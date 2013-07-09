@@ -80,6 +80,7 @@ public:
         string m_BaseAnnotName;
         string GetMainAnnotName(void) const;
         string GetOverviewAnnotName(void) const;
+        string GetMidZoomAnnotName(void) const;
         bool ContainsAnnotsFor(const CSeq_id_Handle& id) const;
     };
 protected:

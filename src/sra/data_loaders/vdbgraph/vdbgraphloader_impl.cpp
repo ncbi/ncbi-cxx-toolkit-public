@@ -66,12 +66,16 @@ class CDataLoader;
 const int kMainGraphAsTable = CVDBGraphSeqIterator::fGraphMainAsTable;
 
 #define OVERVIEW_NAME_SUFFIX "@@5000"
+#define MID_ZOOM_NAME_SUFFIX "@@100"
+
 static const TSeqPos kOverviewChunkSize = 20000*5000;
-static const TSeqPos kMainChunkSize = 20000;
+static const TSeqPos kMidZoomChunkSize = 20000*100;
+static const TSeqPos kMainChunkSize = 100000;
 
 static const size_t kOverviewChunkIdAdd = 0;
-static const size_t kMainChunkIdAdd = 1;
-static const size_t kChunkIdMul = 2;
+static const size_t kMidZoomChunkIdAdd = 1;
+static const size_t kMainChunkIdAdd = 2;
+static const size_t kChunkIdMul = 4;
 
 static const int kTSEId = 1;
 
@@ -210,6 +214,12 @@ string CVDBGraphDataLoader_Impl::SVDBFileInfo::GetOverviewAnnotName(void) const
 }
 
 
+string CVDBGraphDataLoader_Impl::SVDBFileInfo::GetMidZoomAnnotName(void) const
+{
+    return m_BaseAnnotName+MID_ZOOM_NAME_SUFFIX;
+}
+
+
 CVDBGraphDataLoader_Impl::TAnnotNames
 CVDBGraphDataLoader_Impl::GetPossibleAnnotNames(void) const
 {
@@ -217,6 +227,7 @@ CVDBGraphDataLoader_Impl::GetPossibleAnnotNames(void) const
     ITERATE ( TFixedFileMap, it, m_FixedFileMap ) {
         const SVDBFileInfo& info = *it->second;
         names.push_back(CAnnotName(info.GetMainAnnotName()));
+        names.push_back(CAnnotName(info.GetMidZoomAnnotName()));
         names.push_back(CAnnotName(info.GetOverviewAnnotName()));
     }
     sort(names.begin(), names.end());
@@ -331,10 +342,16 @@ CVDBGraphDataLoader_Impl::LoadFullEntry(const CVDBGraphBlobId& blob_id)
     CRange<TSeqPos> range = CRange<TSeqPos>::GetWhole();
     CBioseq_set::TAnnot& dst = entry->SetSet().SetAnnot();
     CVDBGraphSeqIterator::TContentFlags overview_flags = it.fGraphQAll;
+    CVDBGraphSeqIterator::TContentFlags mid_zoom_flags = it.fGraphZoomQAll;
     CVDBGraphSeqIterator::TContentFlags main_flags = it.fGraphMain|kMainGraphAsTable;
     dst.push_back(it.GetAnnot(range,
                               info.GetMainAnnotName(),
                               overview_flags));
+    if ( info.m_VDB->HasMidZoomGraphs() ) {
+        dst.push_back(it.GetAnnot(range,
+                                  info.GetMainAnnotName(),
+                                  mid_zoom_flags));
+    }
     dst.push_back(it.GetAnnot(range,
                               info.GetMainAnnotName(),
                               main_flags));
@@ -357,21 +374,28 @@ void CVDBGraphDataLoader_Impl::LoadSplitEntry(CTSE_Info& tse,
     entry->SetSet().SetId().SetId(kTSEId);
     tse.SetSeq_entry(*entry);
     TSeqPos length = it.GetSeqLength();
-    static const size_t kIdAdd[2] = {
+    static const size_t kIdAdd[3] = {
         kOverviewChunkIdAdd,
+        kMidZoomChunkIdAdd,
         kMainChunkIdAdd
     };
-    static const TSeqPos kSize[2] = {
+    static const TSeqPos kSize[3] = {
         kOverviewChunkSize,
+        kMidZoomChunkSize,
         kMainChunkSize
     };
-    CAnnotName kName[2] = {
+    CAnnotName kName[3] = {
         info.GetOverviewAnnotName(),
+        info.GetMidZoomAnnotName(),
         info.GetMainAnnotName()
     };
     CTSE_Split_Info& split_info = tse.GetSplitInfo();
     CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
-    for ( int k = 0; k < 2; ++k ) {
+    for ( int k = 0; k < 3; ++k ) {
+        if ( kIdAdd[k] == kMidZoomChunkIdAdd &&
+             !info.m_VDB->HasMidZoomGraphs() ) {
+            continue;
+        }
         for ( int i = 0; i*kSize[k] < length; ++i ) {
             TSeqPos from = i*kSize[k], to_open = min(length, from+kSize[k]);
             int chunk_id = i*kChunkIdMul+kIdAdd[k];
@@ -408,15 +432,18 @@ void CVDBGraphDataLoader_Impl::GetChunk(CTSE_Chunk_Info& chunk)
     }
     TSeqPos length = it.GetSeqLength();
 
-    static const TSeqPos kSize[2] = {
+    static const TSeqPos kSize[3] = {
         kOverviewChunkSize,
+        kMidZoomChunkSize,
         kMainChunkSize
     };
-    static const CVDBGraphSeqIterator::TContentFlags kFlags[2] = {
+    static const CVDBGraphSeqIterator::TContentFlags kFlags[3] = {
         CVDBGraphSeqIterator::fGraphQAll,
+        CVDBGraphSeqIterator::fGraphZoomQAll,
         CVDBGraphSeqIterator::fGraphMain|kMainGraphAsTable
     };
-    string kName[2] = {
+    string kName[3] = {
+        info.GetMainAnnotName(),
         info.GetMainAnnotName(),
         info.GetMainAnnotName()
     };
