@@ -56,7 +56,12 @@ class CGvfReadRecord
     : public CGff3ReadRecord
 {
 public:
-    CGvfReadRecord() {};
+    CGvfReadRecord(
+        unsigned int lineNumber,
+        IErrorContainer* pEC = 0): 
+        mLineNumber(lineNumber),
+        mpErrorContainer(pEC)
+    {};
     ~CGvfReadRecord() {};
 
     virtual bool AssignFromGff(
@@ -67,6 +72,12 @@ public:
 protected:
     virtual bool x_AssignAttributesFromGff(
         const string& );
+    void xTraceError(
+        EDiagSev,
+        const string&);
+
+    unsigned int mLineNumber;
+    IErrorContainer* mpErrorContainer;
 };
 
 //  ----------------------------------------------------------------------------
@@ -89,7 +100,8 @@ protected:
                                 
     virtual bool x_ParseFeatureGff(
         const string&,
-        TAnnots& );
+        TAnnots&,
+        IErrorContainer*);
 
     CRef<CSeq_annot> x_GetAnnotById(
         TAnnots& annots,
@@ -97,7 +109,8 @@ protected:
 
     virtual bool x_MergeRecord(
         const CGvfReadRecord&,
-        CRef< CSeq_annot > );
+        CRef<CSeq_annot>,
+        IErrorContainer*);
 
     bool x_FeatureSetLocation(
         const CGff2Record&,
@@ -109,7 +122,8 @@ protected:
 
     virtual bool x_FeatureSetExt(
         const CGvfReadRecord&,
-        CRef< CSeq_feat > );
+        CRef<CSeq_feat>,
+        IErrorContainer*);
 
     CRef<CVariation_ref> x_VariationSNV(
         const CGvfReadRecord&,
@@ -139,7 +153,7 @@ protected:
         const CGvfReadRecord&,
         CRef< CVariation_ref > );
 
-    virtual CGff2Record* x_CreateRecord() { return new CGvfReadRecord(); };   
+    virtual CGff2Record* x_CreateRecord() { return new CGvfReadRecord(m_uLineNumber); };   
 
 protected:
     CRef< CAnnotdesc > m_Pragmas;

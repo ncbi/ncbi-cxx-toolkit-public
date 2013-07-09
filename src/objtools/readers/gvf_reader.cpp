@@ -176,6 +176,21 @@ bool CGvfReadRecord::SanityCheck() const
 }
 
 //  ----------------------------------------------------------------------------
+void CGvfReadRecord::xTraceError(
+    EDiagSev severity,
+    const string& msg)
+//  ----------------------------------------------------------------------------
+{
+    CObjReaderLineException e(
+        severity,
+        mLineNumber,
+        msg);
+    if (!mpErrorContainer->PutError(e)) {
+        throw e;
+    }
+}
+
+//  ----------------------------------------------------------------------------
 CGvfReader::CGvfReader(
     unsigned int uFlags,
     const string& name,
@@ -194,20 +209,21 @@ CGvfReader::~CGvfReader()
 //  ----------------------------------------------------------------------------
 bool CGvfReader::x_ParseFeatureGff(
     const string& strLine,
-    TAnnots& annots )
+    TAnnots& annots,
+    IErrorContainer* pErrorContainer)
 //  ----------------------------------------------------------------------------
 {
     //
     //  Parse the record and determine which ID the given feature will pertain 
     //  to:
     //
-    CGvfReadRecord record;
+    CGvfReadRecord record(m_uLineNumber);
     if ( ! record.AssignFromGff( strLine ) ) {
         return false;
     }
 
     CRef<CSeq_annot> pAnnot = x_GetAnnotById( annots, record.Id() );
-    return x_MergeRecord( record, pAnnot );
+    return x_MergeRecord( record, pAnnot, pErrorContainer );
 //    return x_UpdateAnnot( record, pAnnot ); 
 };
 
@@ -268,7 +284,8 @@ CRef<CSeq_annot> CGvfReader::x_GetAnnotById(
 //  ----------------------------------------------------------------------------
 bool CGvfReader::x_MergeRecord(
     const CGvfReadRecord& record,
-    CRef< CSeq_annot > pAnnot )
+    CRef< CSeq_annot > pAnnot,
+    IErrorContainer* pErrorContainer)
 //  ----------------------------------------------------------------------------
 {
     if ( ! record.SanityCheck() ) {
@@ -281,7 +298,7 @@ bool CGvfReader::x_MergeRecord(
     if ( ! x_FeatureSetVariation( record, pFeature ) ) {
         return false;
     }
-    if ( ! x_FeatureSetExt( record, pFeature ) ) {
+    if ( ! x_FeatureSetExt( record, pFeature, pErrorContainer ) ) {
         return false;
     }
     pAnnot->SetData().SetFtable().push_back( pFeature );
@@ -311,10 +328,11 @@ bool CGvfReader::x_FeatureSetLocation(
     {
         NStr::Split( strRange, ",", range_borders );
         if ( range_borders.size() != 2 ) {
-            cerr << "CGvfReader::x_FeatureSetLocation: "
-                 << "Bad \"Start_range\" attribute"
-                 << endl;
-            return false; //overly harsh?
+            CObjReaderLineException e(
+                eDiag_Error,
+                0,
+                "CGvfReader::x_FeatureSetLocation: Bad \"Start_range\" attribute");
+            throw e;
         }
         try {
             if ( range_borders.back() == "." ) {
@@ -333,10 +351,11 @@ bool CGvfReader::x_FeatureSetLocation(
             }        
         }
         catch ( ... ) {
-            cerr << "CGvfReader::x_FeatureSetLocation: "
-                 << "Bad \"Start_range\" attribute"
-                 << endl;
-            return false; //overly harsh?
+            CObjReaderLineException e(
+                eDiag_Error,
+                0,
+                "CGvfReader::x_FeatureSetLocation: Bad \"Start_range\" attribute");
+            throw e;
         }
     }
 
@@ -346,10 +365,11 @@ bool CGvfReader::x_FeatureSetLocation(
     {
         NStr::Split( strRange, ",", range_borders );
         if ( range_borders.size() != 2 ) {
-            cerr << "CGvfReader::x_FeatureSetLocation: "
-                 << "Bad \"End_range\" attribute"
-                 << endl;
-            return false; //overly harsh?
+            CObjReaderLineException e(
+                eDiag_Error,
+                0,
+                "CGvfReader::x_FeatureSetLocation: Bad \"End_range\" attribute");
+            throw e;
         }
         try {
             if ( range_borders.back() == "." ) {
@@ -368,10 +388,11 @@ bool CGvfReader::x_FeatureSetLocation(
             }        
         }
         catch ( ... ) {
-            cerr << "CGvfReader::x_FeatureSetLocation: "
-                 << "Bad \"End_range\" attribute"
-                 << endl;
-            return false; //overly harsh?
+            CObjReaderLineException e(
+                eDiag_Error,
+                0,
+                "CGvfReader::x_FeatureSetLocation: Bad \"End_range\" attribute");
+            throw e;
         }
     }
 
@@ -624,7 +645,8 @@ bool CGvfReader::x_VariationSetAlleleInstances(
 //  ---------------------------------------------------------------------------
 bool CGvfReader::x_FeatureSetExt(
     const CGvfReadRecord& record,
-    CRef< CSeq_feat > pFeature )
+    CRef< CSeq_feat > pFeature,
+    IErrorContainer* pErrorContainer)
 //  ---------------------------------------------------------------------------
 {
     string strAttribute;
@@ -655,9 +677,13 @@ bool CGvfReader::x_FeatureSetExt(
 
         string strAttribute;
         if ( ! record.GetAttribute( cit->first, strAttribute ) ) {
-            cerr << "CGvfReader::x_FeatureSetExt: Funny attribute \""
-                 << cit->first
-                 << "\"" << endl;
+            CObjReaderLineException e(
+                eDiag_Warning,
+                m_uLineNumber,
+                "CGvfReader::x_FeatureSetExt: Funny attribute \"" + cit->first + "\"");
+            if (!pErrorContainer->PutError(e)) {
+                throw e;
+            }
             continue;
         }
         if ( cit->first == "ID" ) {
