@@ -60,6 +60,7 @@ bool CRNA_gen::IsLegalClass() const
             "autocatalytically_spliced_intron",
             "guide_RNA",
             "hammerhead_ribozyme",
+            "lncRNA",
             "miRNA",
             "other",
             "piRNA",
