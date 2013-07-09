@@ -485,6 +485,9 @@ protected:
      *
      * @param contents The contents of the text node.
      * @return You should return true to continue parsing; false to stop.
+     * @note In case of named entities the callback will have the substituted
+     *       entity value and the 'entity_reference' callback may follow
+     *       it (see  the 'entity_reference' callback notes).
      * @note If an exception is generated in the overloaded version of the
      *       member it will be intercepted and two actions will take place:
      *       - a fatal error message will be stored in the messages contaner.
@@ -825,9 +828,13 @@ protected:
      * Override this memeber function to receive the entity
      * reference message.
      *
-     * @param name The ientity reference name.
+     * @param name The entity reference name.
      * @return You should return true to continue parsing.
      * @return Return false if you want to stop.
+     * @note the callback appears straight after the 'text' callback (if the
+     *       gobal setting to substutute entities is set to false, see
+     *       xml::init::substitute_entities(bool)). The preceding 'text'
+     *       callback delivers a substituted named entity value.
      * @note see http://mail.gnome.org/archives/xml/2009-May/msg00006.html
      *       and http://xmlsoft.org/entities.html for more details when you
      *       get errors on entity reference parsing

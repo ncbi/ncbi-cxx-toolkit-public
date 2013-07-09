@@ -91,10 +91,13 @@ public:
     static void remove_whitespace (bool flag);
 
     //####################################################################
-    /** 
+    /**
      * This member function controls whether or not the XML parser should
      * substitute entities while parsing. The default is true.
      *
+     * @note see the xml::event_parser::text(...) and
+     *       xml::event_parser::entity_reference(...) callback notes as they
+     *       are affected by this flag.
      * @param flag True to turn on substitution, false to turn off.
      * @author Peter Jones
     **/
