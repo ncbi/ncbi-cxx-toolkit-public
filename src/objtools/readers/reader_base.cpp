@@ -217,12 +217,26 @@ CReaderBase::ProcessError(
 //  ----------------------------------------------------------------------------
 {
     err.SetLineNumber( m_uLineNumber );
-    if ( 0 == pContainer ) {
+    if (!pContainer  ||  !pContainer->PutError(err)) {
         throw( err );
     }
-    if ( ! pContainer->PutError( err ) )
-    {
-        throw( err );
+}
+
+//  ----------------------------------------------------------------------------
+void
+CReaderBase::ProcessWarning(
+    CObjReaderLineException& err,
+    IErrorContainer* pContainer )
+//  ----------------------------------------------------------------------------
+{
+    err.SetLineNumber( m_uLineNumber );
+    if (!pContainer) {
+        cerr << m_uLineNumber << ": " << err.SeverityStr() << err.Message() 
+            << endl;
+        return;
+    }
+    if (!pContainer->PutError(err)) {
+        throw(err);
     }
 }
 
@@ -233,19 +247,33 @@ CReaderBase::ProcessError(
     IErrorContainer* pContainer )
 //  ----------------------------------------------------------------------------
 {
-    if ( 0 == pContainer ) {
+    if (!pContainer  ||  !pContainer->PutError(err)) {
         throw( err );
     }
-    if ( ! pContainer->PutError( err ) )
-    {
-        throw( err );
+ }
+
+//  ----------------------------------------------------------------------------
+void
+CReaderBase::ProcessWarning(
+    CLineError& err,
+    IErrorContainer* pContainer )
+//  ----------------------------------------------------------------------------
+{
+    if (!pContainer) {
+        cerr << m_uLineNumber << ": " << err.SeverityStr() << err.Message() 
+            << endl;
+        return;
     }
-}
+    if (!pContainer->PutError(err)) {
+        throw(err);
+    }
+ }
 
 //  ----------------------------------------------------------------------------
 void CReaderBase::x_SetBrowserRegion(
     const string& strRaw,
-    CAnnot_descr& desc )
+    CAnnot_descr& desc,
+    IErrorContainer* pEC)
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_loc> location( new CSeq_loc );
@@ -258,7 +286,7 @@ void CReaderBase::x_SetBrowserRegion(
             eDiag_Error,
             0,
             "Bad browser line: cannot parse browser position" );
-        throw( err );
+        ProcessError(err, pEC);
     }
     CRef<CSeq_id> id( new CSeq_id( CSeq_id::e_Local, strChrom ) );
     location->SetId( *id );
@@ -270,7 +298,7 @@ void CReaderBase::x_SetBrowserRegion(
             eDiag_Error,
             0,
             "Bad browser line: cannot parse browser position" );
-        throw( err );
+        ProcessError(err, pEC);
     }    
     interval.SetFrom( NStr::StringToInt( strFrom ) - 1);
     interval.SetTo( NStr::StringToInt( strTo ) - 1 );
@@ -284,7 +312,8 @@ void CReaderBase::x_SetBrowserRegion(
 //  ----------------------------------------------------------------------------
 bool CReaderBase::x_ParseBrowserLine(
     const string& strLine,
-    CRef<CSeq_annot>& annot )
+    CRef<CSeq_annot>& annot,
+    IErrorContainer* pEC)
 //  ----------------------------------------------------------------------------
 {
     if ( ! NStr::StartsWith( strLine, "browser" ) ) {
@@ -302,10 +331,9 @@ bool CReaderBase::x_ParseBrowserLine(
                     eDiag_Error,
                     0,
                     "Bad browser line: incomplete position directive" );
-                throw( err );
+                ProcessError(err, pEC);
             }
-            x_SetBrowserRegion( *it, desc );
-            continue;
+            x_SetBrowserRegion(*it, desc, pEC);
         }
     }
 
@@ -342,7 +370,8 @@ void CReaderBase::x_AssignTrackData(
 //  ----------------------------------------------------------------------------
 bool CReaderBase::x_ParseTrackLine(
     const string& strLine,
-    CRef<CSeq_annot>& annot )
+    CRef<CSeq_annot>& annot,
+    IErrorContainer* pEC)
 //  ----------------------------------------------------------------------------
 {
     vector<string> parts;

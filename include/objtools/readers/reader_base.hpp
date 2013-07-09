@@ -176,15 +176,18 @@ protected:
                 
     virtual bool x_ParseBrowserLine(
         const string&,
-        CRef<CSeq_annot>& );
+        CRef<CSeq_annot>&,
+        IErrorContainer*);
         
     virtual bool x_ParseTrackLine(
         const string&,
-        CRef<CSeq_annot>& );
+        CRef<CSeq_annot>&,
+        IErrorContainer*);
         
     virtual void x_SetBrowserRegion(
         const string&,
-        CAnnot_descr& );
+        CAnnot_descr&,
+        IErrorContainer*);
 
     virtual void x_SetTrackData(
         CRef<CSeq_annot>&,
@@ -210,6 +213,16 @@ protected:
         
     void
     ProcessError(
+        CLineError&,
+        IErrorContainer* );
+        
+    void
+    ProcessWarning(
+        CObjReaderLineException&,
+        IErrorContainer* );
+        
+    void
+    ProcessWarning(
         CLineError&,
         IErrorContainer* );
         

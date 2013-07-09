@@ -81,7 +81,8 @@ public:
 protected:
     virtual bool x_ParseTrackLine(
         const string&,
-        CRef<CSeq_annot>& );
+        CRef<CSeq_annot>&,
+        IErrorContainer*);
         
     void x_ParseFeature(
         const string&,

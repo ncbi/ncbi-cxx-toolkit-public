@@ -125,7 +125,7 @@ CMicroArrayReader::ReadObject(
 CRef< CSeq_annot >
 CMicroArrayReader::ReadSeqAnnot(
     ILineReader& lr,
-    IErrorContainer* pErrorContainer ) 
+    IErrorContainer* pEC) 
 //  ----------------------------------------------------------------------------                
 {
     CRef< CSeq_annot > annot( new CSeq_annot );
@@ -142,21 +142,21 @@ CMicroArrayReader::ReadSeqAnnot(
             continue;
         }
         try {
-            if ( x_ParseBrowserLine( line, annot ) ) {
+            if (x_ParseBrowserLine(line, annot, pEC)) {
                 continue;
             }
-            if ( x_ParseTrackLine( line, annot ) ) {
+            if (x_ParseTrackLine(line, annot, pEC)) {
                 continue;
             }
             x_ParseFeature( line, annot );
         }
         catch( CObjReaderLineException& err ) {
             err.SetLineNumber( linecount );
-            ProcessError( err, pErrorContainer );
+            ProcessError(err, pEC);
         }
         continue;
     }
-    x_AddConversionInfo( annot, pErrorContainer );
+    x_AddConversionInfo(annot, pEC);
     return annot;
 }
 
@@ -259,14 +259,15 @@ void CMicroArrayReader::x_SetFeatureDisplayData(
 //  ----------------------------------------------------------------------------
 bool CMicroArrayReader::x_ParseTrackLine(
     const string& strLine,
-    CRef<CSeq_annot>& annot )
+    CRef<CSeq_annot>& annot,
+    IErrorContainer* pEC)
 //  ----------------------------------------------------------------------------
 {
     m_strExpNames = "";
     m_iExpScale = -1;
     m_iExpStep = -1;
     
-    if ( ! CReaderBase::x_ParseTrackLine( strLine, annot ) ) {
+    if (!CReaderBase::x_ParseTrackLine( strLine, annot, pEC)) {
         return false;
     }
     if ( m_iFlags & fReadAsBed ) {

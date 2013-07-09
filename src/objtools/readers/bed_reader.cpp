@@ -143,10 +143,10 @@ CBedReader::ReadSeqAnnot(
             if (xParseComment(line, annot)) {
                 continue;
             }
-            if (x_ParseBrowserLine(line, annot)) {
+            if (x_ParseBrowserLine(line, annot, pErrorContainer)) {
                 continue;
             }
-            if (xParseTrackLine(line, annot)) {
+            if (xParseTrackLine(line, annot, pErrorContainer)) {
                 if (featureCount > 0) {
                     --m_uLineNumber;
                     lr.UngetLine();
@@ -227,7 +227,8 @@ CBedReader::ReadObject(
 bool
 CBedReader::xParseTrackLine(
     const string& strLine,
-    CRef< CSeq_annot >& current )
+    CRef< CSeq_annot >& current,
+    IErrorContainer* pEC)
 //  ----------------------------------------------------------------------------
 {
     if ( ! NStr::StartsWith( strLine, "track" ) ) {
@@ -250,7 +251,7 @@ CBedReader::xParseTrackLine(
         m_ErrorsPrivate.ClearAll();
     }
     m_currentId.clear();
-    if (!CReaderBase::x_ParseTrackLine( strLine, current )) {
+    if (!CReaderBase::x_ParseTrackLine(strLine, current, pEC)) {
         CObjReaderLineException err(
             eDiag_Warning,
             0,
