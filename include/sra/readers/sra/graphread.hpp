@@ -59,6 +59,9 @@ public:
     CVDBGraphDb_Impl(void) {}
     CVDBGraphDb_Impl(CVDBMgr& mgr, CTempString path);
 
+    // check if there are graph track of intermediate zoom level
+    bool HasMidZoomGraphs(void);
+
 protected:
     friend class CVDBGraphSeqIterator;
 
@@ -123,9 +126,6 @@ protected:
     void Put(CRef<SGraphTableCursor>& curs) {
         m_Graph.Put(curs);
     }
-
-    // check if there are graph track of intermediate zoom level
-    bool HasMidZoomGraphs(void);
 
 protected:
 
