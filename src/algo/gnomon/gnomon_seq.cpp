@@ -911,7 +911,7 @@ int CAlignMap::FShiftedLen(TSignedSeqRange ab, bool withextras) const {
     int len = MapRangeOrigToEdited(ab, withextras).GetLength(); 
 
     for(int i = 1; i < (int)m_edited_ranges.size(); ++i) {
-        if(m_edited_ranges[i].GetTypeFrom() == eBoundary && Include(ab,m_orig_ranges[i].GetFrom()))
+        if(m_edited_ranges[i].GetTypeFrom() == eBoundary && Include(ab,m_orig_ranges[i-1].GetTo()) && Include(ab,m_orig_ranges[i].GetFrom()))
             len -= m_edited_ranges[i].GetFrom()-m_edited_ranges[i-1].GetTo()-1;
     }
 
