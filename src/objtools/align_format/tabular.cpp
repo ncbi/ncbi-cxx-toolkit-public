@@ -1026,9 +1026,9 @@ void CBlastTabularInfo::x_PrintFieldNames()
         case eSubjectStrand:
         	m_Ostream << "subject strand"; break;
         case eQueryCovSubject:
-        	m_Ostream << "% subject coverage"; break;
+        	m_Ostream << "% query coverage per subject"; break;
         case eQueryCovSeqalign:
-        	m_Ostream << "% hsp coverage"; break;
+        	m_Ostream << "% query coverage per hsp"; break;
         default:
             _ASSERT(false);
             break;
