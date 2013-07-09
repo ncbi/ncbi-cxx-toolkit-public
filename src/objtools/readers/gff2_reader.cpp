@@ -183,10 +183,10 @@ CGff2Reader::ReadSeqAnnotsNew(
 //  ----------------------------------------------------------------------------
 {
     string line;
-    int linecount = 0;
+    //int linecount = 0;
 
     while ( ! lr.AtEOF() ) {
-        ++linecount;
+        ++m_uLineNumber;
         line = NStr::TruncateSpaces( *++lr );
         if ( NStr::TruncateSpaces( line ).empty() ) {
             continue;
@@ -209,7 +209,8 @@ CGff2Reader::ReadSeqAnnotsNew(
             }
         }
         catch( CObjReaderLineException& err ) {
-            err.SetLineNumber( linecount );
+            err.SetLineNumber( m_uLineNumber );
+            ProcessError(err, pErrorContainer);
         }
     }
     x_AddConversionInfoGff( annots, &m_ErrorsPrivate );
@@ -996,7 +997,7 @@ bool CGff2Reader::x_FeatureSetDataGene(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    //CGene_ref& gene = pFeature->SetData().SetGene();
+    CGene_ref& gene = pFeature->SetData().SetGene();
     return true;
 }
 
