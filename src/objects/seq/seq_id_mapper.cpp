@@ -191,5 +191,19 @@ bool CSeq_id_Mapper::x_IsBetter(const CSeq_id_Handle& h1,
 }
 
 
+size_t CSeq_id_Mapper::Dump(CNcbiOstream& out, EDumpDetails details) const
+{
+    size_t total_bytes = 0;
+    for ( size_t i = 0; i < m_Trees.size(); ++i ) {
+        size_t bytes = m_Trees[i]->Dump(out, CSeq_id::E_Choice(i), details);
+        total_bytes += bytes;
+    }
+    if ( details >= eDumpTotalBytes ) {
+        out << "Total CSeq_id_Mapper bytes: "<<total_bytes<<endl;
+    }
+    return total_bytes;
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

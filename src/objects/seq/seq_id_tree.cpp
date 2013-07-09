@@ -34,6 +34,7 @@
 #include <objects/misc/error_codes.hpp>
 #include <corelib/ncbi_param.hpp>
 #include "seq_id_tree.hpp"
+#include <objects/seq/seq_id_mapper.hpp>
 
 
 #define NCBI_USE_ERRCODE_X   Objects_SeqIdMap
@@ -245,6 +246,21 @@ void CSeq_id_Which_Tree::Initialize(CSeq_id_Mapper* mapper,
 }
 
 
+static const size_t kMallocOverhead = 2*sizeof(void*);
+
+static size_t sx_StringMemory(const string& s)
+{
+    size_t size = s.capacity();
+    if ( size ) {
+        if ( size + sizeof(void*) > sizeof(string) ) {
+            // ref-counted
+            size += sizeof(void*) + kMallocOverhead;
+        }
+    }
+    return size;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_id_not_set_Tree
 /////////////////////////////////////////////////////////////////////////////
@@ -314,6 +330,18 @@ void CSeq_id_not_set_Tree::FindReverseMatch(const CSeq_id_Handle& /*id*/,
 {
     LOG_POST_X(4, Warning << "CSeq_id_Mapper::GetReverseMatchingHandles() -- "
                "uninitialized seq-id");
+}
+
+
+size_t CSeq_id_not_set_Tree::Dump(CNcbiOstream& out,
+                                  CSeq_id::E_Choice type,
+                                  int details) const
+{
+    if ( details >= CSeq_id_Mapper::eDumpStatistics ) {
+        out << "CSeq_id_Handles("<<CSeq_id::SelectionName(type)<<"): ";
+        out << "virtual, no memory" << endl;
+    }
+    return 0;
 }
 
 
@@ -395,6 +423,37 @@ void CSeq_id_int_Tree::FindMatchStr(const string& sid,
     }
 }
 
+
+size_t CSeq_id_int_Tree::Dump(CNcbiOstream& out,
+                              CSeq_id::E_Choice type,
+                              int details) const
+{
+    size_t total_bytes = 0;
+    if ( details >= CSeq_id_Mapper::eDumpStatistics ) {
+        out << "CSeq_id_Handles("<<CSeq_id::SelectionName(type)<<"): ";
+    }
+    size_t count = m_IntMap.size(), elem_size = 0, extra_size = 0;
+    if ( count ) {
+        elem_size = sizeof(int)+sizeof(void*); // map value
+        elem_size += sizeof(int)+3*sizeof(void*); // red/black tree overhead
+        elem_size += sizeof(CSeq_id_Info); //
+        elem_size += sizeof(CSeq_id); //
+        // malloc overhead:
+        // map value, CSeq_id_Info, CSeq_id
+        elem_size += 3*kMallocOverhead;
+    }
+    size_t bytes = count*elem_size+extra_size;
+    total_bytes += bytes;
+    if ( details >= CSeq_id_Mapper::eDumpStatistics ) {
+        out << count << " handles, "<<bytes<<" bytes" << endl;
+    }
+    if ( details >= CSeq_id_Mapper::eDumpAllIds ) {
+        ITERATE ( TIntMap, it, m_IntMap ) {
+            out << "  " << it->second->GetSeqId()->AsFastaString() << endl;
+        }
+    }
+    return total_bytes;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_id_Gibbsq_Tree
@@ -574,6 +633,18 @@ void CSeq_id_Gi_Tree::FindMatchStr(const string& sid,
     }
 }
 
+
+size_t CSeq_id_Gi_Tree::Dump(CNcbiOstream& out,
+                             CSeq_id::E_Choice type,
+                             int details) const
+{
+    if ( details >= CSeq_id_Mapper::eDumpStatistics ) {
+        out << "CSeq_id_Handles("<<CSeq_id::SelectionName(type)<<"): ";
+        out << "virtual, small constant memory";
+        out << endl;
+    }
+    return 0;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_id_Textseq_Tree
@@ -1232,6 +1303,75 @@ void CSeq_id_Textseq_Tree::FindReverseMatch(const CSeq_id_Handle& id,
 }
 
 
+size_t CSeq_id_Textseq_Tree::Dump(CNcbiOstream& out,
+                                  CSeq_id::E_Choice type,
+                                  int details) const
+{
+    size_t total_bytes = 0;
+    if ( details >= CSeq_id_Mapper::eDumpStatistics ) {
+        out << "CSeq_id_Handles("<<CSeq_id::SelectionName(type)<<"): "<<endl;
+    }
+    {{
+        size_t size = m_ByAcc.size() + m_ByName.size();
+        size_t elem_size = 0, extra_size = 0;
+        if ( size ) {
+            elem_size = sizeof(string)+sizeof(void*); // map value
+            elem_size += sizeof(int)+3*sizeof(void*); // red/black tree
+            elem_size += sizeof(CSeq_id_Info); //
+            elem_size += sizeof(CSeq_id); //
+            elem_size += sizeof(CTextseq_id); //
+            // malloc overhead:
+            // map value, CSeq_id_Info, CSeq_id, CTextseq_id
+            elem_size += 4*kMallocOverhead;
+            ITERATE ( TStringMap, it, m_ByAcc ) {
+                const CTextseq_id& id =
+                    *it->second->GetSeqId()->GetTextseq_Id();
+                extra_size += sx_StringMemory(id.GetAccession());
+                if ( id.IsSetName() ) {
+                    extra_size += sx_StringMemory(id.GetName());
+                }
+                if ( id.IsSetRelease() ) {
+                    extra_size += sx_StringMemory(id.GetRelease());
+                }
+            }
+        }
+        size_t bytes = extra_size + size*elem_size;
+        total_bytes += bytes;
+        if ( details >= CSeq_id_Mapper::eDumpStatistics ) {
+            out << " "<<size << " handles, "<<bytes<<" bytes"<<endl;
+        }
+    }}
+    {{
+        size_t size = m_PackedMap.size(), elem_size = 0, extra_size = 0;
+        if ( size ) {
+            elem_size = sizeof(TPackedKey)+sizeof(void*);
+            elem_size += sizeof(int)+3*sizeof(void*); // red/black tree
+            elem_size += sizeof(CSeq_id_Textseq_Info); //
+            // malloc overhead:
+            // map value, CSeq_id_Textseq_Info
+            elem_size += 2*kMallocOverhead;
+            ITERATE ( TPackedMap, it, m_PackedMap ) {
+                extra_size += sx_StringMemory(it->first.m_Prefix);
+            }
+        }
+        size_t bytes = extra_size + size*elem_size;
+        total_bytes += bytes;
+        if ( details >= CSeq_id_Mapper::eDumpStatistics ) {
+            out << " " <<size << " packed handles, "<<bytes<<" bytes"<<endl;
+        }
+    }}
+    if ( details >= CSeq_id_Mapper::eDumpAllIds ) {
+        ITERATE ( TStringMap, it, m_ByAcc ) {
+            out << "  " << it->second->GetSeqId()->AsFastaString() << endl;
+        }
+        ITERATE ( TPackedMap, it, m_PackedMap ) {
+            out << "  packed prefix "
+                << it->first.m_Prefix<<"."<<it->first.m_Version << endl;
+        }
+    }
+    return total_bytes;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_id_GB_Tree
 /////////////////////////////////////////////////////////////////////////////
@@ -1576,6 +1716,64 @@ void CSeq_id_Local_Tree::FindMatchStr(const string& sid,
     }
 }
 
+
+size_t CSeq_id_Local_Tree::Dump(CNcbiOstream& out,
+                                CSeq_id::E_Choice type,
+                                int details) const
+{
+    size_t total_bytes = 0;
+    if ( details >= CSeq_id_Mapper::eDumpStatistics ) {
+        out << "CSeq_id_Handles("<<CSeq_id::SelectionName(type)<<"): "<<endl;
+    }
+    {{
+        size_t size = m_ByStr.size(), elem_size = 0, extra_size = 0;
+        if ( size ) {
+            elem_size = sizeof(string)+sizeof(void*); // map value
+            elem_size += sizeof(int)+3*sizeof(void*); // red/black tree
+            elem_size += sizeof(CSeq_id_Info); //
+            elem_size += sizeof(CSeq_id); //
+            elem_size += sizeof(CObject_id); //
+            // malloc overhead:
+            // map value, CSeq_id_Info, CSeq_id, CObject_id
+            elem_size += 4*kMallocOverhead;
+            ITERATE ( TByStr, it, m_ByStr ) {
+                extra_size += sx_StringMemory(it->first);
+            }
+        }
+        size_t bytes = extra_size + size*elem_size;
+        total_bytes += bytes;
+        if ( details >= CSeq_id_Mapper::eDumpStatistics ) {
+            out << " " <<size << " str handles, "<<bytes<<" bytes" << endl;
+        }
+    }}
+    {{
+        size_t size = m_ById.size(), elem_size = 0;
+        if ( size ) {
+            elem_size = sizeof(int)+sizeof(void*);
+            elem_size += sizeof(int)+3*sizeof(void*); // red/black tree
+            elem_size += sizeof(CSeq_id_Info); //
+            elem_size += sizeof(CSeq_id); //
+            elem_size += sizeof(CObject_id); //
+            // malloc overhead:
+            // map value, CSeq_id_Info, CSeq_id, CObject_id
+            elem_size += 4*kMallocOverhead;
+        }
+        size_t bytes = size*elem_size;
+        total_bytes += bytes;
+        if ( details >= CSeq_id_Mapper::eDumpStatistics ) {
+            out << " "<<size << " int handles, "<<bytes<<" bytes" << endl;
+        }
+    }}
+    if ( details >= CSeq_id_Mapper::eDumpAllIds ) {
+        ITERATE ( TByStr, it, m_ByStr ) {
+            out << "  " << it->second->GetSeqId()->AsFastaString() << endl;
+        }
+        ITERATE ( TById, it, m_ById ) {
+            out << "  " << it->second->GetSeqId()->AsFastaString() << endl;
+        }
+    }
+    return total_bytes;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_id_General_Id_Info
@@ -2019,6 +2217,108 @@ void CSeq_id_General_Tree::FindMatchStr(const string& sid,
 }
 
 
+size_t CSeq_id_General_Tree::Dump(CNcbiOstream& out,
+                                  CSeq_id::E_Choice type,
+                                  int details) const
+{
+    size_t total_bytes = 0;
+    if ( details >= CSeq_id_Mapper::eDumpStatistics ) {
+        out << "CSeq_id_Handles("<<CSeq_id::SelectionName(type)<<"): "<<endl;
+    }
+    {{ // m_DbMap
+        size_t count = 0, bytes = 0;
+        ITERATE ( TDbMap, it, m_DbMap ) {
+            bytes += sizeof(string)+sizeof(STagMap); // map value
+            bytes += sizeof(int)+3*sizeof(void*); // red/black tree
+            // malloc overhead:
+            // map value
+            bytes += 1*kMallocOverhead;
+            bytes += sx_StringMemory(it->first);
+            ITERATE ( STagMap::TById, it2, it->second.m_ById ) {
+                count += 1;
+                bytes += sizeof(it2->first)+sizeof(it2->second); // map
+                bytes += sizeof(int)+3*sizeof(void*); // red/black tree
+                bytes += sizeof(CSeq_id_Info);
+                bytes += sizeof(CSeq_id);
+                bytes += sizeof(CObject_id);
+                bytes += 4*kMallocOverhead;
+            }
+            ITERATE ( STagMap::TByStr, it2, it->second.m_ByStr ) {
+                count += 1;
+                bytes += sizeof(it2->first)+sizeof(it2->second); // map
+                bytes += sizeof(int)+3*sizeof(void*); // red/black tree
+                bytes += sizeof(CSeq_id_Info);
+                bytes += sizeof(CSeq_id);
+                bytes += sizeof(CObject_id);
+                bytes += 4*kMallocOverhead;
+                bytes += sx_StringMemory(it2->first);
+            }
+        }
+        total_bytes += bytes;
+        if ( details >= CSeq_id_Mapper::eDumpStatistics ) {
+            out << " "<<count << " handles, "<<bytes<<" bytes" << endl;
+        }
+    }}
+    {{ // m_PackedIdMap
+        size_t count = m_PackedIdMap.size(), elem_size = 0, extra_size = 0;
+        if ( count ) {
+            elem_size = sizeof(TPackedIdKey)+sizeof(void*);
+            elem_size += sizeof(int)+3*sizeof(void*); // red/black tree
+            elem_size += sizeof(CSeq_id_General_Id_Info); //
+            // malloc overhead:
+            // map value, CSeq_id_General_Id_Info
+            elem_size += 2*kMallocOverhead;
+            ITERATE ( TPackedIdMap, it, m_PackedIdMap ) {
+                extra_size += sx_StringMemory(it->first);
+            }
+        }
+        size_t bytes = extra_size + count*elem_size;
+        total_bytes += bytes;
+        if ( details >= CSeq_id_Mapper::eDumpStatistics ) {
+            out << " "<<count << " packed int handles, "<<bytes<<" bytes" << endl;
+        }
+    }}
+    {{ // m_PackedStrMap
+        size_t count = m_PackedStrMap.size(), elem_size = 0, extra_size = 0;
+        if ( count ) {
+            elem_size = sizeof(TPackedIdKey)+sizeof(void*);
+            elem_size += sizeof(int)+3*sizeof(void*); // red/black tree
+            elem_size += sizeof(CSeq_id_General_Str_Info); //
+            // malloc overhead:
+            // map value, CSeq_id_General_Id_Info
+            elem_size += 2*kMallocOverhead;
+            ITERATE ( TPackedStrMap, it, m_PackedStrMap ) {
+                extra_size += sx_StringMemory(it->first.m_Db);
+                extra_size += sx_StringMemory(it->first.m_StrPrefix);
+                extra_size += sx_StringMemory(it->first.m_StrSuffix);
+            }
+        }
+        size_t bytes = extra_size + count*elem_size;
+        total_bytes += bytes;
+        if ( details >= CSeq_id_Mapper::eDumpStatistics ) {
+            out << " "<<count << " packed str handles, "<<bytes<<" bytes" << endl;
+        }
+    }}
+    if ( details >= CSeq_id_Mapper::eDumpAllIds ) {
+        ITERATE ( TDbMap, it, m_DbMap ) {
+            ITERATE ( STagMap::TByStr, it2, it->second.m_ByStr ) {
+                out << "  "<<it2->second->GetSeqId()->AsFastaString() << endl;
+            }
+            ITERATE ( STagMap::TByStr, it2, it->second.m_ByStr ) {
+                out << "  "<<it2->second->GetSeqId()->AsFastaString() << endl;
+            }
+        }
+        ITERATE ( TPackedIdMap, it, m_PackedIdMap ) {
+            out << "  packed int "<<it->first << endl;
+        }
+        ITERATE ( TPackedStrMap, it, m_PackedStrMap ) {
+            out << "  packed str "<<it->first.m_Key<<"/"<<it->first.m_Db<<"/"
+                <<it->first.m_StrPrefix<<"/"<<it->first.m_StrSuffix << endl;
+        }
+    }
+    return total_bytes;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_id_Giim_Tree
 /////////////////////////////////////////////////////////////////////////////
@@ -2121,6 +2421,51 @@ void CSeq_id_Giim_Tree::FindMatchStr(const string& sid,
     }
 }
 
+
+size_t CSeq_id_Giim_Tree::Dump(CNcbiOstream& out,
+                               CSeq_id::E_Choice type,
+                               int details) const
+{
+    size_t total_bytes = 0;
+    if ( details >= CSeq_id_Mapper::eDumpStatistics ) {
+        out << "CSeq_id_Handles("<<CSeq_id::SelectionName(type)<<"): ";
+    }
+    size_t count = 0, bytes = 0;
+    ITERATE ( TIdMap, it, m_IdMap ) {
+        bytes += sizeof(it->first) + sizeof(it->second);
+        bytes += sizeof(int)+3*sizeof(void*); // red/black tree
+        // malloc overhead:
+        // map value, vector
+        bytes += 2*kMallocOverhead;
+        size_t size2 = it->second.size();
+        count += size2;
+        bytes += it->second.capacity()*sizeof(void*);
+        bytes += size2*sizeof(CSeq_id_Info);
+        bytes += size2*sizeof(CSeq_id);
+        bytes += size2*sizeof(CGiimport_id);
+        ITERATE ( TGiimList, it2, it->second ) {
+            const CGiimport_id& id = (*it2)->GetSeqId()->GetGiim();
+            if ( id.IsSetDb() ) {
+                bytes += sx_StringMemory(id.GetDb());
+            }
+            if ( id.IsSetRelease() ) {
+                bytes += sx_StringMemory(id.GetRelease());
+            }
+        }
+    }
+    total_bytes += bytes;
+    if ( details >= CSeq_id_Mapper::eDumpStatistics ) {
+        out << count << " handles, "<<bytes<<" bytes" << endl;
+    }
+    if ( details >= CSeq_id_Mapper::eDumpAllIds ) {
+        ITERATE ( TIdMap, it, m_IdMap ) {
+            ITERATE ( TGiimList, it2, it->second ) {
+                out << "  "<<(*it2)->GetSeqId()->AsFastaString() << endl;
+            }
+        }
+    }
+    return total_bytes;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_id_Patent_Tree
@@ -2282,6 +2627,59 @@ void CSeq_id_Patent_Tree::FindMatchStr(const string& sid,
 }
 
 
+size_t CSeq_id_Patent_Tree::Dump(CNcbiOstream& out,
+                                 CSeq_id::E_Choice type,
+                                 int details) const
+{
+    size_t total_bytes = 0;
+    if ( details >= CSeq_id_Mapper::eDumpStatistics ) {
+        out << "CSeq_id_Handles("<<CSeq_id::SelectionName(type)<<"): ";
+    }
+    size_t count = 0, bytes = 0;
+    ITERATE ( TByCountry, it, m_CountryMap ) {
+        bytes += sizeof(it->first) + sizeof(it->second);
+        bytes += sizeof(int)+3*sizeof(void*); // red/black tree
+        // malloc overhead:
+        // map value, vector
+        bytes += 1*kMallocOverhead;
+        bytes += sx_StringMemory(it->first);
+        ITERATE ( SPat_idMap::TByNumber, it2, it->second.m_ByNumber ) {
+            bytes += sizeof(it2->first) + sizeof(it2->second);
+            bytes += sizeof(int)+3*sizeof(void*); // red/black tree
+            // malloc overhead:
+            // map value, vector
+            bytes += 1*kMallocOverhead;
+            bytes += sx_StringMemory(it2->first);
+            ITERATE ( SPat_idMap::TBySeqid, it3, it2->second ) {
+                count += 1;
+                bytes += sizeof(it2->first) + sizeof(it2->second);
+                bytes += sizeof(int)+3*sizeof(void*); // red/black tree
+                bytes += sizeof(CSeq_id_Info);
+                bytes += sizeof(CSeq_id);
+                bytes += sizeof(CPatent_seq_id);
+                bytes += sizeof(CId_pat);
+                // malloc overhead:
+                // map value, 
+                bytes += 5*kMallocOverhead;
+            }
+        }
+    }
+    total_bytes += bytes;
+    if ( details >= CSeq_id_Mapper::eDumpStatistics ) {
+        out << count << " handles, "<<bytes<<" bytes" << endl;
+    }
+    if ( details >= CSeq_id_Mapper::eDumpAllIds ) {
+        ITERATE ( TByCountry, it, m_CountryMap ) {
+            ITERATE ( SPat_idMap::TByNumber, it2, it->second.m_ByNumber ) {
+                ITERATE ( SPat_idMap::TBySeqid, it3, it2->second ) {
+                    out << "  "<<it3->second->GetSeqId()->AsFastaString() << endl;
+                }
+            }
+        }
+    }
+    return total_bytes;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CSeq_id_PDB_Tree
 /////////////////////////////////////////////////////////////////////////////
@@ -2431,6 +2829,51 @@ void CSeq_id_PDB_Tree::FindMatchStr(const string& sid,
     ITERATE(TSubMolList, sub_it, mit->second) {
         id_list.insert(CSeq_id_Handle(*sub_it));
     }
+}
+
+
+size_t CSeq_id_PDB_Tree::Dump(CNcbiOstream& out,
+                              CSeq_id::E_Choice type,
+                              int details) const
+{
+    size_t total_bytes = 0;
+    if ( details >= CSeq_id_Mapper::eDumpStatistics ) {
+        out << "CSeq_id_Handles("<<CSeq_id::SelectionName(type)<<"): ";
+    }
+    size_t count = 0, bytes = 0;
+    ITERATE ( TMolMap, it, m_MolMap ) {
+        bytes += sizeof(it->first) + sizeof(it->second);
+        bytes += sizeof(int)+3*sizeof(void*); // red/black tree
+        // malloc overhead:
+        // map value, vector
+        bytes += 2*kMallocOverhead;
+        bytes += sx_StringMemory(it->first);
+        size_t size2 = it->second.size();
+        count += size2;
+        bytes += it->second.capacity()*sizeof(void*);
+        bytes += size2*sizeof(CSeq_id_Info);
+        bytes += size2*sizeof(CSeq_id);
+        bytes += size2*sizeof(CPDB_seq_id);
+        ITERATE ( TSubMolList, it2, it->second ) {
+            const CPDB_seq_id& id = (*it2)->GetSeqId()->GetPdb();
+            if ( id.IsSetRel() ) {
+                bytes += sizeof(CDate);
+                bytes += kMallocOverhead;
+            }
+        }
+    }
+    total_bytes += bytes;
+    if ( details >= CSeq_id_Mapper::eDumpStatistics ) {
+        out << count << " handles, "<<bytes<<" bytes" << endl;
+    }
+    if ( details >= CSeq_id_Mapper::eDumpAllIds ) {
+        ITERATE ( TMolMap, it, m_MolMap ) {
+            ITERATE ( TSubMolList, it2, it->second ) {
+                out << "  "<<(*it2)->GetSeqId()->AsFastaString() << endl;
+            }
+        }
+    }
+    return total_bytes;
 }
 
 

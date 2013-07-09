@@ -116,6 +116,11 @@ public:
     virtual bool HaveReverseMatch(const CSeq_id_Handle& id) const;
     virtual void FindReverseMatch(const CSeq_id_Handle& id,
                                   TSeq_id_MatchList& id_list);
+
+    virtual size_t Dump(CNcbiOstream& out,
+                        CSeq_id::E_Choice type,
+                        int details) const = 0;
+
 protected:
     friend class CSeq_id_Mapper;
 
@@ -173,6 +178,10 @@ public:
     virtual void FindReverseMatch(const CSeq_id_Handle& id,
                                   TSeq_id_MatchList& id_list);
 
+    virtual size_t Dump(CNcbiOstream& out,
+                        CSeq_id::E_Choice type,
+                        int details) const;
+
 protected:
     virtual void x_Unindex(const CSeq_id_Info* info);
     bool x_Check(const CSeq_id& id) const;
@@ -196,6 +205,10 @@ public:
 
     virtual void FindMatchStr(const string& sid,
                               TSeq_id_MatchList& id_list) const;
+
+    virtual size_t Dump(CNcbiOstream& out,
+                        CSeq_id::E_Choice type,
+                        int details) const;
 
 protected:
     virtual void x_Unindex(const CSeq_id_Info* info);
@@ -268,6 +281,10 @@ public:
 
     virtual void FindMatchStr(const string& sid,
                               TSeq_id_MatchList& id_list) const;
+
+    virtual size_t Dump(CNcbiOstream& out,
+                        CSeq_id::E_Choice type,
+                        int details) const;
 
 protected:
     virtual void x_Unindex(const CSeq_id_Info* info);
@@ -398,6 +415,11 @@ public:
     virtual bool HaveReverseMatch(const CSeq_id_Handle& id) const;
     virtual void FindReverseMatch(const CSeq_id_Handle& id,
                                   TSeq_id_MatchList& id_list);
+
+    virtual size_t Dump(CNcbiOstream& out,
+                        CSeq_id::E_Choice type,
+                        int details) const;
+
 protected:
     virtual void x_Unindex(const CSeq_id_Info* info);
     virtual bool x_Check(const CSeq_id& id) const = 0;
@@ -605,6 +627,10 @@ public:
     virtual void FindMatchStr(const string& sid,
                               TSeq_id_MatchList& id_list) const;
 
+    virtual size_t Dump(CNcbiOstream& out,
+                        CSeq_id::E_Choice type,
+                        int details) const;
+
 private:
     virtual void x_Unindex(const CSeq_id_Info* info);
     CSeq_id_Info* x_FindInfo(const CObject_id& oid) const;
@@ -730,6 +756,10 @@ public:
     virtual void FindMatchStr(const string& sid,
                               TSeq_id_MatchList& id_list) const;
 
+    virtual size_t Dump(CNcbiOstream& out,
+                        CSeq_id::E_Choice type,
+                        int details) const;
+
 private:
     virtual void x_Unindex(const CSeq_id_Info* info);
     CSeq_id_Info* x_FindInfo(const CDbtag& dbid) const;
@@ -773,6 +803,10 @@ public:
     virtual void FindMatchStr(const string& sid,
                               TSeq_id_MatchList& id_list) const;
 
+    virtual size_t Dump(CNcbiOstream& out,
+                        CSeq_id::E_Choice type,
+                        int details) const;
+
 private:
     virtual void x_Unindex(const CSeq_id_Info* info);
     CSeq_id_Info* x_FindInfo(const CGiimport_id& gid) const;
@@ -802,6 +836,10 @@ public:
 
     virtual void FindMatchStr(const string& sid,
                               TSeq_id_MatchList& id_list) const;
+
+    virtual size_t Dump(CNcbiOstream& out,
+                        CSeq_id::E_Choice type,
+                        int details) const;
 
 private:
     virtual void x_Unindex(const CSeq_id_Info* info);
@@ -843,6 +881,10 @@ public:
     virtual void FindMatchStr(const string& sid,
                               TSeq_id_MatchList& id_list) const;
     
+    virtual size_t Dump(CNcbiOstream& out,
+                        CSeq_id::E_Choice type,
+                        int details) const;
+
 private:
     virtual void x_Unindex(const CSeq_id_Info* info);
     CSeq_id_Info* x_FindInfo(const CPDB_seq_id& pid) const;

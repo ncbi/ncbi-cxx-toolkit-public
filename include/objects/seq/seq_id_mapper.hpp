@@ -94,6 +94,15 @@ public:
     
     /// Get seq-id for the given handle
     static CConstRef<CSeq_id> GetSeq_id(const CSeq_id_Handle& handle);
+
+    enum EDumpDetails {
+        eCountTotalBytes, // no output, only return estimated memory
+        eDumpTotalBytes,  // print and return estimated memory
+        eDumpStatistics,  // print estimated memory for various Seq-id types
+        eDumpAllIds       // print all mapped Seq-ids
+    };
+    size_t Dump(CNcbiOstream& out,
+                EDumpDetails details = eDumpTotalBytes) const;
     
 private:
     CSeq_id_Mapper(void);
