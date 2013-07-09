@@ -363,7 +363,22 @@ bool RemoveNotSupportedIntronsFromTranscripts(CAlignModel& align, CAlignCollapse
     if((align.Type()&CGeneModel::eEST) && (int)newalign.Exons().size() == 1 && newalign.Limits() != align.Limits())
         good_alignment = false;
 
+    TSignedSeqRange old_limits = align.Limits();
+
     align = newalign;
+
+    if((align.Status()&CGeneModel::ePolyA) && 
+       ((align.Strand() == ePlus && align.Limits().GetTo() != old_limits.GetTo()) || 
+        (align.Strand() == eMinus && align.Limits().GetFrom() != old_limits.GetFrom()))) {  // clipped polyA
+
+        align.Status() ^= CGeneModel::ePolyA;
+    }
+    if((align.Status()&CGeneModel::eCap) && 
+       ((align.Strand() == eMinus && align.Limits().GetTo() != old_limits.GetTo()) || 
+        (align.Strand() == ePlus && align.Limits().GetFrom() != old_limits.GetFrom()))) {  // clipped cap
+
+        align.Status() ^= CGeneModel::eCap;
+    }
 
     for (int k = 1; k < (int)align.Exons().size() && good_alignment; ++k) {
         CModelExon exonl = align.Exons()[k-1];
