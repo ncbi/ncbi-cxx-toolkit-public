@@ -1209,6 +1209,15 @@ bool CRWLock::TryWriteLock(const CTimeout& timeout)
             DWORD wait_res =
                 WaitForMultipleObjects(3, obj, TRUE, timeout_msec);
             if (wait_res == WAIT_TIMEOUT) {
+                if (m_Flags & fFavorWriters) {
+                    if (--m_WaitingWriters == 0) {
+                        xncbi_Validate(m_RW->m_Rsema2.Release() == 0,
+                                       "CRWLock::TryWriteLock() - "
+                                       "invalid R-semaphore 2 state");
+                        // Readers still won't be able to proceed, but releasing
+                        // the semaphore here simplifies bookkeeping.
+                    }
+                }
                 return false;
             }
             wait_res -= WAIT_OBJECT_0;
@@ -1242,6 +1251,9 @@ bool CRWLock::TryWriteLock(const CTimeout& timeout)
                 m_RW->m_Mutex.GetHandle(), &ts);
         }
         if (res == ETIMEDOUT) {
+            if (m_Flags & fFavorWriters) {
+                m_WaitingWriters--;
+            }
             return false;
         }
         xncbi_Validate(res == 0,
