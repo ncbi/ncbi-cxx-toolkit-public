@@ -1051,7 +1051,7 @@ CRef<CSeq_entry> CBiosampleChkApp::ProcessSeqEntry(vector<CRef<CSeqdesc> > descr
     ProcessSeqEntry(se, descriptors);
 
     ios::openmode mode = ios::out;
-    CNcbiOfstream os(fname, mode);
+    CNcbiOfstream os(fname.c_str(), mode);
     if (!os)
     {
         NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
@@ -1242,7 +1242,7 @@ CRef<CSeq_submit> CBiosampleChkApp::ProcessSeqSubmit(vector<CRef<CSeqdesc> > des
         }
     }
     ios::openmode mode = ios::out;
-    CNcbiOfstream os(fname, mode);
+    CNcbiOfstream os(fname.c_str(), mode);
     if (!os)
     {
         NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
