@@ -79,6 +79,8 @@ public:
         eProblem_ExpectedModifierMissing,
         eProblem_Missing,
 
+        eProblem_ProgressInfo, // not a problem, actually
+
         eProblem_GeneralParsingError
     };
 
@@ -220,10 +222,45 @@ public:
             return "Expected modifier missing";
         case eProblem_Missing:
             return "Feature is missing";
+        case eProblem_ProgressInfo:
+            return "Just a progress info message (no error)";
         default:
             return "Unknown problem";
         }
     }
+
+    void Dump( 
+        std::ostream& out ) const
+    {
+        out << "                " << SeverityStr() << ":" << endl;
+        out << "Problem:        " << ProblemStr() << endl;
+        const string & seqid = SeqId();
+        if (!seqid.empty()) {
+            out << "SeqId:          " << seqid << endl;
+        }
+        out << "Line:           " << Line() << endl;
+        const string & feature = FeatureName();
+        if (!feature.empty()) {
+            out << "FeatureName:    " << feature << endl;
+        }
+        const string & qualname = QualifierName();
+        if (!qualname.empty()) {
+            out << "QualifierName:  " << qualname << endl;
+        }
+        const string & qualval = QualifierValue();
+        if (!qualval.empty()) {
+            out << "QualifierValue: " << qualval << endl;
+        }
+        const TVecOfLines & vecOfLines = OtherLines();
+        if( ! vecOfLines.empty() ) {
+            out << "OtherLines:";
+            ITERATE(TVecOfLines, line_it, vecOfLines) {
+                out << ' ' << *line_it;
+            }
+            out << endl;
+        }
+        out << endl;
+    };
 };
     
 //  ============================================================================
@@ -279,39 +316,6 @@ public:
 
     const std::string &
     QualifierValue(void) const { return m_strQualifierValue; }
-    
-    void Dump( 
-        std::ostream& out )
-    {
-        out << "                " << SeverityStr() << ":" << endl;
-        out << "Problem:        " << ProblemStr() << endl;
-        string seqid = SeqId();
-        if (!seqid.empty()) {
-            out << "SeqId:          " << seqid << endl;
-        }
-        out << "Line:           " << Line() << endl;
-        string feature = FeatureName();
-        if (!feature.empty()) {
-            out << "FeatureName:    " << feature << endl;
-        }
-        string qualname = QualifierName();
-        if (!qualname.empty()) {
-            out << "QualifierName:  " << qualname << endl;
-        }
-        string qualval = QualifierValue();
-        if (!qualval.empty()) {
-            out << "QualifierValue: " << qualval << endl;
-        }
-        const TVecOfLines & vecOfLines = OtherLines();
-        if( ! vecOfLines.empty() ) {
-            out << "OtherLines:";
-            ITERATE(TVecOfLines, line_it, vecOfLines) {
-                out << ' ' << *line_it;
-            }
-            out << endl;
-        }
-        out << endl;
-    };
         
 protected:
     EProblem m_eProblem;
