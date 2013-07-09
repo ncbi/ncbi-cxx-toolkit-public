@@ -719,6 +719,7 @@ CRef<CSeq_id> CWGSScaffoldIterator::GetAccSeq_id(void) const
     CTempString acc = GetAccession();
     if ( !acc.empty() ) {
         id = new CSeq_id(acc);
+        sx_SetVersion(*id, 1);
     }
     else {
         id = GetDb().GetScaffoldSeq_id(m_CurrId);
