@@ -40,6 +40,7 @@
 #include <ncbi_pch.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/general/User_object.hpp>
+#include <objects/misc/sequence_util_macros.hpp>
 
 // generated classes
 
@@ -251,6 +252,56 @@ CConstRef<CUser_field> CUser_field::GetFieldRef(const string& str,
     return f;
 }
 
+void CUser_field::SFieldNameChain::Join(
+    ostream & out_name_strm, const string & delim) const
+{
+    bool bFirst = true;
+    ITERATE(TFieldNameChainUnderlying, chain_iter, m_FieldNameChain) {
+        if( bFirst ) {
+            bFirst = false;
+        } else {
+            out_name_strm << delim;
+        }
+        out_name_strm << *chain_iter;
+    }
+}
+
+void CUser_field::GetFieldsMap(
+        CUser_field::TMapFieldNameToRef & out_mapFieldNameToRef,
+        TFieldMapFlags fFieldMapFlags,
+        const SFieldNameChain & parent_name) const
+{
+    // get the label
+    if( ! FIELD_IS_SET_AND_IS(*this, Label, Str) ) {
+        // we might eventually support numeric labels
+        return;
+    }
+
+    // copying a vector of CTempStrings is much more efficient
+    // than copying strings, so this should be okay.
+    SFieldNameChain field_name_chain = parent_name;
+
+    if( ! (fFieldMapFlags & fFieldMapFlags_ExcludeThis) ) {
+        field_name_chain += GetLabel().GetStr();
+        out_mapFieldNameToRef.insert( 
+            TMapFieldNameToRef::value_type(field_name_chain, ConstRef(this) ) );
+    }
+
+    // recurse, if applicable
+    if( FIELD_IS_SET_AND_IS(*this, Data, Fields) ) {
+        // some flags do not get passed down recursively
+        TFieldMapFlags fChildFieldMapFlags = 
+            ( fFieldMapFlags & ~fFieldMapFlags_ExcludeThis );
+
+        ITERATE( CUser_field::C_Data::TFields, field_iter, 
+            GetData().GetFields() ) 
+        {
+            (*field_iter)->GetFieldsMap(out_mapFieldNameToRef, 
+                fChildFieldMapFlags,
+                field_name_chain);
+        }
+    }
+}
 
 /// Access a named field in this user field.  This will tokenize the
 /// string 'str' on the delimiters and recursively add fields where needed

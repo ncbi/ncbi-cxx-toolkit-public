@@ -159,4 +159,23 @@ BOOST_AUTO_TEST_CASE(s_TestNesting)
     BOOST_CHECK(data.GetFieldRef("TestNesting.FieldsField.Nested"));
     BOOST_CHECK_EQUAL(data.GetField("TestNesting.FieldsField.Nested")
             .GetData().GetStr(), "NestedStr");
+
+    /// Test GetFieldsMap
+    CConstRef<CUser_field> pTestField = data.GetFieldRef(test);
+    CUser_field::TMapFieldNameToRef mapFieldNameToRef;
+    pTestField->GetFieldsMap(mapFieldNameToRef, 
+        CUser_field::fFieldMapFlags_ExcludeThis);
+    
+    BOOST_CHECK( ! mapFieldNameToRef.empty() );
+
+    // make sure the mapping is correct
+    ITERATE( CUser_field::TMapFieldNameToRef, map_iter, mapFieldNameToRef ) {
+        CNcbiOstrstream name_strm;
+        // name_strm << test << ".";
+        map_iter->first.Join(name_strm);
+        const string sName = CNcbiOstrstreamToString(name_strm);
+        cerr << "Testing name: " << sName << endl;
+        BOOST_CHECK_EQUAL(
+            pTestField->GetFieldRef(sName), map_iter->second );
+    }
 }

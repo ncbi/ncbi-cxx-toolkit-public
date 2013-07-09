@@ -86,6 +86,53 @@ public:
     CConstRef<CUser_field> GetFieldRef(const string& str,
                                        const string& delim = ".") const;
 
+    /// For functions that don't use delims, we instead use a chain of names.
+    struct NCBI_GENERAL_EXPORT SFieldNameChain {
+        /// Convenience func.  This can be deprecated if a
+        /// NStr::Join function is created that takes 
+        /// the type of TFieldNameChainUnderlying
+        void Join(ostream & out_name_strm, const string & delim = ".") const;
+
+        void operator += (const CTempStringEx & str) {
+            m_FieldNameChain.push_back(str);
+        }
+
+        bool operator < (const SFieldNameChain & rhs) const {
+            return m_FieldNameChain < rhs.m_FieldNameChain;
+        }
+
+        typedef vector<CTempStringEx> TFieldNameChainUnderlying;
+        TFieldNameChainUnderlying m_FieldNameChain;
+    };
+
+    /// Maps field names like the input for GetFieldRef to the user-field.
+    typedef map<SFieldNameChain, CConstRef<CUser_field> > TMapFieldNameToRef;
+
+    /// Flags that affect behavior of TMapFieldNameToRef functions.
+    enum EFieldMapFlags {
+        fFieldMapFlags_ExcludeThis = (1<<0) ///< = 0x1 (excludes this CUser_field's name and mapping to self from results)
+    };
+    typedef int TFieldMapFlags; ///< holds bitwise OR of "EFieldMapFlags"
+
+    /// Recursively get the map of field names like the input 
+    /// for GetFieldRef to the user-field.
+    ///
+    /// @param out_mapFieldNameToRef
+    ///   The results are put into here, but it becomes INVALID if this
+    ///   CUser_field or any of its descendents change their label.
+    ///   It will NOT be cleared
+    ///   before more data is added, and in that case would overwrite any
+    ///   item which has the same key.
+    /// @param fFieldMapFlags
+    ///   Flags that affect behavior of function.
+    /// @param parent_name
+    ///   Outside users probably don't need this.  It's really for 
+    ///   internal recursive calls when building the map.
+    void GetFieldsMap(
+        CUser_field::TMapFieldNameToRef & out_mapFieldNameToRef,
+        TFieldMapFlags fFieldMapFlags = 0,
+        const SFieldNameChain & parent_name = SFieldNameChain() ) const;
+
     /// Access a named field in this user field.  This will tokenize the
     /// string 'str' on the delimiters and recursively add fields where needed
     CUser_field&      SetField(const string& str,
