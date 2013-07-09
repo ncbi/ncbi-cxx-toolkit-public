@@ -747,6 +747,7 @@ void CFlatGatherer::x_GatherComments(void) const
     }
 
     x_HistoryComments(ctx);
+    x_RefSeqGenomeComments(ctx);
     x_WGSComment(ctx);
     x_TSAComment(ctx);
     if ( ctx.ShowGBBSource() ) {
@@ -1105,6 +1106,19 @@ void CFlatGatherer::x_HistoryComments(CBioseqContext& ctx) const
         {
             x_AddComment(new CHistComment(CHistComment::eReplaces,
                 hist, ctx));
+        }
+    }
+}
+
+void CFlatGatherer::x_RefSeqGenomeComments(CBioseqContext& ctx) const
+{
+    for (CSeqdesc_CI it(ctx.GetHandle(), CSeqdesc::e_User);  it;  ++it) {
+        const CUser_object& uo = it->GetUser();
+
+        string str = CCommentItem::GetStringForRefSeqGenome(uo);
+        if ( !str.empty() ) {
+            x_AddComment(new CCommentItem(str, ctx, &uo));
+            break;
         }
     }
 }

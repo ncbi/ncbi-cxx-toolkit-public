@@ -50,6 +50,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/general/Date.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/misc/sequence_util_macros.hpp>
 
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -698,6 +699,74 @@ string CCommentItem::GetStringForRefTrack
     }
 
     return CNcbiOstrstreamToString(oss);
+}
+
+string CCommentItem::GetStringForRefSeqGenome(const CUser_object& uo)
+{
+    if ( ! FIELD_IS_SET_AND_IS(uo, Type, Str)  ||
+         uo.GetType().GetStr() != "RefSeqGenome") 
+    {
+        return kEmptyStr;
+    }
+
+    // this holds the value we return if no issues arise
+    CNcbiOstrstream result_oss;
+
+    const static string kRefSeqCat = "RefSeq Category";
+
+    // get category name
+    result_oss << kRefSeqCat << ": ";
+    CConstRef<CUser_field> pCategoryField = uo.GetFieldRef(kRefSeqCat);
+    if( pCategoryField &&
+        FIELD_IS_SET_AND_IS(*pCategoryField, Data, Str) ) 
+    {
+        const string & sCategory = pCategoryField->GetData().GetStr();
+        result_oss << sCategory << endl;
+    } else {
+        result_oss << "(?UNKNOWN?)" << endl;
+    }
+
+    // get details field
+    CConstRef<CUser_field> pDetailsField = uo.GetFieldRef("Details");
+
+    CUser_field::TMapFieldNameToRef mapFieldNameToRef;
+    if( pDetailsField ) {
+        pDetailsField->GetFieldsMap(mapFieldNameToRef,
+            CUser_field::fFieldMapFlags_ExcludeThis);
+
+        const static char * arrFieldNames[] = {
+            "CALC", "COM", "PRT", "UPR"
+        };
+
+        ITERATE_0_IDX(field_idx, ArraySize(arrFieldNames) ) {
+            const CTempString sFieldName( arrFieldNames[field_idx] );
+            CUser_field::SFieldNameChain field_name;
+            field_name += sFieldName;
+
+            CUser_field::TMapFieldNameToRef::const_iterator find_iter =
+                mapFieldNameToRef.find(field_name);
+            if( find_iter == mapFieldNameToRef.end() ) {
+                // not found
+                continue;
+            }
+
+            if( ! FIELD_IS_SET_AND_IS(*find_iter->second, Data, Str) ) {
+                // only Str fields are supported at this time
+                continue;
+            }
+
+            // might need to pad
+            if( sFieldName.length() < kRefSeqCat.length() ) {
+                result_oss << string(
+                    (kRefSeqCat.length() - sFieldName.length()), ' ');
+            }
+
+            result_oss << sFieldName << ": "
+                       << find_iter->second->GetData().GetStr() << endl;
+        }
+    }
+
+    return CNcbiOstrstreamToString(result_oss);
 }
 
 

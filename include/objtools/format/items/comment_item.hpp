@@ -131,6 +131,7 @@ public:
         const CBioseq_Handle& seq, ECommentFormat format = eFormat_Text,
         EGenomeBuildComment eGenomeBuildComment = eGenomeBuildComment_Yes
         );
+    static string GetStringForRefSeqGenome(const CUser_object& uo);
     static string GetStringForWGS(CBioseqContext& ctx);
     static string GetStringForTSA(CBioseqContext& ctx);
     static string GetStringForMolinfo(const CMolInfo& mi, CBioseqContext& ctx);
