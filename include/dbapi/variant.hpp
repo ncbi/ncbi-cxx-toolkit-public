@@ -104,6 +104,8 @@ public:
     explicit CVariant(bool v);
     explicit CVariant(const string& v);
     explicit CVariant(const char* s);
+    explicit CVariant(const TStringUCS2& v);
+    // explicit CVariant(const TCharUCS2* s);
 
     // Factories for different types
     // NOTE: pass p = 0 to make NULL value
@@ -115,8 +117,11 @@ public:
     static CVariant Double       (double *p);
     static CVariant Bit          (bool *p);
     static CVariant LongChar     (const char *p, size_t len = 0);
+    static CVariant LongChar     (const TStringUCS2 &s, size_t len = 0);
     static CVariant VarChar      (const char *p, size_t len = 0);
+    static CVariant VarChar      (const TStringUCS2 &s, size_t len = 0);
     static CVariant Char         (size_t size, const char *p);
+    static CVariant Char         (size_t size, const TStringUCS2& s);
     static CVariant LongBinary   (size_t maxSize, const void *p, size_t len);
     static CVariant VarBinary    (const void *p, size_t len);
     static CVariant Binary       (size_t size, const void *p, size_t len);
@@ -174,6 +179,8 @@ public:
     CVariant& operator=(const double& v);
     CVariant& operator=(const string& v);
     CVariant& operator=(const char* v);
+    CVariant& operator=(const TStringUCS2& v);
+    // CVariant& operator=(const TCharUCS2* v);
     CVariant& operator=(const bool& v);
     CVariant& operator=(const CTime& v);
 
@@ -191,6 +198,8 @@ public:
     size_t GetBlobSize() const;
     size_t Read(void* buf, size_t len) const;
     size_t Append(const void* buf, size_t len);
+    size_t Append(const string& str);
+    size_t Append(const TStringUCS2& str);
     // Truncates from buffer end to buffer start.
     // Truncates everything if no argument
     void Truncate(size_t len = kMax_UInt);
@@ -200,6 +209,11 @@ public:
     void SetITDescriptor(I_ITDescriptor* descr);
     I_ITDescriptor& GetITDescriptor(void) const;
     I_ITDescriptor* ReleaseITDescriptor(void) const;
+
+    // Simplify bulk insertion into NVARCHAR columns, which require
+    // explicit handling.
+    EBulkEnc GetBulkInsertionEnc(void) const;
+    void     SetBulkInsertionEnc(EBulkEnc e);
 
 protected:
     // Set methods

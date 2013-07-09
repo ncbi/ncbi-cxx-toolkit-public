@@ -804,8 +804,8 @@ protected:
 private:
     bool x_AssignParams(void);
     bool x_IsUnicodeClientAPI(void) const;
-    CS_VOID* x_GetValue(const CDB_Char& value) const;
-    CS_VOID* x_GetValue(const CDB_VarChar& value) const;
+    CS_VOID* x_GetValue(const CDB_Char& value, const CTempString& s) const;
+    CS_VOID* x_GetValue(const CDB_VarChar& value, const CTempString& s) const;
     CS_BLKDESC* x_GetSybaseCmd(void) const
     {
         return m_Cmd;

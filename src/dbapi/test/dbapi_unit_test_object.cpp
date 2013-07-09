@@ -2786,6 +2786,60 @@ BOOST_AUTO_TEST_CASE(Test_NVARCHAR)
     string sql;
 
     try {
+        const string kTableName = "#test_nvarchar", kText(5, 'A');
+        const TStringUCS2 kTextUCS2(5, (TCharUCS2)'A');
+        const EDB_Type kTypes[] = { eDB_Char, eDB_LongChar, eDB_VarChar };
+        const unsigned int kNumTypes = sizeof(kTypes) / sizeof(*kTypes);
+
+        auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
+
+        sql = "create table " + kTableName + " (n integer, nvc9 nvarchar(9))";
+        auto_stmt->ExecuteUpdate(sql);
+
+        sql = "insert into " + kTableName + " values (1, '" + kText + "')";
+        auto_stmt->ExecuteUpdate(sql);
+
+        auto_ptr<IBulkInsert> bi;
+        CVariant n(eDB_Int);
+
+        for (Int4 i = 0;  i < kNumTypes;  ++i) {
+            auto_ptr<CVariant> s;
+            switch (kTypes[i]) {
+            case eDB_Char:
+                s.reset(new CVariant(CVariant::Char(5, kEmptyCStr)));
+                break;
+            case eDB_LongChar:
+                s.reset(new CVariant(CVariant::LongChar(kEmptyCStr, 5)));
+                break;
+            default: // only VarChar is okay as is
+                s.reset(new CVariant(kTypes[i]));
+            }
+
+            bi.reset(GetConnection().GetBulkInsert(kTableName));
+            bi->Bind(1, &n);
+            bi->Bind(2, s.get());
+
+            n = i * 2 + 2;
+            s->SetBulkInsertionEnc(eBulkEnc_UCS2FromChar);
+            *s = kText;
+            bi->AddRow();
+            n = i * 2 + 3;
+            *s = kTextUCS2;
+            bi->AddRow();
+            bi->Complete();
+        }
+
+        auto_stmt->SendSql("SELECT n, nvc9 from " + kTableName);
+        while (auto_stmt->HasMoreResults()) {
+            if (auto_stmt->HasRows()) {
+                auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
+                while (rs->Next()) {
+                    const CVariant& var = rs->GetVariant(2);
+                    BOOST_CHECK_EQUAL(var.GetString(), kText);
+                }
+            }
+        }
+
         if (false) {
             string Title69;
 
@@ -2795,7 +2849,7 @@ BOOST_AUTO_TEST_CASE(Test_NVARCHAR)
 
             conn->Connect("anyone","allowed","MSSQL69", "PMC3");
 //             conn->Connect("anyone","allowed","MSSQL42", "PMC3");
-            auto_ptr<IStatement> auto_stmt(conn->GetStatement());
+            auto_stmt.reset(conn->GetStatement());
 
             sql = "SELECT Title from Subject where SubjectId=7";
             auto_stmt->SendSql(sql);
@@ -2823,7 +2877,7 @@ BOOST_AUTO_TEST_CASE(Test_NTEXT)
     string sql;
 
     try {
-        string ins_value = "asdfghjkl";
+        const string ins_value = "asdfghjkl", kTableName = "#test_ntext";
         char buffer[20];
 
         auto_ptr<IStatement> auto_stmt(GetConnection().GetStatement());
@@ -2831,13 +2885,35 @@ BOOST_AUTO_TEST_CASE(Test_NTEXT)
         sql = "SET TEXTSIZE 2147483647";
         auto_stmt->ExecuteUpdate(sql);
 
-        sql = "create table #test_ntext (txt_fld ntext)";
+        sql = "create table " + kTableName + " (n integer, txt_fld ntext)";
         auto_stmt->ExecuteUpdate(sql);
 
-        sql = "insert into #test_ntext values ('" + ins_value + "')";
+        sql = "insert into " + kTableName + " values (1, '" + ins_value + "')";
         auto_stmt->ExecuteUpdate(sql);
 
-        sql = "SELECT txt_fld from #test_ntext";
+        auto_ptr<IBulkInsert> bi(GetConnection().GetBulkInsert(kTableName));
+        CVariant n(eDB_Int), txt_fld(eDB_Text);
+        bi->Bind(1, &n);
+        bi->Bind(2, &txt_fld);
+        for (size_t i = 0, l = ins_value.size();  i < l;  ++i) {
+            n = (Int4)i + 2;
+            txt_fld.Truncate();
+            txt_fld.SetBulkInsertionEnc(eBulkEnc_RawBytes);
+            txt_fld.Append(CUtf8::AsBasicString<TCharUCS2>
+                           (CTempString(ins_value, 0, i)));
+            BOOST_CHECK_EQUAL(txt_fld.GetBulkInsertionEnc(), eBulkEnc_RawUCS2);
+            if (i > 0  &&  i * 2 < l) {
+                txt_fld.Append(ins_value.substr(i, i));
+                txt_fld.Append(CUtf8::AsBasicString<TCharUCS2>
+                               (CTempString(ins_value, i * 2, NPOS)));
+            } else {
+                txt_fld.Append(ins_value.substr(i));
+            }
+            bi->AddRow();
+        }
+        bi->Complete();
+
+        sql = "SELECT n, txt_fld from " + kTableName;
         auto_stmt->SendSql(sql);
         while (auto_stmt->HasMoreResults()) {
             if (auto_stmt->HasRows()) {

@@ -762,7 +762,8 @@ void CDB_BigInt::AssignValue(const CDB_Object& v)
 }
 
 
-inline size_t my_strnlen(const char* str, size_t maxlen)
+template <typename TChar>
+inline size_t my_strnlen(const TChar* str, size_t maxlen)
 {
     size_t len = 0;
     while (len < maxlen  &&  *str != 0) {
@@ -787,14 +788,39 @@ string MakeString(const string& s, string::size_type size)
 }
 
 inline
-string MakeString(const char* s, string::size_type size)
+void s_MakeLittleEndian(TStringUCS2& s)
 {
-    if (s == NULL) {
-        return MakeString(kEmptyStr, size);
+#ifdef WORDS_BIGENDIAN
+    NON_CONST_ITERATE (TStringUCS2, it, s) {
+        *it = (*it << 8) | (*it >> 8);
+    }
+#endif
+}
+
+inline
+string MakeString(const TStringUCS2& s, TStringUCS2::size_type size)
+{
+    TStringUCS2 value(s, 0, size);
+
+    if (size != TStringUCS2::npos) {
+        value.resize(size, TCharUCS2(' '));
     }
 
-    string str;
-    if (size == string::npos)
+    s_MakeLittleEndian(value);
+    return string((const char*)value.data(), value.size() * sizeof(TCharUCS2));
+}
+
+template <typename TChar>
+inline
+string MakeString(const TChar* s, typename basic_string<TChar>::size_type size)
+{
+    typedef basic_string<TChar> TStr;
+    if (s == NULL) {
+        return MakeString(TStr(), size);
+    }
+
+    TStr str;
+    if (size == TStr::npos)
         str.assign(s);
     else {
         size_t str_size = my_strnlen(s, size);
@@ -808,21 +834,21 @@ string MakeString(const char* s, string::size_type size)
 //
 
 CDB_String::CDB_String(void) 
-: CDB_Object(true)
+    : CDB_Object(true), m_BulkInsertionEnc(eBulkEnc_RawBytes)
 {
 }
 
 
-CDB_String::CDB_String(const CDB_String& other) :
-    CDB_Object(other),
-    m_WString(other.m_WString)
+CDB_String::CDB_String(const CDB_String& other)
+    : CDB_Object(other), m_WString(other.m_WString),
+      m_BulkInsertionEnc(other.m_BulkInsertionEnc)
 {
 }
 
 
 CDB_String::CDB_String(const string& s, EEncoding enc)
-: CDB_Object(false)
-, m_WString(s, enc)
+    : CDB_Object(false), m_WString(s, enc),
+      m_BulkInsertionEnc(eBulkEnc_RawBytes)
 {
 }
 
@@ -830,8 +856,8 @@ CDB_String::CDB_String(const string& s, EEncoding enc)
 CDB_String::CDB_String(const char* s,
                        string::size_type size,
                        EEncoding enc)
-: CDB_Object(s == NULL)
-, m_WString(MakeString(s, size), enc)
+    : CDB_Object(s == NULL), m_WString(MakeString(s, size), enc),
+      m_BulkInsertionEnc(eBulkEnc_RawBytes)
 {
 }
 
@@ -839,10 +865,26 @@ CDB_String::CDB_String(const char* s,
 CDB_String::CDB_String(const string& s,
                        string::size_type size,
                        EEncoding enc) 
-: CDB_Object(false)
-, m_WString(MakeString(s, size), enc)
+    : CDB_Object(false), m_WString(MakeString(s, size), enc),
+      m_BulkInsertionEnc(eBulkEnc_RawBytes)
 {
 }
+
+
+CDB_String::CDB_String(const TStringUCS2& s, TStringUCS2::size_type size)
+    : CDB_Object(false), m_WString(MakeString(s, size)),
+      m_BulkInsertionEnc(eBulkEnc_RawUCS2)
+{
+}
+
+
+/*
+CDB_String::CDB_String(const TCharUCS2* s, string::size_type size)
+    : CDB_Object(s == NULL), m_WString(MakeString(s, size)),
+      m_BulkInsertionEnc(eBulkEnc_RawUCS2)
+{
+}
+*/
 
 
 CDB_String::~CDB_String(void)
@@ -874,6 +916,13 @@ CDB_String& CDB_String::operator= (const char* s)
 }
 
 
+CDB_String& CDB_String::operator= (const TStringUCS2& s)
+{
+    Assign(s);
+    return *this;
+}
+
+
 CDB_String::operator const char*(void) const
 {
     return m_WString.AsCString();
@@ -892,6 +941,7 @@ void CDB_String::Assign(const CDB_String& other)
 {
     SetNULL(other.IsNULL());
     m_WString = other.m_WString;
+    m_BulkInsertionEnc = other.m_BulkInsertionEnc;
 }
 
 
@@ -910,6 +960,9 @@ void CDB_String::Assign(const char* s,
     } else {
         SetNULL();
     }
+    if (m_BulkInsertionEnc == eBulkEnc_RawUCS2) {
+        m_BulkInsertionEnc = eBulkEnc_UCS2FromChar;
+    }
 }
 
 
@@ -919,27 +972,85 @@ void CDB_String::Assign(const string& s,
 {
     SetNULL(false);
     m_WString.Assign(MakeString(s, size), enc);
+    if (m_BulkInsertionEnc == eBulkEnc_RawUCS2) {
+        m_BulkInsertionEnc = eBulkEnc_UCS2FromChar;
+    }
 }
 
 
-/////////////////////////////////////////////////////////////////////////////
-static
-string::size_type 
-get_string_size_varchar(const char* str, string::size_type len)
+/*
+void CDB_String::Assign(const TCharUCS2* s,
+                        TStringUCS2::size_type size)
 {
-    if (len == string::npos) {
+    if ( s ) {
+        SetNULL(false);
+        m_WString.Assign(MakeString(s, size));
+    } else {
+        SetNULL();
+    }
+    m_BulkInsertionEnc = eBulkEnc_RawUCS2;
+}
+*/
+
+
+void CDB_String::Assign(const TStringUCS2& s,
+                        TStringUCS2::size_type size)
+{
+    SetNULL(false);
+    m_WString.Assign(MakeString(s, size));
+    m_BulkInsertionEnc = eBulkEnc_RawUCS2;
+}
+
+
+void CDB_String::GetBulkInsertionData(CTempStringEx* ts, bool convert_raw_bytes)
+    const
+{
+    _ASSERT(ts);
+
+    if (IsNULL()) {
+        ts->clear();
+        return;
+    }
+
+    EBulkEnc enc = m_BulkInsertionEnc;
+    if (convert_raw_bytes  &&  enc == eBulkEnc_RawBytes) {
+        enc = eBulkEnc_UCS2FromChar;
+    }
+
+    switch (enc) {
+    case eBulkEnc_RawBytes:
+    case eBulkEnc_RawUCS2:
+        *ts = x_GetWString();
+        break;
+    case eBulkEnc_UCS2FromChar:
+    {
+        TStringUCS2 s2 = CUtf8::AsBasicString<TCharUCS2>(m_WString.AsUTF8());
+        s_MakeLittleEndian(s2);
+        ts->assign((char*) s2.data(), s2.size() * sizeof(TCharUCS2),
+                   CTempStringEx::fMakeCopy);
+        break;
+    }
+    default:
+        _TROUBLE;
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+template <typename TChar>
+static
+typename basic_string<TChar>::size_type 
+get_string_size_varchar(const TChar* str,
+                        typename basic_string<TChar>::size_type len)
+{
+    typedef basic_string<TChar> TStr;
+
+    if (len == TStr::npos) {
         return len;
+    } else if (str == NULL) {
+        return 0;
+    } else {
+        return my_strnlen(str, len ? len : TStr::npos);
     }
-
-    if (str != NULL) {
-        if (len == 0) {
-            return strlen(str); // Similar to string::npos ...
-        } else {
-            return my_strnlen(str, len);
-        }
-    }
-
-    return 0;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -973,6 +1084,20 @@ CDB_VarChar::CDB_VarChar(const char* s,
 }
 
 
+CDB_VarChar::CDB_VarChar(const TStringUCS2& s, size_t l)
+    : CDB_String(s, get_string_size_varchar(s.data(), l))
+{
+}
+
+
+/*
+CDB_VarChar::CDB_VarChar(const TCharUCS2* s, size_t l)
+    : CDB_String(s, get_string_size_varchar(s, l))
+{
+}
+*/
+
+
 CDB_VarChar::~CDB_VarChar(void)
 {
 }
@@ -1003,6 +1128,24 @@ CDB_VarChar& CDB_VarChar::SetValue(const char* s, size_t l,
 
     return *this;
 }
+
+
+CDB_VarChar& CDB_VarChar::SetValue(const TStringUCS2& s)
+{
+    Assign(s, TStringUCS2::npos);
+
+    return *this;
+}
+
+
+/*
+CDB_VarChar& CDB_VarChar::SetValue(const TCharUCS2* s, size_t l)
+{
+    Assign(s, l);
+
+    return *this;
+}
+*/
 
 
 EDB_Type CDB_VarChar::GetType() const
@@ -1054,6 +1197,12 @@ CDB_Char::CDB_Char(size_t s,
 }
 
 
+CDB_Char::CDB_Char(size_t s, const TStringUCS2& v)
+    : CDB_String(v, s), m_Size(CDB_String::Size())
+{
+}
+
+
 CDB_Char::CDB_Char(const CDB_Char& v) :
     CDB_String(v),
     m_Size(v.m_Size)
@@ -1095,12 +1244,30 @@ CDB_Char& CDB_Char::operator= (const char* s)
 }
 
 
+CDB_Char& CDB_Char::operator= (const TStringUCS2& s)
+{
+    CheckStringTruncation(s.size(), m_Size);
+    Assign(s, m_Size);
+
+    return *this;
+}
+
+
 void CDB_Char::SetValue(const char* str, size_t len, EEncoding enc)
 {
     CDB_VarChar vc_value(str, len, enc);
     CheckStringTruncation(vc_value.Size(), m_Size);
 
     Assign(vc_value.AsCString(), m_Size, enc);
+}
+
+
+void CDB_Char::SetValue(const TStringUCS2& v, size_t len)
+{
+    CDB_VarChar vc_value(v, len);
+    CheckStringTruncation(vc_value.Size(), m_Size);
+
+    Assign(vc_value.Data(), m_Size);
 }
 
 
@@ -1175,6 +1342,13 @@ CDB_LongChar::CDB_LongChar(size_t len,
 }
 
 
+CDB_LongChar::CDB_LongChar(size_t s,
+                           const TStringUCS2& v)
+    : CDB_String(v, s), m_Size(CDB_String::Size())
+{
+}
+
+
 CDB_LongChar::CDB_LongChar(const CDB_LongChar& v) :
     CDB_String(v),
     m_Size(v.m_Size)
@@ -1216,6 +1390,15 @@ CDB_LongChar& CDB_LongChar::operator= (const char* s)
 }
 
 
+CDB_LongChar& CDB_LongChar::operator= (const TStringUCS2& s)
+{
+    CheckStringTruncation(s.size(), m_Size);
+    Assign(s, m_Size);
+
+    return *this;
+}
+
+
 void CDB_LongChar::SetValue(const char* str,
                             size_t len,
                             EEncoding enc)
@@ -1223,6 +1406,14 @@ void CDB_LongChar::SetValue(const char* str,
     CheckStringTruncation(CDB_VarChar(str, len, enc).Size(), m_Size);
 
     Assign(str, m_Size, enc);
+}
+
+
+void CDB_LongChar::SetValue(const TStringUCS2& str, size_t len)
+{
+    CheckStringTruncation(CDB_VarChar(str, len).Size(), m_Size);
+
+    Assign(str, m_Size);
 }
 
 
@@ -1699,11 +1890,24 @@ CDB_Object* CDB_Image::Clone() const
 //
 
 CDB_Text::CDB_Text(void)
+    : m_Encoding(eBulkEnc_RawBytes)
 {
 }
 
 CDB_Text::~CDB_Text(void)
 {
+}
+
+void CDB_Text::SetEncoding(EBulkEnc e)
+{
+    if (e == eBulkEnc_UCS2FromChar) {
+        e = eBulkEnc_RawUCS2;
+    }
+    if (e != m_Encoding  &&  Size() > 0) {
+        // Alternatively, arrange to recode existing text?
+        ERR_POST_X(8, "Creating a mixed-encoding CDB_Text object.");
+    }
+    m_Encoding = e;
 }
 
 size_t CDB_Text::Append(const void* buff, size_t nof_bytes)
@@ -1712,17 +1916,52 @@ size_t CDB_Text::Append(const void* buff, size_t nof_bytes)
         // return 0;
         buff = kEmptyCStr;
     }
+    // Warn if nof_bytes == 0?
     return CDB_Stream::Append
         (buff, nof_bytes ? nof_bytes : strlen((const char*) buff));
 }
 
-size_t CDB_Text::Append(const string& s)
+size_t CDB_Text::Append(const char* buff)
 {
-    return CDB_Stream::Append(s.data(), s.size());
+    if (!buff) return 0;
+    return CDB_Stream::Append(buff, strlen(buff));
 }
+
+size_t CDB_Text::Append(const string& s, EEncoding enc)
+{
+    switch (m_Encoding) {
+    case eBulkEnc_RawBytes:
+        return CDB_Stream::Append(s.data(), s.size());
+    case eBulkEnc_RawUCS2:
+    {
+        TStringUCS2 s2 = CUtf8::AsBasicString<TCharUCS2>
+            (CUtf8::AsUTF8(s, enc));
+        s_MakeLittleEndian(s2);
+        return CDB_Stream::Append(s2.data(), s2.size() * sizeof(TCharUCS2));
+    }
+    default:
+        _TROUBLE;
+        return 0;
+    }
+}
+
+
+size_t CDB_Text::Append(const TStringUCS2& s)
+{
+    SetEncoding(eBulkEnc_RawUCS2);
+#ifdef WORDS_BIGENDIAN
+    TStringUCS2 s2(s);
+    s_MakeLittleEndian(s2);
+    return CDB_Stream::Append(s2.data(), s2.size() * sizeof(TCharUCS2));
+#else
+    return CDB_Stream::Append(s.data(), s.size() * sizeof(TCharUCS2));
+#endif
+}
+
 
 CDB_Text& CDB_Text::operator= (const CDB_Text& text)
 {
+    m_Encoding = text.m_Encoding;
     return dynamic_cast<CDB_Text&> (Assign(text));
 }
 

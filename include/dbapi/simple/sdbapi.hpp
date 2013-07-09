@@ -95,9 +95,11 @@ enum ESDB_Type {
     eSDB_Float,
     eSDB_Double,
     eSDB_String,
+    eSDB_StringUCS2,
     eSDB_Binary,
     eSDB_DateTime,
     eSDB_Text,
+    eSDB_TextUCS2,
     eSDB_Image
 };
 

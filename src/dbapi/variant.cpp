@@ -102,15 +102,29 @@ CVariant CVariant::LongChar(const char *p, size_t len)
     return CVariant(p ? new CDB_LongChar(len, p) : new CDB_LongChar(len));
 }
 
+CVariant CVariant::LongChar(const TStringUCS2 &s, size_t len)
+{
+    return CVariant(new CDB_LongChar(len, s));
+}
+
 CVariant CVariant::VarChar(const char *p, size_t len)
 {
     return CVariant(p ? (len ? new CDB_VarChar(p, len) : new CDB_VarChar(p))
                     : new CDB_VarChar());
 }
+CVariant CVariant::VarChar(const TStringUCS2 &s, size_t len)
+{
+    return CVariant(len ? new CDB_VarChar(s, len) : new CDB_VarChar(s));
+}
 
 CVariant CVariant::Char(size_t size, const char *p)
 {
     return CVariant(p ? new CDB_Char(size, p) : new CDB_Char(size));
+}
+
+CVariant CVariant::Char(size_t size, const TStringUCS2 &s)
+{
+    return CVariant(new CDB_Char(size, s));
 }
 
 CVariant CVariant::LongBinary(size_t maxSize, const void *p, size_t len)
@@ -267,6 +281,11 @@ CVariant::CVariant(const string& v)
 
 CVariant::CVariant(const char* s)
     : m_data(new CDB_VarChar(s))
+{
+}
+
+CVariant::CVariant(const TStringUCS2& v)
+    : m_data(new CDB_VarChar(v))
 {
 }
 
@@ -619,6 +638,30 @@ size_t CVariant::Append(const void* buf, size_t len)
     return 0;
 }
 
+size_t CVariant::Append(const string& str)
+{
+    switch(GetType()) {
+    case eDB_Text:
+        return ((CDB_Text*)GetData())->Append(str);
+
+    default:
+        x_Inapplicable_Method("Append()");
+    }
+    return 0;
+}
+
+size_t CVariant::Append(const TStringUCS2& str)
+{
+    switch(GetType()) {
+    case eDB_Text:
+        return ((CDB_Text*)GetData())->Append(str);
+
+    default:
+        x_Inapplicable_Method("Append()");
+    }
+    return 0;
+}
+
 size_t CVariant::GetBlobSize() const
 {
     switch(GetType()) {
@@ -734,6 +777,21 @@ CVariant& CVariant::operator=(const char* v)
         break;
     default:
         x_Verify_AssignType(eDB_UnsupportedType, "const char *");
+    }
+
+    return *this;
+}
+
+CVariant& CVariant::operator=(const TStringUCS2& v)
+{
+    switch( GetType()) {
+    case eDB_VarChar:
+    case eDB_LongChar:
+    case eDB_Char:
+        *((CDB_String*)GetData()) = v;
+        break;
+    default:
+        x_Verify_AssignType(eDB_UnsupportedType, "TStringUCS2");
     }
 
     return *this;
@@ -865,5 +923,44 @@ bool operator==(const CVariant& v1, const CVariant& v2)
     }
     return less;
 }
+
+EBulkEnc CVariant::GetBulkInsertionEnc(void) const
+{
+    if ( !GetData() ) {
+        return eBulkEnc_RawBytes;
+    }
+
+    switch (GetType()) {
+    case eDB_VarChar:
+    case eDB_Char:
+    case eDB_LongChar:
+        return ((const CDB_String*)GetData())->GetBulkInsertionEnc();
+    case eDB_Text:
+        return ((const CDB_Text*)GetData())->GetEncoding();
+    default:
+        return eBulkEnc_RawBytes;
+    }
+}
+
+void CVariant::SetBulkInsertionEnc(EBulkEnc e)
+{
+    if ( !GetData() ) {
+        return;
+    }
+
+    switch (GetType()) {
+    case eDB_VarChar:
+    case eDB_Char:
+    case eDB_LongChar:
+        ((CDB_String*)GetData())->SetBulkInsertionEnc(e);
+        break;
+    case eDB_Text:
+        ((CDB_Text*)GetData())->SetEncoding(e);
+        break;
+    default:
+        break;
+    }
+}
+
 
 END_NCBI_SCOPE

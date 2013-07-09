@@ -73,6 +73,12 @@ enum EDB_Type {
 };
 
 
+enum EBulkEnc {
+    eBulkEnc_RawBytes,    // Raw bytes, perhaps already encoded in UCS-2.
+    eBulkEnc_RawUCS2,     // Directly specified UCS-2, for nvarchar or ntext.
+    eBulkEnc_UCS2FromChar // Character data to be reencoded as UCS-2.
+};
+
 
 /////////////////////////////////////////////////////////////////////////////
 
@@ -438,6 +444,12 @@ public:
     explicit CDB_String(const string& s,
                         string::size_type size = string::npos,
                         EEncoding enc = eEncoding_Unknown);
+    explicit CDB_String(const TStringUCS2& s,
+                        TStringUCS2::size_type size = TStringUCS2::npos);
+    // Accepting const TCharUCS2* in addition to const char* leads to
+    // ambiguity errors when passed NULL.
+    // explicit CDB_String(const TCharUCS2* s,
+    //                     string::size_type size = TStringUCS2::npos);
     virtual ~CDB_String(void);
 
 public:
@@ -445,6 +457,8 @@ public:
     CDB_String& operator= (const CDB_String& other);
     CDB_String& operator= (const string& s);
     CDB_String& operator= (const char* s);
+    CDB_String& operator= (const TStringUCS2& s);
+    // CDB_String& operator= (const TCharUCS2* s);
 
 public:
     // Conversion operators
@@ -497,9 +511,21 @@ public:
     void Assign(const string& s,
                 string::size_type size = string::npos,
                 EEncoding enc = eEncoding_Unknown);
+    // void Assign(const TCharUCS2* s,
+    //             TStringUCS2::size_type size = TStringUCS2::npos);
+    void Assign(const TStringUCS2& s,
+                TStringUCS2::size_type size = TStringUCS2::npos);
+
+    // Simplify bulk insertion into NVARCHAR columns, which require
+    // explicit handling.
+    EBulkEnc GetBulkInsertionEnc(void) const { return m_BulkInsertionEnc; }
+    void     SetBulkInsertionEnc(EBulkEnc e) { m_BulkInsertionEnc = e;    }
+    void     GetBulkInsertionData(CTempStringEx* ts,
+                                  bool convert_raw_bytes = false) const;
 
 private:
     CWString m_WString;
+    EBulkEnc m_BulkInsertionEnc;
 
     // Avoid explicit static_cast<const string&>(m_WString) constructs,
     // which trigger internal errors under ICC 12.
@@ -519,12 +545,16 @@ public:
     CDB_VarChar(const char* s,
                 size_t l,
                 EEncoding enc = eEncoding_Unknown);
+    CDB_VarChar(const TStringUCS2& s, size_t l = TStringUCS2::npos);
+    // CDB_VarChar(const TCharUCS2* s, size_t l);
     virtual ~CDB_VarChar(void);
 
 public:
     // assignment operators
     CDB_VarChar& operator= (const string& s)  { return SetValue(s); }
     CDB_VarChar& operator= (const char*   s)  { return SetValue(s); }
+    CDB_VarChar& operator= (const TStringUCS2& s)  { return SetValue(s); }
+    // CDB_VarChar& operator= (const TCharUCS2*   s)  { return SetValue(s); }
 
 public:
     // set-value methods
@@ -534,6 +564,8 @@ public:
                           EEncoding enc = eEncoding_Unknown);
     CDB_VarChar& SetValue(const char* s, size_t l,
                           EEncoding enc = eEncoding_Unknown);
+    CDB_VarChar& SetValue(const TStringUCS2& s);
+    // CDB_VarChar& SetValue(const TCharUCS2* s, size_t l);
 
 public:
     virtual EDB_Type    GetType() const;
@@ -553,6 +585,8 @@ public:
     CDB_Char(size_t s,
              const char* str,
              EEncoding enc = eEncoding_Unknown);
+    CDB_Char(size_t s, const TStringUCS2& v);
+    // CDB_Char(size_t s, const TCharUCS2* str);
     CDB_Char(const CDB_Char& v);
     virtual ~CDB_Char(void);
 
@@ -561,12 +595,16 @@ public:
     CDB_Char& operator= (const string& v);
     // This operator copies a string.
     CDB_Char& operator= (const char* v);
+    CDB_Char& operator= (const TStringUCS2& v);
+    // CDB_Char& operator= (const TCharUCS2* v);
 
 public:
     // This method copies a string.
     void SetValue(const char* str,
                   size_t len,
                   EEncoding enc = eEncoding_Unknown);
+    void SetValue(const TStringUCS2& v, size_t len);
+    // void SetValue(const TCharUCS2* v, size_t len);
 
 public:
     virtual EDB_Type    GetType() const;
@@ -594,6 +632,8 @@ public:
     CDB_LongChar(size_t len,
                  const char* str,
                  EEncoding enc = eEncoding_Unknown);
+    CDB_LongChar(size_t s, const TStringUCS2& v);
+    // CDB_LongChar(size_t len, const TCharUCS2* str);
     CDB_LongChar(const CDB_LongChar& v);
     virtual ~CDB_LongChar();
 
@@ -602,11 +642,15 @@ public:
     CDB_LongChar& operator= (const string& v);
     // This operator copies a string.
     CDB_LongChar& operator= (const char* v);
+    CDB_LongChar& operator= (const TStringUCS2& v);
+    // CDB_LongChar& operator= (const TCharUCS2* v);
 
     // This method copies a string.
     void SetValue(const char* str,
                   size_t len,
                   EEncoding enc = eEncoding_Unknown);
+    void SetValue(const TStringUCS2& str, size_t len);
+    // void SetValue(const TCharUCS2* str, size_t len);
 
     //
     size_t      Size()  const  { return IsNULL() ? 0 : m_Size; }
@@ -821,13 +865,22 @@ public:
     virtual ~CDB_Text(void);
 
 public:
-    virtual size_t Append(const void* buff, size_t nof_bytes = 0/*strlen*/);
-    virtual size_t Append(const string& s);
+    // Get and set the encoding to be used by subsequent Append operations.
+    EBulkEnc GetEncoding(void) const { return m_Encoding; }
+    void     SetEncoding(EBulkEnc e);
+
+    virtual size_t Append(const void* buff, size_t nof_bytes);
+    size_t Append(const char* buff);
+    virtual size_t Append(const string& s, EEncoding enc = eEncoding_Unknown);
+    virtual size_t Append(const TStringUCS2& s);
 
     CDB_Text& operator= (const CDB_Text& text);
 
     virtual EDB_Type    GetType() const;
     virtual CDB_Object* Clone()   const;
+
+private:
+    EBulkEnc m_Encoding;
 };
 
 

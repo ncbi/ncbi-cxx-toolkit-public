@@ -91,12 +91,14 @@ s_ConvertType(ESDB_Type type)
     case eSDB_Double:
         return eDB_Double;
     case eSDB_String:
+    case eSDB_StringUCS2:
         return eDB_VarChar;
     case eSDB_Binary:
         return eDB_VarBinary;
     case eSDB_DateTime:
         return eDB_DateTime;
     case eSDB_Text:
+    case eSDB_TextUCS2:
         return eDB_Text;
     case eSDB_Image:
         return eDB_Image;
@@ -422,6 +424,9 @@ s_ConvertValue(const string& from_val, CVariant& to_var)
         to_var = CVariant::VarBinary(from_val.data(), from_val.size());
         break;
     case eDB_Text:
+        to_var.Truncate();
+        to_var.Append(from_val);
+        break;
     case eDB_Image:
         to_var.Truncate();
         to_var.Append(from_val.data(), from_val.size());
@@ -460,6 +465,8 @@ s_ConvertValue(const TStringUCS2& from_val, CVariant& to_var)
     case eDB_Char:
     case eDB_VarChar:
     case eDB_LongChar:
+        to_var = from_val;
+        break;
     case eDB_Binary:
     case eDB_LongBinary:
     case eDB_VarBinary:
@@ -468,6 +475,9 @@ s_ConvertValue(const TStringUCS2& from_val, CVariant& to_var)
                        to_var);
         break;
     case eDB_Text:
+        to_var.Truncate();
+        to_var.Append(from_val);
+        break;
     case eDB_Image:
         to_var.Truncate();
         to_var.Append(reinterpret_cast<const char*>(from_val.data()),
@@ -1540,6 +1550,9 @@ CBulkInsertImpl::Bind(int col, ESDB_Type type)
                    "Cannot bind columns in CBulkInsert randomly");
     }
     m_Cols.push_back(CVariant(s_ConvertType(type)));
+    if (type == eSDB_StringUCS2  ||  type == eSDB_TextUCS2) {
+        m_Cols.back().SetBulkInsertionEnc(eBulkEnc_UCS2FromChar);
+    }
 }
 
 inline void

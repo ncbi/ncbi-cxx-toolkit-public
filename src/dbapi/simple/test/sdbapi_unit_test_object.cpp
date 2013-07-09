@@ -488,7 +488,7 @@ BOOST_AUTO_TEST_CASE(Test_NTEXT)
     string sql;
 
     try {
-        string ins_value = "asdfghjkl";
+        const string kInsValue = "asdfghjkl", kTableName = "#test_ntext";
 
         CQuery query = GetDatabase().NewQuery();
 
@@ -496,26 +496,83 @@ BOOST_AUTO_TEST_CASE(Test_NTEXT)
         query.SetSql( sql );
         query.Execute();
 
-        sql = "create table #test_ntext (txt_fld ntext)";
+        sql = "create table " + kTableName + " (n integer, txt_fld ntext)";
         query.SetSql( sql );
         query.Execute();
 
-        sql = "insert into #test_ntext values ('" + ins_value + "')";
+        sql = "insert into " + kTableName + " values (1, '" + kInsValue + "')";
         query.SetSql( sql );
         query.Execute();
 
-        sql = "SELECT txt_fld from #test_ntext";
+        CBulkInsert bi = GetDatabase().NewBulkInsert(kTableName, 10);
+        bi.Bind(1, eSDB_Int4);
+        bi.Bind(2, eSDB_Text);
+        bi << 2 << CUtf8::AsBasicString<TCharUCS2>(kInsValue) << EndRow;
+        bi.Complete();
+
+        bi = GetDatabase().NewBulkInsert(kTableName, 10);
+        bi.Bind(1, eSDB_Int4);
+        bi.Bind(2, eSDB_TextUCS2);
+        bi << 3 << kInsValue << EndRow;
+        bi << 4 << CUtf8::AsBasicString<TCharUCS2>(kInsValue) << EndRow;
+        bi.Complete();
+
+        sql = "SELECT n, txt_fld from " + kTableName;
         query.SetSql( sql );
         query.Execute();
         ITERATE(CQuery, it, query.SingleSet()) {
             string var = it["txt_fld"].AsString();
-            BOOST_CHECK_EQUAL(var, ins_value);
+            BOOST_CHECK_EQUAL(var, kInsValue);
         }
     }
     catch(const CSDB_Exception& ex) {
         DBAPI_BOOST_FAIL(ex);
     }
     catch(const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    }
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_NVARCHAR)
+{
+    string sql;
+
+    try {
+        const string kTableName = "#test_nvarchar", kText(5, 'A');
+        const TStringUCS2 kTextUCS2(5, (TCharUCS2)'A');
+        CQuery query = GetDatabase().NewQuery();
+
+        sql = "create table " + kTableName + " (n integer, nvc9 nvarchar(9))";
+        query.SetSql(sql);
+        query.Execute();
+
+        sql = "insert into " + kTableName + " values (1, '" + kText + "')";
+        query.SetSql(sql);
+        query.Execute();
+
+        CBulkInsert bi = GetDatabase().NewBulkInsert(kTableName, 10);
+        bi.Bind(1, eSDB_Int4);
+        bi.Bind(2, eSDB_String);
+        bi << 2 << kTextUCS2 << EndRow;
+        bi.Complete();
+
+        bi = GetDatabase().NewBulkInsert(kTableName, 10);
+        bi.Bind(1, eSDB_Int4);
+        bi.Bind(2, eSDB_StringUCS2);
+        bi << 3 << kText << EndRow;
+        bi << 4 << kTextUCS2 << EndRow;
+        bi.Complete();
+
+        sql = "SELECT n, nvc9 from " + kTableName;
+        query.SetSql(sql);
+        query.Execute();
+        ITERATE (CQuery, it, query.SingleSet()) {
+            string var = it[2].AsString();
+            BOOST_CHECK_EQUAL(var, kText);
+        }
+
+    } catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
     }
 }

@@ -148,7 +148,7 @@ bool CTL_BCPInCmd::x_IsUnicodeClientAPI(void) const
 
 
 CS_VOID*
-CTL_BCPInCmd::x_GetValue(const CDB_Char& value) const
+CTL_BCPInCmd::x_GetValue(const CDB_Char& value, const CTempString& s) const
 {
 //--------------------------------------------------
 // #if defined(HAVE_WSTRING)
@@ -159,13 +159,12 @@ CTL_BCPInCmd::x_GetValue(const CDB_Char& value) const
 // #endif
 //--------------------------------------------------
 
-    return const_cast<CS_VOID*>(
-        static_cast<const CS_VOID*>(value.Data()));
+    return const_cast<CS_VOID*>(static_cast<const CS_VOID*>(s.data()));
 }
 
 
 CS_VOID*
-CTL_BCPInCmd::x_GetValue(const CDB_VarChar& value) const
+CTL_BCPInCmd::x_GetValue(const CDB_VarChar& value, const CTempString& s) const
 {
 //--------------------------------------------------
 // #if defined(HAVE_WSTRING)
@@ -176,8 +175,7 @@ CTL_BCPInCmd::x_GetValue(const CDB_VarChar& value) const
 // #endif
 //--------------------------------------------------
 
-    return const_cast<CS_VOID*>(
-        static_cast<const CS_VOID*>(value.Data()));
+    return const_cast<CS_VOID*>(static_cast<const CS_VOID*>(s.data()));
 }
 
 
@@ -267,36 +265,42 @@ bool CTL_BCPInCmd::x_AssignParams()
         }
         case eDB_Char: {
             CDB_Char& par = dynamic_cast<CDB_Char&> (param);
+            CTempStringEx data;
+            par.GetBulkInsertionData(&data);
 #ifdef FTDS_IN_USE
             param_fmt.datatype  = CS_VARCHAR_TYPE;
 #else
             param_fmt.datatype  = CS_CHAR_TYPE;
 #endif
-            param_fmt.maxlength = (CS_INT) par.Size() + 1;
+            param_fmt.maxlength = (CS_INT) data.size() + 1;
             bind.datalen   =
-                (bind.indicator == -1) ? 0 : (CS_INT) par.Size();
+                (bind.indicator == -1) ? 0 : (CS_INT) data.size();
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
                                       par.IsNULL()? (CS_VOID*)bind.buffer :
-                                          x_GetValue(par),
+                                          x_GetValue(par, data),
                                       &bind.datalen,
                                       &bind.indicator));
             break;
         }
         case eDB_LongChar: {
             CDB_LongChar& par = dynamic_cast<CDB_LongChar&> (param);
+            CTempStringEx data;
+            par.GetBulkInsertionData(&data);
             param_fmt.datatype  = CS_LONGCHAR_TYPE;
             param_fmt.maxlength = (CS_INT) par.Size() + 1;
             bind.datalen   =
-                (bind.indicator == -1) ? 0 : (CS_INT) par.DataSize();
+                (bind.indicator == -1) ? 0 : (CS_INT) data.size();
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
                                       par.IsNULL()? (CS_VOID*)bind.buffer :
-                                      (CS_VOID*) par.Data(),
+                                      (CS_VOID*) data.data(),
                                       &bind.datalen,
                                       &bind.indicator));
             break;
         }
         case eDB_VarChar: {
             CDB_VarChar& par = dynamic_cast<CDB_VarChar&> (param);
+            CTempStringEx data;
+            par.GetBulkInsertionData(&data);
 #ifdef FTDS_IN_USE
             param_fmt.datatype  = CS_VARCHAR_TYPE;
 #else
@@ -304,11 +308,11 @@ bool CTL_BCPInCmd::x_AssignParams()
             param_fmt.datatype  = CS_CHAR_TYPE;
 #endif
             // param_fmt.maxlength = (CS_INT) par.Size() + 1;
-            param_fmt.maxlength = (CS_INT) par.Size();
-            bind.datalen   = (CS_INT) par.Size();
+            param_fmt.maxlength = (CS_INT) data.size();
+            bind.datalen   = (CS_INT) data.size();
             ret_code = Check(blk_bind(x_GetSybaseCmd(), i + 1, &param_fmt,
                                       par.IsNULL()? (CS_VOID*)bind.buffer :
-                                          x_GetValue(par),
+                                          x_GetValue(par, data),
                                       &bind.datalen,
                                       &bind.indicator));
             break;

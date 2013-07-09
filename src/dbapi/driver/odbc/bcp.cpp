@@ -308,19 +308,13 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
             case eDB_VarChar:
             case eDB_LongChar: {
                 CDB_String& val = dynamic_cast<CDB_String&> (param);
-                CTempString data;
+                CTempStringEx data;
 
                 if (val.IsNULL()) {
                     data.assign(static_cast<char*>(pb), 0);
                 } else {
-                    if (IsMultibyteClientEncoding()) {
-                        const wstring& ws = val.AsWString(GetClientEncoding());
-                        // hack
-                        data.assign((const char*)(ws.data()),
-                                    ws.size() * sizeof(wchar_t));
-                    } else {
-                        data = val.Value();
-                    }
+                    val.GetBulkInsertionData
+                        (&data, IsMultibyteClientEncoding());
                 }
 
                 DBINT length;
