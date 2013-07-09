@@ -229,7 +229,7 @@ public:
         }
     }
 
-    void Dump( 
+    virtual void Dump( 
         std::ostream& out ) const
     {
         out << "                " << SeverityStr() << ":" << endl;
