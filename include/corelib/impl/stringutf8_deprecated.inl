@@ -171,7 +171,9 @@ inline
 CStringUTF8_DEPRECATED CStringUTF8_DEPRECATED::TruncateSpaces(const CTempString& str,
                                     NStr::ETrunc side)
 {
-    return CUtf8::TruncateSpaces(str,side);
+    CStringUTF8_DEPRECATED res;
+    res.assign( CUtf8::TruncateSpaces(str,side));
+    return res;
 }
 #endif
 inline CStringUTF8_DEPRECATED& CStringUTF8_DEPRECATED::operator= (const TStringUnicode& src) {
@@ -499,7 +501,8 @@ bool  CStringUTF8_DEPRECATED::IsWhiteSpace(TUnicodeSymbol chU)
 inline
 CStringUTF8_DEPRECATED& CStringUTF8_DEPRECATED::TruncateSpacesInPlace(NStr::ETrunc side)
 {
-    return CUtf8::TruncateSpacesInPlace(*this,side);
+    CUtf8::TruncateSpacesInPlace(*this,side);
+    return *this;
 }
 #if  STRINGUTF8_OBSOLETE_STATIC
 inline

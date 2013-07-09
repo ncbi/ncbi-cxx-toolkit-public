@@ -481,7 +481,6 @@ public:
 
     // string
     void WriteStd(const string& data);
-    void WriteStd(const CStringUTF8& data);
 
     // C string; VisualAge can't cope with refs here.
     void WriteStd(const char* const data);

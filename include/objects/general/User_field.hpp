@@ -63,8 +63,6 @@ public:
 
     CUser_field& AddField(const string& label, const CUser_field_Base::TData::TStr& value);
     CUser_field& AddField(const string& label, const CUser_field_Base::TData::TStrs& value);
-    CUser_field& AddField(const string& label, const string& value);
-    CUser_field& AddField(const string& label, const vector<string>& value);
 
     CUser_field& AddField(const string& label, const vector<int>&    value);
     CUser_field& AddField(const string& label, const vector<double>& value);

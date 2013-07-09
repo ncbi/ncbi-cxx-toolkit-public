@@ -252,12 +252,6 @@ void CObjectOStream::WriteStd(const string& data)
     WriteString(data);
 }
 
-inline
-void CObjectOStream::WriteStd(const CStringUTF8& data)
-{
-    WriteString(data,eStringTypeUTF8);
-}
-
 // C string
 inline
 void CObjectOStream::WriteStd(const char* const data)

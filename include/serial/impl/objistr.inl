@@ -414,18 +414,6 @@ void CObjectIStream::SkipStd(const string& )
     SkipString();
 }
 
-inline
-void CObjectIStream::ReadStd(CStringUTF8& data)
-{
-    ReadString(data, eStringTypeUTF8);
-}
-
-inline
-void CObjectIStream::SkipStd(CStringUTF8& )
-{
-    SkipString(eStringTypeUTF8);
-}
-
 // C string
 inline
 void CObjectIStream::ReadStd(char* & data)

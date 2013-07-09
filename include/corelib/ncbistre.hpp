@@ -778,9 +778,6 @@ CNcbiOstream& operator<<(CNcbiOstream& out, __int64 val);
 #  endif
 #endif
 
-class CStringUTF8_DEPRECATED;
-typedef CStringUTF8_DEPRECATED CStringUTF8;
-
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// Helper functions to read plain-text data streams.

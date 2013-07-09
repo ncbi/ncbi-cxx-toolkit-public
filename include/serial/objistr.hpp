@@ -672,8 +672,6 @@ public:
     // string
     void ReadStd(string& data);
     void SkipStd(const string& );
-    void ReadStd(CStringUTF8& data);
-    void SkipStd(CStringUTF8& data);
 
     // C string
     void ReadStd(char* & data);

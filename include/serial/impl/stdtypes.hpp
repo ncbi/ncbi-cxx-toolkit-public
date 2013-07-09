@@ -315,16 +315,6 @@ public:
     static CTypeInfo* CreateTypeInfoStringStore(void);
 };
 
-EMPTY_TEMPLATE
-class NCBI_XSERIAL_EXPORT CStdTypeInfo<ncbi::CStringUTF8>
-{
-public:
-    static TTypeInfo GetTypeInfo(void);
-    static CTypeInfo* CreateTypeInfo(void);
-    static TTypeInfo GetTypeInfoStringStore(void);
-    static CTypeInfo* CreateTypeInfoStringStore(void);
-};
-
 class utf8_string_type {
 };
 EMPTY_TEMPLATE

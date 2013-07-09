@@ -36,6 +36,7 @@
 
 
 #include <common/ncbi_export.h>
+#include <string>
 
 
 // Get rid of some warnings in MSVC++
@@ -198,6 +199,11 @@ END_STD_SCOPE
 #endif
 
 #endif
+
+BEGIN_NCBI_SCOPE
+typedef std::string CStringUTF8;
+END_NCBI_SCOPE
+
 
 /* @} */
 

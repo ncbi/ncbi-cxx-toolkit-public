@@ -1109,32 +1109,6 @@ public:
 };
 
 EMPTY_TEMPLATE
-void CStringFunctions<CStringUTF8>::Read(CObjectIStream& in,
-                    TTypeInfo , TObjectPtr objectPtr)
-    {
-        in.ReadString(Get(objectPtr), eStringTypeUTF8);
-    }
-EMPTY_TEMPLATE
-void CStringFunctions<CStringUTF8>::Write(CObjectOStream& out,
-                    TTypeInfo , TConstObjectPtr objectPtr)
-    {
-        out.WriteString(Get(objectPtr), eStringTypeUTF8);
-    }
-
-EMPTY_TEMPLATE
-void CStringFunctions<CStringUTF8>::Copy(CObjectStreamCopier& copier,
-                                         TTypeInfo )
-{
-    copier.CopyString(eStringTypeUTF8);
-}
-
-EMPTY_TEMPLATE
-void CStringFunctions<CStringUTF8>::Skip(CObjectIStream& in, TTypeInfo )
-{
-    in.SkipString(eStringTypeUTF8);
-}
-
-EMPTY_TEMPLATE
 void CStringFunctions<utf8_string_type>::Read(CObjectIStream& in,
                     TTypeInfo , TObjectPtr objectPtr)
     {
@@ -1222,18 +1196,6 @@ CTypeInfo* CStdTypeInfo<string>::CreateTypeInfo(void)
 {
     return new CPrimitiveTypeInfoString();
 }
-
-TTypeInfo CStdTypeInfo<ncbi::CStringUTF8>::GetTypeInfo(void)
-{
-    static TTypeInfo info = CreateTypeInfo();
-    return info;
-}
-
-CTypeInfo* CStdTypeInfo<ncbi::CStringUTF8>::CreateTypeInfo(void)
-{
-    return new CPrimitiveTypeInfoString(CPrimitiveTypeInfoString::eStringTypeUTF8);
-}
-
 
 TTypeInfo CStdTypeInfo<ncbi::utf8_string_type>::GetTypeInfo(void)
 {

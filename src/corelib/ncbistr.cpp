@@ -3212,11 +3212,6 @@ string NStr::Join(const vector<string>& arr, const CTempString& delim)
     return s_NStr_Join(arr, delim);
 }
 
-string NStr::Join(const vector<CStringUTF8>& arr,  const CTempString& delim)
-{
-    return s_NStr_Join(arr, delim);
-}
-
 
 string NStr::Join(const vector<CTempString>& arr, const CTempString& delim)
 {
