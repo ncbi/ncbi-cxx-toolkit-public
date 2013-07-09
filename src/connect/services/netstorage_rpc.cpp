@@ -216,7 +216,8 @@ CJsonNode CReadJsonFromSocket::ReadMessage(CSocket* sock)
     if (m_UTTPReader.GetNextEvent() != CUTTPReader::eEndOfBuffer) {
         NCBI_THROW_FMT(CNetStorageException, eIOError,
                 "Extra bytes past message end while reading from " <<
-                        sock->GetPeerAddress() << '.');
+                        sock->GetPeerAddress() << " after receiving " <<
+                        m_JSONReader.GetMessage().Repr() << '.');
     }
 
     return m_JSONReader.GetMessage();
@@ -494,7 +495,7 @@ SNetStorageRPC::SNetStorageRPC(const string& init_string,
     CNcbiApplication* app = CNcbiApplication::Instance();
     if (app != NULL)
         hello.SetString("Application", app->GetProgramExecutablePath());
-    hello.SetInteger("Protocol", NST_PROTOCOL_VERSION);
+    hello.SetInteger("ProtocolVersion", NST_PROTOCOL_VERSION);
 
     m_Service = new SNetServiceImpl("NetStorageAPI", m_ClientName,
             new CNetStorageServerListener(hello));
@@ -700,15 +701,30 @@ size_t SNetFileRPC::Read(void* buffer, size_t buf_size)
     if (m_State == eReady) {
         m_OriginalRequest = x_MkRequest("READ");
 
-        m_NetStorageRPC->Exchange(m_OriginalRequest, &m_Connection);
-
         if (m_ReadBuffer == NULL)
             m_ReadBuffer = new char[READ_BUFFER_SIZE];
 
-        s_ReadSocket(&m_Connection->m_Socket, m_ReadBuffer,
-                READ_BUFFER_SIZE, &bytes_read);
+        CNetServer server(*m_NetStorageRPC->m_Service.Iterate(
+                CNetService::eRandomize));
 
-        m_UTTPReader.SetNewBuffer(m_ReadBuffer, bytes_read);
+        CJsonOverUTTPExecHandler json_over_uttp_sender(m_OriginalRequest);
+
+        server->TryExec(json_over_uttp_sender);
+
+        m_Connection = json_over_uttp_sender.GetConnection();
+
+        CSocket* sock = &json_over_uttp_sender.GetConnection()->m_Socket;
+
+        CJsonOverUTTPReader json_reader;
+
+        do {
+            s_ReadSocket(sock, m_ReadBuffer, READ_BUFFER_SIZE, &bytes_read);
+
+            m_UTTPReader.SetNewBuffer(m_ReadBuffer, bytes_read);
+
+        } while (!json_reader.ReadMessage(m_UTTPReader));
+
+        s_TrapErrors(m_OriginalRequest, json_reader.GetMessage(), sock);
 
         m_CurrentChunkSize = 0;
 
@@ -925,6 +941,8 @@ void SNetFileImpl::Read(string* data)
 
         chunks.push_back(buffer);
     }
+
+    Close();
 
     *data = NStr::Join(chunks, kEmptyStr);
 }
