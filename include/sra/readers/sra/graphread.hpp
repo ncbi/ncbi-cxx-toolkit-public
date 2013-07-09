@@ -48,6 +48,7 @@ BEGIN_NAMESPACE(objects);
 
 class CSeq_entry;
 class CSeq_graph;
+class CSeq_table;
 class CUser_object;
 class CUser_field;
 class CVDBGraphSeqIterator;
@@ -79,8 +80,14 @@ protected:
         DECLARE_VDB_COLUMN_AS(TGraphQ, GR_Q50);
         DECLARE_VDB_COLUMN_AS(TGraphQ, GR_Q90);
         DECLARE_VDB_COLUMN_AS(TGraphQ, GR_Q100);
+        DECLARE_VDB_COLUMN_AS(TGraphQ, GR_ZOOM_Q0);
+        DECLARE_VDB_COLUMN_AS(TGraphQ, GR_ZOOM_Q10);
+        DECLARE_VDB_COLUMN_AS(TGraphQ, GR_ZOOM_Q50);
+        DECLARE_VDB_COLUMN_AS(TGraphQ, GR_ZOOM_Q90);
+        DECLARE_VDB_COLUMN_AS(TGraphQ, GR_ZOOM_Q100);
         DECLARE_VDB_COLUMN_AS(TGraphV, GRAPH);
         DECLARE_VDB_COLUMN_AS(uint32_t, SCALE);
+        DECLARE_VDB_COLUMN_AS(int64_t, NUM_SWITCHES);
     };
 
     const string& GetPath(void) const {
@@ -116,6 +123,9 @@ protected:
     void Put(CRef<SGraphTableCursor>& curs) {
         m_Graph.Put(curs);
     }
+
+    // check if there are graph track of intermediate zoom level
+    bool HasMidZoomGraphs(void);
 
 protected:
 
@@ -156,11 +166,14 @@ public:
 class NCBI_SRAREAD_EXPORT CVDBGraphSeqIterator
 {
 public:
+    typedef CVDBGraphDb_Impl::SSeqInfo SSeqInfo;
+    typedef CVDBGraphDb_Impl::SGraphTableCursor SGraphTableCursor;
+    typedef CVDBGraphDb_Impl::TSeqInfoList::const_iterator TSeqInfoIter;
+
     CVDBGraphSeqIterator(void)
         {
         }
-    CVDBGraphSeqIterator(const CVDBGraphDb& db,
-                            CVDBGraphDb_Impl::TSeqInfoList::const_iterator pos)
+    CVDBGraphSeqIterator(const CVDBGraphDb& db, TSeqInfoIter pos)
         : m_Db(db),
           m_Iter(pos)
         {
@@ -176,11 +189,11 @@ public:
         return !*this? 0: this;
     }
 
-    const CVDBGraphDb_Impl::SSeqInfo& GetInfo(void) const;
-    const CVDBGraphDb_Impl::SSeqInfo& operator*(void) const {
+    const SSeqInfo& GetInfo(void) const;
+    const SSeqInfo& operator*(void) const {
         return GetInfo();
     }
-    const CVDBGraphDb_Impl::SSeqInfo* operator->(void) const {
+    const SSeqInfo* operator->(void) const {
         return &GetInfo();
     }
 
@@ -200,15 +213,36 @@ public:
         return GetInfo().m_SeqLength;
     }
 
+    // Do not mix graphs of different zoom levels
     enum EContentFlags {
+        // original detailed graph
         fGraphMain = 1<<0,
+
+        // overview graphs (percentiles)
         fGraphQ0   = 1<<1,
         fGraphQ10  = 1<<2,
         fGraphQ50  = 1<<3,
         fGraphQ90  = 1<<4,
         fGraphQ100 = 1<<5,
-        fGraphQAll = fGraphQ0 | fGraphQ10 | fGraphQ50 | fGraphQ90 | fGraphQ100,
+        fGraphQAll = (fGraphQ0 | fGraphQ10 | fGraphQ50 | 
+                      fGraphQ90 | fGraphQ100),
+
+        // main graph representation - either Seq-table or Seq-graph,
+        // set both *As* flags to get more compact representation
         fGraphMainAsTable = 1<<8,
+        fGraphMainAsGraph = 1<<9,
+        fGraphMainAsBest = (fGraphMainAsTable | fGraphMainAsGraph),
+
+        // zoom graphs if available (percentiles)
+        fGraphZoomQ0   = 1<<11,
+        fGraphZoomQ10  = 1<<12,
+        fGraphZoomQ50  = 1<<13,
+        fGraphZoomQ90  = 1<<14,
+        fGraphZoomQ100 = 1<<15,
+        fGraphZoomQAll = (fGraphZoomQ0 | fGraphZoomQ10 | fGraphZoomQ50 |
+                          fGraphZoomQ90 | fGraphZoomQ100),
+
+        // overview graphs by default
         fDefaultContent = fGraphQAll
     };
     typedef int TContentFlags;
@@ -219,19 +253,33 @@ public:
                               const string& annot_name = kEmptyStr,
                               TContentFlags content = fDefaultContent) const;
 
+    bool SeqTableIsSmaller(COpenRange<TSeqPos> range) const;
+
 protected:
     CVDBGraphDb_Impl& GetDb(void) const {
         return m_Db.GetNCObject();
     }
 
-    CRef<CSeq_graph> x_MakeGraphQ(CVDBGraphDb_Impl::SGraphTableCursor& curs,
-                                  CSeq_loc& loc,
-                                  const string& annot_name,
-                                  int level) const;
+    CRef<CSeq_graph> x_MakeGraph(const string& annot_name,
+                                 CSeq_loc& loc,
+                                 const SSeqInfo& info,
+                                 const COpenRange<TSeqPos>& range,
+                                 TSeqPos step,
+                                 SGraphTableCursor& cursor,
+                                 CVDBColumn& column,
+                                 int level) const;
+    CRef<CSeq_table> x_MakeTable(const string& annot_name,
+                                 CSeq_loc& loc,
+                                 const SSeqInfo& info,
+                                 const COpenRange<TSeqPos>& range,
+                                 SGraphTableCursor& cursor) const;
+
+    bool x_SeqTableIsSmaller(COpenRange<TSeqPos> range,
+                             SGraphTableCursor& cursor) const;
 
 private:
     CVDBGraphDb m_Db;
-    CVDBGraphDb_Impl::TSeqInfoList::const_iterator m_Iter;
+    TSeqInfoIter m_Iter;
 };
 
 

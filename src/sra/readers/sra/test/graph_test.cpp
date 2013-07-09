@@ -109,7 +109,11 @@ void CTestApp::Init(void)
     arg_desc->AddFlag("print_objects", "Print generated objects");
     arg_desc->AddFlag("ignore_errors", "Ignore errors in individual entries");
 
+    arg_desc->AddFlag("overview_graphs", "Generate overview graphs");
+    arg_desc->AddFlag("mid_graphs", "Generate mid-zoom graphs");
     arg_desc->AddFlag("main_graph", "Generate main graph");
+    arg_desc->AddFlag("main_as_table", "Generate main graph as Seq-table");
+    arg_desc->AddFlag("main_as_best", "Use smaller of Seq-table or Seq-graph");
 
     arg_desc->AddDefaultKey("o", "OutputFile",
                             "Output file of ASN.1",
@@ -214,23 +218,49 @@ int CTestApp::Run(void)
         query_idh = CSeq_id_Handle::GetHandle(query_id);
         sw.Restart();
 
-        CVDBGraphSeqIterator::TContentFlags flags =
-            CVDBGraphSeqIterator::fDefaultContent;
-        if ( args["main_graph"] ) {
-            flags |= CVDBGraphSeqIterator::fGraphMain;
-        }
         string name = CFile(path).GetName();
         CVDBGraphSeqIterator it(db, query_idh);
-        if ( it ) {
-            CRef<CSeq_annot> annot = it.GetAnnot(query_range, name, flags);
-            if ( annot && print_objects ) {
-                out << MSerial_AsnText << *annot;
-            }
-            out << "Loaded graph in "<<sw.Elapsed()
+
+        if ( !it ) {
+            out << "No graph found in "<<sw.Elapsed()
                 << NcbiEndl;
         }
         else {
-            out << "No graph found in "<<sw.Elapsed()
+            bool main_graph = args["main_graph"];
+            bool mid_graphs = args["mid_graphs"];
+            bool overview_graphs =
+                !(main_graph || mid_graphs) || args["overview_graphs"];
+            if ( overview_graphs ) {
+                CRef<CSeq_annot> annot =
+                    it.GetAnnot(query_range, name,
+                                CVDBGraphSeqIterator::fGraphQAll);
+                if ( annot && print_objects ) {
+                    out << "Overview graphs: " << MSerial_AsnText << *annot;
+                }
+            }
+            if ( mid_graphs ) {
+                CRef<CSeq_annot> annot =
+                    it.GetAnnot(query_range, name,
+                                CVDBGraphSeqIterator::fGraphZoomQAll);
+                if ( annot && print_objects ) {
+                    out << "Zoom graphs: " << MSerial_AsnText << *annot;
+                }
+            }
+            if ( main_graph ) {
+                CVDBGraphSeqIterator::TContentFlags flags = 
+                    CVDBGraphSeqIterator::fGraphMain;
+                if ( args["main_as_table"] ) {
+                    flags |= CVDBGraphSeqIterator::fGraphMainAsTable;
+                }
+                if ( args["main_as_best"] ) {
+                    flags |= CVDBGraphSeqIterator::fGraphMainAsBest;
+                }
+                CRef<CSeq_annot> annot = it.GetAnnot(query_range, name, flags);
+                if ( annot && print_objects ) {
+                    out << "Main graph: " << MSerial_AsnText << *annot;
+                }
+            }
+            out << "Loaded graph in "<<sw.Elapsed()
                 << NcbiEndl;
         }
         sw.Restart();
