@@ -625,14 +625,13 @@ static bool DescendingModelOrderPConsistentCoverage(const TChainPtr& a, const TC
 
 CChainer::CChainerImpl::ECompat CChainer::CChainerImpl::CheckCompatibility(const CGene& gene, const CChain& algn)
 {
-    TSignedSeqRange gene_cds = (gene.size() > 1 || gene.front()->CompleteCds()) ? gene.RealCdsLimits() : gene.front()->MaxCdsLimits();
     bool gene_good_enough_to_be_annotation = allow_partialalts || gene.front()->GoodEnoughToBeAnnotation(); 
-
-    TSignedSeqRange algn_lim = algn.Limits();
-    TSignedSeqRange algn_cds = algn.CompleteCds() ? algn.RealCdsLimits() : algn.MaxCdsLimits();
     bool algn_good_enough_to_be_annotation = allow_partialalts || algn.GoodEnoughToBeAnnotation();
 
-    if(!gene.Limits().IntersectingWith(algn_lim))             // don't overlap
+    TSignedSeqRange gene_cds = (gene.size() > 1 || gene.front()->CompleteCds() || algn_good_enough_to_be_annotation) ? gene.RealCdsLimits() : gene.front()->MaxCdsLimits();
+    TSignedSeqRange algn_cds = (algn.CompleteCds() || gene_good_enough_to_be_annotation) ? algn.RealCdsLimits() : algn.MaxCdsLimits();
+
+    if(!gene.Limits().IntersectingWith(algn.Limits()))             // don't overlap
         return eOtherGene;
     
     if(gene.IsAlternative(algn)) {   // has common splice or common CDS
@@ -2544,15 +2543,15 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
             tmp_chains.push_back(chain);
     }
 
-    CombineCompatibleChains(tmp_chains);
-    SetFlagsForChains(tmp_chains);
-
     NON_CONST_ITERATE(TChainList, it, tmp_chains) {
         CChain& chain = *it;
         chain.SetID(m_idnext);
         chain.SetGeneID(m_idnext);
         m_idnext += m_idinc;
     }
+
+    CombineCompatibleChains(tmp_chains);
+    SetFlagsForChains(tmp_chains);
 
     list<CGene> genes = FindGenes(tmp_chains);  // assigns geneid, rank, skip, nested
 
@@ -3053,7 +3052,6 @@ CChain::CChain(SChainMember& mbr, CGeneModel* gapped_helper) : m_coverage_drop_l
         SChainMember* mi = *i;
         CGeneModel align = *mi->m_align;
         align.SetCdsInfo(*mi->m_cds_info);
-        
         if(extened_parts.empty() || !align.Limits().IntersectingWith(extened_parts.back().Limits())) {
             extened_parts.push_back(align);
             extened_parts_and_gapped.push_back(&extened_parts.back());
@@ -3496,6 +3494,14 @@ void CChain::ClipChain(TSignedSeqRange limits) {
     CalculatedSupportAndWeightFromMembers();
 }
 
+bool BelongToExon(const CGeneModel::TExons& exons, int pos) {
+    ITERATE(CGeneModel::TExons, i, exons) {
+        if(Include(i->Limits(),pos))
+            return true;
+    }
+    return false;
+}
+
 #define MINIMAL_TERMINALS 1
 
 void CChain::ClipToCompleteAlignment(EStatus determinant)
@@ -3527,13 +3533,13 @@ void CChain::ClipToCompleteAlignment(EStatus determinant)
         if((align.Status()&determinant) != 0) {
             if(Strand() == right_end_strand) {
                 int rlimit = (coding ? RealCdsLimits().GetTo() : Exons().back().Limits().GetFrom()); // look in the last exon of notcoding or right UTR of coding
-                if(rlimit < align.Limits().GetTo() && Include(Limits(),align.Limits().GetTo())) {
+                if(rlimit < align.Limits().GetTo() && BelongToExon(Exons(),align.Limits().GetTo())) {
                     position_weight.push_back(make_pair(align.Limits().GetTo(),align.Weight()));
                     weight += align.Weight();
                 }
             } else {
                 int llimit = (coding ? RealCdsLimits().GetFrom() : Exons().front().Limits().GetTo()); // look in the first exon of notcoding or left UTR of coding
-                if(llimit > align.Limits().GetFrom() && Include(Limits(),align.Limits().GetFrom())) {
+                if(llimit > align.Limits().GetFrom() && BelongToExon(Exons(),align.Limits().GetFrom())) {
                     position_weight.push_back(make_pair(align.Limits().GetFrom(),align.Weight()));
                     weight += align.Weight();
                 }
@@ -4696,7 +4702,9 @@ void ProjectCDS::transform_align(CAlignModel& align)
     
     if(left < 0 || right < 0)     // start or stop cannot be projected  
         return;
-    if(left < align.Limits().GetFrom() || right >  align.Limits().GetTo())    // cds is clipped
+
+    CAlignMap alignmap_clipped(a.GetAlignMap());
+    if(alignmap_clipped.MapOrigToEdited(left) < 0 || alignmap_clipped.MapOrigToEdited(right) < 0)     // cds is clipped
         return;
     
     a.Clip(TSignedSeqRange(left,right),CGeneModel::eRemoveExons);
