@@ -65,6 +65,8 @@ public:
     /// add a data field to the user object that holds a given value
     CUser_object& AddField(const string& label, const string& value,
                            EParseField parse = eParse_String);
+    CUser_object& AddField(const string& label, const char* value,
+                           EParseField parse = eParse_String);
     CUser_object& AddField(const string& label, int           value);
     CUser_object& AddField(const string& label, double        value);
     CUser_object& AddField(const string& label, bool          value);
@@ -163,6 +165,14 @@ CUser_object::CUser_object(void)
 {
 }
 
+
+inline
+CUser_object& CUser_object::AddField(const string& label,
+                                     const char* value,
+                                     EParseField parse)
+{
+    return AddField(label, string(value), parse);
+}
 
 /////////////////// end of CUser_object inline methods
 
