@@ -189,7 +189,7 @@
 
 #define SOCK_SET_TIMEOUT(s, t, v)                                       \
     (((s)->_SOCK_CATENATE(t,_tv_set) = (v) ? 1 : 0)                     \
-     ? (void)((s)->_SOCK_CATENATE(t,_tv) = *(v)) : (void) (s))
+     ? (void)((s)->_SOCK_CATENATE(t,_tv) = *(v)) : (void) 0)
 
 #if defined(HAVE_SOCKLEN_T)  ||  defined(_SOCKLEN_T)
 typedef socklen_t  TSOCK_socklen_t;
@@ -2770,7 +2770,8 @@ static EIO_Status s_Read(SOCK    sock,
             assert(status == eIO_Success  ||  !x_read);
 
             /* statistics & logging */
-            if (sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
+            if ((status != eIO_Success  &&  sock->log != eOff)  ||
+                sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
                 s_DoLog(x_read > 0 ? eLOG_Note : eLOG_Trace, sock, eIO_Read,
                         x_read > 0 ? x_buf :
                         status == eIO_Success ? 0 : (void*) &x_error,
@@ -3183,7 +3184,8 @@ static EIO_Status s_WriteData(SOCK        sock,
         assert(status == eIO_Success  ||  x_error);
 
         /* statistics & logging */
-        if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn)) {
+        if ((status != eIO_Success  &&  sock->log != eOff)  ||
+            sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn)) {
             s_DoLog(*n_written > 0 ? eLOG_Note : eLOG_Trace, sock, eIO_Write,
                     status == eIO_Success ? data : (void*) &x_error,
                     status != eIO_Success ? 0    : *n_written, " [encrypt]");
