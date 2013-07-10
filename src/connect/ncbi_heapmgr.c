@@ -190,7 +190,7 @@ static int/*bool*/ s_HEAP_fast = 1/*true*/;
 #define HEAP_ISUSED(b)        (((b)->head.flag & HEAP_USED) != HEAP_FREE)
 
 
-#if 0
+#if 0 /*FIXME*/
 /* Performance / integrity improvements:
  * 1. flag is to keep byte-size of the previous block (instead of the magic);
  * 2. since sizes always have last nibble zero, use that in the flag field as
@@ -223,7 +223,7 @@ static int/*bool*/ x_Parity(unsigned int v)
     return (0x6996 >> v) & 1;
 #endif
 }
-#endif
+#endif /*0*/
 
 
 HEAP HEAP_Create(void*      base,  TNCBI_Size   size,
@@ -308,6 +308,7 @@ HEAP HEAP_Attach(const void* base, TNCBI_Size maxsize, int serial)
     if (base  &&  (!maxsize  ||  maxsize > sizeof(SHEAP_Block))) {
         const SHEAP_HeapBlock* b = (const SHEAP_HeapBlock*) base;
         for (;;) {
+#if 0 /*FIXME*/
             if (!HEAP_ISUSED(b)  &&  !HEAP_ISFREE(b)) { /*FIXME*/
                 CORE_LOGF_X(5, eLOG_Error,
                             ("Heap Attach: Heap corrupt @%u (0x%08X, %u)",
@@ -315,6 +316,7 @@ HEAP HEAP_Attach(const void* base, TNCBI_Size maxsize, int serial)
                              b->head.flag, b->head.size));
                 return 0;
             }
+#endif /*0*/
             size += b->head.size;
             if (maxsize  &&
                 (maxsize < size  ||
@@ -988,7 +990,7 @@ static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
         if (p < heap->base  ||  e <= p
             ||  p->head.size <= sizeof(SHEAP_Block)
             ||  HEAP_ALIGN(p->head.size) != p->head.size
-            ||  (!HEAP_ISFREE(p)  &&  !HEAP_ISUSED(p))) {
+            /*FIXME  ||  (!HEAP_ISFREE(p)  &&  !HEAP_ISUSED(p))*/) {
             CORE_LOGF_X(28, eLOG_Error,
                         ("Heap Walk%s: Alien pointer", s_HEAP_Id(_id, heap)));
             return 0;
@@ -1000,7 +1002,7 @@ static SHEAP_Block* s_HEAP_Walk(const HEAP heap, const SHEAP_Block* ptr)
     if (e <= b  ||  b <= p
         ||  b->head.size <= sizeof(SHEAP_Block)
         ||  HEAP_ALIGN(b->head.size) != b->head.size
-        ||  (!HEAP_ISFREE(b)  &&  !HEAP_ISUSED(b))
+        /*FIXME  ||  (!HEAP_ISFREE(b)  &&  !HEAP_ISUSED(b))*/
         ||  e < (n = HEAP_NEXT(b))  ||  n <= b) {
         if (b != e  ||  (b  &&  !p)) {
             CORE_LOGF_X(26, eLOG_Error,
