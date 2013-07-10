@@ -352,7 +352,7 @@ void CSearchResults::TrimSeqAlign(CSeq_align_set::Tdata::size_type max_size)
 		previous_id = &((*itr)->GetSeq_id(1));
 		++ itr;
 
-		for(; itr != m_Alignment->Get().end(); ++itr)
+		for(; itr != m_Alignment->Set().end(); ++itr)
 		{
 	        if ((*itr)->GetSegs().IsDisc())
 	        {
