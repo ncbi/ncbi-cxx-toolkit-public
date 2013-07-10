@@ -109,6 +109,52 @@
   </xs:complexType>
 </xs:element>
 
+<!-- ==================================================================== -->
+<!-- nillable -->
+<xs:element name="langnil"  nillable="true">
+  <xs:complexType>
+    <xs:simpleContent>
+      <xs:extension base="xs:string">
+        <xs:attribute name="type" type="xs:string" use="required"/>
+      </xs:extension>
+    </xs:simpleContent>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="fromnil" nillable="true">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element name="name" type="xs:string"/>
+      <xs:element name="number" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+
+<xs:element name="nillableElements">
+  <xs:complexType>
+    <xs:sequence>
+      <xs:element name="firstname" type="xs:string" nillable="true"/>
+      <xs:element name="lastname" type="xs:string" nillable="true"/>
+      <xs:element name="dob" type="xs:int" nillable="true"/>
+      <xs:element name="longid" type="xs:long" nillable="true"/>
+      <xs:element name="fraction" type="xs:double" nillable="true"/>
+      <xs:element name="flag" type="xs:boolean" nillable="true"/>
+      <xs:element ref="t:langnil"/>
+      <xs:element name="langlist" type="xs:string"  minOccurs="1" maxOccurs="unbounded" nillable="true"/>
+      <xs:element ref="t:fromnil"/>
+      <xs:element name="fromnilplus" maxOccurs="unbounded" nillable="true">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="name" type="xs:string"/>
+            <xs:element name="number" type="xs:string"/>
+          </xs:sequence>
+          <xs:attribute name="id" type="xs:int" use="required"/>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+</xs:element>
+
 
 <!-- ==================================================================== -->
 <xs:complexType name="all-test-type">
@@ -119,6 +165,7 @@
     <xs:element ref="t:comment" minOccurs="0"/>
     <xs:element name="ordertype" type="t:OrderType" minOccurs="0" maxOccurs="unbounded"/>
     <xs:element ref="t:defaultElement" minOccurs="0"/>
+    <xs:element ref="t:nillableElements" minOccurs="0"/>
     <xs:any processContents="lax" namespace="anyns" minOccurs="0"/>
   </xs:sequence>
   <xs:attributeGroup ref="t:ItemDelivery"/>

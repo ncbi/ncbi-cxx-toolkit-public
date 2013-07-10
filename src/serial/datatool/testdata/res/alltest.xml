@@ -42,4 +42,22 @@
     <language>DE</language>
     <language/>
   </defaultElement>
+  <nillableElements>
+    <firstname nil="true"/>
+    <lastname nil="true"/>
+    <dob nil="true"/>
+    <longid nil="true"/>
+    <fraction nil="true"/>
+    <flag nil="true"/>
+    <langnil type="lang" nil="true"/>
+    <langlist nil="true"/>
+    <langlist>EN</langlist>
+    <fromnil nil="true"/>
+    <fromnilplus id="0" nil="true"/>
+    <fromnilplus id="1">
+      <name>name</name>
+      <number>number</number>
+    </fromnilplus>
+    <fromnilplus id="2" nil="true"/>
+  </nillableElements>
 </note>
