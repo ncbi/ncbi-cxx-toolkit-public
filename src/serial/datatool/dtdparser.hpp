@@ -121,6 +121,7 @@ protected:
                       bool fromInside, bool ignoreAttrib=false);
     AutoPtr<CDataValue> Value(const DTDElement& node);
     AutoPtr<CDataValue> x_Value(const DTDElement& node);
+    CDataType* NillableBlock(const DTDElement& node, bool ignoreAttrib=false);
     CDataType* TypesBlock(CDataMemberContainerType* containerType,
                           const DTDElement& node, bool ignoreAttrib=false);
     CDataType* CompositeNode(const DTDElement& node,

@@ -1005,21 +1005,33 @@ CDataType* DTDParser::x_Type(
             if (ref) {
                 type = new CReferenceDataType(node.GetName());
             } else {
-                type = TypesBlock(new CDataSequenceType(),node,ignoreAttrib);
+                if (node.IsNillable()) {
+                    type = NillableBlock(node,ignoreAttrib);
+                } else {
+                    type = TypesBlock(new CDataSequenceType(),node,ignoreAttrib);
+                }
             }
             break;
         case DTDElement::eChoice:
             if (ref) {
                 type = new CReferenceDataType(node.GetName());
             } else {
-                type = TypesBlock(new CChoiceDataType(),node,ignoreAttrib);
+                if (node.IsNillable()) {
+                    type = NillableBlock(node,ignoreAttrib);
+                } else {
+                    type = TypesBlock(new CChoiceDataType(),node,ignoreAttrib);
+                }
             }
             break;
         case DTDElement::eSet:
             if (ref) {
                 type = new CReferenceDataType(node.GetName());
             } else {
-                type = TypesBlock(new CDataSetType(),node,ignoreAttrib);
+                if (node.IsNillable()) {
+                    type = NillableBlock(node,ignoreAttrib);
+                } else {
+                    type = TypesBlock(new CDataSetType(),node,ignoreAttrib);
+                }
             }
             break;
         case DTDElement::eString:
@@ -1082,6 +1094,9 @@ CDataType* DTDParser::x_Type(
     type->SetSourceLine(node.GetSourceLine());
     type->SetNamespaceName( node.GetNamespaceName());
     type->SetNsQualified( node.IsQualified());
+    if (node.IsNillable()) {
+        type->SetNillable();
+    }
     if (uniseq) {
         CUniSequenceDataType* uniType = new CUniSequenceDataType(type);
         uniType->SetSourceLine(type->GetSourceLine());
@@ -1150,6 +1165,24 @@ AutoPtr<CDataValue> DTDParser::x_Value(const DTDElement& node)
     return AutoPtr<CDataValue>(0);
 }
 
+CDataType* DTDParser::NillableBlock(const DTDElement& node, bool ignoreAttrib)
+{
+    DTDElement tmp(node);
+    tmp.SetNillable(false);
+    AutoPtr<CDataMemberContainerType> container(new CDataSequenceType());
+    if (!ignoreAttrib) {
+        AddAttributes(container, tmp);
+    }
+    AutoPtr<CDataType> type(Type(tmp, DTDElement::eOne, false, true));
+    AutoPtr<CDataMember> member(new CDataMember( tmp.GetName(), type));
+    type->SetNillable();
+    member->SetNotag();
+    member->SetNillable();
+    member->SetNoPrefix();
+    container->AddMember(member);
+    return container.release();
+}
+
 CDataType* DTDParser::TypesBlock(
     CDataMemberContainerType* containerType,const DTDElement& node,
     bool ignoreAttrib)
@@ -1183,6 +1216,8 @@ CDataType* DTDParser::TypesBlock(
             occ = refNode.GetOccurrence();
         }
         AutoPtr<CDataType> type(Type(refNode, occ, true));
+        bool stdtype = type->IsStdType();
+        bool setnil = refNode.IsNillable() && stdtype && !refNode.HasAttributes();
         if (refNode.IsEmbedded() && refNode.IsNamed()) {
             bool optional = false, uniseq = false, uniseq2 = false, refseq = false;
             uniseq = (occ == DTDElement::eOneOrMore || occ == DTDElement::eZeroOrMore);
@@ -1210,8 +1245,14 @@ CDataType* DTDParser::TypesBlock(
                 container->AddMember(member);
                 type.reset(container.release());
             }
+            else if (uniseq2 && setnil) {
+// the idea is to make it implicit
+                DTDElement tmp(refNode);
+                tmp.SetName("");
+                type.reset( CompositeNode(tmp,  DTDElement::eOne));
+                setnil = false;
+            }
             if (uniseq2) {
-
                 CUniSequenceDataType* uniType = new CUniSequenceDataType(type);
                 uniType->SetSourceLine( type->GetSourceLine());
                 uniType->SetNonEmpty( occ == DTDElement::eOneOrMore);
@@ -1229,6 +1270,9 @@ CDataType* DTDParser::TypesBlock(
         }
         if (!refNode.GetDefault().empty() && !refNode.HasAttributes()) {
             member->SetDefault(Value(refNode));
+        }
+        if (setnil) {
+            member->SetNillable();
         }
         member->SetNoPrefix();
         if (m_SrcType == eDTD || refNode.IsEmbedded()) {
@@ -1265,6 +1309,10 @@ CDataType* DTDParser::CompositeNode(
     member->SetNotag();
     if (!node.GetDefault().empty()) {
         member->SetDefault(Value(node));
+    }
+    if (node.IsNillable() &&
+        (occ == DTDElement::eZeroOrOne || occ == DTDElement::eOne)) {
+        member->SetNillable();
     }
     member->SetNoPrefix();
     if (!uniseq) {

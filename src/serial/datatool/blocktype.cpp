@@ -247,6 +247,9 @@ void CDataMemberContainerType::PrintXMLSchema(CNcbiOstream& out,
                 if (isOptionalMember) {
                     tmp += " minOccurs=\"0\"";
                 }
+                if (IsNillable()) {
+                    tmp += " nillable=\"true\"";
+                }
                 string tname;
                 if (defineAsType) {
                     const CDataType* par = GetParentType();
@@ -825,8 +828,8 @@ AutoPtr<CTypeStrings> CWsdlDataType::GetFullCType(void) const
 
 CDataMember::CDataMember(const string& name, const AutoPtr<CDataType>& type)
     : m_Name(name), m_Type(type), m_Optional(false),
-    m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_SimpleType(false)
-
+    m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_SimpleType(false),
+    m_Nillable(false)
 {
     if ( m_Name.empty() ) {
         m_Notag = true;
@@ -969,6 +972,10 @@ void CDataMember::SetNotag(void)
 void CDataMember::SetSimpleType(void)
 {
     m_SimpleType = true;
+}
+void CDataMember::SetNillable(void)
+{
+    m_Nillable = true;
 }
 
 END_NCBI_SCOPE

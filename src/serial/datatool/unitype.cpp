@@ -111,11 +111,24 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
         dynamic_cast<const CStaticDataType*>(typeElem);
     const CDataMemberContainerType* typeContainer =
         dynamic_cast<const CDataMemberContainerType*>(typeElem);
+// check for Static type and Static with attributes
+    bool hasAttlist = false;
+    if (!typeStatic && typeContainer) {
+        if (typeContainer->GetMembers().size() == 1 &&
+            typeContainer->GetMembers().front()->GetName().empty()) {
+            typeStatic =  dynamic_cast<const CStaticDataType*>( typeContainer->GetMembers().front()->GetType() );
+        }
+        else if (typeContainer->GetMembers().size() == 2) {
+            hasAttlist = typeContainer->GetMembers().front().get()->Attlist();
+            typeStatic =  dynamic_cast<const CStaticDataType*>( typeContainer->GetMembers().back()->GetType() );
+        }
+    }
 
-    string tag(XmlTagName()), type(typeElem->GetSchemaTypeString());
+    string tag(XmlTagName());
     string userType = typeRef ? typeRef->UserTypeXmlTagName() : typeElem->XmlTagName();
 
-    if (GetEnforcedStdXml() && (typeStatic || (typeRef && tag == userType))) {
+    if ( GetEnforcedStdXml() && (typeStatic || (typeRef && tag == userType))) {
+        string type(typeStatic ? typeStatic->GetSchemaTypeString() : typeElem->GetSchemaTypeString());
         bool any = dynamic_cast<const CAnyContentDataType*>(typeStatic) != 0;
         PrintASNNewLine(out, indent++);
         if (any) {
@@ -132,7 +145,7 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
                 out << "name";
             }
             out << "=\"" << tag << "\"";
-            if (typeStatic && !type.empty()) {
+            if (typeStatic && !type.empty() && !hasAttlist) {
                 out << " type=\"" << type << "\"";
             }
         }
@@ -143,8 +156,23 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
                 out << " minOccurs=\"0\"";
             }
             out << " maxOccurs=\"unbounded\"";
+            if (typeStatic && typeStatic->GetDataMember() && typeStatic->GetDataMember()->Nillable()) {
+                out <<  " nillable=\"true\"";
+            }
         }
-        out << "/>";
+        if (hasAttlist) {
+            out << ">";
+            PrintASNNewLine(out, indent++) << "<xs:complexType>";
+            PrintASNNewLine(out, indent++) << "<xs:simpleContent>";
+            PrintASNNewLine(out, indent++) << "<xs:extension base=\"" << type << "\">";
+            typeContainer->GetMembers().front().get()->PrintXMLSchema(out, indent);
+            PrintASNNewLine(out, --indent) << "</xs:extension>";
+            PrintASNNewLine(out, --indent) << "</xs:simpleContent>";
+            PrintASNNewLine(out, --indent) << "</xs:complexType>";
+            PrintASNNewLine(out, --indent) << "</xs:element>";
+        } else {
+            out << "/>";
+        }
     } else {
         bool asn_container = false;
         list<string> opentag, closetag;
@@ -154,6 +182,7 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
             bool isMixed = false;
             bool isSimpleSeq = false;
             bool isOptional = false;
+            bool isNillable = false;
             if (typeContainer) {
                 asnk = typeContainer->GetASNKeyword();
                 ITERATE ( CDataMemberContainerType::TMembers, i, typeContainer->GetMembers() ) {
@@ -165,6 +194,9 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
                             break;
                         }
                     }
+                }
+                if (hasAttlist || typeContainer->GetMembers().size() == 1) {
+                    isNillable = typeContainer->GetMembers().back()->GetType()->IsNillable();
                 }
                 if (typeContainer->GetMembers().size() == 1) {
                     CDataMemberContainerType::TMembers::const_iterator i = 
@@ -213,6 +245,9 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
                 if (GetXmlSourceSpec()) {
                     tmp += " maxOccurs=\"unbounded\"";
                 }
+                if (isNillable) {
+                    tmp += " nillable=\"true\"";
+                }
             }
             opentag.push_back(tmp + ">");
             closetag.push_front("</xs:element>");
@@ -233,24 +268,26 @@ void CUniSequenceDataType::PrintXMLSchema(CNcbiOstream& out,
             opentag.push_back(tmp + ">");
             closetag.push_front("</xs:complexType>");
 
-            tmp = "<xs:" + xsdk;
-            if (!GetXmlSourceSpec()) {
-                if (!asn_container) {
-                    tmp += " minOccurs=\"0\" maxOccurs=\"unbounded\"";
+            if (!isNillable) {
+                tmp = "<xs:" + xsdk;
+                if (!GetXmlSourceSpec()) {
+                    if (!asn_container) {
+                        tmp += " minOccurs=\"0\" maxOccurs=\"unbounded\"";
+                    }
+                } else if (!GetDataMember()) {
+                    if (!IsNonEmpty()) {
+                        tmp += " minOccurs=\"0\"";
+                    }
+                    tmp += " maxOccurs=\"unbounded\"";
+                } else if (isSimpleSeq) {
+                    if (isOptional) {
+                        tmp += " minOccurs=\"0\"";
+                    }
+                    tmp += " maxOccurs=\"unbounded\"";
                 }
-            } else if (!GetDataMember()) {
-                if (!IsNonEmpty()) {
-                    tmp += " minOccurs=\"0\"";
-                }
-                tmp += " maxOccurs=\"unbounded\"";
-            } else if (isSimpleSeq) {
-                if (isOptional) {
-                    tmp += " minOccurs=\"0\"";
-                }
-                tmp += " maxOccurs=\"unbounded\"";
+                opentag.push_back(tmp + ">");
+                closetag.push_front("</xs:" + xsdk + ">");
             }
-            opentag.push_back(tmp + ">");
-            closetag.push_front("</xs:" + xsdk + ">");
             ITERATE ( list<string>, s, opentag ) {
                 PrintASNNewLine(out, indent++) << *s;
             }

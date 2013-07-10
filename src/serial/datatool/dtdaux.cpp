@@ -288,6 +288,7 @@ DTDElement::DTDElement(void)
     m_Embd = false;
     m_Named= false;
     m_Qualified = false;
+    m_Nillable = false;
 }
 
 DTDElement::DTDElement(const DTDElement& other)
@@ -297,7 +298,7 @@ DTDElement::DTDElement(const DTDElement& other)
     m_TypeName = other.m_TypeName;
     m_NamespaceName = other.m_NamespaceName;
     m_Default  = other.m_Default;
-    m_Type     = other.eUnknown;
+    m_Type     = other.m_Type;
     m_Occ      = other.m_Occ;
     m_Refd     = other.m_Refd;
     m_Embd     = other.m_Embd;
@@ -306,6 +307,7 @@ DTDElement::DTDElement(const DTDElement& other)
     m_Attrib   = other.m_Attrib;
     m_Named    = other.m_Named;
     m_Qualified= other.m_Qualified;
+    m_Nillable = other.m_Nillable;
     m_Comments = other.m_Comments;
     m_AttribComments = other.m_AttribComments;
 }

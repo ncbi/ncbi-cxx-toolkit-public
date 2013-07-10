@@ -116,6 +116,9 @@ void CStaticDataType::PrintXMLSchema(CNcbiOstream& out,
     if (!form.empty()) {
         out << form;
     }
+    if (IsNillable()) {
+        out << " nillable=\"true\"";
+    }
     if (type.empty() && PrintXMLSchemaContents(out,indent+1)) {
         PrintASNNewLine(out, indent) << "</xs:" << xsdk << ">";
     } else {

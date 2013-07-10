@@ -609,6 +609,9 @@ string XSDParser::ParseElementContent(DTDElement* owner, int emb)
     if (GetAttribute("default")) {
         m_MapElement[name].SetDefault(m_Value);
     }
+    if (GetAttribute("nillable")) {
+        m_MapElement[name].SetNillable(IsValue("true"));
+    }
     if (owner && !name.empty()) {
         owner->SetOccurrence(name, ParseMinOccurs( owner->GetOccurrence(name)));
         owner->SetOccurrence(name, ParseMaxOccurs( owner->GetOccurrence(name)));

@@ -296,6 +296,14 @@ public:
     {
         return m_NsQualified;
     }
+    void SetNillable(void)
+    {
+        m_IsNillable = true;
+    }
+    bool IsNillable(void) const
+    {
+        return m_IsNillable;
+    }
     string GetFullName(void) const;
 
 protected:
@@ -331,6 +339,7 @@ private:
     multimap<string,string> m_ForbidVar;
     string m_Namespace;
     ENsQualifiedMode m_NsQualified;
+    bool m_IsNillable;
 
     CDataType(const CDataType&);
     CDataType& operator=(const CDataType&);

@@ -307,6 +307,13 @@ public:
     void SetDefault(const string& value);
     const string& GetDefault(void) const;
 
+    void SetNillable(bool nil) {
+        m_Nillable = nil;
+    }
+    bool IsNillable(void) const {
+        return m_Nillable;
+    }
+
     CComments& Comments(void)
     {
         return m_Comments;
@@ -338,6 +345,7 @@ private:
     bool m_Embd;
     bool m_Named;
     bool m_Qualified;
+    bool m_Nillable;
     CComments m_Comments;
     CComments m_AttribComments;
 };

@@ -88,6 +88,10 @@ public:
         {
             return m_Default.get();
         }
+    bool Nillable(void) const
+        {
+            return m_Nillable;
+        }
 
     void SetOptional(void);
     void SetNoPrefix(void);
@@ -95,6 +99,7 @@ public:
     void SetNotag(void);
     void SetSimpleType(void);
     void SetDefault(const AutoPtr<CDataValue>& value);
+    void SetNillable(void);
 
     CComments& Comments(void)
         {
@@ -113,6 +118,7 @@ private:
     bool m_Attlist;
     bool m_Notag;
     bool m_SimpleType;
+    bool m_Nillable;
     AutoPtr<CDataValue> m_Default;
     CComments m_Comments;
 };

@@ -183,7 +183,9 @@ CClassTypeStrings::SMemberInfo::SMemberInfo(const string& name,
     if ( haveDefault ) // cannot detect DEFAULT value
         haveFlag = true;
     
-    canBeNull = ref && optional && !haveFlag;
+    bool nillable = dataTp && dataTp->GetDataMember() && dataTp->GetDataMember()->Nillable();
+
+    canBeNull = ref && (optional || nillable) && !haveFlag;
 }
 
 string CClassTypeStrings::GetCType(const CNamespace& /*ns*/) const
@@ -612,7 +614,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "    }\n";
             }
             if ( as_ref ) {
-                if ( !i->optional ) {
+                if ( !i->optional && !i->canBeNull) {
                     // just reset value
                     resetCode = i->type->GetResetCode(i->valueName);
                     if ( !resetCode.empty() ) {
@@ -1404,9 +1406,6 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     methods << ')';
                 methods << ')';
             }
-            if ( i->optional ) {
-                methods << "->SetOptional()";
-            }
             if (i->haveFlag) {
                 methods <<
                     "->SetSetFlag(MEMBER_PTR("SET_PREFIX"[0]))";
@@ -1415,6 +1414,13 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 methods <<
                     "->SetDelayBuffer(MEMBER_PTR("DELAY_PREFIX<<
                     i->cName<<"))";
+            }
+            if ( i->optional ) {
+                methods << "->SetOptional()";
+            }
+            if ((i->dataType && i->dataType->GetDataMember() && i->dataType->GetDataMember()->Nillable()) ||
+                (wrapperClass && DataType() && DataType()->IsNillable())) {
+                methods << "->SetNillable()";
             }
             if (i->noPrefix) {
                 methods << "->SetNoPrefix()";

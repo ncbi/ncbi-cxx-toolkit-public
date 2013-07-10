@@ -83,7 +83,7 @@ TTypeInfo CAnyTypeSource::GetTypeInfo(void)
 CDataType::CDataType(void)
     : m_ParentType(0), m_Module(0), m_SourceLine(0),
       m_DataMember(0), m_TypeStr(0), m_Set(0), m_Choice(0), m_Checked(false),
-      m_Tag(eNoExplicitTag), m_IsAlias(false), m_NsQualified(eNSQNotSet)
+      m_Tag(eNoExplicitTag), m_IsAlias(false), m_NsQualified(eNSQNotSet), m_IsNillable(false)
 {
 }
 
