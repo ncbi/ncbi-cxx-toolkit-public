@@ -444,7 +444,7 @@ CObjectIStream::CObjectIStream(ESerialDataFormat format)
       m_Fail(fNotOpen),
       m_Flags(fFlagNone),
       m_MonitorType(0),
-      m_MemberDefault(0), m_MemberDefaultUsed(false)
+      m_MemberDefault(0), m_SpecialCaseToExpect(0), m_SpecialCaseUsed(eReadAsNormal)
 {
 }
 
@@ -512,6 +512,7 @@ void CObjectIStream::Close(void)
             m_Objects->Clear();
         ClearStack();
         m_Fail = fNotOpen;
+        SetMemberDefault(0);
     }
 }
 
@@ -842,6 +843,7 @@ CObjectIStream::GetRegisteredObject(CReadObjectInfo::TObjectIndex index)
 // root reader
 void CObjectIStream::SkipFileHeader(TTypeInfo typeInfo)
 {
+    SetMemberDefault(0);
     if (!m_MonitorType) {
         m_MonitorType = (!x_HavePathHooks() && m_ReqMonitorType.size()==1) ?
             m_ReqMonitorType.front() : 0;
@@ -861,6 +863,7 @@ void CObjectIStream::SkipFileHeader(TTypeInfo typeInfo)
 
 void CObjectIStream::EndOfRead(void)
 {
+    SetMemberDefault(0);
     m_MonitorType = 0;
     if ( m_Objects )
         m_Objects->Clear();
@@ -1445,8 +1448,9 @@ void CObjectIStream::ReadChoiceSimple(const CChoiceTypeInfo* choiceType,
     BeginChoice(choiceType);
     BEGIN_OBJECT_FRAME(eFrameChoiceVariant);
     TMemberIndex index = BeginChoiceVariant(choiceType);
-    _ASSERT(index != kInvalidMember);
-
+    if ( index == kInvalidMember ) {
+        ThrowError(fFormatError,"choice variant id expected");
+    }
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     SetTopMemberId(variantInfo->GetId());
 
@@ -1464,8 +1468,9 @@ void CObjectIStream::SkipChoiceSimple(const CChoiceTypeInfo* choiceType)
     BeginChoice(choiceType);
     BEGIN_OBJECT_FRAME(eFrameChoiceVariant);
     TMemberIndex index = BeginChoiceVariant(choiceType);
-    if ( index == kInvalidMember )
+    if ( index == kInvalidMember ) {
         ThrowError(fFormatError,"choice variant id expected");
+    }
 
     const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
     SetTopMemberId(variantInfo->GetId());

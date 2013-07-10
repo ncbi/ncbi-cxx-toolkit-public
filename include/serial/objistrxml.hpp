@@ -247,7 +247,7 @@ private:
     char BeginOpeningTag(void);
     char BeginClosingTag(void);
     void BeginData(void);
-    bool UseDefaultData(void);
+    bool UseSpecialCaseRead(void);
 
     int ReadEscapedChar(char endingChar, bool* encoded=0);
     int ReadEncodedChar(char endingChar, EStringType type = eStringTypeVisible, bool* encoded=0);
@@ -288,6 +288,7 @@ private:
     bool m_Attlist;
     bool m_StdXml;
     bool m_Doctype_found;
+    bool m_IsNil;
     string m_LastPrimitive;
     EEncoding m_Encoding;
     EEncoding m_StringEncoding;

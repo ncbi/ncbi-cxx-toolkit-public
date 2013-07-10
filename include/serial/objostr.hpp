@@ -674,9 +674,6 @@ public:
                                   TConstObjectPtr memberPtr);
     MLIOVIR bool WriteClassMember(const CMemberId& memberId,
                                   const CDelayBuffer& buffer);
-    MLIOVIR void WriteClassMemberDefault(const CMemberId& memberId,
-                                         TTypeInfo memberType,
-                                         TConstObjectPtr memberPtr);
     // alias
     MLIOVIR void WriteAlias(const CAliasTypeInfo* aliasType,
                             TConstObjectPtr aliasPtr);
@@ -742,6 +739,17 @@ public:
 
     void WritePointer(TConstObjectPtr object, TTypeInfo typeInfo);
 
+    enum ESpecialCaseWrite {
+        eWriteAsNormal  = 0,
+        eWriteAsDefault = 1,
+        eWriteAsNil     = 2
+    };
+    void  SetSpecialCaseWrite( ESpecialCaseWrite how) {
+        m_SpecialCaseWrite = how;
+    }
+    MLIOVIR void WriteClassMemberSpecialCase(
+        const CMemberId& memberId, TTypeInfo memberType,
+        TConstObjectPtr memberPtr, ESpecialCaseWrite how);
 protected:
     CObjectOStream(ESerialDataFormat format,
                    CNcbiOstream& out, bool deleteOut = false);
@@ -777,7 +785,7 @@ protected:
     bool  m_WriteNamedIntegersByValue;
     EDelayBufferParsing  m_ParseDelayBuffers;
     bool  m_FastWriteDouble;
-    bool  m_WriteAsDefault;
+    ESpecialCaseWrite m_SpecialCaseWrite;
 
 private:
     static CObjectOStream* OpenObjectOStreamAsn(CNcbiOstream& out,
@@ -797,9 +805,6 @@ private:
     CStreamPathHook<CVariantInfo*,CWriteChoiceVariantHook*> m_PathWriteVariantHooks;
 
 public:
-    void  SetWriteAsDefault( bool asdef) {
-        m_WriteAsDefault = asdef;
-    }
     // hook support
     CLocalHookSet<CWriteObjectHook> m_ObjectHookKey;
     CLocalHookSet<CWriteClassMemberHook> m_ClassMemberHookKey;

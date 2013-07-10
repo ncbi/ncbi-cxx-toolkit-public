@@ -40,35 +40,35 @@ BEGIN_NCBI_SCOPE
 CMemberId::CMemberId(void)
     : m_Tag(eNoExplicitTag), m_ExplicitTag(false),
     m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false),
-    m_Compressed(false), m_NsqMode(eNSQNotSet)
+    m_Compressed(false), m_Nillable(false), m_NsqMode(eNSQNotSet)
 {
 }
 
 CMemberId::CMemberId(TTag tag, bool explicitTag)
     : m_Tag(tag), m_ExplicitTag(explicitTag),
     m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false),
-    m_Compressed(false), m_NsqMode(eNSQNotSet)
+    m_Compressed(false), m_Nillable(false), m_NsqMode(eNSQNotSet)
 {
 }
 
 CMemberId::CMemberId(const string& name)
     : m_Name(name), m_Tag(eNoExplicitTag), m_ExplicitTag(false),
     m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false),
-    m_Compressed(false), m_NsqMode(eNSQNotSet)
+    m_Compressed(false), m_Nillable(false), m_NsqMode(eNSQNotSet)
 {
 }
 
 CMemberId::CMemberId(const string& name, TTag tag, bool explicitTag)
     : m_Name(name), m_Tag(tag), m_ExplicitTag(explicitTag),
     m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false),
-    m_Compressed(false), m_NsqMode(eNSQNotSet)
+    m_Compressed(false), m_Nillable(false), m_NsqMode(eNSQNotSet)
 {
 }
 
 CMemberId::CMemberId(const char* name)
     : m_Name(name), m_Tag(eNoExplicitTag), m_ExplicitTag(false),
     m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false),
-    m_Compressed(false), m_NsqMode(eNSQNotSet)
+    m_Compressed(false), m_Nillable(false), m_NsqMode(eNSQNotSet)
 {
     _ASSERT(name);
 }
@@ -76,7 +76,7 @@ CMemberId::CMemberId(const char* name)
 CMemberId::CMemberId(const char* name, TTag tag, bool explicitTag)
     : m_Name(name), m_Tag(tag), m_ExplicitTag(explicitTag),
     m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false),
-    m_Compressed(false), m_NsqMode(eNSQNotSet)
+    m_Compressed(false), m_Nillable(false), m_NsqMode(eNSQNotSet)
 {
     _ASSERT(name);
 }
@@ -121,6 +121,15 @@ void CMemberId::SetAnyContent(void)
 void CMemberId::SetCompressed(void)
 {
     m_Compressed = true;
+}
+
+void CMemberId::SetNillable(void)
+{
+    m_Nillable = true;
+}
+bool CMemberId::IsNillable(void) const
+{
+    return m_Nillable;
 }
 
 void CMemberId::SetNsQualified(bool qualified)

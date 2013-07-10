@@ -46,6 +46,9 @@
 
 BEGIN_NCBI_SCOPE
 
+static
+const char* s_SchemaInstanceNamespace = "http://www.w3.org/2001/XMLSchema-instance";
+
 CObjectIStream* CObjectIStream::CreateObjectIStreamXml()
 {
     return new CObjectIStreamXml();
@@ -54,7 +57,7 @@ CObjectIStream* CObjectIStream::CreateObjectIStreamXml()
 CObjectIStreamXml::CObjectIStreamXml(void)
     : CObjectIStream(eSerial_Xml),
       m_TagState(eTagOutside), m_Attlist(false),
-      m_StdXml(false), m_Doctype_found(false),
+      m_StdXml(false), m_Doctype_found(false), m_IsNil(false),
       m_Encoding( eEncoding_Unknown ),
       m_StringEncoding( eEncoding_Unknown ),
       m_SkipNextTag(false)
@@ -115,8 +118,7 @@ void CObjectIStreamXml::SetEnforcedStdXml(bool set)
 template<typename Type> inline
 Type CObjectIStreamXml::x_UseMemberDefault(void)
 {
-    SetMemberDefaultUsed(true);
-    return CTypeConverter<Type>::Get(GetMemberDefault());
+    return GetMemberDefault() ? CTypeConverter<Type>::Get(GetMemberDefault()) : Type();
 }
 
 static inline
@@ -332,14 +334,29 @@ bool CObjectIStreamXml::EndOpeningTagSelfClosed(void)
     return SelfClosedTag();
 }
 
-bool CObjectIStreamXml::UseDefaultData(void)
+bool CObjectIStreamXml::UseSpecialCaseRead(void)
 {
-    return !m_Attlist &&
+    if (ExpectSpecialCase()==0) {
+        return false;
+    }
+    bool empty = !m_Attlist &&
         (   SelfClosedTag() ||
             EndOpeningTagSelfClosed() ||
             (m_Input.PeekChar(0) == '<' && m_Input.PeekChar(1) == '/')
-        ) &&
-        GetMemberDefault();
+        );
+    if (empty) {
+        if (m_IsNil && (ExpectSpecialCase() & CObjectIStream::eReadAsNil)!=0) {
+            m_IsNil=false;
+            SetSpecialCaseUsed(CObjectIStream::eReadAsNil);
+//            NCBI_THROW(CSerialException,eNullValue, kEmptyStr);
+            return true;
+        }
+        if ( GetMemberDefault()) {
+            SetSpecialCaseUsed(CObjectIStream::eReadAsDefault);
+            return true;
+        }
+    }
+    return false;
 }
 
 char CObjectIStreamXml::BeginOpeningTag(void)
@@ -446,6 +463,16 @@ CTempString CObjectIStreamXml::ReadName(char c)
 #if defined(NCBI_SERIAL_IO_TRACE)
     cout << ", Read= " << m_LastTag;
 #endif
+    if (m_Attlist && m_LastTag.size() == 3 &&
+        m_LastTag == "nil" &&
+        (m_NsPrefixToName.find(m_CurrNsPrefix) == m_NsPrefixToName.end() ||
+        NStr::strcmp(m_NsPrefixToName[m_CurrNsPrefix].c_str(),s_SchemaInstanceNamespace)== 0)) {
+        string value;
+        ReadAttributeValue(value, true);
+        m_IsNil = NStr::StringToBool(value);
+        char ch = SkipWS();
+        return IsEndOfTagChar(ch) ? CTempString() : ReadName(ch);
+    }
     return CTempString(ptr+iColon, i-iColon);
 }
 
@@ -846,29 +873,27 @@ bool CObjectIStreamXml::ReadBool(void)
     CTempString attr;
 // accept both   <a>true</a>   and   <a value="true"/>
 // for compatibility with ASN-generated classes
-    bool checktag = m_Attlist ? false : HasAttlist(); //!x_IsStdXml();
-    if (checktag) {
+    string sValue;
+    bool haveattr=false;
+    if (!m_Attlist) {
         while (HasAttlist()) {
             attr = ReadAttributeName();
             if ( attr == "value" ) {    
-                break;
+                ReadAttributeValue(sValue);
+                haveattr = true;
+                continue;
+            }
+            if ( attr == "nil") {    
+                m_IsNil = true;                
             }
             string value;
             ReadAttributeValue(value);
         }
-        if ( attr != "value" ) {
-            EndOpeningTagSelfClosed();
-//            ThrowError(fMissingValue,"attribute 'value' is missing");
-            checktag = false;
-        }
-    }
-    string sValue;
-    if (m_Attlist || checktag) {
-        ReadAttributeValue(sValue);
-    } else {
-        if (GetMemberDefault() && UseDefaultData()) {
+        if (ExpectSpecialCase()!=0 && UseSpecialCaseRead()) {
             return x_UseMemberDefault<bool>();
         }
+    }
+    if (!haveattr) {
         ReadTagData(sValue);
     }
     NStr::TruncateSpacesInPlace(sValue);
@@ -884,14 +909,14 @@ bool CObjectIStreamXml::ReadBool(void)
         }
         value = false;
     }
-    if ( checktag && !EndOpeningTagSelfClosed() && !NextTagIsClosing() )
+    if ( !m_Attlist && !EndOpeningTagSelfClosed() && !NextTagIsClosing() )
         ThrowError(fFormatError, "boolean tag must have empty contents");
     return value;
 }
 
 char CObjectIStreamXml::ReadChar(void)
 {
-    if (GetMemberDefault() && UseDefaultData()) {
+    if (ExpectSpecialCase()!=0 && UseSpecialCaseRead()) {
         return x_UseMemberDefault<char>();
     }
     BeginData();
@@ -903,7 +928,7 @@ char CObjectIStreamXml::ReadChar(void)
 
 Int4 CObjectIStreamXml::ReadInt4(void)
 {
-    if (GetMemberDefault() && UseDefaultData()) {
+    if (ExpectSpecialCase()!=0 && UseSpecialCaseRead()) {
         return x_UseMemberDefault<Int4>();
     }
     BeginData();
@@ -912,7 +937,7 @@ Int4 CObjectIStreamXml::ReadInt4(void)
 
 Uint4 CObjectIStreamXml::ReadUint4(void)
 {
-    if (GetMemberDefault() && UseDefaultData()) {
+    if (ExpectSpecialCase()!=0 && UseSpecialCaseRead()) {
         return x_UseMemberDefault<Uint4>();
     }
     BeginData();
@@ -921,7 +946,7 @@ Uint4 CObjectIStreamXml::ReadUint4(void)
 
 Int8 CObjectIStreamXml::ReadInt8(void)
 {
-    if (GetMemberDefault() && UseDefaultData()) {
+    if (ExpectSpecialCase()!=0 && UseSpecialCaseRead()) {
         return x_UseMemberDefault<Int8>();
     }
     BeginData();
@@ -930,7 +955,7 @@ Int8 CObjectIStreamXml::ReadInt8(void)
 
 Uint8 CObjectIStreamXml::ReadUint8(void)
 {
-    if (GetMemberDefault() && UseDefaultData()) {
+    if (ExpectSpecialCase()!=0 && UseSpecialCaseRead()) {
         return x_UseMemberDefault<Uint8>();
     }
     BeginData();
@@ -939,7 +964,7 @@ Uint8 CObjectIStreamXml::ReadUint8(void)
 
 double CObjectIStreamXml::ReadDouble(void)
 {
-    if (GetMemberDefault() && UseDefaultData()) {
+    if (ExpectSpecialCase()!=0 && UseSpecialCaseRead()) {
         return x_UseMemberDefault<double>();
     }
     string s;
@@ -1139,7 +1164,7 @@ void CObjectIStreamXml::SkipBitString(void)
 void CObjectIStreamXml::ReadString(string& str, EStringType type)
 {
     str.erase();
-    if (GetMemberDefault() && UseDefaultData()) {
+    if (ExpectSpecialCase()!=0 && UseSpecialCaseRead()) {
         EEncoding enc_in(m_Encoding == eEncoding_Unknown ? eEncoding_UTF8 : m_Encoding);
         CStringUTF8 u( CUtf8::AsUTF8(x_UseMemberDefault<string>(),enc_in));
         if (type == eStringTypeUTF8 || m_StringEncoding == eEncoding_Unknown) {
@@ -1311,8 +1336,12 @@ TEnumValueType CObjectIStreamXml::ReadEnum(const CEnumeratedTypeValues& values)
 
 CObjectIStream::EPointerType CObjectIStreamXml::ReadPointerType(void)
 {
-    if (GetMemberDefault() && UseDefaultData()) {
-        return eThisPointer;
+    if ((ExpectSpecialCase() & CObjectIStream::eReadAsNil)!=0) {
+        if (m_IsNil) {
+            m_IsNil=false;
+            SetSpecialCaseUsed(CObjectIStream::eReadAsNil);
+            return eNullPointer;
+        }
     }
     if ( !HasAttlist() && InsideOpeningTag() && EndOpeningTagSelfClosed() ) {
         // self closed tag
@@ -2120,7 +2149,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                 }
 */
             }
-            if ( SelfClosedTag()) {
+            if ( SelfClosedTag() || ThisTagIsSelfClosed() || NextTagIsClosing()) {
                 m_Attlist = false;
                 TMemberIndex last = classType->GetMembers().LastIndex();
                 if (pos == last) {
@@ -2131,8 +2160,6 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                 }
                 return kInvalidMember;
             }
-            if ( ThisTagIsSelfClosed() || NextTagIsClosing() )
-                return kInvalidMember;
             if (pos <= classType->GetItems().LastIndex()) {
                 const CMemberInfo* mem_info = classType->GetMemberInfo(pos);
                 if (mem_info->GetId().HasNotag() &&
@@ -2495,8 +2522,7 @@ void CObjectIStreamXml::SkipChar(void)
 
 void CObjectIStreamXml::SkipSNumber(void)
 {
-    if (GetMemberDefault() && UseDefaultData()) {
-        SetMemberDefaultUsed(true);
+    if (ExpectSpecialCase()!=0 && UseSpecialCaseRead()) {
         return;
     }
     BeginData();
@@ -2525,8 +2551,7 @@ void CObjectIStreamXml::SkipSNumber(void)
 
 void CObjectIStreamXml::SkipUNumber(void)
 {
-    if (GetMemberDefault() && UseDefaultData()) {
-        SetMemberDefaultUsed(true);
+    if (ExpectSpecialCase()!=0 && UseSpecialCaseRead()) {
         return;
     }
     BeginData();
@@ -2559,8 +2584,7 @@ void CObjectIStreamXml::SkipFNumber(void)
 
 void CObjectIStreamXml::SkipString(EStringType type)
 {
-    if (GetMemberDefault() && UseDefaultData()) {
-        SetMemberDefaultUsed(true);
+    if (ExpectSpecialCase()!=0 && UseSpecialCaseRead()) {
         return;
     }
     BeginData();

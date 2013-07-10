@@ -1059,27 +1059,43 @@ private:
     TTypeInfo m_MonitorType;
     vector<TTypeInfo> m_ReqMonitorType;
     
+public:
+    enum ESpecialCaseRead {
+        eReadAsNormal  = 0,
+        eReadAsDefault = 1,
+        eReadAsNil     = 2
+    };
+private:
     TConstObjectPtr m_MemberDefault;
-    bool m_MemberDefaultUsed;
+    int m_SpecialCaseToExpect;
+    ESpecialCaseRead m_SpecialCaseUsed;
 
     void SetMemberDefault( TConstObjectPtr def)
     {
         m_MemberDefault = def;
-        m_MemberDefaultUsed = false;
+        m_SpecialCaseUsed = eReadAsNormal;
+        m_SpecialCaseToExpect = def ? eReadAsDefault : eReadAsNormal;
     }
-
+    void SetMemberNillable()
+    {
+        m_SpecialCaseToExpect = (m_SpecialCaseToExpect | (int)eReadAsNil);
+    }
 public:
+    int ExpectSpecialCase(void) const
+    {
+        return m_SpecialCaseToExpect;
+    }
     TConstObjectPtr GetMemberDefault( void) const
     {
         return m_MemberDefault;
     }
-    void SetMemberDefaultUsed(bool used)
+    void SetSpecialCaseUsed(ESpecialCaseRead used)
     {
-        m_MemberDefaultUsed = used;
+        m_SpecialCaseUsed = used;
     }
-    bool WasMemberDefaultUsed(void) const
+    ESpecialCaseRead GetSpecialCaseUsed(void) const
     {
-        return m_MemberDefaultUsed;
+        return m_SpecialCaseUsed;
     }
 
     // read hooks
@@ -1092,6 +1108,7 @@ public:
 
     friend class CObjectStreamCopier;
     friend class CMemberInfoFunctions;
+    friend class CClassTypeInfo;
 };
 
 inline

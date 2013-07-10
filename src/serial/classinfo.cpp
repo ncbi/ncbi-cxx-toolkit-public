@@ -291,9 +291,18 @@ void CClassTypeInfo::ReadImplicitMember(CObjectIStream& in,
     if( memberInfo->HaveSetFlag()) {
         memberInfo->UpdateSetFlagYes(objectPtr);
     }
+    if (memberInfo->Nillable()) {
+        in.SetMemberNillable();
+    }
     in.ReadNamedType(classType,
                      memberInfo->GetTypeInfo(),
                      memberInfo->GetItemPtr(objectPtr));
+    if (memberInfo->HaveSetFlag() && in.GetSpecialCaseUsed() == CObjectIStream::eReadAsNil) {
+        memberInfo->UpdateSetFlagNo(objectPtr);
+    }
+    if (memberInfo->Nillable()) {
+        in.SetMemberDefault(0);
+    }
 }
 
 void CClassTypeInfo::WriteClassRandom(CObjectOStream& out,
@@ -326,6 +335,12 @@ void CClassTypeInfo::WriteImplicitMember(CObjectOStream& out,
     const CMemberInfo* memberInfo = classType->GetImplicitMember();
     if (memberInfo->HaveSetFlag() && memberInfo->GetSetFlagNo(objectPtr)) {
         if (memberInfo->Optional()) {
+            return;
+        }
+        if (memberInfo->Nillable()) {
+            out.WriteClassMemberSpecialCase( CMemberId(classType->GetName()),
+                memberInfo->GetTypeInfo(), memberInfo->GetItemPtr(objectPtr),
+                CObjectOStream::eWriteAsNil);
             return;
         }
         if (memberInfo->NonEmpty() ||
@@ -369,7 +384,11 @@ void CClassTypeInfo::CopyImplicitMember(CObjectStreamCopier& copier,
         CTypeConverter<CClassTypeInfo>::SafeCast(objectType);
 
     const CMemberInfo* memberInfo = classType->GetImplicitMember();
+    if (memberInfo->Nillable()) {
+        copier.In().SetMemberNillable();
+    }
     copier.CopyNamedType(classType, memberInfo->GetTypeInfo());
+    copier.In().SetMemberDefault(0);
 }
 
 void CClassTypeInfo::SkipClassRandom(CObjectIStream& in,
@@ -397,7 +416,11 @@ void CClassTypeInfo::SkipImplicitMember(CObjectIStream& in,
         CTypeConverter<CClassTypeInfo>::SafeCast(objectType);
 
     const CMemberInfo* memberInfo = classType->GetImplicitMember();
+    if (memberInfo->Nillable()) {
+        in.SetMemberNillable();
+    }
     in.SkipNamedType(classType, memberInfo->GetTypeInfo());
+    in.SetMemberDefault(0);
 }
 
 bool CClassTypeInfo::IsDefault(TConstObjectPtr /*object*/) const

@@ -66,6 +66,9 @@ CObjectOStream* CObjectOStream::OpenObjectOStreamXml(CNcbiOstream& out,
 
 string CObjectOStreamXml::sm_DefaultDTDFilePrefix = "";
 const char* sm_DefaultSchemaNamespace = "http://www.ncbi.nlm.nih.gov";
+static
+const char* s_SchemaInstanceNamespace = "http://www.w3.org/2001/XMLSchema-instance";
+
 
 CObjectOStreamXml::CObjectOStreamXml(CNcbiOstream& out, bool deleteOut)
     : CObjectOStream(eSerial_Xml, out, deleteOut),
@@ -259,6 +262,8 @@ void CObjectOStreamXml::WriteFileHeader(TTypeInfo type)
         m_SkipIndent = true;
     }
     m_LastTagAction = eTagClose;
+    m_NsNameToPrefix.clear();
+    m_NsPrefixToName.clear();
 }
 
 void CObjectOStreamXml::EndOfWrite(void)
@@ -293,7 +298,7 @@ void CObjectOStreamXml::x_WriteClassNamespace(TTypeInfo type)
 
     if (m_UseSchemaLoc) {
         m_Output.PutEol();
-        string xs_name("http://www.w3.org/2001/XMLSchema-instance");
+        string xs_name(s_SchemaInstanceNamespace);
         string xs_prefix("xs");
         if (m_NsNameToPrefix.find(xs_name) == m_NsNameToPrefix.end()) {
             for (char a='a';
@@ -529,15 +534,22 @@ void CObjectOStreamXml::WriteEncodedChar(const char*& src, EStringType type)
     }
 }
 
-void CObjectOStreamXml::x_WriteAsDefault(void) {
+void CObjectOStreamXml::x_SpecialCaseWrite(void) {
     OpenTagEndBack();
+    if (m_SpecialCaseWrite == eWriteAsNil) {
+         m_Output.PutChar(' ');
+        if (m_UseSchemaRef) {
+            m_Output.PutString("xs:");
+        }
+        m_Output.PutString("nil=\"true\"");
+    }
     SelfCloseTagEnd();
 }
 
 void CObjectOStreamXml::WriteBool(bool data)
 {
-    if (m_WriteAsDefault) {
-        x_WriteAsDefault();
+    if (m_SpecialCaseWrite) {
+        x_SpecialCaseWrite();
         return;
     }
     if ( !x_IsStdXml() ) {
@@ -562,8 +574,8 @@ void CObjectOStreamXml::WriteChar(char data)
 
 void CObjectOStreamXml::WriteInt4(Int4 data)
 {
-    if (m_WriteAsDefault) {
-        x_WriteAsDefault();
+    if (m_SpecialCaseWrite) {
+        x_SpecialCaseWrite();
         return;
     }
     m_Output.PutInt4(data);
@@ -571,8 +583,8 @@ void CObjectOStreamXml::WriteInt4(Int4 data)
 
 void CObjectOStreamXml::WriteUint4(Uint4 data)
 {
-    if (m_WriteAsDefault) {
-        x_WriteAsDefault();
+    if (m_SpecialCaseWrite) {
+        x_SpecialCaseWrite();
         return;
     }
     m_Output.PutUint4(data);
@@ -580,8 +592,8 @@ void CObjectOStreamXml::WriteUint4(Uint4 data)
 
 void CObjectOStreamXml::WriteInt8(Int8 data)
 {
-    if (m_WriteAsDefault) {
-        x_WriteAsDefault();
+    if (m_SpecialCaseWrite) {
+        x_SpecialCaseWrite();
         return;
     }
     m_Output.PutInt8(data);
@@ -589,8 +601,8 @@ void CObjectOStreamXml::WriteInt8(Int8 data)
 
 void CObjectOStreamXml::WriteUint8(Uint8 data)
 {
-    if (m_WriteAsDefault) {
-        x_WriteAsDefault();
+    if (m_SpecialCaseWrite) {
+        x_SpecialCaseWrite();
         return;
     }
     m_Output.PutUint8(data);
@@ -598,8 +610,8 @@ void CObjectOStreamXml::WriteUint8(Uint8 data)
 
 void CObjectOStreamXml::WriteDouble2(double data, size_t digits)
 {
-    if (m_WriteAsDefault) {
-        x_WriteAsDefault();
+    if (m_SpecialCaseWrite) {
+        x_SpecialCaseWrite();
         return;
     }
     if (isnan(data)) {
@@ -865,8 +877,8 @@ void CObjectOStreamXml::WriteCString(const char* str)
 
 void CObjectOStreamXml::WriteString(const string& str, EStringType type)
 {
-    if (m_WriteAsDefault) {
-        x_WriteAsDefault();
+    if (m_SpecialCaseWrite) {
+        x_SpecialCaseWrite();
         return;
     }
     for ( const char* src = str.c_str(); *src; ++src ) {
@@ -886,10 +898,10 @@ void CObjectOStreamXml::CopyString(CObjectIStream& in,
 {
     string str;
     in.ReadString(str, type);
-    SetWriteAsDefault(in.WasMemberDefaultUsed());
-    in.SetMemberDefaultUsed(false);
+    SetSpecialCaseWrite( (CObjectOStream::ESpecialCaseWrite)in.GetSpecialCaseUsed());
+    in.SetSpecialCaseUsed(CObjectIStream::eReadAsNormal);
     WriteString(str, type);
-    SetWriteAsDefault(false);
+    SetSpecialCaseWrite(CObjectOStream::eWriteAsNormal);
 }
 
 void CObjectOStreamXml::CopyStringStore(CObjectIStream& in)
@@ -903,11 +915,21 @@ void CObjectOStreamXml::CopyStringStore(CObjectIStream& in)
 
 void CObjectOStreamXml::WriteNullPointer(void)
 {
-    if (TopFrame().GetNotag()) {
+    bool notag = TopFrame().HasMemberId() && TopFrame().GetMemberId().HasNotag();
+    bool nillable =  TopFrame().HasMemberId() && TopFrame().GetMemberId().IsNillable();
+    if (TopFrame().GetNotag() && !notag) {
+        if (m_LastTagAction == eTagClose) {
+            OpenStackTag(0);
+            m_SpecialCaseWrite = eWriteAsNil;
+            x_SpecialCaseWrite();
+            m_SpecialCaseWrite = eWriteAsNormal;
+            CloseStackTag(0);
+        }
         return;
     }
-    OpenTagEndBack();
-    SelfCloseTagEnd();
+    m_SpecialCaseWrite = nillable ? eWriteAsNil : eWriteAsNormal;
+    x_SpecialCaseWrite();
+    m_SpecialCaseWrite = eWriteAsNormal;
 }
 
 void CObjectOStreamXml::WriteObjectReference(TObjectIndex index)
@@ -1479,23 +1501,26 @@ bool CObjectOStreamXml::WriteClassMember(const CMemberId& memberId,
     return true;
 }
 
-void CObjectOStreamXml::WriteClassMemberDefault(
-    const CMemberId& memberId, TTypeInfo, TConstObjectPtr)
+void CObjectOStreamXml::WriteClassMemberSpecialCase(const CMemberId& memberId,
+    TTypeInfo memberType, TConstObjectPtr memberPtr, ESpecialCaseWrite how)
 {
     if (m_Attlist) {
         return;
     }
+    m_SpecialCaseWrite = how;
     if (memberId.HasNotag()) {
-        x_WriteAsDefault();
+        x_SpecialCaseWrite();
         TopFrame().SetNotag();
         m_LastTagAction = eTagClose;
     } else {
         BEGIN_OBJECT_FRAME2(eFrameClassMember, memberId);
         OpenStackTag(0);
-        x_WriteAsDefault();
+        x_SpecialCaseWrite();
+        m_SpecialCaseWrite = eWriteAsNormal;
         CloseStackTag(0);
         END_OBJECT_FRAME();
     }
+    m_SpecialCaseWrite = eWriteAsNormal;
 }
 #endif
 

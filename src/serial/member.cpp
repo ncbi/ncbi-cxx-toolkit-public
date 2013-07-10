@@ -330,6 +330,13 @@ CMemberInfo* CMemberInfo::SetOptional(void)
     return this;
 }
 
+CMemberInfo* CMemberInfo::SetNillable(void)
+{
+    GetId().SetNillable();
+    UpdateFunctions();
+    return this;
+}
+
 CMemberInfo* CMemberInfo::SetNoPrefix(void)
 {
     GetId().SetNoPrefix();
@@ -433,7 +440,7 @@ void CMemberInfo::UpdateFunctions(void)
 
         if ( GetDefault() )
             writeFunc = &TFunc::WriteWithDefaultMember;
-        else if ( Optional() )
+        else if ( Optional() || Nillable() )
             writeFunc = &TFunc::WriteOptionalMember;
         else
             writeFunc = &TFunc::WriteSimpleMember;
@@ -444,7 +451,7 @@ void CMemberInfo::UpdateFunctions(void)
         getFunc = &TFunc::GetWithSetFlagMember;
         readFuncs.m_Main = &TFunc::ReadWithSetFlagMember;
         writeFunc = &TFunc::WriteWithSetFlagMember;
-        if ( GetDefault() && GetId().HaveNoPrefix()) {
+        if ( (GetDefault() || Nillable()) && GetId().HaveNoPrefix()) {
             readFuncs.m_Main = &TFunc::ReadWithDefaultMemberX;
             writeFunc = &TFunc::WriteWithDefaultMemberX;
         }
@@ -453,7 +460,7 @@ void CMemberInfo::UpdateFunctions(void)
     // copymain/skipmain
     copyFuncs.m_Main = &TFunc::CopySimpleMember;
     skipFuncs.m_Main = &TFunc::SkipSimpleMember;
-    if ( GetDefault() && GetId().HaveNoPrefix()) {
+    if ( (GetDefault() || Nillable()) && GetId().HaveNoPrefix()) {
         copyFuncs.m_Main = &TFunc::CopyWithDefaultMemberX;
         skipFuncs.m_Main = &TFunc::SkipWithDefaultMemberX;
     }
@@ -713,8 +720,13 @@ void CMemberInfoFunctions::ReadSimpleMember(CObjectIStream& in,
 {
     _ASSERT(!memberInfo->CanBeDelayed());
     _ASSERT(!memberInfo->HaveSetFlag());
+    in.SetMemberDefault(0);
+    if (memberInfo->Nillable()) {
+        in.SetMemberNillable();
+    }
     in.ReadObject(memberInfo->GetItemPtr(classPtr),
                   memberInfo->GetTypeInfo());
+    in.SetMemberDefault(0);
 }
 
 void CMemberInfoFunctions::ReadWithSetFlagMember(CObjectIStream& in,
@@ -759,7 +771,7 @@ TConstObjectPtr CMemberInfoFunctions::x_GetMemberDefault(
 {
     ETypeFamily family = memberInfo->GetTypeInfo()->GetTypeFamily();
     TConstObjectPtr defptr = memberInfo->GetDefault();
-    if (family == eTypeFamilyPrimitive || family == eTypeFamilyContainer) {
+    if (!defptr || family == eTypeFamilyPrimitive || family == eTypeFamilyContainer) {
         //noop
     }
     else if (family == eTypeFamilyPointer) {
@@ -797,19 +809,24 @@ void CMemberInfoFunctions::ReadWithDefaultMemberX(CObjectIStream& in,
     _ASSERT(memberInfo->HaveSetFlag());
     memberInfo->UpdateSetFlagYes(classPtr);
     in.SetMemberDefault(x_GetMemberDefault(memberInfo));
+    if (memberInfo->Nillable()) {
+        in.SetMemberNillable();
+    }
     try {
         in.ReadObject(memberInfo->GetItemPtr(classPtr),
                       memberInfo->GetTypeInfo());
-        if (in.WasMemberDefaultUsed()) {
+        if (in.GetSpecialCaseUsed()) {
             memberInfo->UpdateSetFlagNo(classPtr);
-            memberInfo->UpdateSetFlagMaybe(classPtr);
+            if (in.GetSpecialCaseUsed() == CObjectIStream::eReadAsDefault) {
+                memberInfo->UpdateSetFlagMaybe(classPtr);
+            }
         }
         in.SetMemberDefault(0);
     }
     catch (CSerialException& e) {
         in.SetMemberDefault(0);
         if (e.GetErrCode() == CSerialException::eNullValue) {
-            if ( memberInfo->HaveSetFlag() ) {
+            if ( memberInfo->HaveSetFlag() && memberInfo->Nillable() ) {
                 memberInfo->UpdateSetFlagNo(classPtr);
             } else {
                 NCBI_RETHROW(e, CSerialException, eFormatError,
@@ -926,11 +943,16 @@ void CMemberInfoFunctions::WriteOptionalMember(CObjectOStream& out,
                                                TConstObjectPtr classPtr)
 {
     _ASSERT(!memberInfo->CanBeDelayed());
-    _ASSERT(memberInfo->Optional());
+    _ASSERT(memberInfo->Optional() || memberInfo->Nillable());
     TTypeInfo memberType = memberInfo->GetTypeInfo();
     TConstObjectPtr memberPtr = memberInfo->GetItemPtr(classPtr);
-    if ( memberType->IsDefault(memberPtr) )
+    if ( memberType->IsDefault(memberPtr) ) {
+        if (memberInfo->Nillable()) {
+            out.WriteClassMemberSpecialCase( memberInfo->GetId(),
+                memberType, memberPtr, CObjectOStream::eWriteAsNil);
+        }
         return;
+    }
 
     out.WriteClassMember(memberInfo->GetId(), memberType, memberPtr);
 }
@@ -954,12 +976,17 @@ void CMemberInfoFunctions::WriteWithDefaultMemberX(
                          TConstObjectPtr classPtr)
 {
     _ASSERT(!memberInfo->CanBeDelayed());
-    _ASSERT(memberInfo->GetDefault());
+    _ASSERT(memberInfo->GetDefault() || memberInfo->Nillable());
     TTypeInfo memberType = memberInfo->GetTypeInfo();
     TConstObjectPtr memberPtr = memberInfo->GetItemPtr(classPtr);
     CMemberInfo::ESetFlag flag = memberInfo->GetSetFlag(classPtr);
     if (flag == CMemberInfo::eSetNo) {
         if (memberInfo->Optional()) {
+            return;
+        }
+        if (memberInfo->Nillable()) {
+            out.WriteClassMemberSpecialCase( memberInfo->GetId(),
+                memberType, memberPtr, CObjectOStream::eWriteAsNil);
             return;
         }
         ESerialVerifyData verify = out.GetVerifyData();
@@ -971,7 +998,8 @@ void CMemberInfoFunctions::WriteWithDefaultMemberX(
     } else if (flag == CMemberInfo::eSetMaybe &&
                memberType->GetTypeFamily() != eTypeFamilyContainer) {
         if ( memberType->Equals(memberPtr, memberInfo->GetDefault()) ) {
-            out.WriteClassMemberDefault(memberInfo->GetId(), memberType, memberPtr);
+            out.WriteClassMemberSpecialCase(memberInfo->GetId(),
+                memberType, memberPtr, CObjectOStream::eWriteAsDefault);
             return;
         }
     }
@@ -1090,6 +1118,9 @@ void CMemberInfoFunctions::CopyWithDefaultMemberX(CObjectStreamCopier& copier,
                                             const CMemberInfo* memberInfo)
 {
     copier.In().SetMemberDefault(x_GetMemberDefault(memberInfo));
+    if (memberInfo->Nillable()) {
+        copier.In().SetMemberNillable();
+    }
     copier.CopyObject(memberInfo->GetTypeInfo());
     copier.In().SetMemberDefault(0);
 }
@@ -1117,6 +1148,9 @@ void CMemberInfoFunctions::SkipWithDefaultMemberX(CObjectIStream& in,
                                             const CMemberInfo* memberInfo)
 {
     in.SetMemberDefault(x_GetMemberDefault(memberInfo));
+    if (memberInfo->Nillable()) {
+        in.SetMemberNillable();
+    }
     in.SkipObject(memberInfo->GetTypeInfo());
     in.SetMemberDefault(0);
 }

@@ -150,10 +150,11 @@ public:
         {
             TObjectType data;
             copier.In().ReadStd(data);
-            copier.Out().SetWriteAsDefault(copier.In().WasMemberDefaultUsed());
-            copier.In().SetMemberDefaultUsed(false);
+            copier.Out().SetSpecialCaseWrite(
+                (CObjectOStream::ESpecialCaseWrite)copier.In().GetSpecialCaseUsed());
+            copier.In().SetSpecialCaseUsed(CObjectIStream::eReadAsNormal);
             copier.Out().WriteStd(data);
-            copier.Out().SetWriteAsDefault(false);
+            copier.Out().SetSpecialCaseWrite(CObjectOStream::eWriteAsNormal);
         }
 };
 

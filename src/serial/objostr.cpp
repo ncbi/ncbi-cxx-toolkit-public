@@ -292,7 +292,7 @@ CObjectOStream::CObjectOStream(ESerialDataFormat format,
       m_WriteNamedIntegersByValue(false),
       m_ParseDelayBuffers(eDelayBufferPolicyNotSet),
       m_FastWriteDouble(TFastWriteDouble::GetDefault()),
-      m_WriteAsDefault(false),
+      m_SpecialCaseWrite(eWriteAsNormal),
       m_FixMethod(x_GetFixCharsMethodDefault()),
       m_VerifyData(x_GetVerifyDataDefault())
 {
@@ -554,9 +554,8 @@ void CObjectOStream::WriteClassMember(const CConstObjectInfo::CMemberIterator& m
                      memberInfo->GetMemberPtr(classPtr));
 }
 
-void CObjectOStream::WriteClassMemberDefault(const CMemberId& memberId,
-                                         TTypeInfo memberType,
-                                         TConstObjectPtr memberPtr)
+void CObjectOStream::WriteClassMemberSpecialCase( const CMemberId& memberId,
+    TTypeInfo memberType, TConstObjectPtr memberPtr, ESpecialCaseWrite)
 {
     WriteClassMember(memberId,memberType,memberPtr);
 }
