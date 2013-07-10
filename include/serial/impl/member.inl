@@ -49,6 +49,11 @@ bool CMemberInfo::Optional(void) const
 // this can be reversed to simple check above
     return GetId().HaveNoPrefix() ? m_Optional : (m_Optional || m_Default);
 }
+inline
+bool CMemberInfo::Nillable(void) const
+{
+    return GetId().IsNillable();
+}
 
 inline
 TConstObjectPtr CMemberInfo::GetDefault(void) const

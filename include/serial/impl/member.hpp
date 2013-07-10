@@ -85,6 +85,8 @@ public:
 
     bool Optional(void) const;
     CMemberInfo* SetOptional(void);
+    bool Nillable(void) const;
+    CMemberInfo* SetNillable(void);
     CMemberInfo* SetNoPrefix(void);
     CMemberInfo* SetAttlist(void);
     CMemberInfo* SetNotag(void);
