@@ -304,7 +304,7 @@ static int Test_MultiProcess_Child(int test, string lockname)
         // Child process should be killed on this moment and lock released
         return 1;
     }
-    // Unsuccessfull exit code 
+    // Unsuccessful exit code 
     return 1;
 }
 
