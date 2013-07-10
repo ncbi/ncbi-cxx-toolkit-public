@@ -417,7 +417,7 @@ public:
     /// @param first
     ///   First part of the path which can be either absolute or relative.
     /// @param second
-    ///   Fecond part of the path must always be relative.
+    ///   Second part of the path must always be relative.
     /// @return
     ///   The concatenated path.
     static string ConcatPath(const string& first, const string& second);
@@ -481,7 +481,7 @@ public:
         fCF_Backup          = (1<< 3) | fCF_Overwrite,
         /// All above flags can be applied to the top directory only
         /// (not for every file therein), to process the directory
-        /// as a single entity for overwriting, updaing or backing up.
+        /// as a single entity for overwriting, updating or backing up.
         fCF_TopDirOnly      = (1<< 6),
         /// If destination entry exists, it must have the same type as source.
         fCF_EqualTypes      = (1<< 7),
@@ -668,8 +668,8 @@ public:
 
     /// Construct a directory entry object of a specified type.
     ///
-    /// An object of specified type will be constucted in memory only,
-    /// file sytem will not be modified.
+    /// An object of specified type will be constructed in memory only,
+    /// file system will not be modified.
     /// @param type
     ///   Define a type of the object to create.
     /// @return
@@ -1211,7 +1211,7 @@ public:
 
     /// Get file/directory mode creation mask.
     /// @note
-    ///   umask can be usefull on Unix platform only. On Windows only
+    ///   umask can be useful on Unix platform only. On Windows only
     ///   C Runtime library honor it, any methods that use Windows API
     ///   ignore its setting.
     /// @sa 
@@ -1226,7 +1226,7 @@ public:
     /// @note
     ///   fDefault value for permission mode(s) mean 0.
     /// @note
-    ///   umask can be usefull on Unix platform only. On Windows only
+    ///   umask can be useful on Unix platform only. On Windows only
     ///   C Runtime library honor it, any methods that use Windows API
     ///   ignore its setting.
     /// @sa
@@ -1729,7 +1729,7 @@ public:
     /// Create symbolic link.
     ///
     /// @param path
-    ///   Path to some entry that link will be ponted to.
+    ///   Path to some entry that link will be pointed to.
     /// @return
     ///   TRUE if operation successful; FALSE, otherwise.
     ///   Return FALSE also if link already exists.
@@ -1963,11 +1963,11 @@ public:
 /// CTmpFile --
 ///
 /// Define class to generate temporary file name (or use specified), which
-/// can be automaticaly removed on the object destruction.
+/// can be automatically removed on the object destruction.
 ///
 /// This class generate temporary file name in the temporary directory
-/// specified by OS. But this behaviour can be changed, just set desired
-/// temporary directory using global parameter (see CParam class decription)
+/// specified by OS. But this behavior can be changed, just set desired
+/// temporary directory using global parameter (see CParam class description)
 /// in the registry or environment (section 'NCBI', name 'TmpDir') and it
 /// will used by default in this class.
 /// @note
@@ -2024,7 +2024,7 @@ private:
     string      m_FileName;            ///< Name of temporary file.
     ERemoveMode m_RemoveOnDestruction; ///< Remove file on destruction
 
-    // Automatic pointers to store I/O srreams.
+    // Automatic pointers to store I/O streams.
     auto_ptr<CNcbiIstream> m_InFile;
     auto_ptr<CNcbiOstream> m_OutFile;
 
@@ -2037,7 +2037,7 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// fwd-decl of struct containing OS-specific mem.-file handle.
+/// Forward declaration of struct containing OS-specific mem.-file handle.
 
 struct SMemoryFileHandle;
 struct SMemoryFileAttrs;
@@ -2246,7 +2246,7 @@ public:
     bool MemMapAdvise(EMemMapAdvise advise) const;
 
 private:
-    // Check that file is mapped, throw excepton otherwise.
+    // Check that file is mapped, throw exception otherwise.
     void x_Verify(void) const;
 
 private:
@@ -2601,7 +2601,7 @@ public:
     bool MemMapAdvise(EMemMapAdvise advise) const;
 
 private:
-    // Check that file is mapped, throw excepton otherwise.
+    // Check that file is mapped, throw exception otherwise.
     void x_Verify(void) const;
 
 private:
@@ -3227,7 +3227,7 @@ class NCBI_XNCBI_EXPORT CFileWriter : public IWriter,
                                       public CFileReaderWriter_Base
 {
 public:
-    /// Construct CFileWriter for writinf to the file with name 'filename'.
+    /// Construct CFileWriter for writing to the file with name 'filename'.
     /// Throw CFileErrnoException on error.
     CFileWriter(const string& filename,
                 EOpenMode  open_mode  = eCreate,
@@ -3350,11 +3350,11 @@ public:
     /// Default flag in each group have priority above non-default,
     /// if they are used together.
     enum EFlags {
-        /// Lock file using parameters specified in consructor.
+        /// Lock file using parameters specified in constructor.
         fLockNow        = (1 << 1), 
         fLockLater      = (1 << 2),
-        /// Automaticaly remove all obtained locks in the destructor.
-        /// Note, that you still can unlock any segment. All remainings locks
+        /// Automatically remove all obtained locks in the destructor.
+        /// Note, that you still can unlock any segment. All remaining locks
         /// will be removed in the destructor.
         fAutoUnlock     = (1 << 3),
         fNoAutoUnlock   = (1 << 4),
@@ -3365,7 +3365,7 @@ public:
 
 
     /// Construct CFileLock for locking a file with a given name 'filename'.
-    /// File will be automaticaly closed in destructor and all locks removed.
+    /// File will be automatically closed in destructor and all locks removed.
     /// Throw CFileException if file doesn't exist, or on error.
     /// @sa Lock, Unlock, GetFileHandle
     CFileLock(const string& filename,
@@ -3424,7 +3424,7 @@ public:
     /// using only the file descriptor, obtained using this method.
     /// It can be the same file descriptor as was given in the constructor.
     /// @return
-    ///   File decriptor associated with the file. 
+    ///   File descriptor associated with the file. 
     TFileHandle GetFileHandle(void) { return m_Handle; };
 
 protected:
