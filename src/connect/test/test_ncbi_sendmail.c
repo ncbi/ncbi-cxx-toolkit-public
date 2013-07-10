@@ -50,29 +50,6 @@ int main(int argc, const char* argv[])
         "\n"
         "Custom sized body\n"
         "0123456789\n"; /* these 11 chars to ignore */
-    static const char* body[] = {
-        "This is a simple test",
-        "This is a test with\n.",
-        0,
-        ".",
-        "\n.\n",
-        ".\n",
-        "",
-        "a\nb\nc\nd\n.",
-        "a\r\n\rb\r\nc\r\nd\r\n.",
-        ".\na"
-    };
-    static const char* subject[] = {
-        0,
-        "CORE_SendMail Test",
-        "",
-    };
-    static const char* to[] = {
-        "lavr",
-        "lavr@pavo",
-        " \"Anton Lavrentiev\"   <lavr@pavo>  , lavr, <lavr>   ",
-    };
-    size_t i, j, k, n, m;
     const char* mx_host;
     SSendMailInfo info;
     const char* retval;
@@ -81,6 +58,7 @@ int main(int argc, const char* argv[])
     short mx_port;
     char val[32];
     FILE* fp;
+    size_t n;
 
     g_NCBI_ConnectRandomSeed = (int) time(0) ^ NCBI_CONNECT_SRAND_ADDEND;
     srand(g_NCBI_ConnectRandomSeed);
@@ -136,8 +114,8 @@ int main(int argc, const char* argv[])
     if ((huge_body = malloc(TEST_HUGE_BODY_SIZE)) != 0) {
 
         strcpy(huge_body, "user5@");
-        for (i = 0;  i < TEST_HUGE_BODY_SIZE - 6;  i++)
-            huge_body[i + 6] = "abcdefghijklmnopqrstuvwxyz."[rand() % 27];
+        for (n = 0;  n < TEST_HUGE_BODY_SIZE - 6;  n++)
+            huge_body[n + 6] = "abcdefghijklmnopqrstuvwxyz."[rand() % 27];
         huge_body[TEST_HUGE_BODY_SIZE - 1] = '\0';
         SendMailInfo_InitEx(&info, huge_body, eCORE_UsernameCurrent);
         CORE_LOGF(eLOG_Note, ("HUGE user5@host - <%s>", info.from));
@@ -147,9 +125,9 @@ int main(int argc, const char* argv[])
 
         huge_body[4] = '6';
         huge_body[5] = '_';
-        for (i = 6;  i < sizeof(info.from) + 1;  i++) {
-            if (huge_body[i] == '.')
-                huge_body[i]  = '_';
+        for (n = 6;  n < sizeof(info.from) + 1;  n++) {
+            if (huge_body[n] == '.')
+                huge_body[n]  = '_';
         }
         huge_body[sizeof(info.from) + 1] = '@';
         SendMailInfo_InitEx(&info, huge_body, eCORE_UsernameReal);
@@ -182,13 +160,13 @@ int main(int argc, const char* argv[])
                       "Reply-To: Coremake <coremake@ncbi.nlm.nih.gov>";
         if ((fp = fopen(argv[1], "rb")) != 0          &&
             fseek(fp, 0, SEEK_END) == 0               &&
-            (m = ftell(fp)) != (size_t)(-1)           &&
+            (n = ftell(fp)) != (size_t)(-1)           &&
             fseek(fp, 0, SEEK_SET) == 0               &&
-            (huge_body = (char*) malloc(m + 1)) != 0  &&
-            fread(huge_body, m, 1, fp) == 1) {
-            huge_body[m] = '\0';
+            (huge_body = (char*) malloc(n + 1)) != 0  &&
+            fread(huge_body, n, 1, fp) == 1) {
+            huge_body[n] = '\0';
             CORE_LOGF(eLOG_Note, ("Sending file (%lu bytes)",
-                                  (unsigned long) m));
+                                  (unsigned long) n));
             retval = CORE_SendMailEx("lavr", "File", huge_body, &info);
             if (retval) {
                 CORE_LOGF(eLOG_Fatal, ("Test failed: %s", retval));
@@ -201,21 +179,47 @@ int main(int argc, const char* argv[])
     }
 
 #if 0
-    CORE_LOG(eLOG_Note, "Phase 1 of 2: Testing CORE_SendMail");
+    {
+        static const char* body[] = {
+            "This is a simple test",
+            "This is a test with\n.",
+            0,
+            ".",
+            "\n.\n",
+            ".\n",
+            "",
+            "a\nb\nc\nd\n.",
+            "a\r\n\rb\r\nc\r\nd\r\n.",
+            ".\na"
+        };
+        static const char* subject[] = {
+            0,
+            "CORE_SendMail Test",
+            "",
+        };
+        static const char* to[] = {
+            "lavr",
+            "lavr@pavo",
+            " \"Anton Lavrentiev\"   <lavr@pavo>  , lavr, <lavr>   ",
+        };
+        size_t i, j, k, m = 0;
 
-    n = (sizeof(to)/sizeof(to[0]))*
-        (sizeof(subject)/sizeof(subject[0]))*
-        (sizeof(body)/sizeof(body[0]));
-    m = 0;
-    for (i = 0; i < sizeof(to)/sizeof(to[0]); i++) {
-        for (j = 0; j < sizeof(subject)/sizeof(subject[0]); j++)
-            for (k = 0; k < sizeof(body)/sizeof(body[0]); k++) {
-                CORE_LOGF(eLOG_Note, ("Test %u of %u",
-                                      (unsigned)(++m), (unsigned)n));
-                retval = CORE_SendMail(to[i], subject[j], body[k]);
-                if (retval != 0)
-                    CORE_LOGF(eLOG_Fatal, ("Test failed: %s", retval));
-            }
+        CORE_LOG(eLOG_Note, "Phase 1 of 2: Testing CORE_SendMail");
+
+        n = (sizeof(to)/sizeof(to[0]))*
+            (sizeof(subject)/sizeof(subject[0]))*
+            (sizeof(body)/sizeof(body[0]));
+        for (i = 0;  i < sizeof(to) / sizeof(to[0]);  ++i) {
+            for (j = 0;  j < sizeof(subject) / sizeof(subject[0]);  ++j)
+                for (k = 0;  k < sizeof(body) / sizeof(body[0]);  ++k) {
+                    CORE_LOGF(eLOG_Note, ("  Test %u of %u",
+                                          (unsigned int) ++m,
+                                          (unsigned int) n));
+                    retval = CORE_SendMail(to[i], subject[j], body[k]);
+                    if (retval != 0)
+                        CORE_LOGF(eLOG_Fatal, ("Test failed: %s", retval));
+                }
+        }
     }
 #else
     CORE_LOG(eLOG_Note, "Phase 1 of 2: Skipping CORE_SendMail tests");
@@ -287,9 +291,9 @@ int main(int argc, const char* argv[])
     info.bcc = 0;
     if (!(huge_body = (char*) malloc(TEST_HUGE_BODY_SIZE)))
         CORE_LOG(eLOG_Fatal, "Test failed: Cannot allocate memory");
-    for (i = 0; i < TEST_HUGE_BODY_SIZE - 1; i++)
-        huge_body[i] = "0123456789\nABCDEFGHIJKLMNOPQRSTUVWXYZ ."[rand() % 39];
-    huge_body[i] = 0;
+    for (n = 0;  n < TEST_HUGE_BODY_SIZE - 1;  ++n)
+        huge_body[n] = "0123456789\nABCDEFGHIJKLMNOPQRSTUVWXYZ ."[rand() % 39];
+    huge_body[n] = 0;
     retval = CORE_SendMailEx("lavr", "CORE_SendMailEx", huge_body, &info);
     if (retval)
         CORE_LOGF(eLOG_Fatal, ("Test failed: %s", retval));
