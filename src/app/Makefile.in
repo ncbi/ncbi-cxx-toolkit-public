@@ -4,7 +4,7 @@
 #################################
 
 SUB_PROJ = asn2asn asn2fasta asn2flat asnval id1_fetch blast convert_seq \
-           nmer_repeats objmgr gi2taxid netschedule grid igblast \
+           nmer_repeats objmgr gi2taxid netschedule grid netstorage igblast \
            winmasker dustmasker segmasker blastdb vecscreen \
            agpconvert id2_fetch agp_validate objextract lds_indexer \
            bdb_env_keeper nw_aligner speedtest idmapper formatguess \
