@@ -595,6 +595,9 @@ CClassTypeInfo* CDataContainerType::CreateClassInfo(void)
         if (mem->Notag()) {
             memInfo->SetNotag();
         }
+        if (dynamic_cast<const CAnyContentDataType*>(mem->GetType()) != 0) {
+            memInfo->SetAnyContent();
+        }
     }
     if ( HaveModuleName() )
         typeInfo->SetModuleName(GetModule()->GetName());
