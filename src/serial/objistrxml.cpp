@@ -2153,7 +2153,8 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                 m_Attlist = false;
                 TMemberIndex last = classType->GetMembers().LastIndex();
                 if (pos == last) {
-                    if (classType->GetMemberInfo(pos)->GetId().HasNotag()) {
+                    if (classType->GetMemberInfo(pos)->GetId().HasNotag() &&
+                        !classType->GetMemberInfo(pos)->GetId().HasAnyContent()) {
                         TopFrame().SetNotag();
                         return pos;
                     }
