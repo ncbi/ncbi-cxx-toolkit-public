@@ -338,10 +338,48 @@ CSearchResults::SetSubjectMasks(const TSeqLocInfoVector& subj_masks)
 
 void CSearchResults::TrimSeqAlign(CSeq_align_set::Tdata::size_type max_size)
 {
+	if(max_size == 0)
+	{
+		m_Alignment.Reset();
+		return;
+	}
+
 	if (m_Alignment->Size() >  max_size)
 	{
-		CSeq_align_set::Tdata  & as = m_Alignment->Set();
-		as.resize(max_size);
+		CConstRef<CSeq_id> previous_id, sub_id;
+		unsigned int num_aligns = 1;
+		CSeq_align_set::Tdata::iterator itr=m_Alignment->Set().begin();
+		previous_id = &((*itr)->GetSeq_id(1));
+		++ itr;
+
+		for(; itr != m_Alignment->Get().end(); ++itr)
+		{
+	        if ((*itr)->GetSegs().IsDisc())
+	        {
+	            num_aligns ++;
+	        }
+	        else
+	        {
+	            sub_id = &((*itr)->GetSeq_id(1));
+	            if(!sub_id->Match(*previous_id))
+	            {
+	                num_aligns ++;
+	            }
+
+	            if(num_aligns > max_size)
+	            {
+	                 break;
+	            }
+
+	            previous_id = sub_id;
+	        }
+		}
+
+		if(itr != m_Alignment->Set().end())
+		{
+			m_Alignment->Set().erase(itr,m_Alignment->Set().end());
+		}
+
 	}
 }
 
