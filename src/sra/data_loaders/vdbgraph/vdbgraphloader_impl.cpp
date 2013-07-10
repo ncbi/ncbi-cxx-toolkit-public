@@ -55,7 +55,7 @@
 BEGIN_NCBI_SCOPE
 
 #define NCBI_USE_ERRCODE_X   VDBGraphLoader
-NCBI_DEFINE_ERR_SUBCODE_X(3);
+NCBI_DEFINE_ERR_SUBCODE_X(6);
 
 class CObject;
 
@@ -331,6 +331,10 @@ CVDBGraphDataLoader_Impl::GetOrphanAnnotRecords(CDataSource* ds,
 CRef<CSeq_entry>
 CVDBGraphDataLoader_Impl::LoadFullEntry(const CVDBGraphBlobId& blob_id)
 {
+    if ( GetDebugLevel() >= 5 ) {
+        LOG_POST_X(4, "CVDBGraphDataLoader: "
+                   "loading full entry for "<<blob_id.m_SeqId);
+    }
     CRef<SVDBFileInfo> info_ref = x_GetFileInfo(blob_id.m_VDBFile);
     SVDBFileInfo& info = *info_ref;
     CVDBGraphSeqIterator it(info.m_VDB, blob_id.m_SeqId);
@@ -362,6 +366,10 @@ CVDBGraphDataLoader_Impl::LoadFullEntry(const CVDBGraphBlobId& blob_id)
 void CVDBGraphDataLoader_Impl::LoadSplitEntry(CTSE_Info& tse,
                                               const CVDBGraphBlobId& blob_id)
 {
+    if ( GetDebugLevel() >= 5 ) {
+        LOG_POST_X(5, "CVDBGraphDataLoader: "
+                   "loading split entry for "<<blob_id.m_SeqId);
+    }
     CRef<SVDBFileInfo> info_ref = x_GetFileInfo(blob_id.m_VDBFile);
     const_cast<CVDBGraphBlobId&>(blob_id).m_FileInfo = info_ref;
     SVDBFileInfo& info = *info_ref;
@@ -442,6 +450,11 @@ void CVDBGraphDataLoader_Impl::GetChunk(CTSE_Chunk_Info& chunk)
         CVDBGraphSeqIterator::fGraphZoomQAll,
         CVDBGraphSeqIterator::fGraphMain|kMainGraphAsTable
     };
+    static const char* const kTypeName[3] = {
+        "overview",
+        "mid-zoom",
+        "main"
+    };
     string kName[3] = {
         info.GetMainAnnotName(),
         info.GetMainAnnotName(),
@@ -450,6 +463,11 @@ void CVDBGraphDataLoader_Impl::GetChunk(CTSE_Chunk_Info& chunk)
     int k = chunk.GetChunkId()%kChunkIdMul;
     int i = chunk.GetChunkId()/kChunkIdMul;
     TSeqPos from = i*kSize[k], to_open = min(length, from+kSize[k]);
+    if ( GetDebugLevel() >= 6 ) {
+        LOG_POST_X(6, "CVDBGraphDataLoader: "
+                   "loading "<<kTypeName[k]<<" chunk "<<blob_id.m_SeqId<<
+                   " @ "<<from<<"-"<<(to_open-1));
+    }
     CRef<CSeq_annot> annot = it.GetAnnot(COpenRange<TSeqPos>(from, to_open),
                                          kName[k],
                                          kFlags[k]);
