@@ -3380,7 +3380,6 @@ public:
               size_t length = 0);
 
     /// Construct CFileLock for locking file by system file handle 'handle'.
-    /// Throw CFileException on error.
     /// @note
     ///   The file will not be closed at CFileLock destruction.
     /// @sa Lock, LockSegment
@@ -3398,8 +3397,8 @@ public:
     /// Lock whole file, or the part of the file.
     /// Previous lock will be removed. It do not remove locks,
     /// established on the file somewhere else.
-    /// If the lock cannot be obtained (since someone else has it locked already),
-    /// this function returns immediately with FALSE.
+    /// Throw CFileException if the lock cannot be obtained (since someone
+    /// else has it locked already), or on error.
     /// @param type
     ///   Type of the lock, one of eShared or eExclusive.
     /// @param offset
