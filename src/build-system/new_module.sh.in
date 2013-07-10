@@ -14,6 +14,8 @@ if test -z "$CHECK_TIMEOUT"; then
     exec $top_srcdir/scripts/common/check/check_exec.sh $0 "$@"
 fi
 
+rm -f check_exec.pid
+
 # Some useful common functions (such as COMMON_AddRunpath)
 . ${top_srcdir}/scripts/common/common.sh
 
