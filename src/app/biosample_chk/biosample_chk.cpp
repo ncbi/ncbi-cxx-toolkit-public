@@ -141,7 +141,6 @@ private:
 
     // for mode 3, biosample_push
     void UpdateBioSource (CBioseq_Handle bh, const CBioSource& src);
-    void UpdateStructuredComment (CBioseq_Handle bh, const CUser_object& src);
     void x_ClearCoordinatedSubSources(CBioSource& src);
 	void ProcessBioseqHandle(CBioseq_Handle bh, vector<CRef<CSeqdesc> > descriptors);
 	void ProcessSeqEntry(CRef<CSeq_entry> se, vector<CRef<CSeqdesc> > descriptors);
@@ -402,15 +401,6 @@ vector<CRef<CSeqdesc> > CBiosampleChkApp::GetBiosampleDescriptorsFromSeqEntry(co
             src_desc->Assign(*src_desc_ci);
             descriptors.push_back(src_desc);
         }
-	    CSeqdesc_CI comm_desc_ci(*bi, CSeqdesc::e_User);
-	    while (comm_desc_ci) {
-            if (x_IsReportableStructuredComment(*comm_desc_ci)) {
-                CRef<CSeqdesc> comm_desc(new CSeqdesc());
-                comm_desc->Assign(*comm_desc_ci);
-                descriptors.push_back(comm_desc);
-            }
-		    ++comm_desc_ci;
-	    }
     }
 
     return descriptors;
@@ -1186,42 +1176,11 @@ void CBiosampleChkApp::UpdateBioSource (CBioseq_Handle bh, const CBioSource& src
 }
 
 
-void CBiosampleChkApp::UpdateStructuredComment (CBioseq_Handle bh, const CUser_object& user)
-{
-    bool found = false;
-    string match_prefix = s_GetStructuredCommentPrefix(user);
-    if (NStr::IsBlank(match_prefix)) {
-        return;
-    }
-
-    CSeqdesc_CI desc_ci(bh, CSeqdesc::e_User);
-    while (desc_ci && !found) {
-        string prefix = s_GetStructuredCommentPrefix(desc_ci->GetUser());
-        if (NStr::Equal(prefix, match_prefix)) {
-            const CUser_object& u = desc_ci->GetUser();
-            CUser_object* old_user = const_cast<CUser_object*> (&u);
-            old_user->Assign(user);
-            found = true;
-        }
-        ++desc_ci;
-    }
-    if (!found) {
-        CRef<CSeqdesc> new_desc(new CSeqdesc());
-        new_desc->SetUser().Assign(user);
-        CBioseq_EditHandle beh = bh.GetEditHandle();
-        beh.AddSeqdesc(*new_desc);
-    }
-
-}
-
-
 void CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh, vector<CRef<CSeqdesc> > descriptors)
 {
     ITERATE(vector<CRef<CSeqdesc> >, it, descriptors) {
         if ((*it)->IsSource()) {
             UpdateBioSource(bh, (*it)->GetSource());
-        } else if (x_IsReportableStructuredComment(**it)) {
-            UpdateStructuredComment(bh, (*it)->GetUser());
         }
     }
 }
