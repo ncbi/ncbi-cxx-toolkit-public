@@ -119,16 +119,18 @@ CBedReader::~CBedReader()
 CRef< CSeq_annot >
 CBedReader::ReadSeqAnnot(
     ILineReader& lr,
-    IErrorContainer* pErrorContainer ) 
+    IErrorContainer* pEC ) 
 //  ----------------------------------------------------------------------------                
 {
+    const int MAX_RECORDS = 100000;
+
     CRef<CSeq_annot> annot;
     CRef<CAnnot_descr> desc;
 
     annot.Reset(new CSeq_annot);
     desc.Reset(new CAnnot_descr);
     annot->SetDesc(*desc);
-    annot->SetData().SetFtable();
+    CSeq_annot::C_Data::TFtable& tbl = annot->SetData().SetFtable();
 
     string line;
     int featureCount = 0;
@@ -139,38 +141,55 @@ CBedReader::ReadSeqAnnot(
         if (NStr::TruncateSpaces(line).empty()) {
             continue;
         }
-        try {
-            if (xParseComment(line, annot)) {
-                continue;
-            }
-            if (x_ParseBrowserLine(line, annot, pErrorContainer)) {
-                continue;
-            }
-            if (xParseTrackLine(line, annot, pErrorContainer)) {
-                if (featureCount > 0) {
-                    --m_uLineNumber;
-                    lr.UngetLine();
-                    break;
-                }
-                continue;
-            }
-            if (!xParseFeature( line, annot )) {
+        if (xParseComment(line, annot)) {
+            continue;
+        }
+        if (x_ParseBrowserLine(line, annot, pEC)) {
+            continue;
+        }
+        if (xParseTrackLine(line, annot, pEC)) {
+            if (featureCount > 0) {
                 --m_uLineNumber;
                 lr.UngetLine();
                 break;
             }
+            continue;
+        }
+
+	    string record_copy = line;
+	    NStr::TruncateSpacesInPlace(record_copy);
+
+        //  parse
+        vector<string> fields;
+        NStr::Tokenize( record_copy, " \t", fields, NStr::eMergeDelims );
+        try {
+            xCleanColumnValues(fields);
+        }
+        catch(CObjReaderLineException& err) {
+            ProcessError(err, pEC);
+            continue;
+        }
+        if (fields[0] != m_currentId) {
+            //record id has changed
+            if (featureCount > 0) {
+                --m_uLineNumber;
+                lr.UngetLine();
+                break;
+            }
+        }
+        if (xParseFeature(fields, annot, pEC)) {
             ++featureCount;
+            continue;
         }
-        catch( CObjReaderLineException& err ) {
-            xProcessError( err, pErrorContainer );
+        if (tbl.size() >= MAX_RECORDS) {
+            break;
         }
-        continue;
     }
     //  Only return a valid object if there was at least one feature
     if (0 == featureCount) {
         return CRef<CSeq_annot>();
     }
-    x_AddConversionInfo(annot, pErrorContainer);
+    x_AddConversionInfo(annot, pEC);
 
     if(m_columncount >= 3) {
         CRef<CUser_object> columnCountUser( new CUser_object() );
@@ -246,9 +265,7 @@ CBedReader::xParseTrackLine(
         }
     }
     if ( !m_currentId.empty() ) {
-//        x_AddConversionInfo( current, &m_ErrorsPrivate );    
         m_columncount = 0;
-        m_ErrorsPrivate.ClearAll();
     }
     m_currentId.clear();
     if (!CReaderBase::x_ParseTrackLine(strLine, current, pEC)) {
@@ -257,7 +274,7 @@ CBedReader::xParseTrackLine(
             0,
             "Bad track line: Expected \"track key1=value1 key2=value2 ...\". Ignored.",
             ILineError::eProblem_BadTrackLine);
-        throw( err );    
+        ProcessWarning(err , pEC);    
     }
     return true;
 }
@@ -277,22 +294,13 @@ CBedReader::x_AppendAnnot(
     
 //  ----------------------------------------------------------------------------
 bool CBedReader::xParseFeature(
-    const string& record,
-    CRef<CSeq_annot>& annot ) /* throws CObjReaderLineException */
+    const vector<string>& fields,
+    CRef<CSeq_annot>& annot,
+    IErrorContainer* pEC)
 //  ----------------------------------------------------------------------------
 {
-    const int MAX_RECORDS = 100000;
     static int count = 0;
     count++;
-
-    vector<string> fields;
-
-	string record_copy = record;
-	NStr::TruncateSpacesInPlace(record_copy);
-
-    //  parse
-    NStr::Tokenize( record_copy, " \t", fields, NStr::eMergeDelims );
-    xCleanColumnValues(fields);
 
     if (fields.size() != m_columncount) {
         if ( 0 == m_columncount ) {
@@ -303,21 +311,8 @@ bool CBedReader::xParseFeature(
                 eDiag_Error,
                 0,
                 "Bad data line: Inconsistent column count." );
-            throw( err );
-        }
-    }
-
-    
-    //  if feature tables get too big we _will_ run out of memory. To guard against
-    //  that, limit feature tables to a single id, and to MAX_RECORDS at the most.
-    if (m_currentId != fields[0]  ||  count == MAX_RECORDS+1) {
-        if (m_currentId.empty()) {
-            m_currentId = fields[0];
-        }
-        else {
-            m_currentId.clear();
-            count = 0;
-            return false; //indicate no data has been processed 
+            ProcessError(err, pEC );
+            return false;
         }
     }
 
@@ -326,18 +321,16 @@ bool CBedReader::xParseFeature(
     CRef<CSeq_feat> feature;
     feature.Reset( new CSeq_feat );
     try {
-        x_SetFeatureLocation( feature, fields );
-        x_SetFeatureDisplayData( feature, fields );
+        x_SetFeatureLocation(feature, fields);
+        x_SetFeatureDisplayData(feature, fields);
     }
-    catch( ... ) {
-        m_currentId.clear();
-        CObjReaderLineException err(
-            eDiag_Error,
-            0,
-            "Bad data line: General parsing error." );
-        throw( err );    
+    catch(CObjReaderLineException& err) {
+        //m_currentId.clear();
+        ProcessError(err, pEC);
+        return false;
     }
     ftable.push_back( feature );
+    m_currentId = fields[0];
     return true;
 }
 
@@ -435,7 +428,7 @@ void CBedReader::x_SetFeatureLocation(
         CObjReaderLineException err( 
             eDiag_Error,
             0,
-            "Invalid data line --- Bad \"SeqStart\" value." );
+            "Invalid data line: Bad \"SeqStart\" value." );
         throw( err );
     }
     try {
@@ -445,7 +438,7 @@ void CBedReader::x_SetFeatureLocation(
         CObjReaderLineException err( 
             eDiag_Error,
             0,
-            "Invalid data line --- Bad \"SeqStop\" value.");
+            "Invalid data line: Bad \"SeqStop\" value.");
         throw( err );
     }
     if (from == to) {
@@ -459,8 +452,8 @@ void CBedReader::x_SetFeatureLocation(
         CObjReaderLineException err( 
             eDiag_Error,
             0,
-            "Invalid data line --- \"SeqStop\" less than \"SeqStart\"." );
-        throw( err );
+            "Invalid data line: \"SeqStop\" less than \"SeqStart\"." );
+        throw(err);
     }
 
     size_t strand_field = 5;
@@ -468,6 +461,14 @@ void CBedReader::x_SetFeatureLocation(
         strand_field = 4;
     }
     if (strand_field < fields.size()) {
+        string strand = fields[strand_field];
+        if (strand != "+"  &&  strand != "-"  &&  strand != ".") {
+            CObjReaderLineException err( 
+                eDiag_Error,
+                0,
+                "Invalid data line: Invalid strand character." );
+            throw(err);
+        }
         location->SetStrand(( fields[strand_field] == "+" ) ?
                            eNa_strand_plus : eNa_strand_minus );
     }
@@ -512,18 +513,6 @@ void CBedReader::x_SetTrackData(
 }
 
 //  ----------------------------------------------------------------------------
-void
-CBedReader::xProcessError(
-    CObjReaderLineException& err,
-    IErrorContainer* pContainer)
-//  ----------------------------------------------------------------------------
-{
-    err.SetLineNumber(m_uLineNumber);
-    m_ErrorsPrivate.PutError(err);
-    ProcessError(err, pContainer);
-}
-
-//  ----------------------------------------------------------------------------
 bool CBedReader::xGetLine(
     ILineReader& lr,
     string& line)
@@ -557,7 +546,6 @@ CBedReader::ReadTrackData(
 {
     if (m_CurBatchSize == m_MaxBatchSize) {
         m_CurBatchSize = 0;
-        //cerr << "Resuming track ..." << endl;
         return xReadBedDataRaw(lr, rawdata, pErrorContainer);
     }
 
@@ -585,10 +573,6 @@ CBedReader::xReadBedRecordRaw(
     IErrorContainer* pErrorContainer)
 //  ----------------------------------------------------------------------------
 {
-    //Note to self:
-    //Return "false" if this looks legal but isn't a record.
-    //Throw if it is "recognized" as plain junk
-    //
     if (line == "browser"  || NStr::StartsWith(line, "browser ")) {
         return false;
     }
@@ -602,7 +586,13 @@ CBedReader::xReadBedRecordRaw(
 
     //  parse
     NStr::Tokenize( linecopy, " \t", columns, NStr::eMergeDelims );
-    xCleanColumnValues(columns);
+    try {
+        xCleanColumnValues(columns);
+    }
+    catch(CObjReaderLineException& err) {
+        ProcessError(err, pErrorContainer);
+        return false;
+    }
 
     if (columns.size() != m_columncount) {
         if ( 0 == m_columncount ) {
@@ -613,7 +603,8 @@ CBedReader::xReadBedRecordRaw(
                 eDiag_Error,
                 0,
                 "Bad data line: Inconsistent column count." );
-            throw( err );
+            ProcessError(err, pErrorContainer);
+            return false;
         }
     }
 
@@ -629,7 +620,8 @@ CBedReader::xReadBedRecordRaw(
             eDiag_Error,
             0,
             "Bad data line: Invalid \"SeqStart\" (column 2) value." );
-        throw( err );
+        ProcessError(err, pErrorContainer);
+        return false;
     }
 
     unsigned int stop;
@@ -641,7 +633,8 @@ CBedReader::xReadBedRecordRaw(
             eDiag_Error,
             0,
             "Bad data line: Invalid \"SeqStop\" (column 3) value." );
-        throw( err );
+        ProcessError(err, pErrorContainer);
+        return false;
     }
 
     int score(-1);
@@ -654,7 +647,8 @@ CBedReader::xReadBedRecordRaw(
                 eDiag_Error,
                 0,
                 "Bad data line: Invalid \"Score\" (column 5) value." );
-            throw( err );
+            ProcessError(err, pErrorContainer);
+            return false;
         }
     }
     ENa_strand strand = eNa_strand_plus;
@@ -689,7 +683,6 @@ CBedReader::xReadBedDataRaw(
         rawdata.AddRecord(record);
         ++m_CurBatchSize;
         if (m_CurBatchSize == m_MaxBatchSize) {
-            //cerr << "Breaking track ..." << endl;
             return rawdata.HasData();
         }
     }
@@ -713,8 +706,8 @@ CBedReader::xCleanColumnValues(
         CObjReaderLineException err(
             eDiag_Error,
             0,
-            "Bad data line: Insuffixient column count." );
-        throw( err );
+            "Bad data line: Insufficient column count." );
+        throw(err);
     }
 
     try {

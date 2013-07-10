@@ -234,8 +234,9 @@ protected:
         IErrorContainer*);
         
     bool xParseFeature(
-        const string&,
-        CRef<CSeq_annot>&);
+        const vector<string>&,
+        CRef<CSeq_annot>&,
+        IErrorContainer*);
     /* throws CObjReaderLineException */
 
     bool xParseComment(
@@ -244,26 +245,21 @@ protected:
 
     void x_SetFeatureLocation(
         CRef<CSeq_feat>&,
-        const vector<string>& );
+        const vector<string>&);
         
     void x_SetFeatureDisplayData(
         CRef<CSeq_feat>&,
-        const vector<string>& );
+        const vector<string>&);
 
     virtual void x_SetTrackData(
         CRef<CSeq_annot>&,
         CRef<CUser_object>&,
         const string&,
-        const string& );
+        const string&);
 
     CRef< CSeq_annot > x_AppendAnnot(
         vector< CRef< CSeq_annot > >& );
                     
-    void
-    xProcessError(
-        CObjReaderLineException&,
-        IErrorContainer* );
-
     bool
     xReadBedDataRaw(
         ILineReader&,
@@ -287,11 +283,11 @@ protected:
 
     static void xCleanColumnValues(
         vector<string>&);
+
     //
     //  data:
     //
 protected:
-    CErrorContainerLenient m_ErrorsPrivate;
     string m_currentId;
 
     vector<string>::size_type m_columncount;
