@@ -57,14 +57,14 @@
 
 
 #ifndef   EOVERFLOW
-#  define EOVERFLOW (-1)
+#  define EOVERFLOW  (-1)
 #endif // EOVERFLOW
 
 
 USING_NCBI_SCOPE;
 
 
-const unsigned int fVerbose = CTar::fDumpEntryHeaders;
+static const unsigned int fVerbose = CTar::fDumpEntryHeaders;
 
 
 #ifdef TEST_CONN_TAR
@@ -392,7 +392,6 @@ int CTarTest::Run(void)
         NCBI_THROW(CArgException, eInvalidArg,
                    "You must specify exactly one of -c, -r, -u, -t, -x, -T");
     }
-    size_t n = args.GetNExtra();
 
     bool zip = args["z"].HasValue();
     if (zip  &&  (action == eAppend  ||  action == eUpdate)) {
@@ -404,17 +403,22 @@ int CTarTest::Run(void)
     bool url = NStr::FindNoCase(file, "://", 3, 5) != NPOS ? true : false;
 #endif // TEST_CONN_TAR
 
-    bool pipethru;
     string filename;
-    if (args["S"].HasValue()) {
-        filename.swap(file);
-        pipethru = true;
-    } else {
-        pipethru = false;
-    }
-
+    bool   pipethru        = args["S"].HasValue();
     bool   stream          = args["s"].HasValue();
+    bool   verbose         = args["v"].HasValue();
     size_t blocking_factor = args["b"].AsInteger();
+    size_t n               = args.GetNExtra();
+
+    if (pipethru) {
+        filename.swap(file);
+    }
+    if (verbose) {
+        SetDiagPostLevel(eDiag_Info);
+#if defined(_DEBUG)  &&  !defined(NDEBUG)
+        SetDiagTrace(eDT_Enable);
+#endif /*_DEBUG && !NDEBUG*/
+    }
 
     auto_ptr<CTar>     tar;
     auto_ptr<CNcbiIos> zs;
@@ -453,6 +457,11 @@ int CTarTest::Run(void)
             in = &ifs;
         }
 
+#ifdef NCBI_OS_MSWIN
+    _setmode(_fileno(stdin),  _O_BINARY);
+    _setmode(_fileno(stdout), _O_BINARY);
+#endif // NCBI_OS_MSWIN
+
     CRWStream stdio(!in  ||  in->good()
                     ? new CStreamReader(in ? *in : NcbiCin)
                     : 0,
@@ -460,10 +469,6 @@ int CTarTest::Run(void)
                     ? new CStreamWriter(           NcbiCout)
                     : 0,
                     0, 0, CRWStreambuf::fOwnAll | CRWStreambuf::fUntie);
-#ifdef NCBI_OS_MSWIN
-    _setmode(_fileno(stdin),  _O_BINARY);
-    _setmode(_fileno(stdout), _O_BINARY);
-#endif // NCBI_OS_MSWIN
 
     if (file.empty()  ||  zip) {
         if (action == eCreate  ||  action == eAppend  ||  action == eUpdate) {
@@ -535,7 +540,7 @@ int CTarTest::Run(void)
         m_Flags = 0;
     }
 
-    if (args["v"].HasValue()) {
+    if (verbose) {
         m_Flags |=  fVerbose;
     }
     if (args["i"].HasValue()) {
