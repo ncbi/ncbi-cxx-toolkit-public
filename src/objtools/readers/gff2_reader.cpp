@@ -179,7 +179,7 @@ void
 CGff2Reader::ReadSeqAnnotsNew(
     vector< CRef<CSeq_annot> >& annots,
     ILineReader& lr,
-    IErrorContainer* pErrorContainer )
+    IErrorContainer* pEC )
 //  ----------------------------------------------------------------------------
 {
     string line;
@@ -204,16 +204,16 @@ CGff2Reader::ReadSeqAnnotsNew(
             if ( x_ParseTrackLineGff( line, m_CurrentTrackInfo ) ) {
                 continue;
             }
-            if ( ! x_ParseDataGff( line, annots ) ) {
+            if ( ! x_ParseDataGff(line, annots, pEC) ) {
                 continue;
             }
         }
         catch( CObjReaderLineException& err ) {
             err.SetLineNumber( m_uLineNumber );
-            ProcessError(err, pErrorContainer);
+            ProcessError(err, pEC);
         }
     }
-    x_AddConversionInfoGff( annots, &m_ErrorsPrivate );
+    x_AddConversionInfoGff( annots, pEC );
 }
 
 //  ----------------------------------------------------------------------------                
@@ -371,19 +371,21 @@ bool CGff2Reader::x_ParseStructuredCommentGff(
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::x_ParseDataGff(
     const string& strLine,
-    TAnnots& annots )
+    TAnnots& annots,
+    IErrorContainer* pEC)
 //  ----------------------------------------------------------------------------
 {
     if ( CGff2Reader::IsAlignmentData(strLine) ) {
         return x_ParseAlignmentGff(strLine, annots);
     }
-    return x_ParseFeatureGff(strLine, annots);
+    return x_ParseFeatureGff(strLine, annots, pEC);
 }
 
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::x_ParseFeatureGff(
     const string& strLine,
-    TAnnots& annots )
+    TAnnots& annots,
+    IErrorContainer* pEC)
 //  ----------------------------------------------------------------------------
 {
     //
@@ -391,7 +393,11 @@ bool CGff2Reader::x_ParseFeatureGff(
     //  to:
     //
     CGff2Record* pRecord = x_CreateRecord();
-    if ( ! pRecord->AssignFromGff( strLine ) ) {
+    try {
+        pRecord->AssignFromGff(strLine);
+    }
+    catch(CObjReaderLineException& err) {
+        ProcessError(err, pEC);
         return false;
     }
 

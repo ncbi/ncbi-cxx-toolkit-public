@@ -208,10 +208,18 @@ bool CGff2Record::AssignFromGff(
     m_uSeqStart = NStr::StringToUInt( columns[3] ) - 1;
     m_uSeqStop = NStr::StringToUInt( columns[4] ) - 1;
     if (m_uSeqStop < m_uSeqStart) {
-        ERR_POST( 
-            m_strId + ":" + m_strType + " " + columns[3] + "-" + columns[4] + ": " +
-            "Negative length feature--- TOSSED !!!" );
-        return false;
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "Bad data line: location start is greater than location stop (start="
+                + columns[3] + ", stop=" + columns[4] + ").",
+            ILineError::eProblem_BadTrackLine);
+        throw(err);
+
+        //ERR_POST( 
+        //    m_strId + ":" + m_strType + " " + columns[3] + "-" + columns[4] + ": " +
+        //    "Negative length feature--- TOSSED !!!" );
+        //return false;
     }
 
     if ( columns[5] != "." ) {

@@ -139,11 +139,13 @@ public:
     
     virtual bool x_ParseDataGff(
         const string&,
-        TAnnots& );
+        TAnnots&,
+        IErrorContainer*);
 
     virtual bool x_ParseFeatureGff(
         const string&,
-        TAnnots& );
+        TAnnots&,
+        IErrorContainer*);
 
     virtual bool x_ParseAlignmentGff(
         const string&,

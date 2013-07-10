@@ -203,7 +203,7 @@ void
 CGtfReader::ReadSeqAnnots(
     vector< CRef<CSeq_annot> >& annots,
     ILineReader& lr,
-    IErrorContainer* pErrorContainer )
+    IErrorContainer* pEC)
 //  ----------------------------------------------------------------------------
 {
     string line;
@@ -217,7 +217,7 @@ CGtfReader::ReadSeqAnnots(
             if ( x_ParseTrackLineGff( line, m_CurrentTrackInfo ) ) {
                 continue;
             }
-            if ( ! x_ParseFeatureGff( line, annots ) ) {
+            if ( ! x_ParseFeatureGff( line, annots, pEC) ) {
                 continue;
             }
         }
