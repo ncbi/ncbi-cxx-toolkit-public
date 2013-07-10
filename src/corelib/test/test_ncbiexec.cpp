@@ -56,9 +56,15 @@ const char* s_QuoteArgsTest[] =
 {
     "",              // Will be overwritten with application name
     "SpawnV_Quote",  // Test name  
+    "", 
     " ", 
     "\\", 
     " \\", 
+    "\\ ", 
+    "dir\\", 
+    "dir\\path", 
+    "d i r\\p a t h", 
+    "d i r\\p a t h\\", 
     "a b", 
     "\"a", 
     "a\"b", 
@@ -243,6 +249,12 @@ int CTest::Run(void)
                              s_QuoteArgsTest[11],
                              s_QuoteArgsTest[12], 
                              s_QuoteArgsTest[13], 
+                             s_QuoteArgsTest[14], 
+                             s_QuoteArgsTest[15], 
+                             s_QuoteArgsTest[16], 
+                             s_QuoteArgsTest[17], 
+                             s_QuoteArgsTest[18], 
+                             s_QuoteArgsTest[19], 
                              NULL).GetExitCode(); 
         assert( code == TEST_RESULT_C );
         code = CExec::SpawnV(CExec::eWait, app_c, s_QuoteArgsTest).GetExitCode();
@@ -279,6 +291,7 @@ int main(int argc, const char* argv[], const char* envp[])
             assert(argc == (n-1));
             for (int i=2; i<argc; i++) {
                 //cout << i << " = '" << argv[i] << "'" << endl;
+                //cout << i << " = '" << s_QuoteArgsTest[i] << "'" << endl;
                 //cout << i << " = '" << NStr::PrintableString(argv[i]) << "'" << endl;
                 //cout << i << " = '" << NStr::PrintableString(s_QuoteArgsTest[i]) << "'" << endl;
                 //cout.flush();
