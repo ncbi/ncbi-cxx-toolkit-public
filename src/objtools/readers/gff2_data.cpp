@@ -213,7 +213,7 @@ bool CGff2Record::AssignFromGff(
             0,
             "Bad data line: location start is greater than location stop (start="
                 + columns[3] + ", stop=" + columns[4] + ").",
-            ILineError::eProblem_BadTrackLine);
+            ILineError::eProblem_FeatureBadStartAndOrStop);
         throw(err);
 
         //ERR_POST( 
