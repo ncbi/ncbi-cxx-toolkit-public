@@ -257,19 +257,18 @@ string s_QuoteSpawnArg(const string& arg)
     if ( arg.empty() ) {
         return '"' + arg + '"';
     }
-    bool have_spaces = (arg.find(' ') != NPOS);
-    bool have_quotes = (arg.find('"') != NPOS);
-    bool have_slash  = (arg.find('\\') != NPOS);
+    bool have_space = (arg.find(' ') != NPOS);
+    bool have_quote = (arg.find('"') != NPOS);
 
-    if (!have_spaces  &&  !have_quotes  &&  !have_slash) {
+    if (!have_space  &&  !have_quote) {
         return arg;
     }
     string s = arg;
-    if ( have_quotes ) {
+    if ( have_quote ) {
         s = NStr::Replace(s, "\"", "\"\"");
     }
-    if ( have_slash ) {
-        s = NStr::Replace(s, "\\", "\\\\");
+    if ( NStr::EndsWith(s, '\\') ) {
+        return '"' + s + "\\\"";
     }
     return '"' + s + '"';
 #else
@@ -316,7 +315,7 @@ void s_Create_Args_L(
 {
     // Count arguments to allocate memory
     va_list v_args = begin;
-    int xcnt = 2;
+    size_t xcnt = 2;
     while ( va_arg(v_args, const char*) ) {
         xcnt++;
     }
@@ -348,7 +347,7 @@ void s_Create_Args_V(
 {
     // Count arguments to allocate memory
     const char** p = argv;
-    int xcnt = 0;
+    size_t xcnt = 0;
     while ( *(p++) ) {
         xcnt++;
     }
