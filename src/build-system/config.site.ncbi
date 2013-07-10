@@ -17,20 +17,24 @@ if test "$ncbi_favor_std_packages" = yes; then
         test -f "$d/include/fastcgi.h"     &&  : ${FASTCGI_PATH=$d}
         test -d "$d/include/FTGL"          &&  : ${FTGL_PATH=$d}
         test -x "$d/bin/libgcrypt-config"  &&  : ${GCRYPT_PATH=$d}
+        test -f "$d/include/GL/glew.h"     &&  : ${GLEW_PATH=$d}
         test -x "$d/bin/libgnutls-config"  &&  : ${GNUTLS_PATH=$d}
         test -f "$d/include/hdf5.h"        &&  : ${HDF5_PATH=$d}
         test -x "$d/bin/icu-config"        &&  : ${ICU_PATH=$d}
         test -x "$d/include/libxslt"       &&  : ${LIBXML_PATH=$d}
         test -f "$d/include/lzo/lzo1.h"    &&  : ${LZO_PATH=$d}
+        test -d "$d/include/mimetic"       &&  : ${MIMETIC_PATH=$d}
         test -d "$d/include/muParser"      &&  : ${MUPARSER_PATH=$d}
         test -x "$d/bin/mysql-config"      &&  : ${MYSQL_PATH=$d}
         test -d "$d/include/GL"            &&  : ${OPENGL_PATH=$d}
         test -d "$d/include/OB"            &&  : ${ORBACUS_PATH=$d}
         test -x "$d/bin/sablot-config"     &&  : ${SABLOT_PATH=$d}
+        test -f "$d/include/SgmlParser.h"  &&  : ${SP_PATH=$d}
         test -f "$d/include/sqlite3.h"     &&  : ${SQLITE3_PATH=$d}
         test -x "$d/bin/wx-config"         &&  : ${WXWIDGETS_PATH=$d}
         test -d "$d/include/xalanc"        &&  : ${XALAN_PATH=$d}
         test -d "$d/include/xercesc"       &&  : ${XERCES_PATH=$d}
+        test -d "$d/include/zorba"         &&  : ${ZORBA_PATH=$d}
     done
 fi
 
@@ -40,12 +44,7 @@ case "$ncbi_platform" in
 esac
 
 case "$ncbi_platform" in
-    FreeBSD32  )
-        case "`uname -r`" in
-            6* ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.4.20}   ;;
-            8* ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.6.21.1} ;;
-        esac
-        ;;
+    FreeBSD32  ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.6.21.1} ;;
     Linux*     ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.6.21.1} ;;
     *MAC       ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.5.20}   ;;
     SunOSx86   ) : ${BERKELEYDB_PATH=$NCBI/BerkeleyDB-4.6.21.1} ;;
@@ -81,11 +80,11 @@ case "$ncbi_platform" in
     *      ) : ${FTGL_PATH=$NCBI/ftgl-2.1.3-rc5}       ;;
 esac
 
-: ${GLEW_PATH=$NCBI/glew-1.5.8}
-
 case "$ncbi_platform" in
     Linux*     ) : ${GCRYPT_PATH=$NCBI/libgcrypt-1.4.3} ;;
 esac
+
+: ${GLEW_PATH=$NCBI/glew-1.5.8}
 
 case "$ncbi_platform" in
     Linux*     ) : ${GNUTLS_PATH=$NCBI/gnutls-2.4.2} ;;
