@@ -93,7 +93,7 @@
 
 #ifdef NCBI_CXX_TOOLKIT
 
-#  if !defined(NDEBUG)  ||  defined(_DEBUG)
+#  if defined(_DEBUG)  ||  !defined(NDEBUG)
 #    if NCBI_PLATFORM_BITS == 64
 #      define NETDAEMONS_VERSION    NETDAEMONS_VERSION_STR "/64[DEBUG]"
 #    else
@@ -105,7 +105,7 @@
 #    else
 #      define NETDAEMONS_VERSION    NETDAEMONS_VERSION_STR
 #    endif /*NCBI_PLATFORM_BITS==64*/
-#  endif /*!NDEBUG || _DEBUG*/
+#  endif /*_DEBUG || !NDEBUG*/
 
 #else
 

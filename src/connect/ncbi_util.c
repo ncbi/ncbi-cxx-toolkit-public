@@ -364,11 +364,11 @@ extern char* LOG_ComposeMessage
     if (call_data->level == eLOG_Trace  &&  !(format_flags & fLOG_None))
         format_flags |= fLOG_Full;
     if (format_flags == fLOG_Default) {
-#if defined(NDEBUG)  &&  !defined(_DEBUG)
+#if !defined(_DEBUG)  ||  defined(NDEBUG)
         format_flags = fLOG_Short;
 #else
         format_flags = fLOG_Full;
-#endif /*NDEBUG && !_DEBUG*/
+#endif /*!_DEBUG || NDEBUG*/
     }
 
     /* Pre-calculate total message length */
