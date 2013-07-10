@@ -200,7 +200,29 @@ static void x_GnuTlsLogger(int level, const char* message)
 #  ifdef __GNUC__
 inline
 #  endif /*__GNUC__*/
-static int x_GnuTlsStatusToError(EIO_Status status, int/*bool*/ timeout)
+static int/*bool*/ x_IsTimeout(SOCK sock, EIO_Event direction)
+{
+    int retval;
+    switch (direction) {
+    case eIO_Read:
+        retval = !sock->r_tv_set  ||  (sock->r_tv.tv_sec | sock->r_tv.tv_usec);
+        break;
+    case eIO_Write:
+        retval = !sock->w_tv_set  ||  (sock->w_tv.tv_sec | sock->w_tv.tv_usec);
+        break;
+    default:
+        retval = 0;
+        assert(0);
+        break;
+    }
+    return retval;
+}
+
+
+#  ifdef __GNUC__
+inline
+#  endif /*__GNUC__*/
+static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
 {
     int error;
 
@@ -208,7 +230,7 @@ static int x_GnuTlsStatusToError(EIO_Status status, int/*bool*/ timeout)
 
     switch (status) {
     case eIO_Timeout:
-        error = timeout ? SOCK_ETIMEDOUT : EAGAIN;
+        error = x_IsTimeout(sock, direction) ? SOCK_ETIMEDOUT : EAGAIN;
         break;
     case eIO_Closed:
         error = SOCK_ENOTCONN;
@@ -239,7 +261,25 @@ static int x_GnuTlsStatusToError(EIO_Status status, int/*bool*/ timeout)
 #  ifdef __GNUC__
 inline
 #  endif /*__GNUC__*/
-static EIO_Status x_GnuTlsErrorToStatus(int error)
+static EIO_Status x_RetryStatus(gnutls_session_t session, EIO_Event direction)
+{
+    SOCK sock = (SOCK) gnutls_session_get_ptr(session);
+    EIO_Status status;
+    if (direction == eIO_Open) {
+        EIO_Status r_status = SOCK_Status(sock, eIO_Read);
+        EIO_Status w_status = SOCK_Status(sock, eIO_Write);
+        status = r_status > w_status ? r_status : w_status;
+    } else
+        status = SOCK_Status(sock, direction);
+    return status == eIO_Success ? eIO_Timeout : status;
+}
+
+
+#  ifdef __GNUC__
+inline
+#  endif /*__GNUC__*/
+static EIO_Status x_ErrorToStatus(int error,
+                                  gnutls_session_t session,EIO_Event direction)
 {
     EIO_Status status;
 
@@ -248,7 +288,7 @@ static EIO_Status x_GnuTlsErrorToStatus(int error)
     if (!error)
         return eIO_Success;
     else if (error == GNUTLS_E_AGAIN)
-        status = eIO_Timeout;
+        status = x_RetryStatus(session, direction);
     else if (error == GNUTLS_E_INTERRUPTED)
         status = eIO_Interrupt;
     else if (gnutls_error_is_fatal(error))
@@ -303,6 +343,7 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock, int* error)
     gnutls_transport_set_pull_function(session, x_GnuTlsPull);
     gnutls_transport_set_push_function(session, x_GnuTlsPush);
     gnutls_transport_set_ptr(session, ptr);
+    gnutls_session_set_ptr(session, sock);
     return session;
 }
 
@@ -313,7 +354,8 @@ static EIO_Status s_GnuTlsOpen(void* session, int* error)
     int x_error = gnutls_handshake((gnutls_session_t) session);
 
     if (x_error < 0) {
-        status = x_GnuTlsErrorToStatus(x_error);
+        status = x_ErrorToStatus(x_error,
+                                 (gnutls_session_t) session, eIO_Open);
         *error = x_error;
     } else
         status = eIO_Success;
@@ -357,9 +399,7 @@ static ssize_t x_GnuTlsPull(gnutls_transport_ptr_t ptr,
     } else
         status = eIO_NotSupported;
 
-    x_error = x_GnuTlsStatusToError(status, !sock->r_tv_set  ||
-                                    (sock->r_tv.tv_sec | sock->r_tv.tv_usec)
-                                    ? 1 : 0);
+    x_error = x_StatusToError(status, sock, eIO_Read);
     if (x_error)
         x_set_errno((gnutls_session_t) sock->session, x_error);
     return -1;
@@ -383,9 +423,7 @@ static ssize_t x_GnuTlsPush(gnutls_transport_ptr_t ptr,
     } else
         status = eIO_NotSupported;
 
-    x_error = x_GnuTlsStatusToError(status, !sock->w_tv_set  ||
-                                    (sock->w_tv.tv_sec | sock->w_tv.tv_usec)
-                                    ? 1 : 0);
+    x_error = x_StatusToError(status, sock, eIO_Write);
     if (x_error)
         x_set_errno((gnutls_session_t) sock->session, x_error);
     return -1;
@@ -403,7 +441,8 @@ static EIO_Status s_GnuTlsRead(void* session, void* buf, size_t n_todo,
     x_read = gnutls_record_recv((gnutls_session_t) session, buf, n_todo);
 
     if (x_read <= 0) {
-        status = x_GnuTlsErrorToStatus(x_read);
+        status = x_ErrorToStatus(x_read,
+                                 (gnutls_session_t) session, eIO_Read);
         *error = x_read;
         x_read = 0;
     } else
@@ -425,7 +464,8 @@ static EIO_Status s_GnuTlsWrite(void* session, const void* data, size_t n_todo,
     x_written = gnutls_record_send((gnutls_session_t) session, data, n_todo);
 
     if (x_written <= 0) {
-        status = x_GnuTlsErrorToStatus(x_written);
+        status = x_ErrorToStatus(x_written,
+                                 (gnutls_session_t) session, eIO_Write);
         *error = x_written;
         x_written = 0;
     } else
