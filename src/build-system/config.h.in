@@ -237,6 +237,9 @@
 /* Define to 1 if libgnutls is available. */
 #undef HAVE_LIBGNUTLS
 
+/* Define to 1 if libgsoap is available. */
+#undef HAVE_LIBGSOAP
+
 /* Define to 1 if libhdf5_cpp is available. */
 #undef HAVE_LIBHDF5
 

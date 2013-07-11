@@ -19,6 +19,7 @@ if test "$ncbi_favor_std_packages" = yes; then
         test -x "$d/bin/libgcrypt-config"  &&  : ${GCRYPT_PATH=$d}
         test -f "$d/include/GL/glew.h"     &&  : ${GLEW_PATH=$d}
         test -x "$d/bin/libgnutls-config"  &&  : ${GNUTLS_PATH=$d}
+        test -f "$d/include/stdsoap2.h"    &&  : ${GSOAP_PATH=$d}
         test -f "$d/include/hdf5.h"        &&  : ${HDF5_PATH=$d}
         test -x "$d/bin/icu-config"        &&  : ${ICU_PATH=$d}
         test -x "$d/include/libxslt"       &&  : ${LIBXML_PATH=$d}
@@ -88,6 +89,10 @@ esac
 
 case "$ncbi_platform" in
     Linux*     ) : ${GNUTLS_PATH=$NCBI/gnutls-2.4.2} ;;
+esac
+
+case "$ncbi_platform" in
+    Linux64    ) : ${GSOAP_PATH=$NCBI/gsoap-2.8.15} ;;
 esac
 
 case "$ncbi_platform" in

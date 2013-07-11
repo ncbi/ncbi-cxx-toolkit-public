@@ -71,7 +71,7 @@ case "$with_3psw" in
                      python, perl, jni, sqlite3, mimetic, sge, icu, sp, expat,
                      sablot, libxml, libxslt, libexslt, xerces, xalan, zorba,
                      oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm,
-                     magic, curl],
+                     magic, curl, gsoap],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -439,6 +439,10 @@ AC_ARG_WITH(mimetic,
    [ --with-mimetic=DIR      use libmimetic installation in DIR])
 AC_ARG_WITH(mimetic2,
    [ --without-mimetic       do not use libmimetic])
+AC_ARG_WITH(gsoap,
+   [ --with-gsoap=DIR        use gSOAP++ installation in DIR])
+AC_ARG_WITH(gsoap2,
+   [ --without-gsoap         do not use gSOAP++])
 AC_ARG_WITH(3psw,
    [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])
 AC_ARG_WITH(3psw2,
@@ -494,7 +498,7 @@ ftds mysql orbacus freetype ftgl opengl mesa glut glew glew-mx \
 bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
-gif jpeg tiff png xpm magic curl mimetic 3psw \
+gif jpeg tiff png xpm magic curl mimetic gsoap 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -536,7 +540,7 @@ for x_arg in "$@" ; do
       | --with-z=* | --with-bz2=* | --with-lzo=* \
       | --with-pcre=* \
       | --with-gcrypt=* | --with-gnutls=* | --with-openssl=* \
-      | --with-krb5=* | --with-curl=* \
+      | --with-krb5=* | --with-curl=* | --with-gsoap=* \
       | --with-sybase-local=* | --with-wxwidgets=* | --with-mimetic=* \
       | --with-ftds=* | --with-mysql=* | --with-fastcgi=* \
       | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
@@ -6288,6 +6292,56 @@ NCBI_CHECK_THIRD_PARTY_LIB(mimetic,
        [mimetic::MimeEntity me;])])
 
 
+# gSOAP++
+case "$with_gsoap" in
+   yes | '' ) : ${GSOAP_PATH=$NCBI/gsoap} ;;
+   *        ) GSOAP_PATH=$with_gsoap ;;
+esac
+if test -d "$GSOAP_PATH"; then
+   NCBI_FIX_DIR(GSOAP_PATH)
+fi
+for d in "$GSOAP_LIBDIR" \
+         "$GSOAP_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/lib" \
+         "$GSOAP_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/lib" \
+         "$GSOAP_PATH/lib${bit64_sfx}" \
+         "$GSOAP_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}/lib" \
+         "$GSOAP_PATH/${compiler_pfx}${DEBUG_SFX}${mt_sfx}/lib" \
+         "$GSOAP_PATH/lib"; do
+   if test -d "$d"; then
+      GSOAP_LIBDIR=$d
+      NCBI_FIX_DIR(GSOAP_LIBDIR)
+      break
+   fi
+done
+NCBI_RPATHIFY(GSOAP_LIBPATH, $GSOAP_LIBDIR)
+
+: ${GSOAP_BINDIR=`dirname "$GSOAP_LIBDIR"`/bin}
+AC_PATH_PROG(GSOAP_SOAPCPP2, soapcpp2, [], $GSOAP_BINDIR:$PATH)
+AC_PATH_PROG(GSOAP_WSDL2H,   wsdl2h,   [], $GSOAP_BINDIR:$PATH)
+
+NCBI_CHECK_THIRD_PARTY_LIB_EX(gsoap, GSOAP, gsoap++,
+   [AC_LANG_PROGRAM([#include <stdsoap2.h>
+        SOAP_FMAC3 const char** SOAP_FMAC4 soap_faultcode(struct soap*)
+        { return NULL; }
+        SOAP_FMAC3 const char** SOAP_FMAC4 soap_faultsubcode(struct soap*)
+        { return NULL; }
+        SOAP_FMAC3 const char** SOAP_FMAC4 soap_faultstring(struct soap*)
+        { return NULL; }
+        SOAP_FMAC3 const char** SOAP_FMAC4 soap_faultdetail(struct soap*)
+        { return NULL; }
+        SOAP_FMAC3 const char* SOAP_FMAC4 soap_check_faultsubcode(struct soap*)
+        { return NULL; }
+        SOAP_FMAC3 const char* SOAP_FMAC4 soap_check_faultdetail(struct soap*)
+        { return NULL; }
+        SOAP_FMAC3 void SOAP_FMAC4 soap_serializeheader(struct soap*) { }
+        SOAP_FMAC3 int SOAP_FMAC4 soap_putheader(struct soap*) { return 0; }
+        SOAP_FMAC3 int SOAP_FMAC4 soap_getheader(struct soap*) { return 0; }
+        SOAP_FMAC3 void SOAP_FMAC4 soap_serializefault(struct soap*) { }
+        SOAP_FMAC3 int SOAP_FMAC4 soap_putfault(struct soap*) { return 0; }
+        SOAP_FMAC3 int SOAP_FMAC4 soap_getfault(struct soap*) { return 0; }],
+       [soap s;])])
+
+
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
 CPPFLAGS="$orig_CPPFLAGS"
@@ -6952,6 +7006,7 @@ AC_SUBST(ZORBA_STATIC_LIBS)
 AC_SUBST(SQLITE3_STATIC_LIBS)
 AC_SUBST(FREETYPE_INCLUDE)
 AC_SUBST(FREETYPE_LIBS)
+AC_SUBST(GSOAP_PATH)
 AC_SUBST(ncbi_xreader_pubseqos)
 AC_SUBST(ncbi_xreader_pubseqos2)
 AC_SUBST(UNLESS_PUBSEQOS)
