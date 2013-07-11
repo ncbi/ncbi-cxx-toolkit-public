@@ -214,13 +214,13 @@ BOOST_AUTO_TEST_CASE(TestEfficiency) {
 
     cerr << "Creating histogram" << endl;
     stop_watch.Restart();
-    s_TestArray(value_vec.data(), value_vec.size(), 0);
+    s_TestArray(&value_vec[0], value_vec.size(), 0);
     cerr << "Time taken to create histogram, in seconds: " 
          << stop_watch.Elapsed() << endl;
 
     cerr << "Creating histogram that aims to be even" << endl;
     stop_watch.Restart();
-    s_TestArray(value_vec.data(), value_vec.size(), 0, 
+    s_TestArray(&value_vec[0], value_vec.size(), 0, 
         CHistogramBinning::eHistAlgo_TryForSameNumDataInEachBin);
     cerr << "Time taken to create supposedly-even histogram, in seconds: " 
          << stop_watch.Elapsed() << endl;
