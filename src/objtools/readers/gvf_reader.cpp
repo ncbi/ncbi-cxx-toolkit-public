@@ -331,7 +331,9 @@ bool CGvfReader::x_FeatureSetLocation(
             CObjReaderLineException e(
                 eDiag_Error,
                 0,
-                "CGvfReader::x_FeatureSetLocation: Bad \"Start_range\" attribute");
+                string("CGvfReader::x_FeatureSetLocation: Bad \"Start_range\" attribute") +
+                    " (Start_range=" + strRange + ").",
+                ILineError::eProblem_QualifierBadValue);
             throw e;
         }
         try {
@@ -354,7 +356,9 @@ bool CGvfReader::x_FeatureSetLocation(
             CObjReaderLineException e(
                 eDiag_Error,
                 0,
-                "CGvfReader::x_FeatureSetLocation: Bad \"Start_range\" attribute");
+                string("CGvfReader::x_FeatureSetLocation: Bad \"Start_range\" attribute") +
+                    " (Start_range=" + strRange + ").",
+                ILineError::eProblem_QualifierBadValue);
             throw e;
         }
     }
@@ -368,7 +372,9 @@ bool CGvfReader::x_FeatureSetLocation(
             CObjReaderLineException e(
                 eDiag_Error,
                 0,
-                "CGvfReader::x_FeatureSetLocation: Bad \"End_range\" attribute");
+                string("CGvfReader::x_FeatureSetLocation: Bad \"End_range\" attribute") +
+                    " (End_range=" + strRange + ").",
+                ILineError::eProblem_QualifierBadValue);
             throw e;
         }
         try {
@@ -391,7 +397,9 @@ bool CGvfReader::x_FeatureSetLocation(
             CObjReaderLineException e(
                 eDiag_Error,
                 0,
-                "CGvfReader::x_FeatureSetLocation: Bad \"End_range\" attribute");
+                string("CGvfReader::x_FeatureSetLocation: Bad \"End_range\" attribute") +
+                    " (End_range=" + strRange + ").",
+                ILineError::eProblem_QualifierBadValue);
             throw e;
         }
     }
