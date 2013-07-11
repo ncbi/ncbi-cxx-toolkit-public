@@ -71,8 +71,7 @@ Gene-track ::= SEQUENCE {
     status INTEGER {
         live (0) ,
         secondary (1) ,   -- synonym with merged
-        discontinued (2), -- 'deleted', still index and display to public
-        newentry (3)      --  for GeneRif submission (DEPRECATED)
+        discontinued (2)  -- 'deleted', still index and display to public
     } DEFAULT live ,
     current-id SEQUENCE OF Dbtag OPTIONAL , -- see note 1 below
     create-date Date ,   -- date created in Entrez 
