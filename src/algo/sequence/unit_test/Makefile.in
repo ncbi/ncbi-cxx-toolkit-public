@@ -1,6 +1,6 @@
 # $Id$
 
-APP_PROJ = unit_test_gene_model unit_test_polya
+APP_PROJ = unit_test_gene_model unit_test_polya unit_test_gap_analysis
 PROJ_TAG = test
 
 srcdir = @srcdir@
