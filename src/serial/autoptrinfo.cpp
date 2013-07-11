@@ -120,6 +120,9 @@ void CAutoPointerTypeInfo::SkipAutoPtr(CObjectIStream& in,
     const CAutoPointerTypeInfo* autoPtrType =
         CTypeConverter<CAutoPointerTypeInfo>::SafeCast(objectType);
 
+    if ( in.ReadPointerType() == CObjectIStream::eNullPointer) {
+        return;
+    }
     autoPtrType->GetPointedType()->SkipData(in);
 }
 

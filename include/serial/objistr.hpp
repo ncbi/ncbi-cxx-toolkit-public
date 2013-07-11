@@ -1109,6 +1109,7 @@ public:
     friend class CObjectStreamCopier;
     friend class CMemberInfoFunctions;
     friend class CClassTypeInfo;
+    friend class CAutoPointerTypeInfo;
 };
 
 inline
