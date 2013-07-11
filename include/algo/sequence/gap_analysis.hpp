@@ -49,7 +49,7 @@ class NCBI_XALGOSEQ_EXPORT CGapAnalysis {
 public:
 
     typedef CConstRef<CSeq_id> TSeqIdConstRef;
-    typedef Int8 TGapSize;
+    typedef Int8 TGapLength;
 
     /// Calls AddGap for each anywhere under the given CSeq_entry.  In
     /// most cases, much more convenient than raw AddGap calls.
@@ -63,7 +63,7 @@ public:
     /// AddSeqEntryGaps is more convenient, but if you want finer-grained
     /// control you can use this function to tell this class about 
     /// another gap that is found, updating the data.
-    void AddGap( TSeqIdConstRef pSeqId, TGapSize iGapSize );
+    void AddGap( TSeqIdConstRef pSeqId, TGapLength iGapLength );
 
     /// Start analysis over again.
     void Clear(void);
@@ -80,29 +80,30 @@ public:
 
     struct NCBI_XALGOSEQ_EXPORT SGapLengthSummary {
         SGapLengthSummary(
-            TGapSize gap_length_arg,
+            TGapLength gap_length_arg,
             size_t   num_seqs_arg,
             size_t   num_gaps_arg )
             : gap_length(gap_length_arg),
               num_seqs(num_seqs_arg),
               num_gaps(num_gaps_arg) { }
 
-        TGapSize gap_length;
+        TGapLength gap_length;
         size_t   num_seqs; ///< number of sequences which contain one or more gaps of the given length
         size_t   num_gaps; ///< number of times gaps of this length appear anywhere
     };
     typedef vector<SGapLengthSummary> TVectorGapLengthSummary;
+
     AutoPtr<TVectorGapLengthSummary> GetGapLengthSummary(
         ESortGapLength eSortGapLength = eSortGapLength_Length,
         ESortDir eSortDir = eSortDir_Ascending) const;
 
     typedef set<TSeqIdConstRef> TSetSeqIdConstRef;
-    typedef map<TGapSize, TSetSeqIdConstRef> TMapGapSizeToSeqIds;
+    typedef map<TGapLength, TSetSeqIdConstRef> TMapGapLengthToSeqIds;
 
     /// Returns a map of gap_length to the set of all seq-ids that
     /// contain at least one gap of that length.
-    const TMapGapSizeToSeqIds & GetGapLengthSeqIds(void) const {
-        return m_mapGapSizeToSeqIds;
+    const TMapGapLengthToSeqIds & GetGapLengthSeqIds(void) const {
+        return m_mapGapLengthToSeqIds;
     }
 
     AutoPtr<CHistogramBinning::TListOfBins>
@@ -110,14 +111,14 @@ public:
         CHistogramBinning::EHistAlgo eHistAlgo = CHistogramBinning::eHistAlgo_IdentifyClusters);
 
 private:
-    /// For each unique gap size, this holds all the seq-ids which have one
-    /// or more gaps of that size.
-    TMapGapSizeToSeqIds m_mapGapSizeToSeqIds;
+    /// For each unique gap length, this holds all the seq-ids which have one
+    /// or more gaps of that length.
+    TMapGapLengthToSeqIds m_mapGapLengthToSeqIds;
 
-    typedef map<TGapSize, size_t> TMapGapSizeToNumAppearances;
-    /// For each unique gap size, this holds how many times a gap
-    /// of that size appears anywhere.
-    TMapGapSizeToNumAppearances m_mapGapSizeToNumAppearances;
+    typedef map<TGapLength, size_t> TMapGapLengthToNumAppearances;
+    /// For each unique gap length, this holds how many times a gap
+    /// of that length appears anywhere.
+    TMapGapLengthToNumAppearances m_mapGapLengthToNumAppearances;
 
     CHistogramBinning m_histogramBinner;
 

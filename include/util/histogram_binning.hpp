@@ -42,8 +42,12 @@ BEGIN_NCBI_SCOPE
 class NCBI_XUTIL_EXPORT CHistogramBinning {
 public:
 
+    /// The numeric type this bins.  It is big so that it can cover
+    /// whatever type of integer the caller wants to bin.
     typedef Int8 TValue;
 
+    /// Constructor.
+    ///
     /// @param num_bins
     ///   0 means to automatically pick a reasonable number of bins.
     ///   Note that num_bins is a suggestion, and the answer
@@ -51,10 +55,14 @@ public:
     ///   depending on misc factors.
     CHistogramBinning(size_t num_bins = 0) : m_iNumBins(num_bins) { }
 
+    /// As in the constructor, 0 means to auto-pick number of bins.
     void SetNumBins(size_t num_bins) {
         m_iNumBins = num_bins;
     }
 
+    /// Give this histogram another number to bin.  This is called
+    /// repeatedly, and then the caller will probably want to
+    /// call CalcHistogram to get the answer.
     void AddNumber(TValue the_number, size_t num_appearances = 0) {
         m_mapValueToTotalAppearances[the_number] += num_appearances;
     }
@@ -63,18 +71,24 @@ public:
         m_mapValueToTotalAppearances.clear();
     }
 
+    /// Holds the information about a bin.
     struct SBin {
         SBin(
             TValue first_number_arg,
             TValue last_number_arg,
             size_t total_appearances_arg );
 
-        TValue first_number;
+        /// The start range of the bin (inclusive)
+        TValue first_number; 
+        /// The end range of the bin (inclusive)
         TValue last_number;
+        /// The total number of data points in this bin
         size_t total_appearances;
     };
     typedef list<SBin> TListOfBins;
 
+    /// Pick which binning algorithm to use when generating
+    /// the histogram.
     enum EHistAlgo {
         /// This algorithm tries to make each bin represent
         /// values that are clustered together.
@@ -88,7 +102,7 @@ public:
         // Maybe future algo: eHistAlgo_SameRangeInEachBin
     };
 
-    /// Run-time should be O(n * log n), where 
+    /// Call this after data is loaded via AddNumber, etc.
     AutoPtr<TListOfBins> CalcHistogram(
         EHistAlgo eHistAlgo = eHistAlgo_IdentifyClusters) const;
 

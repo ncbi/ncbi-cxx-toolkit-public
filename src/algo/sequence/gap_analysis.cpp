@@ -66,17 +66,17 @@ void CGapAnalysis::AddBioseqGaps(const CBioseq_Handle & bioseq_h)
     }
 }
 
-void CGapAnalysis::AddGap( TSeqIdConstRef pSeqId, TGapSize iGapSize )
+void CGapAnalysis::AddGap( TSeqIdConstRef pSeqId, TGapLength iGapLength )
 {
-    m_mapGapSizeToSeqIds[iGapSize].insert(pSeqId);
-    ++m_mapGapSizeToNumAppearances[iGapSize];
-    m_histogramBinner.AddNumber(iGapSize);
+    m_mapGapLengthToSeqIds[iGapLength].insert(pSeqId);
+    ++m_mapGapLengthToNumAppearances[iGapLength];
+    m_histogramBinner.AddNumber(iGapLength);
 }
 
 void CGapAnalysis::Clear(void)
 {
-    m_mapGapSizeToSeqIds.clear();
-    m_mapGapSizeToNumAppearances.clear();
+    m_mapGapLengthToSeqIds.clear();
+    m_mapGapLengthToNumAppearances.clear();
     m_histogramBinner.clear();
 }
 
@@ -86,19 +86,19 @@ CGapAnalysis::GetGapLengthSummary(
     ESortDir eSortDir) const
 {
     AutoPtr<TVectorGapLengthSummary> pAnswer( new TVectorGapLengthSummary );
-    ITERATE( TMapGapSizeToSeqIds, gap_map_iter, m_mapGapSizeToSeqIds ) {
-        const TGapSize iGapSize = gap_map_iter->first;
+    ITERATE( TMapGapLengthToSeqIds, gap_map_iter, m_mapGapLengthToSeqIds ) {
+        const TGapLength iGapLength = gap_map_iter->first;
         const TSetSeqIdConstRef & setSeqIds = gap_map_iter->second;
 
-        // find appearances of each gap size
+        // find appearances of each gap length
         size_t num_gaps = 0;
-        TMapGapSizeToNumAppearances::const_iterator find_iter =
-            m_mapGapSizeToNumAppearances.find(iGapSize);
-        _ASSERT( find_iter != m_mapGapSizeToNumAppearances.end() );
+        TMapGapLengthToNumAppearances::const_iterator find_iter =
+            m_mapGapLengthToNumAppearances.find(iGapLength);
+        _ASSERT( find_iter != m_mapGapLengthToNumAppearances.end() );
         num_gaps = find_iter->second;
 
         SGapLengthSummary gap_length_summary(
-            iGapSize,
+            iGapLength,
             setSeqIds.size(),
             num_gaps );
         pAnswer->push_back(gap_length_summary);
