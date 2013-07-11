@@ -225,3 +225,4 @@ BOOST_AUTO_TEST_CASE(TestEfficiency) {
     cerr << "Time taken to create supposedly-even histogram, in seconds: " 
          << stop_watch.Elapsed() << endl;
 }
+
