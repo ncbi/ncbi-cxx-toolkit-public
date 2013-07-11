@@ -44,8 +44,6 @@ static char const rcsid[] =
 #include <algo/blast/core/hspfilter_collector.h>
 #include <algo/blast/core/hspfilter_besthit.h>
 
-const int kUngappedHSPNumMax = 400;  /**< Suggested max. number of HSPs for an ungapped search. */
-
 const double kPSSM_NoImpalaScaling = 1.0;
 
 /** Declared in blast_def.h as extern const. */
@@ -1394,10 +1392,6 @@ BLAST_FillHitSavingOptions(BlastHitSavingOptions* options,
       options->expect_value = evalue;
    if (min_diag_separation)
       options->min_diag_separation = min_diag_separation;
-   if(!is_gapped) {
-      options->hsp_num_max = kUngappedHSPNumMax;
-      options->do_sum_stats = TRUE;
-   }
    options->culling_limit = culling_limit;
    options->hsp_filt_opt = NULL;
 

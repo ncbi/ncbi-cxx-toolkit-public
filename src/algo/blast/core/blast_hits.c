@@ -171,20 +171,13 @@ Int4 BlastHspNumMax(Boolean gapped_calculation, const BlastHitSavingOptions* opt
    Int4 retval=0;
 
    /* per-subject HSP limits do not apply to gapped searches; JIRA SB-616 */
-   if (gapped_calculation)
+   if (options->hsp_num_max <= 0)
    {
       retval = INT4_MAX;
    }
    else
    {
-   if (options->hsp_num_max <= 0)
-      {
-         retval = kUngappedHSPNumMax;
-      }
-   else
-      {
-         retval = options->hsp_num_max;
-      }
+      retval = options->hsp_num_max;
    }
 
    return retval;

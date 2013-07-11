@@ -202,11 +202,15 @@ CGenericSearchArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
                            new CArgAllowValuesGreaterThanOrEqual(0));
 
     arg_desc.AddDefaultKey(kArgMaxHSPsPerSubject, "int_value",
-                           "Override maximum number of HSPs per subject to save for ungapped searches (0 means do not override)",
+                           "Set maximum number of HSPs per subject sequence to save (0 means no limit)",
                            CArgDescriptions::eInteger,
                            NStr::IntToString(kDfltArgMaxHSPsPerSubject));
     arg_desc.SetConstraint(kArgMaxHSPsPerSubject,
                            new CArgAllowValuesGreaterThanOrEqual(0));
+
+    arg_desc.AddFlag(kArgSumStats,
+                     "Use sum statistics",
+                     true);
 
     arg_desc.SetCurrentGroup("");
 }
@@ -271,6 +275,10 @@ CGenericSearchArgs::ExtractAlgorithmOptions(const CArgs& args,
         if (value != kDfltArgMaxHSPsPerSubject) {
             opt.SetMaxNumHspPerSequence(value);
         }
+    }
+
+    if (args[kArgSumStats]) {
+        opt.SetSumStatisticsMode(true);
     }
 }
 
@@ -848,8 +856,6 @@ CGappedArgs::ExtractAlgorithmOptions(const CArgs& args, CBlastOptions& options)
     }
 #endif
     options.SetGappedMode( !args[kArgUngapped] );
-    if (options.GetGappedMode() == false)
-        options.SetSumStatisticsMode(true);
 }
 
 void

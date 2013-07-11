@@ -306,6 +306,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgMaxHSPsPerSubject;
 /// Default value for specifying the maximum number of HPSs to save per subject
 NCBI_BLASTINPUT_EXPORT extern const int kDfltArgMaxHSPsPerSubject;
 
+/// Argument to turn on sum statistics
+NCBI_BLASTINPUT_EXPORT extern const string kArgSumStats;
 /// Argument to specify the target percent identity
 NCBI_BLASTINPUT_EXPORT extern const string kArgPercentIdentity;
 /// Argument to specify the search strategy file to read and use for a BLAST
