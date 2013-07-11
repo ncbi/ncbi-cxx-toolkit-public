@@ -225,7 +225,6 @@ CGtfReader::ReadSeqAnnots(
             err.SetLineNumber( linecount );
         }
     }
-    x_AddConversionInfoGff( annots, &m_ErrorsPrivate );
 }
 
 //  --------------------------------------------------------------------------- 

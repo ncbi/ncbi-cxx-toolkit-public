@@ -213,7 +213,6 @@ CGff2Reader::ReadSeqAnnotsNew(
             ProcessError(err, pEC);
         }
     }
-    x_AddConversionInfoGff( annots, pEC );
 }
 
 //  ----------------------------------------------------------------------------                
@@ -530,15 +529,7 @@ bool CGff2Reader::x_ParseTrackLineGff(
        
     return true; 
 };
-                                
-//  ----------------------------------------------------------------------------
-void CGff2Reader::x_AddConversionInfoGff(
-    TAnnots&,
-    IErrorContainer* )
-//  ----------------------------------------------------------------------------
-{
-}                    
-
+ 
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::x_InitAnnot(
     const CGff2Record& gff,

@@ -151,10 +151,6 @@ public:
         const string&,
         TAnnots& );
 
-    virtual void x_AddConversionInfoGff(
-        TAnnots&,
-        IErrorContainer* );
-
     virtual bool x_InitAnnot(
         const CGff2Record&,
         CRef< CSeq_annot > );
