@@ -267,18 +267,6 @@ protected:
         const string&,
         const string& );
                 
-    virtual void x_Info(
-        const string& message,
-        unsigned int line = 0);
-
-    virtual void x_Warn(
-        const string& message,
-        unsigned int line = 0);
-
-    virtual void x_Error(
-        const string& message,
-        unsigned int line = 0);
-
     bool x_IsCommentLine(
         const string& );
 

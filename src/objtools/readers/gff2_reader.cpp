@@ -257,51 +257,6 @@ CGff2Reader::ReadObject(
     return object;
 }
     
-//  ----------------------------------------------------------------------------                
-void 
-CGff2Reader::x_Info(
-    const string& message,
-    unsigned int line )
-//  ----------------------------------------------------------------------------                
-{
-    if ( !m_pErrors ) {
-        return x_Info( message, line );
-    }
-    CObjReaderLineException err( eDiag_Info, line, message );
-    CReaderBase::m_uLineNumber = line;
-    ProcessError( err, m_pErrors );
-}
-
-//  ----------------------------------------------------------------------------                
-void 
-CGff2Reader::x_Warn(
-    const string& message,
-    unsigned int line )
-//  ----------------------------------------------------------------------------                
-{
-    if ( !m_pErrors ) {
-        return x_Warn( message, line );
-    }
-    CObjReaderLineException err( eDiag_Warning, line, message );
-    CReaderBase::m_uLineNumber = line;
-    ProcessError( err, m_pErrors );
-}
-
-//  ----------------------------------------------------------------------------                
-void 
-CGff2Reader::x_Error(
-    const string& message,
-    unsigned int line )
-//  ----------------------------------------------------------------------------                
-{
-    if ( !m_pErrors ) {
-        return x_Error( message, line );
-    }
-    CObjReaderLineException err( eDiag_Error, line, message );
-    CReaderBase::m_uLineNumber = line;
-    ProcessError( err, m_pErrors );
-}
-
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::x_ReadLine(
     ILineReader& lr,

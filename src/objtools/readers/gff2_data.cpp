@@ -215,11 +215,6 @@ bool CGff2Record::AssignFromGff(
                 + columns[3] + ", stop=" + columns[4] + ").",
             ILineError::eProblem_FeatureBadStartAndOrStop);
         throw(err);
-
-        //ERR_POST( 
-        //    m_strId + ":" + m_strType + " " + columns[3] + "-" + columns[4] + ": " +
-        //    "Negative length feature--- TOSSED !!!" );
-        //return false;
     }
 
     if ( columns[5] != "." ) {
