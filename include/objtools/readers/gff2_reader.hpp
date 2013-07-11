@@ -223,7 +223,16 @@ public:
         const CSeq_feat&,
         CRef< CSeq_feat >& );
 
-    bool x_FeatureMergeExon(
+    bool xGetExistingFeature(
+        const CSeq_feat&,
+        CRef<CSeq_annot>,
+        CRef< CSeq_feat >& );
+
+    bool xFeatureMergeExon(
+        CRef< CSeq_feat >,
+        CRef< CSeq_feat > );
+
+    bool xFeatureMergeCds(
         CRef< CSeq_feat >,
         CRef< CSeq_feat > );
 
@@ -250,6 +259,9 @@ public:
 
     static bool IsExon(
         CRef< CSeq_feat > );
+
+    static bool IsCds(
+        CRef<CSeq_feat>);
 
     //
     //  helpers:

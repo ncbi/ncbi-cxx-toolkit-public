@@ -591,13 +591,16 @@ bool CGff2Reader::x_UpdateAnnotFeature(
     if ( ! x_FeatureSetQualifiers( gff, pFeature ) ) {
         return false;
     }
-    
-    string strId;
-    if ( gff.GetAttribute( "ID", strId ) ) {
-        m_MapIdToFeature[ strId ] = pFeature;
+    if (!x_AddFeatureToAnnot( pFeature, pAnnot )) {
+        return false;
     }
-
-    return x_AddFeatureToAnnot( pFeature, pAnnot );
+    string strId;
+    if (gff.GetAttribute("ID", strId) ) {
+        if (m_MapIdToFeature.find(strId) == m_MapIdToFeature.end()) {
+            m_MapIdToFeature[strId] = pFeature;
+        }
+    }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -1047,13 +1050,24 @@ bool CGff2Reader::x_HasTemporaryLocation(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::IsExon(
-    CRef< CSeq_feat > pFeature )
+    CRef<CSeq_feat> pFeature )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! pFeature->CanGetData() || ! pFeature->GetData().IsImp() ) {
+    if (!pFeature->CanGetData() || !pFeature->GetData().IsImp()) {
         return false;
     }
-    return ( pFeature->GetData().GetImp().GetKey() == "exon" );
+    return (pFeature->GetData().GetImp().GetKey() == "exon" );
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Reader::IsCds(
+    CRef<CSeq_feat> pFeature)
+//  ----------------------------------------------------------------------------
+{
+    if (!pFeature->CanGetData()) {
+        return false;
+    }
+    return (pFeature->GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion);
 }
 
 //  ----------------------------------------------------------------------------
@@ -1064,14 +1078,50 @@ bool CGff2Reader::x_AddFeatureToAnnot(
 {
     if (IsExon(pFeature)) {
         CRef< CSeq_feat > pParent;    
-        if ( ! x_GetParentFeature( *pFeature, pParent ) ) {
-            pAnnot->SetData().SetFtable().push_back( pFeature ) ;
+        if (!x_GetParentFeature(*pFeature, pParent) ) {
+            pAnnot->SetData().SetFtable().push_back(pFeature) ;
             return true;
         }
-        return x_FeatureMergeExon( pFeature, pParent );
+        return xFeatureMergeExon( pFeature, pParent );
+    }
+    if (IsCds(pFeature)) {
+        CRef<CSeq_feat> pExisting;
+        if (!xGetExistingFeature(*pFeature, pAnnot, pExisting)) {
+            pAnnot->SetData().SetFtable().push_back(pFeature) ;
+            return true;
+        }
+        return xFeatureMergeCds(pFeature, pExisting);
+    }
+    pAnnot->SetData().SetFtable().push_back( pFeature ) ;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Reader::xGetExistingFeature(
+    const CSeq_feat& feature,
+    CRef<CSeq_annot> pAnnot,
+    CRef< CSeq_feat >& pExisting )
+//  ----------------------------------------------------------------------------
+{
+    if (!feature.CanGetQual()) {
+        return false;
     }
 
-    pAnnot->SetData().SetFtable().push_back( pFeature ) ;
+    string strExistingId;
+    vector<CRef<CGb_qual> > quals = feature.GetQual();
+    vector<CRef<CGb_qual> >::iterator it;
+    for (it = quals.begin(); it != quals.end(); ++it) {
+        if ((*it)->CanGetQual() && (*it)->GetQual() == "ID") {
+            strExistingId = (*it)->GetVal();
+            break;
+        }
+    }
+    if (it == quals.end()) {
+        return false;
+    }
+    if (!x_GetFeatureById( strExistingId, pExisting)) {
+        return false;
+    }
     return true;
 }
 
@@ -1104,15 +1154,15 @@ bool CGff2Reader::x_GetParentFeature(
 }
 
 //  ---------------------------------------------------------------------------
-bool CGff2Reader::x_FeatureMergeExon(
+bool CGff2Reader::xFeatureMergeExon(
     CRef< CSeq_feat > pExon,
-    CRef< CSeq_feat > pFeature )
+    CRef< CSeq_feat > pMrna )
 //  ---------------------------------------------------------------------------
 {
-    if ( x_HasTemporaryLocation( *pFeature ) ) {
+    if ( x_HasTemporaryLocation( *pMrna ) ) {
         // start rebuilding parent location from scratch
-        pFeature->SetLocation().Assign( pExon->GetLocation() );
-        list< CRef< CUser_object > > pExts = pFeature->SetExts();
+        pMrna->SetLocation().Assign( pExon->GetLocation() );
+        list< CRef< CUser_object > > pExts = pMrna->SetExts();
         list< CRef< CUser_object > >::iterator it;
         for ( it = pExts.begin(); it != pExts.end(); ++it ) {
             if ( ! (*it)->CanGetType() || ! (*it)->GetType().IsStr() ) {
@@ -1126,9 +1176,19 @@ bool CGff2Reader::x_FeatureMergeExon(
     }
     else {
         // add exon location to current parent location
-        pFeature->SetLocation().Add(  pExon->GetLocation() );
+        pMrna->SetLocation().Add(  pExon->GetLocation() );
     }
 
+    return true;
+}
+                                
+//  ---------------------------------------------------------------------------
+bool CGff2Reader::xFeatureMergeCds(
+    CRef< CSeq_feat > pNewPiece,
+    CRef< CSeq_feat > pExisting )
+//  ---------------------------------------------------------------------------
+{
+    pExisting->SetLocation().Add(pNewPiece->GetLocation());
     return true;
 }
                                 
