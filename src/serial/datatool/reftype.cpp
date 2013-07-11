@@ -206,6 +206,9 @@ CTypeInfo* CReferenceDataType::CreateTypeInfo(void)
         if (mem->NoPrefix()) {
             memInfo->SetNoPrefix();
         }
+        if (IsNillable()) {
+            memInfo->SetNillable();
+        }
     }
     if ( GetParentType() == 0 ) {
         // global

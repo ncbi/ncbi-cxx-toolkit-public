@@ -562,7 +562,7 @@ CClassTypeInfo* CDataContainerType::CreateClassInfo(void)
     ITERATE ( TMembers, i, GetMembers() ) {
         ++itemCount;
         CDataMember* mem = i->get();
-        if ( mem->Optional() || mem->GetDefault() )
+        if ( mem->Optional() || mem->GetDefault() || mem->Nillable() )
             ++itemCount;
     }
     auto_ptr<CAnyTypeClassInfo> typeInfo(new CAnyTypeClassInfo(GlobalName(),
@@ -583,7 +583,7 @@ CClassTypeInfo* CDataContainerType::CreateClassInfo(void)
         if ( mem->Optional() ) {
             memInfo->SetOptional();
         }
-        if ( mem->Optional() || mem->GetDefault() ) {
+        if ( mem->Optional() || mem->GetDefault() || mem->Nillable() ) {
             memInfo->SetSetFlag(typeInfo->GetSetFlagPtr(index++));
         }
         if (mem->NoPrefix()) {

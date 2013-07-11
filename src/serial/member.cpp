@@ -388,7 +388,7 @@ CMemberInfo* CMemberInfo::SetElementDefault(TConstObjectPtr def)
 
 CMemberInfo* CMemberInfo::SetSetFlag(const bool* setFlag)
 {
-    _ASSERT(Optional());
+//    _ASSERT(Optional());
     m_SetFlagOffset = TPointerOffsetType(setFlag);
     m_BitSetMask = 0;
     UpdateFunctions();
