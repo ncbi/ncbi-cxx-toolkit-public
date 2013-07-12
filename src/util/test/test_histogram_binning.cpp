@@ -49,8 +49,8 @@ namespace {
 
     void s_GenericListOfBinsCheck(
         const CHistogramBinning::TListOfBins & list_of_bins,
-        const size_t expected_num_bins,
-        const size_t expected_total_data_points )
+        const Uint8 expected_num_bins,
+        const Uint8 expected_total_data_points )
     {
         if( expected_num_bins > 0 ) {
             BOOST_CHECK( list_of_bins.size() <= expected_num_bins);
@@ -58,7 +58,7 @@ namespace {
         if( list_of_bins.empty() ) {
             return;
         }
-        size_t total_data_points = 0;
+        Uint8 total_data_points = 0;
         ITERATE(CHistogramBinning::TListOfBins, bin_iter, list_of_bins) {
             const CHistogramBinning::SBin & bin = *bin_iter;
             BOOST_CHECK( bin.first_number <= bin.last_number );
@@ -92,10 +92,10 @@ namespace {
 
     AutoPtr<CHistogramBinning::TListOfBins>
     s_TestArray(const Int8 numbers[], 
-                     const size_t num_numbers, 
-                     const size_t num_bins,
+                     const Uint8 num_numbers, 
+                     const Uint8 num_bins,
                      CHistogramBinning::EHistAlgo eHistAlgo = 
-                        CHistogramBinning::eHistAlgo_IdentifyClusters )
+                        CHistogramBinning::eHistAlgo_Default )
     {
         CHistogramBinning binner(num_bins);
 
@@ -199,7 +199,7 @@ BOOST_AUTO_TEST_CASE(TestEfficiency) {
 
     CStopWatch stop_watch;
 
-    const size_t kNumDataPoints = 10000000;
+    const Uint8 kNumDataPoints = 10000000;
 
     // generate the pseudo-random data
     cerr << "Generating " << kNumDataPoints << " random numbers" << endl;

@@ -39,6 +39,11 @@
 
 BEGIN_NCBI_SCOPE
 
+/// Given a set of integer data, this will bin the data
+/// for use in histograms.
+/// Usage is generally as follows: AddNumber is called
+/// repeatedly until all data points are loaded, then
+/// CalcHistogram is called to get the resulting histogram.
 class NCBI_XUTIL_EXPORT CHistogramBinning {
 public:
 
@@ -53,20 +58,42 @@ public:
     ///   Note that num_bins is a suggestion, and the answer
     ///   you get could havea a higher or lower number of bins
     ///   depending on misc factors.
-    CHistogramBinning(size_t num_bins = 0) : m_iNumBins(num_bins) { }
+    CHistogramBinning(Uint8 num_bins = 0) : m_iNumBins(num_bins) { }
 
-    /// As in the constructor, 0 means to auto-pick number of bins.
-    void SetNumBins(size_t num_bins) {
+    /// This should not normally be needed, since number of bins
+    /// is usually picked in the constructor.  Callers might
+    /// use it if they want to get histograms with differing 
+    /// number of bins for the same data, for example.
+    ///
+    /// @param num_bins
+    ///   This sets the target number of bins for the next histogram
+    ///   calculated.
+    ///   As in the constructor, 0 means to auto-pick number of bins.
+    void SetNumBins(Uint8 num_bins) {
         m_iNumBins = num_bins;
     }
 
     /// Give this histogram another number to bin.  This is called
     /// repeatedly, and then the caller will probably want to
     /// call CalcHistogram to get the answer.
-    void AddNumber(TValue the_number, size_t num_appearances = 0) {
+    /// It is perfectly fine to call this function multiple times
+    /// with the same the_number; the total appearances will be summed
+    /// up over all the calls.
+    ///
+    /// @param the_number
+    ///   This is the value of the data point.  For example, if this
+    ///   is a histogram of various persons' ages then the_number
+    ///   would be 42 if the next data point is a 42-year-old person.
+    /// @param num_appearances
+    ///   This is how many times the data point appears.  For example,
+    ///   setting this to "3" is the same as calling the function
+    ///   3 times with a num_appearances value of 1.
+    void AddNumber(TValue the_number, Uint8 num_appearances = 1) {
         m_mapValueToTotalAppearances[the_number] += num_appearances;
     }
 
+    /// This clears all data given to the object.  It behaves pretty
+    /// much like destroying the object and then recreating it anew.
     void clear(void) {
         m_mapValueToTotalAppearances.clear();
     }
@@ -76,15 +103,17 @@ public:
         SBin(
             TValue first_number_arg,
             TValue last_number_arg,
-            size_t total_appearances_arg );
+            Uint8 total_appearances_arg );
 
         /// The start range of the bin (inclusive)
         TValue first_number; 
         /// The end range of the bin (inclusive)
         TValue last_number;
         /// The total number of data points in this bin
-        size_t total_appearances;
+        /// for all values from first_number to last_number
+        Uint8 total_appearances;
     };
+    /// A histogram is given as a list of bins.
     typedef list<SBin> TListOfBins;
 
     /// Pick which binning algorithm to use when generating
@@ -95,31 +124,55 @@ public:
         /// Run-time O(n lg n), where n is the number
         /// of possible values, NOT the number of data points.
         eHistAlgo_IdentifyClusters,
-        /// This algorithm tries to make each bin even in size.
+        /// This algorithm tries to make each bin roughly even in size,
+        /// except the last bin which may be much smaller.
         /// Run-time O(n lg n), where n is the number
         /// of possible values, NOT the number of data points.
         eHistAlgo_TryForSameNumDataInEachBin,
         // Maybe future algo: eHistAlgo_SameRangeInEachBin
+
+        /// The default algorithm
+        eHistAlgo_Default = eHistAlgo_IdentifyClusters
     };
 
-    /// Call this after data is loaded via AddNumber, etc.
-    AutoPtr<TListOfBins> CalcHistogram(
-        EHistAlgo eHistAlgo = eHistAlgo_IdentifyClusters) const;
+    /// Call this after data is loaded via AddNumber, etc. and it
+    /// will give you a list of SBin's, each of which identifies
+    /// a bin of the resulting histogram.
+    ///
+    /// NOTE: Caller must deallocate the returned histogram object!
+    ///
+    /// @param eHistAlgo
+    ///   This lets the caller pick which histogram binning algorithm
+    ///   to use.  The default should suffice for most situations.
+    /// @return
+    ///   This returns a newly-allocated list of the bins in the resulting
+    ///   histogram.  The caller is expected to free this.
+    TListOfBins* CalcHistogram(
+        EHistAlgo eHistAlgo = eHistAlgo_Default) const;
 
 private:
-    size_t m_iNumBins;
+    /// The number of bins to aim for the next time CalcHistogram
+    /// is called.  It is 0 to automatically pick the number of bins.
+    Uint8 m_iNumBins;
 
     /// forbid copying 
     CHistogramBinning(const CHistogramBinning&);
     /// forbid assignment
     CHistogramBinning & operator =(const CHistogramBinning &);
 
-    typedef map<TValue, size_t> TMapValueToTotalAppearances;
-    /// maps a value to the number of times it appears
+    /// Maps each value (e.g. age of person if you are histogramming
+    /// ages) to the number of times that value appears.
+    typedef map<TValue, Uint8> TMapValueToTotalAppearances;
+    /// Maps a value to the number of times it appears, for the data
+    /// given so far.
     TMapValueToTotalAppearances m_mapValueToTotalAppearances;
 
-    AutoPtr<TListOfBins> x_IdentifyClusters(void) const;
-    AutoPtr<TListOfBins> x_TryForEvenBins(void) const;
+    /// Implementation of eHistAlgo_IdentifyClusters
+    /// NOTE: Caller must deallocate the returned object!
+    TListOfBins * x_IdentifyClusters(void) const;
+    /// Implementation of eHistAlgo_TryForSameNumDataInEachBin
+    /// NOTE: Caller must deallocate the returned object!
+    TListOfBins * x_TryForEvenBins(void) const;
 
     /// shared by the various histogram algos
     enum EInitStatus {
@@ -133,9 +186,24 @@ private:
         /// number of bins.
         eInitStatus_KeepGoing
     };
+
+    /// This holds the shared logic used by the various histogram
+    /// algorithms.
+    /// 
+    /// @param out_listOfBins
+    ///   This will be filled in with a dummy histogram consisting
+    ///   of one bin for each data value.
+    /// @param out_num_bins
+    ///   This will be filled in by the target number of bins.
+    ///   This is usually m_iNumBins, but if m_iNumBins is zero
+    ///   it will be the automatically picked number of bins.
+    /// @return
+    ///   The return value indicates how initialization went.  In particular,
+    ///   there are cases where the work is already done and out_listOfBins
+    ///   can be returned as-is to the user.
     EInitStatus x_InitializeHistogramAlgo(
         TListOfBins & out_listOfBins,
-        size_t & out_num_bins) const;
+        Uint8 & out_num_bins) const;
 };
 
 END_NCBI_SCOPE

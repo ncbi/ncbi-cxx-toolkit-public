@@ -45,14 +45,14 @@ BEGIN_NCBI_SCOPE
 CHistogramBinning::SBin::SBin(
     TValue first_number_arg,
     TValue last_number_arg,
-    size_t total_appearances_arg )
+    Uint8 total_appearances_arg )
     : first_number(first_number_arg),
     last_number(last_number_arg),
     total_appearances(total_appearances_arg )
 {
 }
 
-AutoPtr<CHistogramBinning::TListOfBins> 
+CHistogramBinning::TListOfBins *
 CHistogramBinning::CalcHistogram(EHistAlgo eHistAlgo) const
 {
     switch(eHistAlgo) {
@@ -66,15 +66,15 @@ CHistogramBinning::CalcHistogram(EHistAlgo eHistAlgo) const
     }
 }
 
-AutoPtr<CHistogramBinning::TListOfBins> 
+CHistogramBinning::TListOfBins *
 CHistogramBinning::x_IdentifyClusters(void) const
 {
     AutoPtr<TListOfBins> pAnswer( new TListOfBins );
-    size_t num_bins = 0;
+    Uint8 num_bins = 0;
     if( eInitStatus_AllAlgoWorkDone == 
         x_InitializeHistogramAlgo(*pAnswer, num_bins) ) 
     {
-        return pAnswer;
+        return pAnswer.release();
     }
 
     // Maps the difference from one bin to the next to the
@@ -115,7 +115,7 @@ CHistogramBinning::x_IdentifyClusters(void) const
 
     // since calculating the length of a list could be expensive, 
     // we calculate how many merges we need ahead of time
-    size_t num_merges_needed = ( pAnswer->size() - num_bins );
+    Uint8 num_merges_needed = ( pAnswer->size() - num_bins );
     
     // merge greedily
     TMapDifferenceToPrevBins::const_iterator diff_to_prev_bin_iter =
@@ -131,18 +131,18 @@ CHistogramBinning::x_IdentifyClusters(void) const
         pAnswer->erase(bin_iter);
     }
 
-    return pAnswer;
+    return pAnswer.release();;
 }
 
-AutoPtr<CHistogramBinning::TListOfBins> 
+CHistogramBinning::TListOfBins *
 CHistogramBinning::x_TryForEvenBins(void) const
 {
     AutoPtr<TListOfBins> pAnswer( new TListOfBins );
-    size_t num_bins = 0;
+    Uint8 num_bins = 0;
     if( eInitStatus_AllAlgoWorkDone == 
         x_InitializeHistogramAlgo(*pAnswer, num_bins) ) 
     {
-        return pAnswer;
+        return pAnswer.release();
     }
 
     // a relatively simple algorithm: fill up a bin until it's
@@ -150,13 +150,13 @@ CHistogramBinning::x_TryForEvenBins(void) const
     // the next one.
 
     // calc total number of data points
-    size_t total_num_data_points = 0;
+    Uint8 total_num_data_points = 0;
     ITERATE( TListOfBins, bin_iter, *pAnswer ) {
         total_num_data_points += bin_iter->total_appearances;
     }
 
     // goal number for each bin
-    const size_t bin_size_goal = ( total_num_data_points / num_bins );
+    const Uint8 bin_size_goal = ( total_num_data_points / num_bins );
 
     TListOfBins::iterator this_bin_iter = pAnswer->begin();
     ERASE_ITERATE( TListOfBins, this_bin_iter, *pAnswer  ) {
@@ -178,13 +178,13 @@ CHistogramBinning::x_TryForEvenBins(void) const
         }
     }
 
-    return pAnswer;
+    return pAnswer.release();
 }
 
 CHistogramBinning::EInitStatus 
 CHistogramBinning::x_InitializeHistogramAlgo(
     TListOfBins & out_listOfBins,
-    size_t & out_num_bins) const
+    Uint8 & out_num_bins) const
 {
     _ASSERT( out_listOfBins.empty() );
 
@@ -193,7 +193,7 @@ CHistogramBinning::x_InitializeHistogramAlgo(
     }
 
     // calculate total number of data points, including dups
-    size_t total_appearances_of_all = 0;
+    Uint8 total_appearances_of_all = 0;
     ITERATE(TMapValueToTotalAppearances, value_iter,
         m_mapValueToTotalAppearances) 
     {
@@ -211,7 +211,7 @@ CHistogramBinning::x_InitializeHistogramAlgo(
         m_mapValueToTotalAppearances) 
     {
         const TValue value = value_iter->first;
-        const size_t total_appearances = value_iter->second;
+        const Uint8 total_appearances = value_iter->second;
         out_listOfBins.push_back( SBin(value, value, total_appearances) );
     }
 
