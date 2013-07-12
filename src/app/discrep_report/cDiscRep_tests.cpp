@@ -128,6 +128,8 @@ bool CDiscTestInfo :: is_CdTransl_run;
 bool CDiscTestInfo :: is_Comment_run;
 bool CDiscTestInfo :: is_Defl_run;
 bool CDiscTestInfo :: is_DESC_user_run;
+bool CDiscTestInfo :: is_Genes_run;
+bool CDiscTestInfo :: is_Genes_oncall_run;
 bool CDiscTestInfo :: is_GP_Set_run;
 bool CDiscTestInfo :: is_IncnstUser_run;
 bool CDiscTestInfo :: is_MolInfo_run;
@@ -181,6 +183,7 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithStaticList()
    unsigned i;
    string pattern, test_name, test_desc;
    ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
+     if ((*it)->GetData().GetSubtype() != CSeqFeatData::eSubtype_prot) continue;
      const CSeqFeatData& sf_dt = (*it)->GetData();
      const CProt_ref& prot = sf_dt.GetProt();
 
@@ -338,6 +341,7 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
    string prot_nm;
    unsigned rule_idx;
    ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
+     if ((*it)->GetData().GetSubtype() != CSeqFeatData::eSubtype_prot) continue;
      const CSeqFeatData& sf_dt = (*it)->GetData();
      const CProt_ref& prot = sf_dt.GetProt();
 
@@ -1853,6 +1857,24 @@ void CBioseq_INCONSISTENT_SOURCE_DEFLINE :: GetReport(CRef <CClickableItem>& c_i
    }
 };
 
+bool CBioseq_CONTAINED_CDS :: x_IgnoreContainedCDS(const CSeq_feat* sft)
+{
+  if (sft->CanGetComment()) {
+     const string& comment = sft->GetComment();
+     if (NStr::EqualNocase(comment, "alternative")
+            || NStr::EqualNocase(comment, "completely contained in another CDS"))
+         return true;
+  }
+  CConstRef <CProt_ref> prot_ref = GetProtRefForFeature (*sft);
+  if (prot_ref.NotEmpty() && prot_ref->CanGetName()) {
+     ITERATE (list <string>, it, prot_ref->GetName()) {
+       if ( (NStr::FindNoCase(*it, "mobilization") != string::npos)
+                    || (*it == "dnaK") || (*it == "mob") )
+          return true;
+     }
+  }
+  return false;
+};
 
 void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
 {
@@ -1861,10 +1883,22 @@ void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
    ENa_strand str1, str2;
    unsigned i=0, j=0;
    string desc1, desc2;
+   // IgnoreContainedCDS
+   vector <int> ignore;
+   ignore.reserve(cd_feat.size());
+   i=0;
+   ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
+      if (x_IgnoreContainedCDS(*it)) ignore[i] = 1;
+      else ignore[i] = 0;
+      i++;
+   }
+
    for (i=0; (int)i< (int)(cd_feat.size()-1); i++) {
+     if (ignore[i]) continue;
      const CSeq_loc& loc1 = cd_feat[i]->GetLocation();
      str1 = loc1.GetStrand();
      for (j=i+1; j< cd_feat.size(); j++) {
+        if (ignore[j]) continue;
         const CSeq_loc& loc2 = cd_feat[j]->GetLocation();
         str2 = loc2.GetStrand();
         sequence:ECompare loc_cmp = Compare(loc1, loc2, thisInfo.scope);
@@ -2310,6 +2344,20 @@ bool CBioseq_test_on_rrna :: NameNotStandard(const string& nm)
 };
 
 
+bool CBioseqTestAndRepData :: x_IsShortrRNA(const CSeq_feat* sft)
+{
+   if (sft->CanGetPartial() && sft->GetPartial()) return false;
+   unsigned len = sequence::GetCoverage(sft->GetLocation(), thisInfo.scope);
+   string rrna_name = GetRNAProductString(*sft);
+   ITERATE (Str2UInt, jt, thisInfo.rRNATerms) {
+     if (NStr::FindNoCase(rrna_name, jt->first) != string::npos
+              && len < jt->second
+              && !thisInfo.rRNATerms_ignore_partial[jt->first] )
+        return true;
+   }
+   return false;
+};
+
 
 void CBioseq_test_on_rrna :: TestOnObj(const CBioseq& bioseq)
 {
@@ -2317,7 +2365,6 @@ void CBioseq_test_on_rrna :: TestOnObj(const CBioseq& bioseq)
    thisTest.is_RRna_run = true;
 
    string desc, rrna_name, prod_str;
-   unsigned len;
    bool run_nm = (thisTest.tests_run.find(GetName_nm()) != thisTest.tests_run.end());
    bool run_its = (thisTest.tests_run.find(GetName_its()) != thisTest.tests_run.end());
    bool run_short = (thisTest.tests_run.find(GetName_short()) != thisTest.tests_run.end());
@@ -2342,6 +2389,9 @@ void CBioseq_test_on_rrna :: TestOnObj(const CBioseq& bioseq)
      }
 
      // DISC_SHORT_RRNA
+     if (run_short && x_IsShortrRNA(*it)) 
+         thisInfo.test_item_list[GetName_short()].push_back(desc);
+/*
      if (!run_short || ((*it)->CanGetPartial() && (*it)->GetPartial()) ) continue; 
      len = sequence::GetCoverage((*it)->GetLocation(), thisInfo.scope);
      rrna_name = GetRNAProductString(**it);
@@ -2354,6 +2404,7 @@ void CBioseq_test_on_rrna :: TestOnObj(const CBioseq& bioseq)
              break;
         }
      }
+*/
    }
 };
 
@@ -6322,7 +6373,13 @@ void CBioseq_RNA_CDS_OVERLAP :: TestOnObj(const CBioseq& bioseq)
 {
   string text_i, text_j, subcat_tp;
   ENa_strand strand_i, strand_j;
+  bool ignore_trna = IsBioseqHasLineage(bioseq, "Eukaryota", false);
+
   ITERATE (vector <const CSeq_feat*>, it, rna_not_mrna_feat) {
+    CSeqFeatData::ESubtype subtp = (*it)->GetData().GetSubtype();
+    if ( subtp == CSeqFeatData::eSubtype_ncRNA
+          || ( subtp == CSeqFeatData::eSubtype_tRNA && ignore_trna) ) continue;
+    if (x_IsShortrRNA(*it)) continue;
     ITERATE (vector <const CSeq_feat*>, jt, cd_feat) {
       const CSeq_loc& loc_i = (*it)->GetLocation();
       const CSeq_loc& loc_j = (*jt)->GetLocation();
@@ -6591,9 +6648,25 @@ void CBioseq_test_on_missing_genes :: CheckGenesForFeatureType (const vector <co
   } 
 };
 
+bool CBioseq_missing_genes_regular :: x_HasPseudogeneQualifier (const CSeq_feat& sft)
+{
+  if (!sft.CanGetQual()) return false;
+  ITERATE (vector <CRef< CGb_qual > >, it, sft.GetQual()) 
+    if (NStr::EqualNocase( (*it)->GetQual(), "pseudogene")) return true;
+
+  return false;
+};
 
 void CBioseq_missing_genes_regular :: TestOnObj(const CBioseq& bioseq)
 {
+  if (thisTest.is_Genes_run) return;
+  thisTest.is_Genes_run = true;
+
+  bool run_missing = (thisTest.tests_run.find(GetName_missing()) != thisTest.tests_run.end());
+  bool run_extra = (thisTest.tests_run.find(GetName_extra()) != thisTest.tests_run.end());
+
+  if (!run_missing && !run_extra) return;
+
   unsigned i;
   if (IsmRNASequenceInGenProdSet(bioseq)) m_super_cnt = 0;
   else {
@@ -6609,15 +6682,13 @@ void CBioseq_missing_genes_regular :: TestOnObj(const CBioseq& bioseq)
   CheckGenesForFeatureType(intron_feat);
 
   // MISSING_GENES
-  if (!m_no_genes.empty()
-           && thisTest.tests_run.find(GetName_missing()) != thisTest.tests_run.end())
+  if (run_missing && !m_no_genes.empty())
       thisInfo.test_item_list[GetName_missing()]
          = NStr::Tokenize(m_no_genes, "$", thisInfo.test_item_list[GetName_missing()]);
 
   // EXTRA_GENES
+  if (!run_extra || !m_super_cnt) return;
   //GetPseudoAndNonPseudoGeneList;
-  if (!m_super_cnt || ( thisTest.tests_run.find(GetName_extra()) == thisTest.tests_run.end()) )
-        return;
   i=0;
   string desc, nm_desc;
   ITERATE (vector <const CSeq_feat* >, it, gene_feat) {
@@ -6626,17 +6697,28 @@ void CBioseq_missing_genes_regular :: TestOnObj(const CBioseq& bioseq)
        thisInfo.test_item_list[GetName_extra()].push_back("extra$" + desc);
        nm_desc = kEmptyStr;
        const CSeqFeatData& seq_feat_dt = (*it)->GetData();
-       if ((*it)->CanGetPseudo() && (*it)->GetPseudo()) nm_desc = "pseudo$" + desc;
-       else if ( seq_feat_dt.GetGene().GetPseudo() ) nm_desc = "pseudo$" + desc;
+       if ( ((*it)->CanGetPseudo() && (*it)->GetPseudo()) 
+                 || seq_feat_dt.GetGene().GetPseudo() || x_HasPseudogeneQualifier(**it) )
+            nm_desc = "pseudo$" + desc;
        else {
-             //GetFrameshiftAndNonFrameshiftGeneList
              if ((*it)->CanGetComment()) {
                const string& comment = (*it)->GetComment();
+               // RemoveGenesWithNoteOrDescription
+               if (comment.empty()) {
+                 const CGene_ref& gene_ref = seq_feat_dt.GetGene();
+                 if (!gene_ref.CanGetDesc() || gene_ref.GetDesc().empty()) 
+                    nm_desc = "nonshift$" + desc;
+               }
+               
+/* this doesn't work after RemoveGenesWithNoteOrDescription
+              //GetFrameshiftAndNonFrameshiftGeneList,
                if (string::npos != NStr::FindNoCase(comment, "frameshift")
                     || string::npos!= NStr::FindNoCase(comment, "frame shift"))
                    nm_desc = "frameshift$" + desc;
                else nm_desc = "nonshift$" + desc;
+*/
              }
+             else nm_desc = "nonshift$" + desc;
        }
        if (!nm_desc.empty()) thisInfo.test_item_list[GetName_extra()].push_back(nm_desc);
      }
@@ -6685,6 +6767,13 @@ void CBioseq_EXTRA_GENES :: GetReport(CRef <CClickableItem>& c_item)
 
 void CBioseq_missing_genes_oncaller :: TestOnObj(const CBioseq& bioseq)
 {
+  if (thisTest.is_Genes_oncall_run) return;
+  thisTest.is_Genes_oncall_run = true;
+
+  bool run_missing = (thisTest.tests_run.find(GetName_missing()) != thisTest.tests_run.end());
+  bool run_extra = (thisTest.tests_run.find(GetName_extra()) != thisTest.tests_run.end());
+  if (!run_missing && !run_extra) return;
+
   if (bioseq.IsAa()) return;
   m_super_cnt = 0;
   unsigned i=0;
@@ -6707,12 +6796,14 @@ void CBioseq_missing_genes_oncaller :: TestOnObj(const CBioseq& bioseq)
   CheckGenesForFeatureType(trna_feat, true);
 
   // ONCALLER_GENE_MISSING
-  if (!m_no_genes.empty() 
+  if (run_missing 
+         && !m_no_genes.empty() 
          && thisTest.tests_run.find(GetName_missing()) != thisTest.tests_run.end())
     thisInfo.test_item_list[GetName_missing()]
        = NStr::Tokenize(m_no_genes, "$", thisInfo.test_item_list[GetName_missing()]);
 
   // ONCALLER_SUPERFLUOUS_GENE
+  if (!run_extra) return;
   m_no_genes = kEmptyStr;
   CheckGenesForFeatureType(all_feat, true);
   m_no_genes = kEmptyStr;

@@ -71,7 +71,7 @@ vector <string>                        CDiscRepInfo :: strandsymbol;
 bool                                   CDiscRepInfo :: exclude_dirsub;
 string                                 CDiscRepInfo :: report;
 Str2UInt                               CDiscRepInfo :: rRNATerms;
-Str2UInt                               CDiscRepInfo :: rRNATerms_partial;
+Str2UInt                               CDiscRepInfo :: rRNATerms_ignore_partial;
 vector <string>                        CDiscRepInfo :: bad_gene_names_contained;
 vector <string>                        CDiscRepInfo :: no_multi_qual;
 vector <string>                        CDiscRepInfo :: short_auth_nms;
@@ -232,7 +232,7 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
        arr = NStr::Tokenize(reg.Get("RRna-terms", *it), ",", arr);
        strtmp = (*it == "5-8S") ? "5.8S" : *it;
        thisInfo.rRNATerms[strtmp] = NStr::StringToUInt(arr[0]);
-       thisInfo.rRNATerms_partial[strtmp] = NStr::StringToUInt(arr[1]);
+       thisInfo.rRNATerms_ignore_partial[strtmp] = NStr::StringToUInt(arr[1]);
     }
 
     // ini. of no_multi_qual
@@ -942,6 +942,8 @@ void CRepConfig :: ReadArgs(Str2Str& args)
 
     // report category
     thisInfo.report = args["P"];
+    thisInfo.output_config.add_output_tag = (thisInfo.report == "t") ? true : false;
+    thisInfo.output_config.add_extra_output_tag = (thisInfo.report == "s") ? true : false;
     if (thisInfo.report == "t" || thisInfo.report == "s") thisInfo.report = "Discrepancy";
 
     // output
@@ -959,8 +961,6 @@ void CRepConfig :: ReadArgs(Str2Str& args)
     strtmp = args["S"];
     thisInfo.output_config.summary_report 
         = (NStr::EqualNocase(strtmp, "true") || NStr::EqualNocase(strtmp, "t")) ? true : false;
-    thisInfo.output_config.add_output_tag = (thisInfo.report == "t") ? true : false;
-    thisInfo.output_config.add_extra_output_tag = (thisInfo.report == "s") ? true : false;
 
     // enabled and disabled tests
     strtmp = args["e"];
@@ -981,6 +981,8 @@ void CRepConfig :: ReadArgs(const CArgs& args)
 
     // report category
     thisInfo.report = args["P"].AsString();
+    thisInfo.output_config.add_output_tag = (thisInfo.report == "t") ? true : false;
+    thisInfo.output_config.add_extra_output_tag = (thisInfo.report == "s") ? true : false;
     if (thisInfo.report == "t" || thisInfo.report == "s") thisInfo.report = "Discrepancy";
 
     // output
@@ -996,8 +998,6 @@ void CRepConfig :: ReadArgs(const CArgs& args)
     }
     thisInfo.output_config.output_f.open(output_f.c_str());
     thisInfo.output_config.summary_report = args["S"].AsBoolean();
-    thisInfo.output_config.add_output_tag = (thisInfo.report == "t") ? true : false;
-    thisInfo.output_config.add_extra_output_tag = (thisInfo.report == "s") ? true : false;
 
     // enabled and disabled tests
     strtmp = args["e"].AsString();

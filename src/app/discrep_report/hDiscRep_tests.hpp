@@ -174,6 +174,8 @@ namespace DiscRepNmSpc {
       static bool   is_Comment_run;
       static bool   is_Defl_run; // checked
       static bool   is_DESC_user_run; // checked
+      static bool   is_Genes_run;
+      static bool   is_Genes_oncall_run;
       static bool   is_GP_Set_run;
       static bool   is_IncnstUser_run;
       static bool   is_MolInfo_run;
@@ -1983,6 +1985,7 @@ namespace DiscRepNmSpc {
        static string GetRNAProductString(const CSeq_feat& seq_feat);
     
     protected:
+       bool x_IsShortrRNA(const CSeq_feat* seq_ft);
        bool BioseqHasKeyword(const CBioseq& bioseq, const string& keywd);
        bool StrandOk(ENa_strand strand1, ENa_strand strand2);
        bool IsUnknown(const string& known_items, const unsigned idx);
@@ -2468,6 +2471,7 @@ namespace DiscRepNmSpc {
     protected:
       string GetName_missing() const {return string("MISSING_GENES"); }
       string GetName_extra() const {return string("EXTRA_GENES"); } 
+      bool x_HasPseudogeneQualifier (const CSeq_feat& sft);
   };
 
   
@@ -3277,8 +3281,10 @@ namespace DiscRepNmSpc {
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("CONTAINED_CDS"); }
-  };
 
+    private:
+      bool x_IgnoreContainedCDS(const CSeq_feat* sft);
+  };
 
   class CBioseq_PSEUDO_MISMATCH : public CBioseqTestAndRepData
   {

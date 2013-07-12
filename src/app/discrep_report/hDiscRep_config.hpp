@@ -133,7 +133,7 @@ namespace DiscRepNmSpc {
         static string                             report;
 
         static Str2UInt                           rRNATerms;
-        static Str2UInt                           rRNATerms_partial;
+        static Str2UInt                           rRNATerms_ignore_partial;
         static vector <string>                    bad_gene_names_contained;
         static vector <string>                    no_multi_qual;
         static vector <string>                    rrna_standard_name; 
