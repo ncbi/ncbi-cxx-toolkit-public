@@ -194,6 +194,14 @@ public:
 
         return m_UTF8String;
     }
+    const TStringUCS2& AsUCS2_LE(EEncoding str_enc = eEncoding_Unknown) const
+    {
+        if (!(GetAvailableValueType() & eUCS2LEString)) {
+            x_MakeUCS2LEString(str_enc);
+        }
+
+        return m_UCS2LEString;
+    }
 #ifdef HAVE_WSTRING
     const wstring& AsUnicode(EEncoding str_enc = eEncoding_Unknown) const
     {
@@ -240,13 +248,21 @@ protected:
     void x_MakeWString(EEncoding str_enc = eEncoding_Unknown) const;
 #endif
     void x_MakeUTF8String(EEncoding str_enc = eEncoding_Unknown) const;
+    void x_MakeUCS2LEString(EEncoding str_enc = eEncoding_Unknown) const;
 
     void x_CalculateEncoding(EEncoding str_enc) const;
     void x_UTF8ToString(EEncoding str_enc = eEncoding_Unknown) const;
     void x_StringToUTF8(EEncoding str_enc = eEncoding_Unknown) const;
 
 protected:
-    enum {eChar = 1, eWChar = 2, eString = 4, eWString = 8, eUTF8String = 16};
+    enum {
+        eChar         = 0x1,
+        eWChar        = 0x2,
+        eString       = 0x4,
+        eWString      = 0x8,
+        eUTF8String   = 0x10,
+        eUCS2LEString = 0x20
+    };
 
     mutable int             m_AvailableValueType;
     mutable EEncoding       m_StringEncoding; // Source string encoding.
@@ -259,6 +275,7 @@ protected:
     mutable wstring         m_WString;
 #endif
     mutable CStringUTF8     m_UTF8String;
+    mutable TStringUCS2     m_UCS2LEString;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -520,7 +537,7 @@ public:
     // explicit handling.
     EBulkEnc GetBulkInsertionEnc(void) const { return m_BulkInsertionEnc; }
     void     SetBulkInsertionEnc(EBulkEnc e) { m_BulkInsertionEnc = e;    }
-    void     GetBulkInsertionData(CTempStringEx* ts,
+    void     GetBulkInsertionData(CTempString* ts,
                                   bool convert_raw_bytes = false) const;
 
 private:

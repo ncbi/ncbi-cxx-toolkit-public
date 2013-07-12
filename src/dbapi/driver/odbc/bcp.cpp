@@ -308,7 +308,7 @@ bool CODBC_BCPInCmd::x_AssignParams(void* pb)
             case eDB_VarChar:
             case eDB_LongChar: {
                 CDB_String& val = dynamic_cast<CDB_String&> (param);
-                CTempStringEx data;
+                CTempString data;
 
                 if (val.IsNULL()) {
                     data.assign(static_cast<char*>(pb), 0);

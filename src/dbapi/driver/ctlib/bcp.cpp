@@ -265,7 +265,7 @@ bool CTL_BCPInCmd::x_AssignParams()
         }
         case eDB_Char: {
             CDB_Char& par = dynamic_cast<CDB_Char&> (param);
-            CTempStringEx data;
+            CTempString data;
             par.GetBulkInsertionData(&data);
 #ifdef FTDS_IN_USE
             param_fmt.datatype  = CS_VARCHAR_TYPE;
@@ -284,7 +284,7 @@ bool CTL_BCPInCmd::x_AssignParams()
         }
         case eDB_LongChar: {
             CDB_LongChar& par = dynamic_cast<CDB_LongChar&> (param);
-            CTempStringEx data;
+            CTempString data;
             par.GetBulkInsertionData(&data);
             param_fmt.datatype  = CS_LONGCHAR_TYPE;
             param_fmt.maxlength = (CS_INT) par.Size() + 1;
@@ -299,7 +299,7 @@ bool CTL_BCPInCmd::x_AssignParams()
         }
         case eDB_VarChar: {
             CDB_VarChar& par = dynamic_cast<CDB_VarChar&> (param);
-            CTempStringEx data;
+            CTempString data;
             par.GetBulkInsertionData(&data);
 #ifdef FTDS_IN_USE
             param_fmt.datatype  = CS_VARCHAR_TYPE;

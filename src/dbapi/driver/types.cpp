@@ -48,6 +48,17 @@
 BEGIN_NCBI_SCOPE
 
 
+inline
+void s_MakeLittleEndian(TStringUCS2& s)
+{
+#ifdef WORDS_BIGENDIAN
+    NON_CONST_ITERATE (TStringUCS2, it, s) {
+        *it = (*it << 8) | (*it >> 8);
+    }
+#endif
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 template<>
 CGenericSqlString<char>::operator const char*(void) const
@@ -360,6 +371,18 @@ void CWString::x_MakeUTF8String(EEncoding str_enc) const
         }
         m_AvailableValueType |= eUTF8String;
 #endif
+    }
+}
+
+void CWString::x_MakeUCS2LEString(EEncoding str_enc) const
+{
+    if (m_AvailableValueType & eUCS2LEString) {
+        return;
+    } else {
+        x_MakeUTF8String(str_enc);
+        m_UCS2LEString = CUtf8::AsBasicString<TCharUCS2>(m_UTF8String);
+        s_MakeLittleEndian(m_UCS2LEString);
+        m_AvailableValueType |= eUCS2LEString;
     }
 }
 
@@ -788,16 +811,6 @@ string MakeString(const string& s, string::size_type size)
 }
 
 inline
-void s_MakeLittleEndian(TStringUCS2& s)
-{
-#ifdef WORDS_BIGENDIAN
-    NON_CONST_ITERATE (TStringUCS2, it, s) {
-        *it = (*it << 8) | (*it >> 8);
-    }
-#endif
-}
-
-inline
 string MakeString(const TStringUCS2& s, TStringUCS2::size_type size)
 {
     TStringUCS2 value(s, 0, size);
@@ -1002,7 +1015,7 @@ void CDB_String::Assign(const TStringUCS2& s,
 }
 
 
-void CDB_String::GetBulkInsertionData(CTempStringEx* ts, bool convert_raw_bytes)
+void CDB_String::GetBulkInsertionData(CTempString* ts, bool convert_raw_bytes)
     const
 {
     _ASSERT(ts);
@@ -1024,10 +1037,8 @@ void CDB_String::GetBulkInsertionData(CTempStringEx* ts, bool convert_raw_bytes)
         break;
     case eBulkEnc_UCS2FromChar:
     {
-        TStringUCS2 s2 = CUtf8::AsBasicString<TCharUCS2>(m_WString.AsUTF8());
-        s_MakeLittleEndian(s2);
-        ts->assign((char*) s2.data(), s2.size() * sizeof(TCharUCS2),
-                   CTempStringEx::fMakeCopy);
+        const TStringUCS2& s2 = m_WString.AsUCS2_LE();
+        ts->assign((char*) s2.data(), s2.size() * sizeof(TCharUCS2));
         break;
     }
     default:
