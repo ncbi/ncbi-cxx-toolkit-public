@@ -3883,7 +3883,7 @@ void CChain::CalculateDropLimits() {
     int right_limit = soft_limit.GetTo();
     first_bump = -1;
     max_cov = 0;
-    while(right_limit < mrna_len && first_bump < 0 && (longseq_coverage[right_limit] > 0 || m_coverage[right_limit] > m_core_coverage*COVERAGE_DROP)) {
+    while(right_limit < mrna_len-1 && first_bump < 0 && (longseq_coverage[right_limit] > 0 || m_coverage[right_limit] > m_core_coverage*COVERAGE_DROP)) {
         max_cov = max(max_cov,m_coverage[right_limit]);
         if(first_bump < 0 && max_cov > m_core_coverage*COVERAGE_BUMP)
             first_bump = right_limit;
@@ -3896,7 +3896,7 @@ void CChain::CalculateDropLimits() {
             m_coverage_bump_right = amap.MapEditedToOrig(first_bump);
         else
             m_coverage_bump_left = amap.MapEditedToOrig(first_bump);
-    } else if(right_limit < mrna_len || m_coverage[right_limit] <= m_core_coverage*COVERAGE_DROP) {
+    } else if(right_limit < mrna_len-1 || m_coverage[right_limit] <= m_core_coverage*COVERAGE_DROP) {  // garanteed that right_limit <= mrna_len-1
         int first_drop = right_limit;
         if(first_drop-SCAN_WINDOW/2 > 0) {
             for( ; first_drop < mrna_len-SCAN_WINDOW/2; ++first_drop) {
