@@ -1855,6 +1855,10 @@ SImplementation::x_CreateCdsFeature(CConstRef<CSeq_feat> cds_feat_on_query_mrna,
                 cds_loc = &cds_feat_on_genome->SetLocation();
             }
             if (cds_loc  && cds_loc->Which() != CSeq_loc::e_not_set) {
+                CRangeCollection<TSeqPos> loc_ranges;
+                ITERATE (CSeq_loc, loc_it, *cds_loc) {
+                    loc_ranges += loc_it.GetRange();
+                }
 
                 bool is_partial_5prime = offset > 0 || cds_loc->IsPartialStart(eExtreme_Biological);
                 cds_loc->SetPartialStart(is_partial_5prime, eExtreme_Biological);
@@ -1983,7 +1987,14 @@ SImplementation::x_CreateCdsFeature(CConstRef<CSeq_feat> cds_feat_on_query_mrna,
                             new_cb_loc = new_cb_loc->GetEquiv().Get().front();
                         }
 
-                        if (new_cb_loc  &&  !new_cb_loc->IsNull() && GetLength(*new_cb_loc, NULL)==3) {
+                        CRangeCollection<TSeqPos> new_cb_ranges;
+                        if (new_cb_loc && !new_cb_loc->IsNull()) {
+                            ITERATE (CSeq_loc, loc_it, *new_cb_loc) {
+                                new_cb_ranges += loc_it.GetRange();
+                            }
+                            new_cb_ranges &= loc_ranges;
+                        }
+                        if (new_cb_ranges.GetCoveredLength() == 3) {
                             (*it)->SetLoc(*new_cb_loc);
                             ++it;
                         } else {

@@ -9708,17 +9708,6 @@ Seq-annot ::= {
         frame three,
         code {
           id 1
-        },
-        code-break {
-          {
-            loc int {
-              from 1197818,
-              to 1197820,
-              strand minus,
-              id gi 157697769
-            },
-            aa ncbieaa 77
-          }
         }
       },
       partial TRUE,
