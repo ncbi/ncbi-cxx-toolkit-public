@@ -270,6 +270,23 @@ bool s_UserFieldCompare (const CRef<CUser_field>& f1, const CRef<CUser_field>& f
     return f1->GetLabel().Compare(f2->GetLabel()) < 0;
 }
 
+static bool s_IsGenomeAssembly (
+    const CUser_object& usr
+)
+
+{
+    ITERATE (CUser_object::TData, field, usr.GetData()) {
+        if ((*field)->IsSetLabel() && (*field)->GetLabel().IsStr()) {
+            if (NStr::EqualNocase((*field)->GetLabel().GetStr(), "StructuredCommentPrefix")) {
+                const string& prefix = (*field)->GetData().GetStr();
+                if (NStr::EqualCase(prefix, "##Genome-Assembly-Data-START##")) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
 
 bool CValidError_desc::ValidateStructuredComment 
 (const CUser_object& usr,
@@ -278,6 +295,7 @@ bool CValidError_desc::ValidateStructuredComment
  bool  report)
 {
     bool is_valid = true;
+    EDiagSev sev;
 
     CField_set::Tdata::const_iterator field_rule = rule.GetFields().Get().begin();
     CUser_object::TData::const_iterator field = usr.GetData().begin();
@@ -309,7 +327,13 @@ bool CValidError_desc::ValidateStructuredComment
                 if (!(*field_rule)->DoesStringMatchRuleExpression(value)) {
                     if (report) {
                         // post error about not matching format
-                        PostErr (s_ErrorLevelFromFieldRuleSev((*field_rule)->GetSeverity()),
+                        sev = s_ErrorLevelFromFieldRuleSev((*field_rule)->GetSeverity());
+                        if (NStr::EqualNocase (label, "Finishing Goal") && s_IsGenomeAssembly (usr)) {
+                            sev = eDiag_Error;
+                        } else if (NStr::EqualNocase (label, "Current Finishing Status") && s_IsGenomeAssembly (usr)) {
+                            sev = eDiag_Error;
+                        }
+                        PostErr (sev,
                                  eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue, 
                                  value + " is not a valid value for " + label, *m_Ctx, desc);   
                     }
