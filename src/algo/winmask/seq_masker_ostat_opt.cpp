@@ -44,8 +44,8 @@
 
 BEGIN_NCBI_SCOPE
 
-static const unsigned long GROW_CHUNK = 1024L;
 static const unsigned long MB = 1024L*1024L;
+static const unsigned long GROW_CHUNK = MB;
 static const char * PARAMS[] = { "t_low", "t_extend", "t_threshold", "t_high" };
 
 //------------------------------------------------------------------------------
@@ -70,10 +70,17 @@ void CSeqMaskerOstatOpt::doSetUnitSize( Uint4 us )
 //------------------------------------------------------------------------------
 void CSeqMaskerOstatOpt::doSetUnitCount( Uint4 unit, Uint4 count )
 {
+    // The coditional code below is needed for low-memory machines
+    // (32-bit with 3GB user space memory limit) to avoid problems
+    // with default doubling of capacity in vector.
+    // 
+    // It will probably be removed in the future.
+    //
     if( units.size() == units.capacity() )
     {
-        units.reserve( units.size() + GROW_CHUNK );
-        counts.reserve( units.size() + GROW_CHUNK );
+        size_t grow( std::max( GROW_CHUNK, units.size()/10 ) );
+        units.reserve( units.size() + grow );
+        counts.reserve( units.size() + grow );
     }
 
     units.push_back( unit );

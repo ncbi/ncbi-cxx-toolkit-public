@@ -71,7 +71,7 @@ void CSeqMaskerOstatOptBin::write_out( const params & p ) const
     for( Uint4 i = 0; i < GetParams().size(); ++i )
         write_word( GetParams()[i] );
 
-    if( use_ba )
+    if( use_ba ) {
         if( p.cba != 0 )
         {
             Uint8 total = 
@@ -81,6 +81,7 @@ void CSeqMaskerOstatOptBin::write_out( const params & p ) const
             out_stream.write( (const char *)(p.cba), size*sizeof( Uint4 ) );
         }
         else write_word( (Uint4)0 );
+    }
 
     Uint4 sz = (1<<p.k);
     out_stream.write( (const char *)(p.ht), sz*sizeof( Uint4 ) );
