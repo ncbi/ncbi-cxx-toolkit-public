@@ -415,9 +415,9 @@ int CBAMCompareApp::Run(void)
                 ERR_POST(Fatal << "Invalid query format: " << q);
             }
             TSeqPos from =
-                NStr::StringToNumeric(q.substr(colon_pos+1,
-                                               dash_pos-colon_pos-1));
-            TSeqPos to = NStr::StringToNumeric(q.substr(dash_pos+1));
+                NStr::StringToNumeric<TSeqPos>(q.substr(colon_pos+1,
+                                                        dash_pos-colon_pos-1));
+            TSeqPos to = NStr::StringToNumeric<TSeqPos>(q.substr(dash_pos+1));
             query_range.SetFrom(from).SetTo(to);
         }
 
