@@ -838,8 +838,8 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
 
     // Add synonyms if any.
     TSynonyms synonyms;
+    synonyms.insert(CSeq_id_Handle::GetHandle(*id));
     if ( gc_seq.IsSetSeq_id_synonyms() ) {
-        synonyms.insert(CSeq_id_Handle::GetHandle(*id));
         ITERATE(CGC_Sequence::TSeq_id_synonyms, it, gc_seq.GetSeq_id_synonyms()) {
             // Add conversion for each synonym which can be used
             // as a source id.
