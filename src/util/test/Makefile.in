@@ -35,7 +35,8 @@ APP_PROJ = example_value_convert \
            test_utf8 \
            test_uttp \
            test_value_convert \
-           test_histogram_binning
+           test_histogram_binning \
+           test_table_printer
 
 EXPENDABLE_APP_PROJ = \
            test_limited_map

@@ -7,7 +7,7 @@ SRC = random_gen utf8 checksum bytesrc strbuffer itree smalldns \
       transmissionrw miscmath mutex_pool ncbi_cache line_reader \
       util_exception uttp multi_writer itransaction thread_pool \
       thread_pool_ctrl scheduler distribution util_misc ncbi_url \
-      histogram_binning
+      histogram_binning table_printer
 
 LIB = xutil
 PROJ_TAG = core
