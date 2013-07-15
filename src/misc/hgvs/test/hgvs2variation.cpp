@@ -315,10 +315,17 @@ int CHgvs2variationApplication::Run(void)
                     args["in"].AsInputFile() >> MSerial_AsnText>> *v;
                 }                
             } catch(CEofException& e) {
-                break;
+                NcbiCerr << MSerial_AsnText << *v;
+                NCBI_RETHROW_SAME(e, "Can't deserialize variation");
             }
             ProcessVariation(*v, args, *scope, aln, *variation_util);
-            ostr << MSerial_AsnText << *v;
+            if(args["o_annot"]) {
+                    CRef<CSeq_annot> annot(new CSeq_annot);
+                    variation_util->AsVariation_feats(*v, annot->SetData().SetFtable());
+                    ostr << MSerial_AsnText << *annot;
+            } else {
+                ostr << MSerial_AsnText << *v;
+            }
         }
     } else {
 
