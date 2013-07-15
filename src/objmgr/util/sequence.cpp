@@ -2386,6 +2386,10 @@ CRef<CBioseq> CreateBioseqFromBioseq(const CBioseq_Handle& bsh,
 
             case CSeqMap::eSeqChunk:
                 break;
+
+            default:
+                NCBI_THROW(CException, eUnknown,
+                           "unhandled gap type in CreateBioseqFromBioseq()");
             }
 
             if (map_iter.GetEndPosition() > to) {

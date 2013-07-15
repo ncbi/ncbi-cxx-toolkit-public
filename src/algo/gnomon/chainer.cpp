@@ -4140,7 +4140,7 @@ pair<string,int> GetAccVer(const CAlignModel& a, CScope& scope)
                 make_pair(txtid->GetAccession(), txtid->GetVersion()) : make_pair(idh.AsString(), 0);
         }
     }
-    catch (sequence::CSeqIdFromHandleException& e) {
+    catch (sequence::CSeqIdFromHandleException&) {
     }
     return make_pair(a.TargetAccession(), 0);
 }
