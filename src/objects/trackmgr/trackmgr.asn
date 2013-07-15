@@ -40,7 +40,8 @@ TMgr-Reply ::= CHOICE {
 
 TMgr-GenomeContext ::= CHOICE {
     assembly TMgr-AssemblySpec,
-    sequence Seq-id
+    sequence Seq-id,
+    refseqgene NULL
 }
 
 TMgr-ClientInfo ::= SEQUENCE {
@@ -244,7 +245,7 @@ TMgr-CreateUserTrackReply ::= SEQUENCE {
 TMgr-ItemResolverRequest ::= SEQUENCE {
     dtrack-ids SET OF Dbtag,
     client TMgr-ClientInfo,
-    assembly TMgr-AssemblySpec OPTIONAL,
+    genome-context TMgr-GenomeContext,
     attrs SET OF TMgr-AttrSpec OPTIONAL,
     sequence Seq-id OPTIONAL -- resolve specifically for this top-level sequence
 }
