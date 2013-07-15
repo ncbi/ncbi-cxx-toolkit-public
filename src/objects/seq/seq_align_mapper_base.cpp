@@ -2090,7 +2090,8 @@ void CSeq_align_Mapper_Base::x_GetDstSpliced(CRef<CSeq_align>& dst) const
         spliced.SetProduct_strand(prod_strand);
     }
     // Update bounds if defined in the original alignment.
-    if (single_prod_id  &&  single_gen_id  &&  m_OrigAlign->IsSetBounds()) {
+    if (single_prod_id  &&  single_gen_id  &&  m_OrigAlign->IsSetBounds()  &&
+        m_LocMapper.m_Mappings) {
         CSeq_align::TBounds& bounds = dst->SetBounds();
         bounds.clear();
         ITERATE(CSeq_align::TBounds, it, m_OrigAlign->GetBounds()) {
