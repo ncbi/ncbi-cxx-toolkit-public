@@ -3325,7 +3325,10 @@ private:
 ///    locks, before closing a file. If this is not done, access to file
 ///    may be denied if the operating system has not yet unlocked them.
 ///
-///  4) Locks are not inherited by a child process.
+///  4) Locks can be inherited or not by a child process, depending from OS.
+///
+///  5) Locked file cannot be empty. CFileLock can work with empty files,
+///     depending from OS, but it is better to avoid this for compatibility.
 ///
 /// All methods of this class except the destructor throw exceptions
 /// CFileErrnoException on errors.
