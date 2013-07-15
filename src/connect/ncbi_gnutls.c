@@ -515,9 +515,9 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
     if (*value) {
         int level = atoi(value);
         s_GnuTlsLogLevel = level < 0 ? 0 : level;
-        gnutls_global_set_log_function(x_GnuTlsLogger);
-        gnutls_global_set_log_level(s_GnuTlsLogLevel);
-        if (s_GnuTlsLogLevel > 1) {
+        if (s_GnuTlsLogLevel > 0) {
+            gnutls_global_set_log_function(x_GnuTlsLogger);
+            gnutls_global_set_log_level(s_GnuTlsLogLevel);
             CORE_LOGF(eLOG_Note, ("GNUTLS V%s (Loglevel=%d)",
                                   gnutls_check_version(0), s_GnuTlsLogLevel));
         }

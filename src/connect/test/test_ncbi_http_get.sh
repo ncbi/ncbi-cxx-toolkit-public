@@ -19,7 +19,7 @@ if [ "$ssl" = "1" -a "`echo $FEATURES | grep -vic '[-]GNUTLS'`" = "1" ]; then
   # for netstat
   PATH=${PATH}:/sbin:/usr/sbin
   CONN_USESSL=1
-  CONN_GNUTLS_LOGLEVEL=7
+  CONN_GNUTLS_LOGLEVEL=2
   export PATH CONN_USESSL CONN_GNUTLS_LOGLEVEL
   if [ -z "$proxy" -a "`netstat -a -n | grep -w 5556 | grep -c ':5556'`" != "0" ]; then
     url='https://localhost:5556'

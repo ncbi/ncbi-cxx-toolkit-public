@@ -16,7 +16,7 @@ case "`expr '(' $$ / 10 ')' '%' 2`" in
   0)
   ssl="`expr '(' $$ / 100 ')' '%' 2`"
   if [ "$ssl" = "1" -a "`echo $FEATURES | grep -vic '[-]GNUTLS'`" = "1" ]; then
-    CONN_GNUTLS_LOGLEVEL=7;  export CONN_GNUTLS_LOGLEVEL
+    CONN_GNUTLS_LOGLEVEL=2;  export CONN_GNUTLS_LOGLEVEL
     url='https://www.ncbi.nlm.nih.gov'
   else
     url='http://www.ncbi.nlm.nih.gov'
