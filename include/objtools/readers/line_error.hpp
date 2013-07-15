@@ -79,6 +79,11 @@ public:
         eProblem_ExpectedModifierMissing,
         eProblem_Missing,
 
+        //vcf specific
+        eProblem_BadInfoLine,
+        eProblem_BadFormatLine,
+        eProblem_BadFilterLine,
+
         eProblem_ProgressInfo, // not a problem, actually
 
         eProblem_GeneralParsingError
@@ -222,6 +227,14 @@ public:
             return "Expected modifier missing";
         case eProblem_Missing:
             return "Feature is missing";
+
+        case eProblem_BadInfoLine:
+            return "Broken ##INFO line";
+        case eProblem_BadFormatLine:
+            return "Broken ##FORMAT line";
+        case eProblem_BadFilterLine:
+            return "Broken ##FILTER line";
+
         case eProblem_ProgressInfo:
             return "Just a progress info message (no error)";
         default:

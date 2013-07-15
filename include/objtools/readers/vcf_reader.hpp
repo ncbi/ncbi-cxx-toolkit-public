@@ -186,22 +186,26 @@ protected:
     virtual bool
     xProcessMetaLine(
         const string&,
-        CRef<CSeq_annot> );
+        CRef<CSeq_annot>,
+        IErrorContainer*);
 
     virtual bool
     xProcessMetaLineInfo(
         const string&,
-        CRef<CSeq_annot> );
+        CRef<CSeq_annot>,
+        IErrorContainer*);
 
     virtual bool
     xProcessMetaLineFilter(
         const string&,
-        CRef<CSeq_annot> );
+        CRef<CSeq_annot>,
+        IErrorContainer*);
 
     virtual bool
     xProcessMetaLineFormat(
         const string&,
-        CRef<CSeq_annot> );
+        CRef<CSeq_annot>,
+        IErrorContainer*);
 
     virtual bool
     xProcessHeaderLine(
@@ -211,7 +215,8 @@ protected:
     virtual bool
     xProcessDataLine(
         const string&,
-        CRef<CSeq_annot> );
+        CRef<CSeq_annot>,
+        IErrorContainer*);
         
     virtual bool
     xAssignVariationAlleleSet(
@@ -255,7 +260,8 @@ protected:
     virtual bool
     xAssignVariantProps(
         CVcfData&,
-        CRef<CSeq_feat> );
+        CRef<CSeq_feat>,
+        IErrorContainer*);
 
     virtual bool
     xProcessScore(
@@ -270,7 +276,8 @@ protected:
     virtual bool
     xProcessInfo(
         CVcfData&,
-        CRef<CSeq_feat> );
+        CRef<CSeq_feat>,
+        IErrorContainer*);
 
     virtual bool
     xProcessFormat(
