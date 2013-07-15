@@ -143,10 +143,9 @@ TSeqRange CSpliced_exon::GetRowSeq_range(CSeq_align::TDim    row,
             break;
         }
     }
-    else if (row == 1) {
+
         // Genomic
         return TSeqRange(GetGenomic_start(), GetGenomic_end());
-    }
 }
 
 CRangeCollection<TSeqPos> CSpliced_exon::GetRowSeq_insertions(
