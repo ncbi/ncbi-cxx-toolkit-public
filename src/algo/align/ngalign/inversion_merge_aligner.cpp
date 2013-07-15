@@ -136,6 +136,8 @@ void CInversionMergeAligner::x_RunMerger(objects::CScope& Scope,
 
 
         double PctCovs[2] = { 0.0, 0.0 };
+		double Expands[2] = { 0.0, 0.0 };
+		double NumIdts[2] = { 0.0, 0.0 };
 
         Pluses->Get().front()->GetNamedScore("pct_coverage", PctCovs[0]);
         Minuses->Get().front()->GetNamedScore("pct_coverage", PctCovs[1]);
@@ -157,6 +159,13 @@ void CInversionMergeAligner::x_RunMerger(objects::CScope& Scope,
                 (*DomIter)->GetNamedScore("pct_coverage", PctCovs[0]);
                 (*NonIter)->GetNamedScore("pct_coverage", PctCovs[1]);
 
+				(*DomIter)->GetNamedScore("expansion", Expands[0]);
+                (*NonIter)->GetNamedScore("expansion", Expands[1]);
+
+				(*DomIter)->GetNamedScore("num_ident", NumIdts[0]);
+                (*NonIter)->GetNamedScore("num_ident", NumIdts[1]);
+
+
                 CRange<TSeqPos> DomSubjRange = (*DomIter)->GetSeqRange(1);
                 CRange<TSeqPos> NonSubjRange = (*NonIter)->GetSeqRange(1);
 
@@ -169,15 +178,18 @@ void CInversionMergeAligner::x_RunMerger(objects::CScope& Scope,
                     else
                         Dist = NonSubjRange.GetFrom() - DomSubjRange.GetTo();
                 }
-
-                if( (PctCovs[0]/PctCovs[1]) <= 10.0 &&
+				
+				if( (PctCovs[0]/PctCovs[1]) <= 1000.0 &&
                     (PctCovs[0]/PctCovs[1]) >= 1.0 &&
-                    Dist >= 0 && Dist <= NonSubjRange.GetLength()*10) {
-
+                    Dist <= NonSubjRange.GetLength()*10  && 
+					Expands[0] <= 3.0 && Expands[1] <= 3.0 ) {
+				
                     CRef<CSeq_align> Disc(new CSeq_align);
                     Disc = x_CreateDiscAlignment(**DomIter, **NonIter, Scope);
                     if(!Disc.IsNull()) {
-                        ResultSet->Set().push_back(Disc);
+				cerr << "Making Disc: (" << NumIdts[0] << "," << Expands[0] << ") to "
+					<< "(" << NumIdts[1] << "," << Expands[1] << ")" << endl;
+						ResultSet->Set().push_back(Disc);
                         Made = true;
                         break;
                     }
@@ -231,9 +243,15 @@ void CInversionMergeAligner::x_HandleSingleStrandMerging(CSeq_align_set& Source,
         Out = x_MergeSeqAlignSet(Source, Scope);
         if(!Out.IsNull() && Out->CanGet() && !Out->Get().empty()) {
             NON_CONST_ITERATE(CSeq_align_set::Tdata, MergedIter, Out->Set()) {
-                Scorer.AddScore(Scope, **MergedIter, CSeq_align::eScore_PercentIdentity);
+                Scorer.AddScore(Scope, **MergedIter, CSeq_align::eScore_PercentIdentity_Ungapped);
                 Scorer.AddScore(Scope, **MergedIter, CSeq_align::eScore_PercentCoverage);
-                Source.Set().push_back(*MergedIter);
+                
+        		TSeqPos AlignLen, AlignedLen;
+				AlignedLen = Scorer.GetAlignLength(**MergedIter, true);
+                AlignLen = (*MergedIter)->GetSeqRange(1).GetLength();
+                (*MergedIter)->SetNamedScore("expansion", double(AlignLen)/double(AlignedLen) );
+				
+				Source.Set().push_back(*MergedIter);
                 Results.Set().push_back(*MergedIter);
             }
         }
@@ -257,11 +275,31 @@ CInversionMergeAligner::x_CreateDiscAlignment(const CSeq_align& Dom, const CSeq_
     DomRef->Assign(Dom);
     NonRef->Assign(Non);
 
+	if (Dom.GetSeq_id(0).IsLocal() &&
+		Dom.GetSeq_id(0).GetLocal().GetStr() == "HG858_PATCH") {
+		TSeqPos SwitchSpot = 35739;
+	
+		if ( NonRef->GetSeqStart(0) == 0 && NonRef->GetSeqStop(0) == SwitchSpot-1) {	
+			CRef<CDense_seg> DomSlice, NonSlice;
+			DomSlice = DomRef->GetSegs().GetDenseg().ExtractSlice(0, SwitchSpot, DomRef->GetSeqStop(0)); 
+			NonSlice = NonRef->GetSegs().GetDenseg().ExtractSlice(0, NonRef->GetSeqStart(0), SwitchSpot-1); 
+	
+			DomRef->SetSegs().SetDenseg().Assign(*DomSlice);
+			NonRef->SetSegs().SetDenseg().Assign(*NonSlice);
+		}
+	}
+
+	if(Dom.GetSeq_id(0).IsLocal() &&
+	   (Dom.GetSeq_id(0).GetLocal().GetStr() == "HG281_PATCH" ||
+		Dom.GetSeq_id(0).GetLocal().GetStr() == "HG1000_2_PATCH") ) {
+		return CRef<CSeq_align>();
+	}
+
     // Run Clean up on the two parts, as an attempt to uniqify what they cover.
     CRef<CSeq_align_set> Source(new CSeq_align_set), Cleaned;
-    Source->Set().push_back(DomRef);
-    Source->Set().push_back(NonRef);
-    Cleaned = x_MergeSeqAlignSet(*Source, Scope);
+	Source->Set().push_back(DomRef);
+   	Source->Set().push_back(NonRef);
+	Cleaned = x_MergeSeqAlignSet(*Source, Scope);
 
     if(Cleaned.IsNull() || Cleaned->Set().size() != 2) {
         return CRef<CSeq_align>();
@@ -347,7 +385,8 @@ CInversionMergeAligner::x_MergeSeqAlignSet(const CSeq_align_set& InAligns, objec
 
     try {
         CAlignCleanup Cleaner(Scope);
-        Cleaner.FillUnaligned(true);
+        Cleaner.SortInputsByScore(false);
+		Cleaner.FillUnaligned(true);
         Cleaner.Cleanup(In, Out->Set());
     } catch(CException& e) {
         ERR_POST(Info << "Cleanup Error: " << e.ReportAll());
