@@ -222,7 +222,6 @@ void CUnorderedSplitter::x_SplitDeltaExt(const objects::CSeq_id& Id,
     CurrBioseq->SetInst().SetExt().SetDelta().Set();
 
     TSeqPos SegStart = 0;
-    TSeqPos BigStart = 0;
     TSeqRange BioRange;
 
     ITERATE(CDelta_ext::Tdata, SeqIter, OrigDelta.Get()) {
@@ -242,7 +241,6 @@ void CUnorderedSplitter::x_SplitDeltaExt(const objects::CSeq_id& Id,
             // Finished with this Bioseq. Put an ID on it and make the next one
             if(BioRange.Empty() ) {
                 SegStart += Seq.GetLiteral().GetLength();
-                BigStart = SegStart;
                 continue;
             }
 
@@ -274,7 +272,6 @@ void CUnorderedSplitter::x_SplitDeltaExt(const objects::CSeq_id& Id,
             CurrBioseq->SetInst().SetExt().SetDelta().Set();
 
             SegStart += Seq.GetLiteral().GetLength();
-            BigStart = SegStart;
             continue;
         }
     
@@ -305,8 +302,6 @@ void CUnorderedSplitter::x_SplitDeltaExt(const objects::CSeq_id& Id,
                 InsertSeq->SetLoc().SetInt().SetStrand(eNa_strand_plus);
                 InsertSeq->SetLoc().SetInt().SetFrom(Inter.GetFrom());
                 InsertSeq->SetLoc().SetInt().SetTo(Inter.GetTo());
-                if(CurrBioseq->GetInst().GetLength() == 0)
-                    BigStart = LimitRange.GetFrom();
                 CurrRange = Inter;
             }
         }
@@ -623,7 +618,7 @@ void CUnorderedSplitter::x_TrimRows(const CDense_seg& DomSeg, CDense_seg& NonSeg
     CRef<CDense_seg> Slice;
     try { 
         Slice = NonSeg.ExtractSlice(Row, NonRange.GetFrom(), NonRange.GetTo());
-    } catch(CException& e) {
+    } catch(...) {  
         //cerr << "ExtractSlice failed" << endl;
         NonSeg.SetStarts().clear();
         NonSeg.SetStarts().push_back(-1);
