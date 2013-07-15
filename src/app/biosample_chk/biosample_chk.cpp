@@ -118,14 +118,15 @@ private:
 
     void GetBioseqDiffs(CBioseq_Handle bh);
     void AddBioseqToTable(CBioseq_Handle bh);
+    void PushToRecord(CBioseq_Handle bh);
 
     void ProcessBioseqHandle(CBioseq_Handle bh);
-    void ProcessSeqEntry(const CSeq_entry& se);
+    void ProcessSeqEntry(CRef<CSeq_entry> se);
     void ProcessSeqEntry(void);
     void ProcessSeqSubmit(void);
     void ProcessInput (void);
     void ProcessList (const string& fname);
-    void ProcessOneDirectory(string dir_name, bool recurse);
+    void ProcessOneDirectory(const string& dir_name, bool recurse);
     void ProcessOneFile(string fname);
     void ProcessReleaseFile(const CArgs& args);
     CRef<CSeq_entry> ReadSeqEntry(void);
@@ -139,13 +140,9 @@ private:
     // for mode 3, biosample_push
     void UpdateBioSource (CBioseq_Handle bh, const CBioSource& src);
     void x_ClearCoordinatedSubSources(CBioSource& src);
-	void ProcessBioseqHandle(CBioseq_Handle bh, vector<CRef<CSeqdesc> > descriptors);
-	void ProcessSeqEntry(CRef<CSeq_entry> se, vector<CRef<CSeqdesc> > descriptors);
-    CRef<CSeq_entry> ProcessSeqEntry(vector<CRef<CSeqdesc> > descriptors, const string& fname);
-    CRef<CSeq_submit> ProcessSeqSubmit(vector<CRef<CSeqdesc> > descriptors, const string& fname);
-    void ProcessInput (vector<CRef<CSeqdesc> > descriptors, const string& fname);
-	void ProcessOneFile(string fname, vector<CRef<CSeqdesc> > descriptors);
-    void ProcessOneDirectory(string dir_name, bool recurse, vector<CRef<CSeqdesc> > descriptors);
+    CRef<CSeq_entry> ProcessSeqEntry(const string& fname);
+    CRef<CSeq_submit> ProcessSeqSubmit(const string& fname);
+    void ProcessInput (const string& fname);
     vector<CRef<CSeqdesc> > GetBiosampleDescriptors(string fname);
     vector<CRef<CSeqdesc> > GetBiosampleDescriptorsFromSeqSubmit();
     vector<CRef<CSeqdesc> > GetBiosampleDescriptorsFromSeqEntry();
@@ -176,6 +173,7 @@ private:
 
     TBiosampleFieldDiffList m_Diffs;
     CRef<CSeq_table> m_Table;
+    vector<CRef<CSeqdesc> > m_Descriptors;
 };
 
 
@@ -287,7 +285,7 @@ void CBiosampleChkApp::ProcessList (const string& fname)
 }
 
 
-void CBiosampleChkApp::ProcessInput (vector<CRef<CSeqdesc> > descriptors, const string& fname)
+void CBiosampleChkApp::ProcessInput (const string& fname)
 {
     // Process file based on its content
     // Unless otherwise specifien we assume the file in hand is
@@ -298,9 +296,9 @@ void CBiosampleChkApp::ProcessInput (vector<CRef<CSeqdesc> > descriptors, const 
 	string header = m_In->ReadFileHeader();
 
     if (header == "Seq-submit" ) {  // Seq-submit
-        ProcessSeqSubmit(descriptors, fname + ".out");
+        ProcessSeqSubmit(fname + ".out");
     } else if ( header == "Seq-entry" ) {           // Seq-entry
-        ProcessSeqEntry(descriptors, fname + ".out");
+        ProcessSeqEntry(fname + ".out");
     } else {
         NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
     }
@@ -331,8 +329,12 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
     if (NStr::Equal(args["a"].AsString(), "l")) {
         ProcessList (fname);
     } else {
-        m_In.reset(OpenFile(fname, args));    
-        ProcessInput ();
+        m_In.reset(OpenFile(fname, args));
+        if (m_Mode == e_push) {
+            ProcessInput(fname);
+        } else {
+            ProcessInput ();
+        }
     }
 
     if (m_Mode == e_report_diffs) {
@@ -351,17 +353,6 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
         }
         m_ReportStream = 0;
     }
-}
-
-
-void CBiosampleChkApp::ProcessOneFile(string fname, vector<CRef<CSeqdesc> > descriptors)
-{
-    const CArgs& args = GetArgs();
-
-    m_In.reset(OpenFile(fname, args));
-
-    ProcessInput (descriptors, fname);
-
 }
 
 
@@ -437,7 +428,7 @@ vector<CRef<CSeqdesc> > CBiosampleChkApp::GetBiosampleDescriptors(string fname)
 }
 
 
-void CBiosampleChkApp::ProcessOneDirectory(string dir_name, bool recurse)
+void CBiosampleChkApp::ProcessOneDirectory(const string& dir_name, bool recurse)
 {
     const CArgs& args = GetArgs();
 
@@ -471,40 +462,6 @@ void CBiosampleChkApp::ProcessOneDirectory(string dir_name, bool recurse)
 }
 
 
-void CBiosampleChkApp::ProcessOneDirectory(string dir_name, bool recurse, vector<CRef<CSeqdesc> > descriptors)
-{
-    const CArgs& args = GetArgs();
-
-    CDir dir(dir_name);
-
-    string suffix = ".sqn";
-    if (args["x"]) {
-        suffix = args["x"].AsString();
-    }
-    string mask = "*" + suffix;
-
-    CDir::TEntries files (dir.GetEntries(mask, CDir::eFile));
-    ITERATE(CDir::TEntries, ii, files) {
-        string fname = (*ii)->GetName();
-        if ((*ii)->IsFile() &&
-            (!args["f"] || NStr::Find (fname, args["f"].AsString()) != string::npos)) {
-            string fname = CDirEntry::MakePath(dir_name, (*ii)->GetName());
-            ProcessOneFile (fname, descriptors);
-        }
-    }
-    if (recurse) {
-        CDir::TEntries subdirs (dir.GetEntries("", CDir::eDir));
-        ITERATE(CDir::TEntries, ii, subdirs) {
-            string subdir = (*ii)->GetName();
-            if ((*ii)->IsDir() && !NStr::Equal(subdir, ".") && !NStr::Equal(subdir, "..")) {
-                string subname = CDirEntry::MakePath(dir_name, (*ii)->GetName());
-                ProcessOneDirectory (subname, recurse, descriptors);
-            }
-        }
-    }
-}
-
-
 int CBiosampleChkApp::Run(void)
 {
     const CArgs& args = GetArgs();
@@ -524,6 +481,12 @@ int CBiosampleChkApp::Run(void)
     m_SrcReportFields.clear();
 	m_StructuredCommentReportFields.clear();
 
+    if (!NStr::IsBlank(m_StructuredCommentPrefix) && m_Mode != e_generate_biosample) {
+        // error
+        *m_LogStream << "Structured comment prefix is only appropriate for generating a biosample table." << endl;
+        return 0;
+    }
+
     // Process file based on its content
     // Unless otherwise specified we assume the file in hand is
     // a Seq-entry ASN.1 file, other option are a Seq-submit or NCBI
@@ -531,11 +494,17 @@ int CBiosampleChkApp::Run(void)
     // at a time.
 
     if ( m_Mode == e_push) {
-        if (!args["p"] || !args["i"]) {
+        if (NStr::Equal(args["a"].AsString(), "l")) {
             // error
+            *m_LogStream << "List type (-a l) is not appropriate for push mode." << endl;
+            return 0;
+        } else if (!args["p"] || !args["i"]) {
+            // error
+            *m_LogStream << "Both directory containing contigs (-p) and master file (-i) are required for push mode." << endl;
+            return 0;
         } else {
-            vector<CRef<CSeqdesc> > descriptors = GetBiosampleDescriptors(args["i"].AsString());
-            ProcessOneDirectory (args["p"].AsString(), args["u"], descriptors);
+            m_Descriptors = GetBiosampleDescriptors(args["i"].AsString());
+            ProcessOneDirectory (args["p"].AsString(), args["u"]);
         }
     } else if ( args["p"] ) {
  	    if (m_Mode == e_generate_biosample) {
@@ -595,7 +564,7 @@ void CBiosampleChkApp::ReadClassMember
                 CStopWatch sw(CStopWatch::eStart);
                 
                 m_Diffs.clear();
-                ProcessSeqEntry(*se);
+                ProcessSeqEntry(se);
                 PrintResults(m_Diffs);
                 // TODO! Must free diffs
                 m_Diffs.clear();
@@ -923,6 +892,16 @@ void CBiosampleChkApp::GetBioseqDiffs(CBioseq_Handle bh)
 }
 
 
+void CBiosampleChkApp::PushToRecord(CBioseq_Handle bh)
+{
+    ITERATE(vector<CRef<CSeqdesc> >, it, m_Descriptors) {
+        if ((*it)->IsSource()) {
+            UpdateBioSource(bh, (*it)->GetSource());
+        }
+    }
+}
+
+
 void CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh)
 {
     switch (m_Mode) {
@@ -932,31 +911,22 @@ void CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh)
         case e_generate_biosample:
             AddBioseqToTable(bh);
             break;
+        case e_push:
+            PushToRecord(bh);
+            break;
     }
 }
 
 
-void CBiosampleChkApp::ProcessSeqEntry(const CSeq_entry& se)
-{
-    CRef<CScope> scope = BuildScope();
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(se);
-    CBioseq_CI bi(seh, CSeq_inst::eMol_na);
-    while (bi) {
-        ProcessBioseqHandle(*bi);
-        ++bi;
-    }
-}
-
-
-void CBiosampleChkApp::ProcessSeqEntry(CRef<CSeq_entry> se, vector<CRef<CSeqdesc> > descriptors)
+void CBiosampleChkApp::ProcessSeqEntry(CRef<CSeq_entry> se)
 {
     CRef<CScope> scope = BuildScope();
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*se);
     CBioseq_CI bi(seh, CSeq_inst::eMol_na);
     while (bi) {
-		ProcessBioseqHandle(*bi, descriptors);
-		++bi;
-	}
+        ProcessBioseqHandle(*bi);
+        ++bi;
+    }
     scope->RemoveTopLevelSeqEntry(seh);
 }
 
@@ -966,16 +936,16 @@ void CBiosampleChkApp::ProcessSeqEntry(void)
     // Get seq-entry to process
     CRef<CSeq_entry> se(ReadSeqEntry());
 
-    ProcessSeqEntry(*se);
+    ProcessSeqEntry(se);
 }
 
 
-CRef<CSeq_entry> CBiosampleChkApp::ProcessSeqEntry(vector<CRef<CSeqdesc> > descriptors, const string& fname)
+CRef<CSeq_entry> CBiosampleChkApp::ProcessSeqEntry(const string& fname)
 {
     // Get seq-entry to process
     CRef<CSeq_entry> se(ReadSeqEntry());
 
-    ProcessSeqEntry(se, descriptors);
+    ProcessSeqEntry(se);
 
     ios::openmode mode = ios::out;
     CNcbiOfstream os(fname.c_str(), mode);
@@ -1001,7 +971,7 @@ void CBiosampleChkApp::ProcessSeqSubmit(void)
     CRef<CScope> scope = BuildScope();
     if (ss->GetData().IsEntrys()) {
         ITERATE(CSeq_submit::TData::TEntrys, se, ss->GetData().GetEntrys()) {
-            ProcessSeqEntry(**se);
+            ProcessSeqEntry(*se);
         }
     }
 }
@@ -1077,6 +1047,7 @@ void CBiosampleChkApp::UpdateBioSource (CBioseq_Handle bh, const CBioSource& src
             old_src->SetGenome(src.GetGenome());
         }
 
+        // only values that must stay the same are removed from the existing source
         x_ClearCoordinatedSubSources(*old_src);
 
         if (src.IsSetSubtype()) {
@@ -1085,6 +1056,23 @@ void CBiosampleChkApp::UpdateBioSource (CBioseq_Handle bh, const CBioSource& src
                     CRef<CSubSource> s(new CSubSource());
                     s->Assign(**it);
                     old_src->SetSubtype().push_back(s);
+                } else {
+                    // if the master has a value, the contig's value must be updated,
+                    // but if the master had no value, the contig's value would have
+                    // been allowed to remain
+                    bool found = false;
+                    NON_CONST_ITERATE (CBioSource::TSubtype, sit, old_src->SetSubtype()) {
+                        if ((*it)->GetSubtype() == (*sit)->GetSubtype()) {
+                            found = true;
+                            (*sit)->SetName((*it)->GetName());
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        CRef<CSubSource> s(new CSubSource());
+                        s->Assign(**it);
+                        old_src->SetSubtype().push_back(s);                        
+                    }
                 }
             }
         }
@@ -1092,17 +1080,7 @@ void CBiosampleChkApp::UpdateBioSource (CBioseq_Handle bh, const CBioSource& src
 }
 
 
-void CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh, vector<CRef<CSeqdesc> > descriptors)
-{
-    ITERATE(vector<CRef<CSeqdesc> >, it, descriptors) {
-        if ((*it)->IsSource()) {
-            UpdateBioSource(bh, (*it)->GetSource());
-        }
-    }
-}
-
-
-CRef<CSeq_submit> CBiosampleChkApp::ProcessSeqSubmit(vector<CRef<CSeqdesc> > descriptors, const string& fname)
+CRef<CSeq_submit> CBiosampleChkApp::ProcessSeqSubmit(const string& fname)
 {
     CRef<CSeq_submit> ss(new CSeq_submit);
 
@@ -1113,7 +1091,7 @@ CRef<CSeq_submit> CBiosampleChkApp::ProcessSeqSubmit(vector<CRef<CSeqdesc> > des
     CRef<CScope> scope = BuildScope();
     if (ss->GetData().IsEntrys()) {
         ITERATE(CSeq_submit::TData::TEntrys, se, ss->GetData().GetEntrys()) {
-            ProcessSeqEntry(*se, descriptors);
+            ProcessSeqEntry(*se);
         }
     }
     ios::openmode mode = ios::out;
