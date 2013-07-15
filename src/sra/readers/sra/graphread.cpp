@@ -168,7 +168,7 @@ CRef<CVDBGraphDb_Impl::SGraphTableCursor> CVDBGraphDb_Impl::Graph(void)
         try {
             curs = new SGraphTableCursor(*this);
         }
-        catch ( CSraException& exc ) {
+        catch ( CSraException& /*exc*/ ) {
             if ( !(GetPath().size() > 8 &&
                    NStr::StartsWith(GetPath(), "NA")) ) {
                 throw;
