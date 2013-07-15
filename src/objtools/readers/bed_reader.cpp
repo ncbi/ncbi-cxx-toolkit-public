@@ -387,7 +387,7 @@ void CBedReader::x_SetFeatureDisplayData(
     if ( m_columncount >= 9 ) {
         display_data->AddField( 
             "itemRGB",
-            NStr::StringToInt(fields[8], NStr::fConvErr_NoThrow) );
+            fields[8]);
     }
     if ( m_columncount >= 10 ) {
         display_data->AddField( 
