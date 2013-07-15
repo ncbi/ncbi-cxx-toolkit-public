@@ -32,7 +32,7 @@
  */
 
 #define  STRINGUTF8_DEFINITION      1
-#define  STRINGUTF8_OBSOLETE_STATIC 1
+#define  STRINGUTF8_OBSOLETE_STATIC 0
 
 #if STRINGUTF8_DEFINITION
 /////////////////////////////////////////////////////////////////////////////
@@ -104,29 +104,29 @@ public:
     /// @param validate
     ///   Verify the character encoding of the source
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED_CTOR( CStringUTF8_DEPRECATED(const CTempString& src) );
-    NCBI_DEPRECATED_CTOR( CStringUTF8_DEPRECATED(const char* src ) );
-    NCBI_DEPRECATED_CTOR( CStringUTF8_DEPRECATED(const string& src) );
-    NCBI_DEPRECATED_CTOR( CStringUTF8_DEPRECATED(const CTempString& src,
+    CStringUTF8_DEPRECATED(const CTempString& src);
+    CStringUTF8_DEPRECATED(const char* src );
+    CStringUTF8_DEPRECATED(const string& src);
+    CStringUTF8_DEPRECATED(const CTempString& src,
                   EEncoding encoding,
-                  EValidate validate = eNoValidate));
-    NCBI_DEPRECATED_CTOR( CStringUTF8_DEPRECATED(const char* src,
+                  EValidate validate = eNoValidate);
+    CStringUTF8_DEPRECATED(const char* src,
                 EEncoding encoding,
-                EValidate validate = eNoValidate));
-    NCBI_DEPRECATED_CTOR( CStringUTF8_DEPRECATED(const string& src,
+                EValidate validate = eNoValidate);
+    CStringUTF8_DEPRECATED(const string& src,
                 EEncoding encoding,
-                EValidate validate = eNoValidate));
+                EValidate validate = eNoValidate);
 
     /// Constructor from Unicode string
     ///
     /// @param src
     ///   Source string
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED_CTOR( CStringUTF8_DEPRECATED(const TStringUnicode& src));
-    NCBI_DEPRECATED_CTOR( CStringUTF8_DEPRECATED(const TStringUCS4&    src));
-    NCBI_DEPRECATED_CTOR( CStringUTF8_DEPRECATED(const TStringUCS2&    src));
+    CStringUTF8_DEPRECATED(const TStringUnicode& src);
+    CStringUTF8_DEPRECATED(const TStringUCS4&    src);
+    CStringUTF8_DEPRECATED(const TStringUCS2&    src);
 #if defined(HAVE_WSTRING)
-    NCBI_DEPRECATED_CTOR( CStringUTF8_DEPRECATED(const wstring&        src));
+    CStringUTF8_DEPRECATED(const wstring&        src);
 #endif
 
     /// Constructor from Unicode character sequence
@@ -134,11 +134,11 @@ public:
     /// @param src
     ///   Source zero-terminated character buffer
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED_CTOR( CStringUTF8_DEPRECATED(const TUnicodeSymbol* src));
-    NCBI_DEPRECATED_CTOR( CStringUTF8_DEPRECATED(const TCharUCS4*      src));
-    NCBI_DEPRECATED_CTOR( CStringUTF8_DEPRECATED(const TCharUCS2*      src));
+    CStringUTF8_DEPRECATED(const TUnicodeSymbol* src);
+    CStringUTF8_DEPRECATED(const TCharUCS4*      src);
+    CStringUTF8_DEPRECATED(const TCharUCS2*      src);
 #if defined(HAVE_WSTRING)
-    NCBI_DEPRECATED_CTOR( CStringUTF8_DEPRECATED(const wchar_t*        src));
+    CStringUTF8_DEPRECATED(const wchar_t*        src);
 #endif
 
     /// Constructor from Unicode character sequence
@@ -151,15 +151,15 @@ public:
     /// @param char_count
     ///   Number of TChars in the buffer
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED_CTOR( CStringUTF8_DEPRECATED(ECharBufferType type,
-                const TUnicodeSymbol* src, SIZE_TYPE char_count));
-    NCBI_DEPRECATED_CTOR( CStringUTF8_DEPRECATED(ECharBufferType type,
-                const TCharUCS4*      src, SIZE_TYPE char_count));
-    NCBI_DEPRECATED_CTOR( CStringUTF8_DEPRECATED(ECharBufferType type,
-                const TCharUCS2*      src, SIZE_TYPE char_count));
+    CStringUTF8_DEPRECATED(ECharBufferType type,
+                const TUnicodeSymbol* src, SIZE_TYPE char_count);
+    CStringUTF8_DEPRECATED(ECharBufferType type,
+                const TCharUCS4*      src, SIZE_TYPE char_count);
+    CStringUTF8_DEPRECATED(ECharBufferType type,
+                const TCharUCS2*      src, SIZE_TYPE char_count);
 #if defined(HAVE_WSTRING)
-    NCBI_DEPRECATED_CTOR( CStringUTF8_DEPRECATED(ECharBufferType type,
-                const wchar_t*        src, SIZE_TYPE char_count));
+    CStringUTF8_DEPRECATED(ECharBufferType type,
+                const wchar_t*        src, SIZE_TYPE char_count);
 #endif
 
     /// Assign UTF8 string
@@ -170,11 +170,11 @@ public:
     /// @param src
     ///   Source string
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& operator= (const TStringUnicode& src);
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& operator= (const TStringUCS4&    src);
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& operator= (const TStringUCS2&    src);
+    CStringUTF8_DEPRECATED& operator= (const TStringUnicode& src);
+    CStringUTF8_DEPRECATED& operator= (const TStringUCS4&    src);
+    CStringUTF8_DEPRECATED& operator= (const TStringUCS2&    src);
 #if defined(HAVE_WSTRING)
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& operator= (const wstring&        src);
+    CStringUTF8_DEPRECATED& operator= (const wstring&        src);
 #endif
 
     /// Assign Unicode C string
@@ -182,11 +182,11 @@ public:
     /// @param src
     ///   Source zero-terminated character buffer
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& operator= (const TUnicodeSymbol* src);
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& operator= (const TCharUCS4*      src);
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& operator= (const TCharUCS2*      src);
+    CStringUTF8_DEPRECATED& operator= (const TUnicodeSymbol* src);
+    CStringUTF8_DEPRECATED& operator= (const TCharUCS4*      src);
+    CStringUTF8_DEPRECATED& operator= (const TCharUCS2*      src);
 #if defined(HAVE_WSTRING)
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& operator= (const wchar_t*        src);
+    CStringUTF8_DEPRECATED& operator= (const wchar_t*        src);
 #endif
 
     /// Append UTF8 string
@@ -197,11 +197,11 @@ public:
     /// @param src
     ///   Source string
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& operator+= (const TStringUnicode& src);
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& operator+= (const TStringUCS4&    src);
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& operator+= (const TStringUCS2&    src);
+    CStringUTF8_DEPRECATED& operator+= (const TStringUnicode& src);
+    CStringUTF8_DEPRECATED& operator+= (const TStringUCS4&    src);
+    CStringUTF8_DEPRECATED& operator+= (const TStringUCS2&    src);
 #if defined(HAVE_WSTRING)
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& operator+= (const wstring&        src);
+    CStringUTF8_DEPRECATED& operator+= (const wstring&        src);
 #endif
 
     /// Append Unicode C string
@@ -209,11 +209,11 @@ public:
     /// @param src
     ///   Source zero-terminated character buffer
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& operator+= (const TUnicodeSymbol* src);
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& operator+= (const TCharUCS4*      src);
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& operator+= (const TCharUCS2*      src);
+    CStringUTF8_DEPRECATED& operator+= (const TUnicodeSymbol* src);
+    CStringUTF8_DEPRECATED& operator+= (const TCharUCS4*      src);
+    CStringUTF8_DEPRECATED& operator+= (const TCharUCS2*      src);
 #if defined(HAVE_WSTRING)
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& operator+= (const wchar_t*        src);
+    CStringUTF8_DEPRECATED& operator+= (const wchar_t*        src);
 #endif
 
     /// Assign C/C++ string
@@ -225,7 +225,7 @@ public:
     /// @param validate
     ///   Verify the character encoding of the source
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Assign(const CTempString& src,
+    CStringUTF8_DEPRECATED& Assign(const CTempString& src,
                         EEncoding          encoding,
                         EValidate          validate = eNoValidate);
 
@@ -234,11 +234,11 @@ public:
     /// @param src
     ///   Source string
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Assign(const TStringUnicode& src);
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Assign(const TStringUCS4&    src);
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Assign(const TStringUCS2&    src);
+    CStringUTF8_DEPRECATED& Assign(const TStringUnicode& src);
+    CStringUTF8_DEPRECATED& Assign(const TStringUCS4&    src);
+    CStringUTF8_DEPRECATED& Assign(const TStringUCS2&    src);
 #if defined(HAVE_WSTRING)
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Assign(const wstring&        src);
+    CStringUTF8_DEPRECATED& Assign(const wstring&        src);
 #endif
 
     /// Assign Unicode C string
@@ -246,11 +246,11 @@ public:
     /// @param src
     ///   Source zero-terminated character buffer
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Assign(const TUnicodeSymbol* src);
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Assign(const TCharUCS4*      src);
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Assign(const TCharUCS2*      src);
+    CStringUTF8_DEPRECATED& Assign(const TUnicodeSymbol* src);
+    CStringUTF8_DEPRECATED& Assign(const TCharUCS4*      src);
+    CStringUTF8_DEPRECATED& Assign(const TCharUCS2*      src);
 #if defined(HAVE_WSTRING)
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Assign(const wchar_t*        src);
+    CStringUTF8_DEPRECATED& Assign(const wchar_t*        src);
 #endif
 
     /// Assign Unicode C string or character buffer
@@ -263,14 +263,14 @@ public:
     /// @param char_count
     ///   Number of TChars in the buffer
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Assign(ECharBufferType type,
+    CStringUTF8_DEPRECATED& Assign(ECharBufferType type,
                         const TUnicodeSymbol* src, SIZE_TYPE char_count);
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Assign(ECharBufferType type,
+    CStringUTF8_DEPRECATED& Assign(ECharBufferType type,
                         const TCharUCS4*      src, SIZE_TYPE char_count);
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Assign(ECharBufferType type,
+    CStringUTF8_DEPRECATED& Assign(ECharBufferType type,
                         const TCharUCS2*      src, SIZE_TYPE char_count);
 #if defined(HAVE_WSTRING)
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Assign(ECharBufferType type,
+    CStringUTF8_DEPRECATED& Assign(ECharBufferType type,
                         const wchar_t*        src, SIZE_TYPE char_count);
 #endif
 
@@ -281,7 +281,7 @@ public:
     /// @param encoding
     ///   Character encoding
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Assign(char ch, EEncoding encoding);
+    CStringUTF8_DEPRECATED& Assign(char ch, EEncoding encoding);
 
     /// Append a C/C++ string
     ///
@@ -292,7 +292,7 @@ public:
     /// @param validate
     ///   Verify the character encoding of the source
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Append(const CTempString& src,
+    CStringUTF8_DEPRECATED& Append(const CTempString& src,
                         EEncoding encoding,
                         EValidate validate = eNoValidate);
 
@@ -301,11 +301,11 @@ public:
     /// @param src
     ///   Source string
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Append(const TStringUnicode& src);
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Append(const TStringUCS4&    src);
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Append(const TStringUCS2&    src);
+    CStringUTF8_DEPRECATED& Append(const TStringUnicode& src);
+    CStringUTF8_DEPRECATED& Append(const TStringUCS4&    src);
+    CStringUTF8_DEPRECATED& Append(const TStringUCS2&    src);
 #if defined(HAVE_WSTRING)
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Append(const wstring&        src);
+    CStringUTF8_DEPRECATED& Append(const wstring&        src);
 #endif
 
     /// Append Unicode C string
@@ -313,11 +313,11 @@ public:
     /// @param src
     ///   Source zero-terminated character buffer
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Append(const TUnicodeSymbol* src);
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Append(const TCharUCS4*      src);
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Append(const TCharUCS2*      src);
+    CStringUTF8_DEPRECATED& Append(const TUnicodeSymbol* src);
+    CStringUTF8_DEPRECATED& Append(const TCharUCS4*      src);
+    CStringUTF8_DEPRECATED& Append(const TCharUCS2*      src);
 #if defined(HAVE_WSTRING)
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Append(const wchar_t*        src);
+    CStringUTF8_DEPRECATED& Append(const wchar_t*        src);
 #endif
 
     /// Append Unicode C string or character buffer
@@ -330,14 +330,14 @@ public:
     /// @param char_count
     ///   Number of TChars in the buffer
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Append(ECharBufferType type,
+    CStringUTF8_DEPRECATED& Append(ECharBufferType type,
                         const TUnicodeSymbol* src, SIZE_TYPE char_count);
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Append(ECharBufferType type,
+    CStringUTF8_DEPRECATED& Append(ECharBufferType type,
                         const TCharUCS4*      src, SIZE_TYPE char_count);
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Append(ECharBufferType type,
+    CStringUTF8_DEPRECATED& Append(ECharBufferType type,
                         const TCharUCS2*      src, SIZE_TYPE char_count);
 #if defined(HAVE_WSTRING)
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Append(ECharBufferType type,
+    CStringUTF8_DEPRECATED& Append(ECharBufferType type,
                         const wchar_t*        src, SIZE_TYPE char_count);
 #endif
 
@@ -348,21 +348,21 @@ public:
     /// @param encoding
     ///   Character encoding
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Append(char ch, EEncoding encoding);
+    CStringUTF8_DEPRECATED& Append(char ch, EEncoding encoding);
 
     /// Append single Unicode code point
     ///
     /// @param ch
     ///   Unicode code point
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& Append(TUnicodeSymbol ch);
+    CStringUTF8_DEPRECATED& Append(TUnicodeSymbol ch);
 
     /// Get the number of symbols (code points) in the string
     ///
     /// @return
     ///   Number of symbols (code points)
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED SIZE_TYPE GetSymbolCount(void) const;
+    SIZE_TYPE GetSymbolCount(void) const;
     
     /// Get the number of symbols (code points) in the string
     ///
@@ -370,7 +370,7 @@ public:
     ///   Number of symbols (code points)
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    NCBI_DEPRECATED static SIZE_TYPE GetSymbolCount(const CTempString& src);
+    static SIZE_TYPE GetSymbolCount(const CTempString& src);
 #endif
 
     /// Get the number of valid UTF-8 symbols (code points) in the buffer
@@ -383,7 +383,7 @@ public:
     ///   Number of valid symbols (no exception thrown)
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    NCBI_DEPRECATED static SIZE_TYPE GetValidSymbolCount(const char* src, SIZE_TYPE buf_size);
+    static SIZE_TYPE GetValidSymbolCount(const char* src, SIZE_TYPE buf_size);
 #endif
 
     /// Get the number of valid UTF-8 symbols (code points) in the char buffer
@@ -394,7 +394,7 @@ public:
     ///   Number of valid symbols (no exception thrown)
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    NCBI_DEPRECATED static SIZE_TYPE GetValidSymbolCount(const CTempString& src);
+    static SIZE_TYPE GetValidSymbolCount(const CTempString& src);
 #endif
     
     /// Get the number of valid UTF-8 bytes (code units) in the buffer
@@ -407,7 +407,7 @@ public:
     ///   Number of valid bytes (no exception thrown)
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    NCBI_DEPRECATED static SIZE_TYPE GetValidBytesCount(const char* src, SIZE_TYPE buf_size);
+    static SIZE_TYPE GetValidBytesCount(const char* src, SIZE_TYPE buf_size);
 #endif
 
     /// Get the number of valid UTF-8 bytes (code units) in the char buffer
@@ -418,7 +418,7 @@ public:
     ///   Number of valid bytes (no exception thrown)
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    NCBI_DEPRECATED static SIZE_TYPE GetValidBytesCount(const CTempString& src);
+    static SIZE_TYPE GetValidBytesCount(const CTempString& src);
 #endif
 
     /// Check that the character encoding of the string is valid UTF-8
@@ -426,7 +426,7 @@ public:
     /// @return
     ///   Result of the check
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED bool IsValid(void) const;
+    bool IsValid(void) const;
 
     /// Convert to ISO 8859-1 (Latin1) character representation
     ///
@@ -436,7 +436,7 @@ public:
     ///   If the conversion is impossible, append the provided string
     ///   or, if substitute_on_error equals 0, throw the exception
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED string AsLatin1(const char* substitute_on_error = 0) const;
+    string AsLatin1(const char* substitute_on_error = 0) const;
     
     /// Convert the string to a single-byte character representation
     ///
@@ -450,7 +450,7 @@ public:
     /// @return
     ///   C++ string
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED string AsSingleByteString(EEncoding   encoding,
+    string AsSingleByteString(EEncoding   encoding,
                               const char* substitute_on_error = 0) const;
 
 #if defined(HAVE_WSTRING)
@@ -465,7 +465,7 @@ public:
     ///   If the conversion is impossible, append the provided string
     ///   or, if substitute_on_error equals 0, throw the exception
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED wstring AsUnicode(const wchar_t* substitute_on_error = 0) const;
+    wstring AsUnicode(const wchar_t* substitute_on_error = 0) const;
 #endif // HAVE_WSTRING
 
     /// Convert to UCS-2 for all platforms
@@ -477,17 +477,17 @@ public:
     ///   If the conversion is impossible, append the provided string
     ///   or, if substitute_on_error equals 0, throw the exception
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED TStringUCS2 AsUCS2(const TCharUCS2* substitute_on_error = 0) const;
+    TStringUCS2 AsUCS2(const TCharUCS2* substitute_on_error = 0) const;
 
     /// Conversion to Unicode string with any base type we need
     /// @deprecated  Use utility class CUtf8 instead
-    template <typename TChar> NCBI_DEPRECATED 
+    template <typename TChar> 
     basic_string<TChar> AsBasicString(const TChar* substitute_on_error = 0)
         const;
 
     /// Conversion to Unicode string with any base type we need
     /// @deprecated  Use utility class CUtf8 instead
-    template <typename TChar> NCBI_DEPRECATED 
+    template <typename TChar> 
     static  
     basic_string<TChar> AsBasicString(
         const CTempString& src,
@@ -496,7 +496,7 @@ public:
 
     /// Conversion to Unicode string with any base type we need
     /// @deprecated  Use utility class CUtf8 instead
-    template <typename TChar> NCBI_DEPRECATED 
+    template <typename TChar> 
     static basic_string<TChar> AsBasicString(const CTempString& src);
 
     /// Guess the encoding of the C/C++ string
@@ -508,7 +508,7 @@ public:
     ///   Encoding
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    NCBI_DEPRECATED static EEncoding GuessEncoding(const CTempString& src);
+    static EEncoding GuessEncoding(const CTempString& src);
 #endif
     /// Check the encoding of the C/C++ string
     ///
@@ -522,7 +522,7 @@ public:
     ///   Boolean result: encoding is same or compatible
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    NCBI_DEPRECATED static bool MatchEncoding(const CTempString& src, EEncoding encoding);
+    static bool MatchEncoding(const CTempString& src, EEncoding encoding);
 #endif
 
     /// Give Encoding name as string
@@ -536,7 +536,7 @@ public:
     ///   Encoding name
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    NCBI_DEPRECATED static string EncodingToString(EEncoding encoding);
+    static string EncodingToString(EEncoding encoding);
 #endif
     
     /// Convert encoding name into EEncoding enum, taking into account synonyms
@@ -551,7 +551,7 @@ public:
     ///   EEncoding enum
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    NCBI_DEPRECATED static EEncoding StringToEncoding(const CTempString& str);
+    static EEncoding StringToEncoding(const CTempString& str);
 #endif
     
     /// Convert encoded character into UTF16
@@ -564,7 +564,7 @@ public:
     ///   Code point
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    NCBI_DEPRECATED static TUnicodeSymbol CharToSymbol(char ch, EEncoding encoding);
+    static TUnicodeSymbol CharToSymbol(char ch, EEncoding encoding);
 #endif
     
     /// Convert Unicode code point into encoded character
@@ -577,7 +577,7 @@ public:
     ///   Encoded character
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    NCBI_DEPRECATED static char SymbolToChar(TUnicodeSymbol sym, EEncoding encoding);
+    static char SymbolToChar(TUnicodeSymbol sym, EEncoding encoding);
 #endif
 
     /// Convert sequence of UTF8 code units into Unicode code point
@@ -588,10 +588,10 @@ public:
     ///   Unicode code point
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    NCBI_DEPRECATED static TUnicodeSymbol Decode(const char*& src);
+    static TUnicodeSymbol Decode(const char*& src);
 #ifndef NCBI_COMPILER_WORKSHOP
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED static TUnicodeSymbol Decode(string::const_iterator& src);
+    static TUnicodeSymbol Decode(string::const_iterator& src);
 #endif
 #endif
     
@@ -604,7 +604,7 @@ public:
     ///   TruncateSpacesInPlace, TruncateSpaces_Unsafe, TruncateSpaces
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    NCBI_DEPRECATED static bool IsWhiteSpace(TUnicodeSymbol chU);
+    static bool IsWhiteSpace(TUnicodeSymbol chU);
 #endif
     
     /// Truncate spaces in the string (in-place)
@@ -617,7 +617,7 @@ public:
     /// @sa
     ///   IsWhiteSpace, TruncateSpaces_Unsafe, TruncateSpaces
     /// @deprecated  Use utility class CUtf8 instead
-    NCBI_DEPRECATED CStringUTF8_DEPRECATED& TruncateSpacesInPlace(NStr::ETrunc side = NStr::eTrunc_Both);
+    CStringUTF8_DEPRECATED& TruncateSpacesInPlace(NStr::ETrunc side = NStr::eTrunc_Both);
 
     /// Truncate spaces in the string
     ///
@@ -634,7 +634,7 @@ public:
     ///   IsWhiteSpace, TruncateSpacesInPlace, TruncateSpaces, CTempString
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    NCBI_DEPRECATED static CTempString TruncateSpaces_Unsafe
+    static CTempString TruncateSpaces_Unsafe
     (const CTempString& str, NStr::ETrunc side = NStr::eTrunc_Both);
 #endif
 
@@ -649,7 +649,7 @@ public:
     ///   IsWhiteSpace, TruncateSpacesInPlace, TruncateSpaces_Unsafe
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    NCBI_DEPRECATED static CStringUTF8_DEPRECATED TruncateSpaces(const CTempString& str,
+    static CStringUTF8_DEPRECATED TruncateSpaces(const CTempString& str,
                                       NStr::ETrunc side = NStr::eTrunc_Both);
 #endif
 
@@ -663,7 +663,7 @@ public:
     ///   non-zero, if the character is valid
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    NCBI_DEPRECATED static TUnicodeSymbol  DecodeFirst(char ch, SIZE_TYPE& more);
+    static TUnicodeSymbol  DecodeFirst(char ch, SIZE_TYPE& more);
 #endif
 
     /// Convert next character of UTF8 sequence into Unicode
@@ -676,7 +676,7 @@ public:
     ///   non-zero, if the character is valid
     /// @deprecated  Use utility class CUtf8 instead
 #if  STRINGUTF8_OBSOLETE_STATIC
-    NCBI_DEPRECATED static TUnicodeSymbol  DecodeNext(TUnicodeSymbol chU, char ch);
+    static TUnicodeSymbol  DecodeNext(TUnicodeSymbol chU, char ch);
 #endif
 
 private:
