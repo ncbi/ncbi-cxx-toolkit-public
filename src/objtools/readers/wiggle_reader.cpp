@@ -251,17 +251,6 @@ CWiggleReader::xReadVariableStepDataRaw(
 }
 
 //  ----------------------------------------------------------------------------
-void
-CWiggleReader::xProcessError(
-    CObjReaderLineException& err,
-    IErrorContainer* pContainer)
-//  ----------------------------------------------------------------------------
-{
-    err.SetLineNumber(m_uLineNumber);
-    ProcessError(err, pContainer);
-}
-
-//  ----------------------------------------------------------------------------
 double CWiggleReader::xEstimateSize(size_t rows, bool fixed_span) const
 //  ----------------------------------------------------------------------------
 {
@@ -647,7 +636,7 @@ CTempString CWiggleReader::xGetWord(
             eDiag_Warning,
             0,
             "Identifier expected");
-        xProcessError(err, pErrorContainer);
+        ProcessError(err, pErrorContainer);
     }
     m_CurLine = m_CurLine.substr(skip);
     return CTempString(ptr, skip);
@@ -674,7 +663,7 @@ CTempString CWiggleReader::xGetParamName(
         eDiag_Warning,
         0,
         "\"=\" expected");
-    xProcessError(err, pErrorContainer);
+    ProcessWarning(err, pErrorContainer);
     return CTempString();
 }
 
@@ -698,7 +687,7 @@ CTempString CWiggleReader::xGetParamValue(
             eDiag_Warning,
             0,
             "Open quotes");
-        xProcessError(err, pErrorContainer);
+        ProcessError(err, pErrorContainer);
     }
     return xGetWord(pErrorContainer);
 }
@@ -726,7 +715,7 @@ void CWiggleReader::xGetPos(
             eDiag_Error,
             0,
             "Integer value expected");
-        xProcessError(err, pErrorContainer);
+        ProcessError(err, pErrorContainer);
         }
     }
 }
@@ -815,7 +804,7 @@ bool CWiggleReader::xTryGetDouble(
             eDiag_Warning,
             0,
             "Extra text on line");
-        xProcessError(err, pErrorContainer);
+        ProcessError(err, pErrorContainer);
     }
     m_CurLine.clear();
     return true;
@@ -846,7 +835,7 @@ inline void CWiggleReader::xGetDouble(
             eDiag_Error,
             0,
             "Floating point value expected");
-        xProcessError(err, pErrorContainer);
+        ProcessError(err, pErrorContainer);
     }
 }
 
@@ -947,7 +936,7 @@ void CWiggleReader::xReadTrack(
                     eDiag_Warning,
                     0,
                     "Invalid track type");
-                xProcessError(err, pErrorContainer);
+                ProcessError(err, pErrorContainer);
             }
         }
         else if ( name == "name" ) {
@@ -965,7 +954,7 @@ void CWiggleReader::xReadTrack(
             eDiag_Error,
             0,
             "Unknown track type");
-        xProcessError(err, pErrorContainer);
+        ProcessError(err, pErrorContainer);
     }
 }
 
@@ -981,7 +970,7 @@ void CWiggleReader::xGetFixedStepInfo(
                 eDiag_Warning,
                 0,
                 "Track \"type=wiggle_0\" is required");
-            xProcessError(err, pErrorContainer);
+            ProcessError(err, pErrorContainer);
         }
         else {
             m_TrackType = eTrackType_wiggle_0;
@@ -1009,7 +998,7 @@ void CWiggleReader::xGetFixedStepInfo(
                 eDiag_Warning,
                 0,
                 "Bad parameter name");
-            xProcessError(err, pErrorContainer);
+            ProcessError(err, pErrorContainer);
         }
     }
     if ( fixedStepInfo.mChrom.empty() ) {
@@ -1017,21 +1006,21 @@ void CWiggleReader::xGetFixedStepInfo(
             eDiag_Error,
             0,
             "Missing chrom parameter");
-        xProcessError(err, pErrorContainer);
+        ProcessError(err, pErrorContainer);
     }
     if ( fixedStepInfo.mStart == 0 ) {
         CObjReaderLineException err(
             eDiag_Error,
             0,
             "Missing start value");
-        xProcessError(err, pErrorContainer);
+        ProcessError(err, pErrorContainer);
     }
     if ( fixedStepInfo.mStep == 0 ) {
         CObjReaderLineException err(
             eDiag_Error,
             0,
             "Missing step value");
-        xProcessError(err, pErrorContainer);
+        ProcessError(err, pErrorContainer);
     }
 }
 
@@ -1068,7 +1057,7 @@ void CWiggleReader::xGetVarStepInfo(
                 eDiag_Warning,
                 0,
                 "Track \"type=wiggle_0\" is required");
-            xProcessError(err, pErrorContainer);
+            ProcessError(err, pErrorContainer);
         }
         else {
             m_TrackType = eTrackType_wiggle_0;
@@ -1090,7 +1079,7 @@ void CWiggleReader::xGetVarStepInfo(
                 eDiag_Warning,
                 0,
                 "Bad parameter name");
-            xProcessError(err, pErrorContainer);
+            ProcessError(err, pErrorContainer);
         }
     }
     if ( varStepInfo.mChrom.empty() ) {
@@ -1098,7 +1087,7 @@ void CWiggleReader::xGetVarStepInfo(
             eDiag_Error,
             0,
             "Missing chrom parameter");
-        xProcessError(err, pErrorContainer);
+        ProcessError(err, pErrorContainer);
     }
 }
 
@@ -1136,7 +1125,7 @@ void CWiggleReader::xReadBedLine(
             eDiag_Warning,
             0,
             "Track \"type=bedGraph\" is required");
-        xProcessError(err, pErrorContainer);
+        ProcessError(err, pErrorContainer);
     }
     xSetChrom(chrom);
     SValueInfo value;

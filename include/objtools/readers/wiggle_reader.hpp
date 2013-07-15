@@ -288,11 +288,6 @@ public:
     //  helpers:
     //
 protected:
-    void
-    xProcessError(
-        CObjReaderLineException&,
-        IErrorContainer* );
-
     void 
     xReadBrowser();
 
