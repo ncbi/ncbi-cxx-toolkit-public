@@ -55,7 +55,7 @@ namespace {
         ITERATE( CGapAnalysis::TVectorGapLengthSummary, summary_iter, 
             summary ) 
         {
-            const CGapAnalysis::SGapLengthSummary & one_summary =
+            const CGapAnalysis::SOneGapLengthSummary & one_summary =
                 *summary_iter;
             cerr << "\tlen: " << one_summary.gap_length 
                 << "\tnum seqs: " << one_summary.num_seqs
@@ -113,4 +113,24 @@ BOOST_AUTO_TEST_CASE(TestBasic)
     BOOST_CHECK_EQUAL( (*basic_gap_summary)[1].num_gaps, 1 );
     BOOST_CHECK_EQUAL( (*basic_gap_summary)[2].num_gaps, 1 );
     BOOST_CHECK_EQUAL( (*basic_gap_summary)[3].num_gaps, 3 );
+}
+
+BOOST_AUTO_TEST_CASE(TestSeqIdComparison)
+{
+    // make sure Seq-ids are compared by contents, not pointer address.
+
+    CRef<CSeq_id> pSeqId1( new CSeq_id("lcl|Seq1") );
+    CRef<CSeq_id> pSeqId2( new CSeq_id("lcl|Seq1") );
+    CRef<CSeq_id> pSeqId3( new CSeq_id("lcl|Seq2") );
+
+    const CGapAnalysis::TGapLength kGapLength = 10;
+
+    CGapAnalysis gap_analysis;
+    gap_analysis.AddGap(pSeqId1, kGapLength);
+    gap_analysis.AddGap(pSeqId2, kGapLength);
+    gap_analysis.AddGap(pSeqId3, kGapLength);
+
+    BOOST_CHECK_EQUAL( 
+        gap_analysis.GetGapLengthSeqIds().find(kGapLength)->second.size(), 
+        2 );
 }

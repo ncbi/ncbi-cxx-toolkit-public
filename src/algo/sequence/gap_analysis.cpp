@@ -73,14 +73,14 @@ void CGapAnalysis::AddGap( TSeqIdConstRef pSeqId, TGapLength iGapLength )
     m_histogramBinner.AddNumber(iGapLength);
 }
 
-void CGapAnalysis::Clear(void)
+void CGapAnalysis::clear(void)
 {
     m_mapGapLengthToSeqIds.clear();
     m_mapGapLengthToNumAppearances.clear();
     m_histogramBinner.clear();
 }
 
-AutoPtr<CGapAnalysis::TVectorGapLengthSummary> 
+CGapAnalysis::TVectorGapLengthSummary *
 CGapAnalysis::GetGapLengthSummary(
     ESortGapLength eSortGapLength,
     ESortDir eSortDir) const
@@ -91,13 +91,13 @@ CGapAnalysis::GetGapLengthSummary(
         const TSetSeqIdConstRef & setSeqIds = gap_map_iter->second;
 
         // find appearances of each gap length
-        size_t num_gaps = 0;
+        Uint8 num_gaps = 0;
         TMapGapLengthToNumAppearances::const_iterator find_iter =
             m_mapGapLengthToNumAppearances.find(iGapLength);
         _ASSERT( find_iter != m_mapGapLengthToNumAppearances.end() );
         num_gaps = find_iter->second;
 
-        SGapLengthSummary gap_length_summary(
+        SOneGapLengthSummary gap_length_summary(
             iGapLength,
             setSeqIds.size(),
             num_gaps );
@@ -108,23 +108,23 @@ CGapAnalysis::GetGapLengthSummary(
     if( eSortGapLength != eSortGapLength_Length ||
         eSortDir != eSortDir_Ascending )
     {
-        SGapLengthSummarySorter sorter(eSortGapLength, eSortDir);
+        SOneGapLengthSummarySorter sorter(eSortGapLength, eSortDir);
         stable_sort(pAnswer->begin(), pAnswer->end(), sorter );
     }
 
-    return pAnswer;
+    return pAnswer.release();
 }
 
-AutoPtr<CHistogramBinning::TListOfBins>
+CHistogramBinning::TListOfBins *
 CGapAnalysis::GetGapHistogram(
-    size_t num_bins,
+    Uint8 num_bins,
     CHistogramBinning::EHistAlgo eHistAlgo )
 {
     m_histogramBinner.SetNumBins(num_bins);
     return m_histogramBinner.CalcHistogram(eHistAlgo);
 }
 
-CGapAnalysis::SGapLengthSummarySorter::SGapLengthSummarySorter(
+CGapAnalysis::SOneGapLengthSummarySorter::SOneGapLengthSummarySorter(
     ESortGapLength sort_gap_length_arg,
     ESortDir       sort_dir_arg )
     : sort_gap_length(sort_gap_length_arg), sort_dir(sort_dir_arg)
@@ -132,13 +132,13 @@ CGapAnalysis::SGapLengthSummarySorter::SGapLengthSummarySorter(
     // nothing to do
 }
 
-bool CGapAnalysis::SGapLengthSummarySorter::operator()(
-    const SGapLengthSummary & lhs,
-    const SGapLengthSummary & rhs ) const
+bool CGapAnalysis::SOneGapLengthSummarySorter::operator()(
+    const SOneGapLengthSummary & lhs,
+    const SOneGapLengthSummary & rhs ) const
 {
     // handle if sorting reversed
-    const SGapLengthSummary & real_lhs = (sort_dir == eSortDir_Ascending ? lhs : rhs);
-    const SGapLengthSummary & real_rhs = (sort_dir == eSortDir_Ascending ? rhs : lhs);
+    const SOneGapLengthSummary & real_lhs = (sort_dir == eSortDir_Ascending ? lhs : rhs);
+    const SOneGapLengthSummary & real_rhs = (sort_dir == eSortDir_Ascending ? rhs : lhs);
 
     switch(sort_gap_length) {
     case eSortGapLength_Length:
