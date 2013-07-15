@@ -765,7 +765,7 @@ bool CVariationUtil::AttachSeq(CVariantPlacement& p, TSeqPos max_len)
                 p.SetExceptions().push_back(CreateException("Ambiguous residues in reference", CVariationException::eCode_ambiguous_sequence));
             }    
             ret = true;
-        } catch(CException& e) { 
+        } catch(CException&) { 
             //location can be invalid - SNP-5510
             p.SetExceptions().push_back(CreateException("Cannot fetch sequence at location", CVariationException::eCode_seqfetch_invalid));
             ret = false;
