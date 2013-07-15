@@ -44,6 +44,7 @@
 #include <corelib/test_boost.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <corelib/ncbierror.hpp>
 
 /////////////////////////////////////////////////////////////////////////////
 // Test ASN serialization
@@ -113,7 +114,10 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
         {
             string in_name  = CDirEntry::MakePath(src_dir, filename, ext[in_i]);
             LOG_POST("Reading from "<<in_name);
-            CFile(in_name).Copy(loc_name);
+            if (!CFile(in_name).Copy(loc_name))
+            {
+                LOG_POST("Error copying file:  " << CNcbiError::GetLast());
+            }
         }
         
         CRef<TObject> obj(new TObject);
@@ -227,7 +231,10 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationWithHook)
         {
             string in_name = CDirEntry::MakePath(src_dir, filename, ext[in_i]);
             LOG_POST("Reading from "<<in_name);
-            CFile(in_name).Copy(loc_name);
+            if (!CFile(in_name).Copy(loc_name))
+            {
+                LOG_POST("Error copying file:  " << CNcbiError::GetLast());
+            }
         }
         
         CRef<TObject> obj(new TObject);
@@ -321,7 +328,10 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationCopy)
         {
             string in_name = CDirEntry::MakePath(src_dir, filename, ext[in_i]);
             LOG_POST("Reading from "<<in_name);
-            CFile(in_name).Copy(loc_name);
+            if (!CFile(in_name).Copy(loc_name))
+            {
+                LOG_POST("Error copying file:  " << CNcbiError::GetLast());
+            }
         }
         
         LOG_POST("Copy into:");
