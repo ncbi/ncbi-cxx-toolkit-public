@@ -906,9 +906,9 @@ inline bool s_ITERATE_SameObject(const Type& obj1, const Type& obj2)
     return &obj1 == &obj2;
 }
 # define ITERATE_GET_BEGIN(Cont) \
-    (NCBI_ASSERT_EXPR(s_ITERATE_SameObject((Cont), (Cont)), "rvalue container in *ITERATE"), (Cont).begin())
+    (NCBI_ASSERT_EXPR(NCBI_NS_NCBI::s_ITERATE_SameObject((Cont), (Cont)), "rvalue container in *ITERATE"), (Cont).begin())
 # define ITERATE_GET_RBEGIN(Cont) \
-    (NCBI_ASSERT_EXPR(s_ITERATE_SameObject((Cont), (Cont)), "rvalue container in *ITERATE"), (Cont).rbegin())
+    (NCBI_ASSERT_EXPR(NCBI_NS_NCBI::s_ITERATE_SameObject((Cont), (Cont)), "rvalue container in *ITERATE"), (Cont).rbegin())
 #else
 # define ITERATE_GET_BEGIN(Cont) (Cont).begin()
 # define ITERATE_GET_RBEGIN(Cont) (Cont).rbegin()
