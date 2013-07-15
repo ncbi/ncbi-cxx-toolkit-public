@@ -51,7 +51,6 @@ CRequestContext::CRequestContext(TContextFlags flags)
       m_ReqTimer(CStopWatch::eStop),
       m_BytesRd(0),
       m_BytesWr(0),
-      m_LogSite(kEmptyStr),
       m_PropSet(0),
       m_IsRunning(false),
       m_AutoIncOnPost(false),
@@ -113,7 +112,6 @@ void CRequestContext::Reset(void)
     UnsetRequestStatus();
     UnsetBytesRd();
     UnsetBytesWr();
-    UnsetLogSite();
     m_ReqTimer.Reset();
 }
 
@@ -415,47 +413,6 @@ const char* CRequestContextException::GetErrCodeString(void) const
     case eBadHit:     return "eBadHit";
     default:          return CException::GetErrCodeString();
     }
-}
-
-
-// NCBI_LOG_SITE logging.
-NCBI_PARAM_DECL(string, Log, Site);
-NCBI_PARAM_DEF_EX(string, Log, Site, kEmptyStr, eParam_NoThread, NCBI_LOG_SITE);
-typedef NCBI_PARAM_TYPE(Log, Site) TLogSite;
-
-
-string CRequestContext::GetApplicationLogSite(void)
-{
-    return TLogSite::GetDefault();
-}
-
-
-string CRequestContext::GetLogSite(void) const
-{
-    if ( x_IsSetProp(eProp_LogSite) ) {
-        return m_LogSite;
-    }
-    return TLogSite::GetDefault();
-}
-
-
-void CRequestContext::SetLogSite(const string& log_site)
-{
-    x_SetProp(eProp_LogSite);
-    m_LogSite = log_site;
-}
-
-
-bool CRequestContext::IsSetLogSite(void) const
-{
-    return x_IsSetProp(eProp_LogSite);
-}
-
-
-void CRequestContext::UnsetLogSite(void)
-{
-    x_UnsetProp(eProp_LogSite);
-    m_LogSite = kEmptyStr;
 }
 
 

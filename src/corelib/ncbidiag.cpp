@@ -1810,10 +1810,6 @@ void CDiagContext::PrintProperties(void)
 void CDiagContext::PrintStart(const string& message)
 {
     x_PrintMessage(SDiagMessage::eEvent_Start, message);
-    string log_site = CRequestContext::GetApplicationLogSite();
-    if ( !log_site.empty() ) {
-        Extra().Print("log_site", log_site);
-    }
 }
 
 
@@ -1910,13 +1906,6 @@ void CDiagContext_Extra::Flush(void)
             app_state != eDiagAppState_Request) {
             ctx.SetAppState(eDiagAppState_RequestBegin);
             app_state_updated = true;
-        }
-        string log_site = CDiagContext::GetRequestContext().GetLogSite();
-        if ( !log_site.empty() ) {
-            // Reset flush flag to add one more value.
-            m_Flushed = false;
-            Print("log_site", log_site);
-            m_Flushed = true;
         }
         CDiagContext::x_StartRequest();
     }
@@ -2445,7 +2434,6 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
     string prop;
     bool need_space = false;
     CRequestContext& ctx = GetRequestContext();
-    string log_site;
 
     switch ( event ) {
     case SDiagMessage::eEvent_Start:
@@ -2454,7 +2442,6 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
     case SDiagMessage::eEvent_RequestStart:
         {
             x_StartRequest();
-            log_site = ctx.GetLogSite();
             break;
         }
     case SDiagMessage::eEvent_Stop:
@@ -2483,17 +2470,11 @@ void CDiagContext::x_PrintMessage(SDiagMessage::EEventType event,
     default:
         return; // Prevent warning about other event types.
     }
-    if ( !message.empty()  ||  !log_site.empty() ) {
+    if ( !message.empty() ) {
         if (need_space) {
             ostr << " ";
         }
         ostr << message;
-        if ( !log_site.empty() ) {
-            if ( !message.empty() ) {
-                ostr << "&";
-            }
-            ostr << "log_site=" << log_site;
-        }
     }
     SDiagMessage mess(eDiag_Info,
                       ostr.str(), size_t(ostr.pcount()),

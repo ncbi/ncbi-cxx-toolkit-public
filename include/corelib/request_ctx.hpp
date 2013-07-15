@@ -141,20 +141,6 @@ public:
     bool IsSetBytesWr(void) const;
     void UnsetBytesWr(void);
 
-    /// Get log_site value if set either by user or in the environment
-    /// or registry. The log_site can be set to an empty string, which
-    /// will override the env/reg value, but will not print log_site.
-    string GetLogSite(void) const;
-    /// Set log_site. The new value overrides any environment/registry
-    /// values. If set to an empty string, the value is not printed at all.
-    void SetLogSite(const string& log_site);
-    /// Return true if log_site has been set either explicitly. Even if the
-    /// method returns false, the log_site value may be non-empty if it's
-    /// set through env/reg.
-    bool IsSetLogSite(void) const;
-    /// Unset log_site value. This will allow using env/reg if available.
-    void UnsetLogSite(void);
-
     /// Reset all properties to the initial state
     void Reset(void);
 
@@ -212,9 +198,6 @@ public:
     static ESessionIDFormat GetAllowedSessionIDFormat(void);
     static void SetAllowedSessionIDFormat(ESessionIDFormat fmt);
 
-    /// Get env/reg value for log_site.
-    static string GetApplicationLogSite(void);
-
 private:
     // Prohibit copying
     CRequestContext(const CRequestContext&);
@@ -241,8 +224,7 @@ private:
         eProp_HitID         = 1 << 3,
         eProp_ReqStatus     = 1 << 4,
         eProp_BytesRd       = 1 << 5,
-        eProp_BytesWr       = 1 << 6,
-        eProp_LogSite       = 1 << 7
+        eProp_BytesWr       = 1 << 6
     };
     typedef int TPropSet;
 
@@ -262,7 +244,6 @@ private:
     CStopWatch     m_ReqTimer;
     Int8           m_BytesRd;
     Int8           m_BytesWr;
-    string         m_LogSite;
     TProperties    m_Properties;
     TPropSet       m_PropSet;
     bool           m_IsRunning;
