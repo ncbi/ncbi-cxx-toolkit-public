@@ -6222,12 +6222,15 @@ struct SLock {
 #if defined(NCBI_OS_MSWIN)
     void Reset(off_t off, size_t len) 
     {
+        offset_lo = (DWORD)(off & 0xFFFFFFFF);
+        offset_hi = (DWORD)((Int8(off) >> 32) & 0xFFFFFFFF);
         // Locking a region that goes beyond the current EOF position
         // is not an error.
         if (len) {
             length_lo = (DWORD)(len & 0xFFFFFFFF);
             length_hi = (DWORD)((Int8(len) >> 32) & 0xFFFFFFFF);
         } else {
+            // Lock a whole file
             length_lo = 0;
             length_hi = 0xFFFFFFFF;
         }
