@@ -43,6 +43,14 @@
 #include <objects/seq/Seqdesc.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
+#include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/taxon3/Taxon3_request.hpp>
+#include <objects/taxon3/T3Request.hpp>
+#include <objects/taxon3/SequenceOfInt.hpp>
+#include <objects/taxon3/Taxon3_reply.hpp>
+#include <objects/taxon3/T3Reply.hpp>
+#include <objects/taxon3/taxon3.hpp>
 
 #include <serial/iterator.hpp>
 
@@ -1161,26 +1169,8 @@ string CAutoDef::x_GetFeatureClauseProductEnding(const string& feature_clauses,
 }
 
 
-string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, CBioseq_Handle bh)
+string CAutoDef::GetOneFeatureClauseList(CBioseq_Handle bh, unsigned int genome_val)
 {
-    // for protein sequences, use sequence::GetTitle
-    if (bh.CanGetInst() && bh.GetInst().CanGetMol() && bh.GetInst().GetMol() == CSeq_inst::eMol_aa) {
-        return sequence::CDeflineGenerator()
-            .GenerateDefline(bh,
-                             sequence::CDeflineGenerator::fIgnoreExisting |
-                             sequence::CDeflineGenerator::fAllProteinNames);
-    }
-    string org_desc = "Unknown organism";
-    unsigned int genome_val = CBioSource::eGenome_unknown;
-    
-    for (CSeqdesc_CI dit(bh, CSeqdesc::e_Source); dit;  ++dit) {
-        const CBioSource& bsrc = dit->GetSource();
-        org_desc = mod_combo->GetSourceDescriptionString(bsrc);
-        if (bsrc.CanGetGenome()) {
-            genome_val = bsrc.GetGenome();
-        }
-        break;
-    }
     string feature_clauses = "";
     if (m_FeatureListType == eListAllFeatures) {
         feature_clauses = " " + x_GetFeatureClauses(bh);
@@ -1207,8 +1197,107 @@ string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, CBioseq_Handle 
         }
         feature_clauses += ", complete genome";
     }
+    return feature_clauses;
+}
+
+
+string CAutoDef::GetOneDefLine(CAutoDefModifierCombo *mod_combo, CBioseq_Handle bh)
+{
+    // for protein sequences, use sequence::GetTitle
+    if (bh.CanGetInst() && bh.GetInst().CanGetMol() && bh.GetInst().GetMol() == CSeq_inst::eMol_aa) {
+        return sequence::CDeflineGenerator()
+            .GenerateDefline(bh,
+                             sequence::CDeflineGenerator::fIgnoreExisting |
+                             sequence::CDeflineGenerator::fAllProteinNames);
+    }
+    string org_desc = "Unknown organism";
+    unsigned int genome_val = CBioSource::eGenome_unknown;
+    
+    for (CSeqdesc_CI dit(bh, CSeqdesc::e_Source); dit;  ++dit) {
+        const CBioSource& bsrc = dit->GetSource();
+        org_desc = mod_combo->GetSourceDescriptionString(bsrc);
+        if (bsrc.CanGetGenome()) {
+            genome_val = bsrc.GetGenome();
+        }
+        break;
+    }
+    string feature_clauses = GetOneFeatureClauseList(bh, genome_val);
     
     return org_desc + feature_clauses;
+}
+
+
+string CAutoDef::GetDocsumOrgDescription(CSeq_entry_Handle se)
+{
+    string joined_org = "Mixed organisms";
+
+    CRef<CT3Request> rq(new CT3Request());
+    CBioseq_CI bi (se, CSeq_inst::eMol_na);
+    while (bi) {
+        CSeqdesc_CI desc_ci(*bi, CSeqdesc::e_Source);
+        if (desc_ci && desc_ci->GetSource().IsSetOrg()) {
+            int taxid = desc_ci->GetSource().GetOrg().GetTaxId();
+            if (taxid > 0) {
+                rq->SetJoin().Set().push_back(taxid);
+            }
+        }
+        ++bi;
+    }
+    if (rq->IsJoin() && rq->GetJoin().Get().size() > 0) {
+        CTaxon3_request request;
+        request.SetRequest().push_back(rq);
+        CTaxon3 taxon3;
+        taxon3.Init();
+        CRef<CTaxon3_reply> reply = taxon3.SendRequest(request);
+        if (reply) {
+            CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+            while (reply_it != reply->GetReply().end()) {
+                if ((*reply_it)->IsData() 
+                    && (*reply_it)->GetData().GetOrg().IsSetTaxname()) {
+                    joined_org = (*reply_it)->GetData().GetOrg().GetTaxname();
+                    break;
+                }
+                ++reply_it;
+            }
+        }
+    }
+
+    return joined_org;
+}
+
+
+string CAutoDef::GetDocsumDefLine(CSeq_entry_Handle se)
+{
+    string org_desc = GetDocsumOrgDescription(se);
+
+    string feature_clauses = "";
+    CBioseq_CI bi(se, CSeq_inst::eMol_na);
+    if (bi) {
+        unsigned int genome_val = CBioSource::eGenome_unknown;
+        CSeqdesc_CI di(*bi, CSeqdesc::e_Source);
+        if (di && di->GetSource().IsSetGenome()) {
+            genome_val = di->GetSource().GetGenome();
+        }
+        feature_clauses = GetOneFeatureClauseList(*bi, genome_val);
+    }
+    
+    return org_desc + feature_clauses;
+}
+
+
+bool CAutoDef::NeedsDocsumDefline(const CBioseq_set& set)
+{
+    bool rval = false;
+    if (set.IsSetClass()) {
+        CBioseq_set::EClass set_class = set.GetClass();
+        if (set_class == CBioseq_set::eClass_pop_set
+              || set_class == CBioseq_set::eClass_phy_set
+              || set_class == CBioseq_set::eClass_eco_set
+              || set_class == CBioseq_set::eClass_mut_set) {
+            rval = true;
+        }
+    }
+    return rval;
 }
 
 

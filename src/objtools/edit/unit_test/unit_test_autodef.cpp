@@ -102,6 +102,7 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/unit_test_util/unit_test_util.hpp>
 #include <corelib/ncbiapp.hpp>
 
 #include <objtools/edit/autodef.hpp>
@@ -232,6 +233,15 @@ static void CheckDeflineMatches(CRef<CSeq_entry> entry, bool use_best = false)
        string new_defline = autodef.GetOneDefLine(mod_combo, bh);
 
        BOOST_CHECK_EQUAL(orig_defline, new_defline);
+    }
+    if (seh.IsSet() && CAutoDef::NeedsDocsumDefline(*(seh.GetSet().GetCompleteBioseq_set()))) {
+        string orig_defline = "";
+        CSeqdesc_CI desc_it(seh, CSeqdesc::e_Title, 1);
+        if (desc_it) {
+            orig_defline = desc_it->GetTitle();
+        }
+        string new_defline = autodef.GetDocsumDefLine(seh);
+        BOOST_CHECK_EQUAL(orig_defline, new_defline);
     }
 }
 
@@ -483,6 +493,66 @@ BOOST_AUTO_TEST_CASE(Test_SQD_155)
 
     CheckDeflineMatches(entry);
 }
+
+BOOST_AUTO_TEST_CASE(Test_DocsumTitle_Popset)
+{
+    CRef<CSeq_entry> seq1 = unit_test_util::BuildGoodNucProtSet();
+    unit_test_util::SetTaxname(seq1, "Pinus cembra");
+    // clear previous taxid before setting new one
+    unit_test_util::SetTaxon(seq1, 0);
+    unit_test_util::SetTaxon(seq1, 58041);
+    unit_test_util::SetOrgMod(seq1, COrgMod::eSubtype_isolate, "AcesapD07");
+    string defline = "Pinus cembra AcesapD07 fake protein name gene, complete cds.";
+    AddTitle(unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(seq1), defline);
+
+    CRef<CSeq_entry> seq2 = unit_test_util::BuildGoodNucProtSet();
+    unit_test_util::ChangeId(seq2, "2");
+    unit_test_util::SetTaxname(seq2, "Pinus cembra");
+    // clear previous taxid before setting new one
+    unit_test_util::SetTaxon(seq2, 0);
+    unit_test_util::SetTaxon(seq2, 58041);
+    unit_test_util::SetOrgMod(seq2, COrgMod::eSubtype_isolate, "AcesapD12");
+    defline = "Pinus cembra AcesapD12 fake protein name gene, complete cds.";
+    AddTitle(unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(seq2), defline);
+
+    CRef<CSeq_entry> set(new CSeq_entry());
+    set->SetSet().SetClass(CBioseq_set::eClass_pop_set);
+    set->SetSet().SetSeq_set().push_back(seq1);
+    set->SetSet().SetSeq_set().push_back(seq2);
+    defline = "Pinus cembra fake protein name gene, complete cds.";
+    AddTitle(set, defline);
+    CheckDeflineMatches(set, true);
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_DocsumTitle_Physet)
+{
+    CRef<CSeq_entry> seq1 = unit_test_util::BuildGoodNucProtSet();
+    unit_test_util::SetTaxname(seq1, "Bembidion mendocinum");
+    // clear previous taxid before setting new one
+    unit_test_util::SetTaxon(seq1, 0);
+    unit_test_util::SetTaxon(seq1, 1353850);
+    string defline = "Bembidion mendocinum fake protein name gene, complete cds.";
+    AddTitle(unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(seq1), defline);
+
+    CRef<CSeq_entry> seq2 = unit_test_util::BuildGoodNucProtSet();
+    unit_test_util::ChangeId(seq2, "2");
+    unit_test_util::SetTaxname(seq2, "Bembidion orregoi");
+    // clear previous taxid before setting new one
+    unit_test_util::SetTaxon(seq2, 0);
+    unit_test_util::SetTaxon(seq2, 1353851);
+    defline = "Bembidion orregoi fake protein name gene, complete cds.";
+    AddTitle(unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(seq2), defline);
+
+    CRef<CSeq_entry> set(new CSeq_entry());
+    set->SetSet().SetClass(CBioseq_set::eClass_pop_set);
+    set->SetSet().SetSeq_set().push_back(seq1);
+    set->SetSet().SetSeq_set().push_back(seq2);
+    defline = "Chilioperyphus fake protein name gene, complete cds.";
+    AddTitle(set, defline);
+    CheckDeflineMatches(set, true);
+}
+
 
 
 END_SCOPE(objects)

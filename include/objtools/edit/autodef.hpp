@@ -83,6 +83,12 @@ public:
     CAutoDefModifierCombo* GetEmptyCombo();
     unsigned int GetNumAvailableModifiers();
     string GetOneSourceDescription(CBioseq_Handle bh);
+    string GetOneFeatureClauseList(CBioseq_Handle bh, unsigned int genome_val);
+    string GetOneDefLine(CAutoDefModifierCombo* mod_combo, CBioseq_Handle bh);
+    string GetDocsumOrgDescription(CSeq_entry_Handle se);
+    string GetDocsumDefLine(CSeq_entry_Handle se);
+    static bool NeedsDocsumDefline(const CBioseq_set& set);
+
     void DoAutoDef();
     
     void SetFeatureListType(unsigned int feature_list_type);
@@ -103,9 +109,7 @@ public:
 	void SetUseNcRNAComment (bool use_comment);
     void SetUseFakePromoters (bool use_fake);
     
-    void SuppressFeature(objects::CFeatListItem feat);
-    
-    string GetOneDefLine(CAutoDefModifierCombo* mod_combo, CBioseq_Handle bh);
+    void SuppressFeature(objects::CFeatListItem feat);    
     
     typedef vector<CAutoDefModifierCombo *> TModifierComboVector;
     
