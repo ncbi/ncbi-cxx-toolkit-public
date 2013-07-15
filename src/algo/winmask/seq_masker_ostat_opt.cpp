@@ -78,7 +78,7 @@ void CSeqMaskerOstatOpt::doSetUnitCount( Uint4 unit, Uint4 count )
     //
     if( units.size() == units.capacity() )
     {
-        size_t grow( std::max( GROW_CHUNK, units.size()/10 ) );
+        size_t grow( std::max( (size_t)GROW_CHUNK, units.size()/10 ) );
         units.reserve( units.size() + grow );
         counts.reserve( units.size() + grow );
     }
@@ -285,7 +285,7 @@ void CSeqMaskerOstatOpt::doFinalize()
             = CSeqMaskerUtil::hash_code( units[i], k, roff );
         Uint1 ccount = (htp[hash.first]&coll_mask);
 
-        if( ccount != 0 )
+        if( ccount != 0 ) {
             if( ccount == 1 )
             {
                 Uint4 hsb = (((Uint4)(hash.second))<<24);
@@ -304,6 +304,7 @@ void CSeqMaskerOstatOpt::doFinalize()
                 vtp[htp[hash.first]>>bc] 
                     = (((Uint2)(hash.second))<<9) + counts[i];
             }
+        }
     }
 
     params p = { M, k, roff, bc, htp, vtp, cba };
