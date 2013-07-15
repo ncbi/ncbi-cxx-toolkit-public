@@ -649,7 +649,7 @@ CCSraAlignIterator::CCSraAlignIterator(const CCSraDb& csra_db,
                                        const string& ref_id,
                                        TSeqPos ref_pos,
                                        TSeqPos window)
-    : m_RefIter(csra_db, ref_id),
+    : m_RefIter(csra_db, CSeq_id_Handle::GetHandle(ref_id)),
       m_Ref(m_RefIter.GetDb().Ref()),
       m_Error(RC_NO_MORE_ALIGNMENTS),
       m_ArgRefPos(0),
