@@ -952,7 +952,7 @@ bool CGff2Reader::x_FeatureSetDataGene(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    CGene_ref& gene = pFeature->SetData().SetGene();
+    pFeature->SetData().SetGene();
     return true;
 }
 
@@ -974,7 +974,7 @@ bool CGff2Reader::x_FeatureSetDataCDS(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    CCdregion& cdr = pFeature->SetData().SetCdregion();
+    pFeature->SetData().SetCdregion();
     return true;
 }
 
