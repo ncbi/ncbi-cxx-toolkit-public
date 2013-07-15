@@ -995,6 +995,11 @@ public:
      *  XPath expression to run
      * @return
      *  XPath query result nodes set
+     * @attention
+     *  Expressions like "root/node" will result in 0 matches even if the
+     *  document has <root><node/></root>, due to a bug in libxml2 (at least
+     *  till version 2.9.1). The workaround is to use "/root/node" or
+     *  "//root/node" depending on circumstances.
      * @note
      *  If the query result is a scalar value (e.g. count() function) then
      *  the result set will have a single node of the following format:
@@ -1013,6 +1018,11 @@ public:
      *  XPath expression to run
      * @return
      *  XPath query const result nodes set
+     * @attention
+     *  Expressions like "root/node" will result in 0 matches even if the
+     *  document has <root><node/></root>, due to a bug in libxml2 (at least
+     *  till version 2.9.1). The workaround is to use "/root/node" or
+     *  "//root/node" depending on circumstances.
      * @note
      *  If the query result is a scalar value (e.g. count() function) then
      *  the result set will have a single node of the following format:
@@ -1033,6 +1043,11 @@ public:
      *  XPath expression to run, must not be NULL
      * @return
      *  XPath query result nodes set
+     * @attention
+     *  Expressions like "root/node" will result in 0 matches even if the
+     *  document has <root><node/></root>, due to a bug in libxml2 (at least
+     *  till version 2.9.1). The workaround is to use "/root/node" or
+     *  "//root/node" depending on circumstances.
      * @exception
      *  Throws exceptions in case of problems
      * @note
@@ -1057,6 +1072,11 @@ public:
      *  XPath expression to run, must not be NULL
      * @return
      *  XPath query const result nodes set
+     * @attention
+     *  Expressions like "root/node" will result in 0 matches even if the
+     *  document has <root><node/></root>, due to a bug in libxml2 (at least
+     *  till version 2.9.1). The workaround is to use "/root/node" or
+     *  "//root/node" depending on circumstances.
      * @exception
      *  Throws exceptions in case of problems
      * @note
