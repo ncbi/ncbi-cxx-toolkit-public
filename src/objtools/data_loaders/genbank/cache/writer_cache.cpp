@@ -170,11 +170,20 @@ namespace {
             {
                 size_t size = s.size();
                 CheckStore(4+size);
-                x_StoreUint4(size);
+                x_StoreUint4(ToUint4(size));
                 memcpy(m_Ptr, s.data(), size);
                 m_Ptr += size;
             }
 
+        static Uint4 ToUint4(size_t size)
+            {
+                Uint4 ret = Uint4(size);
+                if ( ret != size ) {
+                    NCBI_THROW(CLoaderException, eLoaderFailed,
+                               "Uint4 overflow");
+                }
+                return ret;
+            }
     protected:
         void x_FreeBuffer(void);
         void x_StoreUint4(Uint4 v)
@@ -410,7 +419,7 @@ void CCacheWriter::WriteSeq_ids(const string& key,
 
         CWStream w_stream(writer.release(), 0, 0, CRWStreambuf::fOwnAll);
         CObjectOStreamAsnBinary obj_stream(w_stream);
-        static_cast<CObjectOStream&>(obj_stream).WriteUint4(ids->size());
+        static_cast<CObjectOStream&>(obj_stream).WriteUint4(CStoreBuffer::ToUint4(ids->size()));
         ITERATE ( CLoadInfoSeq_ids, it, *ids ) {
             obj_stream << *it->GetSeqId();
         }
@@ -446,7 +455,7 @@ void CCacheWriter::SaveSeq_idBlob_ids(CReaderRequestResult& result,
     CStoreBuffer str;
     str.StoreInt4(IDS_MAGIC);
     str.StoreUint4(ids->GetState());
-    str.StoreUint4(ids->size());
+    str.StoreUint4(str.ToUint4(ids->size()));
     ITERATE ( CLoadInfoBlob_ids, it, *ids ) {
         const CBlob_id& id = *it->first;
         str.StoreUint4(id.GetSat());
@@ -454,7 +463,7 @@ void CCacheWriter::SaveSeq_idBlob_ids(CReaderRequestResult& result,
         str.StoreUint4(id.GetSatKey());
         const CBlob_Info& info = it->second;
         str.StoreUint4(info.GetContentsMask());
-        str.StoreUint4(info.GetNamedAnnotNames().size());
+        str.StoreUint4(str.ToUint4(info.GetNamedAnnotNames().size()));
         ITERATE(CBlob_Info::TNamedAnnotNames, it2, info.GetNamedAnnotNames()) {
             str.StoreString(*it2);
         }
