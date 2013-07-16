@@ -2153,7 +2153,8 @@ public:
                                       const CTempString&   delim,
                                       list<CTempStringEx>& arr,
                                       TSplitFlags flags = fSplit_MergeDelims,
-                                      vector<SIZE_TYPE>*   token_pos = NULL);
+                                      vector<SIZE_TYPE>*   token_pos = NULL,
+                                      CTempString_Storage* storage = NULL);
 
     static list<CTempString>& Split(const CTempString& str,
                                     const CTempString& delim,
@@ -2201,7 +2202,8 @@ public:
                                     const CTempString&     delim,
                                     vector<CTempStringEx>& arr,
                                     TSplitFlags            flags = 0,
-                                    vector<SIZE_TYPE>*     token_pos = NULL);
+                                    vector<SIZE_TYPE>*     token_pos = NULL,
+                                    CTempString_Storage*   storage = NULL);
 
     static
     vector<CTempString>& Tokenize(const CTempString&   str,
@@ -2267,7 +2269,8 @@ public:
                            const CTempString& delim,
                            CTempStringEx&     str1,
                            CTempStringEx&     str2,
-                           TSplitFlags        flags = 0);
+                           TSplitFlags        flags = 0,
+                           CTempString_Storage* storage = NULL);
 
     static bool SplitInTwo(const CTempString& str, 
                            const CTempString& delim,

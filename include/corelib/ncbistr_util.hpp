@@ -89,7 +89,8 @@ struct CStrDummyTargetReserve
 class CTempStringList
 {
 public:
-    CTempStringList() : m_LastNode(NULL) { }
+    CTempStringList(CTempString_Storage* storage)
+        : m_LastNode(NULL), m_Storage(storage) { }
 
     void   Add(const CTempString& s);
     void   Clear(void);
@@ -109,6 +110,7 @@ private:
 
     SNode  m_FirstNode;
     SNode *m_LastNode;
+    CTempString_Storage* m_Storage;
 };
 
 inline
@@ -137,7 +139,8 @@ public:
     typedef NStr::TSplitFlags TFlags;
 
     CStrTokenizeBase(const CTempString& str, const CTempString& delim,
-                     TFlags flags);
+                     TFlags flags,
+                     CTempString_Storage* storage);
 
     SIZE_TYPE GetPos(void) const { return m_Pos; }
     bool      AtEnd (void) const { return m_Pos == NPOS; }
@@ -152,18 +155,21 @@ protected:
     CTempString        m_Delim;
     SIZE_TYPE          m_Pos;
     TFlags             m_Flags;
+    CTempString_Storage* m_Storage;
 
 private:
-    void x_ExtendInternalDelim(void);
+    void x_ExtendInternalDelim();
 
     CTempStringEx m_InternalDelim;
+    CTempString_Storage m_DelimStorage;
 };
 
 inline
 CStrTokenizeBase::CStrTokenizeBase(const CTempString& str,
                                    const CTempString& delim,
-                                   TFlags flags)
-    : m_Str(str), m_Pos(0), m_Flags(flags)
+                                   TFlags flags,
+                                   CTempString_Storage* storage)
+    : m_Str(str), m_Pos(0), m_Flags(flags), m_Storage(storage)
 {
     SetDelim(delim);
 }
@@ -218,8 +224,9 @@ public:
     ///   each other are treated as separate delimiters - empty string(s) 
     ///   appear in the target output.
     ///
-    CStrTokenize(const TString& str, const TString& delim, TFlags flags)
-        : CStrTokenizeBase(str, delim, flags) 
+    CStrTokenize(const TString& str, const TString& delim, TFlags flags,
+        CTempString_Storage* storage)
+        : CStrTokenizeBase(str, delim, flags, storage) 
         { }
 
     /// Tokenize the string using the specified set of char delimiters.
@@ -256,7 +263,7 @@ public:
 
         // Tokenization
         //
-        CTempStringList part_collector;
+        CTempStringList part_collector(m_Storage);
         SIZE_TYPE       prev_pos;
         do {
             prev_pos = m_Pos;

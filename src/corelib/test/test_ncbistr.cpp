@@ -2601,10 +2601,11 @@ BOOST_AUTO_TEST_CASE(s_SplitWithFlags)
     for (size_t i = 0; i < count; i++) {
         const SSplitWithFlags& data = s_SplitWithFlagsTest[i];
 
+        CTempString_Storage storage;
         v.clear();
         token_pos.clear();
         try {
-            NStr::Tokenize(data.str, data.delim, v, data.flags, &token_pos);
+            NStr::Tokenize(data.str, data.delim, v, data.flags, &token_pos, &storage);
             BOOST_REQUIRE_EQUAL(v.size(), token_pos.size());
             CNcbiOstrstream oss;
             const char*     sep = "";
@@ -2628,8 +2629,9 @@ BOOST_AUTO_TEST_CASE(s_SplitWithFlags)
         const SSplitInTwo<NStr::TSplitFlags>& data
             = s_SplitInTwoWithFlagsTest[i];
 
+        CTempString_Storage storage;
         bool result = NStr::SplitInTwo(data.str, data.delim, lhs, rhs,
-                                       data.mode);
+                                       data.mode, &storage);
         BOOST_CHECK_EQUAL(data.expected_ret,  result);
         BOOST_CHECK_EQUAL(data.expected_str1, lhs);
         BOOST_CHECK_EQUAL(data.expected_str2, rhs);

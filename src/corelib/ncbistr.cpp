@@ -2999,7 +2999,8 @@ string& NStr::ReplaceInPlace(string& src,
 template<typename TString, typename TContainer>
 TContainer& s_Split(const TString& str, const TString& delim,
                     TContainer& arr, NStr::TSplitFlags flags,
-                    vector<SIZE_TYPE>* token_pos)
+                    vector<SIZE_TYPE>* token_pos,
+                    CTempString_Storage* storage = NULL)
 {
     typedef CStrTokenPosAdapter<vector<SIZE_TYPE> >         TPosArray;
     typedef CStrDummyTargetReserve<TContainer, TPosArray>   TReserve;
@@ -3007,7 +3008,7 @@ TContainer& s_Split(const TString& str, const TString& delim,
                          CStrDummyTokenCount, TReserve>     TSplitter;
 
     TPosArray token_pos_proxy(token_pos);
-    TSplitter splitter(str, delim, flags);
+    TSplitter splitter(str, delim, flags, storage);
     splitter.Do(arr, token_pos_proxy, kEmptyStr);
     return arr;
 }
@@ -3023,9 +3024,10 @@ list<string>& NStr::Split(const CTempString& str, const CTempString& delim,
 list<CTempStringEx>& NStr::Split(const CTempString& str,
                                  const CTempString& delim,
                                  list<CTempStringEx>& arr, TSplitFlags flags,
-                                 vector<SIZE_TYPE>* token_pos)
+                                 vector<SIZE_TYPE>* token_pos,
+                                 CTempString_Storage* storage)
 {
-    return s_Split(str, delim, arr, flags, token_pos);
+    return s_Split(str, delim, arr, flags, token_pos, storage);
 }
 
 list<CTempString>& NStr::Split(const CTempString& str,
@@ -3037,7 +3039,6 @@ list<CTempString>& NStr::Split(const CTempString& str,
     Tokenize(str, delim, arr2,
              (merge == eMergeDelims) ? fSplit_MergeDelims : 0, token_pos);
     ITERATE (vector<CTempStringEx>, it, arr2) {
-        _ASSERT( !it->OwnsData() );
         arr.push_back(*it);
     }
     return arr;
@@ -3055,9 +3056,10 @@ vector<CTempStringEx>& NStr::Tokenize(const CTempString& str,
                                       const CTempString& delim,
                                       vector<CTempStringEx>& arr,
                                       TSplitFlags        flags,
-                                      vector<SIZE_TYPE>* token_pos)
+                                      vector<SIZE_TYPE>* token_pos,
+                                      CTempString_Storage* storage)
 {
-    return s_Split(str, delim, arr, flags, token_pos);
+    return s_Split(str, delim, arr, flags, token_pos, storage);
 }
 
 vector<CTempString>& NStr::Tokenize(const CTempString& str,
@@ -3071,7 +3073,6 @@ vector<CTempString>& NStr::Tokenize(const CTempString& str,
              (merge == eMergeDelims) ? fSplit_MergeDelims : 0, token_pos);
     arr.reserve(arr.size() + arr2.size());
     ITERATE (vector<CTempStringEx>, it, arr2) {
-        _ASSERT( !it->OwnsData() );
         arr.push_back(*it);
     }
     return arr;
@@ -3091,7 +3092,6 @@ vector<CTempString>& NStr::TokenizePattern(const CTempString& str,
              token_pos);
     arr.reserve(arr.size() + arr2.size());
     ITERATE (vector<CTempStringEx>, it, arr2) {
-        _ASSERT( !it->OwnsData() );
         arr.push_back(*it);
     }
     return arr;
@@ -3115,8 +3115,6 @@ bool NStr::SplitInTwo(const CTempString& str, const CTempString& delim,
     CTempStringEx tsx1, tsx2;
     bool result = SplitInTwo(str, delim, tsx1, tsx2,
                              (merge == eMergeDelims) ? fSplit_MergeDelims : 0);
-    _ASSERT( !tsx1.OwnsData() );
-    _ASSERT( !tsx2.OwnsData() );
     str1 = tsx1;
     str2 = tsx2;
     return result;
@@ -3124,14 +3122,21 @@ bool NStr::SplitInTwo(const CTempString& str, const CTempString& delim,
 
 bool NStr::SplitInTwo(const CTempString& str, const CTempString& delim,
                       CTempStringEx& str1, CTempStringEx& str2,
-                      TSplitFlags flags)
+                      TSplitFlags flags,
+                      CTempString_Storage* storage)
 {
+    if ((flags & (fSplit_CanEscape | fSplit_CanQuote)) && !storage) {
+        NCBI_THROW2(CStringException, eBadArgs,
+            "NStr::SplitInTwo(): the selected flags require non-NULL storage",
+            0);
+    }
+
     typedef CStrTokenize<CTempString, int, CStrDummyTokenPos,
                          CStrDummyTokenCount,
                          CStrDummyTargetReserve<int, int> > TSplitter;
 
-    CTempStringList part_collector;
-    TSplitter       splitter(str, delim, flags);
+    CTempStringList part_collector(storage);
+    TSplitter       splitter(str, delim, flags, storage);
     bool            found_delim;
 
     splitter.SkipDelims();
@@ -3165,7 +3170,7 @@ bool NStr::SplitInTwo(const CTempString& str, const CTempString& delim,
     // don't need further splitting, just quote and escape parsing
     splitter.SetDelim(kEmptyStr);
     splitter.Advance(&part_collector);
-    part_collector.Join(&str2);        
+    part_collector.Join(&str2);
 
     return found_delim;
 }
@@ -6193,18 +6198,20 @@ void CTempStringList::Join(CTempStringEx* s) const
     if (m_FirstNode.next.get() == NULL) {
         *s = m_FirstNode.str;
     } else {
+        if ( !m_Storage ) {
+            NCBI_THROW2(CStringException, eBadArgs,
+                "CTempStringList::Join(): non-NULL storage required", 0);
+        }
         SIZE_TYPE n = GetSize();
-        AutoArray<char> buf(n + 1);
-        char* p = buf.get();
+        char* buf = m_Storage->Allocate(n + 1);
+        char* p = buf;
         for (const SNode* node = &m_FirstNode;  node != NULL;
              node = node->next.get()) {
             memcpy(p, node->str.data(), node->str.size());
             p += node->str.size();
         }
-        _ASSERT(p == buf.get() + n);
         *p = '\0';
-        s->assign(buf.release(), n,
-                  CTempStringEx::fHasZeroAtEnd | CTempStringEx::fOwnsData);
+        s->assign(buf, n);
     }
 }
 
@@ -6330,11 +6337,15 @@ void CStrTokenizeBase::SkipDelims(void)
     }
 }
 
-void CStrTokenizeBase::x_ExtendInternalDelim(void)
+void CStrTokenizeBase::x_ExtendInternalDelim()
 {
+    if ( !(m_Flags & (NStr::fSplit_CanEscape | NStr::fSplit_CanQuote)) ) {
+        return; // Nothing to do
+    }
+
     SIZE_TYPE n = m_InternalDelim.size();
-    AutoArray<char> buf(n + 3);
-    char *s = buf.get();
+    char* buf = m_DelimStorage.Allocate(n + 3);
+    char *s = buf;
     memcpy(s, m_InternalDelim.data(), n);
     if ((m_Flags & NStr::fSplit_CanEscape) != 0) {
         s[n++] = '\\';
@@ -6345,7 +6356,7 @@ void CStrTokenizeBase::x_ExtendInternalDelim(void)
     if ((m_Flags & NStr::fSplit_CanDoubleQuote) != 0) {
         s[n++] = '"';
     }
-    m_InternalDelim.assign(buf.release(), n, CTempStringEx::fOwnsData);
+    m_InternalDelim.assign(buf, n);
 }
 
 
