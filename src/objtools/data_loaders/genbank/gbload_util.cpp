@@ -48,6 +48,7 @@ BEGIN_SCOPE(objects)
 
 
 /* =========================================================================== */
+#if 0
 //////////////////////////////////////////////////////////////////////////////
 //
 // CTimer 
@@ -111,7 +112,7 @@ bool CTimer::NeedCalibration(void)
         (m_ReasonableRefreshDelay==0) ||
         (m_Time-m_LastCalibrated>100*m_ReasonableRefreshDelay);
 }
-
+#endif
 
 #if 0
 void CRefresher::Reset(CTimer &timer)

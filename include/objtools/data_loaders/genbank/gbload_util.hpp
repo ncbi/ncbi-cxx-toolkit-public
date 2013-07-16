@@ -46,6 +46,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 //========================================================================
+#if 0
 class NCBI_XLOADER_GENBANK_EXPORT CTimer
 {
 public:
@@ -66,7 +67,7 @@ private:
     time_t m_StartTime;
     CMutex m_TimerLock;
 };
-
+#endif
 
 #if 0
 class NCBI_XLOADER_GENBANK_EXPORT CRefresher

@@ -354,7 +354,7 @@ private:
     TLoadMapSeq_ids2        m_LoadMapSeq_ids2;
     TLoadMapBlob_ids        m_LoadMapBlob_ids;
 
-    CTimer                  m_Timer;
+    //CTimer                  m_Timer;
 
     // Information about all available caches
     CGBReaderCacheManager   m_CacheManager;

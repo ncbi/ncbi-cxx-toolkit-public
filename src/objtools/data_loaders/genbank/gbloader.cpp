@@ -578,7 +578,7 @@ bool CGBDataLoader::x_CreateReaders(const string& str,
 {
     vector<string> str_list;
     NStr::Tokenize(str, ";", str_list, NStr::eNoMergeDelims);
-    int reader_count = 0;
+    size_t reader_count = 0;
     for ( size_t i = 0; i < str_list.size(); ++i ) {
         CRef<CReader> reader(x_CreateReader(str_list[i], params));
         if( reader ) {
@@ -1379,7 +1379,7 @@ void CGBDataLoader::GetBlobs(TTSE_LockSets& tse_sets)
     }
 }
 
-
+#if 0
 class CTimerGuard
 {
     CTimer *t;
@@ -1399,7 +1399,7 @@ public:
             }
         }
 };
-
+#endif
 
 const CGBDataLoader::TRealBlobId&
 CGBDataLoader::GetRealBlobId(const TBlobId& blob_id) const
