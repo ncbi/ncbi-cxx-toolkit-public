@@ -505,6 +505,13 @@ bool CVDBGraphSeqIterator::x_SeqTableIsSmaller(COpenRange<TSeqPos> range,
 
 bool CVDBGraphSeqIterator::SeqTableIsSmaller(COpenRange<TSeqPos> range) const
 {
+    const SSeqInfo& info = GetInfo();
+    if ( range.GetToOpen() > info.m_SeqLength ) {
+        range.SetToOpen(info.m_SeqLength);
+    }
+    if ( range.Empty() ) {
+        return false;
+    }
     CRef<SGraphTableCursor> curs(GetDb().Graph());
     bool seq_table_is_smaller = x_SeqTableIsSmaller(range, *curs);
     GetDb().Put(curs);
