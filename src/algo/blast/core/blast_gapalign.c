@@ -2565,6 +2565,8 @@ static void s_UpdateEditScript(GapEditScript* esp, int pos, int bf, int af) {
               break;
           case eGapAlignDel:
               sd -= esp->num[op];
+          default:
+              break;
           }
       } while (qd > 0 || sd > 0);
 
@@ -2591,6 +2593,8 @@ static void s_UpdateEditScript(GapEditScript* esp, int pos, int bf, int af) {
               break;
           case eGapAlignDel:
               sd -= esp->num[op];
+          default:
+              break;
           }
       } while (qd > 0 || sd > 0);
 
