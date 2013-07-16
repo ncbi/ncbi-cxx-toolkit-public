@@ -300,7 +300,7 @@ namespace {
     bool sx_FetchNextItem(CDB_Result& result, const CTempString& name)
     {
         while ( result.Fetch() ) {
-            for ( size_t pos = 0; pos < result.NofItems(); ++pos ) {
+            for ( unsigned pos = 0; pos < result.NofItems(); ++pos ) {
                 if ( result.ItemName(pos) == name ) {
                     return true;
                 }

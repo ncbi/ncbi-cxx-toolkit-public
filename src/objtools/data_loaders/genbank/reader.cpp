@@ -528,8 +528,8 @@ bool CReader::LoadSeq_idTaxId(CReaderRequestResult& result,
 bool CReader::LoadAccVers(CReaderRequestResult& result,
                           const TIds& ids, TLoaded& loaded, TIds& ret)
 {
-    int count = ids.size();
-    for ( int i = 0; i < count; ++i ) {
+    size_t count = ids.size();
+    for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
@@ -549,8 +549,8 @@ bool CReader::LoadAccVers(CReaderRequestResult& result,
 bool CReader::LoadGis(CReaderRequestResult& result,
                       const TIds& ids, TLoaded& loaded, TGis& ret)
 {
-    int count = ids.size();
-    for ( int i = 0; i < count; ++i ) {
+    size_t count = ids.size();
+    for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
@@ -570,8 +570,8 @@ bool CReader::LoadGis(CReaderRequestResult& result,
 bool CReader::LoadLabels(CReaderRequestResult& result,
                          const TIds& ids, TLoaded& loaded, TLabels& ret)
 {
-    int count = ids.size();
-    for ( int i = 0; i < count; ++i ) {
+    size_t count = ids.size();
+    for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
@@ -591,8 +591,8 @@ bool CReader::LoadLabels(CReaderRequestResult& result,
 bool CReader::LoadTaxIds(CReaderRequestResult& result,
                          const TIds& ids, TLoaded& loaded, TTaxIds& ret)
 {
-    int count = ids.size();
-    for ( int i = 0; i < count; ++i ) {
+    size_t count = ids.size();
+    for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }

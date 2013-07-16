@@ -413,12 +413,12 @@ bool CId2ReaderBase::LoadAccVers(CReaderRequestResult& result,
         return CReader::LoadAccVers(result, ids, loaded, ret);
     }
 
-    int count = ids.size();
+    size_t count = ids.size();
     vector<AutoPtr<CLoadLockSeq_ids> > locks(count);
     CID2_Request_Packet packet;
-    int packet_start = 0;
+    size_t packet_start = 0;
     
-    for ( int i = 0; i < count; ++i ) {
+    for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
@@ -441,8 +441,8 @@ bool CId2ReaderBase::LoadAccVers(CReaderRequestResult& result,
         packet.Set().push_back(req);
         if ( packet.Set().size() == max_request_size ) {
             x_ProcessPacket(result, packet, 0);
-            int count = i+1;
-            for ( int i = packet_start; i < count; ++i ) {
+            size_t count = i+1;
+            for ( size_t i = packet_start; i < count; ++i ) {
                 if ( loaded[i] ) {
                     continue;
                 }
@@ -461,7 +461,7 @@ bool CId2ReaderBase::LoadAccVers(CReaderRequestResult& result,
     if ( !packet.Set().empty() ) {
         x_ProcessPacket(result, packet, 0);
 
-        for ( int i = packet_start; i < count; ++i ) {
+        for ( size_t i = packet_start; i < count; ++i ) {
             if ( loaded[i] ) {
                 continue;
             }
@@ -487,12 +487,12 @@ bool CId2ReaderBase::LoadGis(CReaderRequestResult& result,
         return CReader::LoadGis(result, ids, loaded, ret);
     }
 
-    int count = ids.size();
+    size_t count = ids.size();
     vector<AutoPtr<CLoadLockSeq_ids> > locks(count);
     CID2_Request_Packet packet;
-    int packet_start = 0;
+    size_t packet_start = 0;
     
-    for ( int i = 0; i < count; ++i ) {
+    for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
@@ -515,8 +515,8 @@ bool CId2ReaderBase::LoadGis(CReaderRequestResult& result,
         packet.Set().push_back(req);
         if ( packet.Set().size() == max_request_size ) {
             x_ProcessPacket(result, packet, 0);
-            int count = i+1;
-            for ( int i = packet_start; i < count; ++i ) {
+            size_t count = i+1;
+            for ( size_t i = packet_start; i < count; ++i ) {
                 if ( loaded[i] ) {
                     continue;
                 }
@@ -535,7 +535,7 @@ bool CId2ReaderBase::LoadGis(CReaderRequestResult& result,
     if ( !packet.Set().empty() ) {
         x_ProcessPacket(result, packet, 0);
 
-        for ( int i = packet_start; i < count; ++i ) {
+        for ( size_t i = packet_start; i < count; ++i ) {
             if ( loaded[i] ) {
                 continue;
             }
@@ -561,12 +561,12 @@ bool CId2ReaderBase::LoadLabels(CReaderRequestResult& result,
         return CReader::LoadLabels(result, ids, loaded, ret);
     }
 
-    int count = ids.size();
+    size_t count = ids.size();
     vector<AutoPtr<CLoadLockSeq_ids> > locks(count);
     CID2_Request_Packet packet;
-    int packet_start = 0;
+    size_t packet_start = 0;
     
-    for ( int i = 0; i < count; ++i ) {
+    for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
@@ -594,8 +594,8 @@ bool CId2ReaderBase::LoadLabels(CReaderRequestResult& result,
         packet.Set().push_back(req);
         if ( packet.Set().size() == max_request_size ) {
             x_ProcessPacket(result, packet, 0);
-            int count = i+1;
-            for ( int i = packet_start; i < count; ++i ) {
+            size_t count = i+1;
+            for ( size_t i = packet_start; i < count; ++i ) {
                 if ( loaded[i] ) {
                     continue;
                 }
@@ -618,7 +618,7 @@ bool CId2ReaderBase::LoadLabels(CReaderRequestResult& result,
     if ( !packet.Set().empty() ) {
         x_ProcessPacket(result, packet, 0);
 
-        for ( int i = packet_start; i < count; ++i ) {
+        for ( size_t i = packet_start; i < count; ++i ) {
             if ( loaded[i] ) {
                 continue;
             }
@@ -649,12 +649,12 @@ bool CId2ReaderBase::LoadTaxIds(CReaderRequestResult& result,
         return CReader::LoadTaxIds(result, ids, loaded, ret);
     }
 
-    int count = ids.size();
+    size_t count = ids.size();
     vector<AutoPtr<CLoadLockSeq_ids> > locks(count);
     CID2_Request_Packet packet;
-    int packet_start = 0;
+    size_t packet_start = 0;
     
-    for ( int i = 0; i < count; ++i ) {
+    for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
@@ -681,8 +681,8 @@ bool CId2ReaderBase::LoadTaxIds(CReaderRequestResult& result,
         packet.Set().push_back(req);
         if ( packet.Set().size() == max_request_size ) {
             x_ProcessPacket(result, packet, 0);
-            int count = i+1;
-            for ( int i = packet_start; i < count; ++i ) {
+            size_t count = i+1;
+            for ( size_t i = packet_start; i < count; ++i ) {
                 if ( loaded[i] ) {
                     continue;
                 }
@@ -705,7 +705,7 @@ bool CId2ReaderBase::LoadTaxIds(CReaderRequestResult& result,
     if ( !packet.Set().empty() ) {
         x_ProcessPacket(result, packet, 0);
 
-        for ( int i = packet_start; i < count; ++i ) {
+        for ( size_t i = packet_start; i < count; ++i ) {
             if ( loaded[i] ) {
                 continue;
             }

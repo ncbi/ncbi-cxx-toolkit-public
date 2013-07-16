@@ -312,7 +312,7 @@ static unsigned read_unsigned(CNcbiIstream& stream)
 }
 
 
-static void write_size(CNcbiOstream& stream, unsigned size)
+static void write_size(CNcbiOstream& stream, size_t size)
 {
     // use ASN.1 binary like format
     while ( size >= (1<<7) ) {
@@ -323,14 +323,14 @@ static void write_size(CNcbiOstream& stream, unsigned size)
 }
 
 
-static unsigned read_size(CNcbiIstream& stream)
+static size_t read_size(CNcbiIstream& stream)
 {
-    unsigned size = 0;
+    size_t size = 0;
     int shift = 0;
     char c = char(1<<7);
     while ( c & (1<<7) ) {
         c = stream.get();
-        size |= (c & ((1<<7)-1)) << shift;
+        size |= size_t(c & ((1<<7)-1)) << shift;
         shift += 7;
     }
     return size;
@@ -342,7 +342,7 @@ void StoreIndexedStringsTo(CNcbiOstream& stream,
 {
     write_size(stream, strings.GetSize());
     for (size_t idx = 0; idx < strings.GetSize(); ++idx) {
-        unsigned size = strings.GetString(idx).size();
+        size_t size = strings.GetString(idx).size();
         write_size(stream, size);
         stream.write(strings.GetString(idx).data(), size);
     }
@@ -355,7 +355,7 @@ void LoadIndexedStringsFrom(CNcbiIstream& stream,
                             size_t max_length)
 {
     strings.Clear();
-    unsigned count = read_size(stream);
+    size_t count = read_size(stream);
     if ( !stream || (count > unsigned(max_index+1)) ) {
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "Bad format of SNP table");
@@ -363,7 +363,7 @@ void LoadIndexedStringsFrom(CNcbiIstream& stream,
     strings.Resize(count);
     AutoPtr<char, ArrayDeleter<char> > buf(new char[max_length]);
     for (size_t idx = 0; idx < strings.GetSize(); ++idx) {
-        unsigned size = read_size(stream);
+        size_t size = read_size(stream);
         if ( !stream || (size > max_length) ) {
             strings.Clear();
             NCBI_THROW(CLoaderException, eLoaderFailed,
@@ -577,7 +577,7 @@ void CSeq_annot_SNP_Info_Reader::x_Write(CNcbiOstream& stream,
     StoreIndexedOctetStringsTo(stream, snp_info.m_QualityCodesOs);
 
     // simple Set_Info
-    unsigned count = snp_info.m_SNP_Set.size();
+    size_t count = snp_info.m_SNP_Set.size();
     write_size(stream, count);
     stream.write(reinterpret_cast<const char*>(&snp_info.m_SNP_Set[0]),
                  count*sizeof(SSNP_Info));
@@ -629,7 +629,7 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
                                 kMax_QualityLength);
 
     // simple Set_Info
-    unsigned count = read_size(stream);
+    size_t count = read_size(stream);
     if ( stream ) {
         snp_info.m_SNP_Set.resize(count);
         stream.read(reinterpret_cast<char*>(&snp_info.m_SNP_Set[0]),
