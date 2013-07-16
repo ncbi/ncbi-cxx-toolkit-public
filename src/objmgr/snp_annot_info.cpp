@@ -1011,7 +1011,10 @@ CSeq_annot_SNP_Info::x_GetAlleleIndex(const string& allele)
             }
         }
     }
-    return m_Alleles.GetIndex(allele, SSNP_Info::kMax_AlleleIndex);
+    size_t index =
+        m_Alleles.GetIndex(allele, SSNP_Info::kMax_AlleleIndex);
+     // index cannot be bigger than SSNP_Info::kMax_AlleleIndex
+     return SSNP_Info::TAlleleIndex(index);
 }
 
 
