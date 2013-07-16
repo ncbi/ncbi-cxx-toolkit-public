@@ -422,7 +422,7 @@ void CVDBGraphDataLoader_Impl::LoadSplitEntry(CTSE_Info& tse,
         }
         for ( int i = 0; i*kSize[k] < length; ++i ) {
             TSeqPos from = i*kSize[k], to_open = min(length, from+kSize[k]);
-            int chunk_id = i*kChunkIdMul+kIdAdd[k];
+            int chunk_id = int(i*kChunkIdMul+kIdAdd[k]);
             CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(chunk_id));
             chunk->x_AddAnnotType(kName[k], type, it.GetSeq_id_Handle(),
                                   COpenRange<TSeqPos>(from, to_open));
