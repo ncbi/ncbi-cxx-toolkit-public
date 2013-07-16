@@ -1260,11 +1260,11 @@ CSeq_inst::TMol CDataSource::GetSequenceType(const CSeq_id_Handle& idh)
 
 void CDataSource::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 {
-    int count = ids.size(), remaining = 0;
+    size_t count = ids.size(), remaining = 0;
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
     TTSE_LockSet locks;
-    for ( int i = 0; i < count; ++i ) {
+    for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
@@ -1285,11 +1285,11 @@ void CDataSource::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 
 void CDataSource::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
 {
-    int count = ids.size(), remaining = 0;
+    size_t count = ids.size(), remaining = 0;
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
     TTSE_LockSet locks;
-    for ( int i = 0; i < count; ++i ) {
+    for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
@@ -1310,11 +1310,11 @@ void CDataSource::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
 
 void CDataSource::GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret)
 {
-    int count = ids.size(), remaining = 0;
+    size_t count = ids.size(), remaining = 0;
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
     TTSE_LockSet locks;
-    for ( int i = 0; i < count; ++i ) {
+    for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
@@ -1335,11 +1335,11 @@ void CDataSource::GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret)
 
 void CDataSource::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
 {
-    int count = ids.size(), remaining = 0;
+    size_t count = ids.size(), remaining = 0;
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
     TTSE_LockSet locks;
-    for ( int i = 0; i < count; ++i ) {
+    for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
@@ -1361,11 +1361,11 @@ void CDataSource::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
 void CDataSource::GetSequenceLengths(const TIds& ids, TLoaded& loaded,
                                      TSequenceLengths& ret)
 {
-    int count = ids.size(), remaining = 0;
+    size_t count = ids.size(), remaining = 0;
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
     TTSE_LockSet locks;
-    for ( int i = 0; i < count; ++i ) {
+    for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
@@ -1387,11 +1387,11 @@ void CDataSource::GetSequenceLengths(const TIds& ids, TLoaded& loaded,
 void CDataSource::GetSequenceTypes(const TIds& ids, TLoaded& loaded,
                                    TSequenceTypes& ret)
 {
-    int count = ids.size(), remaining = 0;
+    size_t count = ids.size(), remaining = 0;
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
     TTSE_LockSet locks;
-    for ( int i = 0; i < count; ++i ) {
+    for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }

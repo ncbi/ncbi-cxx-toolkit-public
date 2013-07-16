@@ -300,11 +300,11 @@ CSeq_inst::TMol CDataLoader::GetSequenceType(const CSeq_id_Handle& idh)
 
 void CDataLoader::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 {
-    int count = ids.size();
+    size_t count = ids.size();
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
     TIds seq_ids;
-    for ( int i = 0; i < count; ++i ) {
+    for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
@@ -319,11 +319,11 @@ void CDataLoader::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
 
 void CDataLoader::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
 {
-    int count = ids.size();
+    size_t count = ids.size();
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
     TIds seq_ids;
-    for ( int i = 0; i < count; ++i ) {
+    for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
@@ -338,11 +338,11 @@ void CDataLoader::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
 
 void CDataLoader::GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret)
 {
-    int count = ids.size();
+    size_t count = ids.size();
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
     TIds seq_ids;
-    for ( int i = 0; i < count; ++i ) {
+    for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
@@ -358,10 +358,10 @@ void CDataLoader::GetLabels(const TIds& ids, TLoaded& loaded, TLabels& ret)
 
 void CDataLoader::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
 {
-    int count = ids.size();
+    size_t count = ids.size();
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
-    for ( int i = 0; i < count; ++i ) {
+    for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
@@ -383,10 +383,10 @@ void CDataLoader::GetTaxIds(const TIds& ids, TLoaded& loaded, TTaxIds& ret)
 void CDataLoader::GetSequenceLengths(const TIds& ids, TLoaded& loaded,
                                      TSequenceLengths& ret)
 {
-    int count = ids.size();
+    size_t count = ids.size();
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
-    for ( int i = 0; i < count; ++i ) {
+    for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }
@@ -408,10 +408,10 @@ void CDataLoader::GetSequenceLengths(const TIds& ids, TLoaded& loaded,
 void CDataLoader::GetSequenceTypes(const TIds& ids, TLoaded& loaded,
                                    TSequenceTypes& ret)
 {
-    int count = ids.size();
+    size_t count = ids.size();
     _ASSERT(ids.size() == loaded.size());
     _ASSERT(ids.size() == ret.size());
-    for ( int i = 0; i < count; ++i ) {
+    for ( size_t i = 0; i < count; ++i ) {
         if ( loaded[i] ) {
             continue;
         }

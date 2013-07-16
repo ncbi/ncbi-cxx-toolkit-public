@@ -2718,6 +2718,18 @@ bool CScope_Impl::IsTransactionActive() const
 }
 
 
+static size_t sx_CountFalse(const vector<bool>& loaded)
+{
+#ifdef NCBI_COMPILER_WORKSHOP
+    int tmp_count = 0;
+    std::count(loaded.begin(), loaded.end(), false, tmp_count);
+    return size_t(tmp_count);
+#else
+    return std::count(loaded.begin(), loaded.end(), false);
+#endif
+}
+
+
 /// Bulk retrieval methods
 CScope_Impl::TBioseqHandles CScope_Impl::GetBioseqHandles(const TIds& ids)
 {
@@ -2784,11 +2796,11 @@ void CScope_Impl::GetAccVers(TIds& ret,
                              const TIds& ids,
                              bool force_load)
 {
-    int count = ids.size(), remaining = count;
+    size_t count = ids.size(), remaining = count;
     ret.assign(count, CSeq_id_Handle());
     vector<bool> loaded(count);
     if ( !force_load ) {
-        for ( int i = 0; i < count; ++i ) {
+        for ( size_t i = 0; i < count; ++i ) {
             CConstRef<CSeq_id> id = ids[i].GetSeqId();
             const CTextseq_id* text_id = id->GetTextseq_Id();
             if ( text_id &&
@@ -2804,7 +2816,7 @@ void CScope_Impl::GetAccVers(TIds& ret,
         TConfReadLockGuard rguard(m_ConfLock);
         
         if ( !force_load ) {
-            for ( int i = 0; i < count; ++i ) {
+            for ( size_t i = 0; i < count; ++i ) {
                 if ( loaded[i] ) {
                     continue;
                 }
@@ -2830,11 +2842,7 @@ void CScope_Impl::GetAccVers(TIds& ret,
             }
             CPrefetchManager::IsActive();
             it->GetDataSource().GetAccVers(ids, loaded, ret);
-#ifdef NCBI_COMPILER_WORKSHOP
-        std::count(loaded.begin(), loaded.end(), false, remaining);
-#else
-            remaining = std::count(loaded.begin(), loaded.end(), false);
-#endif
+            remaining = sx_CountFalse(loaded);
         }
     }
 }
@@ -2844,11 +2852,11 @@ void CScope_Impl::GetGis(TGIs& ret,
                          const TIds& ids,
                          bool force_load)
 {
-    int count = ids.size(), remaining = count;
+    size_t count = ids.size(), remaining = count;
     ret.assign(count, ZERO_GI);
     vector<bool> loaded(count);
     if ( !force_load ) {
-        for ( int i = 0; i < count; ++i ) {
+        for ( size_t i = 0; i < count; ++i ) {
             if ( ids[i].IsGi() ) {
                 ret[i] = ids[i].GetGi();
                 loaded[i] = true;
@@ -2860,7 +2868,7 @@ void CScope_Impl::GetGis(TGIs& ret,
         TConfReadLockGuard rguard(m_ConfLock);
         
         if ( !force_load ) {
-            for ( int i = 0; i < count; ++i ) {
+            for ( size_t i = 0; i < count; ++i ) {
                 if ( loaded[i] ) {
                     continue;
                 }
@@ -2886,11 +2894,7 @@ void CScope_Impl::GetGis(TGIs& ret,
             }
             CPrefetchManager::IsActive();
             it->GetDataSource().GetGis(ids, loaded, ret);
-#ifdef NCBI_COMPILER_WORKSHOP
-        std::count(loaded.begin(), loaded.end(), false, remaining);
-#else
-            remaining = std::count(loaded.begin(), loaded.end(), false);
-#endif
+            remaining = sx_CountFalse(loaded);
         }
     }
 }
@@ -2900,11 +2904,11 @@ void CScope_Impl::GetLabels(TLabels& ret,
                             const TIds& ids,
                             bool force_load)
 {
-    int count = ids.size(), remaining = count;
+    size_t count = ids.size(), remaining = count;
     ret.assign(count, string());
     vector<bool> loaded(count);
     if ( !force_load ) {
-        for ( int i = 0; i < count; ++i ) {
+        for ( size_t i = 0; i < count; ++i ) {
             ret[i] = GetDirectLabel(ids[i]);
             if ( !ret[i].empty() ) {
                 loaded[i] = true;
@@ -2916,7 +2920,7 @@ void CScope_Impl::GetLabels(TLabels& ret,
         TConfReadLockGuard rguard(m_ConfLock);
         
         if ( !force_load ) {
-            for ( int i = 0; i < count; ++i ) {
+            for ( size_t i = 0; i < count; ++i ) {
                 if ( loaded[i] ) {
                     continue;
                 }
@@ -2942,11 +2946,7 @@ void CScope_Impl::GetLabels(TLabels& ret,
             }
             CPrefetchManager::IsActive();
             it->GetDataSource().GetLabels(ids, loaded, ret);
-#ifdef NCBI_COMPILER_WORKSHOP
-        std::count(loaded.begin(), loaded.end(), false, remaining);
-#else
-            remaining = std::count(loaded.begin(), loaded.end(), false);
-#endif
+            remaining = sx_CountFalse(loaded);
         }
     }
 }
@@ -2956,11 +2956,11 @@ void CScope_Impl::GetTaxIds(TTaxIds& ret,
                             const TIds& ids,
                             bool force_load)
 {
-    int count = ids.size(), remaining = count;
+    size_t count = ids.size(), remaining = count;
     ret.assign(count, -1);
     vector<bool> loaded(count);
     if ( !force_load ) {
-        for ( int i = 0; i < count; ++i ) {
+        for ( size_t i = 0; i < count; ++i ) {
             if ( ids[i].Which() == CSeq_id::e_General ) {
                 CConstRef<CSeq_id> id = ids[i].GetSeqId();
                 const CDbtag& dbtag = id->GetGeneral();
@@ -2977,7 +2977,7 @@ void CScope_Impl::GetTaxIds(TTaxIds& ret,
         TConfReadLockGuard rguard(m_ConfLock);
         
         if ( !force_load ) {
-            for ( int i = 0; i < count; ++i ) {
+            for ( size_t i = 0; i < count; ++i ) {
                 if ( loaded[i] ) {
                     continue;
                 }
@@ -3004,11 +3004,7 @@ void CScope_Impl::GetTaxIds(TTaxIds& ret,
             }
             CPrefetchManager::IsActive();
             it->GetDataSource().GetTaxIds(ids, loaded, ret);
-#ifdef NCBI_COMPILER_WORKSHOP
-        std::count(loaded.begin(), loaded.end(), false, remaining);
-#else
-            remaining = std::count(loaded.begin(), loaded.end(), false);
-#endif
+            remaining = sx_CountFalse(loaded);
         }
     }
 }
@@ -3078,14 +3074,14 @@ void CScope_Impl::GetSequenceLengths(TSequenceLengths& ret,
                                      const TIds& ids,
                                      bool force_load)
 {
-    int count = ids.size(), remaining = count;
+    size_t count = ids.size(), remaining = count;
     ret.assign(count, kInvalidSeqPos);
     vector<bool> loaded(count);
     
     TConfReadLockGuard rguard(m_ConfLock);
     
     if ( !force_load ) {
-        for ( int i = 0; i < count; ++i ) {
+        for ( size_t i = 0; i < count; ++i ) {
             if ( loaded[i] ) {
                 continue;
             }
@@ -3112,11 +3108,7 @@ void CScope_Impl::GetSequenceLengths(TSequenceLengths& ret,
         }
         CPrefetchManager::IsActive();
         it->GetDataSource().GetSequenceLengths(ids, loaded, ret);
-#ifdef NCBI_COMPILER_WORKSHOP
-        std::count(loaded.begin(), loaded.end(), false, remaining);
-#else
-        remaining = std::count(loaded.begin(), loaded.end(), false);
-#endif
+        remaining = sx_CountFalse(loaded);
     }
 }
 
@@ -3125,14 +3117,14 @@ void CScope_Impl::GetSequenceTypes(TSequenceTypes& ret,
                                    const TIds& ids,
                                    bool force_load)
 {
-    int count = ids.size(), remaining = count;
+    size_t count = ids.size(), remaining = count;
     ret.assign(count, CSeq_inst::eMol_not_set);
     vector<bool> loaded(count);
     
     TConfReadLockGuard rguard(m_ConfLock);
     
     if ( !force_load ) {
-        for ( int i = 0; i < count; ++i ) {
+        for ( size_t i = 0; i < count; ++i ) {
             if ( loaded[i] ) {
                 continue;
             }
@@ -3159,11 +3151,7 @@ void CScope_Impl::GetSequenceTypes(TSequenceTypes& ret,
         }
         CPrefetchManager::IsActive();
         it->GetDataSource().GetSequenceTypes(ids, loaded, ret);
-#ifdef NCBI_COMPILER_WORKSHOP
-        std::count(loaded.begin(), loaded.end(), false, remaining);
-#else
-        remaining = std::count(loaded.begin(), loaded.end(), false);
-#endif
+        remaining = sx_CountFalse(loaded);
     }
 }
 
