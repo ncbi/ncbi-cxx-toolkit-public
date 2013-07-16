@@ -397,7 +397,7 @@ CMemberInfo* CMemberInfo::SetSetFlag(const bool* setFlag)
 
 CMemberInfo* CMemberInfo::SetSetFlag(const Uint4* setFlag)
 {
-    unsigned offset = GetIndex()-1;
+    size_t offset = GetIndex()-1;
     m_SetFlagOffset = TPointerOffsetType(setFlag) + (offset/16)*4;
     m_BitSetMask = 3<<(offset%16*2);
     UpdateFunctions();
