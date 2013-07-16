@@ -473,8 +473,13 @@ string CHgvsParser::s_SeqIdToHgvsStr(const CVariantPlacement& vp)
         moltype = "u.";
     }
 
+    string idstr = sequence::GetId(vp.GetLoc(), NULL).GetSeqIdString(true);
+    if(NStr::StartsWith(idstr, "LRG:")) {
+        idstr = idstr.substr(4);
+    }
+
     return (vp.GetLoc().GetStrand() == eNa_strand_minus ? "o" : "") //in HGVS minus-strand is prefixed with "o"
-           +sequence::GetId(vp.GetLoc(), NULL).GetSeqIdString(true) + ":" + moltype;
+           +idstr + ":" + moltype;
 }
 
 string CHgvsParser::s_OffsetPointToString(
