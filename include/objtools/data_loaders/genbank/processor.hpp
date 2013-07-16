@@ -157,6 +157,44 @@ protected:
                         CGBRequestStatistics::EStatType stat_type,
                         const char* descr,
                         double size);
+    static void LogStat(CReaderRequestResult& result,
+                        CStopWatch& sw,
+                        const CBlob_id& blob_id,
+                        CGBRequestStatistics::EStatType stat_type,
+                        const char* descr,
+                        CNcbiStreampos size)
+    {
+        LogStat(result, sw, blob_id, stat_type, descr, double(size));
+    }
+    static void LogStat(CReaderRequestResult& result,
+                        CStopWatch& sw,
+                        const CBlob_id& blob_id,
+                        int chunk_id,
+                        CGBRequestStatistics::EStatType stat_type,
+                        const char* descr,
+                        CNcbiStreampos size)
+    {
+        LogStat(result, sw, blob_id, chunk_id, stat_type, descr, double(size));
+    }
+    static void LogStat(CReaderRequestResult& result,
+                        CStopWatch& sw,
+                        const CBlob_id& blob_id,
+                        CGBRequestStatistics::EStatType stat_type,
+                        const char* descr,
+                        size_t size)
+    {
+        LogStat(result, sw, blob_id, stat_type, descr, double(size));
+    }
+    static void LogStat(CReaderRequestResult& result,
+                        CStopWatch& sw,
+                        const CBlob_id& blob_id,
+                        int chunk_id,
+                        CGBRequestStatistics::EStatType stat_type,
+                        const char* descr,
+                        size_t size)
+    {
+        LogStat(result, sw, blob_id, chunk_id, stat_type, descr, double(size));
+    }
 };
 
 
