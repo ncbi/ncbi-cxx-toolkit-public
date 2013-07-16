@@ -1117,7 +1117,7 @@ struct SSaveResultLevel
         }
     
     CReadDispatcherCommand& m_Command;
-    int m_SavedLevel;
+    CReadDispatcher::TLevel m_SavedLevel;
 };
 
 END_LOCAL_NAMESPACE;
