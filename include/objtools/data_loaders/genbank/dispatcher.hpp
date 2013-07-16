@@ -64,7 +64,7 @@ public:
     typedef  CReader::TBlobId                   TBlobId;
     typedef  CReader::TChunkId                  TChunkId;
     typedef  CReader::TChunkIds                 TChunkIds;
-    typedef  int                                TLevel;
+    typedef  size_t                             TLevel;
     typedef  vector<CSeq_id_Handle>             TIds;
 
     CReadDispatcher(void);
