@@ -101,13 +101,36 @@ static size_t GetGCSize(void)
 
 
 NCBI_PARAM_DECL(int, VDBGRAPH_LOADER, USE_TABLE);
-NCBI_PARAM_DEF_EX(int, VDBGRAPH_LOADER, USE_TABLE, 0,
+NCBI_PARAM_DEF_EX(int, VDBGRAPH_LOADER, USE_TABLE, 2,
                   eParam_NoThread, VDBGRAPH_LOADER_USE_TABLE);
 
 static int GetUseTable(void)
 {
     static NCBI_PARAM_TYPE(VDBGRAPH_LOADER, USE_TABLE) s_Value;
     return s_Value.Get();
+}
+
+
+NCBI_PARAM_DECL(bool, VDBGRAPH_LOADER, DISABLE_ZOOM);
+NCBI_PARAM_DEF_EX(bool, VDBGRAPH_LOADER, DISABLE_ZOOM, false,
+                  eParam_NoThread, VDBGRAPH_LOADER_DISABLE_ZOOM);
+
+static bool GetDisabledZoom(void)
+{
+    static NCBI_PARAM_TYPE(VDBGRAPH_LOADER, DISABLE_ZOOM) s_Value;
+    return s_Value.Get();
+}
+
+
+static bool GetEnabledOverview(void)
+{
+    return !GetDisabledZoom();
+}
+
+
+static bool GetEnabledMidZoom(void)
+{
+    return !GetDisabledZoom();
 }
 
 
@@ -362,10 +385,12 @@ CVDBGraphDataLoader_Impl::LoadFullEntry(const CVDBGraphBlobId& blob_id)
          (GetUseTable() == 1 && it.SeqTableIsSmaller(range)) ) {
         main_flags |= it.fGraphMainAsTable;
     }
-    dst.push_back(it.GetAnnot(range,
-                              info.GetMainAnnotName(),
-                              overview_flags));
-    if ( info.m_VDB->HasMidZoomGraphs() ) {
+    if ( GetEnabledOverview() ) {
+        dst.push_back(it.GetAnnot(range,
+                                  info.GetMainAnnotName(),
+                                  overview_flags));
+    }
+    if ( GetEnabledMidZoom() && info.m_VDB->HasMidZoomGraphs() ) {
         dst.push_back(it.GetAnnot(range,
                                   info.GetMainAnnotName(),
                                   mid_zoom_flags));
@@ -414,8 +439,12 @@ void CVDBGraphDataLoader_Impl::LoadSplitEntry(CTSE_Info& tse,
     CTSE_Split_Info& split_info = tse.GetSplitInfo();
     CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
     for ( int k = 0; k < 3; ++k ) {
+        if ( kIdAdd[k] == kOverviewChunkIdAdd &&
+             !GetEnabledOverview() ) {
+            continue;
+        }
         if ( kIdAdd[k] == kMidZoomChunkIdAdd &&
-             !info.m_VDB->HasMidZoomGraphs() ) {
+             !(GetEnabledMidZoom() && info.m_VDB->HasMidZoomGraphs()) ) {
             continue;
         }
         for ( int i = 0; i*kSize[k] < length; ++i ) {
@@ -487,6 +516,11 @@ void CVDBGraphDataLoader_Impl::GetChunk(CTSE_Chunk_Info& chunk)
     CVDBGraphSeqIterator::TContentFlags flags = kFlags[k];
     CRef<CSeq_annot> annot =
         it.GetAnnot(COpenRange<TSeqPos>(from, to_open), name, flags);
+    if ( GetDebugLevel() >= 6 ) {
+        LOG_POST_X(6, "CVDBGraphDataLoader: "
+                   "loaded "<<kTypeName[k]<<" chunk "<<blob_id.m_SeqId<<
+                   " @ "<<from<<"-"<<(to_open-1)<<": "<<MSerial_AsnText<<*annot);
+    }
     CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
     chunk.x_LoadAnnot(place, *annot);
     chunk.SetLoaded();
