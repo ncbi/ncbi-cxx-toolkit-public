@@ -1030,7 +1030,7 @@ void CSeqVector::x_GetPacked2naSeqData(string& dst_str,
         _ASSERT(dst_str.size() == dst_pos>>2);
     }
     if ( dst_pos&3 ) {
-        dst_str += char(dst_c << 2*(-dst_pos&3));
+        dst_str += char(dst_c << 2*TSeqPos(-TSignedSeqPos(dst_pos)&3));
     }
 }
 
