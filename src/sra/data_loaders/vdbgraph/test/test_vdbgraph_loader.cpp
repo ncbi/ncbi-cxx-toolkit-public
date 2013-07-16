@@ -118,14 +118,17 @@ static void s_CheckFast(CScope& scope, const CSeq_id& id, TSeqPos seq_len,
     }
     for ( ; graph_it; ++graph_it ) {
         const CSeq_graph& graph = graph_it->GetOriginalGraph();
-        string name = graph_it.GetAnnot().GetName()+"/"+graph.GetComment();
+        string name = graph_it.GetAnnot().GetName();
+        if ( graph.IsSetComment() ) {
+            name += "/"+graph.GetComment();
+        }
         const CSeq_interval& interval = graph.GetLoc().GetInt();
         CRange<TSeqPos> range(interval.GetFrom(), interval.GetTo());
         if ( graphs.count(name) == 0 ) {
             graphs[name] = range;
         }
         else {
-            BOOST_CHECK(tables[name].AbuttingWith(range));
+            BOOST_CHECK(graphs[name].AbuttingWith(range));
             graphs[name] += range;
         }
         if ( all.count(name) == 0 ) {
@@ -182,7 +185,10 @@ static void s_CheckFast(CScope& scope, const CSeq_id& id, TSeqPos seq_len,
         }
         for ( ; graph_it; ++graph_it ) {
             const CSeq_graph& graph = graph_it->GetOriginalGraph();
-            string name = graph_it.GetAnnot().GetName()+"/"+graph.GetComment();
+            string name = graph_it.GetAnnot().GetName();
+            if ( graph.IsSetComment() ) {
+                name += "/"+graph.GetComment();
+            }
             const CSeq_interval& interval = graph.GetLoc().GetInt();
             CRange<TSeqPos> range(interval.GetFrom(), interval.GetTo());
             if ( graphs.count(name) == 0 ) {
@@ -278,7 +284,10 @@ BOOST_AUTO_TEST_CASE(FetchSeq2)
         }
         for ( ; graph_it; ++graph_it ) {
             const CSeq_graph& graph = graph_it->GetOriginalGraph();
-            string name = graph_it.GetAnnot().GetName()+"/"+graph.GetComment();
+            string name = graph_it.GetAnnot().GetName();
+            if ( graph.IsSetComment() ) {
+                name += "/"+graph.GetComment();
+            }
             const CSeq_interval& interval = graph.GetLoc().GetInt();
             CRange<TSeqPos> range(interval.GetFrom(), interval.GetTo());
             if ( graphs.count(name) == 0 ) {
