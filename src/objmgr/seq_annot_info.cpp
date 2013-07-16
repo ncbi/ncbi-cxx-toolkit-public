@@ -285,14 +285,14 @@ string CSeq_annot_Info::GetDescription(void) const
 CSeq_annot_Info::TAnnotIndex
 CSeq_annot_Info::x_GetSNPFeatCount(void) const
 {
-    return x_GetSNP_annot_Info().size();
+    return TAnnotIndex(x_GetSNP_annot_Info().size());
 }
 
 
 CSeq_annot_Info::TAnnotIndex
 CSeq_annot_Info::x_GetAnnotCount(void) const
 {
-    return GetAnnotObjectInfos().size();
+    return TAnnotIndex(GetAnnotObjectInfos().size());
 }
 
 
@@ -1513,7 +1513,7 @@ CSeq_annot_Info::TAnnotIndex CSeq_annot_Info::Add(const CSeq_feat& new_obj)
     C_Data& data = m_Object->SetData();
     sx_CheckType(data, data.e_Ftable,
                  "Cannot add Seq-feat: Seq-annot is not ftable");
-    TAnnotIndex index = m_ObjectIndex.GetInfos().size();
+    TAnnotIndex index = TAnnotIndex(m_ObjectIndex.GetInfos().size());
     m_ObjectIndex.AddInfo(CAnnotObject_Info(*this,
                                             index,
                                             data.SetFtable(),
@@ -1531,7 +1531,7 @@ CSeq_annot_Info::TAnnotIndex CSeq_annot_Info::Add(const CSeq_align& new_obj)
     C_Data& data = m_Object->SetData();
     sx_CheckType(data, data.e_Align,
                  "Cannot add Seq-align: Seq-annot is not align");
-    TAnnotIndex index = m_ObjectIndex.GetInfos().size();
+    TAnnotIndex index = TAnnotIndex(m_ObjectIndex.GetInfos().size());
     m_ObjectIndex.AddInfo(CAnnotObject_Info(*this,
                                             index,
                                             data.SetAlign(),
@@ -1549,7 +1549,7 @@ CSeq_annot_Info::TAnnotIndex CSeq_annot_Info::Add(const CSeq_graph& new_obj)
     C_Data& data = m_Object->SetData();
     sx_CheckType(data, data.e_Graph,
                  "Cannot add Seq-graph: Seq-annot is not graph");
-    TAnnotIndex index = m_ObjectIndex.GetInfos().size();
+    TAnnotIndex index = TAnnotIndex(m_ObjectIndex.GetInfos().size());
     m_ObjectIndex.AddInfo(CAnnotObject_Info(*this,
                                             index,
                                             data.SetGraph(),
