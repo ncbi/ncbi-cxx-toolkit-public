@@ -72,7 +72,8 @@ static const TSeqPos kMainChunkSize = 100000;
 
 static const size_t kOverviewChunkIdAdd = 0;
 static const size_t kMidZoomChunkIdAdd = 1;
-static const size_t kMainChunkIdAdd = 2;
+static const size_t kMainGraphChunkIdAdd = 2;
+static const size_t kMainTableChunkIdAdd = 3;
 static const size_t kChunkIdMul = 4;
 
 static const int kTSEId = 1;
@@ -100,7 +101,7 @@ static size_t GetGCSize(void)
 
 
 NCBI_PARAM_DECL(int, VDBGRAPH_LOADER, USE_TABLE);
-NCBI_PARAM_DEF_EX(int, VDBGRAPH_LOADER, USE_TABLE, 0,
+NCBI_PARAM_DEF_EX(int, VDBGRAPH_LOADER, USE_TABLE, 2,
                   eParam_NoThread, VDBGRAPH_LOADER_USE_TABLE);
 
 static int GetUseTable(void)
@@ -397,7 +398,7 @@ void CVDBGraphDataLoader_Impl::LoadSplitEntry(CTSE_Info& tse,
     static const size_t kIdAdd[3] = {
         kOverviewChunkIdAdd,
         kMidZoomChunkIdAdd,
-        kMainChunkIdAdd
+        kMainGraphChunkIdAdd
     };
     static const TSeqPos kSize[3] = {
         kOverviewChunkSize,
@@ -416,16 +417,23 @@ void CVDBGraphDataLoader_Impl::LoadSplitEntry(CTSE_Info& tse,
              !info.m_VDB->HasMidZoomGraphs() ) {
             continue;
         }
-        CSeq_annot::TData::E_Choice type = CSeq_annot::C_Data::e_Graph;
-        if ( kIdAdd[k] == kMainChunkIdAdd && GetUseTable() ) {
-            type = CSeq_annot::C_Data::e_Seq_table;
-        }
         for ( int i = 0; i*kSize[k] < length; ++i ) {
             TSeqPos from = i*kSize[k], to_open = min(length, from+kSize[k]);
-            int chunk_id = int(i*kChunkIdMul+kIdAdd[k]);
+            COpenRange<TSeqPos> range(from, to_open);
+            size_t id_add = kIdAdd[k];
+            if ( id_add == kMainGraphChunkIdAdd && GetUseTable() ) {
+                if ( GetUseTable() == 2 ||
+                     (GetUseTable() == 1 && it.SeqTableIsSmaller(range)) ) {
+                    id_add = kMainTableChunkIdAdd;
+                }
+            }
+            CSeq_annot::TData::E_Choice type = CSeq_annot::C_Data::e_Graph;
+            if ( id_add == kMainTableChunkIdAdd ) {
+                type = CSeq_annot::C_Data::e_Seq_table;
+            }
+            int chunk_id = int(i*kChunkIdMul+id_add);
             CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(chunk_id));
-            chunk->x_AddAnnotType(kName[k], type, it.GetSeq_id_Handle(),
-                                  COpenRange<TSeqPos>(from, to_open));
+            chunk->x_AddAnnotType(kName[k], type, it.GetSeq_id_Handle(), range);
             chunk->x_AddAnnotPlace(place);
             split_info.AddChunk(*chunk);
         }
@@ -448,26 +456,25 @@ void CVDBGraphDataLoader_Impl::GetChunk(CTSE_Chunk_Info& chunk)
     }
     TSeqPos length = it.GetSeqLength();
 
-    static const TSeqPos kSize[3] = {
+    static const TSeqPos kSize[kChunkIdMul] = {
         kOverviewChunkSize,
         kMidZoomChunkSize,
+        kMainChunkSize,
         kMainChunkSize
     };
-    static const CVDBGraphSeqIterator::TContentFlags kFlags[3] = {
+    static const CVDBGraphSeqIterator::TContentFlags kFlags[kChunkIdMul] = {
         CVDBGraphSeqIterator::fGraphQAll,
         CVDBGraphSeqIterator::fGraphZoomQAll,
-        CVDBGraphSeqIterator::fGraphMain
+        CVDBGraphSeqIterator::fGraphMain,
+        CVDBGraphSeqIterator::fGraphMain|CVDBGraphSeqIterator::fGraphMainAsTable
     };
-    static const char* const kTypeName[3] = {
+    static const char* const kTypeName[kChunkIdMul] = {
         "overview",
         "mid-zoom",
-        "main"
+        "main graph",
+        "main table"
     };
-    string kName[3] = {
-        info.GetMainAnnotName(),
-        info.GetMainAnnotName(),
-        info.GetMainAnnotName()
-    };
+    string name = info.GetMainAnnotName();
     int k = chunk.GetChunkId()%kChunkIdMul;
     int i = chunk.GetChunkId()/kChunkIdMul;
     TSeqPos from = i*kSize[k], to_open = min(length, from+kSize[k]);
@@ -477,11 +484,8 @@ void CVDBGraphDataLoader_Impl::GetChunk(CTSE_Chunk_Info& chunk)
                    " @ "<<from<<"-"<<(to_open-1));
     }
     CVDBGraphSeqIterator::TContentFlags flags = kFlags[k];
-    if ( flags == it.fGraphMain && GetUseTable() ) {
-        flags |= it.fGraphMainAsTable;
-    }
-    CRef<CSeq_annot> annot = it.GetAnnot(COpenRange<TSeqPos>(from, to_open),
-                                         kName[k], flags);
+    CRef<CSeq_annot> annot =
+        it.GetAnnot(COpenRange<TSeqPos>(from, to_open), name, flags);
     CTSE_Chunk_Info::TPlace place(CSeq_id_Handle(), kTSEId);
     chunk.x_LoadAnnot(place, *annot);
     chunk.SetLoaded();
@@ -491,6 +495,9 @@ void CVDBGraphDataLoader_Impl::GetChunk(CTSE_Chunk_Info& chunk)
 CRef<CVDBGraphDataLoader_Impl::SVDBFileInfo>
 CVDBGraphDataLoader_Impl::x_GetNAFileInfo(const string& na_acc)
 {
+    if ( !m_FixedFileMap.empty() ) {
+        return null;
+    }
     CMutexGuard guard(m_Mutex);
     TAutoFileMap::iterator it = m_AutoFileMap.find(na_acc);
     if ( it != m_AutoFileMap.end() ) {

@@ -47,6 +47,8 @@ USING_SCOPE(objects);
 
 static string s_LoaderName;
 
+static const size_t kMainChunkSize = 100000;
+
 static CRef<CScope> s_MakeScope(const string& file_name = kEmptyStr)
 {
     CRef<CObjectManager> om = CObjectManager::GetInstance();
@@ -70,48 +72,170 @@ static CRef<CScope> s_MakeScope(const string& file_name = kEmptyStr)
 }
 
 
-BOOST_AUTO_TEST_CASE(FetchSeq1)
+static void s_CheckFast(CScope& scope, const CSeq_id& id, TSeqPos seq_len,
+                        const vector<string>& naccs, bool only_main = true)
 {
-    CRef<CScope> scope =
-        s_MakeScope(NCBI_TRACES04_PATH "/nannot01/000/008/NA000008777.1");
-    CSeq_id seqid1("NC_002333.2");
-    
-    BOOST_REQUIRE_EQUAL(kInvalidSeqPos, scope->GetSequenceLength(seqid1));
-    
-    CBioseq_Handle handle1 = scope->GetBioseqHandle(seqid1);
-    BOOST_REQUIRE(!handle1);
+    NcbiCout << "Test with "<<naccs.size()<<" accs"<<NcbiEndl;
+    SAnnotSelector sel;
+    sel.SetSearchUnresolved();
+    ITERATE ( vector<string>, it, naccs ) {
+        sel.IncludeNamedAnnotAccession(*it);
+    }
+    CSeq_loc loc;
+    loc.SetWhole(*SerialClone(id));
+    CGraph_CI graph_it(scope, loc, sel);
+    CSeq_table_CI table_it(scope, loc, sel);
+    if ( only_main ) {
+        BOOST_CHECK_EQUAL(graph_it.GetSize()+table_it.GetSize(),
+                          ((seq_len-1)/kMainChunkSize+1)*naccs.size());
+    }
+    else {
+        BOOST_CHECK(graph_it.GetSize()+table_it.GetSize());
+    }
+    typedef map<string, CRange<TSeqPos> > TRanges;
+    TRanges all, tables, graphs;
+    for ( ; table_it; ++table_it ) {
+        const string& name = table_it.GetAnnot().GetName();
+        const CSeq_loc& loc = table_it.GetMappedLocation();
+        CRange<TSeqPos> range = loc.GetTotalRange();
+        if ( tables.count(name) == 0 ) {
+            tables[name] = range;
+        }
+        else {
+            BOOST_CHECK(tables[name].AbuttingWith(range));
+            tables[name] += range;
+        }
+        if ( all.count(name) == 0 ) {
+            all[name] = range;
+        }
+        else {
+            BOOST_CHECK(all[name].AbuttingWith(range));
+            all[name] += range;
+        }
+    }
+    ITERATE ( TRanges, it, tables ) {
+        NcbiCout << "Table "<<it->first << " " << it->second << NcbiEndl;
+    }
+    for ( ; graph_it; ++graph_it ) {
+        const CSeq_graph& graph = graph_it->GetOriginalGraph();
+        string name = graph_it.GetAnnot().GetName()+"/"+graph.GetComment();
+        const CSeq_interval& interval = graph.GetLoc().GetInt();
+        CRange<TSeqPos> range(interval.GetFrom(), interval.GetTo());
+        if ( graphs.count(name) == 0 ) {
+            graphs[name] = range;
+        }
+        else {
+            BOOST_CHECK(tables[name].AbuttingWith(range));
+            graphs[name] += range;
+        }
+        if ( all.count(name) == 0 ) {
+            all[name] = range;
+        }
+        else {
+            BOOST_CHECK(all[name].AbuttingWith(range));
+            all[name] += range;
+        }
+    }
+    ITERATE ( TRanges, it, graphs ) {
+        NcbiCout << "Graph "<<it->first << " " << it->second << NcbiEndl;
+    }
+    table_it.Rewind();
+    graph_it.Rewind();
+}
+
+
+static void s_CheckFast(CScope& scope, const CSeq_id& id, TSeqPos seq_len,
+                        const string& nacc, bool only_main = true)
+{
+    s_CheckFast(scope, id, seq_len, vector<string>(1, nacc), only_main);
+    return;
     SAnnotSelector sel;
     sel.SetSearchUnresolved();
     CSeq_loc loc;
-    loc.SetWhole(seqid1);
-    CGraph_CI graph_it(*scope, loc, sel);
+    loc.SetWhole(*SerialClone(id));
+    CGraph_CI graph_it(scope, loc, sel);
+    CSeq_table_CI table_it(scope, loc, sel);
     BOOST_CHECK(graph_it.GetSize());
     if ( 0 ) {
         for ( ; graph_it; ++graph_it ) {
             NcbiCout << MSerial_AsnText << graph_it->GetOriginalGraph();
         }
+        graph_it.Rewind();
     }
     if ( 1 ) {
+        typedef map<string, CRange<TSeqPos> > TRanges;
+        TRanges tables, graphs;
+        for ( ; table_it; ++table_it ) {
+            const string& name = table_it.GetAnnot().GetName();
+            const CSeq_loc& loc = table_it.GetMappedLocation();
+            CRange<TSeqPos> range = loc.GetTotalRange();
+            if ( tables.count(name) == 0 ) {
+                tables[name] = range;
+            }
+            else {
+                BOOST_CHECK(tables[name].AbuttingWith(range));
+                tables[name] += range;
+            }
+        }
+        ITERATE ( TRanges, it, tables ) {
+            NcbiCout << "Table "<<it->first << " " << it->second << NcbiEndl;
+        }
         for ( ; graph_it; ++graph_it ) {
             const CSeq_graph& graph = graph_it->GetOriginalGraph();
+            string name = graph_it.GetAnnot().GetName()+"/"+graph.GetComment();
             const CSeq_interval& interval = graph.GetLoc().GetInt();
-            NcbiCout << "Graph "<<graph_it.GetAnnot().GetName()
-                     << " " << interval.GetFrom()<<"-"<<interval.GetTo()
-                     << NcbiEndl;
+            CRange<TSeqPos> range(interval.GetFrom(), interval.GetTo());
+            if ( graphs.count(name) == 0 ) {
+                graphs[name] = range;
+            }
+            else {
+                BOOST_CHECK(tables[name].AbuttingWith(range));
+                graphs[name] += range;
+            }
         }
+        ITERATE ( TRanges, it, graphs ) {
+            NcbiCout << "Graph "<<it->first << " " << it->second << NcbiEndl;
+        }
+        table_it.Rewind();
+        graph_it.Rewind();
     }
+}
+
+
+static void s_VerifyGraphs(CScope& scope, const CSeq_id& id, TSeqPos seq_len,
+                           const string& nacc)
+{
+}
+
+
+BOOST_AUTO_TEST_CASE(FetchSeq1)
+{
+    string nacc = "NA000008777.1";
+    CSeq_id seqid1("NC_002333.2");
+    TSeqPos seq_len = 16596;
+
+    CRef<CScope> scope =
+        s_MakeScope(NCBI_TRACES04_PATH "/nannot01/000/008/"+nacc);
+    BOOST_REQUIRE_EQUAL(kInvalidSeqPos, scope->GetSequenceLength(seqid1));
+    CBioseq_Handle handle1 = scope->GetBioseqHandle(seqid1);
+    BOOST_REQUIRE(!handle1);
+
+    s_CheckFast(*scope, seqid1, seq_len, nacc, false);
+    s_VerifyGraphs(*scope, seqid1, seq_len, nacc);
 }
 
 
 BOOST_AUTO_TEST_CASE(FetchSeq2)
 {
-    CRef<CScope> scope = s_MakeScope();
+    string nacc = "NA000008777.1";
     CSeq_id seqid1("NC_002333.2");
-    
+    TSeqPos seq_len = 16596;
+
+    CRef<CScope> scope = s_MakeScope();
     BOOST_REQUIRE_EQUAL(kInvalidSeqPos, scope->GetSequenceLength(seqid1));
-    
     CBioseq_Handle handle1 = scope->GetBioseqHandle(seqid1);
     BOOST_REQUIRE(!handle1);
+
     SAnnotSelector sel;
     sel.SetSearchUnresolved();
     sel.IncludeNamedAnnotAccession("NA000008777.1");
@@ -119,40 +243,74 @@ BOOST_AUTO_TEST_CASE(FetchSeq2)
     loc.SetWhole(seqid1);
     CGraph_CI graph_it(*scope, loc, sel);
     CSeq_table_CI table_it(*scope, loc, sel);
-    BOOST_CHECK(graph_it.GetSize()||table_it.GetSize());
+    BOOST_CHECK_EQUAL(graph_it.GetSize()+table_it.GetSize(),
+                      (seq_len-1)/kMainChunkSize+1);
     if ( 0 ) {
         for ( ; graph_it; ++graph_it ) {
             NcbiCout << MSerial_AsnText << graph_it->GetOriginalGraph();
         }
+        graph_it.Rewind();
     }
     if ( 1 ) {
+        typedef map<string, CRange<TSeqPos> > TRanges;
+        TRanges all, tables, graphs;
+        for ( ; table_it; ++table_it ) {
+            const string& name = table_it.GetAnnot().GetName();
+            const CSeq_loc& loc = table_it.GetMappedLocation();
+            CRange<TSeqPos> range = loc.GetTotalRange();
+            if ( tables.count(name) == 0 ) {
+                tables[name] = range;
+            }
+            else {
+                BOOST_CHECK(tables[name].AbuttingWith(range));
+                tables[name] += range;
+            }
+            if ( all.count(name) == 0 ) {
+                all[name] = range;
+            }
+            else {
+                BOOST_CHECK(all[name].AbuttingWith(range));
+                all[name] += range;
+            }
+        }
+        ITERATE ( TRanges, it, tables ) {
+            NcbiCout << "Table "<<it->first << " " << it->second << NcbiEndl;
+        }
         for ( ; graph_it; ++graph_it ) {
             const CSeq_graph& graph = graph_it->GetOriginalGraph();
+            string name = graph_it.GetAnnot().GetName()+"/"+graph.GetComment();
             const CSeq_interval& interval = graph.GetLoc().GetInt();
-            NcbiCout << "Graph "<<graph_it.GetAnnot().GetName()
-                     << " " << interval.GetFrom()<<"-"<<interval.GetTo()
-                     << NcbiEndl;
+            CRange<TSeqPos> range(interval.GetFrom(), interval.GetTo());
+            if ( graphs.count(name) == 0 ) {
+                graphs[name] = range;
+            }
+            else {
+                BOOST_CHECK(tables[name].AbuttingWith(range));
+                graphs[name] += range;
+            }
+            if ( all.count(name) == 0 ) {
+                all[name] = range;
+            }
+            else {
+                BOOST_CHECK(all[name].AbuttingWith(range));
+                all[name] += range;
+            }
         }
-        for ( ; table_it; ++table_it ) {
-            CSeq_annot_Handle annot = table_it.GetAnnot();
-            const CSeq_table& table =
-                annot.GetCompleteObject()->GetData().GetSeq_table();
-            const CSeqTable_column& col =
-                table.GetColumn("Seq-table location");
-            CConstRef<CSeq_loc> loc = col.GetSeq_loc(0);
-            const CSeq_interval& interval = loc->GetInt();
-            NcbiCout << "Table "<<annot.GetName()
-                     << " " << interval.GetFrom()<<"-"<<interval.GetTo()
-                     << NcbiEndl;
+        ITERATE ( TRanges, it, graphs ) {
+            NcbiCout << "Graph "<<it->first << " " << it->second << NcbiEndl;
         }
+        table_it.Rewind();
+        graph_it.Rewind();
     }
+    s_VerifyGraphs(*scope, seqid1, seq_len, nacc);
 }
 
 BOOST_AUTO_TEST_CASE(FetchSeq3)
 {
-    CRef<CScope> scope0 = s_MakeScope();
     CSeq_id seqid1("NC_002333.2");
-    
+    TSeqPos seq_len = 16596;
+
+    CRef<CScope> scope0 = s_MakeScope();
     for ( int t = 0; t < 4; ++t ) {
         CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
         scope->AddDataLoader(s_LoaderName);
@@ -161,45 +319,42 @@ BOOST_AUTO_TEST_CASE(FetchSeq3)
         
         CBioseq_Handle handle1 = scope->GetBioseqHandle(seqid1);
         BOOST_REQUIRE(!handle1);
-        SAnnotSelector sel;
-        sel.SetSearchUnresolved();
+        vector<string> naccs;
         int first_na = 8777, last_na = t < 2? 8781: 8788;
         for ( int na = first_na; na <= last_na; ++na ) {
             char buf[99];
             sprintf(buf, "NA%09d.1", na);
-            sel.IncludeNamedAnnotAccession(buf);
+            naccs.push_back(buf);
         }
-        CSeq_loc loc;
-        loc.SetWhole(seqid1);
-        CGraph_CI graph_it(*scope, loc, sel);
-        CSeq_table_CI table_it(*scope, loc, sel);
-        BOOST_CHECK(graph_it.GetSize()||table_it.GetSize());
-        if ( 0 ) {
-            for ( ; graph_it; ++graph_it ) {
-                NcbiCout << MSerial_AsnText << graph_it->GetOriginalGraph();
-            }
+        s_CheckFast(*scope, seqid1, seq_len, naccs);
+        ITERATE ( vector<string>, it, naccs ) {
+            s_VerifyGraphs(*scope, seqid1, seq_len, *it);
         }
-        if ( 1 ) {
-            for ( ; graph_it; ++graph_it ) {
-                const CSeq_graph& graph = graph_it->GetOriginalGraph();
-                const CSeq_interval& interval = graph.GetLoc().GetInt();
-                NcbiCout << "Graph "<<graph_it.GetAnnot().GetName()
-                         << " " << interval.GetFrom()<<"-"<<interval.GetTo()
-                         << NcbiEndl;
-            }
-            for ( ; table_it; ++table_it ) {
-                CSeq_annot_Handle annot = table_it.GetAnnot();
-                const CSeq_table& table =
-                    annot.GetCompleteObject()->GetData().GetSeq_table();
-                const CSeqTable_column& col =
-                    table.GetColumn("Seq-table location");
-                CConstRef<CSeq_loc> loc = col.GetSeq_loc(0);
-                const CSeq_interval& interval = loc->GetInt();
-                NcbiCout << "Table "<<annot.GetName()
-                         << " " << interval.GetFrom()<<"-"<<interval.GetTo()
-                         << NcbiEndl;
-            }
-        }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(FetchSeq4)
+{
+    CSeq_id seqid1("NW_001877341.3");
+    TSeqPos seq_len = 12372269;
+    
+    CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
+    scope->AddDataLoader(s_LoaderName);
+
+    BOOST_REQUIRE_EQUAL(kInvalidSeqPos, scope->GetSequenceLength(seqid1));
+        
+    CBioseq_Handle handle1 = scope->GetBioseqHandle(seqid1);
+    BOOST_REQUIRE(!handle1);
+    vector<string> naccs;
+    int first_na = 8777, last_na = 8781;
+    for ( int na = first_na; na <= last_na; ++na ) {
+        char buf[99];
+        sprintf(buf, "NA%09d.1", na);
+        naccs.push_back(buf);
+    }
+    s_CheckFast(*scope, seqid1, seq_len, naccs);
+    ITERATE ( vector<string>, it, naccs ) {
+        s_VerifyGraphs(*scope, seqid1, seq_len, *it);
     }
 }
 
