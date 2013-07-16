@@ -57,7 +57,7 @@ class CID2_Blob_Id;
 class CID2S_Seq_annot_Info;
 class CBlob_id;
 class CTSE_Info;
-class CTimer;
+//class CTimer;
 
 class CGBDataLoader;
 class CLoadInfo;
@@ -582,7 +582,7 @@ public:
     typedef CTSE_Lock TTSE_Lock;
     //typedef CLoadInfoBlob TInfoBlob;
     typedef CLoadLockBlob TLockBlob;
-    typedef int TLevel;
+    typedef size_t TLevel;
     typedef int TBlobVersion;
     typedef int TBlobState;
 
