@@ -416,7 +416,8 @@ NCBI_DEPRECATED
 NCBI_XOBJREAD_EXPORT
 CRef<CSeq_entry> ReadFasta(CNcbiIstream& in, TReadFastaFlags flags = 0,
                            int* counter = 0,
-                           vector<CConstRef<CSeq_loc> >* lcv = 0);
+                           vector<CConstRef<CSeq_loc> >* lcv = 0,
+                           IErrorContainer * pErrorContainer = 0);
 
 //////////////////////////////////////////////////////////////////
 //
