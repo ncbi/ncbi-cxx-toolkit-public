@@ -4,7 +4,24 @@
 script_name="`basename "$0"`"
 
 if test $# -ne 2; then
-    echo "Usage: $script_name <PATH_TO_TOOLKIT_DIR> <TARGET_DIR>" >&2
+cat <<EOF >&2
+This script takes the grid_cli binary from the specified C++ Toolkit
+build directory and combines it with a set of the same-aged 'ncbi.grid'
+Python modules. The resulting Python module can be used for testing the
+NetSchedule server against a particular grid_cli version.
+
+Usage:
+    $script_name <TOOLKIT_BUILD_DIR> <TARGET_MODULE_DIR>
+
+Example:
+    $ ./$script_name \\
+            "\$NCBI/c++.production/DebugMT" 'grid_modules'
+
+    $ python
+    >>> from grid_modules.ncbi.grid import ipc
+    >>> rpc_server = ipc.RPCServer()
+
+EOF
     exit 1
 fi
 
