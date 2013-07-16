@@ -119,13 +119,6 @@ public:
                           CRef<CSeq_interval>& seq_interval,
                           const CSeq_annot_SNP_Info& annot_info) const;
 
-    size_t GetAllelesCount(void) const;
-    size_t GetAlleleStrIndex(size_t index) const;
-    size_t GetExtraIndex(void) const;
-    CUser_field::TData::E_Choice GetQualityCodesWhich(void) const;
-    size_t GetQualityCodesStrIndex(void) const;
-    size_t GetQualityCodesOsIndex(void) const;
-
     typedef int TSNPId;
     typedef Uint1 TPositionDelta;
     enum {
@@ -173,6 +166,13 @@ public:
         fQualityCodesOs    = 1 << 6,
         fQualityCodesMask  = fQualityCodesStr | fQualityCodesOs
     };
+
+    size_t GetAllelesCount(void) const;
+    TAlleleIndex GetAlleleStrIndex(size_t index) const;
+    TExtraIndex GetExtraIndex(void) const;
+    CUser_field::TData::E_Choice GetQualityCodesWhich(void) const;
+    TQualityCodesIndex GetQualityCodesStrIndex(void) const;
+    TQualityCodesIndex GetQualityCodesOsIndex(void) const;
 
     TSeqPos         m_ToPosition;
     TSNPId          m_SNP_Id;
@@ -260,7 +260,7 @@ bool SSNP_Info::NotThis(const TRange& range) const
 
 
 inline
-size_t SSNP_Info::GetAlleleStrIndex(size_t index) const
+SSNP_Info::TAlleleIndex SSNP_Info::GetAlleleStrIndex(size_t index) const
 {
     _ASSERT(index < GetAllelesCount());
     return m_AllelesIndices[index];
@@ -268,14 +268,14 @@ size_t SSNP_Info::GetAlleleStrIndex(size_t index) const
 
 
 inline
-size_t SSNP_Info::GetExtraIndex(void) const
+SSNP_Info::TExtraIndex SSNP_Info::GetExtraIndex(void) const
 {
     return m_ExtraIndex;
 }
 
 
 inline
-size_t SSNP_Info::GetQualityCodesStrIndex(void) const
+SSNP_Info::TQualityCodesIndex SSNP_Info::GetQualityCodesStrIndex(void) const
 {
     _ASSERT(m_Flags & fQualityCodesStr);
     return m_QualityCodesIndex;
@@ -283,7 +283,7 @@ size_t SSNP_Info::GetQualityCodesStrIndex(void) const
 
 
 inline
-size_t SSNP_Info::GetQualityCodesOsIndex(void) const
+SSNP_Info::TQualityCodesIndex SSNP_Info::GetQualityCodesOsIndex(void) const
 {
     _ASSERT(m_Flags & fQualityCodesOs);
     return m_QualityCodesIndex;
