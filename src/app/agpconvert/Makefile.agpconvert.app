@@ -6,7 +6,7 @@
 APP = agpconvert
 SRC = agpconvert
 
-LIB  = xalgoseq xobjedit $(OBJREAD_LIBS) taxon1 xalnmgr xobjutil submit \
+LIB  = xalgoseq xobjedit $(OBJREAD_LIBS) xalnmgr xobjutil taxon3 taxon1 \
     ncbi_xdbapi_ftds $(FTDS_LIB) tables xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
 LIBS = $(FTDS_LIBS) $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
