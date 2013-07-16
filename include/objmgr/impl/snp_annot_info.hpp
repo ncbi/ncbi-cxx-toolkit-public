@@ -322,7 +322,10 @@ inline
 SSNP_Info::TCommentIndex
 CSeq_annot_SNP_Info::x_GetCommentIndex(const string& comment)
 {
-    return m_Comments.GetIndex(comment, SSNP_Info::kMax_CommentIndex);
+    size_t index =
+        m_Comments.GetIndex(comment, SSNP_Info::kMax_CommentIndex);
+    // index cannot be bigger than SSNP_Info::kMax_CommentIndex
+    return SSNP_Info::TCommentIndex(index);
 }
 
 
@@ -330,7 +333,10 @@ inline
 SSNP_Info::TExtraIndex
 CSeq_annot_SNP_Info::x_GetExtraIndex(const string& str)
 {
-    return m_Extra.GetIndex(str, SSNP_Info::kMax_ExtraIndex);
+    size_t index =
+        m_Extra.GetIndex(str, SSNP_Info::kMax_ExtraIndex);
+    // index cannot be bigger than SSNP_Info::kMax_ExtraIndex
+    return SSNP_Info::TExtraIndex(index);
 }
 
 
@@ -338,7 +344,10 @@ inline
 SSNP_Info::TQualityCodesIndex
 CSeq_annot_SNP_Info::x_GetQualityCodesIndex(const string& str)
 {
-    return m_QualityCodesStr.GetIndex(str, SSNP_Info::kMax_QualityCodesIndex);
+    size_t index =
+        m_QualityCodesStr.GetIndex(str, SSNP_Info::kMax_QualityCodesIndex);
+    // index cannot be bigger than SSNP_Info::kMax_QualityCodesIndex
+    return SSNP_Info::TQualityCodesIndex(index);
 }
 
 
@@ -346,7 +355,10 @@ inline
 SSNP_Info::TQualityCodesIndex
 CSeq_annot_SNP_Info::x_GetQualityCodesIndex(const TOctetString& os)
 {
-    return m_QualityCodesOs.GetIndex(os, SSNP_Info::kMax_QualityCodesIndex);
+    size_t index = 
+        m_QualityCodesOs.GetIndex(os, SSNP_Info::kMax_QualityCodesIndex);
+    // index cannot be bigger than SSNP_Info::kMax_QualityCodesIndex
+    return SSNP_Info::TQualityCodesIndex(index);
 }
 
 
