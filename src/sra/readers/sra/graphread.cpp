@@ -311,7 +311,7 @@ CVDBGraphSeqIterator::x_MakeGraph(const string& annot_name,
                        "CVDBGraphSeqIterator: graph data array is too short");
         }
     }
-    int numval = 0;
+    size_t numval = 0;
     if ( max_v <= kMaxByteValue ) {
         // use smaller byte representation
         numval = int_vv->size();
@@ -345,7 +345,11 @@ CVDBGraphSeqIterator::x_MakeGraph(const string& annot_name,
     if ( scale != 1 ) {
         graph->SetA(1./scale);
     }
-    graph->SetNumval(numval);
+    if ( int(numval) != numval ) {
+        NCBI_THROW(CSraException, eOtherError,
+                   "CVDBGraphSeqIterator::x_MakeGraph: graph too big");
+    }
+    graph->SetNumval(int(numval));
     return graph;
 }
 
@@ -369,7 +373,7 @@ CVDBGraphSeqIterator::x_MakeTable(const string& annot_name,
     uint64_t row = pos/row_size;
     for ( ; pos < range.GetToOpen(); ++row, pos += row_size ) {
         CVDBValueFor<TValue> vv_arr(cursor.GRAPH(info.m_RowFirst+row));
-        TSeqPos off = pos - row*row_size;
+        TSeqPos off = TSeqPos(pos - row*row_size);
         TSeqPos cnt = min(row_size-off, range.GetToOpen()-pos);
         for ( TSeqPos i = 0; i < cnt; ++i ) {
             TValue v = vv_arr[off+i];
@@ -454,8 +458,11 @@ CVDBGraphSeqIterator::x_MakeTable(const string& annot_name,
         col_step->SetHeader().SetField_name("value_step");
         col_step->SetDefault().SetReal(1./scale);
     }
-            
-    table->SetNum_rows(arr_pos.size());
+    if ( int(arr_pos.size()) != arr_pos.size() ) {
+        NCBI_THROW(CSraException, eOtherError,
+                   "CVDBGraphSeqIterator::x_MakeTable: graph too big");
+    }
+    table->SetNum_rows(int(arr_pos.size()));
     return table;
 }
 
