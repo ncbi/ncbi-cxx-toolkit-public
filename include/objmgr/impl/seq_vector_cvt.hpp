@@ -41,7 +41,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-void NCBI_XOBJMGR_EXPORT ThrowOutOfRangeSeq_inst(TSeqPos pos);
+void NCBI_XOBJMGR_EXPORT ThrowOutOfRangeSeq_inst(size_t pos);
 
 template<class DstIter, class SrcCont>
 inline

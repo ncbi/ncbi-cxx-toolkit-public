@@ -55,7 +55,7 @@ BEGIN_SCOPE(objects)
 
 static const TSeqPos kCacheSize = 1024;
 
-void ThrowOutOfRangeSeq_inst(TSeqPos pos)
+void ThrowOutOfRangeSeq_inst(size_t pos)
 {
     NCBI_THROW_FMT(CSeqVectorException, eOutOfRange,
                    "reference out of range of Seq-inst data: "<<pos);
