@@ -2,6 +2,7 @@ connect$
 corelib$
 ctools$
 util$
+util/bitset$
 util/regexp$
 util/sequtil$
 util/tables$
