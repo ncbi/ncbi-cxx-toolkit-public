@@ -1124,6 +1124,7 @@ static const s_test_property test_list[] = {
    {"TRANSL_NO_NOTE", fDiscrepancy},
    {"NOTE_NO_TRANSL", fDiscrepancy},
    {"TRANSL_TOO_LONG", fDiscrepancy},
+   {"TEST_SHORT_LNCRNA", fOncaller},
    {"FIND_STRAND_TRNAS", fDiscrepancy},
    {"FIND_BADLEN_TRNAS", fDiscrepancy},
    {"COUNT_TRNAS", fDiscrepancy},
@@ -1172,6 +1173,7 @@ static const s_test_property test_list[] = {
    {"FEATURE_LOCATION_CONFLICT", fDiscrepancy},
 
 // tests_on_Bioseq_CFeat_CSeqdesc
+   {"DISC_BAD_BGPIPE_QUALS", fDiscrepancy},
    {"DISC_INCONSISTENT_MOLINFO_TECH", fDiscrepancy},
    {"SHORT_CONTIG", fDiscrepancy},
    {"SHORT_SEQUENCES", fDiscrepancy},
@@ -1508,6 +1510,11 @@ if (i > sz) return;
                     CRef <CTestAndRepData> (new CBioseq_TRANSL_TOO_LONG));
         if (++i >= sz) return;
    }
+   if ( thisTest.tests_run.find("TEST_SHORT_LNCRNA") != thisTest.tests_run.end()) {
+       tests_on_Bioseq_CFeat.push_back(
+                    CRef <CTestAndRepData> (new CBioseq_TEST_SHORT_LNCRNA));
+        if (++i >= sz) return;
+   }
    if ( thisTest.tests_run.find("FIND_STRAND_TRNAS") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat.push_back(
                     CRef <CTestAndRepData> (new CBioseq_FIND_STRAND_TRNAS));
@@ -1739,6 +1746,11 @@ if (i > sz) return;
    if ( thisTest.tests_run.find("SHORT_SEQUENCES_200") != thisTest.tests_run.end()) {
        tests_on_Bioseq_NotInGenProdSet.push_back(
                                 CRef<CTestAndRepData>(new CBioseq_SHORT_SEQUENCES_200));
+        if (++i >= sz) return;
+   }
+   if ( thisTest.tests_run.find("DISC_BAD_BGPIPE_QUALS") != thisTest.tests_run.end()) {
+       tests_on_Bioseq_CFeat_CSeqdesc.push_back(
+                     CRef <CTestAndRepData>(new CBioseq_DISC_BAD_BGPIPE_QUALS));
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("TEST_UNWANTED_SPACER") != thisTest.tests_run.end()) {

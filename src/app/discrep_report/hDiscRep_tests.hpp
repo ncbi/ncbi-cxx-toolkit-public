@@ -443,7 +443,7 @@ namespace DiscRepNmSpc {
                                                  const CTranslation_constraint& trans_cons);
       bool DoesFeatureMatchLocationConstraint(const CSeq_feat& feat, 
                                                   const CLocation_constraint& loc_cons);
-    protected:
+    private:
       bool x_DoesStrContainPlural(const string& word, char last_letter, 
                                                          char second_to_last_letter);
   };
@@ -1738,7 +1738,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("DISC_FLATFILE_FIND_ONCALLER");}
     
-    protected:
+    private:
       Str2Strs m_fixable2ls; 
       bool m_citem1;
 
@@ -1758,7 +1758,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("ONCALLER_STRAIN_TAXNAME_CONFLICT");}
 
-    protected:
+    private:
       bool StrainConflictsTaxname(const COrg_ref& org);
   };
 
@@ -1771,7 +1771,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const { return string("TEST_SMALL_GENOME_SET_PROBLEM");}
 
-    protected:
+    private:
       bool HasSmallSeqset(const CSeq_entry& seq_entry);
   };
 
@@ -1785,7 +1785,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const { return string("DISC_SUBMITBLOCK_CONFLICT");}
 
-    protected:
+    private:
       bool CitSubMatchExceptDate(const CCit_sub& cit1, const CCit_sub& cit2);
       bool DateMatch(const CSubmit_block& blk1, const CSubmit_block& blk2);
       string SubmitBlockMatchExceptDate(const CSubmit_block& this_blk);
@@ -1801,7 +1801,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const { return string("DISC_INCONSISTENT_MOLTYPES");}
 
-    protected:
+    private:
       unsigned m_entry_no;
       void AddMolinfoToBioseqsOfSet(const CBioseq_set& set, const string& desc);
   };
@@ -1816,7 +1816,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const { return string("DISC_HAPLOTYPE_MISMATCH");}
 
-    protected:
+    private:
       Str2Seqs m_tax_hap2seqs;
       unsigned m_entry_cnt;
 
@@ -1875,7 +1875,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("INCONSISTENT_BIOSOURCE"); }
    
-    protected:
+    private:
       bool SynonymsMatch(const COrg_ref& org1, const COrg_ref& org2);
       bool DbtagMatch(const COrg_ref& org1, const COrg_ref& org2);
       bool OrgModSetMatch(const COrgName& nm1, const COrgName& nm2);
@@ -2812,7 +2812,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return CBioseq_test_on_prot::GetName_prefix(); }
 
-    protected:
+    private:
       void MakeRep(const Str2Strs& item_map, const string& desc1, const string& desc2);
   };
 
@@ -2879,6 +2879,7 @@ namespace DiscRepNmSpc {
       string GetName_tdup() const {return string("FIND_DUP_TRNAS"); }  // launches COUNT_TRNAS
       string GetName_len() const {return string("FIND_BADLEN_TRNAS"); }
       string GetName_strand() const {return string("FIND_STRAND_TRNAS"); }
+      string GetName_lnc() const {return string("TEST_SHORT_LNCRNA"); }
 
       void FindMissingRNAsInList();
       bool RRnaMatch(const CRNA_ref& rna1, const CRNA_ref& rna2);
@@ -2889,6 +2890,14 @@ namespace DiscRepNmSpc {
       string m_bioseq_desc, m_best_id_str;
   };
 
+  class CBioseq_TEST_SHORT_LNCRNA : public CBioseq_test_on_rna
+  {
+    public:
+      virtual ~CBioseq_TEST_SHORT_LNCRNA () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_test_on_rna::GetName_lnc(); }
+  };
 
   class CBioseq_FIND_STRAND_TRNAS : public CBioseq_test_on_rna
   {
@@ -3085,6 +3094,21 @@ namespace DiscRepNmSpc {
 
 // new comb: CBioseq_
 
+  class CBioseq_DISC_BAD_BGPIPE_QUALS : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_DISC_BAD_BGPIPE_QUALS () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("DISC_BAD_BGPIPE_QUALS"); }
+
+    private:
+      bool x_IsBGPipe(const CSeqdesc* sdp); 
+      bool x_HasFieldStrNocase(const CUser_object& uobj, const string& field, 
+                                                                         const string& str);
+  };
+
   class CBioseq_SUSPECT_PHRASES : public CBioseqTestAndRepData 
   {
     public:
@@ -3094,7 +3118,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("SUSPECT_PHRASES"); }
 
-    protected:
+    private:
       void FindSuspectPhrases(const string& check_str, const CSeq_feat& seq_feat);
   };
 
@@ -3161,7 +3185,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("TEST_UNWANTED_SPACER"); }
  
-    protected:
+    private:
       bool HasIntergenicSpacerName (const string& comm);
   };
 
@@ -3219,7 +3243,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("DISC_FEATURE_MOLTYPE_MISMATCH"); }
 
-    protected:
+    private:
       bool IsGenomicDNASequence (const CBioseq& bioseq);
   };
 
@@ -3233,7 +3257,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("ADJACENT_PSEUDOGENES"); }
 
-    protected:
+    private:
       string GetGeneStringMatch (const string& str1, const string& str2);
   };
 
@@ -3295,7 +3319,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("PSEUDO_MISMATCH"); }
 
-    protected:
+    private:
       void FindPseudoDiscrepancies(const CSeq_feat& seq_feat);
   };
 
@@ -3407,7 +3431,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("TEST_UNUSUAL_MISC_RNA");}
 
-    protected:
+    private:
       string GetTrnaProductString(const CTrna_ext& trna_ext);
       string GetRnaRefProductString(const CRNA_ref& rna_ref);
   };
@@ -3422,7 +3446,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("DISC_PARTIAL_PROBLEMS");}
 
-    protected:
+    private:
       bool CouldExtendLeft(const CBioseq& bioseq, const unsigned& pos);
       bool CouldExtendRight(const CBioseq& bioseq, const int& pos);
   };
@@ -3437,7 +3461,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("DISC_SUSPICIOUS_NOTE_TEXT");}
 
-    protected:
+    private:
       bool HasSuspiciousStr(const string& str, string& sus_str);
   };
 
@@ -3489,7 +3513,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("TEST_BAD_GENE_NAME");}
     
-    protected:
+    private:
       bool GeneNameHas4Numbers(const string& locus);
       string GetName_bad() const {return string("BAD_BACTERIAL_GENE_NAME"); }
   };
@@ -3517,7 +3541,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("DISC_BAD_GENE_STRAND");}
 
-    protected:
+    private:
       bool AreIntervalStrandsOk(const CSeq_loc& g_loc, const CSeq_loc& f_loc);
   };
 
@@ -3532,7 +3556,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("DISC_SHORT_INTRON");}
 
-    protected:
+    private:
       bool PosIsAt3End(const unsigned pos, CConstRef <CBioseq>& bioseq);
       bool PosIsAt5End(unsigned pos, CConstRef <CBioseq>& bioseq);
   };
@@ -3642,7 +3666,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("FEATURE_LOCATION_CONFLICT");}
 
-    protected:
+    private:
       void CheckFeatureTypeForLocationDiscrepancies(const vector <const CSeq_feat*>& seq_feat,
                                                                 const string& feat_type);
       bool IsGeneLocationOk(const CSeq_feat* seq_feat, const CSeq_feat* gene);
@@ -3663,7 +3687,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("LOCUS_TAGS");}
 
-    protected:
+    private:
       bool IsLocationDirSub(const CSeq_loc& seq_location);
       string GetName_missing() const { return string("MISSING_LOCUS_TAGS"); };
       string GetName_dup() const { return string("DUPLICATE_LOCUS_TAGS"); }
@@ -3717,7 +3741,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("MISSING_PROTEIN_ID");}
 
-    protected:
+    private:
       string GetName_prefix() const {return string("INCONSISTENT_PROTEIN_ID_PREFIX");}
   };
 
@@ -3731,7 +3755,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("INCONSISTENT_PROTEIN_ID_PREFIX");}
 
-   protected:
+   private:
       string GetName_pid() const {return string("MISSING_PROTEIN_ID"); }
       void MakeRep(const Str2Strs& item_map, const string& desc1, const string& desc2);
   };
@@ -3828,7 +3852,7 @@ namespace DiscRepNmSpc {
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("OVERLAPPING_CDS");}
 
-    protected:
+    private:
       bool OverlappingProdNmSimilar(const string& prod_nm1, const string& prod_nm2);
       void AddToDiscRep(const CSeq_feat* seq_feat);
       bool HasNoSuppressionWords(const CSeq_feat* seq_feat);

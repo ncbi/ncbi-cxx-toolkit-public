@@ -432,6 +432,65 @@ void CBioseq_on_SUSPECT_RULE :: GetReport(CRef <CClickableItem>& c_item)
 };
 
 
+bool CBioseq_DISC_BAD_BGPIPE_QUALS :: x_HasFieldStrNocase(const CUser_object& uobj, const string& field, const string& str)
+{
+   if (uobj.HasField(field)) {
+       const CUser_field& ufd = uobj.GetField(field);
+       if (!ufd.GetData().IsStr()) return false;
+       strtmp = CUtf8::AsSingleByteString(ufd.GetData().GetStr(), eEncoding_Ascii);
+       if (NStr::EqualNocase(strtmp, str)) return true; 
+   } 
+   return false;
+};
+ 
+
+bool CBioseq_DISC_BAD_BGPIPE_QUALS :: x_IsBGPipe(const CSeqdesc* sdp)
+{
+    const CUser_object& uobj = sdp->GetUser();
+    if ( !uobj.GetType().IsStr() 
+             || !NStr::EqualNocase(uobj.GetType().GetStr(), "StructuredComment"))
+      return false ;
+    
+    if (!x_HasFieldStrNocase(uobj, "StructuredCommentPrefix", 
+                                            "##Genome-Annotation-Data-START##"))
+      return false;
+
+    return (x_HasFieldStrNocase(uobj, "Annotation Pipeline", 
+                                           "NCBI Prokaryotic Genome Annotation Pipeline"));
+};
+
+void CBioseq_DISC_BAD_BGPIPE_QUALS :: TestOnObj(const CBioseq& bioseq)
+{
+   // must not be refseq
+   ITERATE (list <CRef <CSeq_id> >, it, bioseq.GetId()) {
+      if ( (*it)->IsOther()) return;
+   }
+
+   // must be BGPIPE
+   bool is_bgpipe = false;
+   ITERATE (vector <const CSeqdesc*>, it, bioseq_user) {
+     if ( (is_bgpipe = x_IsBGPipe(*it)) ) break; 
+   }
+   if (!is_bgpipe) return;
+
+   ITERATE (vector <const CSeq_feat*>, it, all_feat) {
+      strtmp = GetDiscItemText(**it);
+      if ( (*it)->CanGetExcept_text() && !((*it)->GetExcept_text().empty()))
+        thisInfo.test_item_list[GetName()].push_back(strtmp);
+      else if ( (*it)->GetData().IsCdregion() 
+                  && (*it)->GetData().GetCdregion().CanGetCode_break()
+                  && !(*it)->GetData().GetCdregion().GetCode_break().empty())
+        thisInfo.test_item_list[GetName()].push_back(strtmp);
+   }
+};
+
+void CBioseq_DISC_BAD_BGPIPE_QUALS :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description = GetContainsComment(c_item->item_list.size(), "feature")
+                         + "invalid BGPIPE qualifiers";
+};
+
+
 void CBioseq_SUSPECT_PHRASES :: FindSuspectPhrases(const string& check_str, const CSeq_feat& seq_feat)
 {
    ITERATE (vector <string>, it, thisInfo.suspect_phrases) 
@@ -5877,6 +5936,25 @@ void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
     }
   }
 
+  // TEST_SHORT_LNCRNA
+  bool partial5, partial3;
+  if (thisTest.tests_run.find(GetName_lnc()) != thisTest.tests_run.end()) {
+    ITERATE (vector <const CSeq_feat*>, it, rna_feat) {
+       if ( (*it)->GetData().GetSubtype() != CSeqFeatData::eSubtype_ncRNA ) continue;
+       const CRNA_ref& rna_ref = (*it)->GetData().GetRna();
+       if (!rna_ref.CanGetExt() 
+              || !rna_ref.GetExt().IsGen()
+              || !rna_ref.GetExt().GetGen().CanGetClass()
+              || !NStr::EqualNocase(rna_ref.GetExt().GetGen().GetClass(), "lncrna"))
+         continue;
+       partial5 = (*it)->GetLocation().IsPartialStart(eExtreme_Biological);
+       partial3 = (*it)->GetLocation().IsPartialStop(eExtreme_Biological);
+       if (!partial5 && !partial3
+               && sequence::GetCoverage((*it)->GetLocation(), thisInfo.scope) < 200)  
+         thisInfo.test_item_list[GetName_lnc()].push_back(GetDiscItemText(**it));
+    }
+  }
+
   // below covers COUNT_TRNAS, COUNT_RRNAS, FIND_DUP_RRNAS, FIND_STRAND_TRNAS
   // FIND_DUP_TRNAS: launches COUNT_TRNAS
   if (bioseq.IsAa()) return;
@@ -5925,6 +6003,11 @@ void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
   }
 };
 
+void CBioseq_TEST_SHORT_LNCRNA :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description 
+       = GetIsComment(c_item->item_list.size(), "feature") + "suspiciously short";
+};
 
 void CBioseq_FIND_STRAND_TRNAS :: GetReport(CRef <CClickableItem>& c_item)
 {
