@@ -101,7 +101,7 @@ static size_t GetGCSize(void)
 
 
 NCBI_PARAM_DECL(int, VDBGRAPH_LOADER, USE_TABLE);
-NCBI_PARAM_DEF_EX(int, VDBGRAPH_LOADER, USE_TABLE, 2,
+NCBI_PARAM_DEF_EX(int, VDBGRAPH_LOADER, USE_TABLE, 0,
                   eParam_NoThread, VDBGRAPH_LOADER_USE_TABLE);
 
 static int GetUseTable(void)
@@ -358,7 +358,8 @@ CVDBGraphDataLoader_Impl::LoadFullEntry(const CVDBGraphBlobId& blob_id)
     CVDBGraphSeqIterator::TContentFlags overview_flags = it.fGraphQAll;
     CVDBGraphSeqIterator::TContentFlags mid_zoom_flags = it.fGraphZoomQAll;
     CVDBGraphSeqIterator::TContentFlags main_flags = it.fGraphMain;
-    if ( GetUseTable() ) {
+    if ( GetUseTable() == 2 ||
+         (GetUseTable() == 1 && it.SeqTableIsSmaller(range)) ) {
         main_flags |= it.fGraphMainAsTable;
     }
     dst.push_back(it.GetAnnot(range,
