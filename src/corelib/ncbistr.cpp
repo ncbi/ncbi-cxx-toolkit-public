@@ -39,6 +39,7 @@
 #include <corelib/ncbierror.hpp>
 #include <corelib/ncbifloat.h>
 #include <memory>
+#include <functional>
 #include <algorithm>
 #include <iterator>
 #include <stdio.h>
