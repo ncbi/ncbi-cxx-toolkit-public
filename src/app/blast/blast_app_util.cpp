@@ -426,8 +426,7 @@ s_ImportQueries(const CBlast4_queries& queries,
         ITERATE(CBlast4_queries::TSeq_loc_list, itr, seqlocs) {
             if ((*itr)->GetId()) {
                 CBioseq_Handle bh = scope->GetBioseqHandle(*(*itr)->GetId());
-                CConstRef<CBioseq> bioseq = bh.GetCompleteBioseq();
-                out.Write(*bioseq);
+                out.Write(bh);
             }
         }
         scope.Reset();
