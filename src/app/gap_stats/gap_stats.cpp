@@ -70,6 +70,7 @@ private:
     CSeq_inst::EMol m_MolFilter;
     CRef<CScope> m_pScope;
     CGapAnalysis m_gapAnalysis;
+    CFastaReader::TFlags m_fFastaFlags;
 
     void x_ReadFileOrAccn(const string & sFileOrAccn);
     void x_PrintSummaryView( 
@@ -84,7 +85,10 @@ private:
 // Constructor
 
 CGapStatsApplication::CGapStatsApplication(void) :
-    m_MolFilter(CSeq_inst::eMol_na)
+    m_MolFilter(CSeq_inst::eMol_na),
+        m_fFastaFlags(
+            CFastaReader::fParseGaps |
+            CFastaReader::fLetterGaps)
 {
     CRef<CObjectManager> pObjMgr( CObjectManager::GetInstance() );
     CGBDataLoader::RegisterInObjectManager(*pObjMgr);
@@ -141,6 +145,14 @@ void CGapStatsApplication::Init(void)
     arg_desc->SetConstraint("mol", &(*new CArgAllow_Strings,
         "na", "aa", "any"));
 
+    arg_desc->AddDefaultKey("assume-mol", "AssumedMolType",
+        "If unable to determine mol of sequence from ASN.1, "
+        "FASTA mods, etc. this specifies what mol we assume it is.",
+        CArgDescriptions::eString,
+        "na" );
+    arg_desc->SetConstraint("assume-mol", &(*new CArgAllow_Strings,
+        "na", "aa"));
+
     arg_desc->SetCurrentGroup("HISTOGRAM");
 
     arg_desc->AddFlag("show-hist",
@@ -191,6 +203,15 @@ int CGapStatsApplication::Run(void)
         m_MolFilter = CSeq_inst::eMol_not_set;
     } else {
         NCBI_USER_THROW_FMT("Unsupported mol: " << sMol);
+    }
+
+    const string & sAssumeMol = args["assume-mol"].AsString();
+    if( sAssumeMol == "na" ) {
+        m_fFastaFlags |= CFastaReader::fAssumeNuc;
+    } else if( sAssumeMol == "aa" ) {
+        m_fFastaFlags |= CFastaReader::fAssumeProt;
+    } else {
+        NCBI_USER_THROW_FMT("Unsupported assume-mol: " << sAssumeMol);
     }
 
     // load given data into m_gapAnalysis
@@ -275,7 +296,8 @@ void CGapStatsApplication::x_ReadFileOrAccn(const string & sFileOrAccn)
             eSerialDataFormat = eSerial_Xml;
             break;
         case CFormatGuess::eFasta: {
-            CFastaReader fasta_reader(in_file, CFastaReader::fParseGaps );
+            CFastaReader fasta_reader(in_file, 
+                m_fFastaFlags );
             pSeqEntry = fasta_reader.ReadSet();
             break;
         }
@@ -360,7 +382,11 @@ void CGapStatsApplication::x_PrintSummaryView(
     CGapAnalysis::ESortGapLength eSort,
     CGapAnalysis::ESortDir eSortDir)
 {
+
+
     cout << "SUMMARY:" << endl;
+
+    bool bAnyGapOfLenZero = false;
 
     const size_t kDigitsInUint8 = numeric_limits<Uint8>::digits10;
     CTablePrinter::SColInfoVec vecColInfos;
@@ -379,11 +405,22 @@ void CGapStatsApplication::x_PrintSummaryView(
     {
         const CGapAnalysis::SOneGapLengthSummary & summary_unit =
             *summary_unit_it;
-        *table_printer.AddCell() << summary_unit.gap_length;
+        const CGapAnalysis::TGapLength gap_len =
+            summary_unit.gap_length;
+        if( 0 == gap_len ) {
+            bAnyGapOfLenZero = true;
+        }
+        *table_printer.AddCell() << gap_len;
         *table_printer.AddCell() << summary_unit.num_seqs;
         *table_printer.AddCell() << summary_unit.num_gaps;
     }
     cout << endl;
+
+    // print a note if any gaps are of length 0, which
+    // means unknown
+    if( bAnyGapOfLenZero ) {
+        cout << "* Note: Gap of length zero means 'completely unknown length'." << endl;
+    }
 }
 
 /////////////////////////////////////////////////////////////////////////////
