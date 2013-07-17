@@ -387,12 +387,15 @@ class NetStorageConsole:
             return
 
         uttp_writer = self.__nst.get_uttp_writer()
-        chunk = uttp_writer.send_chunk(content)
-        if chunk:
-            self.__sock.send(chunk)
-        chunk = uttp_writer.flush_buf()
-        if chunk:
-            self.__sock.send(chunk)
+        data = uttp_writer.send_chunk(content)
+        if data:
+            self.__sock.send(data)
+        data = uttp_writer.send_control_symbol('\n')
+        if data:
+            self.__sock.send(data)
+        data = uttp_writer.flush_buf()
+        if data:
+            self.__sock.send(data)
 
         response = self.receive()
         if "Status" not in response or response[ "Status" ] != "OK":
@@ -447,10 +450,12 @@ class NetStorageConsole:
                 if event == uttp.Reader.END_OF_BUFFER:
                     break
 
-                if event == uttp.Reader.CHUNK_PART:
+                if event == uttp.Reader.CHUNK:
                     print uttp_reader.get_chunk(),
-                elif event == uttp.Reader.CHUNK:
-                    print uttp_reader.get_chunk() + '<<EOF'
+                elif event == uttp.Reader.CONTROL_SYMBOL:
+                    if uttp_reader.get_control_symbol() != '\n':
+                        raise Exception( "Invalid data stream terminator" )
+                    print '<<EOF'
                     response = self.receive()
                     if "Status" not in response or response[ "Status" ] != "OK":
                         print "Command failed"

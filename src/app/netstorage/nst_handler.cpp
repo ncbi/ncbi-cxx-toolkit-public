@@ -299,20 +299,21 @@ bool CNetStorageHandler::x_ReadRawData()
 {
     CUTTPReader::EStreamParsingEvent uttp_event;
 
-    while ((uttp_event = m_UTTPReader.GetNextEvent()) ==
-            CUTTPReader::eChunkPart)
-        x_OnData(m_UTTPReader.GetChunkPart(),
-                m_UTTPReader.GetChunkPartSize(), false);
+    while ((uttp_event = m_UTTPReader.GetNextEvent()) == CUTTPReader::eChunk ||
+            uttp_event == CUTTPReader::eChunkPart)
+        x_OnData(m_UTTPReader.GetChunkPart(), m_UTTPReader.GetChunkPartSize());
 
     switch (uttp_event) {
-    case CUTTPReader::eChunk:
-        x_OnData(m_UTTPReader.GetChunkPart(),
-                m_UTTPReader.GetChunkPartSize(), true);
-        m_ReadMode = eReadMessages;
-        return true;
-
     case CUTTPReader::eEndOfBuffer:
         return false;
+
+    case CUTTPReader::eControlSymbol:
+        if (m_UTTPReader.GetControlSymbol() == '\n') {
+            x_SendReadConfirmation();
+            m_ReadMode = eReadMessages;
+            return true;
+        }
+        /* FALL THROUGH */
 
     default:
         ERR_POST("Data stream parsing error. The connection will be closed.");
@@ -452,18 +453,12 @@ void CNetStorageHandler::x_OnMessage(const CJsonNode &  message)
 
 
 // x_OnData gets control when raw data are received.
-void CNetStorageHandler::x_OnData(
-        const void* data, size_t data_size, bool last_chunk)
+void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
 {
     if (!m_ObjectStream) {
-        if (!last_chunk || data_size > 0) {
+        if (data_size > 0) {
             ERR_POST("Received " << data_size << " bytes after "
                      "an error has been reported to the client");
-        }
-
-        if (last_chunk) {
-            x_SetCmdRequestStatus(eStatus_ServerError);
-            x_PrintMessageRequestStop();
         }
         return;
     }
@@ -487,13 +482,21 @@ void CNetStorageHandler::x_OnData(
         m_DataMessageSN = -1;
         return;
     }
+}
 
-    if (last_chunk) {
-        x_SendSyncMessage(CreateResponseMessage(m_DataMessageSN));
+
+void CNetStorageHandler::x_SendReadConfirmation()
+{
+    if (!m_ObjectStream) {
+        x_SetCmdRequestStatus(eStatus_ServerError);
         x_PrintMessageRequestStop();
-        m_ObjectStream = NULL;
-        m_DataMessageSN = -1;
+        return;
     }
+
+    x_SendSyncMessage(CreateResponseMessage(m_DataMessageSN));
+    x_PrintMessageRequestStop();
+    m_ObjectStream = NULL;
+    m_DataMessageSN = -1;
 }
 
 
@@ -939,8 +942,12 @@ CNetStorageHandler::x_ProcessRead(
     try {
         while (!net_file.Eof()) {
             bytes_read = net_file.Read(buffer, sizeof(buffer));
-            if (x_SendOverUTTP(buffer, bytes_read, false) != eIO_Success)
+
+            m_UTTPWriter.SendChunk(buffer, bytes_read, false);
+
+            if (x_SendOverUTTP() != eIO_Success)
                 return;
+
             m_ClientRegistry.AddBytesRead(m_Client, bytes_read);
         }
 
@@ -954,7 +961,9 @@ CNetStorageHandler::x_ProcessRead(
                        string("Object read error: ") + ex.what());
     }
 
-    if (x_SendOverUTTP("", 0, true) != eIO_Success)
+    m_UTTPWriter.SendControlSymbol('\n');
+
+    if (x_SendOverUTTP() != eIO_Success)
         return;
 
     x_SendSyncMessage(reply);
@@ -1194,14 +1203,11 @@ CNetFile CNetStorageHandler::x_CreateObjectStream(
 
 
 EIO_Status
-CNetStorageHandler::x_SendOverUTTP(const char *  buffer,
-                                   size_t  buffer_size, bool  last_chunk)
+CNetStorageHandler::x_SendOverUTTP()
 {
     const char *    output_buffer;
     size_t          output_buffer_size;
     size_t          written;
-
-    m_UTTPWriter.SendChunk(buffer, buffer_size, !last_chunk);
 
     do {
         m_UTTPWriter.GetOutputBuffer(&output_buffer, &output_buffer_size);

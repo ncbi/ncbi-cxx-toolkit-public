@@ -50,6 +50,8 @@
 #define WRITE_BUFFER_SIZE (64 * 1024)
 #define READ_BUFFER_SIZE (64 * 1024)
 
+#define END_OF_DATA_MARKER '\n'
+
 BEGIN_NCBI_SCOPE
 
 const char* CNetStorageException::GetErrCodeString() const
@@ -148,8 +150,7 @@ void CSendJsonOverSocket::x_SendOutputBuffer()
     } while (m_JSONWriter.NextOutputBuffer());
 }
 
-static void s_SendUTTPChunk(const char* chunk, size_t chunk_size,
-        bool to_be_continued, CSocket* sock)
+static void s_SendUTTPChunk(const char* chunk, size_t chunk_size, CSocket* sock)
 {
     CUTTPWriter uttp_writer;
 
@@ -157,7 +158,29 @@ static void s_SendUTTPChunk(const char* chunk, size_t chunk_size,
 
     uttp_writer.Reset(write_buffer, WRITE_BUFFER_SIZE);
 
-    uttp_writer.SendChunk(chunk, chunk_size, to_be_continued);
+    uttp_writer.SendChunk(chunk, chunk_size, false);
+
+    const char* output_buffer;
+    size_t output_buffer_size;
+
+    do {
+        uttp_writer.GetOutputBuffer(&output_buffer, &output_buffer_size);
+        s_WriteToSocket(sock, output_buffer, output_buffer_size);
+    } while (uttp_writer.NextOutputBuffer());
+
+    uttp_writer.GetOutputBuffer(&output_buffer, &output_buffer_size);
+    s_WriteToSocket(sock, output_buffer, output_buffer_size);
+}
+
+static void s_SendEndOfData(CSocket* sock)
+{
+    CUTTPWriter uttp_writer;
+
+    char write_buffer[WRITE_BUFFER_SIZE];
+
+    uttp_writer.Reset(write_buffer, WRITE_BUFFER_SIZE);
+
+    uttp_writer.SendControlSymbol(END_OF_DATA_MARKER);
 
     const char* output_buffer;
     size_t output_buffer_size;
@@ -759,10 +782,6 @@ size_t SNetFileRPC::Read(void* buffer, size_t buf_size)
     while (buf_size > 0) {
         switch (m_UTTPReader.GetNextEvent()) {
         case CUTTPReader::eChunk:
-            m_EOF = true;
-            /* FALL THROUGH */
-
-        case CUTTPReader::eChunkPart:
             m_CurrentChunk = m_UTTPReader.GetChunkPart();
             m_CurrentChunkSize = m_UTTPReader.GetChunkPartSize();
 
@@ -778,11 +797,16 @@ size_t SNetFileRPC::Read(void* buffer, size_t buf_size)
             buf_size -= m_CurrentChunkSize;
             bytes_copied += m_CurrentChunkSize;
             m_CurrentChunkSize = 0;
-
-            if (m_EOF)
-                return bytes_copied;
-
             break;
+
+        case CUTTPReader::eControlSymbol:
+            if (m_UTTPReader.GetControlSymbol() != END_OF_DATA_MARKER) {
+                NCBI_THROW_FMT(CNetStorageException, eIOError,
+                        "NetStorage API: invalid end-of-data-stream "
+                        "terminator: " << (int) m_UTTPReader.GetControlSymbol());
+            }
+            m_EOF = true;
+            return bytes_copied;
 
         case CUTTPReader::eEndOfBuffer:
             s_ReadSocket(&m_Connection->m_Socket, m_ReadBuffer,
@@ -828,10 +852,11 @@ void SNetFileRPC::Write(const void* buf_pos, size_t buf_size)
 
             m_State = eWriting;
         }
+        /* FALL THROUGH */
 
     case eWriting:
         s_SendUTTPChunk(reinterpret_cast<const char*>(buf_pos),
-                buf_size, true, &m_Connection->m_Socket);
+                buf_size, &m_Connection->m_Socket);
         break;
 
     default: /* case eReading: */
@@ -887,7 +912,7 @@ void SNetFileRPC::Close()
 
     case eWriting:
         {
-            s_SendUTTPChunk("", 0, false, &m_Connection->m_Socket);
+            s_SendEndOfData(&m_Connection->m_Socket);
 
             CReadJsonFromSocket message_reader;
 

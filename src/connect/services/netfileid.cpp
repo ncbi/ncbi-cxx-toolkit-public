@@ -175,14 +175,13 @@ CNetFileID::CNetFileID(const string& packed_id) :
 
     s_Unscramble(binary_id, binary_id_len);
 
-    unsigned char* ptr = binary_id;
-
     // 1. Check the signature.
     if (memcmp(binary_id, NET_FILE_ID_SIGNATURE,
             NET_FILE_ID_SIGNATURE_LEN) != 0) {
         CLEAN_UP_AND_THROW_INVALID_ID_ERROR(binary_id, packed_id);
     }
-    ptr += NET_FILE_ID_SIGNATURE_LEN;
+
+    unsigned char* ptr = binary_id + NET_FILE_ID_SIGNATURE_LEN;
 
     // 2. Restore the storage flags.
     m_StorageFlags = (TNetStorageFlags) *ptr++;
@@ -329,11 +328,11 @@ void CNetFileID::Pack()
         max_binary_id_len += sizeof(Uint8) + 1;
 
     unsigned char* binary_id = new unsigned char[max_binary_id_len];
-    unsigned char* ptr = binary_id;
 
     // 1. Save the signature.
-    memcpy(ptr, NET_FILE_ID_SIGNATURE, NET_FILE_ID_SIGNATURE_LEN);
-    ptr += NET_FILE_ID_SIGNATURE_LEN;
+    memcpy(binary_id, NET_FILE_ID_SIGNATURE, NET_FILE_ID_SIGNATURE_LEN);
+
+    unsigned char* ptr = binary_id + NET_FILE_ID_SIGNATURE_LEN;
 
     // 2. Save the storage flags.
     *ptr++ = (unsigned char) m_StorageFlags;

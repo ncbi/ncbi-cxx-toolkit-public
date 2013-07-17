@@ -89,7 +89,8 @@ private:
     // Application specific part
     bool  x_ReadRawData();
     void  x_OnMessage(const CJsonNode &  message);
-    void  x_OnData(const void *  data, size_t  data_size, bool last_chunk);
+    void  x_OnData(const void *  data, size_t  data_size);
+    void  x_SendReadConfirmation();
 
     // It closes the connection if there were socket writing errors
     EIO_Status  x_SendSyncMessage(const CJsonNode &  message);
@@ -209,8 +210,7 @@ private:
                     const SICacheSettings &  icache_settings,
                     TNetStorageFlags         flags);
 
-    EIO_Status x_SendOverUTTP(const char *  buffer,
-                              size_t        buffer_size, bool  last_chunk);
+    EIO_Status x_SendOverUTTP();
 }; // CNetStorageHandler
 
 
