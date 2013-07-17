@@ -1235,7 +1235,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleSequences_OneEmpty)
     blast::TSeqLocVector query_vector = source->GetAllSeqLocs(scope);
     BOOST_REQUIRE_EQUAL(kNumQueries, query_vector.size());
     BOOST_REQUIRE(source->End() == true);
-    TSeqPos query_lengths[] = { 1920, 1, 130, 0, 2, 1553 };
+    TSeqPos query_lengths[] = { 1920, 1, 130, 0, 2, 1552 };
     int i = 0;
     ITERATE(blast::TSeqLocVector, q, query_vector) {
         BOOST_REQUIRE(blast::IsLocalId(query_vector[i].seqloc->GetId()));
