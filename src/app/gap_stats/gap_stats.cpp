@@ -372,7 +372,6 @@ void CGapStatsApplication::x_PrintSummaryView(
         CTablePrinter::eJustify_Right);
     CTablePrinter table_printer(vecColInfos, cout);
 
-    cout << "Gap Length\tNum Seqs With Len\tNum Gaps with Len" << endl;
     AutoPtr<CGapAnalysis::TVectorGapLengthSummary> pGapLenSummary( 
         m_gapAnalysis.GetGapLengthSummary(eSort, eSortDir) );
     ITERATE( CGapAnalysis::TVectorGapLengthSummary, 
