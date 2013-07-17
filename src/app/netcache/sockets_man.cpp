@@ -780,7 +780,6 @@ s_ReadFromSocket(CSrvSocketTask* task, void* buf, size_t size)
     if (size == 0)
         return 0;
 
-    task->m_SeenReadEvts = task->m_RegReadEvts;
     ssize_t n_read = 0;
 #ifdef NCBI_OS_LINUX
 retry:
@@ -793,6 +792,7 @@ retry:
             // We should have returned at the very top but due to some races
             // we fell down here. Anyway we should avoid changing variables
             // at the bottom.
+            task->m_SeenReadEvts = task->m_RegReadEvts;
             return 0;
         }
         LOG_WITH_ERRNO(Warning, "Error reading from socket", x_errno);
