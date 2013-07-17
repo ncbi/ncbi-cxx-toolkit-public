@@ -6666,7 +6666,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("KM");
     ambig.push_back("MCP");
     ambig.push_back("GMNH");
-    ambig.push_back("MAFF");
     ambig.push_back("SSM");
     ambig.push_back("MZ");
     ambig.push_back("WSU");
@@ -6745,7 +6744,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("MCCM");
     ambig.push_back("CCB");
     ambig.push_back("NCCB");
-    ambig.push_back("MAFF");
     ambig.push_back("LBG");
     ambig.push_back("BCC");
     ambig.push_back("CCAC");
