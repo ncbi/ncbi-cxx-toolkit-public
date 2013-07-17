@@ -17,14 +17,7 @@ REQUIRES = objects
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SRA_INCLUDE)
 
 CHECK_REQUIRES = in-house-resources -MSWin -Solaris
-CHECK_CMD = wgs_test -file AAAA -print_seq
-CHECK_CMD = wgs_test -file AAAA01 -print_seq
-CHECK_CMD = wgs_test -file AAAA02 -print_seq
-CHECK_CMD = wgs_test -file NZ_AAAA -print_seq
-CHECK_CMD = wgs_test -file NZ_AAAA01 -print_seq
-CHECK_CMD = wgs_test -file ALWZ -print_seq
-CHECK_CMD = wgs_test -file AINT -print_seq
-CHECK_CMD = wgs_test -file AAAA01000001 -print_seq
-CHECK_CMD = wgs_test -file AAAA01999999 -print_seq
+CHECK_COPY = wgs_test.sh
+CHECK_CMD = wgs_test.sh
 
 WATCHERS = vasilche ucko
