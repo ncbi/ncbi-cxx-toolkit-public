@@ -687,8 +687,6 @@ void CNewCleanup_imp::SeqIdBC( CSeq_id &seq_id )
     CRef<CObject_id> pObjectId;
     if( seq_id.IsLocal() ) {
         pObjectId.Reset( & GET_MUTABLE(seq_id, Local) );
-    } else if( FIELD_IS_AND_IS_SET(seq_id, General, Tag) ) {
-        pObjectId.Reset( & GET_MUTABLE(seq_id.SetGeneral(), Tag) );
     }
 
     // currently, we only process the Str ones
@@ -697,15 +695,6 @@ void CNewCleanup_imp::SeqIdBC( CSeq_id &seq_id )
     }
 
     x_TruncateSpacesMarkChanged( GET_MUTABLE(*pObjectId, Str) );
-
-    // convert all-numbers from str to id
-    const CObject_id::TId strAsNum = 
-        NStr::StringToNumeric<CObject_id::TId>( 
-        GET_FIELD(*pObjectId, Str), NStr::fConvErr_NoThrow );
-    if( strAsNum > 0 ) {
-        pObjectId->SetId(strAsNum);
-        ChangeMade(CCleanupChange::eChangeSeqId);
-    }
 }
 
 typedef SStaticPair<const char*, TORGMOD_SUBTYPE>  TOrgModElem;
