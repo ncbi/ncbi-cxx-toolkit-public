@@ -354,6 +354,7 @@ private:
     TSeqPos                 m_SegmentBase;
     TSeqPos                 m_CurrentGapLength;
     TSeqPos                 m_TotalGapLength;
+    char                    m_CurrentGapChar;
     CRef<CSeq_id>           m_BestID;
     TStartsMap              m_Starts;
     TRowNum                 m_Row;

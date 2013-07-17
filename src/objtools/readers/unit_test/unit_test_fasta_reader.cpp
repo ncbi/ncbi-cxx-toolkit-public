@@ -50,6 +50,8 @@
 
 #include <objtools/readers/fasta.hpp>
 
+#include <serial/objistr.hpp>
+
 #include <objects/misc/sequence_macros.hpp>
 
 #include <objmgr/seq_vector.hpp>
@@ -1022,5 +1024,157 @@ BOOST_AUTO_TEST_CASE(TestNonDeltaGaps)
         BOOST_CHECK_EQUAL_COLLECTIONS(
             kExpectedBases.begin(), kExpectedBases.end(),
             seq_vec.begin(), seq_vec.end() );
+    }
+}
+
+BOOST_AUTO_TEST_CASE(TestLetterGaps)
+{
+    const string kFasta =
+        ">lcl|Seq1\n"
+        "AC---NNNNNNNNNACGTGATTACAN\n"
+        ">?48\n"
+        "ACGTACGT-\n"
+        "GATTACA\n"
+        ">?unk50\n"
+        "ACGT---GA-TTNACAN\n"
+        ">?1\n"
+        "ACGTACGT\n"
+        ">?unk1\n"
+        "GATTAACGTTATGC\n"
+        "CGATTAACGTTATGCN-\n"
+        "GGATTAACGTTATGC-N\n"
+        "TGATTAACGTTATGC\n"
+        ">?42\n"
+        ">?37\n"
+        ">?unk20\n"
+        "ACGTTGCA\n";
+
+    const string kExpectedDeltaExt =
+        "Delta-ext ::= {\n"
+        "  literal {\n"
+        "    length 2,\n"
+        "    seq-data ncbi4na '12'H\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 12\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 11,\n"
+        "    seq-data ncbi2na '1B8F10'H\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 1\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 48\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 8,\n"
+        "    seq-data ncbi2na '1B1B'H\n"
+        "  },\n"
+        "  loc null NULL,\n"
+        "  literal {\n"
+        "    length 7,\n"
+        "    seq-data ncbi2na '8F10'H\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 50,\n"
+        "    fuzz lim unk\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 4,\n"
+        "    seq-data ncbi2na '1B'H\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 3\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 2,\n"
+        "    seq-data ncbi4na '41'H\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 1\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 2,\n"
+        "    seq-data ncbi4na '88'H\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 1\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 3,\n"
+        "    seq-data ncbi2na '10'H\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 1\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 1\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 8,\n"
+        "    seq-data ncbi2na '1B1B'H\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 1,\n"
+        "    fuzz lim unk\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 29,\n"
+        "    seq-data ncbi2na '8F06F3963C1BCE40'H\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 2\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 15,\n"
+        "    seq-data ncbi2na 'A3C1BCE4'H\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 2\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 15,\n"
+        "    seq-data ncbi2na 'E3C1BCE4'H\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 42\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 37\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 20,\n"
+        "    fuzz lim unk\n"
+        "  },\n"
+        "  literal {\n"
+        "    length 8,\n"
+        "    seq-data ncbi2na '1BE4'H\n"
+        "  }\n"
+        "}\n";
+
+    auto_ptr<CObjectIStream> pObjIStrm(
+        CObjectIStream::CreateFromBuffer(
+            eSerial_AsnText, 
+            &kExpectedDeltaExt[0], kExpectedDeltaExt.length() ) );
+    CRef<CDelta_ext> pExpectedDeltaExt( new CDelta_ext );
+    pObjIStrm->Read( pExpectedDeltaExt.GetPointer(),
+        pExpectedDeltaExt->GetThisTypeInfo() );
+
+    CRef<CBioseq> pBioseq =
+        s_ParseFasta(kFasta, 
+        CFastaReader::fParseGaps |
+        CFastaReader::fLetterGaps |
+        CFastaReader::fAssumeNuc );
+
+    CConstRef<CDelta_ext> pResultingDeltaExt( 
+        & pBioseq->GetInst().GetExt().GetDelta() );
+    if( ! pResultingDeltaExt->Equals( 
+        *pExpectedDeltaExt ) )
+    {
+        BOOST_ERROR("Delta-ext differs from expected.");
+        cerr << "Expected: " << MSerial_AsnText << *pExpectedDeltaExt << endl;
+        cerr << "Received: " << MSerial_AsnText << *pResultingDeltaExt << endl;
     }
 }

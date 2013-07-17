@@ -315,6 +315,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(IErrorContainer * pErrorContainer)
         m_Offset = 0;
     }
     m_CurrentGapLength = m_TotalGapLength = 0;
+    m_CurrentGapChar = '\0';
     m_CurrentSeqTitles.clear();
 
     bool need_defline = true;
@@ -904,25 +905,37 @@ void CFastaReader::ParseDataLine(
 
     // we're stricter with nucs, so try to determine if we should
     // assume this is a nuc
-    const bool bIsNuc = ( 
-        ( TestFlag(fAssumeNuc) && TestFlag(fForceType) ) ||
-        ( FIELD_CHAIN_OF_2_IS_SET(*m_CurrentSeq, Inst, Mol) &&
-          m_CurrentSeq->IsNa() ) );
+    bool bIsNuc = false;
+    if( ! TestFlag(fForceType) &&
+        FIELD_CHAIN_OF_2_IS_SET(*m_CurrentSeq, Inst, Mol) ) 
+    {
+        if( m_CurrentSeq->IsNa() ) {
+            bIsNuc = true;
+        }
+    } else {
+        bIsNuc = TestFlag(fAssumeNuc);
+    }
         
     m_SeqData.resize(m_CurrentPos + len);
-    // this will stay empty unless there's an error
+
+    // these will stay as -1 and empty unless there's an error
     int bad_pos_line_num = -1;
     vector<TSeqPos> bad_pos_vec; 
+
+    const char chLetterGap = ( bIsNuc ? 'N' : 'X');
     for (size_t pos = 0;  pos < len;  ++pos) {
         unsigned char c = s[pos];
-        if (c == '-'  &&  TestFlag(fParseGaps)) {
+        if ( TestFlag(fParseGaps) && 
+             (c == '-' || (TestFlag(fLetterGaps) && c == chLetterGap)  ) ) 
+        {
             CloseMask();
             // open a gap
             size_t pos2 = pos + 1;
-            while (pos2 < len  &&  s[pos2] == '-') {
+            while (pos2 < len  &&  s[pos2] == c) {
                 ++pos2;
             }
             m_CurrentGapLength += pos2 - pos;
+            m_CurrentGapChar = c;
             pos = pos2 - 1;
         } else if (
             s_ASCII_IsValidNuc(c) ||
@@ -984,7 +997,8 @@ void CFastaReader::x_CloseGap(
         TSeqPos pos = GetCurrentPos(eRawPos);
         // Special case -- treat a lone hyphen at the end of a line as
         // a gap of unknown length.
-        if (len == 1) {
+        // (do NOT treat a lone 'N' or 'X' as unknown length)
+        if (len == 1 && m_CurrentGapChar == '-' ) {
             TSeqPos l = m_SeqData.length();
             if (l == pos  ||  l == pos + (*GetLineReader()).length()) {
                 len = 0;
@@ -1020,6 +1034,10 @@ bool CFastaReader::ParseGapLine(
     const TStr& line, IErrorContainer * pErrorContainer)
 {
     _ASSERT( NStr::StartsWith(line, ">?") );
+
+    // just in case there's a gap before this one,
+    // even though somewhat unusual
+    CloseGap();
 
     // sRemainingLine will hold the part of the line left to parse
     TStr sRemainingLine = line.substr(2);
@@ -1336,6 +1354,7 @@ void CFastaReader::AssembleSeq(IErrorContainer * pErrorContainer)
         m_Gaps.clear();
         m_CurrentPos += m_TotalGapLength;
         m_TotalGapLength = 0;
+        m_CurrentGapChar = '\0';
     }
 
     if (m_Gaps.empty()) {
