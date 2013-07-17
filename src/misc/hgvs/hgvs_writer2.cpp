@@ -24,7 +24,6 @@
  * ===========================================================================
  *
  * File Description:
- *   Sample library
  *
  */
 
@@ -51,6 +50,8 @@
 #include <objects/seqfeat/Delta_item.hpp>
 #include <objects/seqfeat/Ext_loc.hpp>
 
+#include <objects/general/Dbtag.hpp>
+#include <objects/general/Object_id.hpp>
 
 #include <objects/seqfeat/SeqFeatXref.hpp>
 
@@ -526,9 +527,21 @@ string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& orig_vp)
     }
     const CVariantPlacement& vp = vp_ref ? *vp_ref : orig_vp;
         
-    CBioseq_Handle bsh = m_scope->GetBioseqHandle(sequence::GetId(vp.GetLoc(), NULL));
+    CBioseq_Handle bsh;
+    {{
+        const CSeq_id& id = sequence::GetId(vp.GetLoc(), NULL);
+        if(id.IsGeneral() && id.GetGeneral().GetDb() == "LRG") {
+            CRef<CSeq_id_Resolver> lrg_resolver(new CSeq_id_Resolver__LRG(*m_scope));
+            if(lrg_resolver->CanCreate(id.GetGeneral().GetTag().GetStr())) {
+                CSeq_id_Handle idh = lrg_resolver->Get(id.GetGeneral().GetTag().GetStr());
+                bsh = m_scope->GetBioseqHandle(idh);
+            }
+        } else {
+            bsh = m_scope->GetBioseqHandle(id);
+        }
+    }}
 
-    //we'll need to detect when an anchor in anchor+offset case occurs at lost position of 
+    //we'll need to detect when an anchor in anchor+offset case occurs at last position of 
     //the last exon; we'll need to know the effective length.
     size_t effective_seq_length = util.GetEffectiveTranscriptLength(bsh);
 
