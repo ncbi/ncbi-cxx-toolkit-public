@@ -6643,9 +6643,8 @@ Seq-annot ::= {
     },
     {
       data rna {
-        type ncRNA,
+        type premsg,
         ext gen {
-          class "miRNA",
           product "microRNA 155"
         }
       },
