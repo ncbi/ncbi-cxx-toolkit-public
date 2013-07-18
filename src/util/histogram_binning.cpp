@@ -158,7 +158,6 @@ CHistogramBinning::x_TryForEvenBins(void) const
     // goal number for each bin
     const Uint8 bin_size_goal = ( total_num_data_points / num_bins );
 
-    TListOfBins::iterator this_bin_iter = pAnswer->begin();
     ERASE_ITERATE( TListOfBins, this_bin_iter, *pAnswer  ) {
         SBin & this_bin = *this_bin_iter;
 
