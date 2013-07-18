@@ -304,10 +304,25 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromFastaLocal)
 
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id("asd|fgh|jkl")));
 
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("lcl|0")));
+    BOOST_CHECK(id->IsLocal());
+    BOOST_CHECK(id->GetLocal().IsStr());
+    BOOST_CHECK_EQUAL(id->GetLocal().GetStr(), "0");
+
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("lcl|123")));
     BOOST_CHECK(id->IsLocal());
     BOOST_CHECK(id->GetLocal().IsId());
     BOOST_CHECK_EQUAL(id->GetLocal().GetId(), 123);
+
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("lcl|0123")));
+    BOOST_CHECK(id->IsLocal());
+    BOOST_CHECK(id->GetLocal().IsStr());
+    BOOST_CHECK_EQUAL(id->GetLocal().GetStr(), "0123");
+
+    BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("lcl|-123")));
+    BOOST_CHECK(id->IsLocal());
+    BOOST_CHECK(id->GetLocal().IsStr());
+    BOOST_CHECK_EQUAL(id->GetLocal().GetStr(), "-123");
 
     BOOST_CHECK_NO_THROW(id.Reset(new CSeq_id("lcl|asdf")));
     BOOST_CHECK(id->IsLocal());
@@ -1016,39 +1031,61 @@ Seq-id ::= patent {\
 
 BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare)
 {
+    // The array sc_Ids is sorted to match CompareOrdered().
+    // Some elements may compare equal.
     static const char* const sc_Ids[] = {
-        "gnl|ti|12312",
-        "gnl|ti|-12312",
-        "gnl|ti|0",
-        "gnl|ti|22312-234",
-        "gnl|ti|3231212",
-        "gnl|ti|42312324",
-        "gnl|TI|52312123124",
-        "gnl|ti|623121231214",
-        "gnl|TI|str",
-        "gnl|TRACE|12312",
-        "gnl|TRACE|0",
-        "gnl|TRACE|-12312",
-        "gnl|TRACE|22312-234",
-        "gnl|trace|3231212",
-        "gnl|TRACE|42312324",
-        "gnl|TRACE|52312123124",
-        "gnl|trace|623121231214",
-        "gnl|trace|str",
+        "lcl|12",
+        "lcl|12",
+        "lcl|13",
+        "lcl|13",
+        "lcl|123",
+        "lcl|123",
+        "lcl|124",
+        "lcl|124",
+        "lcl|0012",
+        "lcl|00123",
+        "lcl|00124",
+        "lcl|0013",
+        "lcl|012",
+        "lcl|0123",
+        "lcl|0124",
+        "lcl|013",
         "NC_000001",
+        "ref|NC_000001|chr1_build35",
+        "ref|NC_000001|chr1_build36",
         "NC_000001.8",
         "nc_000001.8",
         "NC_000001.9",
         "Nc_000001.9",
         "ref|NC_000001.9|chr1_build36",
-        "ref|NC_000001|chr1_build35",
-        "ref|NC_000001|chr1_build36"
+        "gnl|ti|-12312",
+        "gnl|ti|0",
+        "gnl|ti|12312",
+        "gnl|ti|3231212",
+        "gnl|ti|42312324",
+        "gnl|TI|52312123124",
+        "gnl|ti|623121231214",
+        "gnl|ti|22312-234",
+        "gnl|TI|str",
+        "gnl|TRACE|-12312",
+        "gnl|TRACE|0",
+        "gnl|TRACE|12312",
+        "gnl|trace|3231212",
+        "gnl|TRACE|42312324",
+        "gnl|TRACE|52312123124",
+        "gnl|trace|623121231214",
+        "gnl|TRACE|22312-234",
+        "gnl|trace|str",
     };
 
     typedef CRef<CSeq_id> TRef;
     vector<TRef> ids;
     for ( size_t i = 0; i < ArraySize(sc_Ids); ++i ) {
         ids.push_back(TRef(new CSeq_id(sc_Ids[i])));
+        if ( i > 0 && ids[i]->IsLocal() && ids[i]->Equals(*ids[i-1]) ) {
+            int id = ids[i]->GetLocal().GetId();
+            ids[i]->SetLocal().SetStr(NStr::NumericToString(id));
+        }
     }
     CRandom rnd(1);
     for ( size_t i = 0; i < ids.size(); ++i ) {
@@ -1057,10 +1094,16 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare)
     vector<TRef> sorted_ids = ids;
     sort(sorted_ids.begin(), sorted_ids.end(), PPtrLess<TRef>());
     for ( size_t i = 0; i < sorted_ids.size(); ++i ) {
-        BOOST_CHECK(sorted_ids[i]->CompareOrdered(*sorted_ids[i]) == 0);
+        BOOST_CHECK_EQUAL(sorted_ids[i]->CompareOrdered(*sorted_ids[i]), 0);
         for ( size_t j = 0; j < i; ++j ) {
             BOOST_CHECK(sorted_ids[j]->CompareOrdered(*sorted_ids[i]) <= 0);
             BOOST_CHECK(sorted_ids[i]->CompareOrdered(*sorted_ids[j]) >= 0);
+        }
+        CSeq_id expected_id(sc_Ids[i]);
+        if ( expected_id.CompareOrdered(*sorted_ids[i]) != 0 ) {
+            BOOST_CHECK_EQUAL(sorted_ids[i]->AsFastaString(),
+                              expected_id.AsFastaString());
+            BOOST_CHECK_EQUAL(sorted_ids[i]->AsFastaString(), "");
         }
     }
     typedef set<TRef, PPtrLess<TRef> > TSet;
@@ -1068,7 +1111,7 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare)
     BOOST_CHECK(ids_set.size() < sorted_ids.size());
     ITERATE ( TSet, it, ids_set ) {
         //NcbiCout << (*it)->AsFastaString() << NcbiEndl;
-        BOOST_CHECK((*it)->CompareOrdered(**it) == 0);
+        BOOST_CHECK_EQUAL((*it)->CompareOrdered(**it), 0);
         ITERATE ( TSet, it2, ids_set ) {
             if ( it2 == it ) {
                 break;
@@ -1159,7 +1202,7 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare_Seq_loc)
         sort(locs.begin(), locs.end(), PSeq_locLess());
         for ( size_t i = 0; i < locs.size(); ++i ) {
             //cout << i << ": " << MSerial_AsnText << *locs[i] << endl;
-            BOOST_CHECK(locs[i]->Compare(*locs[i]) == 0);
+            BOOST_CHECK_EQUAL(locs[i]->Compare(*locs[i]), 0);
             if ( locs[i]->Compare(*locs[i]) != 0 ) {
                 cout << i << ": " << MSerial_AsnText << *locs[i];
                 cout << " = " << locs[i]->Compare(*locs[i]) << endl;
