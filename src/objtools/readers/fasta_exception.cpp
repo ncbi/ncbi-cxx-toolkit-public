@@ -35,6 +35,7 @@
 #include <corelib/ncbistr.hpp>
 #include <objtools/readers/fasta_exception.hpp>
 #include <corelib/ncbistre.hpp>
+#include <functional>
 #include <algorithm>
 #include <objects/seqloc/Seq_id.hpp>
 
