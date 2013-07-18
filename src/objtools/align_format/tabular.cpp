@@ -127,6 +127,20 @@ void CBlastTabularInfo::x_SetFieldDelimiter(EFieldDelimiter delim)
     }
 }
 
+
+void CBlastTabularInfo::x_CheckTaxDB()
+{
+   	if( x_IsFieldRequested(eSubjectSciNames) ||
+    	x_IsFieldRequested(eSubjectCommonNames) ||
+    	x_IsFieldRequested(eSubjectBlastNames) ||
+    	x_IsFieldRequested(eSubjectSuperKingdoms))
+   	{
+   		string resolved = SeqDB_ResolveDbPath("taxdb.bti");
+   		if(resolved.empty())
+   			ERR_POST(Warning << "Taxonomy name lookup from taxid requires installation of taxdb database with ftp://ftp.ncbi.nlm.nih.gov/blast/db/taxdb.tar.gz");
+   	}
+}
+
 CBlastTabularInfo::CBlastTabularInfo(CNcbiOstream& ostr, const string& format,
                                      EFieldDelimiter delim, 
                                      bool parse_local_ids)
@@ -139,6 +153,8 @@ CBlastTabularInfo::CBlastTabularInfo(CNcbiOstream& ostr, const string& format,
     SetNoFetch(false);
     m_QueryCovSubject.first = NA;
     m_QueryCovSubject.second = -1;
+
+    x_CheckTaxDB();
 }
 
 CBlastTabularInfo::~CBlastTabularInfo()

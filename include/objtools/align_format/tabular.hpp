@@ -280,6 +280,7 @@ protected:
     void x_SetSubjectId(const objects::CBioseq_Handle& bh, const CRef<objects::CBlast_def_line_set> & bdlRef);
     void x_SetQueryCovSubject(const objects::CSeq_align & align);
     void x_SetQueryCovSeqalign(const CSeq_align & align, int query_len);
+    void x_CheckTaxDB();
 
     CNcbiOstream& m_Ostream; ///< Stream to write output to
     char m_FieldDelimiter;   ///< Delimiter character for fields to print.
