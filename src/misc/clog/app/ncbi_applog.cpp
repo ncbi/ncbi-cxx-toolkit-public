@@ -60,7 +60,7 @@
     ncbi_applog start_app     -pid PID -appname NAME [-host HOST] [-sid SID] [-logsite SITE]
                                       [-timestamp TIME]  // -> app_token
     ncbi_applog stop_app      <token> [-status STATUS] [-timestamp TIME]
-    ncbi_applog start_request <token> [-sid SID] [-rid RID] [-client IP] [-param PAIRS] [-logsite SITE]
+    ncbi_applog start_request <token> [-sid SID] [-rid RID] [-client IP] [-param PAIRS]
                                       [-timestamp TIME]  // -> request_token
     ncbi_applog stop_request  <token> [-status STATUS] [-input N] [-output N]
                                       [-timestamp TIME]  // -> app_token
@@ -71,9 +71,9 @@
                                       [-pid] [-rid] [-sid] [-srvport] [-app_start_time] [-req_start_time]
 
 Special commands (must be used without <token> parameter):
-    ncbi_applog raw           -file <applog_formatted_logs.txt>
-    ncbi_applog raw           -file -
-
+    ncbi_applog raw           -file <applog_formatted_logs.txt> [-logsite SITE]
+    ncbi_applog raw           -file - [-logsite SITE]
+Note, that ncbi_applog will skip any line in non-applog format.
 
 Environment/registry settings:
      1) Logging CGI (used if /log is not accessible on current machine)
@@ -101,6 +101,7 @@ Environment/registry settings:
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbifile.hpp>
 #include <connect/ncbi_conn_stream.hpp>
+#include <util/xregexp/regexp.hpp>
 #include "../ncbi_c_log_p.h"
 
 USING_NCBI_SCOPE;
@@ -109,6 +110,10 @@ USING_NCBI_SCOPE;
 /// Default CGI used by default if /log directory is not writable on current machine.
 /// Can be redefined in the configuration file.
 const char* kDefaultCGI = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi";
+
+/// Regular expression to check lines of raw logs.
+const char* kApplogRegexp = "^\\d{5}/\\d{3}/\\d{4}/[NSPRBE ]{3}[0-9A-Z]{16} \\d{4}/\\d{4} \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}";
+const int   kLoglineNamePos = 126;
 
 /// Declare the parameter for logging CGI
 NCBI_PARAM_DECL(string, NCBI, NcbiApplogCGI); 
@@ -228,7 +233,7 @@ void CNcbiApplogApp::Init(void)
         arg->SetConstraint
             ("mode", &(*new CArgAllow_Strings, "local", "redirect", "cgi"));
         arg->AddDefaultKey
-            ("logsite", "SITE", "Value for logsite parameter. If empty $NCBI_LOG_SITE will be used.", 
+            ("logsite", "SITE", "Value for logsite parameter. If empty $NCBI_APPLOG_SITE will be used.", 
             CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
         arg->AddDefaultKey
             ("srvport", "PORT", "Server port (will be used automatically for 'redirect' mode)",
@@ -277,9 +282,6 @@ void CNcbiApplogApp::Init(void)
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
         arg->SetConstraint
             ("mode", &(*new CArgAllow_Strings, "local", "redirect", "cgi"));
-        arg->AddDefaultKey
-            ("logsite", "SITE", "Value for logsite parameter. If empty $NCBI_LOG_SITE will be used.", 
-            CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
         cmd->AddCommand("start_request", arg.release());
     }}
 
@@ -405,6 +407,9 @@ void CNcbiApplogApp::Init(void)
         arg->AddDefaultKey
             ("mode", "MODE", "Use local/redirect logging ('redirect' will be used automatically if /log is not accessible on current machine)", 
             CArgDescriptions::eString, "local", CArgDescriptions::fHidden);
+        arg->AddDefaultKey
+            ("logsite", "SITE", "Value for logsite parameter. If empty $NCBI_APPLOG_SITE will be used.", 
+            CArgDescriptions::eString, kEmptyStr, CArgDescriptions::fHidden);
         cmd->AddCommand("raw", arg.release());
     }}
 
@@ -483,7 +488,7 @@ int CNcbiApplogApp::Redirect()
             }
             // Global log_site information
             if (need_logsite) {
-                string logsite = GetEnvironment().Get("NCBI_LOG_SITE");
+                string logsite = GetEnvironment().Get("NCBI_APPLOG_SITE");
                 if (!logsite.empty()) {
                     s_args += string(" \"-logsite=") + NStr::URLEncode(logsite) + "\"";
                 }
@@ -512,7 +517,11 @@ int CNcbiApplogApp::Redirect()
     // Send request to another machine via CGI
     CConn_HttpStream cgi(url);
     if ( m_IsRaw ) {
-        cgi << "RAW" << endl;
+        if ( m_Info.logsite.empty() ) {
+            cgi << "RAW" << endl;
+        } else {
+            cgi << "RAW -logsite=" << m_Info.logsite << endl;
+        }
         // We already have first line in m_Raw_line,
         // process it and all remaining lines.
         do {
@@ -732,11 +741,6 @@ void CNcbiApplogApp::SetInfo()
     } else if (!m_Info.sid_app.empty()) {
         NcbiLog_SetSession(m_Info.sid_app.c_str());
     }
-    // If log_site is not specified (or empty), the value from
-    // $NCBI_LOG_SITE will be used automatically in the C Logging API.
-    if (!m_Info.logsite.empty()) {
-        NcbiLog_SetLogSite(m_Info.logsite.c_str());
-    }
 }
 
 
@@ -779,6 +783,16 @@ int CNcbiApplogApp::Run(void)
     // Get command
     string cmd(args.GetCommand());
 
+    // Get logsite information, it will replace original appname if present
+    if (args.Exist("logsite")) {
+        m_Info.logsite = args["logsite"].AsString();
+        if (m_Info.logsite.empty()) {
+            m_Info.logsite = GetEnvironment().Get("NCBI_APPLOG_SITE");
+        }
+        m_Info.logsite = NStr::URLEncode(m_Info.logsite);
+        }
+
+    // Command specific pre-initialization 
     if (cmd == "start_app") {
         // We need application name first to try initialize the local logging
         m_Info.appname = args["appname"].AsString();
@@ -803,15 +817,24 @@ int CNcbiApplogApp::Run(void)
             }
             m_Raw_is = &m_Raw_ifs;
         }
-        // Read first line and hash it for the following processing.
-        if ( !NcbiGetlineEOL(*m_Raw_is, m_Raw_line)  ||  m_Raw_line.length() < 127 ) {
-            throw "Error processing input raw log, cannot read first line";
+
+        // Find first line in applog format and hash it for the following processing
+        CRegexp re(kApplogRegexp);
+        bool found=false;
+        while (NcbiGetlineEOL(*m_Raw_is, m_Raw_line)) {
+            if (re.IsMatch(m_Raw_line)) {
+                found = true;
+                break;
+            }
         }
-        SIZE_TYPE pos = m_Raw_line.find(' ', 127);
+        if ( !found ||  m_Raw_line.length() <= kLoglineNamePos + 1 ) {
+            throw "Error processing input raw log, cannot find any line in applog format";
+        }
+        size_t pos = m_Raw_line.find(' ', kLoglineNamePos + 1);
         if (pos == NPOS) {
-            throw "Error processing input raw log, first line have wrong format";
+            throw "Error processing input raw log, line have wrong format";
         }
-        m_Info.appname = m_Raw_line.substr(126, pos - 126);
+        m_Info.appname = m_Raw_line.substr(kLoglineNamePos, pos - kLoglineNamePos);
     
     } else {
         // Initialize session from existing token
@@ -864,7 +887,13 @@ int CNcbiApplogApp::Run(void)
     // Try to set local logging
 
     // Initialize logging API
-    NcbiLog_InitST(m_Info.appname.c_str());
+    if (m_Info.logsite.empty()) {
+        NcbiLog_InitST(m_Info.appname.c_str());
+    } else {
+        // Use logsite name instead of appname if present.
+        // Original appname will be added as extra after 'start_app' command.
+        NcbiLog_InitST(m_Info.logsite.c_str());
+    }
     NcbiLogP_DisableChecks(1);
     is_api_init = true;
 
@@ -938,11 +967,17 @@ int CNcbiApplogApp::Run(void)
         if (m_Info.sid_app.empty()) {
             m_Info.sid_app = GetEnvironment().Get("NCBI_LOG_SESSION_ID");
         }
-        // If log_site is not specified (or empty), the value from
-        // $NCBI_LOG_SITE will be used automatically in the C Logging API.
         m_Info.logsite = args["logsite"].AsString();
+        if (m_Info.logsite.empty()) {
+            m_Info.logsite = GetEnvironment().Get("NCBI_APPLOG_SITE");
+        }
         SetInfo();
         NcbiLog_AppStart(NULL);
+        // Add original appname as extra after 'start_app' command
+        if (!m_Info.logsite.empty()) {
+            string extra = "orig_appname=" + NStr::URLEncode(m_Info.appname);
+            NcbiLogP_ExtraStr(extra.c_str());
+        }
         token_gen_type = eApp;
     } else 
 
@@ -956,7 +991,7 @@ int CNcbiApplogApp::Run(void)
     } else  
 
     // -----  start_request  -------------------------------------------------
-    // ncbi_applog start_request <token> [-sid SID] [-rid RID] [-client IP] [-param PAIRS] [-logsite SITE] -> request_token
+    // ncbi_applog start_request <token> [-sid SID] [-rid RID] [-client IP] [-param PAIRS] -> request_token
 
     if (cmd == "start_request") {
         m_Info.sid_req = args["sid"].AsString();
@@ -968,13 +1003,6 @@ int CNcbiApplogApp::Run(void)
         m_Info.client = args["client"].AsString();
         string params = args["param"].AsString();
         SetInfo();
-        // Override global log_site information with request-specific value,
-        // if specified. It will be use for this call only, so we don't
-        // need to save it.
-        s = args["logsite"].AsString();
-        if (!s.empty()) {
-            NcbiLog_SetLogSite(s.c_str());
-        }
         NcbiLogP_ReqStartStr(params.c_str());
         token_gen_type = eRequest;
     } else 
@@ -1000,7 +1028,7 @@ int CNcbiApplogApp::Run(void)
     
     if (cmd == "post") {
         string sev = args["severity"].AsString();
-        string msg = args["message"].AsString();
+        string msg = args["message" ].AsString();
         SetInfo();
         // Set minimal allowed posting level to API
         NcbiLog_SetPostLevel(eNcbiLog_Trace);
@@ -1030,8 +1058,8 @@ int CNcbiApplogApp::Run(void)
 
     if (cmd == "perf") {
         int    status = args["status"].AsInteger();
-        double ts     = args["time"].AsDouble();
-        string params = args["param"].AsString();
+        double ts     = args["time"  ].AsDouble();
+        string params = args["param" ].AsString();
         SetInfo();
         NcbiLogP_PerfStr(status, ts, params.c_str());
     } else  
@@ -1041,10 +1069,30 @@ int CNcbiApplogApp::Run(void)
     // ncbi_applog raw -file -
 
     if (cmd == "raw") {
-        // We already have first line in 'raw_line' variable, 
+        // We already have first line in m_Raw_line, 
         // process it and all remaining lines.
+        CRegexp re(kApplogRegexp);
         do {
-            NcbiLogP_Raw(m_Raw_line.c_str());
+            if (re.IsMatch(m_Raw_line)) {
+                if (m_Info.logsite.empty() || m_Info.logsite == m_Info.appname) {
+                    NcbiLogP_Raw(m_Raw_line.c_str());
+                } else {
+                    // Use logsite name instead of appname if necessary.
+                    if (m_Raw_line.length() <= kLoglineNamePos + 1  ||
+                        !NStr::StartsWith(CTempString(CTempString(m_Raw_line), kLoglineNamePos), m_Info.appname)) {
+                        throw "Error processing input raw log, line have wrong format";
+                    }
+                    m_Raw_line = NStr::Replace(m_Raw_line, m_Info.appname, m_Info.logsite);
+                    // Post it
+                    NcbiLogP_Raw(m_Raw_line.c_str());
+                    // Add original appname as extra after 'start_app' command
+                    if (NStr::StartsWith(CTempString(CTempString(m_Raw_line), kLoglineNamePos + m_Info.logsite.size() + 1), "start")) {
+                        string extra = m_Raw_line.substr(0, kLoglineNamePos + 1 + m_Info.logsite.size())
+                                       + "extra         orig_appname=" + m_Info.appname;
+                        NcbiLogP_Raw(extra.c_str());
+                    }
+                }
+            }
         } while (NcbiGetlineEOL(*m_Raw_is, m_Raw_line));
 
     } else  

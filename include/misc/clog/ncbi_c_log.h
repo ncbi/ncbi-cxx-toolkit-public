@@ -434,13 +434,6 @@ extern void NcbiLog_Destroy_Thread(void);
 extern ENcbiLog_Destination NcbiLog_SetDestination(ENcbiLog_Destination ds);
 
 
-/** Set log_site.
- *  The new value overrides any environment value. If set to an empty string,
- *  the value is not printed at all.
- */
-extern void NcbiLog_SetLogSite(const char* logsite);
-
-
 /** Set PID/TID values
  *  @note
  *    This methods do not affect GUID value if called after starting logging.

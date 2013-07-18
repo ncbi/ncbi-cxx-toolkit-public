@@ -114,12 +114,10 @@ struct SInfo_tag {
 
     /* Control parameters */
     
-    ENcbiLog_Severity post_level;               /**< Posting level                                */
-    STime             app_start_time;           /**< Application start time                       */
-    char*             app_full_name;            /**< Pointer to a full application name (argv[0]) */
-    char*             app_base_name;            /**< Pointer to application base name             */
-    char*             logsite;                  /**< Pointer to log_site value                    */
-
+    ENcbiLog_Severity post_level;               /**< Posting level                                 */
+    STime             app_start_time;           /**< Application start time                        */
+    char*             app_full_name;            /**< Pointer to a full application name (argv[0])  */
+    char*             app_base_name;            /**< Pointer to application base name              */
 
     /* Log file names and handles */
 
@@ -196,20 +194,20 @@ extern unsigned int NcbiLogP_SetServerPort(unsigned int server_port);
 extern void NcbiLogP_ReqStartStr(const char* params);
 
 
-/** Variant of NcbiLog_Extra, that use already prepared string with
- *  parameters. Both, key and value in pairs 'key=value' should be 
- *  URL-encoded and separated with '&'.
- *  @sa NcbiLog_Extra
- */
-extern void NcbiLogP_ExtraStr(const char* params);
-
-
 /** Variant of NcbiLog_Perf, that use already prepared string with
  *  parameters. Both, key and value in pairs 'key=value' should be 
  *  URL-encoded and separated with '&'.
  *  @sa NcbiLog_Perf
  */
 extern void NcbiLogP_PerfStr(int status, double timespan, const char* params);
+
+
+/** Variant of NcbiLog_Extra, that use already prepared string with
+ *  parameters. Both, key and value in pairs 'key=value' should be 
+ *  URL-encoded and separated with '&'.
+ *  @sa NcbiLog_Extra
+ */
+extern void NcbiLogP_ExtraStr(const char* params);
 
 
 /** Post already prepared line in applog format to the applog.
@@ -225,10 +223,6 @@ extern void NcbiLogP_Raw(const char* line);
  */
 extern const char* NcbiLogP_GetHostName(void);
 
-
-/** Get log_site value from environment.
- */
-extern const char* NcbiLogP_GetLogSite(void);
 
 
 #ifdef __cplusplus
