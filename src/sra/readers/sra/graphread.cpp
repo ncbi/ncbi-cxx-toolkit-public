@@ -173,15 +173,41 @@ CRef<CVDBGraphDb_Impl::SGraphTableCursor> CVDBGraphDb_Impl::Graph(void)
                    NStr::StartsWith(GetPath(), "NA")) ) {
                 throw;
             }
-            string new_path = NCBI_TRACES04_PATH;
-            new_path += "/nannot01/";
-            new_path += GetPath().substr(2, 3);
-            new_path += '/';
-            new_path += GetPath().substr(5, 3);
-            new_path += '/';
-            new_path += GetPath();
-            m_Path = new_path;
+        }
+    }
+    if ( !curs ) {
+        string old_path = m_Path;
+        string new_path = NCBI_TRACES04_PATH "/nannot01/";
+        new_path += old_path.substr(2, 3);
+        new_path += '/';
+        new_path += old_path.substr(5, 3);
+        new_path += '/';
+        new_path += old_path;
+        m_Path = new_path;
+        try {
             curs = new SGraphTableCursor(*this);
+            LOG_POST(Warning<<"CVDBGraphDb: resolved "<<old_path<<" -> "<<new_path);
+        }
+        catch ( CSraException& /*exc*/ ) {
+            m_Path = old_path;
+        }
+    }
+    if ( !curs ) {
+        string old_path = m_Path;
+        string new_path = "http://ftp-trace.ncbi.nlm.nih.gov/sra/sadb/";
+        new_path += old_path.substr(2, 3);
+        new_path += '/';
+        new_path += old_path.substr(5, 3);
+        new_path += '/';
+        new_path += old_path;
+        m_Path = new_path;
+        try {
+            curs = new SGraphTableCursor(*this);
+            LOG_POST(Warning<<"CVDBGraphDb: resolved "<<old_path<<" -> "<<new_path);
+        }
+        catch ( CSraException& /*exc*/ ) {
+            m_Path = old_path;
+            throw;
         }
     }
     return curs;
