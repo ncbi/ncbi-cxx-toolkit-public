@@ -209,3 +209,4 @@ private:
 END_NCBI_SCOPE
 
 #endif /* UTIL__HISTOGRAM_BINNING__HPP */
+

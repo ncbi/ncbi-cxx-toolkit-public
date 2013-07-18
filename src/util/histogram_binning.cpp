@@ -224,3 +224,4 @@ CHistogramBinning::x_InitializeHistogramAlgo(
 }
 
 END_NCBI_SCOPE
+
