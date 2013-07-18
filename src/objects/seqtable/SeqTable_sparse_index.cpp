@@ -56,6 +56,11 @@ CSeqTable_sparse_index::~CSeqTable_sparse_index(void)
 }
 
 
+#ifdef NCBI_COMPILER_GCC
+const size_t CSeqTable_sparse_index::kInvalidIndex;
+const size_t CSeqTable_sparse_index::kSkipped;
+#endif
+
 DEFINE_STATIC_MUTEX(sx_PrepareMutex_sparse_index);
 static const size_t kBlockSize = 1024;
 
