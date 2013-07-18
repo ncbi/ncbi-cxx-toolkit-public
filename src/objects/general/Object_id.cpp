@@ -88,7 +88,8 @@ CObject_id::E_Choice s_GetInteger(const CObject_id& id, Int8& value)
         return CObject_id::e_Id;
     case CObject_id::e_Str:
         value = NStr::StringToInt8(id.GetStr(), NStr::fConvErr_NoThrow);
-        if ( !value && errno ) {
+        if ( (!value && errno) ||
+             (value != 0 && id.GetStr()[0] == '0') ) {
             // not convertible to integer
             return CObject_id::e_Str;
         }
