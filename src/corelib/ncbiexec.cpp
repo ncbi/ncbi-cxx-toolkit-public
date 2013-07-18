@@ -347,8 +347,8 @@ void s_Create_Args_V(
 {
     // Count arguments to allocate memory
     const char** p = argv;
-    size_t xcnt = 0;
-    while ( *(p++) ) {
+    size_t xcnt = 1;
+    while ( *(++p) ) {
         xcnt++;
     }
     const TXChar **args = new const TXChar*[xcnt+1];
