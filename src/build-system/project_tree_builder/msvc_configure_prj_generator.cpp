@@ -48,8 +48,12 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
                                    const string&            subtree_to_build,
                                    const string&            solution_to_build,
                                    bool  build_ptb)
-:m_Name          ("-CONFIGURE-"),
- m_NameGui       ("-CONFIGURE-DIALOG-"),
+:m_Name          (
+(CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1100) ?
+                    "_CONFIGURE-" : "-CONFIGURE-"),
+ m_NameGui       (
+ (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1100) ?
+                    "_CONFIGURE-DIALOG-" : "-CONFIGURE-DIALOG-"),
  m_OutputDir     (output_dir),
  m_Configs       (configs),
  m_DllBuild      (dll_build),

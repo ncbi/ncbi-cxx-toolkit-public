@@ -501,7 +501,7 @@ void CProjBulderApp::Init(void)
                              CArgDescriptions::eString);
 #elif defined(NCBI_COMPILER_MSVC)
     arg_desc->AddOptionalKey("ide", "msvc_version",
-                             "Target version of MS Visual Studio, for example: 800, 900, 1000",
+                             "Target version of MS Visual Studio, for example: 900, 1000, 1100",
                              CArgDescriptions::eInteger);
     arg_desc->AddOptionalKey("arch", "platform",
                              "Target platform, for example: Win32, x64",
@@ -803,18 +803,25 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
     int i = 0, num_util = 3;
     
     for (i = 0; i < num_util; ++i) {
-        string prj_path = CDirEntry::ConcatPath(utility_projects_dir, utils[i*2]);
+        string prj_file(utils[i*2]);
+        string prj_name(utils[i*2+1]);
+        if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1100) {
+            if (prj_name[0] == '-') {
+                prj_name[0] = '_';
+            }
+        }
+        string prj_path = CDirEntry::ConcatPath(utility_projects_dir, prj_file);
         prj_path += CMsvc7RegSettings::GetVcprojExt();
         utils_id.push_back(prj_path);
         if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000) {
             CVisualStudioProject xmlprj;
-            CreateUtilityProject(utils[i*2+1], *configurations, &xmlprj);
+            CreateUtilityProject(prj_name, *configurations, &xmlprj);
             SaveIfNewer(prj_path, xmlprj);
             utils_id.push_back(xmlprj.GetAttlist().GetProjectGUID());
             utils_id.push_back(xmlprj.GetAttlist().GetName());
         } else {
             string prj_dir =  GetApp().GetUtilityProjectsSrcDir();
-            CProjItem prj_item( CreateUtilityProjectItem(prj_dir, utils[i*2+1]));
+            CProjItem prj_item( CreateUtilityProjectItem(prj_dir, prj_name));
             prj_gen.Generate(prj_item);
             utils_id.push_back(prj_item.m_GUID);
             utils_id.push_back(prj_item.m_Name);

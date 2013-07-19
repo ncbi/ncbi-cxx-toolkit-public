@@ -296,6 +296,7 @@ struct IConfiguration : public ITool
     virtual string IntermediateDirectory(void)	const = 0;
     virtual string ConfigurationType(void)		const = 0;
     virtual string CharacterSet(void)			const = 0;
+    virtual string PlatformToolset(void)    	const = 0;
     virtual string BuildLogFile(void)			const = 0;
 };
 

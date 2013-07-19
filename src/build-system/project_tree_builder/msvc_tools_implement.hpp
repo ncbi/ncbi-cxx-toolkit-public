@@ -115,6 +115,7 @@ public:
 #else
     SUPPORT_CONFIGURATION_OPTION(CharacterSet)
 #endif
+    SUPPORT_CONFIGURATION_OPTION(PlatformToolset)
     virtual string BuildLogFile(void) const
     {
 	    return "$(IntDir)BuildLog_$(TargetName).htm";

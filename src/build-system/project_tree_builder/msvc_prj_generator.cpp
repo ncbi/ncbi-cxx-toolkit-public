@@ -886,6 +886,9 @@ void CMsvcProjectGenerator::GenerateMsbuild(
 
             __SET_PROPGROUP_ELEMENT(t, "ConfigurationType", msvc_tool.Configuration()->ConfigurationType());
             __SET_PROPGROUP_ELEMENT(t, "CharacterSet",      msvc_tool.Configuration()->CharacterSet());
+            if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1100) {
+                __SET_PROPGROUP_ELEMENT(t, "PlatformToolset",      msvc_tool.Configuration()->PlatformToolset());
+            }
         }
     }
 

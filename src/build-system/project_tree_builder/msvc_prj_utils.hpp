@@ -251,6 +251,7 @@ public:
         eMsvc800,
         eMsvc900,
         eMsvc1000,
+        eMsvc1100,
         eXCode30,
         eMsvcNone
     };
