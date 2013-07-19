@@ -2213,6 +2213,7 @@ gpipe_xml needs ct_ftds64
 gpipe_xml needs dbapi
 gpipe_xml needs dbapi_driver
 gpipe_xml needs general
+gpipe_xml needs genome_collection
 gpipe_xml needs gpipe_common
 gpipe_xml needs medline
 gpipe_xml needs ncbi_xdbapi_ftds
@@ -8616,7 +8617,12 @@ xgdsdata needs eutils
 xgdsdata needs general
 xgdsdata needs geodataset
 xgdsdata needs linkout
+xgdsdata needs medline
 xgdsdata needs ncbi_xdbapi_ftds
+xgdsdata needs pub
+xgdsdata needs seq
+xgdsdata needs seqcode
+xgdsdata needs sequtil
 xgdsdata needs tds_ftds64
 xgdsdata needs txxmldoc
 xgdsdata needs uilist
@@ -8626,16 +8632,6 @@ xgdsdata needs xncbi
 xgdsdata needs xser
 xgdsdata needs xutil
 xgdsdata_misc needs xncbi
-xgdsdata_validate needs biblio
-xgdsdata_validate needs general
-xgdsdata_validate needs medline
-xgdsdata_validate needs pub
-xgdsdata_validate needs seq
-xgdsdata_validate needs seqcode
-xgdsdata_validate needs sequtil
-xgdsdata_validate needs xncbi
-xgdsdata_validate needs xser
-xgdsdata_validate needs xutil
 xgencoll needs align-reader
 xgencoll needs aligndb_reader
 xgencoll needs asn_cache
