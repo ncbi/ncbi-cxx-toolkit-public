@@ -63,7 +63,9 @@ bool CMsvcMetaMakefile::IsEmpty(void) const
 string CMsvcMetaMakefile::TranslateOpt(
     const string& value, const string& section, const string& opt)
 {
-    if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000 || value.empty()) {
+    if (value.empty() ||
+        (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000 ||
+        CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eXCode30) ) {
         return value;
     }
     string name(section+"_"+opt+"_"+value);
@@ -73,7 +75,9 @@ string CMsvcMetaMakefile::TranslateOpt(
 
 string CMsvcMetaMakefile::TranslateCommand(const string& value)
 {
-    if (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000 || value.empty()) {
+    if (value.empty() ||
+        (CMsvc7RegSettings::GetMsvcVersion() < CMsvc7RegSettings::eMsvc1000 ||
+        CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eXCode30) ) {
         return value;
     }
     const CMsvcMetaMakefile& meta = GetApp().GetMetaMakefile();
