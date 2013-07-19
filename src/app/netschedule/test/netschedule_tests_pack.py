@@ -9,16 +9,16 @@ Netschedule server tests pack
 """
 
 import time
-from ncbi_grid_1_0.ncbi.grid import ns as grid
+from ncbi_grid_1_0.ncbi.grid import ns, ipc
 
 class TestBase:
     " Base class for tests "
 
     def getNetScheduleService( self, queueName, clientName ):
-        return grid.NetScheduleService( self.ns.getHost() + ":" + \
+        return ns.NetScheduleService( self.ns.getHost() + ":" + \
                                         str( self.ns.getPort() ),
                                         queueName, clientName,
-                                        grid.ipc.RPCServer( \
+                                        ipc.RPCServer( \
                                             self.ns.getGridCLIPath() ) )
 
     def __init__( self, netschedule ):
