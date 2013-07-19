@@ -417,6 +417,7 @@ struct ILibrarianTool : public ITool
     
     //Latest additions
     virtual string AdditionalLibraryDirectories(void) const = 0;
+    virtual string TargetMachine(void)                const = 0;
 };
 
 /// Dummies - Name - only tools. Must present in msvc proj:

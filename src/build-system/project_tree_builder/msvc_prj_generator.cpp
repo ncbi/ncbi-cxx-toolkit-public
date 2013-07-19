@@ -1090,6 +1090,7 @@ void CMsvcProjectGenerator::GenerateMsbuild(
                 __SET_LIB_ELEMENT(p, "IgnoreAllDefaultLibraries",      msvc_tool.Librarian()->IgnoreAllDefaultLibraries());
                 __SET_LIB_ELEMENT(p, "IgnoreSpecificDefaultLibraries", msvc_tool.Librarian()->IgnoreDefaultLibraryNames());
                 __SET_LIB_ELEMENT(p, "OutputFile",                     msvc_tool.Librarian()->OutputFile());
+                __SET_LIB_ELEMENT(p, "TargetMachine",                  msvc_tool.Librarian()->TargetMachine());
             }
             // resource compiler
             {

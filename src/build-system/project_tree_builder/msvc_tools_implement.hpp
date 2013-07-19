@@ -591,7 +591,7 @@ public:
     SUPPORT_LIBRARIAN_OPTION(AdditionalLibraryDirectories)
     SUPPORT_LIBRARIAN_OPTION(IgnoreAllDefaultLibraries)
     SUPPORT_LIBRARIAN_OPTION(IgnoreDefaultLibraryNames)
-
+    SUPPORT_LIBRARIAN_OPTION(TargetMachine)
 
 private:
     string      m_ProjectId;
@@ -631,6 +631,7 @@ public:
     SUPPORT_DUMMY_OPTION(IgnoreAllDefaultLibraries)
     SUPPORT_DUMMY_OPTION(IgnoreDefaultLibraryNames)
     SUPPORT_DUMMY_OPTION(AdditionalLibraryDirectories)
+    SUPPORT_DUMMY_OPTION(TargetMachine)
 
 private:
 	CLibrarianToolDummyImpl(const CLibrarianToolDummyImpl&);
