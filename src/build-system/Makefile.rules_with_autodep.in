@@ -85,7 +85,7 @@ endif
 	@false
 
 
-NODEPGOALS = clean purge requirements deactivate src-stamp export-headers
+NODEPGOALS = $(ALT_GOALS)
 ifneq (,$(filter-out $(NODEPGOALS),$(if $(MAKECMDGOALS),$(MAKECMDGOALS),all)))
 ifdef SOURCES
  -include $(SOURCES:=.d)

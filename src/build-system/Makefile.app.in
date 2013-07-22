@@ -70,18 +70,46 @@ endef
 rebuild-libs:
 	$(foreach l,$(XLIBDEP),$(call rebuild_lib,$(l)))
 
+JUST_RUN_LDD = 0
+ifneq "$(LDD_R)" ""
+  DLL_DEP = $(wildcard $(XAPP_LIB:%=$(libdir)/@lib_pre@%@dll_ext@))
+  ifneq "$(DLL_DEP)" ""
+    ifeq "" "$(findstring q,$(MAKEFLAGS))"
+      ifneq (,$(filter-out $(ALT_GOALS),$(if $(MAKECMDGOALS),$(MAKECMDGOALS),all)))
+        LATEST := $(word 1,$(shell ls -t $(XAPP) $(XOBJ) $(XLIBDEP) 2>/dev/null))
+        ifeq "$(XAPP)" "$(LATEST)"
+          JUST_RUN_LDD = 1
+        endif
+      endif
+    else
+      $(XAPP): $(DLL_DEP)
+    endif
+  endif
+endif
+
+ifeq "$(JUST_RUN_LDD)" "1"
+$(XAPP): $(DLL_DEP)
+# Check for error output.  (ldd's own exit status is of no help.)
+	@if $(LDD_R) $(XAPP) 2>&1 >/dev/null | $(GREP) .; then \
+	    echo "ERROR: $(XAPP) has unresolved symbols"; \
+	    exit 1; \
+	else \
+	    touch $(XAPP); \
+	fi
+else
 $(XAPP): $(XOBJ) $(XLIBDEP)
 	@-$(RM) .$(XAPP).stamp
 	$(LINK_WRAPPER) $(LINK) $(LDFLAGS) $(APP_LDFLAGS) $(XOBJ) $(XOBJ2) $(PRE_LIBS) $(XLIB) $(XAPP_LIBS) @f_outexe@$(XAPP) $(LINK_FILTER)
 	$(STRIP) $(XAPP)
 	$(POST_LINK) $(XAPP)
-ifneq "$(BINCOPY)" "@:"
-  ifneq "$(srcdir)" "."
-    ifneq "$(filter-out /.,$(wildcard $(bindir)/.))" ""
+  ifneq "$(BINCOPY)" "@:"
+    ifneq "$(srcdir)" "."
+      ifneq "$(filter-out /.,$(wildcard $(bindir)/.))" ""
 	@if [ -w $(bindir) ]; then \
 	    echo $(BINCOPY) $(XAPP) $(bindir) && \
 	    $(BINCOPY) $(XAPP) $(bindir); \
 	fi
+      endif
     endif
   endif
 endif

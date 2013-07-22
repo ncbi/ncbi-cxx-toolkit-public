@@ -58,6 +58,8 @@ TOUCH    = @TOUCH@
 MKDIR    = /bin/mkdir
 BINTOUCH = $(TOUCH)
 LN_S     = @LN_S@
+GREP     = @GREP@
+LDD_R    = @LDD_R@
 
 ### filters for screening out bogus messages
 CC_FILTER    = @CC_FILTER@

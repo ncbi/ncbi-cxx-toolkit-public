@@ -2066,6 +2066,7 @@ else
 fi
 
 AC_PATH_PROG(TOUCH, touch, [], /bin:/usr/bin:$PATH)
+AC_PATH_PROG(GREP, grep)
 AC_PROG_EGREP
 AC_MSG_CHECKING([how to run $EGREP quietly])
 if test -z "`echo foo | $EGREP -q fo+ 2>>config.log || echo $?`"; then
@@ -2079,6 +2080,16 @@ AC_MSG_RESULT($EGREP_Q)
 
 AC_CHECK_PROG(VALGRIND_PATH, valgrind, valgrind)
 
+AC_PATH_PROG(LDD, ldd)
+if test -n "$LDD"; then
+   AC_MSG_CHECKING([whether $LDD accepts -r])
+   if $LDD -r /bin/ls >/dev/null 2>&1; then
+      AC_MSG_RESULT(yes)
+      LDD_R="$LDD -r"
+   else
+      AC_MSG_RESULT(no)
+   fi
+fi
 
 #### Check if "${build_root}" is defined;  provide a default one
 if test -n "${with_build_root}" ; then
@@ -6820,6 +6831,7 @@ AC_SUBST(LINK)
 AC_SUBST(C_LINK)
 AC_SUBST(TAIL_N)
 AC_SUBST(EGREP_Q)
+AC_SUBST(LDD_R)
 
 AC_SUBST(CFLAGS)
 AC_SUBST(FAST_CFLAGS)

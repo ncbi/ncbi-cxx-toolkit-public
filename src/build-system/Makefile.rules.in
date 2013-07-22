@@ -10,6 +10,8 @@
 # Requirements checking
 requirements:  $(REQUIRES:%=$(status_dir)/%.enabled)
 
+ALT_GOALS = clean purge requirements deactivate src-stamp export-headers
+
 ALL_SETTINGS = $(CFLAGS_ALL) $(CXXFLAGS_ALL) $(DLL_LIBS) \
                $(LDFLAGS) $(LIB) $(LIBS)
 ifneq "" "$(filter @%@,$(ALL_SETTINGS))"
