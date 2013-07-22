@@ -1178,3 +1178,4 @@ BOOST_AUTO_TEST_CASE(TestLetterGaps)
         cerr << "Received: " << MSerial_AsnText << *pResultingDeltaExt << endl;
     }
 }
+
