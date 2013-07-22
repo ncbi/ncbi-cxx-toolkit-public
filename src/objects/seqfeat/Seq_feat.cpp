@@ -421,7 +421,8 @@ CSeq_feat::GetTempExceptionTextSet(void) const
 
 bool CSeq_feat::HasExceptionText(const string & exception_text ) const
 {
-    CTempString sCleanedInputText = NStr::TruncateSpaces(exception_text);
+    CTempString sCleanedInputText = 
+        NStr::TruncateSpaces(CTempString(exception_text));
     if( sCleanedInputText.empty() ) {
         // it's preferable for the caller not to give us an
         // empty string, but... just in case
