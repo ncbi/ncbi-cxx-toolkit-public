@@ -921,6 +921,25 @@ class NetSchedule:
 
         self.verbosePrint( cmdLine )
         result = {}
+        try:
+            for line in self.__safeRun( cmdLine ).split( '\n' ):
+                line = line.strip()
+                if line == "":
+                    continue
+                parts = line.split( ":" )
+                if len( parts ) != 2:
+                    continue
+                result[ parts[0].strip() ] = parts[1].strip()
+            return result
+        except:
+            pass
+
+        cmdLine = [ self.__grid_cli, "queueinfo", qname,
+                    "--ns=" + self.__host + ":" + str( self.__port ) ]
+        cmdLine = self.__appendNodeSession( cmdLine, node, session )
+
+        self.verbosePrint( cmdLine )
+        result = {}
         for line in self.__safeRun( cmdLine ).split( '\n' ):
             line = line.strip()
             if line == "":
@@ -930,6 +949,7 @@ class NetSchedule:
                 continue
             result[ parts[0].strip() ] = parts[1].strip()
         return result
+
 
     def getQueueDump( self, qname, status = '',
                             start_after = '', count = 0,
@@ -1336,6 +1356,9 @@ class NetSchedule:
             cmdLine.append( "--use-preferred-affinities" )
         if isAnyAffs:
             cmdLine.append( "--any-affinity" )
+
+        if self.__verbose:
+            print "Executing command: " + " ".join( cmdLine )
 
         process = Popen( cmdLine, stdin = PIPE,
                          stdout = PIPE, stderr = PIPE )

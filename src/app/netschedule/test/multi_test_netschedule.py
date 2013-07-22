@@ -9,7 +9,7 @@
 Netschedule server test script
 """
 
-import os, os.path, sys, md5
+import os.path, sys, md5
 import tempfile
 import logging
 from subprocess import Popen, PIPE
@@ -17,6 +17,22 @@ from optparse import OptionParser
 from test_netschedule import latestNetscheduleVersion
 
 grep = "/bin/grep"
+
+GRID_CLI_PATHS = [ "$NCBI/c++.metastable/DebugMT" ]
+
+configFiles = [ "netscheduled.ini.1", "netscheduled.ini.2",
+                "netscheduled.ini.3", "netscheduled.ini.4",
+                "netscheduled.ini.5", "netscheduled.ini.6",
+                "netscheduled.ini.7", "netscheduled.ini.8",
+                "netscheduled.ini.9",
+                "netscheduled.ini.505-1", "netscheduled.ini.505-2",
+                "netscheduled.ini.505-3", "netscheduled.ini.505-4",
+                "netscheduled.ini.505-5" ]
+scripts = [ "make_ncbi_grid_module_tree.sh", "netschedule.py",
+            "netschedule_tests_pack.py", "netschedule_tests_pack_4_10.py",
+            "netschedule_tests_pack_4_11.py", "netschedule_tests_pack_4_13.py",
+            "netschedule_tests_pack_4_14.py", "netschedule_tests_pack_4_16.py",
+            "ns.py", "test_netschedule.py" ]
 
 
 
@@ -85,25 +101,18 @@ def main():
     parser.add_option( "-v", "--verbose",
                        action="store_true", dest="verbose", default=False,
                        help="be verbose (default: False)" )
-    parser.add_option( "--path-grid-cli", dest="pathGridCli",
-                       default="",
-                       help="Path to directory where grid_cli " \
-                            "utility links are" )
-    parser.add_option( "--path-netschedule", dest="pathNetschedule",
-                       default="",
-                       help="Path to directory where netschedule " \
-                            "daemon links are" )
     parser.add_option( "--port", dest="port",
                        default=9109,
-                       help="Netschedule daemon port to be used for tests. " \
+                       help="Netschedule daemon port to be used for tests. "
                             "Default: 9109" )
 
 
     # parse the command line options
     options, args = parser.parse_args()
 
-    if len( args ) != 0:
-        return parserError( parser, "No arguments are expected" )
+    if len( args ) == 0:
+        return parserError( parser,
+                            "At least one NetSchedule version is expected" )
 
     port = int( options.port )
     if port < 1024 or port > 65535:
@@ -111,73 +120,27 @@ def main():
 
     checkPrerequisites()
 
-    # Build a list of grid_cli utilities
-    pathGridCli = options.pathGridCli
-    if pathGridCli == "":
-        pathGridCli = os.path.dirname( os.path.abspath( sys.argv[ 0 ] ) ) + \
-                      os.path.sep + "grid_cli" + os.path.sep
-
-    if not pathGridCli.endswith( os.path.sep ):
-        pathGridCli += os.path.sep
-
-    if not os.path.exists( pathGridCli ):
-        raise Exception( "Cannot find grid_cli links directory. " \
-                         "Expected here: " + pathGridCli )
-
-    gridCliList = buildExecutablesList( pathGridCli )
-    if len( gridCliList ) == 0:
-        print >> sys.stderr, "No grid_cli binaries are found at " + \
-                             pathGridCli + ". Exiting."
-        return 0
-
-    # Build a list of the netscheduled daemons
-    pathNS = options.pathNetschedule
-    if pathNS == "":
-        pathNS = os.path.dirname( os.path.abspath( sys.argv[ 0 ] ) ) + \
-                 os.path.sep + "netscheduled" + os.path.sep
-
-    if not pathNS.endswith( os.path.sep ):
-        pathNS += os.path.sep
-
-    if not os.path.exists( pathNS ):
-        raise Exception( "Cannot find netscheduled links directory. " \
-                         "Expected here: " + pathNS )
-
-    nsList = buildExecutablesList( pathNS )
+    # Build a list of the netscheduled daemons.
+    # Each args is a NS version from the releases storage or an exact path to
+    # the directory where NS is.
+    nsList = buildExecutablesList( args )
     if len( nsList ) == 0:
         print >> sys.stderr, "No netscheduled binaries are found at " + \
-                             pathNS + ". Exiting."
+                             str( args ) + ". Exiting."
         return 0
 
-
-    # Form the lists of absolutely new items
-    # May be used later
-    # gridCliListNew = excludeTested( gridCliList )
-    # nsListNew = excludeTested( nsList )
-
-    #if len( nsListNew ) + len( gridCliListNew ) == 0:
-    #    # Nothing to test
-    #    return 0
-
-
-    # Here: we have some pairs to be tested
-    #for oneNS in nsListNew:
-    #    for oneGC in gridCliList:
-    #        testOneCombination( oneNS, oneGC )
-    #    updateTestedCache( oneNS )
-
-    #for oneGC in gridCliListNew:
-    #    for oneNS in nsList:
-    #        testOneCombination( oneNS, oneGC )
-    #    updateTestedCache( oneGC )
-
-    # Simple approach - test all the combinations
+    # Test all the combinations of the grid_cli components and NSs
     tempPath = createSandbox()
     trimNSLogFile( tempPath )
 
+    if options.verbose:
+        print "Found NS versions: " + str( nsList )
+        print "Grid locations: " + str( GRID_CLI_PATHS )
+        print "Sandbox: " + tempPath
+
     numberOfFailed = 0
     for oneNS in nsList:
-        for oneGC in gridCliList:
+        for oneGC in GRID_CLI_PATHS:
             numberOfFailed += testOneCombination( tempPath, oneNS, oneGC,
                                                   port, options.verbose )
 
@@ -232,12 +195,21 @@ def guessNSVersion( elfPath, linkName, defaultVersion ):
     return defaultVersion
 
 
-def testOneCombination( sandboxPath, nsPath, gcPath, port, verbose ):
+def testOneCombination( sandboxPath, nsPathVer, gcPath, port, verbose ):
     " Tests one combination, returns 1 if failed "
+
+    # Expand grid CLI path
+    gcPath = gcPath.replace( "$NCBI", os.environ[ "NCBI" ] )
+    nsPath = nsPathVer[ 0 ]
+    nsVer = nsPathVer[ 1 ]
 
     combination = "Testing combination: NS: " + nsPath + \
                   " GRID_CLI: " + gcPath
     logging.info( combination )
+
+    if verbose:
+        print combination
+
     basePath = os.path.dirname( os.path.abspath( sys.argv[ 0 ] ) ) + \
                os.path.sep
 
@@ -249,21 +221,30 @@ def testOneCombination( sandboxPath, nsPath, gcPath, port, verbose ):
         print >> sys.stderr, ""
         logging.error( "Error copying binary to sandbox: " + nsPath )
         return 1
-    if os.system( "cp -p " + gcPath + " " + \
-                  sandboxPath + os.path.sep + "grid_cli" ) != 0:
-        print >> sys.stderr, combination
-        print >> sys.stderr, "Error copying binary to sandbox: " + gcPath
-        print >> sys.stderr, ""
-        logging.error( "Error copying binary to sandbox: " + gcPath )
-        return 1
 
-    nsVersion = guessNSVersion( sandboxPath + os.path.sep + "netscheduled",
-                                nsPath, latestNetscheduleVersion )
+    if nsVer is None:
+        nsVersion = guessNSVersion( sandboxPath + os.path.sep + "netscheduled",
+                                    nsPath, latestNetscheduleVersion )
+        if verbose:
+            print "Detected NS version: " + nsVersion
+    else:
+        nsVersion = nsVer
+
+
+    # Now, run the script which prepares the grid_cli staff
+    os.system( "rm -rf " + sandboxPath + "ncbi_grid_1_0" )
+    if os.system( sandboxPath + "make_ncbi_grid_module_tree.sh " + gcPath +
+                  " " + sandboxPath + "ncbi_grid_1_0" ) != 0:
+        print >> sys.stderr, combination
+        print >> sys.stderr, "Error creating grin_cli staff in sandbox: " + gcPath
+        print >> sys.stderr, ""
+        logging.error( "Error creating grin_cli staff in sandbox: " + gcPath )
+        return 1
 
     # Binary is here as well the configuration files
     # We can run the tests now
-    cmdLine = [ basePath + "test_netschedule.py", str( port ),
-                "--path-grid-cli=" + sandboxPath,
+    cmdLine = [ sandboxPath + "test_netschedule.py", str( port ),
+                "--path-grid-cli=" + sandboxPath + "ncbi_grid_1_0/",
                 "--path-netschedule=" + sandboxPath,
                 "--db-path=/dev/shm/data",
                 "--header='" + combination + "'",
@@ -307,12 +288,14 @@ def createSandbox():
     if not os.path.exists( path ):
         os.mkdir( path )
 
-    retCode = os.system( "cp " + basePath + "netscheduled.ini.1 " + \
-                         path + "netscheduled.ini.1" )
-    retCode += os.system( "cp " + basePath + "netscheduled.ini.2 " + \
-                          path + "netscheduled.ini.2" )
+    retCode = 0
+    for fName in configFiles:
+        retCode += os.system( "cp " + basePath + fName + " " + path + fName )
+    for fName in scripts:
+        retCode += os.system( "cp " + basePath + fName + " " + path + fName )
+
     if retCode != 0:
-        raise Exception( "Error copying netschedule configuration files." )
+        raise Exception( "Error copying test framework files." )
 
     return path
 
@@ -352,106 +335,144 @@ def checkPrerequisites():
     basePath = os.path.dirname( os.path.abspath( sys.argv[ 0 ] ) ) + \
                os.path.sep
 
-    fName = basePath + "netscheduled.ini.1"
-    if not os.path.exists( fName ):
-        raise Exception( "Cannot find configuration file. Expected: " + fName )
+    if not os.environ.has_key( "NCBI" ):
+        raise Exception( "$NCBI variable must be set before running the script" )
 
-    fName = basePath + "netscheduled.ini.2"
-    if not os.path.exists( fName ):
-        raise Exception( "Cannot find configuration file. Expected: " + fName )
+    for fName in configFiles:
+        if not os.path.exists( basePath + fName ):
+            raise Exception( "Cannot find configuration file. Expected: " +
+                             basePath + fName )
 
-    fName = basePath + "test_netschedule.py"
-    if not os.path.exists( fName ):
-        raise Exception( "Cannot find test script. Expected: " + fName )
-
+    for script in scripts:
+        if not os.path.exists( basePath + script ):
+            raise Exception( "Cannot find test script. Expected: " +
+                             basePath + script )
     return
 
 
-def buildExecutablesList( path ):
-    """ Analyzes all the symbolic links in the given dir and builds a list of
-        those which are not broken and point to executables """
+def buildExecutablesList( paths ):
+    """ Paths is a list of paths or NS version from the releases storage """
 
     result = []
-    for item in os.listdir( path ):
-        candidate = path + item
-        if not os.path.islink( candidate ):
-            continue    # Not a symlink at all
-        if not os.path.exists( candidate ):
-            logging.warning( "Broken symlink detected: " + candidate )
-            continue    # Broken link
-        if not os.access( candidate, os.X_OK ):
-            logging.warning( "Symlink to a non-executable file: " + candidate )
-            continue    # No permissions to execute
+    for path in paths:
+        path = path.replace( "$NCBI", os.environ[ "NCBI" ] ).strip()
+        if not path:
+            continue
+        if path[ 0 ].isdigit():
+            # This is a version from the release storage
+            candidatePath = "/am/ncbiapdata/release/netschedule/builds/" + \
+                            path + "/Linux64/"
+            if not os.path.exists( candidatePath ):
+                logging.warning( "Cannot find NetSchedule " + path + " at " +
+                                 candidatePath + ". Skipping." )
+                continue
 
-        result.append( candidate )
+            # Find release directory
+            found = False
+            for item in os.listdir( candidatePath ):
+                if "ReleaseMT64" in item:
+                    # Here it is
+                    candidatePath += item
+                    found = True
+                    break
+            if not found:
+                logging.warning( "Cannot find NetSchedule " + path + " at " +
+                                 candidatePath + ". Skipping." )
+                continue
+
+            candidatePath += "/bin/netscheduled"
+            if not os.path.exists( candidatePath ):
+                logging.warning( "Cannot find NetSchedule " + path + " at " +
+                                 candidatePath + ". Skipping." )
+                continue
+
+            # Great, NS found
+            result.append( (os.path.abspath( candidatePath ), path) )
+        else:
+            # This is a directory where NS is or a the binary itself
+            path = os.path.abspath( path )
+            if os.path.isdir( path ):
+                if not path.endswith( "/" ):
+                    path += "/netscheduled"
+
+            if not os.path.exists( path ):
+                logging.warning( "Cannot find NetSchedule " + path + ". Skipping." )
+                continue
+
+            if not os.access( path, os.X_OK ):
+                logging.warning( "The path points to a non-executable file: " + path )
+                continue    # No permissions to execute
+
+            # It is supposed that this is the latest version
+            result.append( (path, None) )
     return result
 
-def getCacheFileName():
-    " provides the file name where tested cache is stored "
-    return os.path.dirname( os.path.abspath( sys.argv[ 0 ] ) ) + \
-           os.path.sep + "already_tested.cache"
+#def getCacheFileName():
+#    " provides the file name where tested cache is stored "
+#    return os.path.dirname( os.path.abspath( sys.argv[ 0 ] ) ) + \
+#           os.path.sep + "already_tested.cache"
 
-def getTestedCache():
-    " Reads the tested files cache "
-    cache = {}
-    fName = getCacheFileName()
+#def getTestedCache():
+#    " Reads the tested files cache "
+#    cache = {}
+#    fName = getCacheFileName()
+#
+#    if not os.path.exists( fName ):
+#        return
+#    f = open( fName, "r" )
+#    for line in f:
+#        line = line.strip()
+#        if line == "":
+#            continue
+#        if line.startswith( '#' ):
+#            continue
+#        parts = line.split()
+#        if len( parts ) != 2:
+#            raise Exception( "Cache file malformed" )
+#        cache[ parts[ 0 ] ] = parts[ 1 ]
+#    return cache
 
-    if not os.path.exists( fName ):
-        return
-    f = open( fName, "r" )
-    for line in f:
-        line = line.strip()
-        if line == "":
-            continue
-        if line.startswith( '#' ):
-            continue
-        parts = line.split()
-        if len( parts ) != 2:
-            raise Exception( "Cache file malformed" )
-        cache[ parts[ 0 ] ] = parts[ 1 ]
-    return cache
+#def getMD5( path ):
+#    " Provides the MD5 sum for the given file "
+#    f = open( path, "rb" )
+#    md5Sum = md5.new()
+#    while 1:
+#        block = f.read( 1024 * 1024 )
+#        if not block:
+#            break
+#        md5Sum.update( block )
+#    f.close()
+#    digest = md5Sum.digest()
+#    return ( "%02x"*len( digest ) ) % tuple( map( ord, digest ) )
 
-def getMD5( path ):
-    " Provides the MD5 sum for the given file "
-    f = open( path, "rb" )
-    md5Sum = md5.new()
-    while 1:
-        block = f.read( 1024 * 1024 )
-        if not block:
-            break
-        md5Sum.update( block )
-    f.close()
-    digest = md5Sum.digest()
-    return ( "%02x"*len( digest ) ) % tuple( map( ord, digest ) )
+#def updateTestedCache( fName ):
+#    " Updates the cached MD5 for the given link "
+#    cache = getTestedCache()
+#    cache[ fName ] = getMD5( os.path.realpath( fName ) )
+#    f = open( getCacheFileName(), "w" )
+#    for key in cache:
+#        f.write( key + " " + cache[ key ] + "\n" )
+#    f.close()
+#    return
 
-def updateTestedCache( fName ):
-    " Updates the cached MD5 for the given link "
-    cache = getTestedCache()
-    cache[ fName ] = getMD5( os.path.realpath( fName ) )
-    f = open( getCacheFileName(), "w" )
-    for key in cache:
-        f.write( key + " " + cache[ key ] + "\n" )
-    f.close()
-    return
-
-def excludeTested( files ):
-    """ Excludes those files which have already been tested.
-        Returns the number of excluded paths. """
-
-    cache = getTestedCache()
-
-    result = []
-    count = 0
-    for index in xrange( 0, len( files ) ):
-        if cache.has_key( files[ index ] ):
-            abspath = os.path.realpath( files[ index ] )
-            # Check the new MD5
-            if cache[ files[ index ] ] == getMD5( abspath ):
-                # The same, no need
-                count += 1
-                continue
-        result.append( files[ index ] )
-    return count
+#def excludeTested( files ):
+#    """ Excludes those files which have already been tested.
+#        Returns the number of excluded paths. """
+#
+#    cache = getTestedCache()
+#
+#    result = []
+#    count = 0
+#    for index in xrange( 0, len( files ) ):
+#        if cache.has_key( files[ index ] ):
+#            abspath = os.path.realpath( files[ index ] )
+#            # Check the new MD5
+#            if cache[ files[ index ] ] == getMD5( abspath ):
+#                # The same, no need
+#                count += 1
+#                continue
+#        result.append( files[ index ] )
+#    return count
 
 
 
@@ -471,4 +492,3 @@ if __name__ == "__main__":
         returnValue = 1
 
     sys.exit( returnValue )
-

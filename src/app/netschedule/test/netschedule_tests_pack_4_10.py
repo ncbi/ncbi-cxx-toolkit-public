@@ -3554,7 +3554,8 @@ class Scenario192( TestBase ):
         if "[valid" in processStdout:
             return True
 
-        raise Exception( "Did not receive notifications when expected" )
+        raise Exception( "Did not receive notifications when expected. "
+                         "Received:\n'" + processStdout + "'" )
 
 class Scenario193( TestBase ):
     " Scenario 193 "

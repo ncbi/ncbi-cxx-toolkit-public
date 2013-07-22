@@ -9,7 +9,12 @@
 Netschedule server test script
 """
 
-import os, os.path, sys, datetime
+import sys, os.path
+
+oldcwd = os.getcwd()
+os.chdir( os.path.dirname( sys.argv[ 0 ] ) )
+
+import datetime
 from optparse import OptionParser
 from netschedule import NetSchedule
 import netschedule_tests_pack as pack
@@ -38,9 +43,9 @@ latestNetscheduleVersion = "4.16.10"
 excludeTestsMap = \
 {
 
-    "4.16.8":   [ 800, 801, 900 ],
-    "4.16.9":   [ 900 ],
-    "4.16.10":  [ ]
+    "4.16.8":   [ 214, 215, 800, 801, 900 ],
+    "4.16.9":   [ 214, 215, 900 ],
+    "4.16.10":  [ 214, 215 ]
 }
 
 
@@ -476,6 +481,7 @@ def main():
             netschedule.deleteDB()
         except:
             pass
+        os.chdir( oldcwd )
 #        raise
 
     print getTimestamp() + " Total succeeded: " + str( successCount )
@@ -502,4 +508,5 @@ if __name__ == "__main__":
 #        raise
         returnValue = 1
 
+    os.chdir( oldcwd )
     sys.exit( returnValue )
