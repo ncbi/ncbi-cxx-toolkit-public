@@ -6,10 +6,10 @@ outlog()
   logfile="$1"
   if [ -s "$logfile" ]; then
     echo "=== $logfile ==="
-    if [ "`head -201 $logfile 2>/dev/null | wc -l`" -gt "200" ]; then
-      head -100 "$logfile"
+    if [ "`head -401 $logfile 2>/dev/null | wc -l`" -gt "400" ]; then
+      head -200 "$logfile"
       echo '...'
-      tail -100 "$logfile"
+      tail -200 "$logfile"
     else
       cat "$logfile"
     fi
