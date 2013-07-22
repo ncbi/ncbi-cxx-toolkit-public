@@ -181,6 +181,7 @@ static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
     { "PBR", CDbtag::eDbtagType_PBR },
     { "REBASE", CDbtag::eDbtagType_REBASE },
     { "SK-FST", CDbtag::eDbtagType_SK_FST },
+    {"SRPDB", CDbtag::eDbtagType_SRPDB },
     { "VBRC", CDbtag::eDbtagType_VBRC }
 };
 
@@ -611,6 +612,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_SGD, "http://www.yeastgenome.org/cgi-bin/locus.fpl?sgdid=" },
     { CDbtag::eDbtagType_SGN, "http://www.sgn.cornell.edu/search/est.pl?request_type=7&request_id=" },
     { CDbtag::eDbtagType_SK_FST, "http://aafc-aac.usask.ca/fst/" },
+    { CDbtag::eDbtagType_SRPDB, "http://rnp.uthscsa.edu/rnp/SRPDB/rna/sequences/fasta/" },
     { CDbtag::eDbtagType_SubtiList, "http://genolist.pasteur.fr/SubtiList/genome.cgi?external_query+" },
     { CDbtag::eDbtagType_TAIR, "http://www.arabidopsis.org/servlets/TairObject?type=locus&name=" },
     { CDbtag::eDbtagType_TIGRFAM, "http://cmr.tigr.org/tigr-scripts/CMR/HmmReport.cgi?hmm_acc=" },
@@ -754,6 +756,10 @@ string CDbtag::GetUrl(const string & genus,
             if (tag[0] == 'g') {
                 tag = tag.substr(1);
             }
+            break;
+
+        case eDbtagType_SRPDB:
+            tag += ".fasta";
             break;
 
         case eDbtagType_dbSTS:

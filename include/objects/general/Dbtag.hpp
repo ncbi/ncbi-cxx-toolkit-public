@@ -155,6 +155,7 @@ public:
         eDbtagType_SGD,
         eDbtagType_SGN,
         eDbtagType_SK_FST,
+        eDbtagType_SRPDB,
         eDbtagType_SoyBase,
         eDbtagType_SubtiList,
         eDbtagType_TAIR,
