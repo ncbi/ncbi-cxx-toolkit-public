@@ -1899,6 +1899,8 @@ void CGenbankFormatter::FormatWGS
 (const CWGSItem& wgs,
  IFlatTextOStream& orig_text_os)
 {
+    const bool bHtml = wgs.GetContext()->Config().DoHTML();
+    
     CRef<IFlatTextOStream> p_text_os;
     IFlatTextOStream& text_os = s_WrapOstreamIfCallbackExists(p_text_os, wgs, orig_text_os);
 
@@ -1906,7 +1908,7 @@ void CGenbankFormatter::FormatWGS
 
     switch ( wgs.GetType() ) {
     case CWGSItem::eWGS_Projects:
-        tag = "WGS";
+        tag += "WGS";
         break;
 
     case CWGSItem::eWGS_ScaffoldList:
@@ -1920,8 +1922,6 @@ void CGenbankFormatter::FormatWGS
     default:
         return;
     }
-
-    const bool bHtml = wgs.GetContext()->Config().DoHTML();
 
     // Get first and last id (sanitized for html, if necessary)
     list<string> l;
@@ -1961,7 +1961,8 @@ void CGenbankFormatter::FormatWGS
                 } else {
                     url_arg = first_id.substr(0, 6);
                 }
-                link = "http://www.ncbi.nlm.nih.gov/Traces/wgs?val=" + url_arg;
+                link = "http://www.ncbi.nlm.nih.gov/Traces/wgs?val=" + 
+                    url_arg + ( bIsWGSProject ? "#contigs" : "#scaffolds" );
             } else {
                 link = "http://www.ncbi.nlm.nih.gov/nuccore?term=" + first_id + ":" + last_id + "[PACC]";
             }

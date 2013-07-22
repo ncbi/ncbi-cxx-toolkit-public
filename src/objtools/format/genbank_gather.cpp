@@ -231,6 +231,7 @@ void CGenbankGatherer::x_GatherWGS(void) const
     const string* first = 0;
     const string* last  = 0;
 
+    bool bFirstWgsItem = true;
     for (CSeqdesc_CI desc(ctx.GetHandle(), CSeqdesc::e_User);  desc;  ++desc) {
         const CUser_object& uo = desc->GetUser();
         CWGSItem::EWGSType wgs_type = CWGSItem::eWGS_not_set;
@@ -266,6 +267,11 @@ void CGenbankGatherer::x_GatherWGS(void) const
         }
 
         if ( (first != 0)  &&  (last != 0) ) {
+            if( bFirstWgsItem ) {
+                CConstRef<IFlatItem> anchor_item( new CHtmlAnchorItem(ctx, "wgs" ) );
+                ItemOS() << anchor_item; 
+                bFirstWgsItem = false;
+            }
             CConstRef<IFlatItem> item( new CWGSItem(wgs_type, *first, *last, uo, ctx) );  
             ItemOS() << item;
         }
