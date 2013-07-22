@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <serial/objostr.hpp>
+#include <serial/objostrxml.hpp>
 
 #include <objects/gbseq/GBSet.hpp>
 #include <objects/gbseq/GBSeq.hpp>
@@ -49,6 +50,7 @@
 
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/gbseq_formatter.hpp>
+#include <objtools/format/genbank_formatter.hpp>
 #include <objtools/format/items/locus_item.hpp>
 #include <objtools/format/items/defline_item.hpp>
 #include <objtools/format/items/accession_item.hpp>
@@ -189,7 +191,7 @@ CGBSeq::TStrandedness s_GBSeqStrandedness(
     }
     }
 
-    return "?";  // eStrandedness_not_set;
+    return kEmptyStr;  // eStrandedness_not_set;
     
 }
 
@@ -198,7 +200,7 @@ CGBSeq::TMoltype s_GBSeqMoltype(CMolInfo::TBiomol biomol)
 {
     switch ( biomol ) {
     case CMolInfo::eBiomol_unknown:
-        return "?";  // eMoltype_nucleic_acid
+        return kEmptyStr;  // eMoltype_nucleic_acid
     case CMolInfo::eBiomol_genomic:
     case CMolInfo::eBiomol_other_genetic:
     case CMolInfo::eBiomol_genomic_mRNA:
@@ -224,7 +226,7 @@ CGBSeq::TMoltype s_GBSeqMoltype(CMolInfo::TBiomol biomol)
     default:
         break;
     }
-    return "?";  // eMoltype_nucleic_acid
+    return kEmptyStr;  // eMoltype_nucleic_acid
 }
 
 
@@ -265,8 +267,15 @@ void CGBSeqFormatter::FormatLocus
 
     m_GBSeq->SetLocus(locus.GetName());
     m_GBSeq->SetLength(locus.GetLength());
-    m_GBSeq->SetMoltype(s_GBSeqMoltype(locus.GetBiomol()));
-    m_GBSeq->SetStrandedness(s_GBSeqStrandedness(locus.GetStrand(), locus.GetBiomol()));
+    CGBSeq::TMoltype sMolType = s_GBSeqMoltype(locus.GetBiomol());
+    if( ! sMolType.empty() ) {
+        m_GBSeq->SetMoltype(sMolType);
+    }
+    CGBSeq::TStrandedness sStrandedness = 
+        s_GBSeqStrandedness(locus.GetStrand(), locus.GetBiomol());
+    if( ! sStrandedness.empty() ) {
+        m_GBSeq->SetStrandedness(sStrandedness);
+    }
     m_GBSeq->SetTopology(s_GBSeqTopology(locus.GetTopology()));
     m_GBSeq->SetDivision(locus.GetDivision());
     m_GBSeq->SetUpdate_date(s_GetDate(ctx.GetHandle(), CSeqdesc::e_Update_date));
@@ -355,6 +364,10 @@ void CGBSeqFormatter::FormatSource
     m_GBSeq->SetSource(CNcbiOstrstreamToString(source_line));
     m_GBSeq->SetOrganism(source.GetTaxname());
     m_GBSeq->SetTaxonomy(source.GetLineage());
+    string & sTaxonomy = m_GBSeq->SetTaxonomy();
+    if( NStr::EndsWith(sTaxonomy, ".") ) {
+        sTaxonomy.resize( sTaxonomy.length() - 1);
+    }
 }
 
 
@@ -384,11 +397,21 @@ void CGBSeqFormatter::FormatReference
     CBioseqContext& ctx = *ref.GetContext();
 
     CRef<CGBReference> gbref(new CGBReference);
-    const CSeq_loc* loc = &ref.GetLoc();
+    gbref->SetReference(NStr::NumericToString(ref.GetSerial()));
+
     CNcbiOstrstream refstr;
-    refstr << ref.GetSerial() << ' ';
-    x_FormatRefLocation(refstr, *loc, " to ", "; ", ctx);
-    gbref->SetReference(CNcbiOstrstreamToString(refstr));
+    const CSeq_loc* loc = &ref.GetLoc();
+    const char* pchDelim = "";
+    for ( CSeq_loc_CI it(*loc);  it;  ++it ) {
+        CSeq_loc_CI::TRange range = it.GetRange();
+        if ( range.IsWhole() ) {
+            range.SetTo(sequence::GetLength(it.GetSeq_id(), &ctx.GetScope()) - 1);
+        }
+        refstr << pchDelim << range.GetFrom() + 1 << ".." << range.GetTo() + 1;
+        pchDelim = "; ";
+    }
+    gbref->SetPosition(CNcbiOstrstreamToString(refstr));
+
     list<string> authors;
     if (ref.IsSetAuthors()) {
         CReferenceItem::GetAuthNames(ref.GetAuthors(), authors);
@@ -410,6 +433,7 @@ void CGBSeqFormatter::FormatReference
         }
     }
     string journal;
+    CGenbankFormatter genbank_formatter;
     x_FormatRefJournal(ref, journal, ctx);
     NON_CONST_ITERATE (string, it, journal) {
         if ( (*it == '\n')  ||  (*it == '\t')  ||  (*it == '\r') ) {
@@ -526,10 +550,10 @@ void CGBSeqFormatter::FormatFeature
     string location = feat->GetLoc().GetString();
     s_GBSeqStringCleanup(location, true);
     gbfeat->SetLocation(location);
-    if ( feat->GetKey() != "source" ) {
+    // if ( feat->GetKey() != "source" ) {
         s_SetIntervals(gbfeat->SetIntervals(), f.GetLoc(), 
             f.GetContext()->GetScope());
-    }
+    // }
     if ( !feat->GetQuals().empty() ) {
         s_SetQuals(gbfeat->SetQuals(), feat->GetQuals());
     }
@@ -548,8 +572,9 @@ void CGBSeqFormatter::FormatSequence
 {
     string data;
 
-    CSeqVector_CI vec_ci(seq.GetSequence());
-    vec_ci.GetSeqData(data, seq.GetSequence().size());
+    CSeqVector_CI vec_ci(seq.GetSequence(), 0, 
+        CSeqVector_CI::eCaseConversion_lower);
+    vec_ci.GetSeqData(data, seq.GetSequence().size() );
 
     if ( !m_GBSeq->IsSetSequence() ) {
         m_GBSeq->SetSequence(kEmptyStr);
@@ -581,9 +606,11 @@ void CGBSeqFormatter::FormatContig
 void CGBSeqFormatter::x_WriteFileHeader(IFlatTextOStream& text_os)
 {
     m_Out.reset(CObjectOStream::Open(eSerial_Xml, m_StrStream));
+    CObjectOStreamXml & out_strm = dynamic_cast<CObjectOStreamXml&>(*m_Out);
     const CClassTypeInfo* gbset_info
         = dynamic_cast<const CClassTypeInfo*>(CGBSet::GetTypeInfo());
-    m_Out->WriteFileHeader(gbset_info);
+    out_strm.SetEncoding(eEncoding_UTF8);
+    out_strm.WriteFileHeader(gbset_info);
     x_StrOStreamToTextOStream(text_os);
 }
 
