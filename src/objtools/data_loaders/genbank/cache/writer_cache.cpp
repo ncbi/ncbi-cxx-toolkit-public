@@ -467,6 +467,19 @@ void CCacheWriter::SaveSeq_idBlob_ids(CReaderRequestResult& result,
         ITERATE(CBlob_Info::TNamedAnnotNames, it2, info.GetNamedAnnotNames()) {
             str.StoreString(*it2);
         }
+        if ( info.GetAnnotInfo().empty() ) {
+            str.StoreString(kEmptyStr);
+        }
+        else {
+            CNcbiOstrstream stream_str;
+            {{
+                CObjectOStreamAsnBinary stream(stream_str);
+                ITERATE( CBlob_Info::TAnnotInfo, it2, info.GetAnnotInfo() ) {
+                    stream << **it2;
+                }
+            }}
+            str.StoreString(CNcbiOstrstreamToString(stream_str));
+        }
     }
     if ( !true_subkey.empty() ) {
         str.StoreString(true_subkey);
@@ -490,6 +503,7 @@ void CCacheWriter::SaveBlobVersion(CReaderRequestResult& /*result*/,
         return;
     }
 
+    _ASSERT(version);
     CStoreBuffer str;
     str.StoreInt4(version);
     try {
@@ -514,6 +528,7 @@ public:
         : m_Cache(cache), m_Key(key), m_Version(version), m_Subkey(subkey),
           m_Writer(cache->GetWriteStream(key, version, subkey))
         {
+            _ASSERT(version);
             if ( SCacheInfo::GetDebugLevel() ) {
                 LOG_POST(Info<<"CCache:Write: "<<key<<","<<subkey<<","<<version);
             }
@@ -590,6 +605,7 @@ CCacheWriter::OpenBlobStream(CReaderRequestResult& result,
 
     try {
         CLoadLockBlob blob(result, blob_id);
+        _ASSERT(blob.GetBlobVersion());
         CRef<CBlobStream> stream
             (new CCacheBlobStream(m_BlobCache, GetBlobKey(blob_id),
                                   blob.GetBlobVersion(),

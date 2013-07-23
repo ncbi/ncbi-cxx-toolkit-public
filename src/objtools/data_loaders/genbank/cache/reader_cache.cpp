@@ -69,7 +69,7 @@ int SCacheInfo::GetDebugLevel(void)
     return s_Value;
 }
 
-const int    SCacheInfo::IDS_MAGIC = 0x32fd0105;
+const int    SCacheInfo::IDS_MAGIC = 0x32fd0107;
 
 string SCacheInfo::GetBlobKey(const CBlob_id& blob_id)
 {
@@ -743,6 +743,16 @@ bool CCacheReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
             for ( size_t j = 0; j < name_count; ++j ) {
                 info.AddNamedAnnotName(str.ParseString());
             }
+            string s = str.ParseString();
+            if ( !s.empty() ) {
+                CObjectIStreamAsnBinary stream(s.data(), s.size());
+                CRef<CID2S_Seq_annot_Info> annot_info;
+                while ( stream.HaveMoreData() ) {
+                    annot_info.Reset(new CID2S_Seq_annot_Info);
+                    stream >> *annot_info;
+                    info.AddAnnotInfo(*annot_info);
+                }
+            }
             ids.AddBlob_id(id, info);
         }
         if ( !true_subkey.empty() && str.ParseString() != true_subkey ) {
@@ -814,6 +824,7 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
                     reader.reset(m_BlobCache->GetReadStream(key, subkey,
                                                             &version,
                                                             &validity));
+                    _ASSERT(version);
                     if ( m_JoinedBlobVersion == eDefault ) {
                         // joined blob version is supported by ICache
                         m_JoinedBlobVersion = eOn;
@@ -891,6 +902,7 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
         }
     }
     TBlobVersion version = blob.GetBlobVersion();
+    _ASSERT(version);
 
     CConn conn(result, this);
     if ( GetDebugLevel() ) {
