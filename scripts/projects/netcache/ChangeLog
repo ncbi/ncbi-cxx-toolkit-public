@@ -29,3 +29,12 @@ Added re-initialization of database, when Netcache was not terminated properly.
 Fixed bug, when NC was sending confirmation which client did not expect.
 Added maximal time-to-live setting for blobs.
 Fixed bug in READPART command, when invalid data was returned under certain conditions.
+
+
+July 23, 2013
+version 6.6.2
+Corrected problem with belated socket closing.
+Corrected handling of purged blobs on HASB command.
+Added journaling and reporting of initial and periodic synchronizations.
+
+
