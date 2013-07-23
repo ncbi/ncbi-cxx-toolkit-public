@@ -40,13 +40,16 @@ Dependent-field-rule ::= SEQUENCE {
 
 Dependent-field-set ::= SET OF Dependent-field-rule    
 
+Phrase-list ::= SET OF VisibleString
+
 Comment-rule ::= SEQUENCE {
     prefix VisibleString ,
     updated BOOLEAN DEFAULT FALSE ,
     fields Field-set ,
     require-order BOOLEAN DEFAULT TRUE ,
     allow-unlisted BOOLEAN DEFAULT FALSE ,
-    dependent-rules Dependent-field-set OPTIONAL
+    dependent-rules Dependent-field-set OPTIONAL ,
+    forbidden-phrases Phrase-list OPTIONAL
 }
 
 Comment-set ::= SET OF Comment-rule
