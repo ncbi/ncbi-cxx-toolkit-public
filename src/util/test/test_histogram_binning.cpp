@@ -187,19 +187,11 @@ BOOST_AUTO_TEST_CASE(TestEfficiency) {
     // number of data points should
     // be reasonably quick
 
-// in debug mode, there are checks done which make this extremely slow,
-// so we skip this test in those modes
-#ifdef _DEBUG
-    cerr << "Skipping this test because in debug mode the debug asserts make "
-         << "it quadratic time" << endl;
-    return;
-#endif
-
     vector<CHistogramBinning::TValue> value_vec;
 
     CStopWatch stop_watch;
 
-    const Uint8 kNumDataPoints = 10000000;
+    const Uint8 kNumDataPoints = 1000000;
 
     // generate the pseudo-random data
     cerr << "Generating " << kNumDataPoints << " random numbers" << endl;

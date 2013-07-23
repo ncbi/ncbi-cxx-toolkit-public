@@ -113,8 +113,8 @@ public:
         /// for all values from first_number to last_number
         Uint8 total_appearances;
     };
-    /// A histogram is given as a list of bins.
-    typedef list<SBin> TListOfBins;
+    /// A histogram is given as a vector of bins.
+    typedef vector<SBin> TListOfBins;
 
     /// Pick which binning algorithm to use when generating
     /// the histogram.

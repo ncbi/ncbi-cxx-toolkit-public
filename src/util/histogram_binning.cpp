@@ -40,7 +40,26 @@
 #include <util/histogram_binning.hpp>
 #include <util/bitset/bmutil.h>
 
+#include <limits>
+
 BEGIN_NCBI_SCOPE
+
+namespace {
+
+    // avoid putting this template in the header file
+
+    template<typename TValue>
+    class CReverseSort {
+    public:
+        bool operator()(
+            const TValue & lhs,
+            const TValue & rhs) 
+        {
+            // reversed
+            return rhs < lhs;
+        }
+    };
+}
 
 CHistogramBinning::SBin::SBin(
     TValue first_number_arg,
@@ -77,27 +96,31 @@ CHistogramBinning::x_IdentifyClusters(void) const
         return pAnswer.release();
     }
 
+    typedef size_t SIndexOfBin;
+
+    typedef pair<TValue, SIndexOfBin> TDiffAndBinPair;
+    typedef vector<TDiffAndBinPair> TVecOfDiffAndBinPair;
+    TVecOfDiffAndBinPair vecOfDiffAndBinPair;
+    vecOfDiffAndBinPair.reserve(pAnswer->size());
+
     // Maps the difference from one bin to the next to the
     // bins at the start of each gap between bins.
     // (This is explained better in a comment farther below)
-    typedef multimap<TValue, TListOfBins::iterator> TMapDifferenceToPrevBins;
-    TMapDifferenceToPrevBins mapDifferenceToPrevBins;
 
-    TListOfBins::iterator bin_iter = pAnswer->begin();
-    for( ; bin_iter != pAnswer->end(); ++bin_iter ) {
-        TListOfBins::iterator next_bin_iter = bin_iter;
-        ++next_bin_iter;
-
-        if( next_bin_iter == pAnswer->end() ) {
-            break;
-        }
+    ITERATE_0_IDX(ii, pAnswer->size() - 1) {
+        const SBin & this_bin = (*pAnswer)[ii];
+        const SBin & next_bin = (*pAnswer)[ii+1];
 
         const TValue difference = (
-            next_bin_iter->first_number - bin_iter->last_number );
-        mapDifferenceToPrevBins.insert(
-            TMapDifferenceToPrevBins::value_type(
-                difference, bin_iter) );
+            next_bin.first_number - this_bin.last_number );
+        vecOfDiffAndBinPair.push_back(
+            make_pair(
+                difference, ii ) );
     }
+
+    sort( vecOfDiffAndBinPair.begin(),
+        vecOfDiffAndBinPair.end(),
+        CReverseSort<TVecOfDiffAndBinPair::value_type>() );
 
     // example contents that mapDifferenceToPrevBins might have now:
     //
@@ -113,25 +136,61 @@ CHistogramBinning::x_IdentifyClusters(void) const
     // Use a greedy algorithm to merge the closest bins until
     // the number of bins equals the number requested by the user
 
-    // since calculating the length of a list could be expensive, 
-    // we calculate how many merges we need ahead of time
-    Uint8 num_merges_needed = ( pAnswer->size() - num_bins );
-    
-    // merge greedily
-    TMapDifferenceToPrevBins::const_iterator diff_to_prev_bin_iter =
-            mapDifferenceToPrevBins.begin();
-    for( ; num_merges_needed-- > 0; ++diff_to_prev_bin_iter ) {
-        TListOfBins::iterator bin_iter = diff_to_prev_bin_iter->second;
-        TListOfBins::iterator next_bin_iter = bin_iter;
-        ++next_bin_iter;
-
-        // merge bin_iter and next_bin_iter
-        next_bin_iter->first_number = bin_iter->first_number;
-        next_bin_iter->total_appearances += bin_iter->total_appearances;
-        pAnswer->erase(bin_iter);
+    // we start from the *end* because the biggest gaps are where
+    // the divisions between ranges are.
+    vector<SIndexOfBin> vecNodesThatEndRanges;
+    ITERATE(TVecOfDiffAndBinPair, map_iter, 
+        vecOfDiffAndBinPair) 
+    {
+        if( vecNodesThatEndRanges.size() >= (num_bins - 1) ) {
+            break;
+        }
+        vecNodesThatEndRanges.push_back( map_iter->second );
     }
 
-    return pAnswer.release();;
+    // sort vecNodesThatEndRanges by their number
+    // (highest first)
+    sort( vecNodesThatEndRanges.begin(),
+        vecNodesThatEndRanges.end() );
+
+    AutoPtr<TListOfBins> pNewAnswer( new TListOfBins );
+
+    SIndexOfBin bin_in_range_idx = 0;
+    ITERATE(vector<SIndexOfBin>, range_near_end_it, 
+        vecNodesThatEndRanges) 
+    {
+        Uint8 total_appearances_in_range = 0;
+        const Uint8 lowest_number_in_range = 
+            (*pAnswer)[bin_in_range_idx].first_number;
+        for( ; bin_in_range_idx != *range_near_end_it ; 
+            ++bin_in_range_idx )
+        {
+            const SBin & bin = (*pAnswer)[bin_in_range_idx];
+            total_appearances_in_range += bin.total_appearances;
+        }
+        // bin_in_range_iter currently holds the last one in the range
+        total_appearances_in_range += (*pAnswer)[bin_in_range_idx].total_appearances;
+        const Uint8 highest_number_in_range = (*pAnswer)[bin_in_range_idx].last_number;
+        pNewAnswer->push_back( SBin(lowest_number_in_range, 
+            highest_number_in_range, 
+            total_appearances_in_range ) );
+        ++bin_in_range_idx;
+    }
+
+    // do the last range
+    Uint8 total_appearances_in_range = 0;
+    const Uint8 lowest_number_in_range = 
+            (*pAnswer)[bin_in_range_idx].first_number;
+    for( ; bin_in_range_idx != pAnswer->size(); ++bin_in_range_idx) {
+        total_appearances_in_range += (*pAnswer)[bin_in_range_idx].total_appearances;
+    }
+
+    const Uint8 highest_number_in_range = pAnswer->back().last_number;
+    pNewAnswer->push_back( SBin(lowest_number_in_range, 
+        highest_number_in_range, 
+        total_appearances_in_range ) );
+
+    return pNewAnswer.release();
 }
 
 CHistogramBinning::TListOfBins *
@@ -155,29 +214,36 @@ CHistogramBinning::x_TryForEvenBins(void) const
         total_num_data_points += bin_iter->total_appearances;
     }
 
-    // goal number for each bin
-    const Uint8 bin_size_goal = ( total_num_data_points / num_bins );
+    AutoPtr<TListOfBins> pNewAnswer( new TListOfBins );
+    Uint8 total_data_points_remaining = total_num_data_points;
+    ITERATE(TListOfBins, this_bin_iter, *pAnswer) {
+        const SBin & current_input_bin = *this_bin_iter;
 
-    ERASE_ITERATE( TListOfBins, this_bin_iter, *pAnswer  ) {
-        SBin & this_bin = *this_bin_iter;
+        const Uint8 num_bins_remaining = (num_bins - pNewAnswer->size() );
 
-        // get next_bin, if possible
-        TListOfBins::iterator next_bin_iter = this_bin_iter;
-        ++next_bin_iter;
-        if( next_bin_iter == pAnswer->end() ) {
-            break;
+        // goal number for this bin
+        const Uint8 bin_size_goal = 
+            ( num_bins_remaining > 0 ?
+            ( total_data_points_remaining / num_bins_remaining ) :
+        numeric_limits<Uint8>::max()
+            );
+
+        if( pNewAnswer->empty() ) {
+            pNewAnswer->push_back(current_input_bin);
+        } else if( pNewAnswer->back().total_appearances >= bin_size_goal )
+        {
+            pNewAnswer->push_back(current_input_bin);
+        } else {
+            SBin & current_answer_bin = pNewAnswer->back();
+            current_answer_bin.last_number = current_input_bin.last_number;
+            current_answer_bin.total_appearances += current_input_bin.total_appearances;
         }
-        SBin & next_bin = *next_bin_iter;
-
-        // maybe merge this bin into the next one?
-        if( this_bin.total_appearances < bin_size_goal ) {
-            next_bin.first_number = this_bin.last_number;
-            next_bin.total_appearances += this_bin.total_appearances;
-            pAnswer->erase(this_bin_iter);
-        }
+        total_data_points_remaining -= current_input_bin.total_appearances;
     }
 
-    return pAnswer.release();
+    _ASSERT(total_data_points_remaining == 0);
+
+    return pNewAnswer.release();
 }
 
 CHistogramBinning::EInitStatus 
