@@ -38,7 +38,7 @@
 
 BEGIN_NCBI_SCOPE
 
-BEGIN_objects_SCOPE // namespace ncbi::objects::
+BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 //  ============================================================================
 class IMessageListener
@@ -70,6 +70,12 @@ public:
             
     virtual void
     ClearAll() =0;
+
+    virtual void
+    PutProgress(
+        const string & sMessage,
+        const Uint8 iNumDone = 0,
+        const Uint8 iNumTotal = 0 ) = 0;
 };
             
 //  ============================================================================
@@ -117,7 +123,37 @@ public:
             out << "(( no errors ))" << endl;
         }
     };
-                
+
+    virtual void
+    PutProgress(
+        const string & sMessage,
+        const Uint8 iNumDone = 0,
+        const Uint8 iNumTotal = 0 ) 
+    {
+        // default is to turn the progress into an info-level
+        // message, but child classes are free to handle progress
+        // messages however they like
+
+        CNcbiOstrstream msg_strm;
+        msg_strm << sMessage;
+        if( iNumDone > 0 || iNumTotal > 0 ) {
+            msg_strm << " (" << iNumDone;
+            if( iNumTotal > 0 ) {
+                msg_strm << " of " << iNumTotal;
+            }
+            msg_strm << " done)";
+        }
+
+        CLineError progress_msg(
+            ILineError::eProblem_ProgressInfo,
+            eDiag_Info,
+            CNcbiOstrstreamToString(msg_strm),
+            0 // line
+            );
+
+        PutError(progress_msg);
+    }
+
 private:
     // private so later we can change the structure if
     // necessary (e.g. to have indexing and such to speed up
@@ -253,7 +289,8 @@ private:
     const CDiagCompileInfo m_Info;
 };
 
-END_objects_SCOPE
+END_SCOPE(objects)
+
 END_NCBI_SCOPE
 
 #endif // OBJTOOLS_READERS___MESSAGELISTENER__HPP

@@ -26,234 +26,46 @@
  * Author: Frank Ludwig
  *
  * File Description:
- *   Basic reader interface
+ *   Deprecated legacy NCBI_DEPRECATED typedefs for IMessageListener.
+ *   This file should eventually be removed.
  *
  */
 
 #ifndef OBJTOOLS_READERS___ERRORCONTAINER__HPP
 #define OBJTOOLS_READERS___ERRORCONTAINER__HPP
 
-#include <corelib/ncbistd.hpp>
-#include <objtools/readers/line_error.hpp>
+#include <objtools/readers/message_listener.hpp>
 
 BEGIN_NCBI_SCOPE
 
-BEGIN_objects_SCOPE // namespace ncbi::objects::
+BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
-//  ============================================================================
-class IErrorContainer
-//  ============================================================================
-{
-public:
-    virtual ~IErrorContainer() {}
-    /// Store error in the container, and 
-    /// return true if error was stored fine, and
-    /// return false if the caller should terminate all further processing.
-    ///
-    virtual bool
-    PutError(
-        const ILineError& ) = 0;
-    
-    /// 0-based error retrieval.
-    virtual const ILineError&
-    GetError(
-        size_t ) =0;
-        
-    /// Return number of errors seen so far.
-    virtual size_t
-    Count() const =0;
-    
-    /// Returns the number of errors seen so far at the given severity.
-    virtual size_t
-    LevelCount(
-        EDiagSev ) =0;
-            
-    virtual void
-    ClearAll() =0;
+// These are essentially typedefs, except that typedefs can't
+// be used because old files might have forward declarations
+// like "class IErrorContainer;" that would conflict with a typedef.
+
+class NCBI_DEPRECATED IErrorContainer        : public IMessageListener        { };
+class NCBI_DEPRECATED CErrorContainerBase    : public CMessageListenerBase    { };
+class NCBI_DEPRECATED CErrorContainerLenient : public CMessageListenerLenient { };
+class NCBI_DEPRECATED CErrorContainerStrict  : public CMessageListenerStrict  { };
+class NCBI_DEPRECATED CErrorContainerCount   : public CMessageListenerCount   { 
+    CErrorContainerCount(size_t uMaxCount) :
+        CMessageListenerCount(uMaxCount) { }
 };
-            
-//  ============================================================================
-class CErrorContainerBase:
-//  ============================================================================
-    public CObject, public IErrorContainer
-{
-public:
-    CErrorContainerBase() {};
-    virtual ~CErrorContainerBase() {};
-    
-public:
-    size_t
-    Count() const { return m_Errors.size(); };
-    
-    virtual size_t
-    LevelCount(
-        EDiagSev eSev ) {
-        
-        size_t uCount( 0 );
-        for ( size_t u=0; u < Count(); ++u ) {
-            if ( m_Errors[u].Severity() == eSev ) ++uCount;
-        }
-        return uCount;
-    };
-    
-    void
-    ClearAll() { m_Errors.clear(); };
-    
-    const ILineError&
-    GetError(
-        size_t uPos ) { return m_Errors[ uPos ]; };
-    
-    virtual void Dump(
-        std::ostream& out )
-    {
-        if ( m_Errors.size() ) {
-            std::vector<CLineError>::iterator it;
-            for ( it= m_Errors.begin(); it != m_Errors.end(); ++it ) {
-                it->Dump( out );
-                out << endl;
-            }
-        }
-        else {
-            out << "(( no errors ))" << endl;
-        }
-    };
-                
-private:
-    // private so later we can change the structure if
-    // necessary (e.g. to have indexing and such to speed up
-    // level-counting)
-    std::vector< CLineError > m_Errors;
+class NCBI_DEPRECATED CErrorContainerLevel   : public CMessageListenerLevel   {
+    CErrorContainerLevel( int iLevel ) :
+        CMessageListenerLevel(iLevel) { }
+};
+class NCBI_DEPRECATED CErrorContainerWithLog : public CMessageListenerWithLog {
+    CErrorContainerWithLog(
+    const CDiagCompileInfo& info) :
+    CMessageListenerWithLog(info) { }
 
-protected:
-
-    // Child classes should use this to store errors
-    // into m_Errors
-    void StoreError(const ILineError& err)
-    {
-        m_Errors.push_back( 
-            CLineError( err.Problem(), err.Severity(), err.SeqId(), err.Line(), 
-                err.FeatureName(), err.QualifierName(), err.QualifierValue()) );
-        ITERATE( ILineError::TVecOfLines, line_it, err.OtherLines() ) {
-            m_Errors.back().AddOtherLine(*line_it);
-        }
-    }
 };
 
-//  ============================================================================
-class CErrorContainerLenient:
-//
-//  Accept everything.
-//  ============================================================================
-    public CErrorContainerBase
-{
-public:
-    CErrorContainerLenient() {};
-    ~CErrorContainerLenient() {};
-    
-    bool
-    PutError(
-        const ILineError& err ) 
-    {
-        StoreError(err);
-        return true;
-    };
-};        
+END_SCOPE(objects)
 
-//  ============================================================================
-class CErrorContainerStrict:
-//
-//  Don't accept any errors, at all.
-//  ============================================================================
-    public CErrorContainerBase
-{
-public:
-    CErrorContainerStrict() {};
-    ~CErrorContainerStrict() {};
-    
-    bool
-    PutError(
-        const ILineError& err ) 
-    {
-        StoreError(err);
-        return false;
-    };
-};        
-
-//  ===========================================================================
-class CErrorContainerCount:
-//
-//  Accept up to <<count>> errors, any level.
-//  ===========================================================================
-    public CErrorContainerBase
-{
-public:
-    CErrorContainerCount(
-        size_t uMaxCount ): m_uMaxCount( uMaxCount ) {};
-    ~CErrorContainerCount() {};
-    
-    bool
-    PutError(
-        const ILineError& err ) 
-    {
-        StoreError(err);
-        return (Count() < m_uMaxCount);
-    };    
-protected:
-    size_t m_uMaxCount;
-};
-
-//  ===========================================================================
-class CErrorContainerLevel:
-//
-//  Accept evrything up to a certain level.
-//  ===========================================================================
-    public CErrorContainerBase
-{
-public:
-    CErrorContainerLevel(
-        int iLevel ): m_iAcceptLevel( iLevel ) {};
-    ~CErrorContainerLevel() {};
-    
-    bool
-    PutError(
-        const ILineError& err ) 
-    {
-        StoreError(err);
-        return (err.Severity() <= m_iAcceptLevel);
-    };    
-protected:
-    int m_iAcceptLevel;
-};
-
-//  ===========================================================================
-class CErrorContainerWithLog:
-//
-//  Accept everything, and besides storing all errors, post them.
-//  ===========================================================================
-    public CErrorContainerBase
-{
-public:
-    CErrorContainerWithLog(const CDiagCompileInfo& info)
-        : m_Info(info) {};
-    ~CErrorContainerWithLog() {};
-
-    bool
-    PutError(
-        const ILineError& err )
-    {
-        CNcbiDiag(m_Info, err.Severity(),
-                  eDPF_Log | eDPF_IsMessage).GetRef()
-           << err.Message() << Endm;
-
-        StoreError(err);
-        return true;
-    };
-
-private:
-    const CDiagCompileInfo m_Info;
-};
-
-END_objects_SCOPE
 END_NCBI_SCOPE
 
-#endif // OBJTOOLS_READERS___ERRORCONTAINER__HPP
+
+#endif /* OBJTOOLS_READERS___ERRORCONTAINER__HPP */

@@ -89,11 +89,11 @@
                                 m_BestID->AsFastaString() :             \
                                 kEmptyStr  );                           \
         const size_t uLineNum = (_uLineNum);                            \
-        stringstream err_strm;                                          \
+        CNcbiOstrstream err_strm;                                       \
         err_strm << _MessageStrmOps;                                    \
         CObjReaderLineException lineExpt(                               \
             (_eSeverity), uLineNum,                                     \
-            err_strm.str(),                                             \
+            CNcbiOstrstreamToString(err_strm),                          \
             (_eProblem),                                                \
             sSeqId, (_sFeature),                                        \
             kEmptyStr, kEmptyStr,                                       \
@@ -106,6 +106,14 @@
                         err_strm.str(), uLineNum );                     \
         }                                                               \
     } while(0)
+
+#define FASTA_PROGRESS(_MessageStrmOps) \
+    do {                                                                   \
+        CNcbiOstrstream err_strm;                                          \
+        err_strm << _MessageStrmOps;                                       \
+        pMessageListener->PutProgress(CNcbiOstrstreamToString(err_strm));  \
+    } while(false)
+
 
 #define FASTA_WARNING(_uLineNum, _MessageStrmOps, _eProblem, _Feature) \
     FASTA_LINE_EXPT(eDiag_Warning, _uLineNum, _MessageStrmOps, eFormat, _eProblem, _Feature)
@@ -323,6 +331,9 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(IMessageListener * pMessageListener)
     CBadResiduesException::SBadResiduePositions bad_residue_positions;
     while ( !GetLineReader().AtEOF() ) {
         char c = GetLineReader().PeekChar();
+        if( LineNumber() % 10000 == 0 && LineNumber() != 0 ) {
+            FASTA_PROGRESS("Processing line " << LineNumber());
+        }
         if (GetLineReader().AtEOF()) {
             FASTA_ERROR(LineNumber(), 
                         "CFastaReader: Unexpected end-of-file around line " << LineNumber(),
@@ -672,6 +683,9 @@ void CFastaReader::ParseDefLine(const TStr& s, IMessageListener * pMessageListen
         m_BestID = GetIDs().front();
         m_ExpectedEnd = range_end - range_start;
     }
+
+    FASTA_PROGRESS("Processing Seq-id: " << 
+        ( m_BestID ? m_BestID->AsFastaString() : "UNKNOWN" ) );
 
     if ( !TestFlag(fNoUserObjs) ) {
         // store the raw defline in a User-object for reference

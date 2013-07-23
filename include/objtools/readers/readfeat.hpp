@@ -80,26 +80,26 @@ public:
     // read 5-column feature table and return Seq-annot
     static CRef<CSeq_annot> ReadSequinFeatureTable(ILineReader& reader,
                                                    const TFlags flags = 0,
-                                                   IMessageListener* container=0,
+                                                   IMessageListener* pMessageListener=0,
                                                    ITableFilter *filter = 0);
 
     static CRef<CSeq_annot> ReadSequinFeatureTable (CNcbiIstream& ifs,
                                                     const TFlags flags = 0,
-                                                    IMessageListener* container=0,
+                                                    IMessageListener* pMessageListener=0,
                                                    ITableFilter *filter = 0);
 
     static CRef<CSeq_annot> ReadSequinFeatureTable (ILineReader& reader,
                                                     const string& seqid,
                                                     const string& annotname,
                                                     const TFlags flags = 0,
-                                                    IMessageListener* container=0,
+                                                    IMessageListener* pMessageListener=0,
                                                    ITableFilter *filter = 0);
 
     static CRef<CSeq_annot> ReadSequinFeatureTable (CNcbiIstream& ifs,
                                                     const string& seqid,
                                                     const string& annotname,
                                                     const TFlags flags = 0,
-                                                    IMessageListener* container=0,
+                                                    IMessageListener* pMessageListener=0,
                                                    ITableFilter *filter = 0);
 
     // read all feature tables available from the input, attaching each
@@ -107,20 +107,20 @@ public:
     static void ReadSequinFeatureTables(ILineReader& reader,
                                         CSeq_entry& entry,
                                         const TFlags flags = 0,
-                                        IMessageListener* container=0,
+                                        IMessageListener* pMessageListener=0,
                                         ITableFilter *filter = 0);
 
     static void ReadSequinFeatureTables(CNcbiIstream& ifs,
                                         CSeq_entry& entry,
                                         const TFlags flags = 0,
-                                        IMessageListener* container=0,
+                                        IMessageListener* pMessageListener=0,
                                         ITableFilter *filter = 0);
 
     // create single feature from key
     static CRef<CSeq_feat> CreateSeqFeat (const string& feat,
                                           CSeq_loc& location,
                                           const TFlags flags = 0,
-                                          IMessageListener* container = 0,
+                                          IMessageListener* pMessageListener = 0,
                                           unsigned int line = 0,
                                           std::string *seq_id = 0,
                                           ITableFilter *filter = 0);
@@ -131,7 +131,7 @@ public:
                              const string& qual,
                              const string& val,
                              const TFlags flags = 0,
-                             IMessageListener* container=0,
+                             IMessageListener* pMessageListener=0,
                              int line = 0, 	
                              const string &seq_id = std::string() );
 

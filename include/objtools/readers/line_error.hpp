@@ -84,7 +84,10 @@ public:
         eProblem_BadFormatLine,
         eProblem_BadFilterLine,
 
-        eProblem_ProgressInfo, // not a problem, actually
+        // not a problem, actually, but used as
+        // the default if PutProgress is
+        // not overridden.
+        eProblem_ProgressInfo, 
 
         eProblem_GeneralParsingError
     };
