@@ -1,6 +1,6 @@
 # $Id$
 
-EXPENDABLE_SUB_PROJ = test
+SUB_PROJ = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
