@@ -40,6 +40,8 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
 
+#include <corelib/test_boost.hpp>
+
 #include <stdio.h>
 
 #include <common/test_assert.h>  /* This header must go last */
@@ -50,18 +52,16 @@
 
 USING_NCBI_SCOPE;
 
-class CJsonOverUTTPTestApp : public CNcbiApplication
+class CJsonOverUTTPTest
 {
 public:
-    CJsonOverUTTPTestApp();
+    CJsonOverUTTPTest();
 
-    virtual int Run();
+    void MakeRandomJsonTree();
+    size_t ReadWriteAndCompare(char* buffer, size_t buffer_size);
 
 private:
     bool x_ReadOutputBuffer(size_t* packed_length);
-    size_t x_ReadWriteAndCompare(char* buffer, size_t buffer_size);
-
-    void x_MakeRandomJsonTree(size_t tree_size);
     string x_GenerateRandomString();
 
     CRandom::TValue m_RandomSeed;
@@ -77,7 +77,7 @@ private:
     CJsonOverUTTPWriter m_JSONWriter;
 };
 
-inline CJsonOverUTTPTestApp::CJsonOverUTTPTestApp() :
+inline CJsonOverUTTPTest::CJsonOverUTTPTest() :
     m_RandomSeed((CRandom::TValue) time(NULL)),
     m_Random(m_RandomSeed),
     m_JSONWriter(m_UTTPWriter)
@@ -85,7 +85,7 @@ inline CJsonOverUTTPTestApp::CJsonOverUTTPTestApp() :
     LOG_POST("Using random seed " << m_RandomSeed);
 }
 
-bool CJsonOverUTTPTestApp::x_ReadOutputBuffer(size_t* packed_length)
+bool CJsonOverUTTPTest::x_ReadOutputBuffer(size_t* packed_length)
 {
     const char* output_buffer;
     size_t output_buffer_size;
@@ -95,12 +95,12 @@ bool CJsonOverUTTPTestApp::x_ReadOutputBuffer(size_t* packed_length)
         *packed_length += output_buffer_size;
         m_UTTPReader.SetNewBuffer(output_buffer, output_buffer_size);
         if (m_JSONReader.ReadMessage(m_UTTPReader)) {
-            _ASSERT(!m_JSONWriter.NextOutputBuffer() &&
+            BOOST_CHECK(!m_JSONWriter.NextOutputBuffer() &&
                     m_JSONWriter.CompleteMessage());
 
             string read_repr = m_JSONReader.GetMessage().Repr();
 
-            _ASSERT(m_RandomTreeRepr == read_repr);
+            BOOST_CHECK(m_RandomTreeRepr == read_repr);
 
             return true;
         }
@@ -109,11 +109,11 @@ bool CJsonOverUTTPTestApp::x_ReadOutputBuffer(size_t* packed_length)
     return false;
 }
 
-size_t CJsonOverUTTPTestApp::x_ReadWriteAndCompare(
-        char* buffer, size_t buffer_size)
+size_t CJsonOverUTTPTest::ReadWriteAndCompare(char* buffer, size_t buffer_size)
 {
     size_t packed_length = 0;
 
+    m_JSONReader.Reset();
     m_UTTPWriter.Reset(buffer, buffer_size,
             m_RandomTreeRepr.length() > buffer_size ?
                     m_RandomTreeRepr.length() : buffer_size);
@@ -124,25 +124,20 @@ size_t CJsonOverUTTPTestApp::x_ReadWriteAndCompare(
                 return packed_length;
         while (!m_JSONWriter.CompleteMessage());
 
-    _ASSERT(x_ReadOutputBuffer(&packed_length));
+    BOOST_CHECK(x_ReadOutputBuffer(&packed_length));
 
     return packed_length;
 }
 
-int CJsonOverUTTPTestApp::Run()
+BOOST_AUTO_TEST_CASE(JsonOverUTTPTest)
 {
-    size_t tree_size = m_Random.GetRand(1, MAX_RANDOM_TREE_SIZE);
+    CJsonOverUTTPTest test;
 
-    x_MakeRandomJsonTree(tree_size);
-
-    LOG_POST("Random tree size: " << tree_size);
-
-    m_RandomTreeRepr = m_RandomTree.Repr();
-    puts(m_RandomTreeRepr.c_str());
+    test.MakeRandomJsonTree();
 
     char first_buffer[MIN_WRITE_BUFFER_SIZE];
 
-    size_t packed_length = x_ReadWriteAndCompare(
+    size_t packed_length = test.ReadWriteAndCompare(
             first_buffer, sizeof(first_buffer));
 
     LOG_POST("Packed tree length: " << packed_length);
@@ -151,17 +146,19 @@ int CJsonOverUTTPTestApp::Run()
 
     for (size_t buffer_size = MIN_WRITE_BUFFER_SIZE + 1;
             buffer_size <= packed_length; ++buffer_size) {
-        m_JSONReader.Reset();
-        _ASSERT(x_ReadWriteAndCompare(buffer, buffer_size) == packed_length);
+        BOOST_CHECK(test.ReadWriteAndCompare(buffer,
+                buffer_size) == packed_length);
     }
 
     delete[] buffer;
-
-    return 0;
 }
 
-void CJsonOverUTTPTestApp::x_MakeRandomJsonTree(size_t tree_size)
+void CJsonOverUTTPTest::MakeRandomJsonTree()
 {
+    size_t tree_size = m_Random.GetRand(1, MAX_RANDOM_TREE_SIZE);
+
+    LOG_POST("Random tree size: " << tree_size);
+
     CJsonNode* tree_elements = new CJsonNode[tree_size];
 
     bool have_containter;
@@ -226,9 +223,11 @@ void CJsonOverUTTPTestApp::x_MakeRandomJsonTree(size_t tree_size)
     m_RandomTree = *tree_elements;
 
     delete[] tree_elements;
+
+    m_RandomTreeRepr = m_RandomTree.Repr();
 }
 
-string CJsonOverUTTPTestApp::x_GenerateRandomString()
+string CJsonOverUTTPTest::x_GenerateRandomString()
 {
     static const char* consonant[] = {
         "b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "q",
@@ -255,9 +254,4 @@ string CJsonOverUTTPTestApp::x_GenerateRandomString()
     while (--len > 0);
 
     return random_string;
-}
-
-int main(int argc, const char* argv[])
-{
-    return CJsonOverUTTPTestApp().AppMain(argc, argv);
 }
