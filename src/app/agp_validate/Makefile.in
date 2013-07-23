@@ -59,6 +59,8 @@ new_test: agp_validate
 space_test: agp_validate
 	-sh -c "./agp_validate $(srcdir)/test/space_test.agp>space_test.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/space_test.out space_test.out
+	-sh -c "./agp_validate $(srcdir)/test/space_in_object_id.agp>space_in_object_id.out 2>&1"
+	diff ${DOPT} -u $(srcdir)/test/space_in_object_id.out space_in_object_id.out
 
 runs_of_ns: agp_validate
 	sh -c "./agp_validate -out runs_of_ns.agp $(srcdir)/test/MedtrA17_3.5.head.comp_fa $(srcdir)/test/MedtrA17_3.5.head.agp>runs_of_ns.out 2>&1"
