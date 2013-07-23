@@ -159,6 +159,7 @@ CUTTPReader::EStreamParsingEvent CUTTPReader::ReadRawData(size_t data_size)
         m_LengthAcc = data_size - m_BufferSize;
         m_BufferSize = 0;
         m_State = eReadChunk;
+        m_ChunkContinued = false;
         return eChunkPart;
     }
 }
