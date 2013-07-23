@@ -207,7 +207,12 @@ public:
      *
      * @param doc The XML document to transform.
      * @param with_params Override xsl:param elements using the given key/value map
-     * @param with_params each (simple) param name must be enclosed in quotes as pre libxslt specs
+     * @note each (simple) param name must be enclosed in quotes as per libxslt specs
+     * @note string parameter value has to be enclosed in quotes. e.g.,
+     * @note params["ParamString"] = "'Text'";
+     * @note each xpath parameter value (including simple numerics) should be given as is. e.g.
+     * @note params["ParamXpath"] = "//NodeName";
+     * @note params["ParamNumber"] = "123565";
      * @return The result tree.
      **/
     //####################################################################
