@@ -49,14 +49,17 @@ class NCBI_DEPRECATED CErrorContainerBase    : public CMessageListenerBase    { 
 class NCBI_DEPRECATED CErrorContainerLenient : public CMessageListenerLenient { };
 class NCBI_DEPRECATED CErrorContainerStrict  : public CMessageListenerStrict  { };
 class NCBI_DEPRECATED CErrorContainerCount   : public CMessageListenerCount   { 
+public:
     CErrorContainerCount(size_t uMaxCount) :
         CMessageListenerCount(uMaxCount) { }
 };
 class NCBI_DEPRECATED CErrorContainerLevel   : public CMessageListenerLevel   {
+public:
     CErrorContainerLevel( int iLevel ) :
         CMessageListenerLevel(iLevel) { }
 };
 class NCBI_DEPRECATED CErrorContainerWithLog : public CMessageListenerWithLog {
+public:
     CErrorContainerWithLog(
     const CDiagCompileInfo& info) :
     CMessageListenerWithLog(info) { }
