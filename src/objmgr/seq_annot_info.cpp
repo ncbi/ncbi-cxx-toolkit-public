@@ -165,9 +165,6 @@ void CSeq_annot_Info::x_DSUnmapObject(CConstRef<TObject> obj, CDataSource& ds)
 
 void CSeq_annot_Info::x_TSEAttachContents(CTSE_Info& tse)
 {
-    if ( tse.GetName().IsNamed() ) {
-        m_Name = tse.GetName();
-    }
     CRef<CSeq_annot_SNP_Info> snp_info = tse.x_GetSNP_Info(m_Object);
     if ( snp_info ) {
         _ASSERT(!m_SNP_Info);
@@ -177,6 +174,8 @@ void CSeq_annot_Info::x_TSEAttachContents(CTSE_Info& tse)
         x_AttachObject(*snp_info);
     }
     TParent::x_TSEAttachContents(tse);
+    x_UpdateName();
+    x_SetDirtyAnnotIndex();
     if ( m_SNP_Info ) {
         m_SNP_Info->x_TSEAttach(tse);
     }
@@ -205,10 +204,6 @@ const CAnnotName& CSeq_annot_Info::GetName(void) const
 
 void CSeq_annot_Info::x_UpdateName(void)
 {
-    if ( HasTSE_Info() && GetTSE_Info().GetName().IsNamed() ) {
-        m_Name = GetTSE_Info().GetName();
-        return;
-    }
     int zoom_level = -1;
     m_Name.SetUnnamed();
     const CSeq_annot& annot = *m_Object;
@@ -257,6 +252,9 @@ void CSeq_annot_Info::x_UpdateName(void)
                 }
             }
         }
+    }
+    if ( HasTSE_Info() && GetTSE_Info().GetName().IsNamed() ) {
+        m_Name = GetTSE_Info().GetName();
     }
     if ( zoom_level >= 0 && m_Name.IsNamed() ) {
         m_Name.SetNamed(m_Name.GetName()+
@@ -317,9 +315,11 @@ void CSeq_annot_Info::x_SetObject(TObject& obj)
     if ( HasDataSource() ) {
         x_DSMapObject(m_Object, GetDataSource());
     }
-    x_UpdateName();
     x_InitAnnotList();
-    x_SetDirtyAnnotIndex();
+    if ( HasTSE_Info() ) {
+        x_UpdateName();
+        x_SetDirtyAnnotIndex();
+    }
 }
 
 
