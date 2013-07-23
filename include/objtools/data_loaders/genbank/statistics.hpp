@@ -65,10 +65,10 @@ public:
 
     CGBRequestStatistics(const char* action, const char* entity);
 
-    const string& GetAction(void) const {
+    const char* GetAction(void) const {
         return m_Action;
     }
-    const string& GetEntity(void) const {
+    const char* GetEntity(void) const {
         return m_Entity;
     }
     size_t GetCount(void) const {
@@ -98,8 +98,8 @@ public:
     }
 
 private:
-    string m_Action;
-    string m_Entity;
+    const char* m_Action;
+    const char* m_Entity;
     size_t m_Count;
     double m_Time;
     double m_Size;
