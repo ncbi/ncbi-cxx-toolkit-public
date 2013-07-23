@@ -1,6 +1,9 @@
 corelib$
 connect$
+./include/util/bitset$
 util$
+util/regexp$
+util/xregexp$
 misc$
 misc/clog$
 misc/clog/app$
