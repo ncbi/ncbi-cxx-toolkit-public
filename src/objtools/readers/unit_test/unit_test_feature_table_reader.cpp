@@ -68,6 +68,25 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+namespace {
+    class CMessageListenerLenientIgnoreProgress:
+        public CMessageListenerBase
+    {
+    public:
+        CMessageListenerLenientIgnoreProgress() {};
+        ~CMessageListenerLenientIgnoreProgress() {};
+
+        bool
+            PutError(
+            const ILineError& err ) 
+        {
+            if( err.Severity() > eDiag_Info ) {
+                StoreError(err);
+            }
+            return true;
+        };
+    };   
+}
 
 static const char * sc_Table1 = "\
 >Feature lcl|seq_1\n\
@@ -84,6 +103,9 @@ static const char * sc_Table1 = "\
 
 static bool s_IgnoreError(const ILineError& line_error)
 {
+    if( line_error.Severity() <= eDiag_Info ) {
+        return true;
+    }
     return false;
 }
 
@@ -123,7 +145,7 @@ s_CheckErrorsVersusExpected(
 {
     for (size_t i = 0; i < pMessageListener->Count(); i++) {
         const ILineError& line_error = pMessageListener->GetError(i);
-        string error_text = line_error.FeatureName() + ":" + line_error.QualifierName();
+        string error_text = line_error.Message();
         if( s_IgnoreError(line_error) ) {
             // certain error types may be ignored
         } else if( expected_errors.empty() ) {
@@ -163,7 +185,7 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (
 
     auto_ptr<IMessageListener> p_temp_err_container;
     if( ! pMessageListener ) {
-        p_temp_err_container.reset( new CMessageListenerLenient );
+        p_temp_err_container.reset( new CMessageListenerLenientIgnoreProgress );
         pMessageListener = p_temp_err_container.get();
     }
         
@@ -210,7 +232,7 @@ s_ReadMultipleTablesFromString(
 
     auto_ptr<IMessageListener> p_temp_err_container;
     if( ! pMessageListener ) {
-        p_temp_err_container.reset( new CMessageListenerLenient );
+        p_temp_err_container.reset( new CMessageListenerLenientIgnoreProgress );
         pMessageListener = p_temp_err_container.get();
     }
 
@@ -1422,7 +1444,7 @@ BOOST_AUTO_TEST_CASE(TestCDSInGenesCheck)
     fill_n( back_inserter(expected_errors), 
         linesWithError.size(), ILineError::eProblem_FeatMustBeInXrefdGene);
 
-    CMessageListenerLenient err_container;
+    CMessageListenerLenientIgnoreProgress err_container;
 
     CRef<CSeq_annot> annot = s_ReadOneTableFromString (
         sc_Table10,
@@ -1541,7 +1563,7 @@ BOOST_AUTO_TEST_CASE(TestCreateGenesFromCDSs)
             linesWithError.push_back(23);
         }
 
-        CMessageListenerLenient err_container;
+        CMessageListenerLenientIgnoreProgress err_container;
 
         CRef<CSeq_annot> annot = s_ReadOneTableFromString (
             sc_Table11,
