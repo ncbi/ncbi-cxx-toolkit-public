@@ -190,6 +190,7 @@ CBedReader::ReadSeqAnnot(
         return CRef<CSeq_annot>();
     }
     x_AddConversionInfo(annot, pEC);
+    x_AssignTrackData( annot );
 
     if(m_columncount >= 3) {
         CRef<CUser_object> columnCountUser( new CUser_object() );

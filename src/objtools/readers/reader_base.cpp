@@ -380,7 +380,6 @@ bool CReaderBase::x_ParseTrackLine(
         return false;
     }
     m_pTrackDefaults->ParseLine( parts );
-    x_AssignTrackData( annot );
     return true;
 }
 
