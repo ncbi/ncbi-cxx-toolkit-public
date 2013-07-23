@@ -1427,12 +1427,11 @@ void CId2ReaderBase::x_UpdateLoadedSet(CReaderRequestResult& result,
             const SId2BlobInfo::TAnnotInfo& ainfos = it2->second.m_AnnotInfo;
             ITERATE ( SId2BlobInfo::TAnnotInfo, it3, ainfos ) {
                 const CID2S_Seq_annot_Info& annot_info = **it3;
-                if ( (it2->second.m_ContentMask & fBlobHasNamedFeat) &&
+                if ( (it2->second.m_ContentMask & fBlobHasNamedAnnot) &&
                      annot_info.IsSetName() ) {
                     blob_info.AddNamedAnnotName(annot_info.GetName());
                 }
-                if ( ainfos.size() == 1 &&
-                     annot_info.IsSetName() &&
+                if ( annot_info.IsSetName() &&
                      annot_info.IsSetSeq_loc() &&
                      (annot_info.IsSetAlign() ||
                       annot_info.IsSetGraph() ||

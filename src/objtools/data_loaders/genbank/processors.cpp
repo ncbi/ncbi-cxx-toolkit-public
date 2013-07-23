@@ -45,6 +45,7 @@
 #include <objtools/error_codes.hpp>
 
 #include <objmgr/impl/tse_split_info.hpp>
+#include <objmgr/annot_selector.hpp>
 
 #include <objects/id1/id1__.hpp>
 #include <objects/id2/ID2_Reply_Data.hpp>
@@ -2403,7 +2404,9 @@ void CProcessor_AnnotInfo::LoadBlob(CReaderRequestResult& result,
         const CID2S_Seq_annot_Info& annot_info = **it;
         // create special external annotations blob
         CAnnotName name(annot_info.GetName());
-        blob->SetName(name);
+        if ( name.IsNamed() && !ExtractZoomLevel(name.GetName(), 0, 0) ) {
+            blob->SetName(name);
+        }
 
         vector<SAnnotTypeSelector> types;
         if ( annot_info.IsSetAlign() ) {
