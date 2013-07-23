@@ -1057,6 +1057,12 @@ bool CGtfReader::x_ProcessQualifierSpecialCase(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
+    if (0 == NStr::CompareNocase(it->first, "exon_id")) {
+        return true;
+    }
+    if (0 == NStr::CompareNocase(it->first, "exon_number")) {
+        return true;
+    }
     if ( 0 == NStr::CompareNocase( it->first, "note" ) ) {
         pFeature->SetComment( it->second );
         return true;
