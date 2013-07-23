@@ -2775,6 +2775,8 @@ tds_alloc_get_string(TDSSOCKET * tds, char **string, int len)
 int
 tds_process_cancel(TDSSOCKET * tds)
 {
+    TDS_INT orig_timeout;
+
     CHECK_TDS_EXTRA(tds);
 
     /* silly cases, nothing to do */
@@ -2784,8 +2786,10 @@ tds_process_cancel(TDSSOCKET * tds)
     if (tds->state != TDS_PENDING)
         return TDS_SUCCEED;
 
+    orig_timeout = tds->query_timeout;
     tds->query_start_time = 0;
-    tds->query_timeout = 0;
+    if (tds->query_timeout > 0  &&  tds->query_timeout < 60)
+        tds->query_timeout = 60;
 
     /* TODO support TDS5 cancel, wait for cancel packet first, then wait for done */
     for (;;) {
@@ -2793,10 +2797,12 @@ tds_process_cancel(TDSSOCKET * tds)
 
         switch (tds_process_tokens(tds, &result_type, NULL, 0)) {
         case TDS_FAIL:
+            tds->query_timeout = orig_timeout;
             return TDS_FAIL;
         case TDS_CANCELLED:
         case TDS_SUCCEED:
         case TDS_NO_MORE_RESULTS:
+            tds->query_timeout = orig_timeout;
             return TDS_SUCCEED;
         }
     }
