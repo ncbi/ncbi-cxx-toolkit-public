@@ -84,7 +84,7 @@ protected:
         string&,
         int& );
 
-    virtual bool x_UpdateAnnot(
+    virtual bool x_UpdateAnnotFeature(
         const CGff2Record&,
         CRef< CSeq_annot > );
 

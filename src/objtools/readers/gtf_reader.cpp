@@ -270,7 +270,7 @@ CGtfReader::x_GetLine(
 }
  
 //  ----------------------------------------------------------------------------
-bool CGtfReader::x_UpdateAnnot(
+bool CGtfReader::x_UpdateAnnotFeature(
     const CGff2Record& gff,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
