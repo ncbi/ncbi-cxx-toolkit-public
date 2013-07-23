@@ -48,7 +48,6 @@ GlobalOptimizations=false
 InlineFunctionExpansion=0
 FavorSizeOrSpeed=0
 OmitFramePointers=false
-# use "0" to 'purify', 'quantify', 'vtune' etc; "3" - otherwise
 BasicRuntimeChecks=3
 BrowseInformation=0
 EnableFunctionLevelLinking=false
@@ -90,7 +89,6 @@ IgnoreAllDefaultLibraries=false
 IgnoreDefaultLibraryNames=
 GenerateManifest=true
 EmbedManifest=false
-# use "1" to 'purify', 'quantify', 'vtune' etc; "0" - otherwise
 FixedBaseAddress=0
 
 [Linker.1000]
