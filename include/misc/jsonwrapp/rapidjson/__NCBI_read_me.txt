@@ -16,6 +16,7 @@ Search for 'NCBI' in the following files:
 document.h
 filestream.h
 reader.h
+writer.h
 
 
 

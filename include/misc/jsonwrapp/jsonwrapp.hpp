@@ -45,8 +45,8 @@
 *   only document objects can be created and copied. That is,
 *   all values are associated with a specific document only.
 *   When a document is destroyed, all its values are destroyed as well.
-*   So, to create a value, one should add it into a document (or into JSON array
-*   or object) and get a proper adapter object.
+*   So, to create a value, one should add it into a document (or into JSON
+*   array or object) and get a proper adapter object.
 * 
 *   Classes that store JSON value:
 *       CJson_ConstNode,   CJson_Node     -- base class;
@@ -138,6 +138,9 @@ protected:
     CJson_ConstNode(_Impl* impl) : m_Impl(impl) {
     }
     _Impl* m_Impl;
+    static _Impl*& x_Impl(CJson_ConstNode& v){
+        return v.m_Impl;
+    }
     friend class CJson_ConstValue;
     friend class CJson_Array;
     friend class CJson_ConstArray;
@@ -369,6 +372,7 @@ protected:
     }
     CJson_ConstArray(_Impl* impl) : CJson_ConstNode(impl) {
     }
+    static CJson_Node x_MakeNode(_Impl* impl);
     friend class CJson_ConstNode;
 };
 
@@ -501,6 +505,7 @@ public:
         _ImplIterator m_vi;
         mutable pair m_pvi;
         friend class CJson_ConstObject;
+        friend class iterator;
     };
 
     /// Random-access iterator to access non-const JSON object element.
@@ -551,6 +556,7 @@ public:
         mutable pair m_pvi;
         friend class CJson_ConstObject;
         friend class CJson_Object;
+        friend class const_iterator;
     };
 
     /// Return the number of elements in the object
@@ -586,6 +592,7 @@ protected:
     }
     CJson_ConstObject( _Impl* impl) : CJson_ConstNode(impl) {
     }
+    static CJson_Node x_MakeNode(_Impl* impl);
     friend class CJson_ConstNode;
 };
 
@@ -859,6 +866,19 @@ inline std::ostream& operator<<(std::ostream& os, const CJson_Document& d)
 // inline implementations
 
 #define JSONWRAPP_TO_NCBIUTF8(v)        (v)
+
+// workarounds to make it compile
+#if defined(NCBI_COMPILER_GCC) && (NCBI_COMPILER_VERSION < 442)
+CJson_Node CJson_ConstArray::x_MakeNode(_Impl* impl){
+    return CJson_Node(impl);
+}
+CJson_Node CJson_ConstObject::x_MakeNode(_Impl* impl){
+    return CJson_Node(impl);
+}
+#  define JSONWRAPP_MAKENODE(v) x_MakeNode(v)
+#else
+#  define JSONWRAPP_MAKENODE(v) (v)
+#endif
 
 // --------------------------------------------------------------------------
 // CJson_Node methods
@@ -1198,7 +1218,7 @@ inline CJson_Array::iterator CJson_Array::end(void) {
 // CJson_Array::const_iterator
 
 inline CJson_ConstArray::const_iterator::const_iterator(void)
-    : m_vi(0), m_v(0) {
+    : m_vi(0), m_v(JSONWRAPP_MAKENODE(0)) {
 }
 inline CJson_ConstArray::const_iterator::const_iterator(
     const CJson_ConstArray::const_iterator& i) : m_vi(i.m_vi), m_v(i.m_v) {
@@ -1252,19 +1272,20 @@ CJson_ConstArray::const_iterator::operator-(int i) const {
 }
 inline const CJson_ConstNode&
 CJson_ConstArray::const_iterator::operator*(void) const {
-    m_v.m_Impl = m_vi; return m_v;
+    x_Impl(m_v) = m_vi; return m_v;
 }
 inline const CJson_ConstNode*
 CJson_Array::const_iterator::operator->(void) const {
-    m_v.m_Impl = m_vi; return &m_v;
+    x_Impl(m_v) = m_vi; return &m_v;
 }
 inline CJson_ConstArray::const_iterator::const_iterator(
     const CJson_ConstArray::_ImplCIterator vi)
-    : m_vi(const_cast<CJson_ConstArray::_ImplIterator>(vi)) {
+    : m_vi(const_cast<CJson_ConstArray::_ImplIterator>(vi)),
+      m_v(JSONWRAPP_MAKENODE(0)) {
 }
 inline CJson_ConstArray::const_iterator::const_iterator(
     const CJson_ConstArray::_ImplIterator vi)
-    : m_vi(vi) {
+    : m_vi(vi), m_v(JSONWRAPP_MAKENODE(0)) {
 }
 // --------------------------------------------------------------------------
 // CJson_Array::iterator
@@ -1288,11 +1309,11 @@ CJson_Array::iterator::operator-(int i) const {
 }
 inline CJson_Node&
 CJson_ConstArray::iterator::operator*(void) const {
-    m_v.m_Impl = m_vi; return m_v;
+    x_Impl(m_v) = m_vi; return m_v;
 }
 inline CJson_Node*
 CJson_ConstArray::iterator::operator->(void) const {
-    m_v.m_Impl = m_vi; return &m_v;
+    x_Impl(m_v) = m_vi; return &m_v;
 }
 inline CJson_ConstArray::iterator::iterator(
     const CJson_ConstArray::_ImplIterator vi) : const_iterator(vi) {
@@ -1552,11 +1573,11 @@ CJson_ConstObject::const_iterator::operator==(
     return m_vi == vi.m_vi;
 }
 inline CJson_ConstObject::const_iterator::pair::pair(void)
-    : name(0), value(0) {
+    : name(0), value(JSONWRAPP_MAKENODE(0)) {
 }
 inline CJson_ConstObject::const_iterator::pair::pair(
     const CJson_Node::TCharType* _name, const _Impl& _value)
-    : name(_name), value(const_cast<_Impl*>(&_value)) {
+    : name(_name), value(JSONWRAPP_MAKENODE(const_cast<_Impl*>(&_value))) {
 }
 inline CJson_ConstObject::const_iterator::pair&
 CJson_ConstObject::const_iterator::pair::assign(
@@ -1657,11 +1678,11 @@ CJson_ConstObject::iterator::operator->(void) const {
 }
 
 inline CJson_ConstObject::iterator::pair::pair(void)
-    : name(0), value(0) {
+    : name(0), value(JSONWRAPP_MAKENODE(0)) {
 }
 inline CJson_ConstObject::iterator::pair::pair(
     const CJson_Node::TCharType* _name, _Impl& _value)
-    : name(_name), value(&_value) {
+    : name(_name), value(JSONWRAPP_MAKENODE(&_value)) {
 }
 inline CJson_ConstObject::iterator::pair&
 CJson_ConstObject::iterator::pair::assign(
@@ -1718,25 +1739,25 @@ inline void CJson_WalkHandler::x_EndObjectOrArray(void) {
     }
 }
 inline void CJson_WalkHandler::Null() {
-    x_Notify( rapidjson::Value((rapidjson::Value::AllocatorType*)0));
+    x_Notify( (rapidjson::Value::AllocatorType*)0);
 }
 inline void CJson_WalkHandler::Bool(bool v) {
-    x_Notify( rapidjson::Value(v));
+    x_Notify(v);
 }
 inline void CJson_WalkHandler::Int(int v) { 
-    x_Notify( rapidjson::Value(v));
+    x_Notify(v);
 }
 inline void CJson_WalkHandler::Uint(unsigned v) { 
-    x_Notify( rapidjson::Value(v));
+    x_Notify(v);
 }
 inline void CJson_WalkHandler::Int64(int64_t v) { 
-    x_Notify( rapidjson::Value(v));
+    x_Notify(v);
 }
 inline void CJson_WalkHandler::Uint64(uint64_t v) { 
-    x_Notify( rapidjson::Value(v));
+    x_Notify(v);
 }
 inline void CJson_WalkHandler::Double(double v) { 
-    x_Notify( rapidjson::Value(v));
+    x_Notify(v);
 }
 inline void CJson_WalkHandler::String(const Ch* buf,
     rapidjson::SizeType sz, bool c) {
@@ -1745,7 +1766,8 @@ inline void CJson_WalkHandler::String(const Ch* buf,
         m_name.back().assign(buf, sz);
         return;
     }
-    x_Notify( rapidjson::Value(buf,sz));
+    rapidjson::Value v(buf,sz);
+    x_Notify(v);
 }
 inline void CJson_WalkHandler::StartObject() { 
     x_BeginObjectOrArray(true);

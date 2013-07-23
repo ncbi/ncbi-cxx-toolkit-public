@@ -185,7 +185,7 @@ protected:
 
 		stream_.Put('\"');
 		for (const Ch* p = str; p != str + length; ++p) {
-			if ((sizeof(Ch) == 1 || *p < 256) && escape[(unsigned char)*p])  {
+			if ((sizeof(Ch) == 1 || *p < 256) && escape[(unsigned char)*p])  { /* NCBI_FAKE_WARNING */
 				stream_.Put('\\');
 				stream_.Put(escape[(unsigned char)*p]);
 				if (escape[(unsigned char)*p] == 'u') {
