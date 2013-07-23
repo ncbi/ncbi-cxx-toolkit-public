@@ -560,6 +560,7 @@ public:
         W_AGPVersionCommentUnnecessary,
         W_DuplicateEvidence,    // CAgpRow (v. >= 2.0 )
         W_CompIsNotHtgTypeIs,
+        W_SingletonsOnly,
         W_Last, W_First = 31,
 
         // "GenBank" checks that rely on information about the sequence

@@ -260,6 +260,9 @@ protected:
   int m_last_scaf_start_file;
   int m_last_scaf_start_line;
   bool m_last_scaf_start_is_obj;
+
+  int m_max_comp_beg;
+  int m_max_obj_beg;
 };
 
 END_NCBI_SCOPE

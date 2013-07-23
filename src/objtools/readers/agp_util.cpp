@@ -140,7 +140,7 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
     "ignoring AGP version comment - version already set to X",
     "linkage evidence term X appears more than once",
     "component_id X is not an HTG accession, but is used with component_type A, D, or F",
-    kEmptyCStr,
+    "all objects are singletons with component_beg=1",
 
     kEmptyCStr,
     kEmptyCStr,

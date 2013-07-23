@@ -73,6 +73,8 @@ void CAgpValidateReader::Reset(bool for_chr_from_scaf)
   memset(m_GapTypeCnt, 0, sizeof(m_GapTypeCnt));
   m_ln_ev_flags2count.clear();
 
+  m_max_comp_beg=m_max_obj_beg=0;
+
   if(for_chr_from_scaf) {
     NCBI_ASSERT(m_explicit_scaf, "m_explicit_scaf is false in CAgpValidateReader::Reset(true)");
 
@@ -145,6 +147,7 @@ void CAgpValidateReader::OnGapOrComponent()
   if(m_this_row->pcomment!=NPOS) m_EolComments++;
   m_TypeCompCnt.add( m_this_row->GetComponentType() );
 
+  if(m_max_obj_beg < m_this_row->object_beg) m_max_obj_beg = m_this_row->object_beg;
   if( m_this_row->IsGap() ) {
     m_GapCount++;
     m_gapsInLastObject++;
@@ -200,6 +203,7 @@ void CAgpValidateReader::OnGapOrComponent()
       case '0': m_CompOri[CCompVal::ORI_zero ]++; break;
       case 'n': m_CompOri[CCompVal::ORI_na   ]++; break;
     }
+    if(m_max_comp_beg < m_this_row->component_beg) m_max_comp_beg = m_this_row->component_beg;
 
     //// Orientation "0" or "na" only for singletons
     // A saved potential error
@@ -548,6 +552,13 @@ void CAgpValidateReader::OnObjectChange()
         m_expected_obj_len=0;
       }
     }
+  }
+  else {
+    if(m_max_comp_beg==1 && m_max_obj_beg==1) m_AgpErr->Msg(CAgpErr::W_SingletonsOnly,
+      // to do -- add a message if we can be certain that
+      //   ?" and component_end=length of component sequence":
+      //    " (some component_end shorter than the whole component)"
+      CAgpErr::fAtNone);
   }
 
   m_last_scaf_start_file=m_AgpErr->GetFileNum();
