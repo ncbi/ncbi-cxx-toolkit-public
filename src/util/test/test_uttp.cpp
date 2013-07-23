@@ -35,52 +35,55 @@
 #include <ncbi_pch.hpp>
 
 #include <util/uttp.hpp>
+
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbiargs.hpp>
+
+#include <corelib/test_boost.hpp>
+
 #include <stdio.h>
 
 #include <common/test_assert.h>  /* This header must go last */
 
 USING_NCBI_SCOPE;
 
-class CUTTPTestApp : public CNcbiApplication
+struct SChunkData {
+    const char* chunk;
+    bool to_be_continued;
+    char control_symbol;
+};
+
+class CUTTPReaderTest
 {
-// Overridden
 public:
-    virtual int Run();
-
-// Implementation
-private:
-    struct SChunkData {
-        const char* chunk;
-        bool to_be_continued;
-        char control_symbol;
-    };
-
-    static const SChunkData sm_TestChunkSequence[];
-    static const char sm_TestStream[];
-
-    bool TestReaderChunkPart();
-    bool TestReaderInput(const char* buffer, size_t buffer_size);
-    bool TestReader(size_t buffer_size)
+    bool Test(size_t buffer_size)
 #if defined(__llvm__)  &&  !defined(__clang__)
         __attribute__((noinline))
 #endif
         ;
 
-    bool TestWriterOutput();
-    bool TestWriter(size_t buffer_size);
+private:
+    bool x_TestReaderChunkPart();
+    bool x_TestReaderInput(const char* buffer, size_t buffer_size);
 
     CUTTPReader m_Reader;
     const SChunkData* m_ReaderTestChunk;
     const char* m_ReaderTestChunkPart;
+};
+
+class CUTTPWriterTest
+{
+public:
+    bool Test(size_t buffer_size);
+
+private:
+    bool x_TestWriterOutput();
 
     CUTTPWriter m_Writer;
     const char* m_WriterTestStream;
 };
 
-const CUTTPTestApp::SChunkData
-    CUTTPTestApp::sm_TestChunkSequence[] =
+static const SChunkData s_TestChunkSequence[] =
 {
     {"", false, 0},
     {"cd", false, 0},
@@ -117,7 +120,7 @@ const CUTTPTestApp::SChunkData
     {NULL, false, ';'}
 };
 
-const char CUTTPTestApp::sm_TestStream[] =
+static const char s_TestStream[] =
     "0 "
     "2 cd;"
     "2 ls;"
@@ -133,7 +136,7 @@ const char CUTTPTestApp::sm_TestStream[] =
 
 #define IN_READER_TEST "CUTTPReader test: "
 
-bool CUTTPTestApp::TestReaderChunkPart()
+bool CUTTPReaderTest::x_TestReaderChunkPart()
 {
     if (m_ReaderTestChunk->control_symbol) {
         ERR_POST(IN_READER_TEST
@@ -159,7 +162,7 @@ bool CUTTPTestApp::TestReaderChunkPart()
     return true;
 }
 
-bool CUTTPTestApp::TestReaderInput(
+bool CUTTPReaderTest::x_TestReaderInput(
     const char* buffer, size_t buffer_size)
 {
     m_Reader.SetNewBuffer(buffer, buffer_size);
@@ -167,7 +170,7 @@ bool CUTTPTestApp::TestReaderInput(
     for (;;)
         switch (m_Reader.GetNextEvent()) {
         case CUTTPReader::eChunkPart:
-            if (!TestReaderChunkPart())
+            if (!x_TestReaderChunkPart())
                 return false;
 
             if (*m_ReaderTestChunkPart == 0 &&
@@ -178,7 +181,7 @@ bool CUTTPTestApp::TestReaderInput(
             break;
 
         case CUTTPReader::eChunk:
-            if (!TestReaderChunkPart())
+            if (!x_TestReaderChunkPart())
                 return false;
 
             if (*m_ReaderTestChunkPart != 0) {
@@ -218,38 +221,38 @@ bool CUTTPTestApp::TestReaderInput(
         }
 }
 
-bool CUTTPTestApp::TestReader(size_t buffer_size)
+bool CUTTPReaderTest::Test(size_t buffer_size)
 {
     m_Reader.Reset();
-    m_ReaderTestChunk = sm_TestChunkSequence;
+    m_ReaderTestChunk = s_TestChunkSequence;
     m_ReaderTestChunkPart = NULL;
 
-    const char* buffer = sm_TestStream;
-    size_t stream_length = sizeof(sm_TestStream) - 1;
+    const char* buffer = s_TestStream;
+    size_t stream_length = sizeof(s_TestStream) - 1;
 
     do {
-        if (!TestReaderInput(buffer, buffer_size))
+        if (!x_TestReaderInput(buffer, buffer_size))
             return false;
         buffer += buffer_size;
     } while ((stream_length -= buffer_size) > buffer_size);
 
-    return TestReaderInput(buffer, stream_length);
+    return x_TestReaderInput(buffer, stream_length);
 }
 
 #define IN_WRITER_TEST "CUTTPWriter test: "
 
-bool CUTTPTestApp::TestWriterOutput()
+bool CUTTPWriterTest::x_TestWriterOutput()
 {
     const char* buffer;
     size_t buffer_size;
 
     m_Writer.GetOutputBuffer(&buffer, &buffer_size);
 
-    size_t pos = m_WriterTestStream - sm_TestStream;
+    size_t pos = m_WriterTestStream - s_TestStream;
 
-    if (pos + buffer_size > sizeof(sm_TestStream) - 1) {
+    if (pos + buffer_size > sizeof(s_TestStream) - 1) {
         ERR_POST(IN_WRITER_TEST "output buffer overflow: " <<
-            pos + buffer_size << " > " << sizeof(sm_TestStream) - 1);
+            pos + buffer_size << " > " << sizeof(s_TestStream) - 1);
         return false;
     }
 
@@ -265,17 +268,16 @@ bool CUTTPTestApp::TestWriterOutput()
     return true;
 }
 
-bool CUTTPTestApp::TestWriter(size_t buffer_size)
+bool CUTTPWriterTest::Test(size_t buffer_size)
 {
-    char buffer[sizeof(sm_TestStream) - 1];
+    char buffer[sizeof(s_TestStream) - 1];
 
     m_Writer.Reset(buffer, buffer_size);
-    m_WriterTestStream = sm_TestStream;
+    m_WriterTestStream = s_TestStream;
 
-    int counter = sizeof(sm_TestChunkSequence) /
-        sizeof(*sm_TestChunkSequence);
+    int counter = sizeof(s_TestChunkSequence) / sizeof(*s_TestChunkSequence);
 
-    const SChunkData* test_seq = sm_TestChunkSequence;
+    const SChunkData* test_seq = s_TestChunkSequence;
 
     do {
         if (!(test_seq->control_symbol ?
@@ -283,34 +285,34 @@ bool CUTTPTestApp::TestWriter(size_t buffer_size)
             m_Writer.SendChunk(test_seq->chunk, strlen(test_seq->chunk),
                 test_seq->to_be_continued)))
             do
-                if (!TestWriterOutput())
+                if (!x_TestWriterOutput())
                     return false;
             while (m_Writer.NextOutputBuffer());
 
         ++test_seq;
     } while (--counter);
 
-    return TestWriterOutput();
+    return x_TestWriterOutput();
 }
 
-int CUTTPTestApp::Run()
+BOOST_AUTO_TEST_CASE(TestUTTPWriter)
 {
+    CUTTPWriterTest writer_test;
+
     size_t buffer_size = (sizeof(Int8) >> 1) * 5 + 1;
 
     do
-        if (!TestWriter(buffer_size))
-            return 1;
-    while (++buffer_size < sizeof(sm_TestStream) - 1);
-
-    do
-        if (!TestReader(buffer_size))
-            return 1;
-    while (--buffer_size > 0);
-
-    return 0;
+        BOOST_CHECK(writer_test.Test(buffer_size));
+    while (++buffer_size < sizeof(s_TestStream) - 1);
 }
 
-int main(int argc, const char* argv[])
+BOOST_AUTO_TEST_CASE(TestUTTPReader)
 {
-    return CUTTPTestApp().AppMain(argc, argv);
+    CUTTPReaderTest reader_test;
+
+    size_t buffer_size = sizeof(s_TestStream) - 1;
+
+    do
+        BOOST_CHECK(reader_test.Test(buffer_size));
+    while (--buffer_size > 0);
 }
