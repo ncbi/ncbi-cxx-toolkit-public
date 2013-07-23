@@ -3397,8 +3397,9 @@ CRef<CVariation> InheritParentAttributes(const CVariation& child, const CVariati
     return v;
 }
 
-void CVariationUtil::AsVariation_feats(const CVariation& v, CSeq_annot::TData::TFtable& feats)
+void CVariationUtil::AsVariation_feats(const CVariation& v, CSeq_annot::TData::TFtable& out_feats)
 {
+    CSeq_annot::TData::TFtable feats;
     if(v.IsSetPlacements()) {
         ITERATE(CVariation::TPlacements, it, v.GetPlacements()) {
             const CVariantPlacement& p = **it;
@@ -3406,17 +3407,6 @@ void CVariationUtil::AsVariation_feats(const CVariation& v, CSeq_annot::TData::T
             CRef<CSeq_feat> feat(new CSeq_feat);
             feat->SetLocation().Assign(p.GetLoc());
             feat->SetData().SetVariation(*vr);
-            if(v.IsSetPub()) {
-                feat->SetCit().Assign(v.GetPub());
-            }
-            if(v.IsSetExt()) {
-                ITERATE(CVariation::TExt, it, v.GetExt()) {
-                    CRef<CUser_object> uo(new CUser_object);
-                    uo->Assign(**it);
-                    feat->SetExts().push_back(uo);
-                }
-            }
-
             feats.push_back(feat);
         }
     } else if(v.GetData().IsSet()) {
@@ -3424,6 +3414,25 @@ void CVariationUtil::AsVariation_feats(const CVariation& v, CSeq_annot::TData::T
             AsVariation_feats(*InheritParentAttributes(**it, v), feats);
         }
     }
+
+    NON_CONST_ITERATE(CSeq_annot::TData::TFtable, it, feats) {
+        CSeq_feat& feat = **it;
+        if(v.IsSetPub() && !feat.IsSetCit()) {
+            feat.SetCit().Assign(v.GetPub());
+        }
+        if(v.IsSetExt()) {
+            ITERATE(CVariation::TExt, it2, v.GetExt()) {
+                CRef<CUser_object> uo(new CUser_object);
+                uo->Assign(**it2);
+                feat.SetExts().push_back(uo);
+            }
+        }
+    }
+
+    //note: we can't attach user-objects to out_feats directly because it will result in duplicates
+    //when out_feats recurses into next subvariation. Hence we are working with our own ftable of
+    //feats, and attach the results in the end.
+    out_feats.insert(out_feats.end(), feats.begin(), feats.end());
 }
 
 CRef<CVariation_ref> CVariationUtil::x_AsVariation_ref(const CVariation& v, const CVariantPlacement& p)
