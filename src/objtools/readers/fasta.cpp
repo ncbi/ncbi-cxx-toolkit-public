@@ -111,7 +111,9 @@
     do {                                                                   \
         CNcbiOstrstream err_strm;                                          \
         err_strm << _MessageStrmOps;                                       \
-        pMessageListener->PutProgress(CNcbiOstrstreamToString(err_strm));  \
+        if( pMessageListener ) {                                           \
+            pMessageListener->PutProgress(CNcbiOstrstreamToString(err_strm));  \
+        }                                                                  \
     } while(false)
 
 
@@ -684,8 +686,8 @@ void CFastaReader::ParseDefLine(const TStr& s, IMessageListener * pMessageListen
         m_ExpectedEnd = range_end - range_start;
     }
 
-    FASTA_PROGRESS("Processing Seq-id: " << 
-        ( m_BestID ? m_BestID->AsFastaString() : "UNKNOWN" ) );
+    FASTA_PROGRESS("Processing Seq-id: " <<
+        ( m_BestID ? m_BestID->AsFastaString() : string("UNKNOWN") ) );
 
     if ( !TestFlag(fNoUserObjs) ) {
         // store the raw defline in a User-object for reference
