@@ -81,7 +81,7 @@
 
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
-#include <objtools/readers/error_container.hpp>
+#include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/microarray_reader.hpp>
 #include <objtools/error_codes.hpp>
@@ -113,11 +113,11 @@ CMicroArrayReader::~CMicroArrayReader()
 CRef< CSerialObject >
 CMicroArrayReader::ReadObject(
     ILineReader& lr,
-    IErrorContainer* pErrorContainer ) 
+    IMessageListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------                
 { 
     CRef<CSerialObject> object( 
-        ReadSeqAnnot( lr, pErrorContainer ).ReleaseOrNull() );
+        ReadSeqAnnot( lr, pMessageListener ).ReleaseOrNull() );
     return object;
 }
     
@@ -125,7 +125,7 @@ CMicroArrayReader::ReadObject(
 CRef< CSeq_annot >
 CMicroArrayReader::ReadSeqAnnot(
     ILineReader& lr,
-    IErrorContainer* pEC) 
+    IMessageListener* pEC) 
 //  ----------------------------------------------------------------------------                
 {
     CRef< CSeq_annot > annot( new CSeq_annot );
@@ -260,7 +260,7 @@ void CMicroArrayReader::x_SetFeatureDisplayData(
 bool CMicroArrayReader::x_ParseTrackLine(
     const string& strLine,
     CRef<CSeq_annot>& annot,
-    IErrorContainer* pEC)
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     m_strExpNames = "";

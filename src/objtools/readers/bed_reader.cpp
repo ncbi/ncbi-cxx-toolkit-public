@@ -83,7 +83,7 @@
 #include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
-#include <objtools/readers/error_container.hpp>
+#include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/bed_reader.hpp>
 #include <objtools/error_codes.hpp>
 
@@ -119,7 +119,7 @@ CBedReader::~CBedReader()
 CRef< CSeq_annot >
 CBedReader::ReadSeqAnnot(
     ILineReader& lr,
-    IErrorContainer* pEC ) 
+    IMessageListener* pEC ) 
 //  ----------------------------------------------------------------------------                
 {
     const int MAX_RECORDS = 100000;
@@ -208,11 +208,11 @@ void
 CBedReader::ReadSeqAnnots(
     vector< CRef<CSeq_annot> >& annots,
     CNcbiIstream& istr,
-    IErrorContainer* pErrorContainer )
+    IMessageListener* pMessageListener )
 //  ---------------------------------------------------------------------------
 {
     CStreamLineReader lr( istr );
-    ReadSeqAnnots( annots, lr, pErrorContainer );
+    ReadSeqAnnots( annots, lr, pMessageListener );
 }
  
 //  ---------------------------------------------------------------------------                       
@@ -220,13 +220,13 @@ void
 CBedReader::ReadSeqAnnots(
     vector< CRef<CSeq_annot> >& annots,
     ILineReader& lr,
-    IErrorContainer* pErrorContainer )
+    IMessageListener* pMessageListener )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CSeq_annot> annot = ReadSeqAnnot(lr, pErrorContainer);
+    CRef<CSeq_annot> annot = ReadSeqAnnot(lr, pMessageListener);
     while (annot) {
         annots.push_back(annot);
-        annot = ReadSeqAnnot(lr, pErrorContainer);
+        annot = ReadSeqAnnot(lr, pMessageListener);
     }
 }
                         
@@ -234,11 +234,11 @@ CBedReader::ReadSeqAnnots(
 CRef< CSerialObject >
 CBedReader::ReadObject(
     ILineReader& lr,
-    IErrorContainer* pErrorContainer ) 
+    IMessageListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------                
 { 
     CRef<CSerialObject> object( 
-        ReadSeqAnnot( lr, pErrorContainer ).ReleaseOrNull() );    
+        ReadSeqAnnot( lr, pMessageListener ).ReleaseOrNull() );    
     return object;
 }
 
@@ -247,7 +247,7 @@ bool
 CBedReader::xParseTrackLine(
     const string& strLine,
     CRef< CSeq_annot >& current,
-    IErrorContainer* pEC)
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     if ( ! NStr::StartsWith( strLine, "track" ) ) {
@@ -296,7 +296,7 @@ CBedReader::x_AppendAnnot(
 bool CBedReader::xParseFeature(
     const vector<string>& fields,
     CRef<CSeq_annot>& annot,
-    IErrorContainer* pEC)
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     static int count = 0;
@@ -541,12 +541,12 @@ bool
 CBedReader::ReadTrackData(
     ILineReader& lr,
     CRawBedTrack& rawdata,
-    IErrorContainer* pErrorContainer)
+    IMessageListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     if (m_CurBatchSize == m_MaxBatchSize) {
         m_CurBatchSize = 0;
-        return xReadBedDataRaw(lr, rawdata, pErrorContainer);
+        return xReadBedDataRaw(lr, rawdata, pMessageListener);
     }
 
     string line;
@@ -560,7 +560,7 @@ CBedReader::ReadTrackData(
         }
         //data line
         lr.UngetLine();
-        return xReadBedDataRaw(lr, rawdata, pErrorContainer);
+        return xReadBedDataRaw(lr, rawdata, pMessageListener);
     }
     return false;
 }
@@ -570,7 +570,7 @@ bool
 CBedReader::xReadBedRecordRaw(
     const string& line,
     CRawBedRecord& record,
-    IErrorContainer* pErrorContainer)
+    IMessageListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     if (line == "browser"  || NStr::StartsWith(line, "browser ")) {
@@ -590,7 +590,7 @@ CBedReader::xReadBedRecordRaw(
         xCleanColumnValues(columns);
     }
     catch(CObjReaderLineException& err) {
-        ProcessError(err, pErrorContainer);
+        ProcessError(err, pMessageListener);
         return false;
     }
 
@@ -603,7 +603,7 @@ CBedReader::xReadBedRecordRaw(
                 eDiag_Error,
                 0,
                 "Bad data line: Inconsistent column count." );
-            ProcessError(err, pErrorContainer);
+            ProcessError(err, pMessageListener);
             return false;
         }
     }
@@ -620,7 +620,7 @@ CBedReader::xReadBedRecordRaw(
             eDiag_Error,
             0,
             "Bad data line: Invalid \"SeqStart\" (column 2) value." );
-        ProcessError(err, pErrorContainer);
+        ProcessError(err, pMessageListener);
         return false;
     }
 
@@ -633,7 +633,7 @@ CBedReader::xReadBedRecordRaw(
             eDiag_Error,
             0,
             "Bad data line: Invalid \"SeqStop\" (column 3) value." );
-        ProcessError(err, pErrorContainer);
+        ProcessError(err, pMessageListener);
         return false;
     }
 
@@ -647,7 +647,7 @@ CBedReader::xReadBedRecordRaw(
                 eDiag_Error,
                 0,
                 "Bad data line: Invalid \"Score\" (column 5) value." );
-            ProcessError(err, pErrorContainer);
+            ProcessError(err, pMessageListener);
             return false;
         }
     }
@@ -669,14 +669,14 @@ bool
 CBedReader::xReadBedDataRaw(
     ILineReader& lr,
     CRawBedTrack& rawdata,
-    IErrorContainer* pErrorContainer)
+    IMessageListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     rawdata.Reset();
     string line;
     while (xGetLine(lr, line)) {
         CRawBedRecord record;
-        if (!xReadBedRecordRaw(line, record, pErrorContainer)) {
+        if (!xReadBedRecordRaw(line, record, pMessageListener)) {
             lr.UngetLine();
             break;
         }

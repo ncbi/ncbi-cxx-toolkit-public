@@ -63,12 +63,12 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 namespace {
-    class CIgnoreBelowWarningErrorContainer : 
-        public CErrorContainerBase
+    class CIgnoreBelowWarningMessageListener : 
+        public CMessageListenerBase
     {   
     public:
-        CIgnoreBelowWarningErrorContainer() {};
-        ~CIgnoreBelowWarningErrorContainer() {};
+        CIgnoreBelowWarningMessageListener() {};
+        ~CIgnoreBelowWarningMessageListener() {};
 
         bool PutError(
             const ILineError& err ) 
@@ -327,8 +327,8 @@ BOOST_AUTO_TEST_CASE(TestWarnings)
         cout << "Running test case '" << warning_test.m_sName << "'" << endl;
 
         // this will hold warnings found
-        CRef<CIgnoreBelowWarningErrorContainer> pErrorContainer( 
-            new CIgnoreBelowWarningErrorContainer );
+        CRef<CIgnoreBelowWarningMessageListener> pMessageListener( 
+            new CIgnoreBelowWarningMessageListener );
 
         // create fasta reader
         CStringReader fastaStringReader( warning_test.m_sInputFASTA );
@@ -336,14 +336,14 @@ BOOST_AUTO_TEST_CASE(TestWarnings)
         CFastaReader fasta_reader( fastaRStream, warning_test.m_fFastaFlags );
 
         // do the parsing
-        BOOST_CHECK_NO_THROW( fasta_reader.ReadSet(kMax_Int, pErrorContainer.GetPointer()) );
+        BOOST_CHECK_NO_THROW( fasta_reader.ReadSet(kMax_Int, pMessageListener.GetPointer()) );
 
         typedef set<SOneWarningsInfo> TWarningInfoSet;
         TWarningInfoSet setWarningsSeen;
 
         // load the warnings that were seen into warningsSeenFromThisTest
-        ITERATE_0_IDX(ii, pErrorContainer->Count() ) {
-            const ILineError & line_error = pErrorContainer->GetError(ii);
+        ITERATE_0_IDX(ii, pMessageListener->Count() ) {
+            const ILineError & line_error = pMessageListener->GetError(ii);
             SOneWarningsInfo warning_info = {
                 line_error.Problem(),
                 line_error.FeatureName(),
@@ -388,14 +388,14 @@ namespace {
     {
         CRef<CBioseq> pRetvalBioseq;
         string sErrCodeThatOccurred;
-        CRef<CIgnoreBelowWarningErrorContainer> pErrorContainer( 
-            new CIgnoreBelowWarningErrorContainer );
+        CRef<CIgnoreBelowWarningMessageListener> pMessageListener( 
+            new CIgnoreBelowWarningMessageListener );
 
         try {
             CMemoryLineReader line_reader( sFasta.c_str(), sFasta.length() );
             CFastaReader fasta_reader( line_reader, fFlags );
 
-            CRef<CSeq_entry> pEntry = fasta_reader.ReadOneSeq(pErrorContainer.GetPointer());
+            CRef<CSeq_entry> pEntry = fasta_reader.ReadOneSeq(pMessageListener.GetPointer());
             BOOST_REQUIRE(pEntry->IsSeq());
             pRetvalBioseq.Reset( & pEntry->SetSeq() );
         } catch(const CException & ex ) {
@@ -406,9 +406,9 @@ namespace {
 
         // extract the warning codes
         TWarnVec pWarningTypes;
-        ITERATE_0_IDX(ii, pErrorContainer->Count()) {
+        ITERATE_0_IDX(ii, pMessageListener->Count()) {
             pWarningTypes.push_back(
-                pErrorContainer->GetError(ii).Problem() );
+                pMessageListener->GetError(ii).Problem() );
         }
 
         // check warnings

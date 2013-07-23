@@ -68,13 +68,13 @@ public:
     ReadSeqAnnots(
         TAnnots&,
         CNcbiIstream&,
-        IErrorContainer* =0 );
+        IMessageListener* =0 );
                         
     virtual void
     ReadSeqAnnots(
         TAnnots&,
         ILineReader&,
-        IErrorContainer* =0 );
+        IMessageListener* =0 );
 
 protected:
     virtual CGff2Record* x_CreateRecord() { return new CGtfReadRecord(); };    

@@ -88,7 +88,7 @@
 #include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
-#include <objtools/readers/error_container.hpp>
+#include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/gff3_sofa.hpp>
 #include <objtools/readers/gff2_reader.hpp>
 #include <objtools/readers/gff2_data.hpp>
@@ -149,11 +149,11 @@ void
 CGff2Reader::ReadSeqAnnots(
     vector< CRef<CSeq_annot> >& annots,
     CNcbiIstream& istr,
-    IErrorContainer* pErrorContainer )
+    IMessageListener* pMessageListener )
 //  ---------------------------------------------------------------------------
 {
     CStreamLineReader lr( istr );
-    ReadSeqAnnots( annots, lr, pErrorContainer );
+    ReadSeqAnnots( annots, lr, pMessageListener );
 }
 
 //  ---------------------------------------------------------------------------                       
@@ -161,13 +161,13 @@ void
 CGff2Reader::ReadSeqAnnots(
     vector< CRef<CSeq_annot> >& annots,
     ILineReader& lr,
-    IErrorContainer* pErrorContainer )
+    IMessageListener* pMessageListener )
 //  ----------------------------------------------------------------------------
 {
     if ( m_iFlags & fNewCode ) {
-        return ReadSeqAnnotsNew( annots, lr, pErrorContainer );
+        return ReadSeqAnnotsNew( annots, lr, pMessageListener );
     }
-    CRef< CSeq_entry > entry = ReadSeqEntry( lr, pErrorContainer );
+    CRef< CSeq_entry > entry = ReadSeqEntry( lr, pMessageListener );
     CTypeIterator<CSeq_annot> annot_iter( *entry );
     for ( ;  annot_iter;  ++annot_iter) {
         annots.push_back( CRef<CSeq_annot>( annot_iter.operator->() ) );
@@ -179,7 +179,7 @@ void
 CGff2Reader::ReadSeqAnnotsNew(
     vector< CRef<CSeq_annot> >& annots,
     ILineReader& lr,
-    IErrorContainer* pEC )
+    IMessageListener* pEC )
 //  ----------------------------------------------------------------------------
 {
     string line;
@@ -219,11 +219,11 @@ CGff2Reader::ReadSeqAnnotsNew(
 CRef< CSeq_entry >
 CGff2Reader::ReadSeqEntry(
     ILineReader& lr,
-    IErrorContainer* pErrorContainer ) 
+    IMessageListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------                
 { 
     vector<CRef<CSeq_annot> > annots;
-    ReadSeqAnnotsNew( annots, lr, pErrorContainer );
+    ReadSeqAnnotsNew( annots, lr, pMessageListener );
     
     CRef<CSeq_entry> pSeqEntry(new CSeq_entry());
     pSeqEntry->SetSet();
@@ -248,11 +248,11 @@ CGff2Reader::ReadSeqEntry(
 CRef< CSerialObject >
 CGff2Reader::ReadObject(
     ILineReader& lr,
-    IErrorContainer* pErrorContainer ) 
+    IMessageListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------                
 { 
     CRef<CSerialObject> object( 
-        ReadSeqEntry( lr, pErrorContainer ).ReleaseOrNull() );
+        ReadSeqEntry( lr, pMessageListener ).ReleaseOrNull() );
     return object;
 }
     
@@ -326,7 +326,7 @@ bool CGff2Reader::x_ParseStructuredCommentGff(
 bool CGff2Reader::x_ParseDataGff(
     const string& strLine,
     TAnnots& annots,
-    IErrorContainer* pEC)
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     if ( CGff2Reader::IsAlignmentData(strLine) ) {
@@ -339,7 +339,7 @@ bool CGff2Reader::x_ParseDataGff(
 bool CGff2Reader::x_ParseFeatureGff(
     const string& strLine,
     TAnnots& annots,
-    IErrorContainer* pEC)
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     //

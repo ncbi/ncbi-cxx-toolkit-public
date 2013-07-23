@@ -45,7 +45,7 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
-#include <objtools/readers/error_container.hpp>
+#include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/readfeat.hpp>
 #include <objtools/readers/source_mod_parser.hpp>
@@ -149,7 +149,7 @@ int CSourceModParserTestApp::Run(void)
         CSimpleTableFilter tbl_filter;
         tbl_filter.AddDisallowedFeatureName("source", ITableFilter::eResult_Disallowed );
 
-        CErrorContainerLenient err_container;
+        CMessageListenerLenient err_container;
         CFeature_table_reader::ReadSequinFeatureTables( args["feattbl"].AsInputFile(), *entry, 
             CFeature_table_reader::fReportBadKey, 
             &err_container, &tbl_filter );

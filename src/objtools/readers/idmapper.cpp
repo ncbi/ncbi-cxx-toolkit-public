@@ -43,7 +43,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 
-#include <objtools/readers/error_container.hpp>
+#include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/idmapper.hpp>
 
 #include <objmgr/util/sequence.hpp>
@@ -54,7 +54,7 @@ USING_SCOPE(objects);
 
 CIdMapper::CIdMapper(const std::string& strContext,
                      bool bInvert,
-                     IErrorContainer* pErrors)
+                     IMessageListener* pErrors)
     : m_strContext(strContext),
       m_bInvert(bInvert),
       m_pErrors( pErrors )

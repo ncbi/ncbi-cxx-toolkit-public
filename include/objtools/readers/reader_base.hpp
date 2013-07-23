@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-class IErrorContainer;
+class IMessageListener;
 class CObjReaderLineException;
 class CTrackData;
 
@@ -106,7 +106,7 @@ public:
     virtual CRef< CSerialObject >
     ReadObject(
         CNcbiIstream& istr,
-        IErrorContainer* pErrors=0 );
+        IMessageListener* pErrors=0 );
                 
     /// Read an object from a given line reader, render it as the most
     /// appropriate Genbank object.
@@ -121,7 +121,7 @@ public:
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader& lr,
-        IErrorContainer* pErrors=0 ) =0;
+        IMessageListener* pErrors=0 ) =0;
     
     /// Read an object from a given input stream, render it as a single
     /// Seq-annot. Return empty Seq-annot otherwise.
@@ -133,7 +133,7 @@ public:
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         CNcbiIstream& istr,
-        IErrorContainer* pErrors=0 );
+        IMessageListener* pErrors=0 );
                 
     /// Read an object from a given line reader, render it as a single
     /// Seq-annot, if possible. Return empty Seq-annot otherwise.
@@ -145,7 +145,7 @@ public:
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader& lr,
-        IErrorContainer* pErrors=0 );
+        IMessageListener* pErrors=0 );
 
     /// Read an object from a given input stream, render it as a single
     /// Seq-entry, if possible. Return empty Seq-entry otherwise.
@@ -157,7 +157,7 @@ public:
     virtual CRef< CSeq_entry >
     ReadSeqEntry(
         CNcbiIstream& istr,
-        IErrorContainer* pErrors=0 );
+        IMessageListener* pErrors=0 );
                 
     /// Read an object from a given line reader, render it as a single
     /// Seq-entry, if possible. Return empty Seq-entry otherwise.
@@ -169,7 +169,7 @@ public:
     virtual CRef< CSeq_entry >
     ReadSeqEntry(
         ILineReader& lr,
-        IErrorContainer* pErrors=0 );
+        IMessageListener* pErrors=0 );
        
 protected:
     virtual void x_AssignTrackData(
@@ -178,17 +178,17 @@ protected:
     virtual bool x_ParseBrowserLine(
         const string&,
         CRef<CSeq_annot>&,
-        IErrorContainer*);
+        IMessageListener*);
         
     virtual bool x_ParseTrackLine(
         const string&,
         CRef<CSeq_annot>&,
-        IErrorContainer*);
+        IMessageListener*);
         
     virtual void x_SetBrowserRegion(
         const string&,
         CAnnot_descr&,
-        IErrorContainer*);
+        IMessageListener*);
 
     virtual void x_SetTrackData(
         CRef<CSeq_annot>&,
@@ -198,34 +198,34 @@ protected:
                 
     virtual void x_AddConversionInfo(
         CRef< CSeq_annot >&,
-        IErrorContainer* );
+        IMessageListener* );
                     
     virtual void x_AddConversionInfo(
         CRef< CSeq_entry >&,
-        IErrorContainer* );
+        IMessageListener* );
     
     virtual CRef<CUser_object> x_MakeAsnConversionInfo(
-        IErrorContainer* );
+        IMessageListener* );
 
     void
     ProcessError(
         CObjReaderLineException&,
-        IErrorContainer* );
+        IMessageListener* );
         
     void
     ProcessError(
         CLineError&,
-        IErrorContainer* );
+        IMessageListener* );
         
     void
     ProcessWarning(
         CObjReaderLineException&,
-        IErrorContainer* );
+        IMessageListener* );
         
     void
     ProcessWarning(
         CLineError&,
-        IErrorContainer* );
+        IMessageListener* );
         
     //
     //  Data:

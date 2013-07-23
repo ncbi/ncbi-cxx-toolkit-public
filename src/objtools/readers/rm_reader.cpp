@@ -78,7 +78,7 @@
 
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
-#include <objtools/readers/error_container.hpp>
+#include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/rm_reader.hpp>
 #include <objtools/error_codes.hpp>
 
@@ -761,15 +761,15 @@ CRepeatMaskerReader::TConverter& CRepeatMaskerReader::SetConverter()
 }
 
 CRef<CSerialObject>
-CRepeatMaskerReader::ReadObject(ILineReader& lr, IErrorContainer* pErrorContainer)
+CRepeatMaskerReader::ReadObject(ILineReader& lr, IMessageListener* pMessageListener)
 {
     CRef<CSerialObject> object(
-            ReadSeqAnnot(lr, pErrorContainer).ReleaseOrNull());
+            ReadSeqAnnot(lr, pMessageListener).ReleaseOrNull());
     return object;
 }
 
 CRef<CSeq_annot>
-CRepeatMaskerReader::ReadSeqAnnot(ILineReader& lr, IErrorContainer* pErrorContainer)
+CRepeatMaskerReader::ReadSeqAnnot(ILineReader& lr, IMessageListener* pMessageListener)
 {
     CRef<CSeq_annot> annot(new CSeq_annot);
     // CRef<CAnnot_descr> desc(new CAnnot_descr);
@@ -793,7 +793,7 @@ CRepeatMaskerReader::ReadSeqAnnot(ILineReader& lr, IErrorContainer* pErrorContai
                 eDiag_Error,
                 lr.GetLineNumber(),
                 "RepeatMasker Reader: Parse error in record = " + line);
-            ProcessError(err, pErrorContainer);
+            ProcessError(err, pMessageListener);
             continue;
         }
 
@@ -802,7 +802,7 @@ CRepeatMaskerReader::ReadSeqAnnot(ILineReader& lr, IErrorContainer* pErrorContai
                 eDiag_Error,
                 lr.GetLineNumber(),
                 "RepeatMasker Reader: Verification error in record = " + line);
-            ProcessError(err, pErrorContainer);
+            ProcessError(err, pMessageListener);
             continue;
         }
 
@@ -813,7 +813,7 @@ CRepeatMaskerReader::ReadSeqAnnot(ILineReader& lr, IErrorContainer* pErrorContai
                 lr.GetLineNumber(),
                 "RepeatMasker Reader: Aborting file import, "
                 "unable to create feature table for record = " + line);
-            ProcessError(err, pErrorContainer);
+            ProcessError(err, pMessageListener);
             // we don't tolerate even a few errors here!
             break;
         }
@@ -821,7 +821,7 @@ CRepeatMaskerReader::ReadSeqAnnot(ILineReader& lr, IErrorContainer* pErrorContai
         ftable.push_back(feat);
     }
     // if (! record_counter) annot.Reset();
-    x_AddConversionInfo(annot, pErrorContainer);
+    x_AddConversionInfo(annot, pMessageListener);
     return annot;
 }
 
@@ -1034,7 +1034,7 @@ void CRmReader::Read(CRef<CSeq_annot> annot,
 {
     annot->Reset();
     CRepeatMaskerReader impl(flags);
-    CErrorContainerWithLog error_container(DIAG_COMPILE_INFO);
+    CMessageListenerWithLog error_container(DIAG_COMPILE_INFO);
     CRef<CSeq_annot> result(impl.ReadSeqAnnot(m_Istr, &error_container));
     annot->Assign(*result, eShallow);
 }

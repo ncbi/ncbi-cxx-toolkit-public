@@ -87,7 +87,7 @@
 #include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
-#include <objtools/readers/error_container.hpp>
+#include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/gff3_sofa.hpp>
 #include <objtools/readers/gff2_reader.hpp>
 #include <objtools/readers/gff3_reader.hpp>
@@ -185,7 +185,7 @@ void CGvfReadRecord::xTraceError(
         severity,
         mLineNumber,
         msg);
-    if (!mpErrorContainer->PutError(e)) {
+    if (!mpMessageListener->PutError(e)) {
         throw e;
     }
 }
@@ -210,7 +210,7 @@ CGvfReader::~CGvfReader()
 bool CGvfReader::x_ParseFeatureGff(
     const string& strLine,
     TAnnots& annots,
-    IErrorContainer* pErrorContainer)
+    IMessageListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     //
@@ -223,7 +223,7 @@ bool CGvfReader::x_ParseFeatureGff(
     }
 
     CRef<CSeq_annot> pAnnot = x_GetAnnotById( annots, record.Id() );
-    return x_MergeRecord( record, pAnnot, pErrorContainer );
+    return x_MergeRecord( record, pAnnot, pMessageListener );
 //    return x_UpdateAnnot( record, pAnnot ); 
 };
 
@@ -285,7 +285,7 @@ CRef<CSeq_annot> CGvfReader::x_GetAnnotById(
 bool CGvfReader::x_MergeRecord(
     const CGvfReadRecord& record,
     CRef< CSeq_annot > pAnnot,
-    IErrorContainer* pErrorContainer)
+    IMessageListener* pMessageListener)
 //  ----------------------------------------------------------------------------
 {
     if ( ! record.SanityCheck() ) {
@@ -298,7 +298,7 @@ bool CGvfReader::x_MergeRecord(
     if ( ! x_FeatureSetVariation( record, pFeature ) ) {
         return false;
     }
-    if ( ! x_FeatureSetExt( record, pFeature, pErrorContainer ) ) {
+    if ( ! x_FeatureSetExt( record, pFeature, pMessageListener ) ) {
         return false;
     }
     pAnnot->SetData().SetFtable().push_back( pFeature );
@@ -654,7 +654,7 @@ bool CGvfReader::x_VariationSetAlleleInstances(
 bool CGvfReader::x_FeatureSetExt(
     const CGvfReadRecord& record,
     CRef< CSeq_feat > pFeature,
-    IErrorContainer* pErrorContainer)
+    IMessageListener* pMessageListener)
 //  ---------------------------------------------------------------------------
 {
     string strAttribute;
@@ -689,7 +689,7 @@ bool CGvfReader::x_FeatureSetExt(
                 eDiag_Warning,
                 m_uLineNumber,
                 "CGvfReader::x_FeatureSetExt: Funny attribute \"" + cit->first + "\"");
-            if (!pErrorContainer->PutError(e)) {
+            if (!pMessageListener->PutError(e)) {
                 throw e;
             }
             continue;

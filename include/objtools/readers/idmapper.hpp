@@ -36,7 +36,7 @@
 #include <corelib/ncbistd.hpp>
 #include <objtools/readers/iidmapper.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
-#include <objtools/readers/error_container.hpp>
+#include <objtools/readers/message_listener.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
@@ -65,7 +65,7 @@ public:
     ///   mapping errors result in exceptions that need to be handled.
     CIdMapper(const std::string& strContext = "",
               bool bInvert = false,
-              IErrorContainer* pErrors = 0 );
+              IMessageListener* pErrors = 0 );
 
     virtual ~CIdMapper() {};
 
@@ -112,7 +112,7 @@ protected:
     typedef std::map<CSeq_id_Handle, SMapper> TMapperCache;
     TMapperCache m_Cache;
 
-    IErrorContainer* m_pErrors;
+    IMessageListener* m_pErrors;
 };
 
 
@@ -178,11 +178,11 @@ public:
     CIdMapperConfig(CNcbiIstream& istr,
                     const std::string& strContext = "",
                     bool bInvert = false,
-                    IErrorContainer* pErrors = 0);
+                    IMessageListener* pErrors = 0);
 
     CIdMapperConfig(const std::string& strContext = "",
                     bool bInvert = false,
-                    IErrorContainer* pErrors = 0);
+                    IMessageListener* pErrors = 0);
 
     void Initialize(CNcbiIstream& istr);
     static void DescribeContexts(CNcbiIstream& istr,
@@ -224,7 +224,7 @@ public:
     ///   mapping errors result in exceptions that need to be handled.
     CIdMapperBuiltin(const std::string& strContext,
                      bool bInvert = false,
-                     IErrorContainer* pErrors = 0 );
+                     IMessageListener* pErrors = 0 );
 
     void Initialize();
 
@@ -262,7 +262,7 @@ public:
         const std::string& strDatabase,
         const std::string& strContext,
         bool bInvert = false,
-        IErrorContainer* pErrors = 0)
+        IMessageListener* pErrors = 0)
         : CIdMapper(strContext, bInvert, pErrors),
           m_strServer(strServer),
           m_strDatabase(strDatabase)

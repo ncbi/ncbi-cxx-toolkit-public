@@ -53,7 +53,7 @@
 
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
-#include <objtools/readers/error_container.hpp>
+#include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/idmapper.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/bed_reader.hpp>
@@ -126,7 +126,7 @@ private:
     void xSetFormat(const CArgs&, CNcbiIstream&);
     void xSetFlags(const CArgs&, CNcbiIstream&);
     void xSetMapper(const CArgs&);
-    void xSetErrorContainer(const CArgs&);
+    void xSetMessageListener(const CArgs&);
             
     void xWriteObject(CSerialObject&, CNcbiOstream& );
     void xDumpErrors(CNcbiOstream& );
@@ -139,19 +139,19 @@ private:
     string m_AnnotTitle;
 
     auto_ptr<CIdMapper> m_pMapper;
-    CRef<CErrorContainerBase> m_pErrors;
+    CRef<CMessageListenerBase> m_pErrors;
 };
 
 //  ============================================================================
-class CErrorContainerCustom:
+class CMessageListenerCustom:
 //  ============================================================================
-    public CErrorContainerBase
+    public CMessageListenerBase
 {
 public:
-    CErrorContainerCustom(
+    CMessageListenerCustom(
         int iMaxCount,
         int iMaxLevel ): m_iMaxCount( iMaxCount ), m_iMaxLevel( iMaxLevel ) {};
-    ~CErrorContainerCustom() {};
+    ~CMessageListenerCustom() {};
     
     bool
     PutError(
@@ -387,7 +387,7 @@ CMultiReaderApp::Run(void)
     xSetFormat(args ,istr);    
     xSetFlags(args, istr);
     xSetMapper(args);
-    xSetErrorContainer(args);
+    xSetMessageListener(args);
 
     CRef< CSerialObject> object;
     vector< CRef< CSeq_annot > > annots;
@@ -836,7 +836,7 @@ CMultiReaderApp::xSetMapper(
 
 //  ----------------------------------------------------------------------------
 void
-CMultiReaderApp::xSetErrorContainer(
+CMultiReaderApp::xSetMessageListener(
     const CArgs& args )
 //  ----------------------------------------------------------------------------
 {
@@ -851,11 +851,11 @@ CMultiReaderApp::xSetErrorContainer(
         return;
     }
     if ( args["strict"] ) {
-        m_pErrors = new CErrorContainerStrict;
+        m_pErrors = new CMessageListenerStrict;
         return;
     }
     if ( args["lenient"] ) {
-        m_pErrors = new CErrorContainerLenient;
+        m_pErrors = new CMessageListenerLenient;
         return;
     }
     
@@ -870,10 +870,10 @@ CMultiReaderApp::xSetErrorContainer(
     }
     
     if ( iMaxErrorCount == -1 ) {
-        m_pErrors.Reset(new CErrorContainerLevel(iMaxErrorLevel));
+        m_pErrors.Reset(new CMessageListenerLevel(iMaxErrorLevel));
         return;
     }
-    m_pErrors.Reset(new CErrorContainerCustom(iMaxErrorCount, iMaxErrorLevel));
+    m_pErrors.Reset(new CMessageListenerCustom(iMaxErrorCount, iMaxErrorLevel));
 }
     
 //  ----------------------------------------------------------------------------

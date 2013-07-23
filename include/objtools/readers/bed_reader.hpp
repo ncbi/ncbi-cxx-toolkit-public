@@ -35,7 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objtools/readers/reader_base.hpp>
-#include <objtools/readers/error_container.hpp>
+#include <objtools/readers/message_listener.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -177,7 +177,7 @@ public:
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader& lr,
-        IErrorContainer* pErrors=0 );
+        IMessageListener* pErrors=0 );
                 
     /// Read a single object from given line reader containing BED data. The
     /// resulting Seq-annot will contain a feature table.
@@ -189,7 +189,7 @@ public:
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader& lr,
-        IErrorContainer* pErrors=0 );
+        IMessageListener* pErrors=0 );
 
     /// Read all objects from given insput stream, returning them as a vector of
     /// Seq-annots, each containing a feature table.
@@ -204,7 +204,7 @@ public:
     ReadSeqAnnots(
         vector< CRef<CSeq_annot> >& annots,
         CNcbiIstream& istr,
-        IErrorContainer* pErrors=0 );
+        IMessageListener* pErrors=0 );
                         
     /// Read all objects from given insput stream, returning them as a vector of
     /// Seq-annots, each containing a feature table.
@@ -219,24 +219,24 @@ public:
     ReadSeqAnnots(
         vector< CRef<CSeq_annot> >& annots,
         ILineReader& lr,
-        IErrorContainer* pErrors=0 );
+        IMessageListener* pErrors=0 );
                         
     virtual bool 
     ReadTrackData(
         ILineReader&,
         CRawBedTrack&,
-        IErrorContainer* =0 );
+        IMessageListener* =0 );
 
 protected:
     virtual bool xParseTrackLine(
         const string&,
         CRef< CSeq_annot >&,
-        IErrorContainer*);
+        IMessageListener*);
         
     bool xParseFeature(
         const vector<string>&,
         CRef<CSeq_annot>&,
-        IErrorContainer*);
+        IMessageListener*);
     /* throws CObjReaderLineException */
 
     bool xParseComment(
@@ -264,13 +264,13 @@ protected:
     xReadBedDataRaw(
         ILineReader&,
         CRawBedTrack&,
-        IErrorContainer*);
+        IMessageListener*);
 
     bool
     xReadBedRecordRaw(
         const string&,
         CRawBedRecord&,
-        IErrorContainer*);
+        IMessageListener*);
 
     bool 
     xGetLine(

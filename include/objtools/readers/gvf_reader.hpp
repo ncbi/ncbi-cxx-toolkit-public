@@ -58,9 +58,9 @@ class CGvfReadRecord
 public:
     CGvfReadRecord(
         unsigned int lineNumber,
-        IErrorContainer* pEC = 0): 
+        IMessageListener* pEC = 0): 
         mLineNumber(lineNumber),
-        mpErrorContainer(pEC)
+        mpMessageListener(pEC)
     {};
     ~CGvfReadRecord() {};
 
@@ -77,7 +77,7 @@ protected:
         const string&);
 
     unsigned int mLineNumber;
-    IErrorContainer* mpErrorContainer;
+    IMessageListener* mpMessageListener;
 };
 
 //  ----------------------------------------------------------------------------
@@ -101,7 +101,7 @@ protected:
     virtual bool x_ParseFeatureGff(
         const string&,
         TAnnots&,
-        IErrorContainer*);
+        IMessageListener*);
 
     CRef<CSeq_annot> x_GetAnnotById(
         TAnnots& annots,
@@ -110,7 +110,7 @@ protected:
     virtual bool x_MergeRecord(
         const CGvfReadRecord&,
         CRef<CSeq_annot>,
-        IErrorContainer*);
+        IMessageListener*);
 
     bool x_FeatureSetLocation(
         const CGff2Record&,
@@ -123,7 +123,7 @@ protected:
     virtual bool x_FeatureSetExt(
         const CGvfReadRecord&,
         CRef<CSeq_feat>,
-        IErrorContainer*);
+        IMessageListener*);
 
     CRef<CVariation_ref> x_VariationSNV(
         const CGvfReadRecord&,

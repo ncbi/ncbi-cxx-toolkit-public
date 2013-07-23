@@ -83,7 +83,7 @@
 #include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
-#include <objtools/readers/error_container.hpp>
+#include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/bed_reader.hpp>
 #include <objtools/readers/microarray_reader.hpp>
@@ -160,29 +160,29 @@ CReaderBase::~CReaderBase()
 CRef< CSerialObject >
 CReaderBase::ReadObject(
     CNcbiIstream& istr,
-    IErrorContainer* pErrorContainer ) 
+    IMessageListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------
 {
     CStreamLineReader lr( istr );
-    return ReadObject( lr, pErrorContainer );
+    return ReadObject( lr, pMessageListener );
 }
 
 //  ----------------------------------------------------------------------------
 CRef< CSeq_annot >
 CReaderBase::ReadSeqAnnot(
     CNcbiIstream& istr,
-    IErrorContainer* pErrorContainer ) 
+    IMessageListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------
 {
     CStreamLineReader lr( istr );
-    return ReadSeqAnnot( lr, pErrorContainer );
+    return ReadSeqAnnot( lr, pMessageListener );
 }
 
 //  ----------------------------------------------------------------------------
 CRef< CSeq_annot >
 CReaderBase::ReadSeqAnnot(
     ILineReader&,
-    IErrorContainer* ) 
+    IMessageListener* ) 
 //  ----------------------------------------------------------------------------
 {
     return CRef<CSeq_annot>();
@@ -192,18 +192,18 @@ CReaderBase::ReadSeqAnnot(
 CRef< CSeq_entry >
 CReaderBase::ReadSeqEntry(
     CNcbiIstream& istr,
-    IErrorContainer* pErrorContainer ) 
+    IMessageListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------
 {
     CStreamLineReader lr( istr );
-    return ReadSeqEntry( lr, pErrorContainer );
+    return ReadSeqEntry( lr, pMessageListener );
 }
 
 //  ----------------------------------------------------------------------------
 CRef< CSeq_entry >
 CReaderBase::ReadSeqEntry(
     ILineReader&,
-    IErrorContainer* ) 
+    IMessageListener* ) 
 //  ----------------------------------------------------------------------------
 {
     return CRef<CSeq_entry>();
@@ -213,7 +213,7 @@ CReaderBase::ReadSeqEntry(
 void
 CReaderBase::ProcessError(
     CObjReaderLineException& err,
-    IErrorContainer* pContainer )
+    IMessageListener* pContainer )
 //  ----------------------------------------------------------------------------
 {
     err.SetLineNumber( m_uLineNumber );
@@ -226,7 +226,7 @@ CReaderBase::ProcessError(
 void
 CReaderBase::ProcessWarning(
     CObjReaderLineException& err,
-    IErrorContainer* pContainer )
+    IMessageListener* pContainer )
 //  ----------------------------------------------------------------------------
 {
     err.SetLineNumber( m_uLineNumber );
@@ -244,7 +244,7 @@ CReaderBase::ProcessWarning(
 void
 CReaderBase::ProcessError(
     CLineError& err,
-    IErrorContainer* pContainer )
+    IMessageListener* pContainer )
 //  ----------------------------------------------------------------------------
 {
     if (!pContainer  ||  !pContainer->PutError(err)) {
@@ -256,7 +256,7 @@ CReaderBase::ProcessError(
 void
 CReaderBase::ProcessWarning(
     CLineError& err,
-    IErrorContainer* pContainer )
+    IMessageListener* pContainer )
 //  ----------------------------------------------------------------------------
 {
     if (!pContainer) {
@@ -273,7 +273,7 @@ CReaderBase::ProcessWarning(
 void CReaderBase::x_SetBrowserRegion(
     const string& strRaw,
     CAnnot_descr& desc,
-    IErrorContainer* pEC)
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     CRef<CSeq_loc> location( new CSeq_loc );
@@ -313,7 +313,7 @@ void CReaderBase::x_SetBrowserRegion(
 bool CReaderBase::x_ParseBrowserLine(
     const string& strLine,
     CRef<CSeq_annot>& annot,
-    IErrorContainer* pEC)
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     if ( ! NStr::StartsWith( strLine, "browser" ) ) {
@@ -371,7 +371,7 @@ void CReaderBase::x_AssignTrackData(
 bool CReaderBase::x_ParseTrackLine(
     const string& strLine,
     CRef<CSeq_annot>& annot,
-    IErrorContainer* pEC)
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     vector<string> parts;
@@ -398,47 +398,47 @@ void CReaderBase::x_SetTrackData(
 //  ----------------------------------------------------------------------------
 void CReaderBase::x_AddConversionInfo(
     CRef<CSeq_annot >& annot,
-    IErrorContainer *pErrorContainer )
+    IMessageListener *pMessageListener )
 //  ----------------------------------------------------------------------------
 {
-    if ( !annot || !pErrorContainer ) {
+    if ( !annot || !pMessageListener ) {
         return;
     }
     CRef<CAnnotdesc> user( new CAnnotdesc() );
-    user->SetUser( *x_MakeAsnConversionInfo( pErrorContainer ) );
+    user->SetUser( *x_MakeAsnConversionInfo( pMessageListener ) );
     annot->SetDesc().Set().push_back( user );
 }
 
 //  ----------------------------------------------------------------------------
 void CReaderBase::x_AddConversionInfo(
     CRef<CSeq_entry >& entry,
-    IErrorContainer *pErrorContainer )
+    IMessageListener *pMessageListener )
 //  ----------------------------------------------------------------------------
 {
-    if ( !entry || !pErrorContainer ) {
+    if ( !entry || !pMessageListener ) {
         return;
     }
     CRef<CSeqdesc> user( new CSeqdesc() );
-    user->SetUser( *x_MakeAsnConversionInfo( pErrorContainer ) );
+    user->SetUser( *x_MakeAsnConversionInfo( pMessageListener ) );
     entry->SetDescr().Set().push_back( 
         user );
 }
 
 //  ----------------------------------------------------------------------------
 CRef<CUser_object> CReaderBase::x_MakeAsnConversionInfo(
-    IErrorContainer* pErrorContainer )
+    IMessageListener* pMessageListener )
 //  ----------------------------------------------------------------------------
 {
     CRef<CUser_object> conversioninfo( new CUser_object() );
     conversioninfo->SetType().SetStr( "Conversion Info" );    
     conversioninfo->AddField( 
-        "critical errors", int ( pErrorContainer->LevelCount( eDiag_Critical ) ) );
+        "critical errors", int ( pMessageListener->LevelCount( eDiag_Critical ) ) );
     conversioninfo->AddField( 
-        "errors", int ( pErrorContainer->LevelCount( eDiag_Error ) ) );
+        "errors", int ( pMessageListener->LevelCount( eDiag_Error ) ) );
     conversioninfo->AddField( 
-        "warnings", int ( pErrorContainer->LevelCount( eDiag_Warning ) ) );
+        "warnings", int ( pMessageListener->LevelCount( eDiag_Warning ) ) );
     conversioninfo->AddField( 
-        "notes", int ( pErrorContainer->LevelCount( eDiag_Info ) ) );
+        "notes", int ( pMessageListener->LevelCount( eDiag_Info ) ) );
     return conversioninfo;
 }
 

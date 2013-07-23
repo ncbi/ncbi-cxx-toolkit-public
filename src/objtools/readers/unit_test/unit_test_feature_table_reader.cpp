@@ -62,7 +62,7 @@
 
 #include <objtools/readers/readfeat.hpp>
 #include <objtools/readers/table_filter.hpp>
-#include <objtools/readers/error_container.hpp>
+#include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/line_error.hpp>
 
 USING_NCBI_SCOPE;
@@ -117,12 +117,12 @@ typedef list<ILineError::EProblem> TErrList;
 
 static void 
 s_CheckErrorsVersusExpected( 
-    IErrorContainer * pErrorContainer, 
+    IMessageListener * pMessageListener, 
     TErrList expected_errors // yes, *copy* the container
     )
 {
-    for (size_t i = 0; i < pErrorContainer->Count(); i++) {
-        const ILineError& line_error = pErrorContainer->GetError(i);
+    for (size_t i = 0; i < pMessageListener->Count(); i++) {
+        const ILineError& line_error = pMessageListener->GetError(i);
         string error_text = line_error.FeatureName() + ":" + line_error.QualifierName();
         if( s_IgnoreError(line_error) ) {
             // certain error types may be ignored
@@ -147,13 +147,13 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (
     // no errors expected by default
      const TErrList & expected_errors = TErrList(),
      CFeature_table_reader::TFlags additional_flags = 0,
-     IErrorContainer * pErrorContainer = NULL );
+     IMessageListener * pMessageListener = NULL );
 
 static CRef<CSeq_annot> s_ReadOneTableFromString (
     const char * str,
     const TErrList & expected_errors,
     CFeature_table_reader::TFlags additional_flags,
-    IErrorContainer * pErrorContainer )
+    IMessageListener * pMessageListener )
 {
     CNcbiIstrstream istr(str);
     CRef<ILineReader> reader = ILineReader::New(istr);
@@ -161,20 +161,20 @@ static CRef<CSeq_annot> s_ReadOneTableFromString (
     CSimpleTableFilter tbl_filter;
     tbl_filter.AddDisallowedFeatureName("source", ITableFilter::eResult_Disallowed );
 
-    auto_ptr<IErrorContainer> p_temp_err_container;
-    if( ! pErrorContainer ) {
-        p_temp_err_container.reset( new CErrorContainerLenient );
-        pErrorContainer = p_temp_err_container.get();
+    auto_ptr<IMessageListener> p_temp_err_container;
+    if( ! pMessageListener ) {
+        p_temp_err_container.reset( new CMessageListenerLenient );
+        pMessageListener = p_temp_err_container.get();
     }
         
     CRef<CSeq_annot> annot = CFeature_table_reader::ReadSequinFeatureTable
                    (*reader, // of type ILineReader, which is like istream but line-oriented
                     additional_flags | CFeature_table_reader::fReportBadKey, // flags also available: fKeepBadKey and fTranslateBadKey (to /standard_name=…)
-                    pErrorContainer, // holds errors found during reading
+                    pMessageListener, // holds errors found during reading
                     &tbl_filter // used to make it act certain ways on certain feats.  In particular, in bankit we consider “source” and “REFERENCE” to be disallowed
                     );
 
-    s_CheckErrorsVersusExpected( pErrorContainer, expected_errors );
+    s_CheckErrorsVersusExpected( pMessageListener, expected_errors );
         
     BOOST_REQUIRE(annot != NULL);
     BOOST_REQUIRE(annot->IsFtable());
@@ -191,14 +191,14 @@ s_ReadMultipleTablesFromString(
     // no errors expected by default
     const TErrList & expected_errors = TErrList(),
     CFeature_table_reader::TFlags additional_flags = 0,
-    IErrorContainer * pErrorContainer = NULL );
+    IMessageListener * pMessageListener = NULL );
 
 static TAnnotRefListPtr
 s_ReadMultipleTablesFromString(
     const char * str,
     const TErrList & expected_errors,
     CFeature_table_reader::TFlags additional_flags,
-    IErrorContainer * pErrorContainer )
+    IMessageListener * pMessageListener )
 {
     TAnnotRefListPtr pAnnotRefList( new TAnnotRefList );
 
@@ -208,17 +208,17 @@ s_ReadMultipleTablesFromString(
     CSimpleTableFilter tbl_filter;
     tbl_filter.AddDisallowedFeatureName("source", ITableFilter::eResult_Disallowed );
 
-    auto_ptr<IErrorContainer> p_temp_err_container;
-    if( ! pErrorContainer ) {
-        p_temp_err_container.reset( new CErrorContainerLenient );
-        pErrorContainer = p_temp_err_container.get();
+    auto_ptr<IMessageListener> p_temp_err_container;
+    if( ! pMessageListener ) {
+        p_temp_err_container.reset( new CMessageListenerLenient );
+        pMessageListener = p_temp_err_container.get();
     }
 
     CRef<CSeq_annot> annot;
     while ((annot = CFeature_table_reader::ReadSequinFeatureTable
         (*reader,
         additional_flags | CFeature_table_reader::fReportBadKey, 
-        pErrorContainer, 
+        pMessageListener, 
         &tbl_filter 
         )) != NULL) 
     {
@@ -229,7 +229,7 @@ s_ReadMultipleTablesFromString(
             pAnnotRefList->push_back( CRef<CSeq_annot>(annot) );
     }
 
-    s_CheckErrorsVersusExpected( pErrorContainer, expected_errors );
+    s_CheckErrorsVersusExpected( pMessageListener, expected_errors );
 
     return pAnnotRefList;
 }
@@ -1422,7 +1422,7 @@ BOOST_AUTO_TEST_CASE(TestCDSInGenesCheck)
     fill_n( back_inserter(expected_errors), 
         linesWithError.size(), ILineError::eProblem_FeatMustBeInXrefdGene);
 
-    CErrorContainerLenient err_container;
+    CMessageListenerLenient err_container;
 
     CRef<CSeq_annot> annot = s_ReadOneTableFromString (
         sc_Table10,
@@ -1541,7 +1541,7 @@ BOOST_AUTO_TEST_CASE(TestCreateGenesFromCDSs)
             linesWithError.push_back(23);
         }
 
-        CErrorContainerLenient err_container;
+        CMessageListenerLenient err_container;
 
         CRef<CSeq_annot> annot = s_ReadOneTableFromString (
             sc_Table11,
@@ -1680,5 +1680,41 @@ BOOST_AUTO_TEST_CASE(TestOffsetCommand)
             (gene_extremes_arr[ii].second - 1) );
 
         ++merged_ftables_it;
+    }
+}
+
+// note the "END" buried in the string,
+// which should be replaced manually
+static const char * sc_Table13 = "\
+>Feature lcl|Seq1\n\
+1\t20\tgene\n\
+\t\t\tgene g0\n\
+17^\tEND\tvariation\n\
+\t\t\treplace\tCCT\n\
+";
+
+BOOST_AUTO_TEST_CASE(TestBetweenBaseIntervals)
+{
+    ITERATE_BOTH_BOOL_VALUES(bGoodLoc) {
+        cerr << "Testing with bGoodLoc = " << NStr::BoolToString(bGoodLoc) << endl;
+
+        const char * pchEndVal = (bGoodLoc ? "18" : "19");
+
+        TErrList errList;
+        if( ! bGoodLoc ) {
+            errList.push_back(ILineError::eProblem_BadFeatureInterval);
+        }
+
+        CRef<CSeq_annot> pSeqAnnot =
+            s_ReadOneTableFromString(
+                NStr::Replace(sc_Table13, "END", pchEndVal).c_str(),
+                errList );
+        const CSeq_annot::TData::TFtable& ftable = pSeqAnnot->GetData().GetFtable();
+
+        BOOST_REQUIRE(ftable.size() == 2);
+        BOOST_REQUIRE(ftable.front()->IsSetData());
+        BOOST_REQUIRE(ftable.front()->GetData().IsGene());
+        BOOST_REQUIRE(ftable.back()->IsSetData());
+        BOOST_REQUIRE_EQUAL(ftable.back()->GetData().GetImp().GetKey(), "variation");
     }
 }

@@ -36,7 +36,7 @@
 #include <corelib/ncbistd.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objtools/readers/reader_base.hpp>
-#include <objtools/readers/error_container.hpp>
+#include <objtools/readers/message_listener.hpp>
 #include <objects/seq/Seq_annot.hpp>
 
 
@@ -160,24 +160,24 @@ public:
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader&,
-        IErrorContainer* =0 );
+        IMessageListener* =0 );
                 
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader&,
-        IErrorContainer* =0 );
+        IMessageListener* =0 );
 
     virtual void
     ReadSeqAnnots(
         vector< CRef<CSeq_annot> >&,
         CNcbiIstream&,
-        IErrorContainer* =0 );
+        IMessageListener* =0 );
                         
     virtual void
     ReadSeqAnnots(
         vector< CRef<CSeq_annot> >&,
         ILineReader&,
-        IErrorContainer* =0 );
+        IMessageListener* =0 );
                         
     //
     //  helpers:
@@ -187,25 +187,25 @@ protected:
     xProcessMetaLine(
         const string&,
         CRef<CSeq_annot>,
-        IErrorContainer*);
+        IMessageListener*);
 
     virtual bool
     xProcessMetaLineInfo(
         const string&,
         CRef<CSeq_annot>,
-        IErrorContainer*);
+        IMessageListener*);
 
     virtual bool
     xProcessMetaLineFilter(
         const string&,
         CRef<CSeq_annot>,
-        IErrorContainer*);
+        IMessageListener*);
 
     virtual bool
     xProcessMetaLineFormat(
         const string&,
         CRef<CSeq_annot>,
-        IErrorContainer*);
+        IMessageListener*);
 
     virtual bool
     xProcessHeaderLine(
@@ -216,7 +216,7 @@ protected:
     xProcessDataLine(
         const string&,
         CRef<CSeq_annot>,
-        IErrorContainer*);
+        IMessageListener*);
         
     virtual bool
     xAssignVariationAlleleSet(
@@ -261,7 +261,7 @@ protected:
     xAssignVariantProps(
         CVcfData&,
         CRef<CSeq_feat>,
-        IErrorContainer*);
+        IMessageListener*);
 
     virtual bool
     xProcessScore(
@@ -277,7 +277,7 @@ protected:
     xProcessInfo(
         CVcfData&,
         CRef<CSeq_feat>,
-        IErrorContainer*);
+        IMessageListener*);
 
     virtual bool
     xProcessFormat(
@@ -299,7 +299,7 @@ protected:
     map<string,CVcfFilterSpec> m_FilterSpecs;
     vector<string> m_MetaDirectives;
     vector<string> m_GenotypeHeaders;
-    CErrorContainerLenient m_ErrorsPrivate;
+    CMessageListenerLenient m_ErrorsPrivate;
 };
 
 END_SCOPE(objects)

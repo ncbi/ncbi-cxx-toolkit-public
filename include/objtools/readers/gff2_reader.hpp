@@ -38,7 +38,7 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 
-#include <objtools/readers/error_container.hpp>
+#include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/gff_reader.hpp>
 #include <objtools/readers/gff2_data.hpp>
@@ -90,30 +90,30 @@ public:
     CRef< CSeq_entry >
     ReadSeqEntry(
         ILineReader&,
-        IErrorContainer* =0 );
+        IMessageListener* =0 );
         
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader&,
-        IErrorContainer* =0 );
+        IMessageListener* =0 );
                 
     virtual void
     ReadSeqAnnots(
         TAnnots&,
         CNcbiIstream&,
-        IErrorContainer* =0 );
+        IMessageListener* =0 );
                         
     virtual void
     ReadSeqAnnots(
         TAnnots&,
         ILineReader&,
-        IErrorContainer* =0 );
+        IMessageListener* =0 );
 
     virtual void
     ReadSeqAnnotsNew(
         TAnnots&,
         ILineReader&,
-        IErrorContainer* =0 );
+        IMessageListener* =0 );
 
     //
     // class interface:
@@ -140,12 +140,12 @@ public:
     virtual bool x_ParseDataGff(
         const string&,
         TAnnots&,
-        IErrorContainer*);
+        IMessageListener*);
 
     virtual bool x_ParseFeatureGff(
         const string&,
         TAnnots&,
-        IErrorContainer*);
+        IMessageListener*);
 
     virtual bool x_ParseAlignmentGff(
         const string&,
@@ -248,7 +248,7 @@ public:
     x_ParseDbtag(
         const string& );
 
-    CErrorContainerLenient m_ErrorsPrivate;
+    CMessageListenerLenient m_ErrorsPrivate;
     IdToFeatureMap m_MapIdToFeature;
 
     static string GenbankKey(
@@ -294,7 +294,7 @@ protected:
     //
 protected:
 //    TFlags             m_uFlags;
-    IErrorContainer*   m_pErrors;
+    IMessageListener*   m_pErrors;
     CRef< CAnnotdesc > m_CurrentTrackInfo;
     CRef< CAnnotdesc > m_CurrentBrowserInfo;
     string             m_AnnotName;

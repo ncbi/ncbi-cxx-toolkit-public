@@ -34,13 +34,13 @@
 #define OBJTOOLS_READERS___LINEERROR__HPP
 
 #include <corelib/ncbistd.hpp>
-#include <objtools/readers/line_error.hpp>
+#include <corelib/ncbimisc.hpp>
 #include <objtools/readers/reader_exception.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
-BEGIN_objects_SCOPE // namespace ncbi::objects::
+BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 //  ============================================================================
 class ILineError
@@ -425,7 +425,8 @@ protected:
 };
 
     
-END_objects_SCOPE
+END_SCOPE(objects)
+
 END_NCBI_SCOPE
 
 #endif // OBJTOOLS_READERS___LINEERROR__HPP

@@ -39,7 +39,7 @@
 
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
-#include <objtools/readers/error_container.hpp>
+#include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/idmapper.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -50,7 +50,7 @@ extern const char* sc_BuiltinConfig;
 
 CIdMapperBuiltin::CIdMapperBuiltin(const std::string& strContext,
                                    bool bInvert,
-                                   IErrorContainer* pErrors)
+                                   IMessageListener* pErrors)
     : CIdMapperConfig(strContext, bInvert, pErrors)
 {
     Initialize();

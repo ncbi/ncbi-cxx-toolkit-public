@@ -75,7 +75,7 @@ public:
 
     // hack to deal with interval format
     virtual void ParseDataLine(const TStr &s, 
-        IErrorContainer * pErrorContainer) 
+        IMessageListener * pMessageListener) 
     {
         if (s[0] >= '0' && s[0] <= '9' && s.find('-') > 0) {
             string s1, s2;
@@ -85,9 +85,9 @@ public:
                                  NStr::StringToUInt(NStr::TruncateSpaces(s1)),
                                  NStr::StringToUInt(NStr::TruncateSpaces(s2))));
             // fake a sequence data to make CFastaReader happy
-            CFastaReader::ParseDataLine("A", pErrorContainer);
+            CFastaReader::ParseDataLine("A", pMessageListener);
         } else {
-            CFastaReader::ParseDataLine(s, pErrorContainer);
+            CFastaReader::ParseDataLine(s, pMessageListener);
         }
     }
             

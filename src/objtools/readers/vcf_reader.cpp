@@ -72,7 +72,7 @@
 #include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
-#include <objtools/readers/error_container.hpp>
+#include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/vcf_reader.hpp>
 #include <objtools/error_codes.hpp>
 
@@ -183,7 +183,7 @@ CVcfReader::~CVcfReader()
 CRef< CSeq_annot >
 CVcfReader::ReadSeqAnnot(
     ILineReader& lr,
-    IErrorContainer* pEC ) 
+    IMessageListener* pEC ) 
 //  ----------------------------------------------------------------------------                
 {
     CRef< CSeq_annot > annot( new CSeq_annot );
@@ -221,11 +221,11 @@ void
 CVcfReader::ReadSeqAnnots(
     vector< CRef<CSeq_annot> >& annots,
     CNcbiIstream& istr,
-    IErrorContainer* pErrorContainer )
+    IMessageListener* pMessageListener )
 //  ---------------------------------------------------------------------------
 {
     CStreamLineReader lr(istr);
-    ReadSeqAnnots(annots, lr, pErrorContainer);
+    ReadSeqAnnots(annots, lr, pMessageListener);
 }
  
 //  ---------------------------------------------------------------------------                       
@@ -233,11 +233,11 @@ void
 CVcfReader::ReadSeqAnnots(
     vector< CRef<CSeq_annot> >& annots,
     ILineReader& lr,
-    IErrorContainer* pErrorContainer )
+    IMessageListener* pMessageListener )
 //  ----------------------------------------------------------------------------
 {
     while ( ! lr.AtEOF() ) {
-        CRef<CSeq_annot> pAnnot = ReadSeqAnnot( lr, pErrorContainer );
+        CRef<CSeq_annot> pAnnot = ReadSeqAnnot( lr, pMessageListener );
         if ( pAnnot ) {
             annots.push_back( pAnnot );
         }
@@ -248,11 +248,11 @@ CVcfReader::ReadSeqAnnots(
 CRef< CSerialObject >
 CVcfReader::ReadObject(
     ILineReader& lr,
-    IErrorContainer* pErrorContainer ) 
+    IMessageListener* pMessageListener ) 
 //  ----------------------------------------------------------------------------                
 { 
     CRef<CSerialObject> object( 
-        ReadSeqAnnot( lr, pErrorContainer ).ReleaseOrNull() );    
+        ReadSeqAnnot( lr, pMessageListener ).ReleaseOrNull() );    
     return object;
 }
 
@@ -261,7 +261,7 @@ bool
 CVcfReader::xProcessMetaLine(
     const string& line,
     CRef<CSeq_annot> pAnnot,
-    IErrorContainer* pEC)
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     if ( ! NStr::StartsWith( line, "##" ) ) {
@@ -286,7 +286,7 @@ bool
 CVcfReader::xProcessMetaLineInfo(
     const string& line,
     CRef<CSeq_annot> pAnnot,
-    IErrorContainer* pEC)
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     const string prefix = "##INFO=<";
@@ -351,7 +351,7 @@ bool
 CVcfReader::xProcessMetaLineFilter(
     const string& line,
     CRef<CSeq_annot> pAnnot,
-    IErrorContainer* pEC)
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     const string prefix = "##FILTER=<";
@@ -398,7 +398,7 @@ bool
 CVcfReader::xProcessMetaLineFormat(
     const string& line,
     CRef<CSeq_annot> pAnnot,
-    IErrorContainer* pEC)
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     const string prefix = "##FORMAT=<";
@@ -512,7 +512,7 @@ bool
 CVcfReader::xProcessDataLine(
     const string& line,
     CRef<CSeq_annot> pAnnot,
-    IErrorContainer* pEC)
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     if ( NStr::StartsWith( line, "#" ) ) {
@@ -913,7 +913,7 @@ bool
 CVcfReader::xProcessInfo(
     CVcfData& data,
     CRef<CSeq_feat> pFeature,
-    IErrorContainer* pEC)
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     if (!xAssignVariantProps(data, pFeature, pEC)) {
@@ -1016,7 +1016,7 @@ bool
 CVcfReader::xAssignVariantProps(
     CVcfData& data,
     CRef<CSeq_feat> pFeat,
-    IErrorContainer* pEC)
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     typedef CVariantProperties VP;

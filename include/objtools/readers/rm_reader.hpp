@@ -708,13 +708,13 @@ public:
 
     CRef<CSerialObject>
     ReadObject(ILineReader& lr,
-               IErrorContainer* pErrorContainer = 0);
+               IMessageListener* pMessageListener = 0);
 
     using CReaderBase::ReadSeqAnnot;
 
     CRef<CSeq_annot>
     ReadSeqAnnot(ILineReader& lr,
-                 IErrorContainer* pErrorContainer = 0);
+                 IMessageListener* pMessageListener = 0);
 
     /// Use default Seq-id resolution.
     ///

@@ -39,7 +39,7 @@
 
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
-#include <objtools/readers/error_container.hpp>
+#include <objtools/readers/message_listener.hpp>
 #include <objtools/readers/idmapper.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -48,7 +48,7 @@ USING_SCOPE(objects);
 CIdMapperConfig::CIdMapperConfig(CNcbiIstream& istr,
                                  const std::string& strContext,
                                  bool bInvert,
-                                 IErrorContainer* pErrors)
+                                 IMessageListener* pErrors)
     : CIdMapper(strContext, bInvert, pErrors)
 {
     Initialize(istr);
@@ -57,7 +57,7 @@ CIdMapperConfig::CIdMapperConfig(CNcbiIstream& istr,
 
 CIdMapperConfig::CIdMapperConfig(const std::string& strContext,
                                  bool bInvert,
-                                 IErrorContainer* pErrors)
+                                 IMessageListener* pErrors)
     : CIdMapper(strContext, bInvert, pErrors)
 {
 }

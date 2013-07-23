@@ -259,30 +259,30 @@ public:
     virtual CRef< CSeq_annot >
     ReadSeqAnnot(
         ILineReader&,
-        IErrorContainer* =0 );
+        IMessageListener* =0 );
 
     virtual void
     ReadSeqAnnots(
         vector< CRef<CSeq_annot> >&,
         CNcbiIstream&,
-        IErrorContainer* =0 );
+        IMessageListener* =0 );
                         
     virtual void
     ReadSeqAnnots(
         vector< CRef<CSeq_annot> >&,
         ILineReader&,
-        IErrorContainer* =0 );
+        IMessageListener* =0 );
                 
     virtual CRef< CSerialObject >
     ReadObject(
         ILineReader&,
-        IErrorContainer* =0 );
+        IMessageListener* =0 );
          
     virtual bool 
     ReadTrackData(
         ILineReader&,
         CRawWiggleTrack&,
-        IErrorContainer* =0 );
+        IMessageListener* =0 );
 
     //
     //  helpers:
@@ -293,46 +293,46 @@ protected:
 
     void 
     xReadTrack(
-        IErrorContainer*);
+        IMessageListener*);
 
     void
     xGetFixedStepInfo(
         SFixedStepInfo&,
-        IErrorContainer*);
+        IMessageListener*);
 
     void 
     xReadFixedStepData(
         const SFixedStepInfo&,
         ILineReader&,
-        IErrorContainer*);
+        IMessageListener*);
     
     bool
     xReadFixedStepDataRaw(
         ILineReader&,
         CRawWiggleTrack&,
-        IErrorContainer*);
+        IMessageListener*);
 
     void
     xGetVarStepInfo(
         SVarStepInfo&,
-        IErrorContainer*);
+        IMessageListener*);
 
     void 
     xReadVariableStepData(
         const SVarStepInfo&,
         ILineReader&,
-        IErrorContainer*);
+        IMessageListener*);
 
     bool
     xReadVariableStepDataRaw(
         ILineReader&,
         CRawWiggleTrack&,
-        IErrorContainer*);
+        IMessageListener*);
 
     void 
     xReadBedLine(
         CTempString chrom,
-        IErrorContainer*);
+        IMessageListener*);
 
     CRef<CSeq_annot>
     xGetAnnot();
@@ -346,23 +346,23 @@ protected:
 
     CTempString 
     xGetWord(
-        IErrorContainer*);
+        IMessageListener*);
 
     bool 
     xSkipWS();
 
     CTempString 
     xGetParamName(
-        IErrorContainer*);
+        IMessageListener*);
 
     CTempString 
     xGetParamValue(
-        IErrorContainer*);
+        IMessageListener*);
 
     void 
     xGetPos(
         TSeqPos& v,
-        IErrorContainer*);
+        IMessageListener*);
 
     bool 
     xTryGetDoubleSimple(
@@ -371,17 +371,17 @@ protected:
     bool 
     xTryGetDouble(
         double& v,
-        IErrorContainer*);
+        IMessageListener*);
 
     bool 
     xTryGetPos(
         TSeqPos& v,
-        IErrorContainer*);
+        IMessageListener*);
 
     void 
     xGetDouble(
         double& v,
-        IErrorContainer*);
+        IMessageListener*);
 
     CRef<CSeq_id> 
     xMakeChromId();
