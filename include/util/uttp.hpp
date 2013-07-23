@@ -302,7 +302,7 @@ public:
     ///   A pointer to the output buffer.
     /// @param buffer_size
     ///   The size of the above buffer. This size cannot be less than
-    ///   2.5 * sizeof(size_t) + 1.
+    ///   2.5 * sizeof(Int8) + 1.
     void Reset(char* buffer, size_t buffer_size);
 
     /// Initialize or reinitialize this object.
@@ -310,7 +310,7 @@ public:
     ///   A pointer to the output buffer.
     /// @param buffer_size
     ///   The size of the above buffer. This size cannot be less than
-    ///   2.5 * sizeof(size_t) + 1.
+    ///   2.5 * sizeof(Int8) + 1.
     /// @param max_buffer_size
     ///   The maximum size of the buffer that a call to GetOutputBuffer() will
     ///   ever return. If omitted, considered to be equal to buffer_size.
@@ -414,7 +414,7 @@ private:
     // An unsigned binary integer of size S bytes may require up to
     // L = ceil(S * log10(256)) digit positions when written in decimal
     // notation. A convenient approximation of log10(256) is 2.5:
-    // L = ceil((S * 5) / 2). In case if S = sizeof(size_t), which is
+    // L = ceil((S * 5) / 2). In case if S = sizeof(Int8), which is
     // always an even number: L = S / 2 * 5
     //
     // Additionally, one byte is reserved for either space or plus character
