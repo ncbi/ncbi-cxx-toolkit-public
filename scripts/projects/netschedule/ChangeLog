@@ -1,3 +1,10 @@
+Release 4.16.9 based on SC-11 (2013-07-23)
+
+Improvements and bug fixes
+    * NetSchedule: Implement the HEALTH command (JIRA: CXX-2131)
+    * Allow to specify (and communicate to the client) the "overflow NC server"
+      in the NS configuration (JIRA: CXX-4113)
+
 
 Release 4.16.8 based on SC-11 (2013-04-26)
 
