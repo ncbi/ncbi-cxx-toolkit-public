@@ -291,8 +291,10 @@ tds_get_n(TDSSOCKET * tds, void *dest, int need)
 			dest = (char *) dest + have;
 		}
 		need -= have;
-		if (tds_read_packet(tds) < 0)
+        if (tds->last_packet == 1  ||  tds_read_packet(tds) < 0) {
+            tds_close_socket(tds); /* evidently out of sync */
 			return NULL;
+        }
 		have = tds->in_len;
 	}
 	if (need > 0) {
