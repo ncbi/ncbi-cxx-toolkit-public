@@ -4095,6 +4095,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NAVA	s	Navajo Natural Heritage Program, Navajo Department of Fish & Wildlife",
 "NBAIM	c	National Bureau of Agriculturally Important Microorganisms",
 "NBFGR	s	National Bureau of Fish Genetic Resources (Indian Council of Agricultural Research)",
+"NBFGR:CHN	s	National Bureau of Fish Genetic Resources (Indian Council of Agricultural Research), Cochin Unit",
 "NBG	s	National Botanical Institute",
 "NBGB<BEL>	sb	National Botanical Garden, Belgium",
 "NBIMCC	c	National Bank for Industrial Microorganisms and Cell Cultures",
