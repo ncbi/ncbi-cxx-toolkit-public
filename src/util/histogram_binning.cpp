@@ -114,7 +114,7 @@ CHistogramBinning::x_IdentifyClusters(void) const
         const TValue difference = (
             next_bin.first_number - this_bin.last_number );
         vecOfDiffAndBinPair.push_back(
-            make_pair(
+            TVecOfDiffAndBinPair::value_type(
                 difference, ii ) );
     }
 
