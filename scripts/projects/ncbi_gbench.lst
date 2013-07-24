@@ -4,6 +4,7 @@ app/blast
 app/blastdb
 internal/aligndb
 internal/gbench
+internal/tmsmart
 misc/hgvs$
 misc/third_party
 -algo/blast/unit_tests
