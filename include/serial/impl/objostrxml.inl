@@ -33,6 +33,55 @@
 */
 
 inline
+void CObjectOStreamXml::WriteOneEscapedChar(
+    COStreamBuffer & out_buffer, char ch )
+{
+//  http://www.w3.org/TR/2000/REC-xml-20001006#NT-Char
+    switch ( ch ) {
+    case '&':
+        out_buffer.PutString("&amp;");
+        break;
+    case '<':
+        out_buffer.PutString("&lt;");
+        break;
+    case '>':
+        out_buffer.PutString("&gt;");
+        break;
+    case '\'':
+        out_buffer.PutString("&apos;");
+        break;
+    case '"':
+        out_buffer.PutString("&quot;");
+        break;
+    default:
+        if ((unsigned int)ch < 0x20) {
+            out_buffer.PutString("&#x");
+            Uint1 ch1 = ch;
+            unsigned hi = ch1 >> 4;
+            unsigned lo = ch1 & 0xF;
+            if ( hi ) {
+                out_buffer.PutChar("0123456789abcdef"[hi]);
+            }
+            out_buffer.PutChar("0123456789abcdef"[lo]);
+            out_buffer.PutChar(';');
+        } else {
+            out_buffer.PutChar(ch);
+        }
+        break;
+    }
+}
+
+inline
+void CObjectOStreamXml::WriteEscapedData(
+    COStreamBuffer & out_buffer, 
+    const char * input_data, size_t input_data_length )
+{
+    ITERATE_0_IDX(input_data_idx, input_data_length) {
+        WriteOneEscapedChar(out_buffer, input_data[input_data_idx] );
+    }
+}
+
+inline
 void CObjectOStreamXml::OpenStackTag(size_t level)
 {
     OpenTagStart();
