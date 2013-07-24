@@ -147,13 +147,17 @@ CBedReader::ReadSeqAnnot(
         if (x_ParseBrowserLine(line, annot, pEC)) {
             continue;
         }
-        if (xParseTrackLine(line, annot, pEC)) {
+        if (NStr::StartsWith(line, "track ")) {
             if (featureCount > 0) {
                 --m_uLineNumber;
                 lr.UngetLine();
                 break;
             }
-            continue;
+            else {
+                if (xParseTrackLine(line, annot, pEC)) {
+                    continue;
+                }
+            }
         }
 
 	    string record_copy = line;
