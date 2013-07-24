@@ -8,4 +8,4 @@ SRC = agp_count
 LIB = $(OBJREAD_LIBS) seqset $(SEQ_LIBS) pub medline biblio general \
       xser xutil xncbi
 
-WATCHERS = sapojnik
+WATCHERS = sapojnik kornbluh

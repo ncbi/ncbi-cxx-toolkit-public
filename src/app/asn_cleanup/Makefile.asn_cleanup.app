@@ -16,4 +16,4 @@ LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
 REQUIRES = objects -Cygwin
 
 
-WATCHERS = bollin
+WATCHERS = bollin kornbluh

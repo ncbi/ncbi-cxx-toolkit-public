@@ -10,4 +10,4 @@ LIB    = xobjedit
 
 ASN_DEP = seqset
 
-WATCHERS = bollin
+WATCHERS = bollin kornbluh

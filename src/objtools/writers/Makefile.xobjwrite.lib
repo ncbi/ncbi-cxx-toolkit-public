@@ -13,5 +13,5 @@ SRC = agp_write \
       bed_writer bed_track_record bed_feature_record \
       vcf_writer
       
-WATCHERS = ludwigf boukn
+WATCHERS = ludwigf boukn kornbluh
 

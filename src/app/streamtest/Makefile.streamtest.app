@@ -18,4 +18,4 @@ LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) \
 
 REQUIRES = objects algo LIBXSLT
 
-WATCHERS = kans
+WATCHERS = kans kornbluh

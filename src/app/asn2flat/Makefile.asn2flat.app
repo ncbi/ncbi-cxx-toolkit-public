@@ -14,4 +14,4 @@ LIBS = $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects -Cygwin
 
-WATCHERS = ludwigf
+WATCHERS = ludwigf kornbluh

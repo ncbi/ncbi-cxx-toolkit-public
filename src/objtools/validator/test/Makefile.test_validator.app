@@ -14,4 +14,5 @@ CHECK_COPY = current.prt test_validator.sh
 
 REQUIRES = -Cygwin objects
 
-WATCHERS = bollin
+WATCHERS = bollin kornbluh
+

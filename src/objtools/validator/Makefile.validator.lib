@@ -11,4 +11,4 @@ LIB = xvalidate
 
 ASN_DEP = general biblio pub seq seqset submit taxon3 valerr valid
 
-WATCHERS = bollin
+WATCHERS = bollin kornbluh
