@@ -43,11 +43,15 @@ CMessageListenerBase::PutProgress(
     const Uint8 iNumDone,
     const Uint8 iNumTotal)
 {
+    // NB: Some other classes rely on the message fitting in one line.
+
+    // NB: New attributes or inner elements could be added to the resulting
+    //     message at any time, so make no assumptions.
+
     if( ! m_pProgressOstrm ) {
         // no stream to write to
         return;
     }
-    // NB: Some other classes rely on the message fitting in one line.
 
     *m_pProgressOstrm << "<message severity=\"INFO\" ";
 
