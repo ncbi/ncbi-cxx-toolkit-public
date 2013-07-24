@@ -74,6 +74,7 @@ void CAgpValidateReader::Reset(bool for_chr_from_scaf)
   m_ln_ev_flags2count.clear();
 
   m_max_comp_beg=m_max_obj_beg=0;
+  m_has_partial_comp=m_has_comp_of_unknown_len=false;
 
   if(for_chr_from_scaf) {
     NCBI_ASSERT(m_explicit_scaf, "m_explicit_scaf is false in CAgpValidateReader::Reset(true)");
@@ -344,6 +345,7 @@ void CAgpValidateReader::OnGapOrComponent()
       if( !m_CheckObjLen ) {
         TMapStrInt::iterator it = m_comp2len->find( m_this_row->GetComponentId() );
         if( it==m_comp2len->end() ) {
+          m_has_comp_of_unknown_len=true;
           if(m_is_chr && m_explicit_scaf) {
             m_AgpErr->Msg(CAgpErrEx::E_UnknownScaf, m_this_row->GetComponentId());
           }
@@ -354,6 +356,7 @@ void CAgpValidateReader::OnGapOrComponent()
         else {
           m_comp_name_matches++;
           m_this_row->CheckComponentEnd(it->second);
+          if(it->second != m_this_row->component_end) m_has_partial_comp=true;
           if(m_explicit_scaf && m_is_chr) {
             if(it->second > m_this_row->component_end || m_this_row->component_beg>1) {
               m_AgpErr->Msg(CAgpErrEx::W_ScafNotInFull,
@@ -364,10 +367,16 @@ void CAgpValidateReader::OnGapOrComponent()
           }
         }
       }
+      else {
+        m_has_comp_of_unknown_len=true;
+      }
     }
-    else if(m_explicit_scaf && m_is_chr) {
-      if(m_this_row->component_beg>1) {
-        m_AgpErr->Msg(CAgpErrEx::W_ScafNotInFull);
+    else {
+      m_has_comp_of_unknown_len=true;
+      if(m_explicit_scaf && m_is_chr) {
+        if(m_this_row->component_beg>1) {
+          m_AgpErr->Msg(CAgpErrEx::W_ScafNotInFull);
+        }
       }
     }
 
@@ -558,6 +567,9 @@ void CAgpValidateReader::OnObjectChange()
       // to do -- add a message if we can be certain that
       //   ?" and component_end=length of component sequence":
       //    " (some component_end shorter than the whole component)"
+      m_has_comp_of_unknown_len?"":
+      m_has_partial_comp?" (not all component_end = length of sequence)":
+      " and component_end = length of sequence",
       CAgpErr::fAtNone);
   }
 

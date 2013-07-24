@@ -263,6 +263,7 @@ protected:
 
   int m_max_comp_beg;
   int m_max_obj_beg;
+  bool m_has_partial_comp, m_has_comp_of_unknown_len;
 };
 
 END_NCBI_SCOPE
