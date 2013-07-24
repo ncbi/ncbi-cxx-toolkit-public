@@ -531,6 +531,10 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
 
         ExpandSupport(model.Support(), support, evidence);
 
+        int ests_count = 0;
+        int long_sras_count = 0;
+        int others_count = 0;
+
         ITERATE(CSupportInfoSet, s, support) {
             
             Int8 id = s->GetId();
@@ -556,12 +560,16 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
             else if (type&CGeneModel::emRNA)
                 mrnas.push_back(accession);
             else if (type&CGeneModel::eEST) {
-                if(NStr::StartsWith(accession, "gi|"))
+                if(NStr::StartsWith(accession, "gi|")) {
                     ests.push_back(accession);
-                else if(NStr::StartsWith(accession, "gnl|SRA"))
+                    ests_count += m->Weight();
+                } else if(NStr::StartsWith(accession, "gnl|SRA")) {
                     long_sras.push_back(accession);
-                else
+                    long_sras_count += m->Weight();
+                } else {
                     others.push_back(accession);
+                    others_count += m->Weight();
+                }
             } else if (type&CGeneModel::eSR)
                 short_reads.push_back(accession);
             else
@@ -625,7 +633,7 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
             sort(ests.begin(),ests.end());
             support_field->AddField("ESTs",ests);
             // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
-            support_field->SetData().SetFields().back()->SetNum(ests.size());
+            support_field->SetData().SetFields().back()->SetNum(ests_count);
         }
         if (!short_reads.empty()) {
             sort(short_reads.begin(),short_reads.end());
@@ -637,13 +645,13 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
             sort(long_sras.begin(),long_sras.end());
             support_field->AddField("longSRA",long_sras);
             // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
-            support_field->SetData().SetFields().back()->SetNum(long_sras.size());
+            support_field->SetData().SetFields().back()->SetNum(long_sras_count);
         }
         if (!others.empty()) {
             sort(others.begin(),others.end());
             support_field->AddField("other",others);
             // SetNum should be done in AddField actually. Won't be needed when AddField fixed in the toolkit.
-            support_field->SetData().SetFields().back()->SetNum(others.size());
+            support_field->SetData().SetFields().back()->SetNum(others_count);
         }
         if (!unknown.empty()) {
             support_field->AddField("unknown",unknown);
