@@ -78,7 +78,7 @@ ifneq "$(LDD_R)" ""
       ifneq (,$(filter-out $(ALT_GOALS),$(if $(MAKECMDGOALS),$(MAKECMDGOALS),all)))
         LATEST := $(word 1,$(shell ls -t $(XAPP) $(XOBJ) $(XLIBDEP) 2>/dev/null))
         ifeq "$(XAPP)" "$(LATEST)"
-          JUST_RUN_LDD = 1
+          # JUST_RUN_LDD = 1
         endif
       endif
     else
