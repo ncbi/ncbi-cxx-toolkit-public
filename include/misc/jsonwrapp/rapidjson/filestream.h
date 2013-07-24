@@ -67,7 +67,7 @@ public:
 	size_t Tell() const {
         return (size_t)(in_->gcount());
     }
-	void Put(char c) {
+	void Put(char) {
     }
 
 	// Not implemented

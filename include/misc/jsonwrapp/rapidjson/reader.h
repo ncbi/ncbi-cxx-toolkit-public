@@ -7,7 +7,12 @@
 #include "rapidjson.h"
 #include "internal/pow10.h"
 #include "internal/stack.h"
+// NCBI
+#if NCBI_COMPILER_WORKSHOP
+#include <setjmp.h>
+#else
 #include <csetjmp>
+#endif
 
 #ifdef RAPIDJSON_SSE42
 #include <nmmintrin.h>
