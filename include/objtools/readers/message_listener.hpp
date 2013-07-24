@@ -26,7 +26,7 @@
  * Author: Frank Ludwig
  *
  * File Description:
- *   Basic reader interface
+ *   Classes for listening to errors, progress, etc.
  *
  */
 
@@ -34,6 +34,7 @@
 #define OBJTOOLS_READERS___MESSAGELISTENER__HPP
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <objtools/readers/line_error.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -68,9 +69,11 @@ public:
     LevelCount(
         EDiagSev ) =0;
             
+    /// Clear all accumulated messages.
     virtual void
     ClearAll() =0;
 
+    /// This is used for processing progress messages.
     virtual void
     PutProgress(
         const string & sMessage,
@@ -84,7 +87,7 @@ class CMessageListenerBase:
     public CObject, public IMessageListener
 {
 public:
-    CMessageListenerBase() {};
+    CMessageListenerBase() : m_pProgressOstrm(0) {};
     virtual ~CMessageListenerBase() {};
     
 public:
@@ -127,31 +130,28 @@ public:
     virtual void
     PutProgress(
         const string & sMessage,
-        const Uint8 iNumDone = 0,
-        const Uint8 iNumTotal = 0 ) 
+        const Uint8 iNumDone,
+        const Uint8 iNumTotal );
+
+    /// This sets the stream to which progress messages are written.
+    ///
+    /// @param pProgressOstrm
+    ///   The output stream for progress messages.  Set this to NULL to
+    ///   stop writing progress messages.
+    /// @param eNcbiOwnership
+    ///   Indicates whether this CMessageListenerBase should own
+    ///   pProgressOstrm.
+    virtual void 
+    SetProgressOstream(
+        CNcbiOstream * pProgressOstrm,
+        ENcbiOwnership eNcbiOwnership = eNoOwnership )
     {
-        // default is to turn the progress into an info-level
-        // message, but child classes are free to handle progress
-        // messages however they like
-
-        CNcbiOstrstream msg_strm;
-        msg_strm << sMessage;
-        if( iNumDone > 0 || iNumTotal > 0 ) {
-            msg_strm << " (" << iNumDone;
-            if( iNumTotal > 0 ) {
-                msg_strm << " of " << iNumTotal;
-            }
-            msg_strm << " done)";
+        m_pProgressOstrm = pProgressOstrm;
+        if( eNcbiOwnership == eTakeOwnership && pProgressOstrm ) {
+            m_progressOstrmDestroyer.reset( pProgressOstrm );
+        } else {
+            m_progressOstrmDestroyer.reset();
         }
-
-        CLineError progress_msg(
-            ILineError::eProblem_ProgressInfo,
-            eDiag_Info,
-            CNcbiOstrstreamToString(msg_strm),
-            0 // line
-            );
-
-        PutError(progress_msg);
     }
 
 private:
@@ -159,6 +159,14 @@ private:
     // necessary (e.g. to have indexing and such to speed up
     // level-counting)
     std::vector< CLineError > m_Errors;
+
+    // The stream to which progress messages are written.
+    // If NULL, progress messages are not written.
+    CNcbiOstream * m_pProgressOstrm;
+
+    // do not read this pointer.  It's just used to make
+    // sure m_pProgressOstrm is destroyed if we own it.
+    AutoPtr<CNcbiOstream> m_progressOstrmDestroyer;
 
 protected:
 
@@ -294,3 +302,4 @@ END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif // OBJTOOLS_READERS___MESSAGELISTENER__HPP
+
