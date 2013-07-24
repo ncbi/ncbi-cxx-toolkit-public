@@ -1160,7 +1160,7 @@ inline CJson_Node CJson_Array::back(void) {
 template <typename T> inline void CJson_Array::push_back(T) {
     CProhibited<T>::Implicit_conversions_are_prohibited();
 }
-#define JSW_EMPTY_TEMPLATE EMPTY_TEMPLATE
+#define JSW_EMPTY_TEMPLATE template<>
 #else
 #define JSW_EMPTY_TEMPLATE
 #endif
@@ -1408,56 +1408,56 @@ inline void CJson_Object::insert(const CJson_Node::TKeyType& name) {
     rapidjson::Value sv_value(&a);
     m_Impl->AddMember( sv_name, sv_value, a);
 }
-EMPTY_TEMPLATE inline void
+template<> inline void
 CJson_Object::insert(const CJson_Node::TKeyType& name, bool v) {
     rapidjson::Value::AllocatorType& a = *(m_Impl->GetValueAllocator());
     rapidjson::Value sv_name(name.c_str(), a);
     rapidjson::Value sv_value(&a);
     m_Impl->AddMember( sv_name, sv_value.SetBool(v), a);
 }
-EMPTY_TEMPLATE inline void
+template<> inline void
 CJson_Object::insert(const CJson_Node::TKeyType& name, Int4 v) {
     rapidjson::Value::AllocatorType& a = *(m_Impl->GetValueAllocator());
     rapidjson::Value sv_name(name.c_str(), a);
     rapidjson::Value sv_value(&a);
     m_Impl->AddMember( sv_name, sv_value.SetInt(v), a);
 }
-EMPTY_TEMPLATE inline void
+template<> inline void
 CJson_Object::insert(const CJson_Node::TKeyType& name, Uint4 v) {
     rapidjson::Value::AllocatorType& a = *(m_Impl->GetValueAllocator());
     rapidjson::Value sv_name(name.c_str(), a);
     rapidjson::Value sv_value(&a);
     m_Impl->AddMember( sv_name, sv_value.SetUint(v), a);
 }
-EMPTY_TEMPLATE inline void
+template<> inline void
 CJson_Object::insert(const CJson_Node::TKeyType& name, Int8 v) {
     rapidjson::Value::AllocatorType& a = *(m_Impl->GetValueAllocator());
     rapidjson::Value sv_name(name.c_str(), a);
     rapidjson::Value sv_value(&a);
     m_Impl->AddMember( sv_name, sv_value.SetInt64(v), a);
 }
-EMPTY_TEMPLATE inline void
+template<> inline void
 CJson_Object::insert(const CJson_Node::TKeyType& name, Uint8 v) {
     rapidjson::Value::AllocatorType& a = *(m_Impl->GetValueAllocator());
     rapidjson::Value sv_name(name.c_str(), a);
     rapidjson::Value sv_value(&a);
     m_Impl->AddMember( sv_name, sv_value.SetUint64(v), a);
 }
-EMPTY_TEMPLATE inline void
+template<> inline void
 CJson_Object::insert(const CJson_Node::TKeyType& name, float v) {
     rapidjson::Value::AllocatorType& a = *(m_Impl->GetValueAllocator());
     rapidjson::Value sv_name(name.c_str(), a);
     rapidjson::Value sv_value(&a);
     m_Impl->AddMember( sv_name, sv_value.SetDouble(v), a);
 }
-EMPTY_TEMPLATE inline void
+template<> inline void
 CJson_Object::insert(const CJson_Node::TKeyType& name, double v) {
     rapidjson::Value::AllocatorType& a = *(m_Impl->GetValueAllocator());
     rapidjson::Value sv_name(name.c_str(), a);
     rapidjson::Value sv_value(&a);
     m_Impl->AddMember( sv_name, sv_value.SetDouble(v), a);
 }
-EMPTY_TEMPLATE inline void
+template<> inline void
 CJson_Object::insert(const CJson_Node::TKeyType& name,
                      const CJson_Node::TCharType* value) {
     rapidjson::Value::AllocatorType& a = *(m_Impl->GetValueAllocator());
@@ -1466,7 +1466,7 @@ CJson_Object::insert(const CJson_Node::TKeyType& name,
     m_Impl->AddMember( sv_name, sv_value, a);
 }
 #ifndef NCBI_COMPILER_WORKSHOP
-EMPTY_TEMPLATE
+template<>
 #endif
 inline void
 CJson_Object::insert(const CJson_Node::TKeyType& name,
