@@ -1425,6 +1425,7 @@ void CId2ReaderBase::x_UpdateLoadedSet(CReaderRequestResult& result,
         ITERATE ( SId2LoadedSet::TBlob_ids, it2, it->second.second ) {
             CBlob_Info blob_info(it2->second.m_ContentMask);
             const SId2BlobInfo::TAnnotInfo& ainfos = it2->second.m_AnnotInfo;
+            bool bad_annot_info = false;
             ITERATE ( SId2BlobInfo::TAnnotInfo, it3, ainfos ) {
                 const CID2S_Seq_annot_Info& annot_info = **it3;
                 if ( (it2->second.m_ContentMask & fBlobHasNamedAnnot) &&
@@ -1439,6 +1440,15 @@ void CId2ReaderBase::x_UpdateLoadedSet(CReaderRequestResult& result,
                     // complete annot info
                     blob_info.AddAnnotInfo(annot_info);
                 }
+                // Heuristics to determine incorrect annot info records.
+                if ( annot_info.IsSetAlign() && annot_info.IsSetGraph() ) {
+                    bad_annot_info = true;
+                }
+            }
+            if ( bad_annot_info ) {
+                // The heuristics determined that the annot info is incorect.
+                // Reset it so that the blob will be loaded instead.
+                blob_info = CBlob_Info(it2->second.m_ContentMask);
             }
             ids.AddBlob_id(it2->first, blob_info);
         }
