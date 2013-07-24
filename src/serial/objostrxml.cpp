@@ -464,7 +464,38 @@ void CObjectOStreamXml::CopyEnum(const CEnumeratedTypeValues& values,
 void CObjectOStreamXml::WriteEscapedChar(char c)
 {
 //  http://www.w3.org/TR/2000/REC-xml-20001006#NT-Char
-    WriteOneEscapedChar(m_Output, c);
+    switch ( c ) {
+    case '&':
+        m_Output.PutString("&amp;");
+        break;
+    case '<':
+        m_Output.PutString("&lt;");
+        break;
+    case '>':
+        m_Output.PutString("&gt;");
+        break;
+    case '\'':
+        m_Output.PutString("&apos;");
+        break;
+    case '"':
+        m_Output.PutString("&quot;");
+        break;
+    default:
+        if ((unsigned int)c < 0x20) {
+            m_Output.PutString("&#x");
+            Uint1 ch = c;
+            unsigned hi = ch >> 4;
+            unsigned lo = ch & 0xF;
+            if ( hi ) {
+                m_Output.PutChar("0123456789abcdef"[hi]);
+            }
+            m_Output.PutChar("0123456789abcdef"[lo]);
+            m_Output.PutChar(';');
+        } else {
+            m_Output.PutChar(c);
+        }
+        break;
+    }
 }
 
 /*

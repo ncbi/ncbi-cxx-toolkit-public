@@ -261,29 +261,6 @@ public:
     virtual void WriteFileHeader(TTypeInfo type);
     virtual void EndOfWrite(void);
 
-    /// Write the XML-escaped form of the given character
-    /// to the given buffer.  Example: '&amp;' is written
-    /// as "&amp;amp;".
-    ///
-    /// @param out_buffer
-    ///   This is where the escaped character is written.
-    /// @param ch
-    ///   This is the character to escape.
-    static void WriteOneEscapedChar(COStreamBuffer & out_buffer, char ch );
-
-    /// XML-escapes all the given input data to the given buffer.
-    /// @sa WriteOneEscapedChar
-    ///
-    /// @param out_buffer
-    ///   This is where the escaped characters are written.
-    /// @param input_data
-    ///   This is the source of the characters to escape
-    /// @param input_data_length
-    ///   This is the length of input_data, which is necessary
-    ///   since input_data could have '\0' characters occasionally.
-    static void WriteEscapedData(COStreamBuffer & out_buffer, 
-        const char * input_data, size_t input_data_length );
-
 protected:
     virtual void WriteBool(bool data);
     virtual void WriteChar(char data);
