@@ -296,6 +296,20 @@ void CValidError_bioseqset::ValidateNucProtSet
     FOR_EACH_SEQENTRY_ON_SEQSET (se_list_it, seqset) {
         if ( (*se_list_it)->IsSeq() ) {
             const CBioseq& seq = (*se_list_it)->GetSeq();
+
+
+            FOR_EACH_DESCRIPTOR_ON_BIOSEQ (it, seq) {
+                const CSeqdesc& desc = **it;
+                if (desc.Which() != CSeqdesc::e_User) continue;
+                if (desc.GetUser().IsSetType()) {
+                    const CUser_object& usr = desc.GetUser();
+                    const CObject_id& oi = usr.GetType();
+                    if (oi.IsStr() && NStr::EqualCase(oi.GetStr(), "DBLink")) {
+                        PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem, "DBLink user object should not be on a Bioseq", seq);
+                    }
+                }
+            }
+
             CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
             CBioseq_set_Handle gps = GetGenProdSetParent(bsh);
 			      if (seq.IsNa()) {
