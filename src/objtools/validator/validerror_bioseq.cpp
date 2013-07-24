@@ -932,6 +932,18 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
         // Validate descriptors that affect this bioseq
         ValidateSeqDescContext(seq);
 
+        FOR_EACH_DESCRIPTOR_ON_BIOSEQ (it, seq) {
+            const CSeqdesc& desc = **it;
+            if (desc.Which() != CSeqdesc::e_User) continue;
+            if (desc.GetUser().IsSetType()) {
+                const CUser_object& usr = desc.GetUser();
+                const CObject_id& oi = usr.GetType();
+                if (oi.IsStr() && NStr::EqualCase(oi.GetStr(), "DBLink")) {
+                    PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem, "DBLink user object should not be on a Bioseq", seq);
+                }
+            }
+        }
+
         if (m_dblink_count > 1) {
             PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
                 NStr::IntToString(m_dblink_count) + " DBLink user objects apply to a Bioseq", seq);
