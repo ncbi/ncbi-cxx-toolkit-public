@@ -1420,7 +1420,7 @@ public:
     CTimeSpan operator- (const CTimeSpan& t) const;
 
     /// Unary operator "-" (minus) to change time span sign.
-    const CTimeSpan operator- (void) const;
+    CTimeSpan operator- (void) const;
 
     /// Invert time span. Changes time span sign.
     void Invert(void);
@@ -2403,7 +2403,7 @@ CTimeSpan CTimeSpan::operator- (const CTimeSpan& t) const
 }
 
 inline
-const CTimeSpan CTimeSpan::operator- (void) const
+CTimeSpan CTimeSpan::operator- (void) const
 {
     CTimeSpan t;
     t.m_Sec     = -m_Sec;
