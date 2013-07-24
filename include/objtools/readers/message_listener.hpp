@@ -82,7 +82,7 @@ public:
 };
             
 //  ============================================================================
-class CMessageListenerBase:
+class NCBI_XOBJREAD_EXPORT CMessageListenerBase:
 //  ============================================================================
     public CObject, public IMessageListener
 {
