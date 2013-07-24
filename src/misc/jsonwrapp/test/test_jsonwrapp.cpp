@@ -150,7 +150,7 @@ public:
     }
     virtual void PlainMemberValue(const std::string& name,
                                   const std::string& member,
-                                  const CJson_ConstValue& value) {
+                                  const CJson_ConstValue& /*value*/) {
         std::cout << "plain_member_value " << name
                   << "." << member << ", JPath = "
                   << GetCurrentJPath() << std::endl;
@@ -181,7 +181,7 @@ public:
     }
     virtual void PlainElementValue(const std::string& name,
                                    size_t index,
-                                   const CJson_ConstValue& value) {
+                                   const CJson_ConstValue& /*value*/) {
         std::cout << "plain_element_value " << name << "["
                   << index << "], JPath = "
                   << GetCurrentJPath() << std::endl;
