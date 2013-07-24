@@ -179,6 +179,9 @@ void CMultiReaderApp::Init(void)
     //
     //  input / output:
     //        
+
+    arg_desc->SetCurrentGroup("INPUT / OUTPUT");
+
     arg_desc->AddKey(
         "input", 
         "File_In",
@@ -237,6 +240,9 @@ void CMultiReaderApp::Init(void)
     //
     //  ID mapping:
     //
+
+    arg_desc->SetCurrentGroup("ID MAPPING");
+
     arg_desc->AddDefaultKey(
         "mapfile",
         "File_In",
@@ -253,6 +259,9 @@ void CMultiReaderApp::Init(void)
     //
     //  Error policy:
     //        
+
+    arg_desc->SetCurrentGroup("ERROR POLICY");
+
     arg_desc->AddFlag(
         "dumpstats",
         "write record counts to stderr",
@@ -297,9 +306,16 @@ void CMultiReaderApp::Init(void)
         &(*new CArgAllow_Strings, 
             "info", "warning", "error" ) );
 
+    arg_desc->AddFlag("show-progress", 
+        "This will show XML progress messages on stderr, if the underlying "
+        "reader supports that.");
+
     //
     //  bed and gff reader specific arguments:
     //
+
+    arg_desc->SetCurrentGroup("BED AND GFF READER SPECIFIC");
+
     arg_desc->AddFlag(
         "all-ids-as-local",
         "turn all ids into local ids",
@@ -313,6 +329,9 @@ void CMultiReaderApp::Init(void)
     //
     //  wiggle reader specific arguments:
     //
+
+    arg_desc->SetCurrentGroup("WIGGLE READER SPECIFIC");
+
     arg_desc->AddFlag(
         "join-same",
         "join abutting intervals",
@@ -336,6 +355,9 @@ void CMultiReaderApp::Init(void)
     //
     //  gff reader specific arguments:
     //
+
+    arg_desc->SetCurrentGroup("GFF READER SPECIFIC");
+
     arg_desc->AddFlag( // no longer used, retained for backward compatibility
         "new-code",
         "use new gff3 reader implementation",
@@ -348,6 +370,9 @@ void CMultiReaderApp::Init(void)
     //
     //  alignment reader specific arguments:
     //
+
+    arg_desc->SetCurrentGroup("ALIGNMENT READER SPECIFIC");
+
     arg_desc->AddDefaultKey(
         "aln-gapchar", 
         "STRING",
@@ -371,6 +396,8 @@ void CMultiReaderApp::Init(void)
         "force-local-ids",
         "treat all IDs as local IDs",
         true);
+
+    arg_desc->SetCurrentGroup("");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -852,28 +879,30 @@ CMultiReaderApp::xSetMessageListener(
     }
     if ( args["strict"] ) {
         m_pErrors = new CMessageListenerStrict;
-        return;
-    }
-    if ( args["lenient"] ) {
+    } else if ( args["lenient"] ) {
         m_pErrors = new CMessageListenerLenient;
-        return;
+    } else {    
+        int iMaxErrorCount = args["max-error-count"].AsInteger();
+        int iMaxErrorLevel = eDiag_Error;
+        string strMaxErrorLevel = args["max-error-level"].AsString();
+        if ( strMaxErrorLevel == "info" ) {
+            iMaxErrorLevel = eDiag_Info;
+        }
+        else if ( strMaxErrorLevel == "error" ) {
+            iMaxErrorLevel = eDiag_Error;
+        }
+
+        if ( iMaxErrorCount == -1 ) {
+            m_pErrors.Reset(new CMessageListenerLevel(iMaxErrorLevel));
+        } else {
+            m_pErrors.Reset(new CMessageListenerCustom(iMaxErrorCount, iMaxErrorLevel));
+        }
     }
-    
-    int iMaxErrorCount = args["max-error-count"].AsInteger();
-    int iMaxErrorLevel = eDiag_Error;
-    string strMaxErrorLevel = args["max-error-level"].AsString();
-    if ( strMaxErrorLevel == "info" ) {
-        iMaxErrorLevel = eDiag_Info;
+
+    // if progress requested, wrap the m_pErrors so that progress is shown
+    if( args["show-progress"] ) {
+        m_pErrors->SetProgressOstream( &cerr );
     }
-    else if ( strMaxErrorLevel == "error" ) {
-        iMaxErrorLevel = eDiag_Error;
-    }
-    
-    if ( iMaxErrorCount == -1 ) {
-        m_pErrors.Reset(new CMessageListenerLevel(iMaxErrorLevel));
-        return;
-    }
-    m_pErrors.Reset(new CMessageListenerCustom(iMaxErrorCount, iMaxErrorLevel));
 }
     
 //  ----------------------------------------------------------------------------
