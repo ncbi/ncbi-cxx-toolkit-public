@@ -35,6 +35,10 @@ acc_test : agp_validate
 fa_test : agp_validate
 	-sh -c "./agp_validate $(srcdir)/test/fa_test.fa $(srcdir)/test/fa_test.agp >fa_test.out 2>&1"
 	diff ${DOPT} -u $(srcdir)/test/fa_test.out fa_test.out
+	-sh -c "./agp_validate $(srcdir)/test/fa_test.fa $(srcdir)/test/fa_test1.agp >fa_test1_2.out 2>&1"
+	-sh -c "echo ===================================================== >> fa_test1_2.out"
+	-sh -c "./agp_validate $(srcdir)/test/fa_test.fa $(srcdir)/test/fa_test2.agp>>fa_test1_2.out 2>&1"
+	diff ${DOPT} -u $(srcdir)/test/fa_test1_2.out fa_test1_2.out
 
 un_test : agp_validate
 	-sh -c "./agp_validate -un $(srcdir)/test/fa_test.fa $(srcdir)/test/un_test.agp >un_test.out 2>&1"
