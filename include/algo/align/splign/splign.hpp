@@ -28,6 +28,7 @@
 * ===========================================================================
 *
 * Author:  Yuri Kapustin
+*          Boris Kiryutin
 *
 * File Description:
 *   CSplign class definition
@@ -42,10 +43,13 @@
 #include <algo/align/nw/nw_formatter.hpp>
 #include <algo/align/util/blast_tabular.hpp>
 
-
 BEGIN_NCBI_SCOPE
 
 class CBlastTabular;
+
+const string kTestType_20_28_90 = "20_28_90";
+const string kTestType_production_default = "production_default";
+
 
 BEGIN_SCOPE(objects)
     class CScope;
@@ -144,6 +148,10 @@ public:
     void   SetMinPolyaLen(size_t len);
     static size_t s_GetDefaultMinPolyaLen(void);
     size_t GetMinPolyaLen(void) const;
+
+    void   SetTestType(const string& test_type);
+    string GetTestType(void) const;
+    
 
     //BEGIN basic scores
 
@@ -396,6 +404,8 @@ protected:
     double                m_MinSingletonIdty;
 
     size_t                m_MinSingletonIdtyBps;
+
+    string m_TestType;
 
 
     // mandatory end gap detection flag
