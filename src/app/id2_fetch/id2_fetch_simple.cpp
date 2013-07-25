@@ -943,7 +943,7 @@ int CId2FetchApp::Run(void)
 
         string text = args["packet"].AsString();
         if ( text.find("::=") == NPOS ) {
-            text = "ID2-Request_Packet ::= " + text;
+            text = "ID2-Request-Packet ::= " + text;
         }
         CID2_Request_Packet id2_packet;
         CNcbiIstrstream in(text.data(), text.size());
