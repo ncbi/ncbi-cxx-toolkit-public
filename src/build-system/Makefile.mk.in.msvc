@@ -114,11 +114,14 @@ EnableCOMDATFolding=2
 
 
 [Librarian]
+TargetMachine=1
 AdditionalOptions=
 IgnoreAllDefaultLibraries=false
 IgnoreDefaultLibraryNames=
 AdditionalLibraryDirectories=
 
+[Librarian.x64]
+TargetMachine=17
 
 
 [ResourceCompiler]
@@ -183,6 +186,9 @@ Linker_TargetMachine_1       = MachineX86
 Linker_TargetMachine_17      = MachineX64
 Linker_LargeAddressAware_1   = false
 Linker_LargeAddressAware_2   = true
+
+Librarian_TargetMachine_1       = MachineX86
+Librarian_TargetMachine_17      = MachineX64
 
 Macro_InputPath = %(FullPath)
 Macro_InputDir = %(RootDir)%(Directory)
