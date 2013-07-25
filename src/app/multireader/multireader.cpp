@@ -65,6 +65,7 @@
 #include <objtools/readers/gvf_reader.hpp>
 #include <objtools/readers/aln_reader.hpp>
 #include <objtools/readers/agp_read.hpp>
+#include <objtools/readers/readfeat.hpp>
 
 #include <algo/phy_tree/phy_node.hpp>
 #include <algo/phy_tree/dist_methods.hpp>
@@ -122,6 +123,7 @@ private:
     void xProcessGvf(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessAlignment(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessAgp(const CArgs&, CNcbiIstream&, CNcbiOstream&);
+    void xProcess5ColFeatTable(const CArgs&, CNcbiIstream&, CNcbiOstream&);
 
     void xSetFormat(const CArgs&, CNcbiIstream&);
     void xSetFlags(const CArgs&, CNcbiIstream&);
@@ -236,11 +238,6 @@ void CMultiReaderApp::Init(void)
         "Title for annotation",
         CArgDescriptions::eString, 
         "");
-
-    arg_desc->AddFlag("repeat",
-        "Run the reader over and over as long as there is "
-        "data.  This might be useful for readers which read just one "
-        "item and then give up");
 
     //
     //  ID mapping:
@@ -468,6 +465,9 @@ CMultiReaderApp::Run(void)
         case CFormatGuess::eAlignment:
             xProcessAlignment(args, istr, ostr);
             break;
+        case CFormatGuess::eFiveColFeatureTable:
+            xProcess5ColFeatTable(args, istr, ostr);
+            break;
     }
 
     xDumpErrors( cerr );
@@ -486,15 +486,8 @@ void CMultiReaderApp::xProcessDefault(
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "File format not supported", 0);
     }
-    do {
-        CRef<CSerialObject> object = pReader->ReadObject(istr, m_pErrors);
-        xWriteObject(*object, ostr);
-        // throw out whitespace at the end
-        char dummy_char;
-        while( istr && isspace(istr.peek()) ) {
-            istr.get(dummy_char);
-        }
-    } while( args["repeat"] &&  istr );
+    CRef<CSerialObject> object = pReader->ReadObject(istr, m_pErrors);
+    xWriteObject(*object, ostr);
 }
 
 //  ----------------------------------------------------------------------------
@@ -698,6 +691,25 @@ void CMultiReaderApp::xProcessAgp(
     }
 }
 
+void CMultiReaderApp::xProcess5ColFeatTable(
+    const CArgs& args,
+    CNcbiIstream& istr,
+    CNcbiOstream& ostr)
+{
+    CFeature_table_reader reader;
+    CRef<ILineReader> pLineReader = ILineReader::New(istr);
+    while(istr) {
+        CRef<CSeq_annot> pSeqAnnot =
+            reader.ReadSeqAnnot(*pLineReader, m_pErrors.GetPointerOrNull() );
+        if( ! pSeqAnnot || ! pSeqAnnot->IsFtable() || 
+            pSeqAnnot->GetData().GetFtable().empty() ) 
+        {
+            // empty annot
+            break;
+        }
+        xWriteObject(*pSeqAnnot, ostr);
+    }
+}
 
 //  ----------------------------------------------------------------------------
 void CMultiReaderApp::xProcessAlignment(
