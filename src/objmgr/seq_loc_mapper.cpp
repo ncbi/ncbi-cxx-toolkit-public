@@ -600,6 +600,67 @@ void CSeq_loc_Mapper::x_InitGCAssembly(const CGC_Assembly& gc_assembly,
 }
 
 
+inline bool s_IsLocalRandomChrId(const CSeq_id& id)
+{
+    return id.IsLocal()  &&  id.GetLocal().IsStr()  &&
+        id.GetLocal().GetStr().find("_random") != string::npos;
+}
+
+
+bool CSeq_loc_Mapper::x_IsUCSCRandomChr(const CGC_Sequence& gc_seq,
+                                        CConstRef<CSeq_id>& chr_id,
+                                        TSynonyms& synonyms) const
+{
+    chr_id.Reset();
+    if (!gc_seq.IsSetStructure()) return false;
+
+    CConstRef<CSeq_id> id(&gc_seq.GetSeq_id());
+    synonyms.insert(CSeq_id_Handle::GetHandle(*id));
+    if ( s_IsLocalRandomChrId(*id) ) {
+        chr_id = id;
+    }
+    // Collect all synonyms.
+    ITERATE(CGC_Sequence::TSeq_id_synonyms, it, gc_seq.GetSeq_id_synonyms()) {
+        const CGC_TypedSeqId& gc_id = **it;
+        switch ( gc_id.Which() ) {
+        case CGC_TypedSeqId::e_Genbank:
+            id.Reset(&gc_id.GetGenbank().GetGi());
+            break;
+        case CGC_TypedSeqId::e_Refseq:
+            id.Reset(&gc_id.GetRefseq().GetGi());
+            break;
+        case CGC_TypedSeqId::e_External:
+            id.Reset(&gc_id.GetExternal().GetId());
+            break;
+        case CGC_TypedSeqId::e_Private:
+            id.Reset(&gc_id.GetPrivate());
+            break;
+        default:
+            continue;
+        }
+        synonyms.insert(CSeq_id_Handle::GetHandle(*id));
+        if ( !chr_id  &&  s_IsLocalRandomChrId(*id) ) {
+            chr_id = id;
+        }
+    }
+
+    if ( !chr_id ) {
+        synonyms.clear();
+        return false;
+    }
+
+    // Use only random chromosome ids, ignore other synonyms (?)
+    string lcl_str = chr_id->GetLocal().GetStr();
+    if ( !NStr::StartsWith(lcl_str, "chr") ) {
+        CSeq_id lcl;
+        lcl.SetLocal().SetStr("chr" + lcl_str);
+        synonyms.insert(CSeq_id_Handle::GetHandle(lcl));
+    }
+
+    return true;
+}
+
+
 void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
                                        EGCAssemblyAlias    to_alias)
 {
@@ -686,22 +747,11 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
         }
         else if (to_alias == eGCA_UCSC  ||  to_alias == eGCA_Refseq) {
             TSynonyms synonyms;
+            CConstRef<CSeq_id> chr_id;
             // The requested alias type not found,
             // check for UCSC random chromosomes.
-            const CSeq_id& id = gc_seq.GetSeq_id();
-            if (gc_seq.IsSetStructure()  &&
-                id.IsLocal()  &&  id.GetLocal().IsStr()  &&
-                id.GetLocal().GetStr().find("_random") != string::npos) {
-
-                string lcl_str = id.GetLocal().GetStr();
-                CSeq_id lcl;
-                lcl.SetLocal().SetStr(lcl_str);
-                synonyms.insert(CSeq_id_Handle::GetHandle(lcl));
-                if ( !NStr::StartsWith(lcl_str, "chr") ) {
-                    lcl.SetLocal().SetStr("chr" + lcl_str);
-                    synonyms.insert(CSeq_id_Handle::GetHandle(lcl));
-                }
-                // Ignore other synonyms - they will probably never be set. (?)
+            if ( x_IsUCSCRandomChr(gc_seq, chr_id, synonyms) ) {
+                _ASSERT(chr_id);
                 x_AddVirtualBioseq(synonyms);
 
                 // Use structure (delta-seq) to initialize the mapper.
@@ -729,12 +779,12 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
                             // Map up to the chr
                             x_NextMappingRange(loc_it.GetSeq_id(),
                                 seg_pos, seg_len, seg_str,
-                                id, chr_pos, chr_len,
+                                *chr_id, chr_pos, chr_len,
                                 eNa_strand_unknown);
                             break;
                         case eGCA_Refseq:
                             // Map down to delta parts
-                            x_NextMappingRange(id, chr_pos, chr_len,
+                            x_NextMappingRange(*chr_id, chr_pos, chr_len,
                                 eNa_strand_unknown,
                                 loc_it.GetSeq_id(), seg_pos, seg_len,
                                 seg_str);

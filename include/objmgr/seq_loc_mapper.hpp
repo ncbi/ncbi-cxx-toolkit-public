@@ -281,6 +281,12 @@ private:
     CBioseq_Handle x_AddVirtualBioseq(const TSynonyms&  synonyms,
                                       const CDelta_ext* delta = 0);
 
+    // Helper function to check for UCSC random chromosomes and populate
+    // the set of synonyms.
+    bool x_IsUCSCRandomChr(const CGC_Sequence& gc_seq,
+                           CConstRef<CSeq_id>& chr_id,
+                           TSynonyms& synonyms) const;
+
 private:
     CHeapScope        m_Scope;
 };
