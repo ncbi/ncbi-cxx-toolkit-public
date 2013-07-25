@@ -445,11 +445,28 @@ CJsonNode g_LegacyStatToJson(CNetServer server, bool verbose)
             section_entries.AppendString(line);
         else if (NStr::SplitInTwo(line, ":", key, value)) {
             value = NStr::TruncateSpaces(value, NStr::eTrunc_Begin);
-            if (CNetScheduleAPI::StringToStatus(key) ==
+            if (CNetScheduleAPI::StringToStatus(key) !=
                     CNetScheduleAPI::eJobNotFound)
-                stat_info.SetString(key, value);
-            else
                 jobs_by_status.SetInteger(key, NStr::StringToInt8(value));
+            else {
+                if (key == "Executable path") {
+                    SIZE_TYPE misplaced_pid = NStr::Find(value, "; PID: ");
+                    if (misplaced_pid != NPOS) {
+                        SIZE_TYPE pos = misplaced_pid + sizeof("; PID: ") - 1;
+                        stat_info.SetInteger("PID", NStr::StringToInt8(
+                                CTempString(value.data() + pos,
+                                        value.length() - pos)));
+                        value.erase(misplaced_pid);
+
+                        if (!stat_info.HasKey("Version"))
+                            stat_info.SetString("Version", "Unknown");
+
+                        if (!stat_info.HasKey("Build date"))
+                            stat_info.SetString("Build date", "Unknown");
+                    }
+                }
+                stat_info.SetByKey(key, CJsonNode::GuessType(value));
+            }
         }
     }
 
