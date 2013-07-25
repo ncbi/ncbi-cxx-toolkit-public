@@ -4398,6 +4398,12 @@ CNewCleanup_imp::x_SeqFeatRnaGBQualBC(CSeq_feat& feat, CRNA_ref& rna, CGb_qual& 
                 
                 if (justTrnaText) {
                     copy( codon.begin(), codon.end(), back_inserter(trna.SetCodon()) );
+                } else {
+                    if( ! feat.IsSetComment() ) {
+                        feat.SetComment(gb_qual_val);
+                    } else {
+                        feat.SetComment() += "; " + gb_qual_val;
+                    }
                 }
                 
                 if (aa == 'M') {
