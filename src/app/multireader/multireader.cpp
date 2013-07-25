@@ -237,6 +237,11 @@ void CMultiReaderApp::Init(void)
         CArgDescriptions::eString, 
         "");
 
+    arg_desc->AddFlag("repeat",
+        "Run the reader over and over as long as there is "
+        "data.  This might be useful for readers which read just one "
+        "item and then give up");
+
     //
     //  ID mapping:
     //
@@ -481,8 +486,15 @@ void CMultiReaderApp::xProcessDefault(
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "File format not supported", 0);
     }
-    CRef<CSerialObject> object = pReader->ReadObject(istr, m_pErrors);
-    xWriteObject(*object, ostr);
+    do {
+        CRef<CSerialObject> object = pReader->ReadObject(istr, m_pErrors);
+        xWriteObject(*object, ostr);
+        // throw out whitespace at the end
+        char dummy_char;
+        while( istr && isspace(istr.peek()) ) {
+            istr.get(dummy_char);
+        }
+    } while( args["repeat"] &&  istr );
 }
 
 //  ----------------------------------------------------------------------------
