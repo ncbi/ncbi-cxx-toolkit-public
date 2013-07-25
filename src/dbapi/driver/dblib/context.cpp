@@ -431,6 +431,8 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     string user_name;
     string message = dberrstr;
 
+    CFastMutexGuard ctx_mg(s_CtxMutex);
+
     CDBL_Connection* link = dblink ?
         reinterpret_cast<CDBL_Connection*> (dbgetuserdata(dblink)) : 0;
 
@@ -560,6 +562,8 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
 
     if (msgno == 5701 || msgno == 5703 || msgno == 5704)
         return;
+
+    CFastMutexGuard ctx_mg(s_CtxMutex);
 
     CDBL_Connection* link = dblink ?
         reinterpret_cast<CDBL_Connection*>(dbgetuserdata(dblink)) : 0;

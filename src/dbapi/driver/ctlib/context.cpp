@@ -1005,6 +1005,8 @@ CS_RETCODE CTLibContext::CTLIB_cserr_handler(CS_CONTEXT* context, CS_CLIENTMSG* 
     CS_INT          outlen;
 
     try {
+        CMutexGuard mg(s_CTLCtxMtx);
+
         if (cs_config(context,
                       CS_GET,
                       CS_USERDATA,
@@ -1150,6 +1152,8 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
     string          user_name;
 
     try {
+        CMutexGuard mg(s_CTLCtxMtx);
+
         // Ignoring "The connection has been marked dead" from connection's
         // Close() method.
         if (msg->msgnumber == 16843058
@@ -1331,6 +1335,8 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
     string          user_name;
 
     try {
+        CMutexGuard mg(s_CTLCtxMtx);
+
         if (con != NULL && ct_con_props(con, CS_GET, CS_USERDATA,
                                        (void*) &ctl_conn, (CS_INT) sizeof(ctl_conn),
                                        &outlen) == CS_SUCCEED  &&
