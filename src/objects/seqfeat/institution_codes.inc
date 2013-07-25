@@ -1637,6 +1637,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ENS	s	Hubei College for Nationalities, Forestry Department",
 "ENSJ	s	Escuela Normal Superior de Jalisco",
 "ENT	s	Herbarium, Ministry of Natural Resources, Uganda",
+"ENTOMOFOR	s	Collection of necrophagous Fauna of the Forensic Entomology Laboratory (Basque Country University)",
 "EONJ	s	Upsala College, Biology Department",
 "EOSC	s	Eastern Oregon University, Biology Department",
 "EOSCVM	s	Eastern Oregon State College, Vertebrate Museum",
