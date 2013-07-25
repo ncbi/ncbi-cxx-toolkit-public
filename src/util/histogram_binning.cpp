@@ -37,6 +37,8 @@
 
 #include <corelib/ncbiexpt.hpp>
 
+#include <algorithm>
+
 #include <util/histogram_binning.hpp>
 #include <util/bitset/bmutil.h>
 
