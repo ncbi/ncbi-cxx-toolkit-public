@@ -196,7 +196,8 @@ public:
         eDbtagType_SRA,
         eDbtagType_Trace,
         eDbtagType_RefSeq,
-        eDbtagType_EnsemblGenomes
+        eDbtagType_EnsemblGenomes,
+        eDbtagType_TubercuList
     };
 
     enum EDbtagGroup {

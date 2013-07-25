@@ -143,6 +143,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "SubtiList", CDbtag::eDbtagType_SubtiList },
     { "TAIR", CDbtag::eDbtagType_TAIR },
     { "TIGRFAM", CDbtag::eDbtagType_TIGRFAM },
+    { "TubercuList", CDbtag::eDbtagType_TubercuList },
     { "UNILIB", CDbtag::eDbtagType_UNILIB },
     { "UNITE", CDbtag::eDbtagType_UNITE },
     { "UniGene", CDbtag::eDbtagType_UniGene },
@@ -211,6 +212,7 @@ static const TDbxrefPair kApprovedSrcDbXrefs[] = {
     { "RZPD", CDbtag::eDbtagType_RZPD },
     { "UNILIB", CDbtag::eDbtagType_UNILIB },
     { "UNITE", CDbtag::eDbtagType_UNITE }, 
+    { "TubercuList", CDbtag::eDbtagType_TubercuList },
     { "taxon", CDbtag::eDbtagType_taxon }
 };
 
@@ -645,7 +647,8 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_IKMC, "http://www.knockoutmouse.org/martsearch/project/" },
     { CDbtag::eDbtagType_ViPR, "http://www.viprbrc.org/brc/viprStrainDetails.do?viprSubmissionId=" },
     { CDbtag::eDbtagType_RefSeq, "http://www.ncbi.nlm.nih.gov/nuccore/" },
-    { CDbtag::eDbtagType_EnsemblGenomes, "http://ensemblgenomes.org/id/" }
+    { CDbtag::eDbtagType_EnsemblGenomes, "http://ensemblgenomes.org/id/" },
+    { CDbtag::eDbtagType_TubercuList, "http://tuberculist.epfl.ch/quicksearch.php?gene+name=" }
 };
 
 typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;
