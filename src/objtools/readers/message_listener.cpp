@@ -67,7 +67,27 @@ CMessageListenerBase::PutProgress(
         *m_pProgressOstrm  << " />";
     } else {
         *m_pProgressOstrm  << " >";
-        *m_pProgressOstrm << NStr::XmlEncode(sMessage);
+
+        string sXMLEncodedMessage = NStr::XmlEncode(sMessage);
+
+        // some functionality relies on progress messages fitting into 
+        // one line, so we escape newlines (just in case) while
+        // we write it.
+        ITERATE( string, msg_it, sXMLEncodedMessage ) {
+            const char ch = *msg_it;
+            switch(ch) {
+            case '\r':
+                *m_pProgressOstrm << "&#xD;";
+                break;
+            case '\n':
+                *m_pProgressOstrm << "&#xA;";
+                break;
+            default:
+                *m_pProgressOstrm << ch;
+                break;
+            }
+        }
+
         *m_pProgressOstrm << "</message>" << NcbiEndl;
     }
 }
