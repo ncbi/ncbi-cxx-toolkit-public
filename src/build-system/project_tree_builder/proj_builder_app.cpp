@@ -1970,8 +1970,9 @@ void CProjBulderApp::ParseArguments(void)
                 }
             }
             if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
-                m_CustomConfiguration.AddDefinition("__TweakVTuneR", "no");
-                m_CustomConfiguration.AddDefinition("__TweakVTuneD", "no");
+                string vt = GetSite().IsProvided("TweakVTune", false) ? "yes" : "no";
+                m_CustomConfiguration.AddDefinition("__TweakVTuneR", vt);
+                m_CustomConfiguration.AddDefinition("__TweakVTuneD", vt);
             }
         }
 

@@ -459,6 +459,7 @@ SConfigInfo::SConfigInfo(const string& name,
      m_RuntimeLibrary(runtime_library),
      m_Debug         (debug),
      m_VTuneAddon(false),
+     m_Unicode(false),
      m_rtType(rtUnknown)
 {
     DefineRtType();
@@ -489,7 +490,9 @@ void SConfigInfo::DefineRtType()
 
 string SConfigInfo::GetConfigFullName(void) const
 {
-    if (m_VTuneAddon) {
+    if (m_VTuneAddon && m_Unicode) {
+        return string("VTune_Unicode_") + m_Name;
+    } else if (m_VTuneAddon) {
         return string("VTune_") + m_Name;
     } else if (m_Unicode) {
         return string("Unicode_") + m_Name;
@@ -528,6 +531,7 @@ void LoadConfigInfoByNames(const CNcbiRegistry& registry,
         config.SetRuntimeLibrary( registry.GetString(config_name, 
                                   "runtimeLibraryOption","0"));
         configs->push_back(config);
+#if 0
         if (( config.m_Debug && GetApp().m_TweakVTuneD) ||
             (!config.m_Debug && GetApp().m_TweakVTuneR))
         {
@@ -535,10 +539,24 @@ void LoadConfigInfoByNames(const CNcbiRegistry& registry,
             configs->push_back(config);
             config.m_VTuneAddon = false;
         }
+#else
         if (GetApp().m_AddUnicode) {
             config.m_Unicode = true;
             configs->push_back(config);
         }
+        if (GetApp().m_TweakVTuneR) {
+            if (!config.m_Debug && config.m_rtType == SConfigInfo::rtMultiThreadedDLL)
+            {
+                config.m_Unicode = false;
+                config.m_VTuneAddon = true;
+                configs->push_back(config);
+                if (GetApp().m_AddUnicode) {
+                    config.m_Unicode = true;
+                    configs->push_back(config);
+                }
+            }
+        }
+#endif
     }
     configs->sort(s_Config_less);
 }
