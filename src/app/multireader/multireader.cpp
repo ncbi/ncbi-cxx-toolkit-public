@@ -64,7 +64,7 @@
 #include <objtools/readers/gtf_reader.hpp>
 #include <objtools/readers/gvf_reader.hpp>
 #include <objtools/readers/aln_reader.hpp>
-#include <objtools/readers/agp_read.hpp>
+#include <objtools/readers/agp_seq_entry.hpp>
 #include <objtools/readers/readfeat.hpp>
 
 #include <algo/phy_tree/phy_node.hpp>
@@ -683,10 +683,16 @@ void CMultiReaderApp::xProcessAgp(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
-    typedef vector<CRef<CSeq_entry> > TEntries;
-    TEntries entries;
-    AgpRead(istr, entries);
-    NON_CONST_ITERATE (TEntries, it, entries) {
+    CAgpToSeqEntry reader(m_iFlags);
+    
+    const int iErrCode = reader.ReadStream(istr);
+    if( iErrCode != 0 ) {
+        NCBI_THROW2(CObjReaderParseException, eFormat,
+            "AGP reader failed with code " +
+            NStr::NumericToString(iErrCode), 0 );
+    }
+
+    NON_CONST_ITERATE (CAgpToSeqEntry::TSeqEntryRefVec, it, reader.GetResult()) {
         xWriteObject(**it, ostr);
     }
 }
