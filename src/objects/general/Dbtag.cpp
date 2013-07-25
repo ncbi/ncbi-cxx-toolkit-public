@@ -210,9 +210,9 @@ static const TDbxrefPair kApprovedSrcDbXrefs[] = {
     { "RBGE_garden", CDbtag::eDbtagType_RBGE_garden },
     { "RBGE_herbarium", CDbtag::eDbtagType_RBGE_herbarium },
     { "RZPD", CDbtag::eDbtagType_RZPD },
+    { "TubercuList", CDbtag::eDbtagType_TubercuList },
     { "UNILIB", CDbtag::eDbtagType_UNILIB },
     { "UNITE", CDbtag::eDbtagType_UNITE }, 
-    { "TubercuList", CDbtag::eDbtagType_TubercuList },
     { "taxon", CDbtag::eDbtagType_taxon }
 };
 
