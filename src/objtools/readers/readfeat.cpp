@@ -2666,6 +2666,14 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
     while ( !reader.AtEOF() ) {
 
+        // since reader's UngetLine doesn't actually push back
+        // into the reader's underlying stream, we try to
+        // be careful to detect the most common case of
+        // "there's another feature next"
+        if( reader.PeekChar() == '>' ) {
+            break;
+        }
+
         CTempString line = *++reader;
 
         if( reader.GetLineNumber() % 10000 == 0 &&
