@@ -1403,5 +1403,85 @@ bool DeleteBlastDb(const string& dbpath, CSeqDB::ESeqType seq_type)
     return static_cast<bool>(num_files_removed != 0);
 }
 
+const char* CSeqDB::kBlastDbDateFormat = "b d, Y  H:m P";
+
+set<string>
+CWgsDbTrimmer::x_ExtractOriginalWgsDbs()
+{
+    vector<string> orig_wgs_dbs;
+    NStr::Tokenize(m_OrigWgsList, " ", orig_wgs_dbs);
+    set<string> retval;
+    copy(orig_wgs_dbs.begin(), orig_wgs_dbs.end(), inserter(retval,
+                                                            retval.begin()));
+    return retval;
+}
+
+CWgsDbTrimmer::TGiLists
+CWgsDbTrimmer::x_ReadGiListsForDbs()
+{
+    static string kBlastDb;
+    if (kBlastDb.empty()) {
+        kBlastDb = (m_Path.empty() 
+                    ? CDirEntry(SeqDB_ResolveDbPath("nt.nal")).GetDir()
+                    : m_Path);
+    }
+
+    TGiLists retval;
+    set<string> orig_wgs_dbs = x_ExtractOriginalWgsDbs();
+    if ( !orig_wgs_dbs.empty() ) {
+        const string kDir = (m_Path.empty() ? kBlastDb + "/Wgs2Gi" : m_Path) + "/";
+        const string kExtn = ".gil";
+        ITERATE(set<string>, wgs_db_name, orig_wgs_dbs) {
+            CNcbiOstrstream oss;
+            oss << kDir << CDirEntry(*wgs_db_name).GetName() << kExtn;
+            string fname = CNcbiOstrstreamToString(oss);
+            vector<int> gis;
+            try {
+                bool in_order = false;
+                SeqDB_ReadGiList(fname, gis, &in_order);
+                if ( !in_order ) {
+                    sort(gis.begin(), gis.end());
+                }
+            } catch (...) {} // if there's no GI list, save it
+            retval[*wgs_db_name] = gis;
+            _TRACE("Read " << gis.size() << " from " << fname);
+        }
+    }
+    return retval;
+}
+
+string CWgsDbTrimmer::GetDbList()
+{
+    TGiLists wgs_gi_lists = x_ReadGiListsForDbs();
+    set<string> trimmed_wgs_dbs;
+    ITERATE(set<TGi>, gi, m_Gis) {
+        if (wgs_gi_lists.empty()) {
+            break;
+        }
+        NON_CONST_ITERATE(TGiLists, gis4wgs_db, wgs_gi_lists) {
+            const string& wgs_db_name = gis4wgs_db->first;
+            const vector<int>& wgs_gis = gis4wgs_db->second;
+            if (find(wgs_gis.begin(), wgs_gis.end(), *gi) != wgs_gis.end()) {
+                trimmed_wgs_dbs.insert(wgs_db_name);
+                wgs_gi_lists.erase(wgs_db_name);
+                break;
+            }
+        }
+    }
+    ITERATE(TGiLists, gis4wgs_db, wgs_gi_lists) {
+        const string& wgs_db_name = gis4wgs_db->first;
+        const vector<int>& wgs_gis = gis4wgs_db->second;
+        if (wgs_gis.empty()) {
+            trimmed_wgs_dbs.insert(wgs_db_name);
+        }
+    }
+
+    CNcbiOstrstream oss;
+    ITERATE(set<string>, wgs_db, trimmed_wgs_dbs) {
+        oss << *wgs_db << " ";
+    }
+    return NStr::TruncateSpaces(CNcbiOstrstreamToString(oss));
+}
+
 END_NCBI_SCOPE
 

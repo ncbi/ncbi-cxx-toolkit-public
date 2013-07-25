@@ -717,6 +717,10 @@ public:
     /// be used.
     string GetDate() const;
 
+    /// Format string for the date returned by CSeqDB::GetDate
+    /// @sa CTime
+    static const char* kBlastDbDateFormat;
+
     /// Returns the construction date of the database.
     /// 
     /// @param dbname
@@ -1519,6 +1523,40 @@ CSeqDB::ESeqType ParseMoleculeTypeString(const string& str);
 /// @return true if relevant files were deleted, else false
 NCBI_XOBJREAD_EXPORT 
 bool DeleteBlastDb(const string& dbpath, CSeqDB::ESeqType seq_type);
+
+/// Class to facilitate trimming down the list of WGS BLAST DBs so to those
+/// relevant to the GIs provided. (WB-1206, WB-1069)
+class NCBI_XOBJREAD_EXPORT CWgsDbTrimmer {
+public:
+    /// Constructor which takes a space separated list of WGS BLAST DBs
+    CWgsDbTrimmer(const string& wgs_db_list)
+        : m_OrigWgsList(wgs_db_list) {}
+    /// Add a gi that appears in the BLAST results, so that the resulting
+    /// WGS BLAST DB list can be trimmed on the basis of this
+    void AddGi(TGi gi) { m_Gis.insert(gi); }
+    /// Builds a space separated, trimmed list of WGS BLAST DBs which contain
+    /// all of the GIs, provided to this object until this method is called.
+    /// Those GIs that aren't found in the original list of WGS BLASTDBs
+    /// provided in the constructor are silently ignored.
+    /// @note the list of BLAST DBs will be returned in alphabetical order
+    string GetDbList();
+    /// Returns the BLASTDB list originally provided in the constructor
+    string GetOrigDbList() const { return m_OrigWgsList; }
+    /// Sets the path where the GI lists for WGS BLAST DBs will be searched.
+    /// This is provided as a convenience for unit testing this API. If this
+    /// called, a default hard coded path will be used
+    void SetWgsGiListPath(const string& path) { m_Path = path; }
+private:
+    typedef map<string, vector<int> > TGiLists;
+    /// Reads the gi lists for each of the BLAST DBs provided in the
+    /// constructor, ignoring those that can't be found
+    TGiLists x_ReadGiListsForDbs();
+    /// Returns the WGS BLAST DBs provided in the constructor into a set
+    set<string> x_ExtractOriginalWgsDbs();
+    string m_OrigWgsList;
+    set<TGi> m_Gis;
+    string m_Path;
+};
 
 END_NCBI_SCOPE
 
