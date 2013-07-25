@@ -144,7 +144,7 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
 {
     // add TPA keywords
     if ( ctx.IsTPA() ) {
-        x_AddKeyword("Third Party Annotation");
+        x_AddKeyword("Third Party Data");
         x_AddKeyword("TPA");
 
     // add RefSeq keyword

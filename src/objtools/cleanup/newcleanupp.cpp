@@ -1032,6 +1032,18 @@ void CNewCleanup_imp::GBblockBC (
 
     CLEAN_STRING_LIST (gbk, Keywords);
 
+    CCachedRegexp reassembly_regex(
+        "^tpa[:_]reassembly$", 
+        CRegexp::fCompile_ignore_case );
+    EDIT_EACH_KEYWORD_ON_EMBLBLOCK(keyword_it, gbk) {
+        string & sKeyword = *keyword_it;
+        if( reassembly_regex.IsMatch(sKeyword) ) {
+            // remove the "re" in "reassembly"
+            sKeyword.erase(4, 2);
+            ChangeMade (CCleanupChange::eCleanQualifiers);
+        }
+    }
+
     if( m_SeqEntryInfoStack.top().m_IsEmblOrDdbj ) {
         UNIQUE_WITHOUT_SORT_KEYWORD_ON_GENBANKBLOCK( gbk, PCase );
     } else {
