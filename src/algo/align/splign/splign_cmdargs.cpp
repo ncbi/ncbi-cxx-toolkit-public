@@ -192,14 +192,6 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
           "Test new developments. Default behavior if not set.",
           CArgDescriptions::eString);
 
-
-    argdescr->AddDefaultKey("type", "type",
-                            "Query cDNA type: 'mrna' or 'est'."
-                            " Sets basic scores to preset values",
-                            CArgDescriptions::eString,
-                            kQueryType_mRNA);
-
-
     CArgAllow * constrain01 (new CArgAllow_Doubles(0,1));
     argdescr->SetConstraint("min_compartment_idty", constrain01);
     argdescr->SetConstraint("min_exon_idty", constrain01);
