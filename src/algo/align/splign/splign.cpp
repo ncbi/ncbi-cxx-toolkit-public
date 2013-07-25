@@ -165,6 +165,7 @@ CSplign::CSplign(void):
     m_MinCompartmentIdty(s_GetDefaultMinCompartmentIdty()),
     m_MinSingletonIdty(s_GetDefaultMinCompartmentIdty()),
     m_MinSingletonIdtyBps(numeric_limits<size_t>::max()),
+    m_TestType(kTestType_production_default),
     m_endgaps (true),
     m_strand (true),
     m_nopolya (false),
@@ -493,6 +494,14 @@ size_t CSplign::GetMinSingletonIdentityBps(void) const {
 double CSplign::s_GetDefaultMinCompartmentIdty(void)
 {
     return 0.70;
+}
+
+void CSplign::SetTestType(const string& test_type) {
+    m_TestType = test_type;
+}
+
+string CSplign::GetTestType(void) const {
+    return m_TestType;
 }
 
 void CSplign::SetMaxCompsPerQuery(size_t m) {
@@ -1923,13 +1932,19 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         }
 
 
+        string test_type = GetTestType();
+
         // turn to gaps exons with low identity
         for(size_t k (0); k < seg_dim; ++k) {
 
             TSegment& s (segments[k]);
             if(s.m_exon == false) continue;
-
+            
             bool drop (false);
+
+ 
+      // DEFAULT PRODUCTION
+         if( test_type == kTestType_production_default ) {//default production
             if(s.m_idty < m_MinExonIdty) {
                 drop = true; // always make gaps on low identity
             }
@@ -1951,11 +1966,44 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
 
                 drop = nc_prev || nc_next;
             }
+       //20_28_90 TEST MODE
+         } else if (test_type == kTestType_20_28_90 )  { // test mode
+            if(s.m_idty < m_MinExonIdty) {
+                drop = true; // always make gaps on low identity
+            } else { // deal with exons adjacent to gaps
+                bool adj = false;
+                if(k > 0 && ( ! segments[k-1].m_exon ) &&  (int)s.m_box[0] >= 20 ) {//gap on left
+                    adj = true;
+                }
+                if(k + 1 < seg_dim && (! segments[k+1].m_exon ) && ( (int)SeqLen1 - (int)s.m_box[1] - 1 ) >= 20 ) {//gap on right
+                    adj = true;
+                }
+                if(k == 0 && (int)s.m_box[0] >= 20) {//gap at the beginning
+                    adj = true;
+                }
+                if( k + 1 == seg_dim && ( (int)SeqLen1 - (int)s.m_box[1] - 1 ) >= 20) {//gap at the end
+                    adj = true;
+                }
 
-            if(drop) {
-                s.SetToGap();
+                if(adj) {
+                    if( s.m_len < 20 ) {// 20 rule
+                        drop = true;
+                    }
+                    if ( s.m_idty < kMinTermExonIdty && s.m_len < kMinTermExonSize  ) {// 28_90 rule
+                        drop = true;
+                    }
+                }
+
             }
-        }
+         } else {
+              string msg = "test type \"" + test_type + "\" is not supported.";
+              NCBI_THROW(CAlgoAlignException, eBadParameter, msg.c_str());
+         }
+            
+         if(drop) {
+             s.SetToGap();
+         }
+        } 
 
         // turn to gaps short weak terminal exons
         {{
@@ -1997,24 +2045,35 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         }}
 
         // turn to gaps extra-short exons preceded/followed by gaps
-        bool gap_prev (false);
-        for(size_t k (0); k < seg_dim; ++k) {
 
-            TSegment& s (segments[k]);
-            if(s.m_exon == false) {
-                gap_prev = true;
-            }
-            else {
-                size_t length (s.m_box[1] - s.m_box[0] + 1);
-                bool gap_next (false);
-                if(k + 1 < seg_dim) {
-                    gap_next = !segments[k+1].m_exon;
+      // DEFAULT PRODUCTION
+        if( test_type == kTestType_production_default ) {//default production
+            bool gap_prev (false);
+            for(size_t k (0); k < seg_dim; ++k) {
+                
+                TSegment& s (segments[k]);
+                if(s.m_exon == false) {
+                    gap_prev = true;
                 }
-                if(length <= 10 && (gap_prev || gap_next)) {
-                    s.SetToGap();
+                else {
+                    size_t length (s.m_box[1] - s.m_box[0] + 1);
+                    bool gap_next (false);
+                    if(k + 1 < seg_dim) {
+                        gap_next = !segments[k+1].m_exon;
+                    }
+                    if(length <= 10 && (gap_prev || gap_next)) {
+                        s.SetToGap();
+                    }
+                    gap_prev = false;
                 }
-                gap_prev = false;
             }
+       //20_28_90 TEST MODE
+        } else if (test_type == kTestType_20_28_90 )  { // test mode
+            //already took care of, see above
+        } else {
+              string msg = "test type \"" + test_type + "\" is not supported.";
+              const char * msgc = msg.c_str();
+              NCBI_THROW(CAlgoAlignException, eBadParameter, msgc);
         }
 
         // indicate any slack space on the left
@@ -2181,13 +2240,16 @@ bool CSplign::x_ProcessTermSegm(TSegment** term_segs, Uint1 side) const
     const size_t exon_size (1 + term_segs[0]->m_box[1] -
                             term_segs[0]->m_box[0]);
 
-    if(exon_size < kMinTermExonSize) {
+    const double idty (term_segs[0]->m_idty);
 
-        const double idty (term_segs[0]->m_idty);
-        if(idty < kMinTermExonIdty) {
+
+    if( GetTestType() == kTestType_production_default ) {//default production
+        if(exon_size < kMinTermExonSize && idty < kMinTermExonIdty ) {
             turn2gap = true;
         }
-        else {
+    }
+
+    if(exon_size < kMinTermExonSize) {     
             
             // verify that the intron is not too long
 
@@ -2226,15 +2288,14 @@ bool CSplign::x_ProcessTermSegm(TSegment** term_segs, Uint1 side) const
             if(intron_len > max_intron_len) {
                 turn2gap = true;
             }
-        }
+    }
       
-        if(turn2gap) {
-
-            // turn the segment into a gap
-            TSegment& s = *(term_segs[0]);
-            s.SetToGap();
-            s.m_len = exon_size;
-        }
+    if(turn2gap) {
+        
+        // turn the segment into a gap  
+        TSegment& s = *(term_segs[0]);
+        s.SetToGap();
+        s.m_len = exon_size;
     }
 
     return turn2gap;

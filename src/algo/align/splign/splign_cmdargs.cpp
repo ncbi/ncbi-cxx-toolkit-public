@@ -25,6 +25,7 @@
 *
 * Author:  Yuri Kapustin
 *          Anatoliy Kuznetsov
+*          Boris Kiryutin
 *
 * File Description:
 *   Splign command line argument utilities
@@ -185,6 +186,20 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
          CArgDescriptions::eDouble,
          NStr::DoubleToString(double(CNWAligner::GetDefaultSpaceLimit()) / kMb));
 
+     argdescr->AddOptionalKey
+         ("test",
+          "test_mode",
+          "Test new developments. Default behavior if not set.",
+          CArgDescriptions::eString);
+
+
+    argdescr->AddDefaultKey("type", "type",
+                            "Query cDNA type: 'mrna' or 'est'."
+                            " Sets basic scores to preset values",
+                            CArgDescriptions::eString,
+                            kQueryType_mRNA);
+
+
     CArgAllow * constrain01 (new CArgAllow_Doubles(0,1));
     argdescr->SetConstraint("min_compartment_idty", constrain01);
     argdescr->SetConstraint("min_exon_idty", constrain01);
@@ -203,6 +218,10 @@ void CSplignArgUtil::SetupArgDescriptions(CArgDescriptions* argdescr)
     CArgAllow_Strings * constrain_querytype (new CArgAllow_Strings);
     constrain_querytype ->Allow(kQueryType_mRNA) ->Allow(kQueryType_EST);
     argdescr->SetConstraint("type", constrain_querytype);
+
+    CArgAllow_Strings * constrain_testtype (new CArgAllow_Strings);
+    constrain_testtype ->Allow(kTestType_20_28_90);
+    argdescr->SetConstraint("test", constrain_testtype);
 }
 
 
@@ -228,6 +247,13 @@ void CSplignArgUtil::ArgsToSplign(CSplign* splign, const CArgs& args)
     double max_space (args["max_space"].AsDouble() * kMb);
     const Uint4 kMax32 (numeric_limits<Uint4>::max());
     if(max_space > kMax32) max_space = kMax32;
+
+    if(args["test"]) {
+        splign->SetTestType(args["test"].AsString());
+    } else {
+        splign->SetTestType(kTestType_production_default);
+    }
+
     //basic scores and aligner
     const bool query_low_quality (args["type"].AsString() == kQueryType_EST);
     if(query_low_quality) {
