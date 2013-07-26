@@ -81,7 +81,7 @@ public:
 
 private:
     CGridDebugContext(eMode, CNetCacheAPI::TInstance);
-    static CGridDebugContext* sm_Instance;
+    static AutoPtr<CGridDebugContext> sm_Instance;
 
     eMode m_Mode;
     string m_RunName;
