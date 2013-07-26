@@ -58,17 +58,17 @@ public:
     typedef pair<Uint8, double> TMark;
 
     /// Monitor position progressing in time, calculate speed and
-    /// estimate time to complete the job (if the final size is known).
+    /// estimate time to complete the job (when the final size is known).
     /// @param minspan
     ///   minimal time distance between marks (must be greater than 0)
     /// @param maxspan
     ///   maximal time span covered by measurements (older marks popped out)
     /// @param weight
-    ///   for weighted rate calculations (current:remainig ratio),
+    ///   for weighted rate calculations (current:remaining ratio),
     ///   must be within the interval (0, 1) (excluding both ends);
     ///   a value close to one (e.g. 0.9) makes recent marks more significant
     /// @param precision
-    ///   fraction of minspan to consider sufficient to add next mark,
+    ///   fraction of minspan to consider sufficient to add a next mark,
     ///   must be within the interval (0, 1] (excluding 0 but including 1)
     CRateMonitor(double minspan = 0.5, double maxspan   = 10.0,
                  double weight  = 0.5, double precision = 0.95)
