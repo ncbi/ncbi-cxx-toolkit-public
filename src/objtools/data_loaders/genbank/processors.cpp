@@ -628,7 +628,9 @@ public:
         }
 
     virtual void Update(CBioseq_Info& seq) {
-        if ( m_Descr && HasMasterId(seq) ) {
+        if ( m_Descr &&
+             seq.x_NeedUpdate(seq.fNeedUpdate_descr) &&
+             HasMasterId(seq) ) {
             seq.AddSeq_descr(*m_Descr);
         }
     }
