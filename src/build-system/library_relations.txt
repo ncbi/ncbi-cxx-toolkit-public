@@ -5037,6 +5037,9 @@ seqtest needs xncbi
 seqtest needs xser
 seqtest needs xutil
 sequtil needs xncbi
+smartnetclient needs connect
+smartnetclient needs xconnect
+smartnetclient needs xncbi
 snputil needs biblio
 snputil needs general
 snputil needs genome_collection
