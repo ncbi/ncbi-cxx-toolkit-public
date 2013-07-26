@@ -102,9 +102,10 @@ extern "C" {
 
 typedef enum {
     eReqMethod_Any = 0,
-    eReqMethod_Get,
-    eReqMethod_Post,
-    eReqMethod_Connect
+    eReqMethod_Get,     /* 1   */
+    eReqMethod_Post,    /* 2   */
+    eReqMethod_Head,    /* 1|2 */
+    eReqMethod_Connect  /* 4   */
 } EReqMethod;
 
 typedef unsigned EBReqMethod;

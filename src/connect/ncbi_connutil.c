@@ -78,14 +78,12 @@ static char* x_StrcatCRLF(char* dst, const char* src)
 
 static const char* x_GetValue(const char* service, const char* param,
                               char* value, size_t value_size,
-                              const char* def_value, int* /*bool*/ specific)
+                              const char* def_value, int* /*bool*/ generic)
 {
     char        buf[128];
     const char* val;
     char*       s;
 
-    assert(specific);
-    *specific = 1/*true,safer*/;
     if (!value  ||  value_size <= 0)
         return 0;
     *value = '\0';
@@ -93,6 +91,7 @@ static const char* x_GetValue(const char* service, const char* param,
     if (!param  ||  !*param)
         return 0;
 
+    *generic = 0/*false*/;
     if (service  &&  *service) {
         /* Service-specific inquiry */
         int/*bool*/ end;
@@ -150,7 +149,7 @@ static const char* x_GetValue(const char* service, const char* param,
         s = strupr(buf);
     }
 
-    specific = 0/*false*/;
+    *generic = 1/*true*/;
     /* Environment search for 'CONN_param' */
     if ((val = getenv(s)) != 0)
         return strncpy0(value, val, value_size - 1);
@@ -164,10 +163,10 @@ static const char* x_GetValue(const char* service, const char* param,
 
 static const char* s_GetValue(const char* service, const char* param,
                               char* value, size_t value_size,
-                              const char* def_value, int* /*bool*/ specific)
+                              const char* def_value, int* /*bool*/ generic)
 {
     const char* retval = x_GetValue(service, param,
-                                    value, value_size, def_value, specific);
+                                    value, value_size, def_value, generic);
     if (retval) {
         /*strip enveloping quotes*/
         size_t len = strlen(value);
@@ -188,7 +187,7 @@ extern const char* ConnNetInfo_GetValue(const char* service, const char* param,
                                         const char* def_value)
 {
     int/*bool*/ dummy;
-    return x_GetValue(service, param, value, value_size, def_value, &dummy);
+    return s_GetValue(service, param, value, value_size, def_value, &dummy);
 }
 
 
@@ -243,7 +242,7 @@ static const char* x_Scheme(EURLScheme scheme, char buf[])
 }
 
 
-static EFWMode x_ParseFirewall(const char* str, int/*bool*/ specific)
+static EFWMode x_ParseFirewall(const char* str, int/*bool*/ generic)
 {
     if (!*str) /*NB: not actually necessary but faster*/
         return eFWMode_Legacy;
@@ -259,7 +258,7 @@ static EFWMode x_ParseFirewall(const char* str, int/*bool*/ specific)
         if (sscanf(str, "%hu%n", &port, &n) < 1  ||  !port)
             break;
         str += n;
-        if (!specific)
+        if (generic)
             SERV_AddFirewallPort(port);
         if (!*(str += strspn(str, " \t")))
             return eFWMode_Fallback;
@@ -276,9 +275,9 @@ static EFWMode x_ParseFirewall(const char* str, int/*bool*/ specific)
 extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 {
 #define REG_VALUE(name, value, def_value)                               \
-    s_GetValue(service, name, value, sizeof(value), def_value, &specific)
+    s_GetValue(service, name, value, sizeof(value), def_value, &generic)
 
-    int/*bool*/ specific;
+    int/*bool*/ generic;
     SConnNetInfo* info;
     /* aux. storage */
     char   str[1024];
@@ -307,7 +306,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         info->req_method = eReqMethod_Post;
     else if (strcasecmp(str, "GET") == 0)
         info->req_method = eReqMethod_Get;
-    /* NB: CONNECT is not allowed here */
+    /* NB: HEAD, CONNECT not allowed here */
 
     /* username */
     REG_VALUE(REG_CONN_USER, info->user, DEF_CONN_USER);
@@ -385,13 +384,13 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
     /* firewall mode */
     REG_VALUE(REG_CONN_FIREWALL, str, DEF_CONN_FIREWALL);
-    info->firewall = x_ParseFirewall(str, specific);
+    info->firewall = x_ParseFirewall(str, generic);
 
     /* stateless client? */
     REG_VALUE(REG_CONN_STATELESS, str, DEF_CONN_STATELESS);
     info->stateless = ConnNetInfo_Boolean(str);
 
-    /* prohibit the use of local load balancer? */
+    /* prohibit use of the local load balancer? */
     REG_VALUE(REG_CONN_LB_DISABLE, str, DEF_CONN_LB_DISABLE);
     info->lb_disable = ConnNetInfo_Boolean(str);
 
@@ -1229,17 +1228,19 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     s_SaveKeyval    (s, "req_method",     (info->req_method
                                            == eReqMethod_Connect
                                            ? "CONNECT"
-                                           : (info->req_method
-                                              == eReqMethod_Post
-                                              ? "POST"
-                                              : (info->req_method
-                                                 == eReqMethod_Get
-                                                 ? "GET"
-                                                 : (info->req_method
-                                                    == eReqMethod_Any
-                                                    ? "ANY"
-                                                    : x_Num(info->req_method,
-                                                            buf))))));
+                                           : info->req_method
+                                           == eReqMethod_Head
+                                           ? "HEAD"
+                                           : info->req_method
+                                           == eReqMethod_Post
+                                           ? "POST"
+                                           : info->req_method
+                                           == eReqMethod_Get
+                                           ? "GET"
+                                           : info->req_method
+                                           == eReqMethod_Any
+                                           ? "ANY"
+                                           : x_Num(info->req_method, buf)));
     s_SaveKeyval    (s, "scheme",         (info->scheme
                                            ? x_Scheme((EURLScheme)info->scheme,
                                                       buf)
@@ -1289,14 +1290,13 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
     s_SaveKeyval    (s, "debug_printout", (info->debug_printout
                                            == eDebugPrintout_None
                                            ? "NONE"
-                                           : (info->debug_printout
-                                              == eDebugPrintout_Some
-                                              ? "SOME"
-                                              : (info->debug_printout
-                                                 == eDebugPrintout_Data
-                                                 ? "DATA"
-                                                 : x_Num(info->debug_printout,
-                                                         buf)))));
+                                           : info->debug_printout
+                                           == eDebugPrintout_Some
+                                           ? "SOME"
+                                           : info->debug_printout
+                                           == eDebugPrintout_Data
+                                           ? "DATA"
+                                           : x_Num(info->debug_printout,buf)));
     s_SaveUserHeader(s, "http_user_header",info->http_user_header, uhlen);
     s_SaveString    (s, "http_referer",    info->http_referer);
     strcat(s, "#################### [END] SConnNetInfo\n");
@@ -1427,7 +1427,7 @@ extern EIO_Status URL_ConnectEx
     char        hdr_buf[80];
     size_t      args_len = 0;
     size_t      user_hdr_len = user_hdr  &&  *user_hdr ? strlen(user_hdr) : 0;
-    const char* x_req_method; /* "CONNECT " / "POST " / "GET " */
+    const char* x_req_method; /* "CONNECT " / "HEAD" / "POST " / "GET " */
 
     /* sanity check first */
     if (!sock  ||  !host  ||  !*host  ||  !path  ||  !*path
@@ -1446,9 +1446,13 @@ extern EIO_Status URL_ConnectEx
     /* select request method and its verbal representation */
     if (req_method == eReqMethod_Any)
         req_method  = content_length ? eReqMethod_Post : eReqMethod_Get;
-    else if (req_method == eReqMethod_Get  &&  content_length) {
+    else if (content_length  &&  (req_method == eReqMethod_Get  ||
+                                  req_method == eReqMethod_Head)) {
         CORE_LOGF_X(3, eLOG_Warning,
-                    ("[URL_Connect]  Content length ignored with method GET"));
+                    ("[URL_Connect] "
+                     " Content length (%lu) ignored with method %s",
+                     (unsigned long) content_length,
+                     req_method == eReqMethod_Get ? "GET" : "HEAD"));
         content_length = 0;
     }
 
@@ -1456,6 +1460,10 @@ extern EIO_Status URL_ConnectEx
     case eReqMethod_Connect:
         x_req_method = "CONNECT ";
         add_hdr = 0;
+        break;
+    case eReqMethod_Head:
+        x_req_method = "HEAD ";
+        add_hdr = 1;
         break;
     case eReqMethod_Post:
         x_req_method = "POST ";
