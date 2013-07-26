@@ -26,7 +26,7 @@ namespace rapidjson {
 	\tparam Allocator	Allocator type for allocating memory of object, array and string.
 */
 // NCBI
-#ifndef NCBI_COMPILER_WORKSHOP
+#ifndef NCBI_OS_SOLARIS
 #pragma pack (push, 4)
 #endif
 template <typename Encoding, typename Allocator = MemoryPoolAllocator<> > 
@@ -709,7 +709,7 @@ public:
 #endif
 };
 // NCBI
-#ifndef NCBI_COMPILER_WORKSHOP
+#ifndef NCBI_OS_SOLARIS
 #pragma pack (pop)
 #endif
 

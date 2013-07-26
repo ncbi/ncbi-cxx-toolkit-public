@@ -37,11 +37,23 @@ typedef unsigned __int64 uint64_t;
 #define RAPIDJSON_ENDIAN RAPIDJSON_LITTLEENDIAN
 #else
 #define RAPIDJSON_ENDIAN RAPIDJSON_BIGENDIAN
-#endif // __BYTE_ORDER__
+#endif
+#else
+// NCBI: added dependence on WORDS_BIGENDIAN 
+#ifdef WORDS_BIGENDIAN 
+#define RAPIDJSON_ENDIAN RAPIDJSON_BIGENDIAN
 #else
 #define RAPIDJSON_ENDIAN RAPIDJSON_LITTLEENDIAN	// Assumes little endian otherwise.
-#endif
+#endif //  WORDS_BIGENDIAN
+#endif // __BYTE_ORDER__
 #endif // RAPIDJSON_ENDIAN
+
+// NCBI: added alignment tweaks
+#ifdef NCBI_PLATFORM_BITS
+#define NCBI_DATA_ALIGN (NCBI_PLATFORM_BITS/8-1)
+#else
+#define NCBI_DATA_ALIGN  3
+#endif
 
 ///////////////////////////////////////////////////////////////////////////////
 // RAPIDJSON_SSE2/RAPIDJSON_SSE42/RAPIDJSON_SIMD
@@ -233,13 +245,13 @@ public:
 
 	//! Allocates a memory block. (concept Allocator)
 	void* Malloc(size_t size) {
-		size = (size + 3) & ~3;	// Force aligning size to 4
+		size = (size + NCBI_DATA_ALIGN) & ~(NCBI_DATA_ALIGN);	// Force aligning size to 4
 
 		if (chunkHead_->size + size > chunkHead_->capacity)
 			AddChunk(chunk_capacity_ > size ? chunk_capacity_ : size);
 
 		char *buffer = (char *)(chunkHead_ + 1) + chunkHead_->size;
-		RAPIDJSON_ASSERT(((uintptr_t)buffer & 3) == 0);	// returned buffer is aligned to 4
+		RAPIDJSON_ASSERT(((uintptr_t)buffer & NCBI_DATA_ALIGN) == 0);	// returned buffer is aligned to 4
 		chunkHead_->size += size;
 
 		return buffer;
@@ -257,10 +269,10 @@ public:
 		// Simply expand it if it is the last allocation and there is sufficient space
 		if (originalPtr == (char *)(chunkHead_ + 1) + chunkHead_->size - originalSize) {
 			size_t increment = newSize - originalSize;
-			increment = (increment + 3) & ~3;	// Force aligning size to 4
+			increment = (increment + NCBI_DATA_ALIGN) & ~(NCBI_DATA_ALIGN);	// Force aligning size to 4
 			if (chunkHead_->size + increment <= chunkHead_->capacity) {
 				chunkHead_->size += increment;
-				RAPIDJSON_ASSERT(((uintptr_t)originalPtr & 3) == 0);	// returned buffer is aligned to 4
+				RAPIDJSON_ASSERT(((uintptr_t)originalPtr & NCBI_DATA_ALIGN) == 0);	// returned buffer is aligned to 4
 				return originalPtr;
 			}
 		}

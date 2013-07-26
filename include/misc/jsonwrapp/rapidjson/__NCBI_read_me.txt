@@ -15,6 +15,7 @@ NCBI modifications:
 Search for 'NCBI' in the following files:
 document.h
 filestream.h
+rapidjson.h
 reader.h
 writer.h
 
