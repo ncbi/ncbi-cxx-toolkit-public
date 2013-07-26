@@ -196,6 +196,8 @@ private:
 
 BOOST_AUTO_TEST_CASE(s_JsonWrapp)
 {
+    cout << "Size of data object is " << sizeof(rapidjson::Value) << endl;
+
     CJson_Document doc(CJson_Value::eObject);
     CJson_Object obj( doc.SetObject());
 //will not compile
