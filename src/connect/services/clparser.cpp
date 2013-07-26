@@ -206,8 +206,8 @@ struct SCommandLineParserImpl : public CObject, public SCommonParts
     int m_OptDescrIndent;
 };
 
-static const string s_Help("help");
-static const string s_Version("version");
+static const char s_Help[] = "help";
+static const char s_Version[] = "version";
 
 SCommandLineParserImpl::SCommandLineParserImpl(
         const string& program_name,

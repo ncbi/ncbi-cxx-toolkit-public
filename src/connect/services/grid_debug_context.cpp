@@ -42,19 +42,19 @@
 BEGIN_NCBI_SCOPE
 
 /// @internal
-auto_ptr<CGridDebugContext> CGridDebugContext::sm_Instance;
+CGridDebugContext* CGridDebugContext::sm_Instance;
 
 /// @internal
 CGridDebugContext& CGridDebugContext::Create(eMode mode,
     CNetCacheAPI::TInstance netcache_api)
 {
-    sm_Instance.reset(new CGridDebugContext(mode, netcache_api));
+    sm_Instance = new CGridDebugContext(mode, netcache_api);
     return *sm_Instance;
 }
 
 CGridDebugContext* CGridDebugContext::GetInstance()
 {
-    return sm_Instance.get();
+    return sm_Instance;
 }
 
 CGridDebugContext::CGridDebugContext(eMode mode,

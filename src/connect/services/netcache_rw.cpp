@@ -52,8 +52,8 @@ BEGIN_NCBI_SCOPE
 #define CACHE_XFER_BUFFER_SIZE 4096
 #define MAX_PENDING_COUNT (1024 * 1024 * 1024)
 
-static const string s_InputBlobCachePrefix = ".nc_cache_input.";
-static const string s_OutputBlobCachePrefix = ".nc_cache_output.";
+static const char s_InputBlobCachePrefix[] = ".nc_cache_input.";
+static const char s_OutputBlobCachePrefix[] = ".nc_cache_output.";
 
 CNetCacheReader::CNetCacheReader(SNetCacheAPIImpl* impl,
         const string& blob_id,

@@ -200,11 +200,9 @@ static const char* const s_NetCacheConfigSections[] = {
     NULL
 };
 
-static const string s_NetCacheAPIName("NetCacheAPI");
-
 SNetCacheAPIImpl::SNetCacheAPIImpl(CConfig* config, const string& section,
         const string& service, const string& client_name) :
-    m_Service(new SNetServiceImpl(s_NetCacheAPIName, client_name,
+    m_Service(new SNetServiceImpl("NetCacheAPI", client_name,
         new CNetCacheServerListener)),
     m_DefaultParameters(eVoid)
 {

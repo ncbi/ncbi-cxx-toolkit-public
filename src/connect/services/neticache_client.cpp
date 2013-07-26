@@ -129,7 +129,7 @@ static string s_KeyVersionSubkeyToBlobID(
     return blob_id;
 }
 
-static const string s_NetICacheAPIName("NetICacheClient");
+static const char s_NetICacheAPIName[] = "NetICacheClient";
 
 struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
 {
