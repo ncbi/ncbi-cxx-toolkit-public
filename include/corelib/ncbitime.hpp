@@ -41,7 +41,7 @@
 ///   CStopWatch     - stop watch class to measure elasped time.
 ///   CTimeout       - timeout interval for various I/O etc activity.
 ///   CNanoTimeout   - timeout interval with nanoseconds precision.
-///   CAbsTimeout    - timeout that use absolute time mark (deadline time).
+///   CAbsTimeout    - timeout that uses absolute time mark (deadline time).
 ///   CFastLocalTime - class for quick and dirty getting a local time.
 ///
 /// NOTE about CTime:
@@ -53,11 +53,11 @@
 ///     rules that are different from those currently in the database.
 ///
 ///   - Do not use Local time and time_t and its dependent functions with
-///     dates outside range January 1, 1970 to January 18, 2038.
+///     dates outside the range January 1, 1970 UTC to January 18, 2038 UTC.
 ///     Also avoid to use GMT -> Local time conversion functions.
 ///
-///   - Do not use DataBase conversion functions with dates
-///     less than January 1, 1900.
+///   - Do not use DataBase conversion functions for dates
+///     prior to January 1, 1900.
 
 #include <corelib/ncbistd.hpp>
 
@@ -464,8 +464,8 @@ public:
     /// Get time in time_t format.
     ///
     /// The function return the number of seconds elapsed since midnight
-    /// (00:00:00), January 1, 1970. Do not use this function if year is
-    /// less 1970.
+    /// (00:00:00), January 1, 1970 UTC. Do not use this function if the year
+    /// is before 1970.
     /// @return
     ///   Time in time_t format.
     time_t GetTimeT(void) const;
@@ -474,17 +474,17 @@ public:
     ///
     /// @param sec
     ///   The function return the number of seconds elapsed since
-    ///   midnight (00:00:00), January 1, 1970.
+    ///   midnight (00:00:00), January 1, 1970 UTC.
     /// @param nanosec
     ///   Number of nanoseconds (0, if not possible to get).
-    static void GetCurrentTimeT(time_t *sec, long *nanosec = 0);
+    static void GetCurrentTimeT(time_t* sec, long* nanosec = 0);
 
     /// Set time using "struct tm" time value.
     ///
     /// @param t
     ///   Time to set in time object. This time always represents a local
     ///   time in current time zone. Time object will be set to have eLocal
-    ///   time format, and nanoseconds will be truncated. Note, that all 
+    ///   time format, and nanoseconds will be truncated. Note that all 
     ///   significant fields in the time structure should be set and have
     ///   correct vales, otherwise exception will be thrown.
     /// @return
