@@ -545,7 +545,7 @@ void LoadConfigInfoByNames(const CNcbiRegistry& registry,
             configs->push_back(config);
         }
         if (GetApp().m_TweakVTuneR) {
-            if (!config.m_Debug && config.m_rtType == SConfigInfo::rtMultiThreadedDLL)
+            if (!config.m_Debug /*&& config.m_rtType == SConfigInfo::rtMultiThreadedDLL*/)
             {
                 config.m_Unicode = false;
                 config.m_VTuneAddon = true;
