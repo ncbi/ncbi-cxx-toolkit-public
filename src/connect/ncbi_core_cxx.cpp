@@ -42,7 +42,6 @@
 #include <connect/ncbi_core_cxx.hpp>
 #include <stdlib.h>
 
-
 #define NCBI_USE_ERRCODE_X   Connect_Core
 
 
