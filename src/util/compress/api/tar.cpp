@@ -859,28 +859,32 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         ok = true;
         if (!(fmt & eTar_Ustar)  &&  fmt != eTar_OldGNU) {
             size_t namelen = s_Length(h->name, sizeof(h->name));
-            if (namelen  &&  h->name[namelen - 1] == '/') {
-                tname = "legacy regular entry (dir)" + (h->typeflag[0]? 7 : 0);
-                break;
-            }
+            if (namelen  &&  h->name[namelen - 1] == '/')
+                tname = "legacy regular entry (dir)";
         }
-        tname = "legacy regular entry (file)" + (h->typeflag[0] ? 7 : 0);
+        if (!tname)
+            tname = "legacy regular entry (file)";
+        tname += h->typeflag[0] ? 7 : 0;
         break;
+    case '\1':
     case '1':
         ok = true;
 #ifdef NCBI_OS_UNIX
-        tname = "hard link";
+        tname = "legacy hard link";
 #else
-        tname = "hard link - not FULLY supported";
+        tname = "legacy hard link - not FULLY supported";
 #endif //NCBI_OS_UNIX
+        tname += h->typeflag[0] != '\1' ? 7 : 0;
         break;
+    case '\2':
     case '2':
         ok = true;
 #ifdef NCBI_OS_UNIX
-        tname = "symbolic link";
+        tname = "legacy symbolic link";
 #else
-        tname = "symbolic link - not FULLY supported";
+        tname = "legacy symbolic link - not FULLY supported";
 #endif //NCBI_OS_UNIX
+        tname += h->typeflag[0] != '\2' ? 7 : 0;
         break;
     case '3':
 #ifdef NCBI_OS_UNIX
@@ -2149,8 +2153,8 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
 
     // Entry type
     switch (h->typeflag[0]) {
-    case '0':
     case '\0':
+    case '0':
         if (!(fmt & eTar_Ustar)  &&  fmt != eTar_OldGNU) {
             size_t namelen = s_Length(h->name, sizeof(h->name));
             if (namelen  &&  h->name[namelen - 1] == '/') {
@@ -2161,15 +2165,17 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
         }
         m_Current.m_Type = CTarEntryInfo::eFile;
         break;
+    case '\1':
+    case '\2':
     case '1':
     case '2':
-        m_Current.m_Type = (h->typeflag[0] != '1'
+        m_Current.m_Type = (h->typeflag[0] == '\2'  ||  h->typeflag[0] == '2'
                             ? CTarEntryInfo::eSymLink
                             : CTarEntryInfo::eHardLink);
         m_Current.m_LinkName.assign(h->linkname,
                                     s_Length(h->linkname,sizeof(h->linkname)));
         if (m_Current.GetSize()) {
-            if (h->typeflag[0] != '1') {
+            if (m_Current.GetType() == CTarEntryInfo::eSymLink) {
                 // Mandatory to ignore
                 m_Current.m_Stat.st_size = 0;
             } else if (fmt != eTar_Posix) {
