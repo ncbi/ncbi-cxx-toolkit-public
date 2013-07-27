@@ -430,7 +430,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "BEI	s	American University of Beirut, Biology Department",
 "BEL	s	Ulster Museum, Botany Department",
 "BELC	s	Beloit College, Biology Department",
-"BELUM<GBR>	s	Ulster Museum, Belfast",
+"BELUM	s	Ulster Museum, Belfast",
 "BELZ	s	Zapovednik Belogorje State Nature Reserve",
 "BENH	s	British Entomological and Natural History Society",
 "BENIN	s	Universite National du Benin",
