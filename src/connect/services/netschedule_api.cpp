@@ -132,12 +132,12 @@ bool CNetScheduleNotificationHandler::ReceiveNotification(string* server_host)
 }
 
 bool CNetScheduleNotificationHandler::WaitForNotification(
-        const CAbsTimeout& abs_timeout, string* server_host)
+        const CDeadline& deadline, string* server_host)
 {
     STimeout timeout;
 
     for (;;) {
-        abs_timeout.GetRemainingTime().Get(&timeout.sec, &timeout.usec);
+        deadline.GetRemainingTime().Get(&timeout.sec, &timeout.usec);
 
         if (timeout.sec == 0 && timeout.usec == 0)
             return false;

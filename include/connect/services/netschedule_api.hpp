@@ -535,8 +535,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     /// @param affinity_list
     ///     Comma-separated list of affinity tokens.
     ///
-    /// @param timeout
-    ///     Timeout for waiting for a matching job to appear in the queue.
+    /// @param deadline
+    ///     Deadline for waiting for a matching job to appear in the queue.
     ///
     /// @return
     ///     TRUE if job has been returned from the queue and its input
@@ -545,16 +545,16 @@ class NCBI_XCONNECT_EXPORT CNetScheduleExecutor
     ///     decided not to give a job to this node (e.g. no jobs with
     ///     matching affinities).
     ///
-    bool GetJob(CNetScheduleJob& job,
-            const string& affinity_list = kEmptyStr,
-            CAbsTimeout* timeout = NULL);
+    bool GetJob(CNetScheduleJob&  job,
+                const string&     affinity_list = kEmptyStr,
+                CDeadline*        dealine = NULL);
 
     /// The same as GetJob(CNetScheduleJob&, EJobAffinityPreference,
-    ///     const string&, CAbsTimeout*),
-    ///     only accepts integer wait time in seconds instead of CAbsTimeout.
+    ///                    const string&, CDeadline*),
+    /// except it accepts integer wait time in seconds instead of CDeadline.
     bool GetJob(CNetScheduleJob& job,
-            unsigned wait_time,
-            const string& affinity_list = kEmptyStr);
+                unsigned         wait_time,
+                const string&    affinity_list = kEmptyStr);
 
     /// @deprecated
     ///     Use GetJob() instead.
@@ -862,8 +862,8 @@ public:
 
     bool ReceiveNotification(string* server_host = NULL);
 
-    bool WaitForNotification(const CAbsTimeout& abs_timeout,
-            string* server_host = NULL);
+    bool WaitForNotification(const CDeadline& deadline,
+                             string*          server_host = NULL);
 
     unsigned short GetPort() const {return m_UDPPort;}
 
@@ -883,17 +883,17 @@ public:
             int* last_event_index = NULL);
 
     CNetScheduleAPI::EJobStatus WaitForJobCompletion(CNetScheduleJob& job,
-            CAbsTimeout& abs_timeout, CNetScheduleAPI ns_api);
+            CDeadline& deadline, CNetScheduleAPI ns_api);
 
     bool RequestJobWatching(CNetScheduleAPI::TInstance ns_api,
             const string& job_id,
-            const CAbsTimeout& abs_timeout,
+            const CDeadline& deadline,
             CNetScheduleAPI::EJobStatus* job_status,
             int* last_event_index);
 
     CNetScheduleAPI::EJobStatus WaitForJobEvent(
             const string& job_key,
-            CAbsTimeout& abs_timeout,
+            CDeadline& deadline,
             CNetScheduleAPI ns_api,
             int status_mask,
             int last_event_index,
@@ -904,13 +904,13 @@ public:
     static string MkBaseGETCmd(
         CNetScheduleExecutor::EJobAffinityPreference affinity_preference,
         const string& affinity_list);
-    string CmdAppendTimeoutAndClientInfo(const string& base_cmd,
-            const CAbsTimeout* timeout);
+    string CmdAppendTimeoutAndClientInfo(const string&    base_cmd,
+                                         const CDeadline* deadline);
     bool RequestJob(CNetScheduleExecutor::TInstance executor,
-            CNetScheduleJob& job,
-            const string& cmd);
+                    CNetScheduleJob& job,
+                    const string& cmd);
     bool CheckRequestJobNotification(CNetScheduleExecutor::TInstance executor,
-            CNetServer* server);
+                                     CNetServer* server);
 
 protected:
     CDatagramSocket m_UDPSocket;
@@ -921,12 +921,12 @@ protected:
 };
 
 /// @internal
-inline unsigned s_GetRemainingSeconds(const CAbsTimeout& timeout)
+inline unsigned s_GetRemainingSeconds(const CDeadline& deadline)
 {
     unsigned sec;
     unsigned nanosec;
 
-    timeout.GetRemainingTime().GetNano(&sec, &nanosec);
+    deadline.GetRemainingTime().GetNano(&sec, &nanosec);
 
     if (nanosec > 0)
         ++sec;

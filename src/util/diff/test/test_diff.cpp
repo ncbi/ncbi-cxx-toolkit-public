@@ -113,8 +113,8 @@ void s_Internal_DiffHalfMatch(void)
                 timeout.Set(timeout_sec, 0);
             }
             d.SetTimeout(timeout);
-            auto_ptr<CAbsTimeout> real_timeout(new CAbsTimeout(timeout));
-            d.m_Deadline = real_timeout.get();
+            auto_ptr<CDeadline> real_deadline(new CDeadline(timeout));
+            d.m_Deadline = real_deadline.get();
             // Find half match
             CDiff::TDiffHalfMatchList hm(5);
             bool r = d.x_DiffHalfMatch(s1, s2, hm);

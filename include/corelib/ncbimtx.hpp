@@ -1415,17 +1415,17 @@ public:
     ///  Mutex to release while waiting for a signal.
     ///  At the time of the call the mutex must be locked by this thread
     ///  exactly once. Otherwise, an exception will be thrown.
-    /// @param abs_timeout
+    /// @param deadline
     ///   The wait will time out when system time equals or exceeds
-    ///   the absolute time specified in 'abs_timeout'
+    ///   the absolute time specified in 'deadline'
     /// @return
     ///   - TRUE when condition variable is signalled
     ///   - FALSE if the wait has timed out
     /// @sa
     ///   SignalSome, SignalAll, CConditionVariableException
     bool WaitForSignal
-    (CMutex&            mutex,
-     const CAbsTimeout& abs_timeout = CAbsTimeout(CTimeout::eInfinite));
+    (CMutex&           mutex,
+     const CDeadline&  deadline = CDeadline(CTimeout::eInfinite));
 
     /// Release mutex and lock the calling thread until the condition
     /// variable is signalled.
@@ -1434,16 +1434,16 @@ public:
     ///  Mutex to release while waiting for a signal.
     ///  At the time of the call the mutex must be locked by this thread.
     ///  Otherwise, an exception will be thrown.
-    /// @param abs_timeout
+    /// @param deadline
     ///   The wait will time out when system time equals or exceeds
-    ///   the absolute time specified in 'abs_timeout'
+    ///   the absolute time specified in 'deadline'
     /// @return
     ///   TRUE when condition variable is signalled;  FALSE if timed out
     /// @sa
     ///   SignalSome, SignalAll, CConditionVariableException
     bool WaitForSignal
-    (CFastMutex& mutex,
-     const CAbsTimeout& abs_timeout = CAbsTimeout(CTimeout::eInfinite));
+    (CFastMutex&       mutex,
+     const CDeadline&  deadline = CDeadline(CTimeout::eInfinite));
 
     /// Wake at least one of the threads that are currently waiting on this
     /// condition variable (if any threads are waiting on it).
@@ -1457,7 +1457,7 @@ public:
     void SignalAll(void);
 
 private:
-    bool x_WaitForSignal(SSystemFastMutex& mutex, const CAbsTimeout& timeout);
+    bool x_WaitForSignal(SSystemFastMutex& mutex, const CDeadline& timeout);
 
 #if defined(NCBI_OS_MSWIN)
     CONDITION_VARIABLE m_ConditionVar;

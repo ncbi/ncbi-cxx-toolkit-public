@@ -534,7 +534,7 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
 
             CNetScheduleJob& job = m_GridClient->GetJob();
 
-            CAbsTimeout abs_timeout(m_Opts.timeout, 0);
+            CDeadline deadline(m_Opts.timeout, 0);
 
             CNetScheduleNotificationHandler submit_job_handler;
 
@@ -545,8 +545,8 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
 
             if (!IsOptionSet(eDumpNSNotifications)) {
                 CNetScheduleAPI::EJobStatus status =
-                        submit_job_handler.WaitForJobCompletion(job,
-                                abs_timeout, m_NetScheduleAPI);
+                    submit_job_handler.WaitForJobCompletion
+                    (job, deadline, m_NetScheduleAPI);
 
                 PrintLine(CNetScheduleAPI::StatusToString(status));
 
@@ -560,8 +560,8 @@ int CGridCommandLineInterfaceApp::Cmd_SubmitJob()
 
                 string server_host;
 
-                if (submit_job_handler.WaitForNotification(abs_timeout,
-                        &server_host))
+                if (submit_job_handler.WaitForNotification(deadline,
+                                                           &server_host))
                     PrintJobStatusNotification(submit_job_handler,
                             job.job_id, server_host);
             }
@@ -585,7 +585,7 @@ int CGridCommandLineInterfaceApp::Cmd_WatchJob()
         m_Opts.job_status_mask = ~((1 << CNetScheduleAPI::ePending) |
                 (1 << CNetScheduleAPI::eRunning));
 
-    CAbsTimeout abs_timeout(m_Opts.timeout, 0);
+    CDeadline deadline(m_Opts.timeout, 0);
 
     CNetScheduleNotificationHandler submit_job_handler;
 
@@ -593,7 +593,7 @@ int CGridCommandLineInterfaceApp::Cmd_WatchJob()
     int last_event_index = -1;
 
     if (!submit_job_handler.RequestJobWatching(m_NetScheduleAPI, m_Opts.id,
-            abs_timeout, &job_status, &last_event_index)) {
+            deadline, &job_status, &last_event_index)) {
         fprintf(stderr, GRID_APP_NAME ": unexpected error while "
                 "setting up a job event listener.\n");
         return 3;
@@ -603,7 +603,7 @@ int CGridCommandLineInterfaceApp::Cmd_WatchJob()
         if (last_event_index <= m_Opts.last_event_index &&
                 (m_Opts.job_status_mask & (1 << job_status)) == 0)
             job_status = submit_job_handler.WaitForJobEvent(m_Opts.id,
-                    abs_timeout, m_NetScheduleAPI, m_Opts.job_status_mask,
+                    deadline, m_NetScheduleAPI, m_Opts.job_status_mask,
                     m_Opts.last_event_index, &last_event_index);
 
         printf("%d\n%s\n", last_event_index,
@@ -625,8 +625,8 @@ int CGridCommandLineInterfaceApp::Cmd_WatchJob()
 
         string server_host;
 
-        while (submit_job_handler.WaitForNotification(abs_timeout,
-                &server_host))
+        while (submit_job_handler.WaitForNotification(deadline,
+                                                      &server_host))
             PrintJobStatusNotification(submit_job_handler,
                     m_Opts.id, server_host);
     }
@@ -862,7 +862,7 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
         if (m_NetScheduleExecutor.GetJob(job, m_Opts.timeout, m_Opts.affinity))
             return PrintJobAttrsAndDumpInput(job);
     } else {
-        CAbsTimeout abs_timeout(m_Opts.timeout, 0);
+        CDeadline deadline(m_Opts.timeout, 0);
 
         CNetScheduleNotificationHandler wait_job_handler;
 
@@ -871,7 +871,7 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
         if (wait_job_handler.RequestJob(m_NetScheduleExecutor, job,
                 wait_job_handler.CmdAppendTimeoutAndClientInfo(
                 CNetScheduleNotificationHandler::MkBaseGETCmd(
-                affinity_preference, m_Opts.affinity), &abs_timeout))) {
+                affinity_preference, m_Opts.affinity), &deadline))) {
             fprintf(stderr, "%s\nA job has been returned; won't wait.\n",
                     job.job_id.c_str());
             return 6;
@@ -881,8 +881,8 @@ int CGridCommandLineInterfaceApp::Cmd_RequestJob()
         CNetServer server;
         string server_address;
 
-        while (wait_job_handler.WaitForNotification(abs_timeout,
-                &server_host)) {
+        while (wait_job_handler.WaitForNotification(deadline,
+                                                    &server_host)) {
             const char* format = "%s \"%s\" from %s [invalid]\n";
 
             if (wait_job_handler.CheckRequestJobNotification(

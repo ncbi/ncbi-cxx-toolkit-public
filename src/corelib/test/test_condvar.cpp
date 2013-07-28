@@ -194,24 +194,25 @@ void CTestCondVarApp::Consume(int idx)
         bool timedout = false;
         do {
             timedout = false;
-            CAbsTimeout tout(0, 100*1000*1000);
+            CDeadline deadline(0, 100*1000*1000);
             while (m_QueueSize == 0 && !m_StopRequested) {
 
 #  if USE_WRONG_MUTEX
                 if (wrong) {
                     __TEST_OUTPUT(" consumer waiting for not empty WRONG");
-                    if (!m_BufferNotEmpty.WaitForSignal( wrongMtx, tout)) {
+                    if (!m_BufferNotEmpty.WaitForSignal(wrongMtx, deadline)) {
                         break;
                     }
                 } else {
                     __TEST_OUTPUT(" consumer waiting for not empty");
-                    if (!m_BufferNotEmpty.WaitForSignal( m_BufferLock, tout)) {
+                    if (!m_BufferNotEmpty.WaitForSignal(m_BufferLock,
+                                                        deadline)) {
                         break;
                     }
                 }
 #  else
                 __TEST_OUTPUT(" consumer waiting for not empty");
-                if (!m_BufferNotEmpty.WaitForSignal( m_BufferLock, tout)) {
+                if (!m_BufferNotEmpty.WaitForSignal(m_BufferLock, deadline)) {
                     // timeout
                     __TEST_OUTPUT(" consumer timed out;  will retry");
                     timedout = true;
@@ -222,6 +223,7 @@ void CTestCondVarApp::Consume(int idx)
                 ++m_TotalWaitForNotEmpty;
             }
         } while (timedout);
+
         if (m_QueueSize == 0) {
             __TEST_OUTPUT(" consumer retired");
             if (!m_StopRequested) {

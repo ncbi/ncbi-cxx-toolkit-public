@@ -949,10 +949,10 @@ bool CRWLock::TryReadLock(const CTimeout& timeout)
                                "failed to lock W-semaphore");
             }
 #elif defined(NCBI_POSIX_THREADS)
-            CAbsTimeout abs_timeout(timeout);
+            CDeadline deadline(timeout);
             time_t s;
             unsigned int ns;
-            abs_timeout.GetExpirationTime(&s, &ns);
+            deadline.GetExpirationTime(&s, &ns);
             struct timespec ts;
             ts.tv_sec = s;
             ts.tv_nsec = ns;
@@ -1128,7 +1128,7 @@ bool CRWLock::TryWriteLock(void)
         obj[0] = m_RW->m_Rsema;
         obj[1] = m_RW->m_Wsema;
         DWORD wait_res =
-            WaitForMultipleObjects(2, obj, TRUE, 0)-WAIT_OBJECT_0;
+            WaitForMultipleObjects(2, obj, TRUE, 0) - WAIT_OBJECT_0;
         xncbi_Validate(wait_res < 2,
                        "CRWLock::TryWriteLock() - "
                        "error locking R&W-semaphores");
@@ -1238,10 +1238,10 @@ bool CRWLock::TryWriteLock(const CTimeout& timeout)
         if (m_Flags & fFavorWriters) {
             m_WaitingWriters++;
         }
-        CAbsTimeout abs_timeout(timeout);
+        CDeadline deadline(timeout);
         time_t s;
         unsigned int ns;
-        abs_timeout.GetExpirationTime(&s, &ns);
+        deadline.GetExpirationTime(&s, &ns);
         struct timespec ts;
         ts.tv_sec = s;
         ts.tv_nsec = ns;
@@ -2183,15 +2183,15 @@ inline void s_ThrowIfDifferentMutexes
 
 
 bool CConditionVariable::x_WaitForSignal
-(SSystemFastMutex&  mutex, const CAbsTimeout&  timeout)
+(SSystemFastMutex&  mutex, const CDeadline&  deadline)
 {
     CQuickAndDirtySamePointerGuard<SSystemFastMutex> mutex_guard
         (m_WaitCounter, m_WaitMutex, &mutex);
     s_ThrowIfDifferentMutexes(mutex_guard);
 
 #if defined(NCBI_OS_MSWIN)
-    DWORD timeout_msec = timeout.IsInfinite() ?
-        INFINITE : timeout.GetRemainingTime().GetAsMilliSeconds();
+    DWORD timeout_msec = deadline.IsInfinite() ?
+        INFINITE : deadline.GetRemainingTime().GetAsMilliSeconds();
     BOOL res = CCV_Dynlink_SleepConditionVariableCS
         (&m_ConditionVar, &mutex.m_Handle, timeout_msec);
     s_ThrowIfDifferentMutexes(mutex_guard);
@@ -2207,13 +2207,13 @@ bool CConditionVariable::x_WaitForSignal
                "WaitForSignal failed");
 #else
     int res;
-    if (timeout.IsInfinite()) {
+    if (deadline.IsInfinite()) {
         res = pthread_cond_wait(&m_ConditionVar, &mutex.m_Handle);
     } else {
         struct timespec ts;
         time_t s;
         unsigned int ns;
-        timeout.GetExpirationTime(&s, &ns);
+        deadline.GetExpirationTime(&s, &ns);
         ts.tv_sec = s;
         ts.tv_nsec = ns;
         res = pthread_cond_timedwait(&m_ConditionVar, &mutex.m_Handle, &ts);
@@ -2241,8 +2241,8 @@ bool CConditionVariable::x_WaitForSignal
 }
 
 
-bool CConditionVariable::WaitForSignal(CMutex&            mutex,
-                                       const CAbsTimeout& timeout)
+bool CConditionVariable::WaitForSignal(CMutex&           mutex,
+                                       const CDeadline&  deadline)
 {
     SSystemMutex& sys_mtx = mutex;
     if (sys_mtx.m_Count != 1) {
@@ -2256,18 +2256,18 @@ bool CConditionVariable::WaitForSignal(CMutex&            mutex,
     }
 #endif
     sys_mtx.Unlock(SSystemFastMutex::ePseudo);
-    bool res = x_WaitForSignal(sys_mtx.m_Mutex, timeout);
+    bool res = x_WaitForSignal(sys_mtx.m_Mutex, deadline);
     sys_mtx.Lock(SSystemFastMutex::ePseudo);
     return res;
 }
 
 
-bool CConditionVariable::WaitForSignal(CFastMutex&        mutex,
-                                       const CAbsTimeout& timeout)
+bool CConditionVariable::WaitForSignal(CFastMutex&       mutex,
+                                       const CDeadline&  deadline)
 {
     SSystemFastMutex& sys_mtx = mutex;
     sys_mtx.Unlock(SSystemFastMutex::ePseudo);
-    bool res = x_WaitForSignal(sys_mtx, timeout);
+    bool res = x_WaitForSignal(sys_mtx, deadline);
     sys_mtx.Lock(SSystemFastMutex::ePseudo);
     return res;
 }

@@ -354,25 +354,25 @@ bool SNetScheduleExecutorImpl::ExecGET(SNetServerImpl* server,
 
 bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
         const string& affinity_list,
-        CAbsTimeout* timeout)
+        CDeadline* deadline)
 {
     string base_cmd(CNetScheduleNotificationHandler::MkBaseGETCmd(
             m_Impl->m_AffinityPreference, affinity_list));
 
     if (m_Impl->m_NotificationHandler.RequestJob(m_Impl, job,
             m_Impl->m_NotificationHandler.CmdAppendTimeoutAndClientInfo(
-                    base_cmd, timeout)))
+                    base_cmd, deadline)))
         return true;
 
-    if (timeout == NULL)
+    if (deadline == NULL)
         return false;
 
-    while (m_Impl->m_NotificationHandler.WaitForNotification(*timeout)) {
+    while (m_Impl->m_NotificationHandler.WaitForNotification(*deadline)) {
         CNetServer server;
         if (m_Impl->m_NotificationHandler.CheckRequestJobNotification(m_Impl,
                 &server) && g_ParseGetJobResponse(job, server.ExecWithRetry(
                     m_Impl->m_NotificationHandler.CmdAppendTimeoutAndClientInfo(
-                        base_cmd, timeout)).response)) {
+                        base_cmd, deadline)).response)) {
             // Notify the rest of NetSchedule servers that
             // we are no longer listening on the UDP socket.
             string cancel_wget_cmd("CWGET");
@@ -399,9 +399,9 @@ bool CNetScheduleExecutor::GetJob(CNetScheduleJob& job,
     if (wait_time == 0)
         return GetJob(job, affinity_list);
     else {
-        CAbsTimeout abs_timeout(wait_time, 0);
+        CDeadline deadline(wait_time, 0);
 
-        return GetJob(job, affinity_list, &abs_timeout);
+        return GetJob(job, affinity_list, &deadline);
     }
 }
 
@@ -449,12 +449,12 @@ string CNetScheduleNotificationHandler::MkBaseGETCmd(
 }
 
 string CNetScheduleNotificationHandler::CmdAppendTimeoutAndClientInfo(
-        const string& base_cmd, const CAbsTimeout* timeout)
+        const string& base_cmd, const CDeadline* deadline)
 {
     string cmd(base_cmd);
 
-    if (timeout != NULL) {
-        unsigned remaining_seconds = s_GetRemainingSeconds(*timeout);
+    if (deadline != NULL) {
+        unsigned remaining_seconds = s_GetRemainingSeconds(*deadline);
 
         if (remaining_seconds > 0) {
             cmd += " port=";

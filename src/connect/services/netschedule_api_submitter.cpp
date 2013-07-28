@@ -393,20 +393,20 @@ CNetScheduleAPI::EJobStatus
 CNetScheduleSubmitter::SubmitJobAndWait(CNetScheduleJob& job,
                                         unsigned       wait_time)
 {
-    CAbsTimeout abs_timeout(wait_time, 0);
+    CDeadline deadline(wait_time, 0);
 
     CNetScheduleNotificationHandler submit_job_handler;
 
     submit_job_handler.SubmitJob(m_Impl, job, wait_time);
 
     return submit_job_handler.WaitForJobCompletion(job,
-            abs_timeout, m_Impl->m_API);
+                                                   deadline, m_Impl->m_API);
 }
 
 CNetScheduleAPI::EJobStatus
 CNetScheduleNotificationHandler::WaitForJobCompletion(
         CNetScheduleJob& job,
-        CAbsTimeout& abs_timeout,
+        CDeadline& deadline,
         CNetScheduleAPI ns_api)
 {
     CNetScheduleAPI::EJobStatus status = CNetScheduleAPI::ePending;
@@ -415,10 +415,10 @@ CNetScheduleNotificationHandler::WaitForJobCompletion(
 
     bool last_timeout = false;
     for (;;) {
-        CAbsTimeout timeout(wait_sec++, FORCED_SST_INTERVAL_NANOSEC);
+        CDeadline timeout(wait_sec++, FORCED_SST_INTERVAL_NANOSEC);
 
-        if (!(timeout < abs_timeout)) {
-            if (abs_timeout.GetRemainingTime().IsZero())
+        if (!(timeout < deadline)) {
+            if (deadline.GetRemainingTime().IsZero())
                 try {
                     return ns_api.GetJobDetails(job);
                 }
@@ -428,7 +428,7 @@ CNetScheduleNotificationHandler::WaitForJobCompletion(
                     return status;
                 }
 
-            timeout = abs_timeout;
+            timeout = deadline;
             last_timeout = true;
         }
 
@@ -458,7 +458,7 @@ CNetScheduleNotificationHandler::WaitForJobCompletion(
 bool CNetScheduleNotificationHandler::RequestJobWatching(
         CNetScheduleAPI::TInstance ns_api,
         const string& job_id,
-        const CAbsTimeout& abs_timeout,
+        const CDeadline& deadline,
         CNetScheduleAPI::EJobStatus* job_status,
         int* last_event_index)
 {
@@ -467,7 +467,7 @@ bool CNetScheduleNotificationHandler::RequestJobWatching(
     cmd += " port=";
     cmd += NStr::NumericToString(GetPort());
     cmd += " timeout=";
-    cmd += NStr::NumericToString(s_GetRemainingSeconds(abs_timeout));
+    cmd += NStr::NumericToString(s_GetRemainingSeconds(deadline));
 
     g_AppendClientIPAndSessionID(cmd);
 
@@ -488,7 +488,7 @@ bool CNetScheduleNotificationHandler::RequestJobWatching(
 CNetScheduleAPI::EJobStatus
 CNetScheduleNotificationHandler::WaitForJobEvent(
         const string& job_key,
-        CAbsTimeout& abs_timeout,
+        CDeadline& deadline,
         CNetScheduleAPI ns_api,
         int status_mask,
         int last_event_index,
@@ -502,10 +502,10 @@ CNetScheduleNotificationHandler::WaitForJobEvent(
 
     bool last_timeout = false;
     do {
-        CAbsTimeout timeout(wait_sec++, FORCED_SST_INTERVAL_NANOSEC);
+        CDeadline timeout(wait_sec++, FORCED_SST_INTERVAL_NANOSEC);
 
-        if (!(timeout < abs_timeout)) {
-            timeout = abs_timeout;
+        if (!(timeout < deadline)) {
+            timeout = deadline;
             last_timeout = true;
         }
 
@@ -515,7 +515,7 @@ CNetScheduleNotificationHandler::WaitForJobEvent(
                 *new_event_index > last_event_index))
             break;
 
-        if (abs_timeout.GetRemainingTime().IsZero())
+        if (deadline.GetRemainingTime().IsZero())
             break;
 
         if (WaitForNotification(timeout) &&

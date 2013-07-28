@@ -314,9 +314,9 @@ protected:
     void Reset(void);
 
 protected:
-    CDiffList     m_Diffs;     ///< The list of differences from the last diff
-    CTimeout      m_Timeout;   ///< Relative timeout for processing.
-    CAbsTimeout*  m_Deadline;  ///< Absolute timeout for processing (NULL if not set).
+    CDiffList   m_Diffs;     ///< The list of differences from the last diff
+    CTimeout    m_Timeout;   ///< Relative timeout for processing
+    CDeadline*  m_Deadline;  ///< Deadline for processing (NULL if not set)
 
     friend class CDiff;
     friend class CDiffText;

@@ -169,7 +169,7 @@ bool CJobCommitterThread::x_CommitJob(CWorkerNodeJobContext* job_context)
         if (job_context->m_FirstCommitAttempt) {
             job_context->m_FirstCommitAttempt = false;
             job_context->m_CommitExpiration =
-                    CAbsTimeout(m_WorkerNode->GetQueueTimeout(), 0);
+                    CDeadline(m_WorkerNode->GetQueueTimeout(), 0);
         } else if (job_context->m_CommitExpiration <
                 job_context->GetTimeout()) {
             ERR_POST_X(64, "Could not commit " <<

@@ -2845,11 +2845,11 @@ bool CTimeout::operator<= (const CTimeout& t) const
 
 //=============================================================================
 //
-//  CAbsTimeout
+//  CDeadline
 //
 //=============================================================================
 
-CAbsTimeout::CAbsTimeout(unsigned int sec, unsigned int nanosec)
+CDeadline::CDeadline(unsigned int sec, unsigned int nanosec)
     : m_Seconds(0), m_Nanoseconds(0), m_Infinite(false)
 {
     x_Now();
@@ -2857,7 +2857,7 @@ CAbsTimeout::CAbsTimeout(unsigned int sec, unsigned int nanosec)
 
 }
 
-CAbsTimeout::CAbsTimeout(const CTimeout& rel_timeout)
+CDeadline::CDeadline(const CTimeout& rel_timeout)
     : m_Seconds(0), m_Nanoseconds(0), m_Infinite(false)
 {
     if (rel_timeout.IsInfinite()) {
@@ -2871,7 +2871,7 @@ CAbsTimeout::CAbsTimeout(const CTimeout& rel_timeout)
     }
 }
 
-void CAbsTimeout::x_Now(void)
+void CDeadline::x_Now(void)
 {
 #if defined(NCBI_OS_MSWIN)
     struct _timeb timebuffer;
@@ -2896,7 +2896,7 @@ void CAbsTimeout::x_Now(void)
 #endif
 }
 
-void CAbsTimeout::x_Add(unsigned int seconds, unsigned int nanoseconds)
+void CDeadline::x_Add(unsigned int seconds, unsigned int nanoseconds)
 {
     if (m_Infinite || (seconds == 0 && nanoseconds == 0)) {
         return;
@@ -2907,7 +2907,7 @@ void CAbsTimeout::x_Add(unsigned int seconds, unsigned int nanoseconds)
     m_Seconds += seconds;
 }
 
-void CAbsTimeout::GetExpirationTime(time_t* sec, unsigned int* nanosec) const
+void CDeadline::GetExpirationTime(time_t* sec, unsigned int* nanosec) const
 {
     if ( IsInfinite() ) {
         NCBI_THROW(CTimeException, eConvert, 
@@ -2922,7 +2922,7 @@ void CAbsTimeout::GetExpirationTime(time_t* sec, unsigned int* nanosec) const
     }
 }
 
-CNanoTimeout CAbsTimeout::GetRemainingTime(void) const
+CNanoTimeout CDeadline::GetRemainingTime(void) const
 {
     if ( IsInfinite() ) {
         NCBI_THROW(CTimeException, eConvert, 
@@ -2930,7 +2930,7 @@ CNanoTimeout CAbsTimeout::GetRemainingTime(void) const
                    s_SpecialValueName(CTimeout::eInfinite) + " timeout value");
     }
 
-    CAbsTimeout now(0,0);
+    CDeadline now(0,0);
 
     time_t       thenS  = m_Seconds;
     unsigned int thenNS = m_Nanoseconds;
@@ -2952,7 +2952,7 @@ CNanoTimeout CAbsTimeout::GetRemainingTime(void) const
     return CNanoTimeout((unsigned int)thenS,thenNS);
 }
 
-bool CAbsTimeout::operator <(const CAbsTimeout& right_hand_operand) const
+bool CDeadline::operator <(const CDeadline& right_hand_operand) const
 {
     if (!IsInfinite())
         return right_hand_operand.IsInfinite() ||
@@ -2966,6 +2966,8 @@ bool CAbsTimeout::operator <(const CAbsTimeout& right_hand_operand) const
                 s_SpecialValueName(CTimeout::eInfinite) + "' values");
     }
 }
+
+
 
 //=============================================================================
 //

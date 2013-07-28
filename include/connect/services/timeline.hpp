@@ -44,7 +44,7 @@ class CWorkerNodeTimelineEntry
 public:
     friend class CWorkerNodeTimeline_Base;
 
-    CWorkerNodeTimelineEntry() : m_Timeline(NULL), m_AbsTimeout(0, 0) {}
+    CWorkerNodeTimelineEntry() : m_Timeline(NULL), m_Deadline(0, 0) {}
 
     bool IsInTimeline() const {return m_Timeline != NULL;}
 
@@ -55,23 +55,23 @@ public:
 
     void Cut();
 
-    const CAbsTimeout& GetTimeout() const {return m_AbsTimeout;}
+    const CDeadline& GetTimeout() const {return m_Deadline;}
 
     void ResetTimeout(unsigned seconds)
     {
-        m_AbsTimeout = CAbsTimeout(seconds, 0);
+        m_Deadline = CDeadline(seconds, 0);
     }
 
     bool TimeHasCome() const
     {
-        return m_AbsTimeout.GetRemainingTime().IsZero();
+        return m_Deadline.GetRemainingTime().IsZero();
     }
 
 private:
     CWorkerNodeTimeline_Base* m_Timeline;
     CWorkerNodeTimelineEntry* m_Prev;
     CWorkerNodeTimelineEntry* m_Next;
-    CAbsTimeout m_AbsTimeout;
+    CDeadline                 m_Deadline;
 };
 
 class CWorkerNodeTimeline_Base

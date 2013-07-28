@@ -366,10 +366,10 @@ CDiffList& CDiff::Diff(CTempString s1, CTempString s2, TFlags flags)
     Reset();
 
     // Set deadline time if timeout is specified
-    auto_ptr<CAbsTimeout> real_timeout;
+    auto_ptr<CDeadline> real_deadline;
     if (!m_Timeout.IsInfinite()) {
-        real_timeout.reset(new CAbsTimeout(m_Timeout));
-        m_Deadline = real_timeout.get();
+        real_deadline.reset(new CDeadline(m_Timeout));
+        m_Deadline = real_deadline.get();
     }
 
     // Check for equality (speedup)
@@ -772,10 +772,10 @@ CDiffList& CDiffText::Diff(CTempString s1, CTempString s2, TFlags flags)
     Reset();
 
     // Set deadline time if timeout is specified
-    auto_ptr<CAbsTimeout> real_timeout;
+    auto_ptr<CDeadline> real_deadline;
     if (!m_Timeout.IsInfinite()) {
-        real_timeout.reset(new CAbsTimeout(m_Timeout));
-        m_Deadline = real_timeout.get();
+        real_deadline.reset(new CDeadline(m_Timeout));
+        m_Deadline = real_deadline.get();
     }
 
     // Split both strings to lines

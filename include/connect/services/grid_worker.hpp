@@ -394,8 +394,8 @@ private:
     auto_ptr<IEmbeddedStreamWriter> m_Writer;
     auto_ptr<CNcbiOstream> m_WStream;
 
-    CAbsTimeout m_CommitExpiration;
-    bool m_FirstCommitAttempt;
+    CDeadline m_CommitExpiration;
+    bool      m_FirstCommitAttempt;
 
     /// The copy constructor and the assignment operator
     /// are prohibited

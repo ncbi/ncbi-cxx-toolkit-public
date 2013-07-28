@@ -470,7 +470,7 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout)
     EIO_Status io_st;
     const STimeout& conn_timeout = timeout != NULL ? *timeout :
             m_ServerInPool->m_ServerPool->m_ConnTimeout;
-    CAbsTimeout abs_timeout(conn_timeout.sec, conn_timeout.usec * 1000);
+    CDeadline deadline(conn_timeout.sec, conn_timeout.usec * 1000);
     STimeout internal_timeout = conn_timeout < s_InternalConnectTimeout ?
             conn_timeout : s_InternalConnectTimeout;
 
@@ -555,8 +555,8 @@ CNetServerConnection SNetServerImpl::Connect(STimeout* timeout)
                     server_address.host), server_address.port,
                     &internal_timeout, fSOCK_LogOff | fSOCK_KeepAlive);
 
-            abs_timeout.GetRemainingTime().Get(&remaining_timeout.sec,
-                                               &remaining_timeout.usec);
+            deadline.GetRemainingTime().Get(&remaining_timeout.sec,
+                                            &remaining_timeout.usec);
 
             if (remaining_timeout < internal_timeout)
                 internal_timeout = remaining_timeout;

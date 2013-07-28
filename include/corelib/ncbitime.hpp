@@ -41,7 +41,7 @@
 ///   CStopWatch     - stop watch class to measure elasped time.
 ///   CTimeout       - timeout interval for various I/O etc activity.
 ///   CNanoTimeout   - timeout interval with nanoseconds precision.
-///   CAbsTimeout    - timeout that uses absolute time mark (deadline time).
+///   CDeadline      - timeout that use absolute time mark (deadline time).
 ///   CFastLocalTime - class for quick and dirty getting a local time.
 ///
 /// NOTE about CTime:
@@ -1321,7 +1321,8 @@ public:
         eSSP_Precision6,
         eSSP_Precision7,
 
-        eSSP_Smart          ///< As smart as possible (use most significant levels of time span)
+        /// Be as smart as possible (use most significant levels of time span)
+        eSSP_Smart
     };
 
     /// Which format use to output zero time span parts.
@@ -1610,14 +1611,14 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 /// 
-/// CAbsTimeout
+/// CDeadline
 ///
 ///  Given a relative timeout, compose the absolute time mark
 ///  by adding the timeout to the current time.
 ///
 /// @sa CTimeout
 
-class NCBI_XNCBI_EXPORT CAbsTimeout
+class NCBI_XNCBI_EXPORT CDeadline
 {
 public:
     /// Initialize absolute timeout using seconds and nanoseconds
@@ -1626,16 +1627,17 @@ public:
     ///   Number of seconds to add to the current time
     /// @param rel_nanoseconds
     ///   Number of nanoseconds to add to the current time
-    CAbsTimeout(unsigned int rel_seconds, unsigned int rel_nanoseconds);
+    CDeadline(unsigned int rel_seconds, unsigned int rel_nanoseconds);
     
     /// Initialize absolute timeout by adding relative one to the current time
-    CAbsTimeout(const CTimeout& rel_timeout);
+    CDeadline(const CTimeout& rel_timeout);
 
     /// Check if the timeout is infinite
     bool IsInfinite(void) const { return m_Infinite; }
 
     /// Check if the timeout is expired
-    bool IsExpired(void) const { return !IsInfinite()  &&  GetRemainingTime().IsZero(); }
+    bool IsExpired(void) const
+    { return !IsInfinite()  &&  GetRemainingTime().IsZero(); }
 
     /// Get the number of seconds and nanoseconds (since 1/1/1970).
     /// Throw an exception if the timeout is infinite.
@@ -1644,8 +1646,8 @@ public:
     /// Get time left to the expiration time
     CNanoTimeout GetRemainingTime(void) const;
 
-    /// Compare two CAbsTimeout values.
-    bool operator <(const CAbsTimeout& right_hand_operand) const;
+    /// Compare two CDeadline values.
+    bool operator <(const CDeadline& right_hand_operand) const;
 
 private:
     void x_Now(void);
@@ -1655,6 +1657,11 @@ private:
     unsigned int m_Nanoseconds;
     bool         m_Infinite;
 };
+
+
+/// @deprecated  Use CDeadline instead
+NCBI_DEPRECATED typedef CDeadline CAbsTimeout;
+
 
 
 /////////////////////////////////////////////////////////////////////////////

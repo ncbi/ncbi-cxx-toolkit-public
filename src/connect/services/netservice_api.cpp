@@ -878,8 +878,9 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
 
     const unsigned long retry_delay = s_GetRetryDelay();
 
-    CAbsTimeout max_connection_time(m_ServerPool->m_MaxConnectionTime / 1000,
-        (m_ServerPool->m_MaxConnectionTime % 1000) * 1000 * 1000);
+    CDeadline max_connection_time
+        (m_ServerPool->m_MaxConnectionTime / 1000,
+         (m_ServerPool->m_MaxConnectionTime % 1000) * 1000 * 1000);
 
     CNetServer server = service_traversal->BeginIteration();
 

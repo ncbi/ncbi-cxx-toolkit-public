@@ -1240,8 +1240,8 @@ int CGridWorkerNode::Run()
     }
 
     CNetScheduleJob job;
-    CAbsTimeout max_wait_for_servers(
-            TWorkerNode_MaxWaitForServers::GetDefault());
+    CDeadline max_wait_for_servers
+        (TWorkerNode_MaxWaitForServers::GetDefault());
 
     m_LogRequested = reg.GetBool(kServerSec,
             "log", false, 0, IRegistry::eReturn);
@@ -1283,8 +1283,8 @@ int CGridWorkerNode::Run()
                 job_context.release();
                 job_context.reset(m_JobCommitterThread->AllocJobContext());
             }
-            max_wait_for_servers = CAbsTimeout(
-                    TWorkerNode_MaxWaitForServers::GetDefault());
+            max_wait_for_servers =
+                CDeadline(TWorkerNode_MaxWaitForServers::GetDefault());
         } catch (CNetSrvConnException& e) {
             SleepMilliSec(s_GetRetryDelay());
             if (e.GetErrCode() == CNetSrvConnException::eConnectionFailure &&
