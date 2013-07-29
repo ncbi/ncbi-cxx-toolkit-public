@@ -116,7 +116,7 @@ CRegexp::~CRegexp()
 
 void CRegexp::Set(CTempStringEx pattern, TCompile flags)
 {
-    if (m_PReg != NULL) {
+    if ( m_PReg ) {
         (*pcre_free)(m_PReg);
     }
     const char *err;
@@ -128,9 +128,12 @@ void CRegexp::Set(CTempStringEx pattern, TCompile flags)
     } else {
         m_PReg = pcre_compile(string(pattern).c_str(), x_flags, &err, &err_offset, NULL);
     }
-    if (m_PReg == NULL) {
+    if ( !m_PReg ) {
         NCBI_THROW(CRegexpException, eCompile, "Compilation of the pattern '" +
                    string(pattern) + "' failed: " + err);
+    }
+    if ( m_Extra ) {
+        (*pcre_free)(m_Extra);
     }
     m_Extra = pcre_study((pcre*)m_PReg, 0, &err);
 }
