@@ -53,11 +53,7 @@ BEGIN_NCBI_SCOPE
 class NCBI_XCONNECT_EXPORT CNetScheduleExceptionMap
 {
 public:
-    CNetScheduleExceptionMap();
-    CException::TErrCode GetCode(const string& name);
-private:
-    typedef map<string, CException::TErrCode> TMap;
-    TMap m_Map;
+    static CException::TErrCode GetCode(const string& name);
 };
 
 /// NetSchedule internal exception

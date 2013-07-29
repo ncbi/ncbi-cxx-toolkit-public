@@ -38,8 +38,8 @@
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
-static const string kAsnDeflineObjLabel = "ASN1_BlastDefLine";
-static const string kTaxDataObjLabel    = "TaxNamesData";
+#define kAsnDeflineObjLabel "ASN1_BlastDefLine"
+#define kTaxDataObjLabel    "TaxNamesData"
 
 /** Linkout bit definitions */
 enum LinkoutTypes {

@@ -350,8 +350,7 @@ void CNetScheduleServerListener::OnError(
         msg = code;
 
     // Map code into numeric value
-    CException::TErrCode err_code =
-        SNetScheduleAPIImpl::sm_ExceptionMap.GetCode(code);
+    CException::TErrCode err_code = CNetScheduleExceptionMap::GetCode(code);
 
     switch (err_code) {
     case CException::eInvalid:
@@ -411,8 +410,6 @@ SNetScheduleAPIImpl::SNetScheduleAPIImpl(
     m_UseEmbeddedStorage(parent->m_UseEmbeddedStorage)
 {
 }
-
-CNetScheduleExceptionMap SNetScheduleAPIImpl::sm_ExceptionMap;
 
 CNetScheduleAPI::CNetScheduleAPI(CNetScheduleAPI::EAppRegistry /*use_app_reg*/,
         const string& conf_section /* = kEmptyStr */) :

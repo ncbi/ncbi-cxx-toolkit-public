@@ -98,7 +98,7 @@ public:
                                   objects::CScope& Scope) = 0;
     virtual unsigned int GetFilterRank() const = 0;
 
-    static const string KFILTER_SCORE;
+    static const char* KFILTER_SCORE;
 };
 
 

@@ -32,44 +32,46 @@
 
 #include <ncbi_pch.hpp>
 
+#include <util/static_map.hpp>
 #include <connect/services/netschedule_api_expt.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
-CNetScheduleExceptionMap::CNetScheduleExceptionMap()
-{
-    m_Map["eInternalError"]       = CNetScheduleException::eInternalError;
-    m_Map["eProtocolSyntaxError"] = CNetScheduleException::eProtocolSyntaxError;
-    m_Map["eAuthenticationError"] = CNetScheduleException::eAuthenticationError;
-    m_Map["eKeyFormatError"]      = CNetScheduleException::eKeyFormatError;
-    m_Map["eJobNotFound"]         = CNetScheduleException::eJobNotFound;
-    m_Map["eGroupNotFound"]       = CNetScheduleException::eGroupNotFound;
-    m_Map["eAffinityNotFound"]    = CNetScheduleException::eAffinityNotFound;
-    m_Map["eInvalidJobStatus"]    = CNetScheduleException::eInvalidJobStatus;
-    m_Map["eUnknownQueue"]        = CNetScheduleException::eUnknownQueue;
-    m_Map["eUnknownQueueClass"]   = CNetScheduleException::eUnknownQueueClass;
-    m_Map["eTooManyPendingJobs"]  = CNetScheduleException::eTooManyPendingJobs;
-    m_Map["eDataTooLong"]         = CNetScheduleException::eDataTooLong;
-    m_Map["eInvalidClient"]       = CNetScheduleException::eInvalidClient;
-    m_Map["eAccessDenied"]        = CNetScheduleException::eAccessDenied;
-    m_Map["eSubmitsDisabled"]     = CNetScheduleException::eSubmitsDisabled;
-    m_Map["eShuttingDown"]        = CNetScheduleException::eShuttingDown;
-    m_Map["eDuplicateName"]       = CNetScheduleException::eDuplicateName;
-    m_Map["eCommandIsNotAllowed"] = CNetScheduleException::eCommandIsNotAllowed;
-    m_Map["eObsoleteCommand"]     = CNetScheduleException::eObsoleteCommand;
-    m_Map["eInvalidParameter"]    = CNetScheduleException::eInvalidParameter;
-    m_Map["eInvalidAuthToken"]    = CNetScheduleException::eInvalidAuthToken;
-    m_Map["eTooManyPreferredAffinities"] =
-        CNetScheduleException::eTooManyPreferredAffinities;
-    m_Map["ePrefAffExpired"]      = CNetScheduleException::ePrefAffExpired;
-    m_Map["eTryAgain"]            = CNetScheduleException::eTryAgain;
-}
+typedef SStaticPair<const char*, CException::TErrCode> TExceptionMapElem;
+static const TExceptionMapElem s_NSExceptionArray[] = {
+    {"eAccessDenied", CNetScheduleException::eAccessDenied},
+    {"eAffinityNotFound", CNetScheduleException::eAffinityNotFound},
+    {"eAuthenticationError", CNetScheduleException::eAuthenticationError},
+    {"eCommandIsNotAllowed", CNetScheduleException::eCommandIsNotAllowed},
+    {"eDataTooLong", CNetScheduleException::eDataTooLong},
+    {"eDuplicateName", CNetScheduleException::eDuplicateName},
+    {"eGroupNotFound", CNetScheduleException::eGroupNotFound},
+    {"eInternalError", CNetScheduleException::eInternalError},
+    {"eInvalidAuthToken", CNetScheduleException::eInvalidAuthToken},
+    {"eInvalidClient", CNetScheduleException::eInvalidClient},
+    {"eInvalidJobStatus", CNetScheduleException::eInvalidJobStatus},
+    {"eInvalidParameter", CNetScheduleException::eInvalidParameter},
+    {"eJobNotFound", CNetScheduleException::eJobNotFound},
+    {"eKeyFormatError", CNetScheduleException::eKeyFormatError},
+    {"eObsoleteCommand", CNetScheduleException::eObsoleteCommand},
+    {"ePrefAffExpired", CNetScheduleException::ePrefAffExpired},
+    {"eProtocolSyntaxError", CNetScheduleException::eProtocolSyntaxError},
+    {"eShuttingDown", CNetScheduleException::eShuttingDown},
+    {"eSubmitsDisabled", CNetScheduleException::eSubmitsDisabled},
+    {"eTooManyPendingJobs", CNetScheduleException::eTooManyPendingJobs},
+    {"eTooManyPreferredAffinities", CNetScheduleException::eTooManyPreferredAffinities},
+    {"eTryAgain", CNetScheduleException::eTryAgain},
+    {"eUnknownQueue", CNetScheduleException::eUnknownQueue},
+    {"eUnknownQueueClass", CNetScheduleException::eUnknownQueueClass}
+};
+typedef CStaticArrayMap<const char*, CException::TErrCode, PNocase_CStr> TNSExceptionMap;
+DEFINE_STATIC_ARRAY_MAP(TNSExceptionMap, s_NSExceptionMap, s_NSExceptionArray);
 
 CException::TErrCode CNetScheduleExceptionMap::GetCode(const string& name)
 {
-    TMap::iterator it = m_Map.find(name);
-    if (it == m_Map.end())
+    TNSExceptionMap::const_iterator it = s_NSExceptionMap.find(name.c_str());
+    if (it == s_NSExceptionMap.end())
         return CException::eInvalid;
     return it->second;
 }

@@ -67,7 +67,7 @@ public:
 
         // Timestamp configuration
         {{
-        static const string kCFParam_timestamp = "timestamp";
+        static const char* kCFParam_timestamp = "timestamp";
         
         const string& ts_flags_str = 
             this->GetParam(params, kCFParam_timestamp, false);
@@ -79,14 +79,14 @@ public:
         }}
 
 
-        static const string kCFParam_keep_versions = "keep_versions";
+        static const char* kCFParam_keep_versions = "keep_versions";
 
         const string& keep_versions_str = 
             this->GetParam(params, kCFParam_keep_versions, false);
         if (!keep_versions_str.empty()) {
-            static const string kCFParam_keep_versions_all = "all";
-            static const string kCFParam_keep_versions_drop_old = "drop_old";
-            static const string kCFParam_keep_versions_drop_all = "drop_all";
+            static const char* kCFParam_keep_versions_all = "all";
+            static const char* kCFParam_keep_versions_drop_old = "drop_old";
+            static const char* kCFParam_keep_versions_drop_all = "drop_all";
 
             ICache::EKeepVersions kv_policy = ICache::eKeepAll;
             if (NStr::CompareNocase(keep_versions_str, 
@@ -117,20 +117,20 @@ public:
                             const string&                  options) const
     {
         static 
-        const string kCFParam_timeout       = "timeout";
+        const char* kCFParam_timeout       = "timeout";
         static 
-        const string kCFParam_max_timeout   = "max_timeout";
+        const char* kCFParam_max_timeout   = "max_timeout";
 
         static 
-        const string kCFParam_timestamp_onread   = "onread";
+        const char* kCFParam_timestamp_onread   = "onread";
         static 
-        const string kCFParam_timestamp_subkey   = "subkey";
+        const char* kCFParam_timestamp_subkey   = "subkey";
         static 
-        const string kCFParam_timestamp_expire_not_used = "expire_not_used";
+        const char* kCFParam_timestamp_expire_not_used = "expire_not_used";
         static 
-        const string kCFParam_timestamp_purge_on_startup   = "purge_on_startup";
+        const char* kCFParam_timestamp_purge_on_startup   = "purge_on_startup";
         static 
-        const string kCFParam_timestamp_check_expiration   = "check_expiration";
+        const char* kCFParam_timestamp_check_expiration   = "check_expiration";
 
         list<string> opt;
         NStr::Split(options, " \t", opt);

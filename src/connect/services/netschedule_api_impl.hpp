@@ -161,7 +161,6 @@ struct SNetScheduleAPIImpl : public CObject
 
     CNetService m_Service;
 
-    static CNetScheduleExceptionMap sm_ExceptionMap;
     string m_Queue;
     string m_ProgramVersion;
     string m_ClientNode;

@@ -50,8 +50,10 @@ public:
     static
     void ArgsToSplign(CSplign* splign, const CArgs& args);
 };
-    const string kQueryType_mRNA = "mrna";
-    const string kQueryType_EST  = "est";
+
+#define kQueryType_mRNA "mrna"
+#define kQueryType_EST  "est"
+
 
 END_NCBI_SCOPE
 

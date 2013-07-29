@@ -105,7 +105,7 @@ void CNgAligner::AddScorer(IAlignmentScorer* Scorer)
 
 
 
-const string IAlignmentFilter::KFILTER_SCORE = "filter_score";
+const char* IAlignmentFilter::KFILTER_SCORE = "filter_score";
 
 TAlignSetRef CNgAligner::Align()
 {
