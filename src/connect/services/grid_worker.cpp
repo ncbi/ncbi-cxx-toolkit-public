@@ -1150,6 +1150,8 @@ int CGridWorkerNode::Run()
         m_NetScheduleAPI.SetClientSession(session);
     }
 
+    m_NetScheduleAPI.SetProgramVersion(m_JobProcessorFactory->GetJobVersion());
+
     if (procinfo_file != NULL) {
         fprintf(procinfo_file, "pid: %lu\nport: %s\n"
                 "client_node: %s\nclient_session: %s\n",
@@ -1160,23 +1162,38 @@ int CGridWorkerNode::Run()
         fclose(procinfo_file);
     }
 
-    {{
-        CNetScheduleAdmin::TQueueInfo queue_info;
-
-        m_NetScheduleAPI.GetAdmin().GetQueueInfo(queue_info);
-
-        m_QueueTimeout = NStr::StringToUInt(queue_info["timeout"]);
-    }}
-    m_QueueEmbeddedOutputSize = m_NetScheduleAPI->m_UseEmbeddedStorage ?
-            m_NetScheduleAPI.GetServerParams().max_output_size : 0;
-
     CRequestContext& request_context = CDiagContext::GetRequestContext();
 
     request_context.SetSessionID(m_NetScheduleAPI->m_ClientSession);
 
     m_NSExecutor = m_NetScheduleAPI.GetExecutor();
 
-    m_NetScheduleAPI.SetProgramVersion(m_JobProcessorFactory->GetJobVersion());
+    CDeadline max_wait_for_servers(
+            TWorkerNode_MaxWaitForServers::GetDefault());
+
+    for (;;) {
+        try {
+            CNetScheduleAdmin::TQueueInfo queue_info;
+
+            m_NetScheduleAPI.GetAdmin().GetQueueInfo(queue_info);
+
+            m_QueueTimeout = NStr::StringToUInt(queue_info["timeout"]);
+
+            m_QueueEmbeddedOutputSize = m_NetScheduleAPI->m_UseEmbeddedStorage ?
+                    m_NetScheduleAPI.GetServerParams().max_output_size : 0;
+            break;
+        }
+        catch (CException& e) {
+            LOG_POST(Error << e);
+            int s = (int) m_NSTimeout;
+            do {
+                if (CGridGlobals::GetInstance().IsShuttingDown() ||
+                        max_wait_for_servers.GetRemainingTime().IsZero())
+                    return 1;
+                SleepSec(1);
+            } while (--s > 0);
+        }
+    }
 
     CGridGlobals::GetInstance().SetReuseJobObject(reg.GetBool(kServerSec,
             "reuse_job_object", false, 0, CNcbiRegistry::eReturn));
@@ -1240,8 +1257,8 @@ int CGridWorkerNode::Run()
     }
 
     CNetScheduleJob job;
-    CDeadline max_wait_for_servers
-        (TWorkerNode_MaxWaitForServers::GetDefault());
+    max_wait_for_servers = CDeadline(
+            TWorkerNode_MaxWaitForServers::GetDefault());
 
     m_LogRequested = reg.GetBool(kServerSec,
             "log", false, 0, IRegistry::eReturn);

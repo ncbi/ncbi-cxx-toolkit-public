@@ -178,15 +178,18 @@ static void s_ParseQueueInfo(const string& server_output,
 void CNetScheduleAdmin::GetQueueInfo(CNetServer server,
         const string& queue_name, CNetScheduleAdmin::TQueueInfo& queue_info)
 {
-    s_ParseQueueInfo(server.ExecWithRetry(
-            s_MkQINFCmd(queue_name)).response, queue_info);
+    CNetServer::SExecResult exec_result;
+
+    server->ConnectAndExec(s_MkQINFCmd(queue_name), exec_result);
+
+    s_ParseQueueInfo(exec_result.response, queue_info);
 }
 
 void CNetScheduleAdmin::GetQueueInfo(const string& queue_name,
         CNetScheduleAdmin::TQueueInfo& queue_info)
 {
-    s_ParseQueueInfo(m_Impl->m_API->m_Service.FindServerAndExec(
-            s_MkQINFCmd(queue_name)).response, queue_info);
+    GetQueueInfo(m_Impl->m_API->m_Service.Iterate().GetServer(),
+            queue_name, queue_info);
 }
 
 void CNetScheduleAdmin::GetQueueInfo(CNetServer server,
