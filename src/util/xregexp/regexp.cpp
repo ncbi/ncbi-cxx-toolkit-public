@@ -142,10 +142,13 @@ void CRegexp::Set(CTempStringEx pattern, TCompile flags)
 // @deprecated
 void CRegexp::GetSub(CTempString str, size_t idx, string& dst) const
 {
+    if ( (int)idx >= m_NumFound ) {
+        dst.erase();
+        return;
+    }
     int start = m_Results[2 * idx];
     int end   = m_Results[2 * idx + 1];
-
-    if ((int)idx >= m_NumFound  ||  start == -1  ||  end == -1) {
+    if (start == -1  ||  end == -1) {
         dst.erase();
     } else {
         dst.assign(str.data() + start, end - start);
@@ -155,14 +158,15 @@ void CRegexp::GetSub(CTempString str, size_t idx, string& dst) const
 
 CTempString CRegexp::GetSub(CTempString str, size_t idx) const
 {
+    if ( (int)idx >= m_NumFound ) {
+        return CTempString();
+    }
     int start = m_Results[2 * idx];
     int end   = m_Results[2 * idx + 1];
-
-    if ((int)idx >= m_NumFound  ||  start == -1  ||  end == -1) {
+    if (start == -1  ||  end == -1) {
         return CTempString();
-    } else {
-        return CTempString(str.data() + start, end - start);
     }
+    return CTempString(str.data() + start, end - start);
 }
 
 
