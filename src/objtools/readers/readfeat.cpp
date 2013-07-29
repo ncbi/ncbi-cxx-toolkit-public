@@ -1188,7 +1188,8 @@ s_IsFeatureLineAndFix (
         if( ! isspace(ch) ) {
             if(ch == '>') {
                 if( str_iter != line.begin() ) {
-                    line = NStr::TruncateSpaces(line, NStr::eTrunc_Begin);
+                    line =
+                        NStr::TruncateSpaces_Unsafe(line, NStr::eTrunc_Begin);
                 }
                 return true;
             } else {

@@ -69,9 +69,12 @@ CTextseq_id& CTextseq_id::Set
                    + " for accession " + string(acc_in));
     }
 
-    CTempString acc     = NStr::TruncateSpaces(acc_in,     NStr::eTrunc_Both);
-    CTempString name    = NStr::TruncateSpaces(name_in,    NStr::eTrunc_Both);
-    CTempString release = NStr::TruncateSpaces(release_in, NStr::eTrunc_Both);
+    CTempString acc     =
+        NStr::TruncateSpaces_Unsafe(acc_in,     NStr::eTrunc_Both);
+    CTempString name    =
+        NStr::TruncateSpaces_Unsafe(name_in,    NStr::eTrunc_Both);
+    CTempString release =
+        NStr::TruncateSpaces_Unsafe(release_in, NStr::eTrunc_Both);
 
     if (acc.empty()  &&  name.empty()) {
     }

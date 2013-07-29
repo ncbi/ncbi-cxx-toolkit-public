@@ -397,7 +397,7 @@ CJsonNode g_GenericStatToJson(CNetServer server,
                 NStr::SplitInTwo(line, ":", key, value);
                 NormalizeStatKeyName(key);
                 string key_norm(key);
-                value = NStr::TruncateSpaces(value, NStr::eTrunc_Begin);
+                value = NStr::TruncateSpaces_Unsafe(value, NStr::eTrunc_Begin);
                 if (value.empty())
                     entity_info.SetByKey(key_norm, array_value =
                             CJsonNode::NewArrayNode());
@@ -441,10 +441,12 @@ CJsonNode g_LegacyStatToJson(CNetServer server, bool verbose)
             line.resize(section_name_len);
             stat_info.SetByKey(line,
                     section_entries = CJsonNode::NewArrayNode());
-        } else if (section_entries)
+        }
+        else if (section_entries) {
             section_entries.AppendString(line);
+        }
         else if (NStr::SplitInTwo(line, ":", key, value)) {
-            value = NStr::TruncateSpaces(value, NStr::eTrunc_Begin);
+            value = NStr::TruncateSpaces_Unsafe(value, NStr::eTrunc_Begin);
             if (CNetScheduleAPI::StringToStatus(key) !=
                     CNetScheduleAPI::eJobNotFound)
                 jobs_by_status.SetInteger(key, NStr::StringToInt8(value));

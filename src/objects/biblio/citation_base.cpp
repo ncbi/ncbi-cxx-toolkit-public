@@ -73,7 +73,7 @@ string ICitationBase::FixPages(const string& raw_orig_pages)
     SIZE_TYPE hyphen_pos = NPOS, lhs_digit_pos = NPOS, lhs_letter_pos = NPOS,
               digit_pos = NPOS, letter_pos = NPOS;
 
-    CTempString orig_pages = NStr::TruncateSpaces(CTempString(raw_orig_pages));
+    CTempString orig_pages = NStr::TruncateSpaces_Unsafe(raw_orig_pages);
     for (SIZE_TYPE pos = 0;  pos < orig_pages.size();  ++pos) {
         char c = orig_pages[pos];
         if (c >= '0'  &&  c <= '9') {

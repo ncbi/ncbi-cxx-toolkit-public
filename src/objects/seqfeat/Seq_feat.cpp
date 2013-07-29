@@ -356,7 +356,7 @@ void CSeq_feat::RemoveExceptText(const string & exception_text)
             if( ! new_except_texts.empty() ) {
                 new_except_texts += ", ";
             }
-            new_except_texts += NStr::TruncateSpaces(*text_it);
+            new_except_texts += NStr::TruncateSpaces_Unsafe(*text_it);
         }
     }
 
@@ -413,7 +413,7 @@ CSeq_feat::GetTempExceptionTextSet(void) const
         NStr::eMergeDelims);
 
     ITERATE( vector<CTempStringEx>, part_it, exception_parts ) {
-        pAnswerSet->insert( NStr::TruncateSpaces(*part_it) );
+        pAnswerSet->insert( NStr::TruncateSpaces_Unsafe(*part_it) );
     }
 
     return pAnswerSet;
@@ -421,11 +421,12 @@ CSeq_feat::GetTempExceptionTextSet(void) const
 
 bool CSeq_feat::HasExceptionText(const string & exception_text ) const
 {
-    CTempString sCleanedInputText = 
-        NStr::TruncateSpaces(CTempString(exception_text));
+    CTempString sCleanedInputText =
+        NStr::TruncateSpaces_Unsafe(exception_text);
+
     if( sCleanedInputText.empty() ) {
         // it's preferable for the caller not to give us an
-        // empty string, but... just in case
+        // empty string, but... just in ycase
         return false;
     }
 

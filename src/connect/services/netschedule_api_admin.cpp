@@ -365,8 +365,9 @@ void CNetScheduleAdmin::StatusSnapshot(
 
             while (cmd_output.ReadLine(output_line))
                 if (NStr::SplitInTwo(output_line, ":", st_str, cnt_str))
-                    status_map[st_str] += NStr::StringToUInt(
-                            NStr::TruncateSpaces(cnt_str, NStr::eTrunc_Begin));
+                    status_map[st_str] +=
+                        NStr::StringToUInt(NStr::TruncateSpaces_Unsafe
+                                           (cnt_str, NStr::eTrunc_Begin));
         }
     }
     catch (CStringException& ex)

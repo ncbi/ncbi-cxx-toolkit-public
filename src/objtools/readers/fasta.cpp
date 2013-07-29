@@ -369,7 +369,7 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(IMessageListener * pMessageListener)
             break;
         }
 
-        CTempString line = NStr::TruncateSpaces(*++GetLineReader());
+        CTempString line = NStr::TruncateSpaces_Unsafe(*++GetLineReader());
         if (line.empty()) {
             continue; // ignore lines containing only whitespace
         }
@@ -1117,10 +1117,10 @@ bool CFastaReader::ParseGapLine(
         }
 
         // extract the key and the value
-        TStr sKey = NStr::TruncateSpaces(
+        TStr sKey = NStr::TruncateSpaces_Unsafe(
             sRemainingLine.substr(uOpenBracketPos + 1, 
                 (uPosOfEqualSign - uOpenBracketPos - 1) ) );
-        TStr sValue = NStr::TruncateSpaces(
+        TStr sValue = NStr::TruncateSpaces_Unsafe(
             sRemainingLine.substr(uPosOfEqualSign + 1,
                 uCloseBracketPos - uPosOfEqualSign - 1) );
         

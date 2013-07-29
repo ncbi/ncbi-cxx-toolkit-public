@@ -187,10 +187,11 @@ CGff2Reader::ReadSeqAnnotsNew(
 
     while ( ! lr.AtEOF() ) {
         ++m_uLineNumber;
-        line = NStr::TruncateSpaces( *++lr );
-        if ( NStr::TruncateSpaces( line ).empty() ) {
+        line = NStr::TruncateSpaces_Unsafe( *++lr );
+        if ( line.empty() ) {
             continue;
         }
+
         try {
             if ( x_IsCommentLine( line ) ) {
                 continue;
@@ -266,7 +267,6 @@ bool CGff2Reader::x_ReadLine(
     while ( ! lr.AtEOF() ) {
         strLine = NStr::TruncateSpaces( *++lr );
         ++m_uLineNumber;
-        NStr::TruncateSpacesInPlace( strLine );
         if ( ! x_IsCommentLine( strLine ) ) {
             return true;
         }

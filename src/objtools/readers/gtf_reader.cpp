@@ -249,10 +249,10 @@ CGtfReader::x_GetLine(
 {
     while ( ! lr.AtEOF() ) {
 
-        string strBuffer = NStr::TruncateSpaces( *++lr );
+        string strBuffer = NStr::TruncateSpaces_Unsafe( *++lr );
         ++iLineCount;
 
-        if ( NStr::TruncateSpaces( strBuffer ).empty() ) {
+        if ( strBuffer.empty() ) {
             continue;
         }
         size_t uComment = strBuffer.find( '#' );

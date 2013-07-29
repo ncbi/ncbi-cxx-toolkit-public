@@ -2826,15 +2826,15 @@ string NStr::TruncateSpaces(const string& str, ETrunc where)
     return s_TruncateSpaces(str, where, kEmptyStr);
 }
 
-CTempString NStr::TruncateSpaces(const CTempString& str, ETrunc where)
+CTempString NStr::TruncateSpaces_Unsafe(const CTempString& str, ETrunc where)
 {
     return s_TruncateSpaces(str, where, CTempString());
 }
 
-CTempString NStr::TruncateSpaces(const char* str, ETrunc where)
-{
-    return s_TruncateSpaces(CTempString(str), where, CTempString());
-}
+//CTempString NStr::TruncateSpaces_Unsafe(const char* str, ETrunc where)
+//{
+//    return s_TruncateSpaces(CTempString(str), where, CTempString());
+//}
 
 void NStr::TruncateSpacesInPlace(CTempString& str, ETrunc where)
 {

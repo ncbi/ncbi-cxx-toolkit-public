@@ -115,7 +115,7 @@ string CSourceModParser::ParseTitle(const CTempString& title,
         size_t lb_pos = title.find('[', pos), eq_pos = title.find('=', lb_pos),
                end_pos = CTempString::npos;
         if (eq_pos != CTempString::npos) {
-            mod.key = NStr::TruncateSpaces
+            mod.key = NStr::TruncateSpaces_Unsafe
                 (title.substr(lb_pos + 1, eq_pos - lb_pos - 1));
             if (eq_pos + 3 < title.size()  &&  title[eq_pos + 1] == '"') {
                 end_pos = title.find('"', ++eq_pos + 1);
@@ -127,7 +127,7 @@ string CSourceModParser::ParseTitle(const CTempString& title,
             stripped_title += title.substr(pos);
             break;
         } else {
-            mod.value = NStr::TruncateSpaces
+            mod.value = NStr::TruncateSpaces_Unsafe
                 (title.substr(eq_pos + 1, end_pos - eq_pos - 1));
             if (title[end_pos] == '"') {
                 end_pos = title.find(']', end_pos + 1);
@@ -138,7 +138,7 @@ string CSourceModParser::ParseTitle(const CTempString& title,
             mod.pos = lb_pos;
             mod.used = false;
             m_Mods.insert(mod);
-            CTempString text = NStr::TruncateSpaces
+            CTempString text = NStr::TruncateSpaces_Unsafe
                 (title.substr(pos, lb_pos - pos));
             if ( !stripped_title.empty()  &&  !text.empty() ) {
                 stripped_title += ' ';
@@ -796,7 +796,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CGB_block>& gbb)
         list<CTempString> ranges;
         NStr::Split(mod->value, ",", ranges);
         ITERATE (list<CTempString>, it, ranges) {
-            string s = NStr::TruncateSpaces(*it);
+            string s = NStr::TruncateSpaces_Unsafe(*it);
             try {
                 SSeqIdRange range(s);
                 ITERATE (SSeqIdRange, it2, range) {
@@ -831,7 +831,7 @@ void CSourceModParser::x_ApplyMods(CAutoInitRef<CSeq_hist>& hist)
         list<CTempString> ranges;
         NStr::Split(mod->value, ",", ranges);
         ITERATE (list<CTempString>, it, ranges) {
-            string s = NStr::TruncateSpaces(*it);
+            string s = NStr::TruncateSpaces_Unsafe(*it);
             try {
                 SSeqIdRange range(s);
                 ITERATE (SSeqIdRange, it2, range) {

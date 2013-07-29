@@ -1611,7 +1611,8 @@ CSeq_id::CSeq_id(const CTempString& the_id, TParseFlags flags)
 
 CSeq_id& CSeq_id::Set(const CTempString& the_id_in, TParseFlags flags)
 {
-    CTempString the_id = NStr::TruncateSpaces(the_id_in, NStr::eTrunc_Both);
+    CTempString the_id = NStr::TruncateSpaces_Unsafe(the_id_in,
+                                                     NStr::eTrunc_Both);
     E_Choice    type   = e_not_set;
 
     if ((flags & fParse_NoFASTA) == 0) {
@@ -1717,7 +1718,7 @@ SIZE_TYPE CSeq_id::ParseFastaIds(CBioseq::TId& ids, const CTempString& s,
 SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
                             TParseFlags flags)
 {
-    CTempString ss = NStr::TruncateSpaces(s, NStr::eTrunc_Both);
+    CTempString ss = NStr::TruncateSpaces_Unsafe(s, NStr::eTrunc_Both);
     if (ss.empty()) {
         return 0;
     }
@@ -1951,7 +1952,8 @@ CSeq_id& CSeq_id::Set(E_Choice           the_type,
                       int                version,
                       const CTempString& release_in)
 {
-    CTempString  acc       = NStr::TruncateSpaces(acc_in, NStr::eTrunc_Both);
+    CTempString  acc       = NStr::TruncateSpaces_Unsafe(acc_in,
+                                                         NStr::eTrunc_Both);
 
     int          the_id;
     CTextseq_id* tsid      = 0;
@@ -2005,10 +2007,10 @@ CSeq_id& CSeq_id::Set(E_Choice           the_type,
 
     case e_Patent:
         {
-            CTempString      name      = NStr::TruncateSpaces(name_in,
-                                                            NStr::eTrunc_Both);
-            CTempString      release   = NStr::TruncateSpaces(release_in,
-                                                            NStr::eTrunc_Both);
+            CTempString      name      =
+                NStr::TruncateSpaces_Unsafe(name_in, NStr::eTrunc_Both);
+            CTempString      release   =
+                NStr::TruncateSpaces_Unsafe(release_in, NStr::eTrunc_Both);
             CPatent_seq_id&  pat       = SetPatent();
             CId_pat&         id_pat    = pat.SetCit();
             CId_pat::C_Id&   id_pat_id = id_pat.SetId();
@@ -2026,8 +2028,8 @@ CSeq_id& CSeq_id::Set(E_Choice           the_type,
 
     case e_General:
         {
-            CTempString name = NStr::TruncateSpaces(name_in,
-                                                    NStr::eTrunc_Both);
+            CTempString name = NStr::TruncateSpaces_Unsafe(name_in,
+                                                           NStr::eTrunc_Both);
             CDbtag&     dbt  = SetGeneral();
             dbt.SetDb(acc);
             CObject_id& oid = dbt.SetTag();
@@ -2042,8 +2044,8 @@ CSeq_id& CSeq_id::Set(E_Choice           the_type,
 
     case e_Pdb:
         {
-            CTempString  name = NStr::TruncateSpaces(name_in,
-                                                     NStr::eTrunc_Both);
+            CTempString  name = NStr::TruncateSpaces_Unsafe(name_in,
+                                                            NStr::eTrunc_Both);
             CPDB_seq_id& pdb  = SetPdb();
             pdb.SetMol().Set(acc);
 

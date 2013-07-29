@@ -661,7 +661,7 @@ void CCodeGenerator::GenerateCvsignore(
                     char buf[256];
                     while (extraFile.good()) {
                         extraFile.getline(buf, sizeof(buf));
-                        CTempString sbuf(NStr::TruncateSpaces(CTempString(buf)));
+                        CTempString sbuf(NStr::TruncateSpaces_Unsafe(buf));
                         if (!sbuf.empty()) {
                             ignoreFile << sbuf << endl;
                         }

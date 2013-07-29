@@ -1990,12 +1990,58 @@ public:
     /// @param where
     ///   Which end of the string to truncate space from. Default is to
     ///   truncate space from both ends (eTrunc_Both).
-    static string      TruncateSpaces(const string& str,
-                                      ETrunc where = eTrunc_Both);
+    /// @sa TruncateSpaces_Unsafe
+    static string TruncateSpaces(const string& str,
+                                 ETrunc        where = eTrunc_Both);
+
+    /// Truncate spaces in a string.
+    /// It can be faster but it is also more dangerous than TruncateSpaces()
+    ///
+    /// @param str
+    ///   String to truncate spaces from.
+    /// @param where
+    ///   Which end of the string to truncate space from. Default is to
+    ///   truncate space from both ends (eTrunc_Both).
+    /// @attention
+    ///   The lifespan of the result string is the same as one of the source.
+    ///   So, for example, if the source is temporary string, then the result
+    ///   will be invalid right away (will point to already released memory).
+    /// @sa TruncateSpaces
+    static CTempString TruncateSpaces_Unsafe(const CTempString& str,
+                                             ETrunc where = eTrunc_Both);
+
+
+    /// @deprecated  Use TruncateSpaces_Unsafe() instead -- AND, do make sure
+    ///              that you indeed use that in a safe manner!
+    NCBI_DEPRECATED
     static CTempString TruncateSpaces(const CTempString& str,
-                                      ETrunc where = eTrunc_Both);
+                                      ETrunc where = eTrunc_Both) {
+        return TruncateSpaces_Unsafe(str, where);
+    }
+
+    /// Truncate spaces in a string.
+    /// It can be faster but it is also more dangerous than TruncateSpaces()
+    ///
+    /// @param str
+    ///   String to truncate spaces from.
+    /// @param where
+    ///   Which end of the string to truncate space from. Default is to
+    ///   truncate space from both ends (eTrunc_Both).
+    /// @attention
+    ///   The lifespan of the result string is the same as one of the source.
+    ///   So, for example, if the source is temporary string, then the result
+    ///   will be invalid right away (will point to already released memory).
+    /// @sa TruncateSpaces
+    //static CTempString TruncateSpaces_Unsafe(const char* str,
+    //                                         ETrunc      where = eTrunc_Both);
+
+    /// @deprecated  Use TruncateSpaces_Unsafe() instead -- AND, do make sure
+    ///              that you indeed use that in a safe manner!
+    NCBI_DEPRECATED
     static CTempString TruncateSpaces(const char* str,
-                                      ETrunc where = eTrunc_Both);
+                                      ETrunc where = eTrunc_Both) {
+        return TruncateSpaces_Unsafe(str, where);
+    }
 
     /// Truncate spaces in a string (in-place)
     ///
