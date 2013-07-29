@@ -76,9 +76,9 @@ ifneq "$(LDD_R)" ""
   ifneq "$(DLL_DEP)" ""
     ifeq "" "$(findstring q,$(MAKEFLAGS))"
       ifneq (,$(filter-out $(ALT_GOALS),$(if $(MAKECMDGOALS),$(MAKECMDGOALS),all)))
-        LATEST := $(word 1,$(shell ls -t $(XAPP) $(XOBJ) $(XLIBDEP) 2>/dev/null))
+        LATEST := $(word 1,$(shell /bin/ls -t $(XAPP) $(XOBJ) $(XLIBDEP) 2>/dev/null))
         ifeq "$(XAPP)" "$(LATEST)"
-          # JUST_RUN_LDD = 1
+          JUST_RUN_LDD = 1
         endif
       endif
     else
@@ -88,9 +88,19 @@ ifneq "$(LDD_R)" ""
 endif
 
 ifeq "$(JUST_RUN_LDD)" "1"
-$(XAPP): $(DLL_DEP)
-# Check for error output.  (ldd's own exit status is of no help.)
-	@if $(LDD_R) $(XAPP) 2>&1 >/dev/null | $(GREP) .; then \
+$(XAPP): $(DLL_DEP) $(XOBJ) $(XLIBDEP)
+# This is not entirely straightforward, due to two complications:
+# * The above check doesn't account for object files rebuilt on the fly
+#   (as they typically are).
+# * ldd exits with status 0 even if it found unresolved symbols, so
+#   checking whether it produced error output is necessary.
+	@relink_after_all=false; \
+	for x in $?; do \
+	    case $$x in *@dll_ext@) ;; *) relink_after_all=true ;; esac; \
+	done; \
+	if [ $$relink_after_all = true ]; then \
+	    $(MAKE) -f $(MAKEFILE) $(MFLAGS) $(XAPP) LDD_R=; \
+	elif $(LDD_R) $(XAPP) 2>&1 >/dev/null | $(GREP) .; then \
 	    echo "ERROR: $(XAPP) has unresolved symbols"; \
 	    exit 1; \
 	else \
