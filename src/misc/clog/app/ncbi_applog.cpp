@@ -500,10 +500,9 @@ int CNcbiApplogApp::Redirect()
                     s_args += string(" \"-host=") + hostname + "\"";
                 }
             }
-            // $SERVER_PORT on this host
-            string port = GetEnvironment().Get("SERVER_PORT");
-            if (!port.empty()) {
-                s_args += string(" \"-srvport=") + port + "\"";
+            // $SERVER_PORT
+            if (m_Info.server_port) {
+                s_args += string(" \"-srvport=") + NStr::UIntToString(m_Info.server_port) + "\"";
             }
         }
     }
@@ -798,9 +797,11 @@ int CNcbiApplogApp::Run(void)
         m_Info.appname = args["appname"].AsString();
         // Get value of $SERVER_PORT on original host (if specified; redirect mode only)
         string srvport = args["srvport"].AsString();
-        if ( !srvport.empty() ) {
-            m_Info.server_port = NStr::StringToUInt(srvport);
+        if ( srvport.empty() ) {
+            // or on this host otherwise
+            srvport = GetEnvironment().Get("SERVER_PORT");
         }
+        m_Info.server_port = srvport.empty() ? 0 : NStr::StringToUInt(srvport);
 
     } else
     if (cmd == "raw") {
@@ -882,6 +883,10 @@ int CNcbiApplogApp::Run(void)
         // For CGI redirect all diagnostics to stdout to allow the calling
         // application see it. By default it goes to stderr for eDS_User.
         SetDiagStream(&NcbiCout);
+        // Set server port to 80 if not specified otherwise
+        if ( !m_Info.server_port ) {
+            m_Info.server_port = 80;
+        }
     }
 
     // Try to set local logging
