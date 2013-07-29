@@ -143,7 +143,8 @@ IReader* CNCproxy::GetData(const string& key, size_t* blob_size)
     if (m_NC) {
         return m_NC->GetData(key, blob_size);
     }
-    return  m_IC->GetReadStream(key,m_version,m_subkey,blob_size, CNetCacheAPI::eCaching_AppDefault);
+    return  m_IC->GetReadStream(key,m_version,m_subkey,blob_size /*,
+    CNetCacheAPI::eCaching_AppDefault*/);
 }
 
 void CNCproxy::Remove(const string& key)
