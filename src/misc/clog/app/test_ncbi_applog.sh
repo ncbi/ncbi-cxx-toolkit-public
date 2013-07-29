@@ -2,6 +2,9 @@
 
 APPLOG=${1:-"./ncbi_applog"}
 
+SERVER_PORT=
+export SERVER_PORT
+
 
 Error() {
     echo 'ERROR::' "$1"
