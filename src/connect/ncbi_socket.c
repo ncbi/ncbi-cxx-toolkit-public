@@ -986,7 +986,7 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
 
     if ((host = inet_addr(hostname)) == htonl(INADDR_NONE)) {
         int x_error;
-#if defined(HAVE_GETADDRINFO)
+#if defined(HAVE_GETADDRINFO)  &&  !defined(__GLIBC__)
         struct addrinfo hints, *out = 0;
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = AF_INET; /* currently, we only handle IPv4 */
@@ -1073,7 +1073,7 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
             UTIL_ReleaseBuffer(strerr);
         }
 
-#endif /*HAVE_GETADDR_INFO*/
+#endif /*HAVE_GETADDR_INFO && !__GLIBC__*/
     }
 
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
@@ -1134,7 +1134,7 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
 
     if (host) {
         int x_error;
-#if defined(HAVE_GETNAMEINFO) && defined(EAI_SYSTEM)
+#if defined(HAVE_GETNAMEINFO)  &&  !defined(__GLIBC__)
         struct sockaddr_in sin;
 
         memset(&sin, 0, sizeof(sin));
@@ -1151,11 +1151,11 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
                 else if (x_error)
                     x_error += EAI_BASE;
                 else {
-#ifdef ENOSPC
+#  ifdef ENOSPC
                     x_error  = ENOSPC;
-#else
+#  else
                     x_error  = ERANGE;
-#endif /*ENOSPC*/
+#  endif /*ENOSPC*/
                     log = eOn;
                 }
                 name[0] = '\0';
@@ -1245,7 +1245,7 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
             UTIL_ReleaseBuffer(strerr);
         }
 
-#endif /*HAVE_GETNAMEINFO*/
+#endif /*HAVE_GETNAMEINFO && !__GLIBC__*/
     } else {
         name[0] = 0;
         name = 0;
