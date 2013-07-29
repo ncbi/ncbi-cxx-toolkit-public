@@ -881,6 +881,11 @@ inline std::ostream& operator<<(std::ostream& os, const CJson_Document& d)
 /////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////
 // inline implementations
+#if NCBI_COMPILER_GCC
+#if (NCBI_COMPILER_VERSION == 442) || (NCBI_COMPILER_VERSION == 443)
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+#endif
+#endif
 
 #define JSONWRAPP_TO_NCBIUTF8(v)        (v)
 
