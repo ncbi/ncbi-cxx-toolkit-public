@@ -8,4 +8,4 @@ LIB = xgridcgi
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(FASTCGI_INCLUDE)
 
-WATCHERS = vakatov
+WATCHERS = vakatov kazimird
