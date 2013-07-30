@@ -3545,6 +3545,42 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
                 PostErr(eDiag_Error, eErr_SEQ_FEAT_GapFeatureProblem,
                         "An assembly_gap feature should only be on a contig record", feat);
             }
+            if (location.IsInt()) {
+                TSeqPos from = location.GetInt().GetFrom();
+                TSeqPos to = location.GetInt().GetTo();
+                CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+                string sequence;
+                bool is5 = false;
+                bool is3 = false;
+                long int count = 0;
+                vec.GetSeqData(from - 1, from, sequence);
+                if (NStr::Equal (sequence, "N")) {
+                    is5 = true;
+                }
+                vec.GetSeqData(to + 1, to + 2, sequence);
+                if (NStr::Equal (sequence, "N")) {
+                    is3 = true;
+                }
+                if (is5 && is3) {
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_GapFeatureProblem,
+                            "Assembly_gap flanked by Ns on 5' and 3' sides", feat);
+                } else if (is5) {
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_GapFeatureProblem,
+                            "Assembly_gap flanked by Ns on 5' side", feat);
+                } else if (is3) {
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_GapFeatureProblem,
+                            "Assembly_gap flanked by Ns on 3' side", feat);
+                }
+                vec.GetSeqData(from, to + 1, sequence);
+                for (size_t i = 0; i < sequence.size(); i++) {
+                    if (sequence[i] != 'N') {
+                        count++;
+                    }
+                }
+                if (count > 0) {
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_GapFeatureProblem, "Assembly_gap extends into sequence", feat);
+                }
+            }
         }
         break;
     default:
