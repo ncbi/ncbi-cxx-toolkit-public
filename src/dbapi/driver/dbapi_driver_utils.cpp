@@ -437,7 +437,7 @@ CRowInfo_SP_SQL_Server::Initialize(void) const
                                 res->GetItem(&db_name_value);
 
                                 if (!db_name_value.IsNULL()) {
-                                    db_name = db_name_value.Value();
+                                    db_name = db_name_value.AsString();
                                 }
                             }
                         }
@@ -560,7 +560,7 @@ CRowInfo_SP_SQL_Server::Initialize(void) const
                                 direction = CDBParams::eOut;
                             }
 
-                            Add(column_name.Value(),
+                            Add(column_name.AsString(),
                                     size_t(data_len.Value()),
                                     edb_data_type,
                                     direction

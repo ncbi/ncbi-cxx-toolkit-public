@@ -400,7 +400,7 @@ bool CDBL_CursorCmd::x_AssignParams()
             case eDB_VarChar:
             case eDB_LongChar: {
                 CDB_String& val = dynamic_cast<CDB_String&> (param);
-                const string& s = val.Value(); // NB: 255 bytes at most
+                const string& s = val.AsString(); // NB: 255 bytes at most
                 string::const_iterator c = s.begin();
                 size_t i = 0;
                 val_buffer[i++] = '\'';

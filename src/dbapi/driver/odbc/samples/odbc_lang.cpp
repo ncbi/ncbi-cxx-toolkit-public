@@ -85,7 +85,7 @@ CDemoeApp::Run(void)
                 r->GetItem(&crdate);
 
                 cout
-                    << dbname.Value() << ' '
+                    << dbname.AsString() << ' '
                     << crdate.Value().AsString("M/D/Y h:m")
                     << endl;
             }

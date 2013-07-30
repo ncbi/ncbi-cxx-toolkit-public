@@ -278,7 +278,7 @@ bool CTL_Cmd::AssignCmdParam(CDB_Object&   param,
         if (GetConnection().GetCTLibContext().GetClientEncoding() == eEncoding_UTF8
             &&  !par.IsNULL())
         {
-            CStringUTF8 str_check(CUtf8::AsUTF8(par.Value(),
+            CStringUTF8 str_check(CUtf8::AsUTF8(par.AsString(),
                                   eEncoding_UTF8, CUtf8::eValidate));
             CUtf8::AsBasicString<TCharUCS2>(str_check);
         }

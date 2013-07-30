@@ -170,8 +170,8 @@ CDemoApp::Run(void)
                     cout
                         << "a=" << a.Value() << endl
                         << "b=" << b.Value().AsString() << endl
-                        << "c=" << c.Value() << endl
-                        << "d=" << d.Value() << endl
+                        << "c=" << c.AsString() << endl
+                        << "d=" << d.AsString() << endl
                         << "e=" << e.Value() << endl
                         << "blob size is " << nBlobSize << " blob data is "
                         << (!correct ? "correct" : "not correct") << endl;
@@ -194,7 +194,7 @@ CDemoApp::Run(void)
                         CDB_VarChar field;
                         r->GetItem(&field);
                         if(! field.IsNULL())
-                            cout << field.Value() << endl;
+                            cout << field.AsString() << endl;
                                 else
                                     cout << "NULL\n";
 

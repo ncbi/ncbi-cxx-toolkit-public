@@ -300,7 +300,7 @@ public:
     template <typename TO>
     operator TO(void) const
     {
-        return MakeCP<CP>(m_Value.Value());
+        return MakeCP<CP>(m_Value.AsString());
     }
 
 private:
@@ -326,7 +326,7 @@ public:
     template <typename TO>
     operator TO(void) const
     {
-        return MakeCP<CP>(m_Value.Value());
+        return MakeCP<CP>(m_Value.AsString());
     }
 
 private:
@@ -352,7 +352,7 @@ public:
     template <typename TO>
     operator TO(void) const
     {
-        return MakeCP<CP>(m_Value.Value());
+        return MakeCP<CP>(m_Value.AsString());
     }
 
 private:

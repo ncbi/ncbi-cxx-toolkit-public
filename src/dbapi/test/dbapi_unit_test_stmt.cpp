@@ -877,7 +877,7 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                 char_data = dynamic_cast<CDB_Char*>(variant.GetData());
 
                 if(char_data) {
-                    BOOST_CHECK_EQUAL(char_data->Value(),
+                    BOOST_CHECK_EQUAL(char_data->AsString(),
                                       string("12345     "));
                 }
 
@@ -888,7 +888,7 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                 if(varchar_data) {
                     GetArgs().PutMsgExpected("CDB_Char", "CDB_VarChar");
 
-                    BOOST_CHECK_EQUAL(varchar_data->Value(),
+                    BOOST_CHECK_EQUAL(varchar_data->AsString(),
                                       string("12345     "));
                 }
 
@@ -900,7 +900,7 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                     GetArgs().PutMsgExpected("CDB_Char", "CDB_LongChar");
 
                     BOOST_CHECK_EQUAL(longchar_data->Size(), size_t(10));
-                    BOOST_CHECK_EQUAL(longchar_data->Value(),
+                    BOOST_CHECK_EQUAL(longchar_data->AsString(),
                             string("12345     ")
                             );
                 }
@@ -924,7 +924,7 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                 if(char_data) {
                     GetArgs().PutMsgExpected("CDB_VarChar", "CDB_Char");
 
-                    BOOST_CHECK_EQUAL(char_data->Value(),
+                    BOOST_CHECK_EQUAL(char_data->AsString(),
                                       string("12345     "));
                 }
 
@@ -933,7 +933,7 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                 varchar_data = dynamic_cast<CDB_VarChar*>(variant.GetData());
 
                 if (varchar_data) {
-                    BOOST_CHECK_EQUAL(varchar_data->Value(),
+                    BOOST_CHECK_EQUAL(varchar_data->AsString(),
                                       string("12345"));
                 }
 
@@ -945,7 +945,7 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                     GetArgs().PutMsgExpected("CDB_VarChar", "CDB_LongChar");
 
                     BOOST_CHECK_EQUAL(longchar_data->Size(), size_t(32));
-                    BOOST_CHECK_EQUAL(longchar_data->Value(),
+                    BOOST_CHECK_EQUAL(longchar_data->AsString(),
                             string("12345     ")
                             );
                 }
@@ -965,7 +965,7 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                 char_data = dynamic_cast<CDB_Char*>(variant.GetData());
 
                 if(char_data) {
-                    BOOST_CHECK_EQUAL(char_data->Value(),
+                    BOOST_CHECK_EQUAL(char_data->AsString(),
                                       string("12345     "));
                 }
 
@@ -975,7 +975,7 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                 if(varchar_data) {
                     GetArgs().PutMsgExpected("CDB_Char", "CDB_VarChar");
 
-                    BOOST_CHECK_EQUAL(varchar_data->Value(),
+                    BOOST_CHECK_EQUAL(varchar_data->AsString(),
                                       string("12345     "));
                 }
 
@@ -986,7 +986,7 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                     GetArgs().PutMsgExpected("CDB_Char", "CDB_LongChar");
 
                     BOOST_CHECK_EQUAL(longchar_data->Size(), size_t(10));
-                    BOOST_CHECK_EQUAL(longchar_data->Value(),
+                    BOOST_CHECK_EQUAL(longchar_data->AsString(),
                             string("12345     ")
                             );
                 }
@@ -1009,7 +1009,7 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                 if(char_data) {
                     GetArgs().PutMsgExpected("CDB_VarChar", "CDB_Char");
 
-                    BOOST_CHECK_EQUAL(char_data->Value(),
+                    BOOST_CHECK_EQUAL(char_data->AsString(),
                                       string("12345     "));
                 }
 
@@ -1018,7 +1018,7 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                 varchar_data = dynamic_cast<CDB_VarChar*>(variant.GetData());
 
                 if (varchar_data) {
-                    BOOST_CHECK_EQUAL(varchar_data->Value(),
+                    BOOST_CHECK_EQUAL(varchar_data->AsString(),
                                       string("12345"));
                 }
 
@@ -1030,7 +1030,7 @@ BOOST_AUTO_TEST_CASE(Test_Recordset)
                     GetArgs().PutMsgExpected("CDB_VarChar", "CDB_LongChar");
 
                     BOOST_CHECK_EQUAL(longchar_data->Size(), size_t(32));
-                    BOOST_CHECK_EQUAL(longchar_data->Value(),
+                    BOOST_CHECK_EQUAL(longchar_data->AsString(),
                             string("12345     ")
                             );
                 }

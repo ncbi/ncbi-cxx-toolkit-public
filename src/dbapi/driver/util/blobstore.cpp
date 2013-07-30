@@ -384,7 +384,7 @@ I_ITDescriptor& CSimpleBlobStore::ItDescriptor(void)
         }
 
         string s = m_KeyColName + "= '";
-        s.append(m_Key.Value());
+        s.append(m_Key.AsString());
         s += "' AND " + m_NumColName + "=";
         char buf[32];
         sprintf(buf, "%ld", (long) m_RowNum.Value());

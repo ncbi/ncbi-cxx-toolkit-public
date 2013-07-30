@@ -77,8 +77,7 @@ CDemoeApp::Run(void)
                         if (rt == eDB_Char || rt == eDB_VarChar) {
                             CDB_VarChar r_vc;
                             r->GetItem(&r_vc);
-                            cout << r->ItemName(j) << ": "
-                                 << (r_vc.IsNULL()? kEmptyStr : r_vc.Value())
+                            cout << r->ItemName(j) << ": " << r_vc.AsString()
                                  << " \t";
                         } else if (rt == eDB_Int ||
                                    rt == eDB_SmallInt ||

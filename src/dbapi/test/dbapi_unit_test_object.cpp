@@ -188,9 +188,9 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object)
             BOOST_CHECK_EQUAL(value_SmallInt.Value(), 1);
             BOOST_CHECK_EQUAL(value_TinyInt.Value(), 1);
             BOOST_CHECK_EQUAL(value_BigInt.Value(), 1);
-            BOOST_CHECK_EQUAL(value_VarChar.Value(), string("ABC"));
-            BOOST_CHECK_EQUAL(value_Char.Value(), string("ABC"));
-            BOOST_CHECK_EQUAL(value_LongChar.Value(), string("ABC"));
+            BOOST_CHECK_EQUAL(value_VarChar.AsString(), string("ABC"));
+            BOOST_CHECK_EQUAL(value_Char.AsString(), string("ABC"));
+            BOOST_CHECK_EQUAL(value_LongChar.AsString(), string("ABC"));
             BOOST_CHECK_EQUAL(strncmp((const char*)value_VarBinary.Value(), "ABC", 3), 0);
             BOOST_CHECK_EQUAL(strncmp((const char*)value_Binary.Value(), "ABC", 3), 0);
             BOOST_CHECK_EQUAL(strncmp((const char*)value_LongBinary.Value(), "ABC", 3), 0);
@@ -681,7 +681,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                         CDB_Char db_obj(32);
 
                         rs->GetItem(&db_obj);
-                        string string_value = db_obj.Value();
+                        string string_value = db_obj.AsString();
 
                         BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), string("12345"));
                     }
@@ -708,7 +708,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                         CDB_VarChar db_obj;
 
                         rs->GetItem(&db_obj);
-                        string string_value = db_obj.Value();
+                        string string_value = db_obj.AsString();
 
                         BOOST_CHECK_EQUAL(string_value, string("12345"));
                     }
@@ -735,7 +735,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                         CDB_Char db_obj(32);
 
                         rs->GetItem(&db_obj);
-                        string string_value = db_obj.Value();
+                        string string_value = db_obj.AsString();
 
                         BOOST_CHECK_EQUAL(NStr::TruncateSpaces(string_value), string("12345"));
                     }
@@ -762,7 +762,7 @@ BOOST_AUTO_TEST_CASE(Test_CDB_Object2)
                         CDB_VarChar db_obj;
 
                         rs->GetItem(&db_obj);
-                        string string_value = db_obj.Value();
+                        string string_value = db_obj.AsString();
 
                         BOOST_CHECK_EQUAL(string_value, string("12345"));
                     }

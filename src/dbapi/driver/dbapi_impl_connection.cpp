@@ -172,14 +172,14 @@ CConnection::CalculateServerType(CDBConnParams::EServerType server_type)
 
                         if (!version.IsNULL()) {
                             if (NStr::Compare(
-                                        version.Value(), 
+                                        version.AsString(), 
                                         0, 
                                         15, 
                                         "Adaptive Server"
                                         ) == 0) {
                                 server_type = CDBConnParams::eSybaseSQLServer;
                             } else if (NStr::Compare(
-                                        version.Value(), 
+                                        version.AsString(), 
                                         0, 
                                         20, 
                                         "Microsoft SQL Server"

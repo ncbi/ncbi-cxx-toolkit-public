@@ -285,7 +285,7 @@ CValueConvert<SSafeCP, CDB_Object>::operator string(void) const
         case eDB_LongChar:
             {
                 const CDB_String& cdb_str = static_cast<const CDB_String&>(m_Value);
-                const string& str = cdb_str.Value();
+                const string& str = cdb_str.AsString();
                 return ConvertSafe(str);
             }
         case eDB_Binary:
@@ -548,7 +548,7 @@ CValueConvert<SSafeSqlCP, CDB_Object>::operator string(void) const
         case eDB_LongChar:
             {
                 const CDB_String& cdb_str = static_cast<const CDB_String&>(m_Value);
-                const string& str = cdb_str.Value();
+                const string& str = cdb_str.AsString();
                 return ConvertSafe(str);
             }
         case eDB_Binary:
@@ -643,7 +643,7 @@ TO Convert_CDB_Object(const CDB_Object& value)
         case eDB_LongChar:
             {
                 const CDB_String& cdb_str = static_cast<const CDB_String&>(value);
-                const string& str = cdb_str.Value();
+                const string& str = cdb_str.AsString();
                 return Convert(str);
             }
         case eDB_Binary:
@@ -809,7 +809,7 @@ TO Convert_CDB_ObjectSql(const CDB_Object& value)
         case eDB_LongChar:
             {
                 const CDB_String& cdb_str = static_cast<const CDB_String&>(value);
-                const string& str = cdb_str.Value();
+                const string& str = cdb_str.AsString();
                 return Convert(str);
             }
         case eDB_Binary:

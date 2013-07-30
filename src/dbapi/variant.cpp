@@ -369,7 +369,7 @@ string CVariant::GetString(void) const
             case eDB_Char:
             case eDB_VarChar:
             case eDB_LongChar:
-                s = ((CDB_String*)GetData())->Value();
+                s = ((CDB_String*)GetData())->AsString();
                 break;
             case eDB_Binary:
                 {

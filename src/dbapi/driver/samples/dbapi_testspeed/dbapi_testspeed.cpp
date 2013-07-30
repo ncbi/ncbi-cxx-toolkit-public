@@ -513,7 +513,7 @@ CDbapiTestSpeedApp::FetchFile(const string& table_name, bool readItems)
         }
     }
 
-    cout << "File " << str_val.Value() << " dated "
+    cout << "File " << str_val.AsString() << " dated "
         << date_val.Value().AsString() << " was written to testspeed.out using "
         << (readItems?"ReadItem":"GetItem") << "\n";
 }

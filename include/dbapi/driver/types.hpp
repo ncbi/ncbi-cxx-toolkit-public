@@ -82,10 +82,9 @@ enum EBulkEnc {
 
 /////////////////////////////////////////////////////////////////////////////
 
-/// Convenience extension of basic_string, in part to serve as
-/// CDB_String::Value's return type -- to encourage treating it as a
-/// standard C++ string without breaking code that relied on its
-/// historical behavior of returning a C string.
+/// Convenience extension of basic_string, supporting implicit
+/// conversion to const TChar* in most situations (but alas not within
+/// variadic argument lists, as for printf and the like).
 template <typename TChar>
 class CGenericSqlString : public basic_string<TChar>
 {
@@ -517,7 +516,7 @@ public:
         return IsNULL() ? NULL : x_GetWString().c_str();
     }
 
-    const CSqlString& Value(void) const { return m_WString; }
+    const char* Value(void) const { return AsCString(); }
 
 public:
     // set-value methods

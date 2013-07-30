@@ -340,7 +340,7 @@ CDbapiSampleApp::CreateConnection(IConnValidator*                  validator,
                 CDB_LongChar v;
                 result->GetItem(&v);
                 LOG_POST_X(5, "Connected to the server '"
-                           << NStr::TruncateSpaces(v.Value()) << "'");
+                           << NStr::TruncateSpaces(v.AsString()) << "'");
             }
         }
     }
@@ -394,7 +394,7 @@ CDbapiSampleApp::DeleteLostTables(void)
 
                 if ( str_val.IsNULL() ) continue;
                 string table_creation_date;
-                string table_name = str_val.Value();
+                string table_name = str_val.AsString();
                 string::size_type pos = table_name.find_last_of('_');
 
                 if ( pos == string::npos ) continue;
@@ -445,7 +445,7 @@ CDbapiSampleApp::ShowResults (const string& query)
                         if ( v.IsNULL() ) {
                             cout << "{NULL}";
                         } else {
-                            cout << v.Value();
+                            cout << v.AsString();
                         }
                     } else if ( rt == eDB_Int ||
                                 rt == eDB_SmallInt ||
