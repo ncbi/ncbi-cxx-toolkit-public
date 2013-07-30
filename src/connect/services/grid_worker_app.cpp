@@ -79,6 +79,10 @@ CNetCacheAPI CDefaultWorkerNodeInitContext::GetNetCacheAPI() const
     return grid_app->GetWorkerNode()->GetNetCacheAPI();
 }
 
+void IGridWorkerNodeApp_Listener::OnInit(CGridWorkerApp* /*grid_worker_app*/)
+{
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //
 
@@ -127,7 +131,7 @@ void CGridWorkerApp::Init(void)
     // Setup arg.descriptions for this application
     SetupArgDescriptions(arg_desc.release());
 
-    m_WorkerNode->Init(m_MergeLogLines);
+    m_WorkerNode->Init();
     m_WorkerNode->GetJobFactory().Init(GetInitContext());
 }
 

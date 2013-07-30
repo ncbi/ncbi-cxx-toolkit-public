@@ -53,16 +53,14 @@ public:
         eReturnOnNonZeroExit
     };
 
-    CRemoteAppLauncher();
-
-    void LoadParams(const string& sec_name, const IRegistry&);
+    CRemoteAppLauncher(const string& sec_name, const IRegistry&);
 
     bool ExecRemoteApp(const vector<string>& args,
         CNcbiIstream& in, CNcbiOstream& out, CNcbiOstream& err,
         int& exit_value,
         CWorkerNodeJobContext& job_context,
         int app_run_timeout,
-        const char* const env[]);
+        const char* const env[]) const;
 
     const string& GetAppPath() const { return m_AppPath; }
     ENonZeroExitAction GetNonZeroExitAction() const

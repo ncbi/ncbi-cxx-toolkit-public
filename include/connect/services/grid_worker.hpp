@@ -599,6 +599,7 @@ public:
     virtual void Notify(const CWorkerNodeJobContext& job, EEvent event) = 0;
 };
 
+class CGridWorkerApp;
 class CWorkerNodeIdleThread;
 class CJobCommitterThread;
 class IGridWorkerNodeApp_Listener;
@@ -617,12 +618,12 @@ class NCBI_XCONNECT_EXPORT CGridWorkerNode
 public:
     /// Construct a worker node using class factories
     ///
-    CGridWorkerNode(CNcbiApplication& app,
+    CGridWorkerNode(CGridWorkerApp& app,
         IWorkerNodeJobFactory* job_factory);
 
     virtual ~CGridWorkerNode();
 
-    void Init(bool default_merge_lines_value);
+    void Init();
 
     /// Start job execution loop.
     ///
@@ -800,7 +801,7 @@ private:
 
     auto_ptr<IGridWorkerNodeApp_Listener> m_Listener;
 
-    CNcbiApplication& m_App;
+    CGridWorkerApp& m_App;
     bool m_SingleThreadForced;
     bool m_LogRequested;
     bool m_ProgressLogRequested;

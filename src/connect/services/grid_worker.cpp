@@ -877,7 +877,7 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //
 
-CGridWorkerNode::CGridWorkerNode(CNcbiApplication& app,
+CGridWorkerNode::CGridWorkerNode(CGridWorkerApp& app,
         IWorkerNodeJobFactory* job_factory) :
     m_JobProcessorFactory(job_factory),
     m_MaxThreads(1),
@@ -911,11 +911,13 @@ CGridWorkerNode::~CGridWorkerNode()
     }
 }
 
-void CGridWorkerNode::Init(bool default_merge_lines_value)
+void CGridWorkerNode::Init()
 {
+    m_Listener->OnInit(&m_App);
+
     IRWRegistry& reg = m_App.GetConfig();
 
-    if (reg.GetBool("log", "merge_lines", default_merge_lines_value)) {
+    if (reg.GetBool("log", "merge_lines", m_App.GetMergeLogLines())) {
         SetDiagPostFlag(eDPF_PreMergeLines);
         SetDiagPostFlag(eDPF_MergeLines);
     }

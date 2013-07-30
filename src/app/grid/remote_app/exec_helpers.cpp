@@ -48,15 +48,12 @@ BEGIN_NCBI_SCOPE
 
 //////////////////////////////////////////////////////////////////////////////
 ///
-CRemoteAppLauncher::CRemoteAppLauncher()
+CRemoteAppLauncher::CRemoteAppLauncher(const string& sec_name,
+        const IRegistry& reg)
     : m_MaxAppRunningTime(0), m_KeepAlivePeriod(0), 
       m_NonZeroExitAction(eDoneOnNonZeroExit),
       m_RemoveTempDir(true),
       m_CacheStdOutErr(true)
-{
-}
-
-void CRemoteAppLauncher::LoadParams(const string& sec_name, const IRegistry& reg)
 {
     m_MaxAppRunningTime = 
         reg.GetInt(sec_name,"max_app_run_time",0,0,IRegistry::eReturn);
@@ -486,7 +483,7 @@ bool CRemoteAppLauncher::ExecRemoteApp(const vector<string>& args,
     int& exit_value,
     CWorkerNodeJobContext& job_context,
     int app_run_timeout,
-    const char* const env[])
+    const char* const env[]) const
 {
     string tmp_path = m_TempDir;
     if (!tmp_path.empty()) {

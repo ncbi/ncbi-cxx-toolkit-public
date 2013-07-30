@@ -66,7 +66,8 @@ static void s_SetParam(const CRemoteAppRequest& request,
 class CRemoteAppJob : public IWorkerNodeJob
 {
 public:
-    CRemoteAppJob(const IWorkerNodeInitContext& context);
+    CRemoteAppJob(const IWorkerNodeInitContext& context,
+            const CRemoteAppLauncher& remote_app_launcher);
 
     virtual ~CRemoteAppJob() {} 
 
@@ -200,7 +201,7 @@ private:
     const char* const* x_GetEnv();
 
     CNetCacheAPI m_NetCacheAPI;
-    CRemoteAppLauncher m_RemoteAppLauncher;
+    const CRemoteAppLauncher& m_RemoteAppLauncher;
 
     list<string> m_EnvValues;
     vector<const char*> m_Env;
@@ -231,23 +232,12 @@ const char* const* CRemoteAppJob:: x_GetEnv()
     return &m_Env[0];
 }
 
-CRemoteAppJob::CRemoteAppJob(const IWorkerNodeInitContext& context) :
-    m_NetCacheAPI(context.GetConfig())
+CRemoteAppJob::CRemoteAppJob(const IWorkerNodeInitContext& context,
+        const CRemoteAppLauncher& remote_app_launcher) :
+    m_NetCacheAPI(context.GetConfig()),
+    m_RemoteAppLauncher(remote_app_launcher)
 {
     CGridGlobals::GetInstance().SetReuseJobObject(true);
-
-    const IRegistry& reg = context.GetConfig();
-    m_RemoteAppLauncher.LoadParams("remote_app", reg);
-
-    CFile file(m_RemoteAppLauncher.GetAppPath());
-    if (!file.Exists())
-        NCBI_THROW(CException, eInvalid, 
-                   "File : " + m_RemoteAppLauncher.GetAppPath() + " doesn't exists.");
-
-    if (!CanExecRemoteApp(file))
-        NCBI_THROW(CException, eInvalid, 
-                   "Could not execute " + m_RemoteAppLauncher.GetAppPath() + " file.");
-    
 }
 
 class CRemoteAppIdleTask : public IWorkerNodeIdleTask
@@ -255,8 +245,8 @@ class CRemoteAppIdleTask : public IWorkerNodeIdleTask
 public:
     CRemoteAppIdleTask(const IWorkerNodeInitContext& context) 
     {
-        const IRegistry& reg = context.GetConfig();
-        m_AppCmd = reg.GetString("remote_app", "idle_app_cmd", "" );
+        m_AppCmd = context.GetConfig().GetString("remote_app",
+                "idle_app_cmd", kEmptyStr);
         if (m_AppCmd.empty())
             throw runtime_error("Idle application is not set.");
     }
@@ -271,10 +261,78 @@ private:
     string m_AppCmd;
 };
 
+class CRemoteAppListener : public CGridWorkerNodeApp_Listener
+{
+    virtual void OnInit(CGridWorkerApp* grid_worker_app);
+};
+
+void CRemoteAppListener::OnInit(CGridWorkerApp* grid_worker_app)
+{
+    grid_worker_app->SetMergeLogLines();
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
 
 #define GRID_APP_NAME "remote_app"
 
-NCBI_WORKERNODE_MAIN_MERGE_LOG_LINES_PKG_VER(CRemoteAppJob, CRemoteAppIdleTask);
+class CRemoteAppJobFactory : public IWorkerNodeJobFactory
+{
+public:
+    virtual void Init(const IWorkerNodeInitContext& context)
+    {
+        m_RemoteAppLauncher.reset(
+                new CRemoteAppLauncher("remote_app", context.GetConfig()));
+
+        CFile file(m_RemoteAppLauncher->GetAppPath());
+
+        if (!file.Exists()) {
+            NCBI_THROW_FMT(CException, eInvalid, "File \"" <<
+                    m_RemoteAppLauncher->GetAppPath() <<
+                    "\" does not exists.");
+        }
+
+        if (!CanExecRemoteApp(file)) {
+            NCBI_THROW_FMT(CException, eInvalid, "File \"" <<
+                    m_RemoteAppLauncher->GetAppPath() <<
+                    "\" is not executable.");
+        }
+
+        m_WorkerNodeInitContext = &context;
+        try {
+            m_IdleTask.reset(new CRemoteAppIdleTask(*m_WorkerNodeInitContext));
+        } catch (exception& ex) {
+            LOG_POST_XX(ConnServ_WorkerNode, 16,
+                        "Idle task is not created: " << ex.what());
+        } catch (...) {
+            LOG_POST_XX(ConnServ_WorkerNode, 17,
+                        "Idle task is not created: Unknown error");
+        }
+    }
+    virtual IWorkerNodeJob* CreateInstance(void)
+    {
+        return new CRemoteAppJob(*m_WorkerNodeInitContext, *m_RemoteAppLauncher);
+    }
+    virtual IWorkerNodeIdleTask* GetIdleTask() { return m_IdleTask.get(); }
+
+    virtual string GetJobVersion() const
+    {
+        return GRID_APP_VERSION_INFO;
+    }
+    virtual string GetAppName() const
+    {
+        return GRID_APP_NAME;
+    }
+    virtual string GetAppVersion() const
+    {
+        return GRID_APP_VERSION;
+    }
+
+private:
+    auto_ptr<CRemoteAppLauncher> m_RemoteAppLauncher;
+    const IWorkerNodeInitContext* m_WorkerNodeInitContext;
+    auto_ptr<CRemoteAppIdleTask> m_IdleTask;
+};
+
+NCBI_GRID_PKG_WORKER_NODE_MAIN(CRemoteAppJob,
+        CRemoteAppJobFactory, CRemoteAppListener);
