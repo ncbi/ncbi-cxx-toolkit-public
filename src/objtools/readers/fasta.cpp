@@ -89,11 +89,11 @@
                                 m_BestID->AsFastaString() :             \
                                 kEmptyStr  );                           \
         const size_t uLineNum = (_uLineNum);                            \
-        CNcbiOstrstream err_strm;                                       \
+        stringstream err_strm;                                          \
         err_strm << _MessageStrmOps;                                    \
         CObjReaderLineException lineExpt(                               \
             (_eSeverity), uLineNum,                                     \
-            CNcbiOstrstreamToString(err_strm),                          \
+            err_strm.str(),                                             \
             (_eProblem),                                                \
             sSeqId, (_sFeature),                                        \
             kEmptyStr, kEmptyStr,                                       \
@@ -109,10 +109,10 @@
 
 #define FASTA_PROGRESS(_MessageStrmOps) \
     do {                                                                   \
-        CNcbiOstrstream err_strm;                                          \
+        stringstream err_strm;                                             \
         err_strm << _MessageStrmOps;                                       \
         if( pMessageListener ) {                                           \
-            pMessageListener->PutProgress(CNcbiOstrstreamToString(err_strm));  \
+            pMessageListener->PutProgress(err_strm.str());                 \
         }                                                                  \
     } while(false)
 
