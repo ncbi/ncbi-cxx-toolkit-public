@@ -26,6 +26,88 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
                                      const CDataToolGeneratedSrc&  src,                                   
                                      SCustomBuildInfo*             build_info);
 
+void CreateUtilityProject(const string&            name, 
+                          const list<SConfigInfo>& configs, 
+                          CVisualStudioProject*    project)
+{
+    {{
+        //Attributes:
+        project->SetAttlist().SetProjectType  (MSVC_PROJECT_PROJECT_TYPE);
+        project->SetAttlist().SetVersion      (GetApp().GetRegSettings().GetProjectFileFormatVersion());
+        project->SetAttlist().SetName         (name);
+        project->SetAttlist().SetRootNamespace
+            (MSVC_MASTERPROJECT_ROOT_NAMESPACE);
+        project->SetAttlist().SetProjectGUID  (GenerateSlnGUID());
+        project->SetAttlist().SetKeyword      (MSVC_MASTERPROJECT_KEYWORD);
+    }}
+    
+    {{
+        //Platforms
+         CRef<CPlatform> platform(new CPlatform());
+         platform->SetAttlist().SetName(CMsvc7RegSettings::GetMsvcPlatformName());
+         project->SetPlatforms().SetPlatform().push_back(platform);
+    }}
+
+    ITERATE(list<SConfigInfo>, p , configs) {
+        // Iterate all configurations
+        const string& config = (*p).GetConfigFullName();
+        
+        CRef<CConfiguration> conf(new CConfiguration());
+
+#  define SET_ATTRIBUTE( node, X, val ) node->SetAttlist().Set##X(val)        
+
+        {{
+            //Configuration
+            SET_ATTRIBUTE(conf, Name,               ConfigName(config));
+            SET_ATTRIBUTE(conf, 
+                          OutputDirectory,
+                          "$(SolutionDir)$(ConfigurationName)");
+            SET_ATTRIBUTE(conf, 
+                          IntermediateDirectory,  
+                          "$(ConfigurationName)");
+            SET_ATTRIBUTE(conf, ConfigurationType,  "10");
+            SET_ATTRIBUTE(conf, CharacterSet,       "2");
+            SET_ATTRIBUTE(conf, ManagedExtensions,  "true");
+        }}
+
+        {{
+            //VCCustomBuildTool
+            CRef<CTool> tool(new CTool());
+            SET_ATTRIBUTE(tool, Name, "VCCustomBuildTool" );
+            conf->SetTool().push_back(tool);
+        }}
+        {{
+            //VCMIDLTool
+            CRef<CTool> tool(new CTool());
+            SET_ATTRIBUTE(tool, Name, "VCMIDLTool" );
+            conf->SetTool().push_back(tool);
+        }}
+        {{
+            //VCPostBuildEventTool
+            CRef<CTool> tool(new CTool());
+            SET_ATTRIBUTE(tool, Name, "VCPostBuildEventTool" );
+            conf->SetTool().push_back(tool);
+        }}
+        {{
+            //VCPreBuildEventTool
+            CRef<CTool> tool(new CTool());
+            SET_ATTRIBUTE(tool, Name, "VCPreBuildEventTool" );
+            conf->SetTool().push_back(tool);
+        }}
+
+        project->SetConfigurations().SetConfiguration().push_back(conf);
+    }
+
+    {{
+        //References
+        project->SetReferences("");
+    }}
+
+    {{
+        //Globals
+        project->SetGlobals("");
+    }}
+}
 
 //-----------------------------------------------------------------------------
 
@@ -663,7 +745,7 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
 
         //Description
         build_info->m_Description = 
-            "Using datatool to create a C++ object from ASN/DTD/Schema $(InputPath)";
+            "Using datatool to generate C++ classes from ASN/DTD/Schema $(InputPath)";
 
         //Outputs
         build_info->m_Outputs = "$(InputDir)$(InputName).files;$(InputDir)$(InputName)__.cpp;$(InputDir)$(InputName)___.cpp";
@@ -711,7 +793,7 @@ void s_CreateDatatoolCustomBuildInfo(const CProjItem&              prj,
             "@echo on\n" + tool_exe_location + " " + tool_cmd + "\n@echo off";
         //Description
         build_info->m_Description = 
-            "Using datatool to create a C++ object from ASN/DTD $(InputPath)";
+            "Using datatool to generate C++ classes from ASN/DTD $(InputPath)";
 
         //Outputs
         build_info->m_Outputs = "$(InputDir)$(InputName).files;$(InputDir)$(InputName)__.cpp;$(InputDir)$(InputName)___.cpp";
@@ -1349,6 +1431,7 @@ void CMsvcProjectGenerator::GenerateMsbuild(
     SaveIfNewer(project_path, project);
 
     GenerateMsbuildFilters(collector, project_context, prj);
+    GenerateMsbuildUser(collector, project_context, prj);
 }
 
 class CMsbuildFileFilter
@@ -1600,88 +1683,61 @@ void CMsvcProjectGenerator::GenerateMsbuildFilters(
     }
 }
 
-void CreateUtilityProject(const string&            name, 
-                          const list<SConfigInfo>& configs, 
-                          CVisualStudioProject*    project)
+void CMsvcProjectGenerator::GenerateMsbuildUser(
+                        CMsvcPrjFilesCollector& collector,
+                        CMsvcPrjProjectContext& project_context,
+                        CProjItem& prj)
 {
-    {{
-        //Attributes:
-        project->SetAttlist().SetProjectType  (MSVC_PROJECT_PROJECT_TYPE);
-        project->SetAttlist().SetVersion      (GetApp().GetRegSettings().GetProjectFileFormatVersion());
-        project->SetAttlist().SetName         (name);
-        project->SetAttlist().SetRootNamespace
-            (MSVC_MASTERPROJECT_ROOT_NAMESPACE);
-        project->SetAttlist().SetProjectGUID  (GenerateSlnGUID());
-        project->SetAttlist().SetKeyword      (MSVC_MASTERPROJECT_KEYWORD);
-    }}
-    
-    {{
-        //Platforms
-         CRef<CPlatform> platform(new CPlatform());
-         platform->SetAttlist().SetName(CMsvc7RegSettings::GetMsvcPlatformName());
-         project->SetPlatforms().SetPlatform().push_back(platform);
-    }}
+    if (GetApp().GetBuildType().GetType() != CBuildType::eDll) {
+        return;
+    }
+    if (prj.m_ProjType != CProjItem::TProjType::eApp) {
+        return;
+    }
+    string project_path = CDirEntry::ConcatPath(project_context.ProjectDir(), 
+                                                project_context.ProjectName());
+    project_path += CMsvc7RegSettings::GetVcprojExt();
+    project_path += ".user";
+    if (CDirEntry(project_path).Exists()) {
+        return;
+    }
+    const CMsvcSite& site = GetApp().GetSite();
+    list<string> bin_dirs;
 
-    ITERATE(list<SConfigInfo>, p , configs) {
-        // Iterate all configurations
-        const string& config = (*p).GetConfigFullName();
-        
-        CRef<CConfiguration> conf(new CConfiguration());
+    ITERATE( list<string>, r, prj.m_Requires) {
+        string bin = site.GetThirdPartyLibBin(*r);
+        if (!bin.empty()) {
+            bin_dirs.push_back( CDirEntry::ConcatPath(bin, "$(Configuration)"));
+        }
+    }
+    if (bin_dirs.empty()) {
+        return;
+    }
+    bin_dirs.push_back("%PATH%");
+    string allbins = string("PATH=")+NStr::Join(bin_dirs, ";");
 
-#  define SET_ATTRIBUTE( node, X, val ) node->SetAttlist().Set##X(val)        
+#if __USE_DISABLED_CFGS__
+    const list<SConfigInfo>& all_cfgs = GetApp().GetRegSettings().m_ConfigInfo;
+#else
+    const list<SConfigInfo>& all_cfgs = m_project_configs;
+#endif
+    msbuild::CProject project;
+    project.SetAttlist().SetToolsVersion("4.0");
 
-        {{
-            //Configuration
-            SET_ATTRIBUTE(conf, Name,               ConfigName(config));
-            SET_ATTRIBUTE(conf, 
-                          OutputDirectory,
-                          "$(SolutionDir)$(ConfigurationName)");
-            SET_ATTRIBUTE(conf, 
-                          IntermediateDirectory,  
-                          "$(ConfigurationName)");
-            SET_ATTRIBUTE(conf, ConfigurationType,  "10");
-            SET_ATTRIBUTE(conf, CharacterSet,       "2");
-            SET_ATTRIBUTE(conf, ManagedExtensions,  "true");
-        }}
-
-        {{
-            //VCCustomBuildTool
-            CRef<CTool> tool(new CTool());
-            SET_ATTRIBUTE(tool, Name, "VCCustomBuildTool" );
-            conf->SetTool().push_back(tool);
-        }}
-        {{
-            //VCMIDLTool
-            CRef<CTool> tool(new CTool());
-            SET_ATTRIBUTE(tool, Name, "VCMIDLTool" );
-            conf->SetTool().push_back(tool);
-        }}
-        {{
-            //VCPostBuildEventTool
-            CRef<CTool> tool(new CTool());
-            SET_ATTRIBUTE(tool, Name, "VCPostBuildEventTool" );
-            conf->SetTool().push_back(tool);
-        }}
-        {{
-            //VCPreBuildEventTool
-            CRef<CTool> tool(new CTool());
-            SET_ATTRIBUTE(tool, Name, "VCPreBuildEventTool" );
-            conf->SetTool().push_back(tool);
-        }}
-
-        project->SetConfigurations().SetConfiguration().push_back(conf);
+    ITERATE(list<SConfigInfo>, c , all_cfgs) {
+        const SConfigInfo& cfg_info = *c;
+        string cfg_condition("'$(Configuration)|$(Platform)'=='");
+        cfg_condition += c->GetConfigFullName() + "|" + CMsvc7RegSettings::GetMsvcPlatformName() + "'";
+        CRef<msbuild::CProject::C_ProjectLevelTagType::C_E> t(new msbuild::CProject::C_ProjectLevelTagType::C_E);
+        t->SetPropertyGroup().SetAttlist().SetCondition(cfg_condition);
+        __SET_PROPGROUP_ELEMENT( t, "LocalDebuggerEnvironment", allbins);
+        __SET_PROPGROUP_ELEMENT( t, "DebuggerFlavor", "WindowsLocalDebugger");
+        project.SetProjectLevelTagType().SetProjectLevelTagType().push_back(t);
     }
 
-    {{
-        //References
-        project->SetReferences("");
-    }}
-
-    {{
-        //Globals
-        project->SetGlobals("");
-    }}
+    SaveIfNewer(project_path, project);
 }
+
 
 #endif //NCBI_COMPILER_MSVC
 

@@ -202,6 +202,9 @@ public:
     void   GetThirdPartyLibsToInstall    (list<string>* libs) const;
     string GetThirdPartyLibsBinPathSuffix(void) const;
     string GetThirdPartyLibsBinSubDir    (void) const;
+    void   SetThirdPartyLibBin(const string& lib, const string& bin);
+    string GetThirdPartyLibBin(const string& lib) const;
+
     void   GetStandardFeatures           (list<string>& features) const;
     
     void ProcessMacros (const list<SConfigInfo>& configs);
@@ -232,6 +235,7 @@ private:
 
     CSymResolver m_Macros;
     mutable map<string,SLibInfo> m_AllLibInfo;
+    map<string, string> m_ThirdPartyLibBin;
 
     /// cache of directories and their existence
     typedef map<string, bool> TDirectoryExistenceMap;

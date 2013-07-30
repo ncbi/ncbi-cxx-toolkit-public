@@ -63,7 +63,7 @@ void s_ResetLibInstallKey(const string& dir,
 
 
 static void s_CreateThirdPartyLibsInstallMakefile
-                                            (const CMsvcSite&   site, 
+                                            (CMsvcSite&   site, 
                                              const list<string> libs_to_install,
                                              const SConfigInfo& config,
                                              const CBuildType&  build_type)
@@ -112,6 +112,7 @@ static void s_CreateThirdPartyLibsInstallMakefile
                 ofs << key << " = " << bin_dir << "\n";
 
                 s_ResetLibInstallKey(dir, lib);
+                site.SetThirdPartyLibBin(lib, bin_dir);
             } else {
                 PTB_WARNING_EX(bin_dir, ePTB_PathNotFound,
                                lib << "|" << config.GetConfigFullName()

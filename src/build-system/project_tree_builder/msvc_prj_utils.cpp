@@ -84,7 +84,8 @@ void SaveToXmlFile(const string& file_path, const CSerialObject& project)
     } else {
         xs.SetReferenceDTD(false);
     }
-    xs.SetEncoding(eEncoding_Windows_1252);
+    xs.SetEncoding(eEncoding_UTF8);
+    xs.SetDefaultStringEncoding(eEncoding_UTF8);
 
     xs << project;
 }

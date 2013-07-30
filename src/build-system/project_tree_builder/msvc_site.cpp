@@ -622,6 +622,19 @@ string CMsvcSite::GetThirdPartyLibsBinSubDir(void) const
     return ToOSPath(x_GetConfigureEntry("ThirdPartyLibsBinSubDir"));
 }
 
+void   CMsvcSite::SetThirdPartyLibBin(const string& lib, const string& bin)
+{
+    m_ThirdPartyLibBin[lib] = bin;
+}
+
+string CMsvcSite::GetThirdPartyLibBin(const string& lib) const
+{
+    if (m_ThirdPartyLibBin.find(lib) != m_ThirdPartyLibBin.end()) {
+        return m_ThirdPartyLibBin.find(lib)->second;
+    }
+    return kEmptyStr;
+}
+
 void CMsvcSite::GetStandardFeatures(list<string>& features) const
 {
     features.clear();
