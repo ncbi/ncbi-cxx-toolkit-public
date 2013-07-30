@@ -634,6 +634,8 @@ BTT	s	Burton-upon-Trent Natural History and Archaeological Society
 BTU	s	Technische Universitaet Berlin
 BUA	s	University of Baghdad, Plant Protection Department
 BUAG	s	University of Agronomical Sciences and Veterinary Medicine, Botany and Plant Physiology Department
+BUAP	s	Benemerita Universidad Autonoma de Puebla
+BUAP:EBUAP	s	Benemerita Universidad Autonoma de Puebla, Coleccion Herpetologica
 BUC	s	Universitatea din Bucuresti
 BUCA	s	Institute of Biology, Romanian Academy
 BUCF	s	Forest Research and Management Institute
@@ -1008,6 +1010,7 @@ CLMP	s	Department of Conservation & Land Management
 CLNP	s	Crater Lake National Park
 CLOE	s	Clitheroe Castle Museum
 CLP	s	Forest Products Research and Development Institute, Department of Science and Technology
+CLQCA	c	Coleccion de Levaduras quito catolica
 CLR	s	All Saint's Church, Colchester Borough Council
 CLU	s	Universita della Calabria
 CM	s	Carnegie Museum of Natural History
@@ -2381,7 +2384,7 @@ IBL<USA-MD>	c	Insect Biocontrol Laboratory (USDA-ARS, Beltsville)
 IBLP	s	Instytut Badawczy Lesnictwa
 IBMUNC	s	Universidad Nacional de Cuyo, Instituto de Biologia Animal
 IBP	s	Instituto de Biologia do Parana
-IBRC	sc	Iranian Biological Resources Center
+IBRC	sc	Iranian Biological Resource Center
 IBRP<BRA>	s	Instituto Biologico de Ribeirao Preto
 IBRP<JPN>	s	Institute for Breeding Research, Tokyo University of Agriculture
 IBS	s	Irish Biogeographical Society
