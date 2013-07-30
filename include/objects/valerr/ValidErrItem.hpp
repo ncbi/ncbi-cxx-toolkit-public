@@ -494,6 +494,8 @@ enum EErrType {
     eErr_SEQ_FEAT_PeptideFeatureLacksCDS,
     eErr_SEQ_FEAT_ShortExon,
     eErr_SEQ_FEAT_ExtraProteinFeature,
+    eErr_SEQ_FEAT_AssemblyGapAdjacentToNs,
+    eErr_SEQ_FEAT_AssemblyGapCoversSequence,
     ERR_CODE_END(SEQ_FEAT),
 
     ERR_CODE_BEGIN(SEQ_ALIGN) = 5000,

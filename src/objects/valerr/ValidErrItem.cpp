@@ -1535,7 +1535,13 @@ same id type" } },
  "Internal exon is too short." } } ,
    { eErr_SEQ_FEAT_ExtraProteinFeature,
    { "ExtraProteinFeature",
-   "Protein sequence has multiple protein features that are not signal peptides, mature peptides, transit peptides, or preproteins." } } ,
+"Protein sequence has multiple protein features that are not signal peptides, mature peptides, transit peptides, or preproteins." } } ,
+   { eErr_SEQ_FEAT_AssemblyGapAdjacentToNs,
+   { "AssemblyGapAdjacentToNs",
+"Assembly_gap features must cover the entire contiguous sequence gaps." } },
+   { eErr_SEQ_FEAT_AssemblyGapCoversSequence,
+   { "AssemblyGapCoversSequence",
+"Assembly_gap features must not cover actual bases in the sequence." } },
 
 
 /* SEQ_ALIGN */

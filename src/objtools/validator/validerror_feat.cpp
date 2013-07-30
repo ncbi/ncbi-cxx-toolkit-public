@@ -3561,14 +3561,18 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
                 if (NStr::Equal (sequence, "N")) {
                     is3 = true;
                 }
+                EDiagSev sv = eDiag_Warning;
+                if (m_Imp.IsGenomeSubmission()) {
+                    sv = eDiag_Error;
+                }
                 if (is5 && is3) {
-                    PostErr(eDiag_Error, eErr_SEQ_FEAT_GapFeatureProblem,
+                    PostErr(sv, eErr_SEQ_FEAT_AssemblyGapAdjacentToNs,
                             "Assembly_gap flanked by Ns on 5' and 3' sides", feat);
                 } else if (is5) {
-                    PostErr(eDiag_Error, eErr_SEQ_FEAT_GapFeatureProblem,
+                    PostErr(sv, eErr_SEQ_FEAT_AssemblyGapAdjacentToNs,
                             "Assembly_gap flanked by Ns on 5' side", feat);
                 } else if (is3) {
-                    PostErr(eDiag_Error, eErr_SEQ_FEAT_GapFeatureProblem,
+                    PostErr(sv, eErr_SEQ_FEAT_AssemblyGapAdjacentToNs,
                             "Assembly_gap flanked by Ns on 3' side", feat);
                 }
                 vec.GetSeqData(from, to + 1, sequence);
@@ -3578,7 +3582,7 @@ void CValidError_feat::ValidateImp(const CImp_feat& imp, const CSeq_feat& feat)
                     }
                 }
                 if (count > 0) {
-                    PostErr(eDiag_Error, eErr_SEQ_FEAT_GapFeatureProblem, "Assembly_gap extends into sequence", feat);
+                    PostErr(eDiag_Error, eErr_SEQ_FEAT_AssemblyGapCoversSequence, "Assembly_gap extends into sequence", feat);
                 }
             }
         }
