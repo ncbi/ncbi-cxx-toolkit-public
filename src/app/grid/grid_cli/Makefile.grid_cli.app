@@ -8,6 +8,8 @@ LIB = ncbi_xcache_netcache netstorage xconnserv xcgi \
         xthrserv xconnect connssl xutil xncbi
 LIBS = $(GNUTLS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
+REQUIRES = GNUTLS
+
 CHECK_CMD = netcache_check.sh
 CHECK_COPY = netcache_check.sh
 CHECK_TIMEOUT = 350

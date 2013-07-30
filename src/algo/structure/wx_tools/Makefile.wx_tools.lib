@@ -4,7 +4,7 @@
 #
 ##########################################
 
-REQUIRES = wxWidgets
+REQUIRES = wxWidgets GNUTLS
 
 LIB =   wx_tools
 

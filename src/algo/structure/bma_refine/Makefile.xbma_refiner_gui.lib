@@ -6,7 +6,7 @@
 
 WATCHERS = thiessen
 
-REQUIRES = wxWidgets objects
+REQUIRES = wxWidgets objects GNUTLS
 
 ASN_DEP = cdd
 
