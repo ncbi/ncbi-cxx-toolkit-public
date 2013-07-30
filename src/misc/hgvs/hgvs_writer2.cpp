@@ -131,7 +131,10 @@ CConstRef<CSeq_literal> CHgvsParser::x_FindAssertedSequence(const CVariation& v)
         //common suffix and prefix. The variant allele may be truncated differently than the asserted allele,
         //and they each will get different placements.
         if(v2.GetData().GetInstance().GetObservation() & (CVariation_inst::eObservation_asserted | CVariation_inst::eObservation_reference)
-           && !v2.IsSetPlacements())
+           && !v2.IsSetPlacements()
+           && v2.GetData().GetInstance().GetDelta().size() > 0 //VAR-528
+           && v2.GetData().GetInstance().GetDelta().front()->IsSetSeq()
+           && v2.GetData().GetInstance().GetDelta().front()->GetSeq().IsLiteral())
         {
             asserted_seq.Reset(&v2.GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral());
             break;
