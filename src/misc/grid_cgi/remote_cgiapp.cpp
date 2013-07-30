@@ -139,7 +139,7 @@ void CRemoteCgiApp::Init(void)
     IRWRegistry& reg = GetConfig();
     reg.Set("netcache_client", "cache_output", "true");
 
-    m_AppImpl->Init(false /* DO NOT merge log lines by default */);
+    m_AppImpl->Init();
 }
 
 void CRemoteCgiApp::SetupArgDescriptions(CArgDescriptions* arg_desc)

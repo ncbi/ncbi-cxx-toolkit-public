@@ -79,7 +79,7 @@ CNetCacheAPI CDefaultWorkerNodeInitContext::GetNetCacheAPI() const
     return grid_app->GetWorkerNode()->GetNetCacheAPI();
 }
 
-void IGridWorkerNodeApp_Listener::OnInit(CGridWorkerApp* /*grid_worker_app*/)
+void IGridWorkerNodeApp_Listener::OnInit(CNcbiApplication* /*app*/)
 {
 }
 
@@ -91,8 +91,6 @@ void CGridWorkerApp::Construct(
     ESignalHandling signal_handling)
 {
     m_WorkerNode.reset(new CGridWorkerNode(*this, job_factory));
-
-    m_MergeLogLines = false;
 
 #if defined(NCBI_OS_UNIX)
     if (signal_handling == eStandardSignalHandling) {

@@ -263,12 +263,15 @@ private:
 
 class CRemoteAppListener : public CGridWorkerNodeApp_Listener
 {
-    virtual void OnInit(CGridWorkerApp* grid_worker_app);
+    virtual void OnInit(CNcbiApplication* app);
 };
 
-void CRemoteAppListener::OnInit(CGridWorkerApp* grid_worker_app)
+void CRemoteAppListener::OnInit(CNcbiApplication* app)
 {
-    grid_worker_app->SetMergeLogLines();
+    CNcbiRegistry& reg = app->GetConfig();
+
+    if (!reg.HasEntry("log", "merge_lines"))
+        reg.Set("log", "merge_lines", "true");
 }
 
 

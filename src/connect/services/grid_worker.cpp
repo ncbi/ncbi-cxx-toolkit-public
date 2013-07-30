@@ -877,7 +877,7 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 //
 
-CGridWorkerNode::CGridWorkerNode(CGridWorkerApp& app,
+CGridWorkerNode::CGridWorkerNode(CNcbiApplication& app,
         IWorkerNodeJobFactory* job_factory) :
     m_JobProcessorFactory(job_factory),
     m_MaxThreads(1),
@@ -917,7 +917,7 @@ void CGridWorkerNode::Init()
 
     IRWRegistry& reg = m_App.GetConfig();
 
-    if (reg.GetBool("log", "merge_lines", m_App.GetMergeLogLines())) {
+    if (reg.GetBool("log", "merge_lines", false)) {
         SetDiagPostFlag(eDPF_PreMergeLines);
         SetDiagPostFlag(eDPF_MergeLines);
     }
