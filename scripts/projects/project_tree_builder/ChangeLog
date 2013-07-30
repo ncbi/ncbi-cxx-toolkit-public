@@ -238,3 +238,15 @@ Corrected to recognize both user requests - NCBI-Unicode and NCBI_Unicode.
 February 04, 2013
 version 3.8.5
 Corrected MSVC2010 file filter comparison.
+
+July 30, 2013
+version 3.9.0
+Added support of MS Visual Studio 2012.
+Added possibility of creating custom file filters in MSVC projects.
+Reduced the number of VTune configurations, added Unicode with VTune one.
+Added generation of user settings - to customize PATH in debugging sessions.
+Added TargetMachine settings for Librarian.
+
+
+
+
