@@ -48,5 +48,7 @@ check_r.real:
 $(addsuffix _r.real,$(generic_targets)): %_r.real: %_l.real
 	$(call make_each_sub_proj_r,$*_r)
 
-base_req_needers += $(rec_targets_r)
+mark-as-disabled_r.needs-reqs: mark-as-disabled_r.real ;
+
+base_req_needers += $(filter-out mark-as-disabled_r,$(rec_targets_r))
 .PHONY: $(rec_targets_r) $(rec_targets_r:%=%.real)

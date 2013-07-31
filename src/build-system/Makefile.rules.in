@@ -8,9 +8,22 @@
 #################################
 
 # Requirements checking
+XREQLIB=$(patsubst %$(FORCE_STATIC),%,$(patsubst %$(DLL),%,$(XAPP_LIB) $(XDLL_LIBS)))
+include $(wildcard $(XREQLIB:%=$(status_dir)/.%.disabled))
 requirements:  $(REQUIRES:%=$(status_dir)/%.enabled)
 
-ALT_GOALS = clean purge requirements deactivate src-stamp export-headers
+mark-as-disabled:
+ifneq "$(BINCOPY)" "@:"
+  ifneq "$(srcdir)" "."
+    ifneq "$(filter-out /.,$(wildcard $(status_dir)/.))" ""
+	@echo REQUIRES += $(INHERITED_REQUIREMENTS) $(REQUIRES) \
+	    > $(status_dir)/.$(LIB).disabled
+    endif
+  endif
+endif
+
+ALT_GOALS = clean purge requirements mark-as-disabled deactivate src-stamp \
+            export-headers
 
 ALL_SETTINGS = $(CFLAGS_ALL) $(CXXFLAGS_ALL) $(DLL_LIBS) \
                $(LDFLAGS) $(LIB) $(LIBS)
@@ -56,6 +69,9 @@ clean-common:
 	-$(RM) .make.state
 	-$(RM) $(SOURCES:=.d)
 	-$(RM) ir.out
+ifeq "$(APP)" ""
+	-$(RM) $(status_dir)/.$(LIB).disabled
+endif
 
 ### Header exporting, SSS-style.
 # NB: export-headers explicitly uses $(COPY) rather than $(bincopy) because
@@ -83,5 +99,5 @@ purge-headers:
 	    cd $(incdest)  &&  rmdir -p $(PACKAGE_EXPORT); \
 	fi
 
-.PHONY: clean-common export-headers purge-headers requirements
+.PHONY: clean-common export-headers purge-headers requirements mark-as-disabled
 

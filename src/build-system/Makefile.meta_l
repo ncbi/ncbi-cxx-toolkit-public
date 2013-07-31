@@ -66,6 +66,7 @@ if NCBICXX_TESTING_REQS=1 $(3) -q requirements; then \
     fi ; \
 else \
     echo "NOTE:  skipping project \"$(1)\" due to unmet requirements"; \
+    [ $(5) = .app ] || $(3) mark-as-disabled ; \
 fi
 
 endef
@@ -185,7 +186,7 @@ define add_each_check
 $(foreach p,$(APP_PROJ) $(EXPENDABLE_APP_PROJ),$(call add_one_check,$(p)))
 endef
 
-generic_targets = libs clean purge check_add
+generic_targets = libs mark-as-disabled clean purge check_add
 base_targets = all check $(generic_targets)
 local_targets = $(base_targets:%=%_l) sources_l
 $(local_targets): %: %.needs-reqs
@@ -252,13 +253,19 @@ clean_sources purge_sources:
 libs_l.real: $(sources)
 	$(call make_each_lib_proj,all)
 
+mark-as-disabled%: ign = -
+mark-as-disabled_l.needs-reqs: mark-as-disabled_l.real ;
+mark-as-disabled_l.real:
+	$(call make_each_lib_proj,mark-as-disabled)
+
+
 check_l.real:
 	$(call make_check,check_add_l)
 check_add_l.real:
 	$(add_each_check)
 
-base_req_needers = $(local_targets)
+base_req_needers = $(filter-out mark-as-disabled_l,$(local_targets))
 .PHONY: $(base_targets) $(has_usr_nonusr) $(has_usr_usr)
 .PHONY: $(has_usr_locked) $(has_usr_l_real) $(has_usr_real)
 .PHONY: sources clean_sources purge_sources
-.PHONY: libs_l.real check_l.real check_add_l.real
+.PHONY: libs_l.real mark-as-disabled_l.real check_l.real check_add_l.real

@@ -35,15 +35,13 @@
 default_rule: all
 
 
-### C/C++ source file compilation (and maybe auto-dependencies) build rules
+### C/C++ source file compilation setup
 
 CXXFLAGS_ALL = @f_compile@ \
 	$(CXXFLAGS) $(CXXFLAGS_DLL) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 CFLAGS_ALL   = @f_compile@ \
 	$(CFLAGS) $(CFLAGS_DLL) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 SOURCES      = @UNIX_SRC@ $(LIBOBJ) $(SRC)
-include $(builddir)/Makefile.$(Rules)
-
 
 ### The library build rule
 
@@ -58,6 +56,8 @@ XDLLDEP_LINK  = .$(LIB).dep
 XDLL_LIBS     = @DLL_LIB_SETTING@
 XDLL_LIB      = $(runpath) @f_libpath@$(libdir) $(XDLL_LIBS:%=@lib_l_pre@%@lib_l_ext@)
 XDLL_LIBDEP   = $(XDLL_LIBS:%=$(status_dir)/.%.dep)
+
+include $(builddir)/Makefile.$(Rules)
 
 # This definition loses any trailing #, and is only useful in conditionals.
 has_dll_loadable = @has_dll_loadable@
@@ -81,6 +81,7 @@ $(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
 ifeq "$(wildcard $(XDLLDEP))" ""
 	@echo $(srcdir) $(CURDIR) $(TMPL) > $(XDLLDEP)
 	@$(TOUCH) -r $(XDLL) $(XDLLDEP)
+	@$(RM) $(status_dir)/.$(LIB).disabled
 endif
 ifneq "$(BINCOPY)" "@:"
   ifneq "$(srcdir)" "."

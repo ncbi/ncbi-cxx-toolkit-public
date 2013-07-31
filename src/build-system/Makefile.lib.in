@@ -47,6 +47,7 @@ $(XLIB): $(XLIBOBJ)
 	@$(RANLIB) $(XLIB)
 	@echo $(srcdir) $(CURDIR) $(TMPL) > $(XLIBDEP)
 	@$(TOUCH) -r $(XLIB) $(XLIBDEP)
+	@$(RM) $(status_dir)/.$(LIB).disabled
 ifneq "$(BINCOPY)" "@:"
   ifneq "$(srcdir)" "."
     ifneq "$(filter-out /.,$(wildcard $(libdir)/.))" ""

@@ -22,13 +22,11 @@ default_rule: all
 
 -include $(srcdir)/Makefile.$(TMPL).app.unix
 
-### C/C++ source file compilation (and maybe auto-dependencies) build rules
+### C/C++ source file compilation setup
 
 CXXFLAGS_ALL = @f_compile@ $(CXXFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 CFLAGS_ALL   = @f_compile@ $(CFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 SOURCES      = @UNIX_SRC@ $(SRC)
-include $(builddir)/Makefile.$(Rules)
-
 
 ### Standard application build rules
 
@@ -39,6 +37,8 @@ XAPP_LIB = @APP_LIB_SETTING@
 XAPP_LIBS = @APP_LIBS_SETTING@
 XLIB = $(runpath) @f_libpath@$(libdir) $(XAPP_LIB:%=@lib_l_pre@%@lib_l_ext@)
 XLIBDEP = $(XAPP_LIB:%=$(status_dir)/.%.dep)
+
+include $(builddir)/Makefile.$(Rules)
 
 ASK_REBUILD = \
     base=`echo $$l | sed -e 's,.*/\.\([^.]*\)\.dep$$,\1,'`; \

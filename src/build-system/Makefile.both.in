@@ -38,6 +38,9 @@
 # include @builddir@/Makefile.both
 #################################
 
+# Copied from Makefile.dll.in, so that it can take effect in time for
+# Makefile.lib's inclusion of Makefile.$(Rules).
+XDLL_LIBS = @DLL_LIB_SETTING@
 include $(builddir)/Makefile.lib
 @IF_WITH_DLL@ XLIBDEP = $(XLIBDEPLINK)
 @IF_WITH_DLL@ XOLD_DLLS =

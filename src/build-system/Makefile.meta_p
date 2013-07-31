@@ -135,5 +135,7 @@ check_p.real:
 $(addsuffix _p.real,$(generic_targets)): %_p.real: $(call deps_p,%_l)
 	$(call cmds_p,$*)
 
-base_req_needers += $(rec_targets_p)
+mark-as-disabled_p.needs-reqs: mark-as-disabled_p.real ;
+
+base_req_needers += $(filter-out mark-as-disabled_p,$(rec_targets_p))
 .PHONY: $(rec_targets_p) $(rec_targets_p:%=%.real)
