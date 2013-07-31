@@ -220,7 +220,8 @@ bool CMsvcConfigure::ProcessDefine(const string& define,
         }
         SLibInfo lib_info;
         site.GetLibInfo(component, config, &lib_info);
-        if ( !site.IsLibOk(lib_info) ) {
+        if ( !site.IsLibOk(lib_info)  ||
+             !site.IsLibEnabledInConfig(component, config)) {
             if (!lib_info.IsEmpty()) {
                 PTB_WARNING_EX("", ePTB_ConfigurationError,
                                component << "|" << config.GetConfigFullName()
