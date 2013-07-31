@@ -1688,9 +1688,6 @@ void CMsvcProjectGenerator::GenerateMsbuildUser(
                         CMsvcPrjProjectContext& project_context,
                         CProjItem& prj)
 {
-    if (GetApp().GetBuildType().GetType() != CBuildType::eDll) {
-        return;
-    }
     if (prj.m_ProjType != CProjItem::TProjType::eApp) {
         return;
     }
@@ -1710,9 +1707,21 @@ void CMsvcProjectGenerator::GenerateMsbuildUser(
             bin_dirs.push_back( CDirEntry::ConcatPath(bin, "$(Configuration)"));
         }
     }
+    ITERATE( list<string>, p, prj.m_Libs3Party) {
+        list<string> cmp;
+        site.GetComponents(*p, &cmp);
+        ITERATE( list<string>, r, cmp) {
+            string bin = site.GetThirdPartyLibBin(*r);
+            if (!bin.empty()) {
+                bin_dirs.push_back( CDirEntry::ConcatPath(bin, "$(Configuration)"));
+            }
+        }
+    }
     if (bin_dirs.empty()) {
         return;
     }
+    bin_dirs.sort();
+    bin_dirs.unique();
     bin_dirs.push_back("%PATH%");
     string allbins = string("PATH=")+NStr::Join(bin_dirs, ";");
 
