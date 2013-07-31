@@ -189,7 +189,6 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob)
             // Insert data ...
             {
                 auto_ptr<IBulkInsert> bi(GetConnection().CreateBulkInsert(table_name));
-                // auto_ptr<IBulkInsert> bi(GetConnection().CreateBulkInsert(table_name, 1));
                 CVariant col1(eDB_Int);
                 CVariant col2(eDB_Int);
                 CVariant col3(eDB_VarChar);
@@ -1596,7 +1595,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
             // Overflow test.
             // !!! Current behavior is not defined properly and not consistent between drivers.
     //         {
-    //             auto_ptr<IBulkInsert> blki( GetConnection().CreateBulkInsert("#__blki_test", 2) );
+    //             auto_ptr<IBulkInsert> blki( GetConnection().CreateBulkInsert("#__blki_test") );
     //
     //             CVariant col1(eDB_Char,64);
     //             CVariant col2(eDB_BigInt);
