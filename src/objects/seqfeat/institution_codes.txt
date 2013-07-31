@@ -5970,10 +5970,11 @@ UAZ	s	University of Arizona
 UB<BRA>	s	Universidade de Brasilia, Departamento de Botanica
 UB<FRA>	s	Laboratoire de Biostratigraphie
 UBA	s	Mongolian Academy of Sciences
-UBC	s	University of British Columbia
-UBC<botany>	s	University of British Columbia, Botany Department
+UBC	s	Beaty Biodiversity Museum, University of British Columbia
+UBC:CTC	s	Beaty Biodiversity Museum, University of British Columbia, Cowan Tetrapod Collection
+UBC:Fish	s	Beaty Biodiversity Museum, University of British Columbia, Fish Collection
 UBCC	c	University of Barcelona Culture Collection
-UBCZ	s	University of British Columbia, Spencer Museum
+UBCZ	s	University of British Columbia, Spencer Entomological Museum
 UBJTL	s	Universidad Bogota Jorge Tadeo Lozano
 UBL	s	Universite du Benin
 UBT	s	Oekologisch-Botanischer Garten
