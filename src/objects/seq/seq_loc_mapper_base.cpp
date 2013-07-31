@@ -3382,6 +3382,11 @@ void CSeq_loc_Mapper_Base::x_PushSourceRange(const CSeq_id_Handle& idh,
         }
     }
     // Store the location.
+    if ( !SameOrientation(
+        src_strand ? INDEX_TO_STRAND(src_strand) : eNa_strand_unknown,
+        dst_strand ? INDEX_TO_STRAND(dst_strand) : eNa_strand_unknown) ) {
+        push_reverse = !push_reverse;
+    }
     if ( push_reverse ) {
         m_SrcLocs->SetMix().Set().push_front(loc);
     }
