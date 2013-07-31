@@ -2048,8 +2048,13 @@ void CSeq_loc::ChangeToPackedInt(void)
                 new_int->SetStrand(GetPnt().GetStrand());
             }
             if (GetPnt().IsSetFuzz()) {
-                new_int->SetFuzz_from().Assign(GetPnt().GetFuzz());
-                new_int->SetFuzz_to().Assign(GetPnt().GetFuzz());
+                const CInt_fuzz& fuzz = GetPnt().GetFuzz();
+                if (!fuzz.IsLim()  ||  fuzz.GetLim() != CInt_fuzz::eLim_gt) {
+                    new_int->SetFuzz_from().Assign(fuzz);
+                }
+                if (!fuzz.IsLim()  ||  fuzz.GetLim() != CInt_fuzz::eLim_lt) {
+                    new_int->SetFuzz_to().Assign(fuzz);
+                }
             }
             SetPacked_int().AddInterval(*new_int);
             return;
