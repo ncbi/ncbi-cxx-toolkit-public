@@ -205,11 +205,14 @@ void CCgiResponse::SetOutput(CNcbiOstream* out, int fd)
 
 CNcbiOstream* CCgiResponse::GetOutput(void) const
 {
+    bool client_int_ok = TClientConnIntOk::GetDefault()  ||
+        (AcceptRangesBytes()  && !HaveContentRange());
+
     if (m_Output  &&
         (m_Output->rdstate()  &  (IOS_BASE::badbit | IOS_BASE::failbit))
         != 0  &&
         m_ThrowOnBadOutput.Get()  &&
-        !TClientConnIntOk::GetDefault()) {
+        !client_int_ok) {
         ERR_POST_X(1, Severity(TClientConnIntSeverity::GetDefault()) <<
                    "CCgiResponse::GetOutput() -- output stream is in bad state");
         const_cast<CCgiResponse*>(this)->SetThrowOnBadOutput(false);
