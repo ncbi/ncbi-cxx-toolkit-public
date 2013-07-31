@@ -460,18 +460,11 @@ bool CTestAndRepData :: IsSubSrcPresent(const CBioSource& biosrc, CSubSource::ES
 
 bool CTestAndRepData :: CommentHasPhrase(string comment, const string& phrase)
 {
-  unsigned len = phrase.size();
-  size_t pos;
-  while (!comment.empty()) {
-     if (NStr::FindNoCase(comment.substr(0, len), phrase) != string::npos
-           && (comment.size() == len || comment[len] == ';'))
-         return true;
-     else {
-       if ((pos = comment.find(';')) != string::npos) {
-         comment = CTempString(comment).substr(pos+1);
-         comment = NStr::TruncateSpaces(comment, NStr::eTrunc_Begin);
-       }
-     } 
+  vector <string> arr;
+  arr = NStr::Tokenize(comment, ";", arr);
+  for (unsigned i=0; i< arr.size(); i++) {
+     NStr::TruncateSpacesInPlace(arr[i], NStr::eTrunc_Begin);
+     if (NStr::EqualNocase(arr[i], phrase)) return true;
   }
   return false;
 };
@@ -603,6 +596,7 @@ bool CTestAndRepData :: IsBiosrcEukaryotic(const CBioSource& biosrc)
 bool CTestAndRepData :: IsBioseqHasLineage(const CBioseq& bioseq, const string& type, bool has_biosrc)
 {
    CBioseq_Handle bioseq_handle = thisInfo.scope->GetBioseqHandle(bioseq);
+   if (!bioseq_handle) return false;
    CSeqdesc_CI it(bioseq_handle, CSeqdesc :: e_Source);
    if (!it) return false;
    if (type == "Eukaryota") {
@@ -977,6 +971,7 @@ string CTestAndRepData :: GetDiscItemText(const CBioseq& bioseq)
       CSeq_data out_seq;
       vector <unsigned> idx;
       CBioseq_Handle bioseq_handle = thisInfo.scope->GetBioseqHandle(bioseq);
+      if (!bioseq_handle) return kEmptyStr;
       unsigned ambigs_cnt = 0, gap_cnt = 0;
       SSeqMapSelector sel(CSeqMap::fDefaultFlags);
       if (bioseq.GetInst().CanGetSeq_data()) {   // is this necessary?
@@ -1046,9 +1041,12 @@ string CTestAndRepData :: SeqLocPrintUseBestID(const CSeq_loc& seq_loc, bool ran
       const CSeq_id& seq_id = seq_int.GetId();
       if (!(seq_id.IsGenbank()) ) {
          CBioseq_Handle bioseq_hl = thisInfo.scope->GetBioseqHandle(seq_id);
-         const CSeq_id& new_seq_id = 
+         if (bioseq_hl) {
+            const CSeq_id& new_seq_id = 
                 BioseqToBestSeqId(*(bioseq_hl.GetCompleteBioseq()), CSeq_id::e_Genbank);
-         location = new_seq_id.AsFastaString();
+            location = new_seq_id.AsFastaString();
+         }
+         else location = seq_id.AsFastaString();  // should be impossible
       }
       else location = seq_id.AsFastaString();
       location += ":";

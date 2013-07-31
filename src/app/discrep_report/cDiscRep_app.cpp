@@ -52,19 +52,21 @@ void CDiscRepApp::Init(void)
     // Prepare command line descriptions
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
-                                "Cpp Discrepancy Report");
+                                "C++ Discrepancy Report");
     DisableArgDescriptions();
 
     // Pass argument descriptions to the application
     //
-    arg_desc->AddKey("i", "InputFile", "Single input file (mandatory)", 
+    arg_desc->AddOptionalKey("i", "InputFile", "Single input file (mandatory)", 
                                                CArgDescriptions::eString);
-    // how about report->p?
-/*
-    arg_desc->AddOptionalKey("P", "ReportType", 
-                   "Report type: Discrepancy, Oncaller, TSA, Genome, Big Sequence, MegaReport, Include Tag, Include Tag for Superuser",
-                   CArgDescriptions::eString);
-*/
+    arg_desc->AddOptionalKey("p", "InPath", "Path to ASN.1 Files", CArgDescriptions::eString);
+    arg_desc->AddDefaultKey("x", "Suffix", "File Selection Substring", 
+                                                        CArgDescriptions::eString, ".sqn");
+    arg_desc->AddDefaultKey("u", "Recurse", "Recurse", CArgDescriptions::eString, "0");
+ 
+    arg_desc->AddDefaultKey("a", "Asn1Type", 
+                 "Asn.1 Type: a: Any, e: Seq-entry, b: Bioseq, s: Bioseq-set, m: Seq-submit, t: Batch Bioseq-set, u: Batch Seq-submit, c: Catenated seq-entry",
+                 CArgDescriptions::eString, "a");
     arg_desc->AddDefaultKey("P", "ReportType",
                    "Report type: Discrepancy, Oncaller, TSA, Genome, Big Sequence, MegaReport, Include Tag, Include Tag for Superuser",
                    CArgDescriptions::eString, "Discrepancy");
@@ -84,7 +86,7 @@ void CDiscRepApp::Init(void)
 
 int CDiscRepApp :: Run(void)
 {
-    // Process command line args:  get GI to load
+    // Crocess command line args:  get GI to load
     const CArgs& args = GetArgs();
     
     string report = args["P"].AsString();
@@ -92,8 +94,7 @@ int CDiscRepApp :: Run(void)
     CRepConfig* config = CRepConfig::factory(report);
     config->InitParams(GetConfig());
     config->ReadArgs(args);
-    config->Run();
-    config->Export();
+    config->Run(config);
     
     return 0;
 }
@@ -108,6 +109,7 @@ int main(int argc, const char* argv[])
 //  SetDiagTrace(eDT_Enable);
   SetDiagPostLevel(eDiag_Error);
 
+cerr << "start " << CTime(CTime::eCurrent).AsString()  << endl;
   try {
     return CDiscRepApp().AppMain(argc, argv);
   } catch(CException& eu) {

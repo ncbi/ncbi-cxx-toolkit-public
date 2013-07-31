@@ -48,6 +48,7 @@
 #include <serial/serial.hpp>
 
 #include "hDiscRep_tests.hpp"
+#include "hDiscRep_config.hpp"
 
 using namespace ncbi;
 using namespace objects;
@@ -105,10 +106,85 @@ namespace DiscRepNmSpc {
    {
       public:
         bool     use_flag;
-        ofstream output_f;
+        //ofstream output_f;
+        CNcbiOstream*  output_f;
         bool     summary_report;
         bool     add_output_tag;
         bool     add_extra_output_tag;
+   };
+
+   class CRepConfig 
+   {
+     public:
+        virtual ~CRepConfig() {};
+
+        // removed from *_app.hpp
+        void InitParams(const IRWRegistry& reg);
+        void ReadArgs(const CArgs& args);
+        void ProcessArgs(Str2Str& args);
+        void CheckThisSeqEntry(CRef <CSeq_entry> seq_entry);
+        void GetOrgModSubtpName(unsigned num1, unsigned num2,
+                                         map <string, COrgMod::ESubtype>& orgmodnm_subtp);
+        CRef <CSearch_func> MakeSimpleSearchFunc(const string& match_text,
+                                                                 bool whole_word = false);
+
+        void CollectTests();
+        void Run(CRepConfig* config);
+        static CRepConfig* factory(const string& report_tp);
+        virtual void Export() = 0;
+        void AddListOutputTags();
+        bool NeedsTag(const string& setting_name, const string& desc, 
+                             const s_fataltag* tags, const unsigned& tags_cnt);
+  
+        static vector < CRef < CTestAndRepData > > tests_on_Bioseq;
+        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_na;
+        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_aa;
+        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_CFeat; 
+        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_CFeat_NotInGenProdSet; 
+        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_NotInGenProdSet;
+        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_CFeat_CSeqdesc;
+        static vector < CRef < CTestAndRepData > > tests_on_SeqEntry;
+        static vector < CRef < CTestAndRepData > > tests_on_SeqEntry_feat_desc;
+        static vector < CRef < CTestAndRepData > > tests_4_once;
+        static vector < CRef < CTestAndRepData > > tests_on_BioseqSet;
+        static vector < CRef < CTestAndRepData > > tests_on_SubmitBlk;
+
+     protected:
+        void x_ReadAsn1(const string& infile, ESerialDataFormat datafm = eSerial_AsnText);
+        void x_ReadFasta(const string& infile);
+        void x_ProcessOneFile(const string& infile);
+        void x_ProcessDir(const CDir& dir, const string& suffix, bool dorecurse, bool out_f,
+                                                 CRepConfig* config);
+
+        void WriteDiscRepSummary();
+        void WriteDiscRepSubcategories(const vector <CRef <CClickableItem> >& subcategories, unsigned ident=1);
+        void WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_rep_dt, 
+                                 bool use_flag, bool IsSubcategory=false);
+        void WriteDiscRepItems(CRef <CClickableItem> c_item, const string& prefix);
+        bool SuppressItemListForFeatureTypeForOutputFiles(const string& setting_name);
+        void StandardWriteDiscRepItems(COutputConfig& oc, const CClickableItem* c_item, const string& prefix, bool list_features_if_subcat);
+        bool RmTagInDescp(string& str, const string& tag);
+   };
+
+   class CRepConfDiscrepancy : public CRepConfig
+   {
+      public:
+        virtual ~CRepConfDiscrepancy () {};
+        virtual void Export();
+   };
+
+   class CRepConfOncaller : public CRepConfig
+   {
+      public:
+        virtual ~CRepConfOncaller () {};
+        virtual void Export() { };
+   };
+
+   class CRepConfAll : public CRepConfig 
+   {
+      public:
+        virtual ~CRepConfAll () {};
+        virtual void Export() { };
    };
 
    class CDiscRepInfo
@@ -119,6 +195,9 @@ namespace DiscRepNmSpc {
 
         static CRef < CScope >                    scope;
         static string                             infile;
+        static string                             directory;
+        static string                             suffix;
+        static bool                               dorecurse;
         static COutputConfig                      output_config;
         static vector < CRef < CClickableItem > > disc_report_data;
         static Str2Strs                           test_item_list;
@@ -209,74 +288,6 @@ namespace DiscRepNmSpc {
 
         s_SuspectProductNameData                    suspect_prod_terms[];
         unsigned GetSusProdTermsLen() { return sizeof(suspect_prod_terms); };
-   };
-
-   class CRepConfig 
-   {
-     public:
-        virtual ~CRepConfig() {};
-
-        // removed from *_app.hpp
-        void InitParams(const IRWRegistry& reg);
-        void ReadArgs(const CArgs& args);
-        void ReadArgs(Str2Str& args);
-        void CheckThisSeqEntry(CRef <CSeq_entry> seq_entry);
-        void GetOrgModSubtpName(unsigned num1, unsigned num2,
-                                         map <string, COrgMod::ESubtype>& orgmodnm_subtp);
-        CRef <CSearch_func> MakeSimpleSearchFunc(const string& match_text,
-                                                                 bool whole_word = false);
-
-        void CollectTests();
-        void Run();
-        static CRepConfig* factory(const string& report_tp);
-        virtual void Export() = 0;
-        void AddListOutputTags();
-        bool NeedsTag(const string& setting_name, const string& desc, 
-                             const s_fataltag* tags, const unsigned& tags_cnt);
-  
-        static vector < CRef < CTestAndRepData > > tests_on_Bioseq;
-        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_na;
-        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_aa;
-        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_CFeat; 
-        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_CFeat_NotInGenProdSet; 
-        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_NotInGenProdSet;
-        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_CFeat_CSeqdesc;
-        static vector < CRef < CTestAndRepData > > tests_on_SeqEntry;
-        static vector < CRef < CTestAndRepData > > tests_on_SeqEntry_feat_desc;
-        static vector < CRef < CTestAndRepData > > tests_4_once;
-        static vector < CRef < CTestAndRepData > > tests_on_BioseqSet;
-        static vector < CRef < CTestAndRepData > > tests_on_SubmitBlk;
-
-     protected:
-        void WriteDiscRepSummary();
-        void WriteDiscRepSubcategories(const vector <CRef <CClickableItem> >& subcategories, unsigned ident=1);
-        void WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_rep_dt, 
-                                 bool use_flag, bool IsSubcategory=false);
-        void WriteDiscRepItems(CRef <CClickableItem> c_item, const string& prefix);
-        bool SuppressItemListForFeatureTypeForOutputFiles(const string& setting_name);
-        void StandardWriteDiscRepItems(COutputConfig& oc, const CClickableItem* c_item, const string& prefix, bool list_features_if_subcat);
-        bool RmTagInDescp(string& str, const string& tag);
-   };
-
-   class CRepConfDiscrepancy : public CRepConfig
-   {
-      public:
-        virtual ~CRepConfDiscrepancy () {};
-        virtual void Export();
-   };
-
-   class CRepConfOncaller : public CRepConfig
-   {
-      public:
-        virtual ~CRepConfOncaller () {};
-        virtual void Export() { };
-   };
-
-   class CRepConfAll : public CRepConfig 
-   {
-      public:
-        virtual ~CRepConfAll () {};
-        virtual void Export() { };
    };
 };
 

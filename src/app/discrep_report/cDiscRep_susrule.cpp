@@ -907,9 +907,11 @@ bool CSuspectRuleCheck :: DoesCodingRegionMatchTranslationConstraint(const CSeq_
     if (feat.CanGetProduct()) {
        CBioseq_Handle 
            actual_prot = GetBioseqFromSeqLoc(feat.GetProduct(), *thisInfo.scope);
-       CSeqVector 
-           seq_vec = m_bioseq_hl.GetSeqVector(CBioseq_Handle::eCoding_Iupac, eNa_strand_plus);
-       seq_vec.GetSeqData(0, actual_prot.GetInst_Length(), actual);
+       if (actual_prot) {
+           CSeqVector 
+             seq_vec =m_bioseq_hl.GetSeqVector(CBioseq_Handle::eCoding_Iupac, eNa_strand_plus);
+           seq_vec.GetSeqData(0, actual_prot.GetInst_Length(), actual);
+       }
     }
   }
 
@@ -1200,7 +1202,8 @@ bool CSuspectRuleCheck :: GetSpanFromHyphenInString(const string& str, const siz
    if (cp == string::npos) cp = 0;
 
    unsigned len = hyphen - cp;
-   first = NStr::TruncateSpaces(CTempString(str).substr(cp, len));
+   first = CTempString(str).substr(cp, len);
+   NStr::TruncateSpacesInPlace(first);
  
    /* find range end */
    cp = str.find_first_not_of(' ', hyphen+1);
@@ -1209,7 +1212,8 @@ bool CSuspectRuleCheck :: GetSpanFromHyphenInString(const string& str, const siz
 
    len = cp - hyphen;
    if (!isspace (str[cp])) len--;
-   second = NStr::TruncateSpaces(CTempString(str).substr(hyphen+1, len));
+   second = CTempString(str).substr(hyphen+1, len);
+   NStr::TruncateSpacesInPlace(second);
 
    bool rval = true;
    if (first.empty() || second.empty()) rval = false;
@@ -1491,7 +1495,8 @@ bool CSuspectRuleCheck :: x_DoesStrContainPlural(const string& word, char last_l
            return true;
       }
    }
-   else return false;
+
+   return false;
 };
 
 bool CSuspectRuleCheck :: StringMayContainPlural(const string& str)
@@ -1637,7 +1642,8 @@ bool CSuspectRuleCheck :: FollowedByFamily(string& after_str)
            return true;
      }
   } 
-  else return false;
+
+  return false;
 };
 
 bool CSuspectRuleCheck :: ContainsThreeOrMoreNumbersTogether(const string& search)
@@ -1901,16 +1907,18 @@ bool CSuspectRuleCheck :: DoesObjectMatchStringConstraint(const CSeq_feat& feat,
             if (feat.CanGetProduct()) {
                CBioseq_Handle 
                      bioseq_hl = GetBioseqFromSeqLoc(feat.GetProduct(), *thisInfo.scope);
-               CFeat_CI ci(bioseq_hl, SAnnotSelector(CSeqFeatData::eSubtype_prot)); 
-                if (ci) {
-                   vector <string> arr;
-                   GetStringsFromObject(ci->GetOriginalFeature(), arr);
-                   ITERATE (vector <string>, it, arr) {
-                       rval = DoesSingleStringMatchConstraint(*it, &str_cons);
-                       if (rval) break;
-                   }
-                   arr.clear();
-                }
+               if (bioseq_hl) {
+                  CFeat_CI ci(bioseq_hl, SAnnotSelector(CSeqFeatData::eSubtype_prot)); 
+                  if (ci) {
+                     vector <string> arr;
+                     GetStringsFromObject(ci->GetOriginalFeature(), arr);
+                     ITERATE (vector <string>, it, arr) {
+                         rval = DoesSingleStringMatchConstraint(*it, &str_cons);
+                         if (rval) break;
+                     }
+                     arr.clear();
+                  }
+               }
             }
             break;
          }
@@ -2486,8 +2494,10 @@ string CSuspectRuleCheck :: GetQualFromFeatureAnyType(const CSeq_feat& seq_feat,
     prot = seq_feat.GetProtXref();
     if (!prot && seq_feat.CanGetProduct()) {
       prot_hl = GetBioseqFromSeqLoc(seq_feat.GetProduct(), *thisInfo.scope); 
-      const CSeq_feat* prot_f =GetPROTForProduct(prot_hl);
-      if (prot_f) prot = &(prot_f->GetData().GetProt());
+      if (prot_hl) {
+         const CSeq_feat* prot_f = GetPROTForProduct(prot_hl);
+         if (prot_f) prot = &(prot_f->GetData().GetProt());
+      }
     }
   }
 
@@ -3456,7 +3466,7 @@ const CSeq_feat* CSuspectRuleCheck :: GetmRNAforCDS (const CSeq_feat& cds)
   if (!mrna) {
     //BioseqFindFromSeqLoc (cds->location);
     CBioseq_Handle mbsp = GetBioseqFromSeqLoc(cds.GetLocation(), *thisInfo.scope); 
-    if (CTestAndRepData :: IsmRNASequenceInGenProdSet(*(mbsp.GetCompleteBioseq()))) {
+    if (mbsp && CTestAndRepData :: IsmRNASequenceInGenProdSet(*(mbsp.GetCompleteBioseq()))) {
       // SeqMgrGetRNAgivenProduct(mbsp, &mcontext);
       mrna = GetmRNAForProduct(mbsp); 
     }

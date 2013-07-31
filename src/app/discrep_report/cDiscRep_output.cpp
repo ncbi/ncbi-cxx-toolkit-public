@@ -166,17 +166,15 @@ void CRepConfig :: AddListOutputTags()
   } 
 };
 
-//void CRepConfDiscrepancy :: Export()
-//void CRepConfig :: Export()
 void CRepConfDiscrepancy :: Export()
 {
   if (oc.add_output_tag || oc.add_extra_output_tag) AddListOutputTags();
 
-  oc.output_f << "Discrepancy Report Results\n\n"
+  *(oc.output_f) << "Discrepancy Report Results\n\n"
        << "Summary\n";
   WriteDiscRepSummary();
 
-  oc.output_f << "\n\nDetailed Report\n";
+  *(oc.output_f) << "\n\nDetailed Report\n";
   WriteDiscRepDetails(thisInfo.disc_report_data, oc.use_flag);
 };  // Discrepancy:: Export
 
@@ -201,9 +199,8 @@ void CRepConfig :: WriteDiscRepSummary()
       desc = (*it)->description;
       if ( desc.empty()) continue;
       // FATAL tag
-      if (RmTagInDescp(desc, "FATAL: ")) oc.output_f  << "FATAL:";
-      oc.output_f 
-         << (*it)->setting_name << ": " << desc << endl;
+      if (RmTagInDescp(desc, "FATAL: ")) *(oc.output_f)  << "FATAL:";
+      *(oc.output_f) << (*it)->setting_name << ": " << desc << endl;
       if ("SUSPECT_PRODUCT_NAMES" == (*it)->setting_name)
             WriteDiscRepSubcategories((*it)->subcategories);
   }
@@ -215,8 +212,8 @@ void CRepConfig :: WriteDiscRepSubcategories(const vector <CRef <CClickableItem>
 {
    unsigned i;
    ITERATE (vector <CRef <CClickableItem> >, it, subcategories) {
-      for (i=0; i< ident; i++) oc.output_f << "\t"; 
-      oc.output_f << (*it)->description  << endl; 
+      for (i=0; i< ident; i++) *(oc.output_f) << "\t"; 
+      *(oc.output_f) << (*it)->description  << endl; 
       WriteDiscRepSubcategories( (*it)->subcategories, ident+1);
    }
 } // WriteDiscRepSubcategories
@@ -254,7 +251,7 @@ void CRepConfig :: WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_re
 
       // summary report
       if (oc.summary_report) {
-         oc.output_f << prefix << desc << endl;
+         *(oc.output_f) << prefix << desc << endl;
 /*
          if ( ( oc.add_output_tag || oc.add_extra_output_tag) 
                && SubsHaveTags((*it), oc))
@@ -303,12 +300,12 @@ void CRepConfig :: WriteDiscRepItems(CRef <CClickableItem> c_item, const string&
 {
    if (oc.use_flag && 
          SuppressItemListForFeatureTypeForOutputFiles (c_item->setting_name)) {
-       if (!prefix.empty()) oc.output_f << prefix;
+       if (!prefix.empty()) *(oc.output_f) << prefix;
        string desc = c_item->description;
        RmTagInDescp(desc, "FATAL: ");
-       oc.output_f << desc << endl;
+       *(oc.output_f) << desc << endl;
 ITERATE (vector <string>, it, c_item->item_list) {  // necessary?
-  oc.output_f << *it << endl;
+  *(oc.output_f) << *it << endl;
 //cerr << c_item->setting_name << "  " << *it << endl;
 };
 /* unnecessary
@@ -321,7 +318,7 @@ ITERATE (vector <string>, it, c_item->item_list) {  // necessary?
             fprintf (fp, "%s\n", dip->description);
           }
     }
-       oc.output_f << endl;
+       *(oc.output_f) << endl;
 */
   } 
   else {
@@ -329,17 +326,17 @@ ITERATE (vector <string>, it, c_item->item_list) {  // necessary?
   }
   if ((!c_item->next_sibling && c_item->subcategories.empty()) 
         || (!c_item->subcategories.empty() && !c_item->item_list.empty()) ) // for !OkToExpand
-             oc.output_f << endl;
+             *(oc.output_f) << endl;
   
 } // WriteDiscRepItems()
 
 
 void CRepConfig :: StandardWriteDiscRepItems(COutputConfig& oc, const CClickableItem* c_item, const string& prefix, bool list_features_if_subcat)
 {
-  if (!prefix.empty())  oc.output_f << prefix;
+  if (!prefix.empty())  *(oc.output_f) << prefix;
   string desc = c_item->description;
   RmTagInDescp(desc, "FATAL: ");
-  oc.output_f << desc << endl;
+  *(oc.output_f) << desc << endl;
 
   if (c_item->subcategories.empty() || list_features_if_subcat) {
           /*
@@ -349,7 +346,7 @@ void CRepConfig :: StandardWriteDiscRepItems(COutputConfig& oc, const CClickable
              vnp = list_copy;
            }
         */
-      ITERATE (vector <string>, it, c_item->item_list) oc.output_f << *it << endl;
+      ITERATE (vector <string>, it, c_item->item_list) *(oc.output_f) << *it << endl;
   }
 
 }; // StandardWriteDiscRepItems()

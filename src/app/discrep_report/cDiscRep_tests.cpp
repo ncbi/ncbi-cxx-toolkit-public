@@ -145,7 +145,7 @@ bool CDiscTestInfo :: is_SusPhrase_run;
 bool CDiscTestInfo :: is_SusProd_run;
 bool CDiscTestInfo :: is_TaxCflts_run;
 bool CDiscTestInfo :: is_TaxDef_run;
-bool CDiscTestInfo :: is_TRRna_run;
+bool CDiscTestInfo :: is_TRna_run;
 
 typedef map <string, CRef < GeneralDiscSubDt > > Str2SubDt;
 typedef map <int, vector <string> > Int2Strs;
@@ -586,7 +586,7 @@ void CBioseq_TEST_ORGANELLE_PRODUCTS :: TestOnObj(const CBioseq& bioseq)
 {
    CBioseq_Handle bioseq_hl = thisInfo.scope->GetBioseqHandle(bioseq);
    const CBioSource* biosrc = GetBioSource(bioseq_hl); // biosrc of seqdesc
-   if (biosrc) return;
+   if (!biosrc) return;
 
    int genome = biosrc->GetGenome();
    if (genome == (int)CBioSource::eGenome_mitochondrion
@@ -1405,6 +1405,36 @@ void CBioseq_DISC_MICROSATELLITE_REPEAT_TYPE :: GetReport(CRef <CClickableItem>&
 
 
 //new comb
+
+/*
+void CBioseq_test_on_user :: TestOnObj(const CBioseq& bioseq)
+{
+  if (thisTest.is_User_run) return;
+  thisTest.is_User_run = true;
+
+  bool run_gcomm = (thisTest.tests_run.find(GetName_gcomm()) != thisTest.tests_run.end());
+  bool run_proj = (thisTest.tests_run.find(GetName_proj()) != thisTest.tests_run.end());
+  bool run_oncall =(thisTest.tests_run.find(GetName_oncall_scomm())!=thisTest.tests_run.end());
+  bool run_scomm = (thisTest.tests_run.find(GetName_scomm()) != thisTest.tests_run.end());
+  bool run_mproj = (thisTest.tests_run.find(GetName_mproj()) != thisTest.tests_run.end());
+  bool run_bproj = (thisTest.tests_run.find(GetName_bproj()) != thisTest.tests_run.end());
+  bool run_prefix = (thisTest.tests_run.find(GetName_prefix()) != thisTest.tests_run.end());
+
+  CValidError errors;
+  CValidError_imp imp(thisInfo.scope->GetObjectManager(),&errors);
+  CValidError_desc validator(imp);
+
+  unsigned i=0, cnt;
+  int id;
+  string bioseq_desc, type_str, user_desc;
+  Str2Int bioseq2cnt;
+
+  ITERATE (vector <const CSeqdesc*>, it, bioseq_user) {
+     // 
+  } 
+};
+*/
+
 void CBioseq_test_on_suspect_phrase :: TestOnObj(const CBioseq& bioseq) 
 {
    if (thisTest.is_SusPhrase_run) return;
@@ -1675,6 +1705,7 @@ void CBioseq_ADJACENT_PSEUDOGENES :: TestOnObj(const CBioseq& bioseq)
    ITERATE (vector <const CSeq_feat*>, it, gene_feat) {
      if (!(*it)->CanGetPseudo() || !(*it)->GetPseudo()) continue;
      jt = it + 1; 
+     if (jt == gene_feat.end()) continue;
      if (!(*jt)->CanGetPseudo() || !(*jt)->GetPseudo()) continue;
      if ((*it)->GetLocation().GetStrand() != (*jt)->GetLocation().GetStrand()) 
                continue;
@@ -1947,6 +1978,7 @@ void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
    ignore.reserve(cd_feat.size());
    i=0;
    ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
+cerr << "cd " << Blob2Str(**it) << endl;
       if (x_IgnoreContainedCDS(*it)) ignore[i] = 1;
       else ignore[i] = 0;
       i++;
@@ -2548,19 +2580,19 @@ CConstRef <CSeq_feat> CBioseqTestAndRepData :: GetmRNAforCDS(const CSeq_feat& cd
 
 CConstRef <CProt_ref> CBioseqTestAndRepData :: GetProtRefForFeature(const CSeq_feat& seq_feat, bool look_xref)
 {
-  CConstRef <CProt_ref> prot_ref;
+  CConstRef <CProt_ref> prot_ref(0);
   if (seq_feat.GetData().IsProt()) 
        prot_ref = CConstRef <CProt_ref> (&(seq_feat.GetData().GetProt()));
   else if (seq_feat.GetData().IsCdregion()) {
-    if (look_xref) 
-      prot_ref = CConstRef <CProt_ref> (seq_feat.GetProtXref());
+    if (look_xref) prot_ref.Reset(seq_feat.GetProtXref());
 
     if (prot_ref.Empty() && seq_feat.CanGetProduct()) {
         CBioseq_Handle bioseq_h = GetBioseqFromSeqLoc(seq_feat.GetProduct(), *thisInfo.scope);
-        for (CFeat_CI prot_ci(bioseq_h, CSeqFeatData::e_Prot); prot_ci; ++prot_ci) {
-          prot_ref 
-              = CConstRef <CProt_ref> (&(prot_ci->GetOriginalFeature().GetData().GetProt())); 
-          if (prot_ref->GetProcessed() == CProt_ref :: eProcessed_not_set) break;
+        if (bioseq_h) {
+           for (CFeat_CI prot_ci(bioseq_h, CSeqFeatData::e_Prot); prot_ci; ++prot_ci) {
+              prot_ref.Reset( (&(prot_ci->GetOriginalFeature().GetData().GetProt())) );
+              if (prot_ref->GetProcessed() == CProt_ref :: eProcessed_not_set) break;
+           }
 	}
     }
   }
@@ -3573,14 +3605,17 @@ void CBioseq_HYPOTHETICAL_CDS_HAVING_GENE_NAME :: TestOnObj(const CBioseq& biose
         continue;  // no gene name
     if ((*it)->CanGetProduct()) {
       CBioseq_Handle bioseq_prot = GetBioseqFromSeqLoc((*it)->GetProduct(),*thisInfo.scope);
-      CFeat_CI feat_it(bioseq_prot, sel_seqfeat);
-      if (!feat_it) continue;
-      const CProt_ref& prot_ref = feat_it->GetOriginalFeature().GetData().GetProt();
-      if (prot_ref.CanGetName()) {
-          ITERATE (list <string>, jt, prot_ref.GetName()) {
-            if (NStr::FindNoCase(*jt, "hypothetical protein") != string::npos)
-                thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
-          }
+      if (bioseq_prot) {
+         CFeat_CI feat_it(bioseq_prot, sel_seqfeat);
+         if (feat_it) {
+            const CProt_ref& prot_ref = feat_it->GetOriginalFeature().GetData().GetProt();
+            if (prot_ref.CanGetName()) {
+                ITERATE (list <string>, jt, prot_ref.GetName()) {
+                  if (NStr::FindNoCase(*jt, "hypothetical protein") != string::npos)
+                      thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
+                }
+            }
+         }
       }
     }
   }
@@ -3695,6 +3730,7 @@ void CBioseq_TEST_LOW_QUALITY_REGION :: TestOnObj(const CBioseq& bioseq)
     unsigned i=0, num_ns, len;
     bool found_interval = false;
     CBioseq_Handle bioseq_h = thisInfo.scope->GetBioseqHandle(bioseq);
+    if (!bioseq_h) return;
     CSeqVector seq_vec = bioseq_h.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
     for (CSeqVector_CI it =seq_vec.begin(); it && !found_interval; ++it, i++) {
       if ( it.IsInGap()) continue;
@@ -4123,6 +4159,7 @@ void CBioseq_on_base :: TestOnObj(const CBioseq& bioseq)
     unsigned start_n, i=0;
     string n10_intvls(kEmptyStr), n14_intvls(kEmptyStr);
     CBioseq_Handle bioseq_h = thisInfo.scope->GetBioseqHandle(bioseq);
+    if (!bioseq_h) return;
     CSeqVector seq_vec = bioseq_h.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
     for (CSeqVector_CI it =seq_vec.begin(); it; ++it, i++) {
 // if ( it.IsInGap()) cerr << "is in gap " << (*it) << endl;// gaps represented as 'N's
@@ -4742,6 +4779,7 @@ bool CBioseq_LOCUS_TAGS :: IsLocationDirSub(const CSeq_loc& seq_location)  // no
    if (!seq_id) return false;
    if (seq_id->Which() == CSeq_id::e_Other) return false;
    CBioseq_Handle bioseq_h = thisInfo.scope->GetBioseqHandle(*seq_id);
+   if (bioseq_h) return true;
    CConstRef <CBioseq> bioseq = bioseq_h.GetCompleteBioseq();
    if (bioseq.NotEmpty()) {
       bool ret = true, is_complete = false;
@@ -5917,8 +5955,8 @@ void CBioseq_test_on_rna :: FindtRNAsOnSameStrand()
 
 void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
 {
-  if (thisTest.is_TRRna_run) return;
-  thisTest.is_TRRna_run = true;
+  if (thisTest.is_TRna_run) return;
+  thisTest.is_TRna_run = true;
  
   // FIND_BADLEN_TRNAS
   unsigned len;
@@ -6879,9 +6917,7 @@ void CBioseq_missing_genes_oncaller :: TestOnObj(const CBioseq& bioseq)
   CheckGenesForFeatureType(trna_feat, true);
 
   // ONCALLER_GENE_MISSING
-  if (run_missing 
-         && !m_no_genes.empty() 
-         && thisTest.tests_run.find(GetName_missing()) != thisTest.tests_run.end())
+  if (run_missing && !m_no_genes.empty()) 
     thisInfo.test_item_list[GetName_missing()]
        = NStr::Tokenize(m_no_genes, "$", thisInfo.test_item_list[GetName_missing()]);
 
@@ -6890,8 +6926,7 @@ void CBioseq_missing_genes_oncaller :: TestOnObj(const CBioseq& bioseq)
   m_no_genes = kEmptyStr;
   CheckGenesForFeatureType(all_feat, true);
   m_no_genes = kEmptyStr;
-  if (!m_super_cnt || (thisTest.tests_run.find(GetName_extra()) == thisTest.tests_run.end()) ) 
-        return;
+  if (!m_super_cnt ) return;
   i=0;
   ITERATE (vector <const CSeq_feat*>, it, gene_feat) {
     if (!m_super_idx[i]) continue;
@@ -7220,6 +7255,7 @@ void CBioseqSet_on_class :: FindUnwantedSetWrappers (const CBioseq_set& set)
     if ( (*it)->IsSeq() ) {
        const CBioseq& bioseq = (*it)->GetSeq();
        CBioseq_Handle bioseq_hl = thisInfo.scope->GetBioseqHandle(bioseq);
+       if (!bioseq_hl) continue;
        for (CSeqdesc_CI ci(bioseq_hl, CSeqdesc::e_Source); ci && !m_has_rearranged; ++ci) {
          m_has_rearranged = IsSubSrcPresent( ci->GetSource(), CSubSource::eSubtype_rearranged);
        }
@@ -8909,8 +8945,8 @@ bool CSeqEntry_test_on_biosrc :: FindTrinomialWithoutQualifier(const CBioSource&
   size_t pos;
   ITERATE (Str2Str, it, thisInfo.srcqual_keywords) {
      if ( (pos = NStr::FindNoCase(tax_nm, it->second)) != string::npos) {
-        tax_nm = NStr::TruncateSpaces(CTempString(tax_nm).substr(pos+ (it->second).size()), 
-                                                                         NStr::eTrunc_Begin);
+        tax_nm = CTempString(tax_nm).substr(pos+ (it->second).size());
+        NStr::TruncateSpacesInPlace(tax_nm, NStr::eTrunc_Begin);
         if (!tax_nm.empty()) {
            vector <string> arr;
            GetOrgModValues(biosrc, it->first, arr);
@@ -9521,6 +9557,7 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
 
   CValidError errors;
   CValidError_imp imp(thisInfo.scope->GetObjectManager(),&errors);
+CObjectManager& obj = thisInfo.scope->GetObjectManager();
   CValidError_desc validator(imp);
 
   unsigned i=0, cnt;
@@ -9544,6 +9581,7 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
   bool run_prefix = (thisTest.tests_run.find(GetName_prefix()) != thisTest.tests_run.end());
 
   ITERATE (vector <const CSeqdesc*>, it, user_seqdesc) {
+cerr << "i " << i << endl;
     const CUser_object& user_obj = (*it)->GetUser();
     if ( !(user_obj.GetType().IsStr()) ) { 
          i++; continue;
@@ -9551,16 +9589,6 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
     type_str = user_obj.GetType().GetStr();
     user_desc = GetDiscItemText(**it, *(user_seqdesc_seqentry[i]));
     CBioseq_CI b_ci(*thisInfo.scope, *(user_seqdesc_seqentry[i]));
-
-/*
-    entry_is_seq = false;
-    if (user_seqdesc_seqentry[i]->IsSeq()) {
-          seq_ref = CConstRef <CBioseq> (&(user_seqdesc_seqentry[i]->GetSeq()));
-          bioseq_desc = GetDiscItemText(*seq_ref);
-          entry_is_seq = true;
-    }
-    else set_ref = CConstRef <CBioseq_set> (&(user_seqdesc_seqentry[i]->GetSet()));
-*/
 
     // MISSING_GENOMEASSEMBLY_COMMENTS
     if (run_gcomm && type_str == "StructuredComment"
@@ -9573,14 +9601,6 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
                if (bb_ci->IsNa()) 
                     m_bioseq2geno_comm[GetDiscItemText(*bb_ci->GetCompleteBioseq())] = 0;
             }
-/*
-            if (entry_is_seq) {
-                if (seq_ref->IsNa()
-                     && m_bioseq2geno_comm.find(bioseq_desc)== m_bioseq2geno_comm.end()) // !=?
-                m_bioseq2geno_comm[bioseq_desc] = 0;
-            }
-            else RmvBioseqsOfSetOutMap(*set_ref);
-*/
     }
 
     // TEST_HAS_PROJECT_ID
@@ -9598,19 +9618,6 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
               thisInfo.test_item_list[GetName_proj()].push_back("nuc$" + bioseq_desc);
          }
       }
-/*
-      if (entry_is_seq) {
-          if ( seq_ref->IsAa() ) {
-              PROJECT_ID_prot[id].push_back(bioseq_desc);
-              thisInfo.test_item_list[GetName_proj()].push_back("prot$" + bioseq_desc);
-          }
-          else {
-              PROJECT_ID_nuc[id].push_back(bioseq_desc);
-              thisInfo.test_item_list[GetName_proj()].push_back("nuc$" + bioseq_desc);
-          }
-      }
-      else GroupAllBioseqs(*set_ref, id);
-*/
     }
 
     // ONCALLER_MISSING_STRUCTURED_COMMENTS, MISSING_STRUCTURED_COMMENT
@@ -9627,18 +9634,6 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
              else bioseq2cnt[bioseq_desc] = cnt;
           }
        }
-/*
-       if (entry_is_seq) {
-         if (!seq_ref->IsAa()) {
-            if (bioseq2cnt.find(bioseq_desc) != bioseq2cnt.end()) {
-                 if (cnt) bioseq2cnt[bioseq_desc] 
-                            = bioseq2cnt[bioseq_desc] ? bioseq2cnt[bioseq_desc]++ : cnt;
-            }
-            else bioseq2cnt[bioseq_desc] = cnt;
-         }
-       }
-       else CheckCommentCountForSet(*set_ref, cnt, bioseq2cnt);
-*/
     }
 
     // MISSING_PROJECT
@@ -9647,7 +9642,6 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
        for (CBioseq_CI bb_ci = b_ci; bb_ci; ++bb_ci) 
           thisInfo.test_item_list[GetName_mproj()].push_back(
                             GetDiscItemText( *(bb_ci->GetCompleteBioseq())) );
-//       AddBioseqsInSeqentryToReport(user_seqdesc_seqentry[i], GetName_mproj());
     }
 
     // ONCALLER_BIOPROJECT_ID
@@ -9659,20 +9653,14 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
            thisInfo.test_item_list[GetName_bproj()].push_back(
                             GetDiscItemText( *(bb_ci->GetCompleteBioseq())) );
          }
-/*
-         if (entry_is_seq) 
-              thisInfo.test_item_list[GetName_bproj()].push_back(bioseq_desc);
-         else 
-            AddBioseqsOfSetToReport(*set_ref, GetName_bproj());
-*/
        }
     }
 
     // ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX
     if (run_prefix && type_str == "StructuredComment"   // 3 cond. added for C++ api
                     && user_obj.HasField("StructuredCommentPrefix") 
-                    && user_obj.HasField("StructuredCommentSuffix")
-                    && validator.ValidateStructuredComment(user_obj, **it))
+                    && user_obj.HasField("StructuredCommentSuffix"))
+// temp. off                    && validator.ValidateStructuredComment(user_obj, **it))
        thisInfo.test_item_list[GetName_prefix()].push_back(user_desc); 
 
     i++;
@@ -9974,7 +9962,8 @@ bool CSeqEntry_ONCALLER_STRAIN_TAXNAME_CONFLICT :: StrainConflictsTaxname(const 
         ITERATE (vector <string>, it, thisInfo.strain_tax) {
           len = (*it).size();
           if (NStr::EqualNocase((*iit).substr(0, len), *it)) {
-             strtmp = NStr::TruncateSpaces( CTempString(*iit).substr(len) );
+             strtmp = CTempString(*iit).substr(len);
+             NStr::TruncateSpacesInPlace(strtmp);
              if (strtmp != tax_nm) return true;
              break;
           }
@@ -10305,6 +10294,9 @@ bool CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: SeqMatch(const CConstRef <CBioseq>& se
 {
    CBioseq_Handle hdl1 = thisInfo.scope->GetBioseqHandle(*seq1);
    CBioseq_Handle hdl2 = thisInfo.scope->GetBioseqHandle(*seq2);
+   if (!hdl1 && !hdl2) return true;
+   else if (!hdl1 || !hdl2) return false;
+
    CSeqVector seq_vec1 = hdl1.GetSeqVector(CBioseq_Handle::eCoding_Iupac, eNa_strand_plus); 
    CSeqVector seq_vec2 = hdl2.GetSeqVector(CBioseq_Handle::eCoding_Iupac, eNa_strand_plus); 
    unsigned sz=0;

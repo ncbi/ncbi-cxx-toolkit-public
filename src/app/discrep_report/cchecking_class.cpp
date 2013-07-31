@@ -58,6 +58,104 @@ bool CCheckingClass :: CanGetOrgMod(const CBioSource& biosrc)
   else return false;
 };
 
+CCheckingClass :: CCheckingClass() : num_bioseq(0)
+{
+   // subtypes cover type: RBS, exon and intron for IMP;
+   sel_seqfeat.IncludeFeatType(CSeqFeatData::e_Gene)
+              .IncludeFeatType(CSeqFeatData::e_Cdregion)
+              .IncludeFeatType(CSeqFeatData::e_Rna)
+              .IncludeFeatSubtype(CSeqFeatData::eSubtype_RBS)
+              .IncludeFeatSubtype(CSeqFeatData::eSubtype_exon)
+              .IncludeFeatSubtype(CSeqFeatData::eSubtype_intron)
+              .IncludeFeatType(CSeqFeatData::e_Prot);
+
+   sel_seqfeat_4_seq_entry.IncludeFeatType(CSeqFeatData::e_Pub)
+                          .IncludeFeatType(CSeqFeatData::e_Biosrc);
+
+   sel_seqdesc.reserve(6);
+   sel_seqdesc.push_back(CSeqdesc::e_Pub);
+   sel_seqdesc.push_back(CSeqdesc::e_Comment);
+   sel_seqdesc.push_back(CSeqdesc::e_Source);
+   sel_seqdesc.push_back(CSeqdesc::e_Title);
+   sel_seqdesc.push_back(CSeqdesc::e_User);
+   sel_seqdesc.push_back(CSeqdesc::e_Org);
+
+   sel_seqdesc_4_bioseq.reserve(5);
+   sel_seqdesc_4_bioseq.push_back(CSeqdesc::e_Source);
+   sel_seqdesc_4_bioseq.push_back(CSeqdesc::e_Molinfo);
+   sel_seqdesc_4_bioseq.push_back(CSeqdesc::e_Title);
+   sel_seqdesc_4_bioseq.push_back(CSeqdesc::e_User);
+   sel_seqdesc_4_bioseq.push_back(CSeqdesc::e_Genbank);
+
+   m_vec_sf.push_back(&CTestAndRepData :: all_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: bioseq_biosrc_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: biosrc_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: biosrc_orgmod_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: biosrc_subsrc_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: cd_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: D_loop_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: exon_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: gap_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: gene_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: intron_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: miscfeat_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: mix_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: mrna_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: non_prot_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: org_orgmod_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: otherRna_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: promoter_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: prot_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: pub_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: rbs_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: rna_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: repeat_region_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: rna_not_mrna_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: rrna_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: trna_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: utr3_feat);
+   m_vec_sf.push_back(&CTestAndRepData :: utr5_feat);
+
+   m_vec_desc.push_back(&CTestAndRepData :: bioseq_biosrc_seqdesc);
+   m_vec_desc.push_back(&CTestAndRepData :: bioseq_genbank);
+   m_vec_desc.push_back(&CTestAndRepData :: bioseq_molinfo);
+   m_vec_desc.push_back(&CTestAndRepData :: bioseq_title);
+   m_vec_desc.push_back(&CTestAndRepData :: bioseq_user);
+   m_vec_desc.push_back(&CTestAndRepData :: biosrc_orgmod_seqdesc);
+   m_vec_desc.push_back(&CTestAndRepData :: biosrc_seqdesc);
+   m_vec_desc.push_back(&CTestAndRepData :: biosrc_subsrc_seqdesc);
+   m_vec_desc.push_back(&CTestAndRepData :: comm_seqdesc);
+   m_vec_desc.push_back(&CTestAndRepData :: molinfo_seqdesc);
+   m_vec_desc.push_back(&CTestAndRepData :: org_orgmod_seqdesc);
+   m_vec_desc.push_back(&CTestAndRepData :: pub_seqdesc);
+   m_vec_desc.push_back(&CTestAndRepData :: title_seqdesc);
+   m_vec_desc.push_back(&CTestAndRepData :: user_seqdesc);
+
+   m_vec_entry.push_back(&CTestAndRepData :: biosrc_orgmod_seqdesc_seqentry);
+   m_vec_entry.push_back(&CTestAndRepData :: biosrc_seqdesc_seqentry);
+   m_vec_entry.push_back(&CTestAndRepData :: biosrc_subsrc_seqdesc_seqentry);
+   m_vec_entry.push_back(&CTestAndRepData :: comm_seqdesc_seqentry);
+   m_vec_entry.push_back(&CTestAndRepData :: molinfo_seqdesc_seqentry);
+   m_vec_entry.push_back(&CTestAndRepData :: org_orgmod_seqdesc_seqentry);
+   m_vec_entry.push_back(&CTestAndRepData :: pub_seqdesc_seqentry);
+   m_vec_entry.push_back(&CTestAndRepData :: title_seqdesc_seqentry);
+   m_vec_entry.push_back(&CTestAndRepData :: user_seqdesc_seqentry);
+};
+
+void CCheckingClass :: x_Clean()
+{
+   NON_CONST_ITERATE (vector <vector <const CSeq_feat*> * >, it, m_vec_sf) {
+     if ( !(*it)->empty() ) (*it)->clear();
+   };
+
+   NON_CONST_ITERATE (vector < vector <const CSeqdesc*> * >, it, m_vec_desc) {
+       if ( !(*it)->empty() ) (*it)->clear();
+   };
+
+   NON_CONST_ITERATE (vector < vector <const CSeq_entry*> * >, it, m_vec_entry) {
+       if ( !(*it)->empty() ) (*it)->clear();
+   };
+};
 
 void CCheckingClass :: CollectSeqdescFromSeqEntry(const CSeq_entry_Handle& seq_entry_h)
 {
@@ -110,11 +208,10 @@ void CCheckingClass :: CollectSeqdescFromSeqEntry(const CSeq_entry_Handle& seq_e
      }
    } 
 };
- 
-
 
 void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
 {
+ // cerr << "CheckSeqEntry " << CTime(CTime::eCurrent).AsString() << endl;
   // ini.
   thisTest.is_BIOSRC_run = false;
   thisTest.is_BIOSRC1_run = false;
@@ -132,12 +229,6 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
 
   if (!CRepConfig::tests_on_SeqEntry_feat_desc.empty()) {
      CSeq_entry_Handle seq_entry_h = thisInfo.scope->GetSeq_entryHandle(*seq_entry);
-
-     CTestAndRepData::pub_feat.clear();
-     CTestAndRepData::biosrc_feat.clear();
-     CTestAndRepData::biosrc_orgmod_feat.clear();
-     CTestAndRepData::biosrc_subsrc_feat.clear();
-     CTestAndRepData::org_orgmod_feat.clear();
 
      for (CFeat_CI feat_it(seq_entry_h, sel_seqfeat_4_seq_entry); feat_it; ++feat_it) {
         const CSeq_feat& seq_feat = (feat_it->GetOriginalFeature());
@@ -160,49 +251,17 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
         }
      }
 
-     CTestAndRepData :: molinfo_seqdesc.clear();
-     CTestAndRepData :: pub_seqdesc.clear();
-     CTestAndRepData :: comm_seqdesc.clear();
-     CTestAndRepData :: biosrc_seqdesc.clear();
-     CTestAndRepData :: biosrc_orgmod_seqdesc.clear();
-     CTestAndRepData :: biosrc_subsrc_seqdesc.clear();
-     CTestAndRepData :: title_seqdesc.clear();
-     CTestAndRepData :: user_seqdesc.clear();
-     CTestAndRepData :: org_orgmod_seqdesc.clear();
-
-     CTestAndRepData :: molinfo_seqdesc_seqentry.clear();
-     CTestAndRepData :: pub_seqdesc_seqentry.clear();
-     CTestAndRepData :: comm_seqdesc_seqentry.clear();
-     CTestAndRepData :: biosrc_seqdesc_seqentry.clear();
-     CTestAndRepData :: biosrc_orgmod_seqdesc_seqentry.clear();
-     CTestAndRepData :: biosrc_subsrc_seqdesc_seqentry.clear();
-     CTestAndRepData :: title_seqdesc_seqentry.clear();
-     CTestAndRepData :: user_seqdesc_seqentry.clear();
-     CTestAndRepData :: org_orgmod_seqdesc_seqentry.clear();
-
      CollectSeqdescFromSeqEntry(seq_entry_h);
 
      GoTests(CRepConfig :: tests_on_SeqEntry_feat_desc, *seq_entry);
   }
 
   GoTests(CRepConfig :: tests_on_SeqEntry, *seq_entry);
+
+  // clean
+  x_Clean();
+ // cerr << "end " << CTime(CTime::eCurrent).AsString() << endl;
 }
-
-
-void CCheckingClass :: CheckGbQual (const vector < CRef< CGb_qual > >& gb_quals)
-{
-    has_locus_tag = false;
-    ITERATE (vector <CRef< CGb_qual > >, it, gb_quals) {
-//         if ((gb_quals[i])->CanGetQual() && (gb_quals[i])->GetQual()== "locus_tag") {
-         if ( (*it)->CanGetQual() && (*it)->GetQual()== "locus_tag") {
-            has_locus_tag = true;
-            num_qual_locus_tag ++;
-            return;
-         }
-         else has_locus_tag = false;
-    }
-
-} // CheckGbQual
 
 bool CCheckingClass :: SortByFrom(const CSeq_feat* seqfeat1, const CSeq_feat* seqfeat2)
 {
@@ -210,22 +269,23 @@ bool CCheckingClass :: SortByFrom(const CSeq_feat* seqfeat1, const CSeq_feat* se
                           < seqfeat2->GetLocation().GetStart(eExtreme_Positional));
 };
 
-
-
 void CCheckingClass :: CheckBioseqSet ( CBioseq_set& bioseq_set)
 {
+ // cerr << "CheckBioseqSet " << CTime(CTime::eCurrent).AsString() << endl;
    thisTest.is_BioSet_run = false;
    GoTests(CRepConfig::tests_on_BioseqSet, bioseq_set); 
+ // cerr << "end " << CTime(CTime::eCurrent).AsString() << endl;
 };
-
 
 void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
 {
+// cerr << "bioseq " << ++num_bioseq << endl;
 // ini.
    thisTest.is_Aa_run = false;
    thisTest.is_AllAnnot_run = false;
    thisTest.is_BacPartial_run = false;
    thisTest.is_Bases_N_run = false;
+   thisTest.is_BASES_N_run = false; // no needed?
    thisTest.is_CDs_run = false;
    thisTest.is_CdTransl_run = false;
    thisTest.is_Genes_run = false;
@@ -236,7 +296,7 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
    thisTest.is_mRNA_run = false;
    thisTest.is_Prot_run = false;
    thisTest.is_ProtFeat_run = false;
-   thisTest.is_TRRna_run = false;
+   thisTest.is_TRna_run = false;
    thisTest.is_RRna_run = false;
    thisTest.is_SusPhrase_run = false;
    thisTest.is_SusProd_run = false;
@@ -324,51 +384,6 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
               }
           default: break;
         }
-
-/*
-        if (seq_feat_dt.IsGene()) CTestAndRepData::gene_feat.push_back(&seq_feat);
-        else if (seq_feat_dt.IsProt()) CTestAndRepData::prot_feat.push_back(&seq_feat);
-        else  if (seq_feat_dt.IsCdregion()) {
-               CTestAndRepData::cd_feat.push_back(&seq_feat);
-               CTestAndRepData::mix_feat.push_back(&seq_feat);
-        }
-        else if (seq_feat_dt.IsRna()) {
-               CTestAndRepData::rna_feat.push_back(&seq_feat); 
-               CSeqFeatData::ESubtype subtp = seq_feat_dt.GetSubtype();
-               if (subtp != CSeqFeatData :: eSubtype_mRNA) {
-                 CTestAndRepData::rna_not_mrna_feat.push_back(&seq_feat);
-                 if (subtp == CSeqFeatData :: eSubtype_rRNA)
-                      CTestAndRepData :: rrna_feat.push_back(&seq_feat);
-               }
-               CTestAndRepData::mix_feat.push_back(&seq_feat);
-        }
-        else if (seq_feat_dt.IsImp()) {
-              CSeqFeatData::ESubtype subtp = seq_feat_dt.GetSubtype();
-              switch (subtp) {
-                case CSeqFeatData::eSubtype_D_loop:
-                    CTestAndRepData::D_loop_feat.push_back(&seq_feat);
-                    break;
-                case CSeqFeatData::eSubtype_repeat_region:
-                    CTestAndRepData::repeat_region_feat.push_back(&seq_feat);
-                    break;
-                case CSeqFeatData::eSubtype_RBS :
-                    CTestAndRepData::rbs_feat.push_back(&seq_feat);
-                    CTestAndRepData::mix_feat.push_back(&seq_feat);
-                    break;
-                case CSeqFeatData::eSubtype_intron :
-                     CTestAndRepData::intron_feat.push_back(&seq_feat);
-                     CTestAndRepData::mix_feat.push_back(&seq_feat);
-                     break;
-                case CSeqFeatData::eSubtype_exon:
-                     CTestAndRepData::mix_feat.push_back(&seq_feat);
-                     break;
-                case CSeqFeatData :: eSubtype_misc_feature:
-                     CTestAndRepData :: miscfeat_feat.push_back(&seq_feat);
-                     break;
-                default: break;
-              }
-        } 
-*/
      }
 
 // CFeat_CI is sorted:
@@ -397,10 +412,6 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
         }
 
         GoTests(CRepConfig::tests_on_Bioseq_CFeat_CSeqdesc, bioseq);
-
-        CTestAndRepData::bioseq_biosrc_seqdesc.clear();
-        CTestAndRepData::bioseq_molinfo.clear();
-        CTestAndRepData::bioseq_title.clear();
      }
 
      if (!CRepConfig::tests_on_Bioseq_CFeat.empty())
@@ -408,26 +419,6 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
      if (!CRepConfig::tests_on_Bioseq_CFeat_NotInGenProdSet.empty()
                                && !CTestAndRepData::IsmRNASequenceInGenProdSet(bioseq))
                GoTests(CRepConfig::tests_on_Bioseq_CFeat_NotInGenProdSet, bioseq);
-
-     CTestAndRepData::gene_feat.clear();
-     CTestAndRepData::bioseq_biosrc_feat.clear();
-     CTestAndRepData::mix_feat.clear();
-     CTestAndRepData::cd_feat.clear();
-     CTestAndRepData::rna_feat.clear();
-     CTestAndRepData::rna_not_mrna_feat.clear();
-     CTestAndRepData::prot_feat.clear();
-     CTestAndRepData::pub_feat.clear();
-     CTestAndRepData::all_feat.clear();
-     CTestAndRepData::non_prot_feat.clear();
-     CTestAndRepData::rrna_feat.clear();
-     CTestAndRepData::miscfeat_feat.clear();
-     CTestAndRepData::otherRna_feat.clear();
-     CTestAndRepData::utr3_feat.clear();
-     CTestAndRepData::utr5_feat.clear();
-     CTestAndRepData::promoter_feat.clear();
-     CTestAndRepData::mrna_feat.clear();
-     CTestAndRepData::trna_feat.clear();
-     CTestAndRepData::gap_feat.clear();
    }
 
 /*
@@ -453,6 +444,10 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
 
    if (bioseq.IsAa() && !CRepConfig::tests_on_Bioseq_aa.empty())
         GoTests(CRepConfig::tests_on_Bioseq_aa, bioseq);        
+
+   // clean
+   x_Clean();
+
 } // CheckBioseq
 
 
@@ -501,37 +496,6 @@ void CCheckingClass :: CollectRepData()
   GoGetRep(CRepConfig::tests_on_Bioseq_CFeat_CSeqdesc);
 
 // clean
-  CTestAndRepData :: pub_feat.clear();
-  CTestAndRepData :: biosrc_feat.clear();
-  CTestAndRepData :: pub_seqdesc.clear();
-  CTestAndRepData :: biosrc_seqdesc.clear();
-  CTestAndRepData :: title_seqdesc.clear();
-
-/*
-  auto_ptr < CTestAndRepData > disc_repdt (CTestAndRepData::factory("none"));
-  Str2Strs :: iterator it;
-  ITERATE (Str2Strs, it, thisInfo.test_item_list) {
-       CRef < CClickableItem > c_item (new CClickableItem);
-       c_item->setting_name = it->first;
-       c_item->item_list = it->second;
-
-       disc_repdt.reset(CTestAndRepData::factory(it->first));
-       if (disc_repdt.get()) 
-            disc_repdt->GetReport( c_item, it->first, it->second);
-  }
-*/
-/*
-  unsigned i, j;
-  for (i=0; i< CRepConfig::tests_on_Bioseq.size(); i++) {
-       disc_repdt = auto_ptr <CTestAndRepData> 
-                       (CTestAndRepData::factory(CRepConfig::tests_on_Bioseq[i]));
-       for (j=0; j<bioseq_ls.size(); j++) 
-                               disc_testrep->TestOnObj(*(bioseq_ls[j]));
-       disc_testrep->GetReport();
-  }
-*/
+  x_Clean();
 
 } // CollectRepData()
-
-
-

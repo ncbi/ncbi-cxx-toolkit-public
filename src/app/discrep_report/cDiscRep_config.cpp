@@ -33,6 +33,9 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <objtools/readers/reader_base.hpp>
+#include <objtools/readers/fasta.hpp>
 
 #include <sstream>
 
@@ -58,6 +61,9 @@ static vector <string> arr;
 // Initialization
 CRef < CScope >                        CDiscRepInfo :: scope;
 string				       CDiscRepInfo :: infile;
+string				       CDiscRepInfo :: directory;
+string				       CDiscRepInfo :: suffix;
+bool				       CDiscRepInfo :: dorecurse;
 vector < CRef < CClickableItem > >     CDiscRepInfo :: disc_report_data;
 Str2Strs                               CDiscRepInfo :: test_item_list;
 COutputConfig                          CDiscRepInfo :: output_config;
@@ -144,18 +150,18 @@ vector <string>                      CDiscRepInfo :: tests_enabled;
 vector <string>                      CDiscRepInfo :: tests_disabled;
 vector <string>                      CDiscRepInfo :: suspect_phrases;
 
-vector < CRef <CTestAndRepData> > CRepConfig :: tests_on_Bioseq;
-vector < CRef <CTestAndRepData> > CRepConfig :: tests_on_Bioseq_aa;
-vector < CRef <CTestAndRepData> > CRepConfig :: tests_on_Bioseq_na;
-vector < CRef <CTestAndRepData> > CRepConfig :: tests_on_Bioseq_CFeat;
-vector < CRef <CTestAndRepData> > CRepConfig :: tests_on_Bioseq_CFeat_NotInGenProdSet;
-vector < CRef <CTestAndRepData> > CRepConfig :: tests_on_Bioseq_NotInGenProdSet;
-vector < CRef <CTestAndRepData> > CRepConfig :: tests_on_Bioseq_CFeat_CSeqdesc;
-vector < CRef <CTestAndRepData> > CRepConfig :: tests_on_SeqEntry;
-vector < CRef <CTestAndRepData> > CRepConfig :: tests_on_SeqEntry_feat_desc;
-vector < CRef <CTestAndRepData> > CRepConfig :: tests_4_once;
-vector < CRef <CTestAndRepData> > CRepConfig :: tests_on_BioseqSet;
-vector < CRef <CTestAndRepData> > CRepConfig :: tests_on_SubmitBlk;
+vector < CRef <CTestAndRepData> >    CRepConfig :: tests_on_Bioseq;
+vector < CRef <CTestAndRepData> >    CRepConfig :: tests_on_Bioseq_aa;
+vector < CRef <CTestAndRepData> >    CRepConfig :: tests_on_Bioseq_na;
+vector < CRef <CTestAndRepData> >    CRepConfig :: tests_on_Bioseq_CFeat;
+vector < CRef <CTestAndRepData> >    CRepConfig :: tests_on_Bioseq_CFeat_NotInGenProdSet;
+vector < CRef <CTestAndRepData> >    CRepConfig :: tests_on_Bioseq_NotInGenProdSet;
+vector < CRef <CTestAndRepData> >    CRepConfig :: tests_on_Bioseq_CFeat_CSeqdesc;
+vector < CRef <CTestAndRepData> >    CRepConfig :: tests_on_SeqEntry;
+vector < CRef <CTestAndRepData> >    CRepConfig :: tests_on_SeqEntry_feat_desc;
+vector < CRef <CTestAndRepData> >    CRepConfig :: tests_4_once;
+vector < CRef <CTestAndRepData> >    CRepConfig :: tests_on_BioseqSet;
+vector < CRef <CTestAndRepData> >    CRepConfig :: tests_on_SubmitBlk;
 set <string> CDiscTestInfo :: tests_run;
 
 
@@ -180,6 +186,7 @@ const char* fix_type_names[] = {
 
 void CRepConfig :: InitParams(const IRWRegistry& reg)
 {
+// cerr << "InitParams " << CTime(CTime::eCurrent).AsString() << endl;
     int i;
 
     // get other parameters from *.ini
@@ -933,12 +940,16 @@ cerr << "222can get\n";
 
    strs.clear();
    arr.clear();
+// cerr << "end " << CTime(CTime::eCurrent).AsString() << endl;
 };
 
-void CRepConfig :: ReadArgs(Str2Str& args)
+void CRepConfig :: ProcessArgs(Str2Str& args)
 {
-    // input file
-    thisInfo.infile = args["i"];
+    // input file/path
+    thisInfo.infile = (args.find("i") != args.end()) ? args["i"] : kEmptyStr;
+    thisInfo.directory = (args.find("p") != args.end()) ? args["p"] : kEmptyStr;
+    thisInfo.suffix = args["x"];
+    thisInfo.dorecurse = (args["u"] == "1") ? true : false;
 
     // report category
     thisInfo.report = args["P"];
@@ -948,16 +959,14 @@ void CRepConfig :: ReadArgs(Str2Str& args)
 
     // output
     string output_f = args["o"];
-    if (output_f.empty()) {
-       vector <string> infile_path;
-       infile_path = NStr::Tokenize(thisInfo.infile, "/", infile_path);
-       strtmp = infile_path[infile_path.size()-1];
-       size_t pos = strtmp.find(".");
-       if (pos != string::npos) strtmp = strtmp.substr(0, pos);
-       infile_path[infile_path.size()-1] = strtmp + ".dr";
-       output_f = NStr::Join(infile_path, "/");
+    if (output_f.empty() && !thisInfo.infile.empty()) {
+       CFile file(thisInfo.infile);
+       output_f = file.GetBase();
+       output_f = file.GetDir() + output_f + ".dr";
     }
-    thisInfo.output_config.output_f.open(output_f.c_str());
+    thisInfo.output_config.output_f =
+        output_f.empty()? 0: (new CNcbiOfstream(output_f.c_str()));
+    // thisInfo.output_config.output_f.open(output_f.c_str());
     strtmp = args["S"];
     thisInfo.output_config.summary_report 
         = (NStr::EqualNocase(strtmp, "true") || NStr::EqualNocase(strtmp, "t")) ? true : false;
@@ -976,38 +985,25 @@ void CRepConfig :: ReadArgs(Str2Str& args)
 
 void CRepConfig :: ReadArgs(const CArgs& args) 
 {
+// cerr << "ReadArgs " << CTime(CTime::eCurrent).AsString() << endl;
+    Str2Str arg_map;
     // input file
-    thisInfo.infile = args["i"].AsString();
-
-    // report category
-    thisInfo.report = args["P"].AsString();
-    thisInfo.output_config.add_output_tag = (thisInfo.report == "t") ? true : false;
-    thisInfo.output_config.add_extra_output_tag = (thisInfo.report == "s") ? true : false;
-    if (thisInfo.report == "t" || thisInfo.report == "s") thisInfo.report = "Discrepancy";
-
+    if (args["i"]) arg_map["i"] = args["i"].AsString();
+    // reprot category
+    arg_map["P"] = args["P"].AsString();
     // output
-    string output_f = args["o"].AsString();
-    if (output_f.empty()) {
-       vector <string> infile_path;
-       infile_path = NStr::Tokenize(thisInfo.infile, "/", infile_path);
-       strtmp = infile_path[infile_path.size()-1];
-       size_t pos = strtmp.find(".");
-       if (pos != string::npos) strtmp = strtmp.substr(0, pos);
-       infile_path[infile_path.size()-1] = strtmp + ".dr";
-       output_f = NStr::Join(infile_path, "/");
-    }
-    thisInfo.output_config.output_f.open(output_f.c_str());
-    thisInfo.output_config.summary_report = args["S"].AsBoolean();
-
+    arg_map["o"] = args["o"].AsString();
+    arg_map["S"] = args["S"].AsBoolean();
     // enabled and disabled tests
-    strtmp = args["e"].AsString();
-    if (!strtmp.empty()) 
-          thisInfo.tests_enabled 
-              = NStr::Tokenize(strtmp, ", ", thisInfo.tests_enabled, NStr::eMergeDelims);
-    strtmp = args["d"].AsString();
-    if (!strtmp.empty())
-         thisInfo.tests_disabled 
-              = NStr::Tokenize(strtmp, ", ", thisInfo.tests_disabled, NStr::eMergeDelims);
+    arg_map["e"] = args["e"].AsString();
+    arg_map["d"] = args["d"].AsString();
+    // input directory
+    if (args["p"]) arg_map["p"] = args["p"].AsString();
+    arg_map["x"] = args["x"].AsString();
+    arg_map["u"] = args["u"].AsString();
+
+    ProcessArgs(arg_map);
+// cerr << "end " << CTime(CTime::eCurrent).AsString() << endl;
 };
 
 CRef <CSearch_func> CRepConfig :: MakeSimpleSearchFunc(const string& match_text, bool whole_word)
@@ -1060,7 +1056,7 @@ void CRepConfig :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
 
     // collect disc report
     myChecker.CollectRepData();
-    // cout << "Number of seq-feats: " << myChecker.GetNumSeqFeats() << endl;
+    cout << "Number of bioseq: " << myChecker.GetNumBioseq() << endl;
 
 };  // CheckThisSeqEntry()
 
@@ -2269,8 +2265,98 @@ if (i >= sz) return;
    NCBI_THROW(CException, eUnknown, "Some requested tests are unrecognizable.");
 };
 
-void CRepConfig :: Run()
+void CRepConfig :: x_ReadAsn1(const string& infile, ESerialDataFormat datafm)
 {
+    auto_ptr <CObjectIStream> ois (CObjectIStream::Open(datafm, infile));
+    CRef <CSeq_entry> seq_entry (new CSeq_entry);
+    strtmp = ois->ReadFileHeader();
+    ois->SetStreamPos(0);
+    if (strtmp == "Seq-submit") {
+       *ois >> thisInfo.seq_submit.GetObject();
+       if (thisInfo.seq_submit->IsEntrys()) {
+         ITERATE (list <CRef <CSeq_entry> >, it, thisInfo.seq_submit->GetData().GetEntrys())
+            CheckThisSeqEntry(*it);
+       }
+    }
+    else if (strtmp == "Seq-entry") {
+       *ois >> *seq_entry;
+       CheckThisSeqEntry(seq_entry);
+    }
+    else if (strtmp == "Bioseq") {
+       CRef <CBioseq> bioseq (new CBioseq);
+       *ois >> *bioseq;
+       seq_entry->SetSeq(*bioseq);
+       CheckThisSeqEntry(seq_entry);
+    }
+    else if (strtmp == "Bioseq-set") {
+       CRef <CBioseq_set> seq_set(new CBioseq_set);
+       *ois >> *seq_set;
+       seq_entry->SetSet(*seq_set);
+       CheckThisSeqEntry(seq_entry);
+    }
+    else NCBI_THROW(CException, eUnknown, "Couldn't read type [" + strtmp + "]");
+    
+    ois->Close();
+};
+
+void CRepConfig :: x_ReadFasta(const string& infile)
+{
+   auto_ptr <CReaderBase> reader (CReaderBase::GetReader(CFormatGuess::eFasta)); // flags?
+   if (!reader.get())
+       NCBI_THROW(CException, eUnknown, "File format not supported");
+   CRef <CSerialObject> obj = reader->ReadObject(*(new CNcbiIfstream(infile.c_str())));
+   if (!obj) NCBI_THROW(CException, eUnknown, "Couldn't read file " + infile);
+   CSeq_entry& seq_entry = dynamic_cast <CSeq_entry&>(obj.GetObject());
+   seq_entry.ResetParentEntry();
+   CheckThisSeqEntry(CRef <CSeq_entry> (&seq_entry));
+};
+
+void CRepConfig :: x_ProcessOneFile(const string& infile)
+{
+   CFormatGuess::EFormat f_fmt = CFormatGuess::Format(infile);
+   switch (f_fmt) {
+      case CFormatGuess :: eBinaryASN:
+          x_ReadAsn1(infile, eSerial_AsnBinary);
+          break;
+      case CFormatGuess :: eTextASN:
+          x_ReadAsn1(infile, eSerial_AsnText); 
+          break;
+      case CFormatGuess :: eFlatFileSequence:
+          break;
+      case CFormatGuess :: eFasta:
+          x_ReadFasta(infile);
+          break;
+      default:
+          NCBI_THROW(CException, eUnknown, 
+              "File format: " + NStr::UIntToString((unsigned)f_fmt) + " not supported");
+   }
+};
+
+void CRepConfig :: x_ProcessDir(const CDir& dir, const string& suffix, bool dorecurse, bool one_ofile, CRepConfig* config)
+{
+   CDir::TGetEntriesFlags flag = dorecurse ? 0 : CDir::fIgnoreRecursive ;
+   list <AutoPtr <CDirEntry> > entries = dir.GetEntries(kEmptyStr, flag);
+unsigned i=0;
+   ITERATE (list <AutoPtr <CDirEntry> >, it, entries) {
+     if ((*it)->GetExt() == suffix) {
+cerr << (*it)->GetDir() + (*it)->GetName() << endl;
+        if ( i > 32)
+               x_ProcessOneFile((*it)->GetDir() + (*it)->GetName());
+        if (!one_ofile) { 
+          thisInfo.output_config.output_f 
+             = new CNcbiOfstream( ( (*it)->GetDir() + (*it)->GetBase() + ".dr" ).c_str());     
+          if ( i> 32)
+                config->Export();
+          thisInfo.test_item_list.clear(); 
+        }
+i++;
+     }
+   }
+};
+
+void CRepConfig :: Run(CRepConfig* config)
+{
+ cerr << "Run " << CTime(CTime::eCurrent).AsString() << endl;
    tests_on_Bioseq.reserve(50);
    tests_on_Bioseq_aa.reserve(50);
    tests_on_Bioseq_na.reserve(50);
@@ -2306,29 +2392,40 @@ void CRepConfig :: Run()
   
    CollectTests();
   
-   // read input file and go tests
-    CRef <CSeq_entry> seq_entry (new CSeq_entry);
-    set <const CTypeInfo*> known_tp;
-    known_tp.insert(CSeq_submit::GetTypeInfo());
-    auto_ptr <CObjectIStream> ois (CObjectIStream::Open(eSerial_AsnText,
-                                                            thisInfo.infile));
-    set <const CTypeInfo*> matching_tp = ois->GuessDataType(known_tp);
-    if (matching_tp.size() == 1 && *(matching_tp.begin()) == CSeq_submit :: GetTypeInfo()) {
-         *ois >> *thisInfo.seq_submit;
-         if (thisInfo.seq_submit->IsEntrys()) {
-             ITERATE (list <CRef <CSeq_entry> >,it,thisInfo.seq_submit->GetData().GetEntrys())
-                CheckThisSeqEntry(*it);
+   // read input file/path and go tests
+   if (thisInfo.directory.empty() && thisInfo.infile.empty())
+         NCBI_THROW(CException, eUnknown, "Input path or input file must be specified");
+   if (!thisInfo.directory.empty()) {
+     CDir dir(thisInfo.directory);
+     if (!dir.Exists()) {
+         if (!CFile(thisInfo.infile).Exists()) 
+            NCBI_THROW(CException, eUnknown, "Input path or input file must exist");
+         else {
+              x_ProcessOneFile(thisInfo.infile);
+              config->Export();
          }
-    }
-    else {
-        *ois >> *seq_entry;
-        CheckThisSeqEntry(seq_entry);
-    }
+     }
+     else {
+       bool one_ofile = (bool)thisInfo.output_config.output_f; 
+       x_ProcessDir(dir, thisInfo.suffix, thisInfo.dorecurse, one_ofile, config);
+       if (one_ofile) config->Export();
+     }
+   }
+   else {
+     if (!CFile(thisInfo.infile).Exists())
+            NCBI_THROW(CException, eUnknown, "Input file must exist");
+     else {
+              x_ProcessOneFile(thisInfo.infile);
+              config->Export();
+     }
+   }
+   thisInfo.test_item_list.clear();
 
     cout << "disc_rep.size()  " << thisInfo.disc_report_data.size() << endl;
 
     // Exit
     thisInfo.tax_db_conn.Fini();
+cerr << "end " << CTime(CTime::eCurrent).AsString() << endl;
 }; // Run()
 
 

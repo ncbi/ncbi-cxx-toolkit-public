@@ -61,41 +61,10 @@ namespace DiscRepNmSpc{
    class CCheckingClass 
    {
       public:
-         CCheckingClass() :
-             num_seq_feats(0),
-             num_qual_locus_tag(0)
-             {
-                // subtypes cover type: RBS, exon and intron for IMP;
-                sel_seqfeat.IncludeFeatType(CSeqFeatData::e_Gene)
-                           .IncludeFeatType(CSeqFeatData::e_Cdregion)
-                           .IncludeFeatType(CSeqFeatData::e_Rna)
-                           .IncludeFeatSubtype(CSeqFeatData::eSubtype_RBS)
-                           .IncludeFeatSubtype(CSeqFeatData::eSubtype_exon)
-                           .IncludeFeatSubtype(CSeqFeatData::eSubtype_intron)
-                           .IncludeFeatType(CSeqFeatData::e_Prot);
-
-                sel_seqfeat_4_seq_entry.IncludeFeatType(CSeqFeatData::e_Pub)
-                                       .IncludeFeatType(CSeqFeatData::e_Biosrc);
-
-                sel_seqdesc.reserve(10);
-                sel_seqdesc.push_back(CSeqdesc::e_Pub);
-                sel_seqdesc.push_back(CSeqdesc::e_Comment);
-                sel_seqdesc.push_back(CSeqdesc::e_Source);
-                sel_seqdesc.push_back(CSeqdesc::e_Title);
-                sel_seqdesc.push_back(CSeqdesc::e_User);
-                sel_seqdesc.push_back(CSeqdesc::e_Org);
-
-                sel_seqdesc_4_bioseq.reserve(10);
-                sel_seqdesc_4_bioseq.push_back(CSeqdesc::e_Source);
-                sel_seqdesc_4_bioseq.push_back(CSeqdesc::e_Molinfo);
-                sel_seqdesc_4_bioseq.push_back(CSeqdesc::e_Title);
-                sel_seqdesc_4_bioseq.push_back(CSeqdesc::e_User);
-                sel_seqdesc_4_bioseq.push_back(CSeqdesc::e_Genbank);
-             }; 
+         CCheckingClass();
 
          void CheckBioseq( CBioseq& bioseq );
-         void CheckSeqInstMol(CSeq_inst& seq_inst, CBioseq& bioseq);
-         void CheckGbQual( const vector < CRef< CGb_qual > >& gb_qual );
+         void CheckSeqInstMol(CSeq_inst& seq_inst, CBioseq& bioseq); // not used
          void CheckSeqEntry ( CRef <CSeq_entry> seq_entry);
          void CheckBioseqSet ( CBioseq_set& bioseq_set);
 
@@ -105,8 +74,8 @@ namespace DiscRepNmSpc{
                return has_locus_tag;
          };
 
-         int GetNumSeqFeats(void) {
-             return num_seq_feats;
+         int GetNumBioseq(void) {
+             return num_bioseq;
          };
 
          template < class T >
@@ -114,9 +83,10 @@ namespace DiscRepNmSpc{
          {
             NON_CONST_ITERATE (vector <CRef <CTestAndRepData> >, it, test_category)
 {
-//cerr << "GetNAme " << (*it)->GetName() << endl;
+cerr << "GetNAme " << (*it)->GetName() << endl;
+// if ( (*it)->GetName() == "MISSING_STRUCTURED_COMMENT")
                   (*it)->TestOnObj(obj);
-//cerr << "done\n";
+ cerr << "done\n";
 }
          };
 
@@ -124,17 +94,21 @@ namespace DiscRepNmSpc{
 
          static bool SortByFrom(const CSeq_feat* seqfeat1, const CSeq_feat* seqfeat2);
 
-      protected:
+      private:
+         void x_Clean();
+
          bool CanGetOrgMod(const CBioSource& biosrc);
          void CollectSeqdescFromSeqEntry(const CSeq_entry_Handle& seq_entry_h);
 
-      private:
          SAnnotSelector sel_seqfeat, sel_seqfeat_4_seq_entry;
          vector <CSeqdesc :: E_Choice> sel_seqdesc, sel_seqdesc_4_bioseq;
 
-         int num_seq_feats;
-         int num_qual_locus_tag;
+         int num_bioseq;
          bool has_locus_tag;
+
+         vector < vector <const CSeq_feat*> * >  m_vec_sf;
+         vector < vector <const CSeqdesc*> * >   m_vec_desc;
+         vector < vector <const CSeq_entry*> * > m_vec_entry; 
    };
 };
 

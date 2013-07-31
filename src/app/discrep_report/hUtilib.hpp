@@ -84,6 +84,7 @@ string Blob2Str(const AsnClass& blob, ESerialDataFormat datafm = eSerial_AsnText
         CNcbiOstrstream oss;
         auto_ptr <CObjectOStream> oos (CObjectOStream::Open(datafm, oss, eNoOwnership));
         *oos << blob;
+        oos->Close();
         return ( CNcbiOstrstreamToString(oss) );
 
 };
@@ -96,9 +97,11 @@ bool Str2Blob(const string& str, AsnClass& blob, ESerialDataFormat datafm=eSeria
         auto_ptr <CObjectIStream> ois (CObjectIStream::Open(datafm, iss));
 	try { 
                 *ois >> blob;
+                ois->Close();
         }
         catch (CSerialException&) {
 
+           ois->Close();
            return false;
         }
 
@@ -112,6 +115,7 @@ void OutBlob(const AsnClass& blob, ESerialDataFormat datafm, string file_nm)
 {
 	auto_ptr <CObjectOStream> oos (CObjectOStream::Open(datafm, file_nm));
 	*oos << blob;
+        oos->Close();
 };
 
 
@@ -120,6 +124,7 @@ void ReadInBlob(AsnClass& blob, string file_nm, ESerialDataFormat datafm=eSerial
 {
         auto_ptr <CObjectIStream> ois (CObjectIStream::Open(datafm, file_nm));
         *ois >> blob;
+        ois->Close();
 };
 
 
