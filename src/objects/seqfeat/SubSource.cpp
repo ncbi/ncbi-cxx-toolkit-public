@@ -1834,6 +1834,7 @@ string CCountries::NewFixCountry (const string& input)
     bool bad_cap = false;
     vector<string> countries;
     string valid_country;
+    string orig_valid_country;
     NStr::Tokenize(input,",:",countries);
     for(vector<string>::iterator country = countries.begin(); country != countries.end(); ++country)
         if (!country->empty() && !too_many_countries)
@@ -1842,9 +1843,14 @@ string CCountries::NewFixCountry (const string& input)
             if (IsValid(*country,bad_cap))
             {
                 if (valid_country.empty())
+                {
                     valid_country = *country;
+                    orig_valid_country = *country;
+                }
                 else
+                {
                     too_many_countries = true;
+                }
             }
             else // see if this is a fixable country
             {
@@ -1852,9 +1858,14 @@ string CCountries::NewFixCountry (const string& input)
                 if (found != k_country_name_fixes.end())
                 {
                     if (valid_country.empty())
+                    {
                         valid_country = found->second;
+                        orig_valid_country = *country;
+                    }
                     else
+                    {
                         too_many_countries = true;
+                    }
                 }
             }
         }
@@ -1872,14 +1883,14 @@ string CCountries::NewFixCountry (const string& input)
     else if(!valid_country.empty() && !too_many_countries)
     {
         // find valid_country in input
-        int pos = NStr::Find(input,valid_country);
+        size_t pos = NStr::Find(input,orig_valid_country);
         // save preceeding string without trailing spaces or delimiters ":,"
         string before = input.substr(0,pos);
         NStr::ReplaceInPlace(before,":"," ");
         NStr::ReplaceInPlace(before,","," ");
         NStr::TruncateSpacesInPlace(before,NStr::eTrunc_End);
         // save trailing string without initial spaces or delimiters
-        string after = input.substr(pos+valid_country.length());
+        string after = input.substr(pos+orig_valid_country.length());
         NStr::ReplaceInPlace(after,":"," ");
         NStr::ReplaceInPlace(after,","," ");
         NStr::TruncateSpacesInPlace(after,NStr::eTrunc_Begin);
