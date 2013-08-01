@@ -79,6 +79,7 @@ private:
     virtual void Init(void);
     virtual int Run ();
     virtual void Exit(void);
+    void CompareVar(CRef<CVariation> v1, CRef<CVariation> v2);
 };
 
 
@@ -87,7 +88,7 @@ void CCorrectRefAlleleApp::Init(void)
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),"Correct Ref Allele in Variation objects");
     arg_desc->AddDefaultKey("i", "input", "Input file",CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
-    arg_desc->AddDefaultKey("o", "output", "Output file",CArgDescriptions::eOutputFile,"-",CArgDescriptions::fPreOpen);
+    arg_desc->AddDefaultKey("f", "fixed", "Fixed file",CArgDescriptions::eInputFile,"fixed",CArgDescriptions::fPreOpen);
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -95,27 +96,83 @@ void CCorrectRefAlleleApp::Exit(void)
 {
 }
 
+
+void CCorrectRefAlleleApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
+{
+    if (v1->SetData().SetSet().SetVariations().size() !=
+        v2->SetData().SetSet().SetVariations().size() )
+        ERR_POST(Error << "Second level variation size does not match" << Endm);
+
+    if (v1->SetData().SetSet().SetVariations().front()->SetPlacements().size() !=
+        v2->SetData().SetSet().SetVariations().front()->SetPlacements().size())
+        ERR_POST(Error << "Placement size does not match" << Endm);
+
+    if (v1->SetData().SetSet().SetVariations().front()->SetPlacements().front()->SetSeq().SetSeq_data().SetIupacna().Set() !=
+        v2->SetData().SetSet().SetVariations().front()->SetPlacements().front()->SetSeq().SetSeq_data().SetIupacna().Set())
+        ERR_POST(Error << "Reference allele does not match" << Endm);
+
+    CVariation::TData::TSet::TVariations::iterator vi2 = v2->SetData().SetSet().SetVariations().begin();
+    for (CVariation::TData::TSet::TVariations::iterator vi1 = v1->SetData().SetSet().SetVariations().begin(); 
+         vi1 != v1->SetData().SetSet().SetVariations().end() && vi2 != v2->SetData().SetSet().SetVariations().end();
+         ++vi1, ++vi2)
+    {
+        if ((*vi1)->SetData().SetSet().SetVariations().size() !=
+            (*vi2)->SetData().SetSet().SetVariations().size() )
+            ERR_POST(Error << "Third level variation size does not match" << Endm);
+
+        set<string> alleles1, alleles2;
+        for (CVariation::TData::TSet::TVariations::iterator var2 = (*vi1)->SetData().SetSet().SetVariations().begin(); var2 != (*vi1)->SetData().SetSet().SetVariations().end(); ++var2)
+            if ( (*var2)->IsSetData() && (*var2)->SetData().IsInstance() && (*var2)->SetData().SetInstance().IsSetDelta() && !(*var2)->SetData().SetInstance().SetDelta().empty()
+                 && (*var2)->SetData().SetInstance().SetDelta().front()->IsSetSeq() && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().IsLiteral()
+                 && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().IsSetSeq_data() 
+                 && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().IsIupacna())
+            {
+                string a = (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(); 
+                alleles1.insert(a);
+            }
+        for (CVariation::TData::TSet::TVariations::iterator var2 = (*vi2)->SetData().SetSet().SetVariations().begin(); var2 != (*vi2)->SetData().SetSet().SetVariations().end(); ++var2)
+            if ( (*var2)->IsSetData() && (*var2)->SetData().IsInstance() && (*var2)->SetData().SetInstance().IsSetDelta() && !(*var2)->SetData().SetInstance().SetDelta().empty()
+                 && (*var2)->SetData().SetInstance().SetDelta().front()->IsSetSeq() && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().IsLiteral()
+                 && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().IsSetSeq_data() 
+                 && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().IsIupacna())
+            {
+                string a = (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(); 
+                alleles2.insert(a);
+            }
+        if (!equal(alleles1.begin(), alleles1.end(), alleles2.begin()))
+            ERR_POST(Error << "Alt alleles do not match" << Endm);
+    }
+}
+
 int CCorrectRefAlleleApp::Run() 
 {
     CArgs args = GetArgs();
     CNcbiIstream& istr = args["i"].AsInputFile();
-    CNcbiOstream& ostr = args["o"].AsOutputFile();
+    CNcbiIstream& fstr = args["f"].AsInputFile();
 
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
     CRef<CScope> scope(new CScope(*object_manager));
     CGBDataLoader::RegisterInObjectManager(*object_manager, NULL, CObjectManager::eDefault, 2);
     scope->AddDefaults();
 
-    AutoPtr<CDecompressIStream>	decomp_stream(new CDecompressIStream(istr, CCompressStream::eGZipFile, CZipCompression::fAllowTransparentRead));
-    AutoPtr<CObjectIStream> var_in(CObjectIStream::Open(eSerial_AsnText, *decomp_stream));
+    AutoPtr<CDecompressIStream>	decomp_stream1(new CDecompressIStream(istr, CCompressStream::eGZipFile, CZipCompression::fAllowTransparentRead));
+    AutoPtr<CObjectIStream> var_in1(CObjectIStream::Open(eSerial_AsnText, *decomp_stream1));
 
-    while (!var_in->EndOfData())
+    AutoPtr<CDecompressIStream>	decomp_stream2(new CDecompressIStream(fstr, CCompressStream::eGZipFile, CZipCompression::fAllowTransparentRead));
+    AutoPtr<CObjectIStream> var_in2(CObjectIStream::Open(eSerial_AsnText, *decomp_stream2));
+
+    while (!var_in1->EndOfData() && !var_in2->EndOfData())
     {
-        CRef<CVariation> v(new CVariation);
-        *var_in >> *v;
-        CVariationUtilities::CorrectRefAllele(v,*scope);
-        ostr <<MSerial_AsnText<< *v;
+        CRef<CVariation> v1(new CVariation);
+        *var_in1 >> *v1;
+        CVariationUtilities::CorrectRefAllele(v1,*scope);
+        CRef<CVariation> v2(new CVariation);
+        *var_in2 >> *v2;
+        CompareVar(v1,v2);
     }
+    if (!var_in1->EndOfData() || !var_in2->EndOfData())
+        ERR_POST(Error << "File size does not match" << Endm);
+
     return 0;
 }
 
