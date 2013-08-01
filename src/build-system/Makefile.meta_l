@@ -66,7 +66,7 @@ if NCBICXX_TESTING_REQS=1 $(3) -q requirements; then \
     fi ; \
 else \
     echo "NOTE:  skipping project \"$(1)\" due to unmet requirements"; \
-    [ $(5) = .app ] || $(3) mark-as-disabled ; \
+    [ $(5) = .app ] || $(3) mark-as-disabled || true ; \
 fi
 
 endef
