@@ -165,7 +165,12 @@ const IWorkerNodeInitContext&  CGridWorkerApp::GetInitContext()
 
 int CGridWorkerApp::Run(void)
 {
-    return m_WorkerNode->Run();
+    const CArgs& args = GetArgs();
+
+    return m_WorkerNode->Run(args["nodaemon"] ? eOff :
+                    args["daemon"] ? eOn : eDefault,
+            args["procinfofile"].HasValue() ?
+                    args["procinfofile"].AsString() : kEmptyStr);
 }
 
 void CGridWorkerApp::RequestShutdown()

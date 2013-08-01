@@ -626,7 +626,8 @@ public:
 
     /// Start job execution loop.
     ///
-    int Run();
+    int Run(ESwitch daemonize = eDefault,
+            string procinfo_file_name = kEmptyStr);
 
     void RequestShutdown();
 

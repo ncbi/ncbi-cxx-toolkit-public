@@ -928,7 +928,7 @@ void CGridWorkerNode::Init()
     m_NetCacheAPI = CNetCacheAPI(reg);
 }
 
-int CGridWorkerNode::Run()
+int CGridWorkerNode::Run(ESwitch daemonize, string procinfo_file_name)
 {
     const string kServerSec("server");
 
@@ -986,9 +986,8 @@ int CGridWorkerNode::Run()
     }}
 
 #ifdef NCBI_OS_UNIX
-    bool is_daemon = args["nodaemon"] ? false :
-            args["daemon"] ? true : reg.GetBool(kServerSec, "daemon",
-                    false, 0, CNcbiRegistry::eReturn);
+    bool is_daemon = daemonize != eDefault ? daemonize == eOn :
+            reg.GetBool(kServerSec, "daemon", false, 0, CNcbiRegistry::eReturn);
 #endif
 
     {{
@@ -1074,19 +1073,30 @@ int CGridWorkerNode::Run()
 #endif
     }
 
-    // Now that most of parameters have been checked, create the
-    // "procinfo" file.
-    FILE* procinfo_file;
-    string procinfo_file_name;
-
-    if (!args["procinfofile"].HasValue())
-        procinfo_file = NULL;
-    else {
-        procinfo_file_name = args["procinfofile"].AsString();
-
-        if ((procinfo_file = fopen(procinfo_file_name.c_str(), "wt")) == NULL) {
-            perror(procinfo_file_name.c_str());
-            return 2;
+    if (!procinfo_file_name.empty()) {
+        // Make sure the process info file is writable.
+        if (access(procinfo_file_name.c_str(), F_OK) == 0) {
+            // Already exists
+            if (access(procinfo_file_name.c_str(), W_OK) != 0) {
+                fprintf(stderr, "'%s' is not writable.\n",
+                        procinfo_file_name.c_str());
+                return 21;
+            }
+        } else {
+            // The process info file does not exist yet.
+            // Create a temporary file in the designated directory
+            // to make sure the location is writable.
+            string test_file_name = procinfo_file_name + ".TEST";
+            FILE* f = fopen(test_file_name.c_str(), "w");
+            if (f == NULL) {
+                perror(("Cannot create " + test_file_name).c_str());
+                return 22;
+            }
+            fclose(f);
+            // The worker node may fail (e.g. if the control port is busy)
+            // before the process info file can be written; remove the
+            // empty file to avoid confusion.
+            remove(test_file_name.c_str());
         }
     }
 
@@ -1114,10 +1124,6 @@ int CGridWorkerNode::Run()
         control_thread->Prepare();
     }
     catch (CServer_Exception& e) {
-        if (procinfo_file != NULL) {
-            fclose(procinfo_file);
-            unlink(procinfo_file_name.c_str());
-        }
         if (e.GetErrCode() != CServer_Exception::eCouldntListen)
             throw;
         NCBI_THROW_FMT(CGridWorkerNodeException, ePortBusy,
@@ -1154,7 +1160,14 @@ int CGridWorkerNode::Run()
 
     m_NetScheduleAPI.SetProgramVersion(m_JobProcessorFactory->GetJobVersion());
 
-    if (procinfo_file != NULL) {
+    // Now that most of parameters have been checked, create the
+    // "procinfo" file.
+    if (!procinfo_file_name.empty()) {
+        FILE* procinfo_file;
+        if ((procinfo_file = fopen(procinfo_file_name.c_str(), "wt")) == NULL) {
+            perror(procinfo_file_name.c_str());
+            return 23;
+        }
         fprintf(procinfo_file, "pid: %lu\nport: %s\n"
                 "client_node: %s\nclient_session: %s\n",
                 (unsigned long) CDiagContext::GetPID(),
