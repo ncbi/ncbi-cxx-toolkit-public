@@ -842,6 +842,44 @@ bool CGff2Reader::x_ProcessQualifierSpecialCase(
 }  
 
 //  ----------------------------------------------------------------------------
+bool CGff2Reader::x_FeatureTrimQualifiers(
+    const CGff2Record& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    typedef CSeq_feat::TQual TQual;
+    typedef CGff2Record::TAttributes TAttrs;
+    //task:
+    // for each attribute of the new piece check if we already got a feature 
+    //  qualifier
+    // if so, and with the same value, then the qualifier is allowed to live
+    // otherwise it is subfeature specific and hence removed from the feature
+    TQual& quals = pFeature->SetQual();
+    const TAttrs& attrs = record.Attributes();
+    for (TQual::iterator it = quals.begin(); it != quals.end(); /**/) {
+        const string& qualKey = (*it)->GetQual();
+        if (NStr::StartsWith(qualKey, "gff_")) {
+            it++;
+            continue;
+        }
+        const string& qualVal = (*it)->GetVal();
+        string attrVal;
+        if (!record.GetAttribute(qualKey, attrVal)) {
+            //superfluous qualifier- squish
+            it = quals.erase(it);
+            continue;
+        }
+        if (qualVal != attrVal) {
+            //ambiguous qualifier- squish
+            it = quals.erase(it);
+            continue;
+        }
+        it++;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff2Reader::x_FeatureSetQualifiers(
     const CGff2Record& record,
     CRef< CSeq_feat > pFeature )

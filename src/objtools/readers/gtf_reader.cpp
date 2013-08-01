@@ -587,7 +587,10 @@ bool CGtfReader::x_UpdateAnnotExon(
         }
     }
     else {
-        if ( ! x_MergeParentGene( gff, pGene ) ) {
+        if (!x_MergeParentGene(gff, pGene)) {
+            return false;
+        }
+        if (!x_FeatureTrimQualifiers(gff, pGene)) {
             return false;
         }
     }
@@ -609,7 +612,10 @@ bool CGtfReader::x_UpdateAnnotExon(
         //
         // Update an already existing CDS features:
         //
-        if ( ! x_MergeFeatureLocationMultiInterval( gff, pMrna ) ) {
+        if (!x_MergeFeatureLocationMultiInterval(gff, pMrna)) {
+            return false;
+        }
+        if (!x_FeatureTrimQualifiers(gff, pMrna)) {
             return false;
         }
     }
@@ -703,6 +709,12 @@ bool CGtfReader::x_MergeFeatureLocationSingleInterval(
     if ( gene_int.GetTo() < record.SeqStop() - 1 ) {
         pFeature->SetLocation().SetInt().SetTo( record.SeqStop() );
     }
+    if (record.Type() == "exon"  &&  pFeature->GetData().IsGene()) {
+        return x_FeatureTrimQualifiers(record, pFeature);
+    }
+    if (record.Type() == "CDS"  &&  pFeature->GetData().IsCdregion()) {
+        return x_FeatureTrimQualifiers(record, pFeature);
+    }
     return true;
 }
 
@@ -726,22 +738,7 @@ bool CGtfReader::x_MergeFeatureLocationMultiInterval(
         pFeature->SetLocation(), CSeq_loc::fSortAndMerge_All, 0 );
     pFeature->SetLocation( *pLocation );
 
-//    if ( x_CdsIsPartial( record ) ) {
-//        CRef<CSeq_feat> pParent;
-//        if ( x_FindParentMrna( record, pParent ) ) {
-//            CSeq_loc& loc = pFeature->SetLocation();
-//            if ( loc.GetStart( eExtreme_Positional ) == 
-//                pParent->GetLocation().GetStart( eExtreme_Positional ) ) {
-//                loc.SetPartialStart( true, eExtreme_Positional );
-//            }
-//            if ( loc.GetStop( eExtreme_Positional ) == 
-//                pParent->GetLocation().GetStop( eExtreme_Positional ) ) {
-//                loc.SetPartialStop( true, eExtreme_Positional );
-//            }
-//        }
-//    }
-
-    return true;
+    return x_FeatureTrimQualifiers(record, pFeature);
 }
 
 //  -----------------------------------------------------------------------------
@@ -778,7 +775,10 @@ bool CGtfReader::x_MergeParentGene(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    return x_MergeFeatureLocationSingleInterval( record, pFeature );
+    if (!x_MergeFeatureLocationSingleInterval( record, pFeature )) {
+        return false;
+    }
+    return true;
 }
 
 //  -----------------------------------------------------------------------------
@@ -1061,6 +1061,10 @@ bool CGtfReader::x_ProcessQualifierSpecialCase(
         return true;
     }
     if (0 == NStr::CompareNocase(it->first, "exon_number")) {
+        return true;
+    }
+    if (0 == NStr::CompareNocase(it->first, "transcript_id")  &&  
+            pFeature->GetData().IsGene()) {
         return true;
     }
     if ( 0 == NStr::CompareNocase( it->first, "note" ) ) {
