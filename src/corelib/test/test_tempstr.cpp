@@ -393,7 +393,7 @@ BOOST_AUTO_TEST_CASE(TestTempString)
         string sub = "  hello, world  ";
         CTempString temp_sub = "  hello, world  ";
         sub = NStr::TruncateSpaces(sub);
-        temp_sub = NStr::TruncateSpaces(temp_sub);
+        temp_sub = NStr::TruncateSpaces_Unsafe(temp_sub);
         LOG_POST(Info << "NStr::TruncateSpaces(sub) = >>" << sub << "<<");
         LOG_POST(Info << "NStr::TruncateSpaces(temp_sub) = >>" << temp_sub << "<<");
         BOOST_CHECK(temp_sub == sub);
