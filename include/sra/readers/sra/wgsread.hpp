@@ -76,7 +76,8 @@ public:
     // 0. if the argument looks like path - do not change it
     // 1. exclude contig/scaffold id
     // 2. add default version (1)
-    static string NormalizePathOrAccession(CTempString path_or_acc);
+    static string NormalizePathOrAccession(CTempString path_or_acc,
+                                           CTempString vol_path = CTempString());
 
     // parse row id from accession
     // returns 0 if accession is in wrong format

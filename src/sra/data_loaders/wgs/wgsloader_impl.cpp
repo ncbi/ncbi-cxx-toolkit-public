@@ -267,9 +267,19 @@ CWGSDataLoader_Impl::GetFileInfo(const CSeq_id_Handle& idh,
                                  bool* scaffold_ptr,
                                  Uint8* read_id_ptr)
 {
-    if ( idh.Which() != CSeq_id::e_Genbank &&
-         idh.Which() != CSeq_id::e_Other ) {
+    switch ( idh.Which() ) { // shortcut
+    case CSeq_id::e_not_set:
+    case CSeq_id::e_Local:
+    case CSeq_id::e_Gibbsq:
+    case CSeq_id::e_Gibbmt:
+    case CSeq_id::e_Giim:
+    case CSeq_id::e_Patent:
+    case CSeq_id::e_General:
+    case CSeq_id::e_Gi:
+    case CSeq_id::e_Pdb:
         return null;
+    default:
+        break;
     }
     CConstRef<CSeq_id> id = idh.GetSeqId();
     const CTextseq_id* text_id = id->GetTextseq_Id();

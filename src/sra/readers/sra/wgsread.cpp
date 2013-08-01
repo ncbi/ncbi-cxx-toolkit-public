@@ -34,6 +34,7 @@
 #include <sra/readers/sra/wgsread.hpp>
 #include <sra/readers/ncbi_traces_path.hpp>
 #include <corelib/ncbistr.hpp>
+#include <corelib/ncbifile.hpp>
 #include <corelib/ncbi_param.hpp>
 #include <objects/general/general__.hpp>
 #include <objects/seq/seq__.hpp>
@@ -115,7 +116,7 @@ CWGSDb_Impl::CWGSDb_Impl(CVDBMgr& mgr,
                          CTempString path_or_acc,
                          CTempString vol_path)
     : m_Mgr(mgr),
-      m_WGSPath(NormalizePathOrAccession(path_or_acc)),
+      m_WGSPath(NormalizePathOrAccession(path_or_acc, vol_path)),
       m_Db(mgr, m_WGSPath)
 {
     x_InitIdParams();
@@ -146,8 +147,20 @@ void CWGSDb_Impl::x_InitIdParams(void)
 }
 
 
-string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc)
+string CWGSDb_Impl::NormalizePathOrAccession(CTempString path_or_acc,
+                                             CTempString vol_path)
 {
+    if ( !vol_path.empty() ) {
+        list<CTempString> dirs;
+        NStr::Split(vol_path, ":", dirs);
+        ITERATE ( list<CTempString>, it, dirs ) {
+            string path = CDirEntry::MakePath(*it, path_or_acc);
+            if ( CDirEntry(path).Exists() ) {
+                return path;
+            }
+        }
+        return CDirEntry::MakePath(vol_path, path_or_acc);
+    }
     if ( path_or_acc.find_first_of("/\\") == NPOS ) {
         // parse WGS accession
         // optional "NZ_" prefix

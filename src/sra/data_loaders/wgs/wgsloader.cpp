@@ -88,9 +88,13 @@ string CWGSDataLoader::GetLoaderNameFromArgs(void)
 }
 
 
-string CWGSDataLoader::GetLoaderNameFromArgs(const SLoaderParams& /*params*/)
+string CWGSDataLoader::GetLoaderNameFromArgs(const SLoaderParams& params)
 {
-    return GetLoaderNameFromArgs();
+    string ret = GetLoaderNameFromArgs();
+    if ( !params.m_WGSVolPath.empty() ) {
+        ret += "("+params.m_WGSVolPath+")";
+    }
+    return ret;
 }
 
 
