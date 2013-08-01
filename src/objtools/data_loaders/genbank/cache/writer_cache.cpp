@@ -453,7 +453,7 @@ void CCacheWriter::SaveSeq_idBlob_ids(CReaderRequestResult& result,
     string subkey, true_subkey;
     GetBlob_idsSubkey(sel, subkey, true_subkey);
     CStoreBuffer str;
-    str.StoreInt4(IDS_MAGIC);
+    str.StoreInt4(BLOB_IDS_MAGIC);
     str.StoreUint4(ids->GetState());
     str.StoreUint4(str.ToUint4(ids->size()));
     ITERATE ( CLoadInfoBlob_ids, it, *ids ) {

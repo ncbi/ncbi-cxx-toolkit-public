@@ -69,7 +69,8 @@ int SCacheInfo::GetDebugLevel(void)
     return s_Value;
 }
 
-const int    SCacheInfo::IDS_MAGIC = 0x32fd0107;
+const int    SCacheInfo::BLOB_IDS_MAGIC = 0x32fd0108;
+const char*  SCacheInfo::BLOB_IDS_SUBKEY = "blobs8";
 
 string SCacheInfo::GetBlobKey(const CBlob_id& blob_id)
 {
@@ -109,18 +110,18 @@ void SCacheInfo::GetBlob_idsSubkey(const SAnnotSelector* sel,
                                    string& true_subkey)
 {
     if ( !sel ) {
-        subkey = "blobs";
+        subkey = BLOB_IDS_SUBKEY;
         return;
     }
     const SAnnotSelector::TNamedAnnotAccessions& accs =
         sel->GetNamedAnnotAccessions();
     if ( accs.empty() ) {
-        subkey = "blobs";
+        subkey = BLOB_IDS_SUBKEY;
         return;
     }
 
     CNcbiOstrstream str;
-    str << "blobs";
+    str << BLOB_IDS_SUBKEY;
     size_t total_size = 0;
     ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it, accs ) {
         total_size += 1+it->first.size();
@@ -727,7 +728,7 @@ bool CCacheReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
     GetBlob_idsSubkey(sel, subkey, true_subkey);
     CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, subkey);
     if ( str.Found() ) {
-        if ( str.ParseInt4() != IDS_MAGIC ) {
+        if ( str.ParseInt4() != BLOB_IDS_MAGIC ) {
             return false;
         }
         ids->clear();
