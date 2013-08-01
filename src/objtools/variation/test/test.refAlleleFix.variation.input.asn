@@ -1,0 +1,204 @@
+Variation ::= {
+  id {
+    db "dbSNP",
+    tag str "rs61752872"
+  },
+  variant-prop {
+    version 5,
+    resource-link 29,
+    gene-location intron,
+    effect no-change,
+    mapping 0,
+    frequency-based-validation 0,
+    genotype 0,
+    quality-check 0
+  },
+  data set {
+    type package,
+    variations {
+      {
+        placements {
+          {
+            loc pnt {
+              point 68910540,
+              id other {
+                accession "NC_000001",
+                version 10
+              }
+            },
+            mol genomic,
+            seq {
+              length 1,
+              seq-data iupacna "G"
+            }
+          }
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  ext {
+    {
+      type str "Description",
+      data {
+        {
+          label str "Input RefAllele Fix",
+          data str "This record need nothing done to it"
+        }
+      }
+    }
+  }
+}
+Variation ::= {
+  id {
+    db "dbSNP",
+    tag str "rs61752872"
+  },
+  variant-prop {
+    version 5,
+    resource-link 29,
+    gene-location intron,
+    effect no-change,
+    mapping 0,
+    frequency-based-validation 0,
+    genotype 0,
+    quality-check 0
+  },
+  data set {
+    type package,
+    variations {
+      {
+        placements {
+          {
+            loc pnt {
+              point 68910540,
+              id other {
+                accession "NC_000001",
+                version 10
+              }
+            },
+            mol genomic,
+            seq {
+              length 1,
+              seq-data iupacna "A"
+            }
+          }
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  ext {
+    {
+      type str "Description",
+      data {
+        {
+          label str "Input RefAllele Fix",
+          data str "This SNV record needs the ref and alt to swap."
+        }
+      }
+    }
+  }
+}
+Variation ::= {
+  id {
+    db "dbSNP",
+    tag str "rs61752872"
+  },
+  variant-prop {
+    version 5,
+    resource-link 29,
+    gene-location intron,
+    effect no-change,
+    mapping 0,
+    frequency-based-validation 0,
+    genotype 0,
+    quality-check 0
+  },
+  data set {
+    type package,
+    variations {
+      {
+        placements {
+          {
+            loc pnt {
+              point 68910540,
+              id other {
+                accession "NC_000001",
+                version 10
+              }
+            },
+            mol genomic,
+            seq {
+              length 1,
+              seq-data iupacna "A"
+            }
+          }
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "T"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  ext {
+    {
+      type str "Description",
+      data {
+        {
+          label str "Input RefAllele Fix",
+          data str "This SNV record needs the ref altered, and the original ref added to the alt list as a new leaf node"
+        }
+      }
+    }
+  }
+}
