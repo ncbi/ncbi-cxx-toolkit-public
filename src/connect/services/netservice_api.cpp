@@ -506,7 +506,6 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section)
     m_PermanentConnection = eOn;
 
     if (m_ClientName.empty() || m_ClientName == "noname" ||
-            NStr::FindNoCase(m_ClientName, "sample") != NPOS ||
             NStr::FindNoCase(m_ClientName, "unknown") != NPOS) {
         CNcbiApplication* app = CNcbiApplication::Instance();
         if (app == NULL) {
