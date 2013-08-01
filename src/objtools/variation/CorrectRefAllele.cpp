@@ -72,6 +72,7 @@ void CVariationUtilities::CorrectRefAllele(CRef<CVariation>& v, CScope& scope)
 {
     string old_ref = v->SetData().SetSet().SetVariations().front()->SetPlacements().front()->SetSeq().SetSeq_data().SetIupacna().Set(); 
     string new_ref = GetRefAlleleFromVP(v->SetData().SetSet().SetVariations().front()->SetPlacements().front(), scope);
+    v->SetData().SetSet().SetVariations().front()->SetPlacements().front()->SetSeq().SetSeq_data().SetIupacna().Set(new_ref);
     FixAlleles(v,old_ref,new_ref);
 }
 
@@ -160,8 +161,8 @@ void CVariationUtilities::FixAlleles(CRef<CVariation> v, string old_ref, string 
             {
                 if (new_ref == old_ref)
                     old_ref.clear();
-                else if (!found_ref)
-                    NCBI_THROW(CException, eUnknown, "New reference allele is not found in the set of existing alleles " + new_ref);
+                //else if (!found_ref)
+                //    NCBI_THROW(CException, eUnknown, "New reference allele is not found in the set of existing alleles " + new_ref);
             }
 
             if (!old_ref.empty())
