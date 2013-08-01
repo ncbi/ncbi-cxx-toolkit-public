@@ -314,12 +314,12 @@ int CCompartApp::x_DoWithExternalHits(void)
     typedef map<string,string> TIdToId;
     TIdToId id2id;
 
-    char line [1024];
+    string line;
     string query0, subj0;
     while(cin) {
 
-        cin.getline(line, sizeof line, '\n');
-        string s (NStr::TruncateSpaces(line));
+        getline(cin, line);
+        string s = NStr::TruncateSpaces(line);
         if(s.size()) {
 
             THitRef hit (new THit(s.c_str()));

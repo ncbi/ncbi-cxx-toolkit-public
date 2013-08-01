@@ -241,8 +241,8 @@ void CAppHitFilter::x_ReadInputHits(THitRefs* phitrefs, bool one_pair)
 
         while(istr) {
 
-            char line [1024];
-            istr.getline(line, sizeof line, '\n');
+            string line;
+            getline(istr, line);
             string s (NStr::TruncateSpaces(line));
 
             if(s.size()) {
