@@ -725,7 +725,7 @@ CVcfReader::xAssignVariantDelins(
         if( data.m_Alt[index].size() == 1 && data.m_strRef.size() == 1) {
           instance.SetType(CVariation_inst::eType_snv);
         } else {
-          instance.SetType(CVariation_inst::eType_mnp);
+          instance.SetType(CVariation_inst::eType_delins);
         }
 
 
