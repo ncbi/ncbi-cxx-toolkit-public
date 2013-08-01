@@ -1075,9 +1075,10 @@ int CGridWorkerNode::Run(ESwitch daemonize, string procinfo_file_name)
 
     if (!procinfo_file_name.empty()) {
         // Make sure the process info file is writable.
-        if (access(procinfo_file_name.c_str(), F_OK) == 0) {
+        CFile proc_info_file(procinfo_file_name);
+        if (proc_info_file.Exists()) {
             // Already exists
-            if (access(procinfo_file_name.c_str(), W_OK) != 0) {
+            if (!proc_info_file.CheckAccess(CFile::fWrite)) {
                 fprintf(stderr, "'%s' is not writable.\n",
                         procinfo_file_name.c_str());
                 return 21;
