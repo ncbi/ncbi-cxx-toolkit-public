@@ -289,10 +289,10 @@ private:
 
 class CRemoteCgiListener : public CGridWorkerNodeApp_Listener
 {
-    virtual void OnInit(CGridWorkerApp* grid_worker_app);
+    virtual void OnInit(CNcbiApplication* app);
 };
 
-void CRemoteCgiListener::OnInit(CGridWorkerApp* grid_worker_app)
+void CRemoteCgiListener::OnInit(CNcbiApplication* /*app*/)
 {
 }
 
