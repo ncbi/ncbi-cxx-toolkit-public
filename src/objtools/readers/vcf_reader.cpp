@@ -585,7 +585,7 @@ CVcfReader::xAssignVariationAlleleSet(
         pIdentity->SetDeletion();
         break;
     default: 
-        variant.push_back(data.m_strRef.substr(1));
+        variant.push_back(data.m_strRef);
         pIdentity->SetSNV(variant, CVariation_ref::eSeqType_na);
         break;
     }
@@ -711,14 +711,24 @@ CVcfReader::xAssignVariantDelins(
 
     CRef<CVariation_ref> pVariant(new CVariation_ref);
     {{
-        string insertion(data.m_Alt[index].substr(1));
+        string insertion(data.m_Alt[index]);
         CRef<CSeq_literal> pLiteral(new CSeq_literal);
         pLiteral->SetSeq_data().SetIupacna().Set(insertion);
         pLiteral->SetLength(insertion.size());
         CRef<CDelta_item> pItem(new CDelta_item);
         pItem->SetSeq().SetLiteral(*pLiteral); 
         CVariation_inst& instance =  pVariant->SetData().SetInstance();
-        instance.SetType(CVariation_inst::eType_mnp);
+
+
+        //Let's try to smartly set the Type.
+
+        if( data.m_Alt[index].size() == 1 && data.m_strRef.size() == 1) {
+          instance.SetType(CVariation_inst::eType_snv);
+        } else {
+          instance.SetType(CVariation_inst::eType_mnp);
+        }
+
+
         instance.SetDelta().push_back(pItem);       
     }}
     variants.push_back(pVariant);
@@ -875,10 +885,13 @@ CVcfReader::xAssignFeatureLocationSet(
         return true;
     }
 
-    //default: set location for MNVs
-    pFeat->SetLocation().SetInt().SetFrom(data.m_iPos);
-    pFeat->SetLocation().SetInt().SetTo( data.m_iPos+1);
-    pFeat->SetLocation().SetInt().SetId(*pId);
+    //default: For MNV's we will use the single starting point
+    //NB: For references of size >=2, this location will not
+    //match the reference allele.  Future Variation-ref
+    //normalization code will address these issues,
+    //and obviate the need for this code altogether.
+    pFeat->SetLocation().SetPnt().SetPoint(data.m_iPos-1);
+    pFeat->SetLocation().SetPnt().SetId(*pId);
     return true;
 }
 
