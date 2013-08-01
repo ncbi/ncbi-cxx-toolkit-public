@@ -1688,7 +1688,7 @@ void CMsvcProjectGenerator::GenerateMsbuildUser(
                         CMsvcPrjProjectContext& project_context,
                         CProjItem& prj)
 {
-    if (prj.m_ProjType != CProjItem::TProjType::eApp) {
+    if (prj.m_ProjType != CProjKey::eApp) {
         return;
     }
     string project_path = CDirEntry::ConcatPath(project_context.ProjectDir(), 
