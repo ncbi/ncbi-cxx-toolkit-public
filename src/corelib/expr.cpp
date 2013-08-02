@@ -655,7 +655,7 @@ CExprParser::Scan(bool operand)
             m_VStack[m_v_sp].SetType(CExprValue::eSTRING);
 
             m_VStack[m_v_sp].m_sval = StringConstant;     //assign string
-            m_Pos += pos+1;                               // move m_Pos
+            m_Pos += (int)pos+1;                          // move m_Pos
 
             m_VStack[m_v_sp].m_Pos = m_Pos;
             m_VStack[m_v_sp].m_Var = NULL;
