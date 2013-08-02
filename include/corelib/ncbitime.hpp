@@ -1621,33 +1621,33 @@ public:
 class NCBI_XNCBI_EXPORT CDeadline
 {
 public:
-    /// Initialize absolute timeout using seconds and nanoseconds
+    /// Initialize deadline using seconds and nanoseconds
     /// (adding to the current time)
     /// @param seconds
     ///   Number of seconds to add to the current time
     /// @param nanoseconds
     ///   Number of nanoseconds to add to the current time
-    CDeadline(unsigned int seconds, unsigned int nanoseconds = 0);
+    CDeadline(unsigned int rel_seconds, unsigned int rel_nanoseconds = 0);
 
-    /// Initialize absolute timeout by adding relative one to the current time
+    /// Initialize deadline by adding relative timeout to the current time.
     CDeadline(const CTimeout& timeout);
 
-    /// Check if the timeout is infinite
+    /// Check if the deadline is infinite.
     bool IsInfinite(void) const { return m_Infinite; }
 
-    /// Check if the timeout is expired
+    /// Check if the deadline is expired.
     bool IsExpired(void) const
     { return !IsInfinite()  &&  GetRemainingTime().IsZero(); }
 
     /// Get the number of seconds and nanoseconds (since 1/1/1970).
-    /// Throw an exception if the timeout is infinite.
+    /// Throw an exception if the deadline is infinite.
     void GetExpirationTime(time_t* sec, unsigned int* nanosec) const;
 
-    /// Get time left to the expiration time
+    /// Get time left to the expiration.
     CNanoTimeout GetRemainingTime(void) const;
 
     /// Compare two CDeadline values.
-    bool operator <(const CDeadline& right_hand_operand) const;
+    bool operator < (const CDeadline& right_hand_operand) const;
 
 private:
     void x_Now(void);
