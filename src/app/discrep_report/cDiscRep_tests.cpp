@@ -1978,7 +1978,6 @@ void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
    ignore.reserve(cd_feat.size());
    i=0;
    ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
-cerr << "cd " << Blob2Str(**it) << endl;
       if (x_IgnoreContainedCDS(*it)) ignore[i] = 1;
       else ignore[i] = 0;
       i++;
@@ -9581,7 +9580,7 @@ CObjectManager& obj = thisInfo.scope->GetObjectManager();
   bool run_prefix = (thisTest.tests_run.find(GetName_prefix()) != thisTest.tests_run.end());
 
   ITERATE (vector <const CSeqdesc*>, it, user_seqdesc) {
-cerr << "i " << i << endl;
+//cerr << "i " << i << endl;
     const CUser_object& user_obj = (*it)->GetUser();
     if ( !(user_obj.GetType().IsStr()) ) { 
          i++; continue;
@@ -9802,49 +9801,53 @@ void CSeqEntry_TEST_HAS_PROJECT_ID :: GetReport(CRef <CClickableItem>& c_item)
 
 // new method
 
-CFlatFileConfig::CGenbankBlockCallback::EBioseqSkip CFlatfileTextFind::notify_bioseq(const CBioseqContext& ctx )
+CFlatFileConfig::CGenbankBlockCallback::EBioseqSkip CFlatfileTextFind::notify_bioseq(CBioseqContext& ctx )
 {
+cerr << "notify_bioseq \n";
    m_taxname = ctx.GetTaxname();
-// wait for new build: CConstRef <CBioseq> m_bioseq_ref = ctx.GetHandle().GetCompleteObject();
-   m_bioseq_desc = "!!!"; //GetDiscItemText(*m_bioseq_ref);
+   CBioseq_Handle& bioseq_hl = ctx.GetHandle();
+   if (!bioseq_hl) return (eBioseqSkip_Yes);
+   CConstRef <CBioseq> bioseq_ref = bioseq_hl.GetCompleteObject();
+   m_bioseq_desc = GetDiscItemText(*bioseq_ref);
 
    m_src_desc = m_mol_desc = m_tlt_desc = m_pub_desc = m_gbk_desc = kEmptyStr;
-/*
-   for (CSeqdesc_CI it(ctx.GetHandle(), m_seqdesc_sel); it; ++it) {
+   for (CSeqdesc_CI it(bioseq_hl, m_seqdesc_sel); it; ++it) {
      switch (it->Which()) {
         case CSeqdesc::e_Source:
-            m_src_desc = GetDiscItemText(it->GetSource(), *m_bioseq_ref);
+            m_src_desc = GetDiscItemText(*it, *bioseq_ref);
             break;
         case CSeqdesc::e_Molinfo:
-            m_mol_desc = GetDiscItemText(it->GetMolinfo(), *m_bioseq_ref);
+            m_mol_desc = GetDiscItemText(*it, *bioseq_ref);
             break;
         case CSeqdesc::e_Title:
-            m_tlt_desc = GetDiscItemText(it->GetTitle(), *m_bioseq_ref);
+            m_tlt_desc = GetDiscItemText(*it, *bioseq_ref);
             break;
         case CSeqdesc::e_Pub:
-            m_pub_desc = GetDiscItemText(it->GetPub(), *m_bioseq_ref);
+            m_pub_desc = GetDiscItemText(*it, *bioseq_ref);
             break;
         case CSeqdesc::e_Genbank:
-            m_gbk_desc = GetDiscItemText(it->GetGenbank(), *m_bioseq_ref);
+            m_gbk_desc = GetDiscItemText(*it, *bioseq_ref);
             break;
         default: break;
      }
 
    }
 
-*/
    return (eBioseqSkip_No); 
 };
 
 CFlatFileConfig::CGenbankBlockCallback::EAction   CFlatfileTextFind::notify(string& block_text, const CBioseqContext& ctx, const CSourceItem& source_item)
 {
+cerr << "notify sourceItem\n";
   block_text = block_text.substr(0, block_text.find("ORGANISM")); // double check  
+//cerr << "block_text ORGANISM " << endl << block_text << endl;
   return unified_notify(block_text, ctx, source_item, 
                                           CFlatFileConfig::fGenbankBlocks_Source);
 };
 
 CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::notify(string& block_text, const CBioseqContext& ctx, const CFeatureItem& feature_item)
 {
+//cerr << "notify feature_item\n";
    size_t pos = block_text.find("/translation=\"");
    string trans_str;
    if (pos != string::npos) {
@@ -9862,36 +9865,39 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::notify(string
 
 CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notify( string & block_text, const CBioseqContext& ctx, const IFlatItem & flat_item, CFlatFileConfig::FGenbankBlocks which_block )
 {
+//cerr << "unified_notify\n";
   block_text =CTestAndRepData::FindReplaceString(block_text, m_taxname, "", false, true);
+//cerr << "block_text " << block_text << endl;
   ITERATE (Str2UInt, it, thisInfo.whole_word) {
      if (CTestAndRepData 
            :: DoesStringContainPhrase(block_text, it->first, false,  (bool)it->second)) {
        switch (which_block) {
-         case CFlatFileConfig::fGenbankBlocks_Locus: strtmp = m_mol_desc; break;
-         case CFlatFileConfig::fGenbankBlocks_Defline: strtmp = m_tlt_desc; break;
-         case CFlatFileConfig::fGenbankBlocks_Keywords: strtmp = m_gbk_desc; break;
-         case CFlatFileConfig::fGenbankBlocks_Reference: strtmp = m_pub_desc; break;
-         case CFlatFileConfig::fGenbankBlocks_Source: strtmp = m_src_desc; break;
+         case CFlatFileConfig::fGenbankBlocks_Locus: cerr << "locus\n";strtmp = m_mol_desc; break;
+         case CFlatFileConfig::fGenbankBlocks_Defline: cerr << "defline \n";strtmp = m_tlt_desc; break;
+         case CFlatFileConfig::fGenbankBlocks_Keywords: cerr << "keyword\n";strtmp = m_gbk_desc; break;
+         case CFlatFileConfig::fGenbankBlocks_Reference: cerr << "refer\n";strtmp = m_pub_desc; break;
+         case CFlatFileConfig::fGenbankBlocks_Source: cerr << "src\n";strtmp = m_src_desc; break;
          case CFlatFileConfig::fGenbankBlocks_Sourcefeat: 
             {
+cerr << "srcfeat\n";
               const CFeatureItemBase& feat_item 
                              = dynamic_cast<const CFeatureItemBase&> (flat_item);
-              strtmp = GetDiscItemText(
-                                             feat_item.GetFeat().GetOriginalFeature());
+              strtmp = GetDiscItemText( feat_item.GetFeat().GetOriginalFeature());
             }
             break;
          case CFlatFileConfig::fGenbankBlocks_FeatAndGap:
             {
+cerr << "featandgap\n";
               const CFeatureItemBase& feat_item 
                              = dynamic_cast<const CFeatureItemBase&> (flat_item);
-              strtmp = GetDiscItemText(
-                                             feat_item.GetFeat().GetOriginalFeature());
+              strtmp = GetDiscItemText( feat_item.GetFeat().GetOriginalFeature());
             }
             break;
-         default: strtmp = m_bioseq_desc;
+         default: cerr << "def\n";strtmp = m_bioseq_desc;
        };
        thisInfo.test_item_list[m_setting_name].push_back(
             thisInfo.fix_data[it->first] + "$" + it->first + "#" + strtmp);
+cerr << "test_item_list " << thisInfo.fix_data[it->first] + "$" + it->first + "#" + strtmp <<endl;
      }
   } 
 
@@ -9914,17 +9920,16 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: TestOnObj(const CSeq_entry& seq_en
    CFlatFileGenerator gen(cfg);
    CSeq_entry_Handle entry_hl = thisInfo.scope->GetSeq_entryHandle(seq_entry);
    gen.Generate( entry_hl, cout); // slow
-   
-cerr << "block_text " << flatfile_find.m_block_text << endl;
 };
 
 void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: AddCItemToReport(const string& ls_type, const string& setting_name, CRef <CClickableItem>& c_item)
 {
    Str2Strs wrds2ls;
+   if (m_fixable2ls.size() == 1 && m_fixable2ls.begin()->first != ls_type) return;
    ITERATE (Str2Strs, it, m_fixable2ls) {
      if (it->first == ls_type) {
         wrds2ls.clear();
-        GetTestItemList(it->second, wrds2ls);
+        GetTestItemList(it->second, wrds2ls, "#");
         ITERATE (Str2Strs, jt, wrds2ls) {
            if (m_citem1) m_citem1 = false;
            else {
@@ -9933,6 +9938,7 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: AddCItemToReport(const string& ls_
               thisInfo.disc_report_data.push_back(c_item);
            }
            c_item->item_list = jt->second;
+cerr << "jt->second " << jt->second.size() << endl;
            c_item->description
                    = GetContainsComment(c_item->item_list.size(), "object") + jt->first;
         }

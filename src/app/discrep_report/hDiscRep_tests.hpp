@@ -1703,7 +1703,7 @@ namespace DiscRepNmSpc {
        }
        virtual ~CFlatfileTextFind () { };
     
-       virtual EBioseqSkip notify_bioseq( const CBioseqContext& ctx );
+       virtual EBioseqSkip notify_bioseq(CBioseqContext& ctx);
 
        virtual EAction notify (string& block_text, const CBioseqContext& ctx,
                                               const CSourceItem& source_item);
