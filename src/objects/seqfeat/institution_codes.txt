@@ -1015,6 +1015,7 @@ CLR	s	All Saint's Church, Colchester Borough Council
 CLU	s	Universita della Calabria
 CM	s	Carnegie Museum of Natural History
 CM-IEA	s	Universidad Autonoma de Tamaulipas (Mexico)
+CM-MBM-UAC	s	Coleccion Mastozoologica de la Museo de Biodiversidad Maya, Universidad  Autonoma de Campeche
 CM-UMSNH	s	Universidad de Michoacan (Mexico)
 CM:M	s	Carnegie Museum of Natural History, Section of Mammals
 CM:O	s	Carnegie Museum of Natural History, Section of Birds
@@ -1544,6 +1545,7 @@ ECNB	s	Escuela Nacional Ciencias
 ECOL	s	Collection du Laborataire d'Ecologie
 ECOMAR<FRA>	s	ECOMAR lab University of Reunion
 ECON	s	Harvard University
+ECOSCM	s	Coleccion Mastozoologica de El Colegio de la Frontera Sur, Unidad San  Cristobal
 ECOSUR	s	El Colegio de la Frontera Sur (Mexico)
 ECSC	s	East Central University, Biology Department
 ECSFI	s	East China Sea Fisheries Institute
