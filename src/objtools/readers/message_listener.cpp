@@ -90,6 +90,8 @@ CMessageListenerBase::PutProgress(
 
         *m_pProgressOstrm << "</message>" << NcbiEndl;
     }
+
+    m_pProgressOstrm->flush();
 }
 
 END_SCOPE(objects)
