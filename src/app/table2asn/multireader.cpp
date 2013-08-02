@@ -455,8 +455,14 @@ void CMultiReader::xProcessDefault(
     CNcbiIstream& istr)
 //  ----------------------------------------------------------------------------
 {
-    auto_ptr<CReaderBase> pReader(CReaderBase::GetReader(m_uFormat, m_iFlags));
-	//auto_ptr<CReaderBase> pReader(new CFastaReader(0, m_iFlags));
+    //auto_ptr<CReaderBase> pReader(CReaderBase::GetReader(m_uFormat, m_iFlags));
+	if (!args.sHandleAsSet)
+	{
+		m_iFlags |= CFastaReader::fOneSeq;
+	}
+	m_iFlags |= CFastaReader::fAddMods;
+	
+	auto_ptr<CReaderBase> pReader(new CFastaReader(0, m_iFlags));
     if (!pReader.get()) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "File format not supported", 0);
@@ -918,20 +924,6 @@ CMultiReader::CMultiReader()
 {
 }
 
-void LocateAndMofidyDesc(CSeq_descr_Base::Tdata& cont, CRef<CSeqdesc> value)
-{
-	CSeq_descr_Base::Tdata::iterator it = cont.begin();
-	for (; it != cont.end(); ++it)
-	{
-		if ((**it).Which() == value->Which())
-		{
-			cont.erase(it);
-			break;
-		}
-	}
-	cont.push_back(value);
-}
-
 void CMultiReader::ApplyAdditionalProperties(const CTable2AsnContext& context, CSeq_entry& entry)
 {
 	switch(entry.Which())
@@ -952,38 +944,21 @@ void CMultiReader::ApplyAdditionalProperties(const CTable2AsnContext& context, C
 		break;
 	}
 
-	CSeq_descr& descr = entry.SetDescr();
-	//cout << "descr len:" << descr.Get().size() << endl;
-
 	if (!context.yComment.empty())
 	{
 		CRef<CSeqdesc> value(new CSeqdesc());
 		value->SetComment(context.yComment);
 
-		LocateAndMofidyDesc(descr.Set(), value);
+		MergeDescriptors(entry.SetDescr(), *value);
 	}
 
 	if (!context.nOrganismName.empty())
 	{
 		CRef<CSeqdesc> value(new CSeqdesc());
 		value->SetOrg().SetTaxname().assign(context.nOrganismName);
-		LocateAndMofidyDesc(descr.Set(), value);
-	}
-	//bioseq
 
-#if 0
-	{
-		CRef<CSeqdesc> hello(new CSeqdesc());
-		hello->SetTitle("SetTitle: Hello world");
-		descr.Set().push_back(hello);
+		MergeDescriptors(entry.SetDescr(), *value);
 	}
-	{
-		CRef<CSeqdesc> hello(new CSeqdesc());
-		hello->SetComment("SetComment: Hello world");
-		descr.Set().push_back(hello);
-	}
-#endif
-
 }
 
 void CMultiReader::ApplyAdditionalProperties(const CTable2AsnContext& context, CSerialObject* obj)
@@ -995,11 +970,85 @@ void CMultiReader::ApplyAdditionalProperties(const CTable2AsnContext& context, C
 	else
 	if (CSeq_submit* submit = dynamic_cast<CSeq_submit*>(obj))
 	{
+		if (context.HoldUntilPublish.Which() == CDate_Base::e_Std)
+		{
+			submit->SetSub().SetHup(true);
+			submit->SetSub().SetReldate().Assign(context.HoldUntilPublish);
+		}
+
 		NON_CONST_ITERATE(CSeq_submit_Base::C_Data::TEntrys, it, submit->SetData().SetEntrys())
 		{
 			ApplyAdditionalProperties(context, **it);
 		}
 	}
+}
+
+void CMultiReader::LoadDescriptors(const CTable2AsnContext& args, const string& ifname, CRef<CSeq_descr> & out_desc)
+{
+	out_desc.Reset(new CSeq_descr);
+
+    CNcbiIfstream istrm(ifname.c_str());
+
+    // guess format
+    ESerialDataFormat eSerialDataFormat = eSerial_None;
+    {{
+        CFormatGuess::EFormat eFormat = 
+            CFormatGuess::Format(istrm);
+
+        switch(eFormat) {
+        case CFormatGuess::eBinaryASN:
+            eSerialDataFormat = eSerial_AsnBinary;
+            break;
+        case CFormatGuess::eTextASN:
+            eSerialDataFormat = eSerial_AsnText;
+            break;
+        case CFormatGuess::eXml:
+            eSerialDataFormat = eSerial_Xml;
+            break;
+        default:
+            NCBI_USER_THROW_FMT(
+                "Descriptor file seems to be in an unsupported format: " 
+                << CFormatGuess::GetFormatName(eFormat) );
+            break;
+        }
+
+        istrm.seekg(0);
+    }}
+
+    auto_ptr<CObjectIStream> pObjIstrm( 
+        CObjectIStream::Open(eSerialDataFormat, istrm, eNoOwnership) );
+
+    // guess object type
+    //const string sType = pObjIstrm->ReadFileHeader();
+
+    // do the right thing depending on the input type
+    while (true) {
+        try {
+			const string sType = pObjIstrm->ReadFileHeader();
+			if (sType == CSeq_descr::GetTypeInfo()->GetName())
+			{
+				CRef<CSeq_descr> descr(new CSeq_descr);
+				pObjIstrm->Read(ObjectInfo(*descr),
+					CObjectIStream::eNoFileHeader);
+				out_desc->Set().insert(out_desc->Set().end(), descr->Get().begin(), descr->Get().end());
+			}
+			else
+			if (sType == CSeqdesc::GetTypeInfo()->GetName())
+			{
+				CRef<CSeqdesc> desc(new CSeqdesc);
+				pObjIstrm->Read(ObjectInfo(*desc),
+					CObjectIStream::eNoFileHeader);
+				out_desc->Set().push_back(desc);
+			}
+			else
+			{
+				throw runtime_error("Descriptor file must contain "
+					"either Seq_descr or Seqdesc elements");
+			}
+        } catch (...) {
+            break;
+        }
+    }
 }
 
 void CMultiReader::LoadTemplate(const CTable2AsnContext& args, const string& ifname, CRef<CSeq_entry> & out_ent_templ, CRef<CSeq_submit> & out_submit_templ)
@@ -1174,7 +1223,138 @@ void CMultiReader::LoadTemplate(const CTable2AsnContext& args, const string& ifn
 #endif
 }
 
+namespace
+{
+    class AllowedDuplicates: public set<CSeqdesc_Base::E_Choice>
+	{
+	public:
+		AllowedDuplicates()
+		{
+    		insert(CSeqdesc_Base::e_User);
+		}
+	};
+	AllowedDuplicates m_allowed_duplicates;
 
+	template<typename _which>
+	struct LocateWhich
+	{
+		typename _which::E_Choice compare_to;
+		bool operator() (_which l)  const
+		{
+			return l.Which() == compare_to;
+		}
+		bool operator() (const CRef<_which>& l)  const
+		{
+			return l->Which() == compare_to;
+		}
+	};
+}
+
+void CMultiReader::MergeDescriptors(CSeq_descr & dest, const CSeq_descr & source)
+{
+	ITERATE(CSeq_descr::Tdata, it, source.Get())
+	{
+		MergeDescriptors(dest, **it);
+	}
+}
+
+void CMultiReader::MergeDescriptors(CSeq_descr & dest, const CSeqdesc & source)
+{
+	if (m_allowed_duplicates.find(source.Which()) == m_allowed_duplicates.end())
+	{
+		LocateWhich<CSeqdesc> pred; pred.compare_to = source.Which();
+		CSeq_descr::Tdata::iterator it = find_if(dest.Set().begin(), dest.Set().end(), pred);
+		if (it != dest.Set().end())
+			dest.Set().erase(it);
+	}
+
+	CRef<CSeqdesc> desc (new CSeqdesc);
+	desc->Assign(source);
+	dest.Set().push_back(desc);
+		
+}
+
+void CMultiReader::ApplyDescriptors(CSerialObject & obj, const CSeq_descr & source)
+{
+	if (obj.GetThisTypeInfo() == CSeq_submit::GetTypeInfo())
+	{
+		CSeq_submit* submit = dynamic_cast<CSeq_submit*>(&obj);
+		if (submit)
+		{
+			NON_CONST_ITERATE(CSeq_submit_Base::C_Data::TEntrys, it, submit->SetData().SetEntrys())
+			{
+			  ApplyDescriptors(**it, source);
+			}
+		}
+	}
+	else
+	if (obj.GetThisTypeInfo() == CSeq_entry::GetTypeInfo())
+	{
+		CSeq_entry* entry = dynamic_cast<CSeq_entry*>(&obj);
+		if (entry)
+		{
+			MergeDescriptors(entry->SetDescr(), source);
+		}
+	}
+}
+
+CRef<CSerialObject> CMultiReader::LoadFile(const CTable2AsnContext& context, const string& ifname)
+{
+	CRef<CSerialObject> result;
+	if (context.m_submit_template.NotEmpty())
+	{	 	  
+		// Make a submit output
+		CRef<CSeq_submit> submit(new CSeq_submit());
+
+		if (context.m_submit_template->IsSetSub())
+		{
+			submit->Assign(*context.m_submit_template);
+		}
+
+		CRef<CSerialObject> obj = ReadFile(context, ifname);  
+		CSeq_entry* pEntry = dynamic_cast<CSeq_entry*>(obj.GetPointerOrNull());
+		if (pEntry)
+		{
+		    CRef<CSeq_entry> read_entry(pEntry);
+			switch (pEntry->Which())
+			{
+			case CSeq_entry_Base::e_Seq:
+				{
+					submit->SetData().SetEntrys().push_back(read_entry);
+				}
+				break;
+			case CSeq_entry_Base::e_Set:
+				{
+					CSeq_submit_Base::C_Data::TEntrys& data = submit->SetData().SetEntrys();				
+					data.insert(data.end(), read_entry->GetSet().GetSeq_set().begin(), read_entry->GetSet().GetSeq_set().end());
+				}
+				break;
+			}
+		}
+		result = submit;
+	}
+	else
+	{
+		result = ReadFile(context, ifname);
+	}
+	return result;
+}
+
+void CMultiReader::Cleanup(const CTable2AsnContext& context, CRef<CSerialObject> obj)
+{
+	/*
+		if (result->GetThisTypeInfo() == CSeq_entry::GetTypeInfo())
+		{
+			CSeq_entry* entry = dynamic_cast<CSeq_entry*>(result.GetPointerOrNull());
+			if (entry) 
+			{
+				CCleanup cleanup;
+				CConstRef<CCleanupChange> changes;
+				changes = cleanup.ExtendedCleanup(*entry);
+			}
+		}
+		*/
+}
 
 
 END_NCBI_SCOPE

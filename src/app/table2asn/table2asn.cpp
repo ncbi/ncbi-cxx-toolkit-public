@@ -45,25 +45,13 @@
 #include <connect/ncbi_util.h>
 
 // Objects includes
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seqloc/Seq_id.hpp>
-#include <objects/seqloc/Seq_loc.hpp>
-#include <objects/seqloc/Seq_interval.hpp>
-#include <objects/seq/Seq_inst.hpp>
-#include <objects/seq/Pubdesc.hpp>
 #include <objects/submit/Seq_submit.hpp>
-#include <objects/submit/Submit_block.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqfeat/BioSource.hpp>
-#include <objtools/validator/validator.hpp>
-#include <objtools/validator/valid_cmdargs.hpp>
-#include <objtools/cleanup/cleanup.hpp>
-
-#include <objects/seqset/Bioseq_set.hpp>
+#include <objects/seq/Seq_descr.hpp>
 
 // Object Manager includes
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#if 0
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/seq_descr_ci.hpp>
 #include <objmgr/feat_ci.hpp>
@@ -71,15 +59,15 @@
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
-
-#include <common/test_assert.h>  /* This header must go last */
+#endif
 
 #include "multireader.hpp"
 
+#include <common/test_assert.h>  /* This header must go last */
 
 using namespace ncbi;
 using namespace objects;
-using namespace validator;
+//using namespace validator;
 
 const char * TBL2ASN_APP_VER = "10.0";
 
@@ -103,25 +91,32 @@ private:
 
     void Setup(const CArgs& args);
 
-    CObjectIStream* OpenFile(const CArgs& args);
-    CObjectIStream* OpenFile(const string& fname, const CArgs& args);
-	
     void ProcessOneFile(const CTable2AsnContext& context, const string& pathname);
 	void ProcessOneFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
 	bool ProcessOneDirectory(const CTable2AsnContext& context, const CDir& directory, const CMask& mask, bool recurse);
+	void ProcessSecretFiles(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
+	void ProcessSRCFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
+	void ProcessQVLFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
+	void ProcessDSCFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
+	void ProcessCMTFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
+	void ProcessPEPFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
+	void ProcessRNAFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
+	void ProcessPRTFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
 
+#if 0
     CRef<CSeq_entry> ReadSeqEntry(void);
     CRef<CSeq_feat> ReadSeqFeat(void);
     CRef<CBioSource> ReadBioSource(void);
     CRef<CPubdesc> ReadPubdesc(void);
+#endif
 
     CRef<CScope> BuildScope(void);
 
     CRef<CObjectManager> m_ObjMgr;
-    auto_ptr<CObjectIStream> m_In;
-    unsigned int m_Options;
-    bool m_Continue;
-    bool m_OnlyAnnots;
+    //auto_ptr<CObjectIStream> m_In;
+    //unsigned int m_Options;
+    //bool m_Continue;
+    //bool m_OnlyAnnots;
 
     //size_t m_Level;
     //size_t m_Reported;
@@ -139,7 +134,8 @@ private:
 
 
 CTbl2AsnApp::CTbl2AsnApp(void) :
-    m_ObjMgr(0), m_In(0), m_Options(0), m_Continue(false), m_OnlyAnnots(false)
+    m_ObjMgr(0)
+    //, m_In(0), m_Options(0), m_Continue(false), m_OnlyAnnots(false)
     //m_Level(0), m_Reported(0), m_OutputStream(0), m_LogStream(0)
 {
 }
@@ -171,8 +167,8 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddDefaultKey
         ("x", "String", "Suffix", CArgDescriptions::eString, ".fsa");
 
-    arg_desc->AddFlag("E", "Recurse");
-    arg_desc->AddOptionalKey
+    arg_desc->AddFlag("E", "Recurse");  // done
+    arg_desc->AddOptionalKey            // done
         ("t", "InFile", "Template File",
         CArgDescriptions::eInputFile);
 
@@ -211,7 +207,7 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey
         ("Y", "InFile", "Comment File", CArgDescriptions::eInputFile); // done
     arg_desc->AddOptionalKey
-        ("D", "InFile", "Descriptors File", CArgDescriptions::eInputFile);
+        ("D", "InFile", "Descriptors File", CArgDescriptions::eInputFile); // done
     arg_desc->AddOptionalKey
         ("f", "InFile", "Single Table File", CArgDescriptions::eInputFile);
 
@@ -256,7 +252,7 @@ void CTbl2AsnApp::Init(void)
 
 	arg_desc->AddOptionalKey("H", "String", "Hold Until Publish\n\
   y Hold for One Year\n\
-  mm/dd/yyyy", CArgDescriptions::eString);
+  mm/dd/yyyy", CArgDescriptions::eString); // done
 
 	arg_desc->AddOptionalKey(
         "Z", "OutFile", "Discrepancy Report Output File", CArgDescriptions::eOutputFile);
@@ -348,13 +344,17 @@ int CTbl2AsnApp::Run(void)
 	}
 
 	context.gGenomicProductSet = args["g"];
+	context.sHandleAsSet = args["s"];
 
 	if (args["t"])
 	{
-		context.tTemplateFile = args["t"].AsString();
-		context.m_make_submit = true;
+		//context.tTemplateFile = args["t"].AsString();
 
 		m_reader.LoadTemplate(context, args["t"].AsString(), context.m_other_template, context.m_submit_template);
+	}
+	if (args["D"])
+	{
+		m_reader.LoadDescriptors(context, args["D"].AsString(), context.m_descriptors);
 	}
 
 	if (args["H"])
@@ -442,6 +442,7 @@ CRef<CScope> CTbl2AsnApp::BuildScope (void)
 }
 
 
+#if 0 
 CRef<CSeq_entry> CTbl2AsnApp::ReadSeqEntry(void)
 {
     CRef<CSeq_entry> se(new CSeq_entry);
@@ -449,79 +450,21 @@ CRef<CSeq_entry> CTbl2AsnApp::ReadSeqEntry(void)
 
     return se;
 }
-
-#if 0
-template<typename dest_t, typename cont>
-void MergeTemplate(dest_t & dest, const cont& templ)
-{
-	ITERATE(cont, it, templ)
-	{
-		string name = (**it).GetThisTypeInfo()->GetName();
-		if (name == "Seq-submit")
-		{
-			CSeq_submit* submit = dynamic_cast<CSeq_submit*>(((*it).GetNCPointerOrNull()));
-			if (submit != 0)
-			{
-			   //dest.SetSeq().SetAnnot().push_back(CRef(submit));
-				CRef<CSeq_entry> entry(new CSeq_entry);
-				entry->SetSeq().Assign(*submit);
-				dest.push_back(entry);
-			}
-		}
-	}
-}
 #endif
 
 void CTbl2AsnApp::ProcessOneFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
 {
 	m_reader.Process(context, *this);
 
-	if (context.m_make_submit)
-	{	 	  
-		//CRef<CSerialObject> main_obj;
-		CRef<CSeq_submit> submit(new CSeq_submit());
+	result = m_reader.LoadFile(context, pathname);
 
-		if (context.m_submit_template->IsSetSub())
-		{
-			submit->Assign(*context.m_submit_template);
-		}
-
-		// Make a submit output
-		if (context.HoldUntilPublish.Which() == CDate_Base::e_Std)
-		{
-			submit->SetSub().SetHup(true);
-			submit->SetSub().SetReldate().Assign(context.HoldUntilPublish);
-		}
-
-		CRef<CSerialObject> obj = m_reader.ReadFile(context, pathname);  
-		CSeq_entry* pEntry = dynamic_cast<CSeq_entry*>(obj.GetPointerOrNull());
-		CRef<CSeq_entry> read_entry(pEntry);
-		if (pEntry)
-		{
-			switch (pEntry->Which())
-			{
-			case CSeq_entry_Base::e_Seq:
-				{
-					submit->SetData().SetEntrys().push_back(read_entry);
-				}
-				break;
-			case CSeq_entry_Base::e_Set:
-				{
-					CSeq_submit_Base::C_Data::TEntrys& data = submit->SetData().SetEntrys();				
-					data.insert(data.end(), read_entry->GetSet().GetSeq_set().begin(), read_entry->GetSet().GetSeq_set().end());
-				}
-				break;
-			}
-		}
-		result = submit;
-	}
-	else
-	{
-		result = m_reader.ReadFile(context, pathname);
-	}
+	if (context.m_descriptors.NotNull())
+	  m_reader.ApplyDescriptors(*result, *context.m_descriptors);
+	ProcessSecretFiles(context, pathname, result);
+	m_reader.ApplyAdditionalProperties(context, result);
 }
 
-CNcbiOfstream* GenerateOutputStream(const CTable2AsnContext& context, const string& pathname)
+string GenerateOutputStream(const CTable2AsnContext& context, const string& pathname)
 {
 	string dir;
 	string outputfile;
@@ -534,29 +477,41 @@ CNcbiOfstream* GenerateOutputStream(const CTable2AsnContext& context, const stri
 
 	cout << "Opening:" << pathname << ":" << outputfile << endl;
 
-	return new CNcbiOfstream(outputfile.c_str());
+	return outputfile.c_str();
 }
 
 void CTbl2AsnApp::ProcessOneFile(const CTable2AsnContext& context, const string& pathname)
 {
 	CNcbiOstream* output = 0;
-	auto_ptr<CNcbiOfstream> local_file(0);
-	if (context.m_output == 0)
+	auto_ptr<CNcbiOfstream> local_output(0);
+	CFile local_file;
+	try
 	{
-		local_file.reset(GenerateOutputStream(context, pathname));
-		output = local_file.get();
-	}
-	else
-	{
-		output = context.m_output;
-	}
+		if (context.m_output == 0)
+		{
+			local_file = GenerateOutputStream(context, pathname);
+			local_output.reset(new CNcbiOfstream(local_file.GetPath().c_str()));
+			output = local_output.get();
+		}
+		else
+		{
+			output = context.m_output;
+		}
 
-	CRef<CSerialObject> obj;
-	ProcessOneFile(context, pathname, obj);
-	m_reader.ApplyAdditionalProperties(context, obj);
-	m_reader.WriteObject(*obj, *output);
+		CRef<CSerialObject> obj;
+		ProcessOneFile(context, pathname, obj);
+		m_reader.WriteObject(*obj, *output);
+	}
+	catch(...)
+	{
+		// if something goes wrong - remove the partial output to avoid confuse
+		if (local_output.get())
+		{
+			local_file.Remove();
+		}
+		throw;
+	}
 }
-
 
 bool CTbl2AsnApp::ProcessOneDirectory(const CTable2AsnContext& context, const CDir& directory, const CMask& mask, bool recurse)
 {
@@ -573,17 +528,14 @@ bool CTbl2AsnApp::ProcessOneDirectory(const CTable2AsnContext& context, const CD
 		      ProcessOneFile(context, (*it)->GetPath());
 		}
 		else
+		if (recurse)
 		{
-			if (recurse)
-			{
-				ProcessOneDirectory(context, **it, mask, recurse);
-			}
+			ProcessOneDirectory(context, **it, mask, recurse);
 		}
 	}
 
 	return true;
 }
-
 
 void CTbl2AsnApp::Setup(const CArgs& args)
 {
@@ -603,37 +555,82 @@ void CTbl2AsnApp::Setup(const CArgs& args)
     }
 }
 
-
-CObjectIStream* CTbl2AsnApp::OpenFile(const CArgs& args)
+/*
+tbl    5-column Feature Table 
+.src   tab-delimited table with source qualifiers
+.qvl   PHRAP/PHRED/consed quality scores
+.dsc  One or more descriptors in ASN.1 format
+.cmt  Tab-delimited file for structured comment
+.pep  Replacement proteins for coding regions on this sequence, use to mark conflicts
+.rna   Replacement mRNA sequences for RNA editing
+.prt    Proteins for suggest intervals
+*/
+void CTbl2AsnApp::ProcessSecretFiles(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
 {
-    // file name
-    string fname = args["i"].AsString();
+	string dir;
+	string base;
+	string ext;
+	CDirEntry::SplitPath(pathname, &dir, &base, &ext);
 
-    // file format
-    ESerialDataFormat format = eSerial_AsnText;
-    if ( args["b"] ) {
-        format = eSerial_AsnBinary;
-    }
+	string name = dir + base;
 
-    return CObjectIStream::Open(fname, format);
+	ProcessSRCFile(context, name + ".src", result);
+	ProcessQVLFile(context, name + ".qvl", result);
+	ProcessDSCFile(context, name + ".dsc", result);
+	ProcessCMTFile(context, name + ".cmt", result);
+	ProcessPEPFile(context, name + ".pep", result);
+	ProcessRNAFile(context, name + ".rna", result);
+	ProcessPRTFile(context, name + ".prt", result);
 }
 
-
-CObjectIStream* CTbl2AsnApp::OpenFile(const string& fname, const CArgs& args)
+void CTbl2AsnApp::ProcessSRCFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
 {
-    // file format
-    ESerialDataFormat format = eSerial_AsnText;
-    if ( args["b"] ) {
-        format = eSerial_AsnBinary;
-    }
-
-    return CObjectIStream::Open(fname, format);
+	CFile file(pathname);
+	if (!file.Exists()) return;
 }
 
+void CTbl2AsnApp::ProcessQVLFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
+{
+	CFile file(pathname);
+	if (!file.Exists()) return;
+}
+
+void CTbl2AsnApp::ProcessDSCFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
+{
+	CFile file(pathname);
+	if (!file.Exists()) return;
+
+	CRef<CSeq_descr> descr;
+	m_reader.LoadDescriptors(context, pathname, descr);
+	CMultiReader::ApplyDescriptors(*result, *descr);
+}
+
+void CTbl2AsnApp::ProcessCMTFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
+{
+	CFile file(pathname);
+	if (!file.Exists()) return;
+}
+
+void CTbl2AsnApp::ProcessPEPFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
+{
+	CFile file(pathname);
+	if (!file.Exists()) return;
+}
+
+void CTbl2AsnApp::ProcessRNAFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
+{
+	CFile file(pathname);
+	if (!file.Exists()) return;
+}
+
+void CTbl2AsnApp::ProcessPRTFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
+{
+	CFile file(pathname);
+	if (!file.Exists()) return;
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //  MAIN
-
 
 int main(int argc, const char* argv[])
 {

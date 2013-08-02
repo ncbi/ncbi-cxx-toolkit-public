@@ -10,24 +10,19 @@ BEGIN_NCBI_SCOPE
 
 namespace objects
 {
-class CSeq_annot;
+//class CSeq_annot;
 class CSeq_entry;
 class CSeq_submit;
 };
 
 // command line parameters are mapped into the context 
+// those with only only symbol still needs to be implemented
 struct CTable2AsnContext
 {
-	//string pDirectory;
 	string rResultsDirectory;
-	//string iInFile;
-	//string oOutFileName;
 	CNcbiOstream* m_output;
-	//string x;
-	//bool   E;
-	string tTemplateFile;
 	string a;
-	bool   s;
+	bool   sHandleAsSet;
 	bool   gGenomicProductSet;
 	bool   J;
 	string F;
@@ -37,7 +32,6 @@ struct CTable2AsnContext
 	string j;
 	string yComment;
 	string YCommentFile;
-	string DInFile;
 	string fInFile;
 	string k;
 	string V;
@@ -54,7 +48,6 @@ struct CTable2AsnContext
 	bool   P;
 	bool   W;
 	bool   K;
-	//string H;
 	objects::CDate  HoldUntilPublish;
 	string ZOutFile;
 	string c;
@@ -67,9 +60,10 @@ struct CTable2AsnContext
 	string m;
 
 	// 
-	bool   m_make_submit;
+	//bool   m_make_submit;
 	CRef<objects::CSeq_submit> m_submit_template;
 	CRef<objects::CSeq_entry>  m_other_template;
+	CRef<objects::CSeq_descr>  m_descriptors;
 
 	//string logfile;
 	//string conffile;
@@ -92,7 +86,9 @@ struct CTable2AsnContext
 	CTable2AsnContext():
 	   //m_input(0), 
 	   m_output(0),
-	   m_make_submit(false)
+	   //m_make_set(false),
+	   sHandleAsSet(false),
+	   gGenomicProductSet(false)
 	{
 	}
 };
@@ -110,11 +106,21 @@ public:
 
    //CArgDescriptions* InitAppArgs(CNcbiApplication& app);
    int RunOld(const CTable2AsnContext& args, const string& ifname, CNcbiOstream& output);
+
    CRef<CSerialObject> ReadFile(const CTable2AsnContext& args, const string& ifname);
+   CRef<CSerialObject> LoadFile(const CTable2AsnContext& args, const string& ifname);
+   void Cleanup(const CTable2AsnContext& args, CRef<CSerialObject>);
    void WriteObject(CSerialObject&, CNcbiOstream& );
    void ApplyAdditionalProperties(const CTable2AsnContext& args, CSerialObject* obj);
    void ApplyAdditionalProperties(const CTable2AsnContext& args, objects::CSeq_entry& entry);
    void LoadTemplate(const CTable2AsnContext& args, const string& ifname, CRef<objects::CSeq_entry> & out_ent_templ, CRef<objects::CSeq_submit> & out_submit_templ);
+   void LoadDescriptors(const CTable2AsnContext& args, const string& ifname, CRef<objects::CSeq_descr> & out_desc);
+   static
+   void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeq_descr & source);
+   static
+   void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeqdesc & source);
+   static
+   void ApplyDescriptors(CSerialObject & obj, const objects::CSeq_descr & source);
 
 protected:
        
