@@ -49,8 +49,13 @@ deprecated {
 
 # Don't forget: order matters!
 
+use m_NewCleanup.x_BioseqSetEC
+{
+    Bioseq-set
+}
+
 use m_NewCleanup.x_SortSeqDescs {
-    Seq-entry
+    POST Seq-entry
 }
 
 use m_NewCleanup.x_RemoveDupBioSource {
@@ -75,3 +80,4 @@ use m_NewCleanup.x_RemoveEmptyUserObject
     Bioseq.descr,
     Bioseq-set.descr
 }
+

@@ -250,14 +250,26 @@ void s_LoadExpectedOutput(
     }
 }
 
+enum EExtendedCleanup {
+    eExtendedCleanup_DoNotRun,
+    eExtendedCleanup_Run
+};
+
 static
 void s_ProcessOneEntry( 
     CSeq_entry &input_seq_entry, 
-    const CSeq_entry &expected_output_seq_entry )
+    const CSeq_entry &expected_output_seq_entry,
+    EExtendedCleanup eExtendedCleanup)
 {
     // clean input, then compare to output
     CCleanup cleanup;
-    cleanup.BasicCleanup( input_seq_entry );
+    if( eExtendedCleanup == eExtendedCleanup_Run ) {
+        // extended cleanup includes basic cleanup
+        cleanup.ExtendedCleanup( input_seq_entry, 
+            CCleanup::eClean_NoNcbiUserObjects );
+    } else {
+        cleanup.BasicCleanup( input_seq_entry );
+    }
     const bool bSeqEntriesAreEqual = 
         input_seq_entry.Equals(expected_output_seq_entry);
     BOOST_CHECK( bSeqEntriesAreEqual );
@@ -324,13 +336,21 @@ void s_ProcessInputFile( const string &input_file_name )
 
     BOOST_CHECK( seq_entries.size() == expected_seq_entries.size() );
 
+    // see whether or not to run extended cleanup, which depends
+    // on the file path
+    EExtendedCleanup eExtendedCleanup = eExtendedCleanup_DoNotRun;
+    if( NStr::FindNoCase(input_file_name, "ExtendedCleanup") != NPOS ) {
+        eExtendedCleanup = eExtendedCleanup_Run;
+    }
+
     // The file might contain multiple test cases
     const size_t num_entries_to_check = 
         min( seq_entries.size(), expected_seq_entries.size() );
     size_t curr_idx = 0;
     for( ; curr_idx < num_entries_to_check; ++curr_idx ) {
         s_ProcessOneEntry( *seq_entries[curr_idx], 
-            *expected_seq_entries[curr_idx] );
+            *expected_seq_entries[curr_idx],
+            eExtendedCleanup);
     }
 }
 

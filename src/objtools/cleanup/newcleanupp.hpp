@@ -455,6 +455,11 @@ private:
 
     void x_RemoveEmptyUserObject( CSeq_descr & seq_descr );
 
+    void x_BioseqSetEC( CBioseq_set & bioseq_set );
+    void x_BioseqSetNucProtEC( CBioseq_set & bioseq_set );
+
+    bool x_IsDBLinkUserObj( const CSeqdesc & desc );
+
 protected:
 
     // variables used for the whole cleaning process

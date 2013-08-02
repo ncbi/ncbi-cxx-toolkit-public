@@ -59,8 +59,9 @@ class NCBI_CLEANUP_EXPORT CCleanup : public CObject
 public:
 
     enum EValidOptions {
-        eClean_NoReporting = 0x1,
-        eClean_GpipeMode =   0x2
+        eClean_NoReporting       = 0x1,
+        eClean_GpipeMode         = 0x2,
+        eClean_NoNcbiUserObjects = 0x4
     };
 
     // Construtor / Destructor

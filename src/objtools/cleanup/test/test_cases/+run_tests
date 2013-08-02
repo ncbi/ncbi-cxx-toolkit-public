@@ -52,14 +52,32 @@ prepend_with()
     awk 'BEGIN { did_print = 0; } { if( 0 == did_print) { print "'$WORD'"; print $0; did_print = 1; } else { print $0 } }'
 }
 
+file_needs_extended_cleanup()
+{
+    FILE="$1"
+    echo "$FILE" | tr 'A-Z' 'a-z' | read LOWERCASE_FILE
+
+    if [[ $DO_EXTENDED_CLEANUP == yes ]] ; then
+        # always
+        return 0
+    elif [[ $DO_EXTENDED_CLEANUP == no ]] ; then
+        # never
+        return 1
+    elif [[ $DO_EXTENDED_CLEANUP == auto ]] ; then
+        return [[ "$LOWERCASE_FILE" == *extendedcleanup* ]]
+    else
+        die "bad DO_EXTENDED_CLEANUP: $DO_EXTENDED_CLEANUP:"
+    fi
+}
+
 # Runs cleanasn on a file
 do_cleanasn()
 {
     for FILE in "$@" ; do
-        if [[ $DO_EXTENDED_CLEANUP == yes ]]; then
-            $CLEANASN -i $FILE -K bcs -a ${CLEANASN_TYPE} -U grp
+        if file_needs_extended_cleanup "$FILE" ; then
+            $CLEANASN -i $FILE -K bcsu -a ${CLEANASN_TYPE} -U grp
         else
-            $CLEANASN -i $FILE -K bc -a ${CLEANASN_TYPE} -U grp
+            $CLEANASN -i $FILE -K bcu -a ${CLEANASN_TYPE} -U grp
         fi
     done
 }
@@ -69,12 +87,19 @@ do_newcleanup()
 {
     ARG=
 
+    these_files_require_extended_cleanup=no
+
     # construct arg
     for file in "$@" ; do
         ARG="${ARG} -i ${file} -o - "
+        if file_needs_extended_cleanup "$file" ; then
+            these_files_require_extended_cleanup=yes
+        fi
     done
 
-    if [[ $DO_EXTENDED_CLEANUP == yes ]]; then
+    # save the old value
+    OLD_NEW_CLEANASN_EXTRA_ARGS="$NEW_CLEANASN_EXTRA_ARGS"
+    if [[ $these_files_require_extended_cleanup == yes ]] ; then 
         NEW_CLEANASN_EXTRA_ARGS="${NEW_CLEANASN_EXTRA_ARGS} -e"
     fi
 
@@ -83,6 +108,9 @@ do_newcleanup()
     else
         $NEW_CLEANUP -x $CHANGES_FILE ${ARG}
     fi
+
+    # restore the old value
+    NEW_CLEANASN_EXTRA_ARGS="$OLD_NEW_CLEANASN_EXTRA_ARGS"
 }
 
 parse_args()
@@ -114,6 +142,10 @@ parse_args()
                 ;;
             -e)
                 DO_EXTENDED_CLEANUP=yes
+                ;;
+            -e-auto)
+                # auto-detect whether to run extended cleanup
+                DO_EXTENDED_CLEANUP=auto
                 ;;
             -sd)
                 DIFF=sdiff

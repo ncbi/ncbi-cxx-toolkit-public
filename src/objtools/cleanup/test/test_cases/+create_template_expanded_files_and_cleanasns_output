@@ -82,8 +82,8 @@ generate_cleanasns_output()
     # for simplicity (but certainly not speed!) we split the template file
     must $EASY_AUTO_REPLACE ${template_root}.template
     
-    # no must because might fail just because of change
-    $RUN_TESTS $( sort_by_middle_num ${template_root} test ) -wco -ca=$CLEANASN
+    # no "must" because might fail just because of change
+    $RUN_TESTS $( sort_by_middle_num ${template_root} test ) -wco -ca=$CLEANASN -e-auto
     
     silent rm ${template_root}.cleanasns_output # make sure empty
     for file in $( sort_by_middle_num ${template_root} cleanasns_output ) ; do
@@ -209,7 +209,7 @@ for raw_test_gz in $(find -name '*.raw_test.gz') ; do
     must mv ${cleanasns_output_file}.gz $cleanasns_output_file_old_gz
 
     # no "must" because might fail just because of difference
-    $RUN_TESTS $raw_test -wco -ca=$CLEANASN
+    $RUN_TESTS $raw_test -wco -ca=$CLEANASN -e-auto
 
     # zip the files back up
     must rm -f $raw_test
