@@ -1508,7 +1508,7 @@ public:
     CTimeout(unsigned int sec, unsigned int usec);
 
     /// Initialize timeout from number of seconds (fractional value).
-    CTimeout(double sec);
+    explicit CTimeout(double sec);
 
     /// Destructor.
     ~CTimeout(void) {}
@@ -1627,19 +1627,8 @@ public:
     ///   Number of seconds to add to the current time
     /// @param nanoseconds
     ///   Number of nanoseconds to add to the current time
-    CDeadline(unsigned int seconds, unsigned int nanoseconds);
+    CDeadline(unsigned int seconds, unsigned int nanoseconds = 0);
 
-    /// Initialize absolute timeout using seconds and nanoseconds
-    /// (adding to the current time)
-    /// @param seconds
-    ///   Number of seconds to add to the current time.
-    ///   The fractional part is used to compute nanoseconds.
-    /// @note
-    ///   Please, use this constructor as rarely as possible, because after
-    ///   doing some arithmetical operations and conversion with it,
-    ///   the time span can differ at some nanoseconds from expected value.
-    explicit CDeadline(double seconds);
-    
     /// Initialize absolute timeout by adding relative one to the current time
     CDeadline(const CTimeout& timeout);
 

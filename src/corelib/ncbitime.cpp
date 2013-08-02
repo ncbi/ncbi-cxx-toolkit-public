@@ -2857,21 +2857,6 @@ CDeadline::CDeadline(unsigned int seconds, unsigned int nanoseconds)
 }
 
 
-CDeadline::CDeadline(double seconds)
-    : m_Seconds(0), m_Nanoseconds(0), m_Infinite(false)
-{
-    if (seconds < 0  || seconds > kMax_UInt) {
-        NCBI_THROW(CTimeException, eConvert, 
-                  "Value " + NStr::DoubleToString(seconds) +
-                  " is too big to convert to CDeadline");
-    }
-    x_Now();
-    unsigned int sec     = (unsigned int)(seconds);
-    unsigned int nanosec = (unsigned int)((seconds - sec) * kNanoSecondsPerSecond);
-    x_Add(sec, nanosec);
-}
-
-
 CDeadline::CDeadline(const CTimeout& timeout)
     : m_Seconds(0), m_Nanoseconds(0), m_Infinite(false)
 {
