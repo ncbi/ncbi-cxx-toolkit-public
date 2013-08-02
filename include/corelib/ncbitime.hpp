@@ -1623,14 +1623,25 @@ class NCBI_XNCBI_EXPORT CDeadline
 public:
     /// Initialize absolute timeout using seconds and nanoseconds
     /// (adding to the current time)
-    /// @param rel_seconds
+    /// @param seconds
     ///   Number of seconds to add to the current time
-    /// @param rel_nanoseconds
+    /// @param nanoseconds
     ///   Number of nanoseconds to add to the current time
-    CDeadline(unsigned int rel_seconds, unsigned int rel_nanoseconds);
+    CDeadline(unsigned int seconds, unsigned int nanoseconds);
+
+    /// Initialize absolute timeout using seconds and nanoseconds
+    /// (adding to the current time)
+    /// @param seconds
+    ///   Number of seconds to add to the current time.
+    ///   The fractional part is used to compute nanoseconds.
+    /// @note
+    ///   Please, use this constructor as rarely as possible, because after
+    ///   doing some arithmetical operations and conversion with it,
+    ///   the time span can differ at some nanoseconds from expected value.
+    explicit CDeadline(double seconds);
     
     /// Initialize absolute timeout by adding relative one to the current time
-    CDeadline(const CTimeout& rel_timeout);
+    CDeadline(const CTimeout& timeout);
 
     /// Check if the timeout is infinite
     bool IsInfinite(void) const { return m_Infinite; }

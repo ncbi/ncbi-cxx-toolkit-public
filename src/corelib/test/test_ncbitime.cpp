@@ -46,8 +46,9 @@
 USING_NCBI_SCOPE;
 
 
-// Macro to enable/disable tests
+// Macro to enable/disable speed tests
 #define ENABLE_SPEED_TESTS  0
+
 // String printout
 #define STR(t) string("[" + (t).AsString() + "]")
 

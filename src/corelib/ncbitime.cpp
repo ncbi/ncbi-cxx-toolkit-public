@@ -2849,27 +2849,43 @@ bool CTimeout::operator<= (const CTimeout& t) const
 //
 //=============================================================================
 
-CDeadline::CDeadline(unsigned int sec, unsigned int nanosec)
+CDeadline::CDeadline(unsigned int seconds, unsigned int nanoseconds)
     : m_Seconds(0), m_Nanoseconds(0), m_Infinite(false)
 {
     x_Now();
-    x_Add(sec,nanosec);
-
+    x_Add(seconds, nanoseconds);
 }
 
-CDeadline::CDeadline(const CTimeout& rel_timeout)
+
+CDeadline::CDeadline(double seconds)
     : m_Seconds(0), m_Nanoseconds(0), m_Infinite(false)
 {
-    if (rel_timeout.IsInfinite()) {
+    if (seconds < 0  || seconds > kMax_UInt) {
+        NCBI_THROW(CTimeException, eConvert, 
+                  "Value " + NStr::DoubleToString(seconds) +
+                  " is too big to convert to CDeadline");
+    }
+    x_Now();
+    unsigned int sec     = (unsigned int)(seconds);
+    unsigned int nanosec = (unsigned int)((seconds - sec) * kNanoSecondsPerSecond);
+    x_Add(sec, nanosec);
+}
+
+
+CDeadline::CDeadline(const CTimeout& timeout)
+    : m_Seconds(0), m_Nanoseconds(0), m_Infinite(false)
+{
+    if (timeout.IsInfinite()) {
         m_Infinite = true;
     }
-    else if (rel_timeout.IsFinite()) {
+    else if (timeout.IsFinite()) {
         x_Now();
         unsigned int sec, mksec;
-        rel_timeout.Get(&sec, &mksec);
-        x_Add(sec,mksec*1000);
+        timeout.Get(&sec, &mksec);
+        x_Add(sec, mksec*1000);
     }
 }
+
 
 void CDeadline::x_Now(void)
 {
@@ -2896,6 +2912,7 @@ void CDeadline::x_Now(void)
 #endif
 }
 
+
 void CDeadline::x_Add(unsigned int seconds, unsigned int nanoseconds)
 {
     if (m_Infinite || (seconds == 0 && nanoseconds == 0)) {
@@ -2906,6 +2923,7 @@ void CDeadline::x_Add(unsigned int seconds, unsigned int nanoseconds)
     m_Nanoseconds = nn%kNanoSecondsPerSecond;
     m_Seconds += seconds;
 }
+
 
 void CDeadline::GetExpirationTime(time_t* sec, unsigned int* nanosec) const
 {
@@ -2921,6 +2939,7 @@ void CDeadline::GetExpirationTime(time_t* sec, unsigned int* nanosec) const
         *nanosec = m_Nanoseconds;
     }
 }
+
 
 CNanoTimeout CDeadline::GetRemainingTime(void) const
 {
@@ -2951,6 +2970,7 @@ CNanoTimeout CDeadline::GetRemainingTime(void) const
     }
     return CNanoTimeout((unsigned int)thenS,thenNS);
 }
+
 
 bool CDeadline::operator <(const CDeadline& right_hand_operand) const
 {
