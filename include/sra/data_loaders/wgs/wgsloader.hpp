@@ -70,6 +70,7 @@ public:
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(void);
+    static string GetLoaderNameFromArgs(const SLoaderParams& params);
 
     virtual TBlobId GetBlobId(const CSeq_id_Handle& idh);
     virtual TBlobId GetBlobIdFromString(const string& str) const;
@@ -105,8 +106,6 @@ private:
     // parametrized constructor
     CWGSDataLoader(const string& loader_name, const SLoaderParams& params);
     ~CWGSDataLoader(void);
-
-    static string GetLoaderNameFromArgs(const SLoaderParams& params);
 
     CRef<CWGSDataLoader_Impl> m_Impl;
 };
