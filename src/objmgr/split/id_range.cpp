@@ -204,6 +204,9 @@ void CSeqsRange::Add(const CSeq_align& obj, const CBlobSplitterImpl& impl)
     case CSeq_align::C_Segs::e_Spliced:
         Add(segs.GetSpliced(), impl);
         break;
+    case CSeq_align::C_Segs::e_Sparse:
+        Add(segs.GetSparse(), impl);
+        break;
     default:
         break;
     }
@@ -355,7 +358,7 @@ void CSeqsRange::Add(const CSparse_seg& sparse,
             numseg = min(numseg, aln_row.GetSecond_strands().size());
         }
 
-        for (int seg = 0; seg < seg; ++seg) {
+        for (size_t seg = 0; seg < numseg; ++seg) {
             TSeqPos len = aln_row.GetLens()[seg];
             CSeq_id_Handle idh =
                 CSeq_id_Handle::GetHandle(aln_row.GetFirst_id());

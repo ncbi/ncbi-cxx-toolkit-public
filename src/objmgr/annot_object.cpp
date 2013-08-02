@@ -774,11 +774,13 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
         {
             const CSeq_align::C_Segs::TSparse& sparse =
                 align.GetSegs().GetSparse();
-            size_t dim = sparse.GetRows().size();
+            // consensus sequence row + one row for each sub-alignment
+            size_t dim = sparse.GetRows().size() + 1;
             if (hrmaps.size() < dim) {
                 hrmaps.resize(dim);
             }
             size_t row = 0;
+            hrmaps[0].SetMasterSeq(master);
             ITERATE ( CSparse_seg::TRows, it, sparse.GetRows() ) {
                 const CSparse_align& aln_row = **it;
                 size_t numseg = aln_row.GetNumseg();
@@ -804,21 +806,23 @@ void CAnnotObject_Info::x_ProcessAlign(vector<CHandleRangeMap>& hrmaps,
                     numseg = min(numseg, aln_row.GetSecond_strands().size());
                 }
 
-                for (int seg = 0; seg < seg; ++seg) {
+                hrmaps[row+1].SetMasterSeq(master);
+                for (size_t seg = 0; seg < numseg; ++seg) {
                     TSeqPos len = aln_row.GetLens()[seg];
                     CSeq_loc loc;
                     loc.SetInt().SetId().Assign(aln_row.GetFirst_id());
                     loc.SetInt().SetFrom(aln_row.GetFirst_starts()[seg]);
                     loc.SetInt().SetTo(aln_row.GetFirst_starts()[seg] + len - 1);
-                    hrmaps[row].SetMasterSeq(master);
-                    hrmaps[row].AddLocation(loc);
+                    // consensus sequence goes to the first row
+                    hrmaps[0].AddLocation(loc);
+
                     loc.SetInt().SetId().Assign(aln_row.GetSecond_id());
                     loc.SetInt().SetFrom(aln_row.GetSecond_starts()[seg]);
                     loc.SetInt().SetTo(aln_row.GetSecond_starts()[seg] + len - 1);
                     if ( aln_row.IsSetSecond_strands() ) {
                         loc.SetInt().SetStrand(aln_row.GetSecond_strands()[row]);
                     }
-                    hrmaps[row].AddLocation(loc);
+                    hrmaps[row+1].AddLocation(loc);
                 }
                 row++;
             }
