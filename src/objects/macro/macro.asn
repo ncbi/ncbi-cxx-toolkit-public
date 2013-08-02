@@ -1337,6 +1337,7 @@ Table-match-type ::= CHOICE {
   nuc-id NULL ,
   src-qual Source-qual-choice ,
   protein-name NULL ,
+  bioproject NULL ,
   any NULL
 }
 
