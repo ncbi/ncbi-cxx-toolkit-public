@@ -247,6 +247,8 @@ Reduced the number of VTune configurations, added Unicode with VTune one.
 Added generation of user settings - to customize PATH in debugging sessions.
 Added TargetMachine settings for Librarian.
 
-
+August 05, 2013
+version 3.10.0
+Changed utility projects names.
 
 
