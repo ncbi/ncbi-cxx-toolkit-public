@@ -1175,6 +1175,7 @@ CSeq_align_Mapper_Base::x_ConvertSegment(TSegments::iterator& seg_it,
         left_shift += mseg.m_Len;
         start += mseg.m_Len;
         mapped = true;
+        if (start > stop) break;
     }
     // Update alignment flags.
     if (align_flags == eAlign_MultiId  &&  m_AlignFlags == eAlign_Normal) {
