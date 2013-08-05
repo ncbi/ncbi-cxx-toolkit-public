@@ -211,6 +211,8 @@ void CLocusItem::x_SetName(CBioseqContext& ctx)
         return;
         }*/
 
+        const static size_t MAX_LOCUS_ACCN_LEN = 38;
+
         const CTextseq_id* tsip = id.GetSeqId()->GetTextseq_Id();
         if (tsip != NULL) {
             if (s_IsGenomeView(ctx)) {
@@ -229,6 +231,11 @@ void CLocusItem::x_SetName(CBioseqContext& ctx)
 
         if (x_NameHasBadChars(m_Name)  ||  NStr::IsBlank(m_Name)) {
             m_Name = id.GetSeqId()->GetSeqIdString();
+        }
+
+        if( m_Name.length() > MAX_LOCUS_ACCN_LEN ) {
+            m_Name.resize(MAX_LOCUS_ACCN_LEN);
+            *m_Name.rbegin() = '>';
         }
     } catch (CException&) {
     }

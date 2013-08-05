@@ -321,6 +321,15 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
             }
         }
     }
+
+    switch( ctx.GetRepr() ) {
+    case CSeq_inst::eRepr_map:
+        x_AddKeyword("Whole_Genome_Map");
+        break;
+    default:
+        // no action needed for other types
+        break;
+    }
 }
 
 

@@ -85,11 +85,11 @@ s_JoinLinkableStrs(const CUser_field_Base::C_Data::TStrs &strs,
             result << ", ";
         }
         const string &id = *str_iter;
-        if( is_html ) {
+        if( is_html && ! url_prefix.empty() ) {
             result << "<a href=\"" << url_prefix << id << "\">";
         }
         result << id;
-        if( is_html ) {
+        if( is_html && ! url_prefix.empty() ) {
             result << "</a>";
         }
     }
@@ -200,10 +200,17 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
         }
     }
 
-    const static string kStrLinkBaseBioProj = "http://www.ncbi.nlm.nih.gov/bioproject?term=";
-    const static string kStrLinkBaseBioSample = "http://www.ncbi.nlm.nih.gov/biosample?term=";
-    const static string kStrLinkBaseAssembly = "http://www.ncbi.nlm.nih.gov/assembly/";
-    const static string kStrLinkBaseSRA = "http://www.ncbi.nlm.nih.gov/sites/entrez?db=sra&term=";
+    typedef SStaticPair<const char *, const char*> TDbLinkLabelToURL;
+    static const TDbLinkLabelToURL kDbLinkLabelToURL[] = {
+        "Assembly",               "http://www.ncbi.nlm.nih.gov/assembly/",
+        "BioProject",             "http://www.ncbi.nlm.nih.gov/bioproject?term=",
+        "BioSample",              "http://www.ncbi.nlm.nih.gov/biosample?term=",
+        "ProbeDB",                "",
+        "Sequence Read Archive",  "http://www.ncbi.nlm.nih.gov/sites/entrez?db=sra&term=",
+        "Trace Assembly Archive", ""
+    };
+    typedef const CStaticPairArrayMap<const char *, const char*, PNocase> TDbLinkLabelToURLMap;
+    DEFINE_STATIC_ARRAY_MAP(TDbLinkLabelToURLMap, kDbLinkLabelToURLMap, kDbLinkLabelToURL);
 
     // process DBLink
     // ( we have these temporary vectors because we can't push straight to m_DBLinkLines
@@ -214,49 +221,60 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
             const CUser_field& field = **uf_it;
             if ( field.IsSetLabel()  &&  field.GetLabel().IsStr() && field.CanGetData() ) {
                 const string& label = field.GetLabel().GetStr();
-                if( field.GetData().IsStrs() ) 
+
+                TDbLinkLabelToURLMap::const_iterator find_iter =
+                    kDbLinkLabelToURLMap.find(label.c_str());
+                if( find_iter == kDbLinkLabelToURLMap.end() ) {
+                    continue;
+                }
+
+                const char *pchNormalizedDbLinkLabel = find_iter->first;
+                const char *pchDbLinkURLPrefix       = find_iter->second;
+
+                typedef CUser_field::C_Data TFieldData;
+                const TFieldData & field_data = field.GetData();
+
+                if( field_data.IsStrs() || field_data.IsStr() ) 
                 {
-                    const CUser_field_Base::C_Data::TStrs &strs = field.GetData().GetStrs();
+                    const TFieldData::TStrs * pStrs = NULL;
 
-                    if( NStr::EqualNocase(label, "BioProject") ) {
-                        dblinkLines.push_back( "BioProject: " + 
-                            s_JoinLinkableStrs( strs, kStrLinkBaseBioProj, bHtml ) );
-                        if( bHtml ) {
-                            TryToSanitizeHtml( dblinkLines.back() );
-                        }
-                    } else if( NStr::EqualNocase(label, "BioSample") ) {
-                        dblinkLines.push_back( "BioSample: " + 
-                            s_JoinLinkableStrs( strs, kStrLinkBaseBioSample, bHtml ) );
-                        if( bHtml ) {
-                            TryToSanitizeHtml( dblinkLines.back() );
-                        }
-                    } else if( NStr::EqualNocase(label, "Assembly") ) {
-                        dblinkLines.push_back( "Assembly: " + 
-                            s_JoinLinkableStrs( strs, kStrLinkBaseAssembly, bHtml ) );
-                        if( bHtml ) {
-                            TryToSanitizeHtml( dblinkLines.back() );
-                        }
-                    } else if( NStr::EqualNocase(label, "ProbeDB") ) {
-                        dblinkLines.push_back( "ProbeDB: " + 
-                            NStr::Join( strs, ", " ) );
-                        if( bHtml ) {
-                            TryToSanitizeHtml( dblinkLines.back() );
-                        }
-                    } else if ( NStr::EqualNocase(label, "Sequence Read Archive") ) {
-                        dblinkLines.push_back( "Sequence Read Archive: " + 
-                            s_JoinLinkableStrs( strs, kStrLinkBaseSRA, bHtml ) );
-                        if( bHtml ) {
-                            TryToSanitizeHtml( dblinkLines.back() );
-                        }
-                    }
-                } else if( field.GetData().IsInts() ) {
-                    const CUser_field_Base::C_Data::TInts &ints = field.GetData().GetInts();
+                    // auto_ptr just used to destroy the pStrs if it's
+                    // dynamically created.
+                    auto_ptr<TFieldData::TStrs> pStrsDestroyer;
 
-                    if( NStr::EqualNocase(label, "Trace Assembly Archive") ) {
-                        dblinkLines.push_back( "Trace Assembly Archive: " + 
-                            s_JoinNumbers( ints, ", " ) );
-                        // No need to sanitize; it's just numbers, commas, and spaces
+                    if(  field_data.IsStrs() ) {
+                        pStrs = & field_data.GetStrs();
+                    } else {
+                        _ASSERT( field_data.IsStr() );
+                        pStrsDestroyer.reset( new TFieldData::TStrs );
+                        pStrsDestroyer->push_back( field_data.GetStr() );
+                        pStrs = pStrsDestroyer.get();
                     }
+
+                    dblinkLines.push_back( 
+                        pchNormalizedDbLinkLabel + string(": ") + 
+                        s_JoinLinkableStrs( *pStrs, pchDbLinkURLPrefix, bHtml ) );
+                    if( bHtml ) {
+                        TryToSanitizeHtml( dblinkLines.back() );
+                    }
+                } else if( field_data.IsInts() || field_data.IsInt() ) {
+
+                    const TFieldData::TInts * pInts = NULL;
+                    // destroys pInts if it's dynamically created
+                    auto_ptr<TFieldData::TInts> pIntsDestroyer;
+
+                    if( field_data.IsInts() ) {
+                        pInts = & field_data.GetInts();
+                    } else if( field_data.IsInt() ) {
+                        pIntsDestroyer.reset( new TFieldData::TInts );
+                        pIntsDestroyer->push_back( field_data.GetInt() );
+                        pInts = pIntsDestroyer.get();
+                    }
+
+                    dblinkLines.push_back( 
+                        pchNormalizedDbLinkLabel + string(": ") + 
+                        s_JoinNumbers( *pInts, ", " ) );
+                    // No need to sanitize; it's just numbers, commas, and spaces
                 }
             }
         }

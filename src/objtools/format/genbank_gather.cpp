@@ -181,6 +181,7 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
     if ( !cfg.HideSourceFeatures() ) {
         GATHER_VIA_FUNC(Sourcefeat, x_GatherSourceFeatures);
     }
+    const bool bIsMap = (ctx.GetRepr() == CSeq_inst::eRepr_map);
     if ( ctx.IsWGSMaster()  &&  ctx.GetTech() == CMolInfo::eTech_wgs ) {
         GATHER_VIA_FUNC(Wgs, x_GatherWGS);
     } else if( ctx.IsTSAMaster()  &&
@@ -202,11 +203,14 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
         GATHER_ANCHOR(Contig, "contig");
         GATHER_BLOCK(Contig, CContigItem);
         if ( cfg.ShowContigAndSeq() ) {
-            if ( ctx.IsNuc()  &&  s_ShowBaseCount(cfg) ) {
+            if ( ctx.IsNuc() && ! bIsMap && s_ShowBaseCount(cfg) )
+            {
                 GATHER_BLOCK(Basecount, CBaseCountItem);
             }
-            GATHER_BLOCK(Origin, COriginItem);
-            GATHER_VIA_FUNC(Sequence, x_GatherSequence);
+            if( ! bIsMap ) {
+                GATHER_BLOCK(Origin, COriginItem);
+                GATHER_VIA_FUNC(Sequence, x_GatherSequence);
+            }
         }
     } else {
         GATHER_VIA_FUNC(FeatAndGap, x_GatherFeatures);
@@ -214,11 +218,14 @@ void CGenbankGatherer::x_DoSingleSection(CBioseqContext& ctx) const
             GATHER_ANCHOR(Contig, "contig");
             GATHER_BLOCK(Contig, CContigItem);
         }
-        if ( ctx.IsNuc()  &&  s_ShowBaseCount(cfg) ) {
+        if ( ctx.IsNuc()  && ! bIsMap && s_ShowBaseCount(cfg) ) 
+        {
             GATHER_BLOCK(Basecount, CBaseCountItem);
         }
-        GATHER_BLOCK(Origin, COriginItem);
-        GATHER_VIA_FUNC(Sequence, x_GatherSequence);
+        if( ! bIsMap ) {
+            GATHER_BLOCK(Origin, COriginItem);
+            GATHER_VIA_FUNC(Sequence, x_GatherSequence);
+        }
     }
     GATHER_BLOCK(Slash, CEndSectionItem);
 }
