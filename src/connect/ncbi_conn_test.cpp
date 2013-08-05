@@ -35,7 +35,6 @@
 #include <corelib/stream_utils.hpp>
 #include <connect/ncbi_conn_test.hpp>
 #include <connect/ncbi_socket.hpp>
-#include "ncbi_ansi_ext.h"
 #include "ncbi_comm.h"
 #include "ncbi_priv.h"
 #include "ncbi_servicep.h"
@@ -230,13 +229,14 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
     time_t           sec;
     unsigned int nanosec;
     deadline.GetExpirationTime(&sec, &nanosec);
-    sprintf (net_info->path, "/NcbiTest%08lX%08lX",
-             (unsigned long) sec, (unsigned long) nanosec);
+    sprintf(net_info->path, "/NcbiTest%08lX%08lX",
+            (unsigned long) sec, (unsigned long) nanosec);
 
     vector< AutoPtr<CConn_HttpStream> > http;
     for (size_t n = 0;  n < sizeof(x_Tests) / sizeof(x_Tests[0]);  ++n) {
         char user_header[80];
-        strncpy0(net_info->host, x_Tests[n].host, sizeof(net_info->host)-1);
+        _ASSERT(strlen(x_Tests[n].host) < sizeof(net_info->host) - 1);
+        strcpy(net_info->host, x_Tests[n].host);
         if (x_Tests[n].vhost)
             sprintf(user_header, "Host: %s", x_Tests[n].vhost);
         else
