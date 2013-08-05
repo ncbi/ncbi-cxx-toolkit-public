@@ -2576,21 +2576,23 @@ static string s_SpecialValueName(CTimeout::EType type)
     case CTimeout::eInfinite:
         return "eInfinity";
     default:
-        return kEmptyStr;
+        break;
     }
+    return kEmptyStr;
 }
 
 
-bool CTimeout::IsZero() const
+bool CTimeout::IsZero(void) const
 {
     if ( !IsFinite() ) {
         if (m_Type == eDefault) {
             NCBI_THROW(CTimeException, eInvalid, 
-                       "IsZero() cannot be used for default timeout");
+                       "IsZero() cannot be used with " +
+                       s_SpecialValueName(m_Type) + " timeout");
         }
         return false;
     }
-    return !m_Sec  &&  !m_NanoSec;
+    return !(m_Sec | m_NanoSec);
 }
 
 
@@ -2603,16 +2605,16 @@ unsigned long CTimeout::GetAsMilliSeconds(void) const
     }
 #if (SIZEOF_INT == SIZEOF_LONG)
     // Roughly calculate maximum number of seconds that can be safely converted
-    // to milliseconds without overflow.
-    if (m_Sec > (kMax_ULong/1000 - 1)) {
+    // to milliseconds without an overflow.
+    if (m_Sec > kMax_ULong / 1000 - 1) {
         NCBI_THROW(CTimeException, eConvert, 
                    "Timeout value " +
                    NStr::UIntToString(m_Sec) + 
-                   " sec is too big to convert to 'unsigned long'");
+                   " too big to convert to unsigned long");
     }
 #endif
     return m_Sec * kMilliSecondsPerSecond +
-        m_NanoSec / (kNanoSecondsPerSecond/kMilliSecondsPerSecond);
+        m_NanoSec / (kNanoSecondsPerSecond / kMilliSecondsPerSecond);
 }
 
 
@@ -2635,13 +2637,13 @@ CTimeSpan CTimeout::GetAsTimeSpan(void) const
                    s_SpecialValueName(m_Type) + " timeout value");
     }
 #if (SIZEOF_INT == SIZEOF_LONG)
-    if ( m_Sec > (long)kMax_Long ) {
+    if ( m_Sec > (unsigned int) kMax_Long ) {
         NCBI_THROW(CTimeException, eConvert, 
                    "Timeout value " +
-                   NStr::UIntToString(m_Sec) + 
-                   "is too big to convert to CTimeSpan");
-        // We don't need to check microseconds here, because it always have
-        // normalized value and can be safely converted to nanoseconds.
+                   NStr::UIntToString(m_Sec) +
+                   " too big to convert to CTimeSpan");
+        // We don't need to check microseconds here, because it always keeps a
+        // normalized value and can always be safely converted to nanoseconds.
     }
 #endif
     CTimeSpan ts(m_Sec, m_NanoSec);
@@ -2649,18 +2651,21 @@ CTimeSpan CTimeout::GetAsTimeSpan(void) const
 }
 
 
-void CTimeout::Get(unsigned int *sec, unsigned int *microsec) const
+void CTimeout::Get(unsigned int* sec, unsigned int* usec) const
 {
     if ( !IsFinite() ) {
         NCBI_THROW(CTimeException, eConvert, 
                    "Cannot convert from " +
                    s_SpecialValueName(m_Type) + " timeout value");
     }
-    if ( sec )
+    if ( sec ) {
         *sec  = m_Sec;
-    if ( microsec )
-        *microsec = m_NanoSec / (kNanoSecondsPerSecond/kMicroSecondsPerSecond);
+    }
+    if ( usec ) {
+        *usec = m_NanoSec / (kNanoSecondsPerSecond / kMicroSecondsPerSecond);
+    }
 }
+
 
 void CTimeout::GetNano(unsigned int *sec, unsigned int *nanosec) const
 {
@@ -2669,10 +2674,12 @@ void CTimeout::GetNano(unsigned int *sec, unsigned int *nanosec) const
                    "Cannot convert from " +
                    s_SpecialValueName(m_Type) + " timeout value");
     }
-    if ( sec )
-        *sec  = m_Sec;
-    if ( nanosec )
+    if ( sec ) {
+        *sec     = m_Sec;
+    }
+    if ( nanosec ) {
         *nanosec = m_NanoSec;
+    }
 }
 
 
@@ -2689,24 +2696,27 @@ void CTimeout::Set(EType type)
         break;
     default:
         NCBI_THROW(CTimeException, eArgument, 
-            "Incorrect type value " + NStr::IntToString(type));
+                   "Incorrect type value " + NStr::IntToString(type));
     }
 }
 
-void CTimeout::Set(unsigned int sec, unsigned int microsec)
+
+void CTimeout::Set(unsigned int sec, unsigned int usec)
 {
-    m_Type     = eFinite;
-    m_Sec      = sec + microsec / kMicroSecondsPerSecond;
-    m_NanoSec  = (microsec % kMicroSecondsPerSecond) *
-        (kNanoSecondsPerSecond/kMicroSecondsPerSecond);
+    m_Type    = eFinite;
+    m_Sec     =  usec / kMicroSecondsPerSecond + sec;
+    m_NanoSec = (usec % kMicroSecondsPerSecond) *
+        (kNanoSecondsPerSecond / kMicroSecondsPerSecond);
 }
+
 
 void CTimeout::SetNano(unsigned int sec, unsigned int nanosec)
 {
-    m_Type     = eFinite;
-    m_Sec      = sec + nanosec / kNanoSecondsPerSecond;
-    m_NanoSec  = nanosec % kNanoSecondsPerSecond;
+    m_Type    = eFinite;
+    m_Sec     = nanosec / kNanoSecondsPerSecond + sec;
+    m_NanoSec = nanosec % kNanoSecondsPerSecond;
 }
+
 
 void CTimeout::Set(double sec)
 {
@@ -2718,11 +2728,11 @@ void CTimeout::Set(double sec)
     if (sec > kMax_UInt) {
         NCBI_THROW(CTimeException, eConvert, 
                    "Timeout value " +
-                   NStr::DoubleToString(sec) + " is too big");
+                   NStr::DoubleToString(sec) + " too big");
     }
-    m_Type     = eFinite;
-    m_Sec      = (unsigned int)sec;
-    m_NanoSec  = (unsigned int)((sec - m_Sec) * kNanoSecondsPerSecond);
+    m_Type    = eFinite;
+    m_Sec     = (unsigned int)  sec;
+    m_NanoSec = (unsigned int)((sec - m_Sec) * kNanoSecondsPerSecond);
 }
 
 
@@ -2730,23 +2740,24 @@ void CTimeout::Set(const CTimeSpan& ts)
 {
     if (ts.GetSign() == eNegative) {
         NCBI_THROW(CTimeException, eConvert, 
-                   "Cannot convert from negative CTimeStamp '" +
-                   ts.AsString() + "'");
+                   "Cannot convert from negative CTimeSpan(" +
+                   ts.AsString() + ")");
     }
-    if ((Uint8)ts.GetCompleteSeconds() > kMax_UInt) {
+    if ((Uint8) ts.GetCompleteSeconds() > kMax_UInt) {
         NCBI_THROW(CTimeException, eConvert, 
-                   "Value '" + ts.AsString() + "' is too big");
-        // We don't need to check nanoseconds, because CTimeSpan always have
-        // normalized value and its value can be safely converted
+                   "CTimeSpan value (" +
+                   ts.AsString() + ") too big");
+        // We don't need to check nanoseconds, because CTimeSpan always has it
+        // normalized value, and its value can always be safely converted
         // to microseconds.
     }
-    m_Type     = eFinite;
-    m_Sec      = (unsigned int)ts.GetCompleteSeconds();
-    m_NanoSec  = (unsigned int)ts.GetNanoSecondsAfterSecond();
+    m_Type    = eFinite;
+    m_Sec     = (unsigned int) ts.GetCompleteSeconds();
+    m_NanoSec = (unsigned int) ts.GetNanoSecondsAfterSecond();
 }
 
 
-#define COMPARE_TIMEOUT_TYPES(t1, t2) (int(t1) << 2 | int(t2))
+#define COMPARE_TIMEOUT_TYPES(t1, t2) ((int(t1) << 2) | int(t2))
 
 
 bool CTimeout::operator== (const CTimeout& t) const
@@ -2755,13 +2766,14 @@ bool CTimeout::operator== (const CTimeout& t) const
     case COMPARE_TIMEOUT_TYPES(eFinite, eFinite):
         return m_Sec == t.m_Sec  &&  m_NanoSec == t.m_NanoSec;
     case COMPARE_TIMEOUT_TYPES(eInfinite, eInfinite):
-        return true;  // infinite == infinite
+        return true;   // infinite == infinite
     case COMPARE_TIMEOUT_TYPES(eFinite, eInfinite):
     case COMPARE_TIMEOUT_TYPES(eInfinite, eFinite):
-        return false; // infinite != value
+        return false;  // infinite != value
     default:
         NCBI_THROW(CTimeException, eArgument,
-            "Unable to compare with eDefault timeout");
+                   "Unable to compare with " +
+                   s_SpecialValueName(eDefault) + " timeout");
     }
 }
 
@@ -2778,7 +2790,8 @@ bool CTimeout::operator< (const CTimeout& t) const
         return false;
     default:
         NCBI_THROW(CTimeException, eArgument,
-            "Unable to compare with eDefault timeout");
+                   "Unable to compare with " +
+                   s_SpecialValueName(eDefault) + " timeout");
     }
 }
 
@@ -2795,7 +2808,8 @@ bool CTimeout::operator> (const CTimeout& t) const
         return false;
     default:
         NCBI_THROW(CTimeException, eArgument,
-            "Unable to compare with eDefault timeout");
+                   "Unable to compare with " +
+                   s_SpecialValueName(eDefault) + " timeout");
     }
 }
 
@@ -2810,14 +2824,15 @@ bool CTimeout::operator>= (const CTimeout& t) const
     case COMPARE_TIMEOUT_TYPES(eInfinite, eFinite):
     case COMPARE_TIMEOUT_TYPES(eInfinite, eInfinite):
     case COMPARE_TIMEOUT_TYPES(eInfinite, eDefault):
-        return true;      // infinity >= everything
+        return true;      // infinity >= anything
     case COMPARE_TIMEOUT_TYPES(eDefault, eFinite):
         if ( t.IsZero() ) 
             return true;  // default >= zero
         // fall through
     default:
         NCBI_THROW(CTimeException, eArgument,
-            "Unable to compare with eDefault timeout");
+                   "Unable to compare with " +
+                   s_SpecialValueName(eDefault) + " timeout");
     }
 }
 
@@ -2828,20 +2843,23 @@ bool CTimeout::operator<= (const CTimeout& t) const
     case COMPARE_TIMEOUT_TYPES(eFinite, eFinite):
         return m_Sec == t.m_Sec ? m_NanoSec <= t.m_NanoSec : m_Sec <= t.m_Sec;
     case COMPARE_TIMEOUT_TYPES(eInfinite, eFinite):
-        return false;    // infinity > value
+        return false;     // infinity > value
     case COMPARE_TIMEOUT_TYPES(eFinite, eInfinite):
     case COMPARE_TIMEOUT_TYPES(eInfinite, eInfinite):
     case COMPARE_TIMEOUT_TYPES(eDefault, eInfinite):
-        return true;     // everything <= infinity
+        return true;      // anything <= infinity
     case COMPARE_TIMEOUT_TYPES(eFinite, eDefault):
         if ( IsZero() ) 
-            return true; // zero <= default
+            return true;  // zero <= default
         // fall through
     default:
         NCBI_THROW(CTimeException, eArgument,
-            "Unable to compare with eDefault timeout");
+                   "Unable to compare with " +
+                   s_SpecialValueName(eDefault) + " timeout");
     }
 }
+
+
 
 //=============================================================================
 //
@@ -2865,9 +2883,9 @@ CDeadline::CDeadline(const CTimeout& timeout)
     }
     else if (timeout.IsFinite()) {
         x_Now();
-        unsigned int sec, mksec;
-        timeout.Get(&sec, &mksec);
-        x_Add(sec, mksec*1000);
+        unsigned int sec, usec;
+        timeout.Get(&sec, &usec);
+        x_Add(sec, usec * (kNanoSecondsPerSecond / kMicroSecondsPerSecond));
     }
 }
 
@@ -2877,36 +2895,42 @@ void CDeadline::x_Now(void)
 #if defined(NCBI_OS_MSWIN)
     struct _timeb timebuffer;
     _ftime(&timebuffer);
-    m_Seconds = timebuffer.time;
-    m_Nanoseconds = (unsigned int)timebuffer.millitm *
+    m_Seconds     = timebuffer.time;
+    m_Nanoseconds = (unsigned int) timebuffer.millitm *
         (kNanoSecondsPerSecond / kMilliSecondsPerSecond);
 #else
-#if 0
+#  if 0
     struct timespec timebuffer;
-    clock_gettime(CLOCK_REALTIME, &timebuffer);
-    m_Seconds = timebuffer.tv_sec;
-    m_Nanoseconds = timebuffer.tv_nsec;
-#else
+    if (clock_gettime(CLOCK_REALTIME, &timebuffer) == 0) {
+        m_Seconds     = timebuffer.tv_sec;
+        m_Nanoseconds = timebuffer.tv_nsec;
+    } else {
+        NCBI_THROW(CTimeException, eInvalid,
+                   "Cannot get current deadline time value");
+    }
+#  else
     struct timeval tp;
-    if (gettimeofday(&tp,0) != -1) {
-        m_Seconds = tp.tv_sec;
+    if (gettimeofday(&tp, 0) == 0) {
+        m_Seconds     = tp.tv_sec;
         m_Nanoseconds = tp.tv_usec *
             (kNanoSecondsPerSecond / kMicroSecondsPerSecond);
+    } else {
+        NCBI_THROW(CTimeException, eInvalid,
+                   "Cannot get current deadline time value");
     }
-#endif
+#  endif
 #endif
 }
 
 
 void CDeadline::x_Add(unsigned int seconds, unsigned int nanoseconds)
 {
-    if (m_Infinite || (seconds == 0 && nanoseconds == 0)) {
-        return;
+    if (!m_Infinite  &&  (seconds | nanoseconds)) {
+        nanoseconds  += m_Nanoseconds;
+        seconds      += nanoseconds / kNanoSecondsPerSecond;
+        m_Nanoseconds = nanoseconds % kNanoSecondsPerSecond;
+        m_Seconds    += seconds;
     }
-    unsigned int nn = m_Nanoseconds + nanoseconds;
-    m_Seconds    += nn/kNanoSecondsPerSecond;
-    m_Nanoseconds = nn%kNanoSecondsPerSecond;
-    m_Seconds += seconds;
 }
 
 
@@ -2915,12 +2939,13 @@ void CDeadline::GetExpirationTime(time_t* sec, unsigned int* nanosec) const
     if ( IsInfinite() ) {
         NCBI_THROW(CTimeException, eConvert, 
                    "Cannot convert from " +
-                   s_SpecialValueName(CTimeout::eInfinite) + " timeout value");
+                   s_SpecialValueName(CTimeout::eInfinite) +
+                   " deadline value");
     }
-    if (sec) {
-        *sec = m_Seconds;
+    if ( sec ) {
+        *sec     = m_Seconds;
     }
-    if (nanosec) {
+    if ( nanosec ) {
         *nanosec = m_Nanoseconds;
     }
 }
@@ -2931,45 +2956,48 @@ CNanoTimeout CDeadline::GetRemainingTime(void) const
     if ( IsInfinite() ) {
         NCBI_THROW(CTimeException, eConvert, 
                    "Cannot convert from " +
-                   s_SpecialValueName(CTimeout::eInfinite) + " timeout value");
+                   s_SpecialValueName(CTimeout::eInfinite) +
+                   " deadline value");
     }
 
-    CDeadline now(0,0);
+    CDeadline now(0, 0);
 
     time_t       thenS  = m_Seconds;
     unsigned int thenNS = m_Nanoseconds;
     time_t       nowS   = now.m_Seconds;
     unsigned int nowNS  = now.m_Nanoseconds;
 
+    if (thenS < nowS  ||  (thenS == nowS  &&  thenNS <= nowNS)) {
+        return CNanoTimeout(0, 0);
+    }
     if (thenNS >= nowNS) {
         thenNS -= nowNS;
     } else {
-        --thenS;
+        thenS--;
         thenNS = kNanoSecondsPerSecond - (nowNS - thenNS);
     }
+    _ASSERT(thenS >= nowS);
     thenS -= nowS;
 
-    if (thenS < 0) {
-        thenS = 0;
-        thenNS = 0;
-    }
-    return CNanoTimeout((unsigned int)thenS,thenNS);
+    return CNanoTimeout(thenS, thenNS);
 }
 
 
-bool CDeadline::operator <(const CDeadline& right_hand_operand) const
+bool CDeadline::operator< (const CDeadline& right_hand_operand) const
 {
-    if (!IsInfinite())
-        return right_hand_operand.IsInfinite() ||
-                m_Seconds < right_hand_operand.m_Seconds ||
-                (m_Seconds == right_hand_operand.m_Seconds &&
-                        m_Nanoseconds < right_hand_operand.m_Nanoseconds);
-    else if (!right_hand_operand.IsInfinite())
-        return false;
-    else {
-        NCBI_THROW(CTimeException, eInvalid, "Cannot compare two '" +
-                s_SpecialValueName(CTimeout::eInfinite) + "' values");
+    if (!IsInfinite()) {
+        return right_hand_operand.IsInfinite()
+            ||   m_Seconds <  right_hand_operand.m_Seconds
+            ||  (m_Seconds == right_hand_operand.m_Seconds  &&
+                 m_Nanoseconds < right_hand_operand.m_Nanoseconds);
     }
+    if (right_hand_operand.IsInfinite()) {
+        NCBI_THROW(CTimeException, eInvalid,
+                   "Cannot compare two " +
+                   s_SpecialValueName(CTimeout::eInfinite) +
+                   " deadline values");
+    }
+    return false;
 }
 
 
