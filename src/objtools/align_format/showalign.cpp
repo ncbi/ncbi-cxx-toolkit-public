@@ -2268,6 +2268,9 @@ CDisplaySeqalign::SAlnDispParams *CDisplaySeqalign::x_FillAlnDispParams(const CR
 		if(bdl->IsSetTitle()){
 			alnDispParams->title = bdl->GetTitle();
 		}
+        if(alnDispParams->title.empty()) {
+            alnDispParams->title = CDeflineGenerator().GenerateDefline(bsp_handle);            
+        }
 	}    
 	return alnDispParams;
 }
