@@ -1032,8 +1032,12 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
 #    else
 #      error "Unknown HAVE_GETHOSTBYNAME_R value"
 #    endif /*HAVE_GETHOSTNBYNAME_R == N*/
-        if (!he  &&  !x_error  &&  (x_error = SOCK_ERRNO) == ERANGE)
-            log = eOn;
+        if (!he) {
+            if (!x_error  &&  (x_error = SOCK_ERRNO) == ERANGE)
+                log = eOn;
+            else
+                x_error += DNS_BASE;
+        }
 #  else
         static const char suffix[] = "";
 
@@ -1195,8 +1199,12 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
 #    else
 #      error "Unknown HAVE_GETHOSTBYADDR_R value"
 #    endif /*HAVE_GETHOSTBYADDR_R == N*/
-        if (!he  &&  !x_error  &&  (x_error = SOCK_ERRNO) == ERANGE)
-            log = eOn;
+        if (!he) {
+            if (!x_error  &&  (x_error = SOCK_ERRNO) == ERANGE)
+                log = eOn;
+            else
+                x_error += DNS_BASE;
+        }
 #  else /*HAVE_GETHOSTBYADDR_R*/
         static const char suffix[] = "";
 
