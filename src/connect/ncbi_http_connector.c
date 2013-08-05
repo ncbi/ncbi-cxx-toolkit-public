@@ -124,7 +124,8 @@ typedef struct {
     EBReadState       read_state:2;   /* "READ" mode state per table above   */
     unsigned          auth_done:1;    /* website authorization sent          */
     unsigned    proxy_auth_done:1;    /* proxy authorization sent            */
-    unsigned          reserved:6;     /* MBZ                                 */
+    unsigned          skip_host:1;    /* do *not* add the "Host:" header tag */
+    unsigned          reserved:5;     /* MBZ                                 */
     unsigned          minor_fault:3;  /* incr each minor failure since majo  */
     unsigned short    major_fault;    /* incr each major failure since open  */
     unsigned short    http_code;      /* last http code response             */
@@ -257,10 +258,13 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
             if (uuu->net_info->req_method == eReqMethod_Connect)
                 fail = 2;
             else if (retry->data  &&  *retry->data != '?') {
-                if (uuu->net_info->req_method == eReqMethod_Get
+                if (uuu->net_info->req_method != eReqMethod_Post
                     ||  retry->mode == eRetry_Redirect303
                     ||  (uuu->flags & fHTTP_InsecureRedirect)
                     ||  !BUF_Size(uuu->w_buf)) {
+                    char           host[sizeof(uuu->net_info->host)];
+                    unsigned short port = uuu->net_info->port;
+                    strcpy(host, uuu->net_info->host);
                     if (uuu->net_info->scheme == eURL_Https)
                         secure = 1/*true*/;
                     uuu->net_info->args[0] = '\0'/*arguments not inherited*/;
@@ -269,8 +273,16 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
                         if (secure  &&  uuu->net_info->scheme != eURL_Https
                             &&  !(uuu->flags & fHTTP_InsecureRedirect)) {
                             fail = -1;
-                        } else if (retry->mode == eRetry_Redirect303)
-                            uuu->net_info->req_method = eReqMethod_Get;
+                        } else {
+                            if (uuu->net_info->port != port
+                                ||  strcasecmp(uuu->net_info->host,host) != 0){
+                                uuu->skip_host = 0/*false*/;
+                            }
+                            if (uuu->net_info->req_method == eReqMethod_Post
+                                &&  retry->mode == eRetry_Redirect303) {
+                                uuu->net_info->req_method = eReqMethod_Get;
+                            }
+                        }
                     }
                 } else
                     fail = -1;
@@ -452,7 +464,8 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
     for (;;) {
         TSOCK_Flags flags
             = (uuu->net_info->debug_printout == eDebugPrintout_Data
-               ? fSOCK_LogOn : fSOCK_LogDefault);
+               ? fSOCK_KeepAlive | fSOCK_LogOn
+               : fSOCK_KeepAlive | fSOCK_LogDefault);
         sock = 0;
         if (uuu->net_info->req_method != eReqMethod_Connect
             &&  uuu->net_info->scheme == eURL_Https
@@ -514,7 +527,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 } else {
                     /* Proxied HTTP */
                     assert(uuu->net_info->scheme == eURL_Http);
-                    if (!s_SetHttpHostTag(uuu->net_info)) {
+                    if (!uuu->skip_host  &&  !s_SetHttpHostTag(uuu->net_info)){
                         status = eIO_Unknown;
                         free((void*) path);
                         assert(!sock);
@@ -530,7 +543,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 }
             } else {
                 /* Direct HTTP[S] or tunneled HTTPS */
-                if (!s_SetHttpHostTag(uuu->net_info)) {
+                if (!uuu->skip_host  &&  !s_SetHttpHostTag(uuu->net_info)) {
                     status = eIO_Unknown;
                     break;
                 }
@@ -709,53 +722,54 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
 }
 
 
-static int/*bool*/ s_IsValidParam(const char* param, size_t parlen)
+static int/*bool*/ s_IsValidParam(const char* param, size_t paramlen)
 {
-    const char* e = (const char*) memchr(param, '=', parlen);
-    size_t toklen;
+    const char* e = (const char*) memchr(param, '=', paramlen);
+    size_t len;
     if (!e  ||  e == param)
         return 0/*false*/;
-    if ((toklen = (size_t)(++e - param)) >= parlen)
+    if ((len = (size_t)(++e - param)) >= paramlen)
         return 0/*false*/;
     assert(!isspace((unsigned char)(*param)));
-    if (strcspn(param, " \t") < toklen)
+    if (strcspn(param, " \t") < len)
         return 0/*false*/;
     if (*e == '\''  ||  *e == '"') {
         /* a quoted string */
-        toklen = parlen - toklen;
-        if (!(e = (const char*) memchr(e + 1, *e, --toklen)))
+        assert(len < paramlen);
+        len = paramlen - len;
+        if (!(e = (const char*) memchr(e + 1, *e, --len)))
             return 0/*false*/;
         e++/*skip the quote*/;
     } else
         e += strcspn(e, " \t");
-    if (e != param + parlen  &&  e + strspn(e, " \t") != param + parlen)
+    if (e != param + paramlen  &&  e + strspn(e, " \t") != param + paramlen)
         return 0/*false*/;
     return 1/*true*/;
 }
 
 
-static int/*bool*/ s_IsValidAuth(const char* challenge, size_t len)
+static int/*bool*/ s_IsValidChallenge(const char* text, size_t len)
 {
     /* Challenge must contain a scheme name token and a non-empty param
      * list (comma-separated pairs token={token|quoted_string}), with at
      * least one parameter being named "realm=".
      */
-    size_t word = strcspn(challenge, " \t");
+    size_t word = strcspn(text, " \t");
     int retval = 0/*false*/;
     if (word < len) {
         /* 1st word is always the scheme name */
-        const char* param = challenge + word;
-        for (param += strspn(param, " \t");  param < challenge + len;
+        const char* param = text + word;
+        for (param += strspn(param, " \t");  param < text + len;
              param += strspn(param, ", \t")) {
-            size_t parlen = (size_t)(challenge + len - param);
-            const char* c = (const char*) memchr(param, ',', parlen);
+            size_t paramlen = (size_t)(text + len - param);
+            const char* c = (const char*) memchr(param, ',', paramlen);
             if (c)
-                parlen = (size_t)(c - param);
-            if (!s_IsValidParam(param, parlen))
+                paramlen = (size_t)(c - param);
+            if (!s_IsValidParam(param, paramlen))
                 return 0/*false*/;
-            if (parlen > 6  &&  strncasecmp(param, "realm=", 6) == 0)
+            if (paramlen > 6  &&  strncasecmp(param, "realm=", 6) == 0)
                 retval = 1/*true, but keep scanning*/;
-            param += c ? ++parlen : parlen;
+            param += c ? ++paramlen : paramlen;
         }
     }
     return retval;
@@ -879,36 +893,66 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
     }
 
     {{
-        /* parsing "NCBI-Message" tag */
-        static const char kNcbiMessageTag[] = "\n" HTTP_NCBI_MESSAGE " ";
-        const char* s;
+        unsigned int m = uuu->flags & fHTTP_NoAutomagicSID ? 1 : (1 | 2);
+        char* s;
         for (s = strchr(str, '\n');  s  &&  *s;  s = strchr(s + 1, '\n')) {
-            if (strncasecmp(s, kNcbiMessageTag, sizeof(kNcbiMessageTag)-1)==0){
-                const char* message = s + sizeof(kNcbiMessageTag) - 1;
-                while (*message  &&  isspace((unsigned char)(*message)))
-                    message++;
-                if (!(s = strchr(message, '\r')))
-                    s = strchr(message, '\n');
+            static const char kNcbiMessageTag[] = "\n" HTTP_NCBI_MESSAGE " ";
+            static const char kNcbiSidTag[] = "\n" HTTP_NCBI_SID " ";
+            if ((m & 1)  &&
+                /* parse the "NCBI-Message" tag unconditionally */
+                strncasecmp(s, kNcbiMessageTag, sizeof(kNcbiMessageTag)-1)==0){
+                char* msg = s + sizeof(kNcbiMessageTag) - 1;
+                while (*msg  &&  isspace((unsigned char)(*msg)))
+                    ++msg;
+                if (!(s = strchr(msg, '\r')))
+                    s = strchr(msg, '\n');
                 assert(s);
                 do {
                     if (!isspace((unsigned char) s[-1]))
                         break;
-                } while (--s > message);
-                if (message != s) {
+                } while (--s > msg);
+                n = (size_t)(s - msg);
+                if (n) {
+                    char c = msg[n];
+                    msg[n] = '\0';
                     if (s_MessageHook) {
                         if (s_MessageIssued <= 0) {
                             s_MessageIssued  = 1;
-                            s_MessageHook(message);
+                            s_MessageHook(msg);
                         }
                     } else {
                         s_MessageIssued = -1;
                         CORE_LOGF_X(10, eLOG_Critical,
-                                    ("[NCBI-MESSAGE]  %.*s",
-                                     (int)(s - message), message));
+                                    ("[NCBI-MESSAGE]  %s", msg));
                     }
+                    msg[n] = c;
                 }
-                break;
+                m &= ~1;
+            } else if ((m & 2)  &&
+                       strncasecmp(s, kNcbiSidTag, sizeof(kNcbiSidTag)-1)==0) {
+                char* sid = s + sizeof(kNcbiSidTag) - 1, *e;
+                while (*sid  &&  isspace((unsigned char)(*sid)))
+                    ++sid;
+                if (!(e = strchr(sid, '\r')))
+                    e = strchr(sid, '\n');
+                if (!e)
+                    break;
+                do {
+                    if (!isspace((unsigned char) e[-1]))
+                        break;
+                } while (--e > sid);
+                n = (size_t)(e - sid);
+                if (n) {
+                    char c = sid[n];
+                    sid[n] = '\0';
+                    ConnNetInfo_OverrideUserHeader(uuu->net_info, s + 1);
+                    sid[n] = c;
+                    uuu->flags |= fHTTP_NoAutomagicSID;
+                }
+                m &= ~2;
             }
+            if (!m)
+                break;
         }
     }}
 
@@ -933,32 +977,36 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         ? uuu->parse_header(str, uuu->user_data, http_code)
         : eHTTP_HeaderSuccess;
 
-    if (!(uuu->flags & fHTTP_NoAutomagicSID)) {
-        static const char kNcbiSidTag[] = "\n" HTTP_NCBI_SID " ";
-        char* s;
+    if (!http_code  &&  header_parse/*!= eHTTP_HeaderError*/) {
+        /* parse "Content-Length" of non-error responses only */
+        static const char kContentLengthTag[] = "\nContent-Length: ";
+        const char* s;
         for (s = strchr(str, '\n');  s  &&  *s;  s = strchr(s + 1, '\n')) {
-            if (strncasecmp(s, kNcbiSidTag, sizeof(kNcbiSidTag) - 1) == 0) {
-                char* sid = s + sizeof(kNcbiSidTag) - 1, *e;
-                while (*sid  &&  isspace((unsigned char)(*sid)))
-                    sid++;
-                if (!(e = strchr(sid, '\r')))
-                    e = strchr(sid, '\n');
-                if (!e)
-                    break;
+            if (!strncasecmp(s,kContentLengthTag,sizeof(kContentLengthTag)-1)){
+                const char* len = s + sizeof(kContentLengthTag) - 1;
+                while (*len  &&  isspace((unsigned char)(*len)))
+                    len++;
+                if (!(s = strchr(len, '\r')))
+                    s = strchr(len, '\n');
+                assert(s);
                 do {
-                    if (!isspace((unsigned char) e[-1]))
+                    if (!isspace((unsigned char) s[-1]))
                         break;
-                } while (--e > sid);
-                n = (size_t)(e - sid);
-                if (n) {
-                    char c = sid[n];
-                    sid[n] = '\0';
-                    ConnNetInfo_OverrideUserHeader(uuu->net_info, s + 1);
-                    sid[n] = c;
-                    uuu->flags |= fHTTP_NoAutomagicSID;
+                } while (--s > len);
+                if (s != len) {
+                    int n;
+                    if (sscanf(len, "%" NCBI_BIGCOUNT_FORMAT_SPEC "%n",
+                               &uuu->expected, &n) < 1  ||  len + n != s){
+                        uuu->expected = 0/*no checks*/;
+                    } else if (!uuu->expected)
+                        uuu->expected = (TNCBI_BigCount)(-1L);
                 }
                 break;
             }
+        }
+        if (uuu->expected  &&  uuu->net_info->req_method == eReqMethod_Head) {
+            CORE_LOGF(eLOG_Trace, ("Content-Length (%lu) in HEAD response",
+                                   (unsigned long) uuu->expected));
         }
     }
 
@@ -969,29 +1017,29 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
             CORE_DATA_X(19, eLOG_Note, str, size, "HTTP header (parse error)");
         }
     } else if (header_parse == eHTTP_HeaderComplete) {
-        http_code = 0/*fake success*/;
         retry->mode = eRetry_None;
+        http_code = 0/*fake success*/;
     } else if (retry->mode & eRetry_Redirect) {
-        /* parsing "Location" pointer */
+        /* parse "Location" pointer */
         static const char kLocationTag[] = "\nLocation: ";
         char* s;
         assert(http_code);
         for (s = strchr(str, '\n');  s  &&  *s;  s = strchr(s + 1, '\n')) {
             if (strncasecmp(s, kLocationTag, sizeof(kLocationTag) - 1) == 0) {
-                char* location = s + sizeof(kLocationTag) - 1;
-                while (*location  &&  isspace((unsigned char)(*location)))
-                    location++;
-                if (!(s = strchr(location, '\r')))
-                    s = strchr(location, '\n');
+                char* loc = s + sizeof(kLocationTag) - 1;
+                while (*loc  &&  isspace((unsigned char)(*loc)))
+                    ++loc;
+                if (!(s = strchr(loc, '\r')))
+                    s = strchr(loc, '\n');
                 if (!s)
                     break;
                 do {
                     if (!isspace((unsigned char) s[-1]))
                         break;
-                } while (--s > location);
-                n = (size_t)(s - location);
+                } while (--s > loc);
+                n = (size_t)(s - loc);
                 if (n) {
-                    memmove(str, location, n);
+                    memmove(str, loc, n);
                     str[n] = '\0';
                     retry->data = str;
                 }
@@ -999,7 +1047,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
             }
         }
     } else if (retry->mode & eRetry_Authenticate) {
-        /* parsing "Authenticate"/"Proxy-Authenticate" tags */
+        /* parse "Authenticate"/"Proxy-Authenticate" tags */
         static const char kAuthenticateTag[] = "-Authenticate: ";
         char* s;
         assert(http_code);
@@ -1010,12 +1058,12 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                      &&  strncasecmp(s, "\nWWW",   4) == 0)  ||
                     (retry->mode == eRetry_ProxyAuthenticate
                      &&  strncasecmp(s, "\nProxy", 6) == 0)) {
-                    char* challenge = s + sizeof(kAuthenticateTag) - 1, *e;
-                    challenge += retry->mode == eRetry_Authenticate ? 4 : 6;
-                    while (*challenge && isspace((unsigned char)(*challenge)))
-                        challenge++;
-                    if (!(e = strchr(challenge, '\r')))
-                        e = strchr(challenge, '\n');
+                    char* txt = s + sizeof(kAuthenticateTag) - 1, *e;
+                    txt += retry->mode == eRetry_Authenticate ? 4 : 6;
+                    while (*txt  &&  isspace((unsigned char)(*txt)))
+                        ++txt;
+                    if (!(e = strchr(txt, '\r')))
+                        e = strchr(txt, '\n');
                     else
                         s = e;
                     if (!e)
@@ -1023,10 +1071,10 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
                     do {
                         if (!isspace((unsigned char) e[-1]))
                             break;
-                    } while (--e > challenge);
-                    n = (size_t)(e - challenge);
-                    if (n  &&  s_IsValidAuth(challenge, n)) {
-                        memmove(str, challenge, n);
+                    } while (--e > txt);
+                    n = (size_t)(e - txt);
+                    if (n  &&  s_IsValidChallenge(txt, n)) {
+                        memmove(str, txt, n);
                         str[n] = '\0';
                         retry->data = str;
                         break;
@@ -1035,34 +1083,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
             }
         }
     }
-    if (!http_code) {
-        /* parsing "Content-Length" of non-error responses only */
-        static const char kContentLengthTag[] = "\nContent-Length: ";
-        const char* s;
-        for (s = strchr(str, '\n');  s  &&  *s;  s = strchr(s + 1, '\n')) {
-            if (!strncasecmp(s,kContentLengthTag,sizeof(kContentLengthTag)-1)){
-                const char* expected = s + sizeof(kContentLengthTag) - 1;
-                while (*expected  &&  isspace((unsigned char)(*expected)))
-                    expected++;
-                if (!(s = strchr(expected, '\r')))
-                    s = strchr(expected, '\n');
-                assert(s);
-                do {
-                    if (!isspace((unsigned char) s[-1]))
-                        break;
-                } while (--s > expected);
-                if (s != expected) {
-                    int n;
-                    if (sscanf(expected, "%" NCBI_BIGCOUNT_FORMAT_SPEC "%n",
-                               &uuu->expected, &n) < 1  ||  expected + n != s){
-                        uuu->expected = 0/*no checks*/;
-                    } else if (!uuu->expected)
-                        uuu->expected = (TNCBI_BigCount)(-1L);
-                }
-                break;
-            }
-        }
-    }
+
     if (!retry->data)
         free(str);
 
@@ -1644,23 +1665,21 @@ static void s_Destroy
 
 
 /* NB: per the standard, the HTTP tag name is misspelled as "Referer" */
-static int/*bool*/ x_AdjUserHeader(SConnNetInfo* net_info, int/*bool*/ has_sid)
+static int/*bool*/ x_FixupUserHeader(SConnNetInfo* net_info,
+                                     int* /*bool*/ has_sid)
 {
     int/*bool*/ has_referer = 0/*false*/;
+    int/*bool*/ has_host = 0/*false*/;
     const char* s;
-    char* r;
+    char buf[128];
 
-    s = CORE_GetAppName();
-    if (s  &&  *s) {
-        char ua[16 + 80];
-        sprintf(ua, "User-Agent: %.80s", s);
-        ConnNetInfo_ExtendUserHeader(net_info, ua);
-    }
     if ((s = net_info->http_user_header) != 0) {
         int/*bool*/ first = 1/*true*/;
         while (*s) {
-            if (strncasecmp(s, "\nReferer:" + first, 9 - first) == 0) {
+            if        (strncasecmp(s, "\nReferer:" + first, 9 - first) == 0) {
                 has_referer = 1/*true*/;
+            } else if (strncasecmp(s, "\nHost:" + first, 6 - first) == 0) {
+                has_host = 1/*true*/;
 #ifdef HAVE_LIBCONNEXT
             } else if (strncasecmp(s, "\nCAF" + first, 4 - first) == 0
                        &&  (s[4 - first] == '-'  ||  s[4 - first] == ':')) {
@@ -1674,29 +1693,33 @@ static int/*bool*/ x_AdjUserHeader(SConnNetInfo* net_info, int/*bool*/ has_sid)
                     continue;
                 }
 #endif /*HAVE_LIBCONNEXT*/
-            } else if (!has_sid
+            } else if (!*has_sid
                        &&  strncasecmp(s, "\n" HTTP_NCBI_SID + first,
                                        sizeof(HTTP_NCBI_SID) - first) == 0) {
-                has_sid = 1/*true*/;
+                *has_sid = 1/*true*/;
             }
             if (!(s = strchr(++s, '\n')))
                 break;
             first = 0/*false*/;
         }
     }
+    s = CORE_GetAppName();
+    if (s  &&  *s) {
+        sprintf(buf, "User-Agent: %.80s", s);
+        ConnNetInfo_ExtendUserHeader(net_info, buf);
+    }
     if (!has_referer  &&  net_info->http_referer  &&  *net_info->http_referer
-        &&  (r = (char*) malloc(strlen(net_info->http_referer) + 10)) != 0) {
-        sprintf(r, "Referer: %s", net_info->http_referer);
-        ConnNetInfo_AppendUserHeader(net_info, r);
-        free(r);
+        &&  (s = (char*) malloc(strlen(net_info->http_referer) + 10)) != 0) {
+        sprintf((char*) s, "Referer: %s", net_info->http_referer);
+        ConnNetInfo_AppendUserHeader(net_info, s);
+        free((void*) s);
     }
-    if (!has_sid  &&  (s = CORE_GetNcbiSid()) != 0  &&  *s) {
-        char sid[128];
-        sprintf(sid, HTTP_NCBI_SID " %.80s", s);
-        ConnNetInfo_AppendUserHeader(net_info, sid);
-        has_sid = 1/*true*/;
+    if (!*has_sid  &&  (s = CORE_GetNcbiSid()) != 0  &&  *s) {
+        *has_sid = 1/*true*/;
+        sprintf(buf, HTTP_NCBI_SID " %.80s", s);
+        ConnNetInfo_AppendUserHeader(net_info, buf);
     }
-    return has_sid;
+    return has_host;
 }
 
 
@@ -1710,12 +1733,14 @@ static EIO_Status s_CreateHttpConnector
     SConnNetInfo*   xxx;
     SHttpConnector* uuu;
     char*           fff;
+    int/*bool*/     sid;
     char            val[32];
 
     *http = 0;
     xxx = net_info ? ConnNetInfo_Clone(net_info) : ConnNetInfo_Create(0);
     if (!xxx)
         return eIO_Unknown;
+
     if (!tunnel) {
         if (xxx->req_method == eReqMethod_Connect
             ||  (xxx->scheme != eURL_Unspec  && 
@@ -1729,7 +1754,9 @@ static EIO_Status s_CreateHttpConnector
         if ((fff = strchr(xxx->args, '#')) != 0)
             *fff = '\0';
     }
+
     ConnNetInfo_OverrideUserHeader(xxx, user_header);
+
     if (tunnel) {
         xxx->req_method = eReqMethod_Connect;
         xxx->path[0] = '\0';
@@ -1740,8 +1767,6 @@ static EIO_Status s_CreateHttpConnector
         }
         ConnNetInfo_DeleteUserHeader(xxx, "Referer:");
     }
-    if (x_AdjUserHeader(xxx, flags & fHTTP_NoAutomagicSID ? 1 : tunnel))
-        flags |= fHTTP_NoAutomagicSID;
 
     if ((flags & fHTTP_NoAutoRetry)  ||  !xxx->max_try)
         xxx->max_try = 1;
@@ -1759,7 +1784,12 @@ static EIO_Status s_CreateHttpConnector
     uuu->adjust       = 0;
     uuu->cleanup      = 0;
 
+    sid = flags & fHTTP_NoAutomagicSID ? 1 : tunnel;
+    uuu->skip_host    = x_FixupUserHeader(xxx, &sid);
+    if (sid)
+        flags |= fHTTP_NoAutomagicSID;
     uuu->flags        = flags;
+
     uuu->reserved     = 0;
     uuu->can_connect  = fCC_None;         /* will be properly set at open */
 
