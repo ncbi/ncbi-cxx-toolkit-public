@@ -2151,7 +2151,7 @@ public:
         fSplit_CanDoubleQuote  = 1 << 4, ///< Allow "..." quoting
         fSplit_CanQuote        = fSplit_CanSingleQuote | fSplit_CanDoubleQuote
     };
-    typedef int TSplitFlags; ///< binary OR of ESplitFlags
+    typedef int TSplitFlags; ///< Bitwise OR of ESplitFlags
 
     /// Whether to merge adjacent delimiters in Split and Tokenize.
     enum EMergeDelims {
