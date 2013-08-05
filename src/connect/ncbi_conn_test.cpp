@@ -35,6 +35,7 @@
 #include <corelib/stream_utils.hpp>
 #include <connect/ncbi_conn_test.hpp>
 #include <connect/ncbi_socket.hpp>
+#include "ncbi_ansi_ext.h"
 #include "ncbi_comm.h"
 #include "ncbi_priv.h"
 #include "ncbi_servicep.h"
@@ -54,6 +55,8 @@
 BEGIN_NCBI_SCOPE
 
 
+static const SIZE_TYPE kParIndent = 4;
+
 static const char kTest[] = "test";
 static const char kCanceled[] = "Check canceled";
 
@@ -72,7 +75,7 @@ inline bool operator > (const STimeout* t1, const STimeout& t2)
 {
     if (!t1)
         return true;
-    return t1->sec + t1->usec/1000000.0 > t2.sec + t2.usec/1000000.0;
+    return t1->sec + t1->usec / 1000000.0 > t2.sec + t2.usec / 1000000.0;
 }
 
 
@@ -99,6 +102,7 @@ EIO_Status CConnTest::Execute(EStage& stage, string* reason)
 {
     typedef EIO_Status (CConnTest::*FCheck)(string* reason);
     FCheck check[] = {
+        NULL,
         &CConnTest::HttpOkay,
         &CConnTest::DispatcherOkay,
         &CConnTest::ServiceOkay,
@@ -123,6 +127,8 @@ EIO_Status CConnTest::Execute(EStage& stage, string* reason)
             break;
         }
     } while (EStage(s++) < stage);
+    if (status != eIO_Success  &&  status != eIO_Interrupt)
+        ExtraCheckOnFailure();
     return status;
 }
 
@@ -177,11 +183,103 @@ static SConnNetInfo* ConnNetInfo_Create(const char*    svc_name,
 }
 
 
+extern "C" {
+static EHTTP_HeaderParse
+s_CkHdr(const char* /*header*/, void* /*data*/, int /*server_error*/)
+{
+    return eHTTP_HeaderContinue;
+}
+}
+
+
+EIO_Status CConnTest::ExtraCheckOnFailure(void)
+{
+    static const STimeout kTimeout   = { 5,      0 };
+    static const STimeout kTimeSlice = { 0, 100000 };
+    static struct {
+        const char*  host;
+        const char* vhost;
+    } x_Tests[] = {
+        { "www.ncbi.nlm.nih.gov",       0                      },
+        { "www.be-md.ncbi.nlm.nih.gov", "www.ncbi.nlm.nih.gov" },
+        { "www.st-va.ncbi.nlm.nih.gov", "www.ncbi.nlm.nih.gov" },
+        { "130.14.29.110",              "www.ncbi.nlm.nih.gov" }, // NCBI main
+        { "165.112.7.20",               "www.ncbi.nlm.nih.gov" }, // NCBI colo
+        { "www.google.com",             0                      },
+        { "www.yahoo.com",              0                      },
+        { "8.8.4.4",                    "www.google.com"       }
+        // Google public DNS, responds at :80 as well
+    };
+
+    m_CheckPoint.clear();
+    PreCheck(eNone, 0/*main*/, "Failback HTTP access check");
+
+    SConnNetInfo* net_info = ConnNetInfo_Create(0, eDebugPrintout_Data);
+    if (!net_info) {
+        PostCheck(eNone, 0/*main*/,
+                  eIO_Unknown, "Cannot create network info structure");
+        return eIO_Unknown;
+    }
+
+    net_info->req_method = eReqMethod_Head;
+    net_info->timeout    = &kTimeout;
+    net_info->max_try    = 0;
+    m_Timeout = 0;
+
+    CDeadline deadline(kTimeout.sec, kTimeout.usec * 1000);
+    time_t           sec;
+    unsigned int nanosec;
+    deadline.GetExpirationTime(&sec, &nanosec);
+    sprintf (net_info->path, "/NcbiTest%08lX%08lX",
+             (unsigned long) sec, (unsigned long) nanosec);
+
+    vector< AutoPtr<CConn_HttpStream> > http;
+    for (size_t n = 0;  n < sizeof(x_Tests) / sizeof(x_Tests[0]);  ++n) {
+        char user_header[80];
+        strncpy0(net_info->host, x_Tests[n].host, sizeof(net_info->host)-1);
+        if (x_Tests[n].vhost)
+            sprintf(user_header, "Host: %s", x_Tests[n].vhost);
+        else
+            *user_header = '\0';
+        http.push_back(new CConn_HttpStream(net_info, user_header, s_CkHdr));
+    }
+
+    EIO_Status status = eIO_Success;
+    do {
+        if (!http.size())
+            break;
+        ERASE_ITERATE(vector< AutoPtr<CConn_HttpStream> >, h, http) {
+            CONN conn = (*h)->GetCONN();
+            if (!conn) {
+                VECTOR_ERASE(h, http);
+                if (status == eIO_Success)
+                    status  = eIO_Unknown;
+                continue;
+            }
+            EIO_Status readst = CONN_Wait(conn, eIO_Read, &kTimeSlice);
+            if (readst > eIO_Timeout) {
+                if (status < readst  &&  (*h)->GetStatusCode() != 404)
+                    status = readst;
+                VECTOR_ERASE(h, http);
+                continue;
+            }
+        }
+    } while (!deadline.IsExpired());
+
+    if (status == eIO_Success  &&  http.size())
+        status  = eIO_Timeout;
+
+    PostCheck(eNone, 0/*main*/, status, kEmptyStr);
+
+    return status;
+}
+
+
 EIO_Status CConnTest::HttpOkay(string* reason)
 {
     SConnNetInfo* net_info = ConnNetInfo_Create(0, m_DebugPrintout);
     if (net_info) {
-        if (*net_info->http_proxy_host  &&  net_info->http_proxy_port)
+        if (net_info->http_proxy_host[0]  &&  net_info->http_proxy_port)
             m_HttpProxy = true;
         // Make sure there are no extras
         ConnNetInfo_SetUserHeader(net_info, 0);
@@ -236,21 +334,32 @@ EIO_Status CConnTest::HttpOkay(string* reason)
             temp += net_info->http_proxy_host;
             temp += ':';
             temp += NStr::UIntToString(net_info->http_proxy_port);
-            temp += "' specified with [CONN]HTTP_PROXY_{HOST|PORT}"
-                " is correct";
+            temp += "' specified with [CONN]HTTP_PROXY_{HOST|PORT} is correct";
         } else {
+            if (net_info->http_proxy_host[0]  ||  net_info->http_proxy_port) {
+                temp += "Note that your HTTP proxy seems to have been only"
+                    " partially specified, and thus cannot be used: the ";
+                if (net_info->http_proxy_port) {
+                    temp += "host part is missing (for port :"
+                        + NStr::UIntToString(net_info->http_proxy_port);
+                } else {
+                    temp += "port part is missing (for host \'"
+                        + string(net_info->http_proxy_host) + '\'';
+                }
+                temp += ")\n";
+            }
             temp += "If your network access requires the use of an HTTP proxy"
                 " server, please contact your network administrator and set"
-                " [CONN]HTTP_PROXY_{HOST|PORT} in your configuration"
-                " accordingly";
+                " [CONN]HTTP_PROXY_{HOST|PORT} (both must be set) in your"
+                " configuration accordingly";
         }
         temp += "; and if your proxy server requires authorization, please"
             " check that appropriate [CONN]HTTP_PROXY_{USER|PASS} have been"
             " specified\n";
         if (net_info  &&  (*net_info->user  ||  *net_info->pass)) {
-            temp += "Make sure there are no stray [CONN]{USER|PASS} appear in"
-                " your configuration -- NCBI services neither require nor use"
-                " them\n";
+            temp += "Make sure there are no stray [CONN]{USER|PASS} that"
+                " appear in your configuration -- NCBI services neither"
+                " require nor use them\n";
         }
     }
 
@@ -1127,7 +1236,8 @@ void CConnTest::PreCheck(EStage/*stage*/, unsigned int/*step*/,
                 if (!NStr::EndsWith(*str, ".")  &&  !NStr::EndsWith(*str, "!"))
                     str->append(1, '.');
                 list<string> par;
-                NStr::Justify(*str, m_Width, par, kEmptyStr, string(4, ' '));
+                NStr::Justify(*str, m_Width, par,
+                              kEmptyStr, string(kParIndent, ' '));
                 ITERATE(list<string>, line, par) {
                     *m_Output << NcbiEndl << *line;
                 }
@@ -1156,6 +1266,10 @@ void CConnTest::PostCheck(EStage/*stage*/, unsigned int/*step*/,
     }
 
     if (status == eIO_Success) {
+        if (reason.empty()) {
+            *m_Output << NcbiEndl;
+            return;
+        }
         *m_Output << "\n\t"[!end] << (stmt.empty() ? reason : stmt.front())
                   << '!' << NcbiEndl;
         if (!stmt.empty())
@@ -1166,7 +1280,7 @@ void CConnTest::PostCheck(EStage/*stage*/, unsigned int/*step*/,
         *m_Output << "\tFAILED (" << IO_StatusStr(status) << ')';
         const string& where = GetCheckPoint();
         if (!where.empty()) {
-            *m_Output << ':' << NcbiEndl << string(4, ' ') << where;
+            *m_Output << ':' << NcbiEndl << string(kParIndent, ' ') << where;
         }
         if (!stmt.empty())
             *m_Output << NcbiEndl;
@@ -1179,7 +1293,7 @@ void CConnTest::PostCheck(EStage/*stage*/, unsigned int/*step*/,
             str->append(1, '.');
         string pfx1, pfx;
         if (status == eIO_Success  ||  !end) {
-            pfx.assign(4, ' ');
+            pfx.assign(kParIndent, ' ');
             if (status != eIO_Success  &&  stmt.size() > 1) {
                 char buf[40];
                 pfx1.assign(buf, ::sprintf(buf, "%2d. ", ++n));

@@ -55,11 +55,12 @@ public:
     /// (in preceding check) have been found non-operational...
     ///
     enum EStage {
+        eNone,                  ///< Zero placeholder
         eHttp,                  ///< Check whether HTTP works
         eDispatcher,            ///< Check whether NCBI dispatcher works
         eStatelessService,      ///< Check whether simplest NCBI service works
         eFirewallConnPoints,    ///< Obtain all FW ports for stateful services
-        eFirewallConnections,   ///< Check all FW ports one by one
+        eFirewallConnections,   ///< Check all FW ports, falling back if needed
         eStatefulService        ///< Check whether NCBI stateful service works
     };
 
@@ -155,6 +156,9 @@ protected:
     virtual EIO_Status GetFWConnections  (string* reason);
     virtual EIO_Status CheckFWConnections(string* reason);
     virtual EIO_Status StatefulOkay      (string* reason);
+
+    /// Last resort check
+    virtual EIO_Status ExtraCheckOnFailure(void);
 
     /// User-defined rendering callbacks:  PreCheck() and PostCheck().
     /// Each callback receives a stage enumerator and a step within.
