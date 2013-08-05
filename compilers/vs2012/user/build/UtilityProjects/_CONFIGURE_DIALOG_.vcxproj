@@ -19,7 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>_CONFIGURE-DIALOG-</ProjectName>
+    <ProjectName>_CONFIGURE_DIALOG_</ProjectName>
     <ProjectGuid>{EB043EAF-58D4-4179-AC32-538D9059BB8B}</ProjectGuid>
     <RootNamespace>MasterProject</RootNamespace>
     <Keyword>ManagedCProj</Keyword>

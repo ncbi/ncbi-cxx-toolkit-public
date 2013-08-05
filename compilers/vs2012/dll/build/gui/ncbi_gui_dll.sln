@@ -1,8 +1,8 @@
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2012
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_CONFIGURE-", "UtilityProjects\_CONFIGURE_.vcxproj", "{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAA56}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_CONFIGURE_", "UtilityProjects\_CONFIGURE_.vcxproj", "{8BC9CEB8-8B4A-11D0-8D11-AAAAAAAAAA56}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_CONFIGURE-DIALOG-", "UtilityProjects\_CONFIGURE_DIALOG_.vcxproj", "{9BAE6EEC-8C80-44F0-84A9-3379631A8654}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "_CONFIGURE_DIALOG_", "UtilityProjects\_CONFIGURE_DIALOG_.vcxproj", "{9BAE6EEC-8C80-44F0-84A9-3379631A8654}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
