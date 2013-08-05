@@ -507,6 +507,8 @@ void CDeflineGenerator::x_SetFlags (
                 m_TPAInf = true;
             } else if (NStr::EqualNocase (str, "TPA:reassembly")) {
                 m_TPAReasm = true;
+            } else if (NStr::EqualNocase (str, "TPA:assembly")) {
+                m_TPAReasm = true;
             }
         }
     }
@@ -1736,7 +1738,7 @@ const char * CDeflineGenerator::x_SetPrefix (void)
         } else if (m_TPAInf) {
             prefix = "TPA_inf: ";
         } else if (m_TPAReasm) {
-            prefix = "TPA_reasm: ";
+            prefix = "TPA_asm: ";
         } else {
             prefix = "TPA: ";
         }
@@ -1920,7 +1922,8 @@ string CDeflineGenerator::GenerateDefline (
 
     case 7:
         if (NStr::StartsWith (m_MainTitle, "TPA_exp", NStr::eNocase)  ||
-            NStr::StartsWith (m_MainTitle, "TPA_inf", NStr::eNocase)) {
+            NStr::StartsWith (m_MainTitle, "TPA_inf", NStr::eNocase)  ||
+            NStr::StartsWith (m_MainTitle, "TPA_asm", NStr::eNocase)) {
             m_MainTitle.erase (0, 8);
         }
         break;
