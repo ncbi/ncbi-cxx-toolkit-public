@@ -67,7 +67,7 @@ CSocket::CSocket(const string&   host,
     : m_IsOwned(eTakeOwnership),
       r_timeout(0), w_timeout(0), c_timeout(0)
 {
-    if (timeout && timeout != kDefaultTimeout) {
+    if (timeout  &&  timeout != kDefaultTimeout) {
         oo_timeout = *timeout;
         o_timeout  = &oo_timeout;
     } else
@@ -84,7 +84,7 @@ CSocket::CSocket(unsigned int    host,
       r_timeout(0), w_timeout(0), c_timeout(0)
 {
     char x_host[16/*sizeof("255.255.255.255")*/];
-    if (timeout && timeout != kDefaultTimeout) {
+    if (timeout  &&  timeout != kDefaultTimeout) {
         oo_timeout = *timeout;
         o_timeout = &oo_timeout;
     } else
@@ -101,7 +101,7 @@ CUNIXSocket::CUNIXSocket(const string&   path,
                          const STimeout* timeout,
                          TSOCK_Flags     flags)
 {
-    if (timeout && timeout != kDefaultTimeout) {
+    if (timeout  &&  timeout != kDefaultTimeout) {
         oo_timeout = *timeout;
         o_timeout = &oo_timeout;
     } else
@@ -347,9 +347,11 @@ string CSocket::GetPeerAddress(ESOCK_AddressFormat format) const
 
 void CSocket::Reset(SOCK sock, EOwnership if_to_own, ECopyTimeout whence)
 {
-    if (m_Socket  &&  m_IsOwned != eNoOwnership)
-        SOCK_Close(m_Socket);
-    m_Socket  = sock;
+    if (m_Socket != sock) {
+        if (m_Socket  &&  m_IsOwned != eNoOwnership)
+            SOCK_Close(m_Socket);
+        m_Socket  = sock;
+    }
     m_IsOwned = if_to_own;
     if (whence == eCopyTimeoutsFromSOCK) {
         if ( sock ) {
