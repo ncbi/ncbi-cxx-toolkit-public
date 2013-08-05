@@ -65,13 +65,13 @@ extern "C" {
  *       actually sent to the server side, so the following write will form a
  *       new request, and not get added to the previous one;  also this flag
  *       assures that the connector sends at least an HTTP header on "CLOSE"
- *       and re-"CONNECT", even if no data for HTTP body have been written
+ *       and re-"CONNECT", even if no data for HTTP body have been written.
  *
  * @var fHTTP_KeepHeader
  *       Do not strip HTTP header (i.e. everything up to the first "\r\n\r\n",
  *       including the "\r\n\r\n") from the CGI script's response (including
  *       any server error, which then is made available for reading as well)
- *       *NOTE* this flag disables automatic authorization, redirection, etc.
+ *       *NOTE* this flag disables automatic authorization and redirection.
  *
  * @var fHTTP_UrlDecodeInput
  *       Assume the response body as single-part, URL-encoded;  perform the
@@ -81,7 +81,7 @@ extern "C" {
  *       Do *not* do internal reading into temporary buffer while sending data
  *       to HTTP server;  by default any send operation tries to extract data
  *       as they are coming back from the server in order to prevent stalling
- *       due to data clogging in the connection.
+ *       due to data clogging the connection.
  *
  * @var fHTTP_DropUnread
  *       Do not collect incoming data in "Read" mode before switching into
@@ -94,9 +94,9 @@ extern "C" {
  *       (this flag effectively means having SConnNetInfo::max_try set to 1).
 
  * @var fHTTP_InsecureRedirect
- *       For security reasons the following redirects comprise security risk
- *       and, thus, are prohibited:  switching from https to http, and
- *       re-posting data (regardless of the transport, either http or https);
+ *       For security reasons the following redirects comprise security risk,
+ *       and thus, are prohibited:  switching from https to http, and/or
+ *       re-POSTing data (regardless of the transport, either http or https);
  *       this flag allows such redirects (when encountered) to be honored.
  *
  * @note
@@ -249,7 +249,7 @@ typedef void        (*FHTTP_Cleanup)
  *         header that can be provided via the "net_info" argument, see
  *         ConnNetInfo_OverrideUserHeader() from <connect/ncbi_connutil.h>.
  *     @note
- *       Data may depart to the server side earlier if CONN_Flush()'ed in
+ *       Data may depart to the server side earlier if CONN_Flush()'ed in a
  *       fHTTP_Flushable connector, see "flags".
  *  3. After the request has been sent, then the response data from the peer
  *     (usually, a CGI program) can be actually read out.

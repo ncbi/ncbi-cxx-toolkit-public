@@ -263,7 +263,7 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
                     ||  (uuu->flags & fHTTP_InsecureRedirect)
                     ||  !BUF_Size(uuu->w_buf)) {
                     char           host[sizeof(uuu->net_info->host)];
-                    unsigned short port = uuu->net_info->port;
+                    unsigned short port =      uuu->net_info->port;
                     strcpy(host, uuu->net_info->host);
                     if (uuu->net_info->scheme == eURL_Https)
                         secure = 1/*true*/;
@@ -274,8 +274,9 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
                             &&  !(uuu->flags & fHTTP_InsecureRedirect)) {
                             fail = -1;
                         } else {
-                            if (uuu->net_info->port != port
-                                ||  strcasecmp(uuu->net_info->host,host) != 0){
+                            if (port !=    uuu->net_info->port  ||
+                                strcasecmp(uuu->net_info->host, host) != 0) {
+                                /* drop the flag on host / port replaced */
                                 uuu->skip_host = 0/*false*/;
                             }
                             if (uuu->net_info->req_method == eReqMethod_Post
@@ -1768,8 +1769,8 @@ static EIO_Status s_CreateHttpConnector
         ConnNetInfo_DeleteUserHeader(xxx, "Referer:");
     }
 
-    if ((flags & fHTTP_NoAutoRetry)  ||  !xxx->max_try)
-        xxx->max_try = 1;
+    if (xxx->max_try == 0  ||  (flags & fHTTP_NoAutoRetry))
+        xxx->max_try  = 1;
 
     if (!(uuu = (SHttpConnector*) malloc(sizeof(SHttpConnector)))) {
         ConnNetInfo_Destroy(xxx);
