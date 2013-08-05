@@ -50,10 +50,10 @@ CMsvcConfigureProjectGenerator::CMsvcConfigureProjectGenerator
                                    bool  build_ptb)
 :m_Name          (
 (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1100) ?
-                    "_CONFIGURE-" : "-CONFIGURE-"),
+                    "_CONFIGURE_" : "-CONFIGURE-"),
  m_NameGui       (
  (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1100) ?
-                    "_CONFIGURE-DIALOG-" : "-CONFIGURE-DIALOG-"),
+                    "_CONFIGURE_DIALOG_" : "-CONFIGURE-DIALOG-"),
  m_OutputDir     (output_dir),
  m_Configs       (configs),
  m_DllBuild      (dll_build),

@@ -806,9 +806,7 @@ void CProjBulderApp::GenerateMsvcProjects(CProjectItemsTree& projects_tree)
         string prj_file(utils[i*2]);
         string prj_name(utils[i*2+1]);
         if (CMsvc7RegSettings::GetMsvcVersion() >= CMsvc7RegSettings::eMsvc1100) {
-            if (prj_name[0] == '-') {
-                prj_name[0] = '_';
-            }
+            NStr::ReplaceInPlace(prj_name,"-", "_");
         }
         string prj_path = CDirEntry::ConcatPath(utility_projects_dir, prj_file);
         prj_path += CMsvc7RegSettings::GetVcprojExt();
