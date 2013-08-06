@@ -1,0 +1,12 @@
+# $Id$
+
+LIB = trackmgrgridcli
+
+SRC = blast_client createusertrack_client displaytrack_client \
+      item_resolver_client switch_context_client track_attrvalue_client
+
+LIB_OR_DLL = lib
+
+ASN_DEP = trackmgr
+
+WATCHERS = meric clausen

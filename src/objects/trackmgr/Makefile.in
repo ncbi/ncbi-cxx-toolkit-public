@@ -4,7 +4,7 @@
 #################################
 
 ASN_PROJ = trackmgr
-LIB_PROJ = trackmgrcli
+LIB_PROJ = trackmgrcli trackmgrgridcli
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

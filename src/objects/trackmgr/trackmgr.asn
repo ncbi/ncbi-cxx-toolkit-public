@@ -65,10 +65,12 @@ TMgr-DisplayTrackReply ::= SEQUENCE {
     --tracks TMgr-DisplayTracks OPTIONAL
 }
 
+TMgr-DTrackId ::= Dbtag
+
 TMgr-SwitchTrackContextRequest ::= SEQUENCE {
     client TMgr-ClientInfo,
     new-genome-context TMgr-GenomeContext,
-    current-dtrack-ids SET OF Dbtag
+    current-dtrack-ids SET OF TMgr-DTrackId
 }
 
 TMgr-SwitchTrackContextReply ::= SEQUENCE {
@@ -120,7 +122,7 @@ TMgr-SwitchTrackExceptionCode ::= INTEGER {
 }
 
 TMgr-SwitchTrackException ::= SEQUENCE {
-    dtrack-id Dbtag,
+    dtrack-id TMgr-DTrackId,
     code TMgr-SwitchTrackExceptionCode OPTIONAL
 }
 
@@ -151,7 +153,7 @@ TMgr-Attribute ::= SEQUENCE {
 }
 
 TMgr-DisplayTrack ::= SEQUENCE {
-    dtrack-id Dbtag,
+    dtrack-id TMgr-DTrackId,
     name UTF8String,
     attrs SET OF TMgr-Attribute OPTIONAL
 }
@@ -245,7 +247,7 @@ TMgr-CreateUserTrackReply ::= SEQUENCE {
 }
 
 TMgr-ItemResolverRequest ::= SEQUENCE {
-    dtrack-ids SET OF Dbtag,
+    dtrack-ids SET OF TMgr-DTrackId,
     client TMgr-ClientInfo,
     genome-context TMgr-GenomeContext,
     attrs SET OF TMgr-AttrSpec OPTIONAL,
@@ -253,7 +255,7 @@ TMgr-ItemResolverRequest ::= SEQUENCE {
 }
 
 TMgr-TrackItems ::= SEQUENCE {
-    dtrack-id Dbtag,
+    dtrack-id TMgr-DTrackId,
     data SET OF TMgr-DatasetItem
 }
 
