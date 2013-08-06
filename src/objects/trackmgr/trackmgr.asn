@@ -200,6 +200,7 @@ TMgr-BlastRIDReply ::= SEQUENCE {
 
 TMgr-CreateUserDataItem ::= SEQUENCE {
     datakey VisibleString,
+    seqids SET OF VisibleString,
     attrs SET OF TMgr-Attribute OPTIONAL
 }
 
@@ -232,6 +233,7 @@ TMgr-CreateUserTrackRequest ::= SEQUENCE {
     identity TMgr-Identity,
     track-name VisibleString OPTIONAL, -- User-provided track name
     track-descr VisibleString OPTIONAL, -- User-provided data description
+    assembly-acc VisibleString OPTIONAL,
     attrs SET OF TMgr-Attribute OPTIONAL,
     data-items SET OF TMgr-CreateUserDataItem,
     access-perms TMgr-TrackACL-Permission
