@@ -62,7 +62,7 @@ USING_SCOPE(objects);
 
 /// Default constructor
 CScoreBuilderBase::CScoreBuilderBase()
-: m_ErrorMode(eError_Report)
+: m_ErrorMode(eError_Throw)
 , m_SubstMatrixName("BLOSUM62")
 {
 }
