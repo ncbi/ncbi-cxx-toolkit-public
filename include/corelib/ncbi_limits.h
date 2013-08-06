@@ -195,9 +195,9 @@ const Uint8 kMax_UI8 = NCBI_MAX_UI8;
 #  endif
 
 #  if (SIZEOF___INT64 == 8)
-#    define __int64 kMin_Int64  0x8000000000000000i64
-#    define __int64 kMax_Int64  0x7FFFFFFFFFFFFFFFi64
-#    define __int64 kMax_UInt64 0xFFFFFFFFFFFFFFFFui64
+#    define kMin_Int64  NCBI_CONST_INT8(0x8000000000000000)
+#    define kMax_Int64  NCBI_CONST_INT8(0x7FFFFFFFFFFFFFFF)
+#    define kMax_UInt64 NCBI_CONST_UINT8(0xFFFFFFFFFFFFFFFF)
 #  endif
 
 /* [ C ]  built-in floating-point types */
