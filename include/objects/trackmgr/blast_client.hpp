@@ -35,7 +35,7 @@
 /// @file tmgr_blast_client.hpp
 /// NetSchedule grid client for TrackManager BLAST request/reply
 
-#include <internal/misc/serial/gridrpcclient.hpp>
+#include <objects/trackmgr/gridrpcclient.hpp>
 
 
 BEGIN_NCBI_SCOPE

@@ -35,7 +35,7 @@
 /// @file tmgr_displaytrack_client.hpp
 /// NetSchedule grid client for TrackManager item-resolver request/reply
 
-#include <internal/misc/serial/gridrpcclient.hpp>
+#include <objects/trackmgr/gridrpcclient.hpp>
 
 
 BEGIN_NCBI_SCOPE
