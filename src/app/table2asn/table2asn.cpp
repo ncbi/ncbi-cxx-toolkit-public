@@ -63,6 +63,8 @@
 
 #include "multireader.hpp"
 
+#include <util/line_reader.hpp>
+
 #include <common/test_assert.h>  /* This header must go last */
 
 using namespace ncbi;
@@ -95,10 +97,13 @@ private:
 	void ProcessOneFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
 	bool ProcessOneDirectory(const CTable2AsnContext& context, const CDir& directory, const CMask& mask, bool recurse);
 	void ProcessSecretFiles(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
+	void ProcessTBLFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
 	void ProcessSRCFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
 	void ProcessQVLFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
 	void ProcessDSCFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
 	void ProcessCMTFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
+	void ProcessCMTFileByCols(const CTable2AsnContext& context, ILineReader& pathname, CRef<CSerialObject>& result);
+	void ProcessCMTFileByRows(const CTable2AsnContext& context, ILineReader& pathname, CRef<CSerialObject>& result);
 	void ProcessPEPFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
 	void ProcessRNAFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
 	void ProcessPRTFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
@@ -574,6 +579,7 @@ void CTbl2AsnApp::ProcessSecretFiles(const CTable2AsnContext& context, const str
 
 	string name = dir + base;
 
+	ProcessTBLFile(context, name + ".tbl", result);
 	ProcessSRCFile(context, name + ".src", result);
 	ProcessQVLFile(context, name + ".qvl", result);
 	ProcessDSCFile(context, name + ".dsc", result);
@@ -581,6 +587,12 @@ void CTbl2AsnApp::ProcessSecretFiles(const CTable2AsnContext& context, const str
 	ProcessPEPFile(context, name + ".pep", result);
 	ProcessRNAFile(context, name + ".rna", result);
 	ProcessPRTFile(context, name + ".prt", result);
+}
+
+void CTbl2AsnApp::ProcessTBLFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
+{
+	CFile file(pathname);
+	if (!file.Exists()) return;
 }
 
 void CTbl2AsnApp::ProcessSRCFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
@@ -605,16 +617,52 @@ void CTbl2AsnApp::ProcessDSCFile(const CTable2AsnContext& context, const string&
 	CMultiReader::ApplyDescriptors(*result, *descr);
 }
 
+void CTbl2AsnApp::ProcessCMTFileByCols(const CTable2AsnContext& context, ILineReader& reader, CRef<CSerialObject>& result)
+{
+}
+
+void CTbl2AsnApp::ProcessCMTFileByRows(const CTable2AsnContext& context, ILineReader& reader, CRef<CSerialObject>& result)
+{
+	CUser_object* obj = 0;
+	while (!reader.AtEOF())
+	{
+		reader.ReadLine();
+		if (!reader.AtEOF())
+		{
+			string current = reader.GetCurrentLine();
+			if (!current.empty())
+			{
+				int index = current.find('\t');
+				if (index != string::npos )
+				{
+					string commentname = current.substr(0, index);
+					current.erase(current.begin(), current.begin()+index+1);
+					obj = m_reader.AddStructuredComment(obj, commentname, current, *result);
+				}
+			}
+		}
+	}
+}
+
 void CTbl2AsnApp::ProcessCMTFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
 {
 	CFile file(pathname);
 	if (!file.Exists()) return;
+
+	CRef<ILineReader> reader(ILineReader::New(pathname));
+
+	//if (context.wInFile
+	ProcessCMTFileByRows(context, *reader, result);
+	//else
+	//ProcessCMTFileByCols(context, *reader, result);
 }
 
 void CTbl2AsnApp::ProcessPEPFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
 {
 	CFile file(pathname);
 	if (!file.Exists()) return;
+
+	// CPropsLine
 }
 
 void CTbl2AsnApp::ProcessRNAFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)

@@ -31,7 +31,6 @@ struct CTable2AsnContext
 	string nOrganismName;
 	string j;
 	string yComment;
-	string YCommentFile;
 	string fInFile;
 	string k;
 	string V;
@@ -115,6 +114,11 @@ public:
    void ApplyAdditionalProperties(const CTable2AsnContext& args, objects::CSeq_entry& entry);
    void LoadTemplate(const CTable2AsnContext& args, const string& ifname, CRef<objects::CSeq_entry> & out_ent_templ, CRef<objects::CSeq_submit> & out_submit_templ);
    void LoadDescriptors(const CTable2AsnContext& args, const string& ifname, CRef<objects::CSeq_descr> & out_desc);
+   objects::CUser_object* AddStructuredComment(objects::CUser_object* obj, const string& name, const string& value, CSerialObject& cont);
+   objects::CUser_object* AddStructuredComment(objects::CUser_object* obj, const string& name, const string& value, objects::CSeq_descr& cont);
+   static
+   CRef<objects::CSeq_descr> GetSeqDescr(CSerialObject* obj);
+   
    static
    void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeq_descr & source);
    static
