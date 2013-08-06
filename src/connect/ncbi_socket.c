@@ -991,7 +991,7 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = AF_INET; /* currently, we only handle IPv4 */
         if ((x_error = getaddrinfo(hostname, 0, &hints, &out)) == 0  &&  out) {
-            struct sockaddr_in* sin = (struct sockaddr_in *) out->ai_addr;
+            struct sockaddr_in* sin = (struct sockaddr_in*) out->ai_addr;
             assert(sin->sin_family == AF_INET);
             host = sin->sin_addr.s_addr;
         } else {
@@ -1021,9 +1021,9 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
         char x_buf[1024];
 
         x_error = 0;
-#    if (HAVE_GETHOSTBYNAME_R == 5)
+#    if   HAVE_GETHOSTBYNAME_R == 5
         he = gethostbyname_r(hostname, &x_he, x_buf, sizeof(x_buf), &x_error);
-#    elif (HAVE_GETHOSTBYNAME_R == 6)
+#    elif HAVE_GETHOSTBYNAME_R == 6
         if (gethostbyname_r(hostname, &x_he, x_buf, sizeof(x_buf),
                             &he, &x_error) != 0) {
             assert(he == 0);
@@ -1046,7 +1046,7 @@ static unsigned int s_gethostbyname(const char* hostname, ESwitch log)
 #    endif /*!SOCK_GHB_THREAD_SAFE*/
 
         he = gethostbyname(hostname);
-        x_error = h_errno + DNS_BASE;
+        x_error = he ? 0 : h_errno + DNS_BASE;
 #  endif /*HAVE_GETHOSTBYNAME_R*/
 
         if (!he || he->h_addrtype != AF_INET || he->h_length != sizeof(host)) {
@@ -1181,16 +1181,16 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
 
 #else /* use some variant of gethostbyaddr */
         struct hostent* he;
-#  if defined(HAVE_GETHOSTBYADDR_R)
+#  ifdef HAVE_GETHOSTBYADDR_R
         static const char suffix[] = "_r";
         struct hostent x_he;
         char x_buf[1024];
 
         x_error = 0;
-#    if (HAVE_GETHOSTBYADDR_R == 7)
+#    if   HAVE_GETHOSTBYADDR_R == 7
         he = gethostbyaddr_r((char*) &host, sizeof(host), AF_INET, &x_he,
                              x_buf, sizeof(x_buf), &x_error);
-#    elif (HAVE_GETHOSTBYADDR_R == 8)
+#    elif HAVE_GETHOSTBYADDR_R == 8
         if (gethostbyaddr_r((char*) &host, sizeof(host), AF_INET, &x_he,
                             x_buf, sizeof(x_buf), &he, &x_error) != 0) {
             assert(he == 0);
@@ -1213,7 +1213,7 @@ static char* s_gethostbyaddr(unsigned int host, char* name,
 #    endif /*!SOCK_GHB_THREAD_SAFE*/
 
         he = gethostbyaddr((char*) &host, sizeof(host), AF_INET);
-        x_error = h_errno + DNS_BASE;
+        x_error = he ? 0 : h_errno + DNS_BASE;
 #  endif /*HAVE_GETHOSTBYADDR_R*/
 
         if (!he  ||  strlen(he->h_name) >= namelen) {
