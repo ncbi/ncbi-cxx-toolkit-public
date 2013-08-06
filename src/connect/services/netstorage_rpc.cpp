@@ -876,7 +876,7 @@ CNetFileInfo SNetFileRPC::GetInfo()
 {
     CJsonNode request(x_MkRequest("GETOBJECTINFO"));
 
-    return CNetFileInfo(m_NetStorageRPC->Exchange(request));
+    return CNetFileInfo(m_ID, m_NetStorageRPC->Exchange(request));
 }
 
 void SNetFileRPC::Close()

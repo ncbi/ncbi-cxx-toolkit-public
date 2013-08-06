@@ -88,11 +88,12 @@ class NCBI_XCONNECT_EXPORT CNetFileInfo
     NCBI_NET_COMPONENT(NetFileInfo);
 
     /// Construct a CNetFileInfo object.
-    CNetFileInfo(ENetFileLocation location, const CNetFileID& file_id,
+    CNetFileInfo(const string& file_id,
+            ENetFileLocation location, const CNetFileID& file_id_struct,
             Uint8 file_size, CJsonNode::TInstance storage_specific_info);
 
     /// Load file information from a JSON object.
-    CNetFileInfo(const CJsonNode& file_info_node);
+    CNetFileInfo(const string& file_id, const CJsonNode& file_info_node);
 
     /// Return a ENetFileLocation constant that corresponds to the
     /// storage back-end where the file currently resides. If the
@@ -118,6 +119,11 @@ class NCBI_XCONNECT_EXPORT CNetFileInfo
     /// about the file.
     /// @note Valid only if GetLocation() != eNFL_NotFound.
     CJsonNode GetStorageSpecificInfo() const;
+
+    /// If the file is stored on a network file system,
+    /// return the pathname of the file. Otherwise, throw
+    /// an exception.
+    string GetNFSPathname() const;
 
     /// Pack the whole structure in a single JSON object.
     CJsonNode ToJSON();

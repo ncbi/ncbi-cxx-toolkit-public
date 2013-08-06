@@ -584,8 +584,8 @@ bool SNetFileAPIImpl::x_TryGetInfoFromLocation(ENetFileLocation location,
                 blob_size = m_NetICacheClient.GetSize(
                         m_FileID.GetUniqueKey(), 0, kEmptyStr);
 
-            *file_info = CNetFileInfo(eNFL_NetCache,
-                    m_FileID, blob_size, blob_info);
+            *file_info = CNetFileInfo(m_FileID.GetID(),
+                    eNFL_NetCache, m_FileID, blob_size, blob_info);
 
             m_CurrentLocation = eNFL_NetCache;
             return true;
@@ -605,8 +605,8 @@ bool SNetFileAPIImpl::x_TryGetInfoFromLocation(ENetFileLocation location,
             if (size_node)
                 file_size = (Uint8) size_node.AsInteger();
 
-            *file_info = CNetFileInfo(eNFL_FileTrack,
-                    m_FileID, file_size, file_info_node);
+            *file_info = CNetFileInfo(m_FileID.GetID(),
+                    eNFL_FileTrack, m_FileID, file_size, file_info_node);
 
             m_CurrentLocation = eNFL_FileTrack;
             return true;
@@ -645,7 +645,7 @@ CNetFileInfo SNetFileAPIImpl::GetInfo()
         }
     }
 
-    return CNetFileInfo(eNFL_NotFound, m_FileID, 0, NULL);
+    return CNetFileInfo(m_FileID.GetID(), eNFL_NotFound, m_FileID, 0, NULL);
 }
 
 bool SNetFileAPIImpl::x_ExistsAtLocation(ENetFileLocation location)
