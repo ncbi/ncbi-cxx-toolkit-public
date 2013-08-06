@@ -1,0 +1,10 @@
+# $Id$
+# Meta-makefile("objtools" project)
+#################################
+    
+REQUIRES = objects
+ 
+APP_PROJ = test-CorrectRefAllele
+   
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
