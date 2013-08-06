@@ -865,7 +865,10 @@ CVcfReader::xAssignFeatureLocationSet(
     }
     if (data.m_SetType == CVcfData::ST_ALL_INS) {
         //set location for INSs. Will always be a point!
-        pFeat->SetLocation().SetPnt().SetPoint(data.m_iPos);
+        //But needs to be the start + number of ref nts
+        //that are common with alts (i.e. anchor nts)
+        //  --JBH
+      pFeat->SetLocation().SetPnt().SetPoint(data.m_iPos + data.m_strRef.size() );
         pFeat->SetLocation().SetPnt().SetId(*pId);
         return true;
     }
