@@ -62,9 +62,20 @@ END_SCOPE(objects)
 class CBlastScorer : public IAlignmentScorer
 {
 public:
-    CBlastScorer() { ; }
+    enum EOptions {
+        eNone,
+        eSkipUnsupportedAlignments,
+        eDefault = eSkipUnsupportedAlignments
+    };
+    typedef int TOptions;
+
+    CBlastScorer(TOptions options = eDefault)
+        : m_Options(options) { ; }
 
     void ScoreAlignments(TAlignResultsRef Alignments, objects::CScope& Scope);
+
+private:
+    TOptions m_Options;
 };
 
 

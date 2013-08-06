@@ -76,22 +76,26 @@ USING_SCOPE(blast);
 static const Int8 kEffectiveSearchSpace = NCBI_CONST_INT8(1050668186940);
 
 static void s_ScoreAlignments(const CSeq_align_set &alignments,
-                              CScope& Scope, CScoreBuilder &Scorer)
+                              CScope& Scope, CScoreBuilder &Scorer,
+                              bool skip_unsupported)
 {
     ITERATE(CSeq_align_set::Tdata, Iter, alignments.Get()) {
         CRef<CSeq_align> Curr(*Iter);
 
         double DummyScore;
-        if(!Curr->GetNamedScore(CSeq_align::eScore_Score, DummyScore)) {
-            Scorer.AddScore(Scope, *Curr, CSeq_align::eScore_Blast);
-        }
 
-        if(!Curr->GetNamedScore(CSeq_align::eScore_BitScore, DummyScore)) {
-            Scorer.AddScore(Scope, *Curr, CSeq_align::eScore_BitScore);
-        }
+        if ( Curr->GetSegs().IsDenseg()  ||  ! skip_unsupported) {
+            if(!Curr->GetNamedScore(CSeq_align::eScore_Blast, DummyScore)) {
+                Scorer.AddScore(Scope, *Curr, CSeq_align::eScore_Blast);
+            }
 
-        if(!Curr->GetNamedScore(CSeq_align::eScore_EValue, DummyScore)) {
-            Scorer.AddScore(Scope, *Curr, CSeq_align::eScore_EValue);
+            if(!Curr->GetNamedScore(CSeq_align::eScore_BitScore, DummyScore)) {
+                Scorer.AddScore(Scope, *Curr, CSeq_align::eScore_BitScore);
+            }
+
+            if(!Curr->GetNamedScore(CSeq_align::eScore_EValue, DummyScore)) {
+                Scorer.AddScore(Scope, *Curr, CSeq_align::eScore_EValue);
+            }
         }
 
         if(!Curr->GetNamedScore(CSeq_align::eScore_IdentityCount, DummyScore)) {
@@ -100,7 +104,8 @@ static void s_ScoreAlignments(const CSeq_align_set &alignments,
 
         if (Curr->GetSegs().Which() == CSeq_align::C_Segs::e_Disc) {
             /// Compute score for the components of a Disc-seg alignment
-            s_ScoreAlignments(Curr->GetSegs().GetDisc(), Scope, Scorer);
+            s_ScoreAlignments(Curr->GetSegs().GetDisc(), Scope, Scorer,
+                              skip_unsupported);
         }
     }
 }
@@ -108,8 +113,7 @@ static void s_ScoreAlignments(const CSeq_align_set &alignments,
 
 void CBlastScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& Scope)
 {
-    //CScoreBuilder Scorer(*Options);
-    //Scorer.SetEffectiveSearchSpace(Options->GetEffectiveSearchSpace());
+    bool skip_unsupported = m_Options & eSkipUnsupportedAlignments;
     CScoreBuilder Scorer(blast::eMegablast);
     Scorer.SetEffectiveSearchSpace (kEffectiveSearchSpace);
 
@@ -117,7 +121,8 @@ void CBlastScorer::ScoreAlignments(TAlignResultsRef AlignSet, CScope& Scope)
         NON_CONST_ITERATE(CQuerySet::TAssemblyToSubjectSet, AssemIter, QueryIter->second->Get()) {
             NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, AssemIter->second) {  
             //NON_CONST_ITERATE(CQuerySet::TSubjectToAlignSet, SubjectIter, QueryIter->second->Get()) {
-                s_ScoreAlignments(*SubjectIter->second, Scope, Scorer);
+                s_ScoreAlignments(*SubjectIter->second, Scope, Scorer,
+                                  skip_unsupported);
             }
         }
     }

@@ -653,7 +653,8 @@ void CNgAlignApp::x_AddScorers(CNgAligner& NgAligner, IRegistry* RunRegistry)
 	ITERATE(vector<string>, NameIter, Names) {
 
 		if(*NameIter == "blast")
-			NgAligner.AddScorer(new CBlastScorer);
+			NgAligner.AddScorer(
+                new CBlastScorer(CBlastScorer::eSkipUnsupportedAlignments));
 		else if(*NameIter == "pctident")
 			NgAligner.AddScorer(new CPctIdentScorer);
 		else if(*NameIter == "pctcov")

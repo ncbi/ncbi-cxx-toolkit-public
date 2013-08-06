@@ -195,7 +195,8 @@ void CNgAlignTest::x_OneToOneCase(IRegistry* TestCases, const string& Case)
     CRef<CMergeAligner> MergeAligner(new CMergeAligner(1));
     CRef<CInversionMergeAligner> InversionMergeAligner(new CInversionMergeAligner(1));
 
-    CRef<CBlastScorer> BlastScorer(new CBlastScorer);
+    CRef<CBlastScorer> BlastScorer(
+        new CBlastScorer(CBlastScorer::eSkipUnsupportedAlignments));
     CRef<CPctIdentScorer> PctIdentScorer(new CPctIdentScorer);
     CRef<CPctCoverageScorer> PctCoverageScorer(new CPctCoverageScorer);
     CRef<CCommonComponentScorer> CommonComponentScorer(new CCommonComponentScorer);
@@ -308,7 +309,8 @@ void CNgAlignTest::x_OneToBlastDbCase(IRegistry* TestCases, const string& Case)
     CRef<CMergeAligner> MergeAligner(new CMergeAligner(1));
     CRef<CInversionMergeAligner> InversionMergeAligner(new CInversionMergeAligner(1));
 
-    CRef<CBlastScorer> BlastScorer(new CBlastScorer);
+    CRef<CBlastScorer> BlastScorer(
+        new CBlastScorer(CBlastScorer::eSkipUnsupportedAlignments));
     CRef<CPctIdentScorer> PctIdentScorer(new CPctIdentScorer);
     CRef<CPctCoverageScorer> PctCoverageScorer(new CPctCoverageScorer);
     CRef<CCommonComponentScorer> CommonComponentScorer(new CCommonComponentScorer);
@@ -420,7 +422,8 @@ void CNgAlignTest::x_ListToBlastDbCase(IRegistry* TestCases, const string& Case)
     CRef<CMergeAligner> MergeAligner(new CMergeAligner(1));
     CRef<CInversionMergeAligner> InversionMergeAligner(new CInversionMergeAligner(1));
 
-    CRef<CBlastScorer> BlastScorer(new CBlastScorer);
+    CRef<CBlastScorer> BlastScorer(
+        new CBlastScorer(CBlastScorer::eSkipUnsupportedAlignments));
     CRef<CPctIdentScorer> PctIdentScorer(new CPctIdentScorer);
     CRef<CPctCoverageScorer> PctCoverageScorer(new CPctCoverageScorer);
     CRef<CCommonComponentScorer> CommonComponentScorer(new CCommonComponentScorer);
@@ -568,7 +571,8 @@ void CNgAlignTest::x_SplitOneToBlastDbCase(IRegistry* TestCases, const string& C
     CRef<CInversionMergeAligner> InversionMergeAligner(new CInversionMergeAligner(1));
     CRef<CSplitSeqAlignMerger> SplitSeqAlignMerger(new CSplitSeqAlignMerger(&Splitter));
 
-    CRef<CBlastScorer> BlastScorer(new CBlastScorer);
+    CRef<CBlastScorer> BlastScorer(
+        new CBlastScorer(CBlastScorer::eSkipUnsupportedAlignments));
     CRef<CPctIdentScorer> PctIdentScorer(new CPctIdentScorer);
     CRef<CPctCoverageScorer> PctCoverageScorer(new CPctCoverageScorer);
     CRef<CCommonComponentScorer> CommonComponentScorer(new CCommonComponentScorer);
@@ -687,7 +691,8 @@ void CNgAlignTest::x_SplitListToBlastDbCase(IRegistry* TestCases, const string& 
     CRef<CInversionMergeAligner> InversionMergeAligner(new CInversionMergeAligner(1));
     CRef<CSplitSeqAlignMerger> SplitSeqAlignMerger(new CSplitSeqAlignMerger(&Splitter));
 
-    CRef<CBlastScorer> BlastScorer(new CBlastScorer);
+    CRef<CBlastScorer> BlastScorer(
+        new CBlastScorer(CBlastScorer::eSkipUnsupportedAlignments));
     CRef<CPctIdentScorer> PctIdentScorer(new CPctIdentScorer);
     CRef<CPctCoverageScorer> PctCoverageScorer(new CPctCoverageScorer);
     CRef<CCommonComponentScorer> CommonComponentScorer(new CCommonComponentScorer);
