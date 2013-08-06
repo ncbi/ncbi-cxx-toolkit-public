@@ -31,7 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objects/trackmgr/trackmgr__.hpp>
-#include <internal/trackmgr/gridcli/createusertrack_client.hpp>
+#include <objects/trackmgr/createusertrack_client.hpp>
 
 
 BEGIN_NCBI_SCOPE

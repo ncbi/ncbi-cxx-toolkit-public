@@ -31,7 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objects/trackmgr/trackmgr__.hpp>
-#include <internal/trackmgr/gridcli/track_attrvalue_client.hpp>
+#include <objects/trackmgr/track_attrvalue_client.hpp>
 
 
 BEGIN_NCBI_SCOPE

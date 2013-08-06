@@ -32,7 +32,7 @@
 #include <ncbi_pch.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/trackmgr/trackmgr__.hpp>
-#include <internal/trackmgr/gridcli/item_resolver_client.hpp>
+#include <objects/trackmgr/item_resolver_client.hpp>
 
 
 BEGIN_NCBI_SCOPE

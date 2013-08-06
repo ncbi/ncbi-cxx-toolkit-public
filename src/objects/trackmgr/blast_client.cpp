@@ -31,7 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objects/trackmgr/trackmgr__.hpp>
-#include <internal/trackmgr/gridcli/blast_client.hpp>
+#include <objects/trackmgr/blast_client.hpp>
 
 
 BEGIN_NCBI_SCOPE
