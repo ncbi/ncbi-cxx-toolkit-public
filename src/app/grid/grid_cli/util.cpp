@@ -37,85 +37,88 @@
 
 BEGIN_NCBI_SCOPE
 
-static void Indent(FILE* output_stream, int indent)
+static void Indent(FILE* output_stream, int indent_depth, const char* indent)
 {
-    while (--indent >= 0)
-        putc('\t', output_stream);
+    while (--indent_depth >= 0)
+        fprintf(output_stream, "%s", indent);
 }
 
 static void PrintJSONNode(FILE* output_stream, CJsonNode node,
-        int struct_indent = 0, const char* struct_prefix = "",
-        int scalar_indent = 0, const char* scalar_prefix = "")
+        const char* indent,
+        int struct_indent_depth = 0, const char* struct_prefix = "",
+        int scalar_indent_depth = 0, const char* scalar_prefix = "")
 {
     switch (node.GetNodeType()) {
     case CJsonNode::eObject:
         {
             fputs(struct_prefix, output_stream);
-            Indent(output_stream, struct_indent);
+            Indent(output_stream, struct_indent_depth, indent);
             putc('{', output_stream);
             const char* prefix = "\n";
-            int indent = struct_indent + 1;
+            int indent_depth = struct_indent_depth + 1;
             for (CJsonIterator it = node.Iterate(); it; ++it) {
                 fputs(prefix, output_stream);
-                Indent(output_stream, indent);
+                Indent(output_stream, indent_depth, indent);
                 fprintf(output_stream, "\"%s\":",
                         NStr::PrintableString(it.GetKey()).c_str());
-                PrintJSONNode(output_stream, *it, indent, "\n", 0, " ");
+                PrintJSONNode(output_stream, *it, indent,
+                        indent_depth, "\n", 0, " ");
                 prefix = ",\n";
             }
             putc('\n', output_stream);
-            Indent(output_stream, struct_indent);
+            Indent(output_stream, struct_indent_depth, indent);
             putc('}', output_stream);
         }
         break;
     case CJsonNode::eArray:
         {
             fputs(struct_prefix, output_stream);
-            Indent(output_stream, struct_indent);
+            Indent(output_stream, struct_indent_depth, indent);
             putc('[', output_stream);
             const char* prefix = "\n";
-            int indent = struct_indent + 1;
+            int indent_depth = struct_indent_depth + 1;
             for (CJsonIterator it = node.Iterate(); it; ++it) {
                 fputs(prefix, output_stream);
-                PrintJSONNode(output_stream, *it, indent, "", indent, "");
+                PrintJSONNode(output_stream, *it, indent,
+                        indent_depth, "", indent_depth, "");
                 prefix = ",\n";
             }
             putc('\n', output_stream);
-            Indent(output_stream, struct_indent);
+            Indent(output_stream, struct_indent_depth, indent);
             putc(']', output_stream);
         }
         break;
     case CJsonNode::eString:
         fputs(scalar_prefix, output_stream);
-        Indent(output_stream, scalar_indent);
+        Indent(output_stream, scalar_indent_depth, indent);
         fprintf(output_stream, "\"%s\"",
                 NStr::PrintableString(node.AsString()).c_str());
         break;
     case CJsonNode::eInteger:
         fputs(scalar_prefix, output_stream);
-        Indent(output_stream, scalar_indent);
+        Indent(output_stream, scalar_indent_depth, indent);
         fprintf(output_stream, "%lld", (long long) node.AsInteger());
         break;
     case CJsonNode::eDouble:
         fputs(scalar_prefix, output_stream);
-        Indent(output_stream, scalar_indent);
+        Indent(output_stream, scalar_indent_depth, indent);
         fprintf(output_stream, "%.10g", node.AsDouble());
         break;
     case CJsonNode::eBoolean:
         fputs(scalar_prefix, output_stream);
-        Indent(output_stream, scalar_indent);
+        Indent(output_stream, scalar_indent_depth, indent);
         fputs(node.AsBoolean() ? "true" : "false", output_stream);
         break;
     default: // CJsonNode::eNull
         fputs(scalar_prefix, output_stream);
-        Indent(output_stream, scalar_indent);
+        Indent(output_stream, scalar_indent_depth, indent);
         fputs("null", output_stream);
     }
 }
 
-void g_PrintJSON(FILE* output_stream, CJsonNode node)
+void g_PrintJSON(FILE* output_stream, CJsonNode node, const char* indent)
 {
-    PrintJSONNode(output_stream, node);
+    PrintJSONNode(output_stream, node, indent);
     putc('\n', output_stream);
 }
 

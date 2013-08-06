@@ -36,7 +36,8 @@
 
 BEGIN_NCBI_SCOPE
 
-void g_PrintJSON(FILE* output_stream, CJsonNode node);
+void g_PrintJSON(FILE* output_stream, CJsonNode node,
+        const char* indent = "\t");
 
 CJsonNode g_ExecAnyCmdToJson(CNetService service,
         CNetService::EServiceType service_type,
