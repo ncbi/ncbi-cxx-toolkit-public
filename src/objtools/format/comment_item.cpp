@@ -1167,6 +1167,85 @@ string CCommentItem::GetStringForEncode(CBioseqContext& ctx)
     return CNcbiOstrstreamToString(str);
 }
 
+string CCommentItem::GetStringForOpticalMap(CBioseqContext& ctx)
+{
+    const bool bHtml = ctx.Config().DoHTML();
+
+    const CPacked_seqpnt* pOpticalMapPoints = ctx.GetOpticalMapPoints();
+    if( ! pOpticalMapPoints || 
+        RAW_FIELD_IS_EMPTY_OR_UNSET(*pOpticalMapPoints, Points) )
+    {
+        return kEmptyStr;
+    }
+
+    const string & sFiletrackURL = ctx.GetFiletrackURL();
+
+    const bool bIsCircular = FIELD_EQUALS( ctx.GetHandle(), Inst_Topology, 
+        CSeq_inst::eTopology_circular );
+    const TSeqPos uBioseqLength =
+        GET_FIELD_OR_DEFAULT(ctx.GetHandle(), Inst_Length, 0);
+
+    CNcbiOstrstream str;
+
+    str << "This ";
+    if( bHtml && ! sFiletrackURL.empty() ) {
+        str << "<a href=\"" << sFiletrackURL << "\">";
+    }
+    str << "map";
+    if( bHtml && ! sFiletrackURL.empty() ) {
+        str << "</a>";
+    }
+    str << " has ";
+
+    size_t uNumFrags = pOpticalMapPoints->GetPoints().size();
+    if( ! bIsCircular )
+    {
+        // non-circular has an extra fragment because the
+        // last fragment does NOT wrap around to continue on
+        // the beginning of the bioseq.
+        ++uNumFrags;
+    }
+    str << uNumFrags;
+    str << " piece" << ( (uNumFrags > 1) ? "s" : "" ) << ":";
+
+    // vecOfPoints elements are 1-based
+    const CPacked_seqpnt::TPoints & vecOfPoints =
+        pOpticalMapPoints->GetPoints();
+    _ASSERT( ! vecOfPoints.empty() );
+
+    // prevEndPos and thisEndPos are 1-based
+    TSeqPos prevEndPos = 0;
+    TSeqPos thisEndPos = vecOfPoints[0];
+
+    // non-circular's first fragment is from 0 to the first rsite
+    if ( ! bIsCircular ) {
+        x_GetStringForOpticalMap_WriteFragmentLine(
+            str, prevEndPos, thisEndPos, uBioseqLength,
+            eFragmentType_Normal );
+    }
+    prevEndPos = thisEndPos;
+
+    // regular fragments
+    for( size_t idx = 1; idx < vecOfPoints.size(); ++idx ) {
+        thisEndPos = vecOfPoints[idx];
+        x_GetStringForOpticalMap_WriteFragmentLine(
+            str, prevEndPos, thisEndPos, uBioseqLength,
+            eFragmentType_Normal );
+        prevEndPos = thisEndPos;
+    }
+
+    // The last fragment for circular wraps around to the first rsite,
+    // but for non-circular it ends at the end of the bioseq
+    thisEndPos = ( bIsCircular ? vecOfPoints[0] : uBioseqLength );
+    x_GetStringForOpticalMap_WriteFragmentLine(
+            str, prevEndPos, thisEndPos, uBioseqLength,
+            ( bIsCircular ? 
+              eFragmentType_WrapAround :
+              eFragmentType_Normal ) );
+
+    return CNcbiOstrstreamToString(str);
+}
+
 string CCommentItem::GetStringForUnique(CBioseqContext& ctx)
 {
     if( ! ctx.IsRSUniqueProt() ) {
@@ -1483,6 +1562,45 @@ bool CCommentItem::x_IsCommentEmpty(void) const
         }
     }
     return true;
+}
+
+// static
+void CCommentItem::x_GetStringForOpticalMap_WriteFragmentLine(
+    ostream & str, TSeqPos prevEndPos, TSeqPos thisEndPos, 
+    TSeqPos uBioseqLength, EFragmentType eFragmentType)
+{
+    str << endl;
+    str << "*  " 
+        << setw(7) << (1 + prevEndPos) 
+        << ' ' 
+        << setw(7) << thisEndPos
+        << ": fragment of ";
+
+    bool bLengthIsOkay = true; // until proven otherwise
+    if( (eFragmentType == eFragmentType_Normal) &&
+        (thisEndPos <= prevEndPos) ) 
+    {
+        bLengthIsOkay = false;
+    } else if( (eFragmentType == eFragmentType_WrapAround) &&
+        (thisEndPos >= prevEndPos) ) 
+    {
+        bLengthIsOkay = false;
+    }
+
+    if( ! bLengthIsOkay ) {
+        str << "(ERROR: CANNOT CALCULATE LENGTH)";
+    } else if( (thisEndPos > uBioseqLength) || 
+        (prevEndPos > uBioseqLength) ) 
+    {
+        str << "(ERROR: FRAGMENT IS OUTSIDE BIOSEQ BOUNDS)";
+    } else {
+        if( eFragmentType == eFragmentType_Normal ) {
+            str << (thisEndPos - prevEndPos);
+        } else {
+            str << (uBioseqLength + thisEndPos - prevEndPos);
+        }
+    }
+    str << " bp in length";
 }
 
 /////////////////////////////////////////////////////////////////////////////

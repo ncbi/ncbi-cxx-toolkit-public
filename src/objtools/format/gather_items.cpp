@@ -736,6 +736,8 @@ void CFlatGatherer::x_GatherComments(void) const
 
     x_UnverifiedComment(ctx);
 
+    x_MapComment(ctx);
+
     // Gather comments related to the seq-id
     x_IdComments(ctx, 
         ( firstGenAnnotSCAD ? eGenomeAnnotComment_No : eGenomeAnnotComment_Yes ) );
@@ -918,6 +920,21 @@ void CFlatGatherer::x_UnverifiedComment(CBioseqContext& ctx) const
     }
 
     x_AddComment( new CCommentItem(kUnverifiedPrefix + type_string + kUnverifiedSuffix, ctx) );
+}
+
+void CFlatGatherer::x_MapComment(CBioseqContext& ctx) const
+{
+    const CPacked_seqpnt * pSeqpnts = ctx.GetOpticalMapPoints();
+    if( ! pSeqpnts || RAW_FIELD_IS_EMPTY_OR_UNSET(*pSeqpnts, Points) ) {
+        return;
+    }
+
+    string sOpticalMapComment = CCommentItem::GetStringForOpticalMap(ctx);
+    if ( ! NStr::IsBlank(sOpticalMapComment) ) {
+        CRef<CCommentItem> item(new CCommentItem(sOpticalMapComment, ctx));
+        item->SetNeedPeriod(false);
+        x_AddComment(item);
+    }
 }
 
 void CFlatGatherer::x_IdComments(CBioseqContext& ctx, 

@@ -1834,9 +1834,12 @@ void CGenbankFormatter::FormatSequence
                 CNcbiOstrstream gap_link;
                 const char *mol_type = ( seq.GetContext()->IsProt() ? "aa" : "bp" );
                 gap_link << "          [gap " << gap_size << " " << mol_type << "]";
-                gap_link << "    <a href=\"" << strLinkBaseEntrezViewer << seq.GetContext()->GetGI();
-                gap_link << "?fmt_mask=" << kExpandedGapDisplay;
-                gap_link << "\">Expand Ns</a>";
+                const TGi gi = seq.GetContext()->GetGI();
+                if( gi > 0 ) {
+                    gap_link << "    <a href=\"" << strLinkBaseEntrezViewer 
+                        << gi << "?fmt_mask=" << kExpandedGapDisplay
+                        << "\">Expand Ns</a>";
+                }
 
                 text_os.AddLine( (string)CNcbiOstrstreamToString(gap_link) );
             } else {

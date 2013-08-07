@@ -79,12 +79,15 @@ static string
 s_JoinLinkableStrs(const CUser_field_Base::C_Data::TStrs &strs, 
                    const string &url_prefix, const bool is_html )
 {
+    const char * pchPrefix = "";
+
     CNcbiOstrstream result;
     ITERATE( CUser_field_Base::C_Data::TStrs, str_iter, strs ) {
-        if( str_iter != strs.begin() ) {
-            result << ", ";
-        }
         const string &id = *str_iter;
+        if( id.empty() ) {
+            continue;
+        }
+        result << pchPrefix;
         if( is_html && ! url_prefix.empty() ) {
             result << "<a href=\"" << url_prefix << id << "\">";
         }
@@ -92,6 +95,7 @@ s_JoinLinkableStrs(const CUser_field_Base::C_Data::TStrs &strs,
         if( is_html && ! url_prefix.empty() ) {
             result << "</a>";
         }
+        pchPrefix = ", ";
     }
     
     return CNcbiOstrstreamToString( result );
@@ -100,12 +104,16 @@ s_JoinLinkableStrs(const CUser_field_Base::C_Data::TStrs &strs,
 static string
 s_JoinNumbers( const CUser_field_Base::C_Data::TInts & ints, const string & separator )
 {
+    const char * pchPrefix = "";
+
     CNcbiOstrstream result;
     ITERATE( CUser_field_Base::C_Data::TInts, int_iter, ints ) {
-        if( int_iter != ints.begin() ) {
-            result << separator;
+        if( *int_iter == 0 ) {
+            continue;
         }
+        result << pchPrefix;
         result << *int_iter;
+        pchPrefix = separator.c_str();
     }
     return CNcbiOstrstreamToString( result );
 }
@@ -163,6 +171,12 @@ namespace {
             return find_iter->second;
         }
     };
+
+    struct SDbLinkLabelInfo {
+        bool   allow_text; // true if we accept use-field str and strs
+        bool   allow_numeric; // true if we accept use-field int and ints
+        string url; // empty if no url
+    };
 }
 
 void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
@@ -200,17 +214,17 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
         }
     }
 
-    typedef SStaticPair<const char *, const char*> TDbLinkLabelToURL;
-    static const TDbLinkLabelToURL kDbLinkLabelToURL[] = {
-        "Assembly",               "http://www.ncbi.nlm.nih.gov/assembly/",
-        "BioProject",             "http://www.ncbi.nlm.nih.gov/bioproject?term=",
-        "BioSample",              "http://www.ncbi.nlm.nih.gov/biosample?term=",
-        "ProbeDB",                "",
-        "Sequence Read Archive",  "http://www.ncbi.nlm.nih.gov/sites/entrez?db=sra&term=",
-        "Trace Assembly Archive", ""
+    typedef SStaticPair<const char *, SDbLinkLabelInfo> TDbLinkLabelToInfo;
+    static const TDbLinkLabelToInfo kDbLinkLabelToInfo[] = {
+        { "Assembly",               { true,  false, "http://www.ncbi.nlm.nih.gov/assembly/" } },
+        { "BioProject",             { true,  false, "http://www.ncbi.nlm.nih.gov/bioproject?term=" } },
+        { "BioSample",              { true,  false, "http://www.ncbi.nlm.nih.gov/biosample?term=" } },
+        { "ProbeDB",                { true,  false, "" } },
+        { "Sequence Read Archive",  { true,  false, "http://www.ncbi.nlm.nih.gov/sites/entrez?db=sra&term=" } },
+        { "Trace Assembly Archive", { false, true,  "" } }
     };
-    typedef const CStaticPairArrayMap<const char *, const char*, PNocase> TDbLinkLabelToURLMap;
-    DEFINE_STATIC_ARRAY_MAP(TDbLinkLabelToURLMap, kDbLinkLabelToURLMap, kDbLinkLabelToURL);
+    typedef const CStaticPairArrayMap<const char *, SDbLinkLabelInfo, PNocase> TDbLinkLabelToInfoMap;
+    DEFINE_STATIC_ARRAY_MAP(TDbLinkLabelToInfoMap, kDbLinkLabelToInfoMap, kDbLinkLabelToInfo);
 
     // process DBLink
     // ( we have these temporary vectors because we can't push straight to m_DBLinkLines
@@ -222,19 +236,20 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
             if ( field.IsSetLabel()  &&  field.GetLabel().IsStr() && field.CanGetData() ) {
                 const string& label = field.GetLabel().GetStr();
 
-                TDbLinkLabelToURLMap::const_iterator find_iter =
-                    kDbLinkLabelToURLMap.find(label.c_str());
-                if( find_iter == kDbLinkLabelToURLMap.end() ) {
+                TDbLinkLabelToInfoMap::const_iterator find_iter =
+                    kDbLinkLabelToInfoMap.find(label.c_str());
+                if( find_iter == kDbLinkLabelToInfoMap.end() ) {
                     continue;
                 }
 
-                const char *pchNormalizedDbLinkLabel = find_iter->first;
-                const char *pchDbLinkURLPrefix       = find_iter->second;
+                const char             * pchNormalizedDbLinkLabel = find_iter->first;
+                const SDbLinkLabelInfo & dbLinkLabelInfo          = find_iter->second;
 
                 typedef CUser_field::C_Data TFieldData;
                 const TFieldData & field_data = field.GetData();
 
-                if( field_data.IsStrs() || field_data.IsStr() ) 
+                if( dbLinkLabelInfo.allow_text && 
+                    (field_data.IsStrs() || field_data.IsStr()) )
                 {
                     const TFieldData::TStrs * pStrs = NULL;
 
@@ -251,13 +266,19 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
                         pStrs = pStrsDestroyer.get();
                     }
 
-                    dblinkLines.push_back( 
-                        pchNormalizedDbLinkLabel + string(": ") + 
-                        s_JoinLinkableStrs( *pStrs, pchDbLinkURLPrefix, bHtml ) );
-                    if( bHtml ) {
-                        TryToSanitizeHtml( dblinkLines.back() );
+                    string dblinkValue = s_JoinLinkableStrs( 
+                        *pStrs, dbLinkLabelInfo.url, bHtml );
+                    if( ! dblinkValue.empty() ) {
+                        dblinkLines.push_back( 
+                            pchNormalizedDbLinkLabel + string(": ") + dblinkValue );
+                        if( bHtml ) {
+                            TryToSanitizeHtml( dblinkLines.back() );
+                        }
                     }
-                } else if( field_data.IsInts() || field_data.IsInt() ) {
+
+                } else if( dbLinkLabelInfo.allow_numeric && 
+                    (field_data.IsInts() || field_data.IsInt()) )
+                {
 
                     const TFieldData::TInts * pInts = NULL;
                     // destroys pInts if it's dynamically created
@@ -271,10 +292,13 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
                         pInts = pIntsDestroyer.get();
                     }
 
-                    dblinkLines.push_back( 
-                        pchNormalizedDbLinkLabel + string(": ") + 
-                        s_JoinNumbers( *pInts, ", " ) );
-                    // No need to sanitize; it's just numbers, commas, and spaces
+                    string dblinkValue = s_JoinNumbers( *pInts, ", " );
+                    if( ! dblinkValue.empty() ) {
+                        dblinkLines.push_back( 
+                            pchNormalizedDbLinkLabel + string(": ") + 
+                            dblinkValue );
+                        // No need to sanitize; it's just numbers, commas, and spaces
+                    }
                 }
             }
         }

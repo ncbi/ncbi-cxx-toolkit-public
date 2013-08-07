@@ -46,6 +46,7 @@
 #include <objects/seqloc/Textseq_id.hpp>
 #include <objects/seqloc/Patent_seq_id.hpp>
 #include <objects/general/Dbtag.hpp>
+#include <objects/misc/sequence_macros.hpp>
 
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_handle.hpp>
@@ -79,6 +80,7 @@ CBioseqContext::CBioseqContext
  CMasterContext* mctx,
  CTopLevelSeqEntryContext *tlsec) :
     m_Handle(seq),
+    m_pOpticalMapPoints(NULL),
     m_Repr(CSeq_inst::eRepr_not_set),
     m_Mol(CSeq_inst::eMol_not_set),
     m_HasParts(false),
@@ -250,6 +252,9 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
     x_SetHasMultiIntervalGenes();
 
     x_SetTaxname();
+
+    x_SetFiletrackURL();
+    x_SetOpticalMapPoints();
 }
 
 
@@ -369,6 +374,75 @@ void CBioseqContext::x_SetTaxname(void)
                     return;
                 }
             }
+        }
+    }
+}
+
+void CBioseqContext::x_SetFiletrackURL(void)
+{
+    // We might consider merging this functionality into x_SetDataFromUserObjects
+    for (CSeqdesc_CI it(m_Handle, CSeqdesc::e_User);  it;  ++it) {
+        const CUser_object& uo = it->GetUser();
+        if ( ! FIELD_IS_SET_AND_IS(uo, Type, Str) || 
+            ! NStr::EqualNocase(uo.GetType().GetStr(), "FileTrack")) 
+        {
+            continue;
+        }
+        CConstRef<CUser_field> pFileTrackURLField =
+            uo.GetFieldRef("FileTrackURL");
+        if( ! pFileTrackURLField || 
+            ! FIELD_IS_SET_AND_IS(*pFileTrackURLField, Data, Str) ||
+            pFileTrackURLField->GetData().GetStr().empty() )
+        {
+            continue;
+        }
+        m_FiletrackURL = pFileTrackURLField->GetData().GetStr();
+    }
+}
+
+void CBioseqContext::x_SetOpticalMapPoints(void)
+{  
+    if( GetRepr() != CSeq_inst::eRepr_map || 
+        ! FIELD_IS_SET_AND_IS(m_Handle, Inst_Ext, Map) )
+    {
+       return;
+    }
+
+    const CMap_ext & map_ext = m_Handle.GetInst_Ext().GetMap();
+    FOR_EACH_SEQFEAT_ON_MAPEXT(feat_it, map_ext ) {
+        const CSeq_feat & feat = **feat_it;
+        if( ! FIELD_IS_SET_AND_IS(feat, Data, Rsite) || 
+            ! feat.IsSetLocation() )
+        {
+            continue;
+        }
+        const CSeq_loc & feat_loc = feat.GetLocation();
+        switch( feat_loc.Which() ) {
+        case CSeq_loc::e_Pnt: {
+            const CSeq_point & seq_point = feat_loc.GetPnt();
+
+            if( seq_point.IsSetPoint() ) {
+                m_pOpticalMapPointsDestroyer.reset( new CPacked_seqpnt );
+                CLONE_IF_SET_ELSE_RESET(*m_pOpticalMapPointsDestroyer, Fuzz, 
+                    seq_point, Fuzz);
+                CLONE_IF_SET_ELSE_RESET(*m_pOpticalMapPointsDestroyer, Id,
+                    seq_point, Id);
+                ASSIGN_IF_SET_ELSE_RESET(*m_pOpticalMapPointsDestroyer, Strand,
+                    seq_point, Strand);
+                m_pOpticalMapPointsDestroyer->AddPoint( seq_point.GetPoint() );
+
+                m_pOpticalMapPoints = m_pOpticalMapPointsDestroyer.get();
+            }
+            break;
+        }
+        case CSeq_loc::e_Packed_pnt:
+            m_pOpticalMapPoints = & feat_loc.GetPacked_pnt();
+            // in case a previous iteration set this
+            m_pOpticalMapPointsDestroyer.reset(); 
+            break;
+        default:
+            // ignore other types
+            break;
         }
     }
 }

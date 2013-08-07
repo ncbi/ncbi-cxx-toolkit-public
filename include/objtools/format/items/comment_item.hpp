@@ -141,6 +141,7 @@ public:
     static TRefTrackStatus GetRefTrackStatus(const CUser_object& uo,
         string* st = 0);
     static string GetStringForEncode(CBioseqContext& ctx);
+    static string GetStringForOpticalMap(CBioseqContext& ctx);
     static string GetStringForUnique(CBioseqContext& ctx);
 
     static void ResetFirst(void) { sm_FirstComment = true; }
@@ -166,14 +167,27 @@ protected:
     void x_SetSkip(void);
 
 private:
-    bool x_IsCommentEmpty(void) const;
-
     static bool sm_FirstComment; 
 
     list<string>  m_Comment;
     int           m_CommentInternalIndent;
     bool          m_First;
     bool          m_NeedPeriod;
+
+    bool x_IsCommentEmpty(void) const;
+
+    enum EFragmentType {
+        /// typical fragment
+        eFragmentType_Normal, 
+        // a fragment on a circular sequence that wraps around the origin
+        eFragmentType_WrapAround, 
+    };
+    static void x_GetStringForOpticalMap_WriteFragmentLine(
+        ostream & str, 
+        TSeqPos prevEndPos, 
+        TSeqPos thisEndPos,
+        TSeqPos uBioseqLength,
+        EFragmentType eFragmentType);
 };
 
 
