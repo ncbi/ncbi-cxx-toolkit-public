@@ -597,7 +597,7 @@ bool CValidError_desc::ValidateStructuredComment
 
     if (! usr.HasField("StructuredCommentPrefix")) {
         if (report) {
-            PostErr (eDiag_Info, eErr_SEQ_DESCR_StructuredCommentPrefixOrSuffixMissing, 
+            PostErr (eDiag_Warning, eErr_SEQ_DESCR_StructuredCommentPrefixOrSuffixMissing, 
                     "Structured Comment lacks prefix", *m_Ctx, desc);
         }
         return false;
@@ -649,7 +649,7 @@ bool CValidError_desc::ValidateStructuredComment
         // no prefix, in which case no rules
         // but it is still an error - should have prefix
         if (report) {
-            PostErr (eDiag_Info, eErr_SEQ_DESCR_StructuredCommentPrefixOrSuffixMissing, 
+            PostErr (eDiag_Warning, eErr_SEQ_DESCR_StructuredCommentPrefixOrSuffixMissing, 
                     "Structured Comment lacks prefix", *m_Ctx, desc);
         }
         is_valid = false;
