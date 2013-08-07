@@ -5527,7 +5527,7 @@ SRF	s	Shangrao Forestry Institute
 SRFA	s	Universidad Nacional de La Pampa
 SRGH	s	Botanic Garden
 SRI	s	Serengetti Research Institute
-SRNP	s	Insects of the Area de Conservacion Guanacaste (ACG), northwestern Costa Rica
+SRNP	s	Insects of the Area Conservacion Guanacaste, northwestern Costa Rica
 SRP	s	Boise State University, Biology Department
 SRR	s	Koninklijke Shell (Shell Research N.V.)
 SRRC	c	Southern Regional Research Center, Agricultural Research Service, United States Department of Agriculture
