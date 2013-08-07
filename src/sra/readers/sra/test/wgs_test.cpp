@@ -175,6 +175,15 @@ int LowLevelTest(void)
 }
 #endif
 
+string sx_GetSeqData(const CBioseq& seq)
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CBioseq_Handle bh = scope.AddBioseq(seq);
+    string ret;
+    bh.GetSeqVector().GetSeqData(0, kInvalidSeqPos, ret);
+    return ret;
+}
+
 int CWGSTestApp::Run(void)
 {
     //return LowLevelTest();
@@ -246,8 +255,15 @@ int CWGSTestApp::Run(void)
                 out << " gbstate: "<<it.GetGBState();
             }
             out << '\n';
+            CRef<CBioseq> seq1 = it.GetBioseq();
+            CRef<CBioseq> seq2 = it.GetBioseq(it.fDefaultIds|it.fInst_ncbi4na);
             if ( print_seq ) {
-                out << MSerial_AsnText << *it.GetBioseq();
+                out << MSerial_AsnText << *seq1;
+            }
+            string data1 = sx_GetSeqData(*seq1);
+            string data2 = sx_GetSeqData(*seq2);
+            if ( data1 != data2 ) {
+                ERR_POST(Fatal<<"Different Seq-data: "<<MSerial_AsnText<<*seq2);
             }
             if ( ++count >= limit_count ) {
                 break;

@@ -306,10 +306,6 @@ protected:
         }
     }
 
-    static CRef<CSeq_data> x_GetNCBI4na(const CVDBValueFor4Bits& read,
-                                        TSeqPos pos,
-                                        TSeqPos len);
-
 private:
     CWGSDb m_Db;
     CRef<CWGSDb_Impl::SSeqTableCursor> m_Seq; // VDB seq table accessor
