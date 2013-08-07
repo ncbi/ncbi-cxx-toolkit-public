@@ -628,6 +628,31 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
         } \
     }
 
+/// CLONE_IF_SET base macro
+/// (Useful to copy and object from a variable of one
+/// type to a variable of another type)
+/// If SrcVar doesn't have SrcFld set, it's reset on the DestVar also.
+
+#define CLONE_IF_SET_ELSE_RESET(DestVar, DestFld, SrcVar, SrcFld)       \
+    do {                                                                \
+        if( FIELD_IS_SET(SrcVar, SrcFld) ) {                            \
+            (DestVar).Set##DestFld( *SerialClone( GET_FIELD(SrcVar, SrcFld) ) ); \
+        } else {                                                        \
+            (DestVar).Reset##DestFld();                                 \
+        }                                                               \
+    } while(0)
+
+/// ASSIGN_IF_SET_ELSE_RESET
+
+#define ASSIGN_IF_SET_ELSE_RESET(DestVar, DestFld, SrcVar, SrcFld)       \
+    do {                                                                \
+        if( FIELD_IS_SET(SrcVar, SrcFld) ) {                            \
+            (DestVar).Set##DestFld( GET_FIELD(SrcVar, SrcFld) ); \
+        } else {                                                        \
+            (DestVar).Reset##DestFld();                                 \
+        }                                                               \
+    } while(0)
+
 /// TEST_FIELD_CHOICE
 
 #define TEST_FIELD_CHOICE( Var, Fld, Chs ) \
