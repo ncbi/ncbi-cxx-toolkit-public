@@ -1165,7 +1165,11 @@ void CValidError_imp::ValidateBioSource
         case CSubSource::eSubtype_sex:
             sex = true;
             if (isAnimal || isPlant) {
-                // always use /sex, do not check values at this time
+                /* always allow /sex, but now check values */
+                if (! s_IsValidSexQualifierValue((*ssit)->GetName()))  {
+                    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+                        "Invalid value for /sex qualifier", obj, ctx);
+                }
             } else if (isViral) {
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
                     "Virus has unexpected Sex qualifier", obj, ctx);
