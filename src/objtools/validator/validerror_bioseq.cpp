@@ -2393,7 +2393,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
                                     if (i < 20) {
                                         n5 = true;
                                     } 
-                                    if (vec.size() > 20 && i > vec.size() - 20) {
+                                    if (vec.size() > 20 && i > vec.size() - 10) {
                                         n3 = true;
                                     }
                                 }
@@ -2415,7 +2415,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
                                  "Sequence contains " + NStr::IntToString(pct_n) + " percent Ns", seq);
                     }
 
-                    if (max_stretch > 15) {
+                    if (max_stretch >= 15) {
                         PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
                                  "Sequence has a stretch of " + NStr::IntToString(max_stretch) + " Ns", seq);
                     } else {
