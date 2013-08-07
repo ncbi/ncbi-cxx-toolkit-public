@@ -1264,9 +1264,15 @@ void CAgpErrEx::PrintMessageXml(CNcbiOstream& ostr, int code, const string& deta
 
 
 //// class CAgpErrEx - constructor
-CAgpErrEx::CAgpErrEx(CNcbiOstream* out, bool use_xml) : m_use_xml(use_xml), m_out(out)
+CAgpErrEx::CAgpErrEx(CNcbiOstream* out, bool use_xml, EOwnership eOwnsOut) : 
+    m_use_xml(use_xml), m_out(out),
+    m_messages( new CNcbiOstrstream() )
 {
-    m_messages = new CNcbiOstrstream();
+    // if we own m_out, we set a special autoptr so it's automatically destroyed
+    if( eOwnsOut == eTakeOwnership ) {
+        m_out_destroyer.reset( out );
+    }
+
     m_MaxRepeat = 0; // no limit
     m_MaxRepeatTopped = false;
     m_msg_skipped=0;
@@ -1415,8 +1421,7 @@ void CAgpErrEx::LineDone(const string& s, int line_num, bool invalid_line)
         else {
             *m_out << (string)CNcbiOstrstreamToString(*m_messages);
         }
-        delete m_messages;
-        m_messages = new CNcbiOstrstream;
+        m_messages.reset( new CNcbiOstrstream );
 
         m_pp_printed=m_prev_printed; m_prev_printed=true;
     }

@@ -657,7 +657,10 @@ public:
     }
     static void PrintTotalsXml(CNcbiOstream& ostr, int e_count, int w_count, int note_count, int skipped_count);
 
-    CAgpErrEx(CNcbiOstream* out=&cerr, bool use_xml=false);
+    CAgpErrEx(
+        CNcbiOstream* out=&cerr, 
+        bool use_xml=false,
+        EOwnership eOwnsOut = eNoOwnership);
 
     // Can skip unwanted messages, record a message for printing (CAgpErr::fAtThisLine),
     // print it immediately if it applies to the previous line (CAgpErr::fAtPrevLine),
@@ -749,6 +752,11 @@ protected:
     // (intersecting component spans, duplicate objects, etc)
     vector<string> m_InputFiles;
 
+    // If this instance owns m_out, we set this AutoPtr so
+    // it will automatically be destroyed.  It is otherwise
+    // not used.
+    AutoPtr<CNcbiOstream> m_out_destroyer;
+
 public:
     // m_messages is public because:
     // Genbank validator may stow away the syntax errors for the current line
@@ -760,7 +768,7 @@ public:
     //   << process a batch of preceding lines >>
     //   agpErr.m_messages = tmp;
     //   agpErr.LineDone(line_orig, line_num, true);
-    CNcbiOstrstream* m_messages;
+    AutoPtr<CNcbiOstrstream> m_messages;
     CNcbiOstream* m_out;
 
     // 0: reading from STDIN or from a single file

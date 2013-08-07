@@ -622,13 +622,12 @@ void CAgpValidateApplication::x_ValidateFile(
       if( code!=0 || comp2len_check_failed || // process the batch now so that error lines are printed in the correct order
           m_AltValidator->QueueSize() >= 1000
       ) {
-        CNcbiOstrstream* tmp_messages = pAgpErr->m_messages;
-        pAgpErr->m_messages =  new CNcbiOstrstream();
+          AutoPtr<CNcbiOstrstream> tmp_messages = pAgpErr->m_messages;
+          pAgpErr->m_messages.reset(  new CNcbiOstrstream );
 
         // process a batch of preceding lines
         m_AltValidator->ProcessQueue();
 
-        delete pAgpErr->m_messages;
         pAgpErr->m_messages = tmp_messages;
       }
 
