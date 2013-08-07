@@ -161,6 +161,11 @@ public:
     /// Check if 'Content-Range' header is set.
     bool HaveContentRange(void) const;
 
+    /// Initialize cross-origin resource sharing (CORS) headers. The origin
+    /// must match allowed origins for the CORS to be enabled.
+    /// This method is called automatically by CCgiContext.
+    void InitCORSHeaders(const string& origin);
+
 public:
     void x_SetSession(const CCgiSession& session);
 
