@@ -5468,6 +5468,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     unit_test_util::SetLineage(entry, "");
+    expected_errors[0]->SetErrMsg("Invalid value (a) for /sex qualifier");
     expected_errors.push_back(new CExpectedError("good", eDiag_Error, "MissingLineage",
                               "No lineage for this BioSource."));
     eval = validator.Validate(seh, options);

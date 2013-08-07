@@ -1163,25 +1163,33 @@ void CValidError_imp::ValidateBioSource
             break;
 
         case CSubSource::eSubtype_sex:
-            sex = true;
-            if (isAnimal || isPlant) {
-                /* always allow /sex, but now check values */
-                const string str = (*ssit)->GetName();
-                if (! s_IsValidSexQualifierValue(str))  {
-                    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
-                        "Invalid value (" + str + ") for /sex qualifier", obj, ctx);
+            {
+                sex = true;
+                EDiagSev sev = eDiag_Warning;
+                if (IsGpipe() && IsGenomic()) {
+                    sev = eDiag_Error;
                 }
-            } else if (isViral) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
-                    "Virus has unexpected Sex qualifier", obj, ctx);
-            } else if (isBacteria || isArchaea || isFungal) {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
-                    "Unexpected use of /sex qualifier", obj, ctx);
-            } else if (s_IsValidSexQualifierValue((*ssit)->GetName())) {
-                // otherwise values are restricted to specific list
-            } else {
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
-                    "Unexpected use of /sex qualifier", obj, ctx);
+                if (isAnimal || isPlant) {
+                    /* always allow /sex, but now check values */
+                    const string str = (*ssit)->GetName();
+                    if (! s_IsValidSexQualifierValue(str))  {
+                        PostObjErr(sev, eErr_SEQ_DESCR_BioSourceInconsistency,
+                            "Invalid value (" + str + ") for /sex qualifier", obj, ctx);
+                    }
+                } else if (isViral) {
+                    PostObjErr(sev, eErr_SEQ_DESCR_BioSourceInconsistency,
+                        "Virus has unexpected Sex qualifier", obj, ctx);
+                } else if (isBacteria || isArchaea || isFungal) {
+                    PostObjErr(sev, eErr_SEQ_DESCR_BioSourceInconsistency,
+                        "Unexpected use of /sex qualifier", obj, ctx);
+                } else {
+                    const string str = (*ssit)->GetName();
+                    if (! s_IsValidSexQualifierValue(str)) {
+                        // otherwise values are restricted to specific list
+                        PostObjErr(sev, eErr_SEQ_DESCR_BioSourceInconsistency,
+                            "Invalid value (" + str + ") for /sex qualifier", obj, ctx);
+                    }
+                }
             }
 
             break;
