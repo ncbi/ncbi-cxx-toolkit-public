@@ -736,6 +736,8 @@ void CFlatGatherer::x_GatherComments(void) const
 
     x_UnverifiedComment(ctx);
 
+    x_AuthorizedAccessComment(ctx);
+
     x_MapComment(ctx);
 
     // Gather comments related to the seq-id
@@ -934,6 +936,15 @@ void CFlatGatherer::x_MapComment(CBioseqContext& ctx) const
         CRef<CCommentItem> item(new CCommentItem(sOpticalMapComment, ctx));
         item->SetNeedPeriod(false);
         x_AddComment(item);
+    }
+}
+
+void CFlatGatherer::x_AuthorizedAccessComment(CBioseqContext& ctx) const
+{
+    string sAuthorizedAccess = 
+        CCommentItem::GetStringForAuthorizedAccess(ctx);
+    if ( ! NStr::IsBlank(sAuthorizedAccess) ) {
+        x_AddComment(new CCommentItem(sAuthorizedAccess, ctx));
     }
 }
 

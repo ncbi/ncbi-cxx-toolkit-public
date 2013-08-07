@@ -240,6 +240,10 @@ public:
 
     /// Empty if no Filetrack URL.
     const string & GetFiletrackURL(void) const { return m_FiletrackURL; }
+
+    // empty if there is none
+    const string & GetAuthorizedAccess(void) const { return m_AuthorizedAccess; }
+
     /// Empty or NULL if no points or if this bioseq isn't an optical map.
     const CPacked_seqpnt * GetOpticalMapPoints(void) const { 
         return m_pOpticalMapPoints; }
@@ -261,6 +265,7 @@ private:
     void x_SetDataFromAnnot(void);
     void x_SetTaxname(void);
     void x_SetFiletrackURL(void);
+    void x_SetAuthorizedAccess(void);
     void x_SetOpticalMapPoints(void);
 
     CSeq_inst::TRepr x_GetRepr(void) const;
@@ -282,6 +287,7 @@ private:
     string                m_FinishingStatus;
     string                m_Taxname;
     string                m_FiletrackURL;
+    string                m_AuthorizedAccess;
     const CPacked_seqpnt* m_pOpticalMapPoints;
     // used to destroy m_pOpticalMapPoints if it was manually
     // created.

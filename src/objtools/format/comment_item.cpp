@@ -1167,6 +1167,34 @@ string CCommentItem::GetStringForEncode(CBioseqContext& ctx)
     return CNcbiOstrstreamToString(str);
 }
 
+// static
+string CCommentItem::GetStringForAuthorizedAccess(CBioseqContext& ctx)
+{
+    const bool bHtml = ctx.Config().DoHTML();
+
+    const string & sAuthorizedAccess = ctx.GetAuthorizedAccess();
+    if( sAuthorizedAccess.empty() ) {
+        return kEmptyStr;
+    }
+
+    CNcbiOstrstream str;
+
+    str << "These data are available through the dbGaP authorized "
+           "access system. Request access to Study ";
+    if( bHtml ) {
+        str << "<a href=\""  
+            << "https://dbgap.ncbi.nlm.nih.gov/aa/wga.cgi?adddataset="
+            << sAuthorizedAccess << "&page=login\">";
+    }
+    str << sAuthorizedAccess;
+    if( bHtml ) {
+        str << "</a>";
+    }
+    str << "."; // always needs a period
+
+    return CNcbiOstrstreamToString(str);
+}
+
 string CCommentItem::GetStringForOpticalMap(CBioseqContext& ctx)
 {
     const bool bHtml = ctx.Config().DoHTML();

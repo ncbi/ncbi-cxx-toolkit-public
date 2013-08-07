@@ -141,6 +141,7 @@ public:
     static TRefTrackStatus GetRefTrackStatus(const CUser_object& uo,
         string* st = 0);
     static string GetStringForEncode(CBioseqContext& ctx);
+    static string GetStringForAuthorizedAccess(CBioseqContext& ctx);
     static string GetStringForOpticalMap(CBioseqContext& ctx);
     static string GetStringForUnique(CBioseqContext& ctx);
 

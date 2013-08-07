@@ -135,6 +135,7 @@ CBioseqContext::CBioseqContext
  CTopLevelSeqEntryContext *tlsec) :
     m_PrevHandle(prev_seq),
     m_Handle(seq),
+    m_pOpticalMapPoints(NULL),
     m_NextHandle(next_seq),
     m_Repr(CSeq_inst::eRepr_not_set),
     m_Mol(CSeq_inst::eMol_not_set),
@@ -254,6 +255,8 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
     x_SetTaxname();
 
     x_SetFiletrackURL();
+    x_SetAuthorizedAccess();
+
     x_SetOpticalMapPoints();
 }
 
@@ -400,6 +403,28 @@ void CBioseqContext::x_SetFiletrackURL(void)
     }
 }
 
+void CBioseqContext::x_SetAuthorizedAccess(void)
+{
+    // We might consider merging this functionality into x_SetDataFromUserObjects
+    for (CSeqdesc_CI it(m_Handle, CSeqdesc::e_User);  it;  ++it) {
+        const CUser_object& uo = it->GetUser();
+        if ( ! FIELD_IS_SET_AND_IS(uo, Type, Str) || 
+            ! NStr::EqualNocase(uo.GetType().GetStr(), "AuthorizedAccess")) 
+        {
+            continue;
+        }
+        CConstRef<CUser_field> pAuthorizedAccessField =
+            uo.GetFieldRef("Study");
+        if( ! pAuthorizedAccessField || 
+            ! FIELD_IS_SET_AND_IS(*pAuthorizedAccessField, Data, Str) ||
+            pAuthorizedAccessField->GetData().GetStr().empty() )
+        {
+            continue;
+        }
+        m_AuthorizedAccess = pAuthorizedAccessField->GetData().GetStr();
+    }
+}
+
 void CBioseqContext::x_SetOpticalMapPoints(void)
 {  
     if( GetRepr() != CSeq_inst::eRepr_map || 
@@ -519,6 +544,12 @@ void CBioseqContext::x_SetDataFromUserObjects(void)
 
 void CBioseqContext::x_SetDataFromAnnot(void)
 {
+    if( GetRepr() == CSeq_inst::eRepr_map ) {
+        // TODO: is this right?  Maybe handle it differently once
+        // CAnnot_CI is able to handle CSeq_inst::eRepr_map.
+        return;
+    }
+
     CAnnot_CI annot_ci(m_Handle);
     for( ; annot_ci; ++annot_ci ) {
         if( ! annot_ci->Seq_annot_IsSetDesc() ) {
