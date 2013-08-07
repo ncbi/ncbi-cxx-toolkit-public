@@ -247,31 +247,29 @@ const CAgpRow::TStr CAgpRow::gap_types[CAgpRow::eGapCount] = {
     "telomere"
 };
 
-CAgpRow::TMapStrEGap* CAgpRow::gap_type_codes=NULL;
-DEFINE_CLASS_STATIC_FAST_MUTEX(CAgpRow::init_mutex);
+CSafeStatic<CAgpRow::TMapStrEGap> CAgpRow::gap_type_codes( 
+    & CAgpRow::gap_type_codes_creator, NULL );
+
+// static
+CAgpRow::TMapStrEGap * CAgpRow::gap_type_codes_creator(void)
+{
+    TMapStrEGap* p = new TMapStrEGap();
+    for(int i=0; i<eGapCount; i++) {
+        (*p)[ (string)gap_types[i] ] = (EGap)i;
+    }
+    return p;
+}
 
 CAgpRow::CAgpRow(EAgpVersion agp_version, CAgpReader* reader) :
-    m_agp_version(agp_version), m_reader(reader)
+    m_agp_version(agp_version), m_reader(reader),
+        m_OwnAgpErr(true), m_AgpErr( new CAgpErr )
 {
-    if(gap_type_codes==NULL) {
-        // initialize this static map once
-        StaticInit();
-    }
-
-    m_OwnAgpErr=true;
-    m_AgpErr.Reset( new CAgpErr );
 }
 
 CAgpRow::CAgpRow(CAgpErr* arg, EAgpVersion agp_version, CAgpReader* reader) :
-    m_agp_version(agp_version), m_reader(reader)
+    m_agp_version(agp_version), m_reader(reader),
+        m_OwnAgpErr(false), m_AgpErr(arg)
 {
-    if(gap_type_codes==NULL) {
-        // initialize this static map once
-        StaticInit();
-    }
-
-    m_OwnAgpErr=false;
-    m_AgpErr = arg;
 }
 
 CAgpRow::~CAgpRow()
@@ -281,19 +279,6 @@ CAgpRow::~CAgpRow()
     // destroying it.
     if( ! m_OwnAgpErr ) {
         m_AgpErr.ReleaseOrNull();
-    }
-}
-
-void CAgpRow::StaticInit()
-{
-    CFastMutexGuard guard(init_mutex);
-    if(gap_type_codes==NULL) {
-        // not initialized while we were waiting for the mutex
-        TMapStrEGap* p = new TMapStrEGap();
-        for(int i=0; i<eGapCount; i++) {
-            (*p)[ (string)gap_types[i] ] = (EGap)i;
-        }
-        gap_type_codes = p;
     }
 }
 

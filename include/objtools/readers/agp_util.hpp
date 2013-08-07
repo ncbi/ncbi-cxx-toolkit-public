@@ -46,6 +46,7 @@
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbistr.hpp>
 #include <corelib/ncbimtx.hpp>
+#include <corelib/ncbi_safe_static.hpp>
 #include <map>
 
 BEGIN_NCBI_SCOPE
@@ -256,7 +257,9 @@ protected:
     static const TStr gap_types[eGapCount];
 
     typedef map<string, EGap> TMapStrEGap;
-    static TMapStrEGap* gap_type_codes;
+    static CSafeStatic<TMapStrEGap> gap_type_codes;
+
+    static TMapStrEGap * gap_type_codes_creator(void);
 
 private:
     EAgpVersion m_agp_version;
@@ -268,10 +271,6 @@ private:
     // if m_OwnAgpErr is false
     CRef<CAgpErr> m_AgpErr;
     bool m_OwnAgpErr;
-
-    // for initializing gap_type_codes:
-    DECLARE_CLASS_STATIC_FAST_MUTEX(init_mutex);
-    static void StaticInit();
 
 public:
     CAgpErr* GetErrorHandler() { return m_AgpErr; }
