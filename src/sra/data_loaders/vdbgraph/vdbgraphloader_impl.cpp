@@ -421,11 +421,16 @@ void CVDBGraphDataLoader_Impl::LoadSplitEntry(CTSE_Info& tse,
     entry->SetSet().SetId().SetId(kTSEId);
     tse.SetSeq_entry(*entry);
     TSeqPos length = it.GetSeqLength();
-    static const size_t kIdAdd[3] = {
+    size_t kIdAdd[3] = {
         kOverviewChunkIdAdd,
         kMidZoomChunkIdAdd,
         kMainGraphChunkIdAdd
     };
+    if ( GetUseTable() == 2 ||
+         (GetUseTable() == 1 &&
+          it.SeqTableIsSmaller(CRange<TSeqPos>::GetWhole())) ) {
+        kIdAdd[2] = kMainTableChunkIdAdd;
+    }
     static const TSeqPos kSize[3] = {
         kOverviewChunkSize,
         kMidZoomChunkSize,
@@ -451,12 +456,6 @@ void CVDBGraphDataLoader_Impl::LoadSplitEntry(CTSE_Info& tse,
             TSeqPos from = i*kSize[k], to_open = min(length, from+kSize[k]);
             COpenRange<TSeqPos> range(from, to_open);
             size_t id_add = kIdAdd[k];
-            if ( id_add == kMainGraphChunkIdAdd && GetUseTable() ) {
-                if ( GetUseTable() == 2 ||
-                     (GetUseTable() == 1 && it.SeqTableIsSmaller(range)) ) {
-                    id_add = kMainTableChunkIdAdd;
-                }
-            }
             CSeq_annot::TData::E_Choice type = CSeq_annot::C_Data::e_Graph;
             if ( id_add == kMainTableChunkIdAdd ) {
                 type = CSeq_annot::C_Data::e_Seq_table;
