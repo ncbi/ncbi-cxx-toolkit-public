@@ -235,8 +235,6 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
 
     x_SetLocation(user_loc);
     
-    m_Encode.Reset(x_GetEncode());
-
     x_SetDataFromUserObjects();
 
     x_SetDataFromAnnot();
@@ -253,9 +251,6 @@ void CBioseqContext::x_Init(const CBioseq_Handle& seq, const CSeq_loc* user_loc)
     x_SetHasMultiIntervalGenes();
 
     x_SetTaxname();
-
-    x_SetFiletrackURL();
-    x_SetAuthorizedAccess();
 
     x_SetOpticalMapPoints();
 }
@@ -381,48 +376,40 @@ void CBioseqContext::x_SetTaxname(void)
     }
 }
 
-void CBioseqContext::x_SetFiletrackURL(void)
+void CBioseqContext::x_SetFiletrackURL(const CUser_object& uo)
 {
-    // We might consider merging this functionality into x_SetDataFromUserObjects
-    for (CSeqdesc_CI it(m_Handle, CSeqdesc::e_User);  it;  ++it) {
-        const CUser_object& uo = it->GetUser();
-        if ( ! FIELD_IS_SET_AND_IS(uo, Type, Str) || 
-            ! NStr::EqualNocase(uo.GetType().GetStr(), "FileTrack")) 
-        {
-            continue;
-        }
-        CConstRef<CUser_field> pFileTrackURLField =
-            uo.GetFieldRef("FileTrackURL");
-        if( ! pFileTrackURLField || 
-            ! FIELD_IS_SET_AND_IS(*pFileTrackURLField, Data, Str) ||
-            pFileTrackURLField->GetData().GetStr().empty() )
-        {
-            continue;
-        }
-        m_FiletrackURL = pFileTrackURLField->GetData().GetStr();
+    if ( ! FIELD_IS_SET_AND_IS(uo, Type, Str) || 
+        ! NStr::EqualNocase(uo.GetType().GetStr(), "FileTrack")) 
+    {
+        return;
     }
+    CConstRef<CUser_field> pFileTrackURLField =
+        uo.GetFieldRef("FileTrackURL");
+    if( ! pFileTrackURLField || 
+        ! FIELD_IS_SET_AND_IS(*pFileTrackURLField, Data, Str) ||
+        pFileTrackURLField->GetData().GetStr().empty() )
+    {
+        return;
+    }
+    m_FiletrackURL = pFileTrackURLField->GetData().GetStr();
 }
 
-void CBioseqContext::x_SetAuthorizedAccess(void)
+void CBioseqContext::x_SetAuthorizedAccess(const CUser_object& uo)
 {
-    // We might consider merging this functionality into x_SetDataFromUserObjects
-    for (CSeqdesc_CI it(m_Handle, CSeqdesc::e_User);  it;  ++it) {
-        const CUser_object& uo = it->GetUser();
-        if ( ! FIELD_IS_SET_AND_IS(uo, Type, Str) || 
-            ! NStr::EqualNocase(uo.GetType().GetStr(), "AuthorizedAccess")) 
-        {
-            continue;
-        }
-        CConstRef<CUser_field> pAuthorizedAccessField =
-            uo.GetFieldRef("Study");
-        if( ! pAuthorizedAccessField || 
-            ! FIELD_IS_SET_AND_IS(*pAuthorizedAccessField, Data, Str) ||
-            pAuthorizedAccessField->GetData().GetStr().empty() )
-        {
-            continue;
-        }
-        m_AuthorizedAccess = pAuthorizedAccessField->GetData().GetStr();
+    if ( ! FIELD_IS_SET_AND_IS(uo, Type, Str) || 
+        ! NStr::EqualNocase(uo.GetType().GetStr(), "AuthorizedAccess")) 
+    {
+        return;
     }
+    CConstRef<CUser_field> pAuthorizedAccessField =
+        uo.GetFieldRef("Study");
+    if( ! pAuthorizedAccessField || 
+        ! FIELD_IS_SET_AND_IS(*pAuthorizedAccessField, Data, Str) ||
+        pAuthorizedAccessField->GetData().GetStr().empty() )
+    {
+        return;
+    }
+    m_AuthorizedAccess = pAuthorizedAccessField->GetData().GetStr();
 }
 
 void CBioseqContext::x_SetOpticalMapPoints(void)
@@ -537,6 +524,12 @@ void CBioseqContext::x_SetDataFromUserObjects(void)
                 if( m_fUnverified == fUnverified_None ) {
                     m_fUnverified = fUnverified_SequenceOrAnnotation;
                 }
+            } else if( NStr::EqualNocase(uo.GetType().GetStr(), "FileTrack") ) {
+                x_SetFiletrackURL(uo);
+            } else if( NStr::EqualNocase(uo.GetType().GetStr(), "AuthorizedAccess") ) {
+                x_SetAuthorizedAccess(uo);
+            } else if( NStr::EqualNocase(uo.GetType().GetStr(), "ENCODE") ) {
+                x_SetEncode(uo);
             }
         }
     }
@@ -894,18 +887,13 @@ bool CBioseqContext::DoContigStyle(void) const
 }
 
 
-const CUser_object* CBioseqContext::x_GetEncode(void) const
+void CBioseqContext::x_SetEncode(const CUser_object& uo)
 {
-    // We might consider merging this functionality into x_SetDataFromUserObjects
-    for (CSeqdesc_CI it(m_Handle, CSeqdesc::e_User);  it;  ++it) {
-        const CUser_object& uo = it->GetUser();
-        if (uo.IsSetType()  &&  uo.GetType().IsStr()) {
-            if (NStr::EqualNocase(uo.GetType().GetStr(), "ENCODE")) {
-                return &uo;
-            }
+    if (uo.IsSetType()  &&  uo.GetType().IsStr()) {
+        if (NStr::EqualNocase(uo.GetType().GetStr(), "ENCODE")) {
+            m_Encode.Reset(&uo);
         }
     }
-    return NULL;
 }
 
 

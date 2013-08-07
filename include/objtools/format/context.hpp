@@ -264,14 +264,14 @@ private:
     void x_SetDataFromUserObjects(void);
     void x_SetDataFromAnnot(void);
     void x_SetTaxname(void);
-    void x_SetFiletrackURL(void);
-    void x_SetAuthorizedAccess(void);
+    void x_SetFiletrackURL(const CUser_object& uo);
+    void x_SetAuthorizedAccess(const CUser_object& uo);
     void x_SetOpticalMapPoints(void);
+    void x_SetEncode(const CUser_object& uo);
 
     CSeq_inst::TRepr x_GetRepr(void) const;
     const CMolInfo* x_GetMolInfo(void) const;
     bool x_HasOperon(void) const;
-    const CUser_object* x_GetEncode(void) const;
 
     // data
     CBioseq_Handle        m_PrevHandle;
