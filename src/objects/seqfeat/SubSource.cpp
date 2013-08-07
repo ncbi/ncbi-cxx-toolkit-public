@@ -1733,7 +1733,6 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"UKR", "Ukraine"},
 {"UMI", "United States Minor Outlying Islands"},
 {"URY", "Uruguay"},
-{"USA", "United States"},
 {"UZB", "Uzbekistan"},
 {"United States of America", "USA"},
 {"VAT", "Holy See (Vatican City State)"},
@@ -1799,8 +1798,8 @@ bool CCountries::ContainsMultipleCountryNames (const string &phrase)
     ITERATE ( TCStrSet, c, s_CountriesSet ) 
     {
         string country(*c);
-        int pos = NStr::FindNoCase(phrase,country);
-        while (pos != NPOS)
+        size_t pos = NStr::FindNoCase(phrase,country);
+        while (pos != string::npos)
         {
             if (!((pos+country.length()<phrase.length() && isalpha(phrase[pos+country.length()]))
                   || (pos > 0 && isalpha(phrase[pos-1]))
@@ -1837,15 +1836,18 @@ string CCountries::NewFixCountry (const string& input)
     string orig_valid_country;
     NStr::Tokenize(input,",:",countries);
     for(vector<string>::iterator country = countries.begin(); country != countries.end(); ++country)
+    {        
         if (!country->empty() && !too_many_countries)
         {
             bool bad_cap;
-            if (IsValid(*country,bad_cap))
+            string check = *country;
+            NStr::TruncateSpacesInPlace(check);
+            if (IsValid(check,bad_cap))
             {
                 if (valid_country.empty())
                 {
-                    valid_country = *country;
-                    orig_valid_country = *country;
+                    valid_country = check;
+                    orig_valid_country = check;
                 }
                 else
                 {
@@ -1854,13 +1856,13 @@ string CCountries::NewFixCountry (const string& input)
             }
             else // see if this is a fixable country
             {
-                TCStringPairsMap::const_iterator found = k_country_name_fixes.find(country->c_str());
+                TCStringPairsMap::const_iterator found = k_country_name_fixes.find(check.c_str());
                 if (found != k_country_name_fixes.end())
                 {
                     if (valid_country.empty())
                     {
                         valid_country = found->second;
-                        orig_valid_country = *country;
+                        orig_valid_country = check;
                     }
                     else
                     {
@@ -1869,7 +1871,8 @@ string CCountries::NewFixCountry (const string& input)
                 }
             }
         }
-  
+    }
+
     if (!valid_country.empty() && !too_many_countries) 
         too_many_countries = ContainsMultipleCountryNames (input);
   
