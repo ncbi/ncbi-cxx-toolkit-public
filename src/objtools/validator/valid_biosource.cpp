@@ -1166,9 +1166,10 @@ void CValidError_imp::ValidateBioSource
             sex = true;
             if (isAnimal || isPlant) {
                 /* always allow /sex, but now check values */
-                if (! s_IsValidSexQualifierValue((*ssit)->GetName()))  {
+                const string str = (*ssit)->GetName();
+                if (! s_IsValidSexQualifierValue(str))  {
                     PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
-                        "Invalid value for /sex qualifier", obj, ctx);
+                        "Invalid value (" + str + ") for /sex qualifier", obj, ctx);
                 }
             } else if (isViral) {
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
