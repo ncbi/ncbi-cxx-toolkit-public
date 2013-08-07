@@ -199,6 +199,7 @@ namespace DiscRepNmSpc {
         static string                             suffix;
         static bool                               dorecurse;
         static COutputConfig                      output_config;
+        static string                             output_dir;
         static vector < CRef < CClickableItem > > disc_report_data;
         static Str2Strs                           test_item_list;
         static CRef < CSuspect_rule_set>          suspect_prod_rules;

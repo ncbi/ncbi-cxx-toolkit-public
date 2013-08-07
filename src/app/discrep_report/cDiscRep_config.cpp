@@ -67,6 +67,7 @@ bool				       CDiscRepInfo :: dorecurse;
 vector < CRef < CClickableItem > >     CDiscRepInfo :: disc_report_data;
 Str2Strs                               CDiscRepInfo :: test_item_list;
 COutputConfig                          CDiscRepInfo :: output_config;
+string                                 CDiscRepInfo :: output_dir;
 CRef <CSuspect_rule_set >              CDiscRepInfo::suspect_prod_rules(new CSuspect_rule_set);
 vector < vector <string> >             CDiscRepInfo :: susrule_summ;
 vector <string> 	               CDiscRepInfo :: weasels;
@@ -379,12 +380,6 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
           thisInfo.susterm_summ.push_back(arr);
        }
     }
-/*
-if (thisInfo.suspect_prod_rules->IsSet())
-cerr << "222 is set\n";
-if (thisInfo.suspect_prod_rules->CanGet())
-cerr << "222can get\n";
-*/
 
     // ini of skip_bracket_paren
     strtmp = reg.Get("StringVecIni", "SkipBracketOrParen");
@@ -445,114 +440,7 @@ cerr << "222can get\n";
       arr.clear();
       thisInfo.feattype_name[(EMacro_feature_type)i] = tmp;
     }
-/*
-    struct s_FeatTypeFeatDefData {
-             EMacro_feature_type feattype;
-             CSeqFeatData::ESubtype featdef;
-             const char* featname;
-    };
-
-    s_FeatTypeFeatDefData feattype_featdef[] = {
- { eMacro_feature_type_any , CSeqFeatData::eSubtype_any , "any" } , 
- { eMacro_feature_type_gene , CSeqFeatData::eSubtype_gene , "gene" } , 
- { eMacro_feature_type_org , CSeqFeatData::eSubtype_org , "org" } , 
- { eMacro_feature_type_cds , CSeqFeatData::eSubtype_cdregion , "CDS" } , 
- { eMacro_feature_type_prot , CSeqFeatData::eSubtype_prot , "Protein" } , 
- { eMacro_feature_type_preRNA , CSeqFeatData::eSubtype_preRNA , "preRNA" } , 
- { eMacro_feature_type_mRNA , CSeqFeatData::eSubtype_mRNA , "mRNA" } , 
- { eMacro_feature_type_tRNA , CSeqFeatData::eSubtype_tRNA , "tRNA" } , 
- { eMacro_feature_type_rRNA , CSeqFeatData::eSubtype_rRNA , "rRNA" } , 
- { eMacro_feature_type_snRNA , CSeqFeatData::eSubtype_snRNA , "snRNA" } , 
- { eMacro_feature_type_scRNA , CSeqFeatData::eSubtype_scRNA , "scRNA" } , 
- { eMacro_feature_type_otherRNA , CSeqFeatData::eSubtype_otherRNA , "misc_RNA" } , 
- { eMacro_feature_type_pub , CSeqFeatData::eSubtype_pub , "pub" } , 
- { eMacro_feature_type_seq , CSeqFeatData::eSubtype_seq , "seq" } , 
- { eMacro_feature_type_imp , CSeqFeatData::eSubtype_imp , "imp" } , 
- { eMacro_feature_type_allele , CSeqFeatData::eSubtype_allele , "allele" } , 
- { eMacro_feature_type_attenuator , CSeqFeatData::eSubtype_attenuator , "attenuator" } , 
- { eMacro_feature_type_c_region , CSeqFeatData::eSubtype_C_region , "c_region" } , 
- { eMacro_feature_type_caat_signal , CSeqFeatData::eSubtype_CAAT_signal , "caat_signal" } , 
- { eMacro_feature_type_imp_CDS , CSeqFeatData::eSubtype_Imp_CDS , "imp_CDS" } , 
- { eMacro_feature_type_d_loop , CSeqFeatData::eSubtype_D_loop , "d_loop" } , 
- { eMacro_feature_type_d_segment , CSeqFeatData::eSubtype_D_segment , "d_segment" } , 
- { eMacro_feature_type_enhancer , CSeqFeatData::eSubtype_enhancer , "enhancer" } , 
- { eMacro_feature_type_exon , CSeqFeatData::eSubtype_exon , "exon" } , 
- { eMacro_feature_type_gC_signal , CSeqFeatData::eSubtype_GC_signal , "gC_signal" } , 
- { eMacro_feature_type_iDNA , CSeqFeatData::eSubtype_iDNA , "iDNA" } , 
- { eMacro_feature_type_intron , CSeqFeatData::eSubtype_intron , "intron" } , 
- { eMacro_feature_type_j_segment , CSeqFeatData::eSubtype_J_segment , "j_segment" } , 
- { eMacro_feature_type_ltr , CSeqFeatData::eSubtype_LTR , "LTR" } , 
- { eMacro_feature_type_mat_peptide , CSeqFeatData::eSubtype_mat_peptide , "mat_peptide" } , 
- { eMacro_feature_type_misc_binding , CSeqFeatData::eSubtype_misc_binding , "misc_binding" } , 
- { eMacro_feature_type_misc_difference , CSeqFeatData::eSubtype_misc_difference , "misc_difference" } , 
- { eMacro_feature_type_misc_feature , CSeqFeatData::eSubtype_misc_feature , "misc_feature" } , 
- { eMacro_feature_type_misc_recomb , CSeqFeatData::eSubtype_misc_recomb , "misc_recomb" } , 
- { eMacro_feature_type_misc_RNA , CSeqFeatData::eSubtype_otherRNA , "misc_RNA" } , 
- { eMacro_feature_type_misc_signal , CSeqFeatData::eSubtype_misc_signal , "misc_signal" } , 
- { eMacro_feature_type_misc_structure , CSeqFeatData::eSubtype_misc_structure , "misc_structure" } , 
- { eMacro_feature_type_modified_base , CSeqFeatData::eSubtype_modified_base , "modified_base" } , 
- { eMacro_feature_type_mutation , CSeqFeatData::eSubtype_mutation , "mutation" } , 
- { eMacro_feature_type_n_region , CSeqFeatData::eSubtype_N_region , "n_region" } , 
- { eMacro_feature_type_old_sequence , CSeqFeatData::eSubtype_old_sequence , "old_sequence" } , 
- { eMacro_feature_type_polyA_signal , CSeqFeatData::eSubtype_polyA_signal , "polyA_signal" } , 
- { eMacro_feature_type_polyA_site , CSeqFeatData::eSubtype_polyA_site , "polyA_site" } , 
- { eMacro_feature_type_precursor_RNA , CSeqFeatData::eSubtype_preRNA , "precursor_RNA" } , 
- { eMacro_feature_type_prim_transcript , CSeqFeatData::eSubtype_prim_transcript , "prim_transcript" } , 
- { eMacro_feature_type_primer_bind , CSeqFeatData::eSubtype_primer_bind , "primer_bind" } , 
- { eMacro_feature_type_promoter , CSeqFeatData::eSubtype_promoter , "promoter" } , 
- { eMacro_feature_type_protein_bind , CSeqFeatData::eSubtype_protein_bind , "protein_bind" } , 
- { eMacro_feature_type_rbs , CSeqFeatData::eSubtype_RBS , "rbs" } , 
- { eMacro_feature_type_repeat_region , CSeqFeatData::eSubtype_repeat_region , "repeat_region" } , 
- { eMacro_feature_type_rep_origin , CSeqFeatData::eSubtype_rep_origin , "rep_origin" } , 
- { eMacro_feature_type_s_region , CSeqFeatData::eSubtype_S_region , "s_region" } , 
- { eMacro_feature_type_sig_peptide , CSeqFeatData::eSubtype_sig_peptide , "sig_peptide" } , 
- { eMacro_feature_type_source , CSeqFeatData::eSubtype_source , "source" } , 
- { eMacro_feature_type_stem_loop , CSeqFeatData::eSubtype_stem_loop , "stem_loop" } , 
- { eMacro_feature_type_sts , CSeqFeatData::eSubtype_STS , "sts" } , 
- { eMacro_feature_type_tata_signal , CSeqFeatData::eSubtype_TATA_signal , "tata_signal" } , 
- { eMacro_feature_type_terminator , CSeqFeatData::eSubtype_terminator , "terminator" } , 
- { eMacro_feature_type_transit_peptide , CSeqFeatData::eSubtype_transit_peptide , "transit_peptide" } , 
- { eMacro_feature_type_unsure , CSeqFeatData::eSubtype_unsure , "unsure" } , 
- { eMacro_feature_type_v_region , CSeqFeatData::eSubtype_V_region , "v_region" } , 
- { eMacro_feature_type_v_segment , CSeqFeatData::eSubtype_V_segment , "v_segment" } , 
- { eMacro_feature_type_variation , CSeqFeatData::eSubtype_variation , "variation" } , 
- { eMacro_feature_type_virion , CSeqFeatData::eSubtype_virion , "virion" } , 
- { eMacro_feature_type_n3clip , CSeqFeatData::eSubtype_3clip , "3'clip" } , 
- { eMacro_feature_type_n3UTR , CSeqFeatData::eSubtype_3UTR , "3'UTR" } , 
- { eMacro_feature_type_n5clip , CSeqFeatData::eSubtype_5clip , "5'clip" } , 
- { eMacro_feature_type_n5UTR , CSeqFeatData::eSubtype_5UTR , "5'UTR" } , 
- { eMacro_feature_type_n10_signal , CSeqFeatData::eSubtype_10_signal , "10_signal" } , 
- { eMacro_feature_type_n35_signal , CSeqFeatData::eSubtype_35_signal , "35_signal" } , 
- { eMacro_feature_type_site_ref , CSeqFeatData::eSubtype_site_ref , "site_ref" } , 
- { eMacro_feature_type_region , CSeqFeatData::eSubtype_region , "region" } , 
- { eMacro_feature_type_comment , CSeqFeatData::eSubtype_comment , "comment" } , 
- { eMacro_feature_type_bond , CSeqFeatData::eSubtype_bond , "bond" } , 
- { eMacro_feature_type_site , CSeqFeatData::eSubtype_site , "site" } , 
- { eMacro_feature_type_rsite , CSeqFeatData::eSubtype_rsite , "rsite" } , 
- { eMacro_feature_type_user , CSeqFeatData::eSubtype_user , "user" } , 
- { eMacro_feature_type_txinit , CSeqFeatData::eSubtype_txinit , "txinit" } , 
- { eMacro_feature_type_num , CSeqFeatData::eSubtype_num , "num" } , 
- { eMacro_feature_type_psec_str , CSeqFeatData::eSubtype_psec_str , "psec_str" } , 
- { eMacro_feature_type_non_std_residue , CSeqFeatData::eSubtype_non_std_residue , "non_std_residue" } , 
- { eMacro_feature_type_het , CSeqFeatData::eSubtype_het , "het" } , 
- { eMacro_feature_type_biosrc , CSeqFeatData::eSubtype_biosrc , "biosrc" } , 
- { eMacro_feature_type_preprotein , CSeqFeatData::eSubtype_preprotein , "preprotein" } , 
- { eMacro_feature_type_mat_peptide_aa , CSeqFeatData::eSubtype_mat_peptide_aa , "mat_peptide_aa" } , 
- { eMacro_feature_type_sig_peptide_aa , CSeqFeatData::eSubtype_sig_peptide_aa , "sig_peptide_aa" } , 
- { eMacro_feature_type_transit_peptide_aa , CSeqFeatData::eSubtype_transit_peptide_aa , "transit_peptide_aa" } , 
- { eMacro_feature_type_snoRNA , CSeqFeatData::eSubtype_snoRNA , "snoRNA" } , 
- { eMacro_feature_type_gap , CSeqFeatData::eSubtype_gap , "gap" } , 
- { eMacro_feature_type_operon , CSeqFeatData::eSubtype_operon , "operon" } , 
- { eMacro_feature_type_oriT , CSeqFeatData::eSubtype_oriT , "oriT" } , 
- { eMacro_feature_type_ncRNA , CSeqFeatData::eSubtype_ncRNA , "ncRNA" } , 
- { eMacro_feature_type_tmRNA , CSeqFeatData::eSubtype_tmRNA , "tmRNA" } ,
- { eMacro_feature_type_mobile_element, CSeqFeatData::eSubtype_mobile_element, "mobile_element" }
-};
-    for (i = 0; i < (int)(sizeof(feattype_featdef) / sizeof(s_FeatTypeFeatDefData)); i++) {
-       thisInfo.feattype_featdef[feattype_featdef[i].feattype] = feattype_featdef[i].featdef;
-       thisInfo.feattype_name[feattype_featdef[i].feattype] = feattype_featdef[i].featname;
-    }
-*/
+    
     // ini. of rnafeattp_rnareftp
     string rna_feat_tp_nm;
     for (i = CRna_feat_type::e_PreRNA; i <= CRna_feat_type::e_RRNA; i++) 
@@ -943,6 +831,22 @@ cerr << "222can get\n";
 // cerr << "end " << CTime(CTime::eCurrent).AsString() << endl;
 };
 
+/*
+string CRepConfig :: GetDirStr(const string& src_dir)
+{
+   if (src_dir.empty()) return kEmptyStr;
+   else {
+      size_t pos = src_dir.find_last_of('/');
+      if (pos == string::npos) return (src_dir + "/");
+      else {
+         size_t pos2 = src_dir.find_last_not_of('/');
+         if (pos2 > pos) return (src_dir + "/");
+         if (pos2 < pos) return (CTempString(src_dir).substr(0, pos2+1) + "/");
+      }
+   }
+};
+*/
+
 void CRepConfig :: ProcessArgs(Str2Str& args)
 {
     // input file/path
@@ -950,6 +854,8 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
     thisInfo.directory = (args.find("p") != args.end()) ? args["p"] : kEmptyStr;
     thisInfo.suffix = args["x"];
     thisInfo.dorecurse = (args["u"] == "1") ? true : false;
+    if (thisInfo.directory.empty() && thisInfo.infile.empty())
+         NCBI_THROW(CException, eUnknown, "Input path or input file must be specified");
 
     // report category
     thisInfo.report = args["P"];
@@ -958,25 +864,36 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
     if (thisInfo.report == "t" || thisInfo.report == "s") thisInfo.report = "Discrepancy";
 
     // output
-    string output_f = args["o"];
+    string output_f = (args.find("o") != args.end()) ? args["o"] : kEmptyStr;
     if (output_f.empty() && !thisInfo.infile.empty()) {
        CFile file(thisInfo.infile);
        output_f = file.GetBase();
-       output_f = file.GetDir() + output_f + ".dr";
+       output_f = file.GetDir() + output_f + args["s"];
     }
-    thisInfo.output_config.output_f =
-        output_f.empty()? 0: (new CNcbiOfstream(output_f.c_str()));
-    // thisInfo.output_config.output_f.open(output_f.c_str());
+    thisInfo.output_dir = (args.find("r") != args.end()) ? args["r"] : kEmptyStr;
+    if (output_f.empty() && thisInfo.output_dir.empty())
+         NCBI_THROW(CException, eUnknown, "Output directory or output file must be specified");
+    if (!CDir(thisInfo.output_dir).Exists() && !CDir(thisInfo.output_dir).Create())
+         NCBI_THROW(CException, eUnknown, 
+                           "Unable to create output directory " + thisInfo.output_dir);
+    if (output_f.empty()) thisInfo.output_config.output_f = 0;
+    else {
+thisInfo.output_config.output_f = new CNcbiOfstream((thisInfo.output_dir + output_f).c_str());
+/*
+       thisInfo.output_config.output_f 
+          = new CNcbiOfstream(GetDirStr(thisInfo.output_dir + output_f).c_str());
+*/
+    }
     strtmp = args["S"];
     thisInfo.output_config.summary_report 
         = (NStr::EqualNocase(strtmp, "true") || NStr::EqualNocase(strtmp, "t")) ? true : false;
 
     // enabled and disabled tests
-    strtmp = args["e"];
+    strtmp = (args.find("e") != args.end()) ? args["e"] : kEmptyStr;
     if (!strtmp.empty())
           thisInfo.tests_enabled
               = NStr::Tokenize(strtmp, ", ", thisInfo.tests_enabled, NStr::eMergeDelims);
-    strtmp = args["d"];
+    strtmp = (args.find("d") != args.end()) ? args["d"] : kEmptyStr;
     if (!strtmp.empty())
          thisInfo.tests_disabled
               = NStr::Tokenize(strtmp, ", ", thisInfo.tests_disabled, NStr::eMergeDelims);
@@ -989,14 +906,19 @@ void CRepConfig :: ReadArgs(const CArgs& args)
     Str2Str arg_map;
     // input file
     if (args["i"]) arg_map["i"] = args["i"].AsString();
+
     // reprot category
     arg_map["P"] = args["P"].AsString();
+
     // output
-    arg_map["o"] = args["o"].AsString();
+    if (args["o"]) arg_map["o"] = args["o"].AsString();
     arg_map["S"] = args["S"].AsBoolean();
+    arg_map["s"] = args["s"].AsString();
+
     // enabled and disabled tests
-    arg_map["e"] = args["e"].AsString();
-    arg_map["d"] = args["d"].AsString();
+    if (args["e"]) arg_map["e"] = args["e"].AsString();
+    if (args["d"]) arg_map["d"] = args["d"].AsString();
+
     // input directory
     if (args["p"]) arg_map["p"] = args["p"].AsString();
     arg_map["x"] = args["x"].AsString();
@@ -1213,6 +1135,7 @@ static const s_test_property test_list[] = {
    {"END_COLON_IN_COUNTRY", fDiscrepancy},
    {"ONCALLER_SUSPECTED_ORG_COLLECTED", fDiscrepancy},
    {"ONCALLER_SUSPECTED_ORG_IDENTIFIED", fDiscrepancy},
+   {"UNCULTURED_NOTES_ONCALLER", fDiscrepancy | fOncaller}, 
    {"ONCALLER_MORE_NAMES_COLLECTED_BY", fDiscrepancy},
    {"ONCALLER_STRAIN_TAXNAME_CONFLICT", fDiscrepancy},
    {"TEST_SMALL_GENOME_SET_PROBLEM", fDiscrepancy},
@@ -1925,12 +1848,17 @@ if (i > sz) return;
              CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_SUSPECTED_ORG_IDENTIFIED));
         if (++i >= sz) return;
    }
-   if ( thisTest.tests_run.find("ONCALLER_MORE_NAMES_COLLECTED_BY") != thisTest.tests_run.end()) {
+   if ( thisTest.tests_run.find("UNCULTURED_NOTES_ONCALLER") != thisTest.tests_run.end()) {
+       tests_on_Bioseq_CFeat.push_back(
+                CRef <CTestAndRepData> (new CSeqEntry_UNCULTURED_NOTES_ONCALLER));
+        if (++i >= sz) return;
+   }
+   if ( thisTest.tests_run.find("ONCALLER_MORE_NAMES_COLLECTED_BY")!=thisTest.tests_run.end()){
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_MORE_NAMES_COLLECTED_BY));
         if (++i >= sz) return;
    }
-   if ( thisTest.tests_run.find("ONCALLER_STRAIN_TAXNAME_CONFLICT") != thisTest.tests_run.end()) {
+   if ( thisTest.tests_run.find("ONCALLER_STRAIN_TAXNAME_CONFLICT")!=thisTest.tests_run.end()){
        tests_on_SeqEntry_feat_desc.push_back( 
              CRef <CTestAndRepData>(new CSeqEntry_ONCALLER_STRAIN_TAXNAME_CONFLICT));
         if (++i >= sz) return;
@@ -2340,12 +2268,12 @@ unsigned i=0;
    ITERATE (list <AutoPtr <CDirEntry> >, it, entries) {
      if ((*it)->GetExt() == suffix) {
 cerr << (*it)->GetDir() + (*it)->GetName() << endl;
-        if ( i > 32)
+//        if ( i > 43)
                x_ProcessOneFile((*it)->GetDir() + (*it)->GetName());
         if (!one_ofile) { 
           thisInfo.output_config.output_f 
              = new CNcbiOfstream( ( (*it)->GetDir() + (*it)->GetBase() + ".dr" ).c_str());     
-          if ( i> 32)
+ //         if ( i> 43)
                 config->Export();
           thisInfo.test_item_list.clear(); 
         }
@@ -2393,8 +2321,6 @@ void CRepConfig :: Run(CRepConfig* config)
    CollectTests();
   
    // read input file/path and go tests
-   if (thisInfo.directory.empty() && thisInfo.infile.empty())
-         NCBI_THROW(CException, eUnknown, "Input path or input file must be specified");
    if (!thisInfo.directory.empty()) {
      CDir dir(thisInfo.directory);
      if (!dir.Exists()) {

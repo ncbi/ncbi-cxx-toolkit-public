@@ -57,12 +57,20 @@ void CDiscRepApp::Init(void)
 
     // Pass argument descriptions to the application
     //
+    arg_desc->AddOptionalKey("p", "InPath", "Path to ASN.1 Files", CArgDescriptions::eString);
     arg_desc->AddOptionalKey("i", "InputFile", "Single input file (mandatory)", 
                                                CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("p", "InPath", "Path to ASN.1 Files", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("o", "OutputFile","Single output file",CArgDescriptions::eString);
     arg_desc->AddDefaultKey("x", "Suffix", "File Selection Substring", 
                                                         CArgDescriptions::eString, ".sqn");
     arg_desc->AddDefaultKey("u", "Recurse", "Recurse", CArgDescriptions::eString, "0");
+    arg_desc->AddOptionalKey("e", "EnableTests", "List of enabled tests, seperated by ','",
+                              CArgDescriptions::eString); 
+    arg_desc->AddOptionalKey("d", "DisableTests", "List of disabled tests, seperated by ','",
+                              CArgDescriptions::eString);
+    arg_desc->AddDefaultKey("s", "OutputFileSuffix", "Output File Suffix", 
+                              CArgDescriptions::eString, ".dr");
+    arg_desc->AddOptionalKey("r", "OutPath", "Output Directory", CArgDescriptions::eString);
  
     arg_desc->AddDefaultKey("a", "Asn1Type", 
                  "Asn.1 Type: a: Any, e: Seq-entry, b: Bioseq, s: Bioseq-set, m: Seq-submit, t: Batch Bioseq-set, u: Batch Seq-submit, c: Catenated seq-entry",
@@ -71,15 +79,9 @@ void CDiscRepApp::Init(void)
                    "Report type: Discrepancy, Oncaller, TSA, Genome, Big Sequence, MegaReport, Include Tag, Include Tag for Superuser",
                    CArgDescriptions::eString, "Discrepancy");
 
-    arg_desc->AddDefaultKey("o", "OutputFile", "Single output file", 
-                                             CArgDescriptions::eString, "");
 
     arg_desc->AddDefaultKey("S", "SummaryReport", "Summary Report?: 'T'=true, 'F' =false", CArgDescriptions::eBoolean, "F");
 
-    arg_desc->AddDefaultKey("e", "EnableTests", "List of enabled tests, seperated by ','",
-                            CArgDescriptions::eString, ""); 
-    arg_desc->AddDefaultKey("d", "DisableTests", "List of disabled tests, seperated by ','",
-                              CArgDescriptions::eString, "");
 
     SetupArgDescriptions(arg_desc.release());  // call CreateArgs
 };

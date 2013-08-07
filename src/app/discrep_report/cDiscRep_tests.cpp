@@ -9840,9 +9840,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction   CFlatfileTextFind::notify(stri
 {
 cerr << "notify sourceItem\n";
   block_text = block_text.substr(0, block_text.find("ORGANISM")); // double check  
-//cerr << "block_text ORGANISM " << endl << block_text << endl;
-  return unified_notify(block_text, ctx, source_item, 
-                                          CFlatFileConfig::fGenbankBlocks_Source);
+  return unified_notify(block_text, ctx, source_item, CFlatFileConfig::fGenbankBlocks_Source);
 };
 
 CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::notify(string& block_text, const CBioseqContext& ctx, const CFeatureItem& feature_item)
@@ -9879,7 +9877,6 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notif
          case CFlatFileConfig::fGenbankBlocks_Source: cerr << "src\n";strtmp = m_src_desc; break;
          case CFlatFileConfig::fGenbankBlocks_Sourcefeat: 
             {
-cerr << "srcfeat\n";
               const CFeatureItemBase& feat_item 
                              = dynamic_cast<const CFeatureItemBase&> (flat_item);
               strtmp = GetDiscItemText( feat_item.GetFeat().GetOriginalFeature());
@@ -9887,7 +9884,6 @@ cerr << "srcfeat\n";
             break;
          case CFlatFileConfig::fGenbankBlocks_FeatAndGap:
             {
-cerr << "featandgap\n";
               const CFeatureItemBase& feat_item 
                              = dynamic_cast<const CFeatureItemBase&> (flat_item);
               strtmp = GetDiscItemText( feat_item.GetFeat().GetOriginalFeature());
@@ -9897,7 +9893,6 @@ cerr << "featandgap\n";
        };
        thisInfo.test_item_list[m_setting_name].push_back(
             thisInfo.fix_data[it->first] + "$" + it->first + "#" + strtmp);
-cerr << "test_item_list " << thisInfo.fix_data[it->first] + "$" + it->first + "#" + strtmp <<endl;
      }
   } 
 
@@ -9938,7 +9933,6 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: AddCItemToReport(const string& ls_
               thisInfo.disc_report_data.push_back(c_item);
            }
            c_item->item_list = jt->second;
-cerr << "jt->second " << jt->second.size() << endl;
            c_item->description
                    = GetContainsComment(c_item->item_list.size(), "object") + jt->first;
         }
@@ -10434,6 +10428,7 @@ void CSeqEntry_on_biosrc_subsrc :: TestOnObj(const CSeq_entry& seq_entry)
    m_run_orgi = (thisTest.tests_run.find(GetName_orgi()) != thisTest.tests_run.end());
    m_run_orgc = (thisTest.tests_run.find(GetName_orgc()) != thisTest.tests_run.end());
    m_run_end = (thisTest.tests_run.find(GetName_end()) != thisTest.tests_run.end());
+   m_run_uncul = (thisTest.tests_run.find(GetName_uncul()) != thisTest.tests_run.end());
    string desc;
    ITERATE (vector <const CSeq_feat*>, it, biosrc_subsrc_feat) {
       RunTests( (*it)->GetData().GetBiosrc(), GetDiscItemText(**it));
@@ -10460,13 +10455,71 @@ bool CSeqEntry_on_biosrc_subsrc :: Has3Names(const vector <string> arr)
    return false;
 };
 
+const char*  RemovableCultureNotes[] = {
+ "[uncultured (using universal primers)]",
+ "[uncultured (using universal primers) bacterial source]",
+ "[cultured bacterial source]",
+ "[enrichment culture bacterial source]",
+ "[mixed bacterial source (cultured and uncultured)]",
+ "[uncultured]; [universal primers]",
+ "[mixed bacterial source]",
+ "[virus wizard]",
+ "[cDNA derived from mRNA, purified viral particles]",
+ "[cDNA derived from mRNA, whole cell/tissue lysate]",
+ "[cDNA derived from genomic RNA, whole cell/tissue lysate]",
+ "[cDNA derived from genomic RNA, purified viral particles]",
+ "[universal primers]",
+ "[uncultured; wizard]",
+ "[uncultured; wizard; spans unknown]",
+ "[cultured; wizard]",
+ "[cultured; wizard; spans unknown]",
+ "[intergenic wizard]",
+ "[intergenic wizard; spans unknown]",
+ "[Microsatellite wizard]",
+ "[Microsatellite wizard; multiple repeats]",
+ "[D-loop wizard]",
+ "[D-loop wizard; spans unknown]",
+ "[D-loop wizard; spans known]"
+};
+static unsigned rmv_size = sizeof(RemovableCultureNotes)/sizeof(char*);
+
+static const char*  ReplaceableCultureNotes[] = {
+ "[uncultured (with species-specific primers)]",
+ "[uncultured]; [amplified with species-specific primers]",
+ "[uncultured (using species-specific primers) bacterial source]",
+ "[amplified with species-specific primers]"
+};
+static unsigned rpl_size = sizeof(ReplaceableCultureNotes)/sizeof(char*);
+
+
+bool CSeqEntry_on_biosrc_subsrc :: x_HasUnculturedNotes(const string& str, const char** notes,
+unsigned sz)
+{
+   for (unsigned i=0; i< sz; i++) {
+      if (str.find(notes[i]) != string::npos) return true;
+   }
+   return false;
+};
+
 void CSeqEntry_on_biosrc_subsrc :: RunTests(const CBioSource& biosrc, const string& desc)
 {
    vector <string> arr;
+   // UNCULTURED_NOTES_ONCALLER
+   if (m_run_uncul) {
+      GetSubSrcValues(biosrc, CSubSource::eSubtype_other, arr);
+      ITERATE (vector <string>, it, arr) {
+        if ( x_HasUnculturedNotes(*it, RemovableCultureNotes, rmv_size)
+                          || x_HasUnculturedNotes(*it, ReplaceableCultureNotes, rpl_size) )
+           thisInfo.test_item_list[GetName_uncul()].push_back(desc);      
+      }
+      arr.clear();
+   }
+
    // ONCALLER_MORE_NAMES_COLLECTED_BY
    if (m_run_col) {
       GetSubSrcValues(biosrc, CSubSource::eSubtype_collected_by, arr);
       if (Has3Names(arr)) thisInfo.test_item_list[GetName_col()].push_back(desc);
+      arr.clear();
    }
 
    string tax_nm;
@@ -10485,7 +10538,6 @@ void CSeqEntry_on_biosrc_subsrc :: RunTests(const CBioSource& biosrc, const stri
    }
    
    // END_COLON_IN_COUNTRY
-   arr.clear();
    if (m_run_end) {
       GetSubSrcValues(biosrc, CSubSource::eSubtype_country, arr);
       size_t pos;
@@ -10497,9 +10549,14 @@ void CSeqEntry_on_biosrc_subsrc :: RunTests(const CBioSource& biosrc, const stri
    }
 };
 
+void CSeqEntry_UNCULTURED_NOTES_ONCALLER:: GetReport(CRef <CClickableItem>& c_item)
+{
+     c_item->description
+        = GetHasComment(c_item->item_list.size(), "biosource") + "uncultured notes.";
+};
+
 void CSeqEntry_END_COLON_IN_COUNTRY :: GetReport(CRef <CClickableItem>& c_item)
 {
-   
    c_item->description 
       = GetOtherComment(c_item->item_list.size(), "country source ends", 
                                                        "country sources end")

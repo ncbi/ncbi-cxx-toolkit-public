@@ -474,11 +474,13 @@ string CTestAndRepData :: FindReplaceString(const string& src, const string& sea
     CRegexpUtil rxu(src);
     string pattern (CRegexp::Escape(search_str));
     // word boundaries: whitespace & punctuation
-    // pattern = whole_word ? ("\\b" + pattern + "\\b") : pattern;
+    pattern = whole_word ? ("\\b" + pattern + "\\b") : pattern;
+/*
     pattern = 
           whole_word ? ("(?:^|(?<=[[:^alnum:]]))" + pattern + "(?:^|(?<=[[:^alnum:]]))") 
                          : pattern;
           // include underscores
+*/
 
     CRegexp::ECompile comp_flag = case_sensitive? 
                                CRegexp::fCompile_default : CRegexp::fCompile_ignore_case;

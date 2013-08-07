@@ -211,7 +211,7 @@ void CCheckingClass :: CollectSeqdescFromSeqEntry(const CSeq_entry_Handle& seq_e
 
 void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
 {
- // cerr << "CheckSeqEntry " << CTime(CTime::eCurrent).AsString() << endl;
+  cerr << "CheckSeqEntry " << CTime(CTime::eCurrent).AsString() << endl;
   // ini.
   thisTest.is_BIOSRC_run = false;
   thisTest.is_BIOSRC1_run = false;
@@ -260,7 +260,7 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
 
   // clean
   x_Clean();
- // cerr << "end " << CTime(CTime::eCurrent).AsString() << endl;
+cerr << "end " << CTime(CTime::eCurrent).AsString() << endl;
 }
 
 bool CCheckingClass :: SortByFrom(const CSeq_feat* seqfeat1, const CSeq_feat* seqfeat2)
@@ -271,15 +271,17 @@ bool CCheckingClass :: SortByFrom(const CSeq_feat* seqfeat1, const CSeq_feat* se
 
 void CCheckingClass :: CheckBioseqSet ( CBioseq_set& bioseq_set)
 {
- // cerr << "CheckBioseqSet " << CTime(CTime::eCurrent).AsString() << endl;
+  cerr << "CheckBioseqSet " << CTime(CTime::eCurrent).AsString() << endl;
    thisTest.is_BioSet_run = false;
    GoTests(CRepConfig::tests_on_BioseqSet, bioseq_set); 
- // cerr << "end " << CTime(CTime::eCurrent).AsString() << endl;
+  cerr << "end " << CTime(CTime::eCurrent).AsString() << endl;
 };
 
 void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
 {
-// cerr << "bioseq " << ++num_bioseq << endl;
+++num_bioseq;
+//cerr << "bioseq " << num_bioseq << endl;
+if (num_bioseq > 1) return;
 // ini.
    thisTest.is_Aa_run = false;
    thisTest.is_AllAnnot_run = false;

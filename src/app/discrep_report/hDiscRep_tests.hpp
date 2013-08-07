@@ -811,10 +811,21 @@ namespace DiscRepNmSpc {
       string GetName_orgi() const {return string("ONCALLER_SUSPECTED_ORG_IDENTIFIED"); }
       string GetName_orgc() const {return string("ONCALLER_SUSPECTED_ORG_COLLECTED"); }
       string GetName_end() const {return string("END_COLON_IN_COUNTRY"); }
-      bool m_run_col, m_run_orgi, m_run_orgc, m_run_end;
+      string GetName_uncul() const {return string("UNCULTURED_NOTES_ONCALLER");}
 
+      bool m_run_col, m_run_orgi, m_run_orgc, m_run_end, m_run_uncul;
+
+      bool x_HasUnculturedNotes(const string& str, const char** notes, unsigned sz);
       bool Has3Names(const vector <string> arr);
       void RunTests(const CBioSource& biosrc, const string& desc);
+  };
+
+  class CSeqEntry_UNCULTURED_NOTES_ONCALLER : public CSeqEntry_on_biosrc_subsrc
+  {
+    public:
+      virtual ~CSeqEntry_UNCULTURED_NOTES_ONCALLER () {};
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CSeqEntry_on_biosrc_subsrc::GetName_uncul();}
   };
 
   class CSeqEntry_END_COLON_IN_COUNTRY : public CSeqEntry_on_biosrc_subsrc
@@ -3093,6 +3104,7 @@ namespace DiscRepNmSpc {
   };
 
 // new comb: CBioseq_
+
 
   class CBioseq_DISC_BAD_BGPIPE_QUALS : public CBioseqTestAndRepData
   {
