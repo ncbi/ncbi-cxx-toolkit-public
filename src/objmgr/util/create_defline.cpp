@@ -38,6 +38,8 @@
 #include <serial/iterator.hpp>
 
 #include <objects/misc/sequence_macros.hpp>
+#include <objects/seq/Map_ext.hpp>
+#include <objects/seqfeat/Rsite_ref.hpp>
 
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_map_ci.hpp>
@@ -220,6 +222,8 @@ void CDeflineGenerator::x_SetFlags (
 
     m_IsUnverified = false;
 
+    m_rEnzyme.clear();
+
     // now start setting member variables
     m_IsNA = bsh.IsNa();
     m_IsAA = bsh.IsAa();
@@ -230,6 +234,7 @@ void CDeflineGenerator::x_SetFlags (
             m_IsSeg = (repr == CSeq_inst::eRepr_seg);
             m_IsDelta = (repr == CSeq_inst::eRepr_delta);
             m_IsVirtual = (repr == CSeq_inst::eRepr_virtual);
+            m_IsMap = (repr == CSeq_inst::eRepr_map);
         }
     }
 
@@ -509,6 +514,24 @@ void CDeflineGenerator::x_SetFlags (
                 m_TPAReasm = true;
             } else if (NStr::EqualNocase (str, "TPA:assembly")) {
                 m_TPAReasm = true;
+            }
+        }
+    }
+
+    if (m_IsMap) {
+        if (bsh.IsSetInst_Ext() && bsh.GetInst_Ext().IsMap()) {
+            const CMap_ext& mp = bsh.GetInst_Ext().GetMap();
+            if (mp.IsSet()) {
+                const CMap_ext::Tdata& ft = mp.Get();
+                ITERATE (CMap_ext::Tdata, itr, ft) {
+                    const CSeq_feat& feat = **itr;
+                    const CSeqFeatData& data = feat.GetData();
+                    if (! data.IsRsite()) continue;
+                    const CRsite_ref& rsite = data.GetRsite();
+                    if (rsite.IsStr()) {
+                        m_rEnzyme = rsite.GetStr();
+                    }
+                }
             }
         }
     }
@@ -1720,6 +1743,38 @@ void CDeflineGenerator::x_SetTitleFromWGS (void)
     }
 }
 
+// generate title for optical map
+void CDeflineGenerator::x_SetTitleFromMap (void)
+
+{
+    string clnbuf;
+    vector<CTempString> clnvec;
+    CTextJoiner<14, CTempString> joiner;
+
+    joiner.Add(m_Taxname);
+
+    if (! m_Strain.empty()) {
+        if (! x_EndsWithStrain (m_Taxname, m_Strain)) {
+            joiner.Add(" strain ");
+            joiner.Add(m_Strain.substr (0, m_Strain.find(';')));
+        }
+    }
+    if (! m_Chromosome.empty()) {
+        joiner.Add(" chromosome ").Add(m_Chromosome);
+    }
+
+    if (! m_rEnzyme.empty()) {
+        joiner.Add(", ").Add(m_rEnzyme).Add(" whole genome map");
+    }
+
+    joiner.Join(&m_MainTitle);
+    NStr::TruncateSpacesInPlace(m_MainTitle);
+
+    if (islower ((unsigned char) m_MainTitle[0])) {
+        m_MainTitle [0] = toupper ((unsigned char) m_MainTitle [0]);
+    }
+}
+
 // generate TPA or TSA prefix
 const char * CDeflineGenerator::x_SetPrefix (void)
 
@@ -1893,6 +1948,8 @@ string CDeflineGenerator::GenerateDefline (
                 x_SetTitleFromSegSeq (bsh);
             } else if (m_IsTSA || (m_IsWGS && (! m_WGSMaster))) {
                 x_SetTitleFromWGS ();
+            } else if (m_IsMap) {
+                x_SetTitleFromMap ();
             }
         }
 

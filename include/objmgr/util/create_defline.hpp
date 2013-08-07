@@ -153,6 +153,7 @@ private:
         const CBioseq_Handle& bsh
     );
     void x_SetTitleFromWGS (void);
+    void x_SetTitleFromMap (void);
 
     const char * x_SetPrefix (void);
     void x_SetSuffix (
@@ -180,6 +181,7 @@ private:
     bool m_IsSeg;
     bool m_IsDelta;
     bool m_IsVirtual;
+    bool m_IsMap;
 
     /// seq-id fields
     bool m_IsNC;
@@ -245,6 +247,9 @@ private:
 
     /// user object fields
     bool m_IsUnverified;
+
+    /// map fields
+    string m_rEnzyme;
 
     /// exception fields
     CTextFsm<int> m_Low_Quality_Fsa;
