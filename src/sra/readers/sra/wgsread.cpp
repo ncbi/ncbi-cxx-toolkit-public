@@ -223,10 +223,24 @@ CRef<CWGSDb_Impl::SIdxTableCursor> CWGSDb_Impl::Idx(void)
 }
 
 
-uint64_t CWGSDb_Impl::ParseRow(CTempString acc) const
+uint64_t CWGSDb_Impl::ParseRow(CTempString acc, bool* is_scaffold) const
 {
     SIZE_TYPE start = NStr::StartsWith(acc, "NZ_")? 3: 0;
-    return NStr::StringToNumeric<uint64_t>(acc.substr(start+6),
+    CTempString number = acc.substr(start+6);
+    if ( number[0] == 'S' ) {
+        if ( !is_scaffold ) {
+            // only non-scaffolds are accepted if is_scaffold flag is absent
+            return 0;
+        }
+        *is_scaffold = true;
+        number = number.substr(1); // skip scaffold prefix
+    }
+    else {
+        if ( is_scaffold ) {
+            *is_scaffold = false;
+        }
+    }
+    return NStr::StringToNumeric<uint64_t>(number,
                                            NStr::fConvErr_NoThrow);
 }
 
@@ -988,7 +1002,7 @@ CWGSScaffoldIterator::CWGSScaffoldIterator(const CWGSDb& wgs_db, uint64_t row)
 
 CWGSScaffoldIterator::CWGSScaffoldIterator(const CWGSDb& wgs_db, CTempString acc)
 {
-    if ( uint64_t row = wgs_db.ParseRow(acc) ) {
+    if ( uint64_t row = wgs_db.ParseScaffoldRow(acc) ) {
         x_Init(wgs_db);
         if ( row < m_CurrId ) {
             m_FirstBadId = 0;
@@ -1100,6 +1114,66 @@ TSeqPos CWGSScaffoldIterator::GetSeqLength(void) const
 }
 
 
+static
+void sx_AddEvidence(CSeq_gap& gap, CLinkage_evidence::TType type)
+{
+    CRef<CLinkage_evidence> evidence(new CLinkage_evidence);
+    evidence->SetType(type);
+    gap.SetLinkage_evidence().push_back(evidence);
+}
+
+
+static
+void sx_MakeGap(CDelta_seq& seg, TSeqPos len, NCBI_WGS_component_props props)
+{
+    _ASSERT(props < 0);
+    CSeq_literal& literal = seg.SetLiteral();
+    int len_type    = -(-props & ( 3* 1));
+    int gap_type    = -(-props & (15* 4));
+    int gap_linkage = -(-props & (15*64));
+    literal.SetLength(len);
+    if ( len_type == NCBI_WGS_gap_unknown ) {
+        literal.SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+    }
+    if ( gap_type || gap_linkage ) {
+        CSeq_gap& gap = literal.SetSeq_data().SetGap();
+        switch ( gap_type ) {
+        case NCBI_WGS_gap_scaffold:
+            gap.SetType(CSeq_gap::eType_scaffold);
+            break;
+        case NCBI_WGS_gap_contig:
+            gap.SetType(CSeq_gap::eType_contig);
+            break;
+        case NCBI_WGS_gap_centromere:
+            gap.SetType(CSeq_gap::eType_centromere);
+            break;
+        case NCBI_WGS_gap_short_arm:
+            gap.SetType(CSeq_gap::eType_short_arm);
+            break;
+        case NCBI_WGS_gap_heterochromatin:
+            gap.SetType(CSeq_gap::eType_heterochromatin);
+            break;
+        case NCBI_WGS_gap_telomere:
+            gap.SetType(CSeq_gap::eType_telomere);
+            break;
+        case NCBI_WGS_gap_repeat:
+            gap.SetType(CSeq_gap::eType_repeat);
+            break;
+        default:
+            break;
+        }
+        // linkage-evidence bits should be in order of ASN.1 specification
+        int linkage_bits = (-gap_linkage)/(-NCBI_WGS_gap_linkage_paired_ends);
+        _ASSERT(linkage_bits >= 0);
+        for ( int i = 0; linkage_bits >= (1<<i); ++i ) {
+            if ( linkage_bits & (1<<i) ) {
+                sx_AddEvidence(gap, i+CLinkage_evidence::eType_paired_ends);
+            }
+        }
+    }
+}
+
+
 CRef<CSeq_inst> CWGSScaffoldIterator::GetSeq_inst(void) const
 {
     x_CheckValid("GetSeq_inst");
@@ -1120,10 +1194,9 @@ CRef<CSeq_inst> CWGSScaffoldIterator::GetSeq_inst(void) const
         TSeqPos start = starts[i];
         NCBI_WGS_component_props props = propss[i];
         CRef<CDelta_seq> seg(new CDelta_seq);
-        if ( start == 0 ) {
+        if ( props < 0 ) {
             // gap
-            CSeq_literal& literal = seg->SetLiteral();
-            literal.SetLength(len);
+            sx_MakeGap(*seg, len, props);
         }
         else {
             // contig

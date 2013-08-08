@@ -219,6 +219,9 @@ int CWGSTestApp::Run(void)
         out << "Opened WGS in "<<sw.Restart()
             << NcbiEndl;
     }
+    
+    bool is_scaffold;
+    uint64_t row = wgs_db.ParseRow(path, &is_scaffold);
 
     if ( 1 ) {
         CWGSSeqIterator::EWithdrawn withdrawn;
@@ -231,14 +234,16 @@ int CWGSTestApp::Run(void)
 
         CWGSSeqIterator it;
         // try accession
-        if ( uint64_t row = wgs_db.ParseRow(path) ) {
-            it = CWGSSeqIterator(wgs_db, row, withdrawn);
-            if ( !it ) {
-                out << "No such row: "<<path
-                    << NcbiEndl;
-            }
+        if ( row ) {
             // print only one accession
             limit_count = 1;
+            if ( !is_scaffold ) {
+                it = CWGSSeqIterator(wgs_db, row, withdrawn);
+                if ( !it ) {
+                    out << "No such row: "<<path
+                        << NcbiEndl;
+                }
+            }
         }
         else {
             // otherwise scan all sequences
@@ -272,7 +277,19 @@ int CWGSTestApp::Run(void)
     }
 
     if ( 1 ) {
-        CWGSScaffoldIterator it = CWGSScaffoldIterator(wgs_db);
+        CWGSScaffoldIterator it;
+        if ( row ) {
+            if ( is_scaffold ) {
+                it = CWGSScaffoldIterator(wgs_db, row);
+                if ( !it ) {
+                    out << "No such scaffold row: "<<path
+                        << NcbiEndl;
+                }
+            }
+        }
+        else {
+            it = CWGSScaffoldIterator(wgs_db);
+        }
         size_t count = 0;
         for ( ; it; ++it ) {
             out << it.GetScaffoldName() << '\n';

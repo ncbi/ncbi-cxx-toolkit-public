@@ -81,7 +81,16 @@ public:
 
     // parse row id from accession
     // returns 0 if accession is in wrong format
-    uint64_t ParseRow(CTempString acc) const;
+    // if is_scaffold flag pointer is not null, then scaffold ids are also
+    // accepted and the flag is set appropriately
+    uint64_t ParseRow(CTempString acc, bool* is_scaffold = 0) const;
+    // parse scaffold row id from accession
+    // returns 0 if accession is in wrong format
+    uint64_t ParseScaffoldRow(CTempString acc) const {
+        bool is_scaffold;
+        uint64_t row = ParseRow(acc, &is_scaffold);
+        return is_scaffold? row: 0;
+    }
     SIZE_TYPE GetIdRowDigits(void) const {
         return m_IdRowDigits;
     }
@@ -210,8 +219,15 @@ public:
 
     // parse row id from accession
     // returns 0 if accession is in wrong format
-    uint64_t ParseRow(CTempString acc) const {
-        return GetObject().ParseRow(acc);
+    // if is_scaffold flag pointer is not null, then scaffold ids are also
+    // accepted and the flag is set appropriately
+    uint64_t ParseRow(CTempString acc, bool* is_scaffold = 0) const {
+        return GetObject().ParseRow(acc, is_scaffold);
+    }
+    // parse scaffold row id from accession
+    // returns 0 if accession is in wrong format
+    uint64_t ParseScaffoldRow(CTempString acc) const {
+        return GetObject().ParseScaffoldRow(acc);
     }
 };
 
