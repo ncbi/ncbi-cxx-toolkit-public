@@ -79,7 +79,7 @@ private:
     virtual void Init(void);
     virtual int Run ();
     virtual void Exit(void);
-    void CompareVar(CRef<CVariation> v1, CRef<CVariation> v2);
+    int CompareVar(CRef<CVariation> v1, CRef<CVariation> v2);
 };
 
 
@@ -89,6 +89,7 @@ void CCorrectRefAlleleApp::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),"Correct Ref Allele in Variation objects");
     arg_desc->AddDefaultKey("i", "input", "Input file",CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
     arg_desc->AddDefaultKey("f", "fixed", "Fixed file",CArgDescriptions::eInputFile,"fixed",CArgDescriptions::fPreOpen);
+    arg_desc->AddFlag("v", "Verbose output",true);
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -97,19 +98,29 @@ void CCorrectRefAlleleApp::Exit(void)
 }
 
 
-void CCorrectRefAlleleApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
+int CCorrectRefAlleleApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
 {
+    int n = 0;
     if (v1->SetData().SetSet().SetVariations().size() !=
         v2->SetData().SetSet().SetVariations().size() )
+    {
         ERR_POST(Error << "Second level variation size does not match" << Endm);
+        n++;
+    }
 
     if (v1->SetData().SetSet().SetVariations().front()->SetPlacements().size() !=
         v2->SetData().SetSet().SetVariations().front()->SetPlacements().size())
+    {
         ERR_POST(Error << "Placement size does not match" << Endm);
+        n++;
+    }
 
     if (v1->SetData().SetSet().SetVariations().front()->SetPlacements().front()->SetSeq().SetSeq_data().SetIupacna().Set() !=
         v2->SetData().SetSet().SetVariations().front()->SetPlacements().front()->SetSeq().SetSeq_data().SetIupacna().Set())
+    {
         ERR_POST(Error << "Reference allele does not match" << Endm);
+        n++;
+    }
 
     CVariation::TData::TSet::TVariations::iterator vi2 = v2->SetData().SetSet().SetVariations().begin();
     for (CVariation::TData::TSet::TVariations::iterator vi1 = v1->SetData().SetSet().SetVariations().begin(); 
@@ -118,7 +129,10 @@ void CCorrectRefAlleleApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
     {
         if ((*vi1)->SetData().SetSet().SetVariations().size() !=
             (*vi2)->SetData().SetSet().SetVariations().size() )
+        {
             ERR_POST(Error << "Third level variation size does not match" << Endm);
+            n++;
+        }
 
         set<string> alleles1, alleles2;
         for (CVariation::TData::TSet::TVariations::iterator var2 = (*vi1)->SetData().SetSet().SetVariations().begin(); var2 != (*vi1)->SetData().SetSet().SetVariations().end(); ++var2)
@@ -140,8 +154,12 @@ void CCorrectRefAlleleApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
                 alleles2.insert(a);
             }
         if (!equal(alleles1.begin(), alleles1.end(), alleles2.begin()))
+        {
             ERR_POST(Error << "Alt alleles do not match" << Endm);
+            n++;
+        }
     }
+    return n;
 }
 
 int CCorrectRefAlleleApp::Run() 
@@ -149,6 +167,7 @@ int CCorrectRefAlleleApp::Run()
     CArgs args = GetArgs();
     CNcbiIstream& istr = args["i"].AsInputFile();
     CNcbiIstream& fstr = args["f"].AsInputFile();
+    bool verbose = args["v"].AsBoolean();
 
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
     CRef<CScope> scope(new CScope(*object_manager));
@@ -161,15 +180,34 @@ int CCorrectRefAlleleApp::Run()
     AutoPtr<CDecompressIStream>	decomp_stream2(new CDecompressIStream(fstr, CCompressStream::eGZipFile, CZipCompression::fAllowTransparentRead));
     AutoPtr<CObjectIStream> var_in2(CObjectIStream::Open(eSerial_AsnText, *decomp_stream2));
 
+    int n = 0;
     while (!var_in1->EndOfData() && !var_in2->EndOfData())
     {
         CRef<CVariation> v1(new CVariation);
         *var_in1 >> *v1;
+        if (verbose)
+        {
+            cerr << endl << "Input Variation" << endl;
+            cerr <<  MSerial_AsnText << *v1;
+        }
         CVariationUtilities::CorrectRefAllele(v1,*scope);
         CRef<CVariation> v2(new CVariation);
         *var_in2 >> *v2;
-        CompareVar(v1,v2);
+        if (verbose)
+        {
+            cerr << endl << "Desired Variation" << endl;
+            cerr <<  MSerial_AsnText << *v2;
+        }   
+        if (verbose)
+        {
+            cerr << endl << "Output Variation" << endl;
+            cerr <<  MSerial_AsnText << *v1;
+        }   
+        n += CompareVar(v1,v2);
+      
     }
+    if (verbose)
+        cerr << endl << "Number of inconsistencies: " << n << endl;
     if (!var_in1->EndOfData() || !var_in2->EndOfData())
         ERR_POST(Error << "File size does not match" << Endm);
 
