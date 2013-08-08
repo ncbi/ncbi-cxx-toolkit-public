@@ -1028,7 +1028,7 @@ static void s_FormatCitSub
     if (sub.IsSetDate()) {
         DateToString(sub.GetDate(), date, eDateToString_cit_sub);
     } else {
-        date = "??-???-????";
+        date = "\?\?-\?\?\?-\?\?\?\?";
     }
     ((journal += '(') += date) += ')';
 
