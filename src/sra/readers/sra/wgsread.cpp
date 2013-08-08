@@ -1165,6 +1165,9 @@ void sx_MakeGap(CDelta_seq& seg, TSeqPos len, NCBI_WGS_component_props props)
         // linkage-evidence bits should be in order of ASN.1 specification
         int linkage_bits = (-gap_linkage)/(-NCBI_WGS_gap_linkage_paired_ends);
         _ASSERT(linkage_bits >= 0);
+        if ( linkage_bits ) {
+            gap.SetLinkage(gap.eLinkage_linked);
+        }
         for ( int i = 0; linkage_bits >= (1<<i); ++i ) {
             if ( linkage_bits & (1<<i) ) {
                 sx_AddEvidence(gap, i+CLinkage_evidence::eType_paired_ends);
