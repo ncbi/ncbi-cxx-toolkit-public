@@ -262,24 +262,25 @@ CAgpRow::TMapStrEGap * CAgpRow::gap_type_codes_creator(void)
 
 CAgpRow::CAgpRow(EAgpVersion agp_version, CAgpReader* reader) :
     m_agp_version(agp_version), m_reader(reader),
-        m_OwnAgpErr(true), m_AgpErr( new CAgpErr )
+        m_AgpErr( new CAgpErr )
 {
 }
 
 CAgpRow::CAgpRow(CAgpErr* arg, EAgpVersion agp_version, CAgpReader* reader) :
     m_agp_version(agp_version), m_reader(reader),
-        m_OwnAgpErr(false), m_AgpErr(arg)
+        m_AgpErr(arg)
 {
+}
+
+CAgpRow::CAgpRow(const CAgpRow & src)
+{
+    // leverage the assignment operator so we don't
+    // have to keep this function up to date
+    *this = src;
 }
 
 CAgpRow::~CAgpRow()
 {
-    // if we don't own the m_AgpErr,
-    // we want to release it from the CRef without
-    // destroying it.
-    if( ! m_OwnAgpErr ) {
-        m_AgpErr.ReleaseOrNull();
-    }
 }
 
 int CAgpRow::FromString(const string& line)
@@ -711,10 +712,6 @@ string CAgpRow::GetErrorMessage()
 
 void CAgpRow::SetErrorHandler(CAgpErr* arg)
 {
-    NCBI_ASSERT(!m_OwnAgpErr,
-        "CAgpRow -- cannot redefine the default error handler. "
-        "Use a different constructor, e.g. CAgpRow(NULL)"
-    );
     m_AgpErr=arg;
 }
 
@@ -842,21 +839,17 @@ void CAgpRow::SetVersion(EAgpVersion ver)
 CAgpReader::CAgpReader(EAgpVersion agp_version) :
     m_agp_version(agp_version)
 {
-    m_OwnAgpErr=true; // delete in destructor
     m_AgpErr=new CAgpErr;
     Init();
 }
 
-CAgpReader::CAgpReader(CAgpErr* arg, bool ownAgpErr,
+CAgpReader::CAgpReader(CAgpErr* arg,
                        EAgpVersion agp_version ) :
 m_agp_version(agp_version)
 {
     if( arg ) {
-        m_OwnAgpErr=ownAgpErr; // delete in destructor (default=false)
         m_AgpErr=arg;
     } else {
-        _ASSERT( ! ownAgpErr );
-        m_OwnAgpErr=true; // delete in destructor
         m_AgpErr=new CAgpErr;
     }
     Init();
@@ -864,17 +857,14 @@ m_agp_version(agp_version)
 
 void CAgpReader::Init()
 {
-    m_prev_row=new CAgpRow(m_AgpErr, m_agp_version, this);
-    m_this_row=new CAgpRow(m_AgpErr, m_agp_version, this);
+    m_prev_row= CAgpRow::New(m_AgpErr, m_agp_version, this);
+    m_this_row= CAgpRow::New(m_AgpErr, m_agp_version, this);
     m_at_beg=true;
     m_prev_line_num=-1;
 }
 
 CAgpReader::~CAgpReader()
 {
-    if( ! m_OwnAgpErr ) {
-        m_AgpErr.ReleaseOrNull();
-    }
 }
 
 bool CAgpReader::ProcessThisRow()
@@ -1059,10 +1049,6 @@ int CAgpReader::Finalize()
 
 void CAgpReader::SetErrorHandler(CAgpErr* arg)
 {
-    NCBI_ASSERT(!m_OwnAgpErr,
-        "CAgpReader -- cannot redefine the default error handler. "
-        "Use a different constructor, e.g. CAgpReader(NULL)"
-    );
     m_AgpErr=arg;
     m_this_row->SetErrorHandler(arg);
     m_prev_row->SetErrorHandler(arg);

@@ -580,23 +580,23 @@ void CAgpValidateApplication::x_ValidateFile(
   else {
     int line_num = 0;
     string  line;
-    CAgpRow agp_row(pAgpErr.GetPointer(), m_agp_version);
+    CRef<CAgpRow> agp_row( CAgpRow::New(pAgpErr.GetPointer(), m_agp_version));
 
     // Allow Unix, DOS, Mac EOL characters
     while( NcbiGetline(istr, line, "\r\n") ) {
       line_num++;
 
-      int code=agp_row.FromString(line);
+      int code=agp_row->FromString(line);
       if(code==-1) continue; // skip a comment line
       bool queued=false;
       bool comp2len_check_failed=false;
 
       if(code==0) {
-        if( !agp_row.IsGap() ) {
-          if( m_comp2len.size() && !agp_row.IsGap() ) {
-            TMapStrInt::iterator it = m_comp2len.find( agp_row.GetComponentId() );
+        if( !agp_row->IsGap() ) {
+          if( m_comp2len.size() && !agp_row->IsGap() ) {
+            TMapStrInt::iterator it = m_comp2len.find( agp_row->GetComponentId() );
             if( it!=m_comp2len.end() ) {
-              comp2len_check_failed=!agp_row.CheckComponentEnd(it->second);
+              comp2len_check_failed=!agp_row->CheckComponentEnd(it->second);
               // Skip regular genbank-based validation for this line;
               // will print it verbatim, same as gap or error line.
               m_AltValidator->QueueLine(line);
@@ -607,7 +607,7 @@ void CAgpValidateApplication::x_ValidateFile(
           if(!queued){
             // component line - queue for batch lookup
             m_AltValidator->QueueLine(line,
-              agp_row.GetComponentId(), line_num, agp_row.component_end);
+              agp_row->GetComponentId(), line_num, agp_row->component_end);
             queued=true;
           }
         }
@@ -784,7 +784,7 @@ void CAgpCompSpanSplitter::SaveRow(const string& s, CRef<CAgpRow> row, TRangeCol
       object_name = row->GetObject();
       part_number = 1; // row->GetPartNumber();
     }
-    CAgpRow tmp_row = *row;
+    CRef<CAgpRow> tmp_row( row->Clone() );
 
     if(runs_of_Ns && runs_of_Ns->size()) {
 
@@ -800,8 +800,8 @@ void CAgpCompSpanSplitter::SaveRow(const string& s, CRef<CAgpRow> row, TRangeCol
       tmp_gap_row.gap_type = row->GetVersion() == eAgpVersion_1_1 ? CAgpRow::eGapFragment : CAgpRow::eGapScaffold;
       tmp_gap_row.linkage_evidence_flags = CAgpRow::fLinkageEvidence_unspecified;'
       */
-      CAgpRow tmp_gap_row(NULL, row->GetVersion(), NULL);
-      tmp_gap_row.FromString(
+      CRef<CAgpRow> tmp_gap_row( CAgpRow::New(NULL, row->GetVersion(), NULL) );
+      tmp_gap_row->FromString(
         row->GetObject()+
         "\t1\t100\t1\tN\t100\t"+
         string(row->GetVersion() == eAgpVersion_1_1 ? "fragment\tyes\t" : "scaffold\tyes\tunspecified")
@@ -810,39 +810,39 @@ void CAgpCompSpanSplitter::SaveRow(const string& s, CRef<CAgpRow> row, TRangeCol
       int comp2obj_ofs = row->object_beg - row->component_beg;
 
       for(TRangeColl::const_iterator it = runs_of_Ns->begin(); it != runs_of_Ns->end(); ++it) {
-        if( (TSeqPos) tmp_row.component_beg < it->GetFrom() ) {
+        if( (TSeqPos) tmp_row->component_beg < it->GetFrom() ) {
           // component line
-          tmp_row.component_end = it->GetFrom()-1;
-          tmp_row.object_end    = comp2obj_ofs + tmp_row.component_end;
+          tmp_row->component_end = it->GetFrom()-1;
+          tmp_row->object_end    = comp2obj_ofs + tmp_row->component_end;
 
-          tmp_row.part_number = part_number;
-          (*m_out) << tmp_row.ToString() << endl;
+          tmp_row->part_number = part_number;
+          (*m_out) << tmp_row->ToString() << endl;
           part_number++;
         }
 
         // gap line
-        tmp_gap_row.object_beg = comp2obj_ofs + it->GetFrom();
-        tmp_gap_row.object_end = comp2obj_ofs + it->GetTo();
-        tmp_gap_row.gap_length = it->GetTo() - it->GetFrom() + 1;
+        tmp_gap_row->object_beg = comp2obj_ofs + it->GetFrom();
+        tmp_gap_row->object_end = comp2obj_ofs + it->GetTo();
+        tmp_gap_row->gap_length = it->GetTo() - it->GetFrom() + 1;
 
-        tmp_gap_row.part_number = part_number;
-        (*m_out) << tmp_gap_row.ToString(true) << endl; // true: use linkage_evidence_flags
+        tmp_gap_row->part_number = part_number;
+        (*m_out) << tmp_gap_row->ToString(true) << endl; // true: use linkage_evidence_flags
         part_number++;
 
-        tmp_row.component_beg = it->GetTo() + 1;
-        tmp_row.object_beg    = comp2obj_ofs + tmp_row.component_beg;
+        tmp_row->component_beg = it->GetTo() + 1;
+        tmp_row->object_beg    = comp2obj_ofs + tmp_row->component_beg;
       }
 
-      if(tmp_row.component_beg <= row->component_end) {
+      if(tmp_row->component_beg <= row->component_end) {
         // this component does not end with Ns => need to print the final component span
-        tmp_row.component_end = row->component_end;
-        tmp_row.object_end    = row->object_end;
+        tmp_row->component_end = row->component_end;
+        tmp_row->object_end    = row->object_end;
       }
       else return; // ends with Ns => skip printing the component row below
     }
 
-    tmp_row.part_number = part_number;
-    (*m_out) << tmp_row.ToString() << endl;
+    tmp_row->part_number = part_number;
+    (*m_out) << tmp_row->ToString() << endl;
     part_number++;
   }
   else if(!comp_or_gap_printed){

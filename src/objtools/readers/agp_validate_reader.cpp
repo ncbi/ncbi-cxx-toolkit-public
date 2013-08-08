@@ -102,7 +102,7 @@ void CAgpValidateReader::Reset(bool for_chr_from_scaf)
 }
 
 CAgpValidateReader::CAgpValidateReader(CAgpErrEx& agpErr, CMapCompLen& comp2len, TMapStrRangeColl& comp2range_coll) //, bool checkCompNames
-  : CAgpReader(&agpErr, false, eAgpVersion_auto), m_AgpErr(&agpErr), m_comp2len(&comp2len), m_comp2range_coll(&comp2range_coll)
+  : CAgpReader(&agpErr, eAgpVersion_auto), m_AgpErr(&agpErr), m_comp2len(&comp2len), m_comp2range_coll(&comp2range_coll)
 {
   m_CheckCompNames=false; // checkCompNames;
   m_unplaced=false;

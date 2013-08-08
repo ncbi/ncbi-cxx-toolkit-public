@@ -67,12 +67,39 @@ class CAgpReader; // full definition below
 /// object range length equals gap length or component range length.
 class NCBI_XOBJREAD_EXPORT CAgpRow : public CObject
 {
-public:
+protected:
+    // constructors are protected to prevent users from creating
+    // instances on the stack
+
     // reader argument is used for notification of version auto-detection via SetVersion()
-    CAgpRow(CAgpErr* arg, EAgpVersion agp_version = eAgpVersion_auto, CAgpReader* reader=NULL  );
+    CAgpRow(CAgpErr* arg, EAgpVersion agp_version = eAgpVersion_auto,
+        CAgpReader* reader = NULL );
     // constructs a default error handler
-    CAgpRow(EAgpVersion agp_version = eAgpVersion_auto, CAgpReader* reader=NULL );
+    CAgpRow(EAgpVersion agp_version = eAgpVersion_auto,
+        CAgpReader* reader = NULL);
+
+    CAgpRow(const CAgpRow &);
+
+public:
+
     virtual ~CAgpRow();
+
+    static CRef<CAgpRow> New(
+        CAgpErr* arg, EAgpVersion agp_version = eAgpVersion_auto, 
+        CAgpReader* reader=NULL) 
+    {
+        return Ref(new CAgpRow(arg, agp_version, reader));
+    }
+
+    static CRef<CAgpRow> New(EAgpVersion agp_version = eAgpVersion_auto,
+        CAgpReader* reader=NULL)
+    {
+        return Ref( new CAgpRow(agp_version, reader) );
+    }
+
+    CRef<CAgpRow> Clone(void) const {
+        return Ref( new CAgpRow(*this) );
+    }
 
     // Returns:
     //   -1 comment line (to be silently skipped)
@@ -267,10 +294,7 @@ private:
     // raw pointer because we *never* own this.
     CAgpReader* m_reader;
 
-    // m_AgpErr will be released without destruction
-    // if m_OwnAgpErr is false
     CRef<CAgpErr> m_AgpErr;
-    bool m_OwnAgpErr;
 
 public:
     CAgpErr* GetErrorHandler() { return m_AgpErr; }
@@ -293,7 +317,7 @@ public:
 class NCBI_XOBJREAD_EXPORT CAgpReader
 {
 public:
-    CAgpReader(CAgpErr* arg, bool ownAgpErr=false,
+    CAgpReader(CAgpErr* arg,
         EAgpVersion agp_version = eAgpVersion_auto );
     // constructs a default error handler for this object instance
     CAgpReader(EAgpVersion agp_version = eAgpVersion_auto );
@@ -436,10 +460,7 @@ protected:
 
 private:
 
-    // if m_OwnAgpErr is false, release m_AgpErr
-    // without destroying it
     CRef<CAgpErr> m_AgpErr; // Error handler
-    bool m_OwnAgpErr;
 
     void Init();
 

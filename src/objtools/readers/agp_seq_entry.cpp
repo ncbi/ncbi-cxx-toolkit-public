@@ -57,9 +57,8 @@ USING_SCOPE(objects);
 CAgpToSeqEntry::CAgpToSeqEntry( 
     TFlags fFlags, 
     EAgpVersion agp_version,
-    CAgpErr* arg, 
-    bool ownAgpErr) 
-    : CAgpReader( arg, ownAgpErr, agp_version ),
+    CAgpErr* arg) 
+    : CAgpReader( arg, agp_version ),
       m_fFlags(fFlags)
 { }
 

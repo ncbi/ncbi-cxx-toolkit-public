@@ -427,7 +427,7 @@ void CAgpConverter::x_ReadAgpEntries(
         ( (m_fOutputFlags & fOutputFlags_SetGapInfo) ? CAgpToSeqEntry::fSetSeqGap : 0 );
     stringstream err_strm;
     CRef<CAgpErrEx> pErrHandler( new CAgpErrEx(&err_strm) );
-    CAgpToSeqEntry agp_reader( fAgpReaderFlags, eAgpVersion_auto, pErrHandler.GetPointer(), true );
+    CAgpToSeqEntry agp_reader( fAgpReaderFlags, eAgpVersion_auto, pErrHandler.GetPointer() );
     CNcbiIfstream istr( sAgpFileName.c_str() );
     const int iErrCode = agp_reader.ReadStream(istr);
 

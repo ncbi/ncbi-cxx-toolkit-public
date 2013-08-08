@@ -453,7 +453,7 @@ void CAltValidator::ProcessQueue()
 {
   int entrez_count=0;
   int objman_count=0;
-  CAgpRow row;
+
   //cerr << "before QueryAccessions" << endl;
   QueryAccessions(); // In: accessions; Out: mapAccData.
   //cerr << "after QueryAccessions" << endl;

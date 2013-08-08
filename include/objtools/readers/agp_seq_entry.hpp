@@ -72,8 +72,7 @@ public:
     ///   which is likely what the user wants to do most of the time.
     CAgpToSeqEntry( TFlags fFlags = 0, 
         EAgpVersion agp_version = eAgpVersion_auto,
-        CAgpErr* arg = NULL, 
-        bool ownAgpErr = false );
+        CAgpErr* arg = NULL );
 
     /// This gets the results found, but don't call before finalizing.  We are intentionally
     /// giving a non-const reference because the caller is free to 
