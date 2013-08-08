@@ -11,8 +11,6 @@
 
 USE_COMPONENTS
 
-# POSTTAG: move_sra.sh $LOCAL $VERSION
-
 Win32_10   : MSVC10-32 : dll     32  ReleaseDLL
 Win64_10   : MSVC10-64 : static  64  ReleaseDLL
 
