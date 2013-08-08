@@ -133,7 +133,7 @@ public:
     /// Overloaded method to attempt to read non-FASTA input types
     virtual CRef<CSeq_entry> ReadOneSeq(IMessageListener * pMessageListener) {
         
-        const string line = NStr::TruncateSpaces(*++GetLineReader());
+        const string line = NStr::TruncateSpaces_Unsafe(*++GetLineReader());
         if ( !line.empty() && isalnum(line.data()[0]&0xff) ) {
             try {
                 CRef<CSeq_id> id(new CSeq_id(line));
