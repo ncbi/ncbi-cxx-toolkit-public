@@ -1,6 +1,6 @@
 #########################################################################
 # This file was originally generated from by shell script "new_project.sh"
 #########################################################################
-LIB = CorrectRefAllele
-SRC = CorrectRefAllele
+LIB = variation_utils
+SRC = variation_utils
 

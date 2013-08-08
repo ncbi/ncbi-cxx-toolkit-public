@@ -4,7 +4,7 @@
     
 REQUIRES = objects
  
-LIB_PROJ = CorrectRefAllele
+LIB_PROJ = variation_utils
 SUB_PROJ = test
    
 srcdir = @srcdir@

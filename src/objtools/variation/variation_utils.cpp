@@ -66,7 +66,7 @@
 #include <objmgr/seq_vector.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 
-#include <objtools/variation/CorrectRefAllele.hpp>
+#include <objtools/variation/variation_utils.hpp>
 
 void CVariationUtilities::CorrectRefAllele(CRef<CVariation>& v, CScope& scope)
 {
