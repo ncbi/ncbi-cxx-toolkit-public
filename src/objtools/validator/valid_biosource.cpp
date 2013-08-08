@@ -1173,7 +1173,7 @@ void CValidError_imp::ValidateBioSource
                     /* always allow /sex, but now check values */
                     const string str = (*ssit)->GetName();
                     if (! s_IsValidSexQualifierValue(str))  {
-                        PostObjErr(sev, eErr_SEQ_DESCR_BioSourceInconsistency,
+                        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency,
                             "Invalid value (" + str + ") for /sex qualifier", obj, ctx);
                     }
                 } else if (isViral) {
@@ -1186,7 +1186,7 @@ void CValidError_imp::ValidateBioSource
                     const string str = (*ssit)->GetName();
                     if (! s_IsValidSexQualifierValue(str)) {
                         // otherwise values are restricted to specific list
-                        PostObjErr(sev, eErr_SEQ_DESCR_BioSourceInconsistency,
+                        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency,
                             "Invalid value (" + str + ") for /sex qualifier", obj, ctx);
                     }
                 }
