@@ -148,6 +148,7 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
     CClassCode code(ctx, className);
     string methodPrefix = code.GetMethodPrefix();
     bool is_class = false;
+    bool is_ref_to_alias = false;
 
     BeginClassDeclaration(ctx);
     CTypeStrings::EKind kind = m_RefType->GetKind();
@@ -164,6 +165,7 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
             code.SetParentClass(name, m_RefType->GetNamespace());
         }
         is_class = true;
+        is_ref_to_alias = (dynamic_cast<const CAliasRefTypeStrings*>(m_RefType.get()) != NULL);
         break;
     case eKindStd:
     case eKindEnum:
@@ -198,10 +200,17 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
         "\n";
     m_RefType->GenerateTypeCode(ctx);
     if ( is_class ) {
-        code.ClassPublic() <<
-            "    // type info\n"
-            "    DECLARE_INTERNAL_TYPE_INFO();\n"
-            "\n";
+        if (is_ref_to_alias) {
+            code.ClassPublic() <<
+                "    // type info\n"
+                "    DECLARE_STD_ALIAS_TYPE_INFO();\n"
+                "\n";
+        } else {
+            code.ClassPublic() <<
+                "    // type info\n"
+                "    DECLARE_INTERNAL_TYPE_INFO();\n"
+                "\n";
+        }
 //        m_RefType->GenerateTypeCode(ctx);
         code.ClassPublic() <<
             "    // parent type getter/setter\n" <<
