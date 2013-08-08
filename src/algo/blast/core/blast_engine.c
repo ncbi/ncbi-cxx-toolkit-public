@@ -1079,7 +1079,8 @@ s_RPSPreliminarySearchEngine(EBlastProgramType program_number,
     return status;
 }
 
-static void 
+
+static void
 s_AdjustSubjectForSraSearch(BlastHSPList* hsp_list, Uint1 offset )
 {
 	int i = 0;
@@ -1089,16 +1090,23 @@ s_AdjustSubjectForSraSearch(BlastHSPList* hsp_list, Uint1 offset )
 		BlastHSP * hsp = hsp_array[i];
 		if(hsp->subject.offset <= offset)
 		{
+			unsigned int q_offset = offset - hsp->subject.offset;
 			hsp->subject.offset = 0;
-			hsp->query.offset += offset;
+			hsp->query.offset += q_offset;
 
 			if(hsp->subject.gapped_start <= offset)
 			{
 				hsp->subject.gapped_start =  0;
-				hsp->query.gapped_start = hsp->query.offset;
 			}
 			else
+			{
 				hsp->subject.gapped_start -= offset;
+			}
+
+			if(hsp->query.gapped_start < hsp->query.offset)
+			{
+				hsp->query.gapped_start += q_offset;
+			}
 		}
 		else
 		{
@@ -1112,6 +1120,7 @@ s_AdjustSubjectForSraSearch(BlastHSPList* hsp_list, Uint1 offset )
 		ASSERT(hsp->query.offset < hsp->query.end);
 	}
 }
+
 
 Int4 
 BLAST_PreliminarySearchEngine(EBlastProgramType program_number, 
@@ -1250,6 +1259,10 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
       if (hsp_list && hsp_list->hspcnt > 0) {
          int query_index=0; /* Used to loop over queries below. */
          if (!gapped_calculation) {
+        	 if(seq_arg.seq->bases_offset > 0)
+        	 {
+        		 s_AdjustSubjectForSraSearch(hsp_list, seq_arg.seq->bases_offset);
+        	 }
             /* The following must be performed for any ungapped 
                search with a nucleotide database. */
                status = 
@@ -1305,10 +1318,11 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
          } 
          
          // This should only happen for sra searches
-         if(seq_arg.seq->bases_offset > 0)
+         if((seq_arg.seq->bases_offset > 0) && (gapped_calculation))
          {
         	s_AdjustSubjectForSraSearch(hsp_list, seq_arg.seq->bases_offset);
          }
+
 
          /* Save the results. */
          status = BlastHSPStreamWrite(hsp_stream, &hsp_list);
