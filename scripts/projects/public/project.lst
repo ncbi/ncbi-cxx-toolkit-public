@@ -38,7 +38,7 @@ sra
 -connect/ncbi_lbsm_ipc.c
 -connect/ncbi_lbsm_ipc.h
 -connect/ncbi_lbsmd.c
--misc/netstorage
+misc/netstorage
 -objtools/data_loaders/genbank/pubseq
 -objtools/data_loaders/genbank/pubseq2
 -./scripts/internal
