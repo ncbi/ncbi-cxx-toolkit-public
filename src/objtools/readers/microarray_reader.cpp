@@ -99,7 +99,9 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CMicroArrayReader::CMicroArrayReader(
     int flags )
 //  ----------------------------------------------------------------------------
-    : CReaderBase(flags), m_usescore(false)
+    : CReaderBase(flags), m_usescore(false),
+    m_currentId(""),
+    m_columncount(15)
 {
 }
 
@@ -128,76 +130,143 @@ CMicroArrayReader::ReadSeqAnnot(
     IMessageListener* pEC) 
 //  ----------------------------------------------------------------------------                
 {
-    CRef< CSeq_annot > annot( new CSeq_annot );
-    CRef< CAnnot_descr > desc( new CAnnot_descr );
-    annot->SetDesc( *desc );
+    const int MAX_RECORDS = 100000;
+
+    CRef<CSeq_annot> annot;
+    CRef<CAnnot_descr> desc;
+
+    annot.Reset(new CSeq_annot);
+    desc.Reset(new CAnnot_descr);
+    annot->SetDesc(*desc);
+    CSeq_annot::C_Data::TFtable& tbl = annot->SetData().SetFtable();
 
     string line;
-    int linecount = 0;
+    int featureCount = 0;
 
-    while ( ! lr.AtEOF() ) {
-        ++linecount;
+    while (!lr.AtEOF()) {
+        ++m_uLineNumber;
         line = *++lr;
-        if ( NStr::TruncateSpaces( line ).empty() ) {
+        if (NStr::TruncateSpaces(line).empty()) {
             continue;
         }
+        if (xParseComment(line, annot)) {
+            continue;
+        }
+        if (x_ParseBrowserLine(line, annot, pEC)) {
+            continue;
+        }
+        if (NStr::StartsWith(line, "track ")) {
+            if (featureCount > 0) {
+                --m_uLineNumber;
+                lr.UngetLine();
+                break;
+            }
+            else {
+                if (xParseTrackLine(line, annot, pEC)) {
+                    continue;
+                }
+            }
+        }
+
+	    string record_copy = line;
+	    NStr::TruncateSpacesInPlace(record_copy);
+
+        //  parse
+        vector<string> fields;
+        NStr::Tokenize( record_copy, " \t", fields, NStr::eMergeDelims );
         try {
-            if (x_ParseBrowserLine(line, annot, pEC)) {
-                continue;
-            }
-            if (x_ParseTrackLine(line, annot, pEC)) {
-                continue;
-            }
-            x_ParseFeature( line, annot );
+            xCleanColumnValues(fields);
         }
-        catch( CObjReaderLineException& err ) {
-            err.SetLineNumber( linecount );
+        catch(CObjReaderLineException& err) {
             ProcessError(err, pEC);
+            continue;
         }
-        continue;
+        if (fields[0] != m_currentId) {
+            //record id has changed
+            if (featureCount > 0) {
+                --m_uLineNumber;
+                lr.UngetLine();
+                break;
+            }
+        }
+        if (xParseFeature(fields, annot, pEC)) {
+            ++featureCount;
+            continue;
+        }
+        if (tbl.size() >= MAX_RECORDS) {
+            break;
+        }
+    }
+    //  Only return a valid object if there was at least one feature
+    if (0 == featureCount) {
+        return CRef<CSeq_annot>();
     }
     x_AddConversionInfo(annot, pEC);
+    x_AssignTrackData( annot );
+
+    if(m_columncount >= 3) {
+        CRef<CUser_object> columnCountUser( new CUser_object() );
+        columnCountUser->SetType().SetStr( "NCBI_BED_COLUMN_COUNT" );
+        columnCountUser->AddField("NCBI_BED_COLUMN_COUNT", int ( m_columncount ) );
+    
+        CRef<CAnnotdesc> userDesc( new CAnnotdesc() );
+        userDesc->SetUser().Assign( *columnCountUser );
+        annot->SetDesc().Set().push_back( userDesc );
+    }
     return annot;
 }
 
 //  ----------------------------------------------------------------------------
-void CMicroArrayReader::x_ParseFeature(
+bool CMicroArrayReader::xParseComment(
     const string& record,
-    CRef<CSeq_annot>& annot )
+    CRef<CSeq_annot>& annot ) /* throws CObjReaderLineException */
+//  ----------------------------------------------------------------------------
+{
+    if (NStr::StartsWith(record, "#")) {
+        return true;
+    }
+    return false;
+}
+ 
+//  ----------------------------------------------------------------------------
+bool CMicroArrayReader::xParseFeature(
+    const vector<string>& fields,
+    CRef<CSeq_annot>& annot,
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     const size_t columncount = 15;
     CRef<CSeq_feat> feature;
 
-    //  parse
-    vector<string> fields;
-    NStr::Tokenize( record, " \t", fields, NStr::eMergeDelims );
     if (fields.size() != columncount) {
-            CObjReaderLineException err(
-                eDiag_Error,
-                0,
-                "Feature Processing: Bad column count. Should be 15." );
-            throw( err );
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "Feature Processing: Bad column count. Should be 15." );
+        ProcessError(err, pEC );
+        return false;
     }
 
     //  assign
     feature.Reset( new CSeq_feat );
     try {
-        x_SetFeatureLocation( feature, fields );
-        x_SetFeatureDisplayData( feature, fields );
+        xSetFeatureLocation( feature, fields );
+        xSetFeatureDisplayData( feature, fields );
     }
     catch (...) {
         CObjReaderLineException err(
             eDiag_Error,
             0,
             "Feature Processing: General Parse Error." );
-        throw( err );
+        ProcessError(err, pEC );
+        return false;
     }
     annot->SetData().SetFtable().push_back( feature );
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
-void CMicroArrayReader::x_SetFeatureLocation(
+void CMicroArrayReader::xSetFeatureLocation(
     CRef<CSeq_feat>& feature,
     const vector<string>& fields )
 //  ----------------------------------------------------------------------------
@@ -219,7 +288,7 @@ void CMicroArrayReader::x_SetFeatureLocation(
 }
 
 //  ----------------------------------------------------------------------------
-void CMicroArrayReader::x_SetFeatureDisplayData(
+void CMicroArrayReader::xSetFeatureDisplayData(
     CRef<CSeq_feat>& feature,
     const vector<string>& fields )
 //  ----------------------------------------------------------------------------
@@ -257,7 +326,7 @@ void CMicroArrayReader::x_SetFeatureDisplayData(
 }
 
 //  ----------------------------------------------------------------------------
-bool CMicroArrayReader::x_ParseTrackLine(
+bool CMicroArrayReader::xParseTrackLine(
     const string& strLine,
     CRef<CSeq_annot>& annot,
     IMessageListener* pEC)
@@ -279,27 +348,30 @@ bool CMicroArrayReader::x_ParseTrackLine(
             eDiag_Warning,
             0,
             "Track Line Processing: Missing \"expName\" parameter." );
-        throw( err );
+        ProcessError(err, pEC );
+        return false;
     }
     if ( m_iExpScale == -1 ) {
         CObjReaderLineException err(
             eDiag_Warning,
             0,
             "Track Line Processing: Missing \"expScale\" parameter." );
-        throw( err );
+        ProcessError(err, pEC );
+        return false;
     }
     if ( m_iExpStep == -1 ) {
         CObjReaderLineException err(
             eDiag_Warning,
             0,
             "Track Line Processing: Missing \"expStep\" parameter." );
-        throw( err );
+        ProcessError(err, pEC );
+        return false;
     }
     
     return true;
 }
 //  ----------------------------------------------------------------------------
-void CMicroArrayReader::x_SetTrackData(
+void CMicroArrayReader::xSetTrackData(
     CRef<CSeq_annot>& annot,
     CRef<CUser_object>& trackdata,
     const string& strKey,
@@ -345,6 +417,51 @@ void CMicroArrayReader::x_SetTrackData(
         return;
     }
     CReaderBase::x_SetTrackData( annot, trackdata, strKey, strValue );
+}
+
+//  ----------------------------------------------------------------------------
+void
+CMicroArrayReader::xCleanColumnValues(
+   vector<string>& columns)
+//  ----------------------------------------------------------------------------
+{
+    string fixup;
+
+    if (NStr::EqualNocase(columns[0], "chr")  &&  columns.size() > 1) {
+        columns[1] = columns[0] + columns[1];
+        columns.erase(columns.begin());
+    }
+    if (columns.size() < 3) {
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "Bad data line: Insufficient column count." );
+        throw(err);
+    }
+
+    try {
+        NStr::Replace(columns[1], ",", "", fixup);
+        columns[1] = fixup;
+    }
+    catch (...) {
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "Bad data line: Invalid \"SeqStart\" (column 2) value." );
+        throw( err );
+    }
+
+    try {
+        NStr::Replace(columns[2], ",", "", fixup);
+        columns[2] = fixup;
+    }
+    catch (...) {
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "Bad data line: Invalid \"SeqStop\" (column 3) value." );
+        throw( err );
+    }
 }
 
 END_objects_SCOPE

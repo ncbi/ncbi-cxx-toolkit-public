@@ -237,7 +237,6 @@ protected:
         const vector<string>&,
         CRef<CSeq_annot>&,
         IMessageListener*);
-    /* throws CObjReaderLineException */
 
     bool xParseComment(
         const string&,

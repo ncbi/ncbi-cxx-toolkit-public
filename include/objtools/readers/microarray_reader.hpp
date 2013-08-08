@@ -79,33 +79,43 @@ public:
     //  helpers:
     //
 protected:
-    virtual bool x_ParseTrackLine(
+    virtual bool xParseTrackLine(
         const string&,
-        CRef<CSeq_annot>&,
+        CRef< CSeq_annot >&,
         IMessageListener*);
         
-    void x_ParseFeature(
-        const string&,
-        CRef<CSeq_annot>& );
+    bool xParseFeature(
+        const vector<string>&,
+        CRef<CSeq_annot>&,
+        IMessageListener*);
 
-    void x_SetFeatureLocation(
+    bool xParseComment(
+        const string&,
+        CRef<CSeq_annot>&);
+
+    void xSetFeatureLocation(
         CRef<CSeq_feat>&,
         const vector<string>& );
         
-    void x_SetFeatureDisplayData(
+    void xSetFeatureDisplayData(
         CRef<CSeq_feat>&,
         const vector<string>& );
 
-    virtual void x_SetTrackData(
+    virtual void xSetTrackData(
     CRef<CSeq_annot>&,
         CRef<CUser_object>&,
         const string&,
         const string& );
                 
+    static void xCleanColumnValues(
+        vector<string>&);
+
     //
     //  data:
     //
 protected:
+    string m_currentId;
+    vector<string>::size_type m_columncount;
     bool m_usescore;
 //    int m_flags;
     string m_strExpNames;
