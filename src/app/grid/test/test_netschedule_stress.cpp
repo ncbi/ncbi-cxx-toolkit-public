@@ -111,7 +111,10 @@ void TestBatchSubmit(const string& service,
 {
     CNetScheduleAPI cl(service, "stress_test", queue_name);
     cl.SetProgramVersion("test 1.0.0");
-   
+
+    cl.SetClientNode("stress_test_node");
+    cl.SetClientSession("stress_test_session");
+
     typedef vector<CNetScheduleJob> TJobs;
     TJobs jobs;
 
@@ -158,9 +161,9 @@ void TestBatchSubmit(const string& service,
     for (;1;++cnt) {
         job.output = "DONE";
         job.ret_code = 0;
-        executor.PutResult(job);
         if (!executor.GetJob(job))
             break;
+        executor.PutResult(job);
     }
     NcbiCout << NcbiEndl << "Done." << NcbiEndl;
     double elapsed = sw.Elapsed();
