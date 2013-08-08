@@ -578,7 +578,7 @@ CVcfReader::xAssignVariationAlleleSet(
         pIdentity->SetSNV(variant, CVariation_ref::eSeqType_na);
         break;
     case CVcfData::ST_ALL_DEL:
-        variant.push_back(data.m_strRef.substr(1));
+        variant.push_back(data.m_strRef);
         pIdentity->SetSNV(variant, CVariation_ref::eSeqType_na);
         break;
     case CVcfData::ST_ALL_INS:
@@ -789,6 +789,26 @@ CVcfReader::xParseData(
         return false;
     }
 
+    // normalize ref/alt by trimming common prefices and adjusting location
+    bool trimComplete = false;
+    while (!data.m_strRef.empty()) {
+        char leadBase = data.m_strRef[0];
+        for (size_t u=0; u < data.m_Alt.size(); ++u) {
+            if (!NStr::StartsWith(data.m_Alt[u], leadBase)) {
+                trimComplete = true;
+                break;
+            }
+        }
+        if (trimComplete) {
+            break;
+        }
+        data.m_strRef = data.m_strRef.substr(1);
+        for (size_t u=0; u < data.m_Alt.size(); ++u) {
+            data.m_Alt[u] = data.m_Alt[u].substr(1);
+        }
+        data.m_iPos++;
+    }
+
     //assign set type:
 
     //test for all SNVs
@@ -820,11 +840,14 @@ CVcfReader::xParseData(
     }
 
     //test for all deletions:
-    bool maybeAllDel = true;
+    // note: even it is all deletions we are not able to process them 
+    // as such because those deletions would be at different ASN1
+    // locations. Hence we punt to "indel" if there is more than one
+    // alternative.
+    bool maybeAllDel = false;
     for (size_t u=0; u < data.m_Alt.size(); ++u) {
-        if (! NStr::StartsWith(data.m_strRef, data.m_Alt[u])) {
-            maybeAllDel = false;
-            break;
+        if (data.m_Alt.size() == 1  && data.m_Alt[0].empty()) {
+            maybeAllDel = true;
         }
     }
     if (maybeAllDel) {
@@ -870,16 +893,23 @@ CVcfReader::xAssignFeatureLocationSet(
         return true;
     }
     if (data.m_SetType == CVcfData::ST_ALL_DEL) {
-        //set location for DELs
-        if (data.m_strRef.size() == 2) {
-            //deletion of a single base
-            pFeat->SetLocation().SetPnt().SetPoint(data.m_iPos);
-            pFeat->SetLocation().SetPnt().SetId(*pId);
+        if (data.m_Alt.size() == 1) {
+            if (data.m_strRef.size() == 1) {
+                //deletion of a single base
+                pFeat->SetLocation().SetPnt().SetPoint(data.m_iPos);
+                pFeat->SetLocation().SetPnt().SetId(*pId);
+            }
+            else {
+                pFeat->SetLocation().SetInt().SetFrom(data.m_iPos);
+                pFeat->SetLocation().SetInt().SetTo( 
+                    data.m_iPos + data.m_strRef.length());
+                pFeat->SetLocation().SetInt().SetId(*pId);
+            }
         }
         else {
             pFeat->SetLocation().SetInt().SetFrom(data.m_iPos);
             pFeat->SetLocation().SetInt().SetTo( 
-                data.m_iPos + data.m_strRef.length()-2);
+                data.m_iPos + data.m_strRef.length());
             pFeat->SetLocation().SetInt().SetId(*pId);
         }
         return true;
