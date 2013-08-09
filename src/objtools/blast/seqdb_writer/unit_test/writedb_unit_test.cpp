@@ -2094,6 +2094,89 @@ BOOST_AUTO_TEST_CASE(MaskDataBoundsError)
 }
 #endif
 
+/// Auxiliary class to parse the contents of an alias file
+struct SAliasFileData {
+
+    /// Encapsulates the alias' file key-value pair
+    struct Value {
+        Value(const string& name) : m_Found(false), m_Name(name) {}
+        bool Found() const { return m_Found;}
+        string Get() const { return m_Value;}
+        void Set(const string& v) { 
+            if ( !v.empty() ) {
+                m_Value = v; 
+                m_Found = true; 
+            }
+        }
+        string GetKey() const { return m_Name; }
+    private:
+        bool m_Found;
+        string m_Name;
+        string m_Value;
+    };
+
+    Value m_Title;
+    Value m_DbList;
+    Value m_NSeqs;
+    Value m_Length;
+    Value m_FirstOid;
+    Value m_LastOid;
+    Value m_GiList;
+    Value m_TiList;
+    Value m_SeqidList;
+
+    SAliasFileData(const string& fname) : 
+        m_Title("TITLE"), m_DbList("DBLIST"), m_NSeqs("NSEQ"),
+        m_Length("LENGTH"), m_FirstOid("FIRST_OID"), m_LastOid("LAST_OID"),
+        m_GiList("GILIST"), m_TiList("TILIST"), m_SeqidList("SEQIDLIST")
+    { x_Parse(fname); }
+
+private:
+    bool x_HasKeyword(string line, Value& data) {
+        bool retval = false;
+        if (NStr::Find(line, data.GetKey()) != NPOS) {
+            line = line.erase(0, data.GetKey().size()+1);
+            data.Set(line);
+            retval = true;
+        }
+        return retval;
+    }
+
+    /// Parse the alias file's contents
+    void x_Parse(const string& fname) {
+        string line;
+        ifstream alias_file(fname.c_str());
+        if ( ! alias_file ) { return; }
+        while (getline(alias_file, line)) {
+            if (x_HasKeyword(line, m_Title)) {
+                continue;
+            } else if (x_HasKeyword(line, m_DbList)) {
+                continue;
+            } else if (x_HasKeyword(line, m_NSeqs)) {
+                continue;
+            } else if (x_HasKeyword(line, m_Length)) {
+                continue;
+            } else if (x_HasKeyword(line, m_FirstOid)) {
+                continue;
+            } else if (x_HasKeyword(line, m_LastOid)) {
+                continue;
+            } else if (x_HasKeyword(line, m_GiList)) {
+                continue;
+            } else if (x_HasKeyword(line, m_TiList)) {
+                continue;
+            } else if (x_HasKeyword(line, m_SeqidList)) {
+                continue;
+            }
+            if (NStr::Find(line, "Alias file created") != NPOS) {
+                // this should be enough granularity
+                const string kCurrentYear = 
+                    NStr::IntToString(CTime(CTime::eCurrent).Year());
+                BOOST_REQUIRE(NStr::Find(line, kCurrentYear) != NPOS);
+            }
+        }
+    }
+};
+
 BOOST_AUTO_TEST_CASE(AliasFileGeneration)
 {
     CDiagRestorer diag_restorer;
@@ -2117,44 +2200,60 @@ BOOST_AUTO_TEST_CASE(AliasFileGeneration)
     CFileDeleteAtExit::Add(kAliasFileName);
 
     BOOST_REQUIRE(CFile(kAliasFileName).Exists());
-    ifstream alias_file(kAliasFileName.c_str());
+    SAliasFileData alias_file_data(kAliasFileName);
 
-    string line;
-    bool title_found = false, dblist_found = false, gilist_found = false,
-         nseq_found = false, length_found = false;
-    while (getline(alias_file, line)) {
-        if (NStr::Find(line, "TITLE") != NPOS) {
-            BOOST_REQUIRE(NStr::Find(line, kTitle) != NPOS);
-            title_found = true;
-        }
-        if (NStr::Find(line, "DBLIST") != NPOS) {
-            BOOST_REQUIRE(NStr::Find(line, kDbName) != NPOS);
-            dblist_found = true;
-        }
-        if (NStr::Find(line, "GILIST") != NPOS) {
-            BOOST_REQUIRE(NStr::Find(line, kGiFileName) != NPOS);
-            gilist_found = true;
-        }
-        if (NStr::Find(line, "NSEQ") != NPOS) {
-            BOOST_REQUIRE(NStr::Find(line, "1") != NPOS);
-            nseq_found = true;
-        }
-        if (NStr::Find(line, "LENGTH") != NPOS) {
-            BOOST_REQUIRE(NStr::Find(line, "232") != NPOS);
-            length_found = true;
-        }
-        if (NStr::Find(line, "Alias file created") != NPOS) {
-            // this should be enough granularity
-            const string kCurrentYear = 
-                NStr::IntToString(CTime(CTime::eCurrent).Year());
-            BOOST_REQUIRE(NStr::Find(line, kCurrentYear) != NPOS);
-        }
+    BOOST_CHECK(alias_file_data.m_Title.Found());
+    BOOST_CHECK_EQUAL(kTitle, alias_file_data.m_Title.Get());
+    BOOST_CHECK(alias_file_data.m_DbList.Found());
+    BOOST_CHECK(NStr::Find(alias_file_data.m_DbList.Get(), kDbName) != NPOS);
+    BOOST_CHECK(alias_file_data.m_NSeqs.Found());
+    BOOST_CHECK_EQUAL("1", alias_file_data.m_NSeqs.Get());
+    BOOST_CHECK(alias_file_data.m_Length.Found());
+    BOOST_CHECK_EQUAL("232", alias_file_data.m_Length.Get());
+    BOOST_CHECK(alias_file_data.m_GiList.Found());
+    BOOST_CHECK(alias_file_data.m_FirstOid.Found() == false);
+    BOOST_CHECK(alias_file_data.m_LastOid.Found() == false);
+    BOOST_CHECK(alias_file_data.m_TiList.Found() == false);
+    BOOST_CHECK(alias_file_data.m_SeqidList.Found() == false);
+}
+
+BOOST_AUTO_TEST_CASE(AliasFileGeneration_SeqIdList)
+{
+    CDiagRestorer diag_restorer;
+    SetDiagPostLevel(eDiag_Fatal);
+    CTmpFile tmp_aliasfile, tmp_gifile;
+    const string kDbName("nr");
+    const string kTitle("My alias file");
+    string kAliasFileName(tmp_aliasfile.GetFileName());
+    string kGiFileName(tmp_gifile.GetFileName());
+    {
+        ofstream gifile(tmp_gifile.GetFileName().c_str());
+        gifile << "P01013.1" << endl;   // GI 129295
+        gifile << "X65215.1" << endl;        // GI 555 (shouldn't be found)
+        gifile.close();
     }
-    BOOST_REQUIRE(title_found);
-    BOOST_REQUIRE(dblist_found);
-    BOOST_REQUIRE(gilist_found);
-    BOOST_REQUIRE(nseq_found);
-    BOOST_REQUIRE(length_found);
+
+    CWriteDB_CreateAliasFile(kAliasFileName, kDbName, CWriteDB::eProtein,
+                             kGiFileName, kTitle, eSeqIdList);
+    kAliasFileName += ".pal";
+    CFileDeleteAtExit::Add(kAliasFileName);
+
+    BOOST_REQUIRE(CFile(kAliasFileName).Exists());
+    SAliasFileData alias_file_data(kAliasFileName);
+
+    BOOST_CHECK(alias_file_data.m_Title.Found());
+    BOOST_CHECK_EQUAL(kTitle, alias_file_data.m_Title.Get());
+    BOOST_CHECK(alias_file_data.m_DbList.Found());
+    BOOST_CHECK(NStr::Find(alias_file_data.m_DbList.Get(), kDbName) != NPOS);
+    BOOST_CHECK(alias_file_data.m_NSeqs.Found());
+    BOOST_CHECK_EQUAL("1", alias_file_data.m_NSeqs.Get());
+    BOOST_CHECK(alias_file_data.m_Length.Found());
+    BOOST_CHECK_EQUAL("232", alias_file_data.m_Length.Get());
+    BOOST_CHECK(alias_file_data.m_SeqidList.Found());
+    BOOST_CHECK(alias_file_data.m_FirstOid.Found() == false);
+    BOOST_CHECK(alias_file_data.m_LastOid.Found() == false);
+    BOOST_CHECK(alias_file_data.m_GiList.Found() == false);
+    BOOST_CHECK(alias_file_data.m_TiList.Found() == false);
 }
 
 BOOST_AUTO_TEST_CASE(AliasFileGeneration_WithDbListNumVolumes)
@@ -2173,39 +2272,58 @@ BOOST_AUTO_TEST_CASE(AliasFileGeneration_WithDbListNumVolumes)
                              kTitle);
 
     BOOST_REQUIRE(CFile(kAliasFileName).Exists());
-    ifstream alias_file(kAliasFileName.c_str());
+    SAliasFileData alias_file_data(kAliasFileName);
 
-    bool title_found = false, dblist_found = false, nseq_found = false,
-         length_found = false;
-    string line;
-    while (getline(alias_file, line)) {
-        if (NStr::Find(line, "TITLE") != NPOS) {
-            BOOST_REQUIRE(NStr::Find(line, kTitle) != NPOS);
-            title_found = true;
-        }
-        if (NStr::Find(line, "DBLIST") != NPOS) {
-            BOOST_REQUIRE(NStr::Find(line, kMyAliasDb) != NPOS);
-            BOOST_REQUIRE(NStr::Find(line, NStr::IntToString(kNumVols - 1)) != NPOS);
-            BOOST_REQUIRE(NStr::Find(line, NStr::IntToString(kNumVols)) == NPOS);
-            dblist_found = true;
-        }
-        BOOST_REQUIRE(NStr::Find(line, "GILIST") == NPOS);
-        if (NStr::Find(line, "Alias file created") != NPOS) {
-            // this should be enough granularity
-            const string kCurrentYear = 
-                NStr::IntToString(CTime(CTime::eCurrent).Year());
-            BOOST_REQUIRE(NStr::Find(line, kCurrentYear) != NPOS);
-        }
-        if (NStr::Find(line, "NSEQ") != NPOS)
-            nseq_found = true;
-        if (NStr::Find(line, "LENGTH") != NPOS)
-            length_found = true;
+    BOOST_CHECK(alias_file_data.m_Title.Found());
+    BOOST_CHECK_EQUAL(kTitle, alias_file_data.m_Title.Get());
 
-    }
-    BOOST_REQUIRE(title_found);
-    BOOST_REQUIRE(dblist_found);
-    BOOST_REQUIRE(nseq_found);
-    BOOST_REQUIRE(length_found);
+    BOOST_CHECK(alias_file_data.m_DbList.Found());
+    BOOST_CHECK(NStr::Find(alias_file_data.m_DbList.Get(), kMyAliasDb) != NPOS);
+    BOOST_CHECK(NStr::Find(alias_file_data.m_DbList.Get(), NStr::IntToString(kNumVols-1)) != NPOS);
+    BOOST_CHECK(NStr::Find(alias_file_data.m_DbList.Get(), NStr::IntToString(kNumVols)) == NPOS);
+
+    BOOST_CHECK(alias_file_data.m_NSeqs.Found());
+    BOOST_CHECK(alias_file_data.m_Length.Found());
+    BOOST_CHECK(alias_file_data.m_FirstOid.Found() == false);
+    BOOST_CHECK(alias_file_data.m_LastOid.Found() == false);
+    BOOST_CHECK(alias_file_data.m_GiList.Found() == false);
+    BOOST_CHECK(alias_file_data.m_TiList.Found() == false);
+    BOOST_CHECK(alias_file_data.m_SeqidList.Found() == false);
+}
+
+BOOST_AUTO_TEST_CASE(AliasFileGenerationWithOidRange)
+{
+    CDiagRestorer diag_restorer;
+    SetDiagPostLevel(eDiag_Fatal);
+    CTmpFile tmp_aliasfile;
+    const string kDbName("nr");
+    const string kTitle("My alias file");
+    string kAliasFileName(tmp_aliasfile.GetFileName());
+    const TSeqRange oid_range(100, 3500);
+
+    CWriteDB_CreateAliasFile(kAliasFileName, vector<string>(1,kDbName),
+                             CWriteDB::eProtein, oid_range, kTitle);
+    kAliasFileName += ".pal";
+    CFileDeleteAtExit::Add(kAliasFileName);
+
+    BOOST_REQUIRE(CFile(kAliasFileName).Exists());
+    SAliasFileData alias_file_data(kAliasFileName);
+
+    BOOST_CHECK(alias_file_data.m_Title.Found());
+    BOOST_CHECK_EQUAL(kTitle, alias_file_data.m_Title.Get());
+    BOOST_CHECK(alias_file_data.m_DbList.Found());
+    BOOST_CHECK(NStr::Find(alias_file_data.m_DbList.Get(), kDbName) != NPOS);
+    BOOST_CHECK(alias_file_data.m_NSeqs.Found());
+    BOOST_CHECK(alias_file_data.m_Length.Found());
+    BOOST_CHECK(alias_file_data.m_FirstOid.Found());
+    BOOST_CHECK_EQUAL(NStr::IntToString(oid_range.GetFrom()),
+                        alias_file_data.m_FirstOid.Get());
+    BOOST_CHECK(alias_file_data.m_LastOid.Found());
+    BOOST_CHECK_EQUAL(NStr::IntToString(oid_range.GetToOpen()),
+                        alias_file_data.m_LastOid.Get());
+    BOOST_CHECK(alias_file_data.m_GiList.Found() == false);
+    BOOST_CHECK(alias_file_data.m_TiList.Found() == false);
+    BOOST_CHECK(alias_file_data.m_SeqidList.Found() == false);
 }
 
 BOOST_AUTO_TEST_CASE(AliasFileGeneration_WithDbListAggregateBlastDbs)
@@ -2226,39 +2344,22 @@ BOOST_AUTO_TEST_CASE(AliasFileGeneration_WithDbListAggregateBlastDbs)
                              kEmptyStr, kTitle);
 
     BOOST_REQUIRE(CFile(kAliasFileName).Exists());
-    ifstream alias_file(kAliasFileName.c_str());
+    SAliasFileData alias_file_data(kAliasFileName);
 
-    bool title_found = false, dblist_found = false, nseq_found = false,
-         length_found = false;
-    string line;
-    while (getline(alias_file, line)) {
-        if (NStr::Find(line, "TITLE") != NPOS) {
-            BOOST_REQUIRE(NStr::Find(line, kTitle) != NPOS);
-            title_found = true;
-        }
-        if (NStr::Find(line, "DBLIST") != NPOS) {
-            ITERATE(vector<string>, itr, dbs2aggregate) {
-                BOOST_REQUIRE(NStr::Find(line, *itr) != NPOS);
-            }
-            dblist_found = true;
-        }
-        BOOST_REQUIRE(NStr::Find(line, "GILIST") == NPOS);
-        if (NStr::Find(line, "Alias file created") != NPOS) {
-            // this should be enough granularity
-            const string kCurrentYear = 
-                NStr::IntToString(CTime(CTime::eCurrent).Year());
-            BOOST_REQUIRE(NStr::Find(line, kCurrentYear) != NPOS);
-        }
-        if (NStr::Find(line, "NSEQ") != NPOS)
-            nseq_found = true;
-        if (NStr::Find(line, "LENGTH") != NPOS)
-            length_found = true;
-
+    BOOST_CHECK(alias_file_data.m_Title.Found());
+    BOOST_CHECK_EQUAL(kTitle, alias_file_data.m_Title.Get());
+    BOOST_CHECK(alias_file_data.m_DbList.Found());
+    ITERATE(vector<string>, itr, dbs2aggregate) {
+        BOOST_REQUIRE(NStr::Find(alias_file_data.m_DbList.Get(), *itr) != NPOS);
     }
-    BOOST_REQUIRE(title_found);
-    BOOST_REQUIRE(dblist_found);
-    BOOST_REQUIRE(nseq_found);
-    BOOST_REQUIRE(length_found);
+
+    BOOST_CHECK(alias_file_data.m_NSeqs.Found());
+    BOOST_CHECK(alias_file_data.m_Length.Found());
+    BOOST_CHECK(alias_file_data.m_GiList.Found() == false);
+    BOOST_CHECK(alias_file_data.m_FirstOid.Found() == false);
+    BOOST_CHECK(alias_file_data.m_LastOid.Found() == false);
+    BOOST_CHECK(alias_file_data.m_TiList.Found() == false);
+    BOOST_CHECK(alias_file_data.m_SeqidList.Found() == false);
 }
 
 /* This is no longer possible as all volumes must exist on alias creation

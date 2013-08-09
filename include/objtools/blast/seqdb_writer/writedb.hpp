@@ -587,8 +587,10 @@ private:
 
 /// Defines the possible filtering types that can be applied to an alias file
 enum EAliasFileFilterType {
-    eGiList,        ///< Filter a BLAST database via GIs
-    eTiList         ///< Filter a BLAST database via TIs (Trace IDs)
+    eNoAliasFilterType,         ///< Sentinel value
+    eGiList,                    ///< Filter a BLAST database via GIs
+    eTiList,                    ///< Filter a BLAST database via TIs (Trace IDs)
+    eSeqIdList                  ///< Filter a BLAST database via a Seq-id list
 };
 
 /** 
@@ -651,6 +653,13 @@ NCBI_XOBJWRITE_EXPORT
 void CWriteDB_CreateAliasFile(const string& file_name,
                               unsigned int num_volumes,
                               CWriteDB::ESeqType seq_type,
+                              const string& title = string());
+
+NCBI_XOBJWRITE_EXPORT 
+void CWriteDB_CreateAliasFile(const string& file_name,
+                              const vector<string>& db_names,
+                              CWriteDB::ESeqType seq_type,
+                              const TSeqRange& oid_range,
                               const string& title = string());
 
 /** Consolidate the alias files specified into a group alias file.

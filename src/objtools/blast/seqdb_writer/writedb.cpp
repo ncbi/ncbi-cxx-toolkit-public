@@ -331,12 +331,28 @@ void CWriteDB_CreateAliasFile(const string& file_name,
                              alias_type);
 }
 
-void CWriteDB_CreateAliasFile(const string& file_name,
-                              const vector<string>& databases,
-                              CWriteDB::ESeqType seq_type,
-                              const string& gi_file_name,
-                              const string& title,
-                              EAliasFileFilterType alias_type /*= eGiList*/)
+/// Auxiliary function to convert the enumeration into a string
+static string s_AliasFileFilterTypeToString(EAliasFileFilterType e)
+{
+    string retval;
+    switch (e) {
+    case eGiList:       retval = "GILIST"; break;
+    case eTiList:       retval = "TILIST"; break;
+    case eSeqIdList:    retval = "SEQIDLIST"; break;
+    case eNoAliasFilterType: break;
+    default:                _ASSERT(false); /* Need to add a type here? */
+    }
+    return retval;
+}
+
+static void
+s_CreateAliasFilePriv(const string& file_name,
+                      const vector<string>& databases,
+                      CWriteDB::ESeqType seq_type,
+                      const string& gi_file_name,
+                      const string& title,
+                      EAliasFileFilterType alias_type,
+                      const TSeqRange* oid_range = NULL)
 {
     bool is_prot(seq_type == CWriteDB::eProtein ? true : false);
     Uint8 dbsize = 0;
@@ -358,8 +374,12 @@ void CWriteDB_CreateAliasFile(const string& file_name,
     }
     out << "\n";
     if ( !gi_file_name.empty() ) {
-        string token = (alias_type == eGiList ? "GILIST" : "TILIST");
-        out << token << " " << gi_file_name << "\n";
+        _ASSERT(alias_type != eNoAliasFilterType);
+        out << s_AliasFileFilterTypeToString(alias_type) << " " 
+            << gi_file_name << "\n";
+    } else if (oid_range) {
+        out << "FIRST_OID " << oid_range->GetFrom() << "\n"
+            << "LAST_OID "  << oid_range->GetToOpen() << "\n";
     }
     out.close();
 
@@ -431,6 +451,26 @@ void CWriteDB_CreateAliasFile(const string& file_name,
     out << "LENGTH " << dbsize << "\n";
     out.close();
     s_PrintAliasFileCreationLog(concatenated_blastdb_name, is_prot, num_seqs);
+}
+
+void CWriteDB_CreateAliasFile(const string& file_name,
+                              const vector<string>& databases,
+                              CWriteDB::ESeqType seq_type,
+                              const string& gi_file_name,
+                              const string& title,
+                              EAliasFileFilterType alias_type /*= eGiList*/)
+{
+    s_CreateAliasFilePriv(file_name, databases, seq_type, gi_file_name, title, alias_type);
+}
+
+void CWriteDB_CreateAliasFile(const string& file_name,
+                              const vector<string>& db_names,
+                              CWriteDB::ESeqType seq_type,
+                              const TSeqRange& oid_range,
+                              const string& title /*= string()*/)
+{
+    s_CreateAliasFilePriv(file_name, db_names, seq_type, kEmptyStr, title,
+                          eNoAliasFilterType, &oid_range);
 }
 
 void 
