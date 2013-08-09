@@ -65,7 +65,7 @@ public:
     enum EOptions {
         eNone,
         eSkipUnsupportedAlignments,
-        eDefault = eSkipUnsupportedAlignments
+        eDefault = eNone
     };
     typedef int TOptions;
 
