@@ -1264,6 +1264,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CTESN	s	Universidad Nacional del Nordeste",
 "CTM<TUN>	c	Centre de Biotechnologie de Sfax culture collection",
 "CTN	s	Free Library and Museum",
+"CTNRC	s	Thai National Reference Collections",
 "CTS	s	Chongqing Teachers College",
 "CTY	s	Canterbury Literary and Philosophical Institution",
 "CU	sb	Cornell University",
