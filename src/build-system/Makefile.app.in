@@ -89,20 +89,33 @@ endif
 
 ifeq "$(JUST_RUN_LDD)" "1"
 $(XAPP): $(DLL_DEP) $(XOBJ) $(XLIBDEP)
-# This is not entirely straightforward, due to two complications:
+# This is not entirely straightforward, due to some complications:
 # * The above check doesn't account for object files rebuilt on the fly
 #   (as they typically are).
 # * ldd exits with status 0 even if it found unresolved symbols, so
 #   checking whether it produced error output is necessary.
+# * Executables may have relative rpaths, making it necessary to check
+#   copies in $(bindir) if possible.
 	@relink_after_all=false; \
 	for x in $?; do \
 	    case $$x in *@dll_ext@) ;; *) relink_after_all=true ;; esac; \
 	done; \
+	if [ $$relink_after_all = false ]; then \
+	    if [ -w $(bindir)/$(XAPP) ]  &&  \
+	      cmp -s $(XAPP) $(bindir)/$(XAPP); then \
+	        d=$(bindir); \
+	    else \
+	        d=.; \
+	    fi; \
+	    if $(LDD_R) $$d/$(XAPP) 2>&1 >/dev/null | $(GREP) .; then \
+	        echo "$(XAPP) apparently has unresolved symbols;" \
+	            "relinking to confirm"; \
+	        $(RM) $(XAPP); \
+	        relink_after_all=true; \
+	    fi; \
+	fi; \
 	if [ $$relink_after_all = true ]; then \
 	    $(MAKE) -f $(MAKEFILE) $(MFLAGS) $(XAPP) LDD_R=; \
-	elif $(LDD_R) $(XAPP) 2>&1 >/dev/null | $(GREP) .; then \
-	    echo "ERROR: $(XAPP) has unresolved symbols"; \
-	    exit 1; \
 	else \
 	    touch $(XAPP); \
 	fi
