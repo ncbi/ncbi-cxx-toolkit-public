@@ -948,7 +948,7 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
             {
                 const CObjectTypeInfo objectTypeInfo = (
                     eDataType == eDataType_SeqEntry ?
-                    CType<CSeq_entry>().operator ncbi::CObjectTypeInfo() :
+                    CType<CSeq_annot>().operator ncbi::CObjectTypeInfo() :
                     CType<CSeq_submit>().operator ncbi::CObjectTypeInfo() );
                 if ( skip ) {
                     if ( displayMessages )
@@ -1009,7 +1009,7 @@ void CAsn2Asn::RunAsn2Asn(const string& outFileSuffix)
                     // extract the Seq-entry inside there for processing
                     CRef<CSeq_entry> pInnerSeqEntry;
                     if( eDataType == eDataType_SeqEntry ) {
-                        CRef<CSeq_entry> pEntry( new CSeq_entry );
+                        CRef<CSeq_annot> pEntry( new CSeq_annot );
                         *in >> *pEntry;
                         pObjectFromIn = pEntry;
                         // input *is* a seq-entry, so no digging necessary
