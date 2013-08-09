@@ -4,8 +4,8 @@
     
 REQUIRES = objects
  
-LIB_PROJ = variation_utils
-SUB_PROJ = test
+EXPENDABLE_LIB_PROJ = variation_utils
+EXPENDABLE_SUB_PROJ = test
    
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

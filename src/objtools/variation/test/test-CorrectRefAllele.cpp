@@ -80,9 +80,11 @@ private:
     virtual int Run ();
     virtual void Exit(void);
     int CompareVar(CRef<CVariation> v1, CRef<CVariation> v2);
+    int CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2);
     bool IsVariation(AutoPtr<CObjectIStream>& oistr);
     template<class T>
     int CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<CObjectIStream>& var_in2, CRef<CScope> scope, bool verbose);
+    void GetAlleles(CVariation_ref& vr, string& new_ref, set<string>& alleles);
 };
 
 
@@ -165,6 +167,55 @@ int CCorrectRefAlleleApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
     return n;
 }
 
+void CCorrectRefAlleleApp::GetAlleles(CVariation_ref& vr, string& new_ref, set<string>& alleles)
+{
+    for (CVariation_ref::TData::TSet::TVariations::iterator inst = vr.SetData().SetSet().SetVariations().begin(); inst != vr.SetData().SetSet().SetVariations().end(); ++inst)
+    {
+        if ((*inst)->GetData().GetInstance().IsSetDelta() && !(*inst)->GetData().GetInstance().GetDelta().empty() && (*inst)->GetData().GetInstance().GetDelta().front()->IsSetSeq() 
+            && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().IsLiteral()
+            && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
+            && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
+        {
+            string a = (*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
+            if (((*inst)->GetData().GetInstance().IsSetObservation() && ((*inst)->GetData().GetInstance().GetObservation() & CVariation_inst::eObservation_reference) == CVariation_inst::eObservation_reference))
+                new_ref = a;
+            else
+                alleles.insert(a);
+        }
+    }
+}
+
+int CCorrectRefAlleleApp::CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2)
+{
+    int n = 0;
+    CSeq_annot::TData::TFtable::iterator feat1, feat2;
+    for ( feat1 = v1->SetData().SetFtable().begin(), feat2 = v2->SetData().SetFtable().begin(); feat1 != v1->SetData().SetFtable().end() && feat2 != v2->SetData().SetFtable().end(); ++feat1,++feat2)
+    {
+        CVariation_ref& vr1 = (*feat1)->SetData().SetVariation();
+        CVariation_ref& vr2 = (*feat2)->SetData().SetVariation();
+        string new_ref1,new_ref2;
+        set<string> alleles1,alleles2;
+        GetAlleles(vr1,new_ref1,alleles1);
+        GetAlleles(vr2,new_ref2,alleles2);
+        if (new_ref1 != new_ref2)
+        {
+            ERR_POST(Error << "Reference allele does not match" << Endm);
+            n++;
+        }
+        if (!equal(alleles1.begin(), alleles1.end(), alleles2.begin()))
+        {
+            ERR_POST(Error << "Alt alleles do not match" << Endm);
+            n++;
+        } 
+    }
+    if (feat1 != v1->SetData().SetFtable().end() || feat2 != v2->SetData().SetFtable().end())
+    {
+        ERR_POST(Error << "Number of Variations does not match" << Endm);
+        n++;
+    } 
+
+    return n;
+}
 
 bool  CCorrectRefAlleleApp::IsVariation(AutoPtr<CObjectIStream>& oistr)
 {
@@ -237,8 +288,8 @@ int CCorrectRefAlleleApp::Run()
     {
         if (is_variation)
             n += CorrectAndCompare<CVariation>(var_in1, var_in2, scope,verbose);
-        //else
-        //    n += CorrectAndCompare<CSeq_annot>(var_in1, var_in2, scope,verbose);
+        else
+            n += CorrectAndCompare<CSeq_annot>(var_in1, var_in2, scope,verbose);
     }
     if (verbose)
         cerr << endl << "Number of inconsistencies: " << n << endl;

@@ -4,7 +4,7 @@
     
 REQUIRES = objects
  
-APP_PROJ = test-CorrectRefAllele
+EXPENDABLE_APP_PROJ = test-CorrectRefAllele
    
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
