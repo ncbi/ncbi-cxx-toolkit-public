@@ -5805,8 +5805,8 @@ if test "$skip_fast_flags" = no -a -z "$DEF_FAST_FLAGS" ; then
       GCC:* )
         DEF_FAST_FLAGS="-O3 -finline-functions -fstrict-aliasing"
         case "$host_os" in
-           freebsd* ) ;;
-           * )        DEF_FAST_FLAGS="$DEF_FAST_FLAGS -ffast-math" ;;
+           freebsd* | solaris*:*86* ) ;;
+           * ) DEF_FAST_FLAGS="$DEF_FAST_FLAGS -ffast-math" ;;
         esac
         if test "$with_profiling" != "yes"; then
            # incompatible with -pg
