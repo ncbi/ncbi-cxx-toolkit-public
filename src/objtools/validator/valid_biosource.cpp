@@ -1057,6 +1057,16 @@ void CValidError_imp::ValidateBioSource
             continue;
         }
 
+
+        if ((*ssit)->IsSetName()) {
+            string str = (*ssit)->GetName();
+            if (NStr::Equal (str, "N/A")) {
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+                           "Subsource name should not be N/A",
+                           obj, ctx);
+            }
+        }
+
         int subtype = (*ssit)->GetSubtype();
         switch ( subtype ) {
 
@@ -1909,6 +1919,15 @@ void CValidError_imp::ValidateOrgName
             const COrgMod& omd = **omd_itr;
             int subtype = omd.GetSubtype();
 
+            if (omd.IsSetSubname()) {
+                string str = omd.GetSubname();
+                if (NStr::Equal (str, "N/A")) {
+                    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+                               "Orgmod name should not be N/A",
+                               obj, ctx);
+                }
+            }
+
             switch (subtype) {
                 case 0:
                 case 1:
@@ -1916,11 +1935,47 @@ void CValidError_imp::ValidateOrgName
                                "Unknown orgmod subtype " + NStr::IntToString(subtype), obj, ctx);
                     break;
                 case COrgMod::eSubtype_strain:
+                    if (omd.IsSetSubname()) {
+                        string str = omd.GetSubname();
+                        if (NStr::StartsWith (str, "subsp. ")) {
+                            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+                                       "Orgmod.strain should not start with subsp.",
+                                       obj, ctx);
+                        } else if (NStr::StartsWith (str, "serovar ")) {
+                            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+                                       "Orgmod.strain should not start with serovar",
+                                       obj, ctx);
+                        }
+                    }
                     if (has_strain) {
                         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
                                    "Multiple strain qualifiers on the same BioSource", obj, ctx);
                     }
                     has_strain = true;
+                    break;
+                case COrgMod::eSubtype_serovar:
+                    if (omd.IsSetSubname()) {
+                        string str = omd.GetSubname();
+                        if (NStr::StartsWith (str, "subsp. ")) {
+                            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+                                       "Orgmod.serovar should not start with subsp.",
+                                       obj, ctx);
+                        } else if (NStr::StartsWith (str, "strain ")) {
+                            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+                                       "Orgmod.serovar should not start with strain",
+                                       obj, ctx);
+                        }
+                    }
+                    break;
+                case COrgMod::eSubtype_sub_species:
+                    if (omd.IsSetSubname()) {
+                        string str = omd.GetSubname();
+                        if (NStr::Find (str, "subsp. ") != string::npos) {
+                            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
+                                       "Orgmod.sub-species should not contain subsp.",
+                                       obj, ctx);
+                        }
+                    }
                     break;
                 case COrgMod::eSubtype_variety:
                     if ( (!orgname.IsSetDiv() || !NStr::EqualNocase( orgname.GetDiv(), "PLN" ))
@@ -2405,6 +2460,7 @@ bool CValidError_imp::IsTransgenic(const CBioSource& bsrc)
 
 const string CValidError_imp::sm_SourceQualPrefixes[] = {
     "acronym:",
+    "altitude:",
     "anamorph:",
     "authority:",
     "biotype:",
@@ -2454,6 +2510,7 @@ const string CValidError_imp::sm_SourceQualPrefixes[] = {
     "metagenomic:",
     "nat_host:",
     "pathovar:",
+    "phenotype:",
     "placement:",
     "plasmid_name:",
     "plastid_name:",
@@ -2485,6 +2542,7 @@ const string CValidError_imp::sm_SourceQualPrefixes[] = {
     "transposon_name:",
     "type:",
     "variety:",
+    "whole_replicon:",
 };
 
 
