@@ -80,6 +80,9 @@ private:
     virtual int Run ();
     virtual void Exit(void);
     int CompareVar(CRef<CVariation> v1, CRef<CVariation> v2);
+    bool IsVariation(AutoPtr<CObjectIStream>& oistr);
+    template<class T>
+    int CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<CObjectIStream>& var_in2, CRef<CScope> scope, bool verbose);
 };
 
 
@@ -162,6 +165,53 @@ int CCorrectRefAlleleApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
     return n;
 }
 
+
+bool  CCorrectRefAlleleApp::IsVariation(AutoPtr<CObjectIStream>& oistr)
+{
+    set<TTypeInfo> matches;
+    set<TTypeInfo> candidates;
+    //Potential File types
+    candidates.insert(CType<CSeq_annot>().GetTypeInfo());
+    candidates.insert(CType<CVariation>().GetTypeInfo());
+
+    matches   = oistr->GuessDataType(candidates);
+    if(matches.size() != 1) 
+    {
+        string msg = "Found more than one match for this type of file.  Could not guess data type";
+        NCBI_USER_THROW(msg);
+    }
+
+    return (*matches.begin())->GetName() == "Variation";
+}
+
+template<class T>
+int CCorrectRefAlleleApp::CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<CObjectIStream>& var_in2, CRef<CScope> scope, bool verbose)
+{
+    CRef<T> v1(new T);
+    CRef<T> v2(new T);
+
+    *var_in1 >> *v1;      
+    if (verbose)
+    {
+        cerr << endl << "Input Variation" << endl;
+        cerr <<  MSerial_AsnText << *v1;
+    }
+    CVariationUtilities::CorrectRefAllele(v1,*scope);
+    *var_in2 >> *v2;
+    if (verbose)
+    {
+        cerr << endl << "Desired Variation" << endl;
+        cerr <<  MSerial_AsnText << *v2;
+    }   
+    if (verbose)
+    {
+        cerr << endl << "Output Variation" << endl;
+        cerr <<  MSerial_AsnText << *v1;
+    }   
+    int n = CompareVar(v1,v2);
+    return n;
+}
+
 int CCorrectRefAlleleApp::Run() 
 {
     CArgs args = GetArgs();
@@ -180,31 +230,15 @@ int CCorrectRefAlleleApp::Run()
     AutoPtr<CDecompressIStream>	decomp_stream2(new CDecompressIStream(fstr, CCompressStream::eGZipFile, CZipCompression::fAllowTransparentRead));
     AutoPtr<CObjectIStream> var_in2(CObjectIStream::Open(eSerial_AsnText, *decomp_stream2));
 
+    bool is_variation = IsVariation(var_in1);
+
     int n = 0;
     while (!var_in1->EndOfData() && !var_in2->EndOfData())
     {
-        CRef<CVariation> v1(new CVariation);
-        *var_in1 >> *v1;
-        if (verbose)
-        {
-            cerr << endl << "Input Variation" << endl;
-            cerr <<  MSerial_AsnText << *v1;
-        }
-        CVariationUtilities::CorrectRefAllele(v1,*scope);
-        CRef<CVariation> v2(new CVariation);
-        *var_in2 >> *v2;
-        if (verbose)
-        {
-            cerr << endl << "Desired Variation" << endl;
-            cerr <<  MSerial_AsnText << *v2;
-        }   
-        if (verbose)
-        {
-            cerr << endl << "Output Variation" << endl;
-            cerr <<  MSerial_AsnText << *v1;
-        }   
-        n += CompareVar(v1,v2);
-      
+        if (is_variation)
+            n += CorrectAndCompare<CVariation>(var_in1, var_in2, scope,verbose);
+        //else
+        //    n += CorrectAndCompare<CSeq_annot>(var_in1, var_in2, scope,verbose);
     }
     if (verbose)
         cerr << endl << "Number of inconsistencies: " << n << endl;
