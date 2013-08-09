@@ -217,6 +217,8 @@ static void CheckDeflineMatches(CRef<CSeq_entry> entry, bool use_best = false)
     } else {
         mod_combo = new CAutoDefModifierCombo ();
     }
+
+    // check defline for each nucleotide sequence
     CBioseq_CI seq_iter(seh, CSeq_inst::eMol_na);
     for ( ; seq_iter; ++seq_iter ) {
        CBioseq_Handle bh (*seq_iter);
@@ -234,6 +236,8 @@ static void CheckDeflineMatches(CRef<CSeq_entry> entry, bool use_best = false)
 
        BOOST_CHECK_EQUAL(orig_defline, new_defline);
     }
+
+    // check popset title if needed
     if (seh.IsSet() && CAutoDef::NeedsDocsumDefline(*(seh.GetSet().GetCompleteBioseq_set()))) {
         string orig_defline = "";
         CSeqdesc_CI desc_it(seh, CSeqdesc::e_Title, 1);

@@ -152,7 +152,7 @@ private:
     bool         m_ExcludeAffOrgs;
 
     bool         m_KeepParen;
-	bool         m_KeepAfterSemicolon;
+    bool         m_KeepAfterSemicolon;
     unsigned int m_HIVCloneIsolateRule;
     
     string x_GetSubSourceLabel (CSubSource::ESubtype st);

@@ -49,13 +49,14 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 CAutoDefModifierCombo::CAutoDefModifierCombo() : m_UseModifierLabels(false),
+                                                 m_MaxModifiers(0),
                                                  m_KeepCountryText(false),
                                                  m_ExcludeSpOrgs(false),
                                                  m_ExcludeCfOrgs(false),
                                                  m_ExcludeNrOrgs(false),
                                                  m_ExcludeAffOrgs(false),
                                                  m_KeepParen(false),
-												 m_KeepAfterSemicolon(false),
+                                                 m_KeepAfterSemicolon(false),
                                                  m_HIVCloneIsolateRule(ePreferClone)
 
 {
@@ -100,7 +101,9 @@ CAutoDefModifierCombo::CAutoDefModifierCombo(CAutoDefModifierCombo *orig)
     m_ExcludeNrOrgs = orig->GetExcludeNrOrgs();
     m_ExcludeAffOrgs = orig->GetExcludeAffOrgs();
     m_KeepParen = orig->GetKeepParen();
+    m_KeepAfterSemicolon = orig->GetKeepAfterSemicolon();
     m_HIVCloneIsolateRule = orig->GetHIVCloneIsolateRule();
+    m_MaxModifiers = orig->GetMaxModifiers();
 }
 
 
@@ -352,8 +355,10 @@ void CAutoDefModifierCombo::x_CleanUpTaxName (string &tax_name)
 bool CAutoDefModifierCombo::x_AddSubsourceString (string &source_description, const CBioSource& bsrc, CSubSource::ESubtype st)
 {
     bool         used = false;
-    string       val;
 
+    if (!bsrc.IsSetSubtype()) {
+        return false;
+    }
     ITERATE (CBioSource::TSubtype, subSrcI, bsrc.GetSubtype()) {
         if ((*subSrcI)->GetSubtype() == st) {
             source_description += x_GetSubSourceLabel (st);
