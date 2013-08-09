@@ -3467,7 +3467,7 @@ CAlignFormatUtil::GetSeqAlignSetCalcParams(const CSeq_align_set& aln,int queryLe
         if (bits > highest_bits) {  // this is the replacement condition (WB-1175)
             highest_length = align_length;
             highest_ident = num_ident;
-            highest_identity = 100*num_ident/align_length;
+///         highest_identity = 100*num_ident/align_length;
         }
     
         if (bits > highest_bits) {
