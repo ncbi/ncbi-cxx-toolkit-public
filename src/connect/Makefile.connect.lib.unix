@@ -1,0 +1,11 @@
+# $Id$
+
+# Adjust ICC flags to avoid problematic references to
+# __intel_sse2_str* functions (as of ICC [20]13)
+
+ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
+  strcspn=connutil ftp_connector http_connector lbsmd local version
+  $(strcspn:%=ncbi_%.o): %.o: $(srcdir)/%.c
+	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) -fno-builtin-strcspn $< -o $@ \
+	    $(CC_FILTER)
+endif
