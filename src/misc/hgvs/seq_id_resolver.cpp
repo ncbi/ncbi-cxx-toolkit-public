@@ -32,10 +32,9 @@
 
 #include <objects/general/Dbtag.hpp>
 #include <objects/general/Object_id.hpp>
-
 #include <objmgr/scope.hpp>
 #include <objmgr/feat_ci.hpp>
-
+#include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <misc/hgvs/hgvs_parser2.hpp>
 #include <misc/hgvs/seq_id_resolver.hpp>
@@ -149,41 +148,39 @@ CSeq_id_Resolver__CCDS::~CSeq_id_Resolver__CCDS()
 
 
 CSeq_id_Resolver__ChrNamesFromGC::CSeq_id_Resolver__ChrNamesFromGC(const CGC_Assembly& assembly, CScope& scope)
-  : CSeq_id_Resolver(scope)
+  : CSeq_id_Resolver(scope),
+    m_SLMapper(new CSeq_loc_Mapper(assembly, CSeq_loc_Mapper::eSeqMap_Up, SSeqMapSelector()))
 {
-    m_regexp = new CRegexp("^(Chr|CHR|chr)\\w+$");
-
-    CGC_Assembly::TSequenceList tls;
-    assembly.GetMolecules(tls, CGC_Assembly::eTopLevel);
-    ITERATE(CGC_Assembly::TSequenceList, it, tls) {
-        const CGC_Sequence& seq= **it;
-        if(!seq.IsSetSeq_id_synonyms()) {
-            continue;
-        }
-        CConstRef<CSeq_id> syn_seq_id = seq.GetSynonymSeq_id(CGC_TypedSeqId::e_Private, CGC_SeqIdAlias::e_None);
-        if(!syn_seq_id) {
-            continue;
-        }
-        string syn = syn_seq_id->GetSeqIdString(false);
-        if(!NStr::StartsWith(syn, "chr")) {
-            syn = "chr" + syn;
-        }
-        if(m_data.find(syn) != m_data.end()) {
-            NCBI_THROW(CException, eUnknown, "Non-unique chromosome names: " + syn);
-        } else {
-            m_data[syn] = sequence::GetId(seq.GetSeq_id(), *m_scope, sequence::eGetId_ForceAcc);
-        }
-    }
 }
 
 CSeq_id_Handle CSeq_id_Resolver__ChrNamesFromGC::x_Create(const string& s)
 {
     CSeq_id_Handle idh;
-    string s2 = NStr::Replace(s, "Chr", "chr", 0, 1);
-    NStr::ReplaceInPlace(s2, "CHR", "chr", 0, 1);
-    if(m_data.find(s2) != m_data.end()) {
-        idh = m_data.find(s2)->second;
+    CRef<CSeq_id> origid(new CSeq_id(s));
+    CConstRef<CSeq_loc> origloc(new CSeq_loc(*origid, 0, 0));
+    CConstRef<CSeq_loc> newloc = x_MapLoc(*origloc);
+    if (newloc.NotNull()) {
+        idh = sequence::GetId(*newloc->GetId(), *m_scope, sequence::eGetId_ForceAcc);
     }
     return idh;
 }
+
+CConstRef<CSeq_loc> CSeq_id_Resolver__ChrNamesFromGC::x_MapLoc(const CSeq_loc& loc) const
+{
+    try {
+        CConstRef<CSeq_loc> new_loc = m_SLMapper->Map(loc);
+        return (new_loc.IsNull() || new_loc->IsNull()) ? CConstRef<CSeq_loc>() : new_loc;
+    }
+    catch (const CException& e) {
+        ERR_POST("Exception in CSeq_loc_Mapper: " << e.GetMsg());
+        return CConstRef<CSeq_loc>();
+    }
+}
+
+bool CSeq_id_Resolver__ChrNamesFromGC::CanCreate(const string& s)
+{
+    return bool(x_Create(s));
+}
+
+
 END_NCBI_SCOPE

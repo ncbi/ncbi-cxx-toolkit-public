@@ -42,12 +42,15 @@
 
 BEGIN_NCBI_SCOPE
 
-USING_SCOPE(objects);
+class CRegexp;
 
 BEGIN_objects_SCOPE
 class CEntrez2Client;
+class CSeq_loc;
+class CSeq_loc_Mapper;
 END_objects_SCOPE
-class CRegexp;
+
+USING_SCOPE(objects);
 
 /// A helper class to convert a string to a seq-id.
 /// Default implementation assumes a seq-id string, but user may implement
@@ -64,7 +67,7 @@ public:
 
     virtual CSeq_id_Handle Get(const string& s)
     {
-        if(m_cache.find(s) == m_cache.end()) {
+        if (m_cache.find(s) == m_cache.end()) {
             m_cache[s] = x_Create(s);
         }
         return m_cache[s];
@@ -79,7 +82,7 @@ public:
     {
         NON_CONST_ITERATE(TResolvers, it, resolvers) {
             CSeq_id_Resolver& r = **it;
-            if(r.CanCreate(s)) {
+            if (r.CanCreate(s)) {
                 return r.Get(s);
             }
         }
@@ -123,10 +126,15 @@ public:
     CSeq_id_Resolver__ChrNamesFromGC(const CGC_Assembly& assembly, CScope& scope);
     virtual ~CSeq_id_Resolver__ChrNamesFromGC() {}
 
+    virtual bool CanCreate(const string& s);
+
 private:
     virtual CSeq_id_Handle x_Create(const string& s);
+    virtual CConstRef<CSeq_loc> x_MapLoc(const CSeq_loc& loc) const;
+
     typedef map<string, CSeq_id_Handle> TData;
     TData m_data;
+    mutable CRef<CSeq_loc_Mapper> m_SLMapper;
 };
 
 END_NCBI_SCOPE;
