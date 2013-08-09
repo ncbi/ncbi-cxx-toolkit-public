@@ -5,7 +5,7 @@ SRC = test_hgvs_parser_app
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB_ = hgvs variation test_boost xregexp $(PCRE_LIB) xobjutil \
+LIB_ = hgvs $(OBJREAD_LIBS) test_boost xregexp $(PCRE_LIB) xobjutil \
        entrez2cli entrez2 $(OBJMGR_LIBS)
 
 LIB = $(LIB_:%=%$(STATIC))
