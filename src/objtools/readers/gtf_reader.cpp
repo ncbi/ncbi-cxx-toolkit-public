@@ -916,14 +916,6 @@ bool CGtfReader::x_FeatureSetDataGene(
     if ( record.GetAttribute( "gene_id", strValue ) ) {
         gene.SetSyn().push_front( strValue );
     }
-    if (record.GetAttribute("gene_name", strValue)) {
-        if (string::npos == strValue.find(' ')) {
-            gene.SetLocus(strValue);
-        }
-        else {
-            gene.SetDesc(strValue);
-        }
-    }
     return true;
 }
 
@@ -1072,10 +1064,6 @@ bool CGtfReader::x_ProcessQualifierSpecialCase(
         return true;
     }
     if (0 == NStr::CompareNocase(it->first, "transcript_id")  &&  
-            pFeature->GetData().IsGene()) {
-        return true;
-    }
-    if (0 == NStr::CompareNocase(it->first, "gene_name")  &&
             pFeature->GetData().IsGene()) {
         return true;
     }
