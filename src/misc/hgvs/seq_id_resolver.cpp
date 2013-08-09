@@ -149,14 +149,14 @@ CSeq_id_Resolver__CCDS::~CSeq_id_Resolver__CCDS()
 
 CSeq_id_Resolver__ChrNamesFromGC::CSeq_id_Resolver__ChrNamesFromGC(const CGC_Assembly& assembly, CScope& scope)
   : CSeq_id_Resolver(scope),
-    m_SLMapper(new CSeq_loc_Mapper(assembly, CSeq_loc_Mapper::eSeqMap_Up, SSeqMapSelector()))
+    m_SLMapper(new CSeq_loc_Mapper(assembly, CSeq_loc_Mapper::eGCA_Refseq))
 {
 }
 
 CSeq_id_Handle CSeq_id_Resolver__ChrNamesFromGC::x_Create(const string& s)
 {
     CSeq_id_Handle idh;
-    CRef<CSeq_id> origid(new CSeq_id(s));
+    CRef<CSeq_id> origid(new CSeq_id(s, CSeq_id::fParse_AnyLocal));
     CConstRef<CSeq_loc> origloc(new CSeq_loc(*origid, 0, 0));
     CConstRef<CSeq_loc> newloc = x_MapLoc(*origloc);
     if (newloc.NotNull()) {
