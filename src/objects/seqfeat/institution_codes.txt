@@ -2785,7 +2785,8 @@ JCM	c	Japan Collection of Microorganisms
 JCT	c	James Cook Townsville
 JE	s	Friedrich-Schiller-Universitaet Jena
 JEF	s	Indiana University Southeast, Biology Department
-JEL	s	Latvian Agricultural Academy, Plant Protection Department
+JEL	c	Joyce E. Longcore Chytrid Collection at the University of Maine
+JEL<LVA>	s	Latvian Agricultural Academy, Plant Protection Department
 JEPS	s	University of California, Jepson Herbarium
 JESW	s	John Evelyn Society's Museum
 JEY	s	Boys' Grammar School, Victoria College
@@ -5192,6 +5193,7 @@ SBCC	s	Santa Barbara City College, Department of Biological Sciences
 SBCM	s	San Bernardino County Museum
 SBDE	s	Sino-Belgian Dinosaur expedition
 SBG	s	Botanical Garden of Stavropol State University, Botany Department
+SBH	s	S Blair Hedges Collection
 SBKA	s	Stiftssammlungen des Benediktinerstiftskrems-Munster
 SBM<MYS>	s	Sabah Museum
 SBM<USA-CA>	s	Santa Barbara Museum of Natural History
