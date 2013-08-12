@@ -3093,6 +3093,21 @@ static size_t s_GetDeltaLen (const CDelta_seq& seg, CScope* scope)
 }
 
 
+static string linkEvStrings [] = {
+    "paired-ends",
+    "align genus",
+    "align xgenus",
+    "align trnscpt",
+    "within clone",
+    "clone contig",
+    "map",
+    "strobe",
+    "unspecified",
+    "pcr",
+    "other",
+    "UNKNOWN VALUE"
+};
+
 // Assumes seq is a delta sequence
 void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
 {
@@ -3269,6 +3284,35 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                     if (data.Which() == CSeq_data::e_Gap) {
                         const CSeq_gap& gap = data.GetGap();
                         if (gap.IsSetLinkage_evidence()) {
+                            int linkcount = 0;
+                            int linkevarray [12];
+                            for (int i = 0; i < 12; i++) {
+                              linkevarray [i] = 0;
+                            }
+                            ITERATE( CSeq_gap::TLinkage_evidence, ev_itr, gap.GetLinkage_evidence() ) {
+                                const CLinkage_evidence & evidence = **ev_itr;
+                                if (! evidence.CanGetType() ) continue;
+                                int linktype = evidence.GetType();
+                                linkcount++;
+                                if (linktype == 255) {
+                                    (linkevarray [10])++;
+                                } else if (linktype < 0 || linktype > 9) {
+                                    (linkevarray [11])++;
+                                } else {
+                                    (linkevarray [linktype])++;
+                                }
+                            }
+                            if (linkevarray [8] > 0 && linkcount > linkevarray [8]) {
+                                PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapProblem,
+                                    "Seq-gap type has unspecified and additional linkage evidence", seq);
+                            }
+                            for (int i = 0; i < 12; i++) {
+                                if (linkevarray [i] > 1) {
+                                    PostErr(eDiag_Error, eErr_SEQ_INST_SeqGapProblem,
+                                        "Linkage evidence " + linkEvStrings [i] + " appears " +
+                                        NStr::IntToString(linkevarray [i]) + " times", seq);
+                                }
+                            }
                             if (! gap.IsSetLinkage() || gap.GetLinkage() != CSeq_gap::eLinkage_linked) {
                                 PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapProblem,
                                     "Seq-gap with linkage evidence must have linkage field set to linked", seq);
