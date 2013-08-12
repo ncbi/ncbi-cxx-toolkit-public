@@ -35,10 +35,12 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/feat_ci.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <misc/hgvs/hgvs_parser2.hpp>
 #include <misc/hgvs/seq_id_resolver.hpp>
 
+#include <util/ncbi_cache.hpp>
 #include <util/xregexp/regexp.hpp>
 #include <objects/entrez2/entrez2_client.hpp>
 
@@ -60,12 +62,10 @@ CSeq_id_Handle CSeq_id_Resolver::x_Create(const string& s)
 
 CSeq_id_Resolver::~CSeq_id_Resolver()
 {
-    if(m_regexp) {
+    if (m_regexp) {
         delete m_regexp;
     }
 }
-
-
 
 CSeq_id_Resolver__LRG::CSeq_id_Resolver__LRG(CScope& scope)
   : CSeq_id_Resolver(scope)
@@ -81,7 +81,7 @@ CSeq_id_Handle CSeq_id_Resolver__LRG::x_Create(const string& s)
 
     CRef<CSeq_id> lrg_seq_id(new CSeq_id("gnl|LRG|" + lrg_id_str));
     CSeq_id_Handle ng_idh = sequence::GetId(*lrg_seq_id, *m_scope, sequence::eGetId_ForceAcc);
-    if(lrg_product_id_str == "") {
+    if (NStr::IsBlank(lrg_product_id_str)) {
         //bare LRG_# with no product
         return ng_idh;
     }
@@ -89,26 +89,26 @@ CSeq_id_Handle CSeq_id_Resolver__LRG::x_Create(const string& s)
     CSeq_id_Handle product_idh;
     SAnnotSelector sel;
     sel.SetResolveTSE();
-    for(CFeat_CI ci(m_scope->GetBioseqHandle(ng_idh)); ci; ++ci) {
+    for (CFeat_CI ci(m_scope->GetBioseqHandle(ng_idh)); ci; ++ci) {
         const CMappedFeat& mf = *ci;
-        if(!mf.IsSetDbxref()) {
+        if (!mf.IsSetDbxref()) {
             continue;
         }
-        ITERATE(CSeq_feat::TDbxref, it, mf.GetDbxref()) {
+        ITERATE (CSeq_feat::TDbxref, it, mf.GetDbxref()) {
             const CDbtag& dbtag = **it;
-            if(dbtag.GetDb() == "LRG"
-               && dbtag.GetTag().IsStr()
-               && dbtag.GetTag().GetStr() == lrg_product_id_str
-               && mf.IsSetProduct()
-               && mf.GetProduct().GetId())
-            {
+            if (NStr::Equal(dbtag.GetDb(), "LRG") &&
+                dbtag.GetTag().IsStr() &&
+                NStr::Equal(dbtag.GetTag().GetStr(), lrg_product_id_str) &&
+                mf.IsSetProduct() &&
+                mf.GetProduct().GetId()
+               ) {
                 product_idh = sequence::GetId(*mf.GetProduct().GetId(), *m_scope, sequence::eGetId_ForceAcc);
                 break;
             }
         }
     }
 
-    if(!product_idh) {
+    if (!product_idh) {
         NCBI_THROW(CException, eUnknown, "Can't find LRG product " + lrg_product_id_str + " on " + ng_idh.AsString());
     }
     return product_idh;
@@ -133,7 +133,7 @@ CSeq_id_Handle CSeq_id_Resolver__CCDS::x_Create(const string& s)
     vector<int> gis;
     m_entrez->Query(query_str, "nuccore", gis, 0, 5);
 
-    if(gis.size() != 1) {
+    if (gis.size() != 1) {
         NCBI_THROW(CException, eUnknown, "Could not resolve " + s + " to a unique gi");
     }
     CSeq_id_Handle gi_handle = CSeq_id_Handle::GetHandle(GI_FROM(int, gis.front()));
@@ -149,19 +149,33 @@ CSeq_id_Resolver__CCDS::~CSeq_id_Resolver__CCDS()
 
 CSeq_id_Resolver__ChrNamesFromGC::CSeq_id_Resolver__ChrNamesFromGC(const CGC_Assembly& assembly, CScope& scope)
   : CSeq_id_Resolver(scope),
-    m_SLMapper(new CSeq_loc_Mapper(assembly, CSeq_loc_Mapper::eGCA_Refseq))
+    m_SLMapper(new CSeq_loc_Mapper(assembly,
+                                   CSeq_loc_Mapper::eGCA_Refseq
+                                   //,&scope,
+                                   //CSeq_loc_Mapper::eCopyScope
+                                  )
+              )
 {
 }
 
 CSeq_id_Handle CSeq_id_Resolver__ChrNamesFromGC::x_Create(const string& s)
 {
-    CSeq_id_Handle idh;
+    typedef CCache<string, CSeq_id_Handle> TLocCache;
+    static auto_ptr<TLocCache> loccache(new TLocCache(15));
+    static const int kRetrFlags = TLocCache::fGet_NoInsert;
+
+    TLocCache::EGetResult result;
+    const CSeq_id_Handle exist_idh = loccache->Get(s, kRetrFlags, &result);
+    if (result == TLocCache::eGet_Found) {
+        return exist_idh;
+    }
+
     CRef<CSeq_id> origid(new CSeq_id(s, CSeq_id::fParse_AnyLocal));
     CConstRef<CSeq_loc> origloc(new CSeq_loc(*origid, 0, 0));
     CConstRef<CSeq_loc> newloc = x_MapLoc(*origloc);
-    if (newloc.NotNull()) {
-        idh = sequence::GetId(*newloc->GetId(), *m_scope, sequence::eGetId_ForceAcc);
-    }
+    const CSeq_id& id = *(newloc.NotNull() ? newloc : origloc)->GetId();
+    const CSeq_id_Handle idh = sequence::GetId(id, *m_scope, sequence::eGetId_Best);
+    loccache->Add(s, idh);
     return idh;
 }
 
