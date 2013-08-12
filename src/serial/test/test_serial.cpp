@@ -281,7 +281,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
             CObjectIStream::Open(eSerial_AsnText, istrs));
         Serial_FilterStdObjects<CTestSerialObject>(*is, new CStringObjectHook);
     }
-#ifdef _MT
+#ifdef NCBI_THREADS
     {
         // find serial objects of a specific type
         // process them right here
@@ -306,7 +306,7 @@ BOOST_AUTO_TEST_CASE(s_TestSerialFilter)
             LOG_POST("CIStreamStdIterator: obj = " << obj);
         }
     }
-#endif //_MT
+#endif //NCBI_THREADS
 }
 #endif    
 
