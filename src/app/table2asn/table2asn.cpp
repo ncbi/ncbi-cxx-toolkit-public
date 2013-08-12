@@ -64,6 +64,9 @@
 #include "multireader.hpp"
 
 #include <util/line_reader.hpp>
+#include "struc_cmt_reader.hpp"
+#include "OpticalXML2ASN.hpp"
+
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -102,8 +105,6 @@ private:
 	void ProcessQVLFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
 	void ProcessDSCFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
 	void ProcessCMTFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
-	void ProcessCMTFileByCols(const CTable2AsnContext& context, ILineReader& pathname, CRef<CSerialObject>& result);
-	void ProcessCMTFileByRows(const CTable2AsnContext& context, ILineReader& pathname, CRef<CSerialObject>& result);
 	void ProcessPEPFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
 	void ProcessRNAFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
 	void ProcessPRTFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
@@ -461,12 +462,21 @@ void CTbl2AsnApp::ProcessOneFile(const CTable2AsnContext& context, const string&
 {
 	m_reader.Process(context, *this);
 
-	result = m_reader.LoadFile(context, pathname);
+	if (pathname.substr(pathname.length()-4).compare(".xml") == 0)
+	{
+		COpticalxml2asnOperator op;
+		result = op.LoadXML(pathname, context.m_submit_template);
+	}
+	else
+	{
+		result = m_reader.LoadFile(context, pathname);
 
-	if (context.m_descriptors.NotNull())
-	  m_reader.ApplyDescriptors(*result, *context.m_descriptors);
-	ProcessSecretFiles(context, pathname, result);
-	m_reader.ApplyAdditionalProperties(context, result);
+		if (context.m_descriptors.NotNull())
+		  m_reader.ApplyDescriptors(*result, *context.m_descriptors);
+		ProcessSecretFiles(context, pathname, result);
+		m_reader.ApplyAdditionalProperties(context, result);
+	}
+
 }
 
 string GenerateOutputStream(const CTable2AsnContext& context, const string& pathname)
@@ -593,6 +603,42 @@ void CTbl2AsnApp::ProcessTBLFile(const CTable2AsnContext& context, const string&
 {
 	CFile file(pathname);
 	if (!file.Exists()) return;
+
+	CRef<ILineReader> reader(ILineReader::New(pathname));
+
+	vector<string> cols(5);
+
+	while (!reader->AtEOF())
+	{
+		reader->ReadLine();
+		if (!reader->AtEOF())
+		{
+			string temp = reader->GetCurrentLine();
+			if (!temp.empty() && reader->GetLineNumber() == 1 && temp[0] == '>')
+			{
+				continue;
+			}
+
+			for (int i=0; i<5; ++i)
+			{
+				int index = temp.find('\t');
+				if (index == string::npos)
+				{					
+					cols[i++] = temp;
+					while(i<5)
+					{
+						cols[i++].clear();
+					}
+				}
+				else
+				{
+					if (index > 0) // inherit values from previous row
+					   cols[i] = temp.substr(0, index);
+					temp.erase(temp.begin(), temp.begin()+index+1);
+				}
+			}
+		}
+	}
 }
 
 void CTbl2AsnApp::ProcessSRCFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
@@ -617,33 +663,6 @@ void CTbl2AsnApp::ProcessDSCFile(const CTable2AsnContext& context, const string&
 	CMultiReader::ApplyDescriptors(*result, *descr);
 }
 
-void CTbl2AsnApp::ProcessCMTFileByCols(const CTable2AsnContext& context, ILineReader& reader, CRef<CSerialObject>& result)
-{
-}
-
-void CTbl2AsnApp::ProcessCMTFileByRows(const CTable2AsnContext& context, ILineReader& reader, CRef<CSerialObject>& result)
-{
-	CUser_object* obj = 0;
-	while (!reader.AtEOF())
-	{
-		reader.ReadLine();
-		if (!reader.AtEOF())
-		{
-			string current = reader.GetCurrentLine();
-			if (!current.empty())
-			{
-				int index = current.find('\t');
-				if (index != string::npos )
-				{
-					string commentname = current.substr(0, index);
-					current.erase(current.begin(), current.begin()+index+1);
-					obj = m_reader.AddStructuredComment(obj, commentname, current, *result);
-				}
-			}
-		}
-	}
-}
-
 void CTbl2AsnApp::ProcessCMTFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
 {
 	CFile file(pathname);
@@ -651,8 +670,13 @@ void CTbl2AsnApp::ProcessCMTFile(const CTable2AsnContext& context, const string&
 
 	CRef<ILineReader> reader(ILineReader::New(pathname));
 
+	CStructuredCommentsReader cmt_reader;
+
+	//cmt_reader.ProcessCommentsFileByCols(*reader, *result);
+	cmt_reader.ProcessCommentsFileByRows(*reader, *result);
+
 	//if (context.wInFile
-	ProcessCMTFileByRows(context, *reader, result);
+	//ProcessCMTFileByRows(context, *reader, result);
 	//else
 	//ProcessCMTFileByCols(context, *reader, result);
 }
@@ -684,3 +708,4 @@ int main(int argc, const char* argv[])
 {
     return CTbl2AsnApp().AppMain(argc, argv, 0, eDS_Default, 0);
 }
+

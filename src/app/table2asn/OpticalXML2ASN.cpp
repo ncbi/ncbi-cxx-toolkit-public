@@ -31,9 +31,11 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbienv.hpp>
+
+
+//#include <corelib/ncbiapp.hpp>
+//#include <corelib/ncbiargs.hpp>
+//#include <corelib/ncbienv.hpp>
 
 #include <serial/iterator.hpp>
 #include <serial/objistrxml.hpp>
@@ -67,9 +69,14 @@
 #include <objects/general/User_field.hpp>
 #include <objects/biblio/Cit_sub.hpp>
 
-USING_SCOPE(ncbi);
-USING_SCOPE(objects);
+#include "OpticalXML2ASN.hpp"
+
+
 using namespace xml;
+
+BEGIN_NCBI_SCOPE
+
+USING_SCOPE(objects);
 
 typedef pair<int,int> TFragm;
 
@@ -101,14 +108,15 @@ public:
     bool m_linear;
 };
 
-class COpticalxml2asnApplication : public CNcbiApplication
+class COpticalxml2asnOperatorImpl
 {
-    virtual void Init(void);
-    virtual int  Run(void);
-
+//    virtual void Init(void);
+//    virtual int  Run(void);
+public:
     int GetOpticalXMLData(const string& FileIn);
-    int BuildOpticalASNDataSet(const string& FileOut);
-    int BuildOpticalASNData(const string& FileOut, const string& TemplateFile="-");
+    CRef<CSerialObject> BuildOpticalASNDataSet();
+    CRef<CSerialObject> BuildOpticalASNData();
+private:
     void GetOpticalDescr(CRef<CSeq_descr> SD);
     void UseTemplate(CRef<CSeq_descr> SD, const string& TemplateFile);
     void AddUserTrack(CRef<CSeq_descr> SD, const string& type, const string& lbl, const string& data);
@@ -116,7 +124,7 @@ class COpticalxml2asnApplication : public CNcbiApplication
 
     vector <COpticalChrData> m_vchr;
 
-private:
+public:
     int m_taxid;
     string m_taxname;
     string m_title;
@@ -127,7 +135,11 @@ private:
     CBioSource::EGenome m_genome;
 };
 
-void COpticalxml2asnApplication::Init(void)
+
+
+#if 0
+
+void COpticalxml2asnOperatorImpl::Init(void)
 {
     // Create command-line argument descriptions class
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
@@ -173,7 +185,7 @@ void COpticalxml2asnApplication::Init(void)
     SetupArgDescriptions(arg_desc.release());
 }
 
-int COpticalxml2asnApplication::Run(void)
+int COpticalxml2asnOperatorImpl::Run(void)
 {
     CArgs args = GetArgs();
     int nChr = GetOpticalXMLData(args["in"].AsString());
@@ -200,7 +212,9 @@ int COpticalxml2asnApplication::Run(void)
     return (nChr > 1 ? BuildOpticalASNDataSet(out) : BuildOpticalASNData(out, tmpl));
 }
 
-int COpticalxml2asnApplication::GetOpticalXMLData(const string& FileIn)
+#endif
+
+int COpticalxml2asnOperatorImpl::GetOpticalXMLData(const string& FileIn)
 {
     error_messages msg;
     document *doc;
@@ -274,7 +288,8 @@ int COpticalxml2asnApplication::GetOpticalXMLData(const string& FileIn)
     return m_vchr.size();
 }
 
-void COpticalxml2asnApplication::SetOrgData(CSeq_descr::Tdata& TD)
+
+void COpticalxml2asnOperatorImpl::SetOrgData(CSeq_descr::Tdata& TD)
 {
     CTaxon1 taxon;
     bool is_species, is_uncultured;
@@ -350,7 +365,7 @@ void COpticalxml2asnApplication::SetOrgData(CSeq_descr::Tdata& TD)
     TD.push_back(sd);
 }
 
-void COpticalxml2asnApplication::GetOpticalDescr(CRef<CSeq_descr> SD)
+void COpticalxml2asnOperatorImpl::GetOpticalDescr(CRef<CSeq_descr> SD)
 {
     CSeq_descr::Tdata& TD = SD->Set();
     SetOrgData(TD);
@@ -366,8 +381,10 @@ void COpticalxml2asnApplication::GetOpticalDescr(CRef<CSeq_descr> SD)
     TD.push_back(sdm);
 }
 
-void COpticalxml2asnApplication::UseTemplate(CRef<CSeq_descr> SD, const string& TemplateFile)
+
+void COpticalxml2asnOperatorImpl::UseTemplate(CRef<CSeq_descr> SD, const string& TemplateFile)
 {
+#if 0
     if (TemplateFile.empty() || TemplateFile == "-")
 	return;
     try {
@@ -401,9 +418,10 @@ void COpticalxml2asnApplication::UseTemplate(CRef<CSeq_descr> SD, const string& 
 	}
     }
     catch(CException &e){ cerr << endl << "Template file '" << TemplateFile << "': " << e.GetMsg() << endl; }
+#endif
 }
 
-void COpticalxml2asnApplication::AddUserTrack(CRef<CSeq_descr> SD, const string& type, const string& lbl, const string& data)
+void COpticalxml2asnOperatorImpl::AddUserTrack(CRef<CSeq_descr> SD, const string& type, const string& lbl, const string& data)
 {
     if (data.empty())
 	return;
@@ -427,7 +445,7 @@ void COpticalxml2asnApplication::AddUserTrack(CRef<CSeq_descr> SD, const string&
     TD.push_back(sd);
 }
 
-int COpticalxml2asnApplication::BuildOpticalASNData(const string& FileOut, const string& TemplateFile)
+CRef<CSerialObject> COpticalxml2asnOperatorImpl::BuildOpticalASNData()
 {
     vector <COpticalChrData>::iterator it = m_vchr.begin();
     m_enzyme = it->m_enzyme;
@@ -441,7 +459,7 @@ int COpticalxml2asnApplication::BuildOpticalASNData(const string& FileOut, const
     GetOpticalDescr(SD);
     AddUserTrack(SD, "DBLink", "BioProject", m_bpid);
     AddUserTrack(SD, "FileTrack", "FileTrackURL", m_ft_url);
-    UseTemplate(SD, TemplateFile);
+    //UseTemplate(SD, TemplateFile);
     bioseq->SetDescr(*SD);
 
 	CSeq_inst& inst(bioseq->SetInst());
@@ -481,15 +499,16 @@ int COpticalxml2asnApplication::BuildOpticalASNData(const string& FileOut, const
     CRef<CSeq_entry> se(new CSeq_entry());
     se->SetSeq(*bioseq);
 
-    CNcbiOfstream out(FileOut.c_str());
-    out << MSerial_AsnText << *se;
+    //CNcbiOfstream out(FileOut.c_str());
+    //out << MSerial_AsnText << *se;
 
-    return 0;
+	CRef<CSerialObject> result(se);
+    return result;
 }
 
-int COpticalxml2asnApplication::BuildOpticalASNDataSet(const string& FileOut)
+CRef<CSerialObject> COpticalxml2asnOperatorImpl::BuildOpticalASNDataSet()
 {
-    CNcbiOfstream out(FileOut.c_str());
+    //CNcbiOfstream out(FileOut.c_str());
 
     CRef<CBioseq_set> BSS(new CBioseq_set);
     BSS->SetClass(CBioseq_set::eClass_equiv);
@@ -549,14 +568,38 @@ int COpticalxml2asnApplication::BuildOpticalASNDataSet(const string& FileOut)
     CRef<CSeq_entry> se(new CSeq_entry());
     se->SetSet(*BSS);
 
-    out << MSerial_AsnText << *se;
+    //out << MSerial_AsnText << *se;
 
-    return 0;
-}
+	CRef<CSerialObject> result(se);
 
-int main(int argc, const char* argv[])
-{
-    return COpticalxml2asnApplication().AppMain(argc, argv);
+    return result;
 }
 
 //        cout << MSerial_AsnText << inXML;
+
+COpticalxml2asnOperator::COpticalxml2asnOperator()
+{
+
+}
+COpticalxml2asnOperator::~COpticalxml2asnOperator()
+{
+}
+
+CRef<CSerialObject> COpticalxml2asnOperator::LoadXML(const string& FileIn, const CSerialObject* templ)
+{
+	m_impl.reset(new COpticalxml2asnOperatorImpl());
+
+	int cnt = m_impl->GetOpticalXMLData(FileIn);
+
+	CRef<CSerialObject> result(
+        (cnt > 1)? 
+		    m_impl->BuildOpticalASNDataSet() : 
+	        m_impl->BuildOpticalASNData()
+		);
+
+	return result;
+};
+
+
+END_NCBI_SCOPE
+
