@@ -4048,8 +4048,8 @@ BOOST_AUTO_TEST_CASE(CWgsTrimmerShortExampleNoRemove)
     vector<int> gis;
     SeqDB_ReadGiList(gis_in_wgs_results, gis);
 
+    CAutoEnvironmentVariable env_var("WGS_GILIST_DIR", "data");
     CWgsDbTrimmer trimmer(wgs_dbs);
-    trimmer.SetWgsGiListPath("data");
     ITERATE(vector<int>, gi, gis) {
         trimmer.AddGi(*gi);
     }
@@ -4067,8 +4067,8 @@ BOOST_AUTO_TEST_CASE(CWgsTrimmerShortExampleRemove)
     SeqDB_ReadGiList(gis_in_wgs_results, gis);
     gis.erase(gis.begin()+10, gis.end());
 
+    CAutoEnvironmentVariable env_var("WGS_GILIST_DIR", "data");
     CWgsDbTrimmer trimmer(wgs_dbs);
-    trimmer.SetWgsGiListPath("data");
     ITERATE(vector<int>, gi, gis) {
         trimmer.AddGi(*gi);
     }
@@ -4088,8 +4088,8 @@ BOOST_AUTO_TEST_CASE(CWgsTrimmerShortExampleWithNtRemove)
     SeqDB_ReadGiList(gis_in_wgs_results, gis);
     gis.erase(gis.begin()+10, gis.end());
 
+    CAutoEnvironmentVariable env_var("WGS_GILIST_DIR", "data");
     CWgsDbTrimmer trimmer(wgs_dbs);
-    trimmer.SetWgsGiListPath("data");
     ITERATE(vector<int>, gi, gis) {
         trimmer.AddGi(*gi);
     }
@@ -4127,8 +4127,8 @@ BOOST_AUTO_TEST_CASE(CWgsTrimmerLongExample)
     vector<int> gis;
     SeqDB_ReadGiList(gis_in_wgs_results, gis);
 
+    CAutoEnvironmentVariable env_var("WGS_GILIST_DIR", "data");
     CWgsDbTrimmer trimmer(wgs_dbs);
-    trimmer.SetWgsGiListPath("data");
     ITERATE(vector<int>, gi, gis) {
         trimmer.AddGi(*gi);
     }

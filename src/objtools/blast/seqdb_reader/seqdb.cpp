@@ -1416,24 +1416,29 @@ CWgsDbTrimmer::x_ExtractOriginalWgsDbs()
     return retval;
 }
 
+CWgsDbTrimmer::CWgsDbTrimmer(const string& wgs_db_list)
+    : m_OrigWgsList(wgs_db_list)
+{
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if (app) {
+        m_Path = app->GetEnvironment().Get("WGS_GILIST_DIR");
+    }
+}
+
 CWgsDbTrimmer::TGiLists
 CWgsDbTrimmer::x_ReadGiListsForDbs()
 {
-    static string kBlastDb;
-    if (kBlastDb.empty()) {
-        kBlastDb = (m_Path.empty() 
-                    ? CDirEntry(SeqDB_ResolveDbPath("nt.nal")).GetDir()
-                    : m_Path);
+    TGiLists retval;
+    if (m_Path.empty()) {
+        return retval;
     }
 
-    TGiLists retval;
     set<string> orig_wgs_dbs = x_ExtractOriginalWgsDbs();
     if ( !orig_wgs_dbs.empty() ) {
-        const string kDir = (m_Path.empty() ? kBlastDb + "/Wgs2Gi" : m_Path) + "/";
         const string kExtn = ".gil";
         ITERATE(set<string>, wgs_db_name, orig_wgs_dbs) {
             CNcbiOstrstream oss;
-            oss << kDir << CDirEntry(*wgs_db_name).GetName() << kExtn;
+            oss << m_Path << "/" << CDirEntry(*wgs_db_name).GetName() << kExtn;
             string fname = CNcbiOstrstreamToString(oss);
             vector<int> gis;
             try {
@@ -1453,6 +1458,10 @@ CWgsDbTrimmer::x_ReadGiListsForDbs()
 string CWgsDbTrimmer::GetDbList()
 {
     TGiLists wgs_gi_lists = x_ReadGiListsForDbs();
+    if (wgs_gi_lists.empty()) { 
+        // no GI lists were found in WGS_GILIST_DIR, we can't do anything
+        return m_OrigWgsList;
+    }
     set<string> trimmed_wgs_dbs;
     ITERATE(set<TGi>, gi, m_Gis) {
         if (wgs_gi_lists.empty()) {
