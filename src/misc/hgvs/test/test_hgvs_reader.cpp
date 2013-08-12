@@ -77,7 +77,7 @@ BOOST_AUTO_TEST_CASE(TestCaseHgvs1)
 
     const string line(
         "NC_000001.10:g.197031021C>T\n"
-        "NC_000001.10:g.169519049T=\n"
+        "chr1:g.169519049T=\n"
         "NC_000006.11:g.32627914delA\n"
         "NC_000006.11:g.32627914insA\n"
         "NC_000008.10:g.24810374_24810376delCTC\n"
