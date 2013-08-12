@@ -68,6 +68,13 @@ public:
     // function for getting organelle name from genome value
     static string GetOrganelleByGenome (unsigned int genome);
 
+    // function for getting origin value from origin name
+    static CBioSource::EOrigin GetOriginByString (string origin, NStr::ECase use_case = NStr::eCase, bool starts_with = false);
+
+    // function for getting organelle name from genome value
+    static string GetStringFromOrigin (unsigned int origin);
+
+
     // shortcut access to selected Org-ref and OrgName methods
     bool IsSetTaxname(void) const;
     const string& GetTaxname(void) const;

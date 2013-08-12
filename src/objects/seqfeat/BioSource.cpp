@@ -196,6 +196,111 @@ string CBioSource::GetOrganelleByGenome (unsigned int genome)
 }
 
 
+typedef SStaticPair<const char *, CBioSource::EOrigin> TOriginKey;
+
+static const TOriginKey origin_key_to_subtype [] = {
+    {  "artificial",                CBioSource::eOrigin_artificial    },
+    {  "mutant",                    CBioSource::eOrigin_mut           },
+    {  "natural",                   CBioSource::eOrigin_natural       },
+    {  "natural mutant",            CBioSource::eOrigin_natmut        },
+    {  "other",                     CBioSource::eOrigin_other         },
+    {  "synthetic",                 CBioSource::eOrigin_synthetic     },
+    {  "unknown",                   CBioSource::eOrigin_unknown       }
+};
+
+
+static const TOriginKey origin_synonyms [] = {
+    {  "mut",                       CBioSource::eOrigin_mut           },
+    {  "nat mut",                   CBioSource::eOrigin_natmut        },
+    {  "natmut",                    CBioSource::eOrigin_natmut        }
+};
+
+
+typedef CStaticPairArrayMap <const char*, CBioSource::EOrigin, PNocase_CStr> TOriginMap;
+DEFINE_STATIC_ARRAY_MAP(TOriginMap, sm_OriginKeys, origin_key_to_subtype);
+DEFINE_STATIC_ARRAY_MAP(TOriginMap, sm_OriginSynonyms, origin_synonyms);
+
+CBioSource::EOrigin CBioSource::GetOriginByString (string origin, NStr::ECase use_case, bool starts_with)
+{
+    CBioSource::EOrigin gtype = CBioSource::eOrigin_unknown;
+
+    if (use_case == NStr::eCase && !starts_with) {
+        TOriginMap::const_iterator g_iter = sm_OriginKeys.find (origin.c_str ());
+        if (g_iter == sm_OriginKeys.end ()) {
+            g_iter = sm_OriginSynonyms.find (origin.c_str());
+            if (g_iter != sm_OriginSynonyms.end ()) {
+                gtype = g_iter->second;
+            }
+        } else {
+            gtype = g_iter->second;
+        }
+    } else {
+        TOriginMap::const_iterator g_iter = sm_OriginKeys.begin();
+        bool found = false;
+        if (starts_with) {
+            string match;
+            while (g_iter != sm_OriginKeys.end() && !found) {
+                match = g_iter->first;
+                if (NStr::StartsWith(origin, match.c_str(), use_case)) {
+                    if (origin.length() == match.length()
+                        || (match.length() < origin.length() && isspace (origin[match.length()]))) {
+                        gtype = g_iter->second;
+                        found = true;
+                    }
+                }
+                ++g_iter;
+            }
+            if (!found) {
+                g_iter = sm_OriginSynonyms.begin();
+                while (g_iter != sm_OriginSynonyms.end() && !found) {
+                    match = g_iter->first;
+                    if (NStr::StartsWith(origin, match.c_str(), use_case)) {
+                        if (origin.length() == match.length()
+                            || (match.length() < origin.length() && isspace (origin[match.length()]))) {
+                            gtype = g_iter->second;
+                            found = true;
+                        }
+                    }
+                    ++g_iter;
+                }
+            }
+        } else {
+            while (g_iter != sm_OriginKeys.end() && !found) {
+                if (NStr::Equal(origin, g_iter->first, use_case)) {
+                    gtype = g_iter->second;
+                }
+                ++g_iter;
+            }
+            if (!found) {
+                g_iter = sm_OriginSynonyms.begin();
+                while (g_iter != sm_OriginSynonyms.end() && !found) {
+                    if (NStr::Equal(origin, g_iter->first, use_case)) {
+                        gtype = g_iter->second;
+                    }
+                    ++g_iter;
+                }
+            }
+        }
+    }
+    return gtype;
+}
+
+
+string CBioSource::GetStringFromOrigin (unsigned int origin)
+{
+    string origin_str = "";
+    TOriginMap::const_iterator g_iter = sm_OriginKeys.begin();
+    while (g_iter != sm_OriginKeys.end() &&
+           unsigned(g_iter->second) != origin) {
+        ++g_iter;
+    }
+    if (g_iter != sm_OriginKeys.end()) {
+        origin_str = g_iter->first;
+    }
+    return origin_str;
+}
+
+
 bool CBioSource::IsSetTaxname(void) const
 {
     return IsSetOrg () && GetOrg ().IsSetTaxname ();
