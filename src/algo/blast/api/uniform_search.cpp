@@ -161,6 +161,11 @@ CSearchDatabase::SetFilteringAlgorithm(const string &filt_algorithm,
                                        ESubjectMaskingType mask_type)
 {
     m_MaskType = mask_type;
+    m_FilteringAlgorithmString = "";
+    if (mask_type == eNoSubjMasking) {
+        m_FilteringAlgorithmId = -1;
+        return;
+    }
     if (s_IsNumericId(filt_algorithm)) {
         m_FilteringAlgorithmId = NStr::StringToInt(filt_algorithm);
         x_ValidateMaskingAlgorithm();
@@ -180,8 +185,13 @@ void
 CSearchDatabase::SetFilteringAlgorithm(int filt_algorithm_id,
                                        ESubjectMaskingType mask_type)
 {
-    m_FilteringAlgorithmId = filt_algorithm_id;
     m_MaskType = mask_type;
+    m_FilteringAlgorithmString = "";
+    if (mask_type == eNoSubjMasking) {
+        m_FilteringAlgorithmId = -1;
+        return;
+    }
+    m_FilteringAlgorithmId = filt_algorithm_id;
     m_NeedsFilteringTranslation = false;
     x_ValidateMaskingAlgorithm();
 }
@@ -189,6 +199,7 @@ CSearchDatabase::SetFilteringAlgorithm(int filt_algorithm_id,
 int 
 CSearchDatabase::GetFilteringAlgorithm() const
 {
+    if (m_MaskType == eNoSubjMasking) return -1;
     if (m_NeedsFilteringTranslation) {
         x_TranslateFilteringAlgorithm();
     } 
@@ -198,7 +209,8 @@ CSearchDatabase::GetFilteringAlgorithm() const
 string
 CSearchDatabase::GetFilteringAlgorithmKey() const
 {
-	return m_FilteringAlgorithmString;
+    if (m_MaskType == eNoSubjMasking) return "";
+    return m_FilteringAlgorithmString;
 }
 
 ESubjectMaskingType
@@ -210,6 +222,7 @@ CSearchDatabase::GetMaskType() const
 void
 CSearchDatabase::x_TranslateFilteringAlgorithm() const
 {
+    if (m_MaskType == eNoSubjMasking) return;
     if (!m_DbInitialized) {
         x_InitializeDb();
     }
