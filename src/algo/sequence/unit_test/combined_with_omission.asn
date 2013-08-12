@@ -9060,7 +9060,7 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "similarity to MDEG2 (Mus musculus)~isoform MDEG2 is encoded by
+      comment "similarity to MDEG2 (Mus musculus); isoform MDEG2 is encoded by
  transcript variant MDEG2; The RefSeq protein has 13 substitutions compared to
  this genomic sequence",
       product whole gi 34452695,

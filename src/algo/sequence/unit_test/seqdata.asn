@@ -18895,7 +18895,7 @@ FFFF24282122442224441242882242184422242414414224424222424424884424428422444214
                   }
                 }
               },
-              comment "similarity to MDEG2 (Mus musculus)~isoform MDEG2 is
+              comment "similarity to MDEG2 (Mus musculus); isoform MDEG2 is
  encoded by transcript variant MDEG2",
               product whole gi 34452695,
               location int {
