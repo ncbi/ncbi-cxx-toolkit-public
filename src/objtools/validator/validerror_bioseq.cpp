@@ -1076,6 +1076,7 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
         bool is_ddbj = false;
         bool is_refseq = false;
         bool is_wp = false;
+        bool is_yp = false;
         bool is_gibbmt = false;
         bool is_gibbsq = false;
         bool is_patent = false;
@@ -1099,6 +1100,8 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
                             const string& acc = tsid->GetAccession ();
                             if (NStr::StartsWith (acc, "WP_")) {
                                 is_wp = true;
+                            } else if (NStr::StartsWith (acc, "YP_")) {
+                                is_yp = true;
                             }
                         }
                     }
@@ -1117,7 +1120,7 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
             }
         }
         if ((is_genbank || is_embl || is_ddbj || is_refseq)
-            && !is_gibbmt && !is_gibbsq && !is_patent && !is_wp) {
+            && !is_gibbmt && !is_gibbsq && !is_patent && !is_wp && !is_yp) {
             PostErr(eDiag_Error, eErr_SEQ_PKG_OrphanedProtein,
                     "Orphaned stand-alone protein", seq);
         }
