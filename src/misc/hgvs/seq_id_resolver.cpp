@@ -167,14 +167,29 @@ CSeq_id_Handle CSeq_id_Resolver__ChrNamesFromGC::x_Create(const string& s)
     TLocCache::EGetResult result;
     const CSeq_id_Handle exist_idh = loccache->Get(s, kRetrFlags, &result);
     if (result == TLocCache::eGet_Found) {
+        LOG_POST(Info << "cached id for: " << s);
         return exist_idh;
     }
 
-    CRef<CSeq_id> origid(new CSeq_id(s, CSeq_id::fParse_AnyLocal));
-    CConstRef<CSeq_loc> origloc(new CSeq_loc(*origid, 0, 0));
+    CSeq_id_Handle idh;
+    CConstRef<CSeq_id> origid;
+    try {
+        idh = sequence::GetId(CSeq_id_Handle::GetHandle(s), *m_scope, sequence::eGetId_ForceAcc);
+        origid = idh.GetSeqIdOrNull();
+    }
+    catch (const CException& e) {
+        // ignore errors, mostly "Malformatted ID"
+    }
+    LOG_POST(Info << "input: " << s);
+    if (origid.IsNull()) {
+        origid.Reset(new CSeq_id(s, CSeq_id::fParse_AnyLocal));
+        LOG_POST(Info << "created seq-id: " << origid->AsFastaString());
+    }
+    LOG_POST(Info << "created seq-id-handle: " << idh.AsString());
+    CConstRef<CSeq_loc> origloc(new CSeq_loc(const_cast<CSeq_id&>(*origid), 0, 0));
     CConstRef<CSeq_loc> newloc = x_MapLoc(*origloc);
     const CSeq_id& id = *(newloc.NotNull() ? newloc : origloc)->GetId();
-    const CSeq_id_Handle idh = sequence::GetId(id, *m_scope, sequence::eGetId_Best);
+    idh = sequence::GetId(id, *m_scope, sequence::eGetId_Best);
     loccache->Add(s, idh);
     return idh;
 }
