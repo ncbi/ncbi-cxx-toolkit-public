@@ -363,24 +363,26 @@ CRef<CSerialObject> CMultiReader::ReadFile(const CTable2AsnContext& args, const 
 
     //CRef< CSerialObject> object;
     //vector< CRef< CSeq_annot > > annots;
+	CRef<CSerialObject> result;
     switch( m_uFormat ) 
 	{
         case CFormatGuess::eTextASN:
 //                xProcessBed(args, istr, ostr);
             break;
         default: 
-            xProcessDefault(args, istr);   
+			result.Reset(xProcessDefault(args, istr));
 			//ApplyAdditionalProperties(args);
 			//WriteObject(ostr);
             break;
 	}
-	return m_pObject;
+	return result;
 }
 
 //  ----------------------------------------------------------------------------
 int CMultiReader::RunOld(const CTable2AsnContext& args, const string& ifname, CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {   
+#if 0
 //	const CArgs& args = GetArgs();
     //CNcbiIstream& istr = args["input"].AsInputFile();
     //CNcbiOstream& ostr = args["output"].AsOutputFile();
@@ -447,11 +449,12 @@ int CMultiReader::RunOld(const CTable2AsnContext& args, const string& ifname, CN
     }
 
 	xDumpErrors( cerr );
+#endif
     return 0;
 }
 
 //  ----------------------------------------------------------------------------
-void CMultiReader::xProcessDefault(
+CRef<CSerialObject> CMultiReader::xProcessDefault(
     const CTable2AsnContext& args,
     CNcbiIstream& istr)
 //  ----------------------------------------------------------------------------
@@ -468,9 +471,10 @@ void CMultiReader::xProcessDefault(
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "File format not supported", 0);
     }
-    m_pObject = pReader->ReadObject(istr, m_pErrors);
+    CRef<CSerialObject> result = pReader->ReadObject(istr, m_pErrors);
     //xWriteObject(*m_pObject, ostr);
 	//WriteObject(ostr);
+	return result;
 }
 
 //  ----------------------------------------------------------------------------
@@ -925,14 +929,36 @@ CMultiReader::CMultiReader()
 {
 }
 
+void GetSeqId(CRef<CSeq_id>& id, const CTable2AsnContext& context)
+{
+	if (context.qSetIDFromFile)
+	{
+		string base;
+		CDirEntry::SplitPath(context.m_current_file, 0, &base, 0);
+		id.Reset(new CSeq_id(string("lcl|") + base));
+	}
+}
+
 void CMultiReader::ApplyAdditionalProperties(const CTable2AsnContext& context, CSeq_entry& entry)
 {
 	switch(entry.Which())
 	{
 	case CSeq_entry::e_Seq:
+		if (context.qSetIDFromFile)
+		{
+			CRef<CSeq_id> id;
+			GetSeqId(id, context);
+			entry.SetSeq().SetId().push_back(id);
+		}
 		break;
 	case CSeq_entry::e_Set:
 		{
+			if (context.qSetIDFromFile)
+			{
+				CRef<CSeq_id> id;
+				GetSeqId(id, context);
+				entry.SetSet().SetId().Assign(*id);
+			}
 			if (context.gGenomicProductSet)
 			{
 				entry.SetSet().SetClass(CBioseq_set_Base::eClass_gen_prod_set);
