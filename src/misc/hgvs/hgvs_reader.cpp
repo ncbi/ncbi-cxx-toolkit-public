@@ -31,7 +31,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbistd.hpp>              
+#include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbithr.hpp>
 #include <corelib/ncbiutil.hpp>
@@ -47,7 +47,7 @@
 // Objects includes
 #include <objects/general/Object_id.hpp>
 #include <objects/general/User_object.hpp>
-#include <objects/general/User_field.hpp> 
+#include <objects/general/User_field.hpp>
 #include <objects/general/Dbtag.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
@@ -106,21 +106,21 @@ CHgvsReader::~CHgvsReader()
 {
 }
 
-//  ----------------------------------------------------------------------------                
+//  ----------------------------------------------------------------------------
 CRef< CSeq_annot >
 CHgvsReader::ReadSeqAnnot(
     ILineReader& lr,
-    IMessageListener* pEC ) 
-//  ----------------------------------------------------------------------------                
+    IMessageListener* pEC )
+//  ----------------------------------------------------------------------------
 {
      CRef<CSeq_annot> annot (new CSeq_annot);
- 
+
      // object manager
      CRef<CObjectManager> objectManager = CObjectManager::GetInstance();
      CGBDataLoader::RegisterInObjectManager( *objectManager );
      CRef<CScope> scope(new CScope(*objectManager));
      scope->AddDefaults();
-     
+
      // hgvs parser
      variation::CHgvsParser hgvsParser (*scope);
      CRef<CSeq_id_Resolver> assmresolver;
@@ -131,48 +131,49 @@ CHgvsReader::ReadSeqAnnot(
 
      // helper to convert to feature
      variation::CVariationUtil varUtil( *scope );
- 
+
      // parse input
-     while(!lr.AtEOF()) {
+     while (!lr.AtEOF()) {
          string line = *(++lr);
          m_uLineNumber++;
 
          // TODO split multiple hgvs names on one line (sep by whitespace, ";", ",")
          NStr::TruncateSpacesInPlace(line);
-         NStr::ReplaceInPlace(line, "\r", "");
-         NStr::ReplaceInPlace(line, "\n", "");
- 
-         if(line.empty() || line[0] == '#')
+         NStr::ReplaceInPlace(line, "\r", kEmptyStr);
+         NStr::ReplaceInPlace(line, "\n", kEmptyStr);
+
+         if (NStr::IsBlank(line) || NStr::StartsWith(line, "#")) {
              continue;
- 
+         }
+
          try {
              CRef<CVariation> var = hgvsParser.AsVariation( line );
              varUtil.AsVariation_feats( *var, annot->SetData().SetFtable() );
          }
-         catch ( variation::CHgvsParser::CHgvsParserException& e) {
+         catch (const variation::CHgvsParser::CHgvsParserException& e) {
             CObjReaderLineException err(
                 eDiag_Warning,
                 0,
-                string("CHgvsReader::ReadSeqAnnot Error \"") + e.GetErrCodeString() + "\"",
+                string("CHgvsReader::ReadSeqAnnot Error [") + e.GetErrCodeString() + "] " + e.GetMsg(),
                 ILineError::eProblem_GeneralParsingError);
             ProcessWarning(err, pEC);
          }
      }
- 
+
      NON_CONST_ITERATE(CSeq_annot::C_Data::TFtable, itr, annot->SetData().SetFtable() ) {
          CRef<CSeq_feat> feat = *itr;
- 
+
          CRef<CSeq_id> tempid( new CSeq_id );
          tempid->Assign(*(feat->GetLocation().GetId()));
          CSeq_id_Handle idh = sequence::GetId( *(feat->GetLocation().GetId()), *scope, sequence::eGetId_ForceGi );
          tempid->SetGi( idh.GetGi() );
- 
+
          feat->SetLocation().SetId( *tempid );
      }
      return annot;
 }
 
-//  --------------------------------------------------------------------------- 
+//  ---------------------------------------------------------------------------
 void
 CHgvsReader::ReadSeqAnnots(
     vector< CRef<CSeq_annot> >& annots,
@@ -183,8 +184,8 @@ CHgvsReader::ReadSeqAnnots(
     CStreamLineReader lr(istr);
     ReadSeqAnnots(annots, lr, pMessageListener);
 }
- 
-//  ---------------------------------------------------------------------------                       
+
+//  ---------------------------------------------------------------------------
 void
 CHgvsReader::ReadSeqAnnots(
     vector< CRef<CSeq_annot> >& annots,
@@ -194,16 +195,16 @@ CHgvsReader::ReadSeqAnnots(
 {
     annots.push_back(ReadSeqAnnot(lr, pMessageListener));
 }
-                        
-//  ----------------------------------------------------------------------------                
+
+//  ----------------------------------------------------------------------------
 CRef< CSerialObject >
 CHgvsReader::ReadObject(
     ILineReader& lr,
-    IMessageListener* pMessageListener ) 
-//  ----------------------------------------------------------------------------                
-{ 
-    CRef<CSerialObject> object( 
-        ReadSeqAnnot( lr, pMessageListener ).ReleaseOrNull() );    
+    IMessageListener* pMessageListener )
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSerialObject> object(
+        ReadSeqAnnot( lr, pMessageListener ).ReleaseOrNull() );
     return object;
 }
 
