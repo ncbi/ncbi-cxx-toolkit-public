@@ -3109,6 +3109,16 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
 
     string except_text;
 
+    /// The process for setting the comment in some cases finds indels that our
+    /// process here misses, so check the comment to determine if we have indels
+    if (feat.IsSetComment() &&
+        (feat.GetComment().find("indel") != string::npos ||
+         feat.GetComment().find("inserted") != string::npos ||
+         feat.GetComment().find("deleted") != string::npos))
+    {
+        has_indel = true;
+    }
+
     if (actual.size() != xlate.size()  ||
         !has_stop  ||  !has_start  ||
         has_gap || has_indel) {
