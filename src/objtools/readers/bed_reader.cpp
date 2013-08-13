@@ -55,6 +55,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqloc/Seq_point.hpp>
+#include <objects/seqfeat/SeqFeatXref.hpp>
 
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Seq_annot.hpp>
@@ -181,7 +182,7 @@ CBedReader::ReadSeqAnnot(
                 break;
             }
         }
-        if (xParseFeature(fields, annot, pEC)) {
+        if (xParseFeature(fields, annot, featureCount, pEC)) {
             ++featureCount;
             continue;
         }
@@ -301,6 +302,7 @@ CBedReader::x_AppendAnnot(
 bool CBedReader::xParseFeature(
     const vector<string>& fields,
     CRef<CSeq_annot>& annot,
+    unsigned int featureCount,
     IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
@@ -321,6 +323,119 @@ bool CBedReader::xParseFeature(
         }
     }
 
+    if (m_iFlags & CBedReader::fThreeFeatFormat) {
+        return xParseFeatureThreeFeatFormat(fields, annot, 3*featureCount, pEC);
+    }
+    else {
+        return xParseFeatureUserFormat(fields, annot, pEC);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+bool CBedReader::xParseFeatureThreeFeatFormat(
+    const vector<string>& fields,
+    CRef<CSeq_annot>& annot,
+    unsigned int baseId,
+    IMessageListener* pEC)
+//  ----------------------------------------------------------------------------
+{
+    if (!xAppendFeatureChrom(fields, annot, baseId, pEC)) {
+        return false;
+    }
+    if (xContainsThickFeature(fields)  &&  
+            !xAppendFeatureThick(fields, annot, baseId, pEC)) {
+        return false;
+    }
+    if (xContainsBlockFeature(fields)  &&
+            !xAppendFeatureBlock(fields, annot, baseId, pEC)) {
+        return false;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CBedReader::xAppendFeatureChrom(
+    const vector<string>& fields,
+    CRef<CSeq_annot>& annot,
+    unsigned int baseId,
+    IMessageListener* pEC)
+//  ----------------------------------------------------------------------------
+{
+    CSeq_annot::C_Data::TFtable& ftable = annot->SetData().SetFtable();
+    CRef<CSeq_feat> feature;
+    feature.Reset(new CSeq_feat);
+    try {
+        xSetFeatureLocationChrom(feature, fields);
+        xSetFeatureIdsChrom(feature, fields, baseId);
+        xSetFeatureBedData(feature, fields);
+    }
+    catch(CObjReaderLineException& err) {
+        //m_currentId.clear();
+        ProcessError(err, pEC);
+        return false;
+    }
+    ftable.push_back(feature);
+    m_currentId = fields[0];
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CBedReader::xAppendFeatureThick(
+    const vector<string>& fields,
+    CRef<CSeq_annot>& annot,
+    unsigned int baseId,
+    IMessageListener* pEC)
+//  ----------------------------------------------------------------------------
+{
+    CSeq_annot::C_Data::TFtable& ftable = annot->SetData().SetFtable();
+    CRef<CSeq_feat> feature;
+    feature.Reset(new CSeq_feat);
+    try {
+        xSetFeatureLocationThick(feature, fields);
+        xSetFeatureIdsThick(feature, fields, baseId);
+        xSetFeatureBedData(feature, fields);
+    }
+    catch(CObjReaderLineException& err) {
+        //m_currentId.clear();
+        ProcessError(err, pEC);
+        return false;
+    }
+    ftable.push_back(feature);
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CBedReader::xAppendFeatureBlock(
+    const vector<string>& fields,
+    CRef<CSeq_annot>& annot,
+    unsigned int baseId,
+    IMessageListener* pEC)
+//  ----------------------------------------------------------------------------
+{
+    CSeq_annot::C_Data::TFtable& ftable = annot->SetData().SetFtable();
+    CRef<CSeq_feat> feature;
+    feature.Reset(new CSeq_feat);
+    try {
+        xSetFeatureLocationBlock(feature, fields);
+        xSetFeatureIdsBlock(feature, fields, baseId);
+        xSetFeatureBedData(feature, fields);
+    }
+    catch(CObjReaderLineException& err) {
+        //m_currentId.clear();
+        ProcessError(err, pEC);
+        return false;
+    }
+    ftable.push_back(feature);
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CBedReader::xParseFeatureUserFormat(
+    const vector<string>& fields,
+    CRef<CSeq_annot>& annot,
+    IMessageListener* pEC)
+//  ----------------------------------------------------------------------------
+{
     //  assign
     CSeq_annot::C_Data::TFtable& ftable = annot->SetData().SetFtable();
     CRef<CSeq_feat> feature;
@@ -406,6 +521,291 @@ void CBedReader::x_SetFeatureDisplayData(
         display_data->AddField( "blockStarts", fields[11] );
     }
     feature->SetData().SetUser( *display_data );
+}
+
+//  ----------------------------------------------------------------------------
+void CBedReader::xSetFeatureLocationChrom(
+    CRef<CSeq_feat>& feature,
+    const vector<string>& fields)
+//  ----------------------------------------------------------------------------
+{
+    x_SetFeatureLocation(feature, fields);
+
+    CRef<CUser_object> pBed(new CUser_object());
+    pBed->SetType().SetStr("BED");
+    pBed->AddField("location", "chrom");
+    CSeq_feat::TExts& exts = feature->SetExts();
+    exts.push_back(pBed);
+}
+
+//  ----------------------------------------------------------------------------
+void CBedReader::xSetFeatureLocationThick(
+    CRef<CSeq_feat>& feature,
+    const vector<string>& fields)
+//  ----------------------------------------------------------------------------
+{
+    CRef<CSeq_loc> location(new CSeq_loc);
+    int from, to;
+
+    //already established: We got at least three columns
+    try {
+        from = NStr::StringToInt(fields[6]);
+    }
+    catch (...) {
+        CObjReaderLineException err( 
+            eDiag_Error,
+            0,
+            "Invalid data line: Bad \"ThickStart\" value." );
+        throw(err);
+    }
+    try {
+        to = NStr::StringToInt(fields[7]) - 1;
+    }
+    catch (...) {
+        CObjReaderLineException err( 
+            eDiag_Error,
+            0,
+            "Invalid data line: Bad \"ThickStop\" value.");
+        throw(err);
+    }
+    if (from == to) {
+        location->SetPnt().SetPoint(from);
+    }
+    else if (from < to) {
+        location->SetInt().SetFrom(from);
+        location->SetInt().SetTo(to);
+    }
+    else {
+        CObjReaderLineException err( 
+            eDiag_Error,
+            0,
+            "Invalid data line: \"ThickStop\" less than \"ThickStart\"." );
+        throw(err);
+    }
+
+    location->SetStrand(xGetStrand(fields));
+    
+    CRef<CSeq_id> id = CReadUtil::AsSeqId(fields[0]);
+    location->SetId(*id);
+    feature->SetLocation(*location);
+
+    CRef<CUser_object> pBed(new CUser_object());
+    pBed->SetType().SetStr("BED");
+    pBed->AddField("location", "thick");
+    CSeq_feat::TExts& exts = feature->SetExts();
+    exts.push_back(pBed);
+}
+
+//  ----------------------------------------------------------------------------
+ENa_strand CBedReader::xGetStrand(
+    const vector<string>& fields) const
+//  ----------------------------------------------------------------------------
+{
+    size_t strand_field = 5;
+    if (fields.size() == 5  &&  (fields[4] == "-"  ||  fields[4] == "+")) {
+        strand_field = 4;
+    }
+    if (strand_field < fields.size()) {
+        string strand = fields[strand_field];
+        if (strand != "+"  &&  strand != "-"  &&  strand != ".") {
+            CObjReaderLineException err( 
+                eDiag_Error,
+                0,
+                "Invalid data line: Invalid strand character." );
+            throw(err);
+        }
+    }
+    return (fields[strand_field] == "-" ? eNa_strand_minus : eNa_strand_plus);
+}
+
+//  ----------------------------------------------------------------------------
+void CBedReader::xSetFeatureLocationBlock(
+    CRef<CSeq_feat>& feature,
+    const vector<string>& fields)
+//  ----------------------------------------------------------------------------
+{
+    //already established: there are sufficient columns to do this
+    int blockCount = NStr::StringToInt(fields[9]);
+    vector<int> blockSizes;
+    vector<int> blockStarts;
+    {{
+        blockSizes.reserve(blockCount);
+        vector<string> vals; 
+        NStr::Tokenize(fields[10], ",", vals);
+        if (vals.size() != blockCount) {
+            CObjReaderLineException err( 
+                eDiag_Error,
+                0,
+                "Invalid data line: Bad value count in \"blockSizes\"." );
+            throw( err );
+        }
+        try {
+            for (int i=0; i < blockCount; ++i) {
+                blockSizes.push_back(NStr::StringToInt(vals[i]));
+            }
+        }
+        catch (...) {
+            CObjReaderLineException err( 
+                eDiag_Error,
+                0,
+                "Invalid data line: Malformed \"blockSizes\" column." );
+            throw( err );
+        }
+    }}
+    {{
+        blockStarts.reserve(blockCount);
+        vector<string> vals; 
+        int baseStart = NStr::StringToInt(fields[1]);
+        NStr::Tokenize(fields[11], ",", vals);
+        if (vals.size() != blockCount) {
+            CObjReaderLineException err( 
+                eDiag_Error,
+                0,
+                "Invalid data line: Bad value count in \"blockStarts\"." );
+            throw( err );
+        }
+        try {
+            for (int i=0; i < blockCount; ++i) {
+                blockStarts.push_back(baseStart + NStr::StringToInt(vals[i]));
+            }
+        }
+        catch (...) {
+            CObjReaderLineException err( 
+                eDiag_Error,
+                0,
+                "Invalid data line: Malformed \"blockStarts\" column." );
+            throw( err );
+        }
+    }}
+
+    CPacked_seqint& location = feature->SetLocation().SetPacked_int();
+    
+    ENa_strand strand = xGetStrand(fields);
+    CRef<CSeq_id> pId = CReadUtil::AsSeqId(fields[0]);
+    for (int i=0; i < blockCount; ++i) {
+        CRef<CSeq_interval> pInterval(new CSeq_interval);
+        pInterval->SetId(*pId);
+        pInterval->SetFrom(blockStarts[i]);
+        pInterval->SetTo(blockStarts[i] + blockSizes[i]);
+        pInterval->SetStrand(strand);
+        location.Set().push_back(pInterval);
+    }
+
+    CRef<CUser_object> pBed(new CUser_object());
+    pBed->SetType().SetStr("BED");
+    pBed->AddField("location", "block");
+    CSeq_feat::TExts& exts = feature->SetExts();
+    exts.push_back(pBed);
+}
+
+//  ----------------------------------------------------------------------------
+void CBedReader::xSetFeatureIdsChrom(
+    CRef<CSeq_feat>& feature,
+    const vector<string>& fields,
+    unsigned int baseId)
+//  ----------------------------------------------------------------------------
+{
+    baseId++; //0-based to 1-based
+    feature->SetId().SetLocal().SetId(baseId);
+
+    if (xContainsThickFeature(fields)) {
+        CRef<CFeat_id> pIdThick(new CFeat_id);
+        pIdThick->SetLocal().SetId(baseId+1);
+        CRef<CSeqFeatXref> pXrefThick(new CSeqFeatXref);
+        pXrefThick->SetId(*pIdThick);  
+        feature->SetXref().push_back(pXrefThick);
+    }
+    
+    if (xContainsBlockFeature(fields)) {
+        CRef<CFeat_id> pIdBlock(new CFeat_id);
+        pIdBlock->SetLocal().SetId(baseId+2);
+        CRef<CSeqFeatXref> pXrefBlock(new CSeqFeatXref);
+        pXrefBlock->SetId(*pIdBlock);  
+        feature->SetXref().push_back(pXrefBlock);     
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CBedReader::xSetFeatureIdsThick(
+    CRef<CSeq_feat>& feature,
+    const vector<string>& fields,
+    unsigned int baseId)
+//  ----------------------------------------------------------------------------
+{
+    baseId++; //0-based to 1-based
+    feature->SetId().SetLocal().SetId(baseId+1);
+
+    CRef<CFeat_id> pIdChrom(new CFeat_id);
+    pIdChrom->SetLocal().SetId(baseId);
+    CRef<CSeqFeatXref> pXrefChrom(new CSeqFeatXref);
+    pXrefChrom->SetId(*pIdChrom);  
+    feature->SetXref().push_back(pXrefChrom);
+
+    if (xContainsBlockFeature(fields)) {
+        CRef<CFeat_id> pIdBlock(new CFeat_id);
+        pIdBlock->SetLocal().SetId(baseId+2);
+        CRef<CSeqFeatXref> pXrefBlock(new CSeqFeatXref);
+        pXrefBlock->SetId(*pIdBlock);  
+        feature->SetXref().push_back(pXrefBlock);   
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CBedReader::xSetFeatureIdsBlock(
+    CRef<CSeq_feat>& feature,
+    const vector<string>& fields,
+    unsigned int baseId)
+//  ----------------------------------------------------------------------------
+{
+    baseId++; //0-based to 1-based
+    feature->SetId().SetLocal().SetId(baseId+2);
+
+    CRef<CFeat_id> pIdChrom(new CFeat_id);
+    pIdChrom->SetLocal().SetId(baseId);
+    CRef<CSeqFeatXref> pXrefChrom(new CSeqFeatXref);
+    pXrefChrom->SetId(*pIdChrom);  
+    feature->SetXref().push_back(pXrefChrom);
+
+    CRef<CFeat_id> pIdBlock(new CFeat_id);
+    pIdBlock->SetLocal().SetId(baseId+1);
+    CRef<CSeqFeatXref> pXrefBlock(new CSeqFeatXref);
+    pXrefBlock->SetId(*pIdBlock);  
+    feature->SetXref().push_back(pXrefBlock);   
+}
+
+//  ----------------------------------------------------------------------------
+void CBedReader::xSetFeatureBedData(
+    CRef<CSeq_feat>& feature,
+    const vector<string>& fields )
+//  ----------------------------------------------------------------------------
+{
+    CSeqFeatData& data = feature->SetData();
+    data.SetRegion() = fields[0];
+
+    vector<string> rgb;
+    NStr::Tokenize(fields[8], ",", rgb);
+    string rgbValue = NStr::Join(rgb, " ");
+
+    CRef<CUser_object> pDisplayData(new CUser_object());
+    pDisplayData->SetType().SetStr("DisplaySettings");
+    pDisplayData->AddField("color", rgbValue);
+    CSeq_feat::TExts& exts = feature->SetExts();
+    exts.push_front(pDisplayData);
+
+    if (fields.size() < 5  ||  fields[4] == ".") {
+        return;
+    }
+    try {
+        int score = NStr::StringToInt(fields[4]);
+        pDisplayData->AddField("score", score);
+    }
+    catch(...) {
+        CObjReaderLineException err( 
+            eDiag_Error,
+            0,
+            "Invalid data line: Bad \"strand\" value.");
+        throw(err);
+    }
 }
 
 //  ----------------------------------------------------------------------------
@@ -668,6 +1068,26 @@ CBedReader::xReadBedRecordRaw(
     }
     return true;
 }
+
+//  ----------------------------------------------------------------------------
+bool
+CBedReader::xContainsThickFeature(
+    const vector<string>& fields) const
+//  ----------------------------------------------------------------------------
+{
+    return (fields.size() >= 8);
+}
+
+
+//  ----------------------------------------------------------------------------
+bool
+CBedReader::xContainsBlockFeature(
+    const vector<string>& fields) const
+//  ----------------------------------------------------------------------------
+{
+    return (fields.size() >= 12);
+}
+
 
 //  ----------------------------------------------------------------------------
 bool

@@ -163,7 +163,7 @@ public:
     //
 public:
     enum EBedFlags {
-        // currentry, only what's inherited from CReaderBase
+        fThreeFeatFormat = 1<<8,
     };
     typedef int TFlags;
 
@@ -236,6 +236,36 @@ protected:
     bool xParseFeature(
         const vector<string>&,
         CRef<CSeq_annot>&,
+        unsigned int,
+        IMessageListener*);
+
+    bool xParseFeatureUserFormat(
+        const vector<string>&,
+        CRef<CSeq_annot>&,
+        IMessageListener*);
+
+    bool xParseFeatureThreeFeatFormat(
+        const vector<string>&,
+        CRef<CSeq_annot>&,
+        unsigned int,
+        IMessageListener*);
+
+    bool xAppendFeatureChrom(
+        const vector<string>&,
+        CRef<CSeq_annot>&,
+        unsigned int,
+        IMessageListener*);
+
+    bool xAppendFeatureThick(
+        const vector<string>&,
+        CRef<CSeq_annot>&,
+        unsigned int,
+        IMessageListener*);
+
+    bool xAppendFeatureBlock(
+        const vector<string>&,
+        CRef<CSeq_annot>&,
+        unsigned int,
         IMessageListener*);
 
     bool xParseComment(
@@ -246,6 +276,46 @@ protected:
         CRef<CSeq_feat>&,
         const vector<string>&);
         
+    void xSetFeatureLocationChrom(
+        CRef<CSeq_feat>&,
+        const vector<string>&);
+        
+    void xSetFeatureLocationThick(
+        CRef<CSeq_feat>&,
+        const vector<string>&);
+        
+    void xSetFeatureLocationBlock(
+        CRef<CSeq_feat>&,
+        const vector<string>&);
+        
+    void xSetFeatureIdsChrom(
+        CRef<CSeq_feat>&,
+        const vector<string>&,
+        unsigned int);
+        
+    void xSetFeatureIdsThick(
+        CRef<CSeq_feat>&,
+        const vector<string>&,
+        unsigned int);
+        
+    void xSetFeatureIdsBlock(
+        CRef<CSeq_feat>&,
+        const vector<string>&,
+        unsigned int);
+        
+    void xSetFeatureBedData(
+        CRef<CSeq_feat>&,
+        const vector<string>&);
+        
+    bool xContainsThickFeature(
+        const vector<string>&) const;
+
+    bool xContainsBlockFeature(
+        const vector<string>&) const;
+
+    ENa_strand xGetStrand(
+        const vector<string>&) const;
+
     void x_SetFeatureDisplayData(
         CRef<CSeq_feat>&,
         const vector<string>&);
