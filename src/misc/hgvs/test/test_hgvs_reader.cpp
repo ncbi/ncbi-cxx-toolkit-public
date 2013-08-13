@@ -63,28 +63,20 @@ CheckSeqAnnotList(const TSeqAnnotList& annots)
     }
 }
 
-
-BOOST_AUTO_TEST_CASE(TestCaseHgvs1)
+CConstRef<CGC_Assembly>
+GetAssembly(const string& assmacc)
 {
-    CGenomicCollectionsService gcservice;
+    static CGenomicCollectionsService gcservice;
     CConstRef<CGC_Assembly> assembly(
-        gcservice.GetAssembly("GCF_000001405.13",
-                              CGCClient_GetAssemblyRequest::eLevel_scaffold
-                             )
+        gcservice.GetAssembly(assmacc, CGCClient_GetAssemblyRequest::eLevel_scaffold)
     );
+    return assembly;
+}
 
-    CHgvsReader reader(*assembly);
-
-    const string line(
-        "NC_000001.10:g.197031021C>T\n"
-        "chr1:g.169519049T=\n"
-        "NC_000006.11:g.32627914delA\n"
-        "NC_000006.11:g.32627914insA\n"
-        "NC_000008.10:g.24810374_24810376delCTC\n"
-        "NC_000011.9:g.61723378_61723379delGCinsAA\n"
-        "NC_000017.10:g.66519861dupT\n"
-    );
-    CMemoryLineReader line_reader(line.c_str(), line.length());
+void
+TestCase(CHgvsReader& reader, const string& input)
+{
+    CMemoryLineReader line_reader(input.c_str(), input.length());
 
     TSeqAnnotList annots;
     reader.ReadSeqAnnots(annots, line_reader);
@@ -94,25 +86,65 @@ BOOST_AUTO_TEST_CASE(TestCaseHgvs1)
     BOOST_CHECK_EQUAL(1, 1);
 }
 
-BOOST_AUTO_TEST_CASE(TestCaseHgvs2)
+
+BOOST_AUTO_TEST_CASE(TestCaseHgvs1)
 {
-    CGenomicCollectionsService gcservice;
-    CConstRef<CGC_Assembly> assembly(
-        gcservice.GetAssembly("GCF_000001405.13",
-                              CGCClient_GetAssemblyRequest::eLevel_scaffold
-                             )
-    );
-
+    CConstRef<CGC_Assembly> assembly = GetAssembly("GCF_000001405.13");
     CHgvsReader reader(*assembly);
-
-    const string line(
-        "NC_000006.11:g.32627914insA"
+    const string lines(
+        "NC_000001.10:g.197031020C>T\n"
+        "chr1:g.169519049T=\n"
+        "NC_000006.11:g.32627914delA\n"
+        "NC_000006.11:g.32627914insA\n"
+        "NC_000008.10:g.24810374_24810376delCTC\n"
+        "NC_000011.9:g.61723378_61723379delGCinsAA\n"
+        "NC_000017.10:g.66519861dupT\n"
     );
-    CMemoryLineReader line_reader(line.c_str(), line.length());
+    TestCase(reader, lines);
 
-    TSeqAnnotList annots;
-    reader.ReadSeqAnnots(annots, line_reader);
-    CheckSeqAnnotList(annots);
+    // Check that Map results meet expectations
+    BOOST_CHECK_EQUAL(1, 1);
+}
+
+BOOST_AUTO_TEST_CASE(Chr1_RS_GCF)
+{
+    CConstRef<CGC_Assembly> assembly = GetAssembly("GCF_000001405.13");
+    CHgvsReader reader(*assembly);
+    const string line = "NC_000001.10:g.197031021C>T";
+    TestCase(reader, line);
+
+    // Check that Map results meet expectations
+    BOOST_CHECK_EQUAL(1, 1);
+}
+
+BOOST_AUTO_TEST_CASE(Chr1_name_GCF)
+{
+    CConstRef<CGC_Assembly> assembly = GetAssembly("GCF_000001405.13");
+    CHgvsReader reader(*assembly);
+    const string line = "1:g.197031021C>T";
+    TestCase(reader, line);
+
+    // Check that Map results meet expectations
+    BOOST_CHECK_EQUAL(1, 1);
+}
+
+BOOST_AUTO_TEST_CASE(Chr1_UCSC_GCF)
+{
+    CConstRef<CGC_Assembly> assembly = GetAssembly("GCF_000001405.13");
+    CHgvsReader reader(*assembly);
+    const string line = "chr1:g.197031021C>T";
+    TestCase(reader, line);
+
+    // Check that Map results meet expectations
+    BOOST_CHECK_EQUAL(1, 1);
+}
+
+BOOST_AUTO_TEST_CASE(Chr1_GB_GCF)
+{
+    CConstRef<CGC_Assembly> assembly = GetAssembly("GCF_000001405.13");
+    CHgvsReader reader(*assembly);
+    const string line = "CM000663.1:g.197031021C>T";
+    TestCase(reader, line);
 
     // Check that Map results meet expectations
     BOOST_CHECK_EQUAL(1, 1);
