@@ -91,10 +91,9 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-CHgvsReader::CHgvsReader(
-    const CGC_Assembly& assembly,
-    int flags ):
-    CReaderBase(flags), m_Assembly(ConstRef(&assembly))
+CHgvsReader::CHgvsReader(const CGC_Assembly& assembly, int flags)
+    : CReaderBase(flags),
+      m_Assembly(&assembly)
 //  ----------------------------------------------------------------------------
 {
 }
@@ -113,64 +112,63 @@ CHgvsReader::ReadSeqAnnot(
     IMessageListener* pEC )
 //  ----------------------------------------------------------------------------
 {
-     CRef<CSeq_annot> annot (new CSeq_annot);
+    CRef<CSeq_annot> annot(new CSeq_annot);
 
-     // object manager
-     CRef<CObjectManager> objectManager = CObjectManager::GetInstance();
-     CGBDataLoader::RegisterInObjectManager( *objectManager );
-     CRef<CScope> scope(new CScope(*objectManager));
-     scope->AddDefaults();
+    // object manager
+    CRef<CObjectManager> objectManager = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager( *objectManager );
+    CRef<CScope> scope(new CScope(*objectManager));
+    scope->AddDefaults();
 
-     // hgvs parser
-     variation::CHgvsParser hgvsParser (*scope);
-     CRef<CSeq_id_Resolver> assmresolver;
-     if (m_Assembly.NotNull()) {
+    // hgvs parser
+    variation::CHgvsParser hgvsParser(*scope);
+    CRef<CSeq_id_Resolver> assmresolver;
+    if (m_Assembly.NotNull()) {
         assmresolver.Reset(new CSeq_id_Resolver__ChrNamesFromGC(*m_Assembly, *scope));
         hgvsParser.SetSeq_id_Resolvers().push_front(assmresolver);
-     }
+    }
 
-     // helper to convert to feature
-     variation::CVariationUtil varUtil( *scope );
+    // helper to convert to feature
+    variation::CVariationUtil varUtil( *scope );
 
      // parse input
-     while (!lr.AtEOF()) {
-         string line = *(++lr);
-         m_uLineNumber++;
+    while (!lr.AtEOF()) {
+        string line = *(++lr);
+        m_uLineNumber++;
 
-         // TODO split multiple hgvs names on one line (sep by whitespace, ";", ",")
-         NStr::TruncateSpacesInPlace(line);
-         NStr::ReplaceInPlace(line, "\r", kEmptyStr);
-         NStr::ReplaceInPlace(line, "\n", kEmptyStr);
+        // TODO split multiple hgvs names on one line (sep by whitespace, ";", ",")
+        NStr::TruncateSpacesInPlace(line);
+        NStr::ReplaceInPlace(line, "\r", kEmptyStr);
+        NStr::ReplaceInPlace(line, "\n", kEmptyStr);
 
-         if (NStr::IsBlank(line) || NStr::StartsWith(line, "#")) {
-             continue;
-         }
+        if (NStr::IsBlank(line) || NStr::StartsWith(line, "#")) {
+            continue;
+        }
 
-         try {
-             CRef<CVariation> var = hgvsParser.AsVariation( line );
-             varUtil.AsVariation_feats( *var, annot->SetData().SetFtable() );
-         }
-         catch (const variation::CHgvsParser::CHgvsParserException& e) {
+        try {
+            CRef<CVariation> var = hgvsParser.AsVariation(line);
+            varUtil.AsVariation_feats(*var, annot->SetData().SetFtable());
+        }
+        catch (const variation::CHgvsParser::CHgvsParserException& e) {
             CObjReaderLineException err(
-                eDiag_Warning,
-                0,
-                string("CHgvsReader::ReadSeqAnnot Error [") + e.GetErrCodeString() + "] " + e.GetMsg(),
-                ILineError::eProblem_GeneralParsingError);
+               eDiag_Warning,
+               0,
+               string("CHgvsReader::ReadSeqAnnot Error [") + e.GetErrCodeString() + "] " + e.GetMsg(),
+               ILineError::eProblem_GeneralParsingError
+            );
             ProcessWarning(err, pEC);
-         }
-     }
+        }
+    }
 
-     NON_CONST_ITERATE(CSeq_annot::C_Data::TFtable, itr, annot->SetData().SetFtable() ) {
-         CRef<CSeq_feat> feat = *itr;
-
-         CRef<CSeq_id> tempid( new CSeq_id );
-         tempid->Assign(*(feat->GetLocation().GetId()));
-         CSeq_id_Handle idh = sequence::GetId( *(feat->GetLocation().GetId()), *scope, sequence::eGetId_ForceGi );
-         tempid->SetGi( idh.GetGi() );
-
-         feat->SetLocation().SetId( *tempid );
-     }
-     return annot;
+    NON_CONST_ITERATE (CSeq_annot::C_Data::TFtable, itr, annot->SetData().SetFtable() ) {
+        CRef<CSeq_feat> feat = *itr;
+        CRef<CSeq_id> tempid(new CSeq_id());
+        tempid->Assign(*(feat->GetLocation().GetId()));
+        CSeq_id_Handle idh = sequence::GetId(*tempid, *scope, sequence::eGetId_ForceGi);
+        tempid->SetGi(idh.GetGi());
+        feat->SetLocation().SetId(*tempid);
+    }
+    return annot;
 }
 
 //  ---------------------------------------------------------------------------
@@ -203,9 +201,7 @@ CHgvsReader::ReadObject(
     IMessageListener* pMessageListener )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CSerialObject> object(
-        ReadSeqAnnot( lr, pMessageListener ).ReleaseOrNull() );
-    return object;
+    return Ref<CSerialObject>(ReadSeqAnnot(lr, pMessageListener).GetPointer());
 }
 
 END_objects_SCOPE
