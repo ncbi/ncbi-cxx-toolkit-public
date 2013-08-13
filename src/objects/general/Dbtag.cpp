@@ -642,7 +642,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_miRBase, "http://www.mirbase.org/cgi-bin/mirna_entry.pl?acc=" },
     { CDbtag::eDbtagType_niaEST, "http://lgsun.grc.nia.nih.gov/cgi-bin/pro3?sname1=" },
     { CDbtag::eDbtagType_taxon, "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?" },
-    { CDbtag::eDbtagType_BEEBASE, "http://hymenopteragenome.org/cgi-bin/gbrowse/bee_genome4/?name=" },
+    { CDbtag::eDbtagType_BEEBASE, "http://hymenopteragenome.org/cgi-bin/gb2/gbrowse/bee_genome45/?name=" },
     { CDbtag::eDbtagType_NASONIABASE, "http://hymenopteragenome.org/cgi-bin/gbrowse/nasonia10_scaffold/?name=" },
     { CDbtag::eDbtagType_IKMC, "http://www.knockoutmouse.org/martsearch/project/" },
     { CDbtag::eDbtagType_ViPR, "http://www.viprbrc.org/brc/viprStrainDetails.do?viprSubmissionId=" },
