@@ -53,7 +53,7 @@ install-toolkit:
 
 install-gbench:
 	cd $(builddir)/app/gbench/gbench_install  && \
-            make install_dir=$(exec_prefix)
+            $(MAKE) $(MFLAGS) install_dir=$(exec_prefix)
 
 install:
 	if test -d $(lbindir)/gbench; then \

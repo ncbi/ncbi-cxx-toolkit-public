@@ -25,7 +25,7 @@ ifdef base_req_needers
     $(req_needers): %.needs-reqs:
 	@echo 'NOTE: Skipping project $(notdir $(CURDIR)) due to unmet requirements:'
 	@$(foreach r,$(missing_reqs),echo $(r:$(status_dir)/%.enabled=%))
-	@make $(mark_as_disabled) \
+	@$(MAKE) $(MFLAGS) $(mark_as_disabled) \
 	    INHERITED_REQUIREMENTS='$(INHERITED_REQUIREMENTS) $(REQUIRES)'
   endif
   .PHONY: $(base_req_needers) $(req_needers)
