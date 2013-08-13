@@ -582,7 +582,7 @@ protected:
                 /*
                  * Seq-ids and seq-locs
                  */
-                seq_id          = leaf_node_d[alpha_p >> +(alnum_p | chset<>("._-|"))];
+                seq_id          = leaf_node_d[alnum_p >> *(alnum_p | chset<>("._-|"))];
 
                 mol             = str_p("mt") | chset<>("gcnrpm"); //note: for 'mt.' also supporting 'm.'
                 //Genomic, Coding (CDS-relative), Noncoding, Rna-based, Protein, Mitochondrion

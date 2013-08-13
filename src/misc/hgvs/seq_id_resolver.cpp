@@ -52,7 +52,18 @@ BEGIN_NCBI_SCOPE
 
 bool CSeq_id_Resolver::CanCreate(const string& s)
 {
-    return m_regexp ? m_regexp->IsMatch(s) : true;
+    if(m_regexp) {
+        return m_regexp->IsMatch(s);
+    } else {
+        try {
+            CSeq_id id(s);
+            return !id.IsLocal() && !id.IsGi();
+            //note: GIs are not supported because it could be a prefix-less chromosome name or a local id.
+            //VAR-575
+        } catch(CException&) {
+            return false;
+        }
+    }
 }
 
 CSeq_id_Handle CSeq_id_Resolver::x_Create(const string& s)

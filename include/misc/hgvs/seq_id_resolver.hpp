@@ -86,7 +86,7 @@ public:
                 return r.Get(s);
             }
         }
-        return CSeq_id_Handle::GetHandle(s);
+        return CSeq_id_Handle();
     }
 
 protected:
