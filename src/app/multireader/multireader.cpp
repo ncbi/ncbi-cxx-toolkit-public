@@ -328,6 +328,10 @@ void CMultiReaderApp::Init(void)
         "turn integer ids into local ids",
         true );
         
+    arg_desc->AddFlag(
+        "3ff",
+        "use BED three feature format",
+        true);
     //
     //  wiggle reader specific arguments:
     //
@@ -834,6 +838,9 @@ void CMultiReaderApp::xSetFlags(
         }
         if ( args["raw"] ) {
             m_iFlags |= CReaderBase::fAsRaw;
+        }
+        if ( args["3ff"] ) {
+            m_iFlags |= CBedReader::fThreeFeatFormat;
         }
         break;
        
