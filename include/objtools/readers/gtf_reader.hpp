@@ -137,7 +137,7 @@ protected:
         const CGff2Record&,
         CRef< CSeq_feat > );
     
-    bool x_CreateGeneXref(
+    bool x_CreateGeneXrefs(
         const CGff2Record&,
         CRef< CSeq_feat > );
     

@@ -672,7 +672,7 @@ bool CGtfReader::x_CreateFeatureLocation(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGtfReader::x_CreateGeneXref(
+bool CGtfReader::x_CreateGeneXrefs(
     const CGff2Record& record,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
@@ -682,9 +682,14 @@ bool CGtfReader::x_CreateGeneXref(
         return true;
     }
     
-    CRef< CSeqFeatXref > pXref( new CSeqFeatXref );
-    pXref->SetId( pParent->SetId() );    
-    pFeature->SetXref().push_back( pXref );
+    CRef< CSeqFeatXref > pXrefToParent( new CSeqFeatXref );
+    pXrefToParent->SetId( pParent->SetId() );    
+    pFeature->SetXref().push_back( pXrefToParent );
+
+    CRef< CSeqFeatXref > pXrefToChild( new CSeqFeatXref );
+    pXrefToChild->SetId( pFeature->SetId() );
+    pParent->SetXref().push_back( pXrefToChild );
+
     return true;
 }
 
@@ -803,7 +808,7 @@ bool CGtfReader::x_CreateParentCds(
     if ( ! x_CreateFeatureId( gff, "cds", pFeature ) ) {
         return false;
     }
-    if ( ! x_CreateGeneXref( gff, pFeature ) ) {
+    if ( ! x_CreateGeneXrefs( gff, pFeature ) ) {
         return false;
     }
     if ( ! x_FeatureSetQualifiers( gff, pFeature ) ) {
@@ -835,7 +840,7 @@ bool CGtfReader::x_CreateParentMrna(
     if ( ! x_CreateFeatureId( gff, "mrna", pFeature ) ) {
         return false;
     }
-    if ( ! x_CreateGeneXref( gff, pFeature ) ) {
+    if ( ! x_CreateGeneXrefs( gff, pFeature ) ) {
         return false;
     }
     if ( ! x_FeatureSetQualifiers( gff, pFeature ) ) {
