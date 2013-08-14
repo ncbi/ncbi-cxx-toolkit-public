@@ -128,8 +128,9 @@ protected:
         const CGff2Record&,
         CRef< CSeq_annot > );
 
-    bool x_UpdateFeatureId(
+    bool x_CreateFeatureId(
         const CGff2Record&,
+        const string&,
         CRef< CSeq_feat > );
 
     bool x_CreateFeatureLocation(

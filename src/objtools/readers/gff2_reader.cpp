@@ -591,7 +591,7 @@ bool CGff2Reader::x_UpdateAnnotFeature(
     if ( ! x_FeatureSetQualifiers( gff, pFeature ) ) {
         return false;
     }
-    if (!this->x_FeatureSetXref(gff, pFeature)) {
+    if (!x_FeatureSetXref(gff, pFeature)) {
         return false;
     }
     if (!x_AddFeatureToAnnot( pFeature, pAnnot )) {

@@ -633,28 +633,20 @@ bool CGtfReader::x_UpdateAnnotMiscFeature(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGtfReader::x_UpdateFeatureId(
+bool CGtfReader::x_CreateFeatureId(
     const CGff2Record& record,
+    const string& prefix,
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    string strFeatureId;
-    if ( record.Type() == "gene" ) {
-        strFeatureId = "gene|";
-        strFeatureId += s_GeneKey( record );
+    static int seqNum(1);
+
+    string strFeatureId = prefix;
+    if (strFeatureId.empty()) {
+        strFeatureId = "id";
     }
-    else if ( record.Type() == "exon" ) {
-        strFeatureId = "mrna|";
-        strFeatureId += s_FeatureKey( record );
-    }
-    else if ( record.Type() == "CDS" ) {
-        strFeatureId = "cds|";
-        strFeatureId += s_FeatureKey( record );
-    }
-    else {
-        strFeatureId = record.Type() + "|";
-        strFeatureId += s_FeatureKey( record );
-    }
+    strFeatureId += "|";
+    strFeatureId += NStr::IntToString(seqNum++);
     pFeature->SetId().SetLocal().SetStr( strFeatureId );
     return true;
 }
@@ -758,7 +750,7 @@ bool CGtfReader::x_CreateParentGene(
     if ( ! x_CreateFeatureLocation( gff, pFeature ) ) {
         return false;
     }
-    if ( ! x_UpdateFeatureId( gff, pFeature ) ) {
+    if ( ! x_CreateFeatureId( gff, "gene", pFeature ) ) {
         return false;
     }
     if ( ! x_FeatureSetQualifiers( gff, pFeature ) ) {
@@ -808,7 +800,7 @@ bool CGtfReader::x_CreateParentCds(
     if ( ! x_CreateFeatureLocation( gff, pFeature ) ) {
         return false;
     }
-    if ( ! x_UpdateFeatureId( gff, pFeature ) ) {
+    if ( ! x_CreateFeatureId( gff, "cds", pFeature ) ) {
         return false;
     }
     if ( ! x_CreateGeneXref( gff, pFeature ) ) {
@@ -840,7 +832,7 @@ bool CGtfReader::x_CreateParentMrna(
     if ( ! x_CreateFeatureLocation( gff, pFeature ) ) {
         return false;
     }
-    if ( ! x_UpdateFeatureId( gff, pFeature ) ) {
+    if ( ! x_CreateFeatureId( gff, "mrna", pFeature ) ) {
         return false;
     }
     if ( ! x_CreateGeneXref( gff, pFeature ) ) {
