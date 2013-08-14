@@ -22,4 +22,4 @@ CFLAGS  = $(FAST_CFLAGS)
 LDFLAGS = $(FAST_LDFLAGS)
 
 
-WATCHERS = coulouri maning madden camacho
+WATCHERS = maning madden camacho
