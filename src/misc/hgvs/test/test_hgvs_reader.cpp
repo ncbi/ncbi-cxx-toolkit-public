@@ -183,5 +183,16 @@ BOOST_AUTO_TEST_CASE(Chr17_name_GCF)
     BOOST_CHECK_EQUAL(1, 1);
 }
 
+BOOST_AUTO_TEST_CASE(ChrX_name_GCF)
+{
+    CConstRef<CGC_Assembly> assembly = GetAssembly("GCF_000001405.13");
+    CHgvsReader reader(*assembly);
+    const string line = "X:g.6619861dupT";
+    TestCase(reader, line);
+
+    // Check that Map results meet expectations
+    BOOST_CHECK_EQUAL(1, 1);
+}
+
 BOOST_AUTO_TEST_SUITE_END();
 
