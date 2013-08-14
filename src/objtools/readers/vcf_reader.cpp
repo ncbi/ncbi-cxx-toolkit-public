@@ -683,7 +683,7 @@ CVcfReader::xAssignVariantIns(
 
     CRef<CVariation_ref> pVariant(new CVariation_ref);
     {{
-        string insertion(data.m_Alt[index].substr(1));
+        string insertion(data.m_Alt[index]);
         CRef<CSeq_literal> pLiteral(new CSeq_literal);
         pLiteral->SetSeq_data().SetIupacna().Set(insertion);
         pLiteral->SetLength(insertion.size());
@@ -888,28 +888,22 @@ CVcfReader::xAssignFeatureLocationSet(
     }
     if (data.m_SetType == CVcfData::ST_ALL_INS) {
         //set location for INSs. Will always be a point!
-        pFeat->SetLocation().SetPnt().SetPoint(data.m_iPos);
+        //m_iPos points to the 1-based position of the first
+        //nt that is unique between alt and ref
+        pFeat->SetLocation().SetPnt().SetPoint(data.m_iPos-1);
         pFeat->SetLocation().SetPnt().SetId(*pId);
         return true;
     }
     if (data.m_SetType == CVcfData::ST_ALL_DEL) {
-        if (data.m_Alt.size() == 1) {
-            if (data.m_strRef.size() == 1) {
-                //deletion of a single base
-                pFeat->SetLocation().SetPnt().SetPoint(data.m_iPos);
-                pFeat->SetLocation().SetPnt().SetId(*pId);
-            }
-            else {
-                pFeat->SetLocation().SetInt().SetFrom(data.m_iPos);
-                pFeat->SetLocation().SetInt().SetTo( 
-                    data.m_iPos + data.m_strRef.length());
-                pFeat->SetLocation().SetInt().SetId(*pId);
-            }
+        if (data.m_strRef.size() == 1) {
+            //deletion of a single base
+            pFeat->SetLocation().SetPnt().SetPoint(data.m_iPos-1);
+            pFeat->SetLocation().SetPnt().SetId(*pId);
         }
         else {
-            pFeat->SetLocation().SetInt().SetFrom(data.m_iPos);
+            pFeat->SetLocation().SetInt().SetFrom(data.m_iPos-1);
             pFeat->SetLocation().SetInt().SetTo( 
-                data.m_iPos + data.m_strRef.length());
+                data.m_iPos-1 + data.m_strRef.length());
             pFeat->SetLocation().SetInt().SetId(*pId);
         }
         return true;
