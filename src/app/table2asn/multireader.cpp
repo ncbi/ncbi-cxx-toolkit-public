@@ -1395,42 +1395,34 @@ void CMultiReader::ApplyDescriptors(CSerialObject & obj, const CSeq_descr & sour
 CRef<CSerialObject> CMultiReader::LoadFile(const CTable2AsnContext& context, const string& ifname)
 {
 	CRef<CSerialObject> result;
-	if (context.m_submit_template.NotEmpty())
-	{	 	  
-		// Make a submit output
-		CRef<CSeq_submit> submit(new CSeq_submit());
 
-		if (context.m_submit_template->IsSetSub())
+	CRef<CSerialObject> obj = ReadFile(context, ifname);  
+	CSeq_entry* read_entry = dynamic_cast<CSeq_entry*>(obj.GetPointerOrNull());
+	if (read_entry)
+	{
+		switch (read_entry->Which())
 		{
-			submit->Assign(*context.m_submit_template);
-		}
-
-		CRef<CSerialObject> obj = ReadFile(context, ifname);  
-		CSeq_entry* pEntry = dynamic_cast<CSeq_entry*>(obj.GetPointerOrNull());
-		if (pEntry)
-		{
-		    CRef<CSeq_entry> read_entry(pEntry);
-			switch (pEntry->Which())
+		case CSeq_entry_Base::e_Seq:
 			{
-			case CSeq_entry_Base::e_Seq:
-				{
-					submit->SetData().SetEntrys().front()->Assign(*read_entry);
-						//push_back(read_entry);
-				}
-				break;
-			case CSeq_entry_Base::e_Set:
-				{
-					CSeq_submit_Base::C_Data::TEntrys& data = submit->SetData().SetEntrys();				
-					data.insert(data.end(), read_entry->GetSet().GetSeq_set().begin(), read_entry->GetSet().GetSeq_set().end());
-				}
-				break;
+				CBioseq* bioseq = context.GetNextBioSeqFromTemplate(result, false);
+				bioseq->Assign(read_entry->SetSeq());
 			}
+			break;
+		case CSeq_entry_Base::e_Set:
+			{
+				const CSeq_entry_Base::TSet::TSeq_set& data = read_entry->GetSet().GetSeq_set();
+				ITERATE(CSeq_entry_Base::TSet::TSeq_set, it, data)
+				{
+					CBioseq* bioseq = context.GetNextBioSeqFromTemplate(result, true);
+					bioseq->Assign(**it);
+				}
+			}
+			break;
 		}
-		result = submit;
 	}
 	else
 	{
-		result = ReadFile(context, ifname);
+		result = obj;
 	}
 	return result;
 }

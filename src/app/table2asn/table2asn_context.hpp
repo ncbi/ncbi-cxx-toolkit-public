@@ -65,8 +65,6 @@ struct CTable2AsnContext
 
 	// 
 	//bool   m_make_submit;
-	CRef<objects::CSeq_submit> m_submit_template;
-	CRef<objects::CSeq_entry>  m_entry_template;
 	CRef<objects::CSeq_descr>  m_descriptors;
 
 	//string logfile;
@@ -86,22 +84,21 @@ struct CTable2AsnContext
     [-K] [-H String] [-Z OutFile] [-c String] [-z OutFile] [-X String]
     [-N Integer] [-w InFile] [-M String] [-l String] [-m String]
     [-logfile File_Name] [-conffile File_Name] [-version] [-version-full]
-    [-dryrun]	*/
-	CTable2AsnContext():
-	   //m_input(0), 
-	   m_output(0),
-	   //m_make_set(false),
-	   sHandleAsSet(false),
-	   gGenomicProductSet(false),
-	   m_taxid(0)
-	{
-	}
+    [-dryrun]	
 
-	CRef<CSerialObject> UseTemplate(objects::CBioseq*& bioseq) const;
+*/
+	CTable2AsnContext();
+	~CTable2AsnContext();
+
+	objects::CBioseq* GetNextBioSeqFromTemplate(CRef<CSerialObject>& container, bool make_set) const;
 
     void AddUserTrack(objects::CSeq_descr& SD, const string& type, const string& label, const string& data) const;
 	void SetOrganismData(objects::CSeq_descr& SD, objects::CBioSource::EGenome m_genome, const string& m_taxname, int m_taxid, const string& m_strain) const;
 	void RemoteRequestTaxid();
+	CRef<objects::CSeq_submit> m_submit_template;
+	CRef<objects::CSeq_entry>  m_entry_template;
+private:
+	objects::CBioseq* CreateNextBioSeqFromTemplate(objects::CSeq_entry& container, bool make_set) const;
 };
 
 

@@ -47,7 +47,6 @@ protected:
    objects::CUser_object* AddStructuredComment(objects::CUser_object* obj, const string& name, const string& value, CSerialObject& container);
    objects::CUser_object* AddStructuredComment(objects::CUser_object* obj, const string& name, const string& value, objects::CSeq_descr& container);
    void AddSourceQualifier(const string& name, const string& value, objects::CBioseq& container);
-   //void ApplySourceQualifiers(objects::CBioseq& container, const string& src_qualifiers);
 };
 
 END_NCBI_SCOPE

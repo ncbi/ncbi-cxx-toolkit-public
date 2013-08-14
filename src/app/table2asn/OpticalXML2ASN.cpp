@@ -46,9 +46,6 @@
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Map_ext.hpp>
-#include <objects/seq/Pubdesc.hpp>
-#include <objects/pub/Pub.hpp>
-#include <objects/pub/Pub_equiv.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_point.hpp>
@@ -56,14 +53,19 @@
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Rsite_ref.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
-#include <objects/submit/Submit_block.hpp>
-#include <objects/submit/Seq_submit.hpp>
-#include <objects/general/Object_id.hpp>
-#include <objects/general/User_object.hpp>
-#include <objects/general/User_field.hpp>
-#include <objects/biblio/Cit_sub.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
+#include <objects/seqfeat/OrgName.hpp>
 
-#include <objects/taxon1/taxon1.hpp>
+//#include <objects/seq/Pubdesc.hpp>
+//#include <objects/pub/Pub.hpp>
+//#include <objects/pub/Pub_equiv.hpp>
+//#include <objects/submit/Submit_block.hpp>
+//#include <objects/submit/Seq_submit.hpp>
+//#include <objects/general/Object_id.hpp>
+//#include <objects/general/User_object.hpp>
+//#include <objects/general/User_field.hpp>
+//#include <objects/biblio/Cit_sub.hpp>
+//#include <objects/taxon1/taxon1.hpp>
 
 #include "OpticalXML2ASN.hpp"
 
@@ -106,8 +108,6 @@ public:
 
 class COpticalxml2asnOperatorImpl
 {
-//    virtual void Init(void);
-//    virtual int  Run(void);
 public:
 	COpticalxml2asnOperatorImpl():
 		m_genome(CBioSource::eGenome_chromosome) // eGenome_plasmid ??
@@ -115,18 +115,15 @@ public:
 	}
 
     int GetOpticalXMLData(const string& FileIn);
-    CRef<CSerialObject> BuildOpticalASNDataSet(const CTable2AsnContext& context);
     CRef<CSerialObject> BuildOpticalASNData(const CTable2AsnContext& context);
 private:
+	void BuildOpticalASNData(const CTable2AsnContext& context, const COpticalChrData& it, CBioseq* bioseq);
     void GetOpticalDescr(CSeq_descr& SD, const CTable2AsnContext& context);
-    void SetOrganismData(CSeq_descr& SD, const CTable2AsnContext& context);
+    void SetOrganismData(CSeq_descr& SD, const string& enzyme, const CTable2AsnContext& context);
 
     vector <COpticalChrData> m_vchr;
 
 public:
-    string m_enzyme;
-    //string m_bpid;
-    //string m_ft_url;
     CBioSource::EGenome m_genome;
 };
 
@@ -287,7 +284,6 @@ int COpticalxml2asnOperatorImpl::GetOpticalXMLData(const string& FileIn)
 void COpticalxml2asnOperatorImpl::GetOpticalDescr(CSeq_descr& SD, const CTable2AsnContext& context)
 {
     CSeq_descr::Tdata& TD = SD.Set();
-    SetOrganismData(SD, context);
 
 
     CRef<CMolInfo> mi(new CMolInfo);
@@ -301,61 +297,33 @@ void COpticalxml2asnOperatorImpl::GetOpticalDescr(CSeq_descr& SD, const CTable2A
     TD.push_back(sdm);
 }
 
-
-#if 0
-void COpticalxml2asnOperatorImpl::UseTemplate(CRef<CSeq_descr> SD, const CSeq_submit* templ)
-{
-	if (templ == 0)
-	  return;
-
-    try {
-
-	for (;;) {
-	    CSeq_descr::Tdata& TD = SD->Set();
-	    try {
-		CSubmit_block sblk;
-		*istr >> sblk;
-		if (sblk.CanGetCit()) {
-
-		    CRef<CPub> pd(new CPub());
-		    pd->SetSub().Assign(sblk.GetCit());
-
-
-		    CRef<CSeqdesc> pub(new CSeqdesc());
-		    pub->SetPub().SetPub().Set().push_back(pd);
-
-		    TD.push_back(pub);
-		}
-		CRef<CSeqdesc> pub(new CSeqdesc());
-		*istr >> *pub;
-		TD.push_back(pub);
-	    }
-	    catch (CEofException&) {
-		break;
-	    }
-	}
-    }
-    catch(CException &e)
-	{ 
-		//cerr << endl << "Template file '" << TemplateFile << "': " << e.GetMsg() << endl; 
-	}
-}
-#endif
-
 CRef<CSerialObject> COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2AsnContext& context)
 {
-    vector <COpticalChrData>::iterator it = m_vchr.begin();
-    m_enzyme = it->m_enzyme;
+	CRef<CSerialObject> container;
+    
+	for (vector<COpticalChrData>::iterator it = m_vchr.begin(); it != m_vchr.end(); ++it)
+	{
+		CBioseq* bioseq = context.GetNextBioSeqFromTemplate(container, m_vchr.size() > 1);
+		BuildOpticalASNData(context, *it, bioseq);
+	}
 
-	CBioseq* bioseq = 0;
-	CRef<CSerialObject> container = context.UseTemplate(bioseq);
+	return container;
+}
 
-	string lclid = "lcl|optical_map_chr_"+it->m_name;
-	CRef<CSeq_id> id(new CSeq_id(lclid));
+void COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2AsnContext& context, const COpticalChrData& it, CBioseq* bioseq)
+{
+	string lclid;
+	if (it.m_name.find("lcl|") != 0)
+		lclid = "lcl|optical_map_chr_"+ it.m_name;
+	else
+		lclid = it.m_name;
+
+	CRef<CSeq_id> id(new CSeq_id(lclid, CSeq_id::fParse_PartialOK));
 	bioseq->SetId().clear();
 	bioseq->SetId().push_back(id);
 
 	CSeq_descr& SD = bioseq->SetDescr();
+	SetOrganismData(SD, it.m_enzyme, context);
     GetOpticalDescr(SD, context);
 	context.AddUserTrack(SD, "DBLink", "BioProject", context.m_accession);
 	context.AddUserTrack(SD, "FileTrack", "FileTrackURL", context.m_url);
@@ -363,8 +331,8 @@ CRef<CSerialObject> COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTabl
 	CSeq_inst& inst(bioseq->SetInst());
 	inst.SetRepr(CSeq_inst::eRepr_map);
 	inst.SetMol(CSeq_inst::eMol_dna);
-	inst.SetLength(it->m_length);
-	inst.SetTopology(it->m_linear ? CSeq_inst::eTopology_linear : CSeq_inst::eTopology_circular);
+	inst.SetLength(it.m_length);
+	inst.SetTopology(it.m_linear ? CSeq_inst::eTopology_linear : CSeq_inst::eTopology_circular);
 	inst.SetStrand(CSeq_inst::eStrand_ds);
 
 	CMap_ext& map = inst.SetExt().SetMap();
@@ -377,14 +345,14 @@ CRef<CSerialObject> COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTabl
 
 	CRef<CRsite_ref> rs(new CRsite_ref());
 	rs->Select(CRsite_ref::e_Str);
-	rs->SetStr(it->m_enzyme);
+	rs->SetStr(it.m_enzyme);
 	fd->SetRsite(*rs);
 
 	f->SetData(*fd);
 
 	CRef<CPacked_seqpnt> spnt(new CPacked_seqpnt());
 	int addr = -1;
-	ITERATE (vector <TFragm>, fit, it->m_fragments) {
+	ITERATE (vector <TFragm>, fit, it.m_fragments) {
 	    addr += fit->second;
 	    spnt->AddPoint(addr);
 	}
@@ -393,125 +361,16 @@ CRef<CSerialObject> COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTabl
 	f->SetLocation(*l);
 
 	td.push_back(f);
-
-    return container;
 }
 
-CRef<CSerialObject> COpticalxml2asnOperatorImpl::BuildOpticalASNDataSet(const CTable2AsnContext& context)
-{
-    //CNcbiOfstream out(FileOut.c_str());
-
-    CRef<CBioseq_set> BSS(new CBioseq_set);
-    BSS->SetClass(CBioseq_set::eClass_equiv);
-
-    CRef<CSeq_descr> SD(new CSeq_descr());
-    GetOpticalDescr(*SD, context);
-    BSS->SetDescr(*SD);
-
-    list< CRef< CSeq_entry > >& SS = BSS->SetSeq_set();
-
-    ITERATE (vector <COpticalChrData>, it, m_vchr) {
-	CRef<CBioseq> bioseq(new CBioseq);
-	string lclid = "lcl|optical_map_chr_"+it->m_name;
-	CRef<CSeq_id> id(new CSeq_id(lclid));
-	bioseq->SetId().push_back(id);
-
-	CSeq_inst& inst(bioseq->SetInst());
-	inst.SetRepr(CSeq_inst::eRepr_map);
-	inst.SetMol(CSeq_inst::eMol_dna);
-	inst.SetLength(it->m_length);
-	inst.SetTopology(it->m_linear ? CSeq_inst::eTopology_linear : CSeq_inst::eTopology_circular);
-	inst.SetStrand(CSeq_inst::eStrand_ds);
-	CMap_ext& map = inst.SetExt().SetMap();
-
-	list< CRef< CSeq_feat > >& td = map.Set();
-
-	CRef<CSeq_feat> f(new CSeq_feat());
-
-	CRef<CSeqFeatData> fd(new CSeqFeatData());
-	fd->Select(CSeqFeatData::e_Rsite);
-
-	CRef<CRsite_ref> rs(new CRsite_ref());
-	rs->Select(CRsite_ref::e_Str);
-	rs->SetStr(it->m_enzyme);
-	fd->SetRsite(*rs);
-
-	f->SetData(*fd);
-
-	CRef<CPacked_seqpnt> spnt(new CPacked_seqpnt());
-	int addr = -1;
-	ITERATE (vector <TFragm>, fit, it->m_fragments) {
-	    addr += fit->second;
-	    spnt->AddPoint(addr);
-	}
-
-	CRef<CSeq_loc> l(new CSeq_loc(*id, spnt->GetPoints()));
-	f->SetLocation(*l);
-
-	td.push_back(f);
-	//	out << MSerial_AsnText << *bioseq;
-
-	CRef<CSeq_entry> se(new CSeq_entry());
-	se->SetSeq(*bioseq);
-	SS.push_back(se);
-    }
-
-    CRef<CSeq_entry> se(new CSeq_entry());
-    se->SetSet(*BSS);
-
-    //out << MSerial_AsnText << *se;
-
-	CRef<CSerialObject> result(se);
-
-    return result;
-}
-
-void COpticalxml2asnOperatorImpl::SetOrganismData(CSeq_descr& SD, const CTable2AsnContext& context)
+void COpticalxml2asnOperatorImpl::SetOrganismData(CSeq_descr& SD, const string& enzyme, const CTable2AsnContext& context)
 {
 	CSeq_descr::Tdata& TD = SD.Set();
-
-#if 0
-    CTaxon1 taxon;
-    bool is_species, is_uncultured;
-    string blast_name;
-
-    taxon.Init();
-
-
-    if (!m_taxname.empty()) 
-	{
-		int taxid = taxon.GetTaxIdByName(m_taxname);
-		if (m_taxid == 0)
-			m_taxid = taxid;
-		else 
-		if (m_taxid != taxid) 
-		{
-			cerr << endl << "Error: Conflicting taxonomy info provided: taxid " << m_taxid << ": ";
-			if (taxid <= 0)
-			    m_taxid = taxid;
-			else 
-			{
-				taxon.Fini();
-				cerr << "taxonomy ID for the name '" << m_taxname << "' was determined as " << taxid << endl;
-				return;
-			}
-		}
-    }
-    if (m_taxid <= 0) 
-	{
-		taxon.Fini();
-		cerr << endl << "Error: No unique taxonomy ID found for the name '" << m_taxname << "'" << endl;
-		return;
-    }
-#endif
-
-    //CConstRef<COrg_ref> org = taxon.GetOrgRef(m_taxid, is_species, is_uncultured, blast_name);
 
     CRef<CBioSource> bs(new CBioSource());
 	bs->SetGenome(m_genome);
 	bs->SetOrg().SetTaxname(context.m_taxname);
 	bs->SetOrg().SetTaxId(context.m_taxid);
-    //bs->SetOrg().Assign(*org);
 
     // Get strain
     if (!context.m_strain.empty()) 
@@ -531,9 +390,6 @@ void COpticalxml2asnOperatorImpl::SetOrganismData(CSeq_descr& SD, const CTable2A
     //CRef<COrgMod> oldlin(new COrgMod(COrgMod::eSubtype_old_lineage, "old lineage"));
     //bs->SetOrg().SetOrgname().SetMod().push_back(oldlin);
 
-//    taxon.Fini();
-
-
     if (bs->IsSetTaxname()) 
 	{
 		string title = bs->GetTaxname();
@@ -543,8 +399,8 @@ void COpticalxml2asnOperatorImpl::SetOrganismData(CSeq_descr& SD, const CTable2A
 			title += " chromosome";
 		else if (m_genome == CBioSource::eGenome_plasmid)
 			title += " plasmid";
-		if (!m_enzyme.empty())
-			title += " " + m_enzyme;
+		if (!enzyme.empty())
+			title += " " + enzyme;
 		title += " whole genome map";
 
 		CRef<CSeqdesc> sd(new CSeqdesc());
@@ -559,9 +415,6 @@ void COpticalxml2asnOperatorImpl::SetOrganismData(CSeq_descr& SD, const CTable2A
     TD.push_back(sd);
 }
 
-
-//        cout << MSerial_AsnText << inXML;
-
 COpticalxml2asnOperator::COpticalxml2asnOperator()
 {
 }
@@ -574,13 +427,9 @@ CRef<CSerialObject> COpticalxml2asnOperator::LoadXML(const string& FileIn, const
 {
 	m_impl.reset(new COpticalxml2asnOperatorImpl());
 
-	int cnt = m_impl->GetOpticalXMLData(FileIn);
+	int count = m_impl->GetOpticalXMLData(FileIn);
 
-	CRef<CSerialObject> result(
-        (cnt > 1)? 
-		    m_impl->BuildOpticalASNDataSet(context) : 
-	        m_impl->BuildOpticalASNData(context)
-		);
+	CRef<CSerialObject> result(m_impl->BuildOpticalASNData(context));
 
 	return result;
 };

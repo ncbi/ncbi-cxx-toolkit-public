@@ -200,14 +200,14 @@ void CTbl2AsnApp::Init(void)
   o By Overlap\n\
   p By Product", CArgDescriptions::eString, "o");
 
-    arg_desc->AddDefaultKey
-        ("A", "String", "Accession", CArgDescriptions::eString, "");
+    arg_desc->AddOptionalKey
+        ("A", "String", "Accession", CArgDescriptions::eString);
     arg_desc->AddOptionalKey
         ("C", "String", "Genome Center Tag", CArgDescriptions::eString);
     arg_desc->AddOptionalKey
         ("n", "String", "Organism Name", CArgDescriptions::eString); // done
-    arg_desc->AddDefaultKey
-        ("j", "String", "Source Qualifiers", CArgDescriptions::eString, ""); // done
+    arg_desc->AddOptionalKey
+        ("j", "String", "Source Qualifiers", CArgDescriptions::eString); // done
     arg_desc->AddOptionalKey
         ("y", "String", "Comment", CArgDescriptions::eString); // done
     arg_desc->AddOptionalKey
@@ -279,7 +279,7 @@ void CTbl2AsnApp::Init(void)
   C Apply comments in .cmt files to all sequences\n\
   E Treat like eukaryota in the Discrepancy Report", CArgDescriptions::eString);
 
-	arg_desc->AddDefaultKey("N", "Integer", "Project Version Number", CArgDescriptions::eInteger, "0");
+	arg_desc->AddOptionalKey("N", "Integer", "Project Version Number", CArgDescriptions::eInteger);
 
 	arg_desc->AddOptionalKey("w", "InFile", "Single Structured Comment File (overrides the use of -X C)", CArgDescriptions::eInputFile);
     arg_desc->AddOptionalKey("M", "String", "Master Genome Flags\n\
@@ -300,10 +300,10 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddOptionalKey("m", "String", "Lineage to use for Discrepancy Report tests", CArgDescriptions::eString);
 
-    arg_desc->AddDefaultKey("b", "Integer", "Organism taxonomy ID", CArgDescriptions::eInteger, "0");
-    arg_desc->AddDefaultKey("B", "String", "Taxonomy name", CArgDescriptions::eString, "");
-    arg_desc->AddDefaultKey("d", "String", "Strain name", CArgDescriptions::eString, "");
-    arg_desc->AddDefaultKey("e", "String", "URL track to add to source", CArgDescriptions::eString, "");
+    arg_desc->AddOptionalKey("b", "Integer", "Organism taxonomy ID", CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("B", "String", "Taxonomy name", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("d", "String", "Strain name", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("e", "String", "URL track to add to source", CArgDescriptions::eString);
 
 
     // Program description
@@ -357,12 +357,18 @@ int CTbl2AsnApp::Run(void)
 
 	context.gGenomicProductSet = args["g"].AsBoolean();
 	context.sHandleAsSet = args["s"].AsBoolean();
-	context.m_taxname = args["B"].AsString();
-	context.m_taxid   = args["b"].AsInteger();
-	context.m_strain  = args["d"].AsString();
-	context.m_url     = args["e"].AsString();
-	context.m_accession = args["A"].AsString();
-	context.m_source_qualifiers = args["j"].AsString();
+	if (args["B"])
+		context.m_taxname = args["B"].AsString();
+	if (args["b"])
+		context.m_taxid   = args["b"].AsInteger();
+	if (args["d"])
+		context.m_strain  = args["d"].AsString();
+	if (args["e"])
+		context.m_url     = args["e"].AsString();
+	if (args["A"])
+		context.m_accession = args["A"].AsString();
+	if (args["j"])
+	    context.m_source_qualifiers = args["j"].AsString();
 
 	context.TRemoteTaxonomyLookup = args["T"].AsBoolean();
 	if (context.TRemoteTaxonomyLookup)
@@ -398,7 +404,8 @@ int CTbl2AsnApp::Run(void)
         }
 	}
 
-	context.NProjectVersionNumber = args["N"].AsInteger();
+	if (args["N"])
+		context.NProjectVersionNumber = args["N"].AsInteger();
 
 	// Designate where do we output files: local folder, specified folder or a specific single output file
 	if (args["o"])
