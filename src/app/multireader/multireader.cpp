@@ -374,6 +374,17 @@ void CMultiReaderApp::Init(void)
         true );    
 
     //
+    //  gff reader specific arguments:
+    //
+
+    arg_desc->SetCurrentGroup("GTF READER SPECIFIC");
+
+    arg_desc->AddFlag( // no longer used, retained for backward compatibility
+        "child-links",
+        "generate gene->mrna and gene->cds xrefs",
+        true );    
+
+    //
     //  alignment reader specific arguments:
     //
 
@@ -846,11 +857,15 @@ void CMultiReaderApp::xSetFlags(
        
     case CFormatGuess::eGtf:
         if ( args["all-ids-as-local"] ) {
-            m_iFlags |= CGFFReader::fAllIdsAsLocal;
+            m_iFlags |= CBedReader::fAllIdsAsLocal;
         }
         if ( args["numeric-ids-as-local"] ) {
-            m_iFlags |= CGFFReader::fNumericIdsAsLocal;
+            m_iFlags |= CBedReader::fNumericIdsAsLocal;
         }
+        if ( args["child-links"] ) {
+            m_iFlags |= CGtfReader::fGenerateChildXrefs;
+        }
+        break;
             
     default:
         break;
