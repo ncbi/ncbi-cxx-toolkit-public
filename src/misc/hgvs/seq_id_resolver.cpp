@@ -184,23 +184,27 @@ CSeq_id_Handle CSeq_id_Resolver__ChrNamesFromGC::x_Create(const string& s)
 
     CSeq_id_Handle idh;
     CConstRef<CSeq_id> origid;
-    try {
-        idh = sequence::GetId(CSeq_id_Handle::GetHandle(s), *m_scope, sequence::eGetId_ForceAcc);
-        if (idh && !idh.IsGi()) {
-            origid = idh.GetSeqIdOrNull();
-        }
+    const bool is_numeric = (NStr::StringToNumeric(s) != -1);
+    if (is_numeric) {
+        CRef<CSeq_id> sid(new CSeq_id());
+        // ensure numeric chromosome names are stored as "local str" not "local id"
+        sid->SetLocal().SetStr(s);
+        origid = sid;
     }
-    catch (const CException& e) {
-        // ignore errors, mostly "Malformatted ID"
+    else {
+        try {
+            idh = sequence::GetId(CSeq_id_Handle::GetHandle(s), *m_scope, sequence::eGetId_ForceAcc);
+            if (idh && !idh.IsGi()) {
+                origid = idh.GetSeqIdOrNull();
+            }
+        }
+        catch (const CException& e) {
+            // ignore errors, mostly "Malformatted ID"
+        }
     }
     LOG_POST(Info << "input: " << s);
     if (origid.IsNull()) {
-        CRef<CSeq_id> sid(new CSeq_id(s, CSeq_id::fParse_AnyLocal));
-        // ensure numeric chromosome names are stored as "local str" not "local id"
-        if (sid.NotNull() && sid->IsLocal() && sid->GetLocal().IsId()) {
-            sid->SetLocal().SetStr(NStr::IntToString(sid->GetLocal().GetId()));
-        }
-        origid = sid;
+        origid.Reset(new CSeq_id(s, CSeq_id::fParse_AnyLocal));
         LOG_POST(Info << "created seq-id: " << origid->AsFastaString());
     }
     LOG_POST(Info << "created seq-id-handle: " << idh.AsString());
