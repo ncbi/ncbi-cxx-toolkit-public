@@ -50,3 +50,68 @@ private:
     static void FixAlleles(CRef<CVariation> v, string old_ref, string new_ref);
     static void FixAlleles(CVariation_ref& vr, string old_ref, string new_ref) ;
 };
+
+class CVariationNormalization
+{
+public:
+    enum ETargetContext {
+       eDbSnp,
+       eHGVS,
+       eVCF
+    };
+    
+/////////////////////////////////////////////////////////
+ //For later creation, as thin wrappers on the logic below
+    //ASSUME scope has everything you need, but that lookups *can* fail so handle gracefully.
+    static void NormalizeVariation(CRef<CVariation>& var, ETargetContext target_ctxt, CScope& scope);     
+ 
+    // following an overloaded model.  If anyone finds that too confusing or obfuscated, speak up.
+    static void NormalizeVariation(CRef<CVariation_ref>& var, ETargetContext target_ctxt, CScope& scope); 
+/////////////////////////////////////////////////////////
+ 
+ 
+//Initially, the following will be the public methods, each encapsulating a *step* in the normalization process.
+//We can add the above wrappers and enum as a final touch. 
+ 
+    //These methods search out ambiguous ins/del, and alter SeqLoc
+    //to a Seq-equiv: the first is the original SeqLoc
+    //the second is an interval representing the IOA
+    static void NormalizeAmbiguousVars(CRef<CVariation>& var);
+    static void NormalizeAmbiguousVars(CRef<CVariation_ref>& var);
+ 
+    //HGVS
+    //*Assume* Seq-equiv's are present and second one is 'IOA'
+    //  (i.e. that SetContextToDbSnp has already been executed on the object)
+    //Produce one var/var-ref *per* allele, each with single SeqLoc, 
+    //representing right-most position
+    //For an insert, this is a SeqLoc-Point
+    //For a deletion, this is either a point or interval, depending on the size of the deletion.
+    // and precisely why we are breaking up alleles into separate HGVS expressions
+    static void AlterToHGVSVar(CRef<CVariation>& var);
+    static void AlterToHGVSVar(CRef<CVariation_ref>& var);
+ 
+    //VCF business logic
+    static void AlterToVCFVar(CRef<CVariation>& var);
+    static void AlterToVCFVar(CRef<CVariation_ref>& var);
+ 
+    //Future thoughts:
+    // Combine/collapse objects with same SeqLoc/Type
+    // Simplify objects with common prefix in ref and all alts.
+    // Identify mixed type objects, and split.
+ 
+private:
+  
+ 
+    //Shifting logic is shared between contexts
+    //So shouldn't be wrapped up in the above.
+    void x_ShiftLeft(CRef<CVariation>& var);
+    void x_ShiftLeft(CRef<CVariation_ref>& var);
+  
+    void x_ShiftRight(CRef<CVariation>& var);
+    void x_ShiftRight(CRef<CVariation_ref>& var);
+ 
+    //Each Group of Business rules will get a private method
+    //Ideally, operations on Var and Var-ref could share common private methods
+    //that are provided common data, like a SeqLoc, Ref Allele and Alt Allele(s).
+ 
+};
