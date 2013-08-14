@@ -38,6 +38,7 @@
 
 #include <cstdlib>
 #include <iostream>
+#include <algorithm>
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
@@ -274,5 +275,101 @@ void CVariationUtilities::FixAlleles(CRef<CVariation> v, string old_ref, string 
 }
 
 
+void CVariationNormalization::x_rotate_left(string &v)
+{
+    // simple rotation to the left
+    std::rotate(v.begin(), v.begin() + 1, v.end());
+}
 
+void CVariationNormalization::x_rotate_right(string &v)
+{
+    // simple rotation to the right
+    std::rotate(v.rbegin(), v.rbegin() + 1, v.rend());
+}
 
+void CVariationNormalization::x_PrefetchSequence(CScope &scope, string accession)
+{
+    if (accession != m_Accession)
+    {
+        m_Accession = accession;
+        m_Sequence.clear();
+        CSeq_id seq_id( accession );
+        const CBioseq_Handle& bsh = scope.GetBioseqHandle( seq_id );
+        CSeqVector seq_vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+        seq_vec.GetSeqData(0, seq_vec.size(), m_Sequence);
+    }
+}
+ 
+string CVariationNormalization::x_GetSeq(int pos, int length)
+{
+    _ASSERT(!m_Sequence.empty());
+    
+    return m_Sequence.substr(pos,length);
+}
+ 
+
+void CVariationNormalization::x_ShiftLeft(CRef<CVariation>& v, CScope &scope)
+{
+    for (CVariation::TData::TSet::TVariations::iterator v1 = v->SetData().SetSet().SetVariations().begin(); v1 != v->SetData().SetSet().SetVariations().end(); ++v1)
+        if ((*v1)->IsSetPlacements())
+        {
+            CRef<CVariantPlacement> vp1 =  (*v1)->SetPlacements().front(); // should only be a single placement for each second level variation at this point
+            if (vp1->IsSetLoc() && vp1->GetLoc().IsPnt() && vp1->GetLoc().GetPnt().IsSetPoint() && vp1->GetLoc().GetPnt().IsSetId() && vp1->GetLoc().GetPnt().GetId().IsOther()
+                && vp1->GetLoc().GetPnt().GetId().GetOther().IsSetAccession() && vp1->GetLoc().GetPnt().GetId().GetOther().IsSetVersion())
+            {
+                string acc = vp1->GetLoc().GetPnt().GetId().GetOther().GetAccession();
+                int version = vp1->GetLoc().GetPnt().GetId().GetOther().GetVersion();
+                int pos = vp1->GetLoc().GetPnt().GetPoint();
+                stringstream accession;
+                accession << acc << "." << version;
+                x_PrefetchSequence(scope,accession.str());
+
+                for ( CVariation::TData::TSet::TVariations::iterator var2 = (*v1)->SetData().SetSet().SetVariations().begin(); var2 != (*v1)->SetData().SetSet().SetVariations().end();  ++var2 )
+                    if ( (*var2)->IsSetData() && (*var2)->SetData().IsInstance() && (*var2)->SetData().SetInstance().IsSetDelta() && !(*var2)->SetData().SetInstance().SetDelta().empty()
+                         && (*var2)->SetData().SetInstance().SetDelta().front()->IsSetSeq() && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().IsLiteral()
+                         && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().IsSetSeq_data() 
+                         && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().IsIupacna())
+                    {
+                        string a = (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(); 
+                        int type = (*var2)->SetData().SetInstance().SetType(); 
+                        if (!a.empty() && type == CVariation_inst::eType_ins)
+                        {
+                            bool found = false;
+                            for (int i=0; i<a.size(); i++)
+                            {
+                                string b = x_GetSeq(pos,a.size());
+                                if (a == b) 
+                                {
+                                    found = true;
+                                    break;
+                                }
+                                x_rotate_left(a);
+                            }
+                            if (found)
+                            {
+                                bool found_left = false;
+                                while (pos >= 0)
+                                {
+                                    pos--;
+                                    x_rotate_right(a);
+                                    string b = x_GetSeq(pos,a.size());
+                                    if (a != b) 
+                                    {
+                                        pos++;
+                                        x_rotate_left(a);
+                                        found_left = true;
+                                        break;
+                                    }
+                                }
+                                if (found_left)
+                                {
+                                   vp1->SetLoc().SetPnt().SetPoint(pos); 
+                                   (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(a);
+                                }
+                            }
+
+                        }
+                    }
+            }
+        }
+}
