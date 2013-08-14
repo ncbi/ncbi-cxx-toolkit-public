@@ -525,13 +525,13 @@ void CWorkerNodeJobContext::x_RunJob()
     }
     NCBI_CATCH_ALL_X(61, "Could not close IO streams");
 
+    if (m_WorkerNode.IsExclusiveMode() && IsJobExclusive())
+        m_WorkerNode.LeaveExclusiveMode();
+
     switch (GetCommitStatus()) {
     case eDone:
         m_WorkerNode.x_NotifyJobWatchers(*this,
                 IWorkerNodeJobWatcher::eJobSucceeded);
-
-        if (m_WorkerNode.IsExclusiveMode() && IsJobExclusive())
-            m_WorkerNode.LeaveExclusiveMode();
         break;
 
     case eNotCommitted:
