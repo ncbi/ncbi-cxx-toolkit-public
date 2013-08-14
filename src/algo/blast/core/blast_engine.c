@@ -1079,15 +1079,82 @@ s_RPSPreliminarySearchEngine(EBlastProgramType program_number,
     return status;
 }
 
+static void
+s_AdjustSubjectForTranslatedSraSearch(BlastHSPList* hsp_list, Uint1 offset, Int4 length)
+{
+	int i = 0;
+	BlastHSP ** hsp_array = hsp_list->hsp_array;
+	for(i=0; i < hsp_list->hspcnt; i++) {
+		BlastHSP * hsp = hsp_array[i];
+		Boolean fix_co = FALSE;
+
+		if(hsp->subject.frame > 0) {
+			switch (offset) {
+			case 1:
+				if(hsp->subject.frame == 1) {
+					hsp->subject.frame = 3;
+					fix_co = TRUE;
+				}
+				else if(hsp->subject.frame == 2) {
+					hsp->subject.frame = 1;
+				}
+				else if (hsp->subject.frame == 3) {
+					hsp->subject.frame = 2;
+				}
+			break;
+			case 2:
+				if(hsp->subject.frame == 1) {
+					hsp->subject.frame = 2;
+					fix_co = TRUE;
+				}
+				else if(hsp->subject.frame == 2) {
+					hsp->subject.frame = 3;
+					fix_co = TRUE;
+				}
+				else if (hsp->subject.frame == 3) {
+					hsp->subject.frame = 1;
+				}
+			break;
+			case 3:
+					fix_co = TRUE;
+			break;
+			default:
+			break;
+			}
+
+			if(fix_co) {
+				if(hsp->subject.offset == 0)
+					hsp->query.offset +=1;
+
+				if(hsp->subject.offset > 0)
+					hsp->subject.offset -=1;
+
+				hsp->subject.end -=1;
+				hsp->subject.gapped_start -=1;
+			}
+		}
+		else {
+			Int4 max_end = length - offset;
+			Int4 subj_end = (hsp->subject.end + 1) *CODON_LENGTH -hsp->subject.frame -2;
+			if(subj_end > max_end)
+			{
+				hsp->subject.end -=1;
+				hsp->query.end -=1;
+			}
+		}
+	}
+}
 
 static void
 s_AdjustSubjectForSraSearch(BlastHSPList* hsp_list, Uint1 offset )
 {
 	int i = 0;
 	BlastHSP ** hsp_array = hsp_list->hsp_array;
+
 	for(i=0; i < hsp_list->hspcnt; i++)
 	{
 		BlastHSP * hsp = hsp_array[i];
+
 		if(hsp->subject.offset <= offset)
 		{
 			unsigned int q_offset = offset - hsp->subject.offset;
@@ -1261,7 +1328,10 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
          if (!gapped_calculation) {
         	 if(seq_arg.seq->bases_offset > 0)
         	 {
-        		 s_AdjustSubjectForSraSearch(hsp_list, seq_arg.seq->bases_offset);
+        		 if (Blast_SubjectIsTranslated(program_number))
+        		 	 s_AdjustSubjectForTranslatedSraSearch(hsp_list, seq_arg.seq->bases_offset, seq_arg.seq->length);
+        		 else
+        			 s_AdjustSubjectForSraSearch(hsp_list, seq_arg.seq->bases_offset);
         	 }
             /* The following must be performed for any ungapped 
                search with a nucleotide database. */
@@ -1320,9 +1390,11 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
          // This should only happen for sra searches
          if((seq_arg.seq->bases_offset > 0) && (gapped_calculation))
          {
-        	s_AdjustSubjectForSraSearch(hsp_list, seq_arg.seq->bases_offset);
+        	 if (Blast_SubjectIsTranslated(program_number))
+        		 s_AdjustSubjectForTranslatedSraSearch(hsp_list, seq_arg.seq->bases_offset, seq_arg.seq->length);
+        	 else
+        		 s_AdjustSubjectForSraSearch(hsp_list, seq_arg.seq->bases_offset);
          }
-
 
          /* Save the results. */
          status = BlastHSPStreamWrite(hsp_stream, &hsp_list);
