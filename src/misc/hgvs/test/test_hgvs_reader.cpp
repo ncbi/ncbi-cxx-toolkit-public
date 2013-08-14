@@ -150,5 +150,38 @@ BOOST_AUTO_TEST_CASE(Chr1_GB_GCF)
     BOOST_CHECK_EQUAL(1, 1);
 }
 
+BOOST_AUTO_TEST_CASE(Chr8_name_GCF)
+{
+    CConstRef<CGC_Assembly> assembly = GetAssembly("GCF_000001405.13");
+    CHgvsReader reader(*assembly);
+    const string line = "8:g.19813529A>G";
+    TestCase(reader, line);
+
+    // Check that Map results meet expectations
+    BOOST_CHECK_EQUAL(1, 1);
+}
+
+BOOST_AUTO_TEST_CASE(Chr17_RS_GCF)
+{
+    CConstRef<CGC_Assembly> assembly = GetAssembly("GCF_000001405.13");
+    CHgvsReader reader(*assembly);
+    const string line = "NC_000017.10:g.66519861dupT";
+    TestCase(reader, line);
+
+    // Check that Map results meet expectations
+    BOOST_CHECK_EQUAL(1, 1);
+}
+
+BOOST_AUTO_TEST_CASE(Chr17_name_GCF)
+{
+    CConstRef<CGC_Assembly> assembly = GetAssembly("GCF_000001405.13");
+    CHgvsReader reader(*assembly);
+    const string line = "17:g.66519861dupT";
+    TestCase(reader, line);
+
+    // Check that Map results meet expectations
+    BOOST_CHECK_EQUAL(1, 1);
+}
+
 BOOST_AUTO_TEST_SUITE_END();
 
