@@ -928,7 +928,11 @@ void CGridWorkerNode::Init()
     m_NetCacheAPI = CNetCacheAPI(reg);
 }
 
-int CGridWorkerNode::Run(ESwitch daemonize, string procinfo_file_name)
+int CGridWorkerNode::Run(
+#ifdef NCBI_OS_UNIX
+    ESwitch daemonize,
+#endif
+    string procinfo_file_name)
 {
     const string kServerSec("server");
 

@@ -167,8 +167,11 @@ int CGridWorkerApp::Run(void)
 {
     const CArgs& args = GetArgs();
 
-    return m_WorkerNode->Run(args["nodaemon"] ? eOff :
+    return m_WorkerNode->Run(
+#ifdef NCBI_OS_UNIX
+            args["nodaemon"] ? eOff :
                     args["daemon"] ? eOn : eDefault,
+#endif
             args["procinfofile"].HasValue() ?
                     args["procinfofile"].AsString() : kEmptyStr);
 }

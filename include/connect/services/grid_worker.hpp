@@ -626,7 +626,10 @@ public:
 
     /// Start job execution loop.
     ///
-    int Run(ESwitch daemonize = eDefault,
+    int Run(
+#ifdef NCBI_OS_UNIX
+            ESwitch daemonize = eDefault,
+#endif
             string procinfo_file_name = kEmptyStr);
 
     void RequestShutdown();
