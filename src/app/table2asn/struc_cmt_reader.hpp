@@ -10,10 +10,13 @@ namespace objects
 {
 	class CUser_object;
 	class CSeq_descr;
+	class CBioseq;
+	class CObject_id;
+
 };
+
 class CSerialObject;
 class ILineReader;
-
 
 class CStructuredCommentsReader
 {
@@ -34,9 +37,17 @@ public:
    // First collumn of the file is the name of the field
    // Second collumn of the file is the value of the field
    void ProcessCommentsFileByRows(ILineReader& reader, CSerialObject& container);
+
+   void ProcessSourceQualifiers(ILineReader& reader, CSerialObject& container);
+   // service functions
+   static void FillVector(const string& input, vector<string>& output);
+   static objects::CBioseq* FindObjectById(CSerialObject& container, const objects::CObject_id& id);
+   void ApplySourceQualifiers(CSerialObject& container, const string& src_qualifiers);
 protected:
    objects::CUser_object* AddStructuredComment(objects::CUser_object* obj, const string& name, const string& value, CSerialObject& container);
    objects::CUser_object* AddStructuredComment(objects::CUser_object* obj, const string& name, const string& value, objects::CSeq_descr& container);
+   void AddSourceQualifier(const string& name, const string& value, objects::CBioseq& container);
+   //void ApplySourceQualifiers(objects::CBioseq& container, const string& src_qualifiers);
 };
 
 END_NCBI_SCOPE

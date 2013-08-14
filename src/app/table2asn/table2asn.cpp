@@ -206,8 +206,8 @@ void CTbl2AsnApp::Init(void)
         ("C", "String", "Genome Center Tag", CArgDescriptions::eString);
     arg_desc->AddOptionalKey
         ("n", "String", "Organism Name", CArgDescriptions::eString); // done
-    arg_desc->AddOptionalKey
-        ("j", "String", "Source Qualifiers", CArgDescriptions::eString);
+    arg_desc->AddDefaultKey
+        ("j", "String", "Source Qualifiers", CArgDescriptions::eString, ""); // done
     arg_desc->AddOptionalKey
         ("y", "String", "Comment", CArgDescriptions::eString); // done
     arg_desc->AddOptionalKey
@@ -251,7 +251,7 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddFlag("U", "Remove Unnecessary Gene Xref");
     arg_desc->AddFlag("L", "Force Local protein_id/transcript_id");
-    arg_desc->AddFlag("T", "Remote Taxonomy Lookup"); // almost done
+    arg_desc->AddFlag("T", "Remote Taxonomy Lookup");               // almost done
     arg_desc->AddFlag("P", "Remote Publication Lookup");
     arg_desc->AddFlag("W", "Log Progress");
     arg_desc->AddFlag("K", "Save Bioseq-set");
@@ -362,6 +362,7 @@ int CTbl2AsnApp::Run(void)
 	context.m_strain  = args["d"].AsString();
 	context.m_url     = args["e"].AsString();
 	context.m_accession = args["A"].AsString();
+	context.m_source_qualifiers = args["j"].AsString();
 
 	context.TRemoteTaxonomyLookup = args["T"].AsBoolean();
 	if (context.TRemoteTaxonomyLookup)
@@ -449,8 +450,6 @@ int CTbl2AsnApp::Run(void)
     }
 	*/
 
-	//m_reader.Run(args);
-
 	return 0;
 }
 
@@ -505,8 +504,6 @@ string GenerateOutputStream(const CTable2AsnContext& context, const string& path
 	outputfile = context.rResultsDirectory.empty() ? dir : context.rResultsDirectory;
 	outputfile += base;
 	outputfile += ".asn";
-
-	cout << "Opening:" << pathname << ":" << outputfile << endl;
 
 	return outputfile.c_str();
 }
@@ -664,6 +661,11 @@ void CTbl2AsnApp::ProcessSRCFile(const CTable2AsnContext& context, const string&
 {
 	CFile file(pathname);
 	if (!file.Exists()) return;
+
+	CRef<ILineReader> reader(ILineReader::New(pathname));
+
+	CStructuredCommentsReader cmt_reader;
+	cmt_reader.ProcessSourceQualifiers(*reader, *result);
 }
 
 void CTbl2AsnApp::ProcessQVLFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)

@@ -46,7 +46,7 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <util/line_reader.hpp>
-
+#include <objtools/readers/source_mod_parser.hpp>
 
 #include "struc_cmt_reader.hpp"
 
@@ -69,24 +69,29 @@ CUser_object* FindStructuredComment(CSeq_descr& descr)
 	return 0;
 }
 
-void FillVector(const string& input, vector<string>& output)
-{
-	int last_index = 0;
-	for (int i=0; last_index != string::npos; ++i)
-	{
-		int index = input.find('\t', last_index + 1);
-		output.push_back(input.substr(last_index + 1, (index == string::npos) ? string::npos : index-last_index));		
-		last_index = index;
-	}
-}
-
 CSerialObject* FindObjectById(CBioseq& container, const CObject_id& id)
 {
 		//GetFirstId()
 	return 0;
 }
 
-CSerialObject* FindObjectById(CSerialObject& container, const CObject_id& id)
+}
+
+
+void CStructuredCommentsReader::FillVector(const string& input, vector<string>& output)
+{
+	size_t last_index = 0;
+	size_t index;
+	do
+	{
+		index = input.find('\t', last_index);
+		output.push_back(input.substr(last_index, (index == string::npos) ? string::npos : index-last_index));		
+		last_index = index + 1;
+	}
+	while (index != string::npos);
+}
+
+CBioseq* CStructuredCommentsReader::FindObjectById(CSerialObject& container, const CObject_id& id)
 {
 	CSeq_entry* entry = dynamic_cast<CSeq_entry*>(&container);
 	if (entry)
@@ -97,6 +102,7 @@ CSerialObject* FindObjectById(CSerialObject& container, const CObject_id& id)
 			//if (entry->GetSeq().GetId().front()
 			//if (id.Match(*entry->GetSeq().GetFirstId())
 				//return entry;
+			return &entry->SetSeq();
 			break;
 		case CSeq_entry::e_Set:
 			if (entry->GetSet().IsSetId())
@@ -116,9 +122,6 @@ CSerialObject* FindObjectById(CSerialObject& container, const CObject_id& id)
 	}
 	return 0;
 }
-
-}
-
 
 CUser_object* CStructuredCommentsReader::AddStructuredComment(CUser_object* user_obj, const string& name, const string& value, CSeq_descr& descr)
 {
@@ -215,23 +218,76 @@ void CStructuredCommentsReader::ProcessCommentsFileByRows(ILineReader& reader, C
 	while (!reader.AtEOF())
 	{
 		reader.ReadLine();
-		if (!reader.AtEOF())
+		string current = reader.GetCurrentLine();
+		if (!current.empty())
 		{
-			string current = reader.GetCurrentLine();
-			if (!current.empty())
+			int index = current.find('\t');
+			if (index != string::npos )
 			{
-				int index = current.find('\t');
-				if (index != string::npos )
+				string commentname = current.substr(0, index);
+				current.erase(current.begin(), current.begin()+index+1);
+				obj = AddStructuredComment(obj, commentname, current, container);
+			}
+		}
+	}
+}
+
+void CStructuredCommentsReader::ProcessSourceQualifiers(ILineReader& reader, CSerialObject& container)
+{
+	vector<string> cols;
+
+	while (!reader.AtEOF())
+	{
+		reader.ReadLine();
+		// First line is a collumn definitions
+		string current = reader.GetCurrentLine();
+		if (reader.GetLineNumber() == 1)
+		{
+			FillVector(current, cols);
+			continue;
+		}
+
+		if (!current.empty())
+		{
+			// Each line except first is a set of values, first collumn is a sequence id
+			vector<string> values;
+			FillVector(current, values);
+			if (!values[0].empty())
+			{				
+				// try to find destination sequence
+				CObject_id id;
+				id.SetStr(values[0]);
+				CBioseq* dest = FindObjectById(container, id);
+				if (dest)
 				{
-					string commentname = current.substr(0, index);
-					current.erase(current.begin(), current.begin()+index+1);
-					obj = AddStructuredComment(obj, commentname, current, container);
+					CUser_object* obj = 0;
+
+					for (size_t i=1; i<values.size(); i++)
+					{
+						if (!values[i].empty())
+						{
+							// apply structure comment
+							AddSourceQualifier(cols[i], values[i], *dest);
+						}
+					}
 				}
 			}
 		}
 	}
 }
 
+void CStructuredCommentsReader::AddSourceQualifier(const string& name, const string& value, CBioseq& container)
+{
+	//CSeq_descr& TD = container.SetDescr();
+
+	//CRef<CSrcTableColumnBase> column = CSrcTableColumnBaseFactory::Create(name);
+	
+	//CBioSource
+}
+
+void CStructuredCommentsReader::ApplySourceQualifiers(CSerialObject& container, const string& src_qualifiers)
+{
+}
 
 END_NCBI_SCOPE
 

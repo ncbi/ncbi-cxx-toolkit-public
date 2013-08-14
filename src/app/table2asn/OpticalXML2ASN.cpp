@@ -113,7 +113,6 @@ public:
 		m_genome(CBioSource::eGenome_chromosome) // eGenome_plasmid ??
 	{
 	}
-	    
 
     int GetOpticalXMLData(const string& FileIn);
     CRef<CSerialObject> BuildOpticalASNDataSet(const CTable2AsnContext& context);
@@ -589,4 +588,3 @@ CRef<CSerialObject> COpticalxml2asnOperator::LoadXML(const string& FileIn, const
 
 
 END_NCBI_SCOPE
-

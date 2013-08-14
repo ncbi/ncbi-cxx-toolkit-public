@@ -939,11 +939,78 @@ void GetSeqId(CRef<CSeq_id>& id, const CTable2AsnContext& context)
 	}
 }
 
+void ApplySourceQualifiers(objects::CBioseq& bioseq, const string& src_qualifiers)
+{
+    if( ! bioseq.IsSetDescr() && ! bioseq.GetDescr().IsSet() ) {
+        return;
+    }
+	if (src_qualifiers.empty())
+		return;
+
+    CSourceModParser smp;
+    CRef<CSeqdesc> title_desc;
+
+	string title = src_qualifiers;
+
+    if (true)
+	{
+        title = smp.ParseTitle(title, CConstRef<CSeq_id>(bioseq.GetFirstId()) );
+
+        smp.ApplyAllMods(bioseq);
+#if 0
+        if( TestFlag(fUnknModThrow) ) {
+            CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
+            if( ! unused_mods.empty() ) 
+            {
+                // there are unused mods and user specified to throw if any
+                // unused 
+                CNcbiOstrstream err;
+                err << "CFastaReader: Inapplicable or unrecognized modifiers on ";
+
+                // get sequence ID
+                const CSeq_id* seq_id = bioseq.GetFirstId();
+                if( seq_id ) {
+                    err << seq_id->GetSeqIdString();
+                } else {
+                    // seq-id unknown
+                    err << "sequence";
+                }
+
+                err << ":";
+                ITERATE(CSourceModParser::TMods, mod_iter, unused_mods) {
+                    err << " [" << mod_iter->key << "=" << mod_iter->value << ']';
+                }
+                err << " around line " + NStr::NumericToString(iLineNum);
+                NCBI_THROW2(CObjReaderParseException, eUnusedMods,
+                    (string)CNcbiOstrstreamToString(err),
+                    iLineNum);
+            }
+        }
+
+        smp.GetLabel(&title, CSourceModParser::fUnusedMods);
+
+        copy( smp.GetBadMods().begin(), smp.GetBadMods().end(),
+            inserter(m_BadMods, m_BadMods.begin()) );
+        CSourceModParser::TMods unused_mods = 
+            smp.GetMods(CSourceModParser::fUnusedMods);
+        copy( unused_mods.begin(), unused_mods.end(),
+            inserter(m_UnusedMods, m_UnusedMods.begin() ) );
+#endif
+    }
+
+    // remove title if empty
+    //if( title.empty() ) {
+    //    desc_container.erase(desc_it);
+    //}
+}
+
+
 void CMultiReader::ApplyAdditionalProperties(const CTable2AsnContext& context, CSeq_entry& entry)
 {
 	switch(entry.Which())
 	{
 	case CSeq_entry::e_Seq:
+		ApplySourceQualifiers(entry.SetSeq(), context.m_source_qualifiers);
 		if (context.qSetIDFromFile)
 		{
 			CRef<CSeq_id> id;
@@ -1347,7 +1414,8 @@ CRef<CSerialObject> CMultiReader::LoadFile(const CTable2AsnContext& context, con
 			{
 			case CSeq_entry_Base::e_Seq:
 				{
-					submit->SetData().SetEntrys().push_back(read_entry);
+					submit->SetData().SetEntrys().front()->Assign(*read_entry);
+						//push_back(read_entry);
 				}
 				break;
 			case CSeq_entry_Base::e_Set:

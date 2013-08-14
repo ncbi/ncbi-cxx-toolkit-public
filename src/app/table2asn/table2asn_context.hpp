@@ -30,7 +30,7 @@ struct CTable2AsnContext
 	string A;
 	string C;
 	string nOrganismName;
-	string j;
+	string m_source_qualifiers;
 	string yComment;
 	string fInFile;
 	string k;
