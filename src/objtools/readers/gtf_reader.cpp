@@ -694,6 +694,28 @@ bool CGtfReader::x_CreateGeneXrefs(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGtfReader::x_CreateMrnaXrefs(
+    const CGff2Record& record,
+    CRef< CSeq_feat > pFeature )
+//  ----------------------------------------------------------------------------
+{
+    CRef< CSeq_feat > pParent;
+    if ( ! x_FindParentMrna( record, pParent ) ) {
+        return true;
+    }
+    
+    CRef< CSeqFeatXref > pXrefToParent( new CSeqFeatXref );
+    pXrefToParent->SetId( pParent->SetId() );    
+    pFeature->SetXref().push_back( pXrefToParent );
+
+    CRef< CSeqFeatXref > pXrefToChild( new CSeqFeatXref );
+    pXrefToChild->SetId( pFeature->SetId() );
+    pParent->SetXref().push_back( pXrefToChild );
+
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGtfReader::x_MergeFeatureLocationSingleInterval(
     const CGff2Record& record,
     CRef< CSeq_feat > pFeature )
@@ -809,6 +831,9 @@ bool CGtfReader::x_CreateParentCds(
         return false;
     }
     if ( ! x_CreateGeneXrefs( gff, pFeature ) ) {
+        return false;
+    }
+    if ( ! x_CreateMrnaXrefs( gff, pFeature ) ) {
         return false;
     }
     if ( ! x_FeatureSetQualifiers( gff, pFeature ) ) {

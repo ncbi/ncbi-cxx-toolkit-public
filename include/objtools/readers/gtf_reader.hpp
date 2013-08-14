@@ -141,6 +141,10 @@ protected:
         const CGff2Record&,
         CRef< CSeq_feat > );
     
+    bool x_CreateMrnaXrefs(
+        const CGff2Record&,
+        CRef< CSeq_feat > );
+    
     bool x_MergeFeatureLocationSingleInterval(
         const CGff2Record&,
         CRef< CSeq_feat > );
