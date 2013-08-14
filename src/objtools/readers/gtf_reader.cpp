@@ -686,9 +686,11 @@ bool CGtfReader::x_CreateGeneXrefs(
     pXrefToParent->SetId( pParent->SetId() );    
     pFeature->SetXref().push_back( pXrefToParent );
 
-    CRef< CSeqFeatXref > pXrefToChild( new CSeqFeatXref );
-    pXrefToChild->SetId( pFeature->SetId() );
-    pParent->SetXref().push_back( pXrefToChild );
+    if (m_iFlags & CGtfReader::fGenerateChildXrefs) {
+        CRef< CSeqFeatXref > pXrefToChild( new CSeqFeatXref );
+        pXrefToChild->SetId( pFeature->SetId() );
+        pParent->SetXref().push_back( pXrefToChild );
+    }
 
     return true;
 }
@@ -708,9 +710,11 @@ bool CGtfReader::x_CreateMrnaXrefs(
     pXrefToParent->SetId( pParent->SetId() );    
     pFeature->SetXref().push_back( pXrefToParent );
 
-    CRef< CSeqFeatXref > pXrefToChild( new CSeqFeatXref );
-    pXrefToChild->SetId( pFeature->SetId() );
-    pParent->SetXref().push_back( pXrefToChild );
+    if (m_iFlags & CGtfReader::fGenerateChildXrefs) {
+        CRef< CSeqFeatXref > pXrefToChild( new CSeqFeatXref );
+        pXrefToChild->SetId( pFeature->SetId() );
+        pParent->SetXref().push_back( pXrefToChild );
+    }
 
     return true;
 }

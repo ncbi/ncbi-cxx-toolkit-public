@@ -60,6 +60,10 @@ class NCBI_XOBJREAD_EXPORT CGtfReader
     : public CGff2Reader
 {
 public:
+    enum EGtfFlags {
+        fGenerateChildXrefs = 1<<8,
+    };
+
     CGtfReader( unsigned int =0, const string& = "", const string& = "" );
 
     virtual ~CGtfReader();
