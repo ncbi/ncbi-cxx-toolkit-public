@@ -221,8 +221,8 @@ Variation ::= {
   placements {
     {
       loc int {
-        from 10689126,
-        to 10689146,
+        from 10689125,
+        to 10689145,
         id other {
           accession "NT_005612",
           version 16
@@ -293,7 +293,7 @@ Variation ::= {
   placements {
     {
       loc pnt {
-        point 10689133,
+        point 10689132,
         id other {
           accession "NT_005612",
           version 16
@@ -364,8 +364,8 @@ Variation ::= {
   placements {
     {
       loc int {
-        from 10689126,
-        to 10689146,
+        from 10689125,
+        to 10689145,
         id other {
           accession "NT_005612",
           version 16
