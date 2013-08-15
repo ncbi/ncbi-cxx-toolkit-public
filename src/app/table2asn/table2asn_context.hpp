@@ -20,22 +20,22 @@ class CSeq_descr;
 struct CTable2AsnContext
 {
 	string m_current_file;
-	string rResultsDirectory;
+	string m_ResultsDirectory;
 	CNcbiOstream* m_output;
 	string m_accession;
-	bool   sHandleAsSet;
-	bool   gGenomicProductSet;
+	bool   m_HandleAsSet;
+	bool   m_GenomicProductSet;
 	bool   J;
 	string F;
 	string A;
 	string C;
-	string nOrganismName;
+	string m_OrganismName;
 	string m_source_qualifiers;
-	string yComment;
+	string m_Comment;
 	string fInFile;
 	string k;
 	string V;
-	bool   qSetIDFromFile;
+	bool   m_SetIDFromFile;
 	bool   u;
 	bool   I;
 	string G;
@@ -44,7 +44,7 @@ struct CTable2AsnContext
 	string Q;
 	bool   U;
 	bool   L;
-	bool   TRemoteTaxonomyLookup;
+	bool   m_RemoteTaxonomyLookup;
 	bool   P;
 	bool   W;
 	bool   K;
@@ -53,8 +53,8 @@ struct CTable2AsnContext
 	string c;
 	string zOufFile;
 	string X;
-	int    NProjectVersionNumber;
-	string wInFile;
+	int    m_ProjectVersionNumber;
+	string w_single_structure_cmt;
 	string M;
 	string l;
 	string m;
@@ -73,20 +73,7 @@ struct CTable2AsnContext
 
 /////////////
 	string m_format;
-	//CNcbiIstream* m_input;
-	//CNcbiOstream* m_output;
-	/*
-  table2asn.exe [-h] [-help] [-xmlhelp] [-p Directory] [-r Directory]
-    [-i InFile] [-o OutFile] [-x String] [-E] [-t InFile] [-a String] [-s]
-    [-g] [-J] [-F String] [-A String] [-C String] [-n String] [-j String]
-    [-y String] [-Y InFile] [-D InFile] [-f InFile] [-k String] [-V String]
-    [-q] [-u] [-I] [-G String] [-R] [-S] [-Q String] [-U] [-L] [-T] [-P] [-W]
-    [-K] [-H String] [-Z OutFile] [-c String] [-z OutFile] [-X String]
-    [-N Integer] [-w InFile] [-M String] [-l String] [-m String]
-    [-logfile File_Name] [-conffile File_Name] [-version] [-version-full]
-    [-dryrun]	
 
-*/
 	CTable2AsnContext();
 	~CTable2AsnContext();
 

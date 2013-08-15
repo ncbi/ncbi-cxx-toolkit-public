@@ -11,7 +11,6 @@ BEGIN_NCBI_SCOPE
 
 namespace objects
 {
-//class CSeq_annot;
 class CSeq_entry;
 class CSeq_submit;
 };
@@ -26,16 +25,13 @@ public:
 
    void Process(const CTable2AsnContext& args, const CNcbiApplication& app);
 
-   //CArgDescriptions* InitAppArgs(CNcbiApplication& app);
-   int RunOld(const CTable2AsnContext& args, const string& ifname, CNcbiOstream& output);
-
    CRef<CSerialObject> ReadFile(const CTable2AsnContext& args, const string& ifname);
    CRef<CSerialObject> LoadFile(const CTable2AsnContext& args, const string& ifname);
    void Cleanup(const CTable2AsnContext& args, CRef<CSerialObject>);
    void WriteObject(CSerialObject&, CNcbiOstream& );
    void ApplyAdditionalProperties(const CTable2AsnContext& args, CSerialObject* obj);
    void ApplyAdditionalProperties(const CTable2AsnContext& args, objects::CSeq_entry& entry);
-   void LoadTemplate(const CTable2AsnContext& args, const string& ifname, CRef<objects::CSeq_entry> & out_ent_templ, CRef<objects::CSeq_submit> & out_submit_templ);
+   void LoadTemplate(CTable2AsnContext& context, const string& ifname);
    void LoadDescriptors(const CTable2AsnContext& args, const string& ifname, CRef<objects::CSeq_descr> & out_desc);
    static
    CRef<objects::CSeq_descr> GetSeqDescr(CSerialObject* obj);
@@ -49,12 +45,9 @@ public:
 
 protected:
        
-private:
-//    virtual void Init(void);
-//    virtual int  Run(void);
-
-    
+private:  
     CRef<CSerialObject> xProcessDefault(const CTable2AsnContext&, CNcbiIstream&);
+#if 0
     void xProcessWiggle(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
     void xProcessWiggleRaw(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
     void xProcessBed(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
@@ -67,14 +60,15 @@ private:
     void xProcessGvf(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
     void xProcessAlignment(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
     void xProcessAgp(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
+#endif
 
     void xSetFormat(const CTable2AsnContext&, CNcbiIstream&);
     void xSetFlags(const CTable2AsnContext&, CNcbiIstream&);
     void xSetMapper(const CTable2AsnContext&);
     void xSetErrorContainer(const CTable2AsnContext&);
             
-    void xWriteObject(CSerialObject&, CNcbiOstream& );
-    void xDumpErrors(CNcbiOstream& );
+//    void xWriteObject(CSerialObject&, CNcbiOstream& );
+//    void xDumpErrors(CNcbiOstream& );
 
     CFormatGuess::EFormat m_uFormat;
     bool m_bCheckOnly;
@@ -85,7 +79,6 @@ private:
 
     auto_ptr<objects::CIdMapper> m_pMapper;
     CRef<objects::CMessageListenerBase> m_pErrors;
-	//CRef<CSerialObject> m_pObject;
 };
 
 END_NCBI_SCOPE

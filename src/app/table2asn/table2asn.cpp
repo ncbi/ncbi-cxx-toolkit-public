@@ -1,34 +1,35 @@
 /*  $Id$
- * ===========================================================================
- *
- *                            PUBLIC DOMAIN NOTICE
- *               National Center for Biotechnology Information
- *
- *  This software/database is a "United States Government Work" under the
- *  terms of the United States Copyright Act.  It was written as part of
- *  the author's official duties as a United States Government employee and
- *  thus cannot be copyrighted.  This software/database is freely available
- *  to the public for use. The National Library of Medicine and the U.S.
- *  Government have not placed any restriction on its use or reproduction.
- *
- *  Although all reasonable efforts have been taken to ensure the accuracy
- *  and reliability of the software and data, the NLM and the U.S.
- *  Government do not and cannot warrant the performance or results that
- *  may be obtained by using this software or data. The NLM and the U.S.
- *  Government disclaim all warranties, express or implied, including
- *  warranties of performance, merchantability or fitness for any particular
- *  purpose.
- *
- *  Please cite the author in any work or product based on this material.
- *
- * ===========================================================================
- *
- * Author:  Jonathan Kans, Clifford Clausen, Aaron Ucko
- *
- * File Description:
- *   validator
- *
- */
+* ===========================================================================
+*
+*                            PUBLIC DOMAIN NOTICE
+*               National Center for Biotechnology Information
+*
+*  This software/database is a "United States Government Work" under the
+*  terms of the United States Copyright Act.  It was written as part of
+*  the author's official duties as a United States Government employee and
+*  thus cannot be copyrighted.  This software/database is freely available
+*  to the public for use. The National Library of Medicine and the U.S.
+*  Government have not placed any restriction on its use or reproduction.
+*
+*  Although all reasonable efforts have been taken to ensure the accuracy
+*  and reliability of the software and data, the NLM and the U.S.
+*  Government do not and cannot warrant the performance or results that
+*  may be obtained by using this software or data. The NLM and the U.S.
+*  Government disclaim all warranties, express or implied, including
+*  warranties of performance, merchantability or fitness for any particular
+*  purpose.
+*
+*  Please cite the author in any work or product based on this material.
+*
+* ===========================================================================
+*
+* Authors:  Jonathan Kans, Clifford Clausen,
+*           Aaron Ucko, Sergiy Gotvyanskyy
+*
+* File Description:
+*   Converter of various files into ASN.1 format, main application function
+*
+*/
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
@@ -51,15 +52,6 @@
 // Object Manager includes
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
-#if 0
-#include <objmgr/seq_vector.hpp>
-#include <objmgr/seq_descr_ci.hpp>
-#include <objmgr/feat_ci.hpp>
-#include <objmgr/align_ci.hpp>
-#include <objmgr/graph_ci.hpp>
-#include <objmgr/seq_annot_ci.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
-#endif
 
 #include "multireader.hpp"
 
@@ -104,13 +96,12 @@ private:
 	void ProcessSRCFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
 	void ProcessQVLFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
 	void ProcessDSCFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
-	void ProcessCMTFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
+	void ProcessCMTFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result, bool byrows);
 	void ProcessPEPFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
 	void ProcessRNAFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
 	void ProcessPRTFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
 
 #if 0
-    CRef<CSeq_entry> ReadSeqEntry(void);
     CRef<CSeq_feat> ReadSeqFeat(void);
     CRef<CBioSource> ReadBioSource(void);
     CRef<CPubdesc> ReadPubdesc(void);
@@ -281,7 +272,7 @@ void CTbl2AsnApp::Init(void)
 
 	arg_desc->AddOptionalKey("N", "Integer", "Project Version Number", CArgDescriptions::eInteger);
 
-	arg_desc->AddOptionalKey("w", "InFile", "Single Structured Comment File (overrides the use of -X C)", CArgDescriptions::eInputFile);
+	arg_desc->AddOptionalKey("w", "InFile", "Single Structured Comment File (overrides the use of -X C)", CArgDescriptions::eInputFile); //almost done
     arg_desc->AddOptionalKey("M", "String", "Master Genome Flags\n\
   n Normal\n\
   b Big Sequence\n\
@@ -300,10 +291,10 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddOptionalKey("m", "String", "Lineage to use for Discrepancy Report tests", CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("b", "Integer", "Organism taxonomy ID", CArgDescriptions::eInteger);
-    arg_desc->AddOptionalKey("B", "String", "Taxonomy name", CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("d", "String", "Strain name", CArgDescriptions::eString);
-    arg_desc->AddOptionalKey("e", "String", "URL track to add to source", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("b", "Integer", "Organism taxonomy ID", CArgDescriptions::eInteger); //done
+    arg_desc->AddOptionalKey("B", "String", "Taxonomy name", CArgDescriptions::eString);          //done
+    arg_desc->AddOptionalKey("d", "String", "Strain name", CArgDescriptions::eString);            //done
+    arg_desc->AddOptionalKey("e", "String", "URL track to add to source", CArgDescriptions::eString); //done
 
 
     // Program description
@@ -344,19 +335,19 @@ int CTbl2AsnApp::Run(void)
 	*/
 
 	if (args["n"])
-		context.nOrganismName = args["n"].AsString();
+		context.m_OrganismName = args["n"].AsString();
 
 	if (args["y"])
-		context.yComment = args["y"].AsString();
+		context.m_Comment = args["y"].AsString();
 	else
 	if (args["Y"])
 	{
 		CNcbiIfstream comments(args["Y"].AsString().c_str());
-		comments >> context.yComment;
+		comments >> context.m_Comment;
 	}
 
-	context.gGenomicProductSet = args["g"].AsBoolean();
-	context.sHandleAsSet = args["s"].AsBoolean();
+	context.m_GenomicProductSet = args["g"].AsBoolean();
+	context.m_HandleAsSet = args["s"].AsBoolean();
 	if (args["B"])
 		context.m_taxname = args["B"].AsString();
 	if (args["b"])
@@ -370,15 +361,18 @@ int CTbl2AsnApp::Run(void)
 	if (args["j"])
 	    context.m_source_qualifiers = args["j"].AsString();
 
-	context.TRemoteTaxonomyLookup = args["T"].AsBoolean();
-	if (context.TRemoteTaxonomyLookup)
+	if (args["w"])
+		context.w_single_structure_cmt = args["w"].AsString();
+
+	context.m_RemoteTaxonomyLookup = args["T"].AsBoolean();
+	if (context.m_RemoteTaxonomyLookup)
 	{
 		context.RemoteRequestTaxid();
 	}
 
 	if (args["t"])
 	{
-		m_reader.LoadTemplate(context, args["t"].AsString(), context.m_entry_template, context.m_submit_template);
+		m_reader.LoadTemplate(context, args["t"].AsString());
 	}
 	if (args["D"])
 	{
@@ -405,7 +399,7 @@ int CTbl2AsnApp::Run(void)
 	}
 
 	if (args["N"])
-		context.NProjectVersionNumber = args["N"].AsInteger();
+		context.m_ProjectVersionNumber = args["N"].AsInteger();
 
 	// Designate where do we output files: local folder, specified folder or a specific single output file
 	if (args["o"])
@@ -416,15 +410,15 @@ int CTbl2AsnApp::Run(void)
 	{
 		if (args["r"])
 		{
-			context.rResultsDirectory = args["r"].AsString();
+			context.m_ResultsDirectory = args["r"].AsString();
 		}
 		else
 		{
-			context.rResultsDirectory = ".";
+			context.m_ResultsDirectory = ".";
 		}
-		context.rResultsDirectory = CDir::AddTrailingPathSeparator(context.rResultsDirectory);
+		context.m_ResultsDirectory = CDir::AddTrailingPathSeparator(context.m_ResultsDirectory);
 
-		CDir outputdir(context.rResultsDirectory);
+		CDir outputdir(context.m_ResultsDirectory);
 		if (!outputdir.Exists())
 			outputdir.Create();
 	}
@@ -469,17 +463,6 @@ CRef<CScope> CTbl2AsnApp::BuildScope (void)
     return scope;
 }
 
-
-#if 0 
-CRef<CSeq_entry> CTbl2AsnApp::ReadSeqEntry(void)
-{
-    CRef<CSeq_entry> se(new CSeq_entry);
-    m_In->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
-
-    return se;
-}
-#endif
-
 void CTbl2AsnApp::ProcessOneFile(const CTable2AsnContext& context, CRef<CSerialObject>& result)
 {
 	m_reader.Process(context, *this);
@@ -508,7 +491,7 @@ string GenerateOutputStream(const CTable2AsnContext& context, const string& path
 	string base;
 	CDirEntry::SplitPath(pathname, &dir, &base, 0);
 
-	outputfile = context.rResultsDirectory.empty() ? dir : context.rResultsDirectory;
+	outputfile = context.m_ResultsDirectory.empty() ? dir : context.m_ResultsDirectory;
 	outputfile += base;
 	outputfile += ".asn";
 
@@ -616,7 +599,8 @@ void CTbl2AsnApp::ProcessSecretFiles(const CTable2AsnContext& context, CRef<CSer
 	ProcessSRCFile(context, name + ".src", result);
 	ProcessQVLFile(context, name + ".qvl", result);
 	ProcessDSCFile(context, name + ".dsc", result);
-	ProcessCMTFile(context, name + ".cmt", result);
+	ProcessCMTFile(context, name + ".cmt", result, true);
+	ProcessCMTFile(context, context.w_single_structure_cmt, result, false);
 	ProcessPEPFile(context, name + ".pep", result);
 	ProcessRNAFile(context, name + ".rna", result);
 	ProcessPRTFile(context, name + ".prt", result);
@@ -691,7 +675,7 @@ void CTbl2AsnApp::ProcessDSCFile(const CTable2AsnContext& context, const string&
 	CMultiReader::ApplyDescriptors(*result, *descr);
 }
 
-void CTbl2AsnApp::ProcessCMTFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
+void CTbl2AsnApp::ProcessCMTFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result, bool byrows)
 {
 	CFile file(pathname);
 	if (!file.Exists()) return;
@@ -700,13 +684,10 @@ void CTbl2AsnApp::ProcessCMTFile(const CTable2AsnContext& context, const string&
 
 	CStructuredCommentsReader cmt_reader;
 
-	//cmt_reader.ProcessCommentsFileByCols(*reader, *result);
-	cmt_reader.ProcessCommentsFileByRows(*reader, *result);
-
-	//if (context.wInFile
-	//ProcessCMTFileByRows(context, *reader, result);
-	//else
-	//ProcessCMTFileByCols(context, *reader, result);
+	if (byrows)
+	   cmt_reader.ProcessCommentsFileByRows(*reader, *result);
+	else
+	   cmt_reader.ProcessCommentsFileByCols(*reader, *result);
 }
 
 void CTbl2AsnApp::ProcessPEPFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)

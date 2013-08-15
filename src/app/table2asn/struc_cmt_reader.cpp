@@ -32,10 +32,6 @@
 */
 
 #include <ncbi_pch.hpp>
-//#include <corelib/ncbiapp.hpp>
-//#include <corelib/ncbiargs.hpp>
-//#include <corelib/ncbistl.hpp>
-//#include <corelib/ncbi_system.hpp>
 
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seq/Seqdesc.hpp>
@@ -69,14 +65,7 @@ CUser_object* FindStructuredComment(CSeq_descr& descr)
 	return 0;
 }
 
-CSerialObject* FindObjectById(CBioseq& container, const CObject_id& id)
-{
-		//GetFirstId()
-	return 0;
 }
-
-}
-
 
 void CStructuredCommentsReader::FillVector(const string& input, vector<string>& output)
 {
@@ -91,7 +80,7 @@ void CStructuredCommentsReader::FillVector(const string& input, vector<string>& 
 	while (index != string::npos);
 }
 
-CBioseq* CStructuredCommentsReader::FindObjectById(CSerialObject& container, const CObject_id& id)
+CBioseq* CStructuredCommentsReader::FindObjectById(CSerialObject& container, const CSeq_id& id)
 {
 	CSeq_entry* entry = dynamic_cast<CSeq_entry*>(&container);
 	if (entry)
@@ -99,16 +88,14 @@ CBioseq* CStructuredCommentsReader::FindObjectById(CSerialObject& container, con
 		switch (entry->Which())
 		{
 		case CSeq_entry::e_Seq:
-			//if (entry->GetSeq().GetId().front()
-			//if (id.Match(*entry->GetSeq().GetFirstId())
-				//return entry;
-			return &entry->SetSeq();
+			if (entry->GetSeq().GetFirstId()->Compare(id) == CSeq_id::e_YES)
+			   return &entry->SetSeq();
 			break;
 		case CSeq_entry::e_Set:
-			if (entry->GetSet().IsSetId())
-				cout << "Id:" << entry->GetSet().GetId().GetStr().c_str() << endl;
-			//if (id.Match(entry->GetSet().GetId()))
-				//return entry;
+			NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry->SetSet().SetSeq_set())
+			{
+				return FindObjectById(**it, id);
+			}
 			break;
 		}
 	}
@@ -190,8 +177,7 @@ void CStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& reader, C
 				if (!values[0].empty())
 				{				
 					// try to find destination sequence
-					CObject_id id;
-					id.SetStr(values[0]);
+					CSeq_id id(values[0], CSeq_id::fParse_AnyLocal);
 					CSerialObject* dest = FindObjectById(container, id);
 					if (dest)
 					{
@@ -255,13 +241,10 @@ void CStructuredCommentsReader::ProcessSourceQualifiers(ILineReader& reader, CSe
 			if (!values[0].empty())
 			{				
 				// try to find destination sequence
-				CObject_id id;
-				id.SetStr(values[0]);
+				CSeq_id id(values[0], CSeq_id::fParse_AnyLocal);
 				CBioseq* dest = FindObjectById(container, id);
 				if (dest)
 				{
-					CUser_object* obj = 0;
-
 					for (size_t i=1; i<values.size(); i++)
 					{
 						if (!values[i].empty())
@@ -278,15 +261,10 @@ void CStructuredCommentsReader::ProcessSourceQualifiers(ILineReader& reader, CSe
 
 void CStructuredCommentsReader::AddSourceQualifier(const string& name, const string& value, CBioseq& container)
 {
-	//CSeq_descr& TD = container.SetDescr();
+	CSourceModParser mod;
+	mod.ParseTitle("[" + name + "=" + value + "]", CConstRef<CSeq_id>(container.GetFirstId()));
 
-	//CRef<CSrcTableColumnBase> column = CSrcTableColumnBaseFactory::Create(name);
-	
-	//CBioSource
-}
-
-void CStructuredCommentsReader::ApplySourceQualifiers(CSerialObject& container, const string& src_qualifiers)
-{
+	mod.ApplyAllMods(container);
 }
 
 END_NCBI_SCOPE

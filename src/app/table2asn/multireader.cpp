@@ -23,7 +23,7 @@
 *
 * ===========================================================================
 *
-* Author:  Frank Ludwig, NCBI
+* Author:  Frank Ludwig, Sergiy Gotvyanskyy, NCBI
 *
 * File Description:
 *   Reader for selected data file formats
@@ -379,10 +379,751 @@ CRef<CSerialObject> CMultiReader::ReadFile(const CTable2AsnContext& args, const 
 }
 
 //  ----------------------------------------------------------------------------
+CRef<CSerialObject> CMultiReader::xProcessDefault(
+    const CTable2AsnContext& args,
+    CNcbiIstream& istr)
+//  ----------------------------------------------------------------------------
+{
+	if (!args.m_HandleAsSet)
+	{
+		m_iFlags |= CFastaReader::fOneSeq;
+	}
+	m_iFlags |= CFastaReader::fAddMods;
+	
+	auto_ptr<CReaderBase> pReader(new CFastaReader(0, m_iFlags));
+    if (!pReader.get()) {
+        NCBI_THROW2(CObjReaderParseException, eFormat,
+            "File format not supported", 0);
+    }
+    CRef<CSerialObject> result = pReader->ReadObject(istr, m_pErrors);
+
+	return result;
+}
+
+//  ----------------------------------------------------------------------------
+void CMultiReader::xSetFormat(
+    const CTable2AsnContext& args,
+    CNcbiIstream& istr )
+//  ----------------------------------------------------------------------------
+{
+    m_uFormat = CFormatGuess::eUnknown;    
+    string format = args.m_format;
+    const string& strProgramName = "GetProgramDisplayName";
+    
+    if (NStr::StartsWith(strProgramName, "wig") || format == "wig" ||
+        format == "wiggle") {
+        m_uFormat = CFormatGuess::eWiggle;
+    }
+    if (NStr::StartsWith(strProgramName, "bed") || format == "bed") {
+        m_uFormat = CFormatGuess::eBed;
+    }
+    if (NStr::StartsWith(strProgramName, "b15") || format == "bed15" ||
+        format == "microarray") {
+        m_uFormat = CFormatGuess::eBed15;
+    }
+    if (NStr::StartsWith(strProgramName, "gtf") || format == "gtf") {
+        m_uFormat = CFormatGuess::eGtf;
+    }
+    if (NStr::StartsWith(strProgramName, "gff") || 
+        format == "gff3" || format == "gff2") {
+        m_uFormat = CFormatGuess::eGff3;
+    }
+    if (NStr::StartsWith(strProgramName, "agp")) {
+        m_uFormat = CFormatGuess::eAgp;
+    }
+
+    if (NStr::StartsWith(strProgramName, "newick") || 
+        format == "newick" || format == "tree" || format == "tre") {
+        m_uFormat = CFormatGuess::eNewick;
+    }
+    if (NStr::StartsWith(strProgramName, "gvf") || format == "gvf") {
+        m_uFormat = CFormatGuess::eGtf;
+    }
+    if (NStr::StartsWith(strProgramName, "aln") || format == "align" ||
+        format == "aln") {
+        m_uFormat = CFormatGuess::eAlignment;
+    }
+    if (NStr::StartsWith(strProgramName, "hgvs") || 
+        format == "hgvs") {
+        m_uFormat = CFormatGuess::eHgvs;
+    }
+    if( NStr::StartsWith(strProgramName, "fasta") ||
+        format == "fasta" ) {
+            m_uFormat = CFormatGuess::eFasta;
+    }
+    if( NStr::StartsWith(strProgramName, "feattbl") ||
+        format == "5colftbl" ) {
+            m_uFormat = CFormatGuess::eFiveColFeatureTable;
+    }
+    if (m_uFormat == CFormatGuess::eUnknown) {
+        m_uFormat = CFormatGuess::Format(istr);
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CMultiReader::xSetFlags(
+    const CTable2AsnContext& args,
+    CNcbiIstream& istr)
+//  ----------------------------------------------------------------------------
+{
+	m_iFlags = 0;
+#if 0
+    if (m_uFormat == CFormatGuess::eUnknown) {
+        xSetFormat(args, istr);
+    }
+    m_iFlags = NStr::StringToInt( 
+        args["flags"].AsString(), NStr::fConvErr_NoThrow, 16 );
+        
+    switch( m_uFormat ) {
+    
+    case CFormatGuess::eWiggle:
+        if ( args["join-same"] ) {
+            m_iFlags |= CWiggleReader::fJoinSame;
+        }
+        //by default now. But still tolerate if explicitly specified.
+        m_iFlags |= CWiggleReader::fAsByte;
+
+        if ( args["as-graph"] ) {
+            m_iFlags |= CWiggleReader::fAsGraph;
+        }
+
+        if ( args["raw"] ) {
+            m_iFlags |= CReaderBase::fAsRaw;
+        }
+        break;
+    
+    case CFormatGuess::eBed:
+        if ( args["all-ids-as-local"] ) {
+            m_iFlags |= CBedReader::fAllIdsAsLocal;
+        }
+        if ( args["numeric-ids-as-local"] ) {
+            m_iFlags |= CBedReader::fNumericIdsAsLocal;
+        }
+        if ( args["raw"] ) {
+            m_iFlags |= CReaderBase::fAsRaw;
+        }
+        break;
+       
+    case CFormatGuess::eGtf:
+        if ( args["all-ids-as-local"] ) {
+            m_iFlags |= CGFFReader::fAllIdsAsLocal;
+        }
+        if ( args["numeric-ids-as-local"] ) {
+            m_iFlags |= CGFFReader::fNumericIdsAsLocal;
+        }
+            
+    default:
+        break;
+    }
+    m_AnnotName = args["name"].AsString();
+    m_AnnotTitle = args["title"].AsString();
+#endif
+	m_iFlags |= objects::CFastaReader::fNoUserObjs;
+    //m_bCheckOnly = false; //args["checkonly"];
+}
+
+//  ----------------------------------------------------------------------------
+void CMultiReader::WriteObject(
+    CSerialObject& object,                  // potentially modified by mapper
+    CNcbiOstream& ostr)
+//  ----------------------------------------------------------------------------
+{
+    if (m_pMapper.get()) {
+		m_pMapper->MapObject(object);
+    }
+    if (m_bCheckOnly) {
+        return;
+    }
+    ostr << MSerial_AsnText << object;
+    ostr.flush();
+}
+        
+//  ----------------------------------------------------------------------------
+void CMultiReader::xSetMapper(const CTable2AsnContext& args)
+//  ----------------------------------------------------------------------------
+{
+#if 0
+    string strBuild = args["genome"].AsString();
+    string strMapFile = args["mapfile"].AsString();
+    
+    if (strBuild.empty() && strMapFile.empty()) {
+        return;
+    }
+    if (!strMapFile.empty()) {
+        CNcbiIfstream* pMapFile = new CNcbiIfstream(strMapFile.c_str());
+        m_pMapper.reset(
+            new CIdMapperConfig(*pMapFile, strBuild, false, m_pErrors));
+    }
+    else {
+        m_pMapper.reset(new CIdMapperBuiltin(strBuild, false, m_pErrors));
+    }
+#endif
+}        
+
+//  ----------------------------------------------------------------------------
+void CMultiReader::xSetErrorContainer(const CTable2AsnContext& args)
+//  ----------------------------------------------------------------------------
+{
+#if 0
+    //
+    //  By default, allow all errors up to the level of "warning" but nothing
+    //  more serious. -strict trumps everything else, -lenient is the second
+    //  strongest. In the absence of -strict and -lenient, -max-error-count and
+    //  -max-error-level become additive, i.e. both are enforced.
+    //
+    if ( args["noerrors"] ) {   // not using error policy at all
+        m_pErrors = 0;
+        return;
+    }
+    if ( args["strict"] ) {
+        m_pErrors = new CErrorContainerStrict;
+        return;
+    }
+    if ( args["lenient"] ) {
+        m_pErrors = new CErrorContainerLenient;
+        return;
+    }
+    
+    int iMaxErrorCount = args["max-error-count"].AsInteger();
+    int iMaxErrorLevel = eDiag_Error;
+    string strMaxErrorLevel = args["max-error-level"].AsString();
+    if ( strMaxErrorLevel == "info" ) {
+        iMaxErrorLevel = eDiag_Info;
+    }
+    else if ( strMaxErrorLevel == "error" ) {
+        iMaxErrorLevel = eDiag_Error;
+    }
+    
+    if ( iMaxErrorCount == -1 ) {
+        m_pErrors.Reset(new CErrorContainerLevel(iMaxErrorLevel));
+        return;
+    }
+    m_pErrors.Reset(new CErrorContainerCustom(iMaxErrorCount, iMaxErrorLevel));
+#endif
+}
+    
+void CMultiReader::Process(const CTable2AsnContext& args, const CNcbiApplication& app)
+{
+	m_bCheckOnly = app.IsDryRun();
+}
+
+CMultiReader::CMultiReader()
+{
+}
+
+void GetSeqId(CRef<CSeq_id>& id, const CTable2AsnContext& context)
+{
+	if (context.m_SetIDFromFile)
+	{
+		string base;
+		CDirEntry::SplitPath(context.m_current_file, 0, &base, 0);
+		id.Reset(new CSeq_id(string("lcl|") + base));
+	}
+}
+
+void ApplySourceQualifiers(objects::CBioseq& bioseq, const string& src_qualifiers)
+{
+    if( ! bioseq.IsSetDescr() && ! bioseq.GetDescr().IsSet() ) {
+        return;
+    }
+	if (src_qualifiers.empty())
+		return;
+
+    CSourceModParser smp;
+    CRef<CSeqdesc> title_desc;
+
+	string title = src_qualifiers;
+
+    if (true)
+	{
+        title = smp.ParseTitle(title, CConstRef<CSeq_id>(bioseq.GetFirstId()) );
+
+        smp.ApplyAllMods(bioseq);
+#if 0
+        if( TestFlag(fUnknModThrow) ) {
+            CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
+            if( ! unused_mods.empty() ) 
+            {
+                // there are unused mods and user specified to throw if any
+                // unused 
+                CNcbiOstrstream err;
+                err << "CFastaReader: Inapplicable or unrecognized modifiers on ";
+
+                // get sequence ID
+                const CSeq_id* seq_id = bioseq.GetFirstId();
+                if( seq_id ) {
+                    err << seq_id->GetSeqIdString();
+                } else {
+                    // seq-id unknown
+                    err << "sequence";
+                }
+
+                err << ":";
+                ITERATE(CSourceModParser::TMods, mod_iter, unused_mods) {
+                    err << " [" << mod_iter->key << "=" << mod_iter->value << ']';
+                }
+                err << " around line " + NStr::NumericToString(iLineNum);
+                NCBI_THROW2(CObjReaderParseException, eUnusedMods,
+                    (string)CNcbiOstrstreamToString(err),
+                    iLineNum);
+            }
+        }
+
+        smp.GetLabel(&title, CSourceModParser::fUnusedMods);
+
+        copy( smp.GetBadMods().begin(), smp.GetBadMods().end(),
+            inserter(m_BadMods, m_BadMods.begin()) );
+        CSourceModParser::TMods unused_mods = 
+            smp.GetMods(CSourceModParser::fUnusedMods);
+        copy( unused_mods.begin(), unused_mods.end(),
+            inserter(m_UnusedMods, m_UnusedMods.begin() ) );
+#endif
+    }
+
+}
+
+
+void CMultiReader::ApplyAdditionalProperties(const CTable2AsnContext& context, CSeq_entry& entry)
+{
+	switch(entry.Which())
+	{
+	case CSeq_entry::e_Seq:
+		ApplySourceQualifiers(entry.SetSeq(), context.m_source_qualifiers);
+		if (context.m_SetIDFromFile)
+		{
+			CRef<CSeq_id> id;
+			GetSeqId(id, context);
+			entry.SetSeq().SetId().push_back(id);
+		}
+		break;
+	case CSeq_entry::e_Set:
+		{
+			if (context.m_SetIDFromFile)
+			{
+				CRef<CSeq_id> id;
+				GetSeqId(id, context);
+				entry.SetSet().SetId().Assign(*id);
+			}
+			if (context.m_GenomicProductSet)
+			{
+				entry.SetSet().SetClass(CBioseq_set_Base::eClass_gen_prod_set);
+			}
+			NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
+			{
+				ApplyAdditionalProperties(context, **it);
+			}
+		}
+		break;
+	}
+
+	if (!context.m_Comment.empty())
+	{
+		CRef<CSeqdesc> value(new CSeqdesc());
+		value->SetComment(context.m_Comment);
+
+		MergeDescriptors(entry.SetDescr(), *value);
+	}
+
+	if (!context.m_OrganismName.empty())
+	{
+		CRef<CSeqdesc> value(new CSeqdesc());
+		value->SetOrg().SetTaxname().assign(context.m_OrganismName);
+
+		MergeDescriptors(entry.SetDescr(), *value);
+	}
+}
+
+void CMultiReader::ApplyAdditionalProperties(const CTable2AsnContext& context, CSerialObject* obj)
+{
+	if (CSeq_entry* entry = dynamic_cast<CSeq_entry*>(obj))
+	{
+		ApplyAdditionalProperties(context, *entry);
+	}
+	else
+	if (CSeq_submit* submit = dynamic_cast<CSeq_submit*>(obj))
+	{
+		if (context.HoldUntilPublish.Which() == CDate_Base::e_Std)
+		{
+			submit->SetSub().SetHup(true);
+			submit->SetSub().SetReldate().Assign(context.HoldUntilPublish);
+		}
+
+		NON_CONST_ITERATE(CSeq_submit_Base::C_Data::TEntrys, it, submit->SetData().SetEntrys())
+		{
+			ApplyAdditionalProperties(context, **it);
+		}
+	}
+}
+
+void CMultiReader::LoadDescriptors(const CTable2AsnContext& args, const string& ifname, CRef<CSeq_descr> & out_desc)
+{
+	out_desc.Reset(new CSeq_descr);
+
+    CNcbiIfstream istrm(ifname.c_str());
+
+    // guess format
+    ESerialDataFormat eSerialDataFormat = eSerial_None;
+    {{
+        CFormatGuess::EFormat eFormat = 
+            CFormatGuess::Format(istrm);
+
+        switch(eFormat) {
+        case CFormatGuess::eBinaryASN:
+            eSerialDataFormat = eSerial_AsnBinary;
+            break;
+        case CFormatGuess::eTextASN:
+            eSerialDataFormat = eSerial_AsnText;
+            break;
+        case CFormatGuess::eXml:
+            eSerialDataFormat = eSerial_Xml;
+            break;
+        default:
+            NCBI_USER_THROW_FMT(
+                "Descriptor file seems to be in an unsupported format: " 
+                << CFormatGuess::GetFormatName(eFormat) );
+            break;
+        }
+
+        istrm.seekg(0);
+    }}
+
+    auto_ptr<CObjectIStream> pObjIstrm( 
+        CObjectIStream::Open(eSerialDataFormat, istrm, eNoOwnership) );
+
+    // guess object type
+    //const string sType = pObjIstrm->ReadFileHeader();
+
+    // do the right thing depending on the input type
+    while (true) {
+        try {
+			const string sType = pObjIstrm->ReadFileHeader();
+			if (sType == CSeq_descr::GetTypeInfo()->GetName())
+			{
+				CRef<CSeq_descr> descr(new CSeq_descr);
+				pObjIstrm->Read(ObjectInfo(*descr),
+					CObjectIStream::eNoFileHeader);
+				out_desc->Set().insert(out_desc->Set().end(), descr->Get().begin(), descr->Get().end());
+			}
+			else
+			if (sType == CSeqdesc::GetTypeInfo()->GetName())
+			{
+				CRef<CSeqdesc> desc(new CSeqdesc);
+				pObjIstrm->Read(ObjectInfo(*desc),
+					CObjectIStream::eNoFileHeader);
+				out_desc->Set().push_back(desc);
+			}
+			else
+			{
+				throw runtime_error("Descriptor file must contain "
+					"either Seq_descr or Seqdesc elements");
+			}
+        } catch (...) {
+            break;
+        }
+    }
+}
+
+void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname)
+{
+	context.m_entry_template.Reset( new CSeq_entry );
+	context.m_submit_template.Reset( new CSeq_submit ); // possibly not used
+
+#if 0
+    // check if the location doesn't exist, and see if we can
+    // consider it some kind of sequence identifier
+    if( ! CDirEntry(ifname).IsFile() ) {
+        // see if this is blatantly not a sequence identifier
+        if( ! CRegexpUtil(sTemplateLocation).Exists("^[A-Za-z0-9_|]+(\\.[0-9]+)?$") ) {
+            throw runtime_error("This is not a valid sequence identifier: " + sTemplateLocation);
+        }
+
+        // try to load from genbank
+        CGBDataLoader::RegisterInObjectManager(*CObjectManager::GetInstance());
+        CRef<CScope> pScope(new CScope(*CObjectManager::GetInstance()));
+        pScope->AddDefaults();
+
+        CRef<CSeq_id> pTemplateId( new CSeq_id(sTemplateLocation) );
+        CBioseq_Handle bsh = pScope->GetBioseqHandle( *pTemplateId );
+
+        if ( ! bsh ) {
+            throw runtime_error("Invalid sequence identifier: " + sTemplateLocation);
+        }
+        CSeq_entry_Handle entry_h = bsh.GetParentEntry();
+
+        context.m_entry_template->Assign( *entry_h.GetCompleteSeq_entry() );
+        return;
+    }
+#endif
+
+
+    CNcbiIfstream istrm(ifname.c_str());
+
+    // guess format
+    ESerialDataFormat eSerialDataFormat = eSerial_None;
+    {{
+        CFormatGuess::EFormat eFormat = 
+            CFormatGuess::Format(istrm);
+
+        switch(eFormat) {
+        case CFormatGuess::eBinaryASN:
+            eSerialDataFormat = eSerial_AsnBinary;
+            break;
+        case CFormatGuess::eTextASN:
+            eSerialDataFormat = eSerial_AsnText;
+            break;
+        case CFormatGuess::eXml:
+            eSerialDataFormat = eSerial_Xml;
+            break;
+        default:
+            NCBI_USER_THROW_FMT(
+                "template file seems to be in an unsupported format: " 
+                << CFormatGuess::GetFormatName(eFormat) );
+            break;
+        }
+
+        istrm.seekg(0);
+    }}
+
+    auto_ptr<CObjectIStream> pObjIstrm( 
+        CObjectIStream::Open(eSerialDataFormat, istrm, eNoOwnership) );
+
+    // guess object type
+    const string sType = pObjIstrm->ReadFileHeader();
+
+    // do the right thing depending on the input type
+    if( sType == CSeq_entry::GetTypeInfo()->GetName() ) {
+        pObjIstrm->Read(ObjectInfo(*context.m_entry_template), 
+            CObjectIStream::eNoFileHeader);
+    } else if( sType == CBioseq::GetTypeInfo()->GetName() ) {
+        CRef<CBioseq> pBioseq( new CBioseq );
+        pObjIstrm->Read(ObjectInfo(*pBioseq), 
+            CObjectIStream::eNoFileHeader);
+        context.m_entry_template->SetSeq( *pBioseq );
+    } else if( sType == CSeq_submit::GetTypeInfo()->GetName() ) {
+        pObjIstrm->Read(ObjectInfo(*context.m_submit_template),
+            CObjectIStream::eNoFileHeader);
+        if (!context.m_submit_template->GetData().IsEntrys()
+            || context.m_submit_template->GetData().GetEntrys().size() != 1) 
+        {
+            throw runtime_error("Seq-submit template must contain "
+                "exactly one Seq-entry");
+        }
+    } else if( sType == CSubmit_block::GetTypeInfo()->GetName() ) {
+
+        // a Submit-block
+        CRef<CSubmit_block> submit_block(new CSubmit_block);
+        pObjIstrm->Read(ObjectInfo(*submit_block),
+            CObjectIStream::eNoFileHeader);
+
+        // Build a Seq-submit containing this plus a bogus Seq-entry
+        context.m_submit_template->SetSub(*submit_block);
+        CRef<CSeq_entry> ent(new CSeq_entry);
+        CRef<CSeq_id> dummy_id(new CSeq_id("lcl|dummy_id"));
+        ent->SetSeq().SetId().push_back(dummy_id);
+        ent->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
+        ent->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
+        context.m_submit_template->SetData().SetEntrys().push_back(ent);
+    } else {
+        NCBI_USER_THROW_FMT("Template must be Seq-entry, Seq-submit, Bioseq or "
+            "Submit-block.  Object seems to be of type: " << sType);
+    }
+
+    // for submit types, pull out the seq-entry inside and remember it
+    if( context.m_submit_template->IsEntrys() ) {
+        context.m_entry_template = context.m_submit_template->SetData().SetEntrys().front();
+    }
+
+    // The template may contain a set rather than a seq.
+    // That's OK if it contains only one na entry, which we'll use.
+    if (context.m_entry_template->IsSet()) {
+        unsigned int num_nuc_ents = 0;
+        CRef<CSeq_entry> tmp( new CSeq_entry );
+        ITERATE (CBioseq_set::TSeq_set, ent_iter,
+            context.m_entry_template->GetSet().GetSeq_set()) {
+                if ((*ent_iter)->GetSeq().GetInst().IsNa()) {
+                    ++num_nuc_ents;
+                    tmp->Assign(**ent_iter);
+                    // Copy any descriptors from the set to the sequence
+                    ITERATE (CBioseq_set::TDescr::Tdata, desc_iter,
+                        context.m_entry_template->GetSet().GetDescr().Get()) {
+                            CRef<CSeqdesc> desc(new CSeqdesc);
+                            desc->Assign(**desc_iter);
+                            tmp->SetSeq().SetDescr().Set().push_back(desc);
+                    }
+                }
+        }
+        if (num_nuc_ents == 1) {
+            context.m_entry_template->Assign(*tmp);
+        } else {
+            throw runtime_error("template contains "
+                + NStr::IntToString(num_nuc_ents)
+                + " nuc. Seq-entrys; should contain 1");
+        }
+    }
+
+    // incorporate any Seqdesc's that follow in the file
+    while (true) {
+        try {
+            CRef<CSeqdesc> desc(new CSeqdesc);
+            pObjIstrm->Read(ObjectInfo(*desc));
+            context.m_entry_template->SetSeq().SetDescr().Set().push_back(desc);
+        } catch (...) {
+            break;
+        }
+    }
+
+    if ( context.m_submit_template->IsEntrys() ) {
+        // Take Seq-submit.sub.cit and put it in the Bioseq
+        CRef<CPub> pub(new CPub);
+        pub->SetSub().Assign(context.m_submit_template->GetSub().GetCit());
+        CRef<CSeqdesc> pub_desc(new CSeqdesc);
+        pub_desc->SetPub().SetPub().Set().push_back(pub);
+        context.m_entry_template->SetSeq().SetDescr().Set().push_back(pub_desc);
+    }
+
+    if( ! context.m_entry_template->IsSeq() ) {
+        throw runtime_error("The Seq-entry must be a Bioseq not a Bioseq-set.");
+    }
+
+#if 0
+	if( args["output-type"].AsString() == "Seq-entry" ) {
+        // force Seq-entry by throwing out the Seq-submit
+        context.m_submit_template.Reset( new CSeq_submit );
+    }
+#endif
+}
+
+namespace
+{
+    class AllowedDuplicates: public set<CSeqdesc_Base::E_Choice>
+	{
+	public:
+		AllowedDuplicates()
+		{
+    		insert(CSeqdesc_Base::e_User);
+		}
+	};
+	AllowedDuplicates m_allowed_duplicates;
+
+	template<typename _which>
+	struct LocateWhich
+	{
+		typename _which::E_Choice compare_to;
+		bool operator() (_which l)  const
+		{
+			return l.Which() == compare_to;
+		}
+		bool operator() (const CRef<_which>& l)  const
+		{
+			return l->Which() == compare_to;
+		}
+	};
+}
+
+void CMultiReader::MergeDescriptors(CSeq_descr & dest, const CSeq_descr & source)
+{
+	ITERATE(CSeq_descr::Tdata, it, source.Get())
+	{
+		MergeDescriptors(dest, **it);
+	}
+}
+
+void CMultiReader::MergeDescriptors(CSeq_descr & dest, const CSeqdesc & source)
+{
+	if (m_allowed_duplicates.find(source.Which()) == m_allowed_duplicates.end())
+	{
+		LocateWhich<CSeqdesc> pred; pred.compare_to = source.Which();
+		CSeq_descr::Tdata::iterator it = find_if(dest.Set().begin(), dest.Set().end(), pred);
+		if (it != dest.Set().end())
+			dest.Set().erase(it);
+	}
+
+	CRef<CSeqdesc> desc (new CSeqdesc);
+	desc->Assign(source);
+	dest.Set().push_back(desc);
+		
+}
+
+void CMultiReader::ApplyDescriptors(CSerialObject & obj, const CSeq_descr & source)
+{
+	if (obj.GetThisTypeInfo() == CSeq_submit::GetTypeInfo())
+	{
+		CSeq_submit* submit = dynamic_cast<CSeq_submit*>(&obj);
+		if (submit)
+		{
+			NON_CONST_ITERATE(CSeq_submit_Base::C_Data::TEntrys, it, submit->SetData().SetEntrys())
+			{
+			  ApplyDescriptors(**it, source);
+			}
+		}
+	}
+	else
+	if (obj.GetThisTypeInfo() == CSeq_entry::GetTypeInfo())
+	{
+		CSeq_entry* entry = dynamic_cast<CSeq_entry*>(&obj);
+		if (entry)
+		{
+			MergeDescriptors(entry->SetDescr(), source);
+		}
+	}
+}
+
+CRef<CSerialObject> CMultiReader::LoadFile(const CTable2AsnContext& context, const string& ifname)
+{
+	CRef<CSerialObject> result;
+
+	CRef<CSerialObject> obj = ReadFile(context, ifname);  
+	CSeq_entry* read_entry = dynamic_cast<CSeq_entry*>(obj.GetPointerOrNull());
+	if (read_entry)
+	{
+		switch (read_entry->Which())
+		{
+		case CSeq_entry_Base::e_Seq:
+			{
+				CBioseq* bioseq = context.GetNextBioSeqFromTemplate(result, false);
+				bioseq->Assign(read_entry->SetSeq());
+			}
+			break;
+		case CSeq_entry_Base::e_Set:
+			{
+				const CSeq_entry_Base::TSet::TSeq_set& data = read_entry->GetSet().GetSeq_set();
+				ITERATE(CSeq_entry_Base::TSet::TSeq_set, it, data)
+				{
+					CBioseq* bioseq = context.GetNextBioSeqFromTemplate(result, true);
+					bioseq->Assign(**it);
+				}
+			}
+			break;
+		}
+	}
+	else
+	{
+		result = obj;
+	}
+	return result;
+}
+
+void CMultiReader::Cleanup(const CTable2AsnContext& context, CRef<CSerialObject> obj)
+{
+	/*
+		if (result->GetThisTypeInfo() == CSeq_entry::GetTypeInfo())
+		{
+			CSeq_entry* entry = dynamic_cast<CSeq_entry*>(result.GetPointerOrNull());
+			if (entry) 
+			{
+				CCleanup cleanup;
+				CConstRef<CCleanupChange> changes;
+				changes = cleanup.ExtendedCleanup(*entry);
+			}
+		}
+	*/
+}
+
+#if 0
+//  ----------------------------------------------------------------------------
 int CMultiReader::RunOld(const CTable2AsnContext& args, const string& ifname, CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {   
-#if 0
 //	const CArgs& args = GetArgs();
     //CNcbiIstream& istr = args["input"].AsInputFile();
     //CNcbiOstream& ostr = args["output"].AsOutputFile();
@@ -449,32 +1190,7 @@ int CMultiReader::RunOld(const CTable2AsnContext& args, const string& ifname, CN
     }
 
 	xDumpErrors( cerr );
-#endif
     return 0;
-}
-
-//  ----------------------------------------------------------------------------
-CRef<CSerialObject> CMultiReader::xProcessDefault(
-    const CTable2AsnContext& args,
-    CNcbiIstream& istr)
-//  ----------------------------------------------------------------------------
-{
-    //auto_ptr<CReaderBase> pReader(CReaderBase::GetReader(m_uFormat, m_iFlags));
-	if (!args.sHandleAsSet)
-	{
-		m_iFlags |= CFastaReader::fOneSeq;
-	}
-	m_iFlags |= CFastaReader::fAddMods;
-	
-	auto_ptr<CReaderBase> pReader(new CFastaReader(0, m_iFlags));
-    if (!pReader.get()) {
-        NCBI_THROW2(CObjReaderParseException, eFormat,
-            "File format not supported", 0);
-    }
-    CRef<CSerialObject> result = pReader->ReadObject(istr, m_pErrors);
-    //xWriteObject(*m_pObject, ostr);
-	//WriteObject(ostr);
-	return result;
 }
 
 //  ----------------------------------------------------------------------------
@@ -671,14 +1387,12 @@ void CMultiReader::xProcessAgp(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
-#if 0
     typedef vector<CRef<CSeq_entry> > TEntries;
     TEntries entries;
     AgpRead(istr, entries);
     NON_CONST_ITERATE (TEntries, it, entries) {
         xWriteObject(**it, ostr);
     }
-#endif 
 }
 
 
@@ -689,7 +1403,6 @@ void CMultiReader::xProcessAlignment(
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
-#if 0
     CAlnReader reader(istr);
     reader.SetAllGap(args["aln-gapchar"].AsString());
     reader.SetAlphabet(CAlnReader::eAlpha_Nucleotide);
@@ -699,219 +1412,8 @@ void CMultiReader::xProcessAlignment(
     reader.Read(false, args["force-local-ids"]);
     CRef<CSeq_align> pAlign = reader.GetSeqAlign();
     xWriteObject(*pAlign, ostr);
-#endif
 }
 
-//  ----------------------------------------------------------------------------
-void CMultiReader::xSetFormat(
-    const CTable2AsnContext& args,
-    CNcbiIstream& istr )
-//  ----------------------------------------------------------------------------
-{
-    m_uFormat = CFormatGuess::eUnknown;    
-    string format = args.m_format;
-    const string& strProgramName = "GetProgramDisplayName";
-    
-    if (NStr::StartsWith(strProgramName, "wig") || format == "wig" ||
-        format == "wiggle") {
-        m_uFormat = CFormatGuess::eWiggle;
-    }
-    if (NStr::StartsWith(strProgramName, "bed") || format == "bed") {
-        m_uFormat = CFormatGuess::eBed;
-    }
-    if (NStr::StartsWith(strProgramName, "b15") || format == "bed15" ||
-        format == "microarray") {
-        m_uFormat = CFormatGuess::eBed15;
-    }
-    if (NStr::StartsWith(strProgramName, "gtf") || format == "gtf") {
-        m_uFormat = CFormatGuess::eGtf;
-    }
-    if (NStr::StartsWith(strProgramName, "gff") || 
-        format == "gff3" || format == "gff2") {
-        m_uFormat = CFormatGuess::eGff3;
-    }
-    if (NStr::StartsWith(strProgramName, "agp")) {
-        m_uFormat = CFormatGuess::eAgp;
-    }
-
-    if (NStr::StartsWith(strProgramName, "newick") || 
-        format == "newick" || format == "tree" || format == "tre") {
-        m_uFormat = CFormatGuess::eNewick;
-    }
-    if (NStr::StartsWith(strProgramName, "gvf") || format == "gvf") {
-        m_uFormat = CFormatGuess::eGtf;
-    }
-    if (NStr::StartsWith(strProgramName, "aln") || format == "align" ||
-        format == "aln") {
-        m_uFormat = CFormatGuess::eAlignment;
-    }
-    if (NStr::StartsWith(strProgramName, "hgvs") || 
-        format == "hgvs") {
-        m_uFormat = CFormatGuess::eHgvs;
-    }
-    if( NStr::StartsWith(strProgramName, "fasta") ||
-        format == "fasta" ) {
-            m_uFormat = CFormatGuess::eFasta;
-    }
-    if( NStr::StartsWith(strProgramName, "feattbl") ||
-        format == "5colftbl" ) {
-            m_uFormat = CFormatGuess::eFiveColFeatureTable;
-    }
-    if (m_uFormat == CFormatGuess::eUnknown) {
-        m_uFormat = CFormatGuess::Format(istr);
-    }
-}
-
-//  ----------------------------------------------------------------------------
-void CMultiReader::xSetFlags(
-    const CTable2AsnContext& args,
-    CNcbiIstream& istr)
-//  ----------------------------------------------------------------------------
-{
-	m_iFlags = 0;
-#if 0
-    if (m_uFormat == CFormatGuess::eUnknown) {
-        xSetFormat(args, istr);
-    }
-    m_iFlags = NStr::StringToInt( 
-        args["flags"].AsString(), NStr::fConvErr_NoThrow, 16 );
-        
-    switch( m_uFormat ) {
-    
-    case CFormatGuess::eWiggle:
-        if ( args["join-same"] ) {
-            m_iFlags |= CWiggleReader::fJoinSame;
-        }
-        //by default now. But still tolerate if explicitly specified.
-        m_iFlags |= CWiggleReader::fAsByte;
-
-        if ( args["as-graph"] ) {
-            m_iFlags |= CWiggleReader::fAsGraph;
-        }
-
-        if ( args["raw"] ) {
-            m_iFlags |= CReaderBase::fAsRaw;
-        }
-        break;
-    
-    case CFormatGuess::eBed:
-        if ( args["all-ids-as-local"] ) {
-            m_iFlags |= CBedReader::fAllIdsAsLocal;
-        }
-        if ( args["numeric-ids-as-local"] ) {
-            m_iFlags |= CBedReader::fNumericIdsAsLocal;
-        }
-        if ( args["raw"] ) {
-            m_iFlags |= CReaderBase::fAsRaw;
-        }
-        break;
-       
-    case CFormatGuess::eGtf:
-        if ( args["all-ids-as-local"] ) {
-            m_iFlags |= CGFFReader::fAllIdsAsLocal;
-        }
-        if ( args["numeric-ids-as-local"] ) {
-            m_iFlags |= CGFFReader::fNumericIdsAsLocal;
-        }
-            
-    default:
-        break;
-    }
-    m_AnnotName = args["name"].AsString();
-    m_AnnotTitle = args["title"].AsString();
-#endif
-	m_iFlags |= objects::CFastaReader::fNoUserObjs;
-    //m_bCheckOnly = false; //args["checkonly"];
-}
-
-void CMultiReader::xWriteObject(
-    CSerialObject& object,                  // potentially modified by mapper
-    CNcbiOstream& ostr)
-//  ----------------------------------------------------------------------------
-{
-}
-
-//  ----------------------------------------------------------------------------
-void CMultiReader::WriteObject(
-    CSerialObject& object,                  // potentially modified by mapper
-    CNcbiOstream& ostr)
-//  ----------------------------------------------------------------------------
-{
-    if (m_pMapper.get()) {
-		m_pMapper->MapObject(object);
-    }
-    if (m_bCheckOnly) {
-        return;
-    }
-    ostr << MSerial_AsnText << object;
-    ostr.flush();
-}
-        
-//  ----------------------------------------------------------------------------
-void CMultiReader::xSetMapper(const CTable2AsnContext& args)
-//  ----------------------------------------------------------------------------
-{
-#if 0
-    string strBuild = args["genome"].AsString();
-    string strMapFile = args["mapfile"].AsString();
-    
-    if (strBuild.empty() && strMapFile.empty()) {
-        return;
-    }
-    if (!strMapFile.empty()) {
-        CNcbiIfstream* pMapFile = new CNcbiIfstream(strMapFile.c_str());
-        m_pMapper.reset(
-            new CIdMapperConfig(*pMapFile, strBuild, false, m_pErrors));
-    }
-    else {
-        m_pMapper.reset(new CIdMapperBuiltin(strBuild, false, m_pErrors));
-    }
-#endif
-}        
-
-//  ----------------------------------------------------------------------------
-void CMultiReader::xSetErrorContainer(const CTable2AsnContext& args)
-//  ----------------------------------------------------------------------------
-{
-#if 0
-    //
-    //  By default, allow all errors up to the level of "warning" but nothing
-    //  more serious. -strict trumps everything else, -lenient is the second
-    //  strongest. In the absence of -strict and -lenient, -max-error-count and
-    //  -max-error-level become additive, i.e. both are enforced.
-    //
-    if ( args["noerrors"] ) {   // not using error policy at all
-        m_pErrors = 0;
-        return;
-    }
-    if ( args["strict"] ) {
-        m_pErrors = new CErrorContainerStrict;
-        return;
-    }
-    if ( args["lenient"] ) {
-        m_pErrors = new CErrorContainerLenient;
-        return;
-    }
-    
-    int iMaxErrorCount = args["max-error-count"].AsInteger();
-    int iMaxErrorLevel = eDiag_Error;
-    string strMaxErrorLevel = args["max-error-level"].AsString();
-    if ( strMaxErrorLevel == "info" ) {
-        iMaxErrorLevel = eDiag_Info;
-    }
-    else if ( strMaxErrorLevel == "error" ) {
-        iMaxErrorLevel = eDiag_Error;
-    }
-    
-    if ( iMaxErrorCount == -1 ) {
-        m_pErrors.Reset(new CErrorContainerLevel(iMaxErrorLevel));
-        return;
-    }
-    m_pErrors.Reset(new CErrorContainerCustom(iMaxErrorCount, iMaxErrorLevel));
-#endif
-}
-    
-//  ----------------------------------------------------------------------------
 void CMultiReader::xDumpErrors(CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
 {
@@ -920,528 +1422,8 @@ void CMultiReader::xDumpErrors(CNcbiOstream& ostr)
     }
 }
 
-void CMultiReader::Process(const CTable2AsnContext& args, const CNcbiApplication& app)
-{
-	m_bCheckOnly = app.IsDryRun();
-}
 
-CMultiReader::CMultiReader()
-{
-}
-
-void GetSeqId(CRef<CSeq_id>& id, const CTable2AsnContext& context)
-{
-	if (context.qSetIDFromFile)
-	{
-		string base;
-		CDirEntry::SplitPath(context.m_current_file, 0, &base, 0);
-		id.Reset(new CSeq_id(string("lcl|") + base));
-	}
-}
-
-void ApplySourceQualifiers(objects::CBioseq& bioseq, const string& src_qualifiers)
-{
-    if( ! bioseq.IsSetDescr() && ! bioseq.GetDescr().IsSet() ) {
-        return;
-    }
-	if (src_qualifiers.empty())
-		return;
-
-    CSourceModParser smp;
-    CRef<CSeqdesc> title_desc;
-
-	string title = src_qualifiers;
-
-    if (true)
-	{
-        title = smp.ParseTitle(title, CConstRef<CSeq_id>(bioseq.GetFirstId()) );
-
-        smp.ApplyAllMods(bioseq);
-#if 0
-        if( TestFlag(fUnknModThrow) ) {
-            CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
-            if( ! unused_mods.empty() ) 
-            {
-                // there are unused mods and user specified to throw if any
-                // unused 
-                CNcbiOstrstream err;
-                err << "CFastaReader: Inapplicable or unrecognized modifiers on ";
-
-                // get sequence ID
-                const CSeq_id* seq_id = bioseq.GetFirstId();
-                if( seq_id ) {
-                    err << seq_id->GetSeqIdString();
-                } else {
-                    // seq-id unknown
-                    err << "sequence";
-                }
-
-                err << ":";
-                ITERATE(CSourceModParser::TMods, mod_iter, unused_mods) {
-                    err << " [" << mod_iter->key << "=" << mod_iter->value << ']';
-                }
-                err << " around line " + NStr::NumericToString(iLineNum);
-                NCBI_THROW2(CObjReaderParseException, eUnusedMods,
-                    (string)CNcbiOstrstreamToString(err),
-                    iLineNum);
-            }
-        }
-
-        smp.GetLabel(&title, CSourceModParser::fUnusedMods);
-
-        copy( smp.GetBadMods().begin(), smp.GetBadMods().end(),
-            inserter(m_BadMods, m_BadMods.begin()) );
-        CSourceModParser::TMods unused_mods = 
-            smp.GetMods(CSourceModParser::fUnusedMods);
-        copy( unused_mods.begin(), unused_mods.end(),
-            inserter(m_UnusedMods, m_UnusedMods.begin() ) );
 #endif
-    }
-
-    // remove title if empty
-    //if( title.empty() ) {
-    //    desc_container.erase(desc_it);
-    //}
-}
-
-
-void CMultiReader::ApplyAdditionalProperties(const CTable2AsnContext& context, CSeq_entry& entry)
-{
-	switch(entry.Which())
-	{
-	case CSeq_entry::e_Seq:
-		ApplySourceQualifiers(entry.SetSeq(), context.m_source_qualifiers);
-		if (context.qSetIDFromFile)
-		{
-			CRef<CSeq_id> id;
-			GetSeqId(id, context);
-			entry.SetSeq().SetId().push_back(id);
-		}
-		break;
-	case CSeq_entry::e_Set:
-		{
-			if (context.qSetIDFromFile)
-			{
-				CRef<CSeq_id> id;
-				GetSeqId(id, context);
-				entry.SetSet().SetId().Assign(*id);
-			}
-			if (context.gGenomicProductSet)
-			{
-				entry.SetSet().SetClass(CBioseq_set_Base::eClass_gen_prod_set);
-			}
-			NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
-			{
-				ApplyAdditionalProperties(context, **it);
-			}
-		}
-		break;
-	}
-
-	if (!context.yComment.empty())
-	{
-		CRef<CSeqdesc> value(new CSeqdesc());
-		value->SetComment(context.yComment);
-
-		MergeDescriptors(entry.SetDescr(), *value);
-	}
-
-	if (!context.nOrganismName.empty())
-	{
-		CRef<CSeqdesc> value(new CSeqdesc());
-		value->SetOrg().SetTaxname().assign(context.nOrganismName);
-
-		MergeDescriptors(entry.SetDescr(), *value);
-	}
-}
-
-void CMultiReader::ApplyAdditionalProperties(const CTable2AsnContext& context, CSerialObject* obj)
-{
-	if (CSeq_entry* entry = dynamic_cast<CSeq_entry*>(obj))
-	{
-		ApplyAdditionalProperties(context, *entry);
-	}
-	else
-	if (CSeq_submit* submit = dynamic_cast<CSeq_submit*>(obj))
-	{
-		if (context.HoldUntilPublish.Which() == CDate_Base::e_Std)
-		{
-			submit->SetSub().SetHup(true);
-			submit->SetSub().SetReldate().Assign(context.HoldUntilPublish);
-		}
-
-		NON_CONST_ITERATE(CSeq_submit_Base::C_Data::TEntrys, it, submit->SetData().SetEntrys())
-		{
-			ApplyAdditionalProperties(context, **it);
-		}
-	}
-}
-
-void CMultiReader::LoadDescriptors(const CTable2AsnContext& args, const string& ifname, CRef<CSeq_descr> & out_desc)
-{
-	out_desc.Reset(new CSeq_descr);
-
-    CNcbiIfstream istrm(ifname.c_str());
-
-    // guess format
-    ESerialDataFormat eSerialDataFormat = eSerial_None;
-    {{
-        CFormatGuess::EFormat eFormat = 
-            CFormatGuess::Format(istrm);
-
-        switch(eFormat) {
-        case CFormatGuess::eBinaryASN:
-            eSerialDataFormat = eSerial_AsnBinary;
-            break;
-        case CFormatGuess::eTextASN:
-            eSerialDataFormat = eSerial_AsnText;
-            break;
-        case CFormatGuess::eXml:
-            eSerialDataFormat = eSerial_Xml;
-            break;
-        default:
-            NCBI_USER_THROW_FMT(
-                "Descriptor file seems to be in an unsupported format: " 
-                << CFormatGuess::GetFormatName(eFormat) );
-            break;
-        }
-
-        istrm.seekg(0);
-    }}
-
-    auto_ptr<CObjectIStream> pObjIstrm( 
-        CObjectIStream::Open(eSerialDataFormat, istrm, eNoOwnership) );
-
-    // guess object type
-    //const string sType = pObjIstrm->ReadFileHeader();
-
-    // do the right thing depending on the input type
-    while (true) {
-        try {
-			const string sType = pObjIstrm->ReadFileHeader();
-			if (sType == CSeq_descr::GetTypeInfo()->GetName())
-			{
-				CRef<CSeq_descr> descr(new CSeq_descr);
-				pObjIstrm->Read(ObjectInfo(*descr),
-					CObjectIStream::eNoFileHeader);
-				out_desc->Set().insert(out_desc->Set().end(), descr->Get().begin(), descr->Get().end());
-			}
-			else
-			if (sType == CSeqdesc::GetTypeInfo()->GetName())
-			{
-				CRef<CSeqdesc> desc(new CSeqdesc);
-				pObjIstrm->Read(ObjectInfo(*desc),
-					CObjectIStream::eNoFileHeader);
-				out_desc->Set().push_back(desc);
-			}
-			else
-			{
-				throw runtime_error("Descriptor file must contain "
-					"either Seq_descr or Seqdesc elements");
-			}
-        } catch (...) {
-            break;
-        }
-    }
-}
-
-void CMultiReader::LoadTemplate(const CTable2AsnContext& args, const string& ifname, CRef<CSeq_entry> & out_ent_templ, CRef<CSeq_submit> & out_submit_templ)
-{
-    //const CArgs & args = GetArgs();
-
-    out_ent_templ.Reset( new CSeq_entry );
-    out_submit_templ.Reset( new CSeq_submit ); // possibly not used
-
-#if 0
-    // check if the location doesn't exist, and see if we can
-    // consider it some kind of sequence identifier
-    if( ! CDirEntry(ifname).IsFile() ) {
-        // see if this is blatantly not a sequence identifier
-        if( ! CRegexpUtil(sTemplateLocation).Exists("^[A-Za-z0-9_|]+(\\.[0-9]+)?$") ) {
-            throw runtime_error("This is not a valid sequence identifier: " + sTemplateLocation);
-        }
-
-        // try to load from genbank
-        CGBDataLoader::RegisterInObjectManager(*CObjectManager::GetInstance());
-        CRef<CScope> pScope(new CScope(*CObjectManager::GetInstance()));
-        pScope->AddDefaults();
-
-        CRef<CSeq_id> pTemplateId( new CSeq_id(sTemplateLocation) );
-        CBioseq_Handle bsh = pScope->GetBioseqHandle( *pTemplateId );
-
-        if ( ! bsh ) {
-            throw runtime_error("Invalid sequence identifier: " + sTemplateLocation);
-        }
-        CSeq_entry_Handle entry_h = bsh.GetParentEntry();
-
-        out_ent_templ->Assign( *entry_h.GetCompleteSeq_entry() );
-        return;
-    }
-#endif
-
-
-    CNcbiIfstream istrm(ifname.c_str());
-
-    // guess format
-    ESerialDataFormat eSerialDataFormat = eSerial_None;
-    {{
-        CFormatGuess::EFormat eFormat = 
-            CFormatGuess::Format(istrm);
-
-        switch(eFormat) {
-        case CFormatGuess::eBinaryASN:
-            eSerialDataFormat = eSerial_AsnBinary;
-            break;
-        case CFormatGuess::eTextASN:
-            eSerialDataFormat = eSerial_AsnText;
-            break;
-        case CFormatGuess::eXml:
-            eSerialDataFormat = eSerial_Xml;
-            break;
-        default:
-            NCBI_USER_THROW_FMT(
-                "template file seems to be in an unsupported format: " 
-                << CFormatGuess::GetFormatName(eFormat) );
-            break;
-        }
-
-        istrm.seekg(0);
-    }}
-
-    auto_ptr<CObjectIStream> pObjIstrm( 
-        CObjectIStream::Open(eSerialDataFormat, istrm, eNoOwnership) );
-
-    // guess object type
-    const string sType = pObjIstrm->ReadFileHeader();
-
-    // do the right thing depending on the input type
-    if( sType == CSeq_entry::GetTypeInfo()->GetName() ) {
-        pObjIstrm->Read(ObjectInfo(*out_ent_templ), 
-            CObjectIStream::eNoFileHeader);
-    } else if( sType == CBioseq::GetTypeInfo()->GetName() ) {
-        CRef<CBioseq> pBioseq( new CBioseq );
-        pObjIstrm->Read(ObjectInfo(*pBioseq), 
-            CObjectIStream::eNoFileHeader);
-        out_ent_templ->SetSeq( *pBioseq );
-    } else if( sType == CSeq_submit::GetTypeInfo()->GetName() ) {
-        pObjIstrm->Read(ObjectInfo(*out_submit_templ),
-            CObjectIStream::eNoFileHeader);
-        if (!out_submit_templ->GetData().IsEntrys()
-            || out_submit_templ->GetData().GetEntrys().size() != 1) 
-        {
-            throw runtime_error("Seq-submit template must contain "
-                "exactly one Seq-entry");
-        }
-    } else if( sType == CSubmit_block::GetTypeInfo()->GetName() ) {
-
-        // a Submit-block
-        CRef<CSubmit_block> submit_block(new CSubmit_block);
-        pObjIstrm->Read(ObjectInfo(*submit_block),
-            CObjectIStream::eNoFileHeader);
-
-        // Build a Seq-submit containing this plus a bogus Seq-entry
-        out_submit_templ->SetSub(*submit_block);
-        CRef<CSeq_entry> ent(new CSeq_entry);
-        CRef<CSeq_id> dummy_id(new CSeq_id("lcl|dummy_id"));
-        ent->SetSeq().SetId().push_back(dummy_id);
-        ent->SetSeq().SetInst().SetRepr(CSeq_inst::eRepr_raw);
-        ent->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
-        out_submit_templ->SetData().SetEntrys().push_back(ent);
-    } else {
-        NCBI_USER_THROW_FMT("Template must be Seq-entry, Seq-submit, Bioseq or "
-            "Submit-block.  Object seems to be of type: " << sType);
-    }
-
-    // for submit types, pull out the seq-entry inside and remember it
-    if( out_submit_templ->IsEntrys() ) {
-        out_ent_templ = out_submit_templ->SetData().SetEntrys().front();
-    }
-
-    // The template may contain a set rather than a seq.
-    // That's OK if it contains only one na entry, which we'll use.
-    if (out_ent_templ->IsSet()) {
-        unsigned int num_nuc_ents = 0;
-        CRef<CSeq_entry> tmp( new CSeq_entry );
-        ITERATE (CBioseq_set::TSeq_set, ent_iter,
-            out_ent_templ->GetSet().GetSeq_set()) {
-                if ((*ent_iter)->GetSeq().GetInst().IsNa()) {
-                    ++num_nuc_ents;
-                    tmp->Assign(**ent_iter);
-                    // Copy any descriptors from the set to the sequence
-                    ITERATE (CBioseq_set::TDescr::Tdata, desc_iter,
-                        out_ent_templ->GetSet().GetDescr().Get()) {
-                            CRef<CSeqdesc> desc(new CSeqdesc);
-                            desc->Assign(**desc_iter);
-                            tmp->SetSeq().SetDescr().Set().push_back(desc);
-                    }
-                }
-        }
-        if (num_nuc_ents == 1) {
-            out_ent_templ->Assign(*tmp);
-        } else {
-            throw runtime_error("template contains "
-                + NStr::IntToString(num_nuc_ents)
-                + " nuc. Seq-entrys; should contain 1");
-        }
-    }
-
-    // incorporate any Seqdesc's that follow in the file
-    while (true) {
-        try {
-            CRef<CSeqdesc> desc(new CSeqdesc);
-            pObjIstrm->Read(ObjectInfo(*desc));
-            out_ent_templ->SetSeq().SetDescr().Set().push_back(desc);
-        } catch (...) {
-            break;
-        }
-    }
-
-    if ( out_submit_templ->IsEntrys() ) {
-        // Take Seq-submit.sub.cit and put it in the Bioseq
-        CRef<CPub> pub(new CPub);
-        pub->SetSub().Assign(out_submit_templ->GetSub().GetCit());
-        CRef<CSeqdesc> pub_desc(new CSeqdesc);
-        pub_desc->SetPub().SetPub().Set().push_back(pub);
-        out_ent_templ->SetSeq().SetDescr().Set().push_back(pub_desc);
-    }
-
-    if( ! out_ent_templ->IsSeq() ) {
-        throw runtime_error("The Seq-entry must be a Bioseq not a Bioseq-set.");
-    }
-
-#if 0
-	if( args["output-type"].AsString() == "Seq-entry" ) {
-        // force Seq-entry by throwing out the Seq-submit
-        out_submit_templ.Reset( new CSeq_submit );
-    }
-#endif
-}
-
-namespace
-{
-    class AllowedDuplicates: public set<CSeqdesc_Base::E_Choice>
-	{
-	public:
-		AllowedDuplicates()
-		{
-    		insert(CSeqdesc_Base::e_User);
-		}
-	};
-	AllowedDuplicates m_allowed_duplicates;
-
-	template<typename _which>
-	struct LocateWhich
-	{
-		typename _which::E_Choice compare_to;
-		bool operator() (_which l)  const
-		{
-			return l.Which() == compare_to;
-		}
-		bool operator() (const CRef<_which>& l)  const
-		{
-			return l->Which() == compare_to;
-		}
-	};
-}
-
-void CMultiReader::MergeDescriptors(CSeq_descr & dest, const CSeq_descr & source)
-{
-	ITERATE(CSeq_descr::Tdata, it, source.Get())
-	{
-		MergeDescriptors(dest, **it);
-	}
-}
-
-void CMultiReader::MergeDescriptors(CSeq_descr & dest, const CSeqdesc & source)
-{
-	if (m_allowed_duplicates.find(source.Which()) == m_allowed_duplicates.end())
-	{
-		LocateWhich<CSeqdesc> pred; pred.compare_to = source.Which();
-		CSeq_descr::Tdata::iterator it = find_if(dest.Set().begin(), dest.Set().end(), pred);
-		if (it != dest.Set().end())
-			dest.Set().erase(it);
-	}
-
-	CRef<CSeqdesc> desc (new CSeqdesc);
-	desc->Assign(source);
-	dest.Set().push_back(desc);
-		
-}
-
-void CMultiReader::ApplyDescriptors(CSerialObject & obj, const CSeq_descr & source)
-{
-	if (obj.GetThisTypeInfo() == CSeq_submit::GetTypeInfo())
-	{
-		CSeq_submit* submit = dynamic_cast<CSeq_submit*>(&obj);
-		if (submit)
-		{
-			NON_CONST_ITERATE(CSeq_submit_Base::C_Data::TEntrys, it, submit->SetData().SetEntrys())
-			{
-			  ApplyDescriptors(**it, source);
-			}
-		}
-	}
-	else
-	if (obj.GetThisTypeInfo() == CSeq_entry::GetTypeInfo())
-	{
-		CSeq_entry* entry = dynamic_cast<CSeq_entry*>(&obj);
-		if (entry)
-		{
-			MergeDescriptors(entry->SetDescr(), source);
-		}
-	}
-}
-
-CRef<CSerialObject> CMultiReader::LoadFile(const CTable2AsnContext& context, const string& ifname)
-{
-	CRef<CSerialObject> result;
-
-	CRef<CSerialObject> obj = ReadFile(context, ifname);  
-	CSeq_entry* read_entry = dynamic_cast<CSeq_entry*>(obj.GetPointerOrNull());
-	if (read_entry)
-	{
-		switch (read_entry->Which())
-		{
-		case CSeq_entry_Base::e_Seq:
-			{
-				CBioseq* bioseq = context.GetNextBioSeqFromTemplate(result, false);
-				bioseq->Assign(read_entry->SetSeq());
-			}
-			break;
-		case CSeq_entry_Base::e_Set:
-			{
-				const CSeq_entry_Base::TSet::TSeq_set& data = read_entry->GetSet().GetSeq_set();
-				ITERATE(CSeq_entry_Base::TSet::TSeq_set, it, data)
-				{
-					CBioseq* bioseq = context.GetNextBioSeqFromTemplate(result, true);
-					bioseq->Assign(**it);
-				}
-			}
-			break;
-		}
-	}
-	else
-	{
-		result = obj;
-	}
-	return result;
-}
-
-void CMultiReader::Cleanup(const CTable2AsnContext& context, CRef<CSerialObject> obj)
-{
-	/*
-		if (result->GetThisTypeInfo() == CSeq_entry::GetTypeInfo())
-		{
-			CSeq_entry* entry = dynamic_cast<CSeq_entry*>(result.GetPointerOrNull());
-			if (entry) 
-			{
-				CCleanup cleanup;
-				CConstRef<CCleanupChange> changes;
-				changes = cleanup.ExtendedCleanup(*entry);
-			}
-		}
-	*/
-}
 
 
 END_NCBI_SCOPE
