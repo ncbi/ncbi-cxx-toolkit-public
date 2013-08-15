@@ -5942,6 +5942,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "TUSG	s	Tohoku University",
 "TUT	s	Daejeon University, Department of Biology",
 "TUTC	s	Tunghai University",
+"TUZ	s	Tartu University Zoological Department",
 "TV	s	Centro de Estratigrafia e Paleobiologia da Universidade Nova de Lisboa",
 "TVBG	s	Tver State University",
 "TVY	s	Turvey Abbey",
