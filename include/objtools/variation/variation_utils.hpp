@@ -91,9 +91,9 @@ public:
     static void AlterToHGVSVar(CRef<CVariation_ref>& var);
  
     //VCF business logic
-    static void AlterToVCFVar(CRef<CVariation>& var);
-    static void AlterToVCFVar(CRef<CVariation_ref>& var);
- 
+    static void AlterToVCFVar(CRef<CVariation>& var, CScope& scope);
+    static void AlterToVCFVar(CRef<CSeq_annot>& var, CScope& scope);
+
     //Future thoughts:
     // Combine/collapse objects with same SeqLoc/Type
     // Simplify objects with common prefix in ref and all alts.
@@ -104,20 +104,21 @@ private:
  
     //Shifting logic is shared between contexts
     //So shouldn't be wrapped up in the above.
-    void x_ShiftLeft(CRef<CVariation>& var, CScope &scope);
-    void x_ShiftLeft(CRef<CVariation_ref>& var, CScope &scope);
+    static void x_ShiftLeft(CRef<CVariation>& var, CScope &scope);
+    static void x_ShiftLeft(CRef<CSeq_annot>& var, CScope &scope);
+    static void x_ShiftLeft(CRef<CVariation_ref>& var, CScope &scope);
   
-    void x_ShiftRight(CRef<CVariation>& var, CScope &scope);
-    void x_ShiftRight(CRef<CVariation_ref>& var, CScope &scope);
+    static void x_ShiftRight(CRef<CVariation>& var, CScope &scope);
+    static void x_ShiftRight(CRef<CVariation_ref>& var, CScope &scope);
  
     //Each Group of Business rules will get a private method
     //Ideally, operations on Var and Var-ref could share common private methods
     //that are provided common data, like a SeqLoc, Ref Allele and Alt Allele(s).
 
-    void x_rotate_left(string &v);
-    void x_rotate_right(string &v);
-    void x_PrefetchSequence(CScope &scope, string accession);
-    string x_GetSeq(int pos, int length);
-    string m_Sequence;
-    string m_Accession;
+    static void x_rotate_left(string &v);
+    static void x_rotate_right(string &v);
+    static void x_PrefetchSequence(CScope &scope, string accession);
+    static string x_GetSeq(int pos, int length);
+    static string m_Sequence;
+    static string m_Accession;
 };
