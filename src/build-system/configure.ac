@@ -220,8 +220,12 @@ AC_ARG_WITH(distcc,
 
 ## NCBI packages
 AC_ARG_WITH(ncbi-c,
+   [ --with-ncbi-c=DIR       use NCBI C Toolkit installation in DIR])
+AC_ARG_WITH(ncbi-c2,
    [ --without-ncbi-c        do not use NCBI C Toolkit])
 AC_ARG_WITH(sss,
+   [ --with-sss=DIR          use NCBI SSS installation in DIR])
+AC_ARG_WITH(sss2,
    [ --without-sss           do not use NCBI SSS libraries])
 AC_ARG_WITH(sssutils,
    [ --without-utils         do not use NCBI SSS UTIL library])
@@ -538,7 +542,7 @@ for x_arg in "$@" ; do
       | --libdir=* | --bindir=* | --includedir=* | --srcdir=* \
       | [[A-Z]*=*] \
       | --with-z=* | --with-bz2=* | --with-lzo=* \
-      | --with-pcre=* \
+      | --with-pcre=* | --with-ncbi-c=* | --with-sss=* \
       | --with-gcrypt=* | --with-gnutls=* | --with-openssl=* \
       | --with-krb5=* | --with-curl=* | --with-gsoap=* \
       | --with-sybase-local=* | --with-wxwidgets=* | --with-mimetic=* \
@@ -3738,7 +3742,6 @@ if test -z "$BZ2_LIBS"; then
    NCBI_PACKAGE(LocalBZ2)
 fi
 
-: ${LZO_PATH=$NCBI/lzo2}
 if test -d "$LZO_PATH"; then
    NCBI_FIX_DIR(LZO_PATH)
 fi
@@ -3771,7 +3774,7 @@ fi
 ## SSL/TLS libraries
 case "$with_gcrypt" in
    no )       ac_cv_path_LIBGCRYPT_CONFIG=no ;;
-   yes | '' ) : ${GCRYPT_PATH=$NCBI/gcrypt}  ;;
+   yes | '' )                                ;;
    * )        GCRYPT_PATH=$with_gcrypt       ;;
 esac
 if test -d "$GCRYPT_PATH"; then
@@ -3806,7 +3809,7 @@ fi
 
 case "$with_gnutls" in
    no )       ac_cv_path_LIBGNUTLS_CONFIG=no ;;
-   yes | '' ) : ${GNUTLS_PATH=$NCBI/gnutls}  ;;
+   yes | '' )                                ;;
    * )        GNUTLS_PATH=$with_gnutls       ;;
 esac
 if test -d "$GNUTLS_PATH"; then
@@ -4112,7 +4115,8 @@ if test "$with_sybase" != "no" ; then
    SYBASE_DBLIBS="$SYBASE_LPATH $SYBASE_DBLIBS"
    SYBASE_DLLS="$SYBASE_DLLLIST"
 
-   AC_CACHE_CHECK([for Sybase in $SYBASE_PATH], ncbi_cv_lib_sybase,
+   AC_CACHE_CHECK([for Sybase${SYBASE_PATH:+ in $SYBASE_PATH}],
+      ncbi_cv_lib_sybase,
       [CPPFLAGS="$SYBASE_INCLUDE $orig_CPPFLAGS"
        LIBS="$SYBASE_LIBS $SYBASE_DLLS $SYBASE_NETWORK_LIBS $DL_LIBS $orig_LIBS"
        AC_LINK_IFELSE([AC_LANG_PROGRAM(
@@ -4220,7 +4224,8 @@ if test "$with_ftds" != "no" ; then
       AC_MSG_NOTICE([Using bundled FreeTDS (version $ftds_ver) from $FTDS_PATH])
    else
       FTDS_LIBS="$FTDS_CTLIBS"
-      AC_CACHE_CHECK([for FreeTDS in $FTDS_PATH], ncbi_cv_lib_freetds,
+      AC_CACHE_CHECK([for FreeTDS${FTDS_PATH:+ in $FTDS_PATH}],
+         ncbi_cv_lib_freetds,
          [CPPFLAGS="$FTDS_INCLUDE $orig_CPPFLAGS"
           LIBS="$FTDS_LIBS $NETWORK_LIBS $orig_LIBS"
           AC_LINK_IFELSE([AC_LANG_PROGRAM(
@@ -4314,7 +4319,6 @@ fi
 if test "$with_bdb" != "no" ; then
    case "$with_bdb" in
       yes | "" )
-         : ${BERKELEYDB_PATH:="$NCBI/BerkeleyDB"}
          ;;
       */*)
           BERKELEYDB_PATH=$with_bdb
@@ -4355,7 +4359,8 @@ if test "$with_bdb" != "no" ; then
    else
       BERKELEYDB_STATIC_LIBS=${BERKELEYDB_LIBS}
    fi
-   AC_CACHE_CHECK([for Berkeley DB libraries in $BERKELEYDB_PATH],
+   AC_CACHE_CHECK(
+      [for Berkeley DB libraries${BERKELEYDB_PATH:+ in $BERKELEYDB_PATH}],
       ncbi_cv_lib_berkeley_db,
       [CPPFLAGS="$BERKELEYDB_INCLUDE $orig_CPPFLAGS"
        LIBS="$BERKELEYDB_LIBS $orig_LIBS"
@@ -4454,7 +4459,8 @@ case "$ODBC_PATH" in
    NCBI_RPATHIFY(ODBC_LIBS, ${ODBC_LIBPATH}, [ -lodbc -lodbcinst])
    CPPFLAGS="$ODBC_INCLUDE $orig_CPPFLAGS"
    LIBS="$ODBC_LIBS $orig_LIBS"
-   AC_CACHE_CHECK([for ODBC libraries in $ODBC_PATH], ncbi_cv_lib_odbc,
+   AC_CACHE_CHECK([for ODBC libraries${ODBC_PATH:+ in $ODBC_PATH}],
+      ncbi_cv_lib_odbc,
       [AC_LINK_IFELSE([AC_LANG_PROGRAM(
           [[#include <sql.h>]],
           [[SQLHDBC hdbc;  SQLCHAR* cp = (SQLCHAR*) "x";
@@ -4607,9 +4613,7 @@ fi
 
 ## Boost
 if test "$with_boost" != "no"; then
-   if test "${with_boost-yes}" = yes; then
-      : ${BOOST_PATH=$NCBI/boost}
-   else
+   if test "${with_boost-yes}" != yes; then
       BOOST_PATH=$with_boost
    fi
    if test -d "$BOOST_PATH"; then
@@ -4755,7 +4759,9 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
        BOOST_REGEX_STATIC_LIBS=$BOOST_REGEX_LIBS
    fi
 
-   AC_CACHE_CHECK([for Boost.Regex in $BOOST_PATH], ncbi_cv_lib_boost_regex,
+   in_path=${BOOST_PATH:+ in $BOOST_PATH}
+
+   AC_CACHE_CHECK([for Boost.Regex$in_path], ncbi_cv_lib_boost_regex,
       CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
       LIBS="$BOOST_LIBPATH $BOOST_REGEX_LIBS $RT_LIBS $orig_LIBS"
       [AC_LINK_IFELSE(
@@ -4763,7 +4769,7 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
               [[throw boost::regex_error(boost::regex_constants::error_stack);]])],
           [ncbi_cv_lib_boost_regex=yes], [ncbi_cv_lib_boost_regex=no])])
 
-   AC_CACHE_CHECK([for Boost.Spirit in $BOOST_PATH], ncbi_cv_lib_boost_spirit,
+   AC_CACHE_CHECK([for Boost.Spirit$in_path], ncbi_cv_lib_boost_spirit,
       CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
       LIBS="$RT_LIBS $orig_LIBS"
       [AC_LINK_IFELSE(
@@ -4778,7 +4784,7 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
        BOOST_SYSTEM_STATIC_LIBS=$BOOST_SYSTEM_LIBS
    fi
 
-   AC_CACHE_CHECK([for Boost.System in $BOOST_PATH], ncbi_cv_lib_boost_system,
+   AC_CACHE_CHECK([for Boost.System$in_path], ncbi_cv_lib_boost_system,
       CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
       LIBS="$BOOST_LIBPATH $BOOST_SYSTEM_LIBS $RT_LIBS $orig_LIBS"
       [AC_LINK_IFELSE(
@@ -4817,7 +4823,7 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
    BOOST_TEST_TEM_LIBS=$BOOST_TEST_TEM_STATIC_LIBS
    BOOST_TEST_UTF_LIBS=$BOOST_TEST_UTF_STATIC_LIBS
 
-   AC_CACHE_CHECK([for Boost.Test in $BOOST_PATH], ncbi_cv_lib_boost_test,
+   AC_CACHE_CHECK([for Boost.Test$in_path], ncbi_cv_lib_boost_test,
       CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
       LIBS="$RT_LIBS $orig_LIBS"
       found=
@@ -4857,7 +4863,7 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
        BOOST_THREAD_STATIC_LIBS=$BOOST_THREAD_LIBS
    fi
 
-   AC_CACHE_CHECK([for Boost.Threads in $BOOST_PATH], ncbi_cv_lib_boost_thread,
+   AC_CACHE_CHECK([for Boost.Threads$in_path], ncbi_cv_lib_boost_thread,
       CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
       LIBS="$BOOST_LIBPATH $BOOST_THREAD_LIBS $RT_LIBS $orig_LIBS"
       [AC_LINK_IFELSE(
@@ -4931,7 +4937,10 @@ esac
 
 ## NCBI C Toolkit
 if test "$with_ncbi_c" != "no" ; then
-   NCBI_C_PATH=${NCBI_C_PATH:="$NCBI"}
+   if test "${with_ncbi_c-yes}" != yes; then
+      NCBI_C_PATH=$with_ncbi_c
+   fi
+   : ${NCBI_C_PATH="$NCBI"}
    if test "$ncbi_compiler" = ICC -a -d "$NCBI_C_PATH/ncbi_icc"; then
       NCBI_C_PATH=$NCBI_C_PATH/ncbi_icc
    fi
@@ -4953,7 +4962,8 @@ if test "$with_ncbi_c" != "no" ; then
      NCBI_C_ncbi="-lncbi"
    fi
    NCBI_C_LIBPATH="-L$NCBI_C_LIBPATH"
-   AC_CACHE_CHECK([for the NCBI C toolkit in $NCBI_C_PATH], ncbi_cv_lib_ctools,
+   AC_CACHE_CHECK([for the NCBI C toolkit${NCBI_C_PATH:+ in $NCBI_C_PATH}],
+      ncbi_cv_lib_ctools,
       [CPPFLAGS="$NCBI_C_INCLUDE $orig_CPPFLAGS"
        LIBS="$NCBI_C_LIBPATH $NCBI_C_ncbi $NETWORK_LIBS $orig_LIBS"
        AC_LINK_IFELSE([AC_LANG_PROGRAM(
@@ -5004,11 +5014,7 @@ X_ALL_LIBS="$Xmu $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
 
 ## OpenGL
 if test "$with_opengl" != "no"; then
-   if test "${with_opengl-yes}" = yes; then
-      if test -d $NCBI/MesaGL; then
-         : ${OPENGL_PATH=$NCBI/MesaGL}
-      fi
-   else
+   if test "${with_opengl-yes}" != yes; then
       OPENGL_PATH=$with_opengl
    fi
    if test -d "$OPENGL_PATH"; then
@@ -5105,7 +5111,6 @@ else
    else
       OSMESA_STATIC_LIBS=$OSMESA_LIBS
    fi
-   : ${GLUT_PATH=$NCBI/glut}
    if test "$with_glut" != "no"; then
       if test "${with_glut-yes}" != "yes"; then
          GLUT_PATH=$with_glut
@@ -5125,7 +5130,6 @@ else
          NCBI_MISSING_PACKAGE(glut)
       fi
    fi
-   : ${GLEW_PATH=$NCBI/glew}
    if test "$with_glew" != "no"; then
       if test "${with_glew-yes}" != "yes"; then
          GLEW_PATH=$with_glew
@@ -5224,7 +5228,7 @@ LDFLAGS=$orig_LDFLAGS
 : ${with_wxwidgets_ucs=no}
 if test "$with_wxwidgets" != "no" ; then
    case "$with_wxwidgets" in
-      yes | "" ) : ${WXWIDGETS_PATH=$NCBI/wxwidgets} ;;
+      yes | "" ) ;;
       *        ) WXWIDGETS_PATH=$with_wxwidgets ;;
    esac
    if test -d "$WXWIDGETS_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/lib" \
@@ -5293,7 +5297,8 @@ if test "$with_wxwidgets" != "no" ; then
          libsed=$basesed
          ;;
    esac
-   AC_CACHE_CHECK([for wxWidgets in $WXWIDGETS_ARCH_PATH],
+   AC_CACHE_CHECK(
+      [for wxWidgets${WXWIDGETS_ARCH_PATH:+ in $WXWIDGETS_ARCH_PATH}],
       ncbi_cv_lib_wxwidgets,
       [if test -x "$wxconf" ; then
           WXWIDGETS_INCLUDE="$baseflags `"$wxconf" $wxcfflags --cflags`"
@@ -5360,7 +5365,7 @@ fi
 ## In-house Fast-CGI library
 if test "$with_fastcgi" != "no" ; then
    case "$with_fastcgi" in
-      yes | "" ) : ${FASTCGI_PATH:="$NCBI/fcgi-current"} ;;
+      yes | "" ) ;;
       */*      ) FASTCGI_PATH=$with_fastcgi              ;;
       *        ) FASTCGI_PATH=$NCBI/fcgi-${with_fastcgi} ;;
    esac
@@ -5376,7 +5381,8 @@ if test "$with_fastcgi" != "no" ; then
    NCBI_RPATHIFY(FASTCGI_LIBS, $FASTCGI_LIBDIR, [ -lfcgi $NETWORK_LIBS])
    FASTCGI_OBJS="fcgibuf"
    LIBS="$FASTCGI_LIBS $orig_LIBS"
-   AC_CACHE_CHECK([for FastCGI libraries in $FASTCGI_PATH], ncbi_cv_lib_fcgi,
+   AC_CACHE_CHECK([for FastCGI libraries${FASTCGI_PATH:+ in $FASTCGI_PATH}],
+      ncbi_cv_lib_fcgi,
       [CPPFLAGS="$FASTCGI_INCLUDE $orig_CPPFLAGS"
        AC_LINK_IFELSE([AC_LANG_PROGRAM(
           [[#include <fcgiapp.h>]],
@@ -5426,7 +5432,9 @@ if test "$with_sss" != "no" ; then
    else
       with_included_sss=no
    fi
-   NCBI_SSS_PATH=${NCBI_SSS_PATH:="$NCBI/sss/BUILD"}
+   if test "${with_sss-yes}" != yes; then
+      NCBI_SSS_PATH=${NCBI_SSS_PATH:="$NCBI/sss/BUILD"}
+   fi
    NCBI_SSS_INCLUDE=${NCBI_SSS_INCLUDE:="$NCBI_SSS_PATH/include"}
    if test -z "$NCBI_SSS_LIBPATH" ; then
       NCBI_SSS_LIBPATH="${NCBI_SSS_PATH}/lib/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}"
@@ -5434,7 +5442,8 @@ if test "$with_sss" != "no" ; then
          NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}mt"
       fi
    fi
-   AC_MSG_CHECKING([for NCBI SSS directories in $NCBI_SSS_PATH])
+   AC_MSG_CHECKING(
+      [for NCBI SSS directories${NCBI_SSS_PATH:+ in $NCBI_SSS_PATH}])
    if test "$with_included_sss" = "yes"; then
       AC_MSG_RESULT([yes]) # duh
    elif test ! -d "${NCBI_SSS_LIBPATH}"  -o  ! -d "${NCBI_SSS_INCLUDE}" ; then
@@ -5520,7 +5529,6 @@ fi
 
 # SP
 if test "$with_sp" != "no" ; then
-   SP_PATH=${SP_PATH:="$NCBI/SP"}
    if test -n "$SP_INCLUDE"; then
       SP_GENERIC="$SP_INCLUDE/../generic"
    else
@@ -5530,7 +5538,7 @@ if test "$with_sp" != "no" ; then
    if test -z "$SP_LIBPATH" ; then
       SP_LIBPATH="${SP_PATH}/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
    fi
-   AC_MSG_CHECKING([for SP directories in $SP_PATH])
+   AC_MSG_CHECKING([for SP directories${SP_PATH:+ in $SP_PATH}])
    if test ! -d "${SP_LIBPATH}"  -o  ! -d "${SP_INCLUDE}" ; then
       AC_MSG_RESULT([no])
       NCBI_MISSING_PACKAGE(sp)
@@ -5568,19 +5576,13 @@ fi
 
 
 ## ORBacus CORBA
-if test "${with_orbacus:-yes}" = yes; then
-   if test -d $NCBI/corba/${compiler_vpfx}Release${bit64_sfx}MT; then
-      : ${ORBACUS_PATH=$NCBI/corba/${compiler_vpfx}Release${bit64_sfx}MT}
-   else
-      : ${ORBACUS_PATH=$NCBI/corba/OB-4.0.1}
-   fi
-elif test "$with_orbacus" != no; then
-    ORBACUS_PATH=$with_orbacus
-fi
-if test -d "$ORBACUS_PATH"; then
-   NCBI_FIX_DIR(ORBACUS_PATH)
-fi
 if test "$with_orbacus" != no; then
+   if test "$with_orbacus" != yes; then
+       ORBACUS_PATH=$with_orbacus
+   fi
+   if test -d "$ORBACUS_PATH"; then
+      NCBI_FIX_DIR(ORBACUS_PATH)
+   fi
    fullpath=${ORBACUS_PATH}/${DEBUG_SFX}${mt_sfx}${bit64_sfx}
    if test -f ${fullpath}/inc/OB/Config.h ; then
       : ${ORBACUS_INCLUDE="-I$ORBACUS_PATH/include -I$fullpath/inc"}
@@ -5604,7 +5606,8 @@ if test "$with_orbacus" != no; then
          LIBIMR=
          ;;
    esac
-   AC_CACHE_CHECK([for ORBacus in $ORBACUS_PATH], ncbi_cv_lib_orbacus,
+   AC_CACHE_CHECK([for ORBacus${ORBACUS_PATH:+ in $ORBACUS_PATH}],
+      ncbi_cv_lib_orbacus,
       [CPPFLAGS="$ORBACUS_INCLUDE $orig_CPPFLAGS"
        LIBS="$ORBACUS_LIBPATH $LIBOB $NETWORK_LIBS $DL_LIBS $orig_LIBS"
        AC_LINK_IFELSE([AC_LANG_PROGRAM(
@@ -5643,7 +5646,7 @@ fi
 
 if test "$with_icu" != "no" ; then
    case "$with_icu" in
-      yes | "" ) : ${ICU_PATH=$NCBI/icu} ;;
+      yes | "" ) ;;
       *        ) ICU_PATH=$with_icu ;;
    esac
    if test -d "$ICU_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}/lib" \
@@ -5658,7 +5661,8 @@ if test "$with_icu" != "no" ; then
    ICU_BINPATH=${ICU_BINPATH:="$ICU_ARCH_PATH/bin"}
    ICU_LIBPATH=${ICU_LIBPATH:="$ICU_ARCH_PATH/lib"}
    ICU_INCLUDE=
-   AC_CACHE_CHECK([for ICU in $ICU_ARCH_PATH], ncbi_cv_lib_icu,
+   AC_CACHE_CHECK([for ICU${ICU_ARCH_PATH:+ in $ICU_ARCH_PATH}],
+      ncbi_cv_lib_icu,
       [ICU_CONFIG=`$ICU_BINPATH/icu-config --bindir 2>/dev/null`/icu-config
        if test -x "$ICU_CONFIG" ; then
           ICU_INCLUDE=`$ICU_CONFIG --cppflags-searchpath`
@@ -5700,9 +5704,6 @@ fi
 
 
 ### XML/XSL libraries
-if test -d "$NCBI/expat/include"; then
-   : ${EXPAT_PATH=$NCBI/expat}
-fi
 NCBI_CHECK_THIRD_PARTY_LIB(expat,
  AC_LANG_PROGRAM([#include <expat.h>],
     [XML_Parser parser = XML_ParserCreate("utf-8");]))
@@ -5711,7 +5712,6 @@ if test -f "${EXPAT_PATH}/lib${bit64_sfx}/libexpat-static.a"; then
 else
    EXPAT_STATIC_LIBS=${EXPAT_LIBS}
 fi
-: ${SABLOT_PATH=$NCBI/Sablot}
 vpath="$SABLOT_PATH/${compiler_vpfx}build"
 test -d "$vpath"  &&  SABLOT_PATH=$vpath
 if test -d "$SABLOT_PATH"; then
@@ -5728,7 +5728,6 @@ else
    SABLOT_STATIC_LIBS=${SABLOT_LIBS}
 fi
 
-: ${LIBXML_PATH=$NCBI/libxml}
 # test -d "$LIBXML_PATH" || LIBXML_PATH=`xml2-config --prefix 2>/dev/null`
 if test "$with_libxml" != "no"; then
    case "$with_libxml" in
@@ -5823,7 +5822,6 @@ else
    LIBEXSLT_STATIC_LIBS=${LIBEXSLT_LIBS}
 fi
 
-: ${XERCES_PATH=$NCBI/xerces}
 if test "$with_xerces" != no; then
    if test "${with_xerces-yes}" != yes; then
       XERCES_PATH=$with_xerces
@@ -5848,7 +5846,7 @@ if test "$with_xerces" != no; then
          NCBI_FIX_DIR(XERCES_LIBPATH)
       fi
    fi
-   if test -d $XERCES_PATH; then
+   if test -d "$XERCES_PATH"; then
       in_path=" in $XERCES_PATH"
       : ${XERCES_INCLUDE=-I$XERCES_PATH/include}
       : ${XERCES_LIBPATH=$XERCES_PATH/lib}
@@ -5885,7 +5883,6 @@ else
    XERCES_STATIC_LIBS=
 fi
 
-: ${XALAN_PATH=$NCBI/xalan}
 if test "$with_xalan" != no; then
    if test "${with_xalan-yes}" != yes; then
       XALAN_PATH=$with_xalan
@@ -5910,7 +5907,7 @@ if test "$with_xalan" != no; then
          NCBI_FIX_DIR(XALAN_LIBPATH)
       fi
    fi
-   if test -d $XALAN_PATH; then
+   if test -d "$XALAN_PATH"; then
       in_path=" in $XALAN_PATH"
       : ${XALAN_INCLUDE=-I$XALAN_PATH/include}
       : ${XALAN_LIBPATH=$XALAN_PATH/lib}
@@ -5947,7 +5944,6 @@ fi
 
 test -d SunWS_cache  &&  rm -r SunWS_cache
 
-: ${ZORBA_PATH=$NCBI/zorba}
 if test "$with_zorba" != no; then
    if test "${with_zorba-yes}" != yes; then
       ZORBA_PATH=$with_zorba
@@ -5977,7 +5973,7 @@ if test "$with_zorba" != no; then
       ZORBA_PATH=`$ZORBA_CONFIG --prefix`
       : ${ZORBA_INCLUDE=`$ZORBA_CONFIG --cppflags`}
    fi
-   if test -d $ZORBA_PATH; then
+   if test -d "$ZORBA_PATH"; then
       in_path=" in $ZORBA_PATH"
       : ${ZORBA_INCLUDE=-I$ZORBA_PATH/include}
       : ${ZORBA_LIBPATH=$ZORBA_PATH/lib}
@@ -6020,7 +6016,7 @@ fi
 
 ### SQLite
 case "$with_sqlite3" in
-   yes | '' ) : ${SQLITE3_PATH=$NCBI/sqlite3} ;;
+   yes | '' ) ;;
    *        ) SQLITE3_PATH=$with_sqlite3 ;;
 esac
 
@@ -6058,7 +6054,6 @@ fi
 ### OEChem
 # somewhat kludgish, as we now wanto to add in oeiupac and oedepict,
 # which depend on oechem....
-: ${OECHEM_PATH=$NCBI/oechem}
 NCBI_CHECK_THIRD_PARTY_LIB(oechem,
  AC_LANG_PROGRAM([#include <oechem.h>],
     [OEChem::OEMol mol; OEChem::OEConfBase* c = mol.GetActive();]),
@@ -6101,7 +6096,7 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(sge, SGE, drmaa,
 
 ### muParser
 case "$with_muparser" in
-   yes | '' ) : ${MUPARSER_PATH=$NCBI/muParser} ;;
+   yes | '' ) ;;
    *        ) MUPARSER_PATH=$with_muparser ;;
 esac
 
@@ -6121,7 +6116,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(muparser,
 
 ### hdf5
 case "$with_hdf5" in
-   yes | '' ) : ${HDF5_PATH=$NCBI/hdf5} ;;
+   yes | '' ) ;;
    *        ) HDF5_PATH=$with_hdf5 ;;
 esac
 
@@ -6186,7 +6181,7 @@ else
    GIF_LIBS=$UNGIF_LIBS
 fi
 
-test -n "$x_libraries"  &&  : ${XPM_PATH=`dirname "$x_libraries"`}
+case "$x_libraries" in */*) : ${XPM_PATH=`dirname "$x_libraries"`} ;; esac
 NCBI_CHECK_THIRD_PARTY_LIB(Xpm,
  AC_LANG_PROGRAM([#include <X11/xpm.h>],
     [XpmImage image; XpmInfo info;
@@ -6251,7 +6246,7 @@ else
 fi
 
 case "$with_ftgl" in
-   yes | '' ) : ${FTGL_PATH=$NCBI/ftgl} ;;
+   yes | '' ) ;;
    *        ) FTGL_PATH=$with_ftgl ;;
 esac
 
@@ -6278,7 +6273,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(magic,
 
 # Mimetic
 case "$with_mimetic" in
-   yes | '' ) : ${MIMETIC_PATH=$NCBI/mimetic} ;;
+   yes | '' ) ;;
    *        ) MIMETIC_PATH=$with_mimetic ;;
 esac
 if test -d "$MIMETIC_PATH"; then
@@ -6305,7 +6300,7 @@ NCBI_CHECK_THIRD_PARTY_LIB(mimetic,
 
 # gSOAP++
 case "$with_gsoap" in
-   yes | '' ) : ${GSOAP_PATH=$NCBI/gsoap} ;;
+   yes | '' ) ;;
    *        ) GSOAP_PATH=$with_gsoap ;;
 esac
 if test -d "$GSOAP_PATH"; then

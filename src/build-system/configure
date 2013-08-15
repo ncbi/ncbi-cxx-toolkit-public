@@ -925,7 +925,9 @@ Optional Packages:
  --without-caution       proceed without asking when in doubt
  --without-ccache        do not automatically use ccache if available
  --without-distcc        do not automatically use distcc if available
+ --with-ncbi-c=DIR       use NCBI C Toolkit installation in DIR
  --without-ncbi-c        do not use NCBI C Toolkit
+ --with-sss=DIR          use NCBI SSS installation in DIR
  --without-sss           do not use NCBI SSS libraries
  --without-utils         do not use NCBI SSS UTIL library
  --without-sssdb         do not use NCBI SSS DB library
@@ -2205,9 +2207,21 @@ if test "${with_ncbi_c+set}" = set; then
 
 fi;
 
+# Check whether --with-ncbi-c2 or --without-ncbi-c2 was given.
+if test "${with_ncbi_c2+set}" = set; then
+  withval="$with_ncbi_c2"
+
+fi;
+
 # Check whether --with-sss or --without-sss was given.
 if test "${with_sss+set}" = set; then
   withval="$with_sss"
+
+fi;
+
+# Check whether --with-sss2 or --without-sss2 was given.
+if test "${with_sss2+set}" = set; then
+  withval="$with_sss2"
 
 fi;
 
@@ -3029,7 +3043,7 @@ echo "$as_me: error: $x_arg:  requires value;  use --help to show usage" >&2;}
       | --libdir=* | --bindir=* | --includedir=* | --srcdir=* \
       | [A-Z]*=* \
       | --with-z=* | --with-bz2=* | --with-lzo=* \
-      | --with-pcre=* \
+      | --with-pcre=* | --with-ncbi-c=* | --with-sss=* \
       | --with-gcrypt=* | --with-gnutls=* | --with-openssl=* \
       | --with-krb5=* | --with-curl=* | --with-gsoap=* \
       | --with-sybase-local=* | --with-wxwidgets=* | --with-mimetic=* \
@@ -21591,7 +21605,6 @@ _ACEOF
              WithPackages="$WithPackages${WithPackagesSep}LocalBZ2"; WithPackagesSep=" "
 fi
 
-: ${LZO_PATH=$NCBI/lzo2}
 if test -d "$LZO_PATH"; then
    ncbi_fix_dir_tmp=`if cd $LZO_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
@@ -21918,7 +21931,7 @@ fi
 ## SSL/TLS libraries
 case "$with_gcrypt" in
    no )       ac_cv_path_LIBGCRYPT_CONFIG=no ;;
-   yes | '' ) : ${GCRYPT_PATH=$NCBI/gcrypt}  ;;
+   yes | '' )                                ;;
    * )        GCRYPT_PATH=$with_gcrypt       ;;
 esac
 if test -d "$GCRYPT_PATH"; then
@@ -22189,7 +22202,7 @@ fi
 
 case "$with_gnutls" in
    no )       ac_cv_path_LIBGNUTLS_CONFIG=no ;;
-   yes | '' ) : ${GNUTLS_PATH=$NCBI/gnutls}  ;;
+   yes | '' )                                ;;
    * )        GNUTLS_PATH=$with_gnutls       ;;
 esac
 if test -d "$GNUTLS_PATH"; then
@@ -23275,8 +23288,8 @@ echo "${ECHO_T}$ncbi_cv_lib_sybase_r" >&6
    SYBASE_DBLIBS="$SYBASE_LPATH $SYBASE_DBLIBS"
    SYBASE_DLLS="$SYBASE_DLLLIST"
 
-   echo "$as_me:$LINENO: checking for Sybase in $SYBASE_PATH" >&5
-echo $ECHO_N "checking for Sybase in $SYBASE_PATH... $ECHO_C" >&6
+   echo "$as_me:$LINENO: checking for Sybase${SYBASE_PATH:+ in $SYBASE_PATH}" >&5
+echo $ECHO_N "checking for Sybase${SYBASE_PATH:+ in $SYBASE_PATH}... $ECHO_C" >&6
 if test "${ncbi_cv_lib_sybase+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -23542,8 +23555,8 @@ _ACEOF
 echo "$as_me: Using bundled FreeTDS (version $ftds_ver) from $FTDS_PATH" >&6;}
    else
       FTDS_LIBS="$FTDS_CTLIBS"
-      echo "$as_me:$LINENO: checking for FreeTDS in $FTDS_PATH" >&5
-echo $ECHO_N "checking for FreeTDS in $FTDS_PATH... $ECHO_C" >&6
+      echo "$as_me:$LINENO: checking for FreeTDS${FTDS_PATH:+ in $FTDS_PATH}" >&5
+echo $ECHO_N "checking for FreeTDS${FTDS_PATH:+ in $FTDS_PATH}... $ECHO_C" >&6
 if test "${ncbi_cv_lib_freetds+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -23817,7 +23830,6 @@ fi
 if test "$with_bdb" != "no" ; then
    case "$with_bdb" in
       yes | "" )
-         : ${BERKELEYDB_PATH:="$NCBI/BerkeleyDB"}
          ;;
       */*)
           BERKELEYDB_PATH=$with_bdb
@@ -23905,8 +23917,8 @@ if test "$with_bdb" != "no" ; then
    else
       BERKELEYDB_STATIC_LIBS=${BERKELEYDB_LIBS}
    fi
-   echo "$as_me:$LINENO: checking for Berkeley DB libraries in $BERKELEYDB_PATH" >&5
-echo $ECHO_N "checking for Berkeley DB libraries in $BERKELEYDB_PATH... $ECHO_C" >&6
+   echo "$as_me:$LINENO: checking for Berkeley DB libraries${BERKELEYDB_PATH:+ in $BERKELEYDB_PATH}" >&5
+echo $ECHO_N "checking for Berkeley DB libraries${BERKELEYDB_PATH:+ in $BERKELEYDB_PATH}... $ECHO_C" >&6
 if test "${ncbi_cv_lib_berkeley_db+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -24163,8 +24175,8 @@ case "$ODBC_PATH" in
  fi
    CPPFLAGS="$ODBC_INCLUDE $orig_CPPFLAGS"
    LIBS="$ODBC_LIBS $orig_LIBS"
-   echo "$as_me:$LINENO: checking for ODBC libraries in $ODBC_PATH" >&5
-echo $ECHO_N "checking for ODBC libraries in $ODBC_PATH... $ECHO_C" >&6
+   echo "$as_me:$LINENO: checking for ODBC libraries${ODBC_PATH:+ in $ODBC_PATH}" >&5
+echo $ECHO_N "checking for ODBC libraries${ODBC_PATH:+ in $ODBC_PATH}... $ECHO_C" >&6
 if test "${ncbi_cv_lib_odbc+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -25611,9 +25623,7 @@ fi
 
 ## Boost
 if test "$with_boost" != "no"; then
-   if test "${with_boost-yes}" = yes; then
-      : ${BOOST_PATH=$NCBI/boost}
-   else
+   if test "${with_boost-yes}" != yes; then
       BOOST_PATH=$with_boost
    fi
    if test -d "$BOOST_PATH"; then
@@ -25812,8 +25822,10 @@ echo "${ECHO_T}$BOOST_TAG (by explicit request)" >&6
        BOOST_REGEX_STATIC_LIBS=$BOOST_REGEX_LIBS
    fi
 
-   echo "$as_me:$LINENO: checking for Boost.Regex in $BOOST_PATH" >&5
-echo $ECHO_N "checking for Boost.Regex in $BOOST_PATH... $ECHO_C" >&6
+   in_path=${BOOST_PATH:+ in $BOOST_PATH}
+
+   echo "$as_me:$LINENO: checking for Boost.Regex$in_path" >&5
+echo $ECHO_N "checking for Boost.Regex$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_boost_regex+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -25869,8 +25881,8 @@ fi
 echo "$as_me:$LINENO: result: $ncbi_cv_lib_boost_regex" >&5
 echo "${ECHO_T}$ncbi_cv_lib_boost_regex" >&6
 
-   echo "$as_me:$LINENO: checking for Boost.Spirit in $BOOST_PATH" >&5
-echo $ECHO_N "checking for Boost.Spirit in $BOOST_PATH... $ECHO_C" >&6
+   echo "$as_me:$LINENO: checking for Boost.Spirit$in_path" >&5
+echo $ECHO_N "checking for Boost.Spirit$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_boost_spirit+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -25933,8 +25945,8 @@ echo "${ECHO_T}$ncbi_cv_lib_boost_spirit" >&6
        BOOST_SYSTEM_STATIC_LIBS=$BOOST_SYSTEM_LIBS
    fi
 
-   echo "$as_me:$LINENO: checking for Boost.System in $BOOST_PATH" >&5
-echo $ECHO_N "checking for Boost.System in $BOOST_PATH... $ECHO_C" >&6
+   echo "$as_me:$LINENO: checking for Boost.System$in_path" >&5
+echo $ECHO_N "checking for Boost.System$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_boost_system+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -26017,8 +26029,8 @@ echo "${ECHO_T}$ncbi_cv_lib_boost_system" >&6
    BOOST_TEST_TEM_LIBS=$BOOST_TEST_TEM_STATIC_LIBS
    BOOST_TEST_UTF_LIBS=$BOOST_TEST_UTF_STATIC_LIBS
 
-   echo "$as_me:$LINENO: checking for Boost.Test in $BOOST_PATH" >&5
-echo $ECHO_N "checking for Boost.Test in $BOOST_PATH... $ECHO_C" >&6
+   echo "$as_me:$LINENO: checking for Boost.Test$in_path" >&5
+echo $ECHO_N "checking for Boost.Test$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_boost_test+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -26098,8 +26110,8 @@ echo "${ECHO_T}$ncbi_cv_lib_boost_test" >&6
        BOOST_THREAD_STATIC_LIBS=$BOOST_THREAD_LIBS
    fi
 
-   echo "$as_me:$LINENO: checking for Boost.Threads in $BOOST_PATH" >&5
-echo $ECHO_N "checking for Boost.Threads in $BOOST_PATH... $ECHO_C" >&6
+   echo "$as_me:$LINENO: checking for Boost.Threads$in_path" >&5
+echo $ECHO_N "checking for Boost.Threads$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_boost_thread+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -26233,7 +26245,10 @@ esac
 
 ## NCBI C Toolkit
 if test "$with_ncbi_c" != "no" ; then
-   NCBI_C_PATH=${NCBI_C_PATH:="$NCBI"}
+   if test "${with_ncbi_c-yes}" != yes; then
+      NCBI_C_PATH=$with_ncbi_c
+   fi
+   : ${NCBI_C_PATH="$NCBI"}
    if test "$ncbi_compiler" = ICC -a -d "$NCBI_C_PATH/ncbi_icc"; then
       NCBI_C_PATH=$NCBI_C_PATH/ncbi_icc
    fi
@@ -26255,8 +26270,8 @@ if test "$with_ncbi_c" != "no" ; then
      NCBI_C_ncbi="-lncbi"
    fi
    NCBI_C_LIBPATH="-L$NCBI_C_LIBPATH"
-   echo "$as_me:$LINENO: checking for the NCBI C toolkit in $NCBI_C_PATH" >&5
-echo $ECHO_N "checking for the NCBI C toolkit in $NCBI_C_PATH... $ECHO_C" >&6
+   echo "$as_me:$LINENO: checking for the NCBI C toolkit${NCBI_C_PATH:+ in $NCBI_C_PATH}" >&5
+echo $ECHO_N "checking for the NCBI C toolkit${NCBI_C_PATH:+ in $NCBI_C_PATH}... $ECHO_C" >&6
 if test "${ncbi_cv_lib_ctools+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -27956,11 +27971,7 @@ X_ALL_LIBS="$Xmu $Xt $Xext $X_PRE_LIBS -lX11 $X_EXTRA_LIBS"
 
 ## OpenGL
 if test "$with_opengl" != "no"; then
-   if test "${with_opengl-yes}" = yes; then
-      if test -d $NCBI/MesaGL; then
-         : ${OPENGL_PATH=$NCBI/MesaGL}
-      fi
-   else
+   if test "${with_opengl-yes}" != yes; then
       OPENGL_PATH=$with_opengl
    fi
    if test -d "$OPENGL_PATH"; then
@@ -28257,7 +28268,6 @@ echo "$as_me: error: --with-mesa explicitly specified, but no usable version fou
    else
       OSMESA_STATIC_LIBS=$OSMESA_LIBS
    fi
-   : ${GLUT_PATH=$NCBI/glut}
    if test "$with_glut" != "no"; then
       if test "${with_glut-yes}" != "yes"; then
          GLUT_PATH=$with_glut
@@ -28370,7 +28380,6 @@ echo "$as_me: error: --with-glut explicitly specified, but no usable version fou
     fi
       fi
    fi
-   : ${GLEW_PATH=$NCBI/glew}
    if test "$with_glew" != "no"; then
       if test "${with_glew-yes}" != "yes"; then
          GLEW_PATH=$with_glew
@@ -28704,7 +28713,7 @@ LDFLAGS=$orig_LDFLAGS
 : ${with_wxwidgets_ucs=no}
 if test "$with_wxwidgets" != "no" ; then
    case "$with_wxwidgets" in
-      yes | "" ) : ${WXWIDGETS_PATH=$NCBI/wxwidgets} ;;
+      yes | "" ) ;;
       *        ) WXWIDGETS_PATH=$with_wxwidgets ;;
    esac
    if test -d "$WXWIDGETS_PATH/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}/lib" \
@@ -28812,8 +28821,8 @@ fi
          libsed=$basesed
          ;;
    esac
-   echo "$as_me:$LINENO: checking for wxWidgets in $WXWIDGETS_ARCH_PATH" >&5
-echo $ECHO_N "checking for wxWidgets in $WXWIDGETS_ARCH_PATH... $ECHO_C" >&6
+   echo "$as_me:$LINENO: checking for wxWidgets${WXWIDGETS_ARCH_PATH:+ in $WXWIDGETS_ARCH_PATH}" >&5
+echo $ECHO_N "checking for wxWidgets${WXWIDGETS_ARCH_PATH:+ in $WXWIDGETS_ARCH_PATH}... $ECHO_C" >&6
 if test "${ncbi_cv_lib_wxwidgets+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -28981,7 +28990,7 @@ fi
 ## In-house Fast-CGI library
 if test "$with_fastcgi" != "no" ; then
    case "$with_fastcgi" in
-      yes | "" ) : ${FASTCGI_PATH:="$NCBI/fcgi-current"} ;;
+      yes | "" ) ;;
       */*      ) FASTCGI_PATH=$with_fastcgi              ;;
       *        ) FASTCGI_PATH=$NCBI/fcgi-${with_fastcgi} ;;
    esac
@@ -29029,8 +29038,8 @@ if test "$with_fastcgi" != "no" ; then
  fi
    FASTCGI_OBJS="fcgibuf"
    LIBS="$FASTCGI_LIBS $orig_LIBS"
-   echo "$as_me:$LINENO: checking for FastCGI libraries in $FASTCGI_PATH" >&5
-echo $ECHO_N "checking for FastCGI libraries in $FASTCGI_PATH... $ECHO_C" >&6
+   echo "$as_me:$LINENO: checking for FastCGI libraries${FASTCGI_PATH:+ in $FASTCGI_PATH}" >&5
+echo $ECHO_N "checking for FastCGI libraries${FASTCGI_PATH:+ in $FASTCGI_PATH}... $ECHO_C" >&6
 if test "${ncbi_cv_lib_fcgi+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -29240,7 +29249,9 @@ if test "$with_sss" != "no" ; then
    else
       with_included_sss=no
    fi
-   NCBI_SSS_PATH=${NCBI_SSS_PATH:="$NCBI/sss/BUILD"}
+   if test "${with_sss-yes}" != yes; then
+      NCBI_SSS_PATH=${NCBI_SSS_PATH:="$NCBI/sss/BUILD"}
+   fi
    NCBI_SSS_INCLUDE=${NCBI_SSS_INCLUDE:="$NCBI_SSS_PATH/include"}
    if test -z "$NCBI_SSS_LIBPATH" ; then
       NCBI_SSS_LIBPATH="${NCBI_SSS_PATH}/lib/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}"
@@ -29248,8 +29259,8 @@ if test "$with_sss" != "no" ; then
          NCBI_SSS_LIBPATH="${NCBI_SSS_LIBPATH}mt"
       fi
    fi
-   echo "$as_me:$LINENO: checking for NCBI SSS directories in $NCBI_SSS_PATH" >&5
-echo $ECHO_N "checking for NCBI SSS directories in $NCBI_SSS_PATH... $ECHO_C" >&6
+   echo "$as_me:$LINENO: checking for NCBI SSS directories${NCBI_SSS_PATH:+ in $NCBI_SSS_PATH}" >&5
+echo $ECHO_N "checking for NCBI SSS directories${NCBI_SSS_PATH:+ in $NCBI_SSS_PATH}... $ECHO_C" >&6
    if test "$with_included_sss" = "yes"; then
       echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6 # duh
@@ -29470,7 +29481,6 @@ fi
 
 # SP
 if test "$with_sp" != "no" ; then
-   SP_PATH=${SP_PATH:="$NCBI/SP"}
    if test -n "$SP_INCLUDE"; then
       SP_GENERIC="$SP_INCLUDE/../generic"
    else
@@ -29480,8 +29490,8 @@ if test "$with_sp" != "no" ; then
    if test -z "$SP_LIBPATH" ; then
       SP_LIBPATH="${SP_PATH}/${compiler_vpfx}${DEBUG_SFX}${mt_sfx}${bit64_sfx}"
    fi
-   echo "$as_me:$LINENO: checking for SP directories in $SP_PATH" >&5
-echo $ECHO_N "checking for SP directories in $SP_PATH... $ECHO_C" >&6
+   echo "$as_me:$LINENO: checking for SP directories${SP_PATH:+ in $SP_PATH}" >&5
+echo $ECHO_N "checking for SP directories${SP_PATH:+ in $SP_PATH}... $ECHO_C" >&6
    if test ! -d "${SP_LIBPATH}"  -o  ! -d "${SP_INCLUDE}" ; then
       echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
@@ -29582,17 +29592,12 @@ fi
 
 
 ## ORBacus CORBA
-if test "${with_orbacus:-yes}" = yes; then
-   if test -d $NCBI/corba/${compiler_vpfx}Release${bit64_sfx}MT; then
-      : ${ORBACUS_PATH=$NCBI/corba/${compiler_vpfx}Release${bit64_sfx}MT}
-   else
-      : ${ORBACUS_PATH=$NCBI/corba/OB-4.0.1}
+if test "$with_orbacus" != no; then
+   if test "$with_orbacus" != yes; then
+       ORBACUS_PATH=$with_orbacus
    fi
-elif test "$with_orbacus" != no; then
-    ORBACUS_PATH=$with_orbacus
-fi
-if test -d "$ORBACUS_PATH"; then
-   ncbi_fix_dir_tmp=`if cd $ORBACUS_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
+   if test -d "$ORBACUS_PATH"; then
+      ncbi_fix_dir_tmp=`if cd $ORBACUS_PATH; then $as_unset PWD || test "${PWD+set}" != set || { PWD=; export PWD; }; /bin/pwd; fi`
  case "$ncbi_fix_dir_tmp" in
     /.*) ncbi_fix_dir_tmp2=`cd $ORBACUS_PATH && $smart_pwd 2>/dev/null`
          if test -n "$ncbi_fix_dir_tmp2" -a -d "$ncbi_fix_dir_tmp2"; then
@@ -29606,8 +29611,7 @@ if test -d "$ORBACUS_PATH"; then
          ;;
     /*) ORBACUS_PATH=$ncbi_fix_dir_tmp ;;
  esac
-fi
-if test "$with_orbacus" != no; then
+   fi
    fullpath=${ORBACUS_PATH}/${DEBUG_SFX}${mt_sfx}${bit64_sfx}
    if test -f ${fullpath}/inc/OB/Config.h ; then
       : ${ORBACUS_INCLUDE="-I$ORBACUS_PATH/include -I$fullpath/inc"}
@@ -29673,8 +29677,8 @@ if test "$with_orbacus" != no; then
          LIBIMR=
          ;;
    esac
-   echo "$as_me:$LINENO: checking for ORBacus in $ORBACUS_PATH" >&5
-echo $ECHO_N "checking for ORBacus in $ORBACUS_PATH... $ECHO_C" >&6
+   echo "$as_me:$LINENO: checking for ORBacus${ORBACUS_PATH:+ in $ORBACUS_PATH}" >&5
+echo $ECHO_N "checking for ORBacus${ORBACUS_PATH:+ in $ORBACUS_PATH}... $ECHO_C" >&6
 if test "${ncbi_cv_lib_orbacus+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -29768,7 +29772,7 @@ fi
 
 if test "$with_icu" != "no" ; then
    case "$with_icu" in
-      yes | "" ) : ${ICU_PATH=$NCBI/icu} ;;
+      yes | "" ) ;;
       *        ) ICU_PATH=$with_icu ;;
    esac
    if test -d "$ICU_PATH/${compiler_vpfx}${DEBUG_SFX}${bit64_sfx}${mt_sfx}/lib" \
@@ -29783,8 +29787,8 @@ if test "$with_icu" != "no" ; then
    ICU_BINPATH=${ICU_BINPATH:="$ICU_ARCH_PATH/bin"}
    ICU_LIBPATH=${ICU_LIBPATH:="$ICU_ARCH_PATH/lib"}
    ICU_INCLUDE=
-   echo "$as_me:$LINENO: checking for ICU in $ICU_ARCH_PATH" >&5
-echo $ECHO_N "checking for ICU in $ICU_ARCH_PATH... $ECHO_C" >&6
+   echo "$as_me:$LINENO: checking for ICU${ICU_ARCH_PATH:+ in $ICU_ARCH_PATH}" >&5
+echo $ECHO_N "checking for ICU${ICU_ARCH_PATH:+ in $ICU_ARCH_PATH}... $ECHO_C" >&6
 if test "${ncbi_cv_lib_icu+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
@@ -29930,9 +29934,6 @@ fi
 
 
 ### XML/XSL libraries
-if test -d "$NCBI/expat/include"; then
-   : ${EXPAT_PATH=$NCBI/expat}
-fi
 if test "$with_expat" != "no"; then
     case "$with_expat" in
        yes | "" ) ;;
@@ -30079,7 +30080,6 @@ if test -f "${EXPAT_PATH}/lib${bit64_sfx}/libexpat-static.a"; then
 else
    EXPAT_STATIC_LIBS=${EXPAT_LIBS}
 fi
-: ${SABLOT_PATH=$NCBI/Sablot}
 vpath="$SABLOT_PATH/${compiler_vpfx}build"
 test -d "$vpath"  &&  SABLOT_PATH=$vpath
 if test -d "$SABLOT_PATH"; then
@@ -30246,7 +30246,6 @@ else
    SABLOT_STATIC_LIBS=${SABLOT_LIBS}
 fi
 
-: ${LIBXML_PATH=$NCBI/libxml}
 # test -d "$LIBXML_PATH" || LIBXML_PATH=`xml2-config --prefix 2>/dev/null`
 if test "$with_libxml" != "no"; then
    case "$with_libxml" in
@@ -30746,7 +30745,6 @@ else
    LIBEXSLT_STATIC_LIBS=${LIBEXSLT_LIBS}
 fi
 
-: ${XERCES_PATH=$NCBI/xerces}
 if test "$with_xerces" != no; then
    if test "${with_xerces-yes}" != yes; then
       XERCES_PATH=$with_xerces
@@ -30836,7 +30834,7 @@ if test "$with_xerces" != no; then
  esac
       fi
    fi
-   if test -d $XERCES_PATH; then
+   if test -d "$XERCES_PATH"; then
       in_path=" in $XERCES_PATH"
       : ${XERCES_INCLUDE=-I$XERCES_PATH/include}
       : ${XERCES_LIBPATH=$XERCES_PATH/lib}
@@ -30949,7 +30947,6 @@ else
    XERCES_STATIC_LIBS=
 fi
 
-: ${XALAN_PATH=$NCBI/xalan}
 if test "$with_xalan" != no; then
    if test "${with_xalan-yes}" != yes; then
       XALAN_PATH=$with_xalan
@@ -31039,7 +31036,7 @@ if test "$with_xalan" != no; then
  esac
       fi
    fi
-   if test -d $XALAN_PATH; then
+   if test -d "$XALAN_PATH"; then
       in_path=" in $XALAN_PATH"
       : ${XALAN_INCLUDE=-I$XALAN_PATH/include}
       : ${XALAN_LIBPATH=$XALAN_PATH/lib}
@@ -31152,7 +31149,6 @@ fi
 
 test -d SunWS_cache  &&  rm -r SunWS_cache
 
-: ${ZORBA_PATH=$NCBI/zorba}
 if test "$with_zorba" != no; then
    if test "${with_zorba-yes}" != yes; then
       ZORBA_PATH=$with_zorba
@@ -31247,7 +31243,7 @@ if test "$with_zorba" != no; then
       ZORBA_PATH=`$ZORBA_CONFIG --prefix`
       : ${ZORBA_INCLUDE=`$ZORBA_CONFIG --cppflags`}
    fi
-   if test -d $ZORBA_PATH; then
+   if test -d "$ZORBA_PATH"; then
       in_path=" in $ZORBA_PATH"
       : ${ZORBA_INCLUDE=-I$ZORBA_PATH/include}
       : ${ZORBA_LIBPATH=$ZORBA_PATH/lib}
@@ -31366,7 +31362,7 @@ fi
 
 ### SQLite
 case "$with_sqlite3" in
-   yes | '' ) : ${SQLITE3_PATH=$NCBI/sqlite3} ;;
+   yes | '' ) ;;
    *        ) SQLITE3_PATH=$with_sqlite3 ;;
 esac
 
@@ -31818,7 +31814,6 @@ fi
 ### OEChem
 # somewhat kludgish, as we now wanto to add in oeiupac and oedepict,
 # which depend on oechem....
-: ${OECHEM_PATH=$NCBI/oechem}
 if test "$with_oechem" != "no"; then
     case "$with_oechem" in
        yes | "" ) ;;
@@ -32155,7 +32150,7 @@ _ACEOF
 
 ### muParser
 case "$with_muparser" in
-   yes | '' ) : ${MUPARSER_PATH=$NCBI/muParser} ;;
+   yes | '' ) ;;
    *        ) MUPARSER_PATH=$with_muparser ;;
 esac
 
@@ -32326,7 +32321,7 @@ _ACEOF
 
 ### hdf5
 case "$with_hdf5" in
-   yes | '' ) : ${HDF5_PATH=$NCBI/hdf5} ;;
+   yes | '' ) ;;
    *        ) HDF5_PATH=$with_hdf5 ;;
 esac
 
@@ -33235,7 +33230,7 @@ _ACEOF
    GIF_LIBS=$UNGIF_LIBS
 fi
 
-test -n "$x_libraries"  &&  : ${XPM_PATH=`dirname "$x_libraries"`}
+case "$x_libraries" in */*) : ${XPM_PATH=`dirname "$x_libraries"`} ;; esac
 if test "$with_xpm" != "no"; then
     case "$with_xpm" in
        yes | "" ) ;;
@@ -33606,7 +33601,7 @@ _ACEOF
 fi
 
 case "$with_ftgl" in
-   yes | '' ) : ${FTGL_PATH=$NCBI/ftgl} ;;
+   yes | '' ) ;;
    *        ) FTGL_PATH=$with_ftgl ;;
 esac
 
@@ -33954,7 +33949,7 @@ _ACEOF
 
 # Mimetic
 case "$with_mimetic" in
-   yes | '' ) : ${MIMETIC_PATH=$NCBI/mimetic} ;;
+   yes | '' ) ;;
    *        ) MIMETIC_PATH=$with_mimetic ;;
 esac
 if test -d "$MIMETIC_PATH"; then
@@ -34151,7 +34146,7 @@ _ACEOF
 
 # gSOAP++
 case "$with_gsoap" in
-   yes | '' ) : ${GSOAP_PATH=$NCBI/gsoap} ;;
+   yes | '' ) ;;
    *        ) GSOAP_PATH=$with_gsoap ;;
 esac
 if test -d "$GSOAP_PATH"; then
