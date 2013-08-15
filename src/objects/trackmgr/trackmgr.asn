@@ -11,9 +11,10 @@ EXPORTS TMgr-Request, TMgr-Reply, TMgr-GenomeContext,
         TMgr-DisplayTrackReply, TMgr-AssemblySpec,TMgr-AttrSpec,
         TMgr-BlastRIDDetail, TMgr-Assembly, TMgr-Attribute, TMgr-DisplayTrack,
         TMgr-DatasetItem, TMgr-DisplayTrackChoice,
-        TMgr-TrackAttrValueRequest, TMgr-AttrRequest, TMgr-ValueRequest,
-        TMgr-TrackAttrValueReply, TMgr-AttrReply, TMgr-TrackAttributes,
-        TMgr-AttrValueReply, TMgr-MessageLevel, TMgr-Message;
+        TMgr-CreateUserTrackRequest, TMgr-CreateUserTrackReply,
+        TMgr-TrackAttrValueRequest, TMgr-TrackAttrValueReply,
+        TMgr-AttrRequest, TMgr-AttrReply, TMgr-ValueRequest, TMgr-AttrValueReply,
+        TMgr-TrackAttributes, TMgr-MessageLevel, TMgr-Message;
 
 IMPORTS Seq-id FROM NCBI-Seqloc
         Dbtag FROM NCBI-General;
