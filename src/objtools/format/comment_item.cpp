@@ -1179,16 +1179,22 @@ string CCommentItem::GetStringForAuthorizedAccess(CBioseqContext& ctx)
 
     CNcbiOstrstream str;
 
-    str << "These data are available through the dbGaP authorized "
-           "access system. Request access to Study ";
+    str << "These data are available through the dbGaP authorized access system. ";
     if( bHtml ) {
         str << "<a href=\""  
             << "https://dbgap.ncbi.nlm.nih.gov/aa/wga.cgi?adddataset="
             << sAuthorizedAccess << "&page=login\">";
-    }
-    str << sAuthorizedAccess;
-    if( bHtml ) {
+        str << "Request access";
         str << "</a>";
+        str << " to Study ";
+        str << "<a href=\""  
+            << "http://www.ncbi.nlm.nih.gov/projects/gap/cgi-bin/study.cgi?study_id="
+            << sAuthorizedAccess << "\">";
+        str << sAuthorizedAccess;
+        str << "</a>";
+    } else {
+        str << "Request access to Study ";
+        str << sAuthorizedAccess;
     }
     str << "."; // always needs a period
 
