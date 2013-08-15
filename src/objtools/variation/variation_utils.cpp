@@ -314,12 +314,26 @@ void CVariationNormalization::x_ShiftLeft(CRef<CVariation>& v, CScope &scope)
     if (v->IsSetPlacements())
         for (CVariation::TPlacements::iterator vp1 =  v->SetPlacements().begin(); vp1 != v->SetPlacements().end(); ++vp1)
         {
-            if ((*vp1)->IsSetLoc() && (*vp1)->GetLoc().IsPnt() && (*vp1)->GetLoc().GetPnt().IsSetPoint() && (*vp1)->GetLoc().GetPnt().IsSetId() && (*vp1)->GetLoc().GetPnt().GetId().IsOther()
-                && (*vp1)->GetLoc().GetPnt().GetId().GetOther().IsSetAccession() && (*vp1)->GetLoc().GetPnt().GetId().GetOther().IsSetVersion())
+            int pos;
+            string acc;
+            int version;
+            if ((*vp1)->IsSetLoc())
             {
-                string acc = (*vp1)->GetLoc().GetPnt().GetId().GetOther().GetAccession();
-                int version = (*vp1)->GetLoc().GetPnt().GetId().GetOther().GetVersion();
-                int pos = (*vp1)->GetLoc().GetPnt().GetPoint();
+                if ((*vp1)->GetLoc().IsPnt() && (*vp1)->GetLoc().GetPnt().IsSetPoint() && (*vp1)->GetLoc().GetPnt().IsSetId() && (*vp1)->GetLoc().GetPnt().GetId().IsOther()
+                    && (*vp1)->GetLoc().GetPnt().GetId().GetOther().IsSetAccession() && (*vp1)->GetLoc().GetPnt().GetId().GetOther().IsSetVersion())
+                {
+                    acc = (*vp1)->GetLoc().GetPnt().GetId().GetOther().GetAccession();
+                    version = (*vp1)->GetLoc().GetPnt().GetId().GetOther().GetVersion();
+                    pos = (*vp1)->GetLoc().GetPnt().GetPoint();
+                }
+                else if ((*vp1)->GetLoc().IsInt())
+                {
+                    acc = (*vp1)->GetLoc().GetInt().GetId().GetOther().GetAccession();
+                    version = (*vp1)->GetLoc().GetInt().GetId().GetOther().GetVersion();
+                    pos = (*vp1)->GetLoc().GetInt().GetFrom();
+                }
+                else
+                    NCBI_THROW(CException, eUnknown, "Placement is neither point nor interval");
                 int new_pos = -1;
                 stringstream accession;
                 accession << acc << "." << version;
@@ -381,7 +395,16 @@ void CVariationNormalization::x_ShiftLeft(CRef<CVariation>& v, CScope &scope)
                                         new_pos = pos;
                                     else if (new_pos != pos)
                                         NCBI_THROW(CException, eUnknown, "Position is ambiguous due to different leaf alleles");
-                                   (*vp1)->SetLoc().SetPnt().SetPoint(pos); 
+                                    if ((*vp1)->SetLoc().IsInt())
+                                    {
+                                        CSeq_point pnt;
+                                        pnt.SetPoint(pos);
+                                        pnt.SetStrand( (*vp1)->SetLoc().GetInt().GetStrand() );
+                                        pnt.SetId().Assign((*vp1)->SetLoc().GetInt().GetId());
+                                        (*vp1)->SetLoc().SetPnt().Assign(pnt);
+                                    }
+                                    else
+                                        (*vp1)->SetLoc().SetPnt().SetPoint(pos); 
                                    (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(a);
                                 }
                             }

@@ -113,10 +113,32 @@ int CContextApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
         n++;
     }
 // checking only position on the first placement?
-    if (v1->SetPlacements().front()->GetLoc().GetPnt().GetPoint() !=
-        v2->SetPlacements().front()->GetLoc().GetPnt().GetPoint())
+    if (v1->SetPlacements().front()->GetLoc().IsPnt() &&
+        v2->SetPlacements().front()->GetLoc().IsPnt())
     {
-        ERR_POST(Error << "Position does not match" << Endm);
+        if (v1->SetPlacements().front()->GetLoc().GetPnt().GetPoint() !=
+            v2->SetPlacements().front()->GetLoc().GetPnt().GetPoint())
+        {
+            ERR_POST(Error << "Position does not match" << Endm);
+            n++;
+        }
+    }
+    else if (v1->SetPlacements().front()->GetLoc().IsInt() &&
+             v2->SetPlacements().front()->GetLoc().IsInt())
+    {
+        if (v1->SetPlacements().front()->GetLoc().GetInt().GetFrom() !=
+            v2->SetPlacements().front()->GetLoc().GetInt().GetFrom() ||
+            v1->SetPlacements().front()->GetLoc().GetInt().GetTo() !=
+            v2->SetPlacements().front()->GetLoc().GetInt().GetTo())
+
+        {
+            ERR_POST(Error << "Position does not match" << Endm);
+            n++;
+        }
+    }
+    else
+    {
+        ERR_POST(Error << "Type of placement does not match" << Endm);
         n++;
     }
 
