@@ -82,6 +82,7 @@ public:
         eDbtagType_CK,
         eDbtagType_COG,
         eDbtagType_CloneID,
+        eDbtagType_CollecTF,
         eDbtagType_DDBJ,
         eDbtagType_ECOCYC,
         eDbtagType_EMBL,

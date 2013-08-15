@@ -218,6 +218,7 @@ static const TDbxrefPair kApprovedSrcDbXrefs[] = {
 
 static const TDbxrefPair kApprovedProbeDbXrefs[] = {
     { "BB", CDbtag::eDbtagType_BB },
+    { "CollecTF", CDbtag::eDbtagType_CollecTF },
     { "DDBJ", CDbtag::eDbtagType_DDBJ },
     { "EMBL", CDbtag::eDbtagType_EMBL },
     { "GEO", CDbtag::eDbtagType_GEO },
@@ -552,6 +553,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_CGNC, "http://www.agnc.msstate.edu/GeneReport.aspx?a=" },
     { CDbtag::eDbtagType_CK, "http://flybane.berkeley.edu/cgi-bin/cDNA/CK_clone.pl?db=CK&dbid=" },
     { CDbtag::eDbtagType_COG, "http://www.ncbi.nlm.nih.gov/COG/new/release/cow.cgi?cog=" },
+    { CDbtag::eDbtagType_CollecTF, "http://collectf.umbc.edu/" },
     { CDbtag::eDbtagType_ECOCYC, "http://biocyc.org/ECOLI/new-image?type=GENE&object=" },
     { CDbtag::eDbtagType_ENSEMBL, "http://www.ensembl.org/id/" },
     { CDbtag::eDbtagType_EcoGene, "http://ecogene.org/geneInfo.php?eg_id=" },
