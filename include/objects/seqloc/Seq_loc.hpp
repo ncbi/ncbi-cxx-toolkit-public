@@ -170,7 +170,8 @@ public:
     /// check that the 'id' field in all parts of the location is the same
     /// as the specifies id.
     /// if the id parameter is NULL will return the location's id (if unique)
-    void CheckId(const CSeq_id*& id) const;
+    /// @return true on success
+    bool CheckId(const CSeq_id*& id, bool may_throw = true) const;
     void InvalidateIdCache(void) const;
 
     /// set the 'id' field in all parts of this location
@@ -331,8 +332,9 @@ private:
 
     TRange x_UpdateTotalRange(void) const;
     TRange x_CalculateTotalRangeCheckId(const CSeq_id*& id) const;
-    void x_CheckId(const CSeq_id*& id) const;
-    void x_UpdateId(const CSeq_id*& total_id, const CSeq_id* id) const;
+    bool x_CheckId(const CSeq_id*& id, bool may_throw = true) const;
+    bool x_UpdateId(const CSeq_id*& total_id, const CSeq_id* id,
+                    bool may_throw = true) const;
     void x_ChangeToMix(const CSeq_loc& other);
     void x_ChangeToPackedInt(const CSeq_interval& other);
     void x_ChangeToPackedInt(const CSeq_loc& other);
@@ -340,7 +342,8 @@ private:
 
     /// Compare single-id locations, or throw an exception if any location
     /// is multi-id.
-    int x_CompareSingleId(const CSeq_loc& loc) const;
+    int x_CompareSingleId(const CSeq_loc& loc, const CSeq_id* id1,
+                          const CSeq_id* id2) const;
 
     enum {
         kDirtyCache = -2,
@@ -533,27 +536,24 @@ CSeq_loc::TRange CSeq_loc::GetTotalRange(void) const
 
 
 inline
-void CSeq_loc::CheckId(const CSeq_id*& id) const
+bool CSeq_loc::CheckId(const CSeq_id*& id, bool may_throw) const
 {
     const CSeq_id* my_id = m_IdCache;
     if ( my_id == NULL ) {
-        x_CheckId(my_id);
+        if ( !x_CheckId(my_id, may_throw) ) {
+            return false;
+        }
         m_IdCache = my_id;
     }
-    x_UpdateId(id, my_id);
+    return x_UpdateId(id, my_id, may_throw);
 }
 
 
 inline
 const CSeq_id* CSeq_loc::GetId(void) const
 {
-    try {
-        const CSeq_id* sip = NULL;
-        CheckId(sip);
-        return sip;
-    } catch (CException&) {
-    }
-    return NULL;
+    const CSeq_id* sip = NULL;
+    return CheckId(sip, false) ? sip : NULL;
 }
 
 

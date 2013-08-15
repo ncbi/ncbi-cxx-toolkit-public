@@ -377,19 +377,25 @@ CSeq_loc::TRange CSeq_loc::x_UpdateTotalRange(void) const
 }
 
 
-void CSeq_loc::x_UpdateId(const CSeq_id*& total_id, const CSeq_id* id) const
+bool CSeq_loc::x_UpdateId(const CSeq_id*& total_id, const CSeq_id* id,
+                          bool may_throw) const
 {
     if ( total_id == id ) {
-        return;
+        return true;
     }
 
     if ( !total_id ) {
         total_id = id;
     } else if ( (id  &&  !total_id->Equals(*id)) ) {
-        NCBI_THROW(CException, eUnknown,
-                   "CSeq_loc::GetTotalRange() is not defined "
-                   "for seq-loc with several different seq-ids");
+        if (may_throw) {
+            NCBI_THROW(CException, eUnknown,
+                       "CSeq_loc::GetTotalRange() is not defined "
+                       "for seq-loc with several different seq-ids");
+        } else {
+            return false;
+        }
     }
+    return true;
 }
 
 
@@ -508,11 +514,9 @@ CSeq_loc::TRange CSeq_loc::x_CalculateTotalRangeCheckId(const CSeq_id*& id) cons
 }
 
 
-int CSeq_loc::x_CompareSingleId(const CSeq_loc& loc) const
+int CSeq_loc::x_CompareSingleId(const CSeq_loc& loc, const CSeq_id* id1,
+                                const CSeq_id* id2) const
 {
-    // check first that Seq-ids are the same
-    const CSeq_id* id1 = GetId();
-    const CSeq_id* id2 = id1? loc.GetId(): 0;
     if ( !id1 || !id2 ) {
         NCBI_THROW(CException, eUnknown,
                    "CSeq_loc::Compare(): "
@@ -553,10 +557,10 @@ int CSeq_loc::x_CompareSingleId(const CSeq_loc& loc) const
 int CSeq_loc::Compare(const CSeq_loc& loc) const
 {
     // first try fast single-id comparison
-    try {
-        return x_CompareSingleId(loc);
-    }
-    catch ( CException& /*ignored*/ ) {
+    const CSeq_id* id1 = GetId();
+    const CSeq_id* id2 = id1 == NULL ? NULL : loc.GetId();
+    if (id1 != NULL  &&  id2 != NULL) {
+        return x_CompareSingleId(loc, id1, id2);
     }
     // Slow comparison of ranges on each Seq-id separately.
     CSeq_loc_CI iter1(*this, CSeq_loc_CI::eEmpty_Allow);
@@ -609,7 +613,9 @@ int CSeq_loc::Compare(const CSeq_loc& loc) const
             // both locations ended
             return 0;
         }
-        if ( int diff = loc1->x_CompareSingleId(*loc2) ) {
+        id1 = loc1->GetId();
+        id2 = loc2->GetId();
+        if ( int diff = loc1->x_CompareSingleId(*loc2, id1, id2) ) {
             // next sub-locs are different
             return diff;
         }
@@ -1895,36 +1901,32 @@ void CSeq_loc::SetId(CSeq_id& id)
 }
 
 
-void CSeq_loc::x_CheckId(const CSeq_id*& id) const
+bool CSeq_loc::x_CheckId(const CSeq_id*& id, bool may_throw) const
 {
     switch ( Which() ) {
     case e_not_set:
     case e_Null:
         {
             // no Seq-id
-            break;
+            return true;
         }
     case e_Empty:
         {
-            x_UpdateId(id, &GetEmpty());
-            break;
+            return x_UpdateId(id, &GetEmpty(), may_throw);
         }
     case e_Whole:
         {
-            x_UpdateId(id, &GetWhole());
-            break;
+            return x_UpdateId(id, &GetWhole(), may_throw);
         }
     case e_Int:
         {
             const CSeq_interval& loc = GetInt();
-            x_UpdateId(id, &loc.GetId());
-            break;
+            return x_UpdateId(id, &loc.GetId(), may_throw);
         }
     case e_Pnt:
         {
             const CSeq_point& pnt = GetPnt();
-            x_UpdateId(id, &pnt.GetId());
-            break;
+            return x_UpdateId(id, &pnt.GetId(), may_throw);
         }
     case e_Packed_int:
         {
@@ -1932,14 +1934,16 @@ void CSeq_loc::x_CheckId(const CSeq_id*& id) const
             const CPacked_seqint& ints = GetPacked_int();
             ITERATE ( CPacked_seqint::Tdata, ii, ints.Get() ) {
                 const CSeq_interval& loc = **ii;
-                x_UpdateId(id, &loc.GetId());
+                if ( !x_UpdateId(id, &loc.GetId(), may_throw) ) {
+                    return false;
+                }
             }
-            break;
+            return true;
         }
     case e_Packed_pnt:
         {
             const CPacked_seqpnt& pnts = GetPacked_pnt();
-            x_UpdateId(id, &pnts.GetId());
+            return x_UpdateId(id, &pnts.GetId(), may_throw);
             break;
         }
     case e_Mix:
@@ -1947,35 +1951,45 @@ void CSeq_loc::x_CheckId(const CSeq_id*& id) const
             // Check ID of each sub-location.
             const CSeq_loc_mix& mix = GetMix();
             ITERATE( CSeq_loc_mix::Tdata, li, mix.Get() ) {
-                (*li)->CheckId(id);
+                if ( !(*li)->CheckId(id, may_throw) ) {
+                    return false;
+                }
             }
-            break;
+            return true;
         }
     case e_Bond:
         {
             const CSeq_bond& bond = GetBond();
             if ( bond.CanGetA() ) {
-                x_UpdateId(id, &bond.GetA().GetId());
+                if ( !x_UpdateId(id, &bond.GetA().GetId(), may_throw) ) {
+                    return false;
+                }
             }
             if ( bond.CanGetB() ) {
-                x_UpdateId(id, &bond.GetB().GetId());
+                return x_UpdateId(id, &bond.GetB().GetId(), may_throw);
             }
-            break;
+            return true;
         }
     case e_Equiv:
         {
             // Doesn't make much sense to test equiv, but ...
             ITERATE(CSeq_loc_equiv::Tdata, li, GetEquiv().Get()) {
-                (*li)->CheckId(id);
+                if ( !(*li)->CheckId(id, may_throw) ) {
+                    return false;
+                }
             }
-            break;
+            return true;
         }
     case e_Feat:
     default:
         {
-            NCBI_THROW(CException, eUnknown,
-                       "CSeq_loc::CheckId -- "
-                       "unsupported location type");
+            if (may_throw) {
+                NCBI_THROW(CException, eUnknown,
+                           "CSeq_loc::CheckId -- "
+                           "unsupported location type");
+            } else {
+                return false;
+            }
         }
     }
 }
