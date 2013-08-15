@@ -1060,9 +1060,9 @@ void CValidError_imp::ValidateBioSource
 
         if ((*ssit)->IsSetName()) {
             string str = (*ssit)->GetName();
-            if (NStr::Equal (str, "N/A")) {
+            if (NStr::Equal (str, "N/A") || NStr::Equal (str, "Missing")) {
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-                           "Subsource name should not be N/A",
+                           "Subsource name should not be " + str,
                            obj, ctx);
             }
         }
@@ -1921,9 +1921,9 @@ void CValidError_imp::ValidateOrgName
 
             if (omd.IsSetSubname()) {
                 string str = omd.GetSubname();
-                if (NStr::Equal (str, "N/A")) {
+                if (NStr::Equal (str, "N/A") || NStr::Equal (str, "Missing")) {
                     PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-                               "Orgmod name should not be N/A",
+                               "Orgmod name should not be " + str,
                                obj, ctx);
                 }
             }
