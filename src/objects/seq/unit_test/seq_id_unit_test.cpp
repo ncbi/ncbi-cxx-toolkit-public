@@ -1184,7 +1184,7 @@ END_LOCAL_NAMESPACE;
 BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare_Seq_loc)
 {
     CRandom rnd(1);
-    for ( int t = 0; t < 500; ++t ) {
+    for ( int t = 0; t < 1000; ++t ) {
         vector< CRef<CSeq_loc> > locs;
         for ( int i = 0; i < 10; ++i ) {
             size_t segs = rnd.GetRand(1, 10);
