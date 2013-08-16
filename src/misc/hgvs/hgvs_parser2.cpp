@@ -1295,18 +1295,27 @@ CRef<CVariation> CHgvsParser::x_no_change(TIterator const& i, const CContext& co
     CRef<CVariation> vr(new CVariation);
     CVariation_inst& var_inst = vr->SetData().SetInstance();
 
-    SetFirstPlacement(*vr).Assign(context.GetPlacement());
+    CVariantPlacement& p = SetFirstPlacement(*vr);
+    p.Assign(context.GetPlacement());
+
+    //VAR-574: The no-change variation is interpreted as X>X
 
     if(it->value.id() == SGrammar::eID_raw_seq) {
         CRef<CSeq_literal> seq_from = x_raw_seq(it, context);
-        SetFirstPlacement(*vr).SetSeq(*seq_from);
+        p.SetSeq(*seq_from);
         ++it;
+    } else {
+        CVariationUtil util(context.GetScope());
+        util.AttachSeq(p);
+        if(p.IsSetExceptions()) {
+            HGVS_THROW(eSemantic, "Can't get sequence at location, and no asserted sequence specified in the expression");
+        }
     }
 
     var_inst.SetType(CVariation_inst::eType_identity);
 
     TDelta delta(new TDelta::TObjectType);
-    delta->SetSeq().SetThis();
+    delta->SetSeq().SetLiteral().Assign(p.GetSeq());
     var_inst.SetDelta().push_back(delta);
 
     return vr;
