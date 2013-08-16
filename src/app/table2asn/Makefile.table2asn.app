@@ -16,7 +16,7 @@ LIB = xvalidate xcleanup xalnmgr xobjutil \
 
 LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS) $(LIBXML_LIBS) $(LIBXSLT_LIBS)
 
-REQUIRES = objects -Cygwin
+REQUIRES = objects LIBXML LIBXSLT -Cygwin
 
 
 WATCHERS = bollin gotvyans
