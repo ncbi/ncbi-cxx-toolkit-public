@@ -275,20 +275,22 @@ void CVariationUtilities::FixAlleles(CRef<CVariation> v, string old_ref, string 
 }
 
 // Variation Normalization
-
-void CVariationNormalization::x_rotate_left(string &v)
+template<class T>
+void CVariationNormalization_base<T>::x_rotate_left(string &v)
 {
     // simple rotation to the left
     std::rotate(v.begin(), v.begin() + 1, v.end());
 }
 
-void CVariationNormalization::x_rotate_right(string &v)
+template<class T>
+void CVariationNormalization_base<T>::x_rotate_right(string &v)
 {
     // simple rotation to the right
     std::rotate(v.rbegin(), v.rbegin() + 1, v.rend());
 }
 
-void CVariationNormalization::x_PrefetchSequence(CScope &scope, string accession)
+template<class T>
+void CVariationNormalization_base<T>::x_PrefetchSequence(CScope &scope, string accession)
 {
     if (accession != m_Accession)
     {
@@ -300,16 +302,78 @@ void CVariationNormalization::x_PrefetchSequence(CScope &scope, string accession
         seq_vec.GetSeqData(0, seq_vec.size(), m_Sequence);
     }
 }
- 
-string CVariationNormalization::x_GetSeq(int pos, int length)
+
+template<class T>
+string CVariationNormalization_base<T>::x_GetSeq(int pos, int length)
 {
     _ASSERT(!m_Sequence.empty());
     
     return m_Sequence.substr(pos,length);
 }
  
+bool CVariationNormalizationLeft::x_ProcessShift(string &a, int &pos)
+{
+    bool found = false;
+    for (unsigned int i=0; i<a.size(); i++)
+    {
+        string b = x_GetSeq(pos,a.size());
+        if (a == b) 
+        {
+            found = true;
+            break;
+        }
+        x_rotate_left(a);
+    }
+    if (!found && pos > a.size())
+    {
+        pos -= a.size();
+        for (unsigned int i=0; i<a.size(); i++)
+        {
+            string b = x_GetSeq(pos,a.size());
+            if (a == b) 
+            {
+                found = true;
+                break;
+            }
+            x_rotate_left(a);
+        }
+    }
+    if (!found) return false;
+                            
+    bool found_left = false;
+    while (pos >= 0)
+    {
+        pos--; 
+        x_rotate_right(a);
+        string b = x_GetSeq(pos,a.size());
+        if (a != b) 
+        {
+            pos++;
+            x_rotate_left(a);
+            found_left = true;
+            break;
+        }
+    }
+    return found_left;                         
+}
 
-void CVariationNormalization::x_ShiftLeft(CRef<CVariation>& v, CScope &scope)
+void CVariationNormalizationLeft::x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos)
+{
+    if (loc.IsInt())
+    {
+        CSeq_point pnt;
+        pnt.SetPoint(pos);
+        pnt.SetStrand( loc.GetInt().GetStrand() );
+        pnt.SetId().Assign(loc.GetInt().GetId());
+        loc.SetPnt().Assign(pnt);
+    }
+    else
+        loc.SetPnt().SetPoint(pos); 
+    literal.SetSeq_data().SetIupacna().Set(a);
+}
+
+template<class T>
+void CVariationNormalization_base<T>::x_Shift(CRef<CVariation>& v, CScope &scope)
 {
     if (v->IsSetPlacements())
         for (CVariation::TPlacements::iterator vp1 =  v->SetPlacements().begin(); vp1 != v->SetPlacements().end(); ++vp1)
@@ -338,6 +402,7 @@ void CVariationNormalization::x_ShiftLeft(CRef<CVariation>& v, CScope &scope)
                 stringstream accession;
                 accession << acc << "." << version;
                 x_PrefetchSequence(scope,accession.str());
+                
                 for ( CVariation::TData::TSet::TVariations::iterator var2 = v->SetData().SetSet().SetVariations().begin(); var2 != v->SetData().SetSet().SetVariations().end();  ++var2 )
                     if ( (*var2)->IsSetData() && (*var2)->SetData().IsInstance() && (*var2)->SetData().SetInstance().IsSetDelta() && !(*var2)->SetData().SetInstance().SetDelta().empty()
                          && (*var2)->SetData().SetInstance().SetDelta().front()->IsSetSeq() && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().IsLiteral()
@@ -345,68 +410,20 @@ void CVariationNormalization::x_ShiftLeft(CRef<CVariation>& v, CScope &scope)
                          && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().IsIupacna())
                     {
                         string a = (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(); 
+                        //cout << x_GetSeq(pos-a.size(),3*a.size()) << endl;
+                        //cout << setw(a.size()) << " ";
+                        //cout << a <<endl;
                         int type = (*var2)->SetData().SetInstance().SetType(); 
                         if (!a.empty() && type == CVariation_inst::eType_ins)
                         {
-                            bool found = false;
-                            for (int i=0; i<a.size(); i++)
-                            {
-                                string b = x_GetSeq(pos,a.size());
-                                if (a == b) 
-                                {
-                                    found = true;
-                                    break;
-                                }
-                                x_rotate_left(a);
-                            }
-                            if (!found && pos > a.size())
-                            {
-                                pos -= a.size();
-                                for (int i=0; i<a.size(); i++)
-                                {
-                                    string b = x_GetSeq(pos,a.size());
-                                    if (a == b) 
-                                    {
-                                        found = true;
-                                        break;
-                                    }
-                                    x_rotate_left(a);
-                                }
-                            }
+                            bool found = x_ProcessShift(a, pos);
                             if (found)
                             {
-                                bool found_left = false;
-                                while (pos >= 0)
-                                {
-                                    pos--; 
-                                    x_rotate_right(a);
-                                    string b = x_GetSeq(pos,a.size());
-                                    if (a != b) 
-                                    {
-                                        pos++;
-                                        x_rotate_left(a);
-                                        found_left = true;
-                                        break;
-                                    }
-                                }
-                                if (found_left)
-                                {
-                                    if (new_pos == -1)
-                                        new_pos = pos;
-                                    else if (new_pos != pos)
-                                        NCBI_THROW(CException, eUnknown, "Position is ambiguous due to different leaf alleles");
-                                    if ((*vp1)->SetLoc().IsInt())
-                                    {
-                                        CSeq_point pnt;
-                                        pnt.SetPoint(pos);
-                                        pnt.SetStrand( (*vp1)->SetLoc().GetInt().GetStrand() );
-                                        pnt.SetId().Assign((*vp1)->SetLoc().GetInt().GetId());
-                                        (*vp1)->SetLoc().SetPnt().Assign(pnt);
-                                    }
-                                    else
-                                        (*vp1)->SetLoc().SetPnt().SetPoint(pos); 
-                                   (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(a);
-                                }
+                                if (new_pos == -1)
+                                    new_pos = pos;
+                                else if (new_pos != pos)
+                                    NCBI_THROW(CException, eUnknown, "Position is ambiguous due to different leaf alleles");
+                                x_ModifyLocation((*vp1)->SetLoc(),(*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral(),a,pos);
                             }
                         }
                     }
@@ -414,20 +431,23 @@ void CVariationNormalization::x_ShiftLeft(CRef<CVariation>& v, CScope &scope)
         }
 }
 
-void CVariationNormalization::x_ShiftLeft(CRef<CSeq_annot>& var, CScope &scope)
+template<class T>
+void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& var, CScope &scope)
 {
     // TODO 
 }
 
 void CVariationNormalization::AlterToVCFVar(CRef<CVariation>& var, CScope &scope)
 {
-    x_ShiftLeft(var,scope);
+    CVariationNormalizationLeft::x_Shift(var,scope);
 }
 
 void CVariationNormalization::AlterToVCFVar(CRef<CSeq_annot>& var, CScope& scope)
 {
-    x_ShiftLeft(var,scope);
+    CVariationNormalizationLeft::x_Shift(var,scope);
 }
 
-string CVariationNormalization::m_Sequence;
-string CVariationNormalization::m_Accession;
+template<class T>
+string CVariationNormalization_base<T>::m_Sequence;
+template<class T>
+string CVariationNormalization_base<T>::m_Accession;

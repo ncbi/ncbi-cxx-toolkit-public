@@ -51,6 +51,35 @@ private:
     static void FixAlleles(CVariation_ref& vr, string old_ref, string new_ref) ;
 };
 
+template<class T>
+class CVariationNormalization_base
+{
+public:
+    static void x_Shift(CRef<CVariation>& var, CScope &scope);
+    static void x_Shift(CRef<CSeq_annot>& var, CScope &scope);
+    static void x_Shift(CRef<CVariation_ref>& var, CScope &scope);
+    
+    static bool x_ProcessShift(string &a, int &pos) {return T::x_ProcessShift(a,pos);}
+    static void x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos) {T::x_ModifyLocation(loc,literal,a,pos);}
+
+protected:
+    
+    static void x_rotate_left(string &v);
+    static void x_rotate_right(string &v);
+    static void x_PrefetchSequence(CScope &scope, string accession);
+    static string x_GetSeq(int pos, int length);
+    static string m_Sequence;
+    static string m_Accession;
+
+};
+
+class CVariationNormalizationLeft : public CVariationNormalization_base<CVariationNormalizationLeft>
+{
+public:
+    static bool x_ProcessShift(string &a, int &pos);
+    static void x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos);
+};
+
 class CVariationNormalization
 {
 public:
@@ -99,26 +128,4 @@ public:
     // Simplify objects with common prefix in ref and all alts.
     // Identify mixed type objects, and split.
  
-private:
-  
- 
-    //Shifting logic is shared between contexts
-    //So shouldn't be wrapped up in the above.
-    static void x_ShiftLeft(CRef<CVariation>& var, CScope &scope);
-    static void x_ShiftLeft(CRef<CSeq_annot>& var, CScope &scope);
-    static void x_ShiftLeft(CRef<CVariation_ref>& var, CScope &scope);
-  
-    static void x_ShiftRight(CRef<CVariation>& var, CScope &scope);
-    static void x_ShiftRight(CRef<CVariation_ref>& var, CScope &scope);
- 
-    //Each Group of Business rules will get a private method
-    //Ideally, operations on Var and Var-ref could share common private methods
-    //that are provided common data, like a SeqLoc, Ref Allele and Alt Allele(s).
-
-    static void x_rotate_left(string &v);
-    static void x_rotate_right(string &v);
-    static void x_PrefetchSequence(CScope &scope, string accession);
-    static string x_GetSeq(int pos, int length);
-    static string m_Sequence;
-    static string m_Accession;
 };
