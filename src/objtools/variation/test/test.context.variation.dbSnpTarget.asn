@@ -251,7 +251,7 @@ Variation ::= {
             {
               seq literal {
                 length 3,
-                seq-data iupacna "ACG"
+                seq-data iupacna "TGC"
               },
               action ins-before
             }
@@ -322,7 +322,7 @@ Variation ::= {
             {
               seq literal {
                 length 3,
-                seq-data iupacna "ACG"
+                seq-data iupacna "TGC"
               },
               action ins-before
             }
@@ -394,7 +394,7 @@ Variation ::= {
             {
               seq literal {
                 length 3,
-                seq-data iupacna "ACG"
+                seq-data iupacna "TGC"
               },
               action ins-before
             }
