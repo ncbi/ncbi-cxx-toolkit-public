@@ -206,6 +206,11 @@ void CAlignFilter::AddWhitelistQueryId(const CSeq_id_Handle& idh)
     m_QueryWhitelist.insert(idh);
 }
 
+void CAlignFilter::AddExcludeNotInQueryId(const CSeq_id_Handle& idh)
+{
+    m_QueryExcludeNotIn.insert(idh);
+}
+
 
 void CAlignFilter::AddBlacklistSubjectId(const CSeq_id_Handle& idh)
 {
@@ -216,6 +221,11 @@ void CAlignFilter::AddBlacklistSubjectId(const CSeq_id_Handle& idh)
 void CAlignFilter::AddWhitelistSubjectId(const CSeq_id_Handle& idh)
 {
     m_SubjectWhitelist.insert(idh);
+}
+
+void CAlignFilter::AddExcludeNotInSubjectId(const CSeq_id_Handle& idh)
+{
+    m_SubjectExcludeNotIn.insert(idh);
 }
 
 
@@ -254,7 +264,9 @@ void CAlignFilter::Filter(const CSeq_annot& aligns_in,
 bool CAlignFilter::Match(const CSeq_align& align)
 {
     if (align.CheckNumRows() == 2) {
-        if (m_QueryBlacklist.size()  ||  m_QueryWhitelist.size()) {
+        if (m_QueryBlacklist.size()  ||  m_QueryWhitelist.size()
+                                     ||  m_QueryExcludeNotIn.size())
+        {
             CSeq_id_Handle query =
                 CSeq_id_Handle::GetHandle(align.GetSeq_id(0));
             if (m_Scope) {
@@ -271,6 +283,12 @@ bool CAlignFilter::Match(const CSeq_align& align)
                 return false;
             }
 
+            if (m_QueryExcludeNotIn.size()  &&
+                m_QueryExcludeNotIn.find(query) == m_QueryExcludeNotIn.end()) {
+                /// reject: query sequence not found in exclude-not-in list
+                return false;
+            }
+
             if (m_QueryWhitelist.size()  &&
                 m_QueryWhitelist.find(query) != m_QueryWhitelist.end()) {
                 /// accept: query sequence found in white list
@@ -279,7 +297,9 @@ bool CAlignFilter::Match(const CSeq_align& align)
             }
         }
 
-        if (m_SubjectBlacklist.size()  ||  m_SubjectWhitelist.size()) {
+        if (m_SubjectBlacklist.size()  ||  m_SubjectWhitelist.size()
+                                       ||  m_SubjectExcludeNotIn.size())
+        {
             CSeq_id_Handle subject =
                 CSeq_id_Handle::GetHandle(align.GetSeq_id(1));
             if (m_Scope) {
@@ -293,6 +313,12 @@ bool CAlignFilter::Match(const CSeq_align& align)
             if (m_SubjectBlacklist.size()  &&
                 m_SubjectBlacklist.find(subject) != m_SubjectBlacklist.end()) {
                 /// reject: subject sequence found in black list
+                return false;
+            }
+
+            if (m_SubjectExcludeNotIn.size()  &&
+                m_SubjectExcludeNotIn.find(subject) == m_SubjectExcludeNotIn.end()) {
+                /// reject: query sequence not found in exclude-not-in list
                 return false;
             }
 
@@ -318,7 +344,8 @@ bool CAlignFilter::Match(const CSeq_align& align)
             /// inclusion failed - return false
             return false;
         }
-        else if (m_QueryBlacklist.size()  ||  m_SubjectBlacklist.size()) {
+        else if (m_QueryBlacklist.size()  ||  m_SubjectBlacklist.size() ||
+                 m_QueryExcludeNotIn.size()  ||  m_SubjectExcludeNotIn.size()) {
             /// the user supplied exclusion criteria but no filter
             /// exclusion failed - return true
             return true;

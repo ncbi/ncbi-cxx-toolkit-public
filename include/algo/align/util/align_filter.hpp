@@ -193,6 +193,14 @@ public:
     void AddWhitelistQueryId(const objects::CSeq_id_Handle& idh);
     void AddWhitelistSubjectId(const objects::CSeq_id_Handle& idh);
 
+    /// Add a sequence to the exclude-not-in list
+    /// If an alignment does not match one of the IDs, it is excluded.
+    ///
+    /// NOTE: this is only triggered if the alignments are pairwise!
+    ///
+    void AddExcludeNotInQueryId(const objects::CSeq_id_Handle& idh);
+    void AddExcludeNotInSubjectId(const objects::CSeq_id_Handle& idh);
+
     /// Match a single alignment
     bool Match(const objects::CSeq_align& align);
 
@@ -268,8 +276,10 @@ private:
 
     set<objects::CSeq_id_Handle> m_QueryBlacklist;
     set<objects::CSeq_id_Handle> m_QueryWhitelist;
+    set<objects::CSeq_id_Handle> m_QueryExcludeNotIn;
     set<objects::CSeq_id_Handle> m_SubjectBlacklist;
     set<objects::CSeq_id_Handle> m_SubjectWhitelist;
+    set<objects::CSeq_id_Handle> m_SubjectExcludeNotIn;
 
     typedef set<string> TUniqueAligns;
     TUniqueAligns m_UniqueAligns;
