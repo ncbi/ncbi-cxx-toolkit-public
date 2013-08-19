@@ -35,7 +35,7 @@ Variation ::= {
             {
               seq literal {
                 length 3,
-                seq-data iupacna "TGC"
+                seq-data iupacna "TCG"
               },
               action ins-before
             }
