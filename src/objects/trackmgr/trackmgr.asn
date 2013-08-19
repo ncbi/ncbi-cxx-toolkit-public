@@ -52,11 +52,17 @@ TMgr-ClientInfo ::= SEQUENCE {
     --permission keys etc
 }
 
+TMgr-TrackACL-Authorization ::= SEQUENCE {
+    access-level TMgr-ACL-AccessLevel OPTIONAL,
+    access-key VisibleString OPTIONAL
+}
+
 TMgr-DisplayTrackRequest ::= SEQUENCE {
     client TMgr-ClientInfo,
     genome-context TMgr-GenomeContext,
     attrs SET OF TMgr-AttrSpec OPTIONAL,
-    identity TMgr-Identity OPTIONAL
+    identity TMgr-Identity OPTIONAL,
+    authorization TMgr-TrackACL-Authorization OPTIONAL
 }
 
 TMgr-DisplayTrackReply ::= SEQUENCE {
@@ -229,7 +235,8 @@ TMgr-ACL-AccessLevel ::= INTEGER {
 }
 
 TMgr-TrackACL-Permission ::= SEQUENCE {
-    access-level TMgr-ACL-AccessLevel DEFAULT public
+    access-level TMgr-ACL-AccessLevel DEFAULT public,
+    access-key VisibleString OPTIONAL
 }
 
 TMgr-CreateUserTrackRequest ::= SEQUENCE {
