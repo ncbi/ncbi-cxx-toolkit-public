@@ -1438,6 +1438,7 @@ gcaccess_utils needs xobjutil
 gcaccess_utils needs xregexp
 gcaccess_utils needs xser
 gcaccess_utils needs xutil
+gdsutil needs xncbi
 gencoll needs biblio
 gencoll needs general
 gencoll needs genome_collection
@@ -5108,9 +5109,6 @@ seqmasks_io needs xobjread
 seqmasks_io needs xobjutil
 seqmasks_io needs xser
 seqmasks_io needs xutil
-seqmeta needs xncbi
-seqmeta needs xser
-seqmeta needs xutil
 seqset needs biblio
 seqset needs general
 seqset needs medline
