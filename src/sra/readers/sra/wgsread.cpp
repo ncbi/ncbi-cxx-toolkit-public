@@ -573,45 +573,89 @@ NCBI_gb_state CWGSSeqIterator::GetGBState(void) const
 }
 
 
-static const Int1 sx_4na_to_2na_two[256] = {
-    //  +0  +1      +2              +3
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 0
-    -1,  0,  1, -1,  2, -1, -1, -1,  3, -1, -1, -1, -1, -1, -1, -1, // 1 +0
-    -1,  4,  5, -1,  6, -1, -1, -1,  7, -1, -1, -1, -1, -1, -1, -1, // 2 +4
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 3
-    -1,  8,  9, -1, 10, -1, -1, -1, 11, -1, -1, -1, -1, -1, -1, -1, // 4 +8
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 5
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 6
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 7
-    -1, 12, 13, -1, 14, -1, -1, -1, 15, -1, -1, -1, -1, -1, -1, -1, // 8 +12
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 9
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 10
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 11
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 12
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 13
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, // 14
-    -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1  // 15
+// For 4na data in byte {base0 4 (highest) bits, base1 4 bits} the bits are:
+// 5: base0 is not 2na
+// 4: base1 is not 2na
+// 3-2: base0 2na encoding, or 1 if gap
+// 1-0: base1 2na encoding, or 1 if gap
+enum {
+    f1st_4na      = 1<<5,
+    f1st_2na_max  = 3<<2,
+    f1st_gap_bit  = 1<<2,
+    f1st_gap      = f1st_4na|f1st_gap_bit,
+    f1st_mask     = f1st_4na|f1st_2na_max,
+    f2nd_4na      = 1<<4,
+    f2nd_2na_max  = 3<<0,
+    f2nd_gap_bit  = 1<<0,
+    f2nd_gap      = f2nd_4na|f2nd_gap_bit,
+    f2nd_mask     = f2nd_4na|f2nd_2na_max,
+    fBoth_2na_max = f1st_2na_max|f2nd_2na_max,
+    fBoth_4na     = f1st_4na|f2nd_4na,
+    fBoth_gap     = f1st_gap|f2nd_gap
+};
+static const Uint1 sx_4naFlags[256] = {
+    // 2nd (low 4 bits) meaning (default=16)                        // 1st high
+    //  =0  =1      =2              =3                         =17  // =32
+    48, 32, 33, 48, 34, 48, 48, 48, 35, 48, 48, 48, 48, 48, 48, 49, // 
+    16,  0,  1, 16,  2, 16, 16, 16,  3, 16, 16, 16, 16, 16, 16, 17, // =0
+    20,  4,  5, 20,  6, 20, 20, 20,  7, 20, 20, 20, 20, 20, 20, 21, // =4
+    48, 32, 33, 48, 34, 48, 48, 48, 35, 48, 48, 48, 48, 48, 48, 49, // 
+    24,  8,  9, 24, 10, 24, 24, 24, 11, 24, 24, 24, 24, 24, 24, 25, // =8
+    48, 32, 33, 48, 34, 48, 48, 48, 35, 48, 48, 48, 48, 48, 48, 49, // 
+    48, 32, 33, 48, 34, 48, 48, 48, 35, 48, 48, 48, 48, 48, 48, 49, // 
+    48, 32, 33, 48, 34, 48, 48, 48, 35, 48, 48, 48, 48, 48, 48, 49, // 
+    28, 12, 13, 28, 14, 28, 28, 28, 15, 28, 28, 28, 28, 28, 28, 29, // =12
+    48, 32, 33, 48, 34, 48, 48, 48, 35, 48, 48, 48, 48, 48, 48, 49, // 
+    48, 32, 33, 48, 34, 48, 48, 48, 35, 48, 48, 48, 48, 48, 48, 49, // 
+    48, 32, 33, 48, 34, 48, 48, 48, 35, 48, 48, 48, 48, 48, 48, 49, // 
+    48, 32, 33, 48, 34, 48, 48, 48, 35, 48, 48, 48, 48, 48, 48, 49, // 
+    48, 32, 33, 48, 34, 48, 48, 48, 35, 48, 48, 48, 48, 48, 48, 49, // 
+    48, 32, 33, 48, 34, 48, 48, 48, 35, 48, 48, 48, 48, 48, 48, 49, // 
+    52, 36, 37, 52, 38, 52, 52, 52, 39, 52, 52, 52, 52, 52, 52, 53  // =36
 };
 
 
+static const bool kRecoverGaps = true;
+    
 static inline
-bool sx_Is2naBoth(Uint1 b4na)
+bool sx_4naIs2naBoth(Uint1 b4na)
 {
-    return sx_4na_to_2na_two[b4na] >= 0;
+    return sx_4naFlags[b4na] <= fBoth_2na_max;
 }
 
 
 static inline
-bool sx_Is2na1st(Uint1 b4na)
+bool sx_4naIs2na1st(Uint1 b4na)
 {
-    return sx_Is2naBoth((b4na&0xf0)+0x01);
+    return (sx_4naFlags[b4na]&f1st_mask) <= f1st_2na_max;
 }
 
 
 static inline
-bool sx_Is2na2nd(Uint1 b4na)
+bool sx_4naIs2na2nd(Uint1 b4na)
 {
-    return sx_Is2naBoth((b4na&0x0f)+0x10);
+    return (sx_4naFlags[b4na]&f2nd_mask) <= f2nd_2na_max;
+}
+
+
+static inline
+bool sx_4naIsGapBoth(Uint1 b4na)
+{
+    return b4na == 0xff;
+}
+
+
+static inline
+bool sx_4naIsGap1st(Uint1 b4na)
+{
+    return (b4na&0xf0) == 0xf0;
+}
+
+
+static inline
+bool sx_4naIsGap2nd(Uint1 b4na)
+{
+    return (b4na&0x0f) == 0x0f;
 }
 
 
@@ -624,7 +668,7 @@ bool sx_Is2na(const CVDBValueFor4Bits& read,
     const char* raw_ptr = read.raw_data()+(raw_pos/2);
     if ( raw_pos % 2 != 0 ) {
         // check odd base
-        if ( !sx_Is2na2nd(*raw_ptr) ) {
+        if ( !sx_4naIs2na2nd(*raw_ptr) ) {
             return false;
         }
         ++raw_ptr;
@@ -635,7 +679,7 @@ bool sx_Is2na(const CVDBValueFor4Bits& read,
     }
     while ( len >= 2 ) {
         // check both bases
-        if ( !sx_Is2naBoth(*raw_ptr) ) {
+        if ( !sx_4naIs2naBoth(*raw_ptr) ) {
             return false;
         }
         ++raw_ptr;
@@ -643,7 +687,43 @@ bool sx_Is2na(const CVDBValueFor4Bits& read,
     }
     if ( len > 0 ) {
         // check one more base
-        if ( !sx_Is2na1st(*raw_ptr) ) {
+        if ( !sx_4naIs2na1st(*raw_ptr) ) {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+static inline
+bool sx_IsGap(const CVDBValueFor4Bits& read,
+              TSeqPos pos,
+              TSeqPos len)
+{
+    TSeqPos raw_pos = pos+read.offset();
+    const char* raw_ptr = read.raw_data()+(raw_pos/2);
+    if ( raw_pos % 2 != 0 ) {
+        // check odd base
+        if ( !sx_4naIsGap2nd(*raw_ptr) ) {
+            return false;
+        }
+        ++raw_ptr;
+        --len;
+        if ( len == 0 ) {
+            return true;
+        }
+    }
+    while ( len >= 2 ) {
+        // check both bases
+        if ( !sx_4naIsGapBoth(*raw_ptr) ) {
+            return false;
+        }
+        ++raw_ptr;
+        len -= 2;
+    }
+    if ( len > 0 ) {
+        // check one more base
+        if ( !sx_4naIsGap1st(*raw_ptr) ) {
             return false;
         }
     }
@@ -661,7 +741,186 @@ TSeqPos sx_Get2naLength(const CVDBValueFor4Bits& read,
     TSeqPos rem_len = len;
     if ( raw_pos % 2 != 0 ) {
         // check odd base
-        if ( !sx_Is2na2nd(*raw_ptr) ) {
+        if ( !sx_4naIs2na2nd(*raw_ptr) ) {
+            return 0;
+        }
+        ++raw_ptr;
+        --rem_len;
+        if ( rem_len == 0 ) {
+            return 1;
+        }
+    }
+    while ( rem_len >= 2 ) {
+        // check both bases
+        Uint1 flags = sx_4naFlags[Uint1(*raw_ptr)];
+        if ( flags & fBoth_4na ) {
+            if ( !(flags & f1st_4na) ) {
+                --rem_len;
+            }
+            return len-rem_len;
+        }
+        ++raw_ptr;
+        rem_len -= 2;
+    }
+    if ( rem_len > 0 ) {
+        // check one more base
+        if ( sx_4naIs2na1st(*raw_ptr) ) {
+            --rem_len;
+        }
+    }
+    return len-rem_len;
+}
+
+
+static inline
+TSeqPos sx_Get4naLength(const CVDBValueFor4Bits& read,
+                        TSeqPos pos, TSeqPos len,
+                        TSeqPos stop_2na_len, TSeqPos stop_gap_len)
+{
+    if ( len < stop_2na_len ) {
+        return len;
+    }
+    TSeqPos raw_pos = pos+read.offset();
+    const char* raw_ptr = read.raw_data()+(raw_pos/2);
+    TSeqPos rem_len = len, len2na = 0, gap_len = 0;
+    // |-------------------- len -----------------|
+    // |- 4na -|- len2na -|- gap_len -$- rem_len -|
+    // $ is current position
+    // only one of len2na and gap_len can be above zero
+
+    if ( raw_pos % 2 != 0 ) {
+        // check odd base
+        Uint1 b4na = *raw_ptr;
+        if ( kRecoverGaps && sx_4naIsGap2nd(b4na) ) {
+            gap_len = 1;
+            if ( stop_gap_len == 1 ) { // gap length limit
+                return 0;
+            }
+        }
+        if ( sx_4naIs2na2nd(b4na) ) {
+            len2na = 1;
+            if ( stop_2na_len == 1 ) { // 2na length limit
+                return 0;
+            }
+        }
+        ++raw_ptr;
+        --rem_len;
+        if ( rem_len == 0 ) {
+            return 1;
+        }
+    }
+    if ( (len2na+rem_len < stop_2na_len) &&
+         (!kRecoverGaps || gap_len+rem_len < stop_gap_len) ) {
+        // not enough bases to reach stop_2na_len or stop_gap_len
+        return len;
+    }
+
+    while ( rem_len >= 2 ) {
+        // check both bases
+        Uint1 flags = sx_4naFlags[Uint1(*raw_ptr)];
+        if ( !(flags & fBoth_4na) ) { // both 2na
+            ++raw_ptr;
+            rem_len -= 2;
+            len2na += 2;
+            if ( len2na >= stop_2na_len ) { // reached limit on 2na len
+                return len-(rem_len+len2na);
+            }
+            if ( kRecoverGaps ) {
+                gap_len = 0;
+                if ( (rem_len < stop_gap_len) &&
+                     (len2na+rem_len < stop_2na_len) ) {
+                    // not enough bases to reach stop_2na_len or stop_gap_len
+                    return len;
+                }
+            }
+        }
+        else {
+            if ( !(flags & f1st_4na) ) { // 1st 2na
+                if ( len2na == stop_2na_len-1 ) { // 1 more 2na is enough
+                    return len-(rem_len+len2na);
+                }
+                ++len2na;
+                if ( kRecoverGaps ) {
+                    gap_len = 0;
+                }
+            }
+            else {
+                if ( kRecoverGaps && (flags & f1st_gap_bit) ) {
+                    if ( gap_len == stop_gap_len-1 ) { // 1 more gap is enough
+                        return len-(rem_len+gap_len);
+                    }
+                    ++gap_len;
+                }
+                len2na = 0;
+            }
+            --rem_len;
+            if ( !(flags & f2nd_4na) ) { // 2nd 2na
+                if ( len2na == stop_2na_len-1 ) { // 1 more 2na is enough
+                    return len-(rem_len+len2na);
+                }
+                ++len2na;
+                if ( kRecoverGaps ) {
+                    gap_len = 0;
+                }
+            }
+            else {
+                if ( kRecoverGaps && (flags & f2nd_gap_bit) ) {
+                    if ( gap_len == stop_gap_len-1 ) { // 1 more gap is enough
+                        return len-(rem_len+gap_len);
+                    }
+                    ++gap_len;
+                }
+                len2na = 0;
+            }
+            --rem_len;
+            ++raw_ptr;
+            if ( (len2na+rem_len < stop_2na_len) &&
+                 (!kRecoverGaps || gap_len+rem_len < stop_gap_len) ) {
+                // not enough bases to reach stop_2na_len or stop_gap_len
+                return len;
+            }
+        }
+    }
+    if ( rem_len > 0 ) {
+        // check one more base
+        Uint1 flags = sx_4naFlags[Uint1(*raw_ptr)];
+        if ( !(flags & f1st_4na) ) { // 1st 2na
+            if ( len2na == stop_2na_len-1 ) { // 1 more 2na is enough
+                return len-(rem_len+len2na);
+            }
+            ++len2na;
+            if ( kRecoverGaps ) {
+                gap_len = 0;
+            }
+        }
+        else {
+            if ( kRecoverGaps && (flags & f1st_gap_bit) ) {
+                if ( gap_len == stop_gap_len-1 ) { // 1 more gap is enough
+                    return len-(rem_len+gap_len);
+                }
+                ++gap_len;
+            }
+            len2na = 0;
+        }
+        --rem_len;
+    }
+    _ASSERT(len2na < stop_2na_len);
+    _ASSERT(!kRecoverGaps || gap_len < stop_gap_len);
+    return len;
+}
+
+
+static inline
+TSeqPos sx_GetGapLength(const CVDBValueFor4Bits& read,
+                        TSeqPos pos,
+                        TSeqPos len)
+{
+    TSeqPos raw_pos = pos+read.offset();
+    const char* raw_ptr = read.raw_data()+(raw_pos/2);
+    TSeqPos rem_len = len;
+    if ( raw_pos % 2 != 0 ) {
+        // check odd base
+        if ( !sx_4naIsGap2nd(*raw_ptr) ) {
             return 0;
         }
         ++raw_ptr;
@@ -673,8 +932,8 @@ TSeqPos sx_Get2naLength(const CVDBValueFor4Bits& read,
     while ( rem_len >= 2 ) {
         // check both bases
         Uint1 b4na = *raw_ptr;
-        if ( !sx_Is2naBoth(b4na) ) {
-            if ( sx_Is2na1st(b4na) ) {
+        if ( !sx_4naIsGapBoth(b4na) ) {
+            if ( sx_4naIsGap1st(b4na) ) {
                 --rem_len;
             }
             return len-rem_len;
@@ -684,7 +943,7 @@ TSeqPos sx_Get2naLength(const CVDBValueFor4Bits& read,
     }
     if ( rem_len > 0 ) {
         // check one more base
-        if ( sx_Is2na1st(*raw_ptr) ) {
+        if ( sx_4naIsGap1st(*raw_ptr) ) {
             --rem_len;
         }
     }
@@ -692,74 +951,14 @@ TSeqPos sx_Get2naLength(const CVDBValueFor4Bits& read,
 }
 
 
-static inline
-TSeqPos sx_Get4naLength(const CVDBValueFor4Bits& read,
-                        TSeqPos pos,
-                        TSeqPos len,
-                        TSeqPos stop_2na_len)
-{
-    if ( len < stop_2na_len ) {
-        return len;
-    }
-    TSeqPos raw_pos = pos+read.offset();
-    const char* raw_ptr = read.raw_data()+(raw_pos/2);
-    TSeqPos rem_len = len, len2na = 0;
-    if ( raw_pos % 2 != 0 ) {
-        // check odd base
-        if ( sx_Is2na2nd(*raw_ptr) ) {
-            len2na = 1;
-        }
-        else if ( len == stop_2na_len ) {
-            return len;
-        }
-        ++raw_ptr;
-        --rem_len;
-        if ( rem_len == 0 ) {
-            return 1;
-        }
-    }
-    while ( rem_len >= 2 ) {
-        // check both bases
-        Uint1 b4na = *raw_ptr;
-        if ( sx_Is2naBoth(b4na) ) {
-            ++raw_ptr;
-            rem_len -= 2;
-            len2na += 2;
-            if ( len2na >= stop_2na_len ) {
-                return len-(rem_len+len2na);
-            }
-        }
-        else {
-            if ( sx_Is2na1st(b4na) && len2na == stop_2na_len-1 ) {
-                return len-(rem_len+len2na);
-            }
-            ++raw_ptr;
-            rem_len -= 2;
-            len2na = sx_Is2na2nd(b4na);
-            if ( len2na+rem_len < stop_2na_len ) {
-                return len;
-            }
-        }
-    }
-    if ( rem_len > 0 ) {
-        // check one more base
-        --rem_len;
-        if ( sx_Is2na1st(*raw_ptr) ) {
-            ++len2na;
-        }
-        else {
-            return len;
-        }
-    }
-    return len2na >= stop_2na_len? len-len2na: len;
-}
-
-
+// Return 2na Seq-data for specified range.
+// The data mustn't have ambiguities.
 static
 CRef<CSeq_data> sx_Get2na(const CVDBValueFor4Bits& read,
                           TSeqPos pos,
                           TSeqPos len)
 {
+    _ASSERT(len);
     CRef<CSeq_data> ret(new CSeq_data);
     vector<char>& data = ret->SetNcbi2na().Set();
     size_t dst_len = (len+3)/4;
@@ -768,32 +967,33 @@ CRef<CSeq_data> sx_Get2na(const CVDBValueFor4Bits& read,
     const char* raw_ptr = read.raw_data()+(raw_pos/2);
     if ( raw_pos % 2 == 0 ) {
         // even - no shift
+        // 4na (01,23) -> 2na (0123)
         while ( len >= 4 ) {
-            // combine 4 b
-            Uint1 b4na0 = raw_ptr[0]; // 01
-            Uint1 b4na1 = raw_ptr[1]; // 23
+            // combine 4 bases
+            Uint1 b2na0 = sx_4naFlags[Uint1(raw_ptr[0])]; // 01
+            Uint1 b2na1 = sx_4naFlags[Uint1(raw_ptr[1])]; // 23
+            _ASSERT(!(b2na0 & fBoth_4na));
+            _ASSERT(!(b2na1 & fBoth_4na));
             raw_ptr += 2;
-            Uint1 b2na0 = sx_4na_to_2na_two[b4na0]; // 01
-            Uint1 b2na1 = sx_4na_to_2na_two[b4na1]; // 23
-            Uint1 b2na = b2na0*16+b2na1; // 0123
+            Uint1 b2na = (b2na0<<4)+b2na1; // 0123
             data.push_back(b2na);
             len -= 4;
         }
         if ( len > 0 ) {
+            // trailing odd bases 1..3
             Uint1 b2na;
-            Uint1 b4na0 = raw_ptr[0]; // 01
+            Uint1 b2na0 = sx_4naFlags[Uint1(raw_ptr[0])]; // 01
             if ( len == 1 ) {
-                b4na0 &= 0xf0; // 0x
-                Uint1 b2na0 = sx_4na_to_2na_two[b4na0+0x01]; // 0x
-                b2na = b2na0*16; // 0xxx
+                _ASSERT(!(b2na0 & f1st_4na));
+                b2na = (b2na0<<4) & 0xc0; // 0xxx
             }
-            else if ( len >= 2 ) {
-                Uint1 b2na0 = sx_4na_to_2na_two[b4na0];   // 01
-                b2na = b2na0*16; // 01xx
+            else {
+                _ASSERT(!(b2na0 & fBoth_4na));
+                b2na = (b2na0<<4) & 0xff; // 01xx
                 if ( len == 3 ) {
-                    Uint1 b4na1 = raw_ptr[1]; // 2x
-                    Uint1 b2na1 = sx_4na_to_2na_two[(b4na1&0xf0)+0x01];
-                    b2na += b2na1; // 012x
+                    Uint1 b2na1 = sx_4naFlags[Uint1(raw_ptr[1])]; // 2x
+                    _ASSERT(!(b2na1 & f1st_4na));
+                    b2na += b2na1 & 0xc; // 012x
                 }
             }
             data.push_back(b2na);
@@ -801,38 +1001,38 @@ CRef<CSeq_data> sx_Get2na(const CVDBValueFor4Bits& read,
     }
     else {
         // odd - shift
+        // 4na (x0,12,3x) -> 2na (0123)
         while ( len >= 4 ) {
-            // combine 4 b
-            Uint1 b4na0 = raw_ptr[0]; // x0
-            Uint1 b4na1 = raw_ptr[1]; // 12
-            Uint1 b4na2 = raw_ptr[2]; // 2x
+            // combine 4 bases
+            Uint1 b2na0 = sx_4naFlags[Uint1(raw_ptr[0])]; // x0
+            Uint1 b2na1 = sx_4naFlags[Uint1(raw_ptr[1])]; // 12
+            Uint1 b2na2 = sx_4naFlags[Uint1(raw_ptr[2])]; // 3x
             raw_ptr += 2;
-            b4na0 = b4na0*16 + (b4na1>>4); // 01
-            b4na1 = b4na1*16 + (b4na2>>4); // 23
-            Uint1 b2na0 = sx_4na_to_2na_two[b4na0]; // 01
-            Uint1 b2na1 = sx_4na_to_2na_two[b4na1]; // 23
-            Uint1 b2na = b2na0*16+b2na1; // 0123
+            _ASSERT(!(b2na0 & f2nd_4na));
+            _ASSERT(!(b2na1 & fBoth_4na));
+            _ASSERT(!(b2na2 & f1st_4na));
+            Uint1 b2na = ((b2na0<<6)+(b2na1<<2)+(b2na2&3))&0xff; // 0123
             data.push_back(b2na);
             len -= 4;
         }
         if ( len > 0 ) {
+            // trailing odd bases 1..3
             Uint1 b2na;
-            Uint1 b4na0 = raw_ptr[0]; // x0
-            if ( len == 1 ) {
-                b4na0 *= 16; // 0x
-                b2na = sx_4na_to_2na_two[b4na0+0x01]; // 0x
-                b2na *= 16; // 0xxx
-            }
-            else if ( len >= 2 ) {
-                Uint1 b4na1 = raw_ptr[1]; // 12
-                b4na0 = b4na0*16 + (b4na1>>4); // 01
-                b2na = sx_4na_to_2na_two[b4na0]; // 01
-                b2na *= 16; // 01xx
-                if ( len == 3 ) {
-                    b4na1 *= 16; // 2x
-                    b2na += sx_4na_to_2na_two[b4na1+0x01]; // 012x
+            Uint1 b2na0 = sx_4naFlags[Uint1(raw_ptr[0])]; // x0
+            _ASSERT(!(b2na0 & f2nd_4na));
+            b2na = b2na0<<6;
+            if ( len > 1 ) {
+                Uint1 b2na1 = sx_4naFlags[Uint1(raw_ptr[1])]; // 12
+                if ( len == 2 ) {
+                    _ASSERT(!(b2na1 & f1st_4na));
+                    b2na1 &= 0xc; // 1x
                 }
+                else {
+                    _ASSERT(!(b2na1 & fBoth_4na));
+                }
+                b2na += b2na1<<2; // 01xx or 012x
             }
+            b2na &= 0xff;
             data.push_back(b2na);
         }
     }
@@ -840,11 +1040,13 @@ CRef<CSeq_data> sx_Get2na(const CVDBValueFor4Bits& read,
 }
 
 
+// return 4na Seq-data for specified range
 static
 CRef<CSeq_data> sx_Get4na(const CVDBValueFor4Bits& read,
                           TSeqPos pos,
                           TSeqPos len)
 {
+    _ASSERT(len);
     CRef<CSeq_data> ret(new CSeq_data);
     vector<char>& data = ret->SetNcbi4na().Set();
     size_t dst_len = (len+1)/2;
@@ -904,29 +1106,50 @@ void sx_AddDelta(CDelta_ext::Tdata& delta,
     // min size of segment to split
     const TSeqPos kSplit4naSize = kChunk4naSize+kChunk4naSize/4;
     const TSeqPos kSplit2naSize = kChunk2naSize+kChunk2naSize/4;
-        
+
+    // max size of gap segment
+    const TSeqPos kMinGapSize = 20;
+    const TSeqPos kMaxGapSize = 200;
+    // size of gap segment if its actual size is unknown
+    const TSeqPos kUnknownGapSize = 100;
+    
     for ( ; len > 0; ) {
-        TSeqPos limit_len = min(len, kSplit2naSize);
-        TSeqPos seg_len = sx_Get2naLength(read, pos, limit_len);
         CRef<CDelta_seq> seg(new CDelta_seq);
         CSeq_literal& literal = seg->SetLiteral();
+
+        TSeqPos seg_len = sx_Get2naLength(read, pos, min(len, kSplit2naSize));
         if ( seg_len >= kMin2naSize || seg_len == len ) {
             if ( seg_len >= kSplit2naSize ) {
-                seg_len = min(seg_len, kChunk2naSize);
+                seg_len = kChunk2naSize;
             }
             literal.SetSeq_data(*sx_Get2na(read, pos, seg_len));
             _ASSERT(literal.GetSeq_data().GetNcbi2na().Get().size() == (seg_len+3)/4);
         }
         else {
-            TSeqPos limit2_len = min(len, kSplit4naSize);
+            TSeqPos seg_len_2na = seg_len;
             seg_len += sx_Get4naLength(read, pos+seg_len,
-                                       limit2_len-seg_len, kMin2naSize);
-            if ( seg_len >= kSplit4naSize ) {
-                seg_len = min(seg_len, kChunk4naSize);
+                                       min(len, kSplit4naSize)-seg_len,
+                                       kMin2naSize, kMinGapSize);
+            if ( kRecoverGaps && seg_len == 0 ) {
+                seg_len = sx_GetGapLength(read, pos, min(len, kMaxGapSize));
+                _ASSERT(seg_len > 0);
+                if ( seg_len == kUnknownGapSize ) {
+                    literal.SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+                }
             }
-            literal.SetSeq_data(*sx_Get4na(read, pos, seg_len));
-            _ASSERT(literal.GetSeq_data().GetNcbi4na().Get().size() == (seg_len+1)/2);
+            else if ( seg_len == seg_len_2na ) {
+                literal.SetSeq_data(*sx_Get2na(read, pos, seg_len));
+                _ASSERT(literal.GetSeq_data().GetNcbi2na().Get().size() == (seg_len+3)/4);
+            }
+            else {
+                if ( seg_len >= kSplit4naSize ) {
+                    seg_len = kChunk4naSize;
+                }
+                literal.SetSeq_data(*sx_Get4na(read, pos, seg_len));
+                _ASSERT(literal.GetSeq_data().GetNcbi4na().Get().size() == (seg_len+1)/2);
+            }
         }
+
         literal.SetLength(seg_len);
         delta.push_back(seg);
         pos += seg_len;
