@@ -437,6 +437,37 @@ bool CSeq_feat::HasExceptionText(const string & exception_text ) const
         p_exception_text_set->end() );
 }
 
+CConstRef<CUser_object> CSeq_feat::FindExt(const string& ext_type) const
+{
+    CConstRef<CUser_object> ret;
+    if ( IsSetExts() ) {
+        ITERATE(TExts, it, GetExts()) {
+            const CObject_id& obj_type = (*it)->GetType();
+            if ( obj_type.IsStr()  &&  obj_type.GetStr() == ext_type ) {
+                ret.Reset(it->GetPointer());
+                break;
+            }
+        }
+    }
+    return ret;
+}
+
+CRef<CUser_object> CSeq_feat::FindExt(const string& ext_type)
+{
+    CRef<CUser_object> ret;
+    if ( IsSetExts() ) {
+        NON_CONST_ITERATE(TExts, it, SetExts()) {
+            const CObject_id& obj_type = (*it)->GetType();
+            if ( obj_type.IsStr()  &&  obj_type.GetStr() == ext_type ) {
+                ret.Reset(it->GetPointer());
+                break;
+            }
+        }
+    }
+    return ret;
+}
+
+
 ISeq_feat::~ISeq_feat(void)
 {
 }

@@ -47,6 +47,7 @@
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Score.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/general/User_object.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seq/seq_loc_mapper_base.hpp>
@@ -2160,6 +2161,36 @@ CRef<CSeq_align>  CSeq_align::x_CreateSubsegAlignment(int from, int to) const
     return align;
 }
 
+
+CConstRef<CUser_object> CSeq_align::FindExt(const string& ext_type) const
+{
+    CConstRef<CUser_object> ret;
+    if ( IsSetExt() ) {
+        ITERATE(TExt, it, GetExt()) {
+            const CObject_id& obj_type = (*it)->GetType();
+            if ( obj_type.IsStr()  &&  obj_type.GetStr() == ext_type ) {
+                ret.Reset(it->GetPointer());
+                break;
+            }
+        }
+    }
+    return ret;
+}
+
+CRef<CUser_object> CSeq_align::FindExt(const string& ext_type)
+{
+    CRef<CUser_object> ret;
+    if ( IsSetExt() ) {
+        NON_CONST_ITERATE(TExt, it, SetExt()) {
+            const CObject_id& obj_type = (*it)->GetType();
+            if ( obj_type.IsStr()  &&  obj_type.GetStr() == ext_type ) {
+                ret.Reset(it->GetPointer());
+                break;
+            }
+        }
+    }
+    return ret;
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 

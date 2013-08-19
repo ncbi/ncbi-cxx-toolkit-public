@@ -162,6 +162,15 @@ public:
     int GetTypeSortingOrder(void) const;
     static int GetTypeSortingOrder(CSeqFeatData::E_Choice type);
 
+    /// Find extension by type in exts container.
+    /// @param ext_type
+    ///   String id of the extension to find.
+    /// @result
+    ///   User-object of the requested type or NULL.
+    CConstRef<CUser_object> FindExt(const string& ext_type) const;
+    /// Non-const version of FindExt().
+    CRef<CUser_object> FindExt(const string& ext_type);
+
 private:
 
     /// Prohibit copy constructor and assignment operator

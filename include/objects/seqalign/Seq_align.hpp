@@ -336,6 +336,15 @@ public:
 
     TLengthRange ExonLengthRange() const;
 
+    /// Find extension by type in ext container.
+    /// @param ext_type
+    ///   String id of the extension to find.
+    /// @result
+    ///   User-object of the requested type or NULL.
+    CConstRef<CUser_object> FindExt(const string& ext_type) const;
+    /// Non-const version of FindExt().
+    CRef<CUser_object> FindExt(const string& ext_type);
+
     static const TScoreNameMap &ScoreNameMap();
 
     static string HelpText(EScoreType score);
