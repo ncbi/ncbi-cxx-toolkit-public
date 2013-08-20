@@ -16,6 +16,9 @@ from optparse import OptionParser
 from ConfigParser import ConfigParser
 from subprocess import Popen, PIPE
 from StringIO import StringIO
+from ncbi_grid_1_0.ncbi.grid import ipc, ns
+from distutils.version import StrictVersion
+import tempfile
 
 
 def main():
@@ -28,6 +31,8 @@ def main():
     e.g. %prog  netscheduled.ini.old  netscheduled.ini
     NetSchedule configuration files comparing utility.
     It compares the given ini files and prints the difference
+
+    NS ini file can be given as host:port[:effective]
     """ )
     parser.add_option( "-v", "--verbose",
                        action="store_true", dest="verbose", default=False,
@@ -38,12 +43,20 @@ def main():
     parser.add_option( "-e", "--no-extra",
                        action="store_true", dest="noextra", default=False,
                        help="don't complain about extra values for queues (default: False)" )
+    parser.add_option( "-a", "--ns-admin", dest="nsadmin",
+                       default="netschedule_admin",
+                       help="NS Server admin name (default: netschedule_admin)" )
+    parser.add_option( "-w", "--raw", dest="raw", default=False,
+                       action="store_true",
+                       help="Do raw comparison (empty values are not stripped) (default: False)" )
+
 
     # parse the command line options
     options, args = parser.parse_args()
     verbose = options.verbose
     nosed = options.nosed
     noextra = options.noextra
+    raw = options.raw
 
     # Check the number of arguments
     if len( args ) != 2:
@@ -52,51 +65,20 @@ def main():
     lhsIniFile = args[ 0 ]
     rhsIniFile = args[ 1 ]
 
-    if not os.path.exists( lhsIniFile ):
-        print >> sys.stderr, "Cannot find first NS ini file " + lhsIniFile
-        return 1
-    if not os.path.isfile( lhsIniFile ):
-        print >> sys.stderr, "The first NS ini file must be a file name. " \
-                             "The path " + lhsIniFile + " is not a file."
-        return 1
 
-    if not os.path.exists( rhsIniFile ):
-        print >> sys.stderr, "Cannot find second NS ini file " + rhsIniFile
-        return 1
-    if not os.path.isfile( rhsIniFile ):
-        print >> sys.stderr, "The second NS ini file must be a file name. " \
-                             "The path " + rhsIniFile + " is not a file."
-        return 1
+    lhsContent = getIniContent( "first", lhsIniFile, options.nsadmin )
+    rhsContent = getIniContent( "second", rhsIniFile, options.nsadmin )
 
     if verbose:
         print "First config file: " + lhsIniFile
         print "Second config file: " + rhsIniFile
         sys.stdout.flush()
 
-    # Compose parsed configs
-    lhsConfig = ConfigParser()
-    if not nosed:
-        # The first sed prevent having 'class =' uncommented
-        # The second sed uncomments the commented values
-        cmd = "cat " + lhsIniFile + \
-              " | sed 's%^[ ]*;[ ]*\\(class[ ]*=\\)%;;;\\1%'" \
-              " | sed 's%^[ ]*;[ ]*\\([a-zA-Z_][a-zA-Z_]*[ ]*=\\)%\\1%'"
-        afterSed = check_output( cmd, shell = True )
-        lhsConfig.readfp( StringIO( afterSed ) )
-    else:
-        lhsConfig.readfp( open( lhsIniFile ) )
+    lhsConfig = parseConfigContent( lhsContent, nosed )
+    rhsConfig = parseConfigContent( rhsContent, nosed )
 
-    rhsConfig = ConfigParser()
-    if not nosed:
-        # The first sed prevent having 'class =' uncommented
-        # The second sed uncomments the commented values
-        cmd = "cat " + rhsIniFile + \
-              " | sed 's%^[ ]*;[ ]*\\(class[ ]*=\\)%;;;\\1%'" \
-              " | sed 's%^[ ]*;[ ]*\\([a-zA-Z_][a-zA-Z_]*[ ]*=\\)%\\1%'"
-        afterSed = check_output( cmd, shell = True )
-        rhsConfig.readfp( StringIO( afterSed ) )
-    else:
-        rhsConfig.readfp( open( rhsIniFile ) )
+    removeQuotas( lhsConfig, raw )
+    removeQuotas( rhsConfig, raw )
 
     lhsSections = lhsConfig.sections()
     rhsSections = rhsConfig.sections()
@@ -134,6 +116,111 @@ def main():
                                        qname, noextra )
 
     return retCode
+
+
+def getIniContent( iniID, location, nsAdminName ):
+    """
+    Provides a content of the NS ini file.
+    Accepts location as:
+    - file name
+    - host:port[:effective value]
+    """
+
+    if ":" in location:
+        # It is a NetSchedule server
+        parts = location.split( ":" )
+        if len( parts ) not in [ 2, 3 ]:
+            raise Exception( "Unexpected format of the location spec. "
+                             "Supported format: host:port[:effective value]" )
+        host = parts[ 0 ]
+        port = int( parts[ 1 ] )
+        if len( parts ) > 2:
+            effective = parts[ 2 ]
+            if effective not in [ "0", "1" ]:
+                raise Exception( "Unsupported effective value. "
+                                 "Supported: 0 or 1" )
+            if effective == "0":
+                effective = False
+            else:
+                effective = True
+        else:
+            effective = False
+
+        # Now connect to NS and get the config
+        return getConfigFromNS( host, port, effective, nsAdminName )
+
+    # It is a plain file
+    if not os.path.exists( location ):
+        raise Exception( "Cannot find NS ini file " + location )
+    if not os.path.isfile( location ):
+        raise Exception( "The NS ini file must be a file name. "
+                         "The path " + location + " is not a file." )
+
+    f = open( location, "r" )
+    content = f.read()
+    f.close()
+    return content
+
+
+def getConfigFromNS( host, port, effective, nsAdminName ):
+    " Connects to NS and provides the config file content "
+
+    grid_cli = ipc.RPCServer()
+    server = ns.NetScheduleServer( host + ":" + str( port ),
+                                   client_name = nsAdminName,
+                                   rpc_server = grid_cli )
+    server.allow_xsite_connections()
+
+    if effective:
+        # Check the NS version first
+        serverInfo = server.get_server_info()
+        version = serverInfo[ 'server_version' ]
+        if StrictVersion( version ) < StrictVersion( "4.16.10" ):
+            raise Exception( "Effective == 1 can only be applied to "
+                             "NetSchedule 4.16.10 and up. The " +
+                             host + ":" + str( port ) + " NetSchedule "
+                             " has version " + version )
+        cmd = "GETCONF effective=1"
+    else:
+        cmd = "GETCONF"
+
+    output = server.execute( cmd, True )
+    return "\n".join( output )
+
+
+def parseConfigContent( content, nosed ):
+    " Parses the given config content "
+
+    config = ConfigParser()
+    if nosed:
+        config.readfp( StringIO( content ) )
+    else:
+        # The first sed prevent having 'class =' uncommented
+        # The second sed uncomments the commented values
+        tempDirName = tempfile.mkdtemp()
+        if not tempDirName.endswith( os.path.sep ):
+            tempDirName += os.path.sep
+        tempFileName = tempDirName + "ns.ini"
+
+        temporaryStorage = open( tempFileName, "w" )
+        temporaryStorage.write( content )
+        temporaryStorage.close()
+        
+        cmd = "cat " + tempFileName + \
+              " | sed 's%^[ ]*;[ ]*\\(class[ ]*=\\)%;;;\\1%'" \
+              " | sed 's%^[ ]*;[ ]*\\([a-zA-Z_][a-zA-Z_]*[ ]*=\\)%\\1%'"
+        try:
+            afterSed = check_output( cmd, shell = True )
+        except:
+            os.unlink( tempFileName )
+            os.rmdir( tempDirName )
+            raise
+
+        os.unlink( tempFileName )
+        os.rmdir( tempDirName )
+        config.readfp( StringIO( afterSed ) )
+
+    return config
 
 
 def compareQueueValues( lConfig, rConfig, lClasses, rClasses, qname, noextra ):
@@ -307,6 +394,20 @@ def splitSections( sections ):
         else:
             other.append( item )
     return qclasses, queues, other
+
+
+def removeQuotas( config, raw ):
+    " Removes quotas around values if so "
+    for section in config.sections():
+        for option, value in config.items( section ):
+            if value.startswith( '"' ) and value.endswith( '"' ):
+                config.set( section, option, value[ 1 : -1 ] )
+            elif value.startswith( "'" ) and value.endswith( "'" ):
+                config.set( section, option, value[ 1 : -1 ] )
+            if not raw:
+                if config.get( section, option ).strip() == "":
+                    config.remove_option( section, option )
+    return
 
 
 def parserError( parser, message ):
