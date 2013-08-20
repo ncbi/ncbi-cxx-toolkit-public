@@ -81,10 +81,12 @@ private:
     virtual void Exit(void);
     int CompareVar(CRef<CVariation> v1, CRef<CVariation> v2);
     int CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2);
+    int CompareLocations(const CSeq_loc& loc1, const CSeq_loc& loc2, int n);
+    template<class T>
+    void GetAlleles(T &variations, set<string>& alleles);
     bool IsVariation(AutoPtr<CObjectIStream>& oistr);
     template<class T>
     int CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<CObjectIStream>& var_in2, CRef<CScope> scope, bool verbose);
-    void GetAlleles(CVariation_ref& vr, string& new_ref, set<string>& alleles);
 };
 
 
@@ -102,34 +104,20 @@ void CContextApp::Exit(void)
 {
 }
 
-
-int CContextApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
+int CContextApp::CompareLocations(const CSeq_loc& loc1, const CSeq_loc& loc2, int n)
 {
-    int n = 0;
-
-    if (v1->SetPlacements().size() != v2->SetPlacements().size())
+    if (loc1.IsPnt() && loc2.IsPnt())
     {
-        ERR_POST(Error << "Placement size does not match" << Endm);
-        n++;
-    }
-// checking only position on the first placement?
-    if (v1->SetPlacements().front()->GetLoc().IsPnt() &&
-        v2->SetPlacements().front()->GetLoc().IsPnt())
-    {
-        if (v1->SetPlacements().front()->GetLoc().GetPnt().GetPoint() !=
-            v2->SetPlacements().front()->GetLoc().GetPnt().GetPoint())
+        if (loc1.GetPnt().GetPoint() != loc2.GetPnt().GetPoint())
         {
             ERR_POST(Error << "Position does not match" << Endm);
             n++;
         }
     }
-    else if (v1->SetPlacements().front()->GetLoc().IsInt() &&
-             v2->SetPlacements().front()->GetLoc().IsInt())
+    else if (loc1.IsInt() && loc2.IsInt())
     {
-        if (v1->SetPlacements().front()->GetLoc().GetInt().GetFrom() !=
-            v2->SetPlacements().front()->GetLoc().GetInt().GetFrom() ||
-            v1->SetPlacements().front()->GetLoc().GetInt().GetTo() !=
-            v2->SetPlacements().front()->GetLoc().GetInt().GetTo())
+        if (loc1.GetInt().GetFrom() != loc2.GetInt().GetFrom() ||
+            loc1.GetInt().GetTo() != loc2.GetInt().GetTo())
 
         {
             ERR_POST(Error << "Position does not match" << Endm);
@@ -141,7 +129,35 @@ int CContextApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
         ERR_POST(Error << "Type of placement does not match" << Endm);
         n++;
     }
+    return n;
+}
 
+template<class T>
+void  CContextApp::GetAlleles(T &variations, set<string>& alleles)
+{
+    for (typename T::iterator var2 = variations.begin(); var2 != variations.end(); ++var2)
+        if ( (*var2)->IsSetData() && (*var2)->SetData().IsInstance() && (*var2)->SetData().SetInstance().IsSetDelta() && !(*var2)->SetData().SetInstance().SetDelta().empty()
+             && (*var2)->SetData().SetInstance().SetDelta().front()->IsSetSeq() && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().IsLiteral()
+             && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().IsSetSeq_data() 
+             && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().IsIupacna())
+        {
+            string a = (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(); 
+            alleles.insert(a);
+        }
+}
+
+int CContextApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
+{
+    int n = 0;
+
+    if (v1->SetPlacements().size() != v2->SetPlacements().size())
+    {
+        ERR_POST(Error << "Placement size does not match" << Endm);
+        n++;
+    }
+// checking only position on the first placement?
+    n = CompareLocations(v1->SetPlacements().front()->GetLoc(),v1->SetPlacements().front()->GetLoc(),n);
+   
   
     if (v1->SetData().SetSet().SetVariations().size() !=
         v2->SetData().SetSet().SetVariations().size() )
@@ -151,24 +167,9 @@ int CContextApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
     }
 
     set<string> alleles1, alleles2;
-    for (CVariation::TData::TSet::TVariations::iterator var2 = v1->SetData().SetSet().SetVariations().begin(); var2 != v1->SetData().SetSet().SetVariations().end(); ++var2)
-        if ( (*var2)->IsSetData() && (*var2)->SetData().IsInstance() && (*var2)->SetData().SetInstance().IsSetDelta() && !(*var2)->SetData().SetInstance().SetDelta().empty()
-             && (*var2)->SetData().SetInstance().SetDelta().front()->IsSetSeq() && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().IsLiteral()
-             && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().IsSetSeq_data() 
-             && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().IsIupacna())
-        {
-            string a = (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(); 
-            alleles1.insert(a);
-        }
-    for (CVariation::TData::TSet::TVariations::iterator var2 = v2->SetData().SetSet().SetVariations().begin(); var2 != v2->SetData().SetSet().SetVariations().end(); ++var2)
-        if ( (*var2)->IsSetData() && (*var2)->SetData().IsInstance() && (*var2)->SetData().SetInstance().IsSetDelta() && !(*var2)->SetData().SetInstance().SetDelta().empty()
-             && (*var2)->SetData().SetInstance().SetDelta().front()->IsSetSeq() && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().IsLiteral()
-             && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().IsSetSeq_data() 
-             && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().IsIupacna())
-        {
-            string a = (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(); 
-            alleles2.insert(a);
-        }
+    GetAlleles(v1->SetData().SetSet().SetVariations(), alleles1);
+    GetAlleles(v2->SetData().SetSet().SetVariations(), alleles2);
+    
     if (!equal(alleles1.begin(), alleles1.end(), alleles2.begin()))
     {
         ERR_POST(Error << "Alt alleles do not match" << Endm);
@@ -178,41 +179,20 @@ int CContextApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
     return n;
 }
 
-void CContextApp::GetAlleles(CVariation_ref& vr, string& new_ref, set<string>& alleles)
-{
-    for (CVariation_ref::TData::TSet::TVariations::iterator inst = vr.SetData().SetSet().SetVariations().begin(); inst != vr.SetData().SetSet().SetVariations().end(); ++inst)
-    {
-        if ((*inst)->GetData().GetInstance().IsSetDelta() && !(*inst)->GetData().GetInstance().GetDelta().empty() && (*inst)->GetData().GetInstance().GetDelta().front()->IsSetSeq() 
-            && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().IsLiteral()
-            && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
-            && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
-        {
-            string a = (*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
-            if (((*inst)->GetData().GetInstance().IsSetObservation() && ((*inst)->GetData().GetInstance().GetObservation() & CVariation_inst::eObservation_reference) == CVariation_inst::eObservation_reference))
-                new_ref = a;
-            else
-                alleles.insert(a);
-        }
-    }
-}
-
-int CContextApp::CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2) // TODO
+int CContextApp::CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2) 
 {
     int n = 0;
-    /*CSeq_annot::TData::TFtable::iterator feat1, feat2;
+    CSeq_annot::TData::TFtable::iterator feat1, feat2;
     for ( feat1 = v1->SetData().SetFtable().begin(), feat2 = v2->SetData().SetFtable().begin(); feat1 != v1->SetData().SetFtable().end() && feat2 != v2->SetData().SetFtable().end(); ++feat1,++feat2)
     {
+        n = CompareLocations((*feat1)->GetLocation(),(*feat2)->GetLocation(),n);
+
         CVariation_ref& vr1 = (*feat1)->SetData().SetVariation();
         CVariation_ref& vr2 = (*feat2)->SetData().SetVariation();
-        string new_ref1,new_ref2;
         set<string> alleles1,alleles2;
-        GetAlleles(vr1,new_ref1,alleles1);
-        GetAlleles(vr2,new_ref2,alleles2);
-        if (new_ref1 != new_ref2)
-        {
-            ERR_POST(Error << "Reference allele does not match" << Endm);
-            n++;
-        }
+        GetAlleles(vr1.SetData().SetSet().SetVariations(),alleles1);
+        GetAlleles(vr2.SetData().SetSet().SetVariations(),alleles2);
+       
         if (!equal(alleles1.begin(), alleles1.end(), alleles2.begin()))
         {
             ERR_POST(Error << "Alt alleles do not match" << Endm);
@@ -224,7 +204,7 @@ int CContextApp::CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2) // TODO
         ERR_POST(Error << "Number of Variations does not match" << Endm);
         n++;
     } 
-    */
+    
     return n;
 }
 
