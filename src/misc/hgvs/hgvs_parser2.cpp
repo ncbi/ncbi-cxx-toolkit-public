@@ -1312,7 +1312,8 @@ CRef<CVariation> CHgvsParser::x_no_change(TIterator const& i, const CContext& co
         }
     }
 
-    var_inst.SetType(CVariation_inst::eType_identity);
+    //var_inst.SetType(CVariation_inst::eType_identity);
+    var_inst.SetType(p.GetSeq().GetLength() == 1 ? CVariation_inst::eType_snv : CVariation_inst::eType_mnp);
 
     TDelta delta(new TDelta::TObjectType);
     delta->SetSeq().SetLiteral().Assign(p.GetSeq());
