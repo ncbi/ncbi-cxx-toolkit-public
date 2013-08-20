@@ -67,19 +67,6 @@ CUser_object* FindStructuredComment(CSeq_descr& descr)
 
 }
 
-void CStructuredCommentsReader::FillVector(const string& input, vector<string>& output)
-{
-	size_t last_index = 0;
-	size_t index;
-	do
-	{
-		index = input.find('\t', last_index);
-		output.push_back(input.substr(last_index, (index == string::npos) ? string::npos : index-last_index));		
-		last_index = index + 1;
-	}
-	while (index != string::npos);
-}
-
 CBioseq* CStructuredCommentsReader::FindObjectById(CSerialObject& container, const CSeq_id& id)
 {
 	CSeq_entry* entry = dynamic_cast<CSeq_entry*>(&container);
@@ -110,7 +97,7 @@ CBioseq* CStructuredCommentsReader::FindObjectById(CSerialObject& container, con
 	return 0;
 }
 
-CUser_object* CStructuredCommentsReader::AddStructuredComment(CUser_object* user_obj, const string& name, const string& value, CSeq_descr& descr)
+CUser_object* CStructuredCommentsReader::AddStructuredComment(CUser_object* user_obj, CSeq_descr& descr, const string& name, const string& value)
 {
 	if (name.compare("StructuredCommentPrefix") == 0)
 		user_obj = 0; // reset user obj so to create a new one
@@ -134,22 +121,22 @@ CUser_object* CStructuredCommentsReader::AddStructuredComment(CUser_object* user
 	  return user_obj;
 }
 
-CUser_object* CStructuredCommentsReader::AddStructuredComment(CUser_object* obj, const string& name, const string& value, CSerialObject& cont)
+
+void CStructuredCommentsReader::AddStructuredCommentToAllObjects(CSerialObject& cont, const string& name, const string& value)
 {
 	CSeq_entry* entry = dynamic_cast<CSeq_entry*>(&cont);
 	if (entry)
 	{
-		obj = AddStructuredComment(obj, name, value, entry->SetDescr());
+		AddStructuredComment(0, entry->SetDescr(), name, value);
 	}
 	else
 	{
 		CSeq_submit* submit = dynamic_cast<CSeq_submit*>(&cont);
 		NON_CONST_ITERATE(CSeq_submit_Base::C_Data::TEntrys, it, submit->SetData().SetEntrys())
 		{
-			obj = AddStructuredComment(obj, name, value, (**it).SetDescr());
+			AddStructuredComment(0, (**it).SetDescr(), name, value);
 		}
 	}
-	return obj;
 }
 
 void CStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& reader, CSerialObject& container)
@@ -159,37 +146,34 @@ void CStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& reader, C
 	while (!reader.AtEOF())
 	{
 		reader.ReadLine();
-		if (!reader.AtEOF())
+		// First line is a collumn definitions
+		string current = reader.GetCurrentLine();
+		if (reader.GetLineNumber() == 1)
 		{
-			// First line is a collumn definitions
-			string current = reader.GetCurrentLine();
-			if (reader.GetLineNumber() == 1)
-			{
-				FillVector(current, cols);
-				continue;
-			}
+			NStr::Tokenize(current, "\t", cols);
+			continue;
+		}
 
-			if (!current.empty())
-			{
-				// Each line except first is a set of values, first collumn is a sequence id
-				vector<string> values;
-				FillVector(current, values);
-				if (!values[0].empty())
-				{				
-					// try to find destination sequence
-					CSeq_id id(values[0], CSeq_id::fParse_AnyLocal);
-					CSerialObject* dest = FindObjectById(container, id);
-					if (dest)
+		if (!current.empty())
+		{
+			// Each line except first is a set of values, first collumn is a sequence id
+			vector<string> values;
+			NStr::Tokenize(current, "\t", values);
+			if (!values[0].empty())
+			{				
+				// try to find destination sequence
+				CSeq_id id(values[0], CSeq_id::fParse_AnyLocal);
+				CBioseq* dest = FindObjectById(container, id);
+				if (dest)
+				{
+					CUser_object* obj = FindStructuredComment(dest->SetDescr());
+
+					for (size_t i=1; i<values.size(); i++)
 					{
-						CUser_object* obj = 0;
-
-						for (size_t i=1; i<values.size(); i++)
+						if (!values[i].empty())
 						{
-							if (!values[i].empty())
-							{
-								// apply structure comment
-								obj = AddStructuredComment(obj, cols[i], values[i], *dest);
-							}
+							// apply structure comment
+							obj = AddStructuredComment(obj, dest->SetDescr(), cols[i], values[i]);
 						}
 					}
 				}
@@ -200,7 +184,6 @@ void CStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& reader, C
 
 void CStructuredCommentsReader::ProcessCommentsFileByRows(ILineReader& reader, CSerialObject& container)
 {
-	CUser_object* obj = 0;
 	while (!reader.AtEOF())
 	{
 		reader.ReadLine();
@@ -212,7 +195,7 @@ void CStructuredCommentsReader::ProcessCommentsFileByRows(ILineReader& reader, C
 			{
 				string commentname = current.substr(0, index);
 				current.erase(current.begin(), current.begin()+index+1);
-				obj = AddStructuredComment(obj, commentname, current, container);
+				AddStructuredCommentToAllObjects(container, commentname, current);
 			}
 		}
 	}
@@ -226,10 +209,10 @@ void CStructuredCommentsReader::ProcessSourceQualifiers(ILineReader& reader, CSe
 	{
 		reader.ReadLine();
 		// First line is a collumn definitions
-		string current = reader.GetCurrentLine();
+		CTempString current = reader.GetCurrentLine();
 		if (reader.GetLineNumber() == 1)
 		{
-			FillVector(current, cols);
+			NStr::Tokenize(current, "\t", cols);
 			continue;
 		}
 
@@ -237,7 +220,7 @@ void CStructuredCommentsReader::ProcessSourceQualifiers(ILineReader& reader, CSe
 		{
 			// Each line except first is a set of values, first collumn is a sequence id
 			vector<string> values;
-			FillVector(current, values);
+			NStr::Tokenize(current, "\t", values);
 			if (!values[0].empty())
 			{				
 				// try to find destination sequence
@@ -250,7 +233,7 @@ void CStructuredCommentsReader::ProcessSourceQualifiers(ILineReader& reader, CSe
 						if (!values[i].empty())
 						{
 							// apply structure comment
-							AddSourceQualifier(cols[i], values[i], *dest);
+							AddSourceQualifier(*dest, cols[i], values[i]);
 						}
 					}
 				}
@@ -259,7 +242,7 @@ void CStructuredCommentsReader::ProcessSourceQualifiers(ILineReader& reader, CSe
 	}
 }
 
-void CStructuredCommentsReader::AddSourceQualifier(const string& name, const string& value, CBioseq& container)
+void CStructuredCommentsReader::AddSourceQualifier(CBioseq& container, const string& name, const string& value)
 {
 	CSourceModParser mod;
 	mod.ParseTitle("[" + name + "=" + value + "]", CConstRef<CSeq_id>(container.GetFirstId()));

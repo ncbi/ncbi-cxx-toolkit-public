@@ -708,6 +708,10 @@ void CMultiReader::ApplyAdditionalProperties(const CTable2AsnContext& context, C
 			{
 				entry.SetSet().SetClass(CBioseq_set_Base::eClass_gen_prod_set);
 			}
+			if (context.m_NucProtSet)
+			{
+				entry.SetSet().SetClass(CBioseq_set_Base::eClass_nuc_prot);
+			}
 			NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
 			{
 				ApplyAdditionalProperties(context, **it);
@@ -1080,7 +1084,7 @@ CRef<CSerialObject> CMultiReader::LoadFile(const CTable2AsnContext& context, con
 		{
 		case CSeq_entry_Base::e_Seq:
 			{
-				CBioseq* bioseq = context.GetNextBioSeqFromTemplate(result, false);
+				CBioseq* bioseq = context.GetNextBioSeqFromTemplate(result, context.m_HandleAsSet);
 				bioseq->Assign(read_entry->SetSeq());
 			}
 			break;
@@ -1090,7 +1094,7 @@ CRef<CSerialObject> CMultiReader::LoadFile(const CTable2AsnContext& context, con
 				ITERATE(CSeq_entry_Base::TSet::TSeq_set, it, data)
 				{
 					CBioseq* bioseq = context.GetNextBioSeqFromTemplate(result, true);
-					bioseq->Assign(**it);
+					bioseq->Assign((**it).GetSeq());
 				}
 			}
 			break;
@@ -1118,6 +1122,7 @@ void CMultiReader::Cleanup(const CTable2AsnContext& context, CRef<CSerialObject>
 		}
 	*/
 }
+
 
 #if 0
 //  ----------------------------------------------------------------------------

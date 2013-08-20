@@ -7,7 +7,7 @@
 #################################
 
 APP = table2asn
-SRC = table2asn OpticalXML2ASN multireader struc_cmt_reader table2asn_context
+SRC = table2asn OpticalXML2ASN multireader struc_cmt_reader table2asn_context feature_table_reader
 LIB = xvalidate xcleanup xalnmgr xobjutil \
       valid valerr submit taxon3 gbseq \
       xalgophytree biotree fastme xalnmgr tables xobjreadex xobjread \

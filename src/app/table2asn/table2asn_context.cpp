@@ -62,6 +62,7 @@ CTable2AsnContext::CTable2AsnContext():
 	m_SetIDFromFile(false),
 	m_RemoteTaxonomyLookup(false),
 	m_ProjectVersionNumber(0),
+	m_flipped_struc_cmt(false),
 	m_taxid(0)
 {
 }
@@ -132,6 +133,9 @@ CBioseq* CTable2AsnContext::GetNextBioSeqFromTemplate(CRef<CSerialObject>& conta
 		{
 			entry = new CSeq_entry;
 			container.Reset(entry);
+			if (make_set)
+			  entry->SetSet().SetClass(CBioseq_set_Base::eClass_genbank);
+
 		}
 		else
 			entry = dynamic_cast<CSeq_entry*>(container.GetPointerOrNull());

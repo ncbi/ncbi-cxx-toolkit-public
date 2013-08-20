@@ -58,6 +58,7 @@
 #include <util/line_reader.hpp>
 #include "struc_cmt_reader.hpp"
 #include "OpticalXML2ASN.hpp"
+#include "feature_table_reader.hpp"
 
 
 #include <common/test_assert.h>  /* This header must go last */
@@ -164,8 +165,8 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddDefaultKey
         ("x", "String", "Suffix", CArgDescriptions::eString, ".fsa");
 
-    arg_desc->AddFlag("E", "Recurse");  // done
-    arg_desc->AddOptionalKey            // done
+    arg_desc->AddFlag("E", "Recurse");  
+    arg_desc->AddOptionalKey         
         ("t", "InFile", "Template File",
         CArgDescriptions::eInputFile);
 
@@ -184,7 +185,7 @@ void CTbl2AsnApp::Init(void)
   b ASN.1 for -M flag", CArgDescriptions::eString, "a");
 
     arg_desc->AddFlag("s", "Read FASTAs as Set");
-    arg_desc->AddFlag("g", "Genomic Product Set");
+    arg_desc->AddFlag("g", "Genomic Product Set");              // done
     arg_desc->AddFlag("J", "Delayed Genomic Product Set	");
     arg_desc->AddDefaultKey
         ("F", "String", "Feature ID Links\n\
@@ -225,7 +226,7 @@ void CTbl2AsnApp::Init(void)
   t Validate with TSA Check", CArgDescriptions::eString);
 
     arg_desc->AddFlag("q", "Seq ID from File Name"); // almost done
-    arg_desc->AddFlag("u", "GenProdSet to NucProtSet");
+    arg_desc->AddFlag("u", "GenProdSet to NucProtSet");   // done
     arg_desc->AddFlag("I", "General ID to Note");
 
     arg_desc->AddOptionalKey("G", "String", "Alignment Gap Flags (comma separated fields, e.g., p,-,-,-,?,. )\n\
@@ -348,6 +349,13 @@ int CTbl2AsnApp::Run(void)
 
 	context.m_GenomicProductSet = args["g"].AsBoolean();
 	context.m_HandleAsSet = args["s"].AsBoolean();
+	context.m_NucProtSet = args["u"].AsBoolean();
+
+	if (context.m_NucProtSet || context.m_GenomicProductSet)
+	{
+		context.m_HandleAsSet = true;
+	}
+
 	if (args["B"])
 		context.m_taxname = args["B"].AsString();
 	if (args["b"])
@@ -362,7 +370,7 @@ int CTbl2AsnApp::Run(void)
 	    context.m_source_qualifiers = args["j"].AsString();
 
 	if (args["w"])
-		context.w_single_structure_cmt = args["w"].AsString();
+		context.m_single_structure_cmt = args["w"].AsString();
 
 	context.m_RemoteTaxonomyLookup = args["T"].AsBoolean();
 	if (context.m_RemoteTaxonomyLookup)
@@ -599,8 +607,8 @@ void CTbl2AsnApp::ProcessSecretFiles(const CTable2AsnContext& context, CRef<CSer
 	ProcessSRCFile(context, name + ".src", result);
 	ProcessQVLFile(context, name + ".qvl", result);
 	ProcessDSCFile(context, name + ".dsc", result);
-	ProcessCMTFile(context, name + ".cmt", result, true);
-	ProcessCMTFile(context, context.w_single_structure_cmt, result, false);
+	ProcessCMTFile(context, name + ".cmt", result, context.m_flipped_struc_cmt);
+	ProcessCMTFile(context, context.m_single_structure_cmt, result, context.m_flipped_struc_cmt);
 	ProcessPEPFile(context, name + ".pep", result);
 	ProcessRNAFile(context, name + ".rna", result);
 	ProcessPRTFile(context, name + ".prt", result);
@@ -613,39 +621,8 @@ void CTbl2AsnApp::ProcessTBLFile(const CTable2AsnContext& context, const string&
 
 	CRef<ILineReader> reader(ILineReader::New(pathname));
 
-	vector<string> cols(5);
-
-	while (!reader->AtEOF())
-	{
-		reader->ReadLine();
-		if (!reader->AtEOF())
-		{
-			string temp = reader->GetCurrentLine();
-			if (!temp.empty() && reader->GetLineNumber() == 1 && temp[0] == '>')
-			{
-				continue;
-			}
-
-			for (int i=0; i<5; ++i)
-			{
-				int index = temp.find('\t');
-				if (index == string::npos)
-				{					
-					cols[i++] = temp;
-					while(i<5)
-					{
-						cols[i++].clear();
-					}
-				}
-				else
-				{
-					if (index > 0) // inherit values from previous row
-					   cols[i] = temp.substr(0, index);
-					temp.erase(temp.begin(), temp.begin()+index+1);
-				}
-			}
-		}
-	}
+	CFeatureTableReader feature_reader;
+	feature_reader.ReadFeatureTable(result, *reader);
 }
 
 void CTbl2AsnApp::ProcessSRCFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)

@@ -8,7 +8,6 @@ BEGIN_NCBI_SCOPE
 
 namespace objects
 {
-//class CSeq_annot;
 class CSeq_entry;
 class CSeq_submit;
 class CBioseq;
@@ -36,7 +35,7 @@ struct CTable2AsnContext
 	string k;
 	string V;
 	bool   m_SetIDFromFile;
-	bool   u;
+	bool   m_NucProtSet;
 	bool   I;
 	string G;
 	bool   R;
@@ -54,7 +53,8 @@ struct CTable2AsnContext
 	string zOufFile;
 	string X;
 	int    m_ProjectVersionNumber;
-	string w_single_structure_cmt;
+	string m_single_structure_cmt;
+	bool   m_flipped_struc_cmt;
 	string M;
 	string l;
 	string m;
