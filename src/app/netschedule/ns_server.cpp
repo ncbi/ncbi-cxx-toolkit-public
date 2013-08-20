@@ -309,15 +309,27 @@ string CNetScheduleServer::PrintJobsStat(void)
 }
 
 
-string CNetScheduleServer::GetQueueClassesInfo(void)
+string CNetScheduleServer::GetQueueClassesInfo(void) const
 {
     return m_QueueDB->GetQueueClassesInfo();
 }
 
 
-string CNetScheduleServer::GetQueueInfo(void)
+string CNetScheduleServer::GetQueueClassesConfig(void) const
+{
+    return m_QueueDB->GetQueueClassesConfig();
+}
+
+
+string CNetScheduleServer::GetQueueInfo(void) const
 {
     return m_QueueDB->GetQueueInfo();
+}
+
+
+string CNetScheduleServer::GetQueueConfig(void) const
+{
+    return m_QueueDB->GetQueueConfig();
 }
 
 
@@ -336,6 +348,20 @@ bool CNetScheduleServer::IsAdminClientName(const string &  name) const
         if (*k == name)
             return true;
     return false;
+}
+
+string CNetScheduleServer::GetAdminClientNames(void) const
+{
+    string              ret;
+    CReadLockGuard      guard(m_AdminClientsLock);
+
+    for (vector<string>::const_iterator  k(m_AdminClientNames.begin());
+         k != m_AdminClientNames.end(); ++k) {
+        if (!ret.empty())
+            ret += ", ";
+        ret += *k;
+    }
+    return ret;
 }
 
 

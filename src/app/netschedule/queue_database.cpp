@@ -1700,7 +1700,7 @@ string CQueueDataBase::PrintJobsStat(void)
 }
 
 
-string CQueueDataBase::GetQueueClassesInfo(void)
+string CQueueDataBase::GetQueueClassesInfo(void) const
 {
     string              output;
     CFastMutexGuard     guard(m_ConfigureLock);
@@ -1717,7 +1717,22 @@ string CQueueDataBase::GetQueueClassesInfo(void)
 }
 
 
-string CQueueDataBase::GetQueueInfo(void)
+string CQueueDataBase::GetQueueClassesConfig(void) const
+{
+    string              output;
+    CFastMutexGuard     guard(m_ConfigureLock);
+    for (TQueueParams::const_iterator  k = m_QueueClasses.begin();
+         k != m_QueueClasses.end(); ++k) {
+        if (!output.empty())
+            output += "\n";
+        output += "[qclass_" + k->first + "]\n" +
+                  k->second.ConfigSection(true);
+    }
+    return output;
+}
+
+
+string CQueueDataBase::GetQueueInfo(void) const
 {
     string              output;
     CFastMutexGuard     guard(m_ConfigureLock);
@@ -1729,6 +1744,20 @@ string CQueueDataBase::GetQueueInfo(void)
         // false - not URL encoded format
         output += "OK:[queue " + k->first + "]\n" +
                   x_SingleQueueInfo(k).GetPrintableParameters(true, false);
+    }
+    return output;
+}
+
+string CQueueDataBase::GetQueueConfig(void) const
+{
+    string              output;
+    CFastMutexGuard     guard(m_ConfigureLock);
+    for (TQueueInfo::const_iterator  k = m_Queues.begin();
+         k != m_Queues.end(); ++k) {
+        if (!output.empty())
+            output += "\n";
+        output += "[queue_" + k->first + "]\n" +
+                  k->second.first.ConfigSection(false);
     }
     return output;
 }

@@ -101,6 +101,7 @@ struct SQueueParameters
                 bool                      include_description) const;
     string GetPrintableParameters(bool  include_class,
                                   bool  url_encoded) const;
+    string ConfigSection(bool is_class) const;
 
     // Parameters are always: registry and section name
     CNSPreciseTime  ReadTimeout(const IRegistry &, const string &);

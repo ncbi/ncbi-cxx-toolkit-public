@@ -188,8 +188,10 @@ public:
 
     string PrintTransitionCounters(void);
     string PrintJobsStat(void);
-    string GetQueueClassesInfo(void);
-    string GetQueueInfo(void);
+    string GetQueueClassesInfo(void) const;
+    string GetQueueClassesConfig(void) const;
+    string GetQueueInfo(void) const;
+    string GetQueueConfig(void) const;
 
     map< string, string >  GetNCApiSection(const string &  section_name);
 

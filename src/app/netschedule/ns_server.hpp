@@ -93,8 +93,10 @@ public:
     void PrintMemStat(CNcbiOstream& out);
     string PrintTransitionCounters(void);
     string PrintJobsStat(void);
-    string GetQueueClassesInfo(void);
-    string GetQueueInfo(void);
+    string GetQueueClassesInfo(void) const;
+    string GetQueueClassesConfig(void) const;
+    string GetQueueInfo(void) const;
+    string GetQueueConfig(void) const;
 
     bool GetRefuseSubmits() const               { return m_RefuseSubmits; }
     void SetRefuseSubmits(bool  val)            { m_RefuseSubmits = val;  }
@@ -131,6 +133,8 @@ public:
     void InitNodeID(const string &  db_path);
 
     static CNetScheduleServer*  GetInstance(void);
+    const CNetScheduleAccessList &  GetAdminHosts(void) const { return m_AdminHosts; }
+    string GetAdminClientNames(void) const;
 
 protected:
     virtual void Exit();

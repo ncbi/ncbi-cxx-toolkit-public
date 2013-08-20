@@ -76,9 +76,10 @@ struct SNS_Parameters : SServer_Parameters
     unsigned int    affinity_low_removal;
     unsigned int    affinity_dirt_percentage;
 
-    void Read(const IRegistry& reg, const std::string& sname);
-    void CheckAffinityGarbageCollectorSettings(void);
-    void CheckGarbageCollectorSettings(void);
+    void Read(const IRegistry& reg, const std::string& sname,
+              bool silent = false);
+    void CheckAffinityGarbageCollectorSettings(bool  silent);
+    void CheckGarbageCollectorSettings(bool  silent);
 
     unsigned GetNumParams() const;
     std::string GetParamName(unsigned n) const;

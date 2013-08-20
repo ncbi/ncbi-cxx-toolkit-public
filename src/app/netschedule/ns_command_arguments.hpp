@@ -79,6 +79,7 @@ struct SNSCommandArguments
     bool            exclusive_new_aff;
     bool            mode;
     bool            drain;
+    bool            effective;
 
     void AssignValues(const TNSProtoParams &  params,
                       const string &          command,

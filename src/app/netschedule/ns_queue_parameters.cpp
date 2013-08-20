@@ -347,6 +347,41 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
 }
 
 
+string SQueueParameters::ConfigSection(bool is_class) const
+{
+    string  result = "description=\"" + description + "\"\n";
+
+    if (!is_class)
+        result += "class=\"" + qclass + "\"\n";
+
+    result +=
+    "timeout=\"" + NStr::NumericToString(timeout.Sec()) + "\"\n"
+    "notif_hifreq_interval=\"" + NS_FormatPreciseTimeAsSec(notif_hifreq_interval) + "\"\n"
+    "notif_hifreq_period=\"" + NS_FormatPreciseTimeAsSec(notif_hifreq_period) + "\"\n"
+    "notif_lofreq_mult=\"" + NStr::NumericToString(notif_lofreq_mult) + "\"\n"
+    "notif_handicap=\"" + NS_FormatPreciseTimeAsSec(notif_handicap) + "\"\n"
+    "dump_buffer_size=\"" + NStr::NumericToString(dump_buffer_size) + "\"\n"
+    "dump_client_buffer_size=\"" + NStr::NumericToString(dump_client_buffer_size) + "\"\n"
+    "dump_aff_buffer_size=\"" + NStr::NumericToString(dump_aff_buffer_size) + "\"\n"
+    "dump_group_buffer_size=\"" + NStr::NumericToString(dump_group_buffer_size) + "\"\n"
+    "run_timeout=\"" + NS_FormatPreciseTimeAsSec(run_timeout) + "\"\n"
+    "run_timeout_precision=\"" + NS_FormatPreciseTimeAsSec(run_timeout_precision) + "\"\n"
+    "program=\"" + program_name + "\"\n"
+    "failed_retries=\"" + NStr::NumericToString(failed_retries) + "\"\n"
+    "blacklist_time=\"" + NS_FormatPreciseTimeAsSec(blacklist_time) + "\"\n"
+    "max_input_size=\"" + NStr::NumericToString(max_input_size) + "\"\n"
+    "max_output_size=\"" + NStr::NumericToString(max_output_size) + "\"\n"
+    "subm_host=\"" + subm_hosts + "\"\n"
+    "wnode_host=\"" + wnode_hosts + "\"\n"
+    "wnode_timeout=\"" + NS_FormatPreciseTimeAsSec(wnode_timeout) + "\"\n"
+    "pending_timeout=\"" + NS_FormatPreciseTimeAsSec(pending_timeout) + "\"\n"
+    "max_pending_wait_timeout=\"" + NS_FormatPreciseTimeAsSec(max_pending_wait_timeout) + "\"\n"
+    "netcache_api=\"" + netcache_api_section_name + "\"\n";
+
+    return result;
+}
+
+
 CNSPreciseTime
 SQueueParameters::ReadTimeout(const IRegistry &  reg,
                               const string &     sname)

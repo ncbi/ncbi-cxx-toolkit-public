@@ -43,7 +43,7 @@ bool CNetScheduleAccessList::IsAllowed(unsigned ha) const
 {
     CReadLockGuard guard(m_Lock);
 
-    if (m_Hosts.any() == false)
+    if (m_Hosts.count() == 0)
         return true;
 
     return m_Hosts[ha];
@@ -60,6 +60,7 @@ string CNetScheduleAccessList::SetHosts(const string& host_names)
     CWriteLockGuard guard(m_Lock);
     TNSBitVector        old_hosts = m_Hosts;
     m_Hosts.clear();
+    m_AsFromConfig.clear();
 
     ITERATE(vector<string>, it, hosts) {
         const string &      hn = *it;
@@ -73,6 +74,9 @@ string CNetScheduleAccessList::SetHosts(const string& host_names)
                 if (!accepted_hosts.empty())
                     accepted_hosts += ", ";
                 accepted_hosts += my_name;
+                if (!m_AsFromConfig.empty())
+                    m_AsFromConfig += ", ";
+                m_AsFromConfig += hn;
                 continue;
             }
         }
@@ -83,6 +87,9 @@ string CNetScheduleAccessList::SetHosts(const string& host_names)
             if (!accepted_hosts.empty())
                 accepted_hosts += ", ";
             accepted_hosts += hn;
+            if (!m_AsFromConfig.empty())
+                m_AsFromConfig += ", ";
+            m_AsFromConfig += hn;
         }
         else
             ERR_POST("'" << hn << "' is not a valid host name. Ignored.");
@@ -109,6 +116,13 @@ string CNetScheduleAccessList::Print(const string &  prefix,
         s += prefix + CSocketAPI::gethostbyaddr(*en);
     }
     return s;
+}
+
+
+string CNetScheduleAccessList::GetAsFromConfig(void) const
+{
+    CReadLockGuard              guard(m_Lock);
+    return m_AsFromConfig;
 }
 
 

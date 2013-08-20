@@ -223,15 +223,20 @@ private:
     void x_ClearRollbackAction(void);
     void x_ExecuteRollbackAction(CQueue * q);
 
+    string x_GetServerSection(void) const;
+    string x_GetLogSection(void) const;
+    string x_GetDiagSection(void) const;
+    string x_GetBdbSection(void) const;
+
     // Data
     size_t                          m_MsgBufferSize;
     char *                          m_MsgBuffer;
 
-    std::string                     m_RawAuthString;
+    string                          m_RawAuthString;
     CNSClientId                     m_ClientId;
 
     CNetScheduleServer*             m_Server;
-    std::string                     m_QueueName;
+    string                          m_QueueName;
     CWeakRef<CQueue>                m_QueueRef;
     SNSCommandArguments             m_CommandArguments;
 
@@ -246,8 +251,8 @@ private:
     string                          m_BatchGroup;
     unsigned                        m_BatchSubmPort;
     CNSPreciseTime                  m_BatchSubmTimeout;
-    std::string                     m_BatchClientIP;
-    std::string                     m_BatchClientSID;
+    string                          m_BatchClientIP;
+    string                          m_BatchClientSID;
     bool                            m_WithinBatchSubmit;
 
     // Parsers for incoming commands and their parser tables

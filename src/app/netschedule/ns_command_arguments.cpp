@@ -77,6 +77,7 @@ void SNSCommandArguments::x_Reset()
     exclusive_new_aff = false;
     mode = false;
     drain = false;
+    effective = false;
 
     return;
 }
@@ -148,6 +149,13 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &  params,
                     NCBI_THROW(CNetScheduleException, eInvalidParameter,
                                "exclusive_new_aff accepted values are 0 and 1.");
                 exclusive_new_aff = (tmp == 1);
+            }
+            else if (key == "effective") {
+                int tmp = NStr::StringToInt(val);
+                if (tmp != 0 && tmp != 1)
+                    NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                               "effective accepted values are 0 and 1.");
+                effective = (tmp == 1);
             }
             break;
         case 'g':

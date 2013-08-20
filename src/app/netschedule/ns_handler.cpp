@@ -37,6 +37,7 @@
 #include "ns_server.hpp"
 #include "ns_server_misc.hpp"
 #include "ns_rollback.hpp"
+#include "queue_database.hpp"
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -81,7 +82,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "GETCONF",       { &CNetScheduleHandler::x_ProcessGetConf,
                          eNS_Admin },
-        { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+        { { "effective",         eNSPT_Int, eNSPA_Optional, 0   },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "REFUSESUBMITS", { &CNetScheduleHandler::x_ProcessRefuseSubmits,
                          eNS_Admin },
@@ -2295,10 +2297,23 @@ void CNetScheduleHandler::x_ProcessShutdown(CQueue*)
 
 void CNetScheduleHandler::x_ProcessGetConf(CQueue*)
 {
-    CConn_SocketStream  ss(GetSocket().GetSOCK(), eNoOwnership);
+    if (m_CommandArguments.effective) {
+        // The effective config (some parameters could be altered
+        // at run-time) has been requested
+        x_WriteMessage(x_GetServerSection() +
+                       x_GetLogSection() +
+                       x_GetDiagSection() +
+                       x_GetBdbSection() +
+                       m_Server->GetQueueClassesConfig() +
+                       m_Server->GetQueueConfig());
+    } else {
+        // The original config file (the one used at the startup)
+        // has been requested
+        CConn_SocketStream  ss(GetSocket().GetSOCK(), eNoOwnership);
 
-    CNcbiApplication::Instance()->GetConfig().Write(ss);
-    ss.flush();
+        CNcbiApplication::Instance()->GetConfig().Write(ss);
+        ss.flush();
+    }
     x_WriteMessage("OK:END");
     x_PrintCmdRequestStop();
 }
@@ -3066,5 +3081,148 @@ CNetScheduleHandler::x_StatisticsNew(CQueue *                q,
 
     x_WriteMessage("OK:END");
     x_PrintCmdRequestStop();
+}
+
+
+string CNetScheduleHandler::x_GetServerSection(void) const
+{
+    SNS_Parameters          params;
+    params.Read(CNcbiApplication::Instance()->GetConfig(), "server");
+
+    string      ret;
+    ret += "[server]\n";
+
+    if (params.reinit)
+        ret += "reinit=\"true\"\n";
+    else
+        ret += "reinit=\"false\"\n";
+    ret += "max_connections=\"" + NStr::NumericToString(params.max_connections) + "\"\n"
+           "max_threads=\"" + NStr::NumericToString(params.max_threads) + "\"\n"
+           "init_threads=\"" + NStr::NumericToString(params.init_threads) + "\"\n"
+           "port=\"" + NStr::NumericToString(params.port) + "\"\n";
+    if (params.use_hostname)
+        ret += "use_hostname=\"true\"\n";
+    else
+        ret += "use_hostname=\"false\"\n";
+    ret += "network_timeout=\"" + NStr::NumericToString(params.network_timeout) + "\"\n";
+    if (m_Server->IsLog())
+        ret += "log=\"true\"\n";
+    else
+        ret += "log=\"false\"\n";
+    if (m_Server->IsLogBatchEachJob())
+        ret += "log_batch_each_job=\"true\"\n";
+    else
+        ret += "log_batch_each_job=\"false\"\n";
+    if (m_Server->IsLogNotificationThread())
+        ret += "log_notification_thread=\"true\"\n";
+    else
+        ret += "log_notification_thread=\"false\"\n";
+    if (m_Server->IsLogCleaningThread())
+        ret += "log_cleaning_thread=\"true\"\n";
+    else
+        ret += "log_cleaning_thread=\"false\"\n";
+    if (m_Server->IsLogExecutionWatcherThread())
+        ret += "log_execution_watcher_thread=\"true\"\n";
+    else
+        ret += "log_execution_watcher_thread=\"false\"\n";
+    if (m_Server->IsLogStatisticsThread())
+        ret += "log_statistics_thread=\"true\"\n";
+    else
+        ret += "log_statistics_thread=\"false\"\n";
+
+    ret += "del_batch_size=\"" + NStr::NumericToString(params.del_batch_size) + "\"\n"
+           "markdel_batch_size=\"" + NStr::NumericToString(params.markdel_batch_size) + "\"\n"
+           "scan_batch_size=\"" + NStr::NumericToString(params.scan_batch_size) + "\"\n"
+           "purge_timeout=\"" + NStr::NumericToString(params.purge_timeout) + "\"\n"
+           "max_affinities=\"" + NStr::NumericToString(params.max_affinities) + "\"\n"
+           "admin_host=\"" + m_Server->GetAdminHosts().GetAsFromConfig() + "\"\n"
+           "admin_client_name=\"" + m_Server->GetAdminClientNames() + "\"\n"
+           "affinity_high_mark_percentage=\"" + NStr::NumericToString(params.affinity_high_mark_percentage) + "\"\n"
+           "affinity_low_mark_percentage=\"" + NStr::NumericToString(params.affinity_low_mark_percentage) + "\"\n"
+           "affinity_high_removal=\"" + NStr::NumericToString(params.affinity_high_removal) + "\"\n"
+           "affinity_low_removal=\"" + NStr::NumericToString(params.affinity_low_removal) + "\"\n"
+           "affinity_dirt_percentage=\"" + NStr::NumericToString(params.affinity_dirt_percentage) + "\"\n";
+
+    return ret;
+}
+
+
+string CNetScheduleHandler::x_GetLogSection(void) const
+{
+    const CNcbiRegistry &   reg = CNcbiApplication::Instance()->GetConfig();
+    if (reg.HasEntry("log")) {
+        list<string>    entries;
+        reg.EnumerateEntries("log", &entries);
+
+        if (!entries.empty()) {
+            string  ret = "[log]\n";
+            for (list<string>::const_iterator k = entries.begin();
+                 k != entries.end(); ++k) {
+                ret += *k + "=\"" + reg.GetString("log", *k, kEmptyStr) + "\"\n";
+            }
+            return ret;
+        }
+    }
+    return "";
+}
+
+
+string CNetScheduleHandler::x_GetDiagSection(void) const
+{
+    const CNcbiRegistry &   reg = CNcbiApplication::Instance()->GetConfig();
+    if (reg.HasEntry("diag")) {
+        list<string>    entries;
+        reg.EnumerateEntries("diag", &entries);
+
+        if (!entries.empty()) {
+            string  ret = "[diag]\n";
+            for (list<string>::const_iterator k = entries.begin();
+                 k != entries.end(); ++k) {
+                ret += *k + "=\"" + reg.GetString("diag", *k, kEmptyStr) + "\"\n";
+            }
+            return ret;
+        }
+    }
+    return "";
+}
+
+
+string CNetScheduleHandler::x_GetBdbSection(void) const
+{
+    SNSDBEnvironmentParams  bdb_params;
+    const CNcbiRegistry &   reg = CNcbiApplication::Instance()->GetConfig();
+    string                  ret;
+
+    bdb_params.Read(reg, "bdb");
+    ret = "[bdb]\n"
+          "force_storage_version=\"" + bdb_params.db_storage_ver + "\"\n"
+          "path=\"" + bdb_params.db_path + "\"\n"
+          "max_queues=\"" + NStr::NumericToString(bdb_params.max_queues) + "\"\n"
+          "mem_size=\"" + NStr::NumericToString(bdb_params.cache_ram_size) + "\"\n"
+          "mutex_max=\"" + NStr::NumericToString(bdb_params.mutex_max) + "\"\n"
+          "max_locks=\"" + NStr::NumericToString(bdb_params.max_locks) + "\"\n"
+          "max_lockers=\"" + NStr::NumericToString(bdb_params.max_lockers) + "\"\n"
+          "max_lockobjects=\"" + NStr::NumericToString(bdb_params.max_lockobjects) + "\"\n"
+          "log_mem_size=\"" + NStr::NumericToString(bdb_params.log_mem_size) + "\"\n"
+          "checkpoint_kb=\"" + NStr::NumericToString(bdb_params.checkpoint_kb) + "\"\n"
+          "checkpoint_min=\"" + NStr::NumericToString(bdb_params.checkpoint_min) + "\"\n";
+    if (bdb_params.sync_transactions)
+        ret += "sync_transactions=\"true\"\n";
+    else
+        ret += "sync_transactions=\"false\"\n";
+    if (bdb_params.direct_db)
+        ret += "direct_db=\"true\"\n";
+    else
+        ret += "direct_db=\"false\"\n";
+    if (bdb_params.direct_log)
+        ret += "direct_log=\"true\"\n";
+    else
+        ret += "direct_log=\"false\"\n";
+    if (bdb_params.private_env)
+        ret += "private_env=\"true\"\n";
+    else
+        ret += "private_env=\"false\"\n";
+
+    return ret;
 }
 

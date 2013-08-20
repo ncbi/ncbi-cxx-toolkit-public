@@ -64,9 +64,12 @@ public:
     string Print(const string &  prefix,
                  const string &  separator) const;
 
+    string GetAsFromConfig(void) const;
+
 private:
     mutable CRWLock             m_Lock;
     TNSBitVector                m_Hosts;
+    string                      m_AsFromConfig;
 };
 
 
