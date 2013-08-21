@@ -239,7 +239,7 @@ int CContextApp::CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<COb
         cerr <<  MSerial_AsnText << *v1;
     }
 //    CVariationNormalization::AlterToVCFVar(v1,*scope);
-    CVariationNormalization::NormalizeAmbiguousVars(v1,*scope);
+    CVariationNormalization::NormalizeVariation(v1,CVariationNormalization::eDbSnp,*scope);
     *var_in2 >> *v2;
     if (verbose)
     {

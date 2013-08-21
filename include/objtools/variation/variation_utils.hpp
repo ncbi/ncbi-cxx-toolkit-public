@@ -111,7 +111,8 @@ public:
  //For later creation, as thin wrappers on the logic below
     //ASSUME scope has everything you need, but that lookups *can* fail so handle gracefully.
     static void NormalizeVariation(CRef<CVariation>& var, ETargetContext target_ctxt, CScope& scope);     
- 
+    static void  NormalizeVariation(CRef<CSeq_annot>& var, ETargetContext target_ctxt, CScope& scope);
+
     // following an overloaded model.  If anyone finds that too confusing or obfuscated, speak up.
     static void NormalizeVariation(CRef<CVariation_ref>& var, ETargetContext target_ctxt, CScope& scope); 
 /////////////////////////////////////////////////////////

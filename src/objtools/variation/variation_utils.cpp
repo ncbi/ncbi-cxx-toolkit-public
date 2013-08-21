@@ -641,3 +641,23 @@ void CVariationNormalization::NormalizeAmbiguousVars(CRef<CSeq_annot>& var, CSco
 {
     CVariationNormalizationInt::x_Shift(var,scope);
 }
+
+void CVariationNormalization::NormalizeVariation(CRef<CVariation>& var, ETargetContext target_ctxt, CScope& scope)
+{
+    switch(target_ctxt) {
+    case eDbSnp : NormalizeAmbiguousVars(var,scope); break;
+    case eHGVS : AlterToHGVSVar(var,scope); break;
+    case eVCF : AlterToVCFVar(var,scope); break;
+    default :  NCBI_THROW(CException, eUnknown, "Unknown context");
+    }
+}
+
+void CVariationNormalization::NormalizeVariation(CRef<CSeq_annot>& var, ETargetContext target_ctxt, CScope& scope)
+{
+    switch(target_ctxt) {
+    case eDbSnp : NormalizeAmbiguousVars(var,scope); break;
+    case eHGVS : AlterToHGVSVar(var,scope); break;
+    case eVCF : AlterToVCFVar(var,scope); break;
+    default :  NCBI_THROW(CException, eUnknown, "Unknown context");
+    }
+}
