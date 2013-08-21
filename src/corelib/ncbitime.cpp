@@ -2960,7 +2960,7 @@ CNanoTimeout CDeadline::GetRemainingTime(void) const
                    " deadline value");
     }
 
-    CDeadline now(0, 0);
+    CDeadline now(0,0);
 
     time_t       thenS  = m_Seconds;
     unsigned int thenNS = m_Nanoseconds;
@@ -2968,7 +2968,7 @@ CNanoTimeout CDeadline::GetRemainingTime(void) const
     unsigned int nowNS  = now.m_Nanoseconds;
 
     if (thenS < nowS  ||  (thenS == nowS  &&  thenNS <= nowNS)) {
-        return CNanoTimeout(0, 0);
+        return CNanoTimeout(0,0);
     }
     if (thenNS >= nowNS) {
         thenNS -= nowNS;
@@ -2979,7 +2979,7 @@ CNanoTimeout CDeadline::GetRemainingTime(void) const
     _ASSERT(thenS >= nowS);
     thenS -= nowS;
 
-    return CNanoTimeout(thenS, thenNS);
+    return CNanoTimeout((unsigned int)thenS, thenNS);
 }
 
 
