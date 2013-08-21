@@ -6881,6 +6881,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ZJU	b	Zhejiang University College of Sciences",
 "ZLMU	s	Meijo University",
 "ZLSYU	s	Zoological Laboratory",
+"ZLVG	c	Collection of Fungi Slovenian Forestry Institute",
 "ZM	s	Zhejiang Museum of Natural History",
 "ZMA	s	Universiteit van Amsterdam, Zoologisch Museum",
 "ZMAN	s	Instituut voor Taxonomische Zoologie, Zoologisch Museum",
