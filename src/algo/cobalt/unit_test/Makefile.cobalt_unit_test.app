@@ -17,7 +17,7 @@ LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 REQUIRES = Boost.Test.Included
 
 CHECK_CMD = cobalt_unit_test
-CHECK_COPY = data
+CHECK_COPY = cobalt_unit_test.ini data
 CHECK_TIMEOUT = 400
 
 WATCHERS = boratyng
