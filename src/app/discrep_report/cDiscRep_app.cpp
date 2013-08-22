@@ -75,12 +75,14 @@ void CDiscRepApp::Init(void)
     arg_desc->AddDefaultKey("a", "Asn1Type", 
                  "Asn.1 Type: a: Any, e: Seq-entry, b: Bioseq, s: Bioseq-set, m: Seq-submit, t: Batch Bioseq-set, u: Batch Seq-submit, c: Catenated seq-entry",
                  CArgDescriptions::eString, "a");
+    arg_desc->AddDefaultKey("b", "BatchBinary", "Batch File is Binary: 'T' = true, 'F' = false", 
+                              CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("P", "ReportType",
                    "Report type: Discrepancy, Oncaller, TSA, Genome, Big Sequence, MegaReport, Include Tag, Include Tag for Superuser",
                    CArgDescriptions::eString, "Discrepancy");
 
-
-    arg_desc->AddDefaultKey("S", "SummaryReport", "Summary Report?: 'T'=true, 'F' =false", CArgDescriptions::eBoolean, "F");
+    arg_desc->AddDefaultKey("S", "SummaryReport", "Summary Report: 'T'=true, 'F' =false", 
+                                CArgDescriptions::eBoolean, "F");
 
 
     SetupArgDescriptions(arg_desc.release());  // call CreateArgs

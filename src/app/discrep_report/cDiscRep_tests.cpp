@@ -624,7 +624,8 @@ void CBioseq_TEST_ORGANELLE_PRODUCTS :: TestOnObj(const CBioseq& bioseq)
    //SAnnotSelector annot_sel;
    m_annot_sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_prot);
    ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
-     CFeat_CI feat_ci(*thisInfo.scope, (*it)->GetLocation(), m_annot_sel); 
+//     CFeat_CI feat_ci(*thisInfo.scope, (*it)->GetLocation(), m_annot_sel); 
+     CFeat_CI feat_ci(*thisInfo.scope, (*it)->GetLocation(), CSeqFeatData :: eSubtype_prot); 
      if (feat_ci) {
        const CProt_ref& prot_ref = feat_ci->GetOriginalFeature().GetData().GetProt(); 
        if (prot_ref.CanGetName()) {
@@ -3605,7 +3606,8 @@ void CBioseq_HYPOTHETICAL_CDS_HAVING_GENE_NAME :: TestOnObj(const CBioseq& biose
     if ((*it)->CanGetProduct()) {
       CBioseq_Handle bioseq_prot = GetBioseqFromSeqLoc((*it)->GetProduct(),*thisInfo.scope);
       if (bioseq_prot) {
-         CFeat_CI feat_it(bioseq_prot, sel_seqfeat);
+//         CFeat_CI feat_it(bioseq_prot, sel_seqfeat);
+         CFeat_CI feat_it(bioseq_prot, CSeqFeatData :: e_Prot);
          if (feat_it) {
             const CProt_ref& prot_ref = feat_it->GetOriginalFeature().GetData().GetProt();
             if (prot_ref.CanGetName()) {
@@ -4282,7 +4284,7 @@ void CBioseq_DISC_10_PERCENTN :: GetReport(CRef <CClickableItem>& c_item)
 void CBioseq_TEST_UNUSUAL_NT :: GetReport(CRef <CClickableItem>& c_item)
 {
    c_item->description = GetContainsComment(c_item->item_list.size(), "sequence")
-                          + " nucleotides that are not ATCG or N.";
+                          + "nucleotides that are not ATCG or N.";
 };
 
 void CBioseq_RNA_NO_PRODUCT :: TestOnObj(const CBioseq& bioseq)
@@ -7466,6 +7468,7 @@ void CSeqEntry_test_on_quals :: GetMultiOrgModVlus(const CBioSource& biosrc, con
 
 void CSeqEntry_test_on_quals :: GetMultiPrimerVlus(const CBioSource& biosrc, const string& qual_name, vector <string>& multi_vlus)
 {
+   if (!biosrc.CanGetPcr_primers()) return;
    ITERATE (list <CRef <CPCRReaction> >, jt, biosrc.GetPcr_primers().Get()) {
      if (qual_name == "fwd_primer_name" || qual_name == "fwd_primer_seq") {
        ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetForward().Get()) {
@@ -7575,9 +7578,10 @@ string CTestAndRepData :: GetSrcQualValue(const CBioSource& biosrc, const string
  else if ( qual_name == "fwd_primer_name" || qual_name == "fwd_primer_seq"
            || qual_name == "rev_primer_name" || qual_name == "rev_primer_seq" )
  {
-   ITERATE (list <CRef <CPCRReaction> >, jt, biosrc.GetPcr_primers().Get()) {
-     if (qual_name == "fwd_primer_name" || qual_name == "fwd_primer_seq") {
-       ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetForward().Get()) {
+   if (biosrc.CanGetPcr_primers()) {
+     ITERATE (list <CRef <CPCRReaction> >, jt, biosrc.GetPcr_primers().Get()) {
+       if (qual_name == "fwd_primer_name" || qual_name == "fwd_primer_seq") {
+         ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetForward().Get()) {
           if ( qual_name == "fwd_primer_name" && (*kt)->CanGetName() ) {
               strtmp = (*kt)->GetName();
               if (!strtmp.empty()) { ret_str = strtmp; break; }
@@ -7587,9 +7591,9 @@ string CTestAndRepData :: GetSrcQualValue(const CBioSource& biosrc, const string
               if (!strtmp.empty()) { ret_str = strtmp; break; }
           }
           if (!ret_str.empty()) break;
+         }
        }
-     }
-     else {
+       else {
         ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetReverse().Get()) {
            if ( qual_name == "rev_primer_name" && (*kt)->CanGetName() ) {
                strtmp = (*kt)->GetName();
@@ -7601,8 +7605,9 @@ string CTestAndRepData :: GetSrcQualValue(const CBioSource& biosrc, const string
            }
            if ( !ret_str.empty() ) break;
         }
+       }
+       if ( !ret_str.empty() ) break;
      }
-     if ( !ret_str.empty() ) break;
    }
  }
  else ret_str = Get1OrgModValue(biosrc, qual_name);
@@ -9803,7 +9808,7 @@ void CSeqEntry_TEST_HAS_PROJECT_ID :: GetReport(CRef <CClickableItem>& c_item)
 
 CFlatFileConfig::CGenbankBlockCallback::EBioseqSkip CFlatfileTextFind::notify_bioseq(CBioseqContext& ctx )
 {
-cerr << "notify_bioseq \n";
+// cerr << "notify_bioseq \n";
    m_taxname = ctx.GetTaxname();
    CBioseq_Handle& bioseq_hl = ctx.GetHandle();
    if (!bioseq_hl) return (eBioseqSkip_Yes);
@@ -9838,7 +9843,7 @@ cerr << "notify_bioseq \n";
 
 CFlatFileConfig::CGenbankBlockCallback::EAction   CFlatfileTextFind::notify(string& block_text, const CBioseqContext& ctx, const CSourceItem& source_item)
 {
-cerr << "notify sourceItem\n";
+// cerr << "notify sourceItem\n";
   block_text = block_text.substr(0, block_text.find("ORGANISM")); // double check  
   return unified_notify(block_text, ctx, source_item, CFlatFileConfig::fGenbankBlocks_Source);
 };
@@ -9870,11 +9875,11 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notif
      if (CTestAndRepData 
            :: DoesStringContainPhrase(block_text, it->first, false,  (bool)it->second)) {
        switch (which_block) {
-         case CFlatFileConfig::fGenbankBlocks_Locus: cerr << "locus\n";strtmp = m_mol_desc; break;
-         case CFlatFileConfig::fGenbankBlocks_Defline: cerr << "defline \n";strtmp = m_tlt_desc; break;
-         case CFlatFileConfig::fGenbankBlocks_Keywords: cerr << "keyword\n";strtmp = m_gbk_desc; break;
-         case CFlatFileConfig::fGenbankBlocks_Reference: cerr << "refer\n";strtmp = m_pub_desc; break;
-         case CFlatFileConfig::fGenbankBlocks_Source: cerr << "src\n";strtmp = m_src_desc; break;
+         case CFlatFileConfig::fGenbankBlocks_Locus: /*cerr << "locus\n";*/strtmp = m_mol_desc; break;
+         case CFlatFileConfig::fGenbankBlocks_Defline: /*cerr << "defline \n";*/strtmp = m_tlt_desc; break;
+         case CFlatFileConfig::fGenbankBlocks_Keywords:/* cerr << "keyword\n";*/strtmp = m_gbk_desc; break;
+         case CFlatFileConfig::fGenbankBlocks_Reference:/* cerr << "refer\n";*/strtmp = m_pub_desc; break;
+         case CFlatFileConfig::fGenbankBlocks_Source:/* cerr << "src\n";*/strtmp = m_src_desc; break;
          case CFlatFileConfig::fGenbankBlocks_Sourcefeat: 
             {
               const CFeatureItemBase& feat_item 
@@ -9889,7 +9894,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notif
               strtmp = GetDiscItemText( feat_item.GetFeat().GetOriginalFeature());
             }
             break;
-         default: cerr << "def\n";strtmp = m_bioseq_desc;
+         default: /*cerr << "def\n";*/strtmp = m_bioseq_desc;
        };
        thisInfo.test_item_list[m_setting_name].push_back(
             thisInfo.fix_data[it->first] + "$" + it->first + "#" + strtmp);
@@ -10282,8 +10287,10 @@ void CSeqEntry_DISC_INCONSISTENT_MOLTYPES :: GetReport(CRef <CClickableItem>& c_
 void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ExtractNonAaBioseqsOfSet(const string& tax_hap, const CBioseq_set& set)
 {
    ITERATE (list < CRef < CSeq_entry > >, it, set.GetSeq_set()) {
-      if ((*it)->IsSeq() && ! ((*it)->GetSeq().IsAa()) ) 
+      if ((*it)->IsSeq()) {
+        if (! ((*it)->GetSeq().IsAa()) ) 
            m_tax_hap2seqs[tax_hap].push_back(CConstRef <CBioseq> (&(*it)->GetSeq()));
+      }
       else ExtractNonAaBioseqsOfSet(tax_hap, (*it)->GetSet());
    }
 };
@@ -10380,7 +10387,7 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ReportHaplotypeSequenceMismatchForList
    unsigned j, len1, len2;
    vector <string> seqs_Ndiff, seqs_strict;
    string desc1, desc2;
-   bool mismatch;
+   bool mismatch, match_strict, match_Ndiff;
    for (i=0; (int)i < (int)(seqs.size()-1); i++) {
       if (seqs[i].Empty()) continue;
       len1 = seqs[i]->IsSetLength() ? seqs[i]->GetLength() : 0; 
@@ -10390,17 +10397,19 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ReportHaplotypeSequenceMismatchForList
          if (seqs[j].Empty()) continue;
          len2 = seqs[j]->IsSetLength() ? seqs[j]->GetLength() : 0;
          if (len1 == len2) {
+           match_strict = match_Ndiff = false;
            desc2 = GetDiscItemText(*seqs[j]) + ": " + hap_tps[hap_idx[j]];
            if (SeqMatch(seqs[i], 0, seqs[j], 0, len1) ) {
                if (seqs_Ndiff.empty()) seqs_Ndiff.push_back(desc1);
                seqs_Ndiff.push_back(desc2);
-               seqs[j].Reset();
+               match_Ndiff = true;  
            }
-           if (SeqMatch(seqs[1], 0, seqs[j], 0, len1, false)) {
+           if (SeqMatch(seqs[i], 0, seqs[j], 0, len1, false)) {
                if (seqs_strict.empty()) seqs_strict.push_back(desc1);
-               seqs_Ndiff.push_back(desc2);
-               seqs[j].Reset();
+               seqs_strict.push_back(desc2);
+               match_strict = true;
            }
+           if (match_Ndiff || match_strict) seqs[j].Reset();
            if (hap_tps[hap_idx[j]] != hap_tps[hap_idx[i]]) mismatch = true;
          } 
       }
@@ -10587,6 +10596,9 @@ void CSeqEntry_ONCALLER_MORE_NAMES_COLLECTED_BY :: GetReport(CRef <CClickableIte
 
 void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: TestOnObj(const CSeq_entry& seq_entry)
 {
+   m_tax_hap2seqs.clear();
+   
+   // why m_entry_cnt???
    if (thisInfo.test_item_list.find(GetName()) == thisInfo.test_item_list.end()) 
         m_entry_cnt = 0;
    else m_entry_cnt ++;
@@ -10597,7 +10609,7 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: TestOnObj(const CSeq_entry& seq_entry)
      if (biosrc.IsSetTaxname() && !(tax_nm = biosrc.GetTaxname()).empty()) {
         ITERATE (list <CRef <CSubSource> >, it, biosrc.GetSubtype()) {
            if ((*it)->GetSubtype() == CSubSource :: eSubtype_haplotype 
-                 && !(hap_tp = (*it)->GetName()).empty()) {
+                     && !(hap_tp = (*it)->GetName()).empty()) {
                if (biosrc_subsrc_seqdesc_seqentry[i]->IsSet()) {
                   ExtractNonAaBioseqsOfSet(tax_nm +"#" + hap_tp, 
                                             biosrc_subsrc_seqdesc_seqentry[i]->GetSet());
@@ -10606,9 +10618,10 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: TestOnObj(const CSeq_entry& seq_entry)
            }
         }
      }
+     i++;
    }
 
-   ReportHaplotypeSequenceMismatchForList();
+   if (!m_tax_hap2seqs.empty()) ReportHaplotypeSequenceMismatchForList();
 };
 
 

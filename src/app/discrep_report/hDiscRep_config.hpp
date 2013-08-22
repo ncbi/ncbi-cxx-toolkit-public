@@ -45,6 +45,7 @@
 #include <objects/taxon1/taxon1.hpp>
 
 #include <serial/objistr.hpp>
+#include <serial/objhook.hpp>
 #include <serial/serial.hpp>
 
 #include "hDiscRep_tests.hpp"
@@ -113,6 +114,20 @@ namespace DiscRepNmSpc {
         bool     add_extra_output_tag;
    };
 
+   class CSeqEntryReadHook : public CSkipClassMemberHook
+   {
+     public:
+       virtual ~CSeqEntryReadHook () { };
+       virtual void SkipClassMember(CObjectIStream& in, const CObjectTypeInfoMI& passed_info);
+   };
+
+   class CSeqEntryChoiceHook : public CSkipChoiceVariantHook
+   {
+     public:
+       virtual ~CSeqEntryChoiceHook () { };
+       virtual void SkipChoiceVariant(CObjectIStream& in,const CObjectTypeInfoCV& passed_info);
+   };
+
    class CRepConfig 
    {
      public:
@@ -121,13 +136,13 @@ namespace DiscRepNmSpc {
         // removed from *_app.hpp
         void InitParams(const IRWRegistry& reg);
         void ReadArgs(const CArgs& args);
+        string GetDirStr(const string& src_dir);
         void ProcessArgs(Str2Str& args);
-        void CheckThisSeqEntry(CRef <CSeq_entry> seq_entry);
+        static void CheckThisSeqEntry(CRef <CSeq_entry> seq_entry);
         void GetOrgModSubtpName(unsigned num1, unsigned num2,
                                          map <string, COrgMod::ESubtype>& orgmodnm_subtp);
         CRef <CSearch_func> MakeSimpleSearchFunc(const string& match_text,
                                                                  bool whole_word = false);
-
         void CollectTests();
         void Run(CRepConfig* config);
         static CRepConfig* factory(const string& report_tp);
@@ -150,11 +165,18 @@ namespace DiscRepNmSpc {
         static vector < CRef < CTestAndRepData > > tests_on_SubmitBlk;
 
      protected:
-        void x_ReadAsn1(const string& infile, ESerialDataFormat datafm = eSerial_AsnText);
-        void x_ReadFasta(const string& infile);
-        void x_ProcessOneFile(const string& infile);
-        void x_ProcessDir(const CDir& dir, const string& suffix, bool dorecurse, bool out_f,
-                                                 CRepConfig* config);
+        string m_outsuffix, m_outdir, m_insuffix, m_indir, m_file_tp;
+        vector <string> m_enabled, m_disabled;
+        bool m_dorecurse;
+
+        void x_ReadAsn1(ESerialDataFormat datafm = eSerial_AsnText);
+        void x_ReadFasta();
+        void x_GuessFile();
+        void x_BatchSet(ESerialDataFormat datafm = eSerial_AsnText);
+        void x_BatchSeqSubmit(ESerialDataFormat datafm = eSerial_AsnText);
+        void x_CatenatedSeqEntry();
+        void x_ProcessOneFile();
+        void x_ProcessDir(const CDir& dir, bool out_f, CRepConfig* config);
 
         void WriteDiscRepSummary();
         void WriteDiscRepSubcategories(const vector <CRef <CClickableItem> >& subcategories, unsigned ident=1);
@@ -195,11 +217,8 @@ namespace DiscRepNmSpc {
 
         static CRef < CScope >                    scope;
         static string                             infile;
-        static string                             directory;
-        static string                             suffix;
-        static bool                               dorecurse;
+        static string                             report;
         static COutputConfig                      output_config;
-        static string                             output_dir;
         static vector < CRef < CClickableItem > > disc_report_data;
         static Str2Strs                           test_item_list;
         static CRef < CSuspect_rule_set>          suspect_prod_rules;
@@ -210,7 +229,6 @@ namespace DiscRepNmSpc {
         static string                             report_lineage;
         static vector <string>                    strandsymbol;
         static bool                               exclude_dirsub;
-        static string                             report;
 
         static Str2UInt                           rRNATerms;
         static Str2UInt                           rRNATerms_ignore_partial;
@@ -282,8 +300,6 @@ namespace DiscRepNmSpc {
         static map <EStrand_type, string>               strand_names;
         static CRef < CSuspect_rule_set>                suspect_rna_rules;
         static vector <string>                          rna_rule_summ;
-        static vector <string>                          tests_enabled;
-        static vector <string>                          tests_disabled;
         static vector <string>                          suspect_phrases;
         static map <int, string>                        genome_names;
 

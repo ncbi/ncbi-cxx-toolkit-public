@@ -547,6 +547,7 @@ namespace DiscRepNmSpc {
 
       static const CSeq_id& BioseqToBestSeqId(const CBioseq& bioseq, CSeq_id::E_Choice);
       string BioseqToBestSeqIdString(const CBioseq& bioseq, CSeq_id::E_Choice);
+      static string PrintSeqInt(const CSeq_interval& seq_int, bool range_only = false);
       static string SeqLocPrintUseBestID(const CSeq_loc& seq_loc, bool range_only = false);
       string GetLocusTagForFeature(const CSeq_feat& seq_feat);
       string GetProdNmForCD(const CSeq_feat& cd_feat);

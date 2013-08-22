@@ -36,6 +36,9 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/fasta.hpp>
+#include <serial/objhook.hpp>
+#include <serial/objectio.hpp>
+#include <serial/objectiter.hpp>
 
 #include <sstream>
 
@@ -61,13 +64,10 @@ static vector <string> arr;
 // Initialization
 CRef < CScope >                        CDiscRepInfo :: scope;
 string				       CDiscRepInfo :: infile;
-string				       CDiscRepInfo :: directory;
-string				       CDiscRepInfo :: suffix;
-bool				       CDiscRepInfo :: dorecurse;
+string                                 CDiscRepInfo :: report;
 vector < CRef < CClickableItem > >     CDiscRepInfo :: disc_report_data;
 Str2Strs                               CDiscRepInfo :: test_item_list;
 COutputConfig                          CDiscRepInfo :: output_config;
-string                                 CDiscRepInfo :: output_dir;
 CRef <CSuspect_rule_set >              CDiscRepInfo::suspect_prod_rules(new CSuspect_rule_set);
 vector < vector <string> >             CDiscRepInfo :: susrule_summ;
 vector <string> 	               CDiscRepInfo :: weasels;
@@ -76,7 +76,6 @@ string                                 CDiscRepInfo :: expand_defline_on_set;
 string                                 CDiscRepInfo :: report_lineage;
 vector <string>                        CDiscRepInfo :: strandsymbol;
 bool                                   CDiscRepInfo :: exclude_dirsub;
-string                                 CDiscRepInfo :: report;
 Str2UInt                               CDiscRepInfo :: rRNATerms;
 Str2UInt                               CDiscRepInfo :: rRNATerms_ignore_partial;
 vector <string>                        CDiscRepInfo :: bad_gene_names_contained;
@@ -147,8 +146,6 @@ map <EStrand_type, string>           CDiscRepInfo :: strand_names;
 map <ESource_origin, string>         CDiscRepInfo :: srcori_names;
 CRef < CSuspect_rule_set>            CDiscRepInfo :: suspect_rna_rules (new CSuspect_rule_set);
 vector <string>                      CDiscRepInfo :: rna_rule_summ;
-vector <string>                      CDiscRepInfo :: tests_enabled;
-vector <string>                      CDiscRepInfo :: tests_disabled;
 vector <string>                      CDiscRepInfo :: suspect_phrases;
 
 vector < CRef <CTestAndRepData> >    CRepConfig :: tests_on_Bioseq;
@@ -184,6 +181,7 @@ const char* fix_type_names[] = {
   "Use short product name instead of descriptive phrase",
   "use protein instead of gene as appropriate"
 };
+
 
 void CRepConfig :: InitParams(const IRWRegistry& reg)
 {
@@ -831,10 +829,9 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
 // cerr << "end " << CTime(CTime::eCurrent).AsString() << endl;
 };
 
-/*
 string CRepConfig :: GetDirStr(const string& src_dir)
 {
-   if (src_dir.empty()) return kEmptyStr;
+   if (src_dir.empty()) return ("./");
    else {
       size_t pos = src_dir.find_last_of('/');
       if (pos == string::npos) return (src_dir + "/");
@@ -845,17 +842,17 @@ string CRepConfig :: GetDirStr(const string& src_dir)
       }
    }
 };
-*/
 
 void CRepConfig :: ProcessArgs(Str2Str& args)
 {
     // input file/path
     thisInfo.infile = (args.find("i") != args.end()) ? args["i"] : kEmptyStr;
-    thisInfo.directory = (args.find("p") != args.end()) ? args["p"] : kEmptyStr;
-    thisInfo.suffix = args["x"];
-    thisInfo.dorecurse = (args["u"] == "1") ? true : false;
-    if (thisInfo.directory.empty() && thisInfo.infile.empty())
+    m_indir = (args.find("p") != args.end()) ? args["p"] : kEmptyStr;
+    m_insuffix = args["x"];
+    m_dorecurse = (args["u"] == "1") ? true : false;
+    if ((m_indir.empty() || !CDir(m_indir).Exists()) && thisInfo.infile.empty())
          NCBI_THROW(CException, eUnknown, "Input path or input file must be specified");
+    m_file_tp = args["a"];
 
     // report category
     thisInfo.report = args["P"];
@@ -864,26 +861,24 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
     if (thisInfo.report == "t" || thisInfo.report == "s") thisInfo.report = "Discrepancy";
 
     // output
+    m_outsuffix = args["s"];
     string output_f = (args.find("o") != args.end()) ? args["o"] : kEmptyStr;
+    m_outdir = (args.find("r") != args.end()) ? GetDirStr(args["r"]) : kEmptyStr;
+    if (!output_f.empty() && !m_outdir.empty()) 
+        NCBI_THROW(CException, eUnknown,
+            "-o and -r are incompatible: specify the output file name with the full path.");
+
     if (output_f.empty() && !thisInfo.infile.empty()) {
        CFile file(thisInfo.infile);
-       output_f = file.GetBase();
-       output_f = file.GetDir() + output_f + args["s"];
+       output_f = file.GetDir() + file.GetBase() + m_outsuffix;
     }
-    thisInfo.output_dir = (args.find("r") != args.end()) ? args["r"] : kEmptyStr;
-    if (output_f.empty() && thisInfo.output_dir.empty())
-         NCBI_THROW(CException, eUnknown, "Output directory or output file must be specified");
-    if (!CDir(thisInfo.output_dir).Exists() && !CDir(thisInfo.output_dir).Create())
+    if (m_outdir.empty() && m_indir.empty()) m_outdir = "./";
+    if (!m_outdir.empty() && !CDir(m_outdir).Exists() && !CDir(m_outdir).Create())
          NCBI_THROW(CException, eUnknown, 
-                           "Unable to create output directory " + thisInfo.output_dir);
-    if (output_f.empty()) thisInfo.output_config.output_f = 0;
-    else {
-thisInfo.output_config.output_f = new CNcbiOfstream((thisInfo.output_dir + output_f).c_str());
-/*
-       thisInfo.output_config.output_f 
-          = new CNcbiOfstream(GetDirStr(thisInfo.output_dir + output_f).c_str());
-*/
-    }
+                           "Unable to create output directory " + m_outdir);
+
+    thisInfo.output_config.output_f 
+       = output_f.empty() ? 0 : new CNcbiOfstream((m_outdir + output_f).c_str());
     strtmp = args["S"];
     thisInfo.output_config.summary_report 
         = (NStr::EqualNocase(strtmp, "true") || NStr::EqualNocase(strtmp, "t")) ? true : false;
@@ -891,12 +886,12 @@ thisInfo.output_config.output_f = new CNcbiOfstream((thisInfo.output_dir + outpu
     // enabled and disabled tests
     strtmp = (args.find("e") != args.end()) ? args["e"] : kEmptyStr;
     if (!strtmp.empty())
-          thisInfo.tests_enabled
-              = NStr::Tokenize(strtmp, ", ", thisInfo.tests_enabled, NStr::eMergeDelims);
+          m_enabled
+              = NStr::Tokenize(strtmp, ", ", m_enabled, NStr::eMergeDelims);
     strtmp = (args.find("d") != args.end()) ? args["d"] : kEmptyStr;
     if (!strtmp.empty())
-         thisInfo.tests_disabled
-              = NStr::Tokenize(strtmp, ", ", thisInfo.tests_disabled, NStr::eMergeDelims);
+         m_disabled
+              = NStr::Tokenize(strtmp, ", ", m_disabled, NStr::eMergeDelims);
 };
 
 
@@ -906,12 +901,14 @@ void CRepConfig :: ReadArgs(const CArgs& args)
     Str2Str arg_map;
     // input file
     if (args["i"]) arg_map["i"] = args["i"].AsString();
+    arg_map["a"] = args["a"].AsString();
 
     // reprot category
     arg_map["P"] = args["P"].AsString();
 
     // output
     if (args["o"]) arg_map["o"] = args["o"].AsString();
+    if (args["r"]) arg_map["r"] = args["r"].AsString();
     arg_map["S"] = args["S"].AsBoolean();
     arg_map["s"] = args["s"].AsString();
 
@@ -2193,9 +2190,9 @@ if (i >= sz) return;
    NCBI_THROW(CException, eUnknown, "Some requested tests are unrecognizable.");
 };
 
-void CRepConfig :: x_ReadAsn1(const string& infile, ESerialDataFormat datafm)
+void CRepConfig :: x_ReadAsn1(ESerialDataFormat datafm)
 {
-    auto_ptr <CObjectIStream> ois (CObjectIStream::Open(datafm, infile));
+    auto_ptr <CObjectIStream> ois (CObjectIStream::Open(datafm, thisInfo.infile));
     CRef <CSeq_entry> seq_entry (new CSeq_entry);
     strtmp = ois->ReadFileHeader();
     ois->SetStreamPos(0);
@@ -2220,71 +2217,148 @@ void CRepConfig :: x_ReadAsn1(const string& infile, ESerialDataFormat datafm)
        CRef <CBioseq_set> seq_set(new CBioseq_set);
        *ois >> *seq_set;
        seq_entry->SetSet(*seq_set);
-       CheckThisSeqEntry(seq_entry);
+        CheckThisSeqEntry(seq_entry);
     }
     else NCBI_THROW(CException, eUnknown, "Couldn't read type [" + strtmp + "]");
     
     ois->Close();
 };
 
-void CRepConfig :: x_ReadFasta(const string& infile)
+void CRepConfig :: x_ReadFasta()
 {
    auto_ptr <CReaderBase> reader (CReaderBase::GetReader(CFormatGuess::eFasta)); // flags?
    if (!reader.get())
        NCBI_THROW(CException, eUnknown, "File format not supported");
-   CRef <CSerialObject> obj = reader->ReadObject(*(new CNcbiIfstream(infile.c_str())));
-   if (!obj) NCBI_THROW(CException, eUnknown, "Couldn't read file " + infile);
+   CRef <CSerialObject> obj= reader->ReadObject(*(new CNcbiIfstream(thisInfo.infile.c_str())));
+   if (!obj) NCBI_THROW(CException, eUnknown, "Couldn't read file " + thisInfo.infile);
    CSeq_entry& seq_entry = dynamic_cast <CSeq_entry&>(obj.GetObject());
    seq_entry.ResetParentEntry();
    CheckThisSeqEntry(CRef <CSeq_entry> (&seq_entry));
 };
 
-void CRepConfig :: x_ProcessOneFile(const string& infile)
+void CRepConfig :: x_GuessFile()
 {
-   CFormatGuess::EFormat f_fmt = CFormatGuess::Format(infile);
+   CFormatGuess::EFormat f_fmt = CFormatGuess::Format(thisInfo.infile);
    switch (f_fmt) {
       case CFormatGuess :: eBinaryASN:
-          x_ReadAsn1(infile, eSerial_AsnBinary);
+          x_ReadAsn1(eSerial_AsnBinary);
           break;
       case CFormatGuess :: eTextASN:
-          x_ReadAsn1(infile, eSerial_AsnText); 
+          x_ReadAsn1(); 
           break;
       case CFormatGuess :: eFlatFileSequence:
           break;
       case CFormatGuess :: eFasta:
-          x_ReadFasta(infile);
+          x_ReadFasta();
           break;
       default:
-          NCBI_THROW(CException, eUnknown, 
+         NCBI_THROW(CException, eUnknown,
               "File format: " + NStr::UIntToString((unsigned)f_fmt) + " not supported");
    }
 };
 
-void CRepConfig :: x_ProcessDir(const CDir& dir, const string& suffix, bool dorecurse, bool one_ofile, CRepConfig* config)
+void CSeqEntryReadHook :: SkipClassMember(CObjectIStream& in, const CObjectTypeInfoMI& passed_info)
 {
-   CDir::TGetEntriesFlags flag = dorecurse ? 0 : CDir::fIgnoreRecursive ;
+   CRef <CSeq_entry> entry (new CSeq_entry);
+
+   // Iterate through the set of Seq-entry's in container Bioseq-set
+   CIStreamContainerIterator iter(in, passed_info.GetMemberType());
+   for ( ; iter; ++iter ) {
+      iter >> *entry; // Read a single Seq-entry from the stream.
+OutBlob(*entry, "entry.out");
+//cout << MSerial_AsnText << *entry << endl;
+      CRepConfig::CheckThisSeqEntry(entry);  // Process the Seq-entry
+   }
+};
+
+void CRepConfig :: x_BatchSet(ESerialDataFormat datafm)
+{
+   auto_ptr<CObjectIStream> ois (CObjectIStream::Open(datafm, thisInfo.infile));
+   ois->SetPathSkipMemberHook("Bioseq-set.seq-set", new CSeqEntryReadHook);
+   ois->Skip(CType<CBioseq_set>()); 
+};
+
+void CSeqEntryChoiceHook :: SkipChoiceVariant(CObjectIStream& in,const CObjectTypeInfoCV& passed_info)
+{
+   CRef <CSeq_entry> entry (new CSeq_entry);
+
+   // Iterate through the set of Seq-entry's in container Seq-submit
+   CIStreamContainerIterator iter(in, passed_info.GetVariantType());
+   for ( ; iter; ++iter ) {
+     iter >> *entry; // Read a single Seq-entry from the stream.
+
+     CRepConfig::CheckThisSeqEntry(entry);  // Process the Seq-entry
+   
+cout << "processing a Seq-entry..." << endl;
+cout << MSerial_AsnText << *entry << endl;
+   }
+};
+
+void CRepConfig :: x_BatchSeqSubmit(ESerialDataFormat datafm)
+{
+   auto_ptr<CObjectIStream> ois (CObjectIStream::Open(datafm, thisInfo.infile));
+   ois->SetPathSkipVariantHook("Seq-submit.entrys-set", new CSeqEntryChoiceHook);
+   ois->Skip(CType<CBioseq_set>()); 
+};
+
+void CRepConfig :: x_CatenatedSeqEntry()
+{
+   auto_ptr <CObjectIStream> ois (CObjectIStream::Open(eSerial_AsnText, thisInfo.infile));
+   while (!ois->EndOfData()) {
+        CRef <CSeq_entry> seq_entry;
+        *ois >> *seq_entry;
+        CheckThisSeqEntry(seq_entry); 
+   }
+};
+
+void CRepConfig :: x_ProcessOneFile()
+{
+   if (!CFile(thisInfo.infile).Exists())
+      NCBI_THROW(CException, eUnknown, "Can't read file " + thisInfo.infile);
+   switch (m_file_tp[0]) {
+      case 'a': x_GuessFile(); break;
+      case 'e':
+      case 'b': 
+      case 's':
+      case 'm':
+         x_ReadAsn1(); break;
+// binary, compressed & batch ??? ### 
+      case 't':
+         x_BatchSet(); break;
+      case 'u':
+         x_BatchSeqSubmit(); break;
+         break;
+      case 'c': 
+         x_CatenatedSeqEntry(); break;
+      default: x_GuessFile();
+   }
+};
+
+void CRepConfig :: x_ProcessDir(const CDir& dir, bool one_ofile, CRepConfig* config)
+{
+   CDir::TGetEntriesFlags flag = m_dorecurse ? 0 : CDir::fIgnoreRecursive ;
    list <AutoPtr <CDirEntry> > entries = dir.GetEntries(kEmptyStr, flag);
-unsigned i=0;
    ITERATE (list <AutoPtr <CDirEntry> >, it, entries) {
-     if ((*it)->GetExt() == suffix) {
-cerr << (*it)->GetDir() + (*it)->GetName() << endl;
-//        if ( i > 43)
-               x_ProcessOneFile((*it)->GetDir() + (*it)->GetName());
+     if ((*it)->GetExt() == m_insuffix) {
+        thisInfo.infile = (*it)->GetDir() + (*it)->GetName();
+cerr << "infile " << thisInfo.infile << endl;
+        x_ProcessOneFile();
         if (!one_ofile) { 
+          if (!m_outdir.empty()) strtmp = m_outdir;
+          else strtmp = (*it)->GetDir();
           thisInfo.output_config.output_f 
-             = new CNcbiOfstream( ( (*it)->GetDir() + (*it)->GetBase() + ".dr" ).c_str());     
- //         if ( i> 43)
-                config->Export();
+             = new CNcbiOfstream(( strtmp + (*it)->GetBase() + m_outsuffix ).c_str());     
+          config->Export();
+          thisInfo.disc_report_data.clear();
           thisInfo.test_item_list.clear(); 
         }
-i++;
      }
    }
 };
 
 void CRepConfig :: Run(CRepConfig* config)
 {
- cerr << "Run " << CTime(CTime::eCurrent).AsString() << endl;
+ // cerr << "Run " << CTime(CTime::eCurrent).AsString() << endl;
    tests_on_Bioseq.reserve(50);
    tests_on_Bioseq_aa.reserve(50);
    tests_on_Bioseq_na.reserve(50);
@@ -2309,11 +2383,11 @@ void CRepConfig :: Run(CRepConfig* config)
                 thisTest.tests_run.insert(test_list[i].name);
    }
    
-   ITERATE (vector <string>, it, thisInfo.tests_enabled) {
+   ITERATE (vector <string>, it, m_enabled) {
       if (thisTest.tests_run.find(*it) == thisTest.tests_run.end()) 
             thisTest.tests_run.insert(*it);
    }
-   ITERATE (vector <string>, it, thisInfo.tests_disabled) {
+   ITERATE (vector <string>, it, m_disabled) {
       if (thisTest.tests_run.find(*it) != thisTest.tests_run.end())
            thisTest.tests_run.erase(*it);
    }
@@ -2321,37 +2395,24 @@ void CRepConfig :: Run(CRepConfig* config)
    CollectTests();
   
    // read input file/path and go tests
-   if (!thisInfo.directory.empty()) {
-     CDir dir(thisInfo.directory);
-     if (!dir.Exists()) {
-         if (!CFile(thisInfo.infile).Exists()) 
-            NCBI_THROW(CException, eUnknown, "Input path or input file must exist");
-         else {
-              x_ProcessOneFile(thisInfo.infile);
-              config->Export();
-         }
-     }
-     else {
-       bool one_ofile = (bool)thisInfo.output_config.output_f; 
-       x_ProcessDir(dir, thisInfo.suffix, thisInfo.dorecurse, one_ofile, config);
-       if (one_ofile) config->Export();
-     }
+   CDir dir(m_indir);
+   if (!dir.Exists()) {
+       x_ProcessOneFile();
+       config->Export();
    }
    else {
-     if (!CFile(thisInfo.infile).Exists())
-            NCBI_THROW(CException, eUnknown, "Input file must exist");
-     else {
-              x_ProcessOneFile(thisInfo.infile);
-              config->Export();
-     }
+       bool one_ofile = (bool)thisInfo.output_config.output_f; 
+       x_ProcessDir(dir, one_ofile, config);
+       if (one_ofile) config->Export(); // run a global check 
    }
+    cout << "disc_rep.size()  " << thisInfo.disc_report_data.size() << endl;
+   thisInfo.disc_report_data.clear();
    thisInfo.test_item_list.clear();
 
-    cout << "disc_rep.size()  " << thisInfo.disc_report_data.size() << endl;
 
     // Exit
     thisInfo.tax_db_conn.Fini();
-cerr << "end " << CTime(CTime::eCurrent).AsString() << endl;
+// cerr << "end " << CTime(CTime::eCurrent).AsString() << endl;
 }; // Run()
 
 

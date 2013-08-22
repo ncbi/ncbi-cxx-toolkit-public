@@ -1031,12 +1031,9 @@ string CTestAndRepData :: BioseqToBestSeqIdString(const CBioseq& bioseq, CSeq_id
 }; // BioseqToBestSeqIdString();
 
 
-
-string CTestAndRepData :: SeqLocPrintUseBestID(const CSeq_loc& seq_loc, bool range_only)
+string CTestAndRepData :: PrintSeqInt(const CSeq_interval& seq_int, bool range_only)
 {
-  string location(kEmptyStr);
-  if (seq_loc.IsInt()) {
-    const CSeq_interval& seq_int = seq_loc.GetInt();
+    string location;
 
     // Best seq_id
     if (!range_only) {
@@ -1091,13 +1088,30 @@ string CTestAndRepData :: SeqLocPrintUseBestID(const CSeq_loc& seq_loc, bool ran
       }
       location += lab_from + "-" + lab_to; 
     } 
+    return location;
+};
+
+string CTestAndRepData :: SeqLocPrintUseBestID(const CSeq_loc& seq_loc, bool range_only)
+{
+  string location(kEmptyStr);
+  if (seq_loc.IsInt()) {
+     const CSeq_interval& seq_int = seq_loc.GetInt();
+     location = PrintSeqInt(seq_loc.GetInt(), range_only);
   } 
-  else if (seq_loc.IsMix() || seq_loc.IsPacked_int()) {
+  else if (seq_loc.IsMix()) {
      location = "(";
-     CSeq_loc_CI loc_it(seq_loc);
-     location += SeqLocPrintUseBestID (loc_it.GetEmbeddingSeq_loc()); 
-     for (++loc_it; loc_it; ++loc_it)
-       location += (", " + SeqLocPrintUseBestID (loc_it.GetEmbeddingSeq_loc(), true));
+     ITERATE (list <CRef <CSeq_loc> >, it, seq_loc.GetMix().Get()) {
+        location += SeqLocPrintUseBestID(**it) + ", ";
+     }
+     if (!location.empty()) location = location.substr(0, location.size()-2);
+     location = ")"; 
+  }
+  else if (seq_loc.IsPacked_int()) {
+     location = "(";
+     ITERATE (list <CRef <CSeq_interval> >, it, seq_loc.GetPacked_int().Get()) {
+        location += PrintSeqInt(**it) + ", ";
+     }
+     if (!location.empty()) location = location.substr(0, location.size()-2);
      location += ")";
   }
   return location;

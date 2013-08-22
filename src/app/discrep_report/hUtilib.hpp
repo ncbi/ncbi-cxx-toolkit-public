@@ -111,7 +111,7 @@ bool Str2Blob(const string& str, AsnClass& blob, ESerialDataFormat datafm=eSeria
 
 
 template <class AsnClass>
-void OutBlob(const AsnClass& blob, ESerialDataFormat datafm, string file_nm)
+void OutBlob(const AsnClass& blob, string file_nm, ESerialDataFormat datafm =eSerial_AsnText)
 {
 	auto_ptr <CObjectOStream> oos (CObjectOStream::Open(datafm, file_nm));
 	*oos << blob;

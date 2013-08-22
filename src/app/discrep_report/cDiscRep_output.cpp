@@ -59,6 +59,7 @@ static s_fataltag disc_fatal[] = {
         {"BAD_LOCUS_TAG_FORMAT", NULL, NULL},
         {"DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS", NULL, NULL},
         {"DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA", NULL, NULL},
+        {"DISC_BAD_BGPIPE_QUALS", NULL, NULL},
         {"DISC_CITSUBAFFIL_CONFLICT", NULL, "No citsubs were found!"},
         {"DISC_INCONSISTENT_MOLTYPES", NULL, "Moltypes are consistent"},
         {"DISC_MAP_CHROMOSOME_CONFLICT", NULL, NULL},
