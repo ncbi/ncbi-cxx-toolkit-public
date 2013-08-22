@@ -90,11 +90,11 @@
 //USING_NCBI_SCOPE;
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
+    USING_SCOPE(objects);
 
 //  ============================================================================
 void DumpMemory(const string& prefix)
-//  ============================================================================
+    //  ============================================================================
 {
     Uint8 totalMemory = GetPhysicalMemorySize();
     size_t usedMemory; size_t residentMemory; size_t sharedMemory;
@@ -103,11 +103,11 @@ void DumpMemory(const string& prefix)
     }
     else {
         cerr << prefix
-            << "Total:" << totalMemory 
-            << " Used:" << usedMemory << "(" 
-                << (100*usedMemory)/totalMemory <<"%)" 
-            << " Resident:" << residentMemory << "(" 
-                << int((100.0*residentMemory)/totalMemory) <<"%)" 
+            << "Total:" << totalMemory
+            << " Used:" << usedMemory << "("
+            << (100*usedMemory)/totalMemory <<"%)"
+            << " Resident:" << residentMemory << "("
+            << int((100.0*residentMemory)/totalMemory) <<"%)"
             << endl;
     }
 }
@@ -115,7 +115,7 @@ void DumpMemory(const string& prefix)
 #if 0
 //  ============================================================================
 class CErrorContainerCustom:
-//  ============================================================================
+    //  ============================================================================
     public CErrorContainerBase
 {
 public:
@@ -123,26 +123,26 @@ public:
         int iMaxCount,
         int iMaxLevel ): m_iMaxCount( iMaxCount ), m_iMaxLevel( iMaxLevel ) {};
     ~CErrorContainerCustom() {};
-    
+
     bool
-    PutError(
-        const ILineError& err ) 
+        PutError(
+        const ILineError& err )
     {
         StoreError(err);
         return (err.Severity() <= m_iMaxLevel) && (Count() < m_iMaxCount);
     };
-    
+
 protected:
     size_t m_iMaxCount;
-    int m_iMaxLevel;    
-};    
+    int m_iMaxLevel;
+};
 #endif
 
 
 #if 0
 //  ----------------------------------------------------------------------------
 CArgDescriptions* CMultiReader::InitAppArgs(CNcbiApplication& app)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
@@ -150,41 +150,41 @@ CArgDescriptions* CMultiReader::InitAppArgs(CNcbiApplication& app)
 
     //
     //  input / output:
-    //        
+    //
     arg_desc->AddOptionalKey(
-        "input", 
+        "input",
         "File_In",
         "Input filename",
         CArgDescriptions::eInputFile);
 
     arg_desc->AddDefaultKey(
-        "output", 
+        "output",
         "File_Out",
         "Output filename",
-        CArgDescriptions::eOutputFile, "-"); 
+        CArgDescriptions::eOutputFile, "-");
 
     arg_desc->AddDefaultKey(
-        "format", 
+        "format",
         "STRING",
         "Input file format",
-        CArgDescriptions::eString, 
+        CArgDescriptions::eString,
         "guess");
     arg_desc->SetConstraint(
-        "format", 
-        &(*new CArgAllow_Strings, 
-            "bed", 
-            "microarray", "bed15", 
-            "wig", "wiggle", 
-            "gtf", "gff3", "gff2",
-            "gvf",
-            "agp",
-            "newick", "tree", "tre",
-            "vcf",
-            "aln", "align",
-            "hgvs",
-            "fasta",
-            "5colftbl",
-            "guess") );
+        "format",
+        &(*new CArgAllow_Strings,
+        "bed",
+        "microarray", "bed15",
+        "wig", "wiggle",
+        "gtf", "gff3", "gff2",
+        "gvf",
+        "agp",
+        "newick", "tree", "tre",
+        "vcf",
+        "aln", "align",
+        "hgvs",
+        "fasta",
+        "5colftbl",
+        "guess") );
 
     arg_desc->AddDefaultKey(
         "flags",
@@ -194,16 +194,16 @@ CArgDescriptions* CMultiReader::InitAppArgs(CNcbiApplication& app)
         "0" );
 
     arg_desc->AddDefaultKey(
-        "name", 
+        "name",
         "STRING",
         "Name for annotation",
-        CArgDescriptions::eString, 
+        CArgDescriptions::eString,
         "");
     arg_desc->AddDefaultKey(
-        "title", 
+        "title",
         "STRING",
         "Title for annotation",
-        CArgDescriptions::eString, 
+        CArgDescriptions::eString,
         "");
 
     //
@@ -216,58 +216,58 @@ CArgDescriptions* CMultiReader::InitAppArgs(CNcbiApplication& app)
         CArgDescriptions::eString, "" );
 
     arg_desc->AddDefaultKey(
-        "genome", 
+        "genome",
         "STRING",
         "UCSC build number",
-        CArgDescriptions::eString, 
+        CArgDescriptions::eString,
         "" );
-        
+
     //
     //  Error policy:
-    //        
+    //
     arg_desc->AddFlag(
         "dumpstats",
         "write record counts to stderr",
         true );
-        
+
     arg_desc->AddFlag(
         "checkonly",
         "check for errors only",
         true );
-        
+
     arg_desc->AddFlag(
         "noerrors",
         "suppress error display",
         true );
-        
+
     arg_desc->AddFlag(
         "lenient",
         "accept all input format errors",
         true );
-        
+
     arg_desc->AddFlag(
         "strict",
         "accept no input format errors",
         true );
-        
+
     arg_desc->AddDefaultKey(
-        "max-error-count", 
+        "max-error-count",
         "INTEGER",
         "Maximum permissible error count",
         CArgDescriptions::eInteger,
         "-1" );
-        
+
     arg_desc->AddDefaultKey(
-        "max-error-level", 
+        "max-error-level",
         "STRING",
         "Maximum permissible error level",
         CArgDescriptions::eString,
         "warning" );
-        
+
     arg_desc->SetConstraint(
-        "max-error-level", 
-        &(*new CArgAllow_Strings, 
-            "info", "warning", "error" ) );
+        "max-error-level",
+        &(*new CArgAllow_Strings,
+        "info", "warning", "error" ) );
 
     //
     //  bed and gff reader specific arguments:
@@ -276,12 +276,12 @@ CArgDescriptions* CMultiReader::InitAppArgs(CNcbiApplication& app)
         "all-ids-as-local",
         "turn all ids into local ids",
         true );
-        
+
     arg_desc->AddFlag(
         "numeric-ids-as-local",
         "turn integer ids into local ids",
         true );
-        
+
     //
     //  wiggle reader specific arguments:
     //
@@ -289,12 +289,12 @@ CArgDescriptions* CMultiReader::InitAppArgs(CNcbiApplication& app)
         "join-same",
         "join abutting intervals",
         true );
-        
+
     arg_desc->AddFlag(
         "as-byte",
         "generate byte compressed data",
         true );
-    
+
     arg_desc->AddFlag(
         "as-graph",
         "generate graph object",
@@ -311,33 +311,33 @@ CArgDescriptions* CMultiReader::InitAppArgs(CNcbiApplication& app)
     arg_desc->AddFlag( // no longer used, retained for backward compatibility
         "new-code",
         "use new gff3 reader implementation",
-        true );    
+        true );
     arg_desc->AddFlag(
         "old-code",
         "use old gff3 reader implementation",
-        true );    
+        true );
 
     //
     //  alignment reader specific arguments:
     //
     arg_desc->AddDefaultKey(
-        "aln-gapchar", 
+        "aln-gapchar",
         "STRING",
         "Alignment gap character",
-        CArgDescriptions::eString, 
+        CArgDescriptions::eString,
         "-");
 
     arg_desc->AddDefaultKey(
-        "aln-alphabet", 
+        "aln-alphabet",
         "STRING",
         "Alignment alphabet",
-        CArgDescriptions::eString, 
+        CArgDescriptions::eString,
         "nuc");
     arg_desc->SetConstraint(
-        "aln-alphabet", 
-        &(*new CArgAllow_Strings, 
-            "nuc", 
-            "prot") );    
+        "aln-alphabet",
+        &(*new CArgAllow_Strings,
+        "nuc",
+        "prot") );
 
     arg_desc->AddFlag(
         "force-local-ids",
@@ -345,107 +345,107 @@ CArgDescriptions* CMultiReader::InitAppArgs(CNcbiApplication& app)
         true);
 
     //app.SetupArgDescriptions(arg_desc.release());
-	return arg_desc.release();
+    return arg_desc.release();
 }
 #endif
 
 
 CRef<CSerialObject> CMultiReader::ReadFile(const CTable2AsnContext& args, const string& ifname)
 {
-	CNcbiIfstream istr(ifname.c_str());
-	//CNcbiOfstream ostr(ofname);
+    CNcbiIfstream istr(ifname.c_str());
+    //CNcbiOfstream ostr(ofname);
 
 
-	xSetFormat(args, istr);
-	xSetFlags(args, istr);
+    xSetFormat(args, istr);
+    xSetFlags(args, istr);
     xSetMapper(args);
     xSetErrorContainer(args);
 
     //CRef< CSerialObject> object;
     //vector< CRef< CSeq_annot > > annots;
-	CRef<CSerialObject> result;
-    switch( m_uFormat ) 
-	{
-        case CFormatGuess::eTextASN:
-//                xProcessBed(args, istr, ostr);
-            break;
-        default: 
-			result.Reset(xProcessDefault(args, istr));
-			//ApplyAdditionalProperties(args);
-			//WriteObject(ostr);
-            break;
-	}
-	return result;
+    CRef<CSerialObject> result;
+    switch( m_uFormat )
+    {
+    case CFormatGuess::eTextASN:
+        //                xProcessBed(args, istr, ostr);
+        break;
+    default:
+        result.Reset(xProcessDefault(args, istr));
+        //ApplyAdditionalProperties(args);
+        //WriteObject(ostr);
+        break;
+    }
+    return result;
 }
 
 //  ----------------------------------------------------------------------------
 CRef<CSerialObject> CMultiReader::xProcessDefault(
     const CTable2AsnContext& args,
     CNcbiIstream& istr)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
-	if (!args.m_HandleAsSet)
-	{
-		m_iFlags |= CFastaReader::fOneSeq;
-	}
-	m_iFlags |= CFastaReader::fAddMods;
-	
-	auto_ptr<CReaderBase> pReader(new CFastaReader(0, m_iFlags));
+    if (!args.m_HandleAsSet)
+    {
+        m_iFlags |= CFastaReader::fOneSeq;
+    }
+    m_iFlags |= CFastaReader::fAddMods;
+
+    auto_ptr<CReaderBase> pReader(new CFastaReader(0, m_iFlags));
     if (!pReader.get()) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "File format not supported", 0);
     }
     CRef<CSerialObject> result = pReader->ReadObject(istr, m_pErrors);
 
-	return result;
+    return result;
 }
 
 //  ----------------------------------------------------------------------------
 void CMultiReader::xSetFormat(
     const CTable2AsnContext& args,
     CNcbiIstream& istr )
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
-    m_uFormat = CFormatGuess::eUnknown;    
+    m_uFormat = CFormatGuess::eUnknown;
     string format = args.m_format;
     const string& strProgramName = "GetProgramDisplayName";
-    
+
     if (NStr::StartsWith(strProgramName, "wig") || format == "wig" ||
         format == "wiggle") {
-        m_uFormat = CFormatGuess::eWiggle;
+            m_uFormat = CFormatGuess::eWiggle;
     }
     if (NStr::StartsWith(strProgramName, "bed") || format == "bed") {
         m_uFormat = CFormatGuess::eBed;
     }
     if (NStr::StartsWith(strProgramName, "b15") || format == "bed15" ||
         format == "microarray") {
-        m_uFormat = CFormatGuess::eBed15;
+            m_uFormat = CFormatGuess::eBed15;
     }
     if (NStr::StartsWith(strProgramName, "gtf") || format == "gtf") {
         m_uFormat = CFormatGuess::eGtf;
     }
-    if (NStr::StartsWith(strProgramName, "gff") || 
+    if (NStr::StartsWith(strProgramName, "gff") ||
         format == "gff3" || format == "gff2") {
-        m_uFormat = CFormatGuess::eGff3;
+            m_uFormat = CFormatGuess::eGff3;
     }
     if (NStr::StartsWith(strProgramName, "agp")) {
         m_uFormat = CFormatGuess::eAgp;
     }
 
-    if (NStr::StartsWith(strProgramName, "newick") || 
+    if (NStr::StartsWith(strProgramName, "newick") ||
         format == "newick" || format == "tree" || format == "tre") {
-        m_uFormat = CFormatGuess::eNewick;
+            m_uFormat = CFormatGuess::eNewick;
     }
     if (NStr::StartsWith(strProgramName, "gvf") || format == "gvf") {
         m_uFormat = CFormatGuess::eGtf;
     }
     if (NStr::StartsWith(strProgramName, "aln") || format == "align" ||
         format == "aln") {
-        m_uFormat = CFormatGuess::eAlignment;
+            m_uFormat = CFormatGuess::eAlignment;
     }
-    if (NStr::StartsWith(strProgramName, "hgvs") || 
+    if (NStr::StartsWith(strProgramName, "hgvs") ||
         format == "hgvs") {
-        m_uFormat = CFormatGuess::eHgvs;
+            m_uFormat = CFormatGuess::eHgvs;
     }
     if( NStr::StartsWith(strProgramName, "fasta") ||
         format == "fasta" ) {
@@ -464,18 +464,18 @@ void CMultiReader::xSetFormat(
 void CMultiReader::xSetFlags(
     const CTable2AsnContext& args,
     CNcbiIstream& istr)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
-	m_iFlags = 0;
+    m_iFlags = 0;
 #if 0
     if (m_uFormat == CFormatGuess::eUnknown) {
         xSetFormat(args, istr);
     }
-    m_iFlags = NStr::StringToInt( 
+    m_iFlags = NStr::StringToInt(
         args["flags"].AsString(), NStr::fConvErr_NoThrow, 16 );
-        
+
     switch( m_uFormat ) {
-    
+
     case CFormatGuess::eWiggle:
         if ( args["join-same"] ) {
             m_iFlags |= CWiggleReader::fJoinSame;
@@ -491,7 +491,7 @@ void CMultiReader::xSetFlags(
             m_iFlags |= CReaderBase::fAsRaw;
         }
         break;
-    
+
     case CFormatGuess::eBed:
         if ( args["all-ids-as-local"] ) {
             m_iFlags |= CBedReader::fAllIdsAsLocal;
@@ -503,7 +503,7 @@ void CMultiReader::xSetFlags(
             m_iFlags |= CReaderBase::fAsRaw;
         }
         break;
-       
+
     case CFormatGuess::eGtf:
         if ( args["all-ids-as-local"] ) {
             m_iFlags |= CGFFReader::fAllIdsAsLocal;
@@ -511,14 +511,14 @@ void CMultiReader::xSetFlags(
         if ( args["numeric-ids-as-local"] ) {
             m_iFlags |= CGFFReader::fNumericIdsAsLocal;
         }
-            
+
     default:
         break;
     }
     m_AnnotName = args["name"].AsString();
     m_AnnotTitle = args["title"].AsString();
 #endif
-	m_iFlags |= objects::CFastaReader::fNoUserObjs;
+    m_iFlags |= objects::CFastaReader::fNoUserObjs;
     //m_bCheckOnly = false; //args["checkonly"];
 }
 
@@ -526,10 +526,10 @@ void CMultiReader::xSetFlags(
 void CMultiReader::WriteObject(
     CSerialObject& object,                  // potentially modified by mapper
     CNcbiOstream& ostr)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     if (m_pMapper.get()) {
-		m_pMapper->MapObject(object);
+        m_pMapper->MapObject(object);
     }
     if (m_bCheckOnly) {
         return;
@@ -537,15 +537,15 @@ void CMultiReader::WriteObject(
     ostr << MSerial_AsnText << object;
     ostr.flush();
 }
-        
+
 //  ----------------------------------------------------------------------------
 void CMultiReader::xSetMapper(const CTable2AsnContext& args)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
 #if 0
     string strBuild = args["genome"].AsString();
     string strMapFile = args["mapfile"].AsString();
-    
+
     if (strBuild.empty() && strMapFile.empty()) {
         return;
     }
@@ -558,11 +558,11 @@ void CMultiReader::xSetMapper(const CTable2AsnContext& args)
         m_pMapper.reset(new CIdMapperBuiltin(strBuild, false, m_pErrors));
     }
 #endif
-}        
+}
 
 //  ----------------------------------------------------------------------------
 void CMultiReader::xSetErrorContainer(const CTable2AsnContext& args)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
 #if 0
     //
@@ -583,7 +583,7 @@ void CMultiReader::xSetErrorContainer(const CTable2AsnContext& args)
         m_pErrors = new CErrorContainerLenient;
         return;
     }
-    
+
     int iMaxErrorCount = args["max-error-count"].AsInteger();
     int iMaxErrorLevel = eDiag_Error;
     string strMaxErrorLevel = args["max-error-level"].AsString();
@@ -593,7 +593,7 @@ void CMultiReader::xSetErrorContainer(const CTable2AsnContext& args)
     else if ( strMaxErrorLevel == "error" ) {
         iMaxErrorLevel = eDiag_Error;
     }
-    
+
     if ( iMaxErrorCount == -1 ) {
         m_pErrors.Reset(new CErrorContainerLevel(iMaxErrorLevel));
         return;
@@ -601,10 +601,10 @@ void CMultiReader::xSetErrorContainer(const CTable2AsnContext& args)
     m_pErrors.Reset(new CErrorContainerCustom(iMaxErrorCount, iMaxErrorLevel));
 #endif
 }
-    
+
 void CMultiReader::Process(const CTable2AsnContext& args, const CNcbiApplication& app)
 {
-	m_bCheckOnly = app.IsDryRun();
+    m_bCheckOnly = app.IsDryRun();
 }
 
 CMultiReader::CMultiReader()
@@ -613,12 +613,12 @@ CMultiReader::CMultiReader()
 
 void GetSeqId(CRef<CSeq_id>& id, const CTable2AsnContext& context)
 {
-	if (context.m_SetIDFromFile)
-	{
-		string base;
-		CDirEntry::SplitPath(context.m_current_file, 0, &base, 0);
-		id.Reset(new CSeq_id(string("lcl|") + base));
-	}
+    if (context.m_SetIDFromFile)
+    {
+        string base;
+        CDirEntry::SplitPath(context.m_current_file, 0, &base, 0);
+        id.Reset(new CSeq_id(string("lcl|") + base));
+    }
 }
 
 void ApplySourceQualifiers(objects::CBioseq& bioseq, const string& src_qualifiers)
@@ -626,26 +626,26 @@ void ApplySourceQualifiers(objects::CBioseq& bioseq, const string& src_qualifier
     if( ! bioseq.IsSetDescr() && ! bioseq.GetDescr().IsSet() ) {
         return;
     }
-	if (src_qualifiers.empty())
-		return;
+    if (src_qualifiers.empty())
+        return;
 
     CSourceModParser smp;
     CRef<CSeqdesc> title_desc;
 
-	string title = src_qualifiers;
+    string title = src_qualifiers;
 
     if (true)
-	{
+    {
         title = smp.ParseTitle(title, CConstRef<CSeq_id>(bioseq.GetFirstId()) );
 
         smp.ApplyAllMods(bioseq);
 #if 0
         if( TestFlag(fUnknModThrow) ) {
             CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
-            if( ! unused_mods.empty() ) 
+            if( ! unused_mods.empty() )
             {
                 // there are unused mods and user specified to throw if any
-                // unused 
+                // unused
                 CNcbiOstrstream err;
                 err << "CFastaReader: Inapplicable or unrecognized modifiers on ";
 
@@ -673,7 +673,7 @@ void ApplySourceQualifiers(objects::CBioseq& bioseq, const string& src_qualifier
 
         copy( smp.GetBadMods().begin(), smp.GetBadMods().end(),
             inserter(m_BadMods, m_BadMods.begin()) );
-        CSourceModParser::TMods unused_mods = 
+        CSourceModParser::TMods unused_mods =
             smp.GetMods(CSourceModParser::fUnusedMods);
         copy( unused_mods.begin(), unused_mods.end(),
             inserter(m_UnusedMods, m_UnusedMods.begin() ) );
@@ -685,92 +685,92 @@ void ApplySourceQualifiers(objects::CBioseq& bioseq, const string& src_qualifier
 
 void CMultiReader::ApplyAdditionalProperties(const CTable2AsnContext& context, CSeq_entry& entry)
 {
-	switch(entry.Which())
-	{
-	case CSeq_entry::e_Seq:
-		ApplySourceQualifiers(entry.SetSeq(), context.m_source_qualifiers);
-		if (context.m_SetIDFromFile)
-		{
-			CRef<CSeq_id> id;
-			GetSeqId(id, context);
-			entry.SetSeq().SetId().push_back(id);
-		}
-		break;
-	case CSeq_entry::e_Set:
-		{
-			if (context.m_SetIDFromFile)
-			{
-				CRef<CSeq_id> id;
-				GetSeqId(id, context);
-				entry.SetSet().SetId().Assign(*id);
-			}
-			if (context.m_GenomicProductSet)
-			{
-				entry.SetSet().SetClass(CBioseq_set_Base::eClass_gen_prod_set);
-			}
-			if (context.m_NucProtSet)
-			{
-				entry.SetSet().SetClass(CBioseq_set_Base::eClass_nuc_prot);
-			}
-			NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
-			{
-				ApplyAdditionalProperties(context, **it);
-			}
-		}
-		break;
-	default:
-		break;
-	}
+    switch(entry.Which())
+    {
+    case CSeq_entry::e_Seq:
+        ApplySourceQualifiers(entry.SetSeq(), context.m_source_qualifiers);
+        if (context.m_SetIDFromFile)
+        {
+            CRef<CSeq_id> id;
+            GetSeqId(id, context);
+            entry.SetSeq().SetId().push_back(id);
+        }
+        break;
+    case CSeq_entry::e_Set:
+        {
+            if (context.m_SetIDFromFile)
+            {
+                CRef<CSeq_id> id;
+                GetSeqId(id, context);
+                entry.SetSet().SetId().Assign(*id);
+            }
+            if (context.m_GenomicProductSet)
+            {
+                entry.SetSet().SetClass(CBioseq_set_Base::eClass_gen_prod_set);
+            }
+            if (context.m_NucProtSet)
+            {
+                entry.SetSet().SetClass(CBioseq_set_Base::eClass_nuc_prot);
+            }
+            NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
+            {
+                ApplyAdditionalProperties(context, **it);
+            }
+        }
+        break;
+    default:
+        break;
+    }
 
-	if (!context.m_Comment.empty())
-	{
-		CRef<CSeqdesc> value(new CSeqdesc());
-		value->SetComment(context.m_Comment);
+    if (!context.m_Comment.empty())
+    {
+        CRef<CSeqdesc> value(new CSeqdesc());
+        value->SetComment(context.m_Comment);
 
-		MergeDescriptors(entry.SetDescr(), *value);
-	}
+        MergeDescriptors(entry.SetDescr(), *value);
+    }
 
-	if (!context.m_OrganismName.empty())
-	{
-		CRef<CSeqdesc> value(new CSeqdesc());
-		value->SetOrg().SetTaxname().assign(context.m_OrganismName);
+    if (!context.m_OrganismName.empty())
+    {
+        CRef<CSeqdesc> value(new CSeqdesc());
+        value->SetOrg().SetTaxname().assign(context.m_OrganismName);
 
-		MergeDescriptors(entry.SetDescr(), *value);
-	}
+        MergeDescriptors(entry.SetDescr(), *value);
+    }
 }
 
 void CMultiReader::ApplyAdditionalProperties(const CTable2AsnContext& context, CSerialObject* obj)
 {
-	if (CSeq_entry* entry = dynamic_cast<CSeq_entry*>(obj))
-	{
-		ApplyAdditionalProperties(context, *entry);
-	}
-	else
-	if (CSeq_submit* submit = dynamic_cast<CSeq_submit*>(obj))
-	{
-		if (context.HoldUntilPublish.Which() == CDate_Base::e_Std)
-		{
-			submit->SetSub().SetHup(true);
-			submit->SetSub().SetReldate().Assign(context.HoldUntilPublish);
-		}
+    if (CSeq_entry* entry = dynamic_cast<CSeq_entry*>(obj))
+    {
+        ApplyAdditionalProperties(context, *entry);
+    }
+    else
+        if (CSeq_submit* submit = dynamic_cast<CSeq_submit*>(obj))
+        {
+            if (context.HoldUntilPublish.Which() == CDate_Base::e_Std)
+            {
+                submit->SetSub().SetHup(true);
+                submit->SetSub().SetReldate().Assign(context.HoldUntilPublish);
+            }
 
-		NON_CONST_ITERATE(CSeq_submit_Base::C_Data::TEntrys, it, submit->SetData().SetEntrys())
-		{
-			ApplyAdditionalProperties(context, **it);
-		}
-	}
+            NON_CONST_ITERATE(CSeq_submit_Base::C_Data::TEntrys, it, submit->SetData().SetEntrys())
+            {
+                ApplyAdditionalProperties(context, **it);
+            }
+        }
 }
 
 void CMultiReader::LoadDescriptors(const CTable2AsnContext& args, const string& ifname, CRef<CSeq_descr> & out_desc)
 {
-	out_desc.Reset(new CSeq_descr);
+    out_desc.Reset(new CSeq_descr);
 
     CNcbiIfstream istrm(ifname.c_str());
 
     // guess format
     ESerialDataFormat eSerialDataFormat = eSerial_None;
     {{
-        CFormatGuess::EFormat eFormat = 
+        CFormatGuess::EFormat eFormat =
             CFormatGuess::Format(istrm);
 
         switch(eFormat) {
@@ -785,7 +785,7 @@ void CMultiReader::LoadDescriptors(const CTable2AsnContext& args, const string& 
             break;
         default:
             NCBI_USER_THROW_FMT(
-                "Descriptor file seems to be in an unsupported format: " 
+                "Descriptor file seems to be in an unsupported format: "
                 << CFormatGuess::GetFormatName(eFormat) );
             break;
         }
@@ -793,7 +793,7 @@ void CMultiReader::LoadDescriptors(const CTable2AsnContext& args, const string& 
         istrm.seekg(0);
     }}
 
-    auto_ptr<CObjectIStream> pObjIstrm( 
+    auto_ptr<CObjectIStream> pObjIstrm(
         CObjectIStream::Open(eSerialDataFormat, istrm, eNoOwnership) );
 
     // guess object type
@@ -802,27 +802,27 @@ void CMultiReader::LoadDescriptors(const CTable2AsnContext& args, const string& 
     // do the right thing depending on the input type
     while (true) {
         try {
-			const string sType = pObjIstrm->ReadFileHeader();
-			if (sType == CSeq_descr::GetTypeInfo()->GetName())
-			{
-				CRef<CSeq_descr> descr(new CSeq_descr);
-				pObjIstrm->Read(ObjectInfo(*descr),
-					CObjectIStream::eNoFileHeader);
-				out_desc->Set().insert(out_desc->Set().end(), descr->Get().begin(), descr->Get().end());
-			}
-			else
-			if (sType == CSeqdesc::GetTypeInfo()->GetName())
-			{
-				CRef<CSeqdesc> desc(new CSeqdesc);
-				pObjIstrm->Read(ObjectInfo(*desc),
-					CObjectIStream::eNoFileHeader);
-				out_desc->Set().push_back(desc);
-			}
-			else
-			{
-				throw runtime_error("Descriptor file must contain "
-					"either Seq_descr or Seqdesc elements");
-			}
+            const string sType = pObjIstrm->ReadFileHeader();
+            if (sType == CSeq_descr::GetTypeInfo()->GetName())
+            {
+                CRef<CSeq_descr> descr(new CSeq_descr);
+                pObjIstrm->Read(ObjectInfo(*descr),
+                    CObjectIStream::eNoFileHeader);
+                out_desc->Set().insert(out_desc->Set().end(), descr->Get().begin(), descr->Get().end());
+            }
+            else
+                if (sType == CSeqdesc::GetTypeInfo()->GetName())
+                {
+                    CRef<CSeqdesc> desc(new CSeqdesc);
+                    pObjIstrm->Read(ObjectInfo(*desc),
+                        CObjectIStream::eNoFileHeader);
+                    out_desc->Set().push_back(desc);
+                }
+                else
+                {
+                    throw runtime_error("Descriptor file must contain "
+                        "either Seq_descr or Seqdesc elements");
+                }
         } catch (...) {
             break;
         }
@@ -831,8 +831,8 @@ void CMultiReader::LoadDescriptors(const CTable2AsnContext& args, const string& 
 
 void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname)
 {
-	context.m_entry_template.Reset( new CSeq_entry );
-	context.m_submit_template.Reset( new CSeq_submit ); // possibly not used
+    context.m_entry_template.Reset( new CSeq_entry );
+    context.m_submit_template.Reset( new CSeq_submit ); // possibly not used
 
 #if 0
     // check if the location doesn't exist, and see if we can
@@ -867,7 +867,7 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
     // guess format
     ESerialDataFormat eSerialDataFormat = eSerial_None;
     {{
-        CFormatGuess::EFormat eFormat = 
+        CFormatGuess::EFormat eFormat =
             CFormatGuess::Format(istrm);
 
         switch(eFormat) {
@@ -882,7 +882,7 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
             break;
         default:
             NCBI_USER_THROW_FMT(
-                "template file seems to be in an unsupported format: " 
+                "template file seems to be in an unsupported format: "
                 << CFormatGuess::GetFormatName(eFormat) );
             break;
         }
@@ -890,7 +890,7 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
         istrm.seekg(0);
     }}
 
-    auto_ptr<CObjectIStream> pObjIstrm( 
+    auto_ptr<CObjectIStream> pObjIstrm(
         CObjectIStream::Open(eSerialDataFormat, istrm, eNoOwnership) );
 
     // guess object type
@@ -898,18 +898,18 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
 
     // do the right thing depending on the input type
     if( sType == CSeq_entry::GetTypeInfo()->GetName() ) {
-        pObjIstrm->Read(ObjectInfo(*context.m_entry_template), 
+        pObjIstrm->Read(ObjectInfo(*context.m_entry_template),
             CObjectIStream::eNoFileHeader);
     } else if( sType == CBioseq::GetTypeInfo()->GetName() ) {
         CRef<CBioseq> pBioseq( new CBioseq );
-        pObjIstrm->Read(ObjectInfo(*pBioseq), 
+        pObjIstrm->Read(ObjectInfo(*pBioseq),
             CObjectIStream::eNoFileHeader);
         context.m_entry_template->SetSeq( *pBioseq );
     } else if( sType == CSeq_submit::GetTypeInfo()->GetName() ) {
         pObjIstrm->Read(ObjectInfo(*context.m_submit_template),
             CObjectIStream::eNoFileHeader);
         if (!context.m_submit_template->GetData().IsEntrys()
-            || context.m_submit_template->GetData().GetEntrys().size() != 1) 
+            || context.m_submit_template->GetData().GetEntrys().size() != 1)
         {
             throw runtime_error("Seq-submit template must contain "
                 "exactly one Seq-entry");
@@ -992,7 +992,7 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
     }
 
 #if 0
-	if( args["output-type"].AsString() == "Seq-entry" ) {
+    if( args["output-type"].AsString() == "Seq-entry" ) {
         // force Seq-entry by throwing out the Seq-submit
         context.m_submit_template.Reset( new CSeq_submit );
     }
@@ -1002,203 +1002,203 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
 namespace
 {
     class AllowedDuplicates: public set<CSeqdesc_Base::E_Choice>
-	{
-	public:
-		AllowedDuplicates()
-		{
-    		insert(CSeqdesc_Base::e_User);
-		}
-	};
-	AllowedDuplicates m_allowed_duplicates;
+    {
+    public:
+        AllowedDuplicates()
+        {
+            insert(CSeqdesc_Base::e_User);
+        }
+    };
+    AllowedDuplicates m_allowed_duplicates;
 
-	template<typename _which>
-	struct LocateWhich
-	{
-		typename _which::E_Choice compare_to;
-		bool operator() (_which l)  const
-		{
-			return l.Which() == compare_to;
-		}
-		bool operator() (const CRef<_which>& l)  const
-		{
-			return l->Which() == compare_to;
-		}
-	};
+    template<typename _which>
+    struct LocateWhich
+    {
+        typename _which::E_Choice compare_to;
+        bool operator() (_which l)  const
+        {
+            return l.Which() == compare_to;
+        }
+        bool operator() (const CRef<_which>& l)  const
+        {
+            return l->Which() == compare_to;
+        }
+    };
 }
 
 void CMultiReader::MergeDescriptors(CSeq_descr & dest, const CSeq_descr & source)
 {
-	ITERATE(CSeq_descr::Tdata, it, source.Get())
-	{
-		MergeDescriptors(dest, **it);
-	}
+    ITERATE(CSeq_descr::Tdata, it, source.Get())
+    {
+        MergeDescriptors(dest, **it);
+    }
 }
 
 void CMultiReader::MergeDescriptors(CSeq_descr & dest, const CSeqdesc & source)
 {
-	if (m_allowed_duplicates.find(source.Which()) == m_allowed_duplicates.end())
-	{
-		LocateWhich<CSeqdesc> pred; pred.compare_to = source.Which();
-		CSeq_descr::Tdata::iterator it = find_if(dest.Set().begin(), dest.Set().end(), pred);
-		if (it != dest.Set().end())
-			dest.Set().erase(it);
-	}
+    if (m_allowed_duplicates.find(source.Which()) == m_allowed_duplicates.end())
+    {
+        LocateWhich<CSeqdesc> pred; pred.compare_to = source.Which();
+        CSeq_descr::Tdata::iterator it = find_if(dest.Set().begin(), dest.Set().end(), pred);
+        if (it != dest.Set().end())
+            dest.Set().erase(it);
+    }
 
-	CRef<CSeqdesc> desc (new CSeqdesc);
-	desc->Assign(source);
-	dest.Set().push_back(desc);
-		
+    CRef<CSeqdesc> desc (new CSeqdesc);
+    desc->Assign(source);
+    dest.Set().push_back(desc);
+
 }
 
 void CMultiReader::ApplyDescriptors(CSerialObject & obj, const CSeq_descr & source)
 {
-	if (obj.GetThisTypeInfo() == CSeq_submit::GetTypeInfo())
-	{
-		CSeq_submit* submit = dynamic_cast<CSeq_submit*>(&obj);
-		if (submit)
-		{
-			NON_CONST_ITERATE(CSeq_submit_Base::C_Data::TEntrys, it, submit->SetData().SetEntrys())
-			{
-			  ApplyDescriptors(**it, source);
-			}
-		}
-	}
-	else
-	if (obj.GetThisTypeInfo() == CSeq_entry::GetTypeInfo())
-	{
-		CSeq_entry* entry = dynamic_cast<CSeq_entry*>(&obj);
-		if (entry)
-		{
-			MergeDescriptors(entry->SetDescr(), source);
-		}
-	}
+    if (obj.GetThisTypeInfo() == CSeq_submit::GetTypeInfo())
+    {
+        CSeq_submit* submit = dynamic_cast<CSeq_submit*>(&obj);
+        if (submit)
+        {
+            NON_CONST_ITERATE(CSeq_submit_Base::C_Data::TEntrys, it, submit->SetData().SetEntrys())
+            {
+                ApplyDescriptors(**it, source);
+            }
+        }
+    }
+    else
+        if (obj.GetThisTypeInfo() == CSeq_entry::GetTypeInfo())
+        {
+            CSeq_entry* entry = dynamic_cast<CSeq_entry*>(&obj);
+            if (entry)
+            {
+                MergeDescriptors(entry->SetDescr(), source);
+            }
+        }
 }
 
 CRef<CSerialObject> CMultiReader::LoadFile(const CTable2AsnContext& context, const string& ifname)
 {
-	CRef<CSerialObject> result;
+    CRef<CSerialObject> result;
 
-	CRef<CSerialObject> obj = ReadFile(context, ifname);  
-	CSeq_entry* read_entry = dynamic_cast<CSeq_entry*>(obj.GetPointerOrNull());
-	if (read_entry)
-	{
-		switch (read_entry->Which())
-		{
-		case CSeq_entry_Base::e_Seq:
-			{
-				CBioseq* bioseq = context.GetNextBioSeqFromTemplate(result, context.m_HandleAsSet);
-				bioseq->Assign(read_entry->SetSeq());
-			}
-			break;
-		case CSeq_entry_Base::e_Set:
-			{
-				const CSeq_entry_Base::TSet::TSeq_set& data = read_entry->GetSet().GetSeq_set();
-				ITERATE(CSeq_entry_Base::TSet::TSeq_set, it, data)
-				{
-					CBioseq* bioseq = context.GetNextBioSeqFromTemplate(result, true);
-					bioseq->Assign((**it).GetSeq());
-				}
-			}
-			break;
-		default:
-			break;
-		}
-	}
-	else
-	{
-		result = obj;
-	}
-	return result;
+    CRef<CSerialObject> obj = ReadFile(context, ifname);
+    CSeq_entry* read_entry = dynamic_cast<CSeq_entry*>(obj.GetPointerOrNull());
+    if (read_entry)
+    {
+        switch (read_entry->Which())
+        {
+        case CSeq_entry_Base::e_Seq:
+            {
+                CBioseq* bioseq = context.GetNextBioSeqFromTemplate(result, context.m_HandleAsSet);
+                bioseq->Assign(read_entry->SetSeq());
+            }
+            break;
+        case CSeq_entry_Base::e_Set:
+            {
+                const CSeq_entry_Base::TSet::TSeq_set& data = read_entry->GetSet().GetSeq_set();
+                ITERATE(CSeq_entry_Base::TSet::TSeq_set, it, data)
+                {
+                    CBioseq* bioseq = context.GetNextBioSeqFromTemplate(result, true);
+                    bioseq->Assign((**it).GetSeq());
+                }
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    else
+    {
+        result = obj;
+    }
+    return result;
 }
 
 void CMultiReader::Cleanup(const CTable2AsnContext& context, CRef<CSerialObject> obj)
 {
-	/*
-		if (result->GetThisTypeInfo() == CSeq_entry::GetTypeInfo())
-		{
-			CSeq_entry* entry = dynamic_cast<CSeq_entry*>(result.GetPointerOrNull());
-			if (entry) 
-			{
-				CCleanup cleanup;
-				CConstRef<CCleanupChange> changes;
-				changes = cleanup.ExtendedCleanup(*entry);
-			}
-		}
-	*/
+    /*
+    if (result->GetThisTypeInfo() == CSeq_entry::GetTypeInfo())
+    {
+    CSeq_entry* entry = dynamic_cast<CSeq_entry*>(result.GetPointerOrNull());
+    if (entry)
+    {
+    CCleanup cleanup;
+    CConstRef<CCleanupChange> changes;
+    changes = cleanup.ExtendedCleanup(*entry);
+    }
+    }
+    */
 }
 
 
 #if 0
 //  ----------------------------------------------------------------------------
 int CMultiReader::RunOld(const CTable2AsnContext& args, const string& ifname, CNcbiOstream& ostr)
-//  ----------------------------------------------------------------------------
-{   
-//	const CArgs& args = GetArgs();
+    //  ----------------------------------------------------------------------------
+{
+    //	const CArgs& args = GetArgs();
     //CNcbiIstream& istr = args["input"].AsInputFile();
     //CNcbiOstream& ostr = args["output"].AsOutputFile();
-	//CNcbiIstream& istr = *args.m_input;
-	//CNcbiOstream& ostr = *args.m_output;
-	CNcbiIfstream istr(ifname.c_str());
-	//CNcbiOfstream ostr(ofname);
+    //CNcbiIstream& istr = *args.m_input;
+    //CNcbiOstream& ostr = *args.m_output;
+    CNcbiIfstream istr(ifname.c_str());
+    //CNcbiOfstream ostr(ofname);
 
 
-	xSetFormat(args, istr);
-	xSetFlags(args, istr);
+    xSetFormat(args, istr);
+    xSetFlags(args, istr);
     xSetMapper(args);
     xSetErrorContainer(args);
 
     //CRef< CSerialObject> object;
     //vector< CRef< CSeq_annot > > annots;
     switch( m_uFormat ) {
-        default: 
-            xProcessDefault(args, istr);   
-			//ApplyAdditionalProperties(args);
-			WriteObject(*m_pObject, ostr);
-            break;
-        case CFormatGuess::eWiggle:
-            if (m_iFlags & CReaderBase::fAsRaw) {
-                xProcessWiggleRaw(args, istr, ostr);
-            }
-            else {
-                xProcessWiggle(args, istr, ostr);
-            }
-            break;
-        case CFormatGuess::eBed:
-            if (m_iFlags & CReaderBase::fAsRaw) {
-                xProcessBedRaw(args, istr, ostr);
-            }
-            else {
-                xProcessBed(args, istr, ostr);
-            }
-            break;
-        case CFormatGuess::eGtf:
-        case CFormatGuess::eGtf_POISENED:
-            xProcessGtf(args, istr, ostr);
-            break;
-        case CFormatGuess::eVcf:
-            xProcessVcf(args, istr, ostr);
-            break;
-        case CFormatGuess::eNewick:
-            xProcessNewick(args, istr, ostr);
-            break;
-        case CFormatGuess::eGff3:
-            xProcessGff3(args, istr, ostr);
-            break;
-        case CFormatGuess::eGff2:
-            xProcessGff2(args, istr, ostr);
-            break;
-        case CFormatGuess::eGvf:
-            xProcessGvf(args, istr, ostr);
-            break;
-        case CFormatGuess::eAgp:
-            xProcessAgp(args, istr, ostr);
-            break;
-        case CFormatGuess::eAlignment:
-            xProcessAlignment(args, istr, ostr);
-            break;
+    default:
+        xProcessDefault(args, istr);
+        //ApplyAdditionalProperties(args);
+        WriteObject(*m_pObject, ostr);
+        break;
+    case CFormatGuess::eWiggle:
+        if (m_iFlags & CReaderBase::fAsRaw) {
+            xProcessWiggleRaw(args, istr, ostr);
+        }
+        else {
+            xProcessWiggle(args, istr, ostr);
+        }
+        break;
+    case CFormatGuess::eBed:
+        if (m_iFlags & CReaderBase::fAsRaw) {
+            xProcessBedRaw(args, istr, ostr);
+        }
+        else {
+            xProcessBed(args, istr, ostr);
+        }
+        break;
+    case CFormatGuess::eGtf:
+    case CFormatGuess::eGtf_POISENED:
+        xProcessGtf(args, istr, ostr);
+        break;
+    case CFormatGuess::eVcf:
+        xProcessVcf(args, istr, ostr);
+        break;
+    case CFormatGuess::eNewick:
+        xProcessNewick(args, istr, ostr);
+        break;
+    case CFormatGuess::eGff3:
+        xProcessGff3(args, istr, ostr);
+        break;
+    case CFormatGuess::eGff2:
+        xProcessGff2(args, istr, ostr);
+        break;
+    case CFormatGuess::eGvf:
+        xProcessGvf(args, istr, ostr);
+        break;
+    case CFormatGuess::eAgp:
+        xProcessAgp(args, istr, ostr);
+        break;
+    case CFormatGuess::eAlignment:
+        xProcessAlignment(args, istr, ostr);
+        break;
     }
 
-	xDumpErrors( cerr );
+    xDumpErrors( cerr );
     return 0;
 }
 
@@ -1207,11 +1207,11 @@ void CMultiReader::xProcessWiggle(
     const CTable2AsnContext& args,
     CNcbiIstream& istr,
     CNcbiOstream& ostr)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     typedef vector<CRef<CSeq_annot> > ANNOTS;
     ANNOTS annots;
-    
+
     CWiggleReader reader(m_iFlags);
     CStreamLineReader lr(istr);
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
@@ -1226,7 +1226,7 @@ void CMultiReader::xProcessWiggleRaw(
     const CTable2AsnContext& args,
     CNcbiIstream& istr,
     CNcbiOstream& ostr)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     CWiggleReader reader(m_iFlags);
     CStreamLineReader lr(istr);
@@ -1241,7 +1241,7 @@ void CMultiReader::xProcessBed(
     const CTable2AsnContext& args,
     CNcbiIstream& istr,
     CNcbiOstream& ostr)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     //  Use ReadSeqAnnot() over ReadSeqAnnots() to keep memory footprint down.
     CBedReader reader(m_iFlags);
@@ -1259,7 +1259,7 @@ void CMultiReader::xProcessBedRaw(
     const CTable2AsnContext& args,
     CNcbiIstream& istr,
     CNcbiOstream& ostr)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     CBedReader reader(m_iFlags);
     CStreamLineReader lr(istr);
@@ -1274,11 +1274,11 @@ void CMultiReader::xProcessGtf(
     const CTable2AsnContext& args,
     CNcbiIstream& istr,
     CNcbiOstream& ostr)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     typedef vector<CRef<CSeq_annot> > ANNOTS;
     ANNOTS annots;
-    
+
     if (args.m_format == "gff2") { // process as plain GFF2
         return xProcessGff2(args, istr, ostr);
     }
@@ -1294,11 +1294,11 @@ void CMultiReader::xProcessGff3(
     const CTable2AsnContext& args,
     CNcbiIstream& istr,
     CNcbiOstream& ostr)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     typedef vector<CRef<CSeq_annot> > ANNOTS;
     ANNOTS annots;
-    
+
     if (args.m_format == "gff2") { // process as plain GFF2
         return xProcessGff2(args, istr, ostr);
     }
@@ -1314,11 +1314,11 @@ void CMultiReader::xProcessGff2(
     const CTable2AsnContext& args,
     CNcbiIstream& istr,
     CNcbiOstream& ostr)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     typedef vector<CRef<CSeq_annot> > ANNOTS;
     ANNOTS annots;
-    
+
     CGff2Reader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
@@ -1331,11 +1331,11 @@ void CMultiReader::xProcessGvf(
     const CTable2AsnContext& args,
     CNcbiIstream& istr,
     CNcbiOstream& ostr)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     typedef vector<CRef<CSeq_annot> > ANNOTS;
     ANNOTS annots;
-    
+
     if (args.m_format == "gff2") { // process as plain GFF2
         return xProcessGff2(args, istr, ostr);
     }
@@ -1354,7 +1354,7 @@ void CMultiReader::xProcessVcf(
     const CTable2AsnContext& args,
     CNcbiIstream& istr,
     CNcbiOstream& ostr)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     typedef vector<CRef<CSeq_annot> > ANNOTS;
     ANNOTS annots;
@@ -1371,7 +1371,7 @@ void CMultiReader::xProcessNewick(
     const CTable2AsnContext& args,
     CNcbiIstream& istr,
     CNcbiOstream& ostr)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     string strTree;
     char c = istr.get();
@@ -1394,7 +1394,7 @@ void CMultiReader::xProcessAgp(
     const CTable2AsnContext& args,
     CNcbiIstream& istr,
     CNcbiOstream& ostr)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     typedef vector<CRef<CSeq_entry> > TEntries;
     TEntries entries;
@@ -1410,7 +1410,7 @@ void CMultiReader::xProcessAlignment(
     const CTable2AsnContext& args,
     CNcbiIstream& istr,
     CNcbiOstream& ostr)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     CAlnReader reader(istr);
     reader.SetAllGap(args["aln-gapchar"].AsString());
@@ -1424,7 +1424,7 @@ void CMultiReader::xProcessAlignment(
 }
 
 void CMultiReader::xDumpErrors(CNcbiOstream& ostr)
-//  ----------------------------------------------------------------------------
+    //  ----------------------------------------------------------------------------
 {
     if (m_pErrors) {
         m_pErrors->Dump(ostr);

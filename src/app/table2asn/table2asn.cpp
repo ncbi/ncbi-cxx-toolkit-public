@@ -85,22 +85,22 @@ public:
 
 private:
 
-	CMultiReader m_reader;
+    CMultiReader m_reader;
 
     void Setup(const CArgs& args);
 
     void ProcessOneFile(const CTable2AsnContext& context);
-	void ProcessOneFile(const CTable2AsnContext& context, CRef<CSerialObject>& result);
-	bool ProcessOneDirectory(CTable2AsnContext& context, const CDir& directory, const CMask& mask, bool recurse);
-	void ProcessSecretFiles(const CTable2AsnContext& context, CRef<CSerialObject>& result);
-	void ProcessTBLFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
-	void ProcessSRCFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
-	void ProcessQVLFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
-	void ProcessDSCFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
-	void ProcessCMTFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result, bool byrows);
-	void ProcessPEPFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
-	void ProcessRNAFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
-	void ProcessPRTFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
+    void ProcessOneFile(const CTable2AsnContext& context, CRef<CSerialObject>& result);
+    bool ProcessOneDirectory(CTable2AsnContext& context, const CDir& directory, const CMask& mask, bool recurse);
+    void ProcessSecretFiles(const CTable2AsnContext& context, CRef<CSerialObject>& result);
+    void ProcessTBLFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
+    void ProcessSRCFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
+    void ProcessQVLFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
+    void ProcessDSCFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
+    void ProcessCMTFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result, bool byrows);
+    void ProcessPEPFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
+    void ProcessRNAFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
+    void ProcessPRTFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result);
 
 #if 0
     CRef<CSeq_feat> ReadSeqFeat(void);
@@ -132,7 +132,7 @@ private:
 
 
 CTbl2AsnApp::CTbl2AsnApp(void) :
-    m_ObjMgr(0)
+m_ObjMgr(0)
     //, m_In(0), m_Options(0), m_Continue(false), m_OnlyAnnots(false)
     //m_Level(0), m_Reported(0), m_OutputStream(0), m_LogStream(0)
 {
@@ -141,7 +141,7 @@ CTbl2AsnApp::CTbl2AsnApp(void) :
 
 void CTbl2AsnApp::Init(void)
 {
-	
+
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
 
     // Prepare command line descriptions, inherit them from tbl2asn legacy application
@@ -150,7 +150,7 @@ void CTbl2AsnApp::Init(void)
         ("p", "Directory", "Path to ASN.1 Files",
         CArgDescriptions::eInputFile);
 
-	arg_desc->AddOptionalKey
+    arg_desc->AddOptionalKey
         ("r", "Directory", "Path to results",
         CArgDescriptions::eOutputFile);
 
@@ -158,39 +158,39 @@ void CTbl2AsnApp::Init(void)
         ("i", "InFile", "Single Input File",
         CArgDescriptions::eInputFile);
 
-	arg_desc->AddOptionalKey(
+    arg_desc->AddOptionalKey(
         "o", "OutFile", "Single Output File",
         CArgDescriptions::eOutputFile);
 
     arg_desc->AddDefaultKey
         ("x", "String", "Suffix", CArgDescriptions::eString, ".fsa");
 
-    arg_desc->AddFlag("E", "Recurse");  
-    arg_desc->AddOptionalKey         
+    arg_desc->AddFlag("E", "Recurse");
+    arg_desc->AddOptionalKey
         ("t", "InFile", "Template File",
         CArgDescriptions::eInputFile);
 
     arg_desc->AddDefaultKey
         ("a", "String", "File Type\n\
-  a Any\n\
-  r20u Runs of 20+ Ns are gaps, 100 Ns are unknown length\n\
-  r20k Runs of 20+ Ns are gaps, 100 Ns are known length\n\
-  r10u Runs of 10+ Ns are gaps, 100 Ns are unknown length\n\
-  r10k Runs of 10+ Ns are gaps, 100 Ns are known length\n\
-  s FASTA Set (s Batch, s1 Pop, s2 Phy, s3 Mut, s4 Eco, s9 Small-genome)\n\
-  d FASTA Delta, di FASTA Delta with Implicit Gaps\n\
-  l FASTA+Gap Alignment (l Batch, l1 Pop, l2 Phy, l3 Mut, l4 Eco, l9 Small-genome)\n\
-  z FASTA with Gap Lines\n\
-  e PHRAP/ACE\n\
-  b ASN.1 for -M flag", CArgDescriptions::eString, "a");
+                        a Any\n\
+                        r20u Runs of 20+ Ns are gaps, 100 Ns are unknown length\n\
+                        r20k Runs of 20+ Ns are gaps, 100 Ns are known length\n\
+                        r10u Runs of 10+ Ns are gaps, 100 Ns are unknown length\n\
+                        r10k Runs of 10+ Ns are gaps, 100 Ns are known length\n\
+                        s FASTA Set (s Batch, s1 Pop, s2 Phy, s3 Mut, s4 Eco, s9 Small-genome)\n\
+                        d FASTA Delta, di FASTA Delta with Implicit Gaps\n\
+                        l FASTA+Gap Alignment (l Batch, l1 Pop, l2 Phy, l3 Mut, l4 Eco, l9 Small-genome)\n\
+                        z FASTA with Gap Lines\n\
+                        e PHRAP/ACE\n\
+                        b ASN.1 for -M flag", CArgDescriptions::eString, "a");
 
     arg_desc->AddFlag("s", "Read FASTAs as Set");
     arg_desc->AddFlag("g", "Genomic Product Set");              // done
     arg_desc->AddFlag("J", "Delayed Genomic Product Set	");
     arg_desc->AddDefaultKey
         ("F", "String", "Feature ID Links\n\
-  o By Overlap\n\
-  p By Product", CArgDescriptions::eString, "o");
+                        o By Overlap\n\
+                        p By Product", CArgDescriptions::eString, "o");
 
     arg_desc->AddOptionalKey
         ("A", "String", "Accession", CArgDescriptions::eString);
@@ -211,35 +211,35 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddOptionalKey
         ("k", "String", "CDS Flags (combine any of the following letters)\n\
-  c Annotate Longest ORF\n\
-  r Allow Runon ORFs\n\
-  m Allow Alternative Starts\n\
-  k Set Conflict on Mismatch", CArgDescriptions::eString);
+                        c Annotate Longest ORF\n\
+                        r Allow Runon ORFs\n\
+                        m Allow Alternative Starts\n\
+                        k Set Conflict on Mismatch", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey
         ("V", "String", "Verification (combine any of the following letters)\n\
-  v Validate with Normal Stringency\n\
-  r Validate without Country Check\n\
-  c BarCode Validation\n\
-  b Generate GenBank Flatfile\n\
-  g Generate Gene Report\n\
-  t Validate with TSA Check", CArgDescriptions::eString);
+                        v Validate with Normal Stringency\n\
+                        r Validate without Country Check\n\
+                        c BarCode Validation\n\
+                        b Generate GenBank Flatfile\n\
+                        g Generate Gene Report\n\
+                        t Validate with TSA Check", CArgDescriptions::eString);
 
     arg_desc->AddFlag("q", "Seq ID from File Name"); // almost done
     arg_desc->AddFlag("u", "GenProdSet to NucProtSet");   // done
     arg_desc->AddFlag("I", "General ID to Note");
 
     arg_desc->AddOptionalKey("G", "String", "Alignment Gap Flags (comma separated fields, e.g., p,-,-,-,?,. )\n\
-  n Nucleotide or p Protein,\n\
-  Begin, Middle, End Gap Characters,\n\
-  Missing Characters, Match Characters", CArgDescriptions::eString);
+                                            n Nucleotide or p Protein,\n\
+                                            Begin, Middle, End Gap Characters,\n\
+                                            Missing Characters, Match Characters", CArgDescriptions::eString);
 
     arg_desc->AddFlag("R", "Remote Sequence Record Fetching from ID");
     arg_desc->AddFlag("S", "Smart Feature Annotation");
 
-	arg_desc->AddOptionalKey("Q", "String", "mRNA Title Policy\n\
-  s Special mRNA Titles\n\
-  r RefSeq mRNA Titles", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("Q", "String", "mRNA Title Policy\n\
+                                            s Special mRNA Titles\n\
+                                            r RefSeq mRNA Titles", CArgDescriptions::eString);
 
     arg_desc->AddFlag("U", "Remove Unnecessary Gene Xref");
     arg_desc->AddFlag("L", "Force Local protein_id/transcript_id");
@@ -248,47 +248,47 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddFlag("W", "Log Progress");
     arg_desc->AddFlag("K", "Save Bioseq-set");
 
-	arg_desc->AddOptionalKey("H", "String", "Hold Until Publish\n\
-  y Hold for One Year\n\
-  mm/dd/yyyy", CArgDescriptions::eString); // done
+    arg_desc->AddOptionalKey("H", "String", "Hold Until Publish\n\
+                                            y Hold for One Year\n\
+                                            mm/dd/yyyy", CArgDescriptions::eString); // done
 
-	arg_desc->AddOptionalKey(
+    arg_desc->AddOptionalKey(
         "Z", "OutFile", "Discrepancy Report Output File", CArgDescriptions::eOutputFile);
 
-	arg_desc->AddOptionalKey("c", "String", "Cleanup (combine any of the following letters)\n\
-  d Correct Collection Dates (assume month first)\n\
-  D Correct Collection Dates (assume day first)\n\
-  b Append note to coding regions that overlap other coding regions with similar product names and do not contain 'ABC'\n\
-  x Extend partial ends of features by one or two nucleotides to abut gaps or sequence ends\n\
-  p Add exception to non-extendable partials\n\
-  s Add exception to short introns\n\
-  f Fix product names", CArgDescriptions::eString);
+    arg_desc->AddOptionalKey("c", "String", "Cleanup (combine any of the following letters)\n\
+                                            d Correct Collection Dates (assume month first)\n\
+                                            D Correct Collection Dates (assume day first)\n\
+                                            b Append note to coding regions that overlap other coding regions with similar product names and do not contain 'ABC'\n\
+                                            x Extend partial ends of features by one or two nucleotides to abut gaps or sequence ends\n\
+                                            p Add exception to non-extendable partials\n\
+                                            s Add exception to short introns\n\
+                                            f Fix product names", CArgDescriptions::eString);
 
-	arg_desc->AddOptionalKey("z", "OutFile", "Cleanup Log File", CArgDescriptions::eOutputFile);
+    arg_desc->AddOptionalKey("z", "OutFile", "Cleanup Log File", CArgDescriptions::eOutputFile);
 
     arg_desc->AddOptionalKey("X",  "String", "Extra Flags (combine any of the following letters)\n\
-  A Automatic definition line generator\n\
-  C Apply comments in .cmt files to all sequences\n\
-  E Treat like eukaryota in the Discrepancy Report", CArgDescriptions::eString);
+                                             A Automatic definition line generator\n\
+                                             C Apply comments in .cmt files to all sequences\n\
+                                             E Treat like eukaryota in the Discrepancy Report", CArgDescriptions::eString);
 
-	arg_desc->AddOptionalKey("N", "Integer", "Project Version Number", CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("N", "Integer", "Project Version Number", CArgDescriptions::eInteger);
 
-	arg_desc->AddOptionalKey("w", "InFile", "Single Structured Comment File (overrides the use of -X C)", CArgDescriptions::eInputFile); //almost done
+    arg_desc->AddOptionalKey("w", "InFile", "Single Structured Comment File (overrides the use of -X C)", CArgDescriptions::eInputFile); //almost done
     arg_desc->AddOptionalKey("M", "String", "Master Genome Flags\n\
-  n Normal\n\
-  b Big Sequence\n\
-  p Power Option\n\
-  t TSA", CArgDescriptions::eString);
+                                            n Normal\n\
+                                            b Big Sequence\n\
+                                            p Power Option\n\
+                                            t TSA", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("l", "String", "Add type of evidence used to assert linkage across assembly gaps (only for TSA records). Must be one of the following:\n\
-  paired-ends\n\
-  align-genus\n\
-  align-xgenus\n\
-  align-trnscpt\n\
-  within-clone\n\
-  clone-contig\n\
-  map\n\
-  strobe", CArgDescriptions::eString);
+                                            paired-ends\n\
+                                            align-genus\n\
+                                            align-xgenus\n\
+                                            align-trnscpt\n\
+                                            within-clone\n\
+                                            clone-contig\n\
+                                            map\n\
+                                            strobe", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("m", "String", "Lineage to use for Discrepancy Report tests", CArgDescriptions::eString);
 
@@ -310,14 +310,14 @@ void CTbl2AsnApp::Init(void)
 
 int CTbl2AsnApp::Run(void)
 {
-	CTable2AsnContext context;
+    CTable2AsnContext context;
     const CArgs& args = GetArgs();
 
     Setup(args);
 
     //m_LogStream = args["L"] ? &(args["L"].AsOutputFile()) : &NcbiCout;
 
-	/*
+    /*
 
     // note - the C Toolkit uses 0 for SEV_NONE, but the C++ Toolkit uses 0 for SEV_INFO
     // adjust here to make the inputs to table2asn match tbl2asn expectations
@@ -333,133 +333,133 @@ int CTbl2AsnApp::Run(void)
     // Release file (batch processing) where we process each Seq-entry
     // at a time.
     m_Reported = 0;
-	*/
+    */
 
-	if (args["n"])
-		context.m_OrganismName = args["n"].AsString();
+    if (args["n"])
+        context.m_OrganismName = args["n"].AsString();
 
-	if (args["y"])
-		context.m_Comment = args["y"].AsString();
-	else
-	if (args["Y"])
-	{
-		CNcbiIfstream comments(args["Y"].AsString().c_str());
-		comments >> context.m_Comment;
-	}
-
-	context.m_GenomicProductSet = args["g"].AsBoolean();
-	context.m_HandleAsSet = args["s"].AsBoolean();
-	context.m_NucProtSet = args["u"].AsBoolean();
-
-	if (context.m_NucProtSet || context.m_GenomicProductSet)
-	{
-		context.m_HandleAsSet = true;
-	}
-
-	if (args["B"])
-		context.m_taxname = args["B"].AsString();
-	if (args["b"])
-		context.m_taxid   = args["b"].AsInteger();
-	if (args["d"])
-		context.m_strain  = args["d"].AsString();
-	if (args["e"])
-		context.m_url     = args["e"].AsString();
-	if (args["A"])
-		context.m_accession = args["A"].AsString();
-	if (args["j"])
-	    context.m_source_qualifiers = args["j"].AsString();
-
-	if (args["w"])
-		context.m_single_structure_cmt = args["w"].AsString();
-
-	context.m_RemoteTaxonomyLookup = args["T"].AsBoolean();
-	if (context.m_RemoteTaxonomyLookup)
-	{
-		context.RemoteRequestTaxid();
-	}
-
-	if (args["t"])
-	{
-		m_reader.LoadTemplate(context, args["t"].AsString());
-	}
-	if (args["D"])
-	{
-		m_reader.LoadDescriptors(context, args["D"].AsString(), context.m_descriptors);
-	}
-
-	if (args["H"])
-	{
-        try 
-		{	   
-		   CTime time(args["H"].AsString(), "M/D/Y" );
-		   context.HoldUntilPublish.SetToTime(time, CDate::ePrecision_day);
-        } 
-		catch( const CException & ) 
-		{
-			int years = NStr::StringToInt(args["H"].AsString());
-			CTime time; 
-			time.SetCurrent();
-			time.SetYear(time.Year()+years);
-			context.HoldUntilPublish.SetToTime(time, CDate::ePrecision_day);
-//                    // couldn't parse date
-//                    x_HandleBadModValue(*mod);
+    if (args["y"])
+        context.m_Comment = args["y"].AsString();
+    else
+        if (args["Y"])
+        {
+            CNcbiIfstream comments(args["Y"].AsString().c_str());
+            comments >> context.m_Comment;
         }
-	}
 
-	if (args["N"])
-		context.m_ProjectVersionNumber = args["N"].AsInteger();
+        context.m_GenomicProductSet = args["g"].AsBoolean();
+        context.m_HandleAsSet = args["s"].AsBoolean();
+        context.m_NucProtSet = args["u"].AsBoolean();
 
-	// Designate where do we output files: local folder, specified folder or a specific single output file
-	if (args["o"])
-	{
-		context.m_output = &args["o"].AsOutputFile();
-	}
-	else
-	{
-		if (args["r"])
-		{
-			context.m_ResultsDirectory = args["r"].AsString();
-		}
-		else
-		{
-			context.m_ResultsDirectory = ".";
-		}
-		context.m_ResultsDirectory = CDir::AddTrailingPathSeparator(context.m_ResultsDirectory);
-
-		CDir outputdir(context.m_ResultsDirectory);
-		if (!outputdir.Exists())
-			outputdir.Create();
-	}
-
-	// Designate where do we get input: single file or a folder or folder structure
-    if ( args["p"] ) 
-	{
-
-		CDir directory(args["p"].AsString());
-		if (directory.Exists())
-		{
-			CMaskFileName masks;
-			masks.Add("*" +args["x"].AsString());
-
-			ProcessOneDirectory (context, directory, masks, args["E"].AsBoolean());
-		}
-    } else {
-        if (args["i"]) 
-		{
-			context.m_current_file = args["i"].AsString();
-			ProcessOneFile (context);
+        if (context.m_NucProtSet || context.m_GenomicProductSet)
+        {
+            context.m_HandleAsSet = true;
         }
-    }
 
-	/*
-    if (m_Reported > 0) {
+        if (args["B"])
+            context.m_taxname = args["B"].AsString();
+        if (args["b"])
+            context.m_taxid   = args["b"].AsInteger();
+        if (args["d"])
+            context.m_strain  = args["d"].AsString();
+        if (args["e"])
+            context.m_url     = args["e"].AsString();
+        if (args["A"])
+            context.m_accession = args["A"].AsString();
+        if (args["j"])
+            context.m_source_qualifiers = args["j"].AsString();
+
+        if (args["w"])
+            context.m_single_structure_cmt = args["w"].AsString();
+
+        context.m_RemoteTaxonomyLookup = args["T"].AsBoolean();
+        if (context.m_RemoteTaxonomyLookup)
+        {
+            context.RemoteRequestTaxid();
+        }
+
+        if (args["t"])
+        {
+            m_reader.LoadTemplate(context, args["t"].AsString());
+        }
+        if (args["D"])
+        {
+            m_reader.LoadDescriptors(context, args["D"].AsString(), context.m_descriptors);
+        }
+
+        if (args["H"])
+        {
+            try
+            {	
+                CTime time(args["H"].AsString(), "M/D/Y" );
+                context.HoldUntilPublish.SetToTime(time, CDate::ePrecision_day);
+            }
+            catch( const CException & )
+            {
+                int years = NStr::StringToInt(args["H"].AsString());
+                CTime time;
+                time.SetCurrent();
+                time.SetYear(time.Year()+years);
+                context.HoldUntilPublish.SetToTime(time, CDate::ePrecision_day);
+                //                    // couldn't parse date
+                //                    x_HandleBadModValue(*mod);
+            }
+        }
+
+        if (args["N"])
+            context.m_ProjectVersionNumber = args["N"].AsInteger();
+
+        // Designate where do we output files: local folder, specified folder or a specific single output file
+        if (args["o"])
+        {
+            context.m_output = &args["o"].AsOutputFile();
+        }
+        else
+        {
+            if (args["r"])
+            {
+                context.m_ResultsDirectory = args["r"].AsString();
+            }
+            else
+            {
+                context.m_ResultsDirectory = ".";
+            }
+            context.m_ResultsDirectory = CDir::AddTrailingPathSeparator(context.m_ResultsDirectory);
+
+            CDir outputdir(context.m_ResultsDirectory);
+            if (!outputdir.Exists())
+                outputdir.Create();
+        }
+
+        // Designate where do we get input: single file or a folder or folder structure
+        if ( args["p"] )
+        {
+
+            CDir directory(args["p"].AsString());
+            if (directory.Exists())
+            {
+                CMaskFileName masks;
+                masks.Add("*" +args["x"].AsString());
+
+                ProcessOneDirectory (context, directory, masks, args["E"].AsBoolean());
+            }
+        } else {
+            if (args["i"])
+            {
+                context.m_current_file = args["i"].AsString();
+                ProcessOneFile (context);
+            }
+        }
+
+        /*
+        if (m_Reported > 0) {
         return 1;
-    } else {
+        } else {
         return 0;
-    }
-	*/
+        }
+        */
 
-	return 0;
+        return 0;
 }
 
 
@@ -473,102 +473,102 @@ CRef<CScope> CTbl2AsnApp::BuildScope (void)
 
 void CTbl2AsnApp::ProcessOneFile(const CTable2AsnContext& context, CRef<CSerialObject>& result)
 {
-	m_reader.Process(context, *this);
+    m_reader.Process(context, *this);
 
-	if (context.m_current_file.substr(context.m_current_file.length()-4).compare(".xml") == 0)
-	{
-		COpticalxml2asnOperator op;
-		result = op.LoadXML(context.m_current_file, context);
-	}
-	else
-	{
-		result = m_reader.LoadFile(context, context.m_current_file);
-	}
+    if (context.m_current_file.substr(context.m_current_file.length()-4).compare(".xml") == 0)
+    {
+        COpticalxml2asnOperator op;
+        result = op.LoadXML(context.m_current_file, context);
+    }
+    else
+    {
+        result = m_reader.LoadFile(context, context.m_current_file);
+    }
 
-	if (context.m_descriptors.NotNull())
-		m_reader.ApplyDescriptors(*result, *context.m_descriptors);
+    if (context.m_descriptors.NotNull())
+        m_reader.ApplyDescriptors(*result, *context.m_descriptors);
 
-	ProcessSecretFiles(context, result);
+    ProcessSecretFiles(context, result);
 
-	m_reader.ApplyAdditionalProperties(context, result);
+    m_reader.ApplyAdditionalProperties(context, result);
 
-	// this may convert seq into seq-set
-	CFeatureTableReader fr;
-    fr.MergeFeatures(result);
+    // this may convert seq into seq-set
+    CFeatureTableReader fr;
+    fr.MergeCDSFeatures(*result);
 }
 
 string GenerateOutputStream(const CTable2AsnContext& context, const string& pathname)
 {
-	string dir;
-	string outputfile;
-	string base;
-	CDirEntry::SplitPath(pathname, &dir, &base, 0);
+    string dir;
+    string outputfile;
+    string base;
+    CDirEntry::SplitPath(pathname, &dir, &base, 0);
 
-	outputfile = context.m_ResultsDirectory.empty() ? dir : context.m_ResultsDirectory;
-	outputfile += base;
-	outputfile += ".asn";
+    outputfile = context.m_ResultsDirectory.empty() ? dir : context.m_ResultsDirectory;
+    outputfile += base;
+    outputfile += ".asn";
 
-	return outputfile.c_str();
+    return outputfile.c_str();
 }
 
 void CTbl2AsnApp::ProcessOneFile(const CTable2AsnContext& context)
 {
-	CNcbiOstream* output = 0;
-	auto_ptr<CNcbiOfstream> local_output(0);
-	CFile local_file;
-	try
-	{
-		if (context.m_output == 0)
-		{
-			local_file = GenerateOutputStream(context, context.m_current_file);
-			local_output.reset(new CNcbiOfstream(local_file.GetPath().c_str()));
-			output = local_output.get();
-		}
-		else
-		{
-			output = context.m_output;
-		}
+    CNcbiOstream* output = 0;
+    auto_ptr<CNcbiOfstream> local_output(0);
+    CFile local_file;
+    try
+    {
+        if (context.m_output == 0)
+        {
+            local_file = GenerateOutputStream(context, context.m_current_file);
+            local_output.reset(new CNcbiOfstream(local_file.GetPath().c_str()));
+            output = local_output.get();
+        }
+        else
+        {
+            output = context.m_output;
+        }
 
-		CRef<CSerialObject> obj;
-		ProcessOneFile(context, obj);
-		m_reader.WriteObject(*obj, *output);
-	}
-	catch(...)
-	{
-		// if something goes wrong - remove the partial output to avoid confuse
-		if (local_output.get())
-		{
-			local_file.Remove();
-		}
-		throw;
-	}
+        CRef<CSerialObject> obj;
+        ProcessOneFile(context, obj);
+        m_reader.WriteObject(*obj, *output);
+    }
+    catch(...)
+    {
+        // if something goes wrong - remove the partial output to avoid confuse
+        if (local_output.get())
+        {
+            local_file.Remove();
+        }
+        throw;
+    }
 }
 
 bool CTbl2AsnApp::ProcessOneDirectory(CTable2AsnContext& context, const CDir& directory, const CMask& mask, bool recurse)
 {
-	//cout << "Entering directory " << path << endl;
-	CDir::TEntries* e = directory.GetEntriesPtr("*", CDir::fCreateObjects | CDir::fIgnoreRecursive);
-	auto_ptr<CDir::TEntries> entries(e);
+    //cout << "Entering directory " << path << endl;
+    CDir::TEntries* e = directory.GetEntriesPtr("*", CDir::fCreateObjects | CDir::fIgnoreRecursive);
+    auto_ptr<CDir::TEntries> entries(e);
 
-	for (CDir::TEntries::const_iterator it = e->begin(); it != e->end(); it++)
-	{
-		// first process files and then recursivelly access other folders
-		if (!(*it)->IsDir())
-		{
-		   if (mask.Match((*it)->GetPath()))
-		   {
-			  context.m_current_file = (*it)->GetPath();
-		      ProcessOneFile(context);
-		   }
-		}
-		else
-		if (recurse)
-		{
-			ProcessOneDirectory(context, **it, mask, recurse);
-		}
-	}
+    for (CDir::TEntries::const_iterator it = e->begin(); it != e->end(); it++)
+    {
+        // first process files and then recursivelly access other folders
+        if (!(*it)->IsDir())
+        {
+            if (mask.Match((*it)->GetPath()))
+            {
+                context.m_current_file = (*it)->GetPath();
+                ProcessOneFile(context);
+            }
+        }
+        else
+            if (recurse)
+            {
+                ProcessOneDirectory(context, **it, mask, recurse);
+            }
+    }
 
-	return true;
+    return true;
 }
 
 void CTbl2AsnApp::Setup(const CArgs& args)
@@ -581,7 +581,7 @@ void CTbl2AsnApp::Setup(const CArgs& args)
 
     // Create object manager
     m_ObjMgr = CObjectManager::GetInstance();
-	if ( args["r"] ) {
+    if ( args["r"] ) {
         // Create GenBank data loader and register it with the OM.
         // The last argument "eDefault" informs the OM that the loader must
         // be included in scopes during the CScope::AddDefaults() call.
@@ -590,7 +590,7 @@ void CTbl2AsnApp::Setup(const CArgs& args)
 }
 
 /*
-tbl    5-column Feature Table 
+tbl    5-column Feature Table
 .src   tab-delimited table with source qualifiers
 .qvl   PHRAP/PHRED/consed quality scores
 .dsc  One or more descriptors in ASN.1 format
@@ -601,95 +601,95 @@ tbl    5-column Feature Table
 */
 void CTbl2AsnApp::ProcessSecretFiles(const CTable2AsnContext& context, CRef<CSerialObject>& result)
 {
-	string dir;
-	string base;
-	string ext;
-	CDirEntry::SplitPath(context.m_current_file, &dir, &base, &ext);
+    string dir;
+    string base;
+    string ext;
+    CDirEntry::SplitPath(context.m_current_file, &dir, &base, &ext);
 
-	string name = dir + base;
+    string name = dir + base;
 
-	ProcessTBLFile(context, name + ".tbl", result);
-	ProcessSRCFile(context, name + ".src", result);
-	ProcessQVLFile(context, name + ".qvl", result);
-	ProcessDSCFile(context, name + ".dsc", result);
-	ProcessCMTFile(context, name + ".cmt", result, context.m_flipped_struc_cmt);
-	ProcessCMTFile(context, context.m_single_structure_cmt, result, context.m_flipped_struc_cmt);
-	ProcessPEPFile(context, name + ".pep", result);
-	ProcessRNAFile(context, name + ".rna", result);
-	ProcessPRTFile(context, name + ".prt", result);
+    ProcessTBLFile(context, name + ".tbl", result);
+    ProcessSRCFile(context, name + ".src", result);
+    ProcessQVLFile(context, name + ".qvl", result);
+    ProcessDSCFile(context, name + ".dsc", result);
+    ProcessCMTFile(context, name + ".cmt", result, context.m_flipped_struc_cmt);
+    ProcessCMTFile(context, context.m_single_structure_cmt, result, context.m_flipped_struc_cmt);
+    ProcessPEPFile(context, name + ".pep", result);
+    ProcessRNAFile(context, name + ".rna", result);
+    ProcessPRTFile(context, name + ".prt", result);
 }
 
 void CTbl2AsnApp::ProcessTBLFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
 {
-	CFile file(pathname);
-	if (!file.Exists()) return;
+    CFile file(pathname);
+    if (!file.Exists()) return;
 
-	CRef<ILineReader> reader(ILineReader::New(pathname));
+    CRef<ILineReader> reader(ILineReader::New(pathname));
 
-	CFeatureTableReader feature_reader;
-	feature_reader.ReadFeatureTable(result, *reader);
+    CFeatureTableReader feature_reader;
+    feature_reader.ReadFeatureTable(*result, *reader);
 }
 
 void CTbl2AsnApp::ProcessSRCFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
 {
-	CFile file(pathname);
-	if (!file.Exists()) return;
+    CFile file(pathname);
+    if (!file.Exists()) return;
 
-	CRef<ILineReader> reader(ILineReader::New(pathname));
+    CRef<ILineReader> reader(ILineReader::New(pathname));
 
-	CStructuredCommentsReader cmt_reader;
-	cmt_reader.ProcessSourceQualifiers(*reader, *result);
+    CStructuredCommentsReader cmt_reader;
+    cmt_reader.ProcessSourceQualifiers(*reader, *result);
 }
 
 void CTbl2AsnApp::ProcessQVLFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
 {
-	CFile file(pathname);
-	if (!file.Exists()) return;
+    CFile file(pathname);
+    if (!file.Exists()) return;
 }
 
 void CTbl2AsnApp::ProcessDSCFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
 {
-	CFile file(pathname);
-	if (!file.Exists()) return;
+    CFile file(pathname);
+    if (!file.Exists()) return;
 
-	CRef<CSeq_descr> descr;
-	m_reader.LoadDescriptors(context, pathname, descr);
-	CMultiReader::ApplyDescriptors(*result, *descr);
+    CRef<CSeq_descr> descr;
+    m_reader.LoadDescriptors(context, pathname, descr);
+    CMultiReader::ApplyDescriptors(*result, *descr);
 }
 
 void CTbl2AsnApp::ProcessCMTFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result, bool byrows)
 {
-	CFile file(pathname);
-	if (!file.Exists()) return;
+    CFile file(pathname);
+    if (!file.Exists()) return;
 
-	CRef<ILineReader> reader(ILineReader::New(pathname));
+    CRef<ILineReader> reader(ILineReader::New(pathname));
 
-	CStructuredCommentsReader cmt_reader;
+    CStructuredCommentsReader cmt_reader;
 
-	if (byrows)
-	   cmt_reader.ProcessCommentsFileByRows(*reader, *result);
-	else
-	   cmt_reader.ProcessCommentsFileByCols(*reader, *result);
+    if (byrows)
+        cmt_reader.ProcessCommentsFileByRows(*reader, *result);
+    else
+        cmt_reader.ProcessCommentsFileByCols(*reader, *result);
 }
 
 void CTbl2AsnApp::ProcessPEPFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
 {
-	CFile file(pathname);
-	if (!file.Exists()) return;
+    CFile file(pathname);
+    if (!file.Exists()) return;
 
-	// CPropsLine
+    // CPropsLine
 }
 
 void CTbl2AsnApp::ProcessRNAFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
 {
-	CFile file(pathname);
-	if (!file.Exists()) return;
+    CFile file(pathname);
+    if (!file.Exists()) return;
 }
 
 void CTbl2AsnApp::ProcessPRTFile(const CTable2AsnContext& context, const string& pathname, CRef<CSerialObject>& result)
 {
-	CFile file(pathname);
-	if (!file.Exists()) return;
+    CFile file(pathname);
+    if (!file.Exists()) return;
 }
 
 /////////////////////////////////////////////////////////////////////////////

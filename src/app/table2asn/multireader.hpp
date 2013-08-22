@@ -35,7 +35,7 @@ public:
    void LoadDescriptors(const CTable2AsnContext& args, const string& ifname, CRef<objects::CSeq_descr> & out_desc);
    static
    CRef<objects::CSeq_descr> GetSeqDescr(CSerialObject* obj);
-   
+
    static
    void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeq_descr & source);
    static
@@ -44,8 +44,8 @@ public:
    void ApplyDescriptors(CSerialObject & obj, const objects::CSeq_descr & source);
 
 protected:
-       
-private:  
+
+private:
     CRef<CSerialObject> xProcessDefault(const CTable2AsnContext&, CNcbiIstream&);
 #if 0
     void xProcessWiggle(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
@@ -66,7 +66,7 @@ private:
     void xSetFlags(const CTable2AsnContext&, CNcbiIstream&);
     void xSetMapper(const CTable2AsnContext&);
     void xSetErrorContainer(const CTable2AsnContext&);
-            
+
 //    void xWriteObject(CSerialObject&, CNcbiOstream& );
 //    void xDumpErrors(CNcbiOstream& );
 

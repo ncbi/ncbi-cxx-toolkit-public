@@ -14,7 +14,7 @@ class CBioseq;
 class CSeq_descr;
 };
 
-// command line parameters are mapped into the context 
+// command line parameters are mapped into the context
 // those with only only symbol still needs to be implemented
 struct CTable2AsnContext
 {
@@ -63,7 +63,7 @@ struct CTable2AsnContext
 	string m_strain;
 	string m_url;
 
-	// 
+	//
 	//bool   m_make_submit;
 	CRef<objects::CSeq_descr>  m_descriptors;
 
@@ -77,7 +77,7 @@ struct CTable2AsnContext
 	CTable2AsnContext();
 	~CTable2AsnContext();
 
-	objects::CBioseq* GetNextBioSeqFromTemplate(CRef<CSerialObject>& container, bool make_set) const;
+	CRef<objects::CBioseq> GetNextBioSeqFromTemplate(CRef<CSerialObject>& container, bool make_set) const;
 
     void AddUserTrack(objects::CSeq_descr& SD, const string& type, const string& label, const string& data) const;
 	void SetOrganismData(objects::CSeq_descr& SD, objects::CBioSource::EGenome m_genome, const string& m_taxname, int m_taxid, const string& m_strain) const;
@@ -85,7 +85,7 @@ struct CTable2AsnContext
 	CRef<objects::CSeq_submit> m_submit_template;
 	CRef<objects::CSeq_entry>  m_entry_template;
 private:
-	objects::CBioseq* CreateNextBioSeqFromTemplate(objects::CSeq_entry& container, bool make_set) const;
+	CRef<objects::CBioseq> CreateNextBioSeqFromTemplate(objects::CSeq_entry& container, bool make_set) const;
 };
 
 

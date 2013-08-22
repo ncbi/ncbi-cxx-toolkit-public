@@ -17,11 +17,11 @@ namespace objects
 class CSerialObject;
 class ILineReader;
 
-/* 
+/*
   Usage examples
   ProcessCommentsFileByRows tries to apply structure comments to all sequences
   in the container.
-  ProcessCommentsFileByCols tries to apply structure comments to those 
+  ProcessCommentsFileByCols tries to apply structure comments to those
   sequences which id is found in first collumn of each row in the file.
 
   CRef<CSeq_entry> entry;
@@ -42,7 +42,7 @@ public:
    // First row of the file is a list of Field to apply
    // First collumn of the file is an ID of the object (sequence) to apply
    void ProcessCommentsFileByCols(ILineReader& reader, CSerialObject& container);
-   // Read input tab delimited file and apply Structured Comments to all objects 
+   // Read input tab delimited file and apply Structured Comments to all objects
    // (sequences) in the container
    // First collumn of the file is the name of the field
    // Second collumn of the file is the value of the field
@@ -50,21 +50,21 @@ public:
 
    void ProcessSourceQualifiers(ILineReader& reader, CSerialObject& container);
 
-   static void ApplySourceQualifiers(CSerialObject& container, 
+   static void ApplySourceQualifiers(CSerialObject& container,
 	   const string& src_qualifiers);
 private:
    // service functions
-   static objects::CBioseq* FindObjectById(CSerialObject& container, 
+   static objects::CBioseq* FindObjectById(CSerialObject& container,
 	   const objects::CSeq_id& id);
 
-   void AddStructuredCommentToAllObjects(CSerialObject& container, 
+   void AddStructuredCommentToAllObjects(CSerialObject& container,
 	   const string& name, const string& value);
 
    objects::CUser_object* AddStructuredComment(objects::CUser_object* obj,
-	   objects::CSeq_descr& container, 
+	   objects::CSeq_descr& container,
 	   const string& name, const string& value);
 
-   void AddSourceQualifier(objects::CBioseq& container, 
+   void AddSourceQualifier(objects::CBioseq& container,
 	   const string& name, const string& value);
 };
 

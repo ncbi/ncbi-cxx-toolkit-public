@@ -56,19 +56,9 @@
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/OrgName.hpp>
 
-//#include <objects/seq/Pubdesc.hpp>
-//#include <objects/pub/Pub.hpp>
-//#include <objects/pub/Pub_equiv.hpp>
-//#include <objects/submit/Submit_block.hpp>
-//#include <objects/submit/Seq_submit.hpp>
-//#include <objects/general/Object_id.hpp>
-//#include <objects/general/User_object.hpp>
-//#include <objects/general/User_field.hpp>
-//#include <objects/biblio/Cit_sub.hpp>
-//#include <objects/taxon1/taxon1.hpp>
-
 #include "OpticalXML2ASN.hpp"
 
+#include <common/test_assert.h>  /* This header must go last */
 
 using namespace xml;
 
@@ -82,7 +72,7 @@ struct lt_fragment
 {
     bool operator()(const TFragm& p1, const TFragm& p2) const
     {
-	return ( p1.first < p2.first );
+        return ( p1.first < p2.first );
     }
 };
 
@@ -90,34 +80,34 @@ class COpticalChrData
 {
 public:
     COpticalChrData(const string& nm, const char *enzyme, bool is_linear=true) :
-	m_name(nm), m_enzyme(enzyme), m_length(0), m_linear(is_linear) {};
+      m_name(nm), m_enzyme(enzyme), m_length(0), m_linear(is_linear) {};
 
-    void sortFragments(){ sort(m_fragments.begin(), m_fragments.end(), lt_fragment()); };
-    void SetLength(){
-	if (m_length == 0) {
-	    ITERATE (vector <TFragm>, it, m_fragments)
-		m_length += it->second;
-	}
-    };
-    string m_name;
-    string m_enzyme;
-    vector <TFragm> m_fragments;
-    int m_length;
-    bool m_linear;
+      void sortFragments(){ sort(m_fragments.begin(), m_fragments.end(), lt_fragment()); };
+      void SetLength(){
+          if (m_length == 0) {
+              ITERATE (vector <TFragm>, it, m_fragments)
+                  m_length += it->second;
+          }
+      };
+      string m_name;
+      string m_enzyme;
+      vector <TFragm> m_fragments;
+      int m_length;
+      bool m_linear;
 };
 
 class COpticalxml2asnOperatorImpl
 {
 public:
-	COpticalxml2asnOperatorImpl():
-		m_genome(CBioSource::eGenome_chromosome) // eGenome_plasmid ??
-	{
-	}
+    COpticalxml2asnOperatorImpl():
+      m_genome(CBioSource::eGenome_chromosome) // eGenome_plasmid ??
+      {
+      }
 
-    int GetOpticalXMLData(const string& FileIn);
-    CRef<CSerialObject> BuildOpticalASNData(const CTable2AsnContext& context);
+      int GetOpticalXMLData(const string& FileIn);
+      CRef<CSerialObject> BuildOpticalASNData(const CTable2AsnContext& context);
 private:
-	void BuildOpticalASNData(const CTable2AsnContext& context, const COpticalChrData& it, CBioseq* bioseq);
+    void BuildOpticalASNData(const CTable2AsnContext& context, const COpticalChrData& it, CBioseq* bioseq);
     void GetOpticalDescr(CSeq_descr& SD, const CTable2AsnContext& context);
     void SetOrganismData(CSeq_descr& SD, const string& enzyme, const CTable2AsnContext& context);
 
@@ -142,37 +132,37 @@ void COpticalxml2asnOperatorImpl::Init(void)
     // Describe the expected command-line arguments
     arg_desc->AddDefaultKey
         ("in", "InputFile",
-         "name of file to read from (standard input by default)",
-         CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
+        "name of file to read from (standard input by default)",
+        CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
 
     arg_desc->AddDefaultKey
         ("out", "OutputFile",
-         "name of file to write to (InputFile.asn by default)",
-         CArgDescriptions::eOutputFile, "-", CArgDescriptions::fPreOpen);
+        "name of file to write to (InputFile.asn by default)",
+        CArgDescriptions::eOutputFile, "-", CArgDescriptions::fPreOpen);
 
     arg_desc->AddDefaultKey
         ("taxid", "Taxonomy_ID",
-         "Organism taxonomy ID (optional)", CArgDescriptions::eInteger, "0");
+        "Organism taxonomy ID (optional)", CArgDescriptions::eInteger, "0");
 
     arg_desc->AddDefaultKey
         ("taxname", "Taxonomy_name",
-         "Taxonomy name (optional)", CArgDescriptions::eString, "");
+        "Taxonomy name (optional)", CArgDescriptions::eString, "");
 
     arg_desc->AddDefaultKey
         ("tmpl", "TemplateFile",
-         "Template file with common ASN.1 nodes to add to output (optional)", CArgDescriptions::eIOFile, "-");
+        "Template file with common ASN.1 nodes to add to output (optional)", CArgDescriptions::eIOFile, "-");
 
     arg_desc->AddDefaultKey
         ("ft_url", "FileTrack_URL",
-         "FileTrack URL for the XML file retrieval (optional)", CArgDescriptions::eString, "");
+        "FileTrack URL for the XML file retrieval (optional)", CArgDescriptions::eString, "");
 
     arg_desc->AddDefaultKey
         ("bpid", "BioProject_accession",
-         "BioProject accession (optional)", CArgDescriptions::eString, "");
+        "BioProject accession (optional)", CArgDescriptions::eString, "");
 
     arg_desc->AddDefaultKey
         ("strain", "Strain_name",
-         "Strain name (optional)", CArgDescriptions::eString, "");
+        "Strain name (optional)", CArgDescriptions::eString, "");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -182,19 +172,19 @@ int COpticalxml2asnOperatorImpl::Run(void)
     CArgs args = GetArgs();
     int nChr = GetOpticalXMLData(args["in"].AsString());
     if (nChr <= 0)
-	return -1;
+        return -1;
 
     string out(args["out"].AsString());
     if (out == "-")
-	out = args["in"].AsString() + ".asn";
+        out = args["in"].AsString() + ".asn";
     string tmpl(args["tmpl"].AsString());
 
     m_taxid = args["taxid"].AsInteger();
     m_taxname = args["taxname"].AsString();
 
     if (m_taxid == 0 && m_taxname.empty()) {
-	cerr << endl << "Error: No taxonomy information has been provided." << endl;
-	return 100;
+        cerr << endl << "Error: No taxonomy information has been provided." << endl;
+        return 100;
     }
     m_ft_url = args["ft_url"].AsString();
     m_bpid = args["bpid"].AsString();
@@ -212,70 +202,70 @@ int COpticalxml2asnOperatorImpl::GetOpticalXMLData(const string& FileIn)
     document *doc;
 
     try {
-	CNcbiIfstream in(FileIn.c_str());
-	doc = new document(in, &msg);
+        CNcbiIfstream in(FileIn.c_str());
+        doc = new document(in, &msg);
     }
     catch(...) {
-	cerr << endl << "Error: No data found in " << FileIn << ": " << msg.print() << endl;
-	return -1;
+        cerr << endl << "Error: No data found in " << FileIn << ": " << msg.print() << endl;
+        return -1;
     }
 
     node& root = doc->get_root_node();
     node::const_iterator child(root.begin()), child_end(root.end());
     for (; child != child_end; ++child) {
-	if (strcmp(child->get_name(), "RESTRICTION_MAP") == 0) {
-	    // Get chromosome name
-	    string name;
-	    const attributes& at = child->get_attributes();
-	    attributes::const_iterator ait = at.find("ID");
+        if (strcmp(child->get_name(), "RESTRICTION_MAP") == 0) {
+            // Get chromosome name
+            string name;
+            const attributes& at = child->get_attributes();
+            attributes::const_iterator ait = at.find("ID");
 
-	    string id = ait->get_value();
-	    SIZE_TYPE l = NStr::FindNoCase(id, "chromosome");
-	    if (l != NPOS) {
-		vector<string> tok;
-		NStr::TokenizePattern(id.substr(l), " ", tok, NStr::eMergeDelims);
-		if (tok.size() > 1) {
-		    name = tok[1];
-		    if ((l = NStr::Find(name, ",")) != NPOS)
-			name = name.substr(0,l);
-		}
-	    }
-	    if (name.empty()) {
-		cerr << endl << "Warning: No chromosome name found in RESTRICTION_MAP - ID '" << id << "' was used." << endl;
-		name = id;
-	    }
+            string id = ait->get_value();
+            SIZE_TYPE l = NStr::FindNoCase(id, "chromosome");
+            if (l != NPOS) {
+                vector<string> tok;
+                NStr::TokenizePattern(id.substr(l), " ", tok, NStr::eMergeDelims);
+                if (tok.size() > 1) {
+                    name = tok[1];
+                    if ((l = NStr::Find(name, ",")) != NPOS)
+                        name = name.substr(0,l);
+                }
+            }
+            if (name.empty()) {
+                cerr << endl << "Warning: No chromosome name found in RESTRICTION_MAP - ID '" << id << "' was used." << endl;
+                name = id;
+            }
 
-	    bool is_linear(true);
-	    node::const_iterator it = child->begin();
-	    for (; it != child->end() && NStr::Compare(it->get_name(),"MAP_DISPLAY"); ++it);
-	    if (it != child->end()) {
-		const attributes& at = it->get_attributes();
-		attributes::const_iterator ait = at.find("CIRCULAR");
-		if (strcmp(ait->get_value(), "true") == 0)
-		    is_linear = false;
-	    }
-	    COpticalChrData chr(name, at.find("ENZYME")->get_value(), is_linear);
+            bool is_linear(true);
+            node::const_iterator it = child->begin();
+            for (; it != child->end() && NStr::Compare(it->get_name(),"MAP_DISPLAY"); ++it);
+            if (it != child->end()) {
+                const attributes& at = it->get_attributes();
+                attributes::const_iterator ait = at.find("CIRCULAR");
+                if (strcmp(ait->get_value(), "true") == 0)
+                    is_linear = false;
+            }
+            COpticalChrData chr(name, at.find("ENZYME")->get_value(), is_linear);
 
-	    // Get fragments
-	    it = child->begin();
-	    while (it != child->end() && NStr::Compare(it->get_name(),"FRAGMENTS"))
-		++it;
-	    if (it != child->end()) {
-		for (node::const_iterator fit = it->begin(); fit != it->end(); ++fit) {
-		    if (NStr::Compare(fit->get_name(), "F") == 0) {
-			const attributes& at = fit->get_attributes();
-			attributes::const_iterator ait = at.find("I");
-			int n = atoi(ait->get_value());
-			ait = at.find("S");
-			int lng = atoi(ait->get_value());
-			chr.m_fragments.push_back(make_pair(n, lng));
-		    }
-		}
-	    }
-	    chr.sortFragments();
-	    chr.SetLength();
-	    m_vchr.push_back(chr);
-	}
+            // Get fragments
+            it = child->begin();
+            while (it != child->end() && NStr::Compare(it->get_name(),"FRAGMENTS"))
+                ++it;
+            if (it != child->end()) {
+                for (node::const_iterator fit = it->begin(); fit != it->end(); ++fit) {
+                    if (NStr::Compare(fit->get_name(), "F") == 0) {
+                        const attributes& at = fit->get_attributes();
+                        attributes::const_iterator ait = at.find("I");
+                        int n = atoi(ait->get_value());
+                        ait = at.find("S");
+                        int lng = atoi(ait->get_value());
+                        chr.m_fragments.push_back(make_pair(n, lng));
+                    }
+                }
+            }
+            chr.sortFragments();
+            chr.SetLength();
+            m_vchr.push_back(chr);
+        }
     }
     return m_vchr.size();
 }
@@ -299,113 +289,113 @@ void COpticalxml2asnOperatorImpl::GetOpticalDescr(CSeq_descr& SD, const CTable2A
 
 CRef<CSerialObject> COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2AsnContext& context)
 {
-	CRef<CSerialObject> container;
-    
-	for (vector<COpticalChrData>::iterator it = m_vchr.begin(); it != m_vchr.end(); ++it)
-	{
-		CBioseq* bioseq = context.GetNextBioSeqFromTemplate(container, m_vchr.size() > 1);
-		BuildOpticalASNData(context, *it, bioseq);
-	}
+    CRef<CSerialObject> container;
 
-	return container;
+    for (vector<COpticalChrData>::iterator it = m_vchr.begin(); it != m_vchr.end(); ++it)
+    {
+        CBioseq* bioseq = context.GetNextBioSeqFromTemplate(container, m_vchr.size() > 1);
+        BuildOpticalASNData(context, *it, bioseq);
+    }
+
+    return container;
 }
 
 void COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2AsnContext& context, const COpticalChrData& it, CBioseq* bioseq)
 {
-	string lclid;
-	if (it.m_name.find("lcl|") != 0)
-		lclid = "lcl|optical_map_chr_"+ it.m_name;
-	else
-		lclid = it.m_name;
+    string lclid;
+    if (it.m_name.find("lcl|") != 0)
+        lclid = "lcl|optical_map_chr_"+ it.m_name;
+    else
+        lclid = it.m_name;
 
-	CRef<CSeq_id> id(new CSeq_id(lclid, CSeq_id::fParse_PartialOK));
-	bioseq->SetId().clear();
-	bioseq->SetId().push_back(id);
+    CRef<CSeq_id> id(new CSeq_id(lclid, CSeq_id::fParse_PartialOK));
+    bioseq->SetId().clear();
+    bioseq->SetId().push_back(id);
 
-	CSeq_descr& SD = bioseq->SetDescr();
-	SetOrganismData(SD, it.m_enzyme, context);
+    CSeq_descr& SD = bioseq->SetDescr();
+    SetOrganismData(SD, it.m_enzyme, context);
     GetOpticalDescr(SD, context);
-	context.AddUserTrack(SD, "DBLink", "BioProject", context.m_accession);
-	context.AddUserTrack(SD, "FileTrack", "FileTrackURL", context.m_url);
+    context.AddUserTrack(SD, "DBLink", "BioProject", context.m_accession);
+    context.AddUserTrack(SD, "FileTrack", "FileTrackURL", context.m_url);
 
-	CSeq_inst& inst(bioseq->SetInst());
-	inst.SetRepr(CSeq_inst::eRepr_map);
-	inst.SetMol(CSeq_inst::eMol_dna);
-	inst.SetLength(it.m_length);
-	inst.SetTopology(it.m_linear ? CSeq_inst::eTopology_linear : CSeq_inst::eTopology_circular);
-	inst.SetStrand(CSeq_inst::eStrand_ds);
+    CSeq_inst& inst(bioseq->SetInst());
+    inst.SetRepr(CSeq_inst::eRepr_map);
+    inst.SetMol(CSeq_inst::eMol_dna);
+    inst.SetLength(it.m_length);
+    inst.SetTopology(it.m_linear ? CSeq_inst::eTopology_linear : CSeq_inst::eTopology_circular);
+    inst.SetStrand(CSeq_inst::eStrand_ds);
 
-	CMap_ext& map = inst.SetExt().SetMap();
-	list< CRef< CSeq_feat > >& td = map.Set();
+    CMap_ext& map = inst.SetExt().SetMap();
+    list< CRef< CSeq_feat > >& td = map.Set();
 
-	CRef<CSeq_feat> f(new CSeq_feat());
+    CRef<CSeq_feat> f(new CSeq_feat());
 
-	CRef<CSeqFeatData> fd(new CSeqFeatData());
-	fd->Select(CSeqFeatData::e_Rsite);
+    CRef<CSeqFeatData> fd(new CSeqFeatData());
+    fd->Select(CSeqFeatData::e_Rsite);
 
-	CRef<CRsite_ref> rs(new CRsite_ref());
-	rs->Select(CRsite_ref::e_Str);
-	rs->SetStr(it.m_enzyme);
-	fd->SetRsite(*rs);
+    CRef<CRsite_ref> rs(new CRsite_ref());
+    rs->Select(CRsite_ref::e_Str);
+    rs->SetStr(it.m_enzyme);
+    fd->SetRsite(*rs);
 
-	f->SetData(*fd);
+    f->SetData(*fd);
 
-	CRef<CPacked_seqpnt> spnt(new CPacked_seqpnt());
-	int addr = -1;
-	ITERATE (vector <TFragm>, fit, it.m_fragments) {
-	    addr += fit->second;
-	    spnt->AddPoint(addr);
-	}
+    CRef<CPacked_seqpnt> spnt(new CPacked_seqpnt());
+    int addr = -1;
+    ITERATE (vector <TFragm>, fit, it.m_fragments) {
+        addr += fit->second;
+        spnt->AddPoint(addr);
+    }
 
-	CRef<CSeq_loc> l(new CSeq_loc(*id, spnt->GetPoints()));
-	f->SetLocation(*l);
+    CRef<CSeq_loc> l(new CSeq_loc(*id, spnt->GetPoints()));
+    f->SetLocation(*l);
 
-	td.push_back(f);
+    td.push_back(f);
 }
 
 void COpticalxml2asnOperatorImpl::SetOrganismData(CSeq_descr& SD, const string& enzyme, const CTable2AsnContext& context)
 {
-	CSeq_descr::Tdata& TD = SD.Set();
+    CSeq_descr::Tdata& TD = SD.Set();
 
     CRef<CBioSource> bs(new CBioSource());
-	bs->SetGenome(m_genome);
-	bs->SetOrg().SetTaxname(context.m_taxname);
-	bs->SetOrg().SetTaxId(context.m_taxid);
+    bs->SetGenome(m_genome);
+    bs->SetOrg().SetTaxname(context.m_taxname);
+    bs->SetOrg().SetTaxId(context.m_taxid);
 
     // Get strain
-    if (!context.m_strain.empty()) 
-	{
-		CRef<COrgMod> strain(new COrgMod(COrgMod::eSubtype_strain, context.m_strain));
-		bs->SetOrg().SetOrgname().SetMod().push_back(strain);
+    if (!context.m_strain.empty())
+    {
+        CRef<COrgMod> strain(new COrgMod(COrgMod::eSubtype_strain, context.m_strain));
+        bs->SetOrg().SetOrgname().SetMod().push_back(strain);
     }
-    /* Alternative - no rule on selecting one that needed 
+    /* Alternative - no rule on selecting one that needed
     CTaxon1::TNameList sn;
     if (taxon.GetTypeMaterial(m_taxid, sn) && sn.size()) {
-	ITERATE (CTaxon1::TNameList, it, sn) {
-	    CRef<COrgMod> strain(new COrgMod(COrgMod::eSubtype_strain, *it));
-	    bs->SetOrg().SetOrgname().SetMod().push_back(strain);
-	}
+    ITERATE (CTaxon1::TNameList, it, sn) {
+    CRef<COrgMod> strain(new COrgMod(COrgMod::eSubtype_strain, *it));
+    bs->SetOrg().SetOrgname().SetMod().push_back(strain);
+    }
     }
     */
     //CRef<COrgMod> oldlin(new COrgMod(COrgMod::eSubtype_old_lineage, "old lineage"));
     //bs->SetOrg().SetOrgname().SetMod().push_back(oldlin);
 
-    if (bs->IsSetTaxname()) 
-	{
-		string title = bs->GetTaxname();
-		if (!context.m_strain.empty() && !NStr::EndsWith(title, context.m_strain))
-			title += " " + context.m_strain;
-		if (m_genome == CBioSource::eGenome_chromosome)
-			title += " chromosome";
-		else if (m_genome == CBioSource::eGenome_plasmid)
-			title += " plasmid";
-		if (!enzyme.empty())
-			title += " " + enzyme;
-		title += " whole genome map";
+    if (bs->IsSetTaxname())
+    {
+        string title = bs->GetTaxname();
+        if (!context.m_strain.empty() && !NStr::EndsWith(title, context.m_strain))
+            title += " " + context.m_strain;
+        if (m_genome == CBioSource::eGenome_chromosome)
+            title += " chromosome";
+        else if (m_genome == CBioSource::eGenome_plasmid)
+            title += " plasmid";
+        if (!enzyme.empty())
+            title += " " + enzyme;
+        title += " whole genome map";
 
-		CRef<CSeqdesc> sd(new CSeqdesc());
-		sd->SetTitle(title);
-		TD.push_back(sd);
+        CRef<CSeqdesc> sd(new CSeqdesc());
+        sd->SetTitle(title);
+        TD.push_back(sd);
     }
 
     CRef<CSeqdesc> sd(new CSeqdesc());
@@ -425,13 +415,13 @@ COpticalxml2asnOperator::~COpticalxml2asnOperator()
 
 CRef<CSerialObject> COpticalxml2asnOperator::LoadXML(const string& FileIn, const CTable2AsnContext& context)
 {
-	m_impl.reset(new COpticalxml2asnOperatorImpl());
+    m_impl.reset(new COpticalxml2asnOperatorImpl());
 
-	m_impl->GetOpticalXMLData(FileIn);
+    m_impl->GetOpticalXMLData(FileIn);
 
-	CRef<CSerialObject> result(m_impl->BuildOpticalASNData(context));
+    CRef<CSerialObject> result(m_impl->BuildOpticalASNData(context));
 
-	return result;
+    return result;
 };
 
 

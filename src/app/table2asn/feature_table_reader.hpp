@@ -3,20 +3,19 @@
 
 BEGIN_NCBI_SCOPE
 
-struct CTable2AsnContext;
-namespace objects
-{
-//class CSeq_entry;
-class CSeq_annot;
-class CBioseq;
-class CSeq_feat;
-};
+class CSerialObject;
+class ILineReader;
 
 class CFeatureTableReader
 {
 public:
-   void MergeFeatures(CRef<CSerialObject>& obj);
-   void ReadFeatureTable(CRef<CSerialObject>& obj, ILineReader& line_reader);
+// MergeCDSFeatures looks for cdregion features in the feature tables 
+//    in sequence annotations and creates protein sequences based on them 
+//    as well as converting the sequence or a seq-set into nuc-prot-set
+   void MergeCDSFeatures(CSerialObject& obj);
+// This method reads 5 column table and attaches these features to corresponding sequences
+// This method requires certain postprocessing of plain features added
+   void ReadFeatureTable(CSerialObject& obj, ILineReader& line_reader);
 private:
 };
 
