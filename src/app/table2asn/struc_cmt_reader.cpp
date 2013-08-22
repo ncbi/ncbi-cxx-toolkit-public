@@ -84,6 +84,8 @@ CBioseq* CStructuredCommentsReader::FindObjectById(CSerialObject& container, con
 				return FindObjectById(**it, id);
 			}
 			break;
+		default:
+			break;
 		}
 	}
 	else
@@ -190,7 +192,7 @@ void CStructuredCommentsReader::ProcessCommentsFileByRows(ILineReader& reader, C
 		string current = reader.GetCurrentLine();
 		if (!current.empty())
 		{
-			int index = current.find('\t');
+			size_t index = current.find('\t');
 			if (index != string::npos )
 			{
 				string commentname = current.substr(0, index);

@@ -489,7 +489,12 @@ void CTbl2AsnApp::ProcessOneFile(const CTable2AsnContext& context, CRef<CSerialO
 		m_reader.ApplyDescriptors(*result, *context.m_descriptors);
 
 	ProcessSecretFiles(context, result);
+
 	m_reader.ApplyAdditionalProperties(context, result);
+
+	// this may convert seq into seq-set
+	CFeatureTableReader fr;
+    fr.MergeFeatures(result);
 }
 
 string GenerateOutputStream(const CTable2AsnContext& context, const string& pathname)

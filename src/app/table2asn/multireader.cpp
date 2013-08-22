@@ -718,6 +718,8 @@ void CMultiReader::ApplyAdditionalProperties(const CTable2AsnContext& context, C
 			}
 		}
 		break;
+	default:
+		break;
 	}
 
 	if (!context.m_Comment.empty())
@@ -1097,6 +1099,8 @@ CRef<CSerialObject> CMultiReader::LoadFile(const CTable2AsnContext& context, con
 					bioseq->Assign((**it).GetSeq());
 				}
 			}
+			break;
+		default:
 			break;
 		}
 	}

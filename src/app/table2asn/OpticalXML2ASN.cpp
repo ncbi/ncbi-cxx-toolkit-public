@@ -427,7 +427,7 @@ CRef<CSerialObject> COpticalxml2asnOperator::LoadXML(const string& FileIn, const
 {
 	m_impl.reset(new COpticalxml2asnOperatorImpl());
 
-	int count = m_impl->GetOpticalXMLData(FileIn);
+	m_impl->GetOpticalXMLData(FileIn);
 
 	CRef<CSerialObject> result(m_impl->BuildOpticalASNData(context));
 
