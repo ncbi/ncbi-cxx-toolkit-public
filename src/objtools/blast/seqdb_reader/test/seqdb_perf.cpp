@@ -38,12 +38,41 @@ static char const rcsid[] =
 
 #include <ncbi_pch.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <corelib/ncbi_system.hpp>
+#include <corelib/ncbistr.hpp>
 #include <objtools/blast/seqdb_reader/seqdbexpert.hpp>
 #include <omp.h>
+#include <numeric>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 USING_NCBI_SCOPE;
 #endif
+
+/// Auxiliary structure to keep
+struct SMemUsage {
+    size_t total, resident, shared;
+    SMemUsage() : total(0), resident(0), shared(0) {}
+
+    SMemUsage& operator+=(const SMemUsage& other) {
+        this->total += other.total;
+        this->resident += other.resident;
+        this->shared += other.shared;
+        return *this;
+    }
+
+    SMemUsage operator+(const SMemUsage& other) {
+        SMemUsage retval(*this);
+        retval += other;
+        return retval;
+    }
+
+    friend ostream& operator<<(ostream& out, const SMemUsage& mu) {
+        out << "Total memory usage: " << NStr::UInt8ToString_DataSize(mu.total) << endl;
+        out << "Resident memory usage: " << NStr::UInt8ToString_DataSize(mu.resident) << endl;
+        out << "Shared memory usage: " << NStr::UInt8ToString_DataSize(mu.shared) << endl;
+        return out;
+    }
+};
 
 /// The application class
 class CSeqDBPerfApp : public CNcbiApplication
@@ -64,9 +93,13 @@ private:
     bool m_DbIsProtein;
     /// Vector of distinct CSeqDB objects accessing the same database
     TDbHandles m_DbHandles;
+    /// Container of memory usage objects
+    vector<SMemUsage> m_MemoryUsage;
 
     /// Initializes the application's data members
     void x_InitApplicationData();
+    void x_UpdateMemoryUsage(const int thread_id = 0);
+    void x_ReportMemUsage() const;
 
     /// Prints the BLAST database information (e.g.: handles -info command line
     /// option)
@@ -76,6 +109,23 @@ private:
     /// @return 0 on success; 1 if some sequences were not retrieved
     int x_ScanDatabase();
 };
+
+void 
+CSeqDBPerfApp::x_UpdateMemoryUsage(const int thread_id /* = 0 */)
+{
+    SMemUsage mu;
+    if (GetMemoryUsage(&mu.total, &mu.resident, &mu.shared)) {
+        m_MemoryUsage[thread_id] += mu;
+    }
+}
+
+void 
+CSeqDBPerfApp::x_ReportMemUsage() const
+{
+    SMemUsage total = std::accumulate(m_MemoryUsage.begin(),
+                                      m_MemoryUsage.end(), SMemUsage());
+    cout << total << endl;
+}
 
 int
 CSeqDBPerfApp::x_ScanDatabase()
@@ -99,6 +149,7 @@ CSeqDBPerfApp::x_ScanDatabase()
                 }
                 m_DbHandles[kTid]->RetAmbigSeq(&buffer);
             }
+            x_UpdateMemoryUsage(kTid);
         } // end of omp parallel
     } else {
         #pragma omp parallel num_threads(m_DbHandles.size())
@@ -114,11 +165,14 @@ CSeqDBPerfApp::x_ScanDatabase()
                 }
                 m_DbHandles[kTid]->RetSequence(&buffer);
             }
+            x_UpdateMemoryUsage(kTid);
         } // end of omp parallel
     }
     sw.Stop();
     uint64_t bases = static_cast<uint64_t>(num_letters / sw.Elapsed());
-    cout << NStr::NumericToString(bases, NStr::fWithCommas) << " bases/second" << endl;
+    cout << "Scanning rate: " 
+         << NStr::NumericToString(bases, NStr::fWithCommas) 
+         << " bases/second" << endl;
     return 0;
 }
 
@@ -142,9 +196,10 @@ CSeqDBPerfApp::x_InitApplicationData()
             m_DbHandles.push_back(m_BlastDb);
         }
     }
+    m_MemoryUsage.assign(kNumThreads, SMemUsage());
 
     sw.Stop();
-    cout << "Initialization: " << sw.AsSmartString() << endl;
+    cout << "Initialization time: " << sw.AsSmartString() << endl;
 }
 
 int
@@ -175,6 +230,7 @@ CSeqDBPerfApp::x_PrintBlastDatabaseInformation()
     // Print filtering algorithms supported
     out << m_BlastDb->GetAvailableMaskAlgorithmDescriptions();
 #endif
+    x_UpdateMemoryUsage();
 
     // Print volume names
     vector<string> volumes;
@@ -184,7 +240,7 @@ CSeqDBPerfApp::x_PrintBlastDatabaseInformation()
         out << "\t" << *file_name << endl;
     }
     sw.Stop();
-    cout << "Get BLASTDB metadata: " << sw.AsSmartString() << endl;
+    cout << "Time to get BLASTDB metadata: " << sw.AsSmartString() << endl;
     return 0;
 }
 
@@ -247,6 +303,7 @@ int CSeqDBPerfApp::Run(void)
         } else {
             status = x_ScanDatabase();
         }
+        x_ReportMemUsage();
     } catch (const CSeqDBException& e) {
         LOG_POST(Error << "BLAST Database error: " << e.GetMsg());
         status = 1;
