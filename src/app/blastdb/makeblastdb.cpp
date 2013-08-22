@@ -279,9 +279,6 @@ void CMakeBlastDBApp::Init()
     arg_desc->AddDefaultKey("max_file_sz", "number_of_bytes",
                             "Maximum file size for BLAST database files",
                             CArgDescriptions::eString, "1GB");
-#if _BLAST_DEBUG
-    arg_desc->AddFlag("verbose", "Produce verbose output", true);
-#endif /* _BLAST_DEBUG */
 
     arg_desc->SetCurrentGroup("Taxonomy options");
     arg_desc->AddOptionalKey("taxid", "TaxID", 
@@ -294,6 +291,23 @@ void CMakeBlastDBApp::Init()
              "Text file mapping sequence IDs to taxonomy IDs.\n"
              "Format:<SequenceId> <TaxonomyId><newline>",
              CArgDescriptions::eInputFile);
+    arg_desc->SetDependency("taxid_map", CArgDescriptions::eRequires,
+                            "parse_seqids");
+
+    arg_desc->SetCurrentGroup("Miscellaneous options");
+#ifdef NCBI_THREADS
+    const int kMinValue = static_cast<int>(CThreadable::kMinNumThreads);
+    arg_desc->AddDefaultKey(kArgNumThreads, "int_value",
+                           "Number of threads (CPUs) to use with FASTA input",
+                           CArgDescriptions::eInteger, 
+                           NStr::IntToString(kMinValue));
+    arg_desc->SetConstraint(kArgNumThreads, 
+                           new CArgAllowValuesGreaterThanOrEqual(kMinValue));
+#endif /* NCBI_THREADS */
+#if _BLAST_DEBUG
+    arg_desc->AddFlag("verbose", "Produce verbose output", true);
+#endif /* _BLAST_DEBUG */
+    arg_desc->SetCurrentGroup("");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -414,9 +428,9 @@ public:
        if (m_bio ) {
             if (s_GenerateTitle(*m_bio)) {
                  sequence::CDeflineGenerator gen;
-                 const string & title = gen.GenerateDefline(*m_bio , *m_scope);
+                 const string & kTitle = gen.GenerateDefline(*m_bio , *m_scope);
                  CRef<CSeqdesc> des(new CSeqdesc);
-                 des->SetTitle(title);
+                 des->SetTitle(kTitle);
                  CSeq_descr& desr(m_bio ->SetDescr());
                  desr.Set().push_back(des);
             }
@@ -866,12 +880,32 @@ bool CMakeBlastDBApp::x_ShouldParseSeqIds(void)
 	return false;
 }
 
+typedef CT_POS_TYPE file_offset_t;
+
+vector<file_offset_t> SearchForSeqs(istream& in)
+{
+    vector<file_offset_t> retval;
+    string line;
+    while (getline(in, line)) {
+        if (line.empty()) {
+            continue;
+        }
+        if (line[0] == '>') {
+            retval.push_back(in.tellg());
+        }
+    }
+    return retval;
+}
+
 void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
                                          bool           is_protein)
 {
     vector<CTempString> names;
     SeqDB_SplitQuoted(paths, names);
     vector<string> blastdb;
+    const CArgs& args = GetArgs();
+    const int kNumThreads = args.Exist(kArgNumThreads) 
+        ? args[kArgNumThreads].AsInteger() : 0;
 
     ESupportedInputFormats input_fmt = x_GetUserInputTypeHint();
 	CMakeBlastDBApp::TFormat build_fmt = x_ConvertToCFormatGuessType(input_fmt);
@@ -884,7 +918,22 @@ void CMakeBlastDBApp::x_ProcessInputData(const string & paths,
     		for (size_t i = 0; i < names.size(); i++) {
     			const string & seq_file = names[i];
     			CNcbiIfstream f(seq_file.c_str(), ios::binary);
+#ifdef NCBI_THREADS
+                if (kNumThreads && (input_fmt == eFasta)) {
+                    vector<file_offset_t> seq_starts = SearchForSeqs(f);
+                    _TRACE("File " << seq_file << " has " << seq_starts.size() 
+                           << " sequences");
+#pragma omp parallel for num_threads(kNumThreads)
+                    for (size_t i = 0; i < seq_starts.size(); i++) {
+                        const file_offset_t seq_offset = seq_starts[i];
+                        // FIXME: process sequence at offset
+                    }
+                } else {
+                    x_AddSequenceData(f, build_fmt);
+                }
+#else
     			x_AddSequenceData(f, build_fmt);
+#endif /* NCBI_THREADS */
     		}
     	}
     }
@@ -941,35 +990,35 @@ void CMakeBlastDBApp::x_BuildDatabase()
     
     // Get arguments to the CBuildDatabase constructor.
     
-    bool is_protein = (args[kArgDbType].AsString() == "prot");
+    const bool kIsProtein = (args[kArgDbType].AsString() == "prot");
     
     // 1. title option if present
     // 2. otherwise, kInput
-    string title = (args[kArgDbTitle].HasValue()
-                    ? args[kArgDbTitle]
-                    : args[kInput]).AsString();
+    const string kTitle = (args[kArgDbTitle].HasValue()
+                         ? args[kArgDbTitle]
+                         : args[kInput]).AsString();
     
     // 1. database name option if present
     // 2. else, kInput
-    string dbname = (args[kOutput].HasValue()
-                     ? args[kOutput]
-                     : args[kInput]).AsString();
+    const string kDbName = (args[kOutput].HasValue()
+                          ? args[kOutput]
+                          : args[kInput]).AsString();
     
     vector<string> input_files;
-    NStr::Tokenize(dbname, kInputSeparators, input_files);
-    if (dbname == "-" || input_files.size() > 1) {
+    NStr::Tokenize(kDbName, kInputSeparators, input_files);
+    if (kDbName == "-" || input_files.size() > 1) {
         NCBI_THROW(CInvalidDataException, eInvalidInput, 
             "Please provide a database name using -" + kOutput);
     }
 
-    if (args[kInput].AsString() == dbname) {
+    if (args[kInput].AsString() == kDbName) {
         m_IsModifyMode = true;
     }
 
     // N.B.: Source database(s) in the current working directory will
     // be overwritten (as in formatdb)
     
-    if (title == "-") {
+    if (kTitle == "-") {
         NCBI_THROW(CInvalidDataException, eInvalidInput, 
                          "Please provide a title using -title");
     }
@@ -978,19 +1027,19 @@ void CMakeBlastDBApp::x_BuildDatabase()
                    ? args["logfile"].AsOutputFile()
                    : cout);
     
-    bool parse_seqids = x_ShouldParseSeqIds();
-    bool hash_index = args["hash_index"];
-    bool use_gi_mask = args["gi_mask"];
+    const bool kParseSeqIds = x_ShouldParseSeqIds();
+    const bool kHashIndex = args["hash_index"];
+    const bool kUseGiMask = args["gi_mask"];
     
     CWriteDB::TIndexType indexing = CWriteDB::eNoIndex;
-    indexing |= (hash_index ? CWriteDB::eAddHash : 0);
-    indexing |= (parse_seqids ? CWriteDB::eFullIndex : 0);
+    indexing |= (kHashIndex ? CWriteDB::eAddHash : 0);
+    indexing |= (kParseSeqIds ? CWriteDB::eFullIndex : 0);
 
-    m_DB.Reset(new CBuildDatabase(dbname,
-                                  title,
-                                  is_protein,
+    m_DB.Reset(new CBuildDatabase(kDbName,
+                                  kTitle,
+                                  kIsProtein,
                                   indexing,
-                                  use_gi_mask,
+                                  kUseGiMask,
                                   m_LogFile));
 
 #if _BLAST_DEBUG
@@ -999,9 +1048,10 @@ void CMakeBlastDBApp::x_BuildDatabase()
     }
 #endif /* _BLAST_DEBUG */
     
-    // Should we keep the linkout and membership bits?  Sure.
+    // Should we keep the linkout and membership bits? Membership bits:yes,
+    // Linkout: no (they're deprecated)
     
-    // Create empty linkout bit table in order to call these methods;
+    // Create empty membership bit table in order to call these methods;
     // however, in the future it would probably be good to populate
     // this from a user provided option as multisource does.  Also, it
     // might be wasteful to copy membership bits, as the resulting
@@ -1011,7 +1061,6 @@ void CMakeBlastDBApp::x_BuildDatabase()
     
     TLinkoutMap no_bits;
     
-    m_DB->SetLinkouts(no_bits, true);
     m_DB->SetMembBits(no_bits, true);
     
     // Max file size
@@ -1038,7 +1087,7 @@ void CMakeBlastDBApp::x_BuildDatabase()
      (!defined(NCBI_COMPILER_MIPSPRO)) )
     x_ProcessMaskData();
 #endif
-    x_ProcessInputData(args[kInput].AsString(), is_protein);
+    x_ProcessInputData(args[kInput].AsString(), kIsProtein);
 }
 
 int CMakeBlastDBApp::Run(void)
