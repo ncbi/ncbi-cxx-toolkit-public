@@ -559,7 +559,7 @@ void CBedReader::xSetFeatureLocationThick(
         throw(err);
     }
     try {
-        to = NStr::StringToInt(fields[7]) - 1;
+        to = NStr::StringToInt(fields[7])-1;
     }
     catch (...) {
         CObjReaderLineException err( 
@@ -632,6 +632,9 @@ void CBedReader::xSetFeatureLocationBlock(
         blockSizes.reserve(blockCount);
         vector<string> vals; 
         NStr::Tokenize(fields[10], ",", vals);
+        if (vals.back() == "") {
+            vals.erase(vals.end()-1);
+        }
         if (vals.size() != blockCount) {
             CObjReaderLineException err( 
                 eDiag_Error,
@@ -657,6 +660,9 @@ void CBedReader::xSetFeatureLocationBlock(
         vector<string> vals; 
         int baseStart = NStr::StringToInt(fields[1]);
         NStr::Tokenize(fields[11], ",", vals);
+        if (vals.back() == "") {
+            vals.erase(vals.end()-1);
+        }
         if (vals.size() != blockCount) {
             CObjReaderLineException err( 
                 eDiag_Error,
