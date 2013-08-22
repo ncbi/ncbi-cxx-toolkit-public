@@ -787,17 +787,8 @@ void CBedReader::xSetFeatureBedData(
 {
     CSeqFeatData& data = feature->SetData();
     data.SetRegion() = fields[0];
-
-    vector<string> rgb;
-    NStr::Tokenize(fields[8], ",", rgb);
-    string rgbValue = NStr::Join(rgb, " ");
-
     CRef<CUser_object> pDisplayData(new CUser_object());
-    pDisplayData->SetType().SetStr("DisplaySettings");
-    pDisplayData->AddField("color", rgbValue);
-    CSeq_feat::TExts& exts = feature->SetExts();
-    exts.push_front(pDisplayData);
-
+    
     if (fields.size() < 5  ||  fields[4] == ".") {
         return;
     }
@@ -811,6 +802,16 @@ void CBedReader::xSetFeatureBedData(
             0,
             "Invalid data line: Bad \"strand\" value.");
         throw(err);
+    }
+    if (fields.size() >= 9) {
+        vector<string> rgb;
+        NStr::Tokenize(fields[8], ",", rgb);
+        string rgbValue = NStr::Join(rgb, " ");
+
+        pDisplayData->SetType().SetStr("DisplaySettings");
+        pDisplayData->AddField("color", rgbValue);
+        CSeq_feat::TExts& exts = feature->SetExts();
+        exts.push_front(pDisplayData);
     }
 }
 
