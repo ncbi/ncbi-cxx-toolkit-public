@@ -69,35 +69,6 @@ public:
     ///   Current user name, or empty string if there was an error.
     static string GetUserName(void);
 
-
-    /// Get user SID by name.
-    ///
-    /// We get user SID on local machine only. We don't use domain controller
-    /// server because it require to use NetAPI and link Netapi32.lib to each
-    /// application uses the C++ Toolkit, that is undesirable.
-    /// NOTE: Do not forget to deallocated memory for returned
-    ///       user security identifier.
-    /// @param username
-    ///   User account name. If empty - the owner of the current thread.
-    /// @return 
-    ///   Pointer to security identifier for specified account name,
-    ///   or NULL if the function fails.
-    ///   When you have finished using the user SID, free the returned buffer
-    ///   by calling FreeUserSID() method.
-    /// @sa
-    ///   FreeUserSID, GetUserName
-    static PSID GetUserSID(const string& username = kEmptyStr);
-
-
-    /// Deallocate memory used for user SID.
-    ///
-    /// @param sid
-    ///   Pointer to allocated buffer with user SID.
-    /// @sa
-    ///   GetUserSID
-    static void FreeUserSID(PSID sid);
-
-
     /// Get owner name of specified system object.
     ///
     /// Retrieve the name of the named object owner and the name of the first
@@ -118,14 +89,14 @@ public:
     ///   Pointer to an int to receive a (fake) group id.
     /// @return
     ///   TRUE if successful, FALSE otherwise.
-    static bool GetObjectOwner(const string& objname, SE_OBJECT_TYPE objtype,
-                               string* owner, string* group = 0,
+    static bool GetObjectOwner(const string& obj_name, SE_OBJECT_TYPE obj_type,
+                               string* owner, string* group,
                                unsigned int* uid = 0, unsigned int* gid = 0);
 
     /// Same as GetObjectOwner(objname) but gets the owner/group information
     /// by an arbitrary handle rather than by name.
-    static bool GetObjectOwner(HANDLE        objhndl, SE_OBJECT_TYPE objtype,
-                               string* owner, string* group = 0,
+    static bool GetObjectOwner(HANDLE        obj_handle, SE_OBJECT_TYPE obj_type,
+                               string* owner, string* group,
                                unsigned int* uid = 0, unsigned int* gid = 0);
 
 
@@ -134,91 +105,78 @@ public:
     /// @sa 
     ///   GetObjectOwner, SetFileOwner
     static bool GetFileOwner(const string& filename,
-                             string* owner, string* group = 0,
+                             string* owner, string* group,
                              unsigned int* uid = 0, unsigned int* gid = 0)
     {
-        return GetObjectOwner(filename, SE_FILE_OBJECT, owner, group, uid,gid);
+        return GetObjectOwner(filename, SE_FILE_OBJECT, owner, group, uid, gid);
     }
 
 
     /// Set file object owner.
     ///
     /// You should have administrative rights to change an owner.
-    /// Only administrative privileges (Backup, Restore and Take Ownership)
-    /// grant rights to change ownership.  Without one of the privileges,
+    /// Only administrative privileges (Restore and Take Ownership)
+    /// grant rights to change ownership. Without one of the privileges,
     /// an administrator cannot take ownership of any file or give ownership
     /// back to the original owner.
     /// @param filename
     ///   Filename to change the owner of.
     /// @param owner
-    ///   New owner name to set (must not be empty).
+    ///   New owner name to set. If specified as empty, then is not changed.
+    /// @param group
+    ///   New group name to set. If specified as empty, then is not changed.
     /// @param uid
     ///   To receive (fake) numeric user id of the prospective owner
+    ///   (even if the ownership change was unsuccessful), or 0 if unknown.
+    /// @param gid
+    ///   To receive (fake) numeric user id of the prospective group
     ///   (even if the ownership change was unsuccessful), or 0 if unknown.
     /// @return
     ///   TRUE if successful, FALSE otherwise.
     /// @sa
-    ///   GetFileOwner
-    static bool SetFileOwner(const string& filename, const string& owner,
-                             unsigned int* uid = 0);
+    ///   GetFileOwner, SetThreadPrivilege, SetTokenPrivilege
+    static bool SetFileOwner(/* in  */ const string& filename, 
+                             /* in  */ const string& owner, const string& group = kEmptyStr,
+                             /* out */ unsigned int* uid = 0 , unsigned int* gid = 0);
 
 
-    /// Get the file security descriptor.
+    /// Enables or disables privileges in the specified access token.
     ///
-    /// Retrieves a copy of the security descriptor for a file object
-    /// specified by name.
-    /// NOTE: Do not forget to deallocated memory for returned
-    ///       file security descriptor.
-    /// @param path
-    ///   Path to the file object.
+    /// In most case you should have administrative rights to change
+    /// some privilegies.
+    /// @param token
+    ///   A handle to the access token that contains the privileges
+    ///   to be modified. The handle must have TOKEN_ADJUST_PRIVILEGES
+    ///   and TOKEN_QUERY access to the token.
+    /// @param privilege
+    ///   Name of privilege to enable/disable.
+    /// @param enable
+    ///   TRUE/FALSE, to enable or disable privilege.
+    /// @param prev
+    ///   To receive previous state of chnaged privilege (if specified).
     /// @return
-    ///   Pointer to the security descriptor of the file object,
-    ///   or NULL if the function fails.
-    ///   When you have finished using security descriptor, free 
-    ///   the returned pointer to allocated memory calling 
-    ///   FreeFileSD() method.
+    ///   TRUE if successful, FALSE otherwise.
     /// @sa
-    ///   FreeFileSD
-    static PSECURITY_DESCRIPTOR GetFileSD(const string& path);
+    ///   SetFileOwner, SetThreadPrivilege
+    static bool SetTokenPrivilege(HANDLE token, LPCTSTR privilege,
+                                  bool enable, bool* prev = 0);
 
-
-    /// Get the file object security descriptor and DACL.
+    /// Enables or disables privileges for the current thread.
     ///
-    /// Retrieves a copy of the security descriptor and DACL (discretionary
-    /// access control list) for an object specified by name.
-    /// NOTE: Do not forget to deallocated memory for returned
-    ///       file security descriptor.
-    /// @param strPath
-    ///   Path to the file object.
-    /// @param pFileSD
-    ///   Pointer to a variable that receives a pointer to the security descriptor
-    ///   of the object. When you have finished using the DACL, free 
-    ///   the returned buffer by calling the FreeFileSD() method.
-    /// @param pDACL
-    ///   Pointer to a variable that receives a pointer to the DACL inside
-    ///   the security descriptor pFileSD. The file object can contains NULL DACL,
-    ///   that means that means that all access is present for this file.
-    ///   Therefore user has all the permissions.
+    /// In most case you should have administrative rights to change
+    /// some privilegies.
+    /// @param privilege
+    ///   Name of privilege to enable/disable.
+    /// @param enable
+    ///   TRUE/FALSE, to enable or disable privilege.
+    /// @param prev
+    ///   To receive previous state of chnaged privilege (if specified).
     /// @return
-    ///   TRUE if the operation was completed successfully, pFileSD and pDACL
-    ///   contains pointers to the file security descriptor and DACL;
-    ///   FALSE, otherwise.
+    ///   TRUE if successful, FALSE otherwise.
     /// @sa
-    ///   GetFileSD, FreeFileSD
-    static bool GetFileDACL(const string& path,
-                            /*out*/ PSECURITY_DESCRIPTOR* file_sd,
-                            /*out*/ PACL* dacl);
-
-
-    /// Deallocate memory used for file security descriptor.
-    ///
-    /// @param pFileSD
-    ///   Pointer to buffer with file security descriptor, allocated
-    ///   by GetFileDACL() method.
-    /// @sa
-    ///   GetFileDACL
-    static void FreeFileSD(PSECURITY_DESCRIPTOR file_sd);
-
+    ///   SetFileOwner, SetTokenPrivilege
+    static bool SetThreadPrivilege(LPCTSTR privilege,
+                                   bool enable, bool* prev = 0);
 
     /// Get file access permissions.
     ///
@@ -230,8 +188,7 @@ public:
     ///   See MSDN or WinNT.h for all access rights constants.
     /// @return
     ///   TRUE if the operation was completed successfully; FALSE, otherwise.
-    static bool GetFilePermissions(const string& path,
-                                   ACCESS_MASK*  permissions);
+    static bool GetFilePermissions(const string& path, ACCESS_MASK*  permissions);
 };
 
 

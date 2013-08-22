@@ -39,10 +39,16 @@
 // According to MSDN max account name size is 20, domain name size is 256
 #define MAX_ACCOUNT_LEN  256
 
-
 // Hopefully this makes UID/GID compatible with what CYGWIN reports
 #define CYGWIN_MAGIC_ID_OFFSET  10000
 
+// Security acess info
+#define ACCOUNT_SECURITY_INFO  (OWNER_SECURITY_INFORMATION | \
+                                GROUP_SECURITY_INFORMATION)
+
+#define FILE_SECURITY_INFO     (OWNER_SECURITY_INFORMATION | \
+                                GROUP_SECURITY_INFORMATION | \
+                                DACL_SECURITY_INFORMATION)
 
 BEGIN_NCBI_SCOPE
 
@@ -61,49 +67,47 @@ string CWinSecurity::GetUserName(void)
 }
 
 
-PSID CWinSecurity::GetUserSID(const string& username)
-{
-    string t_username = username.empty() ? GetUserName() : username;
-    if ( t_username.empty() ) {
-        return NULL;
-    }
-    TXString x_username( _T_XSTRING(t_username) );
+// Get SID by account name.
+// Return NULL on error.
+// Do not forget to free the returned SID by calling LocalFree().
 
+static PSID x_GetAccountSidByName(const string& account, SID_NAME_USE type = (SID_NAME_USE)0)
+{
     PSID         sid         = NULL;
     DWORD        sid_size    = 0;
     TXChar*      domain      = NULL;
     DWORD        domain_size = 0;
     SID_NAME_USE use;
 
+    TXString name(_T_XSTRING(account));
+
+    // First call to LookupAccountName() to get the buffer sizes
+    if ( !LookupAccountName(NULL, name.c_str(), sid, &sid_size, domain, &domain_size, &use) 
+          &&  GetLastError() != ERROR_INSUFFICIENT_BUFFER ) {
+        CNcbiError::SetFromWindowsError();
+        return NULL;
+    }
     try {
-        // First call to LookupAccountName to get the buffer sizes
-        BOOL ret = LookupAccountName(NULL, x_username.c_str(),
-                                     sid,    &sid_size,
-                                     domain, &domain_size, &use);
-        if ( !ret  &&  GetLastError() != ERROR_INSUFFICIENT_BUFFER ) {
-            CNcbiError::SetFromWindowsError();
-            return NULL;
-        }
         // Allocate buffers
         sid    = (PSID) LocalAlloc(LMEM_FIXED, sid_size);
         domain = (TXChar*) malloc(domain_size * sizeof(TXChar));
         if ( !sid  ||  !domain ) {
             throw(0);
         }
-        // Second call to LookupAccountName to get the actual account info
-        ret = LookupAccountName(NULL, x_username.c_str(),
-                                sid,    &sid_size,
-                                domain, &domain_size, &use);
-        if ( !ret ) {
-            // Unknown local user
+        // Second call to get the actual account info
+        if ( !LookupAccountName(NULL, name.c_str(), sid, &sid_size, domain, &domain_size, &use) ) {
+            CNcbiError::SetFromWindowsError();
+            throw(0);
+        }
+        // Check type of account
+        if (type  &&  type != use ) {
+            CNcbiError::Set(CNcbiError::eUnknown);
             throw(0);
         }
     }
     catch (int) {
-        if ( sid ) {
-            LocalFree(sid);
-            sid = NULL;
-        }
+        LocalFree(sid);
+        sid = NULL;
     }
     // Clean up
     if ( domain ) free(domain);
@@ -112,84 +116,28 @@ PSID CWinSecurity::GetUserSID(const string& username)
 }
 
 
-void CWinSecurity::FreeUserSID(PSID sid)
+// Get account name by SID.
+// Note: *domatch is reset to 0 if the account type has no domain match.
+
+static bool x_GetAccountNameBySid(PSID sid, string* account, int* domatch = 0)
 {
-    if ( sid ) {
-        LocalFree(sid);
-    }
-}
+    _ASSERT(account);
 
-
-// Helper function for SetOwner
-static bool s_EnablePrivilege(HANDLE token, LPCTSTR priv, BOOL enable = TRUE)
-{
-    // Get priviledge unique identifier
-    LUID luid;
-    if ( !LookupPrivilegeValue(NULL, priv, &luid) ) {
-        CNcbiError::SetFromWindowsError();
-        return false;
-    }
-
-    // Get current privilege setting
-
-    TOKEN_PRIVILEGES tp;
-    TOKEN_PRIVILEGES tp_prev;
-    DWORD            tp_prev_size = sizeof(tp_prev);
-
-    tp.PrivilegeCount = 1;
-    tp.Privileges[0].Luid = luid;
-    tp.Privileges[0].Attributes = 0;
-
-    AdjustTokenPrivileges(token, FALSE,
-                          &tp, sizeof(tp),
-                          &tp_prev, &tp_prev_size);
-    if ( GetLastError() != ERROR_SUCCESS ) {
-        CNcbiError::SetFromWindowsError();
-        return false;
-    }
-
-    // Set privilege based on received setting
-
-    tp_prev.PrivilegeCount = 1;
-    tp_prev.Privileges[0].Luid = luid;
-
-    if ( enable ) {
-        tp_prev.Privileges[0].Attributes |=  SE_PRIVILEGE_ENABLED;
-    } else {
-        tp_prev.Privileges[0].Attributes &= ~SE_PRIVILEGE_ENABLED;
-    }
-    AdjustTokenPrivileges(token, FALSE, &tp_prev, tp_prev_size, NULL, NULL);
-    if ( GetLastError() != ERROR_SUCCESS ) {
-        CNcbiError::SetFromWindowsError();
-        return false;
-    }
-
-    // Privilege settings changed
-    return true;
-}
-
-
-// Helper function for GetOwnerGroupFromSIDs().
-// NB:  *domatch is reset to 0 if the account type has no domain match.
-static bool x_LookupAccountSid(PSID sid, string* account, int* domatch = 0)
-{
-    TXChar       account_name[MAX_ACCOUNT_LEN + 2];
-    TXChar       domain_name [MAX_ACCOUNT_LEN + 2];
-    DWORD        account_size = sizeof(account_name)/sizeof(account_name[0])-1;
-    DWORD        domain_size  = sizeof(domain_name)/sizeof(domain_name[0])-1;
+    TXChar   account_name[MAX_ACCOUNT_LEN + 2];
+    TXChar   domain_name [MAX_ACCOUNT_LEN + 2];
+    DWORD    account_size = sizeof(account_name)/sizeof(account_name[0])-1;
+    DWORD    domain_size  = sizeof(domain_name)/sizeof(domain_name[0])-1;
     SID_NAME_USE use;
 
-    if ( !LookupAccountSid(NULL, sid,
-                                     account_name,       &account_size,
+    if ( !LookupAccountSid(NULL, sid, account_name, &account_size,
                            domatch ? domain_name : NULL, &domain_size, &use) ){
         CNcbiError::SetFromWindowsError();
         return false;
     }
     // Save account information
-    if (account) {
-        account_name[account_size] = _TX('\0');
-        account->assign(_T_STDSTRING(account_name));
-    }
+    account_name[account_size] = _TX('\0');
+    account->assign(_T_STDSTRING(account_name));
+
     if (domatch) {
         domain_name[domain_size] = _TX('\0');
         string domain(_T_STDSTRING(domain_name));
@@ -204,8 +152,10 @@ static bool x_LookupAccountSid(PSID sid, string* account, int* domatch = 0)
 }
 
 
-static bool s_GetOwnerGroupFromSIDs(PSID sid_owner, PSID sid_group,
-                                    string* owner, string* group,
+// Get account owner/group names and uids by SID
+
+static bool s_GetOwnerGroupFromSIDs(PSID owner_sid, PSID group_sid,
+                                    string* owner_name, string* group_name,
                                     unsigned int* uid, unsigned int* gid)
 {
     bool success = true;
@@ -213,269 +163,297 @@ static bool s_GetOwnerGroupFromSIDs(PSID sid_owner, PSID sid_group,
     // Get numeric owner
     if ( uid ) {
         int match = SidTypeUser;
-        if ( !x_LookupAccountSid(sid_owner, owner, &match) ) {
-            if ( owner )
+        if ( !x_GetAccountNameBySid(owner_sid, owner_name, &match) ) {
+            if ( owner_name )
                 success = false;
             *uid = 0;
         } else {
             *uid = match ? CYGWIN_MAGIC_ID_OFFSET : 0;
         }
-        owner = 0;
-        *uid += *GetSidSubAuthority(sid_owner,
-                                    *GetSidSubAuthorityCount(sid_owner) - 1);
+        owner_name = NULL;
+        *uid += *GetSidSubAuthority(owner_sid, *GetSidSubAuthorityCount(owner_sid) - 1);
     }
     // Get numeric group
     if ( gid ) {
         int match = SidTypeGroup;
-        if ( !x_LookupAccountSid(sid_group, group, &match) ) {
+        if ( !x_GetAccountNameBySid(group_sid, group_name, &match) ) {
             *gid = 0;
         } else {
             *gid = match ? CYGWIN_MAGIC_ID_OFFSET : 0;
         }
-        group = 0;
-        *gid += *GetSidSubAuthority(sid_group,
-                                    *GetSidSubAuthorityCount(sid_group) - 1);
+        group_name = NULL;
+        *gid += *GetSidSubAuthority(group_sid, *GetSidSubAuthorityCount(group_sid) - 1);
     }
     if ( !success ) {
         return false;
     }
 
-    // Get owner
-    if ( owner  &&  !x_LookupAccountSid(sid_owner, owner) ) {
+    // Get owner name
+    if ( owner_name  &&  !x_GetAccountNameBySid(owner_sid, owner_name) ) {
         return false;
     }
-    // Get group
-    if ( group  &&  !x_LookupAccountSid(sid_group, group) ) {
+    // Get group name
+    if ( group_name  &&  !x_GetAccountNameBySid(group_sid, group_name) ) {
         // This is not an error, because the group name on Windows
         // is an auxiliary information.  Sometimes accounts cannot
         // belong to groups, or we don't have permissions to get
         // such information.
-        group->clear();
-    }
-	return true;
-}
-
-
-bool CWinSecurity::GetObjectOwner(HANDLE         objhndl,
-                                  SE_OBJECT_TYPE objtype,
-                                  string* owner, string* group,
-                                  unsigned int* uid, unsigned int* gid)
-{
-    PSID sid_owner;
-    PSID sid_group;
-    PSECURITY_DESCRIPTOR sd;
-
-    DWORD res = GetSecurityInfo
-        ( objhndl, objtype,
-          OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION,
-          &sid_owner, &sid_group, NULL, NULL, &sd );
-
-    if ( res != ERROR_SUCCESS ) {
-        CNcbiError::SetWindowsError(res);
-        return false;
-    }
-
-    bool retval = s_GetOwnerGroupFromSIDs(sid_owner, sid_group,
-                                          owner, group, uid, gid);
-    LocalFree(sd);
-    return retval;
-}
-
-
-bool CWinSecurity::GetObjectOwner(const string&  objname,
-                                  SE_OBJECT_TYPE objtype,
-                                  string* owner, string* group,
-                                  unsigned int* uid, unsigned int* gid)
-{
-    PSID sid_owner;
-    PSID sid_group;
-    PSECURITY_DESCRIPTOR sd;
-
-    DWORD res = GetNamedSecurityInfo
-        ( _T_XCSTRING(objname), objtype,
-          OWNER_SECURITY_INFORMATION | GROUP_SECURITY_INFORMATION,
-          &sid_owner, &sid_group, NULL, NULL, &sd );
-
-    if ( res != ERROR_SUCCESS ) {
-        CNcbiError::SetWindowsError(res);
-        return false;
-    }
-
-    bool retval = s_GetOwnerGroupFromSIDs(sid_owner, sid_group,
-                                          owner, group, uid, gid);
-    LocalFree(sd);
-    return retval;
-}
-
-
-bool CWinSecurity::SetFileOwner(const string& filename,
-                                const string& owner, unsigned int* uid)
-{
-    if ( uid ) {
-        *uid = 0;
-    }
-
-    _ASSERT( !owner.empty() );
-
-    // Get access token
-    HANDLE token;
-    if ( !OpenProcessToken(GetCurrentProcess(),
-                           TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY,
-                           &token) ) {
-        CNcbiError::SetFromWindowsError();
-        return false;
-    }
-
-    // Enable privileges.  If failed, then try without them
-    s_EnablePrivilege(token, SE_TAKE_OWNERSHIP_NAME);
-    s_EnablePrivilege(token, SE_RESTORE_NAME);
-    s_EnablePrivilege(token, SE_BACKUP_NAME);
-
-    PSID    sid     = NULL;
-    TXChar* domain  = NULL;
-    bool    success = true;
-
-    try {
-
-        //
-        // Get SID for new owner
-        //
-
-        // First call to LookupAccountName() to get the buffer sizes
-        DWORD        sid_size    = 0;
-        DWORD        domain_size = 0;
-        SID_NAME_USE use;
-        BOOL res = LookupAccountName(NULL, _T_XCSTRING(owner),
-                                     NULL, &sid_size, 
-                                     NULL, &domain_size, &use);
-        if ( !res  &&  GetLastError() != ERROR_INSUFFICIENT_BUFFER ) {
-            throw(0);
-        }
-        // Allocate buffers
-        sid = (PSID) LocalAlloc(LMEM_FIXED, sid_size);
-        domain = (TXChar*) malloc(domain_size * sizeof(TXChar));
-        if ( !sid  ||  !domain ) {
-            throw(0);
-        }
-
-        // Second call to LookupAccountName to get the actual account info
-        if ( !LookupAccountName(NULL, _T_XCSTRING(owner),
-                                sid,    &sid_size, 
-                                domain, &domain_size, &use) ) {
-            // Unknown local user
-            throw(0);
-        }
-        s_GetOwnerGroupFromSIDs(sid, NULL, NULL, NULL, uid, NULL);
-
-        //
-        // Change owner
-        //
-
-        // Security descriptor (absolute format)
-        UCHAR sd_abs_buf[SECURITY_DESCRIPTOR_MIN_LENGTH];
-        PSECURITY_DESCRIPTOR sd = (PSECURITY_DESCRIPTOR) &sd_abs_buf;
-
-        // Build security descriptor in absolute format
-        if ( !InitializeSecurityDescriptor
-             (sd, SECURITY_DESCRIPTOR_REVISION) ) {
-            throw(0);
-        }
-        // Modify security descriptor owner.
-        // FALSE - because new owner was explicitly specified.
-        if ( !SetSecurityDescriptorOwner(sd, sid, FALSE) ) {
-            throw(0);
-        }
-        // Check security descriptor
-        if ( !IsValidSecurityDescriptor(sd) ) {
-            throw(0);
-        }
-        // Set new security information for the file object
-        if ( !SetFileSecurity
-             (_T_XCSTRING(filename), OWNER_SECURITY_INFORMATION, sd) ) {
-            throw(0);
-        }
-    }
-    catch (int) {
-        success = false;
-    }
-
-    // Clean up
-    if ( sid )    LocalFree(sid);
-    if ( domain ) free(domain);
-
-    CloseHandle(token);
-
-    if ( !success ) {
-        CNcbiError::SetFromWindowsError();
-    }
-    return success;
-}
-
-
-#define FILE_SECURITY_INFO  (OWNER_SECURITY_INFORMATION | \
-                             GROUP_SECURITY_INFORMATION | \
-                             DACL_SECURITY_INFORMATION)
-
-
-PSECURITY_DESCRIPTOR CWinSecurity::GetFileSD(const string& path)
-{
-    if ( path.empty() ) {
-        CNcbiError::Set(CNcbiError::eInvalidArgument);
-        return NULL;
-    }
-    PSECURITY_DESCRIPTOR sid = NULL;
-    DWORD size               = 0;
-    DWORD size_need          = 0;
-
-    if ( !GetFileSecurity(_T_XCSTRING(path), FILE_SECURITY_INFO,
-                          sid, size, &size_need) ) {
-        if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
-            CNcbiError::SetFromWindowsError();
-            return NULL;
-        }
-        // Allocate memory for the buffer
-        sid = (PSECURITY_DESCRIPTOR) LocalAlloc(LMEM_FIXED, size_need);
-        if ( !sid ) {
-            CNcbiError::SetFromWindowsError();
-            return NULL;
-        }
-        size = size_need;
-        if ( !GetFileSecurity(_T_XCSTRING(path), FILE_SECURITY_INFO,
-                              sid, size, &size_need) ) {
-            CNcbiError::SetFromWindowsError();
-            LocalFree((HLOCAL) sid);
-            return NULL;
-        }
-    }
-    return sid;
-}
-
-
-bool CWinSecurity::GetFileDACL(const string& strPath,
-                               PSECURITY_DESCRIPTOR* pFileSD, PACL* pDACL)
-{
-    if ( strPath.empty() ) {
-        CNcbiError::Set(CNcbiError::eInvalidArgument);
-        return false;
-    }
-    DWORD dwRet = GetNamedSecurityInfo(_T_XCSTRING(strPath),
-                                       SE_FILE_OBJECT, FILE_SECURITY_INFO,
-                                       NULL, NULL, pDACL, NULL, pFileSD);
-    if ( dwRet != ERROR_SUCCESS ) {
-        pFileSD = NULL;
-        pDACL   = NULL;
-        CNcbiError::SetWindowsError(dwRet);
-        return false;
+        group_name->clear();
     }
     return true;
 }
 
 
-void CWinSecurity::FreeFileSD(PSECURITY_DESCRIPTOR sd)
+bool CWinSecurity::GetObjectOwner(HANDLE         obj_handle,
+                                  SE_OBJECT_TYPE obj_type,
+                                  string* owner, string* group,
+                                  unsigned int* uid, unsigned int* gid)
 {
-    if ( sd ) {
-        LocalFree(sd);
+    PSID sid_owner;
+    PSID sid_group;
+    PSECURITY_DESCRIPTOR sd;
+
+    DWORD res = GetSecurityInfo(obj_handle, obj_type, ACCOUNT_SECURITY_INFO,
+                                &sid_owner, &sid_group, NULL, NULL, &sd );
+    if ( res != ERROR_SUCCESS ) {
+        CNcbiError::SetWindowsError(res);
+        return false;
     }
+    bool retval = s_GetOwnerGroupFromSIDs(sid_owner, sid_group, owner, group, uid, gid);
+    LocalFree(sd);
+    return retval;
+}
+
+
+bool CWinSecurity::GetObjectOwner(const string&  obj_name,
+                                  SE_OBJECT_TYPE obj_type,
+                                  string* owner, string* group,
+                                  unsigned int* uid, unsigned int* gid)
+{
+    PSID sid_owner;
+    PSID sid_group;
+    PSECURITY_DESCRIPTOR sd;
+
+    DWORD res = GetNamedSecurityInfo(_T_XCSTRING(obj_name), obj_type,
+                                     ACCOUNT_SECURITY_INFO,
+                                     &sid_owner, &sid_group, NULL, NULL, &sd );
+    if ( res != ERROR_SUCCESS ) {
+        CNcbiError::SetWindowsError(res);
+        return false;
+    }
+    bool retval = s_GetOwnerGroupFromSIDs(sid_owner, sid_group, owner, group, uid, gid);
+    LocalFree(sd);
+    return retval;
+}
+
+
+// Get current thread token. Return INVALID_HANDLE_VALUE on error.
+
+static HANDLE s_GetThreadToken(DWORD access)
+{
+    HANDLE token;
+    if ( !OpenThreadToken(GetCurrentThread(), access, FALSE, &token) ) {
+        DWORD res = GetLastError();
+        if ( res == ERROR_NO_TOKEN ) {
+            if ( !ImpersonateSelf(SecurityImpersonation) ) {
+                // Failed to obtain a token for the current thread and user
+                CNcbiError::SetFromWindowsError();
+                return INVALID_HANDLE_VALUE;
+            }
+            if ( !OpenThreadToken(GetCurrentThread(), access, FALSE, &token) ) {
+                // Failed to open the current threads token with the required access rights
+                CNcbiError::SetFromWindowsError();
+                token = INVALID_HANDLE_VALUE;
+            }
+            RevertToSelf();
+        } else {
+            // Failed to open the current threads token with the required access rights
+            CNcbiError::SetWindowsError(res);
+            return NULL;
+        }
+    }
+    return token;
+}
+
+
+bool CWinSecurity::SetFileOwner(const string& filename,
+                                const string& owner, const string& group, 
+                                unsigned int* uid, unsigned int* gid)
+{
+    if ( uid ) *uid = 0;
+    if ( gid ) *gid = 0;
+
+    if ( owner.empty()  &&  group.empty() ) {
+        CNcbiError::Set(CNcbiError::eInvalidArgument);
+        return false;
+    }
+
+    HANDLE  token     = INVALID_HANDLE_VALUE;
+    PSID    owner_sid = NULL;
+    PSID    group_sid = NULL;
+    bool    success   = false;
+
+    // Get SIDs for new owner and group
+    if ( !owner.empty() ) {
+        owner_sid = x_GetAccountSidByName(owner, SidTypeUser);
+        if (!owner_sid) {
+            return false;
+        }
+    }
+    if ( !group.empty() ) {
+        group_sid = x_GetAccountSidByName(group, SidTypeGroup);
+        if (!group_sid) {
+            goto cleanup;
+        }
+    }
+    if (uid || gid) {
+        s_GetOwnerGroupFromSIDs(owner_sid, group_sid, NULL, NULL, uid, gid);
+    }
+
+    // Change owner
+
+    SECURITY_INFORMATION security_info = 0;
+    if ( owner_sid ) {
+        security_info |= OWNER_SECURITY_INFORMATION;
+    }
+    if ( group_sid ) {
+        security_info |= GROUP_SECURITY_INFORMATION;
+    }
+
+    // Set new owner/group in the object's security descriptor
+    if ( SetNamedSecurityInfo((TXChar*)_T_XCSTRING(filename),
+                              SE_FILE_OBJECT, security_info,
+                              owner_sid, group_sid, NULL, NULL) == ERROR_SUCCESS ) {
+        success = true;
+        goto cleanup;
+    }
+
+    // If the previous call failed because access was denied,
+    // enable the necessary admin privileges for the current thread and try again.
+
+    token = s_GetThreadToken(TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY);
+    if ( token == INVALID_HANDLE_VALUE) {
+        goto cleanup;
+    }
+    bool prev_ownership_name;
+    bool prev_restore_name;
+
+    if ( !SetTokenPrivilege(token, SE_TAKE_OWNERSHIP_NAME, true, &prev_ownership_name) ||
+         !SetTokenPrivilege(token, SE_RESTORE_NAME, true, &prev_restore_name) ) {
+        goto cleanup;
+    }
+    if ( SetNamedSecurityInfo((TXChar*)_T_XCSTRING(filename),
+                              SE_FILE_OBJECT, security_info,
+                              owner_sid, group_sid, NULL, NULL) == ERROR_SUCCESS ) {
+        success = true;
+    }
+    // Restore privileges
+    SetTokenPrivilege(token, SE_TAKE_OWNERSHIP_NAME, prev_ownership_name);
+    SetTokenPrivilege(token, SE_RESTORE_NAME, prev_restore_name);
+
+
+cleanup:
+    if ( owner_sid ) LocalFree(owner_sid);
+    if ( group_sid ) LocalFree(group_sid);
+    if ( token != INVALID_HANDLE_VALUE) CloseHandle(token);
+
+    return success;
+}
+
+
+bool CWinSecurity::SetTokenPrivilege(HANDLE token, LPCTSTR privilege,
+                                     bool enable, bool* prev)
+{
+    // Get privilege unique identifier
+    LUID luid;
+    if ( !LookupPrivilegeValue(NULL, privilege, &luid) ) {
+        CNcbiError::SetFromWindowsError();
+        return false;
+    }
+
+    // Get current privilege setting
+
+    TOKEN_PRIVILEGES tp;
+    TOKEN_PRIVILEGES tp_prev;
+    DWORD            tp_size = sizeof(tp);
+
+    tp.PrivilegeCount = 1;
+    tp.Privileges[0].Luid = luid;
+    tp.Privileges[0].Attributes = 0;
+
+    AdjustTokenPrivileges(token, FALSE, &tp, tp_size, &tp_prev, &tp_size);
+    DWORD res = GetLastError();
+    if ( res != ERROR_SUCCESS ) {
+        // Failed to obtain the current token's privileges
+        CNcbiError::SetWindowsError(res);
+        return false;
+    }
+
+    // Enable/disable privilege
+
+    tp.PrivilegeCount = 1;
+    tp.Privileges[0].Luid = luid;
+    if (prev) {
+        *prev = ((tp_prev.Privileges[0].Attributes & SE_PRIVILEGE_ENABLED) == SE_PRIVILEGE_ENABLED);
+    }
+    tp.Privileges[0].Attributes = enable ? SE_PRIVILEGE_ENABLED : 0;
+
+    AdjustTokenPrivileges(token, FALSE, &tp, tp_size, NULL, NULL);
+    res = GetLastError();
+    if ( res != ERROR_SUCCESS ) {
+        // Failed to change privileges
+        CNcbiError::SetWindowsError(res);
+        return false;
+    }
+    // Privilege settings changed
+    return true;
+}
+
+
+bool CWinSecurity::SetThreadPrivilege(LPCTSTR privilege, bool enable, bool* prev)
+{
+    HANDLE token = s_GetThreadToken(TOKEN_ADJUST_PRIVILEGES | TOKEN_QUERY);
+    if ( token == INVALID_HANDLE_VALUE) {
+        return false;
+    }
+    bool res = SetTokenPrivilege(token, privilege, enable, prev);
+    return res;
+}
+
+
+// Get file security descriptor. Return NULL on error.
+// NOTE: Do not forget to deallocated memory for returned descriptor.
+
+static PSECURITY_DESCRIPTOR s_GetFileSecurityDescriptor(const string& path)
+{
+    if ( path.empty() ) {
+        CNcbiError::Set(CNcbiError::eInvalidArgument);
+        return NULL;
+    }
+    PSECURITY_DESCRIPTOR sd = NULL;
+    DWORD size              = 0;
+    DWORD size_need         = 0;
+
+    if ( !GetFileSecurity(_T_XCSTRING(path), FILE_SECURITY_INFO, sd, size, &size_need) ) {
+        if (GetLastError() != ERROR_INSUFFICIENT_BUFFER) {
+            CNcbiError::SetFromWindowsError();
+            return NULL;
+        }
+        // Allocate memory for the buffer
+        sd = (PSECURITY_DESCRIPTOR) LocalAlloc(LMEM_FIXED, size_need);
+        if ( !sd ) {
+            CNcbiError::SetFromWindowsError();
+            return NULL;
+        }
+        size = size_need;
+        if ( !GetFileSecurity(_T_XCSTRING(path), FILE_SECURITY_INFO,
+                              sd, size, &size_need) ) {
+            CNcbiError::SetFromWindowsError();
+            LocalFree((HLOCAL) sd);
+            return NULL;
+        }
+    }
+    return sd;
 }
 
 
@@ -490,12 +468,11 @@ bool CWinSecurity::GetFilePermissions(const string& path,
         CNcbiError::Set(CNcbiError::eBadAddress);
         return false;
     }
-    // Get DACL for the file
-    PSECURITY_DESCRIPTOR sd = GetFileSD(path);
 
+    // Get security descriptor for the file
+    PSECURITY_DESCRIPTOR sd = s_GetFileSecurityDescriptor(path);
     if ( !sd ) {
-        if ( GetLastError() == ERROR_ACCESS_DENIED ) {
-            CNcbiError::SetWindowsError(ERROR_ACCESS_DENIED);
+        if ( CNcbiError::GetLast().Native() == ERROR_ACCESS_DENIED ) {
             *permissions = 0;  
             return true;
         }
@@ -506,20 +483,11 @@ bool CWinSecurity::GetFilePermissions(const string& path,
     bool success = true;
 
     try {
-        // Perform security impersonation of the user and
-        // open current thread token
-
-        if ( !ImpersonateSelf(SecurityImpersonation) ) {
+        // Open current thread token
+        token = s_GetThreadToken(TOKEN_DUPLICATE | TOKEN_QUERY);
+        if ( token == INVALID_HANDLE_VALUE) {
             throw(0);
         }
-        if ( !OpenThreadToken(GetCurrentThread(),
-                              TOKEN_DUPLICATE | TOKEN_QUERY,
-                              FALSE, &token) ) {
-            RevertToSelf();
-            throw(0);
-        }
-        RevertToSelf();
-
         GENERIC_MAPPING mapping;
         memset(&mapping, 0, sizeof(mapping));
 
@@ -530,6 +498,7 @@ bool CWinSecurity::GetFilePermissions(const string& path,
         if ( !AccessCheck(sd, token, MAXIMUM_ALLOWED, &mapping,
                           &privileges, &privileges_size, permissions,
                           &status)  ||  !status ) {
+            CNcbiError::SetFromWindowsError();
             throw(0);
         }
     }
@@ -539,11 +508,8 @@ bool CWinSecurity::GetFilePermissions(const string& path,
     }
     // Clean up
     CloseHandle(token);
-    FreeFileSD(sd);
+    LocalFree(sd);
 
-    if ( !success ) {
-        CNcbiError::SetFromWindowsError();
-    }
     return success;
 }
 

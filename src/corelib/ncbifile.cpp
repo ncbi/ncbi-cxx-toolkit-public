@@ -2606,41 +2606,19 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
                          EFollowLinks follow,
                          unsigned int* uid, unsigned int* gid) const
 {
+    if ( gid ) *gid = 0;
+    if ( uid ) *uid = 0;
+
+    if ( owner.empty()  &&  group.empty() ) {
+        CNcbiError::Set(CNcbiError::eInvalidArgument);
+        return false;
+    }
+
 #if defined(NCBI_OS_MSWIN)
 
-    if ( gid ) {
-        *gid = 0;
-    }
-
-    if ( !owner.empty() ) {
-        // On MS Windows we can change file owner only
-        return CWinSecurity::SetFileOwner(GetPath(), owner, uid);
-    }
-
-    if ( uid ) {
-        *uid = 0;
-    }
-
-    if ( group.empty() ) {
-        CNcbiError::Set(CNcbiError::eInvalidArgument);
-        return false;
-    }
-
-    return true;
+    return CWinSecurity::SetFileOwner(GetPath(), owner, group, uid, gid);
 
 #elif defined(NCBI_OS_UNIX)
-
-    if ( gid ) {
-        *gid = 0;
-    }
-    if ( uid ) {
-        *uid = 0;
-    }
-
-    if ( group.empty()  &&  owner.empty() ) {
-        CNcbiError::Set(CNcbiError::eInvalidArgument);
-        return false;
-    }
 
     uid_t temp_uid;
     if ( !owner.empty() ) {
@@ -2698,7 +2676,6 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
 #  endif
 
     return true;
-
 #endif
 }
 
@@ -2746,7 +2723,6 @@ string CDirEntry::GetTmpNameEx(const string&        dir,
 
     temp_file.CreateTemporary(dir, prefix, mode == eTmpFileCreate ?
         CFileIO::eDoNotRemove : CFileIO::eRemoveInClose);
-
     temp_file.Close();
 
     return temp_file.GetPathname();
