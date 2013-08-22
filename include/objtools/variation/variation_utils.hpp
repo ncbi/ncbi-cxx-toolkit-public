@@ -113,8 +113,6 @@ public:
     static void NormalizeVariation(CRef<CVariation>& var, ETargetContext target_ctxt, CScope& scope);     
     static void  NormalizeVariation(CRef<CSeq_annot>& var, ETargetContext target_ctxt, CScope& scope);
 
-    // following an overloaded model.  If anyone finds that too confusing or obfuscated, speak up.
-    static void NormalizeVariation(CRef<CVariation_ref>& var, ETargetContext target_ctxt, CScope& scope); 
 /////////////////////////////////////////////////////////
  
  
@@ -125,7 +123,6 @@ public:
     //to a Seq-equiv: the first is the original SeqLoc
     //the second is an interval representing the IOA
     static void NormalizeAmbiguousVars(CRef<CVariation>& var, CScope &scope);
-    static void NormalizeAmbiguousVars(CRef<CVariation_ref>& var, CScope &scope);
     static void NormalizeAmbiguousVars(CRef<CSeq_annot>& var, CScope &scope);
  
     //HGVS

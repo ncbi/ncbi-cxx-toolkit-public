@@ -2,7 +2,9 @@
 # Meta-makefile("objtools" project)
 #################################
     
-EXPENDABLE_SUB_PROJ = test-CorrectRefAllele context
+REQUIRES = objects
+ 
+EXPENDABLE_APP_PROJ = test-context
    
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

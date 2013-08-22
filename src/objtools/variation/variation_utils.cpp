@@ -361,7 +361,7 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CVariation>& v, CScope &scope
                         //cout << setw(a.size()) << " ";
                         //cout << a <<endl;
                         int type = (*var2)->SetData().SetInstance().SetType(); 
-                        if (!a.empty() && type == CVariation_inst::eType_ins)
+                        if (!a.empty() && type == CVariation_inst::eType_ins) // TODO need to work with deletions too
                         {
                             bool found = x_ProcessShift(a, pos_left,pos_right);
                             if (found)
@@ -429,7 +429,7 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
                         //cout << setw(a.size()) << " ";
                         //cout << a <<endl;
                         int type = (*inst)->SetData().SetInstance().SetType(); 
-                        if (!a.empty() && type == CVariation_inst::eType_ins)
+                        if (!a.empty() && type == CVariation_inst::eType_ins) // TODO need to work with deletions
                         {
                             bool found = x_ProcessShift(a, pos_left,pos_right);
                             if (found)
