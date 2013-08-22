@@ -294,6 +294,7 @@ void CMakeBlastDBApp::Init()
              "Text file mapping sequence IDs to taxonomy IDs.\n"
              "Format:<SequenceId> <TaxonomyId><newline>",
              CArgDescriptions::eInputFile);
+    arg_desc->SetDependency("taxid_map", CArgDescriptions::eRequires, "parse_seqids");
 
     SetupArgDescriptions(arg_desc.release());
 }
