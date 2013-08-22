@@ -581,9 +581,7 @@ CLoadLockBlob::TBlobVersion CLoadLockBlob::GetBlobVersion(void) const
 
 void CLoadLockBlob::SetBlobVersion(TBlobVersion version)
 {
-    if ( *this ) {
-        (**this).SetBlobVersion(version);
-    }
+    m_Result->SetBlobVersion(m_BlobId, version);
 }
 
 
