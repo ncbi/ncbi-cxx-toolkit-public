@@ -3002,7 +3002,10 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     }
 
 
-    if (xlate.size() == product_ranges.GetTo()+2  &&  xlate[xlate.size() - 1] == '*') { /// strip a terminal stop
+    if ((xlate.size() == product_ranges.GetTo()+2  ||
+         product_ranges.GetTo() == TSeqRange::GetWholeTo()) &&
+        xlate[xlate.size() - 1] == '*')
+    { /// strip a terminal stop
         xlate.resize(xlate.size() - 1);
         has_stop = true;
     }
@@ -3021,23 +3024,27 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
         has_gap = true;
     } else {
         string whole;
-        vec.GetSeqData(0, vec.size(), whole);
-        string xlate_trimmed;
-        ITERATE (CRangeCollection<TSeqPos>, range_it, product_ranges) {
-            if (range_it->GetFrom() + range_it->GetLength() <= whole.size()) {
-                actual += whole.substr(range_it->GetFrom(), range_it->GetLength());
-            } else {
-                // product sequence is shorter than aligned ranges
-                // most probably product is partial with 5' and/or 3' ends trimmed
-                // assume it corresponds to aligned portion
-                actual = whole;
+	vec.GetSeqData(0, vec.size(), whole);
+        if (product_ranges[0].IsWhole()) {
+            actual = whole;
+        } else {
+	    string xlate_trimmed;
+            ITERATE (CRangeCollection<TSeqPos>, range_it, product_ranges) {
+                if (range_it->GetFrom() + range_it->GetLength() <= whole.size()) {
+                    actual += whole.substr(range_it->GetFrom(), range_it->GetLength());
+                } else {
+                    // product sequence is shorter than aligned ranges
+                    // most probably product is partial with 5' and/or 3' ends trimmed
+                    // assume it corresponds to aligned portion
+                    actual = whole;
+                }
+                xlate_trimmed += xlate.substr(range_it->GetFrom(), range_it->GetLength());
             }
-            xlate_trimmed += xlate.substr(range_it->GetFrom(), range_it->GetLength());
+            xlate = xlate_trimmed;
         }
         if (actual != whole) {
             has_gap = true;
         }
-        xlate = xlate_trimmed;
     }
 
     ///
