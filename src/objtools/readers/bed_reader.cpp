@@ -262,12 +262,13 @@ CBedReader::xParseTrackLine(
     vector<string> parts;
     CReadUtil::Tokenize( strLine, " \t", parts );
     if (parts.size() >= 3) {
-        try {
-            NStr::StringToInt(parts[1]);
-            NStr::StringToInt(parts[2]);
+        const string digits("0123456789");
+        bool col2_is_numeric = 
+            (string::npos == parts[1].find_first_not_of(digits));
+        bool col3_is_numeric = 
+            (string::npos == parts[2].find_first_not_of(digits));
+        if (col2_is_numeric  &&  col3_is_numeric) {
             return false;
-        }
-        catch(...) {
         }
     }
     if ( !m_currentId.empty() ) {
@@ -551,7 +552,7 @@ void CBedReader::xSetFeatureLocationThick(
     try {
         from = NStr::StringToInt(fields[6]);
     }
-    catch (...) {
+    catch (std::exception&) {
         CObjReaderLineException err( 
             eDiag_Error,
             0,
@@ -561,7 +562,7 @@ void CBedReader::xSetFeatureLocationThick(
     try {
         to = NStr::StringToInt(fields[7])-1;
     }
-    catch (...) {
+    catch (std::exception&) {
         CObjReaderLineException err( 
             eDiag_Error,
             0,
@@ -647,7 +648,7 @@ void CBedReader::xSetFeatureLocationBlock(
                 blockSizes.push_back(NStr::StringToInt(vals[i]));
             }
         }
-        catch (...) {
+        catch (std::exception&) {
             CObjReaderLineException err( 
                 eDiag_Error,
                 0,
@@ -675,7 +676,7 @@ void CBedReader::xSetFeatureLocationBlock(
                 blockStarts.push_back(baseStart + NStr::StringToInt(vals[i]));
             }
         }
-        catch (...) {
+        catch (std::exception&) {
             CObjReaderLineException err( 
                 eDiag_Error,
                 0,
@@ -787,32 +788,35 @@ void CBedReader::xSetFeatureBedData(
 {
     CSeqFeatData& data = feature->SetData();
     data.SetRegion() = fields[0];
-    CRef<CUser_object> pDisplayData(new CUser_object());
     
+    CRef<CUser_object> pDisplayData(new CUser_object());
     if (fields.size() < 5  ||  fields[4] == ".") {
         return;
     }
+
+    CSeq_feat::TExts& exts = feature->SetExts();
+    pDisplayData->SetType().SetStr("DisplaySettings");
+    exts.push_front(pDisplayData);
+
     try {
         int score = NStr::StringToInt(fields[4]);
         pDisplayData->AddField("score", score);
     }
-    catch(...) {
+    catch(std::exception&) {
         CObjReaderLineException err( 
             eDiag_Error,
             0,
             "Invalid data line: Bad \"strand\" value.");
         throw(err);
     }
-    if (fields.size() >= 9) {
-        vector<string> rgb;
-        NStr::Tokenize(fields[8], ",", rgb);
-        string rgbValue = NStr::Join(rgb, " ");
 
-        pDisplayData->SetType().SetStr("DisplaySettings");
-        pDisplayData->AddField("color", rgbValue);
-        CSeq_feat::TExts& exts = feature->SetExts();
-        exts.push_front(pDisplayData);
+    if (fields.size() < 9) {
+        return;
     }
+    vector<string> rgb;
+    NStr::Tokenize(fields[8], ",", rgb);
+    string rgbValue = NStr::Join(rgb, " ");
+    pDisplayData->AddField("color", rgbValue);
 }
 
 //  ----------------------------------------------------------------------------
@@ -836,7 +840,7 @@ void CBedReader::x_SetFeatureLocation(
     try {
         from = NStr::StringToInt(fields[1]);
     }
-    catch ( ... ) {
+    catch(std::exception&) {
         CObjReaderLineException err( 
             eDiag_Error,
             0,
@@ -846,7 +850,7 @@ void CBedReader::x_SetFeatureLocation(
     try {
         to = NStr::StringToInt(fields[2]) - 1;
     }
-    catch ( ... ) {
+    catch(std::exception&) {
         CObjReaderLineException err( 
             eDiag_Error,
             0,
@@ -1027,7 +1031,7 @@ CBedReader::xReadBedRecordRaw(
     try {
         start = NStr::StringToInt(columns[1]);
     }
-    catch (...) {
+    catch(std::exception&) {
         CObjReaderLineException err(
             eDiag_Error,
             0,
@@ -1040,7 +1044,7 @@ CBedReader::xReadBedRecordRaw(
     try {
         stop = NStr::StringToInt(columns[2]);
     }
-    catch (...) {
+    catch(std::exception&) {
         CObjReaderLineException err(
             eDiag_Error,
             0,
@@ -1054,7 +1058,7 @@ CBedReader::xReadBedRecordRaw(
         try {
             score = NStr::StringToInt(columns[6]);
         }
-        catch (...) {
+        catch(std::exception&) {
             CObjReaderLineException err(
                 eDiag_Error,
                 0,
@@ -1146,7 +1150,7 @@ CBedReader::xCleanColumnValues(
         NStr::Replace(columns[1], ",", "", fixup);
         columns[1] = fixup;
     }
-    catch (...) {
+    catch(std::exception&) {
         CObjReaderLineException err(
             eDiag_Error,
             0,
@@ -1158,7 +1162,7 @@ CBedReader::xCleanColumnValues(
         NStr::Replace(columns[2], ",", "", fixup);
         columns[2] = fixup;
     }
-    catch (...) {
+    catch(std::exception&) {
         CObjReaderLineException err(
             eDiag_Error,
             0,
