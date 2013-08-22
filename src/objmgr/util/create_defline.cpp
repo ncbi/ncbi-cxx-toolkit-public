@@ -1884,13 +1884,33 @@ void CDeflineGenerator::x_SetSuffix (
             if (m_MIBiomol == NCBI_BIOMOL(mRNA)) {
                 if (m_TSAMaster) {
                     if (m_MainTitle.find
-                        ("whole genome shotgun sequencing project")
+                        ("transcriptome shotgun assembly")
                         == NPOS) {
-                        suffix = ", whole genome shotgun sequencing project";
+                        suffix = ", transcriptome shotgun assembly";
                     }            
                 } else {
-                    if (m_MainTitle.find ("mRNA sequence") == NPOS) {
-                        suffix = ", mRNA sequence";
+                    if (m_MainTitle.find ("RNA sequence") == NPOS) {
+                        switch (m_MIBiomol) {
+                            case NCBI_BIOMOL(mRNA):
+                                suffix = ", mRNA sequence";
+                                break;
+                            case NCBI_BIOMOL(rRNA):
+                                suffix = ", rRNA sequence";
+                                break;
+                            case NCBI_BIOMOL(ncRNA):
+                                suffix = ", ncRNA sequence";
+                                break;
+                            case NCBI_BIOMOL(pre_RNA):
+                            case NCBI_BIOMOL(snRNA):
+                            case NCBI_BIOMOL(scRNA):
+                            case NCBI_BIOMOL(cRNA):
+                            case NCBI_BIOMOL(snoRNA):
+                            case NCBI_BIOMOL(transcribed_RNA):
+                                suffix = ", transcribed RNA sequence";
+                                break;
+                            default:
+                                break;
+                        }
                     }            
                 }
             }
