@@ -78,7 +78,7 @@ class ShowHideObject : public ShowHideInfo
 private:
     const StructureObject *object;
 public:
-    ShowHideObject(const StructureObject *o) : object(o) { label = o->pdbID; }
+    ShowHideObject(const StructureObject *o) : object(o) { label = o->GetPDBID(); }
     virtual ~ShowHideObject(void) { }
     bool IsVisible(const ShowHideManager *shm) const { return shm->IsVisible(object); }
     void Show(ShowHideManager *shm, bool isShown) const { shm->Show(object, isShown); }

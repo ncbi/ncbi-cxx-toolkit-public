@@ -115,7 +115,7 @@ static void SetWorkingTitle(StructureSet *sSet)
     else if (sSet->IsCDD())
         workingTitle = GetWorkingFilename();    // for CDD's edited by curators
     else if (sSet->objects.size() > 0) {
-        workingTitle = sSet->objects.front()->pdbID;
+        workingTitle = sSet->objects.front()->GetPDBID();
         if (sSet->objects.size() > 1)
             workingTitle += " neighbors";
     } else
@@ -602,7 +602,7 @@ void StructureWindow::OnSelect(wxCommandEvent& event)
             ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
             for (m=(*o)->graph->molecules.begin(); m!=me; ++m) {
                 if (m->second->residues.size() > 1) {
-                    names.push_back((*o)->pdbID + '_' + m->second->name);
+                    names.push_back((*o)->GetPDBID() + '_' + m->second->name);
                     molecules.push_back(m->second);
                 }
             }

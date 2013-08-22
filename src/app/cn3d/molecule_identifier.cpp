@@ -93,9 +93,9 @@ const MoleculeIdentifier * MoleculeIdentifier::GetIdentifier(const Molecule *mol
     // check/assign pdb id
     int name = ((molecule->name.size() == 1) ? molecule->name[0] : MoleculeIdentifier::VALUE_NOT_SET);
     if (identifier->pdbID.size() == 0 && identifier->pdbChain == MoleculeIdentifier::VALUE_NOT_SET) {
-        identifier->pdbID = object->pdbID;
+        identifier->pdbID = object->GetPDBID();
         identifier->pdbChain = name;
-    } else if (identifier->pdbID != object->pdbID || identifier->pdbChain != name)
+    } else if (identifier->pdbID != object->GetPDBID() || identifier->pdbChain != name)
         ERRORMSG("PDB ID mismatch in molecule identifier for " << identifier->ToString());
 
     return identifier;
@@ -238,7 +238,11 @@ void MoleculeIdentifier::AddFields(const SeqIdList& ids)
                 pdbID = newID;
                 pdbChain = (*n)->GetPdb().GetChain();
             } else if (pdbID != newID || pdbChain != (*n)->GetPdb().GetChain()) {
-                ERRORMSG("AddFields(): identifier conflict, already has pdb ID '" << pdbID << "_" << ((char) pdbChain) << "'");
+                // special case: for merged structures with multiple pdb ids, allow match to a sequence from a single specific pdb id
+                if (pdbID.size() > 4 && pdbChain == (*n)->GetPdb().GetChain() && NStr::Find(pdbID, newID) != NPOS)
+                        pdbID = newID;
+                else
+                    ERRORMSG("AddFields(): identifier conflict, already has pdb ID '" << pdbID << "_" << ((char) pdbChain) << "'");
             }
         }
 
@@ -329,7 +333,7 @@ bool MoleculeIdentifier::CompareIdentifiers(const MoleculeIdentifier *a, const M
 string MoleculeIdentifier::ToString(void) const
 {
     CNcbiOstrstream oss;
-    if (pdbID.size() > 0 && pdbChain != VALUE_NOT_SET) {
+    if (pdbID.size() == 4 && pdbChain != VALUE_NOT_SET) {
         oss << pdbID;
         if (pdbChain != ' ') {
             oss <<  '_' << (char) pdbChain;

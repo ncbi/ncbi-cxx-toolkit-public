@@ -260,7 +260,7 @@ public:
 
     static const int NO_MMDB_ID;
     int id, mmdbID;
-    std::string pdbID;
+    std::vector < std::string > pdbIDs;
     Matrix *transformToMaster;
 
     // an object has one ChemicalGraph that can be applied to one or more
@@ -280,6 +280,8 @@ public:
     DomainIDMap domainID2MMDB;
 
     // public methods
+
+    std::string GetPDBID(char separator = '_') const;
 
     typedef std::map < const Residue *, const Molecule * > ResidueMap;
     void SelectByDistance(double cutoff, unsigned int options, ResidueMap *selectedResidues) const;

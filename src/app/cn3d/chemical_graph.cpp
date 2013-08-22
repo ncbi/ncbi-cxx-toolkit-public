@@ -386,9 +386,9 @@ bool ChemicalGraph::DrawAll(const AtomSet *ignored) const
 
     if (moleculeToRedraw != -1)
         TRACEMSG("drawing molecule " << moleculeToRedraw
-            << " of ChemicalGraph of object " << object->pdbID);
+            << " of ChemicalGraph of object " << object->GetPDBID());
     else
-        TRACEMSG("drawing ChemicalGraph of object " << object->pdbID);
+        TRACEMSG("drawing ChemicalGraph of object " << object->GetPDBID());
 
     // put each protein (with its 3d-objects) or nucleotide chain in its own display list
     bool continueDraw = false;

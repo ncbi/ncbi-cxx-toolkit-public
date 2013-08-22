@@ -158,7 +158,7 @@ void StructureSet::LoadSequencesForSingleStructure(void)
                     continue;
                 }
                 TRACEMSG("matched sequence " << " gi " << (*s)->identifier->gi << " with object "
-                    << objects.front()->pdbID << " moleculeID " << m->second->id);
+                    << objects.front()->GetPDBID() << " moleculeID " << m->second->id);
 
                 (const_cast<Molecule*>(m->second))->sequence = *s;
                 (const_cast<Sequence*>(*s))->molecule = m->second;
@@ -216,7 +216,7 @@ bool StructureSet::MatchSequenceToMoleculeInObject(const Sequence *seq,
                 continue;
             }
             TRACEMSG("matched sequence " << " gi " << seq->identifier->gi << " with object "
-                << obj->pdbID << " moleculeID " << m->second->id);
+                << obj->GetPDBID() << " moleculeID " << m->second->id);
 
             // sanity check
             if (m->second->sequence) {
@@ -417,7 +417,7 @@ void StructureSet::LoadAlignmentsAndStructures(unsigned int structureLimit)
     // cross-match master sequence and structure
     if (objects.size() == 1 && !MatchSequenceToMoleculeInObject(master, objects.front())) {
         ERRORMSG("MatchSequenceToMoleculeInObject() - can't find molecule in object "
-            << objects.front()->pdbID << " to match master sequence "
+            << objects.front()->GetPDBID() << " to match master sequence "
             << master->identifier->ToString());
         return;
     }
@@ -454,7 +454,7 @@ void StructureSet::LoadAlignmentsAndStructures(unsigned int structureLimit)
                     }
                 }
                 if (l == le)
-                    ERRORMSG("Warning: Structure " << object->pdbID
+                    ERRORMSG("Warning: Structure " << object->GetPDBID()
                         << " doesn't have a matching dependent sequence in the multiple alignment");
             }
         }
@@ -501,7 +501,7 @@ void StructureSet::LoadAlignmentsAndStructures(unsigned int structureLimit)
                             *(dataManager->GetStructureAlignments()), master->identifier->mmdbID);
                     if (!MatchSequenceToMoleculeInObject((*l)->dependent, object,
                             &((const_cast<MasterDependentAlignment*>(*l))->dependent)))
-                        ERRORMSG("Failed to match any molecule in structure " << object->pdbID
+                        ERRORMSG("Failed to match any molecule in structure " << object->GetPDBID()
                             << " with sequence " << (*l)->dependent->identifier->ToString());
                     loadedStructureForDependentRow[row] = true;
                 }
@@ -973,8 +973,8 @@ void StructureSet::SelectedAtom(unsigned int name, bool setCenter)
         const StructureObject *object;
         if (molecule->GetParentOfType(&object)) {
             // assume hets/solvents are single residue
-            if (object->pdbID.size() > 0)
-                molresid.Printf("%s heterogen/solvent molecule %i", object->pdbID.c_str(), molecule->id);
+            if (object->GetPDBID().size() > 0)
+                molresid.Printf("%s heterogen/solvent molecule %i", object->GetPDBID().c_str(), molecule->id);
             else
                 molresid = molecule->identifier->ToString().c_str();
         }
@@ -1006,7 +1006,7 @@ void StructureSet::SelectedAtom(unsigned int name, bool setCenter)
 
     // if indicated, use atom site as rotation center; use coordinate from first CoordSet, default altConf
     if (setCenter) {
-        INFOMSG("rotating about " << object->pdbID
+        INFOMSG("rotating about " << object->GetPDBID()
             << " molecule " << molecule->id << " residue " << residue->id << ", atom " << atomID);
         rotationCenter = pickedAtomCoord;
     }
@@ -1166,12 +1166,11 @@ StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostru
         CBiostruc::TDescr::const_iterator k, ke=biostruc.GetDescr().end();
         for (k=biostruc.GetDescr().begin(); k!=ke; ++k) {
             if (k->GetObject().IsName()) {
-                pdbID = k->GetObject().GetName();
-                break;
+                pdbIDs.push_back(k->GetObject().GetName());
+                TRACEMSG("PDB id " << pdbIDs.back());
             }
         }
     }
-    TRACEMSG("PDB id " << pdbID);
 
     // get atom and feature spatial coordinates
     if (biostruc.IsSetModel()) {
@@ -1204,6 +1203,19 @@ StructureObject::StructureObject(StructureBase *parent, const CBiostruc& biostru
     // avoid storing graph nodes for atoms not present in the model
     graph = new ChemicalGraph(this, biostruc.GetChemical_graph(), biostruc.GetFeatures());
 }
+
+std::string StructureObject::GetPDBID(char separator) const
+{
+    string s;
+    for (unsigned int i=0; i<pdbIDs.size(); ++i) {
+        if (i > 0)
+            s += separator;
+        s += pdbIDs[i];
+    }
+    return s;
+}
+
+
 
 bool StructureObject::SetTransformToMaster(const CBiostruc_annot_set& annot, int masterMMDBID)
 {
@@ -1239,7 +1251,7 @@ bool StructureObject::SetTransformToMaster(const CBiostruc_annot_set& annot, int
                     // mark feature as used
                     if (f2->GetObject().IsSetId())
                         parentSet->usedFeatures[f2->GetObject().GetId().Get()] = true;
-                    TRACEMSG("got transform for " << pdbID << "->master");
+                    TRACEMSG("got transform for " << GetPDBID() << "->master");
 
                     // unpack transform into matrix, moves in reverse order;
                     Matrix xform;
@@ -1273,7 +1285,7 @@ bool StructureObject::SetTransformToMaster(const CBiostruc_annot_set& annot, int
         }
     }
 
-    WARNINGMSG("Can't get structure alignment for dependent " << pdbID
+    WARNINGMSG("Can't get structure alignment for dependent " << GetPDBID()
         << " with master " << masterMMDBID << ";\nwill likely require manual realignment");
     return false;
 }
@@ -1313,7 +1325,7 @@ void StructureObject::RealignStructure(int nCoords,
     ComposeInto(transformToMaster, single, combined);
 
     // print out RMSD
-    INFOMSG("RMSD of alpha coordinates used to align master structure and " << pdbID << ": "
+    INFOMSG("RMSD of alpha coordinates used to align master structure and " << GetPDBID() << ": "
         << setprecision(3) << ComputeRMSD(nCoords, masterCoords, dependentCoords, transformToMaster) << setprecision(6) << " A");
 
     // create a new Biostruc-feature that contains this alignment

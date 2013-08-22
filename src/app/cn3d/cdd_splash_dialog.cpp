@@ -168,7 +168,7 @@ CDDSplashDialog::CDDSplashDialog(StructureWindow *cn3dFrame,
                             StructureSet::ObjectList::const_iterator o, oe = structureSet->objects.end();
                             for (o=structureSet->objects.begin(); o!=oe; ++o) {
                                 if ((*o)->mmdbID == mmdbID) {
-                                    *tDescr << " (" << (*o)->pdbID.c_str() << ')';
+                                    *tDescr << " (" << (*o)->GetPDBID().c_str() << ')';
                                     break;
                                 }
                             }
@@ -186,7 +186,7 @@ CDDSplashDialog::CDDSplashDialog(StructureWindow *cn3dFrame,
         *tDescr << "Structure summary:\n";
         StructureSet::ObjectList::const_iterator o, oe = structureSet->objects.end();
         for (o=structureSet->objects.begin(); o!=oe; ++o) {
-            *tDescr << "\nPDB " << (*o)->pdbID.c_str() << " (MMDB " << (*o)->mmdbID << ")\n";
+            *tDescr << "\nPDB " << (*o)->GetPDBID().c_str() << " (MMDB " << (*o)->mmdbID << ")\n";
 
             // make lists of biopolymer chains and heterogens
             typedef list < string > ChainList;
