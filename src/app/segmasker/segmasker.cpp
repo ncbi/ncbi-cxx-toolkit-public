@@ -227,6 +227,10 @@ int SegMaskerApplication::Run(void)
 
         while ( (seq_entry = reader->GetNextSequence()).NotEmpty() ) {
 
+        	// Allow skipping of oid
+        	if(seq_entry->Which() == CSeq_entry::e_not_set)
+        		continue;
+
             CScope scope(*objmgr);
             CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*seq_entry);
             CBioseq_Handle bioseq_handle = seh.GetSeq();
