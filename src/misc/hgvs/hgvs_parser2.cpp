@@ -1891,8 +1891,8 @@ void CHgvsParser::sx_AppendMoltypeExceptions(CVariation& v, CScope& scope)
             p2->Assign(p);
             p2->SetMol(mol);
 
-            string asserted_header = CHgvsParser::s_SeqIdToHgvsStr(p);
-            string expected_header = CHgvsParser::s_SeqIdToHgvsStr(*p2);
+            string asserted_header = CHgvsParser::s_SeqIdToHgvsStr(p, &scope);
+            string expected_header = CHgvsParser::s_SeqIdToHgvsStr(*p2, &scope);
 
             CRef<CVariationException> ex(new CVariationException);
             ex->SetCode(CVariationException::eCode_inconsistent_asserted_moltype);

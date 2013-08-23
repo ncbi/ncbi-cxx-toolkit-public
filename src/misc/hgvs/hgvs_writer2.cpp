@@ -459,7 +459,7 @@ string CHgvsParser::s_IntWithFuzzToStr(long pos, const TSeqPos* hgvs_ref_pos, bo
     return out;
 }
 
-string CHgvsParser::s_SeqIdToHgvsStr(const CVariantPlacement& vp)
+string CHgvsParser::s_SeqIdToHgvsStr(const CVariantPlacement& vp, CScope* scope)
 {
     string moltype = "";
 
@@ -477,10 +477,16 @@ string CHgvsParser::s_SeqIdToHgvsStr(const CVariantPlacement& vp)
         moltype = "u.";
     }
 
-    string idstr = sequence::GetId(vp.GetLoc(), NULL).GetSeqIdString(true);
-    if(NStr::StartsWith(idstr, "LRG:")) {
-        idstr = idstr.substr(4);
-    }
+    string idstr;
+    {{
+        const CSeq_id& id = sequence::GetId(vp.GetLoc(), NULL);
+        idstr = scope && id.IsGi() ? sequence::GetAccessionForGi(id.GetGi(), *scope)
+                                   : id.GetSeqIdString(true);
+    
+        if(NStr::StartsWith(idstr, "LRG:")) {
+            idstr = idstr.substr(4);
+        }
+    }}
 
     return (vp.GetLoc().GetStrand() == eNa_strand_minus ? "o" : "") //in HGVS minus-strand is prefixed with "o"
            +idstr + ":" + moltype;
@@ -513,7 +519,7 @@ string CHgvsParser::s_OffsetPointToString(
 
 string CHgvsParser::AsHgvsExpression(const CVariantPlacement& p)
 {
-    return s_SeqIdToHgvsStr(p) + x_PlacementCoordsToStr(p);
+    return s_SeqIdToHgvsStr(p, m_scope) + x_PlacementCoordsToStr(p);
 }
 
 string CHgvsParser::x_PlacementCoordsToStr(const CVariantPlacement& orig_vp)

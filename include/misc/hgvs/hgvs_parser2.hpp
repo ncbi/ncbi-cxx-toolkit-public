@@ -859,7 +859,7 @@ private:
             const CInt_fuzz* offset_fuzz);  //..of offset position, can be NULL
 
     /// Construct an hgvs "header" consisting of seq-id and mol-type, e.g. "NG_016831.1:g."
-    static string s_SeqIdToHgvsStr(const CVariantPlacement& vp);
+    static string s_SeqIdToHgvsStr(const CVariantPlacement& vp, CScope* scope = NULL);
 
     static void sx_AppendMoltypeExceptions(CVariation& v, CScope& scope);
     /// In some cases the placement needs to be adjusted depending on inst, e.g. if we have a point-relative insertion,
