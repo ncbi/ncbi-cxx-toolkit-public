@@ -2187,6 +2187,45 @@ SImplementation::x_MapFeature(const objects::CSeq_feat* feature_on_mrna,
                                                     (loc->GetStart(eExtreme_Positional) + loc->GetStop(eExtreme_Positional))/2);
     }
 
+    if (mapped_loc && feature_on_mrna->GetData().IsRna())
+    {
+        if (mapped_loc->IsPartialStop(eExtreme_Biological) &&
+            !feature_on_mrna->GetLocation().IsPartialStop(eExtreme_Biological) &&
+            align.GetSegs().IsSpliced() &&
+            align.GetSegs().GetSpliced().CanGetPoly_a())
+        {
+            /// When propagaring RNA feature, don't create fuzz at 3' end if
+            /// alignment has poly-a flag
+            mapped_loc->SetPartialStop(false, eExtreme_Biological);
+        }
+        if ((mapped_loc->IsPartialStart(eExtreme_Biological) &&
+             !feature_on_mrna->GetLocation().IsPartialStart(eExtreme_Biological)) ||
+            (mapped_loc->IsPartialStop(eExtreme_Biological) &&
+             !feature_on_mrna->GetLocation().IsPartialStop(eExtreme_Biological)))
+        {
+            CSeq_loc_Mapper reverse_mapper(align, 0, m_scope.GetPointer(), opts);
+            CSeq_id &mapped_loc_id = const_cast<CSeq_id &>(*mapped_loc->GetId());
+            TSignedSeqPos feat_start = feature_on_mrna->GetLocation().GetStart(eExtreme_Biological);
+            CSeq_loc start_loc(mapped_loc_id, mapped_loc->GetStart(eExtreme_Biological));
+            TSignedSeqPos mapped_start = reverse_mapper.Map(start_loc)->GetStart(eExtreme_Biological);
+            if (!feature_on_mrna->GetLocation().IsPartialStart(eExtreme_Biological) &&
+                abs(feat_start - mapped_start) <= m_allowed_unaligned)
+            {
+                /// No fuzz in original, and overhang is within limits; shouldn't have fuzz
+                mapped_loc->SetPartialStart(false, eExtreme_Biological);
+            }
+            TSignedSeqPos feat_stop = feature_on_mrna->GetLocation().GetStop(eExtreme_Biological);
+            CSeq_loc stop_loc(mapped_loc_id, mapped_loc->GetStop(eExtreme_Biological));
+            TSignedSeqPos mapped_stop = reverse_mapper.Map(stop_loc)->GetStop(eExtreme_Biological);
+            if (!feature_on_mrna->GetLocation().IsPartialStop(eExtreme_Biological) &&
+                abs(feat_stop - mapped_stop) <= m_allowed_unaligned)
+            {
+                /// No fuzz in original, and overhang is within limits; shouldn't have fuzz
+                mapped_loc->SetPartialStop(false, eExtreme_Biological);
+            }
+        }
+    }
+
     if (mapped_loc && feature_on_mrna->GetData().IsCdregion()) {
         /// For CDS features, trip not to begin/end in gaps
         /// Trim beginning
