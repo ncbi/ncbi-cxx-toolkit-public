@@ -1,8 +1,7 @@
 #ifndef __TABLE2ASN_CONTEXT_HPP_INCLUDED__
 #define __TABLE2ASN_CONTEXT_HPP_INCLUDED__
 
-#include <objects/general/Date.hpp>
-#include <objects/seqfeat/BioSource.hpp>
+//#include <objects/general/Date.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -12,12 +11,14 @@ class CSeq_entry;
 class CSeq_submit;
 class CBioseq;
 class CSeq_descr;
+class CDate;
 };
 
 // command line parameters are mapped into the context
 // those with only only symbol still needs to be implemented
-struct CTable2AsnContext
+class CTable2AsnContext
 {
+public:
 	string m_current_file;
 	string m_ResultsDirectory;
 	CNcbiOstream* m_output;
@@ -47,7 +48,7 @@ struct CTable2AsnContext
 	bool   P;
 	bool   W;
 	bool   K;
-	objects::CDate  HoldUntilPublish;
+	CRef<objects::CDate> m_HoldUntilPublish;
 	string ZOutFile;
 	string c;
 	string zOufFile;
@@ -69,7 +70,7 @@ struct CTable2AsnContext
 
 	//string logfile;
 	//string conffile;
-	//bool   dryrun;
+	bool   m_dryrun;
 
 /////////////
 	string m_format;
@@ -77,15 +78,13 @@ struct CTable2AsnContext
 	CTable2AsnContext();
 	~CTable2AsnContext();
 
-	CRef<objects::CBioseq> GetNextBioSeqFromTemplate(CRef<CSerialObject>& container, bool make_set) const;
-
     void AddUserTrack(objects::CSeq_descr& SD, const string& type, const string& label, const string& data) const;
-	void SetOrganismData(objects::CSeq_descr& SD, objects::CBioSource::EGenome m_genome, const string& m_taxname, int m_taxid, const string& m_strain) const;
+	void SetOrganismData(objects::CSeq_descr& SD, int genome_code, const string& taxname, int taxid, const string& strain) const;
 	void RemoteRequestTaxid();
+
 	CRef<objects::CSeq_submit> m_submit_template;
 	CRef<objects::CSeq_entry>  m_entry_template;
 private:
-	CRef<objects::CBioseq> CreateNextBioSeqFromTemplate(objects::CSeq_entry& container, bool make_set) const;
 };
 
 

@@ -32,9 +32,7 @@
 
 #include <ncbi_pch.hpp>
 
-#include <serial/iterator.hpp>
-#include <serial/objistrxml.hpp>
-#include <serial/serial.hpp>
+
 
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 
@@ -55,8 +53,11 @@
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/BioSource.hpp>
 
+#include "table2asn_context.hpp"
 #include "OpticalXML2ASN.hpp"
+
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -105,9 +106,9 @@ public:
       }
 
       int GetOpticalXMLData(const string& FileIn);
-      CRef<CSerialObject> BuildOpticalASNData(const CTable2AsnContext& context);
+      CRef<CSeq_entry> BuildOpticalASNData(const CTable2AsnContext& context);
 private:
-    void BuildOpticalASNData(const CTable2AsnContext& context, const COpticalChrData& it, CBioseq* bioseq);
+    void BuildOpticalASNData(const CTable2AsnContext& context, const COpticalChrData& it, CBioseq& bioseq);
     void GetOpticalDescr(CSeq_descr& SD, const CTable2AsnContext& context);
     void SetOrganismData(CSeq_descr& SD, const string& enzyme, const CTable2AsnContext& context);
 
@@ -287,20 +288,32 @@ void COpticalxml2asnOperatorImpl::GetOpticalDescr(CSeq_descr& SD, const CTable2A
     TD.push_back(sdm);
 }
 
-CRef<CSerialObject> COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2AsnContext& context)
+CRef<CSeq_entry> COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2AsnContext& context)
 {
-    CRef<CSerialObject> container;
+    CRef<CSeq_entry> container;
+
+    if (m_vchr.size() > 1 )
+    {
+        container.Reset(new CSeq_entry);
+    }
 
     for (vector<COpticalChrData>::iterator it = m_vchr.begin(); it != m_vchr.end(); ++it)
     {
-        CBioseq* bioseq = context.GetNextBioSeqFromTemplate(container, m_vchr.size() > 1);
-        BuildOpticalASNData(context, *it, bioseq);
+        CRef<CSeq_entry> new_entry(new CSeq_entry);
+        if (context.m_entry_template.NotEmpty())
+            new_entry->Assign(*context.m_entry_template);
+        BuildOpticalASNData(context, *it, new_entry->SetSeq());
+
+        if (container.Empty())
+            container = new_entry;
+        else
+            container->SetSet().SetSeq_set().push_back(new_entry);
     }
 
     return container;
 }
 
-void COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2AsnContext& context, const COpticalChrData& it, CBioseq* bioseq)
+void COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2AsnContext& context, const COpticalChrData& it, CBioseq& bioseq)
 {
     string lclid;
     if (it.m_name.find("lcl|") != 0)
@@ -309,16 +322,16 @@ void COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2AsnContext& c
         lclid = it.m_name;
 
     CRef<CSeq_id> id(new CSeq_id(lclid, CSeq_id::fParse_PartialOK));
-    bioseq->SetId().clear();
-    bioseq->SetId().push_back(id);
+    bioseq.SetId().clear();
+    bioseq.SetId().push_back(id);
 
-    CSeq_descr& SD = bioseq->SetDescr();
+    CSeq_descr& SD = bioseq.SetDescr();
     SetOrganismData(SD, it.m_enzyme, context);
     GetOpticalDescr(SD, context);
     context.AddUserTrack(SD, "DBLink", "BioProject", context.m_accession);
     context.AddUserTrack(SD, "FileTrack", "FileTrackURL", context.m_url);
 
-    CSeq_inst& inst(bioseq->SetInst());
+    CSeq_inst& inst(bioseq.SetInst());
     inst.SetRepr(CSeq_inst::eRepr_map);
     inst.SetMol(CSeq_inst::eMol_dna);
     inst.SetLength(it.m_length);
@@ -413,13 +426,14 @@ COpticalxml2asnOperator::~COpticalxml2asnOperator()
 {
 }
 
-CRef<CSerialObject> COpticalxml2asnOperator::LoadXML(const string& FileIn, const CTable2AsnContext& context)
+CRef<CSeq_entry> COpticalxml2asnOperator::LoadXML(const string& FileIn, const CTable2AsnContext& context)
 {
+	auto_ptr<COpticalxml2asnOperatorImpl> m_impl;
     m_impl.reset(new COpticalxml2asnOperatorImpl());
 
     m_impl->GetOpticalXMLData(FileIn);
 
-    CRef<CSerialObject> result(m_impl->BuildOpticalASNData(context));
+    CRef<CSeq_entry> result= m_impl->BuildOpticalASNData(context);
 
     return result;
 };

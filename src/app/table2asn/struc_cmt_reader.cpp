@@ -40,7 +40,6 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objects/general/User_object.hpp>
 #include <objects/general/Object_id.hpp>
-#include <objects/submit/Seq_submit.hpp>
 #include <util/line_reader.hpp>
 #include <objtools/readers/source_mod_parser.hpp>
 
@@ -69,34 +68,22 @@ namespace
 
 }
 
-CBioseq* CStructuredCommentsReader::FindObjectById(CSerialObject& container, const CSeq_id& id)
+CBioseq* CStructuredCommentsReader::FindObjectById(CSeq_entry& entry, const CSeq_id& id)
 {
-    CSeq_entry* entry = dynamic_cast<CSeq_entry*>(&container);
-    if (entry)
+    switch (entry.Which())
     {
-        switch (entry->Which())
-        {
-        case CSeq_entry::e_Seq:
-            if (entry->GetSeq().GetFirstId()->Compare(id) == CSeq_id::e_YES)
-                return &entry->SetSeq();
-            break;
-        case CSeq_entry::e_Set:
-            NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry->SetSet().SetSeq_set())
-            {
-                return FindObjectById(**it, id);
-            }
-            break;
-        default:
-            break;
-        }
-    }
-    else
-    {
-        CSeq_submit* submit = dynamic_cast<CSeq_submit*>(&container);
-        NON_CONST_ITERATE(CSeq_submit_Base::C_Data::TEntrys, it, submit->SetData().SetEntrys())
+    case CSeq_entry::e_Seq:
+        if (entry.GetSeq().GetFirstId()->Compare(id) == CSeq_id::e_YES)
+            return &entry.SetSeq();
+        break;
+    case CSeq_entry::e_Set:
+        NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
         {
             return FindObjectById(**it, id);
         }
+        break;
+    default:
+        break;
     }
     return 0;
 }
@@ -126,24 +113,12 @@ CUser_object* CStructuredCommentsReader::AddStructuredComment(CUser_object* user
 }
 
 
-void CStructuredCommentsReader::AddStructuredCommentToAllObjects(CSerialObject& cont, const string& name, const string& value)
+void CStructuredCommentsReader::AddStructuredCommentToAllObjects(CSeq_entry& entry, const string& name, const string& value)
 {
-    CSeq_entry* entry = dynamic_cast<CSeq_entry*>(&cont);
-    if (entry)
-    {
-        AddStructuredComment(0, entry->SetDescr(), name, value);
-    }
-    else
-    {
-        CSeq_submit* submit = dynamic_cast<CSeq_submit*>(&cont);
-        NON_CONST_ITERATE(CSeq_submit_Base::C_Data::TEntrys, it, submit->SetData().SetEntrys())
-        {
-            AddStructuredComment(0, (**it).SetDescr(), name, value);
-        }
-    }
+    AddStructuredComment(0, entry.SetDescr(), name, value);
 }
 
-void CStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& reader, CSerialObject& container)
+void CStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& reader, CSeq_entry& container)
 {
     vector<string> cols;
 
@@ -186,7 +161,7 @@ void CStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& reader, C
     }
 }
 
-void CStructuredCommentsReader::ProcessCommentsFileByRows(ILineReader& reader, CSerialObject& container)
+void CStructuredCommentsReader::ProcessCommentsFileByRows(ILineReader& reader, CSeq_entry& container)
 {
     while (!reader.AtEOF())
     {
@@ -205,7 +180,7 @@ void CStructuredCommentsReader::ProcessCommentsFileByRows(ILineReader& reader, C
     }
 }
 
-void CStructuredCommentsReader::ProcessSourceQualifiers(ILineReader& reader, CSerialObject& container)
+void CStructuredCommentsReader::ProcessSourceQualifiers(ILineReader& reader, CSeq_entry& container)
 {
     vector<string> cols;
 

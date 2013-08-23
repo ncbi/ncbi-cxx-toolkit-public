@@ -2,10 +2,6 @@
 #define TABLE2ASN_MULTIREADER_HPP
 
 #include <util/format_guess.hpp>
-#include <corelib/ncbistre.hpp>
-#include <objtools/readers/idmapper.hpp>
-
-#include "table2asn_context.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -13,40 +9,44 @@ namespace objects
 {
 class CSeq_entry;
 class CSeq_submit;
+class CSeq_descr;
+class CSeqdesc;
+class IMessageListener;
+class CIdMapper;
+class CBioseq;
 };
+
+class CTable2AsnContext;
+class CSerialObject;
 
 //  ============================================================================
 class CMultiReader
 //  ============================================================================
 {
 public:
-	CMultiReader();
-//    CMultiReaderApp(): m_pErrors( 0 ) {};
+   CMultiReader(objects::IMessageListener* logger);
+   ~CMultiReader();
 
-   void Process(const CTable2AsnContext& args, const CNcbiApplication& app);
+   void Process(const CTable2AsnContext& args);
 
    CRef<CSerialObject> ReadFile(const CTable2AsnContext& args, const string& ifname);
-   CRef<CSerialObject> LoadFile(const CTable2AsnContext& args, const string& ifname);
-   void Cleanup(const CTable2AsnContext& args, CRef<CSerialObject>);
-   void WriteObject(CSerialObject&, CNcbiOstream& );
-   void ApplyAdditionalProperties(const CTable2AsnContext& args, CSerialObject* obj);
+   CRef<objects::CSeq_entry> LoadFile(const CTable2AsnContext& args, const string& ifname);
+   void Cleanup(const CTable2AsnContext& args, CRef<objects::CSeq_entry>);
+   void WriteObject(CSerialObject&, ostream& );
    void ApplyAdditionalProperties(const CTable2AsnContext& args, objects::CSeq_entry& entry);
    void LoadTemplate(CTable2AsnContext& context, const string& ifname);
    void LoadDescriptors(const CTable2AsnContext& args, const string& ifname, CRef<objects::CSeq_descr> & out_desc);
-   static
    CRef<objects::CSeq_descr> GetSeqDescr(CSerialObject* obj);
-
-   static
    void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeq_descr & source);
-   static
    void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeqdesc & source);
-   static
-   void ApplyDescriptors(CSerialObject & obj, const objects::CSeq_descr & source);
+   void ApplyDescriptors(objects::CSeq_entry & obj, const objects::CSeq_descr & source);
+   CRef<CSerialObject> HandleSubmitTemplate(const CTable2AsnContext& args, CRef<objects::CSeq_entry> object) const;
 
 protected:
 
 private:
     CRef<CSerialObject> xProcessDefault(const CTable2AsnContext&, CNcbiIstream&);
+    CRef<objects::CSeq_entry> CreateNewSeqFromTemplate(const CTable2AsnContext& context, objects::CBioseq& bioseq) const;
 #if 0
     void xProcessWiggle(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
     void xProcessWiggleRaw(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
@@ -78,7 +78,7 @@ private:
     string m_AnnotTitle;
 
     auto_ptr<objects::CIdMapper> m_pMapper;
-    CRef<objects::CMessageListenerBase> m_pErrors;
+    objects::IMessageListener* m_logger;
 };
 
 END_NCBI_SCOPE

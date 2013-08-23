@@ -32,18 +32,9 @@
 */
 
 #include <ncbi_pch.hpp>
-#include <corelib/ncbiapp.hpp>
-#include <corelib/ncbiargs.hpp>
-#include <corelib/ncbistl.hpp>
-#include <corelib/ncbi_system.hpp>
-#include <util/format_guess.hpp>
-#include <util/line_reader.hpp>
 
-#include <serial/iterator.hpp>
-#include <serial/objistr.hpp>
-#include <serial/objostr.hpp>
-#include <serial/objostrasn.hpp>
-#include <serial/serial.hpp>
+#include <objtools/readers/fasta.hpp>
+#include <objtools/readers/idmapper.hpp>
 
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
@@ -51,32 +42,9 @@
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqfeat/Variation_ref.hpp>
 
-#include <objtools/readers/reader_exception.hpp>
-#include <objtools/readers/line_error.hpp>
-#include <objtools/readers/idmapper.hpp>
-#include <objtools/readers/reader_base.hpp>
-#include <objtools/readers/bed_reader.hpp>
-#include <objtools/readers/vcf_reader.hpp>
-#include <objtools/readers/wiggle_reader.hpp>
-#include <objtools/readers/gff2_reader.hpp>
-#include <objtools/readers/gff3_reader.hpp>
-#include <objtools/readers/gtf_reader.hpp>
-#include <objtools/readers/gvf_reader.hpp>
-#include <objtools/readers/aln_reader.hpp>
-#include <objtools/readers/agp_read.hpp>
-
-#include <algo/phy_tree/phy_node.hpp>
-#include <algo/phy_tree/dist_methods.hpp>
-#include <objects/biotree/BioTreeContainer.hpp>
-
-#include "multireader.hpp"
-
-#include <objtools/readers/fasta.hpp>
-#include <objmgr/seq_entry_ci.hpp>
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
 #include <objects/seqfeat/OrgName.hpp>
-#include <objtools/readers/readfeat.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/submit/Submit_block.hpp>
 #include <objects/pub/Pub.hpp>
@@ -84,7 +52,23 @@
 #include <objects/biblio/Cit_sub.hpp>
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/general/Object_id.hpp>
+#include <objects/seq/Bioseq.hpp>
+#include <objects/seqset/Bioseq_set.hpp>
+
+#include <corelib/ncbistre.hpp>
+
+#include <serial/iterator.hpp>
+#include <serial/objistr.hpp>
+#include <serial/objostr.hpp>
+#include <serial/objostrasn.hpp>
+#include <serial/serial.hpp>
+
 //#include <objtools/readers/error_container.hpp>
+
+#include "multireader.hpp"
+#include "table2asn_context.hpp"
+
+#include <common/test_assert.h>  /* This header must go last */
 
 
 //USING_NCBI_SCOPE;
@@ -395,7 +379,7 @@ CRef<CSerialObject> CMultiReader::xProcessDefault(
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "File format not supported", 0);
     }
-    CRef<CSerialObject> result = pReader->ReadObject(istr, m_pErrors);
+    CRef<CSerialObject> result = pReader->ReadObject(istr, m_logger);
 
     return result;
 }
@@ -525,7 +509,7 @@ void CMultiReader::xSetFlags(
 //  ----------------------------------------------------------------------------
 void CMultiReader::WriteObject(
     CSerialObject& object,                  // potentially modified by mapper
-    CNcbiOstream& ostr)
+    ostream& ostr)
     //  ----------------------------------------------------------------------------
 {
     if (m_pMapper.get()) {
@@ -602,12 +586,13 @@ void CMultiReader::xSetErrorContainer(const CTable2AsnContext& args)
 #endif
 }
 
-void CMultiReader::Process(const CTable2AsnContext& args, const CNcbiApplication& app)
+void CMultiReader::Process(const CTable2AsnContext& args)
 {
-    m_bCheckOnly = app.IsDryRun();
+    m_bCheckOnly = args.m_dryrun;
 }
 
-CMultiReader::CMultiReader()
+CMultiReader::CMultiReader(IMessageListener* logger)
+    :m_logger(logger)
 {
 }
 
@@ -706,11 +691,11 @@ void CMultiReader::ApplyAdditionalProperties(const CTable2AsnContext& context, C
             }
             if (context.m_GenomicProductSet)
             {
-                entry.SetSet().SetClass(CBioseq_set_Base::eClass_gen_prod_set);
+                //entry.SetSet().SetClass(CBioseq_set_Base::eClass_gen_prod_set);
             }
             if (context.m_NucProtSet)
             {
-                entry.SetSet().SetClass(CBioseq_set_Base::eClass_nuc_prot);
+                //entry.SetSet().SetClass(CBioseq_set_Base::eClass_nuc_prot);
             }
             NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
             {
@@ -737,28 +722,6 @@ void CMultiReader::ApplyAdditionalProperties(const CTable2AsnContext& context, C
 
         MergeDescriptors(entry.SetDescr(), *value);
     }
-}
-
-void CMultiReader::ApplyAdditionalProperties(const CTable2AsnContext& context, CSerialObject* obj)
-{
-    if (CSeq_entry* entry = dynamic_cast<CSeq_entry*>(obj))
-    {
-        ApplyAdditionalProperties(context, *entry);
-    }
-    else
-        if (CSeq_submit* submit = dynamic_cast<CSeq_submit*>(obj))
-        {
-            if (context.HoldUntilPublish.Which() == CDate_Base::e_Std)
-            {
-                submit->SetSub().SetHup(true);
-                submit->SetSub().SetReldate().Assign(context.HoldUntilPublish);
-            }
-
-            NON_CONST_ITERATE(CSeq_submit_Base::C_Data::TEntrys, it, submit->SetData().SetEntrys())
-            {
-                ApplyAdditionalProperties(context, **it);
-            }
-        }
 }
 
 void CMultiReader::LoadDescriptors(const CTable2AsnContext& args, const string& ifname, CRef<CSeq_descr> & out_desc)
@@ -1050,80 +1013,60 @@ void CMultiReader::MergeDescriptors(CSeq_descr & dest, const CSeqdesc & source)
 
 }
 
-void CMultiReader::ApplyDescriptors(CSerialObject & obj, const CSeq_descr & source)
+void CMultiReader::ApplyDescriptors(objects::CSeq_entry& entry, const CSeq_descr& source)
 {
-    if (obj.GetThisTypeInfo() == CSeq_submit::GetTypeInfo())
-    {
-        CSeq_submit* submit = dynamic_cast<CSeq_submit*>(&obj);
-        if (submit)
-        {
-            NON_CONST_ITERATE(CSeq_submit_Base::C_Data::TEntrys, it, submit->SetData().SetEntrys())
-            {
-                ApplyDescriptors(**it, source);
-            }
-        }
-    }
-    else
-        if (obj.GetThisTypeInfo() == CSeq_entry::GetTypeInfo())
-        {
-            CSeq_entry* entry = dynamic_cast<CSeq_entry*>(&obj);
-            if (entry)
-            {
-                MergeDescriptors(entry->SetDescr(), source);
-            }
-        }
+    MergeDescriptors(entry.SetDescr(), source);
 }
 
-CRef<CSerialObject> CMultiReader::LoadFile(const CTable2AsnContext& context, const string& ifname)
+CRef<CSeq_entry> CMultiReader::CreateNewSeqFromTemplate(const CTable2AsnContext& context, CBioseq& bioseq) const 
 {
-    CRef<CSerialObject> result;
+    CRef<CSeq_entry> result(new CSeq_entry);
+    if (context.m_entry_template.NotEmpty())
+       result->Assign(*context.m_entry_template);
+    result->SetSeq(bioseq);
 
-    CRef<CSerialObject> obj = ReadFile(context, ifname);
-    CSeq_entry* read_entry = dynamic_cast<CSeq_entry*>(obj.GetPointerOrNull());
-    if (read_entry)
-    {
-        switch (read_entry->Which())
-        {
-        case CSeq_entry_Base::e_Seq:
-            {
-                CBioseq* bioseq = context.GetNextBioSeqFromTemplate(result, context.m_HandleAsSet);
-                bioseq->Assign(read_entry->SetSeq());
-            }
-            break;
-        case CSeq_entry_Base::e_Set:
-            {
-                const CSeq_entry_Base::TSet::TSeq_set& data = read_entry->GetSet().GetSeq_set();
-                ITERATE(CSeq_entry_Base::TSet::TSeq_set, it, data)
-                {
-                    CBioseq* bioseq = context.GetNextBioSeqFromTemplate(result, true);
-                    bioseq->Assign((**it).GetSeq());
-                }
-            }
-            break;
-        default:
-            break;
-        }
-    }
-    else
-    {
-        result = obj;
-    }
     return result;
 }
 
-void CMultiReader::Cleanup(const CTable2AsnContext& context, CRef<CSerialObject> obj)
+CRef<CSeq_entry> CMultiReader::LoadFile(const CTable2AsnContext& context, const string& ifname)
+{
+    CRef<CSerialObject> obj = ReadFile(context, ifname);
+    CRef<CSeq_entry> read_entry(dynamic_cast<CSeq_entry*>(obj.GetPointerOrNull()));
+    if (read_entry)
+    {
+        if (read_entry->IsSet() && !context.m_HandleAsSet)
+        {
+            cerr << "Error" << endl;
+            return CRef<CSeq_entry>();
+        }
+
+        if (read_entry->IsSet())
+        {
+            CRef<CSeq_entry> entry(new CSeq_entry);
+            entry->SetSet().SetClass(CBioseq_set::eClass_genbank);
+            CSeq_entry_Base::TSet::TSeq_set& data = read_entry->SetSet().SetSeq_set();
+            NON_CONST_ITERATE(CSeq_entry_Base::TSet::TSeq_set, it, data)
+            {                        
+                CRef<CSeq_entry> new_entry = CreateNewSeqFromTemplate(context, (**it).SetSeq());
+                entry->SetSet().SetSeq_set().push_back(new_entry);
+            }
+            return entry;
+        }
+        else
+        {
+            CRef<CSeq_entry> new_entry = CreateNewSeqFromTemplate(context, read_entry->SetSeq());
+            return new_entry;
+        }
+    }
+    return CRef<CSeq_entry>();
+}
+
+void CMultiReader::Cleanup(const CTable2AsnContext& context, CRef<CSeq_entry> entry)
 {
     /*
-    if (result->GetThisTypeInfo() == CSeq_entry::GetTypeInfo())
-    {
-    CSeq_entry* entry = dynamic_cast<CSeq_entry*>(result.GetPointerOrNull());
-    if (entry)
-    {
     CCleanup cleanup;
     CConstRef<CCleanupChange> changes;
     changes = cleanup.ExtendedCleanup(*entry);
-    }
-    }
     */
 }
 
@@ -1434,5 +1377,29 @@ void CMultiReader::xDumpErrors(CNcbiOstream& ostr)
 
 #endif
 
+CRef<CSerialObject> CMultiReader::HandleSubmitTemplate(const CTable2AsnContext& context, CRef<CSeq_entry> object) const
+{
+    if (context.m_submit_template.NotEmpty())
+    {
+        CRef<CSeq_submit> submit(new CSeq_submit);
+        submit->Assign(*context.m_submit_template);
+        submit->SetData().SetEntrys().clear();
+        if (context.m_HandleAsSet || object->IsSeq())
+        {
+            submit->SetData().SetEntrys().push_back(object);
+        }
+        else
+        {
+            submit->SetData().SetEntrys() = object->SetSet().SetSeq_set();
+        }
+        return CRef<CSerialObject>(submit);
+    }     
+    else
+        return CRef<CSerialObject>(object);
+}
+
+CMultiReader::~CMultiReader()
+{
+}
 
 END_NCBI_SCOPE

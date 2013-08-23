@@ -41,8 +41,6 @@
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Seq_descr.hpp>
 
-#include <objects/submit/Seq_submit.hpp>
-
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
@@ -298,6 +296,31 @@ namespace
         entry.SetSet().SetSeq_set().push_back(newentry);
         MoveSomeDescr(entry, newentry->SetSeq());
         entry.SetSet().SetClass(CBioseq_set::eClass_nuc_prot);
+
+        CRef<CSeqdesc> molinfo_desc;
+        NON_CONST_ITERATE(CSeq_descr::Tdata, it, newentry->SetDescr().Set())
+        {
+            if ((**it).IsMolinfo())
+            {
+                molinfo_desc = *it;
+                break;
+            }
+        }
+
+        if (molinfo_desc.Empty())
+        {
+           molinfo_desc.Reset(new CSeqdesc);
+           newentry->SetDescr().Set().push_back(molinfo_desc);
+        }
+        //molinfo_desc->SetMolinfo().SetTech(CMolInfo::eTech_concept_trans);
+        if (!molinfo_desc->SetMolinfo().IsSetBiomol())
+            molinfo_desc->SetMolinfo().SetBiomol(CMolInfo::eBiomol_genomic);
+
+        if (newentry->GetSeq().IsNa() &&
+            newentry->GetSeq().IsSetInst())
+        {
+            newentry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
+        }
     }
 
     bool CheckIfNeedConversion(const CSeq_entry& entry)
@@ -325,50 +348,34 @@ namespace
         return false;
     }
 
-    void MergeCdRegions(CSeq_entry& entry)
+}
+
+void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry)
+{
+    switch(entry.Which())
     {
-        switch(entry.Which())
+    case CSeq_entry::e_Seq:
+        if (CheckIfNeedConversion(entry))
         {
-        case CSeq_entry::e_Seq:
-            if (CheckIfNeedConversion(entry))
-            {
-                ConvertSeqIntoSeqSet(entry);
-                ParseCdregions(entry);
-            }
-            break;
-        case CSeq_entry::e_Set:
+            ConvertSeqIntoSeqSet(entry);
             ParseCdregions(entry);
-            break;
-        default:
-            break;
         }
-    }
-
-}
-
-void CFeatureTableReader::MergeCDSFeatures(CSerialObject& obj)
-{
-    CRef<CSeq_entry> entry(dynamic_cast<CSeq_entry*>(&obj));
-    if (entry.NotEmpty())
-    {
-        MergeCdRegions(*entry);
-    }
-    else
-    {
-        CRef<CSeq_submit> submit(dynamic_cast<CSeq_submit*>(&obj));
-        if (submit.NotEmpty())
-            NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, it, submit->SetData().SetEntrys())
+        break;
+    case CSeq_entry::e_Set:
+        NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
         {
-            MergeCdRegions(**it);
+            MergeCDSFeatures(**it);
         }
+        break;
+    default:
+        break;
     }
 }
 
-void CFeatureTableReader::ReadFeatureTable(CSerialObject& obj, ILineReader& line_reader)
+void CFeatureTableReader::ReadFeatureTable(CSeq_entry& entry, ILineReader& line_reader)
 {
-    CRef<CSeq_entry> entry(dynamic_cast<CSeq_entry*>(&obj));
-    if (entry.NotEmpty())
-      CFeature_table_reader::ReadSequinFeatureTables(line_reader, *entry, CFeature_table_reader::fCreateGenesFromCDSs);
+    CFeature_table_reader::ReadSequinFeatureTables(line_reader, entry, CFeature_table_reader::fCreateGenesFromCDSs);
+    //MergeCDSFeatures(entry);
 }
 
 

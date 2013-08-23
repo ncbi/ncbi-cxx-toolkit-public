@@ -34,9 +34,6 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
-#include "table2asn_context.hpp"
-
-#include <objects/submit/Submit_block.hpp>
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Bioseq.hpp>
@@ -47,7 +44,10 @@
 #include <objects/seqset/Bioseq_set.hpp>
 
 #include <objects/taxon1/taxon1.hpp>
+#include "table2asn_context.hpp"
 
+
+#include <common/test_assert.h>  /* This header must go last */
 
 
 BEGIN_NCBI_SCOPE
@@ -57,6 +57,7 @@ BEGIN_NCBI_SCOPE
 CTable2AsnContext::CTable2AsnContext():
 m_output(0),
     //m_make_set(false),
+    m_dryrun(false),
     m_HandleAsSet(false),
     m_GenomicProductSet(false),
     m_SetIDFromFile(false),
@@ -69,80 +70,6 @@ m_output(0),
 
 CTable2AsnContext::~CTable2AsnContext()
 {
-}
-
-
-CRef<CBioseq> CTable2AsnContext::CreateNextBioSeqFromTemplate(CSeq_entry& container, bool make_set) const
-{
-    if (make_set)
-    {
-        container.SetSet();
-
-        CRef<CSeq_entry> new_entry(new CSeq_entry);
-        container.SetSet().SetSeq_set().push_back(new_entry);
-        if (m_entry_template.NotNull())
-            new_entry->Assign(*m_entry_template);
-
-        return CRef<CBioseq>(&new_entry->SetSeq());
-    }
-    else
-    {
-        container.SetSeq();
-
-        if (m_entry_template.NotNull())
-            container.Assign(*m_entry_template);
-
-        return CRef<CBioseq>(&container.SetSeq());
-    }
-}
-
-CRef<CBioseq> CTable2AsnContext::GetNextBioSeqFromTemplate(CRef<CSerialObject>& container, bool make_set) const
-{
-    if (m_submit_template.NotNull())
-    {	
-        CSeq_submit* submit = 0;
-        if (container.NotNull())
-            submit = dynamic_cast<CSeq_submit*>(container.GetPointerOrNull());
-
-        if (container.IsNull() || submit == 0)
-        {
-            submit = new CSeq_submit;
-            submit->Assign(*m_submit_template);
-            submit->SetData().SetEntrys().clear();
-            container.Reset(submit);
-        }
-
-        CSeq_submit_Base::C_Data::TEntrys& data = submit->SetData().SetEntrys();
-        CRef<CSeq_entry> new_entry;
-        if (data.empty() || !make_set)
-        {
-            new_entry.Reset(new CSeq_entry);
-            data.push_back(new_entry);
-        }
-        else
-        {
-            new_entry = data.back();
-        }
-
-        return CreateNextBioSeqFromTemplate(*new_entry, make_set);
-    }
-    else
-    {
-        CSeq_entry* entry = 0;
-        if (container.IsNull())
-        {
-            entry = new CSeq_entry;
-            container.Reset(entry);
-            if (make_set)
-                entry->SetSet().SetClass(CBioseq_set_Base::eClass_genbank);
-
-        }
-        else
-            entry = dynamic_cast<CSeq_entry*>(container.GetPointerOrNull());
-
-        return CreateNextBioSeqFromTemplate(*entry, make_set || entry->Which() == CSeq_entry_Base::e_Set);
-    }
-    return CRef<CBioseq>();
 }
 
 void CTable2AsnContext::AddUserTrack(CSeq_descr& SD, const string& type, const string& lbl, const string& data) const
@@ -213,8 +140,6 @@ void CTable2AsnContext::RemoteRequestTaxid()
 
     taxon.Fini();
 }
-
-
 
 END_NCBI_SCOPE
 

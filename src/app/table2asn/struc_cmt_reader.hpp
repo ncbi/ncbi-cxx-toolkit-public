@@ -12,6 +12,7 @@ namespace objects
 	class CSeq_descr;
 	class CBioseq;
 	class CObject_id;
+    class CSeq_entry;
 };
 
 class CSerialObject;
@@ -41,23 +42,23 @@ public:
    // Read input tab delimited file and apply Structured Comments to the container
    // First row of the file is a list of Field to apply
    // First collumn of the file is an ID of the object (sequence) to apply
-   void ProcessCommentsFileByCols(ILineReader& reader, CSerialObject& container);
+   void ProcessCommentsFileByCols(ILineReader& reader, objects::CSeq_entry& container);
    // Read input tab delimited file and apply Structured Comments to all objects
    // (sequences) in the container
    // First collumn of the file is the name of the field
    // Second collumn of the file is the value of the field
-   void ProcessCommentsFileByRows(ILineReader& reader, CSerialObject& container);
+   void ProcessCommentsFileByRows(ILineReader& reader, objects::CSeq_entry& container);
 
-   void ProcessSourceQualifiers(ILineReader& reader, CSerialObject& container);
+   void ProcessSourceQualifiers(ILineReader& reader, objects::CSeq_entry& container);
 
-   static void ApplySourceQualifiers(CSerialObject& container,
+   static void ApplySourceQualifiers(objects::CSeq_entry& entry,
 	   const string& src_qualifiers);
 private:
    // service functions
-   static objects::CBioseq* FindObjectById(CSerialObject& container,
+   static objects::CBioseq* FindObjectById(objects::CSeq_entry& container,
 	   const objects::CSeq_id& id);
 
-   void AddStructuredCommentToAllObjects(CSerialObject& container,
+   void AddStructuredCommentToAllObjects(objects::CSeq_entry& container,
 	   const string& name, const string& value);
 
    objects::CUser_object* AddStructuredComment(objects::CUser_object* obj,
