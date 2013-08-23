@@ -902,8 +902,10 @@ CVcfReader::xAssignFeatureLocationSet(
         }
         else {
             pFeat->SetLocation().SetInt().SetFrom(data.m_iPos-1);
+            //-1 for 0-based, 
+            //another -1 for inclusive end-point ( i.e. [], not [) )
             pFeat->SetLocation().SetInt().SetTo( 
-                data.m_iPos-1 + data.m_strRef.length());
+                 data.m_iPos -1 + data.m_strRef.length() - 1); 
             pFeat->SetLocation().SetInt().SetId(*pId);
         }
         return true;
