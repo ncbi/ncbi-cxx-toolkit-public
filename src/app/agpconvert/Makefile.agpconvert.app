@@ -13,7 +13,7 @@ LIBS = $(FTDS_LIBS) $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
-REQUIRES = objects algo
+REQUIRES = objects algo FreeTDS
 
 CHECK_CMD  = test_agpconvert.sh
 CHECK_COPY = test_agpconvert.sh test_data
