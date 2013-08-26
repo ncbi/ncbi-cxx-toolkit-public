@@ -1,19 +1,23 @@
 Variation ::= {
   id {
     db "dbSNP",
-    tag str "rs2"
+    tag str "rs7"
   },
   placements {
     {
       loc int {
-        from 2338230,
-        to 2338231,
+        from 2338270,
+        to 2338274,
         id other {
           accession "NC_000001",
           version 10
         }
       },
-      mol genomic
+      mol genomic,
+      seq {
+        length 1,
+        seq-data iupacana "C"
+      }
     }
   },
   variant-prop {
@@ -31,14 +35,11 @@ Variation ::= {
     variations {
       {
         data instance {
-          type ins,
+          type del,
           delta {
             {
-              seq literal {
-                length 1,
-                seq-data iupacna "T"
-              },
-              action ins-before
+              seq this NULL,
+              action del-at
             }
           }
         }
@@ -64,7 +65,7 @@ Variation ::= {
       data {
         {
           label str "Output dbSNP Context",
-          data str "The point SeqLoc should be converted to this interval SeqLoc."
+          data str "This is deleting a C, and the output should be an interval"
         }
       }
     }
