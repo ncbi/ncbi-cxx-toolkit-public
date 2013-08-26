@@ -58,6 +58,7 @@
 #include "table2asn_context.hpp"
 #include "OpticalXML2ASN.hpp"
 
+#include <objtools/readers/message_listener.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -100,8 +101,9 @@ public:
 class COpticalxml2asnOperatorImpl
 {
 public:
-    COpticalxml2asnOperatorImpl():
-      m_genome(CBioSource::eGenome_chromosome) // eGenome_plasmid ??
+    COpticalxml2asnOperatorImpl(IMessageListener* logger):
+      m_genome(CBioSource::eGenome_chromosome), // eGenome_plasmid ??
+      m_logger(logger)
       {
       }
 
@@ -113,6 +115,7 @@ private:
     void SetOrganismData(CSeq_descr& SD, const string& enzyme, const CTable2AsnContext& context);
 
     vector <COpticalChrData> m_vchr;
+    IMessageListener* m_logger;
 
 public:
     CBioSource::EGenome m_genome;
@@ -207,7 +210,8 @@ int COpticalxml2asnOperatorImpl::GetOpticalXMLData(const string& FileIn)
         doc = new document(in, &msg);
     }
     catch(...) {
-        cerr << endl << "Error: No data found in " << FileIn << ": " << msg.print() << endl;
+        m_logger->PutError(CLineError(CLineError::eProblem_GeneralParsingError, eDiag_Error, "", 0, 
+            "No data found in " + FileIn + ": " + msg.print()));
         return -1;
     }
 
@@ -232,7 +236,9 @@ int COpticalxml2asnOperatorImpl::GetOpticalXMLData(const string& FileIn)
                 }
             }
             if (name.empty()) {
-                cerr << endl << "Warning: No chromosome name found in RESTRICTION_MAP - ID '" << id << "' was used." << endl;
+                m_logger->PutError(
+                    CLineError(CLineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0, 
+                    "No chromosome name found in RESTRICTION_MAP - ID '" + id + "' was used"));
                 name = id;
             }
 
@@ -429,7 +435,7 @@ COpticalxml2asnOperator::~COpticalxml2asnOperator()
 CRef<CSeq_entry> COpticalxml2asnOperator::LoadXML(const string& FileIn, const CTable2AsnContext& context)
 {
 	auto_ptr<COpticalxml2asnOperatorImpl> m_impl;
-    m_impl.reset(new COpticalxml2asnOperatorImpl());
+    m_impl.reset(new COpticalxml2asnOperatorImpl(context.m_logger));
 
     m_impl->GetOpticalXMLData(FileIn);
 

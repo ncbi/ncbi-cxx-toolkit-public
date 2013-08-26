@@ -27,8 +27,6 @@ public:
    CMultiReader(objects::IMessageListener* logger);
    ~CMultiReader();
 
-   void Process(const CTable2AsnContext& args);
-
    CRef<CSerialObject> ReadFile(const CTable2AsnContext& args, const string& ifname);
    CRef<objects::CSeq_entry> LoadFile(const CTable2AsnContext& args, const string& ifname);
    void Cleanup(const CTable2AsnContext& args, CRef<objects::CSeq_entry>);
@@ -71,7 +69,6 @@ private:
 //    void xDumpErrors(CNcbiOstream& );
 
     CFormatGuess::EFormat m_uFormat;
-    bool m_bCheckOnly;
     bool m_bDumpStats;
     int  m_iFlags;
     string m_AnnotName;

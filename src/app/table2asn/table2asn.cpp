@@ -84,7 +84,6 @@ public:
 private:
 
     auto_ptr<CMultiReader> m_reader;
-    CRef<CMessageListenerBase> m_pErrors;
 
     void Setup(const CArgs& args);
 
@@ -111,6 +110,7 @@ private:
 
     CRef<CObjectManager> m_ObjMgr;
     CTable2AsnContext    m_context;
+    CRef<CMessageListenerBase> m_logger;
 
     //auto_ptr<CObjectIStream> m_In;
     //unsigned int m_Options;
@@ -128,13 +128,14 @@ private:
     //EDiagSev m_HighCutoff;
 
     //CNcbiOstream* m_OutputStream;
-    //CNcbiOstream* m_LogStream;
+    CNcbiOstream* m_LogStream;
 };
 
-CTbl2AsnApp::CTbl2AsnApp(void) :
-m_ObjMgr(0)
+CTbl2AsnApp::CTbl2AsnApp(void):
+//m_ObjMgr(0)
     //, m_In(0), m_Options(0), m_Continue(false), m_OnlyAnnots(false)
-    //m_Level(0), m_Reported(0), m_OutputStream(0), m_LogStream(0)
+    //m_Level(0), m_Reported(0), m_OutputStream(0), 
+    m_LogStream(0)
 {
 }
 
@@ -292,11 +293,17 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddOptionalKey("m", "String", "Lineage to use for Discrepancy Report tests", CArgDescriptions::eString);
 
-    arg_desc->AddOptionalKey("b", "Integer", "Organism taxonomy ID", CArgDescriptions::eInteger); //done
-    arg_desc->AddOptionalKey("B", "String", "Taxonomy name", CArgDescriptions::eString);          //done
-    arg_desc->AddOptionalKey("d", "String", "Strain name", CArgDescriptions::eString);            //done
-    arg_desc->AddOptionalKey("e", "String", "URL track to add to source", CArgDescriptions::eString); //done
+    arg_desc->AddOptionalKey("taxid", "Integer", "Organism taxonomy ID", CArgDescriptions::eInteger); //done
+    arg_desc->AddOptionalKey("taxname", "String", "Taxonomy name", CArgDescriptions::eString);          //done
+    arg_desc->AddOptionalKey("strain-name", "String", "Strain name", CArgDescriptions::eString);            //done
+    arg_desc->AddOptionalKey("ft-url", "String", "FileTrack URL for the XML file retrieval", CArgDescriptions::eString); //done
 
+    arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);
+
+//    ABCDEFGHIJKLMNOPQRSTUVWXYZ
+//    ++++++++++++++ +++++++++++]
+//    abcdefghijklmnopqrstuvwxyz
+//    +++++++++++++++++ +++ ++++]
 
     // Program description
     string prog_description = "Converts files of various formats to ASN.1\n";
@@ -314,7 +321,10 @@ int CTbl2AsnApp::Run(void)
 
     Setup(args);
 
-    //m_LogStream = args["L"] ? &(args["L"].AsOutputFile()) : &NcbiCout;
+    m_LogStream = args["logfile"] ? &(args["logfile"].AsOutputFile()) : &NcbiCout;
+    m_logger.Reset(new CMessageListenerLenient());
+    m_logger->SetProgressOstream(m_LogStream);
+    m_context.m_logger = m_logger;
 
     /*
 
@@ -334,7 +344,7 @@ int CTbl2AsnApp::Run(void)
     m_Reported = 0;
     */
 
-    m_reader.reset(new CMultiReader(m_pErrors));
+    m_reader.reset(new CMultiReader(m_logger));
 
     if (args["n"])
         m_context.m_OrganismName = args["n"].AsString();
@@ -357,14 +367,14 @@ int CTbl2AsnApp::Run(void)
         m_context.m_HandleAsSet = true;
     }
 
-    if (args["B"])
-        m_context.m_taxname = args["B"].AsString();
-    if (args["b"])
-        m_context.m_taxid   = args["b"].AsInteger();
-    if (args["d"])
-        m_context.m_strain  = args["d"].AsString();
-    if (args["e"])
-        m_context.m_url     = args["e"].AsString();
+    if (args["taxname"])
+        m_context.m_taxname = args["taxname"].AsString();
+    if (args["taxid"])
+        m_context.m_taxid   = args["taxid"].AsInteger();
+    if (args["strain-name"])
+        m_context.m_strain  = args["strain-name"].AsString();
+    if (args["ft-url"])
+        m_context.m_url     = args["ft-url"].AsString();
     if (args["A"])
         m_context.m_accession = args["A"].AsString();
     if (args["j"])
@@ -429,6 +439,7 @@ int CTbl2AsnApp::Run(void)
         m_context.m_ResultsDirectory = CDir::AddTrailingPathSeparator(m_context.m_ResultsDirectory);
 
         CDir outputdir(m_context.m_ResultsDirectory);
+        if (!IsDryRun())
         if (!outputdir.Exists())
             outputdir.Create();
     }
@@ -452,6 +463,8 @@ int CTbl2AsnApp::Run(void)
         }
     }
 
+    m_logger->Dump(*m_LogStream);
+
     /*
     if (m_Reported > 0) {
     return 1;
@@ -474,8 +487,6 @@ CRef<CScope> CTbl2AsnApp::BuildScope (void)
 
 void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 {
-    m_reader->Process(m_context);
-
     CRef<CSeq_entry> entry;
 
     if (m_context.m_current_file.substr(m_context.m_current_file.length()-4).compare(".xml") == 0)
@@ -520,25 +531,38 @@ string GenerateOutputStream(const CTable2AsnContext& m_context, const string& pa
 
 void CTbl2AsnApp::ProcessOneFile()
 {
+    CFile file(m_context.m_current_file);
+    if (!file.Exists())
+    {
+        m_logger->PutError(
+            CLineError(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+            "File " + m_context.m_current_file + " does not exists"));
+        return;
+    }
+
     CNcbiOstream* output = 0;
     auto_ptr<CNcbiOfstream> local_output(0);
     CFile local_file;
     try
     {
-        if (m_context.m_output == 0)
+        if (!DryRun())
         {
-            local_file = GenerateOutputStream(m_context, m_context.m_current_file);
-            local_output.reset(new CNcbiOfstream(local_file.GetPath().c_str()));
-            output = local_output.get();
-        }
-        else
-        {
-            output = m_context.m_output;
+            if (m_context.m_output == 0)
+            {
+                local_file = GenerateOutputStream(m_context, m_context.m_current_file);
+                local_output.reset(new CNcbiOfstream(local_file.GetPath().c_str()));
+                output = local_output.get();
+            }
+            else
+            {
+                output = m_context.m_output;
+            }
         }
 
         CRef<CSerialObject> obj;
         ProcessOneFile(obj);
-        m_reader->WriteObject(*obj, *output);
+        if (!IsDryRun())
+            m_reader->WriteObject(*obj, *output);
     }
     catch(...)
     {
@@ -553,7 +577,6 @@ void CTbl2AsnApp::ProcessOneFile()
 
 bool CTbl2AsnApp::ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse)
 {
-    //cout << "Entering directory " << path << endl;
     CDir::TEntries* e = directory.GetEntriesPtr("*", CDir::fCreateObjects | CDir::fIgnoreRecursive);
     auto_ptr<CDir::TEntries> entries(e);
 

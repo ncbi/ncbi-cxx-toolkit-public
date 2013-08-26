@@ -515,9 +515,6 @@ void CMultiReader::WriteObject(
     if (m_pMapper.get()) {
         m_pMapper->MapObject(object);
     }
-    if (m_bCheckOnly) {
-        return;
-    }
     ostr << MSerial_AsnText << object;
     ostr.flush();
 }
@@ -548,6 +545,7 @@ void CMultiReader::xSetMapper(const CTable2AsnContext& args)
 void CMultiReader::xSetErrorContainer(const CTable2AsnContext& args)
     //  ----------------------------------------------------------------------------
 {
+    m_logger = args.m_logger;
 #if 0
     //
     //  By default, allow all errors up to the level of "warning" but nothing
@@ -586,11 +584,6 @@ void CMultiReader::xSetErrorContainer(const CTable2AsnContext& args)
 #endif
 }
 
-void CMultiReader::Process(const CTable2AsnContext& args)
-{
-    m_bCheckOnly = args.m_dryrun;
-}
-
 CMultiReader::CMultiReader(IMessageListener* logger)
     :m_logger(logger)
 {
@@ -608,9 +601,9 @@ void GetSeqId(CRef<CSeq_id>& id, const CTable2AsnContext& context)
 
 void ApplySourceQualifiers(objects::CBioseq& bioseq, const string& src_qualifiers)
 {
-    if( ! bioseq.IsSetDescr() && ! bioseq.GetDescr().IsSet() ) {
-        return;
-    }
+    //if( ! bioseq.CanGetDescr() && ! bioseq.GetDescr().IsSet() ) {
+    //    return;
+    //}
     if (src_qualifiers.empty())
         return;
 
@@ -1034,6 +1027,10 @@ CRef<CSeq_entry> CMultiReader::LoadFile(const CTable2AsnContext& context, const 
     CRef<CSeq_entry> read_entry(dynamic_cast<CSeq_entry*>(obj.GetPointerOrNull()));
     if (read_entry)
     {
+        if (read_entry->Which() == CSeq_entry::e_not_set)
+        {
+        }
+
         if (read_entry->IsSet() && !context.m_HandleAsSet)
         {
             cerr << "Error" << endl;

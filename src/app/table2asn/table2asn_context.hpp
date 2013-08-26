@@ -12,6 +12,7 @@ class CSeq_submit;
 class CBioseq;
 class CSeq_descr;
 class CDate;
+class IMessageListener;
 };
 
 // command line parameters are mapped into the context
@@ -70,7 +71,6 @@ public:
 
 	//string logfile;
 	//string conffile;
-	bool   m_dryrun;
 
 /////////////
 	string m_format;
@@ -80,10 +80,12 @@ public:
 
     void AddUserTrack(objects::CSeq_descr& SD, const string& type, const string& label, const string& data) const;
 	void SetOrganismData(objects::CSeq_descr& SD, int genome_code, const string& taxname, int taxid, const string& strain) const;
+    // message listener must be provided
 	void RemoteRequestTaxid();
 
 	CRef<objects::CSeq_submit> m_submit_template;
 	CRef<objects::CSeq_entry>  m_entry_template;
+    objects::IMessageListener* m_logger;
 private:
 };
 

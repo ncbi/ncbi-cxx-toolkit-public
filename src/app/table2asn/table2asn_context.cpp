@@ -46,6 +46,7 @@
 #include <objects/taxon1/taxon1.hpp>
 #include "table2asn_context.hpp"
 
+#include <objtools/readers/message_listener.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -55,16 +56,16 @@ BEGIN_NCBI_SCOPE
     USING_SCOPE(objects);
 
 CTable2AsnContext::CTable2AsnContext():
-m_output(0),
+    m_output(0),
     //m_make_set(false),
-    m_dryrun(false),
     m_HandleAsSet(false),
     m_GenomicProductSet(false),
     m_SetIDFromFile(false),
     m_RemoteTaxonomyLookup(false),
     m_ProjectVersionNumber(0),
     m_flipped_struc_cmt(false),
-    m_taxid(0)
+    m_taxid(0),
+    m_logger(0)
 {
 }
 
@@ -116,13 +117,18 @@ void CTable2AsnContext::RemoteRequestTaxid()
         else
             if (m_taxid != taxid)
             {
-                cerr << endl << "Error: Conflicting taxonomy info provided: taxid " << m_taxid << ": ";
+                m_logger->PutError(
+                    CLineError(ILineError::eProblem_Unset, eDiag_Error, "", 0, 
+                      "Conflicting taxonomy info provided: taxid " + NStr::IntToString(m_taxid)));
+
                 if (taxid <= 0)
                     m_taxid = taxid;
                 else
                 {
                     taxon.Fini();
-                    cerr << "taxonomy ID for the name '" << m_taxname << "' was determined as " << taxid << endl;
+                    m_logger->PutError(
+                        CLineError(ILineError::eProblem_Unset, eDiag_Error, "", 0, 
+                        "taxonomy ID for the name '" + m_taxname + "' was determined as " + NStr::IntToString(taxid)));
                     return;
                 }
             }
@@ -131,7 +137,9 @@ void CTable2AsnContext::RemoteRequestTaxid()
     if (m_taxid <= 0)
     {
         taxon.Fini();
-        cerr << endl << "Error: No unique taxonomy ID found for the name '" << m_taxname << "'" << endl;
+        m_logger->PutError(
+            CLineError(ILineError::eProblem_Unset, eDiag_Error, "", 0, 
+                "No unique taxonomy ID found for the name '" + m_taxname + "'"));
         return;
     }
 
