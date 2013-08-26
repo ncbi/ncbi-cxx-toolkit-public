@@ -54,6 +54,8 @@ USING_SCOPE(objects);
 
 static const int  kTTL = 60; // seconds
 static const string kTestStr = "This is a very simple test string.";
+static const CProjectStorage::ENC_Compression kDefComp =
+    CProjectStorage::eNC_ZlibCompressed;
 
 // global variables
 static bool verbose = false;
@@ -153,7 +155,7 @@ BOOST_AUTO_TEST_CASE(StringTest)
     }
 
     string nc_key =
-        nc_tool.SaveString(kTestStr, "", CProjectStorage::eNC_LzoCompressed, kTTL);
+        nc_tool.SaveString(kTestStr, "", kDefComp, kTTL);
 
     // check if the saving succeeds
     BOOST_CHECK( !nc_key.empty() );
@@ -178,7 +180,7 @@ BOOST_AUTO_TEST_CASE(StringTest)
     nc_tool.GetVector(nc_key, ret_vec);
     NCBITEST_CHECK_EQUAL(ret_vec.size(), kTestStr.size());
     if (verbose) {
-        cout << "The retrieved vector<char> is: " << ret_vec.data() << endl;
+        //cout << "The retrieved vector<char> is: " << ret_vec.data() << endl;
     }
 
     // test nc blob removal
@@ -197,7 +199,7 @@ BOOST_AUTO_TEST_CASE(CloneTest)
 
     CProjectStorage nc_tool = s_GetPrjStorage();
     string nc_key =
-        nc_tool.SaveString(kTestStr, "", CProjectStorage::eNC_LzoCompressed, kTTL);
+        nc_tool.SaveString(kTestStr, "", kDefComp, kTTL);
     if (verbose) {
         cout << "The saved NC key is: " << nc_key << endl;
     }
@@ -241,7 +243,7 @@ BOOST_AUTO_TEST_CASE(PasswordProtectionTest)
     }
 
     string nc_key =
-        nc_tool.SaveString(kTestStr, "", CProjectStorage::eNC_LzoCompressed, kTTL);
+        nc_tool.SaveString(kTestStr, "", kDefComp, kTTL);
 
     // check if the saving succeeds
     BOOST_CHECK( !nc_key.empty() );
@@ -422,7 +424,7 @@ BOOST_AUTO_TEST_CASE(AsnBinaryGZipTest)
         cout << "\n --- Testing ASN binary blob (gzip) --- "
              << endl;
     }
-    s_TestSeqAnnotAsn(eSerial_AsnBinary, CProjectStorage::eNC_ZlibCompressed);
+    s_TestSeqAnnotAsn(eSerial_AsnBinary, kDefComp);
 }
 
 /// Testing data compression (bzip2)
@@ -440,7 +442,9 @@ BOOST_AUTO_TEST_CASE(AsnBinaryLzoTest)
     if (verbose) {
         cout << "\n --- Testing ASN binary blob (lzo) --- " << endl;
     }
+#if defined(HAVE_LIBLZO)
     s_TestSeqAnnotAsn(eSerial_AsnBinary, CProjectStorage::eNC_LzoCompressed);
+#endif //HAVE_LIBLZO
 }
 
 /// Testing saving seq-annot as raw string data
@@ -542,7 +546,7 @@ BOOST_AUTO_TEST_CASE(GBProjectTest)
     string nc_key;
     BOOST_CHECK_NO_THROW(
         nc_key = nc_tool.SaveProject(*gb_project, "",
-                                     CProjectStorage::eNC_LzoCompressed,
+                                     kDefComp,
                                      eSerial_AsnBinary,
                                      kTTL));
 

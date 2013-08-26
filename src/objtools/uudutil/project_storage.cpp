@@ -359,7 +359,16 @@ auto_ptr<CNcbiIstream> CProjectStorage::GetIstream(const string& key, bool raw)
                     } else if (m_CmprsFmt == eNC_Bzip2Compressed) {
                         proc = new CBZip2StreamDecompressor();
                     } else if (m_CmprsFmt == eNC_LzoCompressed) {
+#if defined(HAVE_LIBLZO)
                         proc = new CLZOStreamDecompressor();
+#else
+                        // The blob is lzo-compressed, but the client
+                        // code used to retrived the blob doesn't support
+                        // lzo compression. Throw an exceptoion
+                        NCBI_THROW(CPrjStorageException,
+                                   eUnsupportedCompression,
+                                   "The blob is lzo-compressed, but the client code doesn't support lzo-compression.");
+#endif // HAVE_LIBLZO
                     }
                     
                     auto_ptr<CNcbiIstream> zip_str(
@@ -443,6 +452,13 @@ bool CProjectStorage::Exists(const string& key)
 
 auto_ptr<CNcbiOstream> CProjectStorage::x_GetOutputStream(string& key, unsigned int time_to_live)
 {
+#if !defined(HAVE_LIBLZO)
+    if (m_CmprsFmt == eNC_LzoCompressed) {
+        NCBI_THROW(CPrjStorageException, eUnsupportedCompression,
+                   "The client code doesn't support lzo compression.");
+    }
+#endif // HAVE_LIBLZO
+
     auto_ptr<CNcbiOstream> ostr
         (m_NC.CreateOStream(key, (nc_blob_ttl=time_to_live, nc_blob_password=m_Password)));
     ostr->write((char*)(&m_Magic), sizeof(m_Magic));
@@ -461,9 +477,11 @@ auto_ptr<CNcbiOstream> CProjectStorage::x_GetOutputStream(string& key, unsigned 
         } else if (m_CmprsFmt == eNC_Bzip2Compressed) {
             compressor.reset(new CBZip2StreamCompressor(kCompressionLevel,
                                                         kBufSize, kBufSize));
+#if defined(HAVE_LIBLZO)
         } else if (m_CmprsFmt == eNC_LzoCompressed) {
             compressor.reset(new CLZOStreamCompressor(kCompressionLevel,
                                                       kBufSize, kBufSize));
+#endif // HAVE_LIBLZO
         }
 
         auto_ptr<CNcbiOstream> zip_ostr(
