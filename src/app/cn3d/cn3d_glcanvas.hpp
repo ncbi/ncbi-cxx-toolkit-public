@@ -58,6 +58,8 @@ public:
     StructureSet *structureSet;
     OpenGLRenderer *renderer;
 
+    void SetCurrent(void);
+
     // font stuff - setup from registry, and measure using currently selected font
     void SetGLFontFromRegistry(double fontScale = 1.0);
     bool MeasureText(const std::string& text, int *width, int *height, int *centerX, int *centerY);
@@ -71,6 +73,8 @@ private:
     void OnSize(wxSizeEvent& event);
     void OnEraseBackground(wxEraseEvent& event);
     void OnMouseEvent(wxMouseEvent& event);
+
+    wxGLContext* glContext;
 
     // memoryDC is used for measuring text
     wxMemoryDC memoryDC;

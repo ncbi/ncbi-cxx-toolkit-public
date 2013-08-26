@@ -720,7 +720,7 @@ void UpdateViewer::ImportStructure(void)
                 pdbID.c_str(), chains[choice].second, chains[choice].first->GetSeqIdString().c_str());
         wxArrayInt selections;
 //        selections.Add(0);    // select first by default
-        int nsel = wxGetMultipleChoices(selections, "Which chain(s) do you want to align?",
+        int nsel = wxGetSelectedChoices(selections, "Which chain(s) do you want to align?",
             "Select Chain", chains.size(), choices, *viewerWindow);
         if (nsel == 0) return;
         for (choice=0; choice<nsel; ++choice)

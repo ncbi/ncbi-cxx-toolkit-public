@@ -348,7 +348,7 @@ void SetUpWorkingDirectories(const char* argv0)
 
     // find or create preferences folder
     wxString localDir;
-    wxSplitPath((wxFileConfig::GetLocalFileName("unused")).c_str(), &localDir, NULL, NULL);
+    wxFileName::SplitPath(wxFileConfig::GetLocalFileName("unused"), &localDir, NULL, NULL);
     wxString prefsDirLocal = localDir + wxFILE_SEP_PATH + "Cn3D_User";
     wxString prefsDirProg = wxString(programDir.c_str()) + wxFILE_SEP_PATH + "Cn3D_User";
     if (wxDirExists(prefsDirLocal))

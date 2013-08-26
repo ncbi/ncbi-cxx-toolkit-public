@@ -611,7 +611,7 @@ void StructureWindow::OnSelect(wxCommandEvent& event)
         for (unsigned int i=0; i<names.size(); ++i)
             aChoices.Add(names[i].c_str());
         wxArrayInt selections;
-        size_t nSelected = wxGetMultipleChoices(selections, "Choose chain(s) to toggle:", "Select Chain", aChoices);
+        int nSelected = wxGetSelectedChoices(selections, "Choose chain(s) to toggle:", "Select Chain", aChoices);
         if (nSelected > 0) {
 //            GlobalMessenger()->RemoveAllHighlights(true);
             for (size_t i=0; i<selections.GetCount(); ++i) {
@@ -850,7 +850,7 @@ void StructureWindow::OnEditFavorite(wxCommandEvent& event)
         CCn3d_style_settings *settings = NULL;
         CCn3d_style_settings_set::Tdata::iterator f, fe = favoriteStyles.Set().end();
         for (f=favoriteStyles.Set().begin(); f!=fe; ++f) {
-            if (Stricmp((*f)->GetName().c_str(), name.c_str()) == 0) {
+            if (NStr::CompareNocase((*f)->GetName().c_str(), name.c_str()) == 0) {
                 settings = f->GetPointer();
                 break;
             }
@@ -1414,7 +1414,7 @@ static EModel_type GetModelTypeFromUser(wxWindow *parent)
     models[2] = eModel_type_pdb_model;
 
     wxSingleChoiceDialog dialog(parent, "Please select which type of model you'd like to load",
-        "Select model", 3, choices, (char **) NULL, (wxCAPTION | wxSYSTEM_MENU | wxOK | wxCENTRE));
+        "Select model", 3, choices, (void **) NULL, (wxCAPTION | wxSYSTEM_MENU | wxOK | wxCENTRE));
     if (dialog.ShowModal() != wxID_OK) {
         ERRORMSG("Oops, somehow dialog failed to return OK");
         return eModel_type_ncbi_all_atom;

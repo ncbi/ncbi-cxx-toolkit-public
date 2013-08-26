@@ -118,7 +118,7 @@ void DistanceSelectDialog::CreateControls()
     wxStaticBoxSizer* itemStaticBoxSizer3 = new wxStaticBoxSizer(itemStaticBoxSizer3Static, wxHORIZONTAL);
     itemBoxSizer2->Add(itemStaticBoxSizer3, 0, wxGROW|wxALL, 5);
     wxStaticText* itemStaticText4 = new wxStaticText( itemDialog1, wxID_STATIC, _("Enter a distance cutoff (in Angstroms):"), wxDefaultPosition, wxDefaultSize, 0 );
-    itemStaticBoxSizer3->Add(itemStaticText4, 0, wxGROW|wxALL|wxADJUST_MINSIZE, 5);
+    itemStaticBoxSizer3->Add(itemStaticText4, 0, wxGROW|wxALL, 5);
 
     wxStaticBox* itemStaticBoxSizer5Static = new wxStaticBox(itemDialog1, wxID_ANY, _("Options"));
     wxStaticBoxSizer* itemStaticBoxSizer5 = new wxStaticBoxSizer(itemStaticBoxSizer5Static, wxHORIZONTAL);
@@ -127,7 +127,7 @@ void DistanceSelectDialog::CreateControls()
     itemFlexGridSizer6->AddGrowableCol(0);
     itemStaticBoxSizer5->Add(itemFlexGridSizer6, 100, wxGROW|wxALL, 5);
     wxStaticText* itemStaticText7 = new wxStaticText( itemDialog1, wxID_STATIC, _("Select protein residues:"), wxDefaultPosition, wxDefaultSize, 0 );
-    itemFlexGridSizer6->Add(itemStaticText7, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxALL|wxADJUST_MINSIZE, 5);
+    itemFlexGridSizer6->Add(itemStaticText7, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
     wxCheckBox* itemCheckBox8 = new wxCheckBox( itemDialog1, ID_CHECKBOX, _T(""), wxDefaultPosition, wxDefaultSize, 0 );
     m_Protein = itemCheckBox8;
@@ -135,7 +135,7 @@ void DistanceSelectDialog::CreateControls()
     itemFlexGridSizer6->Add(itemCheckBox8, 0, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
     wxStaticText* itemStaticText9 = new wxStaticText( itemDialog1, wxID_STATIC, _("Select nucleotide residues:"), wxDefaultPosition, wxDefaultSize, 0 );
-    itemFlexGridSizer6->Add(itemStaticText9, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxALL|wxADJUST_MINSIZE, 5);
+    itemFlexGridSizer6->Add(itemStaticText9, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
     wxCheckBox* itemCheckBox10 = new wxCheckBox( itemDialog1, ID_CHECKBOX1, _T(""), wxDefaultPosition, wxDefaultSize, 0 );
     m_Nucleotide = itemCheckBox10;
@@ -143,7 +143,7 @@ void DistanceSelectDialog::CreateControls()
     itemFlexGridSizer6->Add(itemCheckBox10, 0, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
     wxStaticText* itemStaticText11 = new wxStaticText( itemDialog1, wxID_STATIC, _("Select heterogens:"), wxDefaultPosition, wxDefaultSize, 0 );
-    itemFlexGridSizer6->Add(itemStaticText11, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxALL|wxADJUST_MINSIZE, 5);
+    itemFlexGridSizer6->Add(itemStaticText11, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
     wxCheckBox* itemCheckBox12 = new wxCheckBox( itemDialog1, ID_CHECKBOX2, _T(""), wxDefaultPosition, wxDefaultSize, 0 );
     m_Heterogen = itemCheckBox12;
@@ -151,7 +151,7 @@ void DistanceSelectDialog::CreateControls()
     itemFlexGridSizer6->Add(itemCheckBox12, 0, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
     wxStaticText* itemStaticText13 = new wxStaticText( itemDialog1, wxID_STATIC, _("Select solvent:"), wxDefaultPosition, wxDefaultSize, 0 );
-    itemFlexGridSizer6->Add(itemStaticText13, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxALL|wxADJUST_MINSIZE, 5);
+    itemFlexGridSizer6->Add(itemStaticText13, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
     wxCheckBox* itemCheckBox14 = new wxCheckBox( itemDialog1, ID_CHECKBOX3, _T(""), wxDefaultPosition, wxDefaultSize, 0 );
     m_Solvent = itemCheckBox14;
@@ -163,7 +163,7 @@ void DistanceSelectDialog::CreateControls()
     itemFlexGridSizer6->Add(5, 5, 0, wxALIGN_CENTER_HORIZONTAL|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
     wxStaticText* itemStaticText17 = new wxStaticText( itemDialog1, wxID_STATIC, _("Select other molecules only:"), wxDefaultPosition, wxDefaultSize, 0 );
-    itemFlexGridSizer6->Add(itemStaticText17, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxALL|wxADJUST_MINSIZE, 5);
+    itemFlexGridSizer6->Add(itemStaticText17, 0, wxALIGN_LEFT|wxALIGN_CENTER_VERTICAL|wxALL, 5);
 
     wxCheckBox* itemCheckBox18 = new wxCheckBox( itemDialog1, ID_CHECKBOX4, _T(""), wxDefaultPosition, wxDefaultSize, 0 );
     m_Other = itemCheckBox18;

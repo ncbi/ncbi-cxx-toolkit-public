@@ -60,9 +60,10 @@ BEGIN_EVENT_TABLE(Cn3DGLCanvas, wxGLCanvas)
 END_EVENT_TABLE()
 
 Cn3DGLCanvas::Cn3DGLCanvas(wxWindow *parent, int *attribList) :
-    wxGLCanvas(parent, -1, wxPoint(0, 0), wxDefaultSize, wxSUNKEN_BORDER, "Cn3DGLCanvas", attribList),
+    wxGLCanvas(parent, -1, attribList, wxPoint(0, 0), wxDefaultSize, wxSUNKEN_BORDER, "Cn3DGLCanvas"),
     structureSet(NULL), suspended(false)
 {
+    glContext = new wxGLContext(this);
     renderer = new OpenGLRenderer(this);
 }
 
@@ -70,6 +71,12 @@ Cn3DGLCanvas::~Cn3DGLCanvas(void)
 {
     if (structureSet) delete structureSet;
     delete renderer;
+    delete glContext;
+}
+
+void Cn3DGLCanvas::SetCurrent(void)
+{
+    wxGLCanvas::SetCurrent(*glContext);
 }
 
 void Cn3DGLCanvas::SuspendRendering(bool suspend)
@@ -187,7 +194,7 @@ void Cn3DGLCanvas::OnPaint(wxPaintEvent& event)
     // OnPaint handlers must always create a wxPaintDC.
     wxPaintDC dc(this);
 
-    if (!GetContext() || !renderer || suspended) return;
+    if (/*!GetContext() ||*/ !renderer || suspended) return;
     SetCurrent();
     renderer->Display();
     SwapBuffers();
@@ -195,11 +202,11 @@ void Cn3DGLCanvas::OnPaint(wxPaintEvent& event)
 
 void Cn3DGLCanvas::OnSize(wxSizeEvent& event)
 {
-    if (suspended || !GetContext()) return;
+    if (suspended /*|| !GetContext()*/) return;
     SetCurrent();
 
     // this is necessary to update the context on some platforms
-    wxGLCanvas::OnSize(event);
+    //wxGLCanvas::OnSize(event);
 
     // set GL viewport (not called by wxGLCanvas::OnSize on all platforms...)
     int w, h;
@@ -222,7 +229,7 @@ void Cn3DGLCanvas::OnMouseEvent(wxMouseEvent& event)
     static bool dragging = false;
     static long last_x, last_y;
 
-    if (!GetContext() || !renderer || suspended) return;
+    if (/*!GetContext() ||*/ !renderer || suspended) return;
     SetCurrent();
 
 // in wxGTK >= 2.3.2, this causes a system crash on some Solaris machines...

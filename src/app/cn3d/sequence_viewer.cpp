@@ -51,6 +51,9 @@
 #include "sequence_set.hpp"
 #include "cn3d_pssm.hpp"
 
+#include <wx/filename.h>
+
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -519,7 +522,7 @@ void SequenceViewer::ExportAlignment(eExportType type)
 
     wxString outputFolder = wxString(GetUserDir().c_str(), GetUserDir().size() - 1); // remove trailing /
     wxString baseName, outputFile;
-    wxSplitPath(GetWorkingFilename().c_str(), NULL, &baseName, NULL);
+    wxFileName::SplitPath(GetWorkingFilename().c_str(), NULL, &baseName, NULL);
     wxFileDialog dialog(sequenceWindow, "Choose a file for alignment export:", outputFolder,
 #ifdef __WXGTK__
         baseName + extension,
