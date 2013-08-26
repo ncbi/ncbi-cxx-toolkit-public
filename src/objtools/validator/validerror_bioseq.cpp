@@ -3046,29 +3046,36 @@ void CValidError_bioseq::ValidateDeltaLoc
     }
 
     try {
-        size_t loc_len = GetLength(loc, m_Scope);
-        if (loc_len == numeric_limits<TSeqPos>::max()) {
-            PostErr (eDiag_Error, eErr_SEQ_INST_SeqDataLenWrong,
-                     "-1 length on seq-loc of delta seq_ext", seq);
-            string loc_str;
-            loc.GetLabel(&loc_str);
-            if ( loc_str.empty() ) {
-                loc_str = "?";
+        if (seq.IsSetInst ()) {
+            const CSeq_inst& inst = seq.GetInst();
+            size_t loc_len = GetLength(loc, m_Scope);
+            if (loc_len == numeric_limits<TSeqPos>::max()) {
+                PostErr (eDiag_Error, eErr_SEQ_INST_SeqDataLenWrong,
+                         "-1 length on seq-loc of delta seq_ext", seq);
+                string loc_str;
+                loc.GetLabel(&loc_str);
+                if ( loc_str.empty() ) {
+                    loc_str = "?";
+                }
+                if (x_IsDeltaLitOnly(inst)) {
+                    PostErr(eDiag_Warning, eErr_SEQ_INST_SeqLocLength,
+                        "Short length (-1) on seq-loc (" + loc_str + ") of delta seq_ext", seq);
+                }
+            } else {
+                len += loc_len;
             }
-            PostErr(eDiag_Warning, eErr_SEQ_INST_SeqLocLength,
-                "Short length (-1) on seq-loc (" + loc_str + ") of delta seq_ext", seq);
-        } else {
-            len += loc_len;
-        }
-        if ( loc_len <= 10 ) {
-            string loc_str;
-            loc.GetLabel(&loc_str);
-            if ( loc_str.empty() ) {
-                loc_str = "?";
+            if ( loc_len <= 10 ) {
+                string loc_str;
+                loc.GetLabel(&loc_str);
+                if ( loc_str.empty() ) {
+                    loc_str = "?";
+                }
+                if (x_IsDeltaLitOnly(inst)) {
+                    PostErr(eDiag_Warning, eErr_SEQ_INST_SeqLocLength,
+                        "Short length (" + NStr::SizetToString(loc_len) + 
+                        ") on seq-loc (" + loc_str + ") of delta seq_ext", seq);
+                }
             }
-            PostErr(eDiag_Warning, eErr_SEQ_INST_SeqLocLength,
-                "Short length (" + NStr::SizetToString(loc_len) + 
-                ") on seq-loc (" + loc_str + ") of delta seq_ext", seq);
         }
 
     } catch (const CObjmgrUtilException&) {
@@ -3080,7 +3087,7 @@ void CValidError_bioseq::ValidateDeltaLoc
         PostErr(eDiag_Error, eErr_SEQ_INST_SeqDataLenWrong,
             "No length for Seq-loc (" + loc_str + ") of delta seq-ext",
             seq);
-    }    
+    }
 }
 
 
