@@ -16,7 +16,7 @@ Variation ::= {
       mol genomic,
       seq {
         length 1,
-        seq-data iupacana "C"
+        seq-data iupacna "C"
       }
     }
   },
