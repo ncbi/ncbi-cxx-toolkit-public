@@ -965,7 +965,9 @@ bool CSeqMap::CanResolveRange(CScope* scope, const SSeqMapSelector& sel) const
             vector<CTSE_Handle> all_tse;
             vector<CTSE_Handle> parent_tse;
             vector<CSeq_id_Handle> next_ids;
-            CDataLoader::TChunkSet load_chunks, other_chunks;
+            CDataLoader::TChunkSet load_chunks, chunks;
+            vector< AutoPtr<CInitGuard> > guards;
+
             SSeqMapSelector next_sel(sel);
             while ( deeper ) {
                 deeper = false;
@@ -976,7 +978,7 @@ bool CSeqMap::CanResolveRange(CScope* scope, const SSeqMapSelector& sel) const
                 next_sel.SetFlags(fFindAnyLeaf);
                 parent_tse.clear();
                 next_ids.clear();
-                load_chunks.clear();
+                chunks.clear();
                 {{
                     CSeqMap_CI it(ConstRef(this), scope, next_sel);
                     for(; it; ++it) {
@@ -994,7 +996,7 @@ bool CSeqMap::CanResolveRange(CScope* scope, const SSeqMapSelector& sel) const
                             CRef<CTSE_Chunk_Info> chunk = it.x_GetSeqMap()
                                 .x_GetChunkToLoad(it.x_GetSegment());
                             if ( chunk ) {
-                                load_chunks.push_back(chunk);
+                                chunks.push_back(chunk);
                             }
                         }
                     }
@@ -1002,24 +1004,33 @@ bool CSeqMap::CanResolveRange(CScope* scope, const SSeqMapSelector& sel) const
                         return false;
                     }
                 }}
-                if ( !load_chunks.empty() ) {
-                    sort(load_chunks.begin(), load_chunks.end(), PByLoader());
-                    load_chunks.erase(unique(load_chunks.begin(),
-                                             load_chunks.end()),
-                                      load_chunks.end());
-                    CDataLoader* first_loader = PByLoader::Get(load_chunks[0]);
-                    CDataLoader* last_loader;
-                    while ( (last_loader=PByLoader::Get(load_chunks.back())) !=
-                            first_loader ){
-                        other_chunks.clear();
-                        while ( PByLoader::Get(load_chunks.back()) ==
-                                last_loader ) {
-                            other_chunks.push_back(load_chunks.back());
-                            load_chunks.pop_back();
-                        }
-                        last_loader->GetChunks(other_chunks);
+                sort(chunks.begin(), chunks.end(), PByLoader());
+                chunks.erase(unique(chunks.begin(), chunks.end()), chunks.end());
+                while ( !chunks.empty() ) {
+                    // Collect and lock chunks from one loader to be loaded
+                    CDataLoader* loader = PByLoader::Get(chunks.back());
+                    load_chunks.clear();
+                    guards.clear();
+                    // find start index of chunks from this loader
+                    size_t s = chunks.size();
+                    while ( s > 0 && PByLoader::Get(chunks[s-1]) == loader ) {
+                        --s;
                     }
-                    first_loader->GetChunks(load_chunks);
+                    // lock chunks to be loaded
+                    for ( size_t i = s; i < chunks.size(); ++i ) {
+                        AutoPtr<CInitGuard> guard = chunks[i]->GetLoadInitGuard();
+                        if ( guard.get() && *guard.get() ) {
+                            load_chunks.push_back(chunks[i]);
+                            guards.push_back(guard);
+                        }
+                    }
+                    // load the chunks
+                    if ( !load_chunks.empty() ) {
+                        loader->GetChunks(load_chunks);
+                        guards.clear();
+                    }
+                    // done with this loader
+                    chunks.resize(s);
                 }
                 if ( !next_ids.empty() ) {
                     deeper = true;

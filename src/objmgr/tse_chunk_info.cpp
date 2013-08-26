@@ -252,6 +252,15 @@ bool CTSE_Chunk_Info::x_GetRecords(const CSeq_id_Handle& id, bool bioseq) const
 }
 
 
+CInitGuard* CTSE_Chunk_Info::GetLoadInitGuard(void)
+{
+    if ( IsLoaded() ) {
+        return 0;
+    }
+    return new CInitGuard(m_LoadLock, m_SplitInfo->GetMutexPool());
+}
+
+
 void CTSE_Chunk_Info::Load(void) const
 {
     CTSE_Chunk_Info* chunk = const_cast<CTSE_Chunk_Info*>(this);

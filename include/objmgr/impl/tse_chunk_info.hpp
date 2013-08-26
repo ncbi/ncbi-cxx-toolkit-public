@@ -126,6 +126,7 @@ public:
     bool NotLoaded(void) const;
     bool IsLoaded(void) const;
     void Load(void) const;
+    CInitGuard* GetLoadInitGuard(void);
 
     //////////////////////////////////////////////////////////////////
     // chunk content identification
