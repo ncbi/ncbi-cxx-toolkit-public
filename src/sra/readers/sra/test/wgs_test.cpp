@@ -181,6 +181,22 @@ string sx_GetSeqData(const CBioseq& seq)
     CBioseq_Handle bh = scope.AddBioseq(seq);
     string ret;
     bh.GetSeqVector().GetSeqData(0, kInvalidSeqPos, ret);
+    NON_CONST_ITERATE ( string, i, ret ) {
+        if ( *i == char(0xff) || *i == char(0) )
+            *i = char(0xf);
+    }
+    if ( 0 ) {
+        size_t w = 0;
+        ITERATE ( string, i, ret ) {
+            if ( w == 78 ) {
+                cout << '\n';
+                w = 0;
+            }
+            cout << "0123456789ABCDEF"[*i&0xff];
+            ++w;
+        }
+        cout << endl;
+    }
     return ret;
 }
 
@@ -264,11 +280,17 @@ int CWGSTestApp::Run(void)
             CRef<CBioseq> seq2 = it.GetBioseq(it.fDefaultIds|it.fInst_ncbi4na);
             if ( print_seq ) {
                 out << MSerial_AsnText << *seq1;
+                //out << MSerial_AsnText << *seq2;
             }
             string data1 = sx_GetSeqData(*seq1);
             string data2 = sx_GetSeqData(*seq2);
             if ( data1 != data2 ) {
-                ERR_POST(Fatal<<"Different Seq-data: "<<MSerial_AsnText<<*seq2);
+                size_t pos = 0;
+                while ( data1[pos] == data2[pos] ) {
+                    ++pos;
+                }
+                ERR_POST(Fatal<<"Different Seq-data at " << pos << ": " <<
+                         MSerial_AsnText << *seq1 << MSerial_AsnText << *seq2);
             }
             if ( ++count >= limit_count ) {
                 break;
