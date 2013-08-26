@@ -22,8 +22,3 @@ BLAST_LIBS = xblast xalgoblastdbindex composition_adjustment \
 		xalgodustmask xalgowinmask seqmasks_io seqdb blast_services xobjutil \
 		$(OBJREAD_LIBS) xnetblastcli xnetblast blastdb scoremat tables xalnmgr
 # BLAST additionally needs xconnect $(SOBJMGR_LIBS) or $(OBJMGR_LIBS)
-
-# Needed for MT traceback
-LOCAL_LDFLAGS += -fopenmp
-LOCAL_CFLAGS += -fopenmp
-LOCAL_CXXFLAGS += -fopenmp
