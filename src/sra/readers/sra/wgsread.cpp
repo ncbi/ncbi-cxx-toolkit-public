@@ -1011,7 +1011,7 @@ CRef<CSeq_data> sx_Get2na(const CVDBValueFor4Bits& read,
             _ASSERT(!(b2na0 & f2nd_4na));
             _ASSERT(!(b2na1 & fBoth_4na));
             _ASSERT(!(b2na2 & f1st_4na));
-            Uint1 b2na = ((b2na0<<6)+(b2na1<<2)+(b2na2&3))&0xff; // 0123
+            Uint1 b2na = ((b2na0<<6)+(b2na1<<2)+((b2na2>>2)&3))&0xff; // 0123
             data.push_back(b2na);
             len -= 4;
         }
@@ -1169,7 +1169,7 @@ CRef<CSeq_inst> CWGSSeqIterator::GetSeq_inst(TFlags flags) const
     inst->SetStrand(CSeq_inst::eStrand_ds);
     inst->SetRepr(CSeq_inst::eRepr_delta);
     CVDBValueFor4Bits read(m_Seq->READ(m_CurrId));
-    if ( flags & fInst_ncbi4na ) {
+    if ( (flags & fMaskInst) == fInst_ncbi4na ) {
         inst->SetSeq_data(*sx_Get4na(read, 0, length));
     }
     else {
