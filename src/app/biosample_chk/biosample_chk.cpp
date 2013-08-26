@@ -126,6 +126,7 @@ private:
     void ProcessSeqSubmit(void);
     void ProcessInput (void);
     void ProcessList (const string& fname);
+    void ProcessFileList (const string& fname);
     void ProcessOneDirectory(const string& dir_name, bool recurse);
     void ProcessOneFile(string fname);
     void ProcessReleaseFile(const CArgs& args);
@@ -164,7 +165,14 @@ private:
         e_push
     };
 
+    enum E_ListType {
+        e_none = 0,
+        e_accessions,
+        e_files
+    };
+
     int m_Mode;
+    int m_ListType;
 	string m_StructuredCommentPrefix;
 
     TSrcTableColumnList m_SrcReportFields;
@@ -285,6 +293,27 @@ void CBiosampleChkApp::ProcessList (const string& fname)
 }
 
 
+void CBiosampleChkApp::ProcessFileList (const string& fname)
+{
+    // Process file with list of files
+
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CGBDataLoader::RegisterInObjectManager(*objmgr);
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+
+    m_ListType = e_none;
+    CRef<ILineReader> lr = ILineReader::New (fname);
+    while ( !lr->AtEOF() ) {
+        CTempString line = *++*lr;
+        if (!NStr::IsBlank(line)) {
+            ProcessOneFile(line);
+        }
+    }
+    m_ListType = e_files;
+}
+
+
 void CBiosampleChkApp::ProcessInput (const string& fname)
 {
     // Process file based on its content
@@ -326,15 +355,21 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
     }
 
     m_Diffs.clear();
-    if (NStr::Equal(args["a"].AsString(), "l")) {
-        ProcessList (fname);
-    } else {
-        m_In.reset(OpenFile(fname, args));
-        if (m_Mode == e_push) {
-            ProcessInput(fname);
-        } else {
-            ProcessInput ();
-        }
+    switch (m_ListType) {
+        case e_accessions:
+            ProcessList (fname);
+            break;
+        case e_files:    
+            ProcessFileList (fname);
+            break;
+        case e_none:
+            m_In.reset(OpenFile(fname, args));
+            if (m_Mode == e_push) {
+                ProcessInput(fname);
+            } else {
+                ProcessInput ();
+            }
+            break;        
     }
 
     if (m_Mode == e_report_diffs) {
@@ -492,11 +527,18 @@ int CBiosampleChkApp::Run(void)
     // a Seq-entry ASN.1 file, other option are a Seq-submit or NCBI
     // Release file (batch processing) where we process each Seq-entry
     // at a time.
+    if (NStr::Equal(args["a"].AsString(), "l")) {
+        m_ListType = e_accessions;
+    } else if (NStr::Equal(args["a"].AsString(), "f")) {
+        m_ListType = e_files;
+    } else {
+        m_ListType = e_none;
+    }
 
     if ( m_Mode == e_push) {
-        if (NStr::Equal(args["a"].AsString(), "l")) {
+        if (m_ListType != e_none) {
             // error
-            *m_LogStream << "List type (-a l) is not appropriate for push mode." << endl;
+            *m_LogStream << "List type (-a l or -a f) is not appropriate for push mode." << endl;
             return 0;
         } else if (!args["p"] || !args["i"]) {
             // error
