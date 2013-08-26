@@ -156,9 +156,20 @@ int CContextApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
         n++;
     }
 // checking only position on the first placement?
-    n = CompareLocations(v1->SetPlacements().front()->GetLoc(),v1->SetPlacements().front()->GetLoc(),n);
+    n = CompareLocations(v1->SetPlacements().front()->GetLoc(),v2->SetPlacements().front()->GetLoc(),n);
    
-  
+    string ref1,ref2;
+    if (v1->SetPlacements().front()->IsSetSeq() && v1->SetPlacements().front()->GetSeq().IsSetSeq_data() && v1->SetPlacements().front()->GetSeq().GetSeq_data().IsIupacna())
+        ref1 = v1->SetPlacements().front()->SetSeq().SetSeq_data().SetIupacna().Set();
+    if (v2->SetPlacements().front()->IsSetSeq() && v2->SetPlacements().front()->GetSeq().IsSetSeq_data() && v2->SetPlacements().front()->GetSeq().GetSeq_data().IsIupacna())
+        ref2 = v2->SetPlacements().front()->SetSeq().SetSeq_data().SetIupacna().Set();
+
+    if (ref1 != ref2)
+    {
+        ERR_POST(Error << "Ref allele in VariantPlacement do not match" << Endm);
+        n++;
+    }
+
     if (v1->SetData().SetSet().SetVariations().size() !=
         v2->SetData().SetSet().SetVariations().size() )
     {
