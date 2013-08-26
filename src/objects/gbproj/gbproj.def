@@ -1,0 +1,3 @@
+[-]
+_export        = NCBI_GBPROJ_EXPORT
+_extra_headers = objects/gbproj/gbproj_export.h

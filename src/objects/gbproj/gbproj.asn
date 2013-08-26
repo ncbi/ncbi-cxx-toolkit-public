@@ -1,0 +1,267 @@
+
+--- -------------------------------------------------------------------------
+--- Definitions for GB project
+--- GUI projects are the basic units of data used in Genome Workbench
+---
+--- -------------------------------------------------------------------------
+
+NCBI-GBProject DEFINITIONS ::=
+BEGIN
+
+IMPORTS Annotdesc, Seq-annot     FROM NCBI-Sequence
+        Seq-submit               FROM NCBI-Submit
+        Seq-entry                FROM NCBI-Seqset
+        Seq-id, Seq-loc          FROM NCBI-Seqloc
+        Seq-align, Seq-align-set FROM NCBI-Seqalign
+        Date, User-object        FROM NCBI-General;
+
+EXPORTS ProjectFolder, ProjectItem, ProjectHistoryItem, ProjectDescr, ProjectAnnot,
+        FolderInfo, AbstractProjectItem, LoaderDescriptor, ViewDescriptor;
+
+
+-- A dummy type used for replacing 'removed' or deprecated optional fields that
+-- have not been used and won't be used any more.
+DummyObsoleteType ::= CHOICE {
+	null NULL
+}
+
+--
+-- Version 2 project
+-- With version two we start a new paradigm
+-- The first item in the project *MUST* be a non-optional version stamp,
+-- composed as an integer.  This allows us to use a binary ASN.1 fingerprint to
+-- determine the version prior to reading a file.
+--
+GBProject-ver2 ::= SEQUENCE {
+
+    -- the version for this project
+    -- for this particular instance, this should always be 2
+    -- this data element *MUST* be first
+    project-version VisibleString,
+
+    -- next counter for project items
+    counter INTEGER DEFAULT 0,
+
+    -- standard descriptors
+    descr ProjectDescr,
+
+    -- a set of extra analyses perfromed by the user
+    -- each of these may have descriptors
+    data ProjectFolder,
+
+    -- a copy of the original plugin message used to generate this project
+    -- This is deprecated. DO NOT USE THIS FIELD.
+    -- The original spec is: orig-message PluginMessage OPTIONAL.
+	  -- It is intended to be removed, but a complete
+		-- removal will cause order shift for the rest of 
+		-- fields in this choice, and cause deserialization
+		-- failure for existing ASN file since this filed is
+		-- in the middle of the spec.
+    obsolete-orig-message DummyObsoleteType OPTIONAL,
+
+    -- history of things done to this object
+    history SET OF ProjectHistoryItem OPTIONAL,
+
+    --name of the plugin that can handle External Data for the project
+    data-plugin VisibleString OPTIONAL,
+
+    --optional parameter for the data-plugin
+    plugin-param VisibleString OPTIONAL,
+
+    -- arbitrary annotations
+    annot SET OF ProjectAnnot OPTIONAL,
+    
+    -- a set of data sources including data loader and data
+    loaders SET OF LoaderDescriptor OPTIONAL,
+
+    --- set of views, associated with project
+    views SET OF ViewDescriptor OPTIONAL,
+	
+    -- set of view-specific settings
+    view-settings SET OF User-object OPTIONAL
+}
+
+
+ViewDataLink ::= SEQUENCE {
+    --- if both are absent - link goes to project
+    --- if both present - fingerprinted object inside project item
+    --- if only project-item-id present - link goes to project item
+    
+    --- project item id
+    project-item-id INTEGER OPTIONAL,
+    
+    --- fingerprint of object to show in view
+    fingerprint CHOICE {
+        crc32 INTEGER,
+        md5   OCTET STRING
+    } OPTIONAL,
+    
+    type VisibleString
+}
+
+ViewDescriptor ::= SEQUENCE {
+    --- data for view opening
+    data CHOICE {
+        --- link to retrieve data
+        link  ViewDataLink,  
+        
+        --- virtual project item, if link cannot be created
+        item  ProjectItem
+    },        
+    
+    --- plugin name of saved view
+    view-plugin     VisibleString,
+    
+    --- view id
+    view-id         INTEGER,
+    
+    --- optional settings, requered to open view
+    view-memento    ViewMemento OPTIONAL
+}
+
+
+ViewMemento ::= SEQUENCE {
+    options-id  INTEGER
+}
+
+
+ProjectFolder ::= SEQUENCE {
+    info    FolderInfo,
+    folders SET OF ProjectFolder    OPTIONAL,
+    items   SET OF ProjectItem      OPTIONAL
+}
+
+
+ProjectItem ::= SEQUENCE {
+    -- serial number - must be unique in a project (GBProject)
+    id INTEGER,
+
+    -- user-defined label
+    label VisibleString OPTIONAL,
+
+    -- user-defined descriptors
+    descr SET OF Annotdesc OPTIONAL,
+
+    -- the item we represent
+    item CHOICE {
+        -- for projects that simply import a far-pointer
+        id     Seq-id,
+
+        -- for projects that contain something else
+        entry  Seq-entry,
+
+        -- annotation only
+        annot  Seq-annot,
+
+        -- for submission
+        submit Seq-submit,
+
+        -- seq-align and seq-align-set as registered items
+        seq-align     Seq-align,
+        seq-align-set Seq-align-set,
+
+        -- plugin message
+        -- This is deprecated. DO NOT USE THIS FIELD.
+        -- The original spec is: plugin PluginMessage.
+	      -- It is intended to be removed, but a complete
+		    -- removal will cause order shift for the rest of 
+		    -- fields in this choice, and cause deserialization
+		    -- failure for existing ASN files since this filed is
+		    -- in the middle of the spec.
+		    obsolete-plugin DummyObsoleteType,
+
+        -- arbitrary object (use with care!)
+        other AbstractProjectItem,
+        
+        -- PubMed ID
+        pmid   SET OF INTEGER,
+
+        -- Taxonomy ID
+        taxid  SET OF INTEGER
+    },
+
+    --name of the plugin that can handle External Data for the project
+    data-plugin VisibleString OPTIONAL,
+
+    -- "folder open" state
+    disabled    BOOLEAN OPTIONAL
+}
+
+AbstractProjectItem ::= SEQUENCE {
+    type VisibleString,
+    data OCTET STRING
+}
+
+
+ProjectHistoryItem ::= SEQUENCE {
+    -- ID of ProjectItem referenced
+    id INTEGER,
+
+    -- date of modification
+    date Date,
+
+    -- label for this item (terse description)
+    label VisibleString,
+
+    -- optional longer description
+    comment VisibleString OPTIONAL
+}
+
+
+FolderInfo ::= SEQUENCE {
+    title VisibleString,
+
+    -- basic descriptors
+    create-date Date,
+
+    -- optional comments
+    comment VisibleString OPTIONAL,
+
+    -- "folder open" state
+    open    BOOLEAN OPTIONAL,
+
+    -- arbitrary annotations
+    annot SET OF Annotdesc OPTIONAL
+}
+
+
+ProjectDescr ::= SEQUENCE {
+    -- user-defined title for the workspace
+    title VisibleString,
+
+    -- basic (required) descriptors
+    create-date Date,
+    modified-date Date OPTIONAL,
+
+    -- optional descriptors
+    comment VisibleString OPTIONAL
+}
+
+
+ProjectAnnot ::= SEQUENCE {
+    create-date Date,
+    modified-date Date OPTIONAL,
+    annot Annotdesc
+}
+
+
+LoaderDescriptor ::= SEQUENCE {
+    -- data loader label 
+    label VisibleString,
+
+    -- loader data source type
+    loader-type VisibleString,
+
+    -- data, depends on loader type
+    data User-object,
+    
+    -- flag: is this data loader enabled?
+    enabled BOOLEAN DEFAULT TRUE,
+
+    -- loader priority used in object manager
+    priority INTEGER OPTIONAL
+}
+
+
+END
+

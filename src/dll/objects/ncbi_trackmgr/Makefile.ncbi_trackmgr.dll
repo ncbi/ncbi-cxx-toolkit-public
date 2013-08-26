@@ -2,7 +2,7 @@
 
 DLL = ncbi_trackmgr
 
-HOSTED_LIBS = trackmgr trackmgrcli
+HOSTED_LIBS = trackmgr trackmgrcli gbproj
 
 DEPENDENCIES = ncbi_seq ncbi_pub ncbi_general ncbi_core
 
