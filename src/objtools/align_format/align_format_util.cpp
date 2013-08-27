@@ -2275,6 +2275,32 @@ static string s_GetTaxName(int taxid)
     return taxName;
 }
 
+void s_AddOtherRelatedInfoLinks(const list< CRef< CBlast_def_line > > &bdl, 
+                                const string& rid,    
+                                bool is_na,                                                                                                   
+                                bool for_alignment, 
+                                int cur_align,
+                                list<string> &linkout_list)
+                                
+{   
+    //Identical Proteins
+    if(!is_na && bdl.size() > 1) { 
+        list< CRef< CBlast_def_line > >::const_iterator iter = bdl.begin();            
+        CBioseq::TId& cur_id = (CBioseq::TId &)(*iter)->GetSeqid();
+        TGi gi = FindGi(cur_id);
+        if (gi > ZERO_GI) { 
+            CRef<CSeq_id> wid = FindBestChoice(cur_id, CSeq_id::WorstRank);
+            string label;
+            wid->GetLabel(&label, CSeq_id::eContent);                
+            string url_link = kIdenticalProteinsUrl;
+            string lnk_displ = "Identical Proteins";
+            url_link = s_MapLinkoutGenParam(url_link,rid,NStr::IntToString(gi),for_alignment, cur_align,label,lnk_displ);        
+            url_link = CAlignFormatUtil::MapTemplate(kIdenticalProteinsDispl,"lnk",url_link);
+            linkout_list.push_back(url_link);
+        }
+    }
+}
+
 list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_line > > &bdl,                                             
                                                  const string& rid,
                                                  const string& cdd_rid, 
@@ -2369,6 +2395,7 @@ list<string> CAlignFormatUtil::GetFullLinkoutUrl(const list< CRef< CBlast_def_li
             linkout_list.push_back(*iter);
         }
  }
+ s_AddOtherRelatedInfoLinks(bdl,rid,is_na,for_alignment,cur_align,linkout_list); 
  return linkout_list;
 }
 
@@ -3440,7 +3467,7 @@ CAlignFormatUtil::GetSeqAlignSetCalcParams(const CSeq_align_set& aln,int queryLe
     double lowest_evalue = 0;
     int highest_length = 1;
     int highest_ident = 0;
-    int highest_identity = 0;
+    //int highest_identity = 0;
     double totalLen = 0;
     
     list<TGi> use_this_gi;   // Not used here, but needed for GetAlnScores.    
