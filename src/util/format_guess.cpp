@@ -715,6 +715,9 @@ CFormatGuess::TestFormatGvf(
         //  start of data
         //
         if ( it->empty() || (*it)[0] == '#' ) {
+            if (NStr::StartsWith(*it, "##gvf-version")) {
+                return true;
+            }
 			continue;
 		}
 		if ( !uGvfLineCount && NStr::StartsWith( *it, "browser " ) ) {
