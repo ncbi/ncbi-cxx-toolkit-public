@@ -70,11 +70,8 @@
 
 #include <common/test_assert.h>  /* This header must go last */
 
-
-//USING_NCBI_SCOPE;
-
 BEGIN_NCBI_SCOPE
-    USING_SCOPE(objects);
+USING_SCOPE(objects);
 
 //  ============================================================================
 void DumpMemory(const string& prefix)
@@ -334,16 +331,16 @@ CArgDescriptions* CMultiReader::InitAppArgs(CNcbiApplication& app)
 #endif
 
 
-CRef<CSerialObject> CMultiReader::ReadFile(const CTable2AsnContext& args, const string& ifname)
+CRef<CSerialObject> CMultiReader::ReadFile(const string& ifname)
 {
     CNcbiIfstream istr(ifname.c_str());
     //CNcbiOfstream ostr(ofname);
 
 
-    xSetFormat(args, istr);
-    xSetFlags(args, istr);
-    xSetMapper(args);
-    xSetErrorContainer(args);
+    xSetFormat(m_context, istr);
+    xSetFlags(m_context, istr);
+    xSetMapper(m_context);
+    xSetErrorContainer(m_context);
 
     //CRef< CSerialObject> object;
     //vector< CRef< CSeq_annot > > annots;
@@ -354,7 +351,7 @@ CRef<CSerialObject> CMultiReader::ReadFile(const CTable2AsnContext& args, const 
         //                xProcessBed(args, istr, ostr);
         break;
     default:
-        result.Reset(xProcessDefault(args, istr));
+        result.Reset(xProcessDefault(m_context, istr));
         //ApplyAdditionalProperties(args);
         //WriteObject(ostr);
         break;
@@ -379,7 +376,7 @@ CRef<CSerialObject> CMultiReader::xProcessDefault(
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "File format not supported", 0);
     }
-    CRef<CSerialObject> result = pReader->ReadObject(istr, m_logger);
+    CRef<CSerialObject> result = pReader->ReadObject(istr, m_context.m_logger);
 
     return result;
 }
@@ -545,7 +542,6 @@ void CMultiReader::xSetMapper(const CTable2AsnContext& args)
 void CMultiReader::xSetErrorContainer(const CTable2AsnContext& args)
     //  ----------------------------------------------------------------------------
 {
-    m_logger = args.m_logger;
 #if 0
     //
     //  By default, allow all errors up to the level of "warning" but nothing
@@ -584,8 +580,8 @@ void CMultiReader::xSetErrorContainer(const CTable2AsnContext& args)
 #endif
 }
 
-CMultiReader::CMultiReader(IMessageListener* logger)
-    :m_logger(logger)
+CMultiReader::CMultiReader(const CTable2AsnContext& context)
+    :m_context(context)
 {
 }
 
@@ -660,39 +656,38 @@ void ApplySourceQualifiers(objects::CBioseq& bioseq, const string& src_qualifier
 
 }
 
-
-void CMultiReader::ApplyAdditionalProperties(const CTable2AsnContext& context, CSeq_entry& entry)
+void CMultiReader::ApplyAdditionalProperties(CSeq_entry& entry)
 {
     switch(entry.Which())
     {
     case CSeq_entry::e_Seq:
-        ApplySourceQualifiers(entry.SetSeq(), context.m_source_qualifiers);
-        if (context.m_SetIDFromFile)
+        ApplySourceQualifiers(entry.SetSeq(), m_context.m_source_qualifiers);
+        if (m_context.m_SetIDFromFile)
         {
             CRef<CSeq_id> id;
-            GetSeqId(id, context);
+            GetSeqId(id, m_context);
             entry.SetSeq().SetId().push_back(id);
         }
         break;
     case CSeq_entry::e_Set:
         {
-            if (context.m_SetIDFromFile)
+            if (m_context.m_SetIDFromFile)
             {
                 CRef<CSeq_id> id;
-                GetSeqId(id, context);
+                GetSeqId(id, m_context);
                 entry.SetSet().SetId().Assign(*id);
             }
-            if (context.m_GenomicProductSet)
+            if (m_context.m_GenomicProductSet)
             {
                 //entry.SetSet().SetClass(CBioseq_set_Base::eClass_gen_prod_set);
             }
-            if (context.m_NucProtSet)
+            if (m_context.m_NucProtSet)
             {
                 //entry.SetSet().SetClass(CBioseq_set_Base::eClass_nuc_prot);
             }
             NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
             {
-                ApplyAdditionalProperties(context, **it);
+                ApplyAdditionalProperties(**it);
             }
         }
         break;
@@ -700,24 +695,24 @@ void CMultiReader::ApplyAdditionalProperties(const CTable2AsnContext& context, C
         break;
     }
 
-    if (!context.m_Comment.empty())
+    if (!m_context.m_Comment.empty())
     {
         CRef<CSeqdesc> value(new CSeqdesc());
-        value->SetComment(context.m_Comment);
+        value->SetComment(m_context.m_Comment);
 
         MergeDescriptors(entry.SetDescr(), *value);
     }
 
-    if (!context.m_OrganismName.empty())
+    if (!m_context.m_OrganismName.empty())
     {
         CRef<CSeqdesc> value(new CSeqdesc());
-        value->SetOrg().SetTaxname().assign(context.m_OrganismName);
+        value->SetOrg().SetTaxname().assign(m_context.m_OrganismName);
 
         MergeDescriptors(entry.SetDescr(), *value);
     }
 }
 
-void CMultiReader::LoadDescriptors(const CTable2AsnContext& args, const string& ifname, CRef<CSeq_descr> & out_desc)
+void CMultiReader::LoadDescriptors(const string& ifname, CRef<CSeq_descr> & out_desc)
 {
     out_desc.Reset(new CSeq_descr);
 
@@ -1021,9 +1016,9 @@ CRef<CSeq_entry> CMultiReader::CreateNewSeqFromTemplate(const CTable2AsnContext&
     return result;
 }
 
-CRef<CSeq_entry> CMultiReader::LoadFile(const CTable2AsnContext& context, const string& ifname)
+CRef<CSeq_entry> CMultiReader::LoadFile(const string& ifname)
 {
-    CRef<CSerialObject> obj = ReadFile(context, ifname);
+    CRef<CSerialObject> obj = ReadFile(ifname);
     CRef<CSeq_entry> read_entry(dynamic_cast<CSeq_entry*>(obj.GetPointerOrNull()));
     if (read_entry)
     {
@@ -1031,7 +1026,7 @@ CRef<CSeq_entry> CMultiReader::LoadFile(const CTable2AsnContext& context, const 
         {
         }
 
-        if (read_entry->IsSet() && !context.m_HandleAsSet)
+        if (read_entry->IsSet() && !m_context.m_HandleAsSet)
         {
             cerr << "Error" << endl;
             return CRef<CSeq_entry>();
@@ -1044,21 +1039,21 @@ CRef<CSeq_entry> CMultiReader::LoadFile(const CTable2AsnContext& context, const 
             CSeq_entry_Base::TSet::TSeq_set& data = read_entry->SetSet().SetSeq_set();
             NON_CONST_ITERATE(CSeq_entry_Base::TSet::TSeq_set, it, data)
             {                        
-                CRef<CSeq_entry> new_entry = CreateNewSeqFromTemplate(context, (**it).SetSeq());
+                CRef<CSeq_entry> new_entry = CreateNewSeqFromTemplate(m_context, (**it).SetSeq());
                 entry->SetSet().SetSeq_set().push_back(new_entry);
             }
             return entry;
         }
         else
         {
-            CRef<CSeq_entry> new_entry = CreateNewSeqFromTemplate(context, read_entry->SetSeq());
+            CRef<CSeq_entry> new_entry = CreateNewSeqFromTemplate(m_context, read_entry->SetSeq());
             return new_entry;
         }
     }
     return CRef<CSeq_entry>();
 }
 
-void CMultiReader::Cleanup(const CTable2AsnContext& context, CRef<CSeq_entry> entry)
+void CMultiReader::Cleanup(CRef<CSeq_entry> entry)
 {
     /*
     CCleanup cleanup;
@@ -1374,14 +1369,14 @@ void CMultiReader::xDumpErrors(CNcbiOstream& ostr)
 
 #endif
 
-CRef<CSerialObject> CMultiReader::HandleSubmitTemplate(const CTable2AsnContext& context, CRef<CSeq_entry> object) const
+CRef<CSerialObject> CMultiReader::HandleSubmitTemplate(CRef<CSeq_entry> object) const
 {
-    if (context.m_submit_template.NotEmpty())
+    if (m_context.m_submit_template.NotEmpty())
     {
         CRef<CSeq_submit> submit(new CSeq_submit);
-        submit->Assign(*context.m_submit_template);
+        submit->Assign(*m_context.m_submit_template);
         submit->SetData().SetEntrys().clear();
-        if (context.m_HandleAsSet || object->IsSeq())
+        if (m_context.m_HandleAsSet || object->IsSeq())
         {
             submit->SetData().SetEntrys().push_back(object);
         }

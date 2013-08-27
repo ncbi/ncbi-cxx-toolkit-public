@@ -46,6 +46,8 @@
 #include <objects/taxon1/taxon1.hpp>
 #include "table2asn_context.hpp"
 
+#include <algo/sequence/orf.hpp>
+
 #include <objtools/readers/message_listener.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
@@ -57,7 +59,6 @@ BEGIN_NCBI_SCOPE
 
 CTable2AsnContext::CTable2AsnContext():
     m_output(0),
-    //m_make_set(false),
     m_HandleAsSet(false),
     m_GenomicProductSet(false),
     m_SetIDFromFile(false),
@@ -65,7 +66,8 @@ CTable2AsnContext::CTable2AsnContext():
     m_ProjectVersionNumber(0),
     m_flipped_struc_cmt(false),
     m_taxid(0),
-    m_logger(0)
+    m_logger(0),
+    m_RemotePubLookup(false)
 {
 }
 
@@ -147,6 +149,45 @@ void CTable2AsnContext::RemoteRequestTaxid()
     m_taxname = org->GetTaxname();
 
     taxon.Fini();
+}
+
+CRef<CSeq_annot> FindORF(const CBioseq& bioseq)
+{
+    if (bioseq.IsNa())
+    {
+        COrf::TLocVec orfs;
+        CSeqVector  seq_vec(bioseq);
+        COrf::FindOrfs(seq_vec, orfs);
+        if (orfs.size()>0)
+        {
+            CRef<CSeq_id> seqid(new CSeq_id);
+            seqid->Assign(*bioseq.GetId().begin()->GetPointerOrNull());
+            CRef<CSeq_annot> annot = COrf::MakeCDSAnnot(orfs, 1, seqid);
+            return annot;
+        }
+    }
+    return CRef<CSeq_annot>();
+}
+
+void CTable2AsnContext::FindOpenReadingFrame(objects::CSeq_entry& entry)
+{
+    switch(entry.Which())
+    {
+    case CSeq_entry::e_Seq:
+        {
+        CRef<CSeq_annot> annot = FindORF(entry.SetSeq());
+        if (annot.NotEmpty())
+        {
+            entry.SetSeq().SetAnnot().push_back(annot);
+        }
+        }
+        break;
+    case CSeq_entry::e_Set:
+        NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
+        {
+            FindOpenReadingFrame(**it);
+        }
+    }
 }
 
 END_NCBI_SCOPE

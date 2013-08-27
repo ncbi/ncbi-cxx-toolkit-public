@@ -53,11 +53,13 @@
 #include "struc_cmt_reader.hpp"
 #include "OpticalXML2ASN.hpp"
 #include "feature_table_reader.hpp"
+#include "remote_updater.hpp"
 
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/general/Date.hpp>
 
 #include <objtools/readers/message_listener.hpp>
+
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -83,6 +85,7 @@ public:
 
 private:
 
+    auto_ptr<CRemoteUpdater> m_remote_updater;
     auto_ptr<CMultiReader> m_reader;
 
     void Setup(const CArgs& args);
@@ -167,9 +170,8 @@ void CTbl2AsnApp::Init(void)
         ("x", "String", "Suffix", CArgDescriptions::eString, ".fsa");
 
     arg_desc->AddFlag("E", "Recurse");
-    arg_desc->AddOptionalKey
-        ("t", "InFile", "Template File",
-        CArgDescriptions::eInputFile);
+    arg_desc->AddOptionalKey("t", "InFile", "Template File",
+        CArgDescriptions::eInputFile);                              
 
     arg_desc->AddDefaultKey
         ("a", "String", "File Type\n\
@@ -185,8 +187,8 @@ void CTbl2AsnApp::Init(void)
                         e PHRAP/ACE\n\
                         b ASN.1 for -M flag", CArgDescriptions::eString, "a");
 
-    arg_desc->AddFlag("s", "Read FASTAs as Set");
-    arg_desc->AddFlag("g", "Genomic Product Set");              // done
+    arg_desc->AddFlag("s", "Read FASTAs as Set");              // done
+    arg_desc->AddFlag("g", "Genomic Product Set");              
     arg_desc->AddFlag("J", "Delayed Genomic Product Set	");
     arg_desc->AddDefaultKey
         ("F", "String", "Feature ID Links\n\
@@ -208,7 +210,7 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey
         ("D", "InFile", "Descriptors File", CArgDescriptions::eInputFile); // done
     arg_desc->AddOptionalKey
-        ("f", "InFile", "Single Table File", CArgDescriptions::eInputFile);
+        ("f", "InFile", "Single Table File", CArgDescriptions::eInputFile); // done
 
     arg_desc->AddOptionalKey
         ("k", "String", "CDS Flags (combine any of the following letters)\n\
@@ -245,7 +247,7 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddFlag("U", "Remove Unnecessary Gene Xref");
     arg_desc->AddFlag("L", "Force Local protein_id/transcript_id");
     arg_desc->AddFlag("T", "Remote Taxonomy Lookup");               // almost done
-    arg_desc->AddFlag("P", "Remote Publication Lookup");
+    arg_desc->AddFlag("P", "Remote Publication Lookup");            // done
     arg_desc->AddFlag("W", "Log Progress");
     arg_desc->AddFlag("K", "Save Bioseq-set");
 
@@ -344,7 +346,7 @@ int CTbl2AsnApp::Run(void)
     m_Reported = 0;
     */
 
-    m_reader.reset(new CMultiReader(m_logger));
+    m_reader.reset(new CMultiReader(m_context));
 
     if (args["n"])
         m_context.m_OrganismName = args["n"].AsString();
@@ -380,10 +382,19 @@ int CTbl2AsnApp::Run(void)
     if (args["j"])
         m_context.m_source_qualifiers = args["j"].AsString();
 
+    if (args["f"])
+        m_context.m_single_table5_file = args["f"].AsString();
+
     if (args["w"])
         m_context.m_single_structure_cmt = args["w"].AsString();
 
+    m_context.m_RemotePubLookup = args["P"].AsBoolean();
+
     m_context.m_RemoteTaxonomyLookup = args["T"].AsBoolean();
+
+    if (args["k"])
+        m_context.m_find_open_read_frame = args["k"].AsString();
+
     if (m_context.m_RemoteTaxonomyLookup)
     {
         m_context.RemoteRequestTaxid();
@@ -395,7 +406,7 @@ int CTbl2AsnApp::Run(void)
     }
     if (args["D"])
     {
-        m_reader->LoadDescriptors(m_context, args["D"].AsString(), m_context.m_descriptors);
+        m_reader->LoadDescriptors(args["D"].AsString(), m_context.m_descriptors);
     }
 
     if (args["H"])
@@ -496,7 +507,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     }
     else
     {
-        entry = m_reader->LoadFile(m_context, m_context.m_current_file);
+        entry = m_reader->LoadFile(m_context.m_current_file);
     }
 
     entry->Parentize();
@@ -506,13 +517,24 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     ProcessSecretFiles(*entry);
 
-    m_reader->ApplyAdditionalProperties(m_context, *entry);
+    m_reader->ApplyAdditionalProperties(*entry);
 
+    CFeatureTableReader fr(m_logger);
     // this may convert seq into seq-set
-    CFeatureTableReader fr;
     fr.MergeCDSFeatures(*entry);
 
-    result = m_reader->HandleSubmitTemplate(m_context, entry);
+    if (m_context.m_RemotePubLookup)
+    {
+        if (m_remote_updater.get() == 0)
+            m_remote_updater.reset(new CRemoteUpdater);
+
+        m_remote_updater->UpdatePubReferences(*entry);
+    }
+
+    if (!m_context.m_find_open_read_frame.empty())
+        m_context.FindOpenReadingFrame(*entry);
+ 
+    result = m_reader->HandleSubmitTemplate(entry);
 }
 
 string GenerateOutputStream(const CTable2AsnContext& m_context, const string& pathname)
@@ -639,6 +661,7 @@ void CTbl2AsnApp::ProcessSecretFiles(CSeq_entry& result)
     string name = dir + base;
 
     ProcessTBLFile(name + ".tbl", result);
+    ProcessTBLFile(m_context.m_single_table5_file, result);
     ProcessSRCFile(name + ".src", result);
     ProcessQVLFile(name + ".qvl", result);
     ProcessDSCFile(name + ".dsc", result);
@@ -656,7 +679,7 @@ void CTbl2AsnApp::ProcessTBLFile(const string& pathname, CSeq_entry& result)
 
     CRef<ILineReader> reader(ILineReader::New(pathname));
 
-    CFeatureTableReader feature_reader;
+    CFeatureTableReader feature_reader(m_logger);
     feature_reader.ReadFeatureTable(result, *reader);
 }
 
@@ -683,7 +706,7 @@ void CTbl2AsnApp::ProcessDSCFile(const string& pathname, CSeq_entry& result)
     if (!file.Exists()) return;
 
     CRef<CSeq_descr> descr;
-    m_reader->LoadDescriptors(m_context, pathname, descr);
+    m_reader->LoadDescriptors(pathname, descr);
     m_reader->ApplyDescriptors(result, *descr);
 }
 

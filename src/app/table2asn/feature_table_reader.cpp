@@ -180,8 +180,6 @@ namespace
         if (protein.Empty())
             return CRef<CSeq_entry>();
 
-        CBioseq_Handle bioseq_handle = scope.AddBioseq(*protein);
-
         CRef<CSeq_entry> pentry(new CSeq_entry);
         pentry->SetSeq(*protein);
 
@@ -206,6 +204,16 @@ namespace
         string base_name;
         if (feature.IsSetProduct())
         {
+#if 0
+            const CSeq_id* id = feature.GetProduct().GetId();
+            if (id)
+            {
+                id->GetLabel(&base_name, CSeq_id::eContent);
+            }
+            CRef<CSeq_id> newid = GetNewProteinId(top_entry_h, base_name);
+            protein->SetId().clear();
+            protein->SetId().push_back(newid);
+#else
             const CSeq_id* id = feature.GetProduct().GetId();
             if (id)
             {
@@ -219,8 +227,10 @@ namespace
                 CRef<CSeq_id> newid = GetNewProteinId(top_entry_h, base_name);
                 protein->SetId().push_back(newid);
             }
-        }
+#endif
 
+        }
+        CBioseq_Handle bioseq_handle = scope.AddBioseq(*protein);
 
         return pentry;
     }
@@ -374,8 +384,7 @@ void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry)
 
 void CFeatureTableReader::ReadFeatureTable(CSeq_entry& entry, ILineReader& line_reader)
 {
-    CFeature_table_reader::ReadSequinFeatureTables(line_reader, entry, CFeature_table_reader::fCreateGenesFromCDSs);
-    //MergeCDSFeatures(entry);
+    CFeature_table_reader::ReadSequinFeatureTables(line_reader, entry, CFeature_table_reader::fCreateGenesFromCDSs, m_logger);
 }
 
 

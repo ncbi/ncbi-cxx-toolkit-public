@@ -15,6 +15,9 @@ class IMessageListener;
 class CFeatureTableReader
 {
 public:
+   CFeatureTableReader(objects::IMessageListener* logger): m_logger(logger)
+   {
+   }
 // MergeCDSFeatures looks for cdregion features in the feature tables 
 //    in sequence annotations and creates protein sequences based on them 
 //    as well as converting the sequence or a seq-set into nuc-prot-set
@@ -24,6 +27,7 @@ public:
 // This method requires certain postprocessing of plain features added
    void ReadFeatureTable(objects::CSeq_entry& obj, ILineReader& line_reader);
 private:
+   objects::IMessageListener* m_logger;
 };
 
 END_NCBI_SCOPE

@@ -24,21 +24,21 @@ class CMultiReader
 //  ============================================================================
 {
 public:
-   CMultiReader(objects::IMessageListener* logger);
+   CMultiReader(const CTable2AsnContext& context);
    ~CMultiReader();
 
-   CRef<CSerialObject> ReadFile(const CTable2AsnContext& args, const string& ifname);
-   CRef<objects::CSeq_entry> LoadFile(const CTable2AsnContext& args, const string& ifname);
-   void Cleanup(const CTable2AsnContext& args, CRef<objects::CSeq_entry>);
+   CRef<CSerialObject> ReadFile(const string& ifname);
+   CRef<objects::CSeq_entry> LoadFile(const string& ifname);
+   void Cleanup(CRef<objects::CSeq_entry>);
    void WriteObject(CSerialObject&, ostream& );
-   void ApplyAdditionalProperties(const CTable2AsnContext& args, objects::CSeq_entry& entry);
+   void ApplyAdditionalProperties(objects::CSeq_entry& entry);
    void LoadTemplate(CTable2AsnContext& context, const string& ifname);
-   void LoadDescriptors(const CTable2AsnContext& args, const string& ifname, CRef<objects::CSeq_descr> & out_desc);
+   void LoadDescriptors(const string& ifname, CRef<objects::CSeq_descr> & out_desc);
    CRef<objects::CSeq_descr> GetSeqDescr(CSerialObject* obj);
    void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeq_descr & source);
    void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeqdesc & source);
    void ApplyDescriptors(objects::CSeq_entry & obj, const objects::CSeq_descr & source);
-   CRef<CSerialObject> HandleSubmitTemplate(const CTable2AsnContext& args, CRef<objects::CSeq_entry> object) const;
+   CRef<CSerialObject> HandleSubmitTemplate(CRef<objects::CSeq_entry> object) const;
 
 protected:
 
@@ -75,7 +75,7 @@ private:
     string m_AnnotTitle;
 
     auto_ptr<objects::CIdMapper> m_pMapper;
-    objects::IMessageListener* m_logger;
+    const CTable2AsnContext& m_context;
 };
 
 END_NCBI_SCOPE

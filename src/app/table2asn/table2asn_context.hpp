@@ -33,8 +33,8 @@ public:
 	string m_OrganismName;
 	string m_source_qualifiers;
 	string m_Comment;
-	string fInFile;
-	string k;
+	string m_single_table5_file;
+	string m_find_open_read_frame;
 	string V;
 	bool   m_SetIDFromFile;
 	bool   m_NucProtSet;
@@ -46,7 +46,7 @@ public:
 	bool   U;
 	bool   L;
 	bool   m_RemoteTaxonomyLookup;
-	bool   P;
+	bool   m_RemotePubLookup;
 	bool   W;
 	bool   K;
 	CRef<objects::CDate> m_HoldUntilPublish;
@@ -82,6 +82,8 @@ public:
 	void SetOrganismData(objects::CSeq_descr& SD, int genome_code, const string& taxname, int taxid, const string& strain) const;
     // message listener must be provided
 	void RemoteRequestTaxid();
+
+    void FindOpenReadingFrame(objects::CSeq_entry& entry);
 
 	CRef<objects::CSeq_submit> m_submit_template;
 	CRef<objects::CSeq_entry>  m_entry_template;
