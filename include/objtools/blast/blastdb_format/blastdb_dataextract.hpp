@@ -73,6 +73,7 @@ public:
 	m_Gi2AccMap.first = -1;
 	m_Gi2TitleMap.first = -1;
 	m_Oid2Pig.first = -1;
+	m_Gi2SeqIdMap.first = -1;
     }
 
     /// Setting seqid
@@ -138,6 +139,8 @@ protected:
     pair< int, map<int, string> > m_Gi2TitleMap;
     /// Pair with a pig for one Oid.
     pair<int, int> m_Oid2Pig;
+    // Pair with a gi2seqid for one Oid.
+    pair< int, map<int, string> > m_Gi2SeqIdMap;
 private:
     void x_ExtractMaskingData(CSeqDB::TSequenceRanges &ranges, int algo_id);
     int x_ExtractTaxId();
@@ -145,6 +148,8 @@ private:
     void x_SetGi2AccMap();
     /// Sets the map
     void x_SetGi2TitleMap();
+    // sets the gi to seqid map
+    void x_SetGi2SeqIdMap();
 
     /// Initialize the cached defline
     void x_InitDefline();

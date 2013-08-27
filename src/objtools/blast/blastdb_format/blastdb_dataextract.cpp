@@ -238,6 +238,29 @@ void CBlastDBExtractor::x_SetGi2AccMap()
 	return;
 }
 
+void CBlastDBExtractor::x_SetGi2SeqIdMap()
+{
+	if (m_Gi2SeqIdMap.first == m_Oid)
+		return;
+
+	map<TGi, string> gi2id;
+        x_InitDefline();
+        ITERATE(CBlast_def_line_set::Tdata, bd, m_Defline->Get()) {
+	    TGi gi=0;
+            ITERATE(CBlast_def_line::TSeqid, id, ((*bd)->GetSeqid())) {
+                if ((*id)->IsGi()) {
+			gi = (*id)->GetGi();
+			break;
+		}
+	    }
+	    CRef<CSeq_id> theId = FindBestChoice((*bd)->GetSeqid(), CSeq_id::WorstRank);
+	    gi2id[gi] = theId->AsFastaString();
+        }
+	m_Gi2SeqIdMap.first = m_Oid;
+	m_Gi2SeqIdMap.second.swap(gi2id);
+	return;
+}
+
 void CBlastDBExtractor::x_SetGi2TitleMap()
 {
 	if (m_Gi2TitleMap.first == m_Oid)
@@ -277,11 +300,18 @@ string CBlastDBExtractor::ExtractAccession() {
 }
 
 string CBlastDBExtractor::ExtractSeqId() {
+    if (m_Gi)
+    {
+	x_SetGi2SeqIdMap();
+        return m_Gi2SeqIdMap.second[m_Gi];
+    }
+
     CRef<CSeq_id> theId = FindBestChoice(m_Bioseq->GetId(), CSeq_id::WorstRank);
     if (theId->IsGeneral() && theId->GetGeneral().GetDb() == "BL_ORD_ID") {
-        return "No ID available";
+        	return "No ID available";
     }
-    return theId->AsFastaString();
+    string retval = theId->AsFastaString();
+    return retval;
 }
 
 string CBlastDBExtractor::ExtractTitle() {

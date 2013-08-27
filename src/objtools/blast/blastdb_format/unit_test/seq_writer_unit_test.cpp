@@ -128,6 +128,31 @@ BOOST_AUTO_TEST_CASE(TestRequestGiOidLength)
     BOOST_REQUIRE_EQUAL(perc, string("10%"));
 }
 
+BOOST_AUTO_TEST_CASE(TestRequestSeqId)
+{
+    const int kGi(43123516);
+    const string kSeqId("gb|EAC27631.1|");
+    CTmpFile tmpfile;
+    const string& fname = tmpfile.GetFileName();
+    CSeqDB db("data/seqp", CSeqDB::eProtein);
+    const string format_spec("%i");
+    ofstream out(fname.c_str());
+    CSeqFormatter f(format_spec, db, out);
+    CBlastDBSeqId id(NStr::IntToString(kGi));
+    f.Write(id);
+    out.close();
+
+    ifstream in(fname.c_str());
+    char buffer[256] = { '\0' };
+    in.getline(buffer, sizeof(buffer));
+
+    vector<string> tokens;
+    NStr::Tokenize(string(buffer), " ", tokens);
+
+    BOOST_REQUIRE_EQUAL(tokens[0], kSeqId);
+}
+
+
 BOOST_AUTO_TEST_CASE(TestRequestAccessionPIGTaxidTitle)
 {
     const int kGi(43167137);
