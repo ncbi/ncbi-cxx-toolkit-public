@@ -463,6 +463,7 @@ void CSeqMap::x_SetObject(CSegment& seg, const CObject& obj)
         NCBI_THROW(CSeqMapException, eDataError, "object already set");
     }
     // set object
+    seg.m_RefObject.Reset(); // to avoid race
     seg.m_ObjType = seg.m_SegType;
     seg.m_RefObject.Reset(&obj);
     m_Changed = true;
