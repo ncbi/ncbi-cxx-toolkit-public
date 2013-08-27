@@ -75,6 +75,7 @@ private:
 inline
 CFolderInfo::CFolderInfo(void)
 {
+    SetOpen(true);
 }
 
 

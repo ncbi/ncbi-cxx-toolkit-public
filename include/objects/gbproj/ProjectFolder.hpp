@@ -112,7 +112,9 @@ protected:
 // constructor
 inline
 CProjectFolder::CProjectFolder(void)
+:   m_ParentFolder(NULL)
 {
+    m_Id = m_IdCounter.Add(1) - 1;
 }
 
 
