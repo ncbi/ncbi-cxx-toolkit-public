@@ -99,58 +99,6 @@ void CTable2AsnContext::AddUserTrack(CSeq_descr& SD, const string& type, const s
     TD.push_back(sd);
 }
 
-void CTable2AsnContext::RemoteRequestTaxid()
-{
-    if (m_taxname.empty() && m_taxid <= 0)
-        return;
-
-    CTaxon1 taxon;
-    bool is_species, is_uncultured;
-    string blast_name;
-
-    taxon.Init();
-
-
-    if (!m_taxname.empty())
-    {
-        int taxid = taxon.GetTaxIdByName(m_taxname);
-        if (m_taxid == 0)
-            m_taxid = taxid;
-        else
-            if (m_taxid != taxid)
-            {
-                m_logger->PutError(
-                    CLineError(ILineError::eProblem_Unset, eDiag_Error, "", 0, 
-                      "Conflicting taxonomy info provided: taxid " + NStr::IntToString(m_taxid)));
-
-                if (taxid <= 0)
-                    m_taxid = taxid;
-                else
-                {
-                    taxon.Fini();
-                    m_logger->PutError(
-                        CLineError(ILineError::eProblem_Unset, eDiag_Error, "", 0, 
-                        "taxonomy ID for the name '" + m_taxname + "' was determined as " + NStr::IntToString(taxid)));
-                    return;
-                }
-            }
-    }
-
-    if (m_taxid <= 0)
-    {
-        taxon.Fini();
-        m_logger->PutError(
-            CLineError(ILineError::eProblem_Unset, eDiag_Error, "", 0, 
-                "No unique taxonomy ID found for the name '" + m_taxname + "'"));
-        return;
-    }
-
-    CConstRef<COrg_ref> org = taxon.GetOrgRef(m_taxid, is_species, is_uncultured, blast_name);
-    m_taxname = org->GetTaxname();
-
-    taxon.Fini();
-}
-
 CRef<CSeq_annot> FindORF(const CBioseq& bioseq)
 {
     if (bioseq.IsNa())

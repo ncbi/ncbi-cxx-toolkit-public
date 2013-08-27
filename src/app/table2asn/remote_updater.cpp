@@ -46,24 +46,22 @@
 #include <objects/seq/Pubdesc.hpp>
 #include <objects/pub/Pub_equiv.hpp>
 #include <objects/pub/Pub.hpp>
+#include <objects/seqfeat/Org_ref_.hpp>
+#include <objects/taxon1/taxon1.hpp>
 
 #include <objmgr/object_manager.hpp>
+#include <objtools/readers/message_listener.hpp>
 
 #include "remote_updater.hpp"
+#include "table2asn_context.hpp"
 
 #include <common/test_assert.h>  /* This header must go last */
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-CRemoteUpdater::CRemoteUpdater()
+namespace
 {
-}
-
-CRemoteUpdater::~CRemoteUpdater()
-{
-}
-
 
 void UpdatePub(CMLAClient& mlaClient, CPub& pub)
 {
@@ -111,6 +109,72 @@ void UpdatePub(CMLAClient& mlaClient, CPub& pub)
     }
 }
 
+}
+
+void CRemoteUpdater::UpdateOrg(COrg_ref& org)
+{
+    bool is_species, is_uncultured;
+    string blast_name;
+
+    if (m_taxClient.get() == 0)
+    {
+        m_taxClient.reset(new CTaxon1);
+        m_taxClient->Init();
+    }
+
+    int taxid = org.GetTaxId();
+
+    if (org.IsSetTaxname())
+    {
+        int new_taxid = m_taxClient->GetTaxIdByName(org.GetTaxname());
+        if (taxid == 0)
+            taxid = new_taxid;
+        else
+            if (taxid != new_taxid)
+            {
+                m_context.m_logger->PutError(
+                    CLineError(ILineError::eProblem_Unset, eDiag_Error, "", 0, 
+                      "Conflicting taxonomy info provided: taxid " + NStr::IntToString(taxid)));
+
+                if (taxid <= 0)
+                    taxid = new_taxid;
+                else
+                {
+                    m_context.m_logger->PutError(
+                        CLineError(ILineError::eProblem_Unset, eDiag_Error, "", 0, 
+                        "taxonomy ID for the name '" + org.GetTaxname() + "' was determined as " + NStr::IntToString(taxid)));
+                    return;
+                }
+            }
+    }
+
+    if (taxid <= 0)
+    {
+        m_context.m_logger->PutError(
+            CLineError(ILineError::eProblem_Unset, eDiag_Error, "", 0, 
+                "No unique taxonomy ID found for the name '" + org.GetTaxname() + "'"));
+        return;
+    }
+
+    CConstRef<COrg_ref> new_org = m_taxClient->GetOrgRef(taxid, is_species, is_uncultured, blast_name);
+    if (new_org.NotEmpty())
+    {
+        org.Assign(*new_org);
+    }
+}
+
+CRemoteUpdater::CRemoteUpdater(const CTable2AsnContext& ctx)
+    : m_context(ctx)
+{
+}
+
+CRemoteUpdater::~CRemoteUpdater()
+{
+    if (m_taxClient.get() != 0)
+        m_taxClient->Fini();
+}
+
+
 void CRemoteUpdater::UpdatePubReferences(CSeq_entry& entry)
 {
     if (entry.IsSet())
@@ -124,23 +188,45 @@ void CRemoteUpdater::UpdatePubReferences(CSeq_entry& entry)
     if (!entry.IsSetDescr())
         return;
 
-    //CRef<CObjectManager> mgr(CObjectManager::GetInstance());
-
-    //CScope scope(*mgr);
-
-    //CSeq_entry_Handle entry_h = scope.AddTopLevelSeqEntry(entry);
-
     NON_CONST_ITERATE(CSeq_descr::Tdata, it, entry.SetDescr().Set())
     {
         if ((**it).IsPub())
         {
             NON_CONST_ITERATE( CPub_equiv::Tdata, pubit, (**it).SetPub().SetPub().Set())
             {
-                if (mlaclient.Empty())
-                    mlaclient.Reset(new CMLAClient);
+                if (m_mlaClient.Empty())
+                    m_mlaClient.Reset(new CMLAClient);
 
-                UpdatePub(*mlaclient, **pubit);
+                UpdatePub(*m_mlaClient, **pubit);
             }
+        }
+    }
+}
+
+void CRemoteUpdater::UpdateOrgReferences(objects::CSeq_entry& entry)
+{
+    if (entry.IsSet())
+    {
+        NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
+        {
+            UpdateOrgReferences(**it);
+        }
+    }
+
+    if (!entry.IsSetDescr())
+        return;
+
+    NON_CONST_ITERATE(CSeq_descr::Tdata, it, entry.SetDescr().Set())
+    {
+        CSeqdesc& desc = **it;
+        if (desc.IsOrg())
+        {
+            UpdateOrg(desc.SetOrg());
+        }
+        else
+        if (desc.IsSource() && desc.GetSource().IsSetOrg())
+        {
+            UpdateOrg(desc.SetSource().SetOrg());
         }
     }
 }

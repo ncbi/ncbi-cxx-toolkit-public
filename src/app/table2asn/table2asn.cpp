@@ -276,7 +276,7 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddOptionalKey("N", "Integer", "Project Version Number", CArgDescriptions::eInteger);
 
-    arg_desc->AddOptionalKey("w", "InFile", "Single Structured Comment File (overrides the use of -X C)", CArgDescriptions::eInputFile); //almost done
+    arg_desc->AddOptionalKey("w", "InFile", "Single Structured Comment File (overrides the use of -X C)", CArgDescriptions::eInputFile); //done
     arg_desc->AddOptionalKey("M", "String", "Master Genome Flags\n\
                                             n Normal\n\
                                             b Big Sequence\n\
@@ -300,7 +300,7 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey("strain-name", "String", "Strain name", CArgDescriptions::eString);            //done
     arg_desc->AddOptionalKey("ft-url", "String", "FileTrack URL for the XML file retrieval", CArgDescriptions::eString); //done
 
-    arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);
+    arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);    // done
 
 //    ABCDEFGHIJKLMNOPQRSTUVWXYZ
 //    ++++++++++++++ +++++++++++]
@@ -347,6 +347,7 @@ int CTbl2AsnApp::Run(void)
     */
 
     m_reader.reset(new CMultiReader(m_context));
+    m_remote_updater.reset(new CRemoteUpdater(m_context));
 
     if (args["n"])
         m_context.m_OrganismName = args["n"].AsString();
@@ -370,7 +371,7 @@ int CTbl2AsnApp::Run(void)
     }
 
     if (args["taxname"])
-        m_context.m_taxname = args["taxname"].AsString();
+        m_context.m_OrganismName = args["taxname"].AsString();
     if (args["taxid"])
         m_context.m_taxid   = args["taxid"].AsInteger();
     if (args["strain-name"])
@@ -394,11 +395,6 @@ int CTbl2AsnApp::Run(void)
 
     if (args["k"])
         m_context.m_find_open_read_frame = args["k"].AsString();
-
-    if (m_context.m_RemoteTaxonomyLookup)
-    {
-        m_context.RemoteRequestTaxid();
-    }
 
     if (args["t"])
     {
@@ -525,10 +521,12 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     if (m_context.m_RemotePubLookup)
     {
-        if (m_remote_updater.get() == 0)
-            m_remote_updater.reset(new CRemoteUpdater);
-
         m_remote_updater->UpdatePubReferences(*entry);
+    }
+
+    if (m_context.m_RemoteTaxonomyLookup)
+    {
+        m_remote_updater->UpdateOrgReferences(*entry);
     }
 
     if (!m_context.m_find_open_read_frame.empty())

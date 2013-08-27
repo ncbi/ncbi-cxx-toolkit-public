@@ -60,7 +60,6 @@ public:
 	string M;
 	string l;
 	string m;
-	string m_taxname;
 	int    m_taxid;
 	string m_strain;
 	string m_url;
@@ -80,8 +79,6 @@ public:
 
     void AddUserTrack(objects::CSeq_descr& SD, const string& type, const string& label, const string& data) const;
 	void SetOrganismData(objects::CSeq_descr& SD, int genome_code, const string& taxname, int taxid, const string& strain) const;
-    // message listener must be provided
-	void RemoteRequestTaxid();
 
     void FindOpenReadingFrame(objects::CSeq_entry& entry);
 

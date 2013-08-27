@@ -12,6 +12,8 @@ class CSeqdesc;
 class IMessageListener;
 class CMLAClient;
 class CBioseq;
+class CTaxon1;
+class COrg_ref;
 };
 
 class CTable2AsnContext;
@@ -20,11 +22,17 @@ class CSerialObject;
 class CRemoteUpdater
 {
 public:
-   CRemoteUpdater();
+   CRemoteUpdater(const CTable2AsnContext& ctx);
    ~CRemoteUpdater();
+
    void UpdatePubReferences(objects::CSeq_entry& entry);
+   void UpdateOrgReferences(objects::CSeq_entry& entry);
 private:
-   CRef<objects::CMLAClient> mlaclient;
+   void UpdateOrg(objects::COrg_ref& org);
+
+   CRef<objects::CMLAClient>  m_mlaClient;
+   auto_ptr<objects::CTaxon1> m_taxClient;
+   const CTable2AsnContext&   m_context;
 };
 
 END_NCBI_SCOPE

@@ -378,7 +378,7 @@ void COpticalxml2asnOperatorImpl::SetOrganismData(CSeq_descr& SD, const string& 
 
     CRef<CBioSource> bs(new CBioSource());
     bs->SetGenome(m_genome);
-    bs->SetOrg().SetTaxname(context.m_taxname);
+    bs->SetOrg().SetTaxname(context.m_OrganismName);
     bs->SetOrg().SetTaxId(context.m_taxid);
 
     // Get strain
