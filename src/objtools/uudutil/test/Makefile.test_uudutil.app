@@ -11,10 +11,8 @@ SRC = test_uudutil
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-
-LIB = test_boost xncbi uudutil gbproj \
-      submit xconnserv xconnect $(COMPRESS_LIBS) \
-      $(SOBJMGR_LIBS)
+LIB = uudutil gbproj submit seqset $(SEQ_LIBS) pub medline biblio general \
+      xser xutil xconnserv xconnect $(COMPRESS_LIBS) test_boost xncbi
 
 LIBS = $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
@@ -30,5 +28,3 @@ CHECK_COPY = test_uudutil.ini test_align_annot.asn test_gbproject.gbp
 # CFLAGS   = $(FAST_CFLAGS)
 # CXXFLAGS = $(FAST_CXXFLAGS)
 # LDFLAGS  = $(FAST_LDFLAGS)
-
-WATCHERS = wuliangs

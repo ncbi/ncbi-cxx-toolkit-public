@@ -8,4 +8,3 @@ LIB = uudutil
 
 CPPFLAGS = $(LZO_INCLUDE) $(ORIG_CPPFLAGS)
 
-WATCHERS = wuliangs
