@@ -77,7 +77,7 @@ public:
 };
 
 
-class CProjectStorage : public CObject
+class NCBI_UUDUTIL_EXPORT CProjectStorage : public CObject
 {
 public:
   
