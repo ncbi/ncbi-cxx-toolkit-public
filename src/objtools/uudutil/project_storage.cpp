@@ -66,7 +66,7 @@ static const Uint2 kNC_StringMagic = 0x3333;
 /// version number
 static const Uint2 kNC_CurrentVersion = 1;
 
-static const string kKeyError = "The given key is invalid or inaccessible!";
+static const char* kKeyError = "The given key is invalid or inaccessible!";
 
 static const CCompression::ELevel kCompressionLevel = CCompression::eLevel_Lowest;
 static const streamsize kBufSize = 16384;
