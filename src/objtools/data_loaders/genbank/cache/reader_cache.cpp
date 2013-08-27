@@ -825,7 +825,6 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
                     reader.reset(m_BlobCache->GetReadStream(key, subkey,
                                                             &version,
                                                             &validity));
-                    _ASSERT(version);
                     if ( m_JoinedBlobVersion == eDefault ) {
                         // joined blob version is supported by ICache
                         m_JoinedBlobVersion = eOn;
