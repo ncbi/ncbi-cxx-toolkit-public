@@ -1295,6 +1295,40 @@ const StyleSettings& StyleManager::GetStyleForResidue(const StructureObject *obj
     return *style;
 }
 
+bool StyleManager::MoleculeHasUserStyle(const StructureObject *object, int moleculeID) const
+{
+    const Molecule *molecule = object->graph->molecules.find(moleculeID)->second;
+
+    UserAnnotationList::const_iterator d, de = userAnnotations.end();
+    for (d=userAnnotations.begin(); d!=de; ++d) {
+        if (!(*d)->isDisplayed)
+            continue;
+        // check to see if the annotation covers any residue
+        ResidueMap::const_iterator residues = (*d)->residues.find(molecule->identifier);
+        if (residues != (*d)->residues.end())
+            return true;
+    }
+
+    return false;
+}
+
+bool StyleManager::ResidueHasUserStyle(const StructureObject *object, int moleculeID, int residueID) const
+{
+    const Molecule *molecule = object->graph->molecules.find(moleculeID)->second;
+
+    UserAnnotationList::const_iterator d, de = userAnnotations.end();
+    for (d=userAnnotations.begin(); d!=de; ++d) {
+        if (!(*d)->isDisplayed)
+            continue;
+        // check to see if the annotation covers this residue
+        ResidueMap::const_iterator residues = (*d)->residues.find(molecule->identifier);
+        if (residues != (*d)->residues.end() && residues->second[residueID - 1] == true)
+            return true;
+    }
+
+    return false;
+}
+
 const Vector& StyleManager::GetObjectColor(const Molecule *molecule) const
 {
     static const Vector black(0,0,0);

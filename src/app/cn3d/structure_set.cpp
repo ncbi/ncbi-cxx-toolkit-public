@@ -562,12 +562,6 @@ void StructureSet::Load(unsigned int structureLimit)
 
     VerifyFrameMap();
 
-    // setup show/hide items
-    showHideManager->ConstructShowHideArray(this);
-    // alignments always start with aligned domains only
-    if (alignmentSet)
-        showHideManager->ShowAlignedDomains(this);
-
     // load style dictionary and user annotations
     const CCn3d_style_dictionary *styles = dataManager->GetStyleDictionary();
     if (styles) {
@@ -585,6 +579,13 @@ void StructureSet::Load(unsigned int structureLimit)
             ERRORMSG("Error loading user annotations or camera settings");
         dataManager->RemoveUserAnnotations();   // remove now; recreated with current settings upon save
     }
+
+    // setup show/hide items
+    showHideManager->ConstructShowHideArray(this);
+
+    // alignments always start with aligned domains only
+    if (alignmentSet)
+        showHideManager->ShowAlignedOrAnnotatedDomains(this);
 
     dataManager->SetDataUnchanged();
 }

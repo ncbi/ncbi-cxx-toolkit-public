@@ -420,6 +420,38 @@ void ShowHideManager::ShowAlignedDomains(const StructureSet *set)
     }
 }
 
+void ShowHideManager::ShowAlignedOrAnnotatedDomains(const StructureSet *set)
+{
+    MakeAllVisible();
+    StructureSet::ObjectList::const_iterator o, oe = set->objects.end();
+    for (o=set->objects.begin(); o!=oe; ++o) {
+        ChemicalGraph::MoleculeMap::const_iterator m, me = (*o)->graph->molecules.end();
+        for (m=(*o)->graph->molecules.begin(); m!=me; ++m) {
+
+            if (!(m->second->IsProtein() || m->second->IsNucleotide())) 
+                continue;  // but leave all hets/solvents visible
+
+            if (!(set->alignmentManager->IsInAlignment(m->second->sequence) || set->styleManager->MoleculeHasUserStyle(*o, m->second->id))) {
+                Show(m->second, false);
+                continue;
+            }
+
+            map < int, bool > domains;
+            Molecule::ResidueMap::const_iterator r, re = m->second->residues.end();
+
+            // first pass determines which domains have any aligned or annotated residues
+            for (r=m->second->residues.begin(); r!=re; ++r)
+                if (set->alignmentManager->IsAligned(m->second->sequence, r->first - 1) || set->styleManager->ResidueHasUserStyle(*o, m->second->id, r->first))
+                    domains[m->second->residueDomains[r->first - 1]] = true;
+
+            // second pass does hides domains not represented
+            for (r=m->second->residues.begin(); r!=re; ++r)
+                if (domains.find(m->second->residueDomains[r->first - 1]) == domains.end())
+                    Show(r->second, false);
+        }
+    }
+}
+
 void ShowHideManager::ShowAlignedChains(const StructureSet *set)
 {
     MakeAllVisible();

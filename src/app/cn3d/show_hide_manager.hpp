@@ -75,6 +75,7 @@ public:
 
     // functions to show/hide more complex groups of stuff
     void ShowAlignedDomains(const StructureSet *set);
+    void ShowAlignedOrAnnotatedDomains(const StructureSet *set);
     void ShowAlignedChains(const StructureSet *set);
     void ShowResidues(const StructureSet *set, bool showAligned);
     void ShowUnalignedResiduesInAlignedDomains(const StructureSet *set);

@@ -578,6 +578,7 @@ void AlignmentManager::NewMultipleWithRows(const vector < bool >& visibilities)
 
 bool AlignmentManager::IsAligned(const Sequence *sequence, unsigned int seqIndex) const
 {
+    if (!sequence) return false;
     const BlockMultipleAlignment *currentAlignment = GetCurrentMultipleAlignment();
     if (currentAlignment)
         return currentAlignment->IsAligned(sequence, seqIndex);

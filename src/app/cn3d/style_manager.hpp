@@ -315,6 +315,10 @@ public:
         return ((style != userStyles.end()) ? &(style->second) : NULL);
     }
 
+    // checks for presence of active user styles
+    bool MoleculeHasUserStyle(const StructureObject *object, int moleculeID) const;
+    bool ResidueHasUserStyle(const StructureObject *object, int moleculeID, int residueID) const;
+
     // predefined styles
     void SetGlobalColorScheme(StyleSettings::ePredefinedColorScheme scheme);
     void SetGlobalRenderingStyle(StyleSettings::ePredefinedRenderingStyle style);
