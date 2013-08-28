@@ -437,38 +437,67 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
                     NCBI_THROW(CException, eUnknown, "Placement is neither point nor interval");
                 int new_pos_left = -1;
                 int new_pos_right = -1;
+                bool is_deletion = false;
+                string ref;
+                CSeq_literal *refref = NULL;
                 stringstream accession;
                 accession << acc << "." << version;
                 x_PrefetchSequence(scope,accession.str());
                 CVariation_ref& vr = (*feat)->SetData().SetVariation();
                 for (CVariation_ref::TData::TSet::TVariations::iterator inst = vr.SetData().SetSet().SetVariations().begin(); inst != vr.SetData().SetSet().SetVariations().end(); ++inst)
-                {
-                    if ((*inst)->GetData().GetInstance().IsSetDelta() && !(*inst)->GetData().GetInstance().GetDelta().empty() && (*inst)->GetData().GetInstance().GetDelta().front()->IsSetSeq() 
-                        && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().IsLiteral()
-                        && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
-                        && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
+                    if ( (*inst)->IsSetData() && (*inst)->SetData().IsInstance())
                     {
-                        string a = (*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
-                        //cout << x_GetSeq(10689125,21) << endl;
-                        //cout << setw(a.size()) << " ";
-                        //cout << a <<endl;
                         int type = (*inst)->SetData().SetInstance().SetType(); 
-                        if (!a.empty() && type == CVariation_inst::eType_ins) // TODO need to work with deletions
+                        if (type == CVariation_inst::eType_del)
+                            is_deletion = true;
+                        if ((*inst)->GetData().GetInstance().IsSetDelta() && !(*inst)->GetData().GetInstance().GetDelta().empty() 
+                            && (*inst)->GetData().GetInstance().GetDelta().front()->IsSetSeq() 
+                            && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().IsLiteral()
+                            && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
+                            && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
                         {
-                            bool found = x_ProcessShift(a, pos_left,pos_right);
-                            if (found)
+                            string a = (*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
+                            if (type == CVariation_inst::eType_identity && 
+                                (*inst)->GetData().GetInstance().IsSetObservation() &&  
+                                (*inst)->GetData().GetInstance().GetObservation() == CVariation_inst::eObservation_reference)
                             {
-                                if (new_pos_left == -1)
-                                    new_pos_left = pos_left;
-                                else if (new_pos_left != pos_left)
-                                    NCBI_THROW(CException, eUnknown, "Left position is ambiguous due to different leaf alleles");
-                                if (new_pos_right == -1)
-                                    new_pos_right = pos_right;
-                                else if (new_pos_right != pos_right)
-                                    NCBI_THROW(CException, eUnknown, "Right position is ambiguous due to different leaf alleles");
-                                x_ModifyLocation((*feat)->SetLocation(),(*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral(),a,pos_left,pos_right);
+                                ref = a;
+                                refref = &(*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral();
+                            }
+                            if (!a.empty() && type == CVariation_inst::eType_ins) 
+                            {
+                                bool found = x_ProcessShift(a, pos_left,pos_right);
+                                if (found)
+                                {
+                                    if (new_pos_left == -1)
+                                        new_pos_left = pos_left;
+                                    else if (new_pos_left != pos_left)
+                                        NCBI_THROW(CException, eUnknown, "Left position is ambiguous due to different leaf alleles");
+                                    if (new_pos_right == -1)
+                                        new_pos_right = pos_right;
+                                    else if (new_pos_right != pos_right)
+                                        NCBI_THROW(CException, eUnknown, "Right position is ambiguous due to different leaf alleles");
+                                    x_ModifyLocation((*feat)->SetLocation(),(*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral(),a,pos_left,pos_right);
+                                }
                             }
                         }
+                    }
+                if (!ref.empty() && is_deletion)
+                {
+                    bool found = x_ProcessShift(ref, pos_left,pos_right);
+                    if (found)
+                    {
+                        pos_right -= ref.size();
+                        if (new_pos_left == -1)
+                            new_pos_left = pos_left;
+                        else if (new_pos_left != pos_left)
+                            NCBI_THROW(CException, eUnknown, "Left position is ambiguous due to different leaf alleles");
+                        if (new_pos_right == -1)
+                            new_pos_right = pos_right;
+                        else if (new_pos_right != pos_right)
+                            NCBI_THROW(CException, eUnknown, "Right position is ambiguous due to different leaf alleles");
+                        if (pos_right != pos_left)
+                            x_ModifyLocation((*feat)->SetLocation(),*refref,ref,pos_left,pos_right);
                     }
                 }
 

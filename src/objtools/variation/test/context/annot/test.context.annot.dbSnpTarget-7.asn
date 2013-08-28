@@ -29,6 +29,20 @@ Seq-annot ::= {
                   }
                 }
               }
+            },
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "C"
+                    }
+                  }
+                },
+                observation reference
+              }
             }
           }
         }
