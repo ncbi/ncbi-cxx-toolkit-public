@@ -1522,6 +1522,18 @@ void CDeflineGenerator::x_SetTitleFromProtein (
 
     if (m_MainTitle.empty()) {
         m_MainTitle = "unnamed protein product";
+        if (!m_LocalAnnotsOnly) {
+            gene = x_GetGeneRefViaCDS (mapped_cds);
+            if (gene) {
+                const CGene_ref& grp = *gene;
+                if (grp.IsSetLocus_tag()) {
+                    locus_tag = grp.GetLocus_tag();
+                }
+            }
+            if (! locus_tag.empty()) {
+                m_MainTitle += " " + string(locus_tag);
+            }
+        }
     }
 
     if (mapped_cds) {
