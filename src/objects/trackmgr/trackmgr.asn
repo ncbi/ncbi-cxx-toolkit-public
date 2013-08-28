@@ -27,7 +27,8 @@ TMgr-Request ::= CHOICE {
     track-attr-values TMgr-TrackAttrValueRequest,
     blast-tracks TMgr-BlastRIDRequest,
     create-user-tracks TMgr-CreateUserTrackRequest,
-    resolve-track-items TMgr-ItemResolverRequest
+    resolve-track-items TMgr-ItemResolverRequest,
+    remove-user-tracks TMgr-RemoveUserTrackRequest
 }
 
 TMgr-Reply ::= CHOICE {
@@ -36,7 +37,8 @@ TMgr-Reply ::= CHOICE {
     track-attr-values TMgr-TrackAttrValueReply,
     blast-tracks TMgr-BlastRIDReply,
     create-user-tracks TMgr-CreateUserTrackReply,
-    resolve-track-items TMgr-ItemResolverReply
+    resolve-track-items TMgr-ItemResolverReply,
+    remove-user-tracks TMgr-RemoveUserTrackReply
 }
 
 TMgr-GenomeContext ::= CHOICE {
@@ -252,6 +254,15 @@ TMgr-CreateUserTrackRequest ::= SEQUENCE {
 TMgr-CreateUserTrackReply ::= SEQUENCE {
     messages SEQUENCE OF TMgr-Message OPTIONAL,
     display-tracks SET OF TMgr-DisplayTrack OPTIONAL
+}
+
+TMgr-RemoveUserTrackRequest ::= SEQUENCE {
+    identity TMgr-Identity,
+    dtrack-ids SET OF TMgr-DTrackId
+}
+
+TMgr-RemoveUserTrackReply ::= SEQUENCE {
+    messages SEQUENCE OF TMgr-Message OPTIONAL
 }
 
 TMgr-ItemResolverRequest ::= SEQUENCE {
