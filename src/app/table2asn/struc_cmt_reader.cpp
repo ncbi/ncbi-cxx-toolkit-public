@@ -66,26 +66,27 @@ namespace
         return 0;
     }
 
-}
-
-CBioseq* CStructuredCommentsReader::FindObjectById(CSeq_entry& entry, const CSeq_id& id)
-{
-    switch (entry.Which())
+    CBioseq* FindObjectById(CSeq_entry& entry, const CSeq_id& id)
     {
-    case CSeq_entry::e_Seq:
-        if (entry.GetSeq().GetFirstId()->Compare(id) == CSeq_id::e_YES)
-            return &entry.SetSeq();
-        break;
-    case CSeq_entry::e_Set:
-        NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
+        switch (entry.Which())
         {
-            return FindObjectById(**it, id);
+        case CSeq_entry::e_Seq:
+            if (entry.GetSeq().GetFirstId()->Compare(id) == CSeq_id::e_YES)
+                return &entry.SetSeq();
+            break;
+        case CSeq_entry::e_Set:
+            NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
+            {
+                return FindObjectById(**it, id);
+            }
+            break;
+        default:
+            break;
         }
-        break;
-    default:
-        break;
+        return 0;
     }
-    return 0;
+
+
 }
 
 CUser_object* CStructuredCommentsReader::AddStructuredComment(CUser_object* user_obj, CSeq_descr& descr, const string& name, const string& value)
@@ -139,7 +140,7 @@ void CStructuredCommentsReader::ProcessCommentsFileByCols(ILineReader& reader, C
             vector<string> values;
             NStr::Tokenize(current, "\t", values);
             if (!values[0].empty())
-            {				
+            {               
                 // try to find destination sequence
                 CSeq_id id(values[0], CSeq_id::fParse_AnyLocal);
                 CBioseq* dest = FindObjectById(container, id);
@@ -201,7 +202,7 @@ void CStructuredCommentsReader::ProcessSourceQualifiers(ILineReader& reader, CSe
             vector<string> values;
             NStr::Tokenize(current, "\t", values);
             if (!values[0].empty())
-            {				
+            {               
                 // try to find destination sequence
                 CSeq_id id(values[0], CSeq_id::fParse_AnyLocal);
                 CBioseq* dest = FindObjectById(container, id);

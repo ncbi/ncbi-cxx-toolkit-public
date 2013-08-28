@@ -8,11 +8,12 @@ BEGIN_NCBI_SCOPE
 // forward declarations
 namespace objects
 {
-	class CUser_object;
-	class CSeq_descr;
-	class CBioseq;
-	class CObject_id;
+    class CUser_object;
+    class CSeq_descr;
+    class CBioseq;
+    class CObject_id;
     class CSeq_entry;
+    class IMessageListener;
 };
 
 class CSerialObject;
@@ -39,6 +40,11 @@ class ILineReader;
 class CStructuredCommentsReader
 {
 public:
+   // If you need messages and error to be logged
+   // supply an optional IMessageListener instance
+   CStructuredCommentsReader(objects::IMessageListener* logger): m_logger(logger)
+   {
+   }
    // Read input tab delimited file and apply Structured Comments to the container
    // First row of the file is a list of Field to apply
    // First collumn of the file is an ID of the object (sequence) to apply
@@ -50,23 +56,18 @@ public:
    void ProcessCommentsFileByRows(ILineReader& reader, objects::CSeq_entry& container);
 
    void ProcessSourceQualifiers(ILineReader& reader, objects::CSeq_entry& container);
-
-   static void ApplySourceQualifiers(objects::CSeq_entry& entry,
-	   const string& src_qualifiers);
 private:
-   // service functions
-   static objects::CBioseq* FindObjectById(objects::CSeq_entry& container,
-	   const objects::CSeq_id& id);
-
    void AddStructuredCommentToAllObjects(objects::CSeq_entry& container,
-	   const string& name, const string& value);
+       const string& name, const string& value);
 
    objects::CUser_object* AddStructuredComment(objects::CUser_object* obj,
-	   objects::CSeq_descr& container,
-	   const string& name, const string& value);
+       objects::CSeq_descr& container,
+       const string& name, const string& value);
 
    void AddSourceQualifier(objects::CBioseq& container,
-	   const string& name, const string& value);
+       const string& name, const string& value);
+
+    objects::IMessageListener* m_logger;
 };
 
 END_NCBI_SCOPE

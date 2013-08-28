@@ -189,7 +189,7 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddFlag("s", "Read FASTAs as Set");              // done
     arg_desc->AddFlag("g", "Genomic Product Set");              
-    arg_desc->AddFlag("J", "Delayed Genomic Product Set	");
+    arg_desc->AddFlag("J", "Delayed Genomic Product Set ");
     arg_desc->AddDefaultKey
         ("F", "String", "Feature ID Links\n\
                         o By Overlap\n\
@@ -408,7 +408,7 @@ int CTbl2AsnApp::Run(void)
     if (args["H"])
     {
         try
-        {	
+        {   
             CTime time(args["H"].AsString(), "M/D/Y" );
             m_context.m_HoldUntilPublish.Reset(new CDate(time, CDate::ePrecision_day));
             //m_context.m_HoldUntilPublish->SetToTime(
@@ -514,6 +514,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     ProcessSecretFiles(*entry);
 
     m_reader->ApplyAdditionalProperties(*entry);
+    m_context.ApplySourceQualifiers(*entry, m_context.m_source_qualifiers);
 
     CFeatureTableReader fr(m_logger);
     // this may convert seq into seq-set
@@ -688,7 +689,7 @@ void CTbl2AsnApp::ProcessSRCFile(const string& pathname, CSeq_entry& result)
 
     CRef<ILineReader> reader(ILineReader::New(pathname));
 
-    CStructuredCommentsReader cmt_reader;
+    CStructuredCommentsReader cmt_reader(m_logger);
     cmt_reader.ProcessSourceQualifiers(*reader, result);
 }
 
@@ -715,7 +716,7 @@ void CTbl2AsnApp::ProcessCMTFile(const string& pathname, CSeq_entry& result, boo
 
     CRef<ILineReader> reader(ILineReader::New(pathname));
 
-    CStructuredCommentsReader cmt_reader;
+    CStructuredCommentsReader cmt_reader(m_logger);
 
     if (byrows)
         cmt_reader.ProcessCommentsFileByRows(*reader, result);

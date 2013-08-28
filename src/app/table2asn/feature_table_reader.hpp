@@ -1,15 +1,19 @@
 #ifndef __FEATURE_TABLE_READER_HPP_INCLUDED__
 #define __FEATURE_TABLE_READER_HPP_INCLUDED__
 
+
+#include <corelib/ncbistl.hpp>
+
 BEGIN_NCBI_SCOPE
 
-class CSerialObject;
-class ILineReader;
+// forward declarations
 namespace objects
 {
-class CSeq_entry;
-class IMessageListener;
+    class CSeq_entry;
+    class IMessageListener;
 };
+class CSerialObject;
+class ILineReader;
 
 
 class CFeatureTableReader

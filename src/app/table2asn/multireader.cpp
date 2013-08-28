@@ -388,7 +388,7 @@ void CMultiReader::xSetFormat(
     //  ----------------------------------------------------------------------------
 {
     m_uFormat = CFormatGuess::eUnknown;
-    string format = args.m_format;
+#if 0
     const string& strProgramName = "GetProgramDisplayName";
 
     if (NStr::StartsWith(strProgramName, "wig") || format == "wig" ||
@@ -439,6 +439,7 @@ void CMultiReader::xSetFormat(
     if (m_uFormat == CFormatGuess::eUnknown) {
         m_uFormat = CFormatGuess::Format(istr);
     }
+#endif
 }
 
 //  ----------------------------------------------------------------------------
@@ -595,73 +596,12 @@ void GetSeqId(CRef<CSeq_id>& id, const CTable2AsnContext& context)
     }
 }
 
-void ApplySourceQualifiers(objects::CBioseq& bioseq, const string& src_qualifiers)
-{
-    //if( ! bioseq.CanGetDescr() && ! bioseq.GetDescr().IsSet() ) {
-    //    return;
-    //}
-    if (src_qualifiers.empty())
-        return;
-
-    CSourceModParser smp;
-    CRef<CSeqdesc> title_desc;
-
-    string title = src_qualifiers;
-
-    if (true)
-    {
-        title = smp.ParseTitle(title, CConstRef<CSeq_id>(bioseq.GetFirstId()) );
-
-        smp.ApplyAllMods(bioseq);
-#if 0
-        if( TestFlag(fUnknModThrow) ) {
-            CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
-            if( ! unused_mods.empty() )
-            {
-                // there are unused mods and user specified to throw if any
-                // unused
-                CNcbiOstrstream err;
-                err << "CFastaReader: Inapplicable or unrecognized modifiers on ";
-
-                // get sequence ID
-                const CSeq_id* seq_id = bioseq.GetFirstId();
-                if( seq_id ) {
-                    err << seq_id->GetSeqIdString();
-                } else {
-                    // seq-id unknown
-                    err << "sequence";
-                }
-
-                err << ":";
-                ITERATE(CSourceModParser::TMods, mod_iter, unused_mods) {
-                    err << " [" << mod_iter->key << "=" << mod_iter->value << ']';
-                }
-                err << " around line " + NStr::NumericToString(iLineNum);
-                NCBI_THROW2(CObjReaderParseException, eUnusedMods,
-                    (string)CNcbiOstrstreamToString(err),
-                    iLineNum);
-            }
-        }
-
-        smp.GetLabel(&title, CSourceModParser::fUnusedMods);
-
-        copy( smp.GetBadMods().begin(), smp.GetBadMods().end(),
-            inserter(m_BadMods, m_BadMods.begin()) );
-        CSourceModParser::TMods unused_mods =
-            smp.GetMods(CSourceModParser::fUnusedMods);
-        copy( unused_mods.begin(), unused_mods.end(),
-            inserter(m_UnusedMods, m_UnusedMods.begin() ) );
-#endif
-    }
-
-}
 
 void CMultiReader::ApplyAdditionalProperties(CSeq_entry& entry)
 {
     switch(entry.Which())
     {
     case CSeq_entry::e_Seq:
-        ApplySourceQualifiers(entry.SetSeq(), m_context.m_source_qualifiers);
         if (m_context.m_SetIDFromFile)
         {
             CRef<CSeq_id> id;
@@ -705,10 +645,7 @@ void CMultiReader::ApplyAdditionalProperties(CSeq_entry& entry)
 
     if (!m_context.m_OrganismName.empty())
     {
-        CRef<CSeqdesc> value(new CSeqdesc());
-        value->SetOrg().SetTaxname().assign(m_context.m_OrganismName);
-
-        MergeDescriptors(entry.SetDescr(), *value);
+        m_context.SetBioSource(entry.SetDescr()).SetOrg().SetTaxname(m_context.m_OrganismName);
     }
 }
 
@@ -929,6 +866,7 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
         }
     }
 
+#if 0
     if ( context.m_submit_template->IsEntrys() ) {
         // Take Seq-submit.sub.cit and put it in the Bioseq
         CRef<CPub> pub(new CPub);
@@ -937,6 +875,7 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
         pub_desc->SetPub().SetPub().Set().push_back(pub);
         context.m_entry_template->SetSeq().SetDescr().Set().push_back(pub_desc);
     }
+#endif
 
     if( ! context.m_entry_template->IsSeq() ) {
         throw runtime_error("The Seq-entry must be a Bioseq not a Bioseq-set.");
@@ -1068,7 +1007,7 @@ void CMultiReader::Cleanup(CRef<CSeq_entry> entry)
 int CMultiReader::RunOld(const CTable2AsnContext& args, const string& ifname, CNcbiOstream& ostr)
     //  ----------------------------------------------------------------------------
 {
-    //	const CArgs& args = GetArgs();
+    //  const CArgs& args = GetArgs();
     //CNcbiIstream& istr = args["input"].AsInputFile();
     //CNcbiOstream& ostr = args["output"].AsOutputFile();
     //CNcbiIstream& istr = *args.m_input;

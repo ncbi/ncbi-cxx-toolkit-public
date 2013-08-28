@@ -68,6 +68,9 @@ BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
 
+namespace
+{
+
 typedef pair<int,int> TFragm;
 
 struct lt_fragment
@@ -102,8 +105,8 @@ class COpticalxml2asnOperatorImpl
 {
 public:
     COpticalxml2asnOperatorImpl(IMessageListener* logger):
-      m_genome(CBioSource::eGenome_chromosome), // eGenome_plasmid ??
-      m_logger(logger)
+      m_logger(logger),
+      m_genome(CBioSource::eGenome_chromosome) // eGenome_plasmid ??
       {
       }
 
@@ -111,8 +114,11 @@ public:
       CRef<CSeq_entry> BuildOpticalASNData(const CTable2AsnContext& context);
 private:
     void BuildOpticalASNData(const CTable2AsnContext& context, const COpticalChrData& it, CBioseq& bioseq);
-    void GetOpticalDescr(CSeq_descr& SD, const CTable2AsnContext& context);
+    void SetOpticalDescr(CSeq_descr& SD, const CTable2AsnContext& context);
     void SetOrganismData(CSeq_descr& SD, const string& enzyme, const CTable2AsnContext& context);
+
+    CBioSource& SetSourceOrg(CSeq_descr& SD);
+
 
     vector <COpticalChrData> m_vchr;
     IMessageListener* m_logger;
@@ -278,7 +284,7 @@ int COpticalxml2asnOperatorImpl::GetOpticalXMLData(const string& FileIn)
 }
 
 
-void COpticalxml2asnOperatorImpl::GetOpticalDescr(CSeq_descr& SD, const CTable2AsnContext& context)
+void COpticalxml2asnOperatorImpl::SetOpticalDescr(CSeq_descr& SD, const CTable2AsnContext& context)
 {
     CSeq_descr::Tdata& TD = SD.Set();
 
@@ -333,8 +339,7 @@ void COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2AsnContext& c
 
     CSeq_descr& SD = bioseq.SetDescr();
     SetOrganismData(SD, it.m_enzyme, context);
-    GetOpticalDescr(SD, context);
-    context.AddUserTrack(SD, "DBLink", "BioProject", context.m_accession);
+    SetOpticalDescr(SD, context);
     context.AddUserTrack(SD, "FileTrack", "FileTrackURL", context.m_url);
 
     CSeq_inst& inst(bioseq.SetInst());
@@ -376,16 +381,15 @@ void COpticalxml2asnOperatorImpl::SetOrganismData(CSeq_descr& SD, const string& 
 {
     CSeq_descr::Tdata& TD = SD.Set();
 
-    CRef<CBioSource> bs(new CBioSource());
-    bs->SetGenome(m_genome);
-    bs->SetOrg().SetTaxname(context.m_OrganismName);
-    bs->SetOrg().SetTaxId(context.m_taxid);
+    CBioSource& biosource = CTable2AsnContext::SetBioSource(SD);
+    biosource.SetGenome(m_genome);
+    biosource.SetOrg().SetTaxId(context.m_taxid);
 
     // Get strain
     if (!context.m_strain.empty())
     {
         CRef<COrgMod> strain(new COrgMod(COrgMod::eSubtype_strain, context.m_strain));
-        bs->SetOrg().SetOrgname().SetMod().push_back(strain);
+        biosource.SetOrg().SetOrgname().SetMod().push_back(strain);
     }
     /* Alternative - no rule on selecting one that needed
     CTaxon1::TNameList sn;
@@ -399,9 +403,9 @@ void COpticalxml2asnOperatorImpl::SetOrganismData(CSeq_descr& SD, const string& 
     //CRef<COrgMod> oldlin(new COrgMod(COrgMod::eSubtype_old_lineage, "old lineage"));
     //bs->SetOrg().SetOrgname().SetMod().push_back(oldlin);
 
-    if (bs->IsSetTaxname())
+    if (biosource.IsSetTaxname())
     {
-        string title = bs->GetTaxname();
+        string title = biosource.GetTaxname();
         if (!context.m_strain.empty() && !NStr::EndsWith(title, context.m_strain))
             title += " " + context.m_strain;
         if (m_genome == CBioSource::eGenome_chromosome)
@@ -416,12 +420,8 @@ void COpticalxml2asnOperatorImpl::SetOrganismData(CSeq_descr& SD, const string& 
         sd->SetTitle(title);
         TD.push_back(sd);
     }
+}
 
-    CRef<CSeqdesc> sd(new CSeqdesc());
-    sd->Select(CSeqdesc::e_Source);
-    sd->SetSource(*bs);
-
-    TD.push_back(sd);
 }
 
 COpticalxml2asnOperator::COpticalxml2asnOperator()
@@ -434,7 +434,7 @@ COpticalxml2asnOperator::~COpticalxml2asnOperator()
 
 CRef<CSeq_entry> COpticalxml2asnOperator::LoadXML(const string& FileIn, const CTable2AsnContext& context)
 {
-	auto_ptr<COpticalxml2asnOperatorImpl> m_impl;
+    auto_ptr<COpticalxml2asnOperatorImpl> m_impl;
     m_impl.reset(new COpticalxml2asnOperatorImpl(context.m_logger));
 
     m_impl->GetOpticalXMLData(FileIn);
