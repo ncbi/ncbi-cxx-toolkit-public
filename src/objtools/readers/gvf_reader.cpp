@@ -305,10 +305,6 @@ bool CGvfReader::x_MergeRecord(
         return false;
     }
     pAnnot->SetData().SetFtable().push_back( pFeature );
-        const CSeq_annot& annot = *pAnnot;
-        const list< CRef< CSeq_feat > >& ftable = annot.GetData().GetFtable();
-        const CSeq_feat& feat = *(ftable.front());
-        const CVariation_ref& varref = feat.GetData().GetVariation();
     return true;
 }
 
@@ -561,6 +557,17 @@ bool CGvfReader::xVariationSetInsertions(
     CRef<CVariation_ref> pVariation)
 //  ----------------------------------------------------------------------------
 {
+    CRef<CVariation_ref> pReference(new CVariation_ref);
+    pReference->SetData().SetInstance().SetType(
+        CVariation_inst::eType_identity);
+    CRef<CDelta_item> pDelta(new CDelta_item);
+    pDelta->SetSeq().SetThis();
+    pReference->SetData().SetInstance().SetDelta().push_back(pDelta);
+    pReference->SetData().SetInstance().SetObservation(
+        CVariation_inst::eObservation_asserted);
+    pVariation->SetData().SetSet().SetVariations().push_back(
+        pReference );
+
     string strAlleles;
     if ( record.GetAttribute( "Variant_seq", strAlleles ) ) {
         list<string> alleles;
@@ -571,6 +578,9 @@ bool CGvfReader::xVariationSetInsertions(
             cit != alleles.end(); ++cit )
         {
             string allele(*cit); 
+            if (allele == "-") {
+                continue;
+            }
             CRef<CVariation_ref> pAllele(new CVariation_ref);
             //if (allele == strReference) {
             //    continue;
@@ -583,14 +593,16 @@ bool CGvfReader::xVariationSetInsertions(
                 pAllele->SetVariant_prop().SetAllele_state(
                     CVariantProperties::eAllele_state_heterozygous);
             }
-            vector<string> insert;
-            insert.push_back(*cit);
-            pAllele->SetInsertion(allele, CVariation_ref::eSeqType_na);
-            //pAllele->SetSNV(insert, CVariation_ref::eSeqType_na);
+            ///pAllele->SetInsertion(allele, CVariation_ref::eSeqType_na);
+            CRef<CDelta_item> pDelta(new CDelta_item);
+            pDelta->SetSeq().SetLiteral().SetLength(allele.size());
+            pDelta->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(allele);
+            pDelta->SetAction(CDelta_item::eAction_ins_before);
+            pAllele->SetData().SetInstance().SetDelta().push_back(pDelta);
+            pAllele->SetData().SetInstance().SetType(CVariation_inst::eType_ins);
             pAllele->SetData().SetInstance().SetObservation( 
                 CVariation_inst::eObservation_variant );
-            //pAllele->SetData().SetInstance().SetType( 
-            //    CVariation_inst::eType_snv );
+            
             pVariation->SetData().SetSet().SetVariations().push_back(
                pAllele );
         }
