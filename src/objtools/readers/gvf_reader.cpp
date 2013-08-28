@@ -510,18 +510,24 @@ bool CGvfReader::x_FeatureSetVariation(
     CRef< CSeq_feat > pFeature )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CVariation_ref> pVariation;
+    CRef<CVariation_ref> pVariation(new CVariation_ref);
     string strType = record.Type();
     NStr::ToLower( strType );
 
     if ( strType == "snv" ) {
-        pVariation = x_VariationSNV( record, *pFeature );
+        if (!xVariationMakeSNV( record, pVariation )) {
+            return false;
+        }
     }
     else if (strType == "insertion") {
-        pVariation = x_VariationInsertion( record, *pFeature );
+        if (!xVariationMakeInsertions( record, pVariation )) {
+            return false;
+        }
     }
     else {
-        pVariation = x_VariationCNV( record, *pFeature );
+        if (!xVariationMakeCNV( record, pVariation )) {
+            return false;
+        }
     }
     if ( pVariation ) {
         pFeature->SetData().SetVariation( *pVariation );
@@ -595,32 +601,30 @@ bool CGvfReader::xVariationSetInsertions(
 
 
 //  ----------------------------------------------------------------------------
-CRef<CVariation_ref> CGvfReader::x_VariationCNV(
+bool CGvfReader::xVariationMakeCNV(
     const CGvfReadRecord& record,
-    const CSeq_feat& feature )
+    CRef<CVariation_ref> pVariation )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CVariation_ref> pVariation( new CVariation_ref );
-    string id;
-    if ( ! x_VariationSetId( record, pVariation ) ) {
-        return CRef<CVariation_ref>();
+    if (!xVariationSetId(record, pVariation)) {
+        return false;
     }
-    if ( ! x_VariationSetParent( record, pVariation ) ) {
-        return CRef<CVariation_ref>();
+    if (!xVariationSetParent(record, pVariation)) {
+        return false;
     }
-    if ( ! x_VariationSetName( record, pVariation ) ) {
-        return CRef<CVariation_ref>();
+    if (!xVariationSetName(record, pVariation)) {
+        return false;
     }
 
     string strType = record.Type();
     NStr::ToLower( strType );
     if ( strType == "cnv" || strType == "copy_number_variation" ) {
         pVariation->SetCNV();
-        return pVariation;
+        return true;
     }
     if ( strType == "gain" || strType == "copy_number_gain" ) {
         pVariation->SetGain();
-        return pVariation;
+        return true;
     }
     if ( strType == "loss" || strType == "copy_number_loss" ) {
         pVariation->SetLoss();
@@ -632,91 +636,87 @@ CRef<CVariation_ref> CGvfReader::x_VariationCNV(
             new CVariation_ref::C_E_Consequence );
         pConsequence->SetLoss_of_heterozygosity();
         pVariation->SetConsequence().push_back( pConsequence );
-        return pVariation;
-    }
-    if ( strType == "insertion" ) {
-        if (!xVariationSetInsertions(record, pVariation)) {
-            return CRef<CVariation_ref>();
-        }
-        return pVariation;
+        return true;
     }
     if ( strType == "complex"  || strType == "complex_substitution"  ||
         strType == "complex_sequence_alteration" ) {
         pVariation->SetComplex();
-        return pVariation;
+        return true;
     }
     if ( strType == "inversion" ) {
-        pVariation->SetInversion( feature.GetLocation() );
-        return pVariation;
+        //pVariation->SetInversion( feature.GetLocation() );
+        return false;
     }
-//    if ( strType == "unknown" || strType == "other" || 
-//        strType == "sequence_alteration" ) {
-//        pVariation->SetUnknown();
-//        return pVariation;
-//    }
-    //pVariation->SetUnknown();
-    
-    return pVariation;
+    if ( strType == "unknown" || strType == "other" || 
+        strType == "sequence_alteration" ) {
+        pVariation->SetUnknown();
+        return true;
+    }
+    CObjReaderLineException e(
+        eDiag_Error,
+        0,
+        string("GVF record error: Unknown type \"") + strType + "\"",
+        ILineError::eProblem_QualifierBadValue);
+    throw e;
+    return false;
 }
   
 //  ----------------------------------------------------------------------------
-CRef<CVariation_ref> CGvfReader::x_VariationSNV(
+bool CGvfReader::xVariationMakeSNV(
     const CGvfReadRecord& record,
-    const CSeq_feat& )
+    CRef<CVariation_ref> pVariation)
 //  ----------------------------------------------------------------------------
 {
-    CRef<CVariation_ref> pVariation( new CVariation_ref );
     pVariation->SetData().SetSet().SetType( 
         CVariation_ref::C_Data::C_Set::eData_set_type_package );
 
-    if ( ! x_VariationSetId( record, pVariation ) ) {
-        return CRef<CVariation_ref>();
+    if ( ! xVariationSetId( record, pVariation ) ) {
+        return false;
     }
-    if ( ! x_VariationSetParent( record, pVariation ) ) {
-        return CRef<CVariation_ref>();
+    if ( ! xVariationSetParent( record, pVariation ) ) {
+        return false;
     }
-    if ( ! x_VariationSetName( record, pVariation ) ) {
-        return CRef<CVariation_ref>();
+    if ( ! xVariationSetName( record, pVariation ) ) {
+        return false;
     }
-    if ( ! x_VariationSetProperties( record, pVariation ) ) {
-        return CRef<CVariation_ref>();
+    if ( ! xVariationSetProperties( record, pVariation ) ) {
+        return false;
     }
     if ( ! xVariationSetSnvs( record, pVariation ) ) {
-        return CRef<CVariation_ref>();
+        return false;
     }
-    return pVariation;
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
-CRef<CVariation_ref> CGvfReader::x_VariationInsertion(
+bool CGvfReader::xVariationMakeInsertions(
     const CGvfReadRecord& record,
-    const CSeq_feat& )
+    CRef<CVariation_ref> pVariation )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CVariation_ref> pVariation( new CVariation_ref );
     pVariation->SetData().SetSet().SetType( 
         CVariation_ref::C_Data::C_Set::eData_set_type_package );
 
-    if ( ! x_VariationSetId( record, pVariation ) ) {
-        return CRef<CVariation_ref>();
+    if ( ! xVariationSetId( record, pVariation ) ) {
+        return false;
     }
-    if ( ! x_VariationSetParent( record, pVariation ) ) {
-        return CRef<CVariation_ref>();
+    if ( ! xVariationSetParent( record, pVariation ) ) {
+        return false;
     }
-    if ( ! x_VariationSetName( record, pVariation ) ) {
-        return CRef<CVariation_ref>();
+    if ( ! xVariationSetName( record, pVariation ) ) {
+        return false;
     }
-    if ( ! x_VariationSetProperties( record, pVariation ) ) {
-        return CRef<CVariation_ref>();
+    if ( ! xVariationSetProperties( record, pVariation ) ) {
+        return false;
     }
     if ( ! xVariationSetInsertions( record, pVariation ) ) {
-        return CRef<CVariation_ref>();
+        return false;
     }
-    return pVariation;
+    return true;
 }
 
 //  ---------------------------------------------------------------------------
-bool CGvfReader::x_VariationSetId(
+bool CGvfReader::xVariationSetId(
     const CGvfReadRecord& record,
     CRef< CVariation_ref > pVariation )
 //  ---------------------------------------------------------------------------
@@ -730,7 +730,7 @@ bool CGvfReader::x_VariationSetId(
 }
 
 //  ---------------------------------------------------------------------------
-bool CGvfReader::x_VariationSetParent(
+bool CGvfReader::xVariationSetParent(
     const CGvfReadRecord& record,
     CRef< CVariation_ref > pVariation )
 //  ---------------------------------------------------------------------------
@@ -744,7 +744,7 @@ bool CGvfReader::x_VariationSetParent(
 }
 
 //  ---------------------------------------------------------------------------
-bool CGvfReader::x_VariationSetName(
+bool CGvfReader::xVariationSetName(
     const CGvfReadRecord& record,
     CRef< CVariation_ref > pVariation )
 //  ---------------------------------------------------------------------------
@@ -757,7 +757,7 @@ bool CGvfReader::x_VariationSetName(
 }
 
 //  ---------------------------------------------------------------------------
-bool CGvfReader::x_VariationSetProperties(
+bool CGvfReader::xVariationSetProperties(
     const CGvfReadRecord& record,
     CRef< CVariation_ref > pVariation )
 //  ---------------------------------------------------------------------------

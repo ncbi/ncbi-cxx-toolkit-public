@@ -133,31 +133,31 @@ protected:
         CRef<CSeq_feat>,
         IMessageListener*);
 
-    CRef<CVariation_ref> x_VariationSNV(
+    bool xVariationMakeSNV(
         const CGvfReadRecord&,
-        const CSeq_feat& );
+         CRef<CVariation_ref> );
 
-    CRef<CVariation_ref> x_VariationCNV(
+    bool xVariationMakeCNV(
         const CGvfReadRecord&,
-        const CSeq_feat& );
+        CRef<CVariation_ref> );
 
-    CRef<CVariation_ref> x_VariationInsertion(
+    bool xVariationMakeInsertions(
         const CGvfReadRecord&,
-        const CSeq_feat& );
+        CRef<CVariation_ref> );
 
     bool xVariationSetInsertions(
         const CGvfReadRecord&,
         CRef< CVariation_ref > );
 
-    virtual bool x_VariationSetId(
+    virtual bool xVariationSetId(
         const CGvfReadRecord&,
         CRef< CVariation_ref > );
 
-    virtual bool x_VariationSetParent(
+    virtual bool xVariationSetParent(
         const CGvfReadRecord&,
         CRef< CVariation_ref > );
 
-    virtual bool x_VariationSetName(
+    virtual bool xVariationSetName(
         const CGvfReadRecord&,
         CRef< CVariation_ref > );
 
@@ -165,7 +165,7 @@ protected:
         const CGvfReadRecord&,
         CRef< CVariation_ref > );
 
-    virtual bool x_VariationSetProperties(
+    virtual bool xVariationSetProperties(
         const CGvfReadRecord&,
         CRef< CVariation_ref > );
 
