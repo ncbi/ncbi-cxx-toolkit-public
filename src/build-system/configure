@@ -28384,8 +28384,6 @@ echo "$as_me: error: --with-glut explicitly specified, but no usable version fou
       if test "${with_glew-yes}" != "yes"; then
          GLEW_PATH=$with_glew
       fi
-      { echo "$as_me:$LINENO: Looking for GLEW under $GLEW_PATH" >&5
-echo "$as_me: Looking for GLEW under $GLEW_PATH" >&6;}
       if test -d "$GLEW_PATH"; then
          if test -d "$GLEW_PATH/$compiler_vpfx$DEBUG_SFX$bit64_sfx"; then
             GLEW_PATH=$GLEW_PATH/$compiler_vpfx$DEBUG_SFX$bit64_sfx
@@ -28427,13 +28425,6 @@ echo "$as_me: Looking for GLEW under $GLEW_PATH" >&6;}
       else
          glew_config=pkg-config
       fi
-      if test -n "$GLEW_PATH"; then
-         { echo "$as_me:$LINENO: Looking for GLEW in $GLEW_PATH" >&5
-echo "$as_me: Looking for GLEW in $GLEW_PATH" >&6;}
-         glew_ls=`echo DEBUG:; ls -l $GLEW_PATH`
-      fi
-      { echo "$as_me:$LINENO: $glew_ls" >&5
-echo "$as_me: $glew_ls" >&6;}
       if pkg-config --version >/dev/null 2>&1; then
          if $glew_config glewmx --exists >/dev/null 2>&1 \
            && test -n "`$glew_config glewmx --libs 2>/dev/null`"; then

@@ -5134,7 +5134,6 @@ else
       if test "${with_glew-yes}" != "yes"; then
          GLEW_PATH=$with_glew
       fi
-      AC_MSG_NOTICE([Looking for GLEW under $GLEW_PATH])
       if test -d "$GLEW_PATH"; then
          if test -d "$GLEW_PATH/$compiler_vpfx$DEBUG_SFX$bit64_sfx"; then
             GLEW_PATH=$GLEW_PATH/$compiler_vpfx$DEBUG_SFX$bit64_sfx
@@ -5163,11 +5162,6 @@ else
       else
          glew_config=pkg-config
       fi
-      if test -n "$GLEW_PATH"; then
-         AC_MSG_NOTICE([Looking for GLEW in $GLEW_PATH])
-         glew_ls=`echo DEBUG:; ls -l $GLEW_PATH`
-      fi
-      AC_MSG_NOTICE([$glew_ls])
       if pkg-config --version >/dev/null 2>&1; then
          if $glew_config glewmx --exists >/dev/null 2>&1 \
            && test -n "`$glew_config glewmx --libs 2>/dev/null`"; then
