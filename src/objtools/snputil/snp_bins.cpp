@@ -36,8 +36,6 @@
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/align_ci.hpp>
 #include <objmgr/table_field.hpp>
-#include <objmgr/util/sequence.hpp>
-#include <objmgr/util/feature.hpp>
 
 #include <objects/seqalign/Seq_align_set.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
