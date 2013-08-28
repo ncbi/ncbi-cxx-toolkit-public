@@ -192,7 +192,7 @@ void CTable2AsnContext::AddUserTrack(CSeq_descr& SD, const string& type, const s
     SetUserObject(SD, type).SetData().push_back(uf);
 }
 
-void CTable2AsnContext::FindOpenReadingFrame(objects::CSeq_entry& entry)
+void CTable2AsnContext::FindOpenReadingFrame(objects::CSeq_entry& entry) const
 {
     switch(entry.Which())
     {
@@ -216,7 +216,7 @@ void CTable2AsnContext::FindOpenReadingFrame(objects::CSeq_entry& entry)
     }
 }
 
-void CTable2AsnContext::ApplySourceQualifiers(CSeq_entry& entry, const string& src_qualifiers)
+void CTable2AsnContext::ApplySourceQualifiers(CSeq_entry& entry, const string& src_qualifiers) const
 {
     switch(entry.Which())
     {
@@ -274,6 +274,56 @@ CBioSource& CTable2AsnContext::SetBioSource(CSeq_descr& SD)
     source_desc->Select(CSeqdesc::e_Source);
     SD.Set().push_back(source_desc);
     return source_desc->SetSource();
+}
+
+void CTable2AsnContext::ApplyCreateDate(CSeq_entry& entry) const
+{
+    switch(entry.Which())
+    {
+    case CSeq_entry::e_Seq:
+        {
+        CRef<CSeqdesc> create_date(new CSeqdesc);
+        CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
+        create_date->SetCreate_date(*date);
+
+        entry.SetSeq().SetDescr().Set().push_back(create_date);
+        }
+        break;
+    case CSeq_entry::e_Set:
+        NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
+        {
+            ApplyCreateDate(**it);
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+void CTable2AsnContext::ApplyAccession(objects::CSeq_entry& entry) const
+{
+    if (m_accession.empty())
+        return;
+
+    switch(entry.Which())
+    {
+    case CSeq_entry::e_Seq:
+        {
+            CRef<CSeq_id> accession_id(new CSeq_id);
+            accession_id->SetGenbank().SetAccession(m_accession);
+            entry.SetSeq().SetId().clear();
+            entry.SetSeq().SetId().push_back(accession_id);
+        }
+        break;
+    case CSeq_entry::e_Set:
+        NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
+        {
+            ApplyAccession(**it);
+        }
+        break;
+    default:
+        break;
+    }
 }
 
 END_NCBI_SCOPE

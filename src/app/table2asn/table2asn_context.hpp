@@ -76,13 +76,15 @@ public:
 
     void AddUserTrack(objects::CSeq_descr& SD, const string& type, const string& label, const string& data) const;
     void SetOrganismData(objects::CSeq_descr& SD, int genome_code, const string& taxname, int taxid, const string& strain) const;
-    void ApplySourceQualifiers(objects::CSeq_entry& bioseq, const string& src_qualifiers);
+    void ApplySourceQualifiers(objects::CSeq_entry& bioseq, const string& src_qualifiers) const;
 
-    void FindOpenReadingFrame(objects::CSeq_entry& entry);
+    void FindOpenReadingFrame(objects::CSeq_entry& entry) const;
     static
     objects::CUser_object& SetUserObject(objects::CSeq_descr& descr, const string& type);
     static
     objects::CBioSource& SetBioSource(objects::CSeq_descr& SD);
+    void ApplyCreateDate(objects::CSeq_entry& entry) const;
+    void ApplyAccession(objects::CSeq_entry& entry) const;
 
     CRef<objects::CSeq_submit> m_submit_template;
     CRef<objects::CSeq_entry>  m_entry_template;

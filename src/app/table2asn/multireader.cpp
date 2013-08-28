@@ -73,6 +73,20 @@
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
+namespace
+{
+
+void GetSeqId(CRef<CSeq_id>& id, const CTable2AsnContext& context)
+{
+    if (context.m_SetIDFromFile)
+    {
+        string base;
+        CDirEntry::SplitPath(context.m_current_file, 0, &base, 0);
+        id.Reset(new CSeq_id(string("lcl|") + base));
+    }
+}
+
+}
 //  ============================================================================
 void DumpMemory(const string& prefix)
     //  ============================================================================
@@ -352,8 +366,6 @@ CRef<CSerialObject> CMultiReader::ReadFile(const string& ifname)
         break;
     default:
         result.Reset(xProcessDefault(m_context, istr));
-        //ApplyAdditionalProperties(args);
-        //WriteObject(ostr);
         break;
     }
     return result;
@@ -586,17 +598,6 @@ CMultiReader::CMultiReader(const CTable2AsnContext& context)
 {
 }
 
-void GetSeqId(CRef<CSeq_id>& id, const CTable2AsnContext& context)
-{
-    if (context.m_SetIDFromFile)
-    {
-        string base;
-        CDirEntry::SplitPath(context.m_current_file, 0, &base, 0);
-        id.Reset(new CSeq_id(string("lcl|") + base));
-    }
-}
-
-
 void CMultiReader::ApplyAdditionalProperties(CSeq_entry& entry)
 {
     switch(entry.Which())
@@ -608,6 +609,7 @@ void CMultiReader::ApplyAdditionalProperties(CSeq_entry& entry)
             GetSeqId(id, m_context);
             entry.SetSeq().SetId().push_back(id);
         }
+
         break;
     case CSeq_entry::e_Set:
         {

@@ -196,7 +196,7 @@ void CTbl2AsnApp::Init(void)
                         p By Product", CArgDescriptions::eString, "o");
 
     arg_desc->AddOptionalKey
-        ("A", "String", "Accession", CArgDescriptions::eString);
+        ("A", "String", "Accession", CArgDescriptions::eString);  // done
     arg_desc->AddOptionalKey
         ("C", "String", "Genome Center Tag", CArgDescriptions::eString);
     arg_desc->AddOptionalKey
@@ -228,7 +228,7 @@ void CTbl2AsnApp::Init(void)
                         g Generate Gene Report\n\
                         t Validate with TSA Check", CArgDescriptions::eString);
 
-    arg_desc->AddFlag("q", "Seq ID from File Name"); // almost done
+    arg_desc->AddFlag("q", "Seq ID from File Name");      // almost done
     arg_desc->AddFlag("u", "GenProdSet to NucProtSet");   // done
     arg_desc->AddFlag("I", "General ID to Note");
 
@@ -513,6 +513,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     ProcessSecretFiles(*entry);
 
+    m_context.ApplyCreateDate(*entry);
     m_reader->ApplyAdditionalProperties(*entry);
     m_context.ApplySourceQualifiers(*entry, m_context.m_source_qualifiers);
 
@@ -532,6 +533,8 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     if (!m_context.m_find_open_read_frame.empty())
         m_context.FindOpenReadingFrame(*entry);
+
+    m_context.ApplyAccession(*entry);
  
     result = m_reader->HandleSubmitTemplate(entry);
 }
