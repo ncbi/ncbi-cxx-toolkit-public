@@ -116,6 +116,14 @@ protected:
         const CGff2Record&,
         CRef< CSeq_feat > );
     
+    bool xFeatureSetLocationInterval(
+        const CGff2Record&,
+        CRef< CSeq_feat > );
+    
+    bool xFeatureSetLocationPoint(
+        const CGff2Record&,
+        CRef< CSeq_feat > );
+    
     bool x_FeatureSetVariation(
         const CGvfReadRecord&,
         CRef< CSeq_feat > );
@@ -133,6 +141,14 @@ protected:
         const CGvfReadRecord&,
         const CSeq_feat& );
 
+    CRef<CVariation_ref> x_VariationInsertion(
+        const CGvfReadRecord&,
+        const CSeq_feat& );
+
+    bool xVariationSetInsertions(
+        const CGvfReadRecord&,
+        CRef< CVariation_ref > );
+
     virtual bool x_VariationSetId(
         const CGvfReadRecord&,
         CRef< CVariation_ref > );
@@ -145,7 +161,7 @@ protected:
         const CGvfReadRecord&,
         CRef< CVariation_ref > );
 
-    virtual bool x_VariationSetAlleleInstances(
+    virtual bool xVariationSetSnvs(
         const CGvfReadRecord&,
         CRef< CVariation_ref > );
 
