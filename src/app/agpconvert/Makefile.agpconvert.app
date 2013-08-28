@@ -6,14 +6,14 @@
 APP = agpconvert
 SRC = agpconvert
 
-LIB  = xalgoseq xobjedit $(OBJREAD_LIBS) xalnmgr xobjutil taxon3 taxon1 \
-    ncbi_xdbapi_ftds $(FTDS_LIB) tables xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
-LIBS = $(FTDS_LIBS) $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+LIB  = $(OBJREAD_LIBS) taxon1 xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
+LIBS = $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+
 
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
-REQUIRES = objects algo FreeTDS
+REQUIRES = objects
 
 CHECK_CMD  = test_agpconvert.sh
 CHECK_COPY = test_agpconvert.sh test_data
