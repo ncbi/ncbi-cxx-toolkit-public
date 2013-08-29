@@ -53,9 +53,12 @@
 #include <objects/general/User_field.hpp>
 #include <objects/general/Date.hpp>
 
+#include <objects/misc/sequence_util_macros.hpp>
+
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Linkage_evidence.hpp>
 #include <objects/seq/MolInfo.hpp>
 #include <objects/seq/Seg_ext.hpp>
 #include <objects/seq/Seq_ext.hpp>
@@ -2948,10 +2951,33 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
                 _ASSERT(smci.GetType() == CSeqMap::eSeqGap);
                 if (smci.IsUnknownLength()) {
                     // conventional designation, regardless of nominal length
-                    m_Out << ">?unk100\n";
+                    m_Out << ">?unk100";
                 } else {
-                    m_Out << ">?" << gap_size << "\n";
+                    m_Out << ">?" << gap_size;
                 }
+                // print gap mods, if requested
+                if( (m_Flags & fShowGapModifiers) != 0 )
+                {
+                    CConstRef<CSeq_literal> pGapLiteral = 
+                        smci.GetRefGapLiteral();
+                    if( pGapLiteral &&
+                        FIELD_IS_SET_AND_IS(*pGapLiteral, Seq_data, Gap) )
+                    {
+                        const CSeq_gap & seq_gap = 
+                            pGapLiteral->GetSeq_data().GetGap();
+                        SGapModText gap_mod_text;
+                        GetGapModText(seq_gap, gap_mod_text);
+
+                        CNcbiOstrstream gap_mod_strm;
+                        gap_mod_text.WriteAllModsAsFasta(gap_mod_strm);
+                        const string sGapModText = 
+                            CNcbiOstrstreamToString(gap_mod_strm);
+                        if( ! sGapModText.empty() ) {
+                            m_Out << ' ' << sGapModText;
+                        }
+                    }
+                }
+                m_Out << '\n';
                 rem_line = m_Width;
             } else {
                 TSeqPos rem_gap = gap_size;
@@ -3159,6 +3185,159 @@ void CFastaOstream::SetWidth(TSeqPos width)
     m_UC_Xs .reset(new char[width]);  memset(m_UC_Xs .get(), 'X', width);
 }
 
+void 
+CFastaOstream::SGapModText::WriteAllModsAsFasta(
+    CNcbiOstream & out ) const
+{
+    string sPrefix = kEmptyStr;
+    if( ! gap_type.empty() ) {
+        out << sPrefix << "[gap-type=" << gap_type << ']';
+        sPrefix = " ";
+    }
+    if( ! gap_linkage_evidences.empty() ) {
+        out << sPrefix << "[linkage-evidence=" << NStr::Join(gap_linkage_evidences, ";") << ']';
+        sPrefix = " ";
+    }
+}
+
+// static
+void 
+CFastaOstream::GetGapModText(
+    const CSeq_gap & seq_gap,
+    SGapModText & out_gap_info )
+{
+    // convenience references
+    string & gap_type = out_gap_info.gap_type;
+    vector<string> & gap_linkage_evidences = 
+        out_gap_info.gap_linkage_evidences;
+
+    // make sure initialized
+    gap_type.clear();
+    gap_linkage_evidences.clear();
+
+    // true if we need to have a /linkage-evidence tag.
+    // Also, if this is false, we should *not* have any
+    // linkage-evidence tag
+    bool need_evidence = false;
+
+    // determine if we're linked, and also determine if
+    // we need linkage-evidence
+    bool is_linkage =
+        seq_gap.CanGetLinkage() && 
+        seq_gap.GetLinkage() == CSeq_gap::eLinkage_linked;
+
+    if ( seq_gap.IsSetLinkage_evidence() ) {
+        is_linkage = true; /* do not rely solely on Seq-gap.linkage, which is not always set correctly */
+    }
+
+    // For /gap_type qual
+    if( seq_gap.CanGetType() ) {
+        switch( seq_gap.GetType() ) {
+        case CSeq_gap::eType_unknown:
+            // don't show /gap_type
+            break;
+        case CSeq_gap::eType_fragment:
+            gap_type = "within scaffold";
+            need_evidence = true;
+            break;
+        case CSeq_gap::eType_clone:
+            gap_type = ( is_linkage ? "within scaffold" : "between scaffolds" );
+            need_evidence = is_linkage;
+            break;
+        case CSeq_gap::eType_short_arm:
+            gap_type = "short_arm";
+            break;
+        case CSeq_gap::eType_heterochromatin:
+            gap_type = "heterochromatin";
+            break;
+        case CSeq_gap::eType_centromere:
+            gap_type = "centromere";
+            break;
+        case CSeq_gap::eType_telomere:
+            gap_type = "telomere";
+            break;
+        case CSeq_gap::eType_repeat:
+            gap_type = ( is_linkage ? 
+                "repeat within scaffold" : 
+            "repeat between scaffolds" );
+            need_evidence = is_linkage;
+            break;
+        case CSeq_gap::eType_contig:
+            gap_type = "between scaffolds";
+            break;
+        case CSeq_gap::eType_scaffold:
+            gap_type = "within scaffold";
+            need_evidence = is_linkage;
+            break;
+        case CSeq_gap::eType_other:
+            gap_type = "other";
+            break;
+        default:
+            gap_type = "(ERROR: UNRECOGNIZED_GAP_TYPE:" +
+                NStr::IntToString(seq_gap.GetType()) + ")";
+            break;
+        }
+    }
+
+    // For linkage evidence
+    if( seq_gap.CanGetLinkage_evidence() ) {
+        ITERATE( CSeq_gap::TLinkage_evidence, 
+            evidence_iter, 
+            seq_gap.GetLinkage_evidence() ) 
+        {
+            const CLinkage_evidence & evidence = **evidence_iter;
+            if( evidence.CanGetType() ) {
+                switch( evidence.GetType() ) {
+                case CLinkage_evidence::eType_paired_ends:
+                    gap_linkage_evidences.push_back("paired-ends");
+                    break;
+                case CLinkage_evidence::eType_align_genus:
+                    gap_linkage_evidences.push_back("align genus");
+                    break;
+                case CLinkage_evidence::eType_align_xgenus:
+                    gap_linkage_evidences.push_back("align xgenus");
+                    break;
+                case CLinkage_evidence::eType_align_trnscpt:
+                    gap_linkage_evidences.push_back("align trnscpt");
+                    break;
+                case CLinkage_evidence::eType_within_clone:
+                    gap_linkage_evidences.push_back("within clone");
+                    break;
+                case CLinkage_evidence::eType_clone_contig:
+                    gap_linkage_evidences.push_back("clone contig");
+                    break;
+                case CLinkage_evidence::eType_map:
+                    gap_linkage_evidences.push_back("map");
+                    break;
+                case CLinkage_evidence::eType_strobe:
+                    gap_linkage_evidences.push_back("strobe");
+                    break;
+                case CLinkage_evidence::eType_unspecified:
+                    gap_linkage_evidences.push_back("unspecified");
+                    break;
+                case CLinkage_evidence::eType_pcr:
+                    gap_linkage_evidences.push_back("pcr");
+                    break;
+                case CLinkage_evidence::eType_other:
+                    gap_linkage_evidences.push_back("other");
+                    break;
+                default:
+                    gap_linkage_evidences.push_back("(UNRECOGNIZED LINKAGE EVIDENCE:" +
+                        NStr::IntToString( evidence.GetType() ) + ")");
+                    break;
+                }
+            }
+        }
+    }
+
+    if( need_evidence && gap_linkage_evidences.empty() ) {
+        gap_linkage_evidences.push_back("unspecified");
+    } else if( ! need_evidence && ! gap_linkage_evidences.empty() ) {
+        // This case shouldn't happen if the validator is checking
+        // records first.
+        gap_linkage_evidences.clear();
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //

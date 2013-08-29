@@ -2264,133 +2264,13 @@ static CRef<CGapItem> s_NewGapItem(CSeqMap_CI& gap_it, CBioseqContext& ctx)
         }
     }
 
-    string sType;
-    CGapItem::TEvidence sEvidence;
+
+    CFastaOstream::SGapModText gap_mod_text;
     if( pGap ) {
-
-        // true if we need to have a /linkage-evidence tag.
-        // Also, if this is false, we should *not* have any
-        // linkage-evidence tag
-        bool need_evidence = false;
-
-        // determine if we're linked, and also determine if
-        // we need linkage-evidence
-        bool is_linkage =
-            pGap->CanGetLinkage() && 
-            pGap->GetLinkage() == CSeq_gap::eLinkage_linked;
-
-        if ( pGap->IsSetLinkage_evidence() ) {
-            is_linkage = true; /* do not rely solely on Seq-gap.linkage, which is not always set correctly */
-        }
-
-        // For /gap_type qual
-        if( pGap->CanGetType() ) {
-            switch( pGap->GetType() ) {
-            case CSeq_gap::eType_unknown:
-                // don't show /gap_type
-                break;
-            case CSeq_gap::eType_fragment:
-                sType = "within scaffold";
-                need_evidence = true;
-                break;
-            case CSeq_gap::eType_clone:
-                sType = ( is_linkage ? "within scaffold" : "between scaffolds" );
-                need_evidence = is_linkage;
-                break;
-            case CSeq_gap::eType_short_arm:
-                sType = "short_arm";
-                break;
-            case CSeq_gap::eType_heterochromatin:
-                sType = "heterochromatin";
-                break;
-            case CSeq_gap::eType_centromere:
-                sType = "centromere";
-                break;
-            case CSeq_gap::eType_telomere:
-                sType = "telomere";
-                break;
-            case CSeq_gap::eType_repeat:
-                sType = ( is_linkage ? 
-                    "repeat within scaffold" : 
-                    "repeat between scaffolds" );
-                need_evidence = is_linkage;
-                break;
-            case CSeq_gap::eType_contig:
-                sType = "between scaffolds";
-                break;
-            case CSeq_gap::eType_scaffold:
-                sType = "within scaffold";
-                need_evidence = is_linkage;
-                break;
-            case CSeq_gap::eType_other:
-                sType = "other";
-                break;
-            default:
-                sType = "(ERROR: UNRECOGNIZED_GAP_TYPE:" +
-                    NStr::IntToString(pGap->GetType()) + ")";
-                break;
-            }
-        }
-
-        // For linkage evidence
-        if( pGap->CanGetLinkage_evidence() ) {
-            ITERATE( CSeq_gap::TLinkage_evidence, 
-                evidence_iter, 
-                pGap->GetLinkage_evidence() ) 
-            {
-                const CLinkage_evidence & evidence = **evidence_iter;
-                if( evidence.CanGetType() ) {
-                    switch( evidence.GetType() ) {
-                case CLinkage_evidence::eType_paired_ends:
-                    sEvidence.push_back("paired-ends");
-                    break;
-                case CLinkage_evidence::eType_align_genus:
-                    sEvidence.push_back("align genus");
-                    break;
-                case CLinkage_evidence::eType_align_xgenus:
-                    sEvidence.push_back("align xgenus");
-                    break;
-                case CLinkage_evidence::eType_align_trnscpt:
-                    sEvidence.push_back("align trnscpt");
-                    break;
-                case CLinkage_evidence::eType_within_clone:
-                    sEvidence.push_back("within clone");
-                    break;
-                case CLinkage_evidence::eType_clone_contig:
-                    sEvidence.push_back("clone contig");
-                    break;
-                case CLinkage_evidence::eType_map:
-                    sEvidence.push_back("map");
-                    break;
-                case CLinkage_evidence::eType_strobe:
-                    sEvidence.push_back("strobe");
-                    break;
-                case CLinkage_evidence::eType_unspecified:
-                    sEvidence.push_back("unspecified");
-                    break;
-                case CLinkage_evidence::eType_pcr:
-                    sEvidence.push_back("pcr");
-                    break;
-                case CLinkage_evidence::eType_other:
-                    sEvidence.push_back("other");
-                    break;
-                default:
-                    sEvidence.push_back("(UNRECOGNIZED LINKAGE EVIDENCE:" +
-                        NStr::IntToString( evidence.GetType() ) + ")");
-                    break;
-                    }
-                }
-            }
-        }
-
-        if( need_evidence && sEvidence.empty() ) {
-            sEvidence.push_back("unspecified");
-        } else if( ! need_evidence && ! sEvidence.empty() ) {
-            // This case shouldn't happen if the validator is checking
-            // records first.
-            sEvidence.clear();
-        }
+        CFastaOstream::GetGapModText(*pGap, gap_mod_text);
     }
+    const string & sType             = gap_mod_text.gap_type;
+    const vector<string> & sEvidence = gap_mod_text.gap_linkage_evidences;
 
     // feature name depends on what quals we use
     const bool bIsAssemblyGap = ( ! sType.empty() || ! sEvidence.empty() );

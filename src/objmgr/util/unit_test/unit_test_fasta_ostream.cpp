@@ -54,6 +54,8 @@
 // This header must be included before all Boost.Test headers if there are any
 #include <corelib/test_boost.hpp>
 
+#include <corelib/ncbi_autoinit.hpp>
+
 #include <objects/seqset/Seq_entry.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
@@ -64,10 +66,12 @@
 #include <objects/seq/seqport_util.hpp>
 #include <objects/seq/Seq_inst.hpp>
 #include <objects/seq/Seq_ext.hpp>
+#include <objects/seq/Seq_gap.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Delta_seq.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/IUPACna.hpp>
+#include <objects/seq/Linkage_evidence.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -556,6 +560,75 @@ BOOST_AUTO_TEST_CASE(Test_FastaMods)
             "ATCGAAAT\n";
         BOOST_CHECK_EQUAL(s, string(sc_Expected));
     }}
+}
+
+BOOST_AUTO_TEST_CASE(Test_GapMods)
+{
+    CRef<CSeq_entry> entry = s_ReadData();
+
+    /// Give the seq entry's gaps gap-type and linkage-evidence
+    CTypeIterator<CSeq_literal> literal_iter(Begin(*entry));
+    for( ; literal_iter; ++literal_iter) {
+        if( ! literal_iter->IsSetSeq_data() ) {
+            CSeq_gap & seq_gap = literal_iter->SetSeq_data().SetGap();
+
+            seq_gap.SetType(CSeq_gap::eType_clone);
+
+            seq_gap.SetLinkage(CSeq_gap::eLinkage_linked);
+
+            CSeq_gap::TLinkage_evidence & linkage_evidence_vec =
+                seq_gap.SetLinkage_evidence();
+            CAutoInitRef<CLinkage_evidence> mapEvid;
+            mapEvid->SetType( CLinkage_evidence::eType_map );
+            linkage_evidence_vec.push_back( Ref(&*mapEvid) );
+            CAutoInitRef<CLinkage_evidence> strobeEvid;
+            strobeEvid->SetType( CLinkage_evidence::eType_strobe );
+            linkage_evidence_vec.push_back( Ref(&*strobeEvid) );
+        }
+    }
+
+    ///
+    /// we have one bioseq
+    /// add this to a scope and get it back so we can format
+    ///
+    CRef<CObjectManager> om(CObjectManager::GetInstance());
+    CRef<CScope> scope(new CScope(*om));
+
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+
+    ///
+    /// formatting with and without gap modifiers
+    ///
+    ITERATE_BOTH_BOOL_VALUES(bShowGapModifiers)
+    {
+         CNcbiOstrstream os;
+         {{
+              CFastaOstream fasta_os(os);
+              fasta_os.SetGapMode(CFastaOstream::eGM_count);
+              /// FIXME: this should be the default!!
+              //fasta_os.SetFlag(CFastaOstream::fInstantiateGaps);
+              if( bShowGapModifiers ) {
+                  fasta_os.SetFlag(CFastaOstream::fShowGapModifiers);
+              }
+              fasta_os.Write(seh);
+          }}
+         os.flush();
+         string s = string(CNcbiOstrstreamToString(os));
+
+         CNcbiOstrstream expected_os;
+         expected_os << ">lcl|test-seq test sequence\n"
+             "CGGTTGCTTGGGTTTTATAACATCAGTCAGTGACAGGCATTTCCAGAGTTGCCCTGTTCAACAATCGATA\n"
+             "GCTGCCTTTGGCCACCAAAATCCCAAACT\n"
+             ">?20";
+         if( bShowGapModifiers ) {
+             expected_os << " [gap-type=within scaffold] [linkage-evidence=map;strobe]";
+         }
+         expected_os << '\n';
+         expected_os << "AATTAAAGAATTAAATAATTCGAATAATAATTAAGCCCAGTAACCTACGCAGCTTGAGTGCGTAACCGAT\n"
+             "ATCTAGTATACATTTCGATACATCGAAAT\n";
+
+         BOOST_CHECK_EQUAL(s, string(CNcbiOstrstreamToString(expected_os)));
+    }
 }
 
 #if 0

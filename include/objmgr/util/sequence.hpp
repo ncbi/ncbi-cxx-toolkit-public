@@ -68,6 +68,7 @@ class CSeq_entry;
 class CSeq_entry_handle;
 class CGenetic_code;
 class CMolInfo;
+class CSeq_gap;
 
 BEGIN_SCOPE(sequence)
 
@@ -734,16 +735,17 @@ END_SCOPE(sequence)
 class NCBI_XOBJUTIL_EXPORT CFastaOstream {
 public:
     enum EFlags {
-        fAssembleParts   = 0x001, ///< assemble FAR delta sequences; on by dflt
-        fInstantiateGaps = 0x002, ///< honor specifed gap mode; on by default
-        fSuppressRange   = 0x004, ///< never include location details in defline
-        fReverseStrand   = 0x008, ///< flip the (implicit) location
-        fKeepGTSigns     = 0x010, ///< don't convert '>' to '_' in title
-        fMapMasksUp      = 0x020, ///< honor masks specified at a lower level
-        fMapMasksDown    = 0x040, ///< honor masks specified at a higher level
-        fNoExpensiveOps  = 0x080, ///< don't try too hard to find titles
-        fShowModifiers   = 0x100, ///< show key-value pair modifiers (e.g. "[organism=Homo sapiens]")
-        fNoDupCheck      = 0x200, ///< skip check for duplicate sequence IDs
+        fAssembleParts    = 0x001, ///< assemble FAR delta sequences; on by dflt
+        fInstantiateGaps  = 0x002, ///< honor specifed gap mode; on by default
+        fSuppressRange    = 0x004, ///< never include location details in defline
+        fReverseStrand    = 0x008, ///< flip the (implicit) location
+        fKeepGTSigns      = 0x010, ///< don't convert '>' to '_' in title
+        fMapMasksUp       = 0x020, ///< honor masks specified at a lower level
+        fMapMasksDown     = 0x040, ///< honor masks specified at a higher level
+        fNoExpensiveOps   = 0x080, ///< don't try too hard to find titles
+        fShowModifiers    = 0x100, ///< show key-value pair modifiers (e.g. "[organism=Homo sapiens]")
+        fNoDupCheck       = 0x200, ///< skip check for duplicate sequence IDs
+        fShowGapModifiers = 0x400, ///< show gap key-value pair modifiers (e.g. "[linkage-evidence=map;strobe]"). Only works if gap mode is eGM_count.
         // historically misnamed as eFlagName
         eAssembleParts   = fAssembleParts,
         eInstantiateGaps = fInstantiateGaps
@@ -812,6 +814,34 @@ public:
     void    ResetFlag  (EFlags flag)   { m_Flags &= ~flag; }
     void    SetGapMode (EGapMode mode) { m_GapMode = mode; }
     EGapMode GetGapMode(void) const    { return m_GapMode; }
+
+    /// This indicates the text of the modifiers of a gap.
+    struct NCBI_XOBJUTIL_EXPORT SGapModText {
+        /// String representing the gap type.
+        /// Examples: "short_arm", "telomere", etc.
+        string gap_type;
+        /// A vector representing the linkage-evidences of the gap.
+        /// Example linkage-evidences: "align genus", "within clone", etc.
+        vector<string> gap_linkage_evidences;
+
+        // more fields may be added in the future.
+
+        /// This will write the modifiers in
+        /// FASTA format.  (example: "[gap-type=short_arm]")
+        void WriteAllModsAsFasta( CNcbiOstream & out ) const;
+    };
+
+    /// Given a CSeq_gap object, this outputs the
+    /// Gap information
+    ///
+    /// @param seq_gap
+    ///   This is the seq_gap information we're using to figure out
+    ///   the gap mod text
+    /// @param out_gap_mod_text
+    ///   This holds the result.
+    static void GetGapModText(
+        const CSeq_gap & seq_gap,
+        SGapModText & out_gap_mod_text );
 
 private:
     CNcbiOstream&       m_Out;
