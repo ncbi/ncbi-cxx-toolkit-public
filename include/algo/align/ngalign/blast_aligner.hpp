@@ -86,12 +86,12 @@ class CBlastAligner : public IAlignmentFactory
 {
 public:
     CBlastAligner(blast::CBlastOptionsHandle& Options, int Threshold)
-        : m_BlastOptions(&Options), m_Threshold(Threshold), m_Filter(0),
+        : m_BlastOptions(&Options), m_Threshold(Threshold),
           m_UseNegativeGiList(true), m_InterruptFunc(NULL), m_InterruptData(NULL) { ; }
 
     CBlastAligner(const string& Params, int Threshold)
         : m_BlastOptions(CBlastArgs::s_CreateBlastOptions(Params))
-        , m_Threshold(Threshold), m_Filter(0)
+        , m_Threshold(Threshold)
         , m_UseNegativeGiList(true)
         , m_InterruptFunc(NULL), m_InterruptData(NULL) { ; }
 
@@ -102,7 +102,8 @@ public:
                                         ISequenceSet* SubjectSet,
                                         TAlignResultsRef AccumResults);
 
-    void SetSoftFiltering(int Filter) { m_Filter = Filter; }
+    void SetSoftFiltering(int Filter) { m_Filter = NStr::NumericToString<>(Filter); }
+    void SetSoftFiltering(const string& Filter) { m_Filter = Filter; }
     void SetUseNegativeGiList(bool Use) { m_UseNegativeGiList = Use; }
 
     typedef CRef<blast::CBlastOptionsHandle> TBlastOptionsRef;
@@ -120,7 +121,7 @@ private:
 
     CRef<blast::CBlastOptionsHandle> m_BlastOptions;
     int m_Threshold;
-    int m_Filter;
+    string m_Filter;
     bool m_UseNegativeGiList;
     
     TInterruptFnPtr m_InterruptFunc;
@@ -134,11 +135,11 @@ class CRemoteBlastAligner : public IAlignmentFactory
 {
 public:
     CRemoteBlastAligner(blast::CBlastOptionsHandle& Options, int Threshold)
-        : m_BlastOptions(&Options), m_Threshold(Threshold), m_Filter(0) { ; }
+        : m_BlastOptions(&Options), m_Threshold(Threshold) { ; }
 
     CRemoteBlastAligner(const string& Params, int Threshold)
         : m_BlastOptions(CBlastArgs::s_CreateBlastOptions(Params))
-        , m_Threshold(Threshold), m_Filter(0) { ; }
+        , m_Threshold(Threshold) { ; }
 
     string GetName() const { return "remote_blast_aligner"; }
 
@@ -158,7 +159,7 @@ private:
 
     CRef<blast::CBlastOptionsHandle> m_BlastOptions;
     int m_Threshold;
-    int m_Filter;
+    string m_Filter;
 };
 
 

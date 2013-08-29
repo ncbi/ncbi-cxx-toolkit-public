@@ -82,7 +82,8 @@ public:
         eNoSoftFiltering = -1
     };
 
-    void SetSoftFiltering(int Filter) { m_Filter = Filter; }
+    void SetSoftFiltering(int Filter) { m_Filter = NStr::NumericToString<>(Filter); }
+    void SetSoftFiltering(const string& Filter) { m_Filter = Filter; }
 
     void SetNegativeGiList(const vector<int>& GiList);
     void SetPositiveGiList(const vector<int>& GiList);
@@ -100,7 +101,7 @@ public:
 
 protected:
     string m_BlastDb;
-    int m_Filter;
+    string m_Filter;
     CRef<CInputGiList> m_NegativeGiList;
     CRef<CInputGiList> m_PositiveGiList;
 };

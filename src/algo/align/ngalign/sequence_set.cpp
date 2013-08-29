@@ -71,7 +71,7 @@ USING_SCOPE(objects);
 USING_SCOPE(blast);
 
 
-CBlastDbSet::CBlastDbSet(const string& BlastDb) : m_BlastDb(BlastDb), m_Filter(-1)
+CBlastDbSet::CBlastDbSet(const string& BlastDb) : m_BlastDb(BlastDb)
 {
     ;
 }
@@ -126,7 +126,7 @@ CBlastDbSet::CreateLocalDbAdapter(CScope& Scope,
     CRef<CSearchDatabase> SearchDb;
     SearchDb.Reset(new CSearchDatabase(m_BlastDb, CSearchDatabase::eBlastDbIsNucleotide));
 
-    if(m_Filter != -1) {
+    if(! m_Filter.empty()) {
         SearchDb->SetFilteringAlgorithm(m_Filter, eSoftSubjMasking);
     }
 
