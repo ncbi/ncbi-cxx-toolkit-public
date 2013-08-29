@@ -46,6 +46,7 @@
 #include <objects/seq/seq_id_mapper.hpp>
 #include <util/strsearch.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/bioseq_ci.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/create_defline.hpp>
@@ -1186,6 +1187,433 @@ private:
     CTextFsm<TPatternInfo>  m_Fsa;             // finite state machine
 };  //  end of CSeqSearch
 
+
+/// This trims ambiguous bases from the start and/or end of 
+/// sequences, using customizable rules.
+class NCBI_XOBJUTIL_EXPORT CSequenceAmbigTrimmer : public CObject
+{
+public:
+
+    /// This enum is used to set what is meant by "ambiguous".
+    enum EMeaningOfAmbig {
+        /// Here, only N for nucleotides and X for amino acids is considered
+        /// ambiguous.
+        eMeaningOfAmbig_OnlyCompletelyUnknown, 
+        /// Here, anything that's not certain is considered
+        /// ambiguous.  That is, anything but A, C, G, T for nucleotides,
+        /// and most amino acids except, for example, B (which can be 
+        /// aspartic acid or asparagine), X (completely ambiguous), etc.
+        eMeaningOfAmbig_AnyAmbig,
+    };
+
+    enum EFlags {
+        fFlags_DoNotTrimBeginning = (1 << 0), ///< 0x01 ("Beginning" as defined by CSeqVector)
+        fFlags_DoNotTrimEnd       = (1 << 1), ///< 0x02 ("End" as defined by CSeqVector)
+
+        fFlags_TrimAnnot         = (1 << 3)   ///< 0x08 (Trim annots based on trimmed bioseq location)
+    };
+    typedef int TFlags;
+
+    /// For example, if bases_to_check is 10 and max_bases_allowed_to_be_ambig
+    /// is 5, then on each iteration we check the 10 terminal bases and
+    /// trim off those 10 if there are more than 5 ambiguous bases there.
+    struct NCBI_XOBJUTIL_EXPORT STrimRule {
+        TSignedSeqPos bases_to_check;
+        TSignedSeqPos max_bases_allowed_to_be_ambig;
+    };
+    /// Multiple STrimRules are allowed, which are applied from 
+    /// smallest bases_to_check to largest bases_to_check, and 
+    /// redundant rules are automatically removed.  When a rule is applied,
+    /// we start over at the first sorted rule again.
+    typedef vector<STrimRule> TTrimRuleVec;
+
+    /// This returns a reasonable default for trimming rules.
+    static const TTrimRuleVec & GetDefaultTrimRules(void);
+
+    /// This sets up the parameters for how this trimmer will act
+    ///
+    /// @param eMeaningOfAmbig
+    ///   This indicates exactly what ambiguous means (e.g. just "N" or
+    ///   do all ambiguous symbols count? )
+    /// @param fFlags
+    ///   miscellaneous parameters to control this.  See TFlags.
+    /// @param vecTrimRules
+    ///   This indicates how trimming will occur.  See TTrimRuleVec.
+    /// @param uMinSeqLen
+    ///   Trimming tries to halt if the sequence becomes smaller than this size.
+    ///   It is possible for the resulting sequence to be below the
+    ///   uMinSeqLen size (or even trimmed to nothing), but the trimmer
+    ///   will at least <i>try</i> not to do that.
+    CSequenceAmbigTrimmer(
+        EMeaningOfAmbig eMeaningOfAmbig,
+        TFlags fFlags = 0,
+        const TTrimRuleVec & vecTrimRules = GetDefaultTrimRules(),
+        TSignedSeqPos uMinSeqLen = 50 );
+
+    /// Do-nothing destructor just to allow inheritance.
+    virtual ~CSequenceAmbigTrimmer() { }
+
+    /// This indicates what happened with the trim.
+    /// Error states are indicated by an exception, not EResult.
+    enum EResult {
+        /// Bioseq is now trimmed.
+        eResult_SuccessfullyTrimmed,
+
+        /// Bioseq is left unchanged because it did not need to be trimmed
+        /// at all.  This is NOT an error.
+        eResult_NoTrimNeeded
+    };
+
+    /// This trims the given bioseq, using params
+    /// set in the CSequenceAmbigTrimmer constructor.  It will properly
+    /// handle the annots and descs inside the bioseq, too, if requested.
+    ///
+    /// @param bioseq_handle
+    ///   The bioseq to trim.
+    /// @return
+    ///   This returns how the trimming went.  On error, an exception
+    ///   is thrown and the bioseq may be in an undefined state.
+    virtual EResult DoTrim( CBioseq_Handle &bioseq_handle );
+
+protected:
+    /// This holds the current interpretation for "ambiguous".  For example,
+    /// it indicates whether just 'N' is ambiguous or if any non-ACGT
+    /// letter is ambiguous.  Works for amino acids, too (e.g. 'X' for
+    /// completely unknown, etc.)
+    EMeaningOfAmbig m_eMeaningOfAmbig;
+    /// This holds the flags that affect the behavior of this class.
+    TFlags          m_fFlags;
+    /// This holds the trimming rules that will be applied.
+    /// It should be normalized by the constructor 
+    /// to eliminate dups and to sort it from least to most bases.
+    TTrimRuleVec    m_vecTrimRules;
+    /// When the bioseq gets trimmed down to less than this size,
+    /// we halt the trimming.
+    TSignedSeqPos         m_uMinSeqLen;
+
+    /// Test if a given flag is set.
+    bool x_TestFlag(TFlags fFlag) {
+        return ( m_fFlags & fFlag );
+    }
+
+    /// This prepares the vector of trimming rules to be used
+    /// by the trimming algorithm. For example, it eliminate duplicates
+    /// and puts the rules in the correct order.
+    /// 
+    /// @param vecTrimRules
+    ///   Input and output.
+    virtual void x_NormalizeVecTrimRules( TTrimRuleVec & vecTrimRules );
+
+    /// The bioseq is trimmed to size 0.
+    ///
+    /// @param bioseq_handle
+    ///   The bioseq to trim to nothing.
+    /// @returns
+    ///   Works just like the DoTrim return value.
+    virtual EResult x_TrimToNothing( CBioseq_Handle &bioseq_handle );
+
+    // below this point, left/right means positions going numerically upward,
+    // but start/end is relative to direction. That is, 
+    // a negative direction would imply end &lt;= start.
+
+    /// This returns the last good base that won't be trimmed
+    /// (note: last really means "first" when we're starting from the end)
+    ///
+    /// @param seqvec
+    ///   This lets us explore the Bioseq to find out where to trim.
+    /// @param iStartPosInclusive_arg
+    ///   This is the where we start our trimming.  Depending on
+    ///   direction, this could be &lt; or &gt; iEndPosInclusive_arg.
+    /// @param iEndPosInclusive_arg
+    ///   This is where the trimming ends (inclusive).  Analogous to
+    ///   iStartPosInclusive_arg.
+    /// @param iTrimDirection
+    ///   1 to trim from left to right, -1 to trim from right to left.
+    /// @return
+    ///   The last good base (remember: last means "lower number" when we're
+    ///   checking from the end).  If trimming would trim off the entire
+    ///   sequence, it returns a position past the end of the sequence.
+    virtual TSignedSeqPos x_FindWhereToTrim(
+        const CSeqVector & seqvec,
+        const TSignedSeqPos iStartPosInclusive_arg,
+        const TSignedSeqPos iEndPosInclusive_arg,
+        TSignedSeqPos iTrimDirection );
+
+    /// This adjusts in_out_uStartOfGoodBasesSoFar if we're at
+    /// a CSeqMap gap.  It does not notice ambiguous bases that
+    /// are inside a normal sequence.
+    ///
+    /// @param seqvec
+    ///   This is used to access information about the sequence.
+    /// @param in_out_uStartOfGoodBasesSoFar
+    ///   This is the start of where we check for a gap.
+    ///   It will be updated to be past the gap, if a gap is found.
+    /// @param in_out_uRightmostGoodBaseSoFar
+    ///   Analogous to in_out_uLeftmostGoodBaseSoFar.  It's inclusive.
+    /// @param uEndOfGoodBasesSoFar
+    ///   This limits how far this function may search (inclusive) 
+    ///   when looking for
+    ///   the end of a gap segment.
+    /// @param iTrimDirection
+    ///   1 to trim from left to right, -1 to trim from right to left.
+    /// @param uChunkSize
+    ///   The gap size that we chop off must be a multiple of uChunkSize.
+    ///   We will chop off less if we would go more than 1 past the
+    ///   uEndOfGoodBasesSoFar.
+    ///   A uChunkSize of 1 means no chunking for obvious math reasons.
+    virtual void x_EdgeSeqMapGapAdjust( 
+        const CSeqVector & seqvec,
+        TSignedSeqPos & in_out_uStartOfGoodBasesSoFar,
+        const TSignedSeqPos uEndOfGoodBasesSoFar,
+        const TSignedSeqPos iTrimDirection,
+        const TSignedSeqPos uChunkSize );
+
+    /// This holds the output of x_CountAmbigInRange
+    struct NCBI_XOBJUTIL_EXPORT SAmbigCount : public CObject {
+        SAmbigCount(const TSignedSeqPos iTrimDirection) :
+            num_ambig_bases(0),
+            pos_after_last_gap( 
+                (iTrimDirection > 0) 
+                ? numeric_limits<TSignedSeqPos >::max()
+                : numeric_limits<TSignedSeqPos >::min() )
+            { }
+
+        /// the number of ambiguous bases found in the range
+        /// supplied to x_CountAmbigInRange
+        TSignedSeqPos num_ambig_bases;
+        /// Inclusive. This is far past the end if the whole range
+        /// is ambiguous. 
+        TSignedSeqPos pos_after_last_gap;
+    };
+
+    /// This counts the number of ambiguous bases in the range
+    /// [leftmost_pos_to_check, rightmost_pos_to_check].  Note that
+    /// rightmost_pos_to_check is inclusive.
+    ///
+    /// @param out_result
+    ///   This will store the result.  Pass in a struct initialized
+    ///   by the default constructor.
+    /// @param seqvec
+    ///   This is used to get the bases.
+    /// @param iStartPosInclusive
+    ///   This is where we start our count.
+    /// @param iEndPosInclusive
+    ///   This is where we end our count.  Note that it can be &lt; or
+    ///   &gt; iStartPosInclusive, depending on trim direction.
+    /// @param iTrimDirection
+    ///   1 to trim from left to right, -1 to trim from right to left.
+    virtual void x_CountAmbigInRange(
+        SAmbigCount & out_result,
+        const CSeqVector & seqvec,
+        const TSignedSeqPos iStartPosInclusive_arg,
+        const TSignedSeqPos iEndPosInclusive_arg,
+        const TSignedSeqPos iTrimDirection );
+
+    /// This returns the (inclusive) position at the beginning of the
+    /// segment.
+    ///
+    /// @param segment
+    ///   This is the segment we're trying to find the beginning of.
+    /// @param iTrimDirection
+    ///   This is which direction in which we're trimming.  The beginning
+    ///   will be in the opposite direction.
+    /// @return
+    ///   This returns the (inclusive) position at the beginning of the given
+    ///   segment. As always,
+    ///   the definition of "beginning" depends on iTrimDirection.
+    TSignedSeqPos x_SegmentGetBeginningInclusive(
+        const CSeqMap_CI & segment,
+        const TSignedSeqPos iTrimDirection ) 
+    {
+        // symmetrical
+        return x_SegmentGetEndInclusive( segment, -iTrimDirection );
+    }
+
+    /// This returns the (inclusive) position at the end of the
+    /// segment currently at iStartPosInclusive_arg.
+    ///
+    /// @param segment
+    ///   This is the segment we're trying to find the end of.
+    /// @param iTrimDirection
+    ///   This is which direction in which we're trimming.  The end
+    ///   of the segment will be found by looking in that direction.
+    /// @return
+    ///   This returns the (inclusive) position at the end of the given
+    ///   segment. The definition of "end" depends on iTrimDirection.
+    TSignedSeqPos x_SegmentGetEndInclusive(
+        const CSeqMap_CI & segment,
+        const TSignedSeqPos iTrimDirection );
+
+    /// Returns the "next" segment.  The definition of "next"
+    /// depends on iTrimDirection
+    ///
+    /// @param in_out_segment
+    ///   Caller gives the current CSeqMap_CI, which will be
+    ///   returned adjusted in the trim direction.
+    /// @param iTrimDirection
+    ///   The direction in which to increment.  1 means normal incrementing
+    ///   and -1 really means decrementing.
+    /// @return
+    ///   Reference to in_out_segment_it.
+    CSeqMap_CI & x_SeqMapIterDoNext(
+        CSeqMap_CI & in_out_segment_it,
+        const TSignedSeqPos iTrimDirection );
+
+    // For each letter of the alphabet, returns whether or not it's
+    // ambiguous. Index 0 is 'A', index 1 is 'B', etc.
+    typedef bool TAmbigLookupTable[26];
+    TAmbigLookupTable m_arrNucAmbigLookupTable;
+    TAmbigLookupTable m_arrProtAmbigLookupTable;
+};
+
+/// This iterates over the runs of internal-Ns of each sequence
+class NCBI_XOBJUTIL_EXPORT CBioseqGaps_CI : public CObject
+{
+public:
+
+    /// The params that control the behavior of CSequenceInternalNsIter
+    struct NCBI_XOBJUTIL_EXPORT Params {
+        /// Default ctor gives params which are usually reasonable.
+        Params(void) : max_gap_len_to_ignore(10),
+            max_num_gaps_per_seq( numeric_limits<TSeqPos>::max() ),
+            max_num_seqs( numeric_limits<TSeqPos>::max() ),
+            mol_filter(CSeq_inst::eMol_not_set),
+            level_filter(CBioseq_CI::eLevel_All)
+        {
+        }
+
+        /// We completely ignore any gaps we find that have this
+        /// number of bases or fewer.
+        TSeqPos                       max_gap_len_to_ignore;
+        /// We only return up to this many gaps for each sequence
+        TSeqPos                       max_num_gaps_per_seq;
+        /// We only return gaps on up to this many sequences.
+        TSeqPos                       max_num_seqs;
+
+        /// CSeq_inst::eMol_na to only look at gaps on nucleotide
+        /// sequences.  CSeq_inst::eMol_aa to only look at gaps
+        /// on amino acid sequences.
+        /// CSeq_inst::eMol_not_set to avoid filtering.
+        CSeq_inst::EMol               mol_filter;
+        /// Works like the level filter in CBioseq_CI
+        CBioseq_CI::EBioseqLevelFlag  level_filter;
+    };
+
+    /// This constructor initializes the iterator.
+    ///
+    /// @param entry_h
+    ///   This will iterate over all descendents of this entry.
+    /// @param params
+    ///   Controls the behavior of the iterator.  If not specified,
+    ///   a reasonable default will be used.
+    CBioseqGaps_CI(
+        const CSeq_entry_Handle & entry_h,
+        const Params & params = Params() );
+
+    /// Move the iterator forward to next gap 
+    /// (or the end, if there are no more to return)
+    CBioseqGaps_CI & operator ++ (void) { x_Next(); return *this; }
+
+    DECLARE_OPERATOR_BOOL(m_bioseq_CI);
+
+    /// This indicates the state of the iterator right now.
+    /// This structure is undefined if the iterator
+    /// has reached the end, though the caller probably
+    /// won't be able to access it anyway since x_GetCurrent
+    /// will throw an exception in that case.
+    struct NCBI_XOBJUTIL_EXPORT SCurrentGapInfo {
+        /// Constructor initializes to state that it
+        /// should be when the iterator first starts.
+        SCurrentGapInfo(void) : num_seqs_seen_so_far(0),
+            start_pos(0),
+            length(0),
+            num_gaps_seen_so_far_on_this_seq(0) { }
+
+        /// The seq-id that this gap is on.
+        CSeq_id_Handle  seq_id;
+        /// This indicates how many sequences we've seen so far,
+        /// including the one we're currently on.
+        /// For example, 3 means we're on the 3rd sequence to
+        /// contain a relevant gap.
+        size_t          num_seqs_seen_so_far; 
+
+        /// the 0-based position at which the current gap starts
+        /// on the current sequence.
+        TSeqPos         start_pos;
+        /// the length of the current gap
+        TSeqPos         length;
+        /// how many gaps we've seen so far on this sequence.
+        /// For example, 2 would mean we're currently on
+        /// the second relevant gap on this sequence.
+        size_t          num_gaps_seen_so_far_on_this_seq;
+    };
+
+    /// Get information about the gap we're currently on.
+    const SCurrentGapInfo & operator*(void) const {
+        return x_GetCurrent();
+    }
+
+    /// Get information about the gap we're currently on.
+    const SCurrentGapInfo * operator ->(void) const {
+        return &x_GetCurrent();
+    }
+
+protected:
+    /// This points to the bioseq we're currently on.
+    /// When this iterator becomes invalid, that means this
+    /// CBioseqGaps_CI is invalid, too.
+    CBioseq_CI  m_bioseq_CI;
+    /// This indicates information about the gap we're currently on.
+    SCurrentGapInfo    m_infoOnCurrentGap;
+    /// This holds the params the caller gave when this
+    /// object was initially created.
+    Params      m_Params;
+
+    /// This gives info on the gap we're currently on.
+    /// Throws if this iterator has finished.
+    virtual const SCurrentGapInfo & x_GetCurrent(void) const;
+
+    /// This moves this iterator to the next relevant gap.
+    /// Throws if this iterator has finished.
+    virtual void x_Next(void);
+
+    /// This advances m_bioseq_CI although it
+    /// has extra logic to terminate m_bioseq_CI
+    /// if we've exceeded the number of bioseqs we can look for.
+    virtual void x_NextBioseq(void);
+
+    /// This indicates what happened when we tried to run
+    /// x_FindNextGapOnBioseq.
+    enum EFindNext {
+        /// No more relevant gaps were found on this bioseq.  The other output
+        /// parameters will be in an undefined state.
+        eFindNext_NotFound,
+        /// Another relevant gap was found, and the output parameters are 
+        /// filled in to represent information about it.
+        eFindNext_Found
+    };
+
+    /// This finds the next gap on the bioseq, starting at given pos.
+    ///
+    /// @param bioseq_h
+    ///   the bioseq on which we're seeking the next relevant gap.
+    /// @param pos_to_start_looking
+    ///   This is the position on bioseq_h to start looking for a
+    ///   relevant gap.
+    /// @param out_pos_of_gap
+    ///   If a gap is found, this holds the 0-based position of the
+    ///   start of that gap.  This is undefined if no gap was found.
+    /// @param out_len_of_gap
+    ///   If a gap is found, this holds the length of the
+    ///   gap.  This is undefined if no gap was found.
+    /// @return
+    ///   This indicates whether or not a relevant gap was found.
+    virtual EFindNext x_FindNextGapOnBioseq(
+        const CBioseq_Handle & bioseq_h, 
+        const TSeqPos pos_to_start_looking,
+        TSeqPos & out_pos_of_gap,
+        TSeqPos & out_len_of_gap ) const;
+};
 
 /* @} */
 
