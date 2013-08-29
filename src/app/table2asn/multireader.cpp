@@ -381,7 +381,19 @@ CRef<CSerialObject> CMultiReader::xProcessDefault(
     {
         m_iFlags |= CFastaReader::fOneSeq;
     }
-    m_iFlags |= CFastaReader::fAddMods;
+    if (args.m_gapNmin > 0)
+    {
+        m_iFlags |= CFastaReader::fParseGaps 
+                 |  CFastaReader::fLetterGaps;
+    }
+    else
+    {
+        m_iFlags |= CFastaReader::fNoSplit
+                 |  CFastaReader::fLeaveAsText;
+    }
+    m_iFlags |= CFastaReader::fAddMods
+             |  CFastaReader::fAssumeNuc
+             |  CFastaReader::fValidate;
 
     auto_ptr<CReaderBase> pReader(new CFastaReader(0, m_iFlags));
     if (!pReader.get()) {
@@ -1309,27 +1321,6 @@ void CMultiReader::xDumpErrors(CNcbiOstream& ostr)
 
 
 #endif
-
-CRef<CSerialObject> CMultiReader::HandleSubmitTemplate(CRef<CSeq_entry> object) const
-{
-    if (m_context.m_submit_template.NotEmpty())
-    {
-        CRef<CSeq_submit> submit(new CSeq_submit);
-        submit->Assign(*m_context.m_submit_template);
-        submit->SetData().SetEntrys().clear();
-        if (m_context.m_HandleAsSet || object->IsSeq())
-        {
-            submit->SetData().SetEntrys().push_back(object);
-        }
-        else
-        {
-            submit->SetData().SetEntrys() = object->SetSet().SetSeq_set();
-        }
-        return CRef<CSerialObject>(submit);
-    }     
-    else
-        return CRef<CSerialObject>(object);
-}
 
 CMultiReader::~CMultiReader()
 {

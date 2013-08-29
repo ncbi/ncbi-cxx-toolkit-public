@@ -65,6 +65,8 @@ public:
     bool   m_SetIDFromFile;
     bool   m_NucProtSet;
     int    m_taxid;
+    TSeqPos m_gapNmin;
+    TSeqPos m_gap_Unknown_length;
 
     CRef<objects::CSeq_descr>  m_descriptors;
 
@@ -85,6 +87,8 @@ public:
     objects::CBioSource& SetBioSource(objects::CSeq_descr& SD);
     void ApplyCreateDate(objects::CSeq_entry& entry) const;
     void ApplyAccession(objects::CSeq_entry& entry) const;
+    void HandleGaps(objects::CSeq_entry& entry) const;
+    CRef<CSerialObject> HandleSubmitTemplate(CRef<objects::CSeq_entry> object) const;
 
     CRef<objects::CSeq_submit> m_submit_template;
     CRef<objects::CSeq_entry>  m_entry_template;

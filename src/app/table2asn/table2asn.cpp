@@ -300,12 +300,10 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey("strain-name", "String", "Strain name", CArgDescriptions::eString);            //done
     arg_desc->AddOptionalKey("ft-url", "String", "FileTrack URL for the XML file retrieval", CArgDescriptions::eString); //done
 
-    arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);    // done
+    arg_desc->AddOptionalKey("gaps-min", "Integer", "minunim run of Ns recognised as a gap", CArgDescriptions::eInteger); //done
+    arg_desc->AddOptionalKey("gaps-unknown", "Integer", "exact number of Ns recognised as a gap with unknown length", CArgDescriptions::eInteger); //done
 
-//    ABCDEFGHIJKLMNOPQRSTUVWXYZ
-//    ++++++++++++++ +++++++++++]
-//    abcdefghijklmnopqrstuvwxyz
-//    +++++++++++++++++ +++ ++++]
+    arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);    // done
 
     // Program description
     string prog_description = "Converts files of various formats to ASN.1\n";
@@ -392,6 +390,40 @@ int CTbl2AsnApp::Run(void)
     m_context.m_RemotePubLookup = args["P"].AsBoolean();
 
     m_context.m_RemoteTaxonomyLookup = args["T"].AsBoolean();
+
+    if (args["a"])
+    {
+        string gaps = args["a"].AsString();
+        if (gaps.length() > 2 && gaps[0] == 'r')
+        {            
+            switch (*(--gaps.end()))
+            {
+            case 'u':
+                m_context.m_gap_Unknown_length = 100;
+            case 'k':
+                {
+                    m_context.m_gapNmin = NStr::StringToUInt(gaps.substr(1, gaps.length()-2));
+                    if (m_context.m_gapNmin > 30)
+                    {
+                        m_context.m_gapNmin = 0;
+                        // error
+                    }
+                }
+                break;
+            default:
+                // error
+                break;
+            }
+        }
+    }
+    if (args["gaps-min"])
+    {
+        m_context.m_gapNmin = args["gaps-min"].AsInteger();
+    }
+    if (args["gaps-unknown"])
+    {
+        m_context.m_gap_Unknown_length = args["gaps-unknown"].AsInteger();
+    }
 
     if (args["k"])
         m_context.m_find_open_read_frame = args["k"].AsString();
@@ -500,13 +532,15 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     {
         COpticalxml2asnOperator op;
         entry = op.LoadXML(m_context.m_current_file, m_context);
+        entry->Parentize();
     }
     else
     {
         entry = m_reader->LoadFile(m_context.m_current_file);
-    }
+        entry->Parentize();
 
-    entry->Parentize();
+        m_context.HandleGaps(*entry);
+    }
 
     if (m_context.m_descriptors.NotNull())
         m_reader->ApplyDescriptors(*entry, *m_context.m_descriptors);
@@ -536,7 +570,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     m_context.ApplyAccession(*entry);
  
-    result = m_reader->HandleSubmitTemplate(entry);
+    result = m_context.HandleSubmitTemplate(entry);
 }
 
 string GenerateOutputStream(const CTable2AsnContext& m_context, const string& pathname)

@@ -38,7 +38,6 @@ public:
    void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeq_descr & source);
    void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeqdesc & source);
    void ApplyDescriptors(objects::CSeq_entry & obj, const objects::CSeq_descr & source);
-   CRef<CSerialObject> HandleSubmitTemplate(CRef<objects::CSeq_entry> object) const;
 
 protected:
 
