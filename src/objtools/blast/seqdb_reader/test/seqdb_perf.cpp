@@ -133,39 +133,44 @@ CSeqDBPerfApp::x_ScanDatabase()
     CStopWatch sw;
     sw.Start();
     Uint8 num_letters = m_BlastDb->GetTotalLength();
+    int thread_id = 0;
 
     if (m_DbIsProtein || GetArgs()["scan_uncompressed"]) {
         #pragma omp parallel num_threads(m_DbHandles.size())
         { 
-            const int kTid = omp_get_thread_num();
-            for (int oid = 0; m_DbHandles[kTid]->CheckOrFindOID(oid); oid++) {
+#ifdef _OPENMP
+            thread_id = omp_get_thread_num();
+#endif
+            for (int oid = 0; m_DbHandles[thread_id]->CheckOrFindOID(oid); oid++) {
                 const char* buffer = NULL;
                 int encoding = m_DbIsProtein ? 0 : kSeqDBNuclBlastNA8;
-                m_DbHandles[kTid]->GetAmbigSeq(oid, &buffer, encoding);
-                int seqlen = m_DbHandles[kTid]->GetSeqLength(oid);
+                m_DbHandles[thread_id]->GetAmbigSeq(oid, &buffer, encoding);
+                int seqlen = m_DbHandles[thread_id]->GetSeqLength(oid);
                 for (int i = 0; i < seqlen; i++) {
                     char base = buffer[i];
                     base = base;    // dummy statement
                 }
-                m_DbHandles[kTid]->RetAmbigSeq(&buffer);
+                m_DbHandles[thread_id]->RetAmbigSeq(&buffer);
             }
-            x_UpdateMemoryUsage(kTid);
+            x_UpdateMemoryUsage(thread_id);
         } // end of omp parallel
     } else {
         #pragma omp parallel num_threads(m_DbHandles.size())
         { 
-            const int kTid = omp_get_thread_num();
-            for (int oid = 0; m_DbHandles[kTid]->CheckOrFindOID(oid); oid++) {
+#ifdef _OPENMP
+            thread_id = omp_get_thread_num();
+#endif
+            for (int oid = 0; m_DbHandles[thread_id]->CheckOrFindOID(oid); oid++) {
                 const char* buffer = NULL;
-                m_DbHandles[kTid]->GetSequence(oid, &buffer);
-                int seqlen = m_DbHandles[kTid]->GetSeqLength(oid) / 4;
+                m_DbHandles[thread_id]->GetSequence(oid, &buffer);
+                int seqlen = m_DbHandles[thread_id]->GetSeqLength(oid) / 4;
                 for (int i = 0; i < seqlen; i++) {
                     char base = buffer[i];
                     base = base;    // dummy statement
                 }
-                m_DbHandles[kTid]->RetSequence(&buffer);
+                m_DbHandles[thread_id]->RetSequence(&buffer);
             }
-            x_UpdateMemoryUsage(kTid);
+            x_UpdateMemoryUsage(thread_id);
         } // end of omp parallel
     }
     sw.Stop();
@@ -187,7 +192,10 @@ CSeqDBPerfApp::x_InitApplicationData()
     m_BlastDb.Reset(new CSeqDBExpert(kDbName, kSeqType));
     m_DbIsProtein = static_cast<bool>(m_BlastDb->GetSequenceType() == CSeqDB::eProtein);
 
-    const int kNumThreads = args["num_threads"].AsInteger();
+    int kNumThreads = 1;
+#if _OPENMP && NCBI_THREADS
+    kNumThreads = args["num_threads"].AsInteger();
+#endif
     m_DbHandles.reserve(kNumThreads);
     m_DbHandles.push_back(m_BlastDb);
     if (kNumThreads > 1) {
@@ -279,7 +287,8 @@ void CSeqDBPerfApp::Init()
     arg_desc->SetDependency("scan_uncompressed", CArgDescriptions::eExcludes, 
                             "get_metadata"); 
 
-    arg_desc->AddDefaultKey("num_threads", "number", "Number of threads to use",
+    arg_desc->AddDefaultKey("num_threads", "number", 
+                            "Number of threads to use (requires OpenMP)",
                             CArgDescriptions::eInteger, "1");
     arg_desc->SetConstraint("num_threads", new CArgAllow_Integers(0, kMax_Int));
     //arg_desc->AddFlag("one_db_handle", "Build only 1 CSeqDB object?", true);
