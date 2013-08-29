@@ -135,8 +135,8 @@ CBioseqContext::CBioseqContext
  CTopLevelSeqEntryContext *tlsec) :
     m_PrevHandle(prev_seq),
     m_Handle(seq),
-    m_pOpticalMapPoints(NULL),
     m_NextHandle(next_seq),
+    m_pOpticalMapPoints(NULL),
     m_Repr(CSeq_inst::eRepr_not_set),
     m_Mol(CSeq_inst::eMol_not_set),
     m_HasParts(false),
