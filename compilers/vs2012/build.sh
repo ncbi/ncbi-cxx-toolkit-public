@@ -109,8 +109,8 @@ generate_simple_log()
             fi
             prj_log=$prj_log_short
         fi
-        # Remove 3 first bytes from logfile (EF BB BF)
-        cat $prj_log | tr -d '\357\273\277'
+        # Remove 3 first bytes from logfile (EF BB BF) and some garbage from a multi-projects build
+        cat $prj_log | tr -d '\357\273\277' | sed 's/\( *\)1>/\1  /g'
         echo
     done
     grep '.*========== Build:' $log
@@ -148,9 +148,6 @@ rm -f $build_dir/cfgs.log
 # Configure
 
 for tree in $build_trees ; do
-    if [ $tree = dll ] ; then
-        test $cfg_configure != ReleaseDLL -a $cfg_configure != DebugDLL  &&  continue  
-    fi
     sols=`eval echo "$"sol_${tree}""`
     for sol in $sols ; do
         if test ! -f "$tree/build/$sol" ; then
@@ -204,7 +201,7 @@ generate_msvc10_error_check_file $check_awk
 for tree in $build_trees ; do
     for cfg in $cfgs ; do
         if [ $tree = dll ] ; then
-            test $cfg != ReleaseDLL -a $cfg != DebugDLL -a $cfg != Unicode_DebugDLL -a $cfg != Unicode_ReleaseDLL  &&  continue  
+            echo "$cfg" | grep '.*DLL$' >/dev/null  ||  continue
         fi
         sols=`eval echo "$"sol_${tree}""`
         for sol in $sols ; do
