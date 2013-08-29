@@ -1,5 +1,5 @@
 #################################
-# $Id:
+# $Id$
 # Author:  Liangshou Wu
 #################################
 
@@ -16,7 +16,7 @@ LIB = uudutil gbproj submit seqset $(SEQ_LIBS) pub medline biblio general \
 
 LIBS = $(NETWORK_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-REQUIRES = Boost.Test.Included
+REQUIRES = Boost.Test.Included in-house-resources
 
 # Uncomment if you do not want it to run automatically as part of
 # "make check".
