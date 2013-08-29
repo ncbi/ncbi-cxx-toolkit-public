@@ -1,10 +1,10 @@
-Seq-annot ::= {
+iSeq-annot ::= {
   data ftable {
     {
       data variation {
         id {
           db "dbSNP",
-          tag str "rs4"
+          tag str "rs3"
         },
         variant-prop {
           version 5,
@@ -25,8 +25,8 @@ Seq-annot ::= {
                 delta {
                   {
                     seq literal {
-                      length 3,
-                      seq-data iupacna "TGC"
+                      length 1,
+                      seq-data iupacna "T"
                     },
                     action ins-before
                   }
@@ -37,11 +37,11 @@ Seq-annot ::= {
         }
       },
       location int {
-        from 10689125,
-        to 10689145,
+        from 2338229,
+        to 2338230,
         id other {
-          accession "NT_005612",
-          version 16
+          accession "NC_000001",
+          version 10
         }
       },
       exts {
@@ -63,7 +63,7 @@ Seq-annot ::= {
           data {
             {
               label str "Output dbSNP Context",
-              data str "This has changed from a point, to an interval, and left shifted"
+              data str "This has shifted in position by one to 2338230, and then represented as an interval rather than point"
             }
           }
         }

@@ -4,7 +4,7 @@ Seq-annot ::= {
       data variation {
         id {
           db "dbSNP",
-          tag str "rs4"
+          tag str "rs7"
         },
         variant-prop {
           version 5,
@@ -21,27 +21,37 @@ Seq-annot ::= {
           variations {
             {
               data instance {
-                type ins,
+                type del,
+                delta {
+                  {
+                    seq this NULL,
+                    action del-at
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type identity,
                 delta {
                   {
                     seq literal {
-                      length 3,
-                      seq-data iupacna "TGC"
-                    },
-                    action ins-before
+                      length 1,
+                      seq-data iupacna "C"
+                    }
                   }
-                }
+                },
+                observation reference
               }
             }
           }
         }
       },
-      location int {
-        from 10689125,
-        to 10689145,
+      location pnt {
+        point 2338270,
         id other {
-          accession "NT_005612",
-          version 16
+          accession "NC_000001",
+          version 10
         }
       },
       exts {
@@ -63,7 +73,7 @@ Seq-annot ::= {
           data {
             {
               label str "Output dbSNP Context",
-              data str "This has changed from a point, to an interval, and left shifted"
+              data str "Deletions are simply located at the left most *range* of the deletion - if range is 1, just a point"
             }
           }
         }

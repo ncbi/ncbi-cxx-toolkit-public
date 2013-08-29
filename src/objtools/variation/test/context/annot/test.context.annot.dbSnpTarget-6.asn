@@ -63,8 +63,7 @@ Seq-annot ::= {
           data {
             {
               label str "Output dbSNP Context",
-              data str "This has changed position by one to 2338230.  Nothing
- else has chaned"
+              data str "This has shifted to the left, and the insertion allele modulated to match"
             }
           }
         }

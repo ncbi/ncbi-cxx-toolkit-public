@@ -4,7 +4,7 @@ Seq-annot ::= {
       data variation {
         id {
           db "dbSNP",
-          tag str "rs4"
+          tag str "rs6"
         },
         variant-prop {
           version 5,
@@ -37,8 +37,8 @@ Seq-annot ::= {
         }
       },
       location int {
-        from 10689125,
-        to 10689145,
+        from 10689124,
+        to 10689125,
         id other {
           accession "NT_005612",
           version 16
@@ -63,7 +63,7 @@ Seq-annot ::= {
           data {
             {
               label str "Output dbSNP Context",
-              data str "This has changed from a point, to an interval, and left shifted"
+              data str "This has shifted to the left, set as a small insertion, and allele modulated to match"
             }
           }
         }

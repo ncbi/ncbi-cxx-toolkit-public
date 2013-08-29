@@ -4,7 +4,7 @@ Seq-annot ::= {
       data variation {
         id {
           db "dbSNP",
-          tag str "rs4"
+          tag str "rs5"
         },
         variant-prop {
           version 5,
@@ -26,7 +26,7 @@ Seq-annot ::= {
                   {
                     seq literal {
                       length 3,
-                      seq-data iupacna "TGC"
+                      seq-data iupacna "TCG"
                     },
                     action ins-before
                   }
@@ -36,9 +36,8 @@ Seq-annot ::= {
           }
         }
       },
-      location int {
-        from 10689125,
-        to 10689145,
+      location pnt {
+        point 10689132,
         id other {
           accession "NT_005612",
           version 16
@@ -62,8 +61,8 @@ Seq-annot ::= {
           type str "Description",
           data {
             {
-              label str "Output dbSNP Context",
-              data str "This has changed from a point, to an interval, and left shifted"
+              label str "dbSNP Output Context",
+              data str "This insertion is out-of-sync with the repeat, and cannot be shifted"
             }
           }
         }
