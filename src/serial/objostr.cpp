@@ -505,11 +505,11 @@ void CObjectOStream::ThrowError1(const CDiagCompileInfo& diag_info,
                                  CException* exc)
 {
     CSerialException::EErrCode err;
-    SetFailFlags(fail, message.c_str());
     try {
         DefaultFlush();
     } catch(...) {
     }
+    SetFailFlags(fail, message.c_str());
     switch(fail)
     {
     case fNoError:
