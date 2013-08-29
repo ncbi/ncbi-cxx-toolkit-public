@@ -193,7 +193,7 @@ CSeqDBPerfApp::x_InitApplicationData()
     m_DbIsProtein = static_cast<bool>(m_BlastDb->GetSequenceType() == CSeqDB::eProtein);
 
     int kNumThreads = 1;
-#if _OPENMP && NCBI_THREADS
+#if (defined(_OPENMP) && defined(NCBI_THREADS))
     kNumThreads = args["num_threads"].AsInteger();
 #endif
     m_DbHandles.reserve(kNumThreads);
