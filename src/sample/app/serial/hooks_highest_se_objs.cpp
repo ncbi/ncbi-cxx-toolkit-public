@@ -66,7 +66,7 @@ USING_SCOPE(objects);
 ///////////////////////////////////////////////////////////////////////////
 // Static Functions
 
-static void Process(const CSeq_entry& entry)
+static void s_Process(const CSeq_entry& entry)
 {
     // This sample program simply outputs the Seq-entry's label, but this is
     // where you would put your custom processing code.
@@ -101,7 +101,7 @@ public:
         for ( ; isc; ++isc ) {
             CSeq_entry entry;
             isc >> entry;
-            Process(entry);
+            s_Process(entry);
         }
     }
 };
@@ -130,7 +130,7 @@ public:
         for ( ; isc; ++isc ) {
             CSeq_entry entry;
             isc >> entry;
-            Process(entry);
+            s_Process(entry);
         }
     }
 };
@@ -192,7 +192,7 @@ int CProcessHighestSeObjs::Run(void)
             // Just read and process each object - no skipping is needed.
             CSeq_entry entry;
             *in >> entry;
-            Process(entry);
+            s_Process(entry);
         }
     }
 
