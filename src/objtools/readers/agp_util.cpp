@@ -1251,8 +1251,9 @@ void CAgpErrEx::PrintMessageXml(CNcbiOstream& ostr, int code, const string& deta
 
 //// class CAgpErrEx - constructor
 CAgpErrEx::CAgpErrEx(CNcbiOstream* out, bool use_xml, EOwnership eOwnsOut) : 
-    m_use_xml(use_xml), m_out(out),
-    m_messages( new CNcbiOstrstream() )
+    m_use_xml(use_xml), 
+    m_messages( new CNcbiOstrstream() ),
+    m_out(out)
 {
     // if we own m_out, we set a special autoptr so it's automatically destroyed
     if( eOwnsOut == eTakeOwnership ) {
