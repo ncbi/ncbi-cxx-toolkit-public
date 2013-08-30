@@ -1032,6 +1032,13 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
         copy(unconditional_depends_ids.begin(),
              unconditional_depends_ids.end(), back_inserter(depends_ids));
     }
+    k = m->second.m_Contents.find("MSVC_DEP");
+    if (k != m->second.m_Contents.end()) {
+        const list<string> deps = k->second;
+        ITERATE(list<string>, p, deps) {
+            depends_ids.push_back(CProjKey(CProjKey::eMsvc, *p));
+        }
+    }
     ///////////////////////////////////
 
     //requires
@@ -1345,6 +1352,13 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         SMakeProjectT::ConvertLibDepends(depends, &unconditional_depends_ids);
         copy(unconditional_depends_ids.begin(),
              unconditional_depends_ids.end(), back_inserter(depends_ids));
+    }
+    k = m->second.m_Contents.find("MSVC_DEP");
+    if (k != m->second.m_Contents.end()) {
+        const list<string> deps = k->second;
+        ITERATE(list<string>, p, deps) {
+            depends_ids.push_back(CProjKey(CProjKey::eMsvc, *p));
+        }
     }
 
     //requires
