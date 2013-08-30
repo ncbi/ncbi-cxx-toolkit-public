@@ -412,7 +412,7 @@ size_t CSeqMap::x_FindSegment(TSeqPos pos, CScope* scope) const
 void CSeqMap::x_LoadObject(const CSegment& seg) const
 {
     _ASSERT(seg.m_Position != kInvalidSeqPos);
-    if ( !seg.m_RefObject || seg.m_SegType != seg.m_ObjType ) {
+    if ( seg.m_SegType != seg.m_ObjType ) {
         const CObject* obj = seg.m_RefObject.GetPointer();
         if ( obj && seg.m_ObjType == eSeqChunk ) {
             const CTSE_Chunk_Info* chunk =
@@ -428,7 +428,7 @@ void CSeqMap::x_LoadObject(const CSegment& seg) const
 CRef<CTSE_Chunk_Info> CSeqMap::x_GetChunkToLoad(const CSegment& seg) const
 {
     _ASSERT(seg.m_Position != kInvalidSeqPos);
-    if ( !seg.m_RefObject || seg.m_SegType != seg.m_ObjType ) {
+    if ( seg.m_SegType != seg.m_ObjType ) {
         const CObject* obj = seg.m_RefObject.GetPointer();
         if ( obj && seg.m_ObjType == eSeqChunk ) {
             const CTSE_Chunk_Info* chunk =
@@ -444,7 +444,7 @@ CRef<CTSE_Chunk_Info> CSeqMap::x_GetChunkToLoad(const CSegment& seg) const
 
 const CObject* CSeqMap::x_GetObject(const CSegment& seg) const
 {
-    if ( !seg.m_RefObject || seg.m_SegType != seg.m_ObjType ) {
+    if ( seg.m_SegType != seg.m_ObjType ) {
         x_LoadObject(seg);
     }
     if ( !seg.m_RefObject || seg.m_SegType != seg.m_ObjType ) {
@@ -463,9 +463,8 @@ void CSeqMap::x_SetObject(CSegment& seg, const CObject& obj)
         NCBI_THROW(CSeqMapException, eDataError, "object already set");
     }
     // set object
-    seg.m_RefObject.Reset(); // to avoid race
-    seg.m_ObjType = seg.m_SegType;
     seg.m_RefObject.Reset(&obj);
+    seg.m_ObjType = seg.m_SegType;
     m_Changed = true;
 }
 
