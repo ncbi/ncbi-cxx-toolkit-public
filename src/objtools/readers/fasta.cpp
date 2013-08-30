@@ -256,28 +256,32 @@ inline bool s_ASCII_IsValidNuc(unsigned char c)
 
 CFastaReader::CFastaReader(ILineReader& reader, TFlags flags)
     : m_LineReader(&reader), m_MaskVec(0), 
-      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4)
+      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4),
+      m_CompletelyUnknownGapLength(0)
 {
     m_Flags.push(flags);
 }
 
 CFastaReader::CFastaReader(CNcbiIstream& in, TFlags flags)
     : m_LineReader(ILineReader::New(in)), m_MaskVec(0),
-      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4)
+      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4),
+      m_CompletelyUnknownGapLength(0)
 {
     m_Flags.push(flags);
 }
 
 CFastaReader::CFastaReader(const string& path, TFlags flags)
     : m_LineReader(ILineReader::New(path)), m_MaskVec(0),
-      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4)
+      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4),
+      m_CompletelyUnknownGapLength(0)
 {
     m_Flags.push(flags);
 }
 
 CFastaReader::CFastaReader(CReaderBase::TReaderFlags fBaseFlags, TFlags flags)
     : CReaderBase(fBaseFlags), m_MaskVec(0), 
-      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4)
+      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4),
+      m_CompletelyUnknownGapLength(0)
 {
     m_Flags.push(flags);
 }
@@ -1012,18 +1016,20 @@ void CFastaReader::x_CloseGap(
         m_Starts[pos + m_Offset][m_Row] = pos;
     } else {
         TSeqPos pos = GetCurrentPos(eRawPos);
+        SGap::EKnownSize eKnownSize = SGap::eKnownSize_Yes;
         // Special case -- treat a lone hyphen at the end of a line as
         // a gap of unknown length.
         // (do NOT treat a lone 'N' or 'X' as unknown length)
         if (len == 1 && m_CurrentGapChar == '-' ) {
             TSeqPos l = m_SeqData.length();
             if (l == pos  ||  l == pos + (*GetLineReader()).length()) {
-                len = 0;
+                len = m_CompletelyUnknownGapLength;
+                eKnownSize = SGap::eKnownSize_No;
             }
         }
         TGapRef pGap( new SGap(
             pos, len,
-            ( len > 0 ? SGap::eKnownSize_Yes : SGap::eKnownSize_No ),
+            eKnownSize,
             LineNumber()) );
 
         m_Gaps.push_back(pGap);

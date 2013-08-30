@@ -162,6 +162,17 @@ public:
     const CSourceModParser::TMods & GetBadMods(void) const { return m_BadMods; }
     void  ClearBadMods(void) { m_BadMods.clear(); }
 
+    /// The getter for SetCompletelyUnknownGapLength.
+    TSeqPos GetCompletelyUnknownGapLength(void) const { 
+        return m_CompletelyUnknownGapLength; }
+    /// The "completely unknown gap length" is the length that will
+    /// be given to gaps of completely unknown size (normally represented
+    /// with a lone hyphen at the end of a line).  Set this to
+    /// zero to leave them as a completely unknown length (default).
+    /// Usually, this would be set to 0 or 100.
+    void SetCompletelyUnknownGapLength(TSeqPos new_len) { 
+        m_CompletelyUnknownGapLength = new_len; }
+
     /// If this is set, an exception will be thrown if a Sequence ID exceeds the
     /// given length.
     /// @param max_len
@@ -363,6 +374,7 @@ private:
     CSourceModParser::TMods m_BadMods;
     CSourceModParser::TMods m_UnusedMods;
     Uint4                   m_MaxIDLength;
+    TSeqPos                 m_CompletelyUnknownGapLength;
     vector<SLineTextAndLoc> m_CurrentSeqTitles;
 };
 

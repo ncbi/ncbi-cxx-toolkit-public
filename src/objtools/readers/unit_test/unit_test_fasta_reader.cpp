@@ -314,6 +314,20 @@ namespace {
     };
 }
 
+namespace {
+    template<typename TObjRef>
+    void s_LoadObjectRefFromTextASN(
+        TObjRef & pObj, const CTempString & sTextASN )
+    {
+        auto_ptr<CObjectIStream> pObjIStrm(
+            CObjectIStream::CreateFromBuffer(
+            eSerial_AsnText, 
+            sTextASN.data(), sTextASN.length() ) );
+        pObjIStrm->Read( &*pObj,
+            pObj->GetThisTypeInfo() );
+    }
+}
+
 // Test that the right warnings appear under the right conditions
 BOOST_AUTO_TEST_CASE(TestWarnings)
 {
@@ -384,7 +398,8 @@ namespace {
     CRef<CBioseq> s_ParseFasta( const string & sFasta,
         CFastaReader::TFlags fFlags,
         const string & sExpectedExceptionErrCode = kEmptyStr,
-        const TWarnVec & pExpectedWarningTypes = TWarnVec() )
+        const TWarnVec & pExpectedWarningTypes = TWarnVec(),
+        const TSeqPos completelyUnknownGapLength = 0 )
     {
         CRef<CBioseq> pRetvalBioseq;
         string sErrCodeThatOccurred;
@@ -394,6 +409,10 @@ namespace {
         try {
             CMemoryLineReader line_reader( sFasta.c_str(), sFasta.length() );
             CFastaReader fasta_reader( line_reader, fFlags );
+            if( completelyUnknownGapLength != 0 ) {
+                fasta_reader.SetCompletelyUnknownGapLength(
+                    completelyUnknownGapLength );
+            }
 
             CRef<CSeq_entry> pEntry = fasta_reader.ReadOneSeq(pMessageListener.GetPointer());
             BOOST_REQUIRE(pEntry->IsSeq());
@@ -1154,14 +1173,9 @@ BOOST_AUTO_TEST_CASE(TestLetterGaps)
         "  }\n"
         "}\n";
 
-    auto_ptr<CObjectIStream> pObjIStrm(
-        CObjectIStream::CreateFromBuffer(
-            eSerial_AsnText, 
-            &kExpectedDeltaExt[0], kExpectedDeltaExt.length() ) );
-    CRef<CDelta_ext> pExpectedDeltaExt( new CDelta_ext );
-    pObjIStrm->Read( pExpectedDeltaExt.GetPointer(),
-        pExpectedDeltaExt->GetThisTypeInfo() );
-
+    CAutoInitRef<CDelta_ext> pExpectedDeltaExt;
+    s_LoadObjectRefFromTextASN(pExpectedDeltaExt, kExpectedDeltaExt);
+    
     CRef<CBioseq> pBioseq =
         s_ParseFasta(kFasta, 
         CFastaReader::fParseGaps |
@@ -1179,3 +1193,87 @@ BOOST_AUTO_TEST_CASE(TestLetterGaps)
     }
 }
 
+BOOST_AUTO_TEST_CASE(TestLoneEndOfLineHyphens)
+{
+    const string kFasta =
+        ">Seq1\n"
+        "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTA-\n"
+        "GTACGTACGTACGT\n"
+        ">?58\n"
+        "CGGTACGTACGTACGT\n"
+        ">?unk90\n"
+        "AAACGGTACGTACGTACGT\n";
+
+    const string kCompletelyUnknownGap =
+        "Delta-seq ::= \n"
+        "loc null NULL\n";
+    CAutoInitRef<CDelta_seq> pCompletelyUnknownGap;
+    s_LoadObjectRefFromTextASN(pCompletelyUnknownGap, kCompletelyUnknownGap);
+
+    const string kRegularUnknownGap =
+        "Delta-seq ::= \n"
+        "literal {\n"
+        "  length 100,\n"
+        "  fuzz lim unk\n"
+        "}\n";
+    // length of pRegularUnknownGap may be adjusted as we go
+    CAutoInitRef<CDelta_seq> pRegularUnknownGap;
+    s_LoadObjectRefFromTextASN(pRegularUnknownGap, kRegularUnknownGap);
+
+    const string kRegularGap =
+        "Delta-seq ::= \n"
+        "literal {\n"
+        "  length 100\n"
+        "}\n";
+    // length of pRegularGap may be adjusted as we go
+    CAutoInitRef<CDelta_seq> pRegularGap;
+    s_LoadObjectRefFromTextASN(pRegularGap, kRegularGap);
+
+    ITERATE_BOTH_BOOL_VALUES(bSetCompletelyUnknownGapLen) {
+        CRef<CBioseq> pBioseq =
+            s_ParseFasta(kFasta, 
+            CFastaReader::fParseGaps | CFastaReader::fAssumeNuc,
+            kEmptyStr,
+            TWarnVec(),
+            ( bSetCompletelyUnknownGapLen ? 100 : 0 ) );
+
+        const CDelta_ext::Tdata & delta_seqs = 
+            pBioseq->GetInst().GetExt().GetDelta().Get();
+        CDelta_ext::Tdata::const_iterator delta_seq_it = delta_seqs.begin();
+
+        NCBITEST_CHECK( 
+            FIELD_IS_AND_IS_SET( **delta_seq_it, Literal, Seq_data ) );
+
+        ++delta_seq_it;
+        if( bSetCompletelyUnknownGapLen ) {
+            pRegularUnknownGap->SetLiteral().SetLength(100);
+            NCBITEST_CHECK(
+                (*delta_seq_it)->Equals(*pRegularUnknownGap) );
+        } else {
+            NCBITEST_CHECK( 
+                (*delta_seq_it)->Equals(*pCompletelyUnknownGap) );
+        }
+
+        ++delta_seq_it;
+        NCBITEST_CHECK( 
+            FIELD_IS_AND_IS_SET( **delta_seq_it, Literal, Seq_data ) );
+
+        ++delta_seq_it;
+        pRegularGap->SetLiteral().SetLength(58);
+        NCBITEST_CHECK(
+            (*delta_seq_it)->Equals(*pRegularGap) );
+
+        ++delta_seq_it;
+        NCBITEST_CHECK( 
+            FIELD_IS_AND_IS_SET( **delta_seq_it, Literal, Seq_data ) );
+
+        ++delta_seq_it;
+        pRegularUnknownGap->SetLiteral().SetLength(90);
+        NCBITEST_CHECK(
+                (*delta_seq_it)->Equals(*pRegularUnknownGap) );
+
+        ++delta_seq_it;
+        NCBITEST_CHECK( 
+            FIELD_IS_AND_IS_SET( **delta_seq_it, Literal, Seq_data ) );
+    }
+}
