@@ -224,7 +224,13 @@ CWGSDataLoader_Impl::GetFileInfo(const string& acc,
                                  Uint8* row_id_ptr)
 {
     CSeq_id::EAccessionInfo type = CSeq_id::IdentifyAccession(acc);
-    if ( (type & CSeq_id::eAcc_division_mask) != CSeq_id::eAcc_wgs ) {
+    switch ( type & CSeq_id::eAcc_division_mask ) {
+        // accepted accession types
+    case CSeq_id::eAcc_wgs:
+    case CSeq_id::eAcc_wgs_intermed:
+    case CSeq_id::eAcc_tsa:
+        break;
+    default:
         return null;
     }
     SIZE_TYPE prefix_len = NStr::StartsWith(acc, "NZ_")? 9: 6;
