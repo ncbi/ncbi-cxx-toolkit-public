@@ -2288,6 +2288,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "HPPR	s	Instituto Superior Pedagogico de Pinar del Rio, Departamento de Biologia",
 "HPSU	s	Portland State University, Biology Department",
 "HPU	s	High Point University, Biology Department",
+"HPU<USA-HI>	s	Hawaii Pacific University",
 "HPUJ	s	Pontificia Universidad Javeriana",
 "HPVC	s	Universidad Pedagogico Felix Varela,, Departamento de Biologia",
 "HR	s	Muzeum Vychodnich Cech",
