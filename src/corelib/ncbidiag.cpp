@@ -3246,7 +3246,7 @@ private:
 
 void CDiagBuffer::Flush(void)
 {
-    if ( m_InUse ) {
+    if ( m_InUse || !m_Diag ) {
         return;
     }
     CRecursionGuard guard(m_InUse);
