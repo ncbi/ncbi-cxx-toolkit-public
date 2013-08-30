@@ -8,6 +8,7 @@ HOSTED_LIBS = \
 	w_data \
 	w_aln_score \
 	w_edit \
+	w_loaders
 
 DEPENDENCIES   = gui_config gui_utils ncbi_seqext ncbi_image ncbi_core ncbi_general
 
