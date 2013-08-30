@@ -466,6 +466,12 @@ DO_UNIQUE (CHAR_IN_STRING, Var, Func)
 #define FIELD_IS(Var, Fld) \
     ((Var).Is##Fld())
 
+/// FIELD_CHAIN_OF_2_IS base macro
+
+#define FIELD_CHAIN_OF_2_IS(Var, Fld1, Fld2) \
+    ( (Var).Is##Fld1() && \
+      (Var).Get##Fld1().Is##Fld2() )
+
 /// FIELD_IS_SET_AND_IS base macro
 
 #define FIELD_IS_SET_AND_IS(Var, Fld, Chs) \
