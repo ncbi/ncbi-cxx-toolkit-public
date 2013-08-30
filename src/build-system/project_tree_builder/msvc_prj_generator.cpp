@@ -1386,7 +1386,9 @@ void CMsvcProjectGenerator::GenerateMsbuild(
             }
             CProjectItemsTree::TProjects::const_iterator n = GetApp().GetCurrentBuildTree()->m_Projects.find(id);
             if (n != GetApp().GetCurrentBuildTree()->m_Projects.end() && 
-                (n->first.Type() == CProjKey::eLib || n->first.Type() == CProjKey::eDll)) {
+                (n->first.Type() == CProjKey::eLib ||
+                 n->first.Type() == CProjKey::eDll ||
+                 n->first.Type() == CProjKey::eMsvc)) {
                 if (prj.m_GUID != n->second.m_GUID) {
                     guid_to_path[n->second.m_GUID] = CDirEntry::ConcatPath(
                         CDirEntry::CreateRelativePath(prj.m_SourcesBaseDir, n->second.m_SourcesBaseDir),
