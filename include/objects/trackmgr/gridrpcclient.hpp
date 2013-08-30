@@ -217,11 +217,11 @@ public:
         CDeadline deadline(timeout_in_seconds, 0);
 
         CNetScheduleNotificationHandler submit_job_handler;
-        submit_job_handler.SubmitJob(m_NS_api.GetSubmitter(), job,
-                                     timeout_in_seconds);
-
-        // TODO Here's your job ID if you need it.
-        NcbiCerr << "job: " << job.job_id << endl;
+        submit_job_handler.SubmitJob(m_NS_api.GetSubmitter(),
+                                     job,
+                                     timeout_in_seconds
+                                    );
+        LOG_POST(Info << "job: " << job.job_id);
 
         CNetScheduleAPI::EJobStatus status(
             submit_job_handler.WaitForJobCompletion(job, deadline, m_NS_api)
