@@ -64,7 +64,7 @@ public:
 private:
     unsigned char*  buf_;
     unsigned char*  start_;
-    unsigned int    size_;
+    // unsigned int    size_; // never actually checked
 };
 
 // ----------------------------------------------------------------
@@ -506,8 +506,8 @@ private:
     \param buf - memory buffer pointer.
     \param size - size of the buffer
 */
-inline encoder::encoder(unsigned char* buf, unsigned size)
-: buf_(buf), start_(buf), size_(size)
+inline encoder::encoder(unsigned char* buf, unsigned /* size */)
+: buf_(buf), start_(buf) //, size_(size)
 {
 }
 /*!
