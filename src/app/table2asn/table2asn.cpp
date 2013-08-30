@@ -393,22 +393,16 @@ int CTbl2AsnApp::Run(void)
 
     if (args["a"])
     {
-        string gaps = args["a"].AsString();
+        const string& gaps = args["a"].AsString();
         if (gaps.length() > 2 && gaps[0] == 'r')
         {            
-            switch (*(--gaps.end()))
+            switch (*(gaps.end()-1))
             {
             case 'u':
-                m_context.m_gap_Unknown_length = 100;
+                m_context.m_gap_Unknown_length = 100; // yes, it's hardcoded value
+                // do not put break staterment here
             case 'k':
-                {
-                    m_context.m_gapNmin = NStr::StringToUInt(gaps.substr(1, gaps.length()-2));
-                    if (m_context.m_gapNmin > 30)
-                    {
-                        m_context.m_gapNmin = 0;
-                        // error
-                    }
-                }
+                m_context.m_gapNmin = NStr::StringToUInt(gaps.substr(1, gaps.length()-2));
                 break;
             default:
                 // error
@@ -417,13 +411,15 @@ int CTbl2AsnApp::Run(void)
         }
     }
     if (args["gaps-min"])
-    {
         m_context.m_gapNmin = args["gaps-min"].AsInteger();
-    }
     if (args["gaps-unknown"])
-    {
         m_context.m_gap_Unknown_length = args["gaps-unknown"].AsInteger();
-    }
+
+    if (m_context.m_gapNmin < 0)
+        m_context.m_gapNmin = 0;
+
+    if (m_context.m_gapNmin == 0 || m_context.m_gap_Unknown_length < 0 )
+        m_context.m_gap_Unknown_length = 0;
 
     if (args["k"])
         m_context.m_find_open_read_frame = args["k"].AsString();
