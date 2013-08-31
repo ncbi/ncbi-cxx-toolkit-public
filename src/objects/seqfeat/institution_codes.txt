@@ -1514,7 +1514,7 @@ DZUL	s	Departamento de Zoologia, Universidad de La Laguna
 DZUP	s	Universidade Federal do Parana, Museu de Entomologia Pe. Jesus Santiago Moure
 DZVMLP	s	Departamento Cientifico de Zoologia de Vertebrados
 DZVU	s	Universidad de Uruguay
-E	sb	Royal Botanic Garden
+E	sb	Royal Botanic Garden Edinburgh
 EA	s	National Museums of Kenya
 EAA	s	Estonian Agricultural University
 EAC	s	Universidade Federal do Ceara, Departamento de Biologia
@@ -2839,7 +2839,7 @@ JXF	s	Jiangxi Forestry Institute
 JXM	s	Jiangxi Institute of Materia Medica
 JXU	s	Jiangxi University, Biology Department
 JYV	s	University of Jyvaeskylae, Natural History Department
-K	sb	Royal Botanic Gardens
+K	sb	Royal Botanic Gardens, Kew
 KA	s	Vytautas Magnus University
 KABA	s	University of Kabul
 KAC	c	Kalmar Algae Collection
