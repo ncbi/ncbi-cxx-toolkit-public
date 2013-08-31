@@ -1230,6 +1230,7 @@ gc_load_utils needs vdb
 gc_load_utils needs vfs
 gc_load_utils needs vxf
 gc_load_utils needs wgsxf
+gc_load_utils needs writedb
 gc_load_utils needs xalgoblastdbindex
 gc_load_utils needs xalgodustmask
 gc_load_utils needs xalgowinmask
@@ -1332,6 +1333,7 @@ gc_utils needs vdb
 gc_utils needs vfs
 gc_utils needs vxf
 gc_utils needs wgsxf
+gc_utils needs writedb
 gc_utils needs xalgoblastdbindex
 gc_utils needs xalgodustmask
 gc_utils needs xalgowinmask
@@ -1432,6 +1434,7 @@ gcaccess_utils needs vdb
 gcaccess_utils needs vfs
 gcaccess_utils needs vxf
 gcaccess_utils needs wgsxf
+gcaccess_utils needs writedb
 gcaccess_utils needs xalgoblastdbindex
 gcaccess_utils needs xalgodustmask
 gcaccess_utils needs xalgowinmask
@@ -1746,6 +1749,7 @@ gpinit needs vdb
 gpinit needs vfs
 gpinit needs vxf
 gpinit needs wgsxf
+gpinit needs writedb
 gpinit needs xalgoblastdbindex
 gpinit needs xalgodustmask
 gpinit needs xalgowinmask
@@ -1861,6 +1865,7 @@ gpinit_admin needs vdb
 gpinit_admin needs vfs
 gpinit_admin needs vxf
 gpinit_admin needs wgsxf
+gpinit_admin needs writedb
 gpinit_admin needs xalgoblastdbindex
 gpinit_admin needs xalgodustmask
 gpinit_admin needs xalgowinmask
@@ -1967,6 +1972,7 @@ gpinit_buildinfo needs vdb
 gpinit_buildinfo needs vfs
 gpinit_buildinfo needs vxf
 gpinit_buildinfo needs wgsxf
+gpinit_buildinfo needs writedb
 gpinit_buildinfo needs xalgoblastdbindex
 gpinit_buildinfo needs xalgodustmask
 gpinit_buildinfo needs xalgowinmask
@@ -2084,6 +2090,7 @@ gpipe_alnutil needs vdb
 gpipe_alnutil needs vfs
 gpipe_alnutil needs vxf
 gpipe_alnutil needs wgsxf
+gpipe_alnutil needs writedb
 gpipe_alnutil needs xalgoalignutil
 gpipe_alnutil needs xalgoblastdbindex
 gpipe_alnutil needs xalgodustmask
@@ -2250,6 +2257,7 @@ gpipe_objutil needs vdb
 gpipe_objutil needs vfs
 gpipe_objutil needs vxf
 gpipe_objutil needs wgsxf
+gpipe_objutil needs writedb
 gpipe_objutil needs xalgoblastdbindex
 gpipe_objutil needs xalgodustmask
 gpipe_objutil needs xalgowinmask
@@ -5683,6 +5691,7 @@ validate_regions needs vdb
 validate_regions needs vfs
 validate_regions needs vxf
 validate_regions needs wgsxf
+validate_regions needs writedb
 validate_regions needs xalgoblastdbindex
 validate_regions needs xalgodustmask
 validate_regions needs xalgowinmask
@@ -8975,6 +8984,7 @@ xgencoll needs vdb
 xgencoll needs vfs
 xgencoll needs vxf
 xgencoll needs wgsxf
+xgencoll needs writedb
 xgencoll needs xalgoblastdbindex
 xgencoll needs xalgodustmask
 xgencoll needs xalgowinmask
@@ -9077,6 +9087,7 @@ xgencollstats needs vdb
 xgencollstats needs vfs
 xgencollstats needs vxf
 xgencollstats needs wgsxf
+xgencollstats needs writedb
 xgencollstats needs xalgoblastdbindex
 xgencollstats needs xalgodustmask
 xgencollstats needs xalgowinmask
@@ -9784,6 +9795,7 @@ xsmall_assembly needs vdb
 xsmall_assembly needs vfs
 xsmall_assembly needs vxf
 xsmall_assembly needs wgsxf
+xsmall_assembly needs writedb
 xsmall_assembly needs xalgoblastdbindex
 xsmall_assembly needs xalgodustmask
 xsmall_assembly needs xalgowinmask
