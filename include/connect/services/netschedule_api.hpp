@@ -208,6 +208,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
         /// This job should be interpreted by client library, not client itself
         /// Can contain control information, e.g. instruction for node to die
         eSystemJob    = (1 << 3),
+        /// Generate and use job key in CCompoundID format.
+        eUseCompoundID = (1 << 4),
         //                     ---^
         eUserMask     = (1 << 16) ///< User's masks start from here
     };
