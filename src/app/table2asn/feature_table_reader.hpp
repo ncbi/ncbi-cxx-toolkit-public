@@ -30,6 +30,7 @@ public:
 //    to corresponding sequences
 // This method requires certain postprocessing of plain features added
    void ReadFeatureTable(objects::CSeq_entry& obj, ILineReader& line_reader);
+   void FindOpenReadingFrame(objects::CSeq_entry& entry) const;
 private:
    objects::IMessageListener* m_logger;
 };

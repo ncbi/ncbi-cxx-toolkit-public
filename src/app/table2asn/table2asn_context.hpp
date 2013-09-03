@@ -65,6 +65,7 @@ public:
     bool   m_SetIDFromFile;
     bool   m_NucProtSet;
     int    m_taxid;
+    bool   m_avoid_orf_lookup;
     TSeqPos m_gapNmin;
     TSeqPos m_gap_Unknown_length;
 
@@ -80,7 +81,6 @@ public:
     void SetOrganismData(objects::CSeq_descr& SD, int genome_code, const string& taxname, int taxid, const string& strain) const;
     void ApplySourceQualifiers(objects::CSeq_entry& bioseq, const string& src_qualifiers) const;
 
-    void FindOpenReadingFrame(objects::CSeq_entry& entry) const;
     static
     objects::CUser_object& SetUserObject(objects::CSeq_descr& descr, const string& type);
     static

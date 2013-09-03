@@ -388,8 +388,8 @@ CRef<CSerialObject> CMultiReader::xProcessDefault(
     }
     else
     {
-        m_iFlags |= CFastaReader::fNoSplit
-                 |  CFastaReader::fLeaveAsText;
+        m_iFlags |= CFastaReader::fNoSplit;
+//                 |  CFastaReader::fLeaveAsText;
     }
     m_iFlags |= CFastaReader::fAddMods
              |  CFastaReader::fAssumeNuc

@@ -45,12 +45,13 @@
 #include <objects/seqset/Bioseq_set.hpp>
 #include <objtools/readers/source_mod_parser.hpp>
 #include <objects/general/Date.hpp>
-#include <algo/sequence/orf.hpp>
 #include <objtools/readers/message_listener.hpp>
 
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
+#include <objects/seq/Seq_literal.hpp>
+#include <objects/general/Int_fuzz.hpp>
 
 #include "table2asn_context.hpp"
 
@@ -64,33 +65,6 @@ USING_SCOPE(objects);
 
 namespace
 {
-
-CRef<CSeq_annot> FindORF(const CBioseq& bioseq)
-{
-    if (bioseq.IsNa())
-    {
-        COrf::TLocVec orfs;
-        CSeqVector  seq_vec(bioseq);
-        COrf::FindOrfs(seq_vec, orfs);
-        if (orfs.size()>0)
-        {
-            CRef<CSeq_id> seqid(new CSeq_id);
-            seqid->Assign(*bioseq.GetId().begin()->GetPointerOrNull());
-            COrf::TLocVec best;
-            best.push_back(orfs.front());
-            ITERATE(COrf::TLocVec, it, orfs)
-            {
-                if ((**it).GetTotalRange().GetLength() >
-                    best.front()->GetTotalRange().GetLength() )
-                    best.front() = *it;
-            }
-
-            CRef<CSeq_annot> annot = COrf::MakeCDSAnnot(best, 1, seqid);
-            return annot;
-        }
-    }
-    return CRef<CSeq_annot>();
-}
 
 void x_ApplySourceQualifiers(CBioseq& bioseq, CSourceModParser& smp)
 {
@@ -186,6 +160,7 @@ CTable2AsnContext::CTable2AsnContext():
     m_SetIDFromFile(false),
     m_NucProtSet(false),
     m_taxid(0),
+    m_avoid_orf_lookup(false),
     m_gapNmin(0),
     m_gap_Unknown_length(0)
 {
@@ -205,30 +180,6 @@ void CTable2AsnContext::AddUserTrack(CSeq_descr& SD, const string& type, const s
     uf->SetNum(1);
     uf->SetData().SetStr(data);
     SetUserObject(SD, type).SetData().push_back(uf);
-}
-
-void CTable2AsnContext::FindOpenReadingFrame(objects::CSeq_entry& entry) const
-{
-    switch(entry.Which())
-    {
-    case CSeq_entry::e_Seq:
-        {
-        CRef<CSeq_annot> annot = FindORF(entry.SetSeq());
-        if (annot.NotEmpty())
-        {
-            entry.SetSeq().SetAnnot().push_back(annot);
-        }
-        }
-        break;
-    case CSeq_entry::e_Set:
-        NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
-        {
-            FindOpenReadingFrame(**it);
-        }
-        break;
-    default:
-        break;
-    }
 }
 
 void CTable2AsnContext::ApplySourceQualifiers(CSeq_entry& entry, const string& src_qualifiers) const

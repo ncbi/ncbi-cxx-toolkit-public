@@ -523,6 +523,8 @@ CRef<CScope> CTbl2AsnApp::BuildScope (void)
 void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 {
     CRef<CSeq_entry> entry;
+    m_context.m_avoid_orf_lookup = false;
+
 
     if (m_context.m_current_file.substr(m_context.m_current_file.length()-4).compare(".xml") == 0)
     {
@@ -549,7 +551,13 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     CFeatureTableReader fr(m_logger);
     // this may convert seq into seq-set
+    if (!m_context.m_avoid_orf_lookup && !m_context.m_find_open_read_frame.empty())
+        fr.FindOpenReadingFrame(*entry);
+
     fr.MergeCDSFeatures(*entry);
+    entry->Parentize();
+
+
 
     if (m_context.m_RemotePubLookup)
     {
@@ -560,9 +568,6 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     {
         m_remote_updater->UpdateOrgReferences(*entry);
     }
-
-    if (!m_context.m_find_open_read_frame.empty())
-        m_context.FindOpenReadingFrame(*entry);
 
     m_context.ApplyAccession(*entry);
  
@@ -709,6 +714,7 @@ void CTbl2AsnApp::ProcessTBLFile(const string& pathname, CSeq_entry& result)
     CFile file(pathname);
     if (!file.Exists()) return;
 
+    m_context.m_avoid_orf_lookup = true;
     CRef<ILineReader> reader(ILineReader::New(pathname));
 
     CFeatureTableReader feature_reader(m_logger);

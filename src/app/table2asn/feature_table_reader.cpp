@@ -51,6 +51,7 @@
 #include <objmgr/object_manager.hpp>
 
 #include <objtools/readers/readfeat.hpp>
+#include <algo/sequence/orf.hpp>
 
 #include "feature_table_reader.hpp"
 
@@ -194,6 +195,9 @@ namespace
 
         string protein_name;
         GetProteinName(protein_name, feature);
+        if (protein_name.empty())
+            protein_name = "hypothetical protein";
+
         if (org_name.length() > 0)
             protein_name += " [" + org_name + "]";
 
@@ -222,14 +226,17 @@ namespace
                 newid->Assign(*id);
                 protein->SetId().push_back(newid);
             }
-            else
-            {
-                CRef<CSeq_id> newid = GetNewProteinId(top_entry_h, base_name);
-                protein->SetId().push_back(newid);
-            }
 #endif
 
         }
+        if (protein->SetId().empty())
+        {
+            //pentry->GetLabel(&base_name, CSeq_entry::eContent);
+            //pentry->GetSeq().GetId().front()->GetLabel(&base_name, CSeq_id::eContent);
+            CRef<CSeq_id> newid = GetNewProteinId(top_entry_h, base_name);
+            protein->SetId().push_back(newid);
+        }
+
         CBioseq_Handle bioseq_handle = scope.AddBioseq(*protein);
 
         return pentry;
@@ -252,48 +259,67 @@ namespace
         entry.SetSet().SetAnnot().push_back(set_annot);
 
         NON_CONST_ITERATE(CBioseq_set::TSeq_set, seq_it, entry.SetSet().SetSeq_set())
+        //for (CBioseq_set::TSeq_set::iterator seq_it = entry.SetSet().SetSeq_set().begin();
+        //    entry.SetSet().SetSeq_set().end() != seq_it;)
         {
             CRef<CSeq_entry> seq = *seq_it;
             if (seq->IsSeq() &&
                 seq->GetSeq().IsSetInst() &&
-                seq->GetSeq().IsNa() )
-                NON_CONST_ITERATE(CBioseq::TAnnot, annot_it, seq->SetSeq().SetAnnot())
+                seq->GetSeq().IsNa() && 
+                seq->GetSeq().IsSetAnnot() )
             {
-                CRef<CSeq_annot> seq_annot(*annot_it);
+                for (CBioseq::TAnnot::iterator annot_it = seq->SetSeq().SetAnnot().begin(); 
+                    seq->SetSeq().SetAnnot().end() != annot_it;)
+                {
+                    CRef<CSeq_annot> seq_annot(*annot_it);
 
-                if (seq_annot->IsFtable())
-                    for (CSeq_annot::TData::TFtable::iterator feat_it = seq_annot->SetData().SetFtable().begin();
-                        seq_annot->SetData().SetFtable().end() != feat_it;)
+                    if (seq_annot->IsFtable())
                     {
-                        CRef<CSeq_feat> feature = (*feat_it);
-                        if (feature->IsSetData())
+                        for (CSeq_annot::TData::TFtable::iterator feat_it = seq_annot->SetData().SetFtable().begin();
+                            seq_annot->SetData().SetFtable().end() != feat_it;)
                         {
-                            CSeqFeatData& data = feature->SetData();
-                            if (data.IsCdregion())
+                            CRef<CSeq_feat> feature = (*feat_it);
+                            if (feature->IsSetData())
                             {
-                                CRef<CSeq_entry> protein = TranslateProtein(scope, entry_h, *feature);
-                                if (protein.NotEmpty())
+                                CSeqFeatData& data = feature->SetData();
+                                if (data.IsCdregion())
                                 {
-                                    entry.SetSet().SetSeq_set().push_back(protein);
-                                    // move the cdregion into protein and step iterator to next
-                                    set_annot->SetData().SetFtable().push_back(feature);
+                                    CRef<CSeq_entry> protein = TranslateProtein(scope, entry_h, *feature);
+                                    if (protein.NotEmpty())
+                                    {
+                                        entry.SetSet().SetSeq_set().push_back(protein);
+                                        // move the cdregion into protein and step iterator to next
+                                        set_annot->SetData().SetFtable().push_back(feature);
+                                        seq_annot->SetData().SetFtable().erase(feat_it++);
+                                        continue; // avoid iterator increment
+                                    }
+                                }
+                                else
+                                if (data.IsPub())
+                                {
+                                    CRef<CSeqdesc> seqdesc(new CSeqdesc);
+                                    seqdesc->SetPub(data.SetPub());
+                                    entry.SetDescr().Set().push_back(seqdesc);
                                     seq_annot->SetData().SetFtable().erase(feat_it++);
                                     continue; // avoid iterator increment
                                 }
                             }
-                            else
-                            if (data.IsPub())
-                            {
-                                CRef<CSeqdesc> seqdesc(new CSeqdesc);
-                                seqdesc->SetPub(data.SetPub());
-                                entry.SetDescr().Set().push_back(seqdesc);
-                                seq_annot->SetData().SetFtable().erase(feat_it++);
-                                continue; // avoid iterator increment
-                            }
+                            ++feat_it;
                         }
-                        ++feat_it;
-                    }
-            }
+                        if (seq_annot->GetData().GetFtable().empty())
+                        {
+                            seq->SetSeq().SetAnnot().erase(annot_it++);
+                            continue;
+                        }
+                        
+                     }
+                     ++annot_it;
+                  }                 
+                if (seq->GetSeq().GetAnnot().empty())
+                {
+                    seq->SetSeq().ResetAnnot();
+                }
+             }
         }
         entry.Parentize();
     }
@@ -358,6 +384,35 @@ namespace
         return false;
     }
 
+    CRef<CSeq_annot> FindORF(const CBioseq& bioseq)
+    {
+        if (bioseq.IsNa())
+        {
+            COrf::TLocVec orfs;
+            CSeqVector  seq_vec(bioseq);
+            COrf::FindOrfs(seq_vec, orfs);
+            if (orfs.size()>0)
+            {
+                CRef<CSeq_id> seqid(new CSeq_id);
+                seqid->Assign(*bioseq.GetId().begin()->GetPointerOrNull());
+                COrf::TLocVec best;
+                best.push_back(orfs.front());
+                ITERATE(COrf::TLocVec, it, orfs)
+                {
+                    if ((**it).GetTotalRange().GetLength() >
+                        best.front()->GetTotalRange().GetLength() )
+                        best.front() = *it;
+                }
+
+                CRef<CSeq_annot> annot = COrf::MakeCDSAnnot(best, 1, seqid);
+                return annot;
+            }
+        }
+        return CRef<CSeq_annot>();
+    }
+
+
+
 }
 
 void CFeatureTableReader::MergeCDSFeatures(CSeq_entry& entry)
@@ -386,6 +441,32 @@ void CFeatureTableReader::ReadFeatureTable(CSeq_entry& entry, ILineReader& line_
 {
     CFeature_table_reader::ReadSequinFeatureTables(line_reader, entry, CFeature_table_reader::fCreateGenesFromCDSs, m_logger);
 }
+
+void CFeatureTableReader::FindOpenReadingFrame(objects::CSeq_entry& entry) const
+{
+    switch(entry.Which())
+    {
+    case CSeq_entry::e_Seq:
+        {
+        CRef<CSeq_annot> annot = FindORF(entry.SetSeq());
+        if (annot.NotEmpty())
+        {
+            entry.SetSeq().SetAnnot().push_back(annot);
+        }
+        }
+        break;
+    case CSeq_entry::e_Set:
+        NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
+        {
+            FindOpenReadingFrame(**it);
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+
 
 
 END_NCBI_SCOPE
