@@ -43,7 +43,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 //  ============================================================================
-class ILineError
+class NCBI_XOBJUTIL_EXPORT ILineError
 //  ============================================================================
 {
 public:
@@ -295,7 +295,7 @@ public:
 };
     
 //  ============================================================================
-class CLineError:
+class NCBI_XOBJUTIL_EXPORT CLineError:
 //  ============================================================================
     public ILineError
 {
@@ -374,7 +374,7 @@ protected:
 };
 
 //  ============================================================================
-class CObjReaderLineException
+class NCBI_XOBJUTIL_EXPORT CObjReaderLineException
 //  ============================================================================
     : public CObjReaderParseException, public ILineError
 {
@@ -431,13 +431,7 @@ public:
 
     const std::string &ErrorMessage(void) const { return m_strErrorMessage; }
 
-    std::string
-    ProblemStr() const {
-        if (!m_strErrorMessage.empty()) {
-            return m_strErrorMessage;
-        }
-        return ILineError::ProblemStr();
-    }
+    std::string ProblemStr() const;
 
     std::string Message() const { return GetMsg(); }
     

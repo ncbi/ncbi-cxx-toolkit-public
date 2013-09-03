@@ -17,7 +17,7 @@ SRC = read_util format_guess_ex \
       gvf_reader \
       vcf_reader \
       best_feat_finder source_mod_parser fasta_exception agp_converter \
-      message_listener
+      message_listener line_error
 
 
 DLL_LIB = creaders
