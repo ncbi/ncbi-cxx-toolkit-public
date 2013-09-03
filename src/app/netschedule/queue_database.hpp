@@ -88,10 +88,6 @@ struct SNSDBEnvironmentParams
     bool      private_env;
 
     bool Read(const IRegistry& reg, const string& sname);
-
-    unsigned GetNumParams() const;
-    string GetParamName(unsigned n) const;
-    string GetParamValue(unsigned n) const;
 };
 
 

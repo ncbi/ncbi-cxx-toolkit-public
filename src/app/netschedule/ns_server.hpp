@@ -105,6 +105,7 @@ public:
     string & GetHost()                          { return m_Host; }
     unsigned GetPort() const                    { return m_Port; }
     unsigned GetDeleteBatchSize(void) const     { return m_DeleteBatchSize; }
+    bool GetUseHostname(void) const             { return m_UseHostname; }
     unsigned GetMarkdelBatchSize(void) const    { return m_MarkdelBatchSize; }
     unsigned GetScanBatchSize(void) const       { return m_ScanBatchSize; }
     double   GetPurgeTimeout(void) const        { return m_PurgeTimeout; }
@@ -163,6 +164,7 @@ private:
     bool                                        m_LogStatisticsThreadFlag;
 
     bool                                        m_RefuseSubmits;
+    bool                                        m_UseHostname;
 
     // Support for shutdown with drain
     CAtomicCounter                              m_CurrentSubmitsCounter;

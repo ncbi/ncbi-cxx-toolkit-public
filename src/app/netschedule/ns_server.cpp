@@ -59,6 +59,7 @@ CNetScheduleServer::CNetScheduleServer()
       m_LogExecutionWatcherThreadFlag(false),
       m_LogStatisticsThreadFlag(false),
       m_RefuseSubmits(false),
+      m_UseHostname(false),
       m_DeleteBatchSize(100),
       m_MarkdelBatchSize(200),
       m_ScanBatchSize(10000),
@@ -179,7 +180,8 @@ string CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
     CServer::SetParameters(params);
     m_Port = params.port;
     m_HostNetAddr = CSocketAPI::gethostbyname(kEmptyStr);
-    if (params.use_hostname)
+    m_UseHostname = params.use_hostname;
+    if (m_UseHostname)
         m_Host = CSocketAPI::gethostname();
     else
         m_Host = NS_FormatIPAddress(m_HostNetAddr);

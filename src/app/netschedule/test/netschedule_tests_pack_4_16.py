@@ -456,8 +456,6 @@ class Scenario801( TestBase ):
         return True
 
 
-# NS 4.16.10 tests
-
 class Scenario900( TestBase ):
     " Scenario900 "
 
@@ -474,7 +472,7 @@ class Scenario900( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
-        ns_client = self.getNetScheduleService( '', 'scenario702' )
+        ns_client = self.getNetScheduleService( '', 'scenario900' )
         ns_client.set_client_identification( 'node1', 'session1' )
 
         output = execAny( ns_client, 'HEALTH' )
@@ -483,4 +481,87 @@ class Scenario900( TestBase ):
             raise Exception( "Unexpected number of threads" )
         if int( values[ 'proc_fd_used' ][ 0 ] ) <= 0:
             raise Exception( "Unexpected number of fd" )
+        return True
+
+
+# NS 4.16.10 tests
+
+class Scenario1000( TestBase ):
+    " Scenario1000 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Start, RECO, GETCONF effective=0, GETCONF effective=1"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch()
+
+        ns_client = self.getNetScheduleService( '', 'netschedule_admin' )
+        ns_client.set_client_identification( 'netschedule_admin', 'session1' )
+
+        self.ns.setConfig( "1.1000" )
+        output = execAny( ns_client, 'RECO' )
+        output1 = execAny( ns_client, 'GETCONF effective=0', isMultiline = True )
+        output2 = execAny( ns_client, 'GETCONF effective=1', isMultiline = True )
+
+        nonEffectiveMaxThreads = None
+        nonEffectiveNetwrokTimeout = None
+        nonEffectiveAdminClient = None
+        for line in output1:
+            if line.startswith( 'max_threads' ):
+                value = line.split( "=" )[ 1 ].strip()[ 1 : -1 ]
+                nonEffectiveMaxThreads = int( value )
+                continue
+            if line.startswith( 'network_timeout' ):
+                value = line.split( "=" )[ 1 ].strip()[ 1 : -1 ]
+                nonEffectiveNetwrokTimeout = int( value )
+                continue
+            if line.startswith( 'admin_client_name' ):
+                value = line.split( "=" )[ 1 ].strip()[ 1 : -1 ]
+                nonEffectiveAdminClient = value
+
+        effectiveMaxThreads = None
+        effectiveNetwrokTimeout = None
+        effectiveAdminClient = None
+        for line in output2:
+            if line.startswith( 'max_threads' ):
+                value = line.split( "=" )[ 1 ].strip()[ 1 : -1 ]
+                effectiveMaxThreads = int( value )
+                continue
+            if line.startswith( 'network_timeout' ):
+                value = line.split( "=" )[ 1 ].strip()[ 1 : -1 ]
+                effectiveNetwrokTimeout = int( value )
+                continue
+            if line.startswith( 'admin_client_name' ):
+                value = line.split( "=" )[ 1 ].strip()[ 1 : -1 ]
+                effectiveAdminClient = value
+
+        # Parameters cannot be changed since startup
+        if nonEffectiveMaxThreads != 10:
+            raise Exception( "Unexpected !eff max threads: " +
+                             str( nonEffectiveMaxThreads ) + ". Expected 10" )
+        if effectiveMaxThreads != 5:
+            raise Exception( "Unexpected eff max threads: " +
+                             str( effectiveMaxThreads ) + ". Expected 5" )
+        if nonEffectiveNetwrokTimeout != 360:
+            raise Exception( "Unexpected !eff network timeout: " +
+                             str( nonEffectiveNetwrokTimeout ) + ". Expected 360" )
+        if effectiveNetwrokTimeout != 180:
+            raise Exception( "Unexpected eff network timeout: " +
+                             str( effectiveNetwrokTimeout ) + ". Expected 180" )
+
+        # Parameters has to be changed
+        if nonEffectiveAdminClient != "netschedule_admin":
+            raise Exception( "Unexpected !eff admin clients: " +
+                             nonEffectiveAdminClient + ". Expected 'netschedule_admin'" )
+        if effectiveAdminClient != "netschedule_admin":
+            raise Exception( "Unexpected eff admin clients: " +
+                             effectiveAdminClient + ". Expected 'netschedule_admin'" )
+
         return True

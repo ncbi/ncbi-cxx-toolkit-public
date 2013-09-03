@@ -60,6 +60,7 @@
 #include "ns_handler.hpp"
 #include "ns_server.hpp"
 #include "netschedule_version.hpp"
+#include "ns_application.hpp"
 
 #include <corelib/ncbi_process.hpp>
 #include <signal.h>
@@ -87,40 +88,26 @@ extern "C" void Threaded_Server_SignalHandler(int signum)
 }
 
 
-/// NetSchedule daemon application
-///
-/// @internal
-///
-class CNetScheduleDApp : public CNcbiApplication
+CNetScheduleDApp:: CNetScheduleDApp()
+    : CNcbiApplication(), m_EffectiveReinit(false)
 {
-public:
-    CNetScheduleDApp()
-        : CNcbiApplication()
-    {
-        CVersionInfo        version(NCBI_PACKAGE_VERSION_MAJOR,
-                                    NCBI_PACKAGE_VERSION_MINOR,
-                                    NCBI_PACKAGE_VERSION_PATCH);
-        CRef<CVersion>      full_version(new CVersion(version));
+    CVersionInfo        version(NCBI_PACKAGE_VERSION_MAJOR,
+                                NCBI_PACKAGE_VERSION_MINOR,
+                                NCBI_PACKAGE_VERSION_PATCH);
+    CRef<CVersion>      full_version(new CVersion(version));
 
-        full_version->AddComponentVersion("Storage",
-                                          NETSCHEDULED_STORAGE_VERSION_MAJOR,
-                                          NETSCHEDULED_STORAGE_VERSION_MINOR,
-                                          NETSCHEDULED_STORAGE_VERSION_PATCH);
-        full_version->AddComponentVersion("Protocol",
-                                          NETSCHEDULED_PROTOCOL_VERSION_MAJOR,
-                                          NETSCHEDULED_PROTOCOL_VERSION_MINOR,
-                                          NETSCHEDULED_PROTOCOL_VERSION_PATCH);
+    full_version->AddComponentVersion("Storage",
+                                      NETSCHEDULED_STORAGE_VERSION_MAJOR,
+                                      NETSCHEDULED_STORAGE_VERSION_MINOR,
+                                      NETSCHEDULED_STORAGE_VERSION_PATCH);
+    full_version->AddComponentVersion("Protocol",
+                                      NETSCHEDULED_PROTOCOL_VERSION_MAJOR,
+                                      NETSCHEDULED_PROTOCOL_VERSION_MINOR,
+                                      NETSCHEDULED_PROTOCOL_VERSION_PATCH);
 
-        SetVersion(version);
-        SetFullVersion(full_version);
-    }
-
-    void Init(void);
-    int Run(void);
-
-private:
-    STimeout    m_ServerAcceptTimeout;
-};
+    SetVersion(version);
+    SetFullVersion(full_version);
+}
 
 
 void CNetScheduleDApp::Init(void)
@@ -165,6 +152,16 @@ int CNetScheduleDApp::Run(void)
     // Throws an exception if there are hanging references
     NS_ValidateConfigFile(reg);
 
+    x_SaveSection(reg, "log", m_OrigLogSection);
+    x_SaveSection(reg, "diag", m_OrigDiagSection);
+    x_SaveSection(reg, "bdb", m_OrigBDBSection);
+
+    CNcbiOstrstream ostr;
+    reg.Write(ostr);
+    LOG_POST(Message << Warning
+                     << "Configuration file content: " << ostr.str());
+    ostr.freeze(false);
+
     // attempt to get server gracefully shutdown on signal
     signal(SIGINT,  Threaded_Server_SignalHandler);
     signal(SIGTERM, Threaded_Server_SignalHandler);
@@ -202,34 +199,10 @@ int CNetScheduleDApp::Run(void)
         NCBI_THROW(CNetScheduleException, eInternalError,
                    "Failed to read BDB initialization section.");
 
-    {{
-        string str_params;
-        unsigned nParams = bdb_params.GetNumParams();
-        for (unsigned n = 0; n < nParams; ++n) {
-            if (n > 0) str_params += ';';
-            str_params += bdb_params.GetParamName(n) + '=' +
-                          bdb_params.GetParamValue(n);
-        }
-        LOG_POST(Message << Warning
-                         <<"Effective [bdb] parameters: " << str_params);
-    }}
-
     // [server] section
     SNS_Parameters      params;
     params.Read(reg, "server");
 
-
-    {{
-        string      str_params;
-        unsigned    nParams = params.GetNumParams();
-        for (unsigned n = 0; n < nParams; ++n) {
-            if (n > 0) str_params += ';';
-            str_params += params.GetParamName(n) + '=' +
-                          params.GetParamValue(n);
-        }
-        LOG_POST(Message << Warning
-                         <<"Effective [server] parameters: " << str_params);
-    }}
 
     m_ServerAcceptTimeout.sec  = 1;
     m_ServerAcceptTimeout.usec = 0;
@@ -243,17 +216,14 @@ int CNetScheduleDApp::Run(void)
     // Use port passed through parameters
     server->AddDefaultListener(new CNetScheduleConnectionFactory(&*server));
     server->StartListening();
-    LOG_POST(Message << Warning
-                     <<"Server listening on port " << params.port);
 
     // two transactions per thread should be enough
     bdb_params.max_trans = params.max_threads * 2;
 
-    LOG_POST(Message << Warning
-                     << "Mounting database at " << bdb_params.db_path);
-    bool reinit = params.reinit || args[kReinitArgName];
+    m_EffectiveReinit = params.reinit || args[kReinitArgName];
     auto_ptr<CQueueDataBase>    qdb(new CQueueDataBase(server.get(),
-                                                       bdb_params, reinit));
+                                                       bdb_params,
+                                                       m_EffectiveReinit));
 
     if (!args[kNodaemonArgName]) {
         LOG_POST(Message << Warning << "Entering UNIX daemon mode...");
@@ -323,6 +293,24 @@ int CNetScheduleDApp::Run(void)
 
     return 0;
 }
+
+
+void CNetScheduleDApp::x_SaveSection(const CNcbiRegistry &  reg,
+                                     const string &  section,
+                                     map<string, string> &  storage)
+{
+    storage.clear();
+
+    if (reg.HasEntry(section)) {
+        list<string>    entries;
+        reg.EnumerateEntries(section, &entries);
+
+        for (list<string>::const_iterator k = entries.begin();
+             k != entries.end(); ++k)
+            storage[*k] = reg.GetString(section, *k, kEmptyStr);
+    }
+}
+
 
 
 int main(int argc, const char* argv[])

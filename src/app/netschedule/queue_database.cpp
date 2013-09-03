@@ -102,63 +102,6 @@ bool SNSDBEnvironmentParams::Read(const IRegistry& reg, const string& sname)
 }
 
 
-static string  s_DBEnvParameters[] =
-{
-    "path",                     // 0
-    "transaction_log_path",     // 1
-    "max_queues",               // 2
-    "mem_size",                 // 3
-    "mutex_max",                // 4
-    "max_locks",                // 5
-    "max_lockers",              // 6
-    "max_lockobjects",          // 7
-    "log_mem_size",             // 8
-    "checkpoint_kb",            // 9
-    "checkpoint_min",           // 10
-    "sync_transactions",        // 11
-    "direct_db",                // 12
-    "direct_log",               // 13
-    "private_env"               // 14
-};
-static unsigned s_NumDBEnvParameters = sizeof(s_DBEnvParameters) /
-                                       sizeof(string);
-
-
-unsigned SNSDBEnvironmentParams::GetNumParams() const
-{
-    return s_NumDBEnvParameters;
-}
-
-
-string SNSDBEnvironmentParams::GetParamName(unsigned n) const
-{
-    if (n >= s_NumDBEnvParameters)
-        return kEmptyStr;
-    return s_DBEnvParameters[n];
-}
-
-
-string SNSDBEnvironmentParams::GetParamValue(unsigned n) const
-{
-    switch (n) {
-    case 0:  return db_path;
-    case 1:  return db_log_path;
-    case 2:  return NStr::NumericToString(max_queues);
-    case 3:  return NStr::NumericToString(cache_ram_size);
-    case 4:  return NStr::NumericToString(mutex_max);
-    case 5:  return NStr::NumericToString(max_locks);
-    case 6:  return NStr::NumericToString(max_lockers);
-    case 7:  return NStr::NumericToString(max_lockobjects);
-    case 8:  return NStr::NumericToString(log_mem_size);
-    case 9:  return NStr::NumericToString(checkpoint_kb);
-    case 10: return NStr::NumericToString(checkpoint_min);
-    case 11: return NStr::BoolToString(sync_transactions);
-    case 12: return NStr::BoolToString(direct_db);
-    case 13: return NStr::BoolToString(direct_log);
-    case 14: return NStr::BoolToString(private_env);
-    default: return kEmptyStr;
-    }
-}
 
 /////////////////////////////////////////////////////////////////////////////
 // CQueueDataBase implementation

@@ -35,7 +35,7 @@ netstat = "/bin/netstat"
 netcat = "/usr/bin/netcat"
 
 
-latestNetscheduleVersion = "4.16.9"
+latestNetscheduleVersion = "4.16.10"
 
 
 # The map below describes what tests should be excluded for a certain
@@ -43,8 +43,9 @@ latestNetscheduleVersion = "4.16.9"
 excludeTestsMap = \
 {
 
-    "4.16.8":   [ 214, 215, 800, 801, 900 ],
-    "4.16.9":   [ 214, 215 ]
+    "4.16.8":   [ 214, 215, 800, 801, 900, 1000 ],
+    "4.16.9":   [ 214, 215, 1000 ],
+    "4.16.10":  [ ]
 }
 
 
@@ -413,6 +414,8 @@ def main():
               pack_4_16.Scenario801( netschedule ),
 
               pack_4_16.Scenario900( netschedule ),
+
+              pack_4_16.Scenario1000( netschedule ),
             ]
 
     # Calculate the start test index

@@ -80,10 +80,6 @@ struct SNS_Parameters : SServer_Parameters
               bool silent = false);
     void CheckAffinityGarbageCollectorSettings(bool  silent);
     void CheckGarbageCollectorSettings(bool  silent);
-
-    unsigned GetNumParams() const;
-    std::string GetParamName(unsigned n) const;
-    std::string GetParamValue(unsigned n) const;
 };
 
 END_NCBI_SCOPE

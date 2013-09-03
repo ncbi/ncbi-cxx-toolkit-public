@@ -224,6 +224,8 @@ private:
     void x_ExecuteRollbackAction(CQueue * q);
 
     string x_GetServerSection(void) const;
+    string x_GetStoredSectionValues(const string &  section_name,
+                                    const map<string, string> & values) const;
     string x_GetLogSection(void) const;
     string x_GetDiagSection(void) const;
     string x_GetBdbSection(void) const;
