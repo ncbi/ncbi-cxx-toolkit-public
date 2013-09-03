@@ -733,16 +733,23 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
             cerr << "Testing with " << (bIsUnknown ? "unknown" : "known") 
                  << " gap size of " << iGapLen << endl;
 
-            // non-positive gap sizes should create a format error
-            const char * pchExpectedError = ( 
-                iGapLen <= 0 ? "eFormat" : "" );
+            // non-positive gap sizes should create a warning
+            TWarnVec expectedWarningsVec;
+            if( iGapLen <= 0 ) {
+                expectedWarningsVec.push_back( 
+                    ILineError::eProblem_NonPositiveLength );
+            }
+            if( iGapLen < 0 ) {
+                expectedWarningsVec.push_back( 
+                    ILineError::eProblem_ParsingModifiers );
+            }
 
             CRef<CBioseq> pBioseq = s_ParseFasta(
-                sDataToRead, kDefaultFastaFlags, pchExpectedError );
+                sDataToRead, kDefaultFastaFlags, 
+                kEmptyStr, expectedWarningsVec );
 
             // non-positive gap sizes should create a format error
             if( iGapLen <= 0 ) {
-                BOOST_CHECK( ! pBioseq );
                 continue;
             }
 
@@ -881,32 +888,60 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
 
     // test format errors after gap length
     {
-        const char * arrBadGapMods[] = {
+        struct {
+            const char * gap_mods;
+            ILineError::EProblem problem_arr[2];
+        }
+        arrBadGapMods[] = {
             // bogus mod key
-            " [foo=baz]",
+            { " [foo=baz]", 
+              { ILineError::eProblem_UnrecognizedQualifierName,
+              ILineError::eProblem_Unset } },
             // bogus gap type
-            " [gap-type=foo]",
+            { " [gap-type=foo]",
+              { ILineError::eProblem_ParsingModifiers,
+              ILineError::eProblem_Unset } },
             // bogus linkage-evidence
-            " [gap-type=between scaffolds] [linkage-evidence=foo]",
+            { " [gap-type=between scaffolds] [linkage-evidence=foo]",
+              { ILineError::eProblem_ParsingModifiers,
+                ILineError::eProblem_ExpectedModifierMissing } },
             // extra junk on gap line (even if good mods)
-            " extra junk",
-            " [gap-type=short arm] extra junk",
-            " [gap-type=short arm] extra junk [linkage-evidence=map]",
+            { " extra junk",
+              { ILineError::eProblem_ParsingModifiers,
+                ILineError::eProblem_Unset } },
+            { " [gap-type=short arm] extra junk",
+              { ILineError::eProblem_ParsingModifiers,
+                ILineError::eProblem_Unset } },
+            { " [gap-type=short arm] extra junk [linkage-evidence=map]",
+              { ILineError::eProblem_ParsingModifiers,
+                ILineError::eProblem_Unset } },
             // conflicting gap types
-            " [gap-type=short arm] [gap-type=heterochromatin]"
+            { " [gap-type=short arm] [gap-type=heterochromatin]",
+              { ILineError::eProblem_ContradictoryModifiers,
+                ILineError::eProblem_Unset } }
         };
-        ITERATE_0_IDX( ii, ArraySize(arrBadGapMods) ) {
+        const size_t arrBadGapMods_len = sizeof(arrBadGapMods) / sizeof(arrBadGapMods[0]);
+        ITERATE_0_IDX( ii, arrBadGapMods_len ) {
             const string sDataToRead = kLinesBeforeGap +
                 ">?unk" + NStr::NumericToString(kArbGapLen) +
-                arrBadGapMods[ii] + "\n" + kLinesAfterGap;
+                arrBadGapMods[ii].gap_mods + "\n" + kLinesAfterGap;
+
+            TWarnVec expectedWarningsVec;
+            expectedWarningsVec.push_back(
+                arrBadGapMods[ii].problem_arr[0] );
+            if( arrBadGapMods[ii].problem_arr[1] != 
+                ILineError::eProblem_Unset ) 
+            {
+                expectedWarningsVec.push_back(
+                    arrBadGapMods[ii].problem_arr[1] );
+            }
 
             CRef<CBioseq> pBioseq =
                 s_ParseFasta(
                 sDataToRead,
                 kDefaultFastaFlags,
-                "eFormat");
-
-            BOOST_CHECK( ! pBioseq );
+                kEmptyStr,
+                expectedWarningsVec );
         }
     }
 

@@ -395,9 +395,9 @@ public:
         )
         : CObjReaderParseException( DIAG_COMPILE_INFO, 0, static_cast<CObjReaderParseException::EErrCode>(CException::eInvalid), strMessage, uLine,
         eDiag_Info ), 
-        m_eProblem(eProblem), m_strSeqId(strSeqId), m_uLineNumber(uLine), m_strErrorMessage(strMessage),
+        m_eProblem(eProblem), m_strSeqId(strSeqId), m_uLineNumber(uLine),
         m_strFeatureName(strFeatureName), m_strQualifierName(strQualifierName), 
-        m_strQualifierValue(strQualifierValue)
+        m_strQualifierValue(strQualifierValue), m_strErrorMessage(strMessage)
     {
         SetSeverity( eSeverity );
         x_InitErrCode(static_cast<CException::EErrCode>(eErrCode));
@@ -407,7 +407,7 @@ public:
         CObjReaderParseException( rhs ), 
             m_eProblem(rhs.Problem()), m_strSeqId(rhs.SeqId()), m_uLineNumber(rhs.Line()), 
             m_strFeatureName(rhs.FeatureName()), m_strQualifierName(rhs.QualifierName()),
-            m_strErrorMessage(rhs.ErrorMessage()), m_strQualifierValue(rhs.QualifierValue())
+            m_strQualifierValue(rhs.QualifierValue()), m_strErrorMessage(rhs.ErrorMessage())
     {
         SetSeverity( rhs.Severity() );
         x_InitErrCode(static_cast<CException::EErrCode>(rhs.x_GetErrCode()));

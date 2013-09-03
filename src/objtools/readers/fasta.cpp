@@ -83,45 +83,48 @@
 
 #include <ctype.h>
 
-#define FASTA_LINE_EXPT(_eSeverity, _uLineNum, _MessageStrmOps,  _eErrCode, _eProblem, _sFeature) \
+#define FASTA_LINE_EXPT(_eSeverity, _uLineNum, _MessageStrmOps,  _eErrCode, _eProblem, _sFeature, _sQualName, _sQualValue) \
     do {                                                                \
-        const string sSeqId = ( m_BestID ?                              \
-                                m_BestID->AsFastaString() :             \
-                                kEmptyStr  );                           \
-        const size_t uLineNum = (_uLineNum);                            \
-        stringstream err_strm;                                          \
-        err_strm << _MessageStrmOps;                                    \
+        const string sSeqId_49518053 = ( m_BestID ?                     \
+                                         m_BestID->AsFastaString() :    \
+                                         kEmptyStr  );                  \
+        const size_t uLineNum_49518053 = (_uLineNum);                   \
+        stringstream err_strm_49518053;                                 \
+        err_strm_49518053 << _MessageStrmOps;                           \
         CObjReaderLineException lineExpt(                               \
-            (_eSeverity), uLineNum,                                     \
-            err_strm.str(),                                             \
+            (_eSeverity), uLineNum_49518053,                            \
+            err_strm_49518053.str(),                                    \
             (_eProblem),                                                \
-            sSeqId, (_sFeature),                                        \
-            kEmptyStr, kEmptyStr,                                       \
+            sSeqId_49518053, (_sFeature),                               \
+            (_sQualName), (_sQualValue),                                \
             CObjReaderParseException::_eErrCode);                       \
-        if ( ! pMessageListener && (_eSeverity) <= eDiag_Warning ) {     \
+        if ( ! pMessageListener && (_eSeverity) <= eDiag_Warning ) {    \
             ERR_POST_X(1, "FASTA-Reader: Warning: " + lineExpt.Message()); \
         } else if ( ! pMessageListener || ! pMessageListener->PutError( lineExpt ) ) \
         {                                                               \
             NCBI_THROW2(CObjReaderParseException, _eErrCode,            \
-                        err_strm.str(), uLineNum );                     \
+                        err_strm_49518053.str(), uLineNum_49518053 );   \
         }                                                               \
     } while(0)
 
-#define FASTA_PROGRESS(_MessageStrmOps) \
-    do {                                                                   \
-        stringstream err_strm;                                             \
-        err_strm << _MessageStrmOps;                                       \
-        if( pMessageListener ) {                                           \
-            pMessageListener->PutProgress(err_strm.str());                 \
-        }                                                                  \
+#define FASTA_PROGRESS(_MessageStrmOps)                                 \
+    do {                                                                \
+        stringstream err_strm_49518053;                                 \
+        err_strm_49518053 << _MessageStrmOps;                           \
+        if( pMessageListener ) {                                        \
+            pMessageListener->PutProgress(err_strm_49518053.str());     \
+        }                                                               \
     } while(false)
 
 
 #define FASTA_WARNING(_uLineNum, _MessageStrmOps, _eProblem, _Feature) \
-    FASTA_LINE_EXPT(eDiag_Warning, _uLineNum, _MessageStrmOps, eFormat, _eProblem, _Feature)
+    FASTA_LINE_EXPT(eDiag_Warning, _uLineNum, _MessageStrmOps, eFormat, _eProblem, _Feature, kEmptyStr, kEmptyStr)
+
+#define FASTA_WARNING_EX(_uLineNum, _MessageStrmOps, _eProblem, _Feature, _sQualName, _sQualValue) \
+    FASTA_LINE_EXPT(eDiag_Warning, _uLineNum, _MessageStrmOps, eFormat, _eProblem, _Feature, _sQualName, _sQualValue)
 
 #define FASTA_ERROR(_uLineNum, _MessageStrmOps, _eErrCode) \
-    FASTA_LINE_EXPT(eDiag_Error, _uLineNum, _MessageStrmOps, _eErrCode, ILineError::eProblem_GeneralParsingError, kEmptyStr)
+    FASTA_LINE_EXPT(eDiag_Error, _uLineNum, _MessageStrmOps, _eErrCode, ILineError::eProblem_GeneralParsingError, kEmptyStr, kEmptyStr, kEmptyStr)
 
 #define NCBI_USE_ERRCODE_X   Objtools_Rd_Fasta
 
@@ -1090,9 +1093,12 @@ bool CFastaReader::ParseGapLine(
             0, uNumDigits);
         uGapSize = NStr::StringToUInt(sDigits, NStr::fConvErr_NoThrow);
         if( uGapSize <= 0 ) {
-            NCBI_THROW2(CObjReaderParseException, eFormat,
-                        "CFastaReader: Bad gap size at line " + NStr::NumericToString(LineNumber()),
-                        LineNumber());
+            FASTA_WARNING(LineNumber(), 
+                "CFastaReader: Bad gap size at line " << LineNumber(),
+                ILineError::eProblem_NonPositiveLength,
+                "gapline" );
+            // try to continue the best we can
+            uGapSize = 1;
         }
         sRemainingLine = sRemainingLine.substr(sDigits.length());
         NStr::TruncateSpacesInPlace(sRemainingLine, NStr::eTrunc_Begin);
@@ -1115,11 +1121,14 @@ bool CFastaReader::ParseGapLine(
         if( uPosOfEqualSign != TStr::npos ) {
             uCloseBracketPos = sRemainingLine.find(']', uPosOfEqualSign + 1);
         }
-        if( uCloseBracketPos == TStr::npos ) {
-            NCBI_THROW2(CObjReaderParseException, eFormat,
-                        "CFastaReader: Problem parsing gap mods at line " +
-                            NStr::NumericToString(LineNumber()),
-                        LineNumber());
+        if( uCloseBracketPos == TStr::npos ) 
+        {
+            FASTA_WARNING(LineNumber(),
+                "CFastaReader: Problem parsing gap mods at line " 
+                << LineNumber(),
+                ILineError::eProblem_ParsingModifiers,
+                "gapline" );
+            break; // give up on mod-parsing
         }
 
         // extract the key and the value
@@ -1143,11 +1152,8 @@ bool CFastaReader::ParseGapLine(
     const CEnumeratedTypeValues::TNameToValue & linkage_evidence_to_value_map =
         CLinkage_evidence::GetTypeInfo_enum_EType()->NameToValue();
 
-    // remember bad mods and bad values
-    set<CTempString> setBadModNames;
-    set<CTempString> setBadGapTypes;
+    // remember if there is a gap-type conflict
     bool bConflictingGapTypes = false;
-    set<CTempString> setBadLinkageEvidences;
     // extract the mods, if any
     SGap::TNullableGapType pGapType;
     ELinkEvid eLinkEvid = eLinkEvid_UnspecifiedOnly;
@@ -1171,7 +1177,13 @@ bool CFastaReader::ParseGapLine(
                     bConflictingGapTypes = true;
                 }
             } else {
-                setBadGapTypes.insert(sValue);
+                FASTA_WARNING_EX(
+                    LineNumber(),
+                    "Unknown gap-type: " << sValue,
+                    ILineError::eProblem_ParsingModifiers,
+                    "gapline",
+                    "gap-type",
+                    sValue );
             }
 
         } else if( *pCanonicalKey == "linkage-evidence") {
@@ -1190,53 +1202,31 @@ bool CFastaReader::ParseGapLine(
                         static_cast<CLinkage_evidence::EType>(
                         find_iter->second));
                 } else {
-                    setBadLinkageEvidences.insert(sLinkEvid);
+                    FASTA_WARNING_EX(
+                        LineNumber(),
+                        "Unknown linkage-evidence: " << sValue,
+                        ILineError::eProblem_ParsingModifiers,
+                        "gapline",
+                        "linkage-evidence",
+                        sValue );
                 }
             }
 
         } else {
             // unknown mod.
-            setBadModNames.insert(sKey);
+            FASTA_WARNING_EX(
+                LineNumber(),
+                "Unknown gap modifier name(s): " << sKey,
+                ILineError::eProblem_UnrecognizedQualifierName,
+                "gapline", sKey, kEmptyStr );
         }
     }
 
-    // handle bad mods and/or bad values and throw as one big
-    // exception
-    if( ! setBadModNames.empty() || ! setBadGapTypes.empty() ||
-        bConflictingGapTypes || ! setBadLinkageEvidences.empty() ) 
-    {
-        CNcbiOstrstream err_strm;
-        err_strm << "CFastaReader: Gap modifier problems:";
-        const char * pchPrefix = " ";
-        if( ! setBadModNames.empty() ) {
-            err_strm << pchPrefix << "Unknown modifier names:";
-            pchPrefix = "; ";
-            ITERATE( set<CTempString>, bad_mod_it, setBadModNames ) {
-                err_strm << " " << *bad_mod_it;
-            }
-        }
-        if( ! setBadGapTypes.empty() ) {
-            err_strm << pchPrefix << "Unknown gap-types:";
-            pchPrefix = "; ";
-            ITERATE( set<CTempString>, unkn_gap_type_it, setBadGapTypes ) {
-                err_strm << " " << *unkn_gap_type_it;
-            }
-        }
-        if( bConflictingGapTypes ) {
-            err_strm << pchPrefix << "There were conflicting gap-types";
-            pchPrefix = "; ";
-        }
-        if( ! setBadLinkageEvidences.empty() ) {
-            err_strm << pchPrefix << "Unknown linkage-evidence types:";
-            pchPrefix = "; ";
-            ITERATE( set<CTempString>, unkn_evid_type_it, setBadLinkageEvidences ) {
-                err_strm << " " << *unkn_evid_type_it;
-            }
-        }
-        err_strm << pchPrefix << "; all on line " << LineNumber();
-        NCBI_THROW2(CObjReaderParseException, eFormat,
-            CNcbiOstrstreamToString(err_strm),
-            LineNumber());
+    if( bConflictingGapTypes ) {
+        FASTA_WARNING_EX(LineNumber(),
+            "There were conflicting gap-types around line " << LineNumber(),
+            ILineError::eProblem_ContradictoryModifiers,
+            "gapline", "gap-type", kEmptyStr );
     }
 
     // check validation beyond basic parsing problems
