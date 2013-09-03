@@ -78,6 +78,9 @@ public:
         eProblem_ExtraModifierFound,
         eProblem_ExpectedModifierMissing,
         eProblem_Missing,
+        eProblem_NonPositiveLength,
+        eProblem_ParsingModifiers,
+        eProblem_ContradictoryModifiers,
 
         //vcf specific
         eProblem_BadInfoLine,
@@ -236,6 +239,12 @@ public:
             return "Expected modifier missing";
         case eProblem_Missing:
             return "Feature is missing";
+        case eProblem_NonPositiveLength:
+            return "Feature's length must be greater than zero.";
+        case eProblem_ParsingModifiers:
+            return "Could not parse modifiers.";
+        case eProblem_ContradictoryModifiers:
+            return "Multiple different values for modifier";
 
         case eProblem_BadInfoLine:
             return "Broken ##INFO line";
