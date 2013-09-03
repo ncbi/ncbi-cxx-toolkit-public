@@ -35,6 +35,9 @@
 // searching.  If it gets big enough, it will be broken up in the future.
 
 #include <ncbi_pch.hpp>
+
+#include <corelib/ncbi_autoinit.hpp>
+
 #include <objects/misc/sequence_macros.hpp>
 #include <objmgr/annot_ci.hpp>
 #include <objmgr/feat_ci.hpp>
@@ -53,6 +56,7 @@
 
 #include <objects/medline/Medline_entry.hpp>
 
+#include <util/ncbi_cache.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
 #include <util/sequtil/sequtil_manip.hpp>
 #include <util/xregexp/regexp.hpp>
@@ -71,103 +75,85 @@ const int CNewCleanup_imp::NCBI_CLEANUP_VERSION = 1;
 #define CompressSpaces x_CompressSpaces
 
 namespace {
-    // just like a CRegexp except it caches the compilation and locks the underlying CRegexp
-    // so that it can be used as a stack-variable.
 
-    // This class might be pretty useful, so maybe it should be moved to a shared library
-    // where more people can use it.
-
-    // An alternative to using this function could have been using a "static CRegexp" along with
-    // a static CMutex for it, which is locked with a non-static CMutexGuard.
-    class CCachedRegexp {
+    // a CRegexp that has lock and unlock methods,
+    // and also inherits from CObject   
+    class CRegexpWithLock : public CRegexp, public CObject {
     public:
-        // WARNING: pattern must be a literal const char * (e.g. "f(oo|ubar)")
-        // This is so we can look up quickly via the pointer rather than doing
-        // costly string comparison.
-        CCachedRegexp(const char *pattern, CRegexp::TCompile flags=CRegexp::fCompile_default);
-        ~CCachedRegexp(void);
+        CRegexpWithLock( const CTempStringEx & pattern, 
+            CRegexp::TCompile flags ) : CRegexp(pattern, flags) { }
 
-        // wrap some CRegexp operations
-        string GetMatch(CTempString str, size_t offset=0, size_t idx=0, 
-            CRegexp::TMatch flags=CRegexp::fMatch_default, bool noreturn=false)
-        {
-            return m_regexpAndLockIter->second.m_pregexp->GetMatch(str, offset, idx, flags, noreturn);
-        }
- 	
-        bool IsMatch (CTempString str, 
-            CRegexp::TMatch flags=CRegexp::fMatch_default)
-        {
-            return m_regexpAndLockIter->second.m_pregexp->IsMatch(str, flags);
-        }
- 	
-        CTempString GetSub (CTempString str, size_t idx=0) const
-        {
-            return m_regexpAndLockIter->second.m_pregexp->GetSub(str, idx);
-        }
- 	
-        int NumFound () const
-        {
-            return m_regexpAndLockIter->second.m_pregexp->NumFound();
-        }
- 	
-        const int *GetResults (size_t idx) const
-        {
-            return m_regexpAndLockIter->second.m_pregexp->GetResults(idx);
-        }
- 	
+        void Lock(void) { m_mutex.Lock(); }
+        void Unlock(void) { m_mutex.Unlock(); }
+
     private:
-        // careful! The key of the map is comparing pointers NOT looking at the string contents!
-        typedef pair<const char *, CRegexp::TCompile> TPatternAndFlagsKey;
-        typedef CObjectFor<CRegexp> TWrappedRegexp;
-        struct SRegexpAndLock {
-            // these cached regexps and their lock are never deleted, so it's okay to 
-            // use a plain pointer
-            CMutex*  m_pmutex;
-            CRegexp* m_pregexp;
+        CMutex               m_mutex;
+    };
+    typedef CRef<CRegexpWithLock> TRegexpWithLockRef;
 
-            SRegexpAndLock(void)
-                : m_pmutex( new CMutex ), m_pregexp(NULL) { }
-        };
-        typedef map<TPatternAndFlagsKey, SRegexpAndLock> TPatternToRegexpAndLockMap;
-        static TPatternToRegexpAndLockMap ms_PatternToRegexpAndLockMap;
-        // to avoid deadlocks, do not grab any other locks while you're holding
-        // this (although you may, of course, hold onto locks that you already had
-        // before grabbing this lock)
-        static CMutex ms_PatternToRegexpAndLockMap_Mutex;
+    // this protects its inner object by locking
+    // it as soon as it's created and unlocking it when destroyed.
+    // this way, there's only one working CLockingRef on the object at a time
+    template<typename TLockableObj>
+    class CLockingRef {
+    public:
+        explicit 
+        CLockingRef(TLockableObj *pLockableObj) :
+        m_pLockableObj(pLockableObj) 
+        {
+            m_pLockableObj->Lock();
+        }
 
-        // use an iter not a pointer because the iter is guaranteed to be valid
-        // and no one will ever erase the underlying struct
-        TPatternToRegexpAndLockMap::iterator m_regexpAndLockIter;
+        ~CLockingRef(void) { 
+            m_pLockableObj->Unlock();
+        }
+
+        TLockableObj * operator->(void) { return m_pLockableObj.GetPointer(); }
+
+    private:
+        CRef<TLockableObj> m_pLockableObj;
+    };
+    typedef CLockingRef<CRegexpWithLock> CCachedRegexp;
+
+    // careful! the key is compared as a *pointer*, NOT via
+    // strcmp or anything like that.  For safety, just use
+    // string literals.
+    typedef pair<const char *, CRegexp::TCompile> TRegexpKey;
+    typedef TRegexpWithLockRef TRegexpValue;
+    
+    class CRegexpCacheHandler : 
+        public CCacheElement_Handler<TRegexpKey, TRegexpValue>
+    {
+    public:
+        TRegexpValue CreateValue(const TRegexpKey & regexp_key )
+        {
+            return Ref(new CRegexpWithLock(
+                regexp_key.first, regexp_key.second));
+        }
+    };
+    
+    class CRegexpCache {
+    public:
+
+        CRegexpCache(void)
+            : m_Cache(100) { }
+
+        CCachedRegexp Get( const char * pattern, 
+            CRegexp::TCompile flags = CRegexp::fCompile_default )
+        {
+            TRegexpKey regexpKey(pattern, flags);
+            TRegexpWithLockRef regexpLockRef = m_Cache[regexpKey];
+            return CCachedRegexp(regexpLockRef.GetPointer());
+        }
+
+    private:
+        typedef CCache<TRegexpKey, TRegexpValue,
+            CRegexpCacheHandler> TUnderlyingCache;
+        TUnderlyingCache m_Cache;
     };
 
-    CCachedRegexp::TPatternToRegexpAndLockMap CCachedRegexp::ms_PatternToRegexpAndLockMap;
-    CMutex CCachedRegexp::ms_PatternToRegexpAndLockMap_Mutex;
-
-    CCachedRegexp::CCachedRegexp(const char *pattern, CRegexp::TCompile flags)
-    {
-        TPatternAndFlagsKey key(pattern, flags);
-
-        {
-            // lock as briefly as possible
-            CMutexGuard guard(ms_PatternToRegexpAndLockMap_Mutex);
-            m_regexpAndLockIter =
-                ms_PatternToRegexpAndLockMap.find(key);
-            if( m_regexpAndLockIter == ms_PatternToRegexpAndLockMap.end() ) {
-                // create CRegexp if not already created
-                SRegexpAndLock newRegexpAndLock;
-                newRegexpAndLock.m_pregexp = new CRegexp(pattern, flags);
-                m_regexpAndLockIter = ms_PatternToRegexpAndLockMap.insert(
-                    make_pair(key, newRegexpAndLock)).first;
-            }
-        }
-
-        m_regexpAndLockIter->second.m_pmutex->Lock();
-    }
-
-    CCachedRegexp::~CCachedRegexp(void)
-    {
-        m_regexpAndLockIter->second.m_pmutex->Unlock();
-    }
+    // the actual cache
+    CRegexpCache regexpCache;
 }
 
 // Constructor
@@ -1032,12 +1018,12 @@ void CNewCleanup_imp::GBblockBC (
 
     CLEAN_STRING_LIST (gbk, Keywords);
 
-    CCachedRegexp reassembly_regex(
+    CCachedRegexp reassembly_regex = regexpCache.Get(
         "^tpa[:_]reassembly$", 
         CRegexp::fCompile_ignore_case );
     EDIT_EACH_KEYWORD_ON_EMBLBLOCK(keyword_it, gbk) {
         string & sKeyword = *keyword_it;
-        if( reassembly_regex.IsMatch(sKeyword) ) {
+        if( reassembly_regex->IsMatch(sKeyword) ) {
             // remove the "re" in "reassembly"
             sKeyword.erase(4, 2);
             ChangeMade (CCleanupChange::eCleanQualifiers);
@@ -1461,11 +1447,12 @@ void CNewCleanup_imp::BiosourceBC (
                 // (e.g. "meters", etc. to "m.")
                 // Note that we do NOT count a match if it's just a number because 
                 // we can't be sure that the submitter wasn't thinking "feet" or whatever.
-                CCachedRegexp altitude_regex("^([+-]?[0-9]+(\\.[0-9]+)?) ?(m|meter[s]?|metre[s]?)\\.?$",
+                CCachedRegexp altitude_regex = regexpCache.Get(
+                    "^([+-]?[0-9]+(\\.[0-9]+)?) ?(m|meter[s]?|metre[s]?)\\.?$",
                     CRegexp::fCompile_ignore_case );
 
-                if( altitude_regex.IsMatch(altitude) ) {
-                    string new_altitude = altitude_regex.GetSub(altitude, 1); 
+                if( altitude_regex->IsMatch(altitude) ) {
+                    string new_altitude = altitude_regex->GetSub(altitude, 1); 
                     new_altitude += " m.";
                     if( altitude != new_altitude ) {
                         altitude = new_altitude;
@@ -1477,8 +1464,9 @@ void CNewCleanup_imp::BiosourceBC (
             if( chs == NCBI_SUBSOURCE(lat_lon) ) {
                 string &lat_lon = GET_MUTABLE(sbs, Name);
 
-                CCachedRegexp lat_lon_with_comma("^[-.0-9]+ ., [-.0-9]+ .$");
-                if( lat_lon_with_comma.IsMatch(lat_lon) ) {
+                CCachedRegexp lat_lon_with_comma = regexpCache.Get(
+                    "^[-.0-9]+ ., [-.0-9]+ .$");
+                if( lat_lon_with_comma->IsMatch(lat_lon) ) {
                     // remove the comma
                     SIZE_TYPE comma_pos = lat_lon.find(',');
                     _ASSERT(comma_pos != NPOS );
@@ -3335,8 +3323,8 @@ const char *s_FindKeyFromFeatDefType( const CSeq_feat &feat )
 static
 bool s_IsAllDigits( const string &str )
 {
-    CCachedRegexp all_digits_regex("^[0-9]+$");
-    return all_digits_regex.IsMatch(str);
+    CCachedRegexp all_digits_regex = regexpCache.Get("^[0-9]+$");
+    return all_digits_regex->IsMatch(str);
 }
 
 CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSeq_feat& feat)
@@ -4158,8 +4146,9 @@ void s_TokenizeTRnaString (const string &tRNA_string, list<string> &out_string_l
     // SGD Tx(NNN)c or Tx(NNN)c#, where x is the amino acid, c is the chromosome (A-P, Q for mito),
     // and optional # is presumably for individual tRNAs with different anticodons and the same
     // amino acid.
-    CCachedRegexp valid_sgd_regex("^[Tt][A-Za-z]\\(...\\)[A-Za-z]\\d?\\d?$");
-    if ( valid_sgd_regex.IsMatch(tRNA_string) ) {
+    CCachedRegexp valid_sgd_regex = regexpCache.Get(
+        "^[Tt][A-Za-z]\\(...\\)[A-Za-z]\\d?\\d?$");
+    if ( valid_sgd_regex->IsMatch(tRNA_string) ) {
         // parse SGD tRNA anticodon
         out_string_list.push_back(kEmptyStr);
         string &new_SGD_tRNA_anticodon = out_string_list.back();
@@ -4190,9 +4179,10 @@ void s_TokenizeTRnaString (const string &tRNA_string, list<string> &out_string_l
         if ( NStr::StartsWith(tRNA_token, "tRNA", NStr::eNocase) ) {
             tRNA_token = tRNA_token.substr(4);
         }
-        CCachedRegexp threeLettersPlusDigits("^[A-Za-z][A-Za-z][A-Za-z]\\d*$");
+        CCachedRegexp threeLettersPlusDigits = regexpCache.Get(
+            "^[A-Za-z][A-Za-z][A-Za-z]\\d*$");
         if (! tRNA_token.empty() ) {
-            if ( threeLettersPlusDigits.IsMatch(tRNA_token) ) {
+            if ( threeLettersPlusDigits->IsMatch(tRNA_token) ) {
                 tRNA_token = tRNA_token.substr(0, 3);
             }
             out_string_list.push_back(tRNA_token);
@@ -6478,9 +6468,10 @@ void CNewCleanup_imp::x_CleanupAndRepairInference( string &inference )
 
     // check if missing space after a prefix
     // e.g. "COORDINATES:foo" should become "COORDINATES: foo"
-    CCachedRegexp spaceInserter( "(COORDINATES|DESCRIPTION|EXISTENCE):[^ ]" );
-    if( spaceInserter.IsMatch( inference ) ) {
-        int location_just_beyond_match = spaceInserter.GetResults(0)[1];
+    CCachedRegexp spaceInserter = regexpCache.Get(
+        "(COORDINATES|DESCRIPTION|EXISTENCE):[^ ]" );
+    if( spaceInserter->IsMatch( inference ) ) {
+        int location_just_beyond_match = spaceInserter->GetResults(0)[1];
         inference.insert( inference.begin() + location_just_beyond_match - 1, ' ' );
     }
 
@@ -6680,9 +6671,9 @@ void CNewCleanup_imp::x_MendSatelliteQualifier( string &val )
         return;
     }
 
-    CCachedRegexp prefixRegexp("^(micro|mini|)satellite");
-    if( prefixRegexp.IsMatch(val) ) {
-        SIZE_TYPE spot_just_after_match = prefixRegexp.GetResults(0)[1];
+    CCachedRegexp prefixRegexp = regexpCache.Get("^(micro|mini|)satellite");
+    if( prefixRegexp->IsMatch(val) ) {
+        SIZE_TYPE spot_just_after_match = prefixRegexp->GetResults(0)[1];
         if( spot_just_after_match < val.length() && 
             val[spot_just_after_match] == ' ' ) 
         {
@@ -7697,8 +7688,8 @@ static
 bool s_NotExceptedRibosomalName( const string &name )
 {
     // we are "not excepted" if there is a non-space/non-digit somewhere after " ribosomal"
-    CCachedRegexp regex(" ribosomal.*[^ 0-9]");
-    return regex.IsMatch(name);
+    CCachedRegexp regex = regexpCache.Get(" ribosomal.*[^ 0-9]");
+    return regex->IsMatch(name);
 }
 
 
@@ -7709,16 +7700,17 @@ CNewCleanup_imp::x_RRNANameBC( string &name )
 
     if ( name.length() > 5 && s_NotExceptedRibosomalName (name)) {
         // suffix is *after* first match of suffix_regex
-        CCachedRegexp suffix_regex( " (ribosomal|rRNA) ( ?RNA)?( ?DNA)?( ?ribosomal)?" );
-        if( suffix_regex.IsMatch(name) ) {
+        CCachedRegexp suffix_regex = regexpCache.Get( 
+            " (ribosomal|rRNA) ( ?RNA)?( ?DNA)?( ?ribosomal)?" );
+        if( suffix_regex->IsMatch(name) ) {
 
             // extract suffix
-            const SIZE_TYPE suff_pos = ( suffix_regex.GetResults(0)[1] );
+            const SIZE_TYPE suff_pos = ( suffix_regex->GetResults(0)[1] );
             string suff = name.substr(suff_pos);
             NStr::TruncateSpacesInPlace(suff);
 
             // cut ribosomal stuff off of name
-            const SIZE_TYPE ribosomal_pos = suffix_regex.GetResults(0)[0];
+            const SIZE_TYPE ribosomal_pos = suffix_regex->GetResults(0)[0];
             name.resize( ribosomal_pos );
 
             name += " ribosomal RNA"; 
@@ -8294,8 +8286,10 @@ void CNewCleanup_imp::RnaFeatBC (
         {
             x_TranslateITSName( rna.SetExt().SetGen().SetProduct() );
         } else if( ! FIELD_IS_SET(rna, Ext) && STRING_FIELD_NOT_EMPTY(seq_feat, Comment) ) {
-            CCachedRegexp its_regex("internal transcribed spacer [123]", CRegexp::fCompile_ignore_case );
-            if( its_regex.IsMatch(GET_FIELD(seq_feat, Comment) ) ) {
+            CCachedRegexp its_regex = regexpCache.Get(
+                "internal transcribed spacer [123]", 
+                CRegexp::fCompile_ignore_case );
+            if( its_regex->IsMatch(GET_FIELD(seq_feat, Comment) ) ) {
                 rna.SetExt().SetName( GET_FIELD(seq_feat, Comment) );
                 ChangeMade(CCleanupChange::eChangeRNAref);
                 RESET_FIELD(seq_feat, Comment) ;
