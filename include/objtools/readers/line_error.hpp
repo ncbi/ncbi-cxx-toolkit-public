@@ -163,7 +163,13 @@ public:
         }
     };
 
-    std::string
+    virtual const std::string&
+    ErrorMessage(void) const { 
+        static string empty("");
+        return empty; 
+    }
+
+    virtual std::string
     ProblemStr(void) const
     {
         return ProblemStr(Problem());
@@ -292,10 +298,11 @@ public:
         unsigned int uLine,
         const std::string & strFeatureName = string(""),
         const std::string & strQualifierName = string(""),
-        const std::string & strQualifierValue = string("") )
+        const std::string & strQualifierValue = string(""),
+        const std::string & strErrorMessage = string(""))
     : m_eProblem(eProblem), m_eSeverity( eSeverity ), m_strSeqId(strSeqId), m_uLine( uLine ), 
       m_strFeatureName(strFeatureName), m_strQualifierName(strQualifierName), 
-      m_strQualifierValue(strQualifierValue)
+      m_strQualifierValue(strQualifierValue), m_strErrorMessage(strErrorMessage)
      { }
     
     virtual ~CLineError(void) throw() {}
@@ -333,6 +340,18 @@ public:
     const std::string &
     QualifierValue(void) const { return m_strQualifierValue; }
         
+    virtual std::string
+    ProblemStr(void) const
+    {
+        if (m_eProblem == ILineError::eProblem_GeneralParsingError  &&
+                !ErrorMessage().empty()) {
+            return ErrorMessage();
+        }
+        return ILineError::ProblemStr(Problem());
+    }
+
+    const std::string &ErrorMessage(void) const { return m_strErrorMessage; }
+
 protected:
     EProblem m_eProblem;
     EDiagSev m_eSeverity;
@@ -341,6 +360,7 @@ protected:
     std::string m_strFeatureName;
     std::string m_strQualifierName;
     std::string m_strQualifierValue;
+    std::string m_strErrorMessage;
     TVecOfLines m_vecOfOtherLines;
 };
 
@@ -366,7 +386,7 @@ public:
         )
         : CObjReaderParseException( DIAG_COMPILE_INFO, 0, static_cast<CObjReaderParseException::EErrCode>(CException::eInvalid), strMessage, uLine,
         eDiag_Info ), 
-        m_eProblem(eProblem), m_strSeqId(strSeqId), m_uLineNumber(uLine), 
+        m_eProblem(eProblem), m_strSeqId(strSeqId), m_uLineNumber(uLine), m_strErrorMessage(strMessage),
         m_strFeatureName(strFeatureName), m_strQualifierName(strQualifierName), 
         m_strQualifierValue(strQualifierValue)
     {
@@ -377,8 +397,8 @@ public:
     CObjReaderLineException(const CObjReaderLineException & rhs ) :
         CObjReaderParseException( rhs ), 
             m_eProblem(rhs.Problem()), m_strSeqId(rhs.SeqId()), m_uLineNumber(rhs.Line()), 
-            m_strFeatureName(rhs.FeatureName()), m_strQualifierName(rhs.QualifierName()), 
-            m_strQualifierValue(rhs.QualifierValue())
+            m_strFeatureName(rhs.FeatureName()), m_strQualifierName(rhs.QualifierName()),
+            m_strErrorMessage(rhs.ErrorMessage()), m_strQualifierValue(rhs.QualifierValue())
     {
         SetSeverity( rhs.Severity() );
         x_InitErrCode(static_cast<CException::EErrCode>(rhs.x_GetErrCode()));
@@ -399,6 +419,16 @@ public:
     const std::string &FeatureName(void) const { return m_strFeatureName; }
     const std::string &QualifierName(void) const { return m_strQualifierName; }
     const std::string &QualifierValue(void) const { return m_strQualifierValue; }
+
+    const std::string &ErrorMessage(void) const { return m_strErrorMessage; }
+
+    std::string
+    ProblemStr() const {
+        if (!m_strErrorMessage.empty()) {
+            return m_strErrorMessage;
+        }
+        return ILineError::ProblemStr();
+    }
 
     std::string Message() const { return GetMsg(); }
     
@@ -424,6 +454,7 @@ protected:
     std::string m_strFeatureName;
     std::string m_strQualifierName;
     std::string m_strQualifierValue;
+    std::string m_strErrorMessage;
     TVecOfLines m_vecOfOtherLines;
 };
 
