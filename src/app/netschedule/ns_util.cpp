@@ -40,20 +40,6 @@
 BEGIN_NCBI_SCOPE
 
 
-string NS_FormatIPAddress(unsigned int ipaddr)
-{
-    unsigned int    hostaddr = CSocketAPI::HostToNetLong(ipaddr);
-    char            buf[32];
-
-    sprintf(buf, "%u.%u.%u.%u",
-                (hostaddr >> 24) & 0xff,
-                (hostaddr >> 16) & 0xff,
-                (hostaddr >> 8)  & 0xff,
-                 hostaddr        & 0xff);
-    return buf;
-}
-
-
 void    NS_ValidateConfigFile(const CNcbiRegistry &  reg)
 {
     // Walk all the qclass_... and queue_... sections and check that

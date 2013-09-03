@@ -39,7 +39,6 @@
 BEGIN_NCBI_SCOPE
 
 
-string  NS_FormatIPAddress(unsigned int ipaddr);
 void    NS_ValidateConfigFile(const CNcbiRegistry &  reg);
 
 

@@ -184,7 +184,7 @@ string CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
     if (m_UseHostname)
         m_Host = CSocketAPI::gethostname();
     else
-        m_Host = NS_FormatIPAddress(m_HostNetAddr);
+        m_Host = CSocketAPI::ntoa(m_HostNetAddr);
 
     m_InactivityTimeout = params.network_timeout;
 
