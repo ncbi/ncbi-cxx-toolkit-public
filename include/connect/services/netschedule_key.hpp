@@ -71,7 +71,7 @@ struct NCBI_XCONNECT_EXPORT CNetScheduleKey
     CNetScheduleKey() {}
 
     bool ParseJobKey(const string& key_str,
-            CCompoundIDPool::TInstance id_pool);
+            CCompoundIDPool::TInstance id_pool = NULL);
 
     unsigned version; ///< Key version
     string host; ///< Server name

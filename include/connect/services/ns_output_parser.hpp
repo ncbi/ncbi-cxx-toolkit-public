@@ -194,7 +194,7 @@ private:
 extern NCBI_XCONNECT_EXPORT
 void g_ProcessJobInfo(CNetScheduleAPI ns_api, const string& job_key,
         IJobInfoProcessor* processor, bool verbose,
-        CCompoundIDPool::TInstance id_pool);
+        CCompoundIDPool::TInstance id_pool = NULL);
 
 END_NCBI_SCOPE
 
