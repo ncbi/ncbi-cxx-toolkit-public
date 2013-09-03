@@ -9,7 +9,8 @@
 APP = bam_test
 SRC = bam_test
 
-LIB =   bamread xobjreadex submit xobjutil xobjsimple $(OBJMGR_LIBS) $(BAM_LIBS)
+LIB =   bamread $(BAM_LIBS) xobjreadex $(OBJREAD_LIBS) xobjutil xobjsimple \
+        $(OBJMGR_LIBS)
 LIBS =  $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects
