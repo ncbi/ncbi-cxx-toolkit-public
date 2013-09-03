@@ -839,7 +839,8 @@ public:
     ///   the gap mod text
     /// @param out_gap_mod_text
     ///   This holds the result.
-    static void GetGapModText(
+    static void
+    GetGapModText(
         const CSeq_gap & seq_gap,
         SGapModText & out_gap_mod_text );
 
