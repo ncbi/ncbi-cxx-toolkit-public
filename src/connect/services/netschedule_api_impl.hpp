@@ -138,7 +138,7 @@ struct SNetScheduleAPIImpl : public CObject
 
     CNetServer GetServer(const string& job_key)
     {
-        CNetScheduleKey nskey(job_key);
+        CNetScheduleKey nskey(job_key, m_CompoundIDPool);
         return m_Service.GetServer(nskey.host, nskey.port);
     }
 
@@ -175,6 +175,8 @@ struct SNetScheduleAPIImpl : public CObject
 
     CNetScheduleExecutor::EJobAffinityPreference m_AffinityPreference;
     bool m_UseEmbeddedStorage;
+
+    CCompoundIDPool m_CompoundIDPool;
 };
 
 

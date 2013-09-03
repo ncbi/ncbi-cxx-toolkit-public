@@ -761,6 +761,11 @@ void CNetScheduleAPI::SetAuthParam(const string& param_name,
     UpdateAuthString();
 }
 
+CCompoundIDPool CNetScheduleAPI::GetCompoundIDPool()
+{
+    return m_Impl->m_CompoundIDPool;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 /// @internal

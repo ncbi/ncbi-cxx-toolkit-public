@@ -829,7 +829,7 @@ CCgi2RCgiApp::EJobPhase CCgi2RCgiApp::x_CheckJobStatus(
 
         CNetService service(m_NetScheduleAPI.GetService());
 
-        CNetScheduleKey key(job_key);
+        CNetScheduleKey key(job_key, m_NetScheduleAPI.GetCompoundIDPool());
 
         CNetServer bad_server(service.GetServer(key.host, key.port));
 

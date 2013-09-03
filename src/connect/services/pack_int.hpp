@@ -57,7 +57,7 @@ BEGIN_NCBI_SCOPE
 ///     must check whether the returned value is greater than
 ///     'dst_size'.  This, of course, is not necessary if 'dst_size'
 ///     is guaranteed to be at least 9 bytes long, which is the
-///     maximum possible packed length of a 8-byte number.
+///     maximum possible packed length of an 8-byte number.
 /// @param number
 ///     The integer to pack.
 ///

@@ -33,6 +33,7 @@
  *
  */
 
+#include <connect/services/compound_id.hpp>
 
 #include <connect/connect_export.h>
 #include <connect/ncbi_connutil.h>
@@ -63,12 +64,14 @@ struct NCBI_XCONNECT_EXPORT CNetScheduleKey
 {
     /// Parse NetSchedule key; throw an exception
     /// if the key cannot be recognized.
-    explicit CNetScheduleKey(const string& str_key);
+    explicit CNetScheduleKey(const string& str_key,
+            CCompoundIDPool::TInstance id_pool = NULL);
 
     /// Construct an empty object for use with ParseJobKey().
     CNetScheduleKey() {}
 
-    bool ParseJobKey(const string& key_str);
+    bool ParseJobKey(const string& key_str,
+            CCompoundIDPool::TInstance id_pool);
 
     unsigned version; ///< Key version
     string host; ///< Server name
@@ -86,7 +89,14 @@ public:
     string Generate(unsigned id) const;
     void Generate(string* key, unsigned id) const;
 
+    string GenerateCompoundID(unsigned id, CCompoundIDPool id_pool) const;
+
 private:
+    bool m_UseIPv4Addr;
+    unsigned m_HostIPv4Addr;
+    string m_HostName;
+    unsigned short m_Port;
+    string m_QueueName;
     string m_V1HostPortQueue;
 };
 

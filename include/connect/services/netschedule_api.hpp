@@ -41,6 +41,7 @@
 #include <connect/services/netschedule_key.hpp>
 #include <connect/services/netschedule_api_expt.hpp>
 #include <connect/services/netservice_api.hpp>
+#include <connect/services/compound_id.hpp>
 
 #include <corelib/plugin_manager.hpp>
 
@@ -268,6 +269,9 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     /// This method is for use by worker nodes.
     /// @internal
     void SetAuthParam(const string& param_name, const string& param_value);
+
+    /// @internal
+    CCompoundIDPool GetCompoundIDPool();
 };
 
 

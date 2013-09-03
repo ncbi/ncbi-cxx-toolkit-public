@@ -46,16 +46,18 @@ BEGIN_NCBI_SCOPE
 #define NS_KEY_V1_PREFIX "JSID_01_"
 #define NS_KEY_V1_PREFIX_LEN (sizeof(NS_KEY_V1_PREFIX) - 1)
 
-CNetScheduleKey::CNetScheduleKey(const string& key_str)
+CNetScheduleKey::CNetScheduleKey(const string& key_str,
+        CCompoundIDPool::TInstance id_pool)
 {
-    if (!ParseJobKey(key_str)) {
+    if (!ParseJobKey(key_str, id_pool)) {
         NCBI_THROW_FMT(CNetScheduleException, eKeyFormatError,
                 "Invalid job key format: '" <<
                         NStr::PrintableString(key_str) << '\'');
     }
 }
 
-bool CNetScheduleKey::ParseJobKey(const string& key_str)
+bool CNetScheduleKey::ParseJobKey(const string& key_str,
+        CCompoundIDPool::TInstance id_pool)
 {
     // Parses several notations for job id:
     // version 1:
@@ -116,7 +118,41 @@ bool CNetScheduleKey::ParseJobKey(const string& key_str)
         queue.assign(token_begin, ch - token_begin);
 
         return true;
-    } else if (isdigit(*ch)) {
+    } else if (id_pool != NULL) {
+        try {
+            CCompoundIDPool pool_obj(id_pool);
+            CCompoundID cid(pool_obj.FromString(key_str));
+            version = 2;
+            CCompoundIDField field(cid.GetFirst(eCIT_ID));
+            if (field) {
+                id = (unsigned) field.GetID();
+                field = cid.GetFirst(eCIT_DatabaseName);
+                if (field)
+                    queue = field.GetDatabaseName();
+                field = cid.GetFirst(eCIT_IPv4SockAddr);
+                if (field) {
+                    host = CSocketAPI::ntoa(field.GetIPv4Address());
+                    port = field.GetPort();
+                    return true;
+                } else {
+                    field = cid.GetFirst(eCIT_Host);
+                    if (field) {
+                        host = field.GetHost();
+                        field = cid.GetFirst(eCIT_Port);
+                        if (field) {
+                            port = field.GetPort();
+                            return true;
+                        }
+                    }
+                }
+            }
+        }
+        catch (CCompoundIDException& e) {
+            LOG_POST(e);
+        }
+    }
+
+    if (isdigit(*ch)) {
         version = 0;
         id = (unsigned) atoi(ch);
         return true;
@@ -131,6 +167,14 @@ CNetScheduleKeyGenerator::CNetScheduleKeyGenerator(
         const string& host, unsigned port, const string& queue_name)
 {
     SNetScheduleAPIImpl::VerifyQueueNameAlphabet(queue_name);
+
+    m_UseIPv4Addr = CSocketAPI::isip(host, true);
+    if (m_UseIPv4Addr)
+        m_HostIPv4Addr = CSocketAPI::gethostbyname(host);
+    else
+        m_HostName = host;
+    m_Port = (unsigned short) port;
+    m_QueueName = queue_name;
 
     string port_str(NStr::IntToString(port));
 
@@ -157,5 +201,26 @@ void CNetScheduleKeyGenerator::Generate(string* key, unsigned id) const
     key->append(m_V1HostPortQueue);
 }
 
+string CNetScheduleKeyGenerator::GenerateCompoundID(unsigned id,
+        CCompoundIDPool id_pool) const
+{
+    CCompoundID ns_key_cid = id_pool.NewID(eCIC_NetScheduleKey);
+
+    ns_key_cid.AppendID(id);
+
+    if (m_UseIPv4Addr)
+        ns_key_cid.AppendIPv4SockAddr(m_HostIPv4Addr, m_Port);
+    else {
+        ns_key_cid.AppendHost(m_HostName);
+        ns_key_cid.AppendPort(m_Port);
+    }
+
+    if (!m_QueueName.empty())
+        ns_key_cid.AppendDatabaseName(m_QueueName);
+
+    ns_key_cid.AppendCurrentTime();
+
+    return ns_key_cid.ToString();
+}
 
 END_NCBI_SCOPE

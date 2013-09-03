@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 
 #include "pack_int.hpp"
+#include "compound_id_impl.hpp"
 
 #include <connect/services/netstorage.hpp>
 #include <connect/services/error_codes.hpp>
@@ -75,53 +76,6 @@ CNetFileID::CNetFileID(TNetStorageFlags flags,
     x_SetUniqueKeyFromUserDefinedKey();
 }
 
-#define SCRAMBLE_PASS() \
-    pos = seq; \
-    counter = seq_len - 1; \
-    do { \
-        pos[1] ^= *pos ^ length_factor--; \
-        ++pos; \
-    } while (--counter > 0);
-
-static void s_Scramble(unsigned char* seq, size_t seq_len)
-{
-    if (seq_len > 1) {
-        unsigned char length_factor = ((unsigned char) seq_len << 1) - 1;
-        unsigned char* pos;
-        size_t counter;
-
-        SCRAMBLE_PASS();
-
-        *seq ^= *pos ^ length_factor--;
-
-        SCRAMBLE_PASS();
-    }
-}
-
-#define UNSCRAMBLE_PASS() \
-    counter = seq_len - 1; \
-    do { \
-        *pos ^= pos[-1] ^ ++length_factor; \
-        --pos; \
-    } while (--counter > 0);
-
-static void s_Unscramble(unsigned char* seq, size_t seq_len)
-{
-    if (seq_len > 1) {
-        unsigned char length_factor = 0;
-        unsigned char* pos = seq + seq_len - 1;
-        size_t counter;
-
-        UNSCRAMBLE_PASS();
-
-        pos = seq + seq_len - 1;
-
-        *seq ^= *pos ^ ++length_factor;
-
-        UNSCRAMBLE_PASS();
-    }
-}
-
 #define NET_FILE_ID_SIGNATURE "NF"
 #define NET_FILE_ID_SIGNATURE_LEN (sizeof(NET_FILE_ID_SIGNATURE) - 1)
 #define MIN_BINARY_ID_LEN (NET_FILE_ID_SIGNATURE_LEN + \
@@ -133,10 +87,6 @@ static void s_Unscramble(unsigned char* seq, size_t seq_len)
 #define THROW_INVALID_ID_ERROR(packed_id) \
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg, \
                 "Invalid NetFile ID '" << packed_id << '\'')
-
-#define CLEAN_UP_AND_THROW_INVALID_ID_ERROR(binary_id, packed_id) \
-        delete[] binary_id; \
-        THROW_INVALID_ID_ERROR(packed_id)
 
 static size_t s_LoadString(string& dst, unsigned char* src, size_t& src_len)
 {
@@ -159,29 +109,27 @@ CNetFileID::CNetFileID(const string& packed_id) :
     m_Dirty(false),
     m_PackedID(packed_id)
 {
-    size_t binary_id_len;
-    base64url_decode(NULL, packed_id.length(), NULL, 0, &binary_id_len);
+    string binary_id;
+
+    if (!g_UnpackID(packed_id, binary_id)) {
+        THROW_INVALID_ID_ERROR(packed_id);
+    }
+
+    size_t binary_id_len = binary_id.length();
 
     if (binary_id_len < MIN_BINARY_ID_LEN) {
         THROW_INVALID_ID_ERROR(packed_id);
     }
 
-    unsigned char* binary_id = new unsigned char[binary_id_len];
-
-    if (base64url_decode(packed_id.data(), packed_id.length(),
-            binary_id, binary_id_len, NULL) != eBase64_OK) {
-        CLEAN_UP_AND_THROW_INVALID_ID_ERROR(binary_id, packed_id);
-    }
-
-    s_Unscramble(binary_id, binary_id_len);
+    unsigned char* ptr = (unsigned char*) const_cast<char*>(binary_id.data());
 
     // 1. Check the signature.
-    if (memcmp(binary_id, NET_FILE_ID_SIGNATURE,
+    if (memcmp(ptr, NET_FILE_ID_SIGNATURE,
             NET_FILE_ID_SIGNATURE_LEN) != 0) {
-        CLEAN_UP_AND_THROW_INVALID_ID_ERROR(binary_id, packed_id);
+        THROW_INVALID_ID_ERROR(packed_id);
     }
 
-    unsigned char* ptr = binary_id + NET_FILE_ID_SIGNATURE_LEN;
+    ptr += NET_FILE_ID_SIGNATURE_LEN;
 
     // 2. Restore the storage flags.
     m_StorageFlags = (TNetStorageFlags) *ptr++;
@@ -206,14 +154,14 @@ CNetFileID::CNetFileID(const string& packed_id) :
         // 4.1. Load file creation timestamp.
         packed_int_len = g_UnpackInteger(ptr, binary_id_len, &m_Timestamp);
         if (packed_int_len == 0 || binary_id_len <= packed_int_len) {
-            CLEAN_UP_AND_THROW_INVALID_ID_ERROR(binary_id, packed_id);
+            THROW_INVALID_ID_ERROR(packed_id);
         }
         binary_id_len -= packed_int_len;
         ptr += packed_int_len;
         // 4.2. Load the random ID.
         packed_int_len = g_UnpackInteger(ptr, binary_id_len, &m_Random);
         if (packed_int_len == 0 || binary_id_len < packed_int_len) {
-            CLEAN_UP_AND_THROW_INVALID_ID_ERROR(binary_id, packed_id);
+            THROW_INVALID_ID_ERROR(packed_id);
         }
         binary_id_len -= packed_int_len;
         ptr += packed_int_len;
@@ -229,7 +177,7 @@ CNetFileID::CNetFileID(const string& packed_id) :
         ptr += s_LoadString(m_CacheName, ptr, binary_id_len);
         // 5.3. Load the primary NetCache server IP.
         if (binary_id_len < sizeof(m_NetCacheIP) + sizeof(m_NetCachePort)) {
-            CLEAN_UP_AND_THROW_INVALID_ID_ERROR(binary_id, packed_id);
+            THROW_INVALID_ID_ERROR(packed_id);
         }
         binary_id_len -= sizeof(m_NetCacheIP) + sizeof(m_NetCachePort);
         memcpy(&m_NetCacheIP, ptr, sizeof(m_NetCacheIP));
@@ -245,7 +193,7 @@ CNetFileID::CNetFileID(const string& packed_id) :
     if (m_StorageFlags & fNST_Cacheable) {
         packed_int_len = g_UnpackInteger(ptr, binary_id_len, &m_CacheChunkSize);
         if (packed_int_len == 0 || binary_id_len < packed_int_len) {
-            CLEAN_UP_AND_THROW_INVALID_ID_ERROR(binary_id, packed_id);
+            THROW_INVALID_ID_ERROR(packed_id);
         }
         binary_id_len -= packed_int_len;
         ptr += packed_int_len;
@@ -255,14 +203,12 @@ CNetFileID::CNetFileID(const string& packed_id) :
     if (m_Fields & fNFID_TTL) {
         packed_int_len = g_UnpackInteger(ptr, binary_id_len, &m_TTL);
         if (packed_int_len == 0 || binary_id_len < packed_int_len) {
-            CLEAN_UP_AND_THROW_INVALID_ID_ERROR(binary_id, packed_id);
+            THROW_INVALID_ID_ERROR(packed_id);
         }
         // Because this is the last field, pointer adjustment is not needed:
         // binary_id_len -= packed_int_len;
         // ptr += packed_int_len;
     }
-
-    delete[] binary_id;
 }
 
 void CNetFileID::ClearNetICacheParams()
@@ -380,20 +326,7 @@ void CNetFileID::Pack()
         ptr += g_PackInteger(ptr, 9, m_TTL);
 
     // Now pack it all up.
-    size_t binary_id_len = ptr - binary_id;
-    size_t packed_id_len;
-
-    s_Scramble(binary_id, binary_id_len);
-
-    base64url_encode(NULL, binary_id_len, NULL, 0, &packed_id_len);
-
-    m_PackedID.resize(packed_id_len);
-
-    m_PackedID[0] = '\0';
-
-    base64url_encode(binary_id, binary_id_len,
-            const_cast<char*>(m_PackedID.data()),
-            packed_id_len, NULL);
+    g_PackID(binary_id, ptr - binary_id, m_PackedID);
 
     delete[] binary_id;
 

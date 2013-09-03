@@ -695,9 +695,10 @@ void CJobInfoToJSON::ProcessRawLine(const string& line)
 }
 
 void g_ProcessJobInfo(CNetScheduleAPI ns_api, const string& job_key,
-        IJobInfoProcessor* processor, bool verbose)
+        IJobInfoProcessor* processor, bool verbose,
+        CCompoundIDPool::TInstance id_pool)
 {
-    processor->ProcessJobMeta(CNetScheduleKey(job_key));
+    processor->ProcessJobMeta(CNetScheduleKey(job_key, id_pool));
 
     if (verbose) {
         CNetServerMultilineCmdOutput output(ns_api.GetAdmin().DumpJob(job_key));
