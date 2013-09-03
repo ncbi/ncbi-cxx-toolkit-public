@@ -164,16 +164,29 @@ public:
     /// data.  Please see the example in the
     /// class comment. Outside users should not use this class.
     struct NCBI_XUTIL_EXPORT SCellStream : public CObject {
+        typedef CObject TParent;
         /// Give this a reference to its parent table so it
         /// can add the cells to it.  Note the "friend" declaration
         /// farther below.
         SCellStream(CTablePrinter * pParentTable) 
             : m_pParentTable(pParentTable) { }
 
-        /// Cell is printed by destructor
-        ~SCellStream(void) {
-            m_pParentTable->x_AddCellValue(
-                CNcbiOstrstreamToString(m_cellValueStrm));
+        /// Cell is printed after destruction of this SCellStream.
+        /// Since printing can throw, we can't do the printing in
+        /// the destructor per se.
+        void DeleteThis(void) {
+            // remember some information before this object is destroyed
+            CTablePrinter * pParentTable = m_pParentTable;
+            string sStringToPrint = CNcbiOstrstreamToString(m_cellValueStrm);
+
+            // call parent's version of destructor
+            // WARNING: Be careful not to reference any fields or methods
+            // after this point, since the object is probably deleted.
+            TParent::DeleteThis();
+
+            // this can throw:
+            pParentTable->x_AddCellValue(
+                sStringToPrint );
         }
 
         /// SCellStream is not itself an ostream, so we
