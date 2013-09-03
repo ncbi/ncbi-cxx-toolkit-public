@@ -207,7 +207,8 @@ vector<Int8> CBam2Seq_graph::CollectCoverage(CBamDb& db)
         if ( end > ref_length ) {
             if ( ++invalid_align_count <= kWarnLongAlignCount ) {
                 ERR_POST_X(5, Warning << "CBam2Seq_graph: "
-                           "alignment is out of refseq bounds " << pos << ": " << size
+                           "alignment is out of refseq bounds " <<
+                           GetRefLabel() << " @ " << pos << ": " << size
                            << ", CIGAR: "<< ait.GetCIGAR());
             }
             else if ( invalid_align_count == kWarnLongAlignCount+1 ) {
@@ -227,7 +228,8 @@ vector<Int8> CBam2Seq_graph::CollectCoverage(CBamDb& db)
         if ( size > kWarnLongAlignThreshold ) {
             if ( ++long_align_count <= kWarnLongAlignCount ) {
                 ERR_POST_X(3, Warning << "CBam2Seq_graph: "
-                           "alignment is too long at " << pos << ": " << size
+                           "alignment is too long at " <<
+                           GetRefLabel() << " @ " << pos << ": " << size
                            << ", CIGAR: "<< ait.GetCIGAR());
             }
             else if ( long_align_count == kWarnLongAlignCount+1 ) {
