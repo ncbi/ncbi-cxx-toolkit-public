@@ -2951,7 +2951,12 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
                 _ASSERT(smci.GetType() == CSeqMap::eSeqGap);
                 if (smci.IsUnknownLength()) {
                     // conventional designation, regardless of nominal length
-                    m_Out << ">?unk100";
+                    if( gap_size > 0 && (m_Flags & fKeepUnknGapNomLen) != 0 )
+                    {
+                        m_Out << ">?unk" << gap_size;
+                    } else {
+                        m_Out << ">?unk100";
+                    }
                 } else {
                     m_Out << ">?" << gap_size;
                 }

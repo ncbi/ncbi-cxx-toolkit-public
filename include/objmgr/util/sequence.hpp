@@ -735,17 +735,18 @@ END_SCOPE(sequence)
 class NCBI_XOBJUTIL_EXPORT CFastaOstream {
 public:
     enum EFlags {
-        fAssembleParts    = 0x001, ///< assemble FAR delta sequences; on by dflt
-        fInstantiateGaps  = 0x002, ///< honor specifed gap mode; on by default
-        fSuppressRange    = 0x004, ///< never include location details in defline
-        fReverseStrand    = 0x008, ///< flip the (implicit) location
-        fKeepGTSigns      = 0x010, ///< don't convert '>' to '_' in title
-        fMapMasksUp       = 0x020, ///< honor masks specified at a lower level
-        fMapMasksDown     = 0x040, ///< honor masks specified at a higher level
-        fNoExpensiveOps   = 0x080, ///< don't try too hard to find titles
-        fShowModifiers    = 0x100, ///< show key-value pair modifiers (e.g. "[organism=Homo sapiens]")
-        fNoDupCheck       = 0x200, ///< skip check for duplicate sequence IDs
-        fShowGapModifiers = 0x400, ///< show gap key-value pair modifiers (e.g. "[linkage-evidence=map;strobe]"). Only works if gap mode is eGM_count.
+        fAssembleParts     = 0x001, ///< assemble FAR delta sequences; on by dflt
+        fInstantiateGaps   = 0x002, ///< honor specifed gap mode; on by default
+        fSuppressRange     = 0x004, ///< never include location details in defline
+        fReverseStrand     = 0x008, ///< flip the (implicit) location
+        fKeepGTSigns       = 0x010, ///< don't convert '>' to '_' in title
+        fMapMasksUp        = 0x020, ///< honor masks specified at a lower level
+        fMapMasksDown      = 0x040, ///< honor masks specified at a higher level
+        fNoExpensiveOps    = 0x080, ///< don't try too hard to find titles
+        fShowModifiers     = 0x100, ///< show key-value pair modifiers (e.g. "[organism=Homo sapiens]")
+        fNoDupCheck        = 0x200, ///< skip check for duplicate sequence IDs
+        fShowGapModifiers  = 0x400, ///< show gap key-value pair modifiers (e.g. "[linkage-evidence=map;strobe]"). Only works if gap mode is eGM_count.
+        fKeepUnknGapNomLen = 0x800, ///< Keep unknown gap's nominal length.  That is, when a gap has an unknown length but nominal length, use that instead of just making it 100.
         // historically misnamed as eFlagName
         eAssembleParts   = fAssembleParts,
         eInstantiateGaps = fInstantiateGaps
