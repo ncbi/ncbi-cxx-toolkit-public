@@ -904,19 +904,19 @@ bool CGvfReader::xVariationSetSnvs(
 //  ---------------------------------------------------------------------------
 {
     string strReference;
+    CRef<CVariation_ref> pReference(new CVariation_ref);
     if (record.GetAttribute("Reference_seq", strReference)) {
-        CRef<CVariation_ref> pAllele(new CVariation_ref);
-        pAllele->SetData().SetInstance().SetType(
+        pReference->SetData().SetInstance().SetType(
             CVariation_inst::eType_identity);
         CRef<CDelta_item> pDelta(new CDelta_item);
         pDelta->SetSeq().SetLiteral().SetLength(strReference.size());
         pDelta->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(
             strReference);
-        pAllele->SetData().SetInstance().SetDelta().push_back(pDelta);
-        pAllele->SetData().SetInstance().SetObservation(
+        pReference->SetData().SetInstance().SetDelta().push_back(pDelta);
+        pReference->SetData().SetInstance().SetObservation(
             CVariation_inst::eObservation_asserted);
         pVariation->SetData().SetSet().SetVariations().push_back(
-            pAllele );
+            pReference );
     }
 
     string strAlleles;
@@ -931,6 +931,11 @@ bool CGvfReader::xVariationSetSnvs(
             string allele(*cit); 
             CRef<CVariation_ref> pAllele(new CVariation_ref);
             if (allele == strReference) {
+                pReference->SetVariant_prop().SetAllele_state(
+                    CVariantProperties::eAllele_state_homozygous);
+                pReference->SetData().SetInstance().SetObservation(
+                    CVariation_inst::eObservation_asserted |
+                    CVariation_inst::eObservation_variant);
                 continue;
             }
             if (alleles.size() == 1) {
@@ -945,7 +950,7 @@ bool CGvfReader::xVariationSetSnvs(
             replaces.push_back(*cit);
             pAllele->SetSNV(replaces, CVariation_ref::eSeqType_na);
             pAllele->SetData().SetInstance().SetObservation( 
-                CVariation_inst::eObservation_variant );
+                CVariation_inst::eObservation_variant);
             pAllele->SetData().SetInstance().SetType( 
                 CVariation_inst::eType_snv );
             pVariation->SetData().SetSet().SetVariations().push_back(
