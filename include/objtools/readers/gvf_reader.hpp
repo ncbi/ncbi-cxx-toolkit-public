@@ -145,7 +145,15 @@ protected:
         const CGvfReadRecord&,
         CRef<CVariation_ref> );
 
+    bool xVariationMakeDeletions(
+        const CGvfReadRecord&,
+        CRef<CVariation_ref> );
+
     bool xVariationSetInsertions(
+        const CGvfReadRecord&,
+        CRef< CVariation_ref > );
+
+    bool xVariationSetDeletions(
         const CGvfReadRecord&,
         CRef< CVariation_ref > );
 

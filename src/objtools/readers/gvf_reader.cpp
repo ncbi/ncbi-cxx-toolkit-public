@@ -434,7 +434,13 @@ bool CGvfReader::xFeatureSetLocationPoint(
     CRef< CSeq_id > pId = CReadUtil::AsSeqId(record.Id(), m_iFlags);
     CRef< CSeq_loc > pLocation( new CSeq_loc );
     pLocation->SetPnt().SetId(*pId);
-    pLocation->SetPnt().SetPoint(record.SeqStart());
+    if (record.Type() == "insertion") {
+        //for insertions, GVF uses insert-after logic while NCBI uses insert-before
+        pLocation->SetPnt().SetPoint(record.SeqStart()+1);
+    }
+    else {
+        pLocation->SetPnt().SetPoint(record.SeqStart());
+    }
     if (record.IsSetStrand()) {
         pLocation->SetStrand(record.Strand());
     }
@@ -517,6 +523,11 @@ bool CGvfReader::x_FeatureSetVariation(
     }
     else if (strType == "insertion") {
         if (!xVariationMakeInsertions( record, pVariation )) {
+            return false;
+        }
+    }
+    else if (strType == "deletion") {
+        if (!xVariationMakeDeletions( record, pVariation )) {
             return false;
         }
     }
@@ -608,7 +619,7 @@ bool CGvfReader::xVariationSetInsertions(
         }
     }
 //    pVariation->SetInsertion();
-    return pVariation;
+    return true;
 }
 
 
@@ -727,6 +738,33 @@ bool CGvfReader::xVariationMakeInsertions(
     return true;
 }
 
+//  ----------------------------------------------------------------------------
+bool CGvfReader::xVariationMakeDeletions(
+    const CGvfReadRecord& record,
+    CRef<CVariation_ref> pVariation )
+//  ----------------------------------------------------------------------------
+{
+    pVariation->SetData().SetSet().SetType( 
+        CVariation_ref::C_Data::C_Set::eData_set_type_package );
+
+    if ( ! xVariationSetId( record, pVariation ) ) {
+        return false;
+    }
+    if ( ! xVariationSetParent( record, pVariation ) ) {
+        return false;
+    }
+    if ( ! xVariationSetName( record, pVariation ) ) {
+        return false;
+    }
+    if ( ! xVariationSetProperties( record, pVariation ) ) {
+        return false;
+    }
+    if ( ! xVariationSetDeletions( record, pVariation ) ) {
+        return false;
+    }
+    return true;
+}
+
 //  ---------------------------------------------------------------------------
 bool CGvfReader::xVariationSetId(
     const CGvfReadRecord& record,
@@ -794,6 +832,66 @@ bool CGvfReader::xVariationSetProperties(
         }
         if ( strValidated == "0" ) {
             pVariation->SetVariant_prop().SetOther_validation( false );
+        }
+    }
+    return true;
+}
+
+//  ---------------------------------------------------------------------------
+bool CGvfReader::xVariationSetDeletions(
+    const CGvfReadRecord& record,
+    CRef< CVariation_ref > pVariation )
+//  ---------------------------------------------------------------------------
+{
+    string strReference;
+    if (record.GetAttribute("Reference_seq", strReference)) {
+        CRef<CVariation_ref> pAllele(new CVariation_ref);
+        pAllele->SetData().SetInstance().SetType(
+            CVariation_inst::eType_identity);
+        CRef<CDelta_item> pDelta(new CDelta_item);
+        pDelta->SetSeq().SetLiteral().SetLength(strReference.size());
+        pDelta->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(
+            strReference);
+        pAllele->SetData().SetInstance().SetDelta().push_back(pDelta);
+        pAllele->SetData().SetInstance().SetObservation(
+            CVariation_inst::eObservation_asserted);
+        pVariation->SetData().SetSet().SetVariations().push_back(
+            pAllele );
+    }
+    string strAlleles;
+    if ( record.GetAttribute( "Variant_seq", strAlleles ) ) {
+        list<string> alleles;
+        NStr::Split( strAlleles, ",", alleles );
+        alleles.sort();
+        alleles.unique();
+        for ( list<string>::const_iterator cit = alleles.begin(); 
+            cit != alleles.end(); ++cit )
+        {
+            string allele(*cit); 
+            if (allele == strReference) {
+                continue;
+            }
+            CRef<CVariation_ref> pAllele(new CVariation_ref);
+             if (alleles.size() == 1) {
+                pAllele->SetVariant_prop().SetAllele_state(
+                    CVariantProperties::eAllele_state_homozygous);
+            }
+            else {
+                pAllele->SetVariant_prop().SetAllele_state(
+                    CVariantProperties::eAllele_state_heterozygous);
+            }
+
+            CRef<CDelta_item> pDelta(new CDelta_item);
+            pDelta->SetSeq().SetThis();
+            pDelta->SetAction(CDelta_item::eAction_del_at);
+            pAllele->SetData().SetInstance().SetDelta().push_back(pDelta);
+
+            pAllele->SetData().SetInstance().SetType(CVariation_inst::eType_del);
+            pAllele->SetData().SetInstance().SetObservation( 
+                CVariation_inst::eObservation_variant );
+            
+            pVariation->SetData().SetSet().SetVariations().push_back(
+               pAllele );
         }
     }
     return true;
