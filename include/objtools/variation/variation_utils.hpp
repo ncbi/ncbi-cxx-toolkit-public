@@ -62,6 +62,7 @@ protected:
     static int x_GetSeqSize();
     static string m_Sequence;
     static string m_Accession;
+    static int m_Type;         // Current limitation - the same type for the whole placement/location.
 };
 
 template<class T>
@@ -97,6 +98,12 @@ public:
     static void x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right);
 };
 
+class CVariationNormalizationLeftInt :  public CVariationNormalization_base<CVariationNormalizationLeftInt>
+{
+public:
+    static bool x_ProcessShift(string &a, int &pos_left, int &pos_right);
+    static void x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right);
+};
 
 class CVariationNormalization
 {
@@ -104,7 +111,8 @@ public:
     enum ETargetContext {
        eDbSnp,
        eHGVS,
-       eVCF
+       eVCF,
+       eVarLoc
     };
     
 /////////////////////////////////////////////////////////
@@ -144,5 +152,8 @@ public:
     // Combine/collapse objects with same SeqLoc/Type
     // Simplify objects with common prefix in ref and all alts.
     // Identify mixed type objects, and split.
+
+    static void AlterToVarLoc(CRef<CVariation>& var, CScope& scope);
+    static void AlterToVarLoc(CRef<CSeq_annot>& var, CScope& scope);
  
 };

@@ -277,6 +277,7 @@ void CVariationUtilities::FixAlleles(CRef<CVariation> v, string old_ref, string 
 // Variation Normalization
 string CVariationNormalization_base_cache::m_Sequence;
 string CVariationNormalization_base_cache::m_Accession;
+int CVariationNormalization_base_cache::m_Type;         
 
 
 void CVariationNormalization_base_cache::x_rotate_left(string &v)
@@ -358,6 +359,7 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CVariation>& v, CScope &scope
                     if ( (*var2)->IsSetData() && (*var2)->SetData().IsInstance())
                     {
                         int type = (*var2)->SetData().SetInstance().SetType(); 
+                        m_Type = type;
                         if ((*var2)->SetData().SetInstance().IsSetDelta() && !(*var2)->SetData().SetInstance().SetDelta().empty()
                             && (*var2)->SetData().SetInstance().SetDelta().front()->IsSetSeq() && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().IsLiteral()
                          && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().IsSetSeq_data() 
@@ -448,6 +450,7 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
                     if ( (*inst)->IsSetData() && (*inst)->SetData().IsInstance())
                     {
                         int type = (*inst)->SetData().SetInstance().SetType(); 
+                        m_Type = type;
                         if (type == CVariation_inst::eType_del)
                             is_deletion = true;
                         if ((*inst)->GetData().GetInstance().IsSetDelta() && !(*inst)->GetData().GetInstance().GetDelta().empty() 
@@ -519,20 +522,23 @@ bool CVariationNormalizationLeft::x_ProcessShift(string &a, int &pos,int &pos_ri
             }
             x_rotate_left(a);
         }
-    if (!found && pos > a.size())
+    if (m_Type == CVariation_inst::eType_ins)
     {
-        pos -= a.size();
-        if (pos+a.size() < x_GetSeqSize())
-            for (unsigned int i=0; i<a.size(); i++)
-            {
-                string b = x_GetSeq(pos,a.size());
-                if (a == b) 
+        if (!found && pos > a.size())
+        {
+            pos -= a.size();
+            if (pos+a.size() < x_GetSeqSize())
+                for (unsigned int i=0; i<a.size(); i++)
                 {
-                    found = true;
-                    break;
+                    string b = x_GetSeq(pos,a.size());
+                    if (a == b) 
+                    {
+                        found = true;
+                        break;
+                    }
+                    x_rotate_left(a);
                 }
-                x_rotate_left(a);
-            }
+        }
     }
     if (!found) return false;
                             
@@ -583,20 +589,23 @@ bool CVariationNormalizationRight::x_ProcessShift(string &a, int &pos_left, int 
             }
             x_rotate_left(a);
         }
-    if (!found && pos > a.size())
+    if (m_Type == CVariation_inst::eType_ins)
     {
-        pos -= a.size();
-        if (pos+a.size() < x_GetSeqSize())
-            for (unsigned int i=0; i<a.size(); i++)
-            {
-                string b = x_GetSeq(pos,a.size());
-                if (a == b) 
+        if (!found && pos > a.size())
+        {
+            pos -= a.size();
+            if (pos+a.size() < x_GetSeqSize())
+                for (unsigned int i=0; i<a.size(); i++)
                 {
-                    found = true;
-                    break;
+                    string b = x_GetSeq(pos,a.size());
+                    if (a == b) 
+                    {
+                        found = true;
+                        break;
+                    }
+                    x_rotate_left(a);
                 }
-                x_rotate_left(a);
-            }
+        }
     }
     if (!found) return false;
                             
@@ -663,6 +672,41 @@ bool CVariationNormalizationInt::x_ProcessShift(string &a, int &pos_left, int &p
     return found_left & found_right;
 }
 
+bool CVariationNormalizationLeftInt::x_ProcessShift(string &a, int &pos_left, int &pos_right)
+{
+    bool r = CVariationNormalizationLeft::x_ProcessShift(a,pos_left,pos_right);
+    pos_right = pos_left;
+    if (m_Type == CVariation_inst::eType_ins)
+        return true;
+    return r;
+}
+
+void CVariationNormalizationLeftInt::x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right)
+{
+    if (m_Type == CVariation_inst::eType_ins && pos_left > 0)
+    {
+        if (loc.IsPnt())
+        {
+            CSeq_interval interval;
+            interval.SetFrom(pos_left-1);
+            interval.SetTo(pos_left);
+            if (loc.GetPnt().IsSetStrand())
+                interval.SetStrand( loc.GetPnt().GetStrand() );
+            interval.SetId().Assign(loc.GetPnt().GetId());
+            loc.SetInt().Assign(interval);
+        }
+        else
+        {
+            loc.SetInt().SetFrom(pos_left-1);
+            loc.SetInt().SetTo(pos_left); 
+        }
+        literal.SetSeq_data().SetIupacna().Set(a);
+    }
+    else
+        CVariationNormalizationLeft::x_ModifyLocation(loc,literal,a, pos_left, pos_right);
+}
+
+
 
 
 void CVariationNormalization::AlterToVCFVar(CRef<CVariation>& var, CScope &scope)
@@ -695,12 +739,23 @@ void CVariationNormalization::NormalizeAmbiguousVars(CRef<CSeq_annot>& var, CSco
     CVariationNormalizationInt::x_Shift(var,scope);
 }
 
+void CVariationNormalization::AlterToVarLoc(CRef<CVariation>& var, CScope& scope)
+{
+    CVariationNormalizationLeftInt::x_Shift(var,scope);
+}
+
+void CVariationNormalization::AlterToVarLoc(CRef<CSeq_annot>& var, CScope& scope)
+{
+    CVariationNormalizationLeftInt::x_Shift(var,scope);
+}
+
 void CVariationNormalization::NormalizeVariation(CRef<CVariation>& var, ETargetContext target_ctxt, CScope& scope)
 {
     switch(target_ctxt) {
     case eDbSnp : NormalizeAmbiguousVars(var,scope); break;
     case eHGVS : AlterToHGVSVar(var,scope); break;
     case eVCF : AlterToVCFVar(var,scope); break;
+    case eVarLoc : AlterToVarLoc(var,scope); break;
     default :  NCBI_THROW(CException, eUnknown, "Unknown context");
     }
 }
@@ -711,6 +766,8 @@ void CVariationNormalization::NormalizeVariation(CRef<CSeq_annot>& var, ETargetC
     case eDbSnp : NormalizeAmbiguousVars(var,scope); break;
     case eHGVS : AlterToHGVSVar(var,scope); break;
     case eVCF : AlterToVCFVar(var,scope); break;
+    case eVarLoc : AlterToVarLoc(var,scope); break;
     default :  NCBI_THROW(CException, eUnknown, "Unknown context");
     }
 }
+

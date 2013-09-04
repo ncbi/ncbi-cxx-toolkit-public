@@ -86,7 +86,7 @@ private:
     void GetAlleles(T &variations, set<string>& alleles);
     bool IsVariation(AutoPtr<CObjectIStream>& oistr);
     template<class T>
-    int CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<CObjectIStream>& var_in2, CRef<CScope> scope, bool verbose);
+    int CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<CObjectIStream>& var_in2, CVariationNormalization::ETargetContext context, CRef<CScope> scope, bool verbose);
 };
 
 
@@ -97,6 +97,9 @@ void CContextApp::Init(void)
     arg_desc->AddDefaultKey("i", "input", "Input file",CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
     arg_desc->AddDefaultKey("f", "fixed", "Fixed file",CArgDescriptions::eInputFile,"fixed",CArgDescriptions::fPreOpen);
     arg_desc->AddFlag("v", "Verbose output",true);
+    arg_desc->AddFlag("vcf", "VCF context",true);
+    arg_desc->AddFlag("hgvs", "HGVS context",true);
+    arg_desc->AddFlag("varloc", "VarLoc context",true);
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -238,7 +241,7 @@ bool  CContextApp::IsVariation(AutoPtr<CObjectIStream>& oistr)
 }
 
 template<class T>
-int CContextApp::CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<CObjectIStream>& var_in2, CRef<CScope> scope, bool verbose)
+int CContextApp::CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<CObjectIStream>& var_in2, CVariationNormalization::ETargetContext context, CRef<CScope> scope, bool verbose)
 {
     CRef<T> v1(new T);
     CRef<T> v2(new T);
@@ -249,7 +252,7 @@ int CContextApp::CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<COb
         cerr << endl << "Input Variation" << endl;
         cerr <<  MSerial_AsnText << *v1;
     }
-    CVariationNormalization::NormalizeVariation(v1,CVariationNormalization::eDbSnp,*scope);
+    CVariationNormalization::NormalizeVariation(v1,context,*scope);
     *var_in2 >> *v2;
     if (verbose)
     {
@@ -271,6 +274,18 @@ int CContextApp::Run()
     CNcbiIstream& istr = args["i"].AsInputFile();
     CNcbiIstream& fstr = args["f"].AsInputFile();
     bool verbose = args["v"].AsBoolean();
+    bool context_vcf = args["vcf"].AsBoolean();
+    bool context_hgvs = args["hgvs"].AsBoolean();
+    bool context_varloc = args["varloc"].AsBoolean();
+
+    CVariationNormalization::ETargetContext context = CVariationNormalization::eDbSnp;
+    if (context_vcf)
+        context = CVariationNormalization::eVCF;
+    else if (context_hgvs)
+        context = CVariationNormalization::eHGVS;
+    else if (context_varloc)
+        context = CVariationNormalization::eVarLoc;
+
 
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
     CRef<CScope> scope(new CScope(*object_manager));
@@ -289,9 +304,9 @@ int CContextApp::Run()
     while (!var_in1->EndOfData() && !var_in2->EndOfData())
     {
         if (is_variation)
-            n += CorrectAndCompare<CVariation>(var_in1, var_in2, scope,verbose);
+            n += CorrectAndCompare<CVariation>(var_in1, var_in2, context, scope,verbose);
         else
-            n += CorrectAndCompare<CSeq_annot>(var_in1, var_in2, scope,verbose);
+            n += CorrectAndCompare<CSeq_annot>(var_in1, var_in2, context, scope,verbose);
     }
     if (verbose)
         cerr << endl << "Number of inconsistencies: " << n << endl;

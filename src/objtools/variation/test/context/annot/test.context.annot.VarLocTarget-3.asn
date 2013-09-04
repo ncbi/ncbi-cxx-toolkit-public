@@ -1,4 +1,4 @@
-iSeq-annot ::= {
+Seq-annot ::= {
   data ftable {
     {
       data variation {
