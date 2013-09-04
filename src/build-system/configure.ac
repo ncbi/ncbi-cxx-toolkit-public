@@ -1064,9 +1064,7 @@ case "$host_os:$compiler" in
    # "incomplete type is not allowed" should be an error, not a warning!
    CFLAGS="-we70 $CFLAGS"
    CXXFLAGS="-we70 $CXXFLAGS"
-   case "$compiler_version" in
-      1[[1-9]]?? ) MATH_LIBS=-Wl,-lm ;; # avoid static libimf in shared libs
-   esac
+   MATH_LIBS=-Wl,-lm # avoid static libimf in shared libs
    ;;
 
  irix*:GCC )
@@ -5297,7 +5295,7 @@ if test "$with_wxwidgets" != "no" ; then
       [if test -x "$wxconf" ; then
           WXWIDGETS_INCLUDE="$baseflags `"$wxconf" $wxcfflags --cflags`"
           NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS, ["$wxconf" $wxcfflags --libs],
-             [$libsed; ])
+             [$libsed; s/ -lm / /g;])
 
           CPPFLAGS="$WXWIDGETS_INCLUDE $orig_CPPFLAGS"
           LIBS="$WXWIDGETS_LIBS $orig_LIBS"
@@ -5337,9 +5335,9 @@ else
       WXWIDGETS_INCLUDE="$baseflags `"$wxconf" $wxcfflags --cflags`"
    fi
    NCBI_RPATHIFY_OUTPUT(WXWIDGETS_LIBS, [$wxconf $wxcfflags --libs $wxlibs],
-      [$libsed; ])
+      [$libsed; s/ -lm / /g;])
    WXWIDGETS_STATIC_LIBS=`"$wxconf" $wxcfflags --libs --static $wxlibs \
-      2>/dev/null | sed -e "$basesed"`
+      2>/dev/null | sed -e "$basesed; s/ -lm / /g;"`
    if test -n "$WXWIDGETS_STATIC_LIBS"; then
       # Allow direct use of underlying libraries with strict linkers
       WXWIDGETS_LIBS="$WXWIDGETS_LIBS `echo $WXWIDGETS_STATIC_LIBS | sed -e 's/.*\.a *//'`"
