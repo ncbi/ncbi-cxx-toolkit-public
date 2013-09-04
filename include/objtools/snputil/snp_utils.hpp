@@ -40,6 +40,7 @@
 
 #include <objmgr/feat_ci.hpp>
 #include <objects/variation/Variation.hpp>
+#include <objects/general/Dbtag.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seqfeat/Delta_item.hpp>
