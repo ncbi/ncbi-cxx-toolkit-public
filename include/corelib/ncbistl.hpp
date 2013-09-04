@@ -204,6 +204,27 @@ BEGIN_NCBI_SCOPE
 typedef std::string CStringUTF8;
 END_NCBI_SCOPE
 
+#ifdef NCBI_HAVE_CXX11
+// Avoid (copious) warnings from using auto_ptr in C++ '11.
+#  if defined(_GLIBCXX_DEPRECATED_ATTR)
+#    undef _GLIBCXX_DEPRECATED_ATTR
+#    define _GLIBCXX_DEPRECATED_ATTR /* temporarily empty */
+#    include <backward/auto_ptr.h>
+#    undef _GLIBCXX_DEPRECATED_ATTR
+#    define _GLIBCXX_DEPRECATED_ATTR NCBI_DEPRECATED
+#  elif defined(_GLIBCXX_DEPRECATED)
+#    include <ext/concurrence.h>
+#    if __cplusplus >= 201103L
+#      include <bits/unique_ptr.h>
+#      include <bits/shared_ptr.h>
+#    endif
+#    undef _GLIBCXX_DEPRECATED
+#    define _GLIBCXX_DEPRECATED /* temporarily empty */
+#    include <backward/auto_ptr.h>
+#    undef _GLIBCXX_DEPRECATED
+#    define _GLIBCXX_DEPRECATED NCBI_DEPRECATED
+#  endif
+#endif
 
 /* @} */
 
