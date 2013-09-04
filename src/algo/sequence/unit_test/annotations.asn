@@ -9913,3 +9913,79 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+      },
+      partial TRUE,
+      location packed-int {
+        {
+          from 4690,
+          to 5583,
+          strand plus,
+          id gi 17158061,
+          fuzz-to lim circle
+        },
+        {
+          from 0,
+          to 1445,
+          strand plus,
+          id gi 17158061,
+          fuzz-from lim circle,
+          fuzz-to lim gt
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      partial TRUE,
+      except TRUE,
+      product whole local str "CDNA_50",
+      location packed-int {
+        {
+          from 4690,
+          to 5583,
+          strand plus,
+          id gi 17158061
+        },
+        {
+          from 0,
+          to 1445,
+          strand plus,
+          id gi 17158061,
+          fuzz-to lim gt
+        }
+      },
+      except-text "unclassified transcription discrepancy"
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        }
+      },
+      partial TRUE,
+      product whole local str "PROT_50",
+      location packed-int {
+        {
+          from 4690,
+          to 5583,
+          strand plus,
+          id gi 17158061,
+          fuzz-to lim circle
+        },
+        {
+          from 0,
+          to 1445,
+          strand plus,
+          id gi 17158061,
+          fuzz-from lim circle,
+          fuzz-to lim gt
+        }
+      }
+    }
+  }
+}

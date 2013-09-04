@@ -107,7 +107,8 @@ static bool s_CompareFeatRefs(const CRef<CSeq_feat>& ref1,
 }
 
 void s_CompareFtables(const CSeq_annot::TData::TFtable &actual,
-                      const CSeq_annot::TData::TFtable &expected)
+                      const CSeq_annot::TData::TFtable &expected,
+                      const string& compared_features)
 {
         CSeq_annot::TData::TFtable::const_iterator actual_iter =
             actual.begin();
@@ -121,14 +122,18 @@ void s_CompareFtables(const CSeq_annot::TData::TFtable &actual,
             bool display = false;
             const CSeq_feat& f1 = **actual_iter;
             const CSeq_feat& f2 = **expected_iter;
-            BOOST_CHECK(f1.GetData().GetSubtype() == f2.GetData().GetSubtype());
-            BOOST_CHECK(f1.GetLocation().Equals(f2.GetLocation()));
+            BOOST_CHECK_MESSAGE(f1.GetData().GetSubtype() == f2.GetData().GetSubtype(),
+                                compared_features << ": f1.GetData().GetSubtype() == f2.GetData().GetSubtype() failed ["
+                                << f1.GetData().GetSubtype() << " != " << f2.GetData().GetSubtype() << "]");
+            BOOST_CHECK_MESSAGE(f1.GetLocation().Equals(f2.GetLocation()),
+                                compared_features << ": f1.GetLocation().Equals(f2.GetLocation() failed");
             if ( !f1.GetLocation().Equals(f2.GetLocation()) ) {
                 display = true;
             }
 
-            BOOST_CHECK_EQUAL(f1.IsSetPartial()  &&  f1.GetPartial(),
-                              f2.IsSetPartial()  &&  f2.GetPartial());
+            BOOST_CHECK_MESSAGE((f1.IsSetPartial()  &&  f1.GetPartial()) ==
+                                (f2.IsSetPartial()  &&  f2.GetPartial()),
+                                compared_features << ": (f1.IsSetPartial()  &&  f1.GetPartial()) == (f2.IsSetPartial()  &&  f2.GetPartial()) failed");
             if ( (f1.IsSetPartial()  &&  f1.GetPartial()) !=
                  (f2.IsSetPartial()  &&  f2.GetPartial()) ) {
                 display = true;
@@ -433,7 +438,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
         const CSeq_annot::C_Data::TFtable &expected_features = 
             expected_annot.GetData().GetFtable();
 
-        s_CompareFtables(actual_features, expected_features);
+        s_CompareFtables(actual_features, expected_features, "Main annotation");
     }
 
     generator.SetFlags(default_flags);
@@ -443,7 +448,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
     if (combined_annot_with_omission_os.get() != NULL) {
         *combined_annot_with_omission_os << actual_combined_annot_with_omission;
     }
-    s_CompareFtables(actual_combined_features_with_omission, expected_combined_features_with_omission);
+    s_CompareFtables(actual_combined_features_with_omission, expected_combined_features_with_omission, "combined_features_with_omission");
 
     CBioseq_set seqs;
     generator.ConvertAlignToAnnot(combined_aligns, actual_combined_annot, seqs);
@@ -457,7 +462,7 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
     if(combined_annot_os.get() != NULL) {
         *combined_annot_os << actual_combined_annot;
     }
-    s_CompareFtables(actual_combined_features, expected_combined_features);
+    s_CompareFtables(actual_combined_features, expected_combined_features, "combined_features");
 
     BOOST_CHECK(align_istr.eof());
     BOOST_CHECK(annot_istr.eof());

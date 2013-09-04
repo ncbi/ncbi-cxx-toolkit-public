@@ -650,16 +650,12 @@ SImplementation::TransformProteinAlignToTranscript(CConstRef<CSeq_align>& align,
         bool aligned_to_the_end = 
             last_exon->GetProduct_end().GetNucpos()+1==
             fake_transcript_align->GetSegs().GetSpliced().GetProduct_length()*3;
-        if (found_stop_codon && !aligned_to_the_end) {
-            NCBI_THROW(CException, eUnknown,
-                       "found_stop_codon && !aligned_to_the_end");
-        }
 
         fake_transcript_align->SetSegs().SetSpliced().SetProduct_length() = 
             fake_transcript_align->GetSegs().GetSpliced().GetProduct_length()*3 +
-            ((found_stop_codon || !aligned_to_the_end)?3:0);
+            (((found_stop_codon && aligned_to_the_end) || !aligned_to_the_end)?3:0);
 
-        if (found_stop_codon) {
+        if (found_stop_codon && aligned_to_the_end) {
             bool is_minus = last_exon->IsSetGenomic_strand() ?
                     last_exon->GetGenomic_strand() == eNa_strand_minus :
                     (fake_transcript_align->GetSegs().GetSpliced()
