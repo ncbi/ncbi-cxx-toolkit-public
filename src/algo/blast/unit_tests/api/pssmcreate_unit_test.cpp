@@ -1229,7 +1229,7 @@ BOOST_AUTO_TEST_CASE(testRejectUnsupportedMatrix) {
 // Deliberately ask for an alignment data structure that too large to test
 // the error handling. Should not be run under valgrind
 BOOST_AUTO_TEST_CASE(testPsiAlignmentDataCreation_TooMuchMemory) {
-        size_t big_num = ncbi::numeric_limits<int>::max()/sizeof(void*);
+        Uint4 big_num = ncbi::numeric_limits<int>::max()/sizeof(void*);
         const PSIMsaDimensions kDimensions = { big_num, big_num};
         PSIMsa* msa = PSIMsaNew(&kDimensions);
         BOOST_REQUIRE(msa == NULL);

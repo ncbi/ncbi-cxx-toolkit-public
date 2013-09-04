@@ -90,8 +90,8 @@ CProjectStorage::CProjectStorage(const string& client, const string& nc_service,
 void CProjectStorage::SetCommTimeout(float sec)
 {
     if (sec > 0) {
-        int num_sec = (int)floor(sec);
-        int num_msec = (int)((sec - num_sec) * 1000000.0f);
+        unsigned int num_sec  = (unsigned int)floor(sec);
+        unsigned int num_msec = (unsigned int)((sec - num_sec) * 1000000.0f);
         STimeout to = {num_sec, num_msec};
         m_NC.SetCommunicationTimeout(to);
     }

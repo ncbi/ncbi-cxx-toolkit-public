@@ -92,7 +92,7 @@ private:
     string m_MonitorAppPath;
     int m_MaxMonitorRunningTime;
     int m_MonitorPeriod;
-    int m_KillTimeout;
+    unsigned int m_KillTimeout;
 
     CNcbiEnvironment m_LocalEnv;
     TEnvMap m_AddedEnv;

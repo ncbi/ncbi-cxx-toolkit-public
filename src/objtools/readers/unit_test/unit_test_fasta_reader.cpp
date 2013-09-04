@@ -361,7 +361,7 @@ BOOST_AUTO_TEST_CASE(TestWarnings)
             SOneWarningsInfo warning_info = {
                 line_error.Problem(),
                 line_error.FeatureName(),
-                line_error.Line()
+                (int) line_error.Line()
             };
             setWarningsSeen.insert(warning_info);
         }

@@ -276,7 +276,7 @@ BOOST_AUTO_TEST_CASE(CBioseqGaps_CI_OneBioseqTests)
     ITERATE_RAW_ARRAY( string, psGap, {s_NucGap(11), s_NucGap(15)} ) {
         ONE_BIOSEQ_TEST(
             *psPrefix + *psGap + *psSuffix,
-            { { psPrefix->length(), psGap->length() } });
+            { { (TSeqPos) psPrefix->length(), (TSeqPos) psGap->length() } });
     }
 
     }
@@ -295,8 +295,8 @@ BOOST_AUTO_TEST_CASE(CBioseqGaps_CI_OneBioseqTests)
         }
         if( *piSecondGapLen > 10 ) {
             SGapInfo second_gap_info = { 
-                *piPrefixLen + *piFirstGapLen + *piMiddleGoodBasesRun,
-                *piSecondGapLen
+                (TSeqPos) *piPrefixLen + *piFirstGapLen + *piMiddleGoodBasesRun,
+                (TSeqPos) *piSecondGapLen
             };
             expected_gaps.push_back( second_gap_info );
         }
@@ -329,8 +329,8 @@ BOOST_AUTO_TEST_CASE(CBioseqGaps_CI_OneBioseqTests)
         TGapInfoVec expected_gaps;
         ITERATE_0_IDX(gap_idx, min(*piGapsInInput, *piMaxGapsToFind) ) {
             SGapInfo gap_info = { 
-                kSeparator.length(),
-                kGap.length()
+                (TSeqPos) kSeparator.length(),
+                (TSeqPos) kGap.length()
             };
             gap_info.start_pos += 
                 gap_idx * ( kSeparator.length() + kGap.length() );

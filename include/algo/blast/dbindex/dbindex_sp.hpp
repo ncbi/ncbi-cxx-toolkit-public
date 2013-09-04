@@ -136,7 +136,7 @@ class CPreOrderedOffsetIterator
 
         TOffsetValue getOffsetValue() const
         {
-            TOffsetValue r = { special_, offset_ - min_offset_ };
+            TOffsetValue r = { special_, (Uint4) (offset_ - min_offset_) };
             return r;
         };
 

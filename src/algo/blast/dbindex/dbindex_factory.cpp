@@ -840,7 +840,8 @@ bool CSubjectMap_Factory::AddSequenceChunk( bool & overflow )
             return true;
         }
 
-        SLIdMapElement newlid = { this->chunks_.size() - 1, 0, seq_off };
+        SLIdMapElement newlid = { (Uint4) this->chunks_.size() - 1, 0,
+                                  (TSeqPos) seq_off };
         lid_map_.push_back( newlid );
         cur_lid_len_ = 0;
     }

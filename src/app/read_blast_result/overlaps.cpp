@@ -696,7 +696,7 @@ bool CReadBlastApp::overlaps
                  << "[" << qname << "]"
                  << " is marked for removal because of a complete overlap"
                  << NcbiEndl;
-        problemStr problemCOH = {eRemoveOverlap   , "", misc_feat_left.str(), "", "", from1, to1, left_strand};
+        problemStr problemCOH = {eRemoveOverlap   , "", misc_feat_left.str(), "", "", (int)from1, (int)to1, left_strand};
         problemStr problemCO = {eCompleteOverlap, buffer.str(), misc_feat_left.str(), "", "", -1, -1, eNa_strand_unknown };
         m_diag[qname].problems.push_back(problemCOH);
         m_diag[qname].problems.push_back(problemCO);
@@ -717,7 +717,7 @@ bool CReadBlastApp::overlaps
                  << "[" << qrname << "]"
                  << " is marked for removal because of a complete overlap"
                  << NcbiEndl;
-        problemStr problemCOH = {eRemoveOverlap   , "", misc_feat_right.str(), "", "", from2, to2, right_strand};
+        problemStr problemCOH = {eRemoveOverlap   , "", misc_feat_right.str(), "", "", (int)from2, (int)to2, right_strand};
         problemStr problemCO = {eCompleteOverlap, buffer.str(), misc_feat_right.str(), "", "", -1, -1, eNa_strand_unknown };
         m_diag[qrname].problems.push_back(problemCOH);
         m_diag[qrname].problems.push_back(problemCO);

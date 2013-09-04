@@ -454,7 +454,7 @@ private:
     void AddIndexInfo( const std::string & vol_name, bool & idx_not_resolved );
 
     /** Find a volume containing the given subject ordinal id. */
-    TVolList::const_iterator FindVolume( Int4 oid ) const
+    TVolList::const_iterator FindVolume( SIZE_TYPE oid ) const
     {
         SVolumeDescriptor s = { oid };
         TVolList::const_iterator r(
