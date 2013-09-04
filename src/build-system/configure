@@ -5394,7 +5394,10 @@ if test "${ncbi_cv_prog_c_99+set}" = set; then
 else
   orig_CFLAGS=$CFLAGS
     ncbi_cv_prog_c_99=no
-    for x in -xc99=all -std=gnu11 -std=gnu1x -std=gnu99 -std=gnu9x; do
+    for x in -xc99=all "-std=gnu11 -fgnu89-inline" \
+             "-std=gnu1x -fgnu89-inline" \
+             "-std=gnu99 -fgnu89-inline" \
+             "-std=gnu9x -fgnu89-inline"; do
        CFLAGS="$orig_CFLAGS $x"
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */

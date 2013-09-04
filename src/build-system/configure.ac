@@ -1072,7 +1072,10 @@ AC_CACHE_CHECK([how to enable C '11 or at least '99 features in $CC],
    ncbi_cv_prog_c_99,
    [orig_CFLAGS=$CFLAGS
     ncbi_cv_prog_c_99=no
-    for x in -xc99=all -std=gnu11 -std=gnu1x -std=gnu99 -std=gnu9x; do
+    for x in -xc99=all "-std=gnu11 -fgnu89-inline" \
+             "-std=gnu1x -fgnu89-inline" \
+             "-std=gnu99 -fgnu89-inline" \
+             "-std=gnu9x -fgnu89-inline"; do
        CFLAGS="$orig_CFLAGS $x"
        AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])],
           [ncbi_cv_prog_c_99=$x])
