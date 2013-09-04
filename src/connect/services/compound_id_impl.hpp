@@ -59,25 +59,10 @@ struct SSameTypeListLink : SFieldListLink
 {
 };
 
-#define CIF_RESET_IMPL(member, value_type) \
-    void Reset(ECompoundIDFieldType field_type, value_type value) \
-    { \
-        m_Type = field_type; \
-        member = value; \
-    }
-
 struct SCompoundIDFieldImpl : public CObject,
     public SNeighborListLink, public SSameTypeListLink
 {
     virtual void DeleteThis();
-
-    CIF_RESET_IMPL(m_Uint8Value, Uint8);
-    CIF_RESET_IMPL(m_Int8Value, Int8);
-    CIF_RESET_IMPL(m_Uint4Value, Uint4);
-    CIF_RESET_IMPL(m_Uint2Value, Uint2);
-    CIF_RESET_IMPL(m_BoolValue, bool);
-    CIF_RESET_IMPL(m_StringValue, const string&);
-    CIF_RESET_IMPL(m_NestedCID, const CCompoundID&);
 
     CCompoundID m_CID;
 
@@ -86,10 +71,11 @@ struct SCompoundIDFieldImpl : public CObject,
     union {
         Uint8 m_Uint8Value;
         Int8 m_Int8Value;
+        Uint4 m_Uint4Value;
         struct {
-            Uint4 m_Uint4Value;
-            Uint2 m_Uint2Value;
-        };
+            Uint4 m_IPv4Addr;
+            Uint2 m_Port;
+        } m_IPv4SockAddr;
         bool m_BoolValue;
 
         SCompoundIDFieldImpl* m_NextObjectInPool;

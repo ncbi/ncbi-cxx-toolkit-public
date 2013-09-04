@@ -197,16 +197,16 @@ void SIDPackingBuffer::PackCompoundID(SCompoundIDImpl* cid_impl)
             break;
         case eCIT_IPv4Address:
             PackCode(CIT_IPV4_ADDRESS_FIELD_CODE);
-            PackUint4(field->m_Uint4Value);
+            PackUint4(field->m_IPv4SockAddr.m_IPv4Addr);
             break;
         case eCIT_Port:
             PackCode(CIT_PORT_FIELD_CODE);
-            PackPort(field->m_Uint2Value);
+            PackPort(field->m_IPv4SockAddr.m_Port);
             break;
         case eCIT_IPv4SockAddr:
             PackCode(CIT_IPV4_SOCK_ADDR_FIELD_CODE);
-            PackUint4(field->m_Uint4Value);
-            PackPort(field->m_Uint2Value);
+            PackUint4(field->m_IPv4SockAddr.m_IPv4Addr);
+            PackPort(field->m_IPv4SockAddr.m_Port);
             break;
         case eCIT_Boolean:
             PackCode(field->m_BoolValue ? 'Y' : 'N');

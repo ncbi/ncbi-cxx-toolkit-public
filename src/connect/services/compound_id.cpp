@@ -149,10 +149,10 @@ CIF_GET_IMPL(string, GetDatabaseName, eCIT_DatabaseName, m_StringValue);
 CIF_GET_IMPL(Int8, GetTimestamp, eCIT_Timestamp, m_Int8Value);
 CIF_GET_IMPL(Uint4, GetRandom, eCIT_Random, m_Uint4Value);
 CIF_GET_IMPL(Uint4, GetIPv4Address, eCIT_IPv4Address &&
-        m_Impl->m_Type != eCIT_IPv4SockAddr, m_Uint4Value);
+        m_Impl->m_Type != eCIT_IPv4SockAddr, m_IPv4SockAddr.m_IPv4Addr);
 CIF_GET_IMPL(string, GetHost, eCIT_Host, m_StringValue);
 CIF_GET_IMPL(Uint2, GetPort, eCIT_Port &&
-        m_Impl->m_Type != eCIT_IPv4SockAddr, m_Uint2Value);
+        m_Impl->m_Type != eCIT_IPv4SockAddr, m_IPv4SockAddr.m_Port);
 CIF_GET_IMPL(string, GetPath, eCIT_Path, m_StringValue);
 CIF_GET_IMPL(string, GetString, eCIT_String, m_StringValue);
 CIF_GET_IMPL(bool, GetBoolean, eCIT_Boolean, m_BoolValue);
@@ -170,6 +170,7 @@ SCompoundIDFieldImpl* SCompoundIDImpl::AppendField(
     SCompoundIDFieldImpl* new_entry = m_Pool->m_FieldPool.Alloc();
     m_FieldList.Append(new_entry);
     m_HomogeneousFields[field_type].Append(new_entry);
+    new_entry->m_Type = field_type;
     ++m_Length;
     return new_entry;
 }
@@ -224,50 +225,54 @@ CCompoundIDField CCompoundID::GetFirst(ECompoundIDFieldType field_type)
     return first;
 }
 
-#define CID_APPEND_IMPL(method, type, arg_type) \
-    void CCompoundID::method(arg_type value) \
+#define CID_APPEND_IMPL(method, field_type, val_type, member) \
+    void CCompoundID::method(val_type value) \
     { \
-        m_Impl->AppendField(type)->Reset(type, value); \
+        m_Impl->AppendField(field_type)->member = value; \
     }
 
-CID_APPEND_IMPL(AppendID, eCIT_ID, Uint8);
-CID_APPEND_IMPL(AppendInteger, eCIT_Integer, Int8);
-CID_APPEND_IMPL(AppendServiceName, eCIT_ServiceName, const string&);
-CID_APPEND_IMPL(AppendDatabaseName, eCIT_DatabaseName, const string&);
-CID_APPEND_IMPL(AppendTimestamp, eCIT_Timestamp, Int8);
+CID_APPEND_IMPL(AppendID, eCIT_ID, Uint8, m_Uint8Value);
+CID_APPEND_IMPL(AppendInteger, eCIT_Integer, Int8, m_Int8Value);
+CID_APPEND_IMPL(AppendServiceName, eCIT_ServiceName,
+        const string&, m_StringValue);
+CID_APPEND_IMPL(AppendDatabaseName, eCIT_DatabaseName,
+        const string&, m_StringValue);
+CID_APPEND_IMPL(AppendTimestamp, eCIT_Timestamp, Int8, m_Int8Value);
 
 void CCompoundID::AppendCurrentTime()
 {
     AppendTimestamp(time(NULL));
 }
 
-CID_APPEND_IMPL(AppendRandom, eCIT_Random, Uint4);
+CID_APPEND_IMPL(AppendRandom, eCIT_Random, Uint4, m_Uint4Value);
 
 void CCompoundID::AppendRandom()
 {
     AppendRandom(m_Impl->m_Pool->GetRand());
 }
 
-CID_APPEND_IMPL(AppendIPv4Address, eCIT_IPv4Address, Uint4);
-CID_APPEND_IMPL(AppendHost, eCIT_Host, const string&);
-CID_APPEND_IMPL(AppendPort, eCIT_Port, Uint2);
+CID_APPEND_IMPL(AppendIPv4Address, eCIT_IPv4Address,
+        Uint4, m_IPv4SockAddr.m_IPv4Addr);
+CID_APPEND_IMPL(AppendHost, eCIT_Host, const string&, m_StringValue);
+CID_APPEND_IMPL(AppendPort, eCIT_Port, Uint2, m_IPv4SockAddr.m_Port);
 
 void CCompoundID::AppendIPv4SockAddr(Uint4 ipv4_address, Uint2 port_number)
 {
     SCompoundIDFieldImpl* new_field = m_Impl->AppendField(eCIT_IPv4SockAddr);
-    new_field->Reset(eCIT_IPv4SockAddr, ipv4_address);
-    new_field->m_Uint2Value = port_number;
+    new_field->m_IPv4SockAddr.m_IPv4Addr = ipv4_address;
+    new_field->m_IPv4SockAddr.m_Port = port_number;
 }
 
-CID_APPEND_IMPL(AppendPath, eCIT_Path, const string&);
-CID_APPEND_IMPL(AppendString, eCIT_String, const string&);
-CID_APPEND_IMPL(AppendBoolean, eCIT_Boolean, bool);
-CID_APPEND_IMPL(AppendFlags, eCIT_Flags, Uint8);
-CID_APPEND_IMPL(AppendTag, eCIT_Tag, const string&);
-CID_APPEND_IMPL(AppendNumericTag, eCIT_NumericTag, Uint8);
-CID_APPEND_IMPL(AppendSeqID, eCIT_SeqID, const string&);
-CID_APPEND_IMPL(AppendTaxID, eCIT_TaxID, Uint8);
-CID_APPEND_IMPL(AppendNestedCID, eCIT_NestedCID, const CCompoundID&);
+CID_APPEND_IMPL(AppendPath, eCIT_Path, const string&, m_StringValue);
+CID_APPEND_IMPL(AppendString, eCIT_String, const string&, m_StringValue);
+CID_APPEND_IMPL(AppendBoolean, eCIT_Boolean, bool, m_BoolValue);
+CID_APPEND_IMPL(AppendFlags, eCIT_Flags, Uint8, m_Uint8Value);
+CID_APPEND_IMPL(AppendTag, eCIT_Tag, const string&, m_StringValue);
+CID_APPEND_IMPL(AppendNumericTag, eCIT_NumericTag, Uint8, m_Uint8Value);
+CID_APPEND_IMPL(AppendSeqID, eCIT_SeqID, const string&, m_StringValue);
+CID_APPEND_IMPL(AppendTaxID, eCIT_TaxID, Uint8, m_Uint8Value);
+CID_APPEND_IMPL(AppendNestedCID, eCIT_NestedCID,
+        const CCompoundID&, m_NestedCID);
 
 CCompoundIDField CCompoundID::GetLastField()
 {
@@ -325,14 +330,14 @@ static void s_DumpCompoundID(CNcbiOstrstream& sstr, SCompoundIDImpl* cid_impl,
                 sstr << field->m_Uint4Value;
                 break;
             case eCIT_IPv4Address:
-                sstr << CSocketAPI::ntoa(field->m_Uint4Value);
+                sstr << CSocketAPI::ntoa(field->m_IPv4SockAddr.m_IPv4Addr);
                 break;
             case eCIT_Port:
-                sstr << field->m_Uint2Value;
+                sstr << field->m_IPv4SockAddr.m_Port;
                 break;
             case eCIT_IPv4SockAddr:
-                sstr << CSocketAPI::ntoa(field->m_Uint4Value) <<
-                        ':' << field->m_Uint2Value;
+                sstr << CSocketAPI::ntoa(field->m_IPv4SockAddr.m_IPv4Addr) <<
+                        ':' << field->m_IPv4SockAddr.m_Port;
                 break;
             case eCIT_Boolean:
                 sstr << (field->m_BoolValue ? "true" : "false");
