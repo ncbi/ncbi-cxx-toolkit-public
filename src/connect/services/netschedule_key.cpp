@@ -218,8 +218,6 @@ string CNetScheduleKeyGenerator::GenerateCompoundID(unsigned id,
     if (!m_QueueName.empty())
         ns_key_cid.AppendDatabaseName(m_QueueName);
 
-    ns_key_cid.AppendCurrentTime();
-
     return ns_key_cid.ToString();
 }
 
