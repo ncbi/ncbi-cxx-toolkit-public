@@ -1047,6 +1047,13 @@ case "$host_os:$compiler" in
       ;;
 esac
 
+case "$compiler:$compiler_version" in
+   GCC:4[[0-4]]? | ICC:10?? )
+     ncbi_cv_prog_cxx_11=no
+     ncbi_cv_prog_c_99=no
+     ;;
+esac
+
 AC_CACHE_CHECK([how to enable C++ '11 features in $CXX],
    ncbi_cv_prog_cxx_11,
    [orig_CXXFLAGS=$CXXFLAGS
