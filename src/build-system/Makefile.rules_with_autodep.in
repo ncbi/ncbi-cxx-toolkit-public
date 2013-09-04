@@ -55,26 +55,46 @@ D_TAIL_PCH = -x c++-header -DNCBI_USE_PCH -DNCBI_PCH__HPP= \
 	       -e 's%$(includedir0)%$$(includedir0)%g' > $@_ \
 	  &&  test -s $@_  &&  mv -f $@_ $@
 
-%.d: ./%.cpp
+define make_cpp_dep
 	@echo Updating dependency information for $<.
 	@$(CXX_WRAPPER) $(CXX) $(D_TAIL)  ||  \
 	    (echo "FAILED COMMAND: $(CXX_WRAPPER) $(CXX) $(DEPFLAGS_ALL)" \
                   "$< $(DEPFLAGS_POST) | sed ..."; exit 1)
-%.d: $(srcdir)/%.cpp
-	@echo Updating dependency information for $<.
-	@$(CXX_WRAPPER) $(CXX) $(D_TAIL)  ||  \
-	    (echo "FAILED COMMAND: $(CXX_WRAPPER) $(CXX) $(DEPFLAGS_ALL)" \
-                  "$< $(DEPFLAGS_POST) | sed ..."; exit 1)
-%.d: ./%.c
+endef
+
+define make_c_dep
 	@echo Updating dependency information for $<.
 	@$(CC_WRAPPER) $(CC)   $(D_TAIL)  ||  \
 	    (echo "FAILED COMMAND: $(CC_WRAPPER) $(CC) $(DEPFLAGS_ALL)" \
                   "$< $(DEPFLAGS_POST) | sed ..."; exit 1)
-%.d: $(srcdir)/%.c
-	@echo Updating dependency information for $<.
-	@$(CC_WRAPPER) $(CC)   $(D_TAIL)  ||  \
-	    (echo "FAILED COMMAND: $(CC_WRAPPER) $(CC) $(DEPFLAGS_ALL)" \
-                  "$< $(DEPFLAGS_POST) | sed ..."; exit 1)
+endef
+
+ifeq "" "$(OBJ_DIRS)"
+  %.d: %.cpp
+	$(make_cpp_dep)
+  %.d: $(srcdir)/%.cpp
+	$(make_cpp_dep)
+  %.d: %.c
+	$(make_c_dep)
+  %.d: $(srcdir)/%.c
+	$(make_c_dep)
+else
+  CPP_DEP_HERE = $(patsubst %.cpp,%.d,$(wildcard $(SRC:%=%.cpp)))
+  C_DEP_HERE = $(patsubst %.c,%.d,$(wildcard $(SRC:%=%.c)))
+  ifneq "$(srcdir)" "."
+    CPP_DEP_THERE = $(patsubst $(srcdir)/%.cpp,%.d,$(wildcard $(SRC:%=$(srcdir)/%.cpp)))
+    C_DEP_THERE = $(patsubst $(srcdir)/%.c,%.d,$(wildcard $(SRC:%=$(srcdir)/%.c)))
+  endif
+  $(CPP_DEP_HERE): %.d: %.cpp
+	$(make_cpp_dep)
+  $(CPP_DEP_THERE): %.d: $(srcdir)/%.cpp
+	$(make_cpp_dep)
+  $(C_DEP_HERE): %.d: %.c
+	$(make_c_dep)
+  $(C_DEP_THERE): %.d: $(srcdir)/%.c
+	$(make_c_dep)
+endif
+
 $(builddir)/corelib/ncbi_pch_impl.hpp.d.$(PCHMODE): $(pchsrc)
 	$(CXX_WRAPPER) $(CXX) $(D_TAIL_PCH)
 endif

@@ -35,16 +35,41 @@ ifneq "" "$(filter @%@,$(ALL_SETTINGS))"
 endif
 
 ###  C++ compilation
-%@obj_ext@: ./%.cpp $(config_status)
-	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) $< @f_outobj@$@ $(CXX_FILTER)
-%@obj_ext@: $(srcdir)/%.cpp $(config_status)
-	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) $< @f_outobj@$@ $(CXX_FILTER)
-
+make_cpp = $(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) $< @f_outobj@$@ $(CXX_FILTER)
 ###  C compilation
-%@obj_ext@: ./%.c $(config_status)
-	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
-%@obj_ext@: $(srcdir)/%.c $(config_status)
-	$(CC_WRAPPER) $(CC) $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
+make_c = $(CC_WRAPPER) $(CC) $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
+
+OBJ_DIRS = $(filter-out .,$(patsubst %/,%,$(sort $(dir $(SRC)))))
+
+ifeq "" "$(OBJ_DIRS)"
+  %@obj_ext@: %.cpp $(config_status)
+	$(make_cpp)
+  %@obj_ext@: $(srcdir)/%.cpp $(config_status)
+	$(make_cpp)
+  %@obj_ext@: %.c $(config_status)
+	$(make_c)
+  %@obj_ext@: $(srcdir)/%.c $(config_status)
+	$(make_c)
+else
+  $(OBJ_DIRS): %:
+	$(MKDIR) -p $@
+
+  STD_SRC = $(filter-out $(OVERRIDEN_SRC),$(SRC))
+  CPP_OBJ_HERE = $(patsubst %.cpp,%@obj_ext@,$(wildcard $(STD_SRC:%=%.cpp)))
+  C_OBJ_HERE = $(patsubst %.c,%@obj_ext@,$(wildcard $(STD_SRC:%=%.c)))
+  ifneq "$(srcdir)" "."
+    CPP_OBJ_THERE = $(patsubst $(srcdir)/%.cpp,%@obj_ext@,$(wildcard $(STD_SRC:%=$(srcdir)/%.cpp)))
+    C_OBJ_THERE = $(patsubst $(srcdir)/%.c,%@obj_ext@,$(wildcard $(STD_SRC:%=$(srcdir)/%.c)))
+  endif
+  $(CPP_OBJ_HERE): %@obj_ext@: %.cpp $(config_status)
+	$(make_cpp)
+  $(CPP_OBJ_THERE): %@obj_ext@: $(srcdir)/%.cpp $(config_status) $(OBJ_DIRS)
+	$(make_cpp)
+  $(C_OBJ_HERE): %@obj_ext@: %.c $(config_status)
+	$(make_c)
+  $(C_OBJ_THERE): %@obj_ext@: $(srcdir)/%.c $(config_status) $(OBJ_DIRS)
+	$(make_c)
+endif
 
 ###  Header precompilation
 @GCCPCH@pchdir = $(incdir)/common/ncbi_pch_impl.hpp.gch
