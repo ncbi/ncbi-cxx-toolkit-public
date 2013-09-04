@@ -142,17 +142,16 @@ static bool s_CheckSpecialKeyword(const string& keyword, ETechFlags tech)
 
 void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
 {
-    // add TPA keywords
-    if ( ctx.IsTPA() ) {
-        x_AddKeyword("Third Party Data");
-        x_AddKeyword("TPA");
-
-    // add RefSeq keyword
-    } else if ( ctx.IsRefSeq() ) {
-        x_AddKeyword("RefSeq");
+    switch( ctx.GetRepr() ) {
+    case CSeq_inst::eRepr_map:
+        x_AddKeyword("Whole_Genome_Map");
+        break;
+    default:
+        // no action needed yet for other types
+        break;
     }
-   
-    // add ENV keyword
+
+    // check if env sample
     bool is_env_sample = false;
     CSeqdesc_CI src_desc(ctx.GetHandle(), CSeqdesc::e_Source);
     if (src_desc) {
@@ -164,6 +163,7 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
         }
     }
 
+    // we might set this in the mol-info switch statement below
     bool is_tsa = false;
 
     // add keywords based on mol-info
@@ -279,6 +279,16 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
     if( ctx.IsGenomeAssembly() && ! ctx.GetFinishingStatus().empty() ) {
         x_AddKeyword( ctx.GetFinishingStatus() );
     }
+
+    
+    if ( ctx.IsTPA() ) {
+        // add TPA keywords
+        x_AddKeyword("Third Party Data");
+        x_AddKeyword("TPA");
+    } else if ( ctx.IsRefSeq() ) {
+        // add RefSeq keyword
+        x_AddKeyword("RefSeq");
+    }
     
     for (CSeqdesc_CI it(ctx.GetHandle());  it;  ++it) {
         const list<string>* keywords = NULL;
@@ -320,15 +330,6 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
                 }
             }
         }
-    }
-
-    switch( ctx.GetRepr() ) {
-    case CSeq_inst::eRepr_map:
-        x_AddKeyword("Whole_Genome_Map");
-        break;
-    default:
-        // no action needed for other types
-        break;
     }
 }
 
