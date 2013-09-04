@@ -9633,12 +9633,23 @@ void CNewCleanup_imp::x_BioseqSetEC( CBioseq_set & bioseq_set )
     }
 }
 
+// this is for CNewCleanup_imp::x_BioseqSetNucProtEC.
+// It's out here because C++ doesn't like templates on
+// local types.
+namespace {
+    // this holds info about the dblinks we've found
+    struct SDblinkDeleteInfo
+    {
+        CSeq_descr_Base::Tdata::iterator  pDBLinkDesc_iter;
+        CRef<CBioseq>                     pDBLinkDescBioseq;
+    };
+}
+
 void CNewCleanup_imp::x_BioseqSetNucProtEC( CBioseq_set & bioseq_set )
 {
     // if nuc-prot set has exactly one DBLink user-object on its
-    // descendent bioseqs, move it to the nuc-prot set
-    CSeq_descr_Base::Tdata::iterator pDBLinkDesc_iter;
-    CRef<CBioseq>  pDBLinkDescBioseq;
+    // descendent bioseqs, move it to the nuc-prot set.
+    // (identical DBLinks count as one)
 
     // bail if there is a DBLinkDesc on the bioseq_set itself
     FOR_EACH_SEQDESC_ON_SEQSET(desc_it, bioseq_set) {
@@ -9646,7 +9657,11 @@ void CNewCleanup_imp::x_BioseqSetNucProtEC( CBioseq_set & bioseq_set )
             return;
         }
     }
+
+    typedef vector<SDblinkDeleteInfo> TDblinkDeleteInfoVec;
+    TDblinkDeleteInfoVec dblinksToDeleteVec;
     
+    // check for descendent dblinks
     VISIT_ALL_SEQENTRYS_WITHIN_SEQSET( entry_it, bioseq_set )
     {
         CRef<CSeq_entry> pEntry( & const_cast<CSeq_entry&>(*entry_it) );
@@ -9663,22 +9678,41 @@ void CNewCleanup_imp::x_BioseqSetNucProtEC( CBioseq_set & bioseq_set )
                 return;
             }
 
-            if( pDBLinkDescBioseq ) {
-                // bail out if there is more than one DBLink user object
-                return;
+            // there has already been a dblink.  make sure it's
+            // identical
+            if( ! dblinksToDeleteVec.empty() ) {
+                const CSeqdesc & last_dblink = 
+                    **dblinksToDeleteVec.rbegin()->pDBLinkDesc_iter;
+                // bail out if there is more than one DBLink user object,
+                // and they are NOT identical
+                if( ! (*desc_it)->Equals(last_dblink) ) {
+                    return;
+                }
             }
 
-            pDBLinkDesc_iter = desc_it;
-            pDBLinkDescBioseq.Reset( &pEntry->SetSeq() );
+            SDblinkDeleteInfo dblink_to_delete;
+            dblink_to_delete.pDBLinkDesc_iter = desc_it;
+            dblink_to_delete.pDBLinkDescBioseq = Ref(&pEntry->SetSeq());
+            dblinksToDeleteVec.push_back( dblink_to_delete );
         }
     }
 
-    if( pDBLinkDescBioseq ) {
-        // move the DBLink user obj from its bioseq up to the nuc-prot bioseq-set
-        // we started at
-        CRef<CSeqdesc> pDBLinkDesc( &**pDBLinkDesc_iter );
-        ERASE_SEQDESC_ON_BIOSEQ(pDBLinkDesc_iter, *pDBLinkDescBioseq);
-        ADD_SEQDESC_TO_SEQSET(bioseq_set, pDBLinkDesc);
+    // delete dblinks that we're s
+    if( ! dblinksToDeleteVec.empty() ) {
+        // give the parent bioseq-set a copy of the dblink
+        CRef<CSeqdesc> pDblinkForParent( 
+            SerialClone(
+            *dblinksToDeleteVec.begin()->pDBLinkDesc_iter->GetPointer()) );
+        ADD_SEQDESC_TO_SEQSET(bioseq_set, pDblinkForParent);
+
+        // delete the dblinks below the parent
+        NON_CONST_ITERATE( 
+            TDblinkDeleteInfoVec, dblink_delete_info, dblinksToDeleteVec ) 
+        {
+            ERASE_SEQDESC_ON_BIOSEQ(
+                dblink_delete_info->pDBLinkDesc_iter,
+                *dblink_delete_info->pDBLinkDescBioseq );
+        }
     }
 }
 

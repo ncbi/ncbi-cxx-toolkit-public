@@ -100,7 +100,7 @@ do_newcleanup()
     # save the old value
     OLD_NEW_CLEANASN_EXTRA_ARGS="$NEW_CLEANASN_EXTRA_ARGS"
     if [[ $these_files_require_extended_cleanup == yes ]] ; then 
-        NEW_CLEANASN_EXTRA_ARGS="${NEW_CLEANASN_EXTRA_ARGS} -e"
+        NEW_CLEANASN_EXTRA_ARGS="${NEW_CLEANASN_EXTRA_ARGS} -e -onc"
     fi
 
     if [[ $NEW_CLEANASN_EXTRA_ARGS != "" ]] ; then
