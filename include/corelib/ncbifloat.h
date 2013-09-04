@@ -60,6 +60,32 @@ extern "C" {
 #   endif
 #endif
 
+#ifdef NCBI_HAVE_CXX11
+// Kludge to avoid formal ambiguity in C++ '11 between ::isnan, which
+// returns int, and std::isnan, which returns bool.
+#  include <cmath>
+#  ifdef isnan
+#    undef isnan
+#  endif
+#  if __cplusplus >= 201103L
+#    define ISNAN_CONSTEXPR constexpr
+#  else
+#    define ISNAN_CONSTEXPR
+#  endif
+namespace std {
+    inline ISNAN_CONSTEXPR bool bool_isnan(float x)       { return isnan(x); }
+    inline ISNAN_CONSTEXPR bool bool_isnan(double x)      { return isnan(x); }
+    inline ISNAN_CONSTEXPR bool bool_isnan(long double x) { return isnan(x); }
+}
+// Unbreak <boost/math/special_functions/fpclassify.hpp>.
+namespace boost {
+    namespace math_detail {
+        using std::bool_isnan;
+    }
+}
+#  define isnan bool_isnan
+#endif
+
 #if defined(NCBI_OS_MSWIN)  &&  !defined(isnan)
 /**
  * Define value of isnan (Is Not A Number).
