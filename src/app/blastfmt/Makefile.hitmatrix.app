@@ -5,6 +5,7 @@ SRC = blast_hitmatrix cgi_hit_matrix
 
 LIB_ = w_hit_matrix gui_glmesa w_gl w_wx w_data \
 	   gui_graph gui_opengl gui_print gui_objutils gui_utils \
+           gencoll_client gbproj \
 	   xalgoalignutil xalnmgr ximage xcgi xhtml \
 	   entrez2cli entrez2 valerr gbseq entrezgene biotree \
 	   xconnserv xqueryparse snputil $(EUTILS_LIBS) xser xconnect xutil xmlwrapp \
