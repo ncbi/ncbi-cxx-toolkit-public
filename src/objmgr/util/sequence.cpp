@@ -2935,8 +2935,16 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
                 rem_state = ms_it->first - it.GetPos();
             }
         }
+        if( (m_Flags & fShowGapsOfSizeZero) != 0 &&
+            it.HasZeroGapBefore() ) 
+        {
+            m_Out << "-\n";
+            rem_line = m_Width;
+        }
         if ((m_GapMode != native_gap_mode || (m_Flags & fInstantiateGaps) == 0)
-            &&  it.GetGapSizeForward()) {
+            &&  it.GetGapSizeForward()) 
+        {
+            const bool bZeroLengthGapBefore = it.HasZeroGapBefore();
             TSeqPos gap_size = it.SkipGap();
             if (m_GapMode == eGM_one_dash
                 ||  (m_Flags & fInstantiateGaps) == 0) {
