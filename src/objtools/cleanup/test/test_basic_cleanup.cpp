@@ -150,6 +150,8 @@ void CTest_cleanupApplication::Init(void)
         "x", "OutFile", "Output file for error messages",
         CArgDescriptions::eOutputFile);
 
+    arg_desc->AddFlag("onc", "Omit NcbiCleanup object");
+
     // Program description
     string prog_description = "Test driver for BasicCleanup()\n";
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),
@@ -471,6 +473,9 @@ void CTest_cleanupApplication::SetupCleanupOptions(const CArgs& args)
     // Set cleanup options
     m_Options = 0;
 
+    if( args["onc"] ) {
+        m_Options |= CCleanup::eClean_NoNcbiUserObjects;
+    }
 }
 
 
