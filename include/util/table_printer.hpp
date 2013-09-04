@@ -171,6 +171,8 @@ public:
         SCellStream(CTablePrinter * pParentTable) 
             : m_pParentTable(pParentTable) { }
 
+        ~SCellStream() { }
+
         /// Cell is printed after destruction of this SCellStream.
         /// Since printing can throw, we can't do the printing in
         /// the destructor per se.
