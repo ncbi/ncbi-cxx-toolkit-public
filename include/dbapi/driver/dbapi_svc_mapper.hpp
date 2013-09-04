@@ -208,7 +208,7 @@ public:
 
     CDBUniversalMapper(const IRegistry* registry = nullptr,
                        const TMapperConf& ext_mapper
-                       = TMapperConf(kEmptyStr, nullptr));
+                       = TMapperConf(kEmptyStr, (TFactory)nullptr));
     virtual ~CDBUniversalMapper(void);
 
     virtual void Configure(const IRegistry* registry = NULL);
