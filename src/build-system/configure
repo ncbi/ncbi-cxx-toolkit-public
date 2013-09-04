@@ -5112,6 +5112,14 @@ LDFLAGS="$MT_FLAG $LDFLAGS"
 APP_LDFLAGS=
 DLL_LDFLAGS=
 
+### Should go before any test compiler runs
+
+cat >>confdefs.h <<\_ACEOF
+#define _GNU_SOURCE 1
+_ACEOF
+
+
+
 case "$host_os:$compiler" in
    darwin*:GCC )
 
@@ -5302,6 +5310,143 @@ echo "${ECHO_T}$ncbi_cv_prog_cc_new_dtags" >&6
       fi
       ;;
 esac
+
+echo "$as_me:$LINENO: checking how to enable C++ '11 features in $CXX" >&5
+echo $ECHO_N "checking how to enable C++ '11 features in $CXX... $ECHO_C" >&6
+if test "${ncbi_cv_prog_cxx_11+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  orig_CXXFLAGS=$CXXFLAGS
+    ncbi_cv_prog_cxx_11=no
+    for x in -std=gnu++11 -std=gnu++0x; do
+       CXXFLAGS="$orig_CXXFLAGS $x"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_cxx_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_prog_cxx_11=$x
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+          test "x$ncbi_cv_prog_cxx_11" = "xno"  ||  break
+       done
+       CXXFLAGS=$orig_CXXFLAGS
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_prog_cxx_11" >&5
+echo "${ECHO_T}$ncbi_cv_prog_cxx_11" >&6
+test "$ncbi_cv_prog_cxx_11" = no  ||  CXXFLAGS="$CXXFLAGS $ncbi_cv_prog_cxx_11"
+
+ac_ext=c
+ac_cpp='$CPP $CPPFLAGS'
+ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_c_compiler_gnu
+
+
+echo "$as_me:$LINENO: checking how to enable C '11 or at least '99 features in $CC" >&5
+echo $ECHO_N "checking how to enable C '11 or at least '99 features in $CC... $ECHO_C" >&6
+if test "${ncbi_cv_prog_c_99+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  orig_CFLAGS=$CFLAGS
+    ncbi_cv_prog_c_99=no
+    for x in -xc99=all -std=gnu11 -std=gnu1x -std=gnu99 -std=gnu9x; do
+       CFLAGS="$orig_CFLAGS $x"
+       cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ncbi_cv_prog_c_99=$x
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+          test "x$ncbi_cv_prog_c_99" = "xno"  ||  break
+       done
+       CFLAGS=$orig_CFLAGS
+fi
+echo "$as_me:$LINENO: result: $ncbi_cv_prog_c_99" >&5
+echo "${ECHO_T}$ncbi_cv_prog_c_99" >&6
+ac_ext=cc
+ac_cpp='$CXXCPP $CPPFLAGS'
+ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
+ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
+ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
+
+test "$ncbi_cv_prog_c_99" = no  ||  CFLAGS="$CFLAGS $ncbi_cv_prog_c_99"
 
 #### Provide default environment setup for known platforms/compilers
 DEPFLAGS="-M"
@@ -7134,14 +7279,6 @@ if test "$with_profiling" = "yes" ; then
 else
    prof_sfx=
 fi
-
-
-### Should go before any test compiler runs
-
-cat >>confdefs.h <<\_ACEOF
-#define _GNU_SOURCE 1
-_ACEOF
-
 
 
 #### Determine whether this is implicitly a 64-bit platform
@@ -11461,7 +11598,6 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 # some of these can lose in C++ due to the way autoconf works
-
 
 
 

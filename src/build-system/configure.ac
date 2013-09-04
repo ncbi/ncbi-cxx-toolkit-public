@@ -1003,6 +1003,9 @@ LDFLAGS="$MT_FLAG $LDFLAGS"
 APP_LDFLAGS=
 DLL_LDFLAGS=
 
+### Should go before any test compiler runs
+AC_GNU_SOURCE
+
 case "$host_os:$compiler" in
    darwin*:GCC )
       AC_CACHE_CHECK([whether $CC supports -Wl,-rpath],
@@ -1043,6 +1046,34 @@ case "$host_os:$compiler" in
       fi
       ;;
 esac
+
+AC_CACHE_CHECK([how to enable C++ '11 features in $CXX],
+   ncbi_cv_prog_cxx_11,
+   [orig_CXXFLAGS=$CXXFLAGS
+    ncbi_cv_prog_cxx_11=no
+    for x in -std=gnu++11 -std=gnu++0x; do
+       CXXFLAGS="$orig_CXXFLAGS $x"
+       AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])],
+          [ncbi_cv_prog_cxx_11=$x])
+          test "x$ncbi_cv_prog_cxx_11" = "xno"  ||  break
+       done
+       CXXFLAGS=$orig_CXXFLAGS])
+test "$ncbi_cv_prog_cxx_11" = no  ||  CXXFLAGS="$CXXFLAGS $ncbi_cv_prog_cxx_11"
+
+AC_LANG_PUSH(C)
+AC_CACHE_CHECK([how to enable C '11 or at least '99 features in $CC],
+   ncbi_cv_prog_c_99,
+   [orig_CFLAGS=$CFLAGS
+    ncbi_cv_prog_c_99=no
+    for x in -xc99=all -std=gnu11 -std=gnu1x -std=gnu99 -std=gnu9x; do
+       CFLAGS="$orig_CFLAGS $x"
+       AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])],
+          [ncbi_cv_prog_c_99=$x])
+          test "x$ncbi_cv_prog_c_99" = "xno"  ||  break
+       done
+       CFLAGS=$orig_CFLAGS])
+AC_LANG_POP(C)
+test "$ncbi_cv_prog_c_99" = no  ||  CFLAGS="$CFLAGS $ncbi_cv_prog_c_99"
 
 #### Provide default environment setup for known platforms/compilers
 DEPFLAGS="-M"
@@ -2175,9 +2206,6 @@ else
    prof_sfx=
 fi
 
-
-### Should go before any test compiler runs
-AC_GNU_SOURCE
 
 #### Determine whether this is implicitly a 64-bit platform
 AC_TYPE_SIZE_T
