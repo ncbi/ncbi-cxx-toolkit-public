@@ -110,6 +110,12 @@
 #  endif
 #endif
 
+#ifdef __cplusplus
+#  if __cplusplus >= 201103L || defined(__GXX_EXPERIMENTAL_CXX0X__) \
+      || defined(__GXX_EXPERIMENTAL_CPP0X__)
+#    define NCBI_HAVE_CXX11 1
+#  endif
+#endif
 
 #include <common/ncbi_skew_guard.h>
 
