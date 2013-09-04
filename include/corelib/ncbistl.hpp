@@ -214,7 +214,7 @@ END_NCBI_SCOPE
 #    define _GLIBCXX_DEPRECATED_ATTR NCBI_DEPRECATED
 #  elif defined(_GLIBCXX_DEPRECATED)
 #    include <ext/concurrence.h>
-#    if __cplusplus >= 201103L
+#    ifdef _GLIBCXX_THROW_OR_ABORT /* using libstdc++ from GCC 4.8 or later */
 #      include <bits/unique_ptr.h>
 #      include <bits/shared_ptr.h>
 #    endif
