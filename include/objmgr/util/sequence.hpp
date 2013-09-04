@@ -1242,7 +1242,8 @@ public:
         fFlags_DoNotTrimBeginning = (1 << 0), ///< 0x01 ("Beginning" as defined by CSeqVector)
         fFlags_DoNotTrimEnd       = (1 << 1), ///< 0x02 ("End" as defined by CSeqVector)
 
-        fFlags_TrimAnnot         = (1 << 3)   ///< 0x08 (Trim annots based on trimmed bioseq location)
+        // we might support this in the future
+        // fFlags_TrimAnnot         = (1 << 3)   ///< 0x08 (Trim annots based on trimmed bioseq location)
     };
     typedef int TFlags;
 
@@ -1490,6 +1491,11 @@ protected:
     CSeqMap_CI & x_SeqMapIterDoNext(
         CSeqMap_CI & in_out_segment_it,
         const TSignedSeqPos iTrimDirection );
+
+    void x_SliceBioseq( 
+        TSignedSeqPos leftmost_good_base, 
+        TSignedSeqPos rightmost_good_base,
+        CBioseq_Handle & bioseq_handle );
 
     // For each letter of the alphabet, returns whether or not it's
     // ambiguous. Index 0 is 'A', index 1 is 'B', etc.

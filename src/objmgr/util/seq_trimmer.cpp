@@ -41,6 +41,7 @@
 #include <objmgr/seq_vector.hpp>
 
 #include <corelib/ncbistd.hpp>
+#include <corelib/ncbi_autoinit.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 
 #include <objects/misc/sequence_macros.hpp>
@@ -249,43 +250,10 @@ CSequenceAmbigTrimmer::DoTrim( CBioseq_Handle &bioseq_handle)
         return eResult_NoTrimNeeded;
     }
 
-    // set up flags for sequence::CreateBioseqFromBioseq
-    sequence::TCreateBioseqFlags fCreateBioseqFlags =
-        sequence::fBioseq_Defaults;
-    // workaround for bug in fBioseq_CreateDelta
-    // (see JIRA CXX-4305)
-    fCreateBioseqFlags &= ~sequence::fBioseq_CreateDelta;
-    // add other flags at caller's request
-    if( x_TestFlag(fFlags_TrimAnnot) ) {
-        fCreateBioseqFlags |= sequence::fBioseq_CopyAnnot;
-    }
-
-    CRef<CBioseq> pNewBioseq = 
-        sequence::CreateBioseqFromBioseq(
-            bioseq_handle,
-            leftmost_good_base, 
-            ( 1 + rightmost_good_base), // "1+" because func uses [start, end)
-            bioseq_handle.GetAccessSeq_id_Handle(),
-            fCreateBioseqFlags );
-            // 0 // do NOT dig into delta-exts, just take what's there
-    CBioseq_EditHandle bioseq_eh = bioseq_handle.GetEditHandle();
-    bioseq_eh.SetInst( pNewBioseq->SetInst() );
-
-    // if requested, copy over all annots (remove old, then attach new)
-     if( x_TestFlag(fFlags_TrimAnnot) ) {
-        typedef vector<CSeq_annot_Handle> TAnnotVec;
-        TAnnotVec annot_vec;
-        CAnnot_CI annot_ci( bioseq_eh );
-        for( ; annot_ci; ++annot_ci ) {
-            annot_vec.push_back( *annot_ci );
-        }
-        NON_CONST_ITERATE(TAnnotVec, annot_ci, annot_vec) {
-            annot_ci->GetEditHandle().Remove();
-        }
-        EDIT_EACH_SEQANNOT_ON_BIOSEQ(new_annot_ci, *pNewBioseq) {
-            bioseq_eh.AttachAnnot( **new_annot_ci );
-        }
-    }
+    // do the actually slicing of the bioseq
+    x_SliceBioseq( 
+        leftmost_good_base, rightmost_good_base,
+        bioseq_handle );
 
     return eResult_SuccessfullyTrimmed;
 }
@@ -687,6 +655,89 @@ CSequenceAmbigTrimmer::x_SeqMapIterDoNext(
 {
     _ASSERT( s_IsValidDirection(iTrimDirection) );
     return ( iTrimDirection == 1 ? ++in_out_segment_it : --in_out_segment_it );
+}
+
+void
+CSequenceAmbigTrimmer::x_SliceBioseq( 
+    TSignedSeqPos leftmost_good_base, 
+    TSignedSeqPos rightmost_good_base,
+    CBioseq_Handle & bioseq_handle )
+{
+    CSeqVector seqvec( bioseq_handle );
+
+    CAutoInitRef<CDelta_ext> pDeltaExt;
+
+    const CSeqMap & seqmap = bioseq_handle.GetSeqMap();
+    CSeqMap_CI seqmap_ci = seqmap.ResolvedRangeIterator( 
+        &bioseq_handle.GetScope(),
+        leftmost_good_base,
+        1 + ( rightmost_good_base - leftmost_good_base ) );
+    for( ; seqmap_ci; ++seqmap_ci ) {
+        CSeqMap::ESegmentType eType = seqmap_ci.GetType();
+        switch( eType ) {
+        case CSeqMap::eSeqGap: {
+            CConstRef<CSeq_literal> pOriginalGapSeqLiteral =
+                seqmap_ci.GetRefGapLiteral();
+
+            CAutoInitRef<CSeq_literal> pNewGapLiteral;
+            if( pOriginalGapSeqLiteral ) {
+                pNewGapLiteral->Assign(*pOriginalGapSeqLiteral);
+            }
+            pNewGapLiteral->SetLength( seqmap_ci.GetLength() );
+            if( seqmap_ci.IsUnknownLength() ) {
+                pNewGapLiteral->SetFuzz().SetLim( CInt_fuzz::eLim_unk );
+            }
+
+            CAutoInitRef<CDelta_seq> pDeltaSeq;
+            pDeltaSeq->SetLiteral( *pNewGapLiteral );
+            pDeltaExt->Set().push_back( Ref(&*pDeltaSeq) );
+            break;
+        }
+        case CSeqMap::eSeqData: {
+            string new_data;
+            seqvec.GetPackedSeqData( 
+                new_data, seqmap_ci.GetPosition(), 
+                seqmap_ci.GetEndPosition() );
+
+            CRef<CSeq_data> pSeqData( 
+                new CSeq_data( new_data, seqvec.GetCoding() ) );
+
+            CAutoInitRef<CDelta_seq> pDeltaSeq;
+            pDeltaSeq->SetLiteral().SetLength( seqmap_ci.GetLength() );
+            pDeltaSeq->SetLiteral().SetSeq_data( *pSeqData );
+            
+            pDeltaExt->Set().push_back( Ref(&*pDeltaSeq) );
+            break;
+        }
+        default:
+            NCBI_USER_THROW_FMT("CSequenceAmbigTrimmer does not yet support "
+                "seqmap segments of type " << static_cast<int>(eType) );
+            break;
+        }
+    }
+
+    // use the new pDeltaExt
+
+    // (we use const_case to defeat the type system to avoid the expense of
+    // copying the Seq-inst.  We must be careful, though.
+    CSeq_inst & seq_inst = const_cast<CSeq_inst &>(bioseq_handle.GetInst());
+    seq_inst.ResetExt();
+    seq_inst.ResetSeq_data();
+    seq_inst.SetLength( 1 + ( rightmost_good_base - leftmost_good_base ) );
+    if( pDeltaExt->Set().empty() ) {
+        seq_inst.SetRepr( CSeq_inst::eRepr_virtual );
+    } else if( pDeltaExt->Set().size() == 1 ) {
+        CRef<CDelta_seq> pDeltaSeq = *pDeltaExt->Set().begin();
+        CSeq_data & seq_data = pDeltaSeq->SetLiteral().SetSeq_data();
+        seq_inst.SetSeq_data( seq_data );
+    } else {
+        seq_inst.SetExt().SetDelta( *pDeltaExt );
+    }
+    CBioseq_EditHandle bioseq_eh = bioseq_handle.GetEditHandle();
+    bioseq_eh.SetInst( seq_inst );
+
+    // at this time, annots aren't sliced, but that may be supported in the
+    // future.
 }
 
 END_SCOPE(objects)
