@@ -511,6 +511,10 @@ public:
     inline void IncrementPseudogeneCount (void) { m_NumPseudogene++; }
     inline void AddToPseudogeneCount (SIZE_TYPE num) { m_NumPseudogene += num; }
 
+    // look for multiple taxon IDs
+    inline void SetFirstTaxID (int val) { m_FirstTaxID = val; }
+    inline void SetMultTaxIDs (void) { m_MultTaxIDs = true; }
+
     // set flag for farfetchfailure
     inline void SetFarFetchFailure (void) { m_FarFetchFailure = true; }
 
@@ -707,6 +711,9 @@ private:
 
     SIZE_TYPE   m_NumPseudo;
     SIZE_TYPE   m_NumPseudogene;
+
+    int         m_FirstTaxID;
+    bool        m_MultTaxIDs;
 };
 
 
