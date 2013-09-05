@@ -3247,6 +3247,13 @@ private:
 void CDiagBuffer::Flush(void)
 {
     if ( m_InUse || !m_Diag ) {
+        if (!m_InUse  &&  m_Stream  &&  m_Stream->pcount() > 0) {
+            string message(m_Stream->str(), m_Stream->pcount());
+            m_Stream->rdbuf()->freeze(false);
+            // Can not use Reset() without CNcbiDiag.
+            m_Stream->rdbuf()->PUBSEEKOFF(0, IOS_BASE::beg, IOS_BASE::out);
+            _TRACE("Discarding junk data from CDiagBuffer: " << message);
+        }
         return;
     }
     CRecursionGuard guard(m_InUse);
