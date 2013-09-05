@@ -722,7 +722,7 @@ SourceFile::EType CDataTool::LoadDefinitions(
     ITERATE ( list<string>, fi, names ) {
         string name = *fi;
         if (names_done.find(name) != names_done.end()) {
-            LOG_POST_X(4, "Data specification already loaded: " << name);
+            ERR_POST_X(4, Warning << "Data specification already loaded: " << name);
             continue;
         }
         if ( !name.empty() ) {
