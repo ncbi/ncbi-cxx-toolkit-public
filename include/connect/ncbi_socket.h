@@ -94,8 +94,8 @@
  *  DSOCK_Bind
  *  DSOCK_Connect
  *  DSOCK_WaitMsg
- *  DSOCK_SendMsg
  *  DSOCK_RecvMsg
+ *  DSOCK_SendMsg
  *  DSOCK_WipeMsg
  *  DSOCK_SetBroadcast
  *  DSOCK_GetMessageCount
@@ -118,10 +118,11 @@
  *  SOCK_SetReuseAddressAPI
  *  SOCK_SetReuseAddress
  *
- * Data logging:
+ * Data logging / error reporting:
  *
  *  SOCK_SetDataLoggingAPI
  *  SOCK_SetDataLogging
+ *  SOCK_SetErrHook
  *
  * Auxiliary:
  *
@@ -230,7 +231,7 @@ typedef struct TRIGGER_tag* TRIGGER;  /* trigger: handle, opaque             */
 
 
 /******************************************************************************
- *  API Initialization, Shutdown/Cleanup, and Utility
+ *  API INITIALIZATION, SHUTDOWN/CLEANUP, AND UTILITY
  */
 
 /** Initialize all internal/system data & resources to be used by the SOCK API.
@@ -417,6 +418,7 @@ typedef enum {
     fSOCK_InterruptOnSignal = 0x200
 } ESOCK_Flags;
 typedef unsigned int TSOCK_Flags;  /**< bitwise "OR" of ESOCK_Flags */
+
 
 
 /******************************************************************************
@@ -967,8 +969,9 @@ extern NCBI_XCONNECT_EXPORT const STimeout* SOCK_GetTimeout
  * Both mothods return any other code when no data at all were available.
  * eIO_ReadPersist differs from the other two methods as it can return an
  * error condition even if some data were actually obtained from the socket.
+ *
  * Hence, as the *rule of thumb*, an application should always check the number
- * of read bytes BEFORE checking the return status, which merely advises
+ * of read bytes BEFORE checking the return status, which merely advises as to
  * whether it is okay to read again.
  *
  * As a special case, "buf" may passed as NULL:
@@ -1007,8 +1010,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Read
  );
 
 
-/**
- * Read a line from SOCK.  A line is terminated by either '\n' (with
+/** Read a line from SOCK.  A line is terminated by either '\n' (with
  * optional preceding '\r') or '\0'.  Returned result is always '\0'-
  * terminated and having '\r'(if any)'\n' stripped. *n_read (if 'n_read'
  * passed non-NULL) contains the numbed of characters written into
@@ -1424,7 +1426,7 @@ extern NCBI_XCONNECT_EXPORT void SOCK_DisableOSSendDelay
  */
 
 
-/**
+/** Create a datagram socket.
  * @param sock
  *  [out] socket created
  * @param flags
@@ -1540,7 +1542,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status DSOCK_RecvMsg
 );
 
 
-/** Clear message froma datagram socket
+/** Clear message froma datagram socket.
  * @param sock
  *  [in]  SOCK from DSOCK_Create[Ex]()
  * @param direction
@@ -1580,7 +1582,7 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount DSOCK_GetMessageCount
 
 
 /******************************************************************************
- *  Type & statistics information for SOCK sockets
+ *  TYPE & STATISTICS INFORMATION FOR [D]SOCK SOCKETS
  */
 
 
@@ -1680,7 +1682,7 @@ extern NCBI_XCONNECT_EXPORT TNCBI_BigCount SOCK_GetTotalCount
 
 
 /******************************************************************************
- *   I/O restart on signals
+ *  I/O RESTART ON SIGNALS
  */
 
 /** Control restartability of I/O interrupted by signals.
@@ -1716,7 +1718,7 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetInterruptOnSignal
 
 
 /******************************************************************************
- *   Address reuse: EXPERIMENTAL and may be removed in the upcoming releases!
+ *  ADDRESS REUSE
  */
 
 /** Control address reuse for socket addresses taken by the API.
@@ -1751,7 +1753,7 @@ extern NCBI_XCONNECT_EXPORT void SOCK_SetReuseAddress
 
 
 /******************************************************************************
- *  Error & Data Logging
+ *  DATA LOGGING & ERROR REPORTING
  *
  * @note  Use CORE_SetLOG() from "ncbi_core.h" to set log handler.
  *
@@ -1792,9 +1794,33 @@ extern NCBI_XCONNECT_EXPORT ESwitch SOCK_SetDataLogging
  );
 
 
+typedef enum {
+    eSOCK_ErrInit = 1,
+    eSOCK_ErrDns,
+    eSOCK_ErrIO
+} ESOCK_ErrType;
+
+
+typedef struct {
+    ESOCK_ErrType  type;
+    SOCK           sock;    /**< Non-null when SOCK-related             */
+    const char*    host;    /**< Host name/IP (or path for non-IP SOCK) */
+    unsigned short port;    /**< Port = 0 for non-IP SOCK               */
+    EIO_Event      event;   /**< Meaningful only for eSOCK_ErrIO        */
+    EIO_Status     status;  /**< status code to be returned (if known)  */
+} SSOCK_ErrInfo;
+
+
+typedef void (*FSOCK_ErrHook)(const SSOCK_ErrInfo* info, void* data);
+
+
+extern NCBI_XCONNECT_EXPORT void SOCK_SetErrHook(FSOCK_ErrHook hook,
+                                                 void*         data);
+
+
 
 /******************************************************************************
- * GENERIC POLLABLE INTERFACE, please see SOCK_Poll() above for explanations
+ *  GENERIC POLLABLE INTERFACE (please see SOCK_Poll() above for explanations)
  */
 
 
@@ -1846,7 +1872,7 @@ extern NCBI_XCONNECT_EXPORT TRIGGER  POLLABLE_ToTRIGGER(POLLABLE);
 
 
 /******************************************************************************
- *  AUXILIARY network-specific functions (added for the portability reasons)
+ *  AUXILIARY NETWORK-SPECIFIC FUNCTIONS (added for the portability reasons)
  */
 
 
@@ -2010,13 +2036,12 @@ extern NCBI_XCONNECT_EXPORT unsigned int SOCK_gethostbyname
  * @param log
  *  [in]  whether to log failures
  * @return
- *  Value 0
- *  means error, while success is denoted by the 'name' argument returned.
+ *  Value 0 means error; success is denoted by the 'name' argument returned.
  *  Note that on error the name returned emptied (name[0] == '\0').
  * @sa
  *  SOCK_gethostbyaddr
  */
-extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddrEx
+extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddrEx
 (unsigned int addr,
  char*        name,
  size_t       namelen,
@@ -2028,7 +2053,7 @@ extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddrEx
  * @sa
  *  SOCK_gethostbyaddrEx
  */
-extern NCBI_XCONNECT_EXPORT char* SOCK_gethostbyaddr
+extern NCBI_XCONNECT_EXPORT const char* SOCK_gethostbyaddr
 (unsigned int addr,
  char*        name,
  size_t       namelen
@@ -2100,8 +2125,9 @@ extern NCBI_XCONNECT_EXPORT size_t SOCK_HostPortToString
  );
 
 
+
 /******************************************************************************
- *  Secure Socket Layer support
+ *  SECURE SOCKET LAYER (SSL) SUPPORT
  */
 
 /*fwdecl*/

@@ -531,19 +531,6 @@ public:
     ///
     EIO_Status Wait(const STimeout* timeout = kInfiniteTimeout);
 
-    /// @param data
-    ///
-    /// @param datalen
-    ///
-    /// @param host
-    ///
-    /// @param port
-    ///  host byte order
-    EIO_Status Send(const void*     data    = 0,
-                    size_t          datalen = 0,
-                    const string&   host    = string(),
-                    unsigned short  port    = 0);
-
     /// @param buf
     ///
     /// @param buflen
@@ -562,6 +549,19 @@ public:
                     string*         sender_host = 0,
                     unsigned short* sender_port = 0,
                     size_t          maxmsglen   = 0);
+
+    /// @param data
+    ///
+    /// @param datalen
+    ///
+    /// @param host
+    ///
+    /// @param port
+    ///  host byte order
+    EIO_Status Send(const void*     data    = 0,
+                    size_t          datalen = 0,
+                    const string&   host    = string(),
+                    unsigned short  port    = 0);
 
     /// @param direction
     /// @sa
