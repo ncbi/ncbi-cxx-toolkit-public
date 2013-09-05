@@ -318,6 +318,24 @@ struct SSeqAlignsByPctIdent
 };
 
 
+struct SCompartScore {
+    TSeqPos total_size;
+    TRange total_range;
+
+    SCompartScore() : total_size(0) {}
+
+    bool operator<(const SCompartScore &o) const
+    {
+        if (total_size > o.total_size) {
+            return true;
+        }
+        if (total_size < o.total_size) {
+            return false;
+        }
+        return total_range < o.total_range;
+    }
+};
+
 
 void FindCompartments(const list< CRef<CSeq_align> >& aligns,
                       list< CRef<CSeq_align_set> >& align_sets,
@@ -380,8 +398,7 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
         alignments[p].push_back(*it);
     }
 
-
-    typedef pair<TSeqPos, CRef<CSeq_align_set> > TCompartScore;
+    typedef pair<SCompartScore, CRef<CSeq_align_set> > TCompartScore;
     vector<TCompartScore> scored_compartments;
 
 
@@ -659,16 +676,15 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
         // pack into seq-align-sets
         ITERATE (list< multiset<TAlignRange> >, it, compartments) {
             CRef<CSeq_align_set> sas(new CSeq_align_set);
+            SCompartScore score;
             ITERATE (multiset<TAlignRange>, i, *it) {
                 sas->Set().push_back(i->second);
+                score.total_size += i->second->GetAlignLength();
+                score.total_range.first += i->first.first;
+                score.total_range.second += i->first.second;
             }
 
-            TSeqPos sum = 0;
-            ITERATE (CSeq_align_set::Tdata, it, sas->Get()) {
-                sum += (*it)->GetAlignLength();
-            }
-
-            TCompartScore sc(sum, sas);
+            TCompartScore sc(score, sas);
             scored_compartments.push_back(sc);
         }
     }
@@ -677,7 +693,7 @@ void FindCompartments(const list< CRef<CSeq_align> >& aligns,
     // sort our compartments by size descending
     //
     std::sort(scored_compartments.begin(), scored_compartments.end());
-    NON_CONST_REVERSE_ITERATE (vector<TCompartScore>, it, scored_compartments) {
+    ITERATE (vector<TCompartScore>, it, scored_compartments) {
         align_sets.push_back(it->second);
     }
 }
