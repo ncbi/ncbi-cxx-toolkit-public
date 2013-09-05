@@ -63,6 +63,9 @@ USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
 namespace {
+
+    const TSeqPos kUnknownGapLen = 100;
+
     class CIgnoreBelowWarningMessageListener : 
         public CMessageListenerBase
     {   
@@ -398,8 +401,7 @@ namespace {
     CRef<CBioseq> s_ParseFasta( const string & sFasta,
         CFastaReader::TFlags fFlags,
         const string & sExpectedExceptionErrCode = kEmptyStr,
-        const TWarnVec & pExpectedWarningTypes = TWarnVec(),
-        const TSeqPos completelyUnknownGapLength = 0 )
+        const TWarnVec & pExpectedWarningTypes = TWarnVec() )
     {
         CRef<CBioseq> pRetvalBioseq;
         string sErrCodeThatOccurred;
@@ -409,10 +411,6 @@ namespace {
         try {
             CMemoryLineReader line_reader( sFasta.c_str(), sFasta.length() );
             CFastaReader fasta_reader( line_reader, fFlags );
-            if( completelyUnknownGapLength != 0 ) {
-                fasta_reader.SetCompletelyUnknownGapLength(
-                    completelyUnknownGapLength );
-            }
 
             CRef<CSeq_entry> pEntry = fasta_reader.ReadOneSeq(pMessageListener.GetPointer());
             BOOST_REQUIRE(pEntry->IsSeq());
@@ -719,7 +717,7 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
     const CFastaReader::TFlags kDefaultFastaFlags = 
         CFastaReader::fParseGaps;
 
-    // test that numbers other than "100" will work
+    // test that numbers other than kUnknownGapLen will work
     // (no values provided should imply [gap-type=unknown][linkage-evidence=unspecified])
     // (and test that negative or zero fails)
     ITERATE_BOTH_BOOL_VALUES(bIsUnknown) {
@@ -735,11 +733,20 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
 
             // non-positive gap sizes should create a warning
             TWarnVec expectedWarningsVec;
+
             if( iGapLen <= 0 ) {
                 expectedWarningsVec.push_back( 
                     ILineError::eProblem_NonPositiveLength );
             }
+
+            if( (bIsUnknown) && (iGapLen != kUnknownGapLen) ) {
+                // unknown gaps with weird lengths are autocorrected
+                expectedWarningsVec.push_back( 
+                    ILineError::eProblem_InvalidLengthAutoCorrected );
+            }
             if( iGapLen < 0 ) {
+                // in this case, the negative length is
+                // interpreted as a 
                 expectedWarningsVec.push_back( 
                     ILineError::eProblem_ParsingModifiers );
             }
@@ -753,10 +760,14 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
                 continue;
             }
 
+            const int iExpectedGapLen = 
+                ( bIsUnknown ? kUnknownGapLen : iGapLen );
+
+
             s_CheckOnlyBioseqGap(
                 pBioseq,
                 s_RefStd(kNumDeltasExpected),
-                s_RefStd( static_cast<TSeqPos>(iGapLen) ),
+                s_RefStd( static_cast<TSeqPos>(iExpectedGapLen) ),
                 s_RefOrNull(bIsUnknown, CInt_fuzz::eLim_unk),
                 TRefStd<CSeq_gap::EType>(),
                 TRefStd<vector<CLinkage_evidence::EType> >() );
@@ -791,6 +802,8 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
                  << " a linkage-evidence)" << endl;
 
             TWarnVec expectedWarningsVec;
+            expectedWarningsVec.push_back(
+                ILineError::eProblem_InvalidLengthAutoCorrected );
             if( bPutLinkEvidInInput ) 
             {
                 if( gapTypeInfo.m_eLinkEvid == CFastaReader::eLinkEvid_Forbidden ) {
@@ -819,7 +832,7 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
             s_CheckOnlyBioseqGap(
                 pBioseq,
                 s_RefStd(kNumDeltasExpected),
-                s_RefStd(kArbGapLen),
+                s_RefStd(kUnknownGapLen),
                 s_RefStd(CInt_fuzz::eLim_unk),
                 s_RefStd(gapTypeInfo.m_eType),
                 s_RefOrNull(gapTypeInfo.m_eLinkEvid != CFastaReader::eLinkEvid_Forbidden,                 
@@ -849,6 +862,8 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
         cerr << "Testing gap-type " << pchGapType << " with 'unspecified'" << endl;
 
         TWarnVec expectedWarningsVec;
+        expectedWarningsVec.push_back(
+            ILineError::eProblem_InvalidLengthAutoCorrected);
         switch( gapTypeInfo.m_eLinkEvid ) {
         case CFastaReader::eLinkEvid_UnspecifiedOnly:
             // no problem
@@ -878,7 +893,7 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
         s_CheckOnlyBioseqGap(
             pBioseq,
             s_RefStd(kNumDeltasExpected),
-            s_RefStd(kArbGapLen),
+            s_RefStd(kUnknownGapLen),
             s_RefStd(CInt_fuzz::eLim_unk),
             s_RefStd(gapTypeInfo.m_eType),
             s_RefOrNull(
@@ -927,6 +942,9 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
                 arrBadGapMods[ii].gap_mods + "\n" + kLinesAfterGap;
 
             TWarnVec expectedWarningsVec;
+            // due to use of ">?unk", we always expect the autocorrect
+            expectedWarningsVec.push_back(
+                ILineError::eProblem_InvalidLengthAutoCorrected );
             expectedWarningsVec.push_back(
                 arrBadGapMods[ii].problem_arr[0] );
             if( arrBadGapMods[ii].problem_arr[1] != 
@@ -974,7 +992,7 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
             cerr << "Trying: " << pchLinkageEvidences << endl;
 
             const string sDataToRead = kLinesBeforeGap +
-                ">?unk" + NStr::NumericToString(kArbGapLen) +
+                ">?" + NStr::NumericToString(kArbGapLen) +
                 " [gap-type=between scaffolds] " + pchLinkageEvidences + "\n" + 
                 kLinesAfterGap;
 
@@ -987,7 +1005,7 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
                 pBioseq,
                 s_RefStd(kNumDeltasExpected),
                 s_RefStd(kArbGapLen),
-                s_RefStd(CInt_fuzz::eLim_unk),
+                TRefStd<CInt_fuzz::ELim>(),
                 s_RefStd(CSeq_gap::eType_contig),
                 s_RefStd(vecExpectedLinkEvids) );
         }
@@ -997,7 +1015,7 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
     // (that is, case, etc. is ignored)
     {
         const string sDataToRead = kLinesBeforeGap +
-            ">?unk" + NStr::NumericToString(kArbGapLen) +
+            ">?" + NStr::NumericToString(kArbGapLen) +
             " [  GAP tYpe  =   Between_Scaffolds  ] [ linkage_evidence  = Align xgenus   ]\n" + 
             kLinesAfterGap;
 
@@ -1015,7 +1033,7 @@ BOOST_AUTO_TEST_CASE(TestGapMods)
             pBioseq,
             s_RefStd(kNumDeltasExpected),
             s_RefStd(kArbGapLen),
-            s_RefStd(CInt_fuzz::eLim_unk),
+            TRefStd<CInt_fuzz::ELim>(),
             s_RefStd(CSeq_gap::eType_contig),
             s_RefStd(s_VecOfOne(CLinkage_evidence::eType_align_xgenus)) );
     }
@@ -1031,8 +1049,11 @@ BOOST_AUTO_TEST_CASE(TestNonDeltaGaps)
     const TSeqPos kArbGapSize = 17;
     const string kNucsAfterGap = "GTGATTACAACGTGATTACAACGTGATTACA";
 
-    const string kExpectedBases = kNucsBeforeGap + 
+    const string kExpectedBasesIfKnown = kNucsBeforeGap + 
         string(kArbGapSize, 'N') +
+        kNucsAfterGap;
+    const string kExpectedBasesIfUnknown = kNucsBeforeGap + 
+        string(kUnknownGapLen, 'N') +
         kNucsAfterGap;
     // test if the fParseGaps flag is NOT set, which would result in 
     // one big sequence (no deltas).
@@ -1050,14 +1071,21 @@ BOOST_AUTO_TEST_CASE(TestNonDeltaGaps)
             " [gap-type=repeat within scaffold]  [linkage-evidence=pcr]\n"
     };
     ITERATE_0_IDX( gap_str_idx, ArraySize(arrGapStrings) ) {
+        const string & sGapString = arrGapStrings[gap_str_idx];
         const string sDataToRead =
             kDefline + "\n" +
-            kNucsBeforeGap + arrGapStrings[gap_str_idx] + kNucsAfterGap + "\n";
+            kNucsBeforeGap + sGapString + kNucsAfterGap + "\n";
 
+        const bool bGapLenUnknown = 
+            ( NStr::Find(sGapString, "?unk") != NPOS );
 
         // if there are substantive mods on the gaps, a warning
         // is expected
         TWarnVec expectedWarnings;
+        if( bGapLenUnknown ) {
+            expectedWarnings.push_back(
+                ILineError::eProblem_InvalidLengthAutoCorrected );
+        }
         if( sDataToRead.find('[') != string::npos && 
             sDataToRead.find("unknown") == string::npos ) 
         {
@@ -1075,6 +1103,12 @@ BOOST_AUTO_TEST_CASE(TestNonDeltaGaps)
         NCBITEST_CHECK( ! pBioseq->GetInst().GetSeq_data().IsGap() );
 
         CSeqVector seq_vec(*pBioseq, NULL, CBioseq_Handle::eCoding_Iupac);
+
+        const string & kExpectedBases = 
+            ( bGapLenUnknown
+            ? kExpectedBasesIfUnknown 
+            : kExpectedBasesIfKnown );
+
         BOOST_CHECK_EQUAL_COLLECTIONS(
             kExpectedBases.begin(), kExpectedBases.end(),
             seq_vec.begin(), seq_vec.end() );
@@ -1087,7 +1121,7 @@ BOOST_AUTO_TEST_CASE(TestLetterGaps)
         ">lcl|Seq1\n"
         "AC---NNNNNNNNNACGTGATTACAN\n"
         ">?48\n"
-        "ACGTACGT-\n"
+        "ACGTACGT\n"
         "GATTACA\n"
         ">?unk50\n"
         "ACGT---GA-TTNACAN\n"
@@ -1095,7 +1129,7 @@ BOOST_AUTO_TEST_CASE(TestLetterGaps)
         "ACGTACGT\n"
         ">?unk1\n"
         "GATTAACGTTATGC\n"
-        "CGATTAACGTTATGCN-\n"
+        "CGATTAACGTTATGCN\n"
         "GGATTAACGTTATGC-N\n"
         "TGATTAACGTTATGC\n"
         ">?42\n"
@@ -1123,16 +1157,11 @@ BOOST_AUTO_TEST_CASE(TestLetterGaps)
         "    length 48\n"
         "  },\n"
         "  literal {\n"
-        "    length 8,\n"
-        "    seq-data ncbi2na '1B1B'H\n"
-        "  },\n"
-        "  loc null NULL,\n"
-        "  literal {\n"
-        "    length 7,\n"
-        "    seq-data ncbi2na '8F10'H\n"
+        "    length 15,\n"
+        "    seq-data ncbi2na '1B1B8F10'H\n"
         "  },\n"
         "  literal {\n"
-        "    length 50,\n"
+        "    length 100,\n"
         "    fuzz lim unk\n"
         "  },\n"
         "  literal {\n"
@@ -1171,7 +1200,7 @@ BOOST_AUTO_TEST_CASE(TestLetterGaps)
         "    seq-data ncbi2na '1B1B'H\n"
         "  },\n"
         "  literal {\n"
-        "    length 1,\n"
+        "    length 100,\n"
         "    fuzz lim unk\n"
         "  },\n"
         "  literal {\n"
@@ -1179,7 +1208,7 @@ BOOST_AUTO_TEST_CASE(TestLetterGaps)
         "    seq-data ncbi2na '8F06F3963C1BCE40'H\n"
         "  },\n"
         "  literal {\n"
-        "    length 2\n"
+        "    length 1\n"
         "  },\n"
         "  literal {\n"
         "    length 15,\n"
@@ -1199,7 +1228,7 @@ BOOST_AUTO_TEST_CASE(TestLetterGaps)
         "    length 37\n"
         "  },\n"
         "  literal {\n"
-        "    length 20,\n"
+        "    length 100,\n"
         "    fuzz lim unk\n"
         "  },\n"
         "  literal {\n"
@@ -1211,11 +1240,19 @@ BOOST_AUTO_TEST_CASE(TestLetterGaps)
     CAutoInitRef<CDelta_ext> pExpectedDeltaExt;
     s_LoadObjectRefFromTextASN(pExpectedDeltaExt, kExpectedDeltaExt);
     
+    TWarnVec expectedWarningsVec;
+    ITERATE_0_IDX(dummy, 3) {
+        expectedWarningsVec.push_back(
+            ILineError::eProblem_InvalidLengthAutoCorrected );
+    }
+
     CRef<CBioseq> pBioseq =
         s_ParseFasta(kFasta, 
         CFastaReader::fParseGaps |
         CFastaReader::fLetterGaps |
-        CFastaReader::fAssumeNuc );
+        CFastaReader::fAssumeNuc,
+        kEmptyStr, 
+        expectedWarningsVec );
 
     CConstRef<CDelta_ext> pResultingDeltaExt( 
         & pBioseq->GetInst().GetExt().GetDelta() );
@@ -1228,87 +1265,170 @@ BOOST_AUTO_TEST_CASE(TestLetterGaps)
     }
 }
 
-BOOST_AUTO_TEST_CASE(TestLoneEndOfLineHyphens)
+// Not sure what to do about this since lone end-of-line hyphens
+// produce weird results
+
+//BOOST_AUTO_TEST_CASE(TestLoneEndOfLineHyphens)
+//{
+//    const string kFasta =
+//        ">Seq1\n"
+//        "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTA-\n"
+//        "GTACGTACGTACGT\n"
+//        ">?58\n"
+//        "CGGTACGTACGTACGT\n"
+//        ">?unk90\n"
+//        "AAACGGTACGTACGTACGT\n";
+//
+//    const string kCompletelyUnknownGap =
+//        "Delta-seq ::= \n"
+//        "loc null NULL\n";
+//    CAutoInitRef<CDelta_seq> pCompletelyUnknownGap;
+//    s_LoadObjectRefFromTextASN(pCompletelyUnknownGap, kCompletelyUnknownGap);
+//
+//    const string kRegularUnknownGap =
+//        "Delta-seq ::= \n"
+//        "literal {\n"
+//        "  length 100,\n"
+//        "  fuzz lim unk\n"
+//        "}\n";
+//    // length of pRegularUnknownGap may be adjusted as we go
+//    CAutoInitRef<CDelta_seq> pRegularUnknownGap;
+//    s_LoadObjectRefFromTextASN(pRegularUnknownGap, kRegularUnknownGap);
+//
+//    const string kRegularGap =
+//        "Delta-seq ::= \n"
+//        "literal {\n"
+//        "  length 100\n"
+//        "}\n";
+//    // length of pRegularGap may be adjusted as we go
+//    CAutoInitRef<CDelta_seq> pRegularGap;
+//    s_LoadObjectRefFromTextASN(pRegularGap, kRegularGap);
+//
+//    ITERATE_BOTH_BOOL_VALUES(bSetCompletelyUnknownGapLen) {
+//        CRef<CBioseq> pBioseq =
+//            s_ParseFasta(kFasta, 
+//            CFastaReader::fParseGaps | CFastaReader::fAssumeNuc,
+//            kEmptyStr,
+//            TWarnVec(),
+//            ( bSetCompletelyUnknownGapLen ? 100 : 0 ) );
+//
+//        const CDelta_ext::Tdata & delta_seqs = 
+//            pBioseq->GetInst().GetExt().GetDelta().Get();
+//        CDelta_ext::Tdata::const_iterator delta_seq_it = delta_seqs.begin();
+//
+//        NCBITEST_CHECK( 
+//            FIELD_IS_AND_IS_SET( **delta_seq_it, Literal, Seq_data ) );
+//
+//        ++delta_seq_it;
+//        if( bSetCompletelyUnknownGapLen ) {
+//            pRegularUnknownGap->SetLiteral().SetLength(100);
+//            NCBITEST_CHECK(
+//                (*delta_seq_it)->Equals(*pRegularUnknownGap) );
+//        } else {
+//            NCBITEST_CHECK( 
+//                (*delta_seq_it)->Equals(*pCompletelyUnknownGap) );
+//        }
+//
+//        ++delta_seq_it;
+//        NCBITEST_CHECK( 
+//            FIELD_IS_AND_IS_SET( **delta_seq_it, Literal, Seq_data ) );
+//
+//        ++delta_seq_it;
+//        pRegularGap->SetLiteral().SetLength(58);
+//        NCBITEST_CHECK(
+//            (*delta_seq_it)->Equals(*pRegularGap) );
+//
+//        ++delta_seq_it;
+//        NCBITEST_CHECK( 
+//            FIELD_IS_AND_IS_SET( **delta_seq_it, Literal, Seq_data ) );
+//
+//        ++delta_seq_it;
+//        pRegularUnknownGap->SetLiteral().SetLength(90);
+//        NCBITEST_CHECK(
+//                (*delta_seq_it)->Equals(*pRegularUnknownGap) );
+//
+//        ++delta_seq_it;
+//        NCBITEST_CHECK( 
+//            FIELD_IS_AND_IS_SET( **delta_seq_it, Literal, Seq_data ) );
+//    }
+//}
+
+BOOST_AUTO_TEST_CASE(TestHyphensIgnoreAndWarn)
 {
     const string kFasta =
         ">Seq1\n"
-        "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTA-\n"
-        "GTACGTACGTACGT\n"
-        ">?58\n"
-        "CGGTACGTACGTACGT\n"
-        ">?unk90\n"
-        "AAACGGTACGTACGTACGT\n";
+        "ACGTACGTACGTACGTACGTACGTA---CGTACGTACGTACGTACGTACGTA-\n"
+        "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTA\n"
+        "ACGTACGTACGTACG----TACGTA---CGTACGTACGTACGTACGTACGTA-\n";
 
-    const string kCompletelyUnknownGap =
-        "Delta-seq ::= \n"
-        "loc null NULL\n";
-    CAutoInitRef<CDelta_seq> pCompletelyUnknownGap;
-    s_LoadObjectRefFromTextASN(pCompletelyUnknownGap, kCompletelyUnknownGap);
+    TWarnVec expectedWarnings;
+    ITERATE_0_IDX(dummy, 2) {
+        expectedWarnings.push_back( ILineError::eProblem_IgnoredResidue );
+    }
 
-    const string kRegularUnknownGap =
-        "Delta-seq ::= \n"
-        "literal {\n"
-        "  length 100,\n"
-        "  fuzz lim unk\n"
-        "}\n";
-    // length of pRegularUnknownGap may be adjusted as we go
-    CAutoInitRef<CDelta_seq> pRegularUnknownGap;
-    s_LoadObjectRefFromTextASN(pRegularUnknownGap, kRegularUnknownGap);
+    CRef<CBioseq> pBioseq =
+        s_ParseFasta(kFasta, 
+        CFastaReader::fHyphensIgnoreAndWarn,
+        kEmptyStr,
+        expectedWarnings );
 
-    const string kRegularGap =
-        "Delta-seq ::= \n"
-        "literal {\n"
-        "  length 100\n"
-        "}\n";
-    // length of pRegularGap may be adjusted as we go
-    CAutoInitRef<CDelta_seq> pRegularGap;
-    s_LoadObjectRefFromTextASN(pRegularGap, kRegularGap);
+    // ignored, but shouldn't cause an error
+    BOOST_CHECK( pBioseq );
 
-    ITERATE_BOTH_BOOL_VALUES(bSetCompletelyUnknownGapLen) {
-        CRef<CBioseq> pBioseq =
-            s_ParseFasta(kFasta, 
-            CFastaReader::fParseGaps | CFastaReader::fAssumeNuc,
-            kEmptyStr,
-            TWarnVec(),
-            ( bSetCompletelyUnknownGapLen ? 100 : 0 ) );
+    // make sure answer is the correct length
+    {{
+        // calculate num bases expected
+        string::size_type next_char_idx = 0;
+        // skip first line, which is a defline
+        next_char_idx = kFasta.find('\n');
+        BOOST_CHECK_NE( next_char_idx, string::npos );
+        ++next_char_idx;
+        BOOST_CHECK_LT( next_char_idx, kFasta.length() );
 
-        const CDelta_ext::Tdata & delta_seqs = 
-            pBioseq->GetInst().GetExt().GetDelta().Get();
-        CDelta_ext::Tdata::const_iterator delta_seq_it = delta_seqs.begin();
-
-        NCBITEST_CHECK( 
-            FIELD_IS_AND_IS_SET( **delta_seq_it, Literal, Seq_data ) );
-
-        ++delta_seq_it;
-        if( bSetCompletelyUnknownGapLen ) {
-            pRegularUnknownGap->SetLiteral().SetLength(100);
-            NCBITEST_CHECK(
-                (*delta_seq_it)->Equals(*pRegularUnknownGap) );
-        } else {
-            NCBITEST_CHECK( 
-                (*delta_seq_it)->Equals(*pCompletelyUnknownGap) );
+        size_t uNumBasesExpected = 0;
+        for( ; next_char_idx < kFasta.length(); ++next_char_idx ) {
+            const char ch = kFasta[next_char_idx];
+            if( isalpha(ch) ) {
+                ++uNumBasesExpected;
+            }
         }
 
-        ++delta_seq_it;
-        NCBITEST_CHECK( 
-            FIELD_IS_AND_IS_SET( **delta_seq_it, Literal, Seq_data ) );
+        BOOST_CHECK_EQUAL( uNumBasesExpected, pBioseq->GetLength() );
+    }}
+}
 
-        ++delta_seq_it;
-        pRegularGap->SetLiteral().SetLength(58);
-        NCBITEST_CHECK(
-            (*delta_seq_it)->Equals(*pRegularGap) );
+BOOST_AUTO_TEST_CASE(TestThatUnknownLengthGapsShouldHaveSize100)
+{
+    const string kFasta =
+        ">Seq1\n"
+        "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTA\n"
+        ">?unk90\n"
+        "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTA\n";
 
-        ++delta_seq_it;
-        NCBITEST_CHECK( 
-            FIELD_IS_AND_IS_SET( **delta_seq_it, Literal, Seq_data ) );
+    TWarnVec expectedWarnings;
+    expectedWarnings.push_back( ILineError::eProblem_InvalidLengthAutoCorrected );
 
-        ++delta_seq_it;
-        pRegularUnknownGap->SetLiteral().SetLength(90);
-        NCBITEST_CHECK(
-                (*delta_seq_it)->Equals(*pRegularUnknownGap) );
+    CRef<CBioseq> pBioseq =
+        s_ParseFasta(kFasta, 
+        CFastaReader::fParseGaps,
+        kEmptyStr,
+        expectedWarnings );
 
-        ++delta_seq_it;
-        NCBITEST_CHECK( 
-            FIELD_IS_AND_IS_SET( **delta_seq_it, Literal, Seq_data ) );
-    }
+    BOOST_CHECK( pBioseq );
+
+    // make sure the gap really was autocorrected
+    const CDelta_ext::Tdata & delta_seq_container =
+        pBioseq->GetInst().GetExt().GetDelta().Get();
+    BOOST_CHECK_EQUAL( delta_seq_container.size(), 3 );
+    // get second CDelta_seq
+    CDelta_ext::Tdata::const_iterator delta_seq_it = 
+        delta_seq_container.begin();
+    ++delta_seq_it; // move to the second one
+
+    const CDelta_seq & gap_delta_seq = **delta_seq_it;
+    const CSeq_literal & gap_seq_literal = gap_delta_seq.GetLiteral();
+    NCBITEST_CHECK_EQUAL( gap_seq_literal.GetLength(), kUnknownGapLen );
+    NCBITEST_CHECK_EQUAL( gap_seq_literal.GetFuzz().GetLim(), 
+        CInt_fuzz::eLim_unk );
+    NCBITEST_CHECK( ! gap_seq_literal.IsSetSeq_data() );
 }

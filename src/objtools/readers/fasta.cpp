@@ -259,32 +259,28 @@ inline bool s_ASCII_IsValidNuc(unsigned char c)
 
 CFastaReader::CFastaReader(ILineReader& reader, TFlags flags)
     : m_LineReader(&reader), m_MaskVec(0), 
-      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4),
-      m_CompletelyUnknownGapLength(0)
+      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4)
 {
     m_Flags.push(flags);
 }
 
 CFastaReader::CFastaReader(CNcbiIstream& in, TFlags flags)
     : m_LineReader(ILineReader::New(in)), m_MaskVec(0),
-      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4),
-      m_CompletelyUnknownGapLength(0)
+      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4)
 {
     m_Flags.push(flags);
 }
 
 CFastaReader::CFastaReader(const string& path, TFlags flags)
     : m_LineReader(ILineReader::New(path)), m_MaskVec(0),
-      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4),
-      m_CompletelyUnknownGapLength(0)
+      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4)
 {
     m_Flags.push(flags);
 }
 
 CFastaReader::CFastaReader(CReaderBase::TReaderFlags fBaseFlags, TFlags flags)
     : CReaderBase(fBaseFlags), m_MaskVec(0), 
-      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4),
-      m_CompletelyUnknownGapLength(0)
+      m_IDGenerator(new CSeqIdGenerator), m_MaxIDLength(kMax_UI4)
 {
     m_Flags.push(flags);
 }
@@ -869,6 +865,7 @@ void CFastaReader::CheckDataLine(
     if (TestFlag(fSkipCheck)  ||  ! m_SeqData.empty() ) {
         return;
     }
+    const bool bIgnoreHyphens = TestFlag(fHyphensIgnoreAndWarn);
     size_t good = 0, bad = 0, len = s.length();
     const bool bIsNuc = (
         ( TestFlag(fAssumeNuc) && TestFlag(fForceType) ) ||
@@ -877,11 +874,17 @@ void CFastaReader::CheckDataLine(
     size_t ambig_nuc = 0;
     for (size_t pos = 0;  pos < len;  ++pos) {
         unsigned char c = s[pos];
-        if (s_ASCII_IsAlpha(c)  ||  c == '-'  ||  c == '*') {
+        if (s_ASCII_IsAlpha(c) ||  c == '*') {
             ++good;
             if( bIsNuc && s_ASCII_IsAmbigNuc(c) ) {
                 ++ambig_nuc;
             }
+        } else if( c == '-' ) {
+            if( ! bIgnoreHyphens ) {
+                ++good;
+            }
+            // if bIgnoreHyphens == true, the "hyphens are ignored" warning
+            // will be triggered elsewhere
         } else if (isspace(c)  ||  (c >= '0' && c <= '9')) {
             // treat whitespace and digits as neutral
         } else if (c == ';') {
@@ -904,7 +907,7 @@ void CFastaReader::CheckDataLine(
         FASTA_WARNING(LineNumber(), 
             "FASTA-Reader: First data line in seq is about "
             << percent_ambig << "% ambiguous nucleotides (shouldn't be over "
-            << kWarnPercentAmbiguous << "%)", 
+            << kWarnPercentAmbiguous << "%)",   
             ILineError::eProblem_TooManyAmbiguousResidues,
             "first data line");
     }
@@ -946,11 +949,19 @@ void CFastaReader::ParseDataLine(
     int bad_pos_line_num = -1;
     vector<TSeqPos> bad_pos_vec; 
 
+    const bool bHyphensIgnoreAndWarn = TestFlag(fHyphensIgnoreAndWarn);
+    const bool bHyphensAreGaps = 
+        ( TestFlag(fParseGaps) && ! bHyphensIgnoreAndWarn );
+    const bool bAllowLetterGaps =
+        ( TestFlag(fParseGaps) && TestFlag(fLetterGaps) );
+
+    bool bIgnorableHyphenSeen = false;
+
     const char chLetterGap = ( bIsNuc ? 'N' : 'X');
     for (size_t pos = 0;  pos < len;  ++pos) {
         unsigned char c = s[pos];
-        if ( TestFlag(fParseGaps) && 
-             (c == '-' || (TestFlag(fLetterGaps) && c == chLetterGap)  ) ) 
+        if ( ( (c == '-')         && bHyphensAreGaps) ||
+             ( (c == chLetterGap) && bAllowLetterGaps) )
         {
             CloseMask();
             // open a gap
@@ -961,6 +972,8 @@ void CFastaReader::ParseDataLine(
             m_CurrentGapLength += pos2 - pos;
             m_CurrentGapChar = c;
             pos = pos2 - 1;
+        } else if( c == '-' && bHyphensIgnoreAndWarn ) {
+            bIgnorableHyphenSeen = true;
         } else if (
             s_ASCII_IsValidNuc(c) ||
             ( ! bIsNuc &&  ( s_ASCII_IsAlpha(c) ||  c == '*' ) ) ||
@@ -984,6 +997,14 @@ void CFastaReader::ParseDataLine(
     }
 
     m_SeqData.resize(m_CurrentPos);
+
+    if( bIgnorableHyphenSeen ) {
+        _ASSERT( bHyphensIgnoreAndWarn );
+        FASTA_WARNING_EX(LineNumber(),
+            "CFastaReader: Hyphens are invalid and will be ignored around line " << LineNumber(),
+            ILineError::eProblem_IgnoredResidue,
+            kEmptyStr, kEmptyStr, "-" );
+    }
 
     // before throwing, be sure that we're in a valid state so that callers can
     // parse multiple lines and get the invalid residues in all of them.
@@ -1026,7 +1047,7 @@ void CFastaReader::x_CloseGap(
         if (len == 1 && m_CurrentGapChar == '-' ) {
             TSeqPos l = m_SeqData.length();
             if (l == pos  ||  l == pos + (*GetLineReader()).length()) {
-                len = m_CompletelyUnknownGapLength;
+                len = 0;
                 eKnownSize = SGap::eKnownSize_No;
             }
         }
@@ -1099,6 +1120,17 @@ bool CFastaReader::ParseGapLine(
                 "gapline" );
             // try to continue the best we can
             uGapSize = 1;
+        }
+        if( eIsKnown != SGap::eKnownSize_Yes && 
+            uGapSize != 100) 
+        {
+            FASTA_WARNING(LineNumber(), 
+                "CFastaReader: Unknown-size gaps must have a nominal "
+                "length of 100, at line  " << LineNumber(),
+                ILineError::eProblem_InvalidLengthAutoCorrected,
+                "gapline" );
+            // force to correct value
+            uGapSize = 100;
         }
         sRemainingLine = sRemainingLine.substr(sDigits.length());
         NStr::TruncateSpacesInPlace(sRemainingLine, NStr::eTrunc_Begin);

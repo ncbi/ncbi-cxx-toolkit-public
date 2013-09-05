@@ -81,6 +81,8 @@ public:
         eProblem_NonPositiveLength,
         eProblem_ParsingModifiers,
         eProblem_ContradictoryModifiers,
+        eProblem_InvalidLengthAutoCorrected, // covers more general cases than eProblem_NonPositiveLength
+        eProblem_IgnoredResidue,
 
         //vcf specific
         eProblem_BadInfoLine,
@@ -245,6 +247,10 @@ public:
             return "Could not parse modifiers.";
         case eProblem_ContradictoryModifiers:
             return "Multiple different values for modifier";
+        case eProblem_InvalidLengthAutoCorrected:
+            return "Feature had invalid length, but this was automatically corrected.";
+        case eProblem_IgnoredResidue:
+            return "An invalid residue has been ignored";
 
         case eProblem_BadInfoLine:
             return "Broken ##INFO line";

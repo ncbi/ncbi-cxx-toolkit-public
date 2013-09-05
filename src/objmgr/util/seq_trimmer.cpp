@@ -676,20 +676,24 @@ CSequenceAmbigTrimmer::x_SliceBioseq(
         CSeqMap::ESegmentType eType = seqmap_ci.GetType();
         switch( eType ) {
         case CSeqMap::eSeqGap: {
+            const TSeqPos uGapLength = seqmap_ci.GetLength();
+            const bool bIsLengthKnown = ! seqmap_ci.IsUnknownLength();
             CConstRef<CSeq_literal> pOriginalGapSeqLiteral =
                 seqmap_ci.GetRefGapLiteral();
+
+            CAutoInitRef<CDelta_seq> pDeltaSeq;
 
             CAutoInitRef<CSeq_literal> pNewGapLiteral;
             if( pOriginalGapSeqLiteral ) {
                 pNewGapLiteral->Assign(*pOriginalGapSeqLiteral);
             }
-            pNewGapLiteral->SetLength( seqmap_ci.GetLength() );
-            if( seqmap_ci.IsUnknownLength() ) {
+            if( ! bIsLengthKnown ) {
                 pNewGapLiteral->SetFuzz().SetLim( CInt_fuzz::eLim_unk );
             }
+            pNewGapLiteral->SetLength( uGapLength );
 
-            CAutoInitRef<CDelta_seq> pDeltaSeq;
             pDeltaSeq->SetLiteral( *pNewGapLiteral );
+
             pDeltaExt->Set().push_back( Ref(&*pDeltaSeq) );
             break;
         }

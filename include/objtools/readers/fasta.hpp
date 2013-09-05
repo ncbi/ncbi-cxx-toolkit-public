@@ -80,31 +80,32 @@ public:
     /// control-As.  Normally, the reader stops at the first
     /// control-A; however, this flag makes it parse all the IDs.
     enum EFlags {
-        fAssumeNuc    = 1<< 0, ///< Assume nucs unless accns indicate otherwise
-        fAssumeProt   = 1<< 1, ///< Assume prots unless accns indicate otherwise
-        fForceType    = 1<< 2, ///< Force specified type regardless of accession
-        fNoParseID    = 1<< 3, ///< Generate an ID (whole defline -&gt; title)
-        fParseGaps    = 1<< 4, ///< Make a delta sequence if gaps found
-        fOneSeq       = 1<< 5, ///< Just read the first sequence found
-        fAllSeqIds    = 1<< 6, ///< Read Seq-ids past the first ^A (see note)
-        fNoSeqData    = 1<< 7, ///< Parse the deflines but skip the data
-        fRequireID    = 1<< 8, ///< Reject deflines that lack IDs
-        fDLOptional   = 1<< 9, ///< Don't require a leading defline
-        fParseRawID   = 1<<10, ///< Try to identify raw accessions
-        fSkipCheck    = 1<<11, ///< Skip (rudimentary) body content check
-        fNoSplit      = 1<<12, ///< Don't split out ambiguous sequence regions
-        fValidate     = 1<<13, ///< Check (alphabetic) residue validity
-        fUniqueIDs    = 1<<14, ///< Forbid duplicate IDs
-        fStrictGuess  = 1<<15, ///< Assume no typos when guessing sequence type
-        fLaxGuess     = 1<<16, ///< Use legacy heuristic for guessing seq. type
-        fAddMods      = 1<<17, ///< Parse defline mods and add to SeqEntry
-        fLetterGaps   = 1<<18, ///< Parse runs of Ns when splitting data
-        fNoUserObjs   = 1<<19, ///< Don't save raw deflines in User-objects
-        fBadModThrow  = 1<<20, ///< Throw an exception if there's a bad modifier value (e.g. "[topology=nonsense]")
-        fUnknModThrow = 1<<21, ///< Throw if there are any unknown (unused) mods left over
-        fLeaveAsText  = 1<<22, ///< Don't reencode at all, just parse
-        fQuickIDCheck = 1<<23, ///< Just check local IDs' first characters
-        fUseIupacaa   = 1<<24  ///< If Prot, use iupacaa instead of the default ncbieaa.
+        fAssumeNuc            = 1<< 0, ///< Assume nucs unless accns indicate otherwise
+        fAssumeProt           = 1<< 1, ///< Assume prots unless accns indicate otherwise
+        fForceType            = 1<< 2, ///< Force specified type regardless of accession
+        fNoParseID            = 1<< 3, ///< Generate an ID (whole defline -&gt; title)
+        fParseGaps            = 1<< 4, ///< Make a delta sequence if gaps found
+        fOneSeq               = 1<< 5, ///< Just read the first sequence found
+        fAllSeqIds            = 1<< 6, ///< Read Seq-ids past the first ^A (see note)
+        fNoSeqData            = 1<< 7, ///< Parse the deflines but skip the data
+        fRequireID            = 1<< 8, ///< Reject deflines that lack IDs
+        fDLOptional           = 1<< 9, ///< Don't require a leading defline
+        fParseRawID           = 1<<10, ///< Try to identify raw accessions
+        fSkipCheck            = 1<<11, ///< Skip (rudimentary) body content check
+        fNoSplit              = 1<<12, ///< Don't split out ambiguous sequence regions
+        fValidate             = 1<<13, ///< Check (alphabetic) residue validity
+        fUniqueIDs            = 1<<14, ///< Forbid duplicate IDs
+        fStrictGuess          = 1<<15, ///< Assume no typos when guessing sequence type
+        fLaxGuess             = 1<<16, ///< Use legacy heuristic for guessing seq. type
+        fAddMods              = 1<<17, ///< Parse defline mods and add to SeqEntry
+        fLetterGaps           = 1<<18, ///< Parse runs of Ns when splitting data
+        fNoUserObjs           = 1<<19, ///< Don't save raw deflines in User-objects
+        fBadModThrow          = 1<<20, ///< Throw an exception if there's a bad modifier value (e.g. "[topology=nonsense]")
+        fUnknModThrow         = 1<<21, ///< Throw if there are any unknown (unused) mods left over
+        fLeaveAsText          = 1<<22, ///< Don't reencode at all, just parse
+        fQuickIDCheck         = 1<<23, ///< Just check local IDs' first characters
+        fUseIupacaa           = 1<<24, ///< If Prot, use iupacaa instead of the default ncbieaa.
+        fHyphensIgnoreAndWarn = 1<<25, ///< When a hyphen is encountered in seq data, ignore it but warn.
     };
     typedef int TFlags; ///< binary OR of EFlags
 
@@ -161,17 +162,6 @@ public:
     const CSourceModParser::TMods & GetUnusedMods(void) const { return m_UnusedMods; }
     const CSourceModParser::TMods & GetBadMods(void) const { return m_BadMods; }
     void  ClearBadMods(void) { m_BadMods.clear(); }
-
-    /// The getter for SetCompletelyUnknownGapLength.
-    TSeqPos GetCompletelyUnknownGapLength(void) const { 
-        return m_CompletelyUnknownGapLength; }
-    /// The "completely unknown gap length" is the length that will
-    /// be given to gaps of completely unknown size (normally represented
-    /// with a lone hyphen at the end of a line).  Set this to
-    /// zero to leave them as a completely unknown length (default).
-    /// Usually, this would be set to 0 or 100.
-    void SetCompletelyUnknownGapLength(TSeqPos new_len) { 
-        m_CompletelyUnknownGapLength = new_len; }
 
     /// If this is set, an exception will be thrown if a Sequence ID exceeds the
     /// given length.
@@ -374,7 +364,6 @@ private:
     CSourceModParser::TMods m_BadMods;
     CSourceModParser::TMods m_UnusedMods;
     Uint4                   m_MaxIDLength;
-    TSeqPos                 m_CompletelyUnknownGapLength;
     vector<SLineTextAndLoc> m_CurrentSeqTitles;
 };
 
