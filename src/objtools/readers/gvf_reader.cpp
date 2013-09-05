@@ -590,6 +590,13 @@ bool CGvfReader::xVariationSetInsertions(
         {
             string allele(*cit); 
             if (allele == "-") {
+                pReference->SetVariant_prop().SetAllele_state(
+                    (alleles.size() == 1) ?
+                        CVariantProperties::eAllele_state_homozygous :
+                        CVariantProperties::eAllele_state_heterozygous);
+                pReference->SetData().SetInstance().SetObservation(
+                    CVariation_inst::eObservation_asserted |
+                    CVariation_inst::eObservation_variant);
                 continue;
             }
             CRef<CVariation_ref> pAllele(new CVariation_ref);
@@ -844,19 +851,19 @@ bool CGvfReader::xVariationSetDeletions(
 //  ---------------------------------------------------------------------------
 {
     string strReference;
+    CRef<CVariation_ref> pReference(new CVariation_ref);
     if (record.GetAttribute("Reference_seq", strReference)) {
-        CRef<CVariation_ref> pAllele(new CVariation_ref);
-        pAllele->SetData().SetInstance().SetType(
+        pReference->SetData().SetInstance().SetType(
             CVariation_inst::eType_identity);
         CRef<CDelta_item> pDelta(new CDelta_item);
         pDelta->SetSeq().SetLiteral().SetLength(strReference.size());
         pDelta->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(
             strReference);
-        pAllele->SetData().SetInstance().SetDelta().push_back(pDelta);
-        pAllele->SetData().SetInstance().SetObservation(
+        pReference->SetData().SetInstance().SetDelta().push_back(pDelta);
+        pReference->SetData().SetInstance().SetObservation(
             CVariation_inst::eObservation_asserted);
         pVariation->SetData().SetSet().SetVariations().push_back(
-            pAllele );
+            pReference );
     }
     string strAlleles;
     if ( record.GetAttribute( "Variant_seq", strAlleles ) ) {
@@ -869,18 +876,20 @@ bool CGvfReader::xVariationSetDeletions(
         {
             string allele(*cit); 
             if (allele == strReference) {
+                pReference->SetVariant_prop().SetAllele_state(
+                    (alleles.size() == 1) ?
+                        CVariantProperties::eAllele_state_homozygous :
+                        CVariantProperties::eAllele_state_heterozygous);
+                pReference->SetData().SetInstance().SetObservation(
+                    CVariation_inst::eObservation_asserted |
+                    CVariation_inst::eObservation_variant);
                 continue;
             }
             CRef<CVariation_ref> pAllele(new CVariation_ref);
-             if (alleles.size() == 1) {
-                pAllele->SetVariant_prop().SetAllele_state(
-                    CVariantProperties::eAllele_state_homozygous);
-            }
-            else {
-                pAllele->SetVariant_prop().SetAllele_state(
-                    CVariantProperties::eAllele_state_heterozygous);
-            }
-
+            pAllele->SetVariant_prop().SetAllele_state(
+                (alleles.size() == 1) ?
+                CVariantProperties::eAllele_state_homozygous :
+                CVariantProperties::eAllele_state_heterozygous);
             CRef<CDelta_item> pDelta(new CDelta_item);
             pDelta->SetSeq().SetThis();
             pDelta->SetAction(CDelta_item::eAction_del_at);
@@ -932,7 +941,9 @@ bool CGvfReader::xVariationSetSnvs(
             CRef<CVariation_ref> pAllele(new CVariation_ref);
             if (allele == strReference) {
                 pReference->SetVariant_prop().SetAllele_state(
-                    CVariantProperties::eAllele_state_homozygous);
+                    (alleles.size() == 1) ?
+                        CVariantProperties::eAllele_state_homozygous :
+                        CVariantProperties::eAllele_state_heterozygous);
                 pReference->SetData().SetInstance().SetObservation(
                     CVariation_inst::eObservation_asserted |
                     CVariation_inst::eObservation_variant);
