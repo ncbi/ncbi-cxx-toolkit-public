@@ -142,6 +142,7 @@ public:
     ///   The input line that will be parsed.
     /// @param out_seqid
     ///   If returning true, this will hold the seqid of line_arg
+    ///   (or empty if there is none)
     /// @param out_annotname
     ///   If returning true, this will hold the annotname of 
     ///   line_arg (or empty if there is none)

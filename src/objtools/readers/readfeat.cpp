@@ -2942,14 +2942,11 @@ bool CFeature_table_reader_imp::ParseFeatureLine (
     string annotname;
     NStr::SplitInTwo(line, " ", seqid, annotname, 
         NStr::fSplit_MergeDelims );
-    if( ! seqid.empty() ) {
-        // swap is faster than assignment
-        out_seqid.swap(seqid);
-        out_annotname.swap(annotname);
-        return true;
-    }
 
-    return false;
+    // swap is faster than assignment
+    out_seqid.swap(seqid);
+    out_annotname.swap(annotname);
+    return true;
 }
 
 
