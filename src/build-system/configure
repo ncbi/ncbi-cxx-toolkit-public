@@ -5478,7 +5478,9 @@ case "$host_os:$compiler" in
    # "incomplete type is not allowed" should be an error, not a warning!
    CFLAGS="-we70 $CFLAGS"
    CXXFLAGS="-we70 $CXXFLAGS"
-   MATH_LIBS=-Wl,-lm # avoid static libimf in shared libs
+   case "$compiler_version" in
+      1[1-9]?? ) MATH_LIBS=-Wl,-lm ;; # avoid static libimf in shared libs
+   esac
    ;;
 
  irix*:GCC )
