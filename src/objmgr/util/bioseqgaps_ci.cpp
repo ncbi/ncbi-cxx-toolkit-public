@@ -246,4 +246,4 @@ CBioseqGaps_CI::x_FindNextGapOnBioseq(
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
-      
+
