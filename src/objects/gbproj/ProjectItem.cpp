@@ -215,6 +215,15 @@ const CProjectFolder* CProjectItem::GetParentFolder() const
     return m_ParentFolder;
 }
 
+void CProjectItem::SetUserObject(CObject* object)
+{
+	m_UserObject.Reset(object);
+}
+
+CObject* CProjectItem::GetUserObject()
+{
+	return m_UserObject.GetPointer();
+}
 
 END_objects_SCOPE // namespace ncbi::objects::
 

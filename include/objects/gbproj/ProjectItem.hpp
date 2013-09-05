@@ -87,6 +87,9 @@ public:
     CProjectFolder* GetParentFolder();
     const CProjectFolder* GetParentFolder() const;
 
+    void     SetUserObject(CObject* object);
+    CObject* GetUserObject();
+
 private:
     // Prohibit copy constructor and assignment operator
     CProjectItem(const CProjectItem& value);
@@ -94,6 +97,7 @@ private:
 
 protected:
     CProjectFolder* m_ParentFolder;
+	CRef<CObject>   m_UserObject;
 };
 
 /////////////////// CProjectItem inline methods
