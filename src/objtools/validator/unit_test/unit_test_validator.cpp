@@ -15422,16 +15422,31 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UndesiredProteinName)
 
     STANDARD_SETUP
     
-    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "UndesiredProteinName",
-                              ""));
     string msg;
 
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "UndesiredProteinName",
+                              ""));
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "MultipleTaxonIDs",
+                              "There are multiple taxonIDs in this RefSeq record."));
     test_undesired_protein_name("a=b")
+
+    CLEAR_ERRORS
+
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "UndesiredProteinName",
+                              ""));
     expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "BadInternalCharacter",
                               "Protein name contains undesired character"));
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "MultipleTaxonIDs",
+                              "There are multiple taxonIDs in this RefSeq record."));
     test_undesired_protein_name("a~b")
-    delete expected_errors[1];
-    expected_errors.pop_back();
+
+    CLEAR_ERRORS
+
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "UndesiredProteinName",
+                              ""));
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "MultipleTaxonIDs",
+                              "There are multiple taxonIDs in this RefSeq record."));
+
     test_undesired_protein_name("uniprot protein")
     test_undesired_protein_name("uniprotkb protein")
     test_undesired_protein_name("refers to pmid 23")
@@ -15630,6 +15645,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MissingGeneLocusTag)
 
     expected_errors.push_back (new CExpectedError("NC_123456", eDiag_Warning, "MissingGeneLocusTag",
                                 "Missing gene locus tag"));
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "MultipleTaxonIDs",
+                              "There are multiple taxonIDs in this RefSeq record."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
