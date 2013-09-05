@@ -531,13 +531,21 @@ void CFastaReader::ParseDefLine(const TStr& s, IMessageListener * pMessageListen
 {
     size_t start = 1, pos, len = s.length(), range_len = 0, title_start;
     TSeqPos range_start, range_end;
+
+    // ignore spaces between '>' and the sequence ID
+    for( ; start < len; ++start ) {
+        if( ! isspace(s[start]) ) {
+            break;
+        }
+    }
+
     do {
         bool has_id = true;
         if (TestFlag(fNoParseID)) {
             title_start = start;
         } else {
             // This loop finds the end of the sequence ID
-            for (pos = start;  pos < len;  ++pos) {
+            for ( pos = start;  pos < len;  ++pos) {
                 unsigned char c = s[pos];
                 
                 if (c <= ' ' ) { // assumes ASCII
@@ -2123,3 +2131,4 @@ CFastaReader::SGap::SGap(
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+

@@ -364,7 +364,7 @@ BOOST_AUTO_TEST_CASE(TestWarnings)
             SOneWarningsInfo warning_info = {
                 line_error.Problem(),
                 line_error.FeatureName(),
-                (int) line_error.Line()
+                line_error.Line()
             };
             setWarningsSeen.insert(warning_info);
         }
@@ -1432,3 +1432,36 @@ BOOST_AUTO_TEST_CASE(TestThatUnknownLengthGapsShouldHaveSize100)
         CInt_fuzz::eLim_unk );
     NCBITEST_CHECK( ! gap_seq_literal.IsSetSeq_data() );
 }
+
+BOOST_AUTO_TEST_CASE(TestIgnoringSpacesAfterGreaterThanInDefline)
+{
+    const string kLocalId = "Seq1";
+    const string kSeq = "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTA";
+
+    ITERATE_0_IDX(num_spaces, 3) {
+        const string sDefline = 
+            ">" + string(num_spaces, ' ') + kLocalId;
+
+        cout << "Trying with defline '" << sDefline << "'" << endl;
+
+        const string sFastaToParse =
+            sDefline + "\n" +
+            kSeq + "\n";
+
+        CRef<CBioseq> pBioseq =
+            s_ParseFasta(sFastaToParse, 
+            kDefaultFastaReaderFlags );
+
+        BOOST_CHECK( pBioseq );
+
+        NCBITEST_CHECK_EQUAL( 
+            pBioseq->GetFirstId()->GetLocal().GetStr(),
+            kLocalId );
+
+        CSeqVector seqvec( *pBioseq, NULL, CBioseq_Handle::eCoding_Iupac );
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            kSeq.begin(), kSeq.end(),
+            seqvec.begin(), seqvec.end() );
+    }
+}
+
