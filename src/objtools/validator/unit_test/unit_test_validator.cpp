@@ -12848,6 +12848,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ExceptionProblem)
     // not legal (is warning for NC or NT)
     feat->SetExcept_text("not a legal exception");
     expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Warning, "ExceptionProblem", "not a legal exception is not a legal exception explanation"));
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "MultipleTaxonIDs", "There are multiple taxonIDs in this RefSeq record."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -13104,6 +13105,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_AltStartCodon)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("NM_123456", eDiag_Warning, "AltStartCodon",
                               "Unnecessary alternative start codon exception"));
+    expected_errors.push_back(new CExpectedError("NM_123456", eDiag_Error, "MultipleTaxonIDs",
+                              "There are multiple taxonIDs in this RefSeq record."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -13334,6 +13337,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_LocusTagProductMismatch)
     options |= CValidator::eVal_locus_tag_general_match;
     expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "LocusTagProductMismatch",
                                "Gene locus_tag does not match general ID of product"));
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "MultipleTaxonIDs",
+                              "There are multiple taxonIDs in this RefSeq record."));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -14040,6 +14045,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SuspiciousGeneXref)
                                 "Curated Drosophila record should not have gene cross-reference other gene"));
     expected_errors.push_back (new CExpectedError("NT_123456", eDiag_Warning, "GeneXrefStrandProblem",
                                 "Gene cross-reference is not on expected strand"));
+    expected_errors.push_back(new CExpectedError("NT_123456", eDiag_Error, "MultipleTaxonIDs",
+                              "There are multiple taxonIDs in this RefSeq record."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -14233,6 +14240,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_HpotheticalProteinMismatch) {
 
     expected_errors.push_back (new CExpectedError("XP_654321", eDiag_Warning, "HpotheticalProteinMismatch",
                                "Hypothetical protein reference does not match accession"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "MultipleTaxonIDs",
+                              "There are multiple taxonIDs in this RefSeq record."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -15338,6 +15347,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UndesiredGeneSynonym)
     STANDARD_SETUP
 
     expected_errors.push_back (new CExpectedError("NC_123456", eDiag_Warning, "UndesiredGeneSynonym", ""));
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "MultipleTaxonIDs",
+                              "There are multiple taxonIDs in this RefSeq record."));
 
     test_gene_syn("alpha")
     test_gene_syn("alternative")
