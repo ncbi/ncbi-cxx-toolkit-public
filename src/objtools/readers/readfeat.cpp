@@ -258,6 +258,11 @@ public:
                       int line,
                       const string &seq_id );
 
+    static bool ParseFeatureLine (
+        const CTempString& line_arg,
+        string & out_seqid,
+        string & out_annotname );
+
 private:
 
     // Prohibit copy constructor and assignment operator
@@ -1172,54 +1177,6 @@ bool CFeature_table_reader_imp::x_StringIsJustQuotes (
     }
 
     return true;
-}
-
-// returns true if this is a feature line,
-// otherwise out_seqid and out_annotname will be cleared.
-//
-// try to be as forgiving about spaces as possible
-static bool 
-s_ParseFeatureLineAndFix (
-    CTempString& line_arg,
-    string & out_seqid,
-    string & out_annotname )
-{
-    out_seqid.clear();
-    out_annotname.clear();
-
-    // copy the line_arg because we can't edit line_arg itself
-    CTempString line = line_arg;
-
-    // handle ">"
-    NStr::TruncateSpacesInPlace(line);
-    if( ! NStr::StartsWith(line, ">") ) {
-        return false;
-    }
-    line_arg = line; // NB: we trim line_arg if it has a '>' after its spaces
-    line = line.substr(1); // remove '>'
-
-    // handle "Feature"
-    NStr::TruncateSpacesInPlace(line, NStr::eTrunc_Begin);
-    const CTempString kFeatureStr("Feature");
-    if( ! NStr::StartsWith(line, kFeatureStr, NStr::eNocase) ) {
-        return false;
-    }
-    line = line.substr( kFeatureStr.length() ); // remove "Feature"
-
-    // extract seqid and annotname
-    NStr::TruncateSpacesInPlace(line, NStr::eTrunc_Begin);
-    string seqid;
-    string annotname;
-    NStr::SplitInTwo(line, " ", seqid, annotname, 
-        NStr::fSplit_MergeDelims );
-    if( ! seqid.empty() ) {
-        // swap is faster than assignment
-        out_seqid.swap(seqid);
-        out_annotname.swap(annotname);
-        return true;
-    }
-
-    return false;
 }
 
 static bool
@@ -2707,7 +2664,7 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
 
         if (! line.empty () && (!bIgnoreWebComments || ! x_IsWebComment(line) ) ) {
             string dummy1, dummy2;
-            if( s_ParseFeatureLineAndFix(line, dummy1, dummy2) ) {
+            if( ParseFeatureLine(line, dummy1, dummy2) ) {
                 // if next feature table, return current sap
                 reader.UngetLine(); // we'll get this feature line the next time around
                 break;
@@ -2952,6 +2909,49 @@ void CFeature_table_reader_imp::AddFeatQual (
     }
 }
 
+// static
+bool CFeature_table_reader_imp::ParseFeatureLine (
+    const CTempString& line_arg,
+    string & out_seqid,
+    string & out_annotname )
+{
+    out_seqid.clear();
+    out_annotname.clear();
+
+    // copy the line_arg because we can't edit line_arg itself
+    CTempString line = line_arg;
+
+    // handle ">"
+    NStr::TruncateSpacesInPlace(line);
+    if( ! NStr::StartsWith(line, ">") ) {
+        return false;
+    }
+    line = line.substr(1); // remove '>'
+
+    // handle "Feature"
+    NStr::TruncateSpacesInPlace(line, NStr::eTrunc_Begin);
+    const CTempString kFeatureStr("Feature");
+    if( ! NStr::StartsWith(line, kFeatureStr, NStr::eNocase) ) {
+        return false;
+    }
+    line = line.substr( kFeatureStr.length() ); // remove "Feature"
+
+    // extract seqid and annotname
+    NStr::TruncateSpacesInPlace(line, NStr::eTrunc_Begin);
+    string seqid;
+    string annotname;
+    NStr::SplitInTwo(line, " ", seqid, annotname, 
+        NStr::fSplit_MergeDelims );
+    if( ! seqid.empty() ) {
+        // swap is faster than assignment
+        out_seqid.swap(seqid);
+        out_annotname.swap(annotname);
+        return true;
+    }
+
+    return false;
+}
+
 
 // public access functions
 
@@ -3056,7 +3056,7 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 
         CTempString line = *++reader;
 
-        if( s_ParseFeatureLineAndFix(line, seqid, annotname) ) {
+        if( ParseFeatureLine(line, seqid, annotname) ) {
             FTBL_PROGRESS( seqid, reader.GetLineNumber() );
         }
     }
@@ -3152,6 +3152,15 @@ void CFeature_table_reader::AddFeatQual (
 
 {
     x_GetImplementation ().AddFeatQual ( sfp, feat_name, qual, val, flags, pMessageListener, line, seq_id ) ;
+}
+
+bool
+CFeature_table_reader::ParseFeatureLine (
+    const CTempString& line_arg,
+    string & out_seqid,
+    string & out_annotname )
+{
+    return x_GetImplementation ().ParseFeatureLine ( line_arg, out_seqid, out_annotname );
 }
 
 

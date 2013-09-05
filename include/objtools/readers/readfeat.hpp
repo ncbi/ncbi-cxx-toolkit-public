@@ -135,6 +135,23 @@ public:
                              int line = 0, 	
                              const string &seq_id = std::string() );
 
+    /// If line_arg is a feature line (e.g. ">Feature lcl|seq1"), then
+    /// it will parse it and return true.
+    ///
+    /// @param line_arg
+    ///   The input line that will be parsed.
+    /// @param out_seqid
+    ///   If returning true, this will hold the seqid of line_arg
+    /// @param out_annotname
+    ///   If returning true, this will hold the annotname of 
+    ///   line_arg (or empty if there is none)
+    /// @returns
+    ///   True if it is a feature line and false if it's not.
+    static bool ParseFeatureLine (
+        const CTempString& line_arg,
+        string & out_seqid,
+        string & out_annotname );
+
 private:
     // this class uses a singleton internally to manage the specifics
     // of the feature table reader implementation
