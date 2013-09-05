@@ -100,6 +100,17 @@ static size_t GetGCSize(void)
 }
 
 
+NCBI_PARAM_DECL(size_t, VDBGRAPH_LOADER, MISSING_GC_SIZE);
+NCBI_PARAM_DEF_EX(size_t, VDBGRAPH_LOADER, MISSING_GC_SIZE, 10000,
+                  eParam_NoThread, VDBGRAPH_LOADER_MISSING_GC_SIZE);
+
+static size_t GetMissingGCSize(void)
+{
+    static NCBI_PARAM_TYPE(VDBGRAPH_LOADER, MISSING_GC_SIZE) s_Value;
+    return s_Value.Get();
+}
+
+
 NCBI_PARAM_DECL(int, VDBGRAPH_LOADER, USE_TABLE);
 NCBI_PARAM_DEF_EX(int, VDBGRAPH_LOADER, USE_TABLE, 2,
                   eParam_NoThread, VDBGRAPH_LOADER_USE_TABLE);
@@ -205,7 +216,8 @@ bool CVDBGraphBlobId::operator==(const CBlobId& id) const
 
 
 CVDBGraphDataLoader_Impl::CVDBGraphDataLoader_Impl(const TVDBFiles& vdb_files)
-    : m_AutoFileMap(GetGCSize())
+    : m_AutoFileMap(GetGCSize()),
+      m_MissingFileSet(GetMissingGCSize())
 {
     ITERATE ( TVDBFiles, it, vdb_files ) {
         if ( GetDebugLevel() >= 2 ) {
@@ -341,6 +353,10 @@ CVDBGraphDataLoader_Impl::GetOrphanAnnotRecords(CDataSource* ds,
         if ( m_AutoFileMap.get_size_limit() < accs.size() ) {
             // increase VDB cache size
             m_AutoFileMap.set_size_limit(accs.size()+GetGCSize());
+        }
+        if ( m_MissingFileSet.get_size_limit() < accs.size() ) {
+            // increase VDB cache size
+            m_MissingFileSet.set_size_limit(accs.size()+GetMissingGCSize());
         }
         ITERATE ( SAnnotSelector::TNamedAnnotAccessions, it, accs ) {
             if ( 1 ) {
@@ -533,6 +549,10 @@ CVDBGraphDataLoader_Impl::x_GetNAFileInfo(const string& na_acc)
         return null;
     }
     CMutexGuard guard(m_Mutex);
+    TMissingFileSet::iterator it2 = m_MissingFileSet.find(na_acc);
+    if ( it2 != m_MissingFileSet.end() ) {
+        return null;
+    }
     TAutoFileMap::iterator it = m_AutoFileMap.find(na_acc);
     if ( it != m_AutoFileMap.end() ) {
         return it->second;
@@ -553,7 +573,8 @@ CVDBGraphDataLoader_Impl::x_GetNAFileInfo(const string& na_acc)
         if ( GetDebugLevel() >= 2 ) {
             LOG_POST_X(3, "CVDBGraphDataLoader: accession not found: "<<na_acc);
         }
-        info = null;
+        m_MissingFileSet[na_acc] = true;
+        return null;
     }
     m_AutoFileMap[na_acc] = info;
     return info;

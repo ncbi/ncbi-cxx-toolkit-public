@@ -86,6 +86,7 @@ public:
 protected:
     typedef map<string, CRef<SVDBFileInfo> > TFixedFileMap;
     typedef limited_size_map<string, CRef<SVDBFileInfo> > TAutoFileMap;
+    typedef limited_size_map<string, bool> TMissingFileSet;
     typedef multimap<CSeq_id_Handle, CRef<SVDBFileInfo> > TSeqIdIndex;
 
     CRef<SVDBFileInfo> x_GetFileInfo(const string& name);
@@ -96,6 +97,7 @@ protected:
     CVDBMgr m_Mgr;
     TFixedFileMap m_FixedFileMap;
     TAutoFileMap m_AutoFileMap;
+    TMissingFileSet m_MissingFileSet;
     TSeqIdIndex m_SeqIdIndex;
 };
 
