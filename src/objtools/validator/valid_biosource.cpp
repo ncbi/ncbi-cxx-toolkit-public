@@ -1807,6 +1807,18 @@ void CValidError_imp::ValidateOrgRef
         ValidateDbxref(orgref.GetDb(), obj, true, ctx);
     }
 
+    FOR_EACH_DBXREF_ON_ORGREF (dbt, orgref) {
+        if ( NStr::CompareNocase((*dbt)->GetDb(), "taxon") != 0 ) continue;
+        if (! (*dbt)->IsSetTag()) continue;
+        const CObject_id& id = (*dbt)->GetTag();
+        if (! id.IsId()) continue;
+        if (m_FirstTaxID == 0) {
+            SetFirstTaxID (id.GetId());
+        } else if (m_FirstTaxID != id.GetId()) {
+            SetMultTaxIDs();
+        }
+    }
+
     if ( IsRequireTaxonID() ) {
         bool found = false;
         FOR_EACH_DBXREF_ON_ORGREF (dbt, orgref) {

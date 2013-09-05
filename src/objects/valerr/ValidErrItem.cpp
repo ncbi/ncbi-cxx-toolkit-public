@@ -634,6 +634,9 @@ require a taxonomy consult." } },
    { "InconsistentDates",
 "There are two date descriptors that are inconsistent with each \
 other. Please make them consistent." } },
+   { eErr_SEQ_DESCR_MultipleTaxonIDs,
+   { "MultipleTaxonIDs",
+"There are multiple BioSources with multiple taxonIDs in this RefSeq record." } },
 
 /* SEQ_GENERIC */
 
