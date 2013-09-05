@@ -424,7 +424,7 @@ BOOST_AUTO_TEST_CASE(ReadProteinWithGaps)
     CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
 
     for (size_t i = 0; i < sv.size(); i++) {
-        BOOST_REQUIRE((char)sv[i] != '-');
+        BOOST_CHECK_NE('-', (char)sv[i]);
     }
 
     CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(seqs);
@@ -436,7 +436,7 @@ BOOST_AUTO_TEST_CASE(ReadProteinWithGaps)
     BOOST_REQUIRE(seq_data.IsNcbieaa());
     const string& seq = seq_data.GetNcbieaa().Get();
     for (size_t i = 0; i < seq.size(); i++) {
-        BOOST_REQUIRE((char)seq[i] != '-');
+        BOOST_CHECK_NE('-', (char)seq[i]);
     }
 }
 
@@ -2105,204 +2105,7 @@ BOOST_AUTO_TEST_CASE(NoDeflineUnexpected)
 
     BOOST_REQUIRE_THROW(source->GetAllSeqLocs(scope), CException);
 }
-
-/// Auxiliary class to convert a string into an argument count and vector
-class CString2Args
-{
-public:
-    CString2Args(const string& cmd_line_args) {
-        x_Init(cmd_line_args);
-    }
-
-    ~CString2Args() {
-        x_CleanUp();
-    }
-
-    void Reset(const string& cmd_line_args) {
-        x_CleanUp();
-        x_Init(cmd_line_args);
-    }
-
-    CArgs* CreateCArgs(CBlastAppArgs& args) const {
-        auto_ptr<CArgDescriptions> arg_desc(args.SetCommandLine());
-        CNcbiArguments ncbi_args(m_Argc, m_Argv);
-        return arg_desc->CreateArgs(ncbi_args);
-    }
-
-private:
-
-    /// Functor to help remove empty strings from a container
-    struct empty_string_remover : public unary_function<bool, string> {
-        bool operator() (const string& str) {
-            return str.empty();
-        }
-    };
-
-    /// Extract the arguments from a command line
-    vector<string> x_TokenizeCmdLine(const string& cmd_line_args) {
-        vector<string> retval;
-        NStr::Tokenize(cmd_line_args, " ", retval);
-        vector<string>::iterator new_end = remove_if(retval.begin(), 
-                                                     retval.end(), 
-                                                     empty_string_remover());
-        retval.erase(new_end, retval.end());
-        return retval;
-    }
-
-    /// Convert a C++ string into a C-style string
-    char* x_ToCString(const string& str) {
-        char* retval = new char[str.size()+1];
-        strncpy(retval, str.c_str(), str.size());
-        retval[str.size()] = '\0';
-        return retval;
-    }
-
-    void x_CleanUp() {
-        for (size_t i = 0; i < m_Argc; i++) {
-            delete [] m_Argv[i];
-        }
-        delete [] m_Argv;
-    }
-
-    void x_Init(const string& cmd_line_args) {
-        const string program_name("./blastinput_unit_test");
-        vector<string> args = x_TokenizeCmdLine(cmd_line_args);
-        m_Argc = args.size() + 1;   // one extra for dummy program name
-        m_Argv = new char*[m_Argc];
-        m_Argv[0] = x_ToCString(program_name);
-        for (size_t i = 0; i < args.size(); i++) {
-            m_Argv[i+1] = x_ToCString(args[i]);
-        }
-    }
-
-    char** m_Argv;
-    size_t m_Argc;
-};
-
-
-/* Test for the PSI-BLAST command line application arguments */
-
-BOOST_AUTO_TEST_CASE(PsiBlastAppTestMatrix)
-{
-    CPsiBlastAppArgs psiblast_args;
-    CString2Args s2a("-matrix BLOSUM80 -db ecoli ");
-    auto_ptr<CArgs> args(s2a.CreateCArgs(psiblast_args));
-
-    CRef<CBlastOptionsHandle> opts = psiblast_args.SetOptions(*args);
-
-    BOOST_REQUIRE_EQUAL(opts->GetOptions().GetMatrixName(), string("BLOSUM80"));
-}
-
-BOOST_AUTO_TEST_CASE(CheckMutuallyExclusiveOptions)
-{
-    CString2Args s2a("-remote -num_threads 2");
-
-    typedef vector< CRef<CBlastAppArgs> > TArgClasses;
-    vector< CRef<CBlastAppArgs> > arg_classes;
-    arg_classes.push_back(CRef<CBlastAppArgs>(new CPsiBlastAppArgs));
-    arg_classes.push_back(CRef<CBlastAppArgs>(new CBlastpAppArgs));
-    arg_classes.push_back(CRef<CBlastAppArgs>(new CBlastnAppArgs));
-    arg_classes.push_back(CRef<CBlastAppArgs>(new CBlastxAppArgs));
-    arg_classes.push_back(CRef<CBlastAppArgs>(new CTblastnAppArgs));
-    arg_classes.push_back(CRef<CBlastAppArgs>(new CTblastxAppArgs));
-
-    NON_CONST_ITERATE(TArgClasses, itr, arg_classes) {
-        auto_ptr<CArgs> args;
-        BOOST_REQUIRE_THROW(args.reset(s2a.CreateCArgs(**itr)), 
-                          CArgException);
-    }
-}
-
-BOOST_AUTO_TEST_CASE(CheckDiscoMegablast) {
-    auto_ptr<CArgs> args;
-    CBlastnAppArgs blastn_args;
-
-    // missing required template_length argument
-    CString2Args s2a("-db ecoli -template_type coding ");
-    BOOST_REQUIRE_THROW(args.reset(s2a.CreateCArgs(blastn_args)), 
-                      CArgException);
-    // missing required template_type argument
-    s2a.Reset("-db ecoli -template_length 21 ");
-    BOOST_REQUIRE_THROW(args.reset(s2a.CreateCArgs(blastn_args)), 
-                      CArgException);
-
-    // valid combination
-    s2a.Reset("-db ecoli -template_type coding -template_length 16");
-    BOOST_REQUIRE_NO_THROW(args.reset(s2a.CreateCArgs(blastn_args)));
-
-    // test the setting of an invalid word size for disco. megablast
-    s2a.Reset("-db ecoli -word_size 32 -template_type optimal -template_length 16");
-    BOOST_REQUIRE_NO_THROW(args.reset(s2a.CreateCArgs(blastn_args)));
-    CRef<CBlastOptionsHandle> opts;
-    BOOST_REQUIRE_THROW(blastn_args.SetOptions(*args), CInputException);
-}
-
-BOOST_AUTO_TEST_CASE(CheckPercentIdentity) {
-    auto_ptr<CArgs> args;
-    CBlastnAppArgs blast_args;
-
-    // invalid value
-    CString2Args s2a("-db ecoli -perc_identity 104.3");
-    BOOST_REQUIRE_THROW(args.reset(s2a.CreateCArgs(blast_args)), 
-                      CArgException);
-
-    // valid combination
-    s2a.Reset("-db ecoli -perc_identity 75.0 ");
-    BOOST_REQUIRE_NO_THROW(args.reset(s2a.CreateCArgs(blast_args)));
-}
-
-BOOST_AUTO_TEST_CASE(CheckNoGreedyExtension) {
-    auto_ptr<CArgs> args;
-    CBlastnAppArgs blast_args;
-
-    CString2Args s2a("-db ecoli -no_greedy");
-    BOOST_REQUIRE_NO_THROW(args.reset(s2a.CreateCArgs(blast_args)));
-    CRef<CBlastOptionsHandle> opts;
-    // this throws because non-affine gapping costs must be provided for
-    // non-greedy extension
-    BOOST_REQUIRE_THROW(blast_args.SetOptions(*args), CInputException);
-}
-
-BOOST_AUTO_TEST_CASE(CheckCulling) {
-    typedef vector< CRef<CBlastAppArgs> > TArgClasses;
-    vector< CRef<CBlastAppArgs> > arg_classes;
-    arg_classes.push_back(CRef<CBlastAppArgs>(new CPsiBlastAppArgs));
-    arg_classes.push_back(CRef<CBlastAppArgs>(new CBlastpAppArgs));
-    arg_classes.push_back(CRef<CBlastAppArgs>(new CBlastnAppArgs));
-    arg_classes.push_back(CRef<CBlastAppArgs>(new CBlastxAppArgs));
-    arg_classes.push_back(CRef<CBlastAppArgs>(new CTblastnAppArgs));
-    arg_classes.push_back(CRef<CBlastAppArgs>(new CTblastxAppArgs));
-
-    NON_CONST_ITERATE(TArgClasses, itr, arg_classes) {
-        auto_ptr<CArgs> args;
-        // invalid value
-        CString2Args s2a("-db ecoli -culling_limit -4");
-        BOOST_REQUIRE_THROW(args.reset(s2a.CreateCArgs(**itr)), 
-                          CArgException);
-
-        // valid combination
-        s2a.Reset("-db ecoli -culling_limit 0");
-        BOOST_REQUIRE_NO_THROW(args.reset(s2a.CreateCArgs(**itr)));
-    }
-
-}
-
-BOOST_AUTO_TEST_CASE(CheckTaskArgs) {
-    set<string> tasks
-        (CBlastOptionsFactory::GetTasks(CBlastOptionsFactory::eNuclNucl));
-    CRef<IBlastCmdLineArgs> arg;
-    arg.Reset(new CTaskCmdLineArgs(tasks, "megablast")),
-    arg.Reset(new CTaskCmdLineArgs(tasks, "dc-megablast")),
-    arg.Reset(new CTaskCmdLineArgs(tasks, "blastn")),
-    arg.Reset(new CTaskCmdLineArgs(tasks, "blastn-short")),
-
-    tasks = CBlastOptionsFactory::GetTasks(CBlastOptionsFactory::eProtProt);
-    arg.Reset(new CTaskCmdLineArgs(tasks, "blastp"));
-    arg.Reset(new CTaskCmdLineArgs(tasks, "blastp-short"));
-}
-
-BOOST_AUTO_TEST_CASE(wb325_1)
-{
+BOOST_AUTO_TEST_CASE(wb325_1) {
     string input("gb|ABZI01000088\ngb|ABZN01000067");
     istringstream instream(input);
     
@@ -2431,21 +2234,77 @@ BOOST_AUTO_TEST_CASE(ThrowOnEmptySequence)
     string wgs_master("NZ_ABFD00000000.2"); // Contains no sequence
     istringstream instream(wgs_master);
 
-    CBlastInputSourceConfig iconfig(false);
+    const bool is_protein(false);
+    CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetRetrieveSeqData(false);
     CRef<CBlastInput> source(s_DeclareBlastInput(instream, iconfig));
     CScope scope(*CObjectManager::GetInstance());
     BOOST_REQUIRE_THROW(source->GetAllSeqLocs(scope), CInputException);
 }
 
-BOOST_AUTO_TEST_CASE(ThrowOnSraID)
+BOOST_AUTO_TEST_CASE(FetchSraID)
 {
     CNcbiIfstream infile("data/sra_seqid.txt");
-    CBlastInputSourceConfig iconfig(false);
-    iconfig.SetRetrieveSeqData(false);
+    const bool is_protein(false);
+    SDataLoaderConfig dlconfig(is_protein,
+                               SDataLoaderConfig::eUseGenbankDataLoader);
+    CBlastInputSourceConfig iconfig(dlconfig);
     CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
     CScope scope(*CObjectManager::GetInstance());
-    BOOST_REQUIRE_THROW(source->GetAllSeqLocs(scope), CInputException);
+
+    TSeqLocVector seqs = source->GetAllSeqLocs(scope);
+    blast::SSeqLoc ssl = seqs.front();
+    BOOST_CHECK(source->End() == true);
+
+    // Obtained by running
+    // fastq-dump SRR066117 -N 18823 -X 18823 --fasta 80 --split-spot --skip-technical  --minReadLen 6 --clip 
+    const string kSeqData =
+        "AGCACCACGACTGCTAACCGTAACGCCAGGTGTATAACCTAATGCTTCTTTACAGACTGAAATTGATGCATCTGCATCTC"
+        "TTCATTTGTCACAACCGAAATACGTAATAACTTCGTATAGCATACATTATACGAAGTTATACGAAA";
+
+    BOOST_CHECK(ssl.seqloc->IsInt());
+    BOOST_REQUIRE(ssl.seqloc->GetId()->IsGeneral());
+    BOOST_REQUIRE_EQUAL(CDbtag::eDbtagType_SRA,
+                        ssl.seqloc->GetId()->GetGeneral().GetType());
+
+    BOOST_CHECK(ssl.seqloc->GetInt().IsSetFrom() == true);
+    BOOST_CHECK_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
+
+    BOOST_CHECK(ssl.seqloc->GetInt().IsSetTo() == true);
+    BOOST_CHECK_EQUAL(kSeqData.size()-1, ssl.seqloc->GetInt().GetTo());
+
+    const CSeq_id * seqid = ssl.seqloc->GetId();
+    CBioseq_Handle bh = scope.GetBioseqHandle(*seqid);
+    CSeqVector sv = bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+
+    BOOST_CHECK_EQUAL(kSeqData.size(), sv.size());
+    for (size_t i = 0; i < std::min((TSeqPos)kSeqData.size(), sv.size()); i++) {
+        CNcbiOstrstream oss;
+        oss << "Base number " << i+1 << " differs: got '" 
+            << (char)sv[i] << "', expected '" << kSeqData[i]
+            << "'";
+        string msg = CNcbiOstrstreamToString(oss);
+        BOOST_CHECK_MESSAGE((char)sv[i] == kSeqData[i], msg);
+        BOOST_CHECK_NE('-', (char)sv[i]);
+    }
+
+    CRef<CBioseq_set> bioseqs = TSeqLocVector2Bioseqs(seqs);
+    const CBioseq& bioseq = bioseqs->GetSeq_set().front()->GetSeq();
+    const CSeq_inst& inst = bioseq.GetInst();
+    BOOST_CHECK_EQUAL(inst.GetLength(), kSeqData.size());
+    BOOST_REQUIRE(inst.IsSetSeq_data());
+    const CSeq_data& seq_data = inst.GetSeq_data();
+    BOOST_REQUIRE(seq_data.IsIupacna());
+    const string& seq = seq_data.GetIupacna().Get();
+    for (size_t i = 0; i < seq.size(); i++) {
+        CNcbiOstrstream oss;
+        oss << "Base number " << i+1 << " differs: got '" 
+            << (char)sv[i] << "', expected '" << kSeqData[i]
+            << "'";
+        string msg = CNcbiOstrstreamToString(oss);
+        BOOST_CHECK_MESSAGE((char)sv[i] == kSeqData[i], msg);
+        BOOST_CHECK_NE('-', (char)seq[i]);
+    }
 }
 
 BOOST_AUTO_TEST_CASE(ReadSinglePdb_InDifferentFormats)
@@ -2608,6 +2467,204 @@ BOOST_AUTO_TEST_CASE(CheckQueryBatchSize) {
     BOOST_REQUIRE_EQUAL(10000, GetQueryBatchSize(eBlastn, false, true));
 }
 
-BOOST_AUTO_TEST_SUITE_END()
+BOOST_AUTO_TEST_SUITE_END() // end of blastinput test suite
+
+BOOST_AUTO_TEST_SUITE(blastargs)
+
+/// Auxiliary class to convert a string into an argument count and vector
+class CString2Args
+{
+public:
+    CString2Args(const string& cmd_line_args) {
+        x_Init(cmd_line_args);
+    }
+
+    ~CString2Args() {
+        x_CleanUp();
+    }
+
+    void Reset(const string& cmd_line_args) {
+        x_CleanUp();
+        x_Init(cmd_line_args);
+    }
+
+    CArgs* CreateCArgs(CBlastAppArgs& args) const {
+        auto_ptr<CArgDescriptions> arg_desc(args.SetCommandLine());
+        CNcbiArguments ncbi_args(m_Argc, m_Argv);
+        return arg_desc->CreateArgs(ncbi_args);
+    }
+
+private:
+
+    /// Functor to help remove empty strings from a container
+    struct empty_string_remover : public unary_function<bool, string> {
+        bool operator() (const string& str) {
+            return str.empty();
+        }
+    };
+
+    /// Extract the arguments from a command line
+    vector<string> x_TokenizeCmdLine(const string& cmd_line_args) {
+        vector<string> retval;
+        NStr::Tokenize(cmd_line_args, " ", retval);
+        vector<string>::iterator new_end = remove_if(retval.begin(), 
+                                                     retval.end(), 
+                                                     empty_string_remover());
+        retval.erase(new_end, retval.end());
+        return retval;
+    }
+
+    /// Convert a C++ string into a C-style string
+    char* x_ToCString(const string& str) {
+        char* retval = new char[str.size()+1];
+        strncpy(retval, str.c_str(), str.size());
+        retval[str.size()] = '\0';
+        return retval;
+    }
+
+    void x_CleanUp() {
+        for (size_t i = 0; i < m_Argc; i++) {
+            delete [] m_Argv[i];
+        }
+        delete [] m_Argv;
+    }
+
+    void x_Init(const string& cmd_line_args) {
+        const string program_name("./blastinput_unit_test");
+        vector<string> args = x_TokenizeCmdLine(cmd_line_args);
+        m_Argc = args.size() + 1;   // one extra for dummy program name
+        m_Argv = new char*[m_Argc];
+        m_Argv[0] = x_ToCString(program_name);
+        for (size_t i = 0; i < args.size(); i++) {
+            m_Argv[i+1] = x_ToCString(args[i]);
+        }
+    }
+
+    char** m_Argv;
+    size_t m_Argc;
+};
+
+/* Test for the PSI-BLAST command line application arguments */
+
+BOOST_AUTO_TEST_CASE(PsiBlastAppTestMatrix)
+{
+    CPsiBlastAppArgs psiblast_args;
+    CString2Args s2a("-matrix BLOSUM80 -db ecoli ");
+    auto_ptr<CArgs> args(s2a.CreateCArgs(psiblast_args));
+
+    CRef<CBlastOptionsHandle> opts = psiblast_args.SetOptions(*args);
+
+    BOOST_REQUIRE_EQUAL(opts->GetOptions().GetMatrixName(), string("BLOSUM80"));
+}
+
+BOOST_AUTO_TEST_CASE(CheckMutuallyExclusiveOptions)
+{
+    CString2Args s2a("-remote -num_threads 2");
+
+    typedef vector< CRef<CBlastAppArgs> > TArgClasses;
+    vector< CRef<CBlastAppArgs> > arg_classes;
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CPsiBlastAppArgs));
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CBlastpAppArgs));
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CBlastnAppArgs));
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CBlastxAppArgs));
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CTblastnAppArgs));
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CTblastxAppArgs));
+
+    NON_CONST_ITERATE(TArgClasses, itr, arg_classes) {
+        auto_ptr<CArgs> args;
+        BOOST_REQUIRE_THROW(args.reset(s2a.CreateCArgs(**itr)), 
+                          CArgException);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(CheckDiscoMegablast) {
+    auto_ptr<CArgs> args;
+    CBlastnAppArgs blastn_args;
+
+    // missing required template_length argument
+    CString2Args s2a("-db ecoli -template_type coding ");
+    BOOST_REQUIRE_THROW(args.reset(s2a.CreateCArgs(blastn_args)), 
+                      CArgException);
+    // missing required template_type argument
+    s2a.Reset("-db ecoli -template_length 21 ");
+    BOOST_REQUIRE_THROW(args.reset(s2a.CreateCArgs(blastn_args)), 
+                      CArgException);
+
+    // valid combination
+    s2a.Reset("-db ecoli -template_type coding -template_length 16");
+    BOOST_REQUIRE_NO_THROW(args.reset(s2a.CreateCArgs(blastn_args)));
+
+    // test the setting of an invalid word size for disco. megablast
+    s2a.Reset("-db ecoli -word_size 32 -template_type optimal -template_length 16");
+    BOOST_REQUIRE_NO_THROW(args.reset(s2a.CreateCArgs(blastn_args)));
+    CRef<CBlastOptionsHandle> opts;
+    BOOST_REQUIRE_THROW(blastn_args.SetOptions(*args), CInputException);
+}
+
+BOOST_AUTO_TEST_CASE(CheckPercentIdentity) {
+    auto_ptr<CArgs> args;
+    CBlastnAppArgs blast_args;
+
+    // invalid value
+    CString2Args s2a("-db ecoli -perc_identity 104.3");
+    BOOST_REQUIRE_THROW(args.reset(s2a.CreateCArgs(blast_args)), 
+                      CArgException);
+
+    // valid combination
+    s2a.Reset("-db ecoli -perc_identity 75.0 ");
+    BOOST_REQUIRE_NO_THROW(args.reset(s2a.CreateCArgs(blast_args)));
+}
+
+BOOST_AUTO_TEST_CASE(CheckNoGreedyExtension) {
+    auto_ptr<CArgs> args;
+    CBlastnAppArgs blast_args;
+
+    CString2Args s2a("-db ecoli -no_greedy");
+    BOOST_REQUIRE_NO_THROW(args.reset(s2a.CreateCArgs(blast_args)));
+    CRef<CBlastOptionsHandle> opts;
+    // this throws because non-affine gapping costs must be provided for
+    // non-greedy extension
+    BOOST_REQUIRE_THROW(blast_args.SetOptions(*args), CInputException);
+}
+
+BOOST_AUTO_TEST_CASE(CheckCulling) {
+    typedef vector< CRef<CBlastAppArgs> > TArgClasses;
+    vector< CRef<CBlastAppArgs> > arg_classes;
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CPsiBlastAppArgs));
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CBlastpAppArgs));
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CBlastnAppArgs));
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CBlastxAppArgs));
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CTblastnAppArgs));
+    arg_classes.push_back(CRef<CBlastAppArgs>(new CTblastxAppArgs));
+
+    NON_CONST_ITERATE(TArgClasses, itr, arg_classes) {
+        auto_ptr<CArgs> args;
+        // invalid value
+        CString2Args s2a("-db ecoli -culling_limit -4");
+        BOOST_REQUIRE_THROW(args.reset(s2a.CreateCArgs(**itr)), 
+                          CArgException);
+
+        // valid combination
+        s2a.Reset("-db ecoli -culling_limit 0");
+        BOOST_REQUIRE_NO_THROW(args.reset(s2a.CreateCArgs(**itr)));
+    }
+
+}
+
+BOOST_AUTO_TEST_CASE(CheckTaskArgs) {
+    set<string> tasks
+        (CBlastOptionsFactory::GetTasks(CBlastOptionsFactory::eNuclNucl));
+    CRef<IBlastCmdLineArgs> arg;
+    arg.Reset(new CTaskCmdLineArgs(tasks, "megablast")),
+    arg.Reset(new CTaskCmdLineArgs(tasks, "dc-megablast")),
+    arg.Reset(new CTaskCmdLineArgs(tasks, "blastn")),
+    arg.Reset(new CTaskCmdLineArgs(tasks, "blastn-short")),
+
+    tasks = CBlastOptionsFactory::GetTasks(CBlastOptionsFactory::eProtProt);
+    arg.Reset(new CTaskCmdLineArgs(tasks, "blastp"));
+    arg.Reset(new CTaskCmdLineArgs(tasks, "blastp-short"));
+}
+
+BOOST_AUTO_TEST_SUITE_END() // end of blastargs test suite
 
 #endif /* SKIP_DOXYGEN_PROCESSING */

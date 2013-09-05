@@ -137,14 +137,6 @@ public:
         if ( !line.empty() && isalnum(line.data()[0]&0xff) ) {
             try {
                 CRef<CSeq_id> id(new CSeq_id(line));
-
-                // Workaround until CXX-3351 is available
-                if (id->IsGeneral() &&
-                    NStr::FindNoCase(id->GetGeneral().GetDb(), "sra") != NPOS) {
-                    NCBI_THROW(CInputException, eInvalidInput,
-                           "SRA accessions are currently not supported, please use FASTA");
-                }
-
                 CRef<CBioseq> bioseq(x_CreateBioseq(id));
                 CRef<CSeq_entry> retval(new CSeq_entry());
                 retval->SetSeq(*bioseq);
