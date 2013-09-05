@@ -85,9 +85,34 @@ AutoPtr<CDataTypeModule> ASNParser::Module(void)
     CopyComments(module->Comments());
 
     Consume(K_DEFINITIONS, "DEFINITIONS");
-    while (NextToken().GetText() != "::=") {
+
+// correct default is EXPLICIT!
+// we use AUTOMATIC because our specs mean automatic, but do not specify it
+// NOTE: when changing this, also change default m_TagType in CDataType ctor
+
+//    m_TagDefault = CAsnBinaryDefs::eExplicit;
+    m_TagDefault = CAsnBinaryDefs::eAutomatic;
+
+
+    for (;;) {
+        const AbstractToken& token = NextToken();
+        if (token.GetText() == "::=") {
+            break;
+        }
+        TToken tok = token.GetToken();
+        if (tok == K_EXPLICIT) {
+            m_TagDefault = CAsnBinaryDefs::eExplicit;
+        } else if (tok == K_IMPLICIT) {
+            m_TagDefault = CAsnBinaryDefs::eImplicit;
+        } else if (tok == K_AUTOMATIC) {
+            m_TagDefault = CAsnBinaryDefs::eAutomatic;
+        }
+        else if (tok == T_EOF) {
+            ParseError("::=");
+        }
         Consume();
     }
+    module->SetTagDefault( m_TagDefault);
     Consume();
     Consume(K_BEGIN, "BEGIN");
 
@@ -178,6 +203,9 @@ AutoPtr<CDataType> ASNParser::Type(void)
 {
     int line = NextTokenLine();
     AutoPtr<CDataType> type(x_Type());
+    if (!type->HasTag()) {
+        type->SetTagType( m_TagDefault);
+    }
     type->SetSourceLine(line);
     return type;
 }
@@ -186,6 +214,8 @@ CDataType* ASNParser::x_Type(void)
 {
     TToken tok = Next();
     switch ( tok ) {
+    default:
+        break;
     case K_BOOLEAN:
         Consume();
         return new CBoolDataType();
@@ -256,10 +286,49 @@ CDataType* ASNParser::x_Type(void)
     case T_IDENTIFIER:
     case T_TYPE_REFERENCE:
         return new CReferenceDataType(TypeReference());
-    case T_TAG:
-        string val = ConsumeAndValue();
+
+    case T_TAG_BEGIN:
+        CAsnBinaryDefs::ETagClass tagclass = CAsnBinaryDefs::eContextSpecific;
+        CAsnBinaryDefs::ETagType tagtype = m_TagDefault;
+        int tag = 0;
+        TToken ttk = tok;
+        bool tagclosed = false;
+        for (;;) {
+            Consume();
+            ttk = NextToken().GetToken();
+            if (tagclosed && ttk != K_IMPLICIT && ttk != K_EXPLICIT) {
+                break;
+            }
+            switch (ttk) {
+            case K_APPLICATION:
+                tagclass = CAsnBinaryDefs::eApplication;
+                break;
+            case K_PRIVATE:
+                tagclass = CAsnBinaryDefs::ePrivate;
+                break;
+            case T_NUMBER:
+                tag = NStr::StringToInt( NextToken().GetText());
+                break;
+            case T_TAG_END:
+                tagclosed = true;
+                break;
+            case K_IMPLICIT:
+                tagtype = CAsnBinaryDefs::eImplicit;
+                break;
+            case K_EXPLICIT:
+                tagtype = CAsnBinaryDefs::eExplicit;
+                break;
+            default:
+                break;
+            case T_EOF:
+                ParseError("Tag definition");
+                break;
+            }
+        }
         CDataType* tagged = x_Type();
-        tagged->SetTag(NStr::StringToInt(val.substr(1, val.length()-2)));
+        tagged->SetTag(tag);
+        tagged->SetTagClass(tagclass);
+        tagged->SetTagType(tagtype);
         return tagged;
     }
     ParseError("type");
@@ -271,6 +340,8 @@ bool ASNParser::HaveMoreElements(void)
     const AbstractToken& token = NextToken();
     if ( token.GetToken() == T_SYMBOL ) {
         switch ( token.GetSymbol() ) {
+        default:
+            break;
         case ',':
             Consume();
             return true;
@@ -342,13 +413,21 @@ CDataType* ASNParser::TypesBlock(CDataMemberContainerType* containerType,
 AutoPtr<CDataMember> ASNParser::NamedDataType(bool allowDefaults)
 {
     string name;
-    if ( Next() == T_IDENTIFIER )
+    TToken tok = Next();
+    if (tok == K_COMPONENTS) {
+        Consume();
+        Consume(K_OF, "OF");
+    }
+    if ( tok == T_IDENTIFIER ) {
         name = Identifier();
+    }
     AutoPtr<CDataType> type(Type());
 
     AutoPtr<CDataMember> member(new CDataMember(name, type));
     if ( allowDefaults ) {
         switch ( Next() ) {
+        default:
+            break;
         case K_OPTIONAL:
             Consume();
             member->SetOptional();
@@ -408,6 +487,8 @@ AutoPtr<CDataValue> ASNParser::Value(void)
 AutoPtr<CDataValue> ASNParser::x_Value(void)
 {
     switch ( Next() ) {
+    default:
+        break;
     case T_NUMBER:
         return AutoPtr<CDataValue>(new CIntDataValue(Number()));
     case T_DOUBLE:
@@ -436,6 +517,8 @@ AutoPtr<CDataValue> ASNParser::x_Value(void)
         return AutoPtr<CDataValue>(new CBitStringDataValue(ConsumeAndValue()));
     case T_SYMBOL:
         switch ( NextToken().GetSymbol() ) {
+        default:
+            break;
         case '-':
             return AutoPtr<CDataValue>(new CIntDataValue(Number()));
         case '{':
@@ -477,6 +560,8 @@ const string& ASNParser::String(void)
 const string& ASNParser::Identifier(void)
 {
     switch ( Next() ) {
+    default:
+        break;
     case T_TYPE_REFERENCE:
         Lexer().LexerError("identifier must begin with lowercase letter");
         return ConsumeAndValue();
@@ -490,6 +575,8 @@ const string& ASNParser::Identifier(void)
 const string& ASNParser::TypeReference(void)
 {
     switch ( Next() ) {
+    default:
+        break;
     case T_TYPE_REFERENCE:
         return ConsumeAndValue();
     case T_IDENTIFIER:
@@ -503,6 +590,8 @@ const string& ASNParser::TypeReference(void)
 const string& ASNParser::ModuleReference(void)
 {
     switch ( Next() ) {
+    default:
+        break;
     case T_TYPE_REFERENCE:
         return ConsumeAndValue();
     case T_IDENTIFIER:

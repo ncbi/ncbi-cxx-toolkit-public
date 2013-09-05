@@ -87,6 +87,7 @@ void CDataMemberContainerType::AddMember(const AutoPtr<CDataMember>& member)
 
 void CDataMemberContainerType::PrintASN(CNcbiOstream& out, int indent) const
 {
+    PrintASNTag(out);
     out << GetASNKeyword() << " {";
     ++indent;
     ITERATE ( TMembers, i, m_Members ) {
@@ -520,6 +521,56 @@ bool CDataMemberContainerType::CheckType(void) const
         if ( !(*i)->Check() )
             ok = false;
     }
+
+//check tags
+// All tags must be different
+    bool hasUntagged = false;
+    set< pair< CAsnBinaryDefs::TLongTag, CAsnBinaryDefs::ETagClass> > tag_inuse;
+    CAsnBinaryDefs::ETagType tagtype = GetTagType();
+    bool ischoice = NStr::CompareCase(GetASNKeyword(),"CHOICE")==0;
+
+    if (tagtype == CAsnBinaryDefs::eAutomatic ||
+        ischoice) {
+
+        ITERATE ( TMembers, i, m_Members ) {
+            const CDataType* itype = (*i)->GetType();
+            bool hastag = itype->HasTag();
+            CAsnBinaryDefs::TLongTag itag = itype->GetTag();
+            CAsnBinaryDefs::ETagClass tagclass = itype->GetTagClass();
+            if (!hastag && itype->IsReference()) {
+                const CDataType* rtype = itype->Resolve();
+                if (rtype) {
+                    hastag = rtype->HasTag();
+                    itag = rtype->GetTag();
+                    tagclass = rtype->GetTagClass();
+                }
+            }
+            if (hastag) {
+                pair< CAsnBinaryDefs::TLongTag, CAsnBinaryDefs::ETagClass>
+                    tag = make_pair(itag, tagclass);
+                if (tag_inuse.find(tag) != tag_inuse.end()) {
+                    NCBI_THROW(CDatatoolException,eInvalidData,
+                               "Duplicate tag: " + itype->IdName() +
+                               " [" + NStr::NumericToString(itag) + "] in " +
+                               GetModule()->GetName());
+                }
+                tag_inuse.insert(tag);
+                if (hasUntagged) {
+                    NCBI_THROW(CDatatoolException,eInvalidData,
+                               "No explicit tag for " + itype->IdName() + " in " +
+                               GetModule()->GetName());
+                }
+            }
+            else {
+                hasUntagged = true;
+                if (!tag_inuse.empty()) {
+                    NCBI_THROW(CDatatoolException,eInvalidData,
+                               "No explicit tag for " + itype->IdName() + " in " +
+                               GetModule()->GetName());
+                }
+            }
+        }
+    }
     return ok;
 }
 
@@ -602,6 +653,7 @@ CClassTypeInfo* CDataContainerType::CreateClassInfo(void)
             memInfo->SetNillable();
         }
     }
+    typeInfo->AssignItemsTags();
     if ( HaveModuleName() )
         typeInfo->SetModuleName(GetModule()->GetName());
     return typeInfo.release();

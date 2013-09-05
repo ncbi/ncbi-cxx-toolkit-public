@@ -53,6 +53,7 @@ TObjectPtr CStaticDataType::CreateDefault(const CDataValue& ) const
 
 void CStaticDataType::PrintASN(CNcbiOstream& out, int /*indent*/) const
 {
+    PrintASNTag(out);
     out << GetASNKeyword();
 }
 
@@ -835,6 +836,7 @@ bool CAnyContentDataType::CheckValue(const CDataValue& /* value */) const
 
 void CAnyContentDataType::PrintASN(CNcbiOstream& out, int /* indent */) const
 {
+    PrintASNTag(out);
     out << GetASNKeyword();
 }
 

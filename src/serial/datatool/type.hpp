@@ -37,6 +37,7 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/impl/typeref.hpp>
+#include <serial/impl/objstrasnb.hpp>
 #include "comments.hpp"
 #include <list>
 #include <set>
@@ -225,17 +226,33 @@ public:
     enum {
         eNoExplicitTag = -1
     };
-    void SetTag(int tag) {
+    void SetTag(CAsnBinaryDefs::TLongTag tag) {
         m_Tag = tag;
     }
 
-    int GetTag(void) const {
+    CAsnBinaryDefs::TLongTag GetTag(void) const {
         return m_Tag;
     }
 
     bool HasTag(void) const {
         return m_Tag != eNoExplicitTag;
     }
+
+    void SetTagClass(CAsnBinaryDefs::ETagClass tclass) {
+        m_TagClass = tclass;
+    }
+    CAsnBinaryDefs::ETagClass GetTagClass(void) const {
+        return m_TagClass;
+    }
+    void SetTagType(CAsnBinaryDefs::ETagType ttype) {
+        m_TagType = ttype;
+    }
+    CAsnBinaryDefs::ETagType GetTagType(void) const {
+        return m_TagType;
+    }
+    CNcbiOstream& PrintASNTag(CNcbiOstream& out) const;
+    static string GetTagClassString(CAsnBinaryDefs::ETagClass tclass);
+    static string GetTagTypeString(CAsnBinaryDefs::ETagType ttype);
 
     void SetTypeStr(CClassTypeStrings* TypeStr) const {
         m_TypeStr = TypeStr;
@@ -334,7 +351,9 @@ private:
     AutoPtr<CTypeInfo> m_RealTypeInfo;
     mutable string m_CachedFileName;
     mutable auto_ptr<CNamespace> m_CachedNamespace;
-    int m_Tag;
+    CAsnBinaryDefs::TLongTag  m_Tag;
+    CAsnBinaryDefs::ETagClass m_TagClass;
+    CAsnBinaryDefs::ETagType  m_TagType;
     bool m_IsAlias;
     multimap<string,string> m_ForbidVar;
     string m_Namespace;

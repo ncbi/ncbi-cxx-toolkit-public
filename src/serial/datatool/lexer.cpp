@@ -84,11 +84,22 @@ TToken ASNLexer::LookupToken(void)
         StartToken();
         AddChar();
         return LookupBinHexString();
+#if 0
     case '[':
         StartToken();
         AddChar();
         LookupTag();
         return T_TAG;
+#else
+    case '[':
+        StartToken();
+        AddChar();
+        return T_TAG_BEGIN;
+    case ']':
+        StartToken();
+        AddChar();
+        return T_TAG_END;
+#endif
     default:
         if ( IsDigit(c) ) {
             StartToken();
@@ -329,7 +340,7 @@ void ASNLexer::LookupTag(void)
             break;
         default:
             AddChar();
-            LexerWarning("illegal character in tag", 14);
+//            LexerWarning("illegal character in tag", 14);
             break;
         }
     }
@@ -355,6 +366,7 @@ TToken ASNLexer::LookupKeyword(void)
         CHECK("NULL", K_NULL, 4);
         CHECK("REAL", K_REAL, 4);
         CHECK("FROM", K_FROM, 4);
+        CHECK("TAGS", K_TAGS, 4);
         break;
     case 5:
         CHECK("OCTET", K_OCTET, 5);
@@ -372,18 +384,26 @@ TToken ASNLexer::LookupKeyword(void)
         CHECK("DEFAULT", K_DEFAULT, 7);
         CHECK("IMPORTS", K_IMPORTS, 7);
         CHECK("EXPORTS", K_EXPORTS, 7);
+        CHECK("PRIVATE", K_PRIVATE, 7);
         break;
     case 8:
         CHECK("SEQUENCE", K_SEQUENCE, 8);
         CHECK("OPTIONAL", K_OPTIONAL, 8);
+        CHECK("EXPLICIT", K_EXPLICIT, 8);
+        CHECK("IMPLICIT", K_IMPLICIT, 8);
         break;
+    case 9:
+        CHECK("AUTOMATIC", K_AUTOMATIC, 9);
+        CHECK("UNIVERSAL", K_UNIVERSAL, 9);
     case 10:
         CHECK("ENUMERATED", K_ENUMERATED, 10);
         CHECK("UTF8String", K_UTF8String, 10);
+        CHECK("COMPONENTS", K_COMPONENTS, 10);
         break;
     case 11:
         CHECK("StringStore", K_StringStore, 11);
         CHECK("DEFINITIONS", K_DEFINITIONS, 11);
+        CHECK("APPLICATION", K_APPLICATION, 11);
         break;
     case 13:
         CHECK("VisibleString", K_VisibleString, 13);

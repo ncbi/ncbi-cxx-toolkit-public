@@ -88,18 +88,18 @@ void CChoicePtrTypeStrings::GenerateClassCode(CClassCode& code,
         code.GetNamespace().GetNamespaceRef(CNamespace::KNCBINamespace);
 
     code.ClassPublic() <<
-        "    static const "<<ncbiNamespace<<"CTypeInfo* "REFCHOICE_TYPE_METHOD"(void);\n"
+        "    static const "<<ncbiNamespace<<"CTypeInfo* " REFCHOICE_TYPE_METHOD "(void);\n"
         "\n";
 
     // generated choice enum
     {
         code.ClassPublic() <<
             "    // choice state enum\n"
-            "    enum "STATE_ENUM" {\n"
-            "        "STATE_NOT_SET" = "<<kEmptyChoice;
+            "    enum " STATE_ENUM " {\n"
+            "        " STATE_NOT_SET " = "<<kEmptyChoice;
         ITERATE ( TVariants, i, m_Variants ) {
             code.ClassPublic() << ",\n"
-                "        "STATE_PREFIX<<i->cName;
+                "        " STATE_PREFIX<<i->cName;
         }
         code.ClassPublic() << "\n"
             "    };\n"
@@ -109,7 +109,7 @@ void CChoicePtrTypeStrings::GenerateClassCode(CClassCode& code,
     // generate choice methods
     code.ClassPublic() <<
         "    // return selection name (for diagnostic purposes)\n"
-        "    static "<<stdNamespace<<"string SelectionName("STATE_ENUM" index);\n"
+        "    static "<<stdNamespace<<"string SelectionName(" STATE_ENUM " index);\n"
         "\n";
 
     // generate choice variants names
@@ -126,7 +126,7 @@ void CChoicePtrTypeStrings::GenerateClassCode(CClassCode& code,
         code.Methods() << "\n"
             "};\n"
             "\n"
-            "NCBI_NS_STD::string "<<methodPrefix<<"SelectionName("STATE_ENUM" index)\n"
+            "NCBI_NS_STD::string "<<methodPrefix<<"SelectionName(" STATE_ENUM " index)\n"
             "{\n"
             "    return NCBI_NS_NCBI::CInvalidChoiceSelection::GetName(index, sm_SelectionNames, sizeof(sm_SelectionNames)/sizeof(sm_SelectionNames[0]));\n"
             "}\n"

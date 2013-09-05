@@ -87,6 +87,7 @@ void CUniSequenceDataType::SetElementType(const AutoPtr<CDataType>& type)
 
 void CUniSequenceDataType::PrintASN(CNcbiOstream& out, int indent) const
 {
+    PrintASNTag(out);
     out << GetASNKeyword() << " OF ";
     GetElementType()->PrintASNTypeComments(out, indent + 1);
     GetElementType()->PrintASN(out, indent);

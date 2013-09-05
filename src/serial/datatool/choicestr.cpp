@@ -253,8 +253,8 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         }
         code.ClassPublic() <<
             "\n    /// Choice variants.\n"
-            "    enum "STATE_ENUM" {\n"
-            "        "STATE_NOT_SET" = "<<kEmptyChoice
+            "    enum " STATE_ENUM " {\n"
+            "        " STATE_NOT_SET " = "<<kEmptyChoice
             <<"," ;
         for (currlen = strlen(STATE_NOT_SET)+2; currlen < maxlen; ++currlen) {
             code.ClassPublic() << " ";
@@ -268,7 +268,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             if (!i->attlist) {
                 const CComments& comments = i->comments;
                 cName = i->cName;
-                code.ClassPublic() << "        "STATE_PREFIX<<cName;
+                code.ClassPublic() << "        " STATE_PREFIX<<cName;
                 if (needIni) {
                     code.ClassPublic() << " = "<<currIndex;
                     needIni = false;
@@ -295,7 +295,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         code.ClassPublic() << "    /// Maximum+1 value of the choice variant enumerator.\n";
         code.ClassPublic() <<
             "    enum E_ChoiceStopper {\n"
-            "        e_MaxChoice = " << currIndex+1 << " ///< == "STATE_PREFIX
+            "        e_MaxChoice = " << currIndex+1 << " ///< == " STATE_PREFIX
                 << m_Variants.rbegin()->cName << "+1\n"
             "    };\n"
             "\n";
@@ -309,7 +309,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     code.ClassPublic() << "void Reset(void);\n\n";
 
     code.ClassPublic() <<
-        "    /// Reset the selection (set it to "STATE_NOT_SET").\n"
+        "    /// Reset the selection (set it to " STATE_NOT_SET ").\n"
         "    ";
     if ( HaveUserClass() )
         code.ClassPublic() << "virtual ";
@@ -325,7 +325,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "    ///   Choice state enumerator.\n";
     }
     code.ClassPublic() <<
-        "    "STATE_ENUM" Which(void) const;\n\n"
+        "    " STATE_ENUM " Which(void) const;\n\n"
         "    /// Verify selection, throw exception if it differs from the expected.\n";
     if (CClassCode::GetDoxygenComments()) {
         code.ClassPublic() <<
@@ -334,7 +334,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "    ///   Expected selection.\n";
     }
     code.ClassPublic() <<
-        "    void CheckSelected("STATE_ENUM" index) const;\n\n"
+        "    void CheckSelected(" STATE_ENUM " index) const;\n\n"
         "    /// Throw \'InvalidSelection\' exception.\n";
     if (CClassCode::GetDoxygenComments()) {
         code.ClassPublic() <<
@@ -343,7 +343,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "    ///   Expected selection.\n";
     }
     code.ClassPublic() <<
-        "    NCBI_NORETURN void ThrowInvalidSelection("STATE_ENUM" index) const;\n\n"
+        "    NCBI_NORETURN void ThrowInvalidSelection(" STATE_ENUM " index) const;\n\n"
         "    /// Retrieve selection name (for diagnostic purposes).\n";
     if (CClassCode::GetDoxygenComments()) {
         code.ClassPublic() <<
@@ -354,7 +354,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "    ///   Name string.\n";
     }
     code.ClassPublic() <<
-        "    static "<<stdNamespace<<"string SelectionName("STATE_ENUM" index);\n"
+        "    static "<<stdNamespace<<"string SelectionName(" STATE_ENUM " index);\n"
         "\n";
     setters <<
         "    /// Select the requested variant if needed.\n";
@@ -369,12 +369,12 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "    ///   or the flag is set to eDoResetVariant.\n";
     }
     setters <<
-        "    void Select("STATE_ENUM" index, "<<ncbiNamespace<<"EResetVariant reset = "<<ncbiNamespace<<"eDoResetVariant);\n";
+        "    void Select(" STATE_ENUM " index, "<<ncbiNamespace<<"EResetVariant reset = "<<ncbiNamespace<<"eDoResetVariant);\n";
     setters <<
         "    /// Select the requested variant if needed,\n"
         "    /// allocating CObject variants from memory pool.\n";
     setters <<
-        "    void Select("STATE_ENUM" index,\n"
+        "    void Select(" STATE_ENUM " index,\n"
         "                "<<ncbiNamespace<<"EResetVariant reset,\n"
         "                "<<ncbiNamespace<<"CObjectMemoryPool* pool);\n";
     if ( delayed ) {
@@ -387,7 +387,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 "    ///   New selection state.\n";
         }
         setters <<
-            "    void SelectDelayBuffer("STATE_ENUM" index);\n";
+            "    void SelectDelayBuffer(" STATE_ENUM " index);\n";
     }
     setters <<
         "\n";
@@ -397,30 +397,30 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
 
     inlineMethods <<
         "inline\n"<<
-        methodPrefix<<STATE_ENUM" "<<methodPrefix<<"Which(void) const\n"
+        methodPrefix<<STATE_ENUM " "<<methodPrefix<<"Which(void) const\n"
         "{\n"
-        "    return "STATE_MEMBER";\n"
+        "    return " STATE_MEMBER ";\n"
         "}\n"
         "\n"
         "inline\n"
-        "void "<<methodPrefix<<"CheckSelected("STATE_ENUM" index) const\n"
+        "void "<<methodPrefix<<"CheckSelected(" STATE_ENUM " index) const\n"
         "{\n"
-        "    if ( "STATE_MEMBER" != index )\n"
+        "    if ( " STATE_MEMBER " != index )\n"
         "        ThrowInvalidSelection(index);\n"
         "}\n"
         "\n"
         "inline\n"
-        "void "<<methodPrefix<<"Select("STATE_ENUM" index, NCBI_NS_NCBI::EResetVariant reset, NCBI_NS_NCBI::CObjectMemoryPool* pool)\n"
+        "void "<<methodPrefix<<"Select(" STATE_ENUM " index, NCBI_NS_NCBI::EResetVariant reset, NCBI_NS_NCBI::CObjectMemoryPool* pool)\n"
         "{\n"
-        "    if ( reset == NCBI_NS_NCBI::eDoResetVariant || "STATE_MEMBER" != index ) {\n"
-        "        if ( "STATE_MEMBER" != "STATE_NOT_SET" )\n"
+        "    if ( reset == NCBI_NS_NCBI::eDoResetVariant || " STATE_MEMBER " != index ) {\n"
+        "        if ( " STATE_MEMBER " != " STATE_NOT_SET " )\n"
         "            ResetSelection();\n"
         "        DoSelect(index, pool);\n"
         "    }\n"
         "}\n"
         "\n"
         "inline\n"
-        "void "<<methodPrefix<<"Select("STATE_ENUM" index, NCBI_NS_NCBI::EResetVariant reset)\n"
+        "void "<<methodPrefix<<"Select(" STATE_ENUM " index, NCBI_NS_NCBI::EResetVariant reset)\n"
         "{\n"
         "    Select(index, reset, 0);\n"
         "}\n"
@@ -428,11 +428,11 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     if ( delayed ) {
         inlineMethods <<
             "inline\n"
-            "void "<<methodPrefix<<"SelectDelayBuffer("STATE_ENUM" index)\n"
+            "void "<<methodPrefix<<"SelectDelayBuffer(" STATE_ENUM " index)\n"
             "{\n"
-            "    if ( "STATE_MEMBER" != "STATE_NOT_SET" || "DELAY_MEMBER".GetIndex() != (index - 1))\n"
+            "    if ( " STATE_MEMBER " != " STATE_NOT_SET " || " DELAY_MEMBER ".GetIndex() != (index - 1))\n"
             "        NCBI_THROW(ncbi::CSerialException,eIllegalCall, \"illegal call\");\n"
-            "    "STATE_MEMBER" = index;\n"
+            "    " STATE_MEMBER " = index;\n"
             "}\n"
             "\n";
     }
@@ -460,9 +460,9 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     // generate choice state
     code.ClassPrivate() <<
         "    // choice state\n"
-        "    "STATE_ENUM" "STATE_MEMBER";\n"
+        "    " STATE_ENUM " " STATE_MEMBER ";\n"
         "    // helper methods\n"
-        "    void DoSelect("STATE_ENUM" index, "<<ncbiNamespace<<"CObjectMemoryPool* pool = 0);\n";
+        "    void DoSelect(" STATE_ENUM " index, "<<ncbiNamespace<<"CObjectMemoryPool* pool = 0);\n";
     if ( HaveAssignment() ) {
         code.ClassPrivate() <<
             "    void DoAssign(const "<<codeClassName<<"& src);\n";
@@ -499,7 +499,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 methods << "    Reset" << i->cName << "();\n";
             }
         }
-        methods << "    if ( "STATE_MEMBER" != "STATE_NOT_SET" )\n"
+        methods << "    if ( " STATE_MEMBER " != " STATE_NOT_SET " )\n"
                 << "        ResetSelection();\n";
         methods <<
             "}\n"
@@ -510,12 +510,12 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         if ( haveObjectPointer || havePointers || haveString || haveUtf8String || haveBuffer ) {
             if ( delayed ) {
                 methods <<
-                    "    if ( "DELAY_MEMBER" )\n"
-                    "        "DELAY_MEMBER".Forget();\n"
+                    "    if ( " DELAY_MEMBER " )\n"
+                    "        " DELAY_MEMBER ".Forget();\n"
                     "    else\n";
             }
             methods <<
-                "    switch ( "STATE_MEMBER" ) {\n";
+                "    switch ( " STATE_MEMBER " ) {\n";
             // generate destruction code for pointers
             ITERATE ( TVariants, i, m_Variants ) {
                 if (i->attlist) {
@@ -523,7 +523,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 }
                 if ( i->memberType == ePointerMember ) {
                     methods <<
-                        "    case "STATE_PREFIX<<i->cName<<":\n";
+                        "    case " STATE_PREFIX<<i->cName<<":\n";
                     WriteTabbed(methods, 
                                 i->type->GetDestructionCode("*m_"+i->cName),
                                 "        ");
@@ -533,7 +533,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 }
                 if ( i->memberType == eBufferMember ) {
                     methods <<
-                        "    case "STATE_PREFIX<<i->cName<<":\n";
+                        "    case " STATE_PREFIX<<i->cName<<":\n";
                     WriteTabbed(methods, 
                                 i->type->GetDestructionCode("*m_"+i->cName),
                                 "        ");
@@ -550,23 +550,23 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     }
                     if ( i->memberType == eStringMember ) {
                         methods <<
-                            "    case "STATE_PREFIX<<i->cName<<":\n";
+                            "    case " STATE_PREFIX<<i->cName<<":\n";
                     }
                 }
                 if ( haveUnion ) {
                     // string is pointer inside union
                     if ( haveBuffer ) {
                         methods <<
-                            "        "STRING_MEMBER".Destruct();\n";
+                            "        " STRING_MEMBER ".Destruct();\n";
                     }
                     else {
                         methods <<
-                            "        delete "STRING_MEMBER";\n";
+                            "        delete " STRING_MEMBER ";\n";
                     }
                 }
                 else {
                     methods <<
-                        "        "STRING_MEMBER".erase();\n";
+                        "        " STRING_MEMBER ".erase();\n";
                 }
                 methods <<
                     "        break;\n";
@@ -579,23 +579,23 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     }
                     if ( i->memberType == eUtf8StringMember ) {
                         methods <<
-                            "    case "STATE_PREFIX<<i->cName<<":\n";
+                            "    case " STATE_PREFIX<<i->cName<<":\n";
                     }
                 }
                 if ( haveUnion ) {
                     // string is pointer inside union
                     if ( haveBuffer ) {
                         methods <<
-                            "        "UTF8_STRING_MEMBER".Destruct();\n";
+                            "        " UTF8_STRING_MEMBER ".Destruct();\n";
                     }
                     else {
                         methods <<
-                            "        delete "UTF8_STRING_MEMBER";\n";
+                            "        delete " UTF8_STRING_MEMBER ";\n";
                     }
                 }
                 else {
                     methods <<
-                        "        "UTF8_STRING_MEMBER".erase();\n";
+                        "        " UTF8_STRING_MEMBER ".erase();\n";
                 }
                 methods <<
                     "        break;\n";
@@ -608,11 +608,11 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     }
                     if ( i->memberType == eObjectPointerMember ) {
                         methods <<
-                            "    case "STATE_PREFIX<<i->cName<<":\n";
+                            "    case " STATE_PREFIX<<i->cName<<":\n";
                     }
                 }
                 methods <<
-                    "        "OBJECT_MEMBER"->RemoveReference();\n"
+                    "        " OBJECT_MEMBER "->RemoveReference();\n"
                     "        break;\n";
             }
             methods <<
@@ -621,7 +621,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 "    }\n";
         }
         methods <<
-            "    "STATE_MEMBER" = "STATE_NOT_SET";\n"
+            "    " STATE_MEMBER " = " STATE_NOT_SET ";\n"
             "}\n"
             "\n";
     }
@@ -631,25 +631,25 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         methods <<
             "void "<<methodPrefix<<"DoAssign(const "<<codeClassName<<"& src)\n"
             "{\n"
-            "    "STATE_ENUM" index = src.Which();\n"
+            "    " STATE_ENUM " index = src.Which();\n"
             "    switch ( index ) {\n";
         ITERATE ( TVariants, i, m_Variants ) {
             switch ( i->memberType ) {
             case eSimpleMember:
                 methods <<
-                    "    case "STATE_PREFIX<<i->cName<<":\n"
+                    "    case " STATE_PREFIX<<i->cName<<":\n"
                     "        m_"<<i->cName<<" = src.m_"<<i->cName<<";\n"
                     "        break;\n";
                 break;
             case ePointerMember:
                 methods <<
-                    "    case "STATE_PREFIX<<i->cName<<":\n"
+                    "    case " STATE_PREFIX<<i->cName<<":\n"
                     "        m_"<<i->cName<<" = new T"<<i->cName<<"(*src.m_"<<i->cName<<");\n"
                     "        break;\n";
                 break;
             case eBufferMember:
                 methods <<
-                    "    case "STATE_PREFIX<<i->cName<<":\n"
+                    "    case " STATE_PREFIX<<i->cName<<":\n"
                     "        m_"<<i->cName<<".Construct();\n"
                     "        *m_"<<i->cName<<" = *src.m_"<<i->cName<<";\n"
                     "        break;\n";
@@ -673,24 +673,24 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             ITERATE ( TVariants, i, m_Variants ) {
                 if ( i->memberType == eStringMember ) {
                     methods <<
-                        "    case "STATE_PREFIX<<i->cName<<":\n";
+                        "    case " STATE_PREFIX<<i->cName<<":\n";
                 }
             }
             if ( haveUnion ) {
                 if ( haveBuffer ) {
                     methods <<
-                        "        "STRING_MEMBER".Construct();\n"
-                        "        *"STRING_MEMBER" = *src."STRING_MEMBER";\n";
+                        "        " STRING_MEMBER ".Construct();\n"
+                        "        *" STRING_MEMBER " = *src." STRING_MEMBER ";\n";
                 }
                 else {
                     // string is pointer
                     methods <<
-                        "        "STRING_MEMBER" = new "STRING_TYPE_FULL"(*src."STRING_MEMBER");\n";
+                        "        " STRING_MEMBER " = new " STRING_TYPE_FULL "(*src." STRING_MEMBER ");\n";
                 }
             }
             else {
                 methods <<
-                    "        "STRING_MEMBER" = src."STRING_MEMBER";\n";
+                    "        " STRING_MEMBER " = src." STRING_MEMBER ";\n";
             }
             methods <<
                 "        break;\n";
@@ -700,26 +700,26 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             ITERATE ( TVariants, i, m_Variants ) {
                 if ( i->memberType == eUtf8StringMember ) {
                     methods <<
-                        "    case "STATE_PREFIX<<i->cName<<":\n";
+                        "    case " STATE_PREFIX<<i->cName<<":\n";
                 }
             }
             if ( haveUnion ) {
                 if ( haveBuffer ) {
                     methods <<
-                        "        "UTF8_STRING_MEMBER".Construct();\n"
-                        "        *"UTF8_STRING_MEMBER" = *src."UTF8_STRING_MEMBER";\n";
+                        "        " UTF8_STRING_MEMBER ".Construct();\n"
+                        "        *" UTF8_STRING_MEMBER " = *src." UTF8_STRING_MEMBER ";\n";
                 }
                 else {
                     // string is pointer
                     methods <<
-                        "        "UTF8_STRING_MEMBER" = new " <<
+                        "        " UTF8_STRING_MEMBER " = new " <<
                         utf8CType <<
-                        "(*src."UTF8_STRING_MEMBER");\n";
+                        "(*src." UTF8_STRING_MEMBER ");\n";
                 }
             }
             else {
                 methods <<
-                    "        "UTF8_STRING_MEMBER" = src."UTF8_STRING_MEMBER";\n";
+                    "        " UTF8_STRING_MEMBER " = src." UTF8_STRING_MEMBER ";\n";
             }
             methods <<
                 "        break;\n";
@@ -729,11 +729,11 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             ITERATE ( TVariants, i, m_Variants ) {
                 if ( i->memberType == eObjectPointerMember ) {
                     methods <<
-                        "    case "STATE_PREFIX<<i->cName<<":\n";
+                        "    case " STATE_PREFIX<<i->cName<<":\n";
                 }
             }
             methods <<
-                "        ("OBJECT_MEMBER" = src."OBJECT_MEMBER")->AddReference();\n"
+                "        (" OBJECT_MEMBER " = src." OBJECT_MEMBER ")->AddReference();\n"
                 "        break;\n";
         }
 
@@ -741,7 +741,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "    default:\n"
             "        break;\n"
             "    }\n"
-            "    "STATE_MEMBER" = index;\n"
+            "    " STATE_MEMBER " = index;\n"
             "}\n"
             "\n";
     }
@@ -749,7 +749,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
     // generate Select method
     {
         methods <<
-            "void "<<methodPrefix<<"DoSelect("STATE_ENUM" index, NCBI_NS_NCBI::CObjectMemoryPool* ";
+            "void "<<methodPrefix<<"DoSelect(" STATE_ENUM " index, NCBI_NS_NCBI::CObjectMemoryPool* ";
         if ( haveUnion || haveObjectPointer ) {
             ITERATE ( TVariants, i, m_Variants ) {
                 if (!i->attlist && i->memberType == eObjectPointerMember) {
@@ -771,27 +771,27 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     if (!x_IsNullType(i)) {
                         string init = i->type->GetInitializer();
                         methods <<
-                            "    case "STATE_PREFIX<<i->cName<<":\n"
+                            "    case " STATE_PREFIX<<i->cName<<":\n"
                             "        m_"<<i->cName<<" = "<<init<<";\n"
                             "        break;\n";
                     }
                     break;
                 case ePointerMember:
                     methods <<
-                        "    case "STATE_PREFIX<<i->cName<<":\n"
+                        "    case " STATE_PREFIX<<i->cName<<":\n"
                         "        m_"<<i->cName<<" = "<<i->type->NewInstance(NcbiEmptyString)<<";\n"
                         "        break;\n";
                     break;
                 case eBufferMember:
                     methods <<
-                        "    case "STATE_PREFIX<<i->cName<<":\n"
+                        "    case " STATE_PREFIX<<i->cName<<":\n"
                         "        m_"<<i->cName<<".Construct();\n"
                         "        break;\n";
                     break;
                 case eObjectPointerMember:
                     methods <<
-                        "    case "STATE_PREFIX<<i->cName<<":\n"
-                        "        ("OBJECT_MEMBER" = "<<i->type->NewInstance(NcbiEmptyString, "(pool)")<<")->AddReference();\n"
+                        "    case " STATE_PREFIX<<i->cName<<":\n"
+                        "        (" OBJECT_MEMBER " = "<<i->type->NewInstance(NcbiEmptyString, "(pool)")<<")->AddReference();\n"
                         "        break;\n";
                     break;
                 case eStringMember:
@@ -804,17 +804,17 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 ITERATE ( TVariants, i, m_Variants ) {
                     if ( i->memberType == eStringMember ) {
                         methods <<
-                            "    case "STATE_PREFIX<<i->cName<<":\n";
+                            "    case " STATE_PREFIX<<i->cName<<":\n";
                     }
                 }
                 if ( haveBuffer ) {
                     methods <<
-                        "        "STRING_MEMBER".Construct();\n"
+                        "        " STRING_MEMBER ".Construct();\n"
                         "        break;\n";
                 }
                 else {
                     methods <<
-                        "        "STRING_MEMBER" = new "STRING_TYPE_FULL";\n"
+                        "        " STRING_MEMBER " = new " STRING_TYPE_FULL ";\n"
                         "        break;\n";
                 }
             }
@@ -822,17 +822,17 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 ITERATE ( TVariants, i, m_Variants ) {
                     if ( i->memberType == eUtf8StringMember ) {
                         methods <<
-                            "    case "STATE_PREFIX<<i->cName<<":\n";
+                            "    case " STATE_PREFIX<<i->cName<<":\n";
                     }
                 }
                 if ( haveBuffer ) {
                     methods <<
-                        "        "UTF8_STRING_MEMBER".Construct();\n"
+                        "        " UTF8_STRING_MEMBER ".Construct();\n"
                         "        break;\n";
                 }
                 else {
                     methods <<
-                        "        "UTF8_STRING_MEMBER" = new " <<
+                        "        " UTF8_STRING_MEMBER " = new " <<
                         utf8CType <<
                         ";\n        break;\n";
                 }
@@ -843,7 +843,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 "    }\n";
         }
         methods <<
-            "    "STATE_MEMBER" = index;\n"
+            "    " STATE_MEMBER " = index;\n"
             "}\n"
             "\n";
     }
@@ -865,12 +865,12 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         methods << "\n"
             "};\n"
             "\n"
-            "NCBI_NS_STD::string "<<methodPrefix<<"SelectionName("STATE_ENUM" index)\n"
+            "NCBI_NS_STD::string "<<methodPrefix<<"SelectionName(" STATE_ENUM " index)\n"
             "{\n"
             "    return NCBI_NS_NCBI::CInvalidChoiceSelection::GetName(index, sm_SelectionNames, sizeof(sm_SelectionNames)/sizeof(sm_SelectionNames[0]));\n"
             "}\n"
             "\n"
-            "void "<<methodPrefix<<"ThrowInvalidSelection("STATE_ENUM" index) const\n"
+            "void "<<methodPrefix<<"ThrowInvalidSelection(" STATE_ENUM " index) const\n"
             "{\n"
             "    throw NCBI_NS_NCBI::CInvalidChoiceSelection(DIAG_COMPILE_INFO";
         if ( 1 ) { // add extra argument for better error message
@@ -1096,8 +1096,8 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 constMemberRef = memberRef;
                 break;
             case eObjectPointerMember:
-                memberRef = "*static_cast<T"+i->cName+"*>("OBJECT_MEMBER")";
-                constMemberRef = "*static_cast<const T"+i->cName+"*>("OBJECT_MEMBER")";
+                memberRef = "*static_cast<T"+i->cName+"*>(" OBJECT_MEMBER ")";
+                constMemberRef = "*static_cast<const T"+i->cName+"*>(" OBJECT_MEMBER ")";
                 inl = false;
                 break;
             }
@@ -1141,7 +1141,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     "inline\n"
                     "bool "<<methodPrefix<<"Is"<<i->cName<<"(void) const\n"
                     "{\n"
-                    "    return "STATE_MEMBER" == "STATE_PREFIX<<i->cName<<";\n"
+                    "    return " STATE_MEMBER " == " STATE_PREFIX<<i->cName<<";\n"
                     "}\n"
                     "\n";
                 if (kind == eKindEnum || (i->dataType && i->dataType->IsPrimitive())) {
@@ -1153,10 +1153,10 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     code.Methods(inl) <<
                         " "<<methodPrefix<<"Get"<<i->cName<<"(void) const\n"
                         "{\n"
-                        "    CheckSelected("STATE_PREFIX<<i->cName<<");\n";
+                        "    CheckSelected(" STATE_PREFIX<<i->cName<<");\n";
                     if ( i->delayed ) {
                         code.Methods(inl) <<
-                            "    "DELAY_MEMBER".Update();\n";
+                            "    " DELAY_MEMBER ".Update();\n";
                     }
                     code.Methods(inl) <<
                         "    return "<<constMemberRef<<";\n"
@@ -1172,11 +1172,11 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 }
                 code.Methods(inl) <<
                     "{\n"
-                    "    Select("STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n";
+                    "    Select(" STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n";
                 if (!isNull) {
                     if ( i->delayed ) {
                         code.Methods(inl) <<
-                            "    "DELAY_MEMBER".Update();\n";
+                            "    " DELAY_MEMBER ".Update();\n";
                     }
                     if (isNullWithAtt) {
                         code.Methods(inl) <<
@@ -1203,10 +1203,10 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                         }
                         code.Methods(set_inl) << " value)\n"
                             "{\n"
-                            "    Select("STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n";
+                            "    Select(" STATE_PREFIX<<i->cName<<", NCBI_NS_NCBI::eDoNotResetVariant);\n";
                         if ( i->delayed ) {
                             code.Methods(set_inl) <<
-                                "    "DELAY_MEMBER".Forget();\n";
+                                "    " DELAY_MEMBER ".Forget();\n";
                         }
                         code.Methods(set_inl) <<
                             "    "<<memberRef<<" = value;\n"
@@ -1221,16 +1221,16 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                         "    T"<<i->cName<<"* ptr = &value;\n";
                     if ( i->delayed ) {
                         methods <<
-                            "    if ( "STATE_MEMBER" != "STATE_PREFIX<<i->cName<<" || "DELAY_MEMBER" || "OBJECT_MEMBER" != ptr ) {\n";
+                            "    if ( " STATE_MEMBER " != " STATE_PREFIX<<i->cName<<" || " DELAY_MEMBER " || " OBJECT_MEMBER " != ptr ) {\n";
                     }
                     else {
                         methods <<
-                            "    if ( "STATE_MEMBER" != "STATE_PREFIX<<i->cName<<" || "OBJECT_MEMBER" != ptr ) {\n";
+                            "    if ( " STATE_MEMBER " != " STATE_PREFIX<<i->cName<<" || " OBJECT_MEMBER " != ptr ) {\n";
                     }
                     methods <<
                         "        ResetSelection();\n"
-                        "        ("OBJECT_MEMBER" = ptr)->AddReference();\n"
-                        "        "STATE_MEMBER" = "STATE_PREFIX<<i->cName<<";\n"
+                        "        (" OBJECT_MEMBER " = ptr)->AddReference();\n"
+                        "        " STATE_MEMBER " = " STATE_PREFIX<<i->cName<<";\n"
                         "    }\n"
                         "}\n"
                         "\n";
@@ -1314,11 +1314,11 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             if ( haveString ) {
                 if ( haveBuffer ) {
                     code.ClassPrivate() <<
-                        "        NCBI_NS_NCBI::CUnionBuffer<"STRING_TYPE_FULL"> "STRING_MEMBER";\n";
+                        "        NCBI_NS_NCBI::CUnionBuffer<" STRING_TYPE_FULL "> " STRING_MEMBER ";\n";
                 }
                 else {
                     code.ClassPrivate() <<
-                        "        "STRING_TYPE_FULL" *"STRING_MEMBER";\n";
+                        "        " STRING_TYPE_FULL " *" STRING_MEMBER ";\n";
                 }
             }
             if ( haveUtf8String ) {
@@ -1326,18 +1326,18 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                     code.ClassPrivate() <<
                         "        NCBI_NS_NCBI::CUnionBuffer<" <<
                         utf8CType <<
-                        "> "UTF8_STRING_MEMBER";\n";
+                        "> " UTF8_STRING_MEMBER ";\n";
                 }
                 else {
                     code.ClassPrivate() <<
                         "        " <<
                         utf8CType <<
-                        " *"UTF8_STRING_MEMBER";\n";
+                        " *" UTF8_STRING_MEMBER ";\n";
                 }
             }
             if ( haveObjectPointer ) {
                 code.ClassPrivate() <<
-                    "        "OBJECT_TYPE_FULL" *"OBJECT_MEMBER";\n";
+                    "        " OBJECT_TYPE_FULL " *" OBJECT_MEMBER ";\n";
             }
             if ( haveBuffer && !havePointers && !haveObjectPointer ) {
                 // we should add some union member to force alignment
@@ -1351,22 +1351,22 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         else if ( haveString || haveUtf8String ) {
             if (haveString) {
                 code.ClassPrivate() <<
-                    "    "STRING_TYPE_FULL" "STRING_MEMBER";\n";
+                    "    " STRING_TYPE_FULL " " STRING_MEMBER ";\n";
             }
             if (haveUtf8String) {
                 code.ClassPrivate() <<
                     "    " <<
                     utf8CType <<
-                    " "UTF8_STRING_MEMBER";\n";
+                    " " UTF8_STRING_MEMBER ";\n";
             }
         }
         else if ( haveObjectPointer ) {
             code.ClassPrivate() <<
-                "    "OBJECT_TYPE_FULL" *"OBJECT_MEMBER";\n";
+                "    " OBJECT_TYPE_FULL " *" OBJECT_MEMBER ";\n";
         }
         if ( delayed ) {
             code.ClassPrivate() <<
-                "    mutable "DELAY_TYPE_FULL" "DELAY_MEMBER";\n";
+                "    mutable " DELAY_TYPE_FULL " " DELAY_MEMBER ";\n";
         }
     }
 
@@ -1398,6 +1398,19 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
         methods <<
             "    SET_CHOICE_MODULE(\""<<module_name<<"\");\n";
     }
+    const CDataType* dataType = DataType();
+    if (dataType) {
+        if (dataType->HasTag()) {
+            methods <<
+                "    SET_ASN_TAGGED_TYPE_INFO(" <<"SetTag, (" <<  dataType->GetTag() <<',' << 
+                dataType->GetTagClassString(dataType->GetTagClass()) << ',' <<
+                dataType->GetTagTypeString(dataType->GetTagType()) <<"));\n";
+        } else if (dataType->GetTagType() != CAsnBinaryDefs::eAutomatic) {
+            methods <<
+                "    SET_ASN_TAGGED_TYPE_INFO(" <<"SetTagType, (" <<
+                dataType->GetTagTypeString(dataType->GetTagType()) <<"));\n";
+        }
+    }
 
     ENsQualifiedMode defNsqMode = eNSQNotSet;
     if (DataType()) {
@@ -1428,38 +1441,7 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
             "    SET_CHOICE_DELAYED();\n";
     }
     {
-        // All or none of the choices must be tagged
-        bool useTags = false;
-        bool hasUntagged = false;
-        // All tags must be different
-        map<int, bool> tag_map;
-
         ITERATE ( TVariants, i, m_Variants ) {
-            // Save member info
-            if ( i->memberTag >= 0 ) {
-                if ( hasUntagged ) {
-                    NCBI_THROW(CDatatoolException,eInvalidData,
-                        "No explicit tag for some members in " +
-                        GetModuleName());
-                }
-                if ( tag_map[i->memberTag] ) {
-                    NCBI_THROW(CDatatoolException,eInvalidData,
-                        "Duplicate tag: " + i->cName +
-                        " [" + NStr::IntToString(i->memberTag) + "] in " +
-                        GetModuleName());
-                }
-                tag_map[i->memberTag] = true;
-                useTags = true;
-            }
-            else {
-                hasUntagged = true;
-                if ( useTags ) {
-                    NCBI_THROW(CDatatoolException,eInvalidData,
-                        "No explicit tag for " + i->cName + " in " +
-                        GetModuleName());
-                }
-            }
-
             methods << "    ADD_NAMED_";
             bool isNull = x_IsNullType(i);
             if (isNull) {
@@ -1577,7 +1559,14 @@ void CChoiceTypeStrings::GenerateClassCode(CClassCode& code,
                 methods << "->SetNotag()";
             }
             if ( i->memberTag >= 0 ) {
-                methods << "->GetId().SetTag(" << i->memberTag << ")";
+                methods << "->GetId().SetTag(" << i->memberTag;
+                if (i->dataType && 
+                    (i->dataType->GetTagClass() != CAsnBinaryDefs::eContextSpecific ||
+                     i->dataType->GetTagType()  == CAsnBinaryDefs::eImplicit)) {
+                    methods << ',' << CDataType::GetTagClassString(i->dataType->GetTagClass())
+                            << ',' << CDataType::GetTagTypeString(i->dataType->GetTagType());
+                }
+                methods << ")";
             }
             if (i->dataType) {
                 const COctetStringDataType* octets =

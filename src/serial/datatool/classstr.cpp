@@ -508,13 +508,13 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     if ( i->haveFlag ) {
                         // use special boolean flag
                         inlineMethods <<
-                            "    return (("SET_PREFIX"["<<set_index<<"] & 0x"<<
+                            "    return ((" SET_PREFIX "["<<set_index<<"] & 0x"<<
                             hex<<set_mask<<dec<<") != 0);\n";
                     }
                     else {
                         if ( i->delayed ) {
                             inlineMethods <<
-                                "    if ( "DELAY_PREFIX<<i->cName<<" )\n"
+                                "    if ( " DELAY_PREFIX<<i->cName<<" )\n"
                                 "        return true;\n";
                         }
                         if ( as_ref ) {
@@ -601,7 +601,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 "{\n";
             if ( i->delayed ) {
                 code.Methods(inl) <<
-                    "    "DELAY_PREFIX<<i->cName<<".Forget();\n";
+                    "    " DELAY_PREFIX<<i->cName<<".Forget();\n";
             }
             WriteTabbed(code.Methods(inl), destructionCode);
             if ( (as_ref && !i->canBeNull) ) {
@@ -654,7 +654,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             }
             if ( i->haveFlag ) {
                 code.Methods(inl) <<
-                    "    "SET_PREFIX"["<<set_index<<"] &= ~0x"<<hex<<set_mask<<dec<<";\n";
+                    "    " SET_PREFIX "["<<set_index<<"] &= ~0x"<<hex<<set_mask<<dec<<";\n";
             }
             code.Methods(inl) <<
                 "}\n"
@@ -675,7 +675,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "    Reset"<<i->cName<<"();\n";
                 if ( i->haveFlag && i->noPrefix) {
                     code.Methods(inl) <<
-                        "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask_maybe<<dec<<";\n";
+                        "    " SET_PREFIX "["<<set_index<<"] |= 0x"<<hex<<set_mask_maybe<<dec<<";\n";
                 }
                 code.Methods(inl) <<
                     "}\n"
@@ -740,7 +740,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 }
                 if ( i->delayed ) {
                     code.Methods(inl) <<
-                        "    "DELAY_PREFIX<<i->cName<<".Update();\n";
+                        "    " DELAY_PREFIX<<i->cName<<".Update();\n";
                 }
                 if ( (as_ref && !i->canBeNull) ) {
                     code.Methods(inl) <<
@@ -784,7 +784,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "{\n";
                 if ( i->delayed ) {
                     methods <<
-                        "    "DELAY_PREFIX<<i->cName<<".Forget();\n";
+                        "    " DELAY_PREFIX<<i->cName<<".Forget();\n";
                 }
                 methods <<
                     "    "<<i->mName<<".Reset(&value);\n";
@@ -794,7 +794,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 }
                 if ( i->haveFlag ) {
                     methods <<
-                        "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
+                        "    " SET_PREFIX "["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
                 }
                 methods <<
                     "}\n"
@@ -817,7 +817,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "{\n";
                     if ( i->delayed ) {
                         methods <<
-                            "    "DELAY_PREFIX<<i->cName<<".Update();\n";
+                            "    " DELAY_PREFIX<<i->cName<<".Update();\n";
                     }
                     methods <<
                         "    if ( !"<<i->mName<<" )\n"
@@ -854,7 +854,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                             "{\n";
                         if ( i->delayed ) {
                             inlineMethods <<
-                                "    "DELAY_PREFIX<<i->cName<<".Update();\n";
+                                "    " DELAY_PREFIX<<i->cName<<".Update();\n";
                         }
                         if ( (as_ref && !i->canBeNull) ) {
                             inlineMethods <<
@@ -868,7 +868,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         }
                         if ( i->haveFlag) {
                             inlineMethods <<
-                                "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
+                                "    " SET_PREFIX "["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
                         }
                         inlineMethods <<
                             "    return "<<i->valueName<<";\n"
@@ -926,7 +926,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "void "<<methodPrefix<<"Set"<<i->cName<<"(void)\n"
                         "{\n";
                     inlineMethods <<
-                        "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
+                        "    " SET_PREFIX "["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
                     inlineMethods <<
                         "}\n"
                         "\n";
@@ -957,13 +957,13 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         }
                         if ( i->delayed ) {
                             inlineMethods <<
-                                "    "DELAY_PREFIX<<i->cName<<".Forget();\n";
+                                "    " DELAY_PREFIX<<i->cName<<".Forget();\n";
                         }
                         inlineMethods <<                        
                             "    "<<valueRef<<" = value;\n";
                         if ( i->haveFlag ) {
                             inlineMethods <<
-                                "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
+                                "    " SET_PREFIX "["<<set_index<<"] |= 0x"<<hex<<set_mask<<dec<<";\n";
                         }
                         inlineMethods <<
                             "}\n"
@@ -985,7 +985,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         "{\n";
                     if ( i->delayed ) {
                         inlineMethods <<
-                            "    "DELAY_PREFIX<<i->cName<<".Update();\n";
+                            "    " DELAY_PREFIX<<i->cName<<".Update();\n";
                     }
                     if ( i->haveFlag ) {
 
@@ -1012,7 +1012,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                         }
 
                         inlineMethods <<
-                            "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask_maybe<<dec<<";\n";
+                            "    " SET_PREFIX "["<<set_index<<"] |= 0x"<<hex<<set_mask_maybe<<dec<<";\n";
                     }
                     inlineMethods <<
                         "    return "<<valueRef<<";\n"
@@ -1044,7 +1044,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "{\n";
                 if ( i->delayed ) {
                     inlineMethods <<
-                        "    "DELAY_PREFIX<<i->cName<<".Update();\n";
+                        "    " DELAY_PREFIX<<i->cName<<".Update();\n";
                 }
                 inlineMethods << "    return ";
                 if ( as_ref )
@@ -1059,7 +1059,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     "{\n";
                 if ( i->delayed ) {
                     inlineMethods <<
-                        "    "DELAY_PREFIX<<i->cName<<".Update();\n";
+                        "    " DELAY_PREFIX<<i->cName<<".Update();\n";
                 }
                 if ( i->haveFlag ) {
 
@@ -1086,7 +1086,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                     }
 
                     inlineMethods <<
-                        "    "SET_PREFIX"["<<set_index<<"] |= 0x"<<hex<<set_mask_maybe<<dec<<";\n";
+                        "    " SET_PREFIX "["<<set_index<<"] |= 0x"<<hex<<set_mask_maybe<<dec<<";\n";
                 }
                 inlineMethods << "    return ";
                 if ( as_ref )
@@ -1116,7 +1116,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         {
             if (m_Members.size() !=0) {
                 code.ClassPrivate() <<
-                    "    Uint4 "SET_PREFIX<<"["<<
+                    "    Uint4 " SET_PREFIX<<"["<<
                     (2*m_Members.size()-1+8*sizeof(Uint4))/(8*sizeof(Uint4)) <<"];\n";
             }
         }
@@ -1124,7 +1124,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             ITERATE ( TMembers, i, m_Members ) {
                 if ( i->delayed ) {
                     code.ClassPrivate() <<
-                        "    mutable NCBI_NS_NCBI::CDelayBuffer "DELAY_PREFIX<<i->cName<<";\n";
+                        "    mutable NCBI_NS_NCBI::CDelayBuffer " DELAY_PREFIX<<i->cName<<";\n";
                 }
             }
         }
@@ -1168,7 +1168,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             }
         }
         code.AddConstructionCode
-            ("memset("SET_PREFIX",0,sizeof("SET_PREFIX"));\n");
+            ("memset(" SET_PREFIX ",0,sizeof(" SET_PREFIX "));\n");
         if ( has_non_null_refs ) {
             code.AddConstructionCode("if ( !IsAllocatedInPool() ) {\n");
             ITERATE ( TMembers, i, m_Members ) {
@@ -1255,6 +1255,19 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
         methods <<
             "    SET_CLASS_MODULE(\""<<module_name<<"\");\n";
     }
+    const CDataType* dataType = DataType();
+    if (dataType) {
+        if (dataType->HasTag()) {
+            methods <<
+                "    SET_ASN_TAGGED_TYPE_INFO(" <<"SetTag, (" <<  dataType->GetTag() <<',' << 
+                dataType->GetTagClassString(dataType->GetTagClass()) << ',' <<
+                dataType->GetTagTypeString(dataType->GetTagType()) <<"));\n";
+        } else if (dataType->GetTagType() != CAsnBinaryDefs::eAutomatic) {
+            methods <<
+                "    SET_ASN_TAGGED_TYPE_INFO(" <<"SetTagType, (" <<
+                dataType->GetTagTypeString(dataType->GetTagType()) <<"));\n";
+        }
+    }
 
     ENsQualifiedMode defNsqMode = eNSQNotSet;
     if (DataType()) {
@@ -1286,38 +1299,7 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             "    SET_PARENT_CLASS("<<m_ParentClassNamespace.GetNamespaceRef(code.GetNamespace())<<m_ParentClassName<<");\n";
     }
     {
-        // All or none of the members must be tagged
-        bool useTags = false;
-        bool hasUntagged = false;
-        // All tags must be different
-        map<int, bool> tag_map;
-
-        size_t member_index = 0;
         ITERATE ( TMembers, i, m_Members ) {
-            ++member_index;
-            if ( i->memberTag >= 0 ) {
-                if ( hasUntagged ) {
-                    NCBI_THROW(CDatatoolException,eInvalidData,
-                               "No explicit tag for some members in " +
-                               GetModuleName());
-                }
-                if ( tag_map[i->memberTag] )
-                    NCBI_THROW(CDatatoolException,eInvalidData,
-                               "Duplicate tag: " + i->cName +
-                               " [" + NStr::IntToString(i->memberTag) + "] in " +
-                               GetModuleName());
-                tag_map[i->memberTag] = true;
-                useTags = true;
-            }
-            else {
-                hasUntagged = true;
-                if ( useTags ) {
-                    NCBI_THROW(CDatatoolException,eInvalidData,
-                               "No explicit tag for " + i->cName + " in " +
-                               GetModuleName());
-                }
-            }
-
             methods << "    ADD_NAMED_";
             bool isNull = x_IsNullType(i);
             if (isNull) {
@@ -1408,11 +1390,11 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
             }
             if (i->haveFlag) {
                 methods <<
-                    "->SetSetFlag(MEMBER_PTR("SET_PREFIX"[0]))";
+                    "->SetSetFlag(MEMBER_PTR(" SET_PREFIX "[0]))";
             }
             if ( i->delayed ) {
                 methods <<
-                    "->SetDelayBuffer(MEMBER_PTR("DELAY_PREFIX<<
+                    "->SetDelayBuffer(MEMBER_PTR(" DELAY_PREFIX<<
                     i->cName<<"))";
             }
             if ( i->optional ) {
@@ -1435,7 +1417,14 @@ void CClassTypeStrings::GenerateClassCode(CClassCode& code,
                 methods << "->SetAnyContent()";
             }
             if ( i->memberTag >= 0 ) {
-                methods << "->GetId().SetTag(" << i->memberTag << ")";
+                methods << "->GetId().SetTag(" << i->memberTag;
+                if (i->dataType && 
+                    (i->dataType->GetTagClass() != CAsnBinaryDefs::eContextSpecific ||
+                     i->dataType->GetTagType()  == CAsnBinaryDefs::eImplicit)) {
+                    methods << ',' << CDataType::GetTagClassString(i->dataType->GetTagClass())
+                            << ',' << CDataType::GetTagTypeString(i->dataType->GetTagType());
+                }
+                methods << ")";
             }
             if (i->dataType) {
                 const COctetStringDataType* octets =

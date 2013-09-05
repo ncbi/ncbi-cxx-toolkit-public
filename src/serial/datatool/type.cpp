@@ -83,7 +83,9 @@ TTypeInfo CAnyTypeSource::GetTypeInfo(void)
 CDataType::CDataType(void)
     : m_ParentType(0), m_Module(0), m_SourceLine(0),
       m_DataMember(0), m_TypeStr(0), m_Set(0), m_Choice(0), m_Checked(false),
-      m_Tag(eNoExplicitTag), m_IsAlias(false), m_NsQualified(eNSQNotSet), m_IsNillable(false)
+      m_Tag(eNoExplicitTag), m_TagClass(CAsnBinaryDefs::eUniversal),
+      m_TagType(CAsnBinaryDefs::eAutomatic),
+      m_IsAlias(false), m_NsQualified(eNSQNotSet), m_IsNillable(false)
 {
 }
 
@@ -111,6 +113,55 @@ void CDataType::Warning(const string& mess, int err_subcode) const
 {
     CNcbiDiag() << ErrCode(NCBI_ERRCODE_X, err_subcode)
                 << LocationString() << ": " << mess;
+}
+
+CNcbiOstream& CDataType::PrintASNTag(CNcbiOstream& out) const
+{
+    if (HasTag()) {
+        out  << '[';
+        switch (GetTagClass()) {
+        default: break;
+        case CAsnBinaryDefs::eApplication: cout << "APPLICATION "; break;
+        case CAsnBinaryDefs::ePrivate:     cout << "PRIVATE ";     break;
+        }
+        out << NStr::NumericToString(GetTag());
+        out  << ']';
+        CAsnBinaryDefs::ETagType ttype = GetTagType();
+        if (ttype != GetModule()->GetTagDefault()) {
+            switch (ttype) {
+            default: break;
+            case CAsnBinaryDefs::eExplicit: cout << " EXPLICIT"; break;
+            case CAsnBinaryDefs::eImplicit: cout << " IMPLICIT";     break;
+            }
+        }
+        out << ' ';
+    }
+    return out;
+}
+
+string CDataType::GetTagClassString(CAsnBinaryDefs::ETagClass tclass)
+{
+    const char* p = "something went wrong";
+    switch (tclass) {
+    default:
+        break;
+    case CAsnBinaryDefs::eUniversal:       p = "ncbi::CAsnBinaryDefs::eUniversal"; break;
+    case CAsnBinaryDefs::eApplication:     p = "ncbi::CAsnBinaryDefs::eApplication"; break;
+    case CAsnBinaryDefs::eContextSpecific: p = "ncbi::CAsnBinaryDefs::eContextSpecific"; break;
+    case CAsnBinaryDefs::ePrivate:         p = "ncbi::CAsnBinaryDefs::ePrivate";     break;
+    }
+    return p;
+}
+string CDataType::GetTagTypeString(CAsnBinaryDefs::ETagType ttype)
+{
+    const char* p = "something went wrong";
+    switch (ttype) {
+    default:
+        break;
+    case CAsnBinaryDefs::eExplicit:   p = "ncbi::CAsnBinaryDefs::eExplicit"; break;
+    case CAsnBinaryDefs::eImplicit:   p = "ncbi::CAsnBinaryDefs::eImplicit"; break;
+    }
+    return p;
 }
 
 void CDataType::PrintASNTypeComments(CNcbiOstream& out,
@@ -727,6 +778,7 @@ AutoPtr<CTypeStrings> CDataType::GenerateCode(void) const
                                                               ClassName(),
                                                               *dType.release(),
                                                               Comments()));
+        code->SetDataType(this);
         code->SetNamespaceName( GetNamespaceName());
         code->SetFullAlias(!fullalias.empty());
         return AutoPtr<CTypeStrings>(code.release());

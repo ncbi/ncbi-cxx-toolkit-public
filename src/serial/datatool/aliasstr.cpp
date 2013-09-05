@@ -297,6 +297,19 @@ void CAliasTypeStrings::GenerateCode(CClassContext& ctx) const
             methods <<
                 "    SET_ALIAS_MODULE(\"" << GetModuleName() << "\");\n";
         }
+        const CDataType* dataType = DataType();
+        if (dataType) {
+            if (dataType->HasTag()) {
+                methods <<
+                    "    SET_ASN_TAGGED_TYPE_INFO(" <<"SetTag, (" <<  dataType->GetTag() <<',' << 
+                    dataType->GetTagClassString(dataType->GetTagClass()) << ',' <<
+                    dataType->GetTagTypeString(dataType->GetTagType()) <<"));\n";
+            } else if (dataType->GetTagType() != CAsnBinaryDefs::eAutomatic) {
+                methods <<
+                    "    SET_ASN_TAGGED_TYPE_INFO(" <<"SetTagType, (" <<
+                    dataType->GetTagTypeString(dataType->GetTagType()) <<"));\n";
+            }
+        }
         methods << "    SET_";
         if ( is_class ) {
             methods << "CLASS";

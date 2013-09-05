@@ -51,6 +51,7 @@ CReferenceDataType::CReferenceDataType(const string& n, bool ref_to_parent /*=fa
 
 void CReferenceDataType::PrintASN(CNcbiOstream& out, int /*indent*/) const
 {
+    PrintASNTag(out);
     out << CDataTypeModule::ToAsnName(m_UserTypeName);
 }
 

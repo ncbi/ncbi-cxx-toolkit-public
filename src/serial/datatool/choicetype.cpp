@@ -201,6 +201,7 @@ CTypeInfo* CChoiceDataType::CreateTypeInfo(void)
             }
         }
     }
+    typeInfo->AssignItemsTags();
     return UpdateModuleName(typeInfo.release());
 }
 

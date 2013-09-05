@@ -81,6 +81,7 @@ CEnumDataType::TValue& CEnumDataType::AddValue(const string& valueName,
 
 void CEnumDataType::PrintASN(CNcbiOstream& out, int indent) const
 {
+    PrintASNTag(out);
     out << GetASNKeyword() << " {";
     ++indent;
     ITERATE ( TValues, i, m_Values ) {

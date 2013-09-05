@@ -34,6 +34,8 @@
 */
 
 #include <corelib/ncbiutil.hpp>
+#include <serial/serialdef.hpp>
+#include <serial/impl/objstrasnb.hpp>
 #include "aparser.hpp"
 #include "lexer.hpp"
 #include "moduleset.hpp"
@@ -92,6 +94,9 @@ public:
 
     bool HaveMoreElements(void);
     void SkipTo(char ch);
+
+private:
+    CAsnBinaryDefs::ETagType m_TagDefault;
 };
 
 END_NCBI_SCOPE

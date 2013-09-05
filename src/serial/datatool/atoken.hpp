@@ -34,12 +34,9 @@
 */
 
 #include <corelib/ncbistd.hpp>
+#include "tokens.hpp"
 
 BEGIN_NCBI_SCOPE
-
-typedef int TToken;
-static const TToken T_SYMBOL = 0;
-static const TToken T_EOF = -1;
 
 class AbstractToken {
 public:

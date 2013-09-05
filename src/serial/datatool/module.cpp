@@ -50,7 +50,8 @@ BEGIN_NCBI_SCOPE
 string CDataTypeModule::s_ModuleFileSuffix;
 
 CDataTypeModule::CDataTypeModule(const string& n)
-    : m_SourceLine(0), m_Errors(false), m_Name(n)
+    : m_SourceLine(0), m_Errors(false), m_Name(n),
+      m_TagDefault(CAsnBinaryDefs::eAutomatic)
 {
 }
 
@@ -143,10 +144,16 @@ void CDataTypeModule::PrintASN(CNcbiOstream& out) const
 {
     m_Comments.PrintASN(out, 0, CComments::eMultiline);
 
-    out <<
-        ToAsnName(GetName()) << " DEFINITIONS AUTOMATIC TAGS ::=\n"
-        "BEGIN\n"
-        "\n";
+    out << ToAsnName(GetName()) << " DEFINITIONS ";
+
+    if (m_TagDefault == CAsnBinaryDefs::eImplicit) {
+        out << "IMPLICIT";
+    } else if (m_TagDefault == CAsnBinaryDefs::eExplicit) {
+        out << "EXPLICIT";
+    } else {
+        out << "AUTOMATIC";
+    }
+    out << " TAGS ::=\nBEGIN\n\n";
 
     if ( !m_Exports.empty() ) {
         out << "EXPORTS ";

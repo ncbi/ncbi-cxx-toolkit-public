@@ -37,6 +37,7 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiutil.hpp>
 #include <serial/serialdef.hpp>
+#include <serial/impl/objstrasnb.hpp>
 #include <list>
 #include <map>
 #include <set>
@@ -142,6 +143,12 @@ public:
     void AddExtraSchemaOutput(const string& extra) const;
     string GetSubnamespace(void) const;
 
+    void SetTagDefault( CAsnBinaryDefs::ETagType ttype) {
+        m_TagDefault = ttype;
+    }
+    CAsnBinaryDefs::ETagType GetTagDefault(void) const {
+        return m_TagDefault;
+    }
 private:
     const string x_GetVar(const string& section,
         const string& value, bool collect=false) const;
@@ -171,6 +178,7 @@ private:
     mutable map< string, bool > m_DefSections;
     mutable map< string, list< string > > m_DefSectionEntries;
     mutable string m_ExtraDefs;
+    CAsnBinaryDefs::ETagType m_TagDefault;
 };
 
 END_NCBI_SCOPE
