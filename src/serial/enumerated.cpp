@@ -213,6 +213,7 @@ CEnumeratedTypeInfo::CEnumeratedTypeInfo(size_t size,
       m_ValueType(CPrimitiveTypeInfo::GetIntegerTypeInfo(size, sign)),
       m_Values(*values)
 {
+    SetTag(CAsnBinaryDefs::eEnumerated);
     _ASSERT(m_ValueType->GetPrimitiveValueType() == ePrimitiveValueInteger);
     if ( values->IsInternal() )
         SetInternalName(values->GetInternalName());

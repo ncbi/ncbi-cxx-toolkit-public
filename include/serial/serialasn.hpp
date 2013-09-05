@@ -114,7 +114,8 @@ GetOldAsnTypeRef(const string& name,
         NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateAsnStructInfo(AsnStructAlias))
 #define BEGIN_ASN_STRUCT_INFO(AsnStructName) \
     BEGIN_NAMED_ASN_STRUCT_INFO(#AsnStructName, AsnStructName)
-#define END_ASN_STRUCT_INFO END_TYPE_INFO
+#define END_ASN_STRUCT_INFO \
+    END_STRUCT_INFO
 
 #define SET_ASN_STRUCT_MODULE(ModuleName) \
     NCBI_NS_NCBI::SetModuleName(info, ModuleName)
@@ -130,7 +131,8 @@ GetOldAsnTypeRef(const string& name,
 #define SET_ASN_CHOICE_MODULE(ModuleName) \
     NCBI_NS_NCBI::SetModuleName(info, ModuleName)
 
-#define END_ASN_CHOICE_INFO END_TYPE_INFO
+#define END_ASN_CHOICE_INFO \
+    END_STRUCT_INFO
 
 // adding old ASN members
 #define ADD_NAMED_ASN_MEMBER(MemberAlias, MemberName, AsnTypeKind) \

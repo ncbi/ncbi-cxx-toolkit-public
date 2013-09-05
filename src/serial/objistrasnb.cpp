@@ -52,6 +52,8 @@
 #undef _TRACE
 #define _TRACE(arg) ((void)0)
 
+#define USE_OLD_TAGS 0
+
 BEGIN_NCBI_SCOPE
 
 #define NCBI_USE_ERRCODE_X   Serial_IStream
@@ -73,6 +75,11 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(EFixNonPrint how)
     m_CurrentTagLimit = 0;
 #endif
     m_CurrentTagLength = 0;
+    m_SkipNextTag = false;
+#if USE_DEF_LEN
+    m_CurrentDataLimit = 0;
+    m_DataLimits.reserve(16);
+#endif
 }
 
 CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
@@ -87,6 +94,11 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
     m_CurrentTagLimit = 0;
 #endif
     m_CurrentTagLength = 0;
+    m_SkipNextTag = false;
+#if USE_DEF_LEN
+    m_CurrentDataLimit = 0;
+    m_DataLimits.reserve(16);
+#endif
     Open(in);
 }
 
@@ -103,6 +115,11 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
     m_CurrentTagLimit = 0;
 #endif
     m_CurrentTagLength = 0;
+    m_SkipNextTag = false;
+#if USE_DEF_LEN
+    m_CurrentDataLimit = 0;
+    m_DataLimits.reserve(16);
+#endif
     Open(in, deleteIn ? eTakeOwnership : eNoOwnership);
 }
 
@@ -119,6 +136,11 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
     m_CurrentTagLimit = 0;
 #endif
     m_CurrentTagLength = 0;
+    m_SkipNextTag = false;
+#if USE_DEF_LEN
+    m_CurrentDataLimit = 0;
+    m_DataLimits.reserve(16);
+#endif
     Open(in, deleteIn);
 }
 
@@ -134,6 +156,11 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CByteSourceReader& reader,
     m_CurrentTagLimit = 0;
 #endif
     m_CurrentTagLength = 0;
+    m_SkipNextTag = false;
+#if USE_DEF_LEN
+    m_CurrentDataLimit = 0;
+    m_DataLimits.reserve(16);
+#endif
     Open(reader);
 }
 
@@ -150,6 +177,11 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(const char* buffer,
     m_CurrentTagLimit = 0;
 #endif
     m_CurrentTagLength = 0;
+    m_SkipNextTag = false;
+#if USE_DEF_LEN
+    m_CurrentDataLimit = 0;
+    m_DataLimits.reserve(16);
+#endif
     OpenFromBuffer(buffer, size);
 }
 
@@ -205,6 +237,20 @@ void CObjectIStreamAsnBinary::UnexpectedContinuation(void)
 void CObjectIStreamAsnBinary::UnexpectedLongLength(void)
 {
     ThrowError(fFormatError, "ShortLength expected");
+}
+
+void CObjectIStreamAsnBinary::UnexpectedTagValue(ETagClass tag_class,
+    TLongTag tag_got, TLongTag tag_expected)
+{
+    string s("Unexpected tag: ");
+    if (tag_class == eApplication) {
+        s += "Application ";
+    } else if (tag_class == ePrivate) {
+        s += "Private ";
+    }
+    s += NStr::NumericToString(tag_got) + " expected: " +
+         NStr::NumericToString(tag_expected);
+    ThrowError(fFormatError, s);
 }
 
 string CObjectIStreamAsnBinary::PeekClassTag(void)
@@ -271,6 +317,10 @@ NCBI_PARAM_DEF_EX(int, SERIAL, READ_ANY_VISIBLESTRING_TAG, 1,
 
 void CObjectIStreamAsnBinary::ExpectStringTag(EStringType type)
 {
+    if (m_SkipNextTag) {
+        m_SkipNextTag = false;
+        return;
+    }
     if ( type == eStringTypeUTF8 ) {
         static const bool sx_ReadAnyUtf8 =
             NCBI_PARAM_TYPE(SERIAL, READ_ANY_UTF8STRING_TAG)::GetDefault();
@@ -306,7 +356,7 @@ void CObjectIStreamAsnBinary::ExpectStringTag(EStringType type)
 
 string CObjectIStreamAsnBinary::TagToString(TByte byte)
 {
-    const char *cls, *con, *v;
+    const char *cls, *con;
 
     switch (byte & eTagClassMask) {
     default:
@@ -320,36 +370,40 @@ string CObjectIStreamAsnBinary::TagToString(TByte byte)
     case ePrimitive:         con = "";              break;
     case eConstructed:       con = "constructed/";  break;
     }
-    switch (byte & eTagValueMask) {
-    case eNone:              v= "None";             break;
-    case eBoolean:           v= "Boolean";          break;
-    case eInteger:           v= "Integer";          break;
-    case eBitString:         v= "BitString";        break;
-    case eOctetString:       v= "OctetString";      break;
-    case eNull:              v= "Null";             break;
-    case eObjectIdentifier:  v= "ObjectIdentifier"; break;
-    case eObjectDescriptor:  v= "ObjectDescriptor"; break;
-    case eExternal:          v= "External";         break;
-    case eReal:              v= "Real";             break;
-    case eEnumerated:        v= "Enumerated";       break;
-    case eSequence:          v= "Sequence";         break;
-    case eSet:               v= "Set";              break;
-    case eNumericString:     v= "NumericString";    break;
-    case ePrintableString:   v= "PrintableString";  break;
-    case eTeletextString:    v= "TeletextString";   break;
-    case eVideotextString:   v= "VideotextString";  break;
-    case eIA5String:         v= "IA5String";        break;
-    case eUTCTime:           v= "UTCTime";          break;
-    case eGeneralizedTime:   v= "GeneralizedTime";  break;
-    case eGraphicString:     v= "GraphicString";    break;
-    case eVisibleString:     v= "VisibleString";    break;
-    case eUTF8String:        v= "UTF8String";       break;
-    case eGeneralString:     v= "GeneralString";    break;
-    case eMemberReference:   v= "MemberReference";  break;
-    case eObjectReference:   v= "ObjectReference";  break;
-    default:                 v= "unknown";          break;
+    if ((byte & eTagClassMask) == eUniversal) {
+        const char *v;
+        switch (byte & eTagValueMask) {
+        case eNone:              v= "None";             break;
+        case eBoolean:           v= "Boolean";          break;
+        case eInteger:           v= "Integer";          break;
+        case eBitString:         v= "BitString";        break;
+        case eOctetString:       v= "OctetString";      break;
+        case eNull:              v= "Null";             break;
+        case eObjectIdentifier:  v= "ObjectIdentifier"; break;
+        case eObjectDescriptor:  v= "ObjectDescriptor"; break;
+        case eExternal:          v= "External";         break;
+        case eReal:              v= "Real";             break;
+        case eEnumerated:        v= "Enumerated";       break;
+        case eSequence:          v= "Sequence";         break;
+        case eSet:               v= "Set";              break;
+        case eNumericString:     v= "NumericString";    break;
+        case ePrintableString:   v= "PrintableString";  break;
+        case eTeletextString:    v= "TeletextString";   break;
+        case eVideotextString:   v= "VideotextString";  break;
+        case eIA5String:         v= "IA5String";        break;
+        case eUTCTime:           v= "UTCTime";          break;
+        case eGeneralizedTime:   v= "GeneralizedTime";  break;
+        case eGraphicString:     v= "GraphicString";    break;
+        case eVisibleString:     v= "VisibleString";    break;
+        case eUTF8String:        v= "UTF8String";       break;
+        case eGeneralString:     v= "GeneralString";    break;
+        case eMemberReference:   v= "MemberReference";  break;
+        case eObjectReference:   v= "ObjectReference";  break;
+        default:                 v= "unknown";          break;
+        }
+        return string(cls) + con + v + " (" + NStr::IntToString(byte) + ")";
     }
-    return string(cls) + con + v + " (" + NStr::IntToString(byte) + ")";
+    return string(cls) + con + NStr::NumericToString((byte & eTagValueMask));
 }
 
 void CObjectIStreamAsnBinary::UnexpectedSysTagByte(TByte tag_byte)
@@ -561,11 +615,15 @@ Uint4 CObjectIStreamAsnBinary::ReadUint4(void)
 
 Int8 CObjectIStreamAsnBinary::ReadInt8(void)
 {
-    TByte next = PeekTagByte();
-    if (next == MakeTagByte(eUniversal, ePrimitive, eInteger)) {
-        ExpectSysTag(eInteger);
+    if (m_SkipNextTag) {
+        m_SkipNextTag = false;
     } else {
-        ExpectSysTag(eApplication, ePrimitive, eInteger);
+        TByte next = PeekTagByte();
+        if (next == MakeTagByte(eUniversal, ePrimitive, eInteger)) {
+            ExpectSysTag(eInteger);
+        } else {
+            ExpectSysTag(eApplication, ePrimitive, eInteger);
+        }
     }
     Uint8 data;
     ReadStdSigned(*this, data);
@@ -574,11 +632,15 @@ Int8 CObjectIStreamAsnBinary::ReadInt8(void)
 
 Uint8 CObjectIStreamAsnBinary::ReadUint8(void)
 {
-    TByte next = PeekTagByte();
-    if (next == MakeTagByte(eUniversal, ePrimitive, eInteger)) {
-        ExpectSysTag(eInteger);
+    if (m_SkipNextTag) {
+        m_SkipNextTag = false;
     } else {
-        ExpectSysTag(eApplication, ePrimitive, eInteger);
+        TByte next = PeekTagByte();
+        if (next == MakeTagByte(eUniversal, ePrimitive, eInteger)) {
+            ExpectSysTag(eInteger);
+        } else {
+            ExpectSysTag(eApplication, ePrimitive, eInteger);
+        }
     }
     Uint8 data;
     ReadStdUnsigned(*this, data);
@@ -762,7 +824,11 @@ void CObjectIStreamAsnBinary::ReadString(string& s, EStringType type)
 
 void CObjectIStreamAsnBinary::ReadStringStore(string& s)
 {
-    ExpectSysTagByte(MakeTagByte(eApplication, ePrimitive, eStringStore));
+    if (m_SkipNextTag) {
+        m_SkipNextTag = false;
+    } else {
+        ExpectSysTagByte(MakeTagByte(eApplication, ePrimitive, eStringStore));
+    }
     ReadStringValue(ReadLength(), s, eFNP_Allow);
 }
 
@@ -800,14 +866,109 @@ char* CObjectIStreamAsnBinary::ReadCString(void)
     return s;
 }
 
-void CObjectIStreamAsnBinary::BeginContainer(const CContainerTypeInfo* contType)
+void CObjectIStreamAsnBinary::BeginNamedType(TTypeInfo namedTypeInfo)
 {
-    ExpectContainer(contType->RandomElementsOrder());
+#if !USE_OLD_TAGS
+    bool need_eoc = false;
+    if (namedTypeInfo->HasTag()) {
+        if (!m_SkipNextTag) {
+            need_eoc = namedTypeInfo->IsTagConstructed();
+            ExpectTag(namedTypeInfo->GetTagClass(),
+                      namedTypeInfo->GetTagConstructed(),
+                      namedTypeInfo->GetTag());
+            if (need_eoc) {
+                ExpectIndefiniteLength();
+            }
+        }
+        m_SkipNextTag = namedTypeInfo->IsTagImplicit();
+    }
+    TopFrame().SetNoEOC(!need_eoc);
+#endif
+}
+
+void CObjectIStreamAsnBinary::EndNamedType(void)
+{
+#if !USE_OLD_TAGS
+    if (!TopFrame().GetNoEOC()) {
+        ExpectEndOfContent();
+    }
+#endif
+}
+
+#ifdef VIRTUAL_MID_LEVEL_IO
+void CObjectIStreamAsnBinary::ReadNamedType(
+    TTypeInfo namedTypeInfo,TTypeInfo typeInfo, TObjectPtr object)
+{
+#if USE_OLD_TAGS
+#ifndef VIRTUAL_MID_LEVEL_IO
+    BEGIN_OBJECT_FRAME2(eFrameNamed, namedTypeInfo);
+    BeginNamedType(namedTypeInfo);
+#endif
+    ReadObject(object, typeInfo);
+#ifndef VIRTUAL_MID_LEVEL_IO
+    EndNamedType();
+    END_OBJECT_FRAME();
+#endif
+
+#else
+    bool need_eoc = false;
+    if (namedTypeInfo->HasTag()) {
+        if (!m_SkipNextTag) {
+            need_eoc = namedTypeInfo->IsTagConstructed();
+            ExpectTag(namedTypeInfo->GetTagClass(),
+                      namedTypeInfo->GetTagConstructed(),
+                      namedTypeInfo->GetTag());
+            if (need_eoc) {
+                ExpectIndefiniteLength();
+            }
+        }
+        m_SkipNextTag = namedTypeInfo->IsTagImplicit();
+    }
+
+    ReadObject(object, typeInfo);
+    if (need_eoc) {
+        ExpectEndOfContent();
+    }
+#endif
+}
+void CObjectIStreamAsnBinary::SkipNamedType(
+    TTypeInfo namedTypeInfo,TTypeInfo typeInfo)
+{
+    BEGIN_OBJECT_FRAME2(eFrameNamed, namedTypeInfo);
+    BeginNamedType(namedTypeInfo);
+
+    SkipObject(typeInfo);
+
+    EndNamedType();
+    END_OBJECT_FRAME();
+}
+
+void CObjectIStreamAsnBinary::BeginContainer(const CContainerTypeInfo* cType)
+{
+#if USE_OLD_TAGS
+    ExpectContainer(cType->RandomElementsOrder());
+#else
+    _ASSERT(cType->HasTag());
+    _ASSERT(cType->IsTagConstructed());
+    bool need_eoc = !m_SkipNextTag;
+    if (!m_SkipNextTag) {
+        ExpectTag(cType->GetTagClass(), eConstructed, cType->GetTag());
+        ExpectIndefiniteLength();
+    }
+    m_SkipNextTag = cType->IsTagImplicit();
+    TopFrame().SetNoEOC(!need_eoc);
+#endif
 }
 
 void CObjectIStreamAsnBinary::EndContainer(void)
 {
+#if USE_OLD_TAGS
     ExpectEndOfContent();
+#else
+    if (!TopFrame().GetNoEOC()) {
+        ExpectEndOfContent();
+    }
+#endif
 }
 
 bool CObjectIStreamAsnBinary::BeginContainerElement(TTypeInfo /*elementType*/)
@@ -815,11 +976,22 @@ bool CObjectIStreamAsnBinary::BeginContainerElement(TTypeInfo /*elementType*/)
     return HaveMoreElements();
 }
 
-#ifdef VIRTUAL_MID_LEVEL_IO
 void CObjectIStreamAsnBinary::ReadContainer(const CContainerTypeInfo* cType,
                                             TObjectPtr containerPtr)
 {
+#if USE_OLD_TAGS
     ExpectContainer(cType->RandomElementsOrder());
+#else
+    BEGIN_OBJECT_FRAME2(eFrameArray, cType);
+    _ASSERT(cType->HasTag());
+    _ASSERT(cType->IsTagConstructed());
+    bool need_eoc = !m_SkipNextTag;
+    if (!m_SkipNextTag) {
+        ExpectTag(cType->GetTagClass(), eConstructed, cType->GetTag());
+        ExpectIndefiniteLength();
+    }
+    m_SkipNextTag = cType->IsTagImplicit();
+#endif
 
     BEGIN_OBJECT_FRAME(eFrameArrayElement);
 
@@ -841,12 +1013,24 @@ void CObjectIStreamAsnBinary::ReadContainer(const CContainerTypeInfo* cType,
 
     END_OBJECT_FRAME();
 
+#if USE_OLD_TAGS
     ExpectEndOfContent();
+#else
+    if (need_eoc) {
+        ExpectEndOfContent();
+    }
+    END_OBJECT_FRAME();
+#endif
 }
 
 void CObjectIStreamAsnBinary::SkipContainer(const CContainerTypeInfo* cType)
 {
+#if USE_OLD_TAGS
     ExpectContainer(cType->RandomElementsOrder());
+#else
+    BEGIN_OBJECT_FRAME2(eFrameArray, cType);
+    CObjectIStreamAsnBinary::BeginContainer(cType);
+#endif
 
     TTypeInfo elementType = cType->GetElementType();
     BEGIN_OBJECT_FRAME(eFrameArrayElement);
@@ -857,18 +1041,41 @@ void CObjectIStreamAsnBinary::SkipContainer(const CContainerTypeInfo* cType)
 
     END_OBJECT_FRAME();
 
+#if USE_OLD_TAGS
     ExpectEndOfContent();
+#else
+    CObjectIStreamAsnBinary::EndContainer();
+    END_OBJECT_FRAME();
+#endif
 }
 #endif
 
-void CObjectIStreamAsnBinary::BeginClass(const CClassTypeInfo* classInfo)
+void CObjectIStreamAsnBinary::BeginClass(const CClassTypeInfo* classType)
 {
-    ExpectContainer(classInfo->RandomOrder());
+#if USE_OLD_TAGS
+    ExpectContainer(classType->RandomOrder());
+#else
+    _ASSERT(classType->HasTag());
+    _ASSERT(classType->IsTagConstructed());
+    bool need_eoc = !m_SkipNextTag;
+    if (!m_SkipNextTag) {
+        ExpectTag(classType->GetTagClass(), eConstructed, classType->GetTag());
+        ExpectIndefiniteLength();
+    }
+    m_SkipNextTag = classType->IsTagImplicit();
+    TopFrame().SetNoEOC(!need_eoc);
+#endif
 }
 
 void CObjectIStreamAsnBinary::EndClass(void)
 {
+#if USE_OLD_TAGS
     ExpectEndOfContent();
+#else
+    if (!TopFrame().GetNoEOC()) {
+        ExpectEndOfContent();
+    }
+#endif
 }
 
 void CObjectIStreamAsnBinary::UnexpectedMember(TLongTag tag, const CItemsInfo& items)
@@ -885,13 +1092,42 @@ void CObjectIStreamAsnBinary::UnexpectedMember(TLongTag tag, const CItemsInfo& i
 TMemberIndex
 CObjectIStreamAsnBinary::BeginClassMember(const CClassTypeInfo* classType)
 {
+#if USE_DEF_LEN
+    if (!HaveMoreElements()) {
+        return kInvalidMember;
+    }
+    TByte first_tag_byte = PeekTagByte();
+#else
     TByte first_tag_byte = PeekTagByte();
     if ( first_tag_byte == eEndOfContentsByte )
         return kInvalidMember;
+#endif
 
+#if !USE_OLD_TAGS
+    if (classType->GetTagType() != eAutomatic) {
+        TLongTag tag = PeekTag(first_tag_byte);
+        TMemberIndex index = classType->GetMembers().Find(tag, GetTagClass(first_tag_byte));
+        if ( index == kInvalidMember ) {
+            UnexpectedMember(tag, classType->GetItems());
+        }
+        if (!classType->GetMemberInfo(index)->GetId().HasTag()) {
+            UndoPeekTag();
+            TopFrame().SetNoEOC(true);
+            m_SkipNextTag = false;
+            return index;
+        }
+        bool need_eoc = GetTagConstructed(first_tag_byte) != ePrimitive;
+        if (need_eoc) {
+            ExpectIndefiniteLength();
+        }
+        TopFrame().SetNoEOC(!need_eoc);
+        m_SkipNextTag = classType->GetMemberInfo(index)->GetId().IsTagImplicit();
+        return index;
+    }
+#endif
     TLongTag tag = PeekTag(first_tag_byte, eContextSpecific, eConstructed);
     ExpectIndefiniteLength();
-    TMemberIndex index = classType->GetMembers().Find(tag);
+    TMemberIndex index = classType->GetMembers().Find(tag, eContextSpecific);
     if ( index == kInvalidMember ) {
         if (CanSkipUnknownMembers()) {
             SetFailFlags(fUnknownValue);
@@ -910,13 +1146,42 @@ TMemberIndex
 CObjectIStreamAsnBinary::BeginClassMember(const CClassTypeInfo* classType,
                                           TMemberIndex pos)
 {
+#if USE_DEF_LEN
+    if (!HaveMoreElements()) {
+        return kInvalidMember;
+    }
+    TByte first_tag_byte = PeekTagByte();
+#else
     TByte first_tag_byte = PeekTagByte();
     if ( first_tag_byte == eEndOfContentsByte )
         return kInvalidMember;
+#endif
 
+#if !USE_OLD_TAGS
+    if (classType->GetTagType() != eAutomatic) {
+        TLongTag tag = PeekTag(first_tag_byte);
+        TMemberIndex index = classType->GetMembers().Find(tag, GetTagClass(first_tag_byte), pos);
+        if ( index == kInvalidMember ) {
+            UnexpectedMember(tag, classType->GetItems());
+        }
+        if (!classType->GetMemberInfo(index)->GetId().HasTag()) {
+            UndoPeekTag();
+            TopFrame().SetNoEOC(true);
+            m_SkipNextTag = false;
+            return index;
+        }
+        bool need_eoc = GetTagConstructed(first_tag_byte) != ePrimitive;
+        if (need_eoc) {
+            ExpectIndefiniteLength();
+        }
+        TopFrame().SetNoEOC(!need_eoc);
+        m_SkipNextTag = classType->GetMemberInfo(index)->GetId().IsTagImplicit();
+        return index;
+    }
+#endif
     TLongTag tag = PeekTag(first_tag_byte, eContextSpecific, eConstructed);
     ExpectIndefiniteLength();
-    TMemberIndex index = classType->GetMembers().Find(tag, pos);
+    TMemberIndex index = classType->GetMembers().Find(tag, eContextSpecific, pos);
     if ( index == kInvalidMember ) {
         if (CanSkipUnknownMembers()) {
             SetFailFlags(fUnknownValue);
@@ -933,7 +1198,9 @@ CObjectIStreamAsnBinary::BeginClassMember(const CClassTypeInfo* classType,
 
 void CObjectIStreamAsnBinary::EndClassMember(void)
 {
-    ExpectEndOfContent();
+    if (!TopFrame().GetNoEOC()) {
+        ExpectEndOfContent();
+    }
 }
 
 #ifdef VIRTUAL_MID_LEVEL_IO
@@ -941,19 +1208,23 @@ void CObjectIStreamAsnBinary::ReadClassRandom(const CClassTypeInfo* classType,
                                               TObjectPtr classPtr)
 {
     BEGIN_OBJECT_FRAME3(eFrameClass, classType, classPtr);
+#if USE_OLD_TAGS
     ExpectContainer(classType->RandomOrder());
+#else
+    CObjectIStreamAsnBinary::BeginClass(classType);
+#endif
     ReadClassRandomContentsBegin(classType);
 
     TMemberIndex index;
     while ( (index = CObjectIStreamAsnBinary::BeginClassMember(classType)) != kInvalidMember ) {
         ReadClassRandomContentsMember(classPtr);
-        ExpectEndOfContent();
-        //CObjectIStreamAsnBinary::EndClassMember();
+//        ExpectEndOfContent();
+        CObjectIStreamAsnBinary::EndClassMember();
     }
 
     ReadClassRandomContentsEnd();
-    ExpectEndOfContent();
-    //CObjectIStreamAsnBinary::EndClass();
+//    ExpectEndOfContent();
+    CObjectIStreamAsnBinary::EndClass();
     END_OBJECT_FRAME();
 }
 
@@ -962,38 +1233,58 @@ CObjectIStreamAsnBinary::ReadClassSequential(const CClassTypeInfo* classType,
                                              TObjectPtr classPtr)
 {
     BEGIN_OBJECT_FRAME3(eFrameClass, classType, classPtr);
+#if USE_OLD_TAGS
     ExpectContainer(classType->RandomOrder());
+#else
+    CObjectIStreamAsnBinary::BeginClass(classType);
+#endif
     ReadClassSequentialContentsBegin(classType);
 
     TMemberIndex index;
     while ( (index = CObjectIStreamAsnBinary::BeginClassMember(classType,*pos)) != kInvalidMember ) {
         ReadClassSequentialContentsMember(classPtr);
+#if USE_OLD_TAGS
         ExpectEndOfContent();
-        //CObjectIStreamAsnBinary::EndClassMember();
+#else
+        CObjectIStreamAsnBinary::EndClassMember();
+#endif
     }
 
     ReadClassSequentialContentsEnd(classPtr);
+#if USE_OLD_TAGS
     ExpectEndOfContent();
-    //CObjectIStreamAsnBinary::EndClass();
+#else
+    CObjectIStreamAsnBinary::EndClass();
+#endif
     END_OBJECT_FRAME();
 }
 
 void CObjectIStreamAsnBinary::SkipClassRandom(const CClassTypeInfo* classType)
 {
     BEGIN_OBJECT_FRAME2(eFrameClass, classType);
+#if USE_OLD_TAGS
     ExpectContainer(classType->RandomOrder());
+#else
+    CObjectIStreamAsnBinary::BeginClass(classType);
+#endif
     SkipClassRandomContentsBegin(classType);
 
     TMemberIndex index;
     while ( (index = CObjectIStreamAsnBinary::BeginClassMember(classType)) != kInvalidMember ) {
         SkipClassRandomContentsMember();
+#if USE_OLD_TAGS
         ExpectEndOfContent();
-        //CObjectIStreamAsnBinary::EndClassMember();
+#else
+        CObjectIStreamAsnBinary::EndClassMember();
+#endif
     }
 
     SkipClassRandomContentsEnd();
+#if USE_OLD_TAGS
     ExpectEndOfContent();
-    //CObjectIStreamAsnBinary::EndClass();
+#else
+    CObjectIStreamAsnBinary::EndClass();
+#endif
     END_OBJECT_FRAME();
 }
 
@@ -1001,19 +1292,29 @@ void
 CObjectIStreamAsnBinary::SkipClassSequential(const CClassTypeInfo* classType)
 {
     BEGIN_OBJECT_FRAME2(eFrameClass, classType);
+#if USE_OLD_TAGS
     ExpectContainer(classType->RandomOrder());
+#else
+    CObjectIStreamAsnBinary::BeginClass(classType);
+#endif
     SkipClassSequentialContentsBegin(classType);
 
     TMemberIndex index;
     while ( (index = CObjectIStreamAsnBinary::BeginClassMember(classType,*pos)) != kInvalidMember ) {
         SkipClassSequentialContentsMember();
+#if USE_OLD_TAGS
         ExpectEndOfContent();
-        //CObjectIStreamAsnBinary::EndClassMember();
+#else
+        CObjectIStreamAsnBinary::EndClassMember();
+#endif
     }
 
     SkipClassSequentialContentsEnd();
+#if USE_OLD_TAGS
     ExpectEndOfContent();
-    //CObjectIStreamAsnBinary::EndClass();
+#else
+    CObjectIStreamAsnBinary::EndClass();
+#endif
     END_OBJECT_FRAME();
 }
 #endif
@@ -1037,9 +1338,34 @@ void CObjectIStreamAsnBinary::EndChoice(void)
 TMemberIndex
 CObjectIStreamAsnBinary::BeginChoiceVariant(const CChoiceTypeInfo* choiceType)
 {
+#if !USE_OLD_TAGS
+    if (choiceType->GetTagType() != eAutomatic) {
+        TByte first_tag_byte = PeekTagByte();
+        TLongTag tag = PeekTag(first_tag_byte);
+
+        TMemberIndex index = choiceType->GetVariants().Find(tag, GetTagClass(first_tag_byte));
+        if ( index == kInvalidMember ) {
+            UnexpectedMember(tag, choiceType->GetItems());
+        }
+        if (!choiceType->GetVariantInfo(index)->GetId().HasTag()) {
+            UndoPeekTag();
+            TopFrame().SetNoEOC(true);
+            m_SkipNextTag = false;
+            return index;
+        }
+        bool need_eoc = GetTagConstructed(first_tag_byte) != ePrimitive;
+        if (need_eoc) {
+            ExpectIndefiniteLength();
+        }
+        TopFrame().SetNoEOC(!need_eoc);
+        m_SkipNextTag = choiceType->GetVariantInfo(index)->GetId().IsTagImplicit();
+        return index;
+    }
+#endif
+
     TLongTag tag = PeekTag(PeekTagByte(), eContextSpecific, eConstructed);
     ExpectIndefiniteLength();
-    TMemberIndex index = choiceType->GetVariants().Find(tag);
+    TMemberIndex index = choiceType->GetVariants().Find(tag, eContextSpecific);
     if ( index == kInvalidMember ) {
         if (CanSkipUnknownVariants()) {
             SetFailFlags(fUnknownValue);
@@ -1054,14 +1380,20 @@ CObjectIStreamAsnBinary::BeginChoiceVariant(const CChoiceTypeInfo* choiceType)
         }
         tag = PeekTag(PeekTagByte(), eContextSpecific, eConstructed);
         ExpectIndefiniteLength();
-        index = choiceType->GetVariants().Find(tag)+1;
+        index = choiceType->GetVariants().Find(tag, eContextSpecific)+1;
     }
     return index;
 }
 
 void CObjectIStreamAsnBinary::EndChoiceVariant(void)
 {
+#if USE_OLD_TAGS
     ExpectEndOfContent();
+#else
+    if (!TopFrame().GetNoEOC()) {
+        ExpectEndOfContent();
+    }
+#endif
 }
 
 #ifdef VIRTUAL_MID_LEVEL_IO
@@ -1070,61 +1402,94 @@ void CObjectIStreamAsnBinary::ReadChoiceSimple(const CChoiceTypeInfo* choiceType
                                                TObjectPtr choicePtr)
 {
     BEGIN_OBJECT_FRAME3(eFrameChoice, choiceType, choicePtr);
-    TLongTag tag = PeekTag(PeekTagByte(), eContextSpecific, eConstructed);
     BEGIN_OBJECT_FRAME(eFrameChoiceVariant);
-    ExpectIndefiniteLength();
-    TMemberIndex index = choiceType->GetVariants().Find(tag);
-    if ( index == kInvalidMember ) {
-        if (!CanSkipUnknownVariants()) {
-            UnexpectedMember(tag, choiceType->GetItems());
+    TMemberIndex index;
+    if (choiceType->GetTagType() != eAutomatic) {
+        index = CObjectIStreamAsnBinary::BeginChoiceVariant(choiceType);
+    } else {
+        TLongTag tag = PeekTag(PeekTagByte(), eContextSpecific, eConstructed);
+        ExpectIndefiniteLength();
+        index = choiceType->GetVariants().Find(tag, eContextSpecific);
+        if ( index == kInvalidMember ) {
+            if (!CanSkipUnknownVariants()) {
+                UnexpectedMember(tag, choiceType->GetItems());
+            }
+            SetFailFlags(fUnknownValue);
+            SkipAnyContent();
         }
-        SetFailFlags(fUnknownValue);
-        SkipAnyContent();
     }
-    else {
+    if ( index != kInvalidMember ) {
         const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
         SetTopMemberId(variantInfo->GetId());
         variantInfo->ReadVariant(*this, choicePtr);
     }
+    if (choiceType->GetTagType() != eAutomatic) {
+        CObjectIStreamAsnBinary::EndChoiceVariant();
+    } else {
+        ExpectEndOfContent();
+    }
     END_OBJECT_FRAME();
-    ExpectEndOfContent();
     END_OBJECT_FRAME();
 }
 
 void CObjectIStreamAsnBinary::SkipChoiceSimple(const CChoiceTypeInfo* choiceType)
 {
     BEGIN_OBJECT_FRAME2(eFrameChoice, choiceType);
-    TLongTag tag = PeekTag(PeekTagByte(), eContextSpecific, eConstructed);
     BEGIN_OBJECT_FRAME(eFrameChoiceVariant);
-    ExpectIndefiniteLength();
-    TMemberIndex index = choiceType->GetVariants().Find(tag);
-    if ( index == kInvalidMember ) {
-        if (!CanSkipUnknownVariants()) {
-            UnexpectedMember(tag, choiceType->GetItems());
+    TMemberIndex index;
+    if (choiceType->GetTagType() != eAutomatic) {
+        index = CObjectIStreamAsnBinary::BeginChoiceVariant(choiceType);
+    } else {
+        TLongTag tag = PeekTag(PeekTagByte(), eContextSpecific, eConstructed);
+        ExpectIndefiniteLength();
+        index = choiceType->GetVariants().Find(tag, eContextSpecific);
+        if ( index == kInvalidMember ) {
+            if (!CanSkipUnknownVariants()) {
+                UnexpectedMember(tag, choiceType->GetItems());
+            }
+            SetFailFlags(fUnknownValue);
+            SkipAnyContent();
         }
-        SetFailFlags(fUnknownValue);
-        SkipAnyContent();
     }
-    else {
+    if ( index != kInvalidMember ) {
         const CVariantInfo* variantInfo = choiceType->GetVariantInfo(index);
         SetTopMemberId(variantInfo->GetId());
         variantInfo->SkipVariant(*this);
     }
+    if (choiceType->GetTagType() != eAutomatic) {
+        CObjectIStreamAsnBinary::EndChoiceVariant();
+    } else {
+        ExpectEndOfContent();
+    }
     END_OBJECT_FRAME();
-    ExpectEndOfContent();
     END_OBJECT_FRAME();
 }
 #endif
 
 void CObjectIStreamAsnBinary::BeginBytes(ByteBlock& block)
 {
-    if (PeekTagByte() == MakeTagByte(eUniversal, ePrimitive, eOctetString)) {
+    CAsnBinaryDefs::ETagValue type = CAsnBinaryDefs::eNone;
+    TByte bt = PeekByte();
+    if (bt == MakeTagByte(eUniversal, ePrimitive, eOctetString)) {
+        type = eOctetString;
+    } else if (bt == MakeTagByte(eUniversal, ePrimitive, eBitString)) {
+        type = eBitString;
+    } else if (m_SkipNextTag) {
+        const CChoiceTypeInfo* choiceType =
+            dynamic_cast<const CChoiceTypeInfo*>(FetchFrameFromTop(1).GetTypeInfo());
+        type = (CAsnBinaryDefs::ETagValue)choiceType->GetVariantInfo(
+            TopFrame().GetMemberId().GetName())->GetTypeInfo()->GetTag();
+    }
+    if (type == eOctetString) {
         ExpectSysTag(eOctetString);
         block.SetLength(ReadLength());
-    } else {
+    } else if (type == eOctetString) {
         ExpectSysTag(eBitString);
         block.SetLength(ReadLength()-1);
         ReadByte();
+    } else {
+        ThrowError(fUnknownValue,
+            "Unable to identify the type of byte block");
     }
 }
 

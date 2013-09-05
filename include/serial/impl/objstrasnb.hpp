@@ -59,6 +59,12 @@ public:
     typedef Uint1 TByte;
     typedef Int4 TLongTag;
 
+    enum ETagType {
+        eExplicit = 0,
+        eImplicit,
+        eAutomatic
+    };
+
     enum ETagClass {
         eUniversal          = 0 << 6,
         eApplication        = 1 << 6,
@@ -139,6 +145,7 @@ public:
     static ETagValue GetTagValue(TByte byte);
     static ETagValue StringTag(EStringType type);
     static ETagConstructed GetTagConstructed(TByte byte);
+    static ETagClass GetTagClass(TByte byte);
     static TByte GetTagClassAndConstructed(TByte byte);
 };
 

@@ -91,6 +91,9 @@ void CClassTypeInfo::InitClassTypeInfo(void)
 CClassTypeInfo* CClassTypeInfo::SetRandomOrder(bool random)
 {
     _ASSERT(!Implicit());
+    if (GetTagClass() == CAsnBinaryDefs::eUniversal) {
+        SetTag( random ? CAsnBinaryDefs::eSet : CAsnBinaryDefs::eSequence, GetTagClass(), GetTagType());
+    }
     m_ClassType = random? eRandom: eSequential;
     UpdateFunctions();
     return this;
@@ -99,6 +102,9 @@ CClassTypeInfo* CClassTypeInfo::SetRandomOrder(bool random)
 CClassTypeInfo* CClassTypeInfo::SetImplicit(void)
 {
     m_ClassType = eImplicit;
+    if (GetTagClass() == CAsnBinaryDefs::eUniversal) {
+        SetTag(eNoExplicitTag);
+    }
     UpdateFunctions();
     return this;
 }

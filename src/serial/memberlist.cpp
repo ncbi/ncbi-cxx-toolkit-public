@@ -72,23 +72,36 @@ void CItemsInfo::AddItem(CItemInfo* item)
     m_ItemsByTag.reset(0);
     m_ItemsByOffset.reset(0);
 
-    // update item's tag
-    if ( !item->GetId().HaveExplicitTag() ) {
-        TTag tag = CMemberId::eFirstTag;
-        if ( !Empty() ) {
-            TMemberIndex lastIndex = LastIndex();
-            const CItemInfo* lastItem = GetItemInfo(lastIndex);
-            if ( lastIndex != FirstIndex() ||
-                 !lastItem->GetId().HaveParentTag() )
-                tag = lastItem->GetId().GetTag() + 1;
-        }
-        item->GetId().SetTag(tag, false);
-    }
-
     // add item
     m_Items.push_back(AutoPtr<CItemInfo>(item));
     item->m_Index = LastIndex();
 }
+
+void CItemsInfo::AssignItemsTags(CAsnBinaryDefs::ETagType containerType)
+{
+    if (containerType != CAsnBinaryDefs::eAutomatic) {
+        NON_CONST_ITERATE( TItems, it, m_Items) {
+            CItemInfo* item = it->get();
+            if ( item->GetId().HasTag() && item->GetId().IsTagImplicit()) {
+                item->GetId().m_TagConstructed = item->GetTypeInfo()->GetTagConstructed();
+            }
+        }
+        return;
+    }
+    TTag tag = CMemberId::eFirstTag;
+    NON_CONST_ITERATE( TItems, it, m_Items) {
+        CItemInfo* item = it->get();
+        // update item's tag
+        if ( item->GetId().HaveParentTag()) {
+            continue;
+        }
+        if ( item->GetId().HasTag()) {
+            tag = item->GetId().GetTag() + 1;
+            continue;
+        }
+        item->GetId().SetTag(tag++);
+    }
+ }
 
 DEFINE_STATIC_FAST_MUTEX(s_ItemsMapMutex);
 
@@ -152,6 +165,33 @@ CItemsInfo::GetItemsByOffset(void) const
     return *items;
 }
 
+CItemsInfo::TTagAndClass
+CItemsInfo::GetTagAndClass(const CItemsInfo::CIterator& i) const
+{
+    const CItemInfo* itemInfo = GetItemInfo(i);
+    TTag tag = itemInfo->GetId().GetTag();
+    CAsnBinaryDefs::ETagClass tagclass = itemInfo->GetId().GetTagClass();
+    if (!itemInfo->GetId().HasTag()) {
+        TTypeInfo itemType = itemInfo->GetTypeInfo();
+        while (!itemType->HasTag() && itemType->GetTypeFamily() == eTypeFamilyPointer) {
+            const CPointerTypeInfo* ptr =
+                dynamic_cast<const CPointerTypeInfo*>(itemType);
+            if (ptr) {
+                itemType = ptr->GetPointedType();
+            } else {
+                NCBI_THROW(CSerialException,eInvalidData,
+                    string("invalid type info: ") + itemInfo->GetId().GetName());
+            }
+        }
+
+        if (itemType->HasTag()) {
+            tag = itemType->GetTag();
+            tagclass = itemType->GetTagClass();
+        }
+    }
+    return make_pair(tag, tagclass);
+}
+
 pair<TMemberIndex, const CItemsInfo::TItemsByTag*>
 CItemsInfo::GetItemsByTagInfo(void) const
 {
@@ -164,11 +204,15 @@ CItemsInfo::GetItemsByTagInfo(void) const
             {
                 CIterator i(*this);
                 if ( i.Valid() ) {
-                    ret.first = *i-GetItemInfo(i)->GetId().GetTag();
-                    for ( ++i; i.Valid(); ++i ) {
-                        if ( ret.first != *i-GetItemInfo(i)->GetId().GetTag() ) {
-                            ret.first = kInvalidMember;
-                            break;
+                    if (GetItemInfo(i)->GetId().HasTag() &&
+                        GetItemInfo(i)->GetId().GetTagClass() == CAsnBinaryDefs::eContextSpecific) {
+                        ret.first = *i - GetItemInfo(i)->GetId().GetTag();
+                        for ( ++i; i.Valid(); ++i ) {
+                            if ( ret.first != *i - GetItemInfo(i)->GetId().GetTag() ||
+                                 GetItemInfo(i)->GetId().GetTagClass() != CAsnBinaryDefs::eContextSpecific) {
+                                ret.first = kInvalidMember;
+                                break;
+                            }
                         }
                     }
                 }
@@ -179,10 +223,12 @@ CItemsInfo::GetItemsByTagInfo(void) const
             else {
                 auto_ptr<TItemsByTag> items(new TItemsByTag);
                 for ( CIterator i(*this); i.Valid(); ++i ) {
-                    const CItemInfo* itemInfo = GetItemInfo(i);
-                    TTag tag = itemInfo->GetId().GetTag();
-                    if ( !items->insert(TItemsByTag::value_type(tag, *i)).second ) {
-                        NCBI_THROW(CSerialException,eInvalidData, "duplicate member tag");
+                    TTagAndClass tc = GetTagAndClass(i);
+                    if (tc.first >= 0) {
+                        if ( !items->insert(TItemsByTag::value_type( tc, *i)).second &&
+                            GetItemInfo(i)->GetId().HasTag() ) {
+                            NCBI_THROW(CSerialException,eInvalidData, "duplicate member tag");
+                        }
                     }
                 }
                 ret.second = items.get();
@@ -341,7 +387,7 @@ TMemberIndex CItemsInfo::Find(const CTempString& name, TMemberIndex pos) const
     return kInvalidMember;
 }
 
-TMemberIndex CItemsInfo::Find(TTag tag) const
+TMemberIndex CItemsInfo::Find(TTag tag, CAsnBinaryDefs::ETagClass tagclass) const
 {
     TMemberIndex zero_index = m_ZeroTagIndex;
     if ( zero_index == kInvalidMember && !m_ItemsByTag.get() ) {
@@ -354,14 +400,14 @@ TMemberIndex CItemsInfo::Find(TTag tag) const
         return index;
     }
     else {
-        TItemsByTag::const_iterator mi = m_ItemsByTag->find(tag);
+        TItemsByTag::const_iterator mi = m_ItemsByTag->find( make_pair(tag,tagclass));
         if ( mi == m_ItemsByTag->end() )
             return kInvalidMember;
         return mi->second;
     }
 }
 
-TMemberIndex CItemsInfo::Find(TTag tag, TMemberIndex pos) const
+TMemberIndex CItemsInfo::Find(TTag tag, CAsnBinaryDefs::ETagClass tagclass, TMemberIndex pos) const
 {
     TMemberIndex zero_index = m_ZeroTagIndex;
     if ( zero_index == kInvalidMember && !m_ItemsByTag.get() ) {
@@ -375,8 +421,19 @@ TMemberIndex CItemsInfo::Find(TTag tag, TMemberIndex pos) const
     }
     else {
         for ( CIterator i(*this, pos); i.Valid(); ++i ) {
-            if ( GetItemInfo(i)->GetId().GetTag() == tag )
+            TTagAndClass tc = GetTagAndClass(i);
+            if (tc.first == tag && tc.second == tagclass) {
                 return *i;
+            }
+        }
+        if (pos <= LastIndex()) {
+            const CItemInfo* info = GetItemInfo(pos);
+            if (!info->GetId().HasTag()) {
+                const CMemberInfo* mem = dynamic_cast<const CMemberInfo*>(info);
+                if (mem && !mem->Optional()) {
+                    return pos;
+                }
+            }
         }
         return kInvalidMember;
     }

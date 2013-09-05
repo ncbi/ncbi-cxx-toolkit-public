@@ -210,6 +210,7 @@ public:
 
 CNullTypeInfo::CNullTypeInfo(void)
 {
+    SetTag(CAsnBinaryDefs::eNull);
     SetCreateFunction(&CNullFunctions::Create);
     SetReadFunction(&CNullFunctions::Read);
     SetWriteFunction(&CNullFunctions::Write);

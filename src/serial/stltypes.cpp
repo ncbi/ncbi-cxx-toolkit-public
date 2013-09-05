@@ -240,6 +240,7 @@ TTypeInfo CStlTwoArgsTemplate::CreateElementTypeInfo(TTypeInfo argType)
     classInfo->AddMember(mapType->GetValueId(),
                          TConstObjectPtr(mapType->m_ValueOffset),
                          mapType->m_ValueType.Get());
+    classInfo->AssignItemsTags();
     return classInfo;
 }
 

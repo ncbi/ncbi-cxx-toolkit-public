@@ -43,6 +43,7 @@
  * @{
  */
 
+#define USE_DEF_LEN  1
 
 BEGIN_NCBI_SCOPE
 
@@ -164,6 +165,10 @@ protected:
     virtual void SkipByteBlock(void);
 
 #ifdef VIRTUAL_MID_LEVEL_IO
+    virtual void ReadNamedType(TTypeInfo namedTypeInfo,
+                               TTypeInfo typeInfo, TObjectPtr object);
+    virtual void SkipNamedType(TTypeInfo namedTypeInfo,
+                               TTypeInfo typeInfo);
     virtual void ReadContainer(const CContainerTypeInfo* containerType,
                                TObjectPtr containerPtr);
     virtual void SkipContainer(const CContainerTypeInfo* containerType);
@@ -182,6 +187,9 @@ protected:
 #endif
 
     // low level I/O
+    virtual void BeginNamedType(TTypeInfo namedTypeInfo);
+    virtual void EndNamedType(void);
+
     virtual void BeginContainer(const CContainerTypeInfo* containerType);
     virtual void EndContainer(void);
     virtual bool BeginContainerElement(TTypeInfo elementType);
@@ -252,9 +260,15 @@ private:
     stack<Int8> m_Limits;
 #endif
     size_t m_CurrentTagLength;  // length of tag header (without length field)
+    bool m_SkipNextTag;
+#if USE_DEF_LEN
+    Int8 m_CurrentDataLimit;
+    vector<Int8> m_DataLimits;
+#endif
 
     // low level interface
 private:
+    TByte PeekByte(size_t index = 0);
     TByte PeekTagByte(size_t index = 0);
     TByte StartTag(TByte first_tag_byte);
     TLongTag PeekTag(TByte first_tag_byte);
@@ -268,6 +282,7 @@ private:
     void UnexpectedFixedLength(void);
     void UnexpectedContinuation(void);
     void UnexpectedLongLength(void);
+    void UnexpectedTagValue(ETagClass tag_class, TLongTag tag_got, TLongTag tag_expected);
     TLongTag PeekTag(TByte first_tag_byte,
                      ETagClass tag_class,
                      ETagConstructed tag_constructed);
@@ -281,6 +296,16 @@ private:
                       ETagConstructed tag_constructed,
                       ETagValue tag_value);
     void ExpectSysTag(ETagValue tag_value);
+
+    void ExpectTag(ETagClass tag_class,
+                   ETagConstructed tag_constructed,
+                   TLongTag tag_value);
+    void ExpectTag(TByte first_tag_byte,
+                   ETagClass tag_class,
+                   ETagConstructed tag_constructed,
+                   TLongTag tag_value);
+    void UndoPeekTag(void);
+
     TByte FlushTag(void);
     void ExpectIndefiniteLength(void);
     bool PeekIndefiniteLength(void);

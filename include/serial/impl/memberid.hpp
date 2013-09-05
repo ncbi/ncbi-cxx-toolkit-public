@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <serial/serialdef.hpp>
+#include <serial/impl/objstrasnb.hpp>
 
 
 /** @addtogroup FieldsComplex
@@ -50,7 +51,7 @@ BEGIN_NCBI_SCOPE
 // default value of tag is eNoExplicitTag
 class NCBI_XSERIAL_EXPORT CMemberId {
 public:
-    typedef int TTag;
+    typedef CAsnBinaryDefs::TLongTag TTag;
     enum {
         eNoExplicitTag = -1,
         eParentTag = 30,
@@ -67,11 +68,19 @@ public:
 
     const string& GetName(void) const;     // ASN.1 tag name
     TTag GetTag(void) const;               // ASN.1 effective binary tag value
-    bool HaveExplicitTag(void) const;      // ASN.1 explicit binary tag value
+    CAsnBinaryDefs::ETagClass GetTagClass(void) const;
+    CAsnBinaryDefs::ETagType  GetTagType(void) const;
+    CAsnBinaryDefs::ETagConstructed GetTagConstructed(void) const;
+    bool IsTagConstructed(void) const;
+    bool IsTagImplicit(void) const;
+    bool HasTag(void) const;      // ASN.1 explicit binary tag value
 
     void SetName(const string& name);
-    void SetTag(TTag tag, bool explicitTag = true);
+    void SetTag(TTag tag,
+                CAsnBinaryDefs::ETagClass tagclass = CAsnBinaryDefs::eContextSpecific,
+                CAsnBinaryDefs::ETagType tagtype   = CAsnBinaryDefs::eAutomatic);
 
+    bool HaveExplicitTag(void) const;
     bool HaveParentTag(void) const;
     void SetParentTag(void);
 
@@ -103,7 +112,9 @@ private:
     // identification
     string m_Name;
     TTag m_Tag;
-    bool m_ExplicitTag;
+    CAsnBinaryDefs::ETagClass m_TagClass;
+    CAsnBinaryDefs::ETagType m_TagType;
+    CAsnBinaryDefs::ETagConstructed m_TagConstructed;
     bool m_NoPrefix;
     bool m_Attlist;
     bool m_Notag;
@@ -111,6 +122,8 @@ private:
     bool m_Compressed;
     bool m_Nillable;
     ENsQualifiedMode m_NsqMode;
+
+    friend class CItemsInfo;
 };
 
 

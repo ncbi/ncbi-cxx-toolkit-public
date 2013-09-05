@@ -36,6 +36,7 @@
 #include <serial/serialdef.hpp>
 #include <serial/impl/hookdata.hpp>
 #include <serial/impl/hookfunc.hpp>
+#include <serial/impl/objstrasnb.hpp>
 
 
 /** @addtogroup TypeInfoCPP
@@ -73,6 +74,9 @@ class CObjectMemoryPool;
 class NCBI_XSERIAL_EXPORT CTypeInfo
 {
 protected:
+    enum {
+        eNoExplicitTag = -1,
+    };
     CTypeInfo(ETypeFamily typeFamily, size_t size);
     CTypeInfo(ETypeFamily typeFamily, size_t size, const char* name);
     CTypeInfo(ETypeFamily typeFamily, size_t size, const string& name);
@@ -231,6 +235,35 @@ public:
     void DefaultCopyData(CObjectStreamCopier& copier) const;
     void DefaultSkipData(CObjectIStream& in) const;
 
+
+    CTypeInfo* SetTagType(CAsnBinaryDefs::ETagType ttype) {
+        m_TagType = ttype;
+        return this;
+    }
+    CAsnBinaryDefs::ETagType GetTagType(void) const {
+        return m_TagType;
+    }
+    bool IsTagImplicit(void) const {
+        return m_TagType == CAsnBinaryDefs::eImplicit;
+    }
+    virtual CTypeInfo* SetTag(CAsnBinaryDefs::TLongTag tag,
+                CAsnBinaryDefs::ETagClass tagclass = CAsnBinaryDefs::eUniversal,
+                CAsnBinaryDefs::ETagType tagtype   = CAsnBinaryDefs::eAutomatic);
+    CAsnBinaryDefs::TLongTag GetTag(void) const {
+        return m_Tag;
+    }
+    bool HasTag(void) const {
+        return m_Tag != eNoExplicitTag;
+    }
+    CAsnBinaryDefs::ETagClass GetTagClass(void) const {
+        return m_TagClass;
+    }
+    CAsnBinaryDefs::ETagConstructed GetTagConstructed(void) const {
+        return m_TagConstructed;
+    }
+    bool IsTagConstructed(void) const {
+        return m_TagConstructed == CAsnBinaryDefs::eConstructed;
+    }
 private:
     // private constructors to avoid copying
     CTypeInfo(const CTypeInfo&);
@@ -253,6 +286,10 @@ protected:
 
     bool m_IsCObject;
     bool m_IsInternal;
+    CAsnBinaryDefs::TLongTag  m_Tag;
+    CAsnBinaryDefs::ETagClass m_TagClass;
+    CAsnBinaryDefs::ETagType  m_TagType;
+    CAsnBinaryDefs::ETagConstructed m_TagConstructed;
 
 private:
     // type specific function pointers

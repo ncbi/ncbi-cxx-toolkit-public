@@ -56,6 +56,10 @@
 
 #define NCBI_USE_ERRCODE_X   Serial_OStream
 
+#define USE_OLD_TAGS 0
+// this is backward compatibility check
+#define USE_VERIFY_TAGGING 1
+
 BEGIN_NCBI_SCOPE
 
 
@@ -68,7 +72,7 @@ CObjectOStream* CObjectOStream::OpenObjectOStreamAsnBinary(CNcbiOstream& out,
 CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
                                                  EFixNonPrint how)
     : CObjectOStream(eSerial_AsnBinary, out),
-      m_CStyleBigInt(false)
+      m_CStyleBigInt(false), m_SkipNextTag(false), m_AutomaticTagging(true)
 {
     FixNonPrint(how);
 #if CHECK_OUTSTREAM_INTEGRITY
@@ -82,7 +86,7 @@ CObjectOStreamAsnBinary::CObjectOStreamAsnBinary(CNcbiOstream& out,
                                                  bool deleteOut,
                                                  EFixNonPrint how)
     : CObjectOStream(eSerial_AsnBinary, out, deleteOut),
-      m_CStyleBigInt(false)
+      m_CStyleBigInt(false), m_SkipNextTag(false), m_AutomaticTagging(true)
 {
     FixNonPrint(how);
 #if CHECK_OUTSTREAM_INTEGRITY
@@ -243,12 +247,20 @@ void CObjectOStreamAsnBinary::WriteShortTag(ETagClass tag_class,
                                             ETagConstructed tag_constructed,
                                             ETagValue tag_value)
 {
+    if (m_SkipNextTag) {
+        m_SkipNextTag = false;
+        return;
+    }
     WriteByte(MakeTagByte(tag_class, tag_constructed, tag_value));
 }
 
 inline
 void CObjectOStreamAsnBinary::WriteSysTag(ETagValue tag_value)
 {
+    if (m_SkipNextTag) {
+        m_SkipNextTag = false;
+        return;
+    }
     WriteShortTag(eUniversal, ePrimitive, tag_value);
 }
 
@@ -277,6 +289,10 @@ CObjectOStreamAsnBinary::TByte CObjectOStreamAsnBinary::GetUTF8StringTag(void)
 inline
 void CObjectOStreamAsnBinary::WriteStringTag(EStringType type)
 {
+    if (m_SkipNextTag) {
+        m_SkipNextTag = false;
+        return;
+    }
     WriteByte(type == eStringTypeUTF8?
               GetUTF8StringTag():
               MakeTagByte(eUniversal, ePrimitive, eVisibleString));
@@ -313,6 +329,10 @@ void CObjectOStreamAsnBinary::WriteTag(ETagClass tag_class,
                                        ETagConstructed tag_constructed,
                                        TLongTag tag_value)
 {
+    if (m_SkipNextTag) {
+        m_SkipNextTag = false;
+        return;
+    }
     if ( tag_value >= 0 && tag_value < eLongTag )
         WriteShortTag(tag_class, tag_constructed, ETagValue(tag_value));
     else
@@ -321,6 +341,10 @@ void CObjectOStreamAsnBinary::WriteTag(ETagClass tag_class,
 
 void CObjectOStreamAsnBinary::WriteClassTag(TTypeInfo typeInfo)
 {
+    if (m_SkipNextTag) {
+        m_SkipNextTag = false;
+        return;
+    }
     const string& tag = typeInfo->GetName();
     if ( tag.empty() )
         ThrowError(fInvalidData, "empty tag string");
@@ -929,23 +953,167 @@ void CObjectOStreamAsnBinary::WriteOther(TConstObjectPtr object,
     WriteEndOfContent();
 }
 
+
+#ifdef VIRTUAL_MID_LEVEL_IO
+
+void CObjectOStreamAsnBinary::BeginNamedType(TTypeInfo namedTypeInfo)
+{
+#if !USE_OLD_TAGS
+    bool need_eoc = false;
+#if USE_VERIFY_TAGGING
+    m_AutomaticTagging = namedTypeInfo->GetTagType() == CAsnBinaryDefs::eAutomatic;
+#endif
+    if (namedTypeInfo->HasTag()) {
+#if USE_VERIFY_TAGGING
+        if (m_AutomaticTagging) {
+            ThrowError(fInvalidData, "ASN TAGGING ERROR. Report immediately!");
+        }
+#endif
+        if (!m_SkipNextTag) {
+            need_eoc = namedTypeInfo->IsTagConstructed();
+            WriteTag(namedTypeInfo->GetTagClass(),
+                     namedTypeInfo->GetTagConstructed(),
+                     namedTypeInfo->GetTag());
+            if (need_eoc) {
+                WriteIndefiniteLength();
+            }
+        }
+        m_SkipNextTag = namedTypeInfo->IsTagImplicit();
+    }
+    TopFrame().SetNoEOC(!need_eoc);
+#endif
+}
+
+void CObjectOStreamAsnBinary::EndNamedType(void)
+{
+#if !USE_OLD_TAGS
+    if (!TopFrame().GetNoEOC()) {
+        WriteEndOfContent();
+    }
+#endif
+}
+
+void CObjectOStreamAsnBinary::WriteNamedType(
+    TTypeInfo namedTypeInfo,TTypeInfo objectType, TConstObjectPtr objectPtr)
+{
+
+#if USE_OLD_TAGS
+#ifndef VIRTUAL_MID_LEVEL_IO
+    BEGIN_OBJECT_FRAME2(eFrameNamed, namedTypeInfo);
+    BeginNamedType(namedTypeInfo);
+#endif
+    WriteObject(objectPtr, objectType);
+#ifndef VIRTUAL_MID_LEVEL_IO
+    EndNamedType();
+    END_OBJECT_FRAME();
+#endif
+#else //USE_OLD_TAGS
+
+    bool need_eoc = false;
+#if USE_VERIFY_TAGGING
+    m_AutomaticTagging = namedTypeInfo->GetTagType() == CAsnBinaryDefs::eAutomatic;
+#endif
+    if (namedTypeInfo->HasTag()) {
+#if USE_VERIFY_TAGGING
+        if (m_AutomaticTagging) {
+            ThrowError(fInvalidData, "ASN TAGGING ERROR. Report immediately!");
+        }
+#endif
+        if (!m_SkipNextTag) {
+            need_eoc = namedTypeInfo->IsTagConstructed();
+            WriteTag(namedTypeInfo->GetTagClass(),
+                     namedTypeInfo->GetTagConstructed(),
+                     namedTypeInfo->GetTag());
+            if (need_eoc) {
+                WriteIndefiniteLength();
+            }
+        }
+        m_SkipNextTag = namedTypeInfo->IsTagImplicit();
+    }
+    WriteObject(objectPtr, objectType);
+    if (need_eoc) {
+        WriteEndOfContent();
+    }
+#endif // USE_OLD_TAGS
+}
+
+void CObjectOStreamAsnBinary::CopyNamedType(
+    TTypeInfo namedTypeInfo,TTypeInfo objectType,CObjectStreamCopier& copier)
+{
+    BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameNamed, namedTypeInfo);
+    copier.In().BeginNamedType(namedTypeInfo);
+    BeginNamedType(namedTypeInfo);
+
+    CopyObject(objectType, copier);
+
+    EndNamedType();
+    copier.In().EndNamedType();
+    END_OBJECT_2FRAMES_OF(copier);
+}
+
+
 void CObjectOStreamAsnBinary::BeginContainer(const CContainerTypeInfo* cType)
 {
+#if USE_OLD_TAGS
     WriteByte(MakeContainerTagByte(cType->RandomElementsOrder()));
     WriteIndefiniteLength();
+#else
+    _ASSERT(cType->HasTag());
+    _ASSERT(cType->IsTagConstructed());
+#if 0 //USE_VERIFY_TAGGING
+    m_AutomaticTagging = cType->GetTagType() == CAsnBinaryDefs::eAutomatic;
+#endif
+    bool need_eoc = !m_SkipNextTag;
+    if (!m_SkipNextTag) {
+        WriteTag(cType->GetTagClass(), eConstructed, cType->GetTag());
+        WriteIndefiniteLength();
+    }
+#if USE_VERIFY_TAGGING
+    else if (m_AutomaticTagging) {
+        ThrowError(fInvalidData, "ASN TAGGING ERROR. Report immediately!");
+    }
+#endif
+    m_SkipNextTag = cType->IsTagImplicit();
+    TopFrame().SetNoEOC(!need_eoc);
+#endif
 }
 
 void CObjectOStreamAsnBinary::EndContainer(void)
 {
+#if USE_OLD_TAGS
     WriteEndOfContent();
+#else
+    if (!TopFrame().GetNoEOC()) {
+        WriteEndOfContent();
+    }
+#endif
 }
 
-#ifdef VIRTUAL_MID_LEVEL_IO
 void CObjectOStreamAsnBinary::WriteContainer(const CContainerTypeInfo* cType,
                                              TConstObjectPtr containerPtr)
 {
+#if USE_OLD_TAGS
     WriteByte(MakeContainerTagByte(cType->RandomElementsOrder()));
     WriteIndefiniteLength();
+#else
+    BEGIN_OBJECT_FRAME2(eFrameArray, cType);
+    _ASSERT(cType->HasTag());
+    _ASSERT(cType->IsTagConstructed());
+#if 0 //USE_VERIFY_TAGGING
+    m_AutomaticTagging = cType->GetTagType() == CAsnBinaryDefs::eAutomatic;
+#endif
+    bool need_eoc = !m_SkipNextTag;
+    if (!m_SkipNextTag) {
+        WriteTag(cType->GetTagClass(), eConstructed, cType->GetTag());
+        WriteIndefiniteLength();
+    }
+#if USE_VERIFY_TAGGING
+    else if (m_AutomaticTagging) {
+        ThrowError(fInvalidData, "ASN TAGGING ERROR. Report immediately!");
+    }
+#endif
+    m_SkipNextTag = cType->IsTagImplicit();
+#endif
     
     CContainerTypeInfo::CConstIterator i;
     if ( cType->InitIterator(i, containerPtr) ) {
@@ -969,17 +1137,29 @@ void CObjectOStreamAsnBinary::WriteContainer(const CContainerTypeInfo* cType,
         END_OBJECT_FRAME();
     }
 
+#if USE_OLD_TAGS
     WriteEndOfContent();
+#else
+    if (need_eoc) {
+        WriteEndOfContent();
+    }
+    END_OBJECT_FRAME();
+#endif
 }
 
 void CObjectOStreamAsnBinary::CopyContainer(const CContainerTypeInfo* cType,
                                             CObjectStreamCopier& copier)
 {
+#if USE_OLD_TAGS
     BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameArray, cType);
     copier.In().BeginContainer(cType);
-
     WriteByte(MakeContainerTagByte(cType->RandomElementsOrder()));
     WriteIndefiniteLength();
+#else
+    BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameArray, cType);
+    copier.In().BeginContainer(cType);
+    CObjectOStreamAsnBinary::BeginContainer(cType);
+#endif
 
     TTypeInfo elementType = cType->GetElementType();
     BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameArrayElement, elementType);
@@ -993,48 +1173,129 @@ void CObjectOStreamAsnBinary::CopyContainer(const CContainerTypeInfo* cType,
 
     END_OBJECT_2FRAMES_OF(copier);
     
+#if USE_OLD_TAGS
     WriteEndOfContent();
-
     copier.In().EndContainer();
     END_OBJECT_FRAME_OF(copier.In());
+#else
+    CObjectOStreamAsnBinary::EndContainer();
+    copier.In().EndContainer();
+    END_OBJECT_2FRAMES_OF(copier);
+#endif
+
 }
 
 #endif
 
 void CObjectOStreamAsnBinary::BeginClass(const CClassTypeInfo* classType)
 {
+#if USE_OLD_TAGS
     WriteByte(MakeContainerTagByte(classType->RandomOrder()));
     WriteIndefiniteLength();
+#else
+    _ASSERT(classType->HasTag());
+    _ASSERT(classType->IsTagConstructed());
+#if USE_VERIFY_TAGGING
+    m_AutomaticTagging = classType->GetTagType() == CAsnBinaryDefs::eAutomatic;
+#endif
+    bool need_eoc = !m_SkipNextTag;
+    if (!m_SkipNextTag) {
+        WriteTag(classType->GetTagClass(), eConstructed, classType->GetTag());
+        WriteIndefiniteLength();
+    }
+#if USE_VERIFY_TAGGING
+    else if (m_AutomaticTagging) {
+        ThrowError(fInvalidData, "ASN TAGGING ERROR. Report immediately!");
+    }
+#endif
+    m_SkipNextTag = classType->IsTagImplicit();
+    TopFrame().SetNoEOC(!need_eoc);
+#endif
 }
 
 void CObjectOStreamAsnBinary::EndClass(void)
 {
+#if USE_OLD_TAGS
     WriteEndOfContent();
+#else
+    if (!TopFrame().GetNoEOC()) {
+        WriteEndOfContent();
+    }
+#endif
 }
 
 void CObjectOStreamAsnBinary::BeginClassMember(const CMemberId& id)
 {
+#if USE_OLD_TAGS
     WriteTag(eContextSpecific, eConstructed, id.GetTag());
     WriteIndefiniteLength();
+#else
+    if (id.HasTag()) {
+        WriteTag(id.GetTagClass(), id.GetTagConstructed(), id.GetTag());
+        if (id.IsTagConstructed()) {
+            WriteIndefiniteLength();
+        }
+    }
+#if USE_VERIFY_TAGGING
+    else if (m_AutomaticTagging) {
+        ThrowError(fInvalidData, "ASN TAGGING ERROR. Report immediately!");
+    }
+#endif
+    m_SkipNextTag = id.HasTag() && id.IsTagImplicit();
+#endif
 }
 
 void CObjectOStreamAsnBinary::EndClassMember(void)
 {
+#if USE_OLD_TAGS
     WriteEndOfContent();
+#else
+    const CMemberId& id = TopFrame().GetMemberId();
+    if (id.HasTag() && id.IsTagConstructed()) {
+        WriteEndOfContent();
+    }
+#endif
 }
 
 #ifdef VIRTUAL_MID_LEVEL_IO
 void CObjectOStreamAsnBinary::WriteClass(const CClassTypeInfo* classType,
                                          TConstObjectPtr classPtr)
 {
+#if USE_OLD_TAGS
     WriteByte(MakeContainerTagByte(classType->RandomOrder()));
     WriteIndefiniteLength();
+#else
+    BEGIN_OBJECT_FRAME2(eFrameClass, classType);
+    _ASSERT(classType->HasTag());
+    _ASSERT(classType->IsTagConstructed());
+#if USE_VERIFY_TAGGING
+    m_AutomaticTagging = classType->GetTagType() == CAsnBinaryDefs::eAutomatic;
+#endif
+    bool need_eoc = !m_SkipNextTag;
+    if (!m_SkipNextTag) {
+        WriteTag(classType->GetTagClass(), eConstructed, classType->GetTag());
+        WriteIndefiniteLength();
+    }
+#if USE_VERIFY_TAGGING
+    else if (m_AutomaticTagging) {
+        ThrowError(fInvalidData, "ASN TAGGING ERROR. Report immediately!");
+    }
+#endif
+    m_SkipNextTag = classType->IsTagImplicit();
+#endif
     
     for ( CClassTypeInfo::CIterator i(classType); i.Valid(); ++i ) {
         classType->GetMemberInfo(i)->WriteMember(*this, classPtr);
     }
     
+#if USE_OLD_TAGS
     WriteEndOfContent();
+#else
+    if (need_eoc) {
+        WriteEndOfContent();
+    }
+    END_OBJECT_FRAME();
+#endif
 }
 
 void CObjectOStreamAsnBinary::WriteClassMember(const CMemberId& memberId,
@@ -1042,12 +1303,35 @@ void CObjectOStreamAsnBinary::WriteClassMember(const CMemberId& memberId,
                                                TConstObjectPtr memberPtr)
 {
     BEGIN_OBJECT_FRAME2(eFrameClassMember, memberId);
+#if USE_OLD_TAGS
     WriteTag(eContextSpecific, eConstructed, memberId.GetTag());
     WriteIndefiniteLength();
+#else
+    bool need_eoc = false;
+    if (memberId.HasTag()) {
+        WriteTag(memberId.GetTagClass(), memberId.GetTagConstructed(), memberId.GetTag());
+        need_eoc = memberId.IsTagConstructed();
+        if (need_eoc) {
+            WriteIndefiniteLength();
+        }
+    }
+#if USE_VERIFY_TAGGING
+    else if (m_AutomaticTagging) {
+        ThrowError(fInvalidData, "ASN TAGGING ERROR. Report immediately!");
+    }
+#endif
+    m_SkipNextTag = memberId.HasTag() && memberId.IsTagImplicit();
+#endif
     
     WriteObject(memberPtr, memberType);
     
+#if USE_OLD_TAGS
     WriteEndOfContent();
+#else
+    if (need_eoc) {
+        WriteEndOfContent();
+    }
+#endif
     END_OBJECT_FRAME();
 }
 
@@ -1058,12 +1342,35 @@ bool CObjectOStreamAsnBinary::WriteClassMember(const CMemberId& memberId,
         return false;
 
     BEGIN_OBJECT_FRAME2(eFrameClassMember, memberId);
+#if USE_OLD_TAGS
     WriteTag(eContextSpecific, eConstructed, memberId.GetTag());
     WriteIndefiniteLength();
+#else
+    bool need_eoc = false;
+    if (memberId.HasTag()) {
+        WriteTag(memberId.GetTagClass(), memberId.GetTagConstructed(), memberId.GetTag());
+        need_eoc = memberId.IsTagConstructed();
+        if (need_eoc) {
+            WriteIndefiniteLength();
+        }
+    }
+#if USE_VERIFY_TAGGING
+    else if (m_AutomaticTagging) {
+        ThrowError(fInvalidData, "ASN TAGGING ERROR. Report immediately!");
+    }
+#endif
+    m_SkipNextTag = memberId.HasTag() && memberId.IsTagImplicit();
+#endif
     
     Write(buffer.GetSource());
     
+#if USE_OLD_TAGS
     WriteEndOfContent();
+#else
+    if (need_eoc) {
+        WriteEndOfContent();
+    }
+#endif
     END_OBJECT_FRAME();
 
     return true;
@@ -1072,11 +1379,16 @@ bool CObjectOStreamAsnBinary::WriteClassMember(const CMemberId& memberId,
 void CObjectOStreamAsnBinary::CopyClassRandom(const CClassTypeInfo* classType,
                                               CObjectStreamCopier& copier)
 {
+#if USE_OLD_TAGS
     BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameClass, classType);
     copier.In().BeginClass(classType);
-
     WriteByte(MakeContainerTagByte(classType->RandomOrder()));
     WriteIndefiniteLength();
+#else
+    BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameClass, classType);
+    copier.In().BeginClass(classType);
+    CObjectOStreamAsnBinary::BeginClass(classType);
+#endif
 
     vector<Uint1> read(classType->GetMembers().LastIndex() + 1);
 
@@ -1095,14 +1407,22 @@ void CObjectOStreamAsnBinary::CopyClassRandom(const CClassTypeInfo* classType,
         else {
             read[index] = true;
 
+#if USE_OLD_TAGS
             WriteTag(eContextSpecific,
                      eConstructed,
                      memberInfo->GetId().GetTag());
             WriteIndefiniteLength();
+#else
+            CObjectOStreamAsnBinary::BeginClassMember(memberInfo->GetId());
+#endif
 
             memberInfo->CopyMember(copier);
 
+#if USE_OLD_TAGS
             WriteEndOfContent();
+#else
+            CObjectOStreamAsnBinary::EndClassMember();
+#endif
         }
         
         copier.In().EndClassMember();
@@ -1117,20 +1437,30 @@ void CObjectOStreamAsnBinary::CopyClassRandom(const CClassTypeInfo* classType,
         }
     }
 
+#if USE_OLD_TAGS
     WriteEndOfContent();
-
     copier.In().EndClass();
     END_OBJECT_FRAME_OF(copier.In());
+#else
+    CObjectOStreamAsnBinary::EndClass();
+    copier.In().EndClass();
+    END_OBJECT_2FRAMES_OF(copier);
+#endif
 }
 
 void CObjectOStreamAsnBinary::CopyClassSequential(const CClassTypeInfo* classType,
                                                   CObjectStreamCopier& copier)
 {
+#if USE_OLD_TAGS
     BEGIN_OBJECT_FRAME_OF2(copier.In(), eFrameClass, classType);
     copier.In().BeginClass(classType);
-
     WriteByte(MakeContainerTagByte(classType->RandomOrder()));
     WriteIndefiniteLength();
+#else
+    BEGIN_OBJECT_2FRAMES_OF2(copier, eFrameClass, classType);
+    copier.In().BeginClass(classType);
+    CObjectOStreamAsnBinary::BeginClass(classType);
+#endif
     
     CClassTypeInfo::CIterator pos(classType);
     BEGIN_OBJECT_2FRAMES_OF(copier, eFrameClassMember);
@@ -1147,12 +1477,20 @@ void CObjectOStreamAsnBinary::CopyClassSequential(const CClassTypeInfo* classTyp
             classType->GetMemberInfo(i)->CopyMissingMember(copier);
         }
 
+#if USE_OLD_TAGS
         WriteTag(eContextSpecific, eConstructed, memberInfo->GetId().GetTag());
         WriteIndefiniteLength();
+#else
+            CObjectOStreamAsnBinary::BeginClassMember(memberInfo->GetId());
+#endif
 
         memberInfo->CopyMember(copier);
 
+#if USE_OLD_TAGS
         WriteEndOfContent();
+#else
+        CObjectOStreamAsnBinary::EndClassMember();
+#endif
         
         pos.SetIndex(index + 1);
 
@@ -1166,10 +1504,15 @@ void CObjectOStreamAsnBinary::CopyClassSequential(const CClassTypeInfo* classTyp
         classType->GetMemberInfo(pos)->CopyMissingMember(copier);
     }
 
+#if USE_OLD_TAGS
     WriteEndOfContent();
-
     copier.In().EndClass();
     END_OBJECT_FRAME_OF(copier.In());
+#else
+    CObjectOStreamAsnBinary::EndClass();
+    copier.In().EndClass();
+    END_OBJECT_2FRAMES_OF(copier);
+#endif
 }
 #endif
 
@@ -1198,8 +1541,23 @@ void CObjectOStreamAsnBinary::BeginChoiceVariant(const CChoiceTypeInfo* ,
         WriteTag(eContextSpecific, eConstructed, id.GetTag()-1);
         WriteIndefiniteLength();
     } else {
+#if USE_OLD_TAGS
         WriteTag(eContextSpecific, eConstructed, id.GetTag());
         WriteIndefiniteLength();
+#else
+        if (id.HasTag()) {
+            WriteTag(id.GetTagClass(), id.GetTagConstructed(), id.GetTag());
+            if (id.IsTagConstructed()) {
+                WriteIndefiniteLength();
+            }
+        }
+#if USE_VERIFY_TAGGING
+        else if (m_AutomaticTagging) {
+            ThrowError(fInvalidData, "ASN TAGGING ERROR. Report immediately!");
+        }
+#endif
+        m_SkipNextTag = id.HasTag() && id.IsTagImplicit();
+#endif
     }
 }
 
@@ -1208,7 +1566,14 @@ void CObjectOStreamAsnBinary::EndChoiceVariant(void)
     if (FetchFrameFromTop(1).GetNotag()) {
         WriteEndOfContent();
     }
+#if USE_OLD_TAGS
     WriteEndOfContent();
+#else
+    const CMemberId& id = TopFrame().GetMemberId();
+    if (id.HasTag() && id.IsTagConstructed()) {
+        WriteEndOfContent();
+    }
+#endif
 }
 
 void CObjectOStreamAsnBinary::BeginBytes(const ByteBlock& block)

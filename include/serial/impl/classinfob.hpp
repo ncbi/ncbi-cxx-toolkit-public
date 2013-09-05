@@ -80,6 +80,7 @@ public:
 
     const CItemsInfo& GetItems(void) const;
     const CItemInfo* GetItemInfo(const string& name) const;
+    void AssignItemsTags(void);
 
     const type_info& GetId(void) const;
 

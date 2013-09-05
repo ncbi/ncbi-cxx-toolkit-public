@@ -142,6 +142,7 @@ public:
 
 void CContainerTypeInfo::InitContainerTypeInfoFunctions(void)
 {
+    SetTag(m_RandomOrder ? CAsnBinaryDefs::eSetOf : CAsnBinaryDefs::eSequenceOf);
     SetReadFunction(&ReadContainer);
     SetWriteFunction(&WriteContainer);
     SetCopyFunction(&CopyContainer);

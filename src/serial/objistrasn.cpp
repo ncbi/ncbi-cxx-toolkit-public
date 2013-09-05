@@ -391,7 +391,7 @@ TMemberIndex CObjectIStreamAsn::GetMemberIndex
     TMemberIndex idx;
     if (!id.empty()  &&  isdigit((unsigned char) id[0])) {
         idx = classType->GetMembers().Find
-            (CMemberId::TTag(NStr::StringToInt(id)));
+            (CMemberId::TTag(NStr::StringToInt(id)), CAsnBinaryDefs::eContextSpecific);
     }
     else {
         idx = classType->GetMembers().Find(id);
@@ -410,7 +410,7 @@ TMemberIndex CObjectIStreamAsn::GetMemberIndex
     TMemberIndex idx;
     if (!id.empty()  &&  isdigit((unsigned char) id[0])) {
         idx = classType->GetMembers().Find
-            (CMemberId::TTag(NStr::StringToInt(id)), pos);
+            (CMemberId::TTag(NStr::StringToInt(id)), CAsnBinaryDefs::eContextSpecific, pos);
     }
     else {
         idx = classType->GetMembers().Find(id, pos);
@@ -428,7 +428,7 @@ TMemberIndex CObjectIStreamAsn::GetChoiceIndex
     TMemberIndex idx;
     if (!id.empty()  &&  isdigit((unsigned char) id[0])) {
         idx = choiceType->GetVariants().Find
-            (CMemberId::TTag(NStr::StringToInt(id)));
+            (CMemberId::TTag(NStr::StringToInt(id)), CAsnBinaryDefs::eContextSpecific);
     }
     else {
         idx = choiceType->GetVariants().Find(id);

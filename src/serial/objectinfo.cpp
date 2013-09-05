@@ -127,7 +127,7 @@ TMemberIndex CObjectTypeInfo::FindMemberIndex(const string& name) const
 
 TMemberIndex CObjectTypeInfo::FindMemberIndex(int tag) const
 {
-    return GetClassTypeInfo()->GetMembers().Find(tag);
+    return GetClassTypeInfo()->GetMembers().Find(tag, CAsnBinaryDefs::eContextSpecific);
 }
 
 TMemberIndex CObjectTypeInfo::FindVariantIndex(const string& name) const
@@ -137,7 +137,7 @@ TMemberIndex CObjectTypeInfo::FindVariantIndex(const string& name) const
 
 TMemberIndex CObjectTypeInfo::FindVariantIndex(int tag) const
 {
-    return GetChoiceTypeInfo()->GetVariants().Find(tag);
+    return GetChoiceTypeInfo()->GetVariants().Find(tag, CAsnBinaryDefs::eContextSpecific);
 }
 
 bool CConstObjectInfo::GetPrimitiveValueBool(void) const
@@ -570,7 +570,7 @@ bool CObjectTypeInfo::MatchPattern(
             while (pattern[pos] == depth) {
                 size_t prev = pos;
                 TMemberIndex i = GetClassTypeInfo()->GetItems()
-                    .Find(pattern[pos+1]);
+                    .Find(pattern[pos+1], CAsnBinaryDefs::eContextSpecific);
                 good = i != kInvalidMember &&
                     GetMemberIterator(i).GetMemberType()
                         .MatchPattern(pattern,pos,depth,
@@ -590,7 +590,7 @@ bool CObjectTypeInfo::MatchPattern(
         {
             size_t prev = pos;
             TMemberIndex i = GetChoiceTypeInfo()->GetItems()
-                .Find(pattern[pos+1]);
+                .Find(pattern[pos+1], CAsnBinaryDefs::eContextSpecific);
             good = i != kInvalidMember &&
                 GetVariantIterator(i).GetVariantType()
                     .MatchPattern(pattern,pos,depth,
@@ -618,7 +618,7 @@ bool CObjectTypeInfo::MatchPattern(
                 for (;;) {
                     size_t prev = pos;
                     TMemberIndex i = e.GetChoiceTypeInfo()->GetItems()
-                        .Find(pattern[pos+1]);
+                        .Find(pattern[pos+1], CAsnBinaryDefs::eContextSpecific);
                     good = i != kInvalidMember &&
                         e.GetVariantIterator(i).GetVariantType()
                             .MatchPattern(pattern,pos,depth);

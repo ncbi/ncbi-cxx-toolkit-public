@@ -37,6 +37,7 @@ void CObjectStackFrame::Reset(void)
 {
     m_FrameType = eFrameOther;
     m_Notag = false;
+    m_NoEOC = false;
     m_NsqMode = eNSQNotSet;
     m_TypeInfo = 0;
     m_MemberId = 0;
@@ -115,6 +116,17 @@ inline
 bool CObjectStackFrame::GetNotag(void) const
 {
     return m_Notag;
+}
+
+inline
+void CObjectStackFrame::SetNoEOC(bool set)
+{
+    m_NoEOC = set;
+}
+inline
+bool CObjectStackFrame::GetNoEOC(void) const
+{
+    return m_NoEOC;
 }
 
 inline

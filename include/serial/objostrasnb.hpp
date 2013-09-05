@@ -158,6 +158,9 @@ protected:
     virtual void WriteOther(TConstObjectPtr object, TTypeInfo typeInfo);
 
 #ifdef VIRTUAL_MID_LEVEL_IO
+    virtual void WriteNamedType(TTypeInfo namedTypeInfo,
+                                TTypeInfo typeInfo, TConstObjectPtr object);
+
     virtual void WriteContainer(const CContainerTypeInfo* containerType,
                                 TConstObjectPtr containerPtr);
 
@@ -170,6 +173,9 @@ protected:
                                   const CDelayBuffer& buffer);
 
     // COPY
+    virtual void CopyNamedType(TTypeInfo namedTypeInfo,
+                               TTypeInfo typeInfo,
+                               CObjectStreamCopier& copier);
     virtual void CopyContainer(const CContainerTypeInfo* containerType,
                                CObjectStreamCopier& copier);
     virtual void CopyClassRandom(const CClassTypeInfo* objectType,
@@ -177,6 +183,9 @@ protected:
     virtual void CopyClassSequential(const CClassTypeInfo* objectType,
                                      CObjectStreamCopier& copier);
 #endif
+    virtual void BeginNamedType(TTypeInfo namedTypeInfo);
+    virtual void EndNamedType(void);
+
     virtual void BeginContainer(const CContainerTypeInfo* containerType);
     virtual void EndContainer(void);
 
@@ -232,6 +241,8 @@ private:
     void SetTagLength(size_t length);
 #endif
     bool m_CStyleBigInt;
+    bool m_SkipNextTag;
+    bool m_AutomaticTagging;
 };
 
 

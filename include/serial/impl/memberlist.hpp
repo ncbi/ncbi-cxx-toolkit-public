@@ -58,7 +58,8 @@ public:
     typedef CMemberId::TTag TTag;
     typedef vector< AutoPtr<CItemInfo> > TItems;
     typedef map<CTempString, TMemberIndex, PQuickStringLess> TItemsByName;
-    typedef map<TTag, TMemberIndex> TItemsByTag;
+    typedef pair< TTag, CAsnBinaryDefs::ETagClass> TTagAndClass;
+    typedef map< TTagAndClass, TMemberIndex> TItemsByTag;
     typedef map<size_t, TMemberIndex> TItemsByOffset;
 
     CItemsInfo(void);
@@ -86,14 +87,15 @@ public:
     TMemberIndex FindDeep(const CTempString& name, bool search_attlist = false) const;
     TMemberIndex FindEmpty(void) const;
     TMemberIndex Find(const CTempString& name, TMemberIndex pos) const;
-    TMemberIndex Find(TTag tag) const;
-    TMemberIndex Find(TTag tag, TMemberIndex pos) const;
+    TMemberIndex Find(TTag tag, CAsnBinaryDefs::ETagClass tagclass) const;
+    TMemberIndex Find(TTag tag, CAsnBinaryDefs::ETagClass tagclass, TMemberIndex pos) const;
 
     static const CTypeInfo* FindRealTypeInfo(const CTypeInfo* info);
     static const CItemInfo* FindNextMandatory(const CItemInfo* info);
 
     const CItemInfo* GetItemInfo(TMemberIndex index) const;
     void AddItem(CItemInfo* item);
+    void AssignItemsTags(CAsnBinaryDefs::ETagType containerType);
 
     // helping member iterator class (internal use)
     class CIterator
@@ -125,6 +127,7 @@ protected:
 private:
     const TItemsByName& GetItemsByName(void) const;
     const TItemsByOffset& GetItemsByOffset(void) const;
+    TTagAndClass GetTagAndClass(const CIterator& i) const;
     pair<TMemberIndex, const TItemsByTag*> GetItemsByTagInfo(void) const;
 
     // items

@@ -97,11 +97,15 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size)
       m_InfoItem(0),
       m_IsCObject(false),
       m_IsInternal(false),
+      m_Tag(eNoExplicitTag), m_TagClass(CAsnBinaryDefs::eUniversal),
+      m_TagType(CAsnBinaryDefs::eAutomatic),
+      m_TagConstructed(CAsnBinaryDefs::eConstructed),
       m_CreateFunction(&CVoidTypeFunctions::Create),
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
       m_SkipHookData(&CVoidTypeFunctions::Skip, &TFunc::SkipWithHook),
       m_CopyHookData(&CVoidTypeFunctions::Copy, &TFunc::CopyWithHook)
+
 {
     return;
 }
@@ -112,6 +116,9 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const char* name)
       m_InfoItem(0),
       m_IsCObject(false),
       m_IsInternal(false),
+      m_Tag(eNoExplicitTag), m_TagClass(CAsnBinaryDefs::eUniversal),
+      m_TagType(CAsnBinaryDefs::eAutomatic),
+      m_TagConstructed(CAsnBinaryDefs::eConstructed),
       m_CreateFunction(&CVoidTypeFunctions::Create),
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
@@ -127,6 +134,9 @@ CTypeInfo::CTypeInfo(ETypeFamily typeFamily, size_t size, const string& name)
       m_InfoItem(0),
       m_IsCObject(false),
       m_IsInternal(false),
+      m_Tag(eNoExplicitTag), m_TagClass(CAsnBinaryDefs::eUniversal),
+      m_TagType(CAsnBinaryDefs::eAutomatic),
+      m_TagConstructed(CAsnBinaryDefs::eConstructed),
       m_CreateFunction(&CVoidTypeFunctions::Create),
       m_ReadHookData(&CVoidTypeFunctions::Read, &TFunc::ReadWithHook),
       m_WriteHookData(&CVoidTypeFunctions::Write, &TFunc::WriteWithHook),
@@ -143,6 +153,16 @@ CTypeInfo::~CTypeInfo(void)
         delete m_InfoItem;
     }
     return;
+}
+
+CTypeInfo* CTypeInfo::SetTag(
+    CAsnBinaryDefs::TLongTag tag,
+    CAsnBinaryDefs::ETagClass tagclass, CAsnBinaryDefs::ETagType tagtype)
+{
+    m_Tag = tag;
+    m_TagClass = tagclass;
+    m_TagType = tagtype;
+    return this;
 }
 
 bool CTypeInfo::HasNamespaceName(void) const

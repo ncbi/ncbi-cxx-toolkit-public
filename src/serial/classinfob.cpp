@@ -48,6 +48,7 @@ CClassTypeInfoBase::CClassTypeInfoBase(ETypeFamily typeFamily,
                                        const type_info& ti)
     : CParent(typeFamily, size, name)
 {
+    SetTag( CAsnBinaryDefs::eSequence);
     InitClassTypeInfoBase(ti);
     SetCreateFunction(createFunc);
 }
@@ -60,6 +61,7 @@ CClassTypeInfoBase::CClassTypeInfoBase(ETypeFamily typeFamily,
     : CParent(typeFamily, size, name)
 {
     m_IsCObject = true;
+    SetTag( CAsnBinaryDefs::eSequence);
     InitClassTypeInfoBase(ti);
     SetCreateFunction(createFunc);
 }
@@ -71,6 +73,7 @@ CClassTypeInfoBase::CClassTypeInfoBase(ETypeFamily typeFamily,
                                        const type_info& ti)
     : CParent(typeFamily, size, name)
 {
+    SetTag( CAsnBinaryDefs::eSequence);
     InitClassTypeInfoBase(ti);
     SetCreateFunction(createFunc);
 }
@@ -83,6 +86,7 @@ CClassTypeInfoBase::CClassTypeInfoBase(ETypeFamily typeFamily,
     : CParent(typeFamily, size, name)
 {
     m_IsCObject = true;
+    SetTag( CAsnBinaryDefs::eSequence);
     InitClassTypeInfoBase(ti);
     SetCreateFunction(createFunc);
 }
@@ -112,6 +116,11 @@ CMemberInfo* CClassTypeInfoBase::AddMember(const CMemberId& memberId,
                                               memberType);
     GetItems().AddItem(memberInfo);
     return memberInfo;
+}
+
+void CClassTypeInfoBase::AssignItemsTags(void)
+{
+    GetItems().AssignItemsTags(GetTagType());
 }
 
 void CClassTypeInfoBase::InitClassTypeInfoBase(const type_info& id)

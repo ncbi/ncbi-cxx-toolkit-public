@@ -38,35 +38,50 @@
 BEGIN_NCBI_SCOPE
 
 CMemberId::CMemberId(void)
-    : m_Tag(eNoExplicitTag), m_ExplicitTag(false),
+    : m_Tag(eNoExplicitTag),
+    m_TagClass(CAsnBinaryDefs::eContextSpecific),
+    m_TagType(CAsnBinaryDefs::eAutomatic),
+    m_TagConstructed(CAsnBinaryDefs::eConstructed),
     m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false),
     m_Compressed(false), m_Nillable(false), m_NsqMode(eNSQNotSet)
 {
 }
 
 CMemberId::CMemberId(TTag tag, bool explicitTag)
-    : m_Tag(tag), m_ExplicitTag(explicitTag),
+    : m_Tag(tag),
+    m_TagClass(CAsnBinaryDefs::eContextSpecific),
+    m_TagType(CAsnBinaryDefs::eAutomatic),
+    m_TagConstructed(CAsnBinaryDefs::eConstructed),
     m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false),
     m_Compressed(false), m_Nillable(false), m_NsqMode(eNSQNotSet)
 {
 }
 
 CMemberId::CMemberId(const string& name)
-    : m_Name(name), m_Tag(eNoExplicitTag), m_ExplicitTag(false),
+    : m_Name(name), m_Tag(eNoExplicitTag),
+    m_TagClass(CAsnBinaryDefs::eContextSpecific),
+    m_TagType(CAsnBinaryDefs::eAutomatic),
+    m_TagConstructed(CAsnBinaryDefs::eConstructed),
     m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false),
     m_Compressed(false), m_Nillable(false), m_NsqMode(eNSQNotSet)
 {
 }
 
 CMemberId::CMemberId(const string& name, TTag tag, bool explicitTag)
-    : m_Name(name), m_Tag(tag), m_ExplicitTag(explicitTag),
+    : m_Name(name), m_Tag(tag),
+    m_TagClass(CAsnBinaryDefs::eContextSpecific),
+    m_TagType(CAsnBinaryDefs::eAutomatic),
+    m_TagConstructed(CAsnBinaryDefs::eConstructed),
     m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false),
     m_Compressed(false), m_Nillable(false), m_NsqMode(eNSQNotSet)
 {
 }
 
 CMemberId::CMemberId(const char* name)
-    : m_Name(name), m_Tag(eNoExplicitTag), m_ExplicitTag(false),
+    : m_Name(name), m_Tag(eNoExplicitTag),
+    m_TagClass(CAsnBinaryDefs::eContextSpecific),
+    m_TagType(CAsnBinaryDefs::eAutomatic),
+    m_TagConstructed(CAsnBinaryDefs::eConstructed),
     m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false),
     m_Compressed(false), m_Nillable(false), m_NsqMode(eNSQNotSet)
 {
@@ -74,7 +89,10 @@ CMemberId::CMemberId(const char* name)
 }
 
 CMemberId::CMemberId(const char* name, TTag tag, bool explicitTag)
-    : m_Name(name), m_Tag(tag), m_ExplicitTag(explicitTag),
+    : m_Name(name), m_Tag(tag),
+    m_TagClass(CAsnBinaryDefs::eContextSpecific),
+    m_TagType(CAsnBinaryDefs::eAutomatic),
+    m_TagConstructed(CAsnBinaryDefs::eConstructed),
     m_NoPrefix(false), m_Attlist(false), m_Notag(false), m_AnyContent(false),
     m_Compressed(false), m_Nillable(false), m_NsqMode(eNSQNotSet)
 {
@@ -87,7 +105,9 @@ CMemberId::~CMemberId(void)
 
 void CMemberId::SetParentTag(void)
 {
-    SetTag(eParentTag, false);
+    m_Tag = eParentTag;
+    m_TagClass = CAsnBinaryDefs::eContextSpecific;
+    m_TagConstructed = CAsnBinaryDefs::eConstructed;
 }
 
 string CMemberId::ToString(void) const

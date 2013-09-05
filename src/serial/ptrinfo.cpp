@@ -93,6 +93,33 @@ void CPointerTypeInfo::SetFunctions(TGetDataFunction getFunc,
     m_SetData = setFunc;
 }
 
+CTypeInfo* CPointerTypeInfo::SetTag(
+    CAsnBinaryDefs::TLongTag tag,
+    CAsnBinaryDefs::ETagClass tagclass,CAsnBinaryDefs::ETagType tagtype)
+{
+    CParent::SetTag(tag, tagclass, tagtype);
+    if (tagtype == CAsnBinaryDefs::eImplicit) {
+        const CPointerTypeInfo *ptrtype = this;
+        while (ptrtype) {
+            TTypeInfo ptype = ptrtype->GetPointedType();
+            ptrtype = dynamic_cast<const CPointerTypeInfo*>(ptype);
+            if (ptrtype) {
+                if (ptrtype->GetTagType() == CAsnBinaryDefs::eImplicit ||
+                    !ptrtype->HasTag()) {
+                    continue;
+                }
+                m_TagConstructed = CAsnBinaryDefs::eConstructed;
+            } else {
+                m_TagConstructed = ptype->GetTagConstructed();
+            }
+            break;
+        }
+    } else {
+        m_TagConstructed = CAsnBinaryDefs::eConstructed;
+    }
+    return this;
+}
+
 TTypeInfo CPointerTypeInfo::GetTypeInfo(TTypeInfo base)
 {
     return new CPointerTypeInfo(base);

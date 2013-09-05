@@ -42,6 +42,7 @@
 #include <serial/impl/choiceptr.hpp>
 #include <serial/impl/aliasinfo.hpp>
 #include <serial/impl/classinfohelper.hpp>
+#include <serial/impl/objstrasnb.hpp>
 
 
 /** @addtogroup GenClassSupport
@@ -295,6 +296,11 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
     return info; \
 }
 
+#define END_STRUCT_INFO \
+    info->AssignItemsTags(); \
+    END_TYPE_INFO
+
+
 // macros for specifying differents members
 #define SERIAL_MEMBER(MemberName,TypeMacro,TypeMacroArgs) \
     NCBI_NS_NCBI::Check<SERIAL_TYPE(TypeMacro)TypeMacroArgs >::Ptr(MEMBER_PTR(MemberName)), SERIAL_REF(TypeMacro)TypeMacroArgs
@@ -432,9 +438,12 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 #define SET_NAMESPACE(name) \
     info->SetNamespaceName(name)
 
+#define SET_ASN_TAGGED_TYPE_INFO(method, args) \
+    info->method args
+
 #define END_CLASS_INFO                                                  \
     NCBI_NS_NCBI::CClassInfoHelper<CClass>::SetReadWriteMemberMethods(info); \
-    END_TYPE_INFO
+    END_STRUCT_INFO
 
 #define BEGIN_NAMED_ABSTRACT_CLASS_INFO(ClassAlias,ClassName) \
     BEGIN_TYPE_INFO(ClassName, \
@@ -449,7 +458,8 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
         NCBI_NS_NCBI::CClassTypeInfo, \
         NCBI_NS_NCBI::CClassInfoHelper<CClass>::CreateAbstractClassInfo(ClassAlias))
 
-#define END_ABSTRACT_CLASS_INFO END_TYPE_INFO
+#define END_ABSTRACT_CLASS_INFO \
+    END_STRUCT_INFO
 
 #define BEGIN_NAMED_DERIVED_CLASS_INFO(ClassAlias,ClassName,ParentClassName) \
     BEGIN_NAMED_CLASS_INFO(ClassAlias,ClassName) \
@@ -457,7 +467,8 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 #define BEGIN_DERIVED_CLASS_INFO(ClassName,ParentClassName) \
     BEGIN_NAMED_DERIVED_CLASS_INFO(#ClassName, ClassName, ParentClassName)
 
-#define END_DERIVED_CLASS_INFO END_TYPE_INFO
+#define END_DERIVED_CLASS_INFO \
+    END_STRUCT_INFO
 
 #define BEGIN_NAMED_CHOICE_INFO(ClassAlias,ClassName) \
     BEGIN_TYPE_INFO(ClassName, \
@@ -482,7 +493,7 @@ const NCBI_NS_NCBI::CTypeInfo* Method(void) \
 
 #define END_CHOICE_INFO                                                 \
     NCBI_NS_NCBI::CClassInfoHelper<CClass>::SetReadWriteVariantMethods(info); \
-    END_TYPE_INFO
+    END_STRUCT_INFO
 
 // sub class definition
 #define SET_PARENT_CLASS(ParentClassName) \

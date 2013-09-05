@@ -83,6 +83,10 @@ public:
 
     void SetFunctions(TGetDataFunction getFunc, TSetDataFunction setFunc);
 
+    virtual CTypeInfo* SetTag(CAsnBinaryDefs::TLongTag tag,
+                CAsnBinaryDefs::ETagClass tagclass = CAsnBinaryDefs::eUniversal,
+                CAsnBinaryDefs::ETagType tagtype   = CAsnBinaryDefs::eAutomatic);
+
 protected:
     static TObjectPtr GetPointer(const CPointerTypeInfo* objectType,
                                  TObjectPtr objectPtr);

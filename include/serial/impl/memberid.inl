@@ -43,17 +43,46 @@ CMemberId::TTag CMemberId::GetTag(void) const
 {
     return m_Tag;
 }
+inline
+CAsnBinaryDefs::ETagClass CMemberId::GetTagClass(void) const
+{
+    return m_TagClass;
+}
+inline
+CAsnBinaryDefs::ETagType  CMemberId::GetTagType(void) const
+{
+    return m_TagType;
+}
+inline
+CAsnBinaryDefs::ETagConstructed CMemberId::GetTagConstructed(void) const {
+    return m_TagConstructed;
+}
+inline
+bool CMemberId::IsTagConstructed(void) const {
+    return m_TagConstructed == CAsnBinaryDefs::eConstructed;
+}
+
+inline
+bool CMemberId::IsTagImplicit(void) const {
+    return m_TagType == CAsnBinaryDefs::eImplicit;
+}
+
+inline
+bool CMemberId::HasTag(void) const
+{
+    return m_Tag != eNoExplicitTag;
+}
 
 inline
 bool CMemberId::HaveExplicitTag(void) const
 {
-    return m_ExplicitTag;
+    return HasTag() && GetTagType() != CAsnBinaryDefs::eAutomatic;
 }
 
 inline
 bool CMemberId::HaveParentTag(void) const
 {
-    return GetTag() == eParentTag && !HaveExplicitTag();
+    return GetTag() == eParentTag && GetTagClass() == CAsnBinaryDefs::eContextSpecific;
 }
 
 inline
@@ -63,10 +92,13 @@ void CMemberId::SetName(const string& name)
 }
 
 inline
-void CMemberId::SetTag(TTag tag, bool explicitTag)
+void CMemberId::SetTag(TTag tag,
+    CAsnBinaryDefs::ETagClass tagclass, CAsnBinaryDefs::ETagType tagtype)
+
 {
     m_Tag = tag;
-    m_ExplicitTag = explicitTag;
+    m_TagClass = tagclass;
+    m_TagType = tagtype;
 }
 
 inline

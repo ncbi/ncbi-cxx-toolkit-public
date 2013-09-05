@@ -85,6 +85,9 @@ public:
     void SetNotag(bool set=true);
     bool GetNotag(void) const;
 
+    void SetNoEOC(bool set=true);
+    bool GetNoEOC(void) const;
+
     const char* GetFrameTypeName(void) const;
     string GetFrameInfo(void) const;
     string GetFrameName(void) const;
@@ -99,7 +102,8 @@ private:
     friend class CObjectStack;
 
     EFrameType m_FrameType;
-    bool m_Notag;
+    bool m_Notag; // means no XML tag
+    bool m_NoEOC; // no binary ASN end-of-content mark
     ENsQualifiedMode m_NsqMode;
     TTypeInfo m_TypeInfo;
     const CMemberId* m_MemberId;

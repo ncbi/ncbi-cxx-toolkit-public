@@ -279,6 +279,7 @@ CPrimitiveTypeInfo::CPrimitiveTypeInfo(size_t size,
       m_ValueType(valueType), m_Signed(isSigned)
 {
     typedef CVoidTypeFunctions TFunctions;
+    m_TagConstructed = CAsnBinaryDefs::ePrimitive;
     SetMemFunctions(&TFunctions::Create,
                     &TFunctions::IsDefault, &TFunctions::SetDefault,
                     &TFunctions::Equals, &TFunctions::Assign);
@@ -502,6 +503,7 @@ void CPrimitiveTypeInfo::SetValueAnyContent(TObjectPtr /*objectPtr*/,
 CPrimitiveTypeInfoBool::CPrimitiveTypeInfoBool(void)
     : CParent(sizeof(TObjectType), ePrimitiveValueBool)
 {
+    SetTag(CAsnBinaryDefs::eBoolean);
     CPrimitiveTypeFunctions<TObjectType>::SetMemFunctions(this);
     CPrimitiveTypeFunctions<TObjectType>::SetIOFunctions(this);
 }
@@ -836,6 +838,7 @@ public:
 CPrimitiveTypeInfoInt::CPrimitiveTypeInfoInt(size_t size, bool isSigned)
     : CParent(size, ePrimitiveValueInteger, isSigned)
 {
+    SetTag(CAsnBinaryDefs::eInteger);
 }
 
 void CPrimitiveTypeInfoInt::SetInt4Functions(TGetInt4Function getInt4,
@@ -970,6 +973,7 @@ const CPrimitiveTypeInfo* CPrimitiveTypeInfo::GetIntegerTypeInfo(size_t size,
 CPrimitiveTypeInfoDouble::CPrimitiveTypeInfoDouble(void)
     : CParent(sizeof(TObjectType), ePrimitiveValueReal, true)
 {
+    SetTag(CAsnBinaryDefs::eReal);
     CPrimitiveTypeFunctions<TObjectType>::SetMemFunctions(this);
     CPrimitiveTypeFunctions<TObjectType>::SetIOFunctions(this);
 }
@@ -999,6 +1003,7 @@ CTypeInfo* CStdTypeInfo<double>::CreateTypeInfo(void)
 CPrimitiveTypeInfoFloat::CPrimitiveTypeInfoFloat(void)
     : CParent(sizeof(TObjectType), ePrimitiveValueReal, true)
 {
+    SetTag(CAsnBinaryDefs::eReal);
     CPrimitiveTypeFunctions<TObjectType>::SetMemFunctions(this);
     CPrimitiveTypeFunctions<TObjectType>::SetIOFunctions(this);
 }
@@ -1033,6 +1038,7 @@ CTypeInfo* CStdTypeInfo<float>::CreateTypeInfo(void)
 CPrimitiveTypeInfoLongDouble::CPrimitiveTypeInfoLongDouble(void)
     : CParent(sizeof(TObjectType), ePrimitiveValueReal, true)
 {
+    SetTag(CAsnBinaryDefs::eReal);
     CPrimitiveTypeFunctions<TObjectType>::SetMemFunctions(this);
     CPrimitiveTypeFunctions<TObjectType>::SetIOFunctions(this);
 }
@@ -1140,6 +1146,7 @@ CPrimitiveTypeInfoString::CPrimitiveTypeInfoString(EType type)
     : CParent(sizeof(string), ePrimitiveValueString), m_Type(type)
 {
     if (type == eStringTypeUTF8) {
+        SetTag(CAsnBinaryDefs::eUTF8String);
         SetMemFunctions(&CStringFunctions<CStringUTF8>::Create,
                         &CStringFunctions<CStringUTF8>::IsDefault,
                         &CStringFunctions<CStringUTF8>::SetDefault,
@@ -1150,6 +1157,7 @@ CPrimitiveTypeInfoString::CPrimitiveTypeInfoString(EType type)
                        &CStringFunctions<utf8_string_type>::Copy,
                        &CStringFunctions<utf8_string_type>::Skip);
     } else {
+        SetTag(CAsnBinaryDefs::eVisibleString);
         SetMemFunctions(&CStringFunctions<string>::Create,
                         &CStringFunctions<string>::IsDefault,
                         &CStringFunctions<string>::SetDefault,
@@ -1241,6 +1249,7 @@ TTypeInfo CStdTypeInfo<string>::GetTypeInfoStringStore(void)
 CTypeInfo* CStdTypeInfo<string>::CreateTypeInfoStringStore(void)
 {
     CPrimitiveTypeInfo* info = new CPrimitiveTypeInfoString;
+    info->SetTag(CAsnBinaryDefs::eStringStore, CAsnBinaryDefs::eApplication);
     typedef CStringStoreFunctions TFunctions;
     info->SetIOFunctions(&TFunctions::Read, &TFunctions::Write,
                          &TFunctions::Copy, &TFunctions::Skip);
@@ -1483,6 +1492,7 @@ CCharVectorTypeInfo<Char>::CCharVectorTypeInfo(void)
     : CParent(sizeof(TObjectType), ePrimitiveValueOctetString)
 {
     typedef CCharVectorFunctions<Char> TFunctions;
+    SetTag(CAsnBinaryDefs::eOctetString);
     SetMemFunctions(&TFunctions::Create,
                     &TFunctions::IsDefault, &TFunctions::SetDefault,
                     &TFunctions::Equals, &TFunctions::Assign);
@@ -1673,6 +1683,7 @@ CPrimitiveTypeInfoBitString::CPrimitiveTypeInfoBitString(void)
     : CParent(sizeof(CBitString), ePrimitiveValueBitString)
 {
     typedef CPrimitiveTypeFunctions<ncbi::CBitString> TFunctions;
+    SetTag(CAsnBinaryDefs::eBitString);
     SetMemFunctions(&CBitStringFunctions::Create,
                     &CBitStringFunctions::IsDefault,
                     &CBitStringFunctions::SetDefault,
