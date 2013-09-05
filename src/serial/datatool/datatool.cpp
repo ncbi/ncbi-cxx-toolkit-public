@@ -470,7 +470,7 @@ bool CDataTool::ProcessData(void)
     }
     else {
         if (typeName == "?") {
-            ERR_POST_X(4, "Data type: " << typeInfo->GetName());
+            cout << "Data type: " << typeInfo->GetName() << endl;
         }
         // no input data
         outFormat = eSerial_None;
@@ -718,9 +718,15 @@ SourceFile::EType CDataTool::LoadDefinitions(
         }
     }
 
+    set<string> names_done;
     ITERATE ( list<string>, fi, names ) {
         string name = *fi;
+        if (names_done.find(name) != names_done.end()) {
+            ERR_POST_X(4, "Data specification already loaded: " << name);
+            continue;
+        }
         if ( !name.empty() ) {
+            names_done.insert(name);
             SourceFile fName(name, modulesPath);
             moduleType = fName.GetType();
 
