@@ -503,7 +503,7 @@ BOOST_AUTO_TEST_CASE(SeqAnnotRawDataTest)
     ostr->Close();
 
     CFile orig_file(kSeqAnnotAsnFile);
-    BOOST_CHECK(orig_file.Compare(tmp_file.GetFileName()));
+    BOOST_CHECK(orig_file.CompareTextContents(tmp_file.GetFileName(), CFile::eIgnoreEol));
 
     // test nc blob removal
     BOOST_CHECK_NO_THROW(nc_tool.Delete(nc_key));
