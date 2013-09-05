@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objects/seqloc/Seq_id.hpp>
+#include <objects/general/Object_id.hpp>
 #include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_base.hpp>
 
@@ -83,37 +84,46 @@ void CReadUtil::Tokenize(
 //  -----------------------------------------------------------------
 CRef<CSeq_id> CReadUtil::AsSeqId(
     const string& rawId,
-    unsigned int flags)
+    unsigned int flags,
+    bool localInts)
 //  -----------------------------------------------------------------
 {
-    CRef<CSeq_id> pId;
     if (flags & CReaderBase::fAllIdsAsLocal) {
-        pId.Reset(new CSeq_id(CSeq_id::e_Local, rawId));
+        CRef<CSeq_id> pId(new CSeq_id);
+        if (string::npos == rawId.find_first_not_of("0987654321")  &&
+                localInts) {
+            pId->SetLocal().SetId(
+                NStr::StringToInt(rawId));
+        }
+        else {   
+            pId->SetLocal().SetStr(rawId);
+        }
         return pId;
     }
-
     try {
-        pId.Reset(new CSeq_id(rawId));
+        CRef<CSeq_id> pId(new CSeq_id(rawId));
         if (!pId) {
             pId.Reset(new CSeq_id(CSeq_id::e_Local, rawId));
             return pId;
         }
         if (pId->IsGi()) {
-            if (flags & CReaderBase::fNumericIdsAsLocal) {
-                pId.Reset(new CSeq_id(CSeq_id::e_Local, rawId));
-                return pId;
-            }
-            if (pId->GetGi() < TGi(500)) {
-                pId.Reset(new CSeq_id(CSeq_id::e_Local, rawId));
+            if (flags & CReaderBase::fNumericIdsAsLocal  ||
+                    pId->GetGi() < TGi(500)) {
+                pId.Reset(new CSeq_id);
+                if (!localInts) {
+                    pId->SetLocal().SetStr(rawId);
+                }
+                else {
+                    pId->SetLocal().SetId(NStr::StringToInt(rawId));
+                }
                 return pId;
             }
         }
         return pId;
     }
     catch(...) {
-        pId.Reset(new CSeq_id(CSeq_id::e_Local, rawId));
     }
-    return pId;
+    return CRef<CSeq_id>(new CSeq_id(CSeq_id::e_Local, rawId));
 }
 
 END_objects_SCOPE
