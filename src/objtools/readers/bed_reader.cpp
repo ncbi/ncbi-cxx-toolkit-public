@@ -586,7 +586,7 @@ void CBedReader::xSetFeatureLocationThick(
 
     location->SetStrand(xGetStrand(fields));
     
-    CRef<CSeq_id> id = CReadUtil::AsSeqId(fields[0]);
+    CRef<CSeq_id> id = CReadUtil::AsSeqId(fields[0], m_iFlags, false);
     location->SetId(*id);
     feature->SetLocation(*location);
 
@@ -688,7 +688,7 @@ void CBedReader::xSetFeatureLocationBlock(
     CPacked_seqint& location = feature->SetLocation().SetPacked_int();
     
     ENa_strand strand = xGetStrand(fields);
-    CRef<CSeq_id> pId = CReadUtil::AsSeqId(fields[0]);
+    CRef<CSeq_id> pId = CReadUtil::AsSeqId(fields[0], m_iFlags, false);
     for (int i=0; i < blockCount; ++i) {
         CRef<CSeq_interval> pInterval(new CSeq_interval);
         pInterval->SetId(*pId);
@@ -889,7 +889,7 @@ void CBedReader::x_SetFeatureLocation(
                            eNa_strand_plus : eNa_strand_minus );
     }
     
-    CRef<CSeq_id> id = CReadUtil::AsSeqId(fields[0]);
+    CRef<CSeq_id> id = CReadUtil::AsSeqId(fields[0], m_iFlags, false);
     location->SetId(*id);
     feature->SetLocation(*location);
 }
@@ -1025,7 +1025,7 @@ CBedReader::xReadBedRecordRaw(
     }
 
     //assign columns to record:
-    CRef<CSeq_id> id = CReadUtil::AsSeqId(columns[0]);
+    CRef<CSeq_id> id = CReadUtil::AsSeqId(columns[0], m_iFlags, false);
 
     unsigned int start;
     try {
