@@ -1361,7 +1361,14 @@ BOOST_AUTO_TEST_CASE(Test_tRNAAnticodonQualifiers)
         CNcbiIstrstream strmAnticodonLoc(pchExpectedAnticodonLocations[pos]);
         BOOST_REQUIRE_NO_THROW( strmAnticodonLoc >> MSerial_AsnText >> *pExpectedAnticodonLoc );
 
-        BOOST_CHECK( trna_ext.GetAnticodon().Equals(*pExpectedAnticodonLoc) );
+        if( ! trna_ext.GetAnticodon().Equals(*pExpectedAnticodonLoc) ) {
+            BOOST_ERROR( "Anticodon mismatch: \n"
+                << "Received: " 
+                << MSerial_AsnText << trna_ext.GetAnticodon() << "\n"
+                << "\n"
+                << "Expected: " 
+                << MSerial_AsnText << *pExpectedAnticodonLoc );
+        }
 
         ++pos;
     }
@@ -1706,7 +1713,7 @@ BOOST_AUTO_TEST_CASE(TestOffsetCommand)
 }
 
 // note the "END" buried in the string,
-// which should be replaced manually
+// which should be replaced in code that uses sc_Table13
 static const char * sc_Table13 = "\
 >Feature lcl|Seq1\n\
 1\t20\tgene\n\
@@ -1731,12 +1738,32 @@ BOOST_AUTO_TEST_CASE(TestBetweenBaseIntervals)
             s_ReadOneTableFromString(
                 NStr::Replace(sc_Table13, "END", pchEndVal).c_str(),
                 errList );
-        const CSeq_annot::TData::TFtable& ftable = pSeqAnnot->GetData().GetFtable();
+        const CSeq_annot::TData::TFtable& ftable = 
+            pSeqAnnot->GetData().GetFtable();
 
         BOOST_REQUIRE(ftable.size() == 2);
         BOOST_REQUIRE(ftable.front()->IsSetData());
         BOOST_REQUIRE(ftable.front()->GetData().IsGene());
         BOOST_REQUIRE(ftable.back()->IsSetData());
         BOOST_REQUIRE_EQUAL(ftable.back()->GetData().GetImp().GetKey(), "variation");
+    }
+}
+
+// For example, this should accept ">    Feature abc"
+BOOST_AUTO_TEST_CASE(TestSpacesBeforeFeature)
+{
+    ITERATE_0_IDX(num_spaces, 3) {
+        string sTable = 
+            ">" + string(num_spaces, ' ') + "Feature lcl|Seq1\n"
+            "1\t20\tgene\n"
+            "\t\t\tgene g0\n";
+
+        CRef<CSeq_annot> pSeqAnnot =
+            s_ReadOneTableFromString(
+            sTable.c_str(),
+            TErrList() );
+        const CSeq_annot::TData::TFtable& ftable =
+            pSeqAnnot->GetData().GetFtable();
+        BOOST_REQUIRE(ftable.size() == 1);
     }
 }
