@@ -182,12 +182,54 @@ static SConnNetInfo* ConnNetInfo_Create(const char*    svc_name,
 }
 
 
+struct SAuxData {
+    const ICanceled* m_Canceled;
+    void*            m_Data;
+
+    SAuxData(const ICanceled* canceled, void* data)
+        : m_Canceled(canceled), m_Data(data)
+    { }
+};
+
+
 extern "C" {
-static EHTTP_HeaderParse
-s_CkHdr(const char* /*header*/, void* /*data*/, int /*server_error*/)
+
+static EHTTP_HeaderParse s_AnyHeader(const char* /*header*/,
+                                     void* /*data*/, int /*server_error*/)
 {
     return eHTTP_HeaderContinue;
 }
+
+
+static EHTTP_HeaderParse s_SvcHeader(const char* header,
+                                     void* data, int server_error)
+{
+    SAuxData* auxdata = reinterpret_cast<SAuxData*>(data);
+    _ASSERT(auxdata);
+    *((int*) auxdata->m_Data) =
+        !server_error  &&  NStr::FindNoCase(header, "\nService: ") != NPOS
+        ? 1
+        : 2;
+    return eHTTP_HeaderSuccess;
+}
+
+
+static int/*bool*/ s_Adjust(SConnNetInfo*, void* data, unsigned int /*count*/)
+{
+    SAuxData* auxdata = reinterpret_cast<SAuxData*>(data);
+    _ASSERT(auxdata);
+    return auxdata->m_Canceled  &&  auxdata->m_Canceled->IsCanceled()
+        ? 0/*false*/ : 1/*true*/;
+}
+
+
+static void s_Cleanup(void* data)
+{
+    SAuxData* auxdata = reinterpret_cast<SAuxData*>(data);
+    _ASSERT(auxdata);
+    delete auxdata;
+}
+
 }
 
 
@@ -241,7 +283,10 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
             sprintf(user_header, "Host: %s", x_Tests[n].vhost);
         else
             *user_header = '\0';
-        http.push_back(new CConn_HttpStream(net_info, user_header, s_CkHdr));
+        SAuxData* auxdata = new SAuxData(m_Canceled, 0);
+        http.push_back(new CConn_HttpStream(net_info, user_header, s_AnyHeader,
+                                            auxdata, s_Adjust, s_Cleanup));
+        http.back()->SetCanceledCallback(m_Canceled);
     }
 
     EIO_Status status = eIO_Success;
@@ -293,9 +338,10 @@ EIO_Status CConnTest::HttpOkay(string* reason)
     string port(net_info  &&  net_info->port
                 ? ':' + NStr::UIntToString(net_info->port)
                 : kEmptyStr);
+    SAuxData* auxdata = new SAuxData(m_Canceled, 0);
     CConn_HttpStream http("http://" + host + port + "/Service/index.html",
-                          net_info, kEmptyStr/*user_header*/,
-                          0/*flags*/, 0, 0, 0, 0, m_Timeout);
+                          net_info, kEmptyStr/*user_header*/, 0/*parse_hdr*/,
+                          auxdata, s_Adjust, s_Cleanup, 0/*flags*/, m_Timeout);
     http.SetCanceledCallback(m_Canceled);
     string temp;
     http >> temp;
@@ -372,20 +418,6 @@ EIO_Status CConnTest::HttpOkay(string* reason)
 }
 
 
-extern "C" {
-static EHTTP_HeaderParse
-s_ParseHeader(const char* header, void* data, int server_error)
-{
-    _ASSERT(data);
-    *((int*) data) =
-        !server_error  &&  NStr::FindNoCase(header, "\nService: ") != NPOS
-        ? 1
-        : 2;
-    return eHTTP_HeaderSuccess;
-}
-}
-
-
 EIO_Status CConnTest::DispatcherOkay(string* reason)
 {
     SConnNetInfo* net_info = ConnNetInfo_Create(0, m_DebugPrintout);
@@ -395,9 +427,9 @@ EIO_Status CConnTest::DispatcherOkay(string* reason)
              "Checking whether NCBI dispatcher is okay");
 
     int okay = 0;
-    CConn_HttpStream http(net_info, kEmptyStr/*user_header*/,
-                          s_ParseHeader, &okay, 0/*adjust*/, 0/*cleanup*/,
-                          0/*flags*/, m_Timeout);
+    SAuxData* auxdata = new SAuxData(m_Canceled, &okay);
+    CConn_HttpStream http(net_info, kEmptyStr/*user_header*/, s_SvcHeader,
+                          auxdata, s_Adjust, s_Cleanup, 0/*flags*/, m_Timeout);
     http.SetCanceledCallback(m_Canceled);
     char buf[1024];
     http.read(buf, sizeof(buf));
@@ -532,8 +564,9 @@ EIO_Status CConnTest::x_GetFirewallConfiguration(const SConnNetInfo* net_info)
     char fwdurl[128];
     if (!ConnNetInfo_GetValue(0, "FWD_URL", fwdurl, sizeof(fwdurl), kFWDUrl))
         return eIO_InvalidArg;
-    CConn_HttpStream fwdcgi(fwdurl, net_info, kEmptyStr/*user hdr*/,
-                            0/*flags*/, 0, 0, 0, 0, m_Timeout);
+    SAuxData* auxdata = new SAuxData(m_Canceled, 0);
+    CConn_HttpStream fwdcgi(fwdurl, net_info, kEmptyStr/*usr_hdr*/, 0/*ckhdr*/,
+                            auxdata, s_Adjust, s_Cleanup, 0/*flg*/, m_Timeout);
     fwdcgi.SetCanceledCallback(m_Canceled);
     fwdcgi << "selftest" << NcbiEndl;
 
