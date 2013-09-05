@@ -34486,14 +34486,14 @@ if test "$with_gsoap" != "no"; then
     GSOAP_LIBPATH="${ncbi_rp_L_flags}${ncbi_rp_R_flags}"
  fi
        fi
-       GSOAP_LIBS="$GSOAP_LIBPATH -lgsoap++ "
+       GSOAP_LIBS="$GSOAP_LIBPATH -lgsoapssl++ $OPENSSL_LIBS $Z_LIBS"
     else
        GSOAP_INCLUDE=""
-       GSOAP_LIBS="-lgsoap++ "
+       GSOAP_LIBS="-lgsoapssl++ $OPENSSL_LIBS $Z_LIBS"
        in_path=
     fi
-    echo "$as_me:$LINENO: checking for libgsoap++$in_path" >&5
-echo $ECHO_N "checking for libgsoap++$in_path... $ECHO_C" >&6
+    echo "$as_me:$LINENO: checking for libgsoapssl++$in_path" >&5
+echo $ECHO_N "checking for libgsoapssl++$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_gsoap+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else

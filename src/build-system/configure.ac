@@ -6357,7 +6357,7 @@ NCBI_RPATHIFY(GSOAP_LIBPATH, $GSOAP_LIBDIR)
 AC_PATH_PROG(GSOAP_SOAPCPP2, soapcpp2, [], $GSOAP_BINDIR:$PATH)
 AC_PATH_PROG(GSOAP_WSDL2H,   wsdl2h,   [], $GSOAP_BINDIR:$PATH)
 
-NCBI_CHECK_THIRD_PARTY_LIB_EX(gsoap, GSOAP, gsoap++,
+NCBI_CHECK_THIRD_PARTY_LIB_EX(gsoap, GSOAP, gsoapssl++,
    [AC_LANG_PROGRAM([#include <stdsoap2.h>
         SOAP_FMAC3 const char** SOAP_FMAC4 soap_faultcode(struct soap*)
         { return NULL; }
@@ -6377,7 +6377,8 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(gsoap, GSOAP, gsoap++,
         SOAP_FMAC3 void SOAP_FMAC4 soap_serializefault(struct soap*) { }
         SOAP_FMAC3 int SOAP_FMAC4 soap_putfault(struct soap*) { return 0; }
         SOAP_FMAC3 int SOAP_FMAC4 soap_getfault(struct soap*) { return 0; }],
-       [soap s;])])
+       [soap s;])],
+   $OPENSSL_LIBS $Z_LIBS)
 
 
 ### Restore original compiler/linker flags
