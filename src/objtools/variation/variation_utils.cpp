@@ -354,7 +354,6 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CVariation>& v, CScope &scope
                 stringstream accession;
                 accession << acc << "." << version;
                 x_PrefetchSequence(scope,accession.str());
-                
                 for ( CVariation::TData::TSet::TVariations::iterator var2 = v->SetData().SetSet().SetVariations().begin(); var2 != v->SetData().SetSet().SetVariations().end();  ++var2 )
                     if ( (*var2)->IsSetData() && (*var2)->SetData().IsInstance())
                     {
@@ -674,10 +673,19 @@ bool CVariationNormalizationInt::x_ProcessShift(string &a, int &pos_left, int &p
 
 bool CVariationNormalizationLeftInt::x_ProcessShift(string &a, int &pos_left, int &pos_right)
 {
+    int orig_pos_left = pos_left;
+    string orig_a = a;
     bool r = CVariationNormalizationLeft::x_ProcessShift(a,pos_left,pos_right);
-    pos_right = pos_left;
     if (m_Type == CVariation_inst::eType_ins)
-        return true;
+    {
+        if (!r)
+        {
+            pos_left = orig_pos_left;
+            a = orig_a;
+        }
+        r = true;
+    }
+    pos_right = pos_left;
     return r;
 }
 
