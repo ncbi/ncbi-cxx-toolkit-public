@@ -2944,7 +2944,6 @@ void CFastaOstream::x_WriteSequence(const CSeqVector& vec,
         if ((m_GapMode != native_gap_mode || (m_Flags & fInstantiateGaps) == 0)
             &&  it.GetGapSizeForward()) 
         {
-            const bool bZeroLengthGapBefore = it.HasZeroGapBefore();
             TSeqPos gap_size = it.SkipGap();
             if (m_GapMode == eGM_one_dash
                 ||  (m_Flags & fInstantiateGaps) == 0) {
