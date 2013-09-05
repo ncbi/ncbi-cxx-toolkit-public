@@ -307,6 +307,10 @@ protected:
         CRef<CSeq_feat>&,
         const vector<string>&);
         
+    void xSetFeatureTitle(
+        CRef<CSeq_feat>&,
+        const vector<string>&);
+        
     bool xContainsThickFeature(
         const vector<string>&) const;
 

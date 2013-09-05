@@ -366,6 +366,7 @@ bool CBedReader::xAppendFeatureChrom(
     CRef<CSeq_feat> feature;
     feature.Reset(new CSeq_feat);
     try {
+        xSetFeatureTitle(feature, fields);
         xSetFeatureLocationChrom(feature, fields);
         xSetFeatureIdsChrom(feature, fields, baseId);
         xSetFeatureBedData(feature, fields);
@@ -392,6 +393,7 @@ bool CBedReader::xAppendFeatureThick(
     CRef<CSeq_feat> feature;
     feature.Reset(new CSeq_feat);
     try {
+        xSetFeatureTitle(feature, fields);
         xSetFeatureLocationThick(feature, fields);
         xSetFeatureIdsThick(feature, fields, baseId);
         xSetFeatureBedData(feature, fields);
@@ -417,6 +419,7 @@ bool CBedReader::xAppendFeatureBlock(
     CRef<CSeq_feat> feature;
     feature.Reset(new CSeq_feat);
     try {
+        xSetFeatureTitle(feature, fields);
         xSetFeatureLocationBlock(feature, fields);
         xSetFeatureIdsBlock(feature, fields, baseId);
         xSetFeatureBedData(feature, fields);
@@ -442,6 +445,7 @@ bool CBedReader::xParseFeatureUserFormat(
     CRef<CSeq_feat> feature;
     feature.Reset( new CSeq_feat );
     try {
+        xSetFeatureTitle(feature, fields);
         x_SetFeatureLocation(feature, fields);
         x_SetFeatureDisplayData(feature, fields);
     }
@@ -778,6 +782,20 @@ void CBedReader::xSetFeatureIdsBlock(
     CRef<CSeqFeatXref> pXrefBlock(new CSeqFeatXref);
     pXrefBlock->SetId(*pIdBlock);  
     feature->SetXref().push_back(pXrefBlock);   
+}
+
+//  ----------------------------------------------------------------------------
+void CBedReader::xSetFeatureTitle(
+    CRef<CSeq_feat>& feature,
+    const vector<string>& fields )
+//  ----------------------------------------------------------------------------
+{
+    if (fields.size() >= 4  &&  !fields[3].empty()  &&  fields[3] != ".") {
+        feature->SetTitle(fields[3]);
+    }
+    else {
+        feature->SetTitle(string("line_") + NStr::IntToString(m_uLineNumber));
+    }
 }
 
 //  ----------------------------------------------------------------------------
