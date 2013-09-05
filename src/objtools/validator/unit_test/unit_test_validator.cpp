@@ -11331,6 +11331,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     CheckErrors (*eval, expected_errors);
     unit_test_util::RemoveDbxref (entry, "unrecognized", 0);
 
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "MultipleTaxonIDs", 
+                                         "There are multiple taxonIDs in this RefSeq record."));
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
     seh = scope.AddTopLevelSeqEntry(*entry);
@@ -11342,6 +11344,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
         CheckErrors (*eval, expected_errors);
         unit_test_util::RemoveDbxref (entry, *sit, 0);
     }
+
+    CLEAR_ERRORS
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "IllegalDbXref", 
+                                         "db_xref type %s (1234) should not be used on an OrgRef"));
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetId().front()->SetLocal().SetStr("good");
