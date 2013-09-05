@@ -238,7 +238,7 @@ public:
     void UpdateTSELock(CTSE_ScopeInfo& tse, CTSE_Lock lock);
     void ReleaseTSELock(CTSE_ScopeInfo& tse); // into queue
     void ForgetTSELock(CTSE_ScopeInfo& tse); // completely
-    void RemoveFromHistory(CTSE_ScopeInfo& tse);
+    void RemoveFromHistory(CTSE_ScopeInfo& tse, bool drop_from_ds = false);
     bool TSEIsInQueue(const CTSE_ScopeInfo& tse) const;
 
     void RemoveTSE_Lock(const CTSE_Lock& lock);
@@ -252,6 +252,10 @@ public:
     // IsConst() is true for a data source with manually added const TSEs
     bool IsConst(void) const;
     void SetConst(void);
+    // Make unlocked TSEs will be removed completely in ResetHistory()
+    // this mode is for edited entries retrieved from data loader
+    void SetCanRemoveOnResetHistory(void);
+    bool CanRemoveOnResetHistory(void) const;
 
     typedef CTSE_ScopeUserLock                          TTSE_Lock;
     typedef pair<CConstRef<CSeq_entry_Info>, TTSE_Lock> TSeq_entry_Lock;
@@ -301,6 +305,7 @@ private: // members
     TDataSourceLock             m_DataSource;
     bool                        m_CanBeUnloaded;
     bool                        m_CanBeEdited;
+    bool                        m_CanRemoveOnResetHistory;
     int                         m_NextTSEIndex;
     TTSE_InfoMap                m_TSE_InfoMap;
     mutable TTSE_InfoMapMutex   m_TSE_InfoMapMutex;
@@ -336,7 +341,7 @@ public:
     CDataSource_ScopeInfo& GetDSInfo(void) const;
 
     bool IsAttached(void) const;
-    void RemoveFromHistory(int action_if_locked);//CScope_Impl::EActionIfLocked
+    void RemoveFromHistory(int action_if_locked, bool drop_from_ds = false);//CScope_Impl::EActionIfLocked
 
     bool HasResolvedBioseq(const CSeq_id_Handle& id) const;
 
@@ -605,6 +610,12 @@ bool CDataSource_ScopeInfo::CanBeEdited(void) const
     return m_CanBeEdited;
 }
 
+
+inline
+bool CDataSource_ScopeInfo::CanRemoveOnResetHistory(void) const
+{
+    return m_CanRemoveOnResetHistory;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////

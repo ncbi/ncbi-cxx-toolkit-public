@@ -99,6 +99,7 @@ CDataSource_ScopeInfo::CDataSource_ScopeInfo(CScope_Impl& scope,
                       ds.GetDataLoader() &&
                       ds.GetDataLoader()->CanGetBlobById()),
       m_CanBeEdited(ds.CanBeEdited()),
+      m_CanRemoveOnResetHistory(false),
       m_NextTSEIndex(0),
       m_TSE_UnlockQueue(s_GetScopeAutoReleaseSize())
 {
@@ -142,7 +143,16 @@ void CDataSource_ScopeInfo::SetConst(void)
     _ASSERT(IsConst());
 }
 
-    
+
+void CDataSource_ScopeInfo::SetCanRemoveOnResetHistory(void)
+{
+    _ASSERT(CanBeEdited());
+    _ASSERT(GetDataSource().CanBeEdited());
+    m_CanRemoveOnResetHistory = true;
+    _ASSERT(CanRemoveOnResetHistory());
+}
+
+
 void CDataSource_ScopeInfo::DetachScope(void)
 {
     if ( m_Scope ) {
@@ -391,7 +401,8 @@ void CDataSource_ScopeInfo::ResetHistory(int action_if_locked)
 }
 
 
-void CDataSource_ScopeInfo::RemoveFromHistory(CTSE_ScopeInfo& tse)
+void CDataSource_ScopeInfo::RemoveFromHistory(CTSE_ScopeInfo& tse,
+                                              bool drop_from_ds)
 {
     TTSE_InfoMapMutex::TWriteLockGuard guard1(m_TSE_InfoMapMutex);
     if ( tse.CanBeUnloaded() ) {
@@ -404,7 +415,8 @@ void CDataSource_ScopeInfo::RemoveFromHistory(CTSE_ScopeInfo& tse)
         TTSE_LockSetMutex::TWriteLockGuard guard2(m_TSE_UnlockQueueMutex);
         m_TSE_UnlockQueue.Erase(&tse);
     }}
-    if ( CanBeEdited() ) {
+    if ( CanRemoveOnResetHistory() ||
+         (drop_from_ds && GetDataSource().CanBeEdited()) ) {
         // remove TSE from static blob set in DataSource
         CConstRef<CTSE_Info> tse_info(&*tse.GetTSE_Lock());
         tse.ResetTSE_Lock();
@@ -1027,7 +1039,7 @@ bool CTSE_ScopeInfo::LockedMoreThanOnce(void) const
 }
 
 
-void CTSE_ScopeInfo::RemoveFromHistory(int action_if_locked)
+void CTSE_ScopeInfo::RemoveFromHistory(int action_if_locked, bool drop_from_ds)
 {
     if ( IsLocked() ) {
         switch ( action_if_locked ) {
@@ -1041,7 +1053,7 @@ void CTSE_ScopeInfo::RemoveFromHistory(int action_if_locked)
             break;
         }
     }
-    GetDSInfo().RemoveFromHistory(*this);
+    GetDSInfo().RemoveFromHistory(*this, drop_from_ds);
 }
 
 

@@ -438,7 +438,7 @@ void CScope_Impl::RemoveTopLevelSeqEntry(CTSE_Handle tse)
     }
     x_ClearCacheOnRemoveData(&*tse_lock);
     tse_lock.Reset();
-    tse_info->RemoveFromHistory(CScope::eRemoveIfLocked);
+    tse_info->RemoveFromHistory(CScope::eRemoveIfLocked, true);//drop_from_ds
     _ASSERT(!tse_info->IsAttached());
     _ASSERT(!tse);
     if ( !ds_info->CanBeEdited() ) { // shared -> remove whole DS
@@ -1772,6 +1772,9 @@ CScope_Impl::GetEditDataSource(CDataSource_ScopeInfo& src_ds,
             src_ds.m_EditDS = AddDSBefore(ds, Ref(&src_ds), replaced_tse);
             _ASSERT(src_ds.m_EditDS);
             _ASSERT(src_ds.m_EditDS->CanBeEdited());
+            if ( src_ds.GetDataLoader() ) {
+                src_ds.m_EditDS->SetCanRemoveOnResetHistory();
+            }
         }
     }
     return src_ds.m_EditDS;

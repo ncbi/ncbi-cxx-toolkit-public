@@ -315,6 +315,9 @@ public:
     };
     /// Clean all unused TSEs from the scope's cache and release the memory.
     /// TSEs referenced by any handles are not removed.
+    /// Explicitly added entries are not removed.
+    /// Edited entries retrieved from a data loader are removed,
+    /// so that their unmodified version will be visible.
     void ResetHistory(EActionIfLocked action = eKeepIfLocked);
     /// Clear all information in the scope except added data loaders.
     void ResetDataAndHistory(void);
