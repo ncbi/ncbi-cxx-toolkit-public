@@ -36,8 +36,9 @@ Seq-annot ::= {
           }
         }
       },
-      location pnt {
-        point 10689132,
+      location int {
+        from 10689131,
+	to 10689132,
         id other {
           accession "NT_005612",
           version 16
