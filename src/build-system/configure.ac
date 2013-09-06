@@ -1056,34 +1056,34 @@ esac
 
 AC_CACHE_CHECK([how to enable C++ '11 features in $CXX],
    ncbi_cv_prog_cxx_11,
-   [orig_CXXFLAGS=$CXXFLAGS
+   [orig_CXX=$CXX
     ncbi_cv_prog_cxx_11=no
     for x in -std=gnu++11 -std=gnu++0x; do
-       CXXFLAGS="$orig_CXXFLAGS $x"
+       CXX="$orig_CXX $x"
        AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])],
           [ncbi_cv_prog_cxx_11=$x])
           test "x$ncbi_cv_prog_cxx_11" = "xno"  ||  break
        done
-       CXXFLAGS=$orig_CXXFLAGS])
-test "$ncbi_cv_prog_cxx_11" = no  ||  CXXFLAGS="$CXXFLAGS $ncbi_cv_prog_cxx_11"
+       CXX=$orig_CXX])
+test "$ncbi_cv_prog_cxx_11" = no  ||  CXX="$CXX $ncbi_cv_prog_cxx_11"
 
 AC_LANG_PUSH(C)
 AC_CACHE_CHECK([how to enable C '11 or at least '99 features in $CC],
    ncbi_cv_prog_c_99,
-   [orig_CFLAGS=$CFLAGS
+   [orig_CC=$CC
     ncbi_cv_prog_c_99=no
     for x in -xc99=all "-std=gnu11 -fgnu89-inline" \
              "-std=gnu1x -fgnu89-inline" \
              "-std=gnu99 -fgnu89-inline" \
              "-std=gnu9x -fgnu89-inline"; do
-       CFLAGS="$orig_CFLAGS $x"
+       CC="$orig_CC $x"
        AC_LINK_IFELSE([AC_LANG_PROGRAM([], [])],
           [ncbi_cv_prog_c_99=$x])
           test "x$ncbi_cv_prog_c_99" = "xno"  ||  break
        done
-       CFLAGS=$orig_CFLAGS])
+       CC=$orig_CC])
 AC_LANG_POP(C)
-test "$ncbi_cv_prog_c_99" = no  ||  CFLAGS="$CFLAGS $ncbi_cv_prog_c_99"
+test "$ncbi_cv_prog_c_99" = no  ||  CC="$CC $ncbi_cv_prog_c_99"
 
 #### Provide default environment setup for known platforms/compilers
 DEPFLAGS="-M"
@@ -1097,7 +1097,15 @@ case "$host_os:$compiler" in
    ;;
 
  solaris*:GCC )
-   CPPFLAGS="-D_XOPEN_SOURCE=500 $CPPFLAGS"
+   # On Solaris, GCC defaults to setting _XOPEN_SOURCE (to 500) only
+   # in C++ mode.  Set it for C code as well to ensure consistent
+   # header behavior, taking care to match the C standard version
+   # (as enforced by <sys/feature_tests.h>).
+   case "$ncbi_cv_prog_c_99" in
+      no) CC="$CC -D_XOPEN_SOURCE=500" ;;
+      *)  CC="$CC -D_XOPEN_SOURCE=600" ;;
+   esac
+
    STRIP="@:"
    ;;
 

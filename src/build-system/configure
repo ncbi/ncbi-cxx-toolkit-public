@@ -5323,10 +5323,10 @@ echo $ECHO_N "checking how to enable C++ '11 features in $CXX... $ECHO_C" >&6
 if test "${ncbi_cv_prog_cxx_11+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  orig_CXXFLAGS=$CXXFLAGS
+  orig_CXX=$CXX
     ncbi_cv_prog_cxx_11=no
     for x in -std=gnu++11 -std=gnu++0x; do
-       CXXFLAGS="$orig_CXXFLAGS $x"
+       CXX="$orig_CXX $x"
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -5374,11 +5374,11 @@ rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
           test "x$ncbi_cv_prog_cxx_11" = "xno"  ||  break
        done
-       CXXFLAGS=$orig_CXXFLAGS
+       CXX=$orig_CXX
 fi
 echo "$as_me:$LINENO: result: $ncbi_cv_prog_cxx_11" >&5
 echo "${ECHO_T}$ncbi_cv_prog_cxx_11" >&6
-test "$ncbi_cv_prog_cxx_11" = no  ||  CXXFLAGS="$CXXFLAGS $ncbi_cv_prog_cxx_11"
+test "$ncbi_cv_prog_cxx_11" = no  ||  CXX="$CXX $ncbi_cv_prog_cxx_11"
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -5392,13 +5392,13 @@ echo $ECHO_N "checking how to enable C '11 or at least '99 features in $CC... $E
 if test "${ncbi_cv_prog_c_99+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  orig_CFLAGS=$CFLAGS
+  orig_CC=$CC
     ncbi_cv_prog_c_99=no
     for x in -xc99=all "-std=gnu11 -fgnu89-inline" \
              "-std=gnu1x -fgnu89-inline" \
              "-std=gnu99 -fgnu89-inline" \
              "-std=gnu9x -fgnu89-inline"; do
-       CFLAGS="$orig_CFLAGS $x"
+       CC="$orig_CC $x"
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -5446,7 +5446,7 @@ rm -f conftest.err conftest.$ac_objext \
       conftest$ac_exeext conftest.$ac_ext
           test "x$ncbi_cv_prog_c_99" = "xno"  ||  break
        done
-       CFLAGS=$orig_CFLAGS
+       CC=$orig_CC
 fi
 echo "$as_me:$LINENO: result: $ncbi_cv_prog_c_99" >&5
 echo "${ECHO_T}$ncbi_cv_prog_c_99" >&6
@@ -5456,7 +5456,7 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
-test "$ncbi_cv_prog_c_99" = no  ||  CFLAGS="$CFLAGS $ncbi_cv_prog_c_99"
+test "$ncbi_cv_prog_c_99" = no  ||  CC="$CC $ncbi_cv_prog_c_99"
 
 #### Provide default environment setup for known platforms/compilers
 DEPFLAGS="-M"
@@ -5470,7 +5470,15 @@ case "$host_os:$compiler" in
    ;;
 
  solaris*:GCC )
-   CPPFLAGS="-D_XOPEN_SOURCE=500 $CPPFLAGS"
+   # On Solaris, GCC defaults to setting _XOPEN_SOURCE (to 500) only
+   # in C++ mode.  Set it for C code as well to ensure consistent
+   # header behavior, taking care to match the C standard version
+   # (as enforced by <sys/feature_tests.h>).
+   case "$ncbi_cv_prog_c_99" in
+      no) CC="$CC -D_XOPEN_SOURCE=500" ;;
+      *)  CC="$CC -D_XOPEN_SOURCE=600" ;;
+   esac
+
    STRIP="@:"
    ;;
 
