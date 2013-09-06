@@ -4214,8 +4214,9 @@ static EIO_Status s_Connect(SOCK            sock,
             } else
                 info.host = host;
             info.port = port;
+        }
 #ifdef NCBI_OS_UNIX
-        } else
+        else
             info.host = sock->path;
 #endif /*NCBI_OS_UNIX*/
         info.status = status;
