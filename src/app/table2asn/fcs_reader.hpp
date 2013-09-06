@@ -12,6 +12,8 @@ class CSeqdesc;
 class IMessageListener;
 class CIdMapper;
 class CBioseq;
+class CSeq_inst;
+class CSeq_literal;
 };
 
 class ILineReader;
@@ -28,16 +30,22 @@ public:
     void LoadFile(ILineReader& linereader);
 
 //#sequence name, length, span(s), M/X, apparent source
+    struct Tloc
+    {
+        int    start;  // starting at zero 
+        int    len;
+    };
+
+    typedef map<int, int> Tlocs;
     struct TColumns
     {
         string name;
         int    length;
-        int    start;
-        int    stop;
         char   mode;   // M/X
         string source;
+        Tlocs locs;
     };
-    typedef multimap<string, TColumns> Tdata;
+    typedef map<string, TColumns> Tdata;
 
     void PostProcess(objects::CSeq_entry& entry);
 
@@ -46,6 +54,10 @@ protected:
     const CTable2AsnContext& m_context;
 
     bool AnnotateOrRemove(objects::CSeq_entry& entry) const;
+    void xTrimData(objects::CSeq_inst& inst, const Tlocs& col) const; 
+    void xTrimExt(objects::CSeq_inst& inst, const Tlocs& col) const; 
+    void xTrimLiteral(objects::CSeq_literal& lit, int start, int end) const;
+    bool xCheckLen(const objects::CBioseq& inst) const;
 };
 
 END_NCBI_SCOPE
