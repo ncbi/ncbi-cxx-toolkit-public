@@ -509,7 +509,12 @@ void CObjectOStream::ThrowError1(const CDiagCompileInfo& diag_info,
         DefaultFlush();
     } catch(...) {
     }
-    SetFailFlags(fail, message.c_str());
+    string msg(message);
+    if (fail == fUnassigned) {
+        msg = "cannot write unassigned member "+message;
+    }
+    SetFailFlags(fail, msg.c_str());
+    msg.insert(0,GetPosition()+": ");
     switch(fail)
     {
     case fNoError:
@@ -527,10 +532,9 @@ void CObjectOStream::ThrowError1(const CDiagCompileInfo& diag_info,
     case fNotOpen:        err = CSerialException::eNotOpen;        break;
     case fNotImplemented: err = CSerialException::eNotImplemented; break;
     case fUnassigned:
-        throw CUnassignedMember(diag_info,exc,CUnassignedMember::eWrite,
-                                GetPosition()+": cannot write unassigned member "+message);
+        throw CUnassignedMember(diag_info,exc,CUnassignedMember::eWrite, msg);
     }
-    throw CSerialException(diag_info,exc,err,GetPosition()+": "+message);
+    throw CSerialException(diag_info,exc,err,msg);
 }
 
 void CObjectOStream::EndOfWrite(void)
