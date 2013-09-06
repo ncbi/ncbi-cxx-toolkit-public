@@ -1767,3 +1767,22 @@ BOOST_AUTO_TEST_CASE(TestSpacesBeforeFeature)
         BOOST_REQUIRE(ftable.size() == 1);
     }
 }
+
+static const char * sc_Table14 = "\
+>Feature lcl|Seq1\n\
+1\t1008\tCDS\n\
+\t\t\tgene    THE_GENE_NAME\n\
+50\t200\n\
+\t\t\tproduct THE_GENE_PRODUCT\n\
+\n\
+";
+
+BOOST_AUTO_TEST_CASE(TestErrorIfRangeAfterQuals)
+{
+    TErrList expected_errors;
+    expected_errors.push_back(ILineError::eProblem_NoFeatureProvidedOnIntervals );
+
+    s_ReadOneTableFromString(
+        sc_Table14,
+        expected_errors );
+}

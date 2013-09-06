@@ -258,7 +258,7 @@ public:
                       int line,
                       const string &seq_id );
 
-    static bool ParseFeatureLine (
+    static bool ParseInitialFeatureLine (
         const CTempString& line_arg,
         string & out_seqid,
         string & out_annotname );
@@ -2595,6 +2595,17 @@ void CFeature_table_reader_imp::x_ProcessMsg(
         throw(err);
     }
 }
+
+namespace {
+    // helper for CFeature_table_reader_imp::ReadSequinFeatureTable,
+    // just so we don't forget a step when we reset the feature
+    // 
+    void s_ResetFeat( CRef<CSeq_feat> & sfp, bool & curr_feat_intervals_done ) {
+        sfp.Reset (new CSeq_feat);
+        sfp->ResetLocation ();
+        curr_feat_intervals_done = false;
+    }
+}
                                              
 CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     ILineReader& reader,
@@ -2636,6 +2647,16 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
     TChoiceToFeatMap choiceToFeatMap;
 
     CRef<CSeq_feat> sfp;
+    // This is true once this feature should not
+    // have any more intervals.
+    // This allows us to catch errors like the following:
+    //
+    //>Feature lcl|Seq1
+    //1	1008	CDS
+    //			gene    THE_GENE_NAME
+    //50	200
+    //			product THE_GENE_PRODUCT
+    bool curr_feat_intervals_done = false;
 
     if (! annotname.empty ()) {
       CAnnot_descr& descr = sap->SetDesc ();
@@ -2662,165 +2683,190 @@ CRef<CSeq_annot> CFeature_table_reader_imp::ReadSequinFeatureTable (
             FTBL_PROGRESS(real_seqid, reader.GetLineNumber());
         }
 
-        if (! line.empty () && (!bIgnoreWebComments || ! x_IsWebComment(line) ) ) {
-            string dummy1, dummy2;
-            if( ParseFeatureLine(line, dummy1, dummy2) ) {
-                // if next feature table, return current sap
-                reader.UngetLine(); // we'll get this feature line the next time around
-                break;
-            } 
-            if (line [0] == '[') {
+        // skip empty lines.
+        // if requested, also skip webcomment lines
+        if( line.empty () || (bIgnoreWebComments && x_IsWebComment(line) ) ) {
+            continue;
+        }
 
-                // try to parse it as an offset
-                if( x_TryToParseOffset(line, offset) ) {
-                    // okay, known command
+        // if next line is a new feature table, return current sap
+        string dummy1, dummy2;
+        if( ParseInitialFeatureLine(line, dummy1, dummy2) ) {
+            reader.UngetLine(); // we'll get this feature line the next time around
+            break;
+        } 
+
+        if (line [0] == '[') {
+
+            // try to parse it as an offset
+            if( x_TryToParseOffset(line, offset) ) {
+                // okay, known command
+            } else {
+                // warn for unknown square-bracket commands
+                x_ProcessMsg( pMessageListener,
+                    ILineError::eProblem_UnrecognizedSquareBracketCommand,
+                    eDiag_Warning,
+                    seqid, reader.GetLineNumber() );
+            }
+
+        } else if ( s_LineIndicatesOrder(line) ) {
+
+            // put nulls between feature intervals
+            CRef<CSeq_loc> loc_with_nulls = s_LocationJoinToOrder( sfp->GetLocation() );
+            // loc_with_nulls is unset if no change was needed
+            if( loc_with_nulls ) {
+                sfp->SetLocation( *loc_with_nulls );
+            }
+
+        } else if (x_ParseFeatureTableLine (line, &start, &stop, &partial5, &partial3,
+                                            &ispoint, &isminus, feat, qual, val, offset,
+                                            pMessageListener, reader.GetLineNumber(), real_seqid)) {
+
+            // process line in feature table
+
+            replace( val.begin(), val.end(), '\"', '\'' );
+
+            if ((! feat.empty ()) && start >= 0 && stop >= 0) {
+
+                // process start - stop - feature line
+
+                s_ResetFeat( sfp, curr_feat_intervals_done );
+
+                if (x_SetupSeqFeat (sfp, feat, flags, reader.GetLineNumber(), real_seqid, pMessageListener, filter)) {
+
+                    ftable.push_back (sfp);
+
+                    // now create location
+
+                    CRef<CSeq_loc> location (new CSeq_loc);
+                    sfp->SetLocation (*location);
+
+                    // figure out type of feat, and store in map for later use
+                    CSeqFeatData::E_Choice eChoice = CSeqFeatData::e_not_set;
+                    if( sfp->CanGetData() ) {
+                        eChoice = sfp->GetData().Which();
+                    }
+                    choiceToFeatMap.insert(
+                        TChoiceToFeatMap::value_type(
+                        eChoice, 
+                        SFeatAndLineNum(sfp, reader.GetLineNumber())));
+
+                    // if new feature is a CDS, remember it for later lookups
+                    if( eChoice == CSeqFeatData::e_Cdregion ) {
+                        best_CDS_finder.AddFeat( *sfp );
+                    }
+
+                    // and add first interval
+                    x_AddIntervalToFeature (curr_feat_name, sfp, location->SetMix(), 
+                        start, stop, partial5, partial3, ispoint, isminus, 
+                        pMessageListener, reader.GetLineNumber(), real_seqid );
+
+                    ignore_until_next_feature_key = false;
+
+                    curr_feat_name = feat;
+
                 } else {
-                    // warn for unknown square-bracket commands
-                    x_ProcessMsg( pMessageListener,
-                        ILineError::eProblem_UnrecognizedSquareBracketCommand,
-                        eDiag_Warning,
-                        seqid, reader.GetLineNumber() );
+
+                    // bad feature, set ignore flag
+
+                    ignore_until_next_feature_key = true;
                 }
 
-            } else if ( s_LineIndicatesOrder(line) ) {
+            } else if (ignore_until_next_feature_key) {
 
-                // put nulls between feature intervals
-                CRef<CSeq_loc> loc_with_nulls = s_LocationJoinToOrder( sfp->GetLocation() );
-                // loc_with_nulls is unset if no change was needed
-                if( loc_with_nulls ) {
-                    sfp->SetLocation( *loc_with_nulls );
-                }
+                // bad feature was found before, so ignore 
+                // qualifiers until next feature key
 
-            } else if (x_ParseFeatureTableLine (line, &start, &stop, &partial5, &partial3,
-                                                &ispoint, &isminus, feat, qual, val, offset,
-                                                pMessageListener, reader.GetLineNumber(), real_seqid)) {
+            } else if (start >= 0 && stop >= 0 && feat.empty () && qual.empty () && val.empty ()) {
 
-                // process line in feature table
-
-                replace( val.begin(), val.end(), '\"', '\'' );
-
-                if ((! feat.empty ()) && start >= 0 && stop >= 0) {
-
-                    // process start - stop - feature line
-
-                    sfp.Reset (new CSeq_feat);
-                    sfp->ResetLocation ();
-
-                    if (x_SetupSeqFeat (sfp, feat, flags, reader.GetLineNumber(), real_seqid, pMessageListener, filter)) {
-
-                        ftable.push_back (sfp);
-
-                        // now create location
-
-                        CRef<CSeq_loc> location (new CSeq_loc);
-                        sfp->SetLocation (*location);
-
-                        // figure out type of feat, and store in map for later use
-                        CSeqFeatData::E_Choice eChoice = CSeqFeatData::e_not_set;
-                        if( sfp->CanGetData() ) {
-                            eChoice = sfp->GetData().Which();
-                        }
-                        choiceToFeatMap.insert(
-                            TChoiceToFeatMap::value_type(
-                            eChoice, 
-                            SFeatAndLineNum(sfp, reader.GetLineNumber())));
-
-                        // if new feature is a CDS, remember it for later lookups
-                        if( eChoice == CSeqFeatData::e_Cdregion ) {
-                            best_CDS_finder.AddFeat( *sfp );
-                        }
-
-                        // and add first interval
-                        x_AddIntervalToFeature (curr_feat_name, sfp, location->SetMix(), 
-                            start, stop, partial5, partial3, ispoint, isminus, 
-                            pMessageListener, reader.GetLineNumber(), real_seqid );
-
-                        ignore_until_next_feature_key = false;
-
-                        curr_feat_name = feat;
-
-                    } else {
-
-                        // bad feature, set ignore flag
-
-                        ignore_until_next_feature_key = true;
-                    }
-
-                } else if (ignore_until_next_feature_key) {
-
-                    // bad feature, ignore qualifiers until next feature key
-
-                } else if (start >= 0 && stop >= 0 && feat.empty () && qual.empty () && val.empty ()) {
-
+                if( curr_feat_intervals_done ) {
+                    // the feat intervals were done, so it's an error for there to be more intervals
+                    x_ProcessMsg(pMessageListener, ILineError::eProblem_NoFeatureProvidedOnIntervals,
+                            eDiag_Error,
+                            real_seqid,
+                            reader.GetLineNumber() );
+                    // this feature is in bad shape, so we ignore the rest of it
+                    ignore_until_next_feature_key = true;
+                    s_ResetFeat(sfp, curr_feat_intervals_done);
+                } else if (sfp  &&  sfp->IsSetLocation()  &&  sfp->GetLocation().IsMix()) {
                     // process start - stop multiple interval line
-
-                    if (sfp  &&  sfp->IsSetLocation()  &&  sfp->GetLocation().IsMix()) {
-                        x_AddIntervalToFeature (curr_feat_name, sfp, sfp->SetLocation().SetMix(), 
-                                                start, stop, partial5, partial3, ispoint, isminus, 
-                                                pMessageListener, reader.GetLineNumber(), real_seqid);
-                    } else {
-                        if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                            x_ProcessMsg(pMessageListener, ILineError::eProblem_NoFeatureProvidedOnIntervals,
-                                eDiag_Warning,
-                                real_seqid,
-                                reader.GetLineNumber() );
-                        }
+                    x_AddIntervalToFeature (curr_feat_name, sfp, sfp->SetLocation().SetMix(), 
+                                            start, stop, partial5, partial3, ispoint, isminus, 
+                                            pMessageListener, reader.GetLineNumber(), real_seqid);
+                } else {
+                    if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
+                        x_ProcessMsg(pMessageListener, ILineError::eProblem_NoFeatureProvidedOnIntervals,
+                            eDiag_Warning,
+                            real_seqid,
+                            reader.GetLineNumber() );
                     }
+                }
 
-                } else if ((! qual.empty ()) && (! val.empty ())) {
+            } else if ((! qual.empty ()) && (! val.empty ())) {
 
-                    // process qual - val qualifier line
+                // process qual - val qualifier line
 
-                    if ( !sfp ) {
-                        if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                            x_ProcessMsg(pMessageListener, 
-                                ILineError::eProblem_QualifierWithoutFeature, 
-                                eDiag_Warning,
-                                real_seqid,
-                                reader.GetLineNumber(), kEmptyStr, qual, val );
-                        }
-                    } else if ( !x_AddQualifierToFeature (sfp, curr_feat_name, qual, val, pMessageListener, reader.GetLineNumber(), real_seqid) ) {
+                // there should no more ranges for this feature
+                // (although there still can be ranges for quals, of course)
+                curr_feat_intervals_done = true;
 
-                        // unrecognized qualifier key
-
-                        if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                            x_ProcessMsg(pMessageListener,
-                                ILineError::eProblem_UnrecognizedQualifierName, 
-                                eDiag_Warning, real_seqid, reader.GetLineNumber(), curr_feat_name, qual, val );
-                        }
-
-                        if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
-                            x_AddGBQualToFeature (sfp, qual, val);
-                        }
+                if ( !sfp ) {
+                    if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
+                        x_ProcessMsg(pMessageListener, 
+                            ILineError::eProblem_QualifierWithoutFeature, 
+                            eDiag_Warning,
+                            real_seqid,
+                            reader.GetLineNumber(), kEmptyStr, qual, val );
                     }
+                } else if ( !x_AddQualifierToFeature (sfp, curr_feat_name, qual, val, pMessageListener, reader.GetLineNumber(), real_seqid) ) {
 
-                } else if ((! qual.empty ()) && (val.empty ())) {
-
-                    // check for the few qualifiers that do not need a value
-                    if ( !sfp ) {
-                        if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                            x_ProcessMsg(pMessageListener, 
-                                ILineError::eProblem_QualifierWithoutFeature, eDiag_Warning,
-                                real_seqid, reader.GetLineNumber(),
-                                kEmptyStr, qual );
-                        }
-                    } else {
-                        TSingleSet::const_iterator s_iter = sc_SingleKeys.find (qual.c_str ());
-                        if (s_iter != sc_SingleKeys.end ()) {
-
-                            x_AddQualifierToFeature (sfp, curr_feat_name, qual, val, pMessageListener, reader.GetLineNumber(), real_seqid);
-                        }
-                    }
-                } else if (! feat.empty ()) {
-                
-                    // unrecognized location
+                    // unrecognized qualifier key
 
                     if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
-                        x_ProcessMsg( pMessageListener, 
-                            ILineError::eProblem_FeatureBadStartAndOrStop, eDiag_Warning,
-                            real_seqid, reader.GetLineNumber(),
-                            feat );
+                        x_ProcessMsg(pMessageListener,
+                            ILineError::eProblem_UnrecognizedQualifierName, 
+                            eDiag_Warning, real_seqid, reader.GetLineNumber(), curr_feat_name, qual, val );
                     }
+
+                    if ((flags & CFeature_table_reader::fKeepBadKey) != 0) {
+                        x_AddGBQualToFeature (sfp, qual, val);
+                    }
+                }
+
+            } else if ((! qual.empty ()) && (val.empty ())) {
+
+                // there should no more ranges for this feature
+                // (although there still can be ranges for quals, of course)
+                curr_feat_intervals_done = true;
+
+                // check for the few qualifiers that do not need a value
+                if ( !sfp ) {
+                    if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
+                        x_ProcessMsg(pMessageListener, 
+                            ILineError::eProblem_QualifierWithoutFeature, eDiag_Warning,
+                            real_seqid, reader.GetLineNumber(),
+                            kEmptyStr, qual );
+                    }
+                } else {
+                    TSingleSet::const_iterator s_iter = sc_SingleKeys.find (qual.c_str ());
+                    if (s_iter != sc_SingleKeys.end ()) {
+
+                        x_AddQualifierToFeature (sfp, curr_feat_name, qual, val, pMessageListener, reader.GetLineNumber(), real_seqid);
+                    }
+                }
+            } else if (! feat.empty ()) {
+                
+                // unrecognized location
+
+                // there should no more ranges for this feature
+                // (although there still can be ranges for quals, of course).
+                curr_feat_intervals_done = true;
+
+                if ((flags & CFeature_table_reader::fReportBadKey) != 0) {
+                    x_ProcessMsg( pMessageListener, 
+                        ILineError::eProblem_FeatureBadStartAndOrStop, eDiag_Warning,
+                        real_seqid, reader.GetLineNumber(),
+                        feat );
                 }
             }
         }
@@ -2910,7 +2956,7 @@ void CFeature_table_reader_imp::AddFeatQual (
 }
 
 // static
-bool CFeature_table_reader_imp::ParseFeatureLine (
+bool CFeature_table_reader_imp::ParseInitialFeatureLine (
     const CTempString& line_arg,
     string & out_seqid,
     string & out_annotname )
@@ -3053,7 +3099,7 @@ CRef<CSeq_annot> CFeature_table_reader::ReadSequinFeatureTable (
 
         CTempString line = *++reader;
 
-        if( ParseFeatureLine(line, seqid, annotname) ) {
+        if( ParseInitialFeatureLine(line, seqid, annotname) ) {
             FTBL_PROGRESS( seqid, reader.GetLineNumber() );
         }
     }
@@ -3152,12 +3198,12 @@ void CFeature_table_reader::AddFeatQual (
 }
 
 bool
-CFeature_table_reader::ParseFeatureLine (
+CFeature_table_reader::ParseInitialFeatureLine (
     const CTempString& line_arg,
     string & out_seqid,
     string & out_annotname )
 {
-    return x_GetImplementation ().ParseFeatureLine ( line_arg, out_seqid, out_annotname );
+    return x_GetImplementation ().ParseInitialFeatureLine ( line_arg, out_seqid, out_annotname );
 }
 
 

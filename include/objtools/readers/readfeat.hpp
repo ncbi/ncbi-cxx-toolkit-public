@@ -148,7 +148,7 @@ public:
     ///   line_arg (or empty if there is none)
     /// @returns
     ///   True if it is a feature line and false if it's not.
-    static bool ParseFeatureLine (
+    static bool ParseInitialFeatureLine (
         const CTempString& line_arg,
         string & out_seqid,
         string & out_annotname );
