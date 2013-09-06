@@ -1552,6 +1552,9 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
         }
     }
 
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "MultipleTaxonIDs", 
+                                         "There are multiple taxonIDs in this RefSeq record."));
+
     // don't report if NT or NC
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
@@ -1559,10 +1562,13 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NT_123456");
+    expected_errors[0]->SetAccession("NT_123456");
     scope.RemoveTopLevelSeqEntry(seh);
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
 
     // don't report if gen-prod-set
 
@@ -1938,6 +1944,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_SeqIdNameHasSpace)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Critical, "SeqIdNameHasSpace", "Seq-id.name 'good one' should be a single word without any spaces"));
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "MultipleTaxonIDs", 
+                                         "There are multiple taxonIDs in this RefSeq record."));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -2593,6 +2601,8 @@ BOOST_AUTO_TEST_CASE(Test_MultipleAccessions)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Error, "INSDRefSeqPackaging", "INSD and RefSeq records should not be present in the same set"));
     expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Error, "MultipleAccessions", "Multiple accessions on sequence with gi number"));
+    expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Error, "MultipleTaxonIDs", 
+                                         "There are multiple taxonIDs in this RefSeq record."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
