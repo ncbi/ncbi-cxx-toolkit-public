@@ -1552,9 +1552,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
         }
     }
 
-    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "MultipleTaxonIDs", 
-                                         "There are multiple taxonIDs in this RefSeq record."));
-
     // don't report if NT or NC
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
@@ -1562,13 +1559,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadDeltaSeq)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NT_123456");
-    expected_errors[0]->SetAccession("NT_123456");
     scope.RemoveTopLevelSeqEntry(seh);
     seh = scope.AddTopLevelSeqEntry(*entry);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-
-    CLEAR_ERRORS
 
     // don't report if gen-prod-set
 
@@ -1944,8 +1938,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_SeqIdNameHasSpace)
     STANDARD_SETUP
 
     expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Critical, "SeqIdNameHasSpace", "Seq-id.name 'good one' should be a single word without any spaces"));
-    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "MultipleTaxonIDs", 
-                                         "There are multiple taxonIDs in this RefSeq record."));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -2601,8 +2593,6 @@ BOOST_AUTO_TEST_CASE(Test_MultipleAccessions)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Error, "INSDRefSeqPackaging", "INSD and RefSeq records should not be present in the same set"));
     expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Error, "MultipleAccessions", "Multiple accessions on sequence with gi number"));
-    expected_errors.push_back(new CExpectedError("AY123456.1", eDiag_Error, "MultipleTaxonIDs", 
-                                         "There are multiple taxonIDs in this RefSeq record."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -11341,8 +11331,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
     CheckErrors (*eval, expected_errors);
     unit_test_util::RemoveDbxref (entry, "unrecognized", 0);
 
-    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "MultipleTaxonIDs", 
-                                         "There are multiple taxonIDs in this RefSeq record."));
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
     seh = scope.AddTopLevelSeqEntry(*entry);
@@ -11354,10 +11342,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_IllegalDbXref)
         CheckErrors (*eval, expected_errors);
         unit_test_util::RemoveDbxref (entry, *sit, 0);
     }
-
-    CLEAR_ERRORS
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "IllegalDbXref", 
-                                         "db_xref type %s (1234) should not be used on an OrgRef"));
 
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetId().front()->SetLocal().SetStr("good");
@@ -12858,7 +12842,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ExceptionProblem)
     // not legal (is warning for NC or NT)
     feat->SetExcept_text("not a legal exception");
     expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Warning, "ExceptionProblem", "not a legal exception is not a legal exception explanation"));
-    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "MultipleTaxonIDs", "There are multiple taxonIDs in this RefSeq record."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -13115,8 +13098,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_AltStartCodon)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("NM_123456", eDiag_Warning, "AltStartCodon",
                               "Unnecessary alternative start codon exception"));
-    expected_errors.push_back(new CExpectedError("NM_123456", eDiag_Error, "MultipleTaxonIDs",
-                              "There are multiple taxonIDs in this RefSeq record."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -13347,8 +13328,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_LocusTagProductMismatch)
     options |= CValidator::eVal_locus_tag_general_match;
     expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "LocusTagProductMismatch",
                                "Gene locus_tag does not match general ID of product"));
-    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "MultipleTaxonIDs",
-                              "There are multiple taxonIDs in this RefSeq record."));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -14055,8 +14034,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SuspiciousGeneXref)
                                 "Curated Drosophila record should not have gene cross-reference other gene"));
     expected_errors.push_back (new CExpectedError("NT_123456", eDiag_Warning, "GeneXrefStrandProblem",
                                 "Gene cross-reference is not on expected strand"));
-    expected_errors.push_back(new CExpectedError("NT_123456", eDiag_Error, "MultipleTaxonIDs",
-                              "There are multiple taxonIDs in this RefSeq record."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -14250,8 +14227,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_HpotheticalProteinMismatch) {
 
     expected_errors.push_back (new CExpectedError("XP_654321", eDiag_Warning, "HpotheticalProteinMismatch",
                                "Hypothetical protein reference does not match accession"));
-    expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "MultipleTaxonIDs",
-                              "There are multiple taxonIDs in this RefSeq record."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -15357,8 +15332,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UndesiredGeneSynonym)
     STANDARD_SETUP
 
     expected_errors.push_back (new CExpectedError("NC_123456", eDiag_Warning, "UndesiredGeneSynonym", ""));
-    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "MultipleTaxonIDs",
-                              "There are multiple taxonIDs in this RefSeq record."));
 
     test_gene_syn("alpha")
     test_gene_syn("alternative")
@@ -15432,31 +15405,16 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UndesiredProteinName)
 
     STANDARD_SETUP
     
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "UndesiredProteinName",
+                              ""));
     string msg;
 
-    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "UndesiredProteinName",
-                              ""));
-    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "MultipleTaxonIDs",
-                              "There are multiple taxonIDs in this RefSeq record."));
     test_undesired_protein_name("a=b")
-
-    CLEAR_ERRORS
-
-    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "UndesiredProteinName",
-                              ""));
     expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "BadInternalCharacter",
                               "Protein name contains undesired character"));
-    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "MultipleTaxonIDs",
-                              "There are multiple taxonIDs in this RefSeq record."));
     test_undesired_protein_name("a~b")
-
-    CLEAR_ERRORS
-
-    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "UndesiredProteinName",
-                              ""));
-    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "MultipleTaxonIDs",
-                              "There are multiple taxonIDs in this RefSeq record."));
-
+    delete expected_errors[1];
+    expected_errors.pop_back();
     test_undesired_protein_name("uniprot protein")
     test_undesired_protein_name("uniprotkb protein")
     test_undesired_protein_name("refers to pmid 23")
@@ -15655,8 +15613,6 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MissingGeneLocusTag)
 
     expected_errors.push_back (new CExpectedError("NC_123456", eDiag_Warning, "MissingGeneLocusTag",
                                 "Missing gene locus tag"));
-    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "MultipleTaxonIDs",
-                              "There are multiple taxonIDs in this RefSeq record."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 

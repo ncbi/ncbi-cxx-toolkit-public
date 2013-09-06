@@ -1701,11 +1701,13 @@ bool CValidError_imp::Validate
             *m_TSE);
     }
 
+    /*
     if ( m_MultTaxIDs && IsRefSeq() ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleTaxonIDs, 
                 "There are multiple taxonIDs in this RefSeq record.",
                 *m_TSE);
     }
+    */
 
 
     FindEmbeddedScript(*(seh.GetCompleteSeq_entry()));
