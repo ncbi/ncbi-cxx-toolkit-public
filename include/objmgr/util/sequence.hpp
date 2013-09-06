@@ -1505,12 +1505,12 @@ protected:
     TAmbigLookupTable m_arrProtAmbigLookupTable;
 };
 
-/// This iterates over the runs of internal-Ns of each sequence
+/// This iterates over the runs of Ns of each sequence
 class NCBI_XOBJUTIL_EXPORT CBioseqGaps_CI : public CObject
 {
 public:
 
-    /// The params that control the behavior of CSequenceInternalNsIter
+    /// The params that control the behavior of CBioseqGaps_CI
     struct NCBI_XOBJUTIL_EXPORT Params {
         /// Default ctor gives params which are usually reasonable.
         Params(void) : max_gap_len_to_ignore(10),
