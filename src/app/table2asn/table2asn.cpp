@@ -54,6 +54,7 @@
 #include "OpticalXML2ASN.hpp"
 #include "feature_table_reader.hpp"
 #include "remote_updater.hpp"
+#include "fcs_reader.hpp"
 
 #include <objects/seq/Seq_descr.hpp>
 #include <objects/general/Date.hpp>
@@ -114,6 +115,7 @@ private:
     CRef<CObjectManager> m_ObjMgr;
     CTable2AsnContext    m_context;
     CRef<CMessageListenerBase> m_logger;
+    auto_ptr<CForeignContaminationScreenReportReader> m_fcs_reader;
 
     //auto_ptr<CObjectIStream> m_In;
     //unsigned int m_Options;
@@ -302,6 +304,9 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddOptionalKey("gaps-min", "Integer", "minunim run of Ns recognised as a gap", CArgDescriptions::eInteger); //done
     arg_desc->AddOptionalKey("gaps-unknown", "Integer", "exact number of Ns recognised as a gap with unknown length", CArgDescriptions::eInteger); //done
+    arg_desc->AddOptionalKey("min-threshold", "Integer", "minimun length of sequence", CArgDescriptions::eInteger);
+    arg_desc->AddOptionalKey("fcs-file", "FileName", "FCS report file", CArgDescriptions::eInputFile);
+    arg_desc->AddFlag("fcs-trim", "Trim FCS regions instead of annotate");
 
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);    // done
 
@@ -346,6 +351,18 @@ int CTbl2AsnApp::Run(void)
 
     m_reader.reset(new CMultiReader(m_context));
     m_remote_updater.reset(new CRemoteUpdater(m_context));
+
+    if (args["fcs-file"])
+    {
+        m_fcs_reader.reset(new CForeignContaminationScreenReportReader(m_context));
+        CRef<ILineReader> reader(ILineReader::New(args["fcs-file"].AsInputFile()));
+
+        m_fcs_reader->LoadFile(*reader);
+        m_context.m_fcs_trim = args["fcs-trim"];
+
+        if (args["min-threshold"])
+            m_context.m_minimal_sequence_length = args["min-threshold"].AsInteger();
+    }
 
     if (args["n"])
         m_context.m_OrganismName = args["n"].AsString();
@@ -423,6 +440,15 @@ int CTbl2AsnApp::Run(void)
 
     if (args["k"])
         m_context.m_find_open_read_frame = args["k"].AsString();
+
+    if (m_context.m_HandleAsSet)
+    {
+        if (m_context.m_gapNmin == 0)
+            m_context.m_gapNmin = 10;
+        if (m_context.m_gap_Unknown_length == 0)
+            m_context.m_gap_Unknown_length = 100;
+    }
+
 
     if (args["t"])
     {
@@ -535,6 +561,10 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     else
     {
         entry = m_reader->LoadFile(m_context.m_current_file);
+        if (m_fcs_reader.get())
+        {
+            m_fcs_reader->PostProcess(*entry);
+        }
         entry->Parentize();
 
         m_context.HandleGaps(*entry);

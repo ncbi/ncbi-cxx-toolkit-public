@@ -68,6 +68,9 @@ public:
     bool   m_avoid_orf_lookup;
     TSeqPos m_gapNmin;
     TSeqPos m_gap_Unknown_length;
+    TSeqPos m_minimal_sequence_length;
+    bool   m_fcs_trim;
+
 
     CRef<objects::CSeq_descr>  m_descriptors;
 

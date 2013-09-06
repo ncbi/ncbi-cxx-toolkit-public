@@ -345,7 +345,7 @@ CArgDescriptions* CMultiReader::InitAppArgs(CNcbiApplication& app)
 #endif
 
 
-CRef<CSerialObject> CMultiReader::ReadFile(const string& ifname)
+CRef<CSerialObject> CMultiReader::xReadFile(const string& ifname)
 {
     CNcbiIfstream istr(ifname.c_str());
     //CNcbiOfstream ostr(ofname);
@@ -365,16 +365,15 @@ CRef<CSerialObject> CMultiReader::ReadFile(const string& ifname)
         //                xProcessBed(args, istr, ostr);
         break;
     default:
-        result.Reset(xProcessDefault(m_context, istr));
+        result = xReadFasta(m_context, istr);
         break;
     }
     return result;
 }
 
 //  ----------------------------------------------------------------------------
-CRef<CSerialObject> CMultiReader::xProcessDefault(
-    const CTable2AsnContext& args,
-    CNcbiIstream& istr)
+CRef<CSerialObject> 
+CMultiReader::xReadFasta(const CTable2AsnContext& args, CNcbiIstream& instream)
     //  ----------------------------------------------------------------------------
 {
     if (!args.m_HandleAsSet)
@@ -395,12 +394,12 @@ CRef<CSerialObject> CMultiReader::xProcessDefault(
              |  CFastaReader::fAssumeNuc
              |  CFastaReader::fValidate;
 
-    auto_ptr<CReaderBase> pReader(new CFastaReader(0, m_iFlags));
+    auto_ptr<CFastaReader> pReader(new CFastaReader(0, m_iFlags));   
     if (!pReader.get()) {
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "File format not supported", 0);
     }
-    CRef<CSerialObject> result = pReader->ReadObject(istr, m_context.m_logger);
+    CRef<CSerialObject> result = ((CReaderBase*)pReader.get())->ReadObject(instream, m_context.m_logger);
 
     return result;
 }
@@ -537,7 +536,9 @@ void CMultiReader::WriteObject(
     if (m_pMapper.get()) {
         m_pMapper->MapObject(object);
     }
-    ostr << MSerial_AsnText << object;
+    ostr << MSerial_AsnText 
+         //<< MSerial_VerifyNo
+         << object;
     ostr.flush();
 }
 
@@ -971,7 +972,7 @@ CRef<CSeq_entry> CMultiReader::CreateNewSeqFromTemplate(const CTable2AsnContext&
 
 CRef<CSeq_entry> CMultiReader::LoadFile(const string& ifname)
 {
-    CRef<CSerialObject> obj = ReadFile(ifname);
+    CRef<CSerialObject> obj = xReadFile(ifname);
     CRef<CSeq_entry> read_entry(dynamic_cast<CSeq_entry*>(obj.GetPointerOrNull()));
     if (read_entry)
     {

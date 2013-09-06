@@ -27,7 +27,6 @@ public:
    CMultiReader(const CTable2AsnContext& context);
    ~CMultiReader();
 
-   CRef<CSerialObject> ReadFile(const string& ifname);
    CRef<objects::CSeq_entry> LoadFile(const string& ifname);
    void Cleanup(CRef<objects::CSeq_entry>);
    void WriteObject(CSerialObject&, ostream& );
@@ -39,10 +38,11 @@ public:
    void MergeDescriptors(objects::CSeq_descr & dest, const objects::CSeqdesc & source);
    void ApplyDescriptors(objects::CSeq_entry & obj, const objects::CSeq_descr & source);
 
-protected:
 
+protected:
 private:
-    CRef<CSerialObject> xProcessDefault(const CTable2AsnContext&, CNcbiIstream&);
+    CRef<CSerialObject> xReadFile(const string& ifname);
+    CRef<CSerialObject> xReadFasta(const CTable2AsnContext&, CNcbiIstream& instream);
     CRef<objects::CSeq_entry> CreateNewSeqFromTemplate(const CTable2AsnContext& context, objects::CBioseq& bioseq) const;
 #if 0
     void xProcessWiggle(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
@@ -64,7 +64,6 @@ private:
     void xSetMapper(const CTable2AsnContext&);
     void xSetErrorContainer(const CTable2AsnContext&);
 
-//    void xWriteObject(CSerialObject&, CNcbiOstream& );
 //    void xDumpErrors(CNcbiOstream& );
 
     CFormatGuess::EFormat m_uFormat;
