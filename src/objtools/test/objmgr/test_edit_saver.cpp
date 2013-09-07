@@ -418,7 +418,7 @@ static void s_RemoveAnnot(const CBioseq_Handle& handle)
 
 #define CHECK3(operation, count, message)    \
     if ( Get##operation##Calls() != count )         \
-        THROW( #operation" : wrong calls number. "message+\
+        THROW( #operation " : wrong calls number. " message+\
                NStr::IntToString(Get##operation##Calls())+" <> "+\
                NStr::IntToString(count))
 
