@@ -35,14 +35,14 @@
 #include <ncbiconf.h>
 
 #ifdef NCBI_OS_DARWIN
-# define PANFS_TRACES_PATH(num)  "/net/traces"num
-# define NETAPP_TRACES_PATH(num) "/net/traces"num
+# define PANFS_TRACES_PATH(num)  "/net/traces" num
+# define NETAPP_TRACES_PATH(num) "/net/traces" num
 #elif defined(NCBI_OS_MSWIN)
-# define PANFS_TRACES_PATH(num)  "//panfs/traces"num
-# define NETAPP_TRACES_PATH(num) "//traces"num
+# define PANFS_TRACES_PATH(num)  "//panfs/traces" num
+# define NETAPP_TRACES_PATH(num) "//traces" num
 #else
-# define PANFS_TRACES_PATH(num)  "/panfs/traces"num".be-md.ncbi.nlm.nih.gov"
-# define NETAPP_TRACES_PATH(num) "/netmnt/traces"num
+# define PANFS_TRACES_PATH(num)  "/panfs/traces" num ".be-md.ncbi.nlm.nih.gov"
+# define NETAPP_TRACES_PATH(num) "/netmnt/traces" num
 #endif
 
 #define NCBI_TRACES01_PATH PANFS_TRACES_PATH("01")
@@ -57,13 +57,13 @@
 #define NCBI_SRZ_VOL_PATH "sra8:srz0"
 
 #ifdef NCBI_OS_DARWIN
-# define NCBI_TEST_TRACES_PATH(num) "/netopt/toolkit_test_data/traces"num":/net/snowman/vol/projects/toolkit_test_data/traces"num
+# define NCBI_TEST_TRACES_PATH(num) "/netopt/toolkit_test_data/traces" num ":/net/snowman/vol/projects/toolkit_test_data/traces" num
 #elif defined(NCBI_OS_MSWIN)
-# define NCBI_TEST_TRACES_PATH(num) "//snowman/toolkit_test_data/traces"num
+# define NCBI_TEST_TRACES_PATH(num) "//snowman/toolkit_test_data/traces" num
 #else
-# define NCBI_TEST_TRACES_PATH(num) "/net/snowman/vol/projects/toolkit_test_data/traces"num
+# define NCBI_TEST_TRACES_PATH(num) "/net/snowman/vol/projects/toolkit_test_data/traces" num
 #endif
 
-#define NCBI_TEST_BAM_FILE_PATH NCBI_TEST_TRACES_PATH("02")":"NCBI_TEST_TRACES_PATH("04")
+#define NCBI_TEST_BAM_FILE_PATH NCBI_TEST_TRACES_PATH("02") ":" NCBI_TEST_TRACES_PATH("04")
 
 #endif // SRA__READER__NCBI_TRACES_PATH__HPP
