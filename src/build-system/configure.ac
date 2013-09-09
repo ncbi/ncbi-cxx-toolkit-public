@@ -1048,7 +1048,7 @@ case "$host_os:$compiler" in
 esac
 
 case "$compiler:$compiler_version" in
-   GCC:4[[0-4]]? | ICC:10?? )
+   GCC:4[[0-4]]? | ICC:1[[01]]?? )
      ncbi_cv_prog_cxx_11=no
      ncbi_cv_prog_c_99=no
      ;;
