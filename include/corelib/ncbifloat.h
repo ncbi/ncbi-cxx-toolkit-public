@@ -60,7 +60,8 @@ extern "C" {
 #   endif
 #endif
 
-#ifdef NCBI_HAVE_CXX11
+#if defined(NCBI_HAVE_CXX11)  && \
+    (!defined(__GLIBCXX__)  ||  defined(_GLIBCXX_USE_C99_MATH))
 // Kludge to avoid formal ambiguity in C++ '11 between ::isnan, which
 // returns int, and std::isnan, which returns bool.
 #  include <cmath>
