@@ -253,6 +253,8 @@ void CValidError_imp::Reset(void)
     m_NumTpaWithoutHistory = 0;
     m_NumPseudo = 0;
     m_NumPseudogene = 0;
+    m_FirstTaxID = 0;
+    m_MultTaxIDs = false;
     m_FarFetchFailure = false;
     m_IsTbl2Asn = false;
 }
