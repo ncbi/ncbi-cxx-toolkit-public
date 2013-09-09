@@ -1889,7 +1889,7 @@ void CFeature_table_reader_imp::x_CreateGenesFromCDSs(
             set<SFeatAndLineNum> locusTagGeneMatches;
             if( ! RAW_FIELD_IS_EMPTY_OR_UNSET(*pGeneXrefOnCDS, Locus_tag) ) {
                 TStrToGeneEqualRange locus_tag_equal_range =
-                    locusTagToGeneAndLineMap.equal_range(pGeneXrefOnCDS->GetLocus());
+                    locusTagToGeneAndLineMap.equal_range(pGeneXrefOnCDS->GetLocus_tag());
                 for( TStrToGeneCI locus_tag_gene_ci = locus_tag_equal_range.first;
                      locus_tag_gene_ci != locus_tag_equal_range.second;
                      ++locus_tag_gene_ci )
