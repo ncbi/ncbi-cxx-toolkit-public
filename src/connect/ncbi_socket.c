@@ -7798,12 +7798,10 @@ extern int SOCK_ntoa(unsigned int host,
                      char*        buf,
                      size_t       bufsize)
 {
-    const unsigned char* b = (const unsigned char*) &host;
-    char x_buf[16/*sizeof("255.255.255.255")*/];
-    int len;
-
     if (buf  &&  bufsize) {
-        len = sprintf(x_buf, "%u.%u.%u.%u", b[0], b[1], b[2], b[3]);
+        char x_buf[16/*sizeof("255.255.255.255")*/];
+        const unsigned char* b = (const unsigned char*) &host;
+        int len = sprintf(x_buf, "%u.%u.%u.%u", b[0], b[1], b[2], b[3]);
         assert(0 < len  &&  (size_t) len < sizeof(x_buf));
         if ((size_t) len < bufsize) {
             memcpy(buf, x_buf, len + 1);
@@ -7815,37 +7813,40 @@ extern int SOCK_ntoa(unsigned int host,
 }
 
 
-extern int/*bool*/ SOCK_isip(const char* host)
+extern int/*bool*/ SOCK_isip(const char* str)
 {
-    return SOCK_isipEx(host, 0/*nofullquad*/);
+    return SOCK_isipEx(str, 0/*nofullquad*/);
 }
 
 
-extern int/*bool*/ SOCK_isipEx(const char* host, int/*bool*/ fullquad)
+extern int/*bool*/ SOCK_isipEx(const char* str, int/*bool*/ fullquad)
 {
-    const char* c = host;
     unsigned long val;
-    int dots = 0;
+    int dots;
 
+    if (!str)
+        return 0/*false*/;
+
+    dots = 0;
     for (;;) {
         char* e;
-        if (!isdigit((unsigned char)(*c)))
+        if (!isdigit((unsigned char)(*str)))
             return 0/*false*/;
         errno = 0;
-        val = strtoul(c, &e, fullquad ? 10 : 0);
-        if (errno  ||  c == e)
+        val = strtoul(str, &e, fullquad ? 10 : 0);
+        if (errno  ||  str == e)
             return 0/*false*/;
-        c = e;
-        if (*c != '.')
+        str = e;
+        if (*str != '.')
             break;
         if (++dots > 3)
             return 0/*false*/;
         if (val > 255)
             return 0/*false*/;
-        c++;
+        ++str;
     }
 
-    return !*c  &&
+    return !*str  &&
         (!fullquad  ||  dots == 3)  &&  val <= (0xFFFFFFFFUL >> (dots << 3));
 }
 
@@ -7890,23 +7891,23 @@ extern unsigned short SOCK_htons(unsigned short value)
 }
 
 
-extern int SOCK_gethostnameEx(char* name, size_t namelen, ESwitch log)
+extern int SOCK_gethostnameEx(char* buf, size_t bufsize, ESwitch log)
 {
-    assert(name  &&  namelen > 0);
+    assert(buf  &&  bufsize > 0);
 
     /* initialize internals */
     if (s_InitAPI(0) != eIO_Success) {
-        name[0] = name[namelen - 1] = 0;
+        buf[0] = buf[bufsize - 1] = 0;
         return -1/*failure*/;
     }
 
-    return s_gethostname(name, namelen, log);
+    return s_gethostname(buf, bufsize, log);
 }
 
 
-extern int SOCK_gethostname(char* name, size_t namelen)
+extern int SOCK_gethostname(char* buf, size_t bufsize)
 {
-    return SOCK_gethostnameEx(name, namelen, s_Log);
+    return SOCK_gethostnameEx(buf, bufsize, s_Log);
 }
 
 
@@ -7927,27 +7928,27 @@ extern unsigned int SOCK_gethostbyname(const char* hostname)
 
 
 extern const char* SOCK_gethostbyaddrEx(unsigned int host,
-                                        char*        name,
-                                        size_t       namelen,
+                                        char*        buf,
+                                        size_t       bufsize,
                                         ESwitch      log)
 {
-    assert(name  &&  namelen > 0);
+    assert(buf  &&  bufsize > 0);
 
     /* initialize internals */
     if (s_InitAPI(0) != eIO_Success) {
-        name[0] = '\0';
+        buf[0] = '\0';
         return 0;
     }
 
-    return s_gethostbyaddr(host, name, namelen, log);
+    return s_gethostbyaddr(host, buf, bufsize, log);
 }
 
 
 extern const char* SOCK_gethostbyaddr(unsigned int host,
-                                      char*        name,
-                                      size_t       namelen)
+                                      char*        buf,
+                                      size_t       bufsize)
 {
-    return SOCK_gethostbyaddrEx(host, name, namelen, s_Log);
+    return SOCK_gethostbyaddrEx(host, buf, bufsize, s_Log);
 }
 
 
