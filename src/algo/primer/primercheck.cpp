@@ -67,44 +67,39 @@ static const double k_MinOverlapLenFactor = 0.45;
 static const double k_Min_Percent_Identity = 0.64999;
 static const int k_MaxReliableGapNum = 3;
 
-COligoSpecificityCheck::COligoSpecificityCheck(const CBioseq_Handle& template_handle,
+COligoSpecificityTemplate::COligoSpecificityTemplate(const CBioseq_Handle& template_handle,
                                                const CSeq_align_set& input_seqalign,
-                                               CScope& scope,
+                                               CScope &scope,
                                                int word_size,
                                                TSeqPos allowed_total_mismatch,
                                                TSeqPos allowed_3end_mismatch,
                                                TSeqPos max_mismatch,
                                                bool allow_transcript_variants)
     : m_TemplateHandle(template_handle),
-      m_Hit(&input_seqalign),
-      m_Scope(&scope),
+      m_Id(template_handle.GetSeqId()),
       m_WordSize(word_size),
       m_AllowedTotalMismatch(allowed_total_mismatch),
       m_Allowed3EndMismatch(allowed_3end_mismatch),
       m_MaxMismatch(max_mismatch),
-      m_AllowTranscriptVariants(allow_transcript_variants)
+      m_AllowTranscriptVariants(allow_transcript_variants),
+      m_UseITree(false),
+      m_MismatchRegionLength3End(10),
+      m_MaxHSPSize(0),
+      m_NumNonSpecificTarget(20)
 {
-    m_UseITree = false;
-    m_MismatchRegionLength3End = 10;
-    m_MaxHSPSize = 0;
-
-    x_SortHit();
-    m_SlaveRangeCache.resize(m_SortHit.size());
+    x_SortHit(input_seqalign);
     if(!input_seqalign.Get().empty()){
         m_TemplateRange.Set(0,
                             scope.GetBioseqHandle(input_seqalign.Get().front()
                                                   ->GetSeq_id(0)).GetBioseqLength());
     }
-    m_NumNonSpecificTarget = 20;
-    m_FeatureScope = NULL;
     const CRef<CSeq_id> wid
         = FindBestChoice(template_handle.GetBioseqCore()->GetId(),
                          CSeq_id::WorstRank);
     m_TemplateType = wid->IdentifyAccession();
-    
 }
 
-COligoSpecificityCheck::~COligoSpecificityCheck()
+COligoSpecificityTemplate::~COligoSpecificityTemplate()
 {
     for (TSeqPos i = 0; i < m_SortHit.size(); i ++) {
         for (TSeqPos j = 0; j < m_SortHit[i].first.size(); j ++) {
@@ -123,14 +118,33 @@ COligoSpecificityCheck::~COligoSpecificityCheck()
         delete m_RangeTreeListMinusStrand[i];
     };
     
-    if (m_MaxHSPSize > 0) {
+}
+   
+COligoSpecificityCheck::COligoSpecificityCheck(const COligoSpecificityTemplate* hits,
+                                               CScope & scope)
+    : m_Hits(hits),
+      m_Scope(&scope),
+      m_FeatureScope(NULL)
+{
+    m_SlaveRangeCache.resize(m_Hits->m_SortHit.size());
+    if (m_Hits->m_MaxHSPSize > 0) {
+        m_HspOverlappingWithLeftPrimer = new SHspIndexInfo[m_Hits->m_MaxHSPSize];
+        m_HspOverlappingWithRightPrimer = new SHspIndexInfo[m_Hits->m_MaxHSPSize];
+        m_HspOverlappingWithLeftPrimerMinusStrand = new SHspIndexInfo[m_Hits->m_MaxHSPSize];
+        m_HspOverlappingWithRightPrimerMinusStrand = new SHspIndexInfo[m_Hits->m_MaxHSPSize];
+    }
+}
+
+COligoSpecificityCheck::~COligoSpecificityCheck()
+{
+    if (m_Hits->m_MaxHSPSize > 0) {
         delete [] m_HspOverlappingWithLeftPrimer;
         delete []  m_HspOverlappingWithRightPrimer;
         delete []  m_HspOverlappingWithLeftPrimerMinusStrand;
         delete []  m_HspOverlappingWithRightPrimerMinusStrand;
-    }
+    };
 }
-   
+
 static void s_CountGaps(const string& xcript, 
                         TSeqPos& master_start_gap,
                         TSeqPos& master_end_gap,
@@ -215,22 +229,22 @@ void COligoSpecificityCheck::x_FindMatchInfoForAlignment(CDense_seg& primer_dens
         
         if (master_string[i] == gap_char) {
             if (is_left_primer) {
-                if (num_bp > (int)(master_letter_len - m_MismatchRegionLength3End)){
+                if (num_bp > (int)(master_letter_len - m_Hits->m_MismatchRegionLength3End)){
                     num_3end_gap ++;
                 }
             } else {
-                if (num_bp < (int)(m_MismatchRegionLength3End - 1)){
+                if (num_bp < (int)(m_Hits->m_MismatchRegionLength3End - 1)){
                     num_3end_gap ++;
                 } 
             }
             num_total_gap ++;
         } else if (slave_string[i] == gap_char) {
             if (is_left_primer) {
-                if (num_bp > (int)(master_letter_len - m_MismatchRegionLength3End)){
+                if (num_bp > (int)(master_letter_len - m_Hits->m_MismatchRegionLength3End)){
                     num_3end_gap ++;
                 }
             } else {
-                if (num_bp < (int)(m_MismatchRegionLength3End - 1)){
+                if (num_bp < (int)(m_Hits->m_MismatchRegionLength3End - 1)){
                     num_3end_gap ++; 
                 }
             }
@@ -238,11 +252,11 @@ void COligoSpecificityCheck::x_FindMatchInfoForAlignment(CDense_seg& primer_dens
             num_total_gap ++;
         } else if(master_string[i]!=slave_string[i]){
             if (is_left_primer) {
-                if (num_bp >= (int)(master_letter_len - m_MismatchRegionLength3End)){
+                if (num_bp >= (int)(master_letter_len - m_Hits->m_MismatchRegionLength3End)){
                     num_3end_mismatch ++;
                 }
             } else {
-                if (num_bp < (int)m_MismatchRegionLength3End){
+                if (num_bp < (int)m_Hits->m_MismatchRegionLength3End){
                     num_3end_mismatch ++;
                 }
             }
@@ -580,11 +594,11 @@ CRef<CDense_seg> COligoSpecificityCheck::x_NW_alignment(const CRange<TSeqPos>& d
                  
              case 'R':
                  if (is_left_primer) {
-                     if (num_bp >= (int)(master_letter_len - m_MismatchRegionLength3End)){
+                     if (num_bp >= (int)(master_letter_len - m_Hits->m_MismatchRegionLength3End)){
                          mismatch_3end ++;
                      }
                  } else {
-                     if (num_bp < (int)m_MismatchRegionLength3End){
+                     if (num_bp < (int)m_Hits->m_MismatchRegionLength3End){
                          mismatch_3end ++;
                      }
                  }
@@ -595,11 +609,11 @@ CRef<CDense_seg> COligoSpecificityCheck::x_NW_alignment(const CRange<TSeqPos>& d
                  
              case 'M': 
                  if (is_left_primer) {
-                     if (num_bp >=(int)(master_letter_len - m_MismatchRegionLength3End)){
+                     if (num_bp >=(int)(master_letter_len - m_Hits->m_MismatchRegionLength3End)){
                          match ++;
                      }
                  } else {
-                     if (num_bp < (int)m_MismatchRegionLength3End){
+                     if (num_bp < (int)m_Hits->m_MismatchRegionLength3End){
                          match ++;
                      }
                  }
@@ -612,11 +626,11 @@ CRef<CDense_seg> COligoSpecificityCheck::x_NW_alignment(const CRange<TSeqPos>& d
                  
              case 'I':
                  if (is_left_primer) {
-                     if (num_bp > (int)(master_letter_len - m_MismatchRegionLength3End)){
+                     if (num_bp > (int)(master_letter_len - m_Hits->m_MismatchRegionLength3End)){
                          insertion_3end ++; 
                      }
                  } else {
-                     if (num_bp < (int)(m_MismatchRegionLength3End - 1)){
+                     if (num_bp < (int)(m_Hits->m_MismatchRegionLength3End - 1)){
                          insertion_3end ++; 
                      }
                  }
@@ -627,11 +641,11 @@ CRef<CDense_seg> COligoSpecificityCheck::x_NW_alignment(const CRange<TSeqPos>& d
                  
              case 'D':
                  if (is_left_primer) {
-                     if (num_bp > (int)(master_letter_len - m_MismatchRegionLength3End)){
+                     if (num_bp > (int)(master_letter_len - m_Hits->m_MismatchRegionLength3End)){
                          deletion_3end ++; 
                      }
                  } else {
-                     if (num_bp < (int)(m_MismatchRegionLength3End - 1)){
+                     if (num_bp < (int)(m_Hits->m_MismatchRegionLength3End - 1)){
                          deletion_3end ++; 
                      }
                  }
@@ -736,11 +750,11 @@ x_FillGlobalAlignInfo(const CRange<TSeqPos>& desired_align_range,
                 
                 if (!do_global_alignment) {
                     double percent_ident = 1 - ((double)(num_total_mismatch + num_total_gap))/aln_range.GetLength();
-                    if (max_num_continuous_match >= m_WordSize && 
+                    if (max_num_continuous_match >= m_Hits->m_WordSize && 
                         percent_ident > k_Min_Percent_Identity && 
-                        num_total_mismatch + num_total_gap < m_MaxMismatch &&
-                        (num_total_mismatch + num_total_gap <= m_AllowedTotalMismatch || 
-                         num_3end_mismatch + num_3end_gap <= m_Allowed3EndMismatch)) {
+                        num_total_mismatch + num_total_gap < m_Hits->m_MaxMismatch &&
+                        (num_total_mismatch + num_total_gap <= m_Hits->m_AllowedTotalMismatch || 
+                         num_3end_mismatch + num_3end_gap <= m_Hits->m_Allowed3EndMismatch)) {
                         CRef<CSeq_align> aln_ref(new CSeq_align());
                         aln_ref->SetType(CSeq_align::eType_partial);
                         
@@ -787,11 +801,11 @@ x_FillGlobalAlignInfo(const CRange<TSeqPos>& desired_align_range,
                 } else {
                     percent_ident = 1 - ((double)(num_total_mismatch + num_total_gap))/align_length;
                 }
-                if (max_num_continuous_match >= m_WordSize &&
+                if (max_num_continuous_match >= m_Hits->m_WordSize &&
                     percent_ident > k_Min_Percent_Identity && 
-                    num_total_mismatch + num_total_gap < m_MaxMismatch &&
-                    (num_total_mismatch + num_total_gap <= m_AllowedTotalMismatch || 
-                     num_3end_mismatch + num_3end_gap <= m_Allowed3EndMismatch)) {
+                    num_total_mismatch + num_total_gap < m_Hits->m_MaxMismatch &&
+                    (num_total_mismatch + num_total_gap <= m_Hits->m_AllowedTotalMismatch || 
+                     num_3end_mismatch + num_3end_gap <= m_Hits->m_Allowed3EndMismatch)) {
                     
                     CRef<CSeq_align> aln_ref(new CSeq_align());
                     aln_ref->SetType(CSeq_align::eType_partial);
@@ -843,11 +857,11 @@ bool COligoSpecificityCheck::x_SequencesMappedToSameTarget(CSeq_id::EAccessionIn
     CRef<CSeq_loc> component_loc (0);
     //try backbone and component on template or hit as we don't know which is which
     //at least hit or template needs to be chr or contig
-    if ((m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_chromosome) {
+    if ((m_Hits->m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_chromosome) {
         //template as backbone
-        backbone_loc = new CSeq_loc((CSeq_loc::TId &) *(m_TemplateHandle.GetSeqId()),
-                                    (CSeq_loc::TPoint) m_TemplateRange.GetFrom(),
-                                    (CSeq_loc::TPoint) m_TemplateRange.GetTo()); 
+        backbone_loc = new CSeq_loc((CSeq_loc::TId &) *(m_Hits->m_Id),
+                                    (CSeq_loc::TPoint) m_Hits->m_TemplateRange.GetFrom(),
+                                    (CSeq_loc::TPoint) m_Hits->m_TemplateRange.GetTo()); 
         component_loc = new CSeq_loc((CSeq_loc::TId &) left_align.GetSeq_id(1),
                                      (CSeq_loc::TPoint) min(left_align.GetSeqRange(1).GetFrom(), 
                                                             right_align.GetSeqRange(1).GetFrom()),
@@ -860,9 +874,9 @@ bool COligoSpecificityCheck::x_SequencesMappedToSameTarget(CSeq_id::EAccessionIn
                                                             right_align.GetSeqRange(1).GetFrom()),
                                      (CSeq_loc::TPoint) max(left_align.GetSeqRange(1).GetTo(), 
                                                             right_align.GetSeqRange(1).GetTo())); 
-        component_loc = new CSeq_loc((CSeq_loc::TId &) *(m_TemplateHandle.GetSeqId()),
-                                     (CSeq_loc::TPoint) m_TemplateRange.GetFrom(),
-                                     (CSeq_loc::TPoint) m_TemplateRange.GetTo()); 
+        component_loc = new CSeq_loc((CSeq_loc::TId &) *(m_Hits->m_Id),
+                                     (CSeq_loc::TPoint) m_Hits->m_TemplateRange.GetFrom(),
+                                     (CSeq_loc::TPoint) m_Hits->m_TemplateRange.GetTo()); 
         
 
     } else if ((hit_type & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_con) {
@@ -872,16 +886,16 @@ bool COligoSpecificityCheck::x_SequencesMappedToSameTarget(CSeq_id::EAccessionIn
                                                             right_align.GetSeqRange(1).GetFrom()),
                                      (CSeq_loc::TPoint) max(left_align.GetSeqRange(1).GetTo(), 
                                                             right_align.GetSeqRange(1).GetTo())); 
-        component_loc = new CSeq_loc((CSeq_loc::TId &) *(m_TemplateHandle.GetSeqId()),
-                                     (CSeq_loc::TPoint) m_TemplateRange.GetFrom(),
-                                     (CSeq_loc::TPoint) m_TemplateRange.GetTo()); 
+        component_loc = new CSeq_loc((CSeq_loc::TId &) *(m_Hits->m_Id),
+                                     (CSeq_loc::TPoint) m_Hits->m_TemplateRange.GetFrom(),
+                                     (CSeq_loc::TPoint) m_Hits->m_TemplateRange.GetTo()); 
         
         
-    } else if ((m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_con) {
+    } else if ((m_Hits->m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_con) {
         //template as backbone
-        backbone_loc = new CSeq_loc((CSeq_loc::TId &) *(m_TemplateHandle.GetSeqId()),
-                                    (CSeq_loc::TPoint) m_TemplateRange.GetFrom(),
-                                    (CSeq_loc::TPoint) m_TemplateRange.GetTo()); 
+        backbone_loc = new CSeq_loc((CSeq_loc::TId &) *(m_Hits->m_Id),
+                                    (CSeq_loc::TPoint) m_Hits->m_TemplateRange.GetFrom(),
+                                    (CSeq_loc::TPoint) m_Hits->m_TemplateRange.GetTo()); 
         component_loc = new CSeq_loc((CSeq_loc::TId &) left_align.GetSeq_id(1),
                                      (CSeq_loc::TPoint) min(left_align.GetSeqRange(1).GetFrom(), 
                                                             right_align.GetSeqRange(1).GetFrom()),
@@ -973,9 +987,9 @@ void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
     //    cout << "master_gi = " << master_gi  << endl;
     //   cout << "subj_gi = " << subj_gi  << endl;
     
-    bool left_template_aln_overlap = m_TemplateRange.IntersectingWith(left_align.GetSeqRange(1));
-    bool right_template_aln_overlap = m_TemplateRange.IntersectingWith(right_align.GetSeqRange(1));
-    bool template_hit_same_id = ContainsId(m_TemplateHandle,
+    bool left_template_aln_overlap = m_Hits->m_TemplateRange.IntersectingWith(left_align.GetSeqRange(1));
+    bool right_template_aln_overlap = m_Hits->m_TemplateRange.IntersectingWith(right_align.GetSeqRange(1));
+    bool template_hit_same_id = ContainsId(m_Hits->m_TemplateHandle,
                                            CSeq_id_Handle::
                                            GetHandle(left_align.GetSeq_id(1)));
 
@@ -988,17 +1002,17 @@ void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
     if (template_hit_same_id && left_template_aln_overlap && right_template_aln_overlap) {
         
         m_SelfHit[m_CurrentPrimerIndex].push_back(info);
-    } else if (m_TemplateHandle.GetSeqId()->Which() != CSeq_id::e_Local && 
-               ((m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_chromosome ||
-                (m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_htgs ||
-                (m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_con || 
-                (m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_wgs ||
-                m_TemplateType == CSeq_id::eAcc_refseq_genomic) &&
+    } else if (m_Hits->m_Id->Which() != CSeq_id::e_Local && 
+               ((m_Hits->m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_chromosome ||
+                (m_Hits->m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_htgs ||
+                (m_Hits->m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_con || 
+                (m_Hits->m_TemplateType & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_wgs ||
+                m_Hits->m_TemplateType == CSeq_id::eAcc_refseq_genomic) &&
                ((hit_type & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_chromosome ||
                 (hit_type & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_htgs ||
                 (hit_type & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_con || 
                 (hit_type & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_wgs) &&
-               hit_type != m_TemplateType &&
+               hit_type != m_Hits->m_TemplateType &&
                !template_hit_same_id &&
                x_SequencesMappedToSameTarget(hit_type, left_align, right_align)) {
         //try mapping the template
@@ -1007,7 +1021,7 @@ void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
     } else {
         bool hit_assigned = false;
         //allowed hits
-        ITERATE(vector<TSeqPos>, iter, m_AllowedSeqidIndex) {
+        ITERATE(vector<TSeqPos>, iter, m_Hits->m_AllowedSeqidIndex) {
             if (index == *iter) {
                 m_AllowedHit[m_CurrentPrimerIndex].push_back(info);
                 hit_assigned  = true;
@@ -1017,7 +1031,7 @@ void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
         
         //transcript variants
         
-        if (m_AllowTranscriptVariants && !hit_assigned && master_gi != ZERO_GI && subj_gi != ZERO_GI) {
+        if (m_Hits->m_AllowTranscriptVariants && !hit_assigned && master_gi != ZERO_GI && subj_gi != ZERO_GI) {
             IGeneInfoInput::TGeneIdList master_gene_id_list;
             IGeneInfoInput::TGeneIdList subj_gene_id_list;
             if (m_FileReader.GetGeneIdsForGi(GI_TO(int, master_gi), master_gene_id_list) 
@@ -1047,8 +1061,8 @@ void COligoSpecificityCheck::x_SavePrimerInfo(CSeq_align& left_align,
 }
 
 static bool 
-SortHspByMasterStartAscending(const COligoSpecificityCheck::SHspInfo* info1,
-                              const COligoSpecificityCheck::SHspInfo* info2) 
+SortHspByMasterStartAscending(const SHspInfo* info1,
+                              const SHspInfo* info2) 
 {
     int start1 = 0, start2  = 0;
    
@@ -1083,7 +1097,7 @@ x_FindOverlappingHSP(SHspIndexInfo* left_window_index_list,
                      const vector<SHspInfo*>& hsp_list) {
     left_window_index_list_size = 0;
     right_window_index_list_size = 0;
-    if (m_UseITree) {
+    if (m_Hits->m_UseITree) {
 
         CRange<int> left_window_desired_range_int;
         
@@ -1096,16 +1110,16 @@ x_FindOverlappingHSP(SHspIndexInfo* left_window_index_list,
         CIntervalTree::const_iterator left_window_tree_it;
         CIntervalTree::const_iterator right_window_tree_it;
         if (hit_strand == eNa_strand_minus) {
-            left_window_tree_it = m_RangeTreeListMinusStrand[hit_index]->IntervalsOverlapping(left_window_desired_range_int);
-            right_window_tree_it = m_RangeTreeListMinusStrand[hit_index]->IntervalsOverlapping(right_window_desired_range_int);
+            left_window_tree_it = m_Hits->m_RangeTreeListMinusStrand[hit_index]->IntervalsOverlapping(left_window_desired_range_int);
+            right_window_tree_it = m_Hits->m_RangeTreeListMinusStrand[hit_index]->IntervalsOverlapping(right_window_desired_range_int);
             
         } else {
-            left_window_tree_it = m_RangeTreeListPlusStrand[hit_index]->IntervalsOverlapping(left_window_desired_range_int); 
-            right_window_tree_it = m_RangeTreeListPlusStrand[hit_index]->IntervalsOverlapping(right_window_desired_range_int); 
+            left_window_tree_it = m_Hits->m_RangeTreeListPlusStrand[hit_index]->IntervalsOverlapping(left_window_desired_range_int); 
+            right_window_tree_it = m_Hits->m_RangeTreeListPlusStrand[hit_index]->IntervalsOverlapping(right_window_desired_range_int); 
         }
         
         for (; left_window_tree_it; ++ left_window_tree_it) {
-            CConstRef<Hsp_index>  temp (static_cast<const Hsp_index*> (&*left_window_tree_it.GetValue()));
+            CConstRef<SHspIndex>  temp (static_cast<const SHspIndex*> (&*left_window_tree_it.GetValue()));
             if (hsp_list[temp->index]->master_range.IntersectionWith(left_window_desired_range).GetLength() >= 
                 k_MinOverlapLenFactor*left_window_desired_range.GetLength()) {
                 left_window_index_list[left_window_index_list_size].index = temp->index;
@@ -1114,7 +1128,7 @@ x_FindOverlappingHSP(SHspIndexInfo* left_window_index_list,
             }
         }
         for (; right_window_tree_it; ++ right_window_tree_it) {
-            CConstRef<Hsp_index>  temp (static_cast<const Hsp_index*> (&*right_window_tree_it.GetValue()));
+            CConstRef<SHspIndex>  temp (static_cast<const SHspIndex*> (&*right_window_tree_it.GetValue()));
             if (hsp_list[temp->index]->master_range.IntersectionWith(right_window_desired_range).GetLength() >= 
                 k_MinOverlapLenFactor*right_window_desired_range.GetLength()) {
                 right_window_index_list[right_window_index_list_size].index = temp->index;
@@ -1160,7 +1174,7 @@ x_FindOverlappingHSP(SHspIndexInfo* left_window_index_list,
         
 }
 
-void COligoSpecificityCheck::x_AnalyzeTwoPrimers(TSortedHsp& sorted_hsp,
+void COligoSpecificityCheck::x_AnalyzeTwoPrimers(const TSortedHsp& sorted_hsp,
                                                  TSeqPos hit_index) 
 {
     //our primer input uses locations on the same strand notation so a valid pcr product
@@ -1318,7 +1332,7 @@ x_AnalyzeLeftAndRightPrimer(const vector<SHspInfo*>& hsp_list,
         if (hit_strand == eNa_strand_minus) {
             left_primer_hsp_index = m_HspOverlappingWithLeftPrimerMinusStrand[i].index; 
         }
-        if ((int)(m_PrimerHit[m_CurrentPrimerIndex].size()) >= m_NumNonSpecificTarget){
+        if ((int)(m_PrimerHit[m_CurrentPrimerIndex].size()) >= m_Hits->m_NumNonSpecificTarget){
             break;
         }
         CRange<TSeqPos> left_primer_master_overlap = 
@@ -1380,9 +1394,9 @@ x_AnalyzeLeftAndRightPrimer(const vector<SHspInfo*>& hsp_list,
            
             if (product_len > 0 && 
                 product_len <= 
-                (int)(m_SpecifiedProductLen + m_ProductLenMargin) && 
+                (int)(m_SpecifiedProductLen + m_Hits->m_ProductLenMargin) && 
                 (int)product_len >= 
-                (int)m_SpecifiedProductLen - (int)m_ProductLenMargin){
+                (int)m_SpecifiedProductLen - (int)(m_Hits->m_ProductLenMargin)){
              
                 if (!left_global_align_filled) {
                     
@@ -1466,8 +1480,8 @@ x_IsPcrLengthInRange(const CSeq_align& left_primer_hit_align,
                 
     if (product_len >= min((int)left_primer_hit_align.GetSeqRange(0).GetLength(),
                            (int)right_primer_hit_align.GetSeqRange(0).GetLength()) && 
-        product_len <= (int)(m_SpecifiedProductLen + m_ProductLenMargin) && 
-        (int)product_len >= (int)m_SpecifiedProductLen - (int)m_ProductLenMargin) { 
+        product_len <= (int)(m_SpecifiedProductLen + m_Hits->m_ProductLenMargin) && 
+        (int)product_len >= (int)m_SpecifiedProductLen - (int)(m_Hits->m_ProductLenMargin)) { 
         result = true;
     }
 
@@ -1502,7 +1516,7 @@ x_AnalyzeOnePrimer(const vector<SHspInfo*>& plus_strand_hsp_list,
     for (int i = 0; i < HspOverlappingWithLeftPrimer_size; i ++) {
        
         int left_hsp_index = m_HspOverlappingWithLeftPrimer[i].index;
-        if ((int)(m_PrimerHit[m_CurrentPrimerIndex].size()) >= m_NumNonSpecificTarget){
+        if ((int)(m_PrimerHit[m_CurrentPrimerIndex].size()) >= m_Hits->m_NumNonSpecificTarget){
             break;
         }
         
@@ -1550,9 +1564,9 @@ x_AnalyzeOnePrimer(const vector<SHspInfo*>& plus_strand_hsp_list,
             
             if (!(product_len > 0 && 
                   product_len <= 
-                  (int)(m_SpecifiedProductLen + m_ProductLenMargin) && 
+                  (int)(m_SpecifiedProductLen + m_Hits->m_ProductLenMargin) && 
                   (int)product_len >= 
-                  (int)m_SpecifiedProductLen - (int)m_ProductLenMargin)) {
+                  (int)m_SpecifiedProductLen - (int)(m_Hits->m_ProductLenMargin))) {
                 continue;
             }
            
@@ -1636,7 +1650,7 @@ x_AnalyzeOnePrimer(const vector<SHspInfo*>& plus_strand_hsp_list,
 
     for (int i = 0; i < HspOverlappingWithRightPrimer_size; i ++) {
         int left_hsp_index = m_HspOverlappingWithRightPrimer[i].index;
-        if ((int)(m_PrimerHit[m_CurrentPrimerIndex].size()) >= m_NumNonSpecificTarget){
+        if ((int)(m_PrimerHit[m_CurrentPrimerIndex].size()) >= m_Hits->m_NumNonSpecificTarget){
             break;
         }
        
@@ -1696,9 +1710,9 @@ x_AnalyzeOnePrimer(const vector<SHspInfo*>& plus_strand_hsp_list,
             
             if (!(product_len > 0 && 
                   product_len <= 
-                  (int)(m_SpecifiedProductLen + m_ProductLenMargin) && 
+                  (int)(m_SpecifiedProductLen + m_Hits->m_ProductLenMargin) && 
                   (int)product_len >= 
-                  (int)m_SpecifiedProductLen - (int)m_ProductLenMargin)) {
+                  (int)m_SpecifiedProductLen - (int)(m_Hits->m_ProductLenMargin))) {
                 continue;
             }
           
@@ -1773,15 +1787,15 @@ x_AnalyzeOnePrimer(const vector<SHspInfo*>& plus_strand_hsp_list,
 void COligoSpecificityCheck::x_AnalyzePrimerSpecificity()
 {   
        
-    for (TSeqPos i = 0; i < m_SortHit.size(); i ++) {
+    for (TSeqPos i = 0; i < m_Hits->m_SortHit.size(); i ++) {
      
-        for (int j = 0; j < (int)m_PrimerInfoList->size(); j ++) {
+        for (int j = 0; j < (int)m_PrimerInfoList.size(); j ++) {
            
             m_CurrentPrimerIndex = j;
             
-            m_PrimerInfo = &((*m_PrimerInfoList)[j]);
+            m_PrimerInfo = m_PrimerInfoList[j];
             m_SpecifiedProductLen = m_PrimerInfo->right.GetTo() - m_PrimerInfo->left.GetFrom() + 1;
-            x_AnalyzeTwoPrimers(m_SortHit[i], i);
+            x_AnalyzeTwoPrimers((m_Hits->m_SortHit[i]), i);
             
         }
     }
@@ -1881,62 +1895,36 @@ void COligoSpecificityCheck::x_SortPrimerHit(vector<vector<SPrimerHitInfo> >& pr
     }
 }
 
-void COligoSpecificityCheck::CheckSpecificity(const vector<SPrimerInfo>& primer_info_list)
+void COligoSpecificityCheck::CheckSpecificity(const vector<SPrimerInfo>& primer_info_list, 
+                                              int from, int to)
 {
-    //clear before processing each batch
-    if(m_PrimerHit.size() > 0){
-        for (int i = 0; i < (int) m_PrimerHit.size(); i ++) {
-            m_PrimerHit[i].clear();
-        }
-        m_PrimerHit.clear();
-    }
-    if(m_SelfHit.size() > 0){
-        for (int i = 0; i < (int) m_SelfHit.size(); i ++) {
-            m_SelfHit[i].clear();
-        }
-        m_SelfHit.clear();
-    }
-    if(m_VariantHit.size() > 0){
-        for (int i = 0; i < (int) m_VariantHit.size(); i ++) {
-            m_VariantHit[i].clear();
-        }
-        m_VariantHit.clear();
-    }
-    if(m_AllowedHit.size() > 0){
-        for (int i = 0; i < (int) m_AllowedHit.size(); i ++) {
-            m_AllowedHit[i].clear();
-        }
-        m_AllowedHit.clear();
-    }
-    
-
-  
-    m_PrimerInfoList = &primer_info_list;
-    for (int i = 0; i < (int) m_PrimerInfoList->size(); i ++) {
+    int end = primer_info_list.size(); 
+    if (from >= end) return;
+    if (to > end || to < 0) to = end;
+    for (int i=from; i<to; ++i) {
+        m_PrimerInfoList.push_back(&(primer_info_list[i]));
         vector<SPrimerHitInfo> temp;
         m_PrimerHit.push_back(temp);
         m_SelfHit.push_back(temp);
         m_VariantHit.push_back(temp);
         m_AllowedHit.push_back(temp);
-
     }
    
     x_AnalyzePrimerSpecificity();
     x_SortPrimerHit(m_PrimerHit);
-
 }
 
 
 
 ///Place alignment from the same id into one holder.  Split the alignment in each holder
 /// into plus or minus strand and sort them by alignment start in ascending order
-void COligoSpecificityCheck::x_SortHit()
+void COligoSpecificityTemplate::x_SortHit(const CSeq_align_set& input_hits)
 {
     CConstRef<CSeq_id> previous_id, subid;
     bool is_first_aln = true;
     TSortedHsp each_hit; //first element for plus strand, second element for minus strand
    
-    ITERATE(CSeq_align_set::Tdata, iter, m_Hit->Get()) {
+    ITERATE(CSeq_align_set::Tdata, iter, input_hits.Get()) {
         subid = &((*iter)->GetSeq_id(1));
         if (!is_first_aln && !subid->Match(*previous_id)) {
             //this aln is a new id, save  for the same seqid
@@ -1980,7 +1968,7 @@ void COligoSpecificityCheck::x_SortHit()
         
     }
     int num_hits = m_SortHit.size();
-    int num_hsp = m_Hit->Get().size();
+    int num_hsp = input_hits.Get().size();
     int hsp_hit_ratio = 0;
   
     if (num_hits > 0) {
@@ -2001,7 +1989,7 @@ void COligoSpecificityCheck::x_SortHit()
                 m_MaxHSPSize = (int)m_SortHit[i].first.size();
             }
             for (int j = 0; j < (int)m_SortHit[i].first.size(); j ++) {
-                CRef<Hsp_index> index_holder(new Hsp_index);
+                CRef<SHspIndex> index_holder(new SHspIndex);
                 index_holder->index = j;
                 CRange<int> temp_master_range(m_SortHit[i].first[j]->master_range.GetFrom(),
                                               m_SortHit[i].first[j]->master_range.GetTo());
@@ -2017,7 +2005,7 @@ void COligoSpecificityCheck::x_SortHit()
                 m_MaxHSPSize = (int)m_SortHit[i].second.size();
             }
             for (int j = 0; j < (int)m_SortHit[i].second.size(); j ++) {
-                CRef<Hsp_index> index_holder(new Hsp_index);
+                CRef<SHspIndex> index_holder(new SHspIndex);
                 index_holder->index = j;
                 CRange<int> temp_master_range(m_SortHit[i].second[j]->master_range.GetFrom(),
                                               m_SortHit[i].second[j]->master_range.GetTo());
@@ -2043,12 +2031,6 @@ void COligoSpecificityCheck::x_SortHit()
             }
             
         }
-    }
-    if (m_MaxHSPSize > 0) {
-        m_HspOverlappingWithLeftPrimer = new SHspIndexInfo[m_MaxHSPSize];
-        m_HspOverlappingWithRightPrimer = new SHspIndexInfo[m_MaxHSPSize];
-        m_HspOverlappingWithLeftPrimerMinusStrand = new SHspIndexInfo[m_MaxHSPSize];
-        m_HspOverlappingWithRightPrimerMinusStrand = new SHspIndexInfo[m_MaxHSPSize];
     }
 }
 

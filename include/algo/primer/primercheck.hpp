@@ -48,110 +48,93 @@ class CPrimercheckTest;  //For internal test only
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
 
-class NCBI_XPRIMER_EXPORT COligoSpecificityCheck : public CObject {
+struct SHspInfo {
+    CConstRef<CSeq_align> hsp;
+    CRange<TSeqPos> master_range;
+    CRange<TSeqPos> slave_range;
+    double bit_score;
+};
+    
+struct SHspIndex : CObject {
+    int index;
+};
+
+typedef pair<vector<SHspInfo*>, vector<SHspInfo*> > TSortedHsp; 
+
+class NCBI_XPRIMER_EXPORT COligoSpecificityTemplate : public CObject {
 public:
 
-    ///the input primer pair information
-    ///only the left and right range information is needed by this API
-    ///
-    struct SPrimerInfo {
-        CRange<TSeqPos> left;                     //left primer range 
-        CRange<TSeqPos> right;                    //right primer range
-        CRange<TSeqPos> internal_probe;           //internal probe range
-        double left_tm;                           //left primer melting temprature
-        double right_tm;                          //right primer melting temprature
-        double internal_probe_tm;                 //internal probe melting temprature
-        double left_gc_percent;                   //left primer GC content
-        double right_gc_percent;                  //right primer GC content
-        double internal_probe_gc_percent;         //internal probe GC content
-        string left_seq;                          //left primer sequence
-        string right_seq;                         //right primer sequence
-        string internal_probe_seq;                //internal probe sequence
-        double right_self_complementarity_any;
-        double right_self_complementarity_3end;
-        double left_self_complementarity_any;
-        double left_self_complementarity_3end;
-        double pair_complementarity_any;
-        double pair_complementarity_3end;
-        double product_tm; 
-        double product_tm_oligo_tm_diff;
-        int left_primer_splice_site_pos;
-        int right_primer_splice_site_pos;
-        int left_primer_genomic_exon_start;
-        int left_primer_genomic_exon_end;
-        int right_primer_genomic_exon_start;
-        int right_primer_genomic_exon_end;
-        int total_intron_size;
-        string genomic_dna_acc;
-        int genomic_dna_gi;
-    };
+    ///bioseq handle for input bioseq
+    const CBioseq_Handle& m_TemplateHandle;
 
-    class Hsp_index : public CObject {
-    public:
-        int index;
-    };
+    ///seqid
+    CConstRef<CSeq_id> m_Id;
 
+    ///the processed sorted hit list corresponding to the input seqalign
+    vector<TSortedHsp> m_SortHit;      
+  
+    ///sort the hit
+    void x_SortHit(const CSeq_align_set& input);
 
-    struct SHspIndexInfo {
-        int index;
-        double bit_score;
-    };
+    ///the requested length margin  for non-specific template
+    TSeqPos m_ProductLenMargin;
+
+    ///minimal continuous match required
+    int m_WordSize;
+
+    ///total mismatches allowed by user
+    TSeqPos m_AllowedTotalMismatch;  
+
+    ///3' end mismatches
+    TSeqPos m_Allowed3EndMismatch;   
     
-    struct SHspInfo {
-        CConstRef<CSeq_align> hsp;
-        CRange<TSeqPos> master_range;
-        CRange<TSeqPos> slave_range;
-        double bit_score;
-    };
-    
+    ///total max allowed mismatch
+    TSeqPos m_MaxMismatch;
 
-    typedef pair<vector<SHspInfo*>, vector<SHspInfo*> > TSortedHsp; 
-    typedef pair<CRef<CSeq_align>, CRef<CSeq_align> > TAlignmentPair;
+    ///range on the input template
+    CRange<TSeqPos> m_TemplateRange;
 
-    ///primer hit to the blast dababase
-    struct SPrimerHitInfo {
-        bool self_forward_primer;              //Is the pcr product by forward_primer alone?
-        bool self_reverse_primer;              //Is the pcr product by reverse_primer alone?
-        TSeqPos left_total_mismatch;           //total mismatch between left primer and hit
-        TSeqPos left_3end_mismatch;            //mismatch at the 3' end
-        TSeqPos left_total_gap;                //total gaps between left primer and hit
-        TSeqPos left_3end_gap;                 //gaps at the 3' end
-        TSeqPos right_total_mismatch;          
-        TSeqPos right_3end_mismatch;         
-        TSeqPos right_total_gap;                  
-        TSeqPos right_3end_gap;
-        int product_len;                       //pcr product length on the hit
-        TAlignmentPair aln;                    //the alignments for left-hit and right-hit
-        TSeqPos index;                         //the position index in m_SortHit
-    };
-    
-   
+    //set up interval tree
+    vector<CIntervalTree*> m_RangeTreeListPlusStrand;
+    vector<CIntervalTree*> m_RangeTreeListMinusStrand;
+
+    ///count splice variants as non-specific?
+    bool m_AllowTranscriptVariants;
+
+    ///user specified hits that can be disregarded for specificity checking
+    vector<TSeqPos> m_AllowedSeqidIndex;
+
+    bool m_UseITree;
+
+    ///the length or region at the 3' end for checking mismatches
+    TSeqPos m_MismatchRegionLength3End;
+
+    int m_MaxHSPSize;
+
+    ///the number non-specific targets to return
+    int m_NumNonSpecificTarget;
+
+    CSeq_id::EAccessionInfo m_TemplateType;
+
+
     ///constructor
     ///@template_handle: bioseq represents the pcr template
-
-    
     ///@param input_seqalign: the alignment represening the PCR template hits from
     ///the specificity checking database 
-    
     ///@param scope: scope to fetch the sequences in alignment
-
     ///@word_size: target must have at least this long consecutive match to primer
     ///to be detected.
-
     ///@param allowed_total_mismatch: the total mismatch threshhold below which a 
     ///primer hit pair representing a PCR product will be reported.  
     ///Note that this number is inclusive 
     ///and applies for both the left and right primer hit. Gaps are counted a mismatches.
-    
     ///@param allowed_3end_mismatch: Same as allowed_total_mismatch except that the 
     ///mismatches are counted only if they are in the 3' end region as specified in 
     ///SetMismatchRegionLength3End().  Note that both allowed_total_mismatch and 
     ///allowed_3end_mismatch must be satisfied for a primer hit pair to be reported.
-    
     ///@param allow_transcript_variants: a transcript variant from same gene 
     ///as the input template will not be reported as non-specific primer hit.
-    ///
-    COligoSpecificityCheck(const CBioseq_Handle& template_handle,
+    COligoSpecificityTemplate(const CBioseq_Handle& template_handle,
                            const CSeq_align_set& input_seqalign,
                            CScope& scope,
                            int word_size,
@@ -159,12 +142,12 @@ public:
                            TSeqPos allowed_3end_mismatch = 1,
                            TSeqPos max_mismatch = 7,
                            bool allow_transcript_variants = false);
+
     //destructor
-    ~COligoSpecificityCheck();
+    ~COligoSpecificityTemplate();
     
     ///Set start and end position of the input PCR template
     ///@param range: the range
-    ///
     void SetTemplateRange(CRange<TSeqPos> range) {
         m_TemplateRange = range;
     }
@@ -177,21 +160,18 @@ public:
 
     ///Set mismatch threshhold below which a 
     ///primer hit pair representing a PCR product will be reported.
-     ///@param allowed_total_mismatch: the total mismatch threshhold below which a 
+    ///@param allowed_total_mismatch: the total mismatch threshhold below which a 
     ///primer hit pair representing a PCR product will be reported.  
     ///Note that this number is inclusive 
     ///and applies for both the left and right primer hit. Gaps are counted a mismatches.
-    
     ///@param allowed_3end_mismatch: Same as allowed_total_mismatch except that the 
     ///mismatches are counted only if they are in the 3' end region as specified in 
     ///SetMismatchRegionLength3End().  Note that both allowed_total_mismatch and 
     ///allowed_3end_mismatch must be satisfied for a primer hit pair to be reported.
-    ///
     void SetAllowedMismatch(TSeqPos allowed_total_mismatch, 
                             TSeqPos allowed_3end_mismatch) {
         m_AllowedTotalMismatch = allowed_total_mismatch;
         m_Allowed3EndMismatch = allowed_3end_mismatch;
-        m_Cache.clear();
     }
 
     //hit that have equal to or more than this mismatch number will be ignored
@@ -230,6 +210,81 @@ public:
     void SetMismatchRegionLength3End(TSeqPos length) {
         m_MismatchRegionLength3End = length;
     }
+};
+
+class NCBI_XPRIMER_EXPORT COligoSpecificityCheck : public CObject {
+public:
+
+    ///the input primer pair information
+    ///only the left and right range information is needed by this API
+    ///
+    struct SPrimerInfo {
+        CRange<TSeqPos> left;                     //left primer range 
+        CRange<TSeqPos> right;                    //right primer range
+        CRange<TSeqPos> internal_probe;           //internal probe range
+        double left_tm;                           //left primer melting temprature
+        double right_tm;                          //right primer melting temprature
+        double internal_probe_tm;                 //internal probe melting temprature
+        double left_gc_percent;                   //left primer GC content
+        double right_gc_percent;                  //right primer GC content
+        double internal_probe_gc_percent;         //internal probe GC content
+        string left_seq;                          //left primer sequence
+        string right_seq;                         //right primer sequence
+        string internal_probe_seq;                //internal probe sequence
+        double right_self_complementarity_any;
+        double right_self_complementarity_3end;
+        double left_self_complementarity_any;
+        double left_self_complementarity_3end;
+        double pair_complementarity_any;
+        double pair_complementarity_3end;
+        double product_tm; 
+        double product_tm_oligo_tm_diff;
+        int left_primer_splice_site_pos;
+        int right_primer_splice_site_pos;
+        int left_primer_genomic_exon_start;
+        int left_primer_genomic_exon_end;
+        int right_primer_genomic_exon_start;
+        int right_primer_genomic_exon_end;
+        int total_intron_size;
+        string genomic_dna_acc;
+        int genomic_dna_gi;
+    };
+
+
+    struct SHspIndexInfo {
+        int index;
+        double bit_score;
+    };
+    
+
+    typedef pair<CRef<CSeq_align>, CRef<CSeq_align> > TAlignmentPair;
+
+    ///primer hit to the blast dababase
+    struct SPrimerHitInfo {
+        bool self_forward_primer;              //Is the pcr product by forward_primer alone?
+        bool self_reverse_primer;              //Is the pcr product by reverse_primer alone?
+        TSeqPos left_total_mismatch;           //total mismatch between left primer and hit
+        TSeqPos left_3end_mismatch;            //mismatch at the 3' end
+        TSeqPos left_total_gap;                //total gaps between left primer and hit
+        TSeqPos left_3end_gap;                 //gaps at the 3' end
+        TSeqPos right_total_mismatch;          
+        TSeqPos right_3end_mismatch;         
+        TSeqPos right_total_gap;                  
+        TSeqPos right_3end_gap;
+        int product_len;                       //pcr product length on the hit
+        TAlignmentPair aln;                    //the alignments for left-hit and right-hit
+        TSeqPos index;                         //the position index in m_SortHit
+    };
+    
+   
+    //constructor
+    COligoSpecificityCheck(const COligoSpecificityTemplate* temp,
+                           CScope& scope);
+
+    //destructor
+    ~COligoSpecificityCheck();
+    
+
     
     ///check the specificity of the primer pairs. Note that this funtion can
     ///can be called repeatedly with different primer_info after constructor call, 
@@ -237,9 +292,11 @@ public:
     ///if the primer window has been checked before as the primer match info is
     ///cached
     ///@param primer_info: the primer to be checked for specificity
-   
+    ///@param from: the starting index of primer to be checked for specificity
+    ///@param to: the ending index + 1 of primer to be checked for specificity
     ///
-    void CheckSpecificity(const vector<SPrimerInfo>& primer_info_list);
+    void CheckSpecificity(const vector<SPrimerInfo>& primer_info_list, 
+                          int from = 0, int to = -1);
 
     ///return the non-specific hits that the primer pairs can amplify
     ///
@@ -269,9 +326,14 @@ public:
 
  
 private:
-    
+    ///the information about the blast results
+    const COligoSpecificityTemplate* m_Hits;
+
+    ///scope to fetch sequence
+    CRef<CScope> m_Scope;
+
     ///the information about primer to be checked
-    const vector<SPrimerInfo>* m_PrimerInfoList;
+    vector<const SPrimerInfo *> m_PrimerInfoList;
     
     //current primer
     const SPrimerInfo* m_PrimerInfo;
@@ -288,18 +350,6 @@ private:
     ///the hits represent the transcript variants from the same gene as the input template
     vector<vector<SPrimerHitInfo> >m_VariantHit;
 
-    ///bioseq handle for input bioseq
-    const CBioseq_Handle& m_TemplateHandle;
-
-    ///the input seqalign
-    CConstRef<CSeq_align_set> m_Hit; 
-
-    ///the processed sorted hit list corresponding to the input seqalign
-    vector<TSortedHsp> m_SortHit;      
-  
-    ///sort the hit
-    void x_SortHit();
-
     ///Analyze the primer pair specificity
     void x_AnalyzePrimerSpecificity();
 
@@ -307,8 +357,7 @@ private:
     ///@param sorted_hsp: contains seqalign from the same slave sequence
     ///@param hit_strand: the strand to use as the template
     ///@param index:  the array index of sorted_hsp in m_SortHit list.
-    ///
-    void x_AnalyzeTwoPrimers(TSortedHsp& sorted_hsp,
+    void x_AnalyzeTwoPrimers(const TSortedHsp& sorted_hsp,
                              TSeqPos index);
    
     ///analyze the case where the left primer itself can serve as both 
@@ -321,9 +370,6 @@ private:
     ///@param hit_list: the template hit list from the specificity checking database
     ///@param primer_order_reversed: set to true for the case where
     ///right primer can serve as both left and right primer
-    ///
-
-
     void x_AnalyzeOnePrimer(const vector<SHspInfo*>& plus_strand_hsp_list,
                             const vector<SHspInfo*>& minus_strand_hsp_list,
                             int HspOverlappingWithLeftPrimer_size,
@@ -342,7 +388,6 @@ private:
     ///@param num_3end_gap: 3' end gaps to be filled
     ///@param is_left_primer: Is the the left primer?
     ///@return: the alignment representing the desired primer window
-    ///
     CRef<CSeq_align> 
     x_FillGlobalAlignInfo(const CRange<TSeqPos>& desired_align_range,
                           SHspInfo* input_hsp_info,
@@ -359,7 +404,6 @@ private:
     ///@param left_primer_hit_align: alignment for the left primer
     ///@param right_primer_hit_align: alignment for the right primer
     ///@param product_len: length to be filled.
-    ///
     bool x_IsPcrLengthInRange(const CSeq_align& left_primer_hit_align, 
                               const CSeq_align& right_primer_hit_align,
                               bool primers_on_different_strand,
@@ -461,33 +505,12 @@ private:
     
     int m_CurrentPrimerIndex;
 
-    ///the requested length margin  for non-specific template
-    TSeqPos m_ProductLenMargin;
-
     ///the actual length of the pcr product on the input template
     TSeqPos m_ActualProductLen;
-
-    ///scope to fetch sequence
-    CRef<CScope> m_Scope;
-
-    ///minimal continuous match required
-    int m_WordSize;
 
     //scope associated with server for fetching feature info
     CRef<CObjectManager> m_FeatureOM;
     CRef<CScope> m_FeatureScope;
-
-    ///total mismatches allowed by user
-    TSeqPos m_AllowedTotalMismatch;  
-
-    ///3' end mismatches
-    TSeqPos m_Allowed3EndMismatch;   
-    
-    ///total max allowed mismatch
-    TSeqPos m_MaxMismatch;
-
-    ///range on the input template
-    CRange<TSeqPos> m_TemplateRange;
 
     /// value for coordinate-alignment cache
     struct SPrimerMatch {
@@ -572,35 +595,13 @@ private:
     
     vector<map <SSlaveRange, CRange<TSeqPos>, slave_range_sort_order> >m_SlaveRangeCache;
 
-    
-    //set up interval tree
-    vector<CIntervalTree*> m_RangeTreeListPlusStrand;
-    vector<CIntervalTree*> m_RangeTreeListMinusStrand;
-
-    ///count splice variants as non-specific?
-    bool m_AllowTranscriptVariants;
-
     ///tool to get gene id
     CGeneInfoFileReader m_FileReader;
-
-    ///user specified hits that can be disregarded for specificity checking
-    vector<TSeqPos> m_AllowedSeqidIndex;
-
-    ///the length or region at the 3' end for checking mismatches
-    TSeqPos m_MismatchRegionLength3End;
-
-    ///the number non-specific targets to return
-    int m_NumNonSpecificTarget;
-   
-    bool m_UseITree;
 
     SHspIndexInfo* m_HspOverlappingWithLeftPrimer;
     SHspIndexInfo* m_HspOverlappingWithRightPrimer;
     SHspIndexInfo* m_HspOverlappingWithLeftPrimerMinusStrand;
     SHspIndexInfo* m_HspOverlappingWithRightPrimerMinusStrand;
-    int m_MaxHSPSize;
-
-    CSeq_id::EAccessionInfo m_TemplateType;
 
     //For internal test 
     friend class ::CPrimercheckTest;
