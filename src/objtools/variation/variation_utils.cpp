@@ -107,7 +107,7 @@ void CVariationUtilities::CorrectRefAllele(CVariation_ref& vr, CScope& scope, co
     {
         if (!(*inst)->IsSetData() || !(*inst)->GetData().IsInstance())
             NCBI_THROW(CException, eUnknown, "Variation-inst is not set in input Seq-annot");
-        if ((*inst)->GetData().GetInstance().IsSetObservation() && ((*inst)->GetData().GetInstance().GetObservation() & CVariation_inst::eObservation_reference) == CVariation_inst::eObservation_reference &&
+        if ((*inst)->GetData().GetInstance().IsSetObservation() && ((*inst)->GetData().GetInstance().GetObservation() && CVariation_inst::eObservation_reference) == CVariation_inst::eObservation_reference &&
             (*inst)->GetData().GetInstance().IsSetDelta() && !(*inst)->GetData().GetInstance().GetDelta().empty() && (*inst)->GetData().GetInstance().GetDelta().front()->IsSetSeq() 
             && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().IsLiteral()
             && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
@@ -136,7 +136,7 @@ void CVariationUtilities::FixAlleles(CVariation_ref& vr, string old_ref, string 
         {
             string a = (*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
             if (old_ref  == a) add_old_ref = false;
-            if (!((*inst)->GetData().GetInstance().IsSetObservation() && ((*inst)->GetData().GetInstance().GetObservation() & CVariation_inst::eObservation_reference) == CVariation_inst::eObservation_reference))
+            if (!((*inst)->GetData().GetInstance().IsSetObservation() && ((*inst)->GetData().GetInstance().GetObservation() && CVariation_inst::eObservation_reference) == CVariation_inst::eObservation_reference))
             {
                 type = (*inst)->SetData().SetInstance().SetType();
                 if (new_ref == a)
@@ -371,6 +371,7 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CVariation>& v, CScope &scope
                                 bool found = x_ProcessShift(a, pos_left,pos_right);
                                 if (found)
                                 {
+                                    pos_right += a.size();
                                     if (new_pos_left == -1)
                                         new_pos_left = pos_left;
                                     else if (new_pos_left != pos_left)
@@ -389,7 +390,6 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CVariation>& v, CScope &scope
                             bool found = x_ProcessShift(ref, pos_left,pos_right);
                             if (found)
                             {
-                                pos_right -= ref.size();
                                 if (new_pos_left == -1)
                                     new_pos_left = pos_left;
                                 else if (new_pos_left != pos_left)
@@ -398,8 +398,7 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CVariation>& v, CScope &scope
                                     new_pos_right = pos_right;
                                 else if (new_pos_right != pos_right)
                                     NCBI_THROW(CException, eUnknown, "Right position is ambiguous due to different leaf alleles");
-                                if (pos_right != pos_left)
-                                    x_ModifyLocation((*vp1)->SetLoc(),(*vp1)->SetSeq(),ref,pos_left,pos_right);
+                                x_ModifyLocation((*vp1)->SetLoc(),(*vp1)->SetSeq(),ref,pos_left,pos_right);
                             }
                         }
                     }
@@ -471,6 +470,7 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
                                 bool found = x_ProcessShift(a, pos_left,pos_right);
                                 if (found)
                                 {
+                                    pos_right += a.size();
                                     if (new_pos_left == -1)
                                         new_pos_left = pos_left;
                                     else if (new_pos_left != pos_left)
@@ -489,7 +489,6 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
                     bool found = x_ProcessShift(ref, pos_left,pos_right);
                     if (found)
                     {
-                        pos_right -= ref.size();
                         if (new_pos_left == -1)
                             new_pos_left = pos_left;
                         else if (new_pos_left != pos_left)
@@ -498,8 +497,7 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
                             new_pos_right = pos_right;
                         else if (new_pos_right != pos_right)
                             NCBI_THROW(CException, eUnknown, "Right position is ambiguous due to different leaf alleles");
-                        if (pos_right != pos_left)
-                            x_ModifyLocation((*feat)->SetLocation(),*refref,ref,pos_left,pos_right);
+                        x_ModifyLocation((*feat)->SetLocation(),*refref,ref,pos_left,pos_right);
                     }
                 }
 
@@ -617,7 +615,6 @@ bool CVariationNormalizationRight::x_ProcessShift(string &a, int &pos_left, int 
         if (a != b) 
         {
             pos--;
-            pos += a.size();
             x_rotate_right(a);
             found_right = true;
             break;
@@ -668,7 +665,7 @@ bool CVariationNormalizationInt::x_ProcessShift(string &a, int &pos_left, int &p
     bool found_left = CVariationNormalizationLeft::x_ProcessShift(a_left, pos_left, pos_right);
     bool found_right = CVariationNormalizationRight::x_ProcessShift(a, pos_left, pos_right);
     a = a_left;
-    return found_left & found_right;
+    return found_left | found_right;
 }
 
 bool CVariationNormalizationLeftInt::x_ProcessShift(string &a, int &pos_left, int &pos_right)
