@@ -265,7 +265,7 @@ void CProjectItemsTree::VerifyExternalDepends(void)
                 continue;
             }
             TProjects::iterator d = m_Projects.find(*n);
-            if (d != m_Projects.end() && d->second.m_External) {
+            if (d != m_Projects.end() /*&& d->second.m_External*/) {
                 d->second.m_MakeType = min(d->second.m_MakeType, p->second.m_MakeType);
             }
         }
