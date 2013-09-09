@@ -136,7 +136,7 @@ int main(int argc, const char* argv[])
     LOG_POST(Info << "Test 0 passed\n");
 
 
-    LOG_POST("Test 1 of 9: Memory stream");
+    LOG_POST(Info << "Test 1 of 9: Memory stream");
     // Testing memory stream out-of-sequence interleaving operations
     m = (rand() & 0x00FF) + 1;
     size = 0;
@@ -145,7 +145,8 @@ int main(int argc, const char* argv[])
         string data, back;
         size_t sz = 0;
 #if 0
-        LOG_POST("  Micro-test " << (int) n << " of " << (int) m << " start");
+        LOG_POST(Info << "  Micro-test " << (int) n << " of "
+                 << (int) m << " start");
 #endif
         k = (rand() & 0x00FF) + 1;
         for (i = 0;  i < k;  i++) {
@@ -156,8 +157,8 @@ int main(int argc, const char* argv[])
                 bit[j] = "0123456789"[rand() % 10];
             }
 #if 0
-            LOG_POST("    Data bit at " << (unsigned long) sz <<
-                     ", " << (unsigned long) l << " byte(s) long: " << bit);
+            LOG_POST(Info << "    Data bit at " << (unsigned long) sz << ", "
+                     << (unsigned long) l << " byte(s) long: " << bit);
 #endif
             sz += l;
             data += bit;
@@ -167,7 +168,7 @@ int main(int argc, const char* argv[])
                 switch (n % 4) {
                 case 0:
 #if 0
-                    LOG_POST("  CConn_MemoryStream()");
+                    LOG_POST(Info << "  CConn_MemoryStream()");
 #endif
                     ms = new CConn_MemoryStream;
                     assert(*ms << bit);
@@ -177,7 +178,7 @@ int main(int argc, const char* argv[])
                     BUF buf = 0;
                     assert(BUF_Write(&buf, bit.data(), l));
 #if 0
-                    LOG_POST("  CConn_MemoryStream(BUF)");
+                    LOG_POST(Info << "  CConn_MemoryStream(BUF)");
 #endif
                     ms = new CConn_MemoryStream(buf, eTakeOwnership);
                     break;
@@ -190,8 +191,8 @@ int main(int argc, const char* argv[])
         switch (n % 4) {
         case 2:
 #if 0
-            LOG_POST("  CConn_MemoryStream(" <<
-                     (unsigned long) data.size() << ')');
+            LOG_POST(Info << "  CConn_MemoryStream("
+                     << (unsigned long) data.size() << ')');
 #endif
             ms = new CConn_MemoryStream(data.data(),data.size(), eNoOwnership);
             break;
@@ -200,8 +201,8 @@ int main(int argc, const char* argv[])
             BUF buf = 0;
             assert(BUF_Append(&buf, data.data(), data.size()));
 #if 0
-            LOG_POST("  CConn_MemoryStream(BUF, " <<
-                     (unsigned long) data.size() << ')');
+            LOG_POST(Info << "  CConn_MemoryStream(BUF, "
+                     << (unsigned long) data.size() << ')');
 #endif
             ms = new CConn_MemoryStream(buf, eTakeOwnership);
             break;
@@ -221,12 +222,12 @@ int main(int argc, const char* argv[])
         } else
             ms->ToString(&back);
 #if 0
-        LOG_POST("  Data size=" << (unsigned long) data.size());
-        LOG_POST("  Back size=" << (unsigned long) back.size());
+        LOG_POST(Info << "  Data size=" << (unsigned long) data.size());
+        LOG_POST(Info << "  Back size=" << (unsigned long) back.size());
         for (i = 0;  i < data.size()  &&  i < back.size(); i++) {
             if (data[i] != back[i]) {
-                LOG_POST("  Data differ at pos " << (unsigned long) i <<
-                         ": '" << data[i] << "' vs '" << back[i] << '\'');
+                LOG_POST("  Data differ at pos " << (unsigned long) i
+                         << ": '" << data[i] << "' vs '" << back[i] << '\'');
                 break;
             }
         }
@@ -235,15 +236,16 @@ int main(int argc, const char* argv[])
         size += sz;
         delete ms;
 #if 0
-        LOG_POST("  Micro-test " << (int) n << " of " << (int) m << " finish");
+        LOG_POST(Info << "  Micro-test " << (int) n << " of "
+                 << (int) m << " finish");
 #endif
     }
-    LOG_POST("Test 1 passed in " <<
-             (int) m    << " iteration(s) with " <<
-             (int) size << " byte(s) transferred\n");
+    LOG_POST(Info << "Test 1 passed in "
+             << (int) m    << " iteration(s) with "
+             << (int) size << " byte(s) transferred\n");
 
 
-    LOG_POST("Test 2 of 9: FTP download");
+    LOG_POST(Info << "Test 2 of 9: FTP download");
     if (rand() & 1)
         flag |= fFTP_DelayRestart;
     if (!(net_info = ConnNetInfo_Create(0)))
@@ -278,11 +280,11 @@ int main(int argc, const char* argv[])
     if (n  &&  n != size + 1024)
         ERR_POST(Fatal << "File size mismatch: 1024+" << size << "<>" << n);
 
-    LOG_POST("Test 2 passed: 1024+" << size << '=' << n <<
-             " byte(s) downloaded via FTP\n");
+    LOG_POST(Info << "Test 2 passed: 1024+" << size << '=' << n
+             << " byte(s) downloaded via FTP\n");
 
 
-    LOG_POST("Test 3 of 9: FTP upload");
+    LOG_POST(Info << "Test 3 of 9: FTP upload");
     string ftpuser, ftppass, ftpfile;
     if (s_GetFtpCreds(ftpuser, ftppass)) {
         CTime start(CTime::eCurrent);
@@ -348,7 +350,7 @@ int main(int argc, const char* argv[])
                                       (long)CTime(CTime::eCurrent).GetTimeT());
             }
             if (delta < 1800) {
-                LOG_POST("Test 3 passed: " <<
+                LOG_POST(Info << "Test 3 passed: " <<
                          speedstr << '\n');
             } else
                 LOG_POST(speedstr);
@@ -369,10 +371,10 @@ int main(int argc, const char* argv[])
                      " seconds");
         }
     } else
-        LOG_POST("Test 3 skipped\n");
+        LOG_POST(Info << "Test 3 skipped\n");
 
 
-    LOG_POST("Test 4 of 9: FTP peculiarities");
+    LOG_POST(Info << "Test 4 of 9: FTP peculiarities");
     if (!ftpuser.empty()  &&  !ftppass.empty()) {
         _ASSERT(!ftpfile.empty());
         // Note that FTP streams are not buffered for the sake of command
@@ -387,13 +389,13 @@ int main(int argc, const char* argv[])
         ftp >> temp;  // dangerous: may leave some putback behind
         if (temp.empty())
             ERR_POST(Fatal << "Test 4 failed in SYST");
-        LOG_POST("SYST command returned: '" << temp << '\'');
+        LOG_POST(Info << "SYST command returned: '" << temp << '\'');
         _ASSERT(ftp.Drain() == eIO_Success);
         ftp << "CWD \"dir\"ect\"ory\"" << NcbiEndl;
         if (!ftp  ||  ftp.Status(eIO_Write) != eIO_Success)
             ERR_POST(Fatal << "Test 4 failed in CWD");
         getline(ftp, temp);  // better: does not leave putback behind
-        LOG_POST("CWD command returned: '" << temp << '\'');
+        LOG_POST(Info << "CWD command returned: '" << temp << '\'');
         _ASSERT(temp == "250");
         _ASSERT(ftp.eof());
         ftp.clear();
@@ -401,7 +403,7 @@ int main(int argc, const char* argv[])
         if (!ftp  ||  ftp.Status(eIO_Write) != eIO_Success)
             ERR_POST(Fatal << "Test 4 failed in PWD");
         ftp >> temp;
-        LOG_POST("PWD command returned: '" << temp << '\'');
+        LOG_POST(Info << "PWD command returned: '" << temp << '\'');
         if (temp != "/test_download/\"dir\"ect\"ory\"")
             ERR_POST(Fatal << "Test 4 failed in PWD response");
         ftp.clear();
@@ -427,9 +429,9 @@ int main(int argc, const char* argv[])
             ERR_POST(Fatal << "Test 4 failed in STOR");
         if (ftp.Close() == eIO_Success)
             ERR_POST(Fatal << "Test 4 failed");
-        LOG_POST("Test 4 done\n");
+        LOG_POST(Info << "Test 4 done\n");
     } else
-        LOG_POST("Test 4 skipped\n");
+        LOG_POST(Info << "Test 4 skipped\n");
 
     ConnNetInfo_Destroy(net_info);
 
@@ -443,7 +445,7 @@ int main(int argc, const char* argv[])
     }}
 
 
-    LOG_POST("Test 5 of 9: Big buffer bounce via HTTP");
+    LOG_POST(Info << "Test 5 of 9: Big buffer bounce via HTTP");
     CConn_HttpStream ios(0, "User-Header: My header\r\n", 0, 0, 0, 0,
                          fHTTP_AutoReconnect | fHTTP_Flushable |
                          fHTTP_UrlEncodeArgs);
@@ -472,7 +474,8 @@ int main(int argc, const char* argv[])
     if (!ios.good() && !ios.eof())
         ERR_POST(Fatal << "Cannot receive data");
 
-    LOG_POST(buflen << " bytes obtained" << (ios.eof() ? " (EOF)" : ""));
+    LOG_POST(Info << buflen << " bytes obtained"
+             << (ios.eof() ? " (EOF)" : ""));
     buf2[buflen] = '\0';
 
     for (i = 0; i < kBufferSize; i++) {
@@ -486,13 +489,13 @@ int main(int argc, const char* argv[])
     if ((size_t) buflen > kBufferSize)
         ERR_POST(Fatal << "Sent: " << kBufferSize << ", bounced: " << buflen);
 
-    LOG_POST("Test 5 passed\n");
+    LOG_POST(Info << "Test 5 passed\n");
 
     // Clear EOF condition
     ios.clear();
 
 
-    LOG_POST("Test 6 of 9: Random bounce");
+    LOG_POST(Info << "Test 6 of 9: Random bounce");
 
     if (!(ios << buf1))
         ERR_POST(Fatal << "Cannot send data");
@@ -513,15 +516,15 @@ int main(int argc, const char* argv[])
             return 2;
         }
         if (j != k)
-            LOG_POST("Bytes requested: " << k << ", received: " << j);
+            LOG_POST(Info << "Bytes requested: " << k << ", received: " << j);
         buflen += j;
         l++;
         if (!j && ios.eof())
             break;
     }
 
-    LOG_POST(buflen << " bytes obtained in " << l << " iteration(s)" <<
-             (ios.eof() ? " (EOF)" : ""));
+    LOG_POST(Info << buflen << " bytes obtained in " << l << " iteration(s)"
+             << (ios.eof() ? " (EOF)" : ""));
     buf2[buflen] = '\0';
 
     for (i = 0; i < kBufferSize; i++) {
@@ -535,13 +538,13 @@ int main(int argc, const char* argv[])
     if ((size_t) buflen > kBufferSize)
         ERR_POST(Fatal << "Sent: " << kBufferSize << ", bounced: " << buflen);
 
-    LOG_POST("Test 6 passed\n");
+    LOG_POST(Info << "Test 6 passed\n");
 
     // Clear EOF condition
     ios.clear();
 
 
-    LOG_POST("Test 7 of 9: Truly binary bounce");
+    LOG_POST(Info << "Test 7 of 9: Truly binary bounce");
 
     for (i = 0; i < kBufferSize; i++)
         buf1[i] = (char)(255/*rand() % 256*/);
@@ -559,7 +562,8 @@ int main(int argc, const char* argv[])
     if (!ios.good() && !ios.eof())
         ERR_POST(Fatal << "Cannot receive data");
 
-    LOG_POST(buflen << " bytes obtained" << (ios.eof() ? " (EOF)" : ""));
+    LOG_POST(Info << buflen << " bytes obtained"
+             << (ios.eof() ? " (EOF)" : ""));
 
     for (i = 0; i < kBufferSize; i++) {
         if (buf2[i] != buf1[i])
@@ -570,13 +574,13 @@ int main(int argc, const char* argv[])
     if ((size_t) buflen > kBufferSize)
         ERR_POST(Fatal << "Sent: " << kBufferSize << ", bounced: " << buflen);
 
-    LOG_POST("Test 7 passed\n");
+    LOG_POST(Info << "Test 7 passed\n");
 
     delete[] buf1;
     delete[] buf2;
 
 
-    LOG_POST("Test 8 of 9: NcbiStreamCopy()");
+    LOG_POST(Info << "Test 8 of 9: NcbiStreamCopy()");
 
     ofstream null(DEV_NULL);
     assert(null);
@@ -589,10 +593,10 @@ int main(int argc, const char* argv[])
     if (!http.good()  ||  !http.flush()  ||  !NcbiStreamCopy(null, http))
         ERR_POST(Fatal << "Test 8 failed");
     else
-        LOG_POST("Test 8 passed\n");
+        LOG_POST(Info << "Test 8 passed\n");
 
 
-    LOG_POST("Test 9 of 9: HTTP status code and text");
+    LOG_POST(Info << "Test 9 of 9: HTTP status code and text");
 
     CConn_HttpStream bad_http("http://www.ncbi.nlm.nih.gov/blah");
     bad_http >> ftpfile/*dummy*/;
@@ -613,7 +617,7 @@ int main(int argc, const char* argv[])
     if (code != 200  ||  text.empty())
         ERR_POST(Fatal << "Test 9 failed");
 
-    LOG_POST("Test 9 passed\n");
+    LOG_POST(Info << "Test 9 passed\n");
 
 
     CORE_SetREG(0);
