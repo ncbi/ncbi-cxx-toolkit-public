@@ -243,7 +243,9 @@ string CHgvsParser::x_AsHgvsExpression(
             const CVariation& v2 = **it;
 
             //asserted or reference instances don't participate in HGVS expressions as individual subvariation expressions
+            //Exception: it is the only member of the set: (JIRA: VAR-626)
             if(v2.GetData().IsInstance()
+               && variation.GetData().GetSet().GetVariations().size() > 1
                && v2.GetData().GetInstance().IsSetObservation()
                && !(v2.GetData().GetInstance().GetObservation() & CVariation_inst::eObservation_variant))
             {
