@@ -35,7 +35,7 @@
 #ifndef PYTHONPP_DICT_H
 #define PYTHONPP_DICT_H
 
-#include "pythonpp_object.hpp"
+#include "pythonpp_pdt.hpp"
 
 BEGIN_NCBI_SCOPE
 
