@@ -117,6 +117,9 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerialization)
             if (!CFile(in_name).Copy(loc_name))
             {
                 LOG_POST("Error copying file:  " << CNcbiError::GetLast());
+                if (!CFile(loc_name).Exists()) {
+                    continue;
+                }
             }
         }
         
@@ -234,6 +237,9 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationWithHook)
             if (!CFile(in_name).Copy(loc_name))
             {
                 LOG_POST("Error copying file:  " << CNcbiError::GetLast());
+                if (!CFile(loc_name).Exists()) {
+                    continue;
+                }
             }
         }
         
@@ -289,7 +295,6 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationWithHook)
     }
 }
 
-
 BOOST_AUTO_TEST_CASE(s_TestAsnSerializationCopy)
 {
     typedef CSeq_entry TObject;
@@ -331,6 +336,9 @@ BOOST_AUTO_TEST_CASE(s_TestAsnSerializationCopy)
             if (!CFile(in_name).Copy(loc_name))
             {
                 LOG_POST("Error copying file:  " << CNcbiError::GetLast());
+                if (!CFile(loc_name).Exists()) {
+                    continue;
+                }
             }
         }
         
