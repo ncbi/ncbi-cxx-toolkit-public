@@ -850,6 +850,24 @@ public:
 
     bool CalcChecksum(string& checksum, string& content) const;
 
+    /// Standard request methods.
+    enum ERequestMethod {
+        eMethod_GET,
+        eMethod_POST,
+        eMethod_HEAD,
+        eMethod_PUT,
+        eMethod_DELETE,
+        eMethod_OPTIONS,
+        eMethod_TRACE,
+        eMethod_CONNECT,
+        eMethod_Other    ///< Unknown method, use GetRequestMethodName to read.
+    };
+
+    /// Get request method name.
+    const string& GetRequestMethodName(void) const;
+    /// Get request method.
+    ERequestMethod GetRequestMethod(void) const;
+
 private:
     /// set of environment variables
     const CNcbiEnvironment*    m_Env;

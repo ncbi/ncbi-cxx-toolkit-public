@@ -302,6 +302,33 @@ public:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
+/// CCgiHeadException --
+///
+///   Exceptions used to stop processing request after sending header when
+///   the request method is HEAD. This does not indicate an error, it's
+///   just a way to exit from ProcessRequest.
+
+class CCgiHeadException : public CCgiException
+{
+public:
+    enum EErrCode {
+        eHeaderSent          ///< Header has been written
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch ( GetErrCode() ) {
+        case eHeaderSent:  return "Header has been written";
+        default:           return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CCgiHeadException, CCgiException);
+};
+
+
+/////////////////////////////////////////////////////////////////////////////
+///
 /// CCgiSessionException --
 ///
 ///   Exceptions used by CGI session

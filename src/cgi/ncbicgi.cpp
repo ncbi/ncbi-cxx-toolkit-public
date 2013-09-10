@@ -1706,6 +1706,44 @@ bool CCgiRequest::CalcChecksum(string& checksum, string& content) const
 }
 
 
+const string& CCgiRequest::GetRequestMethodName(void) const
+{
+    return GetProperty(eCgi_RequestMethod);
+}
+
+
+CCgiRequest::ERequestMethod CCgiRequest::GetRequestMethod(void) const
+{
+    const char* s_Request_Method_Names[8] = {
+        "GET",
+        "POST",
+        "HEAD",
+        "PUT",
+        "DELETE",
+        "OPTIONS",
+        "TRACE",
+        "CONNECT"
+    };
+    const ERequestMethod s_Request_Methods[8] = {
+        eMethod_GET,
+        eMethod_POST,
+        eMethod_HEAD,
+        eMethod_PUT,
+        eMethod_DELETE,
+        eMethod_OPTIONS,
+        eMethod_TRACE,
+        eMethod_CONNECT
+    };
+    const string& method = GetRequestMethodName();
+    for (int i = 0; i < 8; i++) {
+        if ( AStrEquiv(method, s_Request_Method_Names[i], PNocase()) ) {
+            return s_Request_Methods[i];
+        }
+    }
+    return eMethod_Other;
+}
+
+
 string CCgiEntry::x_GetCharset(void) const
 {
     string type = GetContentType();

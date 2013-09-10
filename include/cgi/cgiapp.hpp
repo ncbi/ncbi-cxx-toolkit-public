@@ -302,6 +302,9 @@ private:
     CCgiContext&   x_GetContext (void) const;
     CNcbiResource& x_GetResource(void) const;    
 
+    // Check if HEAD request has been served.
+    bool x_DoneHeadRequest(void) const;
+
     auto_ptr<CNcbiResource>   m_Resource;
     auto_ptr<CCgiContext>     m_Context;
     auto_ptr<ICache>          m_Cache;

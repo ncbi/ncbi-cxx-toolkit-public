@@ -166,6 +166,9 @@ public:
     /// This method is called automatically by CCgiContext.
     void InitCORSHeaders(const string& origin);
 
+    /// Set HTTP request method.
+    void SetRequestMethod(CCgiRequest::ERequestMethod method);
+
 public:
     void x_SetSession(const CCgiSession& session);
 
@@ -198,6 +201,7 @@ protected:
     int            m_OutputFD;          // Output file descriptor, if available
     mutable bool   m_HeaderWritten;     // Did we already complete the header?
     CNcbiOstream::iostate m_OutputExpt; // Original output exceptions
+    CCgiRequest::ERequestMethod m_RequestMethod; // Request method from CCgiRequest
 
     // Prohibit copy constructor and assignment operator
     CCgiResponse(const CCgiResponse&);
@@ -310,6 +314,12 @@ inline bool CCgiResponse::IsHeaderWritten(void) const
 inline void CCgiResponse::x_SetSession(const CCgiSession& session)
 {
     m_Session = &session;
+}
+
+
+inline void CCgiResponse::SetRequestMethod(CCgiRequest::ERequestMethod method)
+{
+    m_RequestMethod = method;
 }
 
 

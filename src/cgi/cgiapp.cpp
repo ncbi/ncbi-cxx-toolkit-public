@@ -305,15 +305,21 @@ int CCgiApplication::Run(void)
             }
         }
         catch (CCgiException& e) {
-            if ( e.GetStatusCode() <  CCgiException::e200_Ok  ||
-                 e.GetStatusCode() >= CCgiException::e400_BadRequest ) {
-                throw;
+            if ( x_DoneHeadRequest() ) {
+                // Ignore errors after HEAD request has been finished.
+                GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
             }
-            GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
-            // If for some reason exception with status 2xx was thrown,
-            // set the result to 0, update HTTP status and continue.
-            m_Context->GetResponse().SetStatus(e.GetStatusCode(),
-                                               e.GetStatusMessage());
+            else {
+                if ( e.GetStatusCode() <  CCgiException::e200_Ok  ||
+                     e.GetStatusCode() >= CCgiException::e400_BadRequest ) {
+                    throw;
+                }
+                GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
+                // If for some reason exception with status 2xx was thrown,
+                // set the result to 0, update HTTP status and continue.
+                m_Context->GetResponse().SetStatus(e.GetStatusCode(),
+                                                   e.GetStatusMessage());
+            }
             result = 0;
         }
 
@@ -334,34 +340,41 @@ int CCgiApplication::Run(void)
     }
     catch (exception& e) {
         GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
-        // Call the exception handler and set the CGI exit code
-        result = OnException(e, NcbiCout);
-        x_OnEvent(eException, result);
-
-        // Logging
-        {{
-            string msg = "(CGI) CCgiApplication::ProcessRequest() failed: ";
-            msg += e.what();
-
-            if ( is_stat_log ) {
-                stat->Reset(start_time, result, &e);
-                msg = stat->Compose();
-                stat->Submit(msg);
-                skip_stat_log = true; // Don't print the same message again
-            }
-        }}
-
-        // Exception reporting. Use different severity for broken connection.
-        ios_base::failure* fex = dynamic_cast<ios_base::failure*>(&e);
-        CNcbiOstream* os = m_Context.get() ? m_Context->GetResponse().GetOutput() : NULL;
-        if ((fex  &&  os  &&  !os->good())  ||  m_OutputBroken) {
-            if ( !TClientConnIntOk::GetDefault() ) {
-                ERR_POST_X(13, Severity(TClientConnIntSeverity::GetDefault()) <<
-                    "Connection interrupted");
-            }
+        if ( x_DoneHeadRequest() ) {
+            // Ignore errors after HEAD request has been finished.
+            result = 0;
+            x_OnEvent(eSuccess, result);
         }
         else {
-            NCBI_REPORT_EXCEPTION_X(13, "(CGI) CCgiApplication::Run", e);
+            // Call the exception handler and set the CGI exit code
+            result = OnException(e, NcbiCout);
+            x_OnEvent(eException, result);
+
+            // Logging
+            {{
+                string msg = "(CGI) CCgiApplication::ProcessRequest() failed: ";
+                msg += e.what();
+
+                if ( is_stat_log ) {
+                    stat->Reset(start_time, result, &e);
+                    msg = stat->Compose();
+                    stat->Submit(msg);
+                    skip_stat_log = true; // Don't print the same message again
+                }
+            }}
+
+            // Exception reporting. Use different severity for broken connection.
+            ios_base::failure* fex = dynamic_cast<ios_base::failure*>(&e);
+            CNcbiOstream* os = m_Context.get() ? m_Context->GetResponse().GetOutput() : NULL;
+            if ((fex  &&  os  &&  !os->good())  ||  m_OutputBroken) {
+                if ( !TClientConnIntOk::GetDefault() ) {
+                    ERR_POST_X(13, Severity(TClientConnIntSeverity::GetDefault()) <<
+                        "Connection interrupted");
+                }
+            }
+            else {
+                NCBI_REPORT_EXCEPTION_X(13, "(CGI) CCgiApplication::Run", e);
+            }
         }
     }
 
@@ -1327,6 +1340,19 @@ string CCgiApplication::GetDefaultLogPath(void) const
 void CCgiApplication::SetHTTPStatus(int status)
 {
     CDiagContext::GetRequestContext().SetRequestStatus(status);
+}
+
+
+bool CCgiApplication::x_DoneHeadRequest(void) const
+{
+    const CCgiContext& ctx = GetContext();
+    const CCgiRequest& req = ctx.GetRequest();
+    const CCgiResponse& res = ctx.GetResponse();
+    if (req.GetRequestMethod() != CCgiRequest::eMethod_HEAD  ||
+        !res.IsHeaderWritten() ) {
+        return false;
+    }
+    return true;
 }
 
 

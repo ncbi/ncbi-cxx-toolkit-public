@@ -209,10 +209,10 @@ CNcbiOstream* CCgiResponse::GetOutput(void) const
         (AcceptRangesBytes()  && !HaveContentRange());
 
     if (m_Output  &&
-        (m_Output->rdstate()  &  (IOS_BASE::badbit | IOS_BASE::failbit))
-        != 0  &&
-        m_ThrowOnBadOutput.Get()  &&
-        !client_int_ok) {
+        !client_int_ok  &&
+        !(m_RequestMethod == CCgiRequest::eMethod_HEAD  &&  m_HeaderWritten)  &&
+        (m_Output->rdstate()  &  (IOS_BASE::badbit | IOS_BASE::failbit)) != 0  &&
+        m_ThrowOnBadOutput.Get()) {
         ERR_POST_X(1, Severity(TClientConnIntSeverity::GetDefault()) <<
                    "CCgiResponse::GetOutput() -- output stream is in bad state");
         const_cast<CCgiResponse*>(this)->SetThrowOnBadOutput(false);
@@ -350,7 +350,20 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
     }
 
     // End of header (empty line)
-    return os << HTTP_EOL;
+    os << HTTP_EOL;
+
+    if (m_RequestMethod == CCgiRequest::eMethod_HEAD  &&  &os == m_Output) {
+        try {
+            m_Output->setstate(ios_base::badbit);
+        }
+        catch (ios_base::failure& e) {
+        }
+        // Do not send content when serving HEAD request.
+        NCBI_CGI_THROW_WITH_STATUS(CCgiHeadException, eHeaderSent,
+            "HEAD response sent.", CCgiException::e200_Ok);
+    }
+
+    return os;
 }
 
 
