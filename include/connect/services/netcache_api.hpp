@@ -254,6 +254,9 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
 
     /// Returns the size of the BLOB identified by the "key" parameter.
     ///
+    /// @note
+    ///    This updates the blob's expiration time.
+    ///
     /// @param key
     ///    The key of the BLOB the size of which to be returned.
     /// @param optional
@@ -411,6 +414,9 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
 
     /// Return a CNetServerMultilineCmdOutput object for reading
     /// meta information about the specified blob.
+    ///
+    /// @note
+    ///    This does not update the blob's expiration time.
     CNetServerMultilineCmdOutput GetBlobInfo(const string& blob_id,
             const CNamedParameterList* optional = NULL);
 

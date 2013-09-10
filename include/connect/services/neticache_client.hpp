@@ -127,6 +127,12 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
     virtual size_t GetSize(const string&  key,
                            int            version,
                            const string&  subkey);
+
+    /// Returns the size of the BLOB identified by the "key", "version", and
+    /// "subkey" parameters.
+    ///
+    /// @note
+    ///    This updates the blob's expiration time.
     size_t GetBlobSize(const string& key, int version, const string& subkey,
             const CNamedParameterList* optional = NULL);
 
@@ -301,6 +307,9 @@ class NCBI_NET_CACHE_EXPORT CNetICacheClient : public ICache
 
     /// Return a CNetServerMultilineCmdOutput object for reading
     /// meta information about the specified blob.
+    ///
+    /// @note
+    ///    This does not update the blob's expiration time.
     CNetServerMultilineCmdOutput GetBlobInfo(const string& key,
             int version, const string& subkey,
             const CNamedParameterList* optional = NULL);
