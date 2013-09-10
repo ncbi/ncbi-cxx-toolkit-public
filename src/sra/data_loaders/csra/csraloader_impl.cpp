@@ -923,7 +923,7 @@ CCSRAFileInfo::CCSRAFileInfo(CCSRADataLoader_Impl& impl,
                              const string& csra,
                              CCSraDb::ERefIdType ref_id_type)
 {
-    CMutexGuard guard(GetMutex());
+    //CMutexGuard guard(GetMutex());
     x_Initialize(impl, csra, ref_id_type);
     for ( CCSraRefSeqIterator rit(m_CSRADb); rit; ++rit ) {
         CSeq_id_Handle seq_id = rit.GetRefSeq_id_Handle();
@@ -1051,7 +1051,7 @@ void CCSRAFileInfo::GetRefSeqBlobId(CRef<CCSRABlobId>& ret,
 CRef<CCSRARefSeqInfo>
 CCSRAFileInfo::GetRefSeqInfo(const CSeq_id_Handle& seq_id)
 {
-    CMutexGuard guard(GetMutex());
+    //CMutexGuard guard(GetMutex());
     TRefSeqs::const_iterator it = m_RefSeqs.find(seq_id);
     if ( it != m_RefSeqs.end() ) {
         return it->second;
@@ -1073,7 +1073,7 @@ bool CCSRAFileInfo::IsValidReadId(Uint8 spot_id, Uint4 read_id,
                                   CRef<CCSRARefSeqInfo>* ref_ptr,
                                   TSeqPos* ref_pos_ptr)
 {
-    CMutexGuard guard(GetMutex());
+    //CMutexGuard guard(GetMutex());
     CCSraShortReadIterator read_it(m_CSRADb, spot_id, read_id);
     if ( ref_ptr ) {
         *ref_ptr = 0;
@@ -1120,7 +1120,7 @@ void CCSRAFileInfo::LoadReadsChunk(const CCSRABlobId& /*blob_id*/,
 void CCSRAFileInfo::LoadReadsMainEntry(const CCSRABlobId& blob_id,
                                        CTSE_LoadLock& load_lock)
 {
-    CMutexGuard guard(GetMutex());
+    //CMutexGuard guard(GetMutex());
     CRef<CSeq_entry> entry(new CSeq_entry);
     Uint8 first_spot_id = blob_id.m_FirstSpotId;
     Uint8 stop_spot_id = first_spot_id + kReadsPerBlob;
