@@ -33,7 +33,7 @@ Linux64-Centos   : icc : ICC.sh            --with-strip --without-debug --withou
 
 DEFAULT_CONFIGURATIONS: Linux32-Centos:icc Linux64-Centos:icc
 
-DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-mt --with-build-root=ReleaseMT
+DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-mt --with-build-root=$srcdir/ReleaseMT
 
 Win32_10    : plain : static  32  ReleaseMT
 Win64_10    : plain : static  64  ReleaseMT
