@@ -22,6 +22,7 @@ cgi$
 cgi/impl$
 html$
 connect$
+connect/services$
 connect/ext$
 util$
 util/creaders$
@@ -29,7 +30,7 @@ util/tables$
 util/compress$
 util/compress/bzip2$
 util/compress/zlib$
-util/compress/api$
+util/compress/api
 util/regexp
 util/xregexp
 util/sequtil$
