@@ -234,20 +234,23 @@ private:
 
 // inline functions
 
-template<typename TValue>
-CTablePrinter & operator << (
-    CTablePrinter & table_printer, const TValue & value) 
-{
-    return table_printer.StreamToCurrentCell(value);
-}
+namespace {
 
-template<>
-CTablePrinter & operator << <CTablePrinter::SEndOfCell>(
-    CTablePrinter & table_printer, const CTablePrinter::SEndOfCell & end_of_cell ) 
-{
-    return table_printer.EndOfCurrentCell();
-}
+    template<typename TValue>
+    CTablePrinter & operator << (
+        CTablePrinter & table_printer, const TValue & value) 
+    {
+        return table_printer.StreamToCurrentCell(value);
+    }
 
+    template<>
+    CTablePrinter & operator << <CTablePrinter::SEndOfCell>(
+        CTablePrinter & table_printer, const CTablePrinter::SEndOfCell & end_of_cell ) 
+    {
+        return table_printer.EndOfCurrentCell();
+    }
+
+}
 
 END_NCBI_SCOPE
 
