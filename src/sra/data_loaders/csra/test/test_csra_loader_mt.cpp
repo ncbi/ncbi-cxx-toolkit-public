@@ -73,6 +73,7 @@ private:
     Uint8 FindMaxSpotId(const string& acc);
 
     bool m_Verbose;
+    bool m_PreLoad;
     int m_Seed;
     int m_IterCount, m_IterSize;
     int m_ErrorCount;
@@ -89,12 +90,13 @@ bool CCSRATestApp::TestApp_Args(CArgDescriptions& args)
 {
     // Specify USAGE context
     args.SetUsageContext(GetArguments().GetProgramBasename(),
-                         "csra_test_mt");
+                         "test_csra_loader_mt");
 
     args.AddDefaultKey("accs", "Accessions",
                        "comma separated SRA accession list",
                        CArgDescriptions::eString,
-                       "SRR000010,SRR389414,SRR494733,SRR505887,SRR035417");
+                       "SRR000010");
+                     //"SRR000010,SRR389414,SRR494733,SRR505887,SRR035417");
     args.AddOptionalKey("accs_file", "Accessions",
                         "file with SRA accession list",
                         CArgDescriptions::eInputFile);
@@ -107,6 +109,7 @@ bool CCSRATestApp::TestApp_Args(CArgDescriptions& args)
                        CArgDescriptions::eInteger,
                        "10");
     args.AddFlag("verbose", "Print info about progress");
+    args.AddFlag("preload", "Try to preload libraries in main thread");
 
     return true;
 }
@@ -139,6 +142,9 @@ bool CCSRATestApp::TestApp_Init(void)
     m_MaxSpotId.assign(m_Accession.size(), 0);
     m_OM = CObjectManager::GetInstance();
     CCSRADataLoader::RegisterInObjectManager(*m_OM, CObjectManager::eDefault);
+    if ( args["preload"] ) {
+        Thread_Run(-1);
+    }
     return true;
 }
 
@@ -232,6 +238,7 @@ bool CCSRATestApp::Thread_Run(int idx)
                      <<": scan " << start_id<<" - "<<end_id);
         }
         CScope scope(*m_OM);
+        scope.AddDefaults();
         for ( Uint8 spot_id = start_id; spot_id <= end_id; ++spot_id ) {
             for ( int read_id = 1; read_id <= 4; ++read_id ) {
                 CSeq_id_Handle id = GetHandle(acc, spot_id, read_id);
@@ -249,7 +256,13 @@ bool CCSRATestApp::Thread_Run(int idx)
                 TSeqPos len = scope.GetSequenceLength(id);
                 int taxid = scope.GetTaxId(id);
                 //_ASSERT(!scope.GetBioseqHandle(id, CScope::eGetBioseq_Resolved));
-                if ( true ) continue;
+                if ( true ) {
+                    if ( m_Verbose ) {
+                        LOG_POST(Info<<"T"<<idx<<"."<<ti<<": acc["<<index<<"] "<<acc
+                                 <<": "<<len);
+                    }
+                    continue;
+                }
                 CBioseq_Handle bh = scope.GetBioseqHandle(id);
                 _ASSERT(bh);
                 _ASSERT(bh.GetBioseqLength() == len);
