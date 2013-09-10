@@ -121,8 +121,8 @@ CNcbiOstream& CDataType::PrintASNTag(CNcbiOstream& out) const
         out  << '[';
         switch (GetTagClass()) {
         default: break;
-        case CAsnBinaryDefs::eApplication: cout << "APPLICATION "; break;
-        case CAsnBinaryDefs::ePrivate:     cout << "PRIVATE ";     break;
+        case CAsnBinaryDefs::eApplication: out << "APPLICATION "; break;
+        case CAsnBinaryDefs::ePrivate:     out << "PRIVATE ";     break;
         }
         out << NStr::NumericToString(GetTag());
         out  << ']';
@@ -130,8 +130,8 @@ CNcbiOstream& CDataType::PrintASNTag(CNcbiOstream& out) const
         if (ttype != GetModule()->GetTagDefault()) {
             switch (ttype) {
             default: break;
-            case CAsnBinaryDefs::eExplicit: cout << " EXPLICIT"; break;
-            case CAsnBinaryDefs::eImplicit: cout << " IMPLICIT";     break;
+            case CAsnBinaryDefs::eExplicit: out << " EXPLICIT"; break;
+            case CAsnBinaryDefs::eImplicit: out << " IMPLICIT";     break;
             }
         }
         out << ' ';
