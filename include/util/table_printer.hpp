@@ -38,6 +38,8 @@
 #include <corelib/ncbistre.hpp>
 #include <corelib/ncbiobj.hpp>
 
+#include <sstream>
+
 BEGIN_NCBI_SCOPE
 
 /// This can be used to lay out neat ASCII data.
@@ -58,16 +60,18 @@ BEGIN_NCBI_SCOPE
 /// vecColInfo.AddCol("Name", 20);
 /// vecColInfo.AddCol("ZIP code", 5);
 /// 
+/// typedef CTablePrinter::SEndOfCell SEndOfCell;
+///
 /// CTablePrinter table_printer(vecColInfo, cout);
 /// 
-/// *table_printer.AddCell() << "Pat" << ' ' << "Doe";
-/// *table_printer.AddCell() << "22801";
+/// table_printer << "Pat" << ' ' << "Doe" << SEndOfCell();
+/// table_printer << "22801" << SEndOfCell();
 /// 
-/// *table_printer.AddCell() << "Sammy Smith";
-/// *table_printer.AddCell() << "20852";
+/// table_printer << "Sammy Smith" << SEndOfCell();
+/// table_printer << "20852" << SEndOfCell();
 /// 
-/// *table_printer.AddCell() << "Chris Doe";
-/// *table_printer.AddCell() << "08361";
+/// table_printer << "Chris Doe" << SEndOfCell();
+/// table_printer << "08361" << SEndOfCell();
 /// 
 /// table_printer.FinishTable();
 /// </pre>
@@ -158,64 +162,29 @@ public:
         FinishTable();
     }
 
-    /// This is specifically designed to be a temporary object
-    /// so that each series of ostream-related operators
-    /// will store up and its destructor will then write out the table
-    /// data.  Please see the example in the
-    /// class comment. Outside users should not use this class.
-    struct NCBI_XUTIL_EXPORT SCellStream : public CObject {
-        typedef CObject TParent;
-        /// Give this a reference to its parent table so it
-        /// can add the cells to it.  Note the "friend" declaration
-        /// farther below.
-        SCellStream(CTablePrinter * pParentTable) 
-            : m_pParentTable(pParentTable) { }
-
-        ~SCellStream() { }
-
-        /// Cell is printed after destruction of this SCellStream.
-        /// Since printing can throw, we can't do the printing in
-        /// the destructor per se.
-        void DeleteThis(void) {
-            // remember some information before this object is destroyed
-            CTablePrinter * pParentTable = m_pParentTable;
-            string sStringToPrint = CNcbiOstrstreamToString(m_cellValueStrm);
-
-            // call parent's version of destructor
-            // WARNING: Be careful not to reference any fields or methods
-            // after this point, since the object is probably deleted.
-            TParent::DeleteThis();
-
-            // this can throw:
-            pParentTable->x_AddCellValue(
-                sStringToPrint );
-        }
-
-        /// SCellStream is not itself an ostream, so we
-        /// have this template to return its internal m_cellValueStrm
-        /// instead.
-        template<typename TValue>
-        ostream & operator << (const TValue & value) {
-            return m_cellValueStrm << value; 
-        }
-
-        /// Pointer to parent.  Outside users should not touch this.
-        CTablePrinter * m_pParentTable;
-        /// This is where the cell's value is built.  Outside users
-        /// should not directly touch this, and they should not need to
-        /// anyway since there is an operator just above for reaching it
-        /// cleanly.
-        CNcbiOstrstream m_cellValueStrm;
+    struct SEndOfCell {
+        int dummy; // in case compiler doesn't like empty classes
     };
-    /// Let SCellStream's dtor access x_AddCellValue
-    friend SCellStream::~SCellStream();
 
-    /// Call this once for each cell of table data you would like to add.
-    /// Do NOT store the returned CRef anywhere because it's designed
-    /// to be destroyed at the end of the statement so it can write
-    /// its data.
-    CRef<SCellStream> AddCell(void) {
-        return Ref(new SCellStream(this));
+    template<class TValue>
+    CTablePrinter & StreamToCurrentCell (
+        const TValue & value)
+    {
+        m_NextCellContents << value;
+        return *this;
+    }
+
+    CTablePrinter & EndOfCurrentCell(void)
+    {
+        // reset m_NextCellContents early in case
+        // x_AddCellValue throws.
+        const string sNextCellContents( m_NextCellContents.str() );
+        m_NextCellContents.str(kEmptyStr);
+
+        // might throw
+        x_AddCellValue(sNextCellContents);
+
+        return *this;
     }
 
     /// If the table is not already finished, this
@@ -246,6 +215,8 @@ private:
     /// The text that separates columns (both in the header as well as dat).
     const string m_sColumnSeparator;
 
+    stringstream m_NextCellContents;
+
     /// forbid copy 
     CTablePrinter(const CTablePrinter &);
     /// forbid assignment
@@ -261,7 +232,23 @@ private:
     void x_AddCellValue(const string & sValue);
 };
 
+// inline functions
+
+template<typename TValue>
+CTablePrinter & operator << (
+    CTablePrinter & table_printer, const TValue & value) 
+{
+    return table_printer.StreamToCurrentCell(value);
+}
+
+template<>
+CTablePrinter & operator << <CTablePrinter::SEndOfCell>(
+    CTablePrinter & table_printer, const CTablePrinter::SEndOfCell & end_of_cell ) 
+{
+    return table_printer.EndOfCurrentCell();
+}
+
+
 END_NCBI_SCOPE
 
 #endif /* UTIL___TABLE_PRINTER__HPP */
-

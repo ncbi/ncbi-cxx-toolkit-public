@@ -54,6 +54,10 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+namespace {
+    typedef CTablePrinter::SEndOfCell CellEnd;
+}
+
 /////////////////////////////////////////////////////////////////////////////
 //  CGapStatsApplication::
 
@@ -410,9 +414,9 @@ void CGapStatsApplication::x_PrintSummaryView(
         if( 0 == gap_len ) {
             bAnyGapOfLenZero = true;
         }
-        *table_printer.AddCell() << gap_len;
-        *table_printer.AddCell() << summary_unit.num_seqs;
-        *table_printer.AddCell() << summary_unit.num_gaps;
+        table_printer << gap_len << CellEnd();
+        table_printer << summary_unit.num_seqs << CellEnd();
+        table_printer << summary_unit.num_gaps << CellEnd();
     }
     cout << endl;
 
@@ -463,9 +467,9 @@ void CGapStatsApplication::x_PrintHistogram(
     cout << "HISTOGRAM:" << endl;
     ITERATE( CHistogramBinning::TListOfBins, bin_iter, *pListOfBins ) {
         const CHistogramBinning::SBin & bin = *bin_iter;
-        *table_printer.AddCell() << bin.first_number 
-            << '-' << bin.last_number;
-        *table_printer.AddCell() << bin.total_appearances;
+        table_printer << bin.first_number 
+                      << '-' << bin.last_number << CellEnd();
+        table_printer << bin.total_appearances << CellEnd();
     }
 }
 

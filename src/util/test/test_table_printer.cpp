@@ -43,6 +43,9 @@
 
 BEGIN_NCBI_SCOPE
 
+namespace {
+    typedef CTablePrinter::SEndOfCell CellEnd;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 /// Test Cases
@@ -65,18 +68,18 @@ BOOST_AUTO_TEST_CASE(TestBasic)
         CTablePrinter table_printer(vecColInfo, result_strm, "  |  ");
 
         // add a row that's fine
-        *table_printer.AddCell() << "Jean" << ' ' << "Doe";
-        *table_printer.AddCell() << 88;
-        *table_printer.AddCell() << "Crozet";
-        *table_printer.AddCell() << "VA";
-        *table_printer.AddCell() << "22601";
+        table_printer << "Jean" << ' ' << "Doe" << CellEnd();
+        table_printer << 88 << CellEnd();
+        table_printer << "Crozet" << CellEnd();
+        table_printer << "VA" << CellEnd();
+        table_printer << "22601" << CellEnd();
 
         // add a row where every cell is overflowing
-        *table_printer.AddCell() << "Hubert Blaine Wolfeschlegelsteinhausenbergerdorff..., record holder for longest name";
-        *table_printer.AddCell() << 12345;
-        *table_printer.AddCell() << "Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch";
-        *table_printer.AddCell() << "Wales, part of the United Kingdom, and part of the island of Great Britain";
-        *table_printer.AddCell() << "zip code too long test";
+        table_printer << "Hubert Blaine Wolfeschlegelsteinhausenbergerdorff..., record holder for longest name" << CellEnd();
+        table_printer << 12345 << CellEnd();
+        table_printer << "Llanfairpwllgwyngyllgogerychwyrndrobwllllantysiliogogogoch" << CellEnd();
+        table_printer << "Wales, part of the United Kingdom, and part of the island of Great Britain" << CellEnd();
+        table_printer << "zip code too long test" << CellEnd();
     }}
 
     CNcbiOstrstream expected_result_strm;
@@ -103,7 +106,7 @@ BOOST_AUTO_TEST_CASE(TestOverflowException)
     CTablePrinter table_printer(vecColInfo, dummy_strm);
 
     BOOST_CHECK_THROW(
-        *table_printer.AddCell() << "THIS NAME IS TOO LONG.",
+        table_printer << "THIS NAME IS TOO LONG." << CellEnd(),
         CException);
 }
 
@@ -117,16 +120,16 @@ BOOST_AUTO_TEST_CASE(TestFinishTable)
 
     CTablePrinter table_printer(vecColInfo, result_strm);
 
-    *table_printer.AddCell() << "Pat Doe";
-    *table_printer.AddCell() << "22801";
+    table_printer << "Pat Doe" << CellEnd();
+    table_printer << "22801" << CellEnd();
 
-    *table_printer.AddCell() << "Sammy Smith";
-    *table_printer.AddCell() << "20852";
+    table_printer << "Sammy Smith" << CellEnd();
+    table_printer << "20852" << CellEnd();
 
     table_printer.FinishTable();
 
-    *table_printer.AddCell() << "Chris Doe";
-    *table_printer.AddCell() << "08361";
+    table_printer << "Chris Doe" << CellEnd();
+    table_printer << "08361" << CellEnd();
 
     table_printer.FinishTable();
 
@@ -158,11 +161,11 @@ BOOST_AUTO_TEST_CASE(TestEmptyColName)
 
     CTablePrinter table_printer(vecColInfo, result_strm);
 
-    *table_printer.AddCell() << "";
-    *table_printer.AddCell() << "abc";
+    table_printer << "" << CellEnd();
+    table_printer << "abc" << CellEnd();
 
-    *table_printer.AddCell() << "X";
-    *table_printer.AddCell() << "defgh";
+    table_printer << "X" << CellEnd();
+    table_printer << "defgh" << CellEnd();
 
     table_printer.FinishTable();
 
