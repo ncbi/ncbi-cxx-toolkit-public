@@ -233,11 +233,8 @@ protected:
     void Put(CRef<CObject>& curs);
 
 private:
-    enum {
-        kCacheSize = 2
-    };
-
-    CRef<CObject> m_Obj[kCacheSize];
+    typedef vector< CRef<CObject> > TObjects;
+    TObjects m_Objects;
 
 private:
     CVDBObjectCacheBase(const CVDBObjectCacheBase&);
@@ -250,11 +247,13 @@ class CVDBObjectCache : public CVDBObjectCacheBase
 {
 public:
     CRef<Object> Get(void) {
-        CRef<CObject> obj = CVDBObjectCacheBase::Get();
-        return CRef<Object>(static_cast<Object*>(obj.ReleaseOrNull()));
+        CRef<Object> obj;
+        CRef<CObject> obj2 = CVDBObjectCacheBase::Get();
+        obj = static_cast<Object*>(obj2.GetPointerOrNull());
+        return obj;
     }
     void Put(CRef<Object>& obj) {
-        CRef<CObject> obj2(obj.ReleaseOrNull());
+        CRef<CObject> obj2(obj.GetPointer());
         CVDBObjectCacheBase::Put(obj2);
     }
 };

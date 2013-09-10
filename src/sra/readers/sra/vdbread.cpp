@@ -172,7 +172,13 @@ string CVDBMgr::FindAccPath(const string& acc) const
 }
 
 
+#define GUARD_SDK
+#ifdef GUARD_SDK
 DEFINE_STATIC_FAST_MUTEX(sx_SDKMutex);
+# define DECLARE_SDK_GUARD() CFastMutexGuard guard(sx_SDKMutex)
+#else
+# define DECLARE_SDK_GUARD() 
+#endif
 
 
 void CVDBMgr::x_Init(void)
@@ -208,7 +214,7 @@ string s_FixPath(const string& acc_or_path)
 
 void CVDB::Init(const CVDBMgr& mgr, const string& acc_or_path)
 {
-    CFastMutexGuard guard(sx_SDKMutex);
+    DECLARE_SDK_GUARD();
     if ( rc_t rc = VDBManagerOpenDBRead(mgr, x_InitPtr(), 0,
                                         s_FixPath(acc_or_path).c_str()) ) {
         *x_InitPtr() = 0;
@@ -220,7 +226,7 @@ void CVDB::Init(const CVDBMgr& mgr, const string& acc_or_path)
 
 void CVDBTable::Init(const CVDB& db, const char* table_name)
 {
-    CFastMutexGuard guard(sx_SDKMutex);
+    DECLARE_SDK_GUARD();
     if ( rc_t rc = VDatabaseOpenTableRead(db, x_InitPtr(), table_name) ) {
         *x_InitPtr() = 0;
         NCBI_THROW3(CSraException, eNotFoundTable,
@@ -232,8 +238,8 @@ void CVDBTable::Init(const CVDB& db, const char* table_name)
 void CVDBTable::Init(const CVDBMgr& mgr, const string& acc_or_path)
 {
     *x_InitPtr() = 0;
-    CFastMutexGuard guard(sx_SDKMutex);
     VSchema *schema;
+    DECLARE_SDK_GUARD();
     if ( rc_t rc = SRASchemaMake(&schema, mgr) ) {
         NCBI_THROW2(CSraException, eInitFailed,
                     "Cannot make default SRA schema", rc);
@@ -338,8 +344,12 @@ void CVDBCursor::SetParam(const char* name, const CTempString& value) const
 }
 
 
+static const size_t kCacheSize = 8;
+
+
 CVDBObjectCacheBase::CVDBObjectCacheBase(void)
 {
+    m_Objects.reserve(kCacheSize);
 }
 
 
@@ -348,11 +358,16 @@ CVDBObjectCacheBase::~CVDBObjectCacheBase(void)
 }
 
 
+DEFINE_STATIC_FAST_MUTEX(sm_CacheMutex);
+
+
 CRef<CObject> CVDBObjectCacheBase::Get(void)
 {
     CRef<CObject> obj;
-    for ( int i = 0; i < kCacheSize && !obj; ++i ) {
-        m_Obj[i].AtomicReleaseTo(obj);
+    CFastMutexGuard guard(sm_CacheMutex);
+    if ( !m_Objects.empty() ) {
+        obj.Swap(m_Objects.back());
+        m_Objects.pop_back();
     }
     return obj;
 }
@@ -360,15 +375,10 @@ CRef<CObject> CVDBObjectCacheBase::Get(void)
 
 void CVDBObjectCacheBase::Put(CRef<CObject>& obj)
 {
-    if ( obj && obj->ReferencedOnlyOnce() ) {
-        for ( int i = 0; i < kCacheSize; ++i ) {
-            if ( !m_Obj[i] ) {
-                m_Obj[i].AtomicResetFrom(obj);
-                break;
-            }
-        }
+    CFastMutexGuard guard(sm_CacheMutex);
+    if ( m_Objects.size() < kCacheSize ) {
+        m_Objects.push_back(obj);
     }
-    obj.Reset();
 }
 
 
@@ -378,7 +388,7 @@ void CVDBColumn::Init(const CVDBCursor& cursor,
                       const char* backup_name,
                       EMissing missing)
 {
-    CFastMutexGuard guard(sx_SDKMutex);
+    DECLARE_SDK_GUARD();
     if ( rc_t rc = VCursorAddColumn(cursor, &m_Index, name) ) {
         if ( backup_name &&
              (rc = VCursorAddColumn(cursor, &m_Index, backup_name)) == 0 ) {
