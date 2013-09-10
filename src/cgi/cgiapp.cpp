@@ -779,10 +779,12 @@ public:
     
     virtual void AddEntry(const string& name,
                           const string& value,
+                          const string& filename,
                           bool          is_index)
     {
         _ASSERT(!is_index  ||  value.empty());
-        m_Args.push_back(CDiagContext_Extra::TExtraArg(name, value));
+        m_Args.push_back(CDiagContext_Extra::TExtraArg(name,
+            filename.empty() ? value : filename + "/" + value));
     }
 
     CDiagContext_Extra::TExtraArgs& GetArgs(void) { return m_Args; }

@@ -633,6 +633,7 @@ public:
     virtual ~CEntryCollector_Base(void) {}
     virtual void AddEntry(const string& name,
                           const string& value,
+                          const string& filename,
                           bool          is_index = false) = 0;
 };
 

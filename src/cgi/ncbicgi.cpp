@@ -1563,7 +1563,7 @@ void CCgiRequest::GetCGIEntries(CEntryCollector_Base& collector) const
             if ( idx->empty() ) {
                 continue;
             }
-            collector.AddEntry(*idx, kEmptyStr, true);
+            collector.AddEntry(*idx, kEmptyStr, kEmptyStr, true);
         }
         return;
     }
@@ -1623,6 +1623,7 @@ void CCgiRequest::GetCGIEntries(CEntryCollector_Base& collector) const
         }
         collector.AddEntry(entry->first,
             lim >= 0 ? entry->second.substr(0, lim) : string(entry->second),
+            entry->second.GetFilename(),
             false);
     }
 }
@@ -1635,6 +1636,7 @@ public:
     
     virtual void AddEntry(const string& name,
                           const string& value,
+                          const string& filename,
                           bool          is_index);
 
     const string& GetArgs(void) const { return m_Args; }
@@ -1646,6 +1648,7 @@ private:
 
 void CStringEntryCollector::AddEntry(const string& name,
                                      const string& value,
+                                     const string& /*filename*/,
                                      bool          is_index)
 {
     if ( is_index ) {
