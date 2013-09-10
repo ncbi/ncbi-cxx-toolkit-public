@@ -162,10 +162,15 @@ public:
         FinishTable();
     }
 
+    /// Stream an instance of this object into the CTablePrinter
+    /// to have it write out the current table cell and prepare for the
+    /// next one.  See the documentation of this class for more details.
     struct SEndOfCell {
         int dummy; // in case compiler doesn't like empty classes
     };
 
+    /// This is just a helper for the global "operator <<" function
+    /// for writing into the table.
     template<class TValue>
     CTablePrinter & StreamToCurrentCell (
         const TValue & value)
@@ -174,6 +179,9 @@ public:
         return *this;
     }
 
+    /// This writes the contents of the current cell and
+    /// prepares for the next one.  This is really just a helper
+    /// for the "operator <<" that accepts SEndOfCell.
     CTablePrinter & EndOfCurrentCell(void)
     {
         // reset m_NextCellContents early in case
@@ -215,6 +223,8 @@ private:
     /// The text that separates columns (both in the header as well as dat).
     const string m_sColumnSeparator;
 
+    /// The contents of the current table cell are accumulated
+    /// in here.
     stringstream m_NextCellContents;
 
     /// forbid copy 
@@ -236,6 +246,7 @@ private:
 
 namespace {
 
+    /// Writes object to current table cell.
     template<typename TValue>
     CTablePrinter & operator << (
         CTablePrinter & table_printer, const TValue & value) 
@@ -243,6 +254,7 @@ namespace {
         return table_printer.StreamToCurrentCell(value);
     }
 
+    /// Flushes table cell contents and prepares for the next cell.
     template<>
     CTablePrinter & operator << <CTablePrinter::SEndOfCell>(
         CTablePrinter & table_printer, const CTablePrinter::SEndOfCell & end_of_cell ) 
