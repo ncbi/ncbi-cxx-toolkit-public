@@ -62,6 +62,8 @@
 #include <serial/objostrasnb.hpp>
 #include <serial/objistrasnb.hpp>
 
+#include <common/test_assert.h>  /* This header must go last */
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
@@ -150,40 +152,61 @@ bool CCSRATestApp::TestApp_Exit(void)
 //  Run test
 /////////////////////////////////////////////////////////////////////////////
 
+void s_Check(const CBioseq& seq)
+{
+    _ASSERT(!seq.GetId().empty());
+    const CSeq_inst& inst = seq.GetInst();
+    const string& seqdata = inst.GetSeq_data().GetIupacna().Get();
+    _ASSERT(seqdata.size() == inst.GetLength());
+    ITERATE ( string, i, seqdata ) {
+        _ASSERT(*i >= 'A' && *i <= 'Z');
+    }
+}
+
 string s_AsFASTA(const CBioseq& seq)
 {
-    return seq.GetId().front()->AsFastaString()+" "+
-        seq.GetInst().GetSeq_data().GetIupacna().Get();
+    const CSeq_inst& inst = seq.GetInst();
+    const string& seqdata = inst.GetSeq_data().GetIupacna().Get();
+    return seq.GetId().front()->AsFastaString()+' '+seqdata;
 }
 
 bool CCSRATestApp::Thread_Run(int idx)
 {
     CRandom random(m_Seed+idx);
+    _ASSERT(!m_Accession.empty());
+    _ASSERT(m_IterCount);
+    _ASSERT(m_IterSize);
     for ( int ti = 0; ti < m_IterCount; ++ti ) {
-        size_t index = random.GetRand(0u, m_Accession.size()-1);
+        size_t index = random.GetRandIndex(m_Accession.size());
         const string& acc = m_Accession[index];
         if ( m_Verbose ) {
             LOG_POST(Info<<"T"<<idx<<"."<<ti<<": acc["<<index<<"] "<<acc);
         }
         CCSraDb csra(m_Mgr, acc);
         if ( !m_MaxSpotId[index] ) {
+            DEFINE_STATIC_FAST_MUTEX(s_mutex);
+            CFastMutexGuard guard(s_mutex);
             m_MaxSpotId[index] = CCSraShortReadIterator(csra).GetMaxSpotId();
             if ( m_Verbose ) {
                 LOG_POST(Info<<"T"<<idx<<"."<<ti<<": acc["<<index<<"] "<<acc
                          <<": max id = " << m_MaxSpotId[index]);
             }
+            _ASSERT(m_MaxSpotId[index] > 0);
         }
         int count = int(min(m_MaxSpotId[index], Uint8(m_IterSize)));
-        Uint8 start_id = random.GetRand(1u, m_MaxSpotId[index]-count+1);
-        Uint8 end_id = start_id+count-1;
+        Uint8 start_id = random.GetRandIndex(m_MaxSpotId[index]-count)+1;
+        Uint8 stop_id = start_id+count;
         if ( m_Verbose ) {
             LOG_POST(Info<<"T"<<idx<<"."<<ti<<": acc["<<index<<"] "<<acc
-                     <<": scan " << start_id<<" - "<<end_id);
+                     <<": scan " << start_id<<" - "<<(stop_id-1));
         }
+        size_t seq_count = 0;
         for ( CCSraShortReadIterator i(csra, start_id);
-              i && i.GetSpotId() <= end_id; ++i ) {
+              i && i.GetSpotId() < stop_id; ++i ) {
+            CRef<CBioseq> seq = i.GetShortBioseq();
+            s_Check(*seq);
+            ++seq_count;
             if ( true ) {
-                CRef<CBioseq> seq = i.GetShortBioseq();
                 if ( m_Verbose ) {
                     LOG_POST(Info<<"T"<<idx<<"."<<ti<<": acc["<<index<<"] "<<acc
                              <<": "<<s_AsFASTA(*seq));
@@ -196,6 +219,7 @@ bool CCSRATestApp::Thread_Run(int idx)
                 }
             }
         }
+        _ASSERT(seq_count);
     }
     return true;
 }
