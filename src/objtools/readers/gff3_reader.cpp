@@ -267,16 +267,16 @@ bool CGff3Reader::xUpdateAnnotCds(
     // be handled. Until those are settled, we will flag such records as errors.
     //
     vector<string> parents;
-    if (record.GetAttribute("Parent", parents)  &&  parents.size() > 1) {
-        CObjReaderLineException err(
-            eDiag_Error,
-            0,
-            "Multi-parent CDS records not supported.",
-            ILineError::eProblem_GeneralParsingError);
-        err.SetLineNumber(m_uLineNumber);
-        ProcessError(err, pEC);
-        return false;
-    }
+    //if (record.GetAttribute("Parent", parents)  &&  parents.size() > 1) {
+    //    CObjReaderLineException err(
+    //        eDiag_Error,
+    //        0,
+    //        "Multi-parent CDS records not supported.",
+    //        ILineError::eProblem_GeneralParsingError);
+    //    err.SetLineNumber(m_uLineNumber);
+        //ProcessError(err, pEC);
+    //    return false;
+    //}
     string id;
     if (record.GetAttribute("ID", id)) {
         IdToFeatureMap::iterator it = m_MapIdToFeature.find(id);
