@@ -570,7 +570,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_GrainGenes, "http://wheat.pw.usda.gov/cgi-bin/graingenes/report.cgi?class=marker&name=" },
     { CDbtag::eDbtagType_Greengenes, "http://greengenes.lbl.gov/cgi-bin/show_one_record_v2.pl?prokMSA_id=" },
     { CDbtag::eDbtagType_HGNC, "http://www.genenames.org/data/hgnc_data.php?hgnc_id=" },
-    { CDbtag::eDbtagType_HMP, "http://www.hmpdacc-resources.org/cgi-bin/hmp_catalog/main.cgi?section=HmpSummary&page=displayHmpProject&hmp_id=" },
+    { CDbtag::eDbtagType_HMP, "http://www.hmpdacc.org/catalog/grid.php?dataset=genomic&hmp_id=" },
     { CDbtag::eDbtagType_HOMD, "http://www.homd.org/" },
     { CDbtag::eDbtagType_HPRD, "http://www.hprd.org/protein/" },
     { CDbtag::eDbtagType_HSSP, "http://srs.ebi.ac.uk/srsbin/cgi-bin/wgetz?-newId+-e+hssp-ID:" },
