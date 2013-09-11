@@ -95,7 +95,7 @@ void CContextApp::Init(void)
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),"Correct Context in Variation objects");
     arg_desc->AddDefaultKey("i", "input", "Input file",CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
-    arg_desc->AddDefaultKey("f", "fixed", "Fixed file",CArgDescriptions::eInputFile,"fixed",CArgDescriptions::fPreOpen);
+    arg_desc->AddOptionalKey("f", "fixed", "Fixed file",CArgDescriptions::eInputFile,CArgDescriptions::fPreOpen);
     arg_desc->AddFlag("v", "Verbose output",true);
     arg_desc->AddFlag("vcf", "VCF context",true);
     arg_desc->AddFlag("hgvs", "HGVS context",true);
@@ -253,16 +253,25 @@ int CContextApp::CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<COb
         cerr <<  MSerial_AsnText << *v1;
     }
     CVariationNormalization::NormalizeVariation(v1,context,*scope);
+
+    if (verbose)
+    {
+        cerr << endl << "Output Variation" << endl;
+        cerr <<  MSerial_AsnText << *v1;
+    }   
+
+
+    if(!var_in2.get()) {
+        cout <<  MSerial_AsnText << *v1;
+        return 0;
+    }
+
+
     *var_in2 >> *v2;
     if (verbose)
     {
         cerr << endl << "Desired Variation" << endl;
         cerr <<  MSerial_AsnText << *v2;
-    }   
-    if (verbose)
-    {
-        cerr << endl << "Output Variation" << endl;
-        cerr <<  MSerial_AsnText << *v1;
     }   
     int n = CompareVar(v1,v2); 
     return n;
@@ -270,13 +279,19 @@ int CContextApp::CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<COb
 
 int CContextApp::Run() 
 {
+
     CArgs args = GetArgs();
     CNcbiIstream& istr = args["i"].AsInputFile();
-    CNcbiIstream& fstr = args["f"].AsInputFile();
     bool verbose = args["v"].AsBoolean();
     bool context_vcf = args["vcf"].AsBoolean();
     bool context_hgvs = args["hgvs"].AsBoolean();
     bool context_varloc = args["varloc"].AsBoolean();
+
+    AutoPtr<CNcbiIstream> fstr;
+    if(args["f"])
+        fstr.reset(new CNcbiIfstream(args["f"].AsString().c_str()));
+
+    
 
     CVariationNormalization::ETargetContext context = CVariationNormalization::eDbSnp;
     if (context_vcf)
@@ -295,14 +310,22 @@ int CContextApp::Run()
     AutoPtr<CDecompressIStream>	decomp_stream1(new CDecompressIStream(istr, CCompressStream::eGZipFile, CZipCompression::fAllowTransparentRead));
     AutoPtr<CObjectIStream> var_in1(CObjectIStream::Open(eSerial_AsnText, *decomp_stream1));
 
-    AutoPtr<CDecompressIStream>	decomp_stream2(new CDecompressIStream(fstr, CCompressStream::eGZipFile, CZipCompression::fAllowTransparentRead));
-    AutoPtr<CObjectIStream> var_in2(CObjectIStream::Open(eSerial_AsnText, *decomp_stream2));
+    AutoPtr<CDecompressIStream>	decomp_stream2;
+    AutoPtr<CObjectIStream> var_in2;
+    if( args["f"] ) {
+        decomp_stream2.reset(new CDecompressIStream(*fstr, CCompressStream::eGZipFile, CZipCompression::fAllowTransparentRead));
+        var_in2.reset(CObjectIStream::Open(eSerial_AsnText, *decomp_stream2));
+    }
 
     bool is_variation = IsVariation(var_in1);
 
     int n = 0;
-    while (!var_in1->EndOfData() && !var_in2->EndOfData())
+    while (!var_in1->EndOfData() )  // && !var_in2->EndOfData())
     {
+        if( args["f"] && var_in2->EndOfData() ) 
+        {
+            ERR_POST(Error << "File size does not match - Fixed file is smaller" << Endm);
+        }
         if (is_variation)
             n += CorrectAndCompare<CVariation>(var_in1, var_in2, context, scope,verbose);
         else
@@ -310,8 +333,9 @@ int CContextApp::Run()
     }
     if (verbose)
         cerr << endl << "Number of inconsistencies: " << n << endl;
-    if (!var_in1->EndOfData() || !var_in2->EndOfData())
-        ERR_POST(Error << "File size does not match" << Endm);
+    
+    if( args["f"] && !var_in2->EndOfData() ) 
+        ERR_POST(Error << "File size does not match - Fixed file is larger" << Endm);
 
     return 0;
 }
