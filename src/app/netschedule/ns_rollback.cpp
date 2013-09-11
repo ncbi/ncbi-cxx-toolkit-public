@@ -47,7 +47,7 @@ void CNSSubmitRollback::Rollback(CQueue *  queue)
 
     try {
         // true -> it is a cancel due to rollback
-        queue->Cancel(m_Client, m_JobId, true);
+        queue->Cancel(m_Client, m_JobId, queue->MakeJobKey(m_JobId), true);
     } catch (const exception &  ex) {
         ERR_POST("Error while rolling back job submission: " << ex.what());
     } catch (...) {
@@ -64,7 +64,8 @@ void CNSBatchSubmitRollback::Rollback(CQueue *  queue)
     try {
         for (size_t  k = 0; k < m_BatchSize; ++k) {
             // true -> it is a cancel due to rollback
-            queue->Cancel(m_Client, m_FirstJobId + 1, true);
+            queue->Cancel(m_Client, m_FirstJobId + k,
+                          queue->MakeJobKey(m_FirstJobId + k), true);
         }
     } catch (const exception &  ex) {
         ERR_POST("Error while rolling back job batch submission: " << ex.what());
@@ -86,7 +87,8 @@ void CNSGetJobRollback::Rollback(CQueue *  queue)
                             // not analyzed here
 
         // true -> returned due to rollback
-        queue->ReturnJob(m_Client, m_JobId, "", warning, true);
+        queue->ReturnJob(m_Client, m_JobId, queue->MakeJobKey(m_JobId),
+                         "", warning, true);
     } catch (const exception &  ex) {
         ERR_POST("Error while rolling back requested job: " << ex.what());
     } catch (...) {
@@ -104,7 +106,8 @@ void CNSReadJobRollback::Rollback(CQueue *  queue)
     // into the reading blacklist
     try {
         // true -> returned due to rollback
-        queue->ReturnReadingJob(m_Client, m_JobId, "", true);
+        queue->ReturnReadingJob(m_Client, m_JobId, queue->MakeJobKey(m_JobId),
+                                "", true);
     } catch (const exception &  ex) {
         ERR_POST("Error while rolling back read requested job: " << ex.what());
     } catch (...) {

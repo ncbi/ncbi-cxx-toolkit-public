@@ -136,6 +136,7 @@ public:
     static CNetScheduleServer*  GetInstance(void);
     const CNetScheduleAccessList &  GetAdminHosts(void) const { return m_AdminHosts; }
     string GetAdminClientNames(void) const;
+    CCompoundIDPool GetCompoundIDPool(void) const { return m_CompoundIDPool; }
 
 protected:
     virtual void Exit();
@@ -196,6 +197,8 @@ private:
 
     mutable CRWLock                             m_AdminClientsLock;
     vector<string>                              m_AdminClientNames;
+
+    CCompoundIDPool                             m_CompoundIDPool;
 
 private:
     string  x_GenerateGUID(void) const;

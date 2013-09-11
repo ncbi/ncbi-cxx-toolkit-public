@@ -506,7 +506,7 @@ class Scenario1000( TestBase ):
         ns_client.set_client_identification( 'netschedule_admin', 'session1' )
 
         self.ns.setConfig( "1.1000" )
-        output = execAny( ns_client, 'RECO' )
+        output = execAny( ns_client, 'RECO' )   # analysis:ignore
         output1 = execAny( ns_client, 'GETCONF effective=0', isMultiline = True )
         output2 = execAny( ns_client, 'GETCONF effective=1', isMultiline = True )
 
@@ -565,3 +565,274 @@ class Scenario1000( TestBase ):
                              effectiveAdminClient + ". Expected 'netschedule_admin'" )
 
         return True
+
+class Scenario1100( TestBase ):
+    " Scenario1100 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Start with scrambled keys, SUBMIT"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 1100 )
+        origJobID = self.ns.submitJob( 'TEST', 'bla' )
+        if "JSID" in origJobID:
+            raise Exception( "Unexpected job key format: " + origJobID )
+        return True
+
+class Scenario1101( TestBase ):
+    " Scenario1101 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Start with scrambled keys, SUBMIT, SST2"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 1100 )
+        jobID = self.ns.submitJob( 'TEST', 'blah' )
+        if "JSID" in jobID:
+            raise Exception( "Unexpected job key format: " + jobID )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1101' )
+
+        output = execAny( ns_client, 'SST2 ' + jobID )
+        values = parse_qs( output, True, True )
+        if values[ 'job_status' ] != ['Pending']:
+            raise Exception( "Unexpected SST2 output" )
+        return True
+
+
+class Scenario1102( TestBase ):
+    " Scenario1102 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Start with scrambled keys, SUBMIT, GET2"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 1100 )
+        jobID = self.ns.submitJob( 'TEST', 'blah' )
+        if "JSID" in jobID:
+            raise Exception( "Unexpected job key format: " + jobID )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1102' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1' )
+        values = parse_qs( output, True, True )
+        jobKey = values[ 'job_key' ]
+        if jobKey[ 0 ] != jobID:
+            raise Exception( "Unexpected GET2 output" )
+        return True
+
+
+class Scenario1103( TestBase ):
+    " Scenario1103 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Start with scrambled keys, SUBMIT, PUT2"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 1100 )
+        jobID = self.ns.submitJob( 'TEST', 'blah' )
+        if "JSID" in jobID:
+            raise Exception( "Unexpected job key format: " + jobID )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1103' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1' )
+        values = parse_qs( output, True, True )
+        jobKey = values[ 'job_key' ]
+        if jobKey[ 0 ] != jobID:
+            raise Exception( "Unexpected GET2 output" )
+
+        authToken = values[ 'auth_token' ][ 0 ]
+        execAny( ns_client, "PUT2 " + jobID + " " + authToken + " 0 output" )
+
+        output = execAny( ns_client, 'SST2 ' + jobID )
+        values = parse_qs( output, True, True )
+        if values[ 'job_status' ] != ['Done']:
+            raise Exception( "Unexpected SST2 output" )
+        return True
+
+class Scenario1104( TestBase ):
+    " Scenario1104 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Start with scrambled keys, SUBMIT, FPUT2"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 1100 )
+        jobID = self.ns.submitJob( 'TEST', 'blah' )
+        if "JSID" in jobID:
+            raise Exception( "Unexpected job key format: " + jobID )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1104' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1' )
+        values = parse_qs( output, True, True )
+        jobKey = values[ 'job_key' ]
+        if jobKey[ 0 ] != jobID:
+            raise Exception( "Unexpected GET2 output" )
+
+        authToken = values[ 'auth_token' ][ 0 ]
+        execAny( ns_client, "FPUT2 " + jobID + " " + authToken + " ErrMsg Output 2" )
+
+        output = execAny( ns_client, 'SST2 ' + jobID )
+        values = parse_qs( output, True, True )
+        if values[ 'job_status' ] != ['Failed']:
+            raise Exception( "Unexpected SST2 output" )
+        return True
+
+
+class Scenario1105( TestBase ):
+    " Scenario1105 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Start with scrambled keys, SUBMIT, RETURN2"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 1100 )
+        jobID = self.ns.submitJob( 'TEST', 'blah' )
+        if "JSID" in jobID:
+            raise Exception( "Unexpected job key format: " + jobID )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1105' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1' )
+        values = parse_qs( output, True, True )
+        jobKey = values[ 'job_key' ]
+        if jobKey[ 0 ] != jobID:
+            raise Exception( "Unexpected GET2 output" )
+
+        authToken = values[ 'auth_token' ][ 0 ]
+        execAny( ns_client, "RETURN2 " + jobID + " " + authToken )
+
+        output = execAny( ns_client, 'SST2 ' + jobID )
+        values = parse_qs( output, True, True )
+        if values[ 'job_status' ] != ['Pending']:
+            raise Exception( "Unexpected SST2 output" )
+        return True
+
+class Scenario1106( TestBase ):
+    " Scenario1106 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Start with scrambled keys, SUBMIT, CANCEL"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 1100 )
+        jobID = self.ns.submitJob( 'TEST', 'blah' )
+        if "JSID" in jobID:
+            raise Exception( "Unexpected job key format: " + jobID )
+
+        ns_client = self.getNetScheduleService( 'TEST', 'scenario1106' )
+        ns_client.set_client_identification( 'node', 'session' )
+
+        output = execAny( ns_client, 'GET2 wnode_aff=0 any_aff=1' )
+        values = parse_qs( output, True, True )
+        jobKey = values[ 'job_key' ]
+        if jobKey[ 0 ] != jobID:
+            raise Exception( "Unexpected GET2 output" )
+
+        authToken = values[ 'auth_token' ][ 0 ]
+        execAny( ns_client, "CANCEL " + jobID )
+
+        output = execAny( ns_client, 'SST2 ' + jobID )
+        values = parse_qs( output, True, True )
+        if values[ 'job_status' ] != ['Canceled']:
+            raise Exception( "Unexpected SST2 output" )
+        return True
+
+class Scenario1107( TestBase ):
+    " Scenario1107 "
+
+    def __init__( self, netschedule ):
+        TestBase.__init__( self, netschedule )
+        return
+
+    @staticmethod
+    def getScenario():
+        " Provides the scenario "
+        return "Start without scrambled keys, SUBMIT, RECO with scrambled, SUBMIT"
+
+    def execute( self ):
+        " Should return True if the execution completed successfully "
+        self.fromScratch( 1100 )
+        jobID = self.ns.submitJob( 'TEST', 'blah' )
+        if "JSID" in jobID:
+            raise Exception( "Unexpected job key format: " + jobID )
+
+        self.ns.connect( 15 )
+        try:
+            self.ns.directLogin( '', 'netschedule_admin' )
+
+            self.ns.setConfig( "1" )
+            self.ns.directSendCmd( 'RECO' )
+            reply = self.ns.directReadSingleReply()
+            if reply[ 0 ] != True:
+                raise Exception( 'RECO failed: ' + reply[ 1 ] )
+            if reply[ 1 ] != '"queue_changes"' \
+                             ' {"TEST" {"failed_retries" [0, 3], ' \
+                             '"scramble_job_keys" [true, false]}}':
+                raise Exception( 'Unexpected output for RECO: ' + reply[ 1 ] )
+
+            jobID = self.ns.submitJob( 'TEST', 'blah' )
+            if "JSID" not in jobID:
+                raise Exception( "Unexpected job key format: " + jobID )
+        except Exception, exc:  # analysis:ignore
+            self.ns.disconnect()
+            raise
+
+        self.ns.disconnect()
+        return True
+

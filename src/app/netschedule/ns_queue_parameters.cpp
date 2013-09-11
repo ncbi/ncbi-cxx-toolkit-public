@@ -58,6 +58,7 @@ static CNSPreciseTime   default_run_timeout_precision(3, 0);
 static CNSPreciseTime   default_wnode_timeout(40, 0);
 static CNSPreciseTime   default_pending_timeout(604800, 0);
 static CNSPreciseTime   default_max_pending_wait_timeout(0, 0);
+static bool             default_scramble_job_keys = false;
 
 
 SQueueParameters::SQueueParameters() :
@@ -87,6 +88,7 @@ SQueueParameters::SQueueParameters() :
     max_pending_wait_timeout(default_max_pending_wait_timeout),
     description(""),
     netcache_api_section_name(""),
+    scramble_job_keys(default_scramble_job_keys),
     run_timeout_precision(default_run_timeout_precision)
 {}
 
@@ -94,6 +96,7 @@ SQueueParameters::SQueueParameters() :
 
 #define GetIntNoErr(name, dflt)    reg.GetInt(sname, name, dflt, 0, IRegistry::eReturn)
 #define GetDoubleNoErr(name, dflt) reg.GetDouble(sname, name, dflt, 0, IRegistry::eReturn)
+#define GetBoolNoErr(name, dflt)   reg.GetBool(sname, name, dflt, 0, IRegistry::eReturn)
 
 
 void SQueueParameters::Read(const IRegistry& reg, const string& sname)
@@ -122,6 +125,7 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     max_pending_wait_timeout = ReadMaxPendingWaitTimeout(reg, sname);
     description = ReadDescription(reg, sname);
     netcache_api_section_name = ReadNetCacheAPISectionName(reg, sname);
+    scramble_job_keys = ReadScrambleJobKeys(reg, sname);
     run_timeout_precision = ReadRunTimeoutPrecision(reg, sname);
     return;
 }
@@ -256,6 +260,12 @@ SQueueParameters::Diff(const SQueueParameters &  other,
                 netcache_api_section_name,
                 other.netcache_api_section_name);
 
+    if (scramble_job_keys != other.scramble_job_keys)
+        AddParameterToDiffString(
+                diff, "scramble_job_keys",
+                scramble_job_keys,
+                other.scramble_job_keys);
+
     if (include_description && description != other.description)
         AddParameterToDiffString(diff, "description",
                                  description,
@@ -325,7 +335,8 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
     prefix + "wnode_timeout" + suffix + NS_FormatPreciseTimeAsSec(wnode_timeout) + separator +
     prefix + "pending_timeout" + suffix + NS_FormatPreciseTimeAsSec(pending_timeout) + separator +
     prefix + "max_pending_wait_timeout" + suffix + NS_FormatPreciseTimeAsSec(max_pending_wait_timeout) + separator +
-    prefix + "run_timeout_precision" + suffix + NS_FormatPreciseTimeAsSec(run_timeout_precision) + separator;
+    prefix + "run_timeout_precision" + suffix + NS_FormatPreciseTimeAsSec(run_timeout_precision) + separator +
+    prefix + "scramble_job_keys" + suffix + NStr::BoolToString(scramble_job_keys) + separator;
 
     if (url_encoded) {
         result +=
@@ -376,7 +387,8 @@ string SQueueParameters::ConfigSection(bool is_class) const
     "wnode_timeout=\"" + NS_FormatPreciseTimeAsSec(wnode_timeout) + "\"\n"
     "pending_timeout=\"" + NS_FormatPreciseTimeAsSec(pending_timeout) + "\"\n"
     "max_pending_wait_timeout=\"" + NS_FormatPreciseTimeAsSec(max_pending_wait_timeout) + "\"\n"
-    "netcache_api=\"" + netcache_api_section_name + "\"\n";
+    "netcache_api=\"" + netcache_api_section_name + "\"\n"
+    "scramble_job_keys=\"" + NStr::BoolToString(scramble_job_keys) + "\"\n";
 
     return result;
 }
@@ -745,6 +757,14 @@ SQueueParameters::ReadRunTimeoutPrecision(const IRegistry &  reg,
         val = 3.0;
     }
     return CNSPreciseTime(val);
+}
+
+
+bool
+SQueueParameters::ReadScrambleJobKeys(const IRegistry &  reg,
+                                      const string &     sname)
+{
+    return GetBoolNoErr("scramble_job_keys", false);
 }
 
 END_NCBI_SCOPE

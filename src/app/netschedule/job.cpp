@@ -369,12 +369,12 @@ CJob::EJobFetchResult CJob::x_Fetch(CQueue* queue)
         if (res != eBDB_Ok) {
             if (res != eBDB_NotFound) {
                 ERR_POST("Error reading the job input/output DB, job_key " <<
-                         queue->MakeKey(m_Id));
+                         queue->MakeJobKey(m_Id));
                 return eJF_DBErr;
             }
             ERR_POST("DB inconsistency detected. Long input/output "
                      "expected but no record found in the DB. job_key " <<
-                     queue->MakeKey(m_Id));
+                     queue->MakeJobKey(m_Id));
             return eJF_DBErr;
         }
 
@@ -408,7 +408,7 @@ CJob::EJobFetchResult CJob::x_Fetch(CQueue* queue)
     }
     if (res != eBDB_NotFound) {
         ERR_POST("Error reading queue events db, job_key " <<
-                 queue->MakeKey(m_Id));
+                 queue->MakeJobKey(m_Id));
         return eJF_DBErr;
     }
 
@@ -428,7 +428,7 @@ CJob::EJobFetchResult  CJob::Fetch(CQueue *  queue, unsigned  id)
     if (res != eBDB_Ok) {
         if (res != eBDB_NotFound) {
             ERR_POST("Error reading queue job db, job_key " <<
-                     queue->MakeKey(id));
+                     queue->MakeJobKey(id));
             return eJF_DBErr;
         }
         return eJF_NotFound;
@@ -619,7 +619,7 @@ string CJob::Print(const CQueue &               queue,
                                      m_LastTouch);
 
     result = "OK:id: " + NStr::NumericToString(m_Id) + "\n"
-             "OK:key: " + queue.MakeKey(m_Id) + "\n"
+             "OK:key: " + queue.MakeJobKey(m_Id) + "\n"
              "OK:status: " + CNetScheduleAPI::StatusToString(m_Status) + "\n"
              "OK:last_touch: " + NS_FormatPreciseTime(m_LastTouch) +"\n";
 

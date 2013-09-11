@@ -56,7 +56,7 @@ public:
     { return m_Queue.m_MaxOutputSize; }
 
     unsigned GetNumParams() const
-    { return 18; }
+    { return 20; }
 
     string GetParamName(unsigned int  n) const {
         switch (n) {
@@ -78,6 +78,8 @@ public:
         case 15: return "dump_client_buffer_size";
         case 16: return "dump_aff_buffer_size";
         case 17: return "dump_group_buffer_size";
+        case 18: return "scramble_job_keys";
+        case 19: return "netcache_api";
         default: return "";
         }
     }
@@ -102,6 +104,8 @@ public:
         case 15: return NStr::NumericToString(m_Queue.m_DumpClientBufferSize);
         case 16: return NStr::NumericToString(m_Queue.m_DumpAffBufferSize);
         case 17: return NStr::NumericToString(m_Queue.m_DumpGroupBufferSize);
+        case 18: return NStr::BoolToString(m_Queue.m_ScrambleJobKeys);
+        case 19: return m_Queue.m_NCAPISectionName;
         default: return "";
         }
     }

@@ -605,7 +605,7 @@ CNSAffinityRegistry::x_PrintOne(unsigned int                aff_id,
 
             TNSBitVector::enumerator    en(jobs_affinity.m_Jobs.first());
             for ( ; en.valid(); ++en)
-                buffer += "OK:    " + queue->MakeKey(*en) + "\n";
+                buffer += "OK:    " + queue->MakeJobKey(*en) + "\n";
         }
         else
             buffer += "OK:  JOBS: NONE\n";

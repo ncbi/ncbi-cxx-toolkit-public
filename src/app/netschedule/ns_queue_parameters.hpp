@@ -79,6 +79,7 @@ struct SQueueParameters
     CNSPreciseTime  max_pending_wait_timeout;
     string          description;
     string          netcache_api_section_name;
+    bool            scramble_job_keys;
 
     // This parameter is not reconfigurable
     CNSPreciseTime  run_timeout_precision;
@@ -127,6 +128,7 @@ struct SQueueParameters
     string          ReadDescription(const IRegistry &, const string &);
     string          ReadNetCacheAPISectionName(const IRegistry &, const string &);
     CNSPreciseTime  ReadRunTimeoutPrecision(const IRegistry &, const string &);
+    bool            ReadScrambleJobKeys(const IRegistry &, const string &);
 };
 
 
@@ -155,6 +157,20 @@ void AddParameterToDiffString(string &            output,
               "\", \"" + NStr::PrintableString(value_to) + "\"]";
     return;
 }
+
+template<> inline
+void AddParameterToDiffString(string &          output,
+                              const string &    param_name,
+                              const bool &      value_from,
+                              const bool &      value_to)
+{
+    if (!output.empty())
+        output += ", ";
+    output += "\"" + param_name + "\" [" + NStr::BoolToString(value_from) +
+              ", " + NStr::BoolToString(value_to) + "]";
+    return;
+}
+
 
 END_NCBI_SCOPE
 

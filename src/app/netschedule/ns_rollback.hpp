@@ -118,7 +118,7 @@ class CNSReadJobRollback : public CNSRollbackInterface
 {
     public:
         CNSReadJobRollback(const CNSClientId &  client,
-                          unsigned int         job_id) :
+                          unsigned int          job_id) :
             m_Client(client), m_JobId(job_id)
         {}
 

@@ -513,7 +513,7 @@ string CNSClient::Print(const string &               node_name,
 
         TNSBitVector::enumerator    en(m_BlacklistedJobs.first());
         for ( ; en.valid(); ++en)
-            buffer += "OK:    " + queue->MakeKey(*en) + " " +
+            buffer += "OK:    " + queue->MakeJobKey(*en) + " " +
                       x_GetBlacklistLimit(*en) + "\n";
     }
 
@@ -524,7 +524,7 @@ string CNSClient::Print(const string &               node_name,
 
         TNSBitVector::enumerator    en(m_RunningJobs.first());
         for ( ; en.valid(); ++en)
-            buffer += "OK:    " + queue->MakeKey(*en) + "\n";
+            buffer += "OK:    " + queue->MakeJobKey(*en) + "\n";
     }
 
     buffer += "OK:  NUMBER OF JOBS GIVEN FOR EXECUTION: " +
@@ -537,7 +537,7 @@ string CNSClient::Print(const string &               node_name,
 
         TNSBitVector::enumerator    en(m_ReadingJobs.first());
         for ( ; en.valid(); ++en)
-            buffer += "OK:    " + queue->MakeKey(*en) + "\n";
+            buffer += "OK:    " + queue->MakeJobKey(*en) + "\n";
     }
 
     buffer += "OK:  NUMBER OF JOBS GIVEN FOR READING: " +

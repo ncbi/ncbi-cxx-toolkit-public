@@ -83,9 +83,10 @@ void SNSCommandArguments::x_Reset()
 }
 
 
-void SNSCommandArguments::AssignValues(const TNSProtoParams &  params,
-                                       const string &          command,
-                                       CSocket &               peer_socket)
+void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
+                                       const string &             command,
+                                       CSocket &                  peer_socket,
+                                       CCompoundIDPool::TInstance id_pool)
 {
     x_Reset();
     cmd = command;
@@ -176,7 +177,7 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &  params,
             if (key == "job_key") {
                 job_key = val;
                 if (!val.empty()) {
-                    CNetScheduleKey     parsed_key(val);
+                    CNetScheduleKey     parsed_key(val, id_pool);
                     job_id = parsed_key.id;
                     queue_from_job_key = parsed_key.queue;
                 }
@@ -232,7 +233,7 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &  params,
             else if (key == "start_after") {
                 start_after = val;
                 if (!val.empty())
-                    start_after_job_id = CNetScheduleKey(val).id;
+                    start_after_job_id = CNetScheduleKey(val, id_pool).id;
                 if (start_after_job_id == 0)
                     NCBI_THROW(CNetScheduleException,
                                eInvalidParameter,

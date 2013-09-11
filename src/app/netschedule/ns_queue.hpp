@@ -145,9 +145,8 @@ public:
         return m_QueueName;
     }
 
-    string DecorateJobId(unsigned job_id) {
-        return m_QueueName + '/' + MakeKey(job_id);
-    }
+    string DecorateJob(unsigned int    job_id) const
+    { return m_QueueName + "/" + MakeJobKey(job_id); }
 
     // Submit job, return numeric job id
     unsigned int  Submit(const CNSClientId &        client,
@@ -166,6 +165,7 @@ public:
     TJobStatus  PutResult(const CNSClientId &     client,
                           const CNSPreciseTime &  curr,
                           unsigned                job_id,
+                          const string &          job_key,
                           const string &          auth_token,
                           int                     ret_code,
                           const string *          output);
@@ -196,6 +196,7 @@ public:
                                    const CNSPreciseTime &  tm);
 
     TJobStatus  GetStatusAndLifetime(unsigned int      job_id,
+                                     const string &    job_key,
                                      bool              need_touch,
                                      CNSPreciseTime *  lifetime);
 
@@ -211,11 +212,13 @@ public:
 
     TJobStatus  ReturnJob(const CNSClientId &     client,
                           unsigned int            job_id,
+                          const string &          job_key,
                           const string &          auth_token,
                           string &                warning,
                           bool                    is_ns_rollback = false);
 
     TJobStatus  ReadAndTouchJob(unsigned int      job_id,
+                                const string &    job_key,
                                 CJob &            job,
                                 CNSPreciseTime *  lifetime);
 
@@ -226,6 +229,7 @@ public:
     // Returns the previous job status
     TJobStatus  Cancel(const CNSClientId &  client,
                        unsigned int         job_id,
+                       const string &       job_key,
                        bool                 is_ns_rollback = false);
 
     void CancelAllJobs(const CNSClientId &  client);
@@ -250,15 +254,18 @@ public:
                           CNSRollbackInterface * &  rollback_action);
     // Confirm reading of these jobs
     TJobStatus  ConfirmReadingJob(const CNSClientId &   client,
-                                  unsigned int    job_id,
-                                  const string &  auth_token);
+                                  unsigned int          job_id,
+                                  const string &        job_key,
+                                  const string &        auth_token);
     // Fail (negative acknowledge) reading of these jobs
     TJobStatus  FailReadingJob(const CNSClientId &   client,
                                unsigned int          job_id,
+                               const string &        job_key,
                                const string &        auth_token);
     // Return jobs to unread state without reservation
     TJobStatus  ReturnReadingJob(const CNSClientId &   client,
                                  unsigned int          job_id,
+                                 const string &        job_key,
                                  const string &        auth_token,
                                  bool                  is_ns_rollback = false);
 
@@ -277,7 +284,8 @@ public:
     string GetAffinityList();
 
     TJobStatus FailJob(const CNSClientId &    client,
-                       unsigned               job_id,
+                       unsigned int           job_id,
+                       const string &         job_key,
                        const string &         auth_token,
                        const string &         err_msg,
                        const string &         output,
@@ -342,9 +350,7 @@ public:
     void StatusStatistics(TJobStatus                  status,
                           TNSBitVector::statistics *  st) const;
 
-
-    string MakeKey(unsigned job_id) const
-    { return m_KeyGenerator.Generate(job_id); }
+    string MakeJobKey(unsigned int  job_id) const;
 
     void TouchClientsRegistry(CNSClientId &  client,
                               bool &         client_was_found,
@@ -354,6 +360,7 @@ public:
     void RegisterSocketWriteError(const CNSClientId &  client);
 
     void PrintStatistics(size_t &  aff_count) const;
+    unsigned int GetJobsToDeleteCount(void) const;
     string PrintTransitionCounters(void) const;
     string PrintJobsStat(const string &  group_token,
                          const string &  aff_token) const;
@@ -380,6 +387,7 @@ private:
 
     TJobStatus  x_ChangeReadingStatus(const CNSClientId &  client,
                                       unsigned int         job_id,
+                                      const string &       job_key,
                                       const string &       auth_token,
                                       TJobStatus           target_status,
                                       bool                 is_ns_rollback = false);
@@ -402,6 +410,7 @@ private:
                              unsigned int         picked_earlier);
 
     void x_UpdateDB_PutResultNoLock(unsigned                job_id,
+                                    const string &          job_key,
                                     const string &          auth_token,
                                     const CNSPreciseTime &  curr,
                                     int                     ret_code,
@@ -502,70 +511,71 @@ private:
     CFastMutex                  m_LastIdLock;
 
     // Lock for deleted jobs vectors
-    mutable CFastMutex           m_JobsToDeleteLock;
+    mutable CFastMutex          m_JobsToDeleteLock;
     // Vector of jobs to be deleted from db unconditionally
     // keeps jobs still to be deleted from main DB
-    TNSBitVector                 m_JobsToDelete;
-    unsigned int                 m_JobsToDeleteOps;
+    TNSBitVector                m_JobsToDelete;
+    unsigned int                m_JobsToDeleteOps;
 
     // Vector of jobs which have been set for notifications
-    TNSBitVector                 m_JobsToNotify;
+    TNSBitVector                m_JobsToNotify;
 
     // Configurable queue parameters
-    mutable CFastMutex           m_ParamLock;
-    CNSPreciseTime               m_Timeout;         // Result exp. timeout
-    CNSPreciseTime               m_RunTimeout;      // Execution timeout
+    mutable CFastMutex          m_ParamLock;
+    CNSPreciseTime              m_Timeout;         // Result exp. timeout
+    CNSPreciseTime              m_RunTimeout;      // Execution timeout
     // Its precision, set at startup only, not reconfigurable
-    CNSPreciseTime               m_RunTimeoutPrecision;
+    CNSPreciseTime              m_RunTimeoutPrecision;
     // How many attempts to make on different nodes before failure
-    unsigned                     m_FailedRetries;
-    CNSPreciseTime               m_BlacklistTime;
-    unsigned                     m_MaxInputSize;
-    unsigned                     m_MaxOutputSize;
-    CNSPreciseTime               m_WNodeTimeout;
-    CNSPreciseTime               m_PendingTimeout;
-    CNSPreciseTime               m_MaxPendingWaitTimeout;
+    unsigned                    m_FailedRetries;
+    CNSPreciseTime              m_BlacklistTime;
+    unsigned                    m_MaxInputSize;
+    unsigned                    m_MaxOutputSize;
+    CNSPreciseTime              m_WNodeTimeout;
+    CNSPreciseTime              m_PendingTimeout;
+    CNSPreciseTime              m_MaxPendingWaitTimeout;
     // Client program version control
-    CQueueClientInfoList         m_ProgramVersionList;
+    CQueueClientInfoList        m_ProgramVersionList;
     // Host access list for job submission
-    CNetScheduleAccessList       m_SubmHosts;
+    CNetScheduleAccessList      m_SubmHosts;
     // Host access list for job execution (workers)
-    CNetScheduleAccessList       m_WnodeHosts;
+    CNetScheduleAccessList      m_WnodeHosts;
 
-    CNetScheduleKeyGenerator     m_KeyGenerator;
+    CNetScheduleKeyGenerator    m_KeyGenerator;
 
-    const bool &                 m_Log;
-    const bool &                 m_LogBatchEachJob;
+    const bool &                m_Log;
+    const bool &                m_LogBatchEachJob;
 
-    bool                         m_RefuseSubmits;
+    bool                        m_RefuseSubmits;
 
-    CStatisticsCounters          m_StatisticsCounters;
+    CStatisticsCounters         m_StatisticsCounters;
 
-    unsigned int                 m_MaxAffinities;
-    unsigned int                 m_AffinityHighMarkPercentage;
-    unsigned int                 m_AffinityLowMarkPercentage;
-    unsigned int                 m_AffinityHighRemoval;
-    unsigned int                 m_AffinityLowRemoval;
-    unsigned int                 m_AffinityDirtPercentage;
+    unsigned int                m_MaxAffinities;
+    unsigned int                m_AffinityHighMarkPercentage;
+    unsigned int                m_AffinityLowMarkPercentage;
+    unsigned int                m_AffinityHighRemoval;
+    unsigned int                m_AffinityLowRemoval;
+    unsigned int                m_AffinityDirtPercentage;
 
     // Notifications support
-    CNSNotificationList          m_NotificationsList;
-    CNSPreciseTime               m_NotifHifreqInterval;
-    CNSPreciseTime               m_NotifHifreqPeriod;
-    unsigned int                 m_NotifLofreqMult;
-    CNSPreciseTime               m_HandicapTimeout;
+    CNSNotificationList         m_NotificationsList;
+    CNSPreciseTime              m_NotifHifreqInterval;
+    CNSPreciseTime              m_NotifHifreqPeriod;
+    unsigned int                m_NotifLofreqMult;
+    CNSPreciseTime              m_HandicapTimeout;
 
-    unsigned int                 m_DumpBufferSize;
-    unsigned int                 m_DumpClientBufferSize;
-    unsigned int                 m_DumpAffBufferSize;
-    unsigned int                 m_DumpGroupBufferSize;
-    string                       m_NCAPISectionName;
+    unsigned int                m_DumpBufferSize;
+    unsigned int                m_DumpClientBufferSize;
+    unsigned int                m_DumpAffBufferSize;
+    unsigned int                m_DumpGroupBufferSize;
+    string                      m_NCAPISectionName;
+    bool                        m_ScrambleJobKeys;
 
     // Group registry
-    CNSGroupsRegistry            m_GroupRegistry;
+    CNSGroupsRegistry           m_GroupRegistry;
 
     // Garbage collector registry
-    CJobGCRegistry               m_GCRegistry;
+    CJobGCRegistry              m_GCRegistry;
 };
 
 

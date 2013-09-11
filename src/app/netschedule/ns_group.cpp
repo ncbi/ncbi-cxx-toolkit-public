@@ -477,7 +477,7 @@ CNSGroupsRegistry::x_PrintOne(const SNSGroupJobs &     group_attr,
 
             TNSBitVector::enumerator    en(group_attr.m_Jobs.first());
             for ( ; en.valid(); ++en)
-                buffer += "OK:    " + queue->MakeKey(*en) + "\n";
+                buffer += "OK:    " + queue->MakeJobKey(*en) + "\n";
         }
         else
             buffer += "OK:  JOBS: NONE\n";

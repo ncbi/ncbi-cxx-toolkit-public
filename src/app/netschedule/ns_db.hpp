@@ -291,6 +291,7 @@ struct SQueueDescriptionDB : public CBDB_File
     CBDB_FieldLString   netcache_api_section_name;
     CBDB_FieldUint4     run_timeout_precision_sec;
     CBDB_FieldUint4     run_timeout_precision_nsec;
+    CBDB_FieldUint4     scramble_job_keys;
 
     SQueueDescriptionDB()
     {
@@ -334,6 +335,7 @@ struct SQueueDescriptionDB : public CBDB_File
         BindData("netcache_api_section_name",     &netcache_api_section_name);
         BindData("run_timeout_precision_sec",     &run_timeout_precision_sec);
         BindData("run_timeout_precision_nsec",    &run_timeout_precision_nsec);
+        BindData("scramble_job_keys",             &scramble_job_keys);
     }
 };
 

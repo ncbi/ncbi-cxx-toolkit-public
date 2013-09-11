@@ -33,6 +33,7 @@
  */
 
 #include <connect/services/netservice_protocol_parser.hpp>
+#include <connect/services/compound_id.hpp>
 #include <string>
 
 #include "ns_types.hpp"
@@ -81,9 +82,10 @@ struct SNSCommandArguments
     bool            drain;
     bool            effective;
 
-    void AssignValues(const TNSProtoParams &  params,
-                      const string &          command,
-                      CSocket &               peer_socket);
+    void AssignValues(const TNSProtoParams &     params,
+                      const string &             command,
+                      CSocket &                  peer_socket,
+                      CCompoundIDPool::TInstance id_pool);
 
     private:
         void x_Reset();

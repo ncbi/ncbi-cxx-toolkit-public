@@ -404,6 +404,7 @@ CQueueDataBase::x_ReadDBQueueDescriptions(const string &  expected_prefix)
         params.netcache_api_section_name = m_QueueDescriptionDB.netcache_api_section_name;
         params.run_timeout_precision = CNSPreciseTime(m_QueueDescriptionDB.run_timeout_precision_sec,
                                                       m_QueueDescriptionDB.run_timeout_precision_nsec);
+        params.scramble_job_keys = (m_QueueDescriptionDB.scramble_job_keys != 0);
 
         // It is impossible to have the same entries twice in the DB
         queues[queue_name] = params;
@@ -484,6 +485,7 @@ CQueueDataBase::x_InsertParamRecord(const string &            key,
     m_QueueDescriptionDB.netcache_api_section_name = params.netcache_api_section_name;
     m_QueueDescriptionDB.run_timeout_precision_sec = params.run_timeout_precision.Sec();
     m_QueueDescriptionDB.run_timeout_precision_nsec = params.run_timeout_precision.NSec();
+    m_QueueDescriptionDB.scramble_job_keys = params.scramble_job_keys;
 
     m_QueueDescriptionDB.UpdateInsert();
 }
@@ -675,6 +677,9 @@ CQueueDataBase::x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
             else if (*val == "netcache_api")
                 params.netcache_api_section_name =
                         params.ReadNetCacheAPISectionName(reg, section_name);
+            else if (*val == "scramble_job_keys")
+                params.scramble_job_keys =
+                        params.ReadScrambleJobKeys(reg, section_name);
         }
         params.qclass = qclass;
         queues[queue_name] = params;

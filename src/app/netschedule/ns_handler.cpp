@@ -861,7 +861,8 @@ void CNetScheduleHandler::x_ProcessMsgRequest(BUF buffer)
         // It throws an exception if the input is not valid
         m_CommandArguments.AssignValues(cmd.params,
                                         cmd.command->cmd,
-                                        GetSocket());
+                                        GetSocket(),
+                                        m_Server->GetCompoundIDPool());
 
         x_PrintCmdRequestStart(cmd);
     }
@@ -1071,7 +1072,8 @@ void CNetScheduleHandler::x_ProcessMsgBatchJob(BUF buffer)
     TNSProtoParams  params;
     try {
         m_BatchEndParser.ParseArguments(msg, s_BatchArgs, &params);
-        m_CommandArguments.AssignValues(params, "", GetSocket());
+        m_CommandArguments.AssignValues(params, "", GetSocket(),
+                                        m_Server->GetCompoundIDPool());
     }
     catch (const CNSProtoParserException &  ex) {
         m_WithinBatchSubmit = false;
@@ -1261,6 +1263,7 @@ void CNetScheduleHandler::x_ProcessFastStatusS(CQueue* q)
     bool            cmdv2(m_CommandArguments.cmd == "SST2");
     CNSPreciseTime  lifetime;
     TJobStatus      status = q->GetStatusAndLifetime(m_CommandArguments.job_id,
+                                                     m_CommandArguments.job_key,
                                                      true, &lifetime);
 
 
@@ -1290,6 +1293,7 @@ void CNetScheduleHandler::x_ProcessFastStatusW(CQueue* q)
     bool            cmdv2(m_CommandArguments.cmd == "WST2");
     CNSPreciseTime  lifetime;
     TJobStatus      status = q->GetStatusAndLifetime(m_CommandArguments.job_id,
+                                                     m_CommandArguments.job_key,
                                                      false, &lifetime);
 
 
@@ -1392,13 +1396,14 @@ void CNetScheduleHandler::x_ProcessSubmit(CQueue* q)
 
 
     CJob        job(m_CommandArguments);
-
     try {
         x_ClearRollbackAction();
-        x_WriteMessage("OK:" + q->MakeKey(q->Submit(m_ClientId, job,
-                                          m_CommandArguments.affinity_token,
-                                          m_CommandArguments.group,
-                                          m_RollbackAction)));
+        unsigned int  job_id = q->Submit(m_ClientId, job,
+                                         m_CommandArguments.affinity_token,
+                                         m_CommandArguments.group,
+                                         m_RollbackAction);
+
+        x_WriteMessage("OK:" + q->MakeJobKey(job_id));
         x_ClearRollbackAction();
         m_Server->DecrementCurrentSubmitsCounter();
     } catch (...) {
@@ -1511,7 +1516,9 @@ void CNetScheduleHandler::x_ProcessCancel(CQueue* q)
     }
 
     // Here: CANCEL for a job
-    switch (q->Cancel(m_ClientId, m_CommandArguments.job_id)) {
+    switch (q->Cancel(m_ClientId,
+                      m_CommandArguments.job_id,
+                      m_CommandArguments.job_key)) {
         case CNetScheduleAPI::eJobNotFound:
             ERR_POST(Warning << "CANCEL for unknown job: "
                              << m_CommandArguments.job_key);
@@ -1534,7 +1541,8 @@ void CNetScheduleHandler::x_ProcessStatus(CQueue* q)
     bool            cmdv2 = (m_CommandArguments.cmd == "STATUS2");
     CNSPreciseTime  lifetime;
 
-    if (q->ReadAndTouchJob(m_CommandArguments.job_id, job, &lifetime) ==
+    if (q->ReadAndTouchJob(m_CommandArguments.job_id,
+                           m_CommandArguments.job_key, job, &lifetime) ==
                 CNetScheduleAPI::eJobNotFound) {
         // Here: there is no such a job
         ERR_POST(Warning << m_CommandArguments.cmd << " for unknown job: "
@@ -1654,6 +1662,7 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
     string      output = NStr::ParseEscapes(m_CommandArguments.output);
     TJobStatus  old_status = q->PutResult(m_ClientId, CNSPreciseTime::Current(),
                                           m_CommandArguments.job_id,
+                                          m_CommandArguments.job_key,
                                           m_CommandArguments.auth_token,
                                           m_CommandArguments.job_return_code,
                                           &output);
@@ -1717,6 +1726,7 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
     // PUT part
     TJobStatus      old_status = q->PutResult(m_ClientId, curr,
                                           m_CommandArguments.job_id,
+                                          m_CommandArguments.job_key,
                                           m_CommandArguments.auth_token,
                                           m_CommandArguments.job_return_code,
                                           &output);
@@ -1796,7 +1806,8 @@ void CNetScheduleHandler::x_ProcessGetMessage(CQueue* q)
     CJob            job;
     CNSPreciseTime  lifetime;
 
-    if (q->ReadAndTouchJob(m_CommandArguments.job_id, job, &lifetime) !=
+    if (q->ReadAndTouchJob(m_CommandArguments.job_id,
+                           m_CommandArguments.job_key, job, &lifetime) !=
             CNetScheduleAPI::eJobNotFound)
         x_WriteMessage("OK:" + job.GetProgressMsg());
     else {
@@ -1823,6 +1834,7 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
     TJobStatus  old_status = q->FailJob(
                                 m_ClientId,
                                 m_CommandArguments.job_id,
+                                m_CommandArguments.job_key,
                                 m_CommandArguments.auth_token,
                                 NStr::ParseEscapes(m_CommandArguments.err_msg),
                                 NStr::ParseEscapes(m_CommandArguments.output),
@@ -1888,6 +1900,7 @@ void CNetScheduleHandler::x_ProcessReturn(CQueue* q)
     string          warning;
     TJobStatus      old_status = q->ReturnJob(m_ClientId,
                                               m_CommandArguments.job_id,
+                                              m_CommandArguments.job_key,
                                               m_CommandArguments.auth_token,
                                               warning);
 
@@ -2615,7 +2628,7 @@ void CNetScheduleHandler::x_ProcessReading(CQueue* q)
     string          job_key;
 
     if (job_id) {
-        job_key = q->MakeKey(job_id);
+        job_key = q->MakeJobKey(job_id);
         x_WriteMessage("OK:job_key=" + job_key +
                        "&auth_token=" + job.GetAuthToken() +
                        "&status=" +
@@ -2644,6 +2657,7 @@ void CNetScheduleHandler::x_ProcessConfirm(CQueue* q)
     TJobStatus      old_status = q->ConfirmReadingJob(
                                             m_ClientId,
                                             m_CommandArguments.job_id,
+                                            m_CommandArguments.job_key,
                                             m_CommandArguments.auth_token);
     x_FinalizeReadCommand("CFRM", old_status);
 }
@@ -2657,6 +2671,7 @@ void CNetScheduleHandler::x_ProcessReadFailed(CQueue* q)
     TJobStatus      old_status = q->FailReadingJob(
                                             m_ClientId,
                                             m_CommandArguments.job_id,
+                                            m_CommandArguments.job_key,
                                             m_CommandArguments.auth_token);
     x_FinalizeReadCommand("FRED", old_status);
 }
@@ -2670,6 +2685,7 @@ void CNetScheduleHandler::x_ProcessReadRollback(CQueue* q)
     TJobStatus      old_status = q->ReturnReadingJob(
                                             m_ClientId,
                                             m_CommandArguments.job_id,
+                                            m_CommandArguments.job_key,
                                             m_CommandArguments.auth_token);
     x_FinalizeReadCommand("RDRB", old_status);
 }
@@ -2925,12 +2941,12 @@ CNetScheduleHandler::x_PrintGetJobResponse(const CQueue *  q,
     if (!job.GetId()) {
         // No suitable job found
         if (m_ConnContext.NotNull())
-            GetDiagContext().Extra().Print("job_key", "none");
+            GetDiagContext().Extra().Print("job_key", "None");
         x_WriteMessage("OK:");
         return;
     }
 
-    string      job_key = q->MakeKey(job.GetId());
+    string      job_key = q->MakeJobKey(job.GetId());
     if (m_ConnContext.NotNull()) {
         // The only piece required for logging is the job key
         GetDiagContext().Extra().Print("job_key", job_key);
