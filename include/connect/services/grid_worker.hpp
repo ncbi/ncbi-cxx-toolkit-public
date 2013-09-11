@@ -522,10 +522,8 @@ public:
             m_IdleTask.reset(new TWorkerNodeIdleTask(*m_WorkerNodeInitContext));
         } catch (exception& ex) {
             LOG_POST_XX(ConnServ_WorkerNode, 16,
-                        "Idle task is not created: " << ex.what());
-        } catch (...) {
-            LOG_POST_XX(ConnServ_WorkerNode, 17,
-                        "Idle task is not created: Unknown error");
+                        "Error during Idle task construction: " << ex.what());
+            throw;
         }
     }
     virtual IWorkerNodeJob* CreateInstance(void)
