@@ -243,12 +243,8 @@ CRemoteAppJob::CRemoteAppJob(const IWorkerNodeInitContext& context,
 class CRemoteAppIdleTask : public IWorkerNodeIdleTask
 {
 public:
-    CRemoteAppIdleTask(const IWorkerNodeInitContext& context) 
+    CRemoteAppIdleTask(const string& idle_app_cmd) : m_AppCmd(idle_app_cmd)
     {
-        m_AppCmd = context.GetConfig().GetString("remote_app",
-                "idle_app_cmd", kEmptyStr);
-        if (m_AppCmd.empty())
-            throw runtime_error("Idle application is not set.");
     }
     virtual ~CRemoteAppIdleTask() {}
 
@@ -302,15 +298,10 @@ public:
         }
 
         m_WorkerNodeInitContext = &context;
-        try {
-            m_IdleTask.reset(new CRemoteAppIdleTask(*m_WorkerNodeInitContext));
-        } catch (exception& ex) {
-            LOG_POST_XX(ConnServ_WorkerNode, 16,
-                        "Idle task is not created: " << ex.what());
-        } catch (...) {
-            LOG_POST_XX(ConnServ_WorkerNode, 17,
-                        "Idle task is not created: Unknown error");
-        }
+        string idle_app_cmd = context.GetConfig().GetString("remote_app",
+                "idle_app_cmd", kEmptyStr);
+        if (!idle_app_cmd.empty())
+            m_IdleTask.reset(new CRemoteAppIdleTask(idle_app_cmd));
     }
     virtual IWorkerNodeJob* CreateInstance(void)
     {
