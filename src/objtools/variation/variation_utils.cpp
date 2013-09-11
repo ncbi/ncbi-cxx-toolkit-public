@@ -449,7 +449,8 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
                     if ( (*inst)->IsSetData() && (*inst)->SetData().IsInstance())
                     {
                         int type = (*inst)->SetData().SetInstance().SetType(); 
-                        m_Type = type;
+                        if (type != CVariation_inst::eType_identity)
+                            m_Type = type;
                         if (type == CVariation_inst::eType_del)
                             is_deletion = true;
                         if ((*inst)->GetData().GetInstance().IsSetDelta() && !(*inst)->GetData().GetInstance().GetDelta().empty() 
@@ -577,6 +578,7 @@ void CVariationNormalizationLeft::x_ModifyLocation(CSeq_loc &loc, CSeq_literal &
 bool CVariationNormalizationRight::x_ProcessShift(string &a, int &pos_left, int &pos)
 {
     bool found = false;
+    pos = pos - a.size() + 1;
     if (pos+a.size() < x_GetSeqSize())
         for (unsigned int i=0; i<a.size(); i++)
         {
@@ -643,20 +645,37 @@ void CVariationNormalizationRight::x_ModifyLocation(CSeq_loc &loc, CSeq_literal 
 
 void CVariationNormalizationInt::x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right) 
 {
-    if (loc.IsInt())
+    if (pos_left == pos_right)
     {
-        loc.SetInt().SetFrom(pos_left);
-        loc.SetInt().SetTo(pos_right);
+        if (loc.IsPnt())
+            loc.SetPnt().SetPoint(pos_left);
+        else
+        {
+            CSeq_point pnt;
+            pnt.SetPoint(pos_left);
+            if (loc.GetInt().IsSetStrand())
+                pnt.SetStrand( loc.GetInt().GetStrand() );
+            pnt.SetId().Assign(loc.GetInt().GetId());
+            loc.SetPnt().Assign(pnt);
+        }
     }
     else
     {
-        CSeq_interval interval;
-        interval.SetFrom(pos_left);
-        interval.SetTo(pos_right);
-        if (loc.GetPnt().IsSetStrand())
-            interval.SetStrand( loc.GetPnt().GetStrand() );
-        interval.SetId().Assign(loc.GetPnt().GetId());
-        loc.SetInt().Assign(interval);
+        if (loc.IsInt())
+        {
+            loc.SetInt().SetFrom(pos_left);
+            loc.SetInt().SetTo(pos_right);
+        }
+        else
+        {
+            CSeq_interval interval;
+            interval.SetFrom(pos_left);
+            interval.SetTo(pos_right);
+            if (loc.GetPnt().IsSetStrand())
+                interval.SetStrand( loc.GetPnt().GetStrand() );
+            interval.SetId().Assign(loc.GetPnt().GetId());
+            loc.SetInt().Assign(interval);
+        }
     }
     literal.SetSeq_data().SetIupacna().Set(a);
 }
@@ -711,20 +730,37 @@ void CVariationNormalizationLeftInt::x_ModifyLocation(CSeq_loc &loc, CSeq_litera
     }
     else  if (m_Type == CVariation_inst::eType_del)
     {
-        if (loc.IsPnt())
+        if (a.size() == 1)
         {
-            CSeq_interval interval;
-            interval.SetFrom(pos_left);
-            interval.SetTo(pos_left+a.size()-1);
-            if (loc.GetPnt().IsSetStrand())
-                interval.SetStrand( loc.GetPnt().GetStrand() );
-            interval.SetId().Assign(loc.GetPnt().GetId());
-            loc.SetInt().Assign(interval);
+            if (loc.IsPnt())
+                loc.SetPnt().SetPoint(pos_left);
+            else
+            {
+                CSeq_point pnt;
+                pnt.SetPoint(pos_left);
+                if (loc.GetInt().IsSetStrand())
+                    pnt.SetStrand( loc.GetInt().GetStrand() );
+                pnt.SetId().Assign(loc.GetInt().GetId());
+                loc.SetPnt().Assign(pnt);
+            }
         }
         else
         {
-            loc.SetInt().SetFrom(pos_left);
-            loc.SetInt().SetTo(pos_left+a.size()-1); 
+            if (loc.IsPnt())
+            {
+                CSeq_interval interval;
+                interval.SetFrom(pos_left);
+                interval.SetTo(pos_left+a.size()-1);
+                if (loc.GetPnt().IsSetStrand())
+                    interval.SetStrand( loc.GetPnt().GetStrand() );
+                interval.SetId().Assign(loc.GetPnt().GetId());
+                loc.SetInt().Assign(interval);
+            }
+            else
+            {
+                loc.SetInt().SetFrom(pos_left);
+                loc.SetInt().SetTo(pos_left+a.size()-1); 
+            }
         }
         literal.SetSeq_data().SetIupacna().Set(a);
     }
