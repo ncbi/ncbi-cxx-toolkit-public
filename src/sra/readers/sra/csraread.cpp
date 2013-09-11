@@ -1595,8 +1595,11 @@ bool CCSraShortReadIterator::HasClippingInfo(void) const
 COpenRange<TSeqPos>
 CCSraShortReadIterator::GetReadRange(EClipType clip_type) const
 {
-    TSeqPos pos = m_Seq->READ_START(m_SpotId)[m_ReadId-1];
     TSeqPos len = m_Seq->READ_LEN(m_SpotId)[m_ReadId-1];
+    if ( !len ) {
+        return TOpenRange::GetEmpty();
+    }
+    TSeqPos pos = m_Seq->READ_START(m_SpotId)[m_ReadId-1];
     TSeqPos end = pos + len;
     bool clip_by_quality = clip_type == eDefaultClip?
         m_ClipByQuality: clip_type == eClipByQuality;
