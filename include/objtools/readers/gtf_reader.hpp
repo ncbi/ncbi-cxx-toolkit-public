@@ -90,7 +90,8 @@ protected:
 
     virtual bool x_UpdateAnnotFeature(
         const CGff2Record&,
-        CRef< CSeq_annot > );
+        CRef< CSeq_annot >,
+        IMessageListener* =0);
 
     virtual bool x_UpdateAnnotCds(
         const CGff2Record&,

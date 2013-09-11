@@ -173,7 +173,8 @@ bool CGff3Reader::x_UpdateFeatureCds(
 //  ----------------------------------------------------------------------------
 bool CGff3Reader::x_UpdateAnnotFeature(
     const CGff2Record& record,
-    CRef< CSeq_annot > pAnnot )
+    CRef< CSeq_annot > pAnnot,
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     CRef< CSeq_feat > pFeature(new CSeq_feat);
@@ -183,10 +184,10 @@ bool CGff3Reader::x_UpdateAnnotFeature(
 
     string type = record.Type();
     if (type == "exon"  ||  type == "five_prime_UTR"  ||  type == "three_prime_UTR") {
-        return xUpdateAnnotExon(record, pFeature, pAnnot);
+        return xUpdateAnnotExon(record, pFeature, pAnnot, pEC);
     }
     if (type == "CDS"  ||  type == "cds") {
-        return xUpdateAnnotCds(record, pFeature, pAnnot);
+        return xUpdateAnnotCds(record, pFeature, pAnnot, pEC);
     }
 
     //  General case: brand new regular feature
@@ -237,7 +238,8 @@ bool CGff3Reader::xFeatureAddRoundTripInfo(
 bool CGff3Reader::xUpdateAnnotExon(
     const CGff2Record& record,
     CRef<CSeq_feat>,
-    CRef<CSeq_annot>)
+    CRef<CSeq_annot>,
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     list<string> parents;
@@ -259,15 +261,16 @@ bool CGff3Reader::xUpdateAnnotExon(
 bool CGff3Reader::xUpdateAnnotCds(
     const CGff2Record& record,
     CRef<CSeq_feat> pFeature,
-    CRef<CSeq_annot> pAnnot)
+    CRef<CSeq_annot> pAnnot,
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     //Note:
     // There are still open questions as to how multiparent CDS records ought to
     // be handled. Until those are settled, we will flag such records as errors.
     //
-    vector<string> parents;
-    //if (record.GetAttribute("Parent", parents)  &&  parents.size() > 1) {
+    list<string> parents;
+    if (record.GetAttribute("Parent", parents)  &&  parents.size() > 1) {
     //    CObjReaderLineException err(
     //        eDiag_Error,
     //        0,
@@ -276,7 +279,7 @@ bool CGff3Reader::xUpdateAnnotCds(
     //    err.SetLineNumber(m_uLineNumber);
         //ProcessError(err, pEC);
     //    return false;
-    //}
+    }
     string id;
     if (record.GetAttribute("ID", id)) {
         IdToFeatureMap::iterator it = m_MapIdToFeature.find(id);
@@ -304,7 +307,8 @@ bool CGff3Reader::xUpdateAnnotCds(
 bool CGff3Reader::xUpdateAnnotGeneric(
     const CGff2Record& record,
     CRef<CSeq_feat> pFeature,
-    CRef<CSeq_annot> pAnnot)
+    CRef<CSeq_annot> pAnnot,
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     string id;

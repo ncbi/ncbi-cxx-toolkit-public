@@ -86,7 +86,8 @@ protected:
 
     virtual bool x_UpdateAnnotFeature(
         const CGff2Record&,
-        CRef< CSeq_annot > );
+        CRef< CSeq_annot >,
+        IMessageListener*);
 
     virtual bool x_UpdateFeatureCds(
         const CGff2Record&,
@@ -103,17 +104,20 @@ protected:
     virtual bool xUpdateAnnotExon(
         const CGff2Record&,
         CRef<CSeq_feat>,
-        CRef<CSeq_annot>);
+        CRef<CSeq_annot>,
+        IMessageListener*);
 
     virtual bool xUpdateAnnotCds(
         const CGff2Record&,
         CRef<CSeq_feat>,
-        CRef<CSeq_annot>);
+        CRef<CSeq_annot>,
+        IMessageListener*);
 
     virtual bool xUpdateAnnotGeneric(
         const CGff2Record&,
         CRef<CSeq_feat>,
-        CRef<CSeq_annot>);
+        CRef<CSeq_annot>,
+        IMessageListener*);
 };
 
 END_SCOPE(objects)

@@ -272,7 +272,8 @@ CGtfReader::x_GetLine(
 //  ----------------------------------------------------------------------------
 bool CGtfReader::x_UpdateAnnotFeature(
     const CGff2Record& gff,
-    CRef< CSeq_annot > pAnnot )
+    CRef< CSeq_annot > pAnnot,
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     CRef< CSeq_feat > pFeature( new CSeq_feat );

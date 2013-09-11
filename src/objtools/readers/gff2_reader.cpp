@@ -571,7 +571,8 @@ bool CGff2Reader::x_InitAnnot(
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::x_UpdateAnnotFeature(
     const CGff2Record& gff,
-    CRef< CSeq_annot > pAnnot )
+    CRef< CSeq_annot > pAnnot,
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     CRef< CSeq_feat > pFeature( new CSeq_feat );
