@@ -36,6 +36,7 @@ case "$1" in
   9* | 10*    ) search=$intel_root/cc*/$1.*/bin                  ;;
   11*         ) search=$intel_root/Compiler/$1*/*/bin/i*$bits    ;;
   12*         ) search=$intel_root/Compiler/$1/bin               ;;
+  *13.[15]*   ) search=$intel_root/Compiler/13.5.192/bin/i*$bits ;;
   13* | 2013  ) search=$intel_root/2013/bin                      ;;
   *           ) search=                                          ;;
 esac
