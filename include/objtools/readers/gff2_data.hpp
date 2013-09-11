@@ -115,6 +115,10 @@ public:
         const string&,
         string& ) const;
 
+    bool GetAttribute(
+        const string&,
+        list<string>& ) const;
+
     virtual bool InitializeFeature(
         int,
         CRef<CSeq_feat> ) const; 

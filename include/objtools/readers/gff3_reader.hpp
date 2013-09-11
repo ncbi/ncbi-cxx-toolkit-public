@@ -84,13 +84,36 @@ public:
 protected:
     virtual CGff2Record* x_CreateRecord() { return new CGff3ReadRecord(); };    
 
-    virtual bool x_UpdateAnnot(
+    virtual bool x_UpdateAnnotFeature(
         const CGff2Record&,
         CRef< CSeq_annot > );
 
     virtual bool x_UpdateFeatureCds(
         const CGff2Record&,
         CRef<CSeq_feat>);
+
+    virtual bool x_AddFeatureToAnnot(
+        CRef< CSeq_feat >,
+        CRef< CSeq_annot > );
+
+    virtual bool xFeatureAddRoundTripInfo(
+        const CGff2Record&,
+        CRef<CSeq_feat>);
+
+    virtual bool xUpdateAnnotExon(
+        const CGff2Record&,
+        CRef<CSeq_feat>,
+        CRef<CSeq_annot>);
+
+    virtual bool xUpdateAnnotCds(
+        const CGff2Record&,
+        CRef<CSeq_feat>,
+        CRef<CSeq_annot>);
+
+    virtual bool xUpdateAnnotGeneric(
+        const CGff2Record&,
+        CRef<CSeq_feat>,
+        CRef<CSeq_annot>);
 };
 
 END_SCOPE(objects)

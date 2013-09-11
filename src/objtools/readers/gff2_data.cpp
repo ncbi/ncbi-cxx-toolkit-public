@@ -254,10 +254,25 @@ bool CGff2Record::GetAttribute(
 {
     TAttrCit it = m_Attributes.find( strKey );
     if ( it == m_Attributes.end() ) {
+        strValue.clear();
         return false;
     }
     strValue = it->second;
     return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff2Record::GetAttribute( 
+    const string& strKey,
+    list<string>& values ) const
+//  ----------------------------------------------------------------------------
+{
+    string strValues;
+    if (!GetAttribute(strKey, strValues)) {
+        return false;
+    }
+    NStr::Split(strValues, ",", values);
+    return !values.empty();
 }
 
 //  ----------------------------------------------------------------------------

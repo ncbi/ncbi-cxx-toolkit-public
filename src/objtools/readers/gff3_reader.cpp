@@ -171,52 +171,22 @@ bool CGff3Reader::x_UpdateFeatureCds(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Reader::x_UpdateAnnot(
+bool CGff3Reader::x_UpdateAnnotFeature(
     const CGff2Record& record,
     CRef< CSeq_annot > pAnnot )
 //  ----------------------------------------------------------------------------
 {
-    string gbkey;
-    record.GetAttribute("gbkey", gbkey);
     CRef< CSeq_feat > pFeature(new CSeq_feat);
-
-    //  Round trip info:
-    CRef< CGb_qual > pQual( new CGb_qual );
-    pQual->SetQual( "gff_source" );
-    pQual->SetVal( record.Source() );
-    pFeature->SetQual().push_back( pQual );
-
-    pQual.Reset( new CGb_qual );
-    pQual->SetQual( "gff_type" );
-    pQual->SetVal( record.Type() );
-    pFeature->SetQual().push_back( pQual );
-
-    if ( record.IsSetScore() ) {
-        pQual.Reset( new CGb_qual );
-        pQual->SetQual( "gff_score" );
-        pQual->SetVal( NStr::DoubleToString( record.Score() ) );
-        pFeature->SetQual().push_back( pQual );
+    if (! xFeatureAddRoundTripInfo(record, pFeature)) {
+        return false;
     }
 
-    //  Special case: exon feature belonging to an RNA we have already seen
     string type = record.Type();
     if (type == "exon"  ||  type == "five_prime_UTR"  ||  type == "three_prime_UTR") {
-        string parent;
-        if (record.GetAttribute("Parent", parent)) {
-            IdToFeatureMap::iterator it = m_MapIdToFeature.find(parent);
-            if (it != m_MapIdToFeature.end()) {
-                return record.UpdateFeature(m_iFlags, it->second);
-            }
-        }
+        return xUpdateAnnotExon(record, pFeature, pAnnot);
     }
-
-    //  Special case: Piece of another feature we have already seen
-    string id;
-    if (record.GetAttribute("ID", id)) {
-        IdToFeatureMap::iterator it = m_MapIdToFeature.find(id);
-        if (it != m_MapIdToFeature.end()) {
-            return record.UpdateFeature(m_iFlags, it->second);
-        }
+    if (type == "CDS"  ||  type == "cds") {
+        return xUpdateAnnotCds(record, pFeature, pAnnot);
     }
 
     //  General case: brand new regular feature
@@ -227,11 +197,145 @@ bool CGff3Reader::x_UpdateAnnot(
         x_FeatureSetXref(record, pFeature);
     }
 
+    if (! x_AddFeatureToAnnot( pFeature, pAnnot )) {
+        return false;
+    }
     string strId;
     if ( record.GetAttribute( "ID", strId ) ) {
         m_MapIdToFeature[ strId ] = pFeature;
     }
-    return x_AddFeatureToAnnot( pFeature, pAnnot );
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::xFeatureAddRoundTripInfo(
+    const CGff2Record& record,
+    CRef<CSeq_feat> pFeature)
+//  ----------------------------------------------------------------------------
+{
+    CRef<CGb_qual> pQual(new CGb_qual);
+    pQual->SetQual("gff_source");
+    pQual->SetVal(record.Source());
+    pFeature->SetQual().push_back(pQual);
+
+    pQual.Reset(new CGb_qual);
+    pQual->SetQual("gff_type");
+    pQual->SetVal(record.Type());
+    pFeature->SetQual().push_back(pQual);
+
+    if (record.IsSetScore()) {
+        pQual.Reset(new CGb_qual);
+        pQual->SetQual("gff_score");
+        pQual->SetVal(NStr::DoubleToString(record.Score()));
+        pFeature->SetQual().push_back(pQual);
+    }
+
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::xUpdateAnnotExon(
+    const CGff2Record& record,
+    CRef<CSeq_feat>,
+    CRef<CSeq_annot>)
+//  ----------------------------------------------------------------------------
+{
+    list<string> parents;
+    if (record.GetAttribute("Parent", parents)) {
+        for (list<string>::const_iterator it = parents.begin(); it != parents.end(); 
+                ++it) {
+            IdToFeatureMap::iterator fit = m_MapIdToFeature.find(*it);
+            if (fit != m_MapIdToFeature.end()) {
+                if (!record.UpdateFeature(m_iFlags, fit->second)) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::xUpdateAnnotCds(
+    const CGff2Record& record,
+    CRef<CSeq_feat> pFeature,
+    CRef<CSeq_annot> pAnnot)
+//  ----------------------------------------------------------------------------
+{
+    //Note:
+    // There are still open questions as to how multiparent CDS records ought to
+    // be handled. Until those are settled, we will flag such records as errors.
+    //
+    vector<string> parents;
+    if (record.GetAttribute("Parent", parents)  &&  parents.size() > 1) {
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "Multi-parent CDS records not supported.",
+            ILineError::eProblem_GeneralParsingError);
+        err.SetLineNumber(m_uLineNumber);
+        ProcessError(err, pEC);
+        return false;
+    }
+    string id;
+    if (record.GetAttribute("ID", id)) {
+        IdToFeatureMap::iterator it = m_MapIdToFeature.find(id);
+        if (it != m_MapIdToFeature.end()) {
+            return record.UpdateFeature(m_iFlags, it->second);
+        }
+    }
+
+    if (!record.InitializeFeature(m_iFlags, pFeature)) {
+        return false;
+    }
+    if (!x_FeatureSetXref(record, pFeature)) {
+        return false;
+    }
+    if (! x_AddFeatureToAnnot( pFeature, pAnnot )) {
+        return false;
+    }
+    if ( !id.empty() ) {
+        m_MapIdToFeature[ id ] = pFeature;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::xUpdateAnnotGeneric(
+    const CGff2Record& record,
+    CRef<CSeq_feat> pFeature,
+    CRef<CSeq_annot> pAnnot)
+//  ----------------------------------------------------------------------------
+{
+    string id;
+    if (record.GetAttribute("ID", id)) {
+        IdToFeatureMap::iterator it = m_MapIdToFeature.find(id);
+        if (it != m_MapIdToFeature.end()) {
+            return record.UpdateFeature(m_iFlags, it->second);
+        }
+    }
+
+    if (!record.InitializeFeature(m_iFlags, pFeature)) {
+        return false;
+    }
+    if (! x_AddFeatureToAnnot( pFeature, pAnnot )) {
+        return false;
+    }
+    string strId;
+    if ( record.GetAttribute( "ID", strId ) ) {
+        m_MapIdToFeature[ strId ] = pFeature;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::x_AddFeatureToAnnot(
+    CRef< CSeq_feat > pFeature,
+    CRef< CSeq_annot > pAnnot )
+//  ----------------------------------------------------------------------------
+{
+    pAnnot->SetData().SetFtable().push_back( pFeature ) ;
+    return true;
 }
 
 END_objects_SCOPE

@@ -796,20 +796,24 @@ bool CGff2Reader::x_FeatureSetXref(
 //  ----------------------------------------------------------------------------
 {
     string strParent;
-    if (!record.GetAttribute("Parent", strParent)) {
+    list<string> parents;
+    if (!record.GetAttribute("Parent", parents)) {
         return true;
     }
-    CRef<CFeat_id> pFeatId(new CFeat_id);
-    pFeatId->SetLocal().SetStr(strParent);
-    IdToFeatureMap::iterator it = m_MapIdToFeature.find(strParent);
-    if (it == m_MapIdToFeature.end()) {
-        return false;
+    for (list<string>::const_iterator cit = parents.begin(); cit != parents.end();
+            ++cit) {
+        CRef<CFeat_id> pFeatId(new CFeat_id);
+        pFeatId->SetLocal().SetStr(*cit);
+        IdToFeatureMap::iterator it = m_MapIdToFeature.find(*cit);
+        if (it == m_MapIdToFeature.end()) {
+            return false;
+        }
+        CRef<CSeq_feat> pParent = it->second;
+        pParent->SetId(*pFeatId);
+        CRef< CSeqFeatXref > pXref(new CSeqFeatXref);
+        pXref->SetId(*pFeatId);  
+        pFeature->SetXref().push_back(pXref);
     }
-    CRef<CSeq_feat> pParent = it->second;
-    pParent->SetId(*pFeatId);
-    CRef< CSeqFeatXref > pXref(new CSeqFeatXref);
-    pXref->SetId(*pFeatId);  
-    pFeature->SetXref().push_back(pXref);
     return true;
 }
 
@@ -1130,16 +1134,8 @@ bool CGff2Reader::xGetExistingFeature(
         return false;
     }
 
-    string strExistingId;
-    vector<CRef<CGb_qual> > quals = feature.GetQual();
-    vector<CRef<CGb_qual> >::iterator it;
-    for (it = quals.begin(); it != quals.end(); ++it) {
-        if ((*it)->CanGetQual() && (*it)->GetQual() == "ID") {
-            strExistingId = (*it)->GetVal();
-            break;
-        }
-    }
-    if (it == quals.end()) {
+    string strExistingId = feature.GetNamedQual("ID");
+    if (strExistingId.empty()) {
         return false;
     }
     if (!x_GetFeatureById( strExistingId, pExisting)) {
@@ -1158,16 +1154,8 @@ bool CGff2Reader::x_GetParentFeature(
         return false;
     }
 
-    string strParentId;
-    vector< CRef< CGb_qual > > quals = feature.GetQual();
-    vector< CRef< CGb_qual > >::iterator it;
-    for ( it = quals.begin(); it != quals.end(); ++it ) {
-        if ( (*it)->CanGetQual() && (*it)->GetQual() == "Parent" ) {
-            strParentId = (*it)->GetVal();
-            break;
-        }
-    }
-    if ( it == quals.end() ) {
+    string strParentId = feature.GetNamedQual("Parent");
+    if (strParentId.empty()) {
         return false;
     }
     if ( ! x_GetFeatureById( strParentId, pParent ) ) {
