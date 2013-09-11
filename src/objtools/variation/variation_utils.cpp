@@ -390,6 +390,7 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CVariation>& v, CScope &scope
                             bool found = x_ProcessShift(ref, pos_left,pos_right);
                             if (found)
                             {
+                                pos_right += ref.size()-1;
                                 if (new_pos_left == -1)
                                     new_pos_left = pos_left;
                                 else if (new_pos_left != pos_left)
@@ -489,6 +490,7 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
                     bool found = x_ProcessShift(ref, pos_left,pos_right);
                     if (found)
                     {
+                        pos_right += ref.size()-1;
                         if (new_pos_left == -1)
                             new_pos_left = pos_left;
                         else if (new_pos_left != pos_left)
@@ -704,6 +706,25 @@ void CVariationNormalizationLeftInt::x_ModifyLocation(CSeq_loc &loc, CSeq_litera
         {
             loc.SetInt().SetFrom(pos_left-1);
             loc.SetInt().SetTo(pos_left); 
+        }
+        literal.SetSeq_data().SetIupacna().Set(a);
+    }
+    else  if (m_Type == CVariation_inst::eType_del)
+    {
+        if (loc.IsPnt())
+        {
+            CSeq_interval interval;
+            interval.SetFrom(pos_left);
+            interval.SetTo(pos_left+a.size()-1);
+            if (loc.GetPnt().IsSetStrand())
+                interval.SetStrand( loc.GetPnt().GetStrand() );
+            interval.SetId().Assign(loc.GetPnt().GetId());
+            loc.SetInt().Assign(interval);
+        }
+        else
+        {
+            loc.SetInt().SetFrom(pos_left);
+            loc.SetInt().SetTo(pos_left+a.size()-1); 
         }
         literal.SetSeq_data().SetIupacna().Set(a);
     }

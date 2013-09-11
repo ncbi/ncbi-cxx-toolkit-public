@@ -27,7 +27,7 @@ Seq-annot ::= {
                   {
                     seq literal {
                       length 3,
-                      seq-data iupacna "GCT"
+                      seq-data iupacna "TGC"
                     }
                   }
                 },
