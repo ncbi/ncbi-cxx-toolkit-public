@@ -1,7 +1,9 @@
-Release 4.16.10 based on SC-11 (2013-08-28)
+Release 4.16.10 based on SC-11 (2013-09-11)
 
 Improvements:
     * NetSchedule: GETCONF extension (JIRA: CXX-4251)
+    * NetSchedule: new queue parameter "scramble_job_keys" to generate and use
+      keys in CCompoundID format (JIRA: CXX-4319)
 
 
 Release 4.16.9 based on SC-11 (2013-07-23)
