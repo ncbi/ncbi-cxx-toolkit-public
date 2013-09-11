@@ -334,6 +334,11 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
     CSeq_id gene_for_combined_aligns;
     gene_for_combined_aligns.SetOther().SetAccession("NT_007933");
     gene_for_combined_aligns.SetOther().SetVersion(15);
+    set<CSeq_id_Handle> genes_for_redo_partial;
+    genes_for_redo_partial.insert(CSeq_id_Handle::GetHandle(gene_for_combined_aligns));
+    genes_for_redo_partial.insert(CSeq_id_Handle::GetHandle("NT_011515.12"));
+    genes_for_redo_partial.insert(CSeq_id_Handle::GetGiHandle(224514634));
+    genes_for_redo_partial.insert(CSeq_id_Handle::GetGiHandle(258441149));
 
     CFeatureGenerator generator(scope);
     int default_flags =
@@ -417,7 +422,8 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
                 /// was already added. Also, don't add the RNA feature from the
                 /// very first alignment (to test recomputation of the partial flag
                 /// for the gene)
-                if((!(*it)->GetData().IsGene() ||
+                if (genes_for_redo_partial.count(id) &&
+                   (!(*it)->GetData().IsGene() ||
                    unique_gene_ids.insert(id).second) &&
                    (!(*it)->GetData().IsRna() || alignment > 0))
                     actual_combined_features_with_omission.push_back(*it);
