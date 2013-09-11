@@ -541,7 +541,7 @@ int CNcbiApplogApp::Redirect()
     }
     // Printout CGI's output
     if (!output.empty()) {
-        cout << output << endl;
+        cout << output;
     }
     // Check on errors
     if (output.find("Error:") != NPOS) {
@@ -789,7 +789,7 @@ int CNcbiApplogApp::Run(void)
             m_Info.logsite = GetEnvironment().Get("NCBI_APPLOG_SITE");
         }
         m_Info.logsite = NStr::URLEncode(m_Info.logsite);
-        }
+    }
 
     // Command specific pre-initialization 
     if (cmd == "start_app") {
