@@ -4145,6 +4145,46 @@ BOOST_AUTO_TEST_CASE(CWgsTrimmerLongExample)
     BOOST_REQUIRE_EQUAL(kExpectedResult, kActualResult);
 }
 
+BOOST_AUTO_TEST_CASE(MultiTaxidBlastDefLine)
+{
+    CBlast_def_line bdl;
+    CBlast_def_line::TTaxIds taxids;
+    taxids.insert(9606);
+    taxids.insert(10090);
+    BOOST_CHECK(bdl.IsSetTaxid() == false);
+    BOOST_CHECK(bdl.IsSetLinks() == false);
+
+    bdl.SetTaxIds(taxids);
+    BOOST_REQUIRE(bdl.IsSetTaxid() == false);
+    BOOST_CHECK(bdl.IsSetLinks() == true);
+    CBlast_def_line::TTaxIds returned = bdl.GetTaxIds();
+    BOOST_REQUIRE_EQUAL_COLLECTIONS(taxids.begin(), taxids.end(),
+                                    returned.begin(), returned.end());
+}
+
+BOOST_AUTO_TEST_CASE(SingleTaxidBlastDefLine)
+{
+    CBlast_def_line bdl;
+    const int kTaxid(9606);
+    BOOST_CHECK(bdl.IsSetTaxid() == false);
+    BOOST_CHECK(bdl.IsSetLinks() == false);
+
+    bdl.SetTaxid(kTaxid);
+    BOOST_REQUIRE(bdl.IsSetTaxid() == true);
+    BOOST_CHECK(bdl.IsSetLinks() == false);
+    BOOST_REQUIRE_EQUAL(kTaxid, bdl.GetTaxid());
+
+    CBlast_def_line::TTaxIds returned = bdl.GetTaxIds();
+    CBlast_def_line::TTaxIds expected; 
+    expected.insert(kTaxid);
+    BOOST_REQUIRE_EQUAL_COLLECTIONS(expected.begin(), expected.end(),
+                                    returned.begin(), returned.end());
+
+    bdl.SetTaxIds(expected);
+    BOOST_REQUIRE(bdl.IsSetTaxid() == true);
+    BOOST_CHECK(bdl.IsSetLinks() == false);
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 #endif /* SKIP_DOXYGEN_PROCESSING */
 
