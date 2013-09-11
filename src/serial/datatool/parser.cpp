@@ -50,6 +50,12 @@
 
 BEGIN_NCBI_SCOPE
 
+ASNParser::ASNParser(ASNLexer& lexer)
+    : AbstractParser(lexer)
+{
+    m_StackLexer.push(&lexer);
+}
+
 AutoPtr<CFileModules> ASNParser::Modules(const string& fileName)
 {
 
@@ -337,6 +343,9 @@ CDataType* ASNParser::x_Type(void)
 
 bool ASNParser::HaveMoreElements(void)
 {
+    if (Next() == T_EOF) {
+        EndComponentsDefinition();
+    }
     const AbstractToken& token = NextToken();
     if ( token.GetToken() == T_SYMBOL ) {
         switch ( token.GetSymbol() ) {
@@ -410,6 +419,83 @@ CDataType* ASNParser::TypesBlock(CDataMemberContainerType* containerType,
     return container.release();
 }
 
+void ASNParser::BeginComponentsDefinition(void)
+{
+    TToken tok = Next();
+    if ( tok != T_TYPE_REFERENCE ) {
+        ParseError("type reference");
+    }
+    string reftype = TypeReference();
+    AbstractLexer& curlexer = Lexer();
+    string lexer_name = curlexer.GetName();
+
+    if (m_MapDefinitions.find(reftype) == m_MapDefinitions.end()) {
+
+        AutoPtr<CNcbiIfstream> in( new CNcbiIfstream(lexer_name.c_str()));
+        if (!in.get()->is_open()) {
+            ParseError("cannot access file",lexer_name.c_str());
+        }
+        ASNLexer tmplexer(*in.get(), lexer_name);
+        SetLexer(&tmplexer);
+        int level=0;
+        string collected;
+        bool started = false;
+        for ( ;; ) {
+            const AbstractToken& token = NextToken();
+            tok = token.GetToken();
+            string toktext = token.GetText();
+            if (tok == T_EOF) {
+                break;
+            }
+            Consume();
+            if (started) {
+                if ( tok == T_SYMBOL && toktext == "}") {
+                    if (--level <= 0) {
+                        break;
+                    }
+                }
+                collected += ' ';
+                collected += toktext;
+                if (tok == T_SYMBOL && toktext == "{") {
+                    ++level;
+                }
+                continue;
+            }
+            if (tok == K_COMPONENTS) {
+                Consume(K_OF, "OF");
+                NextToken();
+                Consume();
+            }
+            if (tok == T_TYPE_REFERENCE) {
+                started = (toktext == reftype);
+                if (started) {
+                    Consume(T_DEFINE, "::=");
+                    Consume(K_SEQUENCE, "SEQUENCE");
+                    Consume(T_SYMBOL, "{");
+                    level = 1;
+                }
+            }
+        }
+        SetLexer(&curlexer);
+        m_MapDefinitions[reftype] = collected;
+    }
+
+    CNcbiIstream* in = new CNcbiIstrstream(m_MapDefinitions[reftype].c_str());
+    AbstractLexer *lexer = new ASNLexer(*in,lexer_name);
+    Lexer().FlushCommentsTo(*lexer);
+    m_StackLexer.push(lexer);
+    SetLexer(lexer);
+}
+
+void ASNParser::EndComponentsDefinition(void)
+{
+    if (m_StackLexer.size() > 1) {
+        delete m_StackLexer.top();
+        m_StackLexer.pop();
+        SetLexer(m_StackLexer.top());
+    }
+}
+
 AutoPtr<CDataMember> ASNParser::NamedDataType(bool allowDefaults)
 {
     string name;
@@ -417,6 +503,8 @@ AutoPtr<CDataMember> ASNParser::NamedDataType(bool allowDefaults)
     if (tok == K_COMPONENTS) {
         Consume();
         Consume(K_OF, "OF");
+        BeginComponentsDefinition();
+        tok = Next();
     }
     if ( tok == T_IDENTIFIER ) {
         name = Identifier();

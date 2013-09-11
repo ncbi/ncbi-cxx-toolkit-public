@@ -40,6 +40,8 @@
 #include "lexer.hpp"
 #include "moduleset.hpp"
 #include <list>
+#include <stack>
+#include <map>
 
 BEGIN_NCBI_SCOPE
 
@@ -55,10 +57,7 @@ class CEnumDataTypeValue;
 class ASNParser : public AbstractParser
 {
 public:
-    ASNParser(ASNLexer& lexer)
-        : AbstractParser(lexer)
-        {
-        }
+    ASNParser(ASNLexer& lexer);
 
     const ASNLexer& L(void) const
         {
@@ -79,6 +78,8 @@ public:
     CDataType* x_Type(void);
     CDataType* TypesBlock(CDataMemberContainerType* containerType,
                           bool allowDefaults);
+    void BeginComponentsDefinition(void);
+    void EndComponentsDefinition(void);
     AutoPtr<CDataMember> NamedDataType(bool allowDefaults);
     CEnumDataType* EnumeratedBlock(CEnumDataType* enumType);
     CEnumDataTypeValue& EnumeratedValue(CEnumDataType& enumType);
@@ -97,6 +98,8 @@ public:
 
 private:
     CAsnBinaryDefs::ETagType m_TagDefault;
+    stack<AbstractLexer*>  m_StackLexer;
+    map<string, string> m_MapDefinitions;
 };
 
 END_NCBI_SCOPE
