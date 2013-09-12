@@ -275,7 +275,11 @@ void CVariationUtilities::FixAlleles(CRef<CVariation> v, string old_ref, string 
 }
 
 // Variation Normalization
+#ifdef SEQVEC_CACHE
+CSeqVector CVariationNormalization_base_cache::m_seq_vec;
+#else
 string CVariationNormalization_base_cache::m_Sequence;
+#endif
 string CVariationNormalization_base_cache::m_Accession;
 int CVariationNormalization_base_cache::m_Type;         
 
@@ -297,24 +301,37 @@ void CVariationNormalization_base_cache::x_PrefetchSequence(CScope &scope, strin
     if (accession != m_Accession)
     {
         m_Accession = accession;
-        m_Sequence.clear();
         CSeq_id seq_id( accession );
         const CBioseq_Handle& bsh = scope.GetBioseqHandle( seq_id );
+#ifdef SEQVEC_CACHE
+        m_seq_vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+#else
+        m_Sequence.clear();     
         CSeqVector seq_vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
         seq_vec.GetSeqData(0, seq_vec.size(), m_Sequence);
+#endif
     }
 }
 
 string CVariationNormalization_base_cache::x_GetSeq(int pos, int length)
 {
-    _ASSERT(!m_Sequence.empty());
-    
+#ifdef SEQVEC_CACHE
+    string seq;
+    m_seq_vec.GetSeqData(pos, pos+length, seq);
+    return seq;
+#else
+    _ASSERT(!m_Sequence.empty());   
     return m_Sequence.substr(pos,length);
+#endif
 }
 
 int CVariationNormalization_base_cache::x_GetSeqSize()
 {
+#ifdef SEQVEC_CACHE
+    return m_seq_vec.size();
+#else
     return m_Sequence.size();
+#endif
 } 
 
 template<class T>

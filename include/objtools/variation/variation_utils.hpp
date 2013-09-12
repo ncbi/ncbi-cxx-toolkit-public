@@ -36,6 +36,7 @@ USING_SCOPE(objects);
 using namespace std;
 
 #define MAX_LEN 1000
+#define SEQVEC_CACHE
 
 class CVariationUtilities
 {
@@ -60,7 +61,11 @@ protected:
     static void x_PrefetchSequence(CScope &scope, string accession);
     static string x_GetSeq(int pos, int length);
     static int x_GetSeqSize();
+#ifdef SEQVEC_CACHE
+    static CSeqVector m_seq_vec;
+#else
     static string m_Sequence;
+#endif
     static string m_Accession;
     static int m_Type;         // Current limitation - the same type for the whole placement/location.
 };

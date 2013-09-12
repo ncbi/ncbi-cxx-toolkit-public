@@ -5,8 +5,9 @@ Variation ::= {
   },
   placements {
     {
-      loc pnt {
-        point 76895770,
+      loc int {
+        from 76895770,
+        to 76895791,
         id other {
           accession "NC_000011",
           version 9
