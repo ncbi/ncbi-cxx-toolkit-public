@@ -500,6 +500,32 @@ double CDistMethods::Divergence(const string& seq1, const string& seq2)
 }
 
 
+double CDistMethods::FractionIdentity(const string& seq1, const string& seq2)
+{
+    int same_count = 0;
+    int pos_count = 0;
+
+    for (unsigned int pos = 0;  pos < seq1.size();  ++pos) {
+        if (seq1[pos] == '-' || seq2[pos] == '-') {
+            continue;  // ignore this position if a seq has a gap
+        }
+        pos_count++;
+        if (seq1[pos] == seq2[pos]) {
+            same_count++;
+        }
+    }
+    _ASSERT(pos_count >= 0);
+    _ASSERT(diff_count >= 0);
+
+    if (pos_count == 0) {
+        return 0.0;
+    }
+
+    _ASSERT(same_count <= pos_count);
+    return same_count / (double) pos_count;
+}
+
+
 void CDistMethods::Divergence(const CAlnVec& avec_in, TMatrix& result)
 {
     // want to change gap char of CAlnVec, but no copy constructor,
@@ -594,7 +620,7 @@ CRef<CBioTreeContainer> MakeBioTreeContainer(const TPhyTreeNode *tree)
 bool CDistMethods::AllFinite(const TMatrix& mat)
 {
     ITERATE (TMatrix::TData, it, mat.GetData()) {
-        if (!isfinite(*it)) {
+        if (!isfinite(*it) || *it < 0.0) {
             return false;
         }
     }
