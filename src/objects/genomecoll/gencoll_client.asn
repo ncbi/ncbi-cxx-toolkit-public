@@ -37,12 +37,30 @@ GCClient-Error ::= SEQUENCE {
     description VisibleString OPTIONAL
 }
 
--- This is a bitfield.  All values should be powers of two.
+-- This is a bitfield.  All values are powers of two.
 GCClient-AttributeFlags ::= INTEGER {
     none(0),
     biosource(1),
+    -- obsolete; do not use
     molinfo(2),
-    publications(4)
+    -- obsolete; do not use
+    publications(4),
+
+-- scaffold-flags:
+-- by default, pseudo-scaffolds are reported as submitted.
+-- include_unordered_scaffolds: show pseudo-scaffolds as unordered/unplaced
+-- include_UCSC_pseudo_scaffolds: all unordered/unplaced aer shown as placed
+--  (using UCSC coordinates of chr*_random or chrUn)
+    include-unordered-scaffolds (1024), --  1<<10
+    include-UCSC-pseudo-scaffolds (2048), -- 1<<11
+
+-- chromosome-flags:
+-- by default, alt-loci/patches position on chromosome reported using AlignDb
+-- database alignments.
+-- exclude_aligndb: report alt-loci/patches position on chromosome
+-- using placement and not using AlignDb alignments
+    exclude-aligndb (8192) -- 1<<13
+
 }
 
 
