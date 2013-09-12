@@ -121,6 +121,14 @@ protected:
 
     virtual bool xAnnotPostProcess(
         CRef<CSeq_annot>);
+
+    virtual bool xVerifyCdsParents(
+        const CGff2Record&);
+
+    virtual bool xReadInit();
+
+    // Data:
+    map<string, string> mCdsParentMap;
 };
 
 END_SCOPE(objects)

@@ -265,9 +265,17 @@ bool CGff3Reader::xUpdateAnnotCds(
     IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
+    if (!xVerifyCdsParents(record)) {
+        CObjReaderLineException err(
+            eDiag_Fatal,
+            0,
+            "Bad data line: CDS record with bad parent assignments.",
+            ILineError::eProblem_FeatureBadStartAndOrStop);
+        err.SetLineNumber(m_uLineNumber);
+        ProcessError(err, pEC);
+    }
     list<string> parents;
     if (record.GetAttribute("Parent", parents)) {
-        //smell test
         for (list<string>::const_iterator it = parents.begin(); it != parents.end(); 
                 ++it) {
             IdToFeatureMap::iterator fit = m_MapIdToFeature.find(*it);
@@ -383,6 +391,35 @@ bool CGff3Reader::xAnnotPostProcess(
     return true;
 }
 
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::xVerifyCdsParents(
+    const CGff2Record& record)
+//  ----------------------------------------------------------------------------
+{
+    string id;
+    string parents;
+    if (!record.GetAttribute("ID", id)) {
+        return true;
+    }
+    record.GetAttribute("Parent", parents);
+    map<string, string>::iterator it = mCdsParentMap.find(id);
+    if (it == mCdsParentMap.end()) {
+        mCdsParentMap[id] = parents;
+        return true;
+    }
+    return (it->second == parents);
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Reader::xReadInit()
+//  ----------------------------------------------------------------------------
+{
+    if (!CGff2Reader::xReadInit()) {
+        return false;
+    }
+    mCdsParentMap.clear();
+    return true;
+}
 
 END_objects_SCOPE
 END_NCBI_SCOPE

@@ -245,6 +245,8 @@ public:
         const CGff2Record&,
         CRef<CSeq_align> );
 
+    virtual bool xReadInit();
+
     virtual bool xAnnotPostProcess(
         CRef<CSeq_annot>);
 

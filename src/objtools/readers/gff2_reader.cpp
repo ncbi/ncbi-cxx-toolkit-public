@@ -185,6 +185,7 @@ CGff2Reader::ReadSeqAnnotsNew(
     string line;
     //int linecount = 0;
 
+    xReadInit();
     while ( ! lr.AtEOF() ) {
         ++m_uLineNumber;
         line = NStr::TruncateSpaces_Unsafe( *++lr );
@@ -1251,6 +1252,13 @@ CGff2Reader::x_ParseDbtag(
 //  ============================================================================
 bool CGff2Reader::xAnnotPostProcess(
     CRef<CSeq_annot> pAnnot)
+//  ============================================================================
+{
+    return true;
+}
+
+//  ============================================================================
+bool CGff2Reader::xReadInit()
 //  ============================================================================
 {
     return true;
