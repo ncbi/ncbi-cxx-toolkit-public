@@ -360,7 +360,7 @@ CCompoundID SIDUnpacking::ExtractCID(SCompoundIDPoolImpl* pool_impl)
             new_cid.AppendInteger(ExtractNumber());
             break;
         case '-':
-            new_cid.AppendInteger(-ExtractNumber());
+            new_cid.AppendInteger(-(Int8) ExtractNumber());
             break;
         case CIT_SERVICE_NAME_FIELD_CODE:
             new_cid.AppendServiceName(ExtractString());
