@@ -435,56 +435,60 @@ CMultiReaderApp::Run(void)
 
     CRef< CSerialObject> object;
     vector< CRef< CSeq_annot > > annots;
-    switch( m_uFormat ) {
-        default: 
-            xProcessDefault(args, istr, ostr);   
-            break;
-        case CFormatGuess::eWiggle:
-            if (m_iFlags & CReaderBase::fAsRaw) {
-                xProcessWiggleRaw(args, istr, ostr);
-            }
-            else {
-                xProcessWiggle(args, istr, ostr);
-            }
-            break;
-        case CFormatGuess::eBed:
-            if (m_iFlags & CReaderBase::fAsRaw) {
-                xProcessBedRaw(args, istr, ostr);
-            }
-            else {
-                xProcessBed(args, istr, ostr);
-            }
-            break;
-        case CFormatGuess::eGtf:
-        case CFormatGuess::eGtf_POISENED:
-            xProcessGtf(args, istr, ostr);
-            break;
-        case CFormatGuess::eVcf:
-            xProcessVcf(args, istr, ostr);
-            break;
-        case CFormatGuess::eNewick:
-            xProcessNewick(args, istr, ostr);
-            break;
-        case CFormatGuess::eGff3:
-            xProcessGff3(args, istr, ostr);
-            break;
-        case CFormatGuess::eGff2:
-            xProcessGff2(args, istr, ostr);
-            break;
-        case CFormatGuess::eGvf:
-            xProcessGvf(args, istr, ostr);
-            break;
-        case CFormatGuess::eAgp:
-            xProcessAgp(args, istr, ostr);
-            break;
-        case CFormatGuess::eAlignment:
-            xProcessAlignment(args, istr, ostr);
-            break;
-        case CFormatGuess::eFiveColFeatureTable:
-            xProcess5ColFeatTable(args, istr, ostr);
-            break;
+    try {
+        switch( m_uFormat ) {
+            default: 
+                xProcessDefault(args, istr, ostr);   
+                break;
+            case CFormatGuess::eWiggle:
+                if (m_iFlags & CReaderBase::fAsRaw) {
+                    xProcessWiggleRaw(args, istr, ostr);
+                }
+                else {
+                    xProcessWiggle(args, istr, ostr);
+                }
+                break;
+            case CFormatGuess::eBed:
+                if (m_iFlags & CReaderBase::fAsRaw) {
+                    xProcessBedRaw(args, istr, ostr);
+                }
+                else {
+                    xProcessBed(args, istr, ostr);
+                }
+                break;
+            case CFormatGuess::eGtf:
+            case CFormatGuess::eGtf_POISENED:
+                xProcessGtf(args, istr, ostr);
+                break;
+            case CFormatGuess::eVcf:
+                xProcessVcf(args, istr, ostr);
+                break;
+            case CFormatGuess::eNewick:
+                xProcessNewick(args, istr, ostr);
+                break;
+            case CFormatGuess::eGff3:
+                xProcessGff3(args, istr, ostr);
+                break;
+            case CFormatGuess::eGff2:
+                xProcessGff2(args, istr, ostr);
+                break;
+            case CFormatGuess::eGvf:
+                xProcessGvf(args, istr, ostr);
+                break;
+            case CFormatGuess::eAgp:
+                xProcessAgp(args, istr, ostr);
+                break;
+            case CFormatGuess::eAlignment:
+                xProcessAlignment(args, istr, ostr);
+                break;
+            case CFormatGuess::eFiveColFeatureTable:
+                xProcess5ColFeatTable(args, istr, ostr);
+                break;
+        }
     }
-
+    catch(CObjReaderLineException& err) {
+        cerr << "Reading aborted due to fatal error ." << endl << endl;
+    }
     xDumpErrors( cerr );
     return 0;
 }
@@ -647,6 +651,10 @@ void CMultiReaderApp::xProcessGvf(
     CGvfReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
+        const CSeq_annot& annot = **cit;
+        const list< CRef< CSeq_feat > >& ftable = annot.GetData().GetFtable();
+        const CSeq_feat& feat = *(ftable.front());
+        const CVariation_ref& varref = feat.GetData().GetVariation();
         xWriteObject(**cit, ostr);
     }
 }
