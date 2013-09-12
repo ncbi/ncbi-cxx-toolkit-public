@@ -25,6 +25,7 @@ if test "$ncbi_favor_std_packages" = yes; then
         test -x "$d/include/libxslt"       &&  : ${LIBXML_PATH=$d}
         test -f "$d/include/lzo/lzo1.h"    &&  : ${LZO_PATH=$d}
         test -d "$d/include/mimetic"       &&  : ${MIMETIC_PATH=$d}
+        test -d "$d/include/mongo"         &&  : ${MONGODB_PATH=$d}
         test -d "$d/include/muParser"      &&  : ${MUPARSER_PATH=$d}
         test -x "$d/bin/mysql-config"      &&  : ${MYSQL_PATH=$d}
         test -d "$d/include/GL"            &&  : ${OPENGL_PATH=$d}
@@ -110,6 +111,10 @@ esac
 : ${LZO_PATH=$NCBI/lzo-2.05}
 
 : ${MIMETIC_PATH=$NCBI/mimetic-0.9.7-ncbi1}
+
+case "$ncbi_platform" in
+    Linux64    ) : ${MONGODB_PATH=$NCBI/mongodb-2.4.6} ;;
+esac
 
 case "$ncbi_platform" in
     SunOS* ) : ${MUPARSER_PATH=$NCBI/muParser-1.30-ncbi1} ;;

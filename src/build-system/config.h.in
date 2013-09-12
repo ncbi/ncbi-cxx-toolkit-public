@@ -266,6 +266,9 @@
 /* Define to 1 if libmimetic is available. */
 #undef HAVE_LIBMIMETIC
 
+/* Define to 1 if libmongoclient is available. */
+#undef HAVE_LIBMONGODB
+
 /* Define to 1 if libmuparser is available. */
 #undef HAVE_LIBMUPARSER
 

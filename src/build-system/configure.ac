@@ -71,7 +71,7 @@ case "$with_3psw" in
                      python, perl, jni, sqlite3, mimetic, sge, icu, sp, expat,
                      sablot, libxml, libxslt, libexslt, xerces, xalan, zorba,
                      oechem, muparser, hdf5, gif, jpeg, png, tiff, xpm,
-                     magic, curl, gsoap],
+                     magic, curl, gsoap, mongodb],
         [if test "${[with_]X-no}" != "no"; then
             AC_MSG_ERROR([incompatible options: --with-]X[ but --without-3psw])
          else
@@ -447,6 +447,10 @@ AC_ARG_WITH(gsoap,
    [ --with-gsoap=DIR        use gSOAP++ installation in DIR])
 AC_ARG_WITH(gsoap2,
    [ --without-gsoap         do not use gSOAP++])
+AC_ARG_WITH(mongodb,
+   [ --with-mongodb=DIR      use MongoDB installation in DIR])
+AC_ARG_WITH(mongodb2,
+   [ --without-mongodb       do not use MongoDB])
 AC_ARG_WITH(3psw,
    [ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.])
 AC_ARG_WITH(3psw2,
@@ -502,7 +506,7 @@ ftds mysql orbacus freetype ftgl opengl mesa glut glew glew-mx \
 bdb python perl jni sqlite3 icu boost boost-tag \
 sp expat sablot libxml libxslt libexslt xerces xalan zorba \
 oechem sge muparser hdf5 \
-gif jpeg tiff png xpm magic curl mimetic gsoap 3psw \
+gif jpeg tiff png xpm magic curl mimetic gsoap mongodb 3psw \
 local-lbsm ncbi-crypt connext \
 serial objects dbapi app ctools gui algo internal gbench"
 
@@ -544,7 +548,7 @@ for x_arg in "$@" ; do
       | --with-z=* | --with-bz2=* | --with-lzo=* \
       | --with-pcre=* | --with-ncbi-c=* | --with-sss=* \
       | --with-gcrypt=* | --with-gnutls=* | --with-openssl=* \
-      | --with-krb5=* | --with-curl=* | --with-gsoap=* \
+      | --with-krb5=* | --with-curl=* | --with-gsoap=* | --with-mongodb=* \
       | --with-sybase-local=* | --with-wxwidgets=* | --with-mimetic=* \
       | --with-ftds=* | --with-mysql=* | --with-fastcgi=* \
       | --with-sqlite3=* | --with-expat=* | --with-sablot=* \
@@ -4841,6 +4845,24 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
            BOOST_SYSTEM_LIBS=
            BOOST_SYSTEM_STATIC_LIBS=])])
 
+   boost_fs_lib=-lboost_filesystem${BOOST_TAG}
+   if test -f "$BOOST_LIBPATH_/libboost_filesystem${BOOST_TAG}-static.a"; then
+       boost_fs_static_lib=-lboost_filesystem${BOOST_TAG}-static
+   else
+       boost_fs_static_lib=$boost_fs_lib
+   fi
+   BOOST_FILESYSTEM_LIBS="$boost_fs_lib $BOOST_SYSTEM_LIBS"
+   BOOST_FILESYSTEM_STATIC_LIBS="$boost_fs_static_lib $BOOST_SYSTEM_STATIC_LIBS"
+
+   AC_CACHE_CHECK([for Boost.Filesystem$in_path], ncbi_cv_lib_boost_filesystem,
+      CPPFLAGS="$BOOST_INCLUDE $orig_CPPFLAGS"
+      LIBS="$BOOST_LIBPATH $BOOST_FILESYSTEM_LIBS $RT_LIBS $orig_LIBS"
+      [AC_LINK_IFELSE(
+          [AC_LANG_PROGRAM([[#include <boost/filesystem.hpp>]],
+              [[return boost::filesystem::portable_name("foo");]])],
+          [ncbi_cv_lib_boost_filesystem=yes],
+          [ncbi_cv_lib_boost_filesystem=no])])
+
    BOOST_TEST_PEM_LIBS=-lboost_prg_exec_monitor${BOOST_TAG}
    if test -f "$BOOST_LIBPATH_/libboost_prg_exec_monitor${BOOST_TAG}-static.a"; then
        BOOST_TEST_PEM_STATIC_LIBS=-lboost_prg_exec_monitor${BOOST_TAG}-static
@@ -4920,10 +4942,23 @@ else
    BOOST_INCLUDE=
    BOOST_LIBPATH=
    BOOST_TAG=
+   ncbi_cv_lib_boost_filesystem=no
    ncbi_cv_lib_boost_regex=no
    ncbi_cv_lib_boost_spirit=no
+   ncbi_cv_lib_boost_system=no
    ncbi_cv_lib_boost_test=no
    ncbi_cv_lib_boost_thread=no
+fi
+
+if test "$ncbi_cv_lib_boost_filesystem" != "no"; then
+   dnl AC_DEFINE(HAVE_BOOST_FILESYSTEM, 1,
+   dnl           [Define to 1 if the `Boost.Filesystem' library is available.])
+   NCBI_PACKAGE(Boost.Filesystem)
+else
+   boost_fs_lib=
+   boost_fs_static_lib=
+   BOOST_FILESYSTEM_LIBS=
+   BOOST_FILESYSTEM_STATIC_LIBS=
 fi
 
 if test "$ncbi_cv_lib_boost_regex" != "no"; then
@@ -6390,6 +6425,36 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(gsoap, GSOAP, gsoapssl++,
        [soap s;])],
    $OPENSSL_LIBS $Z_LIBS)
 
+case "$with_sqlite3" in
+   yes | '' ) ;;
+   *        ) SQLITE3_PATH=$with_sqlite3 ;;
+esac
+
+
+# MongoDB
+if test -d "$MONGODB_PATH"; then
+   NCBI_FIX_DIR(MONGODB_PATH)
+fi
+if test -d $MONGODB_PATH/lib${bit64_sfx}; then
+   MONGODB_LIBDIR=$MONGODB_PATH/lib${bit64_sfx}
+else
+   MONGODB_LIBDIR=$MONGODB_PATH/lib
+fi
+# need Boost rpath
+NCBI_RPATHIFY(MONGODB_LIBPATH, $MONGODB_LIBDIR)
+NCBI_CHECK_THIRD_PARTY_LIB_EX(mongodb, MONGODB, mongoclient,
+   [AC_LANG_PROGRAM([#include <mongo/client/dbclient.h>],
+      [std::vector<mongo::HostAndPort> v;
+       mongo::DBClientReplicaSet client("foo", v);
+       client.connect();])],
+   [$BOOST_LIBPATH $boost_fs_lib $BOOST_THREAD_LIBS])
+# MongoDB's own library is normally static, but its supporting Boost
+# libraries might not be by default.
+if test -n "$MONGODB_LIBS"; then
+   MONGODB_STATIC_LIBS="$MONGODB_LIBPATH -lmongodb $BOOST_LIBPATH $boost_fs_static_lib $BOOST_THREAD_STATIC_LIBS"
+else
+   MONGODB_STATIC_LIBS=
+fi
 
 ### Restore original compiler/linker flags
 LIBS="$orig_LIBS"
@@ -6990,6 +7055,8 @@ AC_SUBST(ODBC_LIBS)
 AC_SUBST(BOOST_INCLUDE)
 AC_SUBST(BOOST_LIBPATH)
 AC_SUBST(BOOST_TAG)
+AC_SUBST(BOOST_FILESYSTEM_LIBS)
+AC_SUBST(BOOST_FILESYSTEM_STATIC_LIBS)
 AC_SUBST(BOOST_REGEX_LIBS)
 AC_SUBST(BOOST_REGEX_STATIC_LIBS)
 AC_SUBST(BOOST_SYSTEM_LIBS)
@@ -7057,6 +7124,7 @@ AC_SUBST(SQLITE3_STATIC_LIBS)
 AC_SUBST(FREETYPE_INCLUDE)
 AC_SUBST(FREETYPE_LIBS)
 AC_SUBST(GSOAP_PATH)
+AC_SUBST(MONGODB_STATIC_LIBS)
 AC_SUBST(ncbi_xreader_pubseqos)
 AC_SUBST(ncbi_xreader_pubseqos2)
 AC_SUBST(UNLESS_PUBSEQOS)
