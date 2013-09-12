@@ -214,6 +214,16 @@ CGff2Reader::ReadSeqAnnotsNew(
             ProcessError(err, pEC);
         }
     }
+    typedef vector< CRef<CSeq_annot> >::iterator ANNOTIT;
+    for (ANNOTIT it = annots.begin(); it != annots.end(); ++it) {
+        try {
+            xAnnotPostProcess(*it);
+        }
+        catch(CObjReaderLineException& err) {
+            err.SetLineNumber(m_uLineNumber);
+            ProcessError(err, pEC);
+        }
+    }
 }
 
 //  ----------------------------------------------------------------------------                
@@ -1236,6 +1246,14 @@ CGff2Reader::x_ParseDbtag(
         pDbtag->SetTag().SetStr( str );
     }
     return pDbtag;
+}
+
+//  ============================================================================
+bool CGff2Reader::xAnnotPostProcess(
+    CRef<CSeq_annot> pAnnot)
+//  ============================================================================
+{
+    return true;
 }
 
 //  ============================================================================

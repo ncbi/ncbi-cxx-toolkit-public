@@ -245,6 +245,9 @@ public:
         const CGff2Record&,
         CRef<CSeq_align> );
 
+    virtual bool xAnnotPostProcess(
+        CRef<CSeq_annot>);
+
     bool xAlignmentSetSegment(
         const CGff2Record&,
         CRef<CSeq_align> );

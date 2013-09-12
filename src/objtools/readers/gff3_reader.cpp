@@ -265,20 +265,20 @@ bool CGff3Reader::xUpdateAnnotCds(
     IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
-    //Note:
-    // There are still open questions as to how multiparent CDS records ought to
-    // be handled. Until those are settled, we will flag such records as errors.
-    //
     list<string> parents;
-    if (record.GetAttribute("Parent", parents)  &&  parents.size() > 1) {
-    //    CObjReaderLineException err(
-    //        eDiag_Error,
-    //        0,
-    //        "Multi-parent CDS records not supported.",
-    //        ILineError::eProblem_GeneralParsingError);
-    //    err.SetLineNumber(m_uLineNumber);
-        //ProcessError(err, pEC);
-    //    return false;
+    if (record.GetAttribute("Parent", parents)) {
+        //smell test
+        for (list<string>::const_iterator it = parents.begin(); it != parents.end(); 
+                ++it) {
+            IdToFeatureMap::iterator fit = m_MapIdToFeature.find(*it);
+            if (fit != m_MapIdToFeature.end()) {
+                CRef<CSeq_feat> pF = fit->second;
+                const CSeq_loc& loc = pF->GetLocation();
+                if (!record.UpdateFeature(m_iFlags, fit->second)) {
+                    return false;
+                }
+            }
+        }
     }
     string id;
     if (record.GetAttribute("ID", id)) {
@@ -341,6 +341,48 @@ bool CGff3Reader::x_AddFeatureToAnnot(
     pAnnot->SetData().SetFtable().push_back( pFeature ) ;
     return true;
 }
+
+//  ============================================================================
+bool CGff3Reader::xAnnotPostProcess(
+    CRef<CSeq_annot> pAnnot)
+//  ============================================================================
+{
+    typedef list< CRef< CSeq_feat > > FTABLE;
+    typedef FTABLE::iterator FEATIT;
+    typedef vector< CRef< CSeqFeatXref > > XREFS;
+    typedef XREFS::iterator XREFIT;
+
+    CSeq_annot& annot = *pAnnot;
+    FTABLE& ftable = annot.SetData().SetFtable();
+    for (FEATIT it = ftable.begin(); it != ftable.end(); ++it) {
+        CSeq_feat& feat = **it;
+        if (!feat.GetData().IsCdregion()  ||  feat.GetXref().size() <= 1) {
+            continue;
+        }
+
+        XREFS& xrefs = feat.SetXref();
+        while (xrefs.size() > 1) {
+            //turn each CDS with multiple parent xrefs into a set of
+            // CDSs each with a single parent xref
+
+            //select xref to slice out
+            XREFIT xit = xrefs.begin()+1;
+ 
+           //create new feature
+            CRef<CSeq_feat> pNew(new CSeq_feat);
+            pNew->Assign(feat);
+            pNew->SetXref().clear();
+            pNew->SetXref().push_back(*xit);
+            //newFeats.push_back(pNew);
+            ftable.insert(it, pNew);
+
+            //remove the spliced out xref
+            xrefs.erase(xit);
+        }
+    }
+    return true;
+}
+
 
 END_objects_SCOPE
 END_NCBI_SCOPE

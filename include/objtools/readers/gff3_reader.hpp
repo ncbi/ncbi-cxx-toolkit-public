@@ -118,6 +118,9 @@ protected:
         CRef<CSeq_feat>,
         CRef<CSeq_annot>,
         IMessageListener*);
+
+    virtual bool xAnnotPostProcess(
+        CRef<CSeq_annot>);
 };
 
 END_SCOPE(objects)

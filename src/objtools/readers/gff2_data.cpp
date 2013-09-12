@@ -418,39 +418,7 @@ bool CGff2Record::UpdateFeature(
     }
     else {
         // indicates the feature location is already under construction
-        size_t newFrom = pAddLoc->GetInt().GetFrom();
-        size_t newTo = pAddLoc->GetInt().GetTo();
-
-        if (target.IsInt()) {
-            CSeq_interval& curIntv = pFeature->SetLocation().SetInt();
-            if (newFrom-1 == curIntv.GetTo()) {
-                curIntv.SetTo(newTo);
-                return true;
-            }
-            if (newTo+1 == curIntv.GetFrom()) {
-                curIntv.SetFrom(newFrom);
-                return true;
-            }
-        }
-        else {//location must be Packed_int by construction logic
-            list<CRef<CSeq_interval> >& intervals = 
-                pFeature->SetLocation().SetPacked_int().Set();
-            list<CRef<CSeq_interval> >::iterator it = intervals.begin();
-            for (/**/; it != intervals.end(); ++it) {
-                // try to merge the new piece with an abutting old piece
-                CSeq_interval& curIntv = **it;
-                if (newFrom-1 == curIntv.GetTo()) {
-                    curIntv.SetTo(newTo);
-                    return true;
-                }
-                if (newTo+1 == curIntv.GetFrom()) {
-                    curIntv.SetFrom(newFrom);
-                    return true;
-                }
-            }
-        }
-        // otherwise, just add it to the old pieces
-        pFeature->SetLocation().Add(*pAddLoc);
+        pFeature->SetLocation(*pFeature->SetLocation().Add(*pAddLoc, CSeq_loc::fSortAndMerge_All, 0));
     }        
     return true;
 }
