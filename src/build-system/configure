@@ -3255,6 +3255,10 @@ if test -z "${DEF_FAST_FLAGS}${FAST_CXXFLAGS}"; then
       *\ -O* | *\ -xO* ) skip_fast_flags=yes ;;
    esac
 fi
+# Generally save any originally specified flags.
+USER_CFLAGS=$CFLAGS
+USER_CXXFLAGS=$CXXFLAGS
+USER_LDFLAGS=$LDFLAGS
 
 #### Always define this
 
@@ -9298,15 +9302,30 @@ if test "$compiler" != "MSVC" ; then
    dbgrx1="$wsrx-g[^cx$wschars]*$wsrx"
    dbgrx2="$wsrx-gx*coff[0-9+]*$wsrx"
    optrx="$wsrx-x*O[0-9s]*$wsrx"
+   NDEB_CFLAGS=`  echo " $CFLAGS "   | sed "s/$dbgrx1/ /g; s/$dbgrx2/ /g"`
+   NDEB_CXXFLAGS=`echo " $CXXFLAGS " | sed "s/$dbgrx1/ /g; s/$dbgrx2/ /g"`
+   NDEB_LDFLAGS=` echo " $LDFLAGS "  | sed "s/$dbgrx1/ /g; s/$dbgrx2/ /g"`
    if test "$with_symbols" = "no" ; then
-      CFLAGS=`  echo " $CFLAGS "   | sed "s/$dbgrx1/ /g; s/$dbgrx2/ /g"`
-      CXXFLAGS=`echo " $CXXFLAGS " | sed "s/$dbgrx1/ /g; s/$dbgrx2/ /g"`
-      LDFLAGS=` echo " $LDFLAGS "  | sed "s/$dbgrx1/ /g; s/$dbgrx2/ /g"`
+      CFLAGS=$NDEB_CFLAGS
+      CXXFLAGS=$NDEB_CXXFLAGS
+      LDFLAGS=$NDEB_LDFLAGS
    else
       echo " $CFLAGS "  | $EGREP_Q "$dbgrx1|$dbgrx2" || CFLAGS="$CFLAGS -g"
       echo " $CXXFLAGS "| $EGREP_Q "$dbgrx1|$dbgrx2" || CXXFLAGS="$CXXFLAGS -g"
       echo " $LDFLAGS " | $EGREP_Q "$dbgrx1|$dbgrx2" || LDFLAGS="$LDFLAGS -g"
       STRIP="@:"
+      case "$compiler:$compiler_version" in
+         GCC:4[89]? | GCC:[5-9]? | GCC:???? )
+            # GCC 4.8 defaults to DWARF 4, which Totalview for one
+            # can't handle; roll back to version 3 by default.
+            echo " $USER_CFLAGS " | $EGREP_Q "$dbgrx1|$dbgrx2" || \
+               CFLAGS="$NDEB_CFLAGS -gdwarf-3"
+            echo " $USER_CXXFLAGS " | $EGREP_Q "$dbgrx1|$dbgrx2" || \
+               CXXFLAGS="$NDEB_CXXFLAGS -gdwarf-3"
+            echo " $USER_LDFLAGS " | $EGREP_Q "$dbgrx1|$dbgrx2" || \
+               LDFLAGS="$NDEB_LDFLAGS -gdwarf-3"
+            ;;
+      esac
    fi
 
    NOPT_CFLAGS=`  echo " $CFLAGS "    | sed "s/$optrx/ /g"`
