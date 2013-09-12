@@ -797,21 +797,23 @@ bool CGff3Writer::x_WriteFeatureRecords(
 
     if ( pPackedInt->IsPacked_int() && pPackedInt->GetPacked_int().CanGet() ) {
         const list< CRef< CSeq_interval > >& sublocs = pPackedInt->GetPacked_int().Get();
-        list< CRef< CSeq_interval > >::const_iterator it;
-       string totIntervals = string("/") + NStr::IntToString(sublocs.size());
-        unsigned int curInterval = 1;
-        for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
-            const CSeq_interval& subint = **it;
-            CRef<CGff3WriteRecordFeature> pChild( 
-                new CGff3WriteRecordFeature( record ) );
-            pChild->CorrectLocation( record, subint, seqLength );
-            string part = NStr::IntToString(curInterval++) + totIntervals;
-            pChild->SetAttribute("part", part);
-            if ( ! x_WriteRecord( pChild ) ) {
-                return false;
+        if (sublocs.size() > 1) {
+            list< CRef< CSeq_interval > >::const_iterator it;
+            string totIntervals = string("/") + NStr::IntToString(sublocs.size());
+            unsigned int curInterval = 1;
+            for ( it = sublocs.begin(); it != sublocs.end(); ++it ) {
+                const CSeq_interval& subint = **it;
+                CRef<CGff3WriteRecordFeature> pChild( 
+                    new CGff3WriteRecordFeature( record ) );
+                pChild->CorrectLocation( record, subint, seqLength );
+                string part = NStr::IntToString(curInterval++) + totIntervals;
+                pChild->SetAttribute("part", part);
+                if ( ! x_WriteRecord( pChild ) ) {
+                    return false;
+                }
             }
+            return true;
         }
-        return true;
     }
     
     // default behavior:
