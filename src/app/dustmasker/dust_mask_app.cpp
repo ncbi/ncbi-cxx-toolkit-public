@@ -32,6 +32,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include "dust_mask_app.hpp"
+
 #include <memory>
 
 #include <corelib/ncbidbg.hpp>
@@ -54,8 +56,6 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/readers/fasta.hpp>
 #include <objtools/seqmasks_io/mask_fasta_reader.hpp>
-
-#include "dust_mask_app.hpp"
 
 // Filtering applications IO
 #include <objtools/seqmasks_io/mask_cmdline_args.hpp>
