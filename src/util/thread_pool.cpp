@@ -1651,7 +1651,7 @@ CThreadPool_Impl::AddTask(CThreadPool_Task* task, const CTimeSpan* timeout)
     }
 
     CThreadPool_Guard guard(this, false);
-    auto_ptr<CTimeSpan> real_timeout;
+    auto_ptr<CTimeSpan> adjusted_timeout;
 
     if (!m_IsQueueAllowed) {
         guard.Guard();
@@ -1668,9 +1668,10 @@ CThreadPool_Impl::AddTask(CThreadPool_Task* task, const CTimeSpan* timeout)
             ThrowAddProhibited();
         }
 
-        if (timeout) {
-            real_timeout.reset(new CTimeSpan(timeout->GetAsDouble()
-                                                  - timer.Elapsed()));
+        if ( timeout ) {
+            adjusted_timeout.reset(new CTimeSpan
+                                   (timeout->GetAsDouble() - timer.Elapsed()));
+            timeout = adjusted_timeout.get();
         }
     }
 
@@ -1679,7 +1680,7 @@ CThreadPool_Impl::AddTask(CThreadPool_Task* task, const CTimeSpan* timeout)
     try {
         // Pushing to queue must be out of mutex to be able to wait
         // for available space.
-        m_Queue.Push(Ref(task), real_timeout.get());
+        m_Queue.Push(Ref(task), timeout);
     }
     catch (...) {
         task->x_SetStatus(CThreadPool_Task::eIdle);
