@@ -1120,6 +1120,7 @@ OrgMod ::= SEQUENCE {
         culture-collection (35) ,
         bio-material (36) ,
         metagenome-source (37) ,
+        type-material (38) ,
         old-lineage (253) ,
         old-name (254) ,
         other (255) } ,         -- ASN5: old-name (254) will be added to next spec
