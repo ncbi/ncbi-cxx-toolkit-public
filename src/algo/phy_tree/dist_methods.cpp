@@ -515,7 +515,7 @@ double CDistMethods::FractionIdentity(const string& seq1, const string& seq2)
         }
     }
     _ASSERT(pos_count >= 0);
-    _ASSERT(diff_count >= 0);
+    _ASSERT(same_count >= 0);
 
     if (pos_count == 0) {
         return 0.0;
