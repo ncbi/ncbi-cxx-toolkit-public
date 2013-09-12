@@ -94,6 +94,9 @@ public:
 
     /// Calculate pairwise fractions of non-identity
     static double Divergence(const string& seq1, const string& seq2);
+    /// Calculate pairwise fraction identity based on positions where
+    /// both sequences have a base/residue.
+    static double FractionIdentity(const string& seq1, const string& seq2);
     static void Divergence(const objects::CAlnVec& avec_in, TMatrix& result);
 
     /// Compute a tree by neighbor joining; 

@@ -150,7 +150,7 @@ void CPhyTreeCalc::SetQuery(const CSeq_id& seqid)
     }
 
     // throw if no sequence is found
-    if (i != m_QueryIdx) {
+    if ((int)i != m_QueryIdx) {
         NCBI_THROW(CPhyTreeCalcException, eInvalidOptions,
                    (string)"Sequence id " + seqid.AsFastaString()
                    + " not found in alignment");
@@ -231,12 +231,13 @@ bool CPhyTreeCalc::x_CalcDivergenceMatrix(vector<int>& included)
 
         // find divergence between query and and sequence
         m_AlignDataSource->GetWholeAlnSeqString(i, sequences[i]);
-        double dist = CDistMethods::Divergence(query_seq, sequences[i]);
-        _ASSERT(!isfinite(dist) || dist >= 0.0);
+        double dist = 1.0 - CDistMethods::FractionIdentity(query_seq,
+                                                           sequences[i]);
+        _ASSERT(dist > -1e-10);
 
         // if divergence is finite and smaller than cutoff save divergence
         // and mark sequence as included
-        if (isfinite(dist) && dist < m_MaxDivergence) {
+        if (dist < m_MaxDivergence) {
             links.push_back(SLink(query_idx, i, dist));
             bitvector.set(i);
         }
@@ -274,11 +275,11 @@ bool CPhyTreeCalc::x_CalcDivergenceMatrix(vector<int>& included)
             _ASSERT(!seqj.empty());
 
             // compute divergence
-            double dist = CDistMethods::Divergence(seqi, seqj);
-            _ASSERT(!isfinite(dist) || dist >= 0.0);
+            double dist = 1.0 - CDistMethods::FractionIdentity(seqi, seqj);
+            _ASSERT(dist > -1e-10);
 
             // if divergence is finite and smaller than cutoff save divergence
-            if (isfinite(dist) && dist < m_MaxDivergence) {
+            if (dist < m_MaxDivergence) {
                 links.push_back(SLink(it2->index2, it1->index2, dist));
             }
             else {

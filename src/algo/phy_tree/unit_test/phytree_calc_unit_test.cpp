@@ -373,6 +373,9 @@ BOOST_AUTO_TEST_CASE(TestFastMETree)
 // Verify that CDistMethods::Divergence() does not return a finite number for
 // a pair of sequences with a gap in each position. Make sure that the function
 // isfinite() works.
+// Checking for Nan and Inf does not always work for optimized 32-bit
+// builds.
+#if NCBI_PLATFORM_BITS == 64
 BOOST_AUTO_TEST_CASE(TestNanDivergence)
 {
     const string kSeq1 = "A--";
@@ -389,13 +392,24 @@ BOOST_AUTO_TEST_CASE(TestNanDivergence)
     // be finite
     BOOST_REQUIRE(!isfinite(CDistMethods::Divergence(kSeq1, kSeq2)));
 }
+#endif
 
 // Verify that tree computing functions throw when non-finite number is present
 // in the distance matrix
-BOOST_AUTO_TEST_CASE(TestRejectNanDistance)
+BOOST_AUTO_TEST_CASE(TestRejectIncorrectDistance)
 {
     // create a distance matrix
     CDistMethods::TMatrix dmat(2, 2, 0.0);
+
+    // test for a negative number
+    dmat(0, 1) = dmat(1, 0) = -1.0;
+    BOOST_REQUIRE_THROW(CDistMethods::NjTree(dmat), invalid_argument);
+    BOOST_REQUIRE_THROW(CDistMethods::FastMeTree(dmat), invalid_argument);
+
+
+#if NCBI_PLATFORM_BITS == 64
+    // checking for Nan and Inf does not always work for optimized 32-bit
+    // builds
 
     // test for infinity
     dmat(0, 1) = dmat(1, 0) = numeric_limits<double>::infinity();
@@ -411,6 +425,7 @@ BOOST_AUTO_TEST_CASE(TestRejectNanDistance)
     dmat(0, 1) = dmat(1, 0) = numeric_limits<double>::signaling_NaN();
     BOOST_REQUIRE_THROW(CDistMethods::NjTree(dmat), invalid_argument);
     BOOST_REQUIRE_THROW(CDistMethods::FastMeTree(dmat), invalid_argument);
+#endif
 }
 
 // Verify that alignment with a gap in each column is rejected during
