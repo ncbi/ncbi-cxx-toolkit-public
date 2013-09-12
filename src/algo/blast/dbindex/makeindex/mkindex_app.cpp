@@ -32,6 +32,8 @@
 
 #include <ncbi_pch.hpp>
 
+#include "mkindex_app.hpp"
+
 #include <memory>
 #include <string>
 #include <sstream>
@@ -49,8 +51,6 @@
 #include <algo/blast/dbindex/dbindex.hpp>
 
 #endif
-
-#include "mkindex_app.hpp"
 
 using namespace std;
 
