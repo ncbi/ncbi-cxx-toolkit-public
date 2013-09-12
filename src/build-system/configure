@@ -34813,7 +34813,7 @@ echo $ECHO_N "checking for libmongoclient$in_path... $ECHO_C" >&6
 if test "${ncbi_cv_lib_mongodb+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
-  CPPFLAGS=" $MONGODB_INCLUDE $orig_CPPFLAGS"
+  CPPFLAGS="$BOOST_INCLUDE $MONGODB_INCLUDE $orig_CPPFLAGS"
        LIBS="$MONGODB_LIBS  $orig_LIBS"
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -34880,7 +34880,7 @@ echo "$as_me: error: --with-mongodb explicitly specified, but no usable version 
     MONGODB_LIBS=
  else
               WithPackages="$WithPackages${WithPackagesSep}MONGODB"; WithPackagesSep=" "
-    MONGODB_INCLUDE=" $MONGODB_INCLUDE"
+    MONGODB_INCLUDE="$BOOST_INCLUDE $MONGODB_INCLUDE"
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_LIBMONGODB 1

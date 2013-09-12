@@ -6447,7 +6447,8 @@ NCBI_CHECK_THIRD_PARTY_LIB_EX(mongodb, MONGODB, mongoclient,
       [std::vector<mongo::HostAndPort> v;
        mongo::DBClientReplicaSet client("foo", v);
        client.connect();])],
-   [$BOOST_LIBPATH $boost_fs_lib $BOOST_THREAD_LIBS])
+   [$BOOST_LIBPATH $boost_fs_lib $BOOST_THREAD_LIBS], [],
+   [$BOOST_INCLUDE])
 # MongoDB's own library is normally static, but its supporting Boost
 # libraries might not be by default.
 if test -n "$MONGODB_LIBS"; then
