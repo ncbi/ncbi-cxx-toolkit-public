@@ -1202,8 +1202,8 @@ bool CFastaReader::ParseGapLine(
         const TStr & sKey   = modKeyValue_it->first;
         const TStr & sValue = modKeyValue_it->second;
 
-        auto_ptr<string> pCanonicalKey( CanonicalizeString(sKey) );
-        if(  *pCanonicalKey == "gap-type") {
+        string canonicalKey = CanonicalizeString(sKey);
+        if(  canonicalKey == "gap-type") {
 
             const SGapTypeInfo *pGapTypeInfo = NameToGapTypeInfo(sValue);
             if( pGapTypeInfo ) {
@@ -1226,7 +1226,7 @@ bool CFastaReader::ParseGapLine(
                     sValue );
             }
 
-        } else if( *pCanonicalKey == "linkage-evidence") {
+        } else if( canonicalKey == "linkage-evidence") {
 
             // could be semi-colon separated
             vector<CTempString> arrLinkageEvidences;
@@ -1236,7 +1236,7 @@ bool CFastaReader::ParseGapLine(
             ITERATE(vector<CTempString>, link_evid_it, arrLinkageEvidences) {
                 CTempString sLinkEvid = *link_evid_it;
                 CEnumeratedTypeValues::TNameToValue::const_iterator find_iter =
-                    linkage_evidence_to_value_map.find(*CanonicalizeString(sLinkEvid));
+                    linkage_evidence_to_value_map.find(CanonicalizeString(sLinkEvid));
                 if( find_iter != linkage_evidence_to_value_map.end() ) {
                     setOfLinkageEvidence.insert(
                         static_cast<CLinkage_evidence::EType>(
@@ -2056,23 +2056,23 @@ std::string CFastaReader::x_NucOrProt(void) const
 }
 
 // static
-auto_ptr<string> CFastaReader::CanonicalizeString(const TStr & sValue)
+string CFastaReader::CanonicalizeString(const TStr & sValue)
 {
-    auto_ptr<string> pNewString( new string );
-    pNewString->reserve(sValue.length());
+    string newString;
+    newString.reserve(sValue.length());
 
     ITERATE_0_IDX(ii, sValue.length()) {
         const char ch = sValue[ii];
         if( isupper(ch) ) {
-            pNewString->push_back(tolower(ch));
+            newString.push_back(tolower(ch));
         } else if( ch == ' ' || ch == '_' ) {
-            pNewString->push_back('-');
+            newString.push_back('-');
         } else {
-            pNewString->push_back(ch);
+            newString.push_back(ch);
         }
     }
 
-    return pNewString;
+    return newString;
 }
 
 // static
@@ -2083,7 +2083,7 @@ CFastaReader::NameToGapTypeInfo(const CTempString & sName)
         GetNameToGapTypeInfoMap();
 
     TGapTypeMap::const_iterator find_iter =
-        gapTypeMap.find( CanonicalizeString(sName)->c_str() );
+        gapTypeMap.find( CanonicalizeString(sName).c_str() );
     if( find_iter == gapTypeMap.end() ) {
         // not found
         return NULL;

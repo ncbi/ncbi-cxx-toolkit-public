@@ -293,7 +293,7 @@ protected:
     
     // Make case-sensitive and other kinds of insensitivity, too
     // (such as "spaces" and "underscores" becoming "hyphens"
-    static auto_ptr<string> CanonicalizeString(const TStr & sValue);
+    static string CanonicalizeString(const TStr & sValue);
 
 private:
     struct SGap : public CObject {
