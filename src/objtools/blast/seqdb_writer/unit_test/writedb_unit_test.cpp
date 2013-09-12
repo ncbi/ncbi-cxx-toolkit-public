@@ -2362,44 +2362,6 @@ BOOST_AUTO_TEST_CASE(AliasFileGeneration_WithDbListAggregateBlastDbs)
     BOOST_CHECK(alias_file_data.m_SeqidList.Found() == false);
 }
 
-/* This is no longer possible as all volumes must exist on alias creation
- * time
-BOOST_AUTO_TEST_CASE(AliasFileGeneration_WithMaxVolumes)
-{
-    CTmpFile tmpfile;
-    const string kTitle("My alias file");
-    const unsigned int kNumVols(100);   // test the boundary
-    const string kMyAliasDb(tmpfile.GetFileName());
-    const string kAliasFileName(kMyAliasDb + ".pal");
-    CFileDeleteAtExit::Add(kAliasFileName);
-
-    CWriteDB_CreateAliasFile(kMyAliasDb, kNumVols, CWriteDB::eProtein,
-                             kTitle);
-
-    BOOST_REQUIRE(CFile(kAliasFileName).Exists());
-    ifstream alias_file(kAliasFileName.c_str());
-
-    string line;
-    while (getline(alias_file, line)) {
-        if (NStr::Find(line, "TITLE") != NPOS) {
-            BOOST_REQUIRE(NStr::Find(line, kTitle) != NPOS);
-        }
-        if (NStr::Find(line, "DBLIST") != NPOS) {
-            BOOST_REQUIRE(NStr::Find(line, kMyAliasDb) != NPOS);
-            BOOST_REQUIRE(NStr::Find(line, NStr::IntToString(kNumVols - 1)) != NPOS);
-            BOOST_REQUIRE(NStr::Find(line, NStr::IntToString(kNumVols)) == NPOS);
-        }
-        BOOST_REQUIRE(NStr::Find(line, "GILIST") == NPOS);
-        if (NStr::Find(line, "Alias file created") != NPOS) {
-            // this should be enough granularity
-            const string kCurrentYear = 
-                NStr::IntToString(CTime(CTime::eCurrent).Year());
-            BOOST_REQUIRE(NStr::Find(line, kCurrentYear) != NPOS);
-        }
-    }
-}
-*/
-
 BOOST_AUTO_TEST_CASE(InvalidAliasFileGeneration_TooManyVolumes)
 {
     CTmpFile tmpfile;

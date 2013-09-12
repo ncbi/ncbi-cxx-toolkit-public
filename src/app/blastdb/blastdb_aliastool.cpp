@@ -218,7 +218,7 @@ void CBlastDBAliasApp::Init()
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eRequires, kOutput);
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eRequires, kArgDbType);
     arg_desc->SetDependency("num_volumes", CArgDescriptions::eRequires, kArgDbTitle);
-    arg_desc->SetConstraint("num_volumes", new CArgAllowValuesBetween(0, 100));
+    arg_desc->SetConstraint("num_volumes", new CArgAllowValuesGreaterThanOrEqual(1));
 
     SetupArgDescriptions(arg_desc.release());
 }

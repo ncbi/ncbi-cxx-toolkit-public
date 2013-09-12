@@ -412,11 +412,6 @@ void CWriteDB_CreateAliasFile(const string& file_name,
 {
     bool is_prot(seq_type == CWriteDB::eProtein ? true : false);
     string concatenated_blastdb_name;
-    if (num_volumes >= 101) {
-        NCBI_THROW(CWriteDBException,
-                   eArgErr,
-                   "No more than 100 volumes are supported");
-    }
     vector<string> volume_names(num_volumes, kEmptyStr);
     for (unsigned int i = 0; i < num_volumes; i++) {
         CNcbiOstrstream oss;
