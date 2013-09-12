@@ -886,7 +886,8 @@ s_BlastnDiagHashExtendInitialHit(BLAST_SequenceBlk * query,
              * app rmblastn.
              * -RMH-
              */
-            if ( word_params->options->program_number == eBlastTypeBlastn &&                          word_params->matrix_only_scoring )
+            if ( word_params->options->program_number == eBlastTypeBlastn &&
+                 (word_params->matrix_only_scoring || word_length < 11))
             {
                 s_NuclUngappedExtendExact(query, subject, matrix, q_off,
                                   s_off, -(cutoffs->x_dropoff), ungapped_data);
