@@ -65,6 +65,7 @@ static vector <string> arr;
 CRef < CScope >                        CDiscRepInfo :: scope;
 string				       CDiscRepInfo :: infile;
 string                                 CDiscRepInfo :: report;
+CRef <CRepConfig>                      CDiscRepInfo :: config;
 vector < CRef < CClickableItem > >     CDiscRepInfo :: disc_report_data;
 Str2Strs                               CDiscRepInfo :: test_item_list;
 COutputConfig                          CDiscRepInfo :: output_config;
@@ -981,11 +982,12 @@ void CRepConfig :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
 
 
 static CDiscTestInfo thisTest;
-static const s_test_property test1_list[] = {
-   {"TEST_UNUSUAL_NT", fDiscrepancy},
+static const s_test_property test_list[] = {
+   {"DISC_INCONSISTENT_STRUCTURED_COMMENTS", fDiscrepancy},
+   {"DISC_INCONSISTENT_DBLINK", fDiscrepancy}
 };
 
-static const s_test_property test_list[] = {
+static const s_test_property test1_list[] = {
 // tests_on_SubmitBlk
    {"DISC_SUBMITBLOCK_CONFLICT", fDiscrepancy | fOncaller},
 
@@ -2268,6 +2270,9 @@ void CSeqEntryReadHook :: SkipClassMember(CObjectIStream& in, const CObjectTypeI
 OutBlob(*entry, "entry.out");
 //cout << MSerial_AsnText << *entry << endl;
       CRepConfig::CheckThisSeqEntry(entry);  // Process the Seq-entry
+      thisInfo.config->Export(); 
+      thisInfo.disc_report_data.clear();
+      thisInfo.test_item_list.clear();
    }
 };
 
@@ -2334,21 +2339,20 @@ void CRepConfig :: x_ProcessOneFile()
    }
 };
 
-void CRepConfig :: x_ProcessDir(const CDir& dir, bool one_ofile, CRepConfig* config)
+void CRepConfig :: x_ProcessDir(const CDir& dir, bool one_ofile)
 {
    CDir::TGetEntriesFlags flag = m_dorecurse ? 0 : CDir::fIgnoreRecursive ;
    list <AutoPtr <CDirEntry> > entries = dir.GetEntries(kEmptyStr, flag);
    ITERATE (list <AutoPtr <CDirEntry> >, it, entries) {
      if ((*it)->GetExt() == m_insuffix) {
         thisInfo.infile = (*it)->GetDir() + (*it)->GetName();
-cerr << "infile " << thisInfo.infile << endl;
         x_ProcessOneFile();
         if (!one_ofile) { 
           if (!m_outdir.empty()) strtmp = m_outdir;
           else strtmp = (*it)->GetDir();
           thisInfo.output_config.output_f 
              = new CNcbiOfstream(( strtmp + (*it)->GetBase() + m_outsuffix ).c_str());     
-          config->Export();
+          thisInfo.config->Export();
           thisInfo.disc_report_data.clear();
           thisInfo.test_item_list.clear(); 
         }
@@ -2356,8 +2360,9 @@ cerr << "infile " << thisInfo.infile << endl;
    }
 };
 
-void CRepConfig :: Run(CRepConfig* config)
+void CRepConfig :: Run(CRef <CRepConfig> config)
 {
+   thisInfo.config  = config;
  // cerr << "Run " << CTime(CTime::eCurrent).AsString() << endl;
    tests_on_Bioseq.reserve(50);
    tests_on_Bioseq_aa.reserve(50);
@@ -2402,7 +2407,7 @@ void CRepConfig :: Run(CRepConfig* config)
    }
    else {
        bool one_ofile = (bool)thisInfo.output_config.output_f; 
-       x_ProcessDir(dir, one_ofile, config);
+       x_ProcessDir(dir, one_ofile);
        if (one_ofile) config->Export(); // run a global check 
    }
     cout << "disc_rep.size()  " << thisInfo.disc_report_data.size() << endl;

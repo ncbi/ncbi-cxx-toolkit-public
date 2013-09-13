@@ -143,6 +143,11 @@ static string strtmp;
 static CSuspectRuleCheck rule_check;
 
 // CTestAndRepData
+string CTestAndRepData :: x_GetUserObjType(const CUser_object& user_obj)
+{
+  return (user_obj.GetType().IsStr() ? user_obj.GetType().GetStr() : kEmptyStr);
+};
+
 bool CTestAndRepData :: AllCapitalLetters(const string& pattern, const string& search)
 { 
   if (search.empty()) return false;
@@ -916,24 +921,74 @@ return 0;
 };
 
 
+string CTestAndRepData :: SeqDescLabelContent(const CSeqdesc& sd)
+{
+    string label(kEmptyStr);
+    switch (sd.Which()) 
+    {
+        case CSeqdesc::e_Comment: return (sd.GetComment());
+        case CSeqdesc::e_Region: return (sd.GetRegion());
+        case CSeqdesc::e_Het: return (sd.GetHet());
+        case CSeqdesc::e_Title: return (sd.GetTitle());
+        case CSeqdesc::e_Name: return (sd.GetName());
+        case CSeqdesc::e_Create_date:
+              sd.GetCreate_date().GetDate(&label);
+              return label;
+        case CSeqdesc::e_Update_date:
+              sd.GetUpdate_date().GetDate(&label);
+              return label;
+        case CSeqdesc::e_Org:
+          {
+            const COrg_ref& org = sd.GetOrg();
+            return (org.CanGetTaxname() ? org.GetTaxname() 
+                                          : (org.CanGetCommon()? org.GetCommon(): kEmptyStr));
+          }
+        case CSeqdesc::e_Pub:
+            sd.GetPub().GetPub().GetLabel(&label);
+            return label;
+        case CSeqdesc::e_User:
+          {
+            const CUser_object& uop = sd.GetUser();
+            return (uop.CanGetClass()? uop.GetClass() 
+                                 : (uop.GetType().IsStr()? uop.GetType().GetStr(): kEmptyStr));
+          }
+        case CSeqdesc::e_Method:
+              return (ENUM_METHOD_NAME(EGIBB_method)()->FindName(sd.GetMethod(), true));
+        case CSeqdesc::e_Mol_type:
+              return (ENUM_METHOD_NAME(EGIBB_mol)()->FindName(sd.GetMol_type(), true));
+        case CSeqdesc::e_Modif:
+              ITERATE (list <EGIBB_mod>, it, sd.GetModif()) {
+                label += ENUM_METHOD_NAME(EGIBB_mod)()->FindName(*it, true) + ", ";
+              }
+              return (label.substr(0, label.size()-2));
+        case CSeqdesc::e_Source:
+          {
+            const COrg_ref& org = sd.GetSource().GetOrg();
+            return (org.CanGetTaxname() ? org.GetTaxname() 
+                                          : (org.CanGetCommon()? org.GetCommon(): kEmptyStr));
+          }  
+        case CSeqdesc::e_Maploc:
+              sd.GetMaploc().GetLabel(&label);
+              return label; 
+        case CSeqdesc::e_Molinfo:
+              sd.GetMolinfo().GetLabel(&label);
+              return label;
+        case CSeqdesc::e_Modelev:
+              return kEmptyStr;
+
+        case CSeqdesc::e_Dbxref:
+              sd.GetDbxref().GetLabel(&label);
+              return label;
+        default:
+              return kEmptyStr; 
+    }
+};
 
 string CTestAndRepData :: GetDiscItemText(const CSeqdesc& seqdesc, const CBioseq& bioseq)
 {
+    // what if no bioseq?
     string row_text = BioseqToBestSeqIdString(bioseq, CSeq_id::e_Genbank) + ": ";
-
-    if (seqdesc.IsTitle()) row_text += seqdesc.GetTitle();
-    else if (seqdesc.IsComment()) row_text += seqdesc.GetComment();
-    else if (seqdesc.IsPub()) { 
-      //row_text += ListAllAuths(seqdesc.GetPub());
-      string pub_label;
-      if ( seqdesc.GetPub().GetPub().GetLabel(&pub_label) ) 
-           row_text += pub_label;
-    }
-    else {
-       strtmp.clear();
-       seqdesc.GetLabel(&strtmp, CSeqdesc::eContent);
-       row_text += strtmp;
-    }
+    row_text += SeqDescLabelContent(seqdesc);
     return(thisInfo.infile + ": " + row_text);
 };
 

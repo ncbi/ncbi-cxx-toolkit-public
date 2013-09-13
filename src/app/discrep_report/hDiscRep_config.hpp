@@ -76,33 +76,6 @@ namespace DiscRepNmSpc {
         const char* notag_description;
    };
 
-/*
-   enum ESuspectNameType {
-        eSuspectNameType_None = 0,
-        eSuspectNameType_Typo = 1,
-        eSuspectNameType_QuickFix,
-        eSuspectNameType_NoOrganelleForProkaryote,
-        eSuspectNameType_MightBeNonfunctional,
-        eSuspectNameType_Database,
-        eSuspectNameType_RemoveOrganismName,
-        eSuspectNameType_InappropriateSymbol,
-        eSuspectNameType_EvolutionaryRelationship,
-        eSuspectNameType_UseProtein,
-        eSuspectNameType_Max
-   };
-
-   typedef bool (*FSuspectProductNameSearchFunc) (const string& str1, const string& str2);
-   typedef void (*FSuspectProductNameReplaceFunc) (const string& str, const string& str2,
-                                                   const string& str3, const CSeq_feat& feat);
-   struct s_SuspectProductNameData {
-         const char* pattern;
-         FSuspectProductNameSearchFunc search_func;
-         ESuspectNameType fix_type;
-         const char* replace_phrase;
-         FSuspectProductNameReplaceFunc replace_func;
-   };
-*/
-
    class COutputConfig 
    {
       public:
@@ -128,7 +101,7 @@ namespace DiscRepNmSpc {
        virtual void SkipChoiceVariant(CObjectIStream& in,const CObjectTypeInfoCV& passed_info);
    };
 
-   class CRepConfig 
+   class CRepConfig : public CObject 
    {
      public:
         virtual ~CRepConfig() {};
@@ -144,7 +117,7 @@ namespace DiscRepNmSpc {
         CRef <CSearch_func> MakeSimpleSearchFunc(const string& match_text,
                                                                  bool whole_word = false);
         void CollectTests();
-        void Run(CRepConfig* config);
+        void Run(CRef <CRepConfig> config);
         static CRepConfig* factory(const string& report_tp);
         virtual void Export() = 0;
         void AddListOutputTags();
@@ -176,7 +149,7 @@ namespace DiscRepNmSpc {
         void x_BatchSeqSubmit(ESerialDataFormat datafm = eSerial_AsnText);
         void x_CatenatedSeqEntry();
         void x_ProcessOneFile();
-        void x_ProcessDir(const CDir& dir, bool out_f, CRepConfig* config);
+        void x_ProcessDir(const CDir& dir, bool out_f);
 
         void WriteDiscRepSummary();
         void WriteDiscRepSubcategories(const vector <CRef <CClickableItem> >& subcategories, unsigned ident=1);
@@ -209,7 +182,7 @@ namespace DiscRepNmSpc {
         virtual void Export() { };
    };
 
-   class CDiscRepInfo
+   class CDiscRepInfo 
    {
       public:
         CDiscRepInfo ();
@@ -219,6 +192,7 @@ namespace DiscRepNmSpc {
         static string                             infile;
         static string                             report;
         static COutputConfig                      output_config;
+        static CRef <CRepConfig>                  config;
         static vector < CRef < CClickableItem > > disc_report_data;
         static Str2Strs                           test_item_list;
         static CRef < CSuspect_rule_set>          suspect_prod_rules;

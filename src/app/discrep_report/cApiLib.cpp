@@ -68,7 +68,7 @@ void GetDiscrepancyReport(int argc, const char* argv[])
     if (report.empty()) 
         NCBI_THROW(CException, eUnknown, "Missing the input file which is namdatory");
     if (report == "t" || report == "s") report = "Discrepancy";
-    CRepConfig* config = CRepConfig::factory(report);
+    CRef <CRepConfig> config (CRepConfig::factory(report));
     config->ProcessArgs(args);
 
     CMetaRegistry:: SEntry entry = CMetaRegistry :: Load("disc_report.ini");

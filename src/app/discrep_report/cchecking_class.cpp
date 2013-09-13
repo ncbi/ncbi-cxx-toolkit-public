@@ -211,7 +211,7 @@ void CCheckingClass :: CollectSeqdescFromSeqEntry(const CSeq_entry_Handle& seq_e
 
 void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
 {
-  cerr << "CheckSeqEntry " << CTime(CTime::eCurrent).AsString() << endl;
+  // cerr << "CheckSeqEntry " << CTime(CTime::eCurrent).AsString() << endl;
   // ini.
   thisTest.is_BIOSRC_run = false;
   thisTest.is_BIOSRC1_run = false;
@@ -231,7 +231,7 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
      CSeq_entry_Handle seq_entry_h = thisInfo.scope->GetSeq_entryHandle(*seq_entry);
 
      for (CFeat_CI feat_it(seq_entry_h, sel_seqfeat_4_seq_entry); feat_it; ++feat_it) {
-        const CSeq_feat& seq_feat = (feat_it->GetOriginalFeature());
+        const CSeq_feat& seq_feat = feat_it->GetOriginalFeature();
         const CSeqFeatData& seq_feat_dt = seq_feat.GetData();
         switch (seq_feat_dt.Which()) {
            case CSeqFeatData::e_Org:
@@ -260,7 +260,7 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
 
   // clean
   x_Clean();
-cerr << "end " << CTime(CTime::eCurrent).AsString() << endl;
+// cerr << "end " << CTime(CTime::eCurrent).AsString() << endl;
 }
 
 bool CCheckingClass :: SortByFrom(const CSeq_feat* seqfeat1, const CSeq_feat* seqfeat2)
@@ -271,10 +271,10 @@ bool CCheckingClass :: SortByFrom(const CSeq_feat* seqfeat1, const CSeq_feat* se
 
 void CCheckingClass :: CheckBioseqSet ( CBioseq_set& bioseq_set)
 {
-  cerr << "CheckBioseqSet " << CTime(CTime::eCurrent).AsString() << endl;
+  // cerr << "CheckBioseqSet " << CTime(CTime::eCurrent).AsString() << endl;
    thisTest.is_BioSet_run = false;
    GoTests(CRepConfig::tests_on_BioseqSet, bioseq_set); 
-  cerr << "end " << CTime(CTime::eCurrent).AsString() << endl;
+  // cerr << "end " << CTime(CTime::eCurrent).AsString() << endl;
 };
 
 void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)

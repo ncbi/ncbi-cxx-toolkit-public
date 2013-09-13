@@ -9166,7 +9166,7 @@ void CSeqEntry_ONCALLER_MULTISRC :: GetReport(CRef <CClickableItem>& c_item)
 };
 
 
-void CSeqEntryTestAndRepData :: GetIncnstTestReport (CRef <CClickableItem>& c_item, const string& setting_name, const string& title, const string& item_type)
+void CSeqEntry_on_incnst_user :: x_GetIncnstTestReport (CRef <CClickableItem>& c_item, const string& setting_name, const string& title, const string& item_type)
 { 
   Str2Strs key2ls, field2ls, vlu2ls;
   RmvRedundancy(c_item->item_list);
@@ -9180,67 +9180,127 @@ void CSeqEntryTestAndRepData :: GetIncnstTestReport (CRef <CClickableItem>& c_it
   CRef <CClickableItem> c_missing (new CClickableItem);
   CRef <CClickableItem> c_field (new CClickableItem);
 
+  bool is_strcomm = (setting_name == GetName_comm())? true: false;
   ITERATE (Str2Strs, it, key2ls) {
-    key_str = it->first + " " + item_type; //" structured comment";
-    GetTestItemList(it->second, field2ls, "#");
+    key_str = is_strcomm ? it->first + " " + item_type : kEmptyStr;
+    field2ls.clear();
+    GetTestItemList(it->second, field2ls, "&");
     has_missing = (field2ls.find("missing") == field2ls.end()) ? false : true;
-    if (has_missing) {
-        GetTestItemList(field2ls["missing"], vlu2ls, "@");
-        missing_ls = vlu2ls.begin()->second;
+    if (has_missing) { // prefix + "$missing&" + bsq_desc
         c_missing.Reset(new CClickableItem); 
         c_missing->setting_name = setting_name;
-        c_missing->item_list = missing_ls;
-        c_missing->description = GetIsComment(missing_ls.size(), "Bioseq") 
-              + "missing " + it->first + " " + item_type; //"structured comment";
+        c_missing->item_list = field2ls["missing"];
+        unsigned cnt = field2ls["missing"].size(); 
+        c_missing->description = GetIsComment(cnt, "Bioseq") + "missing " 
+              + (is_strcomm? (it->first + " " + item_type): GetNoun(cnt, "DBLink object"));
         c_item->subcategories.insert(c_item->subcategories.begin(), c_missing);
     }
-    ITERATE (Str2Strs, fid, field2ls) {
+    ITERATE (Str2Strs, fid, field2ls) {// prefix + $ + fid.label + & + fld.vlu + @ + user.desc;
+      if (fid->first == "missing") continue;
       c_field.Reset(new CClickableItem);
       c_field->setting_name = setting_name;
-      if (fid->first != "missing") {
-        GetTestItemList(fid->second, vlu2ls, "@");
-        if (has_missing) {
-           if (vlu2ls.find("missing") != vlu2ls.end())
-              missing_ls.insert(missing_ls.end(), 
-                            vlu2ls["missing"].begin(), vlu2ls["missing"].end());
-           AddSubcategory(c_field, setting_name, &missing_ls, key_str,
-                 " missing field " + fid->first);
-        } 
-        if (has_missing || vlu2ls.size() > 1) {
-            ITERATE (Str2Strs, vid, vlu2ls) {
-              if (vid->first != "missing")
-                  AddSubcategory(c_field, setting_name, &(vid->second), key_str,
-                    "field " + fid->first + " value '" + vid->first + "'", e_HasComment);
+      vlu2ls.clear();
+      GetTestItemList(fid->second, vlu2ls, "@");
+      if (vlu2ls.size() > 1) {
+         ITERATE (Str2Strs, vid, vlu2ls) {
+            strtmp = is_strcomm? key_str : "DBLink object";
+            if (vid->first == "empty") {
+               AddSubcategory(c_field, setting_name, &(vid->second), strtmp,
+                  "missing field " + fid->first, e_IsComment, false);
             }
-        }
-        else if (!has_missing) {
-           AddSubcategory(c_field, setting_name, &(vlu2ls.begin()->second),
-              "All " + key_str, 
-              "field " + fid->first + " value '" + vlu2ls.begin()->first + "'", 
-              e_HasComment); 
-        }
-        cnt = c_field->subcategories.size();
-        strtmp = key_str + " field " + fid->first;
-        if (has_missing) {
+            else {
+              AddSubcategory(c_field, setting_name, &(vid->second), strtmp,
+                  "field " + fid->first + " value '" + vid->first + "'", e_HasComment, false);
+            }
+         }
+      }
+      else { 
+         CRef <CClickableItem> c_sub (new CClickableItem);
+         c_sub->setting_name = setting_name;
+         c_sub->item_list = vlu2ls.begin()->second;
+         c_sub->description = is_strcomm ? "All " + key_str : "All DBLink object";
+         c_sub->description += "s have field " + fid->first + " value '" 
+                 + vlu2ls.begin()->first + "'";
+         c_field->subcategories.push_back(c_sub);
+      }
+      cnt = c_field->subcategories.size();
+      strtmp = is_strcomm ? item_type + " field " + fid->first : fid->first;
+      if (has_missing) {
           if (cnt == 1) strtmp += "  (all missing)";
           else if (cnt == 2) strtmp += " (some missing, all same)";
           else strtmp += " (some missing, inconsistent)";
-        }
-        else {
+      }
+      else {
           if (cnt == 1) strtmp += " (all present, all same)";
           else strtmp += " (all present, inconsistent)"; 
-        }
-        c_field->description = strtmp;
-        c_item->subcategories.push_back(c_field);
-        if (!any_missing && strtmp.find("missing") != string::npos) any_missing = true;
-        if (!any_inconsistent && strtmp.find("inconsistent") != string::npos)
-            any_inconsistent = true;
       }
+      c_field->description = strtmp;
+      c_item->subcategories.push_back(c_field);
+      if (!any_missing && strtmp.find("missing") != string::npos) any_missing = true;
+      if (!any_inconsistent && strtmp.find("inconsistent") != string::npos)
+            any_inconsistent = true;
     }    
   }
 
   c_item->description = title + (any_missing ? " (some missing, " : " (all present, ")
             + (string)(any_inconsistent ? "inconsistent)" : "all same)");
+};
+
+string CSeqEntry_on_incnst_user :: x_GetStrCommPrefix(const CUser_object& user_obj)
+{
+   if (user_obj.HasField("StructuredCommentPrefix")
+            && user_obj.GetField("StructuredCommentPrefix").GetData().IsStr()) {
+      return(CUtf8::AsSingleByteString(
+                           user_obj.GetField("StructuredCommentPrefix").GetData().GetStr(),
+                           eEncoding_Ascii));
+   }
+   else return ("unnamed");
+};
+
+bool CSeqEntry_on_incnst_user :: x_HasUserObjOfType(CSeqdesc_CI uci, const string& type)
+{
+   for (; uci; ++uci) if (x_GetUserObjType(uci->GetUser()) == type) return true;
+ 
+   return false;
+};
+
+void CSeqEntry_on_incnst_user :: x_MakeMissingList(const string& bsq_desc, const string& setting_name, Str2Strs* key2ls)
+{
+   ITERATE (Str2Strs, kid, *key2ls) {
+     thisInfo.test_item_list[setting_name].push_back(kid->first + "$missing&" + bsq_desc);
+     ITERATE (vector <string>, lid, (*key2ls)[kid->first]) {
+        thisInfo.test_item_list[setting_name].push_back(
+                      kid->first + "$" + *lid + "&empty@" + bsq_desc);
+     }
+   }
+};
+
+void CSeqEntry_on_incnst_user :: x_ClassifyFlds(Str2Strs* key2ls, const string& key, const CSeqdesc& sd, const string& setting_name, const CBioseq& bsq)
+{
+   const CUser_object& uobj = sd.GetUser();
+   ITERATE (vector <string>, fid, (*key2ls)[key]) {
+      strtmp = kEmptyStr;
+      if (uobj.HasField(*fid)) {
+         const CUser_field::C_Data& dt = uobj.GetField(*fid).GetData();
+         if (setting_name == GetName_comm()) {
+              strtmp = dt.IsStr()?
+                        CUtf8::AsSingleByteString(dt.GetStr(), eEncoding_Ascii) : "empty";
+         }
+         else {
+           if (dt.IsStrs()) {
+              ITERATE (vector <CStringUTF8>, sit, dt.GetStrs())
+                 strtmp += CUtf8::AsSingleByteString(*sit, eEncoding_Ascii) + "; ";
+           }
+           else if (dt.IsInts()) {
+              ITERATE (vector <int>, iit, dt.GetInts()) 
+                 strtmp += NStr::IntToString(*iit) + "; ";
+           }
+           strtmp = strtmp.substr(0, strtmp.size()-2);
+         }
+      }
+      thisInfo.test_item_list[setting_name].push_back( 
+                     key + "$" + *fid + "&" + strtmp + "@" + GetDiscItemText(sd, bsq)); 
+   }   
 };
 
 void CSeqEntry_on_incnst_user :: TestOnObj(const CSeq_entry& seq_entry)
@@ -9257,219 +9317,93 @@ void CSeqEntry_on_incnst_user :: TestOnObj(const CSeq_entry& seq_entry)
    bool run_test_comm = (thisTest.tests_run.find(GetName_comm()) != thisTest.tests_run.end());
    bool run_test_db = (thisTest.tests_run.find(GetName_db()) != thisTest.tests_run.end());
 
+   Str2Strs prefix2flds, dblink2dbs;
+   // prepare prefix2flds, dblink2dbs;
    ITERATE (vector <const CSeqdesc*>, it, user_seqdesc) {
-     desc = GetDiscItemText(**it, *(user_seqdesc_seqentry[i]));
-     const CUser_object& user_obj = (*it)->GetUser();
-     CBioseq_CI b_ci(*thisInfo.scope, *(user_seqdesc_seqentry[i]), CSeq_inst::eMol_aa);
+       const CUser_object& user_obj = (*it)->GetUser();
+       type_str = x_GetUserObjType(user_obj);
+       if (type_str == "StructuredComment") { // DISC_INCONSISTENT_STRUCTURED_COMMENTS
+         prefix = x_GetStrCommPrefix(user_obj);
+         ITERATE (vector <CRef <CUser_field> >, fid, user_obj.GetData()) {
+           strtmp = (*fid)->GetLabel().IsStr()? (*fid)->GetLabel().GetStr() : "invalid";
+           if (strtmp != "StructuredCommentPrefix" && strtmp != "StructuredCommentSuffix")
+              prefix2flds[prefix].push_back(strtmp);
+         };
+       }
+       else if (type_str == "DBLink") {  // DISC_INCONSISTENT_DBLINK
+          ITERATE (vector <CRef <CUser_field> >, fid, user_obj.GetData()) {
+             strtmp = (*fid)->GetLabel().IsStr()? (*fid)->GetLabel().GetStr() : "invalid";
+             if (strtmp == "Trace Assembly Archive" 
+                      || strtmp == "BioSample"
+                      || strtmp == "ProbeDB" 
+                      || strtmp == "Sequence Read Archive"
+                      || strtmp == "BioProject") {
+                 dblink2dbs["db"].push_back(strtmp);
+             }
+          }
+       }
+   }
+   string bsq_desc, fld_vlu;
+   for (CBioseq_CI bci(*thisInfo.scope, seq_entry); bci; ++bci) {
+     if ((*bci).IsAa()) continue;
+     CSeqdesc_CI uci(*bci, CSeqdesc::e_User);
+     bsq_desc = GetDiscItemText(*bci->GetCompleteBioseq());
+     if (run_test_comm) {  // DISC_INCONSISTENT_STRUCTURED_COMMENTS
+        if (!uci || !x_HasUserObjOfType(uci, "StructuredComment")) {
+           x_MakeMissingList(bsq_desc, GetName_comm(), &prefix2flds);
 /*
-     entry_is_seq = user_seqdesc_seqentry[i]->IsSeq() ? true : false;
-
-     if (entry_is_seq) {
-         seq_ref = CConstRef <CBioseq> (&(user_seqdesc_seqentry[i]->GetSeq()));
-cerr << "seq_ref " << Blob2Str(user_seqdesc_seqentry[i]->GetSeq());
-         seq_desc = GetDiscItemText(*seq_ref);
-     }
-     else set_ref = CConstRef <CBioseq_set> (&(user_seqdesc_seqentry[i]->GetSet()));
-*/
-    
-     type_str = user_obj.GetType().IsStr() ? user_obj.GetType().GetStr() : kEmptyStr;
-     
-     // DISC_INCONSISTENT_STRUCTURED_COMMENTS
-     not_empty_fields = false;
-     if (type_str == "StructuredComment" && run_test_comm) {
-        if (user_obj.HasField("StructuredCommentPrefix")) {
-           if (user_obj.GetField("StructuredCommentPrefix").GetData().IsStr())
-                // how about substitute_on_error
-                prefix = CUtf8::AsSingleByteString(
-                               user_obj.GetField("StructuredCommentPrefix").GetData().GetStr(),
-                               eEncoding_Ascii);
-           else prefix = "unnamed";
-        }
-        else prefix = "unnamed";
-        if (m_prefix_set.find(prefix) == m_prefix_set.end()) m_prefix_set.insert(prefix);
-        for (CBioseq_CI bb_ci = b_ci; bb_ci; ++bb_ci) {
-           m_seq2prefix[GetDiscItemText(*bb_ci->GetCompleteBioseq())] += ("$" + prefix);
-           not_empty_fields = true; 
-        }
-/*
-        if (entry_is_seq) {
-           if (!seq_ref->IsAa()) {
-              m_seq2prefix[seq_desc] += ("$" + prefix);
-              not_empty_fields = true;
+           ITERATE (Str2Strs, pid, prefix2flds) {
+             thisInfo.test_item_list[GetName_comm()].push_back(
+                                                 pid->first + "$missing&" + bsq_desc);
+             ITERATE (vector <string>, fid, prefix2flds[pid->first]) {
+                thisInfo.test_item_list[GetName_comm()].push_back(
+                  pid->first + "$" + *fid + "&empty@" + bsq_desc);
+             }
            }
-        }
-        else not_empty_fields = SetHasStrCommFields(*set_ref, prefix);
 */
-        if (not_empty_fields) AddStrCommFieldValues(user_obj, prefix, desc);
-        else AddStrCommFieldEmptyValues(user_obj, prefix, desc);
-     } 
-     else if (type_str == "DBLink" && run_test_db) { // DISC_INCONSISTENT_DBLINK
-        for (CBioseq_CI bb_ci = b_ci; bb_ci; ++bb_ci) {
-             m_seq_has_dblink.insert(GetDiscItemText(*bb_ci->GetCompleteBioseq()));
-             not_empty_fields = true;
         }
+        else {
+          for (CSeqdesc_CI suci = uci; suci; ++suci) {
+             if (x_GetUserObjType(suci->GetUser()) != "StructuredComment") continue;
+             prefix = x_GetStrCommPrefix(suci->GetUser());
+             x_ClassifyFlds(&prefix2flds, prefix, *suci, GetName_comm(), *(bci->GetCompleteBioseq()));
 /*
-        if (entry_is_seq) {
-           if (!seq_ref->IsAa()) {
-               m_seq_has_dblink.insert(seq_desc);
-               not_empty_fields = true;
+             ITERATE (vector <string>, fid, prefix2flds[prefix]) {
+               if (uci->GetUser().HasField(*fid) 
+                                  && uci->GetUser().GetField(*fid).GetData().IsStr())
+                   strtmp = uci->GetUser().GetField(*fid).GetData().GetStr();
+               else strtmp = "empty";
+               thisInfo.test_item_list[GetName_comm()].push_back(
+                  prefix + "$" + *fid + "&" + strtmp + "@" 
+                           + GetDiscItemText(*uci, *(bci->GetCompleteBioseq()))); 
+             }   
+*/
            }
         } 
-        else not_empty_fields = SetHasDbLinkFields(*set_ref);
+     }
+     if (run_test_db) { // DISC_INCONSISTENT_DBLINK
+        if (!uci || !x_HasUserObjOfType(uci, "DBLink")) {
+           x_MakeMissingList(bsq_desc, GetName_db(), &dblink2dbs);
+/*
+           ITERATE (Str2Strs, did, dblink2dbs) {
+             thisInfo.test_item_list[GetName_db()].push_back(did->first + "$missing&" + bsq_desc);
+             ITERATE (vector <string>, fid, prefix2flds[pid->first]) {
+                thisInfo.test_item_list[GetName_comm()].push_back(
+                  pid->first + "$" + *fid + "&empty@" + bsq_desc);
+             }
+           }
 */
-        if (not_empty_fields) AddDbLinkFieldValues(user_obj, desc);
-        else AddDbLinkFieldEmptyValues(user_obj, desc);
-     }
-
-     i++;
-   }
-
-   // Look for bioseqs missing keys
-   if (seq_entry.IsSeq()) CollectSeqMissingKeys(seq_entry.GetSeq());
-   else FindSeqsMissingKeys(seq_entry.GetSet());
-
-   // DISC_INCONSISTENT_STRUCTURED_COMMENTS
-   if (run_test_comm) {
-     ITERATE (set <string>, pit, m_prefix_set) {
-       ITERATE (Str2Str, bit, m_seq2prefix) {
-         if ( bit->second.find(*pit) == string::npos )
-            thisInfo.test_item_list[GetName_comm()].push_back(
-                     *pit + "$missing#empty@" + bit->first);                
-       } 
-     }   
-     m_seq2prefix.clear();
-     m_prefix_set.clear();
-     m_seq_has_dblink.clear();
-     m_seq_no_dblink.clear();
-   }
-
-   // DISC_INCONSISTENT_DBLink
-   if (run_test_db) {
-      ITERATE (set <string>, it, m_seq_no_dblink)
-        thisInfo.test_item_list[GetName_db()].push_back("DBLink$missing$empty@" + *it);
-   }
-};
-
-bool CSeqEntry_on_incnst_user :: SetHasStrCommFields(const CBioseq_set& set, const string& prefix)
-{
-   bool rval = false;
-   ITERATE (list <CRef <CSeq_entry> >, it, set.GetSeq_set()) {
-     if ( (*it)->IsSeq() ) {
-        if (!(*it)->GetSeq().IsAa()) {
-            m_seq2prefix[GetDiscItemText( (*it)->GetSeq())] += ("$" + prefix);
-            rval = true;
+        }
+        else {
+          for (; uci; ++uci) {
+             if (x_GetUserObjType(uci->GetUser()) != "DBLink") continue;
+             x_ClassifyFlds(&dblink2dbs, "db", *uci, GetName_db(), 
+                                                        *(bci->GetCompleteBioseq())); 
+          }
         }
      }
-     else if (SetHasStrCommFields( (*it)->GetSet(), prefix )) rval = true;
-   }
-   return rval;
-};
-
-void CSeqEntry_on_incnst_user :: AddStrCommFieldValues(const CUser_object& user_obj, const string& prefix, const string& desc)
-{
-    string field_str;
-    ITERATE (vector <CRef <CUser_field> >, uit, user_obj.GetData()) {
-       if (!(*uit)->GetLabel().IsStr()) continue;
-       field_str = (*uit)->GetLabel().GetStr();
-       if (NStr::EqualNocase(field_str, "StructuredCommentPrefix")
-                     || NStr::EqualNocase(field_str, "StructuredCommentPrefix"))
-            continue;
-       strtmp = prefix + "$" + field_str + "#";
-       if ( (*uit)->GetData().IsStr())    // check with Colleen
-            strtmp += (*uit)->GetData().GetStr() + "@" + desc;
-       else strtmp += ("missing@" + desc);
-       thisInfo.test_item_list[GetName_comm()].push_back(strtmp);
-    }
-};
-
-void CSeqEntry_on_incnst_user :: AddStrCommFieldEmptyValues(const CUser_object& user_obj, const string& prefix, const string& desc)
-{
-    string field_str;
-    ITERATE (vector <CRef <CUser_field> >, uit, user_obj.GetData()) { 
-       if (!(*uit)->GetLabel().IsStr()) continue;
-       field_str = (*uit)->GetLabel().GetStr();
-       if (NStr::EqualNocase(field_str, "StructuredCommentPrefix")
-                     || NStr::EqualNocase(field_str, "StructuredCommentPrefix"))
-            continue;
-       strtmp = prefix + "$" + field_str + "#missing@" + desc;
-       thisInfo.test_item_list[GetName_comm()].push_back(strtmp);
-    }
-};
-
-bool CSeqEntry_on_incnst_user :: SetHasDbLinkFields(const CBioseq_set& set)
-{
-   bool rval = false;
-   ITERATE (list <CRef <CSeq_entry> >, it, set.GetSeq_set()) {
-     if ( (*it)->IsSeq() ) {
-        if (!(*it)->GetSeq().IsAa()) {
-            m_seq_has_dblink.insert(GetDiscItemText( (*it)->GetSeq())); 
-            rval = true;
-        }
-     }
-     else if (SetHasDbLinkFields( (*it)->GetSet())) rval = true;
-   }
-   return rval;
-};
-
-void CSeqEntry_on_incnst_user :: AddDbLinkFieldValues(const CUser_object& user_obj, const string& desc)
-{
-    string field_str;
-    ITERATE (vector <CRef <CUser_field> >, uit, user_obj.GetData()) {
-       if (!(*uit)->GetLabel().IsStr()) continue;
-       field_str = (*uit)->GetLabel().GetStr();
-       if (field_str == "Trace Assembly Archive" || field_str == "BioSample"
-                 || field_str == "ProbeDB" || field_str == "Sequence Read Archive"
-                 || field_str == "BioProject") {
-          strtmp = "DBLink$" + field_str + "#";
-          if ( (*uit)->GetData().IsStrs()) {
-              ITERATE (vector <CStringUTF8>, sit, (*uit)->GetData().GetStrs()) 
-                 thisInfo.test_item_list[GetName_db()].push_back(
-                       strtmp + CUtf8::AsSingleByteString(*sit, eEncoding_Ascii) + "@" + desc);
-          }
-          else if ( (*uit)->GetData().IsInts()) {
-              ITERATE (vector <int>, iit, (*uit)->GetData().GetInts())
-                thisInfo.test_item_list[GetName_db()].push_back(
-                   strtmp + NStr::IntToString(*iit) + "@" + desc);
-          }
-          else 
-             thisInfo.test_item_list[GetName_db()].push_back(strtmp + "missing@" + desc);
-       }
-    }
-};
-
-void CSeqEntry_on_incnst_user :: AddDbLinkFieldEmptyValues(const CUser_object& user_obj, const string& desc)
-{
-    string field_str;
-    ITERATE (vector <CRef <CUser_field> >, uit, user_obj.GetData()) {
-       if (!(*uit)->GetLabel().IsStr()) continue;
-       field_str = (*uit)->GetLabel().GetStr();
-       if (field_str == "Trace Assembly Archive" || field_str == "BioSample"
-                 || field_str == "ProbeDB" || field_str == "Sequence Read Archive"
-                 || field_str == "BioProject") {
-          strtmp = "DBLink$" + field_str + "#missing@" + desc;
-          thisInfo.test_item_list[GetName_db()].push_back(strtmp);
-       }
-    }
-};
-
-void CSeqEntry_on_incnst_user :: CollectSeqMissingKeys(const CBioseq& bioseq)
-{
-   if (!bioseq.IsAa()) {
-      string  desc = GetDiscItemText(bioseq);
-      if (m_seq2prefix.find(desc) == m_seq2prefix.end()) m_seq2prefix[desc] = "";
-      if (m_seq_has_dblink.find(desc) == m_seq_has_dblink.end())
-            m_seq_no_dblink.insert(desc);     
    }
 };
- 
-void CSeqEntry_on_incnst_user :: FindSeqsMissingKeys(const CBioseq_set& set)
-{
-   ITERATE (list <CRef <CSeq_entry> >, it, set.GetSeq_set()) {
-      if ( (*it)->IsSeq()) CollectSeqMissingKeys((*it)->GetSeq());
-      else FindSeqsMissingKeys((*it)->GetSet());
-   }
-};
-
 
 void CSeqEntry_test_on_user :: GroupAllBioseqs(const CBioseq_set& bioseq_set, const int& id)
 {

@@ -530,6 +530,7 @@ namespace DiscRepNmSpc {
 
  //  GetDiscrepancyItemTextEx() 
       const CSeq_feat* GetCDFeatFromProtFeat(const CSeq_feat& prot);
+      string SeqDescLabelContent(const CSeqdesc& sd);
       string GetDiscItemText(const CSeq_feat& obj);
       string GetDiscItemText(const CSeq_submit& seq_submit);
       string GetDiscItemText(const CBioseq& obj);
@@ -592,6 +593,7 @@ namespace DiscRepNmSpc {
       static CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& seq_feat);
 
     protected:
+      string x_GetUserObjType(const CUser_object& user_obj);
       bool CommentHasPhrase(string comment, const string& phrase);
       bool HasLineage(const CBioSource& biosrc, const string& type);
       bool IsBiosrcEukaryotic(const CBioSource& biosrc);
@@ -711,9 +713,6 @@ namespace DiscRepNmSpc {
        virtual string GetName() const = 0;
 
      protected:
-       void GetIncnstTestReport (CRef <CClickableItem>& c_item, 
-               const string& setting_name, const string& title, const string& item_type);
-
        void AddBioseqsOfSetToReport(const CBioseq_set& bioseq_set, 
                     const string& setting_name, bool be_na = true, bool be_aa = true);
        void AddBioseqsInSeqentryToReport(const CSeq_entry* seq_entry, 
@@ -756,21 +755,16 @@ namespace DiscRepNmSpc {
 
       string GetName_comm() const {
                       return string("DISC_INCONSISTENT_STRUCTURED_COMMENTS");}
-      string GetName_db() const {
-                      return string("DISC_INCONSISTENT_DBLINK");}
- 
-      bool SetHasStrCommFields(const CBioseq_set& set_pt, const string& prefix);
-      void AddStrCommFieldValues(const CUser_object& user_obj, const string& prefix,  
-                                                                    const string& desc);
-      void AddStrCommFieldEmptyValues(const CUser_object& user_obj, const string& prefix,
-                                                                  const string& desc);
+      string GetName_db() const { return string("DISC_INCONSISTENT_DBLINK");}
 
-      bool SetHasDbLinkFields(const CBioseq_set& set_pt);
-      void AddDbLinkFieldValues(const CUser_object& user_obj, const string& desc);
-      void AddDbLinkFieldEmptyValues(const CUser_object& user_obj, const string& desc);
-  
-      void CollectSeqMissingKeys(const CBioseq& bioseq);
-      void FindSeqsMissingKeys(const CBioseq_set& bioseq_set);
+      void x_MakeMissingList(const string& bsq_desc, const string& setting_name, Str2Strs* key2ls);
+      void x_ClassifyFlds(Str2Strs* key2ls, const string& key, const CSeqdesc& sd, 
+                                          const string& setting_name, const CBioseq& bsq);
+ 
+      void x_GetIncnstTestReport (CRef <CClickableItem>& c_item, 
+               const string& setting_name, const string& title, const string& item_type);
+      string x_GetStrCommPrefix(const CUser_object& user_obj);
+      bool x_HasUserObjOfType(CSeqdesc_CI uci, const string& type);
   };
 
   class CSeqEntry_DISC_INCONSISTENT_STRUCTURED_COMMENTS : public CSeqEntry_on_incnst_user
@@ -781,7 +775,7 @@ namespace DiscRepNmSpc {
       virtual string GetName() const { return CSeqEntry_on_incnst_user::GetName_comm();}
       virtual void GetReport(CRef <CClickableItem>& c_item)
       {
-          GetIncnstTestReport(c_item,GetName(), "Structured Comment Report",
+          x_GetIncnstTestReport(c_item,GetName(), "Structured Comment Report",
                                                                "structured comment");
       };
   };
@@ -794,7 +788,7 @@ namespace DiscRepNmSpc {
       virtual string GetName() const { return CSeqEntry_on_incnst_user::GetName_db();}
       virtual void GetReport(CRef <CClickableItem>& c_item)
       {
-          GetIncnstTestReport(c_item,GetName(), "DBLink Report", "dblink");
+          x_GetIncnstTestReport(c_item,GetName(), "DBLink Report", "");
       };
   };
 
