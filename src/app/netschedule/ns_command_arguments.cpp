@@ -98,9 +98,8 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
         if (key.empty())
             continue;
 
-        if (val.size() > kNetScheduleMaxDBDataSize - 1  &&
-            key != "input"   &&
-            key != "output")
+        if (val.size() > kNetScheduleMaxDBDataSize - 1 &&
+            (key == "input" || key == "output"))
         {
             NCBI_THROW(CNetScheduleException, eDataTooLong,
                        "User input/output exceeds the DB max limit.");
