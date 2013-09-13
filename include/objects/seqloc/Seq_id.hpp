@@ -289,7 +289,7 @@ public:
         eAcc_embl_est       = e_Embl | eAcc_est        | fAcc_nuc,  // F
         eAcc_embl_dirsub    = e_Embl | eAcc_dirsub     | fAcc_nuc,  // V
         eAcc_embl_patent    = e_Embl | eAcc_div_patent | fAcc_nuc,  // A
-        eAcc_embl_tsa_nuc   = e_Embl | eAcc_tsa        | fAcc_nuc,
+        eAcc_embl_tsa_nuc   = e_Embl | eAcc_tsa        | fAcc_nuc,  // IAAA
         eAcc_embl_tsa_prot  = e_Embl | eAcc_tsa        | fAcc_prot,
         eAcc_embl_genome    = e_Embl | eAcc_genome     | fAcc_nuc,
         eAcc_embl_htgs      = e_Embl | eAcc_htgs       | fAcc_nuc,  // unused
