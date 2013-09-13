@@ -632,7 +632,7 @@ SAnnotSelector& SAnnotSelector::ExcludeFeatType(TFeatType type)
         CAnnotType_Index::TIndexRange range =
             CAnnotType_Index::GetFeatTypeRange(type);
         for (size_t i = range.first; i < range.second; ++i) {
-            m_AnnotTypesBitset.test(i);
+            m_AnnotTypesBitset.reset(i);
         }
     }
     return *this;
