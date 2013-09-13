@@ -39,7 +39,7 @@ make_cpp = $(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) $< @f_outobj@$@ $(CXX_FILTER)
 ###  C compilation
 make_c = $(CC_WRAPPER) $(CC) $(CFLAGS_ALL) $< @f_outobj@$@ $(CC_FILTER)
 
-OBJ_DIRS = $(filter-out .,$(patsubst %/,%,$(sort $(dir $(SRC)))))
+OBJ_DIRS = $(filter-out ./.exists,$(patsubst %/,%/.exists,$(sort $(dir $(SRC)))))
 
 ifeq "" "$(OBJ_DIRS)"
   %@obj_ext@: %.cpp $(config_status)
@@ -52,7 +52,8 @@ ifeq "" "$(OBJ_DIRS)"
 	$(make_c)
 else
   $(OBJ_DIRS): %:
-	$(MKDIR) -p $@
+	$(MKDIR) -p $(@D)
+	@touch $@
 
   STD_SRC = $(filter-out $(OVERRIDEN_SRC),$(SRC))
   CPP_OBJ_HERE = $(patsubst %.cpp,%@obj_ext@,$(wildcard $(STD_SRC:%=%.cpp)))

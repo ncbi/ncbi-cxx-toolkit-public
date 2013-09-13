@@ -87,11 +87,11 @@ else
   endif
   $(CPP_DEP_HERE): %.d: %.cpp
 	$(make_cpp_dep)
-  $(CPP_DEP_THERE): %.d: $(srcdir)/%.cpp
+  $(CPP_DEP_THERE): %.d: $(srcdir)/%.cpp $(OBJ_DIRS)
 	$(make_cpp_dep)
   $(C_DEP_HERE): %.d: %.c
 	$(make_c_dep)
-  $(C_DEP_THERE): %.d: $(srcdir)/%.c
+  $(C_DEP_THERE): %.d: $(srcdir)/%.c $(OBJ_DIRS)
 	$(make_c_dep)
 endif
 
