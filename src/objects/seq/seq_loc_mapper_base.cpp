@@ -3173,8 +3173,10 @@ x_RangeToSeq_loc(const CSeq_id_Handle& idh,
     }
 
     CRef<CSeq_loc> loc(new CSeq_loc);
-    // If both fuzzes are set, create interval, not point.
-    if (from == to  &&  (!rg_fuzz.first  ||  !rg_fuzz.second) &&
+    // If any fuzz is set, create interval, not point.
+    // Points with fuzz can create problems later since they don't
+    // specify fuzz direction. See GP-2895.
+    if (from == to  &&  (!rg_fuzz.first  &&  !rg_fuzz.second) &&
         (m_FuzzOption & fFuzzOption_CStyle) == 0 )
     {
         // point
