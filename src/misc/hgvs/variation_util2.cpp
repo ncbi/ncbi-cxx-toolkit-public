@@ -2059,9 +2059,10 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         prot_var_str = prot_var_str.substr(common_prot_prefix_len);
       
         if(frameshift_phase == 0) {
-            TruncateCommonSuffix(prot_ref_str, prot_var_str);
             if(NStr::EndsWith(prot_var_str, "*") && prot_ref_str.size() > prot_var_str.size()) {
                 prot_ref_str.resize(prot_var_str.size());
+            } else {
+                TruncateCommonSuffix(prot_ref_str, prot_var_str);
             }
         } else {
             //Keep the frst AA in case of frameshifts
