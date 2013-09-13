@@ -66,6 +66,15 @@ version  1 # of file format
 4+8   G???  gb_tsa_nuc
 4+9   G???  gb_tsa_nuc
 4+10  G???  gb_tsa_nuc
+4+8   J???  gb_wgs_nuc
+4+9   J???  gb_wgs_nuc
+4+10  J???  gb_wgs_nuc
+4+8   K???  gb_wgs_nuc # fallback to placate older clients
+4+9   K???  gb_wgs_nuc # fallback to placate older clients
+4+10  K???  gb_wgs_nuc # fallback to placate older clients
+4+8   K???  gb_targeted_nuc
+4+9   K???  gb_targeted_nuc
+4+10  K???  gb_targeted_nuc
 
 # Mass sequence Genome for Annotation
 5+7   A???? ddbj_other_nuc

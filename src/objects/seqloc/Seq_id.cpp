@@ -617,6 +617,7 @@ static const TAccInfoMapEntry sc_AccInfoArray[] = {
     { "gb_prot",                 CSeq_id::eAcc_gb_prot },
     { "gb_segset",               CSeq_id::eAcc_gb_segset },
     { "gb_sts",                  CSeq_id::eAcc_gb_sts },
+    { "gb_targeted_nuc",         CSeq_id::eAcc_gb_targeted_nuc },
     { "gb_tpa_chromosome",       CSeq_id::eAcc_gb_tpa_chromosome },
     { "gb_tpa_con",              CSeq_id::eAcc_gb_tpa_con },
     { "gb_tpa_nuc",              CSeq_id::eAcc_gb_tpa_nuc },
@@ -1040,6 +1041,7 @@ CSeq_id::x_IdentifyAccession(const CTempString& main_acc, bool has_version)
     EAccessionInfo ai = s_Guide.Find(SAccGuide::s_Key(digit_pos, digit_count),
                                      main_acc);
     switch (ai & eAcc_division_mask) {
+    case eAcc_targeted:
     case eAcc_tsa:
     case eAcc_wgs:
     case eAcc_wgs_intermed:
