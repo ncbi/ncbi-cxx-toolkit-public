@@ -3564,6 +3564,7 @@ MFRU	s	Malawi Fisheries Research Unit
 MFS	s	Museo dei Fisiocritici
 MFSN	s	Museo Friulano di Storia Naturale of Udine
 MFU	s	Museo Friulano di Storia Naturale
+MFUM	s	Museum of Ferdowsi University of Mashhad
 MFUW	s	Chinzombo Research Station, Chinzombo Wildlife Research Station
 MFW	s	Museum Freriks
 MG<BRA>	s	Museu Paraense Emilio Goeldi, Departamento de Botanica
@@ -5592,7 +5593,7 @@ STR	s	Institut de Botanique
 STRI	s	Smithsonian Tropical Research Institute
 STS	s	Stromness Museum
 STT	s	St. Thomas's Hospital Medical School Library
-STU	s	Staatliches Museum fuer Naturkunde
+STU	s	Staatliches Museum fuer Naturkunde Stuttgart
 STUM	s	Santo Tomas University Museum
 SU<CHN>	s	Suzhou University
 SU<USA-CA>	s	Stanford University
