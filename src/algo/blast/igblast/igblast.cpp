@@ -165,10 +165,16 @@ CIgBlast::Run()
         for (int gene = 1; gene < num_genes; ++gene) {
             x_SetupDJSearch(annots, qf, opts_hndl, gene);
             CLocalBlast blast(qf, opts_hndl, m_IgOptions->m_Db[gene]);
-            results[gene] = blast.Run();
-            x_ConvertResultType(results[gene]);
+            try {
+                results[gene] = blast.Run();
+                x_ConvertResultType(results[gene]);
+            } catch(...) {
+                num_genes = 1;
+                break;
+            }
         }
-        x_AnnotateDJ(results[1], results[2], annots);
+        if (num_genes > 1) 
+            x_AnnotateDJ(results[1], results[2], annots);
     }
 
     /*** collect germline search results */
