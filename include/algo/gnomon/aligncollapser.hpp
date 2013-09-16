@@ -159,6 +159,7 @@ private:
     bool m_collapssr;
     bool m_filtermrna;
     bool m_filterprots;
+    bool m_fillgenomicgaps;
 
     CScope* m_scope;
     typedef map<int,int> TIntMap;

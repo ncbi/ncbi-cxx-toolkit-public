@@ -186,6 +186,7 @@ void CAlignCollapser::SetupArgDescriptions(CArgDescriptions* arg_desc) {
     arg_desc->AddFlag("filterprots","Filter proteins");
     arg_desc->AddFlag("collapsest","Collaps EST");
     arg_desc->AddFlag("collapssr","Collaps SR");
+    arg_desc->AddFlag("fillgenomicgaps","Use provided selfspecies cDNA for genomic gap filling");
 
     arg_desc->AddDefaultKey("max-extension", "MaxExtension",
                             "Maximal extension for one-exon collapsed alignments",
@@ -234,6 +235,7 @@ CAlignCollapser::CAlignCollapser(string contig, CScope* scope) : m_count(0), m_s
     m_filterprots = args["filterprots"];
     m_collapsest = args["collapsest"];
     m_collapssr = args["collapssr"];
+    m_fillgenomicgaps = args["fillgenomicgaps"];
 
     if(m_scope != 0 && contig != "") {
 
@@ -1708,10 +1710,13 @@ void CAlignCollapser::AddAlignment(const CAlignModel& a) {
     if((a.Type()&CGeneModel::eSR) && !a.Continuous())   // ignore SR with internal gaps
         return;
 
-    if((a.Type()&CGeneModel::eNotForChaining) && !(a.Status()&CGeneModel::eGapFiller))
+    CAlignModel align(a);
+    if(!m_fillgenomicgaps)
+        align.Status() &= ~CGeneModel::eGapFiller;
+        
+    if((align.Type()&CGeneModel::eNotForChaining) && !(align.Status()&CGeneModel::eGapFiller))
         return;    
 
-    CAlignModel align(a);
     if((align.Status()&CGeneModel::eUnknownOrientation) && align.Strand() == eMinus)
         align.ReverseComplementModel();
 
