@@ -1786,3 +1786,16 @@ BOOST_AUTO_TEST_CASE(TestErrorIfRangeAfterQuals)
         sc_Table14,
         expected_errors );
 }
+
+static const char * sc_Table15 = "\
+>Features_blah_blah lcl|Seq1\n\
+1\t1008\tCDS\n\
+\t\t\tgene    THE_GENE_NAME\n\
+\n\
+";
+
+BOOST_AUTO_TEST_CASE(TestIfHandlesWhenJunkAfterFeature)
+{
+    s_ReadOneTableFromString(
+        sc_Table15 );
+}
