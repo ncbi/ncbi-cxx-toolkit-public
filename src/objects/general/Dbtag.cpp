@@ -624,7 +624,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_UniGene, "http://www.ncbi.nlm.nih.gov/unigene?term=" },
     { CDbtag::eDbtagType_UniProt_SwissProt, "http://www.uniprot.org/uniprot/" },
     { CDbtag::eDbtagType_UniProt_TrEMBL, "http://www.uniprot.org/uniprot/" },
-    { CDbtag::eDbtagType_UniSTS, "http://www.ncbi.nlm.nih.gov/genome/sts/sts.cgi?uid=" },
+    { CDbtag::eDbtagType_UniSTS, "http://www.ncbi.nlm.nih.gov/probe?term=" },
     { CDbtag::eDbtagType_VBASE2, "http://www.dnaplot.de/vbase2/vgene.php?id=" },
     { CDbtag::eDbtagType_VBRC, "http://vbrc.org/query.asp?web_view=curation&web_id=" },
     { CDbtag::eDbtagType_VectorBase, "http://www.vectorbase.org/Genome/BRCGene/?feature=" },
@@ -765,6 +765,10 @@ string CDbtag::GetUrl(const string & genus,
 
         case eDbtagType_SRPDB:
             tag += ".fasta";
+            break;
+
+        case eDbtagType_UniSTS:
+            tag += "%20%5BUniSTS%20ID%5D";
             break;
 
         case eDbtagType_dbSTS:
