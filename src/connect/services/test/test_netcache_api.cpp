@@ -267,7 +267,7 @@ void s_StressTest(const string&             service,
             ch[i0] = ch[i1] = 0;
 
             if (i % 1000 == 0)
-                cout << "." << flush;
+                cout << "Iteration " << (i + 1) << "..." << NcbiEndl;
         }
 
         for (unsigned k = 0; k < j; ++k) {
