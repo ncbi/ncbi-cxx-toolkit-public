@@ -1809,7 +1809,7 @@ void CNetScheduleHandler::x_ProcessGetMessage(CQueue* q)
     if (q->ReadAndTouchJob(m_CommandArguments.job_id,
                            m_CommandArguments.job_key, job, &lifetime) !=
             CNetScheduleAPI::eJobNotFound)
-        x_WriteMessage("OK:" + job.GetProgressMsg());
+        x_WriteMessage("OK:" + NStr::PrintableString(job.GetProgressMsg()));
     else {
         ERR_POST(Warning << m_CommandArguments.cmd
                          << "MGET for unknown job "
@@ -2672,7 +2672,8 @@ void CNetScheduleHandler::x_ProcessReadFailed(CQueue* q)
                                             m_ClientId,
                                             m_CommandArguments.job_id,
                                             m_CommandArguments.job_key,
-                                            m_CommandArguments.auth_token);
+                                            m_CommandArguments.auth_token,
+                                            m_CommandArguments.err_msg);
     x_FinalizeReadCommand("FRED", old_status);
 }
 

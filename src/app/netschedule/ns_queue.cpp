@@ -1819,7 +1819,7 @@ TJobStatus  CQueue::ConfirmReadingJob(const CNSClientId &  client,
 {
     TJobStatus      old_status = x_ChangeReadingStatus(
                                                 client, job_id, job_key,
-                                                auth_token,
+                                                auth_token, "",
                                                 CNetScheduleAPI::eConfirmed);
     m_ClientsRegistry.ClearReading(client, job_id);
     return old_status;
@@ -1829,11 +1829,12 @@ TJobStatus  CQueue::ConfirmReadingJob(const CNSClientId &  client,
 TJobStatus  CQueue::FailReadingJob(const CNSClientId &  client,
                                    unsigned int         job_id,
                                    const string &       job_key,
-                                   const string &       auth_token)
+                                   const string &       auth_token,
+                                   const string &       err_msg)
 {
     TJobStatus      old_status = x_ChangeReadingStatus(
                                                 client, job_id, job_key,
-                                                auth_token,
+                                                auth_token, err_msg,
                                                 CNetScheduleAPI::eReadFailed);
     m_ClientsRegistry.ClearReadingSetBlacklist(job_id);
     return old_status;
@@ -1848,7 +1849,7 @@ TJobStatus  CQueue::ReturnReadingJob(const CNSClientId &  client,
 {
     TJobStatus      old_status = x_ChangeReadingStatus(
                                                 client, job_id, job_key,
-                                                auth_token,
+                                                auth_token, "",
                                                 CNetScheduleAPI::eDone,
                                                 is_ns_rollback);
     m_ClientsRegistry.ClearReadingSetBlacklist(job_id);
@@ -1860,6 +1861,7 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
                                           unsigned int         job_id,
                                           const string &       job_key,
                                           const string &       auth_token,
+                                          const string &       err_msg,
                                           TJobStatus           target_status,
                                           bool                 is_ns_rollback)
 {
@@ -1907,6 +1909,7 @@ TJobStatus  CQueue::x_ChangeReadingStatus(const CNSClientId &  client,
         event.SetNodeAddr(client.GetAddress());
         event.SetClientNode(client.GetNode());
         event.SetClientSession(client.GetSession());
+        event.SetErrorMsg(err_msg);
 
         switch (target_status) {
             case CNetScheduleAPI::eDone:

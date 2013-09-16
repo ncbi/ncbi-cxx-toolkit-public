@@ -261,7 +261,8 @@ public:
     TJobStatus  FailReadingJob(const CNSClientId &   client,
                                unsigned int          job_id,
                                const string &        job_key,
-                               const string &        auth_token);
+                               const string &        auth_token,
+                               const string &        err_msg);
     // Return jobs to unread state without reservation
     TJobStatus  ReturnReadingJob(const CNSClientId &   client,
                                  unsigned int          job_id,
@@ -389,6 +390,7 @@ private:
                                       unsigned int         job_id,
                                       const string &       job_key,
                                       const string &       auth_token,
+                                      const string &       err_msg,
                                       TJobStatus           target_status,
                                       bool                 is_ns_rollback = false);
 
