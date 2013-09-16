@@ -2233,6 +2233,7 @@ void CScope_Impl::x_GetTSESetWithOrphanAnnots(TTSE_LockMatchSet& lock,
                                               const SAnnotSelector* sel)
 {
     for (CPriority_I it(m_setDataSrc); it; ++it) {
+        CPrefetchManager::IsActive();
         if ( &*it == excl_ds ) {
             // skip non-orphan annotations
             continue;
@@ -2271,6 +2272,7 @@ void CScope_Impl::x_GetTSESetWithBioseqAnnots(TTSE_LockMatchSet& lock,
         return;
 #endif
 
+    CPrefetchManager::IsActive();
     // datasource annotations on all ids of Bioseq
     // add external annots
     TBioseq_Lock bioseq = binfo.GetLock(null);
