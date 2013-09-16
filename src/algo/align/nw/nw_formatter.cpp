@@ -224,6 +224,141 @@ void CNWFormatter::SSegment::SetToGap()
 }
 
 // try improving the segment by cutting it from the left
+void CNWFormatter::SSegment::ImproveFromLeft1(const char* seq1, const char* seq2,
+                                        CConstRef<CSplicedAligner> aligner)
+{
+    
+    //legacy check
+    const size_t min_query_size = 4;
+    if( int(m_box[1] - m_box[0] + 1) < int(min_query_size)) {
+        SetToGap();
+        return;
+    }
+
+    //compute length and number of matches
+    int len_total = (int)m_details.size();
+    int match_total = 0;
+    string::iterator irs0 = m_details.begin(),
+        irs1 = m_details.end(), irs;
+
+    for(irs = irs0; irs != irs1; ++irs) {
+        if(*irs == 'M') {
+            ++match_total;
+        }
+    }
+
+    //count identity at the right end
+    string::reverse_iterator rirs0 = m_details.rbegin(),
+        rirs1 = m_details.rend(), rirs = rirs0;
+    int cnt = 0, max_cnt = 20;
+    int len = 0, match = 0;
+
+    for( ; ( rirs != rirs1 ) && (cnt != max_cnt) ; ++rirs, ++cnt) {
+        ++len;
+        if(*rirs == 'M') {
+            ++match;
+        }
+    }
+    double ident = match/(double)len;
+         
+    //trimming point
+    int i0_max = 0, i1_max = 0;
+    string::iterator irs_max;
+
+    //find the trimming point
+    int i0 = 0, i1 = 0;
+    len = 0;
+    match = 0;
+    double epsilon = 1e-10;
+    const double dropoff_diff = .19; 
+
+    --irs1;
+    for(irs = irs0; irs != irs1; ++irs) {
+        
+        switch(*irs) {
+            
+        case 'M': {
+            ++match;
+            ++i0;
+            ++i1;
+        }
+        break;
+            
+        case 'R': {
+            ++i0;
+            ++i1;
+        }
+        break;
+      
+        case 'I': {
+            ++i1;
+        }
+        break;
+
+        case 'D': {
+            ++i0;
+        }
+        }
+        ++len;
+
+        //trim here if        
+        if( max( ident, (match_total - match)/(double)(len_total-len) ) - match/(double)len - dropoff_diff> epsilon ){
+            i0_max = i0;
+            i1_max = i1;
+            irs_max = irs;
+            //do not count trimmed part, adjust values
+            match_total -= match;
+            len_total -= len;
+            match = 0;
+            len = 0;
+        }
+    }
+
+    // work around a weird case of equally optimal
+    // but detrimental for our purposes alignment
+    // -check the actual sequence chars
+    size_t head = 0;
+    while(i0_max > 0 && i1_max > 0) {
+        if(seq1[m_box[0]+i0_max-1] == seq2[m_box[2]+i1_max-1]) {
+            --i0_max; --i1_max;
+            ++head;
+        }
+        else {
+            break;
+        }
+    }
+
+    //trim
+
+    if(i0_max == 0 && i1_max == 0) return;//no changes
+    
+    // if the resulting segment is still long enough
+    if(m_box[1] - m_box[0] + 1 - i0_max >= min_query_size )
+    {
+        // resize
+        m_box[0] += i0_max;
+        m_box[2] += i1_max;
+        const size_t L = irs_max - irs0 + 1;
+        m_details.erase(0, L);
+        m_details.insert(m_details.begin(), head, 'M');
+        Update(aligner.GetNonNullPointer());
+        
+        // update the first two annotation symbols
+        if(m_annot.size() > 2 && m_annot[2] == '<') {
+            int  j1 = int(m_box[2]) - 2;
+            char c1 = j1 >= 0? seq2[j1]: ' ';
+            m_annot[0] = c1;
+            int  j2 = int(m_box[2]) - 1;
+            char c2 = j2 >= 0? seq2[j2]: ' ';
+            m_annot[1] = c2;
+        }
+    } else {
+        SetToGap();//just drop it
+    }
+}
+
+
+// try improving the segment by cutting it from the left
 void CNWFormatter::SSegment::ImproveFromLeft(const char* seq1, const char* seq2,
                                         CConstRef<CSplicedAligner> aligner)
 {
@@ -361,6 +496,137 @@ bool CNWFormatter::SSegment::IsLowComplexityExon(const char *rna_seq)
     return false;
 }
    
+
+// try improving the segment by cutting it from the right
+void CNWFormatter::SSegment::ImproveFromRight1(const char* seq1, const char* seq2,
+                                              CConstRef<CSplicedAligner> aligner)
+{
+    const size_t min_query_size = 4;
+    //legacy check
+    if(m_box[1] - m_box[0] + 1 < min_query_size) {
+        SetToGap();
+        return;
+    }
+
+    //identity total
+    int len_total = (int)m_details.size();
+    int match_total = 0;
+    string::iterator irs0 = m_details.begin(),
+        irs1 = m_details.end(), irs;
+
+    for(irs = irs0; irs != irs1; ++irs) {
+        if(*irs == 'M') {
+            ++match_total;
+        }
+    }
+
+    //count identity at the left end
+    int cnt = 0, max_cnt = 20;
+    int len = 0, match = 0;
+    for( irs = irs0; ( irs != irs1 ) && (cnt != max_cnt) ; ++irs, ++cnt) {
+        ++len;
+        if(*irs == 'M') {
+            ++match;
+        }
+    }
+    double ident = match/(double)len;
+
+    double epsilon = 1e-10;
+    const double dropoff_diff = .19; 
+
+    int i0 = int(m_box[1] - m_box[0] + 1), i0_max = i0;
+    int i1 = int(m_box[3] - m_box[2] + 1), i1_max = i1;
+    match = 0;
+    len = 0;    
+    string::reverse_iterator rirs0 = m_details.rbegin(),
+        rirs1 = m_details.rend(), rirs = rirs0, rirs_max;
+
+    --rirs1;
+    for( ; rirs != rirs1; ++rirs) {
+        
+        switch(*rirs) {
+            
+        case 'M': {
+            ++match;
+            --i0;
+            --i1;
+        }
+        break;
+            
+        case 'R': {
+            --i0;
+            --i1;
+        }
+        break;
+      
+        case 'I': {
+            --i1;
+        }
+        break;
+
+        case 'D': {
+            --i0;
+        }
+        }
+        ++len;
+        
+        //trim here if        
+        if( max( ident, (match_total - match)/(double)(len_total-len) ) - match/(double)len - dropoff_diff > epsilon ) {
+            i0_max = i0;
+            i1_max = i1;
+            rirs_max = rirs;
+            //do not count trimmed part, adjust values
+            match_total -= match;
+            len_total -= len;
+            match = 0;
+            len = 0;
+        }
+    }
+    
+    int dimq = int(m_box[1] - m_box[0] + 1);
+    int dims = int(m_box[3] - m_box[2] + 1);
+    
+    // work around a weird case of equally optimal
+    // but detrimental for our purposes alignment
+    // -check the actual sequences
+    size_t tail = 0;
+    while(i0_max < dimq  && i1_max < dims ) {
+        if(seq1[m_box[0]+i0_max] == seq2[m_box[2]+i1_max]) {
+            ++i0_max; ++i1_max;
+            ++tail;
+        }
+        else {
+            break;
+        }
+    }
+
+    if( i0_max >= dimq && i1_max >= dims ) return;//no changes
+
+    // if the resulting segment is still long enough
+    if(i0_max - 1 >= int(min_query_size) ) {
+        
+        m_box[1] = m_box[0] + i0_max - 1;
+        m_box[3] = m_box[2] + i1_max - 1;
+        
+        m_details.resize(m_details.size() - (rirs_max - rirs0 + 1));
+        m_details.insert(m_details.end(), tail, 'M');
+        Update(aligner.GetNonNullPointer());
+        
+        // update the last two annotation chars
+        const size_t adim = m_annot.size();
+        if(adim > 2 && m_annot[adim - 3] == '>') {
+
+            const size_t len2 (aligner->GetSeqLen2());
+            const char c3 (m_box[3] + 1 < len2? seq2[m_box[3] + 1]: ' ');
+            const char c4 (m_box[3] + 2 < len2? seq2[m_box[3] + 2]: ' ');
+            m_annot[adim-2] = c3;
+            m_annot[adim-1] = c4;
+        }
+    } else {
+        SetToGap();//just drop it
+    }
+}
+
 
 
 // try improving the segment by cutting it from the right
