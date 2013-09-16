@@ -318,18 +318,7 @@ public:
         const std::string & strFeatureName = string(""),
         const std::string & strQualifierName = string(""),
         const std::string & strQualifierValue = string(""),
-        const std::string & strErrorMessage = string(""))
-    {
-        return Ref( new CLineError(
-            eProblem,
-            eSeverity,
-            strSeqId,
-            uLine,
-            strFeatureName,
-            strQualifierName,
-            strQualifierValue,
-            strErrorMessage));
-    }
+        const std::string & strErrorMessage = string(""));
 
     /// This is marked deprecated because it will eventually become
     /// protected instead of public.  Please use the Create function instead.
@@ -352,9 +341,7 @@ public:
 
     /// copy constructor will be hidden some day, so please use this function to
     /// make this class throw.
-    NCBI_NORETURN void Throw(void) const {
-        throw *this;
-    }
+    NCBI_NORETURN void Throw(void) const;
        
     void PatchLineNumber(
         unsigned int uLine) { m_uLine = uLine; };
@@ -437,20 +424,11 @@ public:
         const std::string & strQualifierName = string(""),
         const std::string & strQualifierValue = string(""),
         CObjReaderLineException::EErrCode eErrCode = eFormat
-        )
-    {
-        return Ref( 
-            new CObjReaderLineException(
-            eSeverity, uLine, strMessage, eProblem,
-            strSeqId, strFeatureName, strQualifierName, strQualifierValue,
-            eErrCode ));
-    }
+        );
 
     // Copy constructor will eventually become protected, so please use 
     /// this function to make this function to throw.
-    NCBI_NORETURN void Throw(void) const {
-        throw *this;
-    }
+    NCBI_NORETURN void Throw(void) const;
 
     ~CObjReaderLineException(void) throw() { }
 

@@ -38,6 +38,117 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
+// static 
+CRef<CLineError> CLineError::Create(
+        EProblem eProblem,
+        EDiagSev eSeverity,
+        const std::string& strSeqId,
+        unsigned int uLine,
+        const std::string & strFeatureName,
+        const std::string & strQualifierName,
+        const std::string & strQualifierValue,
+        const std::string & strErrorMessage)
+{
+    // this triggers a deprecated-call warning, which should disappear
+    // once the constructors become protected instead of deprecated.
+    return Ref( new CLineError(
+            eProblem,
+            eSeverity,
+            strSeqId,
+            uLine,
+            strFeatureName,
+            strQualifierName,
+            strQualifierValue,
+            strErrorMessage));
+}
+
+void 
+CLineError::Throw(void) const {
+    // this triggers a deprecated-call warning, which should disappear
+    // once the constructors become protected instead of deprecated.
+    throw *this;
+}
+
+CLineError::CLineError(
+    EProblem eProblem,
+    EDiagSev eSeverity,
+    const std::string& strSeqId,
+    unsigned int uLine,
+    const std::string & strFeatureName,
+    const std::string & strQualifierName,
+    const std::string & strQualifierValue,
+    const std::string & strErrorMessage )
+    : m_eProblem(eProblem), m_eSeverity( eSeverity ), m_strSeqId(strSeqId), m_uLine( uLine ), 
+    m_strFeatureName(strFeatureName), m_strQualifierName(strQualifierName), 
+    m_strQualifierValue(strQualifierValue), m_strErrorMessage(strErrorMessage)
+{ }
+
+CLineError::CLineError(const CLineError & rhs ) :
+m_eProblem(rhs.m_eProblem), m_eSeverity(rhs.m_eSeverity ), m_strSeqId(rhs.m_strSeqId), m_uLine(rhs.m_uLine ), 
+    m_strFeatureName(rhs.m_strFeatureName), m_strQualifierName(rhs.m_strQualifierName), 
+    m_strQualifierValue(rhs.m_strQualifierValue), m_strErrorMessage(rhs.m_strErrorMessage)
+{ }
+
+CRef<CObjReaderLineException>
+    CObjReaderLineException::Create(
+    EDiagSev eSeverity,
+    unsigned int uLine,
+    const std::string &strMessage,
+    EProblem eProblem,
+    const std::string& strSeqId,
+    const std::string & strFeatureName,
+    const std::string & strQualifierName,
+    const std::string & strQualifierValue,
+    CObjReaderLineException::EErrCode eErrCode
+    )
+{
+    // this triggers a deprecated-call warning, which should disappear
+    // once the constructors become protected instead of deprecated.
+    return Ref( 
+        new CObjReaderLineException(
+        eSeverity, uLine, strMessage, eProblem,
+        strSeqId, strFeatureName, strQualifierName, strQualifierValue,
+        eErrCode ));
+}
+
+void 
+CObjReaderLineException::Throw(void) const {
+    // this triggers a deprecated-call warning, which should disappear
+    // once the constructors become protected instead of deprecated.
+    throw *this;
+}
+
+CObjReaderLineException::CObjReaderLineException(
+    EDiagSev eSeverity,
+    unsigned int uLine,
+    const std::string &strMessage,
+    EProblem eProblem,
+    const std::string& strSeqId,
+    const std::string & strFeatureName,
+    const std::string & strQualifierName,
+    const std::string & strQualifierValue,
+    CObjReaderLineException::EErrCode eErrCode
+    )
+    : CObjReaderParseException( DIAG_COMPILE_INFO, 0, static_cast<CObjReaderParseException::EErrCode>(CException::eInvalid), strMessage, uLine,
+    eDiag_Info ), 
+    m_eProblem(eProblem), m_strSeqId(strSeqId), m_uLineNumber(uLine),
+    m_strFeatureName(strFeatureName), m_strQualifierName(strQualifierName), 
+    m_strQualifierValue(strQualifierValue), m_strErrorMessage(strMessage)
+{
+    SetSeverity( eSeverity );
+    x_InitErrCode(static_cast<CException::EErrCode>(eErrCode));
+}
+
+CObjReaderLineException::CObjReaderLineException(const CObjReaderLineException & rhs ) :
+CObjReaderParseException( rhs ), 
+    m_eProblem(rhs.Problem()), m_strSeqId(rhs.SeqId()), m_uLineNumber(rhs.Line()), 
+    m_strFeatureName(rhs.FeatureName()), m_strQualifierName(rhs.QualifierName()),
+    m_strQualifierValue(rhs.QualifierValue()), m_strErrorMessage(rhs.ErrorMessage())
+{
+    SetSeverity( rhs.Severity() );
+    x_InitErrCode(static_cast<CException::EErrCode>(rhs.x_GetErrCode()));
+}
+
 // this is here because of an apparent compiler bug
 std::string
 CObjReaderLineException::ProblemStr() const
