@@ -1290,6 +1290,8 @@ CDeltaBlastArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddFlag(kArgShowDomainHits, "Show domain hits");
     arg_desc.SetDependency(kArgShowDomainHits, CArgDescriptions::eExcludes,
                            kArgRemote);
+    arg_desc.SetDependency(kArgShowDomainHits, CArgDescriptions::eExcludes,
+                           kArgSubject);
 }
 
 void
