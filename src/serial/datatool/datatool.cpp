@@ -690,9 +690,11 @@ bool CDataTool::GenerateCode(bool undo)
     if ( generator.GetOpt("pch", &opt) )
         CFileCode::SetPchHeader(opt);
     
-    if (undo && generation_requested) {
-        generator.UndoGenerateCode();
-        ERR_POST_X(5, "*** Datatool code generation failed");
+    if (undo) {
+        if (generation_requested) {
+            generator.UndoGenerateCode();
+            ERR_POST_X(5, "*** Datatool code generation failed");
+        }
         return true;
     }
     cout << GetFullVersion().Print(GetProgramDisplayName(), CVersion::fVersionInfo);
