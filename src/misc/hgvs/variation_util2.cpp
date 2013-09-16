@@ -2070,8 +2070,8 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         } else {
             //Keep the frst AA in case of frameshifts
             //NM_000492.3:c.3528delC -> NP_000483.3:p.Lys1177Serfs  instead of NP_000483.3:p.Lys1177delfs 
-            prot_ref_str.resize(min(1UL, prot_ref_str.size()));
-            prot_var_str.resize(min(1UL, prot_ref_str.size()));
+            prot_ref_str.resize(min(static_cast<size_t>(1), prot_ref_str.size()));
+            prot_var_str.resize(min(static_cast<size_t>(1), prot_ref_str.size()));
         }
 
         //adjust the protein location. 
