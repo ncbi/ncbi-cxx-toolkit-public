@@ -45,12 +45,81 @@ BEGIN_SCOPE(gnomon)
 
 USING_SCOPE(objects);
 
+TSignedSeqRange CGeneModel::TranscriptLimits() const {
+    CAlignMap amap = GetAlignMap();
+
+    int l,r;
+
+    if(Orientation() == ePlus) {
+        if(Exons().front().Limits().NotEmpty()) {
+            l = amap.MapOrigToEdited(Exons().front().GetFrom());
+        } else {
+            _ASSERT(Exons().size() > 1 && Exons()[1].Limits().NotEmpty());
+            l = amap.MapOrigToEdited(Exons()[1].GetFrom())-Exons().front().m_seq.length();
+        }
+        if(Exons().back().Limits().NotEmpty()) {
+            r = amap.MapOrigToEdited(Exons().back().GetTo());
+        } else {
+            _ASSERT(Exons().size() > 1 && Exons()[Exons().size()-2].Limits().NotEmpty());
+            r = amap.MapOrigToEdited(Exons()[Exons().size()-2].GetTo()) + Exons().back().m_seq.length();
+        }
+    } else {
+        if(Exons().front().Limits().NotEmpty()) {
+            r = amap.MapOrigToEdited(Exons().front().GetFrom());
+        } else {
+            _ASSERT(Exons().size() > 1 && Exons()[1].Limits().NotEmpty());
+            r = amap.MapOrigToEdited(Exons()[1].GetFrom())+Exons().front().m_seq.length();
+        }
+        if(Exons().back().Limits().NotEmpty()) {
+            l = amap.MapOrigToEdited(Exons().back().GetTo());
+        } else {
+            _ASSERT(Exons().size() > 1 && Exons()[Exons().size()-2].Limits().NotEmpty());
+            l = amap.MapOrigToEdited(Exons()[Exons().size()-2].GetTo()) - Exons().back().m_seq.length();
+        }
+    }
+        
+    return TSignedSeqRange(l,r);
+    }
+
+bool CGeneModel::isNMD(int limit) const
+{
+    if (GetCdsInfo().ReadingFrame().Empty() || Exons().size() <= 1)
+        return false;
+
+    TSignedSeqRange cds = GetCdsInfo().Start()+GetCdsInfo().ReadingFrame()+GetCdsInfo().Stop();
+    CAlignMap amap = GetAlignMap();
+    if(GetCdsInfo().IsMappedToGenome()) {
+        cds = amap.MapRangeOrigToEdited(cds);
+    }
+        
+    int l = -1;
+    if (Strand() == ePlus) {
+        for(int i = (int)Exons().size()-1; i > 0; --i) {
+            if(Exons()[i].m_fsplice && Exons()[i-1].m_ssplice && Exons()[i].m_fsplice_sig != "XX" && Exons()[i-1].m_ssplice_sig != "XX") {
+                l = amap.MapRangeOrigToEdited(Exons()[i],true).GetFrom();
+                break;
+            }
+        }
+    } else {
+        for(int i = 0; i < (int)Exons().size()-1; ++i) {
+            if(Exons()[i].m_ssplice && Exons()[i+1].m_fsplice && Exons()[i].m_ssplice_sig != "XX" && Exons()[i+1].m_fsplice_sig != "XX") {
+                l = amap.MapRangeOrigToEdited(Exons()[i],true).GetFrom();
+                break;
+            }                
+        }
+    }
+    return l > cds.GetTo()+limit;
+}
+
 
 void CGeneModel::ReverseComplementModel() {
     SetStrand(Strand() == ePlus ? eMinus : ePlus);
+    Status() ^= eReversed;
     NON_CONST_ITERATE(TExons, it, MyExons()) {
-        ReverseComplement(it->m_fsplice_sig.begin(),it->m_fsplice_sig.end());
-        ReverseComplement(it->m_ssplice_sig.begin(),it->m_ssplice_sig.end());
+        if(it->m_fsplice_sig != "XX")
+            ReverseComplement(it->m_fsplice_sig.begin(),it->m_fsplice_sig.end());
+        if(it->m_ssplice_sig != "XX")
+            ReverseComplement(it->m_ssplice_sig.begin(),it->m_ssplice_sig.end());
     }
 }
 
@@ -100,7 +169,89 @@ bool CCDSInfo::operator== (const CCDSInfo& a) const
         m_confirmed_stop==a.m_confirmed_stop &&
         m_p_stops==a.m_p_stops &&
         m_open==a.m_open &&
-        m_score==a.m_score;
+        m_score==a.m_score &&
+        m_genomic_coordinates == a.m_genomic_coordinates;
+}
+
+CCDSInfo CCDSInfo::MapFromEditedToOrig(const CAlignMap& amap) const
+{
+    CCDSInfo empty_cds;
+    CCDSInfo new_cds(true);
+
+    if(ProtReadingFrame().NotEmpty()) {
+        TSignedSeqRange prot_rf = amap.MapRangeEditedToOrig(ProtReadingFrame(), false);
+        if(prot_rf.NotEmpty())
+            new_cds.SetReadingFrame(prot_rf, true);
+        else
+            return empty_cds;
+    }
+    if(ReadingFrame().NotEmpty()) {
+        TSignedSeqRange rf = amap.MapRangeEditedToOrig(ReadingFrame(), true);
+        if(rf.NotEmpty())
+            new_cds.SetReadingFrame(rf, false);
+        else
+            return empty_cds;
+    }
+    if(HasStart()) {
+        TSignedSeqRange start = amap.MapRangeEditedToOrig(Start(), false);
+        if(start.NotEmpty())
+            new_cds.SetStart(start, ConfirmedStart());
+        else
+            return empty_cds;
+    }
+    if(HasStop()) {
+        TSignedSeqRange stop = amap.MapRangeEditedToOrig(Stop(), false);
+        if(stop.NotEmpty())
+            new_cds.SetStop(stop, ConfirmedStop());
+        else
+            return empty_cds;        
+    }
+    ITERATE(TPStops, i, PStops()) {
+        TSignedSeqRange pstop = amap.MapRangeEditedToOrig(*i, false);
+        if(pstop.NotEmpty())
+            new_cds.AddPStop(pstop);
+        else
+            return empty_cds;        
+    }
+    if(HasStart() && MaxCdsLimits().GetFrom() == Start().GetFrom()) {
+        new_cds.Set5PrimeCdsLimit(amap.MapEditedToOrig(Start().GetFrom()));
+    } else if(HasStart() &&  MaxCdsLimits().GetTo() == Start().GetTo()) {
+        new_cds.Set5PrimeCdsLimit(amap.MapEditedToOrig(Start().GetTo()));
+    }
+    new_cds.SetScore(Score(), OpenCds());
+
+    return new_cds;    
+}
+
+CCDSInfo CCDSInfo::MapFromOrigToEdited(const CAlignMap& amap) const
+{
+    CCDSInfo new_cds(false);
+
+    _ASSERT(new_cds.ProtReadingFrame().Empty() && new_cds.ReadingFrame().Empty() && new_cds.Start().Empty() && new_cds.Stop().Empty());
+
+    if(ProtReadingFrame().NotEmpty()) {
+        new_cds.SetReadingFrame(amap.MapRangeOrigToEdited(ProtReadingFrame(), false), true);
+    }
+    if(ReadingFrame().NotEmpty()) {
+        new_cds.SetReadingFrame(amap.MapRangeOrigToEdited(ReadingFrame(), true), false);
+    }
+    if(HasStart()) {
+        new_cds.SetStart(amap.MapRangeOrigToEdited(Start(), false), ConfirmedStart());
+    }
+    if(HasStop()) {
+        new_cds.SetStop(amap.MapRangeOrigToEdited(Stop(), false), ConfirmedStop());
+    }
+    ITERATE(TPStops, i, PStops()) {
+        new_cds.AddPStop(amap.MapRangeOrigToEdited(*i, false));
+    }
+    if(HasStart() && MaxCdsLimits().GetFrom() == Start().GetFrom()) {
+        new_cds.Set5PrimeCdsLimit(amap.MapOrigToEdited(Start().GetFrom()));
+    } else if(HasStart() &&  MaxCdsLimits().GetTo() == Start().GetTo()) {
+        new_cds.Set5PrimeCdsLimit(amap.MapOrigToEdited(Start().GetTo()));
+    }
+    new_cds.SetScore(Score(), OpenCds());
+
+    return new_cds;
 }
 
 void CCDSInfo::SetReadingFrame(TSignedSeqRange r, bool protein)
@@ -347,39 +498,31 @@ void CGeneModel::RemoveShortHolesAndRescore(const CGnomonEngine& gnomon) {
 
 bool CGeneModel::CdsInvariant(bool check_start_stop) const
 {
-    _ASSERT( !(ConfirmedStart() && OpenCds()) );
-
     if (ReadingFrame().Empty())
         return true;
 
-    _ASSERT( Include(MaxCdsLimits(),RealCdsLimits()) );
 
 #ifdef _DEBUG
-    CAlignMap mrnamap(Exons(), FrameShifts(), Strand());
-#endif
+    CAlignMap mrnamap(Exons(),FrameShifts(),Strand());
+    CCDSInfo cds_info = GetCdsInfo();
+    if(cds_info.IsMappedToGenome())
+        cds_info = cds_info.MapFromOrigToEdited(mrnamap);
+    
+    _ASSERT( !(ConfirmedStart() && OpenCds()) );
 
+    _ASSERT(Include(cds_info.MaxCdsLimits(), cds_info.Cds()));
+    _ASSERT(cds_info.MaxCdsLimits().GetFrom() == TSignedSeqRange::GetWholeFrom() || cds_info.MaxCdsLimits().GetFrom() == cds_info.Cds().GetFrom());
+    _ASSERT(cds_info.MaxCdsLimits().GetTo() == TSignedSeqRange::GetWholeTo() || cds_info.MaxCdsLimits().GetTo() == cds_info.Cds().GetTo());
 
     if (check_start_stop && Score() != BadScore()) {
-        if (Strand()==ePlus) {
-            _ASSERT( (mrnamap.FShiftedLen(TSignedSeqRange(Limits().GetFrom(),ReadingFrame().GetFrom()), CAlignMap::eSinglePoint, CAlignMap::eLeftEnd) < 4) ^ HasStart() );
-            _ASSERT( (mrnamap.FShiftedLen(TSignedSeqRange(ReadingFrame().GetTo(),Limits().GetTo()), CAlignMap::eRightEnd, CAlignMap::eSinglePoint) < 4) ^ HasStop() );
-        } else {
-            _ASSERT( (mrnamap.FShiftedLen(TSignedSeqRange(ReadingFrame().GetTo(),Limits().GetTo()), CAlignMap::eRightEnd, CAlignMap::eSinglePoint) < 4) ^ HasStart() );
-            _ASSERT( (mrnamap.FShiftedLen(TSignedSeqRange(Limits().GetFrom(),ReadingFrame().GetFrom()), CAlignMap::eSinglePoint, CAlignMap::eLeftEnd) < 4) ^ HasStop() );
-        }
+        _ASSERT(cds_info.ReadingFrame().GetFrom() < 3 || (cds_info.HasStart() && cds_info.Start().GetTo()+1 == cds_info.ReadingFrame().GetFrom()));
+        _ASSERT(cds_info.ReadingFrame().GetTo() >= mrnamap.TargetLen()-3 || (cds_info.HasStop() && cds_info.Stop().GetFrom()-1 == cds_info.ReadingFrame().GetTo()));
     }
 
-    _ASSERT( !HasStart() || mrnamap.FShiftedLen(GetCdsInfo().Start(), false)==3 );
-    _ASSERT( mrnamap.FShiftedLen(GetCdsInfo().Start()+ReadingFrame()+GetCdsInfo().Stop(), false)%3==0 );
-    _ASSERT( !HasStop() || mrnamap.FShiftedLen(GetCdsInfo().Stop(), false)==3 );
-
-    //    _ASSERT( GetCdsInfo().ProtReadingFrame().Empty() ||
-    //             mrnamap.FShiftedLen(GetCdsInfo().ProtReadingFrame(), true)%3==0 );
-
-    if (GetCdsInfo().MaxCdsLimits().GetFrom() < Limits().GetFrom())
-        _ASSERT( GetCdsInfo().MaxCdsLimits().GetFrom()==TSignedSeqRange::GetWholeFrom() );
-    if (Limits().GetTo() < GetCdsInfo().MaxCdsLimits().GetTo())
-        _ASSERT( GetCdsInfo().MaxCdsLimits().GetTo()==TSignedSeqRange::GetWholeTo() );
+    _ASSERT(!cds_info.HasStart() || cds_info.Start().GetLength()==3);
+    _ASSERT(!cds_info.HasStop() || cds_info.Stop().GetLength()==3);
+    _ASSERT(cds_info.Cds().GetLength()%3==0);
+#endif
     
     return true;
 }
@@ -420,17 +563,23 @@ void CGeneModel::CutExons(TSignedSeqRange hole)
             continue;
         if (MyExons()[i].GetFrom()<hole.GetFrom()) {
             MyExons()[i].Limits().SetTo(hole.GetFrom()-1);
-            if (i+1<MyExons().size())
+            MyExons()[i].m_ssplice_sig.clear();
+            if (i+1<MyExons().size()) {
                 MyExons()[i+1].m_fsplice=false;
+            }
         } else if (hole.GetTo()<MyExons()[i].GetTo()) {
             MyExons()[i].Limits().SetFrom(hole.GetTo()+1);
-            if (0<i)
+            MyExons()[i].m_fsplice_sig.clear();
+            if (0<i) {
                 MyExons()[i-1].m_ssplice=false;
+            }
         } else {
-            if (0<i)
+            if (0<i) {
                 MyExons()[i-1].m_ssplice=false;
-            if (i+1<MyExons().size())
+            }
+            if (i+1<MyExons().size()) {
                 MyExons()[i+1].m_fsplice=false;
+            }
             MyExons().erase( MyExons().begin()+i);
             --i;
         }
@@ -485,9 +634,13 @@ void CGeneModel::Clip(TSignedSeqRange clip_limits, EClipMode mode, bool ensure_c
 
     for (TExons::iterator e = MyExons().begin(); e != MyExons().end();) {
         TSignedSeqRange clip = e->Limits() & clip_limits;
-        if (clip.NotEmpty())
+        if (clip.NotEmpty()) {
+            if(e->GetFrom() != clip.GetFrom())   //keep splice sig if not clipped
+                e->m_fsplice_sig.clear();
+            if(e->GetTo() != clip.GetTo())   //keep splice sig if not clipped
+                e->m_ssplice_sig.clear();
             e++->Limits() = clip;
-        else if (mode == eRemoveExons)
+        } else if (mode == eRemoveExons)
             e = MyExons().erase(e);
         else
             ++e;
@@ -691,15 +844,15 @@ bool CGeneModel::IsSubAlignOf(const CGeneModel& a) const
 }
 
 
-void CGeneModel::AddExon(TSignedSeqRange exon_range, string fs, string ss, double ident)
+void CGeneModel::AddExon(TSignedSeqRange exon_range, const string& fs, const string& ss, double ident, const string& seq)
 {
     _ASSERT( (m_range & exon_range).Empty() );
     m_range += exon_range;
 
-    CModelExon e(exon_range.GetFrom(),exon_range.GetTo(),false,false,fs,ss,ident);
+    CModelExon e(exon_range.GetFrom(),exon_range.GetTo(),false,false,fs,ss,ident,seq);
     if (MyExons().empty())
         MyExons().push_back(e);
-    else if (MyExons().back().GetTo()<exon_range.GetFrom()) {
+    else if ((exon_range.Empty() || MyExons().back().Limits().Empty()) || MyExons().back().GetTo() < exon_range.GetFrom()) {
         if (!m_expecting_hole) {
             MyExons().back().m_ssplice = true;
             e.m_fsplice = true;
@@ -838,7 +991,7 @@ void CGeneModel::Extend(const CGeneModel& align, bool ensure_cds_invariant)
     }
     RemoveExtraFShifts();
 
-    SetType(Type() | ((CGeneModel::eProt|CGeneModel::eSR|CGeneModel::eEST|CGeneModel::emRNA)&align.Type()));
+    SetType(Type() | ((CGeneModel::eProt|CGeneModel::eSR|CGeneModel::eEST|CGeneModel::emRNA|CGeneModel::eNotForChaining)&align.Type()));
     if(align.ReadingFrame().NotEmpty())
         CombineCdsInfo(align, ensure_cds_invariant);
 }
@@ -961,12 +1114,26 @@ int CAlignModel::PolyALen() const {
 }
 
 
-TSignedSeqRange CAlignModel::TranscriptExon(int i) const { 
-    CAlignMap::ERangeEnd lend = (Exons()[i].m_fsplice ? CAlignMap::eLeftEnd : CAlignMap::eSinglePoint);
-    CAlignMap::ERangeEnd rend = (Exons()[i].m_ssplice ?  CAlignMap::eRightEnd : CAlignMap::eSinglePoint);
-    return m_alignmap.MapRangeOrigToEdited(Exons()[i].Limits(), lend, rend); 
+TSignedSeqRange CAlignModel::TranscriptExon(int i) const {
+    if(Exons()[i].Limits().NotEmpty()) {
+        CAlignMap::ERangeEnd lend = (Exons()[i].m_fsplice ? CAlignMap::eLeftEnd : CAlignMap::eSinglePoint);
+        CAlignMap::ERangeEnd rend = (Exons()[i].m_ssplice ?  CAlignMap::eRightEnd : CAlignMap::eSinglePoint);
+        return m_alignmap.MapRangeOrigToEdited(Exons()[i].Limits(), lend, rend); 
+    } else if(i > 0) {  // there is real exon on the left
+        int p = GetAlignMap().MapOrigToEdited(Exons()[i-1].GetTo());
+        if(Orientation() == ePlus)
+            return TSignedSeqRange(p+1,p+Exons()[i].m_seq.size());
+        else
+            return TSignedSeqRange(p-Exons()[i].m_seq.size(),p-1);
+    } else {  // there is a real exon on the right
+        _ASSERT(i < (int)Exons().size()-1);
+        int p = GetAlignMap().MapOrigToEdited(Exons()[i+1].GetFrom());
+        if(Orientation() == ePlus)
+            return TSignedSeqRange(p-Exons()[i].m_seq.size(),p-1);
+        else
+            return TSignedSeqRange(p+1,p+Exons()[i].m_seq.size());        
+    }
 }
-
 
 
 TInDels CAlignModel::GetInDels(TSignedSeqPos a, TSignedSeqPos b, bool fs_only) const {
@@ -1084,8 +1251,14 @@ void SGFFrec::print(CNcbiOstream& os) const
     os << (seqid.empty()?dot:seqid) << '\t';
     os << (source.empty()?dot:source) << '\t';
     os << (type.empty()?dot:type) << '\t';
-    os << (start+1) << '\t';
-    os << (end+1) << '\t';
+    if(start >= 0)
+        os << (start+1) << '\t';
+    else
+        os << "-\t";
+    if(end >= 0)
+        os << (end+1) << '\t';
+    else
+        os << "-\t";
     if (score == BadScore()) os << dot; else os << score; os << '\t';
     os << strand << '\t';
     if (phase < 0) os << dot; else os << phase; os << '\t';
@@ -1118,8 +1291,12 @@ CNcbiIstream& operator>>(CNcbiIstream& is, SGFFrec& res)
         rec.seqid = v[0];
         rec.source = v[1];
         rec.type = v[2];
-        rec.start = NStr::StringToUInt(v[3])-1;
-        rec.end = NStr::StringToUInt(v[4])-1;
+        rec.start = -1;
+        if(v[3] != "-")
+            rec.start = NStr::StringToUInt(v[3])-1;
+        rec.end = -1;
+        if(v[4] != "-")
+            rec.end = NStr::StringToUInt(v[4])-1;
         rec.score = v[5]==dot?BadScore():NStr::StringToDouble(v[5]);
         rec.strand = v[6][0];
         rec.phase = v[7]==dot?-1:NStr::StringToInt(v[7]);
@@ -1153,12 +1330,17 @@ CNcbiIstream& operator>>(CNcbiIstream& is, SGFFrec& res)
     return is;
 }
 
-string BuildGFF3Gap(int& prev_pos, int pos, bool is_ins, int len)
+string BuildGFF3Gap(int& prev_pos, int pos, bool is_ins, int len, const string& seq)
 {
     string gap;
     if (prev_pos < pos)
         gap += " M"+NStr::IntToString(pos-prev_pos);
-    gap += string(" ")+(is_ins?"D":"I")+NStr::IntToString(len);
+    if(is_ins || seq.empty()) {
+        gap += string(" ")+(is_ins?"D":"I")+NStr::IntToString(len);
+    } else {
+        gap += string(" ")+"I"+seq;
+    }
+
     prev_pos = pos+(is_ins?len:0);
 
     return gap;
@@ -1173,9 +1355,9 @@ string BuildGFF3Gap(int start, int end, const TInDels& indels)
         CInDelInfo indel = *indelp;
         if (indel.IsInsertion()) {
             _ASSERT( start <=indel.Loc() && indel.Loc()+indel.Len()-1 <= end );
-            gap += BuildGFF3Gap(prev_pos, indel.Loc(), true, indel.Len());
+            gap += BuildGFF3Gap(prev_pos, indel.Loc(), true, indel.Len(), indel.GetInDelV());
         } else {
-            gap += BuildGFF3Gap(prev_pos, indel.Loc(), false, indel.Len());
+            gap += BuildGFF3Gap(prev_pos, indel.Loc(), false, indel.Len(), indel.GetInDelV());
         }
     }
     if (!gap.empty()) {
@@ -1202,7 +1384,12 @@ void readGFF3Gap(const string& gap, int start, int end, insert_iterator<TInDels>
             *iter++ = CInDelInfo(loc,len);
             loc += len;
         } else if ((*o)[0] == 'I') {
-            CInDelInfo deletion(loc,len,false);
+            string seq;
+            if(len == 0) {
+                len = o->length()-1;
+                seq = o->substr(1);
+            }
+            CInDelInfo deletion(loc,len,false,seq);
             *iter++ = deletion;
         }
     }
@@ -1214,7 +1401,7 @@ string CGeneModel::TypeToString(int type)
     if ((type & eGnomon)!=0) return "Gnomon";
     if ((type & eChain)!=0) return  "Chainer";
     if ((type & eProt)!=0) return  "ProSplign";
-    if ((type & (eSR|eEST|emRNA))!=0) return  "Splign";
+    if ((type & (eSR|eEST|emRNA|eNotForChaining))!=0) return  "Splign";
     return "Unknown";
 }
 
@@ -1261,6 +1448,7 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
 
     if ((a.Type()  &CGeneModel::eWall)!=0)       attributes["flags"] += ",Wall";
     if ((a.Type()  &CGeneModel::eNested)!=0)     attributes["flags"] += ",Nested";
+    if ((a.Type()  &CGeneModel::eNotForChaining)!=0)         attributes["flags"] += ",NotForChaining";
     if ((a.Type()  &CGeneModel::eSR)!=0)         attributes["flags"] += ",SR";
     if ((a.Type()  &CGeneModel::eEST)!=0)        attributes["flags"] += ",EST";
     if ((a.Type()  &CGeneModel::emRNA)!=0)       attributes["flags"] += ",mRNA";
@@ -1272,31 +1460,45 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
     if ((a.Status()&CGeneModel::eBestPlacement)!=0)    attributes["flags"] += ",BestPlacement";
     if ((a.Status()&CGeneModel::eConsistentCoverage)!=0)    attributes["flags"] += ",ConsistentCoverage";
     if ((a.Status()&CGeneModel::eUnknownOrientation)!=0)    attributes["flags"] += ",UnknownOrientation";
+    if ((a.Status()&CGeneModel::eGapFiller)!=0)    attributes["flags"] += ",GapFiller";
     if ((a.Status()&CGeneModel::ecDNAIntrons)!=0)    attributes["flags"] += ",cDNAIntrons";
 
-    if (a.ReadingFrame().NotEmpty()) {
-        _ASSERT( a.FShiftedLen(a.GetCdsInfo().Start()+a.ReadingFrame()+a.GetCdsInfo().Stop(), false)%3==0 );
+    if (a.GetCdsInfo().ReadingFrame().NotEmpty()) {
 
-        if (a.MaxCdsLimits()!=a.RealCdsLimits()) {
-            attributes["maxCDS"] = NStr::IntToString(a.MaxCdsLimits().GetFrom()+1)+" "+NStr::IntToString(a.MaxCdsLimits().GetTo()+1);
+        TSignedSeqRange tlim = a.TranscriptLimits();
+        TSignedSeqRange cds = a.GetCdsInfo().Start()+a.GetCdsInfo().ReadingFrame()+a.GetCdsInfo().Stop();  // cdsinfo already in tcoords
+        TSignedSeqRange start = a.GetCdsInfo().Start();
+        TSignedSeqRange maxcdslim = tlim & a.GetCdsInfo().MaxCdsLimits();
+        TSignedSeqRange protcds = a.GetCdsInfo().ProtReadingFrame();
+
+        TSignedSeqRange rf = cds;
+        if(a.GetCdsInfo().HasStart())
+            rf.SetFrom(rf.GetFrom()+3);
+        if(a.GetCdsInfo().HasStop())
+            rf.SetTo(rf.GetTo()-3);
+
+        bool tCoords = false;
+
+        if(start.NotEmpty() && (start.GetFrom() != maxcdslim.GetFrom() && start.GetTo() != maxcdslim.GetTo())) {
+            attributes["maxCDS"] = NStr::IntToString(maxcdslim.GetFrom()+1)+" "+NStr::IntToString(maxcdslim.GetTo()+1);
+            tCoords = true;
         }
-        if (a.GetCdsInfo().ProtReadingFrame().NotEmpty() && a.GetCdsInfo().ProtReadingFrame()!=a.ReadingFrame()) {
-            attributes["protCDS"] =
-                NStr::IntToString(a.GetCdsInfo().ProtReadingFrame().GetFrom()+1)+" "+
-                NStr::IntToString(a.GetCdsInfo().ProtReadingFrame().GetTo()  +1);
+        if(protcds.NotEmpty() && protcds != rf) {
+            attributes["protCDS"] = NStr::IntToString(protcds.GetFrom()+1)+" "+NStr::IntToString(protcds.GetTo()  +1);
+            tCoords = true;
         }
-        if (a.HasStart()) {
-            _ASSERT( !(a.ConfirmedStart() && a.OpenCds()) );
+        if(a.GetCdsInfo().HasStart()) {
+            _ASSERT( !(a.GetCdsInfo().ConfirmedStart() && a.GetCdsInfo().OpenCds()) );
             string adj;
-            if (a.ConfirmedStart())
+            if (a.GetCdsInfo().ConfirmedStart())
                 adj = "Confirmed";
-            else if (a.OpenCds())
+            else if (a.GetCdsInfo().OpenCds())
                 adj = "Putative";
             attributes["flags"] += ","+adj+"Start";
         }
-        if (a.HasStop()) {
+        if (a.GetCdsInfo().HasStop()) {
             string adj;
-            if (a.ConfirmedStop())
+            if (a.GetCdsInfo().ConfirmedStop())
                 adj = "Confirmed";
             attributes["flags"] += ","+adj+"Stop";
         }
@@ -1307,9 +1509,14 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
         if(a.isNMD(50))                              attributes["flags"] += ",NMD";
 
         ITERATE(vector<TSignedSeqRange>, s, a.GetCdsInfo().PStops()) {
-            attributes["pstop"] += ","+NStr::IntToString(s->GetFrom()+1)+" "+NStr::IntToString(s->GetTo()+1);
+            TSignedSeqRange pstop = *s;            
+            attributes["pstop"] += ","+NStr::IntToString(pstop.GetFrom()+1)+" "+NStr::IntToString(pstop.GetTo()+1);
+            tCoords = true;
         }
         attributes["pstop"].erase(0,1);
+
+        if(tCoords)
+           attributes["flags"] += ",tCoords"; 
     }
 
     attributes["flags"].erase(0,1);
@@ -1331,12 +1538,14 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
     bool confirmed_stop = false;
     bool has_start = false;
     bool has_stop = false;
+    bool tcoords = false;
     
     vector<string> flags;
     NStr::Tokenize(attributes["flags"], ",", flags);
     ITERATE(vector<string>, f, flags) {
         if (*f == "Wall")       a.SetType(a.Type()|  CGeneModel::eWall);
         else if (*f == "Nested")     a.SetType(a.Type()|  CGeneModel::eNested);
+        else if (*f == "NotForChaining")         a.SetType(a.Type()|  CGeneModel::eNotForChaining);
         else if (*f == "SR")         a.SetType(a.Type()|  CGeneModel::eSR);
         else if (*f == "EST")        a.SetType(a.Type()|  CGeneModel::eEST);
         else if (*f == "mRNA")       a.SetType(a.Type()|  CGeneModel::emRNA);
@@ -1349,12 +1558,14 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
         else if (*f == "BestPlacement") a.Status()     |= CGeneModel::eBestPlacement;
         else if (*f == "ConsistentCoverage") a.Status()     |= CGeneModel::eConsistentCoverage;
         else if (*f == "UnknownOrientation") a.Status()|= CGeneModel::eUnknownOrientation;
+        else if (*f == "GapFiller") a.Status()|= CGeneModel::eGapFiller;
         else if (*f == "cDNAIntrons") a.Status()       |= CGeneModel::ecDNAIntrons;
         else if (*f == "ConfirmedStart")   { confirmed_start = true; has_start = true; }
         else if (*f == "PutativeStart")   { open_cds = true; has_start = true; }
         else if (*f == "Start") has_start = true;
         else if (*f == "ConfirmedStop")   { confirmed_stop = true; has_stop = true; }
         else if (*f == "Stop")  has_stop = true;
+        else if (*f == "tCoords") tcoords = true;
     }
 
     if (NStr::StartsWith(attributes["Parent"],"gene"))
@@ -1416,63 +1627,78 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
     CCDSInfo cds_info = a.GetCdsInfo();
     TSignedSeqRange reading_frame = cds_info.ReadingFrame();
 
-    TSignedSeqRange start, stop;
     if (reading_frame.NotEmpty()) {
-        cds_info.Clear5PrimeCdsLimit();
+
         if (!attributes["protCDS"].empty()) {
-            cds_info.SetReadingFrame( StringToRange(attributes["protCDS"]), true );
+            TSignedSeqRange protcds = StringToRange(attributes["protCDS"]);
+            if(!tcoords)
+                protcds = a.GetAlignMap().MapRangeOrigToEdited(protcds, false);
+            cds_info.SetReadingFrame(protcds, true );
         }
     
-        TSignedSeqRange rf = a.GetAlignMap().MapRangeOrigToEdited(reading_frame, false);
-        
         bool reversed = (a.Status()&CGeneModel::eReversed) != 0;
 
         if(reversed)
             swap(has_start, has_stop);
         
+        TSignedSeqRange start, stop;
+
         if(has_start) {
-            start = a.GetAlignMap().MapRangeEditedToOrig(TSignedSeqRange(rf.GetFrom(),rf.GetFrom()+2),false);
-            rf.SetFrom(rf.GetFrom()+3);
+            start = TSignedSeqRange(reading_frame.GetFrom(),reading_frame.GetFrom()+2);
+            reading_frame.SetFrom(reading_frame.GetFrom()+3);
         }
         
         if(has_stop) {
-            stop = a.GetAlignMap().MapRangeEditedToOrig(TSignedSeqRange(rf.GetTo()-2,rf.GetTo()),false);
-            rf.SetTo(rf.GetTo()-3);
+            stop = TSignedSeqRange(reading_frame.GetTo()-2,reading_frame.GetTo());
+            reading_frame.SetTo(reading_frame.GetTo()-3);
         }
         
         if(reversed) {
             swap(has_start, has_stop);
             swap(start, stop);
-        }
-        
-        reading_frame = a.GetAlignMap().MapRangeEditedToOrig(rf,true);
-    
+        }    
            
         cds_info.SetReadingFrame(reading_frame, (a.Type()&CGeneModel::eProt)!=0 && cds_info.ProtReadingFrame().Empty());
         cds_info.SetStart(start,confirmed_start);
         
         cds_info.SetStop(stop,confirmed_stop);
         
-        string pstops;
-        pstops = attributes["pstop"];
-        {
+        if(!attributes["pstop"].empty()) {
             vector<string> stops;
-            NStr::Tokenize(pstops, ",", stops);
-            ITERATE(vector<string>, s, stops)
-                cds_info.AddPStop(StringToRange(*s));
+            NStr::Tokenize(attributes["pstop"], ",", stops);
+            ITERATE(vector<string>, s, stops) {
+                TSignedSeqRange pstop = StringToRange(*s);
+                if(!tcoords)
+                    pstop = a.GetAlignMap().MapRangeOrigToEdited(pstop, false);
+                cds_info.AddPStop(pstop);
+            }
         }
 
         TSignedSeqRange max_cds_limits;
+        TSignedSeqRange tlim = a.TranscriptLimits();
         if (attributes["maxCDS"].empty()) {
-            a.SetCdsInfo(cds_info);
-            max_cds_limits = a.RealCdsLimits();
+            max_cds_limits = tlim;
+            if(reversed)
+                swap(start, stop); 
+            if(start.NotEmpty())
+                max_cds_limits.SetFrom(start.GetFrom());
+            if(stop.NotEmpty())
+                max_cds_limits.SetTo(stop.GetTo());
+            if(reversed)
+                swap(start, stop); 
         } else {
             max_cds_limits = StringToRange(attributes["maxCDS"]);
+            if(!tcoords)
+                max_cds_limits = a.GetAlignMap().MapRangeOrigToEdited(max_cds_limits, false);
         }
-        if (a.Strand()==ePlus && a.Limits().GetFrom()<max_cds_limits.GetFrom())
-            cds_info.Set5PrimeCdsLimit(max_cds_limits.GetFrom());
-        else if (a.Strand()==eMinus && a.Limits().GetTo()>max_cds_limits.GetTo())
-            cds_info.Set5PrimeCdsLimit(max_cds_limits.GetTo());
+
+        if(reversed) {
+            if(max_cds_limits.GetTo() < tlim.GetTo())
+                cds_info.Set5PrimeCdsLimit(max_cds_limits.GetTo());
+        } else {
+            if(max_cds_limits.GetFrom() > tlim.GetFrom())
+                cds_info.Set5PrimeCdsLimit(max_cds_limits.GetFrom());
+        }
     }
     
     cds_info.SetScore(cds_info.Score(), open_cds);
@@ -1480,8 +1706,14 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
     a.SetCdsInfo(cds_info);
 }
 
-CNcbiOstream& printGFF3(CNcbiOstream& os, const CAlignModel& a)
+CNcbiOstream& printGFF3(CNcbiOstream& os, CAlignModel a)
 {
+    CCDSInfo cds_info = a.GetCdsInfo();
+    if(cds_info.IsMappedToGenome()) {    // convert local copy to tcoords
+        cds_info = cds_info.MapFromOrigToEdited(a.GetAlignMap());
+        a.SetCdsInfo(cds_info);
+    }
+
     SGFFrec templ;
     templ.model = a.ID();
     templ.seqid = contig_stream_state.slot(os);
@@ -1512,39 +1744,57 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, const CAlignModel& a)
     SGFFrec cds = templ;
     cds.type = "CDS";
 
+    TSignedSeqRange tlim = a.TranscriptLimits();
+    TSignedSeqRange rcds = tlim & cds_info.MaxCdsLimits();   // realcdslimits in tcoords
+    if(cds_info.HasStart()) {
+        if(a.Status()&CGeneModel::eReversed)
+            rcds.SetTo(cds_info.Start().GetTo());
+        else
+            rcds.SetFrom(cds_info.Start().GetFrom());
+    }
+
     int phase = 0;
-    if(a.ReadingFrame().NotEmpty() && !a.LeftComplete() && a.Limits().GetFrom() != a.ReadingFrame().GetFrom()) {
-        phase = a.GetAlignMap().FShiftedLen(TSignedSeqRange(a.Limits().GetFrom(),a.ReadingFrame().GetFrom()), CAlignMap::eSinglePoint, CAlignMap::eLeftEnd) - 1;     // extra bases on the left end
-        _ASSERT(phase > 0 && phase < 3);
+    if(cds_info.ReadingFrame().NotEmpty() && ((a.Strand() == ePlus && !cds_info.HasStart()) || (a.Strand() == eMinus && !cds_info.HasStop()))) {   // may have extra bases on the left end
+        phase = (a.Orientation() == ePlus) ? cds_info.ReadingFrame().GetFrom() - tlim.GetFrom() : tlim.GetTo()-cds_info.ReadingFrame().GetTo();
+        _ASSERT(phase < 3);
     }
 
     for(unsigned int i = 0; i < a.Exons().size(); ++i) {
         const CModelExon *e = &a.Exons()[i]; 
 
-        exon.start = e->GetFrom();
-        exon.end = e->GetTo();
+        if(e->Limits().NotEmpty()) {
+            exon.start = e->GetFrom();
+            exon.end = e->GetTo();
+            int ies = ((e->m_fsplice && a.Exons()[i-1].Limits().NotEmpty()) ? exon.start : exon.start+1);
+            int iee = (e->m_ssplice ? exon.end : exon.end-1);
+            exon.attributes["Gap"] = BuildGFF3Gap(exon.start, exon.end, a.GetInDels(ies, iee, false));
+        } else {
+            exon.start = -1;
+            exon.end = -1;
+            exon.attributes["Seq"] = e->m_seq;
+        }
 
-        string target = NStr::Replace(CIdHandler::ToString(*a.GetTargetId()), " ", "%20");
+        string targetid = NStr::Replace(CIdHandler::ToString(*a.GetTargetId()), " ", "%20");
         
         TSignedSeqRange transcript_exon = a.TranscriptExon(i);
-        target += " "+NStr::IntToString(transcript_exon.GetFrom()+1)+" "+NStr::IntToString(transcript_exon.GetTo()+1);
+        string target = " "+NStr::IntToString(transcript_exon.GetFrom()+1)+" "+NStr::IntToString(transcript_exon.GetTo()+1);
         if((a.Status() & CGeneModel::eReversed)!=0) {
             target += " -";
         } else {
             target += " +";
         }
-        exon.attributes["Target"] = target;
+        exon.attributes["Target"] = targetid+target;
 
         if(e->m_ident > 0) {
             exon.attributes["Ident"] = NStr::DoubleToString(e->m_ident);
         }
 
-        if((!e->m_fsplice_sig.empty() && e->m_fsplice) || (!e->m_ssplice_sig.empty() && e->m_ssplice)) {
+        if(!e->m_fsplice_sig.empty() || !e->m_ssplice_sig.empty()) {
             string fs;
-            if(!e->m_fsplice_sig.empty() && e->m_fsplice)
+            if(!e->m_fsplice_sig.empty())
                 fs = e->m_fsplice_sig;
             string ss;
-            if(!e->m_ssplice_sig.empty() && e->m_ssplice)
+            if(!e->m_ssplice_sig.empty())
                 ss = e->m_ssplice_sig;
             if(a.Strand() == ePlus) {
                 exon.attributes["Splices"] = fs+".."+ss;
@@ -1553,18 +1803,30 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, const CAlignModel& a)
             }
         }
 
-        int ies = (e->m_fsplice ? exon.start : exon.start+1);
-        int iee = (e->m_ssplice ? exon.end : exon.end-1);
-        exon.attributes["Gap"] = BuildGFF3Gap(exon.start, exon.end, a.GetInDels(ies, iee, false));
         exons.push_back(exon);
         exon.attributes["Gap"].erase();
         exon.attributes["Ident"].erase();
         exon.attributes["Splices"].erase();
+        exon.attributes["Seq"].erase();
 
-        TSignedSeqRange cds_limits = e->Limits() & a.RealCdsLimits();
-        if (cds_limits.NotEmpty()) {
-            cds.start = cds_limits.GetFrom();
-            cds.end = cds_limits.GetTo();
+        TSignedSeqRange tcds = transcript_exon & rcds;
+        if(tcds.NotEmpty()) {
+            cds.tstart = tcds.GetFrom();
+            cds.tend = tcds.GetTo();
+            cds.start = -1;
+            cds.end = -1;
+            TSignedSeqRange cds_limits = a.GetAlignMap().MapRangeEditedToOrig(tcds, true);
+            if(cds_limits.NotEmpty()) {
+                cds.start = cds_limits.GetFrom();
+                cds.end = cds_limits.GetTo();
+            }
+            string ctarget = " "+NStr::IntToString(tcds.GetFrom()+1)+" "+NStr::IntToString(tcds.GetTo()+1);
+            if((a.Status() & CGeneModel::eReversed)!=0) {
+                ctarget += " -";
+            } else {
+                ctarget += " +";
+            }
+            cds.attributes["Target"] = targetid+ctarget;
             cdss.push_back(cds);
         }
 
@@ -1588,18 +1850,8 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, const CAlignModel& a)
             NON_CONST_ITERATE(vector<SGFFrec>, e, cdss) {
                 if (a.Strand()==ePlus)
                     e->phase = phase;
-                
-                CAlignMap::ERangeEnd le = CAlignMap::eLeftEnd;
-                CAlignMap::ERangeEnd re = CAlignMap::eRightEnd;
-                if((a.HasStart() && a.Strand() == ePlus && a.GetCdsInfo().Start().GetFrom() == e->start) ||
-                   (a.HasStop() && a.Strand() == eMinus && a.GetCdsInfo().Stop().GetFrom() == e->start))
-                        le = CAlignMap::eSinglePoint;
-                if((a.HasStart() && a.Strand() == eMinus && a.GetCdsInfo().Start().GetTo() == e->end) ||
-                   (a.HasStop() && a.Strand() == ePlus && a.GetCdsInfo().Stop().GetTo() == e->end))
-                        re = CAlignMap::eSinglePoint;
 
-                phase = (a.GetAlignMap().FShiftedLen(TSignedSeqRange(e->start,e->end), le, re) - phase)%3;
-
+                phase = (e->tend - e->tstart+1 - phase)%3;
                 if (a.Strand()==eMinus)
                     e->phase = phase;
                 phase = (3-phase)%3;
@@ -1663,6 +1915,7 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
 
     TSignedSeqRange cds;
     int phase = 0;
+    bool tcoords = false;
 
     vector<CModelExon> exons;
     vector<TSignedSeqRange> transcript_exons;
@@ -1710,7 +1963,10 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
                 eident = NStr::StringToDouble(r->attributes["Ident"]);
             }
             
-            exons.push_back(CModelExon(r->start,r->end,false,false,fs,ss,eident));
+            if(r->start >= 0 && r->end >= 0)
+                exons.push_back(CModelExon(r->start,r->end,false,false,fs,ss,eident));
+            else
+                exons.push_back(CModelExon(1,-1,false,false,fs,ss,eident,r->attributes["Seq"]));
             TSignedSeqRange texon(r->tstart,r->tend);
             if(texon.NotEmpty())
                 transcript_exons.push_back(texon);
@@ -1718,31 +1974,27 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
             if(!r->attributes["Target"].empty())
                 attributes["Target"] = r->attributes["Target"];
         } else if (r->type == "CDS") {
-
             _ASSERT((a.Status()&CGeneModel::eUnknownOrientation) == 0);
 
-            TSignedSeqRange cds_exon(r->start,r->end);
             if (r->strand=='+') {
-                if (cds.Empty() || r->start < cds.GetFrom())
+                if (cds.Empty())
                     phase = r->phase;
             } else {
-                if (cds.Empty() || cds.GetTo() < r->end)
-                    phase = r->phase;
+                phase = r->phase;
             }
-            cds.CombineWith(cds_exon);
+            if(r->tstart < 0) {   // old format before ggaps
+                TSignedSeqRange cds_exon(r->start,r->end);
+                cds.CombineWith(cds_exon);
+                tcoords = false;
+            } else {
+                TSignedSeqRange cds_exon(r->tstart,r->tend);
+                cds.CombineWith(cds_exon);
+                tcoords = true;                
+            }
         } else if (r->type == "mRNA_part") {
             mrna_parts.insert(TSignedSeqRange(r->start,r->end));
         }
     }
-
-
-    sort(exons.begin(),exons.end());
-    sort(transcript_exons.begin(),transcript_exons.end());
-    bool notreversed = (a.Status()&CGeneModel::eReversed) == 0;
-    bool plusstrand = a.Strand() != eMinus;
-    EStrand orientation = (notreversed == plusstrand) ? ePlus : eMinus;
-    if(orientation == eMinus)
-       reverse(transcript_exons.begin(),transcript_exons.end());
     
     ITERATE(vector<CModelExon>, e, exons) {
         if (a.Limits().IntersectingWith(e->Limits())) {
@@ -1751,13 +2003,13 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
         set<TSignedSeqRange,Precedence>::iterator p = mrna_parts.lower_bound(*e);
         if (p != mrna_parts.end() && p->GetFrom()==e->Limits().GetFrom())
             a.AddHole();
-        a.AddExon(e->Limits(),e->m_fsplice_sig,e->m_ssplice_sig,e->m_ident);
+        a.AddExon(e->Limits(),e->m_fsplice_sig,e->m_ssplice_sig,e->m_ident,e->m_seq);
     }
 
     sort(indels.begin(),indels.end());
     CAlignMap amap;
     if(!transcript_exons.empty())
-        amap = CAlignMap(a.Exons(), transcript_exons, indels, orientation, NStr::StringToInt(attributes["TargetLen"]));
+        amap = CAlignMap(a.Exons(), transcript_exons, indels, a.Orientation(), NStr::StringToInt(attributes["TargetLen"]));
     else
         amap = CAlignMap(a.Exons(), indels, a.Strand());
 
@@ -1767,10 +2019,15 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
     CCDSInfo cds_info;
 
     if (cds.NotEmpty()) {
-        align.FrameShifts() = amap.GetInDels(true);
-        TSignedSeqRange rf = amap.MapRangeOrigToEdited(cds, false);
+        cds_info = CCDSInfo(false);
 
-        if(notreversed) {
+        align.FrameShifts() = amap.GetInDels(true);
+
+        TSignedSeqRange rf = cds;
+        if(!tcoords)
+            rf = amap.MapRangeOrigToEdited(cds, false);
+
+        if(!(a.Status() & CGeneModel::eReversed)) {
             rf.SetFrom(rf.GetFrom()+phase);
             rf.SetTo(rf.GetTo()-rf.GetLength()%3);
         } else {
@@ -1778,23 +2035,22 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
             rf.SetFrom(rf.GetFrom()+rf.GetLength()%3);
         }
 
-        reading_frame = amap.MapRangeEditedToOrig(rf,false);
-
-        cds_info.SetReadingFrame(reading_frame, false);
-
-        if (a.Strand()==ePlus && a.Limits().GetFrom()<cds.GetFrom())
-            cds_info.Set5PrimeCdsLimit(cds.GetFrom());
-        else if (a.Strand()==eMinus && a.Limits().GetTo()>cds.GetTo())
-            cds_info.Set5PrimeCdsLimit(cds.GetTo());
+        cds_info.SetReadingFrame(rf, false);
     }
         
     align.SetCdsInfo(cds_info);
 
     ParseAttributes(attributes, align);
 
-    cds_info = align.GetCdsInfo();
-    cds_info.SetScore(score, cds_info.OpenCds());
-    align.SetCdsInfo(cds_info);
+    if(cds.NotEmpty()) {
+        CCDSInfo cds_info_t = align.GetCdsInfo();
+        cds_info_t.SetScore(score, cds_info_t.OpenCds());
+        CCDSInfo cds_info_g = cds_info_t.MapFromEditedToOrig(amap);
+        if(cds_info_g.ReadingFrame().NotEmpty())   // successful projection
+            align.SetCdsInfo(cds_info_g);
+        else
+            align.SetCdsInfo(cds_info_t);
+    }
 
     contig_stream_state.slot(is) = rec.seqid;
     return is;

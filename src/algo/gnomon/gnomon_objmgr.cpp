@@ -384,14 +384,22 @@ string CGeneModel::GetCdsDnaSequence (const CResidueVec& contig_sequence) const
     if(ReadingFrame().Empty())
         return kEmptyStr;
 
-    CAlignMap cdsmap(Exons(), FrameShifts(), Strand(), RealCdsLimits());
-    CResidueVec cds;
-    cdsmap.EditedSequence(contig_sequence, cds);
-    TSignedSeqRange mappedcds = cdsmap.MapRangeOrigToEdited(GetCdsInfo().Cds(), false);
-    int ashift = mappedcds.GetFrom()%3;
-    int bshift = ((int)cds.size()-ashift)%3;
+    CAlignMap amap = CGeneModel::GetAlignMap();
+    CCDSInfo cds_info = GetCdsInfo();
+    if(cds_info.IsMappedToGenome())
+        cds_info = cds_info.MapFromOrigToEdited(amap);
+    int cds_len = cds_info.Cds().GetLength();
+    int cds_start = cds_info.Cds().GetFrom()-TranscriptLimits().GetFrom();
 
-    string cds_seq((char*)&cds[ashift],cds.size()-ashift-bshift);
+    CResidueVec mrna;
+    amap.EditedSequence(contig_sequence,mrna);
+
+    string cds_seq(cds_len,'A');
+    copy(mrna.begin()+cds_start, mrna.begin()+cds_start+cds_len, cds_seq.begin());
+
+    if(Status() & eReversed)
+        ReverseComplement(cds_seq.begin(),cds_seq.end());
+
     return cds_seq;
 }
 

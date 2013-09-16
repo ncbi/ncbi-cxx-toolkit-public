@@ -61,6 +61,8 @@ private:
     CScope& m_Scope;
 };
 
+string GetDNASequence(CConstRef<objects::CSeq_id> id, CScope& scope);
+
 END_SCOPE(gnomon)
 END_NCBI_SCOPE
 

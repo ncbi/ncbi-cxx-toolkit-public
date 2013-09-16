@@ -113,24 +113,38 @@ private:
 
 class CAlignCollapser {
 public:
-    CAlignCollapser();
+    CAlignCollapser(string contig = "", CScope* scope = 0);
     void AddAlignment(const CAlignModel& align);
     void FilterAlignments();
     void GetCollapsedAlgnments(TAlignModelClusterSet& clsset);
+    TInDels GetGenomicGaps() const { return m_align_gaps; };
 
     static void SetupArgDescriptions(CArgDescriptions* arg_desc);
 
     struct SIntronData {
-        SIntronData() : m_weight(0.), m_ident(0.), m_est_support(0), m_keep_anyway(false) {}
+        SIntronData() : m_weight(0.), m_ident(0.), m_est_support(0), m_keep_anyway(false), m_selfsp_support(false) {}
         double m_weight;
         double m_ident;
         int m_est_support;
         bool m_keep_anyway;
+        bool m_selfsp_support;
     };
     typedef map<SIntron,SIntronData> TAlignIntrons;
 
 private:
     void CollapsIdentical();
+    enum {
+        efill_left = 1, 
+        efill_right = 2, 
+        efill_middle = 4
+    };
+    void CleanExonEdge(int ie, CAlignModel& align, const string& transcript, bool right_edge) const; 
+    CAlignModel FillGapsInAlignmentAndAddToGenomicGaps(const CAlignModel& align, int fill);
+    bool CheckAndInsert(const CAlignModel& align, TAlignModelClusterSet& clsset) const;
+    bool RemoveNotSupportedIntronsFromProt(CAlignModel& align);
+    bool RemoveNotSupportedIntronsFromTranscript(CAlignModel& align) const;
+    void ClipNotSupportedFlanks(CAlignModel& align, double clip_threshold);
+
     typedef map< CAlignCommon,deque<SAlignIndividual> > Tdata;
     Tdata m_aligns;
     typedef map< CAlignCommon,deque<char> > Tidpool;
@@ -145,6 +159,17 @@ private:
     bool m_collapssr;
     bool m_filtermrna;
     bool m_filterprots;
+
+    CScope* m_scope;
+    typedef map<int,int> TIntMap;
+    TIntMap m_genomic_gaps_len;
+    TInDels m_align_gaps;
+    string m_contig;
+    string m_contig_name;
+    CResidueVec m_contigrv;
+
+    int m_left_end;
+    vector<double> m_coverage;
 };
 
 END_SCOPE(gnomon)

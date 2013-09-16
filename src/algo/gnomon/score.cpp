@@ -1205,7 +1205,7 @@ double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CERe
         for(int i = 1; i < num_exons; ++i) {
             shift += mrnamap.FShiftedLen(exons[i-1].GetFrom(),exons[i-1].GetTo());
             
-            if(exons[i-1].m_ssplice) {
+            if(exons[i-1].m_ssplice && exons[i-1].m_ssplice_sig != "XX") {
                 int l = exons[i-1].GetTo();
                 double scr = donor.Score(ds[ePlus],l);
                 if(scr == BadScore()) {
@@ -1220,7 +1220,7 @@ double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CERe
                 splicescr[shift] = scr;
             }
 
-            if(exons[i].m_fsplice) {
+            if(exons[i].m_fsplice && exons[i].m_fsplice_sig != "XX") {
                 int l = exons[i].GetFrom()-1;
                 double scr = acceptor.Score(ds[ePlus],l);
                 if(scr == BadScore()) {
@@ -1240,7 +1240,7 @@ double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CERe
         for(int i = 1; i < num_exons; ++i) {
             shift -= mrnamap.FShiftedLen(exons[i-1].GetFrom(),exons[i-1].GetTo());
             
-            if(exons[i-1].m_ssplice) {
+            if(exons[i-1].m_ssplice && exons[i-1].m_ssplice_sig != "XX") {
                 int l = contig_len-2-exons[i-1].GetTo();
                 double scr = acceptor.Score(ds[eMinus],l);
                 if(scr == BadScore()) {
@@ -1255,7 +1255,7 @@ double CGnomonEngine::SelectBestReadingFrame(const CGeneModel& model, const CERe
                 splicescr[shift] = scr;
             }
 
-            if(exons[i].m_fsplice) {
+            if(exons[i].m_fsplice && exons[i].m_fsplice_sig != "XX") {
                 int l = contig_len-1-exons[i].GetFrom();
                 double scr = donor.Score(ds[eMinus],l);
                 if(scr == BadScore()) {

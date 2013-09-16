@@ -36,6 +36,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/seq_vector.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(gnomon)
@@ -79,6 +80,19 @@ CRef<CSeq_id> CIdHandler::GnomonMRNA(Int8 id)
 CRef<CSeq_id> CIdHandler::GnomonProtein(Int8 id)
 {
     return CRef<CSeq_id>(new CSeq_id("gnl|GNOMON|" + NStr::Int8ToString(id) + ".p"));
+}
+
+string GetDNASequence(CConstRef<objects::CSeq_id> id, CScope& scope) 
+{
+    CBioseq_Handle bh (scope.GetBioseqHandle(*id));
+    if (!bh) {
+        NCBI_THROW(CException, eUnknown, "Sequence '"+CIdHandler::ToString(*id)+"' retrieval failed");
+    }
+    CSeqVector sv (bh.GetSeqVector(CBioseq_Handle::eCoding_Iupac));
+    string seq;
+    sv.GetSeqData(0, sv.size(), seq);
+
+    return seq;
 }
 
 END_SCOPE(gnomon)
