@@ -58,7 +58,7 @@ class CVariationNormalization_base_cache
 protected:
     static void x_rotate_left(string &v);
     static void x_rotate_right(string &v);
-    static void x_PrefetchSequence(CScope &scope, string accession);
+    static void x_PrefetchSequence(CScope &scope, CRef<CSeq_id> seq_id);
     static string x_GetSeq(int pos, int length);
     static int x_GetSeqSize();
 #ifdef SEQVEC_CACHE
@@ -77,7 +77,7 @@ public:
     static void x_Shift(CRef<CVariation>& var, CScope &scope);
     static void x_Shift(CRef<CSeq_annot>& var, CScope &scope);
     static void x_Shift(CRef<CVariation_ref>& var, CScope &scope);
-    
+    static void x_ProcessInstance(CVariation_inst &inst, CSeq_loc &loc, bool &is_deletion,  CSeq_literal *&refref, string &ref, int &pos_left, int &pos_right, int &new_pos_left, int &new_pos_right);    
     static bool x_ProcessShift(string &a, int &pos_left, int &pos_right) {return T::x_ProcessShift(a,pos_left,pos_right);}
     static void x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right) {T::x_ModifyLocation(loc,literal,a,pos_left,pos_right);}
 };
