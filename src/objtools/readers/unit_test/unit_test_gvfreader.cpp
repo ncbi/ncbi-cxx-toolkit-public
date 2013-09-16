@@ -128,7 +128,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo)
     }
 
     string tempName = CDirEntry::GetTmpName();
-    CNcbiOfstream tempFile(tempName);
+    CNcbiOfstream tempFile(tempName.c_str());
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
         //cerr << MSerial_AsnText << **cit;
         tempFile << MSerial_AsnText << **cit;
