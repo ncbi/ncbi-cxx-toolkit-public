@@ -36,6 +36,7 @@ static char const rcsid[] =
 
 #include <ncbi_pch.hpp>
 #include <algo/blast/api/psiblast.hpp>
+#include <algo/blast/api/psibl2seq.hpp>
 
 // PSSM Engine includes
 #include <algo/blast/api/pssm_engine.hpp>
@@ -147,9 +148,20 @@ CRef<CSearchResultSet> CDeltaBlast::Run(void)
         // Run psiblast with computed pssm
         CConstRef<CPSIBlastOptionsHandle> psi_opts(
                                              m_Options.GetNonNullPointer());
-        CPsiBlast psiblast(m_Pssm.back(), m_Subject, psi_opts);
-        psiblast.SetNumberOfThreads(GetNumberOfThreads());
-        CRef<CSearchResultSet> results = psiblast.Run();
+        CRef<CSearchResultSet> results;
+        // if the subject sequences are in a blast database, use psiblast
+        if (m_Subject->IsBlastDb()) {
+            CPsiBlast psiblast(m_Pssm.back(), m_Subject, psi_opts);
+            psiblast.SetNumberOfThreads(GetNumberOfThreads());
+            results = psiblast.Run();
+        }
+        else {
+            // otherwise use psiblast-2-sequences;
+            // this is needed because blast formatter requires specifically
+            // generated results for blast-2-sequences
+            CPsiBl2Seq psiblast(m_Pssm.back(), m_Subject, psi_opts);
+            results = psiblast.Run();
+        }
 
         if (m_Results.Empty()) {
             m_Results = results;

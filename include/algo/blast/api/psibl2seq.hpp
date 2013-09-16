@@ -74,6 +74,24 @@ public:
                CRef<IQueryFactory> subject,
                CConstRef<CPSIBlastOptionsHandle> options);
 
+    /// Constructor to compare a PSSM against protein sequences
+    /// @param pssm 
+    ///     PSSM to use as query. This must contain the query sequence which
+    ///     represents the master sequence for the PSSM. PSSM data might be
+    ///     provided as scores or as frequency ratios, in which case the PSSM 
+    ///     engine will be invoked to convert them to scores (and save them as a
+    ///     effect). If both the scores and frequency ratios are provided, the 
+    ///     scores are given priority and are used in the search. [in|out]
+    ///     @todo how should scaled PSSM scores be handled?
+    /// @param subject 
+    ///     Subject sequence(s) to search [in]
+    /// @param options 
+    ///     PSI-BLAST options [in]
+    CPsiBl2Seq(CRef<objects::CPssmWithParameters> pssm,
+               CRef<CLocalDbAdapter> subject,
+               CConstRef<CPSIBlastOptionsHandle> options);
+
+
     /// Constructor to compare protein sequences in an object manager-free
     /// manner.
     /// @param query 

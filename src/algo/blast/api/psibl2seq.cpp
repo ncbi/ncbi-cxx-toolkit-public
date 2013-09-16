@@ -58,6 +58,14 @@ CPsiBl2Seq::CPsiBl2Seq(CRef<objects::CPssmWithParameters> pssm,
     m_Impl = new CPsiBlastImpl(pssm, m_Subject, options);
 }
 
+CPsiBl2Seq::CPsiBl2Seq(CRef<objects::CPssmWithParameters> pssm,
+                       CRef<CLocalDbAdapter> subject,
+                       CConstRef<CPSIBlastOptionsHandle> options)
+{
+    m_Subject = subject;
+    m_Impl = new CPsiBlastImpl(pssm, m_Subject, options);
+}
+
 CPsiBl2Seq::CPsiBl2Seq(CRef<IQueryFactory> query,
                        CRef<IQueryFactory> subject,
                        CConstRef<CBlastProteinOptionsHandle> options)
