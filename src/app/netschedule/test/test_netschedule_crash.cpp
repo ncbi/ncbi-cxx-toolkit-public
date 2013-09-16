@@ -67,10 +67,10 @@ public:
 
     void GetStatus( CNetScheduleExecutor &        executor,
                     const vector<unsigned int> &  jobs );
-    void GetReturn( vector<CNetScheduleAPI *> & clients,
+    void GetReturn( vector<CNetScheduleAPI> &   clients,
                     unsigned int                count,
                     unsigned int                nclients );
-    vector<unsigned int>  Submit( vector<CNetScheduleAPI *> & clients,
+    vector<unsigned int>  Submit( vector<CNetScheduleAPI> &   clients,
                                   const string &              service,
                                   unsigned int                jcount,
                                   unsigned int                naff,
@@ -78,7 +78,7 @@ public:
                                   unsigned int                notif_port,
                                   unsigned int                nclients,
                                   const string &              queue );
-    vector<unsigned int>  GetDone( vector<CNetScheduleAPI *> &  clients,
+    vector<unsigned int>  GetDone( vector<CNetScheduleAPI> &    clients,
                                    unsigned int                 nclients );
     void  MainLoop( CNetScheduleSubmitter &  submitter,
                     CNetScheduleExecutor &   executor,
@@ -178,7 +178,7 @@ void CTestNetScheduleCrash::Init(void)
 
 
 vector<unsigned int>
-CTestNetScheduleCrash::Submit( vector<CNetScheduleAPI *> &  clients,
+CTestNetScheduleCrash::Submit( vector<CNetScheduleAPI> &    clients,
                                const string &               service,
                                unsigned int                 jcount,
                                unsigned int                 naff,
@@ -196,8 +196,8 @@ CTestNetScheduleCrash::Submit( vector<CNetScheduleAPI *> &  clients,
     string                  group = "";
 
 
-    CNetServer              server = clients[0]->GetService().Iterate().GetServer();
-    CNetScheduleSubmitter   submitter = clients[0]->GetSubmitter();
+    CNetServer              server = clients[0].GetService().Iterate().GetServer();
+    CNetScheduleSubmitter   submitter = clients[0].GetSubmitter();
 
 
     jobs.reserve(jcount);
@@ -207,8 +207,8 @@ CTestNetScheduleCrash::Submit( vector<CNetScheduleAPI *> &  clients,
     for (unsigned i = 0; i < jcount; ++i) {
 
         if (nclients > 0) {
-            server = clients[client]->GetService().Iterate().GetServer();
-            submitter = clients[client]->GetSubmitter();
+            server = clients[client].GetService().Iterate().GetServer();
+            submitter = clients[client].GetSubmitter();
             if (++client >= nclients)
                 client = 0;
         }
@@ -237,7 +237,8 @@ CTestNetScheduleCrash::Submit( vector<CNetScheduleAPI *> &  clients,
             job.group = group;
             submitter.SubmitJob(job);
 
-            CNetScheduleKey     key( job.job_id );
+            CNetScheduleKey     key( job.job_id,
+                                     clients[client].GetCompoundIDPool() );
             jobs.push_back( key.id );
             if (m_KeyGenerator == NULL)
                 m_KeyGenerator = new CNetScheduleKeyGenerator( key.host,
@@ -258,7 +259,8 @@ CTestNetScheduleCrash::Submit( vector<CNetScheduleAPI *> &  clients,
             CNetServer::SExecResult     result = server.ExecWithRetry( cmd );
 
             // Dirty hack: 'OK:' need to be stripped
-            CNetScheduleKey     key( result.response.c_str() );
+            CNetScheduleKey     key( result.response.c_str(),
+                                     clients[client].GetCompoundIDPool() );
             jobs.push_back( key.id );
             if (m_KeyGenerator == NULL)
                 m_KeyGenerator = new CNetScheduleKeyGenerator( key.host,
@@ -316,7 +318,7 @@ void CTestNetScheduleCrash::GetStatus( CNetScheduleExecutor &        executor,
 
 
 /* Returns up to count jobs */
-void  CTestNetScheduleCrash::GetReturn( vector<CNetScheduleAPI *> & clients,
+void  CTestNetScheduleCrash::GetReturn( vector<CNetScheduleAPI> &   clients,
                                         unsigned int                count,
                                         unsigned int                nclients )
 {
@@ -326,14 +328,14 @@ void  CTestNetScheduleCrash::GetReturn( vector<CNetScheduleAPI *> & clients,
     vector<TJobIdAuthTokenPair>    jobs_returned;
     jobs_returned.reserve(count);
     unsigned int            client = 0;
-    CNetScheduleExecutor    executor = clients[0]->GetExecutor();
+    CNetScheduleExecutor    executor = clients[0].GetExecutor();
 
     unsigned        cnt = 0;
     CStopWatch      sw(CStopWatch::eStart);
 
     for (; cnt < count; ++cnt) {
         if (nclients > 0) {
-            executor = clients[client]->GetExecutor();
+            executor = clients[client].GetExecutor();
             if (++client >= nclients)
                 client = 0;
         }
@@ -376,7 +378,7 @@ void  CTestNetScheduleCrash::GetReturn( vector<CNetScheduleAPI *> & clients,
 
 
 vector<unsigned int>
-CTestNetScheduleCrash::GetDone( vector<CNetScheduleAPI *> & clients,
+CTestNetScheduleCrash::GetDone( vector<CNetScheduleAPI> &   clients,
                                 unsigned int                nclients )
 {
     unsigned                cnt = 0;
@@ -384,7 +386,7 @@ CTestNetScheduleCrash::GetDone( vector<CNetScheduleAPI *> & clients,
     jobs_processed.reserve(10000);
     unsigned int            client = 0;
 
-    CNetScheduleExecutor    executor = clients[0]->GetExecutor();
+    CNetScheduleExecutor    executor = clients[0].GetExecutor();
 
 
     NcbiCout << NcbiEndl << "Processing..." << NcbiEndl;
@@ -392,7 +394,7 @@ CTestNetScheduleCrash::GetDone( vector<CNetScheduleAPI *> & clients,
     CStopWatch      sw(CStopWatch::eStart);
     for (; 1; ++cnt) {
         if (nclients > 0) {
-            executor = clients[client]->GetExecutor();
+            executor = clients[client].GetExecutor();
             if (++client >= nclients)
                 client = 0;
         }
@@ -402,7 +404,8 @@ CTestNetScheduleCrash::GetDone( vector<CNetScheduleAPI *> & clients,
         if (!job_exists)
             break;
 
-        CNetScheduleKey     key( job.job_id );
+        CNetScheduleKey     key( job.job_id,
+                                 clients[client].GetCompoundIDPool() );
         jobs_processed.push_back( key.id );
 
         job.output = "JOB DONE ";
@@ -504,7 +507,7 @@ int CTestNetScheduleCrash::Run(void)
     bool                main_only = args["main"];
 
 
-    vector<CNetScheduleAPI *>       clients;
+    vector<CNetScheduleAPI>         clients;
     pid_t                           pid = getpid();
 
     if (nclients > 0 && main_only == false) {
@@ -512,29 +515,29 @@ int CTestNetScheduleCrash::Run(void)
             char        buffer[ 64 ];
             sprintf( buffer, "node_%d_%d", pid, k );
 
-            CNetScheduleAPI *   cl = new CNetScheduleAPI(service, "crash_test", queue);
-            cl->SetProgramVersion("crash_test wn 1.0.4");
-            cl->SetClientNode( buffer );
-            cl->SetClientSession("crash_test_session");
+            CNetScheduleAPI     cl = CNetScheduleAPI(service, "crash_test", queue);
+            cl.SetProgramVersion("crash_test wn 1.0.4");
+            cl.SetClientNode( buffer );
+            cl.SetClientSession("crash_test_session");
 
             clients.push_back(cl);
         }
     } else {
         char        buffer[ 64 ];
         sprintf( buffer, "node_%d", pid );
-        CNetScheduleAPI *   cl = new CNetScheduleAPI(service, "crash_test", queue);
-        cl->SetProgramVersion("crash_test wn 1.0.4");
-        cl->SetClientNode( buffer );
-        cl->SetClientSession("crash_test_session");
+        CNetScheduleAPI     cl = CNetScheduleAPI(service, "crash_test", queue);
+        cl.SetProgramVersion("crash_test wn 1.0.4");
+        cl.SetClientNode( buffer );
+        cl.SetClientSession("crash_test_session");
 
         clients.push_back(cl);
     }
 
     // At least one exists for sure
-    clients[0]->GetAdmin().PrintServerVersion(NcbiCout);
+    clients[0].GetAdmin().PrintServerVersion(NcbiCout);
 
-    CNetScheduleSubmitter               submitter = clients[0]->GetSubmitter();
-    CNetScheduleExecutor                executor = clients[0]->GetExecutor();
+    CNetScheduleSubmitter               submitter = clients[0].GetSubmitter();
+    CNetScheduleExecutor                executor = clients[0].GetExecutor();
 
     if (naff > 0) {
         // Enable retrieving affinities
@@ -544,7 +547,6 @@ int CTestNetScheduleCrash::Run(void)
 
     if (main_only) {
         this->MainLoop(submitter, executor, total_jobs, queue);
-        delete clients[0];
         return 0;
     }
 
@@ -607,10 +609,6 @@ int CTestNetScheduleCrash::Run(void)
         /* ----- Get status ----- */
         this->GetStatus(executor, jobs);
     }
-
-    for (vector<CNetScheduleAPI *>::iterator  k = clients.begin();
-         k != clients.end(); ++k)
-        delete *k;
 
     return 0;
 }
