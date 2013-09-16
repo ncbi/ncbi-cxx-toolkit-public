@@ -107,11 +107,20 @@ public:
 
         float  m_score;   // dynprog score (normalized)
         
+
+        //old style:
+
         void ImproveFromLeft(const char* seq1, const char* seq2,
                              CConstRef<CSplicedAligner> aligner);
         void ImproveFromRight(const char* seq1, const char* seq2,
                               CConstRef<CSplicedAligner> aligner);
-                              
+                    
+        //trimming, new style:
+        void ImproveFromLeft1(const char* seq1, const char* seq2,
+                             CConstRef<CSplicedAligner> aligner);
+        void ImproveFromRight1(const char* seq1, const char* seq2,
+                              CConstRef<CSplicedAligner> aligner);
+
         size_t GapLength(); //count total gap length                              
         bool IsLowComplexityExon(const char *rna_seq);
         
