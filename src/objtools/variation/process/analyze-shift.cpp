@@ -84,7 +84,7 @@ private:
     virtual void Init(void);
     virtual int Run ();
     virtual void Exit(void);
-    void ProcessHGVS(string &expression, CRef<CScope> scope, CHgvsReader &reader,int &pos_left, int &pos_right);
+    bool ProcessHGVS(string &expression, CRef<CScope> scope, CHgvsReader &reader,int &pos_left, int &pos_right);
 };
 
 
@@ -102,20 +102,38 @@ void CAnalyzeShiftApp::Exit(void)
 }
 
 
-void CAnalyzeShiftApp::ProcessHGVS(string &expression, CRef<CScope> scope, CHgvsReader &reader, int &pos_left, int &pos_right)
+bool CAnalyzeShiftApp::ProcessHGVS(string &expression, CRef<CScope> scope, CHgvsReader &reader, int &pos_left, int &pos_right)
 {
   vector<CRef<CSeq_annot> > annots;
   stringstream line;
   line << expression;
 
   reader.ReadSeqAnnots(annots, line);
-  _ASSERT(annots.size() == 1);
+  if (annots.size() != 1) return false;
   CRef<CSeq_annot> a(new CSeq_annot);
   a->Assign(*annots.front());
+  //cout <<  MSerial_AsnText << *a;
   CVariationNormalization::NormalizeVariation(a,CVariationNormalization::eDbSnp,*scope);
-  _ASSERT(!a->GetData().GetFtable().empty() && a->GetData().GetFtable().size() == 1);
+  if (a->GetData().GetFtable().empty() || a->GetData().GetFtable().size() != 1) return false;
+  if (!a->GetData().GetFtable().front()->IsSetLocation()) return false;
   const CSeq_loc &loc = a->GetData().GetFtable().front()->GetLocation();
-  string ref = a->GetData().GetFtable().front()->GetData().GetVariation().GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
+  string ref;
+  if (a->GetData().GetFtable().front()->GetData().GetVariation().GetData().IsSet())
+  {
+      for (CVariation_ref::TData::TSet::TVariations::const_iterator inst = a->GetData().GetFtable().front()->GetData().GetVariation().GetData().GetSet().GetVariations().begin(); 
+           inst != a->GetData().GetFtable().front()->GetData().GetVariation().GetData().GetSet().GetVariations().end(); ++inst)
+          if ( (*inst)->IsSetData() && (*inst)->GetData().IsInstance() && (*inst)->GetData().GetInstance().IsSetDelta() && (*inst)->GetData().GetInstance().GetDelta().size() == 1 && 
+               (*inst)->GetData().GetInstance().GetDelta().front()->IsSetSeq() && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().IsLiteral() &&
+               (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
+              ref = (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
+  }
+  else if (a->GetData().GetFtable().front()->GetData().GetVariation().GetData().IsInstance())
+      ref = a->GetData().GetFtable().front()->GetData().GetVariation().GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
+  else
+      return false;
+
+  if (ref.empty()) return false;
+
   if (loc.IsPnt())
   {
       pos_left = loc.GetPnt().GetPoint();
@@ -126,6 +144,9 @@ void CAnalyzeShiftApp::ProcessHGVS(string &expression, CRef<CScope> scope, CHgvs
       pos_left = loc.GetInt().GetFrom();
       pos_right = loc.GetInt().GetTo()+ref.size()-1; // Note - eDbSnp points to the beginning of the right edge, we need the end.
   }
+  else return false;
+
+  return true;
 }
 
 
@@ -165,15 +186,18 @@ int CAnalyzeShiftApp::Run()
             int pos_right = NStr::StringToInt(stop);
             int new_pos_left = pos_left;
             int new_pos_right = pos_right;
-            ProcessHGVS(hgvs,scope,reader,new_pos_left,new_pos_right);
-            bool is_shiftable = false;
-            if (new_pos_left != pos_left || new_pos_right != pos_right)
-                is_shiftable = true;
-            ostr <<snp_id<<"|"<<hgvs<<"|"<<isClinical<<"|"<<is_shiftable;
-            if (is_shiftable)
-                ostr << "|" << pos_left-new_pos_left<<"|"<<new_pos_right-pos_right<<"|"<<new_pos_left<<"|"<<new_pos_right;
-            ostr<<endl;
-
+            if (ProcessHGVS(hgvs,scope,reader,new_pos_left,new_pos_right))
+            {
+                bool is_shiftable = false;
+                if (new_pos_left != pos_left || new_pos_right != pos_right)
+                    is_shiftable = true;
+                ostr <<snp_id<<"|"<<hgvs<<"|"<<isClinical<<"|"<<is_shiftable;
+                if (is_shiftable)
+                    ostr << "|" << pos_left-new_pos_left<<"|"<<new_pos_right-pos_right<<"|"<<new_pos_left<<"|"<<new_pos_right<<"|";
+                ostr<<endl;
+            }
+            else
+                ostr << line <<"ERROR_HGVS_PROCESSING"<<endl;
         }
     }
 
