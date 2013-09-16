@@ -1842,6 +1842,10 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
     }
 
     m_segments.resize(0);
+ 
+    string test_type = GetTestType();
+
+    
     while(true) {
 
         if(m_segments.size() > 0) {
@@ -1892,7 +1896,11 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 const double min_idty (len >= kMinTermExonSize?
                                        m_MinExonIdty:
                                        max(m_MinExonIdty, kMinTermExonIdty));
-                s.ImproveFromLeft(Seq1, Seq2, m_aligner);                
+                if(test_type == kTestType_20_28_90_cut20) {
+                        s.ImproveFromLeft1(Seq1, Seq2, m_aligner);                
+                } else {
+                        s.ImproveFromLeft(Seq1, Seq2, m_aligner);                
+                }
                 if(s.m_idty >= min_idty) {
                     break;
                 }
@@ -1910,8 +1918,12 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 const double min_idty (len >= kMinTermExonSize?
                                        m_MinExonIdty:
                                        max(m_MinExonIdty, kMinTermExonIdty));
-                s.ImproveFromRight(Seq1, Seq2, m_aligner);
-                if(s.m_idty >= min_idty) {
+                if(test_type == kTestType_20_28_90_cut20) {
+                        s.ImproveFromRight1(Seq1, Seq2, m_aligner);                
+                } else {
+                        s.ImproveFromRight(Seq1, Seq2, m_aligner);                
+                }
+                 if(s.m_idty >= min_idty) {
                     break;
                 }
             }
@@ -1923,16 +1935,22 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         for(k0 = 0; k0 < seg_dim; ++k0) {
             if(!segments[k0].m_exon) {
                 if( k0 > 0 && segments[k0-1].m_exon) {
-                    segments[k0-1].ImproveFromRight(Seq1, Seq2, m_aligner);
-                }
+                    if(test_type == kTestType_20_28_90_cut20) {
+                            segments[k0-1].ImproveFromRight1(Seq1, Seq2, m_aligner);                
+                    } else {
+                            segments[k0-1].ImproveFromRight(Seq1, Seq2, m_aligner);                
+                    }
+               }
                 if( k0 + 1 < seg_dim && segments[k0+1].m_exon) {
-                    segments[k0+1].ImproveFromLeft(Seq1, Seq2, m_aligner);
+                    if(test_type == kTestType_20_28_90_cut20) {
+                            segments[k0+1].ImproveFromLeft1(Seq1, Seq2, m_aligner);                
+                    } else {
+                            segments[k0+1].ImproveFromLeft(Seq1, Seq2, m_aligner);                
+                    }
                 }
             }
         }
 
-
-        string test_type = GetTestType();
 
         // turn to gaps exons with low identity
         for(size_t k (0); k < seg_dim; ++k) {
@@ -1967,7 +1985,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 drop = nc_prev || nc_next;
             }
        //20_28_90 TEST MODE
-         } else if (test_type == kTestType_20_28_90 )  { // test mode
+         } else if (test_type == kTestType_20_28_90 || test_type == kTestType_20_28_90_cut20 )  { // test mode
             if(s.m_idty < m_MinExonIdty) {
                 drop = true; // always make gaps on low identity
             } else { // deal with exons adjacent to gaps
@@ -2068,7 +2086,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 }
             }
        //20_28_90 TEST MODE
-        } else if (test_type == kTestType_20_28_90 )  { // test mode
+        } else if (test_type == kTestType_20_28_90 || test_type == kTestType_20_28_90_cut20 )  { // test mode
             //already took care of, see above
         } else {
               string msg = "test type \"" + test_type + "\" is not supported.";
