@@ -114,6 +114,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "MGI", CDbtag::eDbtagType_MGI },
     { "MIM", CDbtag::eDbtagType_MIM },
     { "MaizeGDB", CDbtag::eDbtagType_MaizeGDB },
+    { "MedGen", CDbtag::eDbtagType_MedGen },
     { "MycoBank", CDbtag::eDbtagType_MycoBank },
     { "NBRC", CDbtag::eDbtagType_IFO },
     { "NMPDR", CDbtag::eDbtagType_NMPDR },
@@ -650,7 +651,8 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_ViPR, "http://www.viprbrc.org/brc/viprStrainDetails.do?viprSubmissionId=" },
     { CDbtag::eDbtagType_RefSeq, "http://www.ncbi.nlm.nih.gov/nuccore/" },
     { CDbtag::eDbtagType_EnsemblGenomes, "http://ensemblgenomes.org/id/" },
-    { CDbtag::eDbtagType_TubercuList, "http://tuberculist.epfl.ch/quicksearch.php?gene+name=" }
+    { CDbtag::eDbtagType_TubercuList, "http://tuberculist.epfl.ch/quicksearch.php?gene+name=" },
+    { CDbtag::eDbtagType_MedGen, "http://www.ncbi.nlm.nih.gov/medgen/" }
 };
 
 typedef CStaticPairArrayMap<CDbtag::EDbtagType, const char*> TUrlPrefixMap;
