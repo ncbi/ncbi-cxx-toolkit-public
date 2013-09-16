@@ -2583,16 +2583,19 @@ void CFeature_table_reader_imp::x_ProcessMsg(
     const std::string & strQualifierValue,
     const ILineError::TVecOfLines & vecOfOtherLines )
 {
-    CObjReaderLineException err (eSeverity, uLine, "", eProblem, strSeqId, strFeatureName, strQualifierName, strQualifierValue);
+    CRef<CObjReaderLineException> pErr ( 
+        CObjReaderLineException::Create(
+        eSeverity, uLine, "", eProblem, strSeqId, strFeatureName, 
+        strQualifierName, strQualifierValue));
     ITERATE( ILineError::TVecOfLines, line_it, vecOfOtherLines ) {
-        err.AddOtherLine(*line_it);
+        pErr->AddOtherLine(*line_it);
     }
     if (pMessageListener == 0) {
-        throw (err);
+        pErr->Throw();
     }
 
-    if ( ! pMessageListener->PutError(err) ) {
-        throw(err);
+    if ( ! pMessageListener->PutError(*pErr) ) {
+        pErr->Throw();
     }
 }
 
@@ -2981,6 +2984,12 @@ bool CFeature_table_reader_imp::ParseInitialFeatureLine (
         return false;
     }
     line = line.substr( kFeatureStr.length() ); // remove "Feature"
+
+    // throw out any non-space characters at the beginning,
+    // so we can, for example, handle ">Features" (note the "s")
+    while( ! line.empty() && line[0] != ' ' ) {
+        line = line.substr(1);
+    }
 
     // extract seqid and annotname
     NStr::TruncateSpacesInPlace(line, NStr::eTrunc_Begin);

@@ -91,16 +91,17 @@
         const size_t uLineNum_49518053 = (_uLineNum);                   \
         stringstream err_strm_49518053;                                 \
         err_strm_49518053 << _MessageStrmOps;                           \
-        CObjReaderLineException lineExpt(                               \
-            (_eSeverity), uLineNum_49518053,                            \
-            err_strm_49518053.str(),                                    \
-            (_eProblem),                                                \
-            sSeqId_49518053, (_sFeature),                               \
-            (_sQualName), (_sQualValue),                                \
-            CObjReaderParseException::_eErrCode);                       \
+        CRef<CObjReaderLineException> pLineExpt(                        \
+            CObjReaderLineException::Create(                            \
+                (_eSeverity), uLineNum_49518053,                        \
+                err_strm_49518053.str(),                                \
+                (_eProblem),                                            \
+                sSeqId_49518053, (_sFeature),                           \
+                (_sQualName), (_sQualValue),                            \
+                CObjReaderParseException::_eErrCode) );                 \
         if ( ! pMessageListener && (_eSeverity) <= eDiag_Warning ) {    \
-            ERR_POST_X(1, "FASTA-Reader: Warning: " + lineExpt.Message()); \
-        } else if ( ! pMessageListener || ! pMessageListener->PutError( lineExpt ) ) \
+            ERR_POST_X(1, "FASTA-Reader: Warning: " + pLineExpt->Message()); \
+        } else if ( ! pMessageListener || ! pMessageListener->PutError( *pLineExpt ) ) \
         {                                                               \
             NCBI_THROW2(CObjReaderParseException, _eErrCode,            \
                         err_strm_49518053.str(), uLineNum_49518053 );   \
@@ -767,7 +768,8 @@ bool CFastaReader::ParseIDs(
 
         // before throwing an ID-too-long error, check if what we
         // think is a "sequence ID" is actually sequence data
-        if( CreateWarningsForSeqDataInTitle(s, LineNumber(), pMessageListener) ) {
+        CMessageListenerLenient dummy_err_container; // so we can ignore them
+        if( CreateWarningsForSeqDataInTitle(s, LineNumber(), &dummy_err_container) ) {
             // it's actually seq data
             return false;
         }

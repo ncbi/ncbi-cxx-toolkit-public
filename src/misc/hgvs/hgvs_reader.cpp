@@ -150,13 +150,14 @@ CHgvsReader::ReadSeqAnnot(
             varUtil.AsVariation_feats(*var, annot->SetData().SetFtable());
         }
         catch (const variation::CHgvsParser::CHgvsParserException& e) {
-            CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                eDiag_Warning,
                0,
                string("CHgvsReader::ReadSeqAnnot Error [") + e.GetErrCodeString() + "] " + e.GetMsg(),
                ILineError::eProblem_GeneralParsingError
-            );
-            ProcessWarning(err, pEC);
+            ) );
+            ProcessWarning(*pErr, pEC);
         }
     }
 

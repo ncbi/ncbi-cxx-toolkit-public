@@ -789,31 +789,34 @@ CRepeatMaskerReader::ReadSeqAnnot(ILineReader& lr, IMessageListener* pMessageLis
 
         SRepeatRegion mask_data;
         if ( ! ParseRecord( line, mask_data ) ) {
-            CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 lr.GetLineNumber(),
-                "RepeatMasker Reader: Parse error in record = " + line);
-            ProcessError(err, pMessageListener);
+                "RepeatMasker Reader: Parse error in record = " + line) );
+            ProcessError(*pErr, pMessageListener);
             continue;
         }
 
         if ( ! VerifyData( mask_data ) ) {
-            CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 lr.GetLineNumber(),
-                "RepeatMasker Reader: Verification error in record = " + line);
-            ProcessError(err, pMessageListener);
+                "RepeatMasker Reader: Verification error in record = " + line) );
+            ProcessError(*pErr, pMessageListener);
             continue;
         }
 
         CRef<CSeq_feat> feat(m_ToFeat(mask_data));
         if ( ! feat ) {
-            CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 lr.GetLineNumber(),
                 "RepeatMasker Reader: Aborting file import, "
-                "unable to create feature table for record = " + line);
-            ProcessError(err, pMessageListener);
+                "unable to create feature table for record = " + line) );
+            ProcessError(*pErr, pMessageListener);
             // we don't tolerate even a few errors here!
             break;
         }

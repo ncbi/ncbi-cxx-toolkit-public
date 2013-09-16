@@ -266,13 +266,14 @@ bool CGff3Reader::xUpdateAnnotCds(
 //  ----------------------------------------------------------------------------
 {
     if (!xVerifyCdsParents(record)) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Fatal,
             0,
             "Bad data line: CDS record with bad parent assignments.",
-            ILineError::eProblem_FeatureBadStartAndOrStop);
-        err.SetLineNumber(m_uLineNumber);
-        ProcessError(err, pEC);
+            ILineError::eProblem_FeatureBadStartAndOrStop) );
+        pErr->SetLineNumber(m_uLineNumber);
+        ProcessError(*pErr, pEC);
     }
     list<string> parents;
     if (record.GetAttribute("Parent", parents)) {

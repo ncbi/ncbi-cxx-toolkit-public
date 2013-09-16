@@ -632,11 +632,12 @@ CTempString CWiggleReader::xGetWord(
         }
     }
     if ( skip == 0 ) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Warning,
             0,
-            "Identifier expected");
-        ProcessError(err, pMessageListener);
+            "Identifier expected") );
+        ProcessError(*pErr, pMessageListener);
     }
     m_CurLine = m_CurLine.substr(skip);
     return CTempString(ptr, skip);
@@ -659,11 +660,12 @@ CTempString CWiggleReader::xGetParamName(
             break;
         }
     }
-    CObjReaderLineException err(
+    CRef<CObjReaderLineException> pErr(
+        CObjReaderLineException::Create(
         eDiag_Warning,
         0,
-        "\"=\" expected");
-    ProcessWarning(err, pMessageListener);
+        "\"=\" expected") );
+    ProcessWarning(*pErr, pMessageListener);
     return CTempString();
 }
 
@@ -683,11 +685,12 @@ CTempString CWiggleReader::xGetParamValue(
                 return CTempString(ptr+1, pos-1);
             }
         }
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Warning,
             0,
-            "Open quotes");
-        ProcessError(err, pMessageListener);
+            "Open quotes") );
+        ProcessError(*pErr, pMessageListener);
     }
     return xGetWord(pMessageListener);
 }
@@ -711,11 +714,12 @@ void CWiggleReader::xGetPos(
             return;
         }
         else {
-        CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Integer value expected");
-        ProcessError(err, pMessageListener);
+            "Integer value expected") );
+        ProcessError(*pErr, pMessageListener);
         }
     }
 }
@@ -800,11 +804,12 @@ bool CWiggleReader::xTryGetDouble(
         return false;
     }
     if ( *endptr ) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Warning,
             0,
-            "Extra text on line");
-        ProcessError(err, pMessageListener);
+            "Extra text on line") );
+        ProcessError(*pErr, pMessageListener);
     }
     m_CurLine.clear();
     return true;
@@ -831,11 +836,12 @@ inline void CWiggleReader::xGetDouble(
 //  ----------------------------------------------------------------------------
 {
     if ( !xTryGetDouble(v, pMessageListener) ) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Floating point value expected");
-        ProcessError(err, pMessageListener);
+            "Floating point value expected") );
+        ProcessError(*pErr, pMessageListener);
     }
 }
 
@@ -932,11 +938,12 @@ void CWiggleReader::xReadTrack(
                 m_TrackType = eTrackType_bedGraph;
             }
             else {
-                CObjReaderLineException err(
+                CRef<CObjReaderLineException> pErr(
+                    CObjReaderLineException::Create(
                     eDiag_Warning,
                     0,
-                    "Invalid track type");
-                ProcessError(err, pMessageListener);
+                    "Invalid track type") );
+                ProcessError(*pErr, pMessageListener);
             }
         }
         else if ( name == "name" ) {
@@ -950,11 +957,12 @@ void CWiggleReader::xReadTrack(
         }
     }
     if ( m_TrackType == eTrackType_invalid ) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Unknown track type");
-        ProcessError(err, pMessageListener);
+            "Unknown track type") );
+        ProcessError(*pErr, pMessageListener);
     }
 }
 
@@ -966,11 +974,12 @@ void CWiggleReader::xGetFixedStepInfo(
 {
     if ( m_TrackType != eTrackType_wiggle_0 ) {
         if ( m_TrackType != eTrackType_invalid ) {
-            CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Warning,
                 0,
-                "Track \"type=wiggle_0\" is required");
-            ProcessError(err, pMessageListener);
+                "Track \"type=wiggle_0\" is required") );
+            ProcessError(*pErr, pMessageListener);
         }
         else {
             m_TrackType = eTrackType_wiggle_0;
@@ -994,33 +1003,37 @@ void CWiggleReader::xGetFixedStepInfo(
             fixedStepInfo.mSpan = NStr::StringToUInt(value);
         }
         else {
-            CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Warning,
                 0,
-                "Bad parameter name");
-            ProcessError(err, pMessageListener);
+                "Bad parameter name") );
+            ProcessError(*pErr, pMessageListener);
         }
     }
     if ( fixedStepInfo.mChrom.empty() ) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Missing chrom parameter");
-        ProcessError(err, pMessageListener);
+            "Missing chrom parameter") );
+        ProcessError(*pErr, pMessageListener);
     }
     if ( fixedStepInfo.mStart == 0 ) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Missing start value");
-        ProcessError(err, pMessageListener);
+            "Missing start value") );
+        ProcessError(*pErr, pMessageListener);
     }
     if ( fixedStepInfo.mStep == 0 ) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Missing step value");
-        ProcessError(err, pMessageListener);
+            "Missing step value") );
+        ProcessError(*pErr, pMessageListener);
     }
 }
 
@@ -1053,11 +1066,12 @@ void CWiggleReader::xGetVarStepInfo(
 {
     if ( m_TrackType != eTrackType_wiggle_0 ) {
         if ( m_TrackType != eTrackType_invalid ) {
-            CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Warning,
                 0,
-                "Track \"type=wiggle_0\" is required");
-            ProcessError(err, pMessageListener);
+                "Track \"type=wiggle_0\" is required") );
+            ProcessError(*pErr, pMessageListener);
         }
         else {
             m_TrackType = eTrackType_wiggle_0;
@@ -1075,19 +1089,21 @@ void CWiggleReader::xGetVarStepInfo(
             varStepInfo.mSpan = NStr::StringToUInt(value);
         }
         else {
-            CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Warning,
                 0,
-                "Bad parameter name");
-            ProcessError(err, pMessageListener);
+                "Bad parameter name") );
+            ProcessError(*pErr, pMessageListener);
         }
     }
     if ( varStepInfo.mChrom.empty() ) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Missing chrom parameter");
-        ProcessError(err, pMessageListener);
+            "Missing chrom parameter") );
+        ProcessError(*pErr, pMessageListener);
     }
 }
 
@@ -1121,11 +1137,12 @@ void CWiggleReader::xReadBedLine(
 {
     if ( m_TrackType != eTrackType_bedGraph &&
         m_TrackType != eTrackType_invalid ) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Warning,
             0,
-            "Track \"type=bedGraph\" is required");
-        ProcessError(err, pMessageListener);
+            "Track \"type=bedGraph\" is required") );
+        ProcessError(*pErr, pMessageListener);
     }
     xSetChrom(chrom);
     SValueInfo value;

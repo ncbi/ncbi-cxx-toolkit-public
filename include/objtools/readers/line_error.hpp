@@ -35,6 +35,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbimisc.hpp>
+#include <corelib/ncbiobj.hpp>
 #include <objtools/readers/reader_exception.hpp>
 
 
@@ -43,7 +44,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 //  ============================================================================
-class NCBI_XOBJUTIL_EXPORT ILineError
+class NCBI_XOBJUTIL_EXPORT ILineError : public CObject
 //  ============================================================================
 {
 public:
@@ -306,7 +307,10 @@ class NCBI_XOBJUTIL_EXPORT CLineError:
     public ILineError
 {
 public:
-    CLineError(
+
+    /// The CLineError constructor is deprecated and will be removed at some
+    /// point so please use this instead.
+    static CRef<CLineError> Create(
         EProblem eProblem,
         EDiagSev eSeverity,
         const std::string& strSeqId,
@@ -315,12 +319,42 @@ public:
         const std::string & strQualifierName = string(""),
         const std::string & strQualifierValue = string(""),
         const std::string & strErrorMessage = string(""))
-    : m_eProblem(eProblem), m_eSeverity( eSeverity ), m_strSeqId(strSeqId), m_uLine( uLine ), 
-      m_strFeatureName(strFeatureName), m_strQualifierName(strQualifierName), 
-      m_strQualifierValue(strQualifierValue), m_strErrorMessage(strErrorMessage)
-     { }
-    
+    {
+        return Ref( new CLineError(
+            eProblem,
+            eSeverity,
+            strSeqId,
+            uLine,
+            strFeatureName,
+            strQualifierName,
+            strQualifierValue,
+            strErrorMessage));
+    }
+
+    /// This is marked deprecated because it will eventually become
+    /// protected instead of public.  Please use the Create function instead.
+    NCBI_DEPRECATED_CTOR(CLineError(
+        EProblem eProblem,
+        EDiagSev eSeverity,
+        const std::string& strSeqId,
+        unsigned int uLine,
+        const std::string & strFeatureName,
+        const std::string & strQualifierName,
+        const std::string & strQualifierValue,
+        const std::string & strErrorMessage ));
+
+    /// This is marked deprecated because it will eventually become
+    /// protected instead of public.  Please use the Throw function to throw
+    /// this exception and try to avoid using the copy constructor at all.
+    NCBI_DEPRECATED_CTOR(CLineError(const CLineError & rhs ));
+
     virtual ~CLineError(void) throw() {}
+
+    /// copy constructor will be hidden some day, so please use this function to
+    /// make this class throw.
+    NCBI_NORETURN void Throw(void) const {
+        throw *this;
+    }
        
     void PatchLineNumber(
         unsigned int uLine) { m_uLine = uLine; };
@@ -368,6 +402,7 @@ public:
     const std::string &ErrorMessage(void) const { return m_strErrorMessage; }
 
 protected:
+
     EProblem m_eProblem;
     EDiagSev m_eSeverity;
     std::string m_strSeqId;
@@ -382,13 +417,17 @@ protected:
 //  ============================================================================
 class NCBI_XOBJUTIL_EXPORT CObjReaderLineException
 //  ============================================================================
-    : public CObjReaderParseException, public ILineError
+    // must inherit from ILineError first due to the way CObject detects
+    // whether or not it's on the heap.
+    : public ILineError, public CObjReaderParseException
 {
 public:
 
     using CObjReaderParseException::EErrCode;
 
-    CObjReaderLineException(
+    /// Please use this instead of the constructor because the ctor
+    /// will be moved from public to protected at some point.
+    static CRef<CObjReaderLineException> Create(
         EDiagSev eSeverity,
         unsigned int uLine,
         const std::string &strMessage,
@@ -399,27 +438,41 @@ public:
         const std::string & strQualifierValue = string(""),
         CObjReaderLineException::EErrCode eErrCode = eFormat
         )
-        : CObjReaderParseException( DIAG_COMPILE_INFO, 0, static_cast<CObjReaderParseException::EErrCode>(CException::eInvalid), strMessage, uLine,
-        eDiag_Info ), 
-        m_eProblem(eProblem), m_strSeqId(strSeqId), m_uLineNumber(uLine),
-        m_strFeatureName(strFeatureName), m_strQualifierName(strQualifierName), 
-        m_strQualifierValue(strQualifierValue), m_strErrorMessage(strMessage)
     {
-        SetSeverity( eSeverity );
-        x_InitErrCode(static_cast<CException::EErrCode>(eErrCode));
+        return Ref( 
+            new CObjReaderLineException(
+            eSeverity, uLine, strMessage, eProblem,
+            strSeqId, strFeatureName, strQualifierName, strQualifierValue,
+            eErrCode ));
     }
 
-    CObjReaderLineException(const CObjReaderLineException & rhs ) :
-        CObjReaderParseException( rhs ), 
-            m_eProblem(rhs.Problem()), m_strSeqId(rhs.SeqId()), m_uLineNumber(rhs.Line()), 
-            m_strFeatureName(rhs.FeatureName()), m_strQualifierName(rhs.QualifierName()),
-            m_strQualifierValue(rhs.QualifierValue()), m_strErrorMessage(rhs.ErrorMessage())
-    {
-        SetSeverity( rhs.Severity() );
-        x_InitErrCode(static_cast<CException::EErrCode>(rhs.x_GetErrCode()));
+    // Copy constructor will eventually become protected, so please use 
+    /// this function to make this function to throw.
+    NCBI_NORETURN void Throw(void) const {
+        throw *this;
     }
 
     ~CObjReaderLineException(void) throw() { }
+
+    /// This is marked deprecated because it will eventually become
+    /// protected instead of public.  Please use the Create function instead.
+    NCBI_DEPRECATED_CTOR(
+    CObjReaderLineException(
+        EDiagSev eSeverity,
+        unsigned int uLine,
+        const std::string &strMessage,
+        EProblem eProblem,
+        const std::string& strSeqId,
+        const std::string & strFeatureName,
+        const std::string & strQualifierName,
+        const std::string & strQualifierValue,
+        CObjReaderLineException::EErrCode eErrCode
+        ));
+
+    /// This will become protected at some point in the future, so please
+    /// avoid using it.  To throw this exception, use the Throw function
+    NCBI_DEPRECATED_CTOR(
+    CObjReaderLineException(const CObjReaderLineException & rhs ));
 
     TErrCode GetErrCode(void) const 
     { 
@@ -457,6 +510,7 @@ public:
     }
 
 protected:
+
     EProblem m_eProblem;
     std::string m_strSeqId;
     unsigned int m_uLineNumber;

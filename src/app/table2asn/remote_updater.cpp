@@ -133,7 +133,7 @@ void CRemoteUpdater::UpdateOrg(COrg_ref& org)
             if (taxid != new_taxid)
             {
                 m_context.m_logger->PutError(
-                    CLineError(ILineError::eProblem_Unset, eDiag_Error, "", 0, 
+                    *CLineError::Create(ILineError::eProblem_Unset, eDiag_Error, "", 0, 
                       "Conflicting taxonomy info provided: taxid " + NStr::IntToString(taxid)));
 
                 if (taxid <= 0)
@@ -141,7 +141,7 @@ void CRemoteUpdater::UpdateOrg(COrg_ref& org)
                 else
                 {
                     m_context.m_logger->PutError(
-                        CLineError(ILineError::eProblem_Unset, eDiag_Error, "", 0, 
+                        *CLineError::Create(ILineError::eProblem_Unset, eDiag_Error, "", 0, 
                         "taxonomy ID for the name '" + org.GetTaxname() + "' was determined as " + NStr::IntToString(taxid)));
                     return;
                 }
@@ -151,7 +151,7 @@ void CRemoteUpdater::UpdateOrg(COrg_ref& org)
     if (taxid <= 0)
     {
         m_context.m_logger->PutError(
-            CLineError(ILineError::eProblem_Unset, eDiag_Error, "", 0, 
+            *CLineError::Create(ILineError::eProblem_Unset, eDiag_Error, "", 0, 
                 "No unique taxonomy ID found for the name '" + org.GetTaxname() + "'"));
         return;
     }

@@ -218,7 +218,7 @@ CReaderBase::ProcessError(
 {
     err.SetLineNumber( m_uLineNumber );
     if (!pContainer  ||  !pContainer->PutError(err)) {
-        throw( err );
+        err.Throw();
     }
 }
 
@@ -236,7 +236,7 @@ CReaderBase::ProcessWarning(
         return;
     }
     if (!pContainer->PutError(err)) {
-        throw(err);
+        err.Throw();
     }
 }
 
@@ -248,7 +248,7 @@ CReaderBase::ProcessError(
 //  ----------------------------------------------------------------------------
 {
     if (!pContainer  ||  !pContainer->PutError(err)) {
-        throw( err );
+        err.Throw();
     }
  }
 
@@ -265,7 +265,7 @@ CReaderBase::ProcessWarning(
         return;
     }
     if (!pContainer->PutError(err)) {
-        throw(err);
+        err.Throw();
     }
  }
 
@@ -282,11 +282,12 @@ void CReaderBase::x_SetBrowserRegion(
     string strChrom;
     string strInterval;
     if ( ! NStr::SplitInTwo( strRaw, ":", strChrom, strInterval ) ) {
-        CObjReaderLineException err(
-            eDiag_Error,
-            0,
-            "Bad browser line: cannot parse browser position" );
-        ProcessError(err, pEC);
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+                eDiag_Error,
+                0,
+                "Bad browser line: cannot parse browser position" ) );
+        ProcessError(*pErr, pEC);
     }
     CRef<CSeq_id> id( new CSeq_id( CSeq_id::e_Local, strChrom ) );
     location->SetId( *id );
@@ -294,11 +295,12 @@ void CReaderBase::x_SetBrowserRegion(
     string strFrom;
     string strTo;
     if ( ! NStr::SplitInTwo( strInterval, "-", strFrom, strTo ) ) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Bad browser line: cannot parse browser position" );
-        ProcessError(err, pEC);
+            "Bad browser line: cannot parse browser position" ) );
+        ProcessError(*pErr, pEC);
     }    
     interval.SetFrom( NStr::StringToInt( strFrom ) - 1);
     interval.SetTo( NStr::StringToInt( strTo ) - 1 );
@@ -327,11 +329,12 @@ bool CReaderBase::x_ParseBrowserLine(
         if ( *it == "position" ) {
             ++it;
             if ( it == fields.end() ) {
-                CObjReaderLineException err(
+                CRef<CObjReaderLineException> pErr(
+                    CObjReaderLineException::Create(
                     eDiag_Error,
                     0,
-                    "Bad browser line: incomplete position directive" );
-                ProcessError(err, pEC);
+                    "Bad browser line: incomplete position directive" ) );
+                ProcessError(*pErr, pEC);
             }
             x_SetBrowserRegion(*it, desc, pEC);
         }

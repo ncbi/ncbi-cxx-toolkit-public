@@ -239,11 +239,12 @@ bool CMicroArrayReader::xParseFeature(
     CRef<CSeq_feat> feature;
 
     if (fields.size() != columncount) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Feature Processing: Bad column count. Should be 15." );
-        ProcessError(err, pEC );
+            "Feature Processing: Bad column count. Should be 15." ) );
+        ProcessError(*pErr, pEC );
         return false;
     }
 
@@ -254,11 +255,12 @@ bool CMicroArrayReader::xParseFeature(
         xSetFeatureDisplayData( feature, fields );
     }
     catch (...) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Feature Processing: General Parse Error." );
-        ProcessError(err, pEC );
+            "Feature Processing: General Parse Error." ) );
+        ProcessError(*pErr, pEC );
         return false;
     }
     annot->SetData().SetFtable().push_back( feature );
@@ -344,27 +346,30 @@ bool CMicroArrayReader::xParseTrackLine(
     }
     
     if ( m_strExpNames.empty() ) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Warning,
             0,
-            "Track Line Processing: Missing \"expName\" parameter." );
-        ProcessError(err, pEC );
+            "Track Line Processing: Missing \"expName\" parameter." ) );
+        ProcessError(*pErr, pEC );
         return false;
     }
     if ( m_iExpScale == -1 ) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Warning,
             0,
-            "Track Line Processing: Missing \"expScale\" parameter." );
-        ProcessError(err, pEC );
+            "Track Line Processing: Missing \"expScale\" parameter." ) );
+        ProcessError(*pErr, pEC );
         return false;
     }
     if ( m_iExpStep == -1 ) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Warning,
             0,
-            "Track Line Processing: Missing \"expStep\" parameter." );
-        ProcessError(err, pEC );
+            "Track Line Processing: Missing \"expStep\" parameter." ) );
+        ProcessError(*pErr, pEC );
         return false;
     }
     
@@ -432,11 +437,12 @@ CMicroArrayReader::xCleanColumnValues(
         columns.erase(columns.begin());
     }
     if (columns.size() < 3) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Bad data line: Insufficient column count." );
-        throw(err);
+            "Bad data line: Insufficient column count." ) );
+        pErr->Throw();
     }
 
     try {
@@ -444,11 +450,12 @@ CMicroArrayReader::xCleanColumnValues(
         columns[1] = fixup;
     }
     catch (...) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Bad data line: Invalid \"SeqStart\" (column 2) value." );
-        throw( err );
+            "Bad data line: Invalid \"SeqStart\" (column 2) value." ) );
+        pErr->Throw();
     }
 
     try {
@@ -456,11 +463,12 @@ CMicroArrayReader::xCleanColumnValues(
         columns[2] = fixup;
     }
     catch (...) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Bad data line: Invalid \"SeqStop\" (column 3) value." );
-        throw( err );
+            "Bad data line: Invalid \"SeqStop\" (column 3) value." ) );
+        pErr->Throw();
     }
 }
 

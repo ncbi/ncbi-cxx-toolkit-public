@@ -100,7 +100,7 @@ public:
         
         size_t uCount( 0 );
         for ( size_t u=0; u < Count(); ++u ) {
-            if ( m_Errors[u].Severity() == eSev ) ++uCount;
+            if ( m_Errors[u]->Severity() == eSev ) ++uCount;
         }
         return uCount;
     };
@@ -110,15 +110,16 @@ public:
     
     const ILineError&
     GetError(
-        size_t uPos ) { return m_Errors[ uPos ]; };
+        size_t uPos ) { 
+            return  *m_Errors[ uPos ]; }
     
     virtual void Dump(
         std::ostream& out )
     {
         if ( m_Errors.size() ) {
-            std::vector<CLineError>::iterator it;
-            for ( it= m_Errors.begin(); it != m_Errors.end(); ++it ) {
-                it->Dump( out );
+            TLineErrVec::iterator it;
+            for ( it = m_Errors.begin(); it != m_Errors.end(); ++it ) {
+                (*it)->Dump( out );
                 out << endl;
             }
         }
@@ -158,7 +159,8 @@ private:
     // private so later we can change the structure if
     // necessary (e.g. to have indexing and such to speed up
     // level-counting)
-    std::vector< CLineError > m_Errors;
+    typedef std::vector< CConstRef<ILineError> > TLineErrVec;
+    TLineErrVec m_Errors;
 
     // The stream to which progress messages are written.
     // If NULL, progress messages are not written.
@@ -175,12 +177,7 @@ protected:
     void StoreError(const ILineError& err)
     {
         m_Errors.push_back( 
-            CLineError( err.Problem(), err.Severity(), err.SeqId(), err.Line(), 
-                err.FeatureName(), err.QualifierName(), err.QualifierValue(),
-                err.ErrorMessage()) );
-        ITERATE( ILineError::TVecOfLines, line_it, err.OtherLines() ) {
-            m_Errors.back().AddOtherLine(*line_it);
-        }
+            ConstRef(dynamic_cast<const ILineError*>(&err)) );
     }
 };
 

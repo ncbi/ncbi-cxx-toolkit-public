@@ -276,12 +276,13 @@ CBedReader::xParseTrackLine(
     }
     m_currentId.clear();
     if (!CReaderBase::x_ParseTrackLine(strLine, current, pEC)) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Warning,
             0,
             "Bad track line: Expected \"track key1=value1 key2=value2 ...\". Ignored.",
-            ILineError::eProblem_BadTrackLine);
-        ProcessWarning(err , pEC);    
+            ILineError::eProblem_BadTrackLine) );
+        ProcessWarning(*pErr , pEC);    
     }
     return true;
 }
@@ -315,11 +316,12 @@ bool CBedReader::xParseFeature(
             m_columncount = fields.size();
         }
         else {
-            CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
-                "Bad data line: Inconsistent column count." );
-            ProcessError(err, pEC );
+                "Bad data line: Inconsistent column count." ) );
+            ProcessError(*pErr, pEC );
             return false;
         }
     }
@@ -557,21 +559,23 @@ void CBedReader::xSetFeatureLocationThick(
         from = NStr::StringToInt(fields[6]);
     }
     catch (std::exception&) {
-        CObjReaderLineException err( 
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Invalid data line: Bad \"ThickStart\" value." );
-        throw(err);
+            "Invalid data line: Bad \"ThickStart\" value." ) );
+        pErr->Throw();
     }
     try {
         to = NStr::StringToInt(fields[7])-1;
     }
     catch (std::exception&) {
-        CObjReaderLineException err( 
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Invalid data line: Bad \"ThickStop\" value.");
-        throw(err);
+            "Invalid data line: Bad \"ThickStop\" value.") );
+        pErr->Throw();
     }
     if (from == to) {
         location->SetPnt().SetPoint(from);
@@ -581,11 +585,12 @@ void CBedReader::xSetFeatureLocationThick(
         location->SetInt().SetTo(to);
     }
     else {
-        CObjReaderLineException err( 
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Invalid data line: \"ThickStop\" less than \"ThickStart\"." );
-        throw(err);
+            "Invalid data line: \"ThickStop\" less than \"ThickStart\"." ) );
+        pErr->Throw();
     }
 
     location->SetStrand(xGetStrand(fields));
@@ -613,11 +618,12 @@ ENa_strand CBedReader::xGetStrand(
     if (strand_field < fields.size()) {
         string strand = fields[strand_field];
         if (strand != "+"  &&  strand != "-"  &&  strand != ".") {
-            CObjReaderLineException err( 
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
-                "Invalid data line: Invalid strand character." );
-            throw(err);
+                "Invalid data line: Invalid strand character." ) );
+            pErr->Throw();
         }
     }
     return (fields[strand_field] == "-" ? eNa_strand_minus : eNa_strand_plus);
@@ -641,11 +647,12 @@ void CBedReader::xSetFeatureLocationBlock(
             vals.erase(vals.end()-1);
         }
         if (vals.size() != blockCount) {
-            CObjReaderLineException err( 
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
-                "Invalid data line: Bad value count in \"blockSizes\"." );
-            throw( err );
+                "Invalid data line: Bad value count in \"blockSizes\"." ) );
+            pErr->Throw();
         }
         try {
             for (int i=0; i < blockCount; ++i) {
@@ -653,11 +660,12 @@ void CBedReader::xSetFeatureLocationBlock(
             }
         }
         catch (std::exception&) {
-            CObjReaderLineException err( 
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
-                "Invalid data line: Malformed \"blockSizes\" column." );
-            throw( err );
+                "Invalid data line: Malformed \"blockSizes\" column." ) );
+            pErr->Throw();
         }
     }}
     {{
@@ -669,11 +677,12 @@ void CBedReader::xSetFeatureLocationBlock(
             vals.erase(vals.end()-1);
         }
         if (vals.size() != blockCount) {
-            CObjReaderLineException err( 
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
-                "Invalid data line: Bad value count in \"blockStarts\"." );
-            throw( err );
+                "Invalid data line: Bad value count in \"blockStarts\"." ) );
+            pErr->Throw();
         }
         try {
             for (int i=0; i < blockCount; ++i) {
@@ -681,11 +690,12 @@ void CBedReader::xSetFeatureLocationBlock(
             }
         }
         catch (std::exception&) {
-            CObjReaderLineException err( 
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
-                "Invalid data line: Malformed \"blockStarts\" column." );
-            throw( err );
+                "Invalid data line: Malformed \"blockStarts\" column." ) );
+            pErr->Throw();
         }
     }}
 
@@ -821,11 +831,12 @@ void CBedReader::xSetFeatureBedData(
         pDisplayData->AddField("score", score);
     }
     catch(std::exception&) {
-        CObjReaderLineException err( 
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Invalid data line: Bad \"strand\" value.");
-        throw(err);
+            "Invalid data line: Bad \"strand\" value.") );
+        pErr->Throw();
     }
 
     if (fields.size() < 9) {
@@ -859,21 +870,23 @@ void CBedReader::x_SetFeatureLocation(
         from = NStr::StringToInt(fields[1]);
     }
     catch(std::exception&) {
-        CObjReaderLineException err( 
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Invalid data line: Bad \"SeqStart\" value." );
-        throw( err );
+            "Invalid data line: Bad \"SeqStart\" value." ) );
+        pErr->Throw();
     }
     try {
         to = NStr::StringToInt(fields[2]) - 1;
     }
     catch(std::exception&) {
-        CObjReaderLineException err( 
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Invalid data line: Bad \"SeqStop\" value.");
-        throw( err );
+            "Invalid data line: Bad \"SeqStop\" value.") );
+        pErr->Throw();
     }
     if (from == to) {
         location->SetPnt().SetPoint(from);
@@ -883,11 +896,12 @@ void CBedReader::x_SetFeatureLocation(
         location->SetInt().SetTo(to);
     }
     else {
-        CObjReaderLineException err( 
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Invalid data line: \"SeqStop\" less than \"SeqStart\"." );
-        throw(err);
+            "Invalid data line: \"SeqStop\" less than \"SeqStart\"." ) );
+        pErr->Throw();
     }
 
     size_t strand_field = 5;
@@ -897,11 +911,12 @@ void CBedReader::x_SetFeatureLocation(
     if (strand_field < fields.size()) {
         string strand = fields[strand_field];
         if (strand != "+"  &&  strand != "-"  &&  strand != ".") {
-            CObjReaderLineException err( 
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
-                "Invalid data line: Invalid strand character." );
-            throw(err);
+                "Invalid data line: Invalid strand character." ) );
+            pErr->Throw();
         }
         location->SetStrand(( fields[strand_field] == "+" ) ?
                            eNa_strand_plus : eNa_strand_minus );
@@ -1033,11 +1048,12 @@ CBedReader::xReadBedRecordRaw(
             m_columncount = columns.size();
         }
         else {
-            CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
-                "Bad data line: Inconsistent column count." );
-            ProcessError(err, pMessageListener);
+                "Bad data line: Inconsistent column count." ) );
+            ProcessError(*pErr, pMessageListener);
             return false;
         }
     }
@@ -1050,11 +1066,12 @@ CBedReader::xReadBedRecordRaw(
         start = NStr::StringToInt(columns[1]);
     }
     catch(std::exception&) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Bad data line: Invalid \"SeqStart\" (column 2) value." );
-        ProcessError(err, pMessageListener);
+            "Bad data line: Invalid \"SeqStart\" (column 2) value." ) );
+        ProcessError(*pErr, pMessageListener);
         return false;
     }
 
@@ -1063,11 +1080,12 @@ CBedReader::xReadBedRecordRaw(
         stop = NStr::StringToInt(columns[2]);
     }
     catch(std::exception&) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Bad data line: Invalid \"SeqStop\" (column 3) value." );
-        ProcessError(err, pMessageListener);
+            "Bad data line: Invalid \"SeqStop\" (column 3) value." ) );
+        ProcessError(*pErr, pMessageListener);
         return false;
     }
 
@@ -1077,11 +1095,12 @@ CBedReader::xReadBedRecordRaw(
             score = NStr::StringToInt(columns[6]);
         }
         catch(std::exception&) {
-            CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
-                "Bad data line: Invalid \"Score\" (column 5) value." );
-            ProcessError(err, pMessageListener);
+                "Bad data line: Invalid \"Score\" (column 5) value." ) );
+            ProcessError(*pErr, pMessageListener);
             return false;
         }
     }
@@ -1157,11 +1176,12 @@ CBedReader::xCleanColumnValues(
         columns.erase(columns.begin());
     }
     if (columns.size() < 3) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Bad data line: Insufficient column count." );
-        throw(err);
+            "Bad data line: Insufficient column count." ) );
+        pErr->Throw();
     }
 
     try {
@@ -1169,11 +1189,12 @@ CBedReader::xCleanColumnValues(
         columns[1] = fixup;
     }
     catch(std::exception&) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Bad data line: Invalid \"SeqStart\" (column 2) value." );
-        throw( err );
+            "Bad data line: Invalid \"SeqStart\" (column 2) value." ) );
+        pErr->Throw();
     }
 
     try {
@@ -1181,11 +1202,12 @@ CBedReader::xCleanColumnValues(
         columns[2] = fixup;
     }
     catch(std::exception&) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
-            "Bad data line: Invalid \"SeqStop\" (column 3) value." );
-        throw( err );
+            "Bad data line: Invalid \"SeqStop\" (column 3) value." ) );
+        pErr->Throw();
     }
 }
 

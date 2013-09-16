@@ -624,7 +624,7 @@ void CTbl2AsnApp::ProcessOneFile()
     if (!file.Exists())
     {
         m_logger->PutError(
-            CLineError(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
+            *CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
             "File " + m_context.m_current_file + " does not exists"));
         return;
     }

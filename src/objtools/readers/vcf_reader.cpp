@@ -131,12 +131,13 @@ ESpecType SpecType(
         return typemap[spectype];
     }
     catch( ... ) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Warning,
             0,
             "CVcfReader::xProcessMetaLineInfo: Unrecognized line or record type.",
-            ILineError::eProblem_GeneralParsingError);
-        throw err;
+            ILineError::eProblem_GeneralParsingError) );
+        pErr->Throw();
         return eType_String;
     }
 };
@@ -206,12 +207,13 @@ CVcfReader::ReadSeqAnnot(
             continue;
         }
         // still here? not good!
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Warning,
             0,
             "CVcfReader::ReadSeqAnnot: Unrecognized line or record type.",
-            ILineError::eProblem_GeneralParsingError);
-        ProcessWarning(err, pEC);
+            ILineError::eProblem_GeneralParsingError) );
+        ProcessWarning(*pErr, pEC);
     }
     return annot;
 }
@@ -304,39 +306,43 @@ CVcfReader::xProcessMetaLineInfo(
         NStr::Tokenize( info, ",", fields );
         NStr::SplitInTwo( fields[0], "=", key, id );
         if ( key != "ID" ) {
-            CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
                 "CVcfReader::xProcessMetaLineInfo: ##INFO with bad or missing \"ID\".",
-                ILineError::eProblem_BadInfoLine);
-            throw err;
+                ILineError::eProblem_BadInfoLine) );
+            pErr->Throw();
         }
         NStr::SplitInTwo( fields[1], "=", key, numcount );
         if ( key != "Number" ) {
-            CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
                 "CVcfReader::xProcessMetaLineInfo: ##INFO with bad or missing \"Number\".",
-                ILineError::eProblem_BadInfoLine);
-            throw err;
+                ILineError::eProblem_BadInfoLine) );
+            pErr->Throw();
         }
         NStr::SplitInTwo( fields[2], "=", key, type );
         if ( key != "Type" ) {
-            CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
                 "CVcfReader::xProcessMetaLineInfo: ##INFO with bad or missing \"Type\".",
-                ILineError::eProblem_BadInfoLine);
-            throw err;
+                ILineError::eProblem_BadInfoLine) );
+            pErr->Throw();
         }
         NStr::SplitInTwo( fields[3], "=", key, description );
         if ( key != "Description" ) {
-            CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
                 "CVcfReader::xProcessMetaLineInfo: ##INFO with bad or missing \"Description\".",
-                ILineError::eProblem_BadInfoLine);
-            throw err;
+                ILineError::eProblem_BadInfoLine) );
+            pErr->Throw();
         }
         m_InfoSpecs[id] = CVcfInfoSpec( id, numcount, type, description );        
     }
@@ -369,21 +375,23 @@ CVcfReader::xProcessMetaLineFilter(
         NStr::Tokenize( info, ",", fields );
         NStr::SplitInTwo( fields[0], "=", key, id );
         if ( key != "ID" ) {
-            CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
                 "CVcfReader::xProcessMetaLineInfo: ##FILTER with bad or missing \"ID\".",
-                ILineError::eProblem_BadFilterLine);
-            throw err;
+                ILineError::eProblem_BadFilterLine) );
+            pErr->Throw();
         }
         NStr::SplitInTwo( fields[1], "=", key, description );
         if ( key != "Description" ) {
-            CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
                 "CVcfReader::xProcessMetaLineInfo: ##FILTER with bad or missing \"Description\".",
-                ILineError::eProblem_BadFilterLine);
-            throw err;
+                ILineError::eProblem_BadFilterLine) );
+            pErr->Throw();
         }
         m_FilterSpecs[id] = CVcfFilterSpec( id, description );        
     }
@@ -416,42 +424,46 @@ CVcfReader::xProcessMetaLineFormat(
         NStr::Tokenize( info, ",", fields );
         NStr::SplitInTwo( fields[0], "=", key, id );
         if ( key != "ID" ) {
-            CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
                 "CVcfReader::xProcessMetaLineInfo: ##FORMAT with bad or missing \"ID\".",
-                ILineError::eProblem_BadFormatLine);
-            throw err;
+                ILineError::eProblem_BadFormatLine) );
+            pErr->Throw();
         }
         NStr::SplitInTwo( fields[1], "=", key, numcount );
         if ( key != "Number" ) {
-            CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
                 "CVcfReader::xProcessMetaLineInfo: "
                     "##FORMAT with bad or missing \"Number\".",
-                ILineError::eProblem_BadFormatLine);
-            throw err;
+                ILineError::eProblem_BadFormatLine) );
+            pErr->Throw();
         }
         NStr::SplitInTwo( fields[2], "=", key, type );
         if ( key != "Type" ) {
-            CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
                 "CVcfReader::xProcessMetaLineInfo: "
                     "##FORMAT with bad or missing \"Type\".",
-                ILineError::eProblem_BadFormatLine);
-            throw err;
+                ILineError::eProblem_BadFormatLine) );
+            pErr->Throw();
         }
         NStr::SplitInTwo( fields[3], "=", key, description );
         if ( key != "Description" ) {
-            CObjReaderLineException err(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
                 "CVcfReader::xProcessMetaLineInfo: "
                     "##FORMAT with bad or missing \"Description\".",
-                ILineError::eProblem_BadFormatLine);
-            throw err;
+                ILineError::eProblem_BadFormatLine) );
+            pErr->Throw();
         }
         m_FormatSpecs[id] = CVcfFormatSpec( id, numcount, type, description );        
     }
@@ -1116,12 +1128,13 @@ CVcfReader::xAssignVariantProps(
                 string db, tag;
                 NStr::SplitInTwo(*cit, ":", db, tag);
                 if (db != "PM") {
-                    CObjReaderLineException err(
+                    CRef<CObjReaderLineException> pErr(
+                        CObjReaderLineException::Create(
                         eDiag_Warning,
                         0,
                         "CVcfReader::xAssignVariantProps: Invalid PMID database ID.",
-                        ILineError::eProblem_GeneralParsingError);
-                    ProcessWarning(err, pEC);
+                        ILineError::eProblem_GeneralParsingError) );
+                    ProcessWarning(*pErr, pEC);
                     continue;
                 }
                 CRef<CDbtag> pDbtag(new CDbtag);

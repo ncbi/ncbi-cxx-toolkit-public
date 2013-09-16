@@ -208,13 +208,14 @@ bool CGff2Record::AssignFromGff(
     m_uSeqStart = NStr::StringToUInt( columns[3] ) - 1;
     m_uSeqStop = NStr::StringToUInt( columns[4] ) - 1;
     if (m_uSeqStop < m_uSeqStart) {
-        CObjReaderLineException err(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
             "Bad data line: location start is greater than location stop (start="
-                + columns[3] + ", stop=" + columns[4] + ").",
-            ILineError::eProblem_FeatureBadStartAndOrStop);
-        throw(err);
+            + columns[3] + ", stop=" + columns[4] + ").",
+            ILineError::eProblem_FeatureBadStartAndOrStop) );
+        pErr->Throw();
     }
 
     if ( columns[5] != "." ) {

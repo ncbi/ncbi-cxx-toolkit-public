@@ -1,4 +1,4 @@
-/*  $Id$
+ /*  $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -184,12 +184,13 @@ void CGvfReadRecord::xTraceError(
     const string& msg)
 //  ----------------------------------------------------------------------------
 {
-    CObjReaderLineException e(
+    CRef<CObjReaderLineException> pErr(
+        CObjReaderLineException::Create(
         severity,
         mLineNumber,
-        msg);
-    if (!mpMessageListener->PutError(e)) {
-        throw e;
+        msg) );
+    if (!mpMessageListener->PutError(*pErr)) {
+        pErr->Throw();
     }
 }
 
@@ -345,13 +346,14 @@ bool CGvfReader::xFeatureSetLocationInterval(
     {
         NStr::Split( strRange, ",", range_borders );
         if ( range_borders.size() != 2 ) {
-            CObjReaderLineException e(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
                 string("CGvfReader::x_FeatureSetLocation: Bad \"Start_range\" attribute") +
                     " (Start_range=" + strRange + ").",
-                ILineError::eProblem_QualifierBadValue);
-            throw e;
+                ILineError::eProblem_QualifierBadValue) );
+        pErr->Throw();
         }
         try {
             if ( range_borders.back() == "." ) {
@@ -370,13 +372,14 @@ bool CGvfReader::xFeatureSetLocationInterval(
             }        
         }
         catch ( std::exception& ) {
-            CObjReaderLineException e(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
                 string("CGvfReader::x_FeatureSetLocation: Bad \"Start_range\" attribute") +
                     " (Start_range=" + strRange + ").",
-                ILineError::eProblem_QualifierBadValue);
-            throw e;
+                ILineError::eProblem_QualifierBadValue) );
+        pErr->Throw();
         }
     }
 
@@ -386,13 +389,14 @@ bool CGvfReader::xFeatureSetLocationInterval(
     {
         NStr::Split( strRange, ",", range_borders );
         if ( range_borders.size() != 2 ) {
-            CObjReaderLineException e(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
                 string("CGvfReader::x_FeatureSetLocation: Bad \"End_range\" attribute") +
                     " (End_range=" + strRange + ").",
-                ILineError::eProblem_QualifierBadValue);
-            throw e;
+                ILineError::eProblem_QualifierBadValue) );
+        pErr->Throw();
         }
         try {
             if ( range_borders.back() == "." ) {
@@ -411,13 +415,14 @@ bool CGvfReader::xFeatureSetLocationInterval(
             }        
         }
         catch (std::exception&) {
-            CObjReaderLineException e(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
                 string("CGvfReader::x_FeatureSetLocation: Bad \"End_range\" attribute") +
                     " (End_range=" + strRange + ").",
-                ILineError::eProblem_QualifierBadValue);
-            throw e;
+                ILineError::eProblem_QualifierBadValue) );
+pErr->Throw();
         }
     }
 
@@ -449,13 +454,14 @@ bool CGvfReader::xFeatureSetLocationPoint(
     bool hasLower = record.GetAttribute("Start_range", strRangeLower);
     bool hasUpper = record.GetAttribute("End_range", strRangeUpper);
     if (hasLower  &&  hasUpper  &&  strRangeLower != strRangeUpper) {
-        CObjReaderLineException e(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
             string("CGvfReader::x_FeatureSetLocation: Bad range attribute:") +
                 " Conflicting fuzz ranges for single point location.",
-            ILineError::eProblem_QualifierBadValue);
-        throw e;
+            ILineError::eProblem_QualifierBadValue) );
+    pErr->Throw();
     }
     if (!hasLower  &&  !hasUpper) {
         pFeature->SetLocation(*pLocation);
@@ -469,13 +475,14 @@ bool CGvfReader::xFeatureSetLocationPoint(
     size_t lower, upper;
     NStr::Split( strRangeLower, ",", bounds );
     if (bounds.size() != 2) {
-        CObjReaderLineException e(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
             string("CGvfReader::x_FeatureSetLocation: Bad \"XXX_range\" attribute") +
                 " (XXX_range=" + strRangeLower + ").",
-            ILineError::eProblem_QualifierBadValue);
-        throw e;
+            ILineError::eProblem_QualifierBadValue) );
+pErr->Throw();
     }
     try {
         if (bounds.back() == ".") {
@@ -494,13 +501,14 @@ bool CGvfReader::xFeatureSetLocationPoint(
         }        
     }
     catch ( ... ) {
-        CObjReaderLineException e(
+        CRef<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
             string("CGvfReader::x_FeatureSetLocation: Bad \"XXX_range\" attribute") +
                 " (XXX_range=" + strRangeLower + ").",
-            ILineError::eProblem_QualifierBadValue);
-        throw e;
+            ILineError::eProblem_QualifierBadValue) );
+pErr->Throw();
     }
     pFeature->SetLocation( *pLocation );
     return true;
@@ -682,12 +690,13 @@ bool CGvfReader::xVariationMakeCNV(
         pVariation->SetUnknown();
         return true;
     }
-    CObjReaderLineException e(
+    CRef<CObjReaderLineException> pErr(
+        CObjReaderLineException::Create(
         eDiag_Error,
         0,
         string("GVF record error: Unknown type \"") + strType + "\"",
-        ILineError::eProblem_QualifierBadValue);
-    throw e;
+        ILineError::eProblem_QualifierBadValue) );
+pErr->Throw();
     return false;
 }
   
@@ -1006,12 +1015,13 @@ bool CGvfReader::x_FeatureSetExt(
 
         string strAttribute;
         if ( ! record.GetAttribute( cit->first, strAttribute ) ) {
-            CObjReaderLineException e(
+            CRef<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Warning,
                 m_uLineNumber,
-                "CGvfReader::x_FeatureSetExt: Funny attribute \"" + cit->first + "\"");
-            if (!pMessageListener->PutError(e)) {
-                throw e;
+                "CGvfReader::x_FeatureSetExt: Funny attribute \"" + cit->first + "\"") );
+            if (!pMessageListener->PutError(*pErr)) {
+                pErr->Throw();
             }
             continue;
         }
