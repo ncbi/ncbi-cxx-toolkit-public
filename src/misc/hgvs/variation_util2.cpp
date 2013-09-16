@@ -1879,12 +1879,13 @@ size_t GetCommonPrefixLen(const string& a, const string& b)
     return i;
 }
 
-void TruncateCommonSuffix(string& a, string& b)
+size_t GetCommonSuffixLen(const string& a, const string& b)
 {
-    while(a.size() > 0 && b.size() > 0 && a[a.size() - 1] == b[b.size() - 1]) {
-        a.resize(a.size() - 1);
-        b.resize(b.size() - 1);
+    size_t i = 0;
+    while(a.size() > 0 && b.size() > 0 && a[a.size() - 1 - i] == b[b.size() - 1 - i]) {
+        i++;
     }
+    return i;
 }
 
 CRef<CVariation> CVariationUtil::TranslateNAtoAA(
@@ -2059,16 +2060,18 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         prot_var_str = prot_var_str.substr(common_prot_prefix_len);
       
         if(frameshift_phase == 0) {
-            if(NStr::EndsWith(prot_var_str, "*") && prot_ref_str.size() > prot_var_str.size()) {
+            size_t csl = GetCommonSuffixLen(prot_ref_str, prot_var_str);
+            if(csl > prot_ref_str.size() / 2) {
+                prot_ref_str.resize(prot_ref_str.size() - csl);
+                prot_var_str.resize(prot_var_str.size() - csl);
+            } else if(NStr::EndsWith(prot_var_str, "*") && prot_ref_str.size() > prot_var_str.size()) {
                 prot_ref_str.resize(prot_var_str.size());
-            } else {
-                TruncateCommonSuffix(prot_ref_str, prot_var_str);
             }
         } else {
             //Keep the frst AA in case of frameshifts
             //NM_000492.3:c.3528delC -> NP_000483.3:p.Lys1177Serfs  instead of NP_000483.3:p.Lys1177delfs 
-            prot_ref_str.resize(min(static_cast<size_t>(1), prot_ref_str.size()));
-            prot_var_str.resize(min(static_cast<size_t>(1), prot_ref_str.size()));
+            prot_ref_str.resize(min(1UL, prot_ref_str.size()));
+            prot_var_str.resize(min(1UL, prot_ref_str.size()));
         }
 
         //adjust the protein location. 
