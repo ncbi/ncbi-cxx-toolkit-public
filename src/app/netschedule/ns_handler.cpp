@@ -1836,7 +1836,7 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
                                 m_CommandArguments.job_id,
                                 m_CommandArguments.job_key,
                                 m_CommandArguments.auth_token,
-                                NStr::ParseEscapes(m_CommandArguments.err_msg),
+                                m_CommandArguments.err_msg,
                                 NStr::ParseEscapes(m_CommandArguments.output),
                                 m_CommandArguments.job_return_code,
                                 warning);

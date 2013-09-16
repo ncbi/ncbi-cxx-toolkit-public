@@ -94,15 +94,31 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
     ITERATE(TNSProtoParams, it, params) {
         const CTempString &     key = it->first;
         const CTempString &     val = it->second;
+        size_t                  size = val.size();
+        string                  unescaped_value;
 
         if (key.empty())
             continue;
 
-        if (val.size() > kNetScheduleMaxDBDataSize - 1 &&
-            (key == "input" || key == "output"))
+        // Check all the values except of the input/output fields.
+        // Input/output are checked later against the configured queue
+        // parameters.
+        // The error and progress message sizes must be checked after
+        // unquoting.
+        if (key == "err_msg" || key == "progress_msg")
+        {
+            unescaped_value = NStr::ParseEscapes(val);
+            size = unescaped_value.size();
+        }
+        if (size > kNetScheduleMaxDBDataSize - 1 &&
+            key != "input" && key != "output")
         {
             NCBI_THROW(CNetScheduleException, eDataTooLong,
-                       "User input/output exceeds the DB max limit.");
+                       "Argument '" + string(key) + "' size (" +
+                       NStr::NumericToString(val.size()) +
+                       " bytes) exceeds the DB max limit ( " +
+                       NStr::NumericToString(kNetScheduleMaxDBDataSize - 1) +
+                       " bytes)");
         }
 
         switch (key[0]) {
@@ -141,14 +157,16 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
                 description = val;
             break;
         case 'e':
-            if (key == "err_msg")
-                err_msg = val;
-            else if (key == "exclusive_new_aff") {
+            if (key == "exclusive_new_aff") {
                 int tmp = NStr::StringToInt(val);
                 if (tmp != 0 && tmp != 1)
                     NCBI_THROW(CNetScheduleException, eInvalidParameter,
                                "exclusive_new_aff accepted values are 0 and 1.");
                 exclusive_new_aff = (tmp == 1);
+            }
+            else if (key == "err_msg") {
+                // Escapes were removed above when the size limit is checked
+                err_msg = unescaped_value;
             }
             else if (key == "effective") {
                 int tmp = NStr::StringToInt(val);
@@ -211,8 +229,10 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
                     NCBI_THROW(CNetScheduleException,
                                eInvalidParameter, "Invalid port number");
             }
-            else if (key == "progress_msg")
-                progress_msg = val;
+            else if (key == "progress_msg") {
+                // Escapes were removed above when the size limit is checked
+                progress_msg = unescaped_value;
+            }
             break;
         case 'q':
             if (key == "qname")

@@ -356,7 +356,7 @@ CJob::EJobFetchResult CJob::x_Fetch(CQueue* queue)
         job_db.input.ToString(m_Input);
     if (!(char) job_db.output_overflow)
         job_db.output.ToString(m_Output);
-    m_ProgressMsg = job_db.progress_msg;
+    job_db.progress_msg.ToString(m_ProgressMsg);
 
     // JobInfoDB, can be optimized by adding lazy load
     EBDB_ErrCode        res;
