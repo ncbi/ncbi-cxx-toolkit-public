@@ -124,6 +124,7 @@ public:
 
     void CheckFileNames(void);
     void GenerateCode(void);
+    void UndoGenerateCode(void);
     void GenerateDoxygenGroupDescription(map<string, pair<string,string> >& module_names);
     void GenerateFileList(const list<string>& generated, const list<string>& untouched,
         list<string>& allGeneratedHpp, list<string>& allGeneratedCpp,

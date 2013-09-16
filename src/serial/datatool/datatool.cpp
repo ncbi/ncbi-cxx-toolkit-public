@@ -69,14 +69,21 @@ BEGIN_NCBI_SCOPE
 
 int CDataTool::Run(void)
 {
-    if ( !ProcessModules() )
-        return 1;
-    if ( !ProcessData() )
-        return 1;
-    if ( !GenerateCode() )
-        return 1;
-
-    return 0;
+    try {
+        if ( ProcessModules() &&
+             ProcessData() &&
+             GenerateCode() ) {
+            return 0;
+        }
+    } catch (CException& e) {
+        GenerateCode(true);
+        NCBI_RETHROW_SAME(e, "Datatool failed");
+    } catch (exception& e) {
+        GenerateCode(true);
+        NCBI_THROW(CDatatoolException,eWrongInput,string("Datatool failed: ") + e.what());
+    }
+    GenerateCode(true);
+    return 1;
 }
 
 CDataTool::CDataTool(void)
@@ -579,23 +586,32 @@ bool CDataTool::ProcessData(void)
     return true;
 }
 
-bool CDataTool::GenerateCode(void)
+bool CDataTool::GenerateCode(bool undo)
 {
     string opt;
     //if ( const CArgValue& oD = args["oD"] )
     //    generator.AddConfigLine(oD.AsString());
 
+    bool generation_requested = false;
     // set list of types for generation
     if ( generator.GetOpt("oX") )
         generator.ExcludeRecursion();
-    if ( generator.GetOpt("oA") )
-        generator.IncludeAllMainTypes();
-    if ( generator.GetOpt("ot", &opt) )
-        generator.IncludeTypes(opt);
-    if ( generator.GetOpt("ox", &opt) )
+    if ( generator.GetOpt("oA") ) {
+        generation_requested = true;
+        if (!undo) {
+            generator.IncludeAllMainTypes();
+        }
+    }
+    if ( generator.GetOpt("ot", &opt) ) {
+        generation_requested = true;
+        if (!undo) {
+            generator.IncludeTypes(opt);
+        }
+    }
+    if ( !undo && generator.GetOpt("ox", &opt) )
         generator.ExcludeTypes(opt);
 
-    if ( !generator.HaveGenerateTypes() )
+    if ( !undo && !generator.HaveGenerateTypes() )
         return true;
 
     // set the export specifier, if provided
@@ -608,6 +624,7 @@ bool CDataTool::GenerateCode(void)
         CClassCode::SetExportSpecifier(ex);
     }
     // define the Doxygen group
+    if ( !undo )
     {
         if ( generator.GetOpt("oDc") ) {
             CClassCode::SetDoxygenComments(true);
@@ -673,6 +690,11 @@ bool CDataTool::GenerateCode(void)
     if ( generator.GetOpt("pch", &opt) )
         CFileCode::SetPchHeader(opt);
     
+    if (undo && generation_requested) {
+        generator.UndoGenerateCode();
+        ERR_POST_X(5, "*** Datatool code generation failed");
+        return true;
+    }
     cout << GetFullVersion().Print(GetProgramDisplayName(), CVersion::fVersionInfo);
     // generate code
     generator.GenerateCode();

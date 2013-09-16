@@ -290,6 +290,44 @@ struct string_nocase_less
     }
 };
 
+void CCodeGenerator::UndoGenerateCode(void)
+{
+    if ( m_FileListFileName.empty() ) {
+        return;
+    }
+    string fileName( MakeAbsolutePath(
+        Path(m_CPPDir,Path(m_FileNamePrefix,m_FileListFileName))));
+    CNcbiIfstream fileList(fileName.c_str());
+    if ( fileList.is_open() ) {
+        string strline;
+        string fileroot;
+        while ( NcbiGetlineEOL(fileList, strline) ) {
+            if ( !NStr::StartsWith(strline, "GENFILES =") ) {
+                continue;
+            }
+            NStr::ReplaceInPlace(strline,"GENFILES =","");
+            list<string> files;
+            NStr::Split( strline, " ", files);
+            ITERATE(list<string>, f, files) {
+                CFile fo;
+                fo.Reset( MakeAbsolutePath( Path(m_HPPDir, *f)) + "_.hpp");
+                if (fo.Exists()) {
+                    fo.Remove();
+                }
+                fo.Reset( MakeAbsolutePath( Path(m_CPPDir, *f)) + "_.cpp");
+                if (fo.Exists()) {
+                    fo.Remove();
+                }
+            }
+        }
+        fileList.close();
+        CFile fo(fileName);
+        if (fo.Exists()) {
+            fo.Remove();
+        }
+    }
+}
+
 void CCodeGenerator::CheckFileNames(void)
 {
     set<string,string_nocase_less> names;
@@ -571,8 +609,9 @@ void CCodeGenerator::GenerateCombiningFile(
     for ( int i = 0; i < 2; ++i ) {
         const char* suffix = i? "_.cpp": ".cpp";
         string fileName = m_CombiningFileName + "__" + suffix;
-        fileName = MakeAbsolutePath(Path(m_CPPDir,Path(m_FileNamePrefix,fileName)));
+        fileName = Path(m_CPPDir,Path(m_FileNamePrefix,fileName));
         allCpp.push_back(fileName);
+        fileName = MakeAbsolutePath(fileName);
         CNcbiOfstream out(fileName.c_str());
         if ( !out )
             ERR_POST_X(5, Fatal << "Cannot create file: "<<fileName);
@@ -600,10 +639,10 @@ void CCodeGenerator::GenerateCombiningFile(
     // write combined *__.hpp file
     const char* suffix = ".hpp";
     // save to the includes directory
-    string fileName = MakeAbsolutePath(Path(m_HPPDir,
-                            Path(m_FileNamePrefix,
-                                m_CombiningFileName + "__" + suffix)));
+    string fileName = Path(m_HPPDir, Path(m_FileNamePrefix,
+                           m_CombiningFileName + "__" + suffix));
     allHpp.push_back(fileName);
+    fileName = MakeAbsolutePath(fileName);
 
     CNcbiOfstream out(fileName.c_str());
     if ( !out )

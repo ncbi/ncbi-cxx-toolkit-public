@@ -55,7 +55,7 @@ public:
 private:
     bool ProcessModules(void);
     bool ProcessData(void);
-    bool GenerateCode(void);
+    bool GenerateCode(bool undo=false);
 
     SourceFile::EType LoadDefinitions(
         CFileSet& fileSet, const list <string>& modulesPath,
