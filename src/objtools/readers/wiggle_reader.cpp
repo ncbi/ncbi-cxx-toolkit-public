@@ -207,7 +207,9 @@ CWiggleReader::xReadFixedStepDataRaw(
 
     SFixedStepInfo fixedStepInfo;
     xGetFixedStepInfo(fixedStepInfo, pMessageListener);
-    CRef<CSeq_id> id = CReadUtil::AsSeqId(fixedStepInfo.mChrom);
+    CRef<CSeq_id> id =
+        CReadUtil::AsSeqId(fixedStepInfo.mChrom, m_iFlags);
+
     unsigned int pos(fixedStepInfo.mStart);
     while (xGetLine(lr)) {
         double value(0);
@@ -234,7 +236,8 @@ CWiggleReader::xReadVariableStepDataRaw(
 
     SVarStepInfo varStepInfo;
     xGetVarStepInfo(varStepInfo, pMessageListener);
-    CRef<CSeq_id> id = CReadUtil::AsSeqId(varStepInfo.mChrom);
+    CRef<CSeq_id> id =
+        CReadUtil::AsSeqId(varStepInfo.mChrom, m_iFlags);
     while (xGetLine(lr)) {
         unsigned int pos(0);
         if (!xTryGetPos(pos, pMessageListener)) {
@@ -346,7 +349,8 @@ void CWiggleReader::xPreprocessValues(SWiggleStat& stat)
 CRef<CSeq_id> CWiggleReader::xMakeChromId()
 //  ----------------------------------------------------------------------------
 {
-    CRef<CSeq_id> id = CReadUtil::AsSeqId(m_ChromId);
+    CRef<CSeq_id> id =
+        CReadUtil::AsSeqId(m_ChromId, m_iFlags);
     return id;
 }
 
