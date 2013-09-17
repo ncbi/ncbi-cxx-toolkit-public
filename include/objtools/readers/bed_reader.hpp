@@ -34,12 +34,13 @@
 #define OBJTOOLS_READERS___BEDREADER__HPP
 
 #include <corelib/ncbistd.hpp>
-#include <objtools/readers/reader_base.hpp>
-#include <objtools/readers/message_listener.hpp>
 #include <objects/seq/Seq_annot.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+#include <objtools/readers/reader_base.hpp>
+#include <objtools/readers/message_listener.hpp>
 
 BEGIN_NCBI_SCOPE
 
