@@ -136,6 +136,43 @@ private:
     string mExtErrors;
 };
 
+void sNewCase(CDir& test_cases_dir, const string& test_name)
+{   
+    string input = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extInput);
+    string output = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extOutput);
+    string errors = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extErrors);
+    if (!CFile(input).Exists()) {
+         BOOST_FAIL("input file " << input << " does not exist.");
+    }
+    cerr << "Creating new test case from " << input << " ..." << endl;
+
+    CErrorLogger logger(errors);
+    CBedReader reader(CBedReader::fThreeFeatFormat);
+    CNcbiIfstream ifstr(input.c_str());
+
+    typedef vector<CRef<CSeq_annot> > ANNOTS;
+    ANNOTS annots;
+    try {
+        reader.ReadSeqAnnots(annots, ifstr, &logger);
+    }
+    catch (...) {
+        ifstr.close();
+        BOOST_FAIL("Error: " << input << " failed during conversion.");
+    }
+    ifstr.close();
+    cerr << "    Produced new error listing " << output << "." << endl;
+
+    CNcbiOfstream ofstr(output.c_str());
+    for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
+        ofstr << MSerial_AsnText << **cit;
+        ofstr.flush();
+    }
+    ofstr.close();
+    cerr << "    Produced new ASN1 file " << output << "." << endl;
+
+    cerr << " ... Done." << endl;
+}
+
 void sRunTest(const string &sTestName, const STestInfo & testInfo)
 {
     cerr << "Testing " << testInfo.mInFile.GetName() << " against " <<
@@ -190,10 +227,14 @@ NCBITEST_AUTO_INIT()
 
 NCBITEST_INIT_CMDLINE(arg_descrs)
 {
-    arg_descrs->AddDefaultKey("test-dir", "DIRECTORY",
+    arg_descrs->AddDefaultKey("test-dir", "TEST_FILE_DIRECTORY",
         "Set the root directory under which all test files can be found.",
         CArgDescriptions::eDirectory,
         dirTestFiles );
+    arg_descrs->AddDefaultKey("new-case", "NEW_CASE",
+        "Produce .asn and .error files from given .bed for new test case.",
+        CArgDescriptions::eString,
+        "" );
 }
 
 
@@ -205,15 +246,21 @@ NCBITEST_AUTO_FINI()
 BOOST_AUTO_TEST_CASE(RunTests)
 {
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
+
+    CDir test_cases_dir( args["test-dir"].AsDirectory() );
+    BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(), 
+        "Cannot find dir: " << test_cases_dir.GetPath() );
+
+    string new_case = args["new-case"].AsString();
+    if (!new_case.empty()) {
+        sNewCase(test_cases_dir, new_case);
+        return;
+    }
+   
     const vector<string> kEmptyStringVec;
     TTestNameToInfoMap testNameToInfoMap;
     CTestNameToInfoMapLoader testInfoLoader(
         &testNameToInfoMap, extInput, extOutput, extErrors);
-    CDir test_cases_dir( args["test-dir"].AsDirectory() );
-
-    BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(), 
-        "Cannot find dir: " << test_cases_dir.GetPath() );
-
     FindFilesInDir(
         test_cases_dir,
         kEmptyStringVec,
