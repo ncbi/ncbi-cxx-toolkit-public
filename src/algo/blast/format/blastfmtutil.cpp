@@ -189,18 +189,6 @@ CBlastFormatUtil::PrintAsciiPssm
         out << "\nLast position-specific scoring matrix computed\n";
     }
 
-    out << "         ";
-    // print the header for the last PSSM computed
-    for (size_t c = 0; c < DIM(RESIDUE_ORDER); c++) {
-        out << "  " << NCBISTDAA_TO_AMINOACID[RESIDUE_ORDER[c]];
-    }
-    if (pssm_calculation_done) {
-        // print the header for the weigthed observed percentages
-        for (size_t c = 0; c < DIM(RESIDUE_ORDER); c++) {
-            out << "   " << NCBISTDAA_TO_AMINOACID[RESIDUE_ORDER[c]];
-        }
-    }
-
     // will need psiblast statistics: posCount, intervalSizes,
     // sigma,
     // posCounts can be calculated from residue_frequencies
@@ -219,6 +207,43 @@ CBlastFormatUtil::PrintAsciiPssm
     blast::CScorematPssmConverter::GetNumMatchingSeqs(pssm_with_params,
                                                       num_matching_seqs);
 
+    // find score width
+    // find maximum score
+    int max_score = 0;
+    ITERATE (TNcbiMatrixInt::TData, it, pssm->GetData()) {
+        if (*it <= BLAST_SCORE_MIN) {
+            continue;
+        }
+
+        if (*it > max_score) {
+            max_score = *it;
+        }
+
+        if (-*it > max_score) {
+            max_score = -*it;
+        }
+    }
+
+    // find number of digits in maximum score
+    int num_digits = 0;
+    while (max_score > 0) {
+        max_score /= 10;
+        num_digits++;
+    }
+    int width = num_digits + 2;
+
+    out << "         ";
+    // print the header for the last PSSM computed
+    for (size_t c = 0; c < DIM(RESIDUE_ORDER); c++) {
+        out << setw(width) << NCBISTDAA_TO_AMINOACID[RESIDUE_ORDER[c]];
+    }
+    if (pssm_calculation_done) {
+        // print the header for the weigthed observed percentages
+        for (size_t c = 0; c < DIM(RESIDUE_ORDER); c++) {
+            out << "   " << NCBISTDAA_TO_AMINOACID[RESIDUE_ORDER[c]];
+        }
+    }
+
     CNCBIstdaa query;
     pssm_with_params.GetPssm().GetQuerySequenceData(query);
     const vector<char>& query_seq = query.Get();
@@ -234,7 +259,7 @@ CBlastFormatUtil::PrintAsciiPssm
             if ((*pssm)(RESIDUE_ORDER[c], i) == BLAST_SCORE_MIN) {
                 out << "-I ";
             } else {
-                out << setw(3) << (*pssm)(RESIDUE_ORDER[c], i);
+                out << setw(width) << (*pssm)(RESIDUE_ORDER[c], i);
             }
         }
         out << " ";
