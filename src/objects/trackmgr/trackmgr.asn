@@ -14,7 +14,7 @@ EXPORTS TMgr-Request, TMgr-Reply, TMgr-GenomeContext,
         TMgr-CreateUserTrackRequest, TMgr-CreateUserTrackReply,
         TMgr-TrackAttrValueRequest, TMgr-TrackAttrValueReply,
         TMgr-AttrRequest, TMgr-AttrReply, TMgr-ValueRequest, TMgr-AttrValueReply,
-        TMgr-TrackAttributes, TMgr-MessageLevel, TMgr-Message;
+        TMgr-TrackAttributes, TMgr-MessageLevel, TMgr-Message, TMgr-DatasetItemSeq;
 
 IMPORTS Seq-id FROM NCBI-Seqloc
         Dbtag FROM NCBI-General;
@@ -169,7 +169,13 @@ TMgr-DisplayTrack ::= SEQUENCE {
 
 TMgr-DatasetItem ::= SEQUENCE {
     name UTF8String,
-    attrs SET OF TMgr-Attribute OPTIONAL
+    attrs SET OF TMgr-Attribute OPTIONAL,
+    seqs SET OF TMgr-DatasetItemSeq OPTIONAL
+}
+
+TMgr-DatasetItemSeq ::= SEQUENCE {
+    seq-id Seq-id,
+    counts TMgr-AnnotCounts OPTIONAL
 }
 
 TMgr-DisplayTrackChoice ::= CHOICE {
@@ -270,7 +276,10 @@ TMgr-ItemResolverRequest ::= SEQUENCE {
     client TMgr-ClientInfo,
     genome-context TMgr-GenomeContext,
     attrs SET OF TMgr-AttrSpec OPTIONAL,
-    sequence Seq-id OPTIONAL -- resolve specifically for this top-level sequence
+    sequence Seq-id OPTIONAL, -- resolve specifically for this top-level sequence
+    flags SEQUENCE {
+        include-stats BOOLEAN DEFAULT FALSE
+    } OPTIONAL
 }
 
 TMgr-TrackItems ::= SEQUENCE {
@@ -281,6 +290,42 @@ TMgr-TrackItems ::= SEQUENCE {
 TMgr-ItemResolverReply ::= SEQUENCE {
     messages SEQUENCE OF TMgr-Message OPTIONAL,
     track-items SET OF TMgr-TrackItems OPTIONAL
+}
+
+TMgr-AnnotType ::= INTEGER {
+    total (0),
+    feat (1),
+    feat-gene (100),
+    feat-cdregion (101),
+    feat-prot (102),
+    feat-rna (103),
+    feat-imp (104),
+    feat-region (105),
+    feat-clone (106),
+    feat-variation (107),
+    feat-user (108),
+    seq-table (2),
+    graph (3),
+    align (4),
+    ids (5),
+    locs (6)
+}
+
+TMgr-LengthStats ::= SEQUENCE {
+    min INTEGER,
+    max INTEGER,
+    median INTEGER OPTIONAL,
+    mean INTEGER OPTIONAL
+}
+
+TMgr-TypeStat ::= SEQUENCE {
+    type TMgr-AnnotType,
+    count INTEGER,
+    length-stats TMgr-LengthStats OPTIONAL
+}
+
+TMgr-AnnotCounts ::= SEQUENCE {
+    counts SET OF TMgr-TypeStat
 }
 
 
