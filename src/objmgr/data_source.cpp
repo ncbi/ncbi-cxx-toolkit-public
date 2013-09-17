@@ -853,8 +853,25 @@ void CDataSource::GetTSESetWithOrphanAnnots(const TSeq_idSet& ids,
     }
     else {
         // without loader we look only in static TSE if any
-        ITERATE ( TTSE_LockSet, tse_it, m_StaticBlobs ) {
-            x_AddTSEOrphanAnnots(ret, ids, tse_it->second);
+        if ( m_StaticBlobs.size() <= 10 ) {
+            ITERATE ( TTSE_LockSet, tse_it, m_StaticBlobs ) {
+                x_AddTSEOrphanAnnots(ret, ids, tse_it->second);
+            }
+        }
+        else {
+            UpdateAnnotIndex();
+            TAnnotLock::TReadLockGuard guard(m_DSAnnotLock);
+            ITERATE ( TSeq_idSet, id_it, ids ) {
+                TSeq_id2TSE_Set::const_iterator tse_set =
+                    m_TSE_orphan_annot.find(*id_it);
+                if (tse_set != m_TSE_orphan_annot.end()) {
+                    ITERATE(TTSE_Set, tse_it, tse_set->second) {
+                        sx_AddAnnotMatch(ret,
+                                         m_StaticBlobs.FindLock(*tse_it),
+                                         *id_it);
+                    }
+                }
+            }
         }
     }
     sort(ret.begin(), ret.end());
