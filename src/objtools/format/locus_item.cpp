@@ -351,20 +351,12 @@ void CLocusItem::x_SetTopology(CBioseqContext& ctx)
 
 // Division
 
-void CLocusItem::x_SetDivision(CBioseqContext& ctx)
-{
-    // contig style (old genome_view flag) forces CON division
-    if ( ctx.DoContigStyle() ) {
-        m_Division = "CON";
-        return;
-    }
-    // "genome view" forces CON division
-    if (s_IsGenomeView(ctx)){
-        m_Division = "CON";
-        return;
-    }
+static CTempString x_GetDivisionProc(const CBioseq_Handle& bsh, bool is_prot,
+                                     CMolInfo::TTech tech)
 
-    const CBioseq_Handle& bsh = ctx.GetHandle();
+{
+    CTempString division;
+
     const CBioSource* bsrc = 0;
 
     // Find the BioSource object for this sequnece.
@@ -375,7 +367,7 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
         CFeat_CI feat(bsh, CSeqFeatData::e_Biosrc);
         if ( feat ) {
             bsrc = &(feat->GetData().GetBiosrc());
-        } else if ( ctx.IsProt() ) {
+        } else if ( is_prot ) {
             // if protein with no sources, get sources applicable to 
             // DNA location of CDS
             const CSeq_feat* cds = GetCDSForProduct(bsh);
@@ -408,7 +400,7 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
         if ( bsrc->CanGetOrg() ) {
             const COrg_ref& org = bsrc->GetOrg();
             if ( org.CanGetOrgname()  &&  org.GetOrgname().CanGetDiv() ) {
-                m_Division = org.GetOrgname().GetDiv();
+                division = org.GetOrgname().GetDiv();
             }
         }
 
@@ -423,28 +415,26 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
         }
     }
 
-    CMolInfo::TTech tech = ctx.GetTech();
-
     switch (tech) {
     case CMolInfo::eTech_est:
-        m_Division = "EST";
+        division = "EST";
         break;
     case CMolInfo::eTech_sts:
-        m_Division = "STS";
+        division = "STS";
         break;
     case CMolInfo::eTech_survey:
-        m_Division = "GSS";
+        division = "GSS";
         break;
     case CMolInfo::eTech_htgs_0:
     case CMolInfo::eTech_htgs_1:
     case CMolInfo::eTech_htgs_2:
-        m_Division = "HTG";
+        division = "HTG";
         break;
     case CMolInfo::eTech_htc:
-        m_Division = "HTC";
+        division = "HTC";
         break;
     case CMolInfo::eTech_tsa:
-        m_Division = "TSA";
+        division = "TSA";
         break;
     default:
         break;
@@ -454,27 +444,27 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
         origin == CBioSource::eOrigin_mut         ||
         origin == CBioSource::eOrigin_artificial  ||
         is_transgenic ) {
-        m_Division = "SYN";
+        division = "SYN";
     } else if (is_env_sample) {
         if (tech == CMolInfo::eTech_unknown  ||
             tech == CMolInfo::eTech_standard ||
             tech == CMolInfo::eTech_htgs_3   ||
             tech == CMolInfo::eTech_other) {
-            m_Division = "ENV";
+            division = "ENV";
         }
     }
 
     if (is_transgenic && tech == CMolInfo::eTech_survey) {
-        m_Division = "GSS";
+        division = "GSS";
     }
 
     ITERATE (CBioseq_Handle::TId, iter, bsh.GetId()) {
         if (*iter  &&  iter->GetSeqId()->IsPatent()) {
-            m_Division = "PAT";
+            division = "PAT";
             break;
         }
     }
-    if ( ctx.IsProt() ) {
+    if ( is_prot ) {
         const CSeq_feat* cds = GetCDSForProduct(bsh);
         if ( cds ) {
             const CSeq_loc & cds_loc = cds->GetLocation();
@@ -490,7 +480,7 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
                         CSeq_id_Handle cds_loc_piece_id = cds_loc_iter.GetSeq_id_Handle();
                         if( cds_loc_piece_id ) {
                             nuc = bsh.GetScope().GetBioseqHandleFromTSE(
-                                cds_loc_piece_id, ctx.GetHandle() );
+                                cds_loc_piece_id, bsh );
                             if( nuc ) {
                                 break;
                             }
@@ -504,7 +494,7 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
             if( nuc ) {
                 ITERATE (CBioseq_Handle::TId, iter, nuc.GetId()) {
                     if (*iter  &&  iter->GetSeqId()->IsPatent()) {
-                        m_Division = "PAT";
+                        division = "PAT";
                         break;
                     }
                 }
@@ -517,13 +507,60 @@ void CLocusItem::x_SetDivision(CBioseqContext& ctx)
     for (CSeqdesc_CI gb_desc(bsh, CSeqdesc::e_Genbank); gb_desc; ++gb_desc) {
         const CGB_block& gb = gb_desc->GetGenbank();
         if (gb.CanGetDiv()) {
-            if (m_Division.empty()    ||
+            if (division.empty()    ||
                 gb.GetDiv() == "SYN"  ||
                 gb.GetDiv() == "PAT") {
-                    m_Division = gb.GetDiv();
+                    division = gb.GetDiv();
             }
         }
     }
+
+    // Set a default value (3 spaces)
+    if ( division.empty() ) {
+        division = "   ";
+    }
+
+    return division;
+}
+
+string CLocusItem::GetDivision(const CBioseq_Handle& bsh)
+
+{
+    CMolInfo::TTech tech = 0;
+
+    CSeqdesc_CI::TDescChoices desc_choices;
+    desc_choices.reserve(1);
+    desc_choices.push_back(CSeqdesc::e_Molinfo);
+
+    for (CSeqdesc_CI desc_it(bsh, desc_choices); desc_it;  ++desc_it) {
+        switch (desc_it->Which()) {
+        case CSeqdesc::e_Molinfo:
+        {
+            const CMolInfo& molinf = desc_it->GetMolinfo();
+            tech = molinf.GetTech();
+        }
+        }
+    }
+
+    return x_GetDivisionProc (bsh, bsh.IsAa(), tech);
+}
+
+void CLocusItem::x_SetDivision(CBioseqContext& ctx)
+{
+    // contig style (old genome_view flag) forces CON division
+    if ( ctx.DoContigStyle() ) {
+        m_Division = "CON";
+        return;
+    }
+    // "genome view" forces CON division
+    if (s_IsGenomeView(ctx)){
+        m_Division = "CON";
+        return;
+    }
+
+    const CBioseq_Handle& bsh = ctx.GetHandle();
+
+    m_Division = x_GetDivisionProc (bsh, ctx.IsProt(), ctx.GetTech());
 
     const CMolInfo* molinfo = dynamic_cast<const CMolInfo*>(GetObject());
     if ( ctx.Config().IsFormatEMBL() ) {
