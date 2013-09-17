@@ -92,6 +92,7 @@ BOOST_AUTO_TEST_CASE(TestCaseHgvs1)
     CConstRef<CGC_Assembly> assembly = GetAssembly("GCF_000001405.13");
     CHgvsReader reader(*assembly);
     const string lines(
+        "NC_000023.10:g.107930740_107930741insT \n"
         "NC_000001.10:g.197031020C>T\n"
         "chr1:g.169519049T=\n"
         "NC_000006.11:g.32627914delA\n"
