@@ -120,8 +120,8 @@ bool CDiscTestInfo :: is_BacPartial_run;
 bool CDiscTestInfo :: is_Bases_N_run;
 bool CDiscTestInfo :: is_BASES_N_run;
 bool CDiscTestInfo :: is_BioSet_run;
+//bool CDiscTestInfo :: is_BIOSRC_run;
 bool CDiscTestInfo :: is_BIOSRC_run;
-bool CDiscTestInfo :: is_BIOSRC1_run;
 bool CDiscTestInfo :: is_Biosrc_Orgmod_run;
 bool CDiscTestInfo :: is_CDs_run;
 bool CDiscTestInfo :: is_CdTransl_run;
@@ -5077,6 +5077,7 @@ void CBioseq_DISC_FEATURE_COUNT :: GetReport(CRef <CClickableItem>& c_item)
 };
 
 
+/*
 void CSeqEntryTestAndRepData :: TestOnBiosrc(const CSeq_entry& seq_entry)
 {
    string desc;
@@ -5098,6 +5099,7 @@ void CSeqEntryTestAndRepData :: TestOnBiosrc(const CSeq_entry& seq_entry)
 
   thisTest.is_BIOSRC_run = true;
 };
+*/
 
 
 // change parent name to CSeqEntry_on_biosrc ::
@@ -5138,6 +5140,7 @@ bool CSeqEntryTestAndRepData :: IsBacterialIsolate(const CBioSource& biosrc)
 };
 
 
+/*
 void CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE :: TestOnObj(const CSeq_entry& seq_entry)
 {
    if (!thisTest.is_BIOSRC_run) TestOnBiosrc(seq_entry);
@@ -5148,6 +5151,7 @@ void CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE :: GetReport(CRef <CClickab
    c_item->description = GetHasComment(c_item->item_list.size(), "bacterial biosrouce")
                            + "isolate.";
 };
+*/
 
 
 bool CSeqEntry_INCONSISTENT_BIOSOURCE :: SynonymsMatch(const COrg_ref& org1, const COrg_ref& org2)
@@ -7147,6 +7151,7 @@ void CBioseq_DISC_COUNT_NUCLEOTIDES :: TestOnObj(const CBioseq& bioseq)
    if (bioseq.IsNa())
         thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(bioseq));
 
+
 }; // DISC_COUNT_NUCLEOTIDES :: TestOnObj
 
 
@@ -8737,7 +8742,8 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
      thisInfo.test_item_list[GetName_flu()].push_back(desc);
 
   // DISC_MISSING_VIRAL_QUALS
-  if (m_run_quals) AddMissingViralQualsDiscrepancies(biosrc, desc);
+  if (m_run_quals && HasLineage(biosrc, "Viruses")) 
+         AddMissingViralQualsDiscrepancies(biosrc, desc);
 
   // MORE_OR_SPEC_NAMES_IDENTIFIED_BY
   if ( m_run_iden && HasMoreOrSpecNames( biosrc, CSubSource::eSubtype_identified_by))
@@ -9027,26 +9033,27 @@ void CSeqEntry_test_on_biosrc :: FindSpecSubmitText()
 
 void CSeqEntry_test_on_biosrc :: TestOnObj(const CSeq_entry& seq_entry)
 {
-   if (thisTest.is_BIOSRC1_run) return;
-   thisTest.is_BIOSRC1_run = true;
+   if (thisTest.is_BIOSRC_run) return;
+   thisTest.is_BIOSRC_run = true;
 
-   m_run_trin = (thisTest.tests_run.find(GetName_trin()) != thisTest.tests_run.end());
-   m_run_iso = (thisTest.tests_run.find(GetName_iso()) != thisTest.tests_run.end());
-   m_run_mult = (thisTest.tests_run.find(GetName_mult()) != thisTest.tests_run.end());
-   m_run_tmiss = (thisTest.tests_run.find(GetName_tmiss()) != thisTest.tests_run.end());
-   m_run_tbad = (thisTest.tests_run.find(GetName_tbad()) != thisTest.tests_run.end());
-   m_run_flu = (thisTest.tests_run.find(GetName_flu()) != thisTest.tests_run.end());
-   m_run_quals = (thisTest.tests_run.find(GetName_quals()) != thisTest.tests_run.end());
-   m_run_iden = (thisTest.tests_run.find(GetName_iden()) != thisTest.tests_run.end());
-   m_run_col = (thisTest.tests_run.find(GetName_col()) != thisTest.tests_run.end());
-   m_run_div = (thisTest.tests_run.find(GetName_div()) != thisTest.tests_run.end());
-   m_run_map = (thisTest.tests_run.find(GetName_map()) != thisTest.tests_run.end());
    m_run_clone = (thisTest.tests_run.find(GetName_clone()) != thisTest.tests_run.end());
-   m_run_meta = (thisTest.tests_run.find(GetName_meta()) != thisTest.tests_run.end());
-   m_run_sp = (thisTest.tests_run.find(GetName_sp()) != thisTest.tests_run.end());
-   m_run_prim = (thisTest.tests_run.find(GetName_prim()) != thisTest.tests_run.end());
+   m_run_col = (thisTest.tests_run.find(GetName_col()) != thisTest.tests_run.end());
    m_run_cty = (thisTest.tests_run.find(GetName_cty()) != thisTest.tests_run.end());
+   m_run_div = (thisTest.tests_run.find(GetName_div()) != thisTest.tests_run.end());
+   m_run_flu = (thisTest.tests_run.find(GetName_flu()) != thisTest.tests_run.end());
+   m_run_iden = (thisTest.tests_run.find(GetName_iden()) != thisTest.tests_run.end());
+   m_run_iso = (thisTest.tests_run.find(GetName_iso()) != thisTest.tests_run.end());
+   m_run_map = (thisTest.tests_run.find(GetName_map()) != thisTest.tests_run.end());
+   m_run_meta = (thisTest.tests_run.find(GetName_meta()) != thisTest.tests_run.end());
+   m_run_mult = (thisTest.tests_run.find(GetName_mult()) != thisTest.tests_run.end());
    m_run_pcr = (thisTest.tests_run.find(GetName_pcr()) != thisTest.tests_run.end());
+   m_run_prim = (thisTest.tests_run.find(GetName_prim()) != thisTest.tests_run.end());
+   m_run_quals = (thisTest.tests_run.find(GetName_quals()) != thisTest.tests_run.end());
+   m_run_sp = (thisTest.tests_run.find(GetName_sp()) != thisTest.tests_run.end());
+   m_run_tbad = (thisTest.tests_run.find(GetName_tbad()) != thisTest.tests_run.end());
+   m_run_tmiss = (thisTest.tests_run.find(GetName_tmiss()) != thisTest.tests_run.end());
+   m_run_trin = (thisTest.tests_run.find(GetName_trin()) != thisTest.tests_run.end());
+
    m_submit_text.clear(); 
    FindSpecSubmitText();
 
@@ -9150,7 +9157,7 @@ void CSeqEntry_TAX_LOOKUP_MISMATCH :: GetReport(CRef <CClickableItem>& c_item)
 };
 
 
-void CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1 :: GetReport(CRef <CClickableItem>& c_item)
+void CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE :: GetReport(CRef <CClickableItem>& c_item)
 {
    RmvRedundancy(c_item->item_list); 
    c_item->description = GetHasComment(c_item->item_list.size(), "bacterial biosrouce")
@@ -9308,10 +9315,8 @@ void CSeqEntry_on_incnst_user :: TestOnObj(const CSeq_entry& seq_entry)
    if (thisTest.is_IncnstUser_run) return;
    thisTest.is_IncnstUser_run = true;
 
-   unsigned i=0;
    CConstRef <CBioseq> seq_ref;
    CConstRef <CBioseq_set> set_ref;
-   bool entry_is_seq, not_empty_fields;
    string desc, type_str, prefix, seq_desc;
 
    bool run_test_comm = (thisTest.tests_run.find(GetName_comm()) != thisTest.tests_run.end());
@@ -10988,8 +10993,9 @@ void CSeqEntry_DISC_CITSUBAFFIL_CONFLICT :: GetReport(CRef <CClickableItem>& c_i
    GetTestItemList(c_item->item_list, affil2pubs);
    c_item->item_list.clear();
    if (affil2pubs.size() == 1) {
-      if ( affil2pubs.begin()->first != "no affil" )
-            c_item->description = "All citsub affiliations match";
+      if ( affil2pubs.begin()->first != "no affil" ) { // Make no report if all values match
+            c_item->description = kEmptyStr;
+      }
       else c_item->description = "All citsub have no affiliations";
    }
    else {
@@ -11515,6 +11521,7 @@ void CSeqEntry_ONCALLER_DEFLINE_ON_SET :: GetReport(CRef <CClickableItem>& c_ite
 
 void CSeqEntry_DISC_FEATURE_COUNT :: TestOnObj(const CSeq_entry& seq_entry)
 {  
+cerr << "CSeqEntry_DISC_FEATURE_COUNT\n";
    Str2Int feat_count_list;
    Str2Int :: iterator it;
    CSeq_entry_Handle seq_entry_hl = thisInfo.scope->GetSeq_entryHandle(seq_entry);
@@ -11530,7 +11537,8 @@ void CSeqEntry_DISC_FEATURE_COUNT :: TestOnObj(const CSeq_entry& seq_entry)
    }
 
    ITERATE (Str2Int, it, feat_count_list) 
-     thisInfo.test_item_list[GetName()+"$" + it->first].push_back(NStr::UIntToString(it->second));
+     thisInfo.test_item_list[GetName()].push_back(
+                   it->first + "$" + NStr::UIntToString(it->second));
 };
 
 
@@ -11538,20 +11546,17 @@ void CSeqEntry_DISC_FEATURE_COUNT :: TestOnObj(const CSeq_entry& seq_entry)
 void CSeqEntry_DISC_FEATURE_COUNT :: GetReport(CRef <CClickableItem>& c_item)
 {
    size_t pos;
-   unsigned cnt;
-   strtmp = GetName() + "$";
-   ITERATE (Str2Strs, it, thisInfo.test_item_list) {
-     if ( it->first.find(strtmp) != string::npos) {
-        pos = it->first.find("$");
-        c_item->setting_name = GetName();
-        c_item->item_list.clear();
-        cnt = NStr::StringToUInt(((it->second)[0]));
-        c_item->description 
-            = CTempString(it->first).substr(pos+1) + ": " + NStr::UIntToString(cnt) 
-                                + ((cnt>1)? " present" : " presents");
-        thisInfo.disc_report_data.push_back(c_item);
-        c_item.Reset(new CClickableItem);
-     }
+   unsigned cnt, i=0;
+   vector <string> arr;
+   ITERATE (vector <string>, it, thisInfo.test_item_list[GetName()]) {
+       arr.clear();
+       arr = NStr::Tokenize(*it, "$", arr);
+       c_item->item_list.clear();
+       cnt = NStr::StringToUInt(arr[1]);
+       c_item->description = arr[0] + ": " + arr[1] + ((cnt>1)? " present" : " presents");
+       if (i++) thisInfo.disc_report_data.push_back(c_item);
+       c_item.Reset(new CClickableItem);
+       c_item->setting_name = GetName();
    }
 };
 
@@ -11598,28 +11603,13 @@ void CSeqEntry_DISC_MISMATCHED_COMMENTS :: GetReport(CRef <CClickableItem>& c_it
   }
 };
 
-
-/*
-void CSeqEntry_ONCALLER_COMMENT_PRESENT :: TestOnObj(const CSeq_entry& seq_entry)
-{
-   unsigned i=0;
-   m_all_same = true;
-   ITERATE (vector <const CSeqdesc*>, it, comm_seqdesc) {
-     if (m_all_same && comm_seqdesc[0]->GetComment() != (*it)->GetComment())
-          m_all_same  = false;
-     thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it, *(comm_seqdesc_seqentry[i++])));
-   }
-};
-*/
-
-
 void CSeqEntry_ONCALLER_COMMENT_PRESENT :: GetReport(CRef <CClickableItem>& c_item)
 {
+    unsigned cnt = c_item->item_list.size();
+    strtmp = (cnt==1)? kEmptyStr : (m_all_same? " (all same)." : " (some different). ");
     c_item->description 
-        = GetOtherComment(c_item->item_list.size(), 
-                                          "comment descriptor was found", 
-                                          "comment descriptors were found") 
-        +((c_item->item_list.size() >1 && m_all_same)? " (all same)." : " (some different). ");
+      = GetOtherComment(cnt, "comment descriptor was found", "comment descriptors were found") 
+        + strtmp;
 };
 
 
@@ -11724,7 +11714,7 @@ bool CSeqEntry_test_on_pub ::  AuthNoFirstLastNames(const CAuth_list& auths)
         if (!name.CanGetInitials() || name.GetInitials().empty()) return true;
       }
    }
-   return true;
+   return false;
 };
 
 void CSeqEntry_test_on_pub :: CheckBadAuthCapsOrNoFirstLastNamesInPubdesc(const list <CRef <CPub> >& pubs, const string& desc)
@@ -11749,8 +11739,9 @@ void CSeqEntry_test_on_pub :: CheckBadAuthCapsOrNoFirstLastNamesInPubdesc(const 
 
 void CSeqEntry_DISC_CHECK_AUTH_NAME :: GetReport(CRef <CClickableItem>& c_item)
 {
+   RmvRedundancy(c_item->item_list);
    c_item->description = GetOtherComment(c_item->item_list.size(), "pub", "pubs") 
-                            + "missing author's first or last name";
+                            + " missing author's first or last name";
 };
 
 
@@ -11795,6 +11786,7 @@ void CSeqEntry_DISC_CHECK_AUTH_CAPS :: TestOnObj(const CSeq_entry& seq_entry)
 
 void CSeqEntry_DISC_CHECK_AUTH_CAPS :: GetReport(CRef <CClickableItem>& c_item)
 {
+   RmvRedundancy(c_item->item_list);
    c_item->description = GetHasComment(c_item->item_list.size(), "pub") + 
                                                       "incorrect author capitalization.";
 };

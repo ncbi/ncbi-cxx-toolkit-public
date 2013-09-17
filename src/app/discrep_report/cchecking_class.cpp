@@ -214,7 +214,6 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
   // cerr << "CheckSeqEntry " << CTime(CTime::eCurrent).AsString() << endl;
   // ini.
   thisTest.is_BIOSRC_run = false;
-  thisTest.is_BIOSRC1_run = false;
   thisTest.is_Biosrc_Orgmod_run = false;
   thisTest.is_Comment_run = false;
   thisTest.is_Defl_run = false;
@@ -281,7 +280,6 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
 {
 ++num_bioseq;
 //cerr << "bioseq " << num_bioseq << endl;
-if (num_bioseq > 1) return;
 // ini.
    thisTest.is_Aa_run = false;
    thisTest.is_AllAnnot_run = false;

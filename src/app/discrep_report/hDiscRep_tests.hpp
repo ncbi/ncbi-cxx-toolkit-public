@@ -166,9 +166,8 @@ namespace DiscRepNmSpc {
       static bool   is_Bases_N_run; 
       static bool   is_BASES_N_run; // may not be needed
       static bool   is_BioSet_run;
-      static bool   is_BIOSRC_run;   // may not be needed
       static bool   is_Biosrc_Orgmod_run;
-      static bool   is_BIOSRC1_run;
+      static bool   is_BIOSRC_run;
       static bool   is_CDs_run;
       static bool   is_CdTransl_run;
       static bool   is_Comment_run;
@@ -718,7 +717,7 @@ namespace DiscRepNmSpc {
        void AddBioseqsInSeqentryToReport(const CSeq_entry* seq_entry, 
                         const string& setting_name, bool be_na = true, bool be_aa=true);
 
-       void TestOnBiosrc(const CSeq_entry& seq_entry);
+//       void TestOnBiosrc(const CSeq_entry& seq_entry);
        string GetName_multi() const {return string("ONCALLER_MULTISRC"); }
        string GetName_iso() const {
                              return string("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE"); }
@@ -1485,7 +1484,7 @@ namespace DiscRepNmSpc {
       string GetName_trin() const {
                       return string("DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER"); }
       string GetName_iso() const {
-                        return string("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1"); }
+                        return string("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE"); }
       string GetName_mult() const {return string("ONCALLER_MULTISRC"); }
       string GetName_tmiss() const {return string("TAX_LOOKUP_MISSING"); }
       string GetName_tbad () const {return string("TAX_LOOKUP_MISMATCH"); }
@@ -1663,10 +1662,10 @@ namespace DiscRepNmSpc {
   };
 
 
-  class CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1 : public CSeqEntry_test_on_biosrc
+  class CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE : public CSeqEntry_test_on_biosrc
   {
     public:
-      virtual ~CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1 () {};
+      virtual ~CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const { return CSeqEntry_test_on_biosrc::GetName_iso();}
@@ -1858,6 +1857,7 @@ namespace DiscRepNmSpc {
 
 
 
+/*
   class CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE : public CSeqEntryTestAndRepData
   {
       friend class CSeqEntryTestAndRepData;
@@ -1870,6 +1870,7 @@ namespace DiscRepNmSpc {
                                return string("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE");}
       virtual void Check(const string& desc) {cerr << "check1 " << desc << endl;}
   };
+*/
 
 
   class CSeqEntry_INCONSISTENT_BIOSOURCE : public CSeqEntryTestAndRepData
@@ -3811,6 +3812,7 @@ namespace DiscRepNmSpc {
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("DISC_COUNT_NUCLEOTIDES");}
+unsigned m_cnt;
   };
 
 

@@ -982,12 +982,11 @@ void CRepConfig :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
 
 
 static CDiscTestInfo thisTest;
-static const s_test_property test_list[] = {
-   {"DISC_INCONSISTENT_STRUCTURED_COMMENTS", fDiscrepancy},
-   {"DISC_INCONSISTENT_DBLINK", fDiscrepancy}
+static const s_test_property test1_list[] = {
+   {"ONCALLER_COMMENT_PRESENT", fDiscrepancy},
 };
 
-static const s_test_property test1_list[] = {
+static const s_test_property test_list[] = {
 // tests_on_SubmitBlk
    {"DISC_SUBMITBLOCK_CONFLICT", fDiscrepancy | fOncaller},
 
@@ -1198,7 +1197,6 @@ static const s_test_property test1_list[] = {
    {"MORE_NAMES_COLLECTED_BY", fDiscrepancy},
    {"MISSING_PROJECT", fDiscrepancy},
    {"DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE", fDiscrepancy},
-   {"DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1", fDiscrepancy}, // not tested
 
 // tests_on_BioseqSet   // redundant because of nested set?
    {"DISC_SEGSETS_PRESENT", fDiscrepancy},
@@ -1237,7 +1235,7 @@ void CRepConfig :: CollectTests()
         thisInfo.test_item_list["DISC_QUALITY_SCORES"].clear();
         if (++i >= sz) return;
    }
-   if (thisTest.tests_run.find("DISC_FEATURE_COUNT_oncaller") != thisTest.tests_run.end()) {
+   if (thisTest.tests_run.find("DISC_FEATURE_COUNT") != thisTest.tests_run.end()) {
         tests_on_Bioseq.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_FEATURE_COUNT)); 
         if (++i >= sz) return;
    } 
@@ -1818,7 +1816,7 @@ if (i > sz) return;
              CRef <CTestAndRepData>(new CSeqEntry_DISC_FLATFILE_FIND_ONCALLER));
         if (++i >= sz) return;
    }
-   if ( thisTest.tests_run.find("DISC_FEATURE_COUNT") != thisTest.tests_run.end()) { // asndisc version   
+   if ( thisTest.tests_run.find("DISC_FEATURE_COUNT_oncaller") != thisTest.tests_run.end()) { // asndisc version   
        tests_on_SeqEntry.push_back(CRef <CTestAndRepData>(new CSeqEntry_DISC_FEATURE_COUNT));
         if (++i >= sz) return;
    }
@@ -2164,14 +2162,11 @@ if (i > sz) return;
                        CRef <CTestAndRepData>(new CSeqEntry_MISSING_PROJECT));
         if (++i >= sz) return;
    }
-   if ( thisTest.tests_run.find("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1") != thisTest.tests_run.end()) {
+   if ( thisTest.tests_run.find("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE") 
+                                                            != thisTest.tests_run.end()) {
        tests_on_SeqEntry_feat_desc.push_back(CRef <CTestAndRepData>(
                        new CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE)); // not tested
-       tests_on_SeqEntry_feat_desc.push_back(CRef <CTestAndRepData>(
-                       new CSeqEntry_DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE1)); // not tested
-i += 2;
-if (i >= sz) return;
-      //  if (++i >= sz) return;
+       if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("DISC_SEGSETS_PRESENT") != thisTest.tests_run.end()) {
        tests_on_BioseqSet.push_back(
