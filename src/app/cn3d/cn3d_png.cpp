@@ -47,6 +47,7 @@
 #include <GL/glx.h>
 
 #elif defined(__WXMAC__)
+#include <AGL/agl.h>
 #include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
 #endif

@@ -1761,8 +1761,9 @@ void StructureWindow::OnSave(wxCommandEvent& event)
             SendCommand(messageTargetApp, "FileSaved", data);
         }
 
-#ifdef __WXMAC__
-        // set mac file type and creator
+#if defined(__WXMAC__) && !defined(__WXOSX_COCOA__)
+        // set mac file type and creator (used under Carbon)
+        // Note: creator codes are ignored by OSX 10.6 and later, and for the Cocoa port of wxMac [wx2.9.5 and up]
         wxFileName wxfn(outputFilename);
         if (wxfn.FileExists())
             if (!wxfn.MacSetTypeAndCreator('TEXT', 'Cn3D'))

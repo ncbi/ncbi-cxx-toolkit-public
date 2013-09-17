@@ -42,7 +42,7 @@
 
 #elif defined(__WXMAC__)
 // full paths needed to void having to add -I/Developer/Headers/FlatCarbon to all modules...
-#include "/Developer/Headers/FlatCarbon/Types.h"
+//#include "/Developer/Headers/FlatCarbon/Types.h"
 #include "/Developer/Headers/FlatCarbon/InternetConfig.h"
 #endif
 
@@ -397,12 +397,12 @@ static bool MSWin_OpenDocument(const char* doc_name)
 
 #ifdef __WXMAC__
 //  CJL Hack ... pass the length of the string
-static OSStatus MacLaunchURL(ConstStr255Param urlStr, SInt32 len)
+static OSStatus MacLaunchURL(ConstStr255Param urlStr, long int len)
 {
     OSStatus err;
     ICInstance inst;
-    SInt32 startSel;
-    SInt32 endSel;
+    long int startSel;
+    long int endSel;
 
     err = ICStart(&inst, 'Cn3D');
     if (err == noErr) {

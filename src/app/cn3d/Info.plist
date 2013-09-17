@@ -15,6 +15,8 @@
 			<string>cn3dDoc.icns</string>
 			<key>CFBundleTypeMIMETypes</key>
 			<array>
+				<string>application/vnd.ncbi.cn3d</string>
+				<string>application/x-cn3d</string>
 				<string>chemical/ncbi-asn1-binary</string>
 			</array>
 			<key>CFBundleTypeName</key>
@@ -26,7 +28,7 @@
 	<key>CFBundleExecutable</key>
 	<string>Cn3D</string>
 	<key>CFBundleGetInfoString</key>
-	<string>Cn3D 4.3</string>
+	<string>Cn3D 4.3.1</string>
 	<key>CFBundleIconFile</key>
 	<string>cn3dApp.icns</string>
 	<key>CFBundleIdentifier</key>
@@ -34,17 +36,17 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleLongVersionString</key>
-	<string>Cn3D version 4.3</string>
+	<string>Cn3D version 4.3.1</string>
 	<key>CFBundleName</key>
 	<string>Cn3D</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>4.3</string>
+	<string>4.3.1</string>
 	<key>CFBundleSignature</key>
 	<string>Cn3D</string>
 	<key>CFBundleVersion</key>
-	<string>4.3</string>
+	<string>4.3.1</string>
 	<key>CSResourcesFileMapped</key>
 	<true/>
 	<key>LSRequiresCarbon</key>

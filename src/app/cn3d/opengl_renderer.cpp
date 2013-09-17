@@ -49,7 +49,7 @@
 
 #elif defined(__WXMAC__)
 //#include <Fonts.h>
-#include <OpenGL/gl.h>
+//#include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
 #endif
 
@@ -1944,15 +1944,10 @@ bool OpenGLRenderer::SetGLFont(int firstChar, int nChars, int fontBase)
 //    glXUseXFont(gdk_font_id(GetGLFont().GetInternalFont()), firstChar, nChars, fontBase);
 
 #elif defined(__WXMAC__)
-//    **  RealFont is deprecated as of OSX10.4, with no replacement.  
-//    wxFontRefData *fontRefData = (wxFontRefData *) GetGLFont().GetRefData();
-//    if (RealFont(fontRefData->m_macFontNum, fontRefData->m_macFontSize)) {
-//    if (RealFont(fontFamily, fontSize)) {
-//                (GLint) fontRefData->m_macFontNum,
-//                fontRefData->m_macFontStyle, fontRefData->m_macFontSize,
-
 
 //  Offsets to font family, style determined empirically.  
+//  'aglUseFont' deprecated w/o replacement as of OSX 10.5, but this code no longer appears necessary.
+/*
     int fontFamily = GetGLFont().GetFamily() - wxFONTFAMILY_DEFAULT;
     int fontSize = GetGLFont().GetPointSize();
     int fontStyle = GetGLFont().GetStyle() - wxFONTSTYLE_NORMAL;
@@ -1965,6 +1960,7 @@ bool OpenGLRenderer::SetGLFont(int firstChar, int nChars, int fontBase)
         ERRORMSG("OpenGLRenderer::SetGLFont() - aglUseFont() failed: " << aglErrorString(aglGetError()));
         okay = false;
     }
+*/
 #endif
 
     return okay;
