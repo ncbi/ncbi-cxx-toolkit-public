@@ -39,6 +39,7 @@
 #include <corelib/ncbifile.hpp>
 
 #include <objtools/readers/bed_reader.hpp>
+#include "error_logger.hpp"
 
 #include <cstdio>
 
@@ -53,6 +54,7 @@ USING_SCOPE(objects);
 //  Customization data:
 const string extInput("bed");
 const string extOutput("asn");
+const string extErrors("errors");
 const string dirTestFiles("bedreader_test_cases");
 // !!!
 // !!! Must also customize reader type in sRunTest !!!
@@ -62,6 +64,7 @@ const string dirTestFiles("bedreader_test_cases");
 struct STestInfo {
     CFile mInFile;
     CFile mOutFile;
+    CFile mErrorFile;
 };
 typedef string TTestName;
 typedef map<TTestName, STestInfo> TTestNameToInfoMap;
@@ -71,10 +74,12 @@ public:
     CTestNameToInfoMapLoader(
         TTestNameToInfoMap * pTestNameToInfoMap,
         const string& extInput,
-        const string& extOutput)
+        const string& extOutput,
+        const string& extErrors)
         : m_pTestNameToInfoMap(pTestNameToInfoMap),
           mExtInput(extInput),
-          mExtOutput(extOutput)
+          mExtOutput(extOutput),
+          mExtErrors(extErrors)
     { }
 
     void operator()( const CDirEntry & dirEntry ) {
@@ -113,6 +118,11 @@ public:
             BOOST_REQUIRE( test_info_to_load.mOutFile.GetPath().empty() );
             test_info_to_load.mOutFile = file;
         } 
+        else if (tsFileType == mExtErrors) {
+            BOOST_REQUIRE( test_info_to_load.mErrorFile.GetPath().empty() );
+            test_info_to_load.mErrorFile = file;
+        } 
+
         else {
             BOOST_FAIL("Unknown file type " << sFileName << ".");
         }
@@ -123,12 +133,17 @@ private:
     TTestNameToInfoMap * m_pTestNameToInfoMap;
     string mExtInput;
     string mExtOutput;
+    string mExtErrors;
 };
 
 void sRunTest(const string &sTestName, const STestInfo & testInfo)
 {
     cerr << "Testing " << testInfo.mInFile.GetName() << " against " <<
-        testInfo.mOutFile.GetName() << endl;
+        testInfo.mOutFile.GetName() << " and " <<
+        testInfo.mErrorFile.GetName() << endl;
+
+    string logName = CDirEntry::GetTmpName();
+    CErrorLogger logger(logName);
 
     CBedReader reader(CBedReader::fThreeFeatFormat);
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
@@ -136,7 +151,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo)
     typedef vector<CRef<CSeq_annot> > ANNOTS;
     ANNOTS annots;
     try {
-        reader.ReadSeqAnnots(annots, ifstr);
+        reader.ReadSeqAnnots(annots, ifstr, &logger);
     }
     catch (...) {
         BOOST_ERROR("Error: " << sTestName << " failed during conversion.");
@@ -144,8 +159,8 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo)
         return;
     }
 
-    string tempName = CDirEntry::GetTmpName();
-    CNcbiOfstream ofstr(tempName.c_str());
+    string resultName = CDirEntry::GetTmpName();
+    CNcbiOfstream ofstr(resultName.c_str());
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
         ofstr << MSerial_AsnText << **cit;
         ofstr.flush();
@@ -153,10 +168,18 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo)
     ifstr.close();
     ofstr.close();
 
-    bool success = testInfo.mOutFile.CompareTextContents(tempName, CFile::eIgnoreWs);
-    CDirEntry(tempName).Remove();
+    bool success = testInfo.mOutFile.CompareTextContents(resultName, CFile::eIgnoreWs);
     if (!success) {
+        CDirEntry(resultName).Remove();
+        CDirEntry(logName).Remove();
         BOOST_ERROR("Error: " << sTestName << " failed due to post processing diffs.");
+    }
+    CDirEntry(resultName).Remove();
+
+    success = testInfo.mErrorFile.CompareTextContents(logName, CFile::eIgnoreWs);
+    CDirEntry(logName).Remove();
+    if (!success) {
+        BOOST_ERROR("Error: " << sTestName << " failed due to error handling diffs.");
     }
 };
 
@@ -185,7 +208,7 @@ BOOST_AUTO_TEST_CASE(RunTests)
     const vector<string> kEmptyStringVec;
     TTestNameToInfoMap testNameToInfoMap;
     CTestNameToInfoMapLoader testInfoLoader(
-        &testNameToInfoMap, extInput, extOutput);
+        &testNameToInfoMap, extInput, extOutput, extErrors);
     CDir test_cases_dir( args["test-dir"].AsDirectory() );
 
     BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(), 

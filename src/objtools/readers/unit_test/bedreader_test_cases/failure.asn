@@ -9,7 +9,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 2
         },
         {
           label str "warnings",
@@ -222,37 +222,6 @@ Seq-annot ::= {
       id local id 19,
       data region "chr1",
       location int {
-        from 16890607,
-        to 16905960,
-        strand minus,
-        id local str "chr1"
-      },
-      title "chr1:147006260",
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "score",
-              data int 284948
-            }
-          }
-        },
-        {
-          type str "BED",
-          data {
-            {
-              label str "location",
-              data str "chrom"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local id 22,
-      data region "chr1",
-      location int {
         from 16890824,
         to 16912256,
         strand plus,
@@ -281,7 +250,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 22,
       data region "chr1",
       location int {
         from 16890928,
@@ -312,7 +281,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 25,
       data region "chr1",
       location int {
         from 16893397,
@@ -343,38 +312,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
-      data region "chr1",
-      location int {
-        from 16900902,
-        to 16905960,
-        strand plus,
-        id local str "chr1"
-      },
-      title "chr1:16786052",
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "score",
-              data int 110198
-            }
-          }
-        },
-        {
-          type str "BED",
-          data {
-            {
-              label str "location",
-              data str "chrom"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local id 34,
+      id local id 28,
       data region "chr1",
       location int {
         from 13607163,
@@ -405,7 +343,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 31,
       data region "chr1",
       location int {
         from 47387404,
@@ -436,7 +374,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 34,
       data region "chr1",
       location int {
         from 120747157,
@@ -467,7 +405,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 37,
       data region "chr1",
       location int {
         from 120773192,
@@ -498,38 +436,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
-      data region "chr1",
-      location int {
-        from 142536437,
-        to 142662911,
-        strand minus,
-        id local str "chr1"
-      },
-      title "chrY:11791894",
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "score",
-              data int 0
-            }
-          }
-        },
-        {
-          type str "BED",
-          data {
-            {
-              label str "location",
-              data str "chrom"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local id 49,
+      id local id 40,
       data region "chr1",
       location int {
         from 142540096,
@@ -560,7 +467,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 43,
       data region "chr1",
       location int {
         from 142541122,
@@ -591,7 +498,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 46,
       data region "chr1",
       location int {
         from 142542268,
@@ -622,7 +529,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 49,
       data region "chr1",
       location int {
         from 142543009,
@@ -653,7 +560,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 52,
       data region "chr1",
       location int {
         from 142543755,
@@ -684,7 +591,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 55,
       data region "chr1",
       location int {
         from 142544630,
@@ -715,7 +622,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 58,
       data region "chr1",
       location int {
         from 142553006,
@@ -746,7 +653,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 61,
       data region "chr1",
       location int {
         from 142555146,
@@ -777,7 +684,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 64,
       data region "chr1",
       location int {
         from 142603842,
@@ -820,7 +727,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 2
         },
         {
           label str "warnings",
@@ -1631,7 +1538,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 2
         },
         {
           label str "warnings",
@@ -2442,7 +2349,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 2
         },
         {
           label str "warnings",
@@ -3253,7 +3160,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 2
         },
         {
           label str "warnings",
@@ -4033,7 +3940,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 2
         },
         {
           label str "warnings",
@@ -4844,7 +4751,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 2
         },
         {
           label str "warnings",
@@ -5655,7 +5562,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 2
         },
         {
           label str "warnings",
@@ -6466,7 +6373,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 3
         },
         {
           label str "warnings",
@@ -7277,7 +7184,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 4
         },
         {
           label str "warnings",
@@ -7302,37 +7209,6 @@ Seq-annot ::= {
   data ftable {
     {
       id local id 1,
-      data region "chrX",
-      location int {
-        from 32223915,
-        to 32225152,
-        strand minus,
-        id local str "chrX"
-      },
-      title "chr13:67303712",
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "score",
-              data int 21633
-            }
-          }
-        },
-        {
-          type str "BED",
-          data {
-            {
-              label str "location",
-              data str "chrom"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local id 4,
       data region "chrX",
       location int {
         from 32223916,
@@ -7363,7 +7239,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 7,
+      id local id 4,
       data region "chrX",
       location int {
         from 32223916,
@@ -7394,7 +7270,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 10,
+      id local id 7,
       data region "chrX",
       location int {
         from 32223916,
@@ -7425,7 +7301,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 13,
+      id local id 10,
       data region "chrX",
       location int {
         from 32223917,
@@ -7456,38 +7332,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 16,
-      data region "chrX",
-      location int {
-        from 32223918,
-        to 32225152,
-        strand minus,
-        id local str "chrX"
-      },
-      title "chr2:204345312",
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "score",
-              data int 22677
-            }
-          }
-        },
-        {
-          type str "BED",
-          data {
-            {
-              label str "location",
-              data str "chrom"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local id 19,
+      id local id 13,
       data region "chrX",
       location int {
         from 32223920,
@@ -7518,7 +7363,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 22,
+      id local id 16,
       data region "chrX",
       location int {
         from 32223920,
@@ -7549,7 +7394,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 25,
+      id local id 19,
       data region "chrX",
       location int {
         from 32223921,
@@ -7580,7 +7425,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 28,
+      id local id 22,
       data region "chrX",
       location int {
         from 32223941,
@@ -7611,7 +7456,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 31,
+      id local id 25,
       data region "chrX",
       location int {
         from 32223941,
@@ -7642,7 +7487,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 34,
+      id local id 28,
       data region "chrX",
       location int {
         from 32223941,
@@ -7673,7 +7518,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 37,
+      id local id 31,
       data region "chrX",
       location int {
         from 32224022,
@@ -7704,7 +7549,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 40,
+      id local id 34,
       data region "chrX",
       location int {
         from 32224022,
@@ -7735,7 +7580,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 43,
+      id local id 37,
       data region "chrX",
       location int {
         from 32224022,
@@ -7766,7 +7611,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 46,
+      id local id 40,
       data region "chrX",
       location int {
         from 32224023,
@@ -7797,7 +7642,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 49,
+      id local id 43,
       data region "chrX",
       location int {
         from 32224037,
@@ -7828,7 +7673,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 52,
+      id local id 46,
       data region "chrX",
       location int {
         from 34144852,
@@ -7859,7 +7704,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 55,
+      id local id 49,
       data region "chrX",
       location int {
         from 34476800,
@@ -7890,7 +7735,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 58,
+      id local id 52,
       data region "chrX",
       location int {
         from 34476804,
@@ -7921,7 +7766,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 61,
+      id local id 55,
       data region "chrX",
       location int {
         from 34476804,
@@ -7952,7 +7797,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 64,
+      id local id 58,
       data region "chrX",
       location int {
         from 34476872,
@@ -7983,7 +7828,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 67,
+      id local id 61,
       data region "chrX",
       location int {
         from 34674331,
@@ -8014,7 +7859,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 70,
+      id local id 64,
       data region "chrX",
       location int {
         from 34955672,
@@ -8045,7 +7890,7 @@ Seq-annot ::= {
       }
     },
     {
-      id local id 73,
+      id local id 67,
       data region "chrX",
       location int {
         from 34964362,
@@ -8088,7 +7933,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 4
         },
         {
           label str "warnings",
@@ -8899,7 +8744,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 4
         },
         {
           label str "warnings",
@@ -9710,7 +9555,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 4
         },
         {
           label str "warnings",
@@ -10521,7 +10366,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 4
         },
         {
           label str "warnings",
@@ -11332,7 +11177,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 4
         },
         {
           label str "warnings",
@@ -12143,7 +11988,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 4
         },
         {
           label str "warnings",
@@ -12954,7 +12799,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 4
         },
         {
           label str "warnings",
@@ -13765,7 +13610,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 4
         },
         {
           label str "warnings",
@@ -14576,7 +14421,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 4
         },
         {
           label str "warnings",
@@ -15387,7 +15232,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 4
         },
         {
           label str "warnings",
@@ -16198,7 +16043,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 4
         },
         {
           label str "warnings",
@@ -17009,7 +16854,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 4
         },
         {
           label str "warnings",
@@ -17820,7 +17665,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 4
         },
         {
           label str "warnings",
@@ -18631,7 +18476,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 4
         },
         {
           label str "warnings",
@@ -19442,7 +19287,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 4
         },
         {
           label str "warnings",
@@ -20253,7 +20098,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 4
         },
         {
           label str "warnings",
@@ -20537,7 +20382,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 4
         },
         {
           label str "warnings",
@@ -20697,7 +20542,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 5
         },
         {
           label str "warnings",
@@ -20943,37 +20788,6 @@ Seq-annot ::= {
       location int {
         from 134773,
         to 135959,
-        strand plus,
-        id local str "HSCHR17_RANDOM_CTG3"
-      },
-      title "chr9:67869825",
-      exts {
-        {
-          type str "DisplaySettings",
-          data {
-            {
-              label str "score",
-              data int 20791
-            }
-          }
-        },
-        {
-          type str "BED",
-          data {
-            {
-              label str "location",
-              data str "chrom"
-            }
-          }
-        }
-      }
-    },
-    {
-      id local id 25,
-      data region "HSCHR17_RANDOM_CTG3",
-      location int {
-        from 134773,
-        to 135959,
         strand minus,
         id local str "HSCHR17_RANDOM_CTG3"
       },
@@ -21012,7 +20826,7 @@ Seq-annot ::= {
         },
         {
           label str "errors",
-          data int 0
+          data int 5
         },
         {
           label str "warnings",

@@ -1,0 +1,20 @@
+Line No    : 37
+Severity   : Error
+Message    : Invalid data line: Bad "SeqStop" value.
+
+Line No    : 42
+Severity   : Error
+Message    : Invalid data line: "SeqStop" less than "SeqStart".
+
+Line No    : 257
+Severity   : Error
+Message    : Bad data line: Insufficient column count.
+
+Line No    : 263
+Severity   : Error
+Message    : Bad data line: Inconsistent column count.
+
+Line No    : 678
+Severity   : Error
+Message    : Invalid data line: Invalid strand character.
+
