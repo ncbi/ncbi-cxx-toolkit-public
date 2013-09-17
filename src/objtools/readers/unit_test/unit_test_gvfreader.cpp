@@ -23,11 +23,11 @@
 *
 * ===========================================================================
 *
-* Author:  Pavel Ivanov, NCBI
-*          Customizations by Frank Ludwig, NCBI
+* Author:  Mostly Mike Kornbluh, NCBI.
+*          Customizations by Frank Ludwig, NCBI.
 *
 * File Description:
-*   GVF reader unit test.
+*   GFF3 reader unit test.
 *
 * ===========================================================================
 */
@@ -49,6 +49,16 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 
+//  ============================================================================
+//  Customization data:
+const string extInput("gvf");
+const string extOutput("asn");
+const string dirTestFiles("gvfreader_test_cases");
+// !!!
+// !!! Must also customize reader type in sRunTest !!!
+// !!!
+//  ============================================================================
+
 struct STestInfo {
     CFile mInFile;
     CFile mOutFile;
@@ -59,8 +69,13 @@ typedef map<TTestName, STestInfo> TTestNameToInfoMap;
 class CTestNameToInfoMapLoader {
 public:
     CTestNameToInfoMapLoader(
-        TTestNameToInfoMap * pTestNameToInfoMap )
-        : m_pTestNameToInfoMap(pTestNameToInfoMap) { }
+        TTestNameToInfoMap * pTestNameToInfoMap,
+        const string& extInput,
+        const string& extOutput)
+        : m_pTestNameToInfoMap(pTestNameToInfoMap),
+          mExtInput(extInput),
+          mExtOutput(extOutput)
+    { }
 
     void operator()( const CDirEntry & dirEntry ) {
         const static size_t kInvalidFileNumber = numeric_limits<size_t>::max();
@@ -90,11 +105,11 @@ public:
             (*m_pTestNameToInfoMap)[vecFileNamePieces[0]];
 
         // figure out what type of file we have and set appropriately
-        if (tsFileType == "gvf") {
+        if (tsFileType == mExtInput) {
             BOOST_REQUIRE( test_info_to_load.mInFile.GetPath().empty() );
             test_info_to_load.mInFile = file;
         } 
-        else if (tsFileType == "asn") {
+        else if (tsFileType == mExtOutput) {
             BOOST_REQUIRE( test_info_to_load.mOutFile.GetPath().empty() );
             test_info_to_load.mOutFile = file;
         } 
@@ -106,6 +121,8 @@ public:
 private:
     // raw pointer because we do NOT own this
     TTestNameToInfoMap * m_pTestNameToInfoMap;
+    string mExtInput;
+    string mExtOutput;
 };
 
 void sRunTest(const string &sTestName, const STestInfo & testInfo)
@@ -114,28 +131,27 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo)
         testInfo.mOutFile.GetName() << endl;
 
     CGvfReader reader(0);
-    CNcbiIfstream gvfFile(testInfo.mInFile.GetPath().c_str());
+    CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str());
 
     typedef vector<CRef<CSeq_annot> > ANNOTS;
     ANNOTS annots;
     try {
-        reader.ReadSeqAnnots(annots, gvfFile);
+        reader.ReadSeqAnnots(annots, ifstr);
     }
     catch (...) {
         BOOST_ERROR("Error: " << sTestName << " failed during conversion.");
-        gvfFile.close();
+        ifstr.close();
         return;
     }
 
     string tempName = CDirEntry::GetTmpName();
-    CNcbiOfstream tempFile(tempName.c_str());
+    CNcbiOfstream ofstr(tempName.c_str());
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        //cerr << MSerial_AsnText << **cit;
-        tempFile << MSerial_AsnText << **cit;
-        tempFile.flush();
+        ofstr << MSerial_AsnText << **cit;
+        ofstr.flush();
     }
-    gvfFile.close();
-    tempFile.close();
+    ifstr.close();
+    ofstr.close();
 
     bool success = testInfo.mOutFile.CompareTextContents(tempName, CFile::eIgnoreWs);
     CDirEntry(tempName).Remove();
@@ -154,7 +170,7 @@ NCBITEST_INIT_CMDLINE(arg_descrs)
     arg_descrs->AddDefaultKey("test-dir", "DIRECTORY",
         "Set the root directory under which all test files can be found.",
         CArgDescriptions::eDirectory,
-        "gvfreader_test_cases" );
+        dirTestFiles );
 }
 
 
@@ -165,16 +181,11 @@ NCBITEST_AUTO_FINI()
 
 BOOST_AUTO_TEST_CASE(RunTests)
 {
-    cerr << "Runtests Enter" << endl;
-
     const CArgs& args = CNcbiApplication::Instance()->GetArgs();
-
     const vector<string> kEmptyStringVec;
-
     TTestNameToInfoMap testNameToInfoMap;
-
-    CTestNameToInfoMapLoader testInfoLoader(&testNameToInfoMap);
-
+    CTestNameToInfoMapLoader testInfoLoader(
+        &testNameToInfoMap, extInput, extOutput);
     CDir test_cases_dir( args["test-dir"].AsDirectory() );
 
     BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(), 
@@ -204,6 +215,4 @@ BOOST_AUTO_TEST_CASE(RunTests)
 
         BOOST_CHECK_NO_THROW(sRunTest(sName, testInfo));
     }
-
-    cerr << "Runtests Leave" << endl;
 }
