@@ -101,8 +101,6 @@ public:
     ///@param f istream to archive file
     CRemoteBlast(CNcbiIstream& f);
 
-    CRemoteBlast(CObjectIStream& stream);
-    
     /// Create a search using any kind of options handle.
     CRemoteBlast(CBlastOptionsHandle * any_opts);
     
