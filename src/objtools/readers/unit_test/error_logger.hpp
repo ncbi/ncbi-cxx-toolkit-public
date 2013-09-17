@@ -45,7 +45,7 @@ class CErrorLogger:
 public:
     CErrorLogger(
             const string& filename) {
-        mStream.open(filename);
+        mStream.open(filename.c_str());
     };
 
     ~CErrorLogger() {
