@@ -824,7 +824,7 @@ bool CTSE_ScopeInfo::AddUsedTSE(const CTSE_ScopeUserLock& used_tse) const
     if ( m_TSE_LockCounter.Get() == 0 || // this one is unlocked
          &add_info == this || // the same TSE
          !add_info.CanBeUnloaded() || // permanentrly locked
-         &add_info.GetDSInfo() != &GetDSInfo() || // another data source
+         //&add_info.GetDSInfo() != &GetDSInfo() || // another data source
          add_info.m_UsedByTSE ) { // already used
         return false;
     }
@@ -836,7 +836,7 @@ bool CTSE_ScopeInfo::AddUsedTSE(const CTSE_ScopeUserLock& used_tse) const
     }
     // check if used TSE uses this TSE indirectly
     for ( const CTSE_ScopeInfo* p = m_UsedByTSE; p; p = p->m_UsedByTSE ) {
-        _ASSERT(&p->GetDSInfo() == &GetDSInfo());
+        //_ASSERT(&p->GetDSInfo() == &GetDSInfo());
         if ( p == &add_info ) {
             return false;
         }
