@@ -37,8 +37,7 @@
 ///   classes, and macros.
 ///
 ///   More elaborate documentation could be found in:
-///     http://www.ncbi.nlm.nih.gov/IEB/ToolBox/CPP_DOC/
-///            programming_manual/diag.html
+///     http://www.ncbi.nlm.nih.gov/toolkit/doc/book/ch_core/#ch_core.diag
 
 #include <corelib/ncbiutil.hpp>
 #include <deque>
