@@ -85,7 +85,7 @@ public:
     string GetOneSourceDescription(CBioseq_Handle bh);
     string GetOneFeatureClauseList(CBioseq_Handle bh, unsigned int genome_val);
     string GetOneDefLine(CAutoDefModifierCombo* mod_combo, CBioseq_Handle bh);
-    string GetDocsumOrgDescription(CSeq_entry_Handle se);
+    static string GetDocsumOrgDescription(CSeq_entry_Handle se);
     string GetDocsumDefLine(CSeq_entry_Handle se);
     static bool NeedsDocsumDefline(const CBioseq_set& set);
 

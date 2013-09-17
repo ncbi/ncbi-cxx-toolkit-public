@@ -55,7 +55,7 @@ public:
     string PrintClause(bool print_typeword, bool typeword_is_plural);
     
     virtual CSeqFeatData::ESubtype  GetMainFeatureSubtype();
-    unsigned int GetNumSubclauses() { return m_ClauseList.size(); }
+    size_t GetNumSubclauses() { return m_ClauseList.size(); }
     virtual void Label();
     virtual bool AddmRNA (CAutoDefFeatureClause_Base *mRNAClause);
     virtual bool AddGene (CAutoDefFeatureClause_Base *gene_clause);
