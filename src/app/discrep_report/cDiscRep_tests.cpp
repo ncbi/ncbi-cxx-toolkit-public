@@ -8241,8 +8241,10 @@ void CSeqEntry_test_on_biosrc_orgmod :: RunTests(const CBioSource& biosrc, const
       // DISC_REQUIRED_STRAIN
       if (m_run_strain) thisInfo.test_item_list[GetName_strain()].push_back(desc);
       
+  /*
       // DISC_BACTERIA_MISSING_STRAIN
       if (m_run_sp) thisInfo.test_item_list[GetName_sp_strain()].push_back(desc);
+*/
   }
   else { // DISC_BACTERIA_MISSING_STRAIN
      if (m_run_sp && HasMissingBacteriaStrain(biosrc))
@@ -8420,14 +8422,13 @@ bool CSeqEntry_test_on_biosrc_orgmod :: HasMissingBacteriaStrain(const CBioSourc
    if (!HasLineage(biosrc, "Bacteria")) return false;
    string tax_nm(biosrc.IsSetTaxname() ? biosrc.GetTaxname() : kEmptyStr);
    size_t pos;
-   if (tax_nm.empty() 
-           || NStr::FindNoCase(tax_nm, "enrichment culture clone") != string::npos
-           || (pos = tax_nm.find(" sp. ")) == string::npos) return false;
+   if (tax_nm.empty() || NStr::FindNoCase(tax_nm, "enrichment culture clone") != string::npos
+                      || (pos = tax_nm.find(" sp. ")) == string::npos) 
+       return false;
    tax_nm = CTempString(tax_nm).substr(pos+5);
    if (tax_nm.empty() 
            || (tax_nm.find('(') != string::npos && tax_nm[tax_nm.size()-1] == ')')) 
             return false;
-   if (NStr::FindNoCase(tax_nm, "enrichment culture clone") != string::npos) return false;
    ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod()) {
        if ( (*it)->GetSubtype() == COrgMod :: eSubtype_strain && (*it)->GetSubname() == tax_nm)
             return false;
@@ -8816,7 +8817,7 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
          ITERATE (vector <string>, it, src_strs) {
            arr.clear();
            arr = NStr::Tokenize(*it, ":", arr);
-           if (arr.size() > 1) {
+           if (arr.size() > 2) {
             thisInfo.test_item_list[GetName_cty()].push_back(desc); break;
            }
          }
@@ -11382,24 +11383,19 @@ void CSeqEntry_test_on_defline :: TestOnObj(const CSeq_entry& seq_entry)
     if (thisTest.is_Defl_run) return;
     thisTest.is_Defl_run = true;
 
-    // DISC_MISSING_DEFLINES
-    for (CBioseq_CI b_ci(*thisInfo.scope, seq_entry, CSeq_inst::eMol_aa); b_ci; ++ b_ci) 
-        m_aa_bioseqs.insert(GetDiscItemText(*(b_ci->GetCompleteBioseq())));
-/*
-    if (seq_entry.IsSeq()) {
-        if (!seq_entry.GetSeq().IsAa()) 
-               m_bioseqs.push_back(GetDiscItemText(seq_entry.GetSeq()));
-    }
-    else AddBioseqsOfSet(seq_entry.GetSet());
-    m_bioseqs.sort();
-*/
-
     unsigned i=0; 
     string desc, title;
     bool run_set = (thisTest.tests_run.find(GetName_set()) != thisTest.tests_run.end());
     bool run_dup = (thisTest.tests_run.find(GetName_dup()) != thisTest.tests_run.end());
     bool run_no_tlt = (thisTest.tests_run.find(GetName_no_tlt()) != thisTest.tests_run.end());
     bool run_seqch = (thisTest.tests_run.find(GetName_seqch()) != thisTest.tests_run.end());
+    
+    // DISC_MISSING_DEFLINES
+    for (CBioseq_CI b_ci(*thisInfo.scope, seq_entry); b_ci; ++ b_ci) {
+        if (b_ci->IsAa()) return;
+        m_aa_bioseqs.insert(GetDiscItemText(*(b_ci->GetCompleteBioseq())));
+    }
+
     ITERATE ( vector <const CSeqdesc*>, it, title_seqdesc) {
        if ((title = (*it)->GetTitle()).empty()) continue; 
        desc = GetDiscItemText(**it, *(title_seqdesc_seqentry[i]));
@@ -11411,15 +11407,6 @@ void CSeqEntry_test_on_defline :: TestOnObj(const CSeq_entry& seq_entry)
        // DISC_DUP_DEFLINE
        title = NStr::ToUpper(title); 
        if (run_dup) thisInfo.test_item_list[GetName_dup()].push_back(title + "$" + desc);
-
-       // DISC_MISSING_DEFLINES
-       if (run_no_tlt) {
-          for (CBioseq_CI b_ci(
-                            *thisInfo.scope, *(title_seqdesc_seqentry[i]),CSeq_inst::eMol_aa);
-                      b_ci; ++b_ci) {
-             m_aa_bioseqs.erase(GetDiscItemText(*(b_ci->GetCompleteBioseq())));
-          }
-       }
 
        // DISC_TITLE_ENDS_WITH_SEQUENCE
        if (run_seqch) {
