@@ -59,6 +59,7 @@ struct SNCSpecificParams : public CObject
     ENCBlobPassPolicy pass_policy;
     //Uint4 conn_timeout;
     //Uint4 cmd_timeout;
+    Uint4 lifespan_ttl;
     Uint4 max_ttl;
     Uint4 blob_ttl;
     Uint4 ver_ttl;
@@ -67,14 +68,14 @@ struct SNCSpecificParams : public CObject
 
     SNCSpecificParams()
       : disable(false), prolong_on_read(false), srch_on_read(false), fast_on_main(false),
-        pass_policy(eNCBlobPassAny), max_ttl(0), blob_ttl(0), ver_ttl(0), ttl_unit(0), quorum(0)
+        pass_policy(eNCBlobPassAny), lifespan_ttl(0), max_ttl(0), blob_ttl(0), ver_ttl(0), ttl_unit(0), quorum(0)
     {
     }
     SNCSpecificParams(const SNCSpecificParams& o)
       : disable(o.disable), prolong_on_read(o.prolong_on_read),
         srch_on_read(o.srch_on_read), fast_on_main(o.fast_on_main),
         pass_policy(o.pass_policy),
-        max_ttl(o.max_ttl), blob_ttl(o.blob_ttl), ver_ttl(o.ver_ttl), ttl_unit(o.ttl_unit),
+        lifespan_ttl(o.lifespan_ttl), max_ttl(o.max_ttl), blob_ttl(o.blob_ttl), ver_ttl(o.ver_ttl), ttl_unit(o.ttl_unit),
         quorum(o.quorum)
     {
     }

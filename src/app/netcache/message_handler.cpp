@@ -2017,6 +2017,14 @@ CNCMessageHandler::x_ProlongBlobDeadTime(unsigned int add_time)
     if (!CNCServer::IsDebugMode()  &&  new_expire - old_expire < m_AppSetup->ttl_unit)
         return;
 
+    if (m_AppSetup->lifespan_ttl > 0) {
+        int created = (int)(m_BlobAccess->GetCurBlobCreateTime()/kUSecsPerSecond);
+        int retire = (int)(created + m_AppSetup->lifespan_ttl);
+        if (retire > created) {
+            new_expire = min(new_expire,retire);
+        }
+    }
+
     m_BlobAccess->SetCurBlobExpire(new_expire);
     SNCSyncEvent* event = new SNCSyncEvent();
     event->event_type = eSyncProlong;
