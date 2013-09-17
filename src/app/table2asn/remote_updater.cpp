@@ -111,8 +111,12 @@ void UpdatePub(CMLAClient& mlaClient, CPub& pub)
 
 }
 
-void CRemoteUpdater::UpdateOrg(COrg_ref& org)
+void CRemoteUpdater::UpdateOrgTaxname(COrg_ref& org)
 {
+    int taxid = org.GetTaxId();
+    if (taxid == 0 && !org.IsSetTaxname())
+        return;
+
     bool is_species, is_uncultured;
     string blast_name;
 
@@ -122,31 +126,27 @@ void CRemoteUpdater::UpdateOrg(COrg_ref& org)
         m_taxClient->Init();
     }
 
-    int taxid = org.GetTaxId();
+    int new_taxid = m_taxClient->GetTaxIdByName(org.GetTaxname());
 
-    if (org.IsSetTaxname())
-    {
-        int new_taxid = m_taxClient->GetTaxIdByName(org.GetTaxname());
-        if (taxid == 0)
-            taxid = new_taxid;
-        else
-            if (taxid != new_taxid)
+    if (taxid == 0)
+        taxid = new_taxid;
+    else
+        if (taxid != new_taxid)
+        {
+            m_context.m_logger->PutError(
+                *CLineError::Create(ILineError::eProblem_Unset, eDiag_Error, "", 0, 
+                "Conflicting taxonomy info provided: taxid " + NStr::IntToString(taxid)));
+
+            if (taxid <= 0)
+                taxid = new_taxid;
+            else
             {
                 m_context.m_logger->PutError(
                     *CLineError::Create(ILineError::eProblem_Unset, eDiag_Error, "", 0, 
-                      "Conflicting taxonomy info provided: taxid " + NStr::IntToString(taxid)));
-
-                if (taxid <= 0)
-                    taxid = new_taxid;
-                else
-                {
-                    m_context.m_logger->PutError(
-                        *CLineError::Create(ILineError::eProblem_Unset, eDiag_Error, "", 0, 
-                        "taxonomy ID for the name '" + org.GetTaxname() + "' was determined as " + NStr::IntToString(taxid)));
-                    return;
-                }
+                    "taxonomy ID for the name '" + org.GetTaxname() + "' was determined as " + NStr::IntToString(taxid)));
+                return;
             }
-    }
+        }
 
     if (taxid <= 0)
     {
@@ -159,7 +159,10 @@ void CRemoteUpdater::UpdateOrg(COrg_ref& org)
     CConstRef<COrg_ref> new_org = m_taxClient->GetOrgRef(taxid, is_species, is_uncultured, blast_name);
     if (new_org.NotEmpty())
     {
+        const COrgName_Base::TMod mods = org.GetOrgname().GetMod();
         org.Assign(*new_org);
+        if (!mods.empty())
+            org.SetOrgname().SetMod().insert(org.SetOrgname().SetMod().end(), mods.begin(), mods.end());
     }
 }
 
@@ -221,12 +224,12 @@ void CRemoteUpdater::UpdateOrgReferences(objects::CSeq_entry& entry)
         CSeqdesc& desc = **it;
         if (desc.IsOrg())
         {
-            UpdateOrg(desc.SetOrg());
+            UpdateOrgTaxname(desc.SetOrg());
         }
         else
         if (desc.IsSource() && desc.GetSource().IsSetOrg())
         {
-            UpdateOrg(desc.SetSource().SetOrg());
+            UpdateOrgTaxname(desc.SetSource().SetOrg());
         }
     }
 }

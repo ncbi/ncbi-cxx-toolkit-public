@@ -28,7 +28,7 @@ public:
    void UpdatePubReferences(objects::CSeq_entry& entry);
    void UpdateOrgReferences(objects::CSeq_entry& entry);
 private:
-   void UpdateOrg(objects::COrg_ref& org);
+   void UpdateOrgTaxname(objects::COrg_ref& org);
 
    CRef<objects::CMLAClient>  m_mlaClient;
    auto_ptr<objects::CTaxon1> m_taxClient;

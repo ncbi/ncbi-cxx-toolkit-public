@@ -184,17 +184,23 @@ void CTable2AsnContext::AddUserTrack(CSeq_descr& SD, const string& type, const s
     SetUserObject(SD, type).SetData().push_back(uf);
 }
 
-void CTable2AsnContext::ApplySourceQualifiers(CSeq_entry& entry, const string& src_qualifiers) const
+void CTable2AsnContext::ApplySourceQualifiers(CRef<CSeq_entry>& entry, const string& src_qualifiers) const
 {
-    switch(entry.Which())
+    if (src_qualifiers.empty())
+        return;
+
+    if (entry.Empty())
+        entry.Reset(new CSeq_entry);
+
+    switch(entry->Which())
     {
     case CSeq_entry::e_Seq:
-        x_ApplySourceQualifiers(entry.SetSeq(), m_source_qualifiers);
+        x_ApplySourceQualifiers(entry->SetSeq(), m_source_qualifiers);
         break;
     case CSeq_entry::e_Set:
-        NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
+        NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry->SetSet().SetSeq_set())
         {
-            ApplySourceQualifiers(**it, m_source_qualifiers);
+            ApplySourceQualifiers(*it, m_source_qualifiers);
         }
         break;
     default:

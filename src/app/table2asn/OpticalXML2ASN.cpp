@@ -434,14 +434,11 @@ COpticalxml2asnOperator::~COpticalxml2asnOperator()
 
 CRef<CSeq_entry> COpticalxml2asnOperator::LoadXML(const string& FileIn, const CTable2AsnContext& context)
 {
-    auto_ptr<COpticalxml2asnOperatorImpl> m_impl;
-    m_impl.reset(new COpticalxml2asnOperatorImpl(context.m_logger));
+    auto_ptr<COpticalxml2asnOperatorImpl> m_impl(new COpticalxml2asnOperatorImpl(context.m_logger));
 
     m_impl->GetOpticalXMLData(FileIn);
 
-    CRef<CSeq_entry> result= m_impl->BuildOpticalASNData(context);
-
-    return result;
+    return m_impl->BuildOpticalASNData(context);
 };
 
 

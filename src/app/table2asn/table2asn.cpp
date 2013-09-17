@@ -61,7 +61,6 @@
 
 #include <objtools/readers/message_listener.hpp>
 
-
 #include <common/test_assert.h>  /* This header must go last */
 
 using namespace ncbi;
@@ -459,6 +458,8 @@ int CTbl2AsnApp::Run(void)
         m_reader->LoadDescriptors(args["D"].AsString(), m_context.m_descriptors);
     }
 
+    m_context.ApplySourceQualifiers(m_context.m_entry_template, m_context.m_source_qualifiers);
+
     if (args["H"])
     {
         try
@@ -550,10 +551,12 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 {
     CRef<CSeq_entry> entry;
     m_context.m_avoid_orf_lookup = false;
+    bool skip_template = false;
 
 
     if (m_context.m_current_file.substr(m_context.m_current_file.length()-4).compare(".xml") == 0)
     {
+        skip_template = true;
         COpticalxml2asnOperator op;
         entry = op.LoadXML(m_context.m_current_file, m_context);
         entry->Parentize();
@@ -577,7 +580,6 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     m_context.ApplyCreateDate(*entry);
     m_reader->ApplyAdditionalProperties(*entry);
-    m_context.ApplySourceQualifiers(*entry, m_context.m_source_qualifiers);
 
     CFeatureTableReader fr(m_logger);
     // this may convert seq into seq-set
@@ -600,8 +602,11 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     }
 
     m_context.ApplyAccession(*entry);
- 
-    result = m_context.HandleSubmitTemplate(entry);
+
+    if (skip_template)
+        result = entry;
+    else
+        result = m_context.HandleSubmitTemplate(entry);
 }
 
 string GenerateOutputStream(const CTable2AsnContext& m_context, const string& pathname)
