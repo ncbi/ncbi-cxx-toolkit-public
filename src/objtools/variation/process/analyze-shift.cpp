@@ -112,8 +112,8 @@ bool CAnalyzeShiftApp::ProcessHGVS(string &expression, CRef<CScope> scope, CHgvs
   if (annots.size() != 1) return false;
   CRef<CSeq_annot> a(new CSeq_annot);
   a->Assign(*annots.front());
-  //cout <<  MSerial_AsnText << *a;
-  CVariationNormalization::NormalizeVariation(a,CVariationNormalization::eDbSnp,*scope);
+//  cout <<  MSerial_AsnText << *a;
+  CVariationNormalization::NormalizeVariation(a,CVariationNormalization::eDbSnp2,*scope);
   if (a->GetData().GetFtable().empty() || a->GetData().GetFtable().size() != 1) return false;
   if (!a->GetData().GetFtable().front()->IsSetLocation()) return false;
   const CSeq_loc &loc = a->GetData().GetFtable().front()->GetLocation();
@@ -137,12 +137,12 @@ bool CAnalyzeShiftApp::ProcessHGVS(string &expression, CRef<CScope> scope, CHgvs
   if (loc.IsPnt())
   {
       pos_left = loc.GetPnt().GetPoint();
-      pos_right = pos_left+ref.size()-1; // Note - eDbSnp context points to the beginning of the right edge, we need the end.
+      pos_right = pos_left;
   }
   else  if (loc.IsInt())
   {
       pos_left = loc.GetInt().GetFrom();
-      pos_right = loc.GetInt().GetTo()+ref.size()-1; // Note - eDbSnp points to the beginning of the right edge, we need the end.
+      pos_right = loc.GetInt().GetTo();
   }
   else return false;
 
@@ -191,9 +191,9 @@ int CAnalyzeShiftApp::Run()
                 bool is_shiftable = false;
                 if (new_pos_left != pos_left || new_pos_right != pos_right)
                     is_shiftable = true;
-                ostr <<snp_id<<"|"<<hgvs<<"|"<<isClinical<<"|"<<is_shiftable;
+                ostr <<snp_id<<"|"<<hgvs<<"|"<<isClinical<<"|"<<is_shiftable<<"|";
                 if (is_shiftable)
-                    ostr << "|" << pos_left-new_pos_left<<"|"<<new_pos_right-pos_right<<"|"<<new_pos_left<<"|"<<new_pos_right<<"|";
+                    ostr  << pos_left-new_pos_left<<"|"<<new_pos_right-pos_right<<"|"<<new_pos_left<<"|"<<new_pos_right<<"|";
                 ostr<<endl;
             }
             else

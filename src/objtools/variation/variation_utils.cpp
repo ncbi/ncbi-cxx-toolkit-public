@@ -468,6 +468,7 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
                 string ref;
                 CSeq_literal *refref = NULL;
                 x_PrefetchSequence(scope,seq_id);
+                // cout << "Sequence: " <<x_GetSeq(5621,3) << endl;
                 CVariation_ref& vr = (*feat)->SetData().SetVariation();
                 if (vr.IsSetData() && vr.GetData().IsInstance())
                     x_ProcessInstance(vr.SetData().SetInstance(),(*feat)->SetLocation(),is_deletion,refref,ref,pos_left,pos_right,new_pos_left,new_pos_right);
@@ -679,6 +680,23 @@ bool CVariationNormalizationInt::x_ProcessShift(string &a, int &pos_left, int &p
     return found_left | found_right;
 }
 
+void CVariationNormalizationInt2::x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right) 
+{
+    CVariationNormalizationInt::x_ModifyLocation(loc,literal,a,pos_left,pos_right);
+}
+
+bool CVariationNormalizationInt2::x_ProcessShift(string &a, int &pos_left, int &pos_right) // The same as the first Int but the right margin is taken at the end of the sequence
+{
+    string a_left = a;
+    bool found_left = CVariationNormalizationLeft::x_ProcessShift(a_left, pos_left, pos_right);
+    bool found_right = CVariationNormalizationRight::x_ProcessShift(a, pos_left, pos_right);
+    pos_right += a.size()-1;
+    a = a_left;
+    return found_left | found_right;
+}
+
+
+
 bool CVariationNormalizationLeftInt::x_ProcessShift(string &a, int &pos_left, int &pos_right)
 {
     int orig_pos_left = pos_left;
@@ -791,6 +809,16 @@ void CVariationNormalization::NormalizeAmbiguousVars(CRef<CSeq_annot>& var, CSco
     CVariationNormalizationInt::x_Shift(var,scope);
 }
 
+void CVariationNormalization::NormalizeAmbiguousVars2(CRef<CVariation>& var, CScope &scope)
+{
+    CVariationNormalizationInt2::x_Shift(var,scope);
+}
+
+void CVariationNormalization::NormalizeAmbiguousVars2(CRef<CSeq_annot>& var, CScope &scope)
+{
+    CVariationNormalizationInt2::x_Shift(var,scope);
+}
+
 void CVariationNormalization::AlterToVarLoc(CRef<CVariation>& var, CScope& scope)
 {
     CVariationNormalizationLeftInt::x_Shift(var,scope);
@@ -805,6 +833,7 @@ void CVariationNormalization::NormalizeVariation(CRef<CVariation>& var, ETargetC
 {
     switch(target_ctxt) {
     case eDbSnp : NormalizeAmbiguousVars(var,scope); break;
+    case eDbSnp2 : NormalizeAmbiguousVars2(var,scope); break;
     case eHGVS : AlterToHGVSVar(var,scope); break;
     case eVCF : AlterToVCFVar(var,scope); break;
     case eVarLoc : AlterToVarLoc(var,scope); break;
@@ -816,6 +845,7 @@ void CVariationNormalization::NormalizeVariation(CRef<CSeq_annot>& var, ETargetC
 {
     switch(target_ctxt) {
     case eDbSnp : NormalizeAmbiguousVars(var,scope); break;
+    case eDbSnp2 : NormalizeAmbiguousVars2(var,scope); break;
     case eHGVS : AlterToHGVSVar(var,scope); break;
     case eVCF : AlterToVCFVar(var,scope); break;
     case eVarLoc : AlterToVarLoc(var,scope); break;

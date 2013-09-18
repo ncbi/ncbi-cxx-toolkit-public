@@ -36,7 +36,7 @@ USING_SCOPE(objects);
 using namespace std;
 
 #define MAX_LEN 1000
-#define SEQVEC_CACHE
+//#define SEQVEC_CACHE
 
 class CVariationUtilities
 {
@@ -110,11 +110,19 @@ public:
     static void x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right);
 };
 
+class CVariationNormalizationInt2 : public CVariationNormalization_base<CVariationNormalizationInt2>
+{
+public:
+    static bool x_ProcessShift(string &a, int &pos_left, int &pos_right);
+    static void x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right);
+};
+
 class CVariationNormalization
 {
 public:
     enum ETargetContext {
        eDbSnp,
+       eDbSnp2,
        eHGVS,
        eVCF,
        eVarLoc
@@ -137,6 +145,8 @@ public:
     //the second is an interval representing the IOA
     static void NormalizeAmbiguousVars(CRef<CVariation>& var, CScope &scope);
     static void NormalizeAmbiguousVars(CRef<CSeq_annot>& var, CScope &scope);
+    static void NormalizeAmbiguousVars2(CRef<CVariation>& var, CScope &scope);
+    static void NormalizeAmbiguousVars2(CRef<CSeq_annot>& var, CScope &scope);
  
     //HGVS
     //*Assume* Seq-equiv's are present and second one is 'IOA'
