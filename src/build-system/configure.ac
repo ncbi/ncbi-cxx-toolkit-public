@@ -1541,8 +1541,8 @@ if test "$skip_fast_flags" = no -a -z "$DEF_FAST_FLAGS" ; then
         ;;
       GCC:* )
         DEF_FAST_FLAGS="-O3 -finline-functions -fstrict-aliasing"
-        case "$host_os" in
-           freebsd* | solaris*:*86* ) ;;
+        case "$host_os:$host_cpu:$compiler_version" in
+           freebsd* | solaris*:*86*:* | *:4[[5-9]]? | *:[[5-9]]?? ) ;;
            * ) DEF_FAST_FLAGS="$DEF_FAST_FLAGS -ffast-math" ;;
         esac
         if test "$with_profiling" != "yes"; then
