@@ -113,7 +113,7 @@ bool CAnalyzeShiftApp::ProcessHGVS(string &expression, CRef<CScope> scope, CHgvs
   CRef<CSeq_annot> a(new CSeq_annot);
   a->Assign(*annots.front());
 //  cout <<  MSerial_AsnText << *a;
-  CVariationNormalization::NormalizeVariation(a,CVariationNormalization::eDbSnp2,*scope);
+  CVariationNormalization::NormalizeVariation(a,CVariationNormalization::eDbSnp,*scope);
   if (a->GetData().GetFtable().empty() || a->GetData().GetFtable().size() != 1) return false;
   if (!a->GetData().GetFtable().front()->IsSetLocation()) return false;
   const CSeq_loc &loc = a->GetData().GetFtable().front()->GetLocation();
