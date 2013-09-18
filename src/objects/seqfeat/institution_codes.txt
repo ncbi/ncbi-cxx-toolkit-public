@@ -547,6 +547,8 @@ BOUM	s	Museum d'Histoire Naturelle de Bourges
 BOZ	s	Naturmuseum Suedtirol/Museo Scienze Naturali Alto Adige
 BP	s	Hungarian Natural History Museum, Botanical Department
 BPBM	s	Bernice P. Bishop Museum
+BPBM:Fish	s	Bernice P. Bishop Museum, Fish Collection
+BPBM:IZ	s	Bernice P. Bishop Museum, Invertebrate Zoology
 BPI	s	U.S. National Fungus Collections, Systematic Botany and Mycology Laboratory
 BPI<ZAF>	s	Bernard Price Institute for Palaeontological Research
 BPIC	c	Benaki Phytopathological Institute Collection
@@ -894,6 +896,7 @@ CGH	s	National Museum of Prague
 CGMCC	c	China General Microbiological Culture Collection Center, Chinese Academy of Sciences
 CGMS	s	Universidade Federal de Mato Grosso do Sul, Departamento de Biologia
 CGN	s	Centre for Genetic Resources, The Netherlands
+CGRIS	b	Chinese Crop Germplasm Resources Information Network
 CGSC	c	E. coli Genetic Stock Center
 CH	s	Circulo Herpetologico de Panama
 CH-AG	c	Collection de Recherche
