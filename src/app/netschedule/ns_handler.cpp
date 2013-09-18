@@ -1121,12 +1121,11 @@ void CNetScheduleHandler::x_ProcessMsgBatchJob(BUF buffer)
         return;
     }
 
-    job.SetInput(NStr::ParseEscapes(m_CommandArguments.input));
+    job.SetInput(m_CommandArguments.input);
 
     // Memorize the job affinity if given
     if ( !m_CommandArguments.affinity_token.empty() )
-        m_BatchJobs[m_BatchPos].second =
-                    NStr::ParseEscapes(m_CommandArguments.affinity_token);
+        m_BatchJobs[m_BatchPos].second = m_CommandArguments.affinity_token;
 
     job.SetMask(m_CommandArguments.job_mask);
     job.SetSubmNotifPort(m_BatchSubmPort);
@@ -1341,9 +1340,9 @@ void CNetScheduleHandler::x_ProcessChangeAffinity(CQueue* q)
     list<string>    aff_to_add_list;
     list<string>    aff_to_del_list;
 
-    NStr::Split(NStr::ParseEscapes(m_CommandArguments.aff_to_add),
+    NStr::Split(m_CommandArguments.aff_to_add,
                 "\t,", aff_to_add_list, NStr::eNoMergeDelims);
-    NStr::Split(NStr::ParseEscapes(m_CommandArguments.aff_to_del),
+    NStr::Split(m_CommandArguments.aff_to_del,
                 "\t,", aff_to_del_list, NStr::eNoMergeDelims);
 
     string  msg = q->ChangeAffinity(m_ClientId, aff_to_add_list,
@@ -1367,7 +1366,7 @@ void CNetScheduleHandler::x_ProcessSetAffinity(CQueue* q)
                 .Print("client_session", m_ClientId.GetSession());
 
     list<string>    aff_to_set;
-    NStr::Split(NStr::ParseEscapes(m_CommandArguments.affinity_token),
+    NStr::Split(m_CommandArguments.affinity_token,
                 "\t,", aff_to_set, NStr::eNoMergeDelims);
     q->SetAffinity(m_ClientId, aff_to_set);
     x_WriteMessage("OK:");
@@ -1602,7 +1601,7 @@ void CNetScheduleHandler::x_ProcessGetJob(CQueue* q)
     }
 
     list<string>    aff_list;
-    NStr::Split(NStr::ParseEscapes(m_CommandArguments.affinity_token),
+    NStr::Split(m_CommandArguments.affinity_token,
                 "\t,", aff_list, NStr::eNoMergeDelims);
 
     CJob            job;
@@ -1659,13 +1658,12 @@ void CNetScheduleHandler::x_ProcessPut(CQueue* q)
         x_CheckAuthorizationToken();
     }
 
-    string      output = NStr::ParseEscapes(m_CommandArguments.output);
     TJobStatus  old_status = q->PutResult(m_ClientId, CNSPreciseTime::Current(),
                                           m_CommandArguments.job_id,
                                           m_CommandArguments.job_key,
                                           m_CommandArguments.auth_token,
                                           m_CommandArguments.job_return_code,
-                                          &output);
+                                          m_CommandArguments.output);
     if (old_status == CNetScheduleAPI::ePending ||
         old_status == CNetScheduleAPI::eRunning) {
         x_WriteMessage("OK:");
@@ -1721,7 +1719,6 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
 
 
     CNSPreciseTime  curr = CNSPreciseTime::Current();
-    string          output = NStr::ParseEscapes(m_CommandArguments.output);
 
     // PUT part
     TJobStatus      old_status = q->PutResult(m_ClientId, curr,
@@ -1729,7 +1726,7 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
                                           m_CommandArguments.job_key,
                                           m_CommandArguments.auth_token,
                                           m_CommandArguments.job_return_code,
-                                          &output);
+                                          m_CommandArguments.output);
 
     if (old_status == CNetScheduleAPI::eJobNotFound) {
         ERR_POST(Warning << "Cannot accept job "
@@ -1748,7 +1745,7 @@ void CNetScheduleHandler::x_ProcessJobExchange(CQueue* q)
 
     // Get part
     list<string>        aff_list;
-    NStr::Split(NStr::ParseEscapes(m_CommandArguments.affinity_token),
+    NStr::Split(m_CommandArguments.affinity_token,
                 "\t,", aff_list, NStr::eNoMergeDelims);
 
     CJob                job;
@@ -1837,7 +1834,7 @@ void CNetScheduleHandler::x_ProcessPutFailure(CQueue* q)
                                 m_CommandArguments.job_key,
                                 m_CommandArguments.auth_token,
                                 m_CommandArguments.err_msg,
-                                NStr::ParseEscapes(m_CommandArguments.output),
+                                m_CommandArguments.output,
                                 m_CommandArguments.job_return_code,
                                 warning);
 
@@ -2439,7 +2436,7 @@ void CNetScheduleHandler::x_ProcessCreateDynamicQueue(CQueue*)
                         m_ClientId,
                         m_CommandArguments.qname,
                         m_CommandArguments.qclass,
-                        NStr::ParseEscapes(m_CommandArguments.description));
+                        m_CommandArguments.description);
     x_WriteMessage("OK:");
     x_PrintCmdRequestStop();
 }

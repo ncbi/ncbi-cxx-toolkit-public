@@ -204,7 +204,7 @@ CJob::CJob(const SNSCommandArguments &  request) :
     m_ClientSID(request.sid),
     m_Output("")
 {
-    SetInput(NStr::ParseEscapes(request.input));
+    SetInput(request.input);
 }
 
 

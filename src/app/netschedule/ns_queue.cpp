@@ -594,14 +594,14 @@ TJobStatus  CQueue::PutResult(const CNSClientId &     client,
                               const string &          job_key,
                               const string &          auth_token,
                               int                     ret_code,
-                              const string *          output)
+                              const string &          output)
 {
-    _ASSERT(job_id && output);
+    _ASSERT(job_id);
 
     // The only one parameter (max output size) is required for the put
     // operation so there is no need to use CQueueParamAccessor
 
-    if (output->size() > m_MaxOutputSize)
+    if (output.size() > m_MaxOutputSize)
         NCBI_THROW(CNetScheduleException, eDataTooLong,
                    "Output is too long");
 
@@ -627,7 +627,7 @@ TJobStatus  CQueue::PutResult(const CNSClientId &     client,
             {{
                 CNSTransaction      transaction(this);
                 x_UpdateDB_PutResultNoLock(job_id, job_key, auth_token, curr,
-                                           ret_code, *output, job,
+                                           ret_code, output, job,
                                            client);
                 transaction.Commit();
             }}

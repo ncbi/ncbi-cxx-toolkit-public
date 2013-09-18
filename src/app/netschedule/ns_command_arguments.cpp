@@ -94,41 +94,35 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
     ITERATE(TNSProtoParams, it, params) {
         const CTempString &     key = it->first;
         const CTempString &     val = it->second;
-        size_t                  size = val.size();
-        string                  unescaped_value;
+        size_t                  size_to_check = 0;
+
 
         if (key.empty())
             continue;
 
-        // Check all the values except of the input/output fields.
-        // Input/output are checked later against the configured queue
-        // parameters.
-        // The error and progress message sizes must be checked after
-        // unquoting.
-        if (key == "err_msg" || key == "progress_msg")
-        {
-            unescaped_value = NStr::ParseEscapes(val);
-            size = unescaped_value.size();
-        }
-        if (size > kNetScheduleMaxDBDataSize - 1 &&
-            key != "input" && key != "output")
-        {
-            NCBI_THROW(CNetScheduleException, eDataTooLong,
-                       "Argument '" + string(key) + "' size (" +
-                       NStr::NumericToString(val.size()) +
-                       " bytes) exceeds the DB max limit ( " +
-                       NStr::NumericToString(kNetScheduleMaxDBDataSize - 1) +
-                       " bytes)");
-        }
-
         switch (key[0]) {
         case 'a':
-            if (key == "aff")
-                affinity_token = val;
+            if (key == "aff") {
+                affinity_token = NStr::ParseEscapes(val);
+                size_to_check = affinity_token.size();
+            }
             else if (key == "auth_token")
                 auth_token = val;
-            else if (key == "add")
-                aff_to_add = val;
+            else if (key == "add") {
+                aff_to_add = NStr::ParseEscapes(val);
+                list<string>    aff_to_add_list;
+                NStr::Split(aff_to_add, "\t,", aff_to_add_list,
+                            NStr::eNoMergeDelims);
+                for (list<string>::const_iterator k(aff_to_add_list.begin());
+                     k != aff_to_add_list.end(); ++k)
+                    if (k->size() > kNetScheduleMaxDBDataSize - 1)
+                        NCBI_THROW(CNetScheduleException, eDataTooLong,
+                                   "Affinity token '" + *k + "' size (" +
+                                   NStr::NumericToString(k->size()) +
+                                   " bytes) exceeds the DB max limit ( " +
+                                   NStr::NumericToString(kNetScheduleMaxDBDataSize - 1) +
+                                   " bytes)");
+            }
             else if (key == "any_aff") {
                 int tmp = NStr::StringToInt(val);
                 if (tmp != 0 && tmp != 1)
@@ -139,13 +133,13 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
             break;
         case 'c':
             if (key == "comment")
-                comment = val;
+                comment = NStr::ParseEscapes(val);
             else if (key == "count")
                 count = NStr::StringToUInt(val, NStr::fConvErr_NoThrow);
             break;
         case 'd':
             if (key == "del")
-                aff_to_del = val;
+                aff_to_del = NStr::ParseEscapes(val);
             else if (key == "drain") {
                 int tmp = NStr::StringToInt(val);
                 if (tmp != 0 && tmp != 1)
@@ -153,8 +147,10 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
                                "drain accepted values are 0 and 1.");
                 drain = (tmp == 1);
             }
-            else if (key == "description")
-                description = val;
+            else if (key == "description") {
+                description = NStr::ParseEscapes(val);
+                size_to_check = description.size();
+            }
             break;
         case 'e':
             if (key == "exclusive_new_aff") {
@@ -165,8 +161,8 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
                 exclusive_new_aff = (tmp == 1);
             }
             else if (key == "err_msg") {
-                // Escapes were removed above when the size limit is checked
-                err_msg = unescaped_value;
+                err_msg = NStr::ParseEscapes(val);
+                size_to_check = err_msg.size();
             }
             else if (key == "effective") {
                 int tmp = NStr::StringToInt(val);
@@ -177,15 +173,17 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
             }
             break;
         case 'g':
-            if (key == "group")
-                group = val;
+            if (key == "group") {
+                group = NStr::ParseEscapes(val);
+                size_to_check = group.size();
+            }
             break;
         case 'i':
             if (key == "input")
-                input = val;
+                input = NStr::ParseEscapes(val);
             else if (key == "ip") {
-                ip = val;
-                if (val.empty())
+                ip = NStr::ParseEscapes(val);
+                if (ip.empty())
                     ip = peer_socket.GetPeerAddress(eSAF_IP);
                 CDiagContext::GetRequestContext().SetClientIP(ip);
             }
@@ -203,7 +201,8 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
                                eInvalidParameter, "Invalid job key");
             }
             else if (key == "job_return_code")
-                job_return_code = NStr::StringToInt(val, NStr::fConvErr_NoThrow);
+                job_return_code = NStr::StringToInt(val,
+                                                    NStr::fConvErr_NoThrow);
             break;
         case 'm':
             if (key == "msk")
@@ -218,9 +217,9 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
             break;
         case 'o':
             if (key == "output")
-                output = val;
+                output = NStr::ParseEscapes(val);
             else if (key == "option")
-                option = val;
+                option = NStr::ParseEscapes(val);
             break;
         case 'p':
             if (key == "port") {
@@ -230,15 +229,17 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
                                eInvalidParameter, "Invalid port number");
             }
             else if (key == "progress_msg") {
-                // Escapes were removed above when the size limit is checked
-                progress_msg = unescaped_value;
+                progress_msg = NStr::ParseEscapes(val);
+                size_to_check = progress_msg.size();
             }
             break;
         case 'q':
-            if (key == "qname")
-                qname = val;
+            if (key == "qname") {
+                qname = NStr::ParseEscapes(val);
+                size_to_check = qname.size();
+            }
             else if (key == "qclass")
-                qclass = val;
+                qclass = NStr::ParseEscapes(val);
             break;
         case 's':
             if (key == "status") {
@@ -246,8 +247,8 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
                 job_status_string = val;
             }
             else if (key == "sid") {
-                sid = val;
-                CDiagContext::GetRequestContext().SetSessionID(NStr::URLDecode(val));
+                sid = NStr::ParseEscapes(val);
+                CDiagContext::GetRequestContext().SetSessionID(NStr::URLDecode(sid));
             }
             else if (key == "start_after") {
                 start_after = val;
@@ -274,6 +275,15 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
         default:
             break;
         }
+
+
+        if (size_to_check > kNetScheduleMaxDBDataSize - 1)
+            NCBI_THROW(CNetScheduleException, eDataTooLong,
+                       "Argument '" + string(key) + "' size (" +
+                       NStr::NumericToString(size_to_check) +
+                       " bytes) exceeds the DB max limit ( " +
+                       NStr::NumericToString(kNetScheduleMaxDBDataSize - 1) +
+                       " bytes)");
     }
 
     return;

@@ -164,11 +164,11 @@ public:
 
     TJobStatus  PutResult(const CNSClientId &     client,
                           const CNSPreciseTime &  curr,
-                          unsigned                job_id,
+                          unsigned int            job_id,
                           const string &          job_key,
                           const string &          auth_token,
                           int                     ret_code,
-                          const string *          output);
+                          const string &          output);
 
     bool GetJobOrWait(const CNSClientId &       client,
                       unsigned short            port, // Port the client
