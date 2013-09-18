@@ -43,6 +43,7 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+class CSeq_entry;
 class IMessageListener;
 class CObjReaderLineException;
 class CTrackData;
