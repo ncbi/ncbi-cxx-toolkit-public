@@ -540,6 +540,9 @@ const NCBI_NS_NCBI::CEnumeratedTypeValues* MethodName(void) \
 #define SET_ENUM_MODULE(ModuleName) \
     NCBI_NS_NCBI::SetModuleName(enumInfo, ModuleName)
 
+#define SET_ENUM_BITSET \
+    enumInfo->SetBitset()
+
 #define SET_ENUM_INTERNAL_NAME(OwnerName, MemberName) \
     NCBI_NS_NCBI::SetInternalName(enumInfo, OwnerName, MemberName)
 

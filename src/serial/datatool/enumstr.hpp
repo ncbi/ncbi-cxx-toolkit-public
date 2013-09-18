@@ -72,12 +72,19 @@ public:
 
     void GenerateTypeCode(CClassContext& ctx) const;
 
+    void SetBitset(bool bitset) {
+        m_IsBitset = bitset;
+    }
+    bool IsBitset(void) const {
+        return m_IsBitset;
+    }
 private:
     string m_ExternalName;
     string m_EnumName;
     string m_PackedType;
     string m_CType;
     bool m_IsInteger;
+    bool m_IsBitset;
     const TValues& m_Values;
     string m_ValuesPrefix;
 };

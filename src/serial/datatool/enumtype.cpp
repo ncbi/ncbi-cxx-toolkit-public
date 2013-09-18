@@ -453,6 +453,11 @@ AutoPtr<CTypeStrings> CEnumDataType::GetFullCType(void) const
                                enumInfo.cType, IsInteger(),
                                m_Values, enumInfo.valuePrefix,
                                GetNamespaceName(), this, Comments()));
+
+    string extra = GetVar("_type_extra");
+    if (NStr::CompareNocase(extra, "bitset") == 0) {
+        e->SetBitset(true);
+    }
     return AutoPtr<CTypeStrings>(e.release());
 }
 

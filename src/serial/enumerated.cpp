@@ -46,7 +46,7 @@ CEnumeratedTypeValues::CEnumeratedTypeValues(const char* name,
                                              bool isInteger)
     : m_Name(name),
       m_Integer(isInteger),
-      m_IsInternal(false)
+      m_IsBitset(false), m_IsInternal(false)
 {
 }
 
@@ -54,7 +54,7 @@ CEnumeratedTypeValues::CEnumeratedTypeValues(const string& name,
                                              bool isInteger)
     : m_Name(name),
       m_Integer(isInteger),
-      m_IsInternal(false)
+      m_IsBitset(false), m_IsInternal(false)
 {
 }
 
@@ -144,6 +144,38 @@ const string& CEnumeratedTypeValues::FindName(TEnumValueType value,
         }
     }
     return *i->second;
+}
+
+string CEnumeratedTypeValues::GetDisplayName(TEnumValueType value) const
+{
+    string res;
+    if (IsBitset()) {
+        TEnumValueType v = value;
+        const TValueToName& m = ValueToName();
+        TValueToName::const_reverse_iterator i = m.rbegin();
+        for (i = m.rbegin(); i != m.rend(); ++i) {
+            if ((i->first & v) == i->first) {
+                if (!res.empty()) {
+                    res.insert(0,",");
+                }
+                res.insert(0,*(i->second));
+                v -= i->first;
+            }
+        }
+        if (v) {
+            if (!res.empty()) {
+                res += ',';
+            }
+            res += NStr::NumericToString(v);
+        }
+
+    } else {
+        res = FindName(value, true);
+    }
+    if (res.empty()) {
+        res = NStr::NumericToString(value);
+    }
+    return res;
 }
 
 void CEnumeratedTypeValues::AddValue(const string& name, TEnumValueType value)

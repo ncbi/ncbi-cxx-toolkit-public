@@ -51,7 +51,7 @@ CEnumTypeStrings::CEnumTypeStrings(const string& externalName,
     : CParent(namespaceName, dataType, comments),
       m_ExternalName(externalName), m_EnumName(enumName),
       m_PackedType(packedType),
-      m_CType(cType), m_IsInteger(isInteger),
+      m_CType(cType), m_IsInteger(isInteger), m_IsBitset(false),
       m_Values(values), m_ValuesPrefix(valuePrefix)
 {
 }
@@ -184,6 +184,10 @@ void CEnumTypeStrings::GenerateTypeCode(CClassContext& ctx) const
         if ( !module_name.empty() ) {
             cpp <<
                 "    SET_ENUM_MODULE(\""<<module_name<<"\");\n";
+        }
+        if (IsBitset()) {
+            cpp <<
+                "    SET_ENUM_BITSET;\n";
         }
         ITERATE ( TValues, i, m_Values ) {
             string id = Identifier(i->GetName(), false);

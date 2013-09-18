@@ -126,16 +126,25 @@ public:
     ///   Name of the enum
     const string& FindName(TEnumValueType value, bool allowBadValue) const;
 
+    string GetDisplayName(TEnumValueType value) const;
+
     /// Get name-to-value map
     const TNameToValue& NameToValue(void) const;
     /// Get value-to-name map
     const TValueToName& ValueToName(void) const;
 
+    void SetBitset(bool bitset=true) {
+        m_IsBitset = bitset;
+    }
+    bool IsBitset(void) const {
+        return m_IsBitset;
+    }
 private:
     string m_Name;
     string m_ModuleName;
 
     bool m_Integer;
+    bool m_IsBitset;
     bool m_IsInternal;
     TValues m_Values;
     mutable auto_ptr<TNameToValue> m_NameToValue;
