@@ -1,0 +1,128 @@
+Seq-annot ::= {
+  data seq-table {
+    feat-type 0,
+    num-rows 7,
+    columns {
+      {
+        header {
+          field-name "Seq-table location"
+        },
+        default loc int {
+          from 4799,
+          to 4851,
+          id gi 1010
+        }
+      },
+      {
+        header {
+          field-id location-id
+        },
+        default id gi 1010
+      },
+      {
+        header {
+          field-id location-from
+        },
+        data int {
+          4799,
+          4810,
+          4815,
+          4823,
+          4839,
+          4843,
+          4851
+        }
+      },
+      {
+        header {
+          field-name "span"
+        },
+        default int 1
+      },
+      {
+        header {
+          field-name "value_gap"
+        },
+        default real { 0, 10, 0 }
+      },
+      {
+        header {
+          field-name "values"
+        },
+        data real {
+          { 1, 10, 0 },
+          { 3, 10, 0 },
+          { 1, 10, 0 },
+          { 7, 10, 0 },
+          { 2, 10, 0 },
+          { 1, 10, 0 },
+          { 1, 10, 0 }
+        }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data seq-table {
+    feat-type 0,
+    num-rows 7,
+    columns {
+      {
+        header {
+          field-name "Seq-table location"
+        },
+        default loc int {
+          from 6799,
+          to 6825,
+          id gi 1011
+        }
+      },
+      {
+        header {
+          field-id location-id
+        },
+        default id gi 1011
+      },
+      {
+        header {
+          field-id location-from
+        },
+        data int {
+          6799,
+          6805,
+          6807,
+          6811,
+          6819,
+          6821,
+          6825
+        }
+      },
+      {
+        header {
+          field-name "span"
+        },
+        default int 1
+      },
+      {
+        header {
+          field-name "value_gap"
+        },
+        default real { 0, 10, 0 }
+      },
+      {
+        header {
+          field-name "values"
+        },
+        data real {
+          { 1, 10, 0 },
+          { 3, 10, 0 },
+          { 15, 10, -1 },
+          { 7, 10, 0 },
+          { 2, 10, 0 },
+          { 157, 10, -2 },
+          { 1, 10, 0 }
+        }
+      }
+    }
+  }
+}

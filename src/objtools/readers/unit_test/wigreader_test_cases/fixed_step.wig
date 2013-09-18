@@ -1,0 +1,25 @@
+track type=wiggle_0 name="fixedStep1" description="fixedStep format" visibility=full autoScale=off viewLimits=0:1000 color=0,200,100 maxHeightPixels=100:50:20 graphType=points priority=20
+fixedStep chrom=AC_000017.1 start=1500 step=300 span=300
+1000
+900
+800
+700
+600
+500
+400
+300
+200
+100
+
+track type=wiggle_0 name="fixedStep2" description="fixedStep format" visibility=full autoScale=off viewLimits=0:1000 color=0,200,100 maxHeightPixels=100:50:20 graphType=points priority=20
+fixedStep chrom=AC_000018.1 start=1500 step=300 span=300
+1000
+900
+800
+700
+600
+500
+400
+300
+200
+100
