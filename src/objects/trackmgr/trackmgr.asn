@@ -64,7 +64,10 @@ TMgr-DisplayTrackRequest ::= SEQUENCE {
     genome-context TMgr-GenomeContext,
     attrs SET OF TMgr-AttrSpec OPTIONAL,
     identity TMgr-Identity OPTIONAL,
-    authorization TMgr-TrackACL-Authorization OPTIONAL
+    authorization TMgr-TrackACL-Authorization OPTIONAL,
+    flags SEQUENCE {
+        include-stats BOOLEAN DEFAULT FALSE
+    } OPTIONAL
 }
 
 TMgr-DisplayTrackReply ::= SEQUENCE {
@@ -164,7 +167,8 @@ TMgr-Attribute ::= SEQUENCE {
 TMgr-DisplayTrack ::= SEQUENCE {
     dtrack-id TMgr-DTrackId,
     name UTF8String,
-    attrs SET OF TMgr-Attribute OPTIONAL
+    attrs SET OF TMgr-Attribute OPTIONAL,
+    seqs SET OF TMgr-DatasetItemSeq OPTIONAL
 }
 
 TMgr-DatasetItem ::= SEQUENCE {
