@@ -39,6 +39,9 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 
+#include <objtools/readers/reader_base.hpp>
+#include <objtools/readers/message_listener.hpp>
+
 BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
