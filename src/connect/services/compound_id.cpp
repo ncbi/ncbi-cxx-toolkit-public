@@ -177,20 +177,22 @@ SCompoundIDFieldImpl* SCompoundIDImpl::AppendField(
 
 void SCompoundIDImpl::DeleteThis()
 {
+    CCompoundIDPool pool(m_Pool);
+    m_Pool = NULL;
     SCompoundIDFieldImpl* field = m_FieldList.m_Head;
     while (field != NULL) {
         SCompoundIDFieldImpl* next_field = TFieldList::GetNext(field);
-        m_Pool->m_FieldPool.ReturnToPool(field);
+        pool->m_FieldPool.ReturnToPool(field);
         field = next_field;
     }
-    m_Pool->m_CompoundIDPool.ReturnToPool(this);
-    m_Pool = NULL;
+    pool->m_CompoundIDPool.ReturnToPool(this);
 }
 
 void CCompoundIDField::Remove()
 {
-    m_Impl->m_CID->Remove(m_Impl);
+    CCompoundID cid(m_Impl->m_CID);
     m_Impl->m_CID = NULL;
+    cid->Remove(m_Impl);
 }
 
 ECompoundIDClass CCompoundID::GetClass() const
