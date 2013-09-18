@@ -104,8 +104,7 @@ public:
 private:
     void CreateModelProducts(SModelData& model);
     CRef<CSeq_feat> create_internal_feature(const SModelData& md);
-    enum EWhere { eOnGenome, eOnMrna };
-    CRef<CSeq_feat> create_cdregion_feature(SModelData& md,EWhere onWhat);
+    CRef<CSeq_feat> create_cdregion_feature(SModelData& md);
     CRef<CSeq_align> model2spliced_seq_align(SModelData& md);
     CRef<CSpliced_exon> spliced_exon (const CModelExon& e, EStrand strand) const;
     CRef<CSeq_loc> create_packed_int_seqloc(const CGeneModel& model, TSignedSeqRange limits = TSignedSeqRange::GetWhole());
@@ -244,7 +243,7 @@ void CAnnotationASN1::CImplementationData::AddModel(const CAlignModel& model)
     CRef<CSeq_feat> cds_feat;
     CSeq_feat* cds_feat_ptr = NULL;
     if (!md.is_ncrna) {
-         cds_feat = create_cdregion_feature(md,eOnMrna);
+         cds_feat = create_cdregion_feature(md);
          cds_feat_ptr = cds_feat.GetPointer();
     }
 
@@ -265,26 +264,21 @@ void CAnnotationASN1::CImplementationData::AddModel(const CAlignModel& model)
     AddInternalFeature(md);
 }
 
-CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_cdregion_feature(SModelData& md, EWhere where)
+CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_cdregion_feature(SModelData& md)
 {
     const CGeneModel& model = md.model;
-    EStrand strand = model.Strand();
+    CAlignMap amap = model.GetAlignMap();
+    CCDSInfo cds = model.GetCdsInfo();
+    if(cds.IsMappedToGenome())
+        cds = cds.MapFromOrigToEdited(amap);  // all coords on mRNA
 
     CRef<CSeq_feat> cdregion_feature(new CSeq_feat);  
-
-    if (where==eOnGenome) {
-        CRef<CObject_id> obj_id( new CObject_id() );
-        obj_id->SetStr("cds." + NStr::Int8ToString(model.ID()));
-        CRef<CFeat_id> feat_id( new CFeat_id() );
-        feat_id->SetLocal(*obj_id);
-        cdregion_feature->SetIds().push_back(feat_id);
-    }
 
     CRef<CGenetic_code::C_E> cdrcode(new CGenetic_code::C_E);
     cdrcode->SetId(gencode);
     cdregion_feature->SetData().SetCdregion().SetCode().Set().push_back(cdrcode);
 
-   if(model.PStop() && (where==eOnMrna || model.FrameShifts().empty())) {
+   if(model.PStop()) {
         CCdregion::TCode_break& code_breaks = cdregion_feature->SetData().SetCdregion().SetCode_break();
         ITERATE(CCDSInfo::TPStops,s,model.GetCdsInfo().PStops()) {
             CRef< CCode_break > code_break(new CCode_break);
@@ -292,21 +286,9 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_cdregion_feature(SM
 
             TSeqPos from = s->GetFrom();
             TSeqPos to = s->GetTo();
-            switch (where) {
-            case eOnMrna:
-                from = model.GetAlignMap().MapOrigToEdited(from);
-                to = model.GetAlignMap().MapOrigToEdited(to);
-                
-                if (strand==eMinus)
-                    swap(from,to);
-                _ASSERT(from+2==to);
-                pstop.Reset(new CSeq_loc(*md.mrna_sid, from, to, eNa_strand_plus));
-                break;
-            case eOnGenome:
-                _ASSERT(model.GetAlignMap().FShiftedLen(from,to)==3);
-                pstop = create_packed_int_seqloc(model,*s);
-                break;
-            }
+            _ASSERT(from+2==to);
+            
+            pstop.Reset(new CSeq_loc(*md.mrna_sid, from, to, eNa_strand_plus));
 
             code_break->SetLoc(*pstop);
             CRef<CCode_break::C_Aa> aa(new CCode_break::C_Aa);
@@ -318,16 +300,10 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_cdregion_feature(SM
 
     cdregion_feature->SetProduct().SetWhole(*md.prot_sid);
 
-    int start, stop, altstart;
-    if (strand==ePlus) {
-        altstart = model.GetAlignMap().MapOrigToEdited(model.MaxCdsLimits().GetFrom());
-        start = model.GetAlignMap().MapOrigToEdited(model.GetCdsInfo().Cds().GetFrom());
-        stop = model.GetAlignMap().MapOrigToEdited(model.MaxCdsLimits().GetTo());
-    } else {
-        altstart = model.GetAlignMap().MapOrigToEdited(model.MaxCdsLimits().GetTo());
-        start = model.GetAlignMap().MapOrigToEdited(model.GetCdsInfo().Cds().GetTo());
-        stop = model.GetAlignMap().MapOrigToEdited(model.MaxCdsLimits().GetFrom());
-    }
+    TSignedSeqRange tlim = model.TranscriptLimits();
+    int altstart = (cds.MaxCdsLimits()&tlim).GetFrom();
+    int start = cds.Cds().GetFrom();
+    int stop = (cds.MaxCdsLimits()&tlim).GetTo();
 
     int frame = 0;
     if(!model.HasStart()) {
@@ -341,36 +317,11 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_cdregion_feature(SM
     cdregion_feature->SetData().SetCdregion().SetFrame(ncbi_frame);
 
     CRef<CSeq_loc> cdregion_location;
-    switch (where) {
-    case eOnMrna:
-        cdregion_location.Reset(new CSeq_loc(*md.mrna_sid, start, stop, eNa_strand_plus));
 
-        if (0 < altstart && altstart != start)
-            cdregion_location->SetInt().SetFuzz_from().SetAlt().push_back(altstart);
+    cdregion_location.Reset(new CSeq_loc(*md.mrna_sid, start, stop, eNa_strand_plus));
 
-        break;
-    case eOnGenome:
-        cdregion_location = create_packed_int_seqloc(model,model.RealCdsLimits());
-
-        if (strand==ePlus) {
-            altstart = model.MaxCdsLimits().GetFrom();
-            start = model.RealCdsLimits().GetFrom();
-        } else {
-            altstart = model.MaxCdsLimits().GetTo();
-            start = model.RealCdsLimits().GetTo();
-        }
-
-        if(!model.FrameShifts().empty()) {
-            cdregion_feature->SetExcept(true);
-            cdregion_feature->SetExcept_text("unclassified translation discrepancy");
-        }
-
-        if (model.Status() & CGeneModel::ePseudo) {
-            cdregion_feature->SetPseudo(true);
-        }
- 
-        break;
-    }
+    if (0 < altstart && altstart != start)
+        cdregion_location->SetInt().SetFuzz_from().SetAlt().push_back(altstart);
 
     if (!model.HasStart())
         cdregion_location->SetPartialStart(true,eExtreme_Biological);
