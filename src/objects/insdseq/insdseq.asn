@@ -91,23 +91,28 @@ BEGIN
 INSDSet ::= SEQUENCE OF INSDSeq
 
 INSDSeq ::= SEQUENCE {
-    locus VisibleString ,
+    locus VisibleString OPTIONAL ,
     length INTEGER ,
     strandedness VisibleString OPTIONAL ,
     moltype VisibleString ,
     topology VisibleString OPTIONAL ,
-    division VisibleString ,
-    update-date VisibleString ,
+    division VisibleString OPTIONAL ,
+    update-date VisibleString OPTIONAL ,
     create-date VisibleString OPTIONAL ,
     update-release VisibleString OPTIONAL ,
     create-release VisibleString OPTIONAL ,
-    definition VisibleString ,
+    definition VisibleString OPTIONAL ,
     primary-accession VisibleString OPTIONAL ,
     entry-version VisibleString OPTIONAL ,
     accession-version VisibleString OPTIONAL ,
     other-seqids SEQUENCE OF INSDSeqid OPTIONAL ,
     secondary-accessions SEQUENCE OF INSDSecondary-accn OPTIONAL,
+
+--  INSDSeq_project has been deprecated in favor of INSDSeq_xrefs .
+--  This element may be be removed from a future version of this DTD.
+
     project VisibleString OPTIONAL ,
+
     keywords SEQUENCE OF INSDKeyword OPTIONAL ,
     segment VisibleString OPTIONAL ,
     source VisibleString OPTIONAL ,
@@ -124,7 +129,15 @@ INSDSeq ::= SEQUENCE {
     feature-set SEQUENCE OF INSDFeatureSet OPTIONAL ,
     sequence VisibleString OPTIONAL ,  -- Optional for contig, wgs, etc.
     contig VisibleString OPTIONAL ,
-    alt-seq SEQUENCE OF INSDAltSeqData OPTIONAL
+    alt-seq SEQUENCE OF INSDAltSeqData OPTIONAL ,
+
+--  INSDSeq_xrefs provides cross-references from a sequence record
+--  to other database resources. These cross-references are at the
+--  level of the entire record, rather than at the level of a specific
+--  feature. These cross-references can include: BioProject, BioSample,
+--  Sequence Read Archive, etc.
+
+    xrefs SEQUENCE OF INSDXref OPTIONAL
 }
 
 INSDSeqid ::= VisibleString
@@ -136,7 +149,7 @@ INSDKeyword ::= VisibleString
 -- INSDReference_position contains a string value indicating the
 -- basepair span(s) to which a reference applies. The allowable
 -- formats are:
--- 
+--
 --   X..Y  : Where X and Y are integers separated by two periods,
 --           X >= 1 , Y <= sequence length, and X <= Y 
 --
@@ -147,12 +160,15 @@ INSDKeyword ::= VisibleString
 --           provides sequence annotation information, but the specific
 --           basepair spans are either not captured, or were too numerous
 --           to record.
--- 
+--
 --           The 'sites' literal string is singly occuring, and
 --            cannot be used in conjunction with any X..Y basepair spans.
--- 
---   References that lack an INSDReference_position element apply
---   to the entire sequence.
+--
+--           'sites' is a convention utilized by GenBank, and might
+--           not be presented in XML provided by EMBL and DDBJ.
+--
+--   References that lack an INSDReference_position element are not
+--   attributed to any particular region of the sequence.
 
 INSDReference ::= SEQUENCE {
     reference VisibleString ,
@@ -184,14 +200,7 @@ INSDComment ::= SEQUENCE {
     paragraphs SEQUENCE OF INSDCommentParagraph
 }
 
-INSDCommentParagraph ::= SEQUENCE {
-    items SEQUENCE OF INSDCommentItem
-}
-
-INSDCommentItem ::= SEQUENCE {
-    value VisibleString OPTIONAL ,
-    url VisibleString OPTIONAL
-}
+INSDCommentParagraph ::= VisibleString
 
 INSDStrucComment ::= SEQUENCE {
     name VisibleString OPTIONAL ,
@@ -207,15 +216,15 @@ INSDStrucCommentItem ::= SEQUENCE {
 -- INSDFeature_operator contains a string value describing
 -- the relationship among a set of INSDInterval within
 -- INSDFeature_intervals. The allowable formats are:
--- 
+--
 --   join :  The string literal 'join' indicates that the
 --           INSDInterval intervals are biologically joined
 --           together into a contiguous molecule.
--- 
+--
 --   order : The string literal 'order' indicates that the
 --           INSDInterval intervals are in the presented
 --           order, but they are not necessarily contiguous.
--- 
+--
 --   Either 'join' or 'order' is required if INSDFeature_intervals
 --   is comprised of more than one INSDInterval .
 
@@ -245,9 +254,13 @@ INSDFeature ::= SEQUENCE {
 
 -- INSDInterval_interbp is a boolean indicating whether
 -- a feature (such as a restriction site) is located
--- between two adjacent basepairs. When INSDInterval_iscomp
--- is TRUE, the 'from' and 'to' values must differ by
--- exactly one base.
+-- between two adjacent basepairs. When INSDInterval_interbp
+-- is TRUE, the 'from' and 'to' values will differ by
+-- exactly one base for linear molecules. For circular 
+-- molecules, if the inter-basepair position falls between
+-- the last and the first base, then 'from' will be the
+-- final base (equal to the length of the sequence), and
+-- 'to' will have a value of 1.
 
 INSDInterval ::= SEQUENCE {
     from INTEGER OPTIONAL ,
@@ -263,9 +276,15 @@ INSDQualifier ::= SEQUENCE {
     value VisibleString OPTIONAL
 }
 
+-- INSDAltSeqData provides for sequence representations other than
+-- literal basepair abbreviations (INSDSeq_sequence), such as the
+-- CONTIG/CO linetype of the GenBank and EMBL flatfile formats.
+-- It also accomodates the specification of accession-number ranges,
+-- which are presented on a WGS master record (for the contigs and
+-- and scaffolds of a WGS project).
+
 INSDAltSeqData ::= SEQUENCE {
-    name VisibleString ,  -- e.g., CON-division-join, WGS-contig-range,
-                          -- WGS-scaffold-range, MGA/CAGE-range, genome
+    name VisibleString ,  -- e.g., contig, wgs, scaffold, cage, genome
     items SEQUENCE OF INSDAltSeqItem OPTIONAL
 }
 
