@@ -55,6 +55,7 @@ USING_SCOPE(objects);
 const string extInput("bed");
 const string extOutput("asn");
 const string extErrors("errors");
+const string extKeep("new");
 const string dirTestFiles("bedreader_test_cases");
 // !!!
 // !!! Must also customize reader type in sRunTest !!!
@@ -192,7 +193,7 @@ void sUpdateAll(CDir& test_cases_dir) {
     }
 }
 
-void sRunTest(const string &sTestName, const STestInfo & testInfo)
+void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 {
     cerr << "Testing " << testInfo.mInFile.GetName() << " against " <<
         testInfo.mOutFile.GetName() << " and " <<
@@ -226,14 +227,22 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo)
 
     bool success = testInfo.mOutFile.CompareTextContents(resultName, CFile::eIgnoreWs);
     if (!success) {
-        CDirEntry(resultName).Remove();
+        CDirEntry deResult = CDirEntry(resultName);
+        if (keep) {
+            deResult.Copy(testInfo.mOutFile.GetPath() + "." + extKeep);
+        }
+        deResult.Remove();
         CDirEntry(logName).Remove();
         BOOST_ERROR("Error: " << sTestName << " failed due to post processing diffs.");
     }
     CDirEntry(resultName).Remove();
 
     success = testInfo.mErrorFile.CompareTextContents(logName, CFile::eIgnoreWs);
-    CDirEntry(logName).Remove();
+    CDirEntry deErrors = CDirEntry(logName);
+    if (!success  &&  keep) {
+        deErrors.Copy(testInfo.mErrorFile.GetPath() + "." + extKeep);
+    }
+    deErrors.Remove();
     if (!success) {
         BOOST_ERROR("Error: " << sTestName << " failed due to error handling diffs.");
     }
@@ -256,6 +265,9 @@ NCBITEST_INIT_CMDLINE(arg_descrs)
         "" );
     arg_descrs->AddFlag("update-all",
         "Update all test cases to current reader code (dangerous).",
+        true );
+    arg_descrs->AddFlag("keep-diffs",
+        "Keep output files that are different from the expected.",
         true );
 }
 
@@ -311,6 +323,6 @@ BOOST_AUTO_TEST_CASE(RunTests)
         
         cout << "Running test: " << sName << endl;
 
-        BOOST_CHECK_NO_THROW(sRunTest(sName, testInfo));
+        BOOST_CHECK_NO_THROW(sRunTest(sName, testInfo, args["keep-diffs"]));
     }
 }
