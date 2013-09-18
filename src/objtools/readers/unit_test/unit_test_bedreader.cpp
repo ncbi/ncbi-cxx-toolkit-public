@@ -136,7 +136,7 @@ private:
     string mExtErrors;
 };
 
-void sNewCase(CDir& test_cases_dir, const string& test_name)
+void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 {   
     string input = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extInput);
     string output = CDir::ConcatPath( test_cases_dir.GetPath(), test_name + "." + extOutput);
@@ -171,6 +171,25 @@ void sNewCase(CDir& test_cases_dir, const string& test_name)
     cerr << "    Produced new ASN1 file " << output << "." << endl;
 
     cerr << " ... Done." << endl;
+}
+
+void sUpdateAll(CDir& test_cases_dir) {
+
+    const vector<string> kEmptyStringVec;
+    TTestNameToInfoMap testNameToInfoMap;
+    CTestNameToInfoMapLoader testInfoLoader(
+        &testNameToInfoMap, extInput, extOutput, extErrors);
+    FindFilesInDir(
+        test_cases_dir,
+        kEmptyStringVec,
+        kEmptyStringVec,
+        testInfoLoader,
+        fFF_Default | fFF_Recursive );
+
+    ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
+        const string & sName = name_to_info_it->first;
+        sUpdateCase(test_cases_dir, sName);
+    }
 }
 
 void sRunTest(const string &sTestName, const STestInfo & testInfo)
@@ -231,13 +250,14 @@ NCBITEST_INIT_CMDLINE(arg_descrs)
         "Set the root directory under which all test files can be found.",
         CArgDescriptions::eDirectory,
         dirTestFiles );
-    arg_descrs->AddDefaultKey("new-case", "NEW_CASE",
-        "Produce .asn and .error files from given .bed for new test case.",
+    arg_descrs->AddDefaultKey("update-case", "UPDATE_CASE",
+        "Produce .asn and .error files from given name for new or updated test case.",
         CArgDescriptions::eString,
         "" );
+    arg_descrs->AddFlag("update-all",
+        "Update all test cases to current reader code (dangerous).",
+        true );
 }
-
-
 
 NCBITEST_AUTO_FINI()
 {
@@ -251,9 +271,15 @@ BOOST_AUTO_TEST_CASE(RunTests)
     BOOST_REQUIRE_MESSAGE( test_cases_dir.IsDir(), 
         "Cannot find dir: " << test_cases_dir.GetPath() );
 
-    string new_case = args["new-case"].AsString();
-    if (!new_case.empty()) {
-        sNewCase(test_cases_dir, new_case);
+    bool update_all = args["update-all"].AsBoolean();
+    if (update_all) {
+        sUpdateAll(test_cases_dir);
+        return;
+    }
+
+    string update_case = args["update-case"].AsString();
+    if (!update_case.empty()) {
+        sUpdateCase(test_cases_dir, update_case);
         return;
     }
    
@@ -273,9 +299,11 @@ BOOST_AUTO_TEST_CASE(RunTests)
         const STestInfo & testInfo = name_to_info_it->second;
         cout << "Verifying: " << sName << endl;
         BOOST_REQUIRE_MESSAGE( testInfo.mInFile.Exists(),
-            "GVF file does not exist: " << testInfo.mInFile.GetPath() );
+            extInput + " file does not exist: " << testInfo.mInFile.GetPath() );
         BOOST_REQUIRE_MESSAGE( testInfo.mOutFile.Exists(),
-            "ASN file does not exist: " << testInfo.mOutFile.GetPath() );
+            extOutput + " file does not exist: " << testInfo.mOutFile.GetPath() );
+        BOOST_REQUIRE_MESSAGE( testInfo.mErrorFile.Exists(),
+            extErrors + " file does not exist: " << testInfo.mErrorFile.GetPath() );
     }
     ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
         const string & sName = name_to_info_it->first;

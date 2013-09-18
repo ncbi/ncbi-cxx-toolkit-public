@@ -9,6 +9,13 @@ To add additional test cases to this unit test:
     CErrorLogger (unit_test/error_logger.hpp) object. Name it dummy.errors and
     also put it into this directory.
     
-	
+Alternatively:
+(3) Run "unit_test_bedreader -test-cases-dir [[here]] -update-case dummy"
+    and unit_test_bedreader will generate the corresponding dummy.asn and 
+	dummy.error files based on the bedreader code the unit test was compiled 
+	against.
+	You may want to desk check the aute generated files before committing to
+	them.
+
 That's it - the unit test will scan this directory each time it runs, and thus
 find and execute the new test automatically.
