@@ -8209,18 +8209,6 @@ void CSeqEntry_test_on_biosrc_orgmod :: BiosrcHasConflictingStrainAndCultureColl
        thisInfo.test_item_list[GetName_cul()].push_back(desc + "\n" + extra_str); 
 };
 
-
-bool CSeqEntry_test_on_biosrc_orgmod :: IsMissingRequiredStrain(const CBioSource& biosrc)
-{
-  if (!HasLineage(biosrc, "Bacteria")) return false;
-  ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod())
-       if ( (*it)->GetSubtype() == COrgMod :: eSubtype_strain) return false;
-
-  return true;
-};
-
-
-
 void CSeqEntry_test_on_biosrc_orgmod :: RunTests(const CBioSource& biosrc, const string& desc)
 {
   // DUP_DISC_ATCC_CULTURE_CONFLICT
@@ -8237,17 +8225,8 @@ void CSeqEntry_test_on_biosrc_orgmod :: RunTests(const CBioSource& biosrc, const
   // ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH
   if (m_run_cul) BiosrcHasConflictingStrainAndCultureCollectionValues(biosrc, desc);
 
-  if (IsMissingRequiredStrain(biosrc)) {
-      // DISC_REQUIRED_STRAIN
-      if (m_run_strain) thisInfo.test_item_list[GetName_strain()].push_back(desc);
-      
-  /*
-      // DISC_BACTERIA_MISSING_STRAIN
-      if (m_run_sp) thisInfo.test_item_list[GetName_sp_strain()].push_back(desc);
-*/
-  }
-  else { // DISC_BACTERIA_MISSING_STRAIN
-     if (m_run_sp && HasMissingBacteriaStrain(biosrc))
+  // DISC_BACTERIA_MISSING_STRAIN
+  if (m_run_sp && HasMissingBacteriaStrain(biosrc)) {
        thisInfo.test_item_list[GetName_sp_strain()].push_back(desc);
   }
 
@@ -8454,7 +8433,6 @@ void CSeqEntry_test_on_biosrc_orgmod :: TestOnObj(const CSeq_entry& seq_entry)
    m_run_cul = (thisTest.tests_run.find(GetName_cul()) != thisTest.tests_run.end());
    m_run_cbs = (thisTest.tests_run.find(GetName_cbs()) != thisTest.tests_run.end());
    m_run_atcc = (thisTest.tests_run.find(GetName_atcc()) != thisTest.tests_run.end());
-   m_run_strain = (thisTest.tests_run.find(GetName_strain()) != thisTest.tests_run.end());
    m_run_sp = (thisTest.tests_run.find(GetName_sp_strain()) != thisTest.tests_run.end());
    m_run_meta = (thisTest.tests_run.find(GetName_meta()) != thisTest.tests_run.end());
    m_run_auth = (thisTest.tests_run.find(GetName_auth()) != thisTest.tests_run.end());
@@ -8475,21 +8453,12 @@ void CSeqEntry_test_on_biosrc_orgmod :: TestOnObj(const CSeq_entry& seq_entry)
    }
 };
 
-
-void CSeqEntry_DISC_REQUIRED_STRAIN :: GetReport(CRef <CClickableItem>& c_item)
-{
-  c_item->description = GetIsComment(c_item->item_list.size(), "biosource")
-                                                         + "missing required strain value";
-};
-
-
 void CSeqEntry_DUP_DISC_ATCC_CULTURE_CONFLICT :: GetReport(CRef <CClickableItem>& c_item)
 {
   RmvRedundancy(c_item->item_list); 
   c_item->description = GetHasComment(c_item->item_list.size(), "biosource")
                           + "conflicting ATCC strain and culture collection values.";
 };
-
 
 void CSeqEntry_DUP_DISC_CBS_CULTURE_CONFLICT :: GetReport(CRef <CClickableItem>& c_item)
 {
@@ -8498,14 +8467,12 @@ void CSeqEntry_DUP_DISC_CBS_CULTURE_CONFLICT :: GetReport(CRef <CClickableItem>&
                           + "conflicting CBS strain and culture collection values.";
 };
 
-
 void CSeqEntry_DISC_BACTERIAL_TAX_STRAIN_MISMATCH :: GetReport(CRef <CClickableItem>& c_item)
 {
    RmvRedundancy(c_item->item_list); 
    c_item->description = GetHasComment(c_item->item_list.size(), "biosource") 
                            + "tax name/strain mismatch.";
 };
-
 
 void CSeqEntry_ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH :: GetReport(CRef <CClickableItem>& c_item) 
 {
@@ -8515,6 +8482,15 @@ void CSeqEntry_ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH :: GetReport(CRef <CC
 };
 
 
+bool CSeqEntry_test_on_biosrc :: x_IsMissingRequiredStrain(const CBioSource& biosrc)
+{
+  if (!HasLineage(biosrc, "Bacteria")) return false;
+  if (biosrc.IsSetOrgMod()) {
+     ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod())
+       if ( (*it)->GetSubtype() == COrgMod :: eSubtype_strain) return false;
+  }
+  return true;
+};
 
 bool CSeqEntry_test_on_biosrc :: HasMulSrc(const CBioSource& biosrc)
 {
@@ -8706,6 +8682,10 @@ bool CSeqEntry_test_on_biosrc :: IsMissingRequiredClone (const CBioSource& biosr
 
 void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string& desc, int idx)
 {
+  // DISC_REQUIRED_STRAIN
+  if (m_run_strain && x_IsMissingRequiredStrain(biosrc))
+      thisInfo.test_item_list[GetName_strain()].push_back(desc);
+  
   // DISC_REQUIRED_CLONE
   if (m_run_clone && IsMissingRequiredClone(biosrc))
       thisInfo.test_item_list[GetName_clone()].push_back(desc);
@@ -8880,6 +8860,12 @@ bool CSeqEntry_test_on_biosrc :: SamePCRReaction(const CPCRReaction& pcr1, const
   else return false;
 };
 
+void CSeqEntry_DISC_REQUIRED_STRAIN :: GetReport(CRef <CClickableItem>& c_item)
+{
+  c_item->description = GetIsComment(c_item->item_list.size(), "biosource")
+                                                         + "missing required strain value";
+};
+
 void CSeqEntry_ONCALLER_DUPLICATE_PRIMER_SET :: GetReport(CRef <CClickableItem>& c_item)
 {
    c_item->description
@@ -9050,6 +9036,7 @@ void CSeqEntry_test_on_biosrc :: TestOnObj(const CSeq_entry& seq_entry)
    m_run_pcr = (thisTest.tests_run.find(GetName_pcr()) != thisTest.tests_run.end());
    m_run_prim = (thisTest.tests_run.find(GetName_prim()) != thisTest.tests_run.end());
    m_run_quals = (thisTest.tests_run.find(GetName_quals()) != thisTest.tests_run.end());
+   m_run_strain = (thisTest.tests_run.find(GetName_strain()) != thisTest.tests_run.end());
    m_run_sp = (thisTest.tests_run.find(GetName_sp()) != thisTest.tests_run.end());
    m_run_tbad = (thisTest.tests_run.find(GetName_tbad()) != thisTest.tests_run.end());
    m_run_tmiss = (thisTest.tests_run.find(GetName_tmiss()) != thisTest.tests_run.end());
@@ -9524,8 +9511,9 @@ CObjectManager& obj = thisInfo.scope->GetObjectManager();
   bool run_bproj = (thisTest.tests_run.find(GetName_bproj()) != thisTest.tests_run.end());
   bool run_prefix = (thisTest.tests_run.find(GetName_prefix()) != thisTest.tests_run.end());
 
+  m_seqs_w_pid.clear(); 
+  m_seqs_no_pid.clear();
   ITERATE (vector <const CSeqdesc*>, it, user_seqdesc) {
-//cerr << "i " << i << endl;
     const CUser_object& user_obj = (*it)->GetUser();
     if ( !(user_obj.GetType().IsStr()) ) { 
          i++; continue;
@@ -9581,11 +9569,17 @@ CObjectManager& obj = thisInfo.scope->GetObjectManager();
     }
 
     // MISSING_PROJECT
-    if (run_mproj && type_str != "GenomeProjectsDB"
-                  && (type_str != "DBLink" || !user_obj.HasField("BioProject")) ) {
-       for (CBioseq_CI bb_ci = b_ci; bb_ci; ++bb_ci) 
-          thisInfo.test_item_list[GetName_mproj()].push_back(
-                            GetDiscItemText( *(bb_ci->GetCompleteBioseq())) );
+    if (run_mproj) {
+        if (type_str != "GenomeProjectsDB" 
+                  && (type_str != "DBLink" 
+                         || (type_str == "DBLink" && !(user_obj.HasField("BioProject"))) )) {
+           for (CBioseq_CI bb_ci = b_ci; bb_ci; ++bb_ci) {
+                m_seqs_w_pid.insert(GetDiscItemText(*(bb_ci->GetCompleteBioseq())));
+           }
+        }
+        else for (CBioseq_CI bb_ci = b_ci; bb_ci; ++bb_ci) {
+                m_seqs_no_pid.insert(GetDiscItemText(*(bb_ci->GetCompleteBioseq())));
+        }
     }
 
     // ONCALLER_BIOPROJECT_ID
@@ -9628,6 +9622,19 @@ CObjectManager& obj = thisInfo.scope->GetObjectManager();
           thisInfo.test_item_list[GetName_scomm()].push_back(it->first);
       }
    }
+
+// MISSING_PROJECT
+   if (m_seqs_w_pid.size() > m_seqs_no_pid.size()) {
+      ITERATE (set <string>, it, m_seqs_no_pid)
+        if (m_seqs_w_pid.find(*it) != m_seqs_w_pid.end()) m_seqs_w_pid.erase(it);
+   }
+   else {
+      NON_CONST_ITERATE (set <string>, it, m_seqs_w_pid) {
+         if (m_seqs_no_pid.find(*it) != m_seqs_no_pid.end()) m_seqs_w_pid.erase(it);
+      }
+   }
+   ITERATE (set <string>, it, m_seqs_w_pid)
+       thisInfo.test_item_list[GetName_mproj()].push_back(*it);
 };
 
 void CSeqEntry_ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX :: GetReport(CRef <CClickableItem>& c_item)
@@ -9657,7 +9664,7 @@ void CSeqEntry_MISSING_PROJECT :: GetReport(CRef <CClickableItem>& c_item)
   RmvRedundancy(c_item->item_list);   // all CSeqEntry_Feat_desc tests need this.
 
   c_item->description
-    = GetDoesComment(c_item->item_list.size(), "sequence") + " not include project.";
+    = GetDoesComment(c_item->item_list.size(), "sequence") + "not include project.";
 };
 
 void CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS :: GetReport(CRef <CClickableItem>& c_item)
