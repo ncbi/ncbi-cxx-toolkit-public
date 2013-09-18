@@ -243,6 +243,8 @@ public:
 
     void RemoveTSE_Lock(const CTSE_Lock& lock);
     void AddTSE_Lock(const CTSE_Lock& lock);
+    void SaveUnlockedTSEs(void);
+    void ReleaseUnlockedTSEs(void);
 
     CDataSource& GetDataSource(void);
     const CDataSource& GetDataSource(void) const;
@@ -315,6 +317,26 @@ private: // members
     TTSE_UnlockQueue            m_TSE_UnlockQueue;
     mutable TTSE_LockSetMutex   m_TSE_UnlockQueueMutex;
     CRef<CDataSource_ScopeInfo> m_EditDS;
+
+    class CUnlockTSEGuard {
+    public:
+        CUnlockTSEGuard(CDataSource_ScopeInfo* info)
+            : m_Info(info)
+            {
+                m_Info->SaveUnlockedTSEs();
+            }
+        ~CUnlockTSEGuard(void)
+            {
+                m_Info->ReleaseUnlockedTSEs();
+            }
+    private:
+        CRef<CDataSource_ScopeInfo> m_Info;
+    };
+    friend class CUnlockTSEGuard;
+    
+    typedef vector< CConstRef<CTSE_Info> > TUnlockedTSEs;
+    CAtomicCounter m_UnlockedTSEsStop;
+    TUnlockedTSEs m_UnlockedTSEs;
 
 private: // to prevent copying
     CDataSource_ScopeInfo(const CDataSource_ScopeInfo&);

@@ -87,6 +87,18 @@ static unsigned s_GetScopeAutoReleaseSize(void)
 }
 
 
+NCBI_PARAM_DECL(int, OBJMGR, SCOPE_POSTPONE_DELETE);
+NCBI_PARAM_DEF_EX(int, OBJMGR, SCOPE_POSTPONE_DELETE, 1,
+                  eParam_NoThread, OBJMGR_SCOPE_POSTPONE_DELETE);
+
+static int s_GetScopePostponeDelete(void)
+{
+    static const int sx_Value =
+        NCBI_PARAM_TYPE(OBJMGR, SCOPE_POSTPONE_DELETE)::GetDefault();
+    return sx_Value;
+}
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CDataSource_ScopeInfo
 /////////////////////////////////////////////////////////////////////////////
@@ -103,6 +115,7 @@ CDataSource_ScopeInfo::CDataSource_ScopeInfo(CScope_Impl& scope,
       m_NextTSEIndex(0),
       m_TSE_UnlockQueue(s_GetScopeAutoReleaseSize())
 {
+    m_UnlockedTSEsStop.Set(0);
 }
 
 
@@ -179,9 +192,29 @@ CDataSource_ScopeInfo::GetTSE_LockSet(void) const
 }
 
 
+void CDataSource_ScopeInfo::SaveUnlockedTSEs(void)
+{
+    m_UnlockedTSEsStop.Add(1);
+}
+
+
+void CDataSource_ScopeInfo::ReleaseUnlockedTSEs(void)
+{
+    if ( m_UnlockedTSEsStop.Add(-1) == 0 ) {
+        TUnlockedTSEs tses;
+        TTSE_LockSetMutex::TWriteLockGuard guard(m_TSE_LockSetMutex);
+        tses = m_UnlockedTSEs;
+        m_UnlockedTSEs.clear();
+    }
+}
+
+
 void CDataSource_ScopeInfo::RemoveTSE_Lock(const CTSE_Lock& lock)
 {
     TTSE_LockSetMutex::TWriteLockGuard guard(m_TSE_LockSetMutex);
+    if ( s_GetScopePostponeDelete() && m_UnlockedTSEsStop.Get() > 0 ) {
+        m_UnlockedTSEs.push_back(ConstRef(&*lock));
+    }
     _VERIFY(m_TSE_LockSet.RemoveLock(lock));
 }
 
@@ -323,6 +356,7 @@ void CDataSource_ScopeInfo::UpdateTSELock(CTSE_ScopeInfo& tse, CTSE_Lock lock)
 // Called by destructor of CTSE_ScopeUserLock when lock counter goes to 0
 void CDataSource_ScopeInfo::ReleaseTSELock(CTSE_ScopeInfo& tse)
 {
+    CUnlockTSEGuard guard(this);
     {{
         CTSE_ScopeInternalLock unlocked;
         TTSE_LockSetMutex::TWriteLockGuard guard(m_TSE_UnlockQueueMutex);
@@ -351,6 +385,7 @@ void CDataSource_ScopeInfo::ForgetTSELock(CTSE_ScopeInfo& tse)
         // already unlocked
         return;
     }
+    CUnlockTSEGuard guard(this);
     tse.ForgetTSE_Lock();
 }
 
@@ -379,6 +414,7 @@ void CDataSource_ScopeInfo::ResetDS(void)
 
 void CDataSource_ScopeInfo::ResetHistory(int action_if_locked)
 {
+    CUnlockTSEGuard guard(this);
     if ( action_if_locked == CScope::eRemoveIfLocked ) {
         // no checks -> fast reset
         ResetDS();
@@ -639,8 +675,11 @@ void CDataSource_ScopeInfo::x_SetMatch(SSeqMatch_Scope& match,
 {
     match.m_Seq_id = idh;
     match.m_TSE_Lock = CTSE_ScopeUserLock(&tse);
+    _ASSERT(match.m_Seq_id);
+    _ASSERT(match.m_TSE_Lock);
     match.m_Bioseq = match.m_TSE_Lock->GetTSE_Lock()->FindBioseq(idh);
     _ASSERT(match.m_Bioseq);
+    _ASSERT(match.m_Bioseq == match.m_TSE_Lock->m_TSE_Lock->FindBioseq(match.m_Seq_id));
 }
 
 
@@ -650,7 +689,9 @@ void CDataSource_ScopeInfo::x_SetMatch(SSeqMatch_Scope& match,
     match.m_Seq_id = ds_match.m_Seq_id;
     match.m_TSE_Lock = GetTSE_Lock(ds_match.m_TSE_Lock);
     match.m_Bioseq = ds_match.m_Bioseq;
+    _ASSERT(match.m_Seq_id);
     _ASSERT(match.m_Bioseq);
+    _ASSERT(match.m_TSE_Lock);
     _ASSERT(match.m_Bioseq == match.m_TSE_Lock->GetTSE_Lock()->FindBioseq(match.m_Seq_id));
 }
 
@@ -786,7 +827,13 @@ void CTSE_ScopeInfo_Base::x_LockTSE(void)
 {
     CTSE_ScopeInfo* tse = static_cast<CTSE_ScopeInfo*>(this);
     if ( !tse->m_TSE_Lock ) {
-        tse->GetDSInfo().UpdateTSELock(*tse, CTSE_Lock());
+        CDataSource_ScopeInfo* ds = tse->m_DS_Info;
+        if ( !ds ) {
+            tse->m_TSE_LockCounter.Add(-1);
+            NCBI_THROW(CCoreException, eNullPtr,
+                       "CTSE_ScopeInfo is not attached to CScope");
+        }
+        ds->UpdateTSELock(*tse, CTSE_Lock());
     }
     _ASSERT(tse->m_TSE_Lock);
 }
@@ -828,6 +875,8 @@ bool CTSE_ScopeInfo::AddUsedTSE(const CTSE_ScopeUserLock& used_tse) const
          add_info.m_UsedByTSE ) { // already used
         return false;
     }
+    CMutexGuard guard1(m_TSE_LockMutex);
+    CMutexGuard guard2(add_info.m_TSE_LockMutex);
     CDataSource_ScopeInfo::TTSE_LockSetMutex::TWriteLockGuard
         guard(GetDSInfo().GetTSE_LockSetMutex());
     if ( m_TSE_LockCounter.Get() == 0 || // this one is unlocked
