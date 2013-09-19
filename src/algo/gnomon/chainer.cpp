@@ -5152,19 +5152,11 @@ bool LeftAndLongFirst(const CGeneModel& a, const CGeneModel& b) {
 
 void CChainer::MapModelsToOrigContig(TGeneModelList& models) {
     if(m_edited_contig_map) {
-        typedef map<int,string> TISMap;
-        TISMap inserted_seqsl;
-        TISMap inserted_seqsr;
+        typedef map<int,TInDels::const_iterator> TIIndMap;
+        TIIndMap inserted_seqsl;
+        TIIndMap inserted_seqsr;
         ITERATE(TInDels, ig, m_editing_indels) {
             if(ig->IsDeletion()) {
-                /*
-                int left_end = m_edited_contig_map->MapOrigToEdited(ig->Loc());
-                _ASSERT(left_end >= 0);
-                left_end -= ig->Len();
-                for(TInDels::const_iterator igg = ig+1; igg != m_editing_indels.end() && igg->Loc() == ig->Loc(); ++igg)
-                    left_end -= igg->Len();
-                */
-
                 int left_end = m_edited_contig_map->MapOrigToEdited(ig->Loc());
                 if(left_end >= 0) {
                     left_end -= ig->Len();
@@ -5179,8 +5171,8 @@ void CChainer::MapModelsToOrigContig(TGeneModelList& models) {
                     }                        
                 }
 
-                inserted_seqsl[left_end] = ig->GetInDelV();
-                inserted_seqsr[left_end+ig->GetInDelV().length()-1] = ig->GetInDelV();
+                inserted_seqsl[left_end] = ig;
+                inserted_seqsr[left_end+ig->GetInDelV().length()-1] = ig;
             }
         }
 
@@ -5195,13 +5187,26 @@ void CChainer::MapModelsToOrigContig(TGeneModelList& models) {
                 const CModelExon& e = im->Exons()[ie];
 
                 string seq;
-                TISMap::iterator i = inserted_seqsl.find(e.GetFrom());
+                CInDelInfo::SSource src;
+                TIIndMap::iterator i = inserted_seqsl.find(e.GetFrom());
                 if(i != inserted_seqsl.end()) {
-                    seq = i->second.substr(0,e.Limits().GetLength());
+                    seq = i->second->GetInDelV().substr(0,e.Limits().GetLength());
+                    src = i->second->GetSource();
+                    if(src.m_strand == ePlus)
+                        src.m_range.SetTo(src.m_range.GetFrom()+e.Limits().GetLength()-1);
+                    else
+                        src.m_range.SetFrom(src.m_range.GetTo()-e.Limits().GetLength()+1);
                 } else {
                     i = inserted_seqsr.find(e.GetTo());
-                    if(i != inserted_seqsr.end()) 
-                        seq = i->second.substr(i->second.length()-e.Limits().GetLength());
+                    if(i != inserted_seqsr.end()) {
+                        string s = i->second->GetInDelV();
+                        seq = s.substr(s.length()-e.Limits().GetLength());
+                        src = i->second->GetSource();
+                        if(src.m_strand == eMinus)
+                            src.m_range.SetTo(src.m_range.GetFrom()+e.Limits().GetLength()-1);
+                        else
+                            src.m_range.SetFrom(src.m_range.GetTo()-e.Limits().GetLength()+1);
+                    }
                 }
 
                 if(seq.empty()) {  // normal exon
@@ -5213,9 +5218,12 @@ void CChainer::MapModelsToOrigContig(TGeneModelList& models) {
                     }
                     model.AddExon(exon, e.m_fsplice_sig, e.m_ssplice_sig);
                 } else {
-                    if(model.Strand() == eMinus)
+                    if(model.Strand() == eMinus) {
                         ReverseComplement(seq.begin(), seq.end());
-                    model.AddExon(TSignedSeqRange::GetEmpty(), e.m_fsplice_sig, e.m_ssplice_sig, e.m_ident, seq);
+                        src.m_strand = (src.m_strand == ePlus ? eMinus : ePlus);
+                    }
+                    _ASSERT((int)seq.length() == src.m_range.GetLength());
+                    model.AddExon(TSignedSeqRange::GetEmpty(), e.m_fsplice_sig, e.m_ssplice_sig, e.m_ident, seq, src);
                 }
 
                 if(ie < (int)im->Exons().size()-1 && (!e.m_ssplice || !im->Exons()[ie+1].m_fsplice)) // hole

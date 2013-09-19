@@ -99,7 +99,15 @@ class CAlignModel;
 class NCBI_XALGOGNOMON_EXPORT CInDelInfo
 {
 public:
-    CInDelInfo(TSignedSeqPos l = 0, int len = 0, bool is_i = true, const string& v = kEmptyStr) : m_loc(l), m_len(len), m_is_insert(is_i), m_indelv(v) 
+
+    struct SSource {
+        SSource() : m_strand(ePlus) {}
+        string m_acc;
+        TSignedSeqRange m_range;
+        EStrand m_strand;
+    };
+
+    CInDelInfo(TSignedSeqPos l = 0, int len = 0, bool is_i = true, const string& v = kEmptyStr, const SSource& s = SSource()) : m_loc(l), m_len(len), m_is_insert(is_i), m_indelv(v),  m_source(s)
     {
         _ASSERT(m_indelv.empty() || (int)m_indelv.length() == len);
         if(IsDeletion() && GetInDelV().empty())
@@ -128,6 +136,7 @@ public:
     bool operator!=(const CInDelInfo& fsi) const { return (*this < fsi || fsi < *this); }
     bool operator==(const CInDelInfo& fsi) const { return !(*this != fsi); }
     string GetInDelV() const { return m_indelv; }
+    const SSource& GetSource() const { return m_source; }
 
 private:
     TSignedSeqPos m_loc;  // left location for insertion, deletion is before m_loc
@@ -135,6 +144,7 @@ private:
     int m_len;
     bool m_is_insert;
     string m_indelv;
+    SSource m_source;
 };
 
 typedef vector<CInDelInfo> TInDels;
@@ -153,8 +163,8 @@ public:
 
 class NCBI_XALGOGNOMON_EXPORT CModelExon {
 public:
-    CModelExon(TSignedSeqPos f = 0, TSignedSeqPos s = 0, bool fs = false, bool ss = false, const string& fsig = "", const string& ssig = "", double ident = 0, const string& seq = "") : 
-        m_fsplice(fs), m_ssplice(ss), m_fsplice_sig(fsig), m_ssplice_sig(ssig), m_ident(ident), m_seq(seq), m_range(f,s) 
+    CModelExon(TSignedSeqPos f = 0, TSignedSeqPos s = 0, bool fs = false, bool ss = false, const string& fsig = "", const string& ssig = "", double ident = 0, const string& seq = "", const CInDelInfo::SSource& src = CInDelInfo::SSource()) : 
+        m_fsplice(fs), m_ssplice(ss), m_fsplice_sig(fsig), m_ssplice_sig(ssig), m_ident(ident), m_seq(seq), m_source(src), m_range(f,s) 
     { 
         _ASSERT(m_seq.empty() || m_range.Empty()); 
     };
@@ -182,6 +192,7 @@ public:
     string m_fsplice_sig, m_ssplice_sig;   // obeys strand
     double m_ident;
     string m_seq;   // exon sequence if in gap; obeys strand
+    CInDelInfo::SSource m_source;
 
     void Remap(const CRangeMapper& mapper) { m_range = mapper(m_range); }
 private:
@@ -342,7 +353,7 @@ public:
         m_type(type), m_id(id), m_status(0), m_ident(0), m_weight(1), m_expecting_hole(false), m_strand(s), m_geneid(0), m_rank_in_gene(0) {}
     virtual ~CGeneModel() {}
 
-    void AddExon(TSignedSeqRange exon, const string& fs = "", const string& ss = "", double ident = 0, const string& seq = "");
+    void AddExon(TSignedSeqRange exon, const string& fs = "", const string& ss = "", double ident = 0, const string& seq = "", const CInDelInfo::SSource& src = CInDelInfo::SSource());
     void AddHole(); // between model and next exons
 
     typedef vector<CModelExon> TExons;

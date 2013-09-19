@@ -844,12 +844,12 @@ bool CGeneModel::IsSubAlignOf(const CGeneModel& a) const
 }
 
 
-void CGeneModel::AddExon(TSignedSeqRange exon_range, const string& fs, const string& ss, double ident, const string& seq)
+void CGeneModel::AddExon(TSignedSeqRange exon_range, const string& fs, const string& ss, double ident, const string& seq, const CInDelInfo::SSource& src)
 {
     _ASSERT( (m_range & exon_range).Empty() );
     m_range += exon_range;
 
-    CModelExon e(exon_range.GetFrom(),exon_range.GetTo(),false,false,fs,ss,ident,seq);
+    CModelExon e(exon_range.GetFrom(),exon_range.GetTo(),false,false,fs,ss,ident,seq,src);
     if (MyExons().empty())
         MyExons().push_back(e);
     else if ((exon_range.Empty() || MyExons().back().Limits().Empty()) || MyExons().back().GetTo() < exon_range.GetFrom()) {
@@ -1772,6 +1772,13 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, CAlignModel a)
             exon.start = -1;
             exon.end = -1;
             exon.attributes["Seq"] = e->m_seq;
+            if(e->m_source.m_range.NotEmpty()) {
+                exon.attributes["Source"] = e->m_source.m_acc + ":";
+                if(e->m_source.m_strand == ePlus)
+                    exon.attributes["Source"] += NStr::IntToString(e->m_source.m_range.GetFrom()+1) + ":" + NStr::IntToString(e->m_source.m_range.GetTo()+1);
+                else
+                    exon.attributes["Source"] += NStr::IntToString(e->m_source.m_range.GetTo()+1) + ":" + NStr::IntToString(e->m_source.m_range.GetFrom()+1);
+            }
         }
 
         string targetid = NStr::Replace(CIdHandler::ToString(*a.GetTargetId()), " ", "%20");
@@ -1808,6 +1815,7 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, CAlignModel a)
         exon.attributes["Ident"].erase();
         exon.attributes["Splices"].erase();
         exon.attributes["Seq"].erase();
+        exon.attributes["Source"].erase();
 
         TSignedSeqRange tcds = transcript_exon & rcds;
         if(tcds.NotEmpty()) {
@@ -1965,8 +1973,25 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
             
             if(r->start >= 0 && r->end >= 0)
                 exons.push_back(CModelExon(r->start,r->end,false,false,fs,ss,eident));
-            else
-                exons.push_back(CModelExon(1,-1,false,false,fs,ss,eident,r->attributes["Seq"]));
+            else {
+                CInDelInfo::SSource src;
+                if(!r->attributes["Source"].empty()) {
+                    vector<string> v;
+                    NStr::Tokenize(r->attributes["Source"], ":", v);
+                    _ASSERT((int)v.size() == 3);
+                    src.m_acc = v[0];
+                    src.m_strand = ePlus;
+                    int a = NStr::StringToInt(v[1]);
+                    int b = NStr::StringToInt(v[2]);
+                    if(a > b) {
+                        swap(a,b);
+                        src.m_strand = eMinus;
+                    }
+                    src.m_range.SetFrom(a-1);
+                    src.m_range.SetTo(b-1);
+                }
+                exons.push_back(CModelExon(1,-1,false,false,fs,ss,eident,r->attributes["Seq"],src));
+            }
             TSignedSeqRange texon(r->tstart,r->tend);
             if(texon.NotEmpty())
                 transcript_exons.push_back(texon);
@@ -2003,7 +2028,7 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
         set<TSignedSeqRange,Precedence>::iterator p = mrna_parts.lower_bound(*e);
         if (p != mrna_parts.end() && p->GetFrom()==e->Limits().GetFrom())
             a.AddHole();
-        a.AddExon(e->Limits(),e->m_fsplice_sig,e->m_ssplice_sig,e->m_ident,e->m_seq);
+        a.AddExon(e->Limits(),e->m_fsplice_sig,e->m_ssplice_sig,e->m_ident,e->m_seq,e->m_source);
     }
 
     sort(indels.begin(),indels.end());

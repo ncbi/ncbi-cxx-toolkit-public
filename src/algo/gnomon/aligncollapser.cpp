@@ -444,7 +444,7 @@ bool CAlignCollapser::RemoveNotSupportedIntronsFromProt(CAlignModel& align) {
             while(pstop != (int)string::npos) {
                 int p = amp.MapEditedToOrig(tcds+3*pstop);
                 if(p >= 0) {
-                    cerr << "Pstopinfo\t" << align.ID() << '\t' << 3*pstop << '\t' << p << '\t' << m_coverage[p-m_left_end] << '\t' << m_coverage[p-m_left_end]/cov*100 << '\t' << protseq << endl;
+                    cerr << "Pstopinfo\t" << align.ID() << '\t' << align.TargetLen() << '\t' << 3*pstop << '\t' << p << '\t' << m_coverage[p-m_left_end] << '\t' << m_coverage[p-m_left_end]/cov*100 << '\t' << protseq << endl;
                 }
         
                 pstop = protseq.find("*",pstop+1);
@@ -1371,7 +1371,7 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
         editedmodel.ClearExons();  // empty alignment with all atributes
         vector<TSignedSeqRange> transcript_exons;
         for(int ie = 0; ie < (int)i->Exons().size(); ++ie) {
-            editedmodel.AddExon(i->Exons()[ie].Limits(), i->Exons()[ie].m_fsplice_sig, i->Exons()[ie].m_ssplice_sig, i->Exons()[ie].m_ident, i->Exons()[ie].m_seq);
+            editedmodel.AddExon(i->Exons()[ie].Limits(), i->Exons()[ie].m_fsplice_sig, i->Exons()[ie].m_ssplice_sig, i->Exons()[ie].m_ident, i->Exons()[ie].m_seq, i->Exons()[ie].m_source);
             transcript_exons.push_back(i->TranscriptExon(ie));
             if(ie < (int)i->Exons().size()-1 && (!i->Exons()[ie].m_ssplice || !i->Exons()[ie+1].m_fsplice))
                 editedmodel.AddHole();
@@ -1542,24 +1542,33 @@ void CAlignCollapser::CleanExonEdge(int ie, CAlignModel& align, const string& tr
             splice_sig = "NN";
         } else if(distance_to_gap > CLOSE_GAP && not_aligned_length > BIG_NOT_ALIGNED) {
             int extracut = 0; 
-            string splice;
-            if(right_edge)
+            string splice, splice2;
+            if(right_edge) {
                 splice = (align.Strand() == ePlus) ? "GT" : "CT";
-            else
+                if(align.Status()&CGeneModel::eUnknownOrientation)
+                    splice2 = (align.Strand() == ePlus) ? "CT" : "GT";
+            } else {
                 splice = (align.Strand() == ePlus) ? "AG" : "AC";
-            while(gseq.length() > CHECK_LENGTH && extracut < EXTRA_CUT &&
-                  gseq[CHECK_LENGTH] == tseq[CHECK_LENGTH] && 
-                  m_contig.substr(min(gedge+1,gedge+2*direction),2) != splice) {
+                if(align.Status()&CGeneModel::eUnknownOrientation)
+                    splice2 = (align.Strand() == ePlus) ? "AC" : "AG";
+            }
+
+            string spl;
+            while(gseq.length() > CHECK_LENGTH && extracut < EXTRA_CUT && gseq[CHECK_LENGTH] == tseq[CHECK_LENGTH]) {
+                spl = m_contig.substr(min(gedge+1,gedge+2*direction),2);
+                if(spl == splice || spl == splice2)
+                    break;
+
                 gedge -= direction;
                 ++extracut;
                 gseq.erase(gseq.begin());
                 tseq.erase(tseq.begin());
             }
 
-            if(m_contig.substr(min(gedge+1,gedge+2*direction),2) == splice) {
+            if(spl == splice || spl == splice2) {
                 if(align.Strand() == eMinus)
-                    ReverseComplement(splice.begin(),splice.end());
-                splice_sig = splice;
+                    ReverseComplement(spl.begin(),spl.end());
+                splice_sig = spl;
 
                 ident = 0.;
                 for(int i = 0; i < (int)gseq.length(); ++i) {
@@ -1629,31 +1638,42 @@ CAlignModel CAlignCollapser::FillGapsInAlignmentAndAddToGenomicGaps(const CAlign
     vector<TSignedSeqRange> transcript_exons;
 
     string left_seq, right_seq;
+    CInDelInfo::SSource left_src;
+    CInDelInfo::SSource right_src;
     TSignedSeqRange left_texon, right_texon;
     TSignedSeqRange tlim = align.TranscriptLimits();
     string transcript = GetDNASequence(align.GetTargetId(),*m_scope);
     if(tlim.GetFrom() > 30 && ((align.Status()&CGeneModel::ePolyA) == 0 || (align.Status()&CGeneModel::eReversed) == 0)) {
         left_seq = transcript.substr(0,tlim.GetFrom());
         left_texon = TSignedSeqRange(0,tlim.GetFrom()-1);
+        left_src.m_acc = align.TargetAccession();
+        left_src.m_strand = ePlus;
+        left_src.m_range = left_texon;
     }
     if(tlim.GetTo() < align.TargetLen()-30 && ((align.Status()&CGeneModel::ePolyA) == 0 || (align.Status()&CGeneModel::eReversed) != 0)) {
         right_seq = transcript.substr(tlim.GetTo()+1);
         right_texon = TSignedSeqRange(tlim.GetTo()+1,align.TargetLen()-1);
+        right_src.m_acc = align.TargetAccession();
+        right_src.m_strand = ePlus;
+        right_src.m_range = right_texon;
     }
     if(align.Orientation() == eMinus) {
         swap(left_seq, right_seq);
         swap(left_texon, right_texon);
+        swap(left_src, right_src);
     }
 
     if(!left_seq.empty() && (fill&efill_left) != 0) {
         TIntMap::iterator ig = m_genomic_gaps_len.lower_bound(align.Limits().GetFrom());
         if(ig != m_genomic_gaps_len.begin() && (--ig)->first > align.Limits().GetFrom()-10000) {  // there is gap on left
             transcript_exons.push_back(left_texon);
-            editedmodel.AddExon(TSignedSeqRange::GetEmpty(), "XX", "XX", 1, left_seq);
+            editedmodel.AddExon(TSignedSeqRange::GetEmpty(), "XX", "XX", 1, left_seq, left_src);
  
-            if(align.Orientation() == eMinus)
+            if(align.Orientation() == eMinus) {
                 ReverseComplement(left_seq.begin(),left_seq.end());
-            m_align_gaps.push_back(CInDelInfo(max(0,ig->first+2*ig->second/3), left_seq.length(), false, left_seq));   // 1/3 of gap length will separate genes abatting the same gap
+                left_src.m_strand = eMinus;
+            }
+            m_align_gaps.push_back(CInDelInfo(max(0,ig->first+2*ig->second/3), left_seq.length(), false, left_seq, left_src));   // 1/3 of gap length will separate genes abatting the same gap
         }
     }
 
@@ -1671,11 +1691,17 @@ CAlignModel CAlignCollapser::FillGapsInAlignmentAndAddToGenomicGaps(const CAlign
                     texon.SetTo(texon.GetTo()-1);
                     transcript_exons.push_back(texon);
                     string seq = transcript.substr(texon.GetFrom(),texon.GetLength());
-                    editedmodel.AddExon(TSignedSeqRange::GetEmpty(), "XX", "XX", 1, seq);
+                    CInDelInfo::SSource src;
+                    src.m_acc = align.TargetAccession();
+                    src.m_strand = ePlus;
+                    src.m_range = texon;
+                    editedmodel.AddExon(TSignedSeqRange::GetEmpty(), "XX", "XX", 1, seq, src);
                         
-                    if(align.Orientation() == eMinus)
+                    if(align.Orientation() == eMinus) {
                         ReverseComplement(seq.begin(),seq.end());
-                    m_align_gaps.push_back(CInDelInfo(ig->first+ig->second/2, seq.length(), false, seq));
+                        src.m_strand = eMinus;
+                    }
+                    m_align_gaps.push_back(CInDelInfo(ig->first+ig->second/2, seq.length(), false, seq, src));
                 } else {
                     editedmodel.AddHole();
                 }
@@ -1689,11 +1715,13 @@ CAlignModel CAlignCollapser::FillGapsInAlignmentAndAddToGenomicGaps(const CAlign
         TIntMap::iterator ig = m_genomic_gaps_len.upper_bound(align.Limits().GetTo());
         if(ig != m_genomic_gaps_len.end() && ig->first < align.Limits().GetTo()+10000) {  // there is gap on right
             transcript_exons.push_back(right_texon);
-            editedmodel.AddExon(TSignedSeqRange::GetEmpty(), "XX", "XX", 1, right_seq);
+            editedmodel.AddExon(TSignedSeqRange::GetEmpty(), "XX", "XX", 1, right_seq, right_src);
                     
-            if(align.Orientation() == eMinus)
+            if(align.Orientation() == eMinus) {
                 ReverseComplement(right_seq.begin(),right_seq.end());
-            m_align_gaps.push_back(CInDelInfo(ig->first+ig->second/3, right_seq.length(), false, right_seq));   // 1/3 of gap length will separate genes abatting the same gap
+                right_src.m_strand = eMinus;
+            }
+            m_align_gaps.push_back(CInDelInfo(ig->first+ig->second/3, right_seq.length(), false, right_seq, right_src));   // 1/3 of gap length will separate genes abatting the same gap
         }
     }
 
