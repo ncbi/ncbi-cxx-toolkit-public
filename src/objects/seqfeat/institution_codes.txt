@@ -2629,7 +2629,7 @@ IPEF	s	Institut fuer Pflanzenschutzforschung
 IPFUB	s	Institute for Paleontology of the Freie Universitat
 IPGR<BGR>	b	Institute for Plant Genetic Resources
 IPHG	s	Institut fur Palaeontologie und Historische Geologie
-IPK	s	Institut fuer Pflanzenschutzforschung
+IPK	sb	Leibniz Institute of Plant Genetics and Crop Plant Research
 IPKUP	s	Paleontologiscsky Institute
 IPLA	c	Instituto de Productos Lacteos de Asturias
 IPMB<DEU>	s	Institut fur Pharmazie und Molekulare Biotechnologie
@@ -5594,6 +5594,7 @@ STPE	s	Florida Marine Research Institute, Florida Department of Environmental Pr
 STPS	s	St. Paul's School
 STR	s	Institut de Botanique
 STRI	s	Smithsonian Tropical Research Institute
+STRI:ICBG-Panama	c	Smithsonian Tropical Research Institute,  International Cooperative Biodiversity Groups
 STS	s	Stromness Museum
 STT	s	St. Thomas's Hospital Medical School Library
 STU	s	Staatliches Museum fuer Naturkunde Stuttgart
@@ -6378,6 +6379,7 @@ UTA	s	University of Texas at Arlington
 UTA:A	s	University of Texas at Arlington, Amphibian Collection
 UTAI	s	Tel Aviv University
 UTC	s	Utah State University, Biology Department
+UTCI	s	University of Tennessee at Chattanooga Insect Collection
 UTD	s	University of Texas, Plant Resources Center
 UTE	s	University of Tartu
 UTEP	s	University of Texas at El Paso, Centennial Museum
@@ -6428,6 +6430,7 @@ UWGB	s	University of Wisconsin-Green Bay, MAC 212
 UWI	s	University of the West Indies (Trinidad and Tobago)
 UWIC	s	University of the West Indies, Trinidad and Tobago
 UWIJ	s	University of the West Indies, Jamaica
+UWIZM	s	The University of the West Indies Zoology Museum
 UWJ	s	University of Wisconsin, Biology Department
 UWL	s	University of Wisconsin, Biology Department
 UWM	s	University of Wisconsin, Biological Sciences Department
