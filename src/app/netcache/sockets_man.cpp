@@ -788,10 +788,13 @@ retry:
         int x_errno = errno;
         if (x_errno == EINTR)
             goto retry;
-        if (x_errno == EAGAIN  ||  x_errno == EWOULDBLOCK) {
-            // We should have returned at the very top but due to some races
-            // we fell down here. Anyway we should avoid changing variables
-            // at the bottom.
+        // We should have returned at the very top but due to some races
+        // we fell down here. Anyway we should avoid changing variables
+        // at the bottom.
+        if (x_errno == EWOULDBLOCK) {
+            return 0;
+        }
+        if (x_errno == EAGAIN) {
             task->m_SeenReadEvts = task->m_RegReadEvts;
             return 0;
         }
