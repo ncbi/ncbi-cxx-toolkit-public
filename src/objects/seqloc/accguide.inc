@@ -152,6 +152,7 @@ static const char* const kBuiltInGuide[] = {
     "3+6  XP_      refseq_prot_predicted",
     "3+9  XP_      refseq_prot_predicted",
     "3+6  XR_      refseq_ncrna_predicted",
+    "3+9  XR_      refseq_ncrna_predicted",
     "3+6  YP_      refseq_prot_predicted",
     "3+9  YP_      refseq_prot_predicted",
     "3+8  ZP_      refseq_wgs_prot",
