@@ -789,7 +789,7 @@ CRepeatMaskerReader::ReadSeqAnnot(ILineReader& lr, IMessageListener* pMessageLis
 
         SRepeatRegion mask_data;
         if ( ! ParseRecord( line, mask_data ) ) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 lr.GetLineNumber(),
@@ -799,7 +799,7 @@ CRepeatMaskerReader::ReadSeqAnnot(ILineReader& lr, IMessageListener* pMessageLis
         }
 
         if ( ! VerifyData( mask_data ) ) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 lr.GetLineNumber(),
@@ -810,7 +810,7 @@ CRepeatMaskerReader::ReadSeqAnnot(ILineReader& lr, IMessageListener* pMessageLis
 
         CRef<CSeq_feat> feat(m_ToFeat(mask_data));
         if ( ! feat ) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 lr.GetLineNumber(),

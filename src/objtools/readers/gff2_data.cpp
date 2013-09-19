@@ -208,7 +208,7 @@ bool CGff2Record::AssignFromGff(
     m_uSeqStart = NStr::StringToUInt( columns[3] ) - 1;
     m_uSeqStop = NStr::StringToUInt( columns[4] ) - 1;
     if (m_uSeqStop < m_uSeqStart) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,

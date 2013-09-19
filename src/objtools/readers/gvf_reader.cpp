@@ -184,7 +184,7 @@ void CGvfReadRecord::xTraceError(
     const string& msg)
 //  ----------------------------------------------------------------------------
 {
-    CRef<CObjReaderLineException> pErr(
+    AutoPtr<CObjReaderLineException> pErr(
         CObjReaderLineException::Create(
         severity,
         mLineNumber,
@@ -346,7 +346,7 @@ bool CGvfReader::xFeatureSetLocationInterval(
     {
         NStr::Split( strRange, ",", range_borders );
         if ( range_borders.size() != 2 ) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -372,7 +372,7 @@ bool CGvfReader::xFeatureSetLocationInterval(
             }        
         }
         catch ( std::exception& ) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -389,7 +389,7 @@ bool CGvfReader::xFeatureSetLocationInterval(
     {
         NStr::Split( strRange, ",", range_borders );
         if ( range_borders.size() != 2 ) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -415,7 +415,7 @@ bool CGvfReader::xFeatureSetLocationInterval(
             }        
         }
         catch (std::exception&) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -454,7 +454,7 @@ bool CGvfReader::xFeatureSetLocationPoint(
     bool hasLower = record.GetAttribute("Start_range", strRangeLower);
     bool hasUpper = record.GetAttribute("End_range", strRangeUpper);
     if (hasLower  &&  hasUpper  &&  strRangeLower != strRangeUpper) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -475,7 +475,7 @@ bool CGvfReader::xFeatureSetLocationPoint(
     size_t lower, upper;
     NStr::Split( strRangeLower, ",", bounds );
     if (bounds.size() != 2) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -501,7 +501,7 @@ pErr->Throw();
         }        
     }
     catch ( ... ) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -690,7 +690,7 @@ bool CGvfReader::xVariationMakeCNV(
         pVariation->SetUnknown();
         return true;
     }
-    CRef<CObjReaderLineException> pErr(
+    AutoPtr<CObjReaderLineException> pErr(
         CObjReaderLineException::Create(
         eDiag_Error,
         0,
@@ -1015,7 +1015,7 @@ bool CGvfReader::x_FeatureSetExt(
 
         string strAttribute;
         if ( ! record.GetAttribute( cit->first, strAttribute ) ) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Warning,
                 m_uLineNumber,

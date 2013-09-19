@@ -239,7 +239,7 @@ bool CMicroArrayReader::xParseFeature(
     CRef<CSeq_feat> feature;
 
     if (fields.size() != columncount) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -255,7 +255,7 @@ bool CMicroArrayReader::xParseFeature(
         xSetFeatureDisplayData( feature, fields );
     }
     catch (...) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -346,7 +346,7 @@ bool CMicroArrayReader::xParseTrackLine(
     }
     
     if ( m_strExpNames.empty() ) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Warning,
             0,
@@ -355,7 +355,7 @@ bool CMicroArrayReader::xParseTrackLine(
         return false;
     }
     if ( m_iExpScale == -1 ) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Warning,
             0,
@@ -364,7 +364,7 @@ bool CMicroArrayReader::xParseTrackLine(
         return false;
     }
     if ( m_iExpStep == -1 ) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Warning,
             0,
@@ -437,7 +437,7 @@ CMicroArrayReader::xCleanColumnValues(
         columns.erase(columns.begin());
     }
     if (columns.size() < 3) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -450,7 +450,7 @@ CMicroArrayReader::xCleanColumnValues(
         columns[1] = fixup;
     }
     catch (...) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -463,7 +463,7 @@ CMicroArrayReader::xCleanColumnValues(
         columns[2] = fixup;
     }
     catch (...) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,

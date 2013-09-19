@@ -2583,7 +2583,7 @@ void CFeature_table_reader_imp::x_ProcessMsg(
     const std::string & strQualifierValue,
     const ILineError::TVecOfLines & vecOfOtherLines )
 {
-    CRef<CObjReaderLineException> pErr ( 
+    AutoPtr<CObjReaderLineException> pErr ( 
         CObjReaderLineException::Create(
         eSeverity, uLine, "", eProblem, strSeqId, strFeatureName, 
         strQualifierName, strQualifierValue));

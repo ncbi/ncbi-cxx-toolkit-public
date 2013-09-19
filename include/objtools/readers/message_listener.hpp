@@ -159,7 +159,7 @@ private:
     // private so later we can change the structure if
     // necessary (e.g. to have indexing and such to speed up
     // level-counting)
-    typedef std::vector< CConstRef<ILineError> > TLineErrVec;
+    typedef std::vector< AutoPtr<ILineError> > TLineErrVec;
     TLineErrVec m_Errors;
 
     // The stream to which progress messages are written.
@@ -176,8 +176,9 @@ protected:
     // into m_Errors
     void StoreError(const ILineError& err)
     {
-        m_Errors.push_back( 
-            ConstRef(dynamic_cast<const ILineError*>(&err)) );
+        m_Errors.resize( m_Errors.size() + 1);
+        AutoPtr<ILineError> & pLineError = m_Errors.back();
+        pLineError.reset( err.Clone() );
     }
 };
 

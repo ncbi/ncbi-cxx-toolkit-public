@@ -44,7 +44,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects) // namespace ncbi::objects::
 
 //  ============================================================================
-class NCBI_XOBJUTIL_EXPORT ILineError : public CObject
+class NCBI_XOBJUTIL_EXPORT ILineError
 //  ============================================================================
 {
 public:
@@ -97,6 +97,14 @@ public:
 
         eProblem_GeneralParsingError
     };
+
+    /// This is here because the copy constructor may be protected
+    /// eventually.
+    virtual ILineError *Clone(void) const {
+        /// throw instead of making it pure virtual for backward
+        /// compatibility.
+        NCBI_USER_THROW("not implemented: ILineError::Clone");
+    }
 
     virtual ~ILineError(void) throw() {}
 
@@ -310,7 +318,10 @@ public:
 
     /// The CLineError constructor is deprecated and will be removed at some
     /// point so please use this instead.
-    static CRef<CLineError> Create(
+    ///
+    /// @returns
+    ///   Caller is responsible for the return value.
+    static CLineError* Create(
         EProblem eProblem,
         EDiagSev eSeverity,
         const std::string& strSeqId,
@@ -318,7 +329,8 @@ public:
         const std::string & strFeatureName = string(""),
         const std::string & strQualifierName = string(""),
         const std::string & strQualifierValue = string(""),
-        const std::string & strErrorMessage = string(""));
+        const std::string & strErrorMessage = string(""),
+        const TVecOfLines & vecOfOtherLines = TVecOfLines() );
 
     /// This is marked deprecated because it will eventually become
     /// protected instead of public.  Please use the Create function instead.
@@ -330,12 +342,15 @@ public:
         const std::string & strFeatureName,
         const std::string & strQualifierName,
         const std::string & strQualifierValue,
-        const std::string & strErrorMessage ));
+        const std::string & strErrorMessage,
+        const TVecOfLines & m_vecOfOtherLine));
 
     /// This is marked deprecated because it will eventually become
     /// protected instead of public.  Please use the Throw function to throw
     /// this exception and try to avoid using the copy constructor at all.
     NCBI_DEPRECATED_CTOR(CLineError(const CLineError & rhs ));
+
+    virtual ILineError *Clone(void) const;
 
     virtual ~CLineError(void) throw() {}
 
@@ -414,7 +429,10 @@ public:
 
     /// Please use this instead of the constructor because the ctor
     /// will be moved from public to protected at some point.
-    static CRef<CObjReaderLineException> Create(
+    ///
+    /// @returns
+    ///   Caller is responsible for the return value.
+    static CObjReaderLineException* Create(
         EDiagSev eSeverity,
         unsigned int uLine,
         const std::string &strMessage,
@@ -423,8 +441,11 @@ public:
         const std::string & strFeatureName = string(""),
         const std::string & strQualifierName = string(""),
         const std::string & strQualifierValue = string(""),
-        CObjReaderLineException::EErrCode eErrCode = eFormat
+        CObjReaderLineException::EErrCode eErrCode = eFormat,
+        const TVecOfLines & vecOfOtherLines = TVecOfLines()
         );
+
+    virtual ILineError *Clone(void) const;
 
     // Copy constructor will eventually become protected, so please use 
     /// this function to make this function to throw.
@@ -444,7 +465,8 @@ public:
         const std::string & strFeatureName,
         const std::string & strQualifierName,
         const std::string & strQualifierValue,
-        CObjReaderLineException::EErrCode eErrCode
+        CObjReaderLineException::EErrCode eErrCode,
+        const TVecOfLines & vecOfOtherLines
         ));
 
     /// This will become protected at some point in the future, so please

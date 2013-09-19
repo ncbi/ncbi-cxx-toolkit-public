@@ -266,7 +266,7 @@ bool CGff3Reader::xUpdateAnnotCds(
 //  ----------------------------------------------------------------------------
 {
     if (!xVerifyCdsParents(record)) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Fatal,
             0,

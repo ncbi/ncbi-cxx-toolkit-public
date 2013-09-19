@@ -276,7 +276,7 @@ CBedReader::xParseTrackLine(
     }
     m_currentId.clear();
     if (!CReaderBase::x_ParseTrackLine(strLine, current, pEC)) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Warning,
             0,
@@ -316,7 +316,7 @@ bool CBedReader::xParseFeature(
             m_columncount = fields.size();
         }
         else {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -559,7 +559,7 @@ void CBedReader::xSetFeatureLocationThick(
         from = NStr::StringToInt(fields[6]);
     }
     catch (std::exception&) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -570,7 +570,7 @@ void CBedReader::xSetFeatureLocationThick(
         to = NStr::StringToInt(fields[7])-1;
     }
     catch (std::exception&) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -585,7 +585,7 @@ void CBedReader::xSetFeatureLocationThick(
         location->SetInt().SetTo(to);
     }
     else {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -618,7 +618,7 @@ ENa_strand CBedReader::xGetStrand(
     if (strand_field < fields.size()) {
         string strand = fields[strand_field];
         if (strand != "+"  &&  strand != "-"  &&  strand != ".") {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -647,7 +647,7 @@ void CBedReader::xSetFeatureLocationBlock(
             vals.erase(vals.end()-1);
         }
         if (vals.size() != blockCount) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -660,7 +660,7 @@ void CBedReader::xSetFeatureLocationBlock(
             }
         }
         catch (std::exception&) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -677,7 +677,7 @@ void CBedReader::xSetFeatureLocationBlock(
             vals.erase(vals.end()-1);
         }
         if (vals.size() != blockCount) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -690,7 +690,7 @@ void CBedReader::xSetFeatureLocationBlock(
             }
         }
         catch (std::exception&) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -831,7 +831,7 @@ void CBedReader::xSetFeatureBedData(
         pDisplayData->AddField("score", score);
     }
     catch(std::exception&) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -870,7 +870,7 @@ void CBedReader::x_SetFeatureLocation(
         from = NStr::StringToInt(fields[1]);
     }
     catch(std::exception&) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -881,7 +881,7 @@ void CBedReader::x_SetFeatureLocation(
         to = NStr::StringToInt(fields[2]) - 1;
     }
     catch(std::exception&) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -896,7 +896,7 @@ void CBedReader::x_SetFeatureLocation(
         location->SetInt().SetTo(to);
     }
     else {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -911,7 +911,7 @@ void CBedReader::x_SetFeatureLocation(
     if (strand_field < fields.size()) {
         string strand = fields[strand_field];
         if (strand != "+"  &&  strand != "-"  &&  strand != ".") {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -1048,7 +1048,7 @@ CBedReader::xReadBedRecordRaw(
             m_columncount = columns.size();
         }
         else {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -1066,7 +1066,7 @@ CBedReader::xReadBedRecordRaw(
         start = NStr::StringToInt(columns[1]);
     }
     catch(std::exception&) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -1080,7 +1080,7 @@ CBedReader::xReadBedRecordRaw(
         stop = NStr::StringToInt(columns[2]);
     }
     catch(std::exception&) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -1095,7 +1095,7 @@ CBedReader::xReadBedRecordRaw(
             score = NStr::StringToInt(columns[6]);
         }
         catch(std::exception&) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -1176,7 +1176,7 @@ CBedReader::xCleanColumnValues(
         columns.erase(columns.begin());
     }
     if (columns.size() < 3) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -1189,7 +1189,7 @@ CBedReader::xCleanColumnValues(
         columns[1] = fixup;
     }
     catch(std::exception&) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -1202,7 +1202,7 @@ CBedReader::xCleanColumnValues(
         columns[2] = fixup;
     }
     catch(std::exception&) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,

@@ -91,7 +91,7 @@
         const size_t uLineNum_49518053 = (_uLineNum);                   \
         stringstream err_strm_49518053;                                 \
         err_strm_49518053 << _MessageStrmOps;                           \
-        CRef<CObjReaderLineException> pLineExpt(                        \
+        AutoPtr<CObjReaderLineException> pLineExpt(                        \
             CObjReaderLineException::Create(                            \
                 (_eSeverity), uLineNum_49518053,                        \
                 err_strm_49518053.str(),                                \

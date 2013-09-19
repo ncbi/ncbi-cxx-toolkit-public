@@ -282,7 +282,7 @@ void CReaderBase::x_SetBrowserRegion(
     string strChrom;
     string strInterval;
     if ( ! NStr::SplitInTwo( strRaw, ":", strChrom, strInterval ) ) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -295,7 +295,7 @@ void CReaderBase::x_SetBrowserRegion(
     string strFrom;
     string strTo;
     if ( ! NStr::SplitInTwo( strInterval, "-", strFrom, strTo ) ) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -329,7 +329,7 @@ bool CReaderBase::x_ParseBrowserLine(
         if ( *it == "position" ) {
             ++it;
             if ( it == fields.end() ) {
-                CRef<CObjReaderLineException> pErr(
+                AutoPtr<CObjReaderLineException> pErr(
                     CObjReaderLineException::Create(
                     eDiag_Error,
                     0,

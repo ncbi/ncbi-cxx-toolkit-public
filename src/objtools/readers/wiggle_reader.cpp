@@ -636,7 +636,7 @@ CTempString CWiggleReader::xGetWord(
         }
     }
     if ( skip == 0 ) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Warning,
             0,
@@ -664,7 +664,7 @@ CTempString CWiggleReader::xGetParamName(
             break;
         }
     }
-    CRef<CObjReaderLineException> pErr(
+    AutoPtr<CObjReaderLineException> pErr(
         CObjReaderLineException::Create(
         eDiag_Warning,
         0,
@@ -689,7 +689,7 @@ CTempString CWiggleReader::xGetParamValue(
                 return CTempString(ptr+1, pos-1);
             }
         }
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Warning,
             0,
@@ -718,7 +718,7 @@ void CWiggleReader::xGetPos(
             return;
         }
         else {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -808,7 +808,7 @@ bool CWiggleReader::xTryGetDouble(
         return false;
     }
     if ( *endptr ) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Warning,
             0,
@@ -840,7 +840,7 @@ inline void CWiggleReader::xGetDouble(
 //  ----------------------------------------------------------------------------
 {
     if ( !xTryGetDouble(v, pMessageListener) ) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -942,7 +942,7 @@ void CWiggleReader::xReadTrack(
                 m_TrackType = eTrackType_bedGraph;
             }
             else {
-                CRef<CObjReaderLineException> pErr(
+                AutoPtr<CObjReaderLineException> pErr(
                     CObjReaderLineException::Create(
                     eDiag_Warning,
                     0,
@@ -961,7 +961,7 @@ void CWiggleReader::xReadTrack(
         }
     }
     if ( m_TrackType == eTrackType_invalid ) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -978,7 +978,7 @@ void CWiggleReader::xGetFixedStepInfo(
 {
     if ( m_TrackType != eTrackType_wiggle_0 ) {
         if ( m_TrackType != eTrackType_invalid ) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Warning,
                 0,
@@ -1007,7 +1007,7 @@ void CWiggleReader::xGetFixedStepInfo(
             fixedStepInfo.mSpan = NStr::StringToUInt(value);
         }
         else {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Warning,
                 0,
@@ -1016,7 +1016,7 @@ void CWiggleReader::xGetFixedStepInfo(
         }
     }
     if ( fixedStepInfo.mChrom.empty() ) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -1024,7 +1024,7 @@ void CWiggleReader::xGetFixedStepInfo(
         ProcessError(*pErr, pMessageListener);
     }
     if ( fixedStepInfo.mStart == 0 ) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -1032,7 +1032,7 @@ void CWiggleReader::xGetFixedStepInfo(
         ProcessError(*pErr, pMessageListener);
     }
     if ( fixedStepInfo.mStep == 0 ) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -1070,7 +1070,7 @@ void CWiggleReader::xGetVarStepInfo(
 {
     if ( m_TrackType != eTrackType_wiggle_0 ) {
         if ( m_TrackType != eTrackType_invalid ) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Warning,
                 0,
@@ -1093,7 +1093,7 @@ void CWiggleReader::xGetVarStepInfo(
             varStepInfo.mSpan = NStr::StringToUInt(value);
         }
         else {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Warning,
                 0,
@@ -1102,7 +1102,7 @@ void CWiggleReader::xGetVarStepInfo(
         }
     }
     if ( varStepInfo.mChrom.empty() ) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Error,
             0,
@@ -1141,7 +1141,7 @@ void CWiggleReader::xReadBedLine(
 {
     if ( m_TrackType != eTrackType_bedGraph &&
         m_TrackType != eTrackType_invalid ) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Warning,
             0,

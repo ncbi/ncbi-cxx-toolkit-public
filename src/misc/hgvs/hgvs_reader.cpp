@@ -150,7 +150,7 @@ CHgvsReader::ReadSeqAnnot(
             varUtil.AsVariation_feats(*var, annot->SetData().SetFtable());
         }
         catch (const variation::CHgvsParser::CHgvsParserException& e) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                eDiag_Warning,
                0,

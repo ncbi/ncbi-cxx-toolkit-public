@@ -131,7 +131,7 @@ ESpecType SpecType(
         return typemap[spectype];
     }
     catch( ... ) {
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Warning,
             0,
@@ -207,7 +207,7 @@ CVcfReader::ReadSeqAnnot(
             continue;
         }
         // still here? not good!
-        CRef<CObjReaderLineException> pErr(
+        AutoPtr<CObjReaderLineException> pErr(
             CObjReaderLineException::Create(
             eDiag_Warning,
             0,
@@ -306,7 +306,7 @@ CVcfReader::xProcessMetaLineInfo(
         NStr::Tokenize( info, ",", fields );
         NStr::SplitInTwo( fields[0], "=", key, id );
         if ( key != "ID" ) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -316,7 +316,7 @@ CVcfReader::xProcessMetaLineInfo(
         }
         NStr::SplitInTwo( fields[1], "=", key, numcount );
         if ( key != "Number" ) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -326,7 +326,7 @@ CVcfReader::xProcessMetaLineInfo(
         }
         NStr::SplitInTwo( fields[2], "=", key, type );
         if ( key != "Type" ) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -336,7 +336,7 @@ CVcfReader::xProcessMetaLineInfo(
         }
         NStr::SplitInTwo( fields[3], "=", key, description );
         if ( key != "Description" ) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -375,7 +375,7 @@ CVcfReader::xProcessMetaLineFilter(
         NStr::Tokenize( info, ",", fields );
         NStr::SplitInTwo( fields[0], "=", key, id );
         if ( key != "ID" ) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -385,7 +385,7 @@ CVcfReader::xProcessMetaLineFilter(
         }
         NStr::SplitInTwo( fields[1], "=", key, description );
         if ( key != "Description" ) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -424,7 +424,7 @@ CVcfReader::xProcessMetaLineFormat(
         NStr::Tokenize( info, ",", fields );
         NStr::SplitInTwo( fields[0], "=", key, id );
         if ( key != "ID" ) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -434,7 +434,7 @@ CVcfReader::xProcessMetaLineFormat(
         }
         NStr::SplitInTwo( fields[1], "=", key, numcount );
         if ( key != "Number" ) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -445,7 +445,7 @@ CVcfReader::xProcessMetaLineFormat(
         }
         NStr::SplitInTwo( fields[2], "=", key, type );
         if ( key != "Type" ) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -456,7 +456,7 @@ CVcfReader::xProcessMetaLineFormat(
         }
         NStr::SplitInTwo( fields[3], "=", key, description );
         if ( key != "Description" ) {
-            CRef<CObjReaderLineException> pErr(
+            AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
@@ -1128,7 +1128,7 @@ CVcfReader::xAssignVariantProps(
                 string db, tag;
                 NStr::SplitInTwo(*cit, ":", db, tag);
                 if (db != "PM") {
-                    CRef<CObjReaderLineException> pErr(
+                    AutoPtr<CObjReaderLineException> pErr(
                         CObjReaderLineException::Create(
                         eDiag_Warning,
                         0,
