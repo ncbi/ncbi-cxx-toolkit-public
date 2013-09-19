@@ -5,6 +5,15 @@ case "$1" in
     *         ) def_compress_others= ;;
 esac
 
+compress='gzip -Nf'
+
+ws='[ 	]' # Contains a space and a tab.
+if grep "^$ws*PURPOSE$ws*=$ws*FINAL$ws*\$" ../../build_info >/dev/null 2>&1 \
+    &&  bzip2 --version </dev/null >/dev/null 2>&1; then
+    # Some bzip2 releases still try to compress stdin with --version(!)
+    compress='bzip2 -f'
+fi
+
 for dir in "$@"; do
     if [ -n "$def_compress_others" ]; then
         compress_others=$def_compress_others
@@ -20,17 +29,17 @@ for dir in "$@"; do
             plugin_test | speedtest | streamtest | biosample_chk \
                 | testipub | test_basic_cleanup | test_checksum | test_mghbn \
                 | test_ncbi_connutil_hit | test_ncbi_dblb | test_ncbi_http_get \
-                | *.gz )
+                | *.*z* )
                 ;;
             *test* | *demo* | *sample* \
                 | net*che*_c* | ns_*remote_job* | save_to_nc )
-                gzip -Nf $f
+                $compress $f
                 ;;
             *blast* | datatool | gbench* | id1_fetch | idwwwget | lbsmc \
                 | one2all )
                 ;;
             *)
-                test "$compress_others" = "no" || gzip -Nf $f
+                test "$compress_others" = "no" || $compress $f
                 ;;
         esac
     done
