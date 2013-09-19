@@ -89,6 +89,7 @@ BEGIN_NCBI_SCOPE
 ///
 
 /// Get string configuration value.
+/// NOTE: The function is not MT-safe.
 ///
 /// @param section
 ///   Check application configuration named section first if not null.
@@ -112,6 +113,7 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
                                            const char* default_value);
 
 /// Get integer configuration value.
+/// NOTE: The function is not MT-safe.
 ///
 /// @param section
 ///   Check application configuration named section first if not null.
@@ -135,6 +137,7 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
                                      int         default_value);
 
 /// Get boolean configuration value.
+/// NOTE: The function is not MT-safe.
 ///
 /// @param section
 ///   Check application configuration named section first if not null.
@@ -159,6 +162,7 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
 
 
 /// Get double configuration value.
+/// NOTE: The function is not MT-safe.
 ///
 /// @param section
 ///   Check application configuration named section first if not null.

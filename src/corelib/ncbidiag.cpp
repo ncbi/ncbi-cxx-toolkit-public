@@ -749,6 +749,12 @@ static void s_ThreadDataSafeStaticCleanup(void*)
 }
 
 
+bool CDiagContextThreadData::IsInitialized(void)
+{
+    return s_ThreadDataState == eInitialized;
+}
+
+
 CDiagContextThreadData::CDiagContextThreadData(void)
     : m_Properties(NULL),
       m_DiagBuffer(new CDiagBuffer),

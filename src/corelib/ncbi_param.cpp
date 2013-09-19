@@ -102,13 +102,26 @@ namespace {
 #ifdef _DEBUG
     static const char* const CONFIG_DUMP_SECTION = "NCBI";
     static const char* const CONFIG_DUMP_VARIABLE = "CONFIG_DUMP_VARIABLES";
-    static bool config_dump = g_GetConfigFlag(CONFIG_DUMP_SECTION,
-                                              CONFIG_DUMP_VARIABLE,
-                                              0,
-                                              false);
+    static bool s_ConfigDump = g_GetConfigFlag(CONFIG_DUMP_SECTION,
+                                               CONFIG_DUMP_VARIABLE,
+                                               0,
+                                               false);
+
+    static volatile bool s_InConfigDump = false;
+
+    inline bool s_CanDumpConfig(void)
+    {
+        return s_ConfigDump  &&  CDiagContextThreadData::IsInitialized();
+    }
 #endif
 }
 
+#define DUMP_CONFIG(code, data) \
+    if ( !s_InConfigDump ) { \
+        s_InConfigDump = true; \
+        LOG_POST_X(code, data); \
+        s_InConfigDump = false; \
+    }
 
 bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
                                        const char* variable,
@@ -116,8 +129,10 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
                                        bool default_value)
 {
 #ifdef _DEBUG
-    bool dump = variable != CONFIG_DUMP_VARIABLE && config_dump;
+    bool is_config_dump = NStr::Equal(section, CONFIG_DUMP_SECTION)  &&
+        NStr::Equal(variable, CONFIG_DUMP_VARIABLE);
 #endif
+
     if ( section  &&  *section ) {
         CNcbiApplication* app = CNcbiApplication::Instance();
         if ( app  &&  app->HasLoadedConfig() ) {
@@ -126,12 +141,15 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
                 try {
                     bool value = s_StringToBool(str);
 #ifdef _DEBUG
-                    if ( dump ) {
-                        LOG_POST_X(5, "NCBI_CONFIG: bool variable"
-                                      " [" << section << "]"
-                                      " " << variable <<
-                                      " = " << value <<
-                                      " from registry");
+                    if ( is_config_dump ) {
+                        s_ConfigDump = value;
+                    }
+                    if ( s_CanDumpConfig() ) {
+                        DUMP_CONFIG(5, "NCBI_CONFIG: bool variable"
+                                       " [" << section << "]"
+                                       " " << variable <<
+                                       " = " << value <<
+                                       " from registry");
                     }
 #endif
                     return value;
@@ -147,20 +165,23 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
         try {
             bool value = s_StringToBool(_T_CSTRING(str));
 #ifdef _DEBUG
-            if ( dump ) {
+            if ( is_config_dump ) {
+                s_ConfigDump = value;
+            }
+            if ( s_CanDumpConfig() ) {
                 if ( section  &&  *section ) {
-                    LOG_POST_X(6, "NCBI_CONFIG: bool variable"
-                                  " [" << section << "]"
-                                  " " << variable <<
-                                  " = " << value <<
-                                  " from env var " <<
-                                  s_GetEnvVarName(section, variable, env_var_name));
+                    DUMP_CONFIG(6, "NCBI_CONFIG: bool variable"
+                                   " [" << section << "]"
+                                   " " << variable <<
+                                   " = " << value <<
+                                   " from env var " <<
+                                   s_GetEnvVarName(section, variable, env_var_name));
                 }
                 else {
-                    LOG_POST_X(7, "NCBI_CONFIG: bool variable "
-                                  " " << variable <<
-                                  " = " << value <<
-                                  " from env var");
+                    DUMP_CONFIG(7, "NCBI_CONFIG: bool variable "
+                                   " " << variable <<
+                                   " = " << value <<
+                                   " from env var");
                 }
             }
 #endif
@@ -172,19 +193,22 @@ bool NCBI_XNCBI_EXPORT g_GetConfigFlag(const char* section,
     }
     bool value = default_value;
 #ifdef _DEBUG
-    if ( dump ) {
+    if ( is_config_dump ) {
+        s_ConfigDump = value;
+    }
+    if ( s_CanDumpConfig() ) {
         if ( section  &&  *section ) {
-            LOG_POST_X(8, "NCBI_CONFIG: bool variable"
-                          " [" << section << "]"
-                          " " << variable <<
-                          " = " << value <<
-                          " by default");
+            DUMP_CONFIG(8, "NCBI_CONFIG: bool variable"
+                           " [" << section << "]"
+                           " " << variable <<
+                           " = " << value <<
+                           " by default");
         }
         else {
-            LOG_POST_X(9, "NCBI_CONFIG: bool variable"
-                          " " << variable <<
-                          " = " << value <<
-                          " by default");
+            DUMP_CONFIG(9, "NCBI_CONFIG: bool variable"
+                           " " << variable <<
+                           " = " << value <<
+                           " by default");
         }
     }
 #endif
@@ -205,12 +229,12 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
                 try {
                     int value = NStr::StringToInt(str);
 #ifdef _DEBUG
-                    if ( config_dump ) {
-                        LOG_POST_X(10, "NCBI_CONFIG: int variable"
-                                       " [" << section << "]"
-                                       " " << variable <<
-                                       " = " << value <<
-                                       " from registry");
+                    if ( s_CanDumpConfig() ) {
+                        DUMP_CONFIG(10, "NCBI_CONFIG: int variable"
+                                        " [" << section << "]"
+                                        " " << variable <<
+                                        " = " << value <<
+                                        " from registry");
                     }
 #endif
                     return value;
@@ -226,20 +250,20 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
         try {
             int value = NStr::StringToInt(_T_CSTRING(str));
 #ifdef _DEBUG
-            if ( config_dump ) {
+            if ( s_CanDumpConfig() ) {
                 if ( section  &&  *section ) {
-                    LOG_POST_X(11, "NCBI_CONFIG: int variable"
-                                   " [" << section << "]"
-                                   " " << variable <<
-                                   " = " << value <<
-                                   " from env var " <<
-                                   s_GetEnvVarName(section, variable, env_var_name));
+                    DUMP_CONFIG(11, "NCBI_CONFIG: int variable"
+                                    " [" << section << "]"
+                                    " " << variable <<
+                                    " = " << value <<
+                                    " from env var " <<
+                                    s_GetEnvVarName(section, variable, env_var_name));
                 }
                 else {
-                    LOG_POST_X(12, "NCBI_CONFIG: int variable "
-                                   " " << variable <<
-                                   " = " << value <<
-                                   " from env var");
+                    DUMP_CONFIG(12, "NCBI_CONFIG: int variable "
+                                    " " << variable <<
+                                    " = " << value <<
+                                    " from env var");
                 }
             }
 #endif
@@ -251,19 +275,19 @@ int NCBI_XNCBI_EXPORT g_GetConfigInt(const char* section,
     }
     int value = default_value;
 #ifdef _DEBUG
-    if ( config_dump ) {
+    if ( s_CanDumpConfig() ) {
         if ( section  &&  *section ) {
-            LOG_POST_X(13, "NCBI_CONFIG: int variable"
-                           " [" << section << "]"
-                           " " << variable <<
-                           " = " << value <<
-                           " by default");
+            DUMP_CONFIG(13, "NCBI_CONFIG: int variable"
+                            " [" << section << "]"
+                            " " << variable <<
+                            " = " << value <<
+                            " by default");
         }
         else {
-            LOG_POST_X(14, "NCBI_CONFIG: int variable"
-                           " " << variable <<
-                           " = " << value <<
-                           " by default");
+            DUMP_CONFIG(14, "NCBI_CONFIG: int variable"
+                            " " << variable <<
+                            " = " << value <<
+                            " by default");
         }
     }
 #endif
@@ -286,12 +310,12 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
                         NStr::fDecimalPosixOrLocal |
                         NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
 #ifdef _DEBUG
-                    if ( config_dump ) {
-                        LOG_POST_X(10, "NCBI_CONFIG: double variable"
-                                       " [" << section << "]"
-                                       " " << variable <<
-                                       " = " << value <<
-                                       " from registry");
+                    if ( s_CanDumpConfig() ) {
+                        DUMP_CONFIG(10, "NCBI_CONFIG: double variable"
+                                        " [" << section << "]"
+                                        " " << variable <<
+                                        " = " << value <<
+                                        " from registry");
                     }
 #endif
                     return value;
@@ -309,20 +333,20 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
                 NStr::fDecimalPosixOrLocal |
                 NStr::fAllowLeadingSpaces | NStr::fAllowTrailingSpaces);
 #ifdef _DEBUG
-            if ( config_dump ) {
+            if ( s_CanDumpConfig() ) {
                 if ( section  &&  *section ) {
-                    LOG_POST_X(11, "NCBI_CONFIG: double variable"
-                                   " [" << section << "]"
-                                   " " << variable <<
-                                   " = " << value <<
-                                   " from env var " <<
-                                   s_GetEnvVarName(section, variable, env_var_name));
+                    DUMP_CONFIG(11, "NCBI_CONFIG: double variable"
+                                    " [" << section << "]"
+                                    " " << variable <<
+                                    " = " << value <<
+                                    " from env var " <<
+                                    s_GetEnvVarName(section, variable, env_var_name));
                 }
                 else {
-                    LOG_POST_X(12, "NCBI_CONFIG: double variable "
-                                   " " << variable <<
-                                   " = " << value <<
-                                   " from env var");
+                    DUMP_CONFIG(12, "NCBI_CONFIG: double variable "
+                                    " " << variable <<
+                                    " = " << value <<
+                                    " from env var");
                 }
             }
 #endif
@@ -334,19 +358,19 @@ double NCBI_XNCBI_EXPORT g_GetConfigDouble(const char* section,
     }
     double value = default_value;
 #ifdef _DEBUG
-    if ( config_dump ) {
+    if ( s_CanDumpConfig() ) {
         if ( section  &&  *section ) {
-            LOG_POST_X(13, "NCBI_CONFIG: double variable"
-                           " [" << section << "]"
-                           " " << variable <<
-                           " = " << value <<
-                           " by default");
+            DUMP_CONFIG(13, "NCBI_CONFIG: double variable"
+                            " [" << section << "]"
+                            " " << variable <<
+                            " = " << value <<
+                            " by default");
         }
         else {
-            LOG_POST_X(14, "NCBI_CONFIG: int variable"
-                           " " << variable <<
-                           " = " << value <<
-                           " by default");
+            DUMP_CONFIG(14, "NCBI_CONFIG: int variable"
+                            " " << variable <<
+                            " = " << value <<
+                            " by default");
         }
     }
 #endif
@@ -365,12 +389,12 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
             const string& value = app->GetConfig().Get(section, variable);
             if ( !value.empty() ) {
 #ifdef _DEBUG
-                if ( config_dump ) {
-                    LOG_POST_X(15, "NCBI_CONFIG: str variable"
-                                   " [" << section << "]"
-                                   " " << variable <<
-                                   " = \"" << value << "\""
-                                   " from registry");
+                if ( s_CanDumpConfig() ) {
+                    DUMP_CONFIG(15, "NCBI_CONFIG: str variable"
+                                    " [" << section << "]"
+                                    " " << variable <<
+                                    " = \"" << value << "\""
+                                    " from registry");
                 }
 #endif
                 return value;
@@ -380,20 +404,20 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
     const TXChar* value = s_GetEnv(section, variable, env_var_name);
     if ( value ) {
 #ifdef _DEBUG
-        if ( config_dump ) {
+        if ( s_CanDumpConfig() ) {
             if ( section  &&  *section ) {
-                LOG_POST_X(16, "NCBI_CONFIG: str variable"
-                               " [" << section << "]"
-                               " " << variable <<
-                               " = \"" << value << "\""
-                               " from env var " <<
-                               s_GetEnvVarName(section, variable, env_var_name));
+                DUMP_CONFIG(16, "NCBI_CONFIG: str variable"
+                                " [" << section << "]"
+                                " " << variable <<
+                                " = \"" << value << "\""
+                                " from env var " <<
+                                s_GetEnvVarName(section, variable, env_var_name));
             }
             else {
-                LOG_POST_X(17, "NCBI_CONFIG: str variable"
-                               " " << variable <<
-                               " = \"" << value << "\""
-                               " from env var");
+                DUMP_CONFIG(17, "NCBI_CONFIG: str variable"
+                                " " << variable <<
+                                " = \"" << value << "\""
+                                " from env var");
             }
         }
 #endif
@@ -401,19 +425,19 @@ string NCBI_XNCBI_EXPORT g_GetConfigString(const char* section,
     }
     const char* dvalue = default_value? default_value: "";
 #ifdef _DEBUG
-    if ( config_dump ) {
+    if ( s_CanDumpConfig() ) {
         if ( section  &&  *section ) {
-            LOG_POST_X(18, "NCBI_CONFIG: str variable"
-                           " [" << section << "]"
-                           " " << variable <<
-                           " = \"" << dvalue << "\""
-                           " by default");
+            DUMP_CONFIG(18, "NCBI_CONFIG: str variable"
+                            " [" << section << "]"
+                            " " << variable <<
+                            " = \"" << dvalue << "\""
+                            " by default");
         }
         else {
-            LOG_POST_X(19, "NCBI_CONFIG: str variable"
-                           " " << variable <<
-                           " = \"" << dvalue << "\""
-                           " by default");
+            DUMP_CONFIG(19, "NCBI_CONFIG: str variable"
+                            " " << variable <<
+                            " = \"" << dvalue << "\""
+                            " by default");
         }
     }
 #endif

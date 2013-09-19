@@ -1793,6 +1793,8 @@ public:
 
     void CollectDiagMessage(const SDiagMessage& mess);
 
+    static bool IsInitialized(void);
+
 private:
     CDiagContextThreadData(const CDiagContextThreadData&);
     CDiagContextThreadData& operator=(const CDiagContextThreadData&);
