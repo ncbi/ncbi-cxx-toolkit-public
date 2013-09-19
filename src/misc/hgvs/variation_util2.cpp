@@ -671,6 +671,7 @@ CRef<CVariantPlacement> CVariationUtil::x_Remap(const CVariantPlacement& p, CSeq
     }
 
     CRef<CSeq_loc> mapped_loc = mapper.Map(p.GetLoc());
+    mapped_loc = sequence::Seq_loc_Merge(*mapped_loc, CSeq_loc::fSortAndMerge_All, NULL);
 
     bool equal_offsets = (!p2->IsSetStart_offset() && !p2->IsSetStop_offset())
                       || ( p2->IsSetStart_offset() &&  p2->IsSetStop_offset() && p2->GetStart_offset() == p2->GetStop_offset());
