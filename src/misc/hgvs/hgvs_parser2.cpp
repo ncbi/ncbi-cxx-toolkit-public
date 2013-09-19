@@ -1196,6 +1196,13 @@ CRef<CVariation> CHgvsParser::x_delins(TIterator const& i, const CContext& conte
     del_vr->SetData().SetInstance().SetDelta() = ins_vr->SetData().SetInstance().SetDelta();
     del_vr->SetData().SetInstance().SetDelta().front()->ResetAction();
 
+    if(ins_len == 1 && del_len == 1) {
+        CRef<CVariationException> ex(new CVariationException);
+        ex->SetCode(CVariationException::eCode_hgvs_parsing);
+        ex->SetMessage("delins used for single-nt substitution");
+        SetFirstPlacement(*del_vr).SetExceptions().push_back(ex);
+    }
+
     return del_vr;
 }
 
