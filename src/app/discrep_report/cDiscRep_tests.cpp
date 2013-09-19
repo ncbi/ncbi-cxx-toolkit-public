@@ -1874,7 +1874,8 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
       }
       
       // TEST_TAXNAME_NOT_IN_DEFLINE
-      if (thisTest.tests_run.find(GetName_missing()) != thisTest.tests_run.end()) { 
+      if (!bioseq.IsAa() 
+                && thisTest.tests_run.find(GetName_missing()) != thisTest.tests_run.end()) { 
         if (NStr::EqualNocase(taxnm, "Human immunodeficiency virus 1")) lookfor = "HIV-1";
         else if (NStr::EqualNocase(taxnm, "Human immunodeficiency virus 2"))
              lookfor = "HIV-2";
@@ -1885,7 +1886,7 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
         if (rx.IsMatch(title)) {
             // capitalization must match for all but the first letter */
             size_t pos = NStr::FindNoCase(title, lookfor);
-            if (CTempString(title).substr(pos, lookfor.size()) != lookfor.substr(1)) 
+            if (CTempString(title).substr(pos+1, lookfor.size()-1) != lookfor.substr(1)) 
                add = true;
         }
         else add = true; // missing in defline
@@ -5504,6 +5505,11 @@ void CBioseq_test_on_genprod_set :: TestOnObj(const CBioseq& bioseq)
    bool run_mtid = (thisTest.tests_run.find(GetName_mtid()) != thisTest.tests_run.end());
    bool run_dtid = (thisTest.tests_run.find(GetName_dtid()) != thisTest.tests_run.end());
 
+cerr << "test_item_list.size() " << thisInfo.test_item_list.size() << endl;
+if (thisInfo.test_item_list.find(GetName_dprot()) == thisInfo.test_item_list.end())
+cerr << "no " << GetName_dprot() << " in test_item_list\n" << endl;
+else cerr << "222 test_item_list.size() " << thisInfo.test_item_list.size() << "  " << GetName_dprot() << "list size " << thisInfo.test_item_list[GetName_dprot()].size() << endl;
+
    string prod_id, desc;
    /* look for missing protein IDs and duplicate protein IDs on coding regions */
    if (run_mprot || run_dprot) {
@@ -5514,12 +5520,18 @@ void CBioseq_test_on_genprod_set :: TestOnObj(const CBioseq& bioseq)
             thisInfo.test_item_list[GetName_mprot()].push_back(desc);
        }
        else if (run_dprot) {
+cerr << "add dprot \n";
           const CSeq_id& seq_id = sequence::GetId((*it)->GetProduct(), thisInfo.scope); 
           seq_id.GetLabel(&prod_id); 
           thisInfo.test_item_list[GetName_dprot()].push_back(prod_id + "$" + desc);
        }
      }   
    }
+cerr << "after run_dprot\n";
+if (thisInfo.test_item_list.find(GetName_dprot()) == thisInfo.test_item_list.end())
+cerr << "no " << GetName_dprot() << " in test_item_list\n" << endl;
+else cerr << GetName_dprot() << " list size " << thisInfo.test_item_list[GetName_dprot()].size() << endl;
+
 
    /* look for missing transcript IDs and duplicate transcript IDs on mRNAs */
    if (run_mtid || run_dtid) {
@@ -5560,8 +5572,8 @@ void CBioseq_test_on_genprod_set :: GetReport_dup(CRef <CClickableItem>& c_item,
                               desc2 + it->first, e_HasComment); 
          } 
       }
-      c_item->description 
-         = GetHasComment(c_item->item_list.size(), desc1) + desc3;
+      if (c_item->subcategories.size()> 1)
+         c_item->description = GetHasComment(c_item->item_list.size(), desc1) + desc3;
    };
 };
 
@@ -9624,16 +9636,8 @@ CObjectManager& obj = thisInfo.scope->GetObjectManager();
    }
 
 // MISSING_PROJECT
-   if (m_seqs_w_pid.size() > m_seqs_no_pid.size()) {
-      ITERATE (set <string>, it, m_seqs_no_pid)
-        if (m_seqs_w_pid.find(*it) != m_seqs_w_pid.end()) m_seqs_w_pid.erase(it);
-   }
-   else {
-      NON_CONST_ITERATE (set <string>, it, m_seqs_w_pid) {
-         if (m_seqs_no_pid.find(*it) != m_seqs_no_pid.end()) m_seqs_w_pid.erase(it);
-      }
-   }
    ITERATE (set <string>, it, m_seqs_w_pid)
+     if (m_seqs_no_pid.find(*it) == m_seqs_no_pid.end())
        thisInfo.test_item_list[GetName_mproj()].push_back(*it);
 };
 
@@ -9646,7 +9650,6 @@ void CSeqEntry_ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX :: GetReport(CRef <CCli
 void CSeqEntry_MISSING_STRUCTURED_COMMENT :: GetReport(CRef <CClickableItem>& c_item)
 {
   RmvRedundancy(c_item->item_list);   // all CSeqEntry_Feat_desc tests need this.
-
   c_item->description = GetDoesComment(c_item->item_list.size(), "sequence") 
                            + "not include structured comments.";
 };
