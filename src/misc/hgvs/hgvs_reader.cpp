@@ -69,6 +69,8 @@
 #include <objects/seqfeat/VariantProperties.hpp>
 #include <objects/seqfeat/Delta_item.hpp>
 
+#include <objects/variation/VariationException.hpp>
+
 #include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_exception.hpp>
 #include <objtools/readers/line_error.hpp>
@@ -147,17 +149,50 @@ CHgvsReader::ReadSeqAnnot(
 
         try {
             CRef<CVariation> var = hgvsParser.AsVariation(line);
+
+            CVariation::TExceptions exception_list;
+            if( var->IsSetExceptions() ) {
+                exception_list.insert(exception_list.end(), var->GetExceptions().begin(), var->GetExceptions().end());
+            }
+            if( var->IsSetPlacements() ) {
+                ITERATE(CVariation::TPlacements, place_it, var->GetPlacements() ) {
+                    const CVariantPlacement& placement = **place_it;
+                    if( placement.IsSetExceptions() ) {
+                        exception_list.insert(exception_list.end(), placement.GetExceptions().begin(), placement.GetExceptions().end());
+                    }
+                }
+            }
+
+            ITERATE(CVariation::TExceptions, except_it, exception_list ) {
+
+                const CVariationException& except = **except_it;
+
+                if( except.IsSetCode() && except.IsSetMessage() ) {
+
+                    const string& code = 
+                        CVariationException::GetTypeInfo_enum_ECode()->FindName(except.GetCode(), true);
+                    CRef<CObjReaderLineException> pErr(
+                        CObjReaderLineException::Create(
+                        eDiag_Warning,
+                        m_uLineNumber,
+                        string("CHgvsReader::ReadSeqAnnot Warning [") + code  + "] " + except.GetMessage(),
+                        ILineError::eProblem_GeneralParsingError
+                        ) );
+                    ProcessWarning(*pErr, pEC);
+                } 
+            }
+
             varUtil.AsVariation_feats(*var, annot->SetData().SetFtable());
         }
         catch (const variation::CHgvsParser::CHgvsParserException& e) {
             AutoPtr<CObjReaderLineException> pErr(
                 CObjReaderLineException::Create(
-               eDiag_Warning,
+               eDiag_Error,
                0,
                string("CHgvsReader::ReadSeqAnnot Error [") + e.GetErrCodeString() + "] " + e.GetMsg(),
                ILineError::eProblem_GeneralParsingError
             ) );
-            ProcessWarning(*pErr, pEC);
+            ProcessError(*pErr, pEC);
         }
     }
 
