@@ -212,23 +212,23 @@ CVariationUtil::ETestStatus CVariationUtil::CheckExonBoundary(const CVariantPlac
 
 void CVariationUtil::s_ResolveIntronicOffsets(CVariantPlacement& p)
 {
-    CRef<CSeq_loc> loc(new CSeq_loc);
-    loc->Assign(p.GetLoc());
-    if(loc->IsPnt()) {
-        if(!p.IsSetStop_offset() && p.IsSetStart_offset()) {
-            //In case of point, only start-offset may be specified. In this case
-            //temporarily set stop-offset to be the same (it will be reset below),
-            //such that start and stop of point-as-interval are adjusted consistently.
-            p.SetStop_offset(p.GetStart_offset());
-        }
+    if(!p.IsSetStart_offset() && !p.IsSetStop_offset()) {
+        return;
     }
 
-    //convert to interval.
+    if(p.GetLoc().IsPnt() && !p.IsSetStop_offset() && p.IsSetStart_offset()) {
+        //In case of point, only start-offset may be specified. In this case
+        //temporarily set stop-offset to be the same (it will be reset below),
+        //such that start and stop of point-as-interval are adjusted consistently.
+        p.SetStop_offset(p.GetStart_offset());
+    }
+
+    //Convert to interval.
     //Need to do for a point so that we can deal with start and stop independently.
     //Another scenario is when start/stop in CDNA coords lie in different exons, so
     //the mapping is across one or more intron - we want to collapse the genomic loc
     //(do we want to preselve the gaps caused by indels rather than introns?)
-    loc = sequence::Seq_loc_Merge(*loc, CSeq_loc::fMerge_SingleRange, NULL);
+    CRef<CSeq_loc> loc = sequence::Seq_loc_Merge(p.GetLoc(), CSeq_loc::fMerge_SingleRange, NULL);
 
     if(!loc->IsInt() && (p.IsSetStart_offset() || p.IsSetStop_offset())) {
         NcbiCerr << MSerial_AsnText << p;
@@ -250,7 +250,6 @@ void CVariationUtil::s_ResolveIntronicOffsets(CVariantPlacement& p)
     }
 
     if(loc->GetTotalRange().GetLength() == 1) {
-        //convert to point
         loc = sequence::Seq_loc_Merge(*loc, CSeq_loc::fSortAndMerge_All, NULL);
     }
 
@@ -671,17 +670,29 @@ CRef<CVariantPlacement> CVariationUtil::x_Remap(const CVariantPlacement& p, CSeq
     }
 
     CRef<CSeq_loc> mapped_loc = mapper.Map(p.GetLoc());
-    mapped_loc = sequence::Seq_loc_Merge(*mapped_loc, CSeq_loc::fSortAndMerge_All, NULL);
 
-    bool equal_offsets = (!p2->IsSetStart_offset() && !p2->IsSetStop_offset())
-                      || ( p2->IsSetStart_offset() &&  p2->IsSetStop_offset() && p2->GetStart_offset() == p2->GetStop_offset());
-    if(p.GetLoc().IsInt() && mapped_loc->IsPnt() && !equal_offsets) {
+    {{
         //If we have offsets, then the distinction between point and one-point interval is important, e.g.
         //NM_000155.3:c.-116-3_-116 - the location is an interval, but the anchor point is the same; we need to 
         //keep it as interval, as if we represent it as a point, then the corresponding HGVS is also a point: NM_000155.3:c.-116-3
-        mapped_loc = sequence::Seq_loc_Merge(*mapped_loc, CSeq_loc::fMerge_SingleRange, NULL);
-    }
+        bool equal_offsets = (!p2->IsSetStart_offset() && !p2->IsSetStop_offset())
+                          || ( p2->IsSetStart_offset() &&  p2->IsSetStop_offset() && p2->GetStart_offset() == p2->GetStop_offset());
 
+        bool merge_single_range = p.GetLoc().IsInt() && mapped_loc->IsPnt() && !equal_offsets;
+
+        if(   mapped_loc->IsInt() 
+           && mapped_loc->GetInt().IsSetFuzz_from() 
+           && mapped_loc->GetInt().IsSetFuzz_to() 
+           && sequence::GetLength(*mapped_loc, NULL) == 1)
+        {
+            //workaround for CXX-4376. single-nt locations will not be collapsed to a point if both From and To fuzz is present
+            mapped_loc->SetInt().ResetFuzz_to();
+        }
+
+        mapped_loc = sequence::Seq_loc_Merge(*mapped_loc, 
+                                             merge_single_range ? CSeq_loc::fMerge_SingleRange : CSeq_loc::fSortAndMerge_All, 
+                                             NULL);
+    }}
 
 #if 1
     //SNP-5148
