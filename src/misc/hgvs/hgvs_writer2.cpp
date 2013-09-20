@@ -705,7 +705,6 @@ TSeqPos CHgvsParser::x_GetInstLength(const CVariation_inst& inst, const CVariant
     return len;
 }
 
-
 string CHgvsParser::x_AsHgvsInstExpression(
         const CVariation& variation,
         CConstRef<CVariantPlacement> placement,
@@ -738,8 +737,12 @@ string CHgvsParser::x_AsHgvsInstExpression(
     {{
         //Priority for using asserted-sequence:
         //use from placement (instantiate if necessary); otherwise use explicit packaged asserted-observation
-        //seq-literal passed from above. Will only use it if have seq-data (SNP-5605){
-        if(placement && placement->IsSetSeq() && placement->GetSeq().IsSetSeq_data()) {
+        //seq-literal passed from above. Will only use it if have seq-data (SNP-5605) and don't have fuzz (VAR-638)
+        if(    placement 
+            && placement->IsSetSeq() 
+            && placement->GetSeq().IsSetSeq_data() 
+            && !CTypeConstIterator<CInt_fuzz>(Begin(placement->GetLoc())))
+        {
             asserted_seq.Reset(&placement->GetSeq());
         } else {
 #if 0
