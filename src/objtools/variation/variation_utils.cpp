@@ -502,7 +502,7 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
 bool CVariationNormalizationLeft::x_ProcessShift(string &a, int &pos,int &pos_right)
 {
     bool found = false;
-    if (pos+a.size() < x_GetSeqSize())
+    if (pos >=0 && pos+a.size() < x_GetSeqSize())
         for (unsigned int i=0; i<a.size(); i++)
         {
             string b = x_GetSeq(pos,a.size());
@@ -515,20 +515,19 @@ bool CVariationNormalizationLeft::x_ProcessShift(string &a, int &pos,int &pos_ri
         }
     if (m_Type == CVariation_inst::eType_ins)
     {
-        if (!found && pos > a.size())
+        if (!found && pos >= a.size() && pos < x_GetSeqSize())
         {
             pos -= a.size();
-            if (pos+a.size() < x_GetSeqSize())
-                for (unsigned int i=0; i<a.size(); i++)
+            for (unsigned int i=0; i<a.size(); i++)
+            {
+                string b = x_GetSeq(pos,a.size());
+                if (a == b) 
                 {
-                    string b = x_GetSeq(pos,a.size());
-                    if (a == b) 
-                    {
-                        found = true;
-                        break;
-                    }
-                    x_rotate_left(a);
+                    found = true;
+                    break;
                 }
+                x_rotate_left(a);
+            }
         }
     }
 
@@ -539,7 +538,9 @@ bool CVariationNormalizationLeft::x_ProcessShift(string &a, int &pos,int &pos_ri
     {
         pos--; 
         x_rotate_right(a);
-        string b = x_GetSeq(pos,a.size());
+        string b;
+        if (pos >=0 && pos+a.size() < x_GetSeqSize())
+            b = x_GetSeq(pos,a.size());
         if (a != b) 
         {
             pos++;
@@ -572,7 +573,7 @@ bool CVariationNormalizationRight::x_ProcessShift(string &a, int &pos_left, int 
 {
     bool found = false;
     pos = pos - a.size() + 1;
-    if (pos+a.size() < x_GetSeqSize())
+    if (pos >=0 && pos+a.size() < x_GetSeqSize())
         for (unsigned int i=0; i<a.size(); i++)
         {
             string b = x_GetSeq(pos,a.size());
@@ -585,30 +586,31 @@ bool CVariationNormalizationRight::x_ProcessShift(string &a, int &pos_left, int 
         }
     if (m_Type == CVariation_inst::eType_ins)
     {
-        if (!found && pos > a.size())
+        if (!found && pos >= a.size() && pos < x_GetSeqSize())
         {
             pos -= a.size();
-            if (pos+a.size() < x_GetSeqSize())
-                for (unsigned int i=0; i<a.size(); i++)
+            for (unsigned int i=0; i<a.size(); i++)
+            {
+                string b = x_GetSeq(pos,a.size());
+                if (a == b) 
                 {
-                    string b = x_GetSeq(pos,a.size());
-                    if (a == b) 
-                    {
-                        found = true;
-                        break;
-                    }
-                    x_rotate_left(a);
+                    found = true;
+                    break;
                 }
+                x_rotate_left(a);
+            }
         }
     }
     if (!found) return false;
                             
     bool found_right = false;
-    while (pos+a.size() < x_GetSeqSize())
+    while (pos >=0 && pos+a.size() < x_GetSeqSize())
     {
         pos++; 
         x_rotate_left(a);
-        string b = x_GetSeq(pos,a.size());
+        string b;
+        if (pos >=0 && pos+a.size() < x_GetSeqSize())
+            b = x_GetSeq(pos,a.size());
         if (a != b) 
         {
             pos--;

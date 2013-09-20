@@ -112,7 +112,7 @@ bool CAnalyzeShiftApp::ProcessHGVS(string &expression, CRef<CScope> scope, CHgvs
   if (annots.size() != 1) return false;
   CRef<CSeq_annot> a(new CSeq_annot);
   a->Assign(*annots.front());
-//  cout <<  MSerial_AsnText << *a;
+// cout <<  MSerial_AsnText << *a;
   if (a->GetData().GetFtable().empty() || a->GetData().GetFtable().size() != 1) return false;
   if (!a->GetData().GetFtable().front()->IsSetLocation()) return false;
   int type = CVariation_inst::eType_identity;
