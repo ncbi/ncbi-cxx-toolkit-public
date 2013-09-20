@@ -153,6 +153,7 @@ static Uint4 s_NewFileSize;
 static TTimeBuckets s_TimeTables;
 static Uint8 s_CurBlobsCnt = 0;
 static Uint8 s_CurKeysCnt = 0;
+static bool s_Draining = false;
 /// Current size of storage database. Kept here for printing statistics.
 static Uint8 s_CurDBSize = 0;
 static CMiniMutex s_GarbageLock;
@@ -1713,6 +1714,9 @@ CNCBlobStorage::ChangeCacheDeadTime(SNCCacheData* cache_data)
     if (cache_data->saved_dead_time != 0) {
         table->time_map.erase(table->time_map.iterator_to(*cache_data));
         AtomicSub(s_CurBlobsCnt, 1);
+        if (s_Draining && s_CurBlobsCnt == 0) {
+            CTaskServer::RequestShutdown(eSrvSlowShutdown);
+        }
     }
     cache_data->saved_dead_time = cache_data->dead_time;
     if (cache_data->saved_dead_time != 0) {
@@ -1816,13 +1820,30 @@ CNCBlobStorage::IsCleanStart(void)
 bool
 CNCBlobStorage::NeedStopWrite(void)
 {
-    return s_IsStopWrite != eNoStop  &&  s_IsStopWrite != eStopWarning;
+    return s_Draining || (s_IsStopWrite != eNoStop  &&  s_IsStopWrite != eStopWarning);
 }
 
 bool
 CNCBlobStorage::AcceptWritesFromPeers(void)
 {
-    return s_IsStopWrite != eStopDiskCritical;
+    return !s_Draining && s_IsStopWrite != eStopDiskCritical;
+}
+
+void
+CNCBlobStorage::SetDraining(bool draining)
+{
+    s_Draining = draining;
+    if (draining) {
+        if (s_CurBlobsCnt == 0) {
+            CTaskServer::RequestShutdown(eSrvSlowShutdown);
+        }
+    }
+}
+
+bool
+CNCBlobStorage::IsDraining(void)
+{
+    return s_Draining;
 }
 
 bool

@@ -88,6 +88,8 @@ public:
     static bool IsCleanStart(void);
     static bool NeedStopWrite(void);
     static bool AcceptWritesFromPeers(void);
+    static void SetDraining(bool draining);
+    static bool IsDraining(void);
 
     static void PackBlobKey(string*      packed_key,
                             CTempString  cache_name,

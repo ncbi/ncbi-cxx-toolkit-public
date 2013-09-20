@@ -33,6 +33,7 @@
 #include "nc_stat.hpp"
 #include "netcached.hpp"
 #include "distribution_conf.hpp"
+#include "nc_storage.hpp"
 #include <set>
 
 
@@ -814,7 +815,9 @@ CNCStat::PrintToSocket(CSrvSocketTask* sock)
     m_EndState.state_time.Print(buf, CSrvTime::eFmtHumanUSecs);
     proxy << ", end " << buf <<endl;
     proxy << "PID - " <<  (Uint8)CProcess::GetCurrentPid() << endl;
-
+    if (CNCBlobStorage::IsDraining()) {
+       proxy << "Draining started" << endl;
+    }
     {
         CMiniMutexGuard guard(s_CommonStatLock);
         Uint8 now = CSrvTime::Current().AsUSec();

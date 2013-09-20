@@ -1158,7 +1158,9 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Client IP for application sending the command.
         { { "ip",      eNSPT_Str,  eNSPA_Optchain },
           // Session ID for application sending the command.
-          { "sid",     eNSPT_Str,  eNSPA_Optional } } },
+          { "sid",     eNSPT_Str,  eNSPA_Optional },
+          // drain: wait until all BLOBs are expired, then shutdown
+          { "drain",    eNSPT_Int,  eNSPA_Optional } } },
     // Get server statistics.
     { "GETSTAT",
         {&CNCMessageHandler::x_DoCmd_GetStat, "GETSTAT"},
@@ -2882,7 +2884,12 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_Shutdown(void)
 {
     LOG_CURRENT_FUNCTION
-    CTaskServer::RequestShutdown(eSrvSlowShutdown);
+    TNSProtoParams& param = m_ParsedCmd.params;
+    if (param.find("drain") != param.end() && param["drain"] != "0") {
+        CNCBlobStorage::SetDraining(true);
+    } else {
+        CTaskServer::RequestShutdown(eSrvSlowShutdown);
+    }
     return &Me::x_FinishCommand;
 }
 
