@@ -831,6 +831,16 @@ unsigned int CTLibContext::GetTimeout(void) const
 }
 
 
+string CTLibContext::GetDriverName(void) const
+{
+#if FTDS_IN_USE
+    return "ftds";
+#else
+    return "ctlib";
+#endif
+}
+
+
 impl::CConnection*
 CTLibContext::MakeIConnection(const CDBConnParams& params)
 {

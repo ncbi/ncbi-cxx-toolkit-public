@@ -97,6 +97,8 @@ public:
 
     virtual bool IsAbleTo(ECapability cpb) const;
 
+    virtual string GetDriverName(void) const;
+
     ///
     /// DBLIB specific functionality
     ///

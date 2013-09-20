@@ -119,6 +119,11 @@ CDBDefaultServiceMapper::~CDBDefaultServiceMapper(void)
 {
 }
 
+string CDBDefaultServiceMapper::GetName(void) const
+{
+    return CDBServiceMapperTraits<CDBDefaultServiceMapper>::GetName();
+}
+
 void
 CDBDefaultServiceMapper::Configure(const IRegistry*)
 {
@@ -168,6 +173,15 @@ CDBServiceMapperCoR::CDBServiceMapperCoR(void)
 
 CDBServiceMapperCoR::~CDBServiceMapperCoR(void)
 {
+}
+
+string CDBServiceMapperCoR::GetName(void) const
+{
+    if (Top().NotEmpty()) {
+        return Top()->GetName();
+    } else {
+        return CDBServiceMapperTraits<CDBServiceMapperCoR>::GetName();
+    }
 }
 
 void
@@ -290,6 +304,11 @@ CDBUDRandomMapper::CDBUDRandomMapper(const IRegistry* registry)
 
 CDBUDRandomMapper::~CDBUDRandomMapper(void)
 {
+}
+
+string CDBUDRandomMapper::GetName(void) const
+{
+    return CDBServiceMapperTraits<CDBUDRandomMapper>::GetName();
 }
 
 void
@@ -561,6 +580,11 @@ CDBUDPriorityMapper::~CDBUDPriorityMapper(void)
 {
 }
 
+string CDBUDPriorityMapper::GetName(void) const
+{
+    return CDBServiceMapperTraits<CDBUDPriorityMapper>::GetName();
+}
+
 void
 CDBUDPriorityMapper::Configure(const IRegistry* registry)
 {
@@ -765,6 +789,15 @@ CDBUniversalMapper::CDBUniversalMapper(const IRegistry* registry,
 
 CDBUniversalMapper::~CDBUniversalMapper(void)
 {
+}
+
+string CDBUniversalMapper::GetName(void) const
+{
+    if (Top().NotEmpty()) {
+        return Top()->GetName();
+    } else {
+        return CDBServiceMapperTraits<CDBUniversalMapper>::GetName();
+    }
 }
 
 void

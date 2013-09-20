@@ -439,6 +439,12 @@ I_ConnectionExtra& CDB_Connection::GetExtraFeatures(void)
     return *m_ConnImpl;
 }
 
+string CDB_Connection::GetDriverName(void) const
+{
+    CHECK_CONNECTION(m_ConnImpl);
+    return m_ConnImpl->GetDriverName();
+}
+
 void CDB_Connection::FinishOpening(void)
 {
     CHECK_CONNECTION(m_ConnImpl);

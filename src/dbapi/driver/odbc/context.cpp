@@ -420,6 +420,12 @@ CODBCContext::SetupErrorReporter(const CDBConnParams& params)
 }
 
 
+string CODBCContext::GetDriverName(void) const
+{
+    return "odbc";
+}
+
+
 void CODBCContext::SetPacketSize(SQLUINTEGER packet_size)
 {
     CMutexGuard mg(m_CtxMtx);

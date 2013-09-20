@@ -239,6 +239,8 @@ public:
     virtual unsigned int GetLoginTimeout(void) const;
     virtual unsigned int GetTimeout     (void) const;
 
+    virtual string GetDriverName(void) const;
+
     //
     // CTLIB specific functionality
     //

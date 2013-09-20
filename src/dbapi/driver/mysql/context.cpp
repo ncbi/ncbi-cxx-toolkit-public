@@ -60,6 +60,12 @@ bool CMySQLContext::IsAbleTo(ECapability /*cpb*/) const
 }
 
 
+string CMySQLContext::GetDriverName(void) const
+{
+    return "mysql";
+}
+
+
 impl::CConnection*
 CMySQLContext::MakeIConnection(const CDBConnParams& params)
 {

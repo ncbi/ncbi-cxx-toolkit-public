@@ -32,6 +32,7 @@
 #include <dbapi/driver/dbapi_conn_factory.hpp>
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
+#include <dbapi/driver/impl/dbapi_driver_utils.hpp>
 #include <dbapi/driver/public.hpp>
 #include <dbapi/error_codes.hpp>
 #include <corelib/ncbiapp.hpp>
@@ -296,6 +297,7 @@ CDBConnectionFactory::MakeDBConnection(
     CDB_Connection* t_con = NULL;
     CRuntimeData& rt_data = GetRuntimeData(params.GetConnValidator());
     TSvrRef dsp_srv = rt_data.GetDispatchedServer(params.GetServerName());
+    unsigned int retries = 0;
 
     // Store original query timeout ...
     unsigned int query_timeout = ctx.GetTimeout();
@@ -309,7 +311,7 @@ CDBConnectionFactory::MakeDBConnection(
         // because a named connection pool has been used before.
         // Dispatch server name ...
 
-        t_con = DispatchServerName(ctx, params);
+        t_con = DispatchServerName(ctx, params, retries);
     } else {
         // Server name is already dispatched ...
         string single_server(params.GetParam("single_server"));
@@ -321,7 +323,7 @@ CDBConnectionFactory::MakeDBConnection(
 
             // Clean previous info ...
             rt_data.SetDispatchedServer(params.GetServerName(), TSvrRef());
-            t_con = DispatchServerName(ctx, params);
+            t_con = DispatchServerName(ctx, params, retries);
         } else {
             // We do not need to re-dispatch it ...
 
@@ -363,7 +365,7 @@ CDBConnectionFactory::MakeDBConnection(
                     }
 
                     // Re-dispatch ...
-                    t_con = DispatchServerName(ctx, params);
+                    t_con = DispatchServerName(ctx, params, retries);
                 }
             } else {
                 // Dispatched server is already set, but calling of this method
@@ -381,13 +383,17 @@ CDBConnectionFactory::MakeDBConnection(
         t_con->SetTimeout(query_timeout);
     }
 
+    if (t_con) {
+        x_LogConnection(*t_con, params, retries);
+    }
     return t_con;
 }
 
 CDB_Connection*
 CDBConnectionFactory::DispatchServerName(
     I_DriverContext& ctx,
-    const CDBConnParams& params)
+    const CDBConnParams& params,
+    unsigned int& retries)
 {
     CDB_Connection* t_con = NULL;
     // I_DriverContext::SConnAttr curr_conn_attr(conn_attr);
@@ -504,6 +510,7 @@ CDBConnectionFactory::DispatchServerName(
             return t_con;
         }
         else if (!t_con) {
+            ++retries;
             bool need_exclude = true;
             if (cur_srv_name == service_name  &&  cur_host == 0  &&  cur_port == 0
                 &&  (conn_status != IConnValidator::eTempInvalidConn
@@ -630,6 +637,73 @@ CDBConnectionFactory::WorkWithSingleServer(const string& validator_name,
     rt_data.SetDispatchedServer(service_name, svr);
 }
 
+void CDBConnectionFactory::x_LogConnection(const CDB_Connection& connection,
+                                           const CDBConnParams& params,
+                                           unsigned int retries)
+{
+    CDBServer stub_dsp_srv;
+
+    CRef<IConnValidator> validator = params.GetConnValidator();
+    CRuntimeData&        rt_data   = GetRuntimeData(validator);
+    const string&        service   = params.GetServerName();
+    TSvrRef              dsp_srv   = rt_data.GetDispatchedServer(service);
+
+    CDiagContext_Extra   extra     = GetDiagContext().Extra();
+
+    if (dsp_srv.Empty()) {
+        dsp_srv.Reset(&stub_dsp_srv);
+    }
+
+    extra.Print("dbapi_resource", service);
+    if ( !dsp_srv->GetName().empty() ) {
+        extra.Print("dbapi_server_name", dsp_srv->GetName());
+    }
+
+    if (dsp_srv->GetHost() != 0) {
+        extra.Print("dbapi_server_ip", impl::ConvertN2A(dsp_srv->GetHost()));
+    } else if (params.GetHost() != 0) {
+        extra.Print("dbapi_server_ip", impl::ConvertN2A(params.GetHost()));
+    }
+
+    if (dsp_srv->GetPort() != 0) {
+        extra.Print("dbapi_server_port", dsp_srv->GetPort());
+    } else if (params.GetPort() != 0) {
+        extra.Print("dbapi_server_port", params.GetPort());
+    }
+
+    if ( !params.GetUserName().empty() ) {
+        extra.Print("dbapi_username", params.GetUserName());
+    }
+
+    if ( !params.GetDatabaseName().empty() ) {
+        extra.Print("dbapi_db_name", params.GetDatabaseName());
+    } else {
+        CTrivialConnValidator* tcv
+            = dynamic_cast<CTrivialConnValidator*>(validator.GetPointer());
+        if (tcv != NULL  &&  !tcv->GetDBName().empty()) {
+            extra.Print("dbapi_db_name", tcv->GetDBName());
+        }
+    }
+
+    if ( !connection.PoolName().empty() ) {
+        extra.Print("dbapi_pool", connection.PoolName());
+    }
+
+    if (validator.NotEmpty()) {
+        extra.Print("dbapi_validator", validator->GetName());
+    }
+
+    {{
+        string driver_name = connection.GetDriverName();
+        if ( !driver_name.empty() ) {
+            extra.Print("dbapi_driver", driver_name);
+        }
+    }}
+
+    extra.Print("dbapi_name_mapper", rt_data.GetDBServiceMapper().GetName());
+
+    extra.Print("dbapi_retries", retries);
+}
 
 
 ///////////////////////////////////////////////////////////////////////////////

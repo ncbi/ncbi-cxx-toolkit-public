@@ -521,6 +521,23 @@ void CODBC_Connection::SetCancelTimeout(size_t nof_secs)
     m_cancel_timeout = nof_secs;
 }
 
+string CODBC_Connection::GetDriverName(void) const
+{
+    string name = GetCDriverContext().GetDriverName();
+#ifdef SQL_DRIVER_NAME
+    TSqlChar    buffer[256];
+    SQLSMALLINT length = sizeof(buffer);
+    if (SQL_SUCCEEDED(SQLGetInfo(m_Link, SQL_DRIVER_NAME, buffer, length,
+                                 &length))
+        &&  length > 0  &&  buffer[0] != _T_NCBI_ODBC('\0')) {
+        TSqlString name2(buffer, length);
+        name2.erase(name2.find(_T_NCBI_ODBC('\0')));
+        name += '(' + CUtf8::AsUTF8(name2) + ')';
+    }
+#endif
+    return name;
+}
+
 static
 bool
 ODBC_xCheckSIE(int rc, CStatementBase& stmt)

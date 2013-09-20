@@ -367,6 +367,11 @@ CConnection::GetLowLevelHandle(void) const
     DATABASE_DRIVER_ERROR("GetLowLevelHandle is not implemented", 500001);
 }
 
+string CConnection::GetDriverName(void) const
+{
+    return GetCDriverContext().GetDriverName();
+}
+
 
 } // namespace impl
 

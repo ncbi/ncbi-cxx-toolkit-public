@@ -334,6 +334,12 @@ bool CDBLibContext::IsAbleTo(ECapability cpb) const
 }
 
 
+string CDBLibContext::GetDriverName(void) const
+{
+    return "dblib";
+}
+
+
 CDBLibContext::~CDBLibContext()
 {
     try {

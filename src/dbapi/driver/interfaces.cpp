@@ -321,6 +321,11 @@ I_DriverContext::ConnectValidated(
     return MakeConnection(params);
 }
 
+string I_DriverContext::GetDriverName(void) const
+{
+    return kEmptyStr;
+}
+
 ////////////////////////////////////////////////////////////////////////////
 I_Connection::I_Connection(void)
 {

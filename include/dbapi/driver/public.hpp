@@ -298,6 +298,8 @@ public:
     /// Get interface for extra features that could be implemented in the driver.
     virtual I_ConnectionExtra& GetExtraFeatures(void);
 
+    virtual string GetDriverName(void) const;
+
 public:
     // Deprecated legacy methods.
     // CXX-601

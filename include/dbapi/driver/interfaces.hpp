@@ -1085,6 +1085,8 @@ public:
     ///   SetHostName()
     virtual string GetHostName(void) const = 0;
 
+    virtual string GetDriverName(void) const;
+
 protected:
     /// @brief 
     ///   Create connection object WITHOUT using of Load Balancer / connection factory.

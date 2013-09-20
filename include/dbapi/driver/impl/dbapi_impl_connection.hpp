@@ -218,6 +218,8 @@ public:
 
     virtual TSockHandle GetLowLevelHandle(void) const;
 
+    virtual string GetDriverName(void) const;
+
     CDBConnParams::EServerType GetServerType(void);
 
     //

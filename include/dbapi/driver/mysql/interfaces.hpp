@@ -73,6 +73,8 @@ public:
 public:
     virtual bool IsAbleTo(ECapability cpb) const;
 
+    virtual string GetDriverName(void) const;
+
 protected:
     virtual impl::CConnection* MakeIConnection(const CDBConnParams& params);
 };

@@ -100,6 +100,7 @@ public:
 
     virtual ~IDBServiceMapper    (void) {}
 
+    virtual string  GetName      (void) const;
     virtual void    Configure    (const IRegistry* registry = NULL) = 0;
     /// Map a service to a server
     virtual TSvrRef GetServer    (const string&    service) = 0;
@@ -143,6 +144,12 @@ public:
         return "none";
     }
 };
+
+inline
+string IDBServiceMapper::GetName(void) const
+{
+    return CDBServiceMapperTraits<IDBServiceMapper>::GetName();
+}
 
 ///////////////////////////////////////////////////////////////////////////////
 

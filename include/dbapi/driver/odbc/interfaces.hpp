@@ -158,6 +158,8 @@ public:
 
     virtual bool IsAbleTo(ECapability cpb) const {return false;}
 
+    virtual string GetDriverName(void) const;
+
     //
     // ODBC specific functionality
     //
@@ -283,6 +285,8 @@ protected:
     {
         return m_cancel_timeout;
     }
+
+    virtual string GetDriverName(void) const;
 
 protected:
     string GetDbgInfo(void) const

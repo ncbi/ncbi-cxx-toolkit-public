@@ -57,6 +57,7 @@ public:
     CDBDefaultServiceMapper(void);
     virtual ~CDBDefaultServiceMapper(void);
 
+    virtual string  GetName      (void) const;
     virtual void    Configure    (const IRegistry* registry = NULL);
     virtual TSvrRef GetServer    (const string&    service);
     virtual void    Exclude      (const string&    service,
@@ -86,6 +87,7 @@ public:
     CDBServiceMapperCoR(void);
     virtual ~CDBServiceMapperCoR(void);
 
+    virtual string  GetName      (void) const;
     virtual void    Configure    (const IRegistry* registry = NULL);
     virtual TSvrRef GetServer    (const string&    service);
     virtual void    Exclude      (const string&    service,
@@ -124,6 +126,7 @@ public:
     virtual ~CDBUDRandomMapper(void);
 
 public:
+    virtual string  GetName      (void) const;
     virtual void    Configure    (const IRegistry* registry = NULL);
     virtual TSvrRef GetServer    (const string&    service);
     virtual void    Exclude      (const string&    service,
@@ -171,6 +174,7 @@ public:
     virtual ~CDBUDPriorityMapper(void);
 
 public:
+    virtual string  GetName      (void) const;
     virtual void    Configure    (const IRegistry* registry = NULL);
     virtual TSvrRef GetServer    (const string&    service);
     virtual void    Exclude      (const string&    service,
@@ -211,6 +215,7 @@ public:
                        = TMapperConf(kEmptyStr, (TFactory)nullptr));
     virtual ~CDBUniversalMapper(void);
 
+    virtual string GetName(void) const;
     virtual void Configure(const IRegistry* registry = NULL);
 
 protected:
