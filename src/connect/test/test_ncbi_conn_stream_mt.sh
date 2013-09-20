@@ -14,7 +14,7 @@ if [ -r $NCBI_TEST_DATA/proxy/test_ncbi_proxy.$n ]; then
   proxy="$n"
 fi
 
-case "`expr '(' $$ / 10 ')' '%' 3`" in
+case "`expr '(' $$ / 10 ')' '%' 4`" in
   0)
   ssl="`expr '(' $$ / 100 ')' '%' 2`"
   if [ "$ssl" = "1" -a "`echo $FEATURES | grep -vic '[-]GNUTLS'`" = "1" ]; then
@@ -37,6 +37,9 @@ case "`expr '(' $$ / 10 ')' '%' 3`" in
   ;;
   2)
   url='ftp://ftp.ncbi.nlm.nih.gov/README.ftp'
+  ;;
+  3)
+  url='http://ftp.ncbi.nlm.nih.gov/README.ftp'
   ;;
 esac
 

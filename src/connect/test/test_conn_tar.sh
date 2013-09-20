@@ -12,7 +12,7 @@ if [ -r $NCBI_TEST_DATA/proxy/test_ncbi_proxy.$n ]; then
   .     $NCBI_TEST_DATA/proxy/test_ncbi_proxy.$n
 fi
 
-case "`expr '(' $$ / 10 ')' '%' 2`" in
+case "`expr '(' $$ / 10 ')' '%' 3`" in
   0)
   ssl="`expr '(' $$ / 100 ')' '%' 2`"
   if [ "$ssl" = "1" -a "`echo $FEATURES | grep -vic '[-]GNUTLS'`" = "1" ]; then
@@ -25,6 +25,9 @@ case "`expr '(' $$ / 10 ')' '%' 2`" in
   ;;
   1)
   huge_tar="ftp://ftp.ncbi.nlm.nih.gov/geo/series/GSE1nnn/GSE1580/suppl/GSE1580_RAW.tar"
+  ;;
+  2)
+  huge_tar="http://ftp.ncbi.nlm.nih.gov/geo/series/GSE1nnn/GSE1580/suppl/GSE1580_RAW.tar"
   ;;
 esac
 
