@@ -4357,38 +4357,6 @@ bool CBioseq_test_on_protfeat :: EndsWithPattern(const string& pattern, const li
   return false;
 };
 
-
-/*
-bool CBioseq_test_on_protfeat :: ContainsPseudo(const string& pattern, const list <string>& strs)
-{
-  bool right_pseudo;
-  size_t pos;
-  ITERATE (list <string>, it, strs) {
-    strtmp = *it;
-    while ( !strtmp.empty() && (pos = strtmp.find("pseudo")) != string::npos) {
-        right_pseudo = true;
-        ITERATE (vector <string>, jt, thisInfo.s_pseudoweasels) {
-           if ( CTempString(strtmp).substr(pos, (*jt).size()) == *jt) {
-               right_pseudo = false;
-               strtmp = CTempString(strtmp).substr(pos + (*jt).size());      
-               break;
-           }
-        }
-        if (right_pseudo) return true;
-    }  
-  };
-  return false;
-};
-
-
-bool CBioseq_test_on_protfeat :: ContainsWholeWord(const string& pattern, const list <string>& strs)
-{
-   ITERATE (list <string>, it, strs) 
-      if (DoesStringContainPhrase(*it, pattern, false, true)) return true;
-   return false;
-};
-*/
-
 void CBioseq_test_on_protfeat :: TestOnObj(const CBioseq& bioseq) 
 {
    if (thisTest.is_ProtFeat_run) return;
@@ -4454,13 +4422,14 @@ void CBioseq_DISC_PROTEIN_NAMES :: GetReport(CRef <CClickableItem>& c_item)
    Str2Strs pnm2feats;
    GetTestItemList(c_item->item_list, pnm2feats);
    unsigned min_num = c_item->item_list.size(), cnt=0;
-   min_num = min_num > 100 ? 100 : min_num;
+   min_num = min_num < 100 ? 100 : min_num;
    c_item->item_list.clear();
    
    ITERATE (Str2Strs, it, pnm2feats) {
      if (it->second.size() < min_num) continue;  // erase?
      cnt++;
    } 
+   if (!cnt) return;
    ITERATE (Str2Strs, it, pnm2feats) {
      if (it->second.size() < min_num) continue;
      if (cnt >1 ) {
@@ -4480,7 +4449,7 @@ void CBioseq_DISC_CDS_PRODUCT_FIND :: GetReport(CRef <CClickableItem>& c_item)
 {
    Str2Strs cd2feats;
    GetTestItemList(c_item->item_list, cd2feats);
-   c_item->item_list.size();
+   c_item->item_list.clear();
    string desc1, desc2;
    vector <string> arr;
    ITERATE (Str2Strs, it, cd2feats) {
@@ -5505,11 +5474,6 @@ void CBioseq_test_on_genprod_set :: TestOnObj(const CBioseq& bioseq)
    bool run_mtid = (thisTest.tests_run.find(GetName_mtid()) != thisTest.tests_run.end());
    bool run_dtid = (thisTest.tests_run.find(GetName_dtid()) != thisTest.tests_run.end());
 
-cerr << "test_item_list.size() " << thisInfo.test_item_list.size() << endl;
-if (thisInfo.test_item_list.find(GetName_dprot()) == thisInfo.test_item_list.end())
-cerr << "no " << GetName_dprot() << " in test_item_list\n" << endl;
-else cerr << "222 test_item_list.size() " << thisInfo.test_item_list.size() << "  " << GetName_dprot() << "list size " << thisInfo.test_item_list[GetName_dprot()].size() << endl;
-
    string prod_id, desc;
    /* look for missing protein IDs and duplicate protein IDs on coding regions */
    if (run_mprot || run_dprot) {
@@ -5520,18 +5484,12 @@ else cerr << "222 test_item_list.size() " << thisInfo.test_item_list.size() << "
             thisInfo.test_item_list[GetName_mprot()].push_back(desc);
        }
        else if (run_dprot) {
-cerr << "add dprot \n";
           const CSeq_id& seq_id = sequence::GetId((*it)->GetProduct(), thisInfo.scope); 
           seq_id.GetLabel(&prod_id); 
           thisInfo.test_item_list[GetName_dprot()].push_back(prod_id + "$" + desc);
        }
      }   
    }
-cerr << "after run_dprot\n";
-if (thisInfo.test_item_list.find(GetName_dprot()) == thisInfo.test_item_list.end())
-cerr << "no " << GetName_dprot() << " in test_item_list\n" << endl;
-else cerr << GetName_dprot() << " list size " << thisInfo.test_item_list[GetName_dprot()].size() << endl;
-
 
    /* look for missing transcript IDs and duplicate transcript IDs on mRNAs */
    if (run_mtid || run_dtid) {

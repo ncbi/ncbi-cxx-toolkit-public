@@ -218,7 +218,9 @@ bool CTestAndRepData :: ContainsWholeWord(const string& pattern, const string& s
 
 bool CTestAndRepData :: ContainsWholeWord(const string& pattern, const list <string>& strs)
 {
-   ITERATE (list <string>, it, strs) if (ContainsWholeWord(pattern, *it)) return true;
+   ITERATE (list <string>, it, strs) {
+      if (ContainsWholeWord(pattern, *it)) return true;
+   }
    return false;
 };
 
@@ -266,21 +268,11 @@ bool CTestAndRepData :: EndsWithPattern(const string& pattern, const string& sea
   unsigned phrase_len = pattern.size();
   unsigned len = search.size();
 
-  if (len >= phrase_len && NStr::EqualNocase(CTempString(search).substr(len - phrase_len), pattern))
+  if (len >= phrase_len 
+              && NStr::EqualNocase(CTempString(search).substr(len - phrase_len), pattern))
       return true;
   else return false;
 }
-
-/*
-bool CTestAndRepData :: EndsWithPattern(const string& pattern, const list <string>& strs)
-{
-  ITERATE (list <string>, it, strs) {
-     if (EndsWithPattern(pattern, *it)) return true; 
-  }
-  return false;
-};
-*/
-
 
 bool CTestAndRepData :: EndsWithPunct(const string& pattern, const string& search)
 {
@@ -478,6 +470,7 @@ string CTestAndRepData :: FindReplaceString(const string& src, const string& sea
 {
     CRegexpUtil rxu(src);
     string pattern (CRegexp::Escape(search_str));
+
     // word boundaries: whitespace & punctuation
     pattern = whole_word ? ("\\b" + pattern + "\\b") : pattern;
 /*
@@ -497,10 +490,7 @@ bool CTestAndRepData :: DoesStringContainPhrase(const string& str, const string&
 {
   if (str.empty()) return false;
   string pattern(CRegexp::Escape(phrase));
-//  pattern = whole_word ? ("\\b" + pattern + "\\b") : pattern;
-  // include underscores
-  pattern = 
-          whole_word ? ("(?<![[:^alnum:]])" + pattern + "(?<![[:^alnum:]])") : pattern;
+  pattern = whole_word ? ("\\b" + pattern + "\\b") : pattern;
   CRegexp::ECompile comp_flag = case_sensitive ?
                             CRegexp::fCompile_default : CRegexp::fCompile_ignore_case;
   CRegexp rx(pattern, comp_flag);

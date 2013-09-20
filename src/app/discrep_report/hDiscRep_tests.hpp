@@ -1213,7 +1213,6 @@ namespace DiscRepNmSpc {
                                     string("ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH");}
       string GetName_cbs() const {return string("DUP_DISC_CBS_CULTURE_CONFLICT");}
       string GetName_atcc() const {return string("DUP_DISC_ATCC_CULTURE_CONFLICT");}
-      string GetName_strain() const {return string("DISC_REQUIRED_STRAIN");}
       string GetName_sp_strain() const {return string("DISC_BACTERIA_MISSING_STRAIN");}
       string GetName_meta() const {return string("DISC_METAGENOME_SOURCE");}
       string GetName_auth() const {return string("ONCALLER_CHECK_AUTHORITY");}
@@ -1223,7 +1222,7 @@ namespace DiscRepNmSpc {
       string GetName_amp() const {
                            return string("TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE");}
 
-      bool m_run_mism, m_run_cul, m_run_cbs, m_run_atcc, m_run_strain, m_run_sp, m_run_meta;
+      bool m_run_mism, m_run_cul, m_run_cbs, m_run_atcc, m_run_sp, m_run_meta;
       bool m_run_auth, m_run_mcul, m_run_human, m_run_env, m_run_amp;
 
       bool AmpPrimersNoEnvSample(const CBioSource& biosrc);
@@ -1312,18 +1311,6 @@ namespace DiscRepNmSpc {
                             return CSeqEntry_test_on_biosrc_orgmod::GetName_sp_strain();}
   };
 
-
-  class CSeqEntry_DISC_REQUIRED_STRAIN : public CSeqEntry_test_on_biosrc_orgmod
-  {
-    public:
-      virtual ~CSeqEntry_DISC_REQUIRED_STRAIN () {};
-
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const { 
-                            return CSeqEntry_test_on_biosrc_orgmod::GetName_strain();}
-  };
-
-
   class CSeqEntry_DUP_DISC_ATCC_CULTURE_CONFLICT : public CSeqEntry_test_on_biosrc_orgmod
   {
     public:
@@ -1375,6 +1362,7 @@ namespace DiscRepNmSpc {
       virtual string GetName() const =0;
 
     protected:
+      set <string> m_seqs_w_pid, m_seqs_no_pid;
       string GetName_gcomm() const {return string("MISSING_GENOMEASSEMBLY_COMMENTS");}
       string GetName_proj() const {return string("TEST_HAS_PROJECT_ID"); }
       string GetName_oncall_scomm() const {
@@ -1382,10 +1370,6 @@ namespace DiscRepNmSpc {
       string GetName_scomm() const {return string("MISSING_STRUCTURED_COMMENT"); }
       string GetName_mproj() const {return string("MISSING_PROJECT"); }
       string GetName_bproj() const {return string("ONCALLER_BIOPROJECT_ID"); }
-/*
-      string GetName_iscomm() const {
-                            return string("DISC_INCONSISTENT_STRUCTURED_COMMENTS"); }
-*/
       string GetName_prefix() const {
                        return string("ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX"); }
 
@@ -1479,7 +1463,7 @@ namespace DiscRepNmSpc {
       vector <string> m_submit_text;
       bool m_run_trin, m_run_iso, m_run_mult, m_run_tmiss, m_run_tbad, m_run_flu, m_run_quals;
       bool m_run_iden, m_run_col, m_run_div, m_run_map, m_run_clone, m_run_meta, m_run_sp;
-      bool m_run_prim, m_run_cty, m_run_pcr;
+      bool m_run_prim, m_run_cty, m_run_pcr, m_run_strain;
 
       string GetName_trin() const {
                       return string("DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER"); }
@@ -1500,7 +1484,9 @@ namespace DiscRepNmSpc {
       string GetName_prim() const {return string("TEST_MISSING_PRIMER");}
       string GetName_cty() const {return string("ONCALLER_COUNTRY_COLON");}
       string GetName_pcr() const {return string("ONCALLER_DUPLICATE_PRIMER_SET");}
+      string GetName_strain() const {return string("DISC_REQUIRED_STRAIN"); }
 
+      bool x_IsMissingRequiredStrain(const CBioSource& biosrc);
       void IniMap(const list <CRef <CPCRPrimer> >& ls, Str2Int& map);
       bool SamePrimerList(const list <CRef <CPCRPrimer> >& ls1, 
                                                const list <CRef <CPCRPrimer> >& ls2);
@@ -1523,6 +1509,15 @@ namespace DiscRepNmSpc {
       void FindSpecSubmitText();
 
       void RunTests(const CBioSource& biosrc, const string& desc, int idx = -1);
+  };
+
+  class CSeqEntry_DISC_REQUIRED_STRAIN : public CSeqEntry_test_on_biosrc
+  {
+    public:
+      virtual ~CSeqEntry_DISC_REQUIRED_STRAIN () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { return CSeqEntry_test_on_biosrc::GetName_strain();}
   };
 
   class CSeqEntry_ONCALLER_DUPLICATE_PRIMER_SET : public CSeqEntry_test_on_biosrc

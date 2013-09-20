@@ -370,6 +370,7 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
           else strtmp = CBioseq_on_SUSPECT_RULE :: GetName_name();
           arr.push_back(strtmp); // test_name
 
+          // CTestAndRepData can't have these functions overwritten. 
           if (this_term.search_func == CTestAndRepData :: EndsWithPattern)
                 strtmp = "end";
           else if (this_term.search_func == CTestAndRepData :: StartsWithPattern)
@@ -982,11 +983,11 @@ void CRepConfig :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
 
 
 static CDiscTestInfo thisTest;
-static const s_test_property test1_list[] = {
-   {"ONCALLER_COMMENT_PRESENT", fDiscrepancy},
+static const s_test_property test_list[] = {
+   {"DISC_CDS_PRODUCT_FIND", fDiscrepancy},
 };
 
-static const s_test_property test_list[] = {
+static const s_test_property test1_list[] = {
 // tests_on_SubmitBlk
    {"DISC_SUBMITBLOCK_CONFLICT", fDiscrepancy | fOncaller},
 
