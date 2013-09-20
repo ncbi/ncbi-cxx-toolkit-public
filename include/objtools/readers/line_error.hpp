@@ -460,13 +460,13 @@ public:
         EDiagSev eSeverity,
         unsigned int uLine,
         const std::string &strMessage,
-        EProblem eProblem,
-        const std::string& strSeqId,
-        const std::string & strFeatureName,
-        const std::string & strQualifierName,
-        const std::string & strQualifierValue,
-        CObjReaderLineException::EErrCode eErrCode,
-        const TVecOfLines & vecOfOtherLines
+        EProblem eProblem = eProblem_GeneralParsingError,
+        const std::string& strSeqId = string(""),
+        const std::string & strFeatureName = string(""),
+        const std::string & strQualifierName = string(""),
+        const std::string & strQualifierValue = string(""),
+        CObjReaderLineException::EErrCode eErrCode = eFormat,
+        const TVecOfLines & vecOfOtherLines = TVecOfLines()
         ));
 
     /// This will become protected at some point in the future, so please
