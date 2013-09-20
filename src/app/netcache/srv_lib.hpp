@@ -476,6 +476,24 @@ public:
     {}
 };
 
+#ifdef NCBI_OS_MSWIN
+
+class CWinSecurity
+{
+public:
+    static bool GetFilePermissions(const string& path, ACCESS_MASK* permissions)
+    { return false; }
+    static bool GetFileOwner(const string& filename,
+                             string* owner, string* group = 0,
+                             unsigned int* uid = 0, unsigned int* gid = 0)
+    { return false; }
+    static bool SetFileOwner(const string& filename, const string& owner,
+                             const string& group = "",
+                             unsigned int* uid = 0, unsigned int* gid = 0)
+    { return false; }
+};
+
+ #endif
 
 END_NCBI_SCOPE
 
