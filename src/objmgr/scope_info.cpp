@@ -99,6 +99,9 @@ static int s_GetScopePostponeDelete(void)
 }
 
 
+DEFINE_STATIC_FAST_MUTEX(sx_UsedTSEMutex);
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CDataSource_ScopeInfo
 /////////////////////////////////////////////////////////////////////////////
@@ -115,7 +118,6 @@ CDataSource_ScopeInfo::CDataSource_ScopeInfo(CScope_Impl& scope,
       m_NextTSEIndex(0),
       m_TSE_UnlockQueue(s_GetScopeAutoReleaseSize())
 {
-    m_UnlockedTSEsStop.Set(0);
 }
 
 
@@ -192,29 +194,70 @@ CDataSource_ScopeInfo::GetTSE_LockSet(void) const
 }
 
 
-void CDataSource_ScopeInfo::SaveUnlockedTSEs(void)
+static CStaticTls<CUnlockedTSEsGuard> st_Guard;
+
+
+CUnlockedTSEsGuard::CUnlockedTSEsGuard(void)
 {
-    m_UnlockedTSEsStop.Add(1);
+    if ( !st_Guard.GetValue() ) {
+        st_Guard.SetValue(this);
+    }
 }
 
 
-void CDataSource_ScopeInfo::ReleaseUnlockedTSEs(void)
+CUnlockedTSEsGuard::~CUnlockedTSEsGuard(void)
 {
-    if ( m_UnlockedTSEsStop.Add(-1) == 0 ) {
-        TUnlockedTSEs tses;
-        TTSE_LockSetMutex::TWriteLockGuard guard(m_TSE_LockSetMutex);
-        tses = m_UnlockedTSEs;
-        m_UnlockedTSEs.clear();
+    if ( st_Guard.GetValue() == this ) {
+        while ( !m_UnlockedTSEsInternal.empty() ) {
+            TUnlockedTSEsInternal locks;
+            swap(m_UnlockedTSEsInternal, locks);
+        }
+        st_Guard.SetValue(0);
+    }
+}
+
+
+void CUnlockedTSEsGuard::SaveLock(const CTSE_Lock& lock)
+{
+    if ( !s_GetScopePostponeDelete() ) {
+        return;
+    }
+    _ASSERT(st_Guard.GetValue());
+    if ( CUnlockedTSEsGuard* guard = st_Guard.GetValue() ) {
+        guard->m_UnlockedTSEsLock.push_back(ConstRef(&*lock));
+    }
+}
+
+
+void CUnlockedTSEsGuard::SaveInternal(const CTSE_ScopeInternalLock& lock)
+{
+    if ( !s_GetScopePostponeDelete() ) {
+        return;
+    }
+    _ASSERT(st_Guard.GetValue());
+    if ( CUnlockedTSEsGuard* guard = st_Guard.GetValue() ) {
+        guard->m_UnlockedTSEsInternal.push_back(lock);
+    }
+}
+
+
+void CUnlockedTSEsGuard::SaveInternal(const TUnlockedTSEsInternal& locks)
+{
+    if ( !s_GetScopePostponeDelete() ) {
+        return;
+    }
+    _ASSERT(st_Guard.GetValue());
+    if ( CUnlockedTSEsGuard* guard = st_Guard.GetValue() ) {
+        guard->m_UnlockedTSEsInternal.insert
+            (guard->m_UnlockedTSEsInternal.end(), locks.begin(), locks.end());
     }
 }
 
 
 void CDataSource_ScopeInfo::RemoveTSE_Lock(const CTSE_Lock& lock)
 {
+    CUnlockedTSEsGuard::SaveLock(lock);
     TTSE_LockSetMutex::TWriteLockGuard guard(m_TSE_LockSetMutex);
-    if ( s_GetScopePostponeDelete() && m_UnlockedTSEsStop.Get() > 0 ) {
-        m_UnlockedTSEs.push_back(ConstRef(&*lock));
-    }
     _VERIFY(m_TSE_LockSet.RemoveLock(lock));
 }
 
@@ -356,7 +399,7 @@ void CDataSource_ScopeInfo::UpdateTSELock(CTSE_ScopeInfo& tse, CTSE_Lock lock)
 // Called by destructor of CTSE_ScopeUserLock when lock counter goes to 0
 void CDataSource_ScopeInfo::ReleaseTSELock(CTSE_ScopeInfo& tse)
 {
-    CUnlockTSEGuard guard(this);
+    CUnlockedTSEsGuard guard;
     {{
         CTSE_ScopeInternalLock unlocked;
         TTSE_LockSetMutex::TWriteLockGuard guard(m_TSE_UnlockQueueMutex);
@@ -369,6 +412,9 @@ void CDataSource_ScopeInfo::ReleaseTSELock(CTSE_ScopeInfo& tse)
             return;
         }
         m_TSE_UnlockQueue.Put(&tse, CTSE_ScopeInternalLock(&tse), &unlocked);
+        if ( unlocked ) {
+            CUnlockedTSEsGuard::SaveInternal(unlocked);
+        }
     }}
 }
 
@@ -385,18 +431,24 @@ void CDataSource_ScopeInfo::ForgetTSELock(CTSE_ScopeInfo& tse)
         // already unlocked
         return;
     }
-    CUnlockTSEGuard guard(this);
+    CUnlockedTSEsGuard guard;
     tse.ForgetTSE_Lock();
 }
 
 
 void CDataSource_ScopeInfo::ResetDS(void)
 {
+    CUnlockedTSEsGuard guard;
     TTSE_InfoMapMutex::TWriteLockGuard guard1(m_TSE_InfoMapMutex);
     {{
         TTSE_UnlockQueue::TUnlockSet unlocked;
-        TTSE_LockSetMutex::TWriteLockGuard guard2(m_TSE_UnlockQueueMutex);
-        m_TSE_UnlockQueue.Clear(&unlocked);
+        {{
+            TTSE_LockSetMutex::TWriteLockGuard guard2(m_TSE_UnlockQueueMutex);
+            m_TSE_UnlockQueue.Clear(&unlocked);
+        }}
+        if ( !unlocked.empty() ) {
+            CUnlockedTSEsGuard::SaveInternal(unlocked);
+        }
     }}
     NON_CONST_ITERATE ( TTSE_InfoMap, it, m_TSE_InfoMap ) {
         it->second->DropTSE_Lock();
@@ -414,23 +466,21 @@ void CDataSource_ScopeInfo::ResetDS(void)
 
 void CDataSource_ScopeInfo::ResetHistory(int action_if_locked)
 {
-    CUnlockTSEGuard guard(this);
     if ( action_if_locked == CScope::eRemoveIfLocked ) {
         // no checks -> fast reset
         ResetDS();
         return;
     }
-    TTSE_InfoMapMutex::TWriteLockGuard guard1(m_TSE_InfoMapMutex);
     typedef vector< CRef<CTSE_ScopeInfo> > TTSEs;
     TTSEs tses;
-    tses.reserve(m_TSE_InfoMap.size());
-    ITERATE ( TTSE_InfoMap, it, m_TSE_InfoMap ) {
-        
-        it->second.GetNCObject().m_UsedByTSE = 0;
-        it->second.GetNCObject().m_UsedTSE_Set.clear();
-
-        tses.push_back(it->second);
-    }
+    {{
+        TTSE_InfoMapMutex::TWriteLockGuard guard1(m_TSE_InfoMapMutex);
+        tses.reserve(m_TSE_InfoMap.size());
+        ITERATE ( TTSE_InfoMap, it, m_TSE_InfoMap ) {
+            tses.push_back(it->second);
+        }
+    }}
+    CUnlockedTSEsGuard guard;
     ITERATE ( TTSEs, it, tses ) {
         it->GetNCObject().RemoveFromHistory(action_if_locked);
     }
@@ -440,6 +490,7 @@ void CDataSource_ScopeInfo::ResetHistory(int action_if_locked)
 void CDataSource_ScopeInfo::RemoveFromHistory(CTSE_ScopeInfo& tse,
                                               bool drop_from_ds)
 {
+    tse.ReleaseUsedTSEs();
     TTSE_InfoMapMutex::TWriteLockGuard guard1(m_TSE_InfoMapMutex);
     if ( tse.CanBeUnloaded() ) {
         x_UnindexTSE(tse);
@@ -787,6 +838,8 @@ CTSE_ScopeInfo::~CTSE_ScopeInfo(void)
     _TRACE_TSE_LOCK("CTSE_ScopeInfo("<<this<<") final: "<<m_TSE_LockCounter.Get());
     _ASSERT(m_TSE_LockCounter.Get() == 0);
     _ASSERT(!m_TSE_Lock);
+    _ASSERT(!m_UsedByTSE);
+    _ASSERT(m_UsedTSE_Set.empty());
 }
 
 
@@ -865,33 +918,41 @@ bool CTSE_ScopeInfo::x_SameTSE(const CTSE_Info& tse) const
 }
 
 
+void CTSE_ScopeInfo::ReleaseUsedTSEs(void)
+{
+    // release all used TSEs
+    TUsedTSE_LockSet used;
+    CFastMutexGuard guard(sx_UsedTSEMutex);
+    NON_CONST_ITERATE ( TUsedTSE_LockSet, it, m_UsedTSE_Set ) {
+        _ASSERT(it->second->m_UsedByTSE == this);
+        it->second->m_UsedByTSE = 0;
+    }
+    m_UsedTSE_Set.swap(used);
+}
+
+
 bool CTSE_ScopeInfo::AddUsedTSE(const CTSE_ScopeUserLock& used_tse) const
 {
+    CTSE_ScopeInternalLock add_lock(used_tse.GetNCPointer());
     CTSE_ScopeInfo& add_info = const_cast<CTSE_ScopeInfo&>(*used_tse);
-    if ( m_TSE_LockCounter.Get() == 0 || // this one is unlocked
-         &add_info == this || // the same TSE
-         !add_info.CanBeUnloaded() || // permanentrly locked
-         //&add_info.GetDSInfo() != &GetDSInfo() || // another data source
-         add_info.m_UsedByTSE ) { // already used
+    if ( &add_info == this || // the same TSE
+         !add_info.CanBeUnloaded() || // added is permanentrly locked
+         m_TSE_LockCounter.Get() == 0 ) { // this one is unlocked
         return false;
     }
-    CMutexGuard guard1(m_TSE_LockMutex);
-    CMutexGuard guard2(add_info.m_TSE_LockMutex);
-    CDataSource_ScopeInfo::TTSE_LockSetMutex::TWriteLockGuard
-        guard(GetDSInfo().GetTSE_LockSetMutex());
-    if ( m_TSE_LockCounter.Get() == 0 || // this one is unlocked
-         add_info.m_UsedByTSE ) { // already used
+    CFastMutexGuard guard(sx_UsedTSEMutex);
+    if ( add_info.m_UsedByTSE ) { // already used
         return false;
     }
-    // check if used TSE uses this TSE indirectly
     for ( const CTSE_ScopeInfo* p = m_UsedByTSE; p; p = p->m_UsedByTSE ) {
-        //_ASSERT(&p->GetDSInfo() == &GetDSInfo());
         if ( p == &add_info ) {
             return false;
         }
     }
+    CTSE_ScopeInternalLock& add_slot = m_UsedTSE_Set[ConstRef(&*used_tse)];
+    _ASSERT(!add_slot);
     add_info.m_UsedByTSE = this;
-    _VERIFY(m_UsedTSE_Set.insert(CTSE_ScopeInternalLock(&add_info)).second);
+    swap(add_slot, add_lock);
     return true;
 }
 
@@ -957,6 +1018,7 @@ void CTSE_ScopeInfo::SetEditTSE(const CTSE_Lock& new_tse_lock,
     _ASSERT(new_ds.CanBeEdited());
     _ASSERT(&new_tse_lock->GetDataSource() == &new_ds.GetDataSource());
 
+    CUnlockedTSEsGuard unlocked_guard;
     CMutexGuard guard(m_TSE_LockMutex);
     _ASSERT(m_TSE_Lock);
     _ASSERT(&m_TSE_Lock->GetDataSource() == &GetDSInfo().GetDataSource());
@@ -1009,20 +1071,22 @@ void CTSE_ScopeInfo::SetEditTSE(const CTSE_Lock& new_tse_lock,
 // Action A4.
 void CTSE_ScopeInfo::ForgetTSE_Lock(void)
 {
+    if ( m_TSE_LockCounter.Get() > 0 ) {
+        // relocked already
+        return;
+    }
+    ReleaseUsedTSEs();
     if ( !m_TSE_Lock ) {
         return;
     }
     CMutexGuard guard(m_TSE_LockMutex);
+    if ( m_TSE_LockCounter.Get() > 0 ) {
+        // relocked already
+        return;
+    }
     if ( !m_TSE_Lock ) {
         return;
     }
-    {{
-        ITERATE ( TUsedTSE_LockSet, it, m_UsedTSE_Set ) {
-            _ASSERT(!(*it)->m_UsedByTSE || (*it)->m_UsedByTSE == this);
-            (*it)->m_UsedByTSE = 0;
-        }
-        m_UsedTSE_Set.clear();
-    }}
     NON_CONST_ITERATE ( TScopeInfoMap, it, m_ScopeInfoMap ) {
         _ASSERT(!it->second->m_TSE_Handle.m_TSE);
         it->second->m_ObjectInfo.Reset();
@@ -1040,15 +1104,8 @@ void CTSE_ScopeInfo::x_DetachDS(void)
     if ( !m_DS_Info ) {
         return;
     }
+    ReleaseUsedTSEs();
     CMutexGuard guard(m_TSE_LockMutex);
-    {{
-        // release all used TSEs
-        ITERATE ( TUsedTSE_LockSet, it, m_UsedTSE_Set ) {
-            _ASSERT((*it)->m_UsedByTSE == this);
-            (*it)->m_UsedByTSE = 0;
-        }
-        m_UsedTSE_Set.clear();
-    }}
     NON_CONST_ITERATE ( TScopeInfoMap, it, m_ScopeInfoMap ) {
         it->second->m_TSE_Handle.Reset();
         it->second->m_ObjectInfo.Reset();
@@ -1102,6 +1159,7 @@ void CTSE_ScopeInfo::RemoveFromHistory(int action_if_locked, bool drop_from_ds)
             break;
         }
     }
+    CUnlockedTSEsGuard guard;
     GetDSInfo().RemoveFromHistory(*this, drop_from_ds);
 }
 

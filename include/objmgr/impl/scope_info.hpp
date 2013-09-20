@@ -243,8 +243,9 @@ public:
 
     void RemoveTSE_Lock(const CTSE_Lock& lock);
     void AddTSE_Lock(const CTSE_Lock& lock);
-    void SaveUnlockedTSEs(void);
-    void ReleaseUnlockedTSEs(void);
+    
+    void UnlockedTSEsSave(void);
+    void UnlockedTSEsRelease(void);
 
     CDataSource& GetDataSource(void);
     const CDataSource& GetDataSource(void) const;
@@ -318,32 +319,29 @@ private: // members
     mutable TTSE_LockSetMutex   m_TSE_UnlockQueueMutex;
     CRef<CDataSource_ScopeInfo> m_EditDS;
 
-    class CUnlockTSEGuard {
-    public:
-        CUnlockTSEGuard(CDataSource_ScopeInfo* info)
-            : m_Info(info)
-            {
-                m_Info->SaveUnlockedTSEs();
-            }
-        ~CUnlockTSEGuard(void)
-            {
-                m_Info->ReleaseUnlockedTSEs();
-            }
-    private:
-        CRef<CDataSource_ScopeInfo> m_Info;
-    };
-    friend class CUnlockTSEGuard;
-    
-    typedef vector< CConstRef<CTSE_Info> > TUnlockedTSEs;
-    CAtomicCounter m_UnlockedTSEsStop;
-    TUnlockedTSEs m_UnlockedTSEs;
-
 private: // to prevent copying
     CDataSource_ScopeInfo(const CDataSource_ScopeInfo&);
     const CDataSource_ScopeInfo& operator=(const CDataSource_ScopeInfo&);
 };
 
 
+class CUnlockedTSEsGuard {
+public:
+    typedef vector< CConstRef<CTSE_Info> > TUnlockedTSEsLock;
+    typedef vector<CTSE_ScopeInternalLock> TUnlockedTSEsInternal;
+
+    CUnlockedTSEsGuard(void);
+    ~CUnlockedTSEsGuard(void);
+
+    static void SaveLock(const CTSE_Lock& lock);
+    static void SaveInternal(const CTSE_ScopeInternalLock& lock);
+    static void SaveInternal(const TUnlockedTSEsInternal& locks);
+private:
+    TUnlockedTSEsLock m_UnlockedTSEsLock;
+    TUnlockedTSEsInternal m_UnlockedTSEsInternal;
+};
+
+    
 class NCBI_XOBJMGR_EXPORT CTSE_ScopeInfo : public CTSE_ScopeInfo_Base
 {
 public:
@@ -351,7 +349,8 @@ public:
     typedef multimap<CSeq_id_Handle, CRef<CBioseq_ScopeInfo> >  TBioseqById;
     typedef vector<CSeq_id_Handle>                        TSeqIds;
     typedef pair<int, int>                                TBlobOrder;
-    typedef set<CTSE_ScopeInternalLock>                   TUsedTSE_LockSet;
+    typedef CConstRef<CTSE_ScopeInfo>                     TUsedTSE_LockKey;
+    typedef map<TUsedTSE_LockKey, CTSE_ScopeInternalLock> TUsedTSE_LockSet;
 
     CTSE_ScopeInfo(CDataSource_ScopeInfo& ds_info,
                    const CTSE_Lock& tse_lock,
@@ -387,6 +386,7 @@ public:
     const TSeqIds& GetBioseqsIds(void) const;
 
     bool AddUsedTSE(const CTSE_ScopeUserLock& lock) const;
+    void ReleaseUsedTSEs(void);
     
     typedef map<CConstRef<CObject>, CRef<CObject> >  TEditInfoMap;
     void SetEditTSE(const CTSE_Lock& new_tse_lock,

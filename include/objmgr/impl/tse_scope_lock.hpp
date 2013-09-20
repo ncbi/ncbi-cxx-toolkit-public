@@ -100,6 +100,10 @@ public:
         {
             InternalUnlock(tse);
         }
+    void TransferLock(const CTSE_ScopeInfo* /*tse*/,
+                      const CTSE_ScopeInternalLocker& /*old_locker*/) const
+        {
+        }
 };
 
 
@@ -109,6 +113,10 @@ public:
     void Unlock(CTSE_ScopeInfo* tse) const
         {
             UserUnlock(tse);
+        }
+    void TransferLock(const CTSE_ScopeInfo* /*tse*/,
+                      const CTSE_ScopeUserLocker& /*old_locker*/) const
+        {
         }
 };
 
