@@ -171,7 +171,7 @@ CHgvsReader::ReadSeqAnnot(
 
                     const string& code = 
                         CVariationException::GetTypeInfo_enum_ECode()->FindName(except.GetCode(), true);
-                    CRef<CObjReaderLineException> pErr(
+                    AutoPtr<CObjReaderLineException> pErr(
                         CObjReaderLineException::Create(
                         eDiag_Warning,
                         m_uLineNumber,
