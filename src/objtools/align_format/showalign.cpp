@@ -3145,6 +3145,10 @@ CDisplaySeqalign::PrepareBlastUngappedSeqalign(const CSeq_align_set& alnset)
                         aln->SetScore() = (*iterDendiag)->GetScores();
                     }
                     aln->SetSegs().SetDendiag().push_back(*iterDendiag);
+                    if((*iter)->IsSetType() && (*iter)->CanGetType()){
+                        aln->SetType((*iter)->GetType());
+                    }
+
                     alnSetRef->Set().push_back(aln);
                 }
                 
