@@ -298,6 +298,7 @@ CDBConnectionFactory::MakeDBConnection(
     CRuntimeData& rt_data = GetRuntimeData(params.GetConnValidator());
     TSvrRef dsp_srv = rt_data.GetDispatchedServer(params.GetServerName());
     unsigned int retries = 0;
+    IConnValidator::EConnStatus conn_status = IConnValidator::eInvalidConn;
 
     // Store original query timeout ...
     unsigned int query_timeout = ctx.GetTimeout();
@@ -311,7 +312,7 @@ CDBConnectionFactory::MakeDBConnection(
         // because a named connection pool has been used before.
         // Dispatch server name ...
 
-        t_con = DispatchServerName(ctx, params, retries);
+        t_con = DispatchServerName(ctx, params, conn_status, retries);
     } else {
         // Server name is already dispatched ...
         string single_server(params.GetParam("single_server"));
@@ -323,12 +324,9 @@ CDBConnectionFactory::MakeDBConnection(
 
             // Clean previous info ...
             rt_data.SetDispatchedServer(params.GetServerName(), TSvrRef());
-            t_con = DispatchServerName(ctx, params, retries);
+            t_con = DispatchServerName(ctx, params, conn_status, retries);
         } else {
             // We do not need to re-dispatch it ...
-
-            IConnValidator::EConnStatus conn_status =
-                IConnValidator::eInvalidConn;
 
             // Try to connect.
             try {
@@ -365,7 +363,8 @@ CDBConnectionFactory::MakeDBConnection(
                     }
 
                     // Re-dispatch ...
-                    t_con = DispatchServerName(ctx, params, retries);
+                    t_con = DispatchServerName(ctx, params, conn_status,
+                                               retries);
                 }
             } else {
                 // Dispatched server is already set, but calling of this method
@@ -383,9 +382,8 @@ CDBConnectionFactory::MakeDBConnection(
         t_con->SetTimeout(query_timeout);
     }
 
-    if (t_con) {
-        x_LogConnection(*t_con, params, retries);
-    }
+    x_LogConnection(ctx, t_con, params, conn_status, retries);
+
     return t_con;
 }
 
@@ -393,6 +391,7 @@ CDB_Connection*
 CDBConnectionFactory::DispatchServerName(
     I_DriverContext& ctx,
     const CDBConnParams& params,
+    IConnValidator::EConnStatus& conn_status,
     unsigned int& retries)
 {
     CDB_Connection* t_con = NULL;
@@ -483,8 +482,7 @@ CDBConnectionFactory::DispatchServerName(
 
         // Try to connect up to a given number of attempts ...
         unsigned int attepmpts = GetMaxNumOfConnAttempts();
-        IConnValidator::EConnStatus conn_status =
-            IConnValidator::eInvalidConn;
+        conn_status = IConnValidator::eInvalidConn;
 
         // We don't check value of conn_status inside of a loop below by design.
         for (; !t_con && attepmpts > 0; --attepmpts) {
@@ -637,8 +635,10 @@ CDBConnectionFactory::WorkWithSingleServer(const string& validator_name,
     rt_data.SetDispatchedServer(service_name, svr);
 }
 
-void CDBConnectionFactory::x_LogConnection(const CDB_Connection& connection,
+void CDBConnectionFactory::x_LogConnection(const I_DriverContext& ctx,
+                                           const CDB_Connection* connection,
                                            const CDBConnParams& params,
+                                           IConnValidator::EConnStatus& conn_status,
                                            unsigned int retries)
 {
     CDBServer stub_dsp_srv;
@@ -653,6 +653,22 @@ void CDBConnectionFactory::x_LogConnection(const CDB_Connection& connection,
     if (dsp_srv.Empty()) {
         dsp_srv.Reset(&stub_dsp_srv);
     }
+
+    {{
+        const char* status_str = "???";
+        switch (conn_status) {
+        case IConnValidator::eValidConn:
+            status_str = "valid";
+            break;
+        case IConnValidator::eInvalidConn:
+            status_str = "invalid";
+            break;
+        case IConnValidator::eTempInvalidConn:
+            status_str = "temporarily-invalid";
+            break;
+        }
+        extra.Print("dbapi_conn_status", status_str);
+    }}
 
     extra.Print("dbapi_resource", service);
     if ( !dsp_srv->GetName().empty() ) {
@@ -685,8 +701,10 @@ void CDBConnectionFactory::x_LogConnection(const CDB_Connection& connection,
         }
     }
 
-    if ( !connection.PoolName().empty() ) {
-        extra.Print("dbapi_pool", connection.PoolName());
+    if (connection != NULL  &&  !connection->PoolName().empty() ) {
+        extra.Print("dbapi_pool", connection->PoolName());
+    } else if ( !params.GetParam("pool_name").empty() ) {
+        extra.Print("dbapi_pool", params.GetParam("pool_name"));
     }
 
     if (validator.NotEmpty()) {
@@ -694,7 +712,8 @@ void CDBConnectionFactory::x_LogConnection(const CDB_Connection& connection,
     }
 
     {{
-        string driver_name = connection.GetDriverName();
+        string driver_name = ((connection == NULL) ? ctx.GetDriverName()
+                              : connection->GetDriverName());
         if ( !driver_name.empty() ) {
             extra.Print("dbapi_driver", driver_name);
         }

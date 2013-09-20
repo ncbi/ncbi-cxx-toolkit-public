@@ -155,6 +155,7 @@ private:
     CDB_Connection* DispatchServerName(
         I_DriverContext& ctx,
         const CDBConnParams& params,
+        IConnValidator::EConnStatus& conn_status,
         unsigned int& retries);
 
     CDB_Connection* MakeValidConnection(
@@ -167,8 +168,11 @@ private:
     unsigned int CalculateConnectionTimeout(const I_DriverContext& ctx) const;
     unsigned int CalculateLoginTimeout(const I_DriverContext& ctx) const;
 
-    void x_LogConnection(const CDB_Connection& connection,
-                         const CDBConnParams& params, unsigned int retries);
+    void x_LogConnection(const I_DriverContext& ctx,
+                         const CDB_Connection* connection,
+                         const CDBConnParams& params,
+                         IConnValidator::EConnStatus& conn_status,
+                         unsigned int retries);
 
 private:
     typedef map<string, CRuntimeData> TValidatorSet;
