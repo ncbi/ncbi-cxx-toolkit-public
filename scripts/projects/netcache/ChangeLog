@@ -38,3 +38,8 @@ Corrected handling of purged blobs on HASB command.
 Added journaling and reporting of initial and periodic synchronizations.
 
 
+September 20, 2013
+version 6.6.3
+Fixed bug that leads to occasional communication blocking.
+Introduced lifespan_ttl - an absolute maximum of blob life duration.
+Modified SHUTDOWN command by adding drain option (wait untill all blobs are gone).
