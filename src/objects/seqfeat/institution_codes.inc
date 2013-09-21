@@ -5626,7 +5626,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "STPE	s	Florida Marine Research Institute, Florida Department of Environmental Protection",
 "STPS	s	St. Paul's School",
 "STR	s	Institut de Botanique",
-"STRI	s	Smithsonian Tropical Research Institute",
+"STRI	sc	Smithsonian Tropical Research Institute",
 "STRI:ICBG-Panama	c	Smithsonian Tropical Research Institute,  International Cooperative Biodiversity Groups",
 "STS	s	Stromness Museum",
 "STT	s	St. Thomas's Hospital Medical School Library",
