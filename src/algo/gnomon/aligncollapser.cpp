@@ -1052,11 +1052,12 @@ void CAlignCollapser::FilterAlignments() {
                     l = TSignedSeqRange(a.Exons().front().GetFrom(),(a.Exons().front().GetFrom()+a.Exons().front().GetTo())/2-1);
                 if(l.NotEmpty())
                     l = a.GetAlignMap().ShrinkToRealPoints(l, false);
-                if(l.NotEmpty())
+                if(l.NotEmpty()) {
                     a.Clip(l, CGeneModel::eRemoveExons);
-                CAlignModel editedalign = FillGapsInAlignmentAndAddToGenomicGaps(a, efill_left);
-                if(editedalign.Exons().size() > 1)
-                    m_aligns_for_filtering_only.push_front(editedalign);
+                    CAlignModel editedalign = FillGapsInAlignmentAndAddToGenomicGaps(a, efill_left);
+                    if(editedalign.Exons().size() > 1)
+                        m_aligns_for_filtering_only.push_front(editedalign);
+                }
             }
 
             for(int ie = 0; ie < (int)align.Exons().size()-1; ++ie) {
@@ -1079,11 +1080,12 @@ void CAlignCollapser::FilterAlignments() {
                     if(left >= 0 && right >= 0) {
                         TSignedSeqRange l(left, right);
                         l = a.GetAlignMap().ShrinkToRealPoints(l, false);
-                        if(l.NotEmpty())
+                        if(l.NotEmpty()) {
                             a.Clip(l, CGeneModel::eRemoveExons);
-                        CAlignModel editedalign = FillGapsInAlignmentAndAddToGenomicGaps(a, efill_middle);
-                        if(editedalign.Exons().size() > 2)
-                            m_aligns_for_filtering_only.push_front(editedalign);
+                            CAlignModel editedalign = FillGapsInAlignmentAndAddToGenomicGaps(a, efill_middle);
+                            if(editedalign.Exons().size() > 2)
+                                m_aligns_for_filtering_only.push_front(editedalign);
+                        }
                     }
                 }
            }
@@ -1098,11 +1100,12 @@ void CAlignCollapser::FilterAlignments() {
 
                 if(l.NotEmpty())
                     l = a.GetAlignMap().ShrinkToRealPoints(l, false);
-                if(l.NotEmpty())
+                if(l.NotEmpty()) {
                     a.Clip(l, CGeneModel::eRemoveExons);
-                CAlignModel editedalign = FillGapsInAlignmentAndAddToGenomicGaps(a, efill_right);
-                if(editedalign.Exons().size() > 1)
-                    m_aligns_for_filtering_only.push_front(editedalign);
+                    CAlignModel editedalign = FillGapsInAlignmentAndAddToGenomicGaps(a, efill_right);
+                    if(editedalign.Exons().size() > 1)
+                        m_aligns_for_filtering_only.push_front(editedalign);
+                }
             }
 
             m_aligns_for_filtering_only.erase(i);
