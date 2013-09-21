@@ -295,7 +295,7 @@ public:
     typedef list<CGeneModel>::const_iterator TConstIt;
     TSignedSeqRange Limits() const { return m_limits; }
     TSignedSeqRange RealCdsLimits() const { return m_real_cds_limits; }
-    bool IsAlternative(const ncbi::gnomon::CGeneModel&) const;
+    bool IsAlternative(const CChain& a) const;
     bool IsAllowedAlternative(const ncbi::gnomon::CGeneModel&, int maxcomposite) const;
     void Insert(CChain& a);
     double MaxScore() const { return m_maxscore; }
@@ -466,16 +466,20 @@ bool CGene::IsAllowedAlternative(const CGeneModel& a, int maxcomposite) const
     return true;
 }
 
-bool CGene::IsAlternative(const CGeneModel& a) const
+bool CGene::IsAlternative(const CChain& a) const
 {
     _ASSERT( size()>0 );
 
     if (a.Strand() != front()->Strand())
         return false;
 
+    bool has_common_splice = false;
+
     ITERATE(CGene, it, *this) {
-        if(CModelCompare::CountCommonSplices(**it, a) > 0)       // has common splice
-            return true;
+        if(CModelCompare::CountCommonSplices(**it, a) > 0) {      // has common splice
+            has_common_splice = true;
+            break;
+        }
     }
 
     if(a.ReadingFrame().NotEmpty() && RealCdsLimits().NotEmpty()) { 
@@ -490,6 +494,9 @@ bool CGene::IsAlternative(const CGeneModel& a) const
             }
         }
     
+        
+        bool has_common_cds = false;
+
         ITERATE(CGene, it, *this) {
             CAlignMap gmap((*it)->Exons(), (*it)->FrameShifts(), (*it)->Strand(), (*it)->GetCdsInfo().Cds());
             TIVec cds_map(gmap.FShiftedLen((*it)->GetCdsInfo().Cds()),0);
@@ -513,13 +520,28 @@ bool CGene::IsAlternative(const CGeneModel& a) const
                 int count = 0;
                 for( ; j < cds_map.size() && i < acds_map.size() && acds_map[i] == cds_map[j]; ++j, ++i, ++count);
             
-                if(count > 30)        // has common cds
-                    return true;
+                if(count > 30) {        // has common cds
+                    has_common_cds = true;
+                    break;
+                }
             }
         }
+
+        bool gene_has_trusted = false;
+        ITERATE(CGene, it, *this) {
+            if((*it)->HasTrustedEvidence()) {
+                gene_has_trusted = true;
+                break;
+            }
+        }
+
+        if(has_common_cds || (has_common_splice && !gene_has_trusted && !a.HasTrustedEvidence()))
+            return true;
+        else
+            return false;
     }
 
-    return false;
+    return has_common_splice;
 }
 
 int NumOfRetainedIntrons(const CGeneModel& under_test, const CGeneModel& control_model)
@@ -804,7 +826,7 @@ void CChainer::CChainerImpl::FindAltsForGeneSeeds(list<CGene>& alts, TChainPoint
                     if(algn.ReadingFrame().Empty()) {
                         cds_overlap = false;
                     } else {
-                        CGeneModel a = algn;
+                        CChain a = algn;
                         a.Clip(a.RealCdsLimits(), CAlignModel::eRemoveExons);
                         ITERATE(list<list<CGene>::iterator>, k, included_in) {
                             if(!(*k)->IsAlternative(a)) {
@@ -1219,6 +1241,7 @@ void CChainer::CChainerImpl::TrimAlignmentsIncludedInDifferentGenes(list<CGene>&
         CChain& chain = *it->first;
         const TMemberPtrSet& conflict_members = it->second;
 
+        /*
         TSignedSeqRange hard_limits(chain.Exons().front().Limits().GetTo(),chain.Exons().back().Limits().GetFrom()); 
         hard_limits += (chain.OpenCds() ? chain.MaxCdsLimits() : chain.RealCdsLimits());
 
@@ -1228,6 +1251,32 @@ void CChainer::CChainerImpl::TrimAlignmentsIncludedInDifferentGenes(list<CGene>&
                 noclip_limits.SetFrom(min(noclip_limits.GetFrom(),(*i)->m_align->Limits().GetFrom()));
             if(Include((*i)->m_align->Limits(),hard_limits.GetTo()-1))
                 noclip_limits.SetTo(max(noclip_limits.GetTo(),(*i)->m_align->Limits().GetTo()));
+        }
+
+        noclip_limits = (noclip_limits & chain.Limits());
+        */
+
+        TSignedSeqRange hard_limits(chain.Exons().front().Limits().GetTo()-15,chain.Exons().back().Limits().GetFrom()+15);
+        hard_limits = (hard_limits & chain.Limits());
+        if(chain.ReadingFrame().NotEmpty())
+            hard_limits = (chain.OpenCds() ? chain.MaxCdsLimits() : chain.RealCdsLimits());  
+
+        TSignedSeqRange noclip_limits = hard_limits;
+        CAlignMap amap = chain.GetAlignMap();
+        ITERATE(TContained, i, chain.m_members) {
+            const CGeneModel& a = *(*i)->m_align;
+            if(Include(a.Limits(),hard_limits.GetFrom()+1) ) {
+                TSignedSeqRange l(hard_limits.GetFrom()+1,min(a.Limits().GetTo(),chain.Limits().GetTo()));
+                l = amap.ShrinkToRealPoints(l,false);
+                if(l.NotEmpty() && amap.FShiftedLen(l) > 0.75*a.AlignLen())
+                    noclip_limits.SetFrom(min(noclip_limits.GetFrom(),(*i)->m_align->Limits().GetFrom()));
+            }
+            if(Include(a.Limits(),hard_limits.GetTo()-1)) {
+                TSignedSeqRange l(max(a.Limits().GetFrom(),chain.Limits().GetFrom()),hard_limits.GetTo()-1);
+                l = amap.ShrinkToRealPoints(l,false);
+                if(l.NotEmpty() && amap.FShiftedLen(l) > 0.75*a.AlignLen())                
+                    noclip_limits.SetTo(max(noclip_limits.GetTo(),(*i)->m_align->Limits().GetTo()));
+            }
         }
         noclip_limits = (noclip_limits & chain.Limits());
 
@@ -1280,12 +1329,15 @@ void CChainer::CChainerImpl::TrimAlignmentsIncludedInDifferentGenes(list<CGene>&
 
             chain.AddComment("Overlap UTR clip");
 
+            _ASSERT(new_limits.NotEmpty());
+
             bool wasopen = chain.OpenCds();
             chain.ClipChain(new_limits);
             chain.ClipToCompleteAlignment(CGeneModel::eCap);
             chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
             if(chain.Type()&CGeneModel::eNested)
                 chain.ClipLowCoverageUTR(0.1, *m_gnomon);
+            _ASSERT(chain.Limits().NotEmpty());
             if(chain.ReadingFrame().NotEmpty()) {
                 m_gnomon->GetScore(chain);
                 CCDSInfo cds = chain.GetCdsInfo();
@@ -5183,6 +5235,8 @@ void CChainer::MapModelsToOrigContig(TGeneModelList& models) {
             model.SetCdsInfo(CCDSInfo());
             model.CutExons(model.Limits());  // empty model with all atributes
 
+            bool bad_model = false;
+
             for(int ie = 0; ie < (int)im->Exons().size(); ++ie) {
                 const CModelExon& e = im->Exons()[ie];
 
@@ -5210,14 +5264,19 @@ void CChainer::MapModelsToOrigContig(TGeneModelList& models) {
                 }
 
                 if(seq.empty()) {  // normal exon
-                    TSignedSeqRange exon = m_edited_contig_map->MapRangeEditedToOrig(e.Limits());
-                    if(exon.Empty()) { // all real alignment was clipped
+                    TSignedSeqRange exon = m_edited_contig_map->MapRangeEditedToOrig(e.Limits(),false);
+                    if(exon.Empty()) { // all real alignment and some filling was clipped
                         _ASSERT(im->Exons().size() == 1);
-                        models.erase(im);
-                        continue;
+                        bad_model = true;
+                        break;
                     }
                     model.AddExon(exon, e.m_fsplice_sig, e.m_ssplice_sig);
                 } else {
+                    if((int)im->Exons().size() == 1){ // all real alignment was clipped
+                        bad_model = true;
+                        break;
+                    }
+
                     if(model.Strand() == eMinus) {
                         ReverseComplement(seq.begin(), seq.end());
                         src.m_strand = (src.m_strand == ePlus ? eMinus : ePlus);
@@ -5228,6 +5287,11 @@ void CChainer::MapModelsToOrigContig(TGeneModelList& models) {
 
                 if(ie < (int)im->Exons().size()-1 && (!e.m_ssplice || !im->Exons()[ie+1].m_fsplice)) // hole
                     model.AddHole();
+            }
+
+            if(bad_model) {
+                models.erase(im);
+                continue;
             }
 
             TInDels editedframeshifts = im->FrameShifts();
