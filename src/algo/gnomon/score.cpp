@@ -126,19 +126,6 @@ bool CSeqScores::OpenNonCodingRegion(int a, int b, int strand) const
     return (a > m_notinintron[strand][b]);
 }
 
-bool CSeqScores::ConflictsWithSraIntron(int a, int b) const 
-{
-    if(!m_sraintrons.empty())
-        return  m_sraintrons.find(TSignedSeqRange(a,b)) == m_sraintrons.end();
-    else
-        return false;
-}
-
-bool CSeqScores::ConflictsWithSraIsland(int a, int b) const 
-{
-    return a <= m_notinsraislands[b];
-}
-
 double CSeqScores::CodingScore(int a, int b, int strand, int frame) const
 {
     if(a > b) return 0; // for splitted start/stop
@@ -244,9 +231,7 @@ const CCodingRegion& cr, const CNonCodingRegion& ncr, const CNonCodingRegion& in
                const CIntronParameters&     intron_params,
                         TSignedSeqPos from, TSignedSeqPos to, const TGeneModelList& cls, const TInDels& initial_fshifts, double mpp, const CGnomonEngine& gnomon)
 : m_acceptor(a), m_donor(d), m_start(stt), m_stop(stp), m_cdr(cr), m_ncdr(ncr), m_intrg(ing), 
-  m_align_list(cls), m_fshifts(initial_fshifts), m_map(from,to), m_chunk_start(from), m_chunk_stop(to), m_mpp(mpp), 
-  m_sraintrons_for_contig(gnomon.GetSRAIntrons()), m_sraintronpenalty(gnomon.GetSRAIntronPenalty()),
-  m_sraislands_for_contig(gnomon.GetSRAIslands()), m_sraislandpenalty(gnomon.GetSRAIslandPenalty())
+  m_align_list(cls), m_fshifts(initial_fshifts), m_map(from,to), m_chunk_start(from), m_chunk_stop(to), m_mpp(mpp)
 {
     m_align_list.sort(s_AlignLeftLimitOrder);
     NON_CONST_ITERATE(TGeneModelList, it, m_align_list) {
@@ -300,8 +285,6 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
             m_ncdrscr[strand].resize(len,BadScore());
             m_ingscr[strand].resize(len,BadScore());
             m_notinintron[strand].resize(len,-1);
-            m_notinsraislands.resize(len,-1);
-            m_sraintrons.clear();
             for(int frame = 0; frame < 3; ++frame) {
                 m_cdrscr[strand][frame].resize(len,BadScore());
                 m_laststop[strand][frame].resize(len,-1);
@@ -756,58 +739,6 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
         }
     }		
 
-    typedef set<TSignedSeqRange> TSRAIntronsSet;
-    TIVec insraintrons(len,-1);
-    if(m_sraintrons_for_contig != 0) {
-        ITERATE(TSRAIntronsSet, it, *m_sraintrons_for_contig) {
-            TSignedSeqRange intron = *it;
-            /*
-            int ia = intron.GetFrom();
-            int ib = intron.GetTo();
-            if(chunk.GetFrom() == 0) 
-                cout << "Intron\t" << ia << "\t" << ib << "\t" << original_sequence[ia] << original_sequence[ia+1] << "\t" << original_sequence[ib-1] << original_sequence[ib] << endl;
-            */
-            if(Include(chunk,intron) && m_map.ShrinkToRealPoints(intron) == intron) {
-                TSignedSeqRange chunk_intron = m_map.MapRangeOrigToEdited(intron, false);
-                TSignedSeqPos a = chunk_intron.GetFrom();
-                TSignedSeqPos b = chunk_intron.GetTo();
-                for(TSignedSeqPos i=a; i<=b; ++i) insraintrons[i] = i;
-                if(a <= m_notinintron[ePlus][b] || a <= m_notinintron[eMinus][b])                // conflicts with alignment
-                    continue;
-                if((m_dscr[ePlus][a-1] != BadScore() && m_ascr[ePlus][b] != BadScore())          // good + intron   
-                   || (m_ascr[eMinus][a-1] != BadScore() && m_dscr[eMinus][b] != BadScore())) {  // good - intron   
-
-                    //                cout << "Accepted\t" << ia << "\t" << ib << "\t" << original_sequence[ia] << original_sequence[ia+1] << "\t" << original_sequence[ib-1] << original_sequence[ib] << endl;
-
-                    m_sraintrons.insert(chunk_intron);
-                }
-            }       
-        }
-        for(TSignedSeqPos i = 1; i < len; ++i) 
-           insraintrons[i] = max(insraintrons[i-1],insraintrons[i]);
-    }
-
-    if(m_sraislands_for_contig != 0) {
-        for(TSignedSeqPos i = 1; i < len; ++i) 
-            m_notinsraislands[i] = i;
-        ITERATE(TSRAIntronsSet, it, *m_sraislands_for_contig) {
-            TSignedSeqRange island = *it;
-            if(Include(chunk,island)) {
-                TSignedSeqRange chunk_island = m_map.MapRangeOrigToEdited(m_map.ShrinkToRealPoints(island), false);
-                TSignedSeqPos a = chunk_island.GetFrom();
-                TSignedSeqPos b = chunk_island.GetTo();
-
-                //                if(a > insraintrons[b])   // island doesn't overlap with any intron
-                //                    continue;
-
-                //                cout << "Accepted\t" << island.GetFrom() << "\t" << island.GetTo() << endl;
-                for(TSignedSeqPos i=a; i<=b; ++i) 
-                    m_notinsraislands[i] = -1;
-            }
-        }
-        for(TSignedSeqPos i = 1; i < len; ++i) 
-           m_notinsraislands[i] = max(m_notinsraislands[i-1],m_notinsraislands[i]);
-    }
     
     for(TAlignSet::iterator it = allaligns.begin(); it != allaligns.end(); ++it)
     {

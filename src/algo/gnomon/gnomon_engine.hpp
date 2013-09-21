@@ -76,11 +76,6 @@ struct CGnomonEngine::SGnomonEngineImplData {
 
     auto_ptr<CSeqScores>       m_ss;
     auto_ptr<CParse>           m_parse;
-
-    const set<TSignedSeqRange>* m_sraintrons;
-    double m_sraintronpenalty;
-    const set<TSignedSeqRange>* m_sraislands;
-    double m_sraislandpenalty;
 };
 
 END_SCOPE(gnomon)

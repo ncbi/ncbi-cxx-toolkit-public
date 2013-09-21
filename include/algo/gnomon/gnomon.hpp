@@ -100,15 +100,6 @@ public:
     TSignedSeqPos PartialModelStepBack(list<CGeneModel>& genes) const;
     void PrintInfo() const;
 
-    void AddSRAIntrons(const set<TSignedSeqRange>* sraintrons, double sraintronpenalty);
-    const set<TSignedSeqRange>* GetSRAIntrons() const;
-    double GetSRAIntronPenalty() const;
-
-    void AddSRAIslands(const set<TSignedSeqRange>* sraislands, double sraislandpenalty);
-    const set<TSignedSeqRange>* GetSRAIslands() const;
-    double GetSRAIslandPenalty() const;
-
-
 private:
     // Prohibit copy constructor and assignment operator
     CGnomonEngine(const CGnomonEngine& value);
