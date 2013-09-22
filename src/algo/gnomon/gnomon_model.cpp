@@ -1465,16 +1465,21 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
 
     if (a.GetCdsInfo().ReadingFrame().NotEmpty()) {
 
+        CCDSInfo cds_info = a.GetCdsInfo();
+        if(cds_info.IsMappedToGenome()) {    // convert local copy to tcoords
+            cds_info = cds_info.MapFromOrigToEdited(a.GetAlignMap());
+        }
+        
         TSignedSeqRange tlim = a.TranscriptLimits();
-        TSignedSeqRange cds = a.GetCdsInfo().Start()+a.GetCdsInfo().ReadingFrame()+a.GetCdsInfo().Stop();  // cdsinfo already in tcoords
-        TSignedSeqRange start = a.GetCdsInfo().Start();
-        TSignedSeqRange maxcdslim = tlim & a.GetCdsInfo().MaxCdsLimits();
-        TSignedSeqRange protcds = a.GetCdsInfo().ProtReadingFrame();
+        TSignedSeqRange cds = cds_info.Cds();  // cdsinfo already in tcoords
+        TSignedSeqRange start = cds_info.Start();
+        TSignedSeqRange maxcdslim = tlim & cds_info.MaxCdsLimits();
+        TSignedSeqRange protcds = cds_info.ProtReadingFrame();
 
         TSignedSeqRange rf = cds;
-        if(a.GetCdsInfo().HasStart())
+        if(cds_info.HasStart())
             rf.SetFrom(rf.GetFrom()+3);
-        if(a.GetCdsInfo().HasStop())
+        if(cds_info.HasStop())
             rf.SetTo(rf.GetTo()-3);
 
         bool tCoords = false;
@@ -1487,18 +1492,18 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
             attributes["protCDS"] = NStr::IntToString(protcds.GetFrom()+1)+" "+NStr::IntToString(protcds.GetTo()  +1);
             tCoords = true;
         }
-        if(a.GetCdsInfo().HasStart()) {
-            _ASSERT( !(a.GetCdsInfo().ConfirmedStart() && a.GetCdsInfo().OpenCds()) );
+        if(cds_info.HasStart()) {
+            _ASSERT( !(cds_info.ConfirmedStart() && cds_info.OpenCds()) );
             string adj;
-            if (a.GetCdsInfo().ConfirmedStart())
+            if (cds_info.ConfirmedStart())
                 adj = "Confirmed";
-            else if (a.GetCdsInfo().OpenCds())
+            else if (cds_info.OpenCds())
                 adj = "Putative";
             attributes["flags"] += ","+adj+"Start";
         }
-        if (a.GetCdsInfo().HasStop()) {
+        if (cds_info.HasStop()) {
             string adj;
-            if (a.GetCdsInfo().ConfirmedStop())
+            if (cds_info.ConfirmedStop())
                 adj = "Confirmed";
             attributes["flags"] += ","+adj+"Stop";
         }
@@ -1508,7 +1513,7 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
         if (a.FrameShifts().size()>0)                attributes["flags"] += ",Frameshifts";
         if(a.isNMD(50))                              attributes["flags"] += ",NMD";
 
-        ITERATE(vector<TSignedSeqRange>, s, a.GetCdsInfo().PStops()) {
+        ITERATE(vector<TSignedSeqRange>, s, cds_info.PStops()) {
             TSignedSeqRange pstop = *s;            
             attributes["pstop"] += ","+NStr::IntToString(pstop.GetFrom()+1)+" "+NStr::IntToString(pstop.GetTo()+1);
             tCoords = true;

@@ -280,7 +280,7 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_cdregion_feature(SM
 
    if(model.PStop()) {
         CCdregion::TCode_break& code_breaks = cdregion_feature->SetData().SetCdregion().SetCode_break();
-        ITERATE(CCDSInfo::TPStops,s,model.GetCdsInfo().PStops()) {
+        ITERATE(CCDSInfo::TPStops,s,cds.PStops()) {
             CRef< CCode_break > code_break(new CCode_break);
             CRef<CSeq_loc> pstop;
 
@@ -869,6 +869,13 @@ void RestoreModelAttributes(const CSeq_feat_Handle& feat_handle, CAlignModel& mo
         cds_info.SetScore(score, cds_info.OpenCds());
         model.SetCdsInfo(cds_info);
     }
+
+    if(model.GetCdsInfo().ReadingFrame().NotEmpty()) {
+        CCDSInfo cds_info_t = model.GetCdsInfo();
+        CCDSInfo cds_info_g = cds_info_t.MapFromEditedToOrig(model.GetAlignMap());
+        if(cds_info_g.ReadingFrame().NotEmpty())   // successful projection
+            model.SetCdsInfo(cds_info_g);
+    }
 }
 
 void RestoreModelReadingFrame(const CSeq_feat_Handle& feat, CAlignModel& model)
@@ -909,10 +916,12 @@ void RestoreModelReadingFrame(const CSeq_feat_Handle& feat, CAlignModel& model)
             }
         }
 
-        TSignedSeqRange reading_frame =  model.GetAlignMap().MapRangeEditedToOrig(rf,false);
+        //will be mapped at the end
+        //        TSignedSeqRange reading_frame =  model.GetAlignMap().MapRangeEditedToOrig(rf,false);
 
-        CCDSInfo cds_info;
-        cds_info.SetReadingFrame(reading_frame, false);
+        CCDSInfo cds_info(false);  // mrna coordinates
+        //        cds_info.SetReadingFrame(reading_frame, false);
+        cds_info.SetReadingFrame(rf, false);
         model.SetCdsInfo(cds_info);
     }
 }
@@ -938,6 +947,9 @@ CAlignModel* RestoreModelFromPublicMrnaFeature(const CSeq_feat_Handle& feat)
     const CSeq_align& align = *mrna->GetInst().GetHist().GetAssembly().front();
 
     Int8 id = GetModelId(align);
+
+    if(id == 94193636)
+        cerr << "Here" << endl;
 
     CFeat_CI cds_feat(mrna_handle);
     while (cds_feat && !cds_feat->GetOriginalFeature().GetData().IsCdregion())
