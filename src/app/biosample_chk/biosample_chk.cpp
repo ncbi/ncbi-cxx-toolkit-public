@@ -282,10 +282,21 @@ void CBiosampleChkApp::ProcessList (const string& fname)
     while ( !lr->AtEOF() ) {
         CTempString line = *++*lr;
         if (!NStr::IsBlank(line)) {
-            CRef<CSeq_id> id(new CSeq_id(line));
-            if (id) {
-                CBioseq_Handle bsh = scope.GetBioseqHandle(*id);
-                ProcessBioseqHandle(bsh);
+            try {
+                CRef<CSeq_id> id(new CSeq_id(line));
+                if (id) {
+                    CBioseq_Handle bsh = scope.GetBioseqHandle(*id);
+                    if (bsh) {
+                        ProcessBioseqHandle(bsh);
+                    } else {
+                        *m_LogStream << "Unable to fetch Bioseq for " << line << endl;
+                        string label = "";
+                        id->GetLabel(&label);
+                        *m_LogStream << "  (interpreted as " << label << ")" << endl;
+                    }                
+                }
+            } catch (CException& e) {
+                *m_LogStream << e.GetMsg() << endl;
             }
         }
     }
