@@ -6,7 +6,7 @@ LIB = ncbi_xloader_csra $(SRAREAD_LIBS) xobjreadex $(OBJREAD_LIBS) xobjutil \
 
 LIBS = $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
-CHECK_CMD = test_csra_loader_mt
+CHECK_CMD = test_csra_loader_mt -threads 30 /CHECK_NAME=test_csra_loader_mt
 CHECK_REQUIRES = in-house-resources -Solaris
 
 WATCHERS = vasilche
