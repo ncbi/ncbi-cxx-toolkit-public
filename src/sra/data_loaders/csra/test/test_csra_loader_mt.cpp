@@ -74,6 +74,8 @@ private:
 
     bool m_Verbose;
     bool m_PreLoad;
+    bool m_FullSeq;
+    bool m_ResetHistory;
     int m_Seed;
     int m_IterCount, m_IterSize;
     int m_ErrorCount;
@@ -81,6 +83,7 @@ private:
     vector<Uint8> m_MaxSpotId;
     
     CRef<CObjectManager> m_OM;
+    CRef<CScope> m_SharedScope;
 };
 
 
@@ -97,19 +100,22 @@ bool CCSRATestApp::TestApp_Args(CArgDescriptions& args)
                        CArgDescriptions::eString,
                        "SRR000010");
                      //"SRR000010,SRR389414,SRR494733,SRR505887,SRR035417");
-    args.AddOptionalKey("accs_file", "Accessions",
+    args.AddOptionalKey("accs-file", "Accessions",
                         "file with SRA accession list",
                         CArgDescriptions::eInputFile);
-    args.AddDefaultKey("iter_count", "IterationCount",
+    args.AddDefaultKey("iter-count", "IterationCount",
                        "Number of read iterations",
                        CArgDescriptions::eInteger,
                        "10");
-    args.AddDefaultKey("iter_size", "IterationSize",
+    args.AddDefaultKey("iter-size", "IterationSize",
                        "Number of sequential sequences in one iteration",
                        CArgDescriptions::eInteger,
                        "10");
     args.AddFlag("verbose", "Print info about progress");
     args.AddFlag("preload", "Try to preload libraries in main thread");
+    args.AddFlag("full-seq", "Load full sequence");
+    args.AddFlag("shared-scope", "Use shared scope in all threads");
+    args.AddFlag("reset-history", "Reset scope's history after each iteration");
 
     return true;
 }
@@ -126,9 +132,9 @@ bool CCSRATestApp::TestApp_Init(void)
         LOG_POST(Info<<"Seed: "<<m_Seed);
     }
     NStr::Tokenize(args["accs"].AsString(), ",", m_Accession);
-    if ( args["accs_file"] ) {
+    if ( args["accs-file"] ) {
         m_Accession.clear();
-        CNcbiIstream& in = args["accs_file"].AsInputFile();
+        CNcbiIstream& in = args["accs-file"].AsInputFile();
         string acc;
         while ( in >> acc ) {
             m_Accession.push_back(acc);
@@ -137,11 +143,17 @@ bool CCSRATestApp::TestApp_Init(void)
     if ( m_Accession.empty() ) {
         ERR_POST(Fatal<<"empty accession list");
     }
-    m_IterCount = args["iter_count"].AsInteger();
-    m_IterSize = args["iter_size"].AsInteger();
+    m_IterCount = args["iter-count"].AsInteger();
+    m_IterSize = args["iter-size"].AsInteger();
     m_MaxSpotId.assign(m_Accession.size(), 0);
     m_OM = CObjectManager::GetInstance();
     CCSRADataLoader::RegisterInObjectManager(*m_OM, CObjectManager::eDefault);
+    if ( args["shared-scope"] ) {
+        m_SharedScope = new CScope(*m_OM);
+        m_SharedScope->AddDefaults();
+    }
+    m_ResetHistory = args["reset-history"];
+    m_FullSeq = args["full-seq"];
     if ( args["preload"] ) {
         Thread_Run(-1);
     }
@@ -163,6 +175,17 @@ bool CCSRATestApp::TestApp_Exit(void)
 /////////////////////////////////////////////////////////////////////////////
 //  Run test
 /////////////////////////////////////////////////////////////////////////////
+
+void s_Check(const CBioseq& seq)
+{
+    _ASSERT(!seq.GetId().empty());
+    const CSeq_inst& inst = seq.GetInst();
+    const string& seqdata = inst.GetSeq_data().GetIupacna().Get();
+    _ASSERT(seqdata.size() == inst.GetLength());
+    ITERATE ( string, i, seqdata ) {
+        _ASSERT(*i >= 'A' && *i <= 'Z');
+    }
+}
 
 string s_AsFASTA(const CBioseq& seq)
 {
@@ -217,7 +240,7 @@ bool CCSRATestApp::Thread_Run(int idx)
 {
     CRandom random(m_Seed+idx);
     for ( int ti = 0; ti < m_IterCount; ++ti ) {
-        size_t index = random.GetRand(0u, m_Accession.size()-1);
+        size_t index = random.GetRandIndex(m_Accession.size());
         const string& acc = m_Accession[index];
         if ( m_Verbose ) {
             LOG_POST(Info<<"T"<<idx<<"."<<ti<<": acc["<<index<<"] "<<acc);
@@ -229,17 +252,23 @@ bool CCSRATestApp::Thread_Run(int idx)
                 LOG_POST(Info<<"T"<<idx<<"."<<ti<<": acc["<<index<<"] "<<acc
                          <<": max id = " << m_MaxSpotId[index]);
             }
+            _ASSERT(m_MaxSpotId[index] > 0);
         }
         int count = int(min(m_MaxSpotId[index], Uint8(m_IterSize)));
-        Uint8 start_id = random.GetRand(1u, m_MaxSpotId[index]-count+1);
-        Uint8 end_id = start_id+count-1;
+        Uint8 start_id = random.GetRandIndex(m_MaxSpotId[index]-count)+1;
+        Uint8 stop_id = start_id+count;
         if ( m_Verbose ) {
             LOG_POST(Info<<"T"<<idx<<"."<<ti<<": acc["<<index<<"] "<<acc
-                     <<": scan " << start_id<<" - "<<end_id);
+                     <<": scan " << start_id<<" - "<<(stop_id-1));
         }
-        CScope scope(*m_OM);
-        scope.AddDefaults();
-        for ( Uint8 spot_id = start_id; spot_id <= end_id; ++spot_id ) {
+        CRef<CScope> scope_ref = m_SharedScope;
+        if ( !scope_ref ) {
+            scope_ref = new CScope(*m_OM);
+            scope_ref->AddDefaults();
+        }
+        CScope& scope = *scope_ref;
+        size_t seq_count = 0;
+        for ( Uint8 spot_id = start_id; spot_id < stop_id; ++spot_id ) {
             for ( int read_id = 1; read_id <= 4; ++read_id ) {
                 CSeq_id_Handle id = GetHandle(acc, spot_id, read_id);
                 _ASSERT(!scope.GetAccVer(id));
@@ -251,12 +280,13 @@ bool CCSRATestApp::Thread_Run(int idx)
                     _ASSERT(scope.GetTaxId(id) == -1);
                     continue;
                 }
+                ++seq_count;
                 _ASSERT(scope.GetIds(id).front() == id);
                 _ASSERT(scope.GetSequenceType(id) == CSeq_inst::eMol_na);
                 TSeqPos len = scope.GetSequenceLength(id);
                 int taxid = scope.GetTaxId(id);
-                //_ASSERT(!scope.GetBioseqHandle(id, CScope::eGetBioseq_Resolved));
-                if ( true ) {
+
+                if ( !m_FullSeq ) {
                     if ( m_Verbose ) {
                         LOG_POST(Info<<"T"<<idx<<"."<<ti<<": acc["<<index<<"] "<<acc
                                  <<": "<<len);
@@ -267,8 +297,9 @@ bool CCSRATestApp::Thread_Run(int idx)
                 _ASSERT(bh);
                 _ASSERT(bh.GetBioseqLength() == len);
                 _ASSERT(scope.GetTaxId(id) == taxid);
+                CConstRef<CBioseq> seq = bh.GetCompleteObject();
+                s_Check(*seq);
                 if ( true ) {
-                    CConstRef<CBioseq> seq = bh.GetCompleteObject();
                     if ( m_Verbose ) {
                         LOG_POST(Info<<"T"<<idx<<"."<<ti<<": acc["<<index<<"] "<<acc
                                  <<": "<<s_AsFASTA(*seq));
@@ -281,6 +312,10 @@ bool CCSRATestApp::Thread_Run(int idx)
                     }
                 }
             }
+        }
+        _ASSERT(seq_count);
+        if ( m_ResetHistory ) {
+            scope.ResetHistory();
         }
     }
     return true;
