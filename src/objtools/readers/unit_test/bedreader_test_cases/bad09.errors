@@ -1,0 +1,8 @@
+Line No    : 5
+Severity   : Error
+Message    : Invalid data line: Invalid strand character.
+
+Line No    : 6
+Severity   : Error
+Message    : Invalid data line: Bad "strand" value.
+
