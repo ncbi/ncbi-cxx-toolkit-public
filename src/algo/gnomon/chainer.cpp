@@ -1241,40 +1241,34 @@ void CChainer::CChainerImpl::TrimAlignmentsIncludedInDifferentGenes(list<CGene>&
         CChain& chain = *it->first;
         const TMemberPtrSet& conflict_members = it->second;
 
-        /*
-        TSignedSeqRange hard_limits(chain.Exons().front().Limits().GetTo(),chain.Exons().back().Limits().GetFrom()); 
-        hard_limits += (chain.OpenCds() ? chain.MaxCdsLimits() : chain.RealCdsLimits());
-
-        TSignedSeqRange noclip_limits = hard_limits;
-        ITERATE(TContained, i, chain.m_members) {
-            if(Include((*i)->m_align->Limits(),hard_limits.GetFrom()+1))
-                noclip_limits.SetFrom(min(noclip_limits.GetFrom(),(*i)->m_align->Limits().GetFrom()));
-            if(Include((*i)->m_align->Limits(),hard_limits.GetTo()-1))
-                noclip_limits.SetTo(max(noclip_limits.GetTo(),(*i)->m_align->Limits().GetTo()));
-        }
-
-        noclip_limits = (noclip_limits & chain.Limits());
-        */
+        CAlignMap amap = chain.GetAlignMap();
 
         TSignedSeqRange hard_limits(chain.Exons().front().Limits().GetTo()-15,chain.Exons().back().Limits().GetFrom()+15);
         hard_limits = (hard_limits & chain.Limits());
         if(chain.ReadingFrame().NotEmpty())
-            hard_limits = (chain.OpenCds() ? chain.MaxCdsLimits() : chain.RealCdsLimits());  
+            hard_limits = (chain.OpenCds() ? chain.MaxCdsLimits() : chain.RealCdsLimits());
+
+        int hard_limits_len = amap.FShiftedLen(hard_limits);
 
         TSignedSeqRange noclip_limits = hard_limits;
-        CAlignMap amap = chain.GetAlignMap();
         ITERATE(TContained, i, chain.m_members) {
             const CGeneModel& a = *(*i)->m_align;
             if(Include(a.Limits(),hard_limits.GetFrom()+1) ) {
                 TSignedSeqRange l(hard_limits.GetFrom()+1,min(a.Limits().GetTo(),chain.Limits().GetTo()));
                 l = amap.ShrinkToRealPoints(l,false);
-                if(l.NotEmpty() && amap.FShiftedLen(l) > 0.75*a.AlignLen())
+                int len = 0;
+                if(l.NotEmpty())
+                    len = amap.FShiftedLen(l);
+                if(len > 0.75*a.AlignLen() || len > 0.75*hard_limits_len)
                     noclip_limits.SetFrom(min(noclip_limits.GetFrom(),(*i)->m_align->Limits().GetFrom()));
             }
             if(Include(a.Limits(),hard_limits.GetTo()-1)) {
                 TSignedSeqRange l(max(a.Limits().GetFrom(),chain.Limits().GetFrom()),hard_limits.GetTo()-1);
                 l = amap.ShrinkToRealPoints(l,false);
-                if(l.NotEmpty() && amap.FShiftedLen(l) > 0.75*a.AlignLen())                
+                int len = 0;
+                if(l.NotEmpty())
+                    len = amap.FShiftedLen(l);
+                if(len > 0.75*a.AlignLen() || len > 0.75*hard_limits_len)                
                     noclip_limits.SetTo(max(noclip_limits.GetTo(),(*i)->m_align->Limits().GetTo()));
             }
         }
