@@ -296,6 +296,7 @@ CTempString GetStringOfSourceQual(ESourceQualifier eSourceQualifier)
         TYPICAL_SQ(transgenic),
         { eSQ_transposon_name, "transposon" },
         TYPICAL_SQ(type),
+        TYPICAL_SQ(type_material),
         TYPICAL_SQ(unstructured),
         TYPICAL_SQ(usedin),
         TYPICAL_SQ(variety),
@@ -360,6 +361,7 @@ GetSourceQualOfOrgMod(COrgMod::ESubtype eOrgModSubtype)
         CASE_ORGMOD(ecotype);
         CASE_ORGMOD(culture_collection);
         CASE_ORGMOD(bio_material);
+        CASE_ORGMOD(type_material);
         CASE_ORGMOD(synonym);
         CASE_ORGMOD(anamorph);
         CASE_ORGMOD(teleomorph);

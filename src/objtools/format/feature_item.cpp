@@ -4931,6 +4931,8 @@ static const string s_GetSubtypeString(const COrgMod::TSubtype& subtype)
         case COrgMod::eSubtype_old_name:         return "old_name";
         case COrgMod::eSubtype_culture_collection: return "culture_collection";
         case COrgMod::eSubtype_bio_material:     return "bio_material";
+        case COrgMod::eSubtype_metagenome_source: return "metagenome_source";
+        case COrgMod::eSubtype_type_material:    return "type_material";
         case COrgMod::eSubtype_other:            return "note";
         default:                                 return kEmptyStr;
     }
@@ -5365,9 +5367,12 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(isolation_source);
     DO_QUAL(spec_or_nat_host);
     DO_QUAL(sub_species);
+
     DO_QUAL(specimen_voucher);
     DO_QUAL(culture_collection);
     DO_QUAL(bio_material);
+
+    DO_QUAL(type_material);
 
     DO_QUAL(db_xref);
     DO_QUAL(org_xref);
@@ -5389,9 +5394,11 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(clone_lib);
     DO_QUAL(dev_stage);
     DO_QUAL(ecotype);
+
     if( ! GetContext()->Config().FrequencyToNote() ) {
         DO_QUAL(frequency);
     }
+
     DO_QUAL(germline);
     DO_QUAL(rearranged);
     DO_QUAL(transgenic);
@@ -5409,6 +5416,7 @@ void CSourceFeatureItem::x_FormatQuals(CFlatFeature& ff) const
     DO_QUAL(country);
 
     DO_QUAL(focus);
+
     DO_QUAL(lat_lon);
     DO_QUAL(altitude);
     DO_QUAL(collection_date);

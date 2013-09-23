@@ -273,6 +273,7 @@ enum ESourceQualifier {
     eSQ_transgenic,
     eSQ_transposon_name,
     eSQ_type,
+    eSQ_type_material,
     eSQ_unstructured,
     eSQ_usedin,
     eSQ_variety,
