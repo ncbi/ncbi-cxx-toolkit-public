@@ -46,6 +46,10 @@ if test -f "$bin_dir/grid_cli.gz"; then
     mkdir "$target_dir" || exit 3
     cp -p "$bin_dir/grid_cli.gz" "$target_dir"
     gunzip "$target_dir/grid_cli.gz"
+elif test -f "$bin_dir/grid_cli.bz2"; then
+    mkdir "$target_dir" || exit 3
+    cp -p "$bin_dir/grid_cli.bz2" "$target_dir"
+    bunzip2 "$target_dir/grid_cli.bz2"
 elif test -f "$bin_dir/grid_cli"; then
     mkdir "$target_dir" || exit 3
     cp -p "$bin_dir/grid_cli" "$target_dir"
