@@ -31,6 +31,10 @@
  */
 
 #include <ncbi_pch.hpp>
+
+#include <serial/serial.hpp>
+#include <serial/objistrasn.hpp>
+
 #include <objects/taxon1/taxon1.hpp>
 #include "cache.hpp"
 
@@ -689,48 +693,77 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
                 }
             }
             // Create name
-            if(is_species) {
-                /* we are on species level or below */
-	     
-                /* check for viruses */
-                if( div_id == GetVirusesDivision()
-                    || div_id == GetPhagesDivision() ) {
-                    /* this is a virus */
-                    /* virus */
-                    if( rank_id == GetSpeciesRank() ) {
-                        /* we are on species level */
-                        on.SetName().SetVirus( node.GetName() );
-                    } else {
-                        /* we are below species */
-                        /* first try to find species or min rank which
-                           below species but above us */
-                        pNode = 0;
-                        CTaxon1Node* pTmp = ( node.GetParent() );
-			
-                        while( pTmp && !pTmp->IsRoot() ) {
-                            int rank(pTmp->GetRank());
-                            if( rank >= GetSpeciesRank() ) {
-                                pNode = pTmp;
-                                if( rank == GetSpeciesRank() )
-                                    break;
-                            } else if( rank >= 0 )
-                                break;
-                            pTmp = pTmp->GetParent();
-                        }
-                        if( !pNode ) {// we have species or something above us
-                            pNode = &node;
-                        }
-                        on.SetName().SetVirus( pNode->GetName() );
-                        // Add modifier to orgname
-                        BuildOrgModifier( &node, on );
-                    } // non species rank
-                } else if( !SetBinomialName( node, on ) ) {
-                    // name is not binomial: set partial
-                    SetPartialName( node, on );
-                }
-            } else { // above species
-                SetPartialName( node, on );
-            }
+	    bool bOrgnameRetreived = false;
+	    CRef<CTaxon1_info> pProp( new CTaxon1_info() );
+	    pProp->SetIval1( node.GetTaxId() );
+	    pProp->SetIval2( -1 ); // Get int property by name
+	    pProp->SetSval( "orgname" );
+	    
+	    req.SetGetorgprop( *pProp );
+	    try {
+		if( m_host.SendRequest( req, resp ) ) {
+		    if( resp.IsGetorgprop() ) { 
+			if( resp.GetGetorgprop().size() > 0 ) {
+			    CRef<CTaxon1_info> pInfo
+				= resp.GetGetorgprop().front();
+			    if( pInfo->IsSetSval() && !pInfo->GetSval().empty() ) {
+				try {
+				    CObjectIStreamAsn is( pInfo->GetSval().c_str(),
+							  pInfo->GetSval().size() );
+				    is >> org.SetOrgname().SetName();
+				    bOrgnameRetreived = true;
+				} catch( exception& e ) {
+				}
+			    }
+			}
+		    }
+		}
+	    } catch( exception& e ) {
+	    }
+	    if( !bOrgnameRetreived ) { // build orgname myself
+		if(is_species) {
+		    /* we are on species level or below */
+
+		    /* check for viruses */
+		    if( div_id == GetVirusesDivision()
+			|| div_id == GetPhagesDivision() ) {
+			/* this is a virus */
+			/* virus */
+			if( rank_id == GetSpeciesRank() ) {
+			    /* we are on species level */
+			    on.SetName().SetVirus( node.GetName() );
+			} else {
+			    /* we are below species */
+			    /* first try to find species or min rank which
+			       below species but above us */
+			    pNode = 0;
+			    CTaxon1Node* pTmp = ( node.GetParent() );
+			    
+			    while( pTmp && !pTmp->IsRoot() ) {
+				int rank(pTmp->GetRank());
+				if( rank >= GetSpeciesRank() ) {
+				    pNode = pTmp;
+				    if( rank == GetSpeciesRank() )
+					break;
+				} else if( rank >= 0 )
+				    break;
+				pTmp = pTmp->GetParent();
+			    }
+			    if( !pNode ) {// we have species or something above us
+				pNode = &node;
+			    }
+			    on.SetName().SetVirus( pNode->GetName() );
+			    // Add modifier to orgname
+			    BuildOrgModifier( &node, on );
+			} // non species rank
+		    } else if( !SetBinomialName( node, on ) ) {
+			// name is not binomial: set partial
+			SetPartialName( node, on );
+		    }
+		} else { // above species
+		    SetPartialName( node, on );
+		}
+	    }
             // Add some genbank names as organism modifiers
             if( org.IsSetOrgname() ) { // OrgName is not empty
                 for( i = lLin.begin(); i != lLin.end(); ++i ) {

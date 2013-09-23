@@ -99,8 +99,8 @@ public:
     // NOTE:
     // 1. These functions uses the following data from inp_orgRef to find
     //    organism in taxonomy database. It uses taxname first. If no organism
-    //    was found (or multiple nodes found) then it tryes to find organism
-    //    using common name. If nothing found, then it tryes to find organism
+    //    was found (or multiple nodes found) then it tries to find organism
+    //    using common name. If nothing found, then it tries to find organism
     //    using synonyms. Lookup never uses tax_id to find organism.
     // 2. LookupMerge function modifies given OrgRef to correspond to the
     //    found one and returns constant pointer to the Taxon2Data structure
@@ -113,8 +113,9 @@ public:
     // Get tax_id by OrgRef
     // Returns: tax_id - if organism found
     //               0 - no organism found
+    //              -1 - error during processing occured
     //         -tax_id - if multiple nodes found
-    //                   (where -tax_id is id of one of the nodes)
+    //                   (where tax_id > 1 is id of one of the nodes)
     // NOTE:
     // This function uses the same information from inp_orgRef as Lookup
     ///
@@ -131,7 +132,8 @@ public:
         eStatus_WrongCommonName = 0x040,
         eStatus_WrongOrgname    = 0x080,
         eStatus_WrongDivision   = 0x100,
-        eStatus_WrongOrgmod     = 0x200
+        eStatus_WrongOrgmod     = 0x200,
+	eStatus_WrongPGC        = 0x400
     };
     typedef unsigned TOrgRefStatus;
     //-----------------------------------------------
@@ -151,8 +153,9 @@ public:
     // Get tax_id by organism name
     // Returns: tax_id - if organism found
     //               0 - no organism found
+    //              -1 - error during processing occured
     //         -tax_id - if multiple nodes found
-    //                   (where -tax_id is id of one of the nodes)
+    //                   (where tax_id > 1 is id of one of the nodes)
     ///
     int GetTaxIdByName(const string& orgname);
 
@@ -160,8 +163,9 @@ public:
     // Get tax_id by organism "unique" name
     // Returns: tax_id - if organism found
     //               0 - no organism found
+    //              -1 - error during processing occured
     //         -tax_id - if multiple nodes found
-    //                   (where -tax_id is id of one of the nodes)
+    //                   (where tax_id > 1 is id of one of the nodes)
     ///
     int FindTaxIdByName(const string& orgname);
 
@@ -172,6 +176,7 @@ public:
     // Returns: tax_id - if organism found
     //               0 - no organism found
     //              -1 - if multiple nodes found
+    //              -2 - error during processing occured
     ///
     int SearchTaxIdByName(const string& orgname,
 			  ESearch mode = eSearch_TokenSet,
@@ -179,14 +184,16 @@ public:
 
     //----------------------------------------------
     // Get ALL tax_id by organism name
-    // Returns: number of organisms found, id list appended with found tax ids
+    // Returns: number of organisms found (negative value on error), 
+    // id list appended with found tax ids
     ///
     int GetAllTaxIdByName(const string& orgname, TTaxIdList& lIds);
 
     //----------------------------------------------
     // Get organism by tax_id
     // Returns: pointer to OrgRef structure if organism found
-    //          NULL - if no such organism in taxonomy database
+    //          NULL - if no such organism in taxonomy database or error occured 
+    //                 (check GetLastError() for the latter)
     // NOTE:
     // This function does not make a copy of OrgRef structure but returns
     // pointer to internally stored OrgRef.
@@ -194,7 +201,8 @@ public:
     CConstRef< COrg_ref > GetOrgRef(int tax_id,
 				    bool& is_species,
 				    bool& is_uncultured,
-				    string& blast_name);
+				    string& blast_name,
+				    bool* is_specified = NULL);
 
     //---------------------------------------------
     // Set mode for synonyms in OrgRef
@@ -232,20 +240,24 @@ public:
 
     //---------------------------------------------
     // Get genus tax_id (id_tax should be below genus)
-    // Returns: tax_id of genus or -1 if error or no genus in the lineage
+    // Returns: tax_id of genus or
+    //               0 - no genus in the lineage
+    //              -1 - if error
     ///
     int GetGenus(int id_tax);
 
     //---------------------------------------------
     // Get superkingdom tax_id (id_tax should be below superkingdom)
-    // Returns: tax_id of superkingdom
-    //          or -1 if error or no superkingdom in the lineage
+    // Returns: tax_id of superkingdom or
+    //               0 - no superkingdom in the lineage
+    //              -1 - if error
     ///
     int GetSuperkingdom(int id_tax);
 
     //---------------------------------------------
     // Get taxids for all children of specified node.
     // Returns: number of children, id list appended with found tax ids
+    //          -1 - in case of error
     ///
     int GetChildren(int id_tax, TTaxIdList& children_ids);
 
@@ -271,7 +283,7 @@ public:
 
     //---------------------------------------------
     // Get name class id by name class name
-    // Returns: value < 0 - Incorrect class name
+    // Returns: value < 0 - Incorrect class name or error
     // NOTE: Currently there are following name classes in Taxonomy:
     //  scientific name
     //  synonym
@@ -302,11 +314,14 @@ public:
     // Get the nearest common ancestor for two nodes
     // Returns: id of this ancestor (id == 1 means that root node only is
     // ancestor)
+    //          -1 - in case of an error
+    ///
     int Join(int taxid1, int taxid2);
 
     //---------------------------------------------
     // Get all names for tax_id
     // Returns: number of names, name list appended with ogranism's names
+    //          -1 - in case of an error
     // NOTE:
     // If unique is true then only unique names will be stored
     ///

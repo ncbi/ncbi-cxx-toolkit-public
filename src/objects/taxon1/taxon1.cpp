@@ -55,6 +55,8 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 static const char s_achInvalTaxid[] = "Invalid tax id specified";
 
+#define TAXON1_IS_INITED (m_pServer!=NULL)
+
 
 CTaxon1::CTaxon1()
     : m_pServer(NULL),
@@ -69,7 +71,7 @@ CTaxon1::CTaxon1()
 
 CTaxon1::~CTaxon1()
 {
-    Reset();
+    Fini();
 }
 
 
@@ -107,7 +109,7 @@ CTaxon1::Init(const STimeout* timeout, unsigned reconnect_attempts,
               unsigned cache_capacity)
 {
     SetLastError(NULL);
-    if( m_pServer ) { // Already inited
+    if( TAXON1_IS_INITED ) { // Already inited
         SetLastError( "ERROR: Init(): Already initialized" );
         return false;
     }
@@ -180,7 +182,7 @@ void
 CTaxon1::Fini(void)
 {
     SetLastError(NULL);
-    if( m_pServer ) {
+    if( TAXON1_IS_INITED ) {
         CTaxon1_req req;
         CTaxon1_resp resp;
 
@@ -199,6 +201,11 @@ CRef< CTaxon2_data >
 CTaxon1::GetById(int tax_id)
 {
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return CRef<CTaxon2_data>(NULL);
+	}
+    }
     if( tax_id > 0 ) {
         // Check if this taxon is in cache
         CTaxon2_data* pData = 0;
@@ -653,6 +660,11 @@ CRef< CTaxon2_data >
 CTaxon1::Lookup(const COrg_ref& inp_orgRef )
 {
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return CRef<CTaxon2_data>(NULL);
+	}
+    }
     // Check if this taxon is in cache
     CTaxon2_data* pData = 0;
     COrgName::TMod hitMod;
@@ -702,6 +714,11 @@ CTaxon1::LookupMerge(COrg_ref& inp_orgRef )
     CTaxon2_data* pData = 0;
 
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return CConstRef<CTaxon2_data>(NULL);
+	}
+    }
     COrgName::TMod hitMod;
     int tax_id = 0; //GetTaxIdByOrgRef( inp_orgRef );
 
@@ -724,6 +741,11 @@ int
 CTaxon1::GetTaxIdByOrgRef(const COrg_ref& inp_orgRef)
 {
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return -1;
+	}
+    }
 
     CTaxon1_req  req;
     CTaxon1_resp resp;
@@ -758,6 +780,11 @@ int
 CTaxon1::FindTaxIdByName(const string& orgname)
 {
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return -1;
+	}
+    }
     if( orgname.empty() )
         return 0;
 
@@ -788,11 +815,13 @@ CTaxon1::FindTaxIdByName(const string& orgname)
 }
 
 //----------------------------------------------
-// Get tax_id by organism name using fancy search modes.
-// Returns: tax_id - if the only organism found
+// Get tax_id by organism name using fancy search modes. If given a pointer
+// to the list of names then it'll return all found names (one name per 
+// tax id). Previous content of name_list_out will be destroyed.
+// Returns: tax_id - if organism found
 //               0 - no organism found
-//         -tax_id - if multiple nodes found
-//                   (where -tax_id is id of one of the nodes)
+//              -1 - if multiple nodes found
+//              -2 - error during processing occured
 ///
 int
 CTaxon1::SearchTaxIdByName(const string& orgname, ESearch mode,
@@ -800,6 +829,11 @@ CTaxon1::SearchTaxIdByName(const string& orgname, ESearch mode,
 {
     // Use fancy searches
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return -2;
+	}
+    }
     if( orgname.empty() ) {
         return 0;
     }
@@ -852,6 +886,11 @@ CTaxon1::GetAllTaxIdByName(const string& orgname, TTaxIdList& lIds)
     int count = 0;
 
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return -2;
+	}
+    }
     if( orgname.empty() )
         return 0;
 
@@ -877,13 +916,28 @@ CTaxon1::GetAllTaxIdByName(const string& orgname, TTaxIdList& lIds)
     return count;
 }
 
+//----------------------------------------------
+// Get organism by tax_id
+// Returns: pointer to OrgRef structure if organism found
+//          NULL - if no such organism in taxonomy database or error occured 
+//                 (check GetLastError() for the latter)
+// NOTE:
+// This function does not make a copy of OrgRef structure but returns
+// pointer to internally stored OrgRef.
+///
 CConstRef< COrg_ref >
 CTaxon1::GetOrgRef(int tax_id,
                    bool& is_species,
                    bool& is_uncultured,
-                   string& blast_name)
+                   string& blast_name,
+		   bool* is_specified)
 {
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return null;
+	}
+    }
     if( tax_id > 0 ) {
         CTaxon2_data* pData = 0;
         if( m_plCache->LookupAndInsert( tax_id, &pData ) && pData ) {
@@ -892,12 +946,26 @@ CTaxon1::GetOrgRef(int tax_id,
             if( pData->GetBlast_name().size() > 0 ) {
                 blast_name.assign( pData->GetBlast_name().front() );
             }
+	    if( is_specified ) {
+		bool specified = false;
+		if( GetNodeProperty( tax_id, "specified_inh", specified ) ) {
+		    *is_specified = specified;
+		} else {
+		    return null;
+		}		
+	    }
             return CConstRef<COrg_ref>(&pData->GetOrg());
         }
     }
     return null;
 }
 
+//---------------------------------------------
+// Set mode for synonyms in OrgRef
+// Returns: previous mode
+// NOTE:
+// Default value: false (do not copy synonyms to the new OrgRef)
+///
 bool
 CTaxon1::SetSynonyms(bool on_off)
 {
@@ -907,11 +975,22 @@ CTaxon1::SetSynonyms(bool on_off)
     return old_val;
 }
 
+//---------------------------------------------
+// Get parent tax_id
+// Returns: tax_id of parent node or 0 if error
+// NOTE:
+//   Root of the tree has tax_id of 1
+///
 int
 CTaxon1::GetParent(int id_tax)
 {
     CTaxon1Node* pNode = 0;
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return 0;
+	}
+    }
     if( m_plCache->LookupAndAdd( id_tax, &pNode )
         && pNode && pNode->GetParent() ) {
         return pNode->GetParent()->GetTaxId();
@@ -935,6 +1014,11 @@ CTaxon1::GetSpecies(int id_tax, ESpeciesMode mode)
 {
     CTaxon1Node* pNode = 0;
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return -1;
+	}
+    }
     if( m_plCache->LookupAndAdd( id_tax, &pNode )
         && pNode ) {
     if( mode == eSpeciesMode_RankOnly ) {
@@ -974,11 +1058,22 @@ CTaxon1::GetSpecies(int id_tax, ESpeciesMode mode)
     return -1;
 }
 
+//---------------------------------------------
+// Get genus tax_id (id_tax should be below genus)
+// Returns: tax_id of genus or
+//               0 - no genus in the lineage
+//              -1 - if error
+///
 int
 CTaxon1::GetGenus(int id_tax)
 {
     CTaxon1Node* pNode = 0;
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return -1;
+	}
+    }
     if( m_plCache->LookupAndAdd( id_tax, &pNode )
         && pNode ) {
         int genus_rank(m_plCache->GetGenusRank());
@@ -987,18 +1082,29 @@ CTaxon1::GetGenus(int id_tax)
             if( rank == genus_rank )
                 return pNode->GetTaxId();
             if( (rank > 0) && (rank < genus_rank))
-                return -1;
+                return 0;
             pNode = pNode->GetParent();
         }
     }
     return -1;
 }
 
+//---------------------------------------------
+// Get superkingdom tax_id (id_tax should be below superkingdom)
+// Returns: tax_id of superkingdom or
+//               0 - no superkingdom in the lineage
+//              -1 - if error
+///
 int
 CTaxon1::GetSuperkingdom(int id_tax)
 {
     CTaxon1Node* pNode = 0;
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return -1;
+	}
+    }
     if( m_plCache->LookupAndAdd( id_tax, &pNode )
         && pNode ) {
         int sk_rank(m_plCache->GetSuperkingdomRank());
@@ -1007,19 +1113,30 @@ CTaxon1::GetSuperkingdom(int id_tax)
             if( rank == sk_rank )
                 return pNode->GetTaxId();
             if( (rank > 0) && (rank < sk_rank))
-                return -1;
+                return 0;
             pNode = pNode->GetParent();
         }
     }
     return -1;
 }
 
+
+//---------------------------------------------
+// Get taxids for all children of specified node.
+// Returns: number of children, id list appended with found tax ids
+//          -1 - in case of error
+///
 int
 CTaxon1::GetChildren(int id_tax, TTaxIdList& children_ids)
 {
     int count(0);
     CTaxon1Node* pNode = 0;
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return -1;
+	}
+    }
     if( m_plCache->LookupAndAdd( id_tax, &pNode )
         && pNode ) {
 
@@ -1057,6 +1174,11 @@ bool
 CTaxon1::GetGCName(short gc_id, string& gc_name_out )
 {
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return false;
+	}
+    }
     if( m_gcStorage.empty() ) {
         CTaxon1_req  req;
         CTaxon1_resp resp;
@@ -1097,6 +1219,11 @@ bool
 CTaxon1::GetRankName(short rank_id, string& rank_name_out )
 {
     SetLastError( NULL );
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return false;
+	}
+    }
     const char* pchName = m_plCache->GetRankName( rank_id );
     if( pchName ) {
         rank_name_out.assign( pchName );
@@ -1114,6 +1241,11 @@ bool
 CTaxon1::GetDivisionName(short div_id, string& div_name_out, string* div_code_out )
 {
     SetLastError( NULL );
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return false;
+	}
+    }
     const char* pchName = m_plCache->GetDivisionName( div_id );
     const char* pchCode = m_plCache->GetDivisionCode( div_id );
     if( pchName ) {
@@ -1135,6 +1267,11 @@ bool
 CTaxon1::GetNameClass(short nameclass_id, string& name_class_out )
 {
     SetLastError( NULL );
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return false;
+	}
+    }
     const char* pchName = m_plCache->GetNameClassName( nameclass_id );
     if( pchName ) {
         name_class_out.assign( pchName );
@@ -1153,18 +1290,34 @@ short
 CTaxon1::GetNameClassId( const string& class_name )
 {
     SetLastError( NULL );
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return -1;
+	}
+    }
     if( m_plCache->InitNameClasses() ) {
         return m_plCache->FindNameClassByName( class_name.c_str() );
     }
     return -1;
 }
 
+//---------------------------------------------
+// Get the nearest common ancestor for two nodes
+// Returns: id of this ancestor (id == 1 means that root node only is
+// ancestor)
+//          -1 - in case of an error
+///
 int
 CTaxon1::Join(int taxid1, int taxid2)
 {
     int tax_id = 0;
     CTaxon1Node *pNode1, *pNode2;
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return -1;
+	}
+    }
     if( m_plCache->LookupAndAdd( taxid1, &pNode1 ) && pNode1
         && m_plCache->LookupAndAdd( taxid2, &pNode2 ) && pNode2 ) {
         CRef< ITreeIterator > pIt( GetTreeIterator() );
@@ -1175,11 +1328,23 @@ CTaxon1::Join(int taxid1, int taxid2)
     return tax_id;
 }
 
+//---------------------------------------------
+// Get all names for tax_id
+// Returns: number of names, name list appended with ogranism's names
+//          -1 - in case of an error
+// NOTE:
+// If unique is true then only unique names will be stored
+///
 int
 CTaxon1::GetAllNames(int tax_id, TNameList& lNames, bool unique)
 {
     int count(0);
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return -1;
+	}
+    }
     CTaxon1_req  req;
     CTaxon1_resp resp;
 
@@ -1219,6 +1384,11 @@ bool
 CTaxon1::GetAllNamesEx(int tax_id, list< CRef< CTaxon1_name > >& lNames)
 {
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return false;
+	}
+    }
     CTaxon1_req  req;
     CTaxon1_resp resp;
 
@@ -1248,6 +1418,11 @@ bool
 CTaxon1::DumpNames( short name_class, list< CRef< CTaxon1_name > >& lOut )
 {
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return false;
+	}
+    }
     CTaxon1_req  req;
     CTaxon1_resp resp;
 
@@ -1280,7 +1455,7 @@ bool
 CTaxon1::IsAlive(void)
 {
     SetLastError(NULL);
-    if( m_pServer ) {
+    if( TAXON1_IS_INITED ) {
         if( !m_pOut || !m_pOut->InGoodState() )
             SetLastError( "Output stream is not in good state" );
         else if( !m_pIn || !m_pIn->InGoodState() )
@@ -1297,6 +1472,12 @@ bool
 CTaxon1::GetTaxId4GI(TGi gi, int& tax_id_out )
 {
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return false;
+	}
+    }
+
     CTaxon1_req  req;
     CTaxon1_resp resp;
 
@@ -1319,6 +1500,11 @@ CTaxon1::GetBlastName(int tax_id, string& blast_name_out )
 {
     CTaxon1Node* pNode = 0;
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return false;
+	}
+    }
     if( m_plCache->LookupAndAdd( tax_id, &pNode ) && pNode ) {
         while( !pNode->IsRoot() ) {
             if( !pNode->GetBlastName().empty() ) {
@@ -1370,8 +1556,7 @@ CTaxon1::SendRequest( CTaxon1_req& req, CTaxon1_resp& resp )
 	    bNeedReconnect = true;
         }
         fail_flags = m_pIn->GetFailFlags();
-        bNeedReconnect |= (fail_flags & ( CObjectIStream::eEOF
-                          |CObjectIStream::eReadError
+        bNeedReconnect |= (fail_flags & ( CObjectIStream::eReadError
                           |CObjectIStream::eFail
                           |CObjectIStream::eNotOpen )
                    ? true : false);
@@ -1450,6 +1635,11 @@ bool
 CTaxon1::GetPopsetJoin( const TTaxIdList& ids_in, TTaxIdList& ids_out )
 {
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return false;
+	}
+    }
     if( ids_in.size() > 0 ) {
         map< int, CTaxon1Node* > nodeMap;
         CTaxon1Node *pParent = 0, *pNode = 0, *pNewParent = 0;
@@ -1539,6 +1729,11 @@ CTaxon1::LoadSubtreeEx( int tax_id, int levels, const ITaxon1Node** ppNode )
 {
     CTaxon1Node* pNode = 0;
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return false;
+	}
+    }
     if( ppNode ) {
         *ppNode = pNode;
     }
@@ -1608,6 +1803,12 @@ CTaxon1::LoadSubtreeEx( int tax_id, int levels, const ITaxon1Node** ppNode )
 CRef< ITreeIterator >
 CTaxon1::GetTreeIterator( CTaxon1::EIteratorMode mode )
 {
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return null;
+	}
+    }
+
     CRef< ITreeIterator > pIt;
     CTreeConstIterator* pIter = m_plCache->GetTree().GetConstIterator();
 
@@ -1636,6 +1837,11 @@ CTaxon1::GetTreeIterator( int tax_id, CTaxon1::EIteratorMode mode )
     CRef< ITreeIterator > pIt;
     CTaxon1Node* pData = 0;
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return null;
+	}
+    }
     if( m_plCache->LookupAndAdd( tax_id, &pData ) ) {
         pIt = GetTreeIterator( mode );
         if( !pIt->GoNode( pData ) ) {
@@ -1652,6 +1858,11 @@ CTaxon1::GetNodeProperty( int tax_id, const string& prop_name,
                           string& prop_val )
 {
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return false;
+	}
+    }
     CTaxon1_req req;
     CTaxon1_resp resp;
     CRef<CTaxon1_info> pProp( new CTaxon1_info() );
@@ -1699,6 +1910,11 @@ CTaxon1::GetNodeProperty( int tax_id, const string& prop_name,
                           bool& prop_val )
 {
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return false;
+	}
+    }
     CTaxon1_req req;
     CTaxon1_resp resp;
     CRef<CTaxon1_info> pProp( new CTaxon1_info() );
@@ -1746,6 +1962,11 @@ CTaxon1::GetNodeProperty( int tax_id, const string& prop_name,
                           int& prop_val )
 {
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return false;
+	}
+    }
     CTaxon1_req req;
     CTaxon1_resp resp;
     CRef<CTaxon1_info> pProp( new CTaxon1_info() );
@@ -1997,6 +2218,20 @@ CTaxon1::CheckOrgRef( const COrg_ref& orgRef, TOrgRefStatus& stat_out )
                         stat_out |= eStatus_WrongMGC;
                     }
                 }
+                if( !inpOn.IsSetPgcode() ) { // pgc not set in input
+                    if( goodOn.IsSetPgcode() &&
+                        goodOn.GetPgcode() != 0 ) {
+                        stat_out |= eStatus_WrongPGC;
+                    }
+                } else { // pgc set
+                    if( !goodOn.IsSetPgcode() ) {
+                        if( inpOn.GetPgcode() != 0 ) { // not unassigned
+                            stat_out |= eStatus_WrongPGC;
+                        }
+                    } else if( inpOn.GetPgcode() != goodOn.GetPgcode() ) {
+                        stat_out |= eStatus_WrongPGC;
+                    }
+                }
                 if( !inpOn.IsSetLineage() || !goodOn.IsSetLineage() ||
                     inpOn.GetLineage().compare( goodOn.GetLineage() ) != 0 ) {
                     stat_out |= eStatus_WrongLineage;
@@ -2088,8 +2323,13 @@ bool
 CTaxon1::GetTypeMaterial( int tax_id, TNameList& type_material_list_out )
 {
     CTaxon1Node* pNode = 0;
-    type_material_list_out.clear();
     SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return false;
+	}
+    }
+    type_material_list_out.clear();
     if( m_plCache->LookupAndAdd( tax_id, &pNode )
         && pNode ) {
 	list< CRef< CTaxon1_name > > lNames;
