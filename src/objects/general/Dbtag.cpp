@@ -90,6 +90,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "GO", CDbtag::eDbtagType_GO },
     { "GOA", CDbtag::eDbtagType_GOA },
     { "GRIN", CDbtag::eDbtagType_GRIN },
+    { "GenBank", CDbtag::eDbtagType_GenBank },
     { "GeneDB", CDbtag::eDbtagType_GeneDB },
     { "GeneID", CDbtag::eDbtagType_GeneID },
     { "Greengenes", CDbtag::eDbtagType_Greengenes },
@@ -136,6 +137,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "RFAM", CDbtag::eDbtagType_RFAM },
     { "RGD", CDbtag::eDbtagType_RGD },
     { "RZPD", CDbtag::eDbtagType_RZPD },
+    { "RefSeq", CDbtag::eDbtagType_RefSeq },
     { "RiceGenes", CDbtag::eDbtagType_RiceGenes },
     { "SEED", CDbtag::eDbtagType_SEED },
     { "SGD", CDbtag::eDbtagType_SGD },
@@ -566,6 +568,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_GO, "http://amigo.geneontology.org/cgi-bin/amigo/go.cgi?view=details&depth=1&query=GO:" },
     { CDbtag::eDbtagType_GOA, "http://www.ebi.ac.uk/ego/GProtein?ac=" },
     { CDbtag::eDbtagType_GRIN, "http://www.ars-grin.gov/cgi-bin/npgs/acc/display.pl?" },
+    { CDbtag::eDbtagType_GenBank, "http://www.ncbi.nlm.nih.gov/nuccore/" },
     { CDbtag::eDbtagType_GeneDB, "http://old.genedb.org/genedb/Search?organism=All%3A*&name=" },
     { CDbtag::eDbtagType_GeneID, "http://www.ncbi.nlm.nih.gov/gene/" },
     { CDbtag::eDbtagType_GrainGenes, "http://wheat.pw.usda.gov/cgi-bin/graingenes/report.cgi?class=marker&name=" },
@@ -870,19 +873,33 @@ string CDbtag::GetUrl(const string & genus,
             tag += "&decorator=vipr";
             break;
 
-    case CDbtag::eDbtagType_IMGT_GENEDB:
-        if( ! genus.empty() ) {
-            string taxname_url_piece = genus + "+" + species;
-            if( ! subspecies.empty() ) {
-                taxname_url_piece += "+" + subspecies;
+        case CDbtag::eDbtagType_IMGT_GENEDB:
+            if( ! genus.empty() ) {
+                string taxname_url_piece = genus + "+" + species;
+                if( ! subspecies.empty() ) {
+                    taxname_url_piece += "+" + subspecies;
+                }
+                string ret = prefix;
+                return NStr::Replace( ret,
+                                      "species=Homo+sapiens&",
+                                      "species=" + taxname_url_piece + "&" ) +
+                    tag;
             }
-            string ret = prefix;
-            return NStr::Replace( ret,
-                                  "species=Homo+sapiens&",
-                                  "species=" + taxname_url_piece + "&" ) +
-                tag;
-        }
-        break;
+            break;
+
+        case eDbtagType_RefSeq:
+        {{
+            string::const_iterator tag_iter = tag.begin();
+            if (isalpha (*tag_iter)) {
+                ++tag_iter;
+                if (*tag_iter == 'P') {
+                    ++tag_iter;
+                    if (*tag_iter == '_') {
+                        prefix = "http://www.ncbi.nlm.nih.gov/protein/";
+                    }
+                }
+            }
+        }}
 
         default:
             break;
