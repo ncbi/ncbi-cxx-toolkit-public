@@ -1,5 +1,8 @@
 #!/bin/sh
 
+PATH=/bin:/usr/bin:/usr/ccs/bin
+export PATH
+
 case "$1" in
     --dirs )
         shift
@@ -11,6 +14,41 @@ case "$1" in
         else
             rm -rf "$@"
         fi
+        ;;
+
+    --post-mortem )
+        shift
+        signature="$1"
+        shift
+        find "$@" -name 'make_*.log' | sed -e 's,/make_[^/]*\.log$,,' | \
+            while read d; do
+                for d2 in . `sort -u $d/.*.dirs 2>/dev/null`; do
+                    test -f $d/$d2/ls-Al  &&  continue
+                    listing=`ls -Al $d/$d2`
+                    test "$signature" = "workshop-Debug" || \
+                        symbols=`nm $d/$d2/*.o 2>/dev/null`
+                    for x in $d/$d2/*; do
+                        test -d "$x"  &&  continue
+                        case "$x" in
+                            *.o )
+                                test "$signature" = "workshop-Debug" || \
+                                    rm -f "$x"
+                                ;;
+                            *.[0-9] | *.*cgi | *.a | *.dylib | *.so )
+                                rm -f "$x"
+                                ;;
+                            $d/$d2/*.* | */Makefile | */ls-Al | */symbols )
+                                ;;
+                            * )
+                                rm -f "$x"
+                                ;;
+                        esac
+                    done
+                    echo "$listing" > $d/$d2/ls-Al
+                    test -z "$symbols"  || \
+                        echo "$symbols" | gzip > $d/$d2/symbols.gz
+                done
+            done
         ;;
 
     --bin )

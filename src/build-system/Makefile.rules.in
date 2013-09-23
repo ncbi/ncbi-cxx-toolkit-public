@@ -57,6 +57,11 @@ else
 	$(MKDIR) -p $(@D)
 	@touch $@
 
+  all: list-dirs
+
+  list-dirs:
+	@-echo $(OBJ_DIRS:%/.exists=%) > .$(TMPL).dirs
+
   STD_SRC = $(filter-out $(OVERRIDEN_SRC),$(SRC))
   CPP_OBJ_HERE = $(patsubst %.cpp,%@obj_ext@,$(wildcard $(STD_SRC:%=%.cpp)))
   C_OBJ_HERE = $(patsubst %.c,%@obj_ext@,$(wildcard $(STD_SRC:%=%.c)))

@@ -36,7 +36,9 @@ compress_tests:
 	    $(bindir)
 
 sfi=$(top_srcdir)/scripts/common/impl/strip_for_install.sh
-strip_for_install:
-	$(sfi) --dirs $(COMPILER)-$(DEBUG_SFX) $(SUB_PROJ) check dll wrappers
+strip_for_install-%:
+	$(sfi) --$* $(COMPILER)-$(DEBUG_SFX) $(SUB_PROJ) check dll wrappers
 	$(sfi) --bin $(top_srcdir) $(bindir)
 	$(sfi) --lib $(top_srcdir) $(libdir) $(statusdir) 
+
+strip_for_install: strip_for_install-dirs
