@@ -236,9 +236,9 @@ def testOneCombination( sandboxPath, nsPathVer, gcPath, port, verbose ):
     if os.system( sandboxPath + "make_ncbi_grid_module_tree.sh " + gcPath +
                   " " + sandboxPath + "ncbi_grid_1_0" ) != 0:
         print >> sys.stderr, combination
-        print >> sys.stderr, "Error creating grin_cli staff in sandbox: " + gcPath
+        print >> sys.stderr, "Error creating grid_cli staff in sandbox: " + gcPath
         print >> sys.stderr, ""
-        logging.error( "Error creating grin_cli staff in sandbox: " + gcPath )
+        logging.error( "Error creating grid_cli staff in sandbox: " + gcPath )
         return 1
 
     # Binary is here as well the configuration files
