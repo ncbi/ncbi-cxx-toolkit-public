@@ -138,9 +138,6 @@ public:
         const string& key,
         string& value);
 
-    static CMappedFeat FindBestGeneParent(
-        CMappedFeat,
-        feature::CFeatTree&);
 };
 
 END_objects_SCOPE

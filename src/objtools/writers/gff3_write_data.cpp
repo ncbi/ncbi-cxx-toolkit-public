@@ -523,7 +523,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributeGene(
 
     if ( strGene.empty() ) {
         //CMappedFeat gene = feature::GetBestGeneForFeat(mf, &m_fc.FeatTree());
-        CMappedFeat gene = CWriteUtil::FindBestGeneParent(mf, m_fc.FeatTree());
+        CMappedFeat gene = m_fc.FindBestGeneParent(mf);
         if (gene.IsSetData()  &&  gene.GetData().IsGene()) {
             CWriteUtil::GetGeneRefGene(gene.GetData().GetGene(), strGene);
         }

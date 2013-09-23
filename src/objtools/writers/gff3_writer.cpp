@@ -843,7 +843,7 @@ bool CGff3Writer::xTryAssignGeneParent(
     CMappedFeat mf)
 //  ============================================================================
 {
-    CMappedFeat gene = CWriteUtil::FindBestGeneParent(mf, fc.FeatTree());
+    CMappedFeat gene = fc.FindBestGeneParent(mf);
     if (!gene) {
         return false;
     }

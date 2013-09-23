@@ -58,8 +58,11 @@ public:
     CBioseq_Handle BioseqHandle() const { return m_bsh; };
     CSeq_annot_Handle AnnotHandle() const { return m_sah; };
 
+    CMappedFeat FindBestGeneParent(const CMappedFeat& mf);
+
 protected:
     feature::CFeatTree m_ft;
+    CMappedFeat m_mfLastIn, m_mfLastOut;
     CBioseq_Handle m_bsh;
     CSeq_annot_Handle m_sah;
 

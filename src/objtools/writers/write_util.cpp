@@ -41,6 +41,7 @@
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/SubSource.hpp>
 #include <objtools/writers/write_util.hpp>
+#include <objtools/writers/feature_context.hpp>
 #include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -702,34 +703,31 @@ bool CWriteUtil::GetQualifier(
     return false;
 }
  
-//  ----------------------------------------------------------------------------
-CMappedFeat CWriteUtil::FindBestGeneParent(
-    CMappedFeat mf,
-    feature::CFeatTree& ftree)
-//  ----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------
+CMappedFeat CGffFeatureContext::FindBestGeneParent(const CMappedFeat& mf)
+// ----------------------------------------------------------------------------
 {
-    static CMappedFeat mfLastIn, mfLastOut;
-    if (mf == mfLastIn) {
-        return mfLastOut;
+    if (mf == m_mfLastIn) {
+        return m_mfLastOut;
     }
-    mfLastIn = mf;
+    m_mfLastIn = mf;
 
     //CMappedFeat gene;
     if (mf.GetFeatSubtype() == CSeqFeatData::eSubtype_mRNA) {
-        mfLastOut = feature::GetBestGeneForMrna(mf, &ftree);
-        if (!mfLastOut) {
-            mfLastOut = feature::GetBestGeneForMrna(mf, &ftree, 0,
+        m_mfLastOut = feature::GetBestGeneForMrna(mf, &m_ft);
+        if (!m_mfLastOut) {
+            m_mfLastOut = feature::GetBestGeneForMrna(mf, &m_ft, 0,
                 feature::CFeatTree::eBestGene_AllowOverlapped);
         }
     }
     else {
-        mfLastOut = feature::GetBestGeneForFeat(mf, &ftree);
-        if (!mfLastOut) {
-            mfLastOut = feature::GetBestGeneForFeat(mf, &ftree, 0,
+        m_mfLastOut = feature::GetBestGeneForFeat(mf, &m_ft);
+        if (!m_mfLastOut) {
+            m_mfLastOut = feature::GetBestGeneForFeat(mf, &m_ft, 0,
                 feature::CFeatTree::eBestGene_AllowOverlapped);
         }
     }
-    if (!mfLastOut) {
+    if (!m_mfLastOut) {
         CSeq_loc loc;
         loc.Add(mf.GetLocation());
         loc.SetStrand(objects::eNa_strand_unknown);
@@ -740,10 +738,10 @@ CMappedFeat CWriteUtil::FindBestGeneParent(
             mf.GetScope());
         CFeat_CI ci(mf.GetScope(), loc);
         if (ci) {
-            mfLastOut = *ci;
+            m_mfLastOut = *ci;
         }
     }
-    return mfLastOut;
+    return m_mfLastOut;
 }
 
 END_NCBI_SCOPE
