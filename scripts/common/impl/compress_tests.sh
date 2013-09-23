@@ -8,8 +8,10 @@ esac
 compress='gzip -Nf'
 
 ws='[ 	]' # Contains a space and a tab.
-if grep "^$ws*PURPOSE$ws*=$ws*FINAL$ws*\$" ../../build_info >/dev/null 2>&1 \
-    &&  bzip2 --version </dev/null >/dev/null 2>&1; then
+if [ -f ../../build-info ] \
+    && (grep "^$ws*PURPOSE$ws*=$ws*FINAL$ws*\$" ../../build_info \
+        &&  grep "^$ws*CODEBASE$ws*=$ws*PRODUCTION$ws*\$" ../../build_info \
+        &&  bzip2 --version </dev/null) >/dev/null 2>&1; then
     # Some bzip2 releases still try to compress stdin with --version(!)
     compress='bzip2 -f'
 fi
