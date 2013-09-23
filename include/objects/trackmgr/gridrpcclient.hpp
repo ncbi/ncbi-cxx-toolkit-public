@@ -118,8 +118,7 @@ public:
                 CCompressionStream::fOwnProcessor
             )
         );
-        return CObjectOStream::Open(GetDataFormat(), *outstr_zip.release(),
-                                    ownership);
+        return CObjectOStream::Open(GetDataFormat(), *outstr_zip.release(), ownership);
     }
 
     /// Return an object input stream (CObjectIStream)
@@ -135,8 +134,7 @@ public:
         auto_ptr<CCompressionIStream> instr_zip(
             new CCompressionIStream(
                 istr,
-                new CZipStreamDecompressor
-                (CZipCompression::fAllowTransparentRead),
+                new CZipStreamDecompressor(CZipCompression::fAllowTransparentRead),
                 CCompressionStream::fOwnProcessor
             )
         );
