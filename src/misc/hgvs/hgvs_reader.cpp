@@ -171,28 +171,24 @@ CHgvsReader::ReadSeqAnnot(
 
                     const string& code = 
                         CVariationException::GetTypeInfo_enum_ECode()->FindName(except.GetCode(), true);
-                    AutoPtr<CObjReaderLineException> pErr(
-                        CObjReaderLineException::Create(
+                    CObjReaderLineException err(
                         eDiag_Warning,
                         m_uLineNumber,
                         string("CHgvsReader::ReadSeqAnnot Warning [") + code  + "] " + except.GetMessage(),
-                        ILineError::eProblem_GeneralParsingError
-                        ) );
-                    ProcessWarning(*pErr, pEC);
+                        ILineError::eProblem_GeneralParsingError);
+                    ProcessWarning(err, pEC);
                 } 
             }
 
             varUtil.AsVariation_feats(*var, annot->SetData().SetFtable());
         }
         catch (const variation::CHgvsParser::CHgvsParserException& e) {
-            AutoPtr<CObjReaderLineException> pErr(
-                CObjReaderLineException::Create(
+            CObjReaderLineException err(
                eDiag_Error,
                0,
                string("CHgvsReader::ReadSeqAnnot Error [") + e.GetErrCodeString() + "] " + e.GetMsg(),
-               ILineError::eProblem_GeneralParsingError
-            ) );
-            ProcessError(*pErr, pEC);
+               ILineError::eProblem_GeneralParsingError);
+            ProcessError(err, pEC);
         }
     }
 
