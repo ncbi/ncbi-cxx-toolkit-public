@@ -419,7 +419,8 @@ Source-qual ::= ENUMERATED {
     dbxref (96) ,
     taxid (97) ,
     all-primers (98) ,
-    altitude (99)
+    altitude (99) ,
+    type-material (100)
 }
 
 Source-qual-pair ::= SEQUENCE {
