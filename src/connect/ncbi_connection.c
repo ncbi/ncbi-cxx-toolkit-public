@@ -150,8 +150,8 @@ typedef struct SConnectionTag {
 
     BUF             buf;         /* storage for peek data                    */
 
-    /* "[c|r|w|l]_timeout" is either 0 (kInfiniteTimeout), kDefaultTimeout
-       (to use connector-specific one), or points to "[cc|rr|ww|ll]_timeout" */
+    /* "[o|r|w|c]_timeout" is either 0 (kInfiniteTimeout), kDefaultTimeout
+       (to use connector-specific one), or points to "[oo|rr|ww|cc]_timeout" */
     const STimeout* o_timeout;   /* timeout on open                          */
     const STimeout* r_timeout;   /* timeout on read                          */
     const STimeout* w_timeout;   /* timeout on write                         */
