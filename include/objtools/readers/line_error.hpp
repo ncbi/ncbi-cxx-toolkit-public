@@ -492,7 +492,7 @@ public:
 
     std::string ProblemStr() const;
 
-    std::string Message() const { return GetMsg(); }
+    std::string Message() const { return ( GetMsg().empty() ? ILineError::Message() : GetMsg()); }
     
     //
     //  Cludge alert: The line number may not be known at the time the exception
