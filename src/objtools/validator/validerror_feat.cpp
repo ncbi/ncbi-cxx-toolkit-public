@@ -5953,10 +5953,13 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         && (cdregion.GetFrame() == CCdregion::eFrame_two || cdregion.GetFrame() == CCdregion::eFrame_three)) {
         // coding region should be 5' partial
         if (!(part_loc & eSeqlocPartial_Start)) {
+            EDiagSev sev = eDiag_Error;
+            /*
             EDiagSev sev = eDiag_Warning;
             if (s_LocIsNmAccession (location, *m_Scope)) {
                 sev = eDiag_Error;
             }
+            */
             has_errors = true;
             other_than_mismatch = true;
             if (report_errors) {
@@ -5969,7 +5972,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
                 && NStr::Find(comment_text, "coding region disrupted by sequencing gap") != string::npos) {
                 // suppress
             } else {
-                EDiagSev sev = eDiag_Info;
+                EDiagSev sev = eDiag_Warning;
                 if (s_LocIsNmAccession (location, *m_Scope)) {
                     sev = eDiag_Error;
                 }
