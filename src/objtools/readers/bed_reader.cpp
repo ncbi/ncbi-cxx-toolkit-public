@@ -100,7 +100,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 CBedReader::CBedReader(
     unsigned int flags ) :
 //  ----------------------------------------------------------------------------
-    CReaderBase(flags),
+    CReaderBase(flags | CReaderBase::fAllIdsAsLocal),
     m_currentId(""),
     m_columncount(0),
     m_usescore(false),
@@ -123,7 +123,7 @@ CBedReader::ReadSeqAnnot(
     IMessageListener* pEC ) 
 //  ----------------------------------------------------------------------------                
 {
-    const int MAX_RECORDS = 100000;
+    const size_t MAX_RECORDS = 100000;
 
     CRef<CSeq_annot> annot;
     CRef<CAnnot_descr> desc;
@@ -133,13 +133,15 @@ CBedReader::ReadSeqAnnot(
     annot->SetDesc(*desc);
     CSeq_annot::C_Data::TFtable& tbl = annot->SetData().SetFtable();
 
-    string line;
     int featureCount = 0;
 
     while (!lr.AtEOF()) {
+
         ++m_uLineNumber;
-        line = *++lr;
-        if (NStr::TruncateSpaces(line).empty()) {
+
+        CTempString line = *++lr;
+
+        if (NStr::TruncateSpaces_Unsafe(line).empty()) {
             continue;
         }
         if (xParseComment(line, annot)) {
@@ -161,8 +163,7 @@ CBedReader::ReadSeqAnnot(
             }
         }
 
-	    string record_copy = line;
-	    NStr::TruncateSpacesInPlace(record_copy);
+	    CTempString record_copy = NStr::TruncateSpaces_Unsafe(line);
 
         //  parse
         vector<string> fields;
@@ -463,7 +464,7 @@ bool CBedReader::xParseFeatureUserFormat(
 
 //  ----------------------------------------------------------------------------
 bool CBedReader::xParseComment(
-    const string& record,
+    const CTempString& record,
     CRef<CSeq_annot>& annot ) /* throws CObjReaderLineException */
 //  ----------------------------------------------------------------------------
 {
@@ -553,6 +554,7 @@ void CBedReader::xSetFeatureLocationThick(
 {
     CRef<CSeq_loc> location(new CSeq_loc);
     int from, to;
+    from = to = -1;
 
     //already established: We got at least three columns
     try {
@@ -636,9 +638,9 @@ void CBedReader::xSetFeatureLocationBlock(
 //  ----------------------------------------------------------------------------
 {
     //already established: there are sufficient columns to do this
-    int blockCount = NStr::StringToInt(fields[9]);
-    vector<int> blockSizes;
-    vector<int> blockStarts;
+    size_t blockCount = NStr::StringToUInt(fields[9]);
+    vector<size_t> blockSizes;
+    vector<size_t> blockStarts;
     {{
         blockSizes.reserve(blockCount);
         vector<string> vals; 
@@ -655,8 +657,8 @@ void CBedReader::xSetFeatureLocationBlock(
             pErr->Throw();
         }
         try {
-            for (int i=0; i < blockCount; ++i) {
-                blockSizes.push_back(NStr::StringToInt(vals[i]));
+            for (size_t i=0; i < blockCount; ++i) {
+                blockSizes.push_back(NStr::StringToUInt(vals[i]));
             }
         }
         catch (std::exception&) {
@@ -671,7 +673,7 @@ void CBedReader::xSetFeatureLocationBlock(
     {{
         blockStarts.reserve(blockCount);
         vector<string> vals; 
-        int baseStart = NStr::StringToInt(fields[1]);
+        size_t baseStart = NStr::StringToUInt(fields[1]);
         NStr::Tokenize(fields[11], ",", vals);
         if (vals.back() == "") {
             vals.erase(vals.end()-1);
@@ -685,8 +687,8 @@ void CBedReader::xSetFeatureLocationBlock(
             pErr->Throw();
         }
         try {
-            for (int i=0; i < blockCount; ++i) {
-                blockStarts.push_back(baseStart + NStr::StringToInt(vals[i]));
+            for (size_t i=0; i < blockCount; ++i) {
+                blockStarts.push_back(baseStart + NStr::StringToUInt(vals[i]));
             }
         }
         catch (std::exception&) {
@@ -703,7 +705,7 @@ void CBedReader::xSetFeatureLocationBlock(
     
     ENa_strand strand = xGetStrand(fields);
     CRef<CSeq_id> pId = CReadUtil::AsSeqId(fields[0], m_iFlags, false);
-    for (int i=0; i < blockCount; ++i) {
+    for (size_t i=0; i < blockCount; ++i) {
         CRef<CSeq_interval> pInterval(new CSeq_interval);
         pInterval->SetId(*pId);
         pInterval->SetFrom(blockStarts[i]);
@@ -842,9 +844,43 @@ void CBedReader::xSetFeatureBedData(
     if (fields.size() < 9) {
         return;
     }
-    vector<string> rgb;
-    NStr::Tokenize(fields[8], ",", rgb);
-    string rgbValue = NStr::Join(rgb, " ");
+    vector<string> srgb;
+    NStr::Tokenize(fields[8], ",", srgb);
+    if (srgb.size() != 3)
+    {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Error,
+            0,
+            "Invalid data line: Bad color value.") );
+        pErr->Throw();
+    }
+    try
+    {
+        for (int i=0; i < 3; i++)
+        {
+           int x = NStr::StringToInt(srgb[i]);
+           if (x<0 || x>255) {
+                AutoPtr<CObjReaderLineException> pErr(
+                    CObjReaderLineException::Create(
+                    eDiag_Error,
+                    0,
+                    "Invalid data line: Bad color value.") );
+                pErr->Throw();
+           }
+
+        }
+    }
+    catch(const std::exception&)
+    {
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
+            eDiag_Error,
+            0,
+            "Invalid data line: Bad color value.") );
+        pErr->Throw();
+    }
+    string rgbValue = NStr::Join(srgb, " ");
     pDisplayData->AddField("color", rgbValue);
 }
 
@@ -864,6 +900,7 @@ void CBedReader::x_SetFeatureLocation(
 
     CRef<CSeq_loc> location(new CSeq_loc);
     int from, to;
+    from = to = -1;
 
     //already established: We got at least three columns
     try {

@@ -6,27 +6,6 @@ Seq-annot ::= {
       strand unknown,
       id local str "chr7"
     },
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
     title "Color by strand demonstration",
     name "ColorByStrandDemo",
     user {

@@ -1,27 +1,6 @@
 Seq-annot ::= {
   desc {
     user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
-    user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
         {
@@ -811,27 +790,6 @@ Seq-annot ::= {
 }
 Seq-annot ::= {
   desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
     user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
@@ -1623,27 +1581,6 @@ Seq-annot ::= {
 Seq-annot ::= {
   desc {
     user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
-    user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
         {
@@ -2433,27 +2370,6 @@ Seq-annot ::= {
 }
 Seq-annot ::= {
   desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
     user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
@@ -3245,27 +3161,6 @@ Seq-annot ::= {
 Seq-annot ::= {
   desc {
     user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
-    user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
         {
@@ -4024,27 +3919,6 @@ Seq-annot ::= {
 }
 Seq-annot ::= {
   desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
     user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
@@ -4836,27 +4710,6 @@ Seq-annot ::= {
 Seq-annot ::= {
   desc {
     user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
-    user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
         {
@@ -5646,27 +5499,6 @@ Seq-annot ::= {
 }
 Seq-annot ::= {
   desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
     user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
@@ -6458,27 +6290,6 @@ Seq-annot ::= {
 Seq-annot ::= {
   desc {
     user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
-    user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
         {
@@ -7268,27 +7079,6 @@ Seq-annot ::= {
 }
 Seq-annot ::= {
   desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
     user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
@@ -8080,27 +7870,6 @@ Seq-annot ::= {
 Seq-annot ::= {
   desc {
     user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
-    user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
         {
@@ -8890,27 +8659,6 @@ Seq-annot ::= {
 }
 Seq-annot ::= {
   desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
     user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
@@ -9702,27 +9450,6 @@ Seq-annot ::= {
 Seq-annot ::= {
   desc {
     user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
-    user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
         {
@@ -10512,27 +10239,6 @@ Seq-annot ::= {
 }
 Seq-annot ::= {
   desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
     user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
@@ -11324,27 +11030,6 @@ Seq-annot ::= {
 Seq-annot ::= {
   desc {
     user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
-    user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
         {
@@ -12134,27 +11819,6 @@ Seq-annot ::= {
 }
 Seq-annot ::= {
   desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
     user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
@@ -12946,27 +12610,6 @@ Seq-annot ::= {
 Seq-annot ::= {
   desc {
     user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
-    user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
         {
@@ -13756,27 +13399,6 @@ Seq-annot ::= {
 }
 Seq-annot ::= {
   desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
     user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
@@ -14568,27 +14190,6 @@ Seq-annot ::= {
 Seq-annot ::= {
   desc {
     user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
-    user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
         {
@@ -15378,27 +14979,6 @@ Seq-annot ::= {
 }
 Seq-annot ::= {
   desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
     user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
@@ -16190,27 +15770,6 @@ Seq-annot ::= {
 Seq-annot ::= {
   desc {
     user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
-    user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
         {
@@ -17000,27 +16559,6 @@ Seq-annot ::= {
 }
 Seq-annot ::= {
   desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
     user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
@@ -17812,27 +17350,6 @@ Seq-annot ::= {
 Seq-annot ::= {
   desc {
     user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
-    user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
         {
@@ -18622,27 +18139,6 @@ Seq-annot ::= {
 }
 Seq-annot ::= {
   desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
     user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
@@ -19434,27 +18930,6 @@ Seq-annot ::= {
 Seq-annot ::= {
   desc {
     user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
-    user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
         {
@@ -20245,27 +19720,6 @@ Seq-annot ::= {
 Seq-annot ::= {
   desc {
     user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
-    user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
         {
@@ -20529,27 +19983,6 @@ Seq-annot ::= {
 Seq-annot ::= {
   desc {
     user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
-    user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
         {
@@ -20688,27 +20121,6 @@ Seq-annot ::= {
 }
 Seq-annot ::= {
   desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
     user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {
@@ -21003,27 +20415,6 @@ Seq-annot ::= {
 }
 Seq-annot ::= {
   desc {
-    user {
-      type str "Conversion Info",
-      data {
-        {
-          label str "critical errors",
-          data int 0
-        },
-        {
-          label str "errors",
-          data int 0
-        },
-        {
-          label str "warnings",
-          data int 0
-        },
-        {
-          label str "notes",
-          data int 0
-        }
-      }
-    },
     user {
       type str "NCBI_BED_COLUMN_COUNT",
       data {

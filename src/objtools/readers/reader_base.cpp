@@ -406,6 +406,14 @@ void CReaderBase::x_AddConversionInfo(
     if ( !annot || !pMessageListener ) {
         return;
     }
+    if (0 == pMessageListener->LevelCount( eDiag_Critical )  &&
+        0 == pMessageListener->LevelCount( eDiag_Error ) &&
+        0 == pMessageListener->LevelCount( eDiag_Warning ) &&
+        0 == pMessageListener->LevelCount( eDiag_Info )) {
+        return;
+    }
+
+
     CRef<CAnnotdesc> user( new CAnnotdesc() );
     user->SetUser( *x_MakeAsnConversionInfo( pMessageListener ) );
     annot->SetDesc().Set().push_back( user );

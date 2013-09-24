@@ -270,7 +270,7 @@ protected:
         IMessageListener*);
 
     bool xParseComment(
-        const string&,
+        const CTempString&,
         CRef<CSeq_annot>&);
 
     void x_SetFeatureLocation(
