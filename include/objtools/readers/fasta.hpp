@@ -163,6 +163,10 @@ public:
     const CSourceModParser::TMods & GetBadMods(void) const { return m_BadMods; }
     void  ClearBadMods(void) { m_BadMods.clear(); }
 
+    void SetModFilter( CRef<CSourceModParser::CModFilter> pModFilter ) {
+        m_pModFilter = pModFilter;
+    }
+
     /// If this is set, an exception will be thrown if a Sequence ID exceeds the
     /// given length.
     /// @param max_len
@@ -365,6 +369,7 @@ private:
     CSourceModParser::TMods m_UnusedMods;
     Uint4                   m_MaxIDLength;
     vector<SLineTextAndLoc> m_CurrentSeqTitles;
+    CRef<CSourceModParser::CModFilter> m_pModFilter;
 };
 
 

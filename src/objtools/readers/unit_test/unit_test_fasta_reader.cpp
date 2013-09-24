@@ -401,7 +401,9 @@ namespace {
     CRef<CBioseq> s_ParseFasta( const string & sFasta,
         CFastaReader::TFlags fFlags,
         const string & sExpectedExceptionErrCode = kEmptyStr,
-        const TWarnVec & pExpectedWarningTypes = TWarnVec() )
+        const TWarnVec & pExpectedWarningTypes = TWarnVec(),
+        CRef<CSourceModParser::CModFilter> pModFilter =  CRef<CSourceModParser::CModFilter>(),
+        set<string> expected_unused_mods = set<string>() )
     {
         CRef<CBioseq> pRetvalBioseq;
         string sErrCodeThatOccurred;
@@ -411,10 +413,22 @@ namespace {
         try {
             CMemoryLineReader line_reader( sFasta.c_str(), sFasta.length() );
             CFastaReader fasta_reader( line_reader, fFlags );
+            if( pModFilter ) {
+                fasta_reader.SetModFilter( pModFilter );
+            }
 
             CRef<CSeq_entry> pEntry = fasta_reader.ReadOneSeq(pMessageListener.GetPointer());
             BOOST_REQUIRE(pEntry->IsSeq());
             pRetvalBioseq.Reset( & pEntry->SetSeq() );
+
+            CSourceModParser::TMods unused_mods = fasta_reader.GetUnusedMods();
+            set<string> unused_mods_as_strings;
+            ITERATE(CSourceModParser::TMods, unused_mod_it, unused_mods) {
+                unused_mods_as_strings.insert( unused_mod_it->key );
+            }
+            BOOST_CHECK_EQUAL_COLLECTIONS(
+                unused_mods_as_strings.begin(), unused_mods_as_strings.end(),
+                expected_unused_mods.begin(), expected_unused_mods.end() );
         } catch(const CException & ex ) {
             sErrCodeThatOccurred = ex.GetErrCodeString();
         } catch(...) {
@@ -651,8 +665,14 @@ BOOST_AUTO_TEST_CASE(TestGeneAndProtein)
             ">Seq1 [gene=some_gene] [protein=foo]\n"
             "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTAC\n";
 
+        set<string> expected_unused_mods;
+        expected_unused_mods.insert("protein");
+
         CRef<CBioseq> pBioseq = s_ParseFasta(
-            kFastaNuc, CFastaReader::fAddMods );
+            kFastaNuc, CFastaReader::fAddMods,
+            kEmptyStr, TWarnVec(), 
+            CRef<CSourceModParser::CModFilter>(),
+            expected_unused_mods );
         BOOST_REQUIRE(pBioseq);
 
         bool bFoundGene = false;
@@ -675,8 +695,14 @@ BOOST_AUTO_TEST_CASE(TestGeneAndProtein)
             ">Seq1 [gene=some_gene] [protein=foo]\n"
             "MALWMHLLTVLALLALWGPNTNQAFVSRHLCGSNLVETLYSVCQDDGFFYIPKDRRELED\n";
 
+        set<string> expected_unused_mods;
+        expected_unused_mods.insert("gene");
+
         CRef<CBioseq> pBioseq = s_ParseFasta(
-            kFastaProt, CFastaReader::fAddMods );
+            kFastaProt, CFastaReader::fAddMods,
+            kEmptyStr, TWarnVec(), 
+            CRef<CSourceModParser::CModFilter>(),
+            expected_unused_mods );
         BOOST_REQUIRE(pBioseq);
 
         bool bHasProt = false;
@@ -1465,3 +1491,47 @@ BOOST_AUTO_TEST_CASE(TestIgnoringSpacesAfterGreaterThanInDefline)
     }
 }
 
+BOOST_AUTO_TEST_CASE(TestModFilter)
+{
+    const string kData = ">Seq1 [topology=circular] [org=ia io]\n"
+        "ACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTA\n";
+
+    // a filter that filters out org mods only.
+    class COrgModFilter : public CSourceModParser::CModFilter
+    {
+    public:
+        virtual bool operator()( const CTempString & mod_name ) {
+            return ( mod_name != "org" );
+        }
+    };
+    CRef<CSourceModParser::CModFilter> pModFilter( new COrgModFilter );
+
+    ITERATE_BOTH_BOOL_VALUES( bUseFilter ) {
+
+        set<string> expected_unused_mods;
+        if( bUseFilter ) {
+            expected_unused_mods.insert( "org" );
+        }
+
+        CRef<CBioseq> pBioseq = 
+            s_ParseFasta( kData,
+            CFastaReader::fAddMods,
+            kEmptyStr,
+            TWarnVec(),
+            ( bUseFilter ? pModFilter : CRef<CSourceModParser::CModFilter>() ),
+            expected_unused_mods );
+        
+        cout << MSerial_AsnText << *pBioseq << endl;
+
+        // check if pBioseq has an org
+        bool has_org = false;
+        FOR_EACH_SEQDESC_ON_BIOSEQ(desc_it, *pBioseq) {
+            if( FIELD_IS_AND_IS_SET(**desc_it, Source, Org) ) {
+                has_org = true;
+                break;
+            }
+        }
+
+        BOOST_CHECK_EQUAL( has_org, ! bUseFilter );
+    }
+}

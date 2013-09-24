@@ -1022,6 +1022,13 @@ CSourceModParser::TMods CSourceModParser::GetMods(TWhichMods which) const
 const CSourceModParser::SMod* CSourceModParser::FindMod(const CTempString& key,
                                                         CTempString alt_key )
 {
+    // check against m_pModFilter, if any
+    if( m_pModFilter ) {
+        if( ! (*m_pModFilter)(key) || ! (*m_pModFilter)(alt_key) ) {
+            return NULL;
+        }
+    }
+
     SMod mod;
 
     for (int tries = 0;  tries < 2;  ++tries) {

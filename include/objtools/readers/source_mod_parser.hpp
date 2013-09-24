@@ -181,6 +181,18 @@ public:
     /// Allows user to get the list of bad mods found by this
     const TMods & GetBadMods(void) const { return m_BadMods; }
 
+    class CModFilter : public CObject {
+    public:
+        virtual ~CModFilter(void) { }
+        virtual bool operator()( const CTempString & mod_name ) = 0;
+    };
+    /// The filter indicates whether certain mods are okay or not.
+    ///
+    /// @param pModFilter
+    ///   If this is an unset CRef, it turns off filtering.
+    void SetModFilter( CRef<CModFilter> pModFilter ) { 
+        m_pModFilter = pModFilter; }
+
     /// Given a mod name (e.g. "topology"), it returns the set of acceptable
     /// values (e.g. "linear", "circular", etc.).  If the
     /// mod is unknown or free-form, the returned set will be blank.
@@ -197,6 +209,8 @@ private:
 
     TMods m_Mods;
     TMods m_BadMods;
+
+    CRef<CModFilter> m_pModFilter;
 
     void x_ApplyMods(CAutoInitRef<CBioSource>& bsrc, CTempString organism);
     void x_ApplyMods(CAutoInitRef<CMolInfo>& mi);

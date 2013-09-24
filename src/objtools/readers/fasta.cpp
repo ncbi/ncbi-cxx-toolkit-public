@@ -1956,6 +1956,7 @@ void CFastaReader::x_ApplyAllMods(
     CSourceModParser smp( TestFlag(fBadModThrow) ?
         CSourceModParser::eHandleBadMod_Throw : 
     CSourceModParser::eHandleBadMod_Ignore );
+    smp.SetModFilter( m_pModFilter );
     CRef<CSeqdesc> title_desc;
 
 
