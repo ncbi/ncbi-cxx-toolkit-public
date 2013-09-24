@@ -449,7 +449,7 @@ void CDense_seg::Compact()
             /// to be different)
             if (IsSetStrands()) {
                 if (GetStrands()[i * GetDim() + j]
-                    != GetStrands()[i * GetDim() + j]) {
+                    != GetStrands()[(i + 1) * GetDim() + j]) {
                     can_merge[i] = false;
                     break;
                 }
