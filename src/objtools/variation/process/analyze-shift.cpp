@@ -108,7 +108,9 @@ bool CAnalyzeShiftApp::ProcessHGVS(string &expression, CRef<CScope> scope, CHgvs
   stringstream line;
   line << expression;
 
-  reader.ReadSeqAnnots(annots, line);
+  try {
+      reader.ReadSeqAnnots(annots, line);
+  } catch(...) {return false;}
   if (annots.size() != 1) return false;
   CRef<CSeq_annot> a(new CSeq_annot);
   a->Assign(*annots.front());
