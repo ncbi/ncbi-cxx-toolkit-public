@@ -596,6 +596,7 @@ int main(int argc, const char* argv[])
     signal(SIGTERM, s_Interrupt);
     signal(SIGQUIT, s_Interrupt);
 #endif // NCBI_OS
+    SOCK_SetInterruptOnSignalAPI(eOn);
 
     // Init the library explicitly (this sets up the log)
     CONNECT_Init(0);
