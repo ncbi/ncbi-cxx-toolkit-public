@@ -33,6 +33,7 @@
 
 #include <ncbi_pch.hpp>
 #include <objmgr/impl/tse_chunk_info.hpp>
+#include <objmgr/impl/tse_chunk_info.hpp>
 #include <objmgr/impl/tse_split_info.hpp>
 #include <objmgr/impl/tse_info.hpp>
 #include <objmgr/impl/tse_assigner.hpp>
@@ -45,8 +46,14 @@
 #include <objects/seq/Seq_literal.hpp>
 #include <objmgr/seq_map.hpp>
 #include <algorithm>
+#include <objmgr/error_codes.hpp>
+
+#define NCBI_USE_ERRCODE_X   ObjMgr_ObjSplitInfo
 
 BEGIN_NCBI_SCOPE
+
+NCBI_DEFINE_ERR_SUBCODE_X(11);
+
 BEGIN_SCOPE(objects)
 
 /////////////////////////////////////////////////////////////////////////////
@@ -490,7 +497,18 @@ void CTSE_Chunk_Info::x_InitObjectIndexList(void)
             ITERATE ( TLocationSet, lit, tit->second ) {
                 key.m_Handle = lit->first;
                 key.m_Range = lit->second;
-                infos.AddMap(key, index);
+                if ( key.m_Range.Empty() ) {
+                    string name;
+                    if ( it->first.IsNamed() ) {
+                        name = " "+it->first.GetName();
+                    }
+                    ERR_POST_X(11, "Empty region in split-info on "<<
+                               key.m_Handle<<name<<" "<<
+                               GetSplitInfo().GetBlobId());
+                }
+                else {
+                    infos.AddMap(key, index);
+                }
             }
             size_t keys_end = infos.GetKeys().size();
             if ( keys_begin+1 == keys_end &&
