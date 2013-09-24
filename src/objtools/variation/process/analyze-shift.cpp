@@ -173,7 +173,12 @@ bool CAnalyzeShiftApp::ProcessHGVS(string &expression, CRef<CScope> scope, CHgvs
                (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
               ref = (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
   }
-  else if (a->GetData().GetFtable().front()->GetData().GetVariation().GetData().IsInstance())
+  else if (a->GetData().GetFtable().front()->GetData().GetVariation().GetData().IsInstance() &&  a->GetData().GetFtable().front()->GetData().GetVariation().GetData().GetInstance().IsSetDelta()
+           && a->GetData().GetFtable().front()->GetData().GetVariation().GetData().GetInstance().GetDelta().size() == 1  
+           && a->GetData().GetFtable().front()->GetData().GetVariation().GetData().GetInstance().GetDelta().front()->IsSetSeq()
+           && a->GetData().GetFtable().front()->GetData().GetVariation().GetData().GetInstance().GetDelta().front()->GetSeq().IsLiteral()
+           && a->GetData().GetFtable().front()->GetData().GetVariation().GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data()
+           && a->GetData().GetFtable().front()->GetData().GetVariation().GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
       ref = a->GetData().GetFtable().front()->GetData().GetVariation().GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get();
   else
       return false;

@@ -502,10 +502,11 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
 bool CVariationNormalizationLeft::x_ProcessShift(string &a, int &pos,int &pos_right)
 {
     bool found = false;
-    if (pos >=0 && pos+a.size() < x_GetSeqSize())
-        for (unsigned int i=0; i<a.size(); i++)
+    int length = a.size();
+    if (pos >=0 && pos+length < x_GetSeqSize())
+        for (unsigned int i=0; i<length; i++)
         {
-            string b = x_GetSeq(pos,a.size());
+            string b = x_GetSeq(pos,length);
             if (a == b) 
             {
                 found = true;
@@ -515,12 +516,12 @@ bool CVariationNormalizationLeft::x_ProcessShift(string &a, int &pos,int &pos_ri
         }
     if (m_Type == CVariation_inst::eType_ins)
     {
-        if (!found && pos >= a.size() && pos < x_GetSeqSize())
+        if (!found && pos >= length && pos < x_GetSeqSize())
         {
-            pos -= a.size();
-            for (unsigned int i=0; i<a.size(); i++)
+            pos -= length;
+            for (unsigned int i=0; i<length; i++)
             {
-                string b = x_GetSeq(pos,a.size());
+                string b = x_GetSeq(pos,length);
                 if (a == b) 
                 {
                     found = true;
@@ -534,13 +535,13 @@ bool CVariationNormalizationLeft::x_ProcessShift(string &a, int &pos,int &pos_ri
     if (!found) return false;
                             
     bool found_left = false;
-    while (pos >= 0 && pos+a.size() < x_GetSeqSize())
+    while (pos >= 0 && pos+length < x_GetSeqSize())
     {
         pos--; 
         x_rotate_right(a);
         string b;
-        if (pos >=0 && pos+a.size() < x_GetSeqSize())
-            b = x_GetSeq(pos,a.size());
+        if (pos >=0 && pos+length < x_GetSeqSize())
+            b = x_GetSeq(pos,length);
         if (a != b) 
         {
             pos++;
@@ -572,11 +573,12 @@ void CVariationNormalizationLeft::x_ModifyLocation(CSeq_loc &loc, CSeq_literal &
 bool CVariationNormalizationRight::x_ProcessShift(string &a, int &pos_left, int &pos)
 {
     bool found = false;
-    pos = pos - a.size() + 1;
-    if (pos >=0 && pos+a.size() < x_GetSeqSize())
-        for (unsigned int i=0; i<a.size(); i++)
+    int length = a.size();
+    pos = pos - length + 1;
+    if (pos >=0 && pos+length < x_GetSeqSize())
+        for (unsigned int i=0; i<length; i++)
         {
-            string b = x_GetSeq(pos,a.size());
+            string b = x_GetSeq(pos,length);
             if (a == b) 
             {
                 found = true;
@@ -586,12 +588,12 @@ bool CVariationNormalizationRight::x_ProcessShift(string &a, int &pos_left, int 
         }
     if (m_Type == CVariation_inst::eType_ins)
     {
-        if (!found && pos >= a.size() && pos < x_GetSeqSize())
+        if (!found && pos >= length && pos < x_GetSeqSize())
         {
-            pos -= a.size();
-            for (unsigned int i=0; i<a.size(); i++)
+            pos -= length;
+            for (unsigned int i=0; i<length; i++)
             {
-                string b = x_GetSeq(pos,a.size());
+                string b = x_GetSeq(pos,length);
                 if (a == b) 
                 {
                     found = true;
@@ -604,13 +606,13 @@ bool CVariationNormalizationRight::x_ProcessShift(string &a, int &pos_left, int 
     if (!found) return false;
                             
     bool found_right = false;
-    while (pos >=0 && pos+a.size() < x_GetSeqSize())
+    while (pos >=0 && pos+length < x_GetSeqSize())
     {
         pos++; 
         x_rotate_left(a);
         string b;
-        if (pos >=0 && pos+a.size() < x_GetSeqSize())
-            b = x_GetSeq(pos,a.size());
+        if (pos >=0 && pos+length < x_GetSeqSize())
+            b = x_GetSeq(pos,length);
         if (a != b) 
         {
             pos--;
