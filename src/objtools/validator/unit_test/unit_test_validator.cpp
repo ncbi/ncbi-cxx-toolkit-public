@@ -14765,7 +14765,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SuspiciousFrame)
     CRef<CSeq_feat> prot_feat = unit_test_util::GetProtFeatFromGoodNucProtSet(entry);
     seh = scope.AddTopLevelSeqEntry(*entry);
 
-    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SuspiciousFrame",
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Error, "SuspiciousFrame",
                                "Suspicious CDS location - frame > 1 but not 5' partial"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -14789,7 +14789,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_SuspiciousFrame)
 
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "PartialProblem",
                                "PartialLocation: 5' partial is not at start AND is not at consensus splice site"));
-    expected_errors.push_back (new CExpectedError("nuc", eDiag_Info, "SuspiciousFrame",
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "SuspiciousFrame",
                                "Suspicious CDS location - frame > 1 and not at consensus splice site"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
