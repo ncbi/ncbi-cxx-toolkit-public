@@ -410,23 +410,6 @@ const xml::dtd& xml::document::get_external_subset (void) const {
     return pimpl_->external_subset_;
 }
 //####################################################################
-bool xml::document::validate (const char *dtdname) {
-    dtd     file_dtd(dtdname,
-                     type_warnings_not_errors);         /* NCBI_FAKE_WARNING */
-    return file_dtd.validate(*this,
-                             type_warnings_not_errors); /* NCBI_FAKE_WARNING */
-}
-//####################################################################
-bool xml::document::validate (dtd &dtd_,
-                              warnings_as_errors_type how) {
-    return dtd_.validate(*this, how);       /* NCBI_FAKE_WARNING */
-}
-//####################################################################
-bool xml::document::validate (schema &xsd_schema,
-                              warnings_as_errors_type how) const {
-    return xsd_schema.validate(*this, how); /* NCBI_FAKE_WARNING */
-}
-//####################################################################
 bool document::validate (error_messages *  messages_,
                          warnings_as_errors_type how) const {
     error_messages *                temp(messages_);

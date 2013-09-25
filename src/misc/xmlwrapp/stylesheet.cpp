@@ -69,9 +69,6 @@
 #include <map>
 #include <string.h>
 
-// temporary
-#include <misc/xmlwrapp/impl/_raw_xslt.hpp>
-
 #include "extension_function_impl.hpp"
 #include "extension_element_impl.hpp"
 
@@ -621,74 +618,6 @@ xslt::stylesheet::~stylesheet()
 }
 
 
-bool xslt::stylesheet::apply(const xml::document &doc, xml::document &result,
-                             result_treat_type  treat)
-{
-    xmlDocPtr input = static_cast<xmlDocPtr>(doc.get_doc_data_read_only());
-    xmlDocPtr xmldoc = apply_stylesheet(pimpl_, input);
-
-    if (xmldoc)
-    {
-        result.set_doc_data_from_xslt(xmldoc,
-                                      new result_impl(xmldoc, pimpl_->ss_),
-                                      treat);
-        return true;
-    }
-
-    return false;
-}
-
-
-bool xslt::stylesheet::apply(const xml::document &doc, xml::document &result,
-                             const param_type &with_params,
-                             result_treat_type  treat)
-{
-    xmlDocPtr input = static_cast<xmlDocPtr>(doc.get_doc_data_read_only());
-    xmlDocPtr xmldoc = apply_stylesheet(pimpl_, input, &with_params);
-
-    if (xmldoc)
-    {
-        result.set_doc_data_from_xslt(xmldoc,
-                                      new result_impl(xmldoc, pimpl_->ss_),
-                                      treat);
-        return true;
-    }
-
-    return false;
-}
-
-
-xml::document_proxy  xslt::stylesheet::apply(const xml::document &doc,
-                                             result_treat_type  treat)
-{
-    xmlDocPtr input = static_cast<xmlDocPtr>(doc.get_doc_data_read_only());
-    xmlDocPtr xmldoc = apply_stylesheet(pimpl_, input);
-
-    if ( !xmldoc )
-        throw xslt::exception(pimpl_->error_);
-
-    xml::document_proxy     proxy(new result_impl(xmldoc, pimpl_->ss_),
-                                  treat);
-    return proxy;
-}
-
-
-xml::document_proxy  xslt::stylesheet::apply(const xml::document &doc,
-                                             const param_type &with_params,
-                                             result_treat_type  treat)
-{
-    xmlDocPtr input = static_cast<xmlDocPtr>(doc.get_doc_data_read_only());
-    xmlDocPtr xmldoc = apply_stylesheet(pimpl_, input, &with_params);
-
-    if ( !xmldoc )
-        throw xslt::exception(pimpl_->error_);
-
-    xml::document_proxy     proxy(new result_impl(xmldoc, pimpl_->ss_),
-                                  treat);
-    return proxy;
-}
-
-
 xml::document_proxy xslt::stylesheet::apply (const xml::document &doc)
 {
     xmlDocPtr input = static_cast<xmlDocPtr>(doc.get_doc_data_read_only());
@@ -725,18 +654,5 @@ xml::document_proxy xslt::stylesheet::apply (const xml::document &doc,
 
     xml::document_proxy     proxy(result_impl_, treat);
     return proxy;
-}
-
-
-const std::string& xslt::stylesheet::get_error_message() const
-{
-    return pimpl_->error_;
-}
-
-
-void *
-xslt::impl::temporary_existing_get_raw_xslt_stylesheet(xslt::stylesheet &  s)
-{
-    return s.pimpl_->ss_;
 }
 

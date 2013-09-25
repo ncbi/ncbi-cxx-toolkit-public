@@ -126,66 +126,6 @@ public:
     **/
     virtual ~schema();
 
-    /**
-     * Create a new xml::schema object by parsing the given XML schema from a
-     * memory buffer.
-     *
-     * @param data The XML schema memory buffer.
-     * @param size Size of the memory buffer.
-     * @param how How to treat warnings (default: warnings are not treated as
-     *            errors). If warnings are treated as errors then an exception
-     *            is thrown in case of both errors and/or warnings. If warnings
-     *            are not treated as errors then an exception will be thrown
-     *            only when there are errors.
-     * @exception Throws xml::parser_exception in case of schema parsing errors
-     *            and std::exception in case of other problems.
-     * @deprecated
-     * @author Sergey Satskiy, NCBI
-    **/
-    NCBI_DEPRECATED
-    schema (const char* data, size_type size,
-            warnings_as_errors_type how = type_warnings_not_errors);
-
-    /**
-     * Get the XML schema parsing error messages.
-     *
-     * @return XML schema error messages.
-     * @deprecated
-     * @author Sergey Satskiy, NCBI
-    **/
-    NCBI_DEPRECATED
-    const error_messages& get_schema_parser_messages (void) const;
-
-    /**
-     * Validate the given XML document.
-     *
-     * @param doc XML document.
-     * @param how How to treat warnings (default: warnings are treated as
-     *            errors). If warnings are treated as errors false is
-     *            returned in case of both errors and/or warnings. If warnings
-     *            are not treated as errors then false is returned
-     *            only when there are errors. The full list of warnings and
-     *            errors can be retrieved by calling the
-     *            get_validation_messages() member function.
-     * @return true if the document is valid, false otherwise.
-     * @exception Throws std::exception in case of problems.
-     * @deprecated
-     * @author Sergey Satskiy, NCBI
-    **/
-    NCBI_DEPRECATED
-    bool validate (const document& doc,
-                   warnings_as_errors_type how = type_warnings_are_errors) const;
-
-    /**
-     * Get the XML document validating error messages.
-     *
-     * @return XML schema error messages.
-     * @deprecated
-     * @author Sergey Satskiy, NCBI
-    **/
-    NCBI_DEPRECATED
-    const error_messages& get_validation_messages(void) const;
-
 private:
     impl::schema_impl *pimpl_;
     void construct (const char* file_or_data, size_type size,

@@ -66,8 +66,6 @@ struct xml::impl::dtd_impl {
 
     xmlDtdPtr       dtd_;
     bool            owned_;
-    error_messages  dtd_parser_messages_;
-    error_messages  dtd_validation_messages_;
 };
 
 
@@ -113,7 +111,7 @@ dtd::dtd (const char* filename, error_messages* messages,
 }
 
 dtd::dtd () : pimpl_(new dtd_impl)
-{} /* NCBI_FAKE_WARNING */
+{}
 
 bool dtd::validate (const document& doc, error_messages* messages,
                     warnings_as_errors_type how) const
@@ -148,28 +146,6 @@ bool dtd::validate (const document& doc, error_messages* messages,
     return true;
 }
 
-// There is a hope that libxml2 will be extended eventually and
-// will provide the detailed errors and warnings for the parsed
-// dtd file.
-dtd::dtd (const char* filename,
-          warnings_as_errors_type how) : pimpl_(NULL) {
-    if (!filename)
-        throw xml::exception("invalid file name");
-    std::auto_ptr<dtd_impl> ap(pimpl_ = new dtd_impl);
-
-    pimpl_->dtd_ = xmlParseDTD(0, reinterpret_cast<const xmlChar*>(filename));
-    if (pimpl_->dtd_ == NULL) {
-        // It is a common case that the file does not exist or cannot be
-        // opened. libxml2 does not recognise it so make a test here to
-        // have a better error message.
-        error_message msg(get_dtd_parsing_error_message(filename),
-                          error_message::type_error);
-        pimpl_->dtd_parser_messages_.get_messages().push_back(msg);
-        throw parser_exception(pimpl_->dtd_parser_messages_);
-    }
-    ap.release();
-} /* NCBI_FAKE_WARNING */
-
 dtd::~dtd() {
     if (pimpl_->owned_ && pimpl_->dtd_)
         xmlFreeDtd(pimpl_->dtd_);
@@ -181,59 +157,9 @@ void dtd::set_dtd_data (void *data) {
     pimpl_->dtd_ = static_cast<xmlDtdPtr>(data);
 }
 
-bool dtd::validate (document& doc, warnings_as_errors_type how) {
-    xmlValidCtxt    vctxt;
-
-    memset(&vctxt, 0, sizeof(vctxt));
-    vctxt.userData = &pimpl_->dtd_validation_messages_;
-    vctxt.error    = cb_dtd_error;
-    vctxt.warning  = cb_dtd_warning;
-
-    // Clear old messages
-    pimpl_->dtd_validation_messages_.get_messages().clear();
-
-    int retCode(0);
-    if (pimpl_->dtd_) {
-        // External DTD case
-        retCode = xmlValidateDtd(&vctxt, doc.pimpl_->doc_, pimpl_->dtd_);
-    } else {
-        // Internal DTD case
-        retCode = xmlValidateDocument(&vctxt, doc.pimpl_->doc_);
-    }
-
-    if (retCode == 0)
-        return false;
-    if (pimpl_->dtd_validation_messages_.has_errors())
-        return false;
-    if (pimpl_->dtd_validation_messages_.has_warnings()) {
-        if (how == type_warnings_are_errors)
-            return false;
-    }
-
-    // Validation is OK. Update the external subset pointer if required
-    if (pimpl_->dtd_ == NULL)
-        return true;
-
-    xmlDtdPtr   copy = xmlCopyDtd(pimpl_->dtd_);
-    if (copy == NULL)
-        throw xml::exception("Error copying DTD");
-
-    if (doc.pimpl_->doc_->extSubset != 0) xmlFreeDtd(doc.pimpl_->doc_->extSubset);
-    doc.pimpl_->doc_->extSubset = copy;
-    return true;
-}
-
 // The document needs access to the raw dtd pointer to set external subset
 void* dtd::get_raw_pointer (void) const {
     return pimpl_->dtd_;
-}
-
-const error_messages& dtd::get_dtd_parser_messages (void) const {
-    return pimpl_->dtd_parser_messages_;
-}
-
-const error_messages& dtd::get_validation_messages(void) const {
-    return pimpl_->dtd_validation_messages_;
 }
 
 const char* dtd::get_public_id (void) const {

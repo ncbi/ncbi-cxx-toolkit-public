@@ -57,8 +57,6 @@
 #include <string>
 
 
-#include <misc/xmlwrapp/impl/_raw_xslt.hpp>
-
 namespace xslt {
 
     namespace impl {
@@ -219,120 +217,6 @@ public:
     xml::document_proxy apply (const xml::document &doc,
                                const param_type &with_params);
 
-    //####################################################################
-    /**
-     * Apply this stylesheet to the given XML document. The result document
-     * is placed in the second document parameter.
-     *
-     * @note The result_treat_type parameter must be xslt::type_treat_as_doc if
-     * you wish to use non-default output formatting control later - e.g. to
-     * suppress the XML declaration when saving to a string or stream, as in:
-     *     mydoc.save_to_string(mystring, xml::save_op_no_decl);
-     *
-     * @param doc The XML document to transform.
-     * @param result The result tree after applying this stylesheet.
-     * @param treat How to treat XSLT result
-     * @return True if the transformation was successful and the results placed in result.
-     * @return False if there was an error, result is not modified.
-     * @deprecated use apply(const xml::document&)
-     * @author Peter Jones
-    **/
-    //####################################################################
-    NCBI_DEPRECATED
-    bool apply (const xml::document &doc, xml::document &result,
-                result_treat_type  treat=type_no_treat);
-
-    //####################################################################
-    /**
-     * Apply this stylesheet to the given XML document. The result document
-     * is placed in the second document parameter.
-     *
-     * @note The result_treat_type parameter must be xslt::type_treat_as_doc if
-     * you wish to use non-default output formatting control later - e.g. to
-     * suppress the XML declaration when saving to a string or stream, as in:
-     *     mydoc.save_to_string(mystring, xml::save_op_no_decl);
-     *
-     * @param doc The XML document to transform.
-     * @param result The result tree after applying this stylesheet.
-     * @param with_params Override xsl:param elements using the given key/value map
-     * @param with_params each (simple) param name must be enclosed in quotes as pre libxslt specs
-     * @param treat How to treat XSLT result
-     * @return True if the transformation was successful and the results placed in result.
-     * @return False if there was an error, result is not modified.
-     * @deprecated use apply(const xml::document&, const param_type&)
-     * @author Peter Jones
-    **/
-    //####################################################################
-    NCBI_DEPRECATED
-    bool apply (const xml::document &doc, xml::document &result,
-                const param_type &with_params,
-                result_treat_type  treat=type_no_treat);
-
-    //####################################################################
-    /**
-     * Apply this stylesheet to the given XML document. The results document
-     * is returned. If there is an error during transformation, this
-     * function will throw an xml::exception exception.
-     *
-     * @note The result_treat_type parameter must be xslt::type_treat_as_doc if
-     * you wish to use non-default output formatting control later - e.g. to
-     * suppress the XML declaration when saving to a string or stream, as in:
-     *     mydoc.save_to_string(mystring, xml::save_op_no_decl);
-     *
-     * @param doc The XML document to transform.
-     * @param treat How to treat XSLT result
-     * @return The result tree.
-     * @deprecated use apply(const xml::document&)
-     * @author Denis Vakatov
-    **/
-    //####################################################################
-    NCBI_DEPRECATED
-    xml::document_proxy apply (const xml::document &doc,
-                               result_treat_type  treat);
-
-    //####################################################################
-    /**
-     * Apply this stylesheet to the given XML document. The results document
-     * is returned. If there is an error during transformation, this
-     * function will throw an xml::exception exception.
-     *
-     * @note The result_treat_type parameter must be xslt::type_treat_as_doc if
-     * you wish to use non-default output formatting control later - e.g. to
-     * suppress the XML declaration when saving to a string or stream, as in:
-     *     mydoc.save_to_string(mystring, xml::save_op_no_decl);
-     *
-     * @param doc The XML document to transform.
-     * @param with_params Override xsl:param elements using the given key/value map
-     * @param with_params each (simple) param name must be enclosed in quotes as pre libxslt specs
-     * @param treat How to treat XSLT result
-     * @return The result tree.
-     * @deprecated use apply(const xml::document&, const param_type&)
-     * @author Denis Vakatov
-     **/
-    //####################################################################
-    NCBI_DEPRECATED
-    xml::document_proxy apply (const xml::document &doc,
-                               const param_type &with_params,
-                               result_treat_type  treat);
-
-    //####################################################################
-    /**
-     * If you used one of the xslt::stylesheet::apply member functions that
-     * return a bool, you can use this function to get the text message for
-     * the transformation error.
-     *
-     * If you are using one of the apply member functions that throws
-     * exceptions, this function should not be used. The text message for
-     * the transformation error will be given to the xml::exception
-     * constructor.
-     *
-     * @return The last error message.
-     * @author Peter Jones
-    **/
-    //####################################################################
-    NCBI_DEPRECATED
-    const std::string& get_error_message (void) const;
-
 private:
     impl::stylesheet_impl *pimpl_;
 
@@ -340,8 +224,6 @@ private:
     stylesheet (const stylesheet&);
     stylesheet& operator= (const stylesheet&);
 
-    // temporary
-    friend void *  xslt::impl::temporary_existing_get_raw_xslt_stylesheet(stylesheet & s);
 }; // end xslt::stylesheet class
 
 } // end xslt namespace

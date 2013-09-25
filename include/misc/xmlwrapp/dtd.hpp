@@ -51,6 +51,7 @@ namespace xml {
 class document;
 namespace impl {
 struct dtd_impl;
+struct doc_impl;
 }
 
 
@@ -130,89 +131,20 @@ public:
     **/
     const char* get_name (void) const;
 
-    /**
-     * Create a new empty xml::dtd object.
-     * The object created this way is for validating a document with a DTD which
-     * resides in the documents.
-     *
-     * @deprecated
-    **/
-    NCBI_DEPRECATED
-    dtd ();
-
-    /**
-     * Create a new xml::dtd object by parsing the given XML dtd file.
-     *
-     * @param filename The XML dtd file name.
-     * @param how How to treat warnings (default: warnings are not treated as
-     *            errors). If warnings are treated as errors then an exception
-     *            is thrown in case of both errors and/or warnings. If warnings
-     *            are not treated as errors then an exception will be thrown
-     *            only when there are errors.
-     * @exception Throws xml::parser_exception in case of dtd parsing errors
-     *            and std::exception in case of other problems.
-     * @deprecated
-     * @author Sergey Satskiy, NCBI
-    **/
-    NCBI_DEPRECATED
-    dtd (const char* filename,
-         warnings_as_errors_type how = type_warnings_not_errors);
-
-    /**
-     * Get the XML dtd parsing error messages.
-     *
-     * @return XML dtd parsing error messages.
-     * @deprecated
-     * @author Sergey Satskiy, NCBI
-    **/
-    NCBI_DEPRECATED
-    const error_messages& get_dtd_parser_messages (void) const;
-
-    /**
-     * Validate the given XML document.
-     *
-     * If the dtd was constructed from a file then after the successfull
-     * document validation the parsed DTD will be added to the document as the
-     * external subset. If there is already an external DTD attached to the
-     * document it will be removed and deleted.
-     *
-     * @param doc XML document.
-     * @param how How to treat warnings (default: warnings are treated as
-     *            errors). If warnings are treated as errors false is
-     *            returned in case of both errors and/or warnings. If warnings
-     *            are not treated as errors then false is returned
-     *            only when there are errors. The full list of warnings and
-     *            errors can be retrieved by calling the
-     *            get_validation_messages() member function.
-     * @return true if the document is valid, false otherwise.
-     * @exception Throws std::exception in case of problems.
-     * @deprecated
-     * @author Sergey Satskiy, NCBI
-    **/
-    NCBI_DEPRECATED
-    bool validate (document& doc,
-                   warnings_as_errors_type how = type_warnings_are_errors);
-
-    /**
-     * Get the XML document validating error messages.
-     *
-     * @return XML dtd validating error messages.
-     * @deprecated
-     * @author Sergey Satskiy, NCBI
-    **/
-    NCBI_DEPRECATED
-    const error_messages& get_validation_messages (void) const;
-
 private:
     impl::dtd_impl *pimpl_;
     void set_dtd_data (void *data);
     void* get_raw_pointer (void) const;
+
+    // Required by xml::document
+    dtd ();
 
     // prohibited
     dtd (const dtd&);
     dtd& operator= (const dtd&);
 
     friend class document;
+    friend struct impl::doc_impl;
 };
 
 } // xml namespace

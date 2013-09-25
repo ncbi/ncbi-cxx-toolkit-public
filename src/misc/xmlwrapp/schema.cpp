@@ -65,8 +65,6 @@ struct xml::impl::schema_impl {
     schema_impl (void) : schema_(NULL) {}
 
     xmlSchemaPtr schema_;
-    error_messages schema_parser_messages_;
-    error_messages validation_messages_;
 };
 
 
@@ -140,16 +138,6 @@ bool schema::validate (const document& doc,
     return true;
 }
 
-schema::schema (const char* data, size_type size,
-                warnings_as_errors_type how) : pimpl_(NULL) {
-    if (!data)
-        throw xml::exception("invalid data pointer");
-    std::auto_ptr<schema_impl> ap(pimpl_ = new schema_impl);
-    construct(data, size,
-              &pimpl_->schema_parser_messages_, how);
-    ap.release();
-} /* NCBI_FAKE_WARNING */
-
 // Helper constructor.
 // Two public constructors bodies differ only in the way of creating the parser
 // context. So this function is introduced.
@@ -195,48 +183,6 @@ schema::~schema() {
     if (pimpl_->schema_)
         xmlSchemaFree(pimpl_->schema_);
     delete pimpl_;
-}
-
-
-bool schema::validate (const document& doc,
-                       warnings_as_errors_type how) const {
-    // Clean up messages for the previous run
-    pimpl_->validation_messages_.get_messages().clear();
-
-    xmlSchemaValidCtxtPtr ctxt;
-
-    if ((ctxt = xmlSchemaNewValidCtxt(pimpl_->schema_)) == 0) {
-        throw std::bad_alloc();
-    }
-
-    xmlSchemaSetValidErrors(ctxt, cb_schema_error,
-                                  cb_schema_warning,
-                                  &pimpl_->validation_messages_);
-    int retCode = xmlSchemaValidateDoc(ctxt, doc.pimpl_->doc_);
-    xmlSchemaFreeValidCtxt(ctxt);
-
-    if (retCode == -1)
-        throw xml::exception("internal libxml2 API error");
-
-    // There are errors
-    if (pimpl_->validation_messages_.has_errors())
-        return false;
-
-    // There are warnings and they are treated as errors
-    if (pimpl_->validation_messages_.has_warnings()) {
-        if (how == type_warnings_are_errors)
-            return false;
-    }
-
-    return true;
-}
-
-const error_messages& schema::get_schema_parser_messages (void) const {
-    return pimpl_->schema_parser_messages_;
-}
-
-const error_messages& schema::get_validation_messages (void) const {
-    return pimpl_->validation_messages_;
 }
 
 
