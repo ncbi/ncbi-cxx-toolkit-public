@@ -291,6 +291,7 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
    thisTest.is_Genes_run = false;
    thisTest.is_Genes_oncall_run = false;
    thisTest.is_GP_Set_run = false;
+   thisTest.is_LocusTag_run = false;
    thisTest.is_MolInfo_run = false;
    thisTest.is_MRNA_run = false;
    thisTest.is_mRNA_run = false;

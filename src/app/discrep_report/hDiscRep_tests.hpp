@@ -177,6 +177,7 @@ namespace DiscRepNmSpc {
       static bool   is_Genes_oncall_run;
       static bool   is_GP_Set_run;
       static bool   is_IncnstUser_run;
+      static bool   is_LocusTag_run;
       static bool   is_MolInfo_run;
       static bool   is_MRNA_run;   // discard later
       static bool   is_mRNA_run;
@@ -203,6 +204,7 @@ namespace DiscRepNmSpc {
      }
   };
 
+  // get all string type data from object
   template <class T>
   void GetStringsFromObject(const T& obj, vector <string>& strs)
   {
@@ -3679,26 +3681,58 @@ namespace DiscRepNmSpc {
       bool StrandOk(const int& strand1, const int& strand2);
   };
 
-
-
-  class CBioseq_LOCUS_TAGS : public CBioseqTestAndRepData
+  class CBioseq_MISSING_LOCUS_TAGS : public CBioseqTestAndRepData
   {
     public:
-      virtual ~CBioseq_LOCUS_TAGS () {};
+      virtual ~CBioseq_MISSING_LOCUS_TAGS() { };
 
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("LOCUS_TAGS");}
+      virtual string GetName() const {return string("MISSING_LOCUS_TAGS"); }
 
     private:
-      bool IsLocationDirSub(const CSeq_loc& seq_location);
-      string GetName_missing() const { return string("MISSING_LOCUS_TAGS"); };
+      bool x_IsLocationDirSub(const CSeq_loc& seq_location);
+  };
+
+
+  class CBioseq_on_locus_tags : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_on_locus_tags () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("LOCUS_TAGS"); };
+
+    protected:
       string GetName_dup() const { return string("DUPLICATE_LOCUS_TAGS"); }
       string GetName_incons() const { return string("INCONSISTENT_LOCUS_TAG_PREFIX"); }
       string GetName_badtag() const { return string("BAD_LOCUS_TAG_FORMAT"); }
   };
 
+  class CBioseq_DUPLICATE_LOCUS_TAGS : public CBioseq_on_locus_tags
+  {
+    public:
+      virtual ~CBioseq_DUPLICATE_LOCUS_TAGS() { };
 
+      virtual string GetName() const {return CBioseq_on_locus_tags::GetName_dup();}
+  };
+
+  class CBioseq_INCONSISTENT_LOCUS_TAG_PREFIX : public CBioseq_on_locus_tags
+  {
+    public:
+      virtual ~CBioseq_INCONSISTENT_LOCUS_TAG_PREFIX() { };
+
+      virtual string GetName() const {return CBioseq_on_locus_tags::GetName_incons();}
+  };
+
+  class CBioseq_BAD_LOCUS_TAG_FORMAT : public CBioseq_on_locus_tags
+  {
+    public:
+      virtual ~CBioseq_BAD_LOCUS_TAG_FORMAT() { };
+
+      virtual string GetName() const {return CBioseq_on_locus_tags::GetName_badtag();}
+  };
 
   class CBioseq_DISC_FEATURE_COUNT : public CBioseqTestAndRepData
   {

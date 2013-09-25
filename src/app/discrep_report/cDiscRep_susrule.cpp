@@ -1240,7 +1240,7 @@ bool CSuspectRuleCheck :: IsStringInSpan(const string& str, const string& first,
 
   int str_num, first_num, second_num;
   str_num = first_num = second_num = 0;
-  bool rval;
+  bool rval = false;
   size_t prefix_len;
   if (StringIsPositiveAllDigits (first)) {
     if (StringIsPositiveAllDigits (str) && StringIsPositiveAllDigits (second)) {
@@ -1358,7 +1358,7 @@ string CSuspectRuleCheck :: StripUnimportantCharacters(const string& str, bool s
 
 bool CSuspectRuleCheck :: DoesSingleStringMatchConstraint(const string& str, const CString_constraint* str_cons)
 {
-  bool rval;
+  bool rval = false;
   string tmp_match;
   CString_constraint tmp_cons;
 
@@ -1486,9 +1486,7 @@ bool CSuspectRuleCheck :: x_DoesStrContainPlural(const string& word, char last_l
 {
    unsigned len = word.size();
    if (last_letter == 's') {
-      if (len >= 5) { 
-        if (CTempString(word).substr(len-5) == "trans") return false; // not plural;
-      }
+      if (len >= 5  && CTempString(word).substr(len-5) == "trans") return false; // not plural;
       else if (len > 3) {
         if (second_to_last_letter != 's' && second_to_last_letter != 'i'
                                                && second_to_last_letter != 'u')
@@ -1516,14 +1514,11 @@ bool CSuspectRuleCheck :: StringMayContainPlural(const string& str)
          = x_DoesStrContainPlural(strtmp, last_letter, second_to_last_letter);
   }
   else {
-    ITERATE (vector <string>, it, arr) {
-       strtmp = *it;
-       last_letter = strtmp[strtmp.size()-1];
-       second_to_last_letter = strtmp[strtmp.size()-2];
-       may_contain_plural 
+    strtmp = arr[arr.size()-2];
+    last_letter = strtmp[strtmp.size()-1];
+    second_to_last_letter = strtmp[strtmp.size()-2];
+    may_contain_plural 
          = x_DoesStrContainPlural(strtmp, last_letter, second_to_last_letter);
-       if (may_contain_plural) break;
-    }
   }
   arr.clear();
   return may_contain_plural;
@@ -3851,7 +3846,7 @@ bool CSuspectRuleCheck :: DoesStringMatchSuspectRule(const CBioseq_Handle& biose
     if (!rule.CanGetFeat_constraint()) return true;
     else {
         if (!feat_pnt) return false;
-        else return DoesObjectMatchConstraintChoiceSet (*feat_pnt, rule.GetFeat_constraint());
+        else return  DoesObjectMatchConstraintChoiceSet (*feat_pnt, rule.GetFeat_constraint());
     }
   }
 

@@ -132,6 +132,7 @@ bool CDiscTestInfo :: is_Genes_run;
 bool CDiscTestInfo :: is_Genes_oncall_run;
 bool CDiscTestInfo :: is_GP_Set_run;
 bool CDiscTestInfo :: is_IncnstUser_run;
+bool CDiscTestInfo :: is_LocusTag_run;
 bool CDiscTestInfo :: is_MolInfo_run;
 bool CDiscTestInfo :: is_MRNA_run;  // need modification, has to be is_mRNACDs_run
 bool CDiscTestInfo :: is_mRNA_run;
@@ -356,16 +357,11 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
      if (prot.CanGetName()) {
        prot_nm = *(prot.GetName().begin()); 
 /*
+if (prot_nm.find("Probable") == string::npos) continue;
 cerr << "prot_nm " << prot_nm << endl;
-if (prot_nm != "addiction module antidote protein, CC2985 family") continue;
 */
        rule_idx = 0;
        ITERATE (list <CRef <CSuspect_rule> >, rit, thisInfo.suspect_prod_rules->Get()) {
-/*
-cerr << " rule_idx " << rule_idx << endl;
-// cerr << "feat_in_use " << Blob2Str(*feat_in_use) << endl;
-if (rule_idx == 2) cerr << "**rit " << Blob2Str(**rit) << endl;
-*/
          if (rule_check.DoesStringMatchSuspectRule(m_bioseq_hl, prot_nm, *feat_in_use, **rit)){
               thisInfo.test_item_list[GetName()].push_back(
                    NStr::UIntToString((int)(*rit)->GetRule_type()) + "$" 
@@ -4742,9 +4738,24 @@ void CBioseq_FEATURE_LOCATION_CONFLICT :: GetReport(CRef <CClickableItem>& c_ite
 };
 
 
+void CBioseq_MISSING_LOCUS_TAGS :: TestOnObj(const CBioseq& bioseq) 
+{
+   string desc;
+   ITERATE (vector <const CSeq_feat*>, jt, gene_feat) {
+     const CGene_ref& gene = (*jt)->GetData().GetGene();
+     if (gene.GetPseudo()) continue;
+     desc = GetDiscItemText(**jt);
+     if (!gene.CanGetLocus_tag() || gene.GetLocus_tag().empty())
+          thisInfo.test_item_list[GetName()].push_back(desc);
+   }
+};
 
+void CBioseq_MISSING_LOCUS_TAGS :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->description = GetHasComment(c_item->item_list.size(), "gene") + "no locus tags.";
+};
 
-bool CBioseq_LOCUS_TAGS :: IsLocationDirSub(const CSeq_loc& seq_location)  // not actually used
+bool CBioseq_MISSING_LOCUS_TAGS :: x_IsLocationDirSub(const CSeq_loc& seq_location)  // not actually used
 {   
    const CSeq_id* seq_id  = seq_location.GetId();
    if (!seq_id) return false;
@@ -4792,10 +4803,16 @@ bool CBioseq_LOCUS_TAGS :: IsLocationDirSub(const CSeq_loc& seq_location)  // no
 };
 
 
-void CBioseq_LOCUS_TAGS :: TestOnObj(const CBioseq& bioseq) 
+static string alnum_str("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
+void CBioseq_on_locus_tags :: TestOnObj(const CBioseq& bioseq) 
 {
+  if (thisTest.is_LocusTag_run) return;
+  thisTest.is_LocusTag_run = true;
+
   string locus_tag, locus_tag_adj;
   string test_desc, test_desc_adj;
+
+  size_t pos;
   ITERATE (vector <const CSeq_feat*>, jt, gene_feat) {
      const CGene_ref& gene = (*jt)->GetData().GetGene();
      if (gene.GetPseudo()) continue;  
@@ -4804,11 +4821,24 @@ void CBioseq_LOCUS_TAGS :: TestOnObj(const CBioseq& bioseq)
         locus_tag = gene.GetLocus_tag();
         if (!locus_tag.empty()) {
            thisInfo.test_item_list[GetName()].push_back( locus_tag + "$" + test_desc);
+           pos = locus_tag.find('_');
+           if (pos != string::npos) {
+              strtmp = locus_tag.substr(0, pos);
+              thisInfo.test_item_list[GetName()+"_prefix"].push_back(strtmp + "$" + test_desc);
+              if (!isalpha(strtmp[0])) 
+                      thisInfo.test_item_list[GetName()+ "_bad"].push_back(test_desc);
+              else {
+                strtmp += CTempString(locus_tag).substr(pos+1);
+                thisInfo.test_item_list[GetName()+ "_bad"].push_back(test_desc);
+              } 
+           }
+           else thisInfo.test_item_list[GetName()+ "_bad"].push_back(test_desc);
+
            // if adjacent gene has the same locus;
            if ((jt+1) != gene_feat.end()) {
              const CGene_ref& gene_adj = (*(jt+1))->GetData().GetGene();
              if (gene_adj.CanGetLocus_tag() && !gene_adj.GetPseudo() 
-                                                        && !gene_adj.GetLocus_tag().empty() ) {
+                                            && !gene_adj.GetLocus_tag().empty() ) {
                 locus_tag_adj = gene_adj.GetLocus_tag();
                 if (locus_tag_adj == locus_tag 
                    && ( (*jt)->GetLocation().GetStop(eExtreme_Positional) 
@@ -4824,100 +4854,81 @@ void CBioseq_LOCUS_TAGS :: TestOnObj(const CBioseq& bioseq)
              }
            }
         }
-        else thisInfo.test_item_list[GetName_missing()].push_back(test_desc);
      }
-     else thisInfo.test_item_list[GetName_missing()].push_back(test_desc);
   }
 };
 
-
-void CBioseq_LOCUS_TAGS :: GetReport(CRef <CClickableItem>& c_item)
+void CBioseq_on_locus_tags :: GetReport(CRef <CClickableItem>& c_item)
 {
-   bool used_citem1 = false;
-   // MISSING_LOCUS_TAGS
-   if (thisInfo.test_item_list.find(GetName_missing()) != thisInfo.test_item_list.end()) {
-     c_item->setting_name = GetName_missing();
-     c_item->item_list = thisInfo.test_item_list[GetName_missing()];
-     c_item->description = GetHasComment(c_item->item_list.size(), "gene") + "no locus tags.";
-     thisInfo.disc_report_data.push_back(c_item);
-     used_citem1 = true;
-   }
-
-// DUPLICATE_LOCUS_TAGS && Dup_prefix && bad_tag_feats;
-   Str2Strs tag2dups, prefix2dups;
-   vector <string> dt_arr, bad_tag_feats;
-   size_t pos;
-   unsigned i;
-   bool bad_tag;
-   dt_arr.clear();
-   ITERATE (vector <string>, it, thisInfo.test_item_list[GetName()]) {
-     bad_tag = false;
-     dt_arr = NStr::Tokenize(*it, "$", dt_arr);
-     tag2dups[dt_arr[0]].push_back(dt_arr[1]);
-     if ( (pos = dt_arr[0].find("_")) != string::npos)
-          prefix2dups[dt_arr[0].substr(0, pos)].push_back(dt_arr[1]);
-     else bad_tag = true;
-     if (!isalpha(dt_arr[0][0])) bad_tag = true;
-     else {
-        dt_arr[0] = dt_arr[0].substr(0, pos) + CTempString(dt_arr[0]).substr(pos+1);
-        for (i=0; (i< dt_arr[0].size()) && !bad_tag; i++)
-             if ( !isalnum(dt_arr[0][i]) ) bad_tag = true;
-     }
-     if (bad_tag) bad_tag_feats.push_back(dt_arr[1]);
-     dt_arr.clear();
-   }
+   bool run_dup = (thisTest.tests_run.find(GetName_dup()) != thisTest.tests_run.end());
+   bool run_incons = (thisTest.tests_run.find(GetName_incons()) != thisTest.tests_run.end());
+   bool run_badtag = (thisTest.tests_run.find(GetName_badtag()) != thisTest.tests_run.end());
 
 // DUPLICATE_LOCUS_TAGS
-   unsigned dup_cnt = 0;
-   string dup_setting_name(GetName_dup());
-   ITERATE (Str2Strs, it, tag2dups) {
-     if (it->second.size() > 1) {
-       CRef <CClickableItem> c_sub (new CClickableItem);
-       c_sub->item_list = it->second;
-       c_sub->setting_name = dup_setting_name;
-       c_sub->description
-              = GetHasComment(c_sub->item_list.size(), "gene") + "locus tag " + it->first;
-       if (thisInfo.report == "Discrepancy") thisInfo.disc_report_data.push_back(c_sub);
-       else {
-          if (used_citem1) c_item.Reset(new CClickableItem);
-          c_item->setting_name = dup_setting_name;
-          c_item->subcategories.push_back(c_sub);
-       }
-       dup_cnt += it->second.size();
+   Str2Strs tag2dups;
+   GetTestItemList(c_item->item_list, tag2dups);
+   c_item->item_list.clear();
+
+   if (run_dup) {
+     ITERATE (Str2Strs, it, tag2dups) {
+        if (it->second.size() > 1) {
+            CRef <CClickableItem> c_sub (new CClickableItem);
+            c_sub->item_list = it->second;
+            c_sub->setting_name = GetName_dup();
+            c_sub->description
+                   = GetHasComment(c_sub->item_list.size(), "gene") + "locus tag " + it->first;
+            if (thisInfo.report == "Discrepancy") thisInfo.disc_report_data.push_back(c_sub);
+            else {
+               c_item.Reset(new CClickableItem);
+               c_item->setting_name = GetName_dup();
+               c_item->subcategories.push_back(c_sub);
+            }
+        }
+     }
+     if (!DUP_LOCUS_TAGS_adj_genes.empty()) {
+         CRef <CClickableItem> c_sub (new CClickableItem);
+         c_sub->setting_name = GetName_dup();
+         c_sub->item_list.insert(c_sub->item_list.end(),
+                            DUP_LOCUS_TAGS_adj_genes.begin(), DUP_LOCUS_TAGS_adj_genes.end());
+         c_sub->description = GetIsComment(c_sub->item_list.size(), "gene")
+                               + "adjacent to another gene with the same locus tag.";
+         if (thisInfo.report == "Discrepancy") thisInfo.disc_report_data.push_back(c_sub);
+         else c_item->subcategories.push_back(c_sub);
+         DUP_LOCUS_TAGS_adj_genes.clear();
+     }
+     if (thisInfo.report != "Discrepancy" && !c_item->subcategories.empty()) {
+          c_item->description 
+               = GetHasComment(c_item->item_list.size(), "gene") + "duplicate locus tags.";
+          thisInfo.disc_report_data.push_back(c_item);
      }
    }
 
-   if (!DUP_LOCUS_TAGS_adj_genes.empty()) {
-       CRef <CClickableItem> c_sub (new CClickableItem);
-       c_sub->setting_name = dup_setting_name;
-       c_sub->item_list.insert(c_sub->item_list.end(), 
-                            DUP_LOCUS_TAGS_adj_genes.begin(), DUP_LOCUS_TAGS_adj_genes.end());
-       c_sub->description = GetIsComment(c_sub->item_list.size(), "gene") 
-                               + "adjacent to another gene with the same locus tag.";
-       if (thisInfo.report == "Discrepancy") thisInfo.disc_report_data.push_back(c_sub);
-       else {
-            c_item->subcategories.push_back(c_sub);
-            if (used_citem1) thisInfo.disc_report_data.push_back(c_item);
-            used_citem1 = true;
-       }
-   }
 
 // inconsistent locus tags: 
-   ITERATE (Str2Strs, it, prefix2dups) {
-      GetProperCItem(c_item, &used_citem1);
-      c_item->setting_name = GetName_incons();
-      c_item->item_list = it->second;
-      c_item->description 
-          = GetHasComment(c_item->item_list.size(),"feature") +"locus tag prefix " + it->first;
-   } 
+   if (run_incons
+        && thisInfo.test_item_list.find(GetName()+"_prefix") != thisInfo.test_item_list.end()){
+     Str2Strs prefix2dups;
+     GetTestItemList(thisInfo.test_item_list[GetName()+"_prefix"], prefix2dups);
+     thisInfo.test_item_list[GetName()+"_prefix"].clear();
+     ITERATE (Str2Strs, it, prefix2dups) {
+        c_item.Reset(new CClickableItem);
+        c_item->setting_name = GetName_incons();
+        c_item->item_list = it->second;
+        c_item->description = GetHasComment(c_item->item_list.size(),"feature") 
+                                        +"locus tag prefix " + it->first;
+        thisInfo.disc_report_data.push_back(c_item);
+     } 
+   }
 
 // bad formats: BAD_LOCUS_TAG_FORMAT
-   if (!bad_tag_feats.empty()) {
-     GetProperCItem(c_item, &used_citem1);
+   if (run_badtag 
+          && thisInfo.test_item_list.find(GetName()+"_bad")!=thisInfo.test_item_list.end()) {
+     c_item.Reset(new CClickableItem);
      c_item->setting_name = GetName_badtag();
-     c_item->item_list = bad_tag_feats;
+     c_item->item_list = thisInfo.test_item_list[GetName()+"_bad"]; 
      c_item->description 
-           = GetIsComment(c_item->item_list.size(), "locus tag") + "incorrectly formatted.";
+             = GetIsComment(c_item->item_list.size(), "locus tag") + "incorrectly formatted.";
+     thisInfo.disc_report_data.push_back(c_item);
    }
 };
 
@@ -11476,7 +11487,6 @@ void CSeqEntry_ONCALLER_DEFLINE_ON_SET :: GetReport(CRef <CClickableItem>& c_ite
 
 void CSeqEntry_DISC_FEATURE_COUNT :: TestOnObj(const CSeq_entry& seq_entry)
 {  
-cerr << "CSeqEntry_DISC_FEATURE_COUNT\n";
    Str2Int feat_count_list;
    Str2Int :: iterator it;
    CSeq_entry_Handle seq_entry_hl = thisInfo.scope->GetSeq_entryHandle(seq_entry);

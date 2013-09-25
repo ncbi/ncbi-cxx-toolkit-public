@@ -327,12 +327,11 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
        }
        else if (strtmp == "starts" || strtmp == "ends") {
            tmp = strtmp.substr(0, strtmp.size()-1) + " with";
-           strtmp = "with";
+           strtmp += " with";
            tmp = "does not " + tmp;
        }
        else if (strtmp == "contains") {
            tmp = "does not contain";
-           strtmp = "contains";
        }
        thisInfo.matloc_names[(EString_location)i] = strtmp;
        thisInfo.matloc_notpresent_names[(EString_location)i] = tmp;
@@ -353,6 +352,7 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
        arr.push_back(strtmp);  // test_name
        arr.push_back(fix_type_names[(int)fixtp]);  // fixtp_name
        arr.push_back(summ_susrule.SummarizeSuspectRuleEx(**rit));
+
        thisInfo.susrule_summ.push_back(arr);
     }
 
@@ -983,11 +983,11 @@ void CRepConfig :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
 
 
 static CDiscTestInfo thisTest;
-static const s_test_property test_list[] = {
-   {"DISC_CDS_PRODUCT_FIND", fDiscrepancy},
+static const s_test_property test1_list[] = {
+   {"INCONSISTENT_LOCUS_TAG_PREFIX", fDiscrepancy},
 };
 
-static const s_test_property test1_list[] = {
+static const s_test_property test_list[] = {
 // tests_on_SubmitBlk
    {"DISC_SUBMITBLOCK_CONFLICT", fDiscrepancy | fOncaller},
 
@@ -1086,7 +1086,10 @@ static const s_test_property test1_list[] = {
 
 // tests_on_Bioseq_CFeat_NotInGenProdSet
    {"DUPLICATE_GENE_LOCUS", fDiscrepancy},
-   {"LOCUS_TAGS", fDiscrepancy},
+   {"MISSING_LOCUS_TAGS", fDiscrepancy},
+   {"DUPLICATE_LOCUS_TAGS", fDiscrepancy},
+   {"INCONSISTENT_LOCUS_TAG_PREFIX", fDiscrepancy},
+   {"BAD_LOCUS_TAG_FORMAT", fDiscrepancy},
    {"FEATURE_LOCATION_CONFLICT", fDiscrepancy},
 
 // tests_on_Bioseq_CFeat_CSeqdesc
@@ -1635,10 +1638,21 @@ if (i > sz) return;
                           CRef <CTestAndRepData>(new CBioseq_DUPLICATE_GENE_LOCUS));
         if (++i >= sz) return;
    }
-   if ( thisTest.tests_run.find("LOCUS_TAGS") != thisTest.tests_run.end()) {
+   if ( thisTest.tests_run.find("MISSING_LOCUS_TAGS") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_NotInGenProdSet.push_back(
-                                   CRef <CTestAndRepData>(new CBioseq_LOCUS_TAGS));
+                                CRef <CTestAndRepData>(new CBioseq_MISSING_LOCUS_TAGS));
         if (++i >= sz) return;
+   }
+   if ( thisTest.tests_run.find("DUPLICATE_LOCUS_TAGS") != thisTest.tests_run.end()
+        || thisTest.tests_run.find("INCONSISTENT_LOCUS_TAG_PREFIX") != thisTest.tests_run.end()
+        || thisTest.tests_run.find("BAD_LOCUS_TAG_FORMAT") != thisTest.tests_run.end()) {
+       tests_on_Bioseq_CFeat_NotInGenProdSet.push_back(
+                                CRef <CTestAndRepData>(new CBioseq_on_locus_tags));
+        if (thisTest.tests_run.find("DUPLICATE_LOCUS_TAGS") != thisTest.tests_run.end()) i++;
+        if (thisTest.tests_run.find("INCONSISTENT_LOCUS_TAG_PREFIX")!=thisTest.tests_run.end())
+             i++;
+        if (thisTest.tests_run.find("BAD_LOCUS_TAG_FORMAT") != thisTest.tests_run.end()) i++;
+        if (i >= sz) return;
    }
    if ( thisTest.tests_run.find("FEATURE_LOCATION_CONFLICT") != thisTest.tests_run.end()) {
        tests_on_Bioseq_CFeat_NotInGenProdSet.push_back(
