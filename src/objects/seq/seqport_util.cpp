@@ -3663,10 +3663,6 @@ bool CSeqportUtil_implementation::FastValidateNcbieaa
     if(uBeginIdx >= in_seq_data.size())
         return true;
 
-    // Check that uBeginIdx is not beyond end of in_seq
-    if(uBeginIdx >= in_seq_data.size())
-        return true;
-
     // Adjust uBeginIdx, uLength
     Adjust(&uBeginIdx, &uLength, in_seq_data.size(), 1, 1);
 
