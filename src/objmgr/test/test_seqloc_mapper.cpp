@@ -68,7 +68,6 @@ CreateMapper(const CGC_Assembly& gcassembly)
 
 BOOST_AUTO_TEST_CASE(TestCaseUcscChr)
 {
-    // Fetch Gencoll
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> gcassembly(
         GCService.GetAssembly("GCF_000001405.22",
@@ -76,20 +75,17 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscChr)
                              )
     );
 
-    // Do a Map
     CRef<CSeq_loc_Mapper> mapper = CreateMapper(*gcassembly);
     CRef<CSeq_loc> OrigLoc(new CSeq_loc());
     OrigLoc->SetWhole().SetLocal().SetStr("chr1");
     CRef<CSeq_loc> Result = mapper->Map(*OrigLoc);
 
-    // Check that Map results meet expectations
     BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), GI_FROM(TIntId, 224589800)); // NC_000001.10
 }
 
 // pattern text
 BOOST_AUTO_TEST_CASE(TestCaseChr)
 {
-    // Fetch Gencoll
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> gcassembly(
         GCService.GetAssembly("GCF_000001405.22",
@@ -97,7 +93,6 @@ BOOST_AUTO_TEST_CASE(TestCaseChr)
                              )
     );
 
-    // Do a Map
     CRef<CSeq_loc_Mapper> mapper = CreateMapper(*gcassembly);
     CRef<CSeq_loc> OrigLoc(new CSeq_loc());
     OrigLoc->SetWhole().SetLocal().SetStr("1");
@@ -107,10 +102,33 @@ BOOST_AUTO_TEST_CASE(TestCaseChr)
     BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), GI_FROM(TIntId, 224589800)); // NC_000001.10
 }
 
+// pattern text
+BOOST_AUTO_TEST_CASE(TestCaseChrPoint)
+{
+    CGenomicCollectionsService GCService;
+    CConstRef<CGC_Assembly> gcassembly(
+        GCService.GetAssembly("GCF_000001405.22",
+                              CGCClient_GetAssemblyRequest::eLevel_scaffold
+                             )
+    );
+
+    const TSeqPos pos = 22456174;
+
+    CRef<CSeq_loc_Mapper> mapper = CreateMapper(*gcassembly);
+    CRef<CSeq_loc> OrigLoc(new CSeq_loc());
+    OrigLoc->SetPnt().SetId().SetLocal().SetStr("1");
+    OrigLoc->SetPnt().SetPoint(pos);
+    CConstRef<CSeq_loc> Result = mapper->Map(*OrigLoc);
+
+    CRef<CSeq_loc> Expected(new CSeq_loc());
+    Expected->SetPnt().SetId().SetGi(224589800); // NC_000001.10
+    Expected->SetPnt().SetPoint(pos);
+
+    BOOST_CHECK(Result->Equals(*Expected));
+}
 
 BOOST_AUTO_TEST_CASE(TestCaseUcscUnTest_Scaffold)
 {
-    // Fetch Gencoll
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> gcassembly(
         GCService.GetAssembly("GCF_000003205.2",
@@ -129,7 +147,6 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscUnTest_Scaffold)
 
 BOOST_AUTO_TEST_CASE(TestCaseUcscUnTest_Comp)
 {
-    // Fetch Gencoll
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> gcassembly(
         GCService.GetAssembly("GCF_000003205.2",
@@ -149,7 +166,6 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscUnTest_Comp)
 
 BOOST_AUTO_TEST_CASE(TestCaseUcscPseudoTest_Scaffold)
 {
-    // Fetch Gencoll
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> gcassembly(
         GCService.GetAssembly("GCF_000001405.12",
@@ -170,7 +186,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscPseudoTest_Scaffold)
     CRef<CSeq_loc> Result = mapper->Map(*OrigLoc);
 
     CRef<CSeq_loc> Expected(new CSeq_loc());
-    Expected->SetInt().SetId().SetGi(88944009); //NT_113872.1
+    Expected->SetInt().SetId().SetGi(88944009); // NT_113872.1
     Expected->SetInt().SetFrom(57066);
     Expected->SetInt().SetTo(67066);
 
@@ -184,7 +200,6 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscPseudoTest_Scaffold)
 /*
 BOOST_AUTO_TEST_CASE(TestCaseUcscPseudoTest_Comp)
 {
-    // Fetch Gencoll
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> gcassembly(
         GCService.GetAssembly("GCF_000001405.12",
@@ -202,7 +217,6 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscPseudoTest_Comp)
     MapSpec.Alias = CGC_SeqIdAlias::e_Public;
     MapSpec.Role = eGC_SequenceRole_top_level;
     
-    // Do a Map
     CGencollIdMapper Mapper(gcassembly);
     CRef<CSeq_loc> OrigLoc(new CSeq_loc());
     OrigLoc->SetInt().SetId().SetLocal().SetStr("chr1_random");
@@ -224,7 +238,6 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscPseudoTest_Comp)
 // map down  test
 BOOST_AUTO_TEST_CASE(TestCaseDownMapTest)
 {
-    // Fetch Gencoll
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> gcassembly(
         GCService.GetAssembly("GCF_000001405.13",
@@ -242,7 +255,6 @@ BOOST_AUTO_TEST_CASE(TestCaseDownMapTest)
     MapSpec.Alias = CGC_SeqIdAlias::e_Public;
     MapSpec.Role = eGC_SequenceRole_component;
 
-    // Do a Map
     CGencollIdMapper Mapper(gcassembly);
     CSeq_loc OrigLoc;
     OrigLoc.SetInt().SetId().Set("NC_000001.10");
@@ -265,7 +277,6 @@ BOOST_AUTO_TEST_CASE(TestCaseDownMapTest)
 // map down scaf  test
 BOOST_AUTO_TEST_CASE(TestCaseDownScafMapTest)
 {
-    // Fetch Gencoll
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> gcassembly(
         GCService.GetAssembly("GCF_000001405.13",
@@ -283,7 +294,6 @@ BOOST_AUTO_TEST_CASE(TestCaseDownScafMapTest)
     MapSpec.Alias = CGC_SeqIdAlias::e_Public;
     MapSpec.Role = eGC_SequenceRole_scaffold;
 
-    // Do a Map
     CGencollIdMapper Mapper(gcassembly);
     CSeq_loc OrigLoc;
     OrigLoc.SetInt().SetId().Set("NC_000001.10");
@@ -305,7 +315,6 @@ BOOST_AUTO_TEST_CASE(TestCaseDownScafMapTest)
 // upmap test
 BOOST_AUTO_TEST_CASE(TestCaseUpMapTest_RefSeqAssm)
 {
-    // Fetch Gencoll
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> gcassembly(
         GCService.GetAssembly("GCF_000001405.13",
@@ -323,7 +332,6 @@ BOOST_AUTO_TEST_CASE(TestCaseUpMapTest_RefSeqAssm)
     MapSpec.Alias = CGC_SeqIdAlias::e_Public;
     MapSpec.Role = eGC_SequenceRole_top_level;
 
-    // Do a Map
     CGencollIdMapper Mapper(gcassembly);
     CSeq_loc OrigLoc;
     CSeq_interval& orig_ival = OrigLoc.SetInt();
@@ -348,7 +356,6 @@ BOOST_AUTO_TEST_CASE(TestCaseUpMapTest_RefSeqAssm)
 // upmap test
 BOOST_AUTO_TEST_CASE(TestCaseUpMapTest_GenBankAssm)
 {
-    // Fetch Gencoll
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> gcassembly(
         GCService.GetAssembly("GCA_000001405.1",
@@ -366,7 +373,6 @@ BOOST_AUTO_TEST_CASE(TestCaseUpMapTest_GenBankAssm)
     MapSpec.Alias = CGC_SeqIdAlias::e_Public;
     MapSpec.Role = eGC_SequenceRole_top_level;
 
-    // Do a Map
     CGencollIdMapper Mapper(gcassembly);
     CSeq_loc OrigLoc;
     CSeq_interval& orig_ival = OrigLoc.SetInt();
@@ -391,7 +397,6 @@ BOOST_AUTO_TEST_CASE(TestCaseUpMapTest_GenBankAssm)
 // upmap scaffold test
 BOOST_AUTO_TEST_CASE(TestCaseUpMapScaffoldTest)
 {
-    // Fetch Gencoll
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> gcassembly(
         GCService.GetAssembly("GCF_000001405.13",
@@ -409,7 +414,6 @@ BOOST_AUTO_TEST_CASE(TestCaseUpMapScaffoldTest)
     MapSpec.Alias = CGC_SeqIdAlias::e_Public;
     MapSpec.Role = eGC_SequenceRole_scaffold;
 
-    // Do a Map
     CGencollIdMapper Mapper(gcassembly);
     CSeq_loc OrigLoc;
     OrigLoc.SetInt().SetId().Set("AL451051.6");
@@ -433,7 +437,6 @@ BOOST_AUTO_TEST_CASE(TestCaseUpMapScaffoldTest)
 // Up/Down, Round Trip, Pattern test
 BOOST_AUTO_TEST_CASE(TestCaseEverythingTest)
 {
-    // Fetch Gencoll
     CGenomicCollectionsService GCService;
     CConstRef<CGC_Assembly> gcassembly(
         GCService.GetAssembly("GCF_000001405.13",
@@ -447,7 +450,6 @@ BOOST_AUTO_TEST_CASE(TestCaseEverythingTest)
     MapSpec.Alias = CGC_SeqIdAlias::e_Public;
     MapSpec.Role = eGC_SequenceRole_scaffold;
 
-    // Do a Map
     CGencollIdMapper Mapper(gcassembly);
     CRef<CSeq_loc> OrigLoc(new CSeq_loc());
     OrigLoc->SetInt().SetId().SetLocal().SetStr("LG2");
