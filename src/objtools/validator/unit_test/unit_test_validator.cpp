@@ -5561,7 +5561,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     // if plasmid genome, better have plasmid name
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_plasmid_name, "");
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
-                              "Plasmid location but not plasmid subsource"));
+                              "Plasmid location set but plasmid name missing. Add a plasmid source modifier with the plasmid name. Use unnamed if the name is not known."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     CLEAR_ERRORS

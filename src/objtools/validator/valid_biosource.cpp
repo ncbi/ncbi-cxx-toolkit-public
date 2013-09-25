@@ -1296,7 +1296,8 @@ void CValidError_imp::ValidateBioSource
     }
     if (bsrc.IsSetGenome() && bsrc.GetGenome() == CBioSource::eGenome_plasmid && !has_plasmid_name) {
         PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency, 
-             "Plasmid location but not plasmid subsource", obj, ctx);
+             "Plasmid location set but plasmid name missing. Add a plasmid source modifier with the plasmid name. Use unnamed if the name is not known.",
+             obj, ctx);
     }
 
     if ( chrom_count > 1 ) {
