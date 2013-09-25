@@ -2286,6 +2286,29 @@ void CValidError_bioseq::x_ValidateTitle(const CBioseq& seq)
     // to create the defline generator once per nuc-prot set
 }
 
+static bool HasAssemblyGap (const CBioseq& seq)
+{
+    const CSeq_inst& inst = seq.GetInst();
+    if (inst.CanGetRepr() && inst.GetRepr() == CSeq_inst::eRepr_delta && inst.CanGetExt()  &&  inst.GetExt().IsDelta()) {
+        ITERATE(CDelta_ext::Tdata, sg, inst.GetExt().GetDelta().Get()) {
+            if ( !(*sg) ) continue;
+            if ((**sg).Which() != CDelta_seq::e_Literal) continue;
+            const CSeq_literal& lit = (*sg)->GetLiteral();
+            if (lit.IsSetSeq_data() && lit.GetSeq_data().IsGap()) {
+                if (lit.IsSetLength() && lit.GetLength() > 0) return true;
+            }
+        }
+    }
+
+    FOR_EACH_SEQANNOT_ON_BIOSEQ (annot_it, seq) {
+        FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, **annot_it) {
+            if ((*feat_it)->GetData().GetSubtype() == CSeqFeatData::eSubtype_assembly_gap) return true;
+        }
+    }
+
+    return false;
+}
+
 
 void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
 {
@@ -2379,6 +2402,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
             if (seq.GetLength() > 0 && !SeqIsPatent(seq)) {
                 // if TSA, check for percentage of Ns and max stretch of Ns
                 if (IsBioseqTSA(seq, m_Scope)) {
+                    if (HasAssemblyGap (seq)) return;
                     bool n5 = false;
                     bool n3 = false;
                     TSeqPos num_ns = 0, this_stretch = 0, max_stretch = 0;
