@@ -563,8 +563,12 @@ ctlib_query_timeout(void *param, unsigned int total_timeout)
 {
     CS_CONNECTION* con = (CS_CONNECTION*) param;
 
-    if (!con)
+    if (!con) {
         return TDS_INT_CONTINUE;
+    } else if (con->tds_socket->state == TDS_QUERYING  &&  !con->cmds) {
+        /* Timeout during login, presumably */
+        return TDS_INT_CANCEL;
+    }
 
     /* tds_set_state(con->tds_socket, TDS_PENDING); */
     tds_set_state(con->tds_socket, TDS_QUERYING);

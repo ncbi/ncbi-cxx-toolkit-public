@@ -488,7 +488,7 @@ tds_goodread(TDSSOCKET * tds, unsigned char *buf, int buflen, unsigned char unfi
                 int timeout_action = TDS_INT_CONTINUE;
     
                 if (canceled)
-                    return got;
+                    return got ? got : -1;
     
                 if (tds->query_timeout_func && tds->query_timeout)
                     timeout_action = (*tds->query_timeout_func)
