@@ -505,10 +505,10 @@ void CTSE_Chunk_Info::x_InitObjectIndexList(void)
                     ERR_POST_X(11, "Empty region in split-info on "<<
                                key.m_Handle<<name<<" "<<
                                GetSplitInfo().GetBlobId());
+                    // do not believe empty range - it must be an error
+                    key.m_Range = key.m_Range.GetWhole();
                 }
-                else {
-                    infos.AddMap(key, index);
-                }
+                infos.AddMap(key, index);
             }
             size_t keys_end = infos.GetKeys().size();
             if ( keys_begin+1 == keys_end &&
