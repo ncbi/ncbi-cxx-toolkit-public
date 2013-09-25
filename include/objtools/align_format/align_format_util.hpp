@@ -198,7 +198,7 @@ static const char kEntrezSubseqTMUrl[] = "http://www.ncbi.nlm.nih.gov/<@db@>/<@g
 
 ///Default linkout order 
 //.ncbirc alias: LINKOUT_ORDER
-static const char kLinkoutOrderStr[] = "G,U,M,E,S,B,R"; 
+static const char kLinkoutOrderStr[] = "G,U,E,S,B,R,M"; 
 
 ///Bl2seq ************fix this and test titles Irena
 // .ncbirc alias: BL2SEQ
