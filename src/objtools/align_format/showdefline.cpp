@@ -1466,6 +1466,8 @@ string CShowBlastDefline::x_FormatSeqSetHeaders(int isGenomicSeq, bool formatHea
 
 string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo* iter,bool &first_new)
 {
+    const int kMaxDescrLength = 4096;
+
     string defLine = ((sdl->gi > ZERO_GI) && ((m_Option & eCheckboxChecked) || (m_Option & eCheckbox))) ? x_FormatPsi(sdl, first_new) : m_DeflineTemplates->defLineTmpl;   
     string dflGi = (m_Option & eShowGi) && (sdl->gi > ZERO_GI) ? "gi|" + NStr::NumericToString(sdl->gi) + "|" : "";
     string seqid;
@@ -1486,7 +1488,15 @@ string CShowBlastDefline::x_FormatDeflineTableLine(SDeflineInfo* sdl,SScoreInfo*
     else {        
         defLine = CAlignFormatUtil::MapTemplate(defLine,"seq_info",dflGi + seqid);        
     }
-    string descr = (!sdl->defline.empty()) ? sdl->defline : "None provided";
+
+    string descr = (!sdl->defline.empty()) ? sdl->defline : "None provided";    
+    if(descr.length() > kMaxDescrLength) {
+        size_t end = NStr::Find(descr," ",0,kMaxDescrLength,NStr::eLast);
+        if(end != NPOS) {            
+            descr = descr.substr(0,end);                                        
+            descr += "...";
+        }                
+    }           
     defLine = CAlignFormatUtil::MapTemplate(defLine,"dfln_defline",CHTMLHelper::HTMLEncode(descr));
 
     if(sdl->score_url != NcbiEmptyString) {        
