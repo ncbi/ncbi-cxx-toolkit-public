@@ -70,6 +70,7 @@ public:
     TSeqPos m_gap_Unknown_length;
     TSeqPos m_minimal_sequence_length;
     bool   m_fcs_trim;
+    bool   m_avoid_submit_block;
 
 
     CRef<objects::CSeq_descr>  m_descriptors;
@@ -91,7 +92,10 @@ public:
     void ApplyCreateDate(objects::CSeq_entry& entry) const;
     void ApplyAccession(objects::CSeq_entry& entry) const;
     void HandleGaps(objects::CSeq_entry& entry) const;
-    CRef<CSerialObject> HandleSubmitTemplate(CRef<objects::CSeq_entry> object) const;
+    CRef<CSerialObject> 
+        CreateSubmitFromTemplate(CRef<objects::CSeq_entry> object) const;
+    CRef<CSerialObject>
+        CreateSeqEntryFromTemplate(CRef<objects::CSeq_entry> object) const;
 
     CRef<objects::CSeq_submit> m_submit_template;
     CRef<objects::CSeq_entry>  m_entry_template;

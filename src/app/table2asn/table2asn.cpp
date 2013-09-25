@@ -306,6 +306,7 @@ void CTbl2AsnApp::Init(void)
     arg_desc->AddOptionalKey("min-threshold", "Integer", "minimun length of sequence", CArgDescriptions::eInteger);
     arg_desc->AddOptionalKey("fcs-file", "FileName", "FCS report file", CArgDescriptions::eInputFile);
     arg_desc->AddFlag("fcs-trim", "Trim FCS regions instead of annotate");
+    arg_desc->AddFlag("avoid-submit", "Avoid submit block for optical map");
 
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);    // done
 
@@ -406,6 +407,8 @@ int CTbl2AsnApp::Run(void)
     m_context.m_RemotePubLookup = args["P"].AsBoolean();
 
     m_context.m_RemoteTaxonomyLookup = args["T"].AsBoolean();
+
+    m_context.m_avoid_submit_block = args["avoid-submit"].AsBoolean();
 
     if (args["a"])
     {
@@ -551,12 +554,12 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 {
     CRef<CSeq_entry> entry;
     m_context.m_avoid_orf_lookup = false;
-    bool skip_template = false;
+    bool avoid_submit_block = false;
 
 
     if (m_context.m_current_file.substr(m_context.m_current_file.length()-4).compare(".xml") == 0)
     {
-        skip_template = true;
+        avoid_submit_block = m_context.m_avoid_submit_block;
         COpticalxml2asnOperator op;
         entry = op.LoadXML(m_context.m_current_file, m_context);
         entry->Parentize();
@@ -603,10 +606,10 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     m_context.ApplyAccession(*entry);
 
-    if (skip_template)
-        result = entry;
+    if (avoid_submit_block)
+        result = m_context.CreateSeqEntryFromTemplate(entry);
     else
-        result = m_context.HandleSubmitTemplate(entry);
+        result = m_context.CreateSubmitFromTemplate(entry);
 }
 
 string GenerateOutputStream(const CTable2AsnContext& m_context, const string& pathname)

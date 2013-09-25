@@ -53,11 +53,15 @@
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/general/Int_fuzz.hpp>
 
+#include <objects/submit/Submit_block.hpp>
+#include <objects/pub/Pub.hpp>
+#include <objects/biblio/Cit_sub.hpp>
+#include <objects/seq/Pubdesc.hpp>
+#include <objects/pub/Pub_equiv.hpp>
+
 #include "table2asn_context.hpp"
 
-
 #include <common/test_assert.h>  /* This header must go last */
-
 
 BEGIN_NCBI_SCOPE
 
@@ -164,7 +168,8 @@ CTable2AsnContext::CTable2AsnContext():
     m_gapNmin(0),
     m_gap_Unknown_length(0),
     m_minimal_sequence_length(0),
-    m_fcs_trim(false)
+    m_fcs_trim(false),
+    m_avoid_submit_block(false)
 {
 }
 
@@ -340,7 +345,7 @@ void CTable2AsnContext::HandleGaps(objects::CSeq_entry& entry) const
     }
 }
 
-CRef<CSerialObject> CTable2AsnContext::HandleSubmitTemplate(CRef<CSeq_entry> object) const
+CRef<CSerialObject> CTable2AsnContext::CreateSubmitFromTemplate(CRef<CSeq_entry> object) const
 {
     if (m_submit_template.NotEmpty())
     {
@@ -357,8 +362,40 @@ CRef<CSerialObject> CTable2AsnContext::HandleSubmitTemplate(CRef<CSeq_entry> obj
         }
         return CRef<CSerialObject>(submit);
     }     
-    else
-        return CRef<CSerialObject>(object);
+
+    return CRef<CSerialObject>(object);
+}
+
+CRef<CSerialObject> CTable2AsnContext::CreateSeqEntryFromTemplate(CRef<CSeq_entry> object) const
+{
+    if (m_submit_template.NotEmpty())
+    {
+        if (m_submit_template->IsSetSub() &&
+            m_submit_template->GetSub().IsSetCit())
+        {
+            CRef<CPub> pub(new CPub);
+            pub->SetSub().Assign(m_submit_template->GetSub().GetCit());
+            CRef<CSeqdesc> pubdesc(new CSeqdesc);
+            pubdesc->SetPub().SetPub().Set().push_back(pub);
+            object->SetDescr().Set().push_back(pubdesc);
+        }
+#if 0
+        if (m_submit_template->IsSetSub() &&
+            m_submit_template->GetSub().IsSetContact() && 
+            m_submit_template->GetSub().GetContact().IsSetContact())
+        {
+            CRef<CAuthor> author(new CAuthor);
+            author->Assign(m_submit_template->GetSub().GetContact().GetContact());
+            CRef<CPub> pub(new CPub);               
+            pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author);
+            //pub->SetSub().SetAuthors().SetName
+            CRef<CSeqdesc> pubdesc(new CSeqdesc);
+            pubdesc->SetPub().SetPub().Set().push_back(pub);
+            object->SetDescr().Set().push_back(pubdesc);
+        }
+#endif
+    }
+    return CRef<CSerialObject>(object);
 }
 
 
