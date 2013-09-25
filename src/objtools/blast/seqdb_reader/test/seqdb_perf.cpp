@@ -41,7 +41,9 @@ static char const rcsid[] =
 #include <corelib/ncbi_system.hpp>
 #include <corelib/ncbistr.hpp>
 #include <objtools/blast/seqdb_reader/seqdbexpert.hpp>
+#ifdef _OPENMP
 #include <omp.h>
+#endif /* OPENMP */
 #include <numeric>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
