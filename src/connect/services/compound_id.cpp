@@ -838,11 +838,12 @@ Uint4 CCompoundIDDumpParser::x_ReadIPv4Address()
     x_SaveErrPos();
     Uint4 ipv4_address = 0;
     unsigned char* octet = reinterpret_cast<unsigned char*>(&ipv4_address);
+    unsigned number;
     int dots = 3;
     do {
         if (x_EOF())
             goto IPv4ParsingError;
-        unsigned number = *m_Ch - '0';
+        number = *m_Ch - '0';
         if (number > 9)
             goto IPv4ParsingError;
         for (;;) {
@@ -863,7 +864,7 @@ Uint4 CCompoundIDDumpParser::x_ReadIPv4Address()
     } while (--dots > 0);
     if (x_EOF())
         goto IPv4ParsingError;
-    unsigned number = *m_Ch - '0';
+    number = *m_Ch - '0';
     if (number > 9)
         goto IPv4ParsingError;
     for (;;) {
