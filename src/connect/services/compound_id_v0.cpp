@@ -297,10 +297,10 @@ string SIDUnpacking::ExtractString()
                 "Invalid CompoundID format: " << m_PackedID);
     }
 
-    string result(m_Ptr, string_len);
+    string result(m_Ptr, (string::size_type) string_len);
 
     m_Ptr += string_len;
-    m_RemainingBytes -= string_len;
+    m_RemainingBytes -= (string::size_type) string_len;
 
     return result;
 }

@@ -90,9 +90,10 @@ class NCBI_XCONNECT_EXPORT CCompoundIDException : public CException
 {
 public:
     enum EErrCode {
-        eInvalidType,   ///< Field type mismatch.
-        eIDTooLong,     ///< ID exceeds length restrictions.
-        eInvalidFormat, ///< Format of the packed ID is not recognized.
+        eInvalidType,       ///< Field type mismatch.
+        eIDTooLong,         ///< ID exceeds length restrictions.
+        eInvalidFormat,     ///< Format of the packed ID is not recognized.
+        eInvalidDumpSyntax, ///< Dump parsing error.
     };
     virtual const char* GetErrCodeString() const;
     NCBI_EXCEPTION_DEFAULT(CCompoundIDException, CException);
@@ -191,7 +192,7 @@ class NCBI_XCONNECT_EXPORT CCompoundIDField
     /// @throw CCompoundIDException if GetType() != eCIT_TaxID.
     Uint8 GetTaxID() const;
 
-    /// Return the netsted compound ID that this field contains.
+    /// Return the nested compound ID that this field contains.
     /// @throw CCompoundIDException if GetType() != eCIT_NestedCID.
     const CCompoundID& GetNestedCID() const;
 };

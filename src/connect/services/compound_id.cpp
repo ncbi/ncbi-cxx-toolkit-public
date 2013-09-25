@@ -40,6 +40,8 @@
 
 #include <connect/ncbi_socket.hpp>
 
+#include <iomanip>
+
 #define CIC_GENERICID_CLASS_NAME "CompoundID"
 #define CIC_NETCACHEKEY_CLASS_NAME "NetCacheKey"
 #define CIC_NETSCHEDULEKEY_CLASS_NAME "NetScheduleKey"
@@ -345,8 +347,15 @@ static void s_DumpCompoundID(CNcbiOstrstream& sstr, SCompoundIDImpl* cid_impl,
                 sstr << (field->m_BoolValue ? "true" : "false");
                 break;
             case eCIT_Flags:
-                /* TODO */
-                sstr << field->m_Uint8Value;
+                if (field->m_Uint8Value <= 0xFF)
+                    sstr << "0b" << setw(8) << setfill('0') <<
+                            NStr::UInt8ToString(field->m_Uint8Value, 0, 2);
+                else if (field->m_Uint8Value <= 0xFFFF)
+                    sstr << "0b" << setw(16) << setfill('0') <<
+                            NStr::UInt8ToString(field->m_Uint8Value, 0, 2);
+                else
+                    sstr << "0x" <<
+                            NStr::UInt8ToString(field->m_Uint8Value, 0, 16);
                 break;
             case eCIT_NestedCID:
                 s_DumpCompoundID(sstr, field->m_NestedCID,
@@ -395,10 +404,509 @@ CCompoundID CCompoundIDPool::FromString(const string& cid)
     return m_Impl->UnpackV0(cid);
 }
 
+class CCompoundIDDumpParser
+{
+public:
+    CCompoundIDDumpParser(CCompoundIDPool::TInstance cid_pool,
+            const string& cid_dump) :
+        m_Pool(cid_pool),
+        m_Dump(cid_dump),
+        m_Ch(m_Dump.c_str()),
+        m_Line(1),
+        m_LineBegin(m_Ch)
+    {
+    }
+
+    CCompoundID ParseID();
+
+    void SkipSpace();
+    void SkipSpaceToNextToken();
+    void CheckEOF();
+
+private:
+    void x_SaveErrPos() {m_ErrLine = m_Line; m_ErrPos = m_Ch;}
+    bool x_EOF() const {return *m_Ch == '\0';}
+    string x_ReadString();
+    Uint8 x_ReadUint8();
+    Uint8 x_ReadInt8();
+    Uint4 x_ReadIPv4Address();
+    Uint2 x_ReadPortNumber();
+
+    CCompoundIDPool m_Pool;
+    string m_Dump;
+    const char* m_Ch;
+    size_t m_Line;
+    const char* m_LineBegin;
+    size_t m_ErrLine;
+    const char* m_ErrPos;
+};
+
+#define CID_PARSER_EXCEPTION(message) \
+    NCBI_THROW_FMT(CCompoundIDException, eInvalidDumpSyntax, \
+            "line " << m_ErrLine << ", column " << (m_ErrPos - m_LineBegin + 1) << ": " << message)
+
+CCompoundID CCompoundIDDumpParser::ParseID()
+{
+    SkipSpace();
+    x_SaveErrPos();
+
+    if (x_EOF() || !isalpha(*m_Ch)) {
+        CID_PARSER_EXCEPTION("missing compound ID class name");
+    }
+
+    const char* token_begin = m_Ch;
+
+    do
+        ++m_Ch;
+    while (!x_EOF() && isalpha(*m_Ch));
+
+    CTempString new_id_class_name(token_begin, m_Ch - token_begin);
+
+    ECompoundIDClass new_id_class = eCIC_NumberOfClasses;
+
+    switch (*token_begin) {
+    case 'C':
+        if (new_id_class_name == CIC_GENERICID_CLASS_NAME)
+            new_id_class = eCIC_GenericID;
+        break;
+    case 'N':
+        if (new_id_class_name == CIC_NETCACHEKEY_CLASS_NAME)
+            new_id_class = eCIC_NetCacheKey;
+        else if (new_id_class_name == CIC_NETSCHEDULEKEY_CLASS_NAME)
+            new_id_class = eCIC_NetScheduleKey;
+        else if (new_id_class_name == CIC_NETSTORAGEFILEID_CLASS_NAME)
+            new_id_class = eCIC_NetStorageFileID;
+    }
+
+    if (new_id_class == eCIC_NumberOfClasses) {
+        CID_PARSER_EXCEPTION("unknown component ID class '" <<
+                new_id_class_name << '\'');
+    }
+
+    SkipSpace();
+
+    if (x_EOF() || *m_Ch != '{') {
+        x_SaveErrPos();
+        CID_PARSER_EXCEPTION("missing '{'");
+    }
+
+    ++m_Ch;
+
+    SkipSpaceToNextToken();
+
+    CCompoundID result(m_Pool.NewID(new_id_class));
+
+    if (*m_Ch != '}')
+        for (;;) {
+            token_begin = m_Ch;
+            x_SaveErrPos();
+
+            do
+                ++m_Ch;
+            while (isalnum(*m_Ch) || *m_Ch == '_');
+
+            CTempString field_type_name(token_begin, m_Ch - token_begin);
+
+            ECompoundIDFieldType field_type = eCIT_NumberOfTypes;
+
+            switch (*token_begin) {
+            case '}':
+                CID_PARSER_EXCEPTION("a field type name is required");
+            case 'b':
+                if (field_type_name == CIT_BOOLEAN_TYPE_NAME)
+                    field_type = eCIT_Boolean;
+                break;
+            case 'd':
+                if (field_type_name == CIT_DATABASE_NAME_TYPE_NAME)
+                    field_type = eCIT_DatabaseName;
+                break;
+            case 'f':
+                if (field_type_name == CIT_FLAGS_TYPE_NAME)
+                    field_type = eCIT_Flags;
+                break;
+            case 'h':
+                if (field_type_name == CIT_HOST_TYPE_NAME)
+                    field_type = eCIT_Host;
+                break;
+            case 'i':
+                if (field_type_name == CIT_ID_TYPE_NAME)
+                    field_type = eCIT_ID;
+                else if (field_type_name == CIT_INTEGER_TYPE_NAME)
+                    field_type = eCIT_Integer;
+                else if (field_type_name == CIT_IPV4_ADDRESS_TYPE_NAME)
+                    field_type = eCIT_IPv4Address;
+                else if (field_type_name == CIT_IPV4_SOCK_ADDR_TYPE_NAME)
+                    field_type = eCIT_IPv4SockAddr;
+                break;
+            case 'n':
+                if (field_type_name == CIT_NESTED_CID_TYPE_NAME)
+                    field_type = eCIT_NestedCID;
+                else if (field_type_name == CIT_NUMERIC_TAG_TYPE_NAME)
+                    field_type = eCIT_NumericTag;
+                break;
+            case 'p':
+                if (field_type_name == CIT_PATH_TYPE_NAME)
+                    field_type = eCIT_Path;
+                else if (field_type_name == CIT_PORT_TYPE_NAME)
+                    field_type = eCIT_Port;
+                break;
+            case 'r':
+                if (field_type_name == CIT_RANDOM_TYPE_NAME)
+                    field_type = eCIT_Random;
+                break;
+            case 's':
+                if (field_type_name == CIT_SEQ_ID_TYPE_NAME)
+                    field_type = eCIT_SeqID;
+                else if (field_type_name == CIT_SERVICE_NAME_TYPE_NAME)
+                    field_type = eCIT_ServiceName;
+                else if (field_type_name == CIT_STRING_TYPE_NAME)
+                    field_type = eCIT_String;
+                break;
+            case 't':
+                if (field_type_name == CIT_TAG_TYPE_NAME)
+                    field_type = eCIT_Tag;
+                else if (field_type_name == CIT_TAX_ID_TYPE_NAME)
+                    field_type = eCIT_TaxID;
+                else if (field_type_name == CIT_TIMESTAMP_TYPE_NAME)
+                    field_type = eCIT_Timestamp;
+            }
+
+            if (field_type == eCIT_NumberOfTypes) {
+                CID_PARSER_EXCEPTION("unknown field type '" <<
+                        field_type_name << '\'');
+            }
+
+            SkipSpaceToNextToken();
+
+            switch (field_type) {
+            case eCIT_ID:
+                result.AppendID(x_ReadUint8());
+                break;
+            case eCIT_Integer:
+                result.AppendInteger(x_ReadInt8());
+                break;
+            case eCIT_ServiceName:
+                result.AppendServiceName(x_ReadString());
+                break;
+            case eCIT_DatabaseName:
+                result.AppendDatabaseName(x_ReadString());
+                break;
+            case eCIT_Timestamp:
+                result.AppendTimestamp(x_ReadInt8());
+                break;
+            case eCIT_Random:
+                {
+                    x_SaveErrPos();
+                    Uint8 random_number = x_ReadUint8();
+                    if (random_number >= ((Uint8) 1) << 8 * sizeof(Uint4)) {
+                        CID_PARSER_EXCEPTION(
+                                "random number exceeds maximum allowed value");
+                    }
+                    result.AppendRandom((Uint4) random_number);
+                }
+                break;
+            case eCIT_IPv4Address:
+                result.AppendIPv4Address(x_ReadIPv4Address());
+                break;
+            case eCIT_Host:
+                result.AppendHost(x_ReadString());
+                break;
+            case eCIT_Port:
+                result.AppendPort(x_ReadPortNumber());
+                break;
+            case eCIT_IPv4SockAddr:
+                {
+                    Uint4 ipv4_address = x_ReadIPv4Address();
+                    if (x_EOF() || *m_Ch != ':') {
+                        x_SaveErrPos();
+                        CID_PARSER_EXCEPTION("missing ':'");
+                    }
+                    ++m_Ch;
+                    result.AppendIPv4SockAddr(ipv4_address, x_ReadPortNumber());
+                }
+                break;
+            case eCIT_Path:
+                result.AppendPath(x_ReadString());
+                break;
+            case eCIT_String:
+                result.AppendString(x_ReadString());
+                break;
+            case eCIT_Boolean:
+                {
+                    token_begin = m_Ch;
+                    x_SaveErrPos();
+
+                    while (!x_EOF() && isalpha(*m_Ch))
+                        ++m_Ch;
+
+                    CTempString bool_val(token_begin, m_Ch - token_begin);
+
+                    if (bool_val == "false")
+                        result.AppendBoolean(false);
+                    else if (bool_val == "true")
+                        result.AppendBoolean(true);
+                    else {
+                        CID_PARSER_EXCEPTION("invalid boolean value \"" <<
+                                bool_val << '\"');
+                    }
+                }
+                break;
+            case eCIT_Flags:
+                result.AppendFlags(x_ReadUint8());
+                break;
+            case eCIT_Tag:
+                result.AppendTag(x_ReadString());
+                break;
+            case eCIT_NumericTag:
+                result.AppendNumericTag(x_ReadUint8());
+                break;
+            case eCIT_SeqID:
+                result.AppendSeqID(x_ReadString());
+                break;
+            case eCIT_TaxID:
+                result.AppendTaxID(x_ReadUint8());
+                break;
+            case eCIT_NestedCID:
+                result.AppendNestedCID(ParseID());
+                break;
+            default:
+                break;
+            }
+
+            SkipSpaceToNextToken();
+
+            if (*m_Ch == ',')
+                ++m_Ch;
+            else if (*m_Ch == '}')
+                break;
+            else {
+                x_SaveErrPos();
+                CID_PARSER_EXCEPTION("either ',' or '}' expected");
+            }
+
+            SkipSpaceToNextToken();
+        }
+    ++m_Ch;
+    return result;
+}
+
+void CCompoundIDDumpParser::SkipSpace()
+{
+    while (!x_EOF() && isspace(*m_Ch))
+        if (*m_Ch++ == '\n') {
+            m_LineBegin = m_Ch;
+            ++m_Line;
+        }
+}
+
+void CCompoundIDDumpParser::SkipSpaceToNextToken()
+{
+    for (;;)
+        if (x_EOF()) {
+            x_SaveErrPos();
+            CID_PARSER_EXCEPTION("unterminated compound ID");
+        } else if (!isspace(*m_Ch))
+            break;
+        else if (*m_Ch++ == '\n') {
+            m_LineBegin = m_Ch;
+            ++m_Line;
+        }
+}
+
+void CCompoundIDDumpParser::CheckEOF()
+{
+    if (!x_EOF()) {
+        x_SaveErrPos();
+        CID_PARSER_EXCEPTION("extra characters past component ID definition");
+    }
+}
+
+string CCompoundIDDumpParser::x_ReadString()
+{
+    char quote_char;
+
+    if (x_EOF() || ((quote_char = *m_Ch) != '"' && quote_char != '\'')) {
+        x_SaveErrPos();
+        CID_PARSER_EXCEPTION("string must start with a quote character");
+    }
+
+    const char* str_begin = ++m_Ch;
+    bool escaped = false;
+
+    while (!x_EOF())
+        if (*m_Ch == quote_char && !escaped)
+            return NStr::ParseEscapes(
+                    CTempString(str_begin, m_Ch++ - str_begin));
+        else if (*m_Ch == '\\') {
+            escaped = !escaped;
+            ++m_Ch;
+        } else {
+            escaped = false;
+            if (*m_Ch++ == '\n') {
+                m_LineBegin = m_Ch;
+                ++m_Line;
+            }
+        }
+
+    x_SaveErrPos();
+    CID_PARSER_EXCEPTION("unterminated quoted string");
+}
+
+Uint8 CCompoundIDDumpParser::x_ReadUint8()
+{
+    x_SaveErrPos();
+
+    if (x_EOF() || !isdigit(*m_Ch)) {
+        CID_PARSER_EXCEPTION("missing integer value");
+    }
+
+    const char* token_begin;
+    int base;
+
+    if (*m_Ch != '0') {
+        token_begin = m_Ch;
+        ++m_Ch;  // A digit other than '0', moving on...
+        base = 10;
+    } else {
+        ++m_Ch;  // Skip the leading zero.
+
+        if (x_EOF())
+            return 0;
+
+        switch (*m_Ch) {
+        case 'b':
+        case 'B':
+            token_begin = ++m_Ch;
+            base = 2;
+            break;
+        case 'x':
+        case 'X':
+            token_begin = ++m_Ch;
+            base = 16;
+            break;
+        default:
+            if (!isdigit(*m_Ch))
+                return 0;
+            token_begin = m_Ch;
+            ++m_Ch;  // It's a digit; move on to the next character.
+            base = 8;
+        }
+    }
+
+    while (!x_EOF() && isalnum(*m_Ch))
+        ++m_Ch;
+
+    Uint8 result = NStr::StringToUInt8(CTempString(token_begin,
+            m_Ch - token_begin), NStr::fConvErr_NoThrow, base);
+
+    if (result == 0 && errno != 0) {
+        CID_PARSER_EXCEPTION("invalid Uint8 number specification");
+    }
+
+    return result;
+}
+
+Uint8 CCompoundIDDumpParser::x_ReadInt8()
+{
+    const char* token_begin = m_Ch;
+    x_SaveErrPos();
+
+    if (!x_EOF() && *m_Ch == '-')
+        ++m_Ch;
+
+    if (x_EOF() || !isdigit(*m_Ch)) {
+        x_SaveErrPos();
+        CID_PARSER_EXCEPTION("missing integer value");
+    }
+
+    do
+        ++m_Ch;
+    while (!x_EOF() && isdigit(*m_Ch));
+
+    Int8 result = NStr::StringToInt8(CTempString(token_begin,
+            m_Ch - token_begin), NStr::fConvErr_NoThrow);
+
+    if (result == 0 && errno != 0) {
+        CID_PARSER_EXCEPTION("integer overflow");
+    }
+
+    return result;
+}
+
+Uint4 CCompoundIDDumpParser::x_ReadIPv4Address()
+{
+    x_SaveErrPos();
+    Uint4 ipv4_address = 0;
+    unsigned char* octet = reinterpret_cast<unsigned char*>(&ipv4_address);
+    int dots = 3;
+    do {
+        if (x_EOF())
+            goto IPv4ParsingError;
+        unsigned number = *m_Ch - '0';
+        if (number > 9)
+            goto IPv4ParsingError;
+        for (;;) {
+            ++m_Ch;
+            if (x_EOF())
+                goto IPv4ParsingError;
+            unsigned digit = *m_Ch - '0';
+            if (digit <= 9) {
+                if ((number = number * 10 + digit) > 255)
+                    goto IPv4ParsingError;
+            } else if (*m_Ch == '.') {
+                ++m_Ch;
+                break;
+            } else
+                goto IPv4ParsingError;
+        }
+        *octet++ = (unsigned char) number;
+    } while (--dots > 0);
+    if (x_EOF())
+        goto IPv4ParsingError;
+    unsigned number = *m_Ch - '0';
+    if (number > 9)
+        goto IPv4ParsingError;
+    for (;;) {
+        ++m_Ch;
+        if (x_EOF())
+            break;
+        unsigned digit = *m_Ch - '0';
+        if (digit <= 9) {
+            if ((number = number * 10 + digit) > 255)
+                goto IPv4ParsingError;
+        } else {
+            if (*m_Ch == '.')
+                ++m_Ch;
+            break;
+        }
+    }
+    *octet = (unsigned char) number;
+    return ipv4_address;
+
+IPv4ParsingError:
+    CID_PARSER_EXCEPTION("invalid IPv4 address");
+}
+
+Uint2 CCompoundIDDumpParser::x_ReadPortNumber()
+{
+    x_SaveErrPos();
+    Uint8 port_number = x_ReadUint8();
+    if (port_number >= 1 << 8 * sizeof(Uint2)) {
+        CID_PARSER_EXCEPTION("port number exceeds maximum value");
+    }
+    return (Uint2) port_number;
+}
+
 CCompoundID CCompoundIDPool::FromDump(const string& cid_dump)
 {
-    /* TODO */
-    return NULL;
+    CCompoundIDDumpParser dump_parser(m_Impl, cid_dump);
+
+    CCompoundID result(dump_parser.ParseID());
+
+    dump_parser.SkipSpace();
+    dump_parser.CheckEOF();
+
+    return result;
 }
 
 #define SCRAMBLE_PASS() \
