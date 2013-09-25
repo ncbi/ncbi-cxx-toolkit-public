@@ -709,7 +709,7 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
 			    if( pInfo->IsSetSval() && !pInfo->GetSval().empty() ) {
 				try {
 				    CObjectIStreamAsn is( pInfo->GetSval().c_str(),
-							  pInfo->GetSval().size() );
+							  pInfo->GetSval().size(), eFNP_Allow );
 				    is >> org.SetOrgname().SetName();
 				    bOrgnameRetreived = true;
 				} catch( exception& e ) {
