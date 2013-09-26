@@ -35,6 +35,7 @@
 #include <corelib/ncbi_system.hpp>
 #include <connect/ncbi_conn_stream.hpp>
 #include <connect/ncbi_misc.hpp>
+#include <connect/ncbi_socket.hpp>
 #include <connect/ncbi_util.h>
 #include <util/compress/stream_util.hpp>
 #include <util/compress/tar.hpp>
@@ -193,13 +194,13 @@ protected:
         CNcbiOstrstream os;
         os << current;
         string line = CNcbiOstrstreamToString(os);
-        size_t linelen = line.size();
-        cerr.flush();
-        cout << line;
+        streamsize linelen = (streamsize) line.size();
+        NcbiCerr.flush();
+        NcbiCout << line;
         if (linelen < SCREEN_COLS) {
-            cout << setw((streamsize)(SCREEN_COLS - linelen)) << ' ';
+            NcbiCout << NcbiSetw(SCREEN_COLS - linelen) << ' ';
         }
-        cout << endl;
+        NcbiCout << NcbiEndl;
         TFile file(current.GetName(), current.GetSize());
         m_Dlcbdata->Append(&file);
         return true;
@@ -319,17 +320,17 @@ size_t CListProcessor::Run(void)
     do {
         string line;
         getline(*m_Stream, line);
-        size_t linelen = line.size();
+        streamsize linelen = (streamsize) line.size();
         if (linelen /*!line.empty()*/  &&  NStr::EndsWith(line, '\r')) {
             line.resize(--linelen);
         }
         if (linelen /*!line.empty()*/) {
-            cerr.flush();
-            cout << line;
+            NcbiCerr.flush();
+            NcbiCout << line;
             if (linelen < SCREEN_COLS) {
-                cout << setw((streamsize)(SCREEN_COLS - linelen)) << ' ';
+                NcbiCout << NcbiSetw(SCREEN_COLS - linelen) << ' ';
             }
-            cout << endl;
+            NcbiCout << NcbiEndl;
             CTar::TFile file = make_pair(line, (Uint8) 0);
             m_Dlcbdata->Append(&file);
             n++;
@@ -494,16 +495,17 @@ static EIO_Status x_ConnectionCallback(CONN           conn,
             double percent = (pos * 100.0) / size;
             os << "Downloaded " << NStr::UInt8ToString(pos)
                << '/' << NStr::UInt8ToString(size)
-               << " (" << fixed << setprecision(2) << percent << "%)"
-                  " in " << fixed << setprecision(1) << time << 's';
+               << " (" << NcbiFixed << NcbiSetprecision(2) << percent << "%)"
+                  " in " << NcbiFixed << NcbiSetprecision(1) << time << 's';
         } else {
             os << "Downloaded " << NStr::UInt8ToString(pos)
                << "/unknown"
-                  " in " << fixed << setprecision(1) << time << 's';
+                  " in " << NcbiFixed << NcbiSetprecision(1) << time << 's';
         }
         dlcbdata->Mark(pos, time);
         double rate = dlcbdata->GetRate();
-        os << " (" << fixed << setprecision(2) << rate / 1024.0 << "KiB/s)";
+        os << " (" << NcbiFixed << NcbiSetprecision(2)
+           << rate / 1024.0 << "KiB/s)";
         double eta = dlcbdata->GetETA();
         if (eta >= 1.0  &&  type != eCONN_OnClose) {
             os << " ETA: "
@@ -513,32 +515,33 @@ static EIO_Status x_ConnectionCallback(CONN           conn,
         } else
             os << "              ";
         string line = CNcbiOstrstreamToString(os);
-        size_t linelen = line.size();
-        cout.flush();
-        cerr << line;
+        streamsize linelen = (streamsize) line.size();
+        NcbiCout.flush();
+        NcbiCerr << line;
         if (linelen < SCREEN_COLS) {
-            cerr << setw((streamsize)(SCREEN_COLS - linelen)) << ' ';
+            NcbiCerr << NcbiSetw(SCREEN_COLS - linelen) << ' ';
         }
-        cerr << '\r' << flush;
+        NcbiCerr << '\r' << NcbiFlush;
     }
 
     if (type == eCONN_OnClose) {
-        cerr << endl << "Connection closed" << endl;
+        NcbiCerr << NcbiEndl << "Connection closed" << NcbiEndl;
     } else if (s_Signaled) {
-        cerr << endl << "Canceled" << endl;
+        NcbiCerr << NcbiEndl << "Canceled" << NcbiEndl;
     } else if (status == eIO_Timeout) {
-        cerr << endl << "Timed out in " << fixed << setprecision(1)
-             << dlcbdata->GetTimeout() << 's' << endl;
+        NcbiCerr << NcbiEndl << "Timed out in "
+                 << NcbiFixed << NcbiSetprecision(1)
+                 << dlcbdata->GetTimeout() << 's' << NcbiEndl;
     }
     return status;
 }
 }
 
 
-static void s_TryAskFtpFilesize(iostream& ios, const char* filename)
+static void s_TryAskFtpFilesize(CNcbiIostream& ios, const char* filename)
 {
     size_t testval;
-    ios << "SIZE " << filename << endl;
+    ios << "SIZE " << filename << NcbiEndl;
     // If SIZE command is not understood, the file size can be captured
     // later when the download (RETR) starts if it is reported by the server
     // in a compatible format (there's the callback set for that, too).
@@ -556,7 +559,7 @@ static void s_InitiateFtpRetrieval(CConn_IOStream& ftp,
     //      one can use SIZE and MDTM on each entry to get details about it)
     // MLSx commands (if supported by the server) can also be used
     const char* cmd = NStr::EndsWith(name, '/') ? "LIST " : "RETR ";
-    ftp << cmd << name << endl;
+    ftp << cmd << name << NcbiEndl;
     if (CONN_Status(ftp.GetCONN(), eIO_Write) != eIO_Success) {
         ftp.clear(IOS_BASE::badbit);
     }
@@ -596,7 +599,7 @@ int main(int argc, const char* argv[])
     signal(SIGTERM, s_Interrupt);
     signal(SIGQUIT, s_Interrupt);
 #endif // NCBI_OS
-    SOCK_SetInterruptOnSignalAPI(eOn);
+    CSocketAPI::SetInterruptOnSignal(eOn);
 
     // Init the library explicitly (this sets up the log)
     CONNECT_Init(0);
@@ -684,7 +687,7 @@ int main(int argc, const char* argv[])
                         net_info->timeout);
 
     // Print out some server info
-    if (!(ftp << "STAT" << flush)) {
+    if (!(ftp << "STAT" << NcbiFlush)) {
         ERR_POST(Fatal << "Cannot connect to ftp server");
     }
     string status;
@@ -731,13 +734,13 @@ int main(int argc, const char* argv[])
     if (size) {
         ERR_POST(Info << "Downloading " << url << ", "
                  << NStr::UInt8ToString(size) << " byte" << &"s"[size == 1]
-                 << ", processor 0x" << hex << proc);
+                 << ", processor 0x" << NcbiHex << proc);
     } else {
         ERR_POST(Info << "Downloading " << url
-                 << ", processor 0x" << hex << proc);
+                 << ", processor 0x" << NcbiHex << proc);
     }
     if (offset) {
-        ftp << "REST " << NStr::UInt8ToString(offset) << flush;
+        ftp << "REST " << NStr::UInt8ToString(offset) << NcbiFlush;
     }
     s_InitiateFtpRetrieval(ftp, net_info->path);
 

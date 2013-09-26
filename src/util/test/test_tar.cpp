@@ -46,11 +46,11 @@
 #  include <io.h>     // For _setmode()
 #  include <fcntl.h>  // For _O_BINARY
 #  include <conio.h>
-#  define  DEVNULL "NUL"
+#  define  DEVNULL  "NUL"
 #endif // NCBI_OS_MSWIN
 #ifdef NCBI_OS_UNIX
 #  include <signal.h>
-#  define  DEVNULL "/dev/null"
+#  define  DEVNULL  "/dev/null"
 #endif // NCBI_OS_UNIX
 
 #include <common/test_assert.h>  // This header must go last
@@ -107,7 +107,6 @@ static void s_Interrupt(int /*signo*/)
 #endif // TEST_CONN_TAR
 
 
-
 //////////////////////////////////////////////////////////////////////////////
 //
 // Test application
@@ -116,33 +115,21 @@ static void s_Interrupt(int /*signo*/)
 class CTarTest : public CNcbiApplication
 {
 public:
-    CTarTest();
+    CTarTest(void);
 
 protected:
     virtual void Init(void);
     virtual int  Run(void);
 
+    auto_ptr<CTar::TEntries> x_Append(CTar& tar, const string& name);
+
     string x_Pos(const CTarEntryInfo& info);
 
-protected:
     CTar::TFlags m_Flags;
-
-    enum EAction {
-        eNone      =  0,
-        eCreate    = (1 << 0),
-        eAppend    = (1 << 1),
-        eUpdate    = (1 << 2),
-        eList      = (1 << 3),
-        eExtract   = (1 << 4),
-        eTest      = (1 << 5)
-    };
-    typedef unsigned int TAction;
-
-    auto_ptr<CTar::TEntries> x_Append(CTar& tar, const string& name);
 };
 
 
-CTarTest::CTarTest()
+CTarTest::CTarTest(void)
     : m_Flags(0)
 {
 #if defined(__GLIBCPP__) || (defined(__GLIBCXX__)  &&  __GLIBCXX__ < 20060524)
@@ -175,7 +162,6 @@ void CTarTest::Init(void)
     signal(SIGTERM, s_Interrupt);
     signal(SIGQUIT, s_Interrupt);
 #  endif // NCBI_OS
-
 #endif // TEST_CONN_TAR
 
     auto_ptr<CArgDescriptions> args(new CArgDescriptions);
@@ -221,7 +207,7 @@ void CTarTest::Init(void)
     args->AddFlag("O", "Extract to stdout (rather than files) when streaming");
     args->AddFlag("U", "Only existing files/entries in update/extract");
     args->AddFlag("B", "Create backup copies of destinations when extracting");
-    args->AddFlag("k", "Keep old files when extracting");
+    args->AddFlag("k", "Don't overwrite[keep] existing files when extracting");
     args->AddFlag("E", "Maintain equal types of files and archive entries");
     args->AddFlag("I", "Ignore unsupported entries (w/o extracting them)");
     args->AddFlag("z", "Use GZIP compression (aka tgz), subsumes NOT -r / -u");
@@ -231,7 +217,7 @@ void CTarTest::Init(void)
     args->AddFlag("v", "Turn on debugging information");
     args->AddFlag("lfs", "Large File Support check [non-standard]");
     args->AddExtra(0/*no mandatory*/, kMax_UInt/*unlimited optional*/,
-                   "List of files to process", CArgDescriptions::eString);
+                   "List of entries to process", CArgDescriptions::eString);
     args->SetUsageContext(GetArguments().GetProgramBasename(),
                           "Tar test suite: a simplified tar utility"
                           " [with some extras]");
@@ -242,8 +228,8 @@ void CTarTest::Init(void)
 static int x_CheckLFS(const CArgs& args, string& path)
 {
     CDirEntry::SStat st;
-    int  nolfs = sizeof(st.orig.st_size) <= 4 ? -1 : 0;
-    bool verbose = args["v"].HasValue() ? true : false;
+    int    nolfs = sizeof(st.orig.st_size) <= 4 ? -1 : 0;
+    bool   verbose = args["v"].HasValue() ? true : false;
     string message = ((path.empty() ? "Large File Support (LFS)" : "LFS")
                       + string(nolfs ? " is not present" : " is present"));
     if (!path.empty()) {
@@ -251,7 +237,8 @@ static int x_CheckLFS(const CArgs& args, string& path)
         if (file.Stat(&st, eFollowLinks)) {
             CDirEntry::EType type = CDirEntry::GetType(st.orig);
             if (type == CDirEntry::eFile) {
-                ifstream ifs(path.c_str(), IOS_BASE::in | IOS_BASE::binary);
+                CNcbiIfstream ifs(path.c_str(),
+                                  IOS_BASE::in | IOS_BASE::binary);
                 if (!ifs) {
                     message +=
                         string(nolfs ? " and" : " but") +
@@ -297,7 +284,7 @@ static string x_DataSize(Uint8 size, bool binary = true)
     size_t idx = 0;
     int prec = 0;
     size *= 1000;
-    for (idx = 0;  idx < sizeof(kSfx)/sizeof(kSfx[0]);  idx++) {
+    for (idx = 0;  idx < sizeof(kSfx) / sizeof(kSfx[0]);  ++idx) {
         if (size <= kilo * 1000)
             break;
         size /= kilo;
@@ -305,7 +292,7 @@ static string x_DataSize(Uint8 size, bool binary = true)
             prec++;
     }
     CNcbiOstrstream os;
-    os << fixed << setprecision(prec) << (double) size / 1000.0
+    os << NcbiFixed << NcbiSetprecision(prec) << (double) size / 1000.0
        << (kSfx[idx] ?           kSfx[idx]               : "?")
        << (kSfx[idx] ? "iB" + (!*kSfx[idx]  ||  !binary) : "");
     return CNcbiOstrstreamToString(os);
@@ -346,7 +333,7 @@ auto_ptr<CTar::TEntries> CTarTest::x_Append(CTar& tar, const string& name)
     }
     if (type == CDirEntry::eFile) {
         Uint8 size = CFile(name).GetLength();
-        ifstream ifs(name.c_str(), IOS_BASE::in | IOS_BASE::binary);
+        CNcbiIfstream ifs(name.c_str(), IOS_BASE::in | IOS_BASE::binary);
         return tar.Append(CTarUserEntryInfo(name, size), ifs);
     }
     return tar.Append(name);
@@ -368,7 +355,16 @@ int CTarTest::Run(void)
         return x_CheckLFS(args, file);
     }
 
-    TAction action = eNone;
+    enum EAction {
+        eNone    =  0,
+        eCreate  = (1 << 0),
+        eAppend  = (1 << 1),
+        eUpdate  = (1 << 2),
+        eList    = (1 << 3),
+        eExtract = (1 << 4),
+        eTest    = (1 << 5)
+    };
+    unsigned int action = eNone;
 
     if (args["c"].HasValue()) {
         action |= eCreate;
@@ -399,20 +395,12 @@ int CTarTest::Run(void)
                    "Sorry, -z is not supported with either -r or -u");
     }
 
-#ifdef TEST_CONN_TAR
-    bool url = NStr::FindNoCase(file, "://", 3, 5) != NPOS ? true : false;
-#endif // TEST_CONN_TAR
-
-    string filename;
+    size_t blocking_factor = args["b"].AsInteger();
     bool   pipethru        = args["S"].HasValue();
     bool   stream          = args["s"].HasValue();
     bool   verbose         = args["v"].HasValue();
-    size_t blocking_factor = args["b"].AsInteger();
     size_t n               = args.GetNExtra();
 
-    if (pipethru) {
-        filename.swap(file);
-    }
     if (verbose) {
         SetDiagPostLevel(eDiag_Info);
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
@@ -422,22 +410,21 @@ int CTarTest::Run(void)
 
     auto_ptr<CTar>     tar;
     auto_ptr<CNcbiIos> zs;
-    istream*  in = 0;
-    ifstream  ifs;
-    ofstream  ofs;
+    CNcbiIstream* in = 0;
+    CNcbiIfstream ifs;
+    CNcbiOfstream ofs;
     CNcbiIos* io;
 
 #ifdef TEST_CONN_TAR
     CCanceled canceled;
     auto_ptr<CConn_IOStream> conn;
-    if (url) {
+    if (NStr::FindNoCase(file, "://", 3, 5) != NPOS) {
 #  ifdef HAVE_LIBGNUTLS
         SOCK_SetupSSL(NcbiSetupGnuTls);
 #  endif // HAVE_LIBGNUTLS
         SOCK_SetInterruptOnSignalAPI(eOn);
-        if (pipethru  &&  action != eCreate) {
-            conn.reset(NcbiOpenURL(filename));
-        } else if (action == eList || action == eExtract || action == eTest) {
+        if (action == eList  ||  action == eExtract  ||  action == eTest
+            ||  (pipethru  &&  action != eCreate)) {
             conn.reset(NcbiOpenURL(file));
             file.erase();
         } else {
@@ -452,8 +439,9 @@ int CTarTest::Run(void)
         }
     } else
 #endif // TEST_CONN_TAR
-        if (pipethru  &&  !filename.empty()) {
-            ifs.open(filename.c_str(), IOS_BASE::in | IOS_BASE::binary);
+        if (pipethru  &&  !file.empty()) {
+            ifs.open(file.c_str(), IOS_BASE::in | IOS_BASE::binary);
+            file.erase();
             in = &ifs;
         }
 
@@ -472,7 +460,7 @@ int CTarTest::Run(void)
 
     if (file.empty()  ||  zip) {
         if (action == eCreate  ||  action == eAppend  ||  action == eUpdate) {
-            ostream* os;
+            CNcbiOstream* os;
             if (!file.empty()) {
                 ofs.open(file.c_str(),
                          IOS_BASE::trunc | IOS_BASE::out | IOS_BASE::binary);
@@ -491,10 +479,10 @@ int CTarTest::Run(void)
                 zc->SetFlags(CZipCompression::fWriteGZipFormat);
                 if (!file.empty()) {
                     CZipCompression::SFileInfo info;
-                    file = CDirEntry(file).GetBase();
-                    if (!NStr::EndsWith(file, ".tar"))
-                        file += ".tar";
-                    info.name  = file;
+                    string tarfile = CDirEntry(file).GetBase();
+                    if (!NStr::EndsWith(tarfile, ".tar"))
+                        tarfile += ".tar";
+                    info.name  = tarfile;
                     info.mtime = CTime(CTime::eCurrent).GetTimeT();
                     zc->SetFileInfo(info);
                 }
@@ -507,8 +495,9 @@ int CTarTest::Run(void)
             io = os;
         } else {
             _ASSERT(action == eList || action == eExtract || action == eTest);
-            istream* is;
+            CNcbiIstream* is;
             if (!file.empty()) {
+                _ASSERT(!ifs.is_open());
                 ifs.open(file.c_str(), IOS_BASE::in | IOS_BASE::binary);
                 is = &ifs;
             } else {
@@ -601,7 +590,7 @@ int CTarTest::Run(void)
                 NCBI_THROW(CTarException, eOpen, "Archive not found");
             }
         }
-        istream& is = io ? dynamic_cast<istream&>(*io) : ifs;
+        CNcbiIstream& is = io ? dynamic_cast<CNcbiIstream&>(*io) : ifs;
         IReader* ir = CTar::Extract(is, args[1].AsString(), m_Flags);
         if (!ir) {
             NCBI_THROW(CTarException, eBadName,
@@ -609,11 +598,11 @@ int CTarTest::Run(void)
         }
         CRStream rs(ir, 0, 0, (CRWStreambuf::fOwnReader |
                                CRWStreambuf::fLogExceptions));
-        ofstream of;
+        CNcbiOfstream of;
         bool tocout = args["O"].HasValue();
         if (!tocout  ||  pipethru) {
             of.open(!tocout ? args[1].AsString().c_str() : DEVNULL,
-                    IOS_BASE::out | IOS_BASE::binary);
+                    IOS_BASE::trunc | IOS_BASE::out | IOS_BASE::binary);
         }
         if (!NcbiStreamCopy(!tocout  ||  pipethru ? of : NcbiCout, rs)) {
             // NB: CTar would throw archive read exception
@@ -666,7 +655,7 @@ int CTarTest::Run(void)
         } else if (action == eList  ||  action == eExtract) {
             if (n) {
                 auto_ptr<CMaskFileName> mask(new CMaskFileName);
-                for (size_t i = 1;  i <= n;  i++) {
+                for (size_t i = 1;  i <= n;  ++i) {
                     mask->Add(args[i].AsString());
                 }
                 tar->SetMask(mask.release(), eTakeOwnership);
@@ -697,11 +686,13 @@ int CTarTest::Run(void)
                     _ASSERT(ir);
                     CRStream rs(ir, 0, 0, (CRWStreambuf::fOwnReader |
                                            CRWStreambuf::fLogExceptions));
-                    ofstream of;
+                    CNcbiOfstream of;
                     bool tocout = args["O"].HasValue();
                     if (!tocout  ||  pipethru) {
                         of.open(!tocout ? info->GetName().c_str() : DEVNULL,
-                                IOS_BASE::out | IOS_BASE::binary);
+                                IOS_BASE::trunc |
+                                IOS_BASE::out   |
+                                IOS_BASE::binary);
                     }
                     if (!NcbiStreamCopy(!tocout || pipethru ? of:NcbiCout,rs)){
                         // NB: CTar would throw archive read exception
