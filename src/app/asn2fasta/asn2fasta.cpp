@@ -203,6 +203,9 @@ void CAsn2FastaApp::Init(void)
     {{
         arg_desc->AddFlag("show-mods", "Show FASTA header mods (e.g. [strain=abc])");
 
+        arg_desc->AddOptionalKey("width", "CHARS", "Output FASTA with an alternate number of columns", CArgDescriptions::eInteger);
+        arg_desc->SetConstraint("width", new CArgAllow_Integers(1, kMax_Int));
+
         // name
         arg_desc->AddOptionalKey("o", "OutputFile",
             "Output file name", CArgDescriptions::eOutputFile);
@@ -448,6 +451,9 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
         CFastaOstream::fNoExpensiveOps);
     if( GetArgs()["show-mods"] ) {
         fasta_os.SetFlag(CFastaOstream::fShowModifiers);
+    }
+    if( GetArgs()["width"] ) {
+        fasta_os.SetWidth( GetArgs()["width"].AsInteger() );
     }
     if (m_DeflineOnly) {
         for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
