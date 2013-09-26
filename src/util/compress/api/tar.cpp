@@ -616,7 +616,7 @@ static string s_SizeOrMajorMinor(const CTarEntryInfo& info)
 }
 
 
-ostream& operator << (ostream& os, const CTarEntryInfo& info)
+CNcbiOstream& operator << (CNcbiOstream& os, const CTarEntryInfo& info)
 {
     CTime mtime(info.GetModificationTime());
     os << s_TypeAsChar(info.GetType())
@@ -1617,7 +1617,7 @@ const char* CTar::x_ReadArchive(size_t& n)
 #ifdef NCBI_COMPILER_MIPSPRO
                 try {
                     // Work around a bug in MIPSPro 7.3's streambuf::xsgetn()
-                    istream* is = dynamic_cast<istream*>(&m_Stream);
+                    CNcbiIstream* is = dynamic_cast<CNcbiIstream*>(&m_Stream);
                     _ASSERT(is);
                     is->read(m_Buffer                  + nread,
                              (streamsize)(m_BufferSize - nread));
@@ -3167,10 +3167,10 @@ bool CTar::x_ExtractEntry(Uint8& size,
                 // ofstream obscurity w.r.t. errors, extra buffering etc.
                 // FIXME:  Should the file name match an existing device (or
                 // a terminal, in particular), things may go really ugly here.
-                ofstream ofs(dst->GetPath().c_str(),
-                             IOS_BASE::out    |
-                             IOS_BASE::binary |
-                             IOS_BASE::trunc);
+                CNcbiOfstream ofs(dst->GetPath().c_str(),
+                                  IOS_BASE::trunc |
+                                  IOS_BASE::out   |
+                                  IOS_BASE::binary);
                 if (!ofs) {
                     int x_errno = errno;
                     TAR_THROW(this, eCreate,
@@ -3724,7 +3724,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const string&   name,
 
 
 auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
-                                        istream& is)
+                                        CNcbiIstream& is)
 {
     auto_ptr<TEntries> entries(new TEntries);
 
@@ -3813,7 +3813,7 @@ auto_ptr<CTar::TEntries> CTar::x_Append(const CTarUserEntryInfo& entry,
 
 
 // Regular entries only!
-void CTar::x_AppendStream(const string& name, istream& is)
+void CTar::x_AppendStream(const string& name, CNcbiIstream& is)
 {
     _ASSERT(m_Current.GetType() == CTarEntryInfo::eFile);
 
@@ -4051,7 +4051,8 @@ ERW_Result CTarReader::PendingCount(size_t* count)
 }
 
 
-IReader* CTar::Extract(istream& is, const string& name, CTar::TFlags flags)
+IReader* CTar::Extract(CNcbiIstream& is,
+                       const string& name, CTar::TFlags flags)
 {
     auto_ptr<CTar> tar(new CTar(is, 1/*blocking factor*/));
     tar->SetFlags(flags & ~fStreamPipeThrough);

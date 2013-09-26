@@ -401,7 +401,8 @@ public:
     ///   A list (containing one entry) with full acrhive info filled in
     /// @sa
     ///   Append
-    auto_ptr<TEntries> Append(const CTarUserEntryInfo& entry, istream& is);
+    auto_ptr<TEntries> Append(const CTarUserEntryInfo& entry,
+                              CNcbiIstream& is);
 
     /// Look whether more recent copies of archive members are available in
     /// the file system, and if so, append them to the archive:
@@ -568,7 +569,7 @@ public:
     /// @sa
     ///   CTarEntryInfo::GetPosition, Extract, SetMask, SetFlags,
     ///   GetNextEntryInfo, GetNextEntryData, IReader, CRStream
-    static IReader* Extract(istream& is, const string& name,
+    static IReader* Extract(CNcbiIstream& is, const string& name,
                             TFlags flags = fSkipUnsupported);
 
 protected:
@@ -678,10 +679,11 @@ private:
     auto_ptr<TEntries> x_Append(const string& name, const TEntries* toc = 0);
 
     // Append an entry from an istream to the archive.
-    auto_ptr<TEntries> x_Append(const CTarUserEntryInfo& entry, istream& is);
+    auto_ptr<TEntries> x_Append(const CTarUserEntryInfo& entry,
+                                CNcbiIstream& is);
 
     // Append data from an istream to the archive.
-    void x_AppendStream(const string& name, istream& is);
+    void x_AppendStream(const string& name, CNcbiIstream& is);
 
     // Append a regular file to the archive.
     void x_AppendFile(const string& file);
@@ -739,7 +741,7 @@ auto_ptr<CTar::TEntries> CTar::Append(const string& name)
 
 inline
 auto_ptr<CTar::TEntries> CTar::Append(const CTarUserEntryInfo& entry,
-                                      istream& is)
+                                      CNcbiIstream& is)
 {
     x_Open(eAppend);
     return x_Append(entry, is);
