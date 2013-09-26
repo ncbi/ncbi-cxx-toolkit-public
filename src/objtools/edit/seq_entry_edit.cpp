@@ -884,7 +884,6 @@ static bool s_DivvyUpAlignments_ProcessAnnot_Denseg(
     const CSeq_entry_Handle & old_input_entry =
         align.GetAnnot().GetParentEntry();
 
-    typedef vector<CSeq_entry_Handle> TEntryVec;
     typedef vector<CDense_seg::TDim> TRowVec; // each element is a row (index into denseg)
     typedef map<CSeq_entry_Handle, TRowVec > TMapInputEntryToDensegRows;
     // this will map each input_entry to the rows in the denseg that it should use.
