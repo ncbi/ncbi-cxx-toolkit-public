@@ -227,12 +227,6 @@ CTSE_Handle::CTSE_Handle(void)
 
 
 inline
-CTSE_Handle::~CTSE_Handle(void)
-{
-}
-
-
-inline
 CScope& CTSE_Handle::GetScope(void) const
 {
     return m_Scope.GetScope();
