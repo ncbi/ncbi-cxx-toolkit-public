@@ -68,12 +68,14 @@ public:
 
     CSeqdesc_CI(void);
     // Old method, should not be used.
+    explicit
     CSeqdesc_CI(const CSeq_descr_CI& desc_it,
                 CSeqdesc::E_Choice choice = CSeqdesc::e_not_set);
 
     /// Create an iterator that enumerates CSeqdesc objects 
     /// from a bioseq with limit number of seq-entries
     /// to "search_depth" (0 = unlimited) for specific type
+    explicit
     CSeqdesc_CI(const CBioseq_Handle& handle,
                 CSeqdesc::E_Choice choice = CSeqdesc::e_not_set,
                 size_t search_depth = 0);
@@ -81,6 +83,7 @@ public:
     /// Create an iterator that enumerates CSeqdesc objects 
     /// from a seq-entry, limit number of seq-entries
     /// to "search_depth" (0 = unlimited) for specific type
+    explicit
     CSeqdesc_CI(const CSeq_entry_Handle& entry,
                 CSeqdesc::E_Choice choice = CSeqdesc::e_not_set,
                 size_t search_depth = 0);

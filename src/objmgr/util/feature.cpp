@@ -1594,6 +1594,22 @@ CFeatTree::CFeatTree(CFeat_CI it)
 }
 
 
+CFeatTree::CFeatTree(const CSeq_annot_Handle& sah)
+{
+    x_Init();
+    CFeat_CI it(sah);
+    AddFeatures(it);
+}
+
+
+CFeatTree::CFeatTree(const CSeq_entry_Handle& seh)
+{
+    x_Init();
+    CFeat_CI it(seh);
+    AddFeatures(it);
+}
+
+
 CFeatTree::~CFeatTree(void)
 {
 }

@@ -91,12 +91,14 @@ public:
 
     /// Create an iterator that enumerates Seq-entries
     /// inside the given Seq-entry.
+    explicit
     CSeq_entry_CI(const CSeq_entry_Handle& entry,
                   TFlags flags = 0,
                   CSeq_entry::E_Choice     type_filter = CSeq_entry::e_not_set);
 
     /// Create an iterator that enumerates Seq-entries
     /// inside the given Bioseq-set.
+    explicit
     CSeq_entry_CI(const CBioseq_set_Handle& set,
                   TFlags flags = 0,
                   CSeq_entry::E_Choice      type_filter = CSeq_entry::e_not_set);

@@ -85,10 +85,12 @@ public:
     /// filter to iterate over selected bioseq types only.
     /// Filter value eMol_na may be used to include both
     /// dna and rna bioseqs.
+    explicit
     CBioseq_CI(const CSeq_entry_Handle& entry,
                CSeq_inst::EMol filter = CSeq_inst::eMol_not_set,
                EBioseqLevelFlag level = eLevel_All);
 
+    explicit
     CBioseq_CI(const CBioseq_set_Handle& bioseq_set,
                CSeq_inst::EMol filter = CSeq_inst::eMol_not_set,
                EBioseqLevelFlag level = eLevel_All);

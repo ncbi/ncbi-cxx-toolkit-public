@@ -68,6 +68,7 @@ public:
     typedef CSeqVector_CI const_iterator;
 
     CSeqVector(void);
+    explicit
     CSeqVector(const CBioseq_Handle& bioseq,
                EVectorCoding coding = CBioseq_Handle::eCoding_Ncbi,
                ENa_strand strand = eNa_strand_unknown);

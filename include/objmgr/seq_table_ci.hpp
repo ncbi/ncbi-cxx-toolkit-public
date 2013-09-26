@@ -62,6 +62,7 @@ public:
 
     /// Create an iterator that enumerates CSeq_table objects 
     /// related to the given bioseq
+    explicit
     CSeq_table_CI(const CBioseq_Handle& bioseq);
 
     /// Create an iterator that enumerates CSeq_table objects 
@@ -70,22 +71,13 @@ public:
     /// @sa
     ///   SAnnotSelector
     CSeq_table_CI(const CBioseq_Handle& bioseq,
-              const SAnnotSelector& sel);
+                  const SAnnotSelector& sel);
 
     /// Create an iterator that enumerates CSeq_table objects 
     /// related to the given bioseq
     CSeq_table_CI(const CBioseq_Handle& bioseq,
-              const CRange<TSeqPos>& range,
-              ENa_strand strand = eNa_strand_unknown);
-
-    /// Create an iterator that enumerates CSeq_table objects 
-    /// related to the given bioseq
-    ///
-    /// @sa
-    ///   SAnnotSelector
-    CSeq_table_CI(const CBioseq_Handle& bioseq,
-              const CRange<TSeqPos>& range,
-              const SAnnotSelector& sel);
+                  const CRange<TSeqPos>& range,
+                  ENa_strand strand = eNa_strand_unknown);
 
     /// Create an iterator that enumerates CSeq_table objects 
     /// related to the given bioseq
@@ -93,14 +85,23 @@ public:
     /// @sa
     ///   SAnnotSelector
     CSeq_table_CI(const CBioseq_Handle& bioseq,
-              const CRange<TSeqPos>& range,
-              ENa_strand strand,
-              const SAnnotSelector& sel);
+                  const CRange<TSeqPos>& range,
+                  const SAnnotSelector& sel);
+
+    /// Create an iterator that enumerates CSeq_table objects 
+    /// related to the given bioseq
+    ///
+    /// @sa
+    ///   SAnnotSelector
+    CSeq_table_CI(const CBioseq_Handle& bioseq,
+                  const CRange<TSeqPos>& range,
+                  ENa_strand strand,
+                  const SAnnotSelector& sel);
 
     /// Create an iterator that enumerates CSeq_table objects 
     /// related to the given seq-loc
     CSeq_table_CI(CScope& scope,
-              const CSeq_loc& loc);
+                  const CSeq_loc& loc);
 
     /// Create an iterator that enumerates CSeq_table objects 
     /// related to the given seq-loc
@@ -108,10 +109,11 @@ public:
     /// @sa
     ///   SAnnotSelector
     CSeq_table_CI(CScope& scope,
-              const CSeq_loc& loc,
-              const SAnnotSelector& sel);
+                  const CSeq_loc& loc,
+                  const SAnnotSelector& sel);
 
     /// Iterate all Seq-tables from the seq-annot regardless of their location
+    explicit
     CSeq_table_CI(const CSeq_annot_Handle& annot);
 
     /// Iterate all Seq-tables from the seq-annot regardless of their location
@@ -119,9 +121,10 @@ public:
     /// @sa
     ///   SAnnotSelector
     CSeq_table_CI(const CSeq_annot_Handle& annot,
-              const SAnnotSelector& sel);
+                  const SAnnotSelector& sel);
 
     /// Iterate all Seq-tables from the seq-entry regardless of their location
+    explicit
     CSeq_table_CI(const CSeq_entry_Handle& entry);
 
     /// Iterate all Seq-tables from the seq-entry regardless of their location
@@ -129,7 +132,7 @@ public:
     /// @sa
     ///   SAnnotSelector
     CSeq_table_CI(const CSeq_entry_Handle& entry,
-              const SAnnotSelector& sel);
+                  const SAnnotSelector& sel);
 
     bool IsMapped(void) const;
     const CSeq_loc& GetMappedLocation(void) const;

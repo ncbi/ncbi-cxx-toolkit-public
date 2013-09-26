@@ -53,7 +53,9 @@ class CFeat_CI;
 class NCBI_XOBJMGR_EXPORT CTableFieldHandle_Base
 {
 public:
+    explicit
     CTableFieldHandle_Base(CSeqTable_column_info::TField_id field_id);
+    explicit
     CTableFieldHandle_Base(const string& field_name);
     ~CTableFieldHandle_Base();
 

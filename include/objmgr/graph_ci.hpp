@@ -211,6 +211,7 @@ public:
 
     /// Create an iterator that enumerates CSeq_graph objects 
     /// related to the given bioseq
+    explicit
     CGraph_CI(const CBioseq_Handle& bioseq);
 
     /// Create an iterator that enumerates CSeq_graph objects 
@@ -261,6 +262,7 @@ public:
               const SAnnotSelector& sel);
 
     /// Iterate all graphs from the seq-annot regardless of their location
+    explicit
     CGraph_CI(const CSeq_annot_Handle& annot);
 
     /// Iterate all graphs from the seq-annot regardless of their location
@@ -271,6 +273,7 @@ public:
               const SAnnotSelector& sel);
 
     /// Iterate all graphs from the seq-entry regardless of their location
+    explicit
     CGraph_CI(const CSeq_entry_Handle& entry);
 
     /// Iterate all graphs from the seq-entry regardless of their location

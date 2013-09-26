@@ -55,6 +55,7 @@ public:
     CScopeSource(void)
         {
         }
+    explicit
     CScopeSource(CScope& scope)
         : m_Scope(scope)
         {
@@ -168,6 +169,7 @@ public:
     typedef typename THandle::TObject TObject;
     typedef CConstRef<TObject> TResult;
 
+    explicit
     CPrefetchComplete(const THandle& handle)
         : m_Handle(handle)
         {
@@ -203,6 +205,7 @@ public:
     typedef THandle::TObject TObject;
     typedef CConstRef<TObject> TResult;
 
+    explicit
     CPrefetchComplete(const THandle& handle);
     CPrefetchComplete(const CScopeSource& scope,
                       const CSeq_id_Handle& seq_id);
@@ -243,6 +246,7 @@ public:
     typedef Container TContainer;
     typedef typename TContainer::const_iterator TIterator;
 
+    explicit
     CStdSeq_idSource(const TContainer& cont)
         : m_Container(cont), m_Iterator(m_Container.begin())
         {

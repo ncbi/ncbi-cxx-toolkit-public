@@ -67,6 +67,7 @@ public:
 
     /// Create an iterator that enumerates CSeq_align objects 
     /// related to the given bioseq
+    explicit
     CAlign_CI(const CBioseq_Handle& bioseq);
 
     /// Create an iterator that enumerates CSeq_align objects 
@@ -120,6 +121,7 @@ public:
 
     /// Create an iterator that enumerates CSeq_align objects
     /// from the annotation regardless of their location
+    explicit
     CAlign_CI(const CSeq_annot_Handle& annot);
 
     /// Create an iterator that enumerates CSeq_align objects
@@ -133,6 +135,7 @@ public:
 
     /// Create an iterator that enumerates CSeq_align objects
     /// from the seq-entry regardless of their location
+    explicit
     CAlign_CI(const CSeq_entry_Handle& entry);
 
     /// Create an iterator that enumerates CSeq_align objects

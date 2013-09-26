@@ -174,7 +174,14 @@ public:
     /// Construct empty tree.
     CFeatTree(void);
     /// Construct a tree with features collected by a CFeat_CI.
+    explicit
     CFeatTree(CFeat_CI it);
+    /// Construct a tree with features from a Seq-annot
+    explicit
+    CFeatTree(const CSeq_annot_Handle& sah);
+    /// Construct a tree with features from a Seq-entry
+    explicit
+    CFeatTree(const CSeq_entry_Handle& seh);
     /// Destructor.
     ~CFeatTree(void);
 

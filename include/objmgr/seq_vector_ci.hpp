@@ -106,6 +106,7 @@ class NCBI_XOBJMGR_EXPORT CSeqVector_CI : public CSeqVectorTypes
 public:
     CSeqVector_CI(void);
     ~CSeqVector_CI(void);
+    explicit
     CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos = 0);
     CSeqVector_CI(const CSeqVector& seq_vector, TSeqPos pos,
                   ECaseConversion case_cvt);

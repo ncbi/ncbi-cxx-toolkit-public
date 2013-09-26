@@ -51,6 +51,7 @@ public:
 
     CAnnotTypes_CI(void);
 
+    explicit
     CAnnotTypes_CI(CScope& scope);
 
     // Search on the part of bioseq

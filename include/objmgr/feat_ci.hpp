@@ -66,6 +66,7 @@ public:
     CFeat_CI(void);
 
     /// Search features on the whole bioseq
+    explicit
     CFeat_CI(const CBioseq_Handle& bioseq);
 
     /// Search features on the whole bioseq
@@ -104,6 +105,7 @@ public:
              const SAnnotSelector& sel);
 
     /// Iterate all features from the seq-annot regardless of their location
+    explicit
     CFeat_CI(const CSeq_annot_Handle& annot);
 
     /// Iterate all features from the seq-annot regardless of their location
@@ -114,6 +116,7 @@ public:
              const SAnnotSelector& sel);
 
     /// Iterate all features from the seq-entry regardless of their location
+    explicit
     CFeat_CI(const CSeq_entry_Handle& entry);
 
     /// Iterate all features from the seq-entry regardless of their location
