@@ -443,15 +443,6 @@ int CTbl2AsnApp::Run(void)
     if (args["k"])
         m_context.m_find_open_read_frame = args["k"].AsString();
 
-    if (m_context.m_HandleAsSet)
-    {
-        if (m_context.m_gapNmin == 0)
-            m_context.m_gapNmin = 10;
-        if (m_context.m_gap_Unknown_length == 0)
-            m_context.m_gap_Unknown_length = 100;
-    }
-
-
     if (args["t"])
     {
         m_reader->LoadTemplate(m_context, args["t"].AsString());
@@ -581,7 +572,10 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     ProcessSecretFiles(*entry);
 
-    m_context.ApplyCreateDate(*entry);
+    bool need_update_date = m_context.ApplyCreateDate(*entry);
+    if (need_update_date)
+        m_context.ApplyUpdateDate(*entry);
+
     m_reader->ApplyAdditionalProperties(*entry);
 
     CFeatureTableReader fr(m_logger);

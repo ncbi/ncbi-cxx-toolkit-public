@@ -54,6 +54,8 @@
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/general/Date.hpp>
+#include <objects/biblio/Cit_sub.hpp>
 
 #include <corelib/ncbistre.hpp>
 
@@ -345,42 +347,69 @@ CArgDescriptions* CMultiReader::InitAppArgs(CNcbiApplication& app)
 #endif
 
 
-CRef<CSerialObject> CMultiReader::xReadFile(const string& ifname)
+CRef<CSeq_entry> CMultiReader::xReadFile(const string& ifname)
 {
     CNcbiIfstream istr(ifname.c_str());
-    //CNcbiOfstream ostr(ofname);
-
 
     xSetFormat(m_context, istr);
     xSetFlags(m_context, istr);
     xSetMapper(m_context);
     xSetErrorContainer(m_context);
 
-    //CRef< CSerialObject> object;
-    //vector< CRef< CSeq_annot > > annots;
-    CRef<CSerialObject> result;
+    CRef<CSeq_entry> result;
     switch( m_uFormat )
     {
     case CFormatGuess::eTextASN:
-        //                xProcessBed(args, istr, ostr);
+        result = xReadASN1(istr);
         break;
     default:
-        result = xReadFasta(m_context, istr);
+        result = xReadFasta(istr);
         break;
     }
     return result;
 }
 
+CRef<CSeq_entry>
+CMultiReader::xReadASN1(CNcbiIstream& instream)
+{
+    auto_ptr<CObjectIStream> pObjIstrm = xCreateASNStream(instream);
+
+    // guess object type
+    const string sType = pObjIstrm->ReadFileHeader();
+
+    // do the right thing depending on the input type
+    if( sType == CSeq_submit::GetTypeInfo()->GetName() ) {
+        CRef<CSeq_submit> submit (new CSeq_submit);
+        pObjIstrm->Read(ObjectInfo(*submit), CObjectIStream::eNoFileHeader);
+
+        CRef<CSeq_entry> entry(new CSeq_entry);
+        if (submit->GetData().GetEntrys().size() > 1)
+        {
+            entry.Reset(new CSeq_entry);
+            entry->SetSet().SetSeq_set() = submit->GetData().GetEntrys();
+        }
+        else
+            entry = *submit->SetData().SetEntrys().begin(); 
+
+        return entry;
+    }
+    else
+    if( sType == CSeq_entry::GetTypeInfo()->GetName() ) {
+        CRef<CSeq_entry> entry (new CSeq_entry);
+        pObjIstrm->Read(ObjectInfo(*entry), CObjectIStream::eNoFileHeader);
+
+        return entry;
+    }
+
+    return CRef<CSeq_entry>();
+}
+
 //  ----------------------------------------------------------------------------
-CRef<CSerialObject> 
-CMultiReader::xReadFasta(const CTable2AsnContext& args, CNcbiIstream& instream)
+CRef<CSeq_entry> 
+CMultiReader::xReadFasta(CNcbiIstream& instream)
     //  ----------------------------------------------------------------------------
 {
-    if (!args.m_HandleAsSet)
-    {
-        m_iFlags |= CFastaReader::fOneSeq;
-    }
-    if (args.m_gapNmin > 0)
+    if (m_context.m_gapNmin > 0)
     {
         m_iFlags |= CFastaReader::fParseGaps 
                  |  CFastaReader::fLetterGaps;
@@ -399,9 +428,17 @@ CMultiReader::xReadFasta(const CTable2AsnContext& args, CNcbiIstream& instream)
         NCBI_THROW2(CObjReaderParseException, eFormat,
             "File format not supported", 0);
     }
-    CRef<CSerialObject> result = ((CReaderBase*)pReader.get())->ReadObject(instream, m_context.m_logger);
 
+    CStreamLineReader lr( instream );
+    CRef<CSeq_entry> result = pReader->ReadSeqEntry (lr, m_context.m_logger);
+    if (result->IsSet() && !m_context.m_HandleAsSet)
+    {
+        m_context.m_logger->PutError(
+            *CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0,
+            "File " + m_context.m_current_file + " contains multiple sequences"));
+    }
     return result;
+
 }
 
 //  ----------------------------------------------------------------------------
@@ -459,10 +496,10 @@ void CMultiReader::xSetFormat(
         format == "5colftbl" ) {
             m_uFormat = CFormatGuess::eFiveColFeatureTable;
     }
+#endif
     if (m_uFormat == CFormatGuess::eUnknown) {
         m_uFormat = CFormatGuess::Format(istr);
     }
-#endif
 }
 
 //  ----------------------------------------------------------------------------
@@ -670,34 +707,7 @@ void CMultiReader::LoadDescriptors(const string& ifname, CRef<CSeq_descr> & out_
 
     CNcbiIfstream istrm(ifname.c_str());
 
-    // guess format
-    ESerialDataFormat eSerialDataFormat = eSerial_None;
-    {{
-        CFormatGuess::EFormat eFormat =
-            CFormatGuess::Format(istrm);
-
-        switch(eFormat) {
-        case CFormatGuess::eBinaryASN:
-            eSerialDataFormat = eSerial_AsnBinary;
-            break;
-        case CFormatGuess::eTextASN:
-            eSerialDataFormat = eSerial_AsnText;
-            break;
-        case CFormatGuess::eXml:
-            eSerialDataFormat = eSerial_Xml;
-            break;
-        default:
-            NCBI_USER_THROW_FMT(
-                "Descriptor file seems to be in an unsupported format: "
-                << CFormatGuess::GetFormatName(eFormat) );
-            break;
-        }
-
-        istrm.seekg(0);
-    }}
-
-    auto_ptr<CObjectIStream> pObjIstrm(
-        CObjectIStream::Open(eSerialDataFormat, istrm, eNoOwnership) );
+    auto_ptr<CObjectIStream> pObjIstrm = xCreateASNStream(istrm);
 
     // guess object type
     //const string sType = pObjIstrm->ReadFileHeader();
@@ -735,7 +745,6 @@ void CMultiReader::LoadDescriptors(const string& ifname, CRef<CSeq_descr> & out_
 void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname)
 {
     context.m_entry_template.Reset( new CSeq_entry );
-    context.m_submit_template.Reset( new CSeq_submit ); // possibly not used
 
 #if 0
     // check if the location doesn't exist, and see if we can
@@ -767,34 +776,7 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
 
     CNcbiIfstream istrm(ifname.c_str());
 
-    // guess format
-    ESerialDataFormat eSerialDataFormat = eSerial_None;
-    {{
-        CFormatGuess::EFormat eFormat =
-            CFormatGuess::Format(istrm);
-
-        switch(eFormat) {
-        case CFormatGuess::eBinaryASN:
-            eSerialDataFormat = eSerial_AsnBinary;
-            break;
-        case CFormatGuess::eTextASN:
-            eSerialDataFormat = eSerial_AsnText;
-            break;
-        case CFormatGuess::eXml:
-            eSerialDataFormat = eSerial_Xml;
-            break;
-        default:
-            NCBI_USER_THROW_FMT(
-                "template file seems to be in an unsupported format: "
-                << CFormatGuess::GetFormatName(eFormat) );
-            break;
-        }
-
-        istrm.seekg(0);
-    }}
-
-    auto_ptr<CObjectIStream> pObjIstrm(
-        CObjectIStream::Open(eSerialDataFormat, istrm, eNoOwnership) );
+    auto_ptr<CObjectIStream> pObjIstrm = xCreateASNStream(istrm);
 
     // guess object type
     const string sType = pObjIstrm->ReadFileHeader();
@@ -809,6 +791,8 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
             CObjectIStream::eNoFileHeader);
         context.m_entry_template->SetSeq( *pBioseq );
     } else if( sType == CSeq_submit::GetTypeInfo()->GetName() ) {
+
+        context.m_submit_template.Reset( new CSeq_submit );
         pObjIstrm->Read(ObjectInfo(*context.m_submit_template),
             CObjectIStream::eNoFileHeader);
         if (!context.m_submit_template->GetData().IsEntrys()
@@ -825,6 +809,7 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
             CObjectIStream::eNoFileHeader);
 
         // Build a Seq-submit containing this plus a bogus Seq-entry
+        context.m_submit_template.Reset( new CSeq_submit );
         context.m_submit_template->SetSub(*submit_block);
         CRef<CSeq_entry> ent(new CSeq_entry);
         CRef<CSeq_id> dummy_id(new CSeq_id("lcl|dummy_id"));
@@ -894,6 +879,16 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
 
     if( ! context.m_entry_template->IsSeq() ) {
         throw runtime_error("The Seq-entry must be a Bioseq not a Bioseq-set.");
+    }
+
+    if (context.m_submit_template.NotEmpty())
+    {
+        if (context.m_submit_template->IsSetSub() &&
+            context.m_submit_template->GetSub().IsSetCit())
+        {
+        CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
+        context.m_submit_template->SetSub().SetCit().SetDate(*date);
+        }
     }
 
 #if 0
@@ -972,39 +967,12 @@ CRef<CSeq_entry> CMultiReader::CreateNewSeqFromTemplate(const CTable2AsnContext&
 
 CRef<CSeq_entry> CMultiReader::LoadFile(const string& ifname)
 {
-    CRef<CSerialObject> obj = xReadFile(ifname);
-    CRef<CSeq_entry> read_entry(dynamic_cast<CSeq_entry*>(obj.GetPointerOrNull()));
-    if (read_entry)
+    CRef<CSeq_entry> read_entry = xReadFile(ifname);
+    if (read_entry.NotEmpty() && m_context.m_entry_template.NotEmpty())
     {
-        if (read_entry->Which() == CSeq_entry::e_not_set)
-        {
-        }
-
-        if (read_entry->IsSet() && !m_context.m_HandleAsSet)
-        {
-            cerr << "Error" << endl;
-            return CRef<CSeq_entry>();
-        }
-
-        if (read_entry->IsSet())
-        {
-            CRef<CSeq_entry> entry(new CSeq_entry);
-            entry->SetSet().SetClass(CBioseq_set::eClass_genbank);
-            CSeq_entry_Base::TSet::TSeq_set& data = read_entry->SetSet().SetSeq_set();
-            NON_CONST_ITERATE(CSeq_entry_Base::TSet::TSeq_set, it, data)
-            {                        
-                CRef<CSeq_entry> new_entry = CreateNewSeqFromTemplate(m_context, (**it).SetSeq());
-                entry->SetSet().SetSeq_set().push_back(new_entry);
-            }
-            return entry;
-        }
-        else
-        {
-            CRef<CSeq_entry> new_entry = CreateNewSeqFromTemplate(m_context, read_entry->SetSeq());
-            return new_entry;
-        }
+        m_context.MergeWithTemplate(*read_entry);
     }
-    return CRef<CSeq_entry>();
+    return read_entry;
 }
 
 void CMultiReader::Cleanup(CRef<CSeq_entry> entry)
@@ -1322,6 +1290,40 @@ void CMultiReader::xDumpErrors(CNcbiOstream& ostr)
 
 
 #endif
+
+auto_ptr<CObjectIStream> CMultiReader::xCreateASNStream(CNcbiIstream& instream)
+{
+    // guess format
+    ESerialDataFormat eSerialDataFormat = eSerial_None;
+    {{
+        CFormatGuess::EFormat eFormat =
+            CFormatGuess::Format(instream);
+
+        switch(eFormat) {
+        case CFormatGuess::eBinaryASN:
+            eSerialDataFormat = eSerial_AsnBinary;
+            break;
+        case CFormatGuess::eTextASN:
+            eSerialDataFormat = eSerial_AsnText;
+            break;
+        case CFormatGuess::eXml:
+            eSerialDataFormat = eSerial_Xml;
+            break;
+        default:
+            NCBI_USER_THROW_FMT(
+                "Descriptor file seems to be in an unsupported format: "
+                << CFormatGuess::GetFormatName(eFormat) );
+            break;
+        }
+
+        instream.seekg(0);
+    }}
+
+    auto_ptr<CObjectIStream> pObjIstrm(
+        CObjectIStream::Open(eSerialDataFormat, instream, eNoOwnership) );
+
+    return pObjIstrm;
+}
 
 CMultiReader::~CMultiReader()
 {

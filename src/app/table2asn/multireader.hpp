@@ -41,23 +41,11 @@ public:
 
 protected:
 private:
-    CRef<CSerialObject> xReadFile(const string& ifname);
-    CRef<CSerialObject> xReadFasta(const CTable2AsnContext&, CNcbiIstream& instream);
+    CRef<objects::CSeq_entry> xReadFile(const string& ifname);
+    CRef<objects::CSeq_entry> xReadFasta(CNcbiIstream& instream);
+    CRef<objects::CSeq_entry> xReadASN1(CNcbiIstream& instream);
+    auto_ptr<CObjectIStream> xCreateASNStream(CNcbiIstream& instream);
     CRef<objects::CSeq_entry> CreateNewSeqFromTemplate(const CTable2AsnContext& context, objects::CBioseq& bioseq) const;
-#if 0
-    void xProcessWiggle(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
-    void xProcessWiggleRaw(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
-    void xProcessBed(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
-    void xProcessBedRaw(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
-    void xProcessGtf(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
-    void xProcessVcf(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
-    void xProcessNewick(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
-    void xProcessGff3(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
-    void xProcessGff2(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
-    void xProcessGvf(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
-    void xProcessAlignment(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
-    void xProcessAgp(const CTable2AsnContext&, CNcbiIstream&, CNcbiOstream&);
-#endif
 
     void xSetFormat(const CTable2AsnContext&, CNcbiIstream&);
     void xSetFlags(const CTable2AsnContext&, CNcbiIstream&);

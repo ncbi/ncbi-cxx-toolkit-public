@@ -89,13 +89,18 @@ public:
     objects::CUser_object& SetUserObject(objects::CSeq_descr& descr, const string& type);
     static
     objects::CBioSource& SetBioSource(objects::CSeq_descr& SD);
-    void ApplyCreateDate(objects::CSeq_entry& entry) const;
+    bool ApplyCreateDate(objects::CSeq_entry& entry) const;
+    void ApplyUpdateDate(objects::CSeq_entry& entry) const;
+    CRef<objects::CSeqdesc> LocateDesc(objects::CSeq_descr& descr, objects::CSeqdesc::E_Choice which) const;
     void ApplyAccession(objects::CSeq_entry& entry) const;
     void HandleGaps(objects::CSeq_entry& entry) const;
     CRef<CSerialObject> 
         CreateSubmitFromTemplate(CRef<objects::CSeq_entry> object) const;
     CRef<CSerialObject>
         CreateSeqEntryFromTemplate(CRef<objects::CSeq_entry> object) const;
+
+    void MergeSeqDescr(objects::CSeq_descr& dest, const objects::CSeq_descr& src) const;
+    void MergeWithTemplate(objects::CSeq_entry& entry) const;
 
     CRef<objects::CSeq_submit> m_submit_template;
     CRef<objects::CSeq_entry>  m_entry_template;

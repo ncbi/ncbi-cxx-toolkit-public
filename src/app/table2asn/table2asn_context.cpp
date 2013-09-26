@@ -255,27 +255,62 @@ CBioSource& CTable2AsnContext::SetBioSource(CSeq_descr& SD)
     return source_desc->SetSource();
 }
 
-void CTable2AsnContext::ApplyCreateDate(CSeq_entry& entry) const
+// create-date should go into each bioseq
+bool CTable2AsnContext::ApplyCreateDate(CSeq_entry& entry) const
 {
+    bool need_update = false;
     switch(entry.Which())
     {
     case CSeq_entry::e_Seq:
+        if (LocateDesc(entry.SetDescr(), CSeqdesc::e_Create_date).NotNull())
+            need_update = true;
+        else
         {
-        CRef<CSeqdesc> create_date(new CSeqdesc);
-        CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
-        create_date->SetCreate_date(*date);
+            CRef<CSeqdesc> create_date(new CSeqdesc);
+            CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
+            create_date->SetCreate_date(*date);
 
-        entry.SetSeq().SetDescr().Set().push_back(create_date);
+            entry.SetSeq().SetDescr().Set().push_back(create_date);
         }
         break;
     case CSeq_entry::e_Set:
         NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
         {
-            ApplyCreateDate(**it);
+            need_update |= ApplyCreateDate(**it);
         }
         break;
     default:
         break;
+    }
+    return need_update;
+}
+
+// update-date should go only to top-level bioseq-set or bioseq
+CRef<CSeqdesc> CTable2AsnContext::LocateDesc(CSeq_descr& descr, CSeqdesc::E_Choice which) const
+{
+    NON_CONST_ITERATE(CSeq_descr::Tdata, it, descr.Set())
+    {
+        if ((**it).Which() == which)
+            return *it;
+    }
+
+    return CRef<CSeqdesc>();
+}
+
+void CTable2AsnContext::ApplyUpdateDate(objects::CSeq_entry& entry) const
+{
+    CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
+    CRef<CSeqdesc> date_desc = LocateDesc(entry.SetDescr(), CSeqdesc::e_Update_date);
+
+    if (date_desc.IsNull())
+    {
+        date_desc.Reset(new CSeqdesc);
+        date_desc->SetUpdate_date(*date);
+        entry.SetDescr().Set().push_back(date_desc);
+    }
+    else
+    {
+        date_desc->SetUpdate_date(*date);
     }
 }
 
@@ -352,14 +387,7 @@ CRef<CSerialObject> CTable2AsnContext::CreateSubmitFromTemplate(CRef<CSeq_entry>
         CRef<CSeq_submit> submit(new CSeq_submit);
         submit->Assign(*m_submit_template);
         submit->SetData().SetEntrys().clear();
-        if (m_HandleAsSet || object->IsSeq())
-        {
-            submit->SetData().SetEntrys().push_back(object);
-        }
-        else
-        {
-            submit->SetData().SetEntrys() = object->SetSet().SetSeq_set();
-        }
+        submit->SetData().SetEntrys().push_back(object);
         return CRef<CSerialObject>(submit);
     }     
 
@@ -396,6 +424,37 @@ CRef<CSerialObject> CTable2AsnContext::CreateSeqEntryFromTemplate(CRef<CSeq_entr
 #endif
     }
     return CRef<CSerialObject>(object);
+}
+
+void CTable2AsnContext::MergeSeqDescr(objects::CSeq_descr& dest, const objects::CSeq_descr& src) const
+{
+    ITERATE(CSeq_descr::Tdata, it, src.Get())
+    {
+        CRef<CSeqdesc> desc = LocateDesc(dest, (**it).Which());
+        if (desc.Empty())
+        {
+            desc.Reset(new CSeqdesc);
+            dest.Set().push_back(desc);
+        }
+        desc->Assign(**it);
+    }
+}
+
+void CTable2AsnContext::MergeWithTemplate(CSeq_entry& entry) const
+{
+    if (entry.IsSet())
+    {
+        CSeq_entry_Base::TSet::TSeq_set& data = entry.SetSet().SetSeq_set();
+        NON_CONST_ITERATE(CSeq_entry_Base::TSet::TSeq_set, it, data)
+        {     
+            MergeWithTemplate(**it);
+        }
+    }
+    else
+    if (entry.IsSeq())
+    {
+        MergeSeqDescr(entry.SetDescr(), m_entry_template->GetDescr());
+    }
 }
 
 
