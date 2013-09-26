@@ -32,13 +32,13 @@ include ./Makefile.meta
 #
 
 compress_tests:
-	$(top_srcdir)/scripts/common/impl/compress_tests.sh --$(DEBUG_SFX) \
-	    $(bindir)
+	$(abs_top_srcdir)/scripts/common/impl/compress_tests.sh \
+	     --$(DEBUG_SFX) ../bin
 
-sfi=$(top_srcdir)/scripts/common/impl/strip_for_install.sh
+sfi=$(abs_top_srcdir)/scripts/common/impl/strip_for_install.sh
 strip_for_install-%:
 	$(sfi) --$* $(COMPILER)-$(DEBUG_SFX) $(SUB_PROJ) check dll wrappers
-	$(sfi) --bin $(top_srcdir) $(bindir)
-	$(sfi) --lib $(top_srcdir) $(libdir) $(statusdir) 
+	$(sfi) --bin $(abs_top_srcdir) ../bin
+	$(sfi) --lib $(abs_top_srcdir) ../lib ../status
 
 strip_for_install: strip_for_install-dirs
