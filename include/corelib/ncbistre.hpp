@@ -398,14 +398,18 @@ typedef IO_PREFIX::fstream       CNcbiFstream;
 #define NcbiCerr                 IO_PREFIX::cerr
 #define NcbiClog                 IO_PREFIX::clog
 
-// I/O manipulators
+// I/O manipulators (the list may be incomplete)
 #define NcbiEndl                 IO_PREFIX::endl
 #define NcbiEnds                 IO_PREFIX::ends
 #define NcbiFlush                IO_PREFIX::flush
+
 #define NcbiDec                  IO_PREFIX::dec
 #define NcbiHex                  IO_PREFIX::hex
 #define NcbiOct                  IO_PREFIX::oct
 #define NcbiWs                   IO_PREFIX::ws
+
+#define NcbiFixed                IO_PREFIX::fixed
+#define NcbiScientific           IO_PREFIX::scientific
 
 #define NcbiSetbase              IO_PREFIX::setbase
 #define NcbiResetiosflags        IO_PREFIX::resetiosflags
@@ -614,7 +618,7 @@ Int8 NcbiStreamposToInt8(CT_POS_TYPE stream_pos)
 inline
 CT_POS_TYPE NcbiInt8ToStreampos(Int8 pos)
 {
-    return (CT_POS_TYPE)((CT_OFF_TYPE)0) + (CT_OFF_TYPE)(pos);
+    return (CT_POS_TYPE)((CT_OFF_TYPE) 0) + (CT_OFF_TYPE)(pos);
 }
 
 
@@ -778,6 +782,7 @@ CNcbiOstream& operator<<(CNcbiOstream& out, __int64 val);
 #  endif
 #endif
 
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// Helper functions to read plain-text data streams.
@@ -848,7 +853,6 @@ EEncodingForm ReadIntoUtf8(
 );
 
 
-
 /// Whether to discard BOM or to keep it in the input stream
 ///
 /// @sa GetTextEncodingForm
@@ -887,6 +891,7 @@ extern NCBI_NS_NCBI::CNcbiOstream& operator<<(NCBI_NS_NCBI::CNcbiOstream& os,
                                               const NCBI_NS_STD::string& str);
 extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
                                               NCBI_NS_STD::string& str);
-#endif
+#endif // NCBI_USE_OLD_IOSTREAM
+
 
 #endif /* NCBISTRE__HPP */
