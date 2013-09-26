@@ -1555,8 +1555,6 @@ typedef NCBI_PARAM_TYPE(CGI, LOG_LIMIT_ARGS) TCGI_LogLimitArgs;
 
 void CCgiRequest::GetCGIEntries(CEntryCollector_Base& collector) const
 {
-    typedef CDiagContext_Extra::TExtraArg TExtraArg;
-
     // If there are any indexes, ignore entries and limits
     if ( !m_Indexes.empty() ) {
         ITERATE(TCgiIndexes, idx, m_Indexes) {

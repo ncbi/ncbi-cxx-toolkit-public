@@ -1736,7 +1736,6 @@ Int8 s_TestForOverlapEx(const CSeq_loc& loc1,
 
     const CSeq_loc* ploc1 = &loc1;
     const CSeq_loc* ploc2 = &loc2;
-    typedef CRange<Int8> TRange8;
     const CSeq_id *id1 = NULL;
     const CSeq_id *id2 = NULL;
     id1 = loc1.GetId();

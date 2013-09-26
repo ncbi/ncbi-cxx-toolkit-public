@@ -356,7 +356,7 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
         try {
             m_Output->setstate(ios_base::badbit);
         }
-        catch (ios_base::failure& e) {
+        catch (ios_base::failure&) {
         }
         // Do not send content when serving HEAD request.
         NCBI_CGI_THROW_WITH_STATUS(CCgiHeadException, eHeaderSent,
