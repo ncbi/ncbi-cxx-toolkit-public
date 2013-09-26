@@ -657,6 +657,38 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
 
             COrgName& on = ( org.SetOrgname() );
 
+            // Create name
+	    bool bOrgnameRetreived = false;
+	    CRef<CTaxon1_info> pProp( new CTaxon1_info() );
+	    pProp->SetIval1( node.GetTaxId() );
+	    pProp->SetIval2( -1 ); // Get string property by name
+	    pProp->SetSval( "orgname" );
+	    
+	    req.SetGetorgprop( *pProp );
+	    try {
+		if( m_host.SendRequest( req, resp ) ) {
+		    if( resp.IsGetorgprop() ) { 
+			if( resp.GetGetorgprop().size() > 0 ) {
+			    CRef<CTaxon1_info> pInfo
+				= resp.GetGetorgprop().front();
+			    if( pInfo->IsSetSval() && !pInfo->GetSval().empty() ) {
+				try {
+ 				    CObjectIStreamAsn is( pInfo->GetSval().c_str(),
+ 							  pInfo->GetSval().size(), eFNP_Allow );
+ 				    is >> on;
+				    bOrgnameRetreived = true;
+				} catch( exception& e ) {
+				    if( e.what() ) {
+					_TRACE( "Exception while parsing orgname property: " << e.what() );
+				    }
+				}
+			    }
+			}
+		    }
+		}
+	    } catch( exception& e ) {
+	    }
+	    // Fill some other orgname fields
             short div_id( node.GetDivision() );
             if( GetDivisionCode( div_id ) ) {
                 on.SetDiv( GetDivisionCode( div_id ) );
@@ -692,34 +724,7 @@ COrgRefCache::BuildOrgRef( CTaxon1Node& node, COrg_ref& org, bool& is_species )
                     pNode = pNode->GetParent();
                 }
             }
-            // Create name
-	    bool bOrgnameRetreived = false;
-	    CRef<CTaxon1_info> pProp( new CTaxon1_info() );
-	    pProp->SetIval1( node.GetTaxId() );
-	    pProp->SetIval2( -1 ); // Get int property by name
-	    pProp->SetSval( "orgname" );
-	    
-	    req.SetGetorgprop( *pProp );
-	    try {
-		if( m_host.SendRequest( req, resp ) ) {
-		    if( resp.IsGetorgprop() ) { 
-			if( resp.GetGetorgprop().size() > 0 ) {
-			    CRef<CTaxon1_info> pInfo
-				= resp.GetGetorgprop().front();
-			    if( pInfo->IsSetSval() && !pInfo->GetSval().empty() ) {
-				try {
-				    CObjectIStreamAsn is( pInfo->GetSval().c_str(),
-							  pInfo->GetSval().size(), eFNP_Allow );
-				    is >> org.SetOrgname().SetName();
-				    bOrgnameRetreived = true;
-				} catch( exception& e ) {
-				}
-			    }
-			}
-		    }
-		}
-	    } catch( exception& e ) {
-	    }
+
 	    if( !bOrgnameRetreived ) { // build orgname myself
 		if(is_species) {
 		    /* we are on species level or below */
