@@ -207,10 +207,6 @@ bool CSeqAnnotFromFasta::MakeIBMSeqAnnot(CCdCore& dummyCD)
     vector<unsigned int> residueCount;  
     set<unsigned int> masterSeqIndices, forcedBreaks;  
 
-    typedef map<unsigned int, vector<unsigned int> > SeqStartMap;
-    typedef SeqStartMap::iterator SeqStartIt;
-    typedef SeqStartMap::value_type SeqStartVT;
-
     unsigned int nBlocks;
     vector<unsigned int> blockStarts;
     vector<unsigned int> blockLengths;
@@ -299,10 +295,6 @@ bool CSeqAnnotFromFasta::MakeAsIsSeqAnnot(CCdCore& dummyCD)
     string sequence, masterSequence;
     vector<unsigned int> residueCount, masterResidueCount;  
     set<unsigned int> masterSeqIndices, forcedBreaks;  
-
-    typedef map<unsigned int, vector<unsigned int> > SeqStartMap;
-    typedef SeqStartMap::iterator SeqStartIt;
-    typedef SeqStartMap::value_type SeqStartVT;
 
     unsigned int nBlocks;
     vector<unsigned int> blockStarts;

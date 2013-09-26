@@ -436,7 +436,7 @@ int CCdCore::GetAllRowIndicesForSeqId(const CRef<CSeq_id>& SeqID, list<int>& row
     CRef<CSeq_id> findID = SeqID;
     int i, nrow = GetNumRows();
 
-    rows.empty();
+    rows.clear();
     for (i=0; i<nrow; i++) {
         if (GetSeqIDFromAlignment(i, testID)) {  // tests only for gi or pdb IDs
             if (findID->Match(*testID)) { // match
@@ -644,7 +644,7 @@ TGi CCdCore::GetGIFromSequenceList(int SeqIndex) const {
       }
     }
   }
-  return INVALID_GI;
+  return -1; 
 }
   
 
