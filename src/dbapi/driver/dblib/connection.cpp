@@ -238,7 +238,9 @@ CDB_SendDataCmd* CDBL_Connection::SendDataCmd(I_ITDescriptor& descr_in,
     if(descr_in.DescriptorType() != CDBL_ITDESCRIPTOR_TYPE_MAGNUM) {
         // this is not a native descriptor
         p_desc= x_GetNativeITDescriptor(dynamic_cast<CDB_ITDescriptor&> (descr_in));
-        if(p_desc == 0) return false;
+        if (p_desc == NULL) {
+            return NULL;
+        }
     }
 
 
