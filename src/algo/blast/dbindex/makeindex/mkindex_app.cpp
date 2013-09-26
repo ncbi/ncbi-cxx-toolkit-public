@@ -90,7 +90,7 @@ void CMkIndexApplication::Init()
     arg_desc->AddOptionalKey(
             "db_mask", "filtering_algorithm",
             "use the specified filtering algorithm from BLAST DB",
-            CArgDescriptions::eInteger );
+            CArgDescriptions::eString );
     arg_desc->AddFlag(
             "show_filters",
             "show the info about available database filtering algorithms"
@@ -235,11 +235,11 @@ int CMkIndexApplication::Run()
                 if( GetArgs()["db_mask"] ) {
                     seqstream = new CSequenceIStreamBlastDB( 
                             GetArgs()["input"].AsString(), true,
-                            GetArgs()["db_mask"].AsInteger() );
+                            GetArgs()["db_mask"].AsString() );
                 }
                 else {
                     seqstream = new CSequenceIStreamBlastDB( 
-                            GetArgs()["input"].AsString(), false );
+                            GetArgs()["input"].AsString(), false, 0 );
                 }
             }
         }
@@ -280,7 +280,7 @@ int CMkIndexApplication::Run()
         }
 
         bool enable_mask( GetArgs()["db_mask"] );
-        int filter( enable_mask ? GetArgs()["db_mask"].AsInteger() : 0 );
+        string filter( enable_mask ? GetArgs()["db_mask"].AsString() : "" );
 
         ITERATE( TStrVec, dbvi, db_vols ) {
             seqstream = 

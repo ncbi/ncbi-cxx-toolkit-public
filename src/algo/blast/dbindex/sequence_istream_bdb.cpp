@@ -42,20 +42,54 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE( blastdbindex )
 
+namespace {
+
+//------------------------------------------------------------------------------
+void CheckBlastDBMaskAlgorithmId( CRef< CSeqDB > & db, int id ) {
+    std::vector< int > ids;
+    db->GetAvailableMaskAlgorithms( ids );
+
+    if( std::find( ids.begin(), ids.end(), id ) == ids.end() ) {
+            NCBI_THROW( CSequenceIStream::CSequenceIStream_Exception, eParam,
+                    std::string( "unrecognized filter algorithm id" ) + 
+                    db->GetAvailableMaskAlgorithmDescriptions() );
+    }
+}
+
+}
+
 //------------------------------------------------------------------------------
 CSequenceIStreamBlastDB::CSequenceIStreamBlastDB( 
         const string & dbname, bool use_filter, int filter_algo_id )
     : seqdb_( new CSeqDB( dbname, CSeqDB::eNucleotide ) ), oid_( 0 ),
       filter_algo_id_( filter_algo_id ), use_filter_( use_filter )
 {
-    if( use_filter_ ) {
-        std::vector< int > alg_ids;
-        seqdb_->GetAvailableMaskAlgorithms( alg_ids );
+    if( use_filter_ ) CheckBlastDBMaskAlgorithmId( seqdb_, filter_algo_id_ );
+}
 
-        if( std::find( alg_ids.begin(), alg_ids.end(), filter_algo_id_ ) == 
-                alg_ids.end() ) {
-            NCBI_THROW( CSequenceIStream_Exception, eParam,
-                    std::string( "unrecognized filter algorithm id" ) + 
+//------------------------------------------------------------------------------
+CSequenceIStreamBlastDB::CSequenceIStreamBlastDB( 
+        const string & dbname, bool use_filter, 
+        string const & filter_algo_name )
+    : seqdb_( new CSeqDB( dbname, CSeqDB::eNucleotide ) ), oid_( 0 ),
+      filter_algo_id_( 0 ), use_filter_( use_filter )
+{
+    if( use_filter_ ) {
+        try {
+            if( NStr::StringToNumeric( 
+                        filter_algo_name, &filter_algo_id_, 
+                        NStr::fConvErr_NoThrow, 10) ) {
+                CheckBlastDBMaskAlgorithmId( seqdb_, filter_algo_id_ );
+            }
+            else {
+                filter_algo_id_ = 
+                    seqdb_->GetMaskAlgorithmId( filter_algo_name );
+            }
+        }
+        catch( CSeqDBException & e ) {
+            NCBI_RETHROW( 
+                    e, CSequenceIStream_Exception, eParam,
+                    std::string( "unrecognised filter algorithm name" ) +
                     seqdb_->GetAvailableMaskAlgorithmDescriptions() );
         }
     }

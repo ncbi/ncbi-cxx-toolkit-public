@@ -66,6 +66,16 @@ class NCBI_XBLAST_EXPORT CSequenceIStreamBlastDB : public CSequenceIStream
                 bool use_filter, 
                 int filter_algo_id = 0 );
 
+        /** Object constructor.
+            @param dbname           [I]     name of the BLAST database
+            @param use_filter       [I]     use/not use subject masking
+            @param filter_algo_name [I]     filtering algorithm text id
+        */
+        CSequenceIStreamBlastDB( 
+                const string & dbname, 
+                bool use_filter, 
+                string const & filter_algo_name = 0 );
+
         /** Object destructor. */
         virtual ~CSequenceIStreamBlastDB() {}
 
