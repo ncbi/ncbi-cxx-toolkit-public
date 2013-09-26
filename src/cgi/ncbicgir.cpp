@@ -88,7 +88,8 @@ CCgiResponse::CCgiResponse(CNcbiOstream* os, int ofd)
       m_OutputFD(0),
       m_HeaderWritten(false),
       m_Session(NULL),
-      m_DisableTrackingCookie(false)
+      m_DisableTrackingCookie(false),
+      m_RequestMethod(CCgiRequest::eMethod_Other)
 {
     SetOutput(os ? os  : &NcbiCout,
               os ? ofd : STDOUT_FILENO  // "os" on this line is NOT a typo
