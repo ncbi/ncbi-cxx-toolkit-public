@@ -60,6 +60,8 @@ public:
     CHgvsReader( 
         const CGC_Assembly& assembly,
         int =0 );
+    CHgvsReader( 
+        int =0 );
     virtual ~CHgvsReader();
     
     //
