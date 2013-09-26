@@ -6,7 +6,7 @@
  *
  *  This software/database is a "United States Government Work" under the
  *  terms of the United States Copyright Act.  It was written as part of
- *  the author's official duties as a United States Government employee and
+ *  the author's official duties as a United States Government employee and 
  *  thus cannot be copyrighted.  This software/database is freely available
  *  to the public for use. The National Library of Medicine and the U.S.
  *  Government have not placed any restriction on its use or reproduction.
@@ -68,6 +68,8 @@
 #include <objects/seqfeat/Variation_inst.hpp>
 #include <objects/seqfeat/VariantProperties.hpp>
 #include <objects/seqfeat/Delta_item.hpp>
+
+#include <objects/variation/VariationException.hpp>
 
 #include <objtools/readers/read_util.hpp>
 #include <objtools/readers/reader_exception.hpp>
@@ -147,16 +149,46 @@ CHgvsReader::ReadSeqAnnot(
 
         try {
             CRef<CVariation> var = hgvsParser.AsVariation(line);
+
+            CVariation::TExceptions exception_list;
+            if( var->IsSetExceptions() ) {
+                exception_list.insert(exception_list.end(), var->GetExceptions().begin(), var->GetExceptions().end());
+            }
+            if( var->IsSetPlacements() ) {
+                ITERATE(CVariation::TPlacements, place_it, var->GetPlacements() ) {
+                    const CVariantPlacement& placement = **place_it;
+                    if( placement.IsSetExceptions() ) {
+                        exception_list.insert(exception_list.end(), placement.GetExceptions().begin(), placement.GetExceptions().end());
+                    }
+                }
+            }
+
+            ITERATE(CVariation::TExceptions, except_it, exception_list ) {
+
+                const CVariationException& except = **except_it;
+
+                if( except.IsSetCode() && except.IsSetMessage() ) {
+
+                    const string& code = 
+                        CVariationException::GetTypeInfo_enum_ECode()->FindName(except.GetCode(), true);
+                    CObjReaderLineException err(
+                        eDiag_Warning,
+                        m_uLineNumber,
+                        string("CHgvsReader::ReadSeqAnnot Warning [") + code  + "] " + except.GetMessage(),
+                        ILineError::eProblem_GeneralParsingError);
+                    ProcessWarning(err, pEC);
+                } 
+            }
+
             varUtil.AsVariation_feats(*var, annot->SetData().SetFtable());
         }
         catch (const variation::CHgvsParser::CHgvsParserException& e) {
             CObjReaderLineException err(
-               eDiag_Warning,
+               eDiag_Error,
                0,
                string("CHgvsReader::ReadSeqAnnot Error [") + e.GetErrCodeString() + "] " + e.GetMsg(),
-               ILineError::eProblem_GeneralParsingError
-            );
-            ProcessWarning(err, pEC);
+               ILineError::eProblem_GeneralParsingError);
+            ProcessError(err, pEC);
         }
     }
 
