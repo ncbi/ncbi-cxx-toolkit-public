@@ -1893,8 +1893,8 @@ size_t GetCommonPrefixLen(const string& a, const string& b)
 
 size_t GetCommonSuffixLen(const string& a, const string& b)
 {
-    size_t i = 0;
-    while(a.size() > 0 && b.size() > 0 && a[a.size() - 1 - i] == b[b.size() - 1 - i]) {
+    size_t i(0);
+    while(i < a.size() && i < b.size() && a[a.size() - 1 - i] == b[b.size() - 1 - i]) {
         i++;
     }
     return i;
