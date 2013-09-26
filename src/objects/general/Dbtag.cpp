@@ -155,6 +155,7 @@ static const TDbxrefPair kApprovedDbXrefs[] = {
     { "UniSTS", CDbtag::eDbtagType_UniSTS },
     { "VBASE2", CDbtag::eDbtagType_VBASE2 },
     { "VectorBase", CDbtag::eDbtagType_VectorBase },
+    { "Vega", CDbtag::eDbtagType_Vega },
     { "ViPR", CDbtag::eDbtagType_ViPR },
     { "WorfDB", CDbtag::eDbtagType_WorfDB },
     { "WormBase", CDbtag::eDbtagType_WormBase },
@@ -185,7 +186,7 @@ static const TDbxrefPair kApprovedRefSeqDbXrefs[] = {
     { "PBR", CDbtag::eDbtagType_PBR },
     { "REBASE", CDbtag::eDbtagType_REBASE },
     { "SK-FST", CDbtag::eDbtagType_SK_FST },
-    {"SRPDB", CDbtag::eDbtagType_SRPDB },
+    { "SRPDB", CDbtag::eDbtagType_SRPDB },
     { "VBRC", CDbtag::eDbtagType_VBRC }
 };
 
