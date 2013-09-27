@@ -155,7 +155,7 @@ class Scenario602( TestBase ):
                  'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0 port=9008 timeout=15' )
 
         # Submit a job and wait for notifications
-        jobID = self.ns.submitJob( 'TEST', 'bla', 'a0' )
+        jobID = self.ns.submitJob( 'TEST', 'bla', 'a0' )        # analysis:ignore
 
         # First notification must come immediately and the second later on
         time.sleep( 0.1 )
@@ -784,7 +784,7 @@ class Scenario1106( TestBase ):
         if jobKey[ 0 ] != jobID:
             raise Exception( "Unexpected GET2 output" )
 
-        authToken = values[ 'auth_token' ][ 0 ]
+        authToken = values[ 'auth_token' ][ 0 ]         # analysis:ignore
         execAny( ns_client, "CANCEL " + jobID )
 
         output = execAny( ns_client, 'SST2 ' + jobID )

@@ -8,7 +8,7 @@
 Netschedule server tests pack for the features appeared in NS-4.10.0
 """
 
-import time
+import time, socket
 from netschedule_tests_pack import TestBase
 from ncbi_grid_1_0.ncbi.grid import ns as grid
 
@@ -3508,12 +3508,10 @@ class Scenario191( TestBase ):
         if process.returncode != 0:
             raise Exception( "Error spawning GET2" )
         processStdout = process.stdout.read()
-        processStderr = process.stderr.read()
+        processStderr = process.stderr.read()       # analysis:ignore
 
         if "[valid" in processStdout:
             return True
-
-        print "NOTIFICATION: " + processStdout
 
         raise Exception( "Did not receive notifications when expected" )
 
@@ -3533,6 +3531,30 @@ class Scenario192( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
+        safeMode = True
+        if safeMode:
+            ns_client = self.getNetScheduleService( 'TEST', 'scenario192' )
+            ns_client.set_client_identification( 'node', 'session' )
+            changeAffinity( ns_client, ['a3'], [] )
+
+            notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+            notifSocket.bind( ( "", 9007 ) )
+
+            execAny( ns_client,
+                     'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=1 port=9007 timeout=3' )
+
+            # Submit a job
+            self.ns.submitJob( 'TEST', 'input', 'a3' )
+
+            time.sleep( 3 )
+            result = self.getNotif( notifSocket )
+            if result == 0:
+                raise Exception( "Expected one notification, received nothing" )
+            return True
+
+        # Unsafe mode: grid_cli has a bug which breaks the test
+        # It's been way too long to wait till it is fixed, so there is a workaround
+        # above to avoid using buggy part of grid_cli
         ns_client = self.getNetScheduleService( 'TEST', 'scenario192' )
         ns_client.set_client_identification( 'node', 'session' )
         changeAffinity( ns_client, ['a3'], [] )
@@ -3549,13 +3571,27 @@ class Scenario192( TestBase ):
         if process.returncode != 0:
             raise Exception( "Error spawning GET2" )
         processStdout = process.stdout.read()
-        processStderr = process.stderr.read()
+        processStderr = process.stderr.read()       # analysis:ignore
 
         if "[valid" in processStdout:
             return True
 
         raise Exception( "Did not receive notifications when expected. "
                          "Received:\n'" + processStdout + "'" )
+
+    def getNotif( self, s ):
+        " Retrieves notifications "
+        try:
+            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            if "queue=TEST" not in data:
+                raise Exception( "Unexpected notification in socket" )
+            return 1
+        except Exception, ex:
+            if "Unexpected notification in socket" in str( ex ):
+                raise
+            pass
+        return 0
+
 
 class Scenario193( TestBase ):
     " Scenario 193 "
