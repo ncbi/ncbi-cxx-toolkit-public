@@ -385,7 +385,7 @@ bool CReadBlastApp::overlaps_na
 // check overlaps with externally defined tRNAs
      if ( !(*f1)->GetData().IsRna() ) continue;
      CRNA_ref::EType rna_type = (*f1)->GetData().GetRna().GetType();
-     if(rna_type != CRNA_ref::eType_tRNA || rna_type != CRNA_ref::eType_rRNA ) continue;
+     if(rna_type != CRNA_ref::eType_tRNA && rna_type != CRNA_ref::eType_rRNA ) continue;
      string type1;
      if ( rna_type == CRNA_ref::eType_tRNA )
        {
