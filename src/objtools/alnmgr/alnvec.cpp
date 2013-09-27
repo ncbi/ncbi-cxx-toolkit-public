@@ -751,7 +751,7 @@ void CAlnVec::CreateConsensus(vector<string>& consens) const
                                     c = cur_char;
                                     break;
                                 case 'N': case 'D':
-                                    c = (cur_char == 'N' || cur_char == 'N') ? 'B' : 'X';
+                                    c = (cur_char == 'N' || cur_char == 'D') ? 'B' : 'X';
                                     break;
                                 case 'Q': case 'E':
                                     c = (cur_char == 'Q' || cur_char == 'E') ? 'Z' : 'X';
@@ -835,7 +835,7 @@ int CAlnVec::CalculateScore(const string& s1, const string& s2,
                    "CAlnVec::CalculateScore(): "
                    "Strings should have equal lenghts.");
     } else if (s1.length() * (s1_is_prot ? 1 : 3) !=
-               s1.length() * (s1_is_prot ? 1 : 3)) {
+               s2.length() * (s2_is_prot ? 1 : 3)) {
         NCBI_THROW(CAlnException, eInvalidRequest,
                    "CAlnVec::CalculateScore(): "
                    "Strings lengths do not match.");
