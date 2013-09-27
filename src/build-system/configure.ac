@@ -992,6 +992,26 @@ if test "$with_mt" = "yes" ; then
         ;;
      * ) NCBIATOMIC_LIB=xncbi ;;
    esac
+   case "$compiler" in
+      GCC )
+         if $CC -v | grep clang >/dev/null; then
+            :
+            # Will allegedly support -openmp at some point, but as of 3.4,
+            # just parses it as specifying an output filename: -o penmp.
+         else
+            case "$compiler_version" in
+               [[123]]?? | 4[[01]]? ) ;;
+               * ) : ${OPENMP_FLAGS=-fopenmp} ;;
+            esac
+         fi
+         ;;
+      ICC )
+         : ${OPENMP_FLAGS=-openmp}
+         ;;
+      WorkShop* )
+         : ${OPENMP_FLAGS=-xopenmp=parallel}
+         ;;
+   esac
    mt_sfx="MT"
    NCBI_FEATURE(MT)
 else
@@ -999,6 +1019,7 @@ else
    MT_FLAG=
    THREAD_LIBS=
    NCBIATOMIC_LIB=
+   OPENMP_FLAGS=
    mt_sfx=""
 fi
 MT_SFX="${mt_sfx}"
@@ -7038,6 +7059,7 @@ AC_SUBST(DBAPI_ODBC)
 
 AC_SUBST(THREAD_LIBS)
 AC_SUBST(NCBIATOMIC_LIB)
+AC_SUBST(OPENMP_FLAGS)
 AC_SUBST(NETWORK_LIBS)
 AC_SUBST(NETWORK_PURE_LIBS)
 AC_SUBST(RESOLVER_LIBS)

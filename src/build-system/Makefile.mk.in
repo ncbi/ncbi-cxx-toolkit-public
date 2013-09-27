@@ -234,6 +234,9 @@ NCBI_PLATFORM_BITS = @NCBI_PLATFORM_BITS@
 OBJCXX_CXXFLAGS = @OBJCXX_CXXFLAGS@
 OBJCXX_LIBS     = @OBJCXX_LIBS@
 
+### Support for OpenMP
+OPENMP_FLAGS = @OPENMP_FLAGS@
+
 ### Post-link command (empty by default, historically needed for
 ### graphical apps on Mac OS X)
 POST_LINK = @:
