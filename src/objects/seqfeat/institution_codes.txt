@@ -810,7 +810,7 @@ CCMGE	s	Chernyshev Central Museum of Geological Explorations,Collections of the 
 CCMI	c	Culture Collection of Industrial Microorganisms
 CCML	s	Coleccion Ictiologica del Departamento de Ciencias Marinas de la Universidad de la Laguna
 CCMM	c	Moroccan Coordinated Collections of Microorganisms
-CCMP	c	Provasoli-Guillard National Center for Culture of Marine Phytoplankton
+CCMP	c	Provasoli-Guillard National Center for Marine Algae and Microiota
 CCNH	s	Central Michigan University, Center for Cultural and Natural History
 CCNL	s	Connecticut College, Botany Department
 CCNP	s	Carlsbad, Carlsbad Caverns National Park
@@ -1377,7 +1377,6 @@ DFS	s	Dumfries and Galloway Natural History and Antiquarian Society
 DFSM	s	Dumfries Museum
 DFV	s	Division of Fisheres
 DGBU	s	Department of Geology, Pusan National University
-DGM	s	Divisao de Geologia c Mineralogia
 DGN	s	Darlington Museum
 DGR	b	Division of Genomic Resources, University of New Mexico
 DGR:Bird	s	Division of Genomic Resources, University of New Mexico, bird tissue collection
