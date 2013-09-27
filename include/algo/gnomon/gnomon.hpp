@@ -92,7 +92,8 @@ public:
     double Run(bool repeats = true, bool leftwall = true, bool rightwall = true, double mpp = 10); // pure ab initio
 
     double Run(const TGeneModelList& chains,
-	       bool repeats, bool leftwall, bool rightwall, bool leftanchor, bool rightanchor, double mpp, double consensuspenalty, const CGnomonAnnotator_Base::TGgapInfo& ggapinfo);
+               bool repeats, bool leftwall, bool rightwall, bool leftanchor, bool rightanchor, double mpp, double consensuspenalty = BadScore(), 
+               const CGnomonAnnotator_Base::TGgapInfo& ggapinfo = CGnomonAnnotator_Base::TGgapInfo());
 
     CRef<objects::CSeq_annot> GetAnnot(const objects::CSeq_id& id);
 
