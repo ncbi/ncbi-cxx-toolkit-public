@@ -104,12 +104,6 @@ struct SProcessMemoryCounters
 
 #endif //NCBI_OS_MSWIN
 
-#ifdef NCBI_OS_CYGWIN
-#  define WINVER 0x0500
-#  define WIN32_LEAN_AND_MEAN
-#  include <windows.h>
-#endif //NCBI_OS_CYGWIN
-
 
 BEGIN_NCBI_SCOPE
 
@@ -582,7 +576,7 @@ bool SetCpuTimeLimit(size_t                max_cpu_time,
 
 unsigned int GetCpuCount(void)
 {
-#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
+#if defined(NCBI_OS_MSWIN)
     SYSTEM_INFO si;
     GetSystemInfo(&si);
     return (unsigned int) si.dwNumberOfProcessors;
@@ -678,7 +672,7 @@ unsigned long GetVirtualMemoryPageSize(void)
     static unsigned long ps = 0;
 
     if (!ps) {
-#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
+#if defined(NCBI_OS_MSWIN)
         SYSTEM_INFO si;
         GetSystemInfo(&si);
         ps = (unsigned long) si.dwPageSize;
@@ -715,13 +709,13 @@ unsigned long GetVirtualMemoryAllocationGranularity(void)
     static unsigned long ag = 0;
 
     if (!ag) {
-#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
+#if defined(NCBI_OS_MSWIN)
         SYSTEM_INFO si;
         GetSystemInfo(&si);
         ag = (unsigned long) si.dwAllocationGranularity;
 #else
         ag = GetVirtualMemoryPageSize();
-#endif //NCBI_OS_MSWIN || NCBI_OS_CYGWIN
+#endif
     }
     return ag;
 }
@@ -729,7 +723,7 @@ unsigned long GetVirtualMemoryAllocationGranularity(void)
 
 Uint8 GetPhysicalMemorySize(void)
 {
-#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
+#if defined(NCBI_OS_MSWIN)
 
     MEMORYSTATUSEX st;
     st.dwLength = sizeof(st);
@@ -943,7 +937,7 @@ bool MemoryAdvise(void* addr, size_t len, EMemoryAdvise advise)
 
 void SleepMicroSec(unsigned long mc_sec, EInterruptOnSignal onsignal)
 {
-#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
+#if defined(NCBI_OS_MSWIN)
 
     // Unlike some of its (buggy) Unix counterparts, MS-Win's Sleep() is safe
     // to use with 0, which causes the current thread to sleep at most until
@@ -996,11 +990,11 @@ void SleepMicroSec(unsigned long mc_sec, EInterruptOnSignal onsignal)
 
 void SleepMilliSec(unsigned long ml_sec, EInterruptOnSignal onsignal)
 {
-#if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
+#if defined(NCBI_OS_MSWIN)
     Sleep(ml_sec);
 #elif defined(NCBI_OS_UNIX)
     SleepMicroSec(ml_sec * 1000, onsignal);
-#endif //NCBI_OS_...
+#endif
 }
 
 
