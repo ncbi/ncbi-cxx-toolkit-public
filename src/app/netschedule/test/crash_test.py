@@ -214,7 +214,8 @@ def generateNSConfig( baseDir, numberOfQueues, port, pathDB ):
                    "run_timeout_precision=30\n" \
                    "delete_done=false\n" \
                    "max_input_size=1M\n" \
-                   "max_output_size=1M\n"
+                   "max_output_size=1M\n" \
+                   "scramble_job_keys=true\n"
 
     f = open( baseDir + "netscheduled.ini", "w" )
     f.write( content )
