@@ -436,7 +436,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributesGene(
         x_AssignAttributeGene( mapped_feat )  &&
         x_AssignAttributeLocusTag( mapped_feat )  &&
         x_AssignAttributeGeneSynonym( mapped_feat )  &&
-        x_AssignAttributeLocusTag( mapped_feat )  &&
+        x_AssignAttributeOldLocusTag( mapped_feat )  &&
         x_AssignAttributePartial( mapped_feat )  &&
         x_AssignAttributeGeneDesc( mapped_feat )  &&
         x_AssignAttributeMapLoc( mapped_feat ) );
