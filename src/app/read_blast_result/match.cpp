@@ -177,7 +177,7 @@ int CReadBlastApp::match_na
 
 // output
    left = input_left - calc_left;
-   right = input_right - input_right;
+   right = input_right - calc_right;
 
    int max_left = max(input_left, calc_left);
    int min_right = min(input_right, calc_right);
