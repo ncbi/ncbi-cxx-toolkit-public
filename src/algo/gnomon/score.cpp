@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <algo/gnomon/gnomon.hpp>
+#include <algo/gnomon/chainer.hpp>
 #include <algo/gnomon/gnomon_exception.hpp>
 #include "score.hpp"
 #include "hmm.hpp"
@@ -265,7 +266,7 @@ const CCodingRegion& cr, const CNonCodingRegion& ncr, const CNonCodingRegion& in
     }
 }
 
-void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwall, bool rightwall, double consensuspenalty, const CIntergenicParameters& intergenic_params)
+void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwall, bool rightwall, double consensuspenalty, const CIntergenicParameters& intergenic_params, const CGnomonAnnotator_Base::TGgapInfo& ggapinfo)
 {
     CResidueVec sequence = ConstructSequenceAndMaps(m_align_list,original_sequence);
 
@@ -297,7 +298,21 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
         }
     } catch(bad_alloc) {
         NCBI_THROW(CGnomonException, eMemoryLimit, "Not enough memory in CSeqScores");
-    } 
+    }
+
+    ITERATE(CGnomonAnnotator_Base::TGgapInfo, ig, ggapinfo) {      // block ab initio in ggaps
+        for(int jj = ig->first; jj <= ig->first + (int)ig->second->GetInDelV().length() - 1; ++jj) {
+            if(jj >= m_chunk_start && jj <= m_chunk_stop) {
+                int j = m_map.MapOrigToEdited(jj);
+                m_laststop[ePlus][0][j] = j;
+                m_laststop[ePlus][1][j] = j;
+                m_laststop[ePlus][2][j] = j;
+                m_laststop[eMinus][0][j] = j;
+                m_laststop[eMinus][1][j] = j;
+                m_laststop[eMinus][2][j] = j;
+            }
+        }
+    }
 
     const int RepeatMargin = 25;
     for(int rpta = 0; rpta < len; ) {
@@ -493,12 +508,9 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
 
         ITERATE(CGeneModel::TExons, e, align.Exons()) {
             for(TSignedSeqPos i = e->GetFrom(); i <= e->GetTo(); ++i) {  // ignoring repeats and allowing Ns in alignmnets
-                m_laststop[ePlus][0][i] = -1;
-                m_laststop[ePlus][1][i] = -1;
-                m_laststop[ePlus][2][i] = -1;
-                m_laststop[eMinus][0][i] = -1;
-                m_laststop[eMinus][1][i] = -1;
-                m_laststop[eMinus][2][i] = -1;
+                m_laststop[strand][0][i] = -1;
+                m_laststop[strand][1][i] = -1;
+                m_laststop[strand][2][i] = -1;
             }
         }
 
@@ -896,6 +908,35 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
             }
         }
     }
+
+    ITERATE(TAlignSet, it, allaligns) {
+        const CGeneModel& algn(*it);
+        if(algn.ReadingFrame().Empty())
+            continue;
+        int strand = algn.Strand();
+
+        if(algn.Exons().front().m_fsplice_sig == "XX" || algn.Exons().front().m_ssplice_sig == "XX") {
+            int p = algn.ReadingFrame().GetFrom()-1;
+            if(strand == ePlus &&  !algn.HasStart()) {
+                m_sttscr[strand][p] = consensuspenalty;
+                ++m_sttnum[strand];
+            } else if(strand == eMinus && !algn.HasStop()) {
+                m_stpscr[strand][p] = consensuspenalty;
+                ++m_stpnum[strand];
+            }
+        }
+
+        if(algn.Exons().back().m_fsplice_sig == "XX" || algn.Exons().back().m_ssplice_sig == "XX") {
+            int p = algn.ReadingFrame().GetTo();
+            if(strand == ePlus && !algn.HasStop()) {
+                m_stpscr[strand][p] = consensuspenalty;
+                ++m_stpnum[strand];
+            } else if(strand == eMinus && !algn.HasStart()) {
+                m_sttscr[strand][p] = consensuspenalty;
+                ++m_sttnum[strand];
+            }
+        }
+    }
     
     const int NonConsensusMargin = 50;
     if (consensuspenalty != BadScore())
@@ -933,7 +974,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
         
         if(strand == ePlus)
         {
-            if(!algn.HasStart())
+            if(!algn.HasStart() && algn.Exons().front().m_ssplice_sig != "XX")
             {
                 int a = max(2,lim.GetFrom()-NonConsensusMargin);
                 int b = lim.GetFrom()-1;
@@ -959,7 +1000,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
                 }
             }
             
-            if(!algn.HasStop())
+            if(!algn.HasStop() && algn.Exons().back().m_fsplice_sig != "XX")
             {
                 int a = lim.GetTo();
                 int b = min(len-4,lim.GetTo()+NonConsensusMargin);
@@ -987,7 +1028,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
         }
         else
         {
-            if(!algn.HasStart())
+            if(!algn.HasStart() && algn.Exons().back().m_fsplice_sig != "XX")
             {
                 int a = lim.GetTo();
                 int b = min(len-4,lim.GetTo()+NonConsensusMargin);
@@ -1013,7 +1054,7 @@ void CSeqScores::Init( CResidueVec& original_sequence, bool repeats, bool leftwa
                 }
             }
             
-            if(!algn.HasStop())
+            if(!algn.HasStop() && algn.Exons().front().m_ssplice_sig != "XX")
             {
                 int a = max(2,lim.GetFrom()-NonConsensusMargin);
                 int b = lim.GetFrom()-1;

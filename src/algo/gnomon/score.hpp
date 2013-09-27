@@ -34,6 +34,7 @@
 
 #include <corelib/ncbistd.hpp>
 
+#include <algo/gnomon/chainer.hpp>
 #include "gnomon_seq.hpp"
 
 BEGIN_NCBI_SCOPE
@@ -54,7 +55,8 @@ public:
                 const TInDels& initial_fshifts, double mpp, const CGnomonEngine& gnomon);
     void Init(CResidueVec& original_sequence, bool repeats, bool leftwall, 
               bool rightwall, double consensuspenalty,
-              const CIntergenicParameters& intergenic_params
+              const CIntergenicParameters& intergenic_params,
+              const CGnomonAnnotator_Base::TGgapInfo& ggapinfo
               );
         
     TSignedSeqPos From() const { return m_chunk_start; }

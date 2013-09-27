@@ -45,6 +45,30 @@ BEGIN_SCOPE(gnomon)
 
 USING_SCOPE(objects);
 
+
+TSignedSeqRange CGeneModel::TranscriptExon(int i) const {
+    CAlignMap amap = GetAlignMap();
+
+    if(Exons()[i].Limits().NotEmpty()) {
+        CAlignMap::ERangeEnd lend = (Exons()[i].m_fsplice ? CAlignMap::eLeftEnd : CAlignMap::eSinglePoint);
+        CAlignMap::ERangeEnd rend = (Exons()[i].m_ssplice ?  CAlignMap::eRightEnd : CAlignMap::eSinglePoint);
+        return amap.MapRangeOrigToEdited(Exons()[i].Limits(), lend, rend); 
+    } else if(i > 0) {  // there is real exon on the left
+        int p = amap.MapOrigToEdited(Exons()[i-1].GetTo());
+        if(Orientation() == ePlus)
+            return TSignedSeqRange(p+1,p+Exons()[i].m_seq.size());
+        else
+            return TSignedSeqRange(p-Exons()[i].m_seq.size(),p-1);
+    } else {  // there is a real exon on the right
+        _ASSERT(i < (int)Exons().size()-1);
+        int p = amap.MapOrigToEdited(Exons()[i+1].GetFrom());
+        if(Orientation() == ePlus)
+            return TSignedSeqRange(p-Exons()[i].m_seq.size(),p-1);
+        else
+            return TSignedSeqRange(p+1,p+Exons()[i].m_seq.size());        
+    }
+}
+
 TSignedSeqRange CGeneModel::TranscriptLimits() const {
     CAlignMap amap = GetAlignMap();
 
@@ -137,6 +161,19 @@ void CAlignModel::ResetAlignMap()
 {
     Status() &= ~CGeneModel::eReversed;
     m_alignmap = CGeneModel::GetAlignMap();
+}
+
+void CAlignModel::RecalculateAlignMap() {
+    if(Exons().empty()) {
+        m_alignmap = CAlignMap();
+        return;
+    }
+
+    vector<TSignedSeqRange> transcript_exons;
+    for(int ie = 0; ie < (int)Exons().size(); ++ie) {
+        transcript_exons.push_back(TranscriptExon(ie));
+    }
+    m_alignmap = CAlignMap(Exons(), transcript_exons, m_alignmap.GetInDels(false), Orientation(), m_alignmap.TargetLen());
 }
 
 string CAlignModel::TargetAccession() const {
@@ -563,13 +600,15 @@ void CGeneModel::CutExons(TSignedSeqRange hole)
             continue;
         if (MyExons()[i].GetFrom()<hole.GetFrom()) {
             MyExons()[i].Limits().SetTo(hole.GetFrom()-1);
-            MyExons()[i].m_ssplice_sig.clear();
+            if(MyExons()[i].m_ssplice_sig != "XX")
+                MyExons()[i].m_ssplice_sig.clear();
             if (i+1<MyExons().size()) {
                 MyExons()[i+1].m_fsplice=false;
             }
         } else if (hole.GetTo()<MyExons()[i].GetTo()) {
             MyExons()[i].Limits().SetFrom(hole.GetTo()+1);
-            MyExons()[i].m_fsplice_sig.clear();
+            if(MyExons()[i].m_fsplice_sig != "XX")
+                MyExons()[i].m_fsplice_sig.clear();
             if (0<i) {
                 MyExons()[i-1].m_ssplice=false;
             }
@@ -584,9 +623,8 @@ void CGeneModel::CutExons(TSignedSeqRange hole)
             --i;
         }
     }
+    RecalculateLimits();
     RemoveExtraFShifts();
-    if(MyExons().empty())
-        m_range = TSignedSeqRange();
 }
 
 void CGeneModel::Clip(TSignedSeqRange clip_limits, EClipMode mode, bool ensure_cds_invariant)
@@ -635,9 +673,9 @@ void CGeneModel::Clip(TSignedSeqRange clip_limits, EClipMode mode, bool ensure_c
     for (TExons::iterator e = MyExons().begin(); e != MyExons().end();) {
         TSignedSeqRange clip = e->Limits() & clip_limits;
         if (clip.NotEmpty()) {
-            if(e->GetFrom() != clip.GetFrom())   //keep splice sig if not clipped
+            if(e->GetFrom() != clip.GetFrom() && e->m_fsplice_sig != "XX")   //keep splice sig if not clipped or ggap
                 e->m_fsplice_sig.clear();
-            if(e->GetTo() != clip.GetTo())   //keep splice sig if not clipped
+            if(e->GetTo() != clip.GetTo() && e->m_ssplice_sig != "XX")   //keep splice sig if not clipped or ggap
                 e->m_ssplice_sig.clear();
             e++->Limits() = clip;
         } else if (mode == eRemoveExons)
@@ -996,6 +1034,28 @@ void CGeneModel::Extend(const CGeneModel& align, bool ensure_cds_invariant)
         CombineCdsInfo(align, ensure_cds_invariant);
 }
 
+void CGeneModel::RecalculateLimits()
+{
+    if (Exons().empty()) {
+        m_range = TSignedSeqRange::GetEmpty(); 
+    } else {
+        int num = Exons().size();
+        if(Exons()[0].Limits().NotEmpty()) {
+            m_range.SetFrom(Exons()[0].GetFrom());
+        } else {
+            _ASSERT(num > 1 && Exons()[1].Limits().NotEmpty());
+            m_range.SetFrom(Exons()[1].GetFrom());
+        }
+        if(Exons()[num-1].Limits().NotEmpty()) {
+            m_range.SetTo(Exons()[num-1].GetTo());
+        } else {
+           _ASSERT(num > 1 && Exons()[num-2].Limits().NotEmpty()); 
+            m_range.SetTo(Exons()[num-2].GetTo());
+        }
+    }
+}
+
+
 void CGeneModel::ExtendLeft(int amount)
 {
     _ASSERT(amount>0);
@@ -1112,29 +1172,6 @@ int CAlignModel::PolyALen() const {
         return lim.GetFrom();
     }
 }
-
-
-TSignedSeqRange CAlignModel::TranscriptExon(int i) const {
-    if(Exons()[i].Limits().NotEmpty()) {
-        CAlignMap::ERangeEnd lend = (Exons()[i].m_fsplice ? CAlignMap::eLeftEnd : CAlignMap::eSinglePoint);
-        CAlignMap::ERangeEnd rend = (Exons()[i].m_ssplice ?  CAlignMap::eRightEnd : CAlignMap::eSinglePoint);
-        return m_alignmap.MapRangeOrigToEdited(Exons()[i].Limits(), lend, rend); 
-    } else if(i > 0) {  // there is real exon on the left
-        int p = GetAlignMap().MapOrigToEdited(Exons()[i-1].GetTo());
-        if(Orientation() == ePlus)
-            return TSignedSeqRange(p+1,p+Exons()[i].m_seq.size());
-        else
-            return TSignedSeqRange(p-Exons()[i].m_seq.size(),p-1);
-    } else {  // there is a real exon on the right
-        _ASSERT(i < (int)Exons().size()-1);
-        int p = GetAlignMap().MapOrigToEdited(Exons()[i+1].GetFrom());
-        if(Orientation() == ePlus)
-            return TSignedSeqRange(p-Exons()[i].m_seq.size(),p-1);
-        else
-            return TSignedSeqRange(p+1,p+Exons()[i].m_seq.size());        
-    }
-}
-
 
 TInDels CAlignModel::GetInDels(TSignedSeqPos a, TSignedSeqPos b, bool fs_only) const {
     

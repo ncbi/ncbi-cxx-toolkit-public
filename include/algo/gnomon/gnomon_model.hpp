@@ -63,6 +63,7 @@ inline
 double BadScore() { return -numeric_limits<double>::max(); }
 
 enum EStrand { ePlus, eMinus};
+inline EStrand OtherStrand(EStrand s) { return (s == ePlus ? eMinus : ePlus); }
 
 typedef objects::CSeqVectorTypes::TResidue TResidue; // unsigned char
 
@@ -370,27 +371,22 @@ public:
 
     void Remap(const CRangeMapper& mapper);
     enum EClipMode { eRemoveExons, eDontRemoveExons };
-    void Clip(TSignedSeqRange limits, EClipMode mode, bool ensure_cds_invariant = true);  // drops the score!!!!!!!!!
-    void CutExons(TSignedSeqRange hole); // clip or remove exons, dangerous, should be completely in or outside the cds, should not cut an exon in two 
+    virtual void Clip(TSignedSeqRange limits, EClipMode mode, bool ensure_cds_invariant = true);  // drops the score!!!!!!!!!
+    virtual void CutExons(TSignedSeqRange hole); // clip or remove exons, dangerous, should be completely in or outside the cds, should not cut an exon in two 
     void ExtendLeft(int amount);
     void ExtendRight(int amount);
     void Extend(const CGeneModel& a, bool ensure_cds_invariant = true);
     void TrimEdgesToFrameInOtherAlignGaps(const TExons& exons_with_gaps, bool ensure_cds_invariant = true);
     void RemoveShortHolesAndRescore(const CGnomonEngine& gnomon);   // removes holes shorter than min intron (may add frameshifts/stops)
    
+    TSignedSeqRange TranscriptExon(int i) const; 
+
     TSignedSeqRange Limits() const { return m_range; }
     TSignedSeqRange TranscriptLimits() const;
     int AlignLen() const ;
-    void RecalculateLimits()
-    {
-        if (Exons().empty()) {
-            m_range = TSignedSeqRange::GetEmpty(); 
-        } else {
-            m_range = TSignedSeqRange(Exons().front().GetFrom(),Exons().back().GetTo());
-        }
-    }
+    void RecalculateLimits();
 
-    // ReadingFrame doesn't include start/stop. It's always on codon boundaries
+   // ReadingFrame doesn't include start/stop. It's always on codon boundaries
     TSignedSeqRange ReadingFrame() const { return m_cds_info.ReadingFrame(); }
     // CdsLimits include start/stop if any, goes to model limit if no start/stop
     TSignedSeqRange RealCdsLimits() const;
@@ -676,9 +672,17 @@ public:
     CAlignModel() {}
     CAlignModel(const objects::CSeq_align& seq_align);
     CAlignModel(const CGeneModel& g, const CAlignMap& a);
-    TSignedSeqRange TranscriptExon(int i) const; 
     virtual CAlignMap GetAlignMap() const { return m_alignmap; }
     void ResetAlignMap();
+
+    virtual void Clip(TSignedSeqRange limits, EClipMode mode, bool ensure_cds_invariant = true) { // drops the score!!!!!!!!!
+        CGeneModel::Clip(limits,mode,ensure_cds_invariant);
+        RecalculateAlignMap();
+    }
+    virtual void CutExons(TSignedSeqRange hole) { // clip or remove exons, dangerous, should be completely in or outside the cds, should not cut an exon in two 
+        CGeneModel::CutExons(hole);
+        RecalculateAlignMap();
+    }
 
     string TargetAccession() const;
     void SetTargetId(const objects::CSeq_id& id) { m_target_id.Reset(&id); }
@@ -689,6 +693,7 @@ public:
     int PolyALen() const;
 
 private:
+    void RecalculateAlignMap();
     CAlignMap m_alignmap;
     CConstRef<objects::CSeq_id> m_target_id;
 };

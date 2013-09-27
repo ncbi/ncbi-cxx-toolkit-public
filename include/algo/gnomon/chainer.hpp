@@ -119,13 +119,22 @@ public:
     void SetGenomic(const CResidueVec& seq);
     void SetGenomic(const CSeq_id& seqid, objects::CScope& scope, const string& mask_annots = kEmptyStr, const TInDels* contig_fix_idels = 0);
     CGnomonEngine& GetGnomon();
+    void MapAlignmentsToEditedContig(TAlignModelList& alignments) const;
+    void MapModelsToEditedContig(TGeneModelList& models) const;
+    void MapModelsToOrigContig(TGeneModelList& models) const;
+    static TInDels GetGenomicGaps(const TGeneModelList& models);
+
+    typedef map<int,TInDels::const_iterator> TGgapInfo;
 
 protected:
+    CAlignModel MapOneModelToEditedContig(const CGeneModel& align) const;
+
     bool m_masking;
     CRef<CHMMParameters> m_hmm_params;
     auto_ptr<CGnomonEngine> m_gnomon;
     CAlignMap* m_edited_contig_map;
-    TInDels m_editing_indels;
+    TInDels m_editing_indels;      //original coordinates
+    TGgapInfo m_inserted_seqs;     // edited coord to indelinfo
 };
 
 ////////////////////////////////////////////////////////////////////////
@@ -153,8 +162,6 @@ public:
     Predicate* ConnectsParalogs(TAlignModelList& alignments);
     TransformFunction* ProjectCDS(objects::CScope& scope);
     TransformFunction* DoNotBelieveFrameShiftsWithoutCdsEvidence();
-    void MapAlignmentsToEditedContig(TAlignModelList& alignments);
-    void MapModelsToOrigContig(TGeneModelList& models);
     void SetConfirmedStartStopForProteinAlignments(TAlignModelList& alignments);
     void DropAlignmentInfo(TAlignModelList& alignments, TGeneModelList& models);
     void FilterOutChimeras(TGeneModelList& clust);

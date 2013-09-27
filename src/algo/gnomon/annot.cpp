@@ -86,7 +86,7 @@ double CGnomonAnnotator::ExtendJustThisChain(CGeneModel& chain,
     cout << "Testing alignment " << chain.ID() << " in fragment " << l << ' ' << r << endl;
                     
     m_gnomon->ResetRange(l,r);
-    return m_gnomon->Run(test_align, true, false, false, false, false, mpp, nonconsensp);
+    return m_gnomon->Run(test_align, true, false, false, false, false, mpp, nonconsensp, m_inserted_seqs);
 }
 
 double CGnomonAnnotator::TryWithoutObviouslyBadAlignments(TGeneModelList& aligns, TGeneModelList& suspect_aligns, TGeneModelList& bad_aligns,
@@ -128,7 +128,7 @@ double CGnomonAnnotator::TryWithoutObviouslyBadAlignments(TGeneModelList& aligns
         m_gnomon->ResetRange(left, right);
         if(found_bad_cluster) {
             cout << "Testing w/o bad alignments in fragment " << left << ' ' << right << endl;
-            return m_gnomon->Run(suspect_aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp);
+            return m_gnomon->Run(suspect_aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_inserted_seqs);
         }
     }
     return BadScore();
@@ -147,7 +147,7 @@ double CGnomonAnnotator::TryToEliminateOneAlignment(TGeneModelList& suspect_alig
         it = suspect_aligns.erase(it);
         
         cout << "Testing w/o " << algn.ID();
-        score = m_gnomon->Run(suspect_aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp);
+        score = m_gnomon->Run(suspect_aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_inserted_seqs);
         if (score != BadScore()) {
             cout << "- Good. Deleting alignment " << algn.ID() << endl;
             algn.Status() |= CGeneModel::eSkipped;
@@ -178,7 +178,7 @@ double CGnomonAnnotator::TryToEliminateAlignmentsFromTail(TGeneModelList& suspec
         it = suspect_aligns.erase(it);
         
         cout << "Testing fragment " << left << ' ' << right << endl;
-        score = m_gnomon->Run(suspect_aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp);
+        score = m_gnomon->Run(suspect_aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_inserted_seqs);
     }
     return score;
 }
@@ -252,7 +252,7 @@ void CGnomonAnnotator::Predict(TSignedSeqPos llimit, TSignedSeqPos rlimit, TGene
 
             cout << left << ' ' << right << ' ' << m_gnomon->GetGCcontent() << endl;
         
-            score = m_gnomon->Run(aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp);
+            score = m_gnomon->Run(aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_inserted_seqs);
         
             if(score == BadScore()) {
                 cout << "Inconsistent alignments in fragment " << left << ' ' << right << '\n';
@@ -516,7 +516,7 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
                             hosting_interval = (hosting_interval&interval);
                     }
                 }
-                _ASSERT((ig->second.front()->Type()&CGeneModel::eNested) == 0 || !hosting_interval.Empty());       
+                //                _ASSERT((ig->second.front()->Type()&CGeneModel::eNested) == 0 || !hosting_interval.Empty());       
 
                 if(hosting_interval.NotEmpty()) {
                     TIterList nested(1,nested_modeli);

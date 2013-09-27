@@ -104,14 +104,16 @@ void CGnomonEngine::ResetRange(TSignedSeqRange range)
     gc_range &= TSignedSeqRange(0,m_data->m_seq.size()-1);
     gc_range += m_data->m_range;
 
+    int length = 0;
     for (TSignedSeqPos i = gc_range.GetFrom();i<=gc_range.GetTo(); ++i) {
         EResidue c = m_data->m_ds[ePlus][i];
         if (c == enC  ||  c == enG) {
             ++m_data->m_gccontent;
         }
+        if(c != enN)   // don't count genomic gaps
+            ++length;
     }
-    m_data->m_gccontent = static_cast<int>
-        (m_data->m_gccontent*100.0 / (gc_range.GetLength()) + 0.5);
+    m_data->m_gccontent = static_cast<int>(m_data->m_gccontent*100.0/length + 0.5);
     m_data->m_gccontent = max(1,m_data->m_gccontent);
     m_data->m_gccontent = min(99,m_data->m_gccontent);
 
@@ -144,15 +146,16 @@ int CGnomonEngine::GetGCcontent() const
 double CGnomonEngine::Run(bool repeats, bool leftwall, bool rightwall, double mpp)
 {
     TGeneModelList cls;
+    CGnomonAnnotator_Base::TGgapInfo ggapinfo;
 
     return Run( cls, repeats,
                 leftwall, rightwall, false, false,
-                mpp
+                mpp, BadScore(), ggapinfo
               );
 }
 
 double CGnomonEngine::Run(const TGeneModelList& cls,
-                          bool repeats, bool leftwall, bool rightwall, bool leftanchor, bool rightanchor, double mpp, double consensuspenalty)
+                          bool repeats, bool leftwall, bool rightwall, bool leftanchor, bool rightanchor, double mpp, double consensuspenalty, const CGnomonAnnotator_Base::TGgapInfo& ggapinfo)
 {
     m_data->m_parse.reset();
     m_data->m_ss.reset();
@@ -165,7 +168,7 @@ double CGnomonEngine::Run(const TGeneModelList& cls,
                                        m_data->m_range.GetFrom(),  m_data->m_range.GetTo(),
                                        cls, initial_fshifts, mpp, *this)
                 );
-    m_data->m_ss->Init(m_data->m_seq, repeats, leftwall, rightwall, consensuspenalty, *m_data->m_intergenic_params);
+    m_data->m_ss->Init(m_data->m_seq, repeats, leftwall, rightwall, consensuspenalty, *m_data->m_intergenic_params, ggapinfo);
     m_data->m_parse.reset( new CParse(*m_data->m_ss,
                                       *m_data->m_intron_params,
                                       *m_data->m_intergenic_params,

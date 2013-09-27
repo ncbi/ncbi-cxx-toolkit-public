@@ -926,18 +926,11 @@ void CAlignCollapser::FilterAlignments() {
 
     //filter other alignments
 
-    //    map<Int8,CAlignModel> old_aligns;
-
     //filter introns
     double clip_threshold = args["utrclipthreshold"].AsDouble();
     for(TAlignModelList::iterator it = m_aligns_for_filtering_only.begin(); it != m_aligns_for_filtering_only.end(); ) {
         TAlignModelList::iterator i = it++;
         CAlignModel& align = *i;
-
-        /*
-        if(align.Status()&CGeneModel::eGapFiller)
-            old_aligns[align.ID()] = align;
-        */
 
         if((align.Type()&CGeneModel::eEST) && !m_filterest)
             continue;
@@ -1013,13 +1006,6 @@ void CAlignCollapser::FilterAlignments() {
                     CleanExonEdge(ie, align, transcript, true);
                 }
             } 
-
-            /*
-            if(old_aligns[align.ID()].Exons() != align.Exons()) {
-                cerr  << setcontig("Old alignment:"+m_contig_name) << old_aligns[align.ID()];
-                cerr  << setcontig("New alignment:"+m_contig_name) << align;
-            }
-            */
         }
     }
     
@@ -1195,10 +1181,10 @@ void CAlignCollapser::FilterAlignments() {
                             }
                         } else { // trim    
                             if(ie == 0) { // first exon 
-                                if(align.Type()&CGeneModel::eProt)
+                                if(align.Type()&CGeneModel::eProt) 
                                     align.Clip(seg,CGeneModel::eRemoveExons); 
                                 else
-                                    align.CutExons(TSignedSeqRange(align.Limits().GetFrom(),seg.GetFrom()-1));   // Clip() is not friendly to gapfillers
+                                    align.CutExons(TSignedSeqRange(align.Limits().GetFrom(),seg.GetFrom()-1));   // Clip() is not friendly to gapfillers    
                             } else {
                                 align.CutExons(TSignedSeqRange(align.Exons()[ie-1].GetTo()+1,seg.GetFrom()-1));
                             }
@@ -1368,24 +1354,7 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
     }
 
     ITERATE(TAlignModelList, i, m_aligns_for_filtering_only) {
-
-        //clean alignmap
-        CGeneModel editedmodel = *i;
-        editedmodel.ClearExons();  // empty alignment with all atributes
-        vector<TSignedSeqRange> transcript_exons;
-        for(int ie = 0; ie < (int)i->Exons().size(); ++ie) {
-            editedmodel.AddExon(i->Exons()[ie].Limits(), i->Exons()[ie].m_fsplice_sig, i->Exons()[ie].m_ssplice_sig, i->Exons()[ie].m_ident, i->Exons()[ie].m_seq, i->Exons()[ie].m_source);
-            transcript_exons.push_back(i->TranscriptExon(ie));
-            if(ie < (int)i->Exons().size()-1 && (!i->Exons()[ie].m_ssplice || !i->Exons()[ie+1].m_fsplice))
-                editedmodel.AddHole();
-        }
-        CAlignMap amap = i->GetAlignMap();
-        CAlignMap editedamap(editedmodel.Exons(), transcript_exons, amap.GetInDels(false), i->Orientation(), amap.TargetLen());
-        CAlignModel editedalign(editedmodel, editedamap);
-        editedalign.SetTargetId(*(i->GetTargetId()));
-        editedalign.SetCdsInfo(i->GetCdsInfo());
-
-        if(CheckAndInsert(editedalign, clsset))
+        if(CheckAndInsert(*i, clsset))
             ++total;
     }
     
@@ -1490,6 +1459,9 @@ void CAlignCollapser::CleanExonEdge(int ie, CAlignModel& align, const string& tr
 
         ++gp;
         ++tp;        
+    }
+    if(indl != indels.end() && indl->Loc() == gright+1 && indl->IsDeletion()) {   // deletion at the end of exon
+        gseq.insert(gp, indl->Len(), '#');
     }
     _ASSERT(gseq.length() == tseq.length() && gseq.length() >= CHECK_LENGTH);
 
