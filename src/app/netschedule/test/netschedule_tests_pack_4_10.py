@@ -3947,10 +3947,12 @@ class Scenario214( TestBase ):
         self.fromScratch()
 
         ns_client = self.getNetScheduleService( 'TEST', 'scenario214' )
-        self.ns.getVersion( 'TEST', '', '' )
+        output = execAny( ns_client, 'GETP' )
         getClientInfo( ns_client, None, 0, 0 )
 
-        self.ns.getVersion( 'TEST', 'mynode', 'mysession' )
+        ns_client1 = self.getNetScheduleService( 'TEST', 'scenario214' )
+        ns_client1.set_client_identification( 'mynode', 'mysession' )
+        output = execAny( ns_client1, 'GETP' )
         getClientInfo( ns_client, 'mynode', 1, 1 )
         return True
 
