@@ -340,7 +340,7 @@ Int8 CArg_Int8::AsInt8(void) const
 inline CArg_Integer::CArg_Integer(const string& name, const string& value)
     : CArg_Int8(name, value)
 {
-    if (m_Integer < kMin_Int  ||  kMin_Int > m_Integer) {
+    if (m_Integer < kMin_Int  ||  m_Integer > kMax_Int) {
         NCBI_THROW(CArgException, eConvert, s_ArgExptMsg(GetName(),
             "Integer value is out of range", value));
     }
