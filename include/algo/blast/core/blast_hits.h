@@ -247,7 +247,7 @@ Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
    const Uint1* query_start, const Int4 query_length, 
    const Uint1* subject_start, const Int4 subject_length,
    const BlastHitSavingParameters* hit_params, 
-   const BlastScoringParameters* score_params, BlastScoreBlk* sbp);
+   const BlastScoringParameters* score_params, const BlastScoreBlk* sbp);
 
 /** Reevaluate the HSP's score and percent identity after taking into
  * account the ambiguity information. Used for ungapped searches with 

@@ -68,14 +68,14 @@ extern "C" {
  * @param ext_options Gapped extension options [in]
  * @param hit_params Hit saving parameters [in]
  * @param gen_code_string specifies genetic code [in]
- * @param fence_hit True is returned here if overrun is detected. [in]
+ * @param fence_hit True is returned here if overrun is detected. [in|out]
  */
 NCBI_XBLAST_EXPORT
 Int2
 Blast_TracebackFromHSPList(EBlastProgramType program_number, 
-   BlastHSPList* hsp_list, BLAST_SequenceBlk* query_blk, 
+   BlastHSPList* hsp_list, const BLAST_SequenceBlk* query_blk, 
    BLAST_SequenceBlk* subject_blk, BlastQueryInfo* query_info,
-   BlastGapAlignStruct* gap_align, BlastScoreBlk* sbp,
+   BlastGapAlignStruct* gap_align, const BlastScoreBlk* sbp,
    const BlastScoringParameters* score_params,
    const BlastExtensionOptions* ext_options,
    const BlastHitSavingParameters* hit_params,
@@ -129,7 +129,8 @@ NCBI_XBLAST_EXPORT
 Int2 
 BLAST_ComputeTraceback(EBlastProgramType program_number, 
    BlastHSPStream* hsp_stream, BLAST_SequenceBlk* query, 
-   BlastQueryInfo* query_info, const BlastSeqSrc* seq_src, 
+   BlastQueryInfo* query_info, 
+   const BlastSeqSrc* seq_src, 
    BlastGapAlignStruct* gap_align, BlastScoringParameters* score_params,
    const BlastExtensionParameters* ext_params,
    BlastHitSavingParameters* hit_params,

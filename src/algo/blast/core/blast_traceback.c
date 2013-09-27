@@ -195,10 +195,10 @@ s_BlastHSPListRPSUpdate(EBlastProgramType program, BlastHSPList *hsplist)
  */
 static Int2
 s_HSPListPostTracebackUpdate(EBlastProgramType program_number, 
-   BlastHSPList* hsp_list, BlastQueryInfo* query_info, 
+   BlastHSPList* hsp_list, const BlastQueryInfo* query_info, 
    const BlastScoringParameters* score_params, 
    const BlastHitSavingParameters* hit_params, 
-   BlastScoreBlk* sbp, Int4 subject_length)
+   const BlastScoreBlk* sbp, Int4 subject_length)
 {
    BlastScoringOptions* score_options = score_params->options;
    const Boolean kGapped = score_options->gapped_calculation;
@@ -253,9 +253,9 @@ s_HSPListPostTracebackUpdate(EBlastProgramType program_number,
  */
 Int2
 Blast_TracebackFromHSPList(EBlastProgramType program_number, 
-   BlastHSPList* hsp_list, BLAST_SequenceBlk* query_blk, 
+   BlastHSPList* hsp_list, const BLAST_SequenceBlk* query_blk, 
    BLAST_SequenceBlk* subject_blk, BlastQueryInfo* query_info_in,
-   BlastGapAlignStruct* gap_align, BlastScoreBlk* sbp, 
+   BlastGapAlignStruct* gap_align, const BlastScoreBlk* sbp, 
    const BlastScoringParameters* score_params,
    const BlastExtensionOptions* ext_options,
    const BlastHitSavingParameters* hit_params, const Uint1* gen_code_string,
@@ -1291,7 +1291,9 @@ BLAST_SetupPartialFetching(EBlastProgramType program_number,
 Int2 
 BLAST_ComputeTraceback(EBlastProgramType program_number, 
                        BlastHSPStream* hsp_stream, BLAST_SequenceBlk* query, 
-                       BlastQueryInfo* query_info, const BlastSeqSrc* seq_src, 
+                       BlastQueryInfo* query_info, 
+                       /* NB: seq_src is modified by this function */
+                       const BlastSeqSrc* seq_src,  
                        BlastGapAlignStruct* gap_align, 
                        BlastScoringParameters* score_params,
                        const BlastExtensionParameters* ext_params,

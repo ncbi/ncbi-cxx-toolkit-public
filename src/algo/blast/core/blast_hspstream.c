@@ -542,13 +542,6 @@ fprintf(stderr, "No hits to query %d\n", global_query);
    return kBlastHSPStream_Success;
 }
 
-/** Batch read function for this BlastHSPStream implementation.      
- * @param hsp_stream The BlastHSPStream object [in]
- * @param batch List of HSP lists for the HSPStream to return. The caller
- * acquires ownership of all HSP lists returned [out]
- * @return kBlastHSPStream_Success on success, kBlastHSPStream_Error, or
- * kBlastHSPStream_Eof on end of stream
- */
 int BlastHSPStreamBatchRead(BlastHSPStream* hsp_stream,
                             BlastHSPStreamResultBatch* batch) 
 {

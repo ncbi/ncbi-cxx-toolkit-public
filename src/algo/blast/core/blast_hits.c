@@ -345,7 +345,7 @@ Boolean Blast_HSPReevaluateWithAmbiguitiesGapped(BlastHSP* hsp,
            const Uint1* s, const Int4 slen,
            const BlastHitSavingParameters* hit_params, 
            const BlastScoringParameters* score_params, 
-           BlastScoreBlk* sbp)
+           const BlastScoreBlk* sbp)
 {
    Int4 sum, score, gap_open, gap_extend;
    Int4 index; /* loop index */
@@ -855,7 +855,7 @@ Blast_HSPGetNumIdentitiesAndPositives(const Uint1* query,
     return retval;
 }
 
-static Boolean s_HSPTest(BlastHSP* hsp,
+static Boolean s_HSPTest(const BlastHSP* hsp,
                          const BlastHitSavingOptions* hit_options,
                          Int4 align_length)
 {

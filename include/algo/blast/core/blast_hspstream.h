@@ -204,10 +204,9 @@ int BlastHSPStreamWrite(BlastHSPStream* hsp_stream, BlastHSPList** hsp_list);
 NCBI_XBLAST_EXPORT
 int BlastHSPStreamRead(BlastHSPStream* hsp_stream, BlastHSPList** hsp_list);
 
-/** Invokes the user-specified batch read function for this BlastHSPStream
- * implementation.
+/** Batch read function for this BlastHSPStream implementation.      
  * @param hsp_stream The BlastHSPStream object [in]
- * @param batch List of HSP listss for the HSPStream to return. The caller
+ * @param batch List of HSP lists for the HSPStream to return. The caller
  * acquires ownership of all HSP lists returned [out]
  * @return kBlastHSPStream_Success on success, kBlastHSPStream_Error, or
  * kBlastHSPStream_Eof on end of stream
