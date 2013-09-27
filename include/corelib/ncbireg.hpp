@@ -487,7 +487,8 @@ public: // WorkShop needs these exposed
     typedef map<string, SEntry, PNocase_Conditional> TEntries;
     struct SSection {
         SSection(TFlags flags)
-            : entries((flags & fEntryCase) == 0 ? NStr::eNocase : NStr::eCase)
+            : entries((flags & fEntryCase) == 0 ? NStr::eNocase : NStr::eCase),
+              cleared(false)
             { }
         string   comment;
         TEntries entries;

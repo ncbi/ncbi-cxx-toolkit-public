@@ -219,6 +219,7 @@ CMetaRegistry::x_Load(const string& name, CMetaRegistry::ENameStyle style,
     scratch_entry.flags       = flags;
     scratch_entry.reg_flags   = reg_flags;
     scratch_entry.registry.Reset(reg);
+    scratch_entry.length      = 0;
     if (scratch_entry.actual_name.empty()
         ||  !scratch_entry.Reload(flags | fAlwaysReload | fKeepContents) ) {
         scratch_entry.registry.Reset();
