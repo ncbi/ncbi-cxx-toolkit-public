@@ -25,56 +25,39 @@
  *
  */
 
-/// @file TMgr_AnnotCounts.hpp
+/// @file TMgr_PositionStats.hpp
 /// User-defined methods of the data storage class.
 ///
-/// See also: TMgr_AnnotCounts_.hpp
 
 
-#ifndef OBJECTS_TRACKMGR_TMGR_ANNOTCOUNTS_HPP
-#define OBJECTS_TRACKMGR_TMGR_ANNOTCOUNTS_HPP
+#ifndef OBJECTS_TRACKMGR_TMGR_POSITIONSTATS_HPP
+#define OBJECTS_TRACKMGR_TMGR_POSITIONSTATS_HPP
 
-#include <objects/trackmgr/TMgr_AnnotCounts_.hpp>
-#include <objects/trackmgr/TMgr_AnnotType.hpp>
-#include <objects/trackmgr/TMgr_TypeStat.hpp>
-
+#include <objects/trackmgr/TMgr_PositionStats_.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 
 /////////////////////////////////////////////////////////////////////////////
-class NCBI_TRACKMGR_EXPORT CTMgr_AnnotCounts : public CTMgr_AnnotCounts_Base
+class NCBI_TRACKMGR_EXPORT CTMgr_PositionStats : public CTMgr_PositionStats_Base
 {
-    typedef CTMgr_AnnotCounts_Base Tparent;
+    typedef CTMgr_PositionStats_Base Tparent;
 public:
-    CTMgr_AnnotCounts(void);
-    ~CTMgr_AnnotCounts(void);
+    CTMgr_PositionStats(void);
+    ~CTMgr_PositionStats(void);
 
-    void Add(ETMgr_AnnotType type, Int8 count);
-    void AddPosition(ETMgr_AnnotType type, Uint8 start, Uint8 stop);
-    objects::CTMgr_TypeStat::TCount GetCount(ETMgr_AnnotType type) const;
-
-protected:
-    typedef CRef<CTMgr_TypeStat> TTypeStatRef;
-    typedef map<int, TTypeStatRef> TCountMap;
-
-protected:
-    TTypeStatRef x_GetCount(ETMgr_AnnotType type) const;
-
-private:
-    mutable TCountMap m_Counts;
+    void Add(TSeqPos start, TSeqPos stop, Uint8 prior_count = 0);
 
 private:
     // Prohibit copy constructor and assignment operator
-    CTMgr_AnnotCounts(const CTMgr_AnnotCounts& value);
-    CTMgr_AnnotCounts& operator=(const CTMgr_AnnotCounts& value);
+    CTMgr_PositionStats(const CTMgr_PositionStats& value);
+    CTMgr_PositionStats& operator=(const CTMgr_PositionStats& value);
 };
 
 
 END_objects_SCOPE // namespace ncbi::objects::
 END_NCBI_SCOPE
 
-
-#endif // OBJECTS_TRACKMGR_TMGR_ANNOTCOUNTS_HPP
+#endif // OBJECTS_TRACKMGR_TMGR_POSITIONSTATS_HPP
 

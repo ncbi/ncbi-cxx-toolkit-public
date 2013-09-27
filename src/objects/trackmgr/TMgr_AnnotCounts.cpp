@@ -36,6 +36,8 @@
 
 #include <ncbi_pch.hpp>
 #include <objects/trackmgr/TMgr_AnnotCounts.hpp>
+#include <objects/trackmgr/TMgr_LengthStats.hpp>
+#include <objects/trackmgr/TMgr_PositionStats.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -71,14 +73,14 @@ CTMgr_AnnotCounts::x_GetCount(ETMgr_AnnotType type) const
 }
 
 CTMgr_TypeStat::TCount
-CTMgr_AnnotCounts::GetCount(ETMgr_AnnotType type) const
+CTMgr_AnnotCounts::GetCount(const ETMgr_AnnotType type) const
 {   
     TTypeStatRef cnt = x_GetCount(type);
     return (cnt.IsNull() ? 0 : cnt->GetCount());
 }
 
 void
-CTMgr_AnnotCounts::Add(ETMgr_AnnotType type, Int8 count)
+CTMgr_AnnotCounts::Add(const ETMgr_AnnotType type, const Int8 count)
 {   
     TTypeStatRef cnt = x_GetCount(type);
     if (cnt.IsNull()) {
@@ -88,6 +90,22 @@ CTMgr_AnnotCounts::Add(ETMgr_AnnotType type, Int8 count)
         SetCounts().push_back(cnt);
     }
     cnt->SetCount(cnt->GetCount() + count);
+}
+
+void
+CTMgr_AnnotCounts::AddPosition(const ETMgr_AnnotType type, const Uint8 start, const Uint8 stop)
+{   
+    TTypeStatRef cnt = x_GetCount(type);
+    if (cnt.IsNull()) {
+        cnt.Reset(new CTMgr_TypeStat());
+        cnt->SetType(type);
+        cnt->SetCount(0);
+        SetCounts().push_back(cnt);
+    }
+    const CTMgr_TypeStat::TCount c = cnt->GetCount();
+    cnt->SetCount(c + 1);
+    cnt->SetLength_stats().Add(stop - start + 1, c);
+    cnt->SetPosition_stats().Add(start, stop, c);
 }
 
 

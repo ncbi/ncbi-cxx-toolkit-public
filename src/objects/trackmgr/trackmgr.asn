@@ -316,17 +316,22 @@ TMgr-AnnotType ::= INTEGER {
     locs (6)
 }
 
+TMgr-PositionStats ::= SEQUENCE {
+    min INTEGER,
+    max INTEGER
+}
+
 TMgr-LengthStats ::= SEQUENCE {
     min INTEGER,
     max INTEGER,
-    median INTEGER OPTIONAL,
     mean INTEGER OPTIONAL
 }
 
 TMgr-TypeStat ::= SEQUENCE {
     type TMgr-AnnotType,
     count INTEGER,
-    length-stats TMgr-LengthStats OPTIONAL
+    length-stats TMgr-LengthStats OPTIONAL,
+    position-stats TMgr-PositionStats OPTIONAL
 }
 
 TMgr-AnnotCounts ::= SEQUENCE {

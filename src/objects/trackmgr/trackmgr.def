@@ -7,3 +7,13 @@ clients = trackmgr_client
 class = CTrackMgrClient
 request = TMgr-Request
 reply = TMgr-Reply
+
+[TMgr-PositionStats]
+min._type = TSeqPos
+max._type = TSeqPos
+
+[TMgr-LengthStats]
+min._type = TSeqPos
+max._type = TSeqPos
+mean._type = TSeqPos
+
