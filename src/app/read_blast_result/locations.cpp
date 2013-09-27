@@ -206,7 +206,7 @@ void CReadBlastApp::GetLocMap
   )
 {
   if(PrintDetails()) NcbiCerr << "GetLocMap starts" << NcbiEndl;
-  loc_map.empty();
+  loc_map.clear();
   IncreaseVerbosity();
   ITERATE(CSeq_annot::C_Data::TFtable, f, feats)
     {
