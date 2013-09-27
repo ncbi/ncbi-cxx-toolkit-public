@@ -9,7 +9,7 @@
 Netschedule server test script
 """
 
-import os.path, sys, md5
+import os.path, sys
 import tempfile
 import logging
 from subprocess import Popen, PIPE
@@ -27,7 +27,8 @@ configFiles = [ "netscheduled.ini.1", "netscheduled.ini.2",
                 "netscheduled.ini.9",
                 "netscheduled.ini.505-1", "netscheduled.ini.505-2",
                 "netscheduled.ini.505-3", "netscheduled.ini.505-4",
-                "netscheduled.ini.505-5" ]
+                "netscheduled.ini.505-5",
+                "netscheduled.ini.1.1000", "netscheduled.ini.1100" ]
 scripts = [ "make_ncbi_grid_module_tree.sh", "netschedule.py",
             "netschedule_tests_pack.py", "netschedule_tests_pack_4_10.py",
             "netschedule_tests_pack_4_11.py", "netschedule_tests_pack_4_13.py",
@@ -203,15 +204,12 @@ def testOneCombination( sandboxPath, nsPathVer, gcPath, port, verbose ):
     nsPath = nsPathVer[ 0 ]
     nsVer = nsPathVer[ 1 ]
 
-    combination = "Testing combination: NS: " + nsPath + \
-                  " GRID_CLI: " + gcPath
+    combination = "Testing combination:\nNS: " + nsPath + \
+                  "\nGRID_CLI: " + gcPath
     logging.info( combination )
 
     if verbose:
         print combination
-
-    basePath = os.path.dirname( os.path.abspath( sys.argv[ 0 ] ) ) + \
-               os.path.sep
 
     # Copy binaries to the sandbox
     if os.system( "cp -p " + nsPath + " " + \
@@ -260,7 +258,7 @@ def testOneCombination( sandboxPath, nsPathVer, gcPath, port, verbose ):
     process = Popen( cmdLine, stdin = PIPE,
                      stdout = PIPE, stderr = errStream )
     process.stdin.close()
-    processStdout = process.stdout.read()
+    processStdout = process.stdout.read()   # analysis:ignore
     process.stdout.close()
     errStream.seek( 0 )
     err = errStream.read()
