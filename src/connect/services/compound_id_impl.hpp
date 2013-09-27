@@ -253,6 +253,7 @@ inline void SCompoundIDImpl::Remove(SCompoundIDFieldImpl* field)
     m_HomogeneousFields[field->m_Type].Remove(field);
     m_Pool->m_FieldPool.ReturnToPool(field);
     --m_Length;
+    m_Dirty = true;
 }
 
 extern void g_PackID(void* binary_id, size_t binary_id_len, string& packed_id);

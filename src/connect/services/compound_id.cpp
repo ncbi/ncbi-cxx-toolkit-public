@@ -669,7 +669,7 @@ CCompoundID CCompoundIDDumpParser::ParseID()
             case eCIT_NestedCID:
                 result.AppendNestedCID(ParseID());
                 break;
-            default:
+            case eCIT_NumberOfTypes:
                 break;
             }
 
