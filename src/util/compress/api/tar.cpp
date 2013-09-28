@@ -3218,8 +3218,7 @@ bool CTar::x_ExtractEntry(Uint8& size,
             } else {
                 _ASSERT(src);
 #ifdef NCBI_OS_UNIX
-                if (link(src->GetPath().c_str(),
-                         dst->GetPath().c_str()) == 0) {
+                if (link(src->GetPath().c_str(), dst->GetPath().c_str()) == 0){
                     if (m_Flags & fPreserveAll) {
                         x_RestoreAttrs(m_Current, m_Flags, dst);
                     }
