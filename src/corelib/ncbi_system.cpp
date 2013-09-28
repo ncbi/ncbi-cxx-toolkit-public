@@ -59,7 +59,7 @@ extern "C" {
 #  include <time.h>
 #  include <unistd.h>
 #  include <fcntl.h>
-#  if defined(NCBI_OS_BSD) || defined(NCBI_OS_DARWIN)
+#  if defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_DARWIN)
 #    include <sys/sysctl.h>
 #  endif //NCBI_OS_BSD || NCBI_OS_DARWIN
 #  if defined(NCBI_OS_IRIX)
@@ -600,12 +600,12 @@ unsigned int GetCpuCount(void)
     nproc = sysconf(_SC_NPROC_ONLN);
 # elif defined(_SC_NPROCESSORS_ONLN)
     nproc = sysconf(_SC_NPROCESSORS_ONLN);
-# elif defined(NCBI_OS_BSD) || defined(NCBI_OS_DAWRIN)
+# elif defined(NCBI_OS_BSD)  ||  defined(NCBI_OS_DAWRIN)
     size_t len = sizeof(nproc);
     int mib[2];
     mib[0] = CTL_HW;
     mib[1] = HW_NCPU;
-    if (sysctl(mib, 2, &nproc, &len, 0, 0) < 0 || len != sizeof(nproc))
+    if (sysctl(mib, 2, &nproc, &len, 0, 0) < 0  ||  len != sizeof(nproc))
         nproc = -1;
 # endif //UNIX_FLAVOR
     return nproc <= 0 ? 1 : (unsigned int) nproc;
@@ -618,18 +618,19 @@ unsigned int GetCpuCount(void)
 bool GetCurrentProcessTimes(double* user_time, double* system_time)
 {
 #if defined(NCBI_OS_MSWIN)
-    // Each FILETIME structure contains the number of 100-nanosecond time units.
+    // Each FILETIME structure contains the number of 100-nanosecond time units
     FILETIME ft_creation, ft_exit, ft_kernel, ft_user;
-    if (! ::GetProcessTimes(GetCurrentProcess(),
-                            &ft_creation, &ft_exit,
-                            &ft_kernel, &ft_user) ) {
-            return false;
+    if (!::GetProcessTimes(GetCurrentProcess(),
+                           &ft_creation, &ft_exit, &ft_kernel, &ft_user)) {
+        return false;
     }
-    if (system_time) {
-        *system_time = (ft_kernel.dwLowDateTime + ((Uint8)ft_kernel.dwHighDateTime<<32)) * 1.0e-7;
+    if ( system_time ) {
+        *system_time = (ft_kernel.dwLowDateTime +
+                        ((Uint8) ft_kernel.dwHighDateTime << 32)) * 1.0e-7;
     }
-    if (user_time) {
-        *user_time = (ft_user.dwLowDateTime + ((Uint8)ft_user.dwHighDateTime<<32)) * 1.0e-7;
+    if ( user_time ) {
+        *user_time = (ft_user.dwLowDateTime +
+                      ((Uint8) ft_user.dwHighDateTime << 32)) * 1.0e-7;
     }
 
 #elif defined(NCBI_OS_UNIX)
@@ -650,11 +651,11 @@ bool GetCurrentProcessTimes(double* user_time, double* system_time)
     if (tick == (clock_t)(-1)) {
         return false;
     }
-    if (system_time) {
-        *system_time = (double)buf.tms_stime / tick;
+    if ( system_time ) {
+        *system_time = (double) buf.tms_stime / tick;
     }
-    if (user_time) {
-        *user_time = (double)buf.tms_utime / tick;
+    if ( user_time ) {
+        *user_time = (double) buf.tms_utime / tick;
     }
 #endif
     return true;
@@ -746,10 +747,10 @@ Uint8 GetPhysicalMemorySize(void)
     uint64_t physmem;
     mib[1] = HW_MEMSIZE;
 #  else
-    /* Native BSD, may be truncated */
+    // Native BSD, may be truncated
     int      physmem;
     mib[1] = HW_PHYSMEM;
-#  endif /*HW_MEMSIZE*/
+#  endif //HW_MEMSIZE
     mib[0] = CTL_HW;
     len = sizeof(physmem);
     if (sysctl(mib, 2, &physmem, &len, 0, 0) == 0  &&  len == sizeof(physmem)){
@@ -758,7 +759,7 @@ Uint8 GetPhysicalMemorySize(void)
 
 #  ifdef NCBI_OS_DARWIN
     {
-        /* heavier fallback */
+        // heavier fallback
         struct vm_statistics vm_stat;
         mach_port_t my_host = mach_host_self();
         mach_msg_type_number_t count = HOST_VM_INFO_COUNT;
@@ -825,9 +826,9 @@ bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared)
 #elif defined(NCBI_OS_SOLARIS)
     Int8 len = CFile("/proc/self/as").GetLength();
     if (len > 0) {
-        *total    = (size_t)len;
-        *resident = (size_t)len; // conservative estimate
-        *shared   = 0;           // does this info exist anywhere?
+        *total    = (size_t) len;
+        *resident = (size_t) len; // conservative estimate
+        *shared   = 0;            // does this info exist anywhere?
         return true;
     }
 #elif defined(HAVE_GETRUSAGE)
@@ -852,11 +853,11 @@ bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared)
 }
 
 
-#if !defined(HAVE_MADVISE)
+#ifndef HAVE_MADVISE
 bool MemoryAdvise(void*, size_t, EMemoryAdvise) {
     return false;
 }
-#else  /* HAVE_MADVISE */
+#else //HAVE_MADVISE
 bool MemoryAdvise(void* addr, size_t len, EMemoryAdvise advise)
 {
     if ( !addr /*|| !len*/ ) {
@@ -926,7 +927,7 @@ bool MemoryAdvise(void* addr, size_t len, EMemoryAdvise advise)
     }
     return true;
 }
-#endif  /* HAVE_MADVISE */
+#endif //HAVE_MADVISE
 
 
 
@@ -942,15 +943,19 @@ void SleepMicroSec(unsigned long mc_sec, EInterruptOnSignal onsignal)
     // Unlike some of its (buggy) Unix counterparts, MS-Win's Sleep() is safe
     // to use with 0, which causes the current thread to sleep at most until
     // the end of the current timeslice (and only if the CPU is not idle).
-    Sleep((mc_sec + 500) / 1000);
+    static const unsigned long kMicroSecondsPerMilliSecond
+        = kMicroSecondsPerSecond / kMilliSecondsPerSecond;
+    Sleep((mc_sec + (kMicroSecondsPerMilliSecond / 2))
+          / kMicroSecondsPerMilliSecond);
 
 #elif defined(NCBI_OS_UNIX)
 
 #  if defined(HAVE_NANOSLEEP)
     struct timespec delay, unslept;
     memset(&unslept, 0, sizeof(unslept));
-    delay.tv_sec  =  mc_sec / kMicroSecondsPerSecond;
-    delay.tv_nsec = (mc_sec % kMicroSecondsPerSecond) * 1000;
+    delay.tv_sec  =   mc_sec / kMicroSecondsPerSecond;
+    delay.tv_nsec = ((mc_sec % kMicroSecondsPerSecond)
+                     * (kNanoSecondsPerSecond / kMicroSecondsPerSecond));
     while (nanosleep(&delay, &unslept) < 0) {
         if (errno != EINTR  ||  onsignal == eInterruptOnSignal)
             break;
@@ -977,7 +982,7 @@ void SleepMicroSec(unsigned long mc_sec, EInterruptOnSignal onsignal)
     delay.tv_sec  = mc_sec / kMicroSecondsPerSecond;
     delay.tv_usec = mc_sec % kMicroSecondsPerSecond;
     while (select(0, (fd_set*) 0, (fd_set*) 0, (fd_set*) 0, &delay) < 0) {
-#    if defined(SELECT_UPDATES_TIMEOUT)
+#    ifdef SELECT_UPDATES_TIMEOUT
         if (errno != EINTR  ||  onsignal == eInterruptOnSignal)
 #    endif
             break;
@@ -990,11 +995,12 @@ void SleepMicroSec(unsigned long mc_sec, EInterruptOnSignal onsignal)
 
 void SleepMilliSec(unsigned long ml_sec, EInterruptOnSignal onsignal)
 {
-#if defined(NCBI_OS_MSWIN)
+#ifdef NCBI_OS_MSWIN
     Sleep(ml_sec);
-#elif defined(NCBI_OS_UNIX)
-    SleepMicroSec(ml_sec * 1000, onsignal);
-#endif
+#else
+    SleepMicroSec(ml_sec * (kMicroSecondsPerSecond / kMilliSecondsPerSecond),
+                  onsignal);
+#endif //NCBI_OS_MSWIN
 }
 
 
@@ -1032,7 +1038,7 @@ extern void SuppressSystemMessageBox(TSuppressSystemMessageBox mode)
         return;
     }
     // System errors
-    if ( (mode & fSuppress_System) == fSuppress_System ) {
+    if ((mode & fSuppress_System) == fSuppress_System ) {
        SetErrorMode(SEM_FAILCRITICALERRORS | SEM_NOGPFAULTERRORBOX |
                     SEM_NOOPENFILEERRORBOX);
     }
@@ -1079,18 +1085,18 @@ extern bool IsSuppressedDebugSystemMessageBox(void)
         s_SuppressedDebugSystemMessageBox;
 #else
     return false;
-#endif
+#endif //NCBI_OS_MSWIN
 }
 
 
 
 extern int GetProcessFDCount(int* soft_limit, int* hard_limit)
 {
-#if defined(NCBI_OS_UNIX)
-    int                 fd_count = 0;
-    struct dirent *     dp;
+#ifdef NCBI_OS_UNIX
+    int            fd_count = 0;
+    struct dirent* dp;
 
-    DIR *   dir = opendir("/proc/self/fd/");
+    DIR* dir = opendir("/proc/self/fd/");
     if (dir) {
         while ((dp = readdir(dir)) != NULL)
             ++fd_count;
@@ -1099,64 +1105,64 @@ extern int GetProcessFDCount(int* soft_limit, int* hard_limit)
         if (fd_count < 0)
             fd_count = -1;
     } else {
-        // Fallback to rlimit analisis
-        struct rlimit       rlim;
+        // Fallback to rlimit analysis
+        struct rlimit rlim;
         if (getrlimit(RLIMIT_NOFILE, &rlim) == 0) {
             // Try till max because the soft limit could be lowered after some
             // FD were opened.
-            for (unsigned int fd = 0; fd < rlim.rlim_max; ++fd) {
+            for (unsigned int fd = 0;  fd < rlim.rlim_max;  ++fd) {
                 if (fcntl(fd, F_GETFD, 0) == -1) {
                     if (errno == EBADF)
                         continue;
                 }
                 ++fd_count;
             }
-            if (soft_limit)
+            if ( soft_limit )
                 *soft_limit = rlim.rlim_cur;
-            if (hard_limit)
+            if ( hard_limit )
                 *hard_limit = rlim.rlim_max;
         } else {
             fd_count = -1;
-            if (soft_limit)
+            if ( soft_limit )
                 *soft_limit = -1;
-            if (hard_limit)
+            if ( hard_limit )
                 *hard_limit = -1;
         }
         return fd_count;
     }
 
-    if (soft_limit || hard_limit) {
-        struct rlimit       rlim;
+    if (soft_limit  ||  hard_limit) {
+        struct rlimit rlim;
         if (getrlimit(RLIMIT_NOFILE, &rlim) == 0) {
-            if (soft_limit)
+            if ( soft_limit )
                 *soft_limit = rlim.rlim_cur;
-            if (hard_limit)
+            if ( hard_limit )
                 *hard_limit = rlim.rlim_max;
         } else {
-            if (soft_limit)
+            if ( soft_limit )
                 *soft_limit = -1;
-            if (hard_limit)
+            if ( hard_limit )
                 *hard_limit = -1;
         }
     }
     return fd_count;
 #else
-    if (soft_limit)
+    if ( soft_limit )
         *soft_limit = -1;
-    if (hard_limit)
+    if ( hard_limit )
         *hard_limit = -1;
     return -1;
-#endif
+#endif //NCBI_OS_UNIX
 }
 
 
 extern int GetProcessThreadCount(void)
 {
-#if defined(NCBI_OS_LINUX)
-    int                 thread_count = 0;
-    struct dirent *     dp;
+#ifdef NCBI_OS_LINUX
+    int            thread_count = 0;
+    struct dirent* dp;
 
-    DIR *   dir = opendir("/proc/self/task/");
+    DIR* dir = opendir("/proc/self/task/");
     if (dir) {
         while ((dp = readdir(dir)) != NULL)
             ++thread_count;
@@ -1169,7 +1175,7 @@ extern int GetProcessThreadCount(void)
     return -1;
 #else
     return -1;
-#endif
+#endif //NCBI_OS_LINUX
 }
 
 
