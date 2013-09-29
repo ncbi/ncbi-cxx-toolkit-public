@@ -42,7 +42,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-class CGffAlignmentRecord
+class NCBI_XOBJWRITE_EXPORT CGffAlignmentRecord
 //  ----------------------------------------------------------------------------
     : public CGffWriteRecord
 {

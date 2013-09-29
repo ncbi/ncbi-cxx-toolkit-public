@@ -45,7 +45,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ============================================================================
-class CGffWriteRecord
+class NCBI_XOBJWRITE_EXPORT CGffWriteRecord
 //  ============================================================================
     : public CObject
 {
