@@ -291,8 +291,8 @@ esac
 
 
 # Set log_site for tests
-NCBI_LOG_SITE=testcxx
-export NCBI_LOG_SITE
+NCBI_APPLOG_SITE=testcxx
+export NCBI_APPLOG_SITE
 
 # Include configuration file
 . \${build_dir}/check.cfg
@@ -446,13 +446,15 @@ RunTest()
             regular | valgrind ) ;;
                              * ) continue ;;
         esac
+        
+        x_cmd="[\$x_work_dir_tail] \$x_name"
         if test \$tool_lo = "regular"; then
-            x_cmd="[\$x_work_dir_tail] \$x_name"
+            #x_cmd="[\$x_work_dir_tail] \$x_name"
             x_test_out="\$x_work_dir/\$x_test.test_out\$x_ext"
             x_test_rep="\$x_work_dir/\$x_test.test_rep\$x_ext"
             x_boost_rep="\$x_work_dir/\$x_test.boost_rep\$x_ext"
         else
-            x_cmd="[\$x_work_dir_tail] \$tool_up \$x_name"
+            #x_cmd="[\$x_work_dir_tail] \$tool_up \$x_name"
             x_test_out="\$x_work_dir/\$x_test.test_out\$x_ext.\$tool_lo"
             x_test_rep="\$x_work_dir/\$x_test.test_rep\$x_ext.\$tool_lo"
             x_boost_rep="\$x_work_dir/\$x_test.boost_rep\$x_ext.\$tool_lo"
@@ -486,7 +488,6 @@ RunTest()
 
             # Goto the test's directory 
             cd "\$x_work_dir"
-            x_cmd="[\$x_work_dir_tail] \$x_name"
 
             # Run test if it exist
             if test -f "\$x_app"; then
@@ -506,6 +507,8 @@ RunTest()
                            NCBI_CHECK_TIMEOUT_MULT=15
                            NCBI_RUN_UNDER_VALGRIND="yes"
                            export NCBI_RUN_UNDER_VALGRIND
+                           NCBI_RUN_UNDER_CHECK_TOOL="yes"
+                           export NCBI_RUN_UNDER_CHECK_TOOL
                            ;;
                 esac
                 export NCBI_CHECK_TOOL

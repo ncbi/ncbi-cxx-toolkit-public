@@ -279,7 +279,7 @@ esac
 ## Run
 
 # Set log_site for tests
-export NCBI_LOG_SITE=testcxx
+export NCBI_APPLOG_SITE=testcxx
 
 # Export some global vars
 export top_srcdir="\$root_dir"
