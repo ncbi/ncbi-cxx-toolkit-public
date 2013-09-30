@@ -135,6 +135,7 @@ CSeqDBPerfApp::x_ScanDatabase()
     CStopWatch sw;
     sw.Start();
     Uint8 num_letters = m_BlastDb->GetTotalLength();
+    const bool kScanUncompressed = GetArgs()["scan_uncompressed"];
     int thread_id = 0;
     vector<int> oids2iterate;
     for (int oid = 0; m_DbHandles[thread_id]->CheckOrFindOID(oid); oid++) {
@@ -142,52 +143,39 @@ CSeqDBPerfApp::x_ScanDatabase()
     }
     LOG_POST(Info << "Will go over " << oids2iterate.size() << " sequences");
 
-    if (m_DbIsProtein || GetArgs()["scan_uncompressed"]) {
-        #pragma omp parallel default(none) num_threads(m_DbHandles.size()) \
-                            private(thread_id) shared(oids2iterate) \
-                            if(m_DbHandles.size() > 1)
-        { 
+    #pragma omp parallel default(none) num_threads(m_DbHandles.size()) \
+                         private(thread_id) shared(oids2iterate) \
+                         if(m_DbHandles.size() > 1)
+    { 
 #ifdef _OPENMP
-            thread_id = omp_get_thread_num();
+        thread_id = omp_get_thread_num();
 #endif
-            #pragma omp for schedule(guided) nowait
-            for (size_t i = 0; i < oids2iterate.size(); i++) {
-                int oid = oids2iterate[i];
-                const char* buffer = NULL;
+        #pragma omp for schedule(guided) nowait
+        for (size_t i = 0; i < oids2iterate.size(); i++) {
+            int oid = oids2iterate[i];
+            const char* buffer = NULL;
+            int seqlen = 0;
+            if (m_DbIsProtein || kScanUncompressed) {
                 int encoding = m_DbIsProtein ? 0 : kSeqDBNuclBlastNA8;
                 m_DbHandles[thread_id]->GetAmbigSeq(oid, &buffer, encoding);
-                int seqlen = m_DbHandles[thread_id]->GetSeqLength(oid);
-                for (int i = 0; i < seqlen; i++) {
-                    char base = buffer[i];
-                    base = base;    // dummy statement
-                }
-                m_DbHandles[thread_id]->RetAmbigSeq(&buffer);
-            }
-            x_UpdateMemoryUsage(thread_id);
-        } // end of omp parallel
-    } else {
-        #pragma omp parallel default(none) num_threads(m_DbHandles.size()) \
-                            private(thread_id) shared(oids2iterate) \
-                            if(m_DbHandles.size() > 1)
-        { 
-#ifdef _OPENMP
-            thread_id = omp_get_thread_num();
-#endif
-            #pragma omp for schedule(guided) nowait
-            for (size_t i = 0; i < oids2iterate.size(); i++) {
-                int oid = oids2iterate[i];
-                const char* buffer = NULL;
+                seqlen = m_DbHandles[thread_id]->GetSeqLength(oid);
+            } else {
                 m_DbHandles[thread_id]->GetSequence(oid, &buffer);
-                int seqlen = m_DbHandles[thread_id]->GetSeqLength(oid) / 4;
-                for (int i = 0; i < seqlen; i++) {
-                    char base = buffer[i];
-                    base = base;    // dummy statement
-                }
+                seqlen = m_DbHandles[thread_id]->GetSeqLength(oid) / 4;
+            }
+            for (int i = 0; i < seqlen; i++) {
+                char base = buffer[i];
+                base = base;    // dummy statement
+            }
+            if (m_DbIsProtein || kScanUncompressed) {
+                m_DbHandles[thread_id]->RetAmbigSeq(&buffer);
+            } else {
                 m_DbHandles[thread_id]->RetSequence(&buffer);
             }
-            x_UpdateMemoryUsage(thread_id);
-        } // end of omp parallel
-    }
+        }
+        x_UpdateMemoryUsage(thread_id);
+    } // end of omp parallel
+
     sw.Stop();
     uint64_t bases = static_cast<uint64_t>(num_letters / sw.Elapsed());
     cout << "Scanning rate: " 
