@@ -802,13 +802,13 @@ CRef< CSeq_align > CAnnotationASN1::CImplementationData::model2spliced_seq_align
                 chunk->SetMatch(e->GetTo()-last_chunk+1);
                 se->SetParts().push_back(chunk);
             }
-
-            exons.push_back(se);
         }  else  {   // gap filler
             CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
             chunk->SetMatch(e->m_source.m_range.GetLength());
             se->SetParts().push_back(chunk);
         }
+
+        exons.push_back(se);
     }
     _ASSERT( indel_i == indels.end() );
 
