@@ -372,7 +372,7 @@ CVDBGraphSeqIterator::x_MakeGraph(const string& annot_name,
         graph->SetA(1./scale);
     }
     if ( numval > kMax_Int ) {
-        NCBI_THROW(CSraException, eOtherError,
+        NCBI_THROW(CSraException, eDataError,
                    "CVDBGraphSeqIterator::x_MakeGraph: graph too big");
     }
     graph->SetNumval(int(numval));
@@ -485,7 +485,7 @@ CVDBGraphSeqIterator::x_MakeTable(const string& annot_name,
         col_step->SetDefault().SetReal(1./scale);
     }
     if ( arr_pos.size() > kMax_Int ) {
-        NCBI_THROW(CSraException, eOtherError,
+        NCBI_THROW(CSraException, eDataError,
                    "CVDBGraphSeqIterator::x_MakeTable: graph too big");
     }
     table->SetNum_rows(int(arr_pos.size()));

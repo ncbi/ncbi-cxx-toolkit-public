@@ -174,6 +174,7 @@ const char* CSraException::GetErrCodeString(void) const
     case eNotFoundTable: return "eNotFoundTable";
     case eNotFoundColumn: return "eNotFoundColumn";
     case eNotFoundValue: return "eNotFoundValue";
+    case eDataError:    return "eDataError";
     default:            return CException::GetErrCodeString();
     }
 }

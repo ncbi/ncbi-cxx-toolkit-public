@@ -925,11 +925,11 @@ void CCSraAlignIterator::MakeFullMismatch(string& ret,
             }
         }
         if ( !type ) {
-            NCBI_THROW_FMT(CSraException, eOtherError,
+            NCBI_THROW_FMT(CSraException, eDataError,
                            "Incomplete CIGAR: " << cigar);
         }
         if ( seglen == 0 ) {
-            NCBI_THROW_FMT(CSraException, eOtherError,
+            NCBI_THROW_FMT(CSraException, eDataError,
                            "Bad CIGAR length: " << type <<
                            "0 in " << cigar);
         }
@@ -940,7 +940,7 @@ void CCSraAlignIterator::MakeFullMismatch(string& ret,
         else if ( type == 'X' ) {
             // mismatch
             if ( mptr + seglen > mend ) {
-                NCBI_THROW_FMT(CSraException, eOtherError,
+                NCBI_THROW_FMT(CSraException, eDataError,
                                "CIGAR mismatch segment beyond MISMATCH: "
                                <<cigar<<" vs "<<mismatch);
             }
@@ -950,7 +950,7 @@ void CCSraAlignIterator::MakeFullMismatch(string& ret,
         }
         else if ( type == 'I' ) {
             if ( seqpos + seglen > has_mismatch.size() ) {
-                NCBI_THROW_FMT(CSraException, eOtherError,
+                NCBI_THROW_FMT(CSraException, eDataError,
                                "CIGAR insert segment beyond HAS_MISMATCH: "
                                <<cigar<<" vs "<<mismatch);
             }
@@ -958,7 +958,7 @@ void CCSraAlignIterator::MakeFullMismatch(string& ret,
                 char c;
                 if ( has_mismatch[seqpos] == '1' ) {
                     if ( mptr == mend ) {
-                        NCBI_THROW_FMT(CSraException, eOtherError,
+                        NCBI_THROW_FMT(CSraException, eDataError,
                                        "CIGAR insert/mismatch segment beyond MISMATCH: "
                                        <<cigar<<" vs "<<mismatch);
                         
@@ -975,13 +975,13 @@ void CCSraAlignIterator::MakeFullMismatch(string& ret,
             continue;
         }
         else {
-            NCBI_THROW_FMT(CSraException, eOtherError,
+            NCBI_THROW_FMT(CSraException, eDataError,
                            "Bad CIGAR char: " <<type<< " in " <<cigar);
         }
     }
     /* soft clips S are not accounted yet
     if ( mptr != mend ) {
-        NCBI_THROW_FMT(CSraException, eOtherError,
+        NCBI_THROW_FMT(CSraException, eDataError,
                        "Extra mismatch chars: " <<cigar<< " vs " <<mismatch);
     }
     */
@@ -1038,11 +1038,11 @@ CRef<CSeq_align> CCSraAlignIterator::GetMatchAlign(void) const
             }
         }
         if ( !type ) {
-            NCBI_THROW_FMT(CSraException, eOtherError,
+            NCBI_THROW_FMT(CSraException, eDataError,
                            "Incomplete CIGAR: " << cigar);
         }
         if ( seglen == 0 ) {
-            NCBI_THROW_FMT(CSraException, eOtherError,
+            NCBI_THROW_FMT(CSraException, eDataError,
                            "Bad CIGAR length: " << type <<
                            "0 in " << cigar);
         }
@@ -1074,7 +1074,7 @@ CRef<CSeq_align> CCSraAlignIterator::GetMatchAlign(void) const
             seqstart = kInvalidSeqPos;
         }
         else if ( type != 'P' ) {
-            NCBI_THROW_FMT(CSraException, eOtherError,
+            NCBI_THROW_FMT(CSraException, eDataError,
                            "Bad CIGAR char: " <<type<< " in " <<cigar);
         }
         starts.push_back(refstart);

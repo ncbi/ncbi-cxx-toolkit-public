@@ -737,7 +737,7 @@ int CCSRATestApp::Run(void)
                             }
                         }
                         if ( seglen == 0 ) {
-                            NCBI_THROW_FMT(CSraException, eOtherError,
+                            NCBI_THROW_FMT(CSraException, eDataError,
                                            "Bad CIGAR length: " << type <<
                                            "0 in " << cigar);
                         }
@@ -778,7 +778,7 @@ int CCSRATestApp::Run(void)
                             }
                         }
                         else if ( type != 'P' ) {
-                            NCBI_THROW_FMT(CSraException, eOtherError,
+                            NCBI_THROW_FMT(CSraException, eDataError,
                                            "Bad CIGAR char: " <<type<< " in " <<cigar);
                         }
                     }
