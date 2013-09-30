@@ -1,0 +1,10 @@
+TestRes - NCBI internal regression testing framework
+
+Started as testipub replacement (CXX-2091)
+1. Maintains hierarchial test structures. 
+2. Allows tests and groups tagging and arbitrarily selection for execution
+3. Communicates to LBSMD to extract the list of the resources to run on
+
+
+
+
