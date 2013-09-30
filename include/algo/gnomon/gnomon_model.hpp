@@ -667,7 +667,7 @@ private:
 
 
 
-class CAlignModel : public CGeneModel {
+class NCBI_XALGOGNOMON_EXPORT CAlignModel : public CGeneModel {
 public:
     CAlignModel() {}
     CAlignModel(const objects::CSeq_align& seq_align);
