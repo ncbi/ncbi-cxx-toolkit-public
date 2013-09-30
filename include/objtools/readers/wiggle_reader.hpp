@@ -86,6 +86,8 @@ struct SValueInfo {
     TSeqPos m_Span;
     double m_Value;
 
+    SValueInfo(): m_Pos(0), m_Span(1), m_Value(0.0) {};
+
     TSeqPos GetEnd(void) const {
         return m_Pos + m_Span;
     }
@@ -445,7 +447,6 @@ protected:
     typedef vector<SValueInfo> TValues;
     TValues m_Values;
     double m_GapValue;
-    bool m_KeepInteger;
     bool m_SingleAnnot;
     bool m_OmitZeros;
     string m_TrackName;

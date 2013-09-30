@@ -69,7 +69,8 @@ CWiggleReader::CWiggleReader(
     TFlags flags ) :
 //  ----------------------------------------------------------------------------
     CReaderBase(flags),
-    m_TrackType(eTrackType_invalid)
+    m_TrackType(eTrackType_invalid),
+    m_OmitZeros(false)
 {
     m_uLineNumber = 0;
     m_GapValue = 0.0; 
@@ -306,10 +307,8 @@ void CWiggleReader::xPreprocessValues(SWiggleStat& stat)
     }
 
     const int range = 255;
-    if ( stat.m_Max > stat.m_Min &&
-         (!m_KeepInteger ||
-          !stat.m_IntValues ||
-          stat.m_Max-stat.m_Min > range) ) {
+    if ( stat.m_Max > stat.m_Min && 
+            (!stat.m_IntValues || stat.m_Max-stat.m_Min > range) ) {
         stat.m_Step = (stat.m_Max-stat.m_Min)/range;
         stat.m_StepMul = 1/stat.m_Step;
     }
