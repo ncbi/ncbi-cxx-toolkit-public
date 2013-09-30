@@ -5,9 +5,9 @@ SRC = seqdb_perf
 LIB_ = seqdb xobjutil blastdb $(SOBJMGR_LIBS)
 LIB = $(LIB_:%=%$(STATIC))
 
-CFLAGS    = $(FAST_CFLAGS) -fopenmp
-CXXFLAGS  = $(FAST_CXXFLAGS) -fopenmp
-LDFLAGS   = $(FAST_LDFLAGS) -fopenmp
+CFLAGS    = $(FAST_CFLAGS) $(OPENMP_FLAGS)
+CXXFLAGS  = $(FAST_CXXFLAGS) $(OPENMP_FLAGS)
+LDFLAGS   = $(FAST_LDFLAGS) $(OPENMP_FLAGS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
