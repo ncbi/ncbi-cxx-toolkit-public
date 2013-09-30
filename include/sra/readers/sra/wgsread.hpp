@@ -43,6 +43,9 @@
 #include <objects/seq/Seq_data.hpp>
 #include <ncbi/ncbi.h>
 #include <ncbi/wgs-contig.h>
+
+typedef int32_t NCBI_WGS_gap_linkage;
+
 #include <map>
 #include <list>
 
@@ -130,6 +133,10 @@ protected:
         DECLARE_VDB_COLUMN_AS_STRING(DESCR);
         DECLARE_VDB_COLUMN_AS_STRING(ANNOT);
         DECLARE_VDB_COLUMN_AS(NCBI_gb_state, GB_STATE);
+        DECLARE_VDB_COLUMN_AS(INSDC_coord_zero, GAP_START);
+        DECLARE_VDB_COLUMN_AS(INSDC_coord_len, GAP_LEN);
+        DECLARE_VDB_COLUMN_AS(NCBI_WGS_component_props, GAP_PROPS);
+        DECLARE_VDB_COLUMN_AS(NCBI_WGS_gap_linkage, GAP_LINKAGE);
     };
 
     // SSeqTableCursor is helper accessor structure for SCAFFOLD table
@@ -139,12 +146,13 @@ protected:
         CVDBTable m_Table;
         CVDBCursor m_Cursor;
 
+        DECLARE_VDB_COLUMN_AS_STRING(SCAFFOLD_NAME);
         DECLARE_VDB_COLUMN_AS_STRING(ACCESSION);
         DECLARE_VDB_COLUMN_AS(uint64_t, COMPONENT_ID);
         DECLARE_VDB_COLUMN_AS(INSDC_coord_one, COMPONENT_START);
         DECLARE_VDB_COLUMN_AS(INSDC_coord_len, COMPONENT_LEN);
         DECLARE_VDB_COLUMN_AS(NCBI_WGS_component_props, COMPONENT_PROPS);
-        DECLARE_VDB_COLUMN_AS_STRING(SCAFFOLD_NAME);
+        DECLARE_VDB_COLUMN_AS(NCBI_WGS_gap_linkage, COMPONENT_LINKAGE);
     };
 
     // SSeqTableCursor is helper accessor structure for SEQUENCE table

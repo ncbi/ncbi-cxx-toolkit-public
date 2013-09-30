@@ -83,7 +83,11 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDB& db)
       INIT_OPTIONAL_VDB_COLUMN(TAXID),
       INIT_OPTIONAL_VDB_COLUMN(DESCR),
       INIT_OPTIONAL_VDB_COLUMN(ANNOT),
-      INIT_OPTIONAL_VDB_COLUMN(GB_STATE)
+      INIT_OPTIONAL_VDB_COLUMN(GB_STATE),
+      INIT_OPTIONAL_VDB_COLUMN(GAP_START),
+      INIT_OPTIONAL_VDB_COLUMN(GAP_LEN),
+      INIT_OPTIONAL_VDB_COLUMN(GAP_PROPS),
+      INIT_OPTIONAL_VDB_COLUMN(GAP_LINKAGE)
 {
 }
 
@@ -91,12 +95,13 @@ CWGSDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDB& db)
 CWGSDb_Impl::SScfTableCursor::SScfTableCursor(const CVDB& db)
     : m_Table(db, "SCAFFOLD"),
       m_Cursor(m_Table),
+      INIT_VDB_COLUMN(SCAFFOLD_NAME),
       INIT_OPTIONAL_VDB_COLUMN(ACCESSION),
       INIT_VDB_COLUMN(COMPONENT_ID),
       INIT_VDB_COLUMN(COMPONENT_START),
       INIT_VDB_COLUMN(COMPONENT_LEN),
       INIT_VDB_COLUMN(COMPONENT_PROPS),
-      INIT_VDB_COLUMN(SCAFFOLD_NAME)
+      INIT_OPTIONAL_VDB_COLUMN(COMPONENT_LINKAGE)
 {
 }
 
@@ -402,7 +407,7 @@ CWGSSeqIterator& CWGSSeqIterator::operator++(void)
 
 void CWGSSeqIterator::x_ReportInvalid(const char* method) const
 {
-    NCBI_THROW_FMT(CSraException, eOtherError,
+    NCBI_THROW_FMT(CSraException, eInvalidState,
                    "CWGSSeqIterator::"<<method<<"(): Invalid iterator state");
 }
 
@@ -419,7 +424,7 @@ CSeq_id::TGi CWGSSeqIterator::GetGi(void) const
     NCBI_gi gi = *m_Seq->GI(m_CurrId);
     if ( sizeof(CSeq_id::TGi) != sizeof(NCBI_gi) &&
          NCBI_gi(CSeq_id::TGi(gi)) != gi ) {
-        NCBI_THROW_FMT(CSraException, eOtherError,
+        NCBI_THROW_FMT(CSraException, eDataError,
                        "CWGSSeqIterator::GetGi() GI is too big: "<<gi);
     }
     return CSeq_id::TGi(gi);
@@ -570,6 +575,98 @@ NCBI_gb_state CWGSSeqIterator::GetGBState(void) const
 }
 
 
+enum
+{
+    NCBI_WGS_gap_linkage_linked                      = 1, // linkage exists
+    NCBI_WGS_gap_linkage_evidence_paired_ends        = 2, // evidence type
+    NCBI_WGS_gap_linkage_evidence_align_genus        = 4, // in ASN spec order
+    NCBI_WGS_gap_linkage_evidence_align_xgenus       = 8,
+    NCBI_WGS_gap_linkage_evidence_align_trnscpt      = 16,
+    NCBI_WGS_gap_linkage_evidence_within_clone       = 32,
+    NCBI_WGS_gap_linkage_evidence_clone_contig       = 64,
+    NCBI_WGS_gap_linkage_evidence_map                = 128,
+    NCBI_WGS_gap_linkage_evidence_strobe             = 256,
+    NCBI_WGS_gap_linkage_evidence_unspecified        = 512,
+    NCBI_WGS_gap_linkage_evidence_pcr                = 1024
+};
+
+
+static
+void sx_AddEvidence(CSeq_gap& gap, CLinkage_evidence::TType type)
+{
+    CRef<CLinkage_evidence> evidence(new CLinkage_evidence);
+    evidence->SetType(type);
+    gap.SetLinkage_evidence().push_back(evidence);
+}
+
+
+static
+void sx_MakeGap(CDelta_seq& seg,
+                TSeqPos len,
+                NCBI_WGS_component_props props,
+                NCBI_WGS_gap_linkage gap_linkage)
+{
+    static const int kLenTypeMask =
+        -NCBI_WGS_gap_known |
+        -NCBI_WGS_gap_unknown;
+    static const int kGapTypeMask =
+        -NCBI_WGS_gap_scaffold |
+        -NCBI_WGS_gap_contig |
+        -NCBI_WGS_gap_centromere |
+        -NCBI_WGS_gap_short_arm |
+        -NCBI_WGS_gap_heterochromatin |
+        -NCBI_WGS_gap_telomere |
+        -NCBI_WGS_gap_repeat;
+    _ASSERT(props < 0);
+    CSeq_literal& literal = seg.SetLiteral();
+    int len_type    = -(-props & kLenTypeMask);
+    int gap_type    = -(-props & kGapTypeMask);
+    literal.SetLength(len);
+    if ( len_type == NCBI_WGS_gap_unknown ) {
+        literal.SetFuzz().SetLim(CInt_fuzz::eLim_unk);
+    }
+    if ( gap_type || gap_linkage ) {
+        CSeq_gap& gap = literal.SetSeq_data().SetGap();
+        switch ( gap_type ) {
+        case NCBI_WGS_gap_scaffold:
+            gap.SetType(CSeq_gap::eType_scaffold);
+            break;
+        case NCBI_WGS_gap_contig:
+            gap.SetType(CSeq_gap::eType_contig);
+            break;
+        case NCBI_WGS_gap_centromere:
+            gap.SetType(CSeq_gap::eType_centromere);
+            break;
+        case NCBI_WGS_gap_short_arm:
+            gap.SetType(CSeq_gap::eType_short_arm);
+            break;
+        case NCBI_WGS_gap_heterochromatin:
+            gap.SetType(CSeq_gap::eType_heterochromatin);
+            break;
+        case NCBI_WGS_gap_telomere:
+            gap.SetType(CSeq_gap::eType_telomere);
+            break;
+        case NCBI_WGS_gap_repeat:
+            gap.SetType(CSeq_gap::eType_repeat);
+            break;
+        default:
+            break;
+        }
+        // linkage-evidence bits should be in order of ASN.1 specification
+        if ( gap_linkage & NCBI_WGS_gap_linkage_linked ) {
+            gap.SetLinkage(gap.eLinkage_linked);
+        }
+        CLinkage_evidence::TType type = CLinkage_evidence::eType_paired_ends;
+        NCBI_WGS_gap_linkage bit = NCBI_WGS_gap_linkage_evidence_paired_ends;
+        for ( ; bit <= gap_linkage; bit<<=1, ++type ) {
+            if ( gap_linkage & bit ) {
+                sx_AddEvidence(gap, type);
+            }
+        }
+    }
+}
+
+
 // For 4na data in byte {base0 4 (highest) bits, base1 4 bits} the bits are:
 // 5: base0 is not 2na
 // 4: base1 is not 2na
@@ -697,6 +794,7 @@ bool sx_IsGap(const CVDBValueFor4Bits& read,
               TSeqPos pos,
               TSeqPos len)
 {
+    _ASSERT(len > 0);
     TSeqPos raw_pos = pos+read.offset();
     const char* raw_ptr = read.raw_data()+(raw_pos/2);
     if ( raw_pos % 2 != 0 ) {
@@ -1076,10 +1174,16 @@ CRef<CSeq_data> sx_Get4na(const CVDBValueFor4Bits& read,
 
 // add raw data as delta segments
 static
-void sx_AddDelta(CDelta_ext::Tdata& delta,
+void sx_AddDelta(const CSeq_id& id,
+                 CDelta_ext::Tdata& delta,
                  const CVDBValueFor4Bits& read,
                  TSeqPos pos,
-                 TSeqPos len)
+                 TSeqPos len,
+                 size_t gaps_count,
+                 const INSDC_coord_one* gaps_start,
+                 const INSDC_coord_len* gaps_len,
+                 const NCBI_WGS_component_props* gaps_props,
+                 const NCBI_WGS_gap_linkage* gaps_linkage)
 {
     // kMin2naSize is the minimal size of 2na segment that will
     // save memory if inserted in between 4na segments.
@@ -1112,9 +1216,43 @@ void sx_AddDelta(CDelta_ext::Tdata& delta,
     
     for ( ; len > 0; ) {
         CRef<CDelta_seq> seg(new CDelta_seq);
+        TSeqPos gap_start = kInvalidSeqPos;
+        if ( gaps_count ) {
+            gap_start = *gaps_start;
+            if ( pos == gap_start ) {
+                TSeqPos gap_len = *gaps_len;
+                if ( gap_len > len ) {
+                    NCBI_THROW_FMT(CSraException, eDataError,
+                                   "CWGSSeqIterator: "<<id.AsFastaString()<<
+                                   ": gap at "<< pos << " is too long");
+                }
+                if ( !sx_IsGap(read, pos, gap_len) ) {
+                    NCBI_THROW_FMT(CSraException, eDataError,
+                                   "CWGSSeqIterator: "<<id.AsFastaString()<<
+                                   ": gap at "<< pos << " has non-gap base");
+                }
+                sx_MakeGap(*seg, gap_len, *gaps_props,
+                           gaps_linkage? *gaps_linkage: 0);
+                --gaps_count;
+                ++gaps_start;
+                ++gaps_len;
+                ++gaps_props;
+                if ( gaps_linkage ) {
+                    ++gaps_linkage;
+                }
+                delta.push_back(seg);
+                len -= gap_len;
+                pos += gap_len;
+                continue;
+            }
+        }
         CSeq_literal& literal = seg->SetLiteral();
 
-        TSeqPos seg_len = sx_Get2naLength(read, pos, min(len, kSplit2naSize));
+        TSeqPos rem_len = len;
+        if ( gaps_count ) {
+            rem_len = min(rem_len, gap_start-pos);
+        }
+        TSeqPos seg_len = sx_Get2naLength(read, pos, min(rem_len, kSplit2naSize));
         if ( seg_len >= kMin2naSize || seg_len == len ) {
             if ( seg_len >= kSplit2naSize ) {
                 seg_len = kChunk2naSize;
@@ -1125,10 +1263,10 @@ void sx_AddDelta(CDelta_ext::Tdata& delta,
         else {
             TSeqPos seg_len_2na = seg_len;
             seg_len += sx_Get4naLength(read, pos+seg_len,
-                                       min(len, kSplit4naSize)-seg_len,
+                                       min(rem_len, kSplit4naSize)-seg_len,
                                        kMin2naSize, kMinGapSize);
             if ( kRecoverGaps && seg_len == 0 ) {
-                seg_len = sx_GetGapLength(read, pos, min(len, kMaxGapSize));
+                seg_len = sx_GetGapLength(read, pos, min(rem_len, kMaxGapSize));
                 _ASSERT(seg_len > 0);
                 if ( seg_len == kUnknownGapSize ) {
                     literal.SetFuzz().SetLim(CInt_fuzz::eLim_unk);
@@ -1170,7 +1308,42 @@ CRef<CSeq_inst> CWGSSeqIterator::GetSeq_inst(TFlags flags) const
         inst->SetSeq_data(*sx_Get4na(read, 0, length));
     }
     else {
-        sx_AddDelta(inst->SetExt().SetDelta().Set(), read, 0, length);
+        CRef<CSeq_id> id = GetAccSeq_id();
+        size_t gaps_count = 0;
+        const INSDC_coord_one* gaps_start = 0;
+        const INSDC_coord_len* gaps_len = 0;
+        const NCBI_WGS_component_props* gaps_props = 0;
+        const NCBI_WGS_gap_linkage* gaps_linkage = 0;
+        if ( m_Seq->m_GAP_START ) {
+            CVDBValueFor<INSDC_coord_one> start = m_Seq->GAP_START(m_CurrId);
+            if ( start.size() ) {
+                gaps_count = start.size();
+                gaps_start = start.data();
+                CVDBValueFor<INSDC_coord_len> len =
+                    m_Seq->GAP_LEN(m_CurrId);
+                CVDBValueFor<NCBI_WGS_component_props> props =
+                    m_Seq->GAP_PROPS(m_CurrId);
+                if ( len.size() != gaps_count || props.size() != gaps_count ) {
+                    NCBI_THROW(CSraException, eDataError,
+                               "CWGSSeqIterator: "+id->AsFastaString()+
+                               " inconsistent gap info");
+                }
+                gaps_len = len.data();
+                gaps_props = props.data();
+                if ( m_Seq->m_GAP_LINKAGE ) {
+                    CVDBValueFor<NCBI_WGS_gap_linkage> linkage =
+                        m_Seq->GAP_LINKAGE(m_CurrId);
+                    if ( linkage.size() != gaps_count ) {
+                        NCBI_THROW(CSraException, eDataError,
+                                   "CWGSSeqIterator: "+id->AsFastaString()+
+                                   " inconsistent gap info");
+                    }
+                    gaps_linkage = linkage.data();
+                }
+            }
+        }
+        sx_AddDelta(*id, inst->SetExt().SetDelta().Set(), read, 0, length,
+                    gaps_count, gaps_start, gaps_len, gaps_props, gaps_linkage);
     }
     return inst;
 }
@@ -1262,7 +1435,7 @@ void CWGSScaffoldIterator::x_Init(const CWGSDb& wgs_db)
 
 void CWGSScaffoldIterator::x_ReportInvalid(const char* method) const
 {
-    NCBI_THROW_FMT(CSraException, eOtherError,
+    NCBI_THROW_FMT(CSraException, eInvalidState,
                    "CWGSScaffoldIterator::"<<method<<"(): "
                    "Invalid iterator state");
 }
@@ -1334,69 +1507,6 @@ TSeqPos CWGSScaffoldIterator::GetSeqLength(void) const
 }
 
 
-static
-void sx_AddEvidence(CSeq_gap& gap, CLinkage_evidence::TType type)
-{
-    CRef<CLinkage_evidence> evidence(new CLinkage_evidence);
-    evidence->SetType(type);
-    gap.SetLinkage_evidence().push_back(evidence);
-}
-
-
-static
-void sx_MakeGap(CDelta_seq& seg, TSeqPos len, NCBI_WGS_component_props props)
-{
-    _ASSERT(props < 0);
-    CSeq_literal& literal = seg.SetLiteral();
-    int len_type    = -(-props & ( 3* 1));
-    int gap_type    = -(-props & (15* 4));
-    int gap_linkage = -(-props & (15*64));
-    literal.SetLength(len);
-    if ( len_type == NCBI_WGS_gap_unknown ) {
-        literal.SetFuzz().SetLim(CInt_fuzz::eLim_unk);
-    }
-    if ( gap_type || gap_linkage ) {
-        CSeq_gap& gap = literal.SetSeq_data().SetGap();
-        switch ( gap_type ) {
-        case NCBI_WGS_gap_scaffold:
-            gap.SetType(CSeq_gap::eType_scaffold);
-            break;
-        case NCBI_WGS_gap_contig:
-            gap.SetType(CSeq_gap::eType_contig);
-            break;
-        case NCBI_WGS_gap_centromere:
-            gap.SetType(CSeq_gap::eType_centromere);
-            break;
-        case NCBI_WGS_gap_short_arm:
-            gap.SetType(CSeq_gap::eType_short_arm);
-            break;
-        case NCBI_WGS_gap_heterochromatin:
-            gap.SetType(CSeq_gap::eType_heterochromatin);
-            break;
-        case NCBI_WGS_gap_telomere:
-            gap.SetType(CSeq_gap::eType_telomere);
-            break;
-        case NCBI_WGS_gap_repeat:
-            gap.SetType(CSeq_gap::eType_repeat);
-            break;
-        default:
-            break;
-        }
-        // linkage-evidence bits should be in order of ASN.1 specification
-        int linkage_bits = (-gap_linkage)/(-NCBI_WGS_gap_linkage_paired_ends);
-        _ASSERT(linkage_bits >= 0);
-        if ( linkage_bits ) {
-            gap.SetLinkage(gap.eLinkage_linked);
-        }
-        for ( int i = 0; linkage_bits >= (1<<i); ++i ) {
-            if ( linkage_bits & (1<<i) ) {
-                sx_AddEvidence(gap, i+CLinkage_evidence::eType_paired_ends);
-            }
-        }
-    }
-}
-
-
 CRef<CSeq_inst> CWGSScaffoldIterator::GetSeq_inst(void) const
 {
     x_CheckValid("GetSeq_inst");
@@ -1411,18 +1521,27 @@ CRef<CSeq_inst> CWGSScaffoldIterator::GetSeq_inst(void) const
     CVDBValueFor<INSDC_coord_len> lens = m_Scf->COMPONENT_LEN(m_CurrId);
     CVDBValueFor<INSDC_coord_one> starts = m_Scf->COMPONENT_START(m_CurrId);
     CVDBValueFor<NCBI_WGS_component_props> propss = m_Scf->COMPONENT_PROPS(m_CurrId);
+    const NCBI_WGS_gap_linkage* linkages = 0;
+    if ( m_Scf->m_COMPONENT_LINKAGE ) {
+        linkages = m_Scf->COMPONENT_LINKAGE(m_CurrId).data();
+    }
     CDelta_ext::Tdata& delta = inst->SetExt().SetDelta().Set();
     for ( size_t i = 0; i < lens.size(); ++i ) {
         TSeqPos len = lens[i];
-        TSeqPos start = starts[i];
         NCBI_WGS_component_props props = propss[i];
         CRef<CDelta_seq> seg(new CDelta_seq);
         if ( props < 0 ) {
             // gap
-            sx_MakeGap(*seg, len, props);
+            sx_MakeGap(*seg, len, props, linkages? *linkages++: 0);
         }
         else {
             // contig
+            TSeqPos start = starts[i];
+            if ( start == 0 || len == 0 ) {
+                NCBI_THROW_FMT(CSraException, eDataError,
+                               "CWGSScaffoldIterator: component is bad for "+
+                               GetAccSeq_id()->AsFastaString());
+            }
             --start; // make start zero-based
             uint64_t row_id = ids[id_ind++];
             CSeq_interval& interval = seg->SetLoc().SetInt();
