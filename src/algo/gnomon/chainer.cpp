@@ -4493,17 +4493,18 @@ struct OverlapsSameAccessionAlignment : public Predicate {
 
 OverlapsSameAccessionAlignment::OverlapsSameAccessionAlignment(TAlignModelList& alignments)
 {
-    if (alignments.empty())
-        return;
-
     CScope scope(*CObjectManager::GetInstance());
     scope.AddDefaults();
 
     vector<CAlignModel*> alignment_ptrs;
     NON_CONST_ITERATE(TAlignModelList, a, alignments) {
-        if(!(a->Status()&CGeneModel::eUnmodifiedAlign))
+        if(!(a->Status()&CGeneModel::eUnmodifiedAlign) && a->Type() != CGeneModel::eNotForChaining)
             alignment_ptrs.push_back(&*a);
     }
+
+    if (alignment_ptrs.empty())
+        return;
+
     sort(alignment_ptrs.begin(), alignment_ptrs.end(), s_ByAccVerLen(scope));
 
     vector<CAlignModel*>::iterator first = alignment_ptrs.begin();
@@ -5957,7 +5958,7 @@ void CutShortPartialExons::transform_align(CAlignModel& a)
     for (size_t i = 1; i < a.Exons().size()-1; ++i) {
         const CModelExon* e = &a.Exons()[i];
         
-        while (i >= 0 && !e->m_ssplice && EffectiveExonLength(*e, alignmap, snap_to_codons) < minex) {
+        while (!e->m_ssplice && EffectiveExonLength(*e, alignmap, snap_to_codons) < minex) {
 
             if(i == 0) { //first exon
                 a.CutExons(*e);
