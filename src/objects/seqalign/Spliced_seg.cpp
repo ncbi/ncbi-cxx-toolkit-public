@@ -154,10 +154,6 @@ void CSpliced_seg::Validate(bool full_test) const
              NCBI_THROW(CSeqalignException, eInvalidAlignment,
                         "genomic-id not set.");
         }
-        if (IsSetGenomic_id()  ==  exon.IsSetGenomic_id()) {
-            NCBI_THROW(CSeqalignException, eInvalidAlignment,
-                       "genomic-id should be set on the level of Spliced-seg XOR Spliced-exon.");
-        }
 
 
         /// Strands
