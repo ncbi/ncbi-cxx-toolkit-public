@@ -115,6 +115,11 @@
       || defined(__GXX_EXPERIMENTAL_CPP0X__)
 #    define NCBI_HAVE_CXX11 1
 #  endif
+#  if defined(NCBI_HAVE_CXX11) \
+      ||  (defined(NCBI_COMPILER_MSVC)  &&  _MSC_VER >= 1600)
+#    define HAVE_IS_SORTED 1
+#    define HAVE_NULLPTR 1
+#  endif
 #endif
 
 #include <common/ncbi_skew_guard.h>

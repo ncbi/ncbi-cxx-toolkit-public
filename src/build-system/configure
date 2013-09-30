@@ -18217,68 +18217,6 @@ _ACEOF
 fi
 
 
-echo "$as_me:$LINENO: checking for std::is_sorted<> in <algorithm>" >&5
-echo $ECHO_N "checking for std::is_sorted<> in <algorithm>... $ECHO_C" >&6
-if test "${ncbi_cv_func_is_sorted+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-#include <algorithm>
-int
-main ()
-{
-int a[2]; return std::is_sorted(a, a+2) ? 0 : 1;
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ncbi_cv_func_is_sorted=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ncbi_cv_func_is_sorted=no
-fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-echo "$as_me:$LINENO: result: $ncbi_cv_func_is_sorted" >&5
-echo "${ECHO_T}$ncbi_cv_func_is_sorted" >&6
-if test "$ncbi_cv_func_is_sorted" = yes; then
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_IS_SORTED 1
-_ACEOF
-
-fi
-
-
 
 echo "$as_me:$LINENO: checking for SysV semaphores" >&5
 echo $ECHO_N "checking for SysV semaphores... $ECHO_C" >&6
@@ -18889,7 +18827,7 @@ if test "${ncbi_cv_c_restrict+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ncbi_cv_c_restrict=no
-    for restrict in restrict __restrict__ __restrict; do
+    for restrict in __restrict__ __restrict restrict; do
        test "$ncbi_cv_c_restrict" = "no" || break
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -18959,7 +18897,7 @@ if test "${ncbi_cv_cxx_restrict+set}" = set; then
   echo $ECHO_N "(cached) $ECHO_C" >&6
 else
   ncbi_cv_cxx_restrict=no
-    for restrict in restrict __restrict__ __restrict; do
+    for restrict in __restrict__ __restrict restrict; do
        test "$ncbi_cv_cxx_restrict" = "no" || break
        cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -19382,67 +19320,6 @@ if test "$ncbi_cv_sys_unaligned_reads" = yes; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_UNALIGNED_READS 1
-_ACEOF
-
-fi
-
-echo "$as_me:$LINENO: checking whether $CXX supports C++0x nullptr" >&5
-echo $ECHO_N "checking whether $CXX supports C++0x nullptr... $ECHO_C" >&6
-if test "${ncbi_cv_cxx_nullptr+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-int
-main ()
-{
-void * p = nullptr;
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
-  (eval $ac_compile) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_cxx_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest.$ac_objext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ncbi_cv_cxx_nullptr=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ncbi_cv_cxx_nullptr=no
-fi
-rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-echo "$as_me:$LINENO: result: $ncbi_cv_cxx_nullptr" >&5
-echo "${ECHO_T}$ncbi_cv_cxx_nullptr" >&6
-if test "$ncbi_cv_cxx_nullptr" = yes; then
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_NULLPTR 1
 _ACEOF
 
 fi

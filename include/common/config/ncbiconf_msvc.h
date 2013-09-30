@@ -62,10 +62,6 @@
 #define HAVE_SYS_TYPES_H 1
 #define HAVE_VSNPRINTF   1
 
-#if _MSC_VER >= 1600
-#  define HAVE_IS_SORTED   1
-#endif
-
 #if _MSC_VER < 1500
 #  define vsnprintf        _vsnprintf
 #endif
@@ -134,10 +130,6 @@ typedef   int   ssize_t;
 #    define NCBI_NON_POD_TYPE_STL_ITERATORS  1
 #  endif
 
-#endif
-
-#if _MSC_VER >= 1600
-#  define HAVE_NULLPTR  1
 #endif
 
 /* Windows XP and above */

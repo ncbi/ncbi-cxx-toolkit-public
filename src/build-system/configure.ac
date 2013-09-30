@@ -3351,17 +3351,6 @@ if test "$ncbi_cv_type_char_traits" = no; then
 fi
 
 
-AC_CACHE_CHECK([for std::is_sorted<> in <algorithm>], ncbi_cv_func_is_sorted,
-   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM(
-       [[#include <algorithm>]],
-       [[int a[2]; return std::is_sorted(a, a+2) ? 0 : 1;]])],
-       [ncbi_cv_func_is_sorted=yes], [ncbi_cv_func_is_sorted=no])])
-if test "$ncbi_cv_func_is_sorted" = yes; then
-   AC_DEFINE(HAVE_IS_SORTED, 1,
-             [Define to 1 if <algorithm> supplies `std::is_sorted<>'.])
-fi
-
-
 
 AC_CACHE_CHECK([for SysV semaphores], ncbi_cv_sys_semaphores,
    AC_LINK_IFELSE([AC_LANG_PROGRAM([#include <sys/types.h>
@@ -3498,7 +3487,7 @@ fi
 AC_CACHE_CHECK([whether the C compiler supports C99 restrict],
    ncbi_cv_c_restrict,
    [ncbi_cv_c_restrict=no
-    for restrict in restrict __restrict__ __restrict; do
+    for restrict in __restrict__ __restrict restrict; do
        test "$ncbi_cv_c_restrict" = "no" || break
        AC_COMPILE_IFELSE([AC_LANG_SOURCE([void f(int * $restrict p);])],
           [ncbi_cv_c_restrict=$restrict], [])
@@ -3518,7 +3507,7 @@ AC_LANG_POP(C)
 AC_CACHE_CHECK([whether the C++ compiler supports C99 restrict],
    ncbi_cv_cxx_restrict,
    [ncbi_cv_cxx_restrict=no
-    for restrict in restrict __restrict__ __restrict; do
+    for restrict in __restrict__ __restrict restrict; do
        test "$ncbi_cv_cxx_restrict" = "no" || break
        AC_COMPILE_IFELSE([AC_LANG_SOURCE([void f(int * $restrict p);])],
           [ncbi_cv_cxx_restrict=$restrict], [])
@@ -3621,14 +3610,6 @@ if test "$ncbi_cv_sys_unaligned_reads" = yes; then
    AC_DEFINE(HAVE_UNALIGNED_READS, 1,
              [Define to 1 if your system permits reading integers from
               unaligned addresses.])
-fi
-
-AC_CACHE_CHECK([whether $CXX supports C++0x nullptr], ncbi_cv_cxx_nullptr,
-   [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([], [[void * p = nullptr;]])],
-       [ncbi_cv_cxx_nullptr=yes], [ncbi_cv_cxx_nullptr=no])])
-if test "$ncbi_cv_cxx_nullptr" = yes; then
-   AC_DEFINE(HAVE_NULLPTR, 1,
-      [Define to 1 if your C++ compiler supports the C++0x `nullptr' keyword.])
 fi
 
 ### Check for the availability of other packages

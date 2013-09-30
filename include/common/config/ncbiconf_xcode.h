@@ -258,9 +258,6 @@
 /* Define to 1 if you have `ios(_base)::register_callback'. */
 #define HAVE_IOS_REGISTER_CALLBACK 1
 
-/* Define to 1 if <algorithm> supplies `std::is_sorted<>'. */
-/* #undef HAVE_IS_SORTED */
-
 /* Define to 1 if you have the `lchown' function. */
 /* #undef HAVE_LCHOWN */
 
@@ -594,9 +591,6 @@
 
 /* Define to 1 if wxWidgets is available. */
 /* #undef HAVE_WXWIDGETS */
-
-/* Define to 1 if nullptr keyword is available. */
-/* #undef HAVE_NULLPTR */
 
 /* Define as const if the declaration of iconv() needs const. */
 #if MAC_OS_X_VERSION_MIN_REQUIRED >= 1050 /* MAC_OS_X_VERSION_10_5 */
