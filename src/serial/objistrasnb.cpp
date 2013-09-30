@@ -1483,7 +1483,7 @@ void CObjectIStreamAsnBinary::BeginBytes(ByteBlock& block)
     if (type == eOctetString) {
         ExpectSysTag(eOctetString);
         block.SetLength(ReadLength());
-    } else if (type == eOctetString) {
+    } else if (type == eBitString) {
         ExpectSysTag(eBitString);
         block.SetLength(ReadLength()-1);
         ReadByte();
