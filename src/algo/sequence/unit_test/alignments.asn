@@ -15010,3 +15010,122 @@ Seq-align ::= {
     }
   }
 }
+Seq-align ::= {
+  type partial,
+  segs spliced {
+    product-id general {
+      db "GNOMON",
+      tag str "1444.m"
+    },
+    genomic-id gi 90662741,
+    product-strand plus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 0,
+        product-end nucpos 784,
+        genomic-start 694369,
+        genomic-end 695152,
+        genomic-id gi 90662741,
+        genomic-strand minus,
+        parts {
+          match 501,
+          product-ins 1,
+          match 283
+        },
+        donor-after-exon {
+          bases "GT"
+        }
+      },
+      {
+        product-start nucpos 785,
+        product-end nucpos 928,
+        genomic-start 690894,
+        genomic-end 691037,
+        genomic-id gi 90662741,
+        genomic-strand minus,
+        parts {
+          match 144
+        },
+        acceptor-before-exon {
+          bases "AG"
+        },
+        donor-after-exon {
+          bases "NN"
+        }
+      },
+      {
+        product-start nucpos 929,
+        product-end nucpos 1060,
+        genomic-start 97,
+        genomic-end 228,
+        genomic-id gi 387329825,
+        genomic-strand plus,
+        parts {
+          match 132
+        },
+        acceptor-before-exon {
+          bases "NN"
+        },
+        donor-after-exon {
+          bases "NN"
+        },
+        ext {
+          {
+            class "Gnomon",
+            type str "AlignmentAttributes",
+            data {
+              {
+                label str "Ggap",
+                data bool TRUE
+              }
+            }
+          }
+        }
+      },
+      {
+        product-start nucpos 1061,
+        product-end nucpos 1938,
+        genomic-start 687321,
+        genomic-end 688198,
+        genomic-id gi 90662741,
+        genomic-strand minus,
+        parts {
+          match 878
+        },
+        acceptor-before-exon {
+          bases "AG"
+        }
+      }
+    },
+    product-length 1939
+  },
+  ext {
+    {
+      type str "CFeatureGenerator",
+      data {
+        {
+          label str "cdregion", 
+          data str "Seq-feat ::= { 
+              data cdregion {
+                    frame one,
+                    code {
+                      id 1
+                    }
+                  },
+                  product whole local id 2,
+                  location int {
+                    from 465,
+                    to 1301,
+                    strand plus,
+                    id general {
+                      db ""GNOMON"",
+                      tag str ""1444.m""
+                    }
+                  }
+            }"
+        }
+      }
+    }
+  }
+}

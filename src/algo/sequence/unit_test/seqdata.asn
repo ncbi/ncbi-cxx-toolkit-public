@@ -19482,3 +19482,209 @@ CDRKQNQPASLREIIVLADQVQLTNS"
     }
   }
 }
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        general {
+          db "GNOMON",
+          tag str "1444.m"
+        }
+      },
+      descr {
+        molinfo {
+          biomol mRNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 1939,
+        seq-data ncbi4na '1144822212142221441282221221444221484422142188444441
+282141182282182822848228882848882822212288884222288882822884228448222122211482
+222282884422842484142244412442128411284444422218842284412442448444144214442844
+414224442242844488844422844122428242842118188418442224821484244222841882284442
+888214881111448882848848848142881842148842828488428184411124841218211118412488
+822248881111428888112811188228422848214184814422221888841424844142842288241424
+14248414244242282224222184484248444422444224444422824284142F242828282122222214
+424228441421844244244224144442224428122844848282222144244141142122442444222421
+128441224124224141842424422821842844828444144148828824124142821142141221142421
+124221144848124141141844221421142828824141841224424142421442844424144141821141
+821141821221121841228822148121441118811118421841214181424148224222242224128442
+228188122814221884184441882844221144822224148228484184421112842244121422142242
+244442228221218222141224144248222848242242224281148221222282848128822248181122
+148428228124114422428824144124182428224121428228221428812848222881148821448244
+144142412244841141142421144842141428422122842141141142142842442842844144221844
+844144142142422442841422424224844144141228422424144842422424842844122142142121
+822882144842141422842142842144112421841841482842844141441821821221148221424828
+144221421448442842448444422444221222144421142212821442214424442114444422422221
+841414414122422882212284422828442444184822288284144448488884144112222214422284
+444124484144282214828221421841184222882282141212144221444228224444482128284148
+114112182281414221282822148482488128182118118128841218442888418188111848181288
+888218828842284482242124488842848842841288448414418422284188418441822211111841
+114214484211184448244442144284414284444441114282842228411444112284848228222821
+221441228284248284822881118442282221242284184141122221444142288224441442888818
+821428284884441421821448488822128422822881421184121241181111482481121228428242
+1242124422284880'H,
+        hist {
+          assembly {
+            {
+              type partial,
+              segs spliced {
+                product-id general {
+                  db "GNOMON",
+                  tag str "1444.m"
+                },
+                genomic-id gi 90662741,
+                product-strand plus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 0,
+                    product-end nucpos 784,
+                    genomic-start 694369,
+                    genomic-end 695152,
+                    genomic-id gi 90662741,
+                    genomic-strand minus,
+                    parts {
+                      match 501,
+                      product-ins 1,
+                      match 283
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 785,
+                    product-end nucpos 928,
+                    genomic-start 690894,
+                    genomic-end 691037,
+                    genomic-id gi 90662741,
+                    genomic-strand minus,
+                    parts {
+                      match 144
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "NN"
+                    }
+                  },
+                  {
+                    product-start nucpos 929,
+                    product-end nucpos 1060,
+                    genomic-start 97,
+                    genomic-end 228,
+                    genomic-id gi 387329825,
+                    genomic-strand plus,
+                    parts {
+                      match 132
+                    },
+                    acceptor-before-exon {
+                      bases "NN"
+                    },
+                    donor-after-exon {
+                      bases "NN"
+                    },
+                    ext {
+                      {
+                        class "Gnomon",
+                        type str "AlignmentAttributes",
+                        data {
+                          {
+                            label str "Ggap",
+                            data bool TRUE
+                          }
+                        }
+                      }
+                    }
+                  },
+                  {
+                    product-start nucpos 1061,
+                    product-end nucpos 1938,
+                    genomic-start 687321,
+                    genomic-end 688198,
+                    genomic-id gi 90662741,
+                    genomic-strand minus,
+                    parts {
+                      match 878
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    }
+                  }
+                },
+                product-length 1939
+              },
+              ext {
+                {
+                  type str "CFeatureGenerator",
+                  data {
+                    {
+                      label str "cdregion",
+                      data str "Seq-feat ::= {               data cdregion {  
+                  frame one,                    code {                      id
+ 1                    }                  },                  product whole
+ local id 2,                  location int {                    from 465,     
+               to 1301,                    strand plus,                    id
+ general {                      db ""GNOMON"",                      tag str 
+""1444.m""                    }                  }            }"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                frame one,
+                code {
+                  id 1
+                }
+              },
+              product whole local id 2,
+              location int {
+                from 465,
+                to 1301,
+                strand plus,
+                id general {
+                  db "GNOMON",
+                  tag str "1444.m"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local id 2
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness complete
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 278,
+        seq-data iupacaa "MVRGAGPGASLSXLSHPPGAWSMAAAEGPGYLVSPQAEKHRRARNWTDAEMR
+GLMLVWEEFFDELKQTKRNAKVYEKMASKLFEMTGERRLGEEIKIKITNMTFQYRKLKCMTDSESAPPDWPYYLAIDG
+ILAKVPESCDGKLPDSQPPGPSTSQTEASLSPPAKSTPLYFPYNQCSYEGRFEDDRSDSSSSLLSLKFRSEERPVKKR
+KVQSCHLQKKQLRLLEAMVEEQRRLSRAVEETCREVRRVLDQQHILQVQSLQLQERMMSLLERIITKSSV"
+      }
+    }
+  }
+}

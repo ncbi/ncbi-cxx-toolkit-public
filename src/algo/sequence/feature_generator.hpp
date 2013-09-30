@@ -229,6 +229,10 @@ private:
                       const CRangeCollection<TSeqPos> &delete_locs,
                       const map<TSeqPos,TSeqPos> &delete_sizes,
                       bool partial_unaligned_edge);
+
+    void x_SetCommentForGapFilledModel(CSeq_feat& feat, TSeqPos insert_length);
+    void x_SetQualForGapFilledModel(CSeq_feat& feat, CSeq_id_Handle id);
+
     string x_ConstructRnaName(const CBioseq_Handle& handle);
 
     CMappedFeat GetCdsOnMrna(const objects::CSeq_id& rna_id);
@@ -239,6 +243,14 @@ private:
     CRef<CSeq_loc> FixOrderOfCrossTheOriginSeqloc(const CSeq_loc& loc,
                                                   TSeqPos outside_point,
                                                   CSeq_loc::TOpFlags flags = CSeq_loc::fSort);
+
+    bool HasMixedGenomicIds(const CSeq_align& input_align);
+    CRef<CSeq_feat>ConvertMixedAlignToAnnot(const CSeq_align& input_align,
+                                            CSeq_annot& annot,
+                                            CBioseq_set& seqs,
+                                            int gene_id,
+                                            const CSeq_feat* cds_feat_on_query_mrna_ptr,
+                                            bool call_on_align_list);
 };
 
 END_NCBI_SCOPE

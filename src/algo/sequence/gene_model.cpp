@@ -117,6 +117,8 @@ void CGeneModel::SetFeatureExceptions(CSeq_feat& feat,
     generator.SetFeatureExceptions(feat, align);
 }
 
+const char* k_except_text_for_gap_filled_gnomon_model = "annotated by transcript or proteomic data";
+
 void CGeneModel::SetPartialFlags(CScope& scope,
                                  CRef<CSeq_feat> gene_feat,
                                  CRef<CSeq_feat> mrna_feat,
@@ -755,6 +757,11 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
                                      const CSeq_feat* cds_feat_on_query_mrna_ptr,
                                      bool call_on_align_list)
 {
+    if (HasMixedGenomicIds(input_align)) {
+        return ConvertMixedAlignToAnnot(input_align, annot, seqs, gene_id, cds_feat_on_query_mrna_ptr,
+                                        call_on_align_list);
+    }
+
     CConstRef<CSeq_align> align(&input_align);
     CRef<CSeq_feat> cds_feat_on_query_mrna;
     bool is_protein_align = IsProteinAlign(*align);
@@ -947,7 +954,9 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         
         if (m_is_gnomon) {  // create xrefs for gnomon models
             CRef< CSeqFeatXref > propagatedxref( new CSeqFeatXref() );
-            propagatedxref->SetId(*(*it)->SetIds().front());
+            if ((*it)->IsSetIds()) {
+                propagatedxref->SetId(*(*it)->SetIds().front());
+            }
         
             CRef< CSeqFeatXref > mrnaxref( new CSeqFeatXref() );
             mrnaxref->SetId(*mrna_feat_on_genome_with_translated_product->SetIds().front());
@@ -2205,7 +2214,7 @@ SImplementation::x_MapFeature(const objects::CSeq_feat* feature_on_mrna,
             CSeq_loc start_loc(mapped_loc_id, mapped_loc->GetStart(eExtreme_Biological));
             TSignedSeqPos mapped_start = reverse_mapper.Map(start_loc)->GetStart(eExtreme_Biological);
             if (!feature_on_mrna->GetLocation().IsPartialStart(eExtreme_Biological) &&
-                abs(feat_start - mapped_start) <= m_allowed_unaligned)
+                TSeqPos(abs(feat_start - mapped_start)) <= m_allowed_unaligned)
             {
                 /// No fuzz in original, and overhang is within limits; shouldn't have fuzz
                 mapped_loc->SetPartialStart(false, eExtreme_Biological);
@@ -2214,7 +2223,7 @@ SImplementation::x_MapFeature(const objects::CSeq_feat* feature_on_mrna,
             CSeq_loc stop_loc(mapped_loc_id, mapped_loc->GetStop(eExtreme_Biological));
             TSignedSeqPos mapped_stop = reverse_mapper.Map(stop_loc)->GetStop(eExtreme_Biological);
             if (!feature_on_mrna->GetLocation().IsPartialStop(eExtreme_Biological) &&
-                abs(feat_stop - mapped_stop) <= m_allowed_unaligned)
+                TSeqPos(abs(feat_stop - mapped_stop)) <= m_allowed_unaligned)
             {
                 /// No fuzz in original, and overhang is within limits; shouldn't have fuzz
                 mapped_loc->SetPartialStop(false, eExtreme_Biological);
@@ -3242,6 +3251,34 @@ void CFeatureGenerator::SImplementation::x_SetExceptText(
     }
 }
 
+void CFeatureGenerator::SImplementation::x_SetQualForGapFilledModel(
+      CSeq_feat& feat, CSeq_id_Handle id)
+{
+    CBioseq_Handle bsh = m_scope->GetBioseqHandle(id);
+    CSeq_id_Handle best_id = sequence::GetId(id, *m_scope);
+
+    string product_type_string = "RNA sequence";
+    const CMolInfo *mol_info = s_GetMolInfo(bsh);
+    if (mol_info && mol_info->CanGetBiomol() &&
+        mol_info->GetBiomol() == CMolInfo::eBiomol_mRNA) {
+        product_type_string += ", mRNA";
+    }
+
+    string db = "INSD";
+    if(best_id.GetSeqId()->IsOther() &&
+       best_id.GetSeqId()->GetOther().GetAccession()[0] == 'N' &&
+       string("MRP").find(best_id.GetSeqId()->GetOther().GetAccession()[1]) != string::npos)
+        {
+            db = "RefSeq";
+        }
+
+    CRef<CGb_qual> qualifier(new CGb_qual);
+    qualifier->SetQual("inference");
+    qualifier->SetVal("similar to " + product_type_string + " (same species):"+db+":" +
+                      best_id.GetSeqId()->GetSeqIdString(true));
+    feat.SetQual().push_back(qualifier);
+
+}
 
 void CFeatureGenerator::SImplementation::SetFeatureExceptions(CSeq_feat& feat,
                                       const CSeq_align* align,
@@ -3536,6 +3573,20 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
     }
 }
 
+void CFeatureGenerator::SImplementation::x_SetCommentForGapFilledModel
+(CSeq_feat& feat,
+ TSeqPos insert_length)
+{
+    _ASSERT(insert_length > 0);
+    string comment = "added " + s_Count(insert_length, "base") + " not found in genome assembly";
+    if (!feat.IsSetComment()) {
+        feat.SetComment(comment);
+        /// If comment is already set, check it doesn't already contain our text
+    } else if (feat.GetComment().find(comment) == string::npos) {
+        feat.SetComment() += "; " + comment;
+    }
+}
+
 CRef<CSeq_loc> CFeatureGenerator::SImplementation::MergeSeq_locs(const CSeq_loc* loc1, const CSeq_loc* loc2)
 {
     CRef<CSeq_loc> merged_loc;
@@ -3644,6 +3695,301 @@ CRef<CSeq_loc> CFeatureGenerator::SImplementation::FixOrderOfCrossTheOriginSeqlo
     }
 
     return left_loc;
+}
+
+bool CFeatureGenerator::
+SImplementation::HasMixedGenomicIds(const CSeq_align& align)
+{
+    set<CSeq_id_Handle> genomic_ids;
+
+    if (!align.GetSegs().IsSpliced()) {
+        return false;
+    }
+
+    const CSpliced_seg& spliced_seg = align.GetSegs().GetSpliced();
+    ITERATE(CSpliced_seg::TExons, it, spliced_seg.GetExons()) {
+        const CSpliced_exon& exon = **it;
+        if (exon.CanGetGenomic_id()) {
+            genomic_ids.insert(CSeq_id_Handle::GetHandle(exon.GetGenomic_id()));
+        }
+    }
+
+    return genomic_ids.size() > 1;
+}
+
+void AddInsertWithGaps(
+                       CRef<CSeq_loc>& edited_sequence_seqloc,
+                       CSeq_id& genomic_seqid,
+                       int& region_begin,
+                       int& region_end,
+                       int& offset,
+                       CRef<CSeq_loc>& insert,
+                       const int k_gap_length,
+                       const int next_exon_start)
+{
+    if (insert->SetMix().Set().size() > 1) {
+        NCBI_THROW(CException, eUnknown, "spliced-seq with several insert exons in a row not supported");
+    }
+    
+    if (insert->SetMix().Set().size() > 0) {
+        int half_intron_length = (next_exon_start - region_end)/2;
+        int copy_length = min(k_gap_length, half_intron_length);
+        region_end += copy_length;
+        
+        if (region_begin < region_end) {
+            CRef<CSeq_loc> genome_loc(new CSeq_loc(genomic_seqid,
+                                                   region_begin,
+                                                   region_end -1));
+            edited_sequence_seqloc->SetMix().Set().push_back(genome_loc);
+        }
+        if (copy_length < k_gap_length) {
+            int gap_length = k_gap_length - copy_length;
+            // fill gap with sequence from the genome itself for simplicity
+            // do not bother creating nonexisting sequence
+            CRef<CSeq_loc> gap_loc(new CSeq_loc(genomic_seqid, 0, gap_length-1)); 
+            edited_sequence_seqloc->SetMix().Set().push_back(gap_loc);
+            offset += gap_length;
+        }
+        
+        edited_sequence_seqloc->SetMix().Set().push_back(insert);
+        insert.Reset(new CSeq_loc);
+        
+        if (copy_length < k_gap_length) {
+            int gap_length = k_gap_length - copy_length;
+            CRef<CSeq_loc> gap_loc(new CSeq_loc(genomic_seqid, 0, gap_length-1));
+            edited_sequence_seqloc->SetMix().Set().push_back(gap_loc);
+            offset += gap_length;
+        }
+        
+        region_begin = region_end;
+    }
+}
+
+CRef<CSeq_feat>
+CFeatureGenerator::
+SImplementation::ConvertMixedAlignToAnnot(const CSeq_align& input_align,
+                                     CSeq_annot& annot,
+                                     CBioseq_set& seqs,
+                                     int gene_id,
+                                     const CSeq_feat* cds_feat_on_query_mrna_ptr,
+                                     bool call_on_align_list)
+{
+
+    CRef<CSeq_align> align(new CSeq_align);
+    align->Assign(input_align);
+
+    CRef<CSeq_loc> edited_sequence_seqloc(new CSeq_loc);
+
+
+    CSpliced_seg& spliced_seg = align->SetSegs().SetSpliced();
+    if (!spliced_seg.CanGetGenomic_id()) {
+        NCBI_THROW(CException, eUnknown, "Mixed-genomic spliced-seq does not have spliced-seg.genomic_id");
+    }
+    CRef<CSeq_id> genomic_seqid(new CSeq_id);
+    genomic_seqid->Assign(spliced_seg.GetGenomic_id());
+    ENa_strand genomic_strand = eNa_strand_plus;
+    if (spliced_seg.CanGetGenomic_strand()) {
+        genomic_strand = spliced_seg.GetGenomic_strand();
+    } else {
+        ITERATE(CSpliced_seg::TExons, it, spliced_seg.GetExons()) {
+            const CSpliced_exon& exon = **it;
+            if ((!exon.CanGetGenomic_id() || exon.GetGenomic_id().Match(*genomic_seqid)) &&
+                exon.CanGetGenomic_strand()) {
+                genomic_strand = exon.GetGenomic_strand();
+                break;
+            }
+        }
+    }
+
+    CSeq_id_Handle idh= CSeq_id_Handle::GetHandle(*genomic_seqid);
+    CBioseq_Handle bsh = m_scope->GetBioseqHandle(idh);
+    TSeqPos genomic_length = bsh.GetBioseqLength();
+
+    { // collect genomic seqlocs for virtual sequence and map exons to it
+
+        const int k_gap_length = min(1000, int(genomic_length));
+
+    if (genomic_strand == eNa_strand_minus) {
+        // reverse exons to process them same way as plus strand
+        // will reverse back in the end
+        spliced_seg.SetExons().reverse();
+    }
+    int region_begin = 0; //included endpoint
+    int region_end = 0;   //not included endpoint
+    int offset = 0;
+    CRef<CSeq_loc> insert(new CSeq_loc);
+    NON_CONST_ITERATE(CSpliced_seg::TExons, it, spliced_seg.SetExons()) {
+        CSpliced_exon& exon = **it;
+        CSeq_id& seqid = exon.CanGetGenomic_id() ? exon.SetGenomic_id() : *genomic_seqid;
+
+        int exon_start = exon.GetGenomic_start(); // included endpoint
+        int exon_stop = exon.GetGenomic_end();    // included endpoint
+
+        if (!seqid.Match(*genomic_seqid)) {
+
+            ENa_strand strand = exon.CanGetGenomic_strand() ? exon.GetGenomic_strand() : genomic_strand;
+            CRef<CSeq_loc> loc(new CSeq_loc(seqid, exon_start, exon_stop, strand));
+            if (genomic_strand == eNa_strand_minus) {
+                loc->FlipStrand();
+            }
+            insert->SetMix().Set().push_back(loc);
+
+            int exon_length = exon_stop - exon_start +1;
+            exon_stop = region_end + k_gap_length -1;
+            exon_start = region_end + k_gap_length - exon_length;
+            offset += exon_length;
+        } else {
+            if (exon.CanGetGenomic_strand() && exon.GetGenomic_strand() != genomic_strand) {
+                NCBI_THROW(CException, eUnknown, "spliced-seq with mixed genomic strands not supported");
+            }
+            if (!(region_end <= exon_start)) {
+                NCBI_THROW(CException, eUnknown, "spliced-seq with exons out of order not supported");
+            }
+
+            AddInsertWithGaps(edited_sequence_seqloc,
+                              *genomic_seqid,
+                              region_begin,
+                              region_end,
+                              offset,
+                              insert,
+                              k_gap_length,
+                              exon_start);
+
+            region_end = exon_stop +1;
+        }
+
+        exon.ResetGenomic_id();
+        exon.ResetGenomic_strand();
+
+        exon.SetGenomic_start(exon_start + offset);
+        exon.SetGenomic_end(exon_stop + offset);
+    }
+
+    AddInsertWithGaps(edited_sequence_seqloc,
+                      *genomic_seqid,
+                      region_begin,
+                      region_end,
+                      offset,
+                      insert,
+                      k_gap_length,
+                      genomic_length);
+
+    if (region_begin < (int)genomic_length) {
+        CRef<CSeq_loc> genome_loc(new CSeq_loc(*genomic_seqid,
+                                               region_begin,
+                                               genomic_length -1));
+        edited_sequence_seqloc->SetMix().Set().push_back(genome_loc);
+    }
+
+    if (genomic_strand == eNa_strand_minus) {
+        // reverse exons back
+        spliced_seg.SetExons().reverse();
+    }
+    spliced_seg.SetGenomic_strand(genomic_strand);
+    }
+
+    edited_sequence_seqloc->ChangeToPackedInt();
+    CRef<CBioseq> bioseq(new CBioseq(*edited_sequence_seqloc));
+    CRef<CSeq_entry> seqentry(new CSeq_entry);
+    seqentry->SetSeq(*bioseq);
+    
+    bioseq->SetInst().SetTopology() = bsh.GetCompleteBioseq()->GetInst().GetTopology();
+    {{
+        CSeqdesc_CI desc(bsh, CSeqdesc::e_Source);
+        if (desc) {
+            CRef<CSeqdesc> seq_desc(new CSeqdesc);
+            seq_desc->Assign(*desc);
+            bioseq->SetDescr().Set().push_back(seq_desc);
+        }
+    }}
+    {{
+        CSeqdesc_CI desc(bsh, CSeqdesc::e_Org);
+        if (desc) {
+            CRef<CSeqdesc> seq_desc(new CSeqdesc);
+            seq_desc->Assign(*desc);
+            bioseq->SetDescr().Set().push_back(seq_desc);
+        }
+    }}
+
+    CBioseq_Handle bioseq_handle = m_scope->AddBioseq(*bioseq);
+
+    CRef<CSeq_id> bioseq_id(new CSeq_id);
+    bioseq_id->Assign(*bioseq->GetFirstId());
+    spliced_seg.SetGenomic_id(*bioseq_id);
+
+    CSeq_annot annot_discard;
+    CBioseq_set seqs_tmp;
+    ConvertAlignToAnnot(*align, annot_discard, seqs_tmp, gene_id, cds_feat_on_query_mrna_ptr,
+                                               call_on_align_list);
+
+    m_scope->RemoveBioseq(bioseq_handle);
+
+
+    set<CSeq_id_Handle> insert_ids;
+    TSeqPos insert_length = 0;
+
+    align.Reset(new CSeq_align);
+    align->Assign(input_align);
+    {
+        CSpliced_seg& spliced_seg = align->SetSegs().SetSpliced();
+        ERASE_ITERATE(CSpliced_seg::TExons, it, spliced_seg.SetExons()) {
+            CSpliced_exon& exon = **it;
+            CSeq_id& seqid = exon.CanGetGenomic_id() ? exon.SetGenomic_id() : *genomic_seqid;
+            
+            if (!seqid.Match(*genomic_seqid)) {
+                insert_ids.insert(CSeq_id_Handle::GetHandle(seqid));
+                insert_length += exon.GetGenomic_end()-exon.GetGenomic_start()+1;
+                spliced_seg.SetExons().erase(it);
+            }
+        }
+    }
+
+    CBioseq_set seqs_discard;
+    CRef<CSeq_feat> feat =
+        ConvertAlignToAnnot(*align, annot, seqs_discard,
+                            gene_id, cds_feat_on_query_mrna_ptr,
+                            call_on_align_list);
+
+    // inst.hist.assembly = input annot
+    align.Reset(new CSeq_align);
+    align->Assign(input_align);
+    NON_CONST_ITERATE(CBioseq_set::TSeq_set, it, seqs_tmp.SetSeq_set()) {
+        CSeq_entry& entry = **it;
+        if (entry.IsSeq() &&
+            entry.GetSeq().IsSetInst() &&
+            entry.GetSeq().GetInst().IsSetHist() &&
+            entry.GetSeq().GetInst().GetHist().IsSetAssembly()) {
+            
+            entry.SetSeq().SetInst().SetHist().SetAssembly().front() = 
+                align;
+            break;
+        }
+    }
+    if (seqs_tmp.IsSetClass()) {
+        seqs.SetClass(seqs_tmp.GetClass());
+    }
+    seqs.SetSeq_set().splice(seqs.SetSeq_set().end(), seqs_tmp.SetSeq_set());
+
+    for (list<CRef<CSeq_feat> >::reverse_iterator it = annot.SetData().SetFtable().rbegin();
+         it != annot.SetData().SetFtable().rend(); ++it) {
+        CSeq_feat& f = **it;
+        if (!f.GetLocation().GetId()->Match(*genomic_seqid)) {
+            break;
+        }
+        if (f.GetData().IsGene()) {
+            continue;
+        }
+        
+        x_SetExceptText(f, k_except_text_for_gap_filled_gnomon_model);
+        _ASSERT(insert_ids.size() > 0);
+        NON_CONST_ITERATE (set<CSeq_id_Handle>, id, insert_ids) {
+            x_SetQualForGapFilledModel(f, *id);
+        }
+        x_SetCommentForGapFilledModel(f, insert_length);
+
+    }
+
+    return feat;
 }
 
 END_NCBI_SCOPE

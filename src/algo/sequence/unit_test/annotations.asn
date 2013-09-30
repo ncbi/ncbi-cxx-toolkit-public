@@ -42,7 +42,7 @@ Seq-annot ::= {
     {
       data rna {
         type mRNA,
-        ext name "solute carrier family 37 (glycerol-3-phosphate transporter),
+        ext name "solute carrier family 37 (glucose-6-phosphate transporter),
  member 1"
       },
       partial TRUE,
@@ -9851,7 +9851,6 @@ Seq-annot ::= {
         to 88247,
         strand plus,
         id gi 358484732,
-        fuzz-from lim lt,
         fuzz-to lim gt
       },
       dbxref {
@@ -9880,8 +9879,7 @@ Seq-annot ::= {
           from 87481,
           to 87527,
           strand plus,
-          id gi 358484732,
-          fuzz-from lim lt
+          id gi 358484732
         },
         {
           from 87655,
@@ -9986,6 +9984,117 @@ Seq-annot ::= {
           fuzz-to lim gt
         }
       }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+      },
+      partial TRUE,
+      location int {
+        from 687321,
+        to 695152,
+        strand minus,
+        id gi 90662741
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The sequence of the model RefSeq transcript was modified
+ relative to this genomic sequence to represent the inferred complete CDS:
+ inserted 1 base in 1 codon; added 132 bases not found in genome assembly",
+      product whole general {
+        db "GNOMON",
+        tag str "1444.m"
+      },
+      location packed-int {
+        {
+          from 694369,
+          to 695152,
+          strand minus,
+          id gi 90662741
+        },
+        {
+          from 690894,
+          to 691037,
+          strand minus,
+          id gi 90662741,
+          fuzz-from lim lt
+        },
+        {
+          from 687321,
+          to 688198,
+          strand minus,
+          id gi 90662741
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):INSD:JV543534.1"
+        }
+      },
+      xref {
+        {
+        }
+      },
+      except-text "annotated by transcript or proteomic data",
+      ids {
+        local str "rna.1444"
+      }
+    },
+    {
+      data cdregion {
+        frame one,
+        code {
+          id 1
+        }
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The sequence of the model RefSeq protein was modified relative
+ to this genomic sequence to represent the inferred complete CDS: inserted 1
+ base in 1 codon; added 132 bases not found in genome assembly",
+      product whole local id 2,
+      location packed-int {
+        {
+          from 694369,
+          to 694687,
+          strand minus,
+          id gi 90662741
+        },
+        {
+          from 690894,
+          to 691037,
+          strand minus,
+          id gi 90662741,
+          fuzz-from lim lt
+        },
+        {
+          from 687958,
+          to 688198,
+          strand minus,
+          id gi 90662741
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):INSD:JV543534.1"
+        }
+      },
+      xref {
+        {
+          id local str "rna.1444"
+        }
+      },
+      except-text "annotated by transcript or proteomic data"
     }
   }
 }

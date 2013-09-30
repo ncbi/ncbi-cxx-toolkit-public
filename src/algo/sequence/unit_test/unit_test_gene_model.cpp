@@ -340,14 +340,15 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
     genes_for_redo_partial.insert(CSeq_id_Handle::GetGiHandle(224514634));
     genes_for_redo_partial.insert(CSeq_id_Handle::GetGiHandle(258441149));
 
-    CFeatureGenerator generator(scope);
-    int default_flags =
+    const int default_flags =
         (CFeatureGenerator::fDefaults &
          ~CFeatureGenerator::fGenerateLocalIds) |
         CFeatureGenerator::fGenerateStableLocalIds |
         CFeatureGenerator::fForceTranslateCds | CFeatureGenerator::fForceTranscribeMrna;
 
     for (int alignment = 0; align_istr  &&  annot_istr; ++alignment) {
+
+        CFeatureGenerator generator(scope);
 
         CRef<CSeq_align> align(new CSeq_align);
         CSeq_annot expected_annot;
@@ -446,6 +447,8 @@ BOOST_AUTO_TEST_CASE(TestUsingArg)
 
         s_CompareFtables(actual_features, expected_features, "Main annotation");
     }
+
+    CFeatureGenerator generator(scope);
 
     generator.SetFlags(default_flags);
 
