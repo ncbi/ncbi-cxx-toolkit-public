@@ -34,6 +34,7 @@
 #include <algo/gnomon/gnomon.hpp>
 #include <algo/gnomon/chainer.hpp>
 #include <algo/gnomon/gnomon_exception.hpp>
+#include <algo/gnomon/id_handler.hpp>
 #include "hmm.hpp"
 #include "hmm_inlines.hpp"
 
@@ -47,6 +48,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objects/seqalign/seqalign__.hpp>
 #include <objects/general/general__.hpp>
+#include <objmgr/object_manager.hpp>
 
 #include <stdio.h>
 
@@ -151,6 +153,11 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
     vector<TSignedSeqRange> transcript_exons;
     TInDels indels;
 
+    if(!sps.CanGetGenomic_id())
+        NCBI_THROW(CGnomonException, eGenericError, "CSpliced_seg must have genomic id");
+
+    const CSeq_id& genomic_id = sps.GetGenomic_id();
+
     ITERATE(CSpliced_seg::TExons, e_it, sps.GetExons()) {
         const CSpliced_exon& exon = **e_it;
         int prod_cur_start = GetProdPosInBases(exon.GetProduct_start());
@@ -192,10 +199,31 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
             }
         }
 
-        AddExon(TSignedSeqRange(nuc_cur_start,nuc_cur_end),fs,ss,eident);
+        if(!exon.CanGetGenomic_id() || !(exon.GetGenomic_id() < genomic_id || genomic_id < exon.GetGenomic_id())) {  // normal exon
+            AddExon(TSignedSeqRange(nuc_cur_start,nuc_cur_end), fs, ss, eident);
+            _ASSERT(Exons().back().Limits().NotEmpty());
+        } else {  // genomic gap
+            if(!exon.CanGetGenomic_strand())
+                NCBI_THROW(CGnomonException, eGenericError, "CSpliced_exon for gap filling must have genomic strand");
+            CConstRef<objects::CSeq_id> fill_id(&exon.GetGenomic_id());
+            CScope scope(*CObjectManager::GetInstance());
+
+            string transcript = GetDNASequence(fill_id,scope);
+            string fill_seq = transcript.substr(nuc_cur_start, nuc_cur_end-nuc_cur_start+1);
+
+            CInDelInfo::SSource fill_src;
+            fill_src.m_acc = CIdHandler::ToString(*fill_id);
+            fill_src.m_strand = ePlus;
+            fill_src.m_range = TSignedSeqRange(nuc_cur_start, nuc_cur_end);
+
+            if(exon.GetGenomic_strand() == eNa_strand_minus) {
+                fill_src.m_strand = eMinus;
+                ReverseComplement(fill_seq.begin(),fill_seq.end());
+            }
+            AddExon(TSignedSeqRange::GetEmpty(), fs, ss, eident, fill_seq, fill_src);
+        }
         transcript_exons.push_back(TSignedSeqRange(GetProdPosInBases(exon.GetProduct_start()),GetProdPosInBases(exon.GetProduct_end())));
 
-        _ASSERT(Exons().back().Limits().NotEmpty());
         _ASSERT(transcript_exons.back().NotEmpty());
 
         int pos = 0;

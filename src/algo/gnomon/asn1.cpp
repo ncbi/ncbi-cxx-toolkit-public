@@ -702,25 +702,32 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_internal_feature(co
 CRef<CSpliced_exon> CAnnotationASN1::CImplementationData::spliced_exon (const CModelExon& e, EStrand strand) const
 {
     CRef<CSpliced_exon> se(new CSpliced_exon());
-    // se->SetProduct_start(...); se->SetProduct_end(...); don't fill in here
-    se->SetGenomic_start(e.GetFrom());
-    se->SetGenomic_end(e.GetTo());
+
+    if(e.Limits().NotEmpty()) { // normal exon
+        se->SetGenomic_start(e.GetFrom());
+        se->SetGenomic_end(e.GetTo());
+    } else {    // gap filler
+        CRef<CSeq_id> fillerid = CIdHandler::ToSeq_id(e.m_source.m_acc);
+        se->SetGenomic_id(*fillerid);
+        se->SetGenomic_strand(e.m_source.m_strand==ePlus?eNa_strand_plus:eNa_strand_minus);
+        se->SetGenomic_start(e.m_source.m_range.GetFrom());
+        se->SetGenomic_end(e.m_source.m_range.GetTo());
+    }
+
     if (e.m_fsplice) {
-        string bases((char*)&contig_seq[e.GetFrom()-2], 2);
+        _ASSERT(e.m_fsplice_sig.length() == 2);
         if (strand==ePlus) {
-            se->SetAcceptor_before_exon().SetBases(bases);
+            se->SetAcceptor_before_exon().SetBases(e.m_fsplice_sig);
         } else {
-            ReverseComplement(bases.begin(),bases.end());
-            se->SetDonor_after_exon().SetBases(bases);
+            se->SetDonor_after_exon().SetBases(e.m_fsplice_sig);
         }
     }
     if (e.m_ssplice) {
-        string bases((char*)&contig_seq[e.GetTo()+1], 2);
+        _ASSERT(e.m_ssplice_sig.length() == 2);
         if (strand==ePlus) {
-            se->SetDonor_after_exon().SetBases(bases);
+            se->SetDonor_after_exon().SetBases(e.m_ssplice_sig);
         } else {
-            ReverseComplement(bases.begin(),bases.end());
-            se->SetAcceptor_before_exon().SetBases(bases);
+            se->SetAcceptor_before_exon().SetBases(e.m_ssplice_sig);
         }
     }
     return se;
@@ -764,38 +771,44 @@ CRef< CSeq_align > CAnnotationASN1::CImplementationData::model2spliced_seq_align
         se->SetProduct_start().SetNucpos(transcript_exon.GetFrom());
         se->SetProduct_end().SetNucpos(transcript_exon.GetTo());
 
-        int last_chunk = e->GetFrom();
-        while (indel_i != indels.end() && indel_i->Loc() <= e->GetTo()+1) {
-            const CInDelInfo& indel = *indel_i;
-            _ASSERT( e->GetFrom() <= indel.Loc() );
+        if(e->Limits().NotEmpty()) {    // normal exon
+            int last_chunk = e->GetFrom();
+            while (indel_i != indels.end() && indel_i->Loc() <= e->GetTo()+1) {
+                const CInDelInfo& indel = *indel_i;
+                _ASSERT( e->GetFrom() <= indel.Loc() );
             
-            if (indel.Loc()-last_chunk > 0) {
+                if (indel.Loc()-last_chunk > 0) {
+                    CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
+                    chunk->SetMatch(indel.Loc()-last_chunk);
+                    se->SetParts().push_back(chunk);
+                    last_chunk = indel.Loc();
+                }
+
+                if (indel.IsInsertion()) {
+                    CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
+                    chunk->SetGenomic_ins(indel.Len());
+                    se->SetParts().push_back(chunk);
+
+                    last_chunk += indel.Len();
+                } else {
+                    CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
+                    chunk->SetProduct_ins(indel.Len());
+                    se->SetParts().push_back(chunk);
+                }
+                ++indel_i;
+            }
+            if (e->GetFrom() <= last_chunk && last_chunk <= e->GetTo()) {
                 CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
-                chunk->SetMatch(indel.Loc()-last_chunk);
+                chunk->SetMatch(e->GetTo()-last_chunk+1);
                 se->SetParts().push_back(chunk);
-                last_chunk = indel.Loc();
             }
 
-            if (indel.IsInsertion()) {
-                CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
-                chunk->SetGenomic_ins(indel.Len());
-                se->SetParts().push_back(chunk);
-
-                last_chunk += indel.Len();
-            } else {
-                CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
-                chunk->SetProduct_ins(indel.Len());
-                se->SetParts().push_back(chunk);
-            }
-            ++indel_i;
-        }
-        if (e->GetFrom() <= last_chunk && last_chunk <= e->GetTo()) {
+            exons.push_back(se);
+        }  else  {   // gap filler
             CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
-            chunk->SetMatch(e->GetTo()-last_chunk+1);
+            chunk->SetMatch(e->m_source.m_range.GetLength());
             se->SetParts().push_back(chunk);
         }
-
-        exons.push_back(se);
     }
     _ASSERT( indel_i == indels.end() );
 
@@ -932,11 +945,7 @@ void RestoreModelReadingFrame(const CSeq_feat_Handle& feat, CAlignModel& model)
             }
         }
 
-        //will be mapped at the end
-        //        TSignedSeqRange reading_frame =  model.GetAlignMap().MapRangeEditedToOrig(rf,false);
-
-        CCDSInfo cds_info(false);  // mrna coordinates
-        //        cds_info.SetReadingFrame(reading_frame, false);
+        CCDSInfo cds_info(false);  // mrna coordinates; will be projected to genome at the end if possible
         cds_info.SetReadingFrame(rf, false);
         model.SetCdsInfo(cds_info);
     }
