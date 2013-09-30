@@ -136,14 +136,23 @@ CSeqDBPerfApp::x_ScanDatabase()
     sw.Start();
     Uint8 num_letters = m_BlastDb->GetTotalLength();
     int thread_id = 0;
+    vector<int> oids2iterate;
+    for (int oid = 0; m_DbHandles[thread_id]->CheckOrFindOID(oid); oid++) {
+        oids2iterate.push_back(oid);
+    }
+    LOG_POST(Info << "Will go over " << oids2iterate.size() << " sequences");
 
     if (m_DbIsProtein || GetArgs()["scan_uncompressed"]) {
-        #pragma omp parallel num_threads(m_DbHandles.size())
+        #pragma omp parallel default(none) num_threads(m_DbHandles.size()) \
+                            private(thread_id) shared(oids2iterate) \
+                            if(m_DbHandles.size() > 1)
         { 
 #ifdef _OPENMP
             thread_id = omp_get_thread_num();
 #endif
-            for (int oid = 0; m_DbHandles[thread_id]->CheckOrFindOID(oid); oid++) {
+            #pragma omp for schedule(guided) nowait
+            for (size_t i = 0; i < oids2iterate.size(); i++) {
+                int oid = oids2iterate[i];
                 const char* buffer = NULL;
                 int encoding = m_DbIsProtein ? 0 : kSeqDBNuclBlastNA8;
                 m_DbHandles[thread_id]->GetAmbigSeq(oid, &buffer, encoding);
@@ -157,12 +166,16 @@ CSeqDBPerfApp::x_ScanDatabase()
             x_UpdateMemoryUsage(thread_id);
         } // end of omp parallel
     } else {
-        #pragma omp parallel num_threads(m_DbHandles.size())
+        #pragma omp parallel default(none) num_threads(m_DbHandles.size()) \
+                            private(thread_id) shared(oids2iterate) \
+                            if(m_DbHandles.size() > 1)
         { 
 #ifdef _OPENMP
             thread_id = omp_get_thread_num();
 #endif
-            for (int oid = 0; m_DbHandles[thread_id]->CheckOrFindOID(oid); oid++) {
+            #pragma omp for schedule(guided) nowait
+            for (size_t i = 0; i < oids2iterate.size(); i++) {
+                int oid = oids2iterate[i];
                 const char* buffer = NULL;
                 m_DbHandles[thread_id]->GetSequence(oid, &buffer);
                 int seqlen = m_DbHandles[thread_id]->GetSeqLength(oid) / 4;
