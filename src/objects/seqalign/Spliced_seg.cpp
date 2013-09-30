@@ -172,17 +172,6 @@ void CSpliced_seg::Validate(bool full_test) const
                        "Protein product cannot have a negative strand.");
         }
 
-        if (CanGetGenomic_strand()  &&  exon.CanGetGenomic_strand()) {
-            NCBI_THROW(CSeqalignException, eInvalidAlignment,
-                       "genomic-strand can be set on level of Spliced-seg XOR Spliced-exon.");
-        }
-        bool genomic_plus = true;
-        if (exon.CanGetGenomic_strand()) {
-            genomic_plus = exon.GetGenomic_strand() != eNa_strand_minus;
-        } else if (CanGetGenomic_strand()) {
-            genomic_plus = GetGenomic_strand() != eNa_strand_minus;
-        }
-
 
         /// Ranges
         if (exon.IsSetParts()) {
