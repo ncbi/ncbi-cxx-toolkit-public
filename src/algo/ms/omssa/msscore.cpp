@@ -434,7 +434,6 @@ void CMSSpectrumMatch::FillMatchedPeaks(
             }
             else if (MatchPeakSet->GetMatchedPeakSet()[i-1]->GetMatchType() == eMSMatchTypeNoSearch ||
                      MatchPeakSet->GetMatchedPeakSet()[i-1]->GetMatchType() == eMSMatchTypeUnknown ||
-                     MatchPeakSet->GetMatchedPeakSet()[i-1]->GetMatchType() == eMSMatchTypeNoSearch ||
                      MatchPeakSet->GetMatchedPeakSet()[i-1]->GetMatchType() == eMSMatchTypeTerminus) {
                 MatchPeakSet->SetMatchedPeakSet()[i]->SetMatchType() = eMSMatchTypeIndependent;
             }
