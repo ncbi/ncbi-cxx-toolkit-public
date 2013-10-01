@@ -1451,7 +1451,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "DMIV	c	Department of Microbiology and Immunology",
 "DMKKU1	c	Department of Microbiology, Faculty of Medicine",
 "DMKKU2	c	Department of Microbiology, Faculty of Medical Science",
-"DMKU	c	Department of Microbiology, Faculty of Science",
+"DMKU	c	Department of Microbiology Kasetsart University",
 "DMMU1	c	Department of Microbiology, Faculty of Science",
 "DMMU3	c	Department of Microbiology, Faculty of Medicine Siriraj Hospital",
 "DMNH<USA-DE>	s	Delaware Museum of Natural History",
