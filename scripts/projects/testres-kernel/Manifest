@@ -1,0 +1,20 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author: Mikhail Zakharov (template by Sergey Satskiy)
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+USE_COMPONENTS
+
+APP: testres_kernel
+
+#templates
+COPY: $srcdir/src/internal/cppcore/testres/tool/templates. $installdir
+
+Linux64-Centos  : plain  : GCC.sh      --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
+
+

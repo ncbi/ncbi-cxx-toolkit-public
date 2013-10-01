@@ -1,0 +1,25 @@
+cgi$
+corelib$
+util$
+util/bitset$ update-only
+util/cache$
+util/regexp$
+util/xregexp$
+connect$
+connect/ext$
+connect/impl$
+connect/services$
+connect/daemons$
+html$
+misc$
+misc/xmlwrapp$
+misc/xmlwrapp/impl$
+serial$
+serial/datatool$
+boost/graph$
+boost/ptr_container$
+boost/algorithm$
+internal$
+internal/cppcore$
+internal/cppcore/testres
+internal/cppcore/testres/kernel
