@@ -455,6 +455,14 @@ bool CBioseq_DISC_BAD_BGPIPE_QUALS :: x_IsBGPipe(const CSeqdesc* sdp)
                                            "NCBI Prokaryotic Genome Annotation Pipeline"));
 };
 
+bool CBioseq_DISC_BAD_BGPIPE_QUALS :: x_CodeBreakIsStopCodon(const list < CRef <CCode_break> >& code_brk)
+{
+   ITERATE (list <CRef <CCode_break> >, it, code_brk) {
+      if ( (*it)->GetAa().IsNcbieaa() && (*it)->GetAa().GetNcbieaa() == 42) return true;
+   }
+   return false;
+};
+
 void CBioseq_DISC_BAD_BGPIPE_QUALS :: TestOnObj(const CBioseq& bioseq)
 {
    // must not be refseq
@@ -473,10 +481,15 @@ void CBioseq_DISC_BAD_BGPIPE_QUALS :: TestOnObj(const CBioseq& bioseq)
       strtmp = GetDiscItemText(**it);
       if ( (*it)->CanGetExcept_text() && !((*it)->GetExcept_text().empty()))
         thisInfo.test_item_list[GetName()].push_back(strtmp);
-      else if ( (*it)->GetData().IsCdregion() 
-                  && (*it)->GetData().GetCdregion().CanGetCode_break()
-                  && !(*it)->GetData().GetCdregion().GetCode_break().empty())
-        thisInfo.test_item_list[GetName()].push_back(strtmp);
+      else if ( (*it)->GetData().IsCdregion()) {
+          const CCdregion& cd = (*it)->GetData().GetCdregion();
+          if (cd.CanGetCode_break() && !cd.GetCode_break().empty()
+               && ( !(*it)->CanGetComment() 
+                         || (*it)->GetComment().find("ambiguity in stop codon")==string::npos
+                         || !x_CodeBreakIsStopCodon( cd.GetCode_break())) ) {
+            thisInfo.test_item_list[GetName()].push_back(strtmp);
+          }
+      }
    }
 };
 
@@ -3775,7 +3788,7 @@ void CBioseq_TEST_LOW_QUALITY_REGION :: GetReport(CRef <CClickableItem>& c_item)
 
 bool CBioseq_TEST_BAD_GENE_NAME :: GeneNameHas4Numbers(const string& locus)
 {
-  bool num_digits=0;
+  unsigned num_digits=0;
   for (unsigned i=0; i< locus.size() && num_digits < 4; i++)
     if (isdigit(locus[i])) num_digits++;
     else num_digits = 0;
@@ -5795,7 +5808,7 @@ void CBioseq_test_on_rna :: FindMissingRNAsInList()
 bool CBioseq_test_on_rna :: RRnaMatch(const CRNA_ref& rna1, const CRNA_ref& rna2)
 {
   if (!rna1.CanGetExt() && !rna2.CanGetExt()) return true;
-  else if (rna1.CanGetExt() && rna1.CanGetExt()) {
+  else if (rna1.CanGetExt() && rna2.CanGetExt()) {
     const CRNA_ref::C_Ext& ext1 = rna1.GetExt();
     const CRNA_ref::C_Ext& ext2 = rna2.GetExt();
     if (ext1.Which() != ext2.Which()) return false;

@@ -82,6 +82,7 @@
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
 #include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/Code_break.hpp>
 #include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/Org_ref.hpp>
@@ -153,6 +154,7 @@ namespace DiscRepNmSpc {
        vector < CRef <CClickableItem > >    subcategories;
        bool                                 expanded;
        bool                                 next_sibling;
+       vector < CConstRef <CObject> >       obj_list;
   };
 
   class CDiscTestInfo 
@@ -3109,6 +3111,7 @@ namespace DiscRepNmSpc {
       virtual string GetName() const {return string("DISC_BAD_BGPIPE_QUALS"); }
 
     private:
+      bool x_CodeBreakIsStopCodon(const list <CRef <CCode_break> >& code_brk);
       bool x_IsBGPipe(const CSeqdesc* sdp); 
       bool x_HasFieldStrNocase(const CUser_object& uobj, const string& field, 
                                                                          const string& str);

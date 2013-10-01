@@ -74,6 +74,7 @@ void GetDiscrepancyReport(int argc, const char* argv[])
     CMetaRegistry:: SEntry entry = CMetaRegistry :: Load("disc_report.ini");
     CRef <IRWRegistry> reg(entry.registry); 
     config->InitParams(*reg);
+    config->CollectTests();
     config->Run(config);
 };
 

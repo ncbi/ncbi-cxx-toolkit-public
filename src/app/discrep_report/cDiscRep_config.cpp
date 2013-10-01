@@ -161,8 +161,9 @@ vector < CRef <CTestAndRepData> >    CRepConfig :: tests_on_SeqEntry_feat_desc;
 vector < CRef <CTestAndRepData> >    CRepConfig :: tests_4_once;
 vector < CRef <CTestAndRepData> >    CRepConfig :: tests_on_BioseqSet;
 vector < CRef <CTestAndRepData> >    CRepConfig :: tests_on_SubmitBlk;
-set <string> CDiscTestInfo :: tests_run;
 
+set <string> CDiscTestInfo :: tests_run;
+CSeq_entry_Handle CRepConfig :: m_TopSeqEntry;
 
 // removed from *_app.cpp
 const char* fix_type_names[] = {
@@ -183,6 +184,11 @@ const char* fix_type_names[] = {
   "use protein instead of gene as appropriate"
 };
 
+CTry* CTry::factory (string type, CSeq_entry_Handle* tse)
+{
+   if (type == "1") return (new CTry_sub1);
+   else return (new CTry_sub2);
+};
 
 void CRepConfig :: InitParams(const IRWRegistry& reg)
 {
@@ -843,6 +849,7 @@ string CRepConfig :: GetDirStr(const string& src_dir)
          if (pos2 < pos) return (CTempString(src_dir).substr(0, pos2+1) + "/");
       }
    }
+   return kEmptyStr;
 };
 
 void CRepConfig :: ProcessArgs(Str2Str& args)
@@ -977,17 +984,17 @@ void CRepConfig :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
 
     // collect disc report
     myChecker.CollectRepData();
-    cout << "Number of bioseq: " << myChecker.GetNumBioseq() << endl;
+cout << "Number of bioseq: " << myChecker.GetNumBioseq() << endl;
 
 };  // CheckThisSeqEntry()
 
 
 static CDiscTestInfo thisTest;
-static const s_test_property test1_list[] = {
-   {"INCONSISTENT_LOCUS_TAG_PREFIX", fDiscrepancy},
+static const s_test_property test_list[] = {
+   {"DISC_COUNT_NUCLEOTIDES", fDiscrepancy|fOncaller},
 };
 
-static const s_test_property test_list[] = {
+static const s_test_property test1_list[] = {
 // tests_on_SubmitBlk
    {"DISC_SUBMITBLOCK_CONFLICT", fDiscrepancy | fOncaller},
 
@@ -1208,20 +1215,24 @@ static const s_test_property test_list[] = {
    {"DISC_NONWGS_SETS_PRESENT", fDiscrepancy}
 };
 
-CRepConfig* CRepConfig :: factory(const string& report_tp)
+CRepConfig* CRepConfig :: factory(string report_tp, CSeq_entry_Handle* tse_p)
 {
    if (report_tp == "Discrepancy") {
-         return new CRepConfDiscrepancy();
          thisInfo.output_config.use_flag = true; // output flags
+         return new CRepConfDiscrepancy();
    }
-   else if(report_tp ==  "Oncaller") return new  CRepConfOncaller();
+   else if(report_tp ==  "Oncaller") {
+       if (tse_p) m_TopSeqEntry = *tse_p;
+       else NCBI_THROW(CException, eUnknown, "Missing top seq-entry-handle");
+       return new  CRepConfOncaller();
+   }
    else {
       NCBI_THROW(CException, eUnknown, "Unrecognized report type.");
       return 0;
    }
 };  // CRepConfig::factory()
 
-void CRepConfig :: CollectTests() 
+void CRepConfig :: GetTestList() 
 {
    unsigned sz = thisTest.tests_run.size(), i=0;
    if (i >= sz) return;
@@ -2202,7 +2213,7 @@ if (i > sz) return;
    NCBI_THROW(CException, eUnknown, "Some requested tests are unrecognizable.");
 };
 
-void CRepConfig :: x_ReadAsn1(ESerialDataFormat datafm)
+void CRepConfDiscrepancy :: x_ReadAsn1(ESerialDataFormat datafm)
 {
     auto_ptr <CObjectIStream> ois (CObjectIStream::Open(datafm, thisInfo.infile));
     CRef <CSeq_entry> seq_entry (new CSeq_entry);
@@ -2236,7 +2247,7 @@ void CRepConfig :: x_ReadAsn1(ESerialDataFormat datafm)
     ois->Close();
 };
 
-void CRepConfig :: x_ReadFasta()
+void CRepConfDiscrepancy :: x_ReadFasta()
 {
    auto_ptr <CReaderBase> reader (CReaderBase::GetReader(CFormatGuess::eFasta)); // flags?
    if (!reader.get())
@@ -2248,7 +2259,7 @@ void CRepConfig :: x_ReadFasta()
    CheckThisSeqEntry(CRef <CSeq_entry> (&seq_entry));
 };
 
-void CRepConfig :: x_GuessFile()
+void CRepConfDiscrepancy :: x_GuessFile()
 {
    CFormatGuess::EFormat f_fmt = CFormatGuess::Format(thisInfo.infile);
    switch (f_fmt) {
@@ -2286,7 +2297,7 @@ OutBlob(*entry, "entry.out");
    }
 };
 
-void CRepConfig :: x_BatchSet(ESerialDataFormat datafm)
+void CRepConfDiscrepancy :: x_BatchSet(ESerialDataFormat datafm)
 {
    auto_ptr<CObjectIStream> ois (CObjectIStream::Open(datafm, thisInfo.infile));
    ois->SetPathSkipMemberHook("Bioseq-set.seq-set", new CSeqEntryReadHook);
@@ -2309,14 +2320,14 @@ cout << MSerial_AsnText << *entry << endl;
    }
 };
 
-void CRepConfig :: x_BatchSeqSubmit(ESerialDataFormat datafm)
+void CRepConfDiscrepancy :: x_BatchSeqSubmit(ESerialDataFormat datafm)
 {
    auto_ptr<CObjectIStream> ois (CObjectIStream::Open(datafm, thisInfo.infile));
    ois->SetPathSkipVariantHook("Seq-submit.entrys-set", new CSeqEntryChoiceHook);
    ois->Skip(CType<CBioseq_set>()); 
 };
 
-void CRepConfig :: x_CatenatedSeqEntry()
+void CRepConfDiscrepancy :: x_CatenatedSeqEntry()
 {
    auto_ptr <CObjectIStream> ois (CObjectIStream::Open(eSerial_AsnText, thisInfo.infile));
    while (!ois->EndOfData()) {
@@ -2326,7 +2337,7 @@ void CRepConfig :: x_CatenatedSeqEntry()
    }
 };
 
-void CRepConfig :: x_ProcessOneFile()
+void CRepConfDiscrepancy :: x_ProcessOneFile()
 {
    if (!CFile(thisInfo.infile).Exists())
       NCBI_THROW(CException, eUnknown, "Can't read file " + thisInfo.infile);
@@ -2349,7 +2360,7 @@ void CRepConfig :: x_ProcessOneFile()
    }
 };
 
-void CRepConfig :: x_ProcessDir(const CDir& dir, bool one_ofile)
+void CRepConfDiscrepancy :: x_ProcessDir(const CDir& dir, bool one_ofile)
 {
    CDir::TGetEntriesFlags flag = m_dorecurse ? 0 : CDir::fIgnoreRecursive ;
    list <AutoPtr <CDirEntry> > entries = dir.GetEntries(kEmptyStr, flag);
@@ -2370,10 +2381,9 @@ void CRepConfig :: x_ProcessDir(const CDir& dir, bool one_ofile)
    }
 };
 
-void CRepConfig :: Run(CRef <CRepConfig> config)
+void CRepConfig :: CollectTests()
 {
-   thisInfo.config  = config;
- // cerr << "Run " << CTime(CTime::eCurrent).AsString() << endl;
+ // cerr << "CollectTests " << CTime(CTime::eCurrent).AsString() << endl;
    tests_on_Bioseq.reserve(50);
    tests_on_Bioseq_aa.reserve(50);
    tests_on_Bioseq_na.reserve(50);
@@ -2407,8 +2417,13 @@ void CRepConfig :: Run(CRef <CRepConfig> config)
            thisTest.tests_run.erase(*it);
    }
   
-   CollectTests();
-  
+   GetTestList();
+};
+
+void CRepConfDiscrepancy :: Run(CRef <CRepConfig> config)
+{
+   thisInfo.config  = config;
+
    // read input file/path and go tests
    CDir dir(m_indir);
    if (!dir.Exists()) {
@@ -2420,7 +2435,7 @@ void CRepConfig :: Run(CRef <CRepConfig> config)
        x_ProcessDir(dir, one_ofile);
        if (one_ofile) config->Export(); // run a global check 
    }
-    cout << "disc_rep.size()  " << thisInfo.disc_report_data.size() << endl;
+cout << "disc_rep.size()  " << thisInfo.disc_report_data.size() << endl;
    thisInfo.disc_report_data.clear();
    thisInfo.test_item_list.clear();
 
@@ -2430,4 +2445,15 @@ void CRepConfig :: Run(CRef <CRepConfig> config)
 // cerr << "end " << CTime(CTime::eCurrent).AsString() << endl;
 }; // Run()
 
+void CRepConfig :: ProcessArgs()
+{
+    thisInfo.report = "Oncaller";
+    m_enabled.clear();
+    m_disabled.clear();
+};
 
+void CRepConfOncaller :: Run(CRef <CRepConfig> config)
+{
+  CRef <CSeq_entry> seq_ref ((CSeq_entry*)(m_TopSeqEntry.GetCompleteSeq_entry().GetPointer()));
+  CheckThisSeqEntry(seq_ref);
+};

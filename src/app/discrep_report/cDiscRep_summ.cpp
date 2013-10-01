@@ -808,7 +808,7 @@ string CSummarizeSusProdRule :: SummarizeTranslationConstraint (const CTranslati
   }
 
   if (internal_stops == eMatch_type_constraint_yes) rval += " and sequence has internal stops";
-  else if (internal_stops == eMatch_type_constraint_yes) 
+  else if (internal_stops == eMatch_type_constraint_no) 
     rval += " and sequence has no internal stops";
 
   return rval;

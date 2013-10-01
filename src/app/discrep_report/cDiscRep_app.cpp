@@ -95,9 +95,10 @@ int CDiscRepApp :: Run(void)
     
     string report = args["P"].AsString();
     if (report == "t" || report == "s") report = "Discrepancy";
-    CRef <CRepConfig> config( CRepConfig::factory(report) );
+    CRef <CRepConfig> config( CRepConfig :: factory(report) );
     config->InitParams(GetConfig());
     config->ReadArgs(args);
+    config->CollectTests();
     config->Run(config);
     
     return 0;

@@ -49,7 +49,7 @@
 #include <serial/serial.hpp>
 
 #include "hDiscRep_tests.hpp"
-#include "hDiscRep_config.hpp"
+#include "clickable_item.hpp"
 
 using namespace ncbi;
 using namespace objects;
@@ -57,6 +57,25 @@ using namespace objects;
 BEGIN_NCBI_SCOPE
 
 namespace DiscRepNmSpc {
+   class CTry : public CObject 
+   {
+     public:
+       virtual ~CTry() { };
+
+        int onePlusOne();
+        static CTry* factory (string type, CSeq_entry_Handle* tse);
+   };
+   class CTry_sub1 : public CTry
+   {
+      public:
+        virtual ~CTry_sub1 () {};
+   };
+   class CTry_sub2 : public CTry
+   {
+      public:
+        virtual ~CTry_sub2 () {};
+   };
+
 
    enum ETestCategoryFlags {
       fDiscrepancy = 1 << 0,
@@ -111,15 +130,19 @@ namespace DiscRepNmSpc {
         void ReadArgs(const CArgs& args);
         string GetDirStr(const string& src_dir);
         void ProcessArgs(Str2Str& args);
+        void ProcessArgs();
         static void CheckThisSeqEntry(CRef <CSeq_entry> seq_entry);
         void GetOrgModSubtpName(unsigned num1, unsigned num2,
                                          map <string, COrgMod::ESubtype>& orgmodnm_subtp);
         CRef <CSearch_func> MakeSimpleSearchFunc(const string& match_text,
                                                                  bool whole_word = false);
+        void GetTestList();
         void CollectTests();
-        void Run(CRef <CRepConfig> config);
-        static CRepConfig* factory(const string& report_tp);
-        virtual void Export() = 0;
+        virtual void Run(CRef <CRepConfig> config) = 0;
+        static CSeq_entry_Handle m_TopSeqEntry;
+        static CRepConfig* factory(string report_tp, CSeq_entry_Handle* tse_p=0);
+        void Export();
+        void Export(vector <CRef <CClickableText> >& item_list);
         void AddListOutputTags();
         bool NeedsTag(const string& setting_name, const string& desc, 
                              const s_fataltag* tags, const unsigned& tags_cnt);
@@ -138,10 +161,11 @@ namespace DiscRepNmSpc {
         static vector < CRef < CTestAndRepData > > tests_on_SubmitBlk;
 
      protected:
-        string m_outsuffix, m_outdir, m_insuffix, m_indir, m_file_tp;
         vector <string> m_enabled, m_disabled;
+        string m_outsuffix, m_outdir, m_insuffix, m_indir, m_file_tp;
         bool m_dorecurse;
 
+/*
         void x_ReadAsn1(ESerialDataFormat datafm = eSerial_AsnText);
         void x_ReadFasta();
         void x_GuessFile();
@@ -150,6 +174,7 @@ namespace DiscRepNmSpc {
         void x_CatenatedSeqEntry();
         void x_ProcessOneFile();
         void x_ProcessDir(const CDir& dir, bool out_f);
+*/
 
         void WriteDiscRepSummary();
         void WriteDiscRepSubcategories(const vector <CRef <CClickableItem> >& subcategories, unsigned ident=1);
@@ -165,22 +190,41 @@ namespace DiscRepNmSpc {
    {
       public:
         virtual ~CRepConfDiscrepancy () {};
-        virtual void Export();
+
+        virtual void Run(CRef <CRepConfig> config);
+     
+      private:
+/*
+        string m_outsuffix, m_outdir, m_insuffix, m_indir, m_file_tp;
+        bool m_dorecurse;
+*/
+
+        void x_ReadAsn1(ESerialDataFormat datafm = eSerial_AsnText);
+        void x_ReadFasta();
+        void x_GuessFile();
+        void x_BatchSet(ESerialDataFormat datafm = eSerial_AsnText);
+        void x_BatchSeqSubmit(ESerialDataFormat datafm = eSerial_AsnText);
+        void x_CatenatedSeqEntry();
+        void x_ProcessOneFile();
+        void x_ProcessDir(const CDir& dir, bool out_f);
    };
 
    class CRepConfOncaller : public CRepConfig
    {
       public:
         virtual ~CRepConfOncaller () {};
-        virtual void Export() { };
+
+        virtual void Run(CRef <CRepConfig> config);
    };
 
+/*
    class CRepConfAll : public CRepConfig 
    {
       public:
         virtual ~CRepConfAll () {};
         virtual void Export() { };
    };
+*/
 
    class CDiscRepInfo 
    {

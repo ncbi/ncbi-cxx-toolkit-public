@@ -167,7 +167,7 @@ void CRepConfig :: AddListOutputTags()
   } 
 };
 
-void CRepConfDiscrepancy :: Export()
+void CRepConfig :: Export()
 {
   if (oc.add_output_tag || oc.add_extra_output_tag) AddListOutputTags();
 
@@ -194,7 +194,7 @@ bool CRepConfig :: RmTagInDescp(string& str, const string& tag)
 
 void CRepConfig :: WriteDiscRepSummary()
 {
-  string prefix, desc;
+  string desc;
 
   ITERATE (vector <CRef < CClickableItem > >, it, thisInfo.disc_report_data) {
       desc = (*it)->description;
@@ -351,3 +351,20 @@ void CRepConfig :: StandardWriteDiscRepItems(COutputConfig& oc, const CClickable
   }
 
 }; // StandardWriteDiscRepItems()
+
+void CRepConfig :: Export(vector <CRef <CClickableText> >& item_list)
+{
+   if (oc.add_output_tag || oc.add_extra_output_tag) AddListOutputTags(); 
+   string desc;
+   ITERATE (vector <CRef < CClickableItem > >, it, thisInfo.disc_report_data) {
+      strtmp = kEmptyStr;
+
+      desc = (*it)->description;
+      if ( desc.empty()) continue;
+      // FATAL tag
+      if (RmTagInDescp(desc, "FATAL: ")) strtmp = "FATAL:";
+      strtmp += (*it)->setting_name + ": " + desc;
+      CRef <CClickableText> item (new CClickableText(strtmp));             
+      item_list.push_back(item);
+   } 
+};
