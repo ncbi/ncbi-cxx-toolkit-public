@@ -2619,6 +2619,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "INIA<ESP>	b	Instituto Nacional de Investigacion y Tecnologia Agraria y Alimentaria",
 "INIBP	s	Instituto Nacional de Investigaciones Biologico Pesqueras",
 "INIDA	s	Instituto Nacional de Investigacao e Desenvolvimento Agrario - Cape Verde",
+"INIDEP	s	Instituto Nacional de Investigacion y Desarrollo Pesquero",
 "INIF	c	Coleccion de Microhongos",
 "INIFAT	c	INIFAT Fungus Collection",
 "INIP	s	Instituto Nacional de Investigacao das Pescas",
