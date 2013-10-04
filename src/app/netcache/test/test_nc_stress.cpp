@@ -510,9 +510,9 @@ int CTestNetCacheStressApp::Run(void)
         threads = (unsigned) args["threads"].AsInteger();
     }
 
-    int timeout = 2000;
+    unsigned timeout = 2000;
     if (args["timeout"]) {
-        timeout = args["timeout"].AsInteger();
+        timeout = (unsigned) args["timeout"].AsInteger();
     }
 
 
