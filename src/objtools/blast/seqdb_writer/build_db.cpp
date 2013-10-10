@@ -352,6 +352,8 @@ static CConstRef<CBioseq> s_FixBioseqDeltas(CConstRef<objects::CBioseq> bs)
                                      L.GetLength(),
                                      na8,
                                      CSeqUtil::e_Ncbi8na);
+	    } else if (L.GetSeq_data().IsGap()) {
+                seq8na.append(L.GetLength(), 0x0f);
             } else {
                 NCBI_THROW(CMultisourceException, eArg,
                            "Unhandled type of sequence data encountered.");

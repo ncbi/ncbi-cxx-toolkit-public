@@ -39,6 +39,7 @@
 #include <objtools/readers/fasta.hpp>
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
+#include <serial/iterator.hpp>
 #include "../mask_info_registry.hpp"
 #include <sstream>
 
@@ -46,6 +47,7 @@
 #include <boost/current_function.hpp>
 #include <objtools/blast/seqdb_writer/build_db.hpp>
 #include <objtools/blast/seqdb_writer/writedb_isam.hpp>
+#include <objects/seqset/Seq_entry.hpp>
 
 #ifndef SKIP_DOXYGEN_PROCESSING
 
@@ -2586,6 +2588,69 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_TestBasicDatabaseCreation)
 
     bd->EndBuild(true);
     BOOST_REQUIRE(f1.Exists() == false);
+}
+
+class CSeqEntryGetSource : public IBioseqSource {
+public:
+	CSeqEntryGetSource(CRef<CSeq_entry> seq_entry)
+		: m_objmgr(CObjectManager::GetInstance()),
+		m_scope(new CScope(*m_objmgr)),
+		m_entry(seq_entry)
+	{
+		m_Bioseq = Begin(*m_entry);
+		for (CTypeIterator<CBioseq> it = Begin(*m_entry); it; ++it)
+	        {
+       		         m_scope->AddBioseq(*it);
+       		}
+        	m_entry->Parentize();
+	}
+ 
+
+	virtual CConstRef<CBioseq> GetNext()
+	{
+		CConstRef<CBioseq> rv;
+	
+		if (m_Bioseq)
+		{
+			rv.Reset(&(*m_Bioseq));
+			++m_Bioseq;
+		}
+		return rv;
+	}
+
+private:
+	CRef<CObjectManager>    m_objmgr;
+	CRef<CScope>            m_scope;
+    	CRef<CSeq_entry>        m_entry;
+	CTypeIterator<CBioseq> m_Bioseq;
+};
+
+BOOST_AUTO_TEST_CASE(CBuildDatabase_WGS_gap)
+{
+
+	CTmpFile tmpfile;
+	CNcbiOstream& log = tmpfile.AsOutputFile(CTmpFile::eIfExists_Reset);
+	const string kOutput("x");
+	CFileDeleteAtExit::Add("x.nin");
+	CFileDeleteAtExit::Add("x.nhr");
+	CFileDeleteAtExit::Add("x.nsq");
+
+	CRef<CBuildDatabase> bd;
+	bd.Reset(new CBuildDatabase(kOutput, "foo", false,
+                            CWriteDB::eNoIndex, false, &log));
+	bd->StartBuild();
+
+    	auto_ptr<CObjectIStream> ois
+       	 (CObjectIStream::Open(eSerial_AsnText, "data/AXBT01000003.asn"));
+    	CRef<CSeq_entry> entry(new CSeq_entry);
+    	*ois >> *entry;
+	CSeqEntryGetSource seqentry_source(entry); 
+	
+	bool status = bd->AddSequences(seqentry_source);
+	BOOST_REQUIRE(status == true);
+	bd->EndBuild();
+    	CFile f1(kOutput + ".nin");
+    	BOOST_REQUIRE(f1.Exists() == true);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
