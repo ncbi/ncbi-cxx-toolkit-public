@@ -5873,80 +5873,65 @@ bool CValidError_feat::ValidateCdRegionTranslation
 }
 
 
-void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
+void CValidError_feat::x_GetExceptionFlags
+(const string& except_text,
+ bool& report_errors,
+ bool& unclassified_except,
+ bool& mismatch_except,
+ bool& frameshift_except,
+ bool& rearrange_except,
+ bool& product_replaced,
+ bool& mixed_population,
+ bool& low_quality,
+ bool& rna_editing)
 {
-    // bail if not CDS
-    if (!feat.GetData().IsCdregion()) {
-        return;
-    }
-
-    // do not validate for pseudo gene
-    FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
-        if ((*it)->IsSetQual()  &&  NStr::EqualNocase((*it)->GetQual(), "pseudo")) {
-            return;
+    ITERATE (TBypassCdsTransCheckSet, it, sc_BypassCdsTransCheck) {
+        if (NStr::FindNoCase(except_text, *it) != NPOS) {
+            report_errors = false;  // biological exception
         }
     }
-
-    if (feat.IsSetProduct() && m_Imp.x_IsFarFetchFailure(feat.GetProduct())) {
-        m_Imp.SetFarFetchFailure();
-        return;
+    if (NStr::FindNoCase(except_text, "unclassified translation discrepancy") != NPOS) {
+        unclassified_except = true;
     }
-
-    bool prot_ok = true;
-    int  ragged = 0;
-    bool has_errors = false, unclassified_except = false,
-        mismatch_except = false, frameshift_except = false,
-        rearrange_except = false, product_replaced = false,
-        mixed_population = false, low_quality = false,
-        report_errors = true, other_than_mismatch = false,
-        rna_editing = false;
-    string farstr;
-    
-    if (!m_Imp.IgnoreExceptions() &&
-        feat.CanGetExcept()  &&  feat.GetExcept()  &&
-        feat.CanGetExcept_text()) {
-        const string& except_text = feat.GetExcept_text();
-        ITERATE (TBypassCdsTransCheckSet, it, sc_BypassCdsTransCheck) {
-            if (NStr::FindNoCase(except_text, *it) != NPOS) {
-                report_errors = false;  // biological exception
-            }
-        }
-        if (NStr::FindNoCase(except_text, "unclassified translation discrepancy") != NPOS) {
-            unclassified_except = true;
-        }
-        if (NStr::FindNoCase(except_text, "mismatches in translation") != NPOS) {
-            mismatch_except = true;
-            report_errors = true;
-        }
-        if (NStr::FindNoCase(except_text, "artificial frameshift") != NPOS) {
-            frameshift_except = true;
-            report_errors = true;
-        }
-        if (NStr::FindNoCase(except_text, "rearrangement required for product") != NPOS) {
-            rearrange_except = true;
-        }
-        if (NStr::FindNoCase(except_text, "translated product replaced") != NPOS) {
-            product_replaced = true;
-        }
-        if (NStr::FindNoCase(except_text, "heterogeneous population sequenced") != NPOS) {
-            mixed_population = true;
-        }
-        if (NStr::FindNoCase(except_text, "low-quality sequence region") != NPOS) {
-            low_quality = true;
-        }
-        if (NStr::FindNoCase (except_text, "RNA editing") != NPOS) {
-            rna_editing = true;
-        }
+    if (NStr::FindNoCase(except_text, "mismatches in translation") != NPOS) {
+        mismatch_except = true;
+        report_errors = true;
     }
+    if (NStr::FindNoCase(except_text, "artificial frameshift") != NPOS) {
+        frameshift_except = true;
+        report_errors = true;
+    }
+    if (NStr::FindNoCase(except_text, "rearrangement required for product") != NPOS) {
+        rearrange_except = true;
+    }
+    if (NStr::FindNoCase(except_text, "translated product replaced") != NPOS) {
+        product_replaced = true;
+    }
+    if (NStr::FindNoCase(except_text, "heterogeneous population sequenced") != NPOS) {
+        mixed_population = true;
+    }
+    if (NStr::FindNoCase(except_text, "low-quality sequence region") != NPOS) {
+        low_quality = true;
+    }
+    if (NStr::FindNoCase (except_text, "RNA editing") != NPOS) {
+        rna_editing = true;
+    }
+}
 
+
+void CValidError_feat::x_CheckCDSFrame
+(const CSeq_feat& feat,
+ const bool report_errors,
+ bool& has_errors,
+ bool& other_than_mismatch)
+{
+    const CCdregion& cdregion = feat.GetData().GetCdregion();
+    const CSeq_loc& location = feat.GetLocation();
+    unsigned int part_loc = SeqLocPartialCheck(location, m_Scope);
     string comment_text = "";
     if (feat.IsSetComment()) {
         comment_text = feat.GetComment();
     }
-
-    const CCdregion& cdregion = feat.GetData().GetCdregion();
-    const CSeq_loc& location = feat.GetLocation();
-    unsigned int part_loc = SeqLocPartialCheck(location, m_Scope);
 
     // check frame
     if (cdregion.IsSetFrame() 
@@ -5968,7 +5953,6 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             }
         } else if ((part_loc & eSeqlocPartial_Start) && !Is5AtEndSpliceSiteOrGap (location)) {
             if (s_PartialAtGapOrNs(m_Scope, location, eSeqlocPartial_Nostart)
-                && feat.IsSetComment()
                 && NStr::Find(comment_text, "coding region disrupted by sequencing gap") != string::npos) {
                 // suppress
             } else {
@@ -5985,32 +5969,19 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             }
         }
     }
+}
 
 
-    // check for unparsed transl_except
-    bool transl_except = false;
-    if (!cdregion.IsSetCode_break()) {
-        FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
-            if ((*it)->IsSetQual()  &&  NStr::Equal((*it)->GetQual(), "transl_except")) {
-                transl_except = true;
-            }
-        }
-    }
-    
-    
-    int gc = 0;
-    if ( cdregion.CanGetCode() ) {
-        // We assume that the id is set for all Genetic_code
-        gc = cdregion.GetCode().GetId();
-    }
-    string gccode = NStr::IntToString(gc);
-
-    string transl_prot;   // translated protein
-    bool got_stop = false;
-    bool alt_start = false;
-    bool show_stop = false;
-    bool unable_to_translate = true;
-
+void CValidError_feat::x_FindTranslationStops
+(const CSeq_feat& feat,
+ bool& got_stop,
+ bool& show_stop,
+ bool& unable_to_translate,
+ bool& alt_start,
+ string& transl_prot
+)
+{
+    const CCdregion& cdregion = feat.GetData().GetCdregion();
     try {
         if (m_Scope) {
             CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
@@ -6039,12 +6010,6 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
                         }
                         show_stop = true;
                     }
-#if 0
-                } else if (feat.GetLocation().GetStart(eExtreme_Positional) > bsh.GetInst_Length() - 1
-                    || feat.GetLocation().GetStop(eExtreme_Positional) > bsh.GetInst_Length() - 1) {
-                    // figure out
-                    // don't translate
-#endif
                 } else {
                     CSeqTranslator::Translate(feat, *m_Scope, transl_prot,
                                                 true,   // include stop codons
@@ -6062,69 +6027,20 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         }
     } catch (CException&) {
     }
-    if (unable_to_translate) {
-        if (report_errors) {
-            PostErr (eDiag_Error, eErr_SEQ_FEAT_CdTransFail, 
-                "Unable to translate", feat);
-        }
-        other_than_mismatch = true;
-    }
+}
 
-    // check alternative start codon
-    if (alt_start  &&  gc == 1) {
-        // do not report
-    } else if (!alt_start && feat.IsSetExcept() && feat.IsSetExcept_text()
-               && NStr::Find(feat.GetExcept_text(), "alternative start codon") != string::npos) {
-        CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
-        if (bsh) {
-            bool is_refseq_loc = false;
-            FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
-                if ((*id_it)->IsOther() && (*id_it)->GetOther().IsSetAccession()
-                    && NStr::StartsWith((*id_it)->GetOther().GetAccession(), "NM_")) {
-                    is_refseq_loc = true;
-                    break;
-                }
-            }
-            if (is_refseq_loc) {
-                PostErr (eDiag_Warning, eErr_SEQ_FEAT_AltStartCodon, 
-                         "Unnecessary alternative start codon exception", feat);
-            }
-        }
-    }
 
-    bool no_end = false;
-    unsigned int part_prod = eSeqlocPartial_Complete;
-    if (feat.IsSetProduct()) {
-        part_prod = SeqLocPartialCheck(feat.GetProduct(), m_Scope);
-        if ( (part_loc & eSeqlocPartial_Stop)  ||
-            (part_prod & eSeqlocPartial_Stop) ) {
-            no_end = true;
-        } else {    
-            // complete stop, so check for ragged end
-            ragged = CheckForRaggedEnd(location, cdregion);
-        }
-    } else if (part_loc & eSeqlocPartial_Stop) {
-        no_end = true;
-    }
-        
-    // check for code break not on a codon
-    if (x_ValidateCodeBreakNotOnCodon(feat, location, cdregion, report_errors)) {
-        has_errors = true;
-        other_than_mismatch = true;
-    }
-    
-    bool no_beg = 
-        (part_loc & eSeqlocPartial_Start)  ||  (part_prod & eSeqlocPartial_Start);
-
-    bool reported_bad_start_codon = false;
-
-    if (!ValidateCdRegionTranslation (feat, transl_prot, report_errors, unclassified_except, has_errors, 
-        other_than_mismatch, reported_bad_start_codon, prot_ok)) {
-        return;
-    }
-    
+const CSeq_id* CValidError_feat::x_GetCDSProduct
+(const CSeq_feat& feat,
+ bool report_errors,
+ size_t translation_length,
+ CBioseq_Handle& prot_handle,
+ string& farstr,
+ bool& has_errors,
+ bool& other_than_mismatch)
+{
     const CSeq_id* protid = 0;
-    CBioseq_Handle prot_handle;
+
     if (feat.IsSetProduct()) {
         try {
             protid = &GetId(feat.GetProduct(), m_Scope);
@@ -6140,19 +6056,19 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
 
                     PostErr(eDiag_Error, eErr_SEQ_FEAT_ProductFetchFailure, 
                           "Unable to fetch CDS product '" + label + "'", feat);
+                    m_Imp.SetFarFetchFailure();
                 }
             }
         }
     }
-
     if (!prot_handle) {
         if  (!m_Imp.IsStandaloneAnnot()) {
-            if (transl_prot.length() > 6) {
+            if (translation_length > 6) {
                 bool is_nt, is_ng, is_nw, is_nc;
-                s_LocIdType(location, *m_Scope, m_Imp.GetTSE(), is_nt, is_ng, is_nw, is_nc);
+                s_LocIdType(feat.GetLocation(), *m_Scope, m_Imp.GetTSE(), is_nt, is_ng, is_nw, is_nc);
                 if (!(is_nt || is_ng || is_nw)) {
                     EDiagSev sev = eDiag_Error;
-                    if (IsDeltaOrFarSeg(location, m_Scope)) {
+                    if (IsDeltaOrFarSeg(feat.GetLocation(), m_Scope)) {
                         sev = eDiag_Warning;
                     }
                     if (is_nc) {
@@ -6173,14 +6089,32 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             }
         }
     }
+    return protid;
+}
 
-    size_t num_mismatches = 0;
-    size_t len = 0;
 
-    show_stop = true;
-
-    bool no_product = true;
-
+void CValidError_feat::x_CheckTranslationMismatches
+(const CSeq_feat& feat,
+ CBioseq_Handle prot_handle,
+ const string& transl_prot,
+ const string& gccode,
+ const string& farstr,
+ bool report_errors,
+ bool got_stop,
+ bool rna_editing,
+ bool mismatch_except,
+ bool unclassified_except,
+ bool reported_bad_start_codon,
+ bool no_beg,
+ bool no_end,
+ size_t& len,
+ size_t& num_mismatches,
+ bool& no_product,
+ bool& prot_ok,
+ bool& show_stop,
+ bool& has_errors,
+ bool& other_than_mismatch)
+{
     // can't check for mismatches unless there is a product
     if (prot_handle && prot_handle.IsAa()) {
         no_product = false;
@@ -6383,6 +6317,184 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
             }
         }
     }
+}
+
+
+void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
+{
+    // bail if not CDS
+    if (!feat.GetData().IsCdregion()) {
+        return;
+    }
+
+    // do not validate for pseudo gene
+    FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
+        if ((*it)->IsSetQual()  &&  NStr::EqualNocase((*it)->GetQual(), "pseudo")) {
+            return;
+        }
+    }
+
+    bool prot_ok = true;
+    int  ragged = 0;
+    bool has_errors = false, unclassified_except = false,
+        mismatch_except = false, frameshift_except = false,
+        rearrange_except = false, product_replaced = false,
+        mixed_population = false, low_quality = false,
+        report_errors = true, other_than_mismatch = false,
+        rna_editing = false;
+    string farstr;
+    
+    if (!m_Imp.IgnoreExceptions() &&
+        feat.CanGetExcept()  &&  feat.GetExcept()  &&
+        feat.CanGetExcept_text()) {
+        const string& except_text = feat.GetExcept_text();
+        x_GetExceptionFlags (except_text,
+                             report_errors,
+                             unclassified_except,
+                             mismatch_except,
+                             frameshift_except,
+                             rearrange_except,
+                             product_replaced,
+                             mixed_population,
+                             low_quality,
+                             rna_editing);
+    }
+
+    string comment_text = "";
+    if (feat.IsSetComment()) {
+        comment_text = feat.GetComment();
+    }
+
+    const CCdregion& cdregion = feat.GetData().GetCdregion();
+    const CSeq_loc& location = feat.GetLocation();
+    unsigned int part_loc = SeqLocPartialCheck(location, m_Scope);
+
+    // check frame
+    x_CheckCDSFrame(feat, report_errors, has_errors, other_than_mismatch);
+
+    // check for unparsed transl_except
+    bool transl_except = false;
+    if (!cdregion.IsSetCode_break()) {
+        FOR_EACH_GBQUAL_ON_FEATURE (it, feat) {
+            if ((*it)->IsSetQual()  &&  NStr::Equal((*it)->GetQual(), "transl_except")) {
+                transl_except = true;
+            }
+        }
+    }
+    
+    
+    int gc = 0;
+    if ( cdregion.CanGetCode() ) {
+        // We assume that the id is set for all Genetic_code
+        gc = cdregion.GetCode().GetId();
+    }
+    string gccode = NStr::IntToString(gc);
+
+    string transl_prot;   // translated protein
+    bool got_stop = false;
+    bool alt_start = false;
+    bool show_stop = false;
+    bool unable_to_translate = true;
+
+    x_FindTranslationStops(feat, got_stop, show_stop, unable_to_translate, alt_start, transl_prot);
+
+    if (unable_to_translate) {
+        if (report_errors) {
+            PostErr (eDiag_Error, eErr_SEQ_FEAT_CdTransFail, 
+                "Unable to translate", feat);
+        }
+        other_than_mismatch = true;
+    }
+
+    // check alternative start codon
+    if (alt_start  &&  gc == 1) {
+        // do not report
+    } else if (!alt_start && feat.IsSetExcept() && feat.IsSetExcept_text()
+               && NStr::Find(feat.GetExcept_text(), "alternative start codon") != string::npos) {
+        CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
+        if (bsh) {
+            bool is_refseq_loc = false;
+            FOR_EACH_SEQID_ON_BIOSEQ (id_it, *(bsh.GetCompleteBioseq())) {
+                if ((*id_it)->IsOther() && (*id_it)->GetOther().IsSetAccession()
+                    && NStr::StartsWith((*id_it)->GetOther().GetAccession(), "NM_")) {
+                    is_refseq_loc = true;
+                    break;
+                }
+            }
+            if (is_refseq_loc) {
+                PostErr (eDiag_Warning, eErr_SEQ_FEAT_AltStartCodon, 
+                         "Unnecessary alternative start codon exception", feat);
+            }
+        }
+    }
+
+    bool no_end = false;
+    unsigned int part_prod = eSeqlocPartial_Complete;
+    if (feat.IsSetProduct()) {
+        part_prod = SeqLocPartialCheck(feat.GetProduct(), m_Scope);
+        if ( (part_loc & eSeqlocPartial_Stop)  ||
+            (part_prod & eSeqlocPartial_Stop) ) {
+            no_end = true;
+        } else {    
+            // complete stop, so check for ragged end
+            ragged = CheckForRaggedEnd(location, cdregion);
+        }
+    } else if (part_loc & eSeqlocPartial_Stop) {
+        no_end = true;
+    }
+        
+    // check for code break not on a codon
+    if (x_ValidateCodeBreakNotOnCodon(feat, location, cdregion, report_errors)) {
+        has_errors = true;
+        other_than_mismatch = true;
+    }
+    
+    bool no_beg = 
+        (part_loc & eSeqlocPartial_Start)  ||  (part_prod & eSeqlocPartial_Start);
+
+    bool reported_bad_start_codon = false;
+
+    if (!ValidateCdRegionTranslation (feat, transl_prot, report_errors, unclassified_except, has_errors, 
+        other_than_mismatch, reported_bad_start_codon, prot_ok)) {
+        return;
+    }
+
+    
+    CBioseq_Handle prot_handle;
+    const CSeq_id* protid = x_GetCDSProduct(feat, 
+                                            report_errors,
+                                            transl_prot.length(),
+                                            prot_handle,
+                                            farstr,
+                                            has_errors,
+                                            other_than_mismatch);
+
+    size_t num_mismatches = 0;
+    size_t len = 0;
+
+    show_stop = true;
+
+    bool no_product = true;
+    x_CheckTranslationMismatches(feat,
+                                 prot_handle,
+                                 transl_prot,
+                                 gccode,
+                                 farstr,
+                                 report_errors,
+                                 got_stop,
+                                 rna_editing,
+                                 mismatch_except,
+                                 unclassified_except,
+                                 reported_bad_start_codon,
+                                 no_beg,
+                                 no_end,
+                                 len,
+                                 num_mismatches,
+                                 no_product,
+                                 prot_ok,
+                                 show_stop,
+                                 has_errors,
+                                 other_than_mismatch);
 
     if (!unable_to_translate) {
         ReportCdTransErrors(feat, show_stop, got_stop, no_end, ragged, 
@@ -6417,6 +6529,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
                 "CDS has unqualified translated product replaced exception", feat);
         }
     }
+
 }
 
 

@@ -894,6 +894,58 @@ private:
     void ValidateCdregion(const CCdregion& cdregion, const CSeq_feat& obj);
     void ValidateCdTrans(const CSeq_feat& feat);
     bool ValidateCdRegionTranslation (const CSeq_feat& feat, const string& transl_prot, bool report_errors, bool unclassified_except, bool& has_errors, bool& other_than_mismatch, bool& reported_bad_start_codon, bool& prot_ok);
+    void x_GetExceptionFlags
+        (const string& except_text,
+         bool& report_errors,
+         bool& unclassified_except,
+         bool& mismatch_except,
+         bool& frameshift_except,
+         bool& rearrange_except,
+         bool& product_replaced,
+         bool& mixed_population,
+         bool& low_quality,
+         bool& rna_editing);
+    void x_CheckCDSFrame
+        (const CSeq_feat& feat,
+         const bool report_errors,
+         bool& has_errors,
+         bool& other_than_mismatch);
+    void x_FindTranslationStops
+        (const CSeq_feat& feat,
+         bool& got_stop,
+         bool& show_stop,
+         bool& unable_to_translate,
+         bool& alt_start,
+         string& transl_prot);
+    const CSeq_id* x_GetCDSProduct
+        (const CSeq_feat& feat,
+         bool report_errors,
+         size_t translation_length,
+         CBioseq_Handle& prot_handle,
+         string& farstr,
+         bool& has_errors,
+         bool& other_than_mismatch);
+    void x_CheckTranslationMismatches
+        (const CSeq_feat& feat,
+         CBioseq_Handle prot_handle,
+         const string& transl_prot,
+         const string& gccode,
+         const string& farstr,
+         bool report_errors,
+         bool got_stop,
+         bool rna_editing,
+         bool mismatch_except,
+         bool unclassified_except,
+         bool reported_bad_start_codon,
+         bool no_beg,
+         bool no_end,
+         size_t& len,
+         size_t& num_mismatches,
+         bool& no_product,
+         bool& prot_ok,
+         bool& show_stop,
+         bool& has_errors,
+         bool& other_than_mismatch);
     void ValidateCdsProductId(const CSeq_feat& feat);
     void ValidateCdConflict(const CCdregion& cdregion, const CSeq_feat& feat);
     void ReportCdTransErrors(const CSeq_feat& feat,
