@@ -357,7 +357,18 @@ string CSubSource::GetCollectionDateProblem (const string& date_string)
 }
 
 
-string CSubSource::FixDateFormat (string orig_date, bool month_first, bool& month_ambiguous)
+string CSubSource::FixDateFormat (const string& orig_date)
+{
+    bool month_ambiguous = false;
+    string fix = FixDateFormat(orig_date, true, month_ambiguous);
+    if (month_ambiguous) {
+        fix = "";
+    }
+    return fix;
+}
+
+
+string CSubSource::FixDateFormat (const string& orig_date, bool month_first, bool& month_ambiguous)
 {
     string reformatted_date = "";
     string month = "";
@@ -366,11 +377,12 @@ string CSubSource::FixDateFormat (string orig_date, bool month_first, bool& mont
     size_t i;
 
     month_ambiguous = false;
-    NStr::TruncateSpacesInPlace (orig_date);
+    string cpy = orig_date;
+    NStr::TruncateSpacesInPlace (cpy);
     vector<string> tokens;
     string one_token;    
     for (i = 0; i < 4; i++) {
-        one_token = NStr::GetField (orig_date, i, token_delimiters, NStr::eMergeDelims);
+        one_token = NStr::GetField (cpy, i, token_delimiters, NStr::eMergeDelims);
         if (NStr::IsBlank (one_token)) {
             break;
         } else {
@@ -408,7 +420,7 @@ string CSubSource::FixDateFormat (string orig_date, bool month_first, bool& mont
                     // numbers should not be less than 1
                     return "";
                 }
-            } catch ( const exception& ) {
+            } catch ( ... ) {
                 // threw exception while converting to int
                 return "";
             }
@@ -426,50 +438,72 @@ string CSubSource::FixDateFormat (string orig_date, bool month_first, bool& mont
         // three numbers, none of them are year, can't resolve
         return "";
     } else if (tokens.size() == 1) {
-        int val = NStr::StringToInt (tokens[0]);
-        if (year == 0) {
-            year = val;
-        } else {
-            if (NStr::IsBlank (month)) {
-                if (val > 0 && val < 13) {
-                    month = sm_LegalMonths[val - 1];
-                } else {
-                    // month number out of range
-                    return "";
-                }
+        try {
+            int val = NStr::StringToInt (tokens[0]);
+            if (year == 0) {
+                year = val;
             } else {
-                day = val;
+                if (NStr::IsBlank (month)) {
+                    if (val > 0 && val < 13) {
+                        month = sm_LegalMonths[val - 1];
+                    } else {
+                        // month number out of range
+                        return "";
+                    }
+                } else {
+                    day = val;
+                }
             }
+        } catch ( ... ) {
+            // threw exception while converting to int
+            return "";
         }
     } else if (!NStr::IsBlank (month)) {
         // shouldn't happen
         return "";
     } else {
-        int val1 = NStr::StringToInt (tokens[0]); 
-        int val2 = NStr::StringToInt (tokens[1]);
-        if (val1 > 12 && val2 > 12) {
-            // both numbers too big for month
-            return "";
-        } else if (val1 < 13 && val2 < 13) {
-            // both numbers could be month
-            month_ambiguous = true;
-            if (month_first) {
+        try {
+            int val1 = NStr::StringToInt (tokens[0]); 
+            int val2 = NStr::StringToInt (tokens[1]);
+            if (val1 > 12 && val2 > 12) {
+                // both numbers too big for month
+                return "";
+            } else if (val1 < 13 && val2 < 13) {
+                // both numbers could be month
+                month_ambiguous = true;
+                if (month_first) {
+                    month = sm_LegalMonths[val1 - 1];
+                    day = val2;
+                } else {
+                    month = sm_LegalMonths[val2 - 1];
+                    day = val1;
+                }
+            } else if (val1 < 13) {
                 month = sm_LegalMonths[val1 - 1];
                 day = val2;
             } else {
                 month = sm_LegalMonths[val2 - 1];
                 day = val1;
             }
-        } else if (val1 < 13) {
-            month = sm_LegalMonths[val1 - 1];
-            day = val2;
-        } else {
-            month = sm_LegalMonths[val2 - 1];
-            day = val1;
+        } catch ( ... ) {
+            // threw exception while converting to int
+            return "";
         }
     }
-                
-    if (year > 0) {
+        
+    if (year > 31 && year < 1900) {
+        // try to guess year
+        string year_date = NStr::NumericToString(year + 2000);
+        bool format_bad = false;
+        bool in_future = false;
+        IsCorrectDateFormat(year_date, format_bad, in_future);
+        if (in_future) {
+            year += 1900;
+        } else {
+            year += 2000;
+        }
+    }
+    if (year > 31 && year < 2100) {
         reformatted_date = NStr::NumericToString (year);
         if (!NStr::IsBlank (month)) {
             reformatted_date = month + "-" + reformatted_date;
