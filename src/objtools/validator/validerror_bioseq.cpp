@@ -3974,7 +3974,7 @@ void CValidError_bioseq::ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh)
                 }
                 if (/* !is_circular && */ (*cit)->GetLocation().GetStop(eExtreme_Positional) < left) {
                     // report if necessary
-                    if (*nit > 1) {
+                    if (*nit > 4) {
                         PostErr (eDiag_Warning, eErr_SEQ_FEAT_MultipleGeneOverlap, 
                                  "Gene contains " + NStr::IntToString (*nit) + " other genes",
                                  **cit);
@@ -3999,7 +3999,7 @@ void CValidError_bioseq::ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh)
         vector< CConstRef < CSeq_feat > >::iterator cit = containing_genes.begin();
         vector< int >::iterator nit = num_contained.begin();
         while (cit != containing_genes.end() && nit != num_contained.end()) {
-            if (*nit > 1) {
+            if (*nit > 4) {
                 PostErr (eDiag_Warning, eErr_SEQ_FEAT_MultipleGeneOverlap, 
                          "Gene contains " + NStr::IntToString (*nit) + " other genes",
                          **cit);
