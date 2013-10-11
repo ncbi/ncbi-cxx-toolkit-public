@@ -375,6 +375,7 @@ string CSubSource::FixDateFormat (const string& orig_date, bool month_first, boo
     int year = 0, day = 0;
     string token_delimiters = " ,-/";
     size_t i;
+    size_t num_original_tokens = 0;
 
     month_ambiguous = false;
     string cpy = orig_date;
@@ -389,6 +390,7 @@ string CSubSource::FixDateFormat (const string& orig_date, bool month_first, boo
             tokens.push_back (one_token);
         }
     }
+    num_original_tokens = tokens.size();
     if (tokens.size() < 1 || tokens.size() > 3) {
         // no tokens or too many tokens
         return "";
@@ -491,8 +493,10 @@ string CSubSource::FixDateFormat (const string& orig_date, bool month_first, boo
         }
     }
         
-    if (year > 31 && year < 1900) {
-        // try to guess year
+    if (year > 31 && year < 100 && num_original_tokens > 1) {
+        // try to guess year from two-digit year provided,
+        // only if it could not possibly be a day of the month
+        // and if there were at least two tokens provided
         string year_date = NStr::NumericToString(year + 2000);
         bool format_bad = false;
         bool in_future = false;
@@ -503,7 +507,7 @@ string CSubSource::FixDateFormat (const string& orig_date, bool month_first, boo
             year += 2000;
         }
     }
-    if (year > 31 && year < 2100) {
+    if (year >= 1000 && year < 2100) {
         reformatted_date = NStr::NumericToString (year);
         if (!NStr::IsBlank (month)) {
             reformatted_date = month + "-" + reformatted_date;

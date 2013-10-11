@@ -95,6 +95,42 @@ public:
 
     static void IsCorrectDateFormat(const string& date_string, bool& bad_format, bool& in_future);
     static string GetCollectionDateProblem (const string& date_string);
+
+    /// Attempt to fix the format of the date
+    /// Returns a blank if the format of the date cannot be determined
+    /// @param orig_date The original date [in]
+    /// Rules:
+    /// First, try to split the string into tokens using the following delimiters:
+    ///      * space
+    ///      * comma (,)
+    ///      * dash (-)
+    ///      * slash (/)
+    /// If more than three tokens are generated, give up.
+    /// Of the tokens that are generated, look for a token that contains letters.
+    /// This token is assumed to be the month, and will be checked to see if it
+    /// begins with any of the three-letter abbreviations for months (Jan, Feb, Mar, etc.).
+    /// If so, the month is known. If none of the abbreviations produce a match, fail and
+    /// return an empty string. If more than one token that contains letters is found,
+    /// return an empty string.
+    /// Also look for any token that is a number and has a value greater than 31. This value
+    /// will be assumed to be the year. If there is more than one such token, return
+    /// an empty string.
+    /// After making this initial pass, try to guess the identities of the remaining tokens.
+    /// Numbers between 1 and 12 could be considered months, if no month token containing
+    /// letters was already identified. If two or more such tokens are found, the date is 
+    /// ambiguous: return an empty string.
+    /// If a number is between 1 and 31, it could be considered the day. If two such tokens
+    /// are found, the date is ambiguous: return an empty string.
+    /// If there is a number that cannot be the month or the day, assume that this is the
+    /// year. If the year is less than 100, this may be a two-digit representation. If
+    /// 2000 + the value is not in the future, use this as the year, otherwise use
+    /// 1900 + the value for the year.
+    /// If all tokens can be identified, arrange them in the output string in one of the 
+    /// following formats:
+    /// YYYY
+    /// MMM-YYYY
+    /// DD-MMM-YYYY
+
     static string FixDateFormat(const string& orig_date);
     static string FixDateFormat(const string& orig_date, bool month_first, bool& month_ambiguous);
     static void IsCorrectLatLonFormat (string lat_lon, bool& format_correct, bool& precision_correct,
