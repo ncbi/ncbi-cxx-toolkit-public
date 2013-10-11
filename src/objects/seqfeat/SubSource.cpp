@@ -193,12 +193,45 @@ static const int sm_daysPerMonth [] = {
   31
 };
 
+
+bool CSubSource::IsDayValueOkForMonth(int day, int month, int year)
+{
+    bool rval = true;
+    if (month < 1 || month > 12) {
+        return false;
+    }
+    if (day < 1) {
+        return false;
+    }
+    int dpm = sm_daysPerMonth [month - 1];
+
+    if (day > dpm) {
+        rval = false;
+        if (month == 2 && day == 29) {
+            // true only if this is a leap year
+            if (! (year % 400)) {
+                rval = true;
+            } else if (!(year % 100)) {
+                rval = false;
+            } else if (!(year % 4)) {
+                rval = true;
+            }
+        }
+    }
+    return rval;
+}
+
+
 CRef<CDate> CSubSource::DateFromCollectionDate (const string& str) THROWS((CException))
 {
     if (NStr::IsBlank(str)) {
         NCBI_THROW (CException, eUnknown,
                         "collection-date string is blank");
     }
+    if (IsISOFormatDate(str)) {
+        return GetDateFromISODate(str);
+    }
+
     size_t pos = NStr::Find(str, "-");
     string year = "";
     string month = "";
@@ -276,11 +309,9 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& str) THROWS((CExce
                         "collection-date year is out of range");
     }
 
-    if (day_val > 0 && dpm > 0 && day_val > dpm) {
-        if (month_val != 2 || day_val != 29 || (year_val % 4) != 0) {
-            NCBI_THROW (CException, eUnknown,
-                            "collection-date day is greater than monthly maximum");
-        }
+    if (day_val > 0 && month_val > 0 && !IsDayValueOkForMonth(day_val, month_val, year_val)) {
+        NCBI_THROW (CException, eUnknown,
+                        "collection-date day is greater than monthly maximum");
     }
 
     CRef<CDate> date(new CDate);
@@ -336,7 +367,7 @@ void CSubSource::IsCorrectDateFormat(const string& date_string, bool& bad_format
             }
         }
     } catch (CException ) {
-        bad_format = true;;
+        bad_format = true;
     }
 }
 
@@ -368,8 +399,88 @@ string CSubSource::FixDateFormat (const string& orig_date)
 }
 
 
+// ISO Formate for date is exactly 10 characters long
+// First four characters must be digits, represent year.
+// Fifth character must be dash.
+// Sixth and seventh characters must be digits, represent month, use zero padding.
+// Eighth character must be dash.
+// Ninth and tenth characters must be digits, represent day, use zero padding.
+bool CSubSource::IsISOFormatDate (const string& orig_date)
+{
+    string cpy = orig_date;
+    NStr::TruncateSpacesInPlace(cpy);
+    if (cpy.length() != 10) {
+        return false;
+    }
+    bool rval = true;
+    size_t pos = 0;
+    string::iterator it = cpy.begin();
+    while (it != cpy.end() && rval) {
+        if (pos == 4 || pos == 7) {
+            if (*it != '-') {
+                rval = false;
+            }
+        } else if (!isdigit(*it)) {
+            rval = false;
+        }
+        ++it;
+        ++pos;
+    }
+    if (rval) {
+        try {
+            int year = NStr::StringToInt(cpy.substr(0, 4));
+            int month = NStr::StringToInt(cpy.substr(5, 2));
+            int day = NStr::StringToInt(cpy.substr(8, 2));
+            if (month < 1 || month > 12) {
+                rval = false;
+            } else if (!IsDayValueOkForMonth(day, month, year)) {
+                rval = false;
+            }
+        } catch (...) {
+            rval = false;
+        }
+    }
+    return rval;
+}
+
+
+CRef<CDate> CSubSource::GetDateFromISODate(const string& orig_date)
+{
+    try {
+        string cpy = orig_date;
+        NStr::TruncateSpacesInPlace(cpy);
+        CRef<CDate> date(new CDate());
+        int year_val = NStr::StringToInt(cpy.substr(0, 4));
+        int month_val = NStr::StringToInt(cpy.substr(5, 2));
+        int day_val = NStr::StringToInt(cpy.substr(8, 2));
+        date->SetStd().SetYear (year_val);
+        date->SetStd().SetMonth (month_val);
+        date->SetStd().SetDay (day_val);
+        return date;
+    } catch (...) {
+        return CRef<CDate>(NULL);
+    }
+}
+
+
+// return 1-based month number if found, 0 for error
+size_t GetMonthNumberFromString(const string& month) 
+{
+    for (size_t i = 0; i < ArraySize(sm_LegalMonths); i++) {
+        if (NStr::StartsWith(month, sm_LegalMonths[i], NStr::eNocase)) {
+            return i + 1;
+        }
+    }
+    return 0;
+}
+
+
 string CSubSource::FixDateFormat (const string& orig_date, bool month_first, bool& month_ambiguous)
 {
+    if (IsISOFormatDate(orig_date)) {
+        return orig_date;
+    }
+
     string reformatted_date = "";
     string month = "";
     int year = 0, day = 0;
@@ -405,22 +516,25 @@ string CSubSource::FixDateFormat (const string& orig_date, bool month_first, boo
                 // already have month, error
                 return "";
             }
-            for (size_t i = 0; i < ArraySize(sm_LegalMonths); i++) {
-                if (NStr::StartsWith(one_token, sm_LegalMonths[i], NStr::eNocase)) {
-                    month = sm_LegalMonths[i];
-                    found = true;
-                    break;
-                }
+            size_t month_num = GetMonthNumberFromString(one_token);
+            if (month_num > 0) {
+                month = sm_LegalMonths[month_num - 1];
+                found = true;
             }
         } else {
             try {
-                int val = NStr::StringToInt (one_token);
-                if (val > 31) {
-                    year = val;
-                    found = true;
-                } else if (val < 1) {
-                    // numbers should not be less than 1
+                int this_val = NStr::StringToInt (one_token);
+                int min = 1;
+                int max = 31;
+                if (this_val < min) {
                     return "";
+                } else if (this_val > max) {
+                    if (year > 0) {
+                        // already have year, error
+                        return "";
+                    }
+                    year = this_val;
+                    found = true;
                 }
             } catch ( ... ) {
                 // threw exception while converting to int
@@ -489,6 +603,16 @@ string CSubSource::FixDateFormat (const string& orig_date, bool month_first, boo
             }
         } catch ( ... ) {
             // threw exception while converting to int
+            return "";
+        }
+    }
+
+    // make sure day is valid
+    if (day > 0 && !NStr::IsBlank(month) && year > -1) {
+        size_t month_num = GetMonthNumberFromString(month);
+        if (month_num == 0) {
+            return "";
+        } else if (!IsDayValueOkForMonth(day, month_num, year)) {
             return "";
         }
     }

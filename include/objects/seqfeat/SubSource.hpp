@@ -96,6 +96,15 @@ public:
     static void IsCorrectDateFormat(const string& date_string, bool& bad_format, bool& in_future);
     static string GetCollectionDateProblem (const string& date_string);
 
+    static bool IsISOFormatDate (const string& orig_date);
+    static CRef<CDate> GetDateFromISODate(const string& orig_date);
+
+    /// Determine whether day number could occur in month.
+    /// @param day   The number of the day, 1-based [in]
+    /// @param month The number of the month, 1-based [in]
+    /// @param year  The number of the year, 1-based [in]
+    static bool IsDayValueOkForMonth(int day, int month, int year);
+
     /// Attempt to fix the format of the date
     /// Returns a blank if the format of the date cannot be determined
     /// @param orig_date The original date [in]

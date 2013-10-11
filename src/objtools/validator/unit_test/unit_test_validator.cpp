@@ -17583,5 +17583,15 @@ BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Sep-93"), "Sep-1993");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("September 10"), "");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("September 24"), "");
+    // ISO Format dates are not ambiguous
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("2010-03-01"), "2010-03-01");
+
+    // check for days not in month
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("31-Jun-2013"), "");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("29-Feb-2013"), "");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("29-Feb-2012"), "29-Feb-2012");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("29-Feb-2000"), "29-Feb-2000");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("29-Feb-1900"), "");
+
 }
 
