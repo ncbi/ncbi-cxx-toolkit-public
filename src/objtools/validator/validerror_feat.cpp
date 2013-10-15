@@ -7247,6 +7247,33 @@ void CValidError_feat::ValidateFeatBioSource
 }
 
 
+size_t CValidError_feat::x_FindStartOfGap (CBioseq_Handle bsh, int pos)
+{
+    if (!bsh || !bsh.IsNa() || !bsh.IsSetInst_Repr() 
+        || bsh.GetInst_Repr() != CSeq_inst::eRepr_delta
+        || !bsh.GetInst().IsSetExt()
+        || !bsh.GetInst().GetExt().IsDelta()) {
+        return bsh.GetInst_Length();
+    }
+    size_t offset = 0;
+
+    ITERATE (CSeq_inst::TExt::TDelta::Tdata, it, bsh.GetInst_Ext().GetDelta().Get()) {
+        int len = 0;
+        if ((*it)->IsLiteral()) {
+            len = (*it)->GetLiteral().GetLength();
+        } else if ((*it)->IsLoc()) {
+            len = sequence::GetLength((*it)->GetLoc(), m_Scope);
+        }
+        if (pos >= offset && pos < offset + len) {
+            return offset;
+        } else {
+            offset += len;
+        }
+    }
+    return offset;
+}
+
+
 void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
 {
     // check for bond locations - only allowable in bond feature and under special circumstances for het
@@ -7430,8 +7457,13 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                         // ignore features that do not cover any gap characters
                     } else if (first_in_gap || last_in_gap) {
                         if (num_real > 0) {
+                            size_t gap_start = x_FindStartOfGap(bsh, 
+                                        first_in_gap ? loc.GetStart(eExtreme_Biological) 
+                                                     : loc.GetStop(eExtreme_Biological));
+
                             PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureBeginsOrEndsInGap, 
-                                     "Feature begins or ends in gap", feat);
+                                    "Feature begins or ends in gap starting at " + NStr::NumericToString(gap_start + 1), feat);
+
                         } else if (misc_feature_matches_gap) {
                             // ignore (misc_) features that exactly cover the gap
                         } else {

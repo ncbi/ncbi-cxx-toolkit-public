@@ -15232,6 +15232,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_BadAuthorSuffix)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+
+    // don't report good suffixes
+    pub->SetArticle().SetAuthors().SetNames().SetStd().front()->SetName().SetName().SetSuffix("3rd");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
 }
 
 
@@ -15445,7 +15451,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_FeatureBeginsOrEndsInGap)
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "SeqLitGapFuzzNot100",
                               "Gap of unknown length should have length 100"));
     expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "FeatureBeginsOrEndsInGap",
-                               "Feature begins or ends in gap"));
+                               "Feature begins or ends in gap starting at 13"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);

@@ -790,10 +790,6 @@ static bool s_BadCharsInAuthor (const CAuthor& author, string& badauthor, bool& 
             && s_BadCharsInAuthorName (author.GetName().GetName().GetInitials(), badauthor, false, true, false)) {
             return true;
         }
-        if (author.GetName().GetName().IsSetSuffix()
-            && s_BadCharsInAuthorName (author.GetName().GetName().GetSuffix(), badauthor, false, true, false)) {
-            return true;
-        }
     }
     return false;
 }
