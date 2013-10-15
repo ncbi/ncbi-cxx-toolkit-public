@@ -1496,17 +1496,16 @@ void CValidError_imp::ValidateSubSource
                      PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode,
                             "Colon at end of country name [" + countryname + "]", obj, ctx);
                }
+               if ( CCountries::WasValid(countryname) ) {
+                    PostObjErr(eDiag_Info, eErr_SEQ_DESCR_ReplacedCountryCode,
+                            "Replaced country name [" + countryname + "]", obj, ctx);
+               }
             } else {
                 if ( countryname.empty() ) {
                     countryname = "?";
                 }
-                if ( CCountries::WasValid(countryname) ) {
-                    PostObjErr(eDiag_Info, eErr_SEQ_DESCR_ReplacedCountryCode,
-                            "Replaced country name [" + countryname + "]", obj, ctx);
-                } else {
-                    PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode,
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadCountryCode,
                             "Bad country name [" + countryname + "]", obj, ctx);
-                }
             }
         }
         break;

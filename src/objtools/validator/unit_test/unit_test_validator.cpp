@@ -15763,6 +15763,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultipleGeneOverlap)
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     CRef<CSeq_feat> gene1 = unit_test_util::AddMiscFeature(entry);
     gene1->SetData().SetGene().SetLocus("a");
+    gene1->SetLocation().SetInt().SetFrom(0);
     gene1->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength()-1);
     CRef<CSeq_feat> gene2 = unit_test_util::AddMiscFeature(entry);
     gene2->SetData().SetGene().SetLocus("b");
@@ -15772,8 +15773,27 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_MultipleGeneOverlap)
     gene3->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength()-1);
 
     STANDARD_SETUP
+    // no error for only two genes
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    CRef<CSeq_feat> gene4 = unit_test_util::AddMiscFeature(entry);
+    gene4->SetData().SetGene().SetLocus("d");
+    gene4->SetLocation().SetInt().SetFrom(15);
+    gene4->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength()-1);
+    CRef<CSeq_feat> gene5 = unit_test_util::AddMiscFeature(entry);
+    gene5->SetData().SetGene().SetLocus("e");
+    gene5->SetLocation().SetInt().SetFrom(20);
+    gene5->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength()-1);
+    CRef<CSeq_feat> gene6 = unit_test_util::AddMiscFeature(entry);
+    gene6->SetData().SetGene().SetLocus("f");
+    gene6->SetLocation().SetInt().SetFrom(25);
+    gene6->SetLocation().SetInt().SetTo(entry->GetSeq().GetInst().GetLength()-1);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
     expected_errors.push_back (new CExpectedError("good", eDiag_Warning, "MultipleGeneOverlap", 
-                              "Gene contains 2 other genes"));
+                              "Gene contains 5 other genes"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -17601,3 +17621,58 @@ BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
 
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_FixCountry)
+{
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("\"United Kingdom: Scotland, Edinburgh\""), "United Kingdom: Scotland, Edinburgh");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("1896"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Anderson, Mesa Verde, Colorado"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Ansirabe"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Antarctic Territory Claimed by Australia"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Ari Ksatr"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Australia: south-western australia"), "Australia: south-western australia");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Auwahi, Maui"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Between Liberia and Ivory Coast"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Caroline Island, Leticia"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Catalina Island, California"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Chia-i"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Congo"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Cousin Island"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Czechoslovakia"), "Czechoslovakia");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("DE"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("France: North East France Nievre-Morvan Breuil Chenue forest"), "France: North East France Nievre-Morvan Breuil Chenue forest");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Great Britain"), "United Kingdom: Great Britain");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Greenland: Saqqaq Culture site Qeqertasussuk, north-western Greenland"), "Greenland: Saqqaq Culture site Qeqertasussuk, north-western Greenland");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Guadaloupe Island"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Hawaii"), "USA: Hawaii");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Hortus Leiden, the Netherlands"), "Netherlands: Hortus Leiden");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Hortus, Leiden, the Netherlands"), "Netherlands: Hortus, Leiden");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Joffreville"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Kenya."), "Kenya");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Korea"), "Korea");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Kuala Belalong, Ulu Temburong National Park"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Lake Fryxell"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Luxemburg"), "Luxembourg");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Mediterranean Sea, Spain"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Mexico. Loreto Bay, Gulf of California."), "Mexico: Loreto Bay, Gulf of California.");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Meyendel, the Netherlands"), "Netherlands: Meyendel");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Mount St. Helena, California"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Nanyuki"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Netherland"), "Netherlands");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("New Guinea"), "Papua New Guinea");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("North Sea, Netherlands"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Noumea"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Roosendaal, De Moeren, the Netherlands"), "Netherlands: Roosendaal, De Moeren");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("SPAIN (orig)"), "Spain: (orig)");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("San Tome and Principe Island (1998)"), "Sao Tome and Principe: (1998)");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Scotland"), "United Kingdom: Scotland");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("USA (orig)"), "USA: (orig)");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("USA: Boqueron National Wildlife Refuge, Puerto Rico"), "USA: Boqueron National Wildlife Refuge, Puerto Rico");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("USA: hypersaline sediment collected at Bitter Lake, New Mexico"), "USA: hypersaline sediment collected at Bitter Lake, New Mexico");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Wales"), "United Kingdom: Wales");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("West Germany"), "Germany: West Germany");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("West Lobe Bonney"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Wissenkerke, Keihoogteweg, the Netherlands"), "Netherlands: Wissenkerke, Keihoogteweg");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Wolfskill Orchand, Winters, California"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Yun Shui"), "");
+}

@@ -1493,7 +1493,13 @@ bool CCountries::IsValid(const string& country)
     }
 
     // try current countries
-    return s_CountriesSet.find(name.c_str()) != s_CountriesSet.end();
+    if (s_CountriesSet.find(name.c_str()) != s_CountriesSet.end()) {
+        return true;
+    } else if (s_Former_CountriesSet.find(name.c_str()) != s_Former_CountriesSet.end()) {
+        return true;
+    } else {
+        return false;
+    }
 }
 
 
@@ -1512,6 +1518,9 @@ bool CCountries::IsValid(const string& country, bool& is_miscapitalized)
     if ( s_CountriesSet.find(name.c_str()) != s_CountriesSet.end() ) {
         return true;
     }
+    if ( s_Former_CountriesSet.find(name.c_str()) != s_Former_CountriesSet.end() ) {
+        return true;
+    }
     // slow check for miscapitalized
     ITERATE ( TCStrSet, it, s_CountriesSet ) {
         if ( NStr::EqualNocase(name, *it) ) {
@@ -1519,6 +1528,13 @@ bool CCountries::IsValid(const string& country, bool& is_miscapitalized)
             return true;
         }
     }
+    ITERATE ( TCStrSet, it, s_Former_CountriesSet ) {
+        if ( NStr::EqualNocase(name, *it) ) {
+            is_miscapitalized = true;
+            return true;
+        }
+    }
+
     return false;
 }
 
@@ -1568,6 +1584,7 @@ bool CCountries::WasValid(const string& country, bool& is_miscapitalized)
 static const SStaticPair<const char*, const char*> s_map_whole_country_fixes[] =
 {
   {"england", "United Kingdom: England"},
+  {"great britain", "United Kingdom: Great Britain"},
   {"new jersey, usa", "USA: New Jersey"}
 };
 typedef CStaticPairArrayMap<const char*, const char*, PCase_CStr> TCStringPairsMap;
@@ -1659,6 +1676,7 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"ESP", "Spain"},
 {"EST", "Estonia"},
 {"ETH", "Ethiopia"},
+{"East Germany", "Germany: East Germany"},
 {"El Hierro", "Spain: El Hierro"},
 {"Europa Island", "French Southern and Antarctic Lands: Europa Island"},
 {"FIN", "Finland"},
@@ -1697,6 +1715,7 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"HRV", "Croatia"},
 {"HTI", "Haiti"},
 {"HUN", "Hungary"},
+{"Hawaii", "USA: Hawaii"},
 {"Heard Island", "Heard Island and McDonald Islands: Heard Island"},
 {"Heard Island & McDonald Islands", "Heard Island and McDonald Islands"},
 {"IDN", "Indonesia"},
@@ -1743,6 +1762,7 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"La Palma", "Spain: La Palma"},
 {"La Reunion Island", "Reunion"},
 {"Lanzarote", "Spain: Lanzarote"},
+{"Luxemburg", "Luxembourg"},
 {"MAC", "Macao"},
 {"MAF", "Saint Martin (French part)"},
 {"MAR", "Morocco"},
@@ -1783,7 +1803,9 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"NPL", "Nepal"},
 {"NRU", "Nauru"},
 {"NZL", "New Zealand"},
+{"Netherland", "Netherlands"},
 {"Nevis", "Saint Kitts and Nevis: Nevis"},
+{"New Guinea", "Papua New Guinea"},
 {"OMN", "Oman"},
 {"P, R, China", "China"},
 {"P.R. China", "China"},
@@ -1843,8 +1865,10 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"Saint Vincent & Grenadines", "Saint Vincent and the Grenadines"},
 {"Saint Vincent & the Grenadines", "Saint Vincent and the Grenadines"},
 {"Saint Vincent and Grenadines", "Saint Vincent and the Grenadines"},
+{"San Tome and Principe Island", "Sao Tome and Principe"},
 {"Sao Tome", "Sao Tome and Principe: Sao Tome"},
 {"Sao Tome & Principe", "Sao Tome and Principe"},
+{"Scotland", "United Kingdom: Scotland"},
 {"South Georgia & South Sandwich Islands", "South Georgia and the South Sandwich Islands"},
 {"South Georgia & the South Sandwich Islands", "South Georgia and the South Sandwich Islands"},
 {"South Sandwich Islands", "South Georgia and the South Sandwich Islands: South Sandwich Islands"},
@@ -1907,10 +1931,13 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"Vietnam", "Viet Nam"},
 {"WLF", "Wallis and Futuna"},
 {"WSM", "Samoa"},
+{"Wales", "United Kingdom: Wales"},
+{"West Germany", "Germany: West Germany"},
 {"YEM", "Yemen"},
 {"ZAF", "South Africa"},
 {"ZMB", "Zambia"},
-{"ZWE", "Zimbabwe"}
+{"ZWE", "Zimbabwe"},
+{"the Netherlands", "Netherlands"}
 };
 
 DEFINE_STATIC_ARRAY_MAP(TCStringPairsMap,k_country_name_fixes, s_map_country_name_fixes);
@@ -1985,8 +2012,47 @@ string CCountries::GetCorrectedCountryCapitalization(const string& country)
     return output;
 }
 
-string CCountries::NewFixCountry (const string& input)
+
+void CCountries::x_RemoveDelimitersFromEnds(string& val)
 {
+    NStr::TruncateSpacesInPlace(val);
+    bool any_found = true;
+    while (!val.empty() && any_found) {
+        any_found = false;
+        if (NStr::StartsWith(val, ",") 
+            || NStr::StartsWith(val, ":") 
+            || NStr::StartsWith(val, ".")
+            || NStr::StartsWith(val, ")")) {
+            val = val.substr(1);
+            any_found = true;
+            NStr::TruncateSpacesInPlace(val);
+        } else if (NStr::EndsWith(val, ",") 
+            || NStr::EndsWith(val, ":")
+            || NStr::EndsWith(val, "(")) {
+            val = val.substr(0, val.length() - 1);
+            any_found = true;
+            NStr::TruncateSpacesInPlace(val);
+        } else if (NStr::EndsWith(val, "the") && !isalpha(val.c_str()[val.length() - 4])) {
+            val = val.substr(0, val.length() - 4);
+            any_found = true;
+        }
+    }
+}
+
+
+string CCountries::NewFixCountry (const string& test)
+{
+    string input = test;
+    if (NStr::StartsWith(input, "\"")) {
+        input = input.substr(1);
+    }
+    if (NStr::EndsWith(input, "\"")) {
+        input = input.substr(0, input.length() - 1);
+    }
+    NStr::TruncateSpacesInPlace(input);
+    if (IsValid(input)) {
+        return input;
+    }
     string new_country = WholeCountryFix(input);
     if (!new_country.empty())
         return new_country;
@@ -1996,20 +2062,23 @@ string CCountries::NewFixCountry (const string& input)
     vector<string> countries;
     string valid_country;
     string orig_valid_country;
-    NStr::Tokenize(input,",:",countries);
+    NStr::Tokenize(input,",:.()",countries);
     for(vector<string>::iterator country = countries.begin(); country != countries.end(); ++country)
     {        
         if (!country->empty() && !too_many_countries)
         {
-            bool bad_cap;
             string check = *country;
             NStr::TruncateSpacesInPlace(check);
-            if (IsValid(check,bad_cap))
+            x_RemoveDelimitersFromEnds(check);
+
+            bool check_has_bad_cap = false;
+            if (IsValid(check,check_has_bad_cap))
             {
                 if (valid_country.empty())
                 {
                     valid_country = check;
                     orig_valid_country = check;
+                    bad_cap = check_has_bad_cap;
                 }
                 else
                 {
@@ -2051,14 +2120,13 @@ string CCountries::NewFixCountry (const string& input)
         size_t pos = NStr::Find(input,orig_valid_country);
         // save preceeding string without trailing spaces or delimiters ":,"
         string before = input.substr(0,pos);
-        NStr::ReplaceInPlace(before,":"," ");
-        NStr::ReplaceInPlace(before,","," ");
-        NStr::TruncateSpacesInPlace(before,NStr::eTrunc_End);
+        
+        x_RemoveDelimitersFromEnds(before);
+        NStr::TruncateSpacesInPlace(before);
         // save trailing string without initial spaces or delimiters
         string after = input.substr(pos+orig_valid_country.length());
-        NStr::ReplaceInPlace(after,":"," ");
-        NStr::ReplaceInPlace(after,","," ");
-        NStr::TruncateSpacesInPlace(after,NStr::eTrunc_Begin);
+        x_RemoveDelimitersFromEnds(after);
+        NStr::TruncateSpacesInPlace(after);
         if (bad_cap) new_country = GetCorrectedCountryCapitalization(valid_country);
         else new_country = valid_country;
         if (!before.empty() || !after.empty())
