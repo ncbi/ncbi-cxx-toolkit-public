@@ -2012,6 +2012,83 @@ void CValidError_imp::ValidateDbxref
 }
 
 
+bool CValidError_imp::x_CheckPackedInt
+(const CPacked_seqint& packed_int,
+ CConstRef<CSeq_id>& id_cur,
+ CConstRef<CSeq_id>& id_prv,
+ ENa_strand& strand_cur,
+ ENa_strand& strand_prv,
+ CConstRef<CSeq_interval>& int_cur,
+ CConstRef<CSeq_interval>& int_prv,
+ bool& adjacent,
+ bool &ordered,
+ bool circular,
+ const CSerialObject& obj)
+{
+    bool chk = true;
+    ITERATE(CPacked_seqint::Tdata, it, packed_int.Get()) {
+        int_cur = (*it);
+        chk &= x_CheckSeqInt(id_cur, id_prv, int_cur, int_prv, strand_cur, strand_prv,
+                      adjacent, ordered, circular, obj);
+
+        id_prv = id_cur;
+        strand_prv = strand_cur;
+        int_prv = int_cur;
+    }
+    return chk;
+}
+
+
+bool CValidError_imp::x_CheckSeqInt
+(CConstRef<CSeq_id>& id_cur,
+ const CSeq_id * id_prv,
+ const CSeq_interval * int_cur,
+ const CSeq_interval * int_prv,
+ ENa_strand& strand_cur,
+ ENa_strand strand_prv,
+ bool& adjacent,
+ bool &ordered,
+ bool circular,
+ const CSerialObject& obj)
+{
+    strand_cur = int_cur->IsSetStrand() ?
+        int_cur->GetStrand() : eNa_strand_unknown;
+    id_cur = &int_cur->GetId();
+    bool chk = IsValid(*int_cur, m_Scope);
+    if (chk  &&  int_prv  && id_prv) {
+        if (IsSameBioseq(*id_prv, *id_cur, m_Scope)) {
+            if (strand_cur == eNa_strand_minus) {
+                if (int_prv->GetTo() < int_cur->GetTo() && !circular) {
+                    ordered = false;
+                }
+                if (int_cur->GetTo() + 1 == int_prv->GetFrom()) {
+                    adjacent = true;
+                }
+            } else {
+                if (int_prv->GetTo() > int_cur->GetTo() && !circular) {
+                    ordered = false;
+                }
+                if (int_prv->GetTo() + 1 == int_cur->GetFrom()) {
+                    adjacent = true;
+                }
+            }
+        }
+    }
+    if (int_prv) {
+        if (IsSameBioseq(int_prv->GetId(), int_cur->GetId(), m_Scope)){
+            if (strand_prv == strand_cur  &&
+                int_prv->GetFrom() == int_cur->GetFrom()  &&
+                int_prv->GetTo() == int_cur->GetTo()) {
+                PostErr(eDiag_Error,
+                    eErr_SEQ_FEAT_DuplicateInterval,
+                    "Duplicate exons in location", obj);
+            }
+        }
+    }
+    return chk;
+}
+
+
 void CValidError_imp::ValidateSeqLoc
 (const CSeq_loc& loc,
  const CBioseq_Handle&  seq,
@@ -2034,44 +2111,19 @@ void CValidError_imp::ValidateSeqLoc
     CTypeConstIterator<CSeq_loc> lit = ConstBegin(loc);
     for (; lit; ++lit) {
         try {
-            switch (lit->Which()) {
+            CSeq_loc::E_Choice loc_choice = lit->Which();
+            switch (loc_choice) {
             case CSeq_loc::e_Int:
-                int_cur = &lit->GetInt();
-                strand_cur = int_cur->IsSetStrand() ?
-                    int_cur->GetStrand() : eNa_strand_unknown;
-                id_cur = &int_cur->GetId();
-                chk = IsValid(*int_cur, m_Scope);
-                if (chk  &&  int_prv  && id_prv) {
-                    if (IsSameBioseq(*id_prv, *id_cur, m_Scope)) {
-                        if (strand_cur == eNa_strand_minus) {
-                            if (int_prv->GetTo() < int_cur->GetTo() && !circular) {
-                                ordered = false;
-                            }
-                            if (int_cur->GetTo() + 1 == int_prv->GetFrom()) {
-                                adjacent = true;
-                            }
-                        } else {
-                            if (int_prv->GetTo() > int_cur->GetTo() && !circular) {
-                                ordered = false;
-                            }
-                            if (int_prv->GetTo() + 1 == int_cur->GetFrom()) {
-                                adjacent = true;
-                            }
-                        }
-                    }
-                }
-                if (int_prv) {
-                    if (IsSameBioseq(int_prv->GetId(), int_cur->GetId(), m_Scope)){
-                        if (strand_prv == strand_cur  &&
-                            int_prv->GetFrom() == int_cur->GetFrom()  &&
-                            int_prv->GetTo() == int_cur->GetTo()) {
-                            PostErr(eDiag_Error,
-                                eErr_SEQ_FEAT_DuplicateInterval,
-                                "Duplicate exons in location", obj);
-                        }
-                    }
-                }
-                int_prv = int_cur;
+                {{
+                    CConstRef<CSeq_id> this_id_cur(id_cur);
+                    int_cur = &lit->GetInt();
+                    chk = x_CheckSeqInt(this_id_cur, id_prv, int_cur, int_prv, strand_cur, strand_prv,
+                          adjacent, ordered, circular, obj);
+                    int_prv = int_cur;
+                    id_cur = this_id_cur.GetPointer();
+                    id_prv = id_cur;
+                    strand_prv = strand_cur;
+                }}
                 break;
             case CSeq_loc::e_Pnt:
                 strand_cur = lit->GetPnt().IsSetStrand() ?
@@ -2086,6 +2138,21 @@ void CValidError_imp::ValidateSeqLoc
                 id_cur = &lit->GetPacked_pnt().GetId();
                 chk = IsValid(lit->GetPacked_pnt(), m_Scope);
                 int_prv = 0;
+                break;
+            case CSeq_loc::e_Packed_int:
+                {{
+                    CConstRef<CSeq_id> this_id_cur(id_cur);
+                    CConstRef<CSeq_id> this_id_prv(id_prv);
+                    CConstRef<CSeq_interval> this_int_cur(int_cur);
+                    CConstRef<CSeq_interval> this_int_prv(int_prv);
+                    chk = x_CheckPackedInt(lit->GetPacked_int(), 
+                                     this_id_cur, this_id_prv,
+                                     strand_cur, strand_prv,
+                                     this_int_cur, this_int_prv,
+                                     adjacent, ordered, circular, obj);
+                    id_cur = this_id_cur.GetPointer();
+                    id_prv = this_id_prv.GetPointer();
+                }}
                 break;
             case CSeq_loc::e_Null:
                 break;

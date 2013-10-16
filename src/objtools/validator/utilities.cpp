@@ -1196,8 +1196,11 @@ bool s_PartialAtGapOrNs (
         return false;
     }
 
-    const CSeq_loc& slp = *temp.GetRangeAsSeq_loc();
-    const CSeq_id* id = slp.GetId();
+    CConstRef<CSeq_loc> slp = temp.GetRangeAsSeq_loc();
+    if (!slp) {
+        return false;
+    }
+    const CSeq_id* id = slp->GetId();
     if (id == NULL) return false;
     CBioseq_Handle bsh = scope->GetBioseqHandle(*id);
     if (!bsh) {

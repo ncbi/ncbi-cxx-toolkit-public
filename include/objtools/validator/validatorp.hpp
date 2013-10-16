@@ -599,6 +599,27 @@ private:
     CLatLonCountryId *x_CalculateLatLonId(float lat_value, float lon_value, string country, string province);
     CLatLonCountryId::TClassificationFlags x_ClassifyLatLonId(CLatLonCountryId *id, string country, string province);
 
+    bool x_CheckPackedInt(const CPacked_seqint& packed_int,
+                          CConstRef<CSeq_id>& id_cur,
+                          CConstRef<CSeq_id>& id_prv,
+                          ENa_strand& strand_cur,
+                          ENa_strand& strand_prv,
+                          CConstRef<CSeq_interval>& int_cur,
+                          CConstRef<CSeq_interval>& int_prv,
+                          bool& adjacent,
+                          bool &ordered,
+                          bool circular,
+                          const CSerialObject& obj);
+    bool x_CheckSeqInt(CConstRef<CSeq_id>& id_cur,
+                       const CSeq_id * id_prv,
+                       const CSeq_interval * int_cur,
+                       const CSeq_interval * int_prv,
+                       ENa_strand& strand_cur,
+                       ENa_strand strand_prv,
+                       bool& adjacent,
+                       bool &ordered,
+                       bool circular,
+                       const CSerialObject& obj);
 
     CRef<CObjectManager>    m_ObjMgr;
     CRef<CScope>            m_Scope;
