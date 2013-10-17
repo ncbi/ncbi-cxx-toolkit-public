@@ -1680,7 +1680,7 @@ CNCBlobStorage::WriteChunkData(SNCBlobVerData* ver_data,
 
     if (map_idx[1] != maps->maps[0]->map_idx) {
         if (!s_SaveChunkMap(ver_data, cache_data, maps->maps, ver_data->map_size, false))
-            return false;
+            return NULL;
         for (Uint1 i = 0; i < kNCMaxBlobMapsDepth - 1; ++i)
             maps->maps[i]->map_idx = map_idx[i + 1];
     }
