@@ -3496,6 +3496,27 @@ class Scenario191( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
+        safeMode = True
+        if safeMode:
+            ns_client = self.getNetScheduleService( 'TEST', 'scenario191' )
+            ns_client.set_client_identification( 'node', 'session' )
+
+            notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+            notifSocket.bind( ( "", 9007 ) )
+
+            execAny( ns_client,
+                     'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0 aff=a1 port=9007 timeout=3' )
+
+            # Submit a job
+            self.ns.submitJob( 'TEST', 'input', 'a2' )
+
+            time.sleep( 3 )
+            result = self.getNotif( notifSocket )
+            if result == 0:
+                raise Exception( "Expected notification(s), received nothing" )
+            return True
+
+
         # Spawn GET2 with waiting
         process = self.ns.spawnGet2Wait( 'TEST', 3,
                                          [ 'a1' ], False, True,
@@ -3514,6 +3535,21 @@ class Scenario191( TestBase ):
             return True
 
         raise Exception( "Did not receive notifications when expected" )
+
+    def getNotif( self, s ):
+        " Retrieves notifications "
+        try:
+            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            if "queue=TEST" not in data:
+                raise Exception( "Unexpected notification in socket" )
+            return 1
+        except Exception, ex:
+            if "Unexpected notification in socket" in str( ex ):
+                raise
+            pass
+        return 0
+
+
 
 class Scenario192( TestBase ):
     " Scenario 192 "
