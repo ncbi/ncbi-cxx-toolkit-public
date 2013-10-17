@@ -222,12 +222,15 @@ bool CSubSource::IsDayValueOkForMonth(int day, int month, int year)
 }
 
 
-CRef<CDate> CSubSource::DateFromCollectionDate (const string& str) THROWS((CException))
+CRef<CDate> CSubSource::DateFromCollectionDate (const string& test) THROWS((CException))
 {
-    if (NStr::IsBlank(str)) {
+    if (NStr::IsBlank(test)) {
         NCBI_THROW (CException, eUnknown,
                         "collection-date string is blank");
     }
+    string str = test;
+    NStr::TruncateSpacesInPlace(str);
+
     if (IsISOFormatDate(str)) {
         return GetDateFromISODate(str);
     }
@@ -335,13 +338,15 @@ void CSubSource::IsCorrectDateFormat(const string& date_string, bool& bad_format
     try {
         CRef<CDate> coll_date = CSubSource::DateFromCollectionDate (date_string);
 
-        // if there are two dashes, then the first token needs to be the day, and the
-        // day has to have two numbers, a leading zero if the day is less than 10
-        size_t pos = NStr::Find(date_string, "-");
-        if (pos != string::npos) {
-            size_t pos2 = NStr::Find(date_string, "-", pos + 1);
-            if (pos2 != string::npos && pos != 2) {
-                bad_format = true;
+        if (!IsISOFormatDate(date_string)) {
+            // if there are two dashes, then the first token needs to be the day, and the
+            // day has to have two numbers, a leading zero if the day is less than 10
+            size_t pos = NStr::Find(date_string, "-");
+            if (pos != string::npos) {
+                size_t pos2 = NStr::Find(date_string, "-", pos + 1);
+                if (pos2 != string::npos && pos != 2) {
+                    bad_format = true;
+                }
             }
         }
 
@@ -475,8 +480,11 @@ size_t GetMonthNumberFromString(const string& month)
 }
 
 
-string CSubSource::FixDateFormat (const string& orig_date, bool month_first, bool& month_ambiguous)
+string CSubSource::FixDateFormat (const string& test, bool month_first, bool& month_ambiguous)
 {
+    string orig_date = test;
+    NStr::TruncateSpacesInPlace(orig_date);
+
     if (IsISOFormatDate(orig_date)) {
         return orig_date;
     }

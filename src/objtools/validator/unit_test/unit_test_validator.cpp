@@ -6035,6 +6035,14 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadCollectionDate)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+
+    // ISO date should be ok
+    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "");
+    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "2003-09-29");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+
 }
 
 
@@ -17609,6 +17617,9 @@ BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Sep-93"), "Sep-1993");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("September 10"), "");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("September 24"), "");
+    // fix leading/trailing spaces
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat(" 2010-03-01"), "2010-03-01");
+
     // ISO Format dates are not ambiguous
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("2010-03-01"), "2010-03-01");
 
