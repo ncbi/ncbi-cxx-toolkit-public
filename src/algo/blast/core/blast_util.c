@@ -822,7 +822,10 @@ Int2 GetReverseNuclSequence(const Uint1* sequence, Int4 length,
    rev_sequence[0] = rev_sequence[length+1] = NULLB;
 
    for (index = 0; index < length; ++index) {
-      rev_sequence[length-index] = conversion_table[sequence[index]];
+        if (sequence[index] == FENCE_SENTRY)
+                rev_sequence[length-index] = FENCE_SENTRY;
+        else
+                rev_sequence[length-index] = conversion_table[sequence[index]];
    }
 
    *rev_sequence_ptr = rev_sequence;
