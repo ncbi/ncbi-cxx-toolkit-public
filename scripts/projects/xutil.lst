@@ -1,2 +1,3 @@
-corelib$
+corelib
 util
+-corelib/test
