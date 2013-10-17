@@ -2040,11 +2040,66 @@ void CCountries::x_RemoveDelimitersFromEnds(string& val)
             val = val.substr(0, val.length() - 1);
             any_found = true;
             NStr::TruncateSpacesInPlace(val);
-        } else if (NStr::EndsWith(val, "the") && !isalpha(val.c_str()[val.length() - 4])) {
+        } else if (NStr::EndsWith(val, "the") && val.length() > 3 && !isalpha(val.c_str()[val.length() - 4])) {
             val = val.substr(0, val.length() - 4);
             any_found = true;
+        } else if (NStr::EndsWith(val, ".")) {
+            size_t len = val.length();
+            if (len > 1 && isspace(val.c_str()[len - 2])) {
+                val = val.substr(0, val.length() - 1);
+                any_found = true;
+                NStr::TruncateSpacesInPlace(val);
+            } else if (len > 5) {
+                // make sure no spaces or punctuation within 4 characters before '.'
+                bool do_remove = true;
+                size_t pos = val.length() - 2;
+                size_t dist = 0;
+                while (dist < 4 && do_remove) {
+                    if (isspace(val.c_str()[pos]) || ispunct(val.c_str()[pos])) {
+                        do_remove = false;
+                    }
+                    pos--;
+                    dist++;
+                }
+                if (do_remove) {
+                    val = val.substr(0, val.length() - 1);
+                    any_found = true;
+                }
+            }
+        }           
+    }
+}
+
+
+vector<string> CCountries::x_Tokenize(const string& val)
+{
+    vector<string> tokens;
+    NStr::Tokenize(val,",:()",tokens);
+    // special tokenizing - if tokens contain periods but resulting token is at least four characters long
+    vector<string>::iterator it = tokens.begin();
+    while (it != tokens.end()) {
+        size_t pos = NStr::Find(*it, ".");
+        if (pos != string::npos && pos > 3 && (*it).length() - pos > 4) {
+            string first = (*it).substr(0, pos);
+            string remainder = (*it).substr(pos + 1);
+            size_t space_pos = NStr::Find(first, " ");
+            size_t len_to_space = first.length();
+            while (space_pos != string::npos) {
+                first = first.substr(space_pos + 1);
+                len_to_space = first.length();
+                space_pos = NStr::Find(first, " ");
+            }
+            if (len_to_space > 4) {
+                (*it) = (*it).substr(0, pos);
+                it = tokens.insert(it, remainder);
+            } else {
+                it++;
+            }
+        } else {
+            it++;
         }
     }
+    return tokens;
 }
 
 
@@ -2058,6 +2113,9 @@ string CCountries::NewFixCountry (const string& test)
         input = input.substr(0, input.length() - 1);
     }
     NStr::TruncateSpacesInPlace(input);
+
+
+
     if (IsValid(input)) {
         return input;
     }
@@ -2067,10 +2125,9 @@ string CCountries::NewFixCountry (const string& test)
     
     bool too_many_countries = false;
     bool bad_cap = false;
-    vector<string> countries;
+    vector<string> countries = x_Tokenize(input);
     string valid_country;
     string orig_valid_country;
-    NStr::Tokenize(input,",:.()",countries);
     for(vector<string>::iterator country = countries.begin(); country != countries.end(); ++country)
     {        
         if (!country->empty() && !too_many_countries)

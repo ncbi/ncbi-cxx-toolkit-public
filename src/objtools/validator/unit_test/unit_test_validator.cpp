@@ -17635,6 +17635,8 @@ BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
 
 BOOST_AUTO_TEST_CASE(Test_FixCountry)
 {
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Kenya."), "Kenya");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("U.S.A."), "USA");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("\"United Kingdom: Scotland, Edinburgh\""), "United Kingdom: Scotland, Edinburgh");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("1896"), "");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Anderson, Mesa Verde, Colorado"), "");
@@ -17659,13 +17661,12 @@ BOOST_AUTO_TEST_CASE(Test_FixCountry)
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Hortus Leiden, the Netherlands"), "Netherlands: Hortus Leiden");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Hortus, Leiden, the Netherlands"), "Netherlands: Hortus, Leiden");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Joffreville"), "");
-    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Kenya."), "Kenya");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Korea"), "Korea");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Kuala Belalong, Ulu Temburong National Park"), "");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Lake Fryxell"), "");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Luxemburg"), "Luxembourg");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Mediterranean Sea, Spain"), "");
-    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Mexico. Loreto Bay, Gulf of California."), "Mexico: Loreto Bay, Gulf of California.");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Mexico. Loreto Bay, Gulf of California."), "Mexico: Loreto Bay, Gulf of California");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Meyendel, the Netherlands"), "Netherlands: Meyendel");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Mount St. Helena, California"), "");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Nanyuki"), "");
