@@ -772,6 +772,7 @@ void CObjectIStream::SetStreamOffset(CNcbiStreampos pos)
 
 void CObjectIStream::SetStreamPos(CNcbiStreampos pos)
 {
+    SetFailFlags(fNoError);
     m_Input.SetStreamPos(pos);
 }
 
