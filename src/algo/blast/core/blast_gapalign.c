@@ -3288,6 +3288,23 @@ BlastGetStartForGappedAlignmentNucl (const Uint1* query, const Uint1* subject,
     Boolean match, prev_match;
     Int4 offset = MIN(hsp->subject.gapped_start - hsp->subject.offset,
                       hsp->query.gapped_start - hsp->query.offset);
+    /* first check if the old value is ok */
+    q_start = hsp->query.gapped_start;
+    s_start = hsp->subject.gapped_start;
+    score = -1;
+    q = query + q_start;
+    s = subject + s_start;
+    while ((q-query < q_len) && (*q++ == *s++)) {
+        score++;
+        if (score > HSP_MAX_IDENT_RUN) return;
+    }
+    q = query + q_start;
+    s = subject + s_start;
+    while ((q-query >= 0) && (*q-- == *s--)) {
+        score++;
+        if (score > HSP_MAX_IDENT_RUN) return;
+    }
+    /* if the old value is not ok, try to find a better point */
     q_start = hsp->query.gapped_start - offset;
     s_start = hsp->subject.gapped_start - offset;
     q_len = MIN(hsp->subject.end - s_start, hsp->query.end - q_start);
