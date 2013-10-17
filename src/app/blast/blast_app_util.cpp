@@ -604,11 +604,14 @@ RecoverSearchStrategy(const CArgs& args, blast::CBlastAppArgs* cmdline_args)
     const bool override_query = (args[kArgQuery].HasValue() && 
                                  args[kArgQuery].AsString() != kDfltArgQuery);
     const bool override_subject = CBlastDatabaseArgs::HasBeenSet(args);
+
+    if (CMbIndexArgs::HasBeenSet(args)) {
+    	if (args[kArgUseIndex].AsBoolean() != kDfltArgUseIndex)
+    		ERR_POST(Warning << "Overriding megablast BLAST DB indexed options in saved strategy");
+    }
+
     s_ImportSearchStrategy(in, cmdline_args, is_remote_search, override_query,
                            override_subject);
-    if (CMbIndexArgs::HasBeenSet(args)) {
-        ERR_POST(Warning << "Overriding megablast BLAST DB indexed options in saved strategy");
-    }
 
     return true;
 }

@@ -2257,7 +2257,7 @@ CMbIndexArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
     arg_desc.AddDefaultKey( 
             kArgUseIndex, "boolean",
             "Use MegaBLAST database index",
-            CArgDescriptions::eBoolean, "false");
+            CArgDescriptions::eBoolean, NStr::BoolToString(kDfltArgUseIndex));
     arg_desc.AddOptionalKey(
             kArgIndexName, "string",
             "MegaBLAST database index name",

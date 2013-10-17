@@ -318,6 +318,8 @@ NCBI_BLASTINPUT_EXPORT extern const string kArgInputSearchStrategy;
 NCBI_BLASTINPUT_EXPORT extern const string kArgOutputSearchStrategy;
 /// Flag to force using or not using megablast database index.
 NCBI_BLASTINPUT_EXPORT extern const string kArgUseIndex;
+/// Default value for megablast database index flag.
+NCBI_BLASTINPUT_EXPORT extern const bool kDfltArgUseIndex;
 /// Megablast database index name.
 NCBI_BLASTINPUT_EXPORT extern const string kArgIndexName;
 /// Use old style megablast index.

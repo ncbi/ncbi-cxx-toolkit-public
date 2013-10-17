@@ -201,6 +201,7 @@ const string kArgUseIndex("use_index");
 const string kArgIndexName("index_name");
 const string kArgOldStyleIndex("old_style_index");
 const string kDfltArgOldStyleIndex("true");
+const bool kDfltArgUseIndex = false;
 
 const string kArgEntrezQuery("entrez_query");
 
