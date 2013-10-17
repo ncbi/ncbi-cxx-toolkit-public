@@ -33,14 +33,6 @@
 
 #include <ncbi_pch.hpp>
 
-#include <common/ncbi_package_ver.h>
-#include <corelib/ncbi_safe_static.hpp>
-#include <corelib/plugin_manager_store.hpp>
-#include <util/static_map.hpp>
-#include <util/value_convert_policy.hpp>
-#include <dbapi/error_codes.hpp>
-#include <dbapi/driver/dbapi_svc_mapper.hpp>
-
 #define PYTHONPP_DEFINE_GLOBALS 1
 #include "python_ncbi_dbapi.hpp"
 #include "pythonpp/pythonpp_pdt.hpp"
@@ -48,6 +40,14 @@
 #  include "pythonpp/pythonpp_date.hpp"
 #endif
 #include <structmember.h>
+
+#include <common/ncbi_package_ver.h>
+#include <corelib/ncbi_safe_static.hpp>
+#include <corelib/plugin_manager_store.hpp>
+#include <util/static_map.hpp>
+#include <util/value_convert_policy.hpp>
+#include <dbapi/error_codes.hpp>
+#include <dbapi/driver/dbapi_svc_mapper.hpp>
 #include "../../ds_impl.hpp"
 
 #if defined(NCBI_OS_CYGWIN)

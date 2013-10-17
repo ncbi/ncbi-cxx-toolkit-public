@@ -31,12 +31,12 @@
 * ===========================================================================
 */
 
+#include "pythonpp/pythonpp_ext.hpp"
+#include "pythonpp/pythonpp_dict.hpp"
+
 #include <dbapi/dbapi.hpp>
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
 #include <set>
-
-#include "pythonpp/pythonpp_ext.hpp"
-#include "pythonpp/pythonpp_dict.hpp"
 
 BEGIN_NCBI_SCOPE
 

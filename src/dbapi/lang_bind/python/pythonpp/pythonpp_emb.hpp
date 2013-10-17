@@ -35,28 +35,9 @@
 #ifndef PYTHONPP_EMB_H
 #define PYTHONPP_EMB_H
 
-#ifdef _MSC_VER
-// disable warning C4005: macro redefinition.
-#pragma warning(disable: 4005)
-#endif
+#include "pythonpp_config.hpp"
 
-#ifdef HAVE_GETHOSTBYNAME_R
-#undef HAVE_GETHOSTBYNAME_R
-#endif
-
-#ifdef _POSIX_C_SOURCE
-#undef _POSIX_C_SOURCE
-#endif
-
-#include <Python.h>
-
-#ifdef HAVE_GETHOSTBYNAME_R
-#undef HAVE_GETHOSTBYNAME_R
-#endif
-
-#ifdef _POSIX_C_SOURCE
-#undef _POSIX_C_SOURCE
-#endif
+#include <corelib/ncbistl.hpp>
 
 BEGIN_NCBI_SCOPE
 

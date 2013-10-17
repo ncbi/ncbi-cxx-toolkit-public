@@ -36,6 +36,7 @@
 #define PYTHONPP_PDT_H
 
 #include "pythonpp_object.hpp"
+#include <corelib/ncbistr.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -70,7 +71,7 @@ public:
     {
     }
     CBool(bool value)
-    : CObject(value ? Py_True : Py_False)
+    : CObject(value ? Py_True : Py_False) // NCBI_FAKE_WARNING
     {
     }
     CBool(long value)

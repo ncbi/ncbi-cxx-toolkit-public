@@ -33,6 +33,8 @@
 #ifndef PYTHON_NCBI_DBAPI_TEST_H
 #define PYTHON_NCBI_DBAPI_TEST_H
 
+#include "../pythonpp/pythonpp_emb.hpp"
+
 #include <corelib/test_boost.hpp>
 
 BEGIN_NCBI_SCOPE

@@ -566,7 +566,7 @@ public:
 
     static CObject& GetTypeObject(void)
     {
-        static CObject obj((PyObject*)&GetType(), pythonpp::eAcquireOwnership);
+        static CObject obj((PyObject*)&GetType(), pythonpp::eAcquireOwnership); // NCBI_FAKE_WARNING
 
         return obj;
     }
