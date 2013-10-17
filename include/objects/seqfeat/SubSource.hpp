@@ -109,21 +109,24 @@ public:
     /// Returns a blank if the format of the date cannot be determined
     /// @param orig_date The original date [in]
     /// Rules:
-    /// First, try to split the string into tokens using the following delimiters:
+    /// First, check to see if the string matches the ISO format (YYYY-MM-DD);
+    /// if so then just return original string as this is valid.
+    /// Second, try to split the string into tokens using the following delimiters:
     ///      * space
     ///      * comma (,)
     ///      * dash (-)
     ///      * slash (/)
-    /// If more than three tokens are generated, give up.
+    /// If more than three tokens are generated, fail and return empty string.
     /// Of the tokens that are generated, look for a token that contains letters.
-    /// This token is assumed to be the month, and will be checked to see if it
-    /// begins with any of the three-letter abbreviations for months (Jan, Feb, Mar, etc.).
-    /// If so, the month is known. If none of the abbreviations produce a match, fail and
-    /// return an empty string. If more than one token that contains letters is found,
-    /// return an empty string.
-    /// Also look for any token that is a number and has a value greater than 31. This value
-    /// will be assumed to be the year. If there is more than one such token, return
-    /// an empty string.
+    /// If there is such a token, this token is assumed to be the month, and will
+    /// be checked to see if it begins with any of the three-letter abbreviations
+    /// for months (Jan, Feb, Mar, etc.). If so, the month is known. If none of 
+    /// the abbreviations produce a match, fail and return an empty string. If 
+    /// more than one token that contains letters is found, return an empty string.
+    /// If there are no tokens that contain letters, try to determine which token is
+    /// the month by eliminating tokens that would be year or day.
+    /// Any token that is a number and has a value greater than 31 will be assumed
+    /// to be the year. If there is more than one such token, return an empty string.
     /// After making this initial pass, try to guess the identities of the remaining tokens.
     /// Numbers between 1 and 12 could be considered months, if no month token containing
     /// letters was already identified. If two or more such tokens are found, the date is 
@@ -137,8 +140,8 @@ public:
     /// If all tokens can be identified, arrange them in the output string in one of the 
     /// following formats:
     /// YYYY
-    /// MMM-YYYY
-    /// DD-MMM-YYYY
+    /// Mmm-YYYY
+    /// DD-Mmm-YYYY
 
     static string FixDateFormat(const string& orig_date);
     static string FixDateFormat(const string& orig_date, bool month_first, bool& month_ambiguous);
