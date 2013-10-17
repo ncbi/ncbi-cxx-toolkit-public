@@ -430,8 +430,8 @@ BOOST_AUTO_TEST_CASE(testBLASTNTraceBackLargeXDrop) {
     const int score_final[k_num_hsps_end] = { 55540};
     const int context_final[k_num_hsps_end] = { 1};
     const int subject_frame_final[k_num_hsps_end] = { 1};
-    const int query_gapped_start_final[k_num_hsps_end] = { 25204};
-    const int subject_gapped_start_final[k_num_hsps_end] = { 11221};
+    const int query_gapped_start_final[k_num_hsps_end] = { 26671};
+    const int subject_gapped_start_final[k_num_hsps_end] = { 12688};
     const int num_ident_final[k_num_hsps_end] = { 27856};
 
     // One hsp is dropped when the function runs.
