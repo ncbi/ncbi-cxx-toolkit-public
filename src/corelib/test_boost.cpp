@@ -44,6 +44,9 @@
 #  define BOOST_TEST_NO_LIB
 #endif
 #define BOOST_TEST_NO_MAIN
+#if defined(__FreeBSD_cc_version)  &&  !defined(__FreeBSD_version)
+#  define __FreeBSD_version __FreeBSD_cc_version
+#endif
 #include <corelib/test_boost.hpp>
 
 #include <boost/preprocessor/cat.hpp>
