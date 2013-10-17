@@ -2,6 +2,9 @@
 #include "ncbi_gui_base.lst"
 app/blast
 app/blastdb
+internal/txclient$
+internal/txxmldoc$
+internal/myncbi$
 internal/aligndb
 internal/gbench
 internal/tmsmart/smartnetclient
