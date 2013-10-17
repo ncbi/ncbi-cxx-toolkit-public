@@ -203,6 +203,9 @@ void CStreamByteSourceReader::Seekg(CNcbiStreampos pos)
 {
     m_Stream->clear();
     m_Stream->seekg(pos);
+    if (m_Stream->fail()) {
+        NCBI_THROW(CIOException, eRead, "Failed to set read position");
+    }
 }
 
 
