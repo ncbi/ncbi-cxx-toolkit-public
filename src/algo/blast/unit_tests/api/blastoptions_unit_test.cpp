@@ -371,7 +371,7 @@ BOOST_AUTO_TEST_CASE( testCalcLinkHSPCutoffs )
     BOOST_CHECK(hit_options->do_sum_stats);
 
     BlastHitSavingParameters* hit_params;
-    BlastHitSavingParametersNew(kBlastProgram, hit_options, sbp, query_info, kAvgSubjectLength, &hit_params);
+    BlastHitSavingParametersNew(kBlastProgram, hit_options, sbp, query_info, kAvgSubjectLength, 2, &hit_params);
     BlastLinkHSPParameters* link_hsp_params = hit_params->link_hsp_params;
 
     BlastInitialWordOptions* word_options;
@@ -454,7 +454,7 @@ BOOST_AUTO_TEST_CASE( testBadKbpForLinkHSPCutoffs )
     BOOST_CHECK(hit_options->do_sum_stats);
 
     BlastHitSavingParameters* hit_params;
-    BlastHitSavingParametersNew(kBlastProgram, hit_options, sbp, query_info, kAvgSubjectLength, &hit_params);
+    BlastHitSavingParametersNew(kBlastProgram, hit_options, sbp, query_info, kAvgSubjectLength, 0, &hit_params);
     BlastLinkHSPParameters* link_hsp_params = hit_params->link_hsp_params;
 
     BlastInitialWordParameters word_params;
@@ -528,7 +528,7 @@ BOOST_AUTO_TEST_CASE( testCalcLinkHSPCutoffsSmallDB )
                              scoring_options->gapped_calculation);
 
     BlastHitSavingParameters* hit_params;
-    BlastHitSavingParametersNew(kBlastProgram, hit_options, sbp, query_info, 0, &hit_params);
+    BlastHitSavingParametersNew(kBlastProgram, hit_options, sbp, query_info, 0, 0, &hit_params);
     BlastLinkHSPParameters* link_hsp_params = hit_params->link_hsp_params;
 
     BlastInitialWordOptions* word_options;
@@ -610,7 +610,7 @@ BOOST_AUTO_TEST_CASE( testCalcLinkHSPResetGapProb )
     BOOST_CHECK(hit_options->do_sum_stats);
 
     BlastHitSavingParameters* hit_params;
-    BlastHitSavingParametersNew(kBlastProgram, hit_options, sbp, query_info, kAvgSubjectLength, &hit_params);
+    BlastHitSavingParametersNew(kBlastProgram, hit_options, sbp, query_info, kAvgSubjectLength, 2, &hit_params);
     BlastLinkHSPParameters* link_hsp_params = hit_params->link_hsp_params;
 
     BlastInitialWordOptions* word_options;
@@ -876,7 +876,7 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamNewSomeInvalidKbp )
                              scoring_options->gapped_calculation);
 
     BlastHitSavingParameters* hit_params;
-    BlastHitSavingParametersNew(kBlastProgram, hit_options, sbp, query_info, 0, &hit_params);
+    BlastHitSavingParametersNew(kBlastProgram, hit_options, sbp, query_info, 0, 0, &hit_params);
 
     BOOST_CHECK_EQUAL(10, hit_params->cutoff_score_min);
 
@@ -940,9 +940,10 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamNewGappedTblastnLargeSubjectSequence )
 
     const int k_avg_subject_length=128199245;
     BlastHitSavingParameters* hit_params;
-    BlastHitSavingParametersNew(kBlastProgram, hit_options, sbp, query_info, k_avg_subject_length, &hit_params);
+    BlastHitSavingParametersNew(kBlastProgram, hit_options, sbp, query_info, k_avg_subject_length, 2, &hit_params);
 
-    BOOST_CHECK_EQUAL(72, hit_params->cutoff_score_min);
+    BOOST_CHECK_EQUAL(66, hit_params->cutoff_score_min);
+    BOOST_CHECK_EQUAL(50, hit_params->prelim_evalue);
 
     scoring_options = BlastScoringOptionsFree(scoring_options);
     hit_params = BlastHitSavingParametersFree(hit_params);
@@ -1004,9 +1005,10 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamNewGappedTblastnMidsizeSubjectSequence )
 
     const int k_avg_subject_length=104833;
     BlastHitSavingParameters* hit_params;
-    BlastHitSavingParametersNew(kBlastProgram, hit_options, sbp, query_info, k_avg_subject_length, &hit_params);
+    BlastHitSavingParametersNew(kBlastProgram, hit_options, sbp, query_info, k_avg_subject_length, 2, &hit_params);
 
-    BOOST_CHECK_EQUAL(46, hit_params->cutoff_score_min);
+    BOOST_CHECK_EQUAL(40, hit_params->cutoff_score_min);
+    BOOST_CHECK_EQUAL(50, hit_params->prelim_evalue);
 
     scoring_options = BlastScoringOptionsFree(scoring_options);
     hit_params = BlastHitSavingParametersFree(hit_params);
@@ -1066,18 +1068,19 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamUpdateMultipleCalls )
 
     const int k_avg_subject_length=104833;
     BlastHitSavingParameters* hit_params;
-    BlastHitSavingParametersNew(kBlastProgram, hit_options, sbp, query_info, k_avg_subject_length, &hit_params);
+    BlastHitSavingParametersNew(kBlastProgram, hit_options, sbp, query_info, k_avg_subject_length, 2, &hit_params);
 
-    BOOST_CHECK_EQUAL(46, hit_params->cutoff_score_min);
-    BOOST_CHECK_EQUAL(46, hit_params->cutoffs[0].cutoff_score);
-    BOOST_CHECK_EQUAL(46, hit_params->cutoffs[0].cutoff_score_max);
+    BOOST_CHECK_EQUAL(40, hit_params->cutoff_score_min);
+    BOOST_CHECK_EQUAL(40, hit_params->cutoffs[0].cutoff_score);
+    BOOST_CHECK_EQUAL(40, hit_params->cutoffs[0].cutoff_score_max);
 
     s_FillSearchSpace(query_info, 2000799959LL);
 
-    BlastHitSavingParametersUpdate(kBlastProgram, sbp, query_info, k_avg_subject_length, hit_params);
-    BOOST_CHECK_EQUAL(46, hit_params->cutoff_score_min);
-    BOOST_CHECK_EQUAL(46, hit_params->cutoffs[0].cutoff_score);
-    BOOST_CHECK_EQUAL(46, hit_params->cutoffs[0].cutoff_score_max);
+    BlastHitSavingParametersUpdate(kBlastProgram, sbp, query_info, k_avg_subject_length, 2, hit_params);
+    BOOST_CHECK_EQUAL(50, hit_params->prelim_evalue);
+    BOOST_CHECK_EQUAL(40, hit_params->cutoff_score_min);
+    BOOST_CHECK_EQUAL(40, hit_params->cutoffs[0].cutoff_score);
+    BOOST_CHECK_EQUAL(40, hit_params->cutoffs[0].cutoff_score_max);
 
     scoring_options = BlastScoringOptionsFree(scoring_options);
     hit_params = BlastHitSavingParametersFree(hit_params);
@@ -1138,11 +1141,11 @@ BOOST_AUTO_TEST_CASE( testHitSavingParamNewGappedTblastnSmallSubjectSequence )
 
     const int k_avg_subject_length=523;
     BlastHitSavingParameters* hit_params;
-    BlastHitSavingParametersNew(kBlastProgram, hit_options, sbp, query_info, k_avg_subject_length, &hit_params);
+    BlastHitSavingParametersNew(kBlastProgram, hit_options, sbp, query_info, k_avg_subject_length, 2, &hit_params);
 
-    BOOST_CHECK_EQUAL(25, hit_params->cutoff_score_min);
-    BOOST_CHECK_EQUAL(25, hit_params->cutoffs[0].cutoff_score);
-    BOOST_CHECK_EQUAL(25, hit_params->cutoffs[0].cutoff_score_max);
+    BOOST_CHECK_EQUAL(19, hit_params->cutoff_score_min);
+    BOOST_CHECK_EQUAL(19, hit_params->cutoffs[0].cutoff_score);
+    BOOST_CHECK_EQUAL(19, hit_params->cutoffs[0].cutoff_score_max);
 
     scoring_options = BlastScoringOptionsFree(scoring_options);
     hit_params = BlastHitSavingParametersFree(hit_params);
@@ -1215,7 +1218,7 @@ BOOST_AUTO_TEST_CASE( testInitialWordParamNewSomeInvalidKbp )
     BlastHitSavingOptionsNew(kBlastProgram, &hit_options,
                              scoring_options->gapped_calculation);
     BlastHitSavingParameters* hit_params;
-    BlastHitSavingParametersNew(kBlastProgram, hit_options, sbp, query_info, 0, &hit_params);
+    BlastHitSavingParametersNew(kBlastProgram, hit_options, sbp, query_info, 0, 0, &hit_params);
     hit_params->cutoff_score_min = 19;
 
     BlastInitialWordOptions* word_options;

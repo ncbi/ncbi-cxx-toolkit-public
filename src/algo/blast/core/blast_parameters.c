@@ -728,6 +728,7 @@ BlastHitSavingParametersNew(EBlastProgramType program_number,
    const BlastScoreBlk* sbp, 
    const BlastQueryInfo* query_info, 
    Int4 avg_subj_length,
+   Int4 compositionBasedStats,
    BlastHitSavingParameters* *parameters)
 {
    Boolean gapped_calculation = TRUE;
@@ -813,7 +814,7 @@ BlastHitSavingParametersNew(EBlastProgramType program_number,
        params->low_score = NULL;
 
    status = BlastHitSavingParametersUpdate(program_number, sbp, query_info, 
-                                           avg_subj_length, params);
+                                           avg_subj_length, compositionBasedStats, params);
 
    return status;
 }
@@ -821,7 +822,8 @@ BlastHitSavingParametersNew(EBlastProgramType program_number,
 Int2
 BlastHitSavingParametersUpdate(EBlastProgramType program_number, 
    const BlastScoreBlk* sbp, const BlastQueryInfo* query_info, 
-   Int4 avg_subject_length, BlastHitSavingParameters* params)
+   Int4 avg_subject_length, Int4 compositionBasedStats, 
+   BlastHitSavingParameters* params)
 {
    BlastHitSavingOptions* options;
    Blast_KarlinBlk** kbp_array;
@@ -855,6 +857,7 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
    } else {
        return -1;
    }
+    params->prelim_evalue = options->expect_value;  /* evalue and prelim_evalue same if no CBS. */
 
    // Set masklevel parameter -RMH-
    if ( program_number == eBlastTypeBlastn && options->mask_level >= 0 )
@@ -918,9 +921,13 @@ BlastHitSavingParametersUpdate(EBlastProgramType program_number,
          if (program_number == eBlastTypeRpsTblastn) 
             searchsp /= NUM_FRAMES;
    
+	 params->prelim_evalue = evalue;  /* evalue and prelim_evalue same if no CBS. */
          /* Get cutoff_score for specified evalue. */
          if (sbp->gbp && sbp->gbp->filled) {
-             new_cutoff = BLAST_SpougeEtoS(evalue, kbp, sbp->gbp, 
+	     /* If cbs greater than 1 (2 or 3), then increase expect value by 5 for preliminary search. */
+	     int cbs_stretch = (compositionBasedStats > 1) ? 5 : 1;
+	     params->prelim_evalue = cbs_stretch*evalue;
+             new_cutoff = BLAST_SpougeEtoS(cbs_stretch*evalue, kbp, sbp->gbp, 
                          query_info->contexts[context].query_length,
                          avg_subject_length);
          } else {

@@ -905,7 +905,8 @@ BLAST_GapAlignSetUp(EBlastProgramType program_number,
    }
 
    BlastHitSavingParametersNew(program_number, hit_options, sbp, query_info, 
-                               min_subject_length, hit_params);
+                               min_subject_length, (*ext_params)->options->compositionBasedStats, 
+				hit_params);
 
    /* To initialize the gapped alignment structure, we need to know the 
       maximal subject sequence length */
@@ -934,7 +935,7 @@ Int2 BLAST_OneSubjectUpdateParameters(EBlastProgramType program_number,
                                 eff_len_params, sbp, query_info, NULL)) != 0)
       return status;
    /* Update cutoff scores in hit saving parameters */
-   BlastHitSavingParametersUpdate(program_number, sbp, query_info, subject_length, 
+   BlastHitSavingParametersUpdate(program_number, sbp, query_info, subject_length, 0, /* FIXME */
                                   hit_params);
    
    if (word_params) {

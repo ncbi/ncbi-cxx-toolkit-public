@@ -579,6 +579,44 @@ s_BlastSearchEngineCoreCleanUp(EBlastProgramType program_number,
     }
 }
 
+/** Discard the HSPs above the prelim e-value threshold from the HSP list 
+ * @param hsp_list List of HSPs for one subject sequence [in] [out]
+ * @param hit_params Parameters block containing the prelim e-value [in]
+*/
+static Int2 
+s_Blast_HSPListReapByPrelimEvalue(BlastHSPList* hsp_list, const BlastHitSavingParameters* hit_params)
+{
+   BlastHSP* hsp;
+   BlastHSP** hsp_array;
+   Int4 hsp_cnt = 0;
+   Int4 index;
+   double cutoff;
+
+   if (hsp_list == NULL)
+      return 0;
+
+   cutoff = hit_params->prelim_evalue;
+
+   hsp_array = hsp_list->hsp_array;
+   for (index = 0; index < hsp_list->hspcnt; index++) {
+      hsp = hsp_array[index];
+
+      ASSERT(hsp != NULL);
+
+      if (hsp->evalue > cutoff) {
+         hsp_array[index] = Blast_HSPFree(hsp_array[index]);
+      } else {
+         if (index > hsp_cnt)
+            hsp_array[hsp_cnt] = hsp_array[index];
+         hsp_cnt++;
+      }
+   }
+
+   hsp_list->hspcnt = hsp_cnt;
+
+   return 0;
+}
+
 /** The core of the BLAST search: comparison between the (concatenated)
  * query against one subject sequence. Translation of the subject sequence
  * into 6 frames is done inside, if necessary. If subject sequence is 
@@ -799,7 +837,7 @@ s_BlastSearchEngineCore(EBlastProgramType program_number,
         status = Blast_HSPListReapByRawScore(hsp_list_out, hit_options);
     }else {
        /* Discard HSPs that don't pass the e-value test. */
-        status = Blast_HSPListReapByEvalue(hsp_list_out, hit_options);
+        status = s_Blast_HSPListReapByPrelimEvalue(hsp_list_out, hit_params);
     }
 
     /* If there are no HSPs left, destroy the HSP list too. */
@@ -1378,8 +1416,7 @@ BLAST_PreliminarySearchEngine(EBlastProgramType program_number,
                    status = Blast_HSPListReapByRawScore(hsp_list,
                                           hit_params->options);
                }else {
-                   status = Blast_HSPListReapByEvalue(hsp_list,
-                                          hit_params->options);
+        	   status = s_Blast_HSPListReapByPrelimEvalue(hsp_list, hit_params);
                }
  
             /* Calculate and fill the bit scores, since there will be no

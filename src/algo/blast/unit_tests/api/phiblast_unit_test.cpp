@@ -429,7 +429,7 @@ BOOST_AUTO_TEST_CASE(testPHIBlastHitSavingParameters) {
     m_QueryInfo->contexts[0].eff_searchsp = 10000000;
     const int k_avg_subject_length=343;
     BlastHitSavingParameters* hit_params;
-    BlastHitSavingParametersNew(kBlastProgram, hit_options, m_ScoreBlk, m_QueryInfo, k_avg_subject_length, &hit_params);
+    BlastHitSavingParametersNew(kBlastProgram, hit_options, m_ScoreBlk, m_QueryInfo, k_avg_subject_length, 0, &hit_params);
 
     BOOST_REQUIRE_EQUAL(28, hit_params->cutoffs[0].cutoff_score);
     BOOST_REQUIRE_EQUAL(28, hit_params->cutoff_score_min);

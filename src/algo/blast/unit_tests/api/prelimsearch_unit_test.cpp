@@ -55,7 +55,7 @@ void x_ValidateResultsForShortProteinSearch(CBlastPrelimSearch& blaster,
 
         BOOST_REQUIRE_EQUAL((Int4)1, hsp_results->num_queries);
         BOOST_REQUIRE(hsp_results->hitlist_array[0]);
-        BOOST_REQUIRE_EQUAL((Int4)4, 
+        BOOST_REQUIRE_EQUAL((Int4)24, 
                              hsp_results->hitlist_array[0]->hsplist_count);
         BOOST_REQUIRE(hsp_results->hitlist_array[0]->hsplist_array[0]);
         BlastHSPList* hsp_list = 

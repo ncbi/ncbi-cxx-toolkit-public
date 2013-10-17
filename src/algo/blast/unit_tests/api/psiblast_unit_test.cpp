@@ -367,6 +367,7 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBS) {
 
 BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBSConditional) {
     m_OptHandle->SetCompositionBasedStats(eCompositionMatrixAdjust);
+    m_OptHandle->SetEvalueThreshold(5.0);
     CConstRef<CBioseq> bioseq(&m_SeqEntry->GetSeq());
     CRef<IQueryFactory> query_factory(s_SetupSubject(bioseq));
     CRef<CLocalDbAdapter> dbadapter(new CLocalDbAdapter(*m_SearchDb));
@@ -375,12 +376,12 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBSConditional) {
     CSearchResultSet results(*psiblast.Run());
     BOOST_REQUIRE(results[0].GetErrors().empty());
 
-    const int kNumExpectedMatchingSeqs = 4;
+    const int kNumExpectedMatchingSeqs = 3;
     CConstRef<CSeq_align_set> sas = results[0].GetSeqAlign();
 
     BOOST_REQUIRE_EQUAL(kNumExpectedMatchingSeqs, s_CountNumberUniqueGIs(sas));
 
-    const size_t kNumExpectedHSPs = 4;
+    const size_t kNumExpectedHSPs = 3;
     qa::TSeqAlignSet expected_results(kNumExpectedHSPs);
 
     // HSP # 1
@@ -432,21 +433,19 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBSConditional) {
 
 
     // HSP # 4
-    expected_results[3].score = 50;
-    expected_results[3].evalue = 7.15763;
-    expected_results[3].bit_score = 23.868211;
+/*
+    expected_results[3].score = 53;
+    expected_results[3].evalue = 5.65033;
+    expected_results[3].bit_score = 25.0238;
     expected_results[3].sequence_gis.SetQuery(7450545);
     expected_results[3].sequence_gis.SetSubject(15836829);
-    expected_results[3].starts.push_back(295);
-    expected_results[3].starts.push_back(23);
-    expected_results[3].starts.push_back(301);
-    expected_results[3].starts.push_back(-1);
+    expected_results[3].starts.push_back(39);
     expected_results[3].starts.push_back(304);
-    expected_results[3].starts.push_back(29);
-    expected_results[3].lengths.push_back(6);
-    expected_results[3].lengths.push_back(3);
-    expected_results[3].lengths.push_back(23);
-    expected_results[3].num_ident = 16;
+    expected_results[3].lengths.push_back(41);
+    expected_results[3].lengths.push_back(41);
+    expected_results[3].num_ident = 15;
+*/
+
 
     qa::TSeqAlignSet actual_results;
     qa::SeqAlignSetConvert(*sas, actual_results);
@@ -469,12 +468,12 @@ BOOST_AUTO_TEST_CASE(TestSingleIteration_ProteinAsQuery_CBSUniversal) {
     CSearchResultSet results(*psiblast.Run());
     BOOST_REQUIRE(results[0].GetErrors().empty());
 
-    const int kNumExpectedMatchingSeqs = 3;
+    const int kNumExpectedMatchingSeqs = 5;
     CConstRef<CSeq_align_set> sas = results[0].GetSeqAlign();
 
     BOOST_REQUIRE_EQUAL(kNumExpectedMatchingSeqs, s_CountNumberUniqueGIs(sas));
 
-    const size_t kNumExpectedHSPs = 3;
+    const size_t kNumExpectedHSPs = 5;
     qa::TSeqAlignSet expected_results(kNumExpectedHSPs);
 
     // HSP # 1

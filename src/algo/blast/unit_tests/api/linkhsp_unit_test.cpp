@@ -466,7 +466,7 @@ struct LinkHspTestFixture {
         score_options = BlastScoringOptionsFree(score_options);
 
         BlastHitSavingParametersNew(m_ProgramType, hit_options,
-                                    m_ScoreBlk, m_QueryInfo, subj_length, &m_HitParams);
+                                    m_ScoreBlk, m_QueryInfo, subj_length, 0, &m_HitParams);
 
 
         QuerySetUpOptions* query_options = NULL;

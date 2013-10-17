@@ -524,7 +524,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
         hit_options->expect_value = kEvalue; 
 
         BlastHitSavingParametersNew(program_number, hit_options, sbp, query_info,
-                                    kDbLength, &hit_params);
+                                    kDbLength, 0, &hit_params);
 
         BOOST_REQUIRE_EQUAL(kHitCutoff, hit_params->cutoff_score_min);
 
@@ -668,7 +668,7 @@ BOOST_AUTO_TEST_CASE(BlastTargetSequence)
                                  scoring_options->gapped_calculation);
 
         BlastHitSavingParametersNew(program_number, hit_options, sbp, query_info,
-                                    kDbLength, &hit_params);
+                                    kDbLength, 0, &hit_params);
 
         BOOST_REQUIRE_EQUAL(kHitCutoff, hit_params->cutoff_score_min);
 

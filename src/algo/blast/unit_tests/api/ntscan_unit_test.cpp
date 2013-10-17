@@ -738,7 +738,7 @@ struct TestFixture {
         BlastHitSavingParameters* hit_params = NULL;
         retval = BlastHitSavingParametersNew(program_number, hitsaving_options,
                                              sbp, query_info, subject_bases, 
-                                             &hit_params);
+                                             0, &hit_params);
         BOOST_REQUIRE_EQUAL(0, retval);
 
         BlastInitialWordParameters* word_params = NULL;

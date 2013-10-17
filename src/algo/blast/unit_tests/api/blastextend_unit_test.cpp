@@ -233,7 +233,7 @@ struct CBlastExtendTestFixture
         BOOST_REQUIRE(status == 0);
         
         BlastHitSavingParametersNew(kCoreProgramType, m_HitSavingOpts,
-				    m_ipScoreBlk, m_iclsQueryInfo, 0, &m_ipHitParams);
+				    m_ipScoreBlk, m_iclsQueryInfo, 0, 0, &m_ipHitParams);
         
         status = BLAST_GapAlignStructNew(m_ipScoreParams, m_ipExtParams, 
                                          subject_length, m_ipScoreBlk, &m_ipGapAlign);

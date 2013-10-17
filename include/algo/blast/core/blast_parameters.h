@@ -181,6 +181,7 @@ typedef struct BlastHitSavingParameters {
    Int4* low_score;             /**< lowest ungapped score that can trigger a
 				gapped alignment if the histlist is already full.
                                 One value for each query. */
+   double prelim_evalue; /**< evalue for preliminary search (may be higher for CBS). */
 } BlastHitSavingParameters;
 
 /** Because approximate gapped alignment adds extra overhead,
@@ -386,6 +387,7 @@ BlastHitSavingParametersFree(BlastHitSavingParameters* parameters);
  * @param query_info Query information, needed for calculating score cutoff 
  *                   from e-value [in]
  * @param avg_subject_length average length of subject sequence [in]
+ * @param compositionBasedStats follows -t option in blastp [in]
  * @param parameters Resulting parameters [out]
  */
 NCBI_XBLAST_EXPORT
@@ -394,6 +396,7 @@ Int2 BlastHitSavingParametersNew(EBlastProgramType program_number,
         const BlastScoreBlk* sbp, 
         const BlastQueryInfo* query_info, 
         Int4 avg_subject_length,
+   	Int4 compositionBasedStats,
         BlastHitSavingParameters* *parameters);
 
 /** Updates cutoff scores in hit saving parameters. 
@@ -404,12 +407,14 @@ Int2 BlastHitSavingParametersNew(EBlastProgramType program_number,
  *                   from e-value [in]
  * @param avg_subject_length average length of subject sequence, used in sum_stats
  *            mode [in]
+ * @param compositionBasedStats follows -t option in blastp [in]
  * @param parameters Preallocated parameters [in] [out]
  */
 NCBI_XBLAST_EXPORT
 Int2 BlastHitSavingParametersUpdate(EBlastProgramType program_number, 
         const BlastScoreBlk* sbp, const BlastQueryInfo* query_info, 
         Int4 avg_subject_length,
+   	Int4 compositionBasedStats,
         BlastHitSavingParameters* parameters);
 
 /** Calculates cutoff scores and returns them.

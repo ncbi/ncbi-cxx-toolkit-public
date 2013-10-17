@@ -414,13 +414,13 @@ BOOST_AUTO_TEST_CASE(testBlastpPrelimSearch)
     const string kDbName("data/seqp");
     const TGi kQueryGi1 = GI_FROM(TIntId, 21282798);
     const TGi kQueryGi2 = GI_FROM(TIntId, 129295);
-    const int kNumHits = 12;
+    const int kNumHits = 28;
     const int kNumHitsToCheck = 3;
     const int kIndices[kNumHitsToCheck] = { 1, 4, 8 };
-    const int kScores[kNumHitsToCheck] = { 519, 56, 52 };
-    const int kOids[kNumHitsToCheck] = { 74, 971, 665 }; 
-    const int kQueryLengths[kNumHitsToCheck] = { 297, 46, 41 };
-    const int kSubjectLengths[kNumHitsToCheck] = { 298, 48, 41 };
+    const int kScores[kNumHitsToCheck] = { 519, 56, 54 };
+    const int kOids[kNumHitsToCheck] = { 74, 971, 45 }; 
+    const int kQueryLengths[kNumHitsToCheck] = { 297, 46, 63 };
+    const int kSubjectLengths[kNumHitsToCheck] = { 298, 48, 55 };
     const EProgram kProgram = eBlastp;
 
     CRef<CSeq_loc> query_loc1(new CSeq_loc());
@@ -463,6 +463,7 @@ BOOST_AUTO_TEST_CASE(testBlastpPrelimSearch)
             results->hitlist_array[0]->hsplist_array[kHitIndex];
         BOOST_REQUIRE_EQUAL(kOids[index], hsp_list->oid);
         BlastHSP* hsp = hsp_list->hsp_array[0];
+// cerr << hsp_list->oid << " " << hsp->score << " " << hsp->num_ident << " " << hsp->query.offset << " " << hsp->query.end << " " << hsp->subject.offset << " " << hsp->subject.end << "\n";
         BOOST_REQUIRE_EQUAL(kScores[index], hsp->score);
         BOOST_REQUIRE_EQUAL(0, hsp->num_ident);
         BOOST_REQUIRE_EQUAL(kQueryLengths[index], 

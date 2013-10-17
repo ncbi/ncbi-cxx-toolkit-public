@@ -341,7 +341,7 @@ void CRedoAlignmentTestFixture::
     BlastHitSavingParameters* hit_params=NULL;
     BlastHitSavingParametersNew(program, hitsaving_opts,
                                 sbp, query_info, kAvgSubjLen, 
-                                &hit_params);
+                                2, &hit_params);
 
     BlastScoringParameters* scoring_params=NULL;
     BlastScoringParametersNew(scoring_opts, sbp, &scoring_params);
@@ -376,6 +376,7 @@ void CRedoAlignmentTestFixture::
 
     BOOST_REQUIRE_EQUAL(ending_hsp_list->hspcnt, hsp_list->hspcnt);
 #if 0
+
     if ( ending_hsp_list->hspcnt !=  hsp_list->hspcnt) {
         cout << "Expected num hsps=" << ending_hsp_list->hspcnt;
         cout << " Actual num hsps=" << hsp_list->hspcnt << endl;
@@ -421,7 +422,7 @@ void CRedoAlignmentTestFixture::
         cerr << "Diff in evalues for " << index << "=" << diff << endl;
 #endif
         BOOST_REQUIRE_CLOSE(expected_hsp->evalue, actual_hsp->evalue, 10.0);
-//            cout << "HSP " << index << " OK" << endl;
+        //    cout << "HSP " << index << " OK" << endl;
     }
 
     results = Blast_HSPResultsFree(results);
