@@ -199,6 +199,9 @@ public:
     /// If feature does not exist returns -1.
     TBioTreeFeatureId GetId(const string& feature_name) const;
 
+    /// Return the featue name given the id, or "" if not found
+    string GetName(TBioTreeFeatureId id) const;
+
     /// Clear the dictionary
     void Clear();
 

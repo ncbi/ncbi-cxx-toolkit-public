@@ -124,6 +124,8 @@ CBioTreeFeatureDictionary::operator=(const CBioTreeFeatureDictionary& btr)
         m_Name2Id.insert(*it);
     }
 
+    m_IdCounter = btr.m_IdCounter;
+
     return *this;
 }
 
@@ -205,6 +207,14 @@ CBioTreeFeatureDictionary::GetId(const string& feature_name) const
         return (TBioTreeFeatureId)-1;
     }
     return it->second;
+}
+
+string CBioTreeFeatureDictionary::GetName(TBioTreeFeatureId id) const
+{
+    TFeatureDict::const_iterator it = m_Dict.find(id);
+    if (it != m_Dict.end())
+        return it->second;
+    return "";
 }
 
 
