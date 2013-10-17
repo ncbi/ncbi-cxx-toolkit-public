@@ -2489,7 +2489,7 @@ static EBool s_SkippableString (char * str)
         ||  s_StringNICmp (str, "matrix", 6) == 0
         ||  s_StringNICmp (str, "sequin", 6) == 0
         ||  s_StringNICmp (str, "#NEXUS", 6) == 0
-        ||  s_StringNICmp (str, "CLUSTAL W", 8) == 0
+        ||  s_StringNICmp (str, "CLUSTAL W", 9) == 0
         ||  s_SkippableNexusComment (str)
         ||  s_IsTwoNumbersSeparatedBySpace (str)
         ||  s_IsOnlyNumbersAndSpaces (str)
@@ -2509,7 +2509,7 @@ static EBool s_IsAlnFormatString (char * str)
 {
     if (s_StringNICmp (str, "matrix", 6) == 0
         ||  s_StringNICmp (str, "#NEXUS", 6) == 0
-        ||  s_StringNICmp (str, "CLUSTAL W", 8) == 0
+        ||  s_StringNICmp (str, "CLUSTAL W", 9) == 0
         ||  s_SkippableNexusComment (str)
         ||  s_IsTwoNumbersSeparatedBySpace (str)
         ||  s_IsConsensusLine (str)) {
