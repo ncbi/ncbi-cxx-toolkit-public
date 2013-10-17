@@ -3266,7 +3266,7 @@ class Scenario184( TestBase ):
         if process.returncode != 0:
             raise Exception( "Error spawning SUBMIT" )
         processStdout = process.stdout.read()
-        processStderr = process.stderr.read()
+        processStderr = process.stderr.read()       # analysis:ignore
 
         if "job_key=" + jobKey in processStdout:
             return True
@@ -3301,7 +3301,7 @@ class Scenario185( TestBase ):
         if process.returncode != 0:
             raise Exception( "Error spawning SUBMIT" )
         processStdout = process.stdout.read()
-        processStderr = process.stderr.read()
+        processStderr = process.stderr.read()       # analysis:ignore
 
         if "job_key=" + jobKey in processStdout:
             return True
@@ -3335,7 +3335,7 @@ class Scenario186( TestBase ):
         if process.returncode != 0:
             raise Exception( "Error spawning SUBMIT" )
         processStdout = process.stdout.read()
-        processStderr = process.stderr.read()
+        processStderr = process.stderr.read()       # analysis:ignore
 
         if "job_key=" + jobKey in processStdout:
             return True
@@ -3369,7 +3369,7 @@ class Scenario187( TestBase ):
         if process.returncode != 0:
             raise Exception( "Error spawning SUBMIT" )
         processStdout = process.stdout.read()
-        processStderr = process.stderr.read()
+        processStderr = process.stderr.read()       # analysis:ignore
 
         if "job_key=" + jobKey in processStdout:
             return True
@@ -3392,6 +3392,27 @@ class Scenario188( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
+        safeMode = True
+        if safeMode:
+            ns_client = self.getNetScheduleService( 'TEST', 'scenario188' )
+            ns_client.set_client_identification( 'node', 'session' )
+
+            notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+            notifSocket.bind( ( "", 9007 ) )
+
+            execAny( ns_client,
+                     'GET2 wnode_aff=0 any_aff=1 exclusive_new_aff=0 port=9007 timeout=3' )
+
+            # Submit a job
+            self.ns.submitJob( 'TEST', 'input' )
+
+            time.sleep( 3 )
+            result = self.getNotif( notifSocket )
+            if result == 0:
+                raise Exception( "Expected notification(s), received nothing" )
+            return True
+
+
         # Spawn GET2 with waiting
         process = self.ns.spawnGet2Wait( 'TEST', 3,
                                          [], False, True,
@@ -3404,12 +3425,27 @@ class Scenario188( TestBase ):
         if process.returncode != 0:
             raise Exception( "Error spawning GET2" )
         processStdout = process.stdout.read()
-        processStderr = process.stderr.read()
+        processStderr = process.stderr.read()       # analysis:ignore
 
         if "[valid" in processStdout:
             return True
 
         raise Exception( "Did not receive notifications when expected" )
+
+    def getNotif( self, s ):
+        " Retrieves notifications "
+        try:
+            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            if "queue=TEST" not in data:
+                raise Exception( "Unexpected notification in socket" )
+            return 1
+        except Exception, ex:
+            if "Unexpected notification in socket" in str( ex ):
+                raise
+            pass
+        return 0
+
+
 
 class Scenario189( TestBase ):
     " Scenario 189 "
@@ -3427,6 +3463,27 @@ class Scenario189( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
+        safeMode = True
+        if safeMode:
+            ns_client = self.getNetScheduleService( 'TEST', 'scenario189' )
+            ns_client.set_client_identification( 'node', 'session' )
+
+            notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+            notifSocket.bind( ( "", 9007 ) )
+
+            execAny( ns_client,
+                     'GET2 wnode_aff=0 any_aff=0 exclusive_new_aff=0 aff=a1 port=9007 timeout=3' )
+
+            # Submit a job
+            self.ns.submitJob( 'TEST', 'input' )
+
+            time.sleep( 3 )
+            result = self.getNotif( notifSocket )
+            if result != 0:
+                raise Exception( "Expect no notifications but received some" )
+            return True
+
+
         # Spawn GET2 with waiting
         process = self.ns.spawnGet2Wait( 'TEST', 3,
                                          [ 'a1' ], False, False,
@@ -3439,11 +3496,25 @@ class Scenario189( TestBase ):
         if process.returncode != 0:
             raise Exception( "Error spawning GET2" )
         processStdout = process.stdout.read()
-        processStderr = process.stderr.read()
+        processStderr = process.stderr.read()       # analysis:ignore
 
         if "[valid" in processStdout:
             raise Exception( "Expect no notifications but received one" )
         return True
+
+    def getNotif( self, s ):
+        " Retrieves notifications "
+        try:
+            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            if "queue=TEST" not in data:
+                raise Exception( "Unexpected notification in socket" )
+            return 1
+        except Exception, ex:
+            if "Unexpected notification in socket" in str( ex ):
+                raise
+            pass
+        return 0
+
 
 class Scenario190( TestBase ):
     " Scenario 190 "
@@ -3461,6 +3532,26 @@ class Scenario190( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
+        safeMode = True
+        if safeMode:
+            ns_client = self.getNetScheduleService( 'TEST', 'scenario190' )
+            ns_client.set_client_identification( 'node', 'session' )
+
+            notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+            notifSocket.bind( ( "", 9007 ) )
+
+            execAny( ns_client,
+                     'GET2 wnode_aff=0 any_aff=0 exclusive_new_aff=0 aff=a1 port=9007 timeout=3' )
+
+            # Submit a job
+            self.ns.submitJob( 'TEST', 'input', 'a1' )
+
+            time.sleep( 3 )
+            result = self.getNotif( notifSocket )
+            if result == 0:
+                raise Exception( "Expected notification(s), received nothing" )
+            return True
+
         # Spawn GET2 with waiting
         process = self.ns.spawnGet2Wait( 'TEST', 3,
                                          [ 'a1' ], False, False,
@@ -3473,12 +3564,27 @@ class Scenario190( TestBase ):
         if process.returncode != 0:
             raise Exception( "Error spawning GET2" )
         processStdout = process.stdout.read()
-        processStderr = process.stderr.read()
+        processStderr = process.stderr.read()       # analysis:ignore
 
         if "[valid" in processStdout:
             return True
 
         raise Exception( "Did not receive notifications when expected" )
+
+    def getNotif( self, s ):
+        " Retrieves notifications "
+        try:
+            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            if "queue=TEST" not in data:
+                raise Exception( "Unexpected notification in socket" )
+            return 1
+        except Exception, ex:
+            if "Unexpected notification in socket" in str( ex ):
+                raise
+            pass
+        return 0
+
+
 
 class Scenario191( TestBase ):
     " Scenario 191 "
@@ -3645,6 +3751,27 @@ class Scenario193( TestBase ):
         " Should return True if the execution completed successfully "
         self.fromScratch()
 
+        safeMode = True
+        if safeMode:
+            ns_client = self.getNetScheduleService( 'TEST', 'scenario193' )
+            ns_client.set_client_identification( 'node', 'session' )
+            changeAffinity( ns_client, ['a3'], [] )
+
+            notifSocket = socket.socket( socket.AF_INET, socket.SOCK_DGRAM )
+            notifSocket.bind( ( "", 9007 ) )
+
+            execAny( ns_client,
+                     'GET2 wnode_aff=1 any_aff=0 exclusive_new_aff=0 port=9007 timeout=3' )
+
+            # Submit a job
+            self.ns.submitJob( 'TEST', 'input', 'a4' )
+
+            time.sleep( 3 )
+            result = self.getNotif( notifSocket )
+            if result != 0:
+                raise Exception( "Received notifications when not expected" )
+            return True
+
         ns_client = self.getNetScheduleService( 'TEST', 'scenario193' )
         ns_client.set_client_identification( 'node', 'session' )
         changeAffinity( ns_client, ['a3'], [] )
@@ -3661,11 +3788,26 @@ class Scenario193( TestBase ):
         if process.returncode != 0:
             raise Exception( "Error spawning GET2" )
         processStdout = process.stdout.read()
-        processStderr = process.stderr.read()
+        processStderr = process.stderr.read()       # analysis:ignore
 
         if "[valid" in processStdout:
             raise Exception( "Received notifications when not expected" )
         return True
+
+    def getNotif( self, s ):
+        " Retrieves notifications "
+        try:
+            data = s.recv( 8192, socket.MSG_DONTWAIT )
+            if "queue=TEST" not in data:
+                raise Exception( "Unexpected notification in socket" )
+            return 1
+        except Exception, ex:
+            if "Unexpected notification in socket" in str( ex ):
+                raise
+            pass
+        return 0
+
+
 
 class Scenario194( TestBase ):
     " Scenario 194 "
@@ -4298,10 +4440,10 @@ class Scenario223( TestBase ):
         if process.returncode != 0:
             raise Exception( "Error spawning GET2" )
         processStdout = process.stdout.read()
-        processStderr = process.stderr.read()
+        processStderr = process.stderr.read()       # analysis:ignore
 
         if "[valid" in processStdout:
-            raise Exception( "Receive notifications when not expected: " + \
+            raise Exception( "Receive notifications when not expected: " +
                              processStdout)
         return True
 
