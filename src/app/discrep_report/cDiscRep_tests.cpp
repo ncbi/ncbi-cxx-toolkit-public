@@ -7142,10 +7142,10 @@ void CBioseq_EXTRA_MISSING_GENES :: GetReport(CRef <CClickableItem>& c_item)
 
 void CBioseq_DISC_COUNT_NUCLEOTIDES :: TestOnObj(const CBioseq& bioseq)
 {
-   if (bioseq.IsNa())
+   if (bioseq.IsNa()) {
         thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(bioseq));
-
-
+        thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(&bioseq));
+   }
 }; // DISC_COUNT_NUCLEOTIDES :: TestOnObj
 
 
@@ -7155,6 +7155,8 @@ void CBioseq_DISC_COUNT_NUCLEOTIDES :: GetReport(CRef <CClickableItem>& c_item)
     c_item->item_list = thisInfo.test_item_list[GetName()];
     c_item->description = GetIsComment(c_item->item_list.size(), "nucleotide Bioseq")
                            + "present.";
+    c_item->obj_list = thisInfo.test_item_objs[GetName()];
+
 }; // DISC_COUNT_NUCLEOTIDES :: GetReport()
 
 

@@ -57,6 +57,8 @@ using namespace objects;
 BEGIN_NCBI_SCOPE
 
 namespace DiscRepNmSpc {
+   typedef map <string, vector < CConstRef <CObject> > > Str2Objs;
+
    class CTry : public CObject 
    {
      public:
@@ -123,7 +125,6 @@ namespace DiscRepNmSpc {
    class CRepConfig : public CObject 
    {
      public:
-        virtual ~CRepConfig() {};
 
         // removed from *_app.hpp
         void InitParams(const IRWRegistry& reg);
@@ -160,6 +161,20 @@ namespace DiscRepNmSpc {
         static vector < CRef < CTestAndRepData > > tests_on_BioseqSet;
         static vector < CRef < CTestAndRepData > > tests_on_SubmitBlk;
 
+        virtual ~CRepConfig() {
+              tests_on_Bioseq.clear();
+              tests_on_Bioseq_na.clear();
+              tests_on_Bioseq_aa.clear();
+              tests_on_Bioseq_CFeat.clear();
+              tests_on_Bioseq_CFeat_NotInGenProdSet.clear();
+              tests_on_Bioseq_NotInGenProdSet.clear();
+              tests_on_Bioseq_CFeat_CSeqdesc.clear();
+              tests_on_SeqEntry.clear();
+              tests_on_SeqEntry_feat_desc.clear();
+              tests_4_once.clear();
+              tests_on_BioseqSet.clear();
+              tests_on_SubmitBlk.clear();
+        };
      protected:
         vector <string> m_enabled, m_disabled;
         string m_outsuffix, m_outdir, m_insuffix, m_indir, m_file_tp;
@@ -239,6 +254,7 @@ namespace DiscRepNmSpc {
         static CRef <CRepConfig>                  config;
         static vector < CRef < CClickableItem > > disc_report_data;
         static Str2Strs                           test_item_list;
+        static Str2Objs                           test_item_objs;
         static CRef < CSuspect_rule_set>          suspect_prod_rules;
         static vector < vector <string> >         susrule_summ;
         static vector <string> 		          weasels;

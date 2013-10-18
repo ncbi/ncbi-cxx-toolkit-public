@@ -356,15 +356,21 @@ void CRepConfig :: Export(vector <CRef <CClickableText> >& item_list)
 {
    if (oc.add_output_tag || oc.add_extra_output_tag) AddListOutputTags(); 
    string desc;
+cerr << "disc_report_data.size() " << thisInfo.disc_report_data.size() << endl;
    ITERATE (vector <CRef < CClickableItem > >, it, thisInfo.disc_report_data) {
       strtmp = kEmptyStr;
 
       desc = (*it)->description;
       if ( desc.empty()) continue;
       // FATAL tag
-      if (RmTagInDescp(desc, "FATAL: ")) strtmp = "FATAL:";
-      strtmp += (*it)->setting_name + ": " + desc;
+      if (RmTagInDescp(desc, "FATAL: ")) strtmp = "FATAL: ";
+      strtmp += desc;
       CRef <CClickableText> item (new CClickableText(strtmp));             
+      item->SetObjects().insert(item->SetObjects().end(), (*it)->obj_list.begin(),
+                 (*it)->obj_list.end());
       item_list.push_back(item);
    } 
+   thisInfo.disc_report_data.clear();
+   thisInfo.test_item_list.clear();
+   thisInfo.test_item_objs.clear();
 };

@@ -68,6 +68,7 @@ string                                 CDiscRepInfo :: report;
 CRef <CRepConfig>                      CDiscRepInfo :: config;
 vector < CRef < CClickableItem > >     CDiscRepInfo :: disc_report_data;
 Str2Strs                               CDiscRepInfo :: test_item_list;
+Str2Objs                               CDiscRepInfo :: test_item_objs;
 COutputConfig                          CDiscRepInfo :: output_config;
 CRef <CSuspect_rule_set >              CDiscRepInfo::suspect_prod_rules(new CSuspect_rule_set);
 vector < vector <string> >             CDiscRepInfo :: susrule_summ;
@@ -2222,7 +2223,7 @@ void CRepConfDiscrepancy :: x_ReadAsn1(ESerialDataFormat datafm)
     if (strtmp == "Seq-submit") {
        *ois >> thisInfo.seq_submit.GetObject();
        if (thisInfo.seq_submit->IsEntrys()) {
-         ITERATE (list <CRef <CSeq_entry> >, it, thisInfo.seq_submit->GetData().GetEntrys())
+         ITERATE (list <CRef <CSeq_entry> >, it, thisInfo.seq_submit->GetData().GetEntrys()) 
             CheckThisSeqEntry(*it);
        }
     }
