@@ -1144,21 +1144,6 @@ CSeq_align::CreateDensegFromDisc(SSeqIdChooser* SeqIdChooser) const
     return new_sa;
 }
 
-static TSeqPos s_ProductPosAsSeqPos(const CProduct_pos &pos)
-{
-    switch (pos.Which()) {
-    case CProduct_pos::e_Nucpos:
-        return pos.GetNucpos();
-
-    case CProduct_pos::e_Protpos:
-        return pos.GetProtpos().GetAmin() * 3 + pos.GetProtpos().GetFrame() - 1;
-
-    default:
-        NCBI_THROW(CException, eUnknown, "Bad product pos");
-        return 0;
-    }
-}
-
 static TSeqPos s_Distance(const TSeqRange &range1,
                           const TSeqRange &range2)
 {
@@ -1626,9 +1611,6 @@ TSeqPos CSeq_align::GetNumFrameshifts(TDim row) const
             vector<TSeqPos> last_edge_insertions(2);
             ITERATE (CSpliced_seg::TExons, iter, GetSegs().GetSpliced().GetExons()) {
                 const CSpliced_exon& exon = **iter;
-                bool frame_missing = exon.GetProduct_start().IsProtpos()
-                                   && (!exon.GetProduct_start().GetProtpos().CanGetFrame()
-                                   || !exon.GetProduct_start().GetProtpos().GetFrame());
                 vector<TSeqPos> edge_insertions(2, 0);
                 for (unsigned r = 0; r < 2; ++r) {
                     if (row != r) {
@@ -1664,15 +1646,15 @@ TSeqPos CSeq_align::GetNumFrameshifts(TDim row) const
                         }
                     }
                 }
-                if (last_exon && !frame_missing && row != 0) {
+                if (last_exon && row != 0) {
                     const CSpliced_exon &lower_exon = is_minus[0]
                                                     ? exon : *last_exon;
                     const CSpliced_exon &higher_exon = is_minus[0]
                                                     ? *last_exon : exon;
                     TSeqPos gap_start =
-                        s_ProductPosAsSeqPos(lower_exon.GetProduct_end()) + 1;
+                        lower_exon.GetProduct_end().AsSeqPos() + 1;
                     TSeqPos gap_end =
-                        s_ProductPosAsSeqPos(higher_exon.GetProduct_start());
+                        higher_exon.GetProduct_start().AsSeqPos();
                     if ((gap_end - gap_start + last_edge_insertions[0]) % 3) {
                         ++retval;
                     }

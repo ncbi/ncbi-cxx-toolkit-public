@@ -59,15 +59,6 @@ BEGIN_SCOPE(gnomon)
 USING_SCOPE(ncbi::objects);
 
 namespace {
-int GetProdPosInBases(const CProduct_pos& product_pos)
-{
-    if (product_pos.IsNucpos())
-        return product_pos.GetNucpos();
-
-    const CProt_pos&  prot_pos = product_pos.GetProtpos();
-    return prot_pos.GetAmin()*3+ prot_pos.GetFrame()-1;
-}
-
 int GetCompartmentNum(const CSeq_align& sa)
 {
     if (sa.CanGetExt()) {
@@ -160,8 +151,8 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
 
     ITERATE(CSpliced_seg::TExons, e_it, sps.GetExons()) {
         const CSpliced_exon& exon = **e_it;
-        int prod_cur_start = GetProdPosInBases(exon.GetProduct_start());
-        int prod_cur_end = GetProdPosInBases(exon.GetProduct_end());
+        int prod_cur_start = exon.GetProduct_start().AsSeqPos();
+        int prod_cur_end = exon.GetProduct_end().AsSeqPos();
         if (is_product_reversed) {
             int tmp = prod_cur_start;
             prod_cur_start = product_len - prod_cur_end -1;
@@ -222,7 +213,7 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
             }
             AddExon(TSignedSeqRange::GetEmpty(), fs, ss, eident, fill_seq, fill_src);
         }
-        transcript_exons.push_back(TSignedSeqRange(GetProdPosInBases(exon.GetProduct_start()),GetProdPosInBases(exon.GetProduct_end())));
+        transcript_exons.push_back(TSignedSeqRange(exon.GetProduct_start().AsSeqPos(), exon.GetProduct_end().AsSeqPos()));
 
         _ASSERT(transcript_exons.back().NotEmpty());
 
@@ -343,11 +334,11 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
         CCDSInfo cds_info;
         cds_info.SetReadingFrame( reading_frame, true);
         if (start.NotEmpty()) {
-            //            cds_info.SetStart(start, GetProdPosInBases(sps.GetExons().front()->GetProduct_start()) == 0 && sps.GetExons().front()->GetParts().front()->IsMatch());
+            //            cds_info.SetStart(start, sps.GetExons().front()->GetProduct_start().AsSeqPos() == 0 && sps.GetExons().front()->GetParts().front()->IsMatch());
             cds_info.SetStart(start, false);
         }
         if (stop.NotEmpty()) {
-            //            cds_info.SetStop(stop, GetProdPosInBases(sps.GetExons().back()->GetProduct_end()) == product_len-1 );
+            //            cds_info.SetStop(stop, sps.GetExons().back()->GetProduct_end().AsSeqPos() == product_len-1 );
             cds_info.SetStop(stop, false);
         }
         SetCdsInfo(cds_info);

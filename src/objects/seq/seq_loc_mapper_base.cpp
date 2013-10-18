@@ -1658,23 +1658,9 @@ void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
                 "Wrong product-end type in spliced-exon, "
                 "does not match product-type");
         }
-        if ( prod_is_prot ) {
-            // Convert all coordinates to genomic.
-            const CProt_pos& from_pos = ex.GetProduct_start().GetProtpos();
-            const CProt_pos& to_pos = ex.GetProduct_end().GetProtpos();
-            prod_from = from_pos.GetAmin()*3;
-            if ( from_pos.GetFrame() ) {
-                prod_from += from_pos.GetFrame() - 1;
-            }
-            prod_to = to_pos.GetAmin()*3;
-            if ( to_pos.GetFrame() ) {
-                prod_to += to_pos.GetFrame() - 1;
-            }
-        }
-        else {
-            prod_from = ex.GetProduct_start().GetNucpos();
-            prod_to = ex.GetProduct_end().GetNucpos();
-        }
+        prod_from = ex.GetProduct_start().AsSeqPos();
+        prod_to = ex.GetProduct_end().AsSeqPos();
+
         TSeqPos gen_len = gen_to - gen_from + 1;
         TSeqPos prod_len = prod_to - prod_from + 1;
         // Cache sequence type for the id.

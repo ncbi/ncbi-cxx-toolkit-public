@@ -285,18 +285,8 @@ public:
                          }
                      } else {
                          for (++it;  it != end;  ++it, ++prev) {
-                             const CProt_pos& curr =
-                                 (*it)->GetProduct_start().GetProtpos();
-                             const CProt_pos& last =
-                                 (*prev)->GetProduct_end().GetProtpos();
-                             TSeqPos curr_nuc = curr.GetAmin() * 3;
-                             if (curr.GetFrame()) {
-                                 curr_nuc += curr.GetFrame() - 1;
-                             }
-                             TSeqPos last_nuc = last.GetAmin() * 3;
-                             if (last.GetFrame()) {
-                                 last_nuc += last.GetFrame() - 1;
-                             }
+                             TSeqPos curr_nuc = (*it)->GetProduct_start().AsSeqPos();
+                             TSeqPos last_nuc = (*prev)->GetProduct_end().AsSeqPos();
                              score_value += curr_nuc - last_nuc - 1;
                          }
                      }
@@ -316,18 +306,8 @@ public:
                          }
                      } else {
                          for (++it;  it != end;  ++it, ++prev) {
-                             const CProt_pos& curr =
-                                 (*it)->GetProduct_start().GetProtpos();
-                             const CProt_pos& last =
-                                 (*prev)->GetProduct_end().GetProtpos();
-                             TSeqPos curr_nuc = curr.GetAmin() * 3;
-                             if (curr.GetFrame()) {
-                                 curr_nuc += curr.GetFrame() - 1;
-                             }
-                             TSeqPos last_nuc = last.GetAmin() * 3;
-                             if (last.GetFrame()) {
-                                 last_nuc += last.GetFrame() - 1;
-                             }
+                             TSeqPos curr_nuc = (*it)->GetProduct_start().AsSeqPos();
+                             TSeqPos last_nuc = (*prev)->GetProduct_end().AsSeqPos();
                              score_value += curr_nuc - last_nuc - 1;
                          }
                      }
@@ -1485,25 +1465,8 @@ public:
             }
             /// Exon percent identity not stored; calculate it
             TSeqRange product_span;
-            if (exon->GetProduct_start().IsNucpos()) {
-                product_span.Set(exon->GetProduct_start().GetNucpos(),
-                                 exon->GetProduct_end().GetNucpos()-1);
-            } else if (exon->GetProduct_start().IsProtpos()) {
-                TSeqPos start_frame =
-                    exon->GetProduct_start().GetProtpos().GetFrame();
-                if(start_frame > 0)
-                    --start_frame;
-                TSeqPos end_frame =
-                    exon->GetProduct_end().GetProtpos().GetFrame();
-                if(end_frame > 0)
-                    --end_frame;
-                product_span.Set(
-                    exon->GetProduct_start().GetProtpos().GetAmin()*3 + start_frame,
-                    exon->GetProduct_end().GetProtpos().GetAmin()*3 + end_frame);
-            } else {
-                NCBI_THROW(CException, eUnknown,
-                           "Spliced-exon is neither nuc nor prot");
-            }
+            product_span.Set(exon->GetProduct_start().AsSeqPos(),
+                             exon->GetProduct_end().AsSeqPos());
             return CScoreBuilder().GetPercentIdentity(*scope, align,
                                                       product_span);
         }

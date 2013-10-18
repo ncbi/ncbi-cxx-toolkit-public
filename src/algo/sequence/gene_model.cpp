@@ -564,10 +564,7 @@ SImplementation::CleanAlignment(const CSeq_align& align_in)
 
 static void s_TransformToNucpos(CProduct_pos &pos)
 {
-    TSeqPos nucpos = pos.GetProtpos().GetAmin()*3;
-    if (pos.GetProtpos().CanGetFrame() && pos.GetProtpos().GetFrame() > 0) {
-        nucpos += pos.GetProtpos().GetFrame() - 1;
-    }
+    TSeqPos nucpos = pos.AsSeqPos();
     pos.SetNucpos(nucpos);
 }
 
@@ -3923,7 +3920,6 @@ SImplementation::ConvertMixedAlignToAnnot(const CSeq_align& input_align,
                                                call_on_align_list);
 
     m_scope->RemoveBioseq(bioseq_handle);
-
 
     set<CSeq_id_Handle> insert_ids;
     TSeqPos insert_length = 0;

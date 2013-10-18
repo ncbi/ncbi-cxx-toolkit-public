@@ -722,17 +722,8 @@ void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
     // Both start and stop will be converted to genomic coords.
     int prod_start, prod_end;
 
-    if ( is_prot_prod ) {
-        TSeqPos pstart = exon.GetProduct_start().GetProtpos().GetAmin();
-        prod_start = pstart*3 +
-            exon.GetProduct_start().GetProtpos().GetFrame() - 1;
-        TSeqPos pend = exon.GetProduct_end().GetProtpos().GetAmin();
-        prod_end = pend*3 + exon.GetProduct_end().GetProtpos().GetFrame();
-    }
-    else {
-        prod_start = exon.GetProduct_start().GetNucpos();
-        prod_end = exon.GetProduct_end().GetNucpos() + 1;
-    }
+    prod_start = exon.GetProduct_start().AsSeqPos();
+    prod_end = exon.GetProduct_end().AsSeqPos() + 1;
 
     if ( exon.IsSetParts() ) {
         // Iterate exon parts.

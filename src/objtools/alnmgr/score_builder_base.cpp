@@ -347,27 +347,8 @@ static void s_GetCountIdentityMismatch(CScope& scope, const CSeq_align& align,
                       align.GetSegs().GetSpliced().GetExons()) {
                  const CSpliced_exon& exon = **iter;
                  TSeqRange product_span;
-                 if (exon.GetProduct_start().IsNucpos()) {
-                     product_span.Set(exon.GetProduct_start().GetNucpos(),
-                                      exon.GetProduct_end().GetNucpos()-1);
-                 } else if (exon.GetProduct_start().IsProtpos()) {
-                     TSeqPos start_frame =
-                         exon.GetProduct_start().GetProtpos().GetFrame();
-                     if(start_frame > 0)
-                         --start_frame;
-                     TSeqPos end_frame =
-                         exon.GetProduct_start().GetProtpos().GetFrame();
-                     if(end_frame > 0)
-                         --end_frame;
-                     product_span.Set(
-                         exon.GetProduct_start().GetProtpos().GetAmin()*3
-                             + start_frame,
-                         exon.GetProduct_end().GetProtpos().GetAmin()*3
-                             + end_frame - 1);
-                 } else {
-                     NCBI_THROW(CSeqalignException, eInvalidInputAlignment,
-                                "Spliced-exon is neither nuc nor prot");
-                 }
+                 product_span.Set(exon.GetProduct_start().AsSeqPos(),
+                                  exon.GetProduct_end().AsSeqPos());
                  if (exon.IsSetParts()) {
                      TSeqPos part_start = product_span.GetFrom();
                      ITERATE (CSpliced_exon::TParts, it, exon.GetParts()) {

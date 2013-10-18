@@ -645,49 +645,10 @@ ConvertSplicedToPairwiseAln(CPairwiseAln& pairwise_aln,
         bool first_direct = row_1 == 0 ? product_plus : genomic_plus;
 
         // Determine positions
-        TSeqPos product_start;
-        if (prot) {
-            product_start = exon.GetProduct_start().GetProtpos().GetAmin() * 3;
-            switch (exon.GetProduct_start().GetProtpos().GetFrame()) {
-            case 0:
-            case 1:
-                break;
-            case 2:
-                product_start += 1;
-                break;
-            case 3:
-                product_start += 2;
-                break;
-            default:
-                NCBI_THROW(CAlnException, eInvalidAlignment,
-                           "Invalid frame");
-            }
-        } else {
-            product_start = exon.GetProduct_start().GetNucpos();
-        }
-        TSeqPos product_end;
-        if (prot) {
-            product_end = exon.GetProduct_end().GetProtpos().GetAmin() * 3;
-            switch (exon.GetProduct_end().GetProtpos().GetFrame()) {
-            case 0:
-            case 1:
-                break;
-            case 2:
-                product_end += 1;
-                break;
-            case 3:
-                product_end += 2;
-                break;
-            default:
-                NCBI_THROW(CAlnException, eInvalidAlignment,
-                           "Invalid frame");
-            }
-        } else {
-            product_end = exon.GetProduct_end().GetNucpos();
-        }
-        TSeqPos product_pos = prot ? 
-            product_start : 
-            (product_plus ? product_start : product_end);
+        TSeqPos product_start = exon.GetProduct_start().AsSeqPos();
+        TSeqPos product_end = exon.GetProduct_end().AsSeqPos();
+
+        TSeqPos product_pos = product_plus ? product_start : product_end;
 
         TSeqPos genomic_start = exon.GetGenomic_start();
         TSeqPos genomic_end = exon.GetGenomic_end();

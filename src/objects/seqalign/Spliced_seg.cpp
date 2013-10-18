@@ -121,12 +121,8 @@ void CSpliced_seg::Validate(bool full_test) const
         const CSpliced_exon& exon = **exon_it;
 
         /// Positions
-        TSeqPos product_start = prot ?
-            exon.GetProduct_start().GetProtpos().GetAmin() * 3 + exon.GetProduct_start().GetProtpos().GetFrame() - 1 :
-            exon.GetProduct_start().GetNucpos();
-        TSeqPos product_end = prot ?
-            exon.GetProduct_end().GetProtpos().GetAmin() * 3 + exon.GetProduct_end().GetProtpos().GetFrame() - 1 :
-            exon.GetProduct_end().GetNucpos();
+        TSeqPos product_start = exon.GetProduct_start().AsSeqPos();
+        TSeqPos product_end = exon.GetProduct_end().AsSeqPos();
         if (product_start > product_end) {
             NCBI_THROW(CSeqalignException, eInvalidAlignment,
                    "CSpliced_seg::Validate(): product_start > product_end");
@@ -362,29 +358,10 @@ s_ExonToDenseg(const CSpliced_exon& exon,
         lens.push_back(max(product_lens[i], genomic_lens[i]));
     }
     vector<TSignedSeqPos> product_starts;
-    if (exon.GetProduct_start().IsNucpos()) {
-        product_starts =
-            s_CalculateStarts(product_lens, product_strand,
-                              exon.GetProduct_start().GetNucpos(),
-                              exon.GetProduct_end().GetNucpos());
-    } else if (exon.GetProduct_start().IsProtpos()) {
-        TSeqPos frame_start = exon.GetProduct_start().GetProtpos().GetFrame();
-        if (frame_start) {
-            --frame_start;
-        }
-        TSeqPos frame_end = exon.GetProduct_end().GetProtpos().GetFrame();
-        if (frame_end) {
-            --frame_end;
-        }
-        product_starts =
-            s_CalculateStarts
-            (product_lens, product_strand,
-             3 * exon.GetProduct_start().GetProtpos().GetAmin() + frame_start,
-             3 * exon.GetProduct_end().GetProtpos().GetAmin() + frame_end);
-    } else {
-        NCBI_THROW(CException, eUnknown,
-                   "unhandled product-start type in Spliced-exon");
-    }
+    product_starts =
+        s_CalculateStarts(product_lens, product_strand,
+                          exon.GetProduct_start().AsSeqPos(),
+                          exon.GetProduct_end().AsSeqPos());
     vector<TSignedSeqPos> genomic_starts =
         s_CalculateStarts(genomic_lens, genomic_strand,
                           exon.GetGenomic_start(),

@@ -590,8 +590,8 @@ Seq-align ::= {
     product-type protein,
     exons {
       {
-        product-start protpos { amin 2000, frame 0 },
-        product-end protpos { amin 2260, frame 2 },
+        product-start protpos { amin 2000, frame 1 },
+        product-end protpos { amin 2260, frame 3 },
         genomic-start 1000,
         genomic-end 1803,
         parts {

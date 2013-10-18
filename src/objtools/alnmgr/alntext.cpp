@@ -188,15 +188,6 @@ void CProteinAlignText::MatchText(size_t len, bool is_match)
     }
 }
 
-int CProteinAlignText::GetProdPosInBases(const CProduct_pos& product_pos)
-{
-    if (product_pos.IsNucpos())
-        return product_pos.GetNucpos();
-
-    const CProt_pos&  prot_pos = product_pos.GetProtpos();
-    return prot_pos.GetAmin()*3+ prot_pos.GetFrame()-1;
-}
-
 char CProteinAlignText::TranslateTriplet(const CTrans_table& table,
                                          const string& triplet)
 {
@@ -302,9 +293,9 @@ CProteinAlignText::CProteinAlignText(objects::CScope& scope, const objects::CSeq
     int prev_genomic_ins = 0;
     ITERATE(CSpliced_seg::TExons, e_it, sps.GetExons()) {
         const CSpliced_exon& exon = **e_it;
-        int prot_cur_start = GetProdPosInBases(exon.GetProduct_start());
+        int prot_cur_start = exon.GetProduct_start().AsSeqPos();
 #ifdef _DEBUG
-        int prot_cur_end = GetProdPosInBases(exon.GetProduct_end());
+        int prot_cur_end = exon.GetProduct_end().AsSeqPos();
 #endif
         int nuc_cur_start = exon.GetGenomic_start();
         int nuc_cur_end = exon.GetGenomic_end();

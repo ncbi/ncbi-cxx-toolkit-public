@@ -120,17 +120,8 @@ TSeqRange CSpliced_exon::GetRowSeq_range(CSeq_align::TDim    row,
 
         case CProduct_pos::e_Protpos:
             if (always_as_nuc) {
-                TSeqPos start_frame =
-                    GetProduct_start().GetProtpos().GetFrame();
-                if(start_frame > 0)
-                    --start_frame;
-                TSeqPos end_frame =
-                    GetProduct_end().GetProtpos().GetFrame();
-                if(end_frame > 0)
-                    --end_frame;
-                return TSeqRange(
-                    GetProduct_start().GetProtpos().GetAmin()*3 + start_frame,
-                    GetProduct_end().GetProtpos().GetAmin()*3 + end_frame);
+                return TSeqRange(GetProduct_start().AsSeqPos(),
+                                 GetProduct_end().AsSeqPos());
             } else {
                 return TSeqRange(GetProduct_start().GetProtpos().GetAmin(),
                                  GetProduct_end().GetProtpos().GetAmin());

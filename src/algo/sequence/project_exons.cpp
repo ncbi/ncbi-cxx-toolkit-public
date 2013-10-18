@@ -105,23 +105,16 @@ void Canonicalize(CSeq_loc& loc)
     }
 }
 
-/// return nucpos ? nucpos : (protpos*3+frame)
-TSeqPos AsNucPos(const CProduct_pos& product_pos)
-{
-    return product_pos.IsNucpos() ? product_pos.GetNucpos() 
-                                  : product_pos.GetProtpos().GetAmin() * 3 + (product_pos.GetProtpos().GetFrame() - 1);
-
-}
 
 /// retrun true iff abutting on query (in nucpos-coords)
 bool AreAbuttingOnProduct(const CSpliced_exon& exon1,
                           const CSpliced_exon& exon2)
 {
-    TSeqPos max_start = max(AsNucPos(exon1.GetProduct_start()),
-                            AsNucPos(exon2.GetProduct_start()));
+    TSeqPos max_start = max(exon1.GetProduct_start().AsSeqPos(),
+                            exon2.GetProduct_start().AsSeqPos());
 
-    TSeqPos min_stop  = min(AsNucPos(exon1.GetProduct_end()),
-                            AsNucPos(exon2.GetProduct_end()));
+    TSeqPos min_stop  = min(exon1.GetProduct_end().AsSeqPos(),
+                            exon2.GetProduct_end().AsSeqPos());
 
     return max_start == min_stop + 1;
 }

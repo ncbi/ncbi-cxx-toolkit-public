@@ -68,8 +68,6 @@ pair <ENa_strand, ENa_strand> GetSplicedStrands(const CSpliced_seg& spliced_seg)
 
 void GetExonStructure(const CSpliced_seg& spliced_seg, vector<SExon>& exons, CScope& scope)
 {
-    bool is_protein = (spliced_seg.GetProduct_type()==CSpliced_seg::eProduct_type_protein);
-
     pair <ENa_strand, ENa_strand> strands = GetSplicedStrands(spliced_seg);
     ENa_strand product_strand = strands.first;
     ENa_strand genomic_strand = strands.second;
@@ -85,24 +83,12 @@ void GetExonStructure(const CSpliced_seg& spliced_seg, vector<SExon>& exons, CSc
         const CProduct_pos& prod_from = exon.GetProduct_start();
         const CProduct_pos& prod_to = exon.GetProduct_end();
 
-        if (is_protein) {
-            const CProt_pos& prot_from = prod_from.GetProtpos();
-            exon_struct.prod_from = prot_from.GetAmin()*3;
-            if (prot_from.IsSetFrame())
-                exon_struct.prod_from += prot_from.GetFrame()-1;
-
-            const CProt_pos& prot_to = prod_to.GetProtpos();
-            exon_struct.prod_to = prot_to.GetAmin()*3;
-                if (prot_to.IsSetFrame())
-                exon_struct.prod_to += prot_to.GetFrame()-1;
-        } else {
-            exon_struct.prod_from = prod_from.GetNucpos();
-            exon_struct.prod_to = prod_to.GetNucpos();
-            if (product_strand == eNa_strand_minus) {
-                swap(exon_struct.prod_from, exon_struct.prod_to);
-                exon_struct.prod_from = -exon_struct.prod_from;
-                exon_struct.prod_to = -exon_struct.prod_to;
-            }
+        exon_struct.prod_from = prod_from.AsSeqPos();
+        exon_struct.prod_to = prod_to.AsSeqPos();
+        if (product_strand == eNa_strand_minus) {
+            swap(exon_struct.prod_from, exon_struct.prod_to);
+            exon_struct.prod_from = -exon_struct.prod_from;
+            exon_struct.prod_to = -exon_struct.prod_to;
         }
 
         exon_struct.genomic_from = exon.GetGenomic_start();

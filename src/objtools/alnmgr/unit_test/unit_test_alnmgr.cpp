@@ -103,6 +103,7 @@ size_t LoadAligns(CNcbiIstream& in,
         try {
             CRef<CSeq_align> align(new CSeq_align);
             in >> MSerial_AsnText >> *align;
+            align->Validate(true);
             aligns.insert(*align);
             num_aligns++;
             if (limit > 0  &&  num_aligns >= limit) break;
