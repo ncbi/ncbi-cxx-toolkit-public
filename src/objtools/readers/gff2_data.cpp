@@ -712,13 +712,11 @@ bool CGff2Record::x_MigrateAttributes(
 
     it = attrs_left.find("transl_table");
     if (it != attrs_left.end()) {
-        if (it != attrs_left.end()) {
-            if (pFeature->GetData().IsCdregion()) {
-                CRef<CGenetic_code::C_E> pCe(new CGenetic_code::C_E) ;
-                pCe->SetId(NStr::StringToInt(it->second));
-                pFeature->SetData().SetCdregion().SetCode().Set().push_back(pCe);
-                attrs_left.erase(it);
-            }
+        if (pFeature->GetData().IsCdregion()) {
+            CRef<CGenetic_code::C_E> pCe(new CGenetic_code::C_E) ;
+            pCe->SetId(NStr::StringToInt(it->second));
+            pFeature->SetData().SetCdregion().SetCode().Set().push_back(pCe);
+            attrs_left.erase(it);
         }
     }
 
