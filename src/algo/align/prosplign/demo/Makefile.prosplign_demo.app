@@ -7,7 +7,7 @@ WATCHERS = chetvern
 APP = prosplign_demo
 SRC = prosplign_demo
 
-LIB = prosplign xalgoalignutil xobjutil \
+LIB = prosplign xalgoalignutil xalnmgr xobjutil \
       tables \
       $(OBJMGR_LIBS:%=%$(STATIC))
 

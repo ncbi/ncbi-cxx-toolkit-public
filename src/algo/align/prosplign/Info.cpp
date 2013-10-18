@@ -573,7 +573,7 @@ TAliChunkCollection ExtractChunks(CScope& scope, CSeq_align& seq_align)
 
     NON_CONST_ITERATE (CSpliced_seg::TExons, e_it, sps.SetExons()) {
         CSpliced_exon& exon = **e_it;
-        int prot_cur_start = CProteinAlignText::GetProdPosInBases(exon.GetProduct_start());
+        int prot_cur_start = exon.GetProduct_start().AsSeqPos();
         int nuc_cur_start = exon.GetGenomic_start();
         int nuc_cur_end = exon.GetGenomic_end();
 
@@ -599,7 +599,7 @@ TAliChunkCollection ExtractChunks(CScope& scope, CSeq_align& seq_align)
             chunks.push_back(chunk);
         }
 
-        _ASSERT( CProteinAlignText::GetProdPosInBases(exon.GetProduct_end())+1==prot_from );
+        _ASSERT( int(exon.GetProduct_end().AsSeqPos()+1) == prot_from );
         _ASSERT( (strand==eNa_strand_plus && nuc_cur_end+1==nuc_from) || (strand!=eNa_strand_plus && nuc_cur_start-1==nuc_to) );
     }
     return chunks;
@@ -649,8 +649,8 @@ void TestExonLength(const CSpliced_exon& exon)
         }
 
 #ifdef _DEBUG
-                int prot_cur_start = CProteinAlignText::GetProdPosInBases(exon.GetProduct_start());
-                int prot_cur_end = CProteinAlignText::GetProdPosInBases(exon.GetProduct_end());
+                int prot_cur_start = exon.GetProduct_start().AsSeqPos();
+                int prot_cur_end = exon.GetProduct_end().AsSeqPos();
                 int nuc_cur_end = exon.GetGenomic_end();
                 int nuc_cur_start = exon.GetGenomic_start();
 #endif
@@ -767,7 +767,7 @@ void SplitExon(CSpliced_seg::TExons& exons, TAliChunkIterator chunk_iter, bool g
         new_exon->ResetDonor_after_exon();
 
     _ASSERT( new_exon->GetGenomic_start() <= new_exon->GetGenomic_end() );
-    _ASSERT( CProteinAlignText::GetProdPosInBases(new_exon->GetProduct_start()) <= CProteinAlignText::GetProdPosInBases(new_exon->GetProduct_end()) );
+    _ASSERT( new_exon->GetProduct_start().AsSeqPos() <= new_exon->GetProduct_end().AsSeqPos() );
 
     exons.insert(chunk_iter->m_exon_iter, new_exon);
 

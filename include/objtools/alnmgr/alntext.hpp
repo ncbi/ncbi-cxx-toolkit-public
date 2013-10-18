@@ -82,8 +82,6 @@ public:
     static CRef<objects::CSeq_loc> GetGenomicBounds(objects::CScope& scope,
                                            const objects::CSeq_align& seqalign);
 
-    static int GetProdPosInBases(const objects::CProduct_pos& product_pos);
-
     static char TranslateTriplet(const objects::CTrans_table& table,
                                  const string& triplet);
 
