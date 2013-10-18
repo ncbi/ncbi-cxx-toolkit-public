@@ -308,6 +308,8 @@ public:
     /// Remembered peer IP address. Value valid only for sockets created from
     /// listening sockets.
     Uint4 m_PeerAddr;
+    ///
+    string m_ConnReqId;
 };
 
 

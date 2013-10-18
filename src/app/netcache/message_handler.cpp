@@ -1321,8 +1321,6 @@ CNCMessageHandler::x_SocketOpened(void)
     m_LocalPort             = GetLocalPort();
     m_ClientParams["port"]  = NStr::UIntToString(m_LocalPort);
 
-    m_ConnReqId = NStr::UInt8ToString(GetDiagCtx()->GetRequestID());
-
     return &Me::x_ReadAuthMessage;
 }
 

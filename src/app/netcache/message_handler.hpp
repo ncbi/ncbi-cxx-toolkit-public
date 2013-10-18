@@ -273,8 +273,6 @@ private:
     /// Processor for the currently executed NetCache command
     State                     m_CmdProcessor;
     ///
-    string                    m_ConnReqId;
-    ///
     Uint8                     m_CntCmds;
     /// Holder of the lock for blob
     CNCBlobAccessor*          m_BlobAccess;

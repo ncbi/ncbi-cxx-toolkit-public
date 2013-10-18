@@ -504,11 +504,13 @@ s_CreateDiagRequest(CSrvSocketTask* task, Uint2 port, Uint4 phost, Uint2 pport)
 {
     task->CreateNewDiagCtx();
     task->GetDiagCtx()->SetClientIP(CTaskServer::IPToString(phost));
+    task->m_ConnReqId = NStr::UInt8ToString(task->GetDiagCtx()->GetRequestID());
 
     CSrvDiagMsg().StartRequest(task->GetDiagCtx())
                  .PrintParam("_type", "conn")
                  .PrintParam("pport", pport)
-                 .PrintParam("port", port);
+                 .PrintParam("port", port)
+                 .PrintParam("conn", task->m_ConnReqId);
 
     task->m_ReadBytes = task->m_WrittenBytes = 0;
 }

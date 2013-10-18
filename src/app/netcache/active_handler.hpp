@@ -326,7 +326,6 @@ private:
     CNCActiveClientHub* m_Client;
     CNCActiveSyncControl* m_SyncCtrl;
     CNCActiveHandler_Proxy* m_Proxy;
-    string m_ConnReqId;
     Uint8  m_CntCmds;
     string m_BlobKey;
     CNCBlobAccessor* m_BlobAccess;
