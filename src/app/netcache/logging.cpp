@@ -210,7 +210,7 @@ s_AllocNewBuf(SLogData* data, size_t buf_size)
 {
     data->buf = (char*)malloc(buf_size);
     data->cur_ptr = data->cur_msg_ptr = data->buf;
-    data->end_ptr = data->buf + buf_size;
+    data->end_ptr = data->buf + buf_size - 8;
 }
 
 static void
@@ -833,6 +833,10 @@ CSrvDiagMsg::StartSrvLog(ESeverity sev,
                          int line,
                          const char* func) const
 {
+    if (m_Data->cur_msg_ptr != m_Data->cur_ptr
+        /* && *m_Data->cur_ptr != '\n' */) {
+        *m_Data->cur_ptr++ = '\n';
+    }
     m_Data->severity = sev;
     s_AddLogPrefix(m_Thr, m_Data);
     s_AddToLog(m_Data, s_SevNames[int(sev)]);
