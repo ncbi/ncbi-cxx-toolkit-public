@@ -55,6 +55,8 @@
 
 #include "feature_table_reader.hpp"
 
+#include <objtools/readers/fasta.hpp>
+
 #include <common/test_assert.h>  /* This header must go last */
 
 BEGIN_NCBI_SCOPE
@@ -174,7 +176,19 @@ namespace
         return id;
     }
 
-    CRef<CSeq_entry> TranslateProtein(CScope& scope, CSeq_entry_Handle top_entry_h, const CSeq_feat& feature)
+    CTempString GetQual(const CSeq_feat& feature, const string& qual)
+    {
+        ITERATE(CSeq_feat::TQual, it, feature.GetQual())
+        {
+            if (0 == NStr::Compare((**it).GetQual(), qual))
+            {
+                return (**it).GetVal();
+            }
+        }
+        return CTempString();
+    }
+
+    CRef<CSeq_entry> TranslateProtein(CScope& scope, CSeq_entry_Handle top_entry_h, const CSeq_feat& feature, CTempString locustag)
     {
         CRef<CBioseq> protein = CSeqTranslator::TranslateToProtein(feature, scope);
 
@@ -198,6 +212,22 @@ namespace
         if (protein_name.empty())
             protein_name = "hypothetical protein";
 
+        if (!locustag.empty())
+        {
+            protein_name += " ";
+            protein_name += locustag;
+        }
+
+#if 0
+        CRef<CSeq_annot> annot(new CSeq_annot);
+        CRef<CSeq_feat> feat(new CSeq_feat);
+        feat->SetData().SetProt().SetName().push_back(protein_name);
+        //feat->SetLocation().set
+        //Assign(feature.GetLocation());
+        annot->SetData().SetFtable().push_back(feat);
+        pentry->SetSeq().SetAnnot().push_back(annot);
+#endif
+
         if (org_name.length() > 0)
             protein_name += " [" + org_name + "]";
 
@@ -206,33 +236,42 @@ namespace
         pentry->SetSeq().SetDescr().Set().push_back(title_desc);
 
         string base_name;
-        if (feature.IsSetProduct())
-        {
-#if 0
-            const CSeq_id* id = feature.GetProduct().GetId();
-            if (id)
-            {
-                id->GetLabel(&base_name, CSeq_id::eContent);
-            }
-            CRef<CSeq_id> newid = GetNewProteinId(top_entry_h, base_name);
-            protein->SetId().clear();
-            protein->SetId().push_back(newid);
-#else
-            const CSeq_id* id = feature.GetProduct().GetId();
-            if (id)
-            {
-                //id->GetLabel(&base_name, CSeq_id::eContent);
-                CRef<CSeq_id> newid(new CSeq_id);
-                newid->Assign(*id);
-                protein->SetId().push_back(newid);
-            }
-#endif
+        CTempString protein_ids = GetQual(feature, "protein_id");
 
-        }
-        if (protein->SetId().empty())
+        if (protein_ids.empty())
         {
-            //pentry->GetLabel(&base_name, CSeq_entry::eContent);
-            //pentry->GetSeq().GetId().front()->GetLabel(&base_name, CSeq_id::eContent);
+            if (feature.IsSetProduct())
+            {
+    #if 0
+                const CSeq_id* id = feature.GetProduct().GetId();
+                if (id)
+                {
+                    id->GetLabel(&base_name, CSeq_id::eContent);
+                }
+                CRef<CSeq_id> newid = GetNewProteinId(top_entry_h, base_name);
+                protein->SetId().clear();
+                protein->SetId().push_back(newid);
+    #else
+                const CSeq_id* id = feature.GetProduct().GetId();
+                if (id)
+                {
+                    //id->GetLabel(&base_name, CSeq_id::eContent);
+                    CRef<CSeq_id> newid(new CSeq_id);
+                    newid->Assign(*id);
+                    protein->SetId().push_back(newid);
+                }
+    #endif
+            }
+        }
+        else
+        {
+            CSeq_id::ParseIDs(protein->SetId(), protein_ids,                                
+                  CSeq_id::fParse_ValidLocal
+                | CSeq_id::fParse_PartialOK);
+        }
+
+        if (protein->GetId().empty())
+        {
             CRef<CSeq_id> newid = GetNewProteinId(top_entry_h, base_name);
             protein->SetId().push_back(newid);
         }
@@ -275,6 +314,7 @@ namespace
 
                     if (seq_annot->IsFtable())
                     {
+                        CTempString locustag;
                         for (CSeq_annot::TData::TFtable::iterator feat_it = seq_annot->SetData().SetFtable().begin();
                             seq_annot->SetData().SetFtable().end() != feat_it;)
                         {
@@ -282,9 +322,16 @@ namespace
                             if (feature->IsSetData())
                             {
                                 CSeqFeatData& data = feature->SetData();
+                                if (data.IsGene())
+                                {
+                                    if (data.GetGene().IsSetLocus_tag())
+                                        locustag = data.GetGene().GetLocus_tag();
+                                }
+                                else
                                 if (data.IsCdregion())
                                 {
-                                    CRef<CSeq_entry> protein = TranslateProtein(scope, entry_h, *feature);
+                                    CRef<CSeq_entry> protein = TranslateProtein(scope, entry_h, *feature, locustag);
+                                    locustag.clear();
                                     if (protein.NotEmpty())
                                     {
                                         entry.SetSet().SetSeq_set().push_back(protein);
@@ -466,7 +513,27 @@ void CFeatureTableReader::FindOpenReadingFrame(objects::CSeq_entry& entry) const
     }
 }
 
+void CFeatureTableReader::ReadReplacementProtein(objects::CSeq_entry& obj, ILineReader& line_reader)
+{
+    int flags = 0;
+    flags |= CFastaReader::fAddMods
+          |  CFastaReader::fNoUserObjs
+          |  CFastaReader::fBadModThrow
+          |  CFastaReader::fAssumeProt;
 
+    auto_ptr<CFastaReader> pReader(new CFastaReader(0, flags));
+
+    CRef<CSerialObject> pep = pReader->ReadObject(line_reader, m_logger);
+
+    CNcbiOfstream ostr("xxx.pep");
+
+    ostr << MSerial_AsnText 
+         << MSerial_VerifyNo
+         << *pep;
+
+    ostr.flush();
+
+}
 
 
 END_NCBI_SCOPE

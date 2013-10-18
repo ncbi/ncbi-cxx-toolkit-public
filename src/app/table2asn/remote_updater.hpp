@@ -25,10 +25,12 @@ public:
    CRemoteUpdater(const CTable2AsnContext& ctx);
    ~CRemoteUpdater();
 
-   void UpdatePubReferences(objects::CSeq_entry& entry);
+   void UpdatePubReferences(CSerialObject& obj);
+
    void UpdateOrgReferences(objects::CSeq_entry& entry);
 private:
-   void UpdateOrgTaxname(objects::COrg_ref& org);
+   void xUpdatePubReferences(objects::CSeq_entry& entry);
+   void xUpdateOrgTaxname(objects::COrg_ref& org);
 
    CRef<objects::CMLAClient>  m_mlaClient;
    auto_ptr<objects::CTaxon1> m_taxClient;

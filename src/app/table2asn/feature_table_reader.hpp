@@ -31,6 +31,7 @@ public:
 // This method requires certain postprocessing of plain features added
    void ReadFeatureTable(objects::CSeq_entry& obj, ILineReader& line_reader);
    void FindOpenReadingFrame(objects::CSeq_entry& entry) const;
+   void ReadReplacementProtein(objects::CSeq_entry& obj, ILineReader& line_reader);
 private:
    objects::IMessageListener* m_logger;
 };

@@ -4,6 +4,8 @@
 BEGIN_NCBI_SCOPE
 
 class CTable2AsnContext;
+class CSerialObject;
+
 namespace objects
 {
     class CSeq_entry;
@@ -17,6 +19,8 @@ public:
 
     CRef<objects::CSeq_entry> 
     LoadXML(const string& FileIn, const CTable2AsnContext& context);
+    static
+    void UpdatePubDate(CSerialObject& obj);
 private:
 };
 

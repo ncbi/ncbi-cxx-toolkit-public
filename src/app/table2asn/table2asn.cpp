@@ -152,7 +152,7 @@ void CTbl2AsnApp::Init(void)
     // Prepare command line descriptions, inherit them from tbl2asn legacy application
 
     arg_desc->AddOptionalKey
-        ("p", "Directory", "Path to ASN.1 Files",
+        ("p", "Directory", "Path to input files",
         CArgDescriptions::eInputFile);
 
     arg_desc->AddOptionalKey
@@ -547,7 +547,6 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     m_context.m_avoid_orf_lookup = false;
     bool avoid_submit_block = false;
 
-
     if (m_context.m_current_file.substr(m_context.m_current_file.length()-4).compare(".xml") == 0)
     {
         avoid_submit_block = m_context.m_avoid_submit_block;
@@ -586,13 +585,6 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     fr.MergeCDSFeatures(*entry);
     entry->Parentize();
 
-
-
-    if (m_context.m_RemotePubLookup)
-    {
-        m_remote_updater->UpdatePubReferences(*entry);
-    }
-
     if (m_context.m_RemoteTaxonomyLookup)
     {
         m_remote_updater->UpdateOrgReferences(*entry);
@@ -604,6 +596,19 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         result = m_context.CreateSeqEntryFromTemplate(entry);
     else
         result = m_context.CreateSubmitFromTemplate(entry);
+
+    if (m_context.m_RemotePubLookup)
+    {
+        m_remote_updater->UpdatePubReferences(*result);
+    }
+
+    if (avoid_submit_block)
+    {
+        // we need to fix cit-sub date
+        COpticalxml2asnOperator::UpdatePubDate(*result);
+    }
+
+
 }
 
 string GenerateOutputStream(const CTable2AsnContext& m_context, const string& pathname)
@@ -800,7 +805,16 @@ void CTbl2AsnApp::ProcessPEPFile(const string& pathname, CSeq_entry& result)
     CFile file(pathname);
     if (!file.Exists()) return;
 
+#if 0
+    CRef<ILineReader> reader(ILineReader::New(pathname));
+
     // CPropsLine
+    CFeatureTableReader peps(m_context.m_logger);
+
+    peps.ReadReplacementProtein(result, *reader);
+
+    //CRef<CSeq_entry> entry = m_reader->LoadFile(pathname);
+#endif
 }
 
 void CTbl2AsnApp::ProcessRNAFile(const string& pathname, CSeq_entry& result)

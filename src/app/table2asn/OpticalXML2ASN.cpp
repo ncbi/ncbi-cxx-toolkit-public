@@ -55,6 +55,10 @@
 #include <objects/seqfeat/OrgName.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 
+#include <serial/typeinfo.hpp>
+#include <objects/seq/Pubdesc.hpp>
+#include <objects/pub/Pub_equiv.hpp>
+
 #include "table2asn_context.hpp"
 #include "OpticalXML2ASN.hpp"
 
@@ -440,6 +444,39 @@ CRef<CSeq_entry> COpticalxml2asnOperator::LoadXML(const string& FileIn, const CT
 
     return m_impl->BuildOpticalASNData(context);
 };
+
+void COpticalxml2asnOperator::UpdatePubDate(CSerialObject& obj)
+{
+#if 0
+    CSeq_entry* entry = 0;
+    if (obj.GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo()))
+        entry = (CSeq_entry*)(&obj);
+    else
+        return;
+
+    if (entry->IsSeq())
+    {
+        NON_CONST_ITERATE(CSeq_descr::Tdata, it, entry->SetDescr().Set())
+        {
+            if ((**it).IsPub())
+            {
+                CSeqdesc::TPub& pub = (**it).SetPub();
+                if (pub.IsSetPub())
+                {
+                    pub.SetPub().Set().
+                }
+            }
+        }
+    }
+    else
+    if (entry->IsSet())
+    NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry->SetSet().SetSeq_set())
+    {
+        return UpdatePubDate(**it);
+    }
+#endif
+}
+
 
 
 

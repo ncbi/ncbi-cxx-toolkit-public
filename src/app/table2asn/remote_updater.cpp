@@ -52,6 +52,9 @@
 #include <objmgr/object_manager.hpp>
 #include <objtools/readers/message_listener.hpp>
 
+#include <objects/submit/Seq_submit.hpp>
+#include <objects/seqset/Seq_entry.hpp>
+
 #include "remote_updater.hpp"
 #include "table2asn_context.hpp"
 
@@ -111,7 +114,7 @@ void UpdatePub(CMLAClient& mlaClient, CPub& pub)
 
 }
 
-void CRemoteUpdater::UpdateOrgTaxname(COrg_ref& org)
+void CRemoteUpdater::xUpdateOrgTaxname(COrg_ref& org)
 {
     int taxid = org.GetTaxId();
     if (taxid == 0 && !org.IsSetTaxname())
@@ -177,14 +180,31 @@ CRemoteUpdater::~CRemoteUpdater()
         m_taxClient->Fini();
 }
 
+void CRemoteUpdater::UpdatePubReferences(CSerialObject& obj)
+{
+    if (obj.GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo()))
+    {
+        CSeq_entry* entry = (CSeq_entry*)(&obj);
+        xUpdatePubReferences(*entry);
+    }
+    else
+    if (obj.GetThisTypeInfo()->IsType(CSeq_submit::GetTypeInfo()))
+    {
+        CSeq_submit* submit = (CSeq_submit*)(&obj);
+        NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, it, submit->SetData().SetEntrys())
+        {
+            xUpdatePubReferences(**it);
+        }
+    }
+}
 
-void CRemoteUpdater::UpdatePubReferences(CSeq_entry& entry)
+void CRemoteUpdater::xUpdatePubReferences(CSeq_entry& entry)
 {
     if (entry.IsSet())
     {
         NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
         {
-            UpdatePubReferences(**it);
+            xUpdatePubReferences(**it);
         }
     }
 
@@ -224,12 +244,12 @@ void CRemoteUpdater::UpdateOrgReferences(objects::CSeq_entry& entry)
         CSeqdesc& desc = **it;
         if (desc.IsOrg())
         {
-            UpdateOrgTaxname(desc.SetOrg());
+            xUpdateOrgTaxname(desc.SetOrg());
         }
         else
         if (desc.IsSource() && desc.GetSource().IsSetOrg())
         {
-            UpdateOrgTaxname(desc.SetSource().SetOrg());
+            xUpdateOrgTaxname(desc.SetSource().SetOrg());
         }
     }
 }
