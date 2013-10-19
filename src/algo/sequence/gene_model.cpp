@@ -874,7 +874,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
                 }
                 gene = genes.insert(make_pair(gene_id,gene_feat)).first;
             } else {
-                gene_feat = gene->second;
+                gene_feat = gene->second;                
                 gene_feat->SetLocation(*MergeSeq_locs(&gene_feat->GetLocation(),
                                                       &mrna_feat_on_genome_with_translated_product->GetLocation()));
             }
@@ -3703,6 +3703,10 @@ SImplementation::HasMixedGenomicIds(const CSeq_align& align)
         return false;
     }
 
+    const CSpliced_seg& sps = align.GetSegs().GetSpliced();
+    if(sps.CanGetGenomic_id())
+        genomic_ids.insert(CSeq_id_Handle::GetHandle(sps.GetGenomic_id()));
+
     const CSpliced_seg& spliced_seg = align.GetSegs().GetSpliced();
     ITERATE(CSpliced_seg::TExons, it, spliced_seg.GetExons()) {
         const CSpliced_exon& exon = **it;
@@ -3914,12 +3918,29 @@ SImplementation::ConvertMixedAlignToAnnot(const CSeq_align& input_align,
     bioseq_id->Assign(*bioseq->GetFirstId());
     spliced_seg.SetGenomic_id(*bioseq_id);
 
+    CRef<CSeq_feat> gene_feat;
+    if (gene_id) {
+        TGeneMap::iterator gene = genes.find(gene_id);
+        if (gene != genes.end()) {
+            gene_feat = gene->second;
+            genes.erase(gene);
+        }
+    }
+
     CSeq_annot annot_discard;
     CBioseq_set seqs_tmp;
     ConvertAlignToAnnot(*align, annot_discard, seqs_tmp, gene_id, cds_feat_on_query_mrna_ptr,
                                                call_on_align_list);
 
     m_scope->RemoveBioseq(bioseq_handle);
+
+    if (gene_id) {
+        if (gene_feat) {
+            genes[gene_id] = gene_feat;
+        } else {
+            genes.erase(gene_id);
+        }
+    }
 
     set<CSeq_id_Handle> insert_ids;
     TSeqPos insert_length = 0;
