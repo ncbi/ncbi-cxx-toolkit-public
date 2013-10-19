@@ -356,6 +356,8 @@ public:
 
     void AddExon(TSignedSeqRange exon, const string& fs = "", const string& ss = "", double ident = 0, const string& seq = "", const CInDelInfo::SSource& src = CInDelInfo::SSource());
     void AddHole(); // between model and next exons
+    void AddGgapExon(double ident, const string& seq, const CInDelInfo::SSource& src, bool infront);
+    void AddNormalExon(TSignedSeqRange exon, const string& fs, const string& ss, double ident, bool infront);
 
     typedef vector<CModelExon> TExons;
     const TExons& Exons() const { return m_exons; }

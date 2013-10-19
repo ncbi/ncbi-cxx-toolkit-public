@@ -911,6 +911,50 @@ void CGeneModel::AddHole()
     m_expecting_hole = true;
 }
 
+void CGeneModel::AddGgapExon(double ident, const string& seq, const CInDelInfo::SSource& src, bool infront)
+{
+    _ASSERT(MyExons().empty() || !m_expecting_hole);
+
+    TSignedSeqRange exon_range(TSignedSeqRange::GetEmpty());
+    CModelExon e(exon_range.GetFrom(),exon_range.GetTo(),false,false,"XX","XX",ident,seq,src);
+    if (MyExons().empty())
+        MyExons().push_back(e);
+    else if (!infront) {
+        MyExons().back().m_ssplice = true;
+        e.m_fsplice = true;
+        MyExons().push_back(e);
+    } else {
+        MyExons().front().m_fsplice = true;
+        e.m_ssplice = true;
+        MyExons().insert(MyExons().begin(),e);
+    }    
+    m_expecting_hole = false;
+}
+
+void CGeneModel::AddNormalExon(TSignedSeqRange exon_range, const string& fs, const string& ss, double ident, bool infront)
+{
+    _ASSERT( (m_range & exon_range).Empty() );
+    m_range += exon_range;
+
+    CModelExon e(exon_range.GetFrom(),exon_range.GetTo(),false,false,fs,ss,ident);
+    if (MyExons().empty())
+        MyExons().push_back(e);
+    else if (!infront) {
+        if (!m_expecting_hole) {
+            MyExons().back().m_ssplice = true;
+            e.m_fsplice = true;
+        }
+        MyExons().push_back(e);
+    } else {
+        if (!m_expecting_hole) {
+            MyExons().front().m_fsplice = true;
+            e.m_ssplice = true;
+        }
+        MyExons().insert(MyExons().begin(),e);
+    }
+    m_expecting_hole = false;
+}
+
 void CModelExon::Extend(const CModelExon& e)
 {
     // spliced should include the other
@@ -1885,8 +1929,18 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, CAlignModel a)
             if (!a.Continuous()) {
                 SGFFrec rec = templ;
                 suffix= "."+NStr::IntToString(++part);
-                rec.start = exons.front().start;
-                rec.end = exons.back().end;
+                if(exons.front().start >= 0) {
+                    rec.start = exons.front().start;
+                } else {
+                    _ASSERT(exons.size() > 1 && exons[1].start >= 0);
+                    rec.start = exons[1].start;
+                }
+                if(exons.back().end >= 0) {
+                    rec.end = exons.back().end;
+                } else {
+                    _ASSERT(exons.size() > 1 && exons[exons.size()-2].end >= 0);
+                    rec.end = exons[exons.size()-2].end;
+                }
                 rec.type = "mRNA_part";
                 rec.attributes["ID"] = rec.attributes["Parent"]+suffix;
                 os << rec;
@@ -2063,14 +2117,17 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
         }
     }
     
-    ITERATE(vector<CModelExon>, e, exons) {
-        if (a.Limits().IntersectingWith(e->Limits())) {
+    for(int i = 0; i < (int)exons.size(); ++i) {
+        const CModelExon& e = exons[i];
+        if (a.Limits().IntersectingWith(e.Limits())) {
             return  InputError(is);
         }
-        set<TSignedSeqRange,Precedence>::iterator p = mrna_parts.lower_bound(*e);
-        if (p != mrna_parts.end() && p->GetFrom()==e->Limits().GetFrom())
-            a.AddHole();
-        a.AddExon(e->Limits(),e->m_fsplice_sig,e->m_ssplice_sig,e->m_ident,e->m_seq,e->m_source);
+        if(i > 0) {    // there can't be ggap adjacent to 'hole'
+            set<TSignedSeqRange,Precedence>::iterator p = mrna_parts.lower_bound(e);
+            if (p != mrna_parts.end() && p->GetFrom()==e.Limits().GetFrom())
+                a.AddHole();
+        }
+        a.AddExon(e.Limits(),e.m_fsplice_sig,e.m_ssplice_sig,e.m_ident,e.m_seq,e.m_source);
     }
 
     sort(indels.begin(),indels.end());
