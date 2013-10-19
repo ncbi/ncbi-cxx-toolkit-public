@@ -2122,7 +2122,7 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
         if (a.Limits().IntersectingWith(e.Limits())) {
             return  InputError(is);
         }
-        if(i > 0) {    // there can't be ggap adjacent to 'hole'
+        if(i > 0 && exons[i-1].Limits().NotEmpty()) {    // there can't be ggap adjacent to 'hole'
             set<TSignedSeqRange,Precedence>::iterator p = mrna_parts.lower_bound(e);
             if (p != mrna_parts.end() && p->GetFrom()==e.Limits().GetFrom())
                 a.AddHole();
