@@ -600,28 +600,26 @@ void CGeneModel::CutExons(TSignedSeqRange hole)
             continue;
         if (MyExons()[i].GetFrom()<hole.GetFrom()) {
             MyExons()[i].Limits().SetTo(hole.GetFrom()-1);
-            if(MyExons()[i].m_ssplice_sig != "XX")
-                MyExons()[i].m_ssplice_sig.clear();
+            MyExons()[i].m_ssplice = false;
+            MyExons()[i].m_ssplice_sig.clear();
             if (i+1<MyExons().size()) {
                 MyExons()[i+1].m_fsplice=false;
             }
         } else if (hole.GetTo()<MyExons()[i].GetTo()) {
             MyExons()[i].Limits().SetFrom(hole.GetTo()+1);
-            if(MyExons()[i].m_fsplice_sig != "XX")
-                MyExons()[i].m_fsplice_sig.clear();
+            MyExons()[i].m_fsplice = false;
+            MyExons()[i].m_fsplice_sig.clear();
             if (0<i) {
                 MyExons()[i-1].m_ssplice=false;
             }
         } else {
             if (0<i) {
                 MyExons()[i-1].m_ssplice=false;
-                if(MyExons()[i-1].m_ssplice_sig != "XX")
-                    MyExons()[i-1].m_ssplice_sig.clear();
-            }
+                MyExons()[i-1].m_ssplice_sig.clear();
+           }
             if (i+1<MyExons().size()) {
                 MyExons()[i+1].m_fsplice=false;
-                if(MyExons()[i+1].m_fsplice_sig != "XX")
-                    MyExons()[i+1].m_fsplice_sig.clear();
+                MyExons()[i+1].m_fsplice_sig.clear();
             }
             MyExons().erase( MyExons().begin()+i);
             --i;
@@ -677,6 +675,15 @@ void CGeneModel::Clip(TSignedSeqRange clip_limits, EClipMode mode, bool ensure_c
     for (TExons::iterator e = MyExons().begin(); e != MyExons().end();) {
         TSignedSeqRange clip = e->Limits() & clip_limits;
         if (clip.NotEmpty()) {
+            if(e->GetFrom() <= clip_limits.GetFrom()) {
+                e->m_fsplice = false;
+                e->m_fsplice_sig.clear(); 	 
+            }
+            if(e->GetTo() >= clip_limits.GetTo()) {
+                e->m_ssplice = false;
+                e->m_ssplice_sig.clear(); 	 
+            }
+
             e++->Limits() = clip;
         } else if (mode == eRemoveExons)
             e = MyExons().erase(e);
@@ -686,11 +693,9 @@ void CGeneModel::Clip(TSignedSeqRange clip_limits, EClipMode mode, bool ensure_c
 
     if (Exons().size()>0) {
         MyExons().front().m_fsplice = false;
-        if(MyExons().front().m_fsplice_sig != "XX")
-            MyExons().front().m_fsplice_sig.clear();
+        MyExons().front().m_fsplice_sig.clear();
         MyExons().back().m_ssplice = false;
-        if(MyExons().back().m_ssplice_sig != "XX")
-            MyExons().back().m_ssplice_sig.clear();
+        MyExons().back().m_ssplice_sig.clear();
     }
 
     RecalculateLimits();
@@ -1863,11 +1868,11 @@ CNcbiOstream& printGFF3(CNcbiOstream& os, CAlignModel a)
             exon.end = -1;
             exon.attributes["Seq"] = e->m_seq;
             if(e->m_source.m_range.NotEmpty()) {
-                exon.attributes["Source"] = e->m_source.m_acc + ":";
+                exon.attributes["Source"] = e->m_source.m_acc + ":"+NStr::IntToString(e->m_source.m_range.GetFrom()+1) + ":"+NStr::IntToString(e->m_source.m_range.GetTo()+1) + ":";
                 if(e->m_source.m_strand == ePlus)
-                    exon.attributes["Source"] += NStr::IntToString(e->m_source.m_range.GetFrom()+1) + ":" + NStr::IntToString(e->m_source.m_range.GetTo()+1);
+                    exon.attributes["Source"] += "+";
                 else
-                    exon.attributes["Source"] += NStr::IntToString(e->m_source.m_range.GetTo()+1) + ":" + NStr::IntToString(e->m_source.m_range.GetFrom()+1);
+                    exon.attributes["Source"] += "-";
             }
         }
 
@@ -2078,18 +2083,15 @@ CNcbiIstream& readGFF3(CNcbiIstream& is, CAlignModel& align)
                 if(!r->attributes["Source"].empty()) {
                     vector<string> v;
                     NStr::Tokenize(r->attributes["Source"], ":", v);
-                    _ASSERT((int)v.size() == 3);
+                    _ASSERT((int)v.size() == 4);
                     src.m_acc = v[0];
-                    src.m_strand = ePlus;
-                    int a = NStr::StringToInt(v[1]);
-                    int b = NStr::StringToInt(v[2]);
-                    if(a > b) {
-                        swap(a,b);
+                    src.m_range.SetFrom(NStr::StringToInt(v[1])-1);
+                    src.m_range.SetTo(NStr::StringToInt(v[2])-1);
+                    if(v[3] == "+")
+                        src.m_strand = ePlus;
+                    else
                         src.m_strand = eMinus;
-                    }
-                    src.m_range.SetFrom(a-1);
-                    src.m_range.SetTo(b-1);
-                }
+               }
                 exons.push_back(CModelExon(1,-1,false,false,fs,ss,eident,r->attributes["Seq"],src));
             }
             TSignedSeqRange texon(r->tstart,r->tend);
