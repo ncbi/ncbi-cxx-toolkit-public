@@ -4786,7 +4786,7 @@ void CChainer::CChainerImpl::AddFShifts(TGeneModelList& clust, const TInDels& fs
             if(!fs->IntersectingWith(la,lb))
                 continue; 
             bool found = false;
-            for(unsigned int k = 0; k < algn.Exons().size() && !found; ++k) {
+            for(int k = 0; k < (int)algn.Exons().size() && !found; ++k) {
                 int a = algn.Exons()[k].GetFrom();
                 int b = algn.Exons()[k].GetTo();
                 if (fs->IntersectingWith(a,b)) {
@@ -4795,7 +4795,12 @@ void CChainer::CChainerImpl::AddFShifts(TGeneModelList& clust, const TInDels& fs
                         (algn.Exons()[k].m_ssplice && fs->IsInsertion() && b<fs->Loc()+fs->Len()-1)) {
                         incompatible_indels = true;
                     }
-                } 
+                }
+                // AlignMap can't handle ggap and frameshift at rthe same point
+                if(k > 0 && algn.Exons()[k-1].m_ssplice_sig == "XX" && fs->IntersectingWith(a,a))
+                    incompatible_indels = true;
+                if(k < (int)algn.Exons().size()-1 && algn.Exons()[k+1].m_fsplice_sig == "XX" && fs->IntersectingWith(b,b))
+                    incompatible_indels = true;
             } 
             if (found)
                 algn_fs.push_back(*fs);
