@@ -615,9 +615,13 @@ void CGeneModel::CutExons(TSignedSeqRange hole)
         } else {
             if (0<i) {
                 MyExons()[i-1].m_ssplice=false;
+                if(MyExons()[i-1].m_ssplice_sig != "XX")
+                    MyExons()[i-1].m_ssplice_sig.clear();
             }
             if (i+1<MyExons().size()) {
                 MyExons()[i+1].m_fsplice=false;
+                if(MyExons()[i+1].m_fsplice_sig != "XX")
+                    MyExons()[i+1].m_fsplice_sig.clear();
             }
             MyExons().erase( MyExons().begin()+i);
             --i;
@@ -673,10 +677,6 @@ void CGeneModel::Clip(TSignedSeqRange clip_limits, EClipMode mode, bool ensure_c
     for (TExons::iterator e = MyExons().begin(); e != MyExons().end();) {
         TSignedSeqRange clip = e->Limits() & clip_limits;
         if (clip.NotEmpty()) {
-            if(e->GetFrom() != clip.GetFrom() && e->m_fsplice_sig != "XX")   //keep splice sig if not clipped or ggap
-                e->m_fsplice_sig.clear();
-            if(e->GetTo() != clip.GetTo() && e->m_ssplice_sig != "XX")   //keep splice sig if not clipped or ggap
-                e->m_ssplice_sig.clear();
             e++->Limits() = clip;
         } else if (mode == eRemoveExons)
             e = MyExons().erase(e);
@@ -686,7 +686,11 @@ void CGeneModel::Clip(TSignedSeqRange clip_limits, EClipMode mode, bool ensure_c
 
     if (Exons().size()>0) {
         MyExons().front().m_fsplice = false;
+        if(MyExons().front().m_fsplice_sig != "XX")
+            MyExons().front().m_fsplice_sig.clear();
         MyExons().back().m_ssplice = false;
+        if(MyExons().back().m_ssplice_sig != "XX")
+            MyExons().back().m_ssplice_sig.clear();
     }
 
     RecalculateLimits();
