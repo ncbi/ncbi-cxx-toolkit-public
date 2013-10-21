@@ -130,7 +130,11 @@ public:
     /// After making this initial pass, try to guess the identities of the remaining tokens.
     /// Numbers between 1 and 12 could be considered months, if no month token containing
     /// letters was already identified. If two or more such tokens are found, the date is 
-    /// ambiguous: return an empty string.
+    /// ambiguous: return an empty string, unless one of these two conditions are met:
+    ///   a) the numbers are equal, in which case ambiguity about placement is irrelevant
+    ///   b) if one token is NOT zero-padded and less than 10, and the other is 
+    ///      either 10 or more or IS zero-padded, then the token that is not padded and
+    ///      less than 10 is the day, and the other is the year, to which we should add 2000
     /// If a number is between 1 and 31, it could be considered the day. If two such tokens
     /// are found, the date is ambiguous: return an empty string.
     /// If there is a number that cannot be the month or the day, assume that this is the

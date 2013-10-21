@@ -583,8 +583,30 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
             return "";
         }
     } else if (!NStr::IsBlank (month)) {
-        // shouldn't happen
-        return "";
+        if (tokens.size() == 2) {
+            // we have a month and two other numbers
+            int val1 = NStr::StringToInt (tokens[0]); 
+            int val2 = NStr::StringToInt (tokens[1]);
+            bool zero_pad_1 = NStr::StartsWith(tokens[0], "0");
+            bool zero_pad_2 = NStr::StartsWith(tokens[1], "0");
+            if (val1 < 10 && !zero_pad_1 && (val2 > 10 || zero_pad_2)) {
+                // if one token is not zero-padded and less than 10,
+                // the other either is zero-padded and greater than 10,
+                // the "small" token is the day and the second (+2000) is the year
+                day = val1;
+                year = val2 + 2000;
+            } else if (val2 < 10 && !zero_pad_2 && (val1 > 10 || zero_pad_1)) {
+                // if one token is not zero-padded and less than 10,
+                // the other either is zero-padded and greater than 10,
+                // the "small" token is the day and the second (+2000) is the year
+                day = val2;
+                year = val1 + 2000;
+            } else {
+                return "";
+            }
+        } else {
+            return "";
+        }
     } else {
         try {
             int val1 = NStr::StringToInt (tokens[0]); 
@@ -593,14 +615,20 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
                 // both numbers too big for month
                 return "";
             } else if (val1 < 13 && val2 < 13) {
-                // both numbers could be month
-                month_ambiguous = true;
-                if (month_first) {
+                if (val1 == val2) {
+                    // no need to call this ambiguous
                     month = sm_LegalMonths[val1 - 1];
                     day = val2;
                 } else {
-                    month = sm_LegalMonths[val2 - 1];
-                    day = val1;
+                    // both numbers could be month
+                    month_ambiguous = true;
+                    if (month_first) {
+                        month = sm_LegalMonths[val1 - 1];
+                        day = val2;
+                    } else {
+                        month = sm_LegalMonths[val2 - 1];
+                        day = val1;
+                    }
                 }
             } else if (val1 < 13) {
                 month = sm_LegalMonths[val1 - 1];

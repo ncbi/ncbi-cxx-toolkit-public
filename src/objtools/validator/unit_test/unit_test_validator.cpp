@@ -17623,12 +17623,39 @@ BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
     // ISO Format dates are not ambiguous
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("2010-03-01"), "2010-03-01");
 
+    // if one token is NOT zero-padded and less than 10, and the other is either
+    // 10 or more or IS zero-padded, then the token that is not padded and less 
+    // than 10 is the day, and the other is the year, to which we should add 2000
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("6-Apr-04"), "06-Apr-2004");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("6-Aug-09"), "06-Aug-2009");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("6-Feb-08"), "06-Feb-2008");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("6-Jan-11"), "06-Jan-2011");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("6-Jun-11"), "06-Jun-2011");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("6-Jun-12"), "06-Jun-2012");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("6-May-03"), "06-May-2003");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("6-Nov-08"), "06-Nov-2008");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("6-Oct-09"), "06-Oct-2009");
+
+    // Can't make above assumption if only two tokens
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Mar-02"), "");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Mar-05"), "");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Mar-09"), "");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Mar-10"), "");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Mar-11"), "");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Mar-12"), "");
+
+
     // check for days not in month
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("31-Jun-2013"), "");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("29-Feb-2013"), "");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("29-Feb-2012"), "29-Feb-2012");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("29-Feb-2000"), "29-Feb-2000");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("29-Feb-1900"), "");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("01/01/1900"), "01-Jan-1900");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("04/04/2013"), "04-Apr-2013");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("11/11/2003"), "11-Nov-2003");
+
+
 
 }
 
