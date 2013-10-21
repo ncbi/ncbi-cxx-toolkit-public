@@ -17467,7 +17467,6 @@ BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("10-Apr-93"), "10-Apr-1993");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("1-Apr"), "");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("#Date"), "");
-    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("03-Aug=2011"), "");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("05122011"), "");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("08-Mar"), "");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("08022011"), "");
@@ -17661,6 +17660,11 @@ BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("1st December 2012"), "01-Dec-2012");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("2nd December 2012"), "02-Dec-2012");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("3rd December 2012"), "03-Dec-2012");
+
+    // unusual delimiters
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("July-15_2011"), "15-Jul-2011");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("03-Aug=2011"), "03-Aug-2011");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Jul=2010"), "Jul-2010");
 
 }
 

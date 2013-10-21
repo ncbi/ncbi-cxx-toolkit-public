@@ -492,7 +492,7 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
     string reformatted_date = "";
     string month = "";
     int year = 0, day = 0;
-    string token_delimiters = " ,-/";
+    string token_delimiters = " ,-/=_";
     size_t i;
     size_t num_original_tokens = 0;
 
