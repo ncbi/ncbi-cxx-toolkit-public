@@ -6042,7 +6042,20 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadCollectionDate)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-
+    // range of dates should be ok
+    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "");
+    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "Aug-2012/Jan-2013");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "");
+    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "2012/2013");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "");
+    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "06-Aug-2004/07-Jan-2007");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+    
 }
 
 

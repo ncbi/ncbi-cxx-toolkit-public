@@ -335,6 +335,26 @@ void CSubSource::IsCorrectDateFormat(const string& date_string, bool& bad_format
 {
     bad_format = false;
     in_future = false;
+
+    vector<string> pieces;
+    NStr::Tokenize(date_string, "/", pieces);
+    if (pieces.size() > 2) {
+        bad_format = true;
+        return;
+    } else if (pieces.size() == 2) {
+        bool first_bad = false;
+        bool first_future = false;
+        bool second_bad = false;
+        bool second_future = false;
+        IsCorrectDateFormat(pieces[0], first_bad, first_future);
+        IsCorrectDateFormat(pieces[1], second_bad, second_future);
+        bad_format = first_bad || second_bad;
+        if (!bad_format) {
+            in_future = first_future || second_future;
+        }
+        return;
+    }
+
     try {
         CRef<CDate> coll_date = CSubSource::DateFromCollectionDate (date_string);
 
