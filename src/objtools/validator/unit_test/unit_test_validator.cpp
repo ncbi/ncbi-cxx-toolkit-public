@@ -17655,7 +17655,12 @@ BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("04/04/2013"), "04-Apr-2013");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("11/11/2003"), "11-Nov-2003");
 
-
+    // look for "named numbers"
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("6th July 2010"), "06-Jul-2010");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("February 24th, 2012"), "24-Feb-2012");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("1st December 2012"), "01-Dec-2012");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("2nd December 2012"), "02-Dec-2012");
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("3rd December 2012"), "03-Dec-2012");
 
 }
 

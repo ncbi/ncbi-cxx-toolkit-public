@@ -517,9 +517,28 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
 
     vector<string>::iterator it = tokens.begin();
     while (it != tokens.end()) {
-        one_token = *it;
+        one_token = *it;        
         bool found = false;
-        if (isalpha(one_token.c_str()[0])) {
+        if (NStr::EqualNocase(one_token, "1st") || NStr::EqualNocase(one_token, "first")) {
+            day = 1;
+            found = true;
+        } else if (NStr::EqualNocase(one_token, "2nd") || NStr::EqualNocase(one_token, "second")) {
+            day = 2;
+            found = true;
+        } else if (NStr::EqualNocase(one_token, "3rd") || NStr::EqualNocase (one_token, "third")) {
+            day = 3;
+            found = true;
+        } else if (one_token.length() > 0
+                   && isdigit(one_token.c_str()[0])
+                   && NStr::EndsWith(one_token, "th")) {
+            try {
+                day = NStr::StringToInt (one_token.substr(0, one_token.length() - 2));
+                found = true;
+            } catch ( ... ) {
+                // threw exception while converting to int
+                return "";
+            }
+        } else if (isalpha(one_token.c_str()[0])) {
             if (!NStr::IsBlank (month)) {
                 // already have month, error
                 return "";
