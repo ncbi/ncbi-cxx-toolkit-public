@@ -4,7 +4,7 @@
     
 REQUIRES = objects
  
-EXPENDABLE_APP_PROJ = test
+EXPENDABLE_APP_PROJ = test freq
    
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
