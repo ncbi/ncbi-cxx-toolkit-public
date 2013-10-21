@@ -838,27 +838,27 @@ CConstRef<CSeq_align> CFeatureGenerator::SImplementation::AdjustAlignment(const 
     return align;
 }
 
-CMappedFeat CFeatureGenerator::SImplementation::GetCdsOnMrna(const objects::CSeq_id& rna_id)
+CMappedFeat GetCdsOnMrna(const objects::CSeq_id& rna_id, CScope& scope)
 {
-    CMappedFeat cdregion_handle;
-    CBioseq_Handle handle = m_scope->GetBioseqHandle(rna_id);
+    CMappedFeat cdregion_feat;
+    CBioseq_Handle handle = scope.GetBioseqHandle(rna_id);
     if (handle) {
         CFeat_CI feat_iter(handle, CSeqFeatData::eSubtype_cdregion);
         if (feat_iter  &&  feat_iter.GetSize()) {
-            cdregion_handle = *feat_iter;
-            const CSeq_loc& cds_loc = cdregion_handle.GetLocation();
+            cdregion_feat = *feat_iter;
+            const CSeq_loc& cds_loc = cdregion_feat.GetLocation();
             const CSeq_id* cds_loc_seq_id  = cds_loc.GetId();
-            if (cds_loc_seq_id == NULL || !sequence::IsSameBioseq(*cds_loc_seq_id, rna_id, m_scope)) {
-                cdregion_handle = CMappedFeat();
+            if (cds_loc_seq_id == NULL || !sequence::IsSameBioseq(*cds_loc_seq_id, rna_id, &scope)) {
+                cdregion_feat = CMappedFeat();
             }
         }
     }
-    return cdregion_handle;
+    return cdregion_feat;
 }
 
 TSignedSeqRange CFeatureGenerator::SImplementation::GetCds(const objects::CSeq_id& rna_id)
 {
-    CMappedFeat cdregion = GetCdsOnMrna(rna_id);
+    CMappedFeat cdregion = GetCdsOnMrna(rna_id, *m_scope);
     if (!cdregion) {
         return TSignedSeqRange();
     }

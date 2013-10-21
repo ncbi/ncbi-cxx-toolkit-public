@@ -40,6 +40,7 @@
 #include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqloc/Na_strand.hpp>
 #include <objmgr/seq_loc_mapper.hpp>
+#include <objmgr/mapped_feat.hpp>
 
 #include <util/range_coll.hpp>
 
@@ -235,8 +236,6 @@ private:
 
     string x_ConstructRnaName(const CBioseq_Handle& handle);
 
-    CMappedFeat GetCdsOnMrna(const objects::CSeq_id& rna_id);
-
     // merge into single interval or, if cross the origin, into two intervals abutting at the origin
     CRef<CSeq_loc> MergeSeq_locs(const CSeq_loc* loc1, const CSeq_loc* loc2 = NULL);
 
@@ -252,6 +251,8 @@ private:
                                             const CSeq_feat* cds_feat_on_query_mrna_ptr,
                                             bool call_on_align_list);
 };
+
+CMappedFeat GetCdsOnMrna(const objects::CSeq_id& rna_id, CScope& scope);
 
 END_NCBI_SCOPE
 

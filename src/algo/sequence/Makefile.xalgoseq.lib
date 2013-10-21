@@ -5,7 +5,8 @@ ASN_DEP = seqset
 SRC = cpg nuc_prop orf prot_prop regexp_loc seq_match restriction antigenic \
       coiled_coil signal_seq make_cdr_prods find_pattern gene_model project_exons transform_align \
       annot_compare compare_feats align_group masking_delta align_cleanup util \
-      gap_analysis
+      gap_analysis \
+      internal_stops
 
 LIB = xalgoseq
 

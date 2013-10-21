@@ -794,7 +794,7 @@ SImplementation::ConvertAlignToAnnot(const CSeq_align& input_align,
         cds_feat_on_query_mrna.Reset(new CSeq_feat);
         cds_feat_on_query_mrna->Assign(*cds_feat_on_query_mrna_ptr);
     } else if (!is_protein_align && !(m_flags & fDeNovoProducts)) {
-        CMappedFeat cdregion_handle = GetCdsOnMrna(query_rna_id);
+        CMappedFeat cdregion_handle = GetCdsOnMrna(query_rna_id, *m_scope);
         if (cdregion_handle) {
             cds_feat_on_query_mrna.Reset(new CSeq_feat);
             cds_feat_on_query_mrna->Assign(cdregion_handle.GetMappedFeature());
