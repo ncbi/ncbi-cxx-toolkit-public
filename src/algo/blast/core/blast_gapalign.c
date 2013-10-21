@@ -3294,6 +3294,7 @@ BlastGetStartForGappedAlignmentNucl (const Uint1* query, const Uint1* subject,
     score = -1;
     q = query + q_start;
     s = subject + s_start;
+    q_len = hsp->query.end;
     while ((q-query < q_len) && (*q++ == *s++)) {
         score++;
         if (score > HSP_MAX_IDENT_RUN) return;

@@ -297,8 +297,8 @@ BOOST_AUTO_TEST_CASE(testBLASTNTraceBack) {
     const int score_final[k_num_hsps_end] = { 252, 226, 182, 54, 40, 26, 24};
     const int context_final[k_num_hsps_end] = { 0, 0, 0, 0, 0, 1, 1};
     const int subject_frame_final[k_num_hsps_end] = { 1, 1, 1, 1, 1, 1, 1};
-    const int query_gapped_start_final[k_num_hsps_end] = { 6042, 6632, 5305, 7199, 5209, 7414, 3824};
-    const int subject_gapped_start_final[k_num_hsps_end] = { 123, 251, 26, 386, 10, 69, 77};
+    const int query_gapped_start_final[k_num_hsps_end] = { 6035, 6625, 5295, 7199, 5209, 7414, 3824};
+    const int subject_gapped_start_final[k_num_hsps_end] = { 116, 244, 16, 386, 10, 69, 77};
     const int num_ident_final[k_num_hsps_end] = { 135, 134, 91, 36, 20, 25, 12};
 
     // One hsp is dropped when the function runs.
