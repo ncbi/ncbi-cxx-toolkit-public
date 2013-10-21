@@ -55,12 +55,15 @@ private:
 
 class CVariationNormalization_base_cache
 {
+public:
+    static int x_GetSeqSize();
+    static void x_PrefetchSequence(CScope &scope, CRef<CSeq_id> seq_id);
+    static string x_GetSeq(int pos, int length);
+
 protected:
     static void x_rotate_left(string &v);
     static void x_rotate_right(string &v);
-    static void x_PrefetchSequence(CScope &scope, CRef<CSeq_id> seq_id);
-    static string x_GetSeq(int pos, int length);
-    static int x_GetSeqSize();
+    
 #ifdef SEQVEC_CACHE
     static CSeqVector m_seq_vec;
 #else

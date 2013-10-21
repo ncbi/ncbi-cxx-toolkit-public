@@ -1,0 +1,10 @@
+# $Id$
+# Meta-makefile("objtools" project)
+#################################
+    
+REQUIRES = objects
+ 
+EXPENDABLE_APP_PROJ = test
+   
+srcdir = @srcdir@
+include @builddir@/Makefile.meta
