@@ -109,6 +109,10 @@ bool CInternalStopFinder::HasInternalStops(const CSeq_align& align)
 
 string CInternalStopFinder::GetCDSNucleotideSequence(const CSeq_align& align)
 {
+    if (!align.GetSegs().IsSpliced()) {
+        NCBI_THROW(CException, eUnknown, "CInternalStopFinder supports Spliced-seg alignments only");
+    }
+
     string mRNA;
 
     const CSpliced_seg& spliced_seg = align.GetSegs().GetSpliced();
