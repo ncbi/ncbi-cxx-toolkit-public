@@ -193,7 +193,7 @@ CNCPeerControl::CreateNewSocket(CNCActiveHandler* conn)
             if (cur_time - m_ThrottleStart <= period) {
                 m_ObjLock.Unlock();
                 SRV_LOG(Warning, "Connection to "
-                    << CNCDistributionConf::GetPeerName(m_SrvId) << " is throttled");
+                    << CNCDistributionConf::GetFullPeerName(m_SrvId) << " is throttled");
                 return false;
             }
 
@@ -641,7 +641,7 @@ CNCPeerControl::x_SrvInitiallySynced(bool succeeded)
 {
     if (!m_InitiallySynced) {
         INFO("Initial sync: for "
-            << CNCDistributionConf::GetPeerName(m_SrvId) << " completed");
+            << CNCDistributionConf::GetFullPeerName(m_SrvId) << " completed");
         m_InitiallySynced = true;
         s_SyncOnInit.Add(-1);
         CNCStat::InitialSyncDone(m_SrvId, succeeded);
@@ -655,7 +655,7 @@ CNCPeerControl::x_SlotsInitiallySynced(Uint2 cnt_slots, bool aborted)
         bool succeeded = true;
         if (cnt_slots != 1) {
             INFO("Initial sync: Server "
-                << CNCDistributionConf::GetPeerName(m_SrvId) << " is out of reach");
+                << CNCDistributionConf::GetFullPeerName(m_SrvId) << " is out of reach");
             succeeded = false;
         }
         m_SlotsToInitSync -= cnt_slots;

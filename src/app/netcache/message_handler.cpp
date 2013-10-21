@@ -1370,7 +1370,9 @@ check_again:
     ENCClientHubStatus status = m_ActiveHub->GetStatus();
     if (status == eNCHubError) {
         m_LastPeerError = m_ActiveHub->GetErrMsg();
-        SRV_LOG(Warning, "Error executing command on peer: " << m_LastPeerError);
+        SRV_LOG(Warning, "Error executing command on peer "
+            << m_ActiveHub->GetFullPeerName() << ": "
+            << m_LastPeerError);
         m_ActiveHub->Release();
         m_ActiveHub = NULL;
         return &Me::x_ProxyToNextPeer;
@@ -2253,8 +2255,9 @@ CNCMessageHandler::State
 CNCMessageHandler::x_CloseOnPeerError(void)
 {
     LOG_CURRENT_FUNCTION
-    SRV_LOG(Warning, "Error executing command on peer: "
-                     << m_ActiveHub->GetErrMsg());
+    SRV_LOG(Warning, "Error executing command on peer "
+        << m_ActiveHub->GetFullPeerName() << ": "
+        << m_ActiveHub->GetErrMsg());
     GetDiagCtx()->SetRequestStatus(eStatus_PeerError);
     return &Me::x_CloseCmdAndConn;
 }
@@ -2346,7 +2349,8 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
         // We can be here only when expecting fake start of blob writing from old
         // NC server, but for some reason we got non-EOF chunk length.
         GetDiagCtx()->SetRequestStatus(eStatus_BadCmd);
-        SRV_LOG(Critical, "Received non-EOF chunk len from peer: " << m_ChunkLen);
+        SRV_LOG(Critical, "Received non-EOF chunk len from peer "
+            << m_ActiveHub->GetFullPeerName() << ": " << m_ChunkLen);
         return &Me::x_CloseCmdAndConn;
     }
 
@@ -2583,7 +2587,8 @@ CNCMessageHandler::x_WaitForPeerAnswer(void)
             return &Me::x_CloseOnPeerError;
 
         m_LastPeerError = m_ActiveHub->GetErrMsg();
-        SRV_LOG(Warning, "Error executing command on peer: " << m_LastPeerError);
+        SRV_LOG(Warning, "Error executing command on peer "
+            << m_ActiveHub->GetFullPeerName() << ": "  << m_LastPeerError);
         m_ActiveHub->Release();
         m_ActiveHub = NULL;
         return &Me::x_ProxyToNextPeer;

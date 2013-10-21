@@ -68,6 +68,7 @@ public:
     const string& GetErrMsg(void);
     CNCActiveHandler* GetHandler(void);
     void Release(void);
+    string GetFullPeerName(void);
 
 public:
     void SetStatus(ENCClientHubStatus status);
@@ -242,6 +243,10 @@ public:
 
     void CloseForShutdown(void);
     void CheckCommandTimeout(void);
+
+    Uint8 GetSrvId(void) const {
+        return  m_SrvId;
+    }
 
 private:
     friend class CNCActiveClientHub;

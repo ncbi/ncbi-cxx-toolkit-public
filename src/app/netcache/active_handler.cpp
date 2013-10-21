@@ -118,6 +118,15 @@ CNCActiveClientHub::Release(void)
     CallRCU();
 }
 
+string
+CNCActiveClientHub::GetFullPeerName(void)
+{
+    if (m_Handler) {
+        return  CNCDistributionConf::GetFullPeerName(m_Handler->GetSrvId());
+    }
+    return "";
+}
+
 void
 CNCActiveClientHub::SetStatus(ENCClientHubStatus status)
 {
@@ -1133,7 +1142,9 @@ CNCActiveHandler::State
 CNCActiveHandler::x_ProcessPeerError(void)
 {
     m_ErrMsg = m_Response;
-    SRV_LOG(Warning, "Error from peer " << m_Peer->GetSrvId() << ": " << m_ErrMsg);
+    SRV_LOG(Warning, "Error from peer "
+        << CNCDistributionConf::GetFullPeerName(m_SrvId) << ": "
+        << m_ErrMsg);
     m_CmdSuccess = false;
     return &Me::x_FinishCommand;
 }
@@ -1141,7 +1152,10 @@ CNCActiveHandler::x_ProcessPeerError(void)
 CNCActiveHandler::State
 CNCActiveHandler::x_ProcessProtocolError(void)
 {
-    SRV_LOG(Critical, "Protocol error. Got response: '" << m_Response << "'");
+    SRV_LOG(Critical, "Error from peer "
+        << CNCDistributionConf::GetFullPeerName(m_SrvId) << ": "
+        << "Protocol error. Got response: '"
+        << m_Response << "'");
     m_ErrMsg = "ERR:Protocol error";
     return &Me::x_CloseCmdAndConn;
 }
@@ -1421,7 +1435,9 @@ CNCActiveHandler::x_ReadSizeToRead(void)
 {
     size_t pos = m_Response.find("SIZE=");
     if (pos == string::npos) {
-        SRV_LOG(Critical, "SIZE is not found in peer response.");
+        SRV_LOG(Critical, "Error from peer "
+            << CNCDistributionConf::GetFullPeerName(m_SrvId) << ": "
+            << "SIZE is not found in peer response");
         return &Me::x_ProcessProtocolError;
     }
 
@@ -1431,7 +1447,9 @@ CNCActiveHandler::x_ReadSizeToRead(void)
                                            NStr::fAllowTrailingSymbols);
     }
     catch (CStringException& ex) {
-        SRV_LOG(Critical, "Cannot parse data size: " << ex);
+        SRV_LOG(Critical, "Error from peer "
+            << CNCDistributionConf::GetFullPeerName(m_SrvId) << ": "
+            << "Cannot parse data size: " << ex);
         return &Me::x_ProcessProtocolError;
     }
 

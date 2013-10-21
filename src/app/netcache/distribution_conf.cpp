@@ -115,6 +115,7 @@ static string       kNCReg_NCServerSlotsPrefix = "srv_slots_";
 bool
 CNCDistributionConf::Initialize(Uint2 control_port)
 {
+    string log_pfx("Bad configuration: ");
     const CNcbiRegistry& reg = CTaskServer::GetConfRegistry();
 
     Uint4 self_host = CTaskServer::GetIPByHost(CTaskServer::GetHostName());
@@ -133,7 +134,7 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         list<CTempString> srv_fields;
         NStr::Split(reg_value, ":", srv_fields);
         if (srv_fields.size() != 3) {
-            SRV_LOG(Critical, "Incorrect peer server specification: '"
+            SRV_LOG(Critical, log_pfx << "invalid peer server specification: '"
                               << reg_value << "'");
             return false;
         }
@@ -146,7 +147,7 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         string port_str = *it_fields;
         Uint2 port = NStr::StringToUInt(port_str, NStr::fConvErr_NoThrow);
         if (host == 0  ||  port == 0) {
-            SRV_LOG(Critical, "Bad configuration: host does not exist ("
+            SRV_LOG(Critical, log_pfx << "host does not exist ("
                               << reg_value << ")");
             return false;
         }
@@ -154,7 +155,7 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         string peer_str = host_str + ":" + port_str;
         if (srv_id == s_SelfID) {
             if (found_self) {
-                SRV_LOG(Critical, "Bad configuration: self host mentioned twice");
+                SRV_LOG(Critical, log_pfx << "self host mentioned twice");
                 return false;
             }
             found_self = true;
@@ -163,7 +164,7 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         }
         else {
             if (s_Peers.find(srv_id) != s_Peers.end()) {
-                SRV_LOG(Critical, "Bad configuration: host " << peer_str
+                SRV_LOG(Critical, log_pfx << "host " << peer_str
                                   << " mentioned twice");
                 return false;
             }
@@ -174,7 +175,7 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         value_name = kNCReg_NCServerSlotsPrefix + NStr::IntToString(srv_idx);
         reg_value = reg.Get(kNCReg_NCPoolSection, value_name.c_str());
         if (reg_value.empty()) {
-            SRV_LOG(Critical, "Bad configuration: no slots for a server "
+            SRV_LOG(Critical, log_pfx << "no slots for a server "
                               << srv_idx);
             return false;
         }
@@ -184,12 +185,12 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         ITERATE(list<string>, it, values) {
             Uint2 slot = NStr::StringToUInt(*it, NStr::fConvErr_NoThrow);
             if (slot == 0) {
-                SRV_LOG(Critical, "Bad slot number: " << *it);
+                SRV_LOG(Critical, log_pfx << "bad slot number " << *it);
                 return false;
             }
             TServersList& srvs = s_RawSlot2Servers[slot];
             if (find(srvs.begin(), srvs.end(), srv_id) != srvs.end()) {
-                SRV_LOG(Critical, "Bad configuration: slot " << slot
+                SRV_LOG(Critical, log_pfx << "slot " << slot
                                   << " provided twice for server " << srv_idx);
                 return false;
             }
@@ -212,7 +213,7 @@ CNCDistributionConf::Initialize(Uint2 control_port)
 
     if (!found_self) {
         if (s_Peers.size() != 0) {
-            SRV_LOG(Critical, "Bad configuration - no description found for "
+            SRV_LOG(Critical, log_pfx << "no description found for "
                               "itself (port " << control_port << ")");
             return false;
         }
@@ -241,7 +242,7 @@ CNCDistributionConf::Initialize(Uint2 control_port)
     try {
         s_CntSlotBuckets = reg.GetInt(kNCReg_NCPoolSection, "cnt_slot_buckets", 10);
         if (numeric_limits<Uint2>::max() / s_CntSlotBuckets < s_MaxSlotNumber) {
-            SRV_LOG(Critical, "Bad configuration: too many buckets per slot ("
+            SRV_LOG(Critical, log_pfx << "too many buckets per slot ("
                               << s_CntSlotBuckets << ") with given number of slots ("
                               << s_MaxSlotNumber << ").");
             return false;
@@ -283,7 +284,7 @@ CNCDistributionConf::Initialize(Uint2 control_port)
         s_NetworkErrorTimeout *= kUSecsPerSecond;
     }
     catch (CStringException& ex) {
-        SRV_LOG(Critical, "Bad configuration: " << ex);
+        SRV_LOG(Critical, log_pfx  << ex);
         return false;
     }
     return true;
@@ -350,9 +351,19 @@ CNCDistributionConf::GetPeerName(Uint8 srv_id)
     else {
         name = "unknown_server";
     }
-//    name += "(" + NStr::NumericToString(srv_id) + ")";
     return name;
 }
+
+string
+CNCDistributionConf::GetFullPeerName(Uint8 srv_id)
+{
+    string name( GetPeerName(srv_id));
+    name += " (";
+    name += NStr::UInt8ToString(srv_id);
+    name += ") ";
+    return name;
+}
+
 
 TServersList
 CNCDistributionConf::GetPeerServers(void)

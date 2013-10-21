@@ -70,6 +70,7 @@ public:
     // Get all partners "host:port" strings
     static const TNCPeerList& GetPeers(void);
     static string GetPeerName(Uint8 srv_id);
+    static string GetFullPeerName(Uint8 srv_id);
     static TServersList GetPeerServers(void);
 
     // Generates a blob key which is covered by the current server slots
