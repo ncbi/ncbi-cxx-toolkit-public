@@ -5,6 +5,9 @@ util/bitset$ update-only
 util/cache$
 util/regexp$
 util/xregexp$
+objects$
+objects/misc$
+objects/general
 connect$
 connect/ext$
 connect/impl$
