@@ -1559,20 +1559,7 @@ CSeq_id& CSeq_id::Set(const CDbtag& dbtag, bool set_as_general)
     }
 
     CDbtag::EDbtagType type = dbtag.GetType();
-    if (type == CDbtag::eDbtagType_bad  &&  dbtag.GetDb() == "GenBank") {
-        type = CDbtag::eDbtagType_GenBank;
-    }
     switch (type) {
-    case CDbtag::eDbtagType_GenBank:
-        try {
-            TIntId gi = NStr::StringToNumeric<TIntId>(acc);
-            SetGi(gi);
-        }
-        catch (...) {
-            SetGenbank().Set(accver);
-        }
-        break;
-
     case CDbtag::eDbtagType_EMBL:
         SetEmbl().Set(accver);
         break;

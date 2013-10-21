@@ -99,7 +99,6 @@ public:
         eDbtagType_GO,
         eDbtagType_GOA,
         eDbtagType_GRIN,
-        eDbtagType_GenBank,
         eDbtagType_GeneDB,
         eDbtagType_GeneID,
         eDbtagType_GrainGenes,
