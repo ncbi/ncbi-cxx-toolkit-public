@@ -14,10 +14,10 @@ USE_COMPONENTS
 APP: testres_scheduler testres.cgi display_run.cgi display_result.cgi unitlist.cgi
 
 #Scripts
-SRC: src/internal/cppcore/testres/tool/scripts
+COPY: $srcdir/src/internal/cppcore/testres/tool/scripts/ $installdir
 
 #Presenters
-SRC: src/internal/cppcore/testres/web/presenters
+COPY: $srcdir/src/internal/cppcore/testres/web/presenters/ $installdir
 
 Linux64-Centos  : plain  : GCC.sh      --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
 

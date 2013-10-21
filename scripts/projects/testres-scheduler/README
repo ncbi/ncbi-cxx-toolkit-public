@@ -1,10 +1,13 @@
-TestRes - NCBI internal regression testing framework
+TestRes scheduler - scheduler of the NCBI internal regression testing framework (TestRes)
 
 Started as testipub replacement (CXX-2091)
-1. Maintains hierarchial test structures. 
+1. Manages hierarchial test structure (branch) with multiple kernel versions
 2. Allows tests and groups tagging and arbitrarily selection for execution
-3. Communicates to LBSMD to extract the list of the resources to run on
+3. Handles framework (kernel) versioning
 
-
-
+TestRes Scheduler Package includes:
+1. TestRes scheduler
+2. tr-dev (console test development environment) scripts
+3. presenters
+4. cgis
 
