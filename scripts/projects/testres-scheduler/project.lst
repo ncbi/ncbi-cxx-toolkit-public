@@ -20,3 +20,4 @@ boost
 internal$
 internal/cppcore$
 internal/cppcore/testres
+-internal/cppcore/testres/kernel
