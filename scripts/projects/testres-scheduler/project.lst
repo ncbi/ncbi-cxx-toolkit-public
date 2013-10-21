@@ -16,9 +16,7 @@ misc/xmlwrapp$
 misc/xmlwrapp/impl$
 serial$
 serial/datatool$
-boost/graph$
-boost/ptr_container$
-boost/algorithm$
+boost
 internal$
 internal/cppcore$
 internal/cppcore/testres
