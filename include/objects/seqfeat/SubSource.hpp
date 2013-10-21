@@ -118,6 +118,7 @@ public:
     ///      * slash (/)
     ///      * underscore (_)
     ///      * equals (=)
+    ///      * period (.)
     /// If more than three tokens are generated, fail and return empty string.
     /// Of the tokens that are generated, look for a token that contains letters.
     /// If there is such a token, this token is assumed to be the month, and will
