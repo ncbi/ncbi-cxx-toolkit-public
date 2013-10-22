@@ -229,6 +229,7 @@ ARK	s	University of Arkansas
 ARM	s	County Museum
 ARMFN	s	Armagh Field Naturalists' Society
 ARSEF	c	ARS Collection of Entomopathogenic Fungi
+AS	c	China General Microbiological Culture Collection Center
 AS<DEU>	s	Paleontological Collection
 AS<PRY>	s	Jardin Botanico
 ASAY	s	Academy of Science of Armenia
@@ -799,9 +800,9 @@ CCGVCC	c	China Centre for General Viruses Culture Collection
 CCIAL	c	Cultures Cells for Institute Adolfo Lutz
 CCIBSO	c	Culture Collection IBSO
 CCIM	c	Culture Collection of Industrial Microorganisms
+CCM	c	Czech Collection of Microorganisms
 CCM-A	c	Coleccion de Cultivos Microbianos
 CCM<CHN>	s	Changchun College of Traditional Chinese Medicine, Department of Chinese Materia Medica
-CCM<CZE>	c	Czech Collection of Microorganisms
 CCM<USA-MT>	s	Carter County Museum
 CCMAC	c	Culture Collection of Macromycetes (Basidiomycotina and Ascomycotina)
 CCMCU	c	Culture Collection of Microorganisms
@@ -839,8 +840,8 @@ CDA<CAN>	c	Canadian Department of Agriculture
 CDA<USA-CA>	s	California Department of Food and Agriculture
 CDBB	c	Coleccion Nacional de Cepas Microbianas y Cultivos Celulares
 CDBI	s	Chengdu Institute of Biology
+CDC	c	Centers for Disease Control and Prevention
 CDC<CHN>	s	Changdu Institute for Drug Control
-CDC<USA-GA>	c	Centers for Disease Control and Prevention
 CDCM	s	Chengdu College of Traditional Chinese Medicine
 CDFM	s	Cardiff Museum
 CDFN	s	Canadian Forest Service - Atlantic
