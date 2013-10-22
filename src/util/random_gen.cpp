@@ -24,7 +24,7 @@
  * ===========================================================================
  *
  * Authors: Clifford Clausen, Denis Vakatov, Jim Ostell, Jonathan Kans,
- *          Greg Schuler
+ *          Greg Schuler, Eugene Vasilchenko
  * Contact: Clifford Clausen
  *
  * File Description:
@@ -35,19 +35,19 @@
  *
  *   CRandom has been tested using the Diehard RNG test package
  *   developed by George Marsaglia, Prof., Dept of Statistics, Florida
- *   State University. CRandom in particular, and LFG type RNGs in general, 
+ *   State University. CRandom in particular, and LFG type RNGs in general,
  *   cannot pass all of the Diehard RNG tests. Specifically, it fails the
  *   "Birthday" test as do other LFG RNGs. CRandom performs as well as
  *   other LFG RNGS, as provided in the Diehard test package. The LFG
  *   class of RNGs was chosen as the RNG for the NCBI C++ Toolkit as it
  *   provides the best tradeoff between time to generate a random number
  *   and performance on tests for randomness.
- *   
+ *
  *   For a download of Diehard software and documentation
- *   see http://stat.fsu.edu/~geo/diehard.html. 
+ *   see http://stat.fsu.edu/~geo/diehard.html.
  *
  *   For further information also see
- *   http://random.mat.sbg.ac.at/,  
+ *   http://random.mat.sbg.ac.at/,
  *   http://csep1.phy.ornl.gov/rn/rn.html, and
  *   http://www.agner.org/random/.
  *
@@ -68,7 +68,7 @@
  *   http://random.mat.sbg.ac.at/literature and
  *   http://www.evensen.org/marsaglia/.
  *
- *   class CRandom:: 
+ *   class CRandom::
  */
 
 #include <ncbi_pch.hpp>
@@ -77,6 +77,18 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/ncbi_process.hpp>
 #include <corelib/ncbithr.hpp>
+#include <corelib/ncbi_safe_static.hpp>
+#include <corelib/ncbidiag.hpp>
+
+#if defined(NCBI_OS_UNIX) || defined(NCBI_OS_DARWIN)
+    #include <sys/types.h>
+    #include <sys/stat.h>
+    #include <fcntl.h>
+    #include <errno.h>
+    #include <string.h>
+#elif defined(NCBI_OS_MSWIN)
+    #include <Wincrypt.h>
+#endif /* NCBI_OS */
 
 
 BEGIN_NCBI_SCOPE
@@ -84,27 +96,135 @@ BEGIN_NCBI_SCOPE
 
 static const size_t kStateOffset = 12;
 
-// Static array used to initialize "m_State"
-static const CRandom::TValue sm_State[CRandom::kStateSize] = {
-    0xd53f1852,  0xdfc78b83,  0x4f256096,  0xe643df7,
-    0x82c359bf,  0xc7794dfa,  0xd5e9ffaa,  0x2c8cb64a,
-    0x2f07b334,  0xad5a7eb5,  0x96dc0cde,  0x6fc24589,
-    0xa5853646,  0xe71576e2,  0xdae30df,   0xb09ce711,
-    0x5e56ef87,  0x4b4b0082,  0x6f4f340e,  0xc5bb17e8,
-    0xd788d765,  0x67498087,  0x9d7aba26,  0x261351d4,
-    0x411ee7ea,  0x393a263,   0x2c5a5835,  0xc115fcd8,
-    0x25e9132c,  0xd0c6e906,  0xc2bc5b2d,  0x6c065c98,
-    0x6e37bd55
-};
+#if defined(NCBI_OS_UNIX) || defined(NCBI_OS_DARWIN)
+
+    static const char * kHardwareGeneratorDevice = "/dev/hwrng";
+    static const char * kSoftwareGeneratorDevice = "/dev/urandom";
+
+    class CRandomSupplier
+    {
+    public:
+        CRandomSupplier() :
+            m_Fd(-1)
+        {
+            m_Fd = open(kHardwareGeneratorDevice, O_RDONLY);
+            if (m_Fd == -1)
+                m_Fd = open(kSoftwareGeneratorDevice, O_RDONLY);
+        }
+        ~CRandomSupplier()
+        {
+            if (m_Fd != -1) {
+                close(m_Fd);
+                m_Fd = -1;
+            }
+        }
+
+        bool IsInitialized(void) const
+        { return m_Fd != -1; }
+
+        bool GetRand(CRandom::TValue *  value, bool  throw_on_error)
+        {
+            if (m_Fd == -1)
+                NCBI_THROW(CRandomException, eUnavailable,
+                           "System-dependent generator is not available");
+
+            for ( ; ; ) {
+                if (read(m_Fd, value, sizeof(CRandom::TValue)) ==
+                                            sizeof(CRandom::TValue))
+                    return true;
+                if (errno != EINTR)
+                    break;
+            }
+
+            if (throw_on_error)
+                NCBI_THROW(CRandomException, eSysGeneratorError,
+                           string("Error getting random value from the "
+                                  "system-dependent generator: ") +
+                           strerror(errno));
+            return false;
+        }
+
+    private:
+        int     m_Fd;
+    };
+
+#elif defined(NCBI_OS_MSWIN)
+
+    class CRandomSupplier
+    {
+    public:
+        CRandomSupplier() :
+            m_Provider(0), m_Initialized(false)
+        {
+            static DWORD    providers[] =
+                                { PROV_RSA_AES, PROV_RSA_FULL, PROV_RSA_SIG,
+                                  PROV_RSA_SCHANNEL, PROV_DSS, PROV_DSS_DH,
+                                  PROV_DH_SCHANNEL, PROV_FORTEZZA,
+                                  PROV_MS_EXCHANGE, PROV_SSL };
+            for ( size_t  k = 0; k < sizeof(providers)/sizeof(providers[0]); ++k) {
+                if (CryptAcquireContext(&m_Provider, 0, 0, providers[k],
+                                        CRYPT_VERIFYCONTEXT | CRYPT_SILENT)) {
+                    m_Initialized = true;
+                    break;
+                }
+            }
+        }
+        ~CRandomSupplier()
+        {
+            if (m_Initialized) {
+                CryptReleaseContext(m_Provider, 0);
+                m_Initialized = false;
+            }
+        }
+
+        bool IsInitialized(void) const
+        { return m_Initialized; }
+
+        bool GetRand(CRandom::TValue *  value, bool  throw_on_error)
+        {
+            if (m_Initialized) {
+                if (CryptGenRandom(m_Provider, sizeof(CRandom::TValue),
+                                   reinterpret_cast<PBYTE>(value)))
+                    return true;
+            }
+            if (throw_on_error) {
+                if (!m_Initialized)
+                    NCBI_THROW(CRandomException, eUnavailable,
+                               "System-dependent generator is not available");
+
+                NCBI_THROW(CRandomException, eSysGeneratorError,
+                        string("Error getting random value from the "
+                                "system-dependent generator. Error code: ") +
+                                NStr::NumericToString(GetLastError()));
+            }
+            return false;
+        }
+
+    private:
+        HCRYPTPROV  m_Provider;
+        bool        m_Initialized;
+    };
+
+#endif /* NCBI_OS */
+
+static CSafeStatic<CRandomSupplier> s_RandomSupplier;
 
 
-CRandom::CRandom(void)
+
+CRandom::CRandom(EGetRandMethod method) :
+    m_RandMethod(method)
 {
-    Reset();
+    if (method == eGetRand_Sys) {
+        if (!s_RandomSupplier->IsInitialized())
+            NCBI_THROW(CRandomException, eUnavailable,
+                       "System-dependent generator is not available");
+    } else
+        Reset();
 }
 
 
-CRandom::CRandom(TValue seed)
+CRandom::CRandom(TValue seed) :
+    m_RandMethod(eGetRand_LFG)
 {
     SetSeed(seed);
 }
@@ -112,6 +232,25 @@ CRandom::CRandom(TValue seed)
 
 void CRandom::Reset(void)
 {
+    if (m_RandMethod == eGetRand_Sys)
+        NCBI_THROW(CRandomException, eUnexpectedRandMethod,
+                   "CRandom::Reset() is not allowed for "
+                   "system-dependent generator");
+
+    // Static array used to initialize "m_State"
+    static const CRandom::TValue sm_State[CRandom::kStateSize] = {
+        0xd53f1852,  0xdfc78b83,  0x4f256096,  0xe643df7,
+        0x82c359bf,  0xc7794dfa,  0xd5e9ffaa,  0x2c8cb64a,
+        0x2f07b334,  0xad5a7eb5,  0x96dc0cde,  0x6fc24589,
+        0xa5853646,  0xe71576e2,  0xdae30df,   0xb09ce711,
+        0x5e56ef87,  0x4b4b0082,  0x6f4f340e,  0xc5bb17e8,
+        0xd788d765,  0x67498087,  0x9d7aba26,  0x261351d4,
+        0x411ee7ea,  0x393a263,   0x2c5a5835,  0xc115fcd8,
+        0x25e9132c,  0xd0c6e906,  0xc2bc5b2d,  0x6c065c98,
+        0x6e37bd55
+    };
+
+
     _ASSERT(sizeof(sm_State) == sizeof(m_State));
     _ASSERT(kStateOffset < kStateSize);
 
@@ -126,17 +265,31 @@ void CRandom::Reset(void)
 
 void CRandom::Randomize(void)
 {
+    if (m_RandMethod == eGetRand_Sys)
+        return;
+
+    TValue  seed;
+    if (s_RandomSupplier->GetRand(&seed, false)) {
+        SetSeed(seed);
+        return;
+    }
+
     CTime now(CTime::eCurrent);
 
     SetSeed(TValue(now.Second() ^
-                now.NanoSecond() ^
-                CProcess::GetCurrentPid() * 19 ^
-                CThread::GetSelf() * 5));
+                   now.NanoSecond() ^
+                   CProcess::GetCurrentPid() * 19 ^
+                   CThread::GetSelf() * 5));
 }
 
 
 void CRandom::SetSeed(TValue seed)
 {
+    if (m_RandMethod == eGetRand_Sys)
+        NCBI_THROW(CRandomException, eUnexpectedRandMethod,
+                   "CRandom::SetSeed(...) is not allowed for "
+                   "system-dependent generator");
+
     _ASSERT(kStateOffset < kStateSize);
 
     m_State[0] = m_Seed = seed;
@@ -152,6 +305,25 @@ void CRandom::SetSeed(TValue seed)
     for (int i = 0;  i < 10 * kStateSize;  ++i) {
         GetRand();
     }
+}
+
+
+CRandom::TValue CRandom::GetSeed(void) const
+{
+    if (m_RandMethod == eGetRand_Sys)
+        NCBI_THROW(CRandomException, eUnexpectedRandMethod,
+                   "CRandom::GetSeed(...) is not allowed for "
+                   "system-dependent generator");
+
+    return m_Seed;
+}
+
+
+CRandom::TValue CRandom::x_GetSysRand32Bits(void) const
+{
+    TValue  r;
+    s_RandomSupplier->GetRand(&r, true);
+    return r;
 }
 
 

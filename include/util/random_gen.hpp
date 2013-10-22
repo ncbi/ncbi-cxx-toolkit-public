@@ -27,16 +27,11 @@
  * ===========================================================================
  *
  * Authors: Clifford Clausen, Denis Vakatov, Jim Ostell, Jonathan Kans,
- *          Greg Schuler
+ *          Greg Schuler, Eugene Vasilchenko
  * Contact: Clifford Clausen
  *
  * File Description:
- *   CRandom implements a lagged Fibonacci (LFG) random number generator (RNG)
- *   with lags 33 and 13, modulus 2^31, and operation '+'. It is a slightly
- *   modified version of Nlm_Random() found in the NCBI C toolkit.
- *   It generates uniform random numbers between 0 and 2^31 - 1 (inclusive).
- *
- *   More details and literature refs are provided in "random_gen.cpp".
+ *   Random namber generator.
  */
 
 #include <corelib/ncbistd.hpp>
@@ -51,61 +46,129 @@
 BEGIN_NCBI_SCOPE
 
 
+
+
 /////////////////////////////////////////////////////////////////////////////
-//  CRandom::
-//
+///  CRandom::
+///
+/// Wraps a system-dependent random generator (could be slow due to
+/// system calls), and implements lagged Fibonacci (LFG) random number
+/// generator  with lags 33 and 13, modulus 2^31, and operation '+'
+///
+/// LFG is a slightly modified version of Nlm_Random() found in the NCBI C
+/// toolkit. It generates uniform random numbers between 0 and 2^31 - 1 (inclusive).
+/// It can be 100 times faster than system-dependent one.
+///
+/// More details and literature refs are provided in "random_gen.cpp".
+
 
 class NCBI_XUTIL_EXPORT CRandom
 {
 public:
-    // Type of the generated integer value and/or the seed value
+    /// Type of the generated integer value and/or the seed value
     typedef Uint4 TValue;
 
-    // Constructors
-    CRandom(void);
+    /// Random generator to use in the GetRand() functions
+    enum EGetRandMethod {
+        eGetRand_LFG,  ///< Use lagged Fibonacci (LFG) random number generator
+        eGetRand_Sys   ///< Use system-dependent random generator
+    };
+
+    /// If "method" is:
+    ///  - eGetRand_LFG -- use LFG generator seeded with a hard-coded seed
+    ///  - eGetRand_Sys -- use system-dependent generator
+    CRandom(EGetRandMethod method = eGetRand_LFG);
+
+    /// Use LFG random generator seeded with "seed"
     CRandom(TValue seed);
 
-    // (Re-)initialize the generator using the current time,
-    // PID, and thread ID
-    void Randomize(void);
-
-    // Initialize and Seed the random number generator
-    void   SetSeed(TValue seed);
-    TValue GetSeed(void);
-
-    // Reset random number generator to initial startup condition
-    void Reset(void);
-
-    // Get the next random number in the interval [0..GetMax()] (inclusive)
+    /// Get the next random number in the interval [0..GetMax()] (inclusive)
+    /// @sa  EGetRandMethod
+    /// @note eGetRand_LFG generator could be 100 times faster
+    ///       than eGetRand_Sys one
     TValue GetRand(void);
 
-    // Get random number in the interval [min_value..max_value] (inclusive)
+    /// Get random number in the interval [min_value..max_value] (inclusive)
+    /// @sa  EGetRandMethod
+    /// @note eGetRand_LFG generator could be 100 times faster
+    ///       than eGetRand_Sys one
     TValue GetRand(TValue min_value, TValue max_value); 
 
-    // Get random number in the interval [0..size-1] (e.g. index in array)
+    /// Get random number in the interval [0..size-1] (e.g. index in array)
+    /// @sa  EGetRandMethod
+    /// @note eGetRand_LFG generator could be 100 times faster
+    ///       than eGetRand_Sys one
     TValue GetRandIndex(TValue size);
 
-    // The max. value GetRand() returns
+    /// The max. value GetRand() returns
     static TValue GetMax(void);
 
+    /// Get the random generator type
+    EGetRandMethod GetRandMethod(void) const;
+
+    // LFG only:
+
+    /// Re-initialize (re-seed) the generator using platform-specific
+    /// randomization.
+    /// @note  Does nothing if system generator is used.
+    void Randomize(void);
+
+    /// Seed the random number generator with "seed".
+    /// @attention  Throw exception if non-LFG (i.e. system) generator is used.
+    void SetSeed(TValue seed);
+
+    /// Get the last set seed (LFG only)
+    /// @attention  Throw exception if non-LFG (i.e. system) generator is used.
+    TValue GetSeed(void) const;
+
+    /// Reset random number generator to initial startup condition (LFG only)
+    /// @attention  Throw exception if non-LFG (i.e. system) generator is used.
+    void Reset(void);
+
+private:
     enum {
         kStateSize = 33  // size of state array
     };
+    EGetRandMethod  m_RandMethod;
+    TValue          m_State[kStateSize];
+    int             m_RJ;
+    int             m_RK;
+    TValue          m_Seed;
 
-private:
     TValue x_GetRand32Bits(void);
+    TValue x_GetSysRand32Bits(void) const;
 
-    // Instance data members
-    TValue  m_State[kStateSize];
-    int     m_RJ;
-    int     m_RK;
-    TValue  m_Seed;
-
-private:
     // prevent copying
     CRandom(const CRandom&);
     CRandom& operator=(const CRandom&);
 };
+
+
+/// Exceptions generated by CRandom class
+class NCBI_XUTIL_EXPORT CRandomException : public CException
+{
+public:
+    enum EErrCode {
+        eUnavailable,           ///< System-dependent generator is not available
+        eUnexpectedRandMethod,  ///< The user called method which is not
+                                ///< allowed for the used generator.
+        eSysGeneratorError      ///< Error getting a random value from the
+                                ///< system-dependent generator.
+    };
+
+    virtual const char* GetErrCodeString(void) const
+    {
+        switch (GetErrCode()) {
+        case eUnavailable           : return "eUnavailable";
+        case eUnexpectedRandMethod  : return "eUnexpectedRandMethod";
+        case eSysGeneratorError     : return "eSysGeneratorError";
+        default                     : return CException::GetErrCodeString();
+        }
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CRandomException, CException);
+};
+
 
 
 /* @} */
@@ -120,14 +183,11 @@ private:
 //  CRandom::
 //
 
-inline CRandom::TValue CRandom::GetSeed(void)
-{
-    return m_Seed;
-}
-
-
 inline CRandom::TValue CRandom::x_GetRand32Bits(void)
 {
+    if (m_RandMethod == eGetRand_Sys)
+        return x_GetSysRand32Bits();
+
     register TValue r;
 
     r = m_State[m_RK] + m_State[m_RJ--];
@@ -175,6 +235,12 @@ inline CRandom::TValue CRandom::GetRand(TValue min_value, TValue max_value)
 inline CRandom::TValue CRandom::GetMax(void)
 {
     return 0x7fffffff;
+}
+
+
+inline CRandom::EGetRandMethod CRandom::GetRandMethod(void) const
+{
+    return m_RandMethod;
 }
 
 

@@ -36,7 +36,8 @@ APP_PROJ = example_value_convert \
            test_uttp \
            test_value_convert \
            test_histogram_binning \
-           test_table_printer
+           test_table_printer \
+           test_random
 
 EXPENDABLE_APP_PROJ = \
            test_limited_map
