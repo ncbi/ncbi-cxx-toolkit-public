@@ -1253,23 +1253,24 @@ void CChainer::CChainerImpl::TrimAlignmentsIncludedInDifferentGenes(list<CGene>&
         TSignedSeqRange noclip_limits = hard_limits;
         ITERATE(TContained, i, chain.m_members) {
             const CGeneModel& a = *(*i)->m_align;
-            if(Include(a.Limits(),hard_limits.GetFrom()+1) ) {
-                TSignedSeqRange l(hard_limits.GetFrom()+1,min(a.Limits().GetTo(),chain.Limits().GetTo()));
+            TSignedSeqRange alim(amap.ShrinkToRealPoints(a.Limits()&chain.Limits(),false));
+            if(Include(alim,hard_limits.GetFrom()) ) {
+                TSignedSeqRange l(hard_limits.GetFrom(),alim.GetTo());
                 l = amap.ShrinkToRealPoints(l,false);
                 int len = 0;
                 if(l.NotEmpty())
                     len = amap.FShiftedLen(l);
                 if(len > 0.75*a.AlignLen() || len > 0.75*hard_limits_len)
-                    noclip_limits.SetFrom(min(noclip_limits.GetFrom(),(*i)->m_align->Limits().GetFrom()));
+                    noclip_limits.SetFrom(min(noclip_limits.GetFrom(),alim.GetFrom()));
             }
-            if(Include(a.Limits(),hard_limits.GetTo()-1)) {
-                TSignedSeqRange l(max(a.Limits().GetFrom(),chain.Limits().GetFrom()),hard_limits.GetTo()-1);
+            if(Include(alim,hard_limits.GetTo())) {
+                TSignedSeqRange l(alim.GetFrom(),hard_limits.GetTo());
                 l = amap.ShrinkToRealPoints(l,false);
                 int len = 0;
                 if(l.NotEmpty())
                     len = amap.FShiftedLen(l);
                 if(len > 0.75*a.AlignLen() || len > 0.75*hard_limits_len)                
-                    noclip_limits.SetTo(max(noclip_limits.GetTo(),(*i)->m_align->Limits().GetTo()));
+                    noclip_limits.SetTo(max(noclip_limits.GetTo(),alim.GetTo()));
             }
         }
         noclip_limits = (noclip_limits & chain.Limits());
@@ -3681,6 +3682,7 @@ void CChain::ClipChain(TSignedSeqRange limits) {
     _ASSERT(Include(Limits(),limits) && (RealCdsLimits().Empty() || Include(limits,RealCdsLimits())));
 
     TSignedSeqRange limits_on_mrna = GetAlignMap().MapRangeOrigToEdited(limits,false);
+    _ASSERT(limits_on_mrna.NotEmpty());
 
     if(limits.GetFrom() > Limits().GetFrom()) {
         TSignedSeqRange clip_range(Limits().GetFrom(),limits.GetFrom()-1);
