@@ -925,16 +925,20 @@ void CGeneModel::AddGgapExon(double ident, const string& seq, const CInDelInfo::
     _ASSERT(MyExons().empty() || !m_expecting_hole);
 
     TSignedSeqRange exon_range(TSignedSeqRange::GetEmpty());
-    CModelExon e(exon_range.GetFrom(),exon_range.GetTo(),false,false,"XX","XX",ident,seq,src);
+    CModelExon e(exon_range.GetFrom(),exon_range.GetTo(),false,false,"","",ident,seq,src);
     if (MyExons().empty())
         MyExons().push_back(e);
     else if (!infront) {
+        _ASSERT(MyExons().back().Limits().NotEmpty());
         MyExons().back().m_ssplice = true;
         e.m_fsplice = true;
+        e.m_fsplice_sig = "XX";
         MyExons().push_back(e);
     } else {
+        _ASSERT(MyExons().front().Limits().NotEmpty());
         MyExons().front().m_fsplice = true;
         e.m_ssplice = true;
+        e.m_ssplice_sig = "XX";
         MyExons().insert(MyExons().begin(),e);
     }    
     m_expecting_hole = false;
@@ -951,12 +955,16 @@ void CGeneModel::AddNormalExon(TSignedSeqRange exon_range, const string& fs, con
     else if (!infront) {
         if (!m_expecting_hole) {
             MyExons().back().m_ssplice = true;
+            if(MyExons().back().Limits().Empty())
+                MyExons().back().m_ssplice_sig = "XX";
             e.m_fsplice = true;
         }
         MyExons().push_back(e);
     } else {
         if (!m_expecting_hole) {
             MyExons().front().m_fsplice = true;
+            if(MyExons().front().Limits().Empty())
+                MyExons().front().m_fsplice_sig = "XX"; 
             e.m_ssplice = true;
         }
         MyExons().insert(MyExons().begin(),e);
