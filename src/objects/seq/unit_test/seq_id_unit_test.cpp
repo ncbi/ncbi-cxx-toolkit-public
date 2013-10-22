@@ -592,29 +592,20 @@ BOOST_AUTO_TEST_CASE(s_TestInitFromDbtag)
 
     NCBI_CHECK_THROW_SEQID(id.Reset(new CSeq_id(dbtag)));
 
-    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("GenBank", "N20001.1")));
-    BOOST_CHECK(id->IsGenbank());
-    BOOST_CHECK_EQUAL(id->GetGenbank().GetAccession(), string("N20001"));
-    BOOST_CHECK( !id->GetGenbank().IsSetName() );
-    BOOST_CHECK_EQUAL(id->GetGenbank().GetVersion(), 1);
-    BOOST_CHECK( !id->GetGenbank().IsSetRelease() );
+    // No longer supported.
+    NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GenBank", "N20001.1")));
 
-    NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GenBank", "N20001.1.1")));
-    NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GenBank", "N20001.1b")));
-    NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GenBank", "N20001.-1")));
-    NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("GenBank", "N20001.z")));
-
-    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("GenBank", "12345")));
-    BOOST_CHECK(id->IsGi());
-    BOOST_CHECK_EQUAL(id->GetGi(), GI_FROM(TIntId, 12345));
-
-    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("GenBank", 12345)));
-    BOOST_CHECK(id->IsGi());
-    BOOST_CHECK_EQUAL(id->GetGi(), GI_FROM(TIntId, 12345));
-
-    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("EMBL", "AL123456")));
+    BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("EMBL", "AL123456.7")));
     BOOST_CHECK(id->IsEmbl());
     BOOST_CHECK_EQUAL(id->GetEmbl().GetAccession(), string("AL123456"));
+    BOOST_CHECK( !id->GetEmbl().IsSetName() );
+    BOOST_CHECK_EQUAL(id->GetEmbl().GetVersion(), 7);
+    BOOST_CHECK( !id->GetEmbl().IsSetRelease() );
+
+    NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("EMBL", "AL123456.7.8")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("EMBL", "AL123456.7b")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("EMBL", "AL123456.-7")));
+    NCBI_CHECK_THROW_SEQID(id.Reset(s_NewDbtagId("EMBL", "AL123456.z")));
 
     BOOST_CHECK_NO_THROW(id.Reset(s_NewDbtagId("DDBJ", "N00068")));
     BOOST_CHECK(id->IsDdbj());
