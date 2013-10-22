@@ -3151,6 +3151,9 @@ void CChainer::CChainerImpl::SetFlagsForChains(TChainList& chains) {
                 TSignedSeqRange rf = (chain.Exons()[i].Limits() & chain.ReadingFrame());
                 if(rf.NotEmpty()) {
                     for(int j = rf.GetFrom(); j <= rf.GetTo(); ++j) {
+                        if(j < left || j > right)
+                            continue;
+
                         int jtr = amap.MapOrigToEdited(j);
                         int frame = abs(cdstr-jtr)%3;
                         if(jtr >= 0 && prot_cov[chain.Strand()][frame][j-left] > 0) {
@@ -3282,6 +3285,13 @@ CChain::CChain(SChainMember& mbr, CGeneModel* gapped_helper) : m_coverage_drop_l
     ITERATE (vector<CGeneModel*>, it, extened_parts_and_gapped) {
         const CGeneModel& align = **it;
         Extend(align, false);
+    }
+
+    NON_CONST_ITERATE(TExons, e, MyExons()) {
+        if(!e->m_fsplice)
+            e->m_fsplice_sig.clear();
+        if(!e->m_ssplice)
+            e->m_ssplice_sig.clear();
     }
 
     CalculatedSupportAndWeightFromMembers();
@@ -5500,7 +5510,8 @@ void CGnomonAnnotator_Base::MapModelsToOrigContig(TGeneModelList& models) const 
                         bad_model = true;
                         break;
                     }
-                    model.AddExon(exon, e.m_fsplice_sig, e.m_ssplice_sig);
+                    //                    model.AddExon(exon, e.m_fsplice_sig, e.m_ssplice_sig);
+                    model.AddNormalExon(exon, e.m_fsplice_sig, e.m_ssplice_sig, 0, false);
                 } else {
                     if((int)im->Exons().size() == 1){ // all real alignment was clipped
                         bad_model = true;
@@ -5512,7 +5523,8 @@ void CGnomonAnnotator_Base::MapModelsToOrigContig(TGeneModelList& models) const 
                         src.m_strand = (src.m_strand == ePlus ? eMinus : ePlus);
                     }
                     _ASSERT((int)seq.length() == src.m_range.GetLength());
-                    model.AddExon(TSignedSeqRange::GetEmpty(), "XX", "XX", e.m_ident, seq, src);
+                    //                    model.AddExon(TSignedSeqRange::GetEmpty(), "XX", "XX", e.m_ident, seq, src);
+                    model.AddGgapExon(0, seq, src, false);
                 }
 
                 if(ie < (int)im->Exons().size()-1 && (!e.m_ssplice || !im->Exons()[ie+1].m_fsplice)) // hole

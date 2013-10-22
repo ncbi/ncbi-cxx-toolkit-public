@@ -565,6 +565,8 @@ private:
 
 
     vector<CCDSInfo> m_edge_reading_frames;
+
+    friend class CChain;
 };
 
 
