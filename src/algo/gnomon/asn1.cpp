@@ -715,7 +715,7 @@ CRef<CSpliced_exon> CAnnotationASN1::CImplementationData::spliced_exon (const CM
     }
 
     if (e.m_fsplice) {
-        _ASSERT(e.m_fsplice_sig.length() == 2);
+        //        _ASSERT(e.m_fsplice_sig.length() == 2);
         if (strand==ePlus) {
             se->SetAcceptor_before_exon().SetBases(e.m_fsplice_sig);
         } else {
@@ -723,7 +723,7 @@ CRef<CSpliced_exon> CAnnotationASN1::CImplementationData::spliced_exon (const CM
         }
     }
     if (e.m_ssplice) {
-        _ASSERT(e.m_ssplice_sig.length() == 2);
+        //        _ASSERT(e.m_ssplice_sig.length() == 2);
         if (strand==ePlus) {
             se->SetDonor_after_exon().SetBases(e.m_ssplice_sig);
         } else {

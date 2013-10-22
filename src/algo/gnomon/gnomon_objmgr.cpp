@@ -109,30 +109,6 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
 
     SetTargetId(sps.GetProduct_id());
 
-    { // set support
-/*
-        int id  = GetCompartmentNum(seq_align);
-        if (id != 0) {
-            product_idref.Reset(new CSeq_id(CSeq_id::e_Local, id));
-            product_idlist.push_back(product_idref);
-        }
-
-        // all seq-align.id except the last, which we used as model's id
-        CSeq_align::TId::const_iterator it = seq_align.GetId().begin();
-        for (size_t i = 0; i < seq_align.GetId().size()-1; ++i, ++it) {
-            const CObject_id& id = **it;
-            if (id.IsId()) {
-                product_idref.Reset(new CSeq_id(CSeq_id::e_Local, id.GetId()));
-            } else if (id.IsStr()) {
-                product_idref.Reset(new CSeq_id(id.GetStr()));
-            } else {
-                continue;
-            }
-            product_idlist.push_back(product_idref);
-        }
-*/
-    }
-
     int product_len = sps.CanGetProduct_length()?sps.GetProduct_length():0;
     if (is_protein)
         product_len *=3;
@@ -149,6 +125,8 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
 
     const CSeq_id& genomic_id = sps.GetGenomic_id();
 
+    bool ggap_model= false;
+
     ITERATE(CSpliced_seg::TExons, e_it, sps.GetExons()) {
         const CSpliced_exon& exon = **e_it;
         int prod_cur_start = exon.GetProduct_start().AsSeqPos();
@@ -161,10 +139,12 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
         int nuc_cur_start = exon.GetGenomic_start();
         int nuc_cur_end = exon.GetGenomic_end();
 
-        bool cur_5_prime_splice = exon.CanGetAcceptor_before_exon() && exon.GetAcceptor_before_exon().CanGetBases() && exon.GetAcceptor_before_exon().GetBases().size()==2;
+        //        bool cur_5_prime_splice = exon.CanGetAcceptor_before_exon() && exon.GetAcceptor_before_exon().CanGetBases() && exon.GetAcceptor_before_exon().GetBases().size()==2;
+        bool cur_5_prime_splice = exon.CanGetAcceptor_before_exon() && exon.GetAcceptor_before_exon().CanGetBases();
         if (prod_prev+1 != prod_cur_start || !prev_3_prime_splice || !cur_5_prime_splice)
             AddHole();
-        prev_3_prime_splice = exon.CanGetDonor_after_exon() && exon.GetDonor_after_exon().CanGetBases() && exon.GetDonor_after_exon().GetBases().size()==2;
+        //        prev_3_prime_splice = exon.CanGetDonor_after_exon() && exon.GetDonor_after_exon().CanGetBases() && exon.GetDonor_after_exon().GetBases().size()==2;
+        prev_3_prime_splice = exon.CanGetDonor_after_exon() && exon.GetDonor_after_exon().CanGetBases();
 
         string fs, ss;
         if(exon.CanGetAcceptor_before_exon() && exon.GetAcceptor_before_exon().CanGetBases()) {
@@ -191,13 +171,13 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
         }
 
         if(!exon.CanGetGenomic_id() || !(exon.GetGenomic_id() < genomic_id || genomic_id < exon.GetGenomic_id())) {  // normal exon
-            AddExon(TSignedSeqRange(nuc_cur_start,nuc_cur_end), fs, ss, eident);
-            _ASSERT(Exons().back().Limits().NotEmpty());
+            AddNormalExon(TSignedSeqRange(nuc_cur_start,nuc_cur_end), fs, ss, eident, Strand() == eMinus);
         } else {  // genomic gap
             if(!exon.CanGetGenomic_strand())
                 NCBI_THROW(CGnomonException, eGenericError, "CSpliced_exon for gap filling must have genomic strand");
             CConstRef<objects::CSeq_id> fill_id(&exon.GetGenomic_id());
             CScope scope(*CObjectManager::GetInstance());
+            scope.AddDefaults();
 
             string transcript = GetDNASequence(fill_id,scope);
             string fill_seq = transcript.substr(nuc_cur_start, nuc_cur_end-nuc_cur_start+1);
@@ -211,7 +191,9 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
                 fill_src.m_strand = eMinus;
                 ReverseComplement(fill_seq.begin(),fill_seq.end());
             }
-            AddExon(TSignedSeqRange::GetEmpty(), fs, ss, eident, fill_seq, fill_src);
+
+            AddGgapExon(eident, fill_seq, fill_src, Strand() == eMinus);
+            ggap_model = true;
         }
         transcript_exons.push_back(TSignedSeqRange(exon.GetProduct_start().AsSeqPos(), exon.GetProduct_end().AsSeqPos()));
 
@@ -286,12 +268,25 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
 
     for (CGeneModel::TExons::const_iterator piece_begin = Exons().begin(); piece_begin != Exons().end(); ++piece_begin) {
         _ASSERT( !piece_begin->m_fsplice );
+
+        if(piece_begin->Limits().Empty()) {   // ggap
+            _ASSERT(piece_begin->m_ssplice);
+            ++piece_begin;
+            _ASSERT(piece_begin->Limits().NotEmpty());
+        }
         
         CGeneModel::TExons::const_iterator piece_end;
         for (piece_end = piece_begin; piece_end != Exons().end() && piece_end->m_ssplice; ++piece_end) ;
         _ASSERT( piece_end != Exons().end() );
+
+        CGeneModel::TExons::const_iterator piece_end_g = piece_end;
+        if(piece_end_g->Limits().Empty()) {   // ggap
+            _ASSERT(piece_end_g->m_fsplice);
+            --piece_end_g;
+            _ASSERT(piece_end_g->Limits().NotEmpty());
+        }
         
-        TSignedSeqRange piece_range(piece_begin->GetFrom(),piece_end->GetTo());
+        TSignedSeqRange piece_range(piece_begin->GetFrom(),piece_end_g->GetTo());
             
         piece_range = m_alignmap.ShrinkToRealPoints(piece_range, is_protein); // finds first projectable interval (on codon boundaries  for proteins)   
 
@@ -309,8 +304,12 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
         }
 
         _ASSERT(piece_range.NotEmpty());
-        _ASSERT(piece_range.IntersectingWith(piece_begin->Limits()) && piece_range.IntersectingWith(piece_end->Limits()));
-        Clip(piece_range, CGeneModel::eDontRemoveExons); 
+        _ASSERT(piece_range.IntersectingWith(piece_begin->Limits()) && piece_range.IntersectingWith(piece_end_g->Limits()));
+
+        if(piece_range.GetFrom() != piece_begin->GetFrom() || piece_range.GetTo() != piece_end_g->GetTo()) {
+            _ASSERT(!ggap_model);
+            Clip(piece_range, CGeneModel::eDontRemoveExons); 
+        }
             
         piece_begin = piece_end;
     }
@@ -346,19 +345,6 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
 
     if (sps.IsSetPoly_a()) {
         Status() |= CGeneModel::ePolyA;
-
-        /* 
-           This check is not needed for the modern Splign alignments
-       
-        int product_alignable_end = sps.GetPoly_a() + (is_product_reversed ? +1 : -1);
-        int product_aligned_end = (Strand() == ePlus ?
-                                   m_alignmap.MapOrigToEdited(Limits().GetTo()) :
-                                   m_alignmap.MapOrigToEdited(Limits().GetFrom()));
-
-        if (product_aligned_end == product_alignable_end) {
-            Status() |= CGeneModel::ePolyA;
-        }
-        */
     }
 
     if(seq_align.CanGetExt()) {
