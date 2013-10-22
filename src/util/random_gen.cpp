@@ -81,6 +81,7 @@
 #include <corelib/ncbidiag.hpp>
 
 #if defined(NCBI_OS_UNIX) || defined(NCBI_OS_DARWIN)
+    #include <unistd.h>
     #include <sys/types.h>
     #include <sys/stat.h>
     #include <fcntl.h>
