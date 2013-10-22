@@ -166,6 +166,7 @@ CNCActiveHandler::CNCActiveHandler(Uint8 srv_id, CNCPeerControl* peer)
 
     //Uint8 cnt = AtomicAdd(s_CntHndls, 1);
     //INFO("CNCActiveHandler, cnt=" << cnt);
+    ResetSizeRdWr();
 }
 
 CNCActiveHandler::~CNCActiveHandler(void)
@@ -1443,6 +1444,7 @@ CNCActiveHandler::x_ReadSizeToRead(void)
 
     pos += sizeof("SIZE=") - 1;
     try {
+        m_SizeToReadReq =
         m_SizeToRead = NStr::StringToUInt8(m_Response.substr(pos),
                                            NStr::fAllowTrailingSymbols);
     }

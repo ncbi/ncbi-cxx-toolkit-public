@@ -358,6 +358,22 @@ private:
     string m_ErrMsg;
     string m_SyncStartExtra;
     TNCBufferType m_ReadBuf;
+
+    Uint8 m_SizeToWriteReq;
+    Uint8 m_SizeToReadReq;
+public:
+    void AddSizeWr( Uint8 chunk) {
+        m_SizeToWriteReq += chunk;
+    }
+    Uint8 GetSizeWr(void) const {
+        return m_SizeToWriteReq;
+    }
+    Uint8 GetSizeRd(void) const {
+        return m_SizeToReadReq;
+    }
+    void ResetSizeRdWr(void) {
+        m_SizeToWriteReq = m_SizeToReadReq = 0;
+    }
 };
 
 inline void

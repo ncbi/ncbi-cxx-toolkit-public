@@ -2087,6 +2087,24 @@ CNCMessageHandler::x_CleanCmdResources(void)
         m_BlobAccess->Release();
         m_BlobAccess = NULL;
     }
+    else if (m_ActiveHub) {
+        switch (m_ParsedCmd.command->extra.proxy_cmd) {
+        case eProxyRead:
+        case eProxyReadLast:
+            print_size = true;
+            m_BlobSize = m_ActiveHub->GetHandler()->GetSizeRd();
+            GetDiagCtx()->SetBytesWr(m_BlobSize);
+            break;
+        case eProxyWrite:
+            print_size = true;
+            m_BlobSize = m_ActiveHub->GetHandler()->GetSizeWr();
+            GetDiagCtx()->SetBytesRd(m_BlobSize);
+            break;
+        default:
+            break;
+        }
+        m_ActiveHub->GetHandler()->ResetSizeRdWr();
+    }
 
     if (x_IsFlagSet(fRunsInStartedSync)) {
         if (cmd_status == eStatus_OK  ||  x_IsFlagSet(fSyncCmdSuccessful))
@@ -2366,6 +2384,7 @@ CNCMessageHandler::x_ReadBlobChunkLength(void)
     if (m_ActiveHub) {
         CSrvSocketTask* active_sock = m_ActiveHub->GetHandler()->GetSocket();
         active_sock->WriteData(&m_ChunkLen, sizeof(m_ChunkLen));
+        m_ActiveHub->GetHandler()->AddSizeWr(m_ChunkLen);
         StartProxyTo(active_sock, m_ChunkLen);
         if (IsProxyInProgress())
             return NULL;
