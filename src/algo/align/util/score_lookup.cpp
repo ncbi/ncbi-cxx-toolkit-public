@@ -31,6 +31,7 @@
 
 #include <ncbi_pch.hpp>
 #include <algo/sequence/gene_model.hpp>
+#include <algo/sequence/internal_stops.hpp>
 #include <algo/align/util/algo_align_util_exceptions.hpp>
 #include <algo/align/util/score_lookup.hpp>
 
@@ -854,6 +855,12 @@ public:
 
     virtual double Get(const CSeq_align& align, CScope* scope) const
     {
+
+        if (align.GetSegs().IsSpliced()) {
+            CInternalStopFinder stop_finder(*scope);
+            return stop_finder.FindStops(align).size();
+        }
+
         double score = 0;
 
         //

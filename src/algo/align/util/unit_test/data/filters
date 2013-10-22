@@ -5,7 +5,7 @@ subject = NT_011515.12
 query >= subject
 10
 query < subject
-0 1 2 3 4 5 6 7 8 9
+0 1 2 3 4 5 6 7 8 9 11
 coalesce(pct_coverage_hiqual,100) > 99.99
 2 5 10
 5prime_unaligned > 50
@@ -29,7 +29,7 @@ cds_end > 4000
 SUB(cds_end, 1000) > 3000
 2 9
 cds_pct_coverage = 100
-1 2
+1 2 11
 cds_pct_identity = 100
 1
 is_seg_type(spliced) = 0
@@ -37,13 +37,13 @@ is_seg_type(spliced) = 0
 exon_count > 1
 2 4 9 10
 not exon_count > 1
-0 1 3 5 6 7 8
+0 1 3 5 6 7 8 11
 exon_count >= 1
-2 3 4 6 7 8 9 10
+2 3 4 6 7 8 9 10 11
 exon_count != 1
 2 4 9 10
 exon_count <= 1
-3 6 7 8
+3 6 7 8 11
 last_splice_site > 3000
 2 9
 internal_unaligned > 2
@@ -61,9 +61,9 @@ max_intron_len > 10000
 min_exon_len < 30
 2
 pct_coverage > 97.5
-0 1 2 3 4 5 10
+0 1 2 3 4 5 10 11
 symmetric_overlap_min > 97.5
-0 1 2 3 4
+0 1 2 3 4 11
 symmetric_overlap > 2
 5
 query_start > 50
@@ -73,7 +73,7 @@ subject_start < 50
 query_end < 500
 5 7 8
 subject_end > 10000000
-8
+8 11
 query_taxid = 8034
 5
 subject_taxid = 7227
@@ -89,19 +89,23 @@ gap_count = 0
 gap_basecount > 100
 0
 query_gap_length < 20
-1 2 3 6 7 8 9 10
+1 2 3 6 7 8 9 10 11
 subject_gap_length < 20
-1 2 3 4 6 8 9 10
+1 2 3 4 6 8 9 10 11
 product_gap_length < 20
-2 3 6 7 8 9 10
+2 3 6 7 8 9 10 11
 genomic_gap_length < 20
-2 3 4 6 8 9 10
+2 3 4 6 8 9 10 11
 MUL(subject_length,product_length) < 2000000000
 5 10
 DIV(query_length,subject_length) < .0001
-3 7 8
+3 7 8 11
 cds_internal_stops == 0
 1 2 3 4 5 6 7 8 9 10
+cds_internal_stops > 0
+11
+cds_internal_stops == 9
+11
 frame > 10
 0 1
 sframe > 5
@@ -109,13 +113,13 @@ sframe > 5
 qframe > 5
 0
 start_codon = 1
-1 2 4 5 10
+1 2 4 5 10 11
 stop_codon = 1
-1 2 4 5 9 10
+1 2 4 5 9 10 11
 not 5prime_exon_len >= 500
-0 1 2 3 4 5 6 7 8 9
+0 1 2 3 4 5 6 7 8 9 11
 not 3prime_exon_len >= 500
-0 1 3 4 5 6 7 8 10
+0 1 3 4 5 6 7 8 10 11
 5prime_exon_len < 500
 2 4 9
 3prime_exon_len < 500
@@ -127,7 +131,7 @@ not 3prime_exon_len >= 500
 query_strand = subject_strand
 0 1 2 3 6 7 8 9
 query_strand = +
-0 1 2 7 8 9
+0 1 2 7 8 9 11
 query_strand = -
 3 6
 query_strand = ?
@@ -135,4 +139,4 @@ query_strand = ?
 subject_strand = +
 0 1 2 5 7 8 9 10
 subject_strand = -
-3 4 6
+3 4 6 11

@@ -4212,3 +4212,72 @@ Seq-align ::= {
     }
   }
 } 
+Seq-align ::= {
+  type disc,
+  dim 2,
+  score {
+    {
+      id str "length",
+      value int 2088
+    },
+    {
+      id str "num_ident",
+      value int 2083
+    },
+    {
+      id str "gapopen",
+      value int 4
+    },
+    {
+      id str "gap_bases",
+      value int 5
+    },
+    {
+      id str "pct_identity_gap",
+      value real { 99760536398467437, 10, -15 }
+    },
+    {
+      id str "pct_identity_ungap",
+      value real { 1, 10, 2 }
+    },
+    {
+      id str "pct_identity_gapopen_only",
+      value real { 99808337326305704, 10, -15 }
+    },
+    {
+      id str "pct_coverage",
+      value real { 99952015355086374, 10, -15 }
+    },
+    {
+      id str "pct_coverage_hiqual",
+      value real { 99952015355086374, 10, -15 }
+    }
+  },
+  segs spliced {
+    product-id gi 178405,
+    genomic-id gi 224514917,
+    product-strand plus,
+    genomic-strand minus,
+    product-type transcript,
+    exons {
+      {
+        product-start nucpos 0,
+        product-end nucpos 2083,
+        genomic-start 78159147,
+        genomic-end 78161233,
+        parts {
+          match 159,
+          genomic-ins 1,
+          match 25,
+          genomic-ins 1,
+          match 47,
+          product-ins 1,
+          match 361,
+          genomic-ins 2,
+          match 1491
+        }
+      }
+    },
+    product-length 2084
+  }
+}
