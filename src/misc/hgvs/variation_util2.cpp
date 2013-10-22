@@ -2871,7 +2871,11 @@ set<int> GetFocusLocusIDs(const CBioseq_Handle& bsh)
         if(transcript_seq_ids.find(product_id) == transcript_seq_ids.end()) {
             continue;
         }
-        ITERATE(CSeq_feat::TDbxref, it, mf.GetDbxref()) {
+
+        //note: using temporary reference "dbxrefs" is necessary because
+        //"ITERATE(CSeq_feat::TDbxref, it, mf.GetDbxref())", assert-fails in stl-safe-iter mode
+        const CSeq_feat::TDbxref& dbxrefs = mf.GetDbxref(); 
+        ITERATE(CSeq_feat::TDbxref, it, dbxrefs) {
             const CDbtag& dbtag = **it;
             if(dbtag.GetDb() == "GeneID" || dbtag.GetDb() == "LocusID") {
                 gene_ids.insert(dbtag.GetTag().GetId());
@@ -3094,7 +3098,11 @@ int CVariationUtil::CVariantPropertiesIndex::s_GetGeneID(const CMappedFeat& mf, 
 {
     int gene_id = 0;
     if(mf.IsSetDbxref()) {
-        ITERATE(CSeq_feat::TDbxref, it, mf.GetDbxref()) {
+
+        //note: using temporary reference "dbxrefs" is necessary because
+        //"ITERATE(CSeq_feat::TDbxref, it, mf.GetDbxref())", assert-fails in stl-safe-iter mode
+        const CSeq_feat::TDbxref& dbxrefs = mf.GetDbxref(); 
+        ITERATE(CSeq_feat::TDbxref, it, dbxrefs) {
             const CDbtag& dbtag = **it;
             if(dbtag.GetDb() == "GeneID" && dbtag.GetTag().IsId()) {
                 gene_id = dbtag.GetTag().GetId();
