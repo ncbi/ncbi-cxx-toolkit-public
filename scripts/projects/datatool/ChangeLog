@@ -116,6 +116,17 @@ Added processing of JSON data.
 When generating C++ code, corrected conversion of enum data defaults. 
 Fixed bug in data type guessing.
 
+October 22, 2013
+version 2.11.0
+Added support of XML nillable elements.
+Added support for tag class and implicit tagging in ASN specifications.
+Added support for component inclusion (COMPONENTS OF) in ASN specification.
+Added hint-level support of bit-fields semantics for named INTEGERs.
+Corrected code generation and serialiation of XML elements with default.
+Corrected code generation for alias to alias ASN data types.
+Corrected argument processing to not load same data specification twice.
+Modified code generation behavior to delete generated files on specification parsing error.
+
 
 
 
