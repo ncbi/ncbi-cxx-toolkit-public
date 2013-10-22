@@ -398,14 +398,11 @@ private:
         struct SCdregion
         {
             CConstRef<CSeq_feat> cdregion_feat;
-
-            //for now will create mappers on the fly
-            //CRef<CSeq_loc_Mapper> prot2parent_mapper;
-            //CRef<CSeq_loc_Mapper> parent2prot_mapper;
-
             bool operator<(const SCdregion& other) const
             {
-                return this->cdregion_feat < other.cdregion_feat;
+                return !this->cdregion_feat ? false
+                     : !other.cdregion_feat ? true
+                     : *this->cdregion_feat < *other.cdregion_feat;
             }
         };
         typedef vector<SCdregion> TCdregions;
