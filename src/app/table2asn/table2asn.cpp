@@ -571,10 +571,6 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     ProcessSecretFiles(*entry);
 
-    bool need_update_date = m_context.ApplyCreateDate(*entry);
-    if (need_update_date)
-        m_context.ApplyUpdateDate(*entry);
-
     m_reader->ApplyAdditionalProperties(*entry);
 
     CFeatureTableReader fr(m_logger);
@@ -584,6 +580,11 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     fr.MergeCDSFeatures(*entry);
     entry->Parentize();
+
+    bool need_update_date = m_context.ApplyCreateDate(*entry);
+    if (need_update_date)
+        m_context.ApplyUpdateDate(*entry);
+
 
     if (m_context.m_RemoteTaxonomyLookup)
     {

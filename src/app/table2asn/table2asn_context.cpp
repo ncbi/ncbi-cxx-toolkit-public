@@ -70,6 +70,22 @@ USING_SCOPE(objects);
 namespace
 {
 
+bool x_ApplyCreateDate(CSeq_entry& entry)
+{
+    bool need_update = false;
+    if (CTable2AsnContext::LocateDesc(entry.SetDescr(), CSeqdesc::e_Create_date).NotNull())
+        need_update = true;
+    else
+    {
+        CRef<CSeqdesc> create_date(new CSeqdesc);
+        CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
+        create_date->SetCreate_date(*date);
+
+        entry.SetDescr().Set().push_back(create_date);
+    }
+    return need_update;
+}
+
 void x_ApplySourceQualifiers(CBioseq& bioseq, CSourceModParser& smp)
 {
    CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
@@ -262,21 +278,12 @@ bool CTable2AsnContext::ApplyCreateDate(CSeq_entry& entry) const
     switch(entry.Which())
     {
     case CSeq_entry::e_Seq:
-        if (LocateDesc(entry.SetDescr(), CSeqdesc::e_Create_date).NotNull())
-            need_update = true;
-        else
-        {
-            CRef<CSeqdesc> create_date(new CSeqdesc);
-            CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
-            create_date->SetCreate_date(*date);
-
-            entry.SetSeq().SetDescr().Set().push_back(create_date);
-        }
+        need_update |= x_ApplyCreateDate(entry);
         break;
     case CSeq_entry::e_Set:
         NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
         {
-            need_update |= ApplyCreateDate(**it);
+            need_update |= x_ApplyCreateDate(**it);
         }
         break;
     default:
@@ -286,7 +293,7 @@ bool CTable2AsnContext::ApplyCreateDate(CSeq_entry& entry) const
 }
 
 // update-date should go only to top-level bioseq-set or bioseq
-CRef<CSeqdesc> CTable2AsnContext::LocateDesc(CSeq_descr& descr, CSeqdesc::E_Choice which) const
+CRef<CSeqdesc> CTable2AsnContext::LocateDesc(CSeq_descr& descr, CSeqdesc::E_Choice which)
 {
     NON_CONST_ITERATE(CSeq_descr::Tdata, it, descr.Set())
     {

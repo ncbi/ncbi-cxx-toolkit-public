@@ -669,6 +669,11 @@ void CMultiReader::ApplyAdditionalProperties(CSeq_entry& entry)
                 GetSeqId(id, m_context);
                 entry.SetSet().SetId().Assign(*id);
             }
+            if (!entry.SetSet().IsSetClass())
+            {
+                entry.SetSet().SetClass(CBioseq_set_Base::eClass_genbank);
+            }
+#if 0
             if (m_context.m_GenomicProductSet)
             {
                 //entry.SetSet().SetClass(CBioseq_set_Base::eClass_gen_prod_set);
@@ -677,6 +682,7 @@ void CMultiReader::ApplyAdditionalProperties(CSeq_entry& entry)
             {
                 //entry.SetSet().SetClass(CBioseq_set_Base::eClass_nuc_prot);
             }
+#endif
             NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
             {
                 ApplyAdditionalProperties(**it);

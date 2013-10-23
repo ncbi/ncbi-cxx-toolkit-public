@@ -91,7 +91,8 @@ public:
     objects::CBioSource& SetBioSource(objects::CSeq_descr& SD);
     bool ApplyCreateDate(objects::CSeq_entry& entry) const;
     void ApplyUpdateDate(objects::CSeq_entry& entry) const;
-    CRef<objects::CSeqdesc> LocateDesc(objects::CSeq_descr& descr, objects::CSeqdesc::E_Choice which) const;
+    static
+    CRef<objects::CSeqdesc> LocateDesc(objects::CSeq_descr& descr, objects::CSeqdesc::E_Choice which);
     void ApplyAccession(objects::CSeq_entry& entry) const;
     void HandleGaps(objects::CSeq_entry& entry) const;
     CRef<CSerialObject> 

@@ -2290,12 +2290,15 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                     return false;
                 case eQual_protein_id:
                     try {
-                        CRef<CSeq_id> pProteinId( 
-                            new CSeq_id(
-                                val, 
-                                CSeq_id::fParse_ValidLocal |
-                                CSeq_id::fParse_PartialOK  ) );
-                        sfp->SetProduct().SetWhole( *pProteinId );
+                        CBioseq::TId ids;
+                        CSeq_id::ParseIDs(ids, val,                                
+                                 CSeq_id::fParse_ValidLocal
+                               | CSeq_id::fParse_PartialOK);
+                        if (ids.size()>1)
+                        {
+                            x_AddGBQualToFeature (sfp, qual, val); // need to store all ids
+                        }
+                        sfp->SetProduct().SetWhole(*ids.front());
                         return true;
                     } catch( CSeqIdException & ) {
                         return false;
