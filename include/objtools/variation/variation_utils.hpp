@@ -63,6 +63,7 @@ public:
 protected:
     static void x_rotate_left(string &v);
     static void x_rotate_right(string &v);
+    static string x_CompactifySeq(string a);
     
 #ifdef SEQVEC_CACHE
     static CSeqVector m_seq_vec;

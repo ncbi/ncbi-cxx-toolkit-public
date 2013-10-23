@@ -296,6 +296,27 @@ void CVariationNormalization_base_cache::x_rotate_right(string &v)
     std::rotate(v.rbegin(), v.rbegin() + 1, v.rend());
 }
 
+string CVariationNormalization_base_cache::x_CompactifySeq(string a)
+{
+    string result = a;
+    for (int i=1; i<= a.size() / 2; i++)
+        if (a.size() % i == 0)
+        {
+            int k = a.size() / i;
+            string b = a.substr(0,i);
+            string c;
+            for (int j=0; j < k; j++)
+                c += b;
+            if (c == a)
+            {
+                result = b;
+                break;
+            }
+
+        }
+    return result;
+}
+
 void CVariationNormalization_base_cache::x_PrefetchSequence(CScope &scope, CRef<CSeq_id> seq_id)
 {
     string accession;
@@ -419,9 +440,16 @@ void CVariationNormalization_base<T>::x_ProcessInstance(CVariation_inst &inst, C
         }
         if (!a.empty() && type == CVariation_inst::eType_ins) 
         {
-            bool found = x_ProcessShift(a, pos_left,pos_right);
+            string compact = x_CompactifySeq(a);
+            string orig_compact = compact;
+            bool found = x_ProcessShift(compact, pos_left,pos_right);
             if (found)
             {
+                while (orig_compact != compact)
+                {
+                    x_rotate_left(a);
+                    x_rotate_left(orig_compact);
+                }
                 if (new_pos_left == -1)
                     new_pos_left = pos_left;
                 else if (new_pos_left != pos_left)
