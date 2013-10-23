@@ -42,7 +42,6 @@
 #include <html/html_exception.hpp>
 #include <html/html.hpp>
 #include <html/nodemap.hpp>
-#include <html/jsmenu.hpp>
 
 
 /** @addtogroup HTMLcomp
@@ -258,27 +257,6 @@ public:
     /// only once.
     static void CacheTemplateFiles(ECacheTemplateFiles caching);
 
-    /// Enable using popup menus. Set URL for popup menu library.
-    ///
-    /// @param type
-    ///   Menu type to enable
-    /// @param menu_script_url
-    ///   An URL for popup menu library.
-    ///   If "menu_lib_url" is not defined, then using default URL.
-    /// @param use_dynamic_menu
-    ///   Enable/disable using dynamic popup menus (eSmith menu only)
-    ///   (default it is disabled).
-    /// Note:
-    ///   - If we not change value "menu_script_url", namely use default
-    ///     value for it, then we can skip call this function.
-    ///   - Dynamic menues work only in new browsers. They use one container
-    ///     for all menus instead of separately container for each menu in 
-    ///     nondynamic mode. This parameter have effect only with eSmith
-    ///     menu type.
-    void EnablePopupMenu(CHTMLPopupMenu::EType type = CHTMLPopupMenu::eSmith,
-                         const string& menu_script_url= kEmptyStr,
-                         bool use_dynamic_menu = false);
-
     /// Tag mappers. 
     virtual void AddTagMap(const string& name, BaseTagMapper* mapper);
     virtual void AddTagMap(const string& name, CNCBINode*     node);
@@ -292,8 +270,7 @@ private:
     /// Read template into string.
     ///
     /// Used by CreateTemplate() to cache templates and add
-    /// on the fly modifications into it, like adding JS code for
-    /// used popup menus.
+    /// on the fly modifications into it.
     void x_LoadTemplate(CNcbiIstream& is, string& str);
 
     /// Create and print template.
@@ -349,24 +326,6 @@ private:
     size_t      m_TemplateSize;   ///< Size of input, if known (0 otherwise)
 
     static ECacheTemplateFiles sm_CacheTemplateFiles;
-
-    /// Popup menu info structure.
-    struct SPopupMenuInfo {
-        SPopupMenuInfo() {
-            m_UseDynamicMenu = false;
-        };
-        SPopupMenuInfo(const string& url, bool use_dynamic_menu) {
-            m_Url = url;
-            m_UseDynamicMenu = use_dynamic_menu;
-        }
-        string m_Url;             ///< Menu library URL 
-        bool   m_UseDynamicMenu;  ///< Dynamic/static. Only for eSmith type.
-    };
-
-    /// Popup menus usage info.
-    typedef map<CHTMLPopupMenu::EType, SPopupMenuInfo> TPopupMenus;
-    TPopupMenus m_PopupMenus;
-    bool        m_UsePopupMenus;
 };
 
 

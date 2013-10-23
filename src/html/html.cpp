@@ -160,46 +160,6 @@ void CHTMLNode::SetEventHandler(const EHTML_EH_Attribute event,
 }
 
 
-void CHTMLNode::AttachPopupMenu(const CHTMLPopupMenu* menu,
-                                EHTML_EH_Attribute    event,
-                                TPopupMenuFlags       flags)
-{
-    if ( !menu ) {
-        return;
-    }
-    const string kStopEvent = " return false;";
-    bool cancel_default_event = ((flags & fPM_EnableDefaultEvent) == 0);
-    string show, hide;
-
-    switch (menu->GetType()) {
-        case CHTMLPopupMenu::eSmith: 
-            show = menu->ShowMenu();
-            if ( cancel_default_event ) {
-                show += kStopEvent;
-            }
-            SetEventHandler(event, show);
-            return;
-        case CHTMLPopupMenu::eKurdin: 
-        case CHTMLPopupMenu::eKurdinConf:
-            {
-                show = menu->ShowMenu();
-                hide = menu->HideMenu();
-                if ( cancel_default_event ) {
-                    show += kStopEvent;
-                    hide += kStopEvent;
-                }
-                SetEventHandler(event, show);
-                SetEventHandler(eHTML_EH_MouseOut, hide);
-            }
-            return;
-        case CHTMLPopupMenu::eKurdinSide:
-            AppendHTMLText(menu->ShowMenu());
-            return;
-    }
-    _TROUBLE;
-}
-
-
 // <@XXX@> mapping tag node
 
 CHTMLTagNode::CHTMLTagNode(const char* name)
@@ -794,91 +754,6 @@ void CHTML_html::Init(void)
     return;
 }
 
-void CHTML_html::EnablePopupMenu(CHTMLPopupMenu::EType type,
-                                 const string& menu_script_url,
-                                 bool use_dynamic_menu)
-{
-    SPopupMenuInfo info(menu_script_url, use_dynamic_menu);
-    m_PopupMenus[type] = info;
-}
-
-static bool s_CheckUsePopupMenus(const CNCBINode* node, 
-                                 CHTMLPopupMenu::EType type)
-{
-    if ( !node  ||  !node->HaveChildren() ) {
-        return false;
-    }
-    ITERATE ( CNCBINode::TChildren, i, node->Children() ) {
-        const CNCBINode* cnode = node->Node(i);
-        if ( dynamic_cast<const CHTMLPopupMenu*>(cnode) ) {
-            const CHTMLPopupMenu* menu = 
-                dynamic_cast<const CHTMLPopupMenu*>(cnode);
-            if ( menu->GetType() == type )
-                return true;
-        }
-        if ( cnode->HaveChildren()  &&  s_CheckUsePopupMenus(cnode, type)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-CNcbiOstream& CHTML_html::PrintChildren(CNcbiOstream& out, TMode mode)
-{
-    // Check mode
-    switch (mode) {
-        case ePlainText:
-            return CParent::PrintChildren(out, mode);
-        case eHTML:
-        case eXHTML:
-            break;
-    }
-    
-    // Check for use popup menus
-    bool use_popup_menus = false;
-    for (int t = CHTMLPopupMenu::ePMFirst; t <= CHTMLPopupMenu::ePMLast; t++ )    {
-        CHTMLPopupMenu::EType type = (CHTMLPopupMenu::EType)t;
-        if ( m_PopupMenus.find(type) == m_PopupMenus.end() ) {
-            if ( s_CheckUsePopupMenus(this, type) ) {
-                EnablePopupMenu(type);
-                use_popup_menus = true;
-            }
-        } else {
-            use_popup_menus = true;
-        }
-    }
-
-    if ( !use_popup_menus  ||  !HaveChildren() ) {
-        return CParent::PrintChildren(out, mode);
-    }
-
-    NON_CONST_ITERATE ( TChildren, i, Children() ) {
-        if ( dynamic_cast<CHTML_head*>(Node(i)) ) {
-            for (int t = CHTMLPopupMenu::ePMFirst;
-                 t <= CHTMLPopupMenu::ePMLast; t++ ) {
-                CHTMLPopupMenu::EType type = (CHTMLPopupMenu::EType)t;
-                TPopupMenus::const_iterator info = m_PopupMenus.find(type);
-                if ( info != m_PopupMenus.end() ) {
-                    Node(i)->AppendChild(new CHTMLText(
-                        CHTMLPopupMenu::GetCodeHead(type,info->second.m_Url)));
-                }
-            }
-        } else if ( dynamic_cast<CHTML_body*>(Node(i)) ) {
-            for (int t = CHTMLPopupMenu::ePMFirst;
-                 t <= CHTMLPopupMenu::ePMLast; t++ ) {
-                CHTMLPopupMenu::EType type = (CHTMLPopupMenu::EType)t;
-                TPopupMenus::const_iterator info = m_PopupMenus.find(type);
-                if ( info != m_PopupMenus.end() ) {
-                    Node(i)->AppendChild(new CHTMLText(
-                        CHTMLPopupMenu::GetCodeBody(type, info->second.m_UseDynamicMenu)));
-                }
-            }
-        }
-    }
-    return CParent::PrintChildren(out, mode);
-}
-
-
 CHTML_tr::CHTML_tr(void)
     : CParent("tr"), m_Parent(0)
 {
@@ -984,7 +859,7 @@ SIZE_TYPE CHTML_tr::GetTextLength(TMode mode)
         Node(i)->Print(sout, mode);
         cols++;
     }
-    SIZE_TYPE textlen = sout.pcount();
+    SIZE_TYPE textlen = (SIZE_TYPE)sout.pcount();
 
     switch (mode) {
         case ePlainText:

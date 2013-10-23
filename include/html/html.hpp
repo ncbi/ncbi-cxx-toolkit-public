@@ -38,7 +38,6 @@
 
 #include <corelib/ncbiobj.hpp>
 #include <html/node.hpp>
-#include <html/jsmenu.hpp>
 #include <html/htmlhelper.hpp>
 
 
@@ -226,23 +225,6 @@ public:
     string GetEventHandlerName(const EHTML_EH_Attribute event) const;
     // Set tag event handler.
     void SetEventHandler(const EHTML_EH_Attribute event, const string& value);
-
-    /// Popup menu flags.
-    enum EPopupMenuFlags {
-        fPM_EnableDefaultEvent = (1 << 0),
-        fPM_Default            = 0
-    };
-    typedef int TPopupMenuFlags;   ///< Binary OR of "EPopupMenuFlags"
-
-    // Attach the specified popup menu to HTML node.
-    // Popup menu will be shown when the "event" occurs.
-    // NOTES:
-    //   2) For eKurdin menu type the parameter "event" cannot be an
-    //      eHTML_EH_MouseOut, because it is used to hide the menu.
-    //   3) For eKurdinSide menu type the event parameters are not used.
-    void AttachPopupMenu(const CHTMLPopupMenu*  menu,
-                         EHTML_EH_Attribute     event = eHTML_EH_MouseOver,
-                         TPopupMenuFlags        flags = fPM_Default);
 };
 
 
@@ -658,42 +640,9 @@ class NCBI_XHTML_EXPORT CHTML_html : public CHTMLElement
 {
     // CParent, constructors, destructor.
     DECLARE_HTML_ELEMENT_COMMON_WITH_INIT(html, CHTMLElement);
-   
-    // Enable using popup menus, set URL for popup menu library.
-    // If "menu_lib_url" is not defined, then using default URL.
-    // use_dynamic_menu - enable/disable using dynamic popup menus 
-    // (default it is disabled).
-    // NOTE: 1) If we not change value "menu_script_url", namely use default
-    //          value for it, then we can skip call this function.
-    //       2) Dynamic menu work only in new browsers. They use one container
-    //          for all menus instead of separately container for each menu in 
-    //          nondynamic mode. This parameter have effect only with eSmith
-    //          menu type.
-    void EnablePopupMenu(CHTMLPopupMenu::EType type = CHTMLPopupMenu::eSmith,
-                         const string&         menu_script_url  = kEmptyStr,
-                         bool                  use_dynamic_menu = false);
 private:
     // Init members.
     void Init(void);
-    
-    // Print all self childrens (automatic include code for support 
-    // popup menus, if it needed).
-    virtual CNcbiOstream& PrintChildren(CNcbiOstream& out, TMode mode);
-
-    // The popup menu info structure.
-    struct SPopupMenuInfo {
-        SPopupMenuInfo() 
-            : m_UseDynamicMenu(false)
-        { };
-        SPopupMenuInfo(const string& url, bool use_dynamic_menu)
-            : m_Url(url), m_UseDynamicMenu(use_dynamic_menu)
-        { }
-        string m_Url;
-        bool   m_UseDynamicMenu; // Only for eSmith menu type.
-    };
-    // The popup menus usage info.
-    typedef map<CHTMLPopupMenu::EType, SPopupMenuInfo> TPopupMenus;
-    TPopupMenus m_PopupMenus;
 };
 
 
