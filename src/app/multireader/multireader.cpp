@@ -349,6 +349,11 @@ void CMultiReaderApp::Init(void)
         true );
     
     arg_desc->AddFlag(
+        "as-real",
+        "generate real value data",
+        true );
+    
+    arg_desc->AddFlag(
         "as-graph",
         "generate graph object",
         true );
@@ -837,8 +842,9 @@ void CMultiReaderApp::xSetFlags(
             m_iFlags |= CWiggleReader::fJoinSame;
         }
         //by default now. But still tolerate if explicitly specified.
-        m_iFlags |= CWiggleReader::fAsByte;
-
+        if (!args["as-real"]) {
+            m_iFlags |= CWiggleReader::fAsByte;
+        }
         if ( args["as-graph"] ) {
             m_iFlags |= CWiggleReader::fAsGraph;
         }
