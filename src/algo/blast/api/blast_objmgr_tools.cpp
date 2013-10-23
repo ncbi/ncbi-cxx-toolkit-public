@@ -125,6 +125,10 @@ CBlastQuerySourceOM::x_AutoDetectGeneticCodes(void)
             CRef<CBlastSearchQuery> query = 
                 m_QueryVector->GetBlastSearchQuery(i);
 
+            if((m_Options) && (m_Options->GetQueryGeneticCode() != BLAST_GENETIC_CODE)) {
+            	query->SetGeneticCodeId(m_Options->GetQueryGeneticCode());
+            }
+
             if (query->GetGeneticCodeId() != BLAST_GENETIC_CODE) {
                 // presumably this has already been set, so skip fetching it
                 // again
@@ -146,6 +150,10 @@ CBlastQuerySourceOM::x_AutoDetectGeneticCodes(void)
     } else {
         _ASSERT(m_TSeqLocVector);
         NON_CONST_ITERATE(TSeqLocVector, sseqloc, *m_TSeqLocVector) {
+
+        	if((m_Options) && (m_Options->GetQueryGeneticCode() != BLAST_GENETIC_CODE)) {
+        		sseqloc->genetic_code_id = m_Options->GetQueryGeneticCode();
+            }
 
             if (sseqloc->genetic_code_id != BLAST_GENETIC_CODE) {
                 // presumably this has already been set, so skip fetching it
