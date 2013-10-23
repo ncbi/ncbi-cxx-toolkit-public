@@ -215,20 +215,6 @@ void CGnomonAnnotator::Predict(TSignedSeqPos llimit, TSignedSeqPos rlimit, TGene
     }
 
     do {
-        /*
-        while( right <= rlimit ) {
-            bool close = false;
-            ITERATE(TGeneModelList, it_c, aligns) {
-                if ((it_c->Type() & CGeneModel::eWall)==0 &&
-                    it_c->MaxCdsLimits().GetFrom()-margin < right && right < it_c->MaxCdsLimits().GetTo()+margin)  {
-                    close = true;
-                    right = it_c->MaxCdsLimits().GetTo()+margin;
-                    break;
-                }
-            }
-            if(!close) break;
-        }
-        */
         for( ; right < rlimit && busy_spots[right] != 0; ++right);
             
         if (right + (right-left)/2 >= rlimit) {
@@ -305,8 +291,14 @@ void CGnomonAnnotator::Predict(TSignedSeqPos llimit, TSignedSeqPos rlimit, TGene
         } else if (partial_start < left+1000) {
             do_it_again=true;
         } else if (partial_start < right) {
-            left = partial_start-100;
-            leftanchor = false;
+            int new_left = partial_start-100; 
+            for( ; new_left > left && busy_spots[new_left] != 0; --new_left);
+            if(new_left > left+1000) {
+                left = new_left;
+                leftanchor = false;
+            } else {
+                do_it_again=true;
+            }
         } else {
             left = (left+right)/2+1;
             leftanchor = false;
@@ -575,6 +567,17 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
                     if(((*im)->Type()&CGeneModel::eNested)) {
                         nested.back().SetType(nested.back().Type()-CGeneModel::eNested);  // remove flag to allow ab initio extension
                     }
+
+                    if(nested.back().HasStart() && !Include(hosting_interval,nested.back().MaxCdsLimits())) {
+                        CCDSInfo cds = nested.back().GetCdsInfo();
+                        if(nested.back().Strand() == ePlus)
+                            cds.Set5PrimeCdsLimit(cds.Start().GetFrom());
+                        else
+                            cds.Set5PrimeCdsLimit(cds.Start().GetTo());
+                        nested.back().SetCdsInfo(cds);
+                    }
+                        
+
 #ifdef _DEBUG 
                     nested.back().AddComment("partialnested");
 #endif    
