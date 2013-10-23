@@ -5535,7 +5535,6 @@ sv_objects needs general
 sv_objects needs xncbi
 sv_objects needs xser
 sv_objects needs xutil
-sybase_os needs clog
 sybdb_ftds64 needs tds_ftds64
 taxon needs xncbi
 taxon needs xser
