@@ -101,7 +101,7 @@ MUL(subject_length,product_length) < 2000000000
 DIV(query_length,subject_length) < .0001
 3 7 8 11
 cds_internal_stops == 0
-1 2 3 4 5 6 7 8 9 10
+1 2 4 5 9 10
 cds_internal_stops > 0
 11
 cds_internal_stops == 9
