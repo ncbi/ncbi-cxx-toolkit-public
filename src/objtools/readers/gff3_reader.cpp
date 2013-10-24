@@ -194,8 +194,9 @@ bool CGff3Reader::x_UpdateAnnotFeature(
     if (!record.InitializeFeature(m_iFlags, pFeature)) {
         return false;
     }
-    if (record.Type() == "CDS") {
-        x_FeatureSetXref(record, pFeature);
+    
+    if (!x_FeatureSetXref(record, pFeature)) {
+        return false;
     }
 
     if (! x_AddFeatureToAnnot( pFeature, pAnnot )) {
