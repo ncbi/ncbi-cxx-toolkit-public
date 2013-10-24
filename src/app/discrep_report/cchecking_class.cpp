@@ -49,6 +49,7 @@ using namespace sequence;
 string strtmp;
 static CDiscRepInfo  thisInfo;
 static CDiscTestInfo thisTest;
+static CTestGrp      thisGrp;
 
 // unused
 bool CCheckingClass :: CanGetOrgMod(const CBioSource& biosrc)
@@ -224,9 +225,9 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
   thisTest.is_Subsrc_run = false;
   thisTest.is_TaxCflts_run = false;
 
-  GoTests(CRepConfig :: tests_on_SubmitBlk, *seq_entry);
+  GoTests(thisGrp.tests_on_SubmitBlk, *seq_entry);
 
-  if (!CRepConfig::tests_on_SeqEntry_feat_desc.empty()) {
+  if (!thisGrp.tests_on_SeqEntry_feat_desc.empty()) {
      CSeq_entry_Handle seq_entry_h = thisInfo.scope->GetSeq_entryHandle(*seq_entry);
 
      for (CFeat_CI feat_it(seq_entry_h, sel_seqfeat_4_seq_entry); feat_it; ++feat_it) {
@@ -252,10 +253,10 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
 
      CollectSeqdescFromSeqEntry(seq_entry_h);
 
-     GoTests(CRepConfig :: tests_on_SeqEntry_feat_desc, *seq_entry);
+     GoTests(thisGrp.tests_on_SeqEntry_feat_desc, *seq_entry);
   }
 
-  GoTests(CRepConfig :: tests_on_SeqEntry, *seq_entry);
+  GoTests(thisGrp.tests_on_SeqEntry, *seq_entry);
 
   // clean
   x_Clean();
@@ -272,7 +273,7 @@ void CCheckingClass :: CheckBioseqSet ( CBioseq_set& bioseq_set)
 {
   // cerr << "CheckBioseqSet " << CTime(CTime::eCurrent).AsString() << endl;
    thisTest.is_BioSet_run = false;
-   GoTests(CRepConfig::tests_on_BioseqSet, bioseq_set); 
+   GoTests(thisGrp.tests_on_BioseqSet, bioseq_set); 
   // cerr << "end " << CTime(CTime::eCurrent).AsString() << endl;
 };
 
@@ -303,12 +304,12 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
    thisTest.is_SusProd_run = false;
    thisTest.is_TaxDef_run = false;
 
-   GoTests(CRepConfig::tests_on_Bioseq, bioseq);
+   GoTests(thisGrp.tests_on_Bioseq, bioseq);
 
-   if (!CRepConfig::tests_on_Bioseq_CFeat.empty() 
-             || (!CRepConfig::tests_on_Bioseq_CFeat_NotInGenProdSet.empty()
+   if (!thisGrp.tests_on_Bioseq_CFeat.empty() 
+             || (!thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet.empty()
                      && !CTestAndRepData::IsmRNASequenceInGenProdSet(bioseq)) 
-             || !CRepConfig::tests_on_Bioseq_CFeat_CSeqdesc.empty() ) {
+             || !thisGrp.tests_on_Bioseq_CFeat_CSeqdesc.empty() ) {
 
      CBioseq_Handle bioseq_hl = thisInfo.scope->GetBioseqHandle(bioseq);
      //for (CFeat_CI feat_it(bioseq_hl, sel_seqfeat); feat_it; ++feat_it) 
@@ -390,7 +391,7 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
 // CFeat_CI is sorted:
 //    sort(CTestAndRepData::gene_feat.begin(), CTestAndRepData::gene_feat.end(), CCheckingClass :: SortByFrom);
      
-     if (!CRepConfig::tests_on_Bioseq_CFeat_CSeqdesc.empty()) {
+     if (!thisGrp.tests_on_Bioseq_CFeat_CSeqdesc.empty()) {
         for (CSeqdesc_CI it(bioseq_hl, sel_seqdesc_4_bioseq); it; ++it) {
           switch (it->Which()) {
             case CSeqdesc::e_Source: 
@@ -412,14 +413,14 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
           }
         }
 
-        GoTests(CRepConfig::tests_on_Bioseq_CFeat_CSeqdesc, bioseq);
+        GoTests(thisGrp.tests_on_Bioseq_CFeat_CSeqdesc, bioseq);
      }
 
-     if (!CRepConfig::tests_on_Bioseq_CFeat.empty())
-              GoTests(CRepConfig::tests_on_Bioseq_CFeat, bioseq);
-     if (!CRepConfig::tests_on_Bioseq_CFeat_NotInGenProdSet.empty()
+     if (!thisGrp.tests_on_Bioseq_CFeat.empty())
+              GoTests(thisGrp.tests_on_Bioseq_CFeat, bioseq);
+     if (!thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet.empty()
                                && !CTestAndRepData::IsmRNASequenceInGenProdSet(bioseq))
-               GoTests(CRepConfig::tests_on_Bioseq_CFeat_NotInGenProdSet, bioseq);
+               GoTests(thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet, bioseq);
    }
 
 /*
@@ -427,24 +428,24 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
          GoTests(CRepConfig::tests_on_Bioseq_NotInGenProdSet, bioseq);
 */
 
-   unsigned prev_len = CRepConfig:: tests_4_once.size();
-   if ( bioseq.IsNa() && !CRepConfig::tests_on_Bioseq_na.empty()) {
-        GoTests(CRepConfig::tests_on_Bioseq_na, bioseq);        
+   unsigned prev_len = thisGrp.tests_4_once.size();
+   if ( bioseq.IsNa() && !thisGrp.tests_on_Bioseq_na.empty()) {
+        GoTests(thisGrp.tests_on_Bioseq_na, bioseq);        
 
-        unsigned cur_len = CRepConfig:: tests_4_once.size();
+        unsigned cur_len = thisGrp.tests_4_once.size();
         if (cur_len > prev_len) {
             NON_CONST_ITERATE(vector < CRef < CTestAndRepData > >, it, 
-                                                         CRepConfig::tests_on_Bioseq_na) {
-                if (CRepConfig:: tests_4_once[cur_len - 1].GetPointer() == *it) {
-                    CRepConfig::tests_on_Bioseq_na.erase(it);
+                                                         thisGrp.tests_on_Bioseq_na) {
+                if (thisGrp.tests_4_once[cur_len - 1].GetPointer() == *it) {
+                    thisGrp.tests_on_Bioseq_na.erase(it);
                     break;
                 }
             }
        }
    }
 
-   if (bioseq.IsAa() && !CRepConfig::tests_on_Bioseq_aa.empty())
-        GoTests(CRepConfig::tests_on_Bioseq_aa, bioseq);        
+   if (bioseq.IsAa() && !thisGrp.tests_on_Bioseq_aa.empty())
+        GoTests(thisGrp.tests_on_Bioseq_aa, bioseq);        
 
    // clean
    x_Clean();
@@ -484,17 +485,17 @@ void CCheckingClass :: GoGetRep(vector <CRef <CTestAndRepData> >& test_category)
 
 void CCheckingClass :: CollectRepData()
 {
-  GoGetRep(CRepConfig::tests_on_Bioseq);
-  GoGetRep(CRepConfig::tests_on_Bioseq_aa);
-  GoGetRep(CRepConfig::tests_on_Bioseq_na);
-  GoGetRep(CRepConfig::tests_on_Bioseq_CFeat);
-  GoGetRep(CRepConfig::tests_on_Bioseq_CFeat_NotInGenProdSet);
-  GoGetRep(CRepConfig::tests_on_Bioseq_NotInGenProdSet);
-  GoGetRep(CRepConfig::tests_on_SeqEntry);
-  GoGetRep(CRepConfig::tests_on_SeqEntry_feat_desc);
-  GoGetRep(CRepConfig::tests_4_once);
-  GoGetRep(CRepConfig::tests_on_BioseqSet);
-  GoGetRep(CRepConfig::tests_on_Bioseq_CFeat_CSeqdesc);
+  GoGetRep(thisGrp.tests_on_Bioseq);
+  GoGetRep(thisGrp.tests_on_Bioseq_aa);
+  GoGetRep(thisGrp.tests_on_Bioseq_na);
+  GoGetRep(thisGrp.tests_on_Bioseq_CFeat);
+  GoGetRep(thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet);
+  GoGetRep(thisGrp.tests_on_Bioseq_NotInGenProdSet);
+  GoGetRep(thisGrp.tests_on_SeqEntry);
+  GoGetRep(thisGrp.tests_on_SeqEntry_feat_desc);
+  GoGetRep(thisGrp.tests_4_once);
+  GoGetRep(thisGrp.tests_on_BioseqSet);
+  GoGetRep(thisGrp.tests_on_Bioseq_CFeat_CSeqdesc);
 
 // clean
   x_Clean();

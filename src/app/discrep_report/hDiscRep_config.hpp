@@ -83,7 +83,8 @@ namespace DiscRepNmSpc {
       fDiscrepancy = 1 << 0,
       fOncaller = 1 << 1,
       fMegaReport = 1 << 2,
-      fTSA = 1 << 3
+      fTSA = 1 << 3,
+      fAsndisc = 1 << 4
    };
 
    struct s_test_property {
@@ -122,9 +123,29 @@ namespace DiscRepNmSpc {
        virtual void SkipChoiceVariant(CObjectIStream& in,const CObjectTypeInfoCV& passed_info);
    };
 
+   class CTestGrp
+   {
+      public:
+        ~CTestGrp() { };
+
+        static vector < CRef < CTestAndRepData > > tests_on_Bioseq;
+        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_na;
+        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_aa;
+        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_CFeat;
+        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_CFeat_NotInGenProdSet;
+        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_NotInGenProdSet;
+        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_CFeat_CSeqdesc;
+        static vector < CRef < CTestAndRepData > > tests_on_SeqEntry;
+        static vector < CRef < CTestAndRepData > > tests_on_SeqEntry_feat_desc;
+        static vector < CRef < CTestAndRepData > > tests_4_once;
+        static vector < CRef < CTestAndRepData > > tests_on_BioseqSet;
+        static vector < CRef < CTestAndRepData > > tests_on_SubmitBlk;
+   };
+
    class CRepConfig : public CObject 
    {
      public:
+        virtual ~CRepConfig() { };
 
         // removed from *_app.hpp
         void InitParams(const IRWRegistry& reg);
@@ -147,49 +168,12 @@ namespace DiscRepNmSpc {
         void AddListOutputTags();
         bool NeedsTag(const string& setting_name, const string& desc, 
                              const s_fataltag* tags, const unsigned& tags_cnt);
-  
-        static vector < CRef < CTestAndRepData > > tests_on_Bioseq;
-        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_na;
-        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_aa;
-        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_CFeat; 
-        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_CFeat_NotInGenProdSet; 
-        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_NotInGenProdSet;
-        static vector < CRef < CTestAndRepData > > tests_on_Bioseq_CFeat_CSeqdesc;
-        static vector < CRef < CTestAndRepData > > tests_on_SeqEntry;
-        static vector < CRef < CTestAndRepData > > tests_on_SeqEntry_feat_desc;
-        static vector < CRef < CTestAndRepData > > tests_4_once;
-        static vector < CRef < CTestAndRepData > > tests_on_BioseqSet;
-        static vector < CRef < CTestAndRepData > > tests_on_SubmitBlk;
-
-        virtual ~CRepConfig() {
-              tests_on_Bioseq.clear();
-              tests_on_Bioseq_na.clear();
-              tests_on_Bioseq_aa.clear();
-              tests_on_Bioseq_CFeat.clear();
-              tests_on_Bioseq_CFeat_NotInGenProdSet.clear();
-              tests_on_Bioseq_NotInGenProdSet.clear();
-              tests_on_Bioseq_CFeat_CSeqdesc.clear();
-              tests_on_SeqEntry.clear();
-              tests_on_SeqEntry_feat_desc.clear();
-              tests_4_once.clear();
-              tests_on_BioseqSet.clear();
-              tests_on_SubmitBlk.clear();
-        };
      protected:
         vector <string> m_enabled, m_disabled;
         string m_outsuffix, m_outdir, m_insuffix, m_indir, m_file_tp;
         bool m_dorecurse;
-
-/*
-        void x_ReadAsn1(ESerialDataFormat datafm = eSerial_AsnText);
-        void x_ReadFasta();
-        void x_GuessFile();
-        void x_BatchSet(ESerialDataFormat datafm = eSerial_AsnText);
-        void x_BatchSeqSubmit(ESerialDataFormat datafm = eSerial_AsnText);
-        void x_CatenatedSeqEntry();
-        void x_ProcessOneFile();
-        void x_ProcessDir(const CDir& dir, bool out_f);
-*/
+        void x_InputRepToGbenchItem(const CClickableItem& c_item, CClickableText& item);
+        string x_GetDesc4GItem(string desc);
 
         void WriteDiscRepSummary();
         void WriteDiscRepSubcategories(const vector <CRef <CClickableItem> >& subcategories, unsigned ident=1);
@@ -201,19 +185,14 @@ namespace DiscRepNmSpc {
         bool RmTagInDescp(string& str, const string& tag);
    };
 
-   class CRepConfDiscrepancy : public CRepConfig
+   class CRepConfAsndisc : public CRepConfig
    {
       public:
-        virtual ~CRepConfDiscrepancy () {};
+        virtual ~CRepConfAsndisc () {};
 
         virtual void Run(CRef <CRepConfig> config);
      
       private:
-/*
-        string m_outsuffix, m_outdir, m_insuffix, m_indir, m_file_tp;
-        bool m_dorecurse;
-*/
-
         void x_ReadAsn1(ESerialDataFormat datafm = eSerial_AsnText);
         void x_ReadFasta();
         void x_GuessFile();
@@ -224,12 +203,20 @@ namespace DiscRepNmSpc {
         void x_ProcessDir(const CDir& dir, bool out_f);
    };
 
+   class CRepConfDiscrepancy : public CRepConfig
+   {
+      public:
+        virtual ~CRepConfDiscrepancy () {};
+
+        virtual void Run(CRef <CRepConfig> config);
+   };
+
    class CRepConfOncaller : public CRepConfig
    {
       public:
         virtual ~CRepConfOncaller () {};
 
-        virtual void Run(CRef <CRepConfig> config);
+        virtual void Run(CRef <CRepConfig> config) { };
    };
 
 /*

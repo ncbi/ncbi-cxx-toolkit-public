@@ -54,7 +54,7 @@ using namespace DiscRepNmSpc;
 //  MAIN
 //
 
-void GetDiscrepancyReport(int argc, const char* argv[])
+void GetAsndiscReport(int argc, const char* argv[])
 {
     vector <string> arr;
     Str2Str args;
@@ -67,7 +67,7 @@ void GetDiscrepancyReport(int argc, const char* argv[])
     string report = args["P"];
     if (report.empty()) 
         NCBI_THROW(CException, eUnknown, "Missing the input file which is namdatory");
-    if (report == "t" || report == "s") report = "Discrepancy";
+    if (report == "t" || report == "s") report = "Asndisc";
     CRef <CRepConfig> config (CRepConfig::factory(report));
     config->ProcessArgs(args);
 
@@ -83,6 +83,6 @@ int main(int argc, const char* argv[])
 //  SetDiagTrace(eDT_Enable);
   SetDiagPostLevel(eDiag_Error);
 
-    GetDiscrepancyReport(argc, argv);
+    GetAsndiscReport(argc, argv);
 }
 

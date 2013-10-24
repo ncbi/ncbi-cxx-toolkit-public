@@ -112,6 +112,7 @@ static CDiscRepInfo thisInfo;
 static string strtmp(kEmptyStr);
 static CDiscTestInfo thisTest;
 static CSuspectRuleCheck rule_check;
+static CTestGrp thisGrp;
 
 // ini. CDiscTestInfo
 bool CDiscTestInfo :: is_Aa_run;
@@ -3663,24 +3664,28 @@ void CBioseqTestAndRepData :: TestOverlapping_ed_Feats(const vector <const CSeq_
                if (ovlp == sequence::eContained || ovlp == sequence::eSame) {
                   thisInfo.test_item_list[setting_name].push_back(
                                                             GetDiscItemText(*feat[i]));
+                  thisInfo.test_item_objs[setting_name].push_back(CConstRef<CObject>(feat[i]));
                   overlapping_ed_feats += NStr::UIntToString(i) + "|";
                   break;
                }
                else if (ovlp == sequence::eContains 
                                           && IsUnknown(overlapping_ed_feats, j)) {
-                    thisInfo.test_item_list[setting_name].push_back(
+                  thisInfo.test_item_list[setting_name].push_back(
                                                             GetDiscItemText(*feat[j]));
-                    overlapping_ed_feats += NStr::UIntToString(j) + "|";
+                  thisInfo.test_item_objs[setting_name].push_back(CConstRef<CObject>(feat[j]));
+                  overlapping_ed_feats += NStr::UIntToString(j) + "|";
                }
            }
            else if (ovlp != sequence :: eNoOverlap) {
                if (IsUnknown(overlapping_ed_feats, i)) {
                   thisInfo.test_item_list[setting_name].push_back(
                                                           GetDiscItemText(*feat[i]));
+                  thisInfo.test_item_objs[setting_name].push_back(CConstRef<CObject>(feat[i]));
                   overlapping_ed_feats += NStr::UIntToString(i) + "|";
                }
                thisInfo.test_item_list[setting_name].push_back(
                                                             GetDiscItemText(*feat[j]));
+               thisInfo.test_item_objs[setting_name].push_back(CConstRef<CObject>(feat[j]));
                overlapping_ed_feats += NStr::UIntToString(j) + "|";
            }
       }
@@ -3716,6 +3721,7 @@ void CBioseq_OVERLAPPING_GENES :: GetReport(CRef <CClickableItem>& c_item)
     c_item->description 
       = GetOtherComment(c_item->item_list.size(), "gene overlaps", "genes overlap")
                            + " another gene on the same strand.";
+    c_item->obj_list = thisInfo.test_item_objs[GetName()];
 };
 
 
@@ -4890,7 +4896,8 @@ void CBioseq_on_locus_tags :: GetReport(CRef <CClickableItem>& c_item)
             c_sub->setting_name = GetName_dup();
             c_sub->description
                    = GetHasComment(c_sub->item_list.size(), "gene") + "locus tag " + it->first;
-            if (thisInfo.report == "Discrepancy") thisInfo.disc_report_data.push_back(c_sub);
+            if (thisInfo.report == "Asndisc" || thisInfo.report == "Discrepancy") 
+                      thisInfo.disc_report_data.push_back(c_sub);
             else {
                c_item.Reset(new CClickableItem);
                c_item->setting_name = GetName_dup();
@@ -4905,11 +4912,13 @@ void CBioseq_on_locus_tags :: GetReport(CRef <CClickableItem>& c_item)
                             DUP_LOCUS_TAGS_adj_genes.begin(), DUP_LOCUS_TAGS_adj_genes.end());
          c_sub->description = GetIsComment(c_sub->item_list.size(), "gene")
                                + "adjacent to another gene with the same locus tag.";
-         if (thisInfo.report == "Discrepancy") thisInfo.disc_report_data.push_back(c_sub);
+         if (thisInfo.report == "Asndisc" || thisInfo.report == "Discrepancy") 
+                 thisInfo.disc_report_data.push_back(c_sub);
          else c_item->subcategories.push_back(c_sub);
          DUP_LOCUS_TAGS_adj_genes.clear();
      }
-     if (thisInfo.report != "Discrepancy" && !c_item->subcategories.empty()) {
+     if (thisInfo.report != "Asndisc" && thisInfo.report != "Discrepancy" 
+                                      && !c_item->subcategories.empty()) {
           c_item->description 
                = GetHasComment(c_item->item_list.size(), "gene") + "duplicate locus tags.";
           thisInfo.disc_report_data.push_back(c_item);
@@ -4969,8 +4978,9 @@ void CBioseq_DISC_FEATURE_COUNT :: TestOnObj(const CBioseq& bioseq)
      if (bioseq.IsAa()) bioseq_feat_count->isAa = true;
      else bioseq_feat_count->isAa = false;
      DISC_FEATURE_COUNT_list.push_back(bioseq_feat_count);
-     if (thisInfo.test_item_list.find(GetName()) == thisInfo.test_item_list.end())
+     if (thisInfo.test_item_list.find(GetName()) == thisInfo.test_item_list.end()) {
            thisInfo.test_item_list[GetName()].push_back("Feaure Counts"); 
+     }
    }
    else {
       if (bioseq.IsAa()) DISC_FEATURE_COUNT_protfeat_prot_list.push_back(bioseq_text);
@@ -5598,8 +5608,10 @@ void CBioseq_test_on_prot :: TestOnObj(const CBioseq& bioseq)
    string desc(GetDiscItemText(bioseq));
 
    // COUNT_PROTEINS
-   if (thisTest.tests_run.find(GetName_cnt()) != thisTest.tests_run.end())
+   if (thisTest.tests_run.find(GetName_cnt()) != thisTest.tests_run.end()) {
        thisInfo.test_item_list[GetName_cnt()].push_back(desc); 
+       thisInfo.test_item_objs[GetName_cnt()].push_back(CConstRef <CObject>(&bioseq));
+   }
 
    // INCONSISTENT_PROTEIN_ID_PREFIX1, MISSING_PROTEIN_ID1
    bool run_prefix = (thisTest.tests_run.find(GetName_prefix()) != thisTest.tests_run.end());
@@ -5633,6 +5645,7 @@ void CBioseq_COUNT_PROTEINS :: GetReport(CRef <CClickableItem>& c_item)
 {
    c_item->description 
      = NStr::UIntToString((unsigned)c_item->item_list.size()) + " protein sequences in record";
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
 };
 
 
@@ -6271,8 +6284,10 @@ void CBioseq_test_on_all_annot :: TestOnObj(const CBioseq& bioseq)
                       (*it)->GetData().GetSubtype() == CSeqFeatData::eSubtype_gap) 
                continue; 
            label = (*it)->GetData().GetKey();
-           label = label.empty()? "unknown$" : label + "$";
-           thisInfo.test_item_list[GetName_ls()].push_back(label + desc);
+           label = label.empty()? "unknown" : label;
+           thisInfo.test_item_list[GetName_ls()].push_back(label + "$" + desc);
+           thisInfo.test_item_objs[GetName_ls() + "$" + label].push_back(
+                                                           CConstRef<CObject>(*it));
         }
 
         // ONCALLER_ORDERED_LOCATION
@@ -6325,8 +6340,8 @@ void CBioseq_DISC_FEATURE_LIST :: GetReport(CRef <CClickableItem>& c_item)
   c_item->item_list.clear();
   ITERATE (Str2Strs, it, feat2ls) {
      strtmp = it->first + " feature";
-     AddSubcategory(c_item, GetName(), &(it->second), strtmp, strtmp + "s", e_OtherComment, 
-                                                                                      false);
+     AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second), strtmp, 
+                                 strtmp + "s", e_OtherComment, false);
   }
   c_item->description = "Feature List";
 };
@@ -6446,9 +6461,9 @@ void CBioseq_TEST_DEFLINE_PRESENT :: TestOnObj(const CBioseq& bioseq)
   CConstRef <CSeqdesc> seqdesc_title = bioseq.GetClosestDescriptor(CSeqdesc::e_Title);
   if (seqdesc_title.NotEmpty()) {
      thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(bioseq));
-     ITERATE(vector < CRef < CTestAndRepData > >, it, CRepConfig :: tests_on_Bioseq_na) {
+     ITERATE(vector < CRef < CTestAndRepData > >, it, thisGrp.tests_on_Bioseq_na) {
        if ( (*it)->GetName() == GetName()) {
-             CRepConfig :: tests_4_once.push_back(*it);
+             thisGrp.tests_4_once.push_back(*it);
              break;
        }
      }
@@ -11516,9 +11531,11 @@ void CSeqEntry_DISC_FEATURE_COUNT :: TestOnObj(const CSeq_entry& seq_entry)
       else it->second ++;
    }
 
-   ITERATE (Str2Int, it, feat_count_list) 
+   ITERATE (Str2Int, it, feat_count_list) {
      thisInfo.test_item_list[GetName()].push_back(
                    it->first + "$" + NStr::UIntToString(it->second));
+     thisInfo.test_item_objs[GetName()].push_back(CConstRef<CObject>(&seq_entry));
+   }
 };
 
 
@@ -11537,6 +11554,7 @@ void CSeqEntry_DISC_FEATURE_COUNT :: GetReport(CRef <CClickableItem>& c_item)
        if (i++) thisInfo.disc_report_data.push_back(c_item);
        c_item.Reset(new CClickableItem);
        c_item->setting_name = GetName();
+       thisInfo.disc_report_data.push_back(c_item);
    }
 };
 

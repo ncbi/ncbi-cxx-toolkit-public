@@ -793,7 +793,8 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_entry& seq_entry)
    if (seq_entry.IsSeq())
         desc =  BioseqToBestSeqIdString(seq_entry.GetSeq(), CSeq_id::e_Genbank);
    else desc = GetDiscItemTextForBioseqSet(seq_entry.GetSet());
-   return (thisInfo.infile + ": " + desc);
+   if (thisInfo.infile.empty()) return desc;
+   else return (thisInfo.infile + ": " + desc);
 };
 
 
@@ -807,7 +808,8 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_submit& seq_submit)
         desc =  BioseqToBestSeqIdString((*entrys.begin())->GetSeq(), CSeq_id::e_Genbank);
      else desc = GetDiscItemTextForBioseqSet((*entrys.begin())->GetSet());
   }
-  return (thisInfo.infile + ": " + desc);
+  if (thisInfo.infile.empty()) return desc;
+  else return (thisInfo.infile + ": " + desc);
 };
 
 
@@ -846,7 +848,10 @@ string CTestAndRepData :: GetDiscItemText(const CBioseq_set& bioseq_set)
    row_text = GetDiscItemTextForBioseqSet(bioseq_set);
 
    if (row_text.empty()) return(kEmptyStr);
-   else return (thisInfo.infile + ": " + row_text);
+   else {
+      if (thisInfo.infile.empty()) return row_text;
+      else return (thisInfo.infile + ": " + row_text);
+   }
 };
 
 string CTestAndRepData :: ListAuthNames(const CAuth_list& auths)
@@ -979,7 +984,8 @@ string CTestAndRepData :: GetDiscItemText(const CSeqdesc& seqdesc, const CBioseq
     // what if no bioseq?
     string row_text = BioseqToBestSeqIdString(bioseq, CSeq_id::e_Genbank) + ": ";
     row_text += SeqDescLabelContent(seqdesc);
-    return(thisInfo.infile + ": " + row_text);
+    if (thisInfo.infile.empty()) return row_text;
+    else return(thisInfo.infile + ": " + row_text);
 };
 
 
@@ -1005,7 +1011,8 @@ string CTestAndRepData :: GetDiscItemText(const CSeqdesc& seqdesc, const CSeq_en
             row_text += pub_label;
      }
      else seqdesc.GetLabel(&row_text, CSeqdesc::eContent);
-     return(thisInfo.infile + ": " + row_text);
+     if (thisInfo.infile.empty()) return row_text;
+     else return(thisInfo.infile + ": " + row_text);
   }
   else return(GetDiscItemText(seqdesc, *bioseq));
 }; // GetDiscItemText(CSeqdesc)
@@ -1043,7 +1050,10 @@ string CTestAndRepData :: GetDiscItemText(const CBioseq& bioseq)
       const CSeq_id& seq_id = BioseqToBestSeqId(bioseq, CSeq_id::e_Genbank);
       return (thisInfo.infile + ": " + seq_id.GetSeqIdString() + len_txt);
 */
-      return(thisInfo.infile +": " + BioseqToBestSeqIdString(bioseq,CSeq_id::e_Genbank)+ len_txt);
+      if (thisInfo.infile.empty())
+         return (BioseqToBestSeqIdString(bioseq,CSeq_id::e_Genbank)+ len_txt);
+      else return(thisInfo.infile +": " 
+                              + BioseqToBestSeqIdString(bioseq,CSeq_id::e_Genbank)+ len_txt);
 
 }; // GetDiscItemText(const CBioseq& obj)
 
@@ -1140,7 +1150,6 @@ string CTestAndRepData :: SeqLocPrintUseBestID(const CSeq_loc& seq_loc, bool ran
 {
   string location(kEmptyStr);
   if (seq_loc.IsInt()) {
-     const CSeq_interval& seq_int = seq_loc.GetInt();
      location = PrintSeqInt(seq_loc.GetInt(), range_only);
   } 
   else if (seq_loc.IsMix()) {
@@ -1242,8 +1251,11 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
           else GetSeqFeatLabel(*seq_feat_p, context_label);
       }
       if (context_label.empty()) context_label = "Unknown context label";
-      return (thisInfo.infile + ": " + label+"\t" + context_label + "\t" 
-                                              + location + "\t" + locus_tag);
+      strtmp = label+"\t" + context_label + "\t" + location + "\t" + locus_tag;
+      if (thisInfo.infile.empty()) return strtmp;
+      else return (thisInfo.infile + ": " + strtmp); 
+      // return (thisInfo.infile + ": " + label+"\t" + context_label + "\t" 
+      //                                        + location + "\t" + locus_tag);
 }; // GetDiscItemText(const CSeqFeat& obj)
 
 
@@ -1302,10 +1314,13 @@ void CTestAndRepData :: GetTestItemList(const vector <string>& itemlist, Str2Str
    }
 };
 
-void CTestAndRepData :: AddSubcategory(CRef <CClickableItem>& c_item, const string& setting_name, const vector <string>* itemlist, const string& desc1, const string& desc2, ECommentTp comm, bool copy2parent, const string& desc3, bool halfsize, unsigned input_cnt)
+void CTestAndRepData :: AddSubcategory(CRef <CClickableItem>& c_item, const string& sub_grp_nm, const vector <string>* itemlist, const string& desc1, const string& desc2, ECommentTp comm, bool copy2parent, const string& desc3, bool halfsize, unsigned input_cnt)
 {    
+     size_t pos;
      CRef <CClickableItem> c_sub (new CClickableItem);
-     c_sub->setting_name = setting_name;
+     if ( (pos = sub_grp_nm.find("$")) != string::npos)
+         c_sub->setting_name = sub_grp_nm.substr(0, pos);
+     else c_sub->setting_name = sub_grp_nm;
      if (itemlist) c_sub->item_list = *itemlist;
      unsigned cnt = itemlist ? c_sub->item_list.size() : input_cnt;
      cnt = halfsize ? cnt/2 : cnt; 
@@ -1328,7 +1343,7 @@ void CTestAndRepData :: AddSubcategory(CRef <CClickableItem>& c_item, const stri
        default:
            NCBI_THROW(CException, eUnknown, "Bad comment type.");
      }  
-                                       
+     c_sub->obj_list = thisInfo.test_item_objs[sub_grp_nm];
      if (itemlist && copy2parent)
         c_item->item_list.insert(c_item->item_list.end(),
                                        c_sub->item_list.begin(), c_sub->item_list.end());

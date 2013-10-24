@@ -78,8 +78,8 @@ void CDiscRepApp::Init(void)
     arg_desc->AddDefaultKey("b", "BatchBinary", "Batch File is Binary: 'T' = true, 'F' = false", 
                               CArgDescriptions::eBoolean, "F");
     arg_desc->AddDefaultKey("P", "ReportType",
-                   "Report type: Discrepancy, Oncaller, TSA, Genome, Big Sequence, MegaReport, Include Tag, Include Tag for Superuser",
-                   CArgDescriptions::eString, "Discrepancy");
+                   "Report type: Asndisc, Discrepancy, Oncaller, TSA, Genome, Big Sequence, MegaReport, Include Tag, Include Tag for Superuser",
+                   CArgDescriptions::eString, "Asndisc");
 
     arg_desc->AddDefaultKey("S", "SummaryReport", "Summary Report: 'T'=true, 'F' =false", 
                                 CArgDescriptions::eBoolean, "F");
@@ -94,7 +94,7 @@ int CDiscRepApp :: Run(void)
     const CArgs& args = GetArgs();
     
     string report = args["P"].AsString();
-    if (report == "t" || report == "s") report = "Discrepancy";
+    if (report == "t" || report == "s") report = "Asndisc";
     CRef <CRepConfig> config( CRepConfig :: factory(report) );
     config->InitParams(GetConfig());
     config->ReadArgs(args);

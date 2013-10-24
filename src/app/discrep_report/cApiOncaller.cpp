@@ -56,15 +56,28 @@ using namespace DiscRepNmSpc;
 
 void GetDiscrepancyReport(int argc, const char* argv[])
 {
-    auto_ptr <CObjectIStream> ois (CObjectIStream::Open(eSerial_AsnText, "CBSstrain.sqn"));
+    auto_ptr <CObjectIStream> ois (CObjectIStream::Open(eSerial_AsnText, "test.sqn"));
+    string strtmp = ois->ReadFileHeader();
+    ois->SetStreamPos(0);
+    CRef <CSeq_submit> seq_submit (new CSeq_submit);
     CRef <CSeq_entry> seq_entry (new CSeq_entry);
-    *ois >> *seq_entry;
+    if (strtmp == "Seq-submit") {
+       *ois >> *seq_submit;
+       if (seq_submit->IsEntrys()) {
+         NON_CONST_ITERATE (list <CRef <CSeq_entry> >, it, seq_submit->SetData().SetEntrys())
+            seq_entry.Reset(&(**it));
+       }
+    }
+    else if (strtmp == "Seq-entry") {
+       *ois >> *seq_entry;
+    }
+
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
     CRef <CScope> scope (new CScope(*object_manager));
     scope->AddTopLevelSeqEntry(*seq_entry);   
     CSeq_entry_Handle seq_handle = scope->GetSeq_entryHandle(*seq_entry);
 
-    CRef <CRepConfig> config (CRepConfig::factory((string)"Oncaller", &seq_handle));
+    CRef <CRepConfig> config (CRepConfig::factory((string)"Discrepancy", &seq_handle));
     config->ProcessArgs();
 
     CMetaRegistry:: SEntry entry = CMetaRegistry :: Load("disc_report.ini");
@@ -74,12 +87,12 @@ void GetDiscrepancyReport(int argc, const char* argv[])
     config->Run(config);
     vector <CRef <CClickableText> > item_list;
     config->Export(item_list);
-cerr << "item_list.size()  " << item_list.size()<< endl;
-cerr << "m_Text " << item_list[0]->GetText();
 };
 
 int main(int argc, const char* argv[])
 {
+// Usage discrep_oncaller
+
 //  SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Error);
 

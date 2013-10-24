@@ -50,6 +50,7 @@ using namespace DiscRepNmSpc;
 static CDiscRepInfo thisInfo;
 static string       strtmp;
 static COutputConfig& oc = thisInfo.output_config;
+static CTestGrp     thisGrp;
 
 static s_fataltag extra_fatal [] = {
         {"MISSING_GENOMEASSEMBLY_COMMENTS", NULL, NULL}
@@ -352,25 +353,61 @@ void CRepConfig :: StandardWriteDiscRepItems(COutputConfig& oc, const CClickable
 
 }; // StandardWriteDiscRepItems()
 
+string CRepConfig :: x_GetDesc4GItem(string desc)
+{
+   // FATAL tag
+   if (RmTagInDescp(desc, "FATAL: ")) return ("FATAL: " + desc);
+   else return desc;
+};
+
+void CRepConfig :: x_InputRepToGbenchItem(const CClickableItem& c_item,  CClickableText& item) 
+{
+   if (c_item.subcategories.empty()) {
+      item.SetObjdescs().insert(item.SetObjdescs().end(), 
+                                          c_item.item_list.begin(), c_item.item_list.end());
+      item.SetObjects().insert(item.SetObjects().end(), c_item.obj_list.begin(),
+                 c_item.obj_list.end());
+   }
+   else {
+      string desc;
+      ITERATE (vector < CRef <CClickableItem > >, sit, c_item.subcategories) {
+            desc = (*sit)->description;
+            if (desc.empty()) continue;
+            desc = x_GetDesc4GItem(desc);
+            CRef <CClickableText> sub (new CClickableText(desc));             
+            x_InputRepToGbenchItem(**sit, *sub);
+            item.SetSubitems().push_back(sub);
+      }
+   }
+};
+
 void CRepConfig :: Export(vector <CRef <CClickableText> >& item_list)
 {
    if (oc.add_output_tag || oc.add_extra_output_tag) AddListOutputTags(); 
    string desc;
-cerr << "disc_report_data.size() " << thisInfo.disc_report_data.size() << endl;
    ITERATE (vector <CRef < CClickableItem > >, it, thisInfo.disc_report_data) {
-      strtmp = kEmptyStr;
-
       desc = (*it)->description;
       if ( desc.empty()) continue;
-      // FATAL tag
-      if (RmTagInDescp(desc, "FATAL: ")) strtmp = "FATAL: ";
-      strtmp += desc;
-      CRef <CClickableText> item (new CClickableText(strtmp));             
-      item->SetObjects().insert(item->SetObjects().end(), (*it)->obj_list.begin(),
-                 (*it)->obj_list.end());
+      desc = x_GetDesc4GItem(desc);
+      CRef <CClickableText> item (new CClickableText(desc));             
+      x_InputRepToGbenchItem(**it, *item);
       item_list.push_back(item);
    } 
    thisInfo.disc_report_data.clear();
    thisInfo.test_item_list.clear();
    thisInfo.test_item_objs.clear();
+ 
+   // clean for gbench usage. 
+   thisGrp.tests_on_Bioseq.clear();
+   thisGrp.tests_on_Bioseq_na.clear();
+   thisGrp.tests_on_Bioseq_aa.clear();
+   thisGrp.tests_on_Bioseq_CFeat.clear();
+   thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet.clear();
+   thisGrp.tests_on_Bioseq_NotInGenProdSet.clear();
+   thisGrp.tests_on_Bioseq_CFeat_CSeqdesc.clear();
+   thisGrp.tests_on_SeqEntry.clear();
+   thisGrp.tests_on_SeqEntry_feat_desc.clear();
+   thisGrp.tests_4_once.clear();
+   thisGrp.tests_on_BioseqSet.clear();
+   thisGrp.tests_on_SubmitBlk.clear();
 };
