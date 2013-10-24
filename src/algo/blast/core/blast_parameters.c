@@ -716,6 +716,9 @@ BlastHitSavingParametersFree(BlastHitSavingParameters* parameters)
    if (parameters) {
       sfree(parameters->cutoffs);
       sfree(parameters->link_hsp_params);
+      if (parameters->low_score) {
+          sfree(parameters->low_score);
+      }
       sfree(parameters);
    }
    return NULL;
