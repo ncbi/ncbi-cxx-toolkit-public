@@ -139,8 +139,6 @@ string CInternalStopFinder::GetCDSNucleotideSequence(const CSeq_align& align)
     ITERATE( CSpliced_seg::TExons, exon, spliced_seg.GetExons() ) {
 
         int prod_pos_start = (*exon)->GetProduct_start().AsSeqPos();
-        int prod_pos_end = (*exon)->GetProduct_end().AsSeqPos();
-
 
         CRef<CSeq_loc> subject_loc(new CSeq_loc);
         subject_loc->SetInt(*(*exon)->CreateRowSeq_interval(1, spliced_seg));
@@ -175,8 +173,6 @@ string CInternalStopFinder::GetCDSNucleotideSequence(const CSeq_align& align)
         } else {
             mRNA.append(subject_seq);
         }
-
-        _ASSERT( next_prod_start >= prod_pos_end + 1);
     }
 
     return mRNA.substr(0, cds_len);
