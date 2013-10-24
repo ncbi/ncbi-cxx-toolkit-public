@@ -968,8 +968,17 @@ CVcfReader::xAssignFeatureLocationSet(
     //match the reference allele.  Future Variation-ref
     //normalization code will address these issues,
     //and obviate the need for this code altogether.
-    pFeat->SetLocation().SetPnt().SetPoint(data.m_iPos-1);
-    pFeat->SetLocation().SetPnt().SetId(*pId);
+    if (data.m_strRef.size() == 1) {
+        //deletion of a single base
+        pFeat->SetLocation().SetPnt().SetPoint(data.m_iPos-1);
+        pFeat->SetLocation().SetPnt().SetId(*pId);
+    }
+    else {
+        pFeat->SetLocation().SetInt().SetFrom(data.m_iPos-1);
+        pFeat->SetLocation().SetInt().SetTo( 
+            data.m_iPos -1 + data.m_strRef.length() - 1); 
+        pFeat->SetLocation().SetInt().SetId(*pId);
+    }
     return true;
 }
 
