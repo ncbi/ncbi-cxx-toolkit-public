@@ -62,6 +62,7 @@ public:
         CRef<CVersion> version(new CVersion());
         version->SetVersionInfo(new CBlastVersion());
         SetFullVersion(version);
+	m_LoadFromArchive = false;
     }
 private:
     /** @inheritDoc */
@@ -92,6 +93,8 @@ private:
     /// The source of CScope objects for queries
     CRef<CBlastScopeSource> m_QueryScopeSource;
 
+    /// Tracks whether results come from an archive file.
+    bool m_LoadFromArchive;
 };
 
 void CBlastFormatterApp::Init()
@@ -336,17 +339,32 @@ int CBlastFormatterApp::PrintFormattedOutput(void)
     		formatter.WriteArchive(*query_factory, *opts_handle, *results);
     	}
     } else {
-        BlastFormatter_PreFetchSequenceData(*results, scope);
-    	ITERATE(CSearchResultSet, result, *results) {
-    		if(isPsiBlast)
-    		{
-    			formatter.PrintOneResultSet(**result, queries, m_RmtBlast->GetPsiNumberOfIterations());
+        while (1)
+	{
+        	BlastFormatter_PreFetchSequenceData(*results, scope);
+    		ITERATE(CSearchResultSet, result, *results) {
+    			if(isPsiBlast)
+    			{
+    				formatter.PrintOneResultSet(**result, queries, 
+					m_RmtBlast->GetPsiNumberOfIterations());
+    			}
+    			else
+    			{
+    				formatter.PrintOneResultSet(**result, queries);
+    			}
     		}
-    		else
-    		{
-    			formatter.PrintOneResultSet(**result, queries);
-    		}
-    	}
+		// The entire archive file (multiple sets) is formatted in this loop for XML.
+		// That does not work for other formats.  Ugly, but that's where it's at now.
+		if (m_LoadFromArchive == false || fmt_args.GetFormattedOutputChoice() != CFormattingArgs::eXml 
+			|| !m_RmtBlast->LoadFromArchive())
+			break;
+		// Reset these for next set from archive
+    		results.Reset(m_RmtBlast->GetResultSet());
+    		queries.Reset(x_ExtractQueries(Blast_QueryIsProtein(p)?true:false));
+    		_ASSERT(queries);
+    		scope.Reset(queries->GetScope(0));
+    		InitializeSubject(db_args, opts_handle, true, db_adapter, scope);
+	}
     }
     formatter.PrintEpilog(opts);
     return retval;
@@ -372,6 +390,7 @@ int CBlastFormatterApp::Run(void)
                 }
             }
 
+	    m_LoadFromArchive = true;
             try {
                 while (m_RmtBlast->LoadFromArchive())
                     status = PrintFormattedOutput();
@@ -379,8 +398,7 @@ int CBlastFormatterApp::Run(void)
                 NCBI_RETHROW(e, CInputException, eInvalidInput,
                              "Invalid input format for BLAST Archive.");
             }
-
-    		return status;
+    	    return status;
         }
 
         const string kRid = args[kArgRid].AsString();
