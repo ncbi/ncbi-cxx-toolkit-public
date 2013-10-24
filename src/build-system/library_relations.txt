@@ -4002,6 +4002,16 @@ mmdb needs sequtil
 mmdb needs xncbi
 mmdb needs xser
 mmdb needs xutil
+moleblastasn_g needs biblio
+moleblastasn_g needs general
+moleblastasn_g needs medline
+moleblastasn_g needs pub
+moleblastasn_g needs seq
+moleblastasn_g needs seqcode
+moleblastasn_g needs sequtil
+moleblastasn_g needs xncbi
+moleblastasn_g needs xser
+moleblastasn_g needs xutil
 muscleasn_g needs biblio
 muscleasn_g needs general
 muscleasn_g needs medline
