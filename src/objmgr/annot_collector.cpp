@@ -1166,6 +1166,9 @@ CCreatedFeat_Ref::GetMappedFeature(const CAnnotMapping_Info& map,
     else if ( !map.IsMapped() ) {
         ret = &orig_feat;
     }
+    else if ( m_CreatedSeq_feat ) {
+        ret = m_CreatedSeq_feat;
+    }
     else {
         CRef<CSeq_loc> loc = GetMappedLocation(map, orig_feat);
 
