@@ -110,6 +110,7 @@ public:
         ST_ALL_SNV,
         ST_ALL_DEL,
         ST_ALL_INS,
+        ST_ALL_MNV,
         ST_MIXED
     } m_SetType;
 };
@@ -585,14 +586,6 @@ CVcfReader::xAssignVariationAlleleSet(
     vector<string> variant;
  
     switch(data.m_SetType) {
-    case CVcfData::ST_ALL_SNV:
-        variant.push_back(data.m_strRef);
-        pIdentity->SetSNV(variant, CVariation_ref::eSeqType_na);
-        break;
-    case CVcfData::ST_ALL_DEL:
-        variant.push_back(data.m_strRef);
-        pIdentity->SetSNV(variant, CVariation_ref::eSeqType_na);
-        break;
     case CVcfData::ST_ALL_INS:
         pIdentity->SetDeletion();
         break;
@@ -618,6 +611,11 @@ CVcfReader::xAssignVariationAlleleSet(
             break;
         case CVcfData::ST_ALL_SNV:
             if (!xAssignVariantSnv(data, i, pFeature)) {
+                return false;
+            }
+            break;
+        case CVcfData::ST_ALL_MNV:
+            if (!xAssignVariantMnv(data, i, pFeature)) {
                 return false;
             }
             break;
@@ -652,6 +650,27 @@ CVcfReader::xAssignVariantSnv(
         vector<string> variant;
         variant.push_back(data.m_Alt[index]);
         pVariant->SetSNV(variant, CVariation_ref::eSeqType_na);
+    }}
+    variants.push_back(pVariant);
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool
+CVcfReader::xAssignVariantMnv(
+    const CVcfData& data,
+    unsigned int index,
+    CRef<CSeq_feat> pFeature )
+//  ----------------------------------------------------------------------------
+{
+    CVariation_ref::TData::TSet::TVariations& variants =
+        pFeature->SetData().SetVariation().SetData().SetSet().SetVariations();
+
+    CRef<CVariation_ref> pVariant(new CVariation_ref);
+    {{
+        vector<string> variant;
+        variant.push_back(data.m_Alt[index]);
+        pVariant->SetMNP(variant, CVariation_ref::eSeqType_na);
     }}
     variants.push_back(pVariant);
     return true;
@@ -838,6 +857,20 @@ CVcfReader::xParseData(
         }
     }
 
+    //test for all mnvs:
+    bool maybeAllMnv = true;
+    size_t refSize = data.m_strRef.size();
+    for (size_t u=0; u < data.m_Alt.size(); ++u) {
+        if (data.m_Alt[u].size() != refSize) {
+            maybeAllMnv = false;
+            break;
+        }
+    }
+    if (maybeAllMnv) {
+        data.m_SetType = CVcfData::ST_ALL_MNV;
+        return true;
+    }
+
     //test for all insertions:
     bool maybeAllIns = true;
     for (size_t u=0; u < data.m_Alt.size(); ++u) {
@@ -896,6 +929,13 @@ CVcfReader::xAssignFeatureLocationSet(
         //set location for SNVs
         pFeat->SetLocation().SetPnt().SetPoint(data.m_iPos-1);
         pFeat->SetLocation().SetPnt().SetId(*pId);
+        return true;
+    }
+    if (data.m_SetType == CVcfData::ST_ALL_MNV) {
+        //set location for MNV. This will be the location of the reference
+        pFeat->SetLocation().SetInt().SetFrom(data.m_iPos-1);
+        pFeat->SetLocation().SetInt().SetTo(data.m_iPos + data.m_strRef.size() - 2);
+        pFeat->SetLocation().SetInt().SetId(*pId);
         return true;
     }
     if (data.m_SetType == CVcfData::ST_ALL_INS) {

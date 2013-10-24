@@ -240,6 +240,12 @@ protected:
         CRef<CSeq_feat> );
 
     virtual bool
+    xAssignVariantMnv(
+        const CVcfData&,
+        unsigned int,
+        CRef<CSeq_feat> );
+
+    virtual bool
     xAssignVariantDel(
         const CVcfData&,
         unsigned int,
