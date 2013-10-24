@@ -44,11 +44,13 @@ struct SAlignIndividual {
         string acc = align.TargetAccession();
         copy(acc.begin(),acc.end(),back_inserter(target_id_pool));
         target_id_pool.push_back(0);
+        if(align.Status()&CGeneModel::eChangedByFilter)
+            m_align_id = -m_align_id;
     };
 
     TSignedSeqRange m_range;
-    Int8 m_align_id;
-    float m_weight;
+    Int8 m_align_id;   // < 0 used for eChangedByFilter
+    float m_weight;    // < 0 used for deleting
     int m_target_id;   // shift in deque<char> for 0 terminated string; deque is maintained by CAlignCollapser
 };
 

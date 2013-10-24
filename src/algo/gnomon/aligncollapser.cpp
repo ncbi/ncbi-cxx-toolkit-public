@@ -37,11 +37,13 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objmgr/util/sequence.hpp>
 #include "gnomon_seq.hpp"
 
 
 BEGIN_SCOPE(ncbi)
 BEGIN_SCOPE(gnomon)
+USING_SCOPE(sequence);
 
 CAlignModel CAlignCommon::GetAlignment(const SAlignIndividual& ali, const deque<char>& target_id_pool) const {
 
@@ -52,8 +54,10 @@ CAlignModel CAlignCommon::GetAlignment(const SAlignIndividual& ali, const deque<
         a.Status() |= CGeneModel::eCap;
     if(isUnknown()) 
         a.Status()|= CGeneModel::eUnknownOrientation;
-    a.SetID(ali.m_align_id);
+    a.SetID(abs(ali.m_align_id));
     a.SetWeight(ali.m_weight);
+    if(ali.m_align_id < 0)
+        a.Status() |= CGeneModel::eChangedByFilter;
 
     if(m_introns.empty()) {
         a.AddExon(ali.m_range);
@@ -796,6 +800,8 @@ void CAlignCollapser::FilterAlignments() {
             ITERATE(deque<SAlignIndividual>, i, data->second) {
                 CAlignModel align(alc.GetAlignment(*i, id_pool));
                 align.Clip(TSignedSeqRange(new_left,new_right),CGeneModel::eRemoveExons);
+                if(alc.isEST())
+                    align.Status() |= CGeneModel::eChangedByFilter;  
                 _ASSERT(align.Limits().NotEmpty());
                 _ASSERT(align.Exons().size() == introns.size()+1);
                 CAlignCommon c(align);
@@ -932,6 +938,12 @@ void CAlignCollapser::FilterAlignments() {
         TAlignModelList::iterator i = it++;
         CAlignModel& align = *i;
 
+        int intronnum = 0;
+        ITERATE(CGeneModel::TExons, e, align.Exons()) {
+            if(e->m_fsplice)
+                ++intronnum;
+        }
+            
         if((align.Type()&CGeneModel::eEST) && !m_filterest)
             continue;
         if((align.Type()&CGeneModel::emRNA) && !m_filtermrna)
@@ -969,26 +981,13 @@ void CAlignCollapser::FilterAlignments() {
             continue;
         }
 
-        /*
-        //delete if retained intron in internal exon    
-        for(int n = 1; n < (int)align.Exons().size()-1; ++n) {
-            if(!align.Exons()[n].m_fsplice || !align.Exons()[n].m_ssplice)
-                continue;
-
-            int l = align.Exons()[n].Limits().GetFrom();
-            int r = align.Exons()[n].Limits().GetTo();
-
-            pair<TIntronsBySplice::iterator,TIntronsBySplice::iterator> eqr(introns_by_right_splice.end(),introns_by_right_splice.end());
-            if(((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == ePlus) && right_plus[r-m_left_end] > l) // crosses right plus splice    
-                eqr = introns_by_right_splice.equal_range(right_plus[r-m_left_end]);
-            if(((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == eMinus) && right_minus[r-m_left_end] > l) // crosses right minus splice 
-                eqr = introns_by_right_splice.equal_range(right_minus[r-m_left_end]);
-            for(TIntronsBySplice::iterator ip = eqr.first; ip != eqr.second; ++ip) {
-                if(ip->second->first.m_range.GetFrom() > l)
-                    good_alignment = false;
-            }
+        ITERATE(CGeneModel::TExons, e, align.Exons()) {
+            if(e->m_fsplice)
+                --intronnum;
         }
-        */
+
+        if(intronnum > 0)
+            align.Status() |= CGeneModel::eChangedByFilter;  
     }
 
     //clean self species cDNA edges
@@ -1353,7 +1352,13 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
         }
     }
 
-    ITERATE(TAlignModelList, i, m_aligns_for_filtering_only) {
+    NON_CONST_ITERATE(TAlignModelList, i, m_aligns_for_filtering_only) {
+        if(i->Type() == CGeneModel::emRNA) {
+            CBioseq_Handle bh (m_scope->GetBioseqHandle(*i->GetTargetId()));
+            const CMolInfo* molinfo = GetMolInfo(bh);
+            if(molinfo && molinfo->IsSetTech() && molinfo->GetTech() == CMolInfo::eTech_tsa)
+                i->Status() |= CGeneModel::eTSA;
+        }
         if(CheckAndInsert(*i, clsset))
             ++total;
     }

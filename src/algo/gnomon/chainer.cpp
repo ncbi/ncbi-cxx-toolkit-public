@@ -4903,7 +4903,7 @@ struct ProjectCDS : public TransformFunction {
 
 void ProjectCDS::transform_align(CAlignModel& align)
 {
-    if ((align.Type()&CAlignModel::emRNA)==0 || (align.Status()&CAlignModel::eReversed)!=0 || (align.Status()&CGeneModel::eUnknownOrientation)!=0)
+    if ((align.Type()&CAlignModel::emRNA)==0 || (align.Status()&CGeneModel::eTSA)!=0 || (align.Status()&CGeneModel::eReversed)!=0 || (align.Status()&CGeneModel::eUnknownOrientation)!=0)
         return;
 
     TSignedSeqRange cds_on_mrna;

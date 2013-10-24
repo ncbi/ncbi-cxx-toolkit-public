@@ -1560,6 +1560,8 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
     if ((a.Status()&CGeneModel::eUnknownOrientation)!=0)    attributes["flags"] += ",UnknownOrientation";
     if ((a.Status()&CGeneModel::eGapFiller)!=0)    attributes["flags"] += ",GapFiller";
     if ((a.Status()&CGeneModel::ecDNAIntrons)!=0)    attributes["flags"] += ",cDNAIntrons";
+    if ((a.Status()&CGeneModel::eChangedByFilter)!=0)    attributes["flags"] += ",ChangedByFilter";
+    if ((a.Status()&CGeneModel::eTSA)!=0)    attributes["flags"] += ",TSA";
 
     if (a.GetCdsInfo().ReadingFrame().NotEmpty()) {
 
@@ -1663,6 +1665,8 @@ void ParseAttributes(map<string,string>& attributes, CAlignModel& a)
         else if (*f == "UnknownOrientation") a.Status()|= CGeneModel::eUnknownOrientation;
         else if (*f == "GapFiller") a.Status()|= CGeneModel::eGapFiller;
         else if (*f == "cDNAIntrons") a.Status()       |= CGeneModel::ecDNAIntrons;
+        else if (*f == "TSA") a.Status()       |= CGeneModel::eTSA;
+        else if (*f == "ChangedByFilter") a.Status()       |= CGeneModel::eChangedByFilter;
         else if (*f == "ConfirmedStart")   { confirmed_start = true; has_start = true; }
         else if (*f == "PutativeStart")   { open_cds = true; has_start = true; }
         else if (*f == "Start") has_start = true;

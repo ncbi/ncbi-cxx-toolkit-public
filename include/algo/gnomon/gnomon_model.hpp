@@ -347,7 +347,9 @@ public:
         eUnknownOrientation = 1024,
         eConsistentCoverage = 2048,
         eGapFiller = 4096,
-        eUnmodifiedAlign = 8192
+        eUnmodifiedAlign = 8192,
+        eChangedByFilter = 16384,
+        eTSA = 32768
     };
 
     CGeneModel(EStrand s = ePlus, Int8 id = 0, int type = 0) :
