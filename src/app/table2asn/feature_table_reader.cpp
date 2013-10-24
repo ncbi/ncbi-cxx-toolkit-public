@@ -188,14 +188,37 @@ namespace
         return CTempString();
     }
 
-    CRef<CSeq_entry> TranslateProtein(CScope& scope, CSeq_entry_Handle top_entry_h, const CSeq_feat& feature, CTempString locustag)
+    CRef<CSeq_entry> LocateProtein(const CSeq_entry& proteins, const CSeq_feat& feature)
     {
+        const CSeq_id* id = feature.GetProduct().GetId();
+        ITERATE(CSeq_entry::TSet::TSeq_set, it, proteins.GetSet().GetSeq_set())
+        {
+            ITERATE(CBioseq::TId, seq_it, (**it).GetSeq().GetId())
+            {
+                if ((**seq_it).Compare(*id) == CSeq_id::e_YES)
+                {
+                    CRef<CSeq_entry> result(new CSeq_entry);
+                    result->Assign(**it);
+                    return result;
+                }
+            }
+        }
+        return CRef<CSeq_entry>();
+    }
+  
+
+    CRef<CSeq_entry> TranslateProtein(CScope& scope, CSeq_entry_Handle top_entry_h, const CSeq_feat& feature, CTempString locustag, const CSeq_entry& proteins)
+    {
+        CRef<CSeq_entry> pentry = LocateProtein(proteins, feature);
+        if (pentry.NotEmpty())
+            return pentry;
+
         CRef<CBioseq> protein = CSeqTranslator::TranslateToProtein(feature, scope);
 
         if (protein.Empty())
             return CRef<CSeq_entry>();
 
-        CRef<CSeq_entry> pentry(new CSeq_entry);
+        pentry.Reset(new CSeq_entry);
         pentry->SetSeq(*protein);
 
         string org_name;
@@ -279,96 +302,6 @@ namespace
         CBioseq_Handle bioseq_handle = scope.AddBioseq(*protein);
 
         return pentry;
-    }
-
-    void ParseCdregions(CSeq_entry& entry)
-    {
-        if (!entry.IsSet() ||
-            entry.GetSet().GetClass() != CBioseq_set::eClass_nuc_prot)
-            return;
-
-        CRef<CObjectManager> mgr(CObjectManager::GetInstance());
-
-        CScope scope(*mgr);
-        CSeq_entry_Handle entry_h = scope.AddTopLevelSeqEntry(entry);
-
-        // Create empty annotation holding cdregion features
-        CRef<CSeq_annot> set_annot(new CSeq_annot);
-        set_annot->SetData().SetFtable();
-        entry.SetSet().SetAnnot().push_back(set_annot);
-
-        NON_CONST_ITERATE(CBioseq_set::TSeq_set, seq_it, entry.SetSet().SetSeq_set())
-        //for (CBioseq_set::TSeq_set::iterator seq_it = entry.SetSet().SetSeq_set().begin();
-        //    entry.SetSet().SetSeq_set().end() != seq_it;)
-        {
-            CRef<CSeq_entry> seq = *seq_it;
-            if (seq->IsSeq() &&
-                seq->GetSeq().IsSetInst() &&
-                seq->GetSeq().IsNa() && 
-                seq->GetSeq().IsSetAnnot() )
-            {
-                for (CBioseq::TAnnot::iterator annot_it = seq->SetSeq().SetAnnot().begin(); 
-                    seq->SetSeq().SetAnnot().end() != annot_it;)
-                {
-                    CRef<CSeq_annot> seq_annot(*annot_it);
-
-                    if (seq_annot->IsFtable())
-                    {
-                        CTempString locustag;
-                        for (CSeq_annot::TData::TFtable::iterator feat_it = seq_annot->SetData().SetFtable().begin();
-                            seq_annot->SetData().SetFtable().end() != feat_it;)
-                        {
-                            CRef<CSeq_feat> feature = (*feat_it);
-                            if (feature->IsSetData())
-                            {
-                                CSeqFeatData& data = feature->SetData();
-                                if (data.IsGene())
-                                {
-                                    if (data.GetGene().IsSetLocus_tag())
-                                        locustag = data.GetGene().GetLocus_tag();
-                                }
-                                else
-                                if (data.IsCdregion())
-                                {
-                                    CRef<CSeq_entry> protein = TranslateProtein(scope, entry_h, *feature, locustag);
-                                    locustag.clear();
-                                    if (protein.NotEmpty())
-                                    {
-                                        entry.SetSet().SetSeq_set().push_back(protein);
-                                        // move the cdregion into protein and step iterator to next
-                                        set_annot->SetData().SetFtable().push_back(feature);
-                                        seq_annot->SetData().SetFtable().erase(feat_it++);
-                                        continue; // avoid iterator increment
-                                    }
-                                }
-                                else
-                                if (data.IsPub())
-                                {
-                                    CRef<CSeqdesc> seqdesc(new CSeqdesc);
-                                    seqdesc->SetPub(data.SetPub());
-                                    entry.SetDescr().Set().push_back(seqdesc);
-                                    seq_annot->SetData().SetFtable().erase(feat_it++);
-                                    continue; // avoid iterator increment
-                                }
-                            }
-                            ++feat_it;
-                        }
-                        if (seq_annot->GetData().GetFtable().empty())
-                        {
-                            seq->SetSeq().SetAnnot().erase(annot_it++);
-                            continue;
-                        }
-                        
-                     }
-                     ++annot_it;
-                  }                 
-                if (seq->GetSeq().GetAnnot().empty())
-                {
-                    seq->SetSeq().ResetAnnot();
-                }
-             }
-        }
-        entry.Parentize();
     }
 
     void ConvertSeqIntoSeqSet(CSeq_entry& entry)
@@ -513,7 +446,7 @@ void CFeatureTableReader::FindOpenReadingFrame(objects::CSeq_entry& entry) const
     }
 }
 
-void CFeatureTableReader::ReadReplacementProtein(objects::CSeq_entry& obj, ILineReader& line_reader)
+CRef<objects::CSeq_entry> CFeatureTableReader::ReadReplacementProtein(ILineReader& line_reader)
 {
     int flags = 0;
     flags |= CFastaReader::fAddMods
@@ -524,15 +457,107 @@ void CFeatureTableReader::ReadReplacementProtein(objects::CSeq_entry& obj, ILine
     auto_ptr<CFastaReader> pReader(new CFastaReader(0, flags));
 
     CRef<CSerialObject> pep = pReader->ReadObject(line_reader, m_logger);
+    CRef<objects::CSeq_entry> result;
 
-    CNcbiOfstream ostr("xxx.pep");
+    if (pep.NotEmpty())
+    {
+        if (pep->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo()))
+        {
+            result = (CSeq_entry*)(pep.GetPointerOrNull());
+        }
+    }
 
-    ostr << MSerial_AsnText 
-         << MSerial_VerifyNo
-         << *pep;
+    return result;
+}
 
-    ostr.flush();
+void CFeatureTableReader::ParseCdregions(CSeq_entry& entry)
+{
+    if (!entry.IsSet() ||
+        entry.GetSet().GetClass() != CBioseq_set::eClass_nuc_prot)
+        return;
 
+    CRef<CObjectManager> mgr(CObjectManager::GetInstance());
+
+    CScope scope(*mgr);
+    CSeq_entry_Handle entry_h = scope.AddTopLevelSeqEntry(entry);
+
+    // Create empty annotation holding cdregion features
+    CRef<CSeq_annot> set_annot(new CSeq_annot);
+    set_annot->SetData().SetFtable();
+    entry.SetSet().SetAnnot().push_back(set_annot);
+
+    NON_CONST_ITERATE(CBioseq_set::TSeq_set, seq_it, entry.SetSet().SetSeq_set())
+    //for (CBioseq_set::TSeq_set::iterator seq_it = entry.SetSet().SetSeq_set().begin();
+    //    entry.SetSet().SetSeq_set().end() != seq_it;)
+    {
+        CRef<CSeq_entry> seq = *seq_it;
+        if (seq->IsSeq() &&
+            seq->GetSeq().IsSetInst() &&
+            seq->GetSeq().IsNa() && 
+            seq->GetSeq().IsSetAnnot() )
+        {
+            for (CBioseq::TAnnot::iterator annot_it = seq->SetSeq().SetAnnot().begin(); 
+                seq->SetSeq().SetAnnot().end() != annot_it;)
+            {
+                CRef<CSeq_annot> seq_annot(*annot_it);
+
+                if (seq_annot->IsFtable())
+                {
+                    CTempString locustag;
+                    for (CSeq_annot::TData::TFtable::iterator feat_it = seq_annot->SetData().SetFtable().begin();
+                        seq_annot->SetData().SetFtable().end() != feat_it;)
+                    {
+                        CRef<CSeq_feat> feature = (*feat_it);
+                        if (feature->IsSetData())
+                        {
+                            CSeqFeatData& data = feature->SetData();
+                            if (data.IsGene())
+                            {
+                                if (data.GetGene().IsSetLocus_tag())
+                                    locustag = data.GetGene().GetLocus_tag();
+                            }
+                            else
+                            if (data.IsCdregion())
+                            {
+                                CRef<CSeq_entry> protein = TranslateProtein(scope, entry_h, *feature, locustag, *m_replacement_protein);
+                                locustag.clear();
+                                if (protein.NotEmpty())
+                                {
+                                    entry.SetSet().SetSeq_set().push_back(protein);
+                                    // move the cdregion into protein and step iterator to next
+                                    set_annot->SetData().SetFtable().push_back(feature);
+                                    seq_annot->SetData().SetFtable().erase(feat_it++);
+                                    continue; // avoid iterator increment
+                                }
+                            }
+                            else
+                            if (data.IsPub())
+                            {
+                                CRef<CSeqdesc> seqdesc(new CSeqdesc);
+                                seqdesc->SetPub(data.SetPub());
+                                entry.SetDescr().Set().push_back(seqdesc);
+                                seq_annot->SetData().SetFtable().erase(feat_it++);
+                                continue; // avoid iterator increment
+                            }
+                        }
+                        ++feat_it;
+                    }
+                    if (seq_annot->GetData().GetFtable().empty())
+                    {
+                        seq->SetSeq().SetAnnot().erase(annot_it++);
+                        continue;
+                    }
+                        
+                    }
+                    ++annot_it;
+                }                 
+            if (seq->GetSeq().GetAnnot().empty())
+            {
+                seq->SetSeq().ResetAnnot();
+            }
+            }
+    }
+    entry.Parentize();
 }
 
 

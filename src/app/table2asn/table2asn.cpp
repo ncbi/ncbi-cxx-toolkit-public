@@ -87,6 +87,7 @@ private:
 
     auto_ptr<CRemoteUpdater> m_remote_updater;
     auto_ptr<CMultiReader> m_reader;
+    CRef<CSeq_entry> m_replacement_proteins;
 
     void Setup(const CArgs& args);
 
@@ -578,6 +579,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     if (!m_context.m_avoid_orf_lookup && !m_context.m_find_open_read_frame.empty())
         fr.FindOpenReadingFrame(*entry);
 
+    fr.m_replacement_protein = m_replacement_proteins;
     fr.MergeCDSFeatures(*entry);
     entry->Parentize();
 
@@ -806,16 +808,12 @@ void CTbl2AsnApp::ProcessPEPFile(const string& pathname, CSeq_entry& result)
     CFile file(pathname);
     if (!file.Exists()) return;
 
-#if 0
     CRef<ILineReader> reader(ILineReader::New(pathname));
 
     // CPropsLine
     CFeatureTableReader peps(m_context.m_logger);
 
-    peps.ReadReplacementProtein(result, *reader);
-
-    //CRef<CSeq_entry> entry = m_reader->LoadFile(pathname);
-#endif
+    m_replacement_proteins = peps.ReadReplacementProtein(*reader);
 }
 
 void CTbl2AsnApp::ProcessRNAFile(const string& pathname, CSeq_entry& result)
