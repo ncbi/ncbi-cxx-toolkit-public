@@ -180,7 +180,8 @@ public:
                    Uint8 size,
                    Uint1 quorum,
                    bool search,
-                   bool force_local);
+                   bool force_local,
+                   Uint8 age);
     void ProxyReadLast(CRequestContext* cmd_ctx,
                        const string& key,
                        const string& password,
@@ -188,7 +189,8 @@ public:
                        Uint8 size,
                        Uint1 quorum,
                        bool search,
-                       bool force_local);
+                       bool force_local,
+                       Uint8 age);
     void ProxyGetMeta(CRequestContext* cmd_ctx,
                       const string& key,
                       Uint1 quorum,

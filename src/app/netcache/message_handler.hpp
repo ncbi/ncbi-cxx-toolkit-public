@@ -338,6 +338,8 @@ private:
     CNCActiveClientHub*       m_ActiveHub;
     string                    m_LastPeerError;
     string                    m_StatType;
+    Uint8                     m_AgeMax;
+    Uint8                     m_AgeCur;
 };
 
 

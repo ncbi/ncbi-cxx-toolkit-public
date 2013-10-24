@@ -161,7 +161,9 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
-          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
+          // Max age of blob (returned blob should be younger)
+          { "age",     eNSPT_Int,  eNSPA_Optional } } },
     // Write blob contents. Command for "ICache" clients.
     { "STOR",
         {&CNCMessageHandler::x_DoCmd_IC_Store,
@@ -248,7 +250,9 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
-          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
+          // Max age of blob (returned blob should be younger)
+          { "age",     eNSPT_Int,  eNSPA_Optional } } },
     // Mark the given blob version as "valid" and do that only if this version
     // is still current and wasn't rewritten with another version.
     { "SETVALID",
@@ -403,7 +407,9 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
-          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
+          // Max age of blob (returned blob should be younger)
+          { "age",     eNSPT_Int,  eNSPA_Optional } } },
     // Check if blob exists. Command for "NetCache" clients.
     { "HASB",
         {&CNCMessageHandler::x_DoCmd_HasBlob,
@@ -523,7 +529,9 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
-          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
+          // Max age of blob (returned blob should be younger)
+          { "age",     eNSPT_Int,  eNSPA_Optional } } },
     // Read part of the blob contents. Command for "ICache" clients.
     { "READPART",
         {&CNCMessageHandler::x_DoCmd_Get,
@@ -550,7 +558,9 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Optional },
           // Password for blob access.
-          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
+          // Max age of blob (returned blob should be younger)
+          { "age",     eNSPT_Int,  eNSPA_Optional } } },
     // Get meta information about the blob. This command is sent only by other
     // NC servers. And it's used to determine which server has the latest
     // version of the blob. Thus response to this command is a line containing
@@ -644,7 +654,9 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Required },
           // Password for blob access.
-          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
+          // Max age of blob (returned blob should be younger)
+          { "age",     eNSPT_Int,  eNSPA_Optional } } },
     // Check if the blob exists. This command is sent only by other NC servers
     // in response to client's HASB command when the server where
     // client have sent initial command cannot execute it locally for any
@@ -748,7 +760,9 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
           // Session ID for application requesting the info.
           { "sid",     eNSPT_Str,  eNSPA_Required },
           // Password for blob access.
-          { "pass",    eNSPT_Str,  eNSPA_Optional } } },
+          { "pass",    eNSPT_Str,  eNSPA_Optional },
+          // Max age of blob (returned blob should be younger)
+          { "age",     eNSPT_Int,  eNSPA_Optional } } },
     // Mark the "current version" of the blob as "valid".
     // This command is sent only by other NC servers in response to client's
     // SETVALID command when the server where client have sent initial command
@@ -1474,6 +1488,7 @@ CNCMessageHandler::x_AssignCmdParams(void)
     m_Quorum = 1;
     m_CmdVersion = 0;
     m_ForceLocal = false;
+    m_AgeMax = m_AgeCur = 0;
     bool quorum_was_set = false;
     bool search_was_set = false;
 
@@ -1484,6 +1499,11 @@ CNCMessageHandler::x_AssignCmdParams(void)
         CTempString& val = it->second;
 
         switch (key[0]) {
+        case 'a':
+            if (key == "age") {
+                m_AgeMax = NStr::StringToUInt8(val);
+            }
+            break;
         case 'c':
             switch (key[1]) {
             case 'a':
@@ -1997,7 +2017,11 @@ CNCMessageHandler::x_ReportBlobNotFound(void)
     x_SetFlag(fNoBlobAccessStats);
     x_UnsetFlag(fConfirmOnFinish);
     GetDiagCtx()->SetRequestStatus(eStatus_NotFound);
-    WriteText(s_MsgForStatus[eStatus_NotFound]).WriteText("\n");
+    WriteText(s_MsgForStatus[eStatus_NotFound]);
+    if (m_AgeCur != 0) {
+        WriteText(", AGE=").WriteNumber(m_AgeCur);
+    }
+    WriteText("\n");
     return &Me::x_FinishCommand;
 }
 
@@ -2547,7 +2571,7 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
     case eProxyRead:
         m_ActiveHub->GetHandler()->ProxyRead(GetDiagCtx(), m_BlobKey, m_RawBlobPass,
                                              m_BlobVersion, m_StartPos, m_Size,
-                                             m_Quorum, m_SearchOnRead, m_ForceLocal);
+                                             m_Quorum, m_SearchOnRead, m_ForceLocal, m_AgeMax);
         break;
     case eProxyWrite:
         m_ActiveHub->GetHandler()->ProxyWrite(GetDiagCtx(), m_BlobKey, m_RawBlobPass,
@@ -2566,7 +2590,7 @@ CNCMessageHandler::x_SendCmdAsProxy(void)
     case eProxyReadLast:
         m_ActiveHub->GetHandler()->ProxyReadLast(GetDiagCtx(), m_BlobKey, m_RawBlobPass,
                                                  m_StartPos, m_Size, m_Quorum,
-                                                 m_SearchOnRead, m_ForceLocal);
+                                                 m_SearchOnRead, m_ForceLocal, m_AgeMax);
         break;
     case eProxySetValid:
         m_ActiveHub->GetHandler()->ProxySetValid(GetDiagCtx(), m_BlobKey, m_RawBlobPass,
@@ -2721,6 +2745,16 @@ CNCMessageHandler::State
 CNCMessageHandler::x_ExecuteOnLatestSrvId(void)
 {
     LOG_CURRENT_FUNCTION
+    if (m_LatestExist) {
+        // if max age specified, check age
+        if (m_AgeMax != 0) {
+            CSrvTime cur_srv_time = CSrvTime::Current();
+            m_AgeCur =  Uint8(cur_srv_time.Sec()) - m_LatestBlobSum->create_time / kUSecsPerSecond;
+            if (m_AgeCur > m_AgeMax) {
+                return &Me::x_ReportBlobNotFound;
+            }
+        }
+    }
     if (!m_PrevCache.empty() && m_BlobAccess->IsPurged(m_PrevCache)) {
         if (x_IsFlagSet(fPeerFindExistsOnly)) {
             m_LatestExist = false;
@@ -2980,7 +3014,11 @@ CNCMessageHandler::x_DoCmd_Get(void)
             m_Size = blob_size;
     }
 
-    WriteText("OK:BLOB found. SIZE=").WriteNumber(blob_size).WriteText("\n");
+    WriteText("OK:BLOB found. SIZE=").WriteNumber(blob_size);
+    if (m_AgeCur != 0) {
+        WriteText(", AGE=").WriteNumber(m_AgeCur);
+    }
+    WriteText("\n");
 
     if (blob_size == 0)
         return &Me::x_FinishCommand;
@@ -3009,6 +3047,9 @@ CNCMessageHandler::x_DoCmd_GetLast(void)
     WriteText("OK:BLOB found. SIZE=").WriteNumber(blob_size);
     WriteText(", VER=").WriteNumber(m_BlobAccess->GetCurBlobVersion());
     WriteText(", VALID=").WriteText(m_BlobAccess->IsCurVerExpired()? "false": "true");
+    if (m_AgeCur != 0) {
+        WriteText(", AGE=").WriteNumber(m_AgeCur);
+    }
     WriteText("\n");
 
     if (blob_size == 0)

@@ -520,7 +520,8 @@ CNCActiveHandler::ProxyRead(CRequestContext* cmd_ctx,
                             Uint8 size,
                             Uint1 quorum,
                             bool search,
-                            bool force_local)
+                            bool force_local,
+                            Uint8 age)
 {
     SetDiagCtx(cmd_ctx);
     m_CurCmd = eReadData;
@@ -557,6 +558,10 @@ CNCActiveHandler::ProxyRead(CRequestContext* cmd_ctx,
         m_CmdToSend += password;
         m_CmdToSend.append(1, '"');
     }
+    if (age != 0) {
+        m_CmdToSend += " age=";
+        m_CmdToSend += NStr::UInt8ToString(age);
+    }
 
     x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
 }
@@ -569,7 +574,8 @@ CNCActiveHandler::ProxyReadLast(CRequestContext* cmd_ctx,
                                 Uint8 size,
                                 Uint1 quorum,
                                 bool search,
-                                bool force_local)
+                                bool force_local,
+                                Uint8 age)
 {
     SetDiagCtx(cmd_ctx);
     m_CurCmd = eReadData;
@@ -603,6 +609,10 @@ CNCActiveHandler::ProxyReadLast(CRequestContext* cmd_ctx,
         m_CmdToSend += " \"";
         m_CmdToSend += password;
         m_CmdToSend.append(1, '"');
+    }
+    if (age != 0) {
+        m_CmdToSend += " age=";
+        m_CmdToSend += NStr::UInt8ToString(age);
     }
 
     x_SetStateAndStartProcessing(&Me::x_SendCmdToExecute);
