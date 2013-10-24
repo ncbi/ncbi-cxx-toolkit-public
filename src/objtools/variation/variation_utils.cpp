@@ -530,10 +530,32 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
 
 bool CVariationNormalizationLeft::x_ProcessShift(string &a, int &pos,int &pos_right)
 {
+    string orig_a = a;
     int length = a.size();
     int orig_pos = pos;
-                              
+                            
     bool found_left = false;
+
+    string b;
+    if (pos >=0 && pos+length < x_GetSeqSize())
+        b = x_GetSeq(pos,length);
+    if (m_Type == CVariation_inst::eType_ins)
+    {
+        while (a != b && pos >= orig_pos - length) // Should be >= here in contrast to the right shifting because the insertion can be after the sequence.
+        {
+            pos--;
+            x_rotate_right(a);
+            if (pos >=0 && pos+length < x_GetSeqSize())
+                b = x_GetSeq(pos,length);
+        }
+    }
+    if (a != b) 
+    {
+        pos = orig_pos;
+        a = orig_a;
+        return false;
+    }   
+
     while (pos >= 0 && pos+length < x_GetSeqSize())
     {
         pos--; 
@@ -573,12 +595,29 @@ void CVariationNormalizationLeft::x_ModifyLocation(CSeq_loc &loc, CSeq_literal &
 
 bool CVariationNormalizationRight::x_ProcessShift(string &a, int &pos_left, int &pos) // pos here should already point to the beginning of the seq to be inserted or deleted
 {
+    string orig_a = a;
     int orig_pos = pos;
     int length = a.size(); 
+
     string b;
     if (pos >=0 && pos+length < x_GetSeqSize())
         b = x_GetSeq(pos,length);
-    if (a != b) return false;
+    if (m_Type == CVariation_inst::eType_ins)
+    {
+        while (a != b && pos > orig_pos - length)
+        {
+            pos--;
+            x_rotate_right(a);
+            if (pos >=0 && pos+length < x_GetSeqSize())
+                b = x_GetSeq(pos,length);
+        }
+    }
+    if (a != b) 
+    {
+        pos = orig_pos;
+        a = orig_a;
+        return false;
+    }
 
     bool found_right = false;
     while (pos >=0 && pos+length < x_GetSeqSize())
