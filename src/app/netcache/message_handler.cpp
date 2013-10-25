@@ -1385,7 +1385,7 @@ check_again:
     if (status == eNCHubError) {
         m_LastPeerError = m_ActiveHub->GetErrMsg();
         SRV_LOG(Warning, "Error executing command on peer "
-            << m_ActiveHub->GetFullPeerName() << ": "
+            << m_ActiveHub->GetFullPeerName() << ", peer says: "
             << m_LastPeerError);
         m_ActiveHub->Release();
         m_ActiveHub = NULL;
@@ -2298,7 +2298,7 @@ CNCMessageHandler::x_CloseOnPeerError(void)
 {
     LOG_CURRENT_FUNCTION
     SRV_LOG(Warning, "Error executing command on peer "
-        << m_ActiveHub->GetFullPeerName() << ": "
+        << m_ActiveHub->GetFullPeerName() << ", peer says: "
         << m_ActiveHub->GetErrMsg());
     GetDiagCtx()->SetRequestStatus(eStatus_PeerError);
     return &Me::x_CloseCmdAndConn;
@@ -2631,7 +2631,7 @@ CNCMessageHandler::x_WaitForPeerAnswer(void)
 
         m_LastPeerError = m_ActiveHub->GetErrMsg();
         SRV_LOG(Warning, "Error executing command on peer "
-            << m_ActiveHub->GetFullPeerName() << ": "  << m_LastPeerError);
+            << m_ActiveHub->GetFullPeerName() << ", peer says: "  << m_LastPeerError);
         m_ActiveHub->Release();
         m_ActiveHub = NULL;
         return &Me::x_ProxyToNextPeer;
