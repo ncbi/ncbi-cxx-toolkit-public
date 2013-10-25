@@ -1,0 +1,96 @@
+Seq-annot ::= {
+  desc {
+    user {
+      type str "vcf-meta-info",
+      data {
+        {
+          label str "meta-information",
+          num 1,
+          data strs {
+            "fileformat=VCFv4.0"
+          }
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs143255646"
+        },
+        variant-prop {
+          version 5,
+          resource-link 0,
+          gene-location 0,
+          effect no-change,
+          mapping 0,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    },
+                    action ins-before
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 2,
+                      seq-data iupacna "AA"
+                    },
+                    action ins-before
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 3,
+                      seq-data iupacna "AAA"
+                    },
+                    action ins-before
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 10228,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          }
+        }
+      }
+    }
+  }
+}
