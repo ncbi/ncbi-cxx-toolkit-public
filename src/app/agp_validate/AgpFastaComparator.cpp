@@ -203,6 +203,7 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
     fasta_flags &= ~CFastaReader::fParseGaps;
     // component ids are always interpreted as local
     fasta_flags &= ~CFastaReader::fParseRawID; 
+    fasta_flags |= CFastaReader::fAddMods;
     lds_mgr->SetFastaFlags(fasta_flags);
 
     list<string> objfiles;
@@ -704,7 +705,7 @@ void CAgpFastaComparator::x_ProcessObjects(
 
             if( format == CFormatGuess::eFasta ) {
                 CNcbiIfstream file_istrm( filename.c_str(), ios::binary );
-                CFastaReader reader(file_istrm);
+                CFastaReader reader(file_istrm, CFastaReader::fAddMods);
                 while (file_istrm) {
                     CRef<CSeq_entry> entry = reader.ReadOneSeq();
 
