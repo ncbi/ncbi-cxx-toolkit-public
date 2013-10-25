@@ -235,7 +235,7 @@ specs/dbSNP_BitField_latest.pdf",
             },
             {
               data instance {
-                type delins,
+                type mnp,
                 delta {
                   {
                     seq literal {
@@ -249,8 +249,9 @@ specs/dbSNP_BitField_latest.pdf",
           }
         }
       },
-      location pnt {
-        point 4077314,
+      location int {
+        from 4077314,
+        to 4077315,
         id local id 1
       },
       ext {
@@ -351,8 +352,9 @@ specs/dbSNP_BitField_latest.pdf",
           }
         }
       },
-      location pnt {
-        point 91666,
+      location int {
+        from 91666,
+        to 91668,
         id local id 1
       },
       ext {

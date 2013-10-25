@@ -76,8 +76,9 @@ Seq-annot ::= {
           }
         }
       },
-      location pnt {
-        point 10228,
+      location int {
+        from 10228,
+        to 10229,
         id local id 1
       },
       ext {
