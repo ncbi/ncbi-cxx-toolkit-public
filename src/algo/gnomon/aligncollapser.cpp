@@ -54,7 +54,7 @@ CAlignModel CAlignCommon::GetAlignment(const SAlignIndividual& ali, const deque<
         a.Status() |= CGeneModel::eCap;
     if(isUnknown()) 
         a.Status()|= CGeneModel::eUnknownOrientation;
-    a.SetID(abs(ali.m_align_id));
+    a.SetID(ali.m_align_id >= 0 ? ali.m_align_id : -ali.m_align_id);
     a.SetWeight(ali.m_weight);
     if(ali.m_align_id < 0)
         a.Status() |= CGeneModel::eChangedByFilter;
