@@ -967,7 +967,12 @@ bool CGff2Record::x_InitFeatureData(
         }
     }
     pFeature->SetData().SetImp();  
-    pFeature->SetData().SetImp().SetKey(Type());
+    if (Type() == ".") {
+        pFeature->SetData().SetImp().SetKey("misc_feature");
+    }
+    else {
+        pFeature->SetData().SetImp().SetKey(Type());
+    }
     return true;
 }
 
