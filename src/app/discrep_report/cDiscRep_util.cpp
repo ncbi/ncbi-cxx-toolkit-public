@@ -1344,9 +1344,12 @@ void CTestAndRepData :: AddSubcategory(CRef <CClickableItem>& c_item, const stri
            NCBI_THROW(CException, eUnknown, "Bad comment type.");
      }  
      c_sub->obj_list = thisInfo.test_item_objs[sub_grp_nm];
-     if (itemlist && copy2parent)
+     if (itemlist && copy2parent) {
         c_item->item_list.insert(c_item->item_list.end(),
                                        c_sub->item_list.begin(), c_sub->item_list.end());
+        c_item->obj_list.insert(c_item->obj_list.end(),
+                                       c_sub->obj_list.begin(), c_sub->obj_list.end());
+     }
      c_item->subcategories.push_back(c_sub);
 };
 

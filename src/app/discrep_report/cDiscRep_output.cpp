@@ -362,13 +362,13 @@ string CRepConfig :: x_GetDesc4GItem(string desc)
 
 void CRepConfig :: x_InputRepToGbenchItem(const CClickableItem& c_item,  CClickableText& item) 
 {
-   if (c_item.subcategories.empty()) {
+   if (!c_item.item_list.empty()) {
       item.SetObjdescs().insert(item.SetObjdescs().end(), 
                                           c_item.item_list.begin(), c_item.item_list.end());
       item.SetObjects().insert(item.SetObjects().end(), c_item.obj_list.begin(),
                  c_item.obj_list.end());
    }
-   else {
+   if (!c_item.subcategories.empty()) {
       string desc;
       ITERATE (vector < CRef <CClickableItem > >, sit, c_item.subcategories) {
             desc = (*sit)->description;

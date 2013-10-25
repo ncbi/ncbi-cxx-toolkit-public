@@ -362,11 +362,16 @@ if (prot_nm.find("Probable") == string::npos) continue;
 cerr << "prot_nm " << prot_nm << endl;
 */
        rule_idx = 0;
+       string test_name, summ;
        ITERATE (list <CRef <CSuspect_rule> >, rit, thisInfo.suspect_prod_rules->Get()) {
          if (rule_check.DoesStringMatchSuspectRule(m_bioseq_hl, prot_nm, *feat_in_use, **rit)){
               thisInfo.test_item_list[GetName()].push_back(
                    NStr::UIntToString((int)(*rit)->GetRule_type()) + "$" 
                    + NStr::UIntToString(rule_idx) + "@" + GetDiscItemText(*feat_in_use));
+              test_name = thisInfo.susrule_summ[rule_idx][0];
+              summ = thisInfo.susrule_summ[rule_idx][2];
+              thisInfo.test_item_objs[test_name + "$" + summ].push_back(
+                                                     CConstRef<CObject>(feat_in_use));
          }
          rule_idx ++;
        }
@@ -393,7 +398,7 @@ void CBioseq_on_SUSPECT_RULE :: GetReportForRules(CRef <CClickableItem>& c_item)
        test_name = thisInfo.susrule_summ[rule_idx][0];
        fixtp_name = thisInfo.susrule_summ[rule_idx][1];
        summ = thisInfo.susrule_summ[rule_idx][2];
-       AddSubcategory(name_cat_citem, test_name, &(rit->second), "feature " + summ, 
+       AddSubcategory(name_cat_citem, test_name+"$"+summ, &(rit->second), "feature " + summ, 
                                                  "features " + summ,  e_OtherComment);
      } 
      name_cat_citem->setting_name = GetName();
@@ -401,7 +406,8 @@ void CBioseq_on_SUSPECT_RULE :: GetReportForRules(CRef <CClickableItem>& c_item)
      c_item->item_list.insert(c_item->item_list.end(), 
                           name_cat_citem->item_list.begin(), name_cat_citem->item_list.end());
      c_item->subcategories.push_back(name_cat_citem);
-     
+     c_item->obj_list.insert(c_item->obj_list.end(), 
+                           name_cat_citem->obj_list.begin(), name_cat_citem->obj_list.end());  
    }   
 
    c_item->description = GetContainsComment(c_item->item_list.size(), "product_name") 
