@@ -4,6 +4,7 @@ Seq-annot ::= {
   },
   data ftable {
     {
+      id local str "gene00001",
       data gene {
       },
       location int {
@@ -53,6 +54,11 @@ Seq-annot ::= {
         {
           qual "Parent",
           val "gene00001"
+        }
+      },
+      xref {
+        {
+          id local str "gene00001"
         }
       }
     },
@@ -104,6 +110,11 @@ Seq-annot ::= {
           qual "Parent",
           val "gene00001"
         }
+      },
+      xref {
+        {
+          id local str "gene00001"
+        }
       }
     },
     {
@@ -147,6 +158,11 @@ Seq-annot ::= {
         {
           qual "Parent",
           val "gene00001"
+        }
+      },
+      xref {
+        {
+          id local str "gene00001"
         }
       }
     },
@@ -197,6 +213,11 @@ Seq-annot ::= {
         {
           qual "Parent",
           val "gene00001"
+        }
+      },
+      xref {
+        {
+          id local str "gene00001"
         }
       }
     },
