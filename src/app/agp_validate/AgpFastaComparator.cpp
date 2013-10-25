@@ -724,17 +724,14 @@ void CAgpFastaComparator::x_ProcessObjects(
                 {
                     CNcbiIfstream file_istrm( filename.c_str(), ios::binary );
                     x_SetBinaryVsText( file_istrm, format );
-                    try {
-                        file_istrm >> *submit;
-                    } catch(...) {
-                        // didn't work
-                    }
+                    file_istrm >> *submit;
                 }
 
                 if( submit ) {
 
                     if( ! submit->IsEntrys() ) {
                         LOG_POST(Error << "Seq-submits must have 'entrys'.");
+                        m_bSuccess = false;
                         return;
                     }
 
@@ -769,6 +766,7 @@ void CAgpFastaComparator::x_ProcessObjects(
             } else {
                 LOG_POST(Error << "Could not determine format of " << filename 
                          << ", best guess is: " << CFormatGuess::GetFormatName(format) );
+                m_bSuccess = false;
                 return;
             }
         }
@@ -777,10 +775,14 @@ void CAgpFastaComparator::x_ProcessObjects(
                 // end of file; no problem
             } else {
                 LOG_POST(Error << "Error reading object file: " << ex.what() );
+                m_bSuccess = false;
+                return;
             }
         }
         catch (CException& ex ) {
             LOG_POST(Error << "Error reading object file: " << ex.what() );
+            m_bSuccess = false;
+            return;
         }
     }
 
