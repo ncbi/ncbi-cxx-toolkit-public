@@ -254,7 +254,7 @@ s_HSPListPostTracebackUpdate(EBlastProgramType program_number,
 Int2
 Blast_TracebackFromHSPList(EBlastProgramType program_number, 
    BlastHSPList* hsp_list, const BLAST_SequenceBlk* query_blk, 
-   BLAST_SequenceBlk* subject_blk, BlastQueryInfo* query_info_in,
+   BLAST_SequenceBlk* subject_blk, const BlastQueryInfo* query_info_in,
    BlastGapAlignStruct* gap_align, const BlastScoreBlk* sbp, 
    const BlastScoringParameters* score_params,
    const BlastExtensionOptions* ext_options,
@@ -286,7 +286,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    const Boolean kFullTranslation = (fence_hit && *fence_hit);
    const Boolean kSmithWaterman = (ext_options->eTbackExt == 
                                    eSmithWatermanTbckFull);
-   BlastQueryInfo* query_info = query_info_in;
+   const BlastQueryInfo* query_info = query_info_in;
    Int4 stat_length = subject_blk->length;
    Int4 offsets[2];
    Int4 num_initial_hsps = hsp_list->hspcnt;
@@ -342,12 +342,13 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
    if (Blast_ProgramIsRpsBlast(program_number)) {
       /* Create a local BlastQueryInfo structure for this subject sequence
 	 that has been switched with the query. */
-      query_info = BlastMemDup(query_info_in, sizeof(BlastQueryInfo));
-      query_info->first_context = query_info->last_context = 0;
-      query_info->num_queries = 1;
+      BlastQueryInfo* qi = BlastMemDup(query_info_in, sizeof(BlastQueryInfo));
+      qi->first_context = qi->last_context = 0;
+      qi->num_queries = 1;
       offsets[0] = 0;
       offsets[1] = query_blk->length + 1;
-      OffsetArrayToContextOffsets(query_info, offsets, program_number);
+      OffsetArrayToContextOffsets(qi, offsets, program_number);
+      query_info = qi;
    }
 
    /* Make sure the HSPs in the HSP list are sorted by score, as they should 
@@ -993,7 +994,8 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
                            BlastHSPStream* hsp_stream, 
                            const BlastSeqSrc* seq_src, 
                            Int4  default_db_genetic_code,
-                           BLAST_SequenceBlk* query, BlastQueryInfo* query_info, 
+                           BLAST_SequenceBlk* query, 
+                           const BlastQueryInfo* query_info, 
                            BlastGapAlignStruct* gap_align,
                            BlastScoringParameters* score_params,
                            const BlastExtensionParameters* ext_params,
@@ -1345,7 +1347,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                                   NULL, hsp_stream, score_params, ext_params, 
                                   hit_params, psi_options, results);
    } else {
-      Int4 i;
+      Int4 i = 0;
       BlastSeqSrcGetSeqArg seq_arg;
       EBlastEncoding encoding = Blast_TracebackGetEncoding(program_number);
       Boolean perform_traceback = score_params->options->gapped_calculation;

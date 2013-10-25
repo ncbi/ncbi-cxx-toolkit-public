@@ -128,7 +128,7 @@ s_AdjustEvaluesForComposition(
     double comp_p_value,
     const BlastSeqSrc* seqSrc,
     Int4 subject_length,
-    BlastContextInfo * query_context,
+    const BlastContextInfo * query_context,
     double LambdaRatio,
     int subject_id)
 {
@@ -296,7 +296,7 @@ static int
 s_HSPListFromDistinctAlignments(BlastHSPList *hsp_list,
                                 BlastCompo_Alignment ** alignments,
                                 int oid,
-                                BlastQueryInfo* queryInfo,
+                                const BlastQueryInfo* queryInfo,
                                 int frame)
 {
     int status = 0;                    /* return code for any routine called */
@@ -382,7 +382,7 @@ s_HitlistEvaluateAndPurge(int * pbestScore, double *pbestEvalue,
                           const BlastSeqSrc* seqSrc,
                           int subject_length,
                           EBlastProgramType program_number,
-                          BlastQueryInfo* queryInfo,
+                          const BlastQueryInfo* queryInfo,
                           int context_index,
                           BlastScoreBlk* sbp,
                           const BlastHitSavingParameters* hitParams,
@@ -745,7 +745,7 @@ s_ResultHspToDistinctAlign(BlastCompo_Alignment **self,
                            int *numAligns,
                            BlastHSP * hsp_array[], Int4 hspcnt,
                            int init_context,
-                           BlastQueryInfo* queryInfo,
+                           const BlastQueryInfo* queryInfo,
                            double localScalingFactor)
 {
     BlastCompo_Alignment * tail[6];        /* last element in aligns */
@@ -1804,7 +1804,7 @@ s_MatrixInfoInit(Blast_MatrixInfo * self,
  * @return the new array on success, or NULL on error
  */
 static BlastCompo_QueryInfo *
-s_GetQueryInfo(Uint1 * query_data, BlastQueryInfo * blast_query_info, Boolean skip)
+s_GetQueryInfo(Uint1 * query_data, const BlastQueryInfo * blast_query_info, Boolean skip)
 {
     int i;                   /* loop index */
     BlastCompo_QueryInfo *
@@ -1817,7 +1817,7 @@ s_GetQueryInfo(Uint1 * query_data, BlastQueryInfo * blast_query_info, Boolean sk
     if (compo_query_info != NULL) {
         for (i = 0;  i < num_queries;  i++) {
             BlastCompo_QueryInfo * query_info = &compo_query_info[i];
-            BlastContextInfo * query_context = &blast_query_info->contexts[i];
+            const BlastContextInfo * query_context = &blast_query_info->contexts[i];
 
             query_info->eff_search_space =
                 (double) query_context->eff_searchsp;
@@ -1896,7 +1896,7 @@ redo_align_callbacks = {
 static Blast_RedoAlignParams *
 s_GetAlignParams(BlastKappa_GappingParamsContext * context,
                  BLAST_SequenceBlk * queryBlk,
-                 BlastQueryInfo* queryInfo,
+                 const BlastQueryInfo* queryInfo,
                  const BlastHitSavingParameters* hitParams,
                  const BlastExtensionParameters* extendParams)
 {
@@ -2008,7 +2008,7 @@ BLAST_SetupPartialFetching(EBlastProgramType program_number,
 Int2
 Blast_RedoAlignmentCore(EBlastProgramType program_number,
                         BLAST_SequenceBlk * queryBlk,
-                        BlastQueryInfo* queryInfo,
+                        const BlastQueryInfo* queryInfo,
                         BlastScoreBlk* sbp,
                         BLAST_SequenceBlk * subjectBlk,
                         const BlastSeqSrc* seqSrc,

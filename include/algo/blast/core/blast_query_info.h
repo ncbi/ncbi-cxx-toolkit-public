@@ -191,7 +191,7 @@ QueryInfo_GetSeqBufLen(const BlastQueryInfo* qinfo);
  * @return Allocated array.
  */
 NCBI_XBLAST_EXPORT
-Int4 * ContextOffsetsToOffsetArray(BlastQueryInfo* info);
+Int4 * ContextOffsetsToOffsetArray(const BlastQueryInfo* info);
 
 
 /** Copy the context query offsets from an array of Int4, allocating

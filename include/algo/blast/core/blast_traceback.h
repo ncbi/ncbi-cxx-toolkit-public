@@ -74,7 +74,7 @@ NCBI_XBLAST_EXPORT
 Int2
 Blast_TracebackFromHSPList(EBlastProgramType program_number, 
    BlastHSPList* hsp_list, const BLAST_SequenceBlk* query_blk, 
-   BLAST_SequenceBlk* subject_blk, BlastQueryInfo* query_info,
+   BLAST_SequenceBlk* subject_blk, const BlastQueryInfo* query_info,
    BlastGapAlignStruct* gap_align, const BlastScoreBlk* sbp,
    const BlastScoringParameters* score_params,
    const BlastExtensionOptions* ext_options,

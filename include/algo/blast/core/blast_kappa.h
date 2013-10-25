@@ -78,7 +78,7 @@ NCBI_XBLAST_EXPORT
 Int2
 Blast_RedoAlignmentCore(EBlastProgramType program_number,
                   BLAST_SequenceBlk* queryBlk,
-                  BlastQueryInfo* query_info,
+                  const BlastQueryInfo* query_info,
                   BlastScoreBlk* sbp,
                   BLAST_SequenceBlk* subjectBlk,
                   const BlastSeqSrc* seqSrc,

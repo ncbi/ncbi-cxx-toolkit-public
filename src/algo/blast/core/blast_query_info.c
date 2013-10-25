@@ -243,7 +243,7 @@ QueryInfo_GetSeqBufLen(const BlastQueryInfo* qinfo)
 }
 
 Int4 *
-ContextOffsetsToOffsetArray(BlastQueryInfo* info)
+ContextOffsetsToOffsetArray(const BlastQueryInfo* info)
 {
     /* The Many Values of 'Length'
      *
