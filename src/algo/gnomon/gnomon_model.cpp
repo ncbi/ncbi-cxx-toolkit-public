@@ -1253,7 +1253,7 @@ TInDels CAlignModel::GetInDels(bool fs_only) const {
 
     TExons::const_iterator iexn = Exons().begin();
     ITERATE(TInDels, i, indels) {
-        while(iexn != Exons().end() && !i->IntersectingWith(iexn->GetFrom(),iexn->GetTo()) && i->Loc() >= iexn->GetTo())
+        while(iexn != Exons().end() && (iexn->Limits().Empty() || (!i->IntersectingWith(iexn->GetFrom(),iexn->GetTo()) && i->Loc() >= iexn->GetTo())))
             ++iexn;
         if(iexn == Exons().end())
             break;
