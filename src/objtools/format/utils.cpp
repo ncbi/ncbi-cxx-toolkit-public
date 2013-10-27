@@ -761,6 +761,10 @@ static bool s_IsValidAccession(const string& acc)
             } else if ( first_letter == 'Z'  ||  first_letter == 'A'  ||
                         first_letter == 'Y' ) {
                 return (second_letter == 'P');
+            } else if ( first_letter == 'W' ) {
+                if ( second_letter == 'P' ) {
+                    return true;
+                }
             }
         }}
         break;
