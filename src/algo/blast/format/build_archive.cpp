@@ -110,6 +110,7 @@ s_BuildArchiveAll(CRef<CExportStrategy>  export_strategy,
 
         bool first_time = true;
         Int8 effective_search_space = 0;
+        Int8 length_adjustment = 0;
         ITERATE(CSearchResultSet, result, results) {
              CConstRef<CSeq_align_set> result_set =
                         (*result)->GetSeqAlign();
@@ -128,6 +129,7 @@ s_BuildArchiveAll(CRef<CExportStrategy>  export_strategy,
                     ka_list.push_back(s_Convert_to_CBlast_ka_block(isPsiblast? ancill_data->GetPsiGappedKarlinBlk() :
                     		    											   ancill_data->GetGappedKarlinBlk(), true));
                     effective_search_space = ancill_data->GetSearchSpace();
+                    length_adjustment = ancill_data->GetLengthAdjustment();
                     first_time = false;
              }
              TMaskedQueryRegions query_masks;
@@ -141,6 +143,7 @@ s_BuildArchiveAll(CRef<CExportStrategy>  export_strategy,
         list<string>& search_stats = net_results->SetSearch_stats();
         search_stats.push_back("Effective search space: " + NStr::Int8ToString(effective_search_space));
         search_stats.push_back("Effective search space used: " + NStr::Int8ToString(effective_search_space));
+        search_stats.push_back("Length adjustment: " + NStr::Int8ToString(length_adjustment));
 
         net_results->SetAlignments(*seqalign_set);
         archive->SetResults(*net_results);

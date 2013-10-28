@@ -127,6 +127,10 @@ public:
     Int8 GetLengthAdjustment() const { 
         return m_LengthAdjustment; 
     }
+    /// Set the length adjustment for boundary conditions
+    void SetLengthAdjustment(int len_adj){
+        m_LengthAdjustment = len_adj;
+    }
 private:
     /// Gumbel parameters for one query
     Blast_GumbelBlk *m_GumbelBlk;

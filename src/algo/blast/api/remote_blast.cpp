@@ -2090,14 +2090,20 @@ CRef<CSearchResultSet> CRemoteBlast::GetResultSet()
     {
         /* Get the effective search space */
         const string kTarget("Effective search space used: ");
+        const string kLength_Adj("Length adjustment: ");
         list<string> search_stats = GetSearchStats();
         Int8 effective_search_space = 0;
+        Int8 length_adjustment = 0;
         NON_CONST_ITERATE(list<string>, itr, search_stats) {
             if (NStr::Find(*itr, kTarget) != NPOS) {
                 NStr::ReplaceInPlace(*itr, kTarget, kEmptyStr);
                 effective_search_space = 
                     NStr::StringToInt8(*itr, NStr::fConvErr_NoThrow);
-                break;
+            }
+            if (NStr::Find(*itr, kLength_Adj) != NPOS) {
+                            NStr::ReplaceInPlace(*itr, kLength_Adj, kEmptyStr);
+                            length_adjustment =
+                                NStr::StringToInt8(*itr, NStr::fConvErr_NoThrow);
             }
         }
 
@@ -2141,6 +2147,7 @@ CRef<CSearchResultSet> CRemoteBlast::GetResultSet()
         // CBlastAncillaryData constructor argument
         CRef<CBlastAncillaryData> ancillary_data
             (new CBlastAncillaryData(lambdas, Ks, Hs, effective_search_space, m_Task == "psiblast"));
+        	ancillary_data->SetLengthAdjustment(length_adjustment);
         ancill_vector.insert(ancill_vector.end(), alignments.size(),
                              ancillary_data);
     }
