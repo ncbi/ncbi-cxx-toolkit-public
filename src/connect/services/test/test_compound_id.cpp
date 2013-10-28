@@ -133,11 +133,11 @@ void CCompoundIDTestRequest::Process()
         case eCIT_Flags:
             RANDOM_ROOT.AppendFlags(m_Random.GetRand());
             break;
-        case eCIT_Tag:
-            RANDOM_ROOT.AppendTag(x_GenerateRandomString());
+        case eCIT_Label:
+            RANDOM_ROOT.AppendLabel(x_GenerateRandomString());
             break;
-        case eCIT_NumericTag:
-            RANDOM_ROOT.AppendNumericTag(m_Random.GetRand());
+        case eCIT_Cue:
+            RANDOM_ROOT.AppendCue(m_Random.GetRand());
             break;
         case eCIT_SeqID:
             RANDOM_ROOT.AppendSeqID(x_GenerateRandomString());

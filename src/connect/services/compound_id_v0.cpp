@@ -57,8 +57,8 @@ BEGIN_NCBI_SCOPE
 #define CIT_STRING_FIELD_CODE '"'
 #define CIT_BOOLEAN_FIELD_CODE 'Y' or 'N'
 #define CIT_FLAGS_FIELD_CODE '|'
-#define CIT_TAG_FIELD_CODE '#'
-#define CIT_NUMERIC_TAG_FIELD_CODE '$'
+#define CIT_LABEL_FIELD_CODE '$'
+#define CIT_CUE_FIELD_CODE '#'
 #define CIT_SEQ_ID_FIELD_CODE 'Q'
 #define CIT_TAX_ID_FIELD_CODE 'X'
 #define CIT_NESTED_CID_FIELD_CODE '{' and '}'
@@ -78,8 +78,8 @@ static const char s_TypePrefix[eCIT_NumberOfTypes] = {
     /* eCIT_String              */  CIT_STRING_FIELD_CODE,
     /* eCIT_Boolean             */  0,
     /* eCIT_Flags               */  CIT_FLAGS_FIELD_CODE,
-    /* eCIT_Tag                 */  CIT_TAG_FIELD_CODE,
-    /* eCIT_NumericTag          */  CIT_NUMERIC_TAG_FIELD_CODE,
+    /* eCIT_Label               */  CIT_LABEL_FIELD_CODE,
+    /* eCIT_Cue                 */  CIT_CUE_FIELD_CODE,
     /* eCIT_SeqID               */  CIT_SEQ_ID_FIELD_CODE,
     /* eCIT_TaxID               */  CIT_TAX_ID_FIELD_CODE,
     /* eCIT_NestedCID           */  0
@@ -157,7 +157,7 @@ void SIDPackingBuffer::PackCompoundID(SCompoundIDImpl* cid_impl)
         switch (field->m_Type) {
         case eCIT_ID:
         case eCIT_Flags:
-        case eCIT_NumericTag:
+        case eCIT_Cue:
         case eCIT_TaxID:
             PackTypePrefix(field->m_Type);
             PackNumber(field->m_Uint8Value);
@@ -176,7 +176,7 @@ void SIDPackingBuffer::PackCompoundID(SCompoundIDImpl* cid_impl)
         case eCIT_Host:
         case eCIT_Path:
         case eCIT_String:
-        case eCIT_Tag:
+        case eCIT_Label:
         case eCIT_SeqID:
             PackTypePrefix(field->m_Type);
             PackNumber(field->m_StringValue.length());
@@ -405,11 +405,11 @@ CCompoundID SIDUnpacking::ExtractCID(SCompoundIDPoolImpl* pool_impl)
         case CIT_FLAGS_FIELD_CODE:
             new_cid.AppendFlags(ExtractNumber());
             break;
-        case CIT_TAG_FIELD_CODE:
-            new_cid.AppendTag(ExtractString());
+        case CIT_LABEL_FIELD_CODE:
+            new_cid.AppendLabel(ExtractString());
             break;
-        case CIT_NUMERIC_TAG_FIELD_CODE:
-            new_cid.AppendNumericTag(ExtractNumber());
+        case CIT_CUE_FIELD_CODE:
+            new_cid.AppendCue(ExtractNumber());
             break;
         case CIT_SEQ_ID_FIELD_CODE:
             new_cid.AppendSeqID(ExtractString());

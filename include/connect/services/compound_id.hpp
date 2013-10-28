@@ -73,8 +73,8 @@ enum ECompoundIDFieldType {
     eCIT_String,        /* Arbitrary single byte character string             */
     eCIT_Boolean,       /* Boolean value                                      */
     eCIT_Flags,         /* Combination of binary flags stored as a number     */
-    eCIT_Tag,           /* Application-specific field prefix, tag, label      */
-    eCIT_NumericTag,    /* Application-specific numeric field prefix or tag   */
+    eCIT_Label,         /* Application-specific field prefix, tag, label      */
+    eCIT_Cue,           /* Application-specific numeric field prefix or tag   */
     eCIT_SeqID,         /* Sequence identifier (string)                       */
     eCIT_TaxID,         /* Taxon identifier (unsigned integer)                */
     eCIT_NestedCID,     /* Nested CompoundID                                  */
@@ -176,13 +176,13 @@ class NCBI_XCONNECT_EXPORT CCompoundIDField
     Uint8 GetFlags() const;
 
     /// Return the application-specific tag that this field contains.
-    /// @throw CCompoundIDException if GetType() != eCIT_Tag.
-    string GetTag() const;
+    /// @throw CCompoundIDException if GetType() != eCIT_Label.
+    string GetLabel() const;
 
     /// Return the application-specific numeric tag value
     /// that this field contains.
-    /// @throw CCompoundIDException if GetType() != eCIT_NumericTag.
-    Uint8 GetNumericTag() const;
+    /// @throw CCompoundIDException if GetType() != eCIT_Cue.
+    Uint8 GetCue() const;
 
     /// Return the Sequence ID that this field contains.
     /// @throw CCompoundIDException if GetType() != eCIT_SeqID.
@@ -270,11 +270,11 @@ class NCBI_XCONNECT_EXPORT CCompoundID
     /// Append an eCIT_Flags field at the end of this compound ID.
     void AppendFlags(Uint8 flags);
 
-    /// Append an eCIT_Tag field at the end of this compound ID.
-    void AppendTag(const string& tag);
+    /// Append an eCIT_Label field at the end of this compound ID.
+    void AppendLabel(const string& tag);
 
-    /// Append an eCIT_NumericTag field at the end of this compound ID.
-    void AppendNumericTag(Uint8 tag);
+    /// Append an eCIT_Cue field at the end of this compound ID.
+    void AppendCue(Uint8 tag);
 
     /// Append an eCIT_SeqID field at the end of this compound ID.
     void AppendSeqID(const string& seq_id);

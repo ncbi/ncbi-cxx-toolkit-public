@@ -61,8 +61,8 @@
 #define CIT_STRING_TYPE_NAME "str"
 #define CIT_BOOLEAN_TYPE_NAME "bool"
 #define CIT_FLAGS_TYPE_NAME "flags"
-#define CIT_TAG_TYPE_NAME "tag"
-#define CIT_NUMERIC_TAG_TYPE_NAME "num_tag"
+#define CIT_LABEL_TYPE_NAME "label"
+#define CIT_CUE_TYPE_NAME "cue"
 #define CIT_SEQ_ID_TYPE_NAME "seq_id"
 #define CIT_TAX_ID_TYPE_NAME "tax_id"
 #define CIT_NESTED_CID_TYPE_NAME "nested"
@@ -91,8 +91,8 @@ static const char* s_TypeNames[eCIT_NumberOfTypes] = {
     /* eCIT_String              */  CIT_STRING_TYPE_NAME,
     /* eCIT_Boolean             */  CIT_BOOLEAN_TYPE_NAME,
     /* eCIT_Flags               */  CIT_FLAGS_TYPE_NAME,
-    /* eCIT_Tag                 */  CIT_TAG_TYPE_NAME,
-    /* eCIT_NumericTag          */  CIT_NUMERIC_TAG_TYPE_NAME,
+    /* eCIT_Label               */  CIT_LABEL_TYPE_NAME,
+    /* eCIT_Cue                 */  CIT_CUE_TYPE_NAME,
     /* eCIT_SeqID               */  CIT_SEQ_ID_TYPE_NAME,
     /* eCIT_TaxID               */  CIT_TAX_ID_TYPE_NAME,
     /* eCIT_NestedCID           */  CIT_NESTED_CID_TYPE_NAME
@@ -159,8 +159,8 @@ CIF_GET_IMPL(string, GetPath, eCIT_Path, m_StringValue);
 CIF_GET_IMPL(string, GetString, eCIT_String, m_StringValue);
 CIF_GET_IMPL(bool, GetBoolean, eCIT_Boolean, m_BoolValue);
 CIF_GET_IMPL(Uint8, GetFlags, eCIT_Flags, m_Uint8Value);
-CIF_GET_IMPL(string, GetTag, eCIT_Tag, m_StringValue);
-CIF_GET_IMPL(Uint8, GetNumericTag, eCIT_NumericTag, m_Uint8Value);
+CIF_GET_IMPL(string, GetLabel, eCIT_Label, m_StringValue);
+CIF_GET_IMPL(Uint8, GetCue, eCIT_Cue, m_Uint8Value);
 CIF_GET_IMPL(string, GetSeqID, eCIT_SeqID, m_StringValue);
 CIF_GET_IMPL(Uint8, GetTaxID, eCIT_TaxID, m_Uint8Value);
 CIF_GET_IMPL(const CCompoundID&, GetNestedCID, eCIT_NestedCID, m_NestedCID);
@@ -225,7 +225,8 @@ CCompoundIDField CCompoundID::GetFirst(ECompoundIDFieldType field_type)
 
     SCompoundIDFieldImpl* first =
             m_Impl->m_HomogeneousFields[field_type].m_Head;
-    first->m_CID = m_Impl;
+    if (first != NULL)
+        first->m_CID = m_Impl;
     return first;
 }
 
@@ -271,8 +272,8 @@ CID_APPEND_IMPL(AppendPath, eCIT_Path, const string&, m_StringValue);
 CID_APPEND_IMPL(AppendString, eCIT_String, const string&, m_StringValue);
 CID_APPEND_IMPL(AppendBoolean, eCIT_Boolean, bool, m_BoolValue);
 CID_APPEND_IMPL(AppendFlags, eCIT_Flags, Uint8, m_Uint8Value);
-CID_APPEND_IMPL(AppendTag, eCIT_Tag, const string&, m_StringValue);
-CID_APPEND_IMPL(AppendNumericTag, eCIT_NumericTag, Uint8, m_Uint8Value);
+CID_APPEND_IMPL(AppendLabel, eCIT_Label, const string&, m_StringValue);
+CID_APPEND_IMPL(AppendCue, eCIT_Cue, Uint8, m_Uint8Value);
 CID_APPEND_IMPL(AppendSeqID, eCIT_SeqID, const string&, m_StringValue);
 CID_APPEND_IMPL(AppendTaxID, eCIT_TaxID, Uint8, m_Uint8Value);
 CID_APPEND_IMPL(AppendNestedCID, eCIT_NestedCID,
@@ -312,7 +313,7 @@ static void s_DumpCompoundID(CNcbiOstrstream& sstr, SCompoundIDImpl* cid_impl,
             sstr << s_TypeNames[field->m_Type] << ' ';
             switch (field->m_Type) {
             case eCIT_ID:
-            case eCIT_NumericTag:
+            case eCIT_Cue:
             case eCIT_TaxID:
                 sstr << field->m_Uint8Value;
                 break;
@@ -325,7 +326,7 @@ static void s_DumpCompoundID(CNcbiOstrstream& sstr, SCompoundIDImpl* cid_impl,
             case eCIT_Host:
             case eCIT_Path:
             case eCIT_String:
-            case eCIT_Tag:
+            case eCIT_Label:
             case eCIT_SeqID:
                 sstr << '"' <<
                         NStr::PrintableString(field->m_StringValue) << '"';
@@ -541,8 +542,8 @@ CCompoundID CCompoundIDDumpParser::ParseID()
             case 'n':
                 if (field_type_name == CIT_NESTED_CID_TYPE_NAME)
                     field_type = eCIT_NestedCID;
-                else if (field_type_name == CIT_NUMERIC_TAG_TYPE_NAME)
-                    field_type = eCIT_NumericTag;
+                else if (field_type_name == CIT_CUE_TYPE_NAME)
+                    field_type = eCIT_Cue;
                 break;
             case 'p':
                 if (field_type_name == CIT_PATH_TYPE_NAME)
@@ -563,8 +564,8 @@ CCompoundID CCompoundIDDumpParser::ParseID()
                     field_type = eCIT_String;
                 break;
             case 't':
-                if (field_type_name == CIT_TAG_TYPE_NAME)
-                    field_type = eCIT_Tag;
+                if (field_type_name == CIT_LABEL_TYPE_NAME)
+                    field_type = eCIT_Label;
                 else if (field_type_name == CIT_TAX_ID_TYPE_NAME)
                     field_type = eCIT_TaxID;
                 else if (field_type_name == CIT_TIMESTAMP_TYPE_NAME)
@@ -654,11 +655,11 @@ CCompoundID CCompoundIDDumpParser::ParseID()
             case eCIT_Flags:
                 result.AppendFlags(x_ReadUint8());
                 break;
-            case eCIT_Tag:
-                result.AppendTag(x_ReadString());
+            case eCIT_Label:
+                result.AppendLabel(x_ReadString());
                 break;
-            case eCIT_NumericTag:
-                result.AppendNumericTag(x_ReadUint8());
+            case eCIT_Cue:
+                result.AppendCue(x_ReadUint8());
                 break;
             case eCIT_SeqID:
                 result.AppendSeqID(x_ReadString());
