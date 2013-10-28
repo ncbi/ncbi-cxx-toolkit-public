@@ -128,6 +128,22 @@ public:
         }
     };
 
+    virtual void DumpAsXML(
+        std::ostream& out )
+    {
+        if ( m_Errors.size() ) {
+            TLineErrVec::iterator it;
+            for ( it = m_Errors.begin(); it != m_Errors.end(); ++it ) {
+                (*it)->DumpAsXML( out );
+                out << endl;
+            }
+        }
+        else {
+            out << "(( no errors ))" << endl;
+        }
+    };
+
+
     virtual void
     PutProgress(
         const string & sMessage,

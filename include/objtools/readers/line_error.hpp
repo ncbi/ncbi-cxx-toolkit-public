@@ -307,6 +307,39 @@ public:
         }
         out << endl;
     };
+
+    // dump the XML on one line since some tools assume that
+    virtual void DumpAsXML(
+        std::ostream& out ) const
+    {
+        out << "<message severity=\"" << NStr::XmlEncode(SeverityStr()) << "\" "
+            << "problem=\"" << NStr::XmlEncode(ProblemStr()) << "\" ";
+        const string & seqid = SeqId();
+        if (!seqid.empty()) {
+            out << "seqid\"" << NStr::XmlEncode(seqid) << "\" ";
+        }
+        out << "line=\"" << Line() << "\" ";
+        const string & feature = FeatureName();
+        if (!feature.empty()) {
+            out << "feature_name=\"" << NStr::XmlEncode(feature) << "\" ";
+        }
+        const string & qualname = QualifierName();
+        if (!qualname.empty()) {
+            out << "qualifier_name=\"" << NStr::XmlEncode(qualname) << "\" ";
+        }
+        const string & qualval = QualifierValue();
+        if (!qualval.empty()) {
+            out << "qualifier_value=\"" << NStr::XmlEncode(qualval) << "\" ";
+        }
+        out << ">";
+
+        // child nodes
+        ITERATE(TVecOfLines, line_it, OtherLines()) {
+            out << "<other_line>" << *line_it << "</other_line>";
+        }
+
+        out << "</message>" << endl;
+    };
 };
     
 //  ============================================================================

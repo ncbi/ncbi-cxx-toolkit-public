@@ -139,6 +139,7 @@ private:
     int  m_iFlags;
     string m_AnnotName;
     string m_AnnotTitle;
+    bool m_bXMLErrors;
 
     auto_ptr<CIdMapper> m_pMapper;
     CRef<CMessageListenerBase> m_pErrors;
@@ -267,6 +268,11 @@ void CMultiReaderApp::Init(void)
     arg_desc->AddFlag(
         "dumpstats",
         "write record counts to stderr",
+        true );
+
+    arg_desc->AddFlag(
+        "xmlerrors",
+        "where possible, print errors as XML",
         true );
         
     arg_desc->AddFlag(
@@ -491,7 +497,7 @@ CMultiReaderApp::Run(void)
                 break;
         }
     }
-    catch(CObjReaderLineException& err) {
+    catch(CObjReaderLineException& ) {
         cerr << "Reading aborted due to fatal error ." << endl << endl;
     }
     xDumpErrors( cerr );
@@ -887,6 +893,7 @@ void CMultiReaderApp::xSetFlags(
     m_AnnotName = args["name"].AsString();
     m_AnnotTitle = args["title"].AsString();
     m_bCheckOnly = args["checkonly"];
+    m_bXMLErrors = args["xmlerrors"];
 }
 
 //  ----------------------------------------------------------------------------
@@ -977,7 +984,11 @@ void CMultiReaderApp::xDumpErrors(
 //  ----------------------------------------------------------------------------
 {
     if (m_pErrors) {
-        m_pErrors->Dump(ostr);
+        if( m_bXMLErrors ) {
+            m_pErrors->DumpAsXML(ostr);
+        } else {
+            m_pErrors->Dump(ostr);
+        }
     }
 }
 
