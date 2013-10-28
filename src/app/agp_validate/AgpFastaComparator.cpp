@@ -346,7 +346,7 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
         ( ! vSeqIdAGPOnly.empty() &&
           ! (diffsToHide & fDiffsToHide_AGPOnly) ) );
     if( ! bThereWereDifferences ) {
-        LOG_POST(Error << "Success: No differences found");
+        LOG_POST(Error << "No differences found");
     }
     if( bThereWereDifferences ) {
         m_bSuccess = false;
@@ -622,6 +622,7 @@ void CAgpFastaComparator::x_PrintDetailsOfLengthIssue(
         bioseq_strm << MSerial_AsnText << *bioseq_h.GetCompleteBioseq();
         LOG_POST(Error << kBugInAgpFastaCompare << ": "
                  << (string)CNcbiOstrstreamToString(bioseq_strm) );
+        m_bSuccess = false;
         return;
     }
 }
