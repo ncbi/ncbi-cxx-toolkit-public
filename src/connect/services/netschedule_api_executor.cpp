@@ -578,7 +578,7 @@ void CNetScheduleExecutor::PutResult(const CNetScheduleJob& job)
 
 void CNetScheduleExecutor::PutProgressMsg(const CNetScheduleJob& job)
 {
-    if (job.progress_msg.length() >= kNetScheduleMaxDataSize) {
+    if (job.progress_msg.length() >= kNetScheduleMaxDBDataSize) {
         NCBI_THROW(CNetScheduleException, eDataTooLong,
                    "Progress message too long");
     }
@@ -601,7 +601,7 @@ void CNetScheduleExecutor::PutFailure(const CNetScheduleJob& job)
     s_CheckOutputSize(job.output,
         m_Impl->m_API->GetServerParams().max_output_size);
 
-    if (job.error_msg.length() >= kNetScheduleMaxErrSize) {
+    if (job.error_msg.length() >= kNetScheduleMaxDBErrSize) {
         NCBI_THROW(CNetScheduleException, eDataTooLong,
                    "Error message too long");
     }

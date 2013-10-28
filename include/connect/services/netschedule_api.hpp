@@ -49,14 +49,10 @@ BEGIN_NCBI_SCOPE
 
 
 /// @internal
-const unsigned int kNetScheduleMaxDataSize = 512;
-/// @internal
-const unsigned int kNetScheduleMaxDBDataSize = kNetScheduleMaxDataSize * 4;
+const unsigned int kNetScheduleMaxDBDataSize = 2048;
 
 /// @internal
-const unsigned int kNetScheduleMaxErrSize = 1024;
-/// @internal
-const unsigned int kNetScheduleMaxDBErrSize = kNetScheduleMaxErrSize * 4;
+const unsigned int kNetScheduleMaxDBErrSize = 4096;
 
 
 /** @addtogroup NetScheduleClient
