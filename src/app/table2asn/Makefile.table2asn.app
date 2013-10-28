@@ -12,7 +12,7 @@ SRC = table2asn OpticalXML2ASN multireader struc_cmt_reader table2asn_context fe
 LIB = xvalidate xcleanup xalnmgr xobjutil \
       valid valerr submit taxon3 gbseq \
       xalgophytree biotree fastme xalnmgr tables xobjreadex xobjread \
-      xalgoseq \
+      xalgoseq prosplign xalnmgr \
       taxon1 xmlwrapp \
       tables xregexp $(XFORMAT_LIBS) $(PCRE_LIB) $(OBJMGR_LIBS)
 
