@@ -528,6 +528,10 @@ void CArgTestApplication::Init(void)
     cmd_desc->SetUsageContext(GetArguments().GetProgramBasename(),
                               prog_description, usage_sort_args);
 
+    string detailed_description = prog_description +
+        "\nIt also illustrates creating command groups";
+    cmd_desc->SetDetailedDescription(detailed_description);
+
     // Describe cmd-line arguments according to the chosen test #
     s_Test[m_TestNo].init(*cmd_desc);
 
@@ -536,8 +540,10 @@ void CArgTestApplication::Init(void)
     for (int a=3; a>=0; --a) {
 
         auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions());
-        arg_desc->SetUsageContext("",
-            "Testing CCommandArgDescriptions: RunTest" + NStr::IntToString(a), true);
+        string ctx = "Testing CCommandArgDescriptions: RunTest" + NStr::IntToString(a);
+        string detailed = ctx + "\nthis will run specified test";
+        arg_desc->SetUsageContext("", ctx, true);
+        arg_desc->SetDetailedDescription(detailed);
         s_Test[a].init(*arg_desc);
         cmd_desc->SetCurrentCommandGroup(a%2 ? "Second command group" : "Command group #1");
         cmd_desc->AddCommand("runtest" + NStr::IntToString(a), arg_desc.release(),
