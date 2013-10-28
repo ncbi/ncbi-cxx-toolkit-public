@@ -759,8 +759,9 @@ namespace DiscRepNmSpc {
                       return string("DISC_INCONSISTENT_STRUCTURED_COMMENTS");}
       string GetName_db() const { return string("DISC_INCONSISTENT_DBLINK");}
 
-      void x_MakeMissingList(const string& bsq_desc, const string& setting_name, Str2Strs* key2ls);
-      void x_ClassifyFlds(Str2Strs* key2ls, const string& key, const CSeqdesc& sd, 
+      void x_MakeMissingList(CConstRef <CBioseq> bsq_ref, const string& bsq_desc, 
+                                       const string& setting_name, Str2Strs& key2ls);
+      void x_ClassifyFlds(Str2Strs& key2ls, const string& key, const CSeqdesc& sd, 
                                           const string& setting_name, const CBioseq& bsq);
  
       void x_GetIncnstTestReport (CRef <CClickableItem>& c_item, 

@@ -379,6 +379,7 @@ void CRepConfig :: x_InputRepToGbenchItem(const CClickableItem& c_item,  CClicka
             item.SetSubitems().push_back(sub);
       }
    }
+   if (c_item.expanded) item.SetOwnExpanded();
 };
 
 void CRepConfig :: Export(vector <CRef <CClickableText> >& item_list)
