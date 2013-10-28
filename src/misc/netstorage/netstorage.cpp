@@ -157,6 +157,8 @@ struct SNetFileAPIImpl : public SNetFileImpl
     bool SetNetICacheClient();
     void DemandNetCache();
 
+    CNetServer GetNetCacheServer();
+
     const ENetFileLocation* GetPossibleFileLocations(); // For reading.
     void ChooseLocation(); // For writing.
 
@@ -246,6 +248,13 @@ void SNetFileAPIImpl::DemandNetCache()
     }
 }
 
+CNetServer SNetFileAPIImpl::GetNetCacheServer()
+{
+    return (m_FileID.GetFields() & fNFID_NetICache) == 0 ? CNetServer() :
+            m_NetICacheClient.GetService().GetServer(m_FileID.GetNetCacheIP(),
+                    m_FileID.GetNetCachePort());
+}
+
 static const ENetFileLocation s_TryNetCacheThenFileTrack[] =
         {eNFL_NetCache, eNFL_FileTrack, eNFL_NotFound};
 
@@ -329,17 +338,11 @@ bool SNetFileAPIImpl::s_TryReadLocation(ENetFileLocation location,
         ERW_Result* rw_res, char* buf, size_t count, size_t* bytes_read)
 {
     if (location == eNFL_NetCache) {
-        CNetServer ic_server;
-
-        if (m_FileID.GetFields() & fNFID_NetICache)
-            ic_server = m_NetICacheClient.GetService().GetServer(
-                    m_FileID.GetNetCacheIP(), m_FileID.GetNetCachePort());
-
         m_NetCacheReader.reset(m_NetICacheClient.GetReadStream(
                 m_FileID.GetUniqueKey(), 0, kEmptyStr,
                 &m_NetCache_BlobSize,
                 (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
-                nc_server_to_use = ic_server)));
+                nc_server_to_use = GetNetCacheServer())));
 
         if (m_NetCacheReader.get() != NULL) {
             m_NetCache_BytesRead = 0;
@@ -486,15 +489,9 @@ bool SNetFileAPIImpl::x_TryGetFileSizeFromLocation(ENetFileLocation location,
 {
     try {
         if (location == eNFL_NetCache) {
-            CNetServer ic_server;
-
-            if (m_FileID.GetFields() & fNFID_NetICache)
-                ic_server = m_NetICacheClient.GetService().GetServer(
-                        m_FileID.GetNetCacheIP(), m_FileID.GetNetCachePort());
-
             *file_size = m_NetICacheClient.GetBlobSize(
                     m_FileID.GetUniqueKey(), 0, kEmptyStr,
-                            nc_server_to_use = ic_server);
+                            nc_server_to_use = GetNetCacheServer());
 
             m_CurrentLocation = eNFL_NetCache;
             return true;
@@ -549,16 +546,10 @@ bool SNetFileAPIImpl::x_TryGetInfoFromLocation(ENetFileLocation location,
         CNetFileInfo* file_info)
 {
     if (location == eNFL_NetCache) {
-        CNetServer ic_server;
-
-        if (m_FileID.GetFields() & fNFID_NetICache)
-            ic_server = m_NetICacheClient.GetService().GetServer(
-                    m_FileID.GetNetCacheIP(), m_FileID.GetNetCachePort());
-
         try {
             CNetServerMultilineCmdOutput output = m_NetICacheClient.GetBlobInfo(
                     m_FileID.GetUniqueKey(), 0, kEmptyStr,
-                    nc_server_to_use = ic_server);
+                    nc_server_to_use = GetNetCacheServer());
 
             CJsonNode blob_info = CJsonNode::NewObjectNode();
             string line;
@@ -651,15 +642,9 @@ CNetFileInfo SNetFileAPIImpl::GetInfo()
 bool SNetFileAPIImpl::x_ExistsAtLocation(ENetFileLocation location)
 {
     if (location == eNFL_NetCache) {
-        CNetServer ic_server;
-
-        if (m_FileID.GetFields() & fNFID_NetICache)
-            ic_server = m_NetICacheClient.GetService().GetServer(
-                    m_FileID.GetNetCacheIP(), m_FileID.GetNetCachePort());
-
         try {
             if (!m_NetICacheClient.HasBlob(m_FileID.GetUniqueKey(),
-                    kEmptyStr, nc_server_to_use = ic_server))
+                    kEmptyStr, nc_server_to_use = GetNetCacheServer()))
                 return false;
 
             m_CurrentLocation = eNFL_NetCache;
@@ -723,14 +708,8 @@ void SNetFileAPIImpl::Remove()
     if (m_CurrentLocation == eNFL_Unknown ||
             m_CurrentLocation == eNFL_NetCache)
         try {
-            CNetServer ic_server;
-
-            if (m_FileID.GetFields() & fNFID_NetICache)
-                ic_server = m_NetICacheClient.GetService().GetServer(
-                        m_FileID.GetNetCacheIP(), m_FileID.GetNetCachePort());
-
             m_NetICacheClient.RemoveBlob(m_FileID.GetUniqueKey(), 0,
-                    kEmptyStr, nc_server_to_use = ic_server);
+                    kEmptyStr, nc_server_to_use = GetNetCacheServer());
         }
         catch (CException& e) {
             LOG_POST(Trace << e);
