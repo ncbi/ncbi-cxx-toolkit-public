@@ -3927,12 +3927,13 @@ SImplementation::ConvertMixedAlignToAnnot(const CSeq_align& input_align,
         }
     }
 
-    CSeq_annot annot_discard;
+    CSeq_annot annot_local;
     CBioseq_set seqs_tmp;
-    ConvertAlignToAnnot(*align, annot_discard, seqs_tmp, gene_id, cds_feat_on_query_mrna_ptr,
+    ConvertAlignToAnnot(*align, annot_local, seqs_tmp, gene_id, cds_feat_on_query_mrna_ptr,
                                                call_on_align_list);
 
     m_scope->RemoveBioseq(bioseq_handle);
+    annot_local.SetData().SetFtable().clear();
 
     if (gene_id) {
         if (gene_feat) {
@@ -3963,7 +3964,7 @@ SImplementation::ConvertMixedAlignToAnnot(const CSeq_align& input_align,
 
     CBioseq_set seqs_discard;
     CRef<CSeq_feat> feat =
-        ConvertAlignToAnnot(*align, annot, seqs_discard,
+        ConvertAlignToAnnot(*align, annot_local, seqs_discard,
                             gene_id, cds_feat_on_query_mrna_ptr,
                             call_on_align_list);
 
@@ -3987,12 +3988,9 @@ SImplementation::ConvertMixedAlignToAnnot(const CSeq_align& input_align,
     }
     seqs.SetSeq_set().splice(seqs.SetSeq_set().end(), seqs_tmp.SetSeq_set());
 
-    for (list<CRef<CSeq_feat> >::reverse_iterator it = annot.SetData().SetFtable().rbegin();
-         it != annot.SetData().SetFtable().rend(); ++it) {
+    for (list<CRef<CSeq_feat> >::reverse_iterator it = annot_local.SetData().SetFtable().rbegin();
+         it != annot_local.SetData().SetFtable().rend(); ++it) {
         CSeq_feat& f = **it;
-        if (!f.GetLocation().GetId()->Match(*genomic_seqid)) {
-            break;
-        }
         if (f.GetData().IsGene()) {
             continue;
         }
@@ -4005,6 +4003,9 @@ SImplementation::ConvertMixedAlignToAnnot(const CSeq_align& input_align,
         x_SetCommentForGapFilledModel(f, insert_length);
 
     }
+
+    annot.SetData().SetFtable().splice(annot.SetData().SetFtable().end(),
+                                       annot_local.SetData().SetFtable());
 
     return feat;
 }
