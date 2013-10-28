@@ -355,3 +355,23 @@ int CGridCommandLineInterfaceApp::Cmd_RemoveNetFile()
 
     return 0;
 }
+
+int CGridCommandLineInterfaceApp::Cmd_GetAttr()
+{
+    SetUp_NetStorageCmd(eNetStorageAPI);
+
+    PrintLine(m_NetStorage.Open(m_Opts.id,
+            m_Opts.netstorage_flags).GetAttribute(m_Opts.attr_name));
+
+    return 0;
+}
+
+int CGridCommandLineInterfaceApp::Cmd_SetAttr()
+{
+    SetUp_NetStorageCmd(eNetStorageAPI);
+
+    m_NetStorage.Open(m_Opts.id, m_Opts.netstorage_flags).
+            SetAttribute(m_Opts.attr_name, m_Opts.attr_value);
+
+    return 0;
+}

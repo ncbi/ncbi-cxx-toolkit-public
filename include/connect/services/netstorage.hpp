@@ -235,6 +235,21 @@ class NCBI_XCONNECT_EXPORT CNetFile
     ///
     Uint8 GetSize(void);
 
+    /// Get the current value of the specified attribute. Attribute
+    /// values are not cached by this method.
+    ///
+    /// @throw If the underlying storage does not support attributes,
+    /// a CNetStorageException will be thrown.
+    ///
+    string GetAttribute(const string& attr_name);
+
+    /// Set the new value for the specified attribute.
+    ///
+    /// @throw If the underlying storage does not support attributes,
+    /// a CNetStorageException will be thrown.
+    ///
+    void SetAttribute(const string& attr_name, const string& attr_value);
+
     /// Return detailed information about the file.
     ///
     /// @return

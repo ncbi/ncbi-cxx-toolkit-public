@@ -78,6 +78,12 @@ struct SOptionDefinition {
 
     {OPT_DEF(ePositionalArgument, eAppUID), "APP_UID", NULL, {-1}},
 
+    {OPT_DEF(ePositionalArgument, eNetFileID), "FILE_ID", NULL, {-1}},
+
+    {OPT_DEF(ePositionalArgument, eAttrName), "ATTR_NAME", NULL, {-1}},
+
+    {OPT_DEF(ePositionalArgument, eAttrValue), "ATTR_VALUE", NULL, {-1}},
+
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     {OPT_DEF(eSwitch, eAllowXSiteConn),
         "allow-xsite-conn", "Allow cross-site connections.", {-1}},
@@ -608,6 +614,22 @@ struct SCommandDefinition {
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
         {eID, eNetStorage, eNetCache, eCache, eLoginToken, eAuth, eDebugHTTP,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
+
+    {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_GetAttr,
+        "getattr", "Get a NetFile attribute value.",
+        MAY_REQUIRE_LOCATION_HINTING
+        ABOUT_NETSTORAGE_OPTION,
+        {eNetFileID, eAttrName, eNetStorage,
+            eNetCache, eCache, eLoginToken, eAuth, eDebugHTTP,
+            ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
+
+    {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_SetAttr,
+        "setattr", "Set a NetFile attribute value.",
+        MAY_REQUIRE_LOCATION_HINTING
+        ABOUT_NETSTORAGE_OPTION,
+        {eNetFileID, eAttrName, eAttrValue, eNetStorage,
+            eNetCache, eCache, eLoginToken, eAuth, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_JobInfo,
@@ -1161,6 +1183,7 @@ int CGridCommandLineInterfaceApp::Run()
                 MarkOptionAsExplicitlySet(eID);
                 /* FALL THROUGH */
             case eID:
+            case eNetFileID:
             case eFileKey:
             case eJobId:
             case eTargetQueueArg:
@@ -1226,6 +1249,12 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eCacheable:
                 m_Opts.netstorage_flags |= fNST_Cacheable;
+                break;
+            case eAttrName:
+                m_Opts.attr_name = opt_value;
+                break;
+            case eAttrValue:
+                m_Opts.attr_value = opt_value;
                 break;
             case eNetSchedule:
             case eWorkerNode:

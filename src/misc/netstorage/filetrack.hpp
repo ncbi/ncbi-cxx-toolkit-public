@@ -93,7 +93,8 @@ struct SFileTrackAPI
 
     CJsonNode GetFileInfo(CNetFileID* file_id);
 
-    void SetFileTrackAttribute(CNetFileID* file_id,
+    string GetFileAttribute(CNetFileID* file_id, const string& attr_name);
+    void SetFileAttribute(CNetFileID* file_id,
             const string& attr_name, const string& attr_value);
 
     CRef<SFileTrackPostRequest> StartUpload(CNetFileID* file_id);

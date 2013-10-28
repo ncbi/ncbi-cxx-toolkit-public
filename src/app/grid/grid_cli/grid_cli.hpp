@@ -129,6 +129,9 @@ enum EOption {
     eOptionalID,
     eID,
     eAppUID,
+    eNetFileID,
+    eAttrName,
+    eAttrValue,
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     eAllowXSiteConn,
 #endif
@@ -305,6 +308,8 @@ private:
         FILE* output_stream;
         FILE* protocol_dump;
         TNetStorageFlags netstorage_flags;
+        string attr_name;
+        string attr_value;
 
         struct SICacheBlobKey {
             string key;
@@ -418,6 +423,8 @@ public:
     int Cmd_MkFileID();
     int Cmd_NetFileInfo();
     int Cmd_RemoveNetFile();
+    int Cmd_GetAttr();
+    int Cmd_SetAttr();
 
 // NetSchedule commands.
 public:

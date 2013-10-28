@@ -47,6 +47,9 @@ struct NCBI_XCONNECT_EXPORT SNetFileImpl : public CObject
     virtual bool Eof() = 0;
     virtual void Write(const void* buffer, size_t buf_size) = 0;
     virtual Uint8 GetSize() = 0;
+    virtual string GetAttribute(const string& attr_name) = 0;
+    virtual void SetAttribute(const string& attr_name,
+            const string& attr_value) = 0;
     virtual CNetFileInfo GetInfo() = 0;
     virtual void Close() = 0;
 };
@@ -84,6 +87,17 @@ inline void CNetFile::Write(const string& data)
 inline Uint8 CNetFile::GetSize()
 {
     return m_Impl->GetSize();
+}
+
+inline string CNetFile::GetAttribute(const string& attr_name)
+{
+    return m_Impl->GetAttribute(attr_name);
+}
+
+inline void CNetFile::SetAttribute(const string& attr_name,
+        const string& attr_value)
+{
+    m_Impl->SetAttribute(attr_name, attr_value);
 }
 
 inline CNetFileInfo CNetFile::GetInfo()

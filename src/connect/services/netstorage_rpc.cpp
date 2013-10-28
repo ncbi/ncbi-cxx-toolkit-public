@@ -419,6 +419,9 @@ struct SNetFileRPC : public SNetFileImpl
     virtual bool Eof();
     virtual void Write(const void* buffer, size_t buf_size);
     virtual Uint8 GetSize();
+    virtual string GetAttribute(const string& attr_name);
+    virtual void SetAttribute(const string& attr_name,
+            const string& attr_value);
     virtual CNetFileInfo GetInfo();
     virtual void Close();
 
@@ -870,6 +873,26 @@ Uint8 SNetFileRPC::GetSize()
     CJsonNode request(x_MkRequest("GETSIZE"));
 
     return (Uint8) m_NetStorageRPC->Exchange(request).GetInteger("Size");
+}
+
+string SNetFileRPC::GetAttribute(const string& attr_name)
+{
+    CJsonNode request(x_MkRequest("GETATTR"));
+
+    request.SetString("AttrName", attr_name);
+
+    return m_NetStorageRPC->Exchange(request).GetString("AttrValue");
+}
+
+void SNetFileRPC::SetAttribute(const string& attr_name,
+        const string& attr_value)
+{
+    CJsonNode request(x_MkRequest("SETATTR"));
+
+    request.SetString("AttrName", attr_name);
+    request.SetString("AttrValue", attr_value);
+
+    m_NetStorageRPC->Exchange(request);
 }
 
 CNetFileInfo SNetFileRPC::GetInfo()
