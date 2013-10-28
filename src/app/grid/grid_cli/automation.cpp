@@ -322,13 +322,15 @@ bool SNetScheduleServiceAutomationObject::Call(const string& method,
                 m_ActualServiceType));
     else if (method == "parse_key") {
         CJobInfoToJSON job_key_to_json;
-        job_key_to_json.ProcessJobMeta(CNetScheduleKey(arg_array.NextString()));
+        job_key_to_json.ProcessJobMeta(CNetScheduleKey(arg_array.NextString(),
+                m_NetScheduleAPI.GetCompoundIDPool()));
         reply.Append(job_key_to_json.GetRootNode());
     } else if (method == "job_info") {
         CJobInfoToJSON job_info_to_json;
         string job_key(arg_array.NextString());
         g_ProcessJobInfo(m_NetScheduleAPI, job_key,
-            &job_info_to_json, arg_array.NextBoolean(true));
+            &job_info_to_json, arg_array.NextBoolean(true),
+            m_NetScheduleAPI.GetCompoundIDPool());
         reply.Append(job_info_to_json.GetRootNode());
     } else if (method == "job_counters") {
         CNetScheduleAdmin::TStatusMap status_map;
