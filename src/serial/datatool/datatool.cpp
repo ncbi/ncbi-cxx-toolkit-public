@@ -88,7 +88,7 @@ int CDataTool::Run(void)
 
 CDataTool::CDataTool(void)
 {
-    SetVersion( CVersionInfo(2,11,0) );
+    SetVersion( CVersionInfo(2,12,0) );
 }
 
 void CDataTool::Init(void)
@@ -551,18 +551,30 @@ bool CDataTool::ProcessData(void)
             }
             CObjectStreamCopier copier(*in, *out);
             copier.Copy(typeInfo, CObjectStreamCopier::eNoFileHeader);
-            // In case the input stream has more than one object of this type,
+            // In case the input stream has more than one object,
             // keep converting them
-            {
-                set<TTypeInfo> known;
-                known.insert(typeInfo);
-                for (bool go=true; go; ) {
+            if (!in->EndOfData()) {
+
+                set<TTypeInfo> known_types;
+                generator.GetMainModules().CollectAllTypeinfo(known_types);
+                set<TTypeInfo> matching;
+
+                set<TTypeInfo> prev;
+                prev.insert(typeInfo);
+
+                for (bool go=true; go && !in->EndOfData(); ) {
                     try {
-                        set<TTypeInfo> matching = in->GuessDataType(known,2);
-                        go = !matching.empty() &&
-                             *matching.begin() == *known.begin();
-                        if (go) {
+                        matching = in->GuessDataType(prev,2);
+                        if (matching.empty()) {
+                            matching = in->GuessDataType(known_types,16);
+                        }
+                        if (matching.size() == 1) {
+                            typeInfo = *matching.begin();
+                            prev.clear();
+                            prev.insert(typeInfo);
                             copier.Copy(typeInfo);
+                        } else {
+                            NCBI_THROW(CNotFoundException,eType,"No typeinfo matches: some data was not copied");
                         }
                     } catch (CSerialException& se) {
                         if (se.GetErrCode() == CSerialException::eEOF) {
