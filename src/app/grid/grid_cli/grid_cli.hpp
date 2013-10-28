@@ -39,6 +39,8 @@
 #include <connect/services/grid_client.hpp>
 #include <connect/services/ns_output_parser.hpp>
 #include <connect/services/netstorage_admin.hpp>
+#include <connect/services/compound_id.hpp>
+
 #include <misc/netstorage/netstorage.hpp>
 
 
@@ -395,6 +397,7 @@ private:
     auto_ptr<CGridClient> m_GridClient;
     CNetStorage m_NetStorage;
     CNetStorageAdmin m_NetStorageAdmin;
+    CCompoundIDPool m_CompoundIDPool;
 
 // NetCache commands.
 public:

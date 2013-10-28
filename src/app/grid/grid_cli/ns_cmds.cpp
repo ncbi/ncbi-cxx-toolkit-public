@@ -66,7 +66,7 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         m_NetScheduleAPI.GetService().GetServerPool().StickToServer(host,
             (unsigned short) NStr::StringToInt(port));
     } else {
-        CNetScheduleKey key(m_Opts.id);
+        CNetScheduleKey key(m_Opts.id, m_CompoundIDPool);
         key.host.push_back(':');
         key.host.append(NStr::NumericToString(key.port));
         m_NetScheduleAPI = CNetScheduleAPI(key.host, m_Opts.auth, queue);
@@ -199,7 +199,7 @@ int CGridCommandLineInterfaceApp::Cmd_JobInfo()
         {
             CJobInfoToJSON job_info_to_json;
             g_ProcessJobInfo(m_NetScheduleAPI, m_Opts.id,
-                    &job_info_to_json, !IsOptionSet(eBrief));
+                    &job_info_to_json, !IsOptionSet(eBrief), m_CompoundIDPool);
             g_PrintJSON(stdout, job_info_to_json.GetRootNode());
         }
         break;
@@ -208,7 +208,7 @@ int CGridCommandLineInterfaceApp::Cmd_JobInfo()
         {
             CPrintJobInfo print_job_info;
             g_ProcessJobInfo(m_NetScheduleAPI, m_Opts.id,
-                    &print_job_info, !IsOptionSet(eBrief));
+                    &print_job_info, !IsOptionSet(eBrief), m_CompoundIDPool);
         }
     }
 

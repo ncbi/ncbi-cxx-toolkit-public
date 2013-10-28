@@ -69,7 +69,7 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
                     GRID_APP_NAME " blobinfo %s\n", m_Opts.id.c_str());
         else if (m_Opts.output_format == eJSON)
             printf("}\n");
-    } else if (ns_key.ParseJobKey(m_Opts.id)) {
+    } else if (ns_key.ParseJobKey(m_Opts.id, m_CompoundIDPool)) {
         if (m_Opts.output_format == eJSON) {
             CJobInfoToJSON job_info_to_json;
 
@@ -95,7 +95,7 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
         }
     } else {
         try {
-            CNetFileID netfile_id(m_Opts.id);
+            CNetFileID netfile_id(m_CompoundIDPool, m_Opts.id);
 
             CJsonNode file_id_info(netfile_id.ToJSON());
 

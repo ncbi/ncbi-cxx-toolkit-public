@@ -33,6 +33,7 @@
  */
 
 #include <string>
+#include <connect/services/compound_id.hpp>
 #include <connect/server.hpp>
 
 
@@ -73,6 +74,8 @@ public:
     { m_CommandLine = cmd_line; }
     string GetCommandLine(void) const
     { return m_CommandLine; }
+    CCompoundIDPool GetCompoundIDPool(void) const
+    { return m_CompoundIDPool; }
 
     bool IsAdminClientName(const string &  name) const;
 
@@ -92,6 +95,7 @@ private:
     CNSTPreciseTime             m_StartTime;
     vector<string>              m_AdminClientNames;
     string                      m_CommandLine;
+    CCompoundIDPool             m_CompoundIDPool;
 
     static CNetStorageServer *  sm_netstorage_server;
 

@@ -32,9 +32,6 @@
 
 #include <ncbi_pch.hpp>
 
-#include "pack_int.hpp"
-#include "compound_id_impl.hpp"
-
 #include <connect/services/netstorage.hpp>
 #include <connect/services/error_codes.hpp>
 
@@ -52,7 +49,9 @@
 
 BEGIN_NCBI_SCOPE
 
-CNetFileID::CNetFileID(TNetStorageFlags flags, Uint8 random_number) :
+CNetFileID::CNetFileID(CCompoundIDPool::TInstance cid_pool,
+        TNetStorageFlags flags, Uint8 random_number) :
+    m_CompoundIDPool(cid_pool),
     m_StorageFlags(flags),
     m_Fields(0),
     m_Timestamp(time(NULL)),
@@ -63,9 +62,11 @@ CNetFileID::CNetFileID(TNetStorageFlags flags, Uint8 random_number) :
     x_SetUniqueKeyFromRandom();
 }
 
-CNetFileID::CNetFileID(TNetStorageFlags flags,
-            const string& app_domain,
-            const string& unique_key) :
+CNetFileID::CNetFileID(CCompoundIDPool::TInstance cid_pool,
+        TNetStorageFlags flags,
+        const string& app_domain,
+        const string& unique_key) :
+    m_CompoundIDPool(cid_pool),
     m_StorageFlags(flags),
     m_Fields(fNFID_KeyAndNamespace),
     m_AppDomain(app_domain),
@@ -86,128 +87,82 @@ CNetFileID::CNetFileID(TNetStorageFlags flags,
 
 #define THROW_INVALID_ID_ERROR(packed_id) \
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg, \
-                "Invalid NetFile ID '" << packed_id << '\'')
+                "Invalid NetFile ID '" << (packed_id) << '\'')
 
-static size_t s_LoadString(string& dst, unsigned char* src, size_t& src_len)
-{
-    size_t len = 0;
-    unsigned char* ptr = src;
+#define VERIFY_FIELD_EXISTS(field) \
+        if (!(field)) { \
+            THROW_INVALID_ID_ERROR(packed_id); \
+        }
 
-    while (len < src_len) {
-        ++len;
-        if (*ptr == '\0')
-            break;
-        ++ptr;
-    }
-
-    dst.assign((const char*) src, ptr - src);
-    src_len -= len;
-    return len;
-}
-
-CNetFileID::CNetFileID(const string& packed_id) :
+CNetFileID::CNetFileID(CCompoundIDPool::TInstance cid_pool,
+        const string& packed_id) :
+    m_CompoundIDPool(cid_pool),
     m_Dirty(false),
     m_PackedID(packed_id)
 {
-    string binary_id;
+    CCompoundID cid = m_CompoundIDPool.FromString(packed_id);
 
-    if (!g_UnpackID(packed_id, binary_id)) {
+    // 1. Check the ID class.
+    if (cid.GetClass() != eCIC_NetStorageFileID) {
         THROW_INVALID_ID_ERROR(packed_id);
     }
-
-    size_t binary_id_len = binary_id.length();
-
-    if (binary_id_len < MIN_BINARY_ID_LEN) {
-        THROW_INVALID_ID_ERROR(packed_id);
-    }
-
-    unsigned char* ptr = (unsigned char*) const_cast<char*>(binary_id.data());
-
-    // 1. Check the signature.
-    if (memcmp(ptr, NET_FILE_ID_SIGNATURE,
-            NET_FILE_ID_SIGNATURE_LEN) != 0) {
-        THROW_INVALID_ID_ERROR(packed_id);
-    }
-
-    ptr += NET_FILE_ID_SIGNATURE_LEN;
 
     // 2. Restore the storage flags.
-    m_StorageFlags = (TNetStorageFlags) *ptr++;
+    CCompoundIDField field = cid.GetFirst(eCIT_Flags);
+    VERIFY_FIELD_EXISTS(field);
+    m_StorageFlags = (TNetStorageFlags) field.GetFlags();
+
     // 3. Restore the field flags.
-    m_Fields = (TNetFileIDFields) *ptr++;
+    VERIFY_FIELD_EXISTS(field = field.GetNextHomogeneous());
+    m_Fields = (TNetFileIDFields) field.GetFlags();
 
-    // Adjust the remaining length.
-    binary_id_len -= NET_FILE_ID_SIGNATURE_LEN +
-            sizeof(unsigned char) + sizeof(TNetFileIDFields);
-
-    unsigned packed_int_len;
-
-    // 4. Load file identification.
+    // 4. Restore file identification.
     if (m_Fields & fNFID_KeyAndNamespace) {
-        // 4.1. Load the unique file key.
-        ptr += s_LoadString(m_UserKey, ptr, binary_id_len);
-        // 4.2. Load the domain name.
-        ptr += s_LoadString(m_AppDomain, ptr, binary_id_len);
+        // 4.1. Get the unique file key.
+        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+        m_UserKey = field.GetString();
+        // 4.2. Get the domain name.
+        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+        m_AppDomain = field.GetString();
 
         x_SetUniqueKeyFromUserDefinedKey();
     } else {
-        // 4.1. Load file creation timestamp.
-        packed_int_len = g_UnpackInteger(ptr, binary_id_len, &m_Timestamp);
-        if (packed_int_len == 0 || binary_id_len <= packed_int_len) {
-            THROW_INVALID_ID_ERROR(packed_id);
-        }
-        binary_id_len -= packed_int_len;
-        ptr += packed_int_len;
-        // 4.2. Load the random ID.
-        packed_int_len = g_UnpackInteger(ptr, binary_id_len, &m_Random);
-        if (packed_int_len == 0 || binary_id_len < packed_int_len) {
-            THROW_INVALID_ID_ERROR(packed_id);
-        }
-        binary_id_len -= packed_int_len;
-        ptr += packed_int_len;
+        // 4.1. Get file creation timestamp.
+        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+        m_Timestamp = field.GetTimestamp();
+        // 4.2. Get the random ID.
+        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+        m_Random = (Uint8) field.GetRandom() << (sizeof(Uint4) * 8);
+        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+        m_Random |= field.GetRandom();
 
         x_SetUniqueKeyFromRandom();
     }
 
-    // 5. Load NetCache info.
+    // 5. Restore NetCache info.
     if (m_Fields & fNFID_NetICache) {
-        // 5.1. Load the service name.
-        ptr += s_LoadString(m_NCServiceName, ptr, binary_id_len);
-        // 5.2. Load the cache name.
-        ptr += s_LoadString(m_CacheName, ptr, binary_id_len);
-        // 5.3. Load the primary NetCache server IP.
-        if (binary_id_len < sizeof(m_NetCacheIP) + sizeof(m_NetCachePort)) {
-            THROW_INVALID_ID_ERROR(packed_id);
-        }
-        binary_id_len -= sizeof(m_NetCacheIP) + sizeof(m_NetCachePort);
-        memcpy(&m_NetCacheIP, ptr, sizeof(m_NetCacheIP));
-        ptr += sizeof(m_NetCacheIP);
-        // 5.4. Load the primary NetCache server port.
-        unsigned short port;
-        memcpy(&port, ptr, sizeof(port));
-        m_NetCachePort = SOCK_NetToHostShort(port);
-        ptr += sizeof(port);
+        // 5.1. Get the service name.
+        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+        m_NCServiceName = field.GetServiceName();
+        // 5.2. Get the cache name.
+        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+        m_CacheName = field.GetDatabaseName();
+        // 5.3. Get the primary NetCache server IP and port.
+        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+        m_NetCacheIP = field.GetIPv4Address();
+        m_NetCachePort = field.GetPort();
     }
 
     // 6. If this file is cacheable, load the size of cache chunks.
     if (m_StorageFlags & fNST_Cacheable) {
-        packed_int_len = g_UnpackInteger(ptr, binary_id_len, &m_CacheChunkSize);
-        if (packed_int_len == 0 || binary_id_len < packed_int_len) {
-            THROW_INVALID_ID_ERROR(packed_id);
-        }
-        binary_id_len -= packed_int_len;
-        ptr += packed_int_len;
+        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+        m_CacheChunkSize = (Uint8) field.GetInteger();
     }
 
-    // 7. If TTL is in the ID, load it.
+    // 7. Restore the TTL if it's in the key.
     if (m_Fields & fNFID_TTL) {
-        packed_int_len = g_UnpackInteger(ptr, binary_id_len, &m_TTL);
-        if (packed_int_len == 0 || binary_id_len < packed_int_len) {
-            THROW_INVALID_ID_ERROR(packed_id);
-        }
-        // Because this is the last field, pointer adjustment is not needed:
-        // binary_id_len -= packed_int_len;
-        // ptr += packed_int_len;
+        VERIFY_FIELD_EXISTS(field = field.GetNextNeighbor());
+        m_TTL = (Uint8) field.GetInteger();
     }
 }
 
@@ -254,9 +209,9 @@ void CNetFileID::x_SetUniqueKeyFromUserDefinedKey()
     m_UniqueKey.append(m_UserKey);
 }
 
-void CNetFileID::Pack()
+void CNetFileID::x_Pack()
 {
-    size_t max_binary_id_len = MIN_BINARY_ID_LEN +
+    /*size_t max_binary_id_len = MIN_BINARY_ID_LEN +
             (m_Fields & fNFID_KeyAndNamespace ?
                     m_UserKey.length() + m_AppDomain.length() :
                     sizeof(Uint8) + sizeof(Uint8)); // Timestamp and random.
@@ -278,57 +233,51 @@ void CNetFileID::Pack()
     // 1. Save the signature.
     memcpy(binary_id, NET_FILE_ID_SIGNATURE, NET_FILE_ID_SIGNATURE_LEN);
 
-    unsigned char* ptr = binary_id + NET_FILE_ID_SIGNATURE_LEN;
+    unsigned char* ptr = binary_id + NET_FILE_ID_SIGNATURE_LEN;*/
+
+    // 1. Allocate a new CompoundID object.
+    CCompoundID cid = m_CompoundIDPool.NewID(eCIC_NetStorageFileID);
+
 
     // 2. Save the storage flags.
-    *ptr++ = (unsigned char) m_StorageFlags;
+    cid.AppendFlags(m_StorageFlags);
     // 3. Remember which fields are stored.
-    *ptr++ = m_Fields;
+    cid.AppendFlags(m_Fields);
 
     // 4. Save file identification.
     if (m_Fields & fNFID_KeyAndNamespace) {
         // 4.1. Save the unique file key.
-        memcpy(ptr, m_UserKey.c_str(), m_UserKey.length() + 1);
-        ptr += m_UserKey.length() + 1;
+        cid.AppendString(m_UserKey);
         // 4.2. Save the domain name.
-        memcpy(ptr, m_AppDomain.c_str(), m_AppDomain.length() + 1);
-        ptr += m_AppDomain.length() + 1;
+        cid.AppendString(m_AppDomain);
     } else {
         // 4.1. Save file creation timestamp.
-        ptr += g_PackInteger(ptr, 9, m_Timestamp);
+        cid.AppendTimestamp(m_Timestamp);
         // 4.2. Save the random ID.
-        ptr += g_PackInteger(ptr, 9, m_Random);
+        cid.AppendRandom(m_Random >> (sizeof(Uint4) * 8));
+        cid.AppendRandom((Uint4) m_Random);
     }
 
     // 5. (Optional) Save NetCache info.
     if (m_Fields & fNFID_NetICache) {
         // 5.1. Save the service name.
-        memcpy(ptr, m_NCServiceName.c_str(), m_NCServiceName.length() + 1);
-        ptr += m_NCServiceName.length() + 1;
+        cid.AppendServiceName(m_NCServiceName);
         // 5.2. Save the cache name.
-        memcpy(ptr, m_CacheName.c_str(), m_CacheName.length() + 1);
-        ptr += m_CacheName.length() + 1;
-        // 5.3. Save the primary NetCache server IP.
-        memcpy(ptr, &m_NetCacheIP, sizeof(m_NetCacheIP));
-        ptr += sizeof(m_NetCacheIP);
-        // 5.4. Save the primary NetCache server port.
-        unsigned short port = SOCK_HostToNetShort(m_NetCachePort);
-        memcpy(ptr, &port, sizeof(port));
-        ptr += sizeof(port);
+        cid.AppendDatabaseName(m_CacheName);
+        // 5.3. Save the primary NetCache server IP and port.
+        cid.AppendIPv4SockAddr(m_NetCacheIP, m_NetCachePort);
     }
 
     // 6. If this file is cacheable, save the size of cache chunks.
     if (m_StorageFlags & fNST_Cacheable)
-        ptr += g_PackInteger(ptr, 9, m_CacheChunkSize);
+        cid.AppendInteger((Int8) m_CacheChunkSize);
 
     // 7. Save the TTL if it's defined.
     if (m_Fields & fNFID_TTL)
-        ptr += g_PackInteger(ptr, 9, m_TTL);
+        cid.AppendInteger((Int8) m_TTL);
 
     // Now pack it all up.
-    g_PackID(binary_id, ptr - binary_id, m_PackedID);
-
-    delete[] binary_id;
+    m_PackedID = cid.ToString();
 
     m_Dirty = false;
 }

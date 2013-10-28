@@ -76,6 +76,7 @@ struct SNetStorageAPIImpl : public SNetStorageImpl
 
     string MoveFile(SNetFileAPIImpl* orig_file, SNetFileAPIImpl* new_file);
 
+    CCompoundIDPool m_CompoundIDPool;
     CNetICacheClient m_NetICacheClient;
     TNetStorageFlags m_DefaultFlags;
 
@@ -106,7 +107,7 @@ struct SNetFileAPIImpl : public SNetFileImpl
             CNetICacheClient::TInstance icache_client) :
         m_NetStorage(storage_impl),
         m_NetICacheClient(icache_client),
-        m_FileID(flags, random_number),
+        m_FileID(storage_impl->m_CompoundIDPool, flags, random_number),
         m_CurrentLocation(eNFL_Unknown),
         m_IOStatus(eNFS_Closed)
     {
@@ -116,7 +117,7 @@ struct SNetFileAPIImpl : public SNetFileImpl
     SNetFileAPIImpl(SNetStorageAPIImpl* storage_impl, const string& file_id) :
         m_NetStorage(storage_impl),
         m_NetICacheClient(eVoid),
-        m_FileID(file_id),
+        m_FileID(storage_impl->m_CompoundIDPool, file_id),
         m_CurrentLocation(eNFL_Unknown),
         m_IOStatus(eNFS_Closed)
     {
@@ -129,7 +130,8 @@ struct SNetFileAPIImpl : public SNetFileImpl
             CNetICacheClient::TInstance icache_client) :
         m_NetStorage(storage_impl),
         m_NetICacheClient(icache_client),
-        m_FileID(flags, domain_name, unique_key),
+        m_FileID(storage_impl->m_CompoundIDPool,
+                flags, domain_name, unique_key),
         m_CurrentLocation(eNFL_Unknown),
         m_IOStatus(eNFS_Closed)
     {

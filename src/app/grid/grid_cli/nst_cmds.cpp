@@ -290,11 +290,11 @@ int CGridCommandLineInterfaceApp::Cmd_MkFileID()
             IsOptionSet(eFileKey, OPTION_N(1)) |
             IsOptionSet(eNamespace, OPTION_N(2))) {
     case OPTION_N(0):
-        file_id.reset(new CNetFileID(m_Opts.id));
+        file_id.reset(new CNetFileID(m_CompoundIDPool, m_Opts.id));
         break;
 
     case OPTION_N(1) + OPTION_N(2):
-        file_id.reset(new CNetFileID(m_Opts.netstorage_flags,
+        file_id.reset(new CNetFileID(m_CompoundIDPool, m_Opts.netstorage_flags,
                 m_Opts.app_domain, m_Opts.id));
         break;
 

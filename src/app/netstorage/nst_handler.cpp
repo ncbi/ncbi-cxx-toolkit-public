@@ -904,7 +904,7 @@ CNetStorageHandler::x_ProcessWrite(
     x_SendSyncMessage(reply);
 
     if (m_ConnContext.NotNull() && !message.HasKey("FileID")) {
-        CNetFileID      file_id_struct(file_id);
+        CNetFileID      file_id_struct(m_Server->GetCompoundIDPool(), file_id);
         GetDiagContext().Extra()
             .Print("FileID", file_id)
             .Print("FileKey", file_id_struct.GetUniqueKey());
@@ -1082,7 +1082,7 @@ CNetStorageHandler::x_GetFileID(const CJsonNode &  message)
         x_CheckFileID(file_id);
 
         if (m_ConnContext.NotNull()) {
-            CNetFileID      file_id_struct(file_id);
+            CNetFileID  file_id_struct(m_Server->GetCompoundIDPool(), file_id);
             GetDiagContext().Extra()
                 .Print("FileKey", file_id_struct.GetUniqueKey());
         }
@@ -1103,7 +1103,8 @@ CNetStorageHandler::x_GetFileID(const CJsonNode &  message)
 
     CNetICacheClient    icache_client(icache_settings.m_ServiceName,
                                       icache_settings.m_CacheName, client_name);
-    CNetFileID          file_id_struct(flags, user_key.m_AppDomain,
+    CNetFileID          file_id_struct(m_Server->GetCompoundIDPool(),
+                                       flags, user_key.m_AppDomain,
                                        user_key.m_UniqueID);
     g_SetNetICacheParams(file_id_struct, icache_client);
 

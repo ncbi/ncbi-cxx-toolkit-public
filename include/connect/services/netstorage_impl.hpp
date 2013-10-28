@@ -34,6 +34,7 @@
  */
 
 #include "netstorage.hpp"
+#include "compound_id.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -166,13 +167,21 @@ inline void CNetStorageByKey::Remove(const string& key, TNetStorageFlags flags)
 }
 
 /// @internal
+enum ENetFileCompoundIDCues {
+    eNFCIDC_KeyAndNamespace,
+    eNFCIDC_NetICache,
+    eNFCIDC_AllowXSiteConn,
+    eNFCIDC_TTL
+};
+
+/// @internal
 enum ENetFileIDFields {
-    fNFID_KeyAndNamespace   = (1 << 0),
-    fNFID_NetICache         = (1 << 1),
+    fNFID_KeyAndNamespace   = (1 << eNFCIDC_KeyAndNamespace),
+    fNFID_NetICache         = (1 << eNFCIDC_NetICache),
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    fNFID_AllowXSiteConn    = (1 << 2),
+    fNFID_AllowXSiteConn    = (1 << eNFCIDC_AllowXSiteConn),
 #endif
-    fNFID_TTL               = (1 << 3),
+    fNFID_TTL               = (1 << eNFCIDC_TTL),
 };
 ///< @internal Bitwise OR of ENetFileIDFields
 typedef unsigned char TNetFileIDFields;
@@ -181,10 +190,15 @@ typedef unsigned char TNetFileIDFields;
 class NCBI_XCONNECT_EXPORT CNetFileID
 {
 public:
-    CNetFileID(TNetStorageFlags flags, Uint8 random_number);
-    CNetFileID(TNetStorageFlags flags,
-            const string& app_domain, const string& unique_key);
-    CNetFileID(const string& packed_id);
+    CNetFileID(CCompoundIDPool::TInstance cid_pool,
+            TNetStorageFlags flags,
+            Uint8 random_number);
+    CNetFileID(CCompoundIDPool::TInstance cid_pool,
+            TNetStorageFlags flags,
+            const string& app_domain,
+            const string& unique_key);
+    CNetFileID(CCompoundIDPool::TInstance cid_pool,
+            const string& packed_id);
 
     void SetStorageFlags(TNetStorageFlags storage_flags)
     {
@@ -195,7 +209,7 @@ public:
     TNetStorageFlags GetStorageFlags() const {return m_StorageFlags;}
     TNetFileIDFields GetFields() const {return m_Fields;}
 
-    Uint8 GetTimestamp() const {return m_Timestamp;}
+    Int8 GetTimestamp() const {return m_Timestamp;}
     Uint8 GetRandom() const {return m_Random;}
 
     string GetAppDomain() const {return m_AppDomain;}
@@ -241,7 +255,7 @@ public:
     string GetID()
     {
         if (m_Dirty)
-            Pack();
+            x_Pack();
         return m_PackedID;
     }
 
@@ -252,14 +266,16 @@ private:
     void x_SetUniqueKeyFromRandom();
     void x_SetUniqueKeyFromUserDefinedKey();
 
-    void Pack();
+    void x_Pack();
     void SetFieldFlags(TNetFileIDFields flags) {m_Fields |= flags;}
     void ClearFieldFlags(TNetFileIDFields flags) {m_Fields &= ~flags;}
+
+    CCompoundIDPool m_CompoundIDPool;
 
     TNetStorageFlags m_StorageFlags;
     TNetFileIDFields m_Fields;
 
-    Uint8 m_Timestamp;
+    Int8 m_Timestamp;
     Uint8 m_Random;
 
     string m_AppDomain;
