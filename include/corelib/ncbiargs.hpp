@@ -862,10 +862,23 @@ public:
     void Delete(const string& name);
 
     /// Set extra info to be used by PrintUsage().
+    /// @sa SetDetailedDescription
     void SetUsageContext(const string& usage_name,           ///< Program name  
                          const string& usage_description,    ///< Usage descr.
                          bool          usage_sort_args = false,///< Sort args.
                          SIZE_TYPE     usage_width = 78);    ///< Format width
+
+    /// Set detailed usage description
+    ///
+    /// In short help message, program will print short
+    /// description defined in SetUsageContext method.
+    /// In detailed help message, program will use detailed
+    /// description defined here.
+    ///
+    /// @param usage_description
+    ///    Detailed usage description
+    /// @sa SetUsageContext
+    void SetDetailedDescription( const string& usage_description);
 
     /// Print usage and exit.
     ///
@@ -970,6 +983,7 @@ private:
 protected:
     string    m_UsageName;         ///< Program name
     string    m_UsageDescription;  ///< Program description
+    string    m_DetailedDescription;  ///< Program long description
     SIZE_TYPE m_UsageWidth;        ///< Maximum length of a usage line
     bool      m_AutoHelp;          ///< Special flag "-h" activated
 
@@ -1059,7 +1073,7 @@ protected:
         CPrintUsage(const CArgDescriptions& desc);
         ~CPrintUsage();
         void AddSynopsis(list<string>& arr, const string& intro, const string& prefix) const;
-        void AddDescription(list<string>& arr) const;
+        void AddDescription(list<string>& arr, bool detailed) const;
         void AddCommandDescription(list<string>& arr, const string& cmd, 
             const map<string,string>* aliases, size_t max_cmd_len, bool detailed) const;
         void AddDetails(list<string>& arr) const;

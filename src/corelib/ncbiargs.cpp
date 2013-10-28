@@ -2662,6 +2662,10 @@ void CArgDescriptions::SetUsageContext
     m_UsageWidth = usage_width;
 }
 
+void CArgDescriptions::SetDetailedDescription( const string& usage_description)
+{
+    m_DetailedDescription = usage_description;
+}
 
 bool CArgDescriptions::VerifyName(const string& name, bool extended)
 {
@@ -3010,13 +3014,16 @@ void CArgDescriptions::CPrintUsage::AddSynopsis(list<string>& arr,
     }
 }
 
-void CArgDescriptions::CPrintUsage::AddDescription(list<string>& arr) const
+void CArgDescriptions::CPrintUsage::AddDescription(list<string>& arr, bool detailed) const
 {
     if ( m_desc.m_UsageDescription.empty() ) {
         arr.push_back("DESCRIPTION    -- none");
     } else {
         arr.push_back("DESCRIPTION");
-        s_PrintCommentBody(arr, m_desc.m_UsageDescription, m_desc.m_UsageWidth);
+        s_PrintCommentBody(arr,
+            (detailed  && !m_desc.m_DetailedDescription.empty()) ?
+                m_desc.m_DetailedDescription : m_desc.m_UsageDescription,
+            m_desc.m_UsageWidth);
     }
 }
 
@@ -3125,7 +3132,7 @@ string& CArgDescriptions::PrintUsage(string& str, bool detailed) const
 
     // DESCRIPTION
     arr.push_back(kEmptyStr);
-    x.AddDescription(arr);
+    x.AddDescription(arr, detailed);
 
     // details
     if (detailed) {
@@ -3454,7 +3461,7 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
 
         // DESCRIPTION
         arr.push_back(kEmptyStr);
-        x.AddDescription(arr);
+        x.AddDescription(arr, detailed);
 
         // details
         if (detailed) {
@@ -3480,7 +3487,7 @@ string& CCommandArgDescriptions::PrintUsage(string& str, bool detailed) const
     }
 
     arr.push_back(kEmptyStr);
-    x.AddDescription(arr);
+    x.AddDescription(arr, detailed);
 
 // max command name length
     size_t max_cmd_len = 0;
