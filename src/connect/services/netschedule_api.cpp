@@ -629,8 +629,8 @@ const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
 
     m_ServerParamsAskCount = SERVER_PARAMS_ASK_MAX_COUNT;
 
-    m_ServerParams->max_input_size = kNetScheduleMaxDBDataSize / 4;
-    m_ServerParams->max_output_size = kNetScheduleMaxDBDataSize / 4;
+    m_ServerParams->max_input_size = kNetScheduleMaxDBDataSize;
+    m_ServerParams->max_output_size = kNetScheduleMaxDBDataSize;
 
     string cmd("QINF2 " + m_Queue);
     g_AppendClientIPAndSessionID(cmd);
@@ -650,11 +650,11 @@ const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
             if (field->name == "max_input_size") {
                 field_bits |= (1 << eMaxInputSize);
                 m_ServerParams->max_input_size =
-                        NStr::StringToInt(field->value) / 4;
+                        NStr::StringToInt(field->value);
             } else if (field->name == "max_output_size") {
                 field_bits |= (1 << eMaxOutputSize);
                 m_ServerParams->max_output_size =
-                        NStr::StringToInt(field->value) / 4;
+                        NStr::StringToInt(field->value);
             }
         }
         if (field_bits == (1 << eNumberOfSizeParams) - 1)
