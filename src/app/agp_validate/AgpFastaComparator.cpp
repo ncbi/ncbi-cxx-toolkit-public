@@ -572,6 +572,7 @@ void CAgpFastaComparator::x_PrintDetailsOfLengthIssue(
 
         if( p_delta_data == NULL ) {
             LOG_POST(Error << kBugInAgpFastaCompare);
+            m_bSuccess = false;
             return;
         }
 
@@ -604,6 +605,7 @@ void CAgpFastaComparator::x_PrintDetailsOfLengthIssue(
             if( ! inner_bioseq_h.IsSetInst_Length() ) {
                 LOG_POST(Error << "    Could not get length of bioseq for "
                          << seq_id_h );
+                m_bSuccess = false;
                 continue;
             }
 
@@ -614,6 +616,7 @@ void CAgpFastaComparator::x_PrintDetailsOfLengthIssue(
                          << " length is " << bioseq_len
                          << " but user tries to access the point "
                          << (highest_pnt+1) ); // "+1" because user sees 1-based
+                m_bSuccess = false;
                 continue;
             }
         }
