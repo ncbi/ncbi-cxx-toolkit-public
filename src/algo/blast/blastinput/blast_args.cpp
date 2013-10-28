@@ -924,14 +924,19 @@ CFrameShiftArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
 }
 
+
+
 void
 CGeneticCodeArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
+	string kGeneticCodeDesc = string ("Permissible values: 1-6, 9-16, 21-25\n"
+									  "See ftp://ftp.ncbi.nih.gov/entrez/misc/data/gc.prt for details\n");
+
     if (m_Target == eQuery) {
         arg_desc.SetCurrentGroup("Input query options");
         // query genetic code
         arg_desc.AddDefaultKey(kArgQueryGeneticCode, "int_value", 
-                               "Genetic code to use to translate query",
+                               "Genetic code to use to translate query\n" + kGeneticCodeDesc ,
                                CArgDescriptions::eInteger,
                                NStr::IntToString(BLAST_GENETIC_CODE));
     } else {
@@ -939,11 +944,24 @@ CGeneticCodeArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
         // DB genetic code
         arg_desc.AddDefaultKey(kArgDbGeneticCode, "int_value", 
                                "Genetic code to use to translate "
-                               "database/subjects",
+                               "database/subjects\n" + kGeneticCodeDesc,
                                CArgDescriptions::eInteger,
                                NStr::IntToString(BLAST_GENETIC_CODE));
+
     }
     arg_desc.SetCurrentGroup("");
+}
+
+void s_CheckGeneticCode(int gc)
+{
+	static int genetic_codes[19] = {1,2,3,4,5,6,9,10,11,12,13,14,15,16,21,22,23,24,25};
+	for(unsigned int i =0; i < 19; i++)
+	{
+		if(genetic_codes[i] == gc)
+			return;
+	}
+	string msg = "Invalid value for genetic code";
+	NCBI_THROW(CInputException, eInvalidInput, msg);
 }
 
 void
@@ -953,11 +971,13 @@ CGeneticCodeArgs::ExtractAlgorithmOptions(const CArgs& args,
     const EProgram program = opt.GetProgram();
 
     if (m_Target == eQuery && args[kArgQueryGeneticCode]) {
+    	s_CheckGeneticCode(args[kArgQueryGeneticCode].AsInteger());
         opt.SetQueryGeneticCode(args[kArgQueryGeneticCode].AsInteger());
     }
   
     if (m_Target == eDatabase && args[kArgDbGeneticCode] &&
         (program == eTblastn || program == eTblastx) ) {
+    	s_CheckGeneticCode(args[kArgDbGeneticCode].AsInteger());
         opt.SetDbGeneticCode(args[kArgDbGeneticCode].AsInteger());
     }
 }
