@@ -1440,7 +1440,7 @@ CNetScheduleAPI::EJobStatus CGridCommandLineInterfaceApp::StringToJobStatus(
         return job_status;
 
     NCBI_THROW_FMT(CArgException, eInvalidArg,
-            "invalid job status '%s'\n" << status_str);
+            "invalid job status '" << status_str << '\'');
 }
 
 #define TRUE_VALUES '1': case 'E': case 'T': \
