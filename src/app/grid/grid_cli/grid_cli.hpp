@@ -217,11 +217,14 @@ enum EOption {
     eDumpCGIEnv,
     eAggregationInterval,
     ePreviousInterval,
+
     eExtendedOptionDelimiter,
+
     eClientNode,
     eClientSession,
     eCommand,
     eMultiline,
+    eDebugHTTP,
     eProtocolDump,
     eDebugConsole,
     eDumpNSNotifications,

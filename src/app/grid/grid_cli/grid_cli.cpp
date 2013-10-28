@@ -397,6 +397,10 @@ struct SOptionDefinition {
     {OPT_DEF(eSwitch, eMultiline),
         "multiline", "Expect multiple lines of output.", {-1}},
 
+    {OPT_DEF(eSwitch, eDebugHTTP),
+        "debug-http", "Dump HTTP request and response headers "
+            "and data for debugging.", {-1}},
+
     {OPT_DEF(eOptionWithParameter, eProtocolDump),
         PROTOCOL_DUMP_OPTION, "Dump input and output messages of "
             "the automation protocol to the specified file.", {-1}},
@@ -443,6 +447,10 @@ struct SCommandCategoryDefinition {
     "\n\nBoth NetCache and ICache modes are supported. " \
     "ICache mode requires blob ID to be specified in the " \
     "following format: \"key,version,subkey\"."
+
+#define MAY_REQUIRE_LOCATION_HINTING \
+    "Some file IDs may require additional options " \
+    "to hint at the current file location."
 
 #define ABOUT_NETSTORAGE_OPTION \
     "\n\nIf a NetStorage service (or server) is specified " \
@@ -552,7 +560,7 @@ struct SCommandDefinition {
         ABOUT_NETSTORAGE_OPTION,
         {eOptionalID, eNetStorage, ePersistent, eFastStorage,
             eNetCache, eCache, eTTL, eMovable, eCacheable,
-            eInput, eInputFile, eLoginToken, eAuth,
+            eInput, eInputFile, eLoginToken, eAuth, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_Download,
@@ -561,7 +569,7 @@ struct SCommandDefinition {
         "standard output (or to the specified output file)."
         ABOUT_NETSTORAGE_OPTION,
         {eID, eNetStorage, eNetCache, eCache, eOffset, eSize,
-            eOutputFile, eLoginToken, eAuth,
+            eOutputFile, eLoginToken, eAuth, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_Relocate,
@@ -574,7 +582,7 @@ struct SCommandDefinition {
         "one for faster file access."
         ABOUT_NETSTORAGE_OPTION,
         {eID, eNetStorage, ePersistent, eFastStorage, eNetCache, eCache,
-            eTTL, eMovable, eCacheable, eLoginToken, eAuth,
+            eTTL, eMovable, eCacheable, eLoginToken, eAuth, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_MkFileID,
@@ -590,18 +598,16 @@ struct SCommandDefinition {
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_NetFileInfo,
         "netfileinfo", "Print information about a NetFile ID.",
-        "Some file IDs may require additional options "
-        "to hint at the current file location."
+        MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
-        {eID, eNetStorage, eNetCache, eCache, eLoginToken, eAuth,
+        {eID, eNetStorage, eNetCache, eCache, eLoginToken, eAuth, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_RemoveNetFile,
         "rmnetfile", "Remove a NetFile by its ID.",
-        "Some file IDs may require additional options "
-        "to hint at the current file location."
+        MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
-        {eID, eNetStorage, eNetCache, eCache, eLoginToken, eAuth,
+        {eID, eNetStorage, eNetCache, eCache, eLoginToken, eAuth, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_JobInfo,
@@ -1046,6 +1052,8 @@ static const char* const s_OutputFormats[eNumberOfOutputFormats] = {
     JSON_OUTPUT_FORMAT                  /* eJSON            */
 };
 
+static char s_ConnDebugEnv[] = "CONN_DEBUG_PRINTOUT=DATA";
+
 int CGridCommandLineInterfaceApp::Run()
 {
     // Override connection defaults.
@@ -1338,6 +1346,19 @@ int CGridCommandLineInterfaceApp::Run()
                     fprintf(stderr, "%s: %s\n", opt_value, strerror(errno));
                     return 2;
                 }
+                break;
+            case eDebugHTTP:
+                // Setup error posting
+                SetDiagTrace(eDT_Enable);
+                SetDiagPostLevel(eDiag_Trace);
+                SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
+                UnsetDiagPostFlag(eDPF_Line);
+                UnsetDiagPostFlag(eDPF_File);
+                UnsetDiagPostFlag(eDPF_Location);
+                UnsetDiagPostFlag(eDPF_LongFilename);
+                SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
+                // Print conn data
+                putenv(s_ConnDebugEnv);
                 break;
             case eProtocolDump:
                 if ((m_Opts.protocol_dump = fopen(opt_value, "a")) == NULL) {
