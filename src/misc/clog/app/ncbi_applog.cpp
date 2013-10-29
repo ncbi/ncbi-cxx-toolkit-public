@@ -215,7 +215,12 @@ void CNcbiApplogApp::Init(void)
     {{
         auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Start application. Return token.", false, kUsageWidth);
-
+        arg->SetDetailedDescription(
+            "Starting logging. You should specify a name of application for that you log and its PID at least. "
+            "First, utility tries to log locally (to /log) by default. If it can't do that then it try to call "
+            "a CGI that does the logging on other machine, or log to stderr on error."
+            "Returns logging token that should be used for any subsequent calls."
+        );
         arg->AddKey
             ("pid", "PID", "Process ID of the application.", CArgDescriptions::eInteger);
         arg->AddKey
@@ -245,6 +250,9 @@ void CNcbiApplogApp::Init(void)
     {{
         auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Stop application.", false, kUsageWidth);
+        arg->SetDetailedDescription(
+            "Stop logging and invalidate passed token. This command should be last in the logging session."
+        );
         arg->AddOpening
             ("token", "Session token, obtained from stdout for <start_app> or <start_request> command.", CArgDescriptions::eString);
         arg->AddDefaultKey
@@ -264,6 +272,11 @@ void CNcbiApplogApp::Init(void)
     {{
         auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Start request. Return token.", false, kUsageWidth);
+        arg->SetDetailedDescription(
+            "Starting logging request. "
+            "Returns logging token specific for this request, it should be used for all subsequent calls related "
+            "to this request. The <stop_request> command invalidate it."
+        );
         arg->AddOpening
             ("token", "Session token, obtained from stdout for <start_app> command.", CArgDescriptions::eString);
         arg->AddDefaultKey
@@ -289,8 +302,13 @@ void CNcbiApplogApp::Init(void)
     {{
         auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Stop request.", false, kUsageWidth);
+        arg->SetDetailedDescription(
+            "Stop logging request. "
+            "Invalidate request specific token obtained for <start_request> command. "
+            "Returns the same token as <start_app> command, so you can use any for logging between requests. "
+        );
         arg->AddOpening
-            ("token", "Session token, obtained from stdout for <start_app> command.", CArgDescriptions::eString);
+            ("token", "Session token, obtained from stdout for <start_request> command.", CArgDescriptions::eString);
         arg->AddDefaultKey
             ("status", "STATUS", "Exit status of the request.", CArgDescriptions::eInteger, "0");
         arg->AddDefaultKey
@@ -312,6 +330,9 @@ void CNcbiApplogApp::Init(void)
     {{
         auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Post a message.", false, kUsageWidth);
+        arg->SetDetailedDescription(
+            "Post a message to the log with specified severity."
+        );
         arg->AddOpening
             ("token", "Session token, obtained from stdout for <start_app> or <start_request> command.", CArgDescriptions::eString);
         // We do not provide "fatal" severity level here, because ncbi_applog
@@ -338,6 +359,7 @@ void CNcbiApplogApp::Init(void)
     {{
         auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Post an extra information.", false, kUsageWidth);
+//        arg->SetDetailedDescription();
         arg->AddOpening
             ("token", "Session token, obtained from stdout for <start_app> or <start_request> command.", CArgDescriptions::eString);
         arg->AddDefaultKey
@@ -357,6 +379,7 @@ void CNcbiApplogApp::Init(void)
     {{
         auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Post performance information.", false, kUsageWidth);
+//        arg->SetDetailedDescription();
         arg->AddOpening
             ("token", "Session token, obtained from stdout for <start_app> or <start_request> command.", CArgDescriptions::eString);
         arg->AddDefaultKey
@@ -381,6 +404,7 @@ void CNcbiApplogApp::Init(void)
     {{
         auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Parse token information and print requested field to stdout.", false, kUsageWidth);
+//        arg->SetDetailedDescription();
         arg->AddOpening
             ("token", "Session token, obtained from stdout for <start_app> or <start_request> command.", CArgDescriptions::eString);
         arg->AddFlag("appname", "Name of the application.");
@@ -401,6 +425,12 @@ void CNcbiApplogApp::Init(void)
     {{
         auto_ptr<CArgDescriptions> arg(new CArgDescriptions(false));
         arg->SetUsageContext(kEmptyStr, "Post already prepared log in applog format.", false, kUsageWidth);
+        arg->SetDetailedDescription(
+            "Copy already existing data in applog format to the log. You can specify a file name with data "
+            "or print it to the standard input. All lines in non-applog format will be ignored. "
+            "If $NCBI_APPLOG_SITE environment variable is specified, that the application name in the passed "
+            "logging data will be replaced with its value and original application name added as 'extra'."
+       );
         arg->AddKey
             ("file", "filename", "Name of the file with log lines. Use '-' to read from the standard input.",
             CArgDescriptions::eString);
