@@ -18,3 +18,5 @@ CHECK_CMD = seqdb_perf -db pataa -dbtype prot -scan_uncompressed -num_threads 4 
 CHECK_CMD = seqdb_perf -db pataa -dbtype prot -scan_uncompressed -num_threads 1 /CHECK_NAME = scan_blastdb_st
 CHECK_CMD = seqdb_perf -db pataa -dbtype prot -get_metadata /CHECK_NAME = get_blastdb_metadata
 
+# This unit test suite shouldn't run longer than 15 minutes
+CHECK_TIMEOUT = 900

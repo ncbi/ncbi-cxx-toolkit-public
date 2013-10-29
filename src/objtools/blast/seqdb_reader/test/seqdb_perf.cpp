@@ -136,21 +136,19 @@ CSeqDBPerfApp::x_ScanDatabase()
     sw.Start();
     Uint8 num_letters = m_BlastDb->GetTotalLength();
     const bool kScanUncompressed = GetArgs()["scan_uncompressed"];
-    int thread_id = 0;
     vector<int> oids2iterate;
-    for (int oid = 0; m_DbHandles[thread_id]->CheckOrFindOID(oid); oid++) {
+    for (int oid = 0; m_DbHandles.front()->CheckOrFindOID(oid); oid++) {
         oids2iterate.push_back(oid);
     }
     LOG_POST(Info << "Will go over " << oids2iterate.size() << " sequences");
 
     #pragma omp parallel default(none) num_threads(m_DbHandles.size()) \
-                         private(thread_id) shared(oids2iterate) \
-                         if(m_DbHandles.size() > 1)
+                         shared(oids2iterate) if(m_DbHandles.size() > 1)
     { 
 #ifdef _OPENMP
-        thread_id = omp_get_thread_num();
+        int thread_id = omp_get_thread_num();
 #endif
-        #pragma omp for schedule(guided) nowait
+        #pragma omp for schedule(static, (oids2iterate.size()/m_DbHandles.size())) nowait
         for (size_t i = 0; i < oids2iterate.size(); i++) {
             int oid = oids2iterate[i];
             const char* buffer = NULL;
