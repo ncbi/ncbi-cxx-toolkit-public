@@ -1493,6 +1493,16 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
             }
         }
 
+        bool starts_with_code_break = false;
+        if (cdr.IsSetCode_break()) {
+            ITERATE (CCdregion::TCode_break, it, cdr.GetCode_break()) {
+                if ((*it)->GetLoc().GetStart(eExtreme_Positional) == 0) {
+                    starts_with_code_break = true;
+                    break;
+                }
+            }
+        }
+
         size_t b = 0;
         size_t e = 0;
         size_t skip_5_prime = 0;
@@ -1554,6 +1564,7 @@ SImplementation::x_CreateProteinBioseq(CSeq_loc* cds_loc,
                 if (b < e) {
 
                     if (b==0 && strprot[b] != 'M' &&
+                        !starts_with_code_break &&
                         !protloc_on_mrna->IsPartialStart(eExtreme_Biological)) {
                         strprot[b] = 'M';
                         TSeqPos pos_on_mrna = codon_start_pos + protloc_on_mrna->GetStart(eExtreme_Positional);
