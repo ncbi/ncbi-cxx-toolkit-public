@@ -819,12 +819,13 @@ CVcfReader::xParseData(
         }
     }
     catch ( ... ) {
-        CObjReaderLineException err(
+        AutoPtr<CObjReaderLineException> pErr(
+            CObjReaderLineException::Create(
             eDiag_Error,
             0,
             "Unable to parse given VCF data (syntax error).",
-            ILineError::eProblem_GeneralParsingError);
-        ProcessError(err, pEC);
+            ILineError::eProblem_GeneralParsingError));
+        ProcessError(*pErr, pEC);
         return false;
     }
 
@@ -907,12 +908,13 @@ CVcfReader::xNormalizeData(
     // make sure none of the alternatives is equal to the reference:
     for (size_t u=0; u < data.m_Alt.size(); ++u) {
         if (data.m_Alt[u] == data.m_strRef) {
-            CObjReaderLineException err(
+            AutoPtr<CObjReaderLineException> pErr(
+                CObjReaderLineException::Create(
                 eDiag_Error,
                 0,
                 "CVcfReader::xNormalizeData: Invalid alternative.",
-                ILineError::eProblem_GeneralParsingError);
-            ProcessError(err, pEC);
+                ILineError::eProblem_GeneralParsingError));
+            ProcessError(*pErr, pEC);
             return false;
         }
     }
