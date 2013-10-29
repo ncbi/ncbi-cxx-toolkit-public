@@ -87,7 +87,7 @@ public:
     const CDB_Exception* GetDBException(void) const;
 
     /// Returns any underlying DBAPI error code, or else CException::eInvalid.
-    TErrCode GetDBErrCode(void) const;
+    CDB_Exception::TErrCode GetDBErrCode(void) const;
 
     // Standard exception boilerplate code.
     NCBI_EXCEPTION_DEFAULT(CSDB_Exception, CException);
