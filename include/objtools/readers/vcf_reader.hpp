@@ -295,6 +295,10 @@ protected:
         const string&,
         CVcfData& );
 
+    virtual bool
+    xNormalizeData(
+        CVcfData& );
+
     //
     //  data:
     //

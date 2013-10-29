@@ -820,24 +820,8 @@ CVcfReader::xParseData(
         return false;
     }
 
-    // normalize ref/alt by trimming common prefices and adjusting location
-    bool trimComplete = false;
-    while (!data.m_strRef.empty()) {
-        char leadBase = data.m_strRef[0];
-        for (size_t u=0; u < data.m_Alt.size(); ++u) {
-            if (!NStr::StartsWith(data.m_Alt[u], leadBase)) {
-                trimComplete = true;
-                break;
-            }
-        }
-        if (trimComplete) {
-            break;
-        }
-        data.m_strRef = data.m_strRef.substr(1);
-        for (size_t u=0; u < data.m_Alt.size(); ++u) {
-            data.m_Alt[u] = data.m_Alt[u].substr(1);
-        }
-        data.m_iPos++;
+    if (!xNormalizeData(data)) {
+        return false;
     }
 
     //assign set type:
@@ -904,6 +888,66 @@ CVcfReader::xParseData(
     return true;
 }
 
+
+//  ---------------------------------------------------------------------------
+bool
+CVcfReader::xNormalizeData(
+    CVcfData& data)
+//  ---------------------------------------------------------------------------
+{
+    // normalize ref/alt by trimming common prefices and adjusting location
+    bool trimComplete = false;
+    while (!data.m_strRef.empty()) {
+        char leadBase = data.m_strRef[0];
+        for (size_t u=0; u < data.m_Alt.size(); ++u) {
+            if (!NStr::StartsWith(data.m_Alt[u], leadBase)) {
+                trimComplete = true;
+                break;
+            }
+        }
+        if (trimComplete) {
+            break;
+        }
+        data.m_strRef = data.m_strRef.substr(1);
+        for (size_t u=0; u < data.m_Alt.size(); ++u) {
+            data.m_Alt[u] = data.m_Alt[u].substr(1);
+        }
+        data.m_iPos++;
+    }
+
+    //  normalize ref/alt by trimming common postfixes and adjusting location
+    trimComplete = false;
+    size_t refSize = data.m_strRef.size();
+    size_t trimSize = 0;
+    while (refSize > trimSize) {
+        string postfix = data.m_strRef.substr(refSize-1-trimSize, trimSize+1);
+        for (size_t u=0; u < data.m_Alt.size(); ++u) {
+            size_t altSize = data.m_Alt[u].size();
+            if (altSize < trimSize+1) {
+                trimComplete = true;
+                break;
+            }
+            string postfixA = data.m_Alt[u].substr(altSize-1-trimSize, trimSize+1);
+            if (postfix != postfixA) {
+                trimComplete = true;
+                break;
+            }
+        }
+        if (trimComplete) {
+            break;
+        }
+        trimSize++;
+    }
+    if (trimSize > 0) {
+        data.m_strRef = 
+            data.m_strRef.substr(0, data.m_strRef.size()-trimSize);
+        for (size_t u=0; u < data.m_Alt.size(); ++u) {
+            data.m_Alt[u] = 
+                data.m_Alt[u].substr(0, data.m_Alt[u].size()-trimSize);
+        }
+    }
+    return true;
+}
 
 //  ---------------------------------------------------------------------------
 bool
