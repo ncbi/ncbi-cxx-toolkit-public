@@ -1654,9 +1654,8 @@ x_GetDstExon(CSpliced_seg&              spliced,
             if (prod_id) {
                 // Id already set, make sure the new one is the same.
                 if (prod_id != prod_row.m_Id) {
-                    NCBI_THROW(CAnnotMapperException, eBadAlignment,
-                        "Can not construct spliced-seg -- "
-                        "exon parts have different product seq-ids");
+                    // New id - start new exon.
+                    break;
                 }
             }
             else {
