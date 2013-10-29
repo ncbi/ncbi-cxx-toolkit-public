@@ -9,14 +9,13 @@
 APP = table2asn
 SRC = table2asn OpticalXML2ASN multireader struc_cmt_reader table2asn_context feature_table_reader \
       remote_updater fcs_reader
-LIB = xvalidate xcleanup xalnmgr xobjutil \
-      valid valerr submit taxon3 gbseq \
-      xalgophytree biotree fastme xalnmgr tables xobjreadex xobjread \
-      xalgoseq prosplign xalnmgr \
-      taxon1 xmlwrapp \
-      tables xregexp $(XFORMAT_LIBS) $(PCRE_LIB) $(OBJMGR_LIBS)
+LIB  = xalgophytree fastme prosplign xalgoalignutil xalgoseq xmlwrapp \
+       xcleanup xvalidate xobjreadex valid valerr taxon3 taxon1 biotree \
+       $(XFORMAT_LIBS) $(BLAST_LIBS) xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
 
-LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS) $(LIBXML_LIBS) $(LIBXSLT_LIBS)
+
+LIBS = $(LIBXSLT_LIBS) $(LIBXML_LIBS) $(CMPRS_LIBS) $(PCRE_LIBS) \
+       $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects LIBXML LIBXSLT -Cygwin
 
