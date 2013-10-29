@@ -6862,6 +6862,8 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ZEA	s	Universidad de Guadalajara, Centro Universitario de la Costa Sur, Departamento de Ecologia y Recursos Naturales",
 "ZFMK	sb	Zoologisches Forschungsmuseum Alexander Koenig",
 "ZFMK:COL	s	Zoologisches Forschungsmuseum Alexander Koenig, Coleoptera collection",
+"ZFMK:FSJF	s	Zoologisches Forschungsmuseum Alexander Koenig, fish collection of Jeorg Freyhof",
+"ZFMK:ICH	s	Zoologisches Forschungsmuseum Alexander Koenig, Ichthyological Collection",
 "ZFSN	s	Laboratoire de Zoologie de la Faculte Des Sciences",
 "ZGLC	s	Natural History Museum, Limassol",
 "ZHAN	s	Zhanjiang Teachers College, Biology Department",
