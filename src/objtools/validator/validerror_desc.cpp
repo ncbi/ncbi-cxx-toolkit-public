@@ -752,6 +752,15 @@ static bool x_IsBadBioProjectFormat (
     return false;
 }
 
+static string s_legalDblinkNames [] = {
+    "Trace Assembly Archive",
+    "ProbeDB",
+    "Assembly",
+    "BioSample",
+    "Sequence Read Archive",
+    "BioProject"
+};
+
 bool CValidError_desc::ValidateDblink
 (const CUser_object& usr,
  const CSeqdesc& desc,
@@ -806,6 +815,13 @@ bool CValidError_desc::ValidateDblink
                                 "Bad BioProject format - " + str, *m_Ctx, desc);
                         }
                     }
+                }
+            }
+
+            for ( size_t i = 0; i < sizeof(s_legalDblinkNames) / sizeof(string); ++i) {
+                if (NStr::EqualNocase (label_str, s_legalDblinkNames[i]) && ! NStr::EqualCase (label_str, s_legalDblinkNames[i])) {
+                    PostErr(eDiag_Critical, eErr_SEQ_DESCR_DBLinkProblem,
+                         "Bad DBLink capitalization - " + label_str, *m_Ctx, desc);
                 }
             }
         }
