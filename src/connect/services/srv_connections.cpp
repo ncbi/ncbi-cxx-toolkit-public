@@ -144,7 +144,9 @@ void SNetServerConnectionImpl::ReadCmdOutputLine(string& result)
         Abort();
         NCBI_THROW_FMT(CNetSrvConnException, eReadTimeout,
                 "Communication timeout reading from " <<
-                m_Server->m_ServerInPool->m_Address.AsString());
+                m_Server->m_ServerInPool->m_Address.AsString() <<
+                " (timeout=" << NcbiTimeoutToMs(
+                        m_Socket.GetTimeout(eIO_Read)) / 1000.0 << "s)");
         break;
     case eIO_Closed:
         Abort();
