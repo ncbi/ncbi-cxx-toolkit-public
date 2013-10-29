@@ -293,11 +293,13 @@ protected:
     virtual bool
     xParseData(
         const string&,
-        CVcfData& );
+        CVcfData&,
+        IMessageListener* =0);
 
     virtual bool
     xNormalizeData(
-        CVcfData& );
+        CVcfData&,
+        IMessageListener* =0);
 
     //
     //  data:

@@ -196,6 +196,7 @@ CVcfReader::ReadSeqAnnot(
     m_Meta->SetUser().SetType().SetStr( "vcf-meta-info" );
 
     while ( ! lr.AtEOF() ) {
+        m_uLineNumber++;
         string line = *(++lr);
         NStr::TruncateSpacesInPlace( line );
         if (xProcessMetaLine(line, annot, pEC)) {
@@ -532,7 +533,7 @@ CVcfReader::xProcessDataLine(
         return false;
     }
     CVcfData data;
-    if (!xParseData(line, data)) {
+    if (!xParseData(line, data, pEC)) {
         return false;
     }
     CRef<CSeq_feat> pFeat( new CSeq_feat );
@@ -770,7 +771,8 @@ CVcfReader::xAssignVariantDelins(
 bool
 CVcfReader::xParseData(
     const string& line,
-    CVcfData& data )
+    CVcfData& data,
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     vector<string> columns;
@@ -817,10 +819,16 @@ CVcfReader::xParseData(
         }
     }
     catch ( ... ) {
+        CObjReaderLineException err(
+            eDiag_Error,
+            0,
+            "Unable to parse given VCF data (syntax error).",
+            ILineError::eProblem_GeneralParsingError);
+        ProcessError(err, pEC);
         return false;
     }
 
-    if (!xNormalizeData(data)) {
+    if (!xNormalizeData(data, pEC)) {
         return false;
     }
 
@@ -892,9 +900,23 @@ CVcfReader::xParseData(
 //  ---------------------------------------------------------------------------
 bool
 CVcfReader::xNormalizeData(
-    CVcfData& data)
+    CVcfData& data,
+    IMessageListener* pEC)
 //  ---------------------------------------------------------------------------
 {
+    // make sure none of the alternatives is equal to the reference:
+    for (size_t u=0; u < data.m_Alt.size(); ++u) {
+        if (data.m_Alt[u] == data.m_strRef) {
+            CObjReaderLineException err(
+                eDiag_Error,
+                0,
+                "CVcfReader::xNormalizeData: Invalid alternative.",
+                ILineError::eProblem_GeneralParsingError);
+            ProcessError(err, pEC);
+            return false;
+        }
+    }
+
     // normalize ref/alt by trimming common prefices and adjusting location
     bool trimComplete = false;
     while (!data.m_strRef.empty()) {
