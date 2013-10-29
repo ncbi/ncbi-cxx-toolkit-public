@@ -107,6 +107,7 @@ public:
   }
 };
 
+
 // Print a nicer usage message
 class CArgDesc_agp_validate : public CArgDescriptions
 {
