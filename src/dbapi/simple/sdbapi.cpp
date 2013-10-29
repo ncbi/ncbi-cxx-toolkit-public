@@ -48,7 +48,9 @@ BEGIN_NCBI_SCOPE
 
 
 #define SDBAPI_CATCH_LOWLEVEL()                             \
-    catch (CDB_Exception& ex) {                             \
+    catch (CDB_DeadlockEx& ex) {                            \
+        NCBI_RETHROW(ex, CSDB_DeadlockException, eLowLevel, ""); \
+    } catch (CDB_Exception& ex) {                           \
         NCBI_RETHROW(ex, CSDB_Exception, eLowLevel, "");    \
     }
 

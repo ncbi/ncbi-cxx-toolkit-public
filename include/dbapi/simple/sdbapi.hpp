@@ -39,6 +39,7 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/rwstream.hpp>
 #include <util/ncbi_url.hpp>
+#include <dbapi/driver/exception.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -81,8 +82,27 @@ public:
 
     /// Translate from the error code value to its string representation.
     virtual const char* GetErrCodeString(void) const;
+
+    /// Returns any underlying DBAPI exception, or else NULL.
+    const CDB_Exception* GetDBException(void) const;
+
+    /// Returns any underlying DBAPI error code, or else CException::eInvalid.
+    TErrCode GetDBErrCode(void) const;
+
     // Standard exception boilerplate code.
     NCBI_EXCEPTION_DEFAULT(CSDB_Exception, CException);
+};
+
+
+class CSDB_DeadlockException : public CSDB_Exception
+{
+public:
+    void x_Init(const CDiagCompileInfo& info, const string& message,
+                const CException* prev_exception, EDiagSev severity);
+
+    void x_InitErrCode(CException::EErrCode err_code);
+
+    NCBI_EXCEPTION_DEFAULT(CSDB_DeadlockException, CSDB_Exception);
 };
 
 
@@ -883,6 +903,35 @@ private:
 //////////////////////////////////////////////////////////////////////////
 // Inline methods
 //////////////////////////////////////////////////////////////////////////
+
+inline
+const CDB_Exception* CSDB_Exception::GetDBException(void) const
+{
+    return dynamic_cast<const CDB_Exception*>(GetPredecessor());
+}
+
+inline
+CException::TErrCode CSDB_Exception::GetDBErrCode(void) const
+{
+    const CDB_Exception* dbex = GetDBException();
+    return dbex ? dbex->GetErrCode() : eInvalid;
+}
+
+
+inline
+void CSDB_DeadlockException::x_Init(const CDiagCompileInfo&, const string&,
+                                    const CException* prev_exception, EDiagSev)
+{
+    _ASSERT(dynamic_cast<const CDB_DeadlockEx*>(prev_exception));
+}
+
+inline
+void CSDB_DeadlockException::x_InitErrCode(CException::EErrCode err_code)
+{
+    _ASSERT((TErrCode)err_code == (TErrCode)CSDB_Exception::eLowLevel);
+}
+
+
 
 inline
 CSDB_ConnectionParam::CSDB_ConnectionParam(const string& url_string /* = kEmptyStr */)
