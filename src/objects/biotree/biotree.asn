@@ -13,13 +13,15 @@ BEGIN
 
 EXPORTS BioTreeContainer, DistanceMatrix;
 
-BioTreeContainer ::= SEQUENCE {
-   treetype  VisibleString OPTIONAL,  -- hint on what kind of tree is that
-   fdict     FeatureDictSet,          -- features dictionary 
-   nodes     NodeSet,                 -- set of nodes with encoded topology
-   label     VisibleString OPTIONAL   -- bio-tree label (short name)
-}
+IMPORTS User-object, User-field FROM NCBI-General;
 
+BioTreeContainer ::= SEQUENCE {
+   treetype  VisibleString OPTIONAL,  -- hint on what kind of tree this is
+   fdict     FeatureDictSet,          -- features dictionary 
+   nodes     NodeSet,                 -- set of nodes with encoded topology   
+   label     VisibleString OPTIONAL,  -- bio-tree label (short name)
+   user      User-object OPTIONAL     -- user defined object
+}
 
 NodeSet ::= SET OF Node
 
