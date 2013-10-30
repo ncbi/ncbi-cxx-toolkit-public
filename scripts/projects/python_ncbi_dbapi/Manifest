@@ -11,15 +11,13 @@
 
 COPY: $srcdir/src/dbapi/lang_bind/python/tests/python_dbapi_test.py $installdir/bin
 
-# Match relevant shared libraries on any platform.
-LIB: *python_ncbi_dbapi.[ds]*
-LIB: *dbapi.[ds]* *dbapi_driver.[ds]* *xconne?t.[ds]* *xutil.[ds]* *xncbi.[ds]*
-LIB: *ncbi_xdbapi_?t*.[ds]* *ct_ftds64.[ds]* *tds_ftds64.[ds]*
+# Library installation relegated to post_build.py, to account for
+# platform-dependent naming and placement.
 
 # Use stable components (per components.link) rather than the trunk.
 USE_COMPONENTS
 
-POSTBUILD: $srcdir/scripts/projects/python_ncbi_dbapi/post_build/post_build.py $installdir $version
+POSTBUILD: $srcdir/scripts/projects/python_ncbi_dbapi/post_build/post_build.py $bindir $libdir $installdir $version
 
 
 # Each line describes a single configuration
