@@ -92,11 +92,12 @@
 #include <objects/seqfeat/Trna_ext.hpp>      
 #include <objects/pub/Pub.hpp>
 
-#include <objmgr/util/seq_loc_util.hpp>
-#include <objmgr/seq_vector.hpp>
-#include <objmgr/seqdesc_ci.hpp>
-#include <objmgr/feat_ci.hpp>
 #include <objmgr/align_ci.hpp>
+#include <objmgr/bioseq_ci.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/util/seq_loc_util.hpp>
 #include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/flat_file_generator.hpp>
 
@@ -114,6 +115,7 @@ namespace DiscRepNmSpc {
   typedef map <int, int> Int2Int;
   typedef map <string, Str2Strs> Str2MapStr2Strs;
   typedef map <string, vector <CConstRef <CBioseq> > > Str2Seqs;
+  typedef map <string, CConstRef <CObject> > Str2Obj;
 
   enum ESuspectNameType {
      eSuspectNameType_None = 0,
@@ -163,6 +165,7 @@ namespace DiscRepNmSpc {
 
       static bool   is_Aa_run;
       static bool   is_AllAnnot_run;  // checked
+      static bool   is_Bad_Gene_Nm; 
       static bool   is_BacPartial_run;
       static bool   is_Bases_N_run; 
       static bool   is_BASES_N_run; // may not be needed
@@ -234,6 +237,7 @@ namespace DiscRepNmSpc {
         virtual ~GeneralDiscSubDt () {};
 
         vector < string > obj_text;  // e.g., seq_feat list
+        vector <CConstRef <CObject> > obj_ls; // e.g., seq_feat obj list
         string str;                       // prop. of the list;
         bool  sf0_added;
         bool  isAa;
@@ -246,7 +250,8 @@ namespace DiscRepNmSpc {
      e_ContainsComment,
      e_HasComment,
      e_DoesComment,
-     e_OtherComment
+     e_OtherComment,
+     e_NoCntComment
   };
 
   class CSuspectRuleCheck : public CObject
@@ -527,7 +532,8 @@ namespace DiscRepNmSpc {
       string GetHasComment(unsigned cnt, const string& str);
       string GetDoesComment(unsigned cnt, const string& str);
       string GetContainsComment(unsigned cnt, const string& str);
-      string GetOtherComment(unsigned cnt, const string& single_str, const string& plural_str);
+      string GetOtherComment(unsigned cnt, const string& single_str,const string& plural_str);
+      string GetNoCntComment(unsigned cnt, const string& single_str,const string& plural_str);
       string GetNoun(unsigned cnt, const string& str);
 
  //  GetDiscrepancyItemTextEx() 
@@ -1366,7 +1372,7 @@ namespace DiscRepNmSpc {
       virtual string GetName() const =0;
 
     protected:
-      set <string> m_seqs_w_pid, m_seqs_no_pid;
+      Str2Obj m_seqs_w_pid, m_seqs_no_pid;
       string GetName_gcomm() const {return string("MISSING_GENOMEASSEMBLY_COMMENTS");}
       string GetName_proj() const {return string("TEST_HAS_PROJECT_ID"); }
       string GetName_oncall_scomm() const {
@@ -1380,10 +1386,10 @@ namespace DiscRepNmSpc {
       void GroupAllBioseqs(const CBioseq_set& bioseq_set, const int& id);
       void CheckCommentCountForSet(const CBioseq_set& set, const unsigned& cnt, 
                                                                         Str2Int& bioseq2cnt);
-      Str2Int m_bioseq2geno_comm;
+      Str2Obj m_bioseq2geno_comm;
       const CBioseq& Get1stBioseqOfSet(const CBioseq_set& bioseq_set);
-      void AddBioseqsOfSet2Map(const CBioseq_set& bioseq_set);
-      void RmvBioseqsOfSetOutMap(const CBioseq_set& bioseq_set);
+//      void AddBioseqsOfSet2Map(const CBioseq_set& bioseq_set);
+ //     void RmvBioseqsOfSetOutMap(const CBioseq_set& bioseq_set);
   };
 
   class CSeqEntry_ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX:public CSeqEntry_test_on_user
@@ -1893,10 +1899,8 @@ namespace DiscRepNmSpc {
       string DescribeBioSourceDifferences(const CBioSource& biosrc1,const CBioSource& biosrc2);
       string DescribeOrgNameDifferences(const COrg_ref& org1, const COrg_ref& org2);
       string OrgModSetDifferences(const COrgName& nm1, const COrgName& nm2);
-      void  AddAllBioseqToList(const CBioseq_set& bioseq_set,
-                        CRef <GeneralDiscSubDt>& item_list, const string& biosrc_txt);
-      CRef <GeneralDiscSubDt> AddSeqEntry(const CSeqdesc& seqdesc,const CSeq_entry& seq_entry);
-      bool HasNaInSet(const CBioseq_set& bioseq_set);
+      CRef <GeneralDiscSubDt> AddSeqEntry(const CSeqdesc& seqdesc,const CSeq_entry& seq_entry,
+                                          const CBioseq_CI& b_ci);
   };
 
 
@@ -2785,8 +2789,8 @@ namespace DiscRepNmSpc {
 
     protected:
       string GetName_cnt () const {return string("COUNT_PROTEINS"); }
-      string GetName_id() const {return string("MISSING_PROTEIN_ID1"); }
-      string GetName_prefix() const {return string("INCONSISTENT_PROTEIN_ID_PREFIX1"); }
+      string GetName_id() const {return string("MISSING_PROTEIN_ID"); }
+      string GetName_prefix() const {return string("INCONSISTENT_PROTEIN_ID_PREFIX"); }
   };
 
 
@@ -2800,20 +2804,20 @@ namespace DiscRepNmSpc {
   };
 
  
-  class CBioseq_MISSING_PROTEIN_ID1 : public CBioseq_test_on_prot
+  class CBioseq_MISSING_PROTEIN_ID : public CBioseq_test_on_prot
   {
     public:
-      virtual ~CBioseq_MISSING_PROTEIN_ID1 () {};
+      virtual ~CBioseq_MISSING_PROTEIN_ID () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return CBioseq_test_on_prot::GetName_id(); }
   };
 
 
-  class CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX1 : public CBioseq_test_on_prot
+  class CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX : public CBioseq_test_on_prot
   {
     public:
-      virtual ~CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX1 () {};
+      virtual ~CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return CBioseq_test_on_prot::GetName_prefix(); }
@@ -3475,14 +3479,14 @@ namespace DiscRepNmSpc {
 
 
 
-  class CBioseq_HYPOTHETICAL_CDS_HAVING_GENE_NAME : public CBioseqTestAndRepData
+  class CBioseq_SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME : public CBioseqTestAndRepData
   {
     public:
-      virtual ~CBioseq_HYPOTHETICAL_CDS_HAVING_GENE_NAME () {};
+      virtual ~CBioseq_SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("HYPOTHETICAL_CDS_HAVING_GENE_NAME");}
+      virtual string GetName() const {return string("SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME");}
   };
 
 
@@ -3509,21 +3513,36 @@ namespace DiscRepNmSpc {
       virtual string GetName() const {return string("TEST_LOW_QUALITY_REGION");}
   };
 
-
  
+  class CBioseq_on_bad_gene_name : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_on_bad_gene_name () {};
 
-  class CBioseq_TEST_BAD_GENE_NAME : public CBioseqTestAndRepData
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const = 0;
+
+    protected:
+      bool GeneNameHas4Numbers(const string& locus);
+      string GetName_gnm() const {return string("TEST_BAD_GENE_NAME");}
+      string GetName_bgnm() const {return string("DISC_BAD_BACTERIAL_GENE_NAME"); }
+  };
+
+  class CBioseq_TEST_BAD_GENE_NAME : public CBioseq_on_bad_gene_name
   {
     public:
       virtual ~CBioseq_TEST_BAD_GENE_NAME () {};
-
-      virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("TEST_BAD_GENE_NAME");}
-    
-    private:
-      bool GeneNameHas4Numbers(const string& locus);
-      string GetName_bad() const {return string("BAD_BACTERIAL_GENE_NAME"); }
+      virtual string GetName() const {return CBioseq_on_bad_gene_name::GetName_gnm(); }
+  };
+
+  class CBioseq_DISC_BAD_BACTERIAL_GENE_NAME : public CBioseq_on_bad_gene_name
+  {
+    public:
+      virtual ~CBioseq_DISC_BAD_BACTERIAL_GENE_NAME () {};
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_on_bad_gene_name::GetName_bgnm(); }
   };
 
 
@@ -3772,6 +3791,7 @@ namespace DiscRepNmSpc {
 
 
 
+/*
   class CBioseq_MISSING_PROTEIN_ID : public CBioseqTestAndRepData
   {
     public:
@@ -3784,8 +3804,10 @@ namespace DiscRepNmSpc {
     private:
       string GetName_prefix() const {return string("INCONSISTENT_PROTEIN_ID_PREFIX");}
   };
+*/
 
 
+/*
   class CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX : public CBioseqTestAndRepData
   {
     public:
@@ -3800,6 +3822,7 @@ namespace DiscRepNmSpc {
       void MakeRep(const Str2Strs& item_map, const string& desc1, const string& desc2);
   };
 
+*/
 
 
   class CBioseq_TEST_DEFLINE_PRESENT : public CBioseqTestAndRepData

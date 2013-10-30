@@ -284,6 +284,7 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
 // ini.
    thisTest.is_Aa_run = false;
    thisTest.is_AllAnnot_run = false;
+   thisTest.is_Bad_Gene_Nm = false;
    thisTest.is_BacPartial_run = false;
    thisTest.is_Bases_N_run = false;
    thisTest.is_BASES_N_run = false; // no needed?
@@ -423,10 +424,8 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
                GoTests(thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet, bioseq);
    }
 
-/*
    if (!CTestAndRepData::IsmRNASequenceInGenProdSet(bioseq))
-         GoTests(CRepConfig::tests_on_Bioseq_NotInGenProdSet, bioseq);
-*/
+         GoTests(thisGrp.tests_on_Bioseq_NotInGenProdSet, bioseq);
 
    unsigned prev_len = thisGrp.tests_4_once.size();
    if ( bioseq.IsNa() && !thisGrp.tests_on_Bioseq_na.empty()) {

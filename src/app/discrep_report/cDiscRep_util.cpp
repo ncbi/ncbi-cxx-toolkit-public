@@ -1293,6 +1293,11 @@ string CTestAndRepData :: GetOtherComment(unsigned cnt, const string& single_str
    return(NStr::UIntToString(cnt) + " " + ( (1==cnt) ? single_str : plural_str));
 }
 
+string CTestAndRepData :: GetNoCntComment(unsigned cnt, const string& single_str, const string& plural_str)
+{
+   return((1==cnt) ? single_str : plural_str);
+};
+
 
 void CTestAndRepData :: RmvChar(string& str, string chars)
 {
@@ -1339,6 +1344,9 @@ void CTestAndRepData :: AddSubcategory(CRef <CClickableItem>& c_item, const stri
             break;
        case e_OtherComment:
             c_sub->description = GetOtherComment(cnt, desc1, desc2) + desc3;
+            break;
+       case e_NoCntComment:
+            c_sub->description = GetNoCntComment(cnt, desc1, desc2) + desc3;
             break;
        default:
            NCBI_THROW(CException, eUnknown, "Bad comment type.");
