@@ -12,7 +12,7 @@ os.mkdir(install_dir + '/lib')
 if os.path.exists(lib_dir + '/python_ncbi_dbapi.so'):
     template = lib_dir.replace('%', '%%') + '/lib%s.[ds]?*'
 else:
-    template = bin_dir.replace('%', '%%') + '/ReleaseDLL/%s.[dp]??'
+    template = bin_dir.replace('%', '%%') + '/%s.[dp]??'
     
 for s in stems:
     for x in glob.glob(template % s):
