@@ -42,9 +42,11 @@ CSymDustMasker::triplets::triplets(
     perfect_list_type & perfect_list, thres_table_type & thresholds )
     : start_( 0 ), stop_( 0 ), max_size_( window - 2 ), low_k_( low_k ),
       L( 0 ), P( perfect_list ), thresholds_( thresholds ),
-      c_w( 64, 0 ), c_v( 64, 0 ),
       r_w( 0 ), r_v( 0 ), num_diff( 0 )
-{}
+{
+    std::fill( c_w, c_w + 64, 0 );
+    std::fill( c_v, c_v + 64, 0 );
+}
 
 //------------------------------------------------------------------------------
 bool CSymDustMasker::triplets::shift_high( triplet_type t )
@@ -116,12 +118,12 @@ bool CSymDustMasker::triplets::shift_window( triplet_type t )
 inline void CSymDustMasker::triplets::find_perfect()
 {
     typedef perfect_list_type::iterator perfect_iter_type;
-    static counts_type counts( 64 );
+    counts_type counts;
 
     Uint4 count = stop_ - L; // count is the suffix length
 
     // we need a local copy of triplet counts
-    std::copy( c_v.begin(), c_v.end(), counts.begin() );
+    std::copy( c_v, c_v + 64, counts );
 
     Uint4 score = r_v; // and of the partial sum
     perfect_iter_type perfect_iter = P.begin();

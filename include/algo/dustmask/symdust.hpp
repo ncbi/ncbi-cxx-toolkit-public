@@ -258,7 +258,7 @@ class NCBI_XALGODUSTMASK_EXPORT CSymDustMasker
                 /**\internal Triplets list iterator type. */
                 typedef impl_type::const_iterator impl_citer_type;
                 /**\internal Type for triplet counts tables. */
-                typedef std::vector< Uint1 > counts_type;
+                typedef Uint1 counts_type[64];
 
                 /** \internal
                     \brief Recompute the value of the running sum
