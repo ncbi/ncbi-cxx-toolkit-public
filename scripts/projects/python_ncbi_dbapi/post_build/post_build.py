@@ -7,7 +7,8 @@ import glob, os, sys
 # needing to match both Unix and Windows library filenames.
 for x in glob.glob(sys.argv[1] + '/lib/*xxconnect*'):
     os.unlink(x)
-os.unlink(sys.argv[1] + '/lib/python_ncbi_dbapi.so')
+if os.path.exists(sys.argv[1] + '/lib/python_ncbi_dbapi.so'):
+    os.unlink(sys.argv[1] + '/lib/python_ncbi_dbapi.so')
 
 # Build a tarball for system-wide installation only on Linux.
 if sys.platform == 'linux2':
