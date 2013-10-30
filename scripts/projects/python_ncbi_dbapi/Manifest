@@ -30,4 +30,4 @@ POSTBUILD: $srcdir/scripts/projects/python_ncbi_dbapi/post_build/post_build.py $
 Linux32-Centos : 32  : GCC.sh 4.6.0 --without-debug --with-optimization --with-mt --with-dll --with-hard-runpath
 Linux64-Centos : 64  : GCC.sh 4.4.2 --without-debug --with-optimization --with-mt --with-dll --with-hard-runpath
 Win32_10       : 1000 : dll 32 ReleaseDLL
-Win64_10       : 1000 : dll 64 ReleaseDLL
+#Win64_10       : 1000 : dll 64 ReleaseDLL
