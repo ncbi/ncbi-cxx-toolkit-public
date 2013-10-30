@@ -3,7 +3,7 @@
 #
 # $Id$
 #
-# Author: Pavel Ivanov
+# Authors: Pavel Ivanov, Aaron Ucko
 #
 # Purpose: This file holds all the supported configurations of a package
 #          It is used by release configurator.
@@ -11,15 +11,15 @@
 
 COPY: $srcdir/src/dbapi/lang_bind/python/tests/python_dbapi_test.py $installdir/bin
 
-LIB: libpython_ncbi_dbapi.so
-LIB: libdbapi.so libdbapi_driver.so libxconnext.so libxconnect.so libxutil.so libxncbi.so
-LIB: libncbi_xdbapi_ftds.so libct_ftds64.so libtds_ftds64.so
-LIB: libncbi_xdbapi_ctlib.so 
+# Match relevant shared libraries on any platform.
+LIB: *python_ncbi_dbapi.[ds]*
+LIB: *dbapi.[ds]* *dbapi_driver.[ds]* *xconne?t.[ds]* *xutil.[ds]* *xncbi.[ds]*
+LIB: *ncbi_xdbapi_?t*.[ds]* *ct_ftds64.[ds]* *tds_ftds64.[ds]*
 
 # Use stable components (per components.link) rather than the trunk.
 USE_COMPONENTS
 
-POSTBUILD: $srcdir/scripts/projects/python_ncbi_dbapi/post_build/build_tarball.sh $installdir $version
+POSTBUILD: $srcdir/scripts/projects/python_ncbi_dbapi/post_build/post_build.py $installdir $version
 
 
 # Each line describes a single configuration
@@ -31,3 +31,5 @@ POSTBUILD: $srcdir/scripts/projects/python_ncbi_dbapi/post_build/build_tarball.s
 # --with-distcc, --with-action etc.
 Linux32-Centos : 32  : GCC.sh 4.6.0 --without-debug --with-optimization --with-mt --with-dll --with-hard-runpath
 Linux64-Centos : 64  : GCC.sh 4.4.2 --without-debug --with-optimization --with-mt --with-dll --with-hard-runpath
+Win32_10       : 1000 : dll 32 ReleaseMT
+Win64_10       : 1000 : dll 64 ReleaseMT
