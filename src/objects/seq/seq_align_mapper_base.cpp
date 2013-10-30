@@ -1636,9 +1636,8 @@ x_GetDstExon(CSpliced_seg&              spliced,
                 // If it's already set and the new segment has a different id,
                 // fail.
                 if (gen_id != gen_row.m_Id) {
-                    NCBI_THROW(CAnnotMapperException, eBadAlignment,
-                        "Can not construct spliced-seg -- "
-                        "exon parts have different genomic seq-ids");
+                    // New id - start new exon.
+                    break;
                 }
             }
             else {
