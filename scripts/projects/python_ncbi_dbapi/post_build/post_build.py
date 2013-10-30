@@ -4,14 +4,17 @@
 import glob, os, shutil, sys
 
 (bin_dir, lib_dir, install_dir, version) = sys.argv[1:]
-stems = ('python_ncbi_dbapi', 'dbapi', 'dbapi_driver',
-         'ncbi_xdbapi_?t*', 'ct_ftds64', 'tds_ftds64',
-         'xconne?t', 'xutil', 'xncbi')
+common_stems  = ('python_ncbi_dbapi', 'ncbi_xdbapi_?t*')
+unix_stems    = ('dbapi', 'dbapi_driver', 'ct_ftds64', 'tds_ftds64',
+                 'xconne?t', 'xutil', 'xncbi')
+windows_stems = ('ncbi_core', 'ncbi_dbapi', 'ncbi_dbapi_driver')
 
 os.mkdir(install_dir + '/lib')
 if os.path.exists(lib_dir + '/python_ncbi_dbapi.so'):
+    stems    = common_stems + unix_stems
     template = lib_dir.replace('%', '%%') + '/lib%s.[ds]?*'
 else:
+    stems    = common_stems + windows_stems
     template = bin_dir.replace('%', '%%') + '/%s.[dp]??'
     
 for s in stems:
