@@ -88,6 +88,8 @@ private:
     auto_ptr<CRemoteUpdater> m_remote_updater;
     auto_ptr<CMultiReader> m_reader;
     CRef<CSeq_entry> m_replacement_proteins;
+    CRef<CSeq_entry> m_possible_proteins;
+
 
     void Setup(const CArgs& args);
 
@@ -579,9 +581,11 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     if (!m_context.m_avoid_orf_lookup && !m_context.m_find_open_read_frame.empty())
         fr.FindOpenReadingFrame(*entry);
 
-    fr.m_replacement_protein = m_replacement_proteins;
+    //fr.m_replacement_protein = m_replacement_proteins;
     fr.MergeCDSFeatures(*entry);
     entry->Parentize();
+    //if (m_possible_proteins.NotEmpty())
+    //    fr.AddProteins(*m_possible_proteins, *entry);
 
     bool need_update_date = m_context.ApplyCreateDate(*entry);
     if (need_update_date)
@@ -594,6 +598,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     }
 
     m_context.ApplyAccession(*entry);
+    m_context.ApplySourceQualifiers(entry, m_context.m_source_qualifiers);
 
     if (avoid_submit_block)
         result = m_context.CreateSeqEntryFromTemplate(entry);
@@ -803,29 +808,34 @@ void CTbl2AsnApp::ProcessCMTFile(const string& pathname, CSeq_entry& result, boo
         cmt_reader.ProcessCommentsFileByCols(*reader, result);
 }
 
-void CTbl2AsnApp::ProcessPEPFile(const string& pathname, CSeq_entry& result)
+void CTbl2AsnApp::ProcessPEPFile(const string& pathname, CSeq_entry& entry)
 {
     CFile file(pathname);
     if (!file.Exists()) return;
 
     CRef<ILineReader> reader(ILineReader::New(pathname));
 
-    // CPropsLine
     CFeatureTableReader peps(m_context.m_logger);
 
     m_replacement_proteins = peps.ReadReplacementProtein(*reader);
 }
 
-void CTbl2AsnApp::ProcessRNAFile(const string& pathname, CSeq_entry& result)
+void CTbl2AsnApp::ProcessRNAFile(const string& pathname, CSeq_entry& entry)
 {
     CFile file(pathname);
     if (!file.Exists()) return;
 }
 
-void CTbl2AsnApp::ProcessPRTFile(const string& pathname, CSeq_entry& result)
+void CTbl2AsnApp::ProcessPRTFile(const string& pathname, CSeq_entry& entry)
 {
     CFile file(pathname);
     if (!file.Exists()) return;
+
+    CRef<ILineReader> reader(ILineReader::New(pathname));
+
+    CFeatureTableReader prts(m_context.m_logger);
+
+    m_possible_proteins = prts.ReadProtein(*reader);
 }
 
 /////////////////////////////////////////////////////////////////////////////

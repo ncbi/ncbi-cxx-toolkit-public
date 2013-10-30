@@ -32,6 +32,8 @@ public:
    void ReadFeatureTable(objects::CSeq_entry& obj, ILineReader& line_reader);
    void FindOpenReadingFrame(objects::CSeq_entry& entry) const;
    CRef<objects::CSeq_entry> ReadReplacementProtein(ILineReader& line_reader);
+   CRef<objects::CSeq_entry> ReadProtein(ILineReader& line_reader);
+   void AddProteins(const objects::CSeq_entry& possible_proteins, objects::CSeq_entry& entry);
    CRef<objects::CSeq_entry> m_replacement_protein;
 private:
    void ParseCdregions(objects::CSeq_entry& entry);

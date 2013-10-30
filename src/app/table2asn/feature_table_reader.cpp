@@ -52,6 +52,7 @@
 
 #include <objtools/readers/readfeat.hpp>
 #include <algo/sequence/orf.hpp>
+#include <algo/align/prosplign/prosplign.hpp>
 
 #include "feature_table_reader.hpp"
 
@@ -188,18 +189,21 @@ namespace
         return CTempString();
     }
 
-    CRef<CSeq_entry> LocateProtein(const CSeq_entry& proteins, const CSeq_feat& feature)
+    CRef<CSeq_entry> LocateProtein(CConstRef<CSeq_entry> proteins, const CSeq_feat& feature)
     {
-        const CSeq_id* id = feature.GetProduct().GetId();
-        ITERATE(CSeq_entry::TSet::TSeq_set, it, proteins.GetSet().GetSeq_set())
+        if (proteins.NotEmpty())
         {
-            ITERATE(CBioseq::TId, seq_it, (**it).GetSeq().GetId())
+            const CSeq_id* id = feature.GetProduct().GetId();
+            ITERATE(CSeq_entry::TSet::TSeq_set, it, proteins->GetSet().GetSeq_set())
             {
-                if ((**seq_it).Compare(*id) == CSeq_id::e_YES)
+                ITERATE(CBioseq::TId, seq_it, (**it).GetSeq().GetId())
                 {
-                    CRef<CSeq_entry> result(new CSeq_entry);
-                    result->Assign(**it);
-                    return result;
+                    if ((**seq_it).Compare(*id) == CSeq_id::e_YES)
+                    {
+                        CRef<CSeq_entry> result(new CSeq_entry);
+                        result->Assign(**it);
+                        return result;
+                    }
                 }
             }
         }
@@ -207,8 +211,8 @@ namespace
     }
   
 
-    CRef<CSeq_entry> TranslateProtein(CScope& scope, CSeq_entry_Handle top_entry_h, const CSeq_feat& feature, CTempString locustag, const CSeq_entry& proteins)
-    {
+    CRef<CSeq_entry> TranslateProtein(CScope& scope, CSeq_entry_Handle top_entry_h, const CSeq_feat& feature, CTempString locustag, CConstRef<CSeq_entry> proteins)
+    {       
         CRef<CSeq_entry> pentry = LocateProtein(proteins, feature);
         if (pentry.NotEmpty())
             return pentry;
@@ -519,7 +523,7 @@ void CFeatureTableReader::ParseCdregions(CSeq_entry& entry)
                             else
                             if (data.IsCdregion())
                             {
-                                CRef<CSeq_entry> protein = TranslateProtein(scope, entry_h, *feature, locustag, *m_replacement_protein);
+                                CRef<CSeq_entry> protein = TranslateProtein(scope, entry_h, *feature, locustag, m_replacement_protein);
                                 locustag.clear();
                                 if (protein.NotEmpty())
                                 {
@@ -560,6 +564,107 @@ void CFeatureTableReader::ParseCdregions(CSeq_entry& entry)
     entry.Parentize();
 }
 
+CRef<objects::CSeq_entry> CFeatureTableReader::ReadProtein(ILineReader& line_reader)
+{
+    int flags = 0;
+    flags |= CFastaReader::fAddMods
+          |  CFastaReader::fNoUserObjs
+          |  CFastaReader::fBadModThrow
+          |  CFastaReader::fAssumeProt;
+
+    auto_ptr<CFastaReader> pReader(new CFastaReader(0, flags));
+
+    CRef<CSerialObject> pep = pReader->ReadObject(line_reader, m_logger);
+    CRef<CSeq_entry> result;
+
+    if (pep.NotEmpty())
+    {
+        if (pep->GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo()))
+        {
+            result = (CSeq_entry*)(pep.GetPointerOrNull());
+            if (result->IsSetDescr())
+            {
+                if (result->GetDescr().Get().size() == 0)
+                {
+                    result->SetDescr(*(CSeq_descr*)0);
+                }
+            }
+            if (result->IsSeq())
+            {
+                // convert into seqset
+                CRef<CSeq_entry> set(new CSeq_entry);
+                set->SetSet().SetSeq_set().push_back(result);
+                result = set;
+            }
+        }
+    }
+
+    return result;
+}
+
+void CFeatureTableReader::AddProteins(const CSeq_entry& possible_proteins, CSeq_entry& entry)
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle h_entry = scope.AddTopLevelSeqEntry(entry);
+
+    CProSplign aligner;  
+    ITERATE(CSeq_entry::TSet::TSeq_set, prot_it, possible_proteins.GetSet().GetSeq_set())
+    {
+        scope.AddBioseq((**prot_it).GetSeq());
+        CBioseq_CI bio_it(h_entry, CSeq_inst::eMol_na);
+        //CSeq_entry_CI seq_it(h_entry, CSeq_entry_CI::fRecursive, CSeq_entry::e_Seq);
+        //for (; seq_it; ++seq_it)
+        for (; bio_it; ++bio_it)
+        {
+            CRef<CSeq_id> protein((**prot_it).GetSeq().GetId().front());
+            CRef<CSeq_id> seq_id(new CSeq_id);
+            seq_id->Assign(*bio_it->GetBioseqCore()->GetId().front());
+                //bio_it->GetId().front().GetSeqId());
+                //seq_it->GetSeq_entryCore()->GetSeq().GetId().front());  
+            CRef<CSeq_loc> genomic(new CSeq_loc);
+            genomic->SetWhole(*seq_id);
+            genomic->SetId(*seq_id);
+            try
+            {
+                CProSplignOutputOptions opts;
+
+                CRef<CSeq_align> align = aligner.FindAlignment(scope, *protein, *genomic, opts);
+
+                /*
+                string name;
+                genomic->GetId()->GetLabel(&name);
+
+                CNcbiOfstream ostr((name + ".align").c_str());
+                ostr << MSerial_AsnText 
+                    << MSerial_VerifyNo;
+                ostr << *align;
+                */
+            }
+            catch(CException& )
+            {
+            }
+        }
+    }
+
+    /*
+    switch(entry.Which())
+    {
+    case CSeq_entry::e_Seq:
+        if (entry.GetSeq().IsNa() && entry.GetSeq().IsSetInst())
+        {
+        }
+        break;
+    case CSeq_entry::e_Set:
+        NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry.SetSet().SetSeq_set())
+        {
+            AddProteins(possible_proteins, **it);
+        }
+        break;
+    default:
+        break;
+    }
+*/
+}
 
 END_NCBI_SCOPE
 

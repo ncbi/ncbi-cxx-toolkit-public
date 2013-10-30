@@ -88,24 +88,29 @@ bool x_ApplyCreateDate(CSeq_entry& entry)
 
 void x_ApplySourceQualifiers(CBioseq& bioseq, CSourceModParser& smp)
 {
-   CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
-   CUser_object::TData data;
-   NON_CONST_ITERATE(CSourceModParser::TMods, mod, unused_mods)
-   {
-       if (mod->key.compare("bioproject")==0 ||
-           mod->key.compare("biosample")==0)
-       {
+    CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
+    CUser_object::TData data;
+    NON_CONST_ITERATE(CSourceModParser::TMods, mod, unused_mods)
+    {
+        if (NStr::CompareNocase(mod->key, "bioproject")==0 ||
+            NStr::CompareNocase(mod->key, "biosample")==0)
+        {
+            string key = mod->key.c_str();
+            NStr::ToLower(key);
+            key[0] = toupper(key[0]);
+            key[3] = toupper(key[3]);
+
             CRef<CUser_field> field(new CUser_field);
-            field->SetLabel().SetStr(mod->key);
+            field->SetLabel().SetStr(key);
             field->SetData().SetStr(mod->value);
             data.push_back(field);                
-       }
-   }
-   if (!data.empty())
-   {
-       CUser_object::TData& existing_data = CTable2AsnContext::SetUserObject(bioseq.SetDescr(), "DBLink").SetData();
-       existing_data.insert(existing_data.end(), data.begin(), data.end());
-   }
+        }
+    }
+    if (!data.empty())
+    {
+        CUser_object::TData& existing_data = CTable2AsnContext::SetUserObject(bioseq.SetDescr(), "DBLink").SetData();
+        existing_data.insert(existing_data.end(), data.begin(), data.end());
+    }
 }
 
 void x_ApplySourceQualifiers(objects::CBioseq& bioseq, const string& src_qualifiers)
@@ -211,7 +216,7 @@ void CTable2AsnContext::ApplySourceQualifiers(CRef<CSeq_entry>& entry, const str
         return;
 
     if (entry.Empty())
-        entry.Reset(new CSeq_entry);
+        return;
 
     switch(entry->Which())
     {
