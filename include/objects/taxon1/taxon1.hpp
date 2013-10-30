@@ -464,6 +464,12 @@ public:
     ///
     bool GetTypeMaterial( int tax_id, TNameList& type_material_list_out );
 
+    //---------------------------------------------------
+    // This function returns the maximal value for taxid
+    // or -1 in case of error
+    ///
+    int GetMaxTaxId( void );
+
 private:
     friend class COrgRefCache;
 

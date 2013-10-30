@@ -2391,5 +2391,21 @@ CTaxon1::GetTypeMaterial( int tax_id, TNameList& type_material_list_out )
     }
 }
 
+//---------------------------------------------------
+// This function returns the maximal value for taxid
+// or -1 in case of error
+///
+int 
+CTaxon1::GetMaxTaxId( void )
+{
+    SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return -1;
+	}
+    }
+    return m_plCache->m_nMaxTaxId;
+}
+
 END_objects_SCOPE
 END_NCBI_SCOPE
