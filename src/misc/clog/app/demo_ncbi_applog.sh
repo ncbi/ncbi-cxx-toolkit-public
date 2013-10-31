@@ -19,7 +19,9 @@ SetOutput() {
 
 # --- Start
 
-token=`$APPLOG start_app -pid=321 -appname="demo_ncbi_applog" -host=DEMOHOST -sid=DEMOSID`
+pid=$$
+
+token=`$APPLOG start_app -pid=$pid -appname="demo_ncbi_applog" -host=DEMOHOST -sid=DEMOSID`
 if [ $? -ne 0 -o -z "$token" ] ; then
     Error "start_app"
 fi
