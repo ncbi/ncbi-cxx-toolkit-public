@@ -18,6 +18,7 @@ APP: netscheduled
 APP: test_netschedule_client+ test_netschedule_node+ test_netschedule_stress+ test_netschedule_stress_new+
 APP: test_netschedule_crash+
 APP: $srcdir/src/app/netschedule/test/ns.py+ $srcdir/src/app/netschedule/test/test_netschedule_bsub.py+
+APP: $srcdir/src/app/netschedule/utils/ns_health_check.py
 ETC: src/app/netschedule/netscheduled.ini
 
 DEFAULT_CONFIGURATIONS: Linux64-Centos:Bdb4520-Release
