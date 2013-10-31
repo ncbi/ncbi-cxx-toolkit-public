@@ -758,11 +758,13 @@ int CBAMCompareApp::Run(void)
                         ++i2;
                         continue;
                     }
-                    if ( i2 == size2 || alns1[i1] < alns2[i2] ) {
+                    if ( i1 < size1 &&
+                         (i2 == size2 || alns1[i1] < alns2[i2]) ) {
                         out << " aln1["<<i1<<"]: "<<alns1[i1]<<NcbiEndl;
                         ++i1;
                     }
-                    else if ( i1 == size1 || alns2[i2] < alns1[i1] ) {
+                    else if ( i2 < size2 &&
+                              (i1 == size1 || alns2[i2] < alns1[i1]) ) {
                         out << " aln2["<<i2<<"]: "<<alns2[i2]<<NcbiEndl;
                         ++i2;
                     }
