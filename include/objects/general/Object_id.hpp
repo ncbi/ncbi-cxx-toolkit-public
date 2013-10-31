@@ -64,6 +64,15 @@ public:
     int Compare(const CObject_id& oid2) const;
     bool operator<(const CObject_id& id2) const;
 
+    // Try to interpret the Object-id as integer.
+    // Returns:
+    //   e_not_set if the Object-id is not set
+    //   e_Id if the Object-id is an integer or a string with valid integer
+    //   e_Str if the Object-id as a string without valid integer
+    // If the result is e_Id the integer id will be returned by Int8 value,
+    // otherwise the value will be set to 0.
+    E_Choice GetIdType(Int8& value) const;
+
     // format contents into a stream
     ostream& AsString(ostream &s) const;
 private:

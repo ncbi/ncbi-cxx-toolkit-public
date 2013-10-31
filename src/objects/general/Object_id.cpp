@@ -76,26 +76,35 @@ bool CObject_id::Match(const CObject_id& oid2) const
 }
 
 
-BEGIN_LOCAL_NAMESPACE;
-
-
-inline
-CObject_id::E_Choice s_GetInteger(const CObject_id& id, Int8& value)
+CObject_id::E_Choice CObject_id::GetIdType(Int8& value) const
 {
-    switch ( id.Which() ) {
-    case CObject_id::e_Id:
-        value = id.GetId();
-        return CObject_id::e_Id;
-    case CObject_id::e_Str:
-        value = NStr::StringToInt8(id.GetStr(), NStr::fConvErr_NoThrow);
-        if ( (!value && errno) ||
-             (value != 0 && id.GetStr()[0] == '0') ) {
-            // not convertible to integer
-            return CObject_id::e_Str;
-        }
-        else {
+    switch ( Which() ) {
+    case e_Id:
+        value = GetId();
+        return e_Id;
+    case e_Str:
+        value = NStr::StringToInt8(GetStr(), NStr::fConvErr_NoThrow);
+        if ( !value ) {
+            if ( errno ) {
+                // not convertible to integer
+                return CObject_id::e_Str;
+            }
+            // converted to 0
+            if ( GetStr().size() != 1 ) {
+                // leading zeroes are not allowed
+                return CObject_id::e_Str;
+            }
+            // valid zero as a string
             return CObject_id::e_Id;
         }
+        // non-zero value
+        if ( GetStr()[0] == '0' ) {
+            // leading zeroes are not allowed
+            value = 0;
+            return CObject_id::e_Str;
+        }
+        // valid non-zero value as a string
+        return CObject_id::e_Id;
     default:
         value = 0;
         return CObject_id::e_not_set;
@@ -103,21 +112,18 @@ CObject_id::E_Choice s_GetInteger(const CObject_id& id, Int8& value)
 }
 
 
-END_LOCAL_NAMESPACE;
-
-
 // match for identity
 int CObject_id::Compare(const CObject_id& oid2) const
 {
     Int8 value, value2;
-    E_Choice type = s_GetInteger(*this, value);
-    E_Choice type2 = s_GetInteger(oid2, value2);
+    E_Choice type = GetIdType(value);
+    E_Choice type2 = oid2.GetIdType(value2);
     if ( int diff = type - type2 ) {
         return diff;
     }
     switch ( type ) {
     case e_Id:
-        return value < value2? -1: value > value2? 1: 0;
+        return value < value2? -1: (value > value2);
     case e_Str:
         return PNocase().Compare(GetStr(), oid2.GetStr());
     default:
