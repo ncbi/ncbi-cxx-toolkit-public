@@ -39,6 +39,12 @@ tmp=./$2.stdin.$$
 # Reinforce timeout
 ulimit -t `expr $timeout + 5` > /dev/null 2>&1
 
+# Use different kill on Unix and Cygwin
+case `uname -s` in
+   CYGWIN* ) cygwin=true  ; kill='/bin/kill -f' ;;
+   *)        cygwin=false ; kill='kill' ;;
+esac
+
 # Run command.
 if [ "X$1" = "X-stdin" ]; then
   trap 'rm -f $tmp' 1 2 15
@@ -49,7 +55,7 @@ else
   $NCBI_CHECK_TOOL "$@" &
 fi
 pid=$!
-trap 'kill $pid; rm -f $tmp' 1 2 15
+trap "$kill $pid; rm -f $tmp" 1 2 15
 
 # Execute time-guard
 $script_dir/check_exec_guard.sh $timeout $pid &

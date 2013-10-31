@@ -39,6 +39,12 @@ echo $$ > check_exec.pid
 # Reinforce timeout
 ulimit -t `expr $timeout + 5` > /dev/null 2>&1
 
+# Use different kill on Unix and Cygwin
+case `uname -s` in
+   CYGWIN* ) cygwin=true  ; kill='/bin/kill -f' ;;
+   *)        cygwin=false ; kill='kill' ;;
+esac
+
 cmd="$1"
 shift
 # Quote all empty arguments
@@ -53,7 +59,7 @@ done
 # Run command.
 $cmd &
 pid=$!
-trap 'kill $pid' 1 2 15
+trap "$kill $pid" 1 2 15
 
 # Execute time-guard
 $script_dir/check_exec_guard.sh $timeout $pid &
@@ -85,10 +91,9 @@ if [ $status -gt 128  -a  ! -f core ]; then
 fi
 rm $timestamp_file > /dev/null 2>&1
 
-case `uname -s` in
-   CYGWIN* ) ;;
-   *) kill $guard_pid >/dev/null 2>&1 ;;
-esac
+if ! $cygwin; then
+   $kill $guard_pid >/dev/null 2>&1 ;;
+fi
 
 # Return test exit code
 exit $status
