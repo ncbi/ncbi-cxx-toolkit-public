@@ -492,11 +492,9 @@ void CFeatureGenerator::SImplementation::MaximizeTranslation(CSeq_align& align)
         CSpliced_exon& exon = **exon_it;
         if (aa_offset) {
             if (is_protein_align)
-                exon.SetProduct_start().SetProtpos().SetAmin() =
-                    exon.GetProduct_start().GetProtpos().GetAmin() + aa_offset;
+                exon.SetProduct_start().SetProtpos().SetAmin() += aa_offset;
             else
-                exon.SetProduct_start().SetNucpos() =
-                    exon.GetProduct_start().GetNucpos() + aa_offset*3;
+                exon.SetProduct_start().SetNucpos() += aa_offset*3;
         }
         if (exon.IsSetParts()) {
             ERASE_ITERATE (CSpliced_exon::TParts, part_it, exon.SetParts()) {
@@ -532,10 +530,13 @@ void CFeatureGenerator::SImplementation::MaximizeTranslation(CSeq_align& align)
         }
         if (aa_offset) {
             if (is_protein_align)
-                exon.SetProduct_end().SetProtpos().SetAmin() = exon.GetProduct_end().GetProtpos().GetAmin() + aa_offset;
+                exon.SetProduct_end().SetProtpos().SetAmin() += aa_offset;
             else
-                exon.SetProduct_end().SetNucpos() = exon.GetProduct_end().GetNucpos() + aa_offset*3;
+                exon.SetProduct_end().SetNucpos() += aa_offset*3;
         }
+    }
+    if (aa_offset) {
+        spliced_seg.SetProduct_length() += is_protein_align ? aa_offset : aa_offset*3;
     }
 }
 

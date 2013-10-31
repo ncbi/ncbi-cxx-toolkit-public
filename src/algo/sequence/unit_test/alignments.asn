@@ -15129,3 +15129,45 @@ Seq-align ::= {
     }
   }
 }
+Seq-align ::= {
+  type disc,
+  dim 2,
+  segs spliced {
+    product-id gi 163940022,
+    genomic-id gi 218230750,
+    genomic-strand plus,
+    product-type protein,
+    exons {
+      {
+        product-start protpos {
+          amin 17,
+          frame 1
+        },
+        product-end protpos {
+          amin 239,
+          frame 3
+        },
+        genomic-start 1055608,
+        genomic-end 1056303,
+        parts {
+          diag 141,
+          genomic-ins 27,
+          diag 528
+        },
+        partial TRUE
+      }
+    },
+    product-length 240
+  },
+  ext {
+    {
+      type str "CFeatureGenerator",
+      data {
+        {
+          label str "Flags", 
+          data int 14183 -- 0x3767: fMaximizeTranslation + fTrimEnds + fDefaults + fGenerateStableLocalIds
+        }
+      }
+    }
+  }
+}

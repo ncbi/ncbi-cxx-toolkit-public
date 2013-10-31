@@ -10098,3 +10098,79 @@ Seq-annot ::= {
     }
   }
 }
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+      },
+      partial TRUE,
+      location int {
+        from 1055608,
+        to 1056303,
+        strand plus,
+        id gi 218230750,
+        fuzz-from lim lt,
+        fuzz-to lim gt
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      partial TRUE,
+      except TRUE,
+      product whole local str "CDNA_53",
+      location packed-int {
+        {
+          from 1055608,
+          to 1056303,
+          strand plus,
+          id gi 218230750,
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        }
+      },
+      except-text "unclassified transcription discrepancy"
+    },
+    {
+      data cdregion {
+        code {
+          id 11
+        },
+        code-break {
+          {
+            loc int {
+              from 1056292,
+              to 1056294,
+              strand plus,
+              id gi 218230750,
+              fuzz-to lim gt
+            },
+            aa ncbieaa 88
+          }
+        }
+      },
+      partial TRUE,
+      product whole local str "PROT_53",
+      location packed-int {
+        {
+          from 1055608,
+          to 1056303,
+          strand plus,
+          id gi 218230750,
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        }
+      },
+      xref {
+        {
+          data prot {
+            name {
+              "ABC transporter"
+            }
+          }
+        }
+      }
+    }
+  }
+}

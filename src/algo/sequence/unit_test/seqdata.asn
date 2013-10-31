@@ -15215,7 +15215,7 @@ Bioseq-set ::= {
       inst {
         repr delta,
         mol rna,
-        length 567,
+        length 576,
         ext delta {
           literal {
             length 84
@@ -15227,7 +15227,7 @@ Bioseq-set ::= {
 97D9E2F6266578D6606D2662A0DB80'H
           },
           literal {
-            length 174
+            length 183
           }
         },
         hist {
@@ -15289,7 +15289,7 @@ Bioseq-set ::= {
                     partial TRUE
                   }
                 },
-                product-length 567
+                product-length 576
               },
               bounds {
                 whole gi 29143757,
@@ -19684,6 +19684,132 @@ Bioseq-set ::= {
 GLMLVWEEFFDELKQTKRNAKVYEKMASKLFEMTGERRLGEEIKIKITNMTFQYRKLKCMTDSESAPPDWPYYLAIDG
 ILAKVPESCDGKLPDSQPPGPSTSQTEASLSPPAKSTPLYFPYNQCSYEGRFEDDRSDSSSSLLSLKFRSEERPVKKR
 KVQSCHLQKKQLRLLEAMVEEQRRLSRAVEETCREVRRVLDQQHILQVQSLQLQERMMSLLERIITKSSV"
+      }
+    }
+  }
+}
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        local str "CDNA_53"
+      },
+      descr {
+        molinfo {
+          biomol mRNA,
+          completeness no-right
+        }
+      },
+      inst {
+        repr delta,
+        mol rna,
+        length 747,
+        ext delta {
+          literal {
+            length 51
+          },
+          literal {
+            length 696,
+            seq-data ncbi2na 'F0086FDBDDEF0C0A607EDA7C36BF03A27AC02C618F0133CD
+AFC3A05800281ED10F0EA0043DB8E33849B16F727FD3F3D68065ACF338E0F06F20893F80F049CE
+9B3A6E8E0010CE081BB2841C7108BF6CE0036FC03AFD4DD3F7402A380400B0E3CE264FFCBA2537
+7F332C8E05FDBE8F235BC98F4357DF40E3A140E0022EB96B3FC3891133FC9869226F3EE3DBD3CF
+F9342B82C2260A819CDE0790D12FC3394AE41BC8E33F13667040A0823CE0C9126F'H
+          }
+        },
+        hist {
+          assembly {
+            {
+              type disc,
+              dim 2,
+              segs spliced {
+                product-id local str "MRNA_18",
+                genomic-id gi 218230750,
+                genomic-strand plus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 51,
+                    product-end nucpos 746,
+                    genomic-start 1055608,
+                    genomic-end 1056303,
+                    parts {
+                      diag 141,
+                      diag 27,
+                      diag 528
+                    },
+                    partial TRUE
+                  }
+                },
+                product-length 747
+              },
+              ext {
+                {
+                  type str "CFeatureGenerator",
+                  data {
+                    {
+                      label str "Flags",
+                      data int 14183
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      annot {
+        {
+          data ftable {
+            {
+              data cdregion {
+                code {
+                  id 11
+                },
+                code-break {
+                  {
+                    loc int {
+                      from 735,
+                      to 737,
+                      id local str "CDNA_53",
+                      fuzz-to lim gt
+                    },
+                    aa ncbieaa 88
+                  }
+                }
+              },
+              product whole local str "PROT_53",
+              location int {
+                from 51,
+                to 746,
+                id local str "CDNA_53",
+                fuzz-from lim lt,
+                fuzz-to lim gt
+              }
+            }
+          }
+        }
+      }
+    },
+    seq {
+      id {
+        local str "PROT_53"
+      },
+      descr {
+        molinfo {
+          biomol peptide,
+          completeness no-ends
+        }
+      },
+      inst {
+        repr raw,
+        mol aa,
+        length 232,
+        seq-data iupacaa "LKDVSFSVNKGELVGLIGLNGAGKSTTIKHIIGLMEPKKGTVTINGKTIRDD
+MTAYRSSFSFIPETPVLYDELTLEEHLKLTAMAYGVDEKQYEERVGQLLQEFRMKNRLKWFPSHFSKGMKQKVMIMSA
+FLVEPSLYIVDEPFVGLDPLAIQSLLQMMDQMKKSGAGILMSTHILATAERYCDSFIILHQGEVRAKGTLSELQSQFN
+MPGATLDDIYIALTKEEDYEXHSV"
       }
     }
   }
