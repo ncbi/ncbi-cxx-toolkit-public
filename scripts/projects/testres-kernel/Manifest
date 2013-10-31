@@ -15,6 +15,6 @@ APP: testres_kernel
 #templates
 COPY: $srcdir/src/internal/cppcore/testres/tool/templates/ $installdir
 
-Linux64-Centos  : plain  : GCC.sh      --without-debug --without-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
+Linux64-Centos  : plain  : GCC.sh      --without-debug --with-mt --with-static --without-runpath --with-flat-makefile --without-ncbi-c
 
 
