@@ -91,8 +91,8 @@ if [ $status -gt 128  -a  ! -f core ]; then
 fi
 rm $timestamp_file > /dev/null 2>&1
 
-if ! $cygwin; then
-   $kill $guard_pid >/dev/null 2>&1 ;;
+if [ $cygwin = false ]; then
+   $kill $guard_pid >/dev/null 2>&1
 fi
 
 # Return test exit code
