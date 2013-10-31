@@ -1162,7 +1162,6 @@ static int s_FindNumIdentical(Uint1* query_seq,
 
         /* if match */
         if (q_pos < query_len - word_size) {
-            match = TRUE;
             int query_start = q_pos;
             int subject_start = s_pos;
 
@@ -1170,6 +1169,7 @@ static int s_FindNumIdentical(Uint1* query_seq,
             int subject_left_len, subject_right_len;
             int align_len_left, align_len_right;
             
+            match = TRUE;
             num_identical += word_size;
 
             /* extend left from word match */
@@ -2396,8 +2396,9 @@ s_GetAlignParams(BlastKappa_GappingParamsContext * context,
     double near_identical_cutoff_bits = NEAR_IDENTICAL_BITS_PER_POSITION;
 
     /* score block is already scaled by context->localScalingFactor */
+    double near_identical_cutoff;
     ASSERT(context->sbp->kbp_gap[queryInfo->first_context]);
-    double near_identical_cutoff =
+    near_identical_cutoff =
         (near_identical_cutoff_bits * NCBIMATH_LN2)
         / context->sbp->kbp_gap[queryInfo->first_context]->Lambda;
     
