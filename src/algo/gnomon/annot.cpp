@@ -83,7 +83,7 @@ double CGnomonAnnotator::ExtendJustThisChain(CGeneModel& chain,
     test_align.push_back(chain);
     int l = max((int)left,(int)chain.Limits().GetFrom()-10000);
     int r = min(right,chain.Limits().GetTo()+10000);
-    cout << "Testing alignment " << chain.ID() << " in fragment " << l << ' ' << r << endl;
+    cerr << "Testing alignment " << chain.ID() << " in fragment " << l << ' ' << r << endl;
                     
     m_gnomon->ResetRange(l,r);
     return m_gnomon->Run(test_align, true, false, false, false, false, mpp, nonconsensp, m_inserted_seqs);
@@ -114,7 +114,7 @@ double CGnomonAnnotator::TryWithoutObviouslyBadAlignments(TGeneModelList& aligns
             if ((it->Type() & (CGeneModel::eWall | CGeneModel::eNested))==0 &&
                 ExtendJustThisChain(*it, left, right) == BadScore()) {
                 found_bad_cluster = true;
-                cout << "Deleting alignment " << it->ID() << endl;
+                cerr << "Deleting alignment " << it->ID() << endl;
                 it->Status() |= CGeneModel::eSkipped;
                 it->AddComment("Bad score prediction alone");
                 bad_aligns.push_back(*it);
@@ -127,7 +127,7 @@ double CGnomonAnnotator::TryWithoutObviouslyBadAlignments(TGeneModelList& aligns
         
         m_gnomon->ResetRange(left, right);
         if(found_bad_cluster) {
-            cout << "Testing w/o bad alignments in fragment " << left << ' ' << right << endl;
+            cerr << "Testing w/o bad alignments in fragment " << left << ' ' << right << endl;
             return m_gnomon->Run(suspect_aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_inserted_seqs);
         }
     }
@@ -146,16 +146,16 @@ double CGnomonAnnotator::TryToEliminateOneAlignment(TGeneModelList& suspect_alig
         CGeneModel algn = *it;
         it = suspect_aligns.erase(it);
         
-        cout << "Testing w/o " << algn.ID();
+        cerr << "Testing w/o " << algn.ID();
         score = m_gnomon->Run(suspect_aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_inserted_seqs);
         if (score != BadScore()) {
-            cout << "- Good. Deleting alignment " << algn.ID() << endl;
+            cerr << "- Good. Deleting alignment " << algn.ID() << endl;
             algn.Status() |= CGeneModel::eSkipped;
             algn.AddComment("Good score prediction without");
             bad_aligns.push_back(algn);
             break;
         } else {
-            cout << " - Still bad." << endl;                        
+            cerr << " - Still bad." << endl;                        
         }
         suspect_aligns.insert(it,algn);
     }
@@ -171,13 +171,13 @@ double CGnomonAnnotator::TryToEliminateAlignmentsFromTail(TGeneModelList& suspec
             ++it;
             continue;
         }
-        cout << "Deleting alignment " << it->ID() << endl;
+        cerr << "Deleting alignment " << it->ID() << endl;
         it->Status() |= CGeneModel::eSkipped;
         it->AddComment("Bad score prediction in combination");
         bad_aligns.push_back(*it);
         it = suspect_aligns.erase(it);
         
-        cout << "Testing fragment " << left << ' ' << right << endl;
+        cerr << "Testing fragment " << left << ' ' << right << endl;
         score = m_gnomon->Run(suspect_aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_inserted_seqs);
     }
     return score;
@@ -236,12 +236,12 @@ void CGnomonAnnotator::Predict(TSignedSeqPos llimit, TSignedSeqPos rlimit, TGene
 
             m_gnomon->ResetRange(left,right);
 
-            cout << left << ' ' << right << ' ' << m_gnomon->GetGCcontent() << endl;
+            cerr << left << ' ' << right << ' ' << m_gnomon->GetGCcontent() << endl;
         
             score = m_gnomon->Run(aligns, true, leftwall, rightwall, leftanchor, rightanchor, mpp, nonconsensp, m_inserted_seqs);
         
             if(score == BadScore()) {
-                cout << "Inconsistent alignments in fragment " << left << ' ' << right << '\n';
+                cerr << "Inconsistent alignments in fragment " << left << ' ' << right << '\n';
 
                 score = TryWithoutObviouslyBadAlignments(aligns, suspect_aligns, bad_aligns,
                                                          leftwall, rightwall, leftanchor, rightanchor,
@@ -264,7 +264,7 @@ void CGnomonAnnotator::Predict(TSignedSeqPos llimit, TSignedSeqPos rlimit, TGene
                 score = TryToEliminateAlignmentsFromTail(suspect_aligns, bad_aligns,
                                                          leftwall, rightwall, leftanchor, rightanchor);
             if(score == BadScore()) {
-                cout << "!!! BAD SCORE EVEN WITH FINISHED ALIGNMENTS !!! " << endl;
+                cerr << "!!! BAD SCORE EVEN WITH FINISHED ALIGNMENTS !!! " << endl;
                 ITERATE(TGeneModelList, it, suspect_aligns) {
                     if ((it->Type() & (CGeneModel::eWall | CGeneModel::eNested))==0 && it->GoodEnoughToBeAnnotation())
                        models.push_back(*it);
@@ -604,6 +604,28 @@ void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_align
     }
 
     Predict(models, bad_aligns, 0, TSignedSeqPos(m_gnomon->GetSeq().size())-1);
+
+    ERASE_ITERATE(TGeneModelList, im, models) {
+        CGeneModel& model = *im;
+        TSignedSeqRange cds = model.RealCdsLimits();
+        if(cds.Empty())
+            continue;
+
+        bool has_genome_cds = false;
+        ITERATE(CGeneModel::TExons, ie, model.Exons()) {
+            if(cds.IntersectingWith(ie->Limits()) && ie->m_fsplice_sig != "XX" && ie->m_ssplice_sig != "XX") {
+                has_genome_cds = true;
+                break;
+            }
+        }
+
+        if(!has_genome_cds) {
+            model.Status() |= CGeneModel::eSkipped;
+            model.AddComment("Whole CDS in genomic gap");
+            bad_aligns.push_back(model);
+            models.erase(im);
+        }
+    }
 }
 
 void CGnomonAnnotator::Predict(TGeneModelList& models, TGeneModelList& bad_aligns, TSignedSeqPos left, TSignedSeqPos right)
