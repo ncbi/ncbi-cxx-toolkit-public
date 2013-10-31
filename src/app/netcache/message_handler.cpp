@@ -2068,7 +2068,7 @@ CNCMessageHandler::x_ProlongVersionLife(void)
     LOG_CURRENT_FUNCTION
     CSrvTime cur_srv_time = CSrvTime::Current();
     Uint8 cur_time = cur_srv_time.AsUSec();
-    int new_expire = int(cur_srv_time.Sec()) + m_BlobAccess->GetCurBlobTTL();
+    int new_expire = int(cur_srv_time.Sec()) + m_BlobAccess->GetCurVersionTTL();
     int old_expire = m_BlobAccess->GetCurVerExpire();
     if (!CNCServer::IsDebugMode()  &&  new_expire - old_expire < m_AppSetup->ttl_unit)
         return;
@@ -2749,7 +2749,12 @@ CNCMessageHandler::x_ExecuteOnLatestSrvId(void)
         // if max age specified, check age
         if (m_AgeMax != 0) {
             CSrvTime cur_srv_time = CSrvTime::Current();
-            m_AgeCur =  Uint8(cur_srv_time.Sec()) - m_LatestBlobSum->create_time / kUSecsPerSecond;
+            unsigned int vttl = m_BlobAccess->GetCurVersionTTL();
+            Uint8 creation = vttl != 0 ?
+// see x_ProlongVersionLife
+                (m_BlobAccess->GetCurVerExpire() - vttl) :
+                (m_LatestBlobSum->create_time / kUSecsPerSecond);
+            m_AgeCur =  Uint8(cur_srv_time.Sec()) - creation;
             if (m_AgeCur > m_AgeMax) {
                 return &Me::x_ReportBlobNotFound;
             }
