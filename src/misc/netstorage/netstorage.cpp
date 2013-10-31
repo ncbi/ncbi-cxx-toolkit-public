@@ -103,7 +103,12 @@ class ITryLocation
 {
 public:
     virtual bool TryLocation(ENetFileLocation location) = 0;
+    virtual ~ITryLocation();
 };
+
+ITryLocation::~ITryLocation()
+{
+}
 
 struct SNetFileAPIImpl : public SNetFileImpl
 {
