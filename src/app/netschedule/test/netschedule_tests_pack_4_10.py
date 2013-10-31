@@ -3414,9 +3414,13 @@ class Scenario188( TestBase ):
 
 
         # Spawn GET2 with waiting
-        process = self.ns.spawnGet2Wait( 'TEST', 3,
+        process = self.ns.spawnGet2Wait( 'TEST', 5,
                                          [], False, True,
                                          'node', 'session' )
+
+        # Sometimes it takes so long to spawn grid_cli that the next
+        # command is sent before GET2 is sent. So, we have a sleep here
+        time.sleep( 2 )
 
         # Submit a job
         self.ns.submitJob( 'TEST', 'input' )
@@ -3485,9 +3489,14 @@ class Scenario189( TestBase ):
 
 
         # Spawn GET2 with waiting
-        process = self.ns.spawnGet2Wait( 'TEST', 3,
+        process = self.ns.spawnGet2Wait( 'TEST', 5,
                                          [ 'a1' ], False, False,
                                          'node', 'session' )
+
+        # Sometimes it takes so long to spawn grid_cli that the next
+        # command is sent before GET2 is sent. So, we have a sleep here
+        time.sleep( 2 )
+
 
         # Submit a job
         self.ns.submitJob( 'TEST', 'input' )
@@ -3553,9 +3562,13 @@ class Scenario190( TestBase ):
             return True
 
         # Spawn GET2 with waiting
-        process = self.ns.spawnGet2Wait( 'TEST', 3,
+        process = self.ns.spawnGet2Wait( 'TEST', 5,
                                          [ 'a1' ], False, False,
                                          'node', 'session' )
+
+        # Sometimes it takes so long to spawn grid_cli that the next
+        # command is sent before GET2 is sent. So, we have a sleep here
+        time.sleep( 2 )
 
         # Submit a job
         self.ns.submitJob( 'TEST', 'input', 'a1' )
@@ -3624,9 +3637,13 @@ class Scenario191( TestBase ):
 
 
         # Spawn GET2 with waiting
-        process = self.ns.spawnGet2Wait( 'TEST', 3,
+        process = self.ns.spawnGet2Wait( 'TEST', 5,
                                          [ 'a1' ], False, True,
                                          'node', 'session' )
+
+        # Sometimes it takes so long to spawn grid_cli that the next
+        # command is sent before GET2 is sent. So, we have a sleep here
+        time.sleep( 2 )
 
         # Submit a job
         self.ns.submitJob( 'TEST', 'input', 'a2' )
@@ -3702,9 +3719,13 @@ class Scenario192( TestBase ):
         changeAffinity( ns_client, ['a3'], [] )
 
         # Spawn GET2 with waiting
-        process = self.ns.spawnGet2Wait( 'TEST', 3,
+        process = self.ns.spawnGet2Wait( 'TEST', 5,
                                          [], True, False,
                                          'node', 'session' )
+
+        # Sometimes it takes so long to spawn grid_cli that the next
+        # command is sent before GET2 is sent. So, we have a sleep here
+        time.sleep( 2 )
 
         # Submit a job
         self.ns.submitJob( 'TEST', 'input', 'a3' )
@@ -3777,9 +3798,13 @@ class Scenario193( TestBase ):
         changeAffinity( ns_client, ['a3'], [] )
 
         # Spawn GET2 with waiting
-        process = self.ns.spawnGet2Wait( 'TEST', 3,
+        process = self.ns.spawnGet2Wait( 'TEST', 5,
                                          [], True, False,
                                          'node', 'session' )
+
+        # Sometimes it takes so long to spawn grid_cli that the next
+        # command is sent before GET2 is sent. So, we have a sleep here
+        time.sleep( 2 )
 
         # Submit a job
         self.ns.submitJob( 'TEST', 'input', 'a4' )
@@ -4423,9 +4448,13 @@ class Scenario223( TestBase ):
         self.fromScratch()
 
         # Spawn GET2 with waiting
-        process = self.ns.spawnGet2Wait( 'TEST', 5,
+        process = self.ns.spawnGet2Wait( 'TEST', 7,
                                          [], True, True,
                                          'node', 'session' )
+
+        # Sometimes it takes so long to spawn grid_cli that the next
+        # command is sent before GET2 is sent. So, we have a sleep here
+        time.sleep( 2 )
 
         # Cancel waiting
         ns_client = self.getNetScheduleService( 'TEST', 'scenario223' )
@@ -5447,9 +5476,13 @@ class Scenario256( TestBase ):
         self.fromScratch()
 
         # Spawn GET2 with waiting
-        process = self.ns.spawnGet2Wait( 'TEST', 3,
+        process = self.ns.spawnGet2Wait( 'TEST', 5,
                                          [], False, True,
                                          'node', 'session' )
+
+        # Sometimes it takes so long to spawn grid_cli that the next
+        # command is sent before GET2 is sent. So, we have a sleep here
+        time.sleep( 2 )
 
         # STAT NOTIFICATIONS
         ns_client = self.getNetScheduleService( 'TEST', 'scenario227' )
