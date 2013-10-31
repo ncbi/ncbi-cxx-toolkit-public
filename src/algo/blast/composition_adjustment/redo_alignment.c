@@ -327,7 +327,7 @@ static Boolean
 s_IsSimilarEndPoint(const BlastCompo_Alignment* newAlign,
                     const BlastCompo_Alignment* align)
 {
-    ASSERT(newAlign->frame == align->frame);
+    /* ASSERT(newAlign->frame == align->frame); */
     /* is start of newAlign contained within align */
     Boolean start_contained =
         KAPPA_CONTAINED_IN_HSP(align->queryStart, align->queryEnd,
