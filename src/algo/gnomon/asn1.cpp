@@ -225,11 +225,18 @@ void CAnnotationASN1::AddModel(const CAlignModel& model)
 void CAnnotationASN1::CImplementationData::CreateModelProducts(SModelData& md)
 {
     CRef< CSeq_align > align = model2spliced_seq_align(md);
+    CRef<CSeq_feat> cds_feat;
+
+    CSeq_feat* cds_feat_ptr = NULL;
+    if (!md.is_ncrna) {
+         cds_feat = create_cdregion_feature(md);
+         cds_feat_ptr = cds_feat.GetPointer();
+    }
 
     CRef<CSeq_entry> model_products(new CSeq_entry);
     nucprots->push_back(model_products);
     CRef<CSeq_annot> annot(new CSeq_annot);
-    feature_generator->ConvertAlignToAnnot(*align, *annot, model_products->SetSet());
+    feature_generator->ConvertAlignToAnnot(*align, *annot, model_products->SetSet(), 0, cds_feat_ptr);
 }
 
 void CAnnotationASN1::CImplementationData::AddInternalFeature(const SModelData& md)
@@ -1039,7 +1046,11 @@ void ExtractSupportModels(int model_id,
         if (!feat_handle)
             feat_handle = tse_handle.GetFeatureWithId(CSeqFeatData::e_Cdregion, id);
 
-        auto_ptr<CAlignModel> model( RestoreModel(feat_handle, feat_handle, seq_align) );
+        CSeq_feat_Handle cds_handle = tse_handle.GetFeatureWithId(CSeqFeatData::e_Cdregion, "cds."+NStr::IntToString(id));
+        if(!cds_handle)
+            cds_handle = feat_handle;
+
+        auto_ptr<CAlignModel> model( RestoreModel(feat_handle, cds_handle, seq_align) );
         evidence_models.push_back(*model);
 
         ExtractSupportModels(id, evidence_models, evidence_alignments, seq_entry_handle, seq_annot_map, processed_ids);
