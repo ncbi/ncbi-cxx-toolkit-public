@@ -103,6 +103,10 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
 
             g_PrintJSON(stdout, file_id_info);
         }
+        catch (CCompoundIDException&) {
+            fprintf(stderr, "Unable to recognize the specified token.\n");
+            return 3;
+        }
         catch (CNetStorageException&) {
             fprintf(stderr, "Unable to recognize the specified token.\n");
             return 3;
@@ -110,25 +114,6 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
     }
 
     return 0;
-}
-
-static void AppendLoginTokenField(string* login_token,
-        const char* field, const string& field_value)
-{
-    if (!field_value.empty()) {
-        unsigned underscore_count = !login_token->empty();
-        const char* underscore = strchr(field_value.c_str(), '_');
-        while (underscore != NULL) {
-            ++underscore_count;
-            underscore = strchr(underscore + 1, '_');
-        }
-
-        login_token->append(underscore_count, '_');
-
-        *login_token += field;
-        *login_token += '_';
-        *login_token += field_value;
-    }
 }
 
 int CGridCommandLineInterfaceApp::Cmd_Login()
@@ -143,51 +128,62 @@ int CGridCommandLineInterfaceApp::Cmd_Login()
         return 2;
     }
 
-    string login_token;
+    CCompoundID cid(m_CompoundIDPool.NewID(eCIC_GenericID));
 
-    AppendLoginTokenField(&login_token,
-            LOGIN_TOKEN_APP_UID_FIELD, m_Opts.app_uid);
+    cid.AppendLabel(LOGIN_TOKEN_APP_UID_FIELD);
+    cid.AppendString(m_Opts.app_uid);
 
-    if (IsOptionSet(eAuth))
-        AppendLoginTokenField(&login_token,
-                LOGIN_TOKEN_AUTH_FIELD, m_Opts.auth);
+    if (IsOptionSet(eAuth)) {
+        cid.AppendLabel(LOGIN_TOKEN_AUTH_FIELD);
+        cid.AppendString(m_Opts.auth);
+    }
 
     string user, host;
     g_GetUserAndHost(&user, &host);
-    AppendLoginTokenField(&login_token, LOGIN_TOKEN_USER_FIELD, user);
-    AppendLoginTokenField(&login_token, LOGIN_TOKEN_HOST_FIELD, host);
+    cid.AppendLabel(LOGIN_TOKEN_USER_FIELD);
+    cid.AppendString(user);
+    cid.AppendLabel(LOGIN_TOKEN_HOST_FIELD);
+    cid.AppendHost(host);
 
-    if (IsOptionSet(eNetCache))
-        AppendLoginTokenField(&login_token,
-                LOGIN_TOKEN_NETCACHE_FIELD, m_Opts.nc_service);
-    if (IsOptionSet(eCache))
-        AppendLoginTokenField(&login_token,
-                LOGIN_TOKEN_ICACHE_NAME_FIELD, m_Opts.cache_name);
-    if (IsOptionSet(eEnableMirroring))
-        AppendLoginTokenField(&login_token, LOGIN_TOKEN_ENABLE_MIRRORING, "y");
+    if (IsOptionSet(eNetCache)) {
+        cid.AppendLabel(LOGIN_TOKEN_NETCACHE_FIELD);
+        cid.AppendServiceName(m_Opts.nc_service);
+    }
+    if (IsOptionSet(eCache)) {
+        cid.AppendLabel(LOGIN_TOKEN_ICACHE_NAME_FIELD);
+        cid.AppendDatabaseName(m_Opts.cache_name);
+    }
+    if (IsOptionSet(eEnableMirroring)) {
+        cid.AppendLabel(LOGIN_TOKEN_ENABLE_MIRRORING);
+        cid.AppendBoolean(true);
+    }
 
-    if (IsOptionSet(eNetSchedule))
-        AppendLoginTokenField(&login_token,
-                LOGIN_TOKEN_NETSCHEDULE_FIELD, m_Opts.ns_service);
-    if (IsOptionSet(eQueue))
-        AppendLoginTokenField(&login_token,
-                LOGIN_TOKEN_QUEUE_FIELD, m_Opts.queue);
+    if (IsOptionSet(eNetSchedule)) {
+        cid.AppendLabel(LOGIN_TOKEN_NETSCHEDULE_FIELD);
+        cid.AppendServiceName(m_Opts.ns_service);
+    }
+    if (IsOptionSet(eQueue)) {
+        cid.AppendLabel(LOGIN_TOKEN_QUEUE_FIELD);
+        cid.AppendDatabaseName(m_Opts.queue);
+    }
 
-    AppendLoginTokenField(&login_token, LOGIN_TOKEN_SESSION_PID_FIELD,
-            NStr::NumericToString(CProcess::GetCurrentPid()));
+    cid.AppendLabel(LOGIN_TOKEN_SESSION_PID_FIELD);
+    cid.AppendID((Uint8) CProcess::GetCurrentPid());
 
-    AppendLoginTokenField(&login_token, LOGIN_TOKEN_SESSION_TIMESTAMP_FIELD,
-            NStr::NumericToString(GetFastLocalTime().GetTimeT()));
+    cid.AppendLabel(LOGIN_TOKEN_SESSION_TIMESTAMP_FIELD);
+    cid.AppendCurrentTime();
 
-    AppendLoginTokenField(&login_token, LOGIN_TOKEN_SESSION_UID_FIELD,
-            GetDiagContext().GetStringUID());
+    cid.AppendLabel(LOGIN_TOKEN_SESSION_UID_FIELD);
+    cid.AppendString(GetDiagContext().GetStringUID());
 
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-    if (IsOptionSet(eAllowXSiteConn))
-        AppendLoginTokenField(&login_token, LOGIN_TOKEN_ALLOW_XSITE_CONN, "y");
+    if (IsOptionSet(eAllowXSiteConn)) {
+        cid.AppendLabel(LOGIN_TOKEN_ALLOW_XSITE_CONN);
+        cid.AppendBoolean(true);
+    }
 #endif
 
-    puts(login_token.c_str());
+    PrintLine(cid.ToString());
 
     return 0;
 }

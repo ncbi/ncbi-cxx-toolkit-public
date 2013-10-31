@@ -335,10 +335,10 @@ private:
 
 private:
     CNetScheduleAPI::EJobStatus StringToJobStatus(const char* status_str);
-    bool ParseLoginToken(const char* token);
+    bool ParseLoginToken(const string& token);
     void DefineClientNode(const string& user, const string& host);
-    void DefineClientSession(const string& pid,
-            const string& timestamp, const string& uid);
+    void DefineClientSession(Uint8 pid,
+            Int8 timestamp, const string& uid);
 
     void MarkOptionAsAccepted(int option)
     {

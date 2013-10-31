@@ -147,8 +147,9 @@ bool CNetScheduleKey::ParseJobKey(const string& key_str,
                 }
             }
         }
-        catch (CCompoundIDException& e) {
-            LOG_POST(e);
+        catch (CCompoundIDException&) {
+            // Do not exit the function yet -- check if
+            // it's a verbatim job ID.
         }
     }
 

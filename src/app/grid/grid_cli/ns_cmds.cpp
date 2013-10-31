@@ -135,8 +135,8 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
         m_NetScheduleAPI.SetClientNode(m_Opts.client_node);
 
     if (!IsOptionSet(eClientSession))
-        DefineClientSession(NStr::NumericToString(CProcess::GetCurrentPid()),
-                NStr::NumericToString(GetFastLocalTime().GetTimeT()),
+        DefineClientSession((Uint8) CProcess::GetCurrentPid(),
+                (Int8) GetFastLocalTime().GetTimeT(),
                 GetDiagContext().GetStringUID());
 
     if (!m_Opts.client_session.empty())

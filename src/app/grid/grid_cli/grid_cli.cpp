@@ -1151,7 +1151,7 @@ int CGridCommandLineInterfaceApp::Run()
                     clparser.AddAssociation(i, *cmd_opt);
         }
 
-        if (!ParseLoginToken(GetEnvironment().Get(LOGIN_TOKEN_ENV).c_str()))
+        if (!ParseLoginToken(GetEnvironment().Get(LOGIN_TOKEN_ENV)))
             return 1;
 
         try {
@@ -1493,85 +1493,68 @@ CNetScheduleAPI::EJobStatus CGridCommandLineInterfaceApp::StringToJobStatus(
             "invalid job status '" << status_str << '\'');
 }
 
-#define TRUE_VALUES '1': case 'E': case 'T': \
-        case 'Y': case 'e': case 't': case 'y'
-
-bool CGridCommandLineInterfaceApp::ParseLoginToken(const char* token)
+bool CGridCommandLineInterfaceApp::ParseLoginToken(const string& token)
 {
-    if (*token == '\0')
+    if (token.empty())
         return true;
 
-    const char* end;
+    CCompoundID cid(m_CompoundIDPool.FromString(token));
+
+    CCompoundIDField label_field(cid.GetFirst(eCIT_Label));
 
     string user;
     string host;
-    string pid;
-    string timestamp;
+    Uint8 pid;
+    Int8 timestamp;
     string uid;
 
-    do {
-        int underscores_to_skip = 0;
-        for (; *token == '_'; ++token)
-            ++underscores_to_skip;
-
-        end = strchr(token, '_');
-        if (end == NULL) {
+    while (label_field) {
+        CCompoundIDField value_field(label_field.GetNextNeighbor());
+        if (!value_field) {
             fprintf(stderr, GRID_APP_NAME ": invalid login token format.\n");
             return false;
         }
+        string label(label_field.GetLabel());
 
-        CTempString key(token, end - token);
-
-        token = end + 1;
-
-        while (*++end != '\0' && (*end != '_' || --underscores_to_skip >= 0))
-            ;
-
-        CTempString val(token, end - token);
-
-        token = end + 1;
-
-        if (key == LOGIN_TOKEN_APP_UID_FIELD) {
-            m_Opts.app_uid = val;
+        if (label == LOGIN_TOKEN_APP_UID_FIELD) {
+            m_Opts.app_uid = value_field.GetString();
             MarkOptionAsSet(eAppUID);
-        } else if (key == LOGIN_TOKEN_AUTH_FIELD) {
-            m_Opts.auth = val;
+        } else if (label == LOGIN_TOKEN_AUTH_FIELD) {
+            m_Opts.auth = value_field.GetString();
             MarkOptionAsSet(eAuth);
-        } else if (key == LOGIN_TOKEN_USER_FIELD)
-            user = val;
-        else if (key == LOGIN_TOKEN_HOST_FIELD)
-            host = val;
-        else if (key == LOGIN_TOKEN_NETCACHE_FIELD) {
-            m_Opts.nc_service = val;
+        } else if (label == LOGIN_TOKEN_USER_FIELD)
+            user = value_field.GetString();
+        else if (label == LOGIN_TOKEN_HOST_FIELD)
+            host = value_field.GetHost();
+        else if (label == LOGIN_TOKEN_NETCACHE_FIELD) {
+            m_Opts.nc_service = value_field.GetServiceName();
             MarkOptionAsSet(eNetCache);
-        } else if (key == LOGIN_TOKEN_ICACHE_NAME_FIELD) {
-            m_Opts.cache_name = val;
+        } else if (label == LOGIN_TOKEN_ICACHE_NAME_FIELD) {
+            m_Opts.cache_name = value_field.GetDatabaseName();
             MarkOptionAsSet(eCache);
-        } else if (key == LOGIN_TOKEN_ENABLE_MIRRORING)
-            switch (*val.data()) {
-            case TRUE_VALUES:
+        } else if (label == LOGIN_TOKEN_ENABLE_MIRRORING) {
+            if (value_field.GetBoolean())
                 MarkOptionAsSet(eEnableMirroring);
-            }
-        else if (key == LOGIN_TOKEN_NETSCHEDULE_FIELD) {
-            m_Opts.ns_service = val;
+        } else if (label == LOGIN_TOKEN_NETSCHEDULE_FIELD) {
+            m_Opts.ns_service = value_field.GetServiceName();
             MarkOptionAsSet(eNetSchedule);
-        } else if (key == LOGIN_TOKEN_QUEUE_FIELD) {
-            m_Opts.queue = val;
+        } else if (label == LOGIN_TOKEN_QUEUE_FIELD) {
+            m_Opts.queue = value_field.GetDatabaseName();
             MarkOptionAsSet(eQueue);
-        } else if (key == LOGIN_TOKEN_SESSION_PID_FIELD)
-            pid = val;
-        else if (key == LOGIN_TOKEN_SESSION_TIMESTAMP_FIELD)
-            timestamp = val;
-        else if (key == LOGIN_TOKEN_SESSION_UID_FIELD)
-            uid = val;
+        } else if (label == LOGIN_TOKEN_SESSION_PID_FIELD)
+            pid = value_field.GetID();
+        else if (label == LOGIN_TOKEN_SESSION_TIMESTAMP_FIELD)
+            timestamp = value_field.GetTimestamp();
+        else if (label == LOGIN_TOKEN_SESSION_UID_FIELD)
+            uid = value_field.GetString();
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-        else if (key == LOGIN_TOKEN_ALLOW_XSITE_CONN)
-            switch (*val.data()) {
-            case TRUE_VALUES:
+        else if (label == LOGIN_TOKEN_ALLOW_XSITE_CONN) {
+            if (value_field.GetBoolean())
                 MarkOptionAsSet(eAllowXSiteConn);
-            }
+        }
 #endif
-    } while (*end != '\0');
+        label_field = label_field.GetNextHomogeneous();
+    }
 
     DefineClientNode(user, host);
     DefineClientSession(pid, timestamp, uid);
@@ -1596,11 +1579,11 @@ void CGridCommandLineInterfaceApp::DefineClientNode(
     MarkOptionAsSet(eClientNode);
 }
 
-void CGridCommandLineInterfaceApp::DefineClientSession(const string& pid,
-        const string& timestamp, const string& uid)
+void CGridCommandLineInterfaceApp::DefineClientSession(Uint8 pid,
+        Int8 timestamp, const string& uid)
 {
-    m_Opts.client_session = pid + '@';
-    m_Opts.client_session += timestamp;
+    m_Opts.client_session = NStr::NumericToString(pid) + '@';
+    m_Opts.client_session += NStr::NumericToString(timestamp);
     m_Opts.client_session += ':';
     m_Opts.client_session += uid;
 

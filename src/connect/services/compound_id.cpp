@@ -121,14 +121,16 @@ ECompoundIDFieldType CCompoundIDField::GetType()
 CCompoundIDField CCompoundIDField::GetNextNeighbor()
 {
     SCompoundIDFieldImpl* next = TFieldList::GetNext(m_Impl);
-    next->m_CID = m_Impl->m_CID;
+    if (next != NULL)
+        next->m_CID = m_Impl->m_CID;
     return next;
 }
 
 CCompoundIDField CCompoundIDField::GetNextHomogeneous()
 {
     SCompoundIDFieldImpl* next = THomogeneousFieldList::GetNext(m_Impl);
-    next->m_CID = m_Impl->m_CID;
+    if (next != NULL)
+        next->m_CID = m_Impl->m_CID;
     return next;
 }
 
