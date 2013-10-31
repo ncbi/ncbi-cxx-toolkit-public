@@ -455,10 +455,18 @@ void CEUtilsApp::CallESummary(const CArgs& args)
         return;
     }
 
-    // Get and show the results
-    CRef<esummary::CESummaryResult> result = req.GetESummaryResult();
-    _ASSERT(result);
-    cout << MSerial_Xml << *result << endl;
+    try {
+        // Get and show the results. GetESummaryResult() may fail if the
+        // selected database uses an incompatible DTD, so report exceptions
+        // if any (in real life this case must be handled by using XmlWrapp
+        // library to parse the data).
+        CRef<esummary::CESummaryResult> result = req.GetESummaryResult();
+        _ASSERT(result);
+        cout << MSerial_Xml << *result << endl;
+    }
+    catch (CSerialException& ex) {
+        cout << "Deserialization error: " << ex.what() << endl;
+    }
 }
 
 

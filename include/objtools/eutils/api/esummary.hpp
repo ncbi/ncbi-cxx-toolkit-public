@@ -80,7 +80,10 @@ public:
     int GetRetMax(void) const { return m_RetMax; }
     void SetRetMax(int retmax) { Disconnect(); m_RetMax = retmax; }
 
-    /// Get search result.
+    /// Get search result. Depending on the requested database this call
+    /// may fail (some databases use different DTDs for serialization).
+    /// To get data from these databases one have to parse the data e.g. using
+    /// XmlWrapp library.
     CRef<esummary::CESummaryResult> GetESummaryResult(void);
 
 private:
