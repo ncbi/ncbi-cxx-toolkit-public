@@ -171,6 +171,10 @@ typedef struct BlastCompo_QueryInfo {
                                                    the query */
     double eff_search_space;  /**< effective search space of searches
                                    involving this query */
+
+    Uint8* words;             /**< list words in the query, needed for
+                                   testing whether the query and a subject
+                                   are nearly identical */
 } BlastCompo_QueryInfo;
 
 
@@ -198,9 +202,13 @@ calc_lambda_type(double * probs, int min_score, int max_score,
  * @param queryData       the sequence data for the query
  * @param queryOffset     offset for align if there are multiple queries
  * @param align           information about the alignment between query and subject
+ * @param query_words     a list of hashes of query words (used for testing
+ *                        for near identical sequences)
  * @param shouldTestIdentical did alignment pass a preliminary test in
  *                       redo_alignment.c that indicates the sequence
  *                        pieces may be near identical
+ * @param subject_maybe_biased If false, subject is not biased, otherwise it is
+ *                             unknown [in|out]
  */
 typedef int
 get_range_type(const BlastCompo_MatchingSequence * sequence,
@@ -209,10 +217,12 @@ get_range_type(const BlastCompo_MatchingSequence * sequence,
 	       const BlastCompo_SequenceData * origQuery,
                const BlastCompo_SequenceRange * q_range,
                BlastCompo_SequenceData * q_data,
+               const Uint8* query_words,
 	       const BlastCompo_Alignment *align,
 	       const Boolean shouldTestIdentical,
 	       const ECompoAdjustModes compo_adjust_mode,
-	       const Boolean isSmithWaterman);
+	       const Boolean isSmithWaterman,
+	       Boolean* subject_maybe_biased);
 
 /**
  * Function type: Calculate the traceback for one alignment by
@@ -339,6 +349,11 @@ typedef struct Blast_RedoAlignParams {
     const Blast_RedoAlignCallbacks *
         callbacks;                     /**< callback functions used by
                                             the Blast_RedoAlign* functions */
+
+    double near_identical_cutoff;  /**< alignments with raw score per residue
+                                        above this value will be tested if
+                                        sequences are near identical to avoid
+                                        segging */
 } Blast_RedoAlignParams;
 
 
@@ -357,7 +372,8 @@ Blast_RedoAlignParamsNew(Blast_MatrixInfo ** pmatrix_info,
                          int query_is_translated,
                          int ccat_query_length, int cutoff_s,
                          double cutoff_e, int do_link_hsps,
-                         const Blast_RedoAlignCallbacks * callbacks);
+                         const Blast_RedoAlignCallbacks * callbacks,
+                         double near_identical_cutoff);
 
 
 /** Free a set of Blast_RedoAlignParams */

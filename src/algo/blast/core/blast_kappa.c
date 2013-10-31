@@ -896,45 +896,419 @@ s_MatchingSequenceRelease(BlastCompo_MatchingSequence * self)
 }
 
 /**
- * Test whether the aligned parts of two sequences that
- * have a high-scoring gapless alignment are nearly identical
+ * Do a simple gapped extension to the right from the beginning of query and
+ * subject ranges examining only matches and mismatches. The extension stops
+ * when there are more than max_shift mismatches or mismatches or gaps are not
+ * followed by two identical matches. This is a simplified version of the
+ * Danielle and Jean Thierry-Miegs' jumper
+ * alignment implemented in NCBI Magic
+ * http://www.ncbi.nlm.nih.gov/IEB/Research/Acembly/Download/Downloads.html
  *
- * @param seqData           subject sequence
- * @param queryData         query sequence
- * @param queryOffset       offset for align if there are multiple queries
- * @param align             information about the alignment
- * @param rangeOffset       offset for subject sequence (used for tblastn)
- *
- * @return                  TRUE if the aligned portions are nearly identical
+ * @param query_seq Query sequence [in]
+ * @param query_len Query length [in]
+ * @param subject_seq Subject sequence [in]
+ * @param subject_len Subject length [in]
+ * @param max_shift Maximum number of mismatches or gaps, extension stops if
+ *        this number is reached [in]
+ * @param query_ext_len Extension length on the query [out]
+ * @param subject_ext_len Extension length on the subject [out]
+ * @param align_len Alignment length [out]
+ * @return Number of identical residues
  */
-static Boolean 
-s_TestNearIdentical(const BlastCompo_SequenceData *seqData, 
-                    const int seqOffset,
-                    const BlastCompo_SequenceData *queryData, 
-                    const int queryOffset, 
-                    const BlastCompo_Alignment *align)
+static int s_ExtendRight(Uint1* query_seq, int query_len,
+                         Uint1* subject_seq, int subject_len,
+                         int max_shift,
+                         int* query_ext_len, int* subject_ext_len,
+                         int* align_len)
 {
-  int numIdentical = 0;
-  double fractionIdentical;
-  int qPos, sPos; /*positions in query and subject;*/
-  int qEnd; /*end of query*/
-  const double kMinFractionNearIdentical = 0.98; /* cutoff for this check. */
+    int num_identical = 0;
+    int q_pos, s_pos;
+    int gaps_in_query = 0;
+    int gaps_in_subject = 0;
+    q_pos = 0;
+    s_pos = 0;
+    while (q_pos < query_len && s_pos < subject_len) {
+        int n;
+        int match = 0;
 
-  qPos = align->queryStart - queryOffset;
-  qEnd = align->queryEnd   - queryOffset;
-  sPos = align->matchStart - seqOffset;
-  while (qPos < qEnd)  {
-      if (queryData->data[qPos] == seqData->data[sPos])
-	numIdentical++;
-      sPos++;
-      qPos++;
-  }
-  fractionIdentical = ((double) numIdentical/
-  (double) (align->queryEnd - align->queryStart));
-  if (fractionIdentical >= kMinFractionNearIdentical)
-    return(TRUE);
-  else
-    return(FALSE);
+        while (q_pos < query_len && s_pos < subject_len
+               && query_seq[q_pos] == subject_seq[s_pos]) {
+
+            num_identical++;
+            q_pos++;
+            s_pos++;
+        }
+
+        /* try to skip mismatches or gaps */
+        for (n=1; n < max_shift && q_pos + n + 1 < query_len
+                 && s_pos + n + 1 < subject_len && !match; n++) {
+
+            /* mismatches */
+            if (query_seq[q_pos + n] == subject_seq[s_pos + n]
+                && query_seq[q_pos + n + 1] == subject_seq[s_pos + n + 1]) {
+                
+                /* we have already checked that two positions behind mismatches
+                   match so we can advance further */
+                q_pos += n + 2;
+                s_pos += n + 2;
+                num_identical += 2;
+                match = 1;
+            }
+
+            /* gap in subject */
+            if (!match && query_seq[q_pos + n] == subject_seq[s_pos]
+                && query_seq[q_pos + n + 1] == subject_seq[s_pos + 1]) {
+                
+                q_pos += n + 2;
+                s_pos += 2;
+                num_identical += 2;
+                gaps_in_subject += n;
+                match = 1;
+            }
+
+            /* gap in query */
+            if (!match && query_seq[q_pos] == subject_seq[s_pos + n]
+                && query_seq[q_pos + 1] == subject_seq[s_pos + n + 1]) {
+
+                q_pos += 2;
+                s_pos += n + 2;
+                num_identical += 2;
+                gaps_in_query += n;
+                match = 1;
+            }
+        }
+
+        if (match) {
+            continue;
+        }
+
+        /* exit the loop */
+        break;
+    }
+    *query_ext_len = q_pos;
+    *subject_ext_len = s_pos;
+    *align_len = q_pos > s_pos ? q_pos + gaps_in_query : s_pos + gaps_in_subject;
+
+    return num_identical;
+}
+
+
+/** 
+ * Extend left from the end of the sequence and subject ranges and count
+ * identities. The extension stops when there are more than max_shift
+ * mismatches or mismatches or gaps are not followed by two identical matches.
+ * See description for s_ExtendRight for more details.
+ *
+ * @param query_seq Query sequence [in]
+ * @param query_len Query length [in]
+ * @param subject_seq Subject sequence [in]
+ * @param subject_len Subject length [in]
+ * @param max_shift Maximum number of mismatches or gaps, extension stops if
+ *        this number is reached [in]
+ * @param query_ext_len Extension length on the query [out]
+ * @param subject_ext_len Extension length on the subject [out]
+ * @param align_len Alignment length [out]
+ * @return Number of identical residues
+ */
+static int s_ExtendLeft(Uint1* query_seq, int query_len,
+                        Uint1* subject_seq, int subject_len,
+                        int max_shift,
+                        int* query_ext_len, int* subject_ext_len,
+                        int* align_len)
+{
+    int q_pos = query_len - 1;
+    int s_pos = subject_len - 1;
+    int num_identical = 0;
+    int gaps_in_query = 0;
+    int gaps_in_subject = 0;
+    while (q_pos >= 0 && s_pos >= 0) {
+        int n;
+        int match = 0;
+
+        /* process identies */
+        while (q_pos > 0 && s_pos > 0 && query_seq[q_pos] == subject_seq[s_pos]) {
+            num_identical++;
+            q_pos--;
+            s_pos--;
+        }
+
+        /* try to skip mismatches or gaps */
+        for (n=1;n < max_shift && q_pos - n - 1 > 0 && s_pos - n - 1 > 0
+                 && !match; n++) {
+
+            /* mismatch */
+            if (query_seq[q_pos - n] == subject_seq[s_pos - n]
+                && query_seq[q_pos - n - 1] == subject_seq[s_pos - n - 1]) {
+                q_pos -= n + 2;
+                s_pos -= n + 2;
+                num_identical += 2;
+                match = 1;
+            }
+
+            /* gap in subject */
+            if (!match && query_seq[q_pos - n] == subject_seq[s_pos]
+                && query_seq[q_pos - n - 1] == subject_seq[s_pos - 1]) {
+                q_pos -= n + 2;
+                s_pos -= 2;
+                num_identical += 2;
+                gaps_in_subject += n;
+                match = 1;
+            }
+
+            /* gap in query */
+            if (!match && query_seq[q_pos] == subject_seq[s_pos - n]
+                && query_seq[q_pos - 1] == subject_seq[s_pos - n - 1]) {
+                q_pos -= 2;
+                s_pos -= n + 2;
+                num_identical += 2;
+                gaps_in_query += n;
+                match = 1;
+            }
+        }
+
+        if (match) {
+            continue;
+        }
+
+        break;
+    }
+    *query_ext_len = query_len - q_pos - 1;
+    *subject_ext_len = subject_len - s_pos - 1;
+    *align_len += *query_ext_len > *subject_ext_len ?
+        *query_ext_len + gaps_in_query : *subject_ext_len + gaps_in_subject;
+
+    return num_identical;
+}
+
+
+/** 
+ * Get hash for a word of word_size residues assuming 28-letter alphabet
+ *
+ * @param data Sequence [in]
+ * @param word_size Word size [in]
+ * @return Hash value
+ */
+static Uint8 s_GetHash(const Uint1* data, int word_size)
+{
+    Uint8 hash = 0;
+    int k;
+    for (k=0;k < word_size;k++) {
+        hash <<= 5;
+        hash += (Int8)data[k];
+    }
+    return hash;
+}
+
+
+/** 
+ * Find a local number of identical residues in two aligned sequences by
+ * finding word matches and doing a simple gapped extensions from the word hits
+ *
+ * @param query_seq Query sequence [in]
+ * @param query_hashes Array of query words with index of each word
+ *        corresponding to word position in the query [in]
+ * @param query_len Query length [in]
+ * @param subject_seq Subject sequence [in]
+ * @param subject_len Subject length [in]
+ * @param max_shift Maximum number of local mismatches or gaps for extensions
+ *        [in]
+ * @return Number of identical residues
+ */
+static int s_FindNumIdentical(Uint1* query_seq,
+                              const Uint8* query_hashes,
+                              int query_len,
+                              Uint1* subject_seq,
+                              int subject_len,
+                              int max_shift)
+{
+    int word_size = 8;         /* word size for k-mer matching */
+    Uint8 hash;
+    Uint8 mask = 0xFFFFFFFFFF; /* mask for computing hash values */
+    int query_from = 0;
+    int subject_from = 0;
+
+    int s_pos;                 /* position in the subject sequence */
+    int num_identical = 0;     /* number of identical residues found */
+    Boolean match = FALSE;
+
+    /* if query or subject length is smaller than word size, exit */
+    if (!query_seq || !query_hashes || !subject_seq
+        || query_len < word_size || subject_len < word_size) {
+
+        return 0;
+    }
+
+    /* for each subject position */
+    for (s_pos = 0; s_pos < subject_len - word_size; s_pos++) {
+        int q_pos;
+
+        /* find word hash */
+        if (s_pos == 0 || match) {
+            hash = s_GetHash(&subject_seq[s_pos], word_size);
+        }
+        else {
+            hash <<= 5;
+            hash &= mask;
+            hash += subject_seq[s_pos + word_size - 1];
+        }
+
+        /* find matching query word; index of hash is position of the word 
+           the query */
+        for (q_pos = query_from;q_pos < query_len - word_size; q_pos++) {
+            if (query_hashes[q_pos] == hash) {
+                break;
+            }
+        }
+
+        /* if match */
+        if (q_pos < query_len - word_size) {
+            match = TRUE;
+            int query_start = q_pos;
+            int subject_start = s_pos;
+
+            int query_left_len, query_right_len;
+            int subject_left_len, subject_right_len;
+            int align_len_left, align_len_right;
+            
+            num_identical += word_size;
+
+            /* extend left from word match */
+            num_identical += s_ExtendLeft(query_seq + query_start - 1,
+                                          query_start - query_from,
+                                          subject_seq + subject_start - 1,
+                                          subject_start - subject_from,
+                                          max_shift,
+                                          &query_left_len, &subject_left_len,
+                                          &align_len_left);
+
+            /* extend right from word match */
+            num_identical += s_ExtendRight(query_seq + query_start + word_size,
+                                       query_len - query_start - word_size,
+                                       subject_seq + subject_start + word_size,
+                                       subject_len - subject_start - word_size,
+                                       max_shift,
+                                       &query_right_len, &subject_right_len,
+                                       &align_len_right);
+
+
+            /* disregard already matched and extended words when matching
+               further positions */
+
+            query_from = query_start + word_size + query_right_len;
+            subject_from = subject_start + word_size + subject_right_len;
+            /* s_pos will be incremented in the loop */
+            s_pos = subject_from - 1;
+        }
+        else {
+            match = FALSE;
+        }
+    }
+
+    return num_identical;
+}
+
+/**
+ * Test whether the aligned parts of two sequences that
+ * have a high-scoring gapless alignment are nearly identical.
+ *
+ * First extend from the left end of the query and subject ranges and stop if
+ * there are too manu mismatches. Then extend from the right end. Then for the
+ * remaining protion of ths sequences find matching words and extend left and
+ * right from the word hit. Repeat the last steo until the whole alignment
+ * ranges are processed.
+ *
+ * @params seqData Subject sequence [in]
+ * @params seqOffse Starting offset of the subject sequence in alignment data
+ *        [in]
+ * @params queryData Query sequence [in]
+ * @params queryOffset Starting offset of the query sequence in alignment data
+ *         [in]
+ * @param query_words Array of query words with word index corresponding to
+ *        word's position in the query [in]
+ * @param align Alignment data [in]
+ * @return True if sequence parts are nearly identical, false otherwise
+ */
+static Boolean
+s_TestNearIdentical(const BlastCompo_SequenceData* seqData,
+                    const int seqOffset,
+                    const BlastCompo_SequenceData* queryData,
+                    const int queryOffset,
+                    const Uint8* query_words,
+                    const BlastCompo_Alignment* align)
+{
+    int qStart = align->queryStart - queryOffset;
+    /* align->queryEnd points to one position past alignment end */
+    int qEnd = align->queryEnd - queryOffset - 1;
+    int sStart = align->matchStart - seqOffset;
+    int sEnd = align->matchEnd - seqOffset - 1;
+    const double kMinFractionNearIdentical = 0.96;
+    int max_shift = 8;
+
+    int query_len = qEnd - qStart + 1;
+    int subject_len = sEnd - sStart + 1;
+    int align_len = MIN(query_len, subject_len);
+
+    int query_left_len = 0;
+    int subject_left_len = 0;
+    int query_right_len = 0;
+    int subject_right_len = 0;
+    int align_left_len = 0;
+    int align_right_len = 0;
+
+    double fraction_identical;
+
+    /* first find number of identies going from the beginning of the query
+       and subject ranges */
+    int num_identical = s_ExtendRight(queryData->data + qStart, query_len,
+                                      seqData->data + sStart, subject_len,
+                                      max_shift,
+                                      &query_right_len, &subject_right_len,
+                                      &align_right_len);
+
+    /* if the whole query range was processed return near identical status */
+    if (query_right_len >= query_len || subject_right_len >= subject_len) {
+        fraction_identical = (double)num_identical / (double)align_len;
+        ASSERT(fraction_identical - 1.0 < 1e-10);
+        return fraction_identical > kMinFractionNearIdentical;
+    }
+
+    /* find the number of identies going from the end of the query and subject
+       ranges */
+    num_identical += s_ExtendLeft(queryData->data + qStart + query_right_len,
+                                  query_len - query_right_len,
+                                  seqData->data + sStart + subject_right_len,
+                                  subject_len - subject_right_len,
+                                  max_shift,
+                                  &query_left_len, &subject_left_len,
+                                  &align_left_len);
+
+    /* if the whole alignment ranges where covered, return the near identical
+       status */
+    if (query_left_len + query_right_len >= query_len
+        || subject_left_len + subject_right_len >= subject_len) {
+
+        fraction_identical = (double)num_identical / (double)(align_len);
+        ASSERT(fraction_identical - 1.0 < 1e-10);
+        return fraction_identical > kMinFractionNearIdentical;
+    }
+
+    /* find the number of identical matches in the middle portion of the
+       alignment ranges */
+    num_identical += s_FindNumIdentical(queryData->data + qStart + query_right_len,
+                            query_words + qStart + query_right_len,
+                            query_len - query_left_len - query_right_len,
+                            seqData->data + sStart + subject_right_len,
+                            subject_len - subject_left_len - subject_right_len,
+                            max_shift);
+
+    fraction_identical = (double)num_identical / (double)align_len;
+    ASSERT(fraction_identical - 1.0 < 1e-10);
+    if (fraction_identical > kMinFractionNearIdentical) {
+        return TRUE;
+    }
+    else {
+        return FALSE;
+    }
 }
 
 
@@ -1023,7 +1397,8 @@ s_MatchingSequenceInitialize(BlastCompo_MatchingSequence * self,
  */
 static int
 s_DoSegSequenceData(BlastCompo_SequenceData * seqData,
-                    EBlastProgramType program_name)
+                    EBlastProgramType program_name,
+                    Boolean* is_seq_biased)
 {
     int status = 0;
     BlastSeqLoc* mask_seqloc = NULL;
@@ -1037,6 +1412,9 @@ s_DoSegSequenceData(BlastCompo_SequenceData * seqData,
                                    seqData->length, 0, filter_options,
                                    &mask_seqloc, NULL);
         filter_options = SBlastFilterOptionsFree(filter_options);
+    }
+    if (is_seq_biased) {
+        *is_seq_biased = (mask_seqloc != NULL);
     }
     if (status == 0) {
         Blast_MaskTheResidues(seqData->data, seqData->length,
@@ -1069,11 +1447,13 @@ s_SequenceGetTranslatedRange(const BlastCompo_MatchingSequence * self,
                              const BlastCompo_SequenceRange * range,
                              BlastCompo_SequenceData * seqData,
                              const BlastCompo_SequenceRange * q_range,
-			     BlastCompo_SequenceData * queryData,
-			     const BlastCompo_Alignment *align,
-			     const Boolean shouldTestIdentical,
-			     const ECompoAdjustModes compo_adjust_mode,
-			     const Boolean isSmithWaterman)
+                             BlastCompo_SequenceData * queryData,
+                             const Uint8* query_words,
+                             const BlastCompo_Alignment *align,
+                             const Boolean shouldTestIdentical,
+                             const ECompoAdjustModes compo_adjust_mode,
+                             const Boolean isSmithWaterman,
+                             Boolean* subject_maybe_biased)
 {
     int status = 0;
     BlastKappa_SequenceInfo * local_data; /* BLAST-specific
@@ -1119,16 +1499,25 @@ s_SequenceGetTranslatedRange(const BlastCompo_MatchingSequence * self,
         seqData->length = translated_length;
 
         if ( !(KAPPA_TBLASTN_NO_SEG_SEQUENCE) ) {
-          if (compo_adjust_mode)
-            if ( (!shouldTestIdentical) || (shouldTestIdentical && (!s_TestNearIdentical(seqData, range->begin, queryData, q_range->begin, align)))) {
-            status = s_DoSegSequenceData(seqData, eBlastTypeTblastn);
-            if (status != 0) {
-                free(seqData->buffer);
-                seqData->buffer = NULL;
-                seqData->data = NULL;
-                seqData->length = 0;
+            if (compo_adjust_mode
+                && (!subject_maybe_biased || *subject_maybe_biased)) {
+
+                if ( (!shouldTestIdentical)
+                     || (shouldTestIdentical
+                         && (!s_TestNearIdentical(seqData, range->begin,
+                                                  queryData, q_range->begin,
+                                                  query_words, align)))) {
+
+                    status = s_DoSegSequenceData(seqData, eBlastTypeTblastn,
+                                                 subject_maybe_biased);
+                    if (status != 0) {
+                        free(seqData->buffer);
+                        seqData->buffer = NULL;
+                        seqData->data = NULL;
+                        seqData->length = 0;
+                    }
+                }
             }
-	  }
         }
     }
     return status;
@@ -1156,11 +1545,13 @@ s_SequenceGetProteinRange(const BlastCompo_MatchingSequence * self,
                           const BlastCompo_SequenceRange * range,
                           BlastCompo_SequenceData * seqData,
                           const BlastCompo_SequenceRange * q_range,
-			  BlastCompo_SequenceData * queryData,
-			  const BlastCompo_Alignment *align,
-			  const Boolean shouldTestIdentical,
-			  const ECompoAdjustModes compo_adjust_mode,
-			  const Boolean isSmithWaterman)
+                          BlastCompo_SequenceData * queryData,
+                          const Uint8* query_words,
+                          const BlastCompo_Alignment *align,
+                          const Boolean shouldTestIdentical,
+                          const ECompoAdjustModes compo_adjust_mode,
+                          const Boolean isSmithWaterman,
+                          Boolean* subject_maybe_biased)
 
 {
     int status = 0;       /* return status */
@@ -1199,10 +1590,19 @@ s_SequenceGetProteinRange(const BlastCompo_MatchingSequence * self,
     }
 
     if ( !(KAPPA_BLASTP_NO_SEG_SEQUENCE) ) {
-      if (compo_adjust_mode)
-        if ( (!shouldTestIdentical) || (shouldTestIdentical && (!s_TestNearIdentical(seqData, 0, queryData, q_range->begin, align)))) {
-        status = s_DoSegSequenceData(seqData, eBlastTypeBlastp); 
-      }
+        if (compo_adjust_mode
+            && (!subject_maybe_biased || *subject_maybe_biased)) {
+
+            if ( (!shouldTestIdentical)
+                 || (shouldTestIdentical
+                     && (!s_TestNearIdentical(seqData, 0, queryData,
+                                              q_range->begin, query_words,
+                                              align)))) {
+
+                status = s_DoSegSequenceData(seqData, eBlastTypeBlastp,
+                                             subject_maybe_biased);
+            }
+        }
     }
     /* Fit the data to the range. */
     seqData ->data    = &seqData->data[range->begin - 1];
@@ -1238,13 +1638,15 @@ static int
 s_SequenceGetRange(const BlastCompo_MatchingSequence * self,
                    const BlastCompo_SequenceRange * s_range,
                    BlastCompo_SequenceData * seqData,
-		   const BlastCompo_SequenceData * query,
+                   const BlastCompo_SequenceData * query,
                    const BlastCompo_SequenceRange * q_range,
                    BlastCompo_SequenceData * queryData,
-		   const BlastCompo_Alignment *align,
-		   const Boolean shouldTestIdentical,
-		   const ECompoAdjustModes compo_adjust_mode,
-		   const Boolean isSmithWaterman)
+                   const Uint8* query_words,
+                   const BlastCompo_Alignment *align,
+                   const Boolean shouldTestIdentical,
+                   const ECompoAdjustModes compo_adjust_mode,
+                   const Boolean isSmithWaterman,
+                   Boolean* subject_maybe_biased)
 {
     Int4 idx;
     BlastKappa_SequenceInfo * seq_info = self->local_data;
@@ -1262,11 +1664,17 @@ s_SequenceGetRange(const BlastCompo_MatchingSequence * self,
     }
     if (seq_info && seq_info->prog_number ==  eBlastTypeTblastn) {
         /* The sequence must be translated. */
-      return s_SequenceGetTranslatedRange(self, s_range, seqData,
-                q_range, queryData, align, shouldTestIdentical, compo_adjust_mode, isSmithWaterman);
+        return s_SequenceGetTranslatedRange(self, s_range, seqData,
+                                            q_range, queryData, query_words,
+                                            align, shouldTestIdentical,
+                                            compo_adjust_mode, isSmithWaterman,
+                                            subject_maybe_biased);
     } else {
-      return s_SequenceGetProteinRange(self, s_range, seqData, 
-                q_range, queryData, align, shouldTestIdentical, compo_adjust_mode, isSmithWaterman);
+        return s_SequenceGetProteinRange(self, s_range, seqData, 
+                                         q_range, queryData, query_words,
+                                         align, shouldTestIdentical,
+                                         compo_adjust_mode, isSmithWaterman,
+                                         subject_maybe_biased);
     }
 }
 
@@ -1793,6 +2201,63 @@ s_MatrixInfoInit(Blast_MatrixInfo * self,
 }
 
 
+/* Create an array of 8-mers for a sequence, such that index of each 8-mer
+   is the same as its position in the query */
+static int
+s_CreateWordArray(const Uint1* seq_data, Int4 seq_len, Uint8** words)
+{
+    int word_size = 8;         /* word size for k-mer matching */
+    Uint8* query_hashes;       /* list of hashes for query words */
+    Uint8 mask = 0xFFFFFFFFFF; /* mask for computing hash values */
+
+    int i;
+
+    /* if query or subject length is smaller than word size, exit */
+    if (!seq_data || !words || seq_len < word_size) {
+        return -1;
+    }
+
+    query_hashes = (Uint8*)calloc((seq_len - word_size + 1),
+                                  sizeof(Uint8));
+    *words = query_hashes;
+
+    if (!query_hashes) {
+        return -1;
+    }
+
+    
+    /* find query word hashes */
+    query_hashes[0] = s_GetHash(&seq_data[0], word_size);
+    for (i = 1; i < seq_len - word_size; i++) {
+        query_hashes[i] = query_hashes[i - 1];
+        query_hashes[i] <<= 5;
+        query_hashes[i] &= mask;
+        query_hashes[i] += (Uint8)seq_data[i + word_size - 1];
+    }
+
+    return 0;
+}
+
+
+static void s_FreeBlastCompo_QueryInfoArray(BlastCompo_QueryInfo** query_info,
+                                            int num_queries)
+{
+    int i;
+
+    if (!query_info) {
+        return;
+    }
+
+    for (i = 0;i < num_queries;i++) {
+        if ((*query_info)[i].words) {
+            free((*query_info)[i].words);
+        }
+    }
+    
+    free(*query_info);
+    *query_info = NULL;
+}
+
 /**
  * Save information about all queries in an array of objects of type
  * BlastCompo_QueryInfo.
@@ -1824,11 +2289,14 @@ s_GetQueryInfo(Uint1 * query_data, const BlastQueryInfo * blast_query_info, Bool
             query_info->origin = query_context->query_offset;
             query_info->seq.data = &query_data[query_info->origin];
             query_info->seq.length = query_context->query_length;
+            query_info->words = NULL;
 
+            s_CreateWordArray(query_info->seq.data, query_info->seq.length,
+                              &query_info->words);
             if (! skip) {
                 Blast_ReadAaComposition(&query_info->composition, BLASTAA_SIZE,
-                                    query_info->seq.data,
-                                    query_info->seq.length);
+                                        query_info->seq.data,
+                                        query_info->seq.length);
             }
         }
     }
@@ -1888,6 +2356,10 @@ redo_align_callbacks = {
 };
 
 
+/* Bit score per alignment position threshold for preliminaru near identical
+   test */
+#define NEAR_IDENTICAL_BITS_PER_POSITION (1.8)
+
 /** 
  * Read the parameters required for the Blast_RedoOneMatch* functions from
  * the corresponding parameters in standard BLAST datatypes.  Return a new
@@ -1918,6 +2390,16 @@ s_GetAlignParams(BlastKappa_GappingParamsContext * context,
     Boolean do_link_hsps = (hitParams->do_sum_stats);
     ECompoAdjustModes compo_adjust_mode =
         (ECompoAdjustModes) extendParams->options->compositionBasedStats;
+
+    /* per position bit score cutoff for testing whether sequences are
+       near identical */
+    double near_identical_cutoff_bits = NEAR_IDENTICAL_BITS_PER_POSITION;
+
+    /* score block is already scaled by context->localScalingFactor */
+    ASSERT(context->sbp->kbp_gap[queryInfo->first_context]);
+    double near_identical_cutoff =
+        (near_identical_cutoff_bits * NCBIMATH_LN2)
+        / context->sbp->kbp_gap[queryInfo->first_context]->Lambda;
     
     if (do_link_hsps) {
         ASSERT(hitParams->link_hsp_params != NULL);
@@ -1947,7 +2429,8 @@ s_GetAlignParams(BlastKappa_GappingParamsContext * context,
                                      query_is_translated,
                                      subject_is_translated,
                                      queryInfo->max_length, cutoff_s, cutoff_e,
-                                     do_link_hsps, &redo_align_callbacks);
+                                     do_link_hsps, &redo_align_callbacks,
+                                     near_identical_cutoff);
     }
 }
 
@@ -2399,7 +2882,7 @@ function_cleanup:
             s_ClearHeap(&redoneMatches[0]);
         }
     }
-    free(query_info);
+    s_FreeBlastCompo_QueryInfoArray(&query_info, numQueries);
     Blast_RedoAlignParamsFree(&redo_align_params);
     if (redoneMatches != NULL) {
         for (query_index = 0;  query_index < numQueries;  query_index++) {

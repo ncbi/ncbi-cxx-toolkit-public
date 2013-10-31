@@ -72,6 +72,12 @@ static char const rcsid[] =
 #define CMP(a,b) ((a)>(b) ? 1 : ((a)<(b) ? -1 : 0))
 #endif
 
+/** Test of whether one set of HSP bounds is contained in another */
+#define KAPPA_CONTAINED_IN_HSP(a,b,c,d,e,f) \
+((a <= c && b >= c) && (d <= f && e >= f))
+/** A macro that defines the mathematical "sign" function */
+#define KAPPA_SIGN(a) (((a) > 0) ? 1 : (((a) < 0) ? -1 : 0))
+
 /** For translated subject sequences, the number of amino acids to
   include before and after the existing aligned segment when
   generating a composition-based scoring system. */
@@ -298,6 +304,54 @@ s_AlignmentCopy(const BlastCompo_Alignment * align)
     
 }
 
+/**
+ * Do given alignments have the same left or right end point
+ */
+static Boolean
+s_IsSameEndPoint(const BlastCompo_Alignment* newAlign,
+                 const BlastCompo_Alignment* align)
+{
+    ASSERT(newAlign->frame == align->frame);
+    return ((align->queryStart == newAlign->queryStart &&
+             align->matchStart == newAlign->matchStart)
+            || (align->queryEnd == newAlign->queryEnd &&
+                align->matchEnd == newAlign->matchEnd));
+}
+
+
+/**
+ * Does at least one end point of newAlign is contined within align and lies
+ * on the same diagnol as the same end point of align
+ */
+static Boolean
+s_IsSimilarEndPoint(const BlastCompo_Alignment* newAlign,
+                    const BlastCompo_Alignment* align)
+{
+    ASSERT(newAlign->frame == align->frame);
+    /* is start of newAlign contained within align */
+    Boolean start_contained =
+        KAPPA_CONTAINED_IN_HSP(align->queryStart, align->queryEnd,
+                               newAlign->queryStart,
+                               align->matchStart, align->matchEnd,
+                               newAlign->matchStart);
+    /* is end of newAlign contained within align */
+    Boolean end_contained = 
+        KAPPA_CONTAINED_IN_HSP(align->queryStart, align->queryEnd,
+                               newAlign->queryEnd,
+                               align->matchStart, align->matchEnd,
+                               newAlign->matchEnd);
+
+    /* does either end point of newAlign lie on the same diagonal as the same
+       end point of align */
+    Boolean result =  (start_contained && 
+                       (newAlign->queryStart - newAlign->matchStart ==
+                        align->queryStart - align->matchStart)) ||
+                      (end_contained &&
+                       (newAlign->queryEnd - newAlign->matchEnd ==
+                        align->queryEnd - align->matchEnd));
+       
+    return result;
+}
 
 /**
  * Given a list of alignments and a new alignment, create a new list
@@ -326,11 +380,18 @@ s_AlignmentCopy(const BlastCompo_Alignment * align)
  * @param free_align_context    a routine to be used to free the context 
  *                              field of an alignment, if any alignment is
  *                              freed; may be NULL
+ * @param is_same_adjustment    were all compared HSPs computed with the same
+ *                              composition adjustment; Nearly identical
+ *                              alignments are computed with exact subjects,
+ *                              and others with segged subjects, hence nearly
+ *                              identical alignments may extend farther; this
+ *                              makes comparing end points more difficult
  */
 static void
 s_WithDistinctEnds(BlastCompo_Alignment **p_newAlign,
                    BlastCompo_Alignment **p_oldAlignments,
-                   void free_align_context(void *))
+                   void free_align_context(void *),
+                   Boolean is_same_adjustment)
 {
     /* Deference the input parameters. */
     BlastCompo_Alignment * newAlign      = *p_newAlign;
@@ -343,11 +404,16 @@ s_WithDistinctEnds(BlastCompo_Alignment **p_newAlign,
     include_new_align  = 1;
 
     for (align = oldAlignments;  align != NULL;  align = align->next) {
+
+        /* If all HSPs were computed with the same adjustment (and subject
+           segging), then simply compare end points. Otherwise, check if the
+           end point of the new HSPs is contained within an old one and
+           whether it lies on the same diagonal as the end point of the old
+           HSP. */
+
         if (align->frame == newAlign->frame &&
-            ((align->queryStart == newAlign->queryStart &&
-              align->matchStart == newAlign->matchStart)
-             || (align->queryEnd == newAlign->queryEnd &&
-                 align->matchEnd == newAlign->matchEnd))) {
+            ((is_same_adjustment && s_IsSameEndPoint(newAlign, align)) ||
+             (!is_same_adjustment && s_IsSimilarEndPoint(newAlign, align)))) {
             /* At least one of the endpoints of newAlign matches an endpoint
                of align. */
             if (newAlign->score <= align->score) {
@@ -387,7 +453,7 @@ s_WithDistinctEnds(BlastCompo_Alignment **p_newAlign,
         BlastCompo_AlignmentsFree(&newAlign, free_align_context);
     } /* end else do not include newAlign */
 }
-
+ 
 
 /** Release the data associated with this object. */
 static void s_SequenceDataRelease(BlastCompo_SequenceData * self)
@@ -875,12 +941,6 @@ s_EvalueFromScore(int score, double Lambda, double logK, double searchsp)
  * routine. */
 #define KAPPA_BIT_TOL 2.0
 
-
-/** Test of whether one set of HSP bounds is contained in another */
-#define KAPPA_CONTAINED_IN_HSP(a,b,c,d,e,f) \
-((a <= c && b >= c) && (d <= f && e >= f))
-/** A macro that defines the mathematical "sign" function */
-#define KAPPA_SIGN(a) (((a) > 0) ? 1 : (((a) < 0) ? -1 : 0))
 /**
  * Return true if an alignment is contained in a previously-computed
  * alignment of sufficiently high score.
@@ -946,7 +1006,8 @@ Blast_RedoAlignParamsNew(Blast_MatrixInfo ** pmatrix_info,
                          int subject_is_translated,
                          int ccat_query_length, int cutoff_s,
                          double cutoff_e, int do_link_hsps,
-                         const Blast_RedoAlignCallbacks * callbacks)
+                         const Blast_RedoAlignCallbacks * callbacks,
+                         double near_identical_cutoff)
 {
     Blast_RedoAlignParams * params = malloc(sizeof(Blast_RedoAlignParams));
     if (params) {
@@ -965,6 +1026,7 @@ Blast_RedoAlignParamsNew(Blast_MatrixInfo ** pmatrix_info,
         params->cutoff_e = cutoff_e;
         params->do_link_hsps = do_link_hsps;
         params->callbacks = callbacks;
+        params->near_identical_cutoff = near_identical_cutoff;
     } else {
         free(*pmatrix_info); *pmatrix_info = NULL;
         free(*pgapping_params); *pgapping_params = NULL;
@@ -976,23 +1038,24 @@ Blast_RedoAlignParamsNew(Blast_MatrixInfo ** pmatrix_info,
 
 
 static Boolean s_preliminaryTestNearIdentical(BlastCompo_QueryInfo query_info[], 
-				   s_WindowInfo *window)
+                                              BlastCompo_Alignment* align,
+                                              double cutoff)
 {
-  BlastCompo_Alignment *align; /*first alignment in this window*/
-  int queryIndex, queryLength;
+  int queryIndex, queryLength, align_len;
 
-  if ((window->hspcnt > 1) ||
-      (window->hspcnt < 1))
-    return(FALSE);
-  align = window->align;
   queryIndex = align->queryIndex;
   queryLength = query_info[queryIndex].seq.length;
-  if ((align->queryEnd - align->queryStart) !=
-      (align->matchEnd - align->matchStart))
-    return(FALSE);
   if ((align->matchEnd - align->matchStart +1) <
       (MIN(queryLength,  MINIMUM_LENGTH_NEAR_IDENTICAL)))
     return(FALSE);
+
+  align_len = MIN(align->queryEnd - align->queryStart,
+                  align->matchEnd - align->matchStart);
+
+  if ((double)align->score / (double)align_len < cutoff) {
+      return (FALSE);
+  }
+
   return(TRUE);
 }
 
@@ -1048,29 +1111,68 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
         BlastCompo_SequenceData query = {0,}; 
         /* the composition of this query */
         Blast_AminoAcidComposition * query_composition;  
-	Boolean nearIdenticalStatus; /*are query and subject nearly
-				       identical in the aligned part?*/
+        Boolean nearIdenticalStatus; /* are query and subject nearly
+                                        identical in the aligned part?*/
+        Boolean oldNearIdenticalStatus; /* were query and subject nearly
+                                           identical for previous alignmnet
+                                           between the same query and subject*/
+
+        Boolean subject_maybe_biased = TRUE; /* False means that the subject
+                                                sequence does not have biased
+                                                segments. True means we do
+                                                not know */
+        int num_adjustments = 0; /* number of matrix adjustments done in this
+                                    window; nearly identical alignments may be
+                                    computed with different composition
+                                    adjustment than other alignments due to using
+                                    full subjects instead of segged ones */
 
         window = windows[window_index];
         query_index = window->align->queryIndex;
         query_composition = &query_info[query_index].composition;
 
-        nearIdenticalStatus = s_preliminaryTestNearIdentical(query_info,  
-						  window);
-        status =
-            callbacks->get_range(matchingSeq, &window->subject_range,
-                                 &subject, 
-				 &query_info[query_index].seq,
-                                 &window->query_range,
-                                 &query,
-				 window->align, nearIdenticalStatus, compo_adjust_mode, FALSE);
-        if (status != 0) {
-            goto window_index_loop_cleanup;
-        }
         /* for all alignments in this window */
         for (in_align = window->align, hsp_index = 0;
              in_align != NULL;
              in_align = in_align->next, hsp_index++) {
+
+
+            /* if the fist HSP for the pair or subject may have biased
+               segments; if the subject is not biased, then segging is not
+               necessary so we do not have to check for near identical status */
+            if (hsp_index == 0 || subject_maybe_biased) {
+
+                nearIdenticalStatus = s_preliminaryTestNearIdentical(query_info,  
+                                             in_align,
+                                             params->near_identical_cutoff);
+            }
+
+            /* if the first HSP for the pair or subject may have biased
+               segments and near identical status is different than for the
+               previous HSP */
+            if (hsp_index == 0 ||
+                (subject_maybe_biased &&
+                 (nearIdenticalStatus != oldNearIdenticalStatus))) {
+ 
+                /* release previously allocated sequence data */
+                s_SequenceDataRelease(&subject);
+                s_SequenceDataRelease(&query);
+                status =
+                    callbacks->get_range(matchingSeq, &window->subject_range,
+                                 &subject, 
+                                 &query_info[query_index].seq,
+                                 &window->query_range,
+                                 &query,
+                                 query_info[query_index].words,
+                                 window->align, nearIdenticalStatus,
+                                 compo_adjust_mode, FALSE,
+                                 &subject_maybe_biased);
+
+                if (status != 0) {
+                    goto window_index_loop_cleanup;
+                }
+            }
+
             /* do frequency count for partial translated query */
             if (query_is_translated) {
                 s_GetComposition(query_composition,
@@ -1086,7 +1188,8 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                  * is called and returns a nonzero value */
                 int adjust_search_failed = 0;
                 if (compo_adjust_mode != eNoCompositionBasedStats &&
-                    (subject_is_translated || hsp_index == 0)) {
+                    (subject_is_translated || hsp_index == 0
+                     || (nearIdenticalStatus != oldNearIdenticalStatus))) {
                     Blast_AminoAcidComposition subject_composition;
                     s_GetComposition(&subject_composition,
                                             alphsize, &subject,
@@ -1108,7 +1211,9 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                         status = adjust_search_failed;
                         goto window_index_loop_cleanup;
                     }
+                    num_adjustments++;
                 }
+
                 if ( !adjust_search_failed ) {
                     newAlign =
                         callbacks->
@@ -1120,7 +1225,8 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                                            gapping_params);
                     if (newAlign && newAlign->score >= params->cutoff_s) {
                         s_WithDistinctEnds(&newAlign, &alignments[query_index],
-                                           callbacks->free_align_traceback);
+                                           callbacks->free_align_traceback,
+                                           num_adjustments == 1);
                     } else {
                         BlastCompo_AlignmentsFree(&newAlign,
                                                   callbacks->
@@ -1128,6 +1234,7 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
                     }
                 }
             } /* end if in_align is not contained...*/
+            oldNearIdenticalStatus = nearIdenticalStatus;
         } /* end for all alignments in this window */
 window_index_loop_cleanup:
         if (subject.data != NULL)
@@ -1219,21 +1326,27 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
         /* adjust_search_failed is true only if Blast_AdjustScores
          * is called and returns a nonzero value */
         int adjust_search_failed = FALSE;
+
         
         window = windows[window_index];
         query_index = window->query_range.context;
         query_composition = &query_info[query_index].composition;
 
         nearIdenticalStatus = s_preliminaryTestNearIdentical(query_info,  
-						  window);
+                                             window->align,
+                                             params->near_identical_cutoff);
 
         status =
             callbacks->get_range(matchingSeq, &window->subject_range,
                                  &subject, 
-				 &query_info[query_index].seq,
+                                 &query_info[query_index].seq,
                                  &window->query_range,
                                  &query,
-				 window->align, nearIdenticalStatus, compo_adjust_mode, TRUE);
+                                 query_info[query_index].words,
+                                 window->align, nearIdenticalStatus,
+                                 compo_adjust_mode, TRUE,
+                                 NULL);
+
         if (status != 0) 
             goto window_index_loop_cleanup;
             
