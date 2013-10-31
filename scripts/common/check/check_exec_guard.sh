@@ -47,7 +47,7 @@ echo "Maximum execution time of $1 seconds is exceeded"
 echo
 
 $kill $pid > /dev/null 2>&1
-if ! $cygwin; then
+if [ $cygwin = false ]; then
    sleep $sleep_time >/dev/null 2>&1
    kill -9 $pid > /dev/null 2>&1
 fi
