@@ -203,6 +203,11 @@ void CAsn2FastaApp::Init(void)
     {{
         arg_desc->AddFlag("show-mods", "Show FASTA header mods (e.g. [strain=abc])");
 
+        arg_desc->AddOptionalKey("gap-mode", "GapMode", "Gap mode",
+            CArgDescriptions::eString);
+        arg_desc->SetConstraint("gap-mode", &(*new CArgAllow_Strings,
+            "one-dash", "dashes", "letters", "count"));
+
         arg_desc->AddOptionalKey("width", "CHARS", "Output FASTA with an alternate number of columns", CArgDescriptions::eInteger);
         arg_desc->SetConstraint("width", new CArgAllow_Integers(1, kMax_Int));
 
@@ -445,10 +450,26 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
 //  --------------------------------------------------------------------------
 {
     CFilteringFastaOstream fasta_os( *m_Os, x_GetFilterIncludes(GetArgs()));
+
     fasta_os.SetAllFlags(
         CFastaOstream::fNoDupCheck |
         CFastaOstream::fKeepGTSigns |
         CFastaOstream::fNoExpensiveOps);
+    if( GetArgs()["gap-mode"] ) {
+        fasta_os.SetFlag(
+            CFastaOstream::fInstantiateGaps);
+        string gapmode = GetArgs()["gap-mode"].AsString();
+        if ( gapmode == "one-dash" ) {
+            fasta_os.SetGapMode(CFastaOstream::eGM_one_dash);
+        } else if ( gapmode == "dashes" ) {
+            fasta_os.SetGapMode(CFastaOstream::eGM_dashes);
+        } else if ( gapmode == "letters" ) {
+            fasta_os.SetGapMode(CFastaOstream::eGM_letters);
+        } else if ( gapmode == "count" ) {
+            fasta_os.SetGapMode(CFastaOstream::eGM_count);
+        }
+    }
+
     if( GetArgs()["show-mods"] ) {
         fasta_os.SetFlag(CFastaOstream::fShowModifiers);
     }
