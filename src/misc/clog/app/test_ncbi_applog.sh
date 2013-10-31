@@ -89,7 +89,7 @@ Log 'stop_request  $request_token -status=200 -input=11 -output=13' 'stop_reques
 
 # --- Posting between requests
 
-Log 'post "" -message "message between requests"' 'post(5)'  "^00123/000/0000/P  $std Error: message between requests"
+Log 'post "" -message "message between requests"' 'post(6)'  "^00123/000/0000/P  $std Error: message between requests"
 
 # --- Request 2
 
