@@ -496,6 +496,11 @@ CBamRefSeqIterator::CBamRefSeqIterator(const CBamDb& bam_db)
     if ( !m_LocateRC ) {
         m_Iter.SetReferencedPointer(ptr);
     }
+    else if ( !(GetRCObject(m_LocateRC) == rcRow &&
+                GetRCState(m_LocateRC) == rcNotFound) ) {
+        NCBI_THROW2(CBamException, eOtherError,
+                    "Cannot find first refseq", m_LocateRC);
+    }
     x_AllocBuffers();
 }
 
@@ -546,6 +551,12 @@ CBamRefSeqIterator& CBamRefSeqIterator::operator++(void)
     x_CheckValid();
     x_InvalidateBuffers();
     m_LocateRC = AlignAccessRefSeqEnumeratorNext(m_Iter);
+    if ( m_LocateRC != 0 &&
+         !(GetRCObject(m_LocateRC) == rcRow &&
+           GetRCState(m_LocateRC) == rcNotFound) ) {
+        NCBI_THROW2(CBamException, eOtherError,
+                    "Cannot find next refseq", m_LocateRC);
+    }
     return *this;
 }
 
@@ -649,6 +660,11 @@ CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db)
     if ( !m_LocateRC ) {
         m_Iter.SetReferencedPointer(ptr);
     }
+    else if ( !(GetRCObject(m_LocateRC) == RCObject(rcData) &&
+                GetRCState(m_LocateRC) == rcNotFound) ) {
+        NCBI_THROW2(CBamException, eOtherError,
+                    "Cannot find first alignment", m_LocateRC);
+    }
     x_AllocBuffers();
 }
 
@@ -666,6 +682,11 @@ CBamAlignIterator::CBamAlignIterator(const CBamDb& bam_db,
                                                  ref_pos, window);
     if ( !m_LocateRC ) {
         m_Iter.SetReferencedPointer(ptr);
+    }
+    else if ( !(GetRCObject(m_LocateRC) == RCObject(rcData) &&
+                GetRCState(m_LocateRC) == rcNotFound) ) {
+        NCBI_THROW2(CBamException, eOtherError,
+                    "Cannot find first alignment", m_LocateRC);
     }
     x_AllocBuffers();
 }
@@ -734,6 +755,12 @@ CBamAlignIterator& CBamAlignIterator::operator++(void)
     x_CheckValid();
     x_InvalidateBuffers();
     m_LocateRC = AlignAccessAlignmentEnumeratorNext(m_Iter);
+    if ( m_LocateRC != 0 &&
+         !(GetRCObject(m_LocateRC) == rcRow &&
+           GetRCState(m_LocateRC) == rcNotFound) ) {
+        NCBI_THROW2(CBamException, eOtherError,
+                    "Cannot find next alignment", m_LocateRC);
+    }
     return *this;
 }
 
