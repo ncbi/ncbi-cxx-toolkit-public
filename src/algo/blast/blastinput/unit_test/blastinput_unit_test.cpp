@@ -919,7 +919,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequenceWithRange)
     const TSeqPos kStart = 1;
     const TSeqPos kStop = 1000;
     iconfig.SetRange().SetFrom(kStart);
-    iconfig.SetRange().SetToOpen(kStop);
+    iconfig.SetRange().SetTo(kStop);
     // comment the line below to fetch the sequence data
     iconfig.SetRetrieveSeqData(false);
     CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
@@ -1681,7 +1681,7 @@ BOOST_AUTO_TEST_CASE(RangeBoth)
     const TSeqPos stop(100);
     CBlastInputSourceConfig iconfig(is_protein);
     iconfig.SetRange().SetFrom(start);
-    iconfig.SetRange().SetToOpen(stop);
+    iconfig.SetRange().SetTo(stop);
     CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
     CScope scope(*CObjectManager::GetInstance());
@@ -2029,7 +2029,7 @@ BOOST_AUTO_TEST_CASE(MultiRange)
     const TSeqPos start(50);
     const TSeqPos stop(100);
     CBlastInputSourceConfig iconfig(is_protein);
-    iconfig.SetRange().SetFrom(start).SetToOpen(stop);
+    iconfig.SetRange().SetFrom(start).SetTo(stop);
     CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
     CScope scope(*CObjectManager::GetInstance());
 
