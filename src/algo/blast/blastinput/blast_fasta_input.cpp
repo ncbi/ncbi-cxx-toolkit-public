@@ -357,8 +357,8 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask,
     // sanity checks for the range
     const TSeqPos from = m_Config.GetRange().GetFrom() == kEmptyRange.GetFrom()
         ? 0 : m_Config.GetRange().GetFrom();
-    const TSeqPos to = m_Config.GetRange().GetToOpen() == kEmptyRange.GetTo()
-        ? 0 : m_Config.GetRange().GetToOpen();
+    const TSeqPos to = m_Config.GetRange().GetTo() == kEmptyRange.GetTo()
+        ? 0 : m_Config.GetRange().GetTo();
 
     // Get the sequence length
     const TSeqPos seqlen = seq_entry->GetSeq().GetInst().GetLength();

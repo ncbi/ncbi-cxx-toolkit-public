@@ -156,6 +156,7 @@ int CBlastnApp::Run(void)
                                opt.GetMBIndexLoaded());
                                
         
+        formatter.SetQueryRange(query_opts->GetRange());
         formatter.PrintProlog();
 
         /*** Process the input ***/

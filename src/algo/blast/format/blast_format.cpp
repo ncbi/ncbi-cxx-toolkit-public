@@ -33,7 +33,7 @@ Author: Jason Papadopoulos
 
 ******************************************************************************/
 
-/** @file blast_format.cpp
+/** @file blast_format.cpppiv
  * Produce formatted blast output
 */
 
@@ -632,6 +632,7 @@ CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results,
 
         CBlastTabularInfo tabinfo(m_Outfile, m_CustomOutputFormatSpec, kDelim);
         tabinfo.SetParseLocalIds(m_BelieveQuery);
+        tabinfo.SetQueryRange(m_QueryRange);
         if (ncbi::NStr::ToLower(m_Program) == string("blastn"))
         	tabinfo.SetNoFetch(true);
 
@@ -649,7 +650,7 @@ CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results,
             CBlastFormatUtil::PruneSeqalign(*aln_set, copy_aln_set, m_HitlistSize);
 
             if(string::npos != m_CustomOutputFormatSpec.find("qcovs"))
-            		CBlastFormatUtil::InsertSubjectScores (copy_aln_set, bhandle);
+            		CBlastFormatUtil::InsertSubjectScores (copy_aln_set, bhandle, m_QueryRange);
 
             ITERATE(CSeq_align_set::Tdata, itr, copy_aln_set.Get()) {
                     const CSeq_align& s = **itr;

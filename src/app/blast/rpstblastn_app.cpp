@@ -151,6 +151,7 @@ int CRPSTBlastnApp::Run(void)
                                db_adapter->GetFilteringAlgorithm(),
                                fmt_args->GetCustomOutputFormatSpec());
 
+        formatter.SetQueryRange(query_opts->GetRange());
         formatter.PrintProlog();
 
         /*** Process the input ***/

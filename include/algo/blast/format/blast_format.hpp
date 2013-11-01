@@ -249,6 +249,14 @@ public:
     /// than when using other output formats.
     void ResetScopeHistory();
     
+    /// Set query range
+    /// @param query_range query range [in]
+
+    void SetQueryRange(const TSeqRange & query_range) { m_QueryRange = query_range; }
+
+    /// Get query range
+    TSeqRange GetQueryRange(void) { return m_QueryRange; }
+
 private:
     /// Format type
     blast::CFormattingArgs::EOutputFormat m_FormatType;
@@ -316,6 +324,8 @@ private:
 
     /// Flag indicate vdb search
     bool m_IsVdb;
+
+    TSeqRange m_QueryRange;
 
     /// Output the ancillary data for one query that was searched
     /// @param summary The ancillary data to report [in]

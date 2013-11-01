@@ -176,7 +176,8 @@ public:
      */
 
     static void InsertSubjectScores (objects::CSeq_align_set & org_align_set,
-    					      const objects::CBioseq_Handle & query_handle);
+    					      const objects::CBioseq_Handle & query_handle,
+    					      TSeqRange query_range = TSeqRange());
 };
 
 

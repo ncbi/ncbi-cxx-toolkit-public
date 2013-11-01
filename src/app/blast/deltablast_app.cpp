@@ -270,6 +270,7 @@ int CDeltaBlastApp::Run(void)
                                false, false, NULL,
                                domain_db_ptr);
         
+        formatter.SetQueryRange(query_opts->GetRange());
         formatter.PrintProlog();
 
         /*** Process the input ***/

@@ -662,7 +662,10 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
                 scope.GetBioseqHandle(align.GetSeq_id(0));
             SetQueryId(query_bh);
             query_is_na = query_bh.IsNa();
-            m_QueryLength = query_bh.GetBioseqLength();
+            if(m_QueryRange.NotEmpty())
+            	m_QueryLength = m_QueryRange.GetLength();
+            else
+            	m_QueryLength = query_bh.GetBioseqLength();
             x_SetQueryCovSeqalign(align, m_QueryLength);
         } catch (const CException&) {
             list<CRef<CSeq_id> > query_ids;
@@ -736,7 +739,10 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
         //_ASSERT(!m_QueryId.empty());
         //_ASSERT(m_QueryId.front().NotEmpty());
         //m_QueryLength = sequence::GetLength(*m_QueryId.front(), &scope);
-        m_QueryLength = sequence::GetLength(align.GetSeq_id(0), &scope);
+    	if(m_QueryRange.NotEmpty())
+    		m_QueryLength = m_QueryRange.GetLength();
+    	else
+    		m_QueryLength = sequence::GetLength(align.GetSeq_id(0), &scope);
 
     }
 

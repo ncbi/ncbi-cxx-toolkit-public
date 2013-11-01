@@ -169,6 +169,10 @@ public:
     /// Avoid fetch of sequence if true returned
     bool GetNoFetch();
 
+    /// Set query range
+    /// @param query range [in]
+    void SetQueryRange(TSeqRange & q_range) { m_QueryRange = q_range;}
+
 protected:
     bool x_IsFieldRequested(ETabularField field);
     /// Add a field to the list of fields to show, if it is not yet present in
@@ -327,6 +331,8 @@ private:
     string m_SubjectStrand;
     pair<string, int>  m_QueryCovSubject;
     int m_QueryCovSeqalign;
+
+    TSeqRange m_QueryRange;
 };
 
 

@@ -564,7 +564,8 @@ CBlastFormatUtil::GetWholeAlnSeqStrings(string & query,
 }
 
 void CBlastFormatUtil::InsertSubjectScores (CSeq_align_set & org_align_set,
-										    const CBioseq_Handle & query_handle)
+										    const CBioseq_Handle & query_handle,
+										    TSeqRange  query_range)
 {
 	if(!org_align_set.IsSet() || org_align_set.Get().empty())
 	{
@@ -579,7 +580,11 @@ void CBlastFormatUtil::InsertSubjectScores (CSeq_align_set & org_align_set,
 
     CConstRef<CBioseq> query_bioseq = query_handle.GetCompleteBioseq();
     int query_len = 0;
-    if (!query_bioseq.Empty() && query_bioseq->IsSetLength())
+    if(query_range.NotEmpty())
+    {
+    	query_len = query_range.GetLength();
+    }
+    else if (!query_bioseq.Empty() && query_bioseq->IsSetLength())
     {
     	query_len = query_bioseq->GetLength();
     }
