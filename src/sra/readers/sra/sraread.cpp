@@ -38,7 +38,9 @@
 #include <sra/types.h>
 #include <sra/impl.h>
 #include <sra/sradb-priv.h>
-#include <sra/xf.h>
+#include <vfs/manager.h>
+#include <vfs/resolver.h>
+#include <vfs/path.h>
 
 #include <corelib/ncbimtx.hpp>
 #include <corelib/ncbi_param.hpp>
@@ -214,15 +216,13 @@ static const size_t kInitialPathSize = 256;
 
 CSraPath::CSraPath(void)
 {
-    x_Init();
-    AddRepPath(GetDefaultRepPath());
-    AddVolPath(GetDefaultVolPath());
+    // AddRepPath(GetDefaultRepPath());
+    // AddVolPath(GetDefaultVolPath());
 }
 
 
 CSraPath::CSraPath(const string& rep_path, const string& vol_path)
 {
-    x_Init();
     AddRepPath(rep_path.empty()? GetDefaultRepPath(): rep_path);
     AddVolPath(vol_path.empty()? GetDefaultVolPath(): vol_path);
 }
@@ -250,47 +250,16 @@ string CSraPath::GetDefaultVolPath(void)
 }
 
 
-void CSraPath::x_Init(void)
-{
-    CSraMgr::RegisterFunctions();
-    if ( rc_t rc = SRAPathMake(x_InitPtr(), 0) ) {
-        *x_InitPtr() = 0;
-        NCBI_THROW2(CSraException, eInitFailed,
-                    "Cannot make SRAPath", rc);
-    }
-    if ( rc_t rc = SRAPathClear(*this) ) {
-        NCBI_THROW2(CSraException, eInitFailed,
-                    "Cannot clear SRAPath", rc);
-    }
-}
-
-
 DEFINE_STATIC_FAST_MUTEX(sx_PathMutex);
 
 
 void CSraPath::AddRepPath(const string& rep_path)
 {
-    if ( rep_path.empty() ) {
-        return;
-    }
-    CFastMutexGuard guard(sx_PathMutex);
-    if ( rc_t rc = SRAPathAddRepPath(*this, rep_path.c_str()) ) {
-        NCBI_THROW3(CSraException, eInitFailed,
-                    "Cannot add rep path", rc, rep_path);
-    }
 }
 
 
 void CSraPath::AddVolPath(const string& vol_path)
 {
-    if ( vol_path.empty() ) {
-        return;
-    }
-    CFastMutexGuard guard(sx_PathMutex);
-    if ( rc_t rc = SRAPathAddVolPath(*this, vol_path.c_str()) ) {
-        NCBI_THROW3(CSraException, eInitFailed,
-                    "Cannot add vol path", rc, vol_path);
-    }
 }
 
 
@@ -298,23 +267,57 @@ string CSraPath::FindAccPath(const string& acc) const
 {
     string ret;
     ret.resize(128);
-    for ( ;; ) {
-        rc_t rc;
-        {{
-            CFastMutexGuard guard(sx_PathMutex);
-            rc = SRAPathFind(*this, acc.c_str(), &ret[0], ret.size());
-        }}
-        if ( !rc ) {
-            break;
+    rc_t rc;
+    {{
+        CFastMutexGuard guard(sx_PathMutex);
+        //rc = SRAPathFind(*this, acc.c_str(), &ret[0], ret.size());
+        VFSManager* mgr;
+        rc = VFSManagerMake(&mgr);
+        if (rc == 0) {
+            rc_t rc2;
+            VResolver* res;
+            rc = VFSManagerGetResolver(mgr, &res);
+            if (rc == 0) {
+                VPath* accPath;
+                rc = VFSManagerMakePath(mgr, &accPath, acc.c_str());
+                if (rc == 0)
+                {
+                    const VPath* resolvedPath;
+                    rc = VResolverQuery(res, eProtocolHttp, accPath, &resolvedPath, NULL, NULL);
+                    if (rc == 0)
+                    {
+                        for ( ;; ) {
+                            String s;
+                            StringInitCString(&s, ret.c_str());
+                            VPathGetPath(resolvedPath, &s);
+                            if ( GetRCState(rc) == rcInsufficient ) {
+                                // buffer too small, realloc and repeat
+                                ret.resize(ret.size()*2);
+                            }
+                            else {
+                                break;
+                            }
+                        }
+                        rc2 = VPathRelease(resolvedPath);
+                        if (rc == 0)
+                            rc = rc2;
+                    }
+                    rc2 = VPathRelease(accPath);
+                    if (rc == 0)
+                        rc = rc2;
+                }
+                rc2 = VResolverRelease(res);
+                if (rc == 0)
+                    rc = rc2;
+            }
+            rc2 = VFSManagerRelease(mgr);
+            if (rc == 0)
+                rc = rc2;
         }
-        if ( GetRCState(rc) == rcInsufficient ) {
-            // buffer too small, realloc and repeat
-            ret.resize(ret.size()*2);
-        }
-        else {
-            NCBI_THROW3(CSraException, eNotFound,
-                        "Cannot find acc path", rc, acc);
-        }
+    }}
+    if ( rc ) {
+        NCBI_THROW3(CSraException, eNotFound,
+                    "Cannot find acc path", rc, acc);
     }
     SIZE_TYPE eol_pos = ret.find('\0');
     if ( eol_pos != NPOS ) {
@@ -343,50 +346,12 @@ CSraMgr::CSraMgr(const string& rep_path, const string& vol_path,
     x_Init();
 }
 
-#if !defined(NCBI_DLL_BUILD) || defined(NCBI_OS_MSWIN) || defined(NCBI_OS_DARWIN)
-# define SRA_SDK_NEEDS_REGISTER_FUNCTIONS
-#endif
-
-#if defined(SRA_SDK_NEEDS_REGISTER_FUNCTIONS)
-static volatile bool s_SraRegistered = false;
-DEFINE_STATIC_FAST_MUTEX(s_SraRegisterMutex);
-#endif
-
 void CSraMgr::RegisterFunctions(void)
 {
-#if defined(SRA_SDK_NEEDS_REGISTER_FUNCTIONS)
-    CFastMutexGuard LOCK(s_SraRegisterMutex);
-    if ( !s_SraRegistered ) {
-        register_sraxf_functions();
-        register_vxf_functions();
-        register_axf_functions();
-        register_wgsxf_functions();
-        s_SraRegistered = true;
-    }
-#endif
 }
 
 
 void CSraMgr::x_Init(void)
-{
-#if defined(SRA_SDK_NEEDS_REGISTER_FUNCTIONS)
-    if ( !s_SraRegistered ) {
-        // try to initialize and retry with registering in case of error
-        try {
-            x_DoInit();
-            return; // initialized successfully
-        }
-        catch ( CSraException& ) {
-            // retry again after registration
-            RegisterFunctions();
-        }
-    }
-#endif
-    x_DoInit();
-}
-
-
-void CSraMgr::x_DoInit(void)
 {
     if ( rc_t rc = SRAMgrMakeRead(x_InitPtr()) ) {
         *x_InitPtr() = 0;
@@ -476,19 +441,6 @@ void CSraRun::Init(CSraMgr& mgr, const string& acc)
 {
     m_Acc = acc;
     m_Trim = mgr.GetTrim();
-#if defined(SRA_SDK_NEEDS_REGISTER_FUNCTIONS)
-    if ( !s_SraRegistered ) {
-        // try to initialize and retry with registering in case of error
-        try {
-            x_DoInit(mgr, acc);
-            return; // initialized successfully
-        }
-        catch ( CSraException& ) {
-            // Register builtins and try again.
-            CSraMgr::RegisterFunctions();
-        }
-    }
-#endif
     x_DoInit(mgr, acc);
 }
 

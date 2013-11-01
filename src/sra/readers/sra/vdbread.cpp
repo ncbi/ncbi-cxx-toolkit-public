@@ -37,7 +37,6 @@
 #include <kfg/config.h>
 #include <vdb/vdb-priv.h>
 #include <sra/sradb-priv.h>
-#include <sra/xf.h>
 #include <vdb/schema.h>
 #include <sra/sraschema.h>
 
@@ -142,7 +141,8 @@ string CVResolver::Resolve(const string& acc_or_path) const
     CVPathRet ret;
     rc_t rc = VResolverLocal(*this, CVPath(acc_or_path), ret.x_InitPtr());
     if ( rc ) {
-        rc = VResolverRemote(*this, CVPath(acc_or_path), ret.x_InitPtr(), 0);
+        rc = VResolverRemote(*this, eProtocolHttp, CVPath(acc_or_path),
+                             ret.x_InitPtr(), 0);
     }
     if ( rc ) {
         *ret.x_InitPtr() = 0;
@@ -183,9 +183,6 @@ DEFINE_STATIC_FAST_MUTEX(sx_SDKMutex);
 
 void CVDBMgr::x_Init(void)
 {
-    {{
-        CSraMgr::RegisterFunctions();
-    }}
     if ( rc_t rc = VDBManagerMakeRead(x_InitPtr(), 0) ) {
         *x_InitPtr() = 0;
         NCBI_THROW2(CSraException, eInitFailed,

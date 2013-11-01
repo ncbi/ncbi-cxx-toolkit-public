@@ -194,7 +194,14 @@ struct CSraRefTraits
         static rc_t x_AddRef (const T* t) { return T##AddRef(t); }      \
     }
 
-SPECIALIZE_SRA_REF_TRAITS(SRAPath, );
+// SPECIALIZE_SRA_REF_TRAITS(SRAPath, );
+template<>
+struct CSraRefTraits<SRAPath>
+{
+    static rc_t x_Release(const SRAPath* t) { return 0; }
+    static rc_t x_AddRef (const SRAPath* t) { return 0; }
+};
+
 SPECIALIZE_SRA_REF_TRAITS(SRAMgr, const);
 SPECIALIZE_SRA_REF_TRAITS(SRAColumn, const);
 SPECIALIZE_SRA_REF_TRAITS(SRATable, const);
@@ -299,18 +306,19 @@ public:
         {
         }
     CSraPath(void);
-    CSraPath(const string& rep_path, const string& vol_path);
+    NCBI_DEPRECATED_CTOR(CSraPath(const string& rep_path,
+                                  const string& vol_path));
 
     static string GetDefaultRepPath(void);
     static string GetDefaultVolPath(void);
 
+    NCBI_DEPRECATED
     void AddRepPath(const string& rep_path);
+
+    NCBI_DEPRECATED
     void AddVolPath(const string& vol_path);
 
     string FindAccPath(const string& acc) const;
-
-protected:
-    void x_Init(void);
 };
 
 class NCBI_SRAREAD_EXPORT CSraMgr
@@ -340,11 +348,11 @@ public:
             return m_Trim;
         }
 
+    NCBI_DEPRECATED
     static void RegisterFunctions(void);
 
 protected:
     void x_Init(void);
-    void x_DoInit(void);
 
 private:
     mutable CSraPath m_Path;
