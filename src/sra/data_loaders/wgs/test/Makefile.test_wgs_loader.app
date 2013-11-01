@@ -1,3 +1,5 @@
+# $Id$
+
 APP = test_wgs_loader
 SRC = test_wgs_loader
 
@@ -10,7 +12,8 @@ LIB = ncbi_xloader_wgs $(SRAREAD_LIBS) xobjreadex $(OBJREAD_LIBS) xobjutil \
 
 LIBS = $(SRA_SDK_SYSLIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
-CHECK_CMD = test_wgs_loader
+CHECK_CMD      = test_wgs_loader
+CHECK_TIMEOUT  = 300
 CHECK_REQUIRES = in-house-resources -Solaris
 
 WATCHERS = vasilche ucko
