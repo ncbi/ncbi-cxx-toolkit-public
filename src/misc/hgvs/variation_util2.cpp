@@ -1,4 +1,4 @@
-/*  $Id$
+/*  $Id: variation_util2.cpp 415910 2013-10-22 16:06:39Z astashya 
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -2072,12 +2072,25 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         prot_var_str = prot_var_str.substr(common_prot_prefix_len);
       
         if(frameshift_phase == 0) {
-            size_t csl = GetCommonSuffixLen(prot_ref_str, prot_var_str);
-            if(csl > prot_ref_str.size() / 2) {
-                prot_ref_str.resize(prot_ref_str.size() - csl);
-                prot_var_str.resize(prot_var_str.size() - csl);
+
+            //if translations' common suffix is long, will capture the sequence change up to it
+            //  prot_ref_str: CWDADPLKRPTFKQIVQLIEKQISES*   -> C
+            //  prot_var_str: LPWDADPLKRPTFKQIVQLIEKQISES*  -> LP
+            //
+            //Otherwise will capture the change up to terminal codon in either reference or variant translation
+            //  prot_ref_str: WS*                           -> WS*
+            //  prot_var_str: CWDADPLKRPTFKQIVQLIEKQISES*   -> CWD
+            //  or
+            //  prot_ref_str: CWDADPLKRPTFKQIVQLIEKQISES*   -> CWD
+            //  prot_var_str: WS*                           -> WS*
+            size_t suffix_len = GetCommonSuffixLen(prot_ref_str, prot_var_str);
+            if(2 * suffix_len > max(prot_ref_str.size(), prot_var_str.size())) {
+                prot_ref_str.resize(prot_ref_str.size() - suffix_len);
+                prot_var_str.resize(prot_var_str.size() - suffix_len);
             } else if(NStr::EndsWith(prot_var_str, "*") && prot_ref_str.size() > prot_var_str.size()) {
                 prot_ref_str.resize(prot_var_str.size());
+            } else if(NStr::EndsWith(prot_ref_str, "*") && prot_var_str.size() > prot_ref_str.size()) {
+                prot_var_str.resize(prot_ref_str.size());
             }
         } else {
             //Keep the frst AA in case of frameshifts

@@ -730,3 +730,123 @@ Variation ::= {
     }
   }
 }
+Variation ::= {
+  name "NM_022965.3:c.2084G>T",
+  description "",
+  placements {
+    {
+      loc pnt {
+        point 2339,
+        strand plus,
+        id other {
+          accession "NM_022965",
+          version 3
+        }
+      },
+      mol cdna,
+      seq {
+        length 1,
+        seq-data iupacna "G"
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 2261
+        }
+      },
+      gene-location 512
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location in-stop-codon
+  },
+  data set {
+    type package,
+    variations {
+      {
+        data instance {
+          type snv,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "T"
+              }
+            }
+          }
+        },
+        consequence {
+          variation {
+            placements {
+              {
+                loc pnt {
+                  point 694,
+                  strand plus,
+                  id other {
+                    accession "NP_075254",
+                    version 1
+                  }
+                },
+                mol protein,
+                seq {
+                  length 1,
+                  seq-data ncbieaa "*"
+                }
+              },
+              {
+                loc int {
+                  from 2338,
+                  to 2340,
+                  strand plus,
+                  id other {
+                    accession "NM_022965",
+                    version 3
+                  }
+                },
+                mol cdna,
+                frame 1,
+                seq {
+                  length 3,
+                  seq-data iupacna "TGA"
+                }
+              }
+            },
+            variant-prop {
+              version 5,
+              effect stop-loss
+            },
+            data instance {
+              type prot-missense,
+              delta {
+                {
+                  seq literal {
+                    length 3,
+                    seq-data iupacna "TTA"
+                  }
+                }
+              }
+            },
+            so-terms {
+              1578
+            }
+          }
+        }
+      },
+      {
+        data instance {
+          type identity,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "G"
+              }
+            }
+          },
+          observation asserted
+        }
+      }
+    }
+  }
+}
