@@ -118,41 +118,6 @@ int CSRATestApp::Run(void)
     // Get arguments
     const CArgs& args = GetArgs();
 
-    if ( 0 ) {
-        const SRAMgr* mgr = 0;
-        CheckRc(SRAMgrMakeRead(&mgr));
-
-        SRAPath* path = 0;
-        CheckRc(SRAPathMakeImpl(&path, 0));
-        CheckRc(SRAPathClear(path));
-        CheckRc(SRAPathAddRepPath(path, "/panfs/traces01.be-md.ncbi.nlm.nih.gov"));
-        CheckRc(SRAPathAddVolPath(path, "sra0:sra1:sra2:sra3"));
-
-        char sra_path[1024];
-        CheckRc(SRAPathFind(path, "SRR000010", sra_path, sizeof(sra_path)));
-        cout << "Path: "<< sra_path << endl;
-
-        const SRATable* table = 0;
-        CheckRc(SRAMgrOpenTableRead(mgr, &table, sra_path));
-
-        const SRAColumn* col_spot_desc = 0;
-        CheckRc(SRATableOpenColumnRead(table, &col_spot_desc,
-                                          "SPOT_DESC", sra_spot_desc_t));
-
-        const void* data = 0;
-        bitsz_t bit_off = 0, bit_len = 0;
-        CheckRc(SRAColumnRead(col_spot_desc, 1, &data, &bit_off, &bit_len));
-
-        const SRAColumn* col_read = 0;
-        CheckRc(SRATableOpenColumnRead(table, &col_read,
-                                          "READ", insdc_fasta_t));
-
-        CheckRc(SRAColumnRead(col_read, 1, &data, &bit_off, &bit_len));
-
-        cout << "Success." << endl;
-        return 0;
-    }
-
     CSraMgr::ETrim trim = CSraMgr::eTrim;
     if ( args["noclip"] ) {
         trim = CSraMgr::eNoTrim;
