@@ -1,4 +1,4 @@
-`configure' configures ncbi-tools++ 0.0 to adapt to many kinds of systems.
+`configure' configures the NCBI C++ Toolkit to adapt to many kinds of systems.
 
 Usage: configure [OPTION]... [VAR=VALUE]...
 
@@ -45,6 +45,10 @@ Fine tuning of the installation directories:
   --infodir=DIR          info documentation [PREFIX/info]
   --mandir=DIR           man documentation [PREFIX/man]
 
+X features:
+  --x-includes=DIR    X include files are in DIR
+  --x-libraries=DIR   X library files are in DIR
+
 System types:
   --build=BUILD     configure for building on BUILD [guessed]
   --host=HOST       cross-compile to build programs to run on HOST [BUILD]
@@ -55,54 +59,190 @@ Optional Packages:
 ===============================================================================
 =============== NCBI C++ Toolkit specific configuration flags =================
  --without-debug         build non-debug versions of libs and apps
+ --with-max-debug        enable extra runtime checks (esp. of STL usage)
+ --with-symbols          retain debugging symbols in non-debug mode
  --without-optimization  turn off optimization flags in non-debug mode
  --with-profiling        build profiled versions of libs and apps
+ --with-tcheck(=DIR)     build for Intel Thread Checker (in DIR)
  --with-dll              build all libraries as DLLs
  --with-static           build all libraries statically even if --with-dll
+ --with-static-exe       build all executables as statically as possible
+ --with-plugin-auto-load always enable the plugin manager by default
+ --with-bundles          build bundles in addition to dylibs on Mac OS X
+ --with-bin-release      build executables suitable for public release
  --with-mt               compile in a MultiThread-safe manner
  --with-64               compile to 64-bit code
+ --with-universal        build universal binaries on Mac OS X
+ --with-universal=CPUs   build universal binaries targeting the given CPUs
  --without-exe           do not build executables
- --with-runpath=         hard-code the runtime path to DLLs
+ --with-runpath=PATH     specify the usual runtime path to DLLs
+ --with-relative-runpath=P specify an executable-relative DLL search path
+ --with-hard-runpath     hard-code runtime path, ignoring LD_LIBRARY_PATH
+ --with-lfs              enable large file support to the extent possible
+ --with-limited-linker   don't attempt to build especially large projects
  --with-extra-action=    script to call after the configuration is complete
  --with-autodep          automatic generation of dependencies (GNU make)
  --with-build-root=DIR   specify a non-default build directory name
+ --with-fake-root=DIR    appear to have been built under DIR
  --without-suffix        no Release/Debug, MT or DLL sfx in the build dir name
  --with-hostspec         add full host specs to the build dir name
+ --without-version       don't always include the cplr ver in the bd name
+ --with-build-root-sfx=X add a user-specified suffix to the build dir name
  --without-execopy       do not copy built executables to the BIN area
- --without-bincopy       no check if libs or apps need to be copied to BIN
+ --with-bincopy          populate lib and bin with copies, not hard links
  --with-lib-rebuilds     ensure that apps use up-to-date libraries
  --with-lib-rebuilds=ask ask whether to update each app's libraries
+ --without-deactivation  keep old copies of libraries that no longer build
+ --without-makefile-auto-update  do not auto-update generated makefiles
  --with-projects=FILE    build projects listed in FILE by default
- --with-check=           run test suite after the build
+ --without-flat-makefile do not generate an all-encompassing flat makefile
+ --with-configure-dialog allow interactive flat makefile project selection
+ --with-saved-settings=F load configuration settings from the file F
+ --with-check            run test suite after the build
+ --with-check-tools=...  use the specified tools for testing
  --with-ncbi-public      ensure compatibility for all in-house platforms
+ --with-strip            strip binaries at build time
+ --with-pch              use precompiled headers if possible
+ --with-caution          cancel configuration unconditionally when in doubt
+ --without-caution       proceed without asking when in doubt
+ --without-ccache        do not automatically use ccache if available
+ --without-distcc        do not automatically use distcc if available
+ --with-ncbi-c=DIR       use NCBI C Toolkit installation in DIR
  --without-ncbi-c        do not use NCBI C Toolkit
+ --with-sss=DIR          use NCBI SSS installation in DIR
  --without-sss           do not use NCBI SSS libraries
  --without-utils         do not use NCBI SSS UTIL library
  --without-sssdb         do not use NCBI SSS DB library
- --without-geo           do not use NCBI GEO libraries
- --without-pubmed        do not use NCBI PubMed libraries
+ --with-included-sss     use the in-tree copy of SSS
+ --with-z=DIR            use zlib installation in DIR
+ --without-z             use internal copy of zlib
+ --with-bz2=DIR          use bzlib installation in DIR
+ --without-bz2           use internal copy of bzlib
+ --with-lzo=DIR          use LZO installation in DIR (requires 2.x or up)
+ --without-lzo           do not use LZO
+ --with-pcre=DIR         use PCRE installation in DIR
+ --without-pcre          use internal copy of PCRE
+ --with-gcrypt=DIR       use gcrypt installation in DIR
+ --without-gcrypt        do not use gcrypt
+ --with-gnutls=DIR       use GNUTLS installation in DIR
+ --without-gnutls        do not use GNUTLS
+ --with-openssl=DIR      use OpenSSL installation in DIR
+ --without-openssl       do not use OpenSSL
+ --with-krb5=DIR         use Kerberos 5 installation in DIR
+ --without-krb5          do not use Kerberos 5
  --without-sybase        do not use SYBASE libraries
  --with-sybase-local=DIR use local SYBASE install (DIR is optional)
  --with-sybase-new       use newer SYBASE install (12.5 rather than 12.0)
  --without-ftds          do not use FreeTDS libraries
  --with-ftds=DIR         use FreeTDS installation in DIR
- --without-fltk          do not use FLTK
- --with-fltk=DIR         use FLTK installation in DIR
- --without-wxwin         do not use wxWindows
- --with-wxwin=DIR        use wxWindows installation in DIR
+ --without-ftds-renamed  do not rename Sybase DBLIB symbols in built-in FTDS
+ --without-mysql         do not use MySQL
+ --with-mysql=DIR        use MySQL installation in DIR
+ --without-opengl        do not use OpenGL
+ --with-opengl=DIR       use OpenGL installation in DIR
+ --without-mesa          do not use MESA off-screen OpenGL
+ --with-mesa=DIR         use MESA installation in DIR
+ --without-glut          do not use GLUT
+ --with-glut=DIR         use GLUT installation in DIR
+ --without-glew          do not use GLEW
+ --with-glew=DIR         use GLEW installation in DIR
+ --with-glew-mx          insist on a multi-context-ready GLEW installation
+ --without-wxwidgets     do not use wxWidgets (2.6+)
+ --with-wxwidgets=DIR    use wxWidgets installation in DIR
+ --with-wxwidgets-ucs    use Unicode builds of wxWidgets
+ --without-wxwidgets-ucs do not use Unicode builds of wxWidgets
+ --without-freetype      do not use FreeType
+ --with-freetype=DIR     use FreeType installation in DIR
+ --without-ftgl          do not use FTGL
+ --with-ftgl=DIR         use FTGL installation in DIR
  --without-fastcgi       do not use Fast-CGI library
+ --with-fastcgi=VERSION  use Fast-CGI installation in \$NCBI/fcgi-VERSION
+ --with-fastcgi=DIR      use Fast-CGI installation in DIR
+ --without-bdb           do not use Berkeley DB library
+ --with-bdb=VERSION      use DB installation in \$NCBI/BerkeleyDB-VERSION
+ --with-bdb=DIR          use Berkeley DB installation in DIR
  --without-sp            do not use SP libraries
  --without-orbacus       do not use ORBacus CORBA libraries
  --with-orbacus=DIR      use ORBacus installation in DIR
+ --with-odbc=DIR         use ODBC installation in DIR
+ --with-python=DIR       use Python installation in DIR
+ --without-python        do not use Python
+ --with-perl=DIR         use Perl installation in DIR
+ --without-perl          do not use Perl
+ --with-jni(=JDK-DIR)    build Java bindings (against the JDK in JDK-DIR)
+ --with-boost=DIR        use Boost installation in DIR
+ --without-boost         do not use Boost
+ --with-boost-tag=TAG    use TAG as the tag appended to Boost library names
+ --without-boost-tag     use untagged Boost library names
+ --with-sqlite3=DIR      use SQLite 3.x installation in DIR
+ --without-sqlite3       do not use SQLite 3.x
+ --with-icu=DIR          use ICU installation in DIR
+ --without-icu           do not use ICU
+ --with-expat=DIR        use Expat installation in DIR
+ --without-expat         do not use Expat
+ --with-sablot=DIR       use Sablotron installation in DIR
+ --without-sablot        do not use Sablotron
+ --with-libxml=DIR       use libxml2 installation in DIR
+ --without-libxml        do not use libxml2
+ --with-libxslt=DIR      use libxslt installation in DIR
+ --without-libxslt       do not use libxslt
+ --with-libexslt=DIR     use libexslt installation in DIR
+ --without-libexslt      do not use libexslt
+ --with-xerces=DIR       use Xerces-C++ installation in DIR
+ --without-xerces        do not use Xerces-C++
+ --with-xalan=DIR        use Xalan-C++ installation in DIR
+ --without-xalan         do not use Xalan-C++
+ --with-zorba=DIR        use Zorba installation in DIR
+ --without-zorba         do not use Zorba
+ --with-oechem=DIR       use OpenEye OEChem installation in DIR
+ --without-oechem        do not use OEChem
+ --with-sge=DIR          use Sun/Univa Grid Engine installation in DIR
+ --without-sge           do not use Sun/Univa Grid Engine
+ --with-muparser=DIR     use muParser installation in DIR
+ --without-muparser      do not use muParser
+ --with-hdf5=DIR         use HDF5 installation in DIR
+ --without-hdf5          do not use HDF5
+ --with-gif=DIR          use lib(un)gif installation in DIR
+ --without-gif           do not use lib(un)gif
+ --with-jpeg=DIR         use libjpeg installation in DIR
+ --without-jpeg          do not use libjpeg
+ --with-png=DIR          use libpng installation in DIR
+ --without-png           do not use libpng
+ --with-tiff=DIR         use libtiff installation in DIR
+ --without-tiff          do not use libtiff
+ --with-xpm=DIR          use libXpm installation in DIR
+ --without-xpm           do not use libXpm
+ --with-magic=DIR        use libmagic installation in DIR
+ --without-magic         do not use libmagic
+ --with-curl=DIR         use libcurl installation in DIR
+ --without-curl          do not use libcurl
+ --with-mimetic=DIR      use libmimetic installation in DIR
+ --without-mimetic       do not use libmimetic
+ --with-gsoap=DIR        use gSOAP++ installation in DIR
+ --without-gsoap         do not use gSOAP++
+ --with-mongodb=DIR      use MongoDB installation in DIR
+ --without-mongodb       do not use MongoDB
+ --with-3psw=std:netopt  favor standard (system) builds of the above pkgs.
+ --without-3psw          do not use any of the above packages
  --without-local-lbsm    turn off support for IPC with locally running LBSMD
+ --without-ncbi-crypt    use a dummy stubbed-out version of ncbi_crypt
+ --without-connext       do not build non-public CONNECT library extensions
  --without-serial        do not build the serialization library and tools
- --with-objects          generate/build serializeable objects from ASNs
- --without-dbapi         do not build NCBI portable database libraries
- --with-app              build standalone applications like ID1_FETCH
+ --without-objects       do not generate/build serializeable objects from ASNs
+ --without-dbapi         do not build database connectivity libraries
+ --without-app           do not build standalone applications like ID1_FETCH
  --without-ctools        do not build NCBI C Toolkit based projects
- --without-gui           do not build wxWindows based projects
- --with-internal         build all internal projects
-***** See also HTML documentation in ./doc/index.html *****
+ --without-gui           do not build most graphical projects
+ --without-algo          do not build CPU-intensive algorithms
+ --with-internal         always try to build internal projects
+ --without-internal      never build internal projects
+ --with-gbench           ensure that Genome Workbench can be built
+ --without-gbench        do not build Genome Workbench
+ --with-x                use the X Window System
+
+Related documentation:
+  Online:     http://www.ncbi.nlm.nih.gov/toolkit/doc/book/
+  Local:      ./doc/public/index.html
 
 Some influential environment variables:
   CC          C compiler command
@@ -114,6 +254,7 @@ Some influential environment variables:
   CXX         C++ compiler command
   CXXFLAGS    C++ compiler flags
   CXXCPP      C++ preprocessor
+  CPP         C preprocessor
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
