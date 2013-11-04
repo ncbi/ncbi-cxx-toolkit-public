@@ -651,7 +651,8 @@ CBlastFormat::x_PrintTabularReport(const blast::CSearchResults& results,
 
             if(string::npos != m_CustomOutputFormatSpec.find("qcovs"))
             		CBlastFormatUtil::InsertSubjectScores (copy_aln_set, bhandle, m_QueryRange);
-
+            tabinfo.SetQueryGeneticCode(m_QueryGenCode);
+            tabinfo.SetDbGeneticCode(m_DbGenCode);
             ITERATE(CSeq_align_set::Tdata, itr, copy_aln_set.Get()) {
                     const CSeq_align& s = **itr;
                     tabinfo.SetFields(s, *m_Scope, &m_ScoringMatrix);

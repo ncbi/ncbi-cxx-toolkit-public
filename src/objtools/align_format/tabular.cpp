@@ -153,6 +153,8 @@ CBlastTabularInfo::CBlastTabularInfo(CNcbiOstream& ostr, const string& format,
     SetNoFetch(false);
     m_QueryCovSubject.first = NA;
     m_QueryCovSubject.second = -1;
+    m_QueryGeneticCode = 1;
+    m_DbGeneticCode = 1;
 
     x_CheckTaxDB();
 }
@@ -835,6 +837,8 @@ int CBlastTabularInfo::SetFields(const CSeq_align& align,
         (x_IsFieldRequested(ePercentIdentical) && !kNoFetchSequence)) {
 
         alnVec->SetGapChar('-');
+        alnVec->SetGenCode(m_QueryGeneticCode, 0);
+        alnVec->SetGenCode(m_DbGeneticCode, 1);
         alnVec->GetWholeAlnSeqString(0, m_QuerySeq);
         alnVec->GetWholeAlnSeqString(1, m_SubjectSeq);
         

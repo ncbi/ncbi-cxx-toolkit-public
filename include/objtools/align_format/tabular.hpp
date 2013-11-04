@@ -169,6 +169,10 @@ public:
     /// Avoid fetch of sequence if true returned
     bool GetNoFetch();
 
+    // Set Genetic code for translating seqs
+    void SetQueryGeneticCode(int q_gc) {m_QueryGeneticCode = q_gc;}
+    void SetDbGeneticCode(int db_gc) {m_DbGeneticCode = db_gc;}
+
     /// Set query range
     /// @param query range [in]
     void SetQueryRange(TSeqRange & q_range) { m_QueryRange = q_range;}
@@ -331,6 +335,9 @@ private:
     string m_SubjectStrand;
     pair<string, int>  m_QueryCovSubject;
     int m_QueryCovSeqalign;
+
+    int m_QueryGeneticCode;
+    int m_DbGeneticCode;
 
     TSeqRange m_QueryRange;
 };
