@@ -924,44 +924,49 @@ CFrameShiftArgs::ExtractAlgorithmOptions(const CArgs& args,
     }
 }
 
+/// Auxiliary class to validate the genetic code input
+class CArgAllowGeneticCodeInteger : public CArgAllow
+{
+protected:
+     /// Overloaded method from CArgAllow
+     virtual bool Verify(const string& value) const {
+         static int gcs[] = {1,2,3,4,5,6,9,10,11,12,13,14,15,16,21,22,23,24,25};
+         static const set<int> genetic_codes(gcs, gcs+sizeof(gcs)/sizeof(*gcs));
+         const int val = NStr::StringToInt(value);
+         return (genetic_codes.find(val) != genetic_codes.end());
+     }
 
+     /// Overloaded method from CArgAllow
+     virtual string GetUsage(void) const {
+         return "values between: 1-6, 9-16, 21-25";
+     }
+};
 
 void
 CGeneticCodeArgs::SetArgumentDescriptions(CArgDescriptions& arg_desc)
 {
-	string kGeneticCodeDesc = string ("Permissible values: 1-6, 9-16, 21-25\n"
-									  "See ftp://ftp.ncbi.nih.gov/entrez/misc/data/gc.prt for details\n");
-
     if (m_Target == eQuery) {
         arg_desc.SetCurrentGroup("Input query options");
         // query genetic code
         arg_desc.AddDefaultKey(kArgQueryGeneticCode, "int_value", 
-                               "Genetic code to use to translate query\n" + kGeneticCodeDesc ,
+                               "Genetic code to use to translate query (see user manual for details)\n",
                                CArgDescriptions::eInteger,
                                NStr::IntToString(BLAST_GENETIC_CODE));
+        arg_desc.SetConstraint(kArgQueryGeneticCode,
+                               new CArgAllowGeneticCodeInteger());
     } else {
         arg_desc.SetCurrentGroup("General search options");
         // DB genetic code
         arg_desc.AddDefaultKey(kArgDbGeneticCode, "int_value", 
                                "Genetic code to use to translate "
-                               "database/subjects\n" + kGeneticCodeDesc,
+                               "database/subjects (see user manual for details)\n",
                                CArgDescriptions::eInteger,
                                NStr::IntToString(BLAST_GENETIC_CODE));
+        arg_desc.SetConstraint(kArgDbGeneticCode,
+                               new CArgAllowGeneticCodeInteger());
 
     }
     arg_desc.SetCurrentGroup("");
-}
-
-void s_CheckGeneticCode(int gc)
-{
-	static int genetic_codes[19] = {1,2,3,4,5,6,9,10,11,12,13,14,15,16,21,22,23,24,25};
-	for(unsigned int i =0; i < 19; i++)
-	{
-		if(genetic_codes[i] == gc)
-			return;
-	}
-	string msg = "Invalid value for genetic code";
-	NCBI_THROW(CInputException, eInvalidInput, msg);
 }
 
 void
@@ -971,13 +976,11 @@ CGeneticCodeArgs::ExtractAlgorithmOptions(const CArgs& args,
     const EProgram program = opt.GetProgram();
 
     if (m_Target == eQuery && args[kArgQueryGeneticCode]) {
-    	s_CheckGeneticCode(args[kArgQueryGeneticCode].AsInteger());
         opt.SetQueryGeneticCode(args[kArgQueryGeneticCode].AsInteger());
     }
   
     if (m_Target == eDatabase && args[kArgDbGeneticCode] &&
         (program == eTblastn || program == eTblastx) ) {
-    	s_CheckGeneticCode(args[kArgDbGeneticCode].AsInteger());
         opt.SetDbGeneticCode(args[kArgDbGeneticCode].AsInteger());
     }
 }
