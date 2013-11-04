@@ -7374,7 +7374,9 @@ fi
 
 cat << EOCONF
 ===============================================================================
-NCBI C++ Toolkit documentation:  doc/index.html,  doc/config.html#ref_Running
+NCBI C++ Toolkit documentation:
+  Online:   http://www.ncbi.nlm.nih.gov/toolkit/doc/book/
+  Local:    ./doc/public/index.html
 For the available configuration flags run:  ./configure --help
 
 CFLAGS   = $CFLAGS
