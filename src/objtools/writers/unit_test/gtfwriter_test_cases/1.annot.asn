@@ -1,0 +1,2697 @@
+Seq-annot ::= {
+  id {
+    local str "NC_000018"
+  },
+  data ftable {
+    {
+      id local str "mrna|ENSG00000173213|ENST00000308911",
+      data gene {
+        syn {
+          "ENSG00000173213"
+        }
+      },
+      location int {
+        from 47389,
+        to 49556,
+        strand minus,
+        id other {
+          accession "NC_000018"
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "exon"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000173213"
+        },
+        {
+          qual "gene_name",
+          val "RP11-683L23.1"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000308911"
+        },
+        {
+          qual "transcript_name",
+          val "RP11-683L23.1-001"
+        }
+      }
+    },
+    {
+      id local str "mrna|ENSG00000173213|ENST00000308911",
+      data rna {
+        type mRNA
+      },
+      product whole local str "ENST00000308911",
+      location mix {
+        int {
+          from 49500,
+          to 49556,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 49128,
+          to 49236,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 48939,
+          to 49049,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 47389,
+          to 48446,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "exon"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000173213"
+        },
+        {
+          qual "gene_name",
+          val "RP11-683L23.1"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000308911"
+        },
+        {
+          qual "transcript_name",
+          val "RP11-683L23.1-001"
+        }
+      },
+      xref {
+        {
+          id local str "mrna|ENSG00000173213|ENST00000308911"
+        }
+      }
+    },
+    {
+      id local str "cds|ENSG00000173213|ENST00000308911",
+      data cdregion {
+      },
+      product whole local str "ENSP00000309431",
+      location mix {
+        int {
+          from 49500,
+          to 49556,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 49128,
+          to 49236,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 48939,
+          to 49049,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 47389,
+          to 48446,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "CDS"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000173213"
+        },
+        {
+          qual "gene_name",
+          val "RP11-683L23.1"
+        },
+        {
+          qual "protein_id",
+          val "ENSP00000309431"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000308911"
+        },
+        {
+          qual "transcript_name",
+          val "RP11-683L23.1-001"
+        }
+      },
+      xref {
+        {
+          id local str "mrna|ENSG00000173213|ENST00000308911"
+        }
+      }
+    },
+    {
+      id local str "mrna|ENSG00000221441|ENST00000408514",
+      data gene {
+        syn {
+          "ENSG00000221441"
+        }
+      },
+      location int {
+        from 48161,
+        to 48271,
+        strand plus,
+        id other {
+          accession "NC_000018"
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "miRNA"
+        },
+        {
+          qual "gff_type",
+          val "exon"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000221441"
+        },
+        {
+          qual "gene_name",
+          val "AP001005.1"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000408514"
+        },
+        {
+          qual "transcript_name",
+          val "AP001005.1-201"
+        }
+      }
+    },
+    {
+      id local str "mrna|ENSG00000221441|ENST00000408514",
+      data rna {
+        type mRNA
+      },
+      product whole local str "ENST00000408514",
+      location int {
+        from 48161,
+        to 48271,
+        strand plus,
+        id other {
+          accession "NC_000018"
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "miRNA"
+        },
+        {
+          qual "gff_type",
+          val "exon"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000221441"
+        },
+        {
+          qual "gene_name",
+          val "AP001005.1"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000408514"
+        },
+        {
+          qual "transcript_name",
+          val "AP001005.1-201"
+        }
+      },
+      xref {
+        {
+          id local str "mrna|ENSG00000221441|ENST00000408514"
+        }
+      }
+    },
+    {
+      id local str "mrna|ENSG00000101557|ENST00000261601",
+      data gene {
+        syn {
+          "ENSG00000101557"
+        }
+      },
+      location int {
+        from 158482,
+        to 213738,
+        strand plus,
+        id other {
+          accession "NC_000018"
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "exon"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000101557"
+        },
+        {
+          qual "gene_name",
+          val "USP14"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000261601"
+        },
+        {
+          qual "transcript_name",
+          val "USP14-201"
+        }
+      }
+    },
+    {
+      id local str "mrna|ENSG00000101557|ENST00000261601",
+      data rna {
+        type mRNA
+      },
+      product whole local str "ENST00000261601",
+      location mix {
+        int {
+          from 158482,
+          to 158713,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 163307,
+          to 163452,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 166786,
+          to 166818,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 178932,
+          to 179036,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 180235,
+          to 180338,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 192841,
+          to 192899,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 196636,
+          to 196766,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 197615,
+          to 197695,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 198046,
+          to 198131,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 199201,
+          to 199315,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 202879,
+          to 202944,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 203097,
+          to 203189,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 204563,
+          to 204691,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 209970,
+          to 210030,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 210385,
+          to 210492,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 211132,
+          to 213738,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "exon"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000101557"
+        },
+        {
+          qual "gene_name",
+          val "USP14"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000261601"
+        },
+        {
+          qual "transcript_name",
+          val "USP14-201"
+        }
+      },
+      xref {
+        {
+          id local str "mrna|ENSG00000101557|ENST00000261601"
+        }
+      }
+    },
+    {
+      id local str "cds|ENSG00000101557|ENST00000261601",
+      data cdregion {
+      },
+      product whole local str "ENSP00000261601",
+      location mix {
+        int {
+          from 158698,
+          to 158713,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 163307,
+          to 163452,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 166786,
+          to 166818,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 178932,
+          to 179036,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 180235,
+          to 180338,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 192841,
+          to 192899,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 196636,
+          to 196766,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 197615,
+          to 197695,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 198046,
+          to 198131,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 199201,
+          to 199315,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 202879,
+          to 202944,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 203097,
+          to 203189,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 204563,
+          to 204691,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 209970,
+          to 210030,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 210385,
+          to 210492,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 211132,
+          to 211283,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "CDS"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000101557"
+        },
+        {
+          qual "gene_name",
+          val "USP14"
+        },
+        {
+          qual "protein_id",
+          val "ENSP00000261601"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000261601"
+        },
+        {
+          qual "transcript_name",
+          val "USP14-201"
+        }
+      },
+      xref {
+        {
+          id local str "mrna|ENSG00000101557|ENST00000261601"
+        }
+      }
+    },
+    {
+      id local str "mrna|ENSG00000101557|ENST00000383589",
+      data rna {
+        type mRNA
+      },
+      product whole local str "ENST00000383589",
+      location mix {
+        int {
+          from 158482,
+          to 158713,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 163307,
+          to 163452,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 166786,
+          to 166818,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 180235,
+          to 180338,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 192841,
+          to 192899,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 196636,
+          to 196766,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 197615,
+          to 197695,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 198046,
+          to 198131,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 199201,
+          to 199315,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 202879,
+          to 202944,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 203097,
+          to 203189,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 204563,
+          to 204691,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 209970,
+          to 210030,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 210385,
+          to 210492,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 211132,
+          to 213738,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "exon"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000101557"
+        },
+        {
+          qual "gene_name",
+          val "USP14"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000383589"
+        },
+        {
+          qual "transcript_name",
+          val "USP14-202"
+        }
+      },
+      xref {
+        {
+          id local str "mrna|ENSG00000101557|ENST00000261601"
+        }
+      }
+    },
+    {
+      id local str "cds|ENSG00000101557|ENST00000383589",
+      data cdregion {
+      },
+      product whole local str "ENSP00000373083",
+      location mix {
+        int {
+          from 158698,
+          to 158713,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 163307,
+          to 163452,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 166786,
+          to 166818,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 180235,
+          to 180338,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 192841,
+          to 192899,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 196636,
+          to 196766,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 197615,
+          to 197695,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 198046,
+          to 198131,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 199201,
+          to 199315,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 202879,
+          to 202944,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 203097,
+          to 203189,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 204563,
+          to 204691,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 209970,
+          to 210030,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 210385,
+          to 210492,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 211132,
+          to 211283,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "CDS"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000101557"
+        },
+        {
+          qual "gene_name",
+          val "USP14"
+        },
+        {
+          qual "protein_id",
+          val "ENSP00000373083"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000383589"
+        },
+        {
+          qual "transcript_name",
+          val "USP14-202"
+        }
+      },
+      xref {
+        {
+          id local str "mrna|ENSG00000101557|ENST00000261601"
+        }
+      }
+    },
+    {
+      id local str "mrna|ENSG00000101557|ENST00000400266",
+      data rna {
+        type mRNA
+      },
+      product whole local str "ENST00000400266",
+      location mix {
+        int {
+          from 158535,
+          to 158713,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 163307,
+          to 163452,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 178932,
+          to 179036,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 180235,
+          to 180338,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 192841,
+          to 192899,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 196636,
+          to 196766,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 197615,
+          to 197695,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 198046,
+          to 198131,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 199201,
+          to 199315,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 202879,
+          to 202944,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 203097,
+          to 203189,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 204563,
+          to 204691,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 209970,
+          to 210030,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 210385,
+          to 210492,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 211132,
+          to 211349,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "exon"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000101557"
+        },
+        {
+          qual "gene_name",
+          val "USP14"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000400266"
+        },
+        {
+          qual "transcript_name",
+          val "USP14-203"
+        }
+      },
+      xref {
+        {
+          id local str "mrna|ENSG00000101557|ENST00000261601"
+        }
+      }
+    },
+    {
+      id local str "cds|ENSG00000101557|ENST00000400266",
+      data cdregion {
+      },
+      product whole local str "ENSP00000383125",
+      location mix {
+        int {
+          from 158698,
+          to 158713,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 163307,
+          to 163452,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 178932,
+          to 179036,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 180235,
+          to 180338,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 192841,
+          to 192899,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 196636,
+          to 196766,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 197615,
+          to 197695,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 198046,
+          to 198131,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 199201,
+          to 199315,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 202879,
+          to 202944,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 203097,
+          to 203189,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 204563,
+          to 204691,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 209970,
+          to 210030,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 210385,
+          to 210492,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 211132,
+          to 211283,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "CDS"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000101557"
+        },
+        {
+          qual "gene_name",
+          val "USP14"
+        },
+        {
+          qual "protein_id",
+          val "ENSP00000383125"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000400266"
+        },
+        {
+          qual "transcript_name",
+          val "USP14-203"
+        }
+      },
+      xref {
+        {
+          id local str "mrna|ENSG00000101557|ENST00000261601"
+        }
+      }
+    },
+    {
+      id local str "mrna|ENSG00000079134|ENST00000261600",
+      data gene {
+        syn {
+          "ENSG00000079134"
+        }
+      },
+      location int {
+        from 214526,
+        to 268058,
+        strand minus,
+        id other {
+          accession "NC_000018"
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "exon"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000079134"
+        },
+        {
+          qual "gene_name",
+          val "THOC1"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000261600"
+        },
+        {
+          qual "transcript_name",
+          val "THOC1-201"
+        }
+      }
+    },
+    {
+      id local str "mrna|ENSG00000079134|ENST00000261600",
+      data rna {
+        type mRNA
+      },
+      product whole local str "ENST00000261600",
+      location mix {
+        int {
+          from 267965,
+          to 268058,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 265456,
+          to 265529,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 265302,
+          to 265362,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 264025,
+          to 264091,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 260185,
+          to 260303,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 259681,
+          to 259729,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 259179,
+          to 259274,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 254272,
+          to 254354,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 252538,
+          to 252611,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 247848,
+          to 247956,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 246323,
+          to 246454,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 226800,
+          to 226900,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 225336,
+          to 225402,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 225088,
+          to 225138,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 224923,
+          to 224993,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 224083,
+          to 224178,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 223439,
+          to 223504,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 218885,
+          to 218968,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 216485,
+          to 216632,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 215428,
+          to 215503,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 214526,
+          to 214920,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "exon"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000079134"
+        },
+        {
+          qual "gene_name",
+          val "THOC1"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000261600"
+        },
+        {
+          qual "transcript_name",
+          val "THOC1-201"
+        }
+      },
+      xref {
+        {
+          id local str "mrna|ENSG00000079134|ENST00000261600"
+        }
+      }
+    },
+    {
+      id local str "cds|ENSG00000079134|ENST00000261600",
+      data cdregion {
+      },
+      product whole local str "ENSP00000261600",
+      location mix {
+        int {
+          from 267965,
+          to 268018,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 265456,
+          to 265529,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 265302,
+          to 265362,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 264025,
+          to 264091,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 260185,
+          to 260303,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 259681,
+          to 259729,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 259179,
+          to 259274,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 254272,
+          to 254354,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 252538,
+          to 252611,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 247848,
+          to 247956,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 246323,
+          to 246454,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 226800,
+          to 226900,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 225336,
+          to 225402,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 225088,
+          to 225138,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 224923,
+          to 224993,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 224083,
+          to 224178,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 223439,
+          to 223504,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 218885,
+          to 218968,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 216485,
+          to 216632,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 215428,
+          to 215503,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 214625,
+          to 214920,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "CDS"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000079134"
+        },
+        {
+          qual "gene_name",
+          val "THOC1"
+        },
+        {
+          qual "protein_id",
+          val "ENSP00000261600"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000261600"
+        },
+        {
+          qual "transcript_name",
+          val "THOC1-201"
+        }
+      },
+      xref {
+        {
+          id local str "mrna|ENSG00000079134|ENST00000261600"
+        }
+      }
+    },
+    {
+      id local str "mrna|ENSG00000158270|ENST00000400256",
+      data gene {
+        syn {
+          "ENSG00000158270"
+        }
+      },
+      location int {
+        from 319354,
+        to 500728,
+        strand minus,
+        id other {
+          accession "NC_000018"
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "exon"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000158270"
+        },
+        {
+          qual "gene_name",
+          val "COLEC12"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000400256"
+        },
+        {
+          qual "transcript_name",
+          val "COLEC12-201"
+        }
+      }
+    },
+    {
+      id local str "mrna|ENSG00000158270|ENST00000400256",
+      data rna {
+        type mRNA
+      },
+      product whole local str "ENST00000400256",
+      location mix {
+        int {
+          from 500507,
+          to 500728,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 480706,
+          to 480756,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 357399,
+          to 357521,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 348064,
+          to 348162,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 346294,
+          to 347340,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 334741,
+          to 335229,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 333006,
+          to 333142,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 331667,
+          to 331776,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 321661,
+          to 321806,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 319354,
+          to 320063,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "exon"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000158270"
+        },
+        {
+          qual "gene_name",
+          val "COLEC12"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000400256"
+        },
+        {
+          qual "transcript_name",
+          val "COLEC12-201"
+        }
+      },
+      xref {
+        {
+          id local str "mrna|ENSG00000158270|ENST00000400256"
+        }
+      }
+    },
+    {
+      id local str "cds|ENSG00000158270|ENST00000400256",
+      data cdregion {
+      },
+      product whole local str "ENSP00000383115",
+      location mix {
+        int {
+          from 500507,
+          to 500513,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 480706,
+          to 480756,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 357399,
+          to 357521,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 348064,
+          to 348162,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 346294,
+          to 347340,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 334741,
+          to 335229,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 333006,
+          to 333142,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 331667,
+          to 331776,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 321661,
+          to 321806,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 320044,
+          to 320063,
+          strand minus,
+          id other {
+            accession "NC_000018"
+          }
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "CDS"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000158270"
+        },
+        {
+          qual "gene_name",
+          val "COLEC12"
+        },
+        {
+          qual "protein_id",
+          val "ENSP00000383115"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000400256"
+        },
+        {
+          qual "transcript_name",
+          val "COLEC12-201"
+        }
+      },
+      xref {
+        {
+          id local str "mrna|ENSG00000158270|ENST00000400256"
+        }
+      }
+    },
+    {
+      id local str "mrna|ENSG00000177143|ENST00000327228",
+      data gene {
+        syn {
+          "ENSG00000177143"
+        }
+      },
+      location int {
+        from 580366,
+        to 581523,
+        strand plus,
+        id other {
+          accession "NC_000018"
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "exon"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000177143"
+        },
+        {
+          qual "gene_name",
+          val "CETN1"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000327228"
+        },
+        {
+          qual "transcript_name",
+          val "CETN1-001"
+        }
+      }
+    },
+    {
+      id local str "mrna|ENSG00000177143|ENST00000327228",
+      data rna {
+        type mRNA
+      },
+      product whole local str "ENST00000327228",
+      location int {
+        from 580366,
+        to 581523,
+        strand plus,
+        id other {
+          accession "NC_000018"
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "exon"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000177143"
+        },
+        {
+          qual "gene_name",
+          val "CETN1"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000327228"
+        },
+        {
+          qual "transcript_name",
+          val "CETN1-001"
+        }
+      },
+      xref {
+        {
+          id local str "mrna|ENSG00000177143|ENST00000327228"
+        }
+      }
+    },
+    {
+      id local str "cds|ENSG00000177143|ENST00000327228",
+      data cdregion {
+      },
+      product whole local str "ENSP00000319052",
+      location int {
+        from 580408,
+        to 580926,
+        strand plus,
+        id other {
+          accession "NC_000018"
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "CDS"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000177143"
+        },
+        {
+          qual "gene_name",
+          val "CETN1"
+        },
+        {
+          qual "protein_id",
+          val "ENSP00000319052"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000327228"
+        },
+        {
+          qual "transcript_name",
+          val "CETN1-001"
+        }
+      },
+      xref {
+        {
+          id local str "mrna|ENSG00000177143|ENST00000327228"
+        }
+      }
+    },
+    {
+      id local str "mrna|ENSG00000222174|ENST00000410242",
+      data gene {
+        syn {
+          "ENSG00000222174"
+        }
+      },
+      location int {
+        from 586516,
+        to 586849,
+        strand minus,
+        id other {
+          accession "NC_000018"
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "misc_RNA"
+        },
+        {
+          qual "gff_type",
+          val "exon"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000222174"
+        },
+        {
+          qual "gene_name",
+          val "7SK.106"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000410242"
+        },
+        {
+          qual "transcript_name",
+          val "7SK.106-201"
+        }
+      }
+    },
+    {
+      id local str "mrna|ENSG00000222174|ENST00000410242",
+      data rna {
+        type mRNA
+      },
+      product whole local str "ENST00000410242",
+      location int {
+        from 586516,
+        to 586849,
+        strand minus,
+        id other {
+          accession "NC_000018"
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "misc_RNA"
+        },
+        {
+          qual "gff_type",
+          val "exon"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000222174"
+        },
+        {
+          qual "gene_name",
+          val "7SK.106"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000410242"
+        },
+        {
+          qual "transcript_name",
+          val "7SK.106-201"
+        }
+      },
+      xref {
+        {
+          id local str "mrna|ENSG00000222174|ENST00000410242"
+        }
+      }
+    },
+    {
+      id local str "mrna|ENSG00000079101|ENST00000400606",
+      data gene {
+        syn {
+          "ENSG00000079101"
+        }
+      },
+      location int {
+        from 596997,
+        to 650290,
+        strand plus,
+        id other {
+          accession "NC_000018"
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "exon"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000079101"
+        },
+        {
+          qual "gene_name",
+          val "CLUL1"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000400606"
+        },
+        {
+          qual "transcript_name",
+          val "CLUL1-202"
+        }
+      }
+    },
+    {
+      id local str "mrna|ENSG00000079101|ENST00000400606",
+      data rna {
+        type mRNA
+      },
+      product whole local str "ENST00000400606",
+      location mix {
+        int {
+          from 596997,
+          to 597128,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 617987,
+          to 618105,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 619212,
+          to 619360,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 624864,
+          to 625031,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 627096,
+          to 627528,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 633297,
+          to 633434,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 641326,
+          to 641540,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 644909,
+          to 645096,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 649897,
+          to 650290,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "exon"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000079101"
+        },
+        {
+          qual "gene_name",
+          val "CLUL1"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000400606"
+        },
+        {
+          qual "transcript_name",
+          val "CLUL1-202"
+        }
+      },
+      xref {
+        {
+          id local str "mrna|ENSG00000079101|ENST00000400606"
+        }
+      }
+    },
+    {
+      id local str "cds|ENSG00000079101|ENST00000400606",
+      data cdregion {
+      },
+      product whole local str "ENSP00000383449",
+      location mix {
+        int {
+          from 618000,
+          to 618105,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 619212,
+          to 619360,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 624864,
+          to 625031,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 627096,
+          to 627528,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 633297,
+          to 633434,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 641326,
+          to 641540,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 644909,
+          to 645096,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        },
+        int {
+          from 649897,
+          to 649900,
+          strand plus,
+          id other {
+            accession "NC_000018"
+          }
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "CDS"
+        },
+        {
+          qual "exon_number",
+          val "2"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000079101"
+        },
+        {
+          qual "gene_name",
+          val "CLUL1"
+        },
+        {
+          qual "protein_id",
+          val "ENSP00000383449"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000400606"
+        },
+        {
+          qual "transcript_name",
+          val "CLUL1-202"
+        }
+      },
+      xref {
+        {
+          id local str "mrna|ENSG00000079101|ENST00000400606"
+        }
+      }
+    },
+    {
+      id local str "mrna|ENSG00000079101|ENST00000540035",
+      data rna {
+        type mRNA
+      },
+      product whole local str "ENST00000540035",
+      location int {
+        from 597022,
+        to 597128,
+        strand plus,
+        id other {
+          accession "NC_000018"
+        }
+      },
+      qual {
+        {
+          qual "gff_source",
+          val "protein_coding"
+        },
+        {
+          qual "gff_type",
+          val "exon"
+        },
+        {
+          qual "exon_number",
+          val "1"
+        },
+        {
+          qual "gene_id",
+          val "ENSG00000079101"
+        },
+        {
+          qual "gene_name",
+          val "CLUL1"
+        },
+        {
+          qual "transcript_id",
+          val "ENST00000540035"
+        },
+        {
+          qual "transcript_name",
+          val "CLUL1-203"
+        }
+      },
+      xref {
+        {
+          id local str "mrna|ENSG00000079101|ENST00000400606"
+        }
+      }
+    }
+  }
+}

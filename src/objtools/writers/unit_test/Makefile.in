@@ -3,8 +3,10 @@
 # Meta-makefile ("objtools/writers" project)
 ############################################
 
-LIB_PROJ = xobjwrite
-SUB_PROJ = unit_test
+APP_PROJ = \
+	unit_test_gtfwriter
+
+PROJ_TAG = test
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

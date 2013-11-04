@@ -1,0 +1,34 @@
+#gtf-version 2.2
+U54469.1	Genbank	gene	80	2881	.	+	.	gene_id "eIF4E"; 
+U54469.1	Genbank	exon	80	224	.	+	.	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; exon_number "1"; 
+U54469.1	Genbank	exon	892	1458	.	+	.	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; exon_number "2"; 
+U54469.1	Genbank	exon	1550	1920	.	+	.	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; exon_number "3"; 
+U54469.1	Genbank	exon	1986	2085	.	+	.	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; exon_number "4"; 
+U54469.1	Genbank	exon	2317	2404	.	+	.	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; exon_number "5"; 
+U54469.1	Genbank	exon	2466	2881	.	+	.	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; exon_number "6"; 
+U54469.1	Genbank	exon	80	224	.	+	.	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; exon_number "1"; 
+U54469.1	Genbank	exon	1129	1458	.	+	.	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; exon_number "2"; 
+U54469.1	Genbank	exon	1550	1920	.	+	.	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; exon_number "3"; 
+U54469.1	Genbank	exon	1986	2085	.	+	.	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; exon_number "4"; 
+U54469.1	Genbank	exon	2317	2404	.	+	.	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; exon_number "5"; 
+U54469.1	Genbank	exon	2466	2881	.	+	.	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; exon_number "6"; 
+U54469.1	Genbank	exon	80	224	.	+	.	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; exon_number "1"; 
+U54469.1	Genbank	exon	1550	1920	.	+	.	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; exon_number "2"; 
+U54469.1	Genbank	exon	1986	2085	.	+	.	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; exon_number "3"; 
+U54469.1	Genbank	exon	2317	2404	.	+	.	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; exon_number "4"; 
+U54469.1	Genbank	exon	2466	2881	.	+	.	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; exon_number "5"; 
+U54469.1	Genbank	CDS	201	224	.	+	0	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; 
+U54469.1	Genbank	CDS	1550	1920	.	+	0	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; 
+U54469.1	Genbank	CDS	1986	2085	.	+	1	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; 
+U54469.1	Genbank	CDS	2317	2404	.	+	0	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; 
+U54469.1	Genbank	CDS	2466	2626	.	+	2	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; 
+U54469.1	Genbank	start_codon	201	203	.	+	0	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; 
+U54469.1	Genbank	stop_codon	2627	2629	.	+	0	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; 
+U54469.1	Genbank	CDS	1402	1458	.	+	0	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; 
+U54469.1	Genbank	CDS	1550	1920	.	+	0	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; 
+U54469.1	Genbank	CDS	1986	2085	.	+	1	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; 
+U54469.1	Genbank	CDS	2317	2404	.	+	0	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; 
+U54469.1	Genbank	CDS	2466	2626	.	+	2	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; 
+U54469.1	Genbank	start_codon	1402	1404	.	+	0	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; 
+U54469.1	Genbank	stop_codon	2627	2629	.	+	0	gene_id "eIF4E"; transcript_id "unknown_transcript_1"; 
+###
