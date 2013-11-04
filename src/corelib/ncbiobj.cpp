@@ -919,6 +919,9 @@ static const bool sx_abort_on_null =
 
 void CObject::ThrowNullPointerException(void)
 {
+#ifdef _DEBUG
+    ERR_POST(Error << "NULL pointer exception: " << CStackTrace());
+#endif
     if ( sx_abort_on_null ) {
         Abort();
     }
@@ -931,6 +934,9 @@ void CObject::ThrowNullPointerException(void)
 
 void CObject::ThrowNullPointerException(const type_info& type)
 {
+#ifdef _DEBUG
+    ERR_POST(Error << "NULL pointer exception: " << CStackTrace());
+#endif
     if ( sx_abort_on_null ) {
         Abort();
     }
