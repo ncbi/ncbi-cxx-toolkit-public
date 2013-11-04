@@ -1037,23 +1037,47 @@ Blast_RedoAlignParamsNew(Blast_MatrixInfo ** pmatrix_info,
 #define MINIMUM_LENGTH_NEAR_IDENTICAL 50
 
 
-static Boolean s_preliminaryTestNearIdentical(BlastCompo_QueryInfo query_info[], 
+/* this function is called for each align in the window, hence we need both
+   arguments */
+static Boolean s_preliminaryTestNearIdentical(BlastCompo_QueryInfo query_info[],
+                                              s_WindowInfo* window,
                                               BlastCompo_Alignment* align,
                                               double cutoff)
 {
   int queryIndex, queryLength, align_len;
 
-  queryIndex = align->queryIndex;
-  queryLength = query_info[queryIndex].seq.length;
-  if ((align->matchEnd - align->matchStart +1) <
-      (MIN(queryLength,  MINIMUM_LENGTH_NEAR_IDENTICAL)))
-    return(FALSE);
+  /* if cutoff > 0, use the more flexible test that allows for multiple HSPs,
+     and gaps in the alignments */
+  if (cutoff > 0) {
+      queryIndex = align->queryIndex;
+      queryLength = query_info[queryIndex].seq.length;
+      if ((align->matchEnd - align->matchStart +1) <
+          (MIN(queryLength,  MINIMUM_LENGTH_NEAR_IDENTICAL)))
+          return(FALSE);
 
-  align_len = MIN(align->queryEnd - align->queryStart,
-                  align->matchEnd - align->matchStart);
+      align_len = MIN(align->queryEnd - align->queryStart,
+                      align->matchEnd - align->matchStart);
 
-  if ((double)align->score / (double)align_len < cutoff) {
-      return (FALSE);
+      if ((double)align->score / (double)align_len < cutoff) {
+          return (FALSE);
+      }
+  }
+  else {
+      /* Otherwise fallback to the old near identical test. This is left for
+         compatibility with the code in c toolkit's tools/kappa.c */
+
+      if ((window->hspcnt > 1) || (window->hspcnt < 1))
+          return(FALSE);
+
+      queryIndex = align->queryIndex;
+      queryLength = query_info[queryIndex].seq.length;
+      if ((align->queryEnd - align->queryStart) !=
+          (align->matchEnd - align->matchStart))
+          return(FALSE);
+
+      if ((align->matchEnd - align->matchStart +1) <
+          (MIN(queryLength, MINIMUM_LENGTH_NEAR_IDENTICAL)))
+          return(FALSE);
   }
 
   return(TRUE);
@@ -1143,6 +1167,7 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
             if (hsp_index == 0 || subject_maybe_biased) {
 
                 nearIdenticalStatus = s_preliminaryTestNearIdentical(query_info,  
+                                             window,
                                              in_align,
                                              params->near_identical_cutoff);
             }
@@ -1332,7 +1357,8 @@ Blast_RedoOneMatchSmithWaterman(BlastCompo_Alignment ** alignments,
         query_index = window->query_range.context;
         query_composition = &query_info[query_index].composition;
 
-        nearIdenticalStatus = s_preliminaryTestNearIdentical(query_info,  
+        nearIdenticalStatus = s_preliminaryTestNearIdentical(query_info,
+                                             window,
                                              window->align,
                                              params->near_identical_cutoff);
 
