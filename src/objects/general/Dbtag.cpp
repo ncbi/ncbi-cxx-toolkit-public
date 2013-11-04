@@ -314,8 +314,17 @@ void CDbtag::GetLabel(string* label) const
     const CObject_id& id = GetTag();
     switch (id.Which()) {
     case CObject_id::e_Str:
-        *label += GetDb() + ": " + id.GetStr();
+    {
+        const string& db  = GetDb();
+        const string& str = id.GetStr();
+        if (str.size() > db.size()  &&  str[db.size()] == ':'
+            &&  NStr::StartsWith(str, db, NStr::eNocase)) {
+            *label += str; // already prefixed; no need to re-tag
+        } else {
+            *label += db + ": " + str;
+        }
         break;
+    }
     case CObject_id::e_Id:
         *label += GetDb() + ": " + NStr::IntToString(id.GetId());
         break;
