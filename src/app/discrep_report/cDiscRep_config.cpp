@@ -356,7 +356,8 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
        arr.clear();
        EFix_type fixtp = (*rit)->GetRule_type();
        if (fixtp == eFix_type_typo) strtmp = CBioseq_on_SUSPECT_RULE :: GetName_typo();
-       else if (fixtp == eFix_type_quickfix) strtmp = CBioseq_on_SUSPECT_RULE::GetName_qfix();
+       else if (fixtp == eFix_type_quickfix) 
+                      strtmp = CBioseq_on_SUSPECT_RULE::GetName_qfix();
        else strtmp = CBioseq_on_SUSPECT_RULE :: GetName_name();
        arr.push_back(strtmp);  // test_name
        arr.push_back(fix_type_names[(int)fixtp]);  // fixtp_name
@@ -989,8 +990,7 @@ cout << "Number of bioseq: " << myChecker.GetNumBioseq() << endl;
 
 
 static const s_test_property test1_list[] = {
-   {"MISSING_PROJECT", fAsndisc},
-   {"DISC_INCONSISTENT_MOLINFO_TECH", fDiscrepancy | fAsndisc},
+   {"SUSPECT_PRODUCT_NAMES", fDiscrepancy | fAsndisc},
 };
 
 static const s_test_property test_list[] = {
@@ -1135,6 +1135,7 @@ static const s_test_property test_list[] = {
 // tests_on_SeqEntry
    {"DISC_FLATFILE_FIND_ONCALLER", fAsndisc},
    {"DISC_FEATURE_COUNT", fOncaller | fAsndisc}, // asndisc version   
+   {"TEST_ALIGNMENT_HAS_SCORE", fDiscrepancy | fAsndisc},
 
 // tests_on_SeqEntry_feat_desc: all CSeqEntry_Feat_desc tests need RmvRedundancy
    {"DISC_INCONSISTENT_STRUCTURED_COMMENTS", fDiscrepancy | fAsndisc},
@@ -1155,7 +1156,7 @@ static const s_test_property test_list[] = {
    {"DISC_MISSING_VIRAL_QUALS", fAsndisc},
    {"DISC_INFLUENZA_DATE_MISMATCH", fDiscrepancy | fAsndisc},
    {"TAX_LOOKUP_MISSING", fDiscrepancy | fAsndisc},
-   {"TAX_LOOKUP_MISMATCH", fAsndisc},
+   {"TAX_LOOKUP_MISMATCH", fDiscrepancy | fAsndisc},
    {"MISSING_STRUCTURED_COMMENT", fAsndisc},
    {"ONCALLER_MISSING_STRUCTURED_COMMENTS", fAsndisc},
    {"DISC_MISSING_AFFIL", fAsndisc},
@@ -1312,7 +1313,8 @@ if (i > sz) return;
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("SUSPECT_PHRASES") != thisTest.tests_run.end()) {
-        thisGrp.tests_on_Bioseq.push_back(CRef <CTestAndRepData>(new CBioseq_SUSPECT_PHRASES));
+        thisGrp.tests_on_Bioseq_CFeat.push_back(
+                                CRef <CTestAndRepData>(new CBioseq_SUSPECT_PHRASES));
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("DISC_SUSPECT_RRNA_PRODUCTS") != thisTest.tests_run.end()) {
@@ -1849,6 +1851,11 @@ if (i > sz) return;
    }
    if ( thisTest.tests_run.find("DISC_FEATURE_COUNT_oncaller") != thisTest.tests_run.end()) { // asndisc version   
        thisGrp.tests_on_SeqEntry.push_back(CRef <CTestAndRepData>(new CSeqEntry_DISC_FEATURE_COUNT));
+        if (++i >= sz) return;
+   }
+   if ( thisTest.tests_run.find("TEST_ALIGNMENT_HAS_SCORE") != thisTest.tests_run.end()) {
+       thisGrp.tests_on_SeqEntry.push_back(
+                        CRef <CTestAndRepData>(new CSeqEntry_TEST_ALIGNMENT_HAS_SCORE));
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("DISC_INCONSISTENT_STRUCTURED_COMMENTS") != thisTest.tests_run.end()) {
@@ -2427,8 +2434,6 @@ void CRepConfig :: CollectTests()
    }
   
    GetTestList();
-ITERATE (set <string>, it, thisTest.tests_run)
-  cerr << "test " << *it << endl;
 };
 
 void CRepConfAsndisc :: Run(CRef <CRepConfig> config)

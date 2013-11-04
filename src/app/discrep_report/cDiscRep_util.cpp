@@ -1158,7 +1158,7 @@ string CTestAndRepData :: SeqLocPrintUseBestID(const CSeq_loc& seq_loc, bool ran
         location += SeqLocPrintUseBestID(**it) + ", ";
      }
      if (!location.empty()) location = location.substr(0, location.size()-2);
-     location = ")"; 
+     location += ")"; 
   }
   else if (seq_loc.IsPacked_int()) {
      location = "(";
@@ -1230,7 +1230,7 @@ const CSeq_feat* CTestAndRepData :: GetCDFeatFromProtFeat(const CSeq_feat& prot)
 string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
 {
       CSeq_feat* seq_feat_p = const_cast <CSeq_feat*>(&seq_feat);
-//cerr << "seq_feat_p " << Blob2Str(*seq_feat_p, eSerial_AsnText) << endl;
+// cerr << "seq_feat_p " << Blob2Str(*seq_feat_p, eSerial_AsnText) << endl;
 
       if ( seq_feat.GetData().IsProt()) {
         const CSeq_feat* cds = GetCDFeatFromProtFeat(seq_feat);
@@ -1334,7 +1334,7 @@ void CTestAndRepData :: AddSubcategory(CRef <CClickableItem>& c_item, const stri
             c_sub->description = GetIsComment(cnt, desc1) + desc2;
             break;
        case e_HasComment:
-            c_sub->description = GetHasComment(cnt, desc1) + desc2; 
+            c_sub->description = GetHasComment(cnt, desc1) + desc2 + desc3; 
             break;
        case e_DoesComment:
             c_sub->description = GetDoesComment(cnt, desc1) + desc2; 

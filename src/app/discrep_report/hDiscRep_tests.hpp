@@ -452,7 +452,7 @@ namespace DiscRepNmSpc {
                                                   const CLocation_constraint& loc_cons);
     private:
       bool x_DoesStrContainPlural(const string& word, char last_letter, 
-                                                         char second_to_last_letter);
+                                    char second_to_last_letter, char next_letter);
   };
 
   class CDiscRepUtil
@@ -1739,6 +1739,20 @@ namespace DiscRepNmSpc {
        vector <CSeqdesc::E_Choice> m_seqdesc_sel;
   };
 
+  class CSeqEntry_TEST_ALIGNMENT_HAS_SCORE : public CSeqEntryTestAndRepData
+  {
+    public:
+      virtual ~CSeqEntry_TEST_ALIGNMENT_HAS_SCORE () {};
+
+      virtual void TestOnObj(const CSeq_entry& seq_entry);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("TEST_ALIGNMENT_HAS_SCORE");}
+
+    protected:
+      void x_CheckSeqAlign(const CSeq_align& aln, const string& desc, CConstRef<CObject> obj);
+      void x_CheckSeqEntryAlign(const CSeq_entry& seq_entry);
+  };
+
   class CSeqEntry_DISC_FLATFILE_FIND_ONCALLER : public CSeqEntryTestAndRepData
   {
     public:
@@ -2060,7 +2074,7 @@ namespace DiscRepNmSpc {
       string GetName_non_nt() const {return string("TEST_UNUSUAL_NT"); }
 
       bool x_IsDeltaSeqWithFarpointers(const CBioseq& bioseq);
-      void x_AddNsReport(CRef <CClickableItem>& c_item, bool is_n10=true);
+      void x_AddNsReport(CRef <CClickableItem>& c_item);
   };
 
   class CBioseq_N_RUNS : public CBioseq_on_base

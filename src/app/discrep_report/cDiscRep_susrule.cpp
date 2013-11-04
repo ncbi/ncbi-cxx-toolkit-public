@@ -1482,14 +1482,15 @@ bool CSuspectRuleCheck :: DoesStringMatchConstraint(const string& str, const CSt
   else return rval;
 };
 
-bool CSuspectRuleCheck :: x_DoesStrContainPlural(const string& word, char last_letter, char second_to_last_letter)
+bool CSuspectRuleCheck :: x_DoesStrContainPlural(const string& word, char last_letter, char second_to_last_letter, char next_letter)
 {
    unsigned len = word.size();
    if (last_letter == 's') {
       if (len >= 5  && CTempString(word).substr(len-5) == "trans") return false; // not plural;
       else if (len > 3) {
         if (second_to_last_letter != 's' && second_to_last_letter != 'i'
-                                               && second_to_last_letter != 'u')
+                                         && second_to_last_letter != 'u'
+                                         && next_letter == ',')
            return true;
       }
    }
@@ -1499,26 +1500,42 @@ bool CSuspectRuleCheck :: x_DoesStrContainPlural(const string& word, char last_l
 
 bool CSuspectRuleCheck :: StringMayContainPlural(const string& str)
 {
-  char    last_letter, second_to_last_letter;
+  char last_letter, second_to_last_letter, next_letter;
   bool may_contain_plural = false;
   string word_skip = " ,";
+  unsigned len;
 
   if (str.empty()) return false;
-  string search = str;
-  arr = NStr::Tokenize(str, " ,", arr);
-  if (arr.size() == 1) { // doesn't have ',', or the last char is ','
-     strtmp = arr[0];
-     last_letter = strtmp[strtmp.size()-1];
-     second_to_last_letter = strtmp[strtmp.size()-2]; 
+  arr = NStr::Tokenize(str, " ,", arr, NStr::eMergeDelims);
+  if (arr.size() == 1) { // doesn't have ', ', or the last char is ', '
+     len = arr[0].size();
+     if (len == 1) return false;
+     last_letter = arr[0][len-1];
+     second_to_last_letter = arr[0][len-2]; 
+     if (len == str.size()) next_letter = ',';
+     else next_letter = str[len];
      may_contain_plural 
-         = x_DoesStrContainPlural(strtmp, last_letter, second_to_last_letter);
+         = x_DoesStrContainPlural(arr[0], last_letter, second_to_last_letter, next_letter);
   }
   else {
-    strtmp = arr[arr.size()-2];
-    last_letter = strtmp[strtmp.size()-1];
-    second_to_last_letter = strtmp[strtmp.size()-2];
-    may_contain_plural 
-         = x_DoesStrContainPlural(strtmp, last_letter, second_to_last_letter);
+    strtmp = str;
+    size_t pos;
+    ITERATE (vector <string>, it, arr) { 
+      pos = strtmp.find(*it);
+      len = (*it).size();
+      if (len == 1) {
+         strtmp = CTempString(strtmp).substr(pos+len);
+         continue;
+      }
+      last_letter = (*it)[len-1];
+      second_to_last_letter = (*it)[len-2];
+      if (len == strtmp.size()) next_letter = ',';
+      else next_letter = strtmp[pos+len];
+      may_contain_plural 
+         = x_DoesStrContainPlural(*it, last_letter, second_to_last_letter, next_letter);
+      if (may_contain_plural) break;
+      strtmp = CTempString(strtmp).substr(pos+len);
+    }
   }
   arr.clear();
   return may_contain_plural;
