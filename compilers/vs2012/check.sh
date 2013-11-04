@@ -34,6 +34,7 @@ errcode=0
 # Get build directory
 build_dir=`dirname $script`
 build_dir=`(cd "$build_dir"; pwd)`
+timer="date +'%H:%M'"
 
 if [ ! -d $build_dir ] ; then
     error "Build directory $build_dir not found"
@@ -90,6 +91,8 @@ for cfg in $cfgs ; do
     x_tree=`echo $cfg | sed -e 's/,.*$//'`
     x_sol=`echo $cfg | sed -e 's/^[^,]*,//' -e 's/,.*$//' -e 's/\.sln//' -e 's|\\\|/|g'`
     x_cfg=`echo $cfg | sed -e 's/^.*,//'`
+    start=`eval $timer`
+    echo $start
     echo CHECK_$method: $x_tree/$x_sol/$x_cfg
 
     cd $build_dir
@@ -110,6 +113,7 @@ for cfg in $cfgs ; do
             $check_dir/check.sh run  ||  errcode=$?
             cat $check_dir/check.sh.log >> $res_log
             cat $check_dir/check.sh.log >> $build_dir/check.sh.${x_tree}_${x_cfg}.log
+            echo "Check time: $start - `eval $timer`"
             ;;
         concat )
             $check_dir/check.sh concat
