@@ -234,7 +234,7 @@ xml::document::document (const document_proxy &  doc_proxy) :
     set_doc_data_from_xslt(doc_proxy.xslt_result_->get_raw_doc(),
                            doc_proxy.xslt_result_,
                            doc_proxy.treat_);
-    // Now the reult doc is owned
+    // Now the result doc is owned
     doc_proxy.release();
 }
 //####################################################################

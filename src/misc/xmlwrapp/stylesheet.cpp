@@ -75,6 +75,24 @@
 #include "stylesheet_impl.hpp"
 
 
+namespace xslt {
+    namespace impl {
+        void destroy_stylesheet (xsltStylesheetPtr ss)
+        {
+            if (ss->_private == NULL)
+                xsltFreeStylesheet(ss);
+            else {
+                stylesheet_refcount * ss_rc =
+                        static_cast<stylesheet_refcount *>(ss->_private);
+                if (ss_rc->dec_ref() == 0) {
+                    delete ss_rc;
+                    xsltFreeStylesheet(ss);
+                }
+            }
+        }
+    }
+}
+
 
 void xslt::impl::stylesheet_impl::clear_nodes (void)
 {
@@ -241,7 +259,23 @@ public:
     // than the lifetime of this object.
     result_impl(xmlDocPtr doc, xsltStylesheetPtr ss) :
         doc_(doc), ss_(ss)
-    {}
+    {
+        if (ss_->_private)
+            static_cast<xslt::impl::stylesheet_refcount*>(ss_->_private)->inc_ref();
+    }
+
+    result_impl(const result_impl &  other) :
+        doc_(other.doc_), ss_(other.ss_)
+    {
+        if (ss_->_private)
+            static_cast<xslt::impl::stylesheet_refcount*>(ss_->_private)->inc_ref();
+    }
+
+    virtual ~result_impl()
+    {
+        if (ss_)
+            xslt::impl::destroy_stylesheet(ss_);
+    }
 
     virtual void save_to_string(std::string &s) const
     {
@@ -278,6 +312,8 @@ private:
     friend class xml::document;
     xmlDocPtr           doc_;
     xsltStylesheetPtr   ss_;
+
+    result_impl & operator=(const result_impl &);
 };
 
 
@@ -423,10 +459,13 @@ xslt::impl::result *  xslt::impl::make_copy (xslt::impl::result *  pattern)
 
 xslt::stylesheet::stylesheet(const char *filename)
 {
-    std::auto_ptr<impl::stylesheet_impl>    ap(pimpl_ = new impl::stylesheet_impl);
-    xml::error_messages                     msgs;
-    xml::document                           doc(filename, &msgs, xml::type_warnings_not_errors);
-    xmlDocPtr                               xmldoc = static_cast<xmlDocPtr>(doc.get_doc_data());
+    std::auto_ptr<impl::stylesheet_impl>
+                    ap(pimpl_ = new impl::stylesheet_impl);
+    xml::error_messages msgs;
+    xml::document       doc(filename, &msgs, xml::type_warnings_not_errors);
+    xmlDocPtr           xmldoc = static_cast<xmlDocPtr>(doc.get_doc_data());
+    std::auto_ptr<impl::stylesheet_refcount>
+                    rc_ap(new impl::stylesheet_refcount);
 
     if ( (pimpl_->ss_ = xsltParseStylesheetDoc(xmldoc)) == 0)
     {
@@ -439,9 +478,12 @@ xslt::stylesheet::stylesheet(const char *filename)
                                             xml::error_message::type_error));
         throw xml::parser_exception(msgs);
     }
+    rc_ap->inc_ref();
+    pimpl_->ss_->_private = rc_ap.get();
 
     // if we got this far, the xmldoc we gave to xsltParseStylesheetDoc is
     // now owned by the stylesheet and will be cleaned up in our destructor.
+    rc_ap.release();
     doc.release_doc_data();
     ap.release();
 }
@@ -454,6 +496,8 @@ xslt::stylesheet::stylesheet(const xml::document &  doc)
                                                 doc_copy.get_doc_data());
     std::auto_ptr<impl::stylesheet_impl>
                             ap(pimpl_ = new impl::stylesheet_impl);
+    std::auto_ptr<impl::stylesheet_refcount>
+                            rc_ap(new impl::stylesheet_refcount);
 
     if ( (pimpl_->ss_ = xsltParseStylesheetDoc(xmldoc)) == 0)
     {
@@ -467,9 +511,12 @@ xslt::stylesheet::stylesheet(const xml::document &  doc)
                                             xml::error_message::type_error));
         throw xml::parser_exception(messages);
     }
+    rc_ap->inc_ref();
+    pimpl_->ss_->_private = rc_ap.get();
 
     // if we got this far, the xmldoc we gave to xsltParseStylesheetDoc is
     // now owned by the stylesheet and will be cleaned up in our destructor.
+    rc_ap.release();
     doc_copy.release_doc_data();
     ap.release();
 }
@@ -483,6 +530,8 @@ xslt::stylesheet::stylesheet (const char* data, size_t size)
     xml::document           doc(data, size, &msgs,
                                 xml::type_warnings_not_errors);
     xmlDocPtr               xmldoc = static_cast<xmlDocPtr>(doc.get_doc_data());
+    std::auto_ptr<impl::stylesheet_refcount>
+                            rc_ap(new impl::stylesheet_refcount);
 
     if ( (pimpl_->ss_ = xsltParseStylesheetDoc(xmldoc)) == 0)
     {
@@ -495,9 +544,12 @@ xslt::stylesheet::stylesheet (const char* data, size_t size)
                                             xml::error_message::type_error));
         throw xml::parser_exception(msgs);
     }
+    rc_ap->inc_ref();
+    pimpl_->ss_->_private = rc_ap.get();
 
     // if we got this far, the xmldoc we gave to xsltParseStylesheetDoc is
     // now owned by the stylesheet and will be cleaned up in our destructor.
+    rc_ap.release();
     doc.release_doc_data();
     ap.release();
 }
@@ -510,6 +562,8 @@ xslt::stylesheet::stylesheet (std::istream & stream)
     xml::error_messages     msgs;
     xml::document           doc(stream, &msgs, xml::type_warnings_not_errors);
     xmlDocPtr               xmldoc = static_cast<xmlDocPtr>(doc.get_doc_data());
+    std::auto_ptr<impl::stylesheet_refcount>
+                            rc_ap(new impl::stylesheet_refcount);
 
     if ( (pimpl_->ss_ = xsltParseStylesheetDoc(xmldoc)) == 0)
     {
@@ -522,9 +576,12 @@ xslt::stylesheet::stylesheet (std::istream & stream)
                                             xml::error_message::type_error));
         throw xml::parser_exception(msgs);
     }
+    rc_ap->inc_ref();
+    pimpl_->ss_->_private = rc_ap.get();
 
     // if we got this far, the xmldoc we gave to xsltParseStylesheetDoc is
     // now owned by the stylesheet and will be cleaned up in our destructor.
+    rc_ap.release();
     doc.release_doc_data();
     ap.release();
 }
@@ -613,7 +670,7 @@ xslt::stylesheet::~stylesheet()
     }
 
     if (pimpl_->ss_)
-        xsltFreeStylesheet(pimpl_->ss_);
+        xslt::impl::destroy_stylesheet(pimpl_->ss_);
     delete pimpl_;
 }
 

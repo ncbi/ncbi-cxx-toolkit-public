@@ -177,6 +177,7 @@ public:
      * is returned. If there is an error during transformation, this
      * function will throw an xml::exception exception.
      *
+     * @attention The method is not thread safe
      * @note The xslt output method is taken into account when the result
      * document is saved later into a string or a stream as in (e.g. to
      * suppress XML declaration):
@@ -196,6 +197,7 @@ public:
      * is returned. If there is an error during transformation, this
      * function will throw an xml::exception exception.
      *
+     * @attention The method is not thread safe
      * @note The xslt output method is taken into account when the result
      * document is saved later into a string or a stream as in (e.g. to
      * suppress XML declaration):

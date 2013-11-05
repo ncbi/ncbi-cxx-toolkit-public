@@ -76,6 +76,17 @@ typedef std::map<ext_elem_key,
 
 namespace xslt {
     namespace impl {
+        struct stylesheet_refcount
+        {
+            stylesheet_refcount (void) : count_(0) {}
+
+            void inc_ref (void) { ++count_; }
+            size_t dec_ref (void) { return --count_; }
+
+            size_t  count_;
+        };
+
+
         struct stylesheet_impl
         {
             stylesheet_impl (void) : ss_(0), errors_occured_(false) { }
@@ -94,6 +105,10 @@ namespace xslt {
 
             void clear_nodes (void);
         };
+
+        // Decrements the stylesheet reference counter and
+        // destroys it if the counter reached zero
+        void destroy_stylesheet (xsltStylesheetPtr ss);
     }
 }
 
