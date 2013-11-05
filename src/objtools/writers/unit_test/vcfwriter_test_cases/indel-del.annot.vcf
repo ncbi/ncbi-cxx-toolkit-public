@@ -1,0 +1,10 @@
+##fileformat=VCFv4.1
+##INFO=<ID=DB,Number=0,Type=Flag,Description="dbSNP Membership">
+##INFO=<ID=H2,Number=0,Type=Flag,Description="Hapmap2 Membership">
+##INFO=<ID=H3,Number=0,Type=Flag,Description="Hapmap3 Membership">
+##INFO=<ID=RL,Number=1,Type=String,Description="Resource Link">
+##INFO=<ID=FBV,Number=1,Type=String,Description="Frequency Based Validation">
+##INFO=<ID=GTP,Number=1,Type=String,Description="Genotype">
+##INFO=<ID=QC,Number=1,Type=String,Description="Quality Check">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+NC_000008.10	2	rs000	NN	?,?,?,?	.	PASS	DB;PM

@@ -1,0 +1,371 @@
+Seq-annot ::= {
+  desc {
+    user {
+      type str "vcf-meta-info",
+      data {
+        {
+          label str "meta-information",
+          num 9,
+          data strs {
+            "fileformat=VCFv4.0",
+            "fileDate=20120616",
+            "source=dbSNP",
+            "dbSNP_BUILD_ID=137",
+            "reference=GRCh37.p5",
+            "phasing=partial",
+            "variationPropertyDocumentationUrl=ftp://ftp.ncbi.nlm.nih.gov/snp/
+specs/dbSNP_BitField_latest.pdf",
+            "INFO=<ID=GCF,Number=0,Type=Flag,Description=""Has Genotype
+ Conflict Same (rs, ind), different genotype.  N/N is not included."">",
+            "FILTER=<ID=NC,Description=""Inconsistent Genotype Submission For
+ At Least One Sample"">"
+          }
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs199476396"
+        },
+        variant-prop {
+          version 5,
+          resource-link 0,
+          gene-location 0,
+          effect no-change,
+          mapping 0,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "C"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 985954,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs61752093"
+        },
+        variant-prop {
+          version 5,
+          resource-link 0,
+          gene-location 0,
+          effect no-change,
+          mapping 0,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 2,
+                      seq-data iupacna "AG"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type del,
+                delta {
+                  {
+                    seq this NULL,
+                    action del-at
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location int {
+        from 2338019,
+        to 2338020,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs80359840"
+        },
+        variant-prop {
+          version 5,
+          resource-link 0,
+          gene-location 0,
+          effect no-change,
+          mapping 0,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 4,
+                      seq-data iupacna "CGAT"
+                    },
+                    action ins-before
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 4339280,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs13785321"
+        },
+        variant-prop {
+          version 5,
+          resource-link 0,
+          gene-location 0,
+          effect no-change,
+          mapping 0,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 2,
+                      seq-data iupacna "TG"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type mnp,
+                delta {
+                  {
+                    seq literal {
+                      length 2,
+                      seq-data iupacna "CA"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location int {
+        from 4077314,
+        to 4077315,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs1234"
+        },
+        variant-prop {
+          version 5,
+          resource-link 0,
+          gene-location 0,
+          effect no-change,
+          mapping 0,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 3,
+                      seq-data iupacna "TTT"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type delins,
+                delta {
+                  {
+                    seq literal {
+                      length 0,
+                      seq-data iupacna ""
+                    }
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type delins,
+                delta {
+                  {
+                    seq literal {
+                      length 3,
+                      seq-data iupacna "TTA"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type delins,
+                delta {
+                  {
+                    seq literal {
+                      length 3,
+                      seq-data iupacna "TAA"
+                    }
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type delins,
+                delta {
+                  {
+                    seq literal {
+                      length 6,
+                      seq-data iupacna "TTTAAA"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location int {
+        from 91666,
+        to 91668,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          }
+        }
+      }
+    }
+  }
+}

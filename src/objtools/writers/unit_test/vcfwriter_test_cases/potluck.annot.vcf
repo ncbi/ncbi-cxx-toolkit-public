@@ -1,0 +1,15 @@
+##fileformat=VCFv4.0
+##fileDate=20120616
+##source=dbSNP
+##dbSNP_BUILD_ID=137
+##reference=GRCh37.p5
+##phasing=partial
+##variationPropertyDocumentationUrl=ftp://ftp.ncbi.nlm.nih.gov/snp/specs/dbSNP_BitField_latest.pdf
+##INFO=<ID=GCF,Number=0,Type=Flag,Description="Has Genotype Conflict Same (rs, ind), different genotype.  N/N is not included.">
+##FILTER=<ID=NC,Description="Inconsistent Genotype Submission For At Least One Sample">
+#CHROM	POS	ID	REF	ALT	QUAL	FILTER	INFO
+1	91667	rs1234	TTT	?,?,?,?	.	.	.
+1	985955	rs199476396	G	C	.	.	.
+1	2338020	rs61752093	AG	.	.	.	.
+1	4077315	rs13785321	TG	?	.	.	.
+1	4339280	rs80359840		.	.	.	.

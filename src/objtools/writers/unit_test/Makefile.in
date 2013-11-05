@@ -4,7 +4,8 @@
 ############################################
 
 APP_PROJ = \
-	unit_test_gtfwriter
+	unit_test_gtfwriter \
+	unit_test_vcfwriter
 
 PROJ_TAG = test
 

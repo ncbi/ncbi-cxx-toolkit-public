@@ -1,0 +1,2477 @@
+Seq-annot ::= {
+  desc {
+    user {
+      type str "vcf-meta-info",
+      data {
+        {
+          label str "meta-information",
+          num 67,
+          data strs {
+            "fileformat=VCFv4.0",
+            "fileDate=20120616",
+            "source=dbSNP",
+            "dbSNP_BUILD_ID=137",
+            "reference=GRCh37.p5",
+            "phasing=partial",
+            "variationPropertyDocumentationUrl=ftp://ftp.ncbi.nlm.nih.gov/snp/
+specs/dbSNP_BitField_latest.pdf",
+            "INFO=<ID=RSPOS,Number=1,Type=Integer,Description=""Chr position
+ reported in dbSNP"">",
+            "INFO=<ID=RV,Number=0,Type=Flag,Description=""RS orientation is
+ reversed"">",
+            "INFO=<ID=VP,Number=1,Type=String,Description=""Variation
+ Property.  Documentation is at
+ ftp://ftp.ncbi.nlm.nih.gov/snp/specs/dbSNP_BitField_latest.pdf"">",
+            "INFO=<ID=GENEINFO,Number=1,Type=String,Description=""Pairs each
+ of gene symbol:gene id.  The gene symbol and id are delimited by a colon (:)
+ and each pair is delimited by a vertical bar (|)"">",
+            "INFO=<ID=dbSNPBuildID,Number=1,Type=Integer,Description=""First
+ dbSNP Build for RS"">",
+            "INFO=<ID=SAO,Number=1,Type=Integer,Description=""Variant Allele
+ Origin: 0 - unspecified, 1 - Germline, 2 - Somatic, 3 - Both"">",
+            "INFO=<ID=SSR,Number=1,Type=Integer,Description=""Variant Suspect
+ Reason Code, 0 - unspecified, 1 - Paralog, 2 - byEST, 3 - Para_EST, 4 -
+ oldAlign, 5 - other"">",
+            "INFO=<ID=GMAF,Number=1,Type=Float,Description=""Global Minor
+ Allele Frequency [0, 0.5]; global population is 1000GenomesProject phase 1
+ genotype data from 629 individuals, released in the 11-23-2010 dataset"">",
+            "INFO=<ID=WGT,Number=1,Type=Integer,Description=""Weight, 00 -
+ unmapped, 1 - weight 1, 2 - weight 2, 3 - weight 3 or more"">",
+            "INFO=<ID=VC,Number=1,Type=String,Description=""Variation Class"">",
+            "INFO=<ID=PM,Number=0,Type=Flag,Description=""Variant is
+ Precious(Clinical,Pubmed Cited)"">",
+            "INFO=<ID=TPA,Number=0,Type=Flag,Description=""Provisional Third
+ Party Annotation(TPA) (currently rs from PHARMGKB who will give phenotype
+ data)"">",
+            "INFO=<ID=PMC,Number=0,Type=Flag,Description=""Links exist to
+ PubMed Central article"">",
+            "INFO=<ID=S3D,Number=0,Type=Flag,Description=""Has 3D structure -
+ SNP3D table"">",
+            "INFO=<ID=SLO,Number=0,Type=Flag,Description=""Has
+ SubmitterLinkOut - From SNP->SubSNP->Batch.link_out"">",
+            "INFO=<ID=NSF,Number=0,Type=Flag,Description=""Has non-synonymous
+ frameshift A coding region variation where one allele in the set changes all
+ downstream amino acids. FxnClass = 44"">",
+            "INFO=<ID=NSM,Number=0,Type=Flag,Description=""Has non-synonymous
+ missense A coding region variation where one allele in the set changes
+ protein peptide. FxnClass = 42"">",
+            "INFO=<ID=NSN,Number=0,Type=Flag,Description=""Has non-synonymous
+ nonsense A coding region variation where one allele in the set changes to
+ STOP codon (TER). FxnClass = 41"">",
+            "INFO=<ID=REF,Number=0,Type=Flag,Description=""Has reference A
+ coding region variation where one allele in the set is identical to the
+ reference sequence. FxnCode = 8"">",
+            "INFO=<ID=SYN,Number=0,Type=Flag,Description=""Has synonymous A
+ coding region variation where one allele in the set does not change the
+ encoded amino acid. FxnCode = 3"">",
+            "INFO=<ID=U3,Number=0,Type=Flag,Description=""In 3' UTR Location
+ is in an untranslated region (UTR). FxnCode = 53"">",
+            "INFO=<ID=U5,Number=0,Type=Flag,Description=""In 5' UTR Location
+ is in an untranslated region (UTR). FxnCode = 55"">",
+            "INFO=<ID=ASS,Number=0,Type=Flag,Description=""In acceptor splice
+ site FxnCode = 73"">",
+            "INFO=<ID=DSS,Number=0,Type=Flag,Description=""In donor
+ splice-site FxnCode = 75"">",
+            "INFO=<ID=INT,Number=0,Type=Flag,Description=""In Intron FxnCode =
+ 6"">",
+            "INFO=<ID=R3,Number=0,Type=Flag,Description=""In 3' gene region
+ FxnCode = 13"">",
+            "INFO=<ID=R5,Number=0,Type=Flag,Description=""In 5' gene region
+ FxnCode = 15"">",
+            "INFO=<ID=OTH,Number=0,Type=Flag,Description=""Has other variant
+ with exactly the same set of mapped positions on NCBI refernce assembly."">",
+            "INFO=<ID=CFL,Number=0,Type=Flag,Description=""Has Assembly
+ conflict. This is for weight 1 and 2 variant that maps to different
+ chromosomes on different assemblies."">",
+            "INFO=<ID=ASP,Number=0,Type=Flag,Description=""Is Assembly
+ specific. This is set if the variant only maps to one assembly"">",
+            "INFO=<ID=MUT,Number=0,Type=Flag,Description=""Is mutation
+ (journal citation, explicit fact): a low frequency variation that is cited in
+ journal and other reputable sources"">",
+            "INFO=<ID=VLD,Number=0,Type=Flag,Description=""Is Validated.  This
+ bit is set if the variant has 2+ minor allele count based on frequency or
+ genotype data."">",
+            "INFO=<ID=G5A,Number=0,Type=Flag,Description="">5% minor allele
+ frequency in each and all populations"">",
+            "INFO=<ID=G5,Number=0,Type=Flag,Description="">5% minor allele
+ frequency in 1+ populations"">",
+            "INFO=<ID=HD,Number=0,Type=Flag,Description=""Marker is on high
+ density genotyping kit (50K density or greater).  The variant may have
+ phenotype associations present in dbGaP."">",
+            "INFO=<ID=GNO,Number=0,Type=Flag,Description=""Genotypes
+ available. The variant has individual genotype (in SubInd table)."">",
+            "INFO=<ID=KGValidated,Number=0,Type=Flag,Description=""1000 Genome
+ validated"">",
+            "INFO=<ID=KGPhase1,Number=0,Type=Flag,Description=""1000 Genome
+ phase 1 (incl. June Interim phase 1)"">",
+            "INFO=<ID=KGPilot123,Number=0,Type=Flag,Description=""1000 Genome
+ discovery all pilots 2010(1,2,3)"">",
+            "INFO=<ID=KGPROD,Number=0,Type=Flag,Description=""Has 1000 Genome
+ submission"">",
+            "INFO=<ID=OTHERKG,Number=0,Type=Flag,Description=""non-1000 Genome
+ submission"">",
+            "INFO=<ID=PH3,Number=0,Type=Flag,Description=""HAP_MAP Phase 3
+ genotyped: filtered, non-redundant"">",
+            "INFO=<ID=CDA,Number=0,Type=Flag,Description=""Variation is
+ interrogated in a clinical diagnostic assay"">",
+            "INFO=<ID=LSD,Number=0,Type=Flag,Description=""Submitted from a
+ locus-specific database"">",
+            "INFO=<ID=MTP,Number=0,Type=Flag,Description=""Microattribution/th
+ird-party annotation(TPA:GWAS,PAGE)"">",
+            "INFO=<ID=OM,Number=0,Type=Flag,Description=""Has OMIM/OMIA"">",
+            "INFO=<ID=NOC,Number=0,Type=Flag,Description=""Contig allele not
+ present in variant allele list. The reference sequence allele at the mapped
+ position is not present in the variant allele list, adjusted for orientation.
+"">",
+            "INFO=<ID=WTD,Number=0,Type=Flag,Description=""Is Withdrawn by
+ submitter If one member ss is withdrawn by submitter, then this bit is set. 
+ If all member ss' are withdrawn, then the rs is deleted to SNPHistory"">",
+            "INFO=<ID=NOV,Number=0,Type=Flag,Description=""Rs cluster has
+ non-overlapping allele sets. True when rs set has more than 2 alleles from
+ different submissions and these sets share no alleles in common."">",
+            "INFO=<ID=GCF,Number=0,Type=Flag,Description=""Has Genotype
+ Conflict Same (rs, ind), different genotype.  N/N is not included."">",
+            "FILTER=<ID=NC,Description=""Inconsistent Genotype Submission For
+ At Least One Sample"">",
+            "INFO=<ID=CLNHGVS,Number=.,Type=String,Description=""Variant names
+ from HGVS.    The order of these variants corresponds to the order of the
+ info in the other clinical  INFO tags."">",
+            "INFO=<ID=CLNALLE,Number=.,Type=Integer,Description=""Variant
+ alleles from REF or ALT columns.  0 is REF, 1 is the first ALT allele, etc. 
+ This is used to match alleles with other corresponding clinical (CLN) INFO
+ tags.  A value of -1 indicates that no allele was found to match a
+ corresponding HGVS allele name."">",
+            "INFO=<ID=CLNSRC,Number=.,Type=String,Description=""Variant
+ Clinical Chanels"">",
+            "INFO=<ID=CLNORIGIN,Number=.,Type=String,Description=""Allele
+ Origin. One or more of the following values may be added: 0 - unknown; 1 -
+ germline; 2 - somatic; 4 - inherited; 8 - paternal; 16 - maternal; 32 -
+ de-novo; 64 - biparental; 128 - uniparental; 256 - not-tested; 512 -
+ tested-inconclusive; 1073741824 - other"">",
+            "INFO=<ID=CLNSRCID,Number=.,Type=String,Description=""Variant
+ Clinical Channel IDs"">",
+            "INFO=<ID=CLNSIG,Number=.,Type=String,Description=""Variant
+ Clinical Significance, 0 - unknown, 1 - untested, 2 - non-pathogenic, 3 -
+ probable-non-pathogenic, 4 - probable-pathogenic, 5 - pathogenic, 6 -
+ drug-response, 7 - histocompatibility, 255 - other"">",
+            "INFO=<ID=CLNCUI,Number=.,Type=String,Description=""Variant
+ disease CUID"">",
+            "INFO=<ID=CLNDBN,Number=.,Type=String,Description=""Variant
+ disease name"">",
+            "INFO=<ID=CLNACC,Number=.,Type=String,Description=""Variant
+ Accession and Versions"">"
+          }
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs199476396"
+        },
+        variant-prop {
+          version 5,
+          resource-link 5,
+          gene-location near-gene-3,
+          effect no-change,
+          mapping is-assembly-specific,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "C"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 985954,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=SCV000040200.1;CLNALLE=1;CLNCUI=C1850792;CLNDBN=M
+yasthenia\x2c limb-girdle\x2c
+ familial;CLNHGVS=NC_000001.10:g.985955G>C;CLNORIGIN=1;CLNSIG=5;CLNSRC=OMIM
+ Allelic
+ Variant;CLNSRCID=103320.0001;LSD;OM;OTHERKG;REF;RSPOS=985955;SAO=1;SSR=0;VC=S
+NV;VP=050260000a05000002110100;dbSNPBuildID=136"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs144003672"
+        },
+        variant-prop {
+          version 5,
+          resource-link 5,
+          gene-location near-gene-3,
+          effect no-change,
+          mapping is-assembly-specific,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "C"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 1245103,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.1245104C>A;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PUSL1:126789;
+LSD;OTHERKG;REF;RSPOS=1245104;SAO=2;SSR=0;VC=SNV;VP=050268000a05000002100100;d
+bSNPBuildID=134"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs145324009"
+        },
+        variant-prop {
+          version 5,
+          resource-link 5,
+          gene-location near-gene-3,
+          effect no-change,
+          mapping is-assembly-specific,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 1469330,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.1469331G>A;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=ATAD3A:55210;
+LSD;OTHERKG;REF;RSPOS=1469331;SAO=2;SSR=0;VC=SNV;VP=050268000a05000002100100;d
+bSNPBuildID=134"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs121434580"
+        },
+        variant-prop {
+          version 5,
+          resource-link 5,
+          gene-location near-gene-3,
+          effect no-change,
+          mapping is-assembly-specific,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "C"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 1959074,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.1959075A>C;CLNORIGIN=1;CLNSIG=255;CLNSRC=.;CLNSRCID=.;GENEINFO=GABRD:2563;
+LSD;OM;OTHERKG;REF;RSPOS=1959075;SAO=1;SSR=0;VC=SNV;VP=050260000a0500000211010
+0;dbSNPBuildID=132"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs41307846"
+        },
+        other-ids {
+          {
+            db "BioProject",
+            tag id 28889
+          }
+        },
+        variant-prop {
+          version 5,
+          resource-link 5,
+          gene-location near-gene-3,
+          effect no-change,
+          mapping 12,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype has-genotypes,
+          quality-check 0,
+          allele-frequency { 96, 10, -4 }
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 1959698,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=SCV000037873.1|SCV000043847.1;CLNALLE=1;CLNCUI=CN
+043549|C2751603;CLNDBN=Epilepsy\x2c juvenile myoclonic 7|Epilepsy\x2c
+ idiopathic generalized
+ 10;CLNHGVS=NC_000001.10:g.1959699G>A;CLNORIGIN=1;CLNSIG=255|255;CLNSRC=OMIM
+ Allelic Variant|OMIM Allelic
+ Variant;CLNSRCID=137163.0002|137163.0002;GENEINFO=GABRD:2563;KGPROD;KGPhase1;
+LSD;OM;OTHERKG;REF;RSPOS=1959699;SAO=1;SSR=0;VC=SNV;VP=050260000a0504011611010
+0;dbSNPBuildID=127"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs142619552"
+        },
+        variant-prop {
+          version 5,
+          resource-link preserved,
+          gene-location near-gene-3,
+          effect no-change,
+          mapping is-assembly-specific,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "C"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "T"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 1961452,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.1961453C>T;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=GABRD:2563;LS
+D;OTHERKG;REF;RSPOS=1961453;SAO=2;SSR=0;VC=SNV;VP=050068000a05000002100100;dbS
+NPBuildID=134"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs61752096"
+        },
+        variant-prop {
+          version 5,
+          resource-link 13,
+          gene-location utr-3,
+          effect no-change,
+          mapping 0,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "C"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "T"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 2337953,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.2337954C>T;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PEX10:5192;LS
+D;OTHERKG;REF;RSPOS=2337954;RV;SAO=0;SSR=0;VC=SNV;VP=050368000601000002100100;
+dbSNPBuildID=129"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs61752095"
+        },
+        variant-prop {
+          version 5,
+          resource-link 13,
+          gene-location near-gene-3,
+          effect no-change,
+          mapping 0,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "C"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 2337964,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=SCV000027369.1;CLNALLE=1;CLNCUI=C0282525;CLNDBN=N
+eonatal
+ adrenoleucodystrophy;CLNHGVS=NC_000001.10:g.2337965G>C;CLNORIGIN=0;CLNSIG=5;C
+LNSRC=OMIM Allelic
+ Variant;CLNSRCID=602859.0002;GENEINFO=PEX10:5192;LSD;OM;OTHERKG;REF;RSPOS=233
+7965;RV;SAO=1;SSR=0;VC=SNV;VP=050368000a01000002110100;dbSNPBuildID=129"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs61752094"
+        },
+        variant-prop {
+          version 5,
+          resource-link 13,
+          gene-location near-gene-3,
+          effect no-change,
+          mapping 0,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "C"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 2337966,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.2337967G>C;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PEX10:5192;LS
+D;OTHERKG;REF;RSPOS=2337967;RV;SAO=0;SSR=0;VC=SNV;VP=050368000a01000002100100;
+dbSNPBuildID=129"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs35082957"
+        },
+        other-ids {
+          {
+            db "BioProject",
+            tag id 28889
+          }
+        },
+        variant-prop {
+          version 5,
+          resource-link 13,
+          gene-location in-gene,
+          effect no-change,
+          mapping 12,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype has-genotypes,
+          quality-check 0,
+          allele-frequency { 32, 10, -4 }
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "C"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "T"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 2337991,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.2337992C>T;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PEX10:5192;KG
+PROD;KGPhase1;LSD;OTHERKG;REF;RSPOS=2337992;RV;SAO=0;SSR=0;VC=SNV;VP=050360000
+305040116100100;dbSNPBuildID=126"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs62641225"
+        },
+        variant-prop {
+          version 5,
+          resource-link 13,
+          gene-location utr-3,
+          effect no-change,
+          mapping 0,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "C"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 2337999,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.2338000C>A;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PEX10:5192;LS
+D;OTHERKG;REF;RSPOS=2338000;RV;SAO=0;SSR=0;VC=SNV;VP=050368000601000002100100;
+dbSNPBuildID=129"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs34154371"
+        },
+        other-ids {
+          {
+            db "BioProject",
+            tag id 28889
+          }
+        },
+        variant-prop {
+          version 5,
+          resource-link 13,
+          gene-location near-gene-3,
+          effect no-change,
+          mapping 12,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype has-genotypes,
+          quality-check 0,
+          allele-frequency { 96, 10, -4 }
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "T"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "C"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 2338014,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.2338015T>C;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PEX10:5192;KG
+PROD;KGPhase1;LSD;OTHERKG;REF;RSPOS=2338015;RV;SAO=0;SSR=0;VC=SNV;VP=050368000
+a05040116100100;dbSNPBuildID=126"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs61752093"
+        },
+        variant-prop {
+          version 5,
+          resource-link 9,
+          gene-location intron,
+          effect no-change,
+          mapping 0,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 2,
+                      seq-data iupacna "AG"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type del,
+                delta {
+                  {
+                    seq this NULL,
+                    action del-at
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location int {
+        from 2338019,
+        to 2338020,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.2338020_2338021delAG;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PEX
+10:5192;LSD;OTHERKG;REF;RSPOS=2338020;RV;SAO=0;SSR=0;VC=DIV;VP=050160001201000
+002100200;dbSNPBuildID=129"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs61752092"
+        },
+        variant-prop {
+          version 5,
+          resource-link 9,
+          gene-location utr-3,
+          effect no-change,
+          mapping 0,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 2338204,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.2338205G>A;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PEX10:5192;LS
+D;OTHERKG;REF;RSPOS=2338205;RV;SAO=0;SSR=0;VC=SNV;VP=050168000601000002100100;
+dbSNPBuildID=129"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs61750435"
+        },
+        variant-prop {
+          version 5,
+          resource-link 9,
+          gene-location intron,
+          effect no-change,
+          mapping 0,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "T"
+                    },
+                    action ins-before
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 2338230,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.2338230_2338231insT;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PEX1
+0:5192;LSD;OTHERKG;REF;RSPOS=2338230;RV;SAO=0;SSR=0;VC=DIV;VP=0501680012010000
+02100200;dbSNPBuildID=129"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs61750434"
+        },
+        variant-prop {
+          version 5,
+          resource-link 9,
+          gene-location utr-3,
+          effect no-change,
+          mapping 0,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 2340117,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=SCV000027370.1;CLNALLE=1;CLNCUI=C0282525;CLNDBN=N
+eonatal
+ adrenoleucodystrophy;CLNHGVS=NC_000001.10:g.2340118G>A;CLNORIGIN=0;CLNSIG=5;C
+LNSRC=OMIM Allelic
+ Variant;CLNSRCID=602859.0003;GENEINFO=PEX10:5192;LSD;OM;OTHERKG;REF;RSPOS=234
+0118;RV;SAO=1;SSR=0;VC=SNV;VP=050168000601000002110100;dbSNPBuildID=129"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs35426403"
+        },
+        other-ids {
+          {
+            db "BioProject",
+            tag id 28889
+          }
+        },
+        variant-prop {
+          version 5,
+          resource-link 41,
+          gene-location near-gene-3,
+          effect no-change,
+          mapping 12,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype has-genotypes,
+          quality-check 0,
+          allele-frequency { 64, 10, -4 }
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 2340158,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.2340159A>G;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PEX10:5192;KG
+PROD;KGPhase1;LSD;OTHERKG;REF;RSPOS=2340159;RV;SAO=0;SSR=0;VC=SNV;VP=050160000
+a05040516100100;dbSNPBuildID=126"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs1143016"
+        },
+        other-ids {
+          {
+            db "BioProject",
+            tag id 28889
+          }
+        },
+        variant-prop {
+          version 5,
+          resource-link 41,
+          gene-location in-gene,
+          effect no-change,
+          mapping 12,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype has-genotypes,
+          quality-check 0,
+          allele-frequency { 247, 10, -4 }
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 2340211,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.2340212G>A;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;G5;GENEINFO=PEX10:5192
+;KGPROD;KGPhase1;LSD;OTHERKG;REF;RSPOS=2340212;RV;SAO=0;SSR=0;VC=SNV;VP=050160
+000305050516100100;dbSNPBuildID=86"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs62636524"
+        },
+        variant-prop {
+          version 5,
+          resource-link 9,
+          gene-location intron,
+          effect no-change,
+          mapping 0,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "C"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type del,
+                delta {
+                  {
+                    seq this NULL,
+                    action del-at
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 2343937,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.2343938delC;CLNORIGIN=0;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PEX10:5192;L
+SD;OTHERKG;REF;RSPOS=2343938;RV;SAO=0;SSR=0;VC=DIV;VP=050168001201000002100200
+;dbSNPBuildID=129"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs145632008"
+        },
+        variant-prop {
+          version 5,
+          resource-link preserved,
+          gene-location near-gene-3,
+          effect no-change,
+          mapping is-assembly-specific,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "C"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "T"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 3334485,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.3334486C>T;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=PRDM16:63976;
+LSD;OTHERKG;REF;RSPOS=3334486;SAO=2;SSR=0;VC=SNV;VP=050068000a05000002100100;d
+bSNPBuildID=134"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs139984517"
+        },
+        variant-prop {
+          version 5,
+          resource-link preserved,
+          gene-location acceptor,
+          effect no-change,
+          mapping is-assembly-specific,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 3680268,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.3680269G>A;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=CCDC27:148870
+;LSD;OTHERKG;RSPOS=3680269;SAO=2;SSR=0;VC=SNV;VP=050068200005000002100100;dbSN
+PBuildID=134"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs139901107"
+        },
+        variant-prop {
+          version 5,
+          resource-link preserved,
+          gene-location near-gene-3,
+          effect no-change,
+          mapping is-assembly-specific,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 3755580,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.3755581G>A;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=CEP104:9731;L
+SD;OTHERKG;REF;RSPOS=3755581;SAO=2;SSR=0;VC=SNV;VP=050068000a05000002100100;db
+SNPBuildID=134"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs145420390"
+        },
+        variant-prop {
+          version 5,
+          resource-link preserved,
+          gene-location utr-3,
+          effect no-change,
+          mapping is-assembly-specific,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 3765181,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.3765182G>A;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=CEP104:9731;L
+SD;OTHERKG;REF;RSPOS=3765182;SAO=2;SSR=0;VC=SNV;VP=050068000605000002100100;db
+SNPBuildID=134"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs28940891"
+        },
+        variant-prop {
+          version 5,
+          resource-link preserved,
+          gene-location near-gene-3,
+          effect no-change,
+          mapping 0,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype has-genotypes,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 5935005,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=SCV000023729.1;CLNALLE=1;CLNCUI=C1847013;CLNDBN=N
+ephronophthisis
+ 4;CLNHGVS=NC_000001.10:g.5935006A>G;CLNORIGIN=0;CLNSIG=5;CLNSRC=OMIM Allelic
+ Variant;CLNSRCID=607215.0004;GENEINFO=NPHP4:261734;LSD;OM;OTHERKG;REF;RSPOS=5
+935006;RV;SAO=0;SSR=0;VC=SNV;VP=050060000a01000102110100;dbSNPBuildID=125"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs137852919"
+        },
+        variant-prop {
+          version 5,
+          resource-link preserved,
+          gene-location utr-3,
+          effect no-change,
+          mapping 0,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 5947453,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=SCV000023727.1;CLNALLE=1;CLNCUI=C1847013;CLNDBN=N
+ephronophthisis
+ 4;CLNHGVS=NC_000001.10:g.5947454G>A;CLNORIGIN=1;CLNSIG=5;CLNSRC=OMIM Allelic
+ Variant;CLNSRCID=607215.0002;GENEINFO=NPHP4:261734;LSD;OM;OTHERKG;REF;RSPOS=5
+947454;RV;SAO=1;SSR=0;VC=SNV;VP=050060000601000002110100;dbSNPBuildID=133"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs137852918"
+        },
+        variant-prop {
+          version 5,
+          resource-link preserved,
+          gene-location utr-3,
+          effect no-change,
+          mapping 0,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "C"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 5947462,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=SCV000023726.1;CLNALLE=1;CLNCUI=C1847013;CLNDBN=N
+ephronophthisis
+ 4;CLNHGVS=NC_000001.10:g.5947463C>A;CLNORIGIN=1;CLNSIG=5;CLNSRC=OMIM Allelic
+ Variant;CLNSRCID=607215.0001;GENEINFO=NPHP4:261734;LSD;OM;OTHERKG;REF;RSPOS=5
+947463;RV;SAO=1;SSR=0;VC=SNV;VP=050060000601000002110100;dbSNPBuildID=133"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs137852922"
+        },
+        variant-prop {
+          version 5,
+          resource-link preserved,
+          gene-location utr-3,
+          effect no-change,
+          mapping 0,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 5947495,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=SCV000023731.1;CLNALLE=1;CLNCUI=C1846979;CLNDBN=S
+enior-Loken syndrome
+ 4;CLNHGVS=NC_000001.10:g.5947496G>A;CLNORIGIN=1;CLNSIG=5;CLNSRC=OMIM Allelic
+ Variant;CLNSRCID=607215.0006;GENEINFO=NPHP4:261734;LSD;OM;OTHERKG;REF;RSPOS=5
+947496;RV;SAO=1;SSR=0;VC=SNV;VP=050060000601000002110100;dbSNPBuildID=133"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs137852920"
+        },
+        variant-prop {
+          version 5,
+          resource-link preserved,
+          gene-location utr-3,
+          effect no-change,
+          mapping 0,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 5964775,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=SCV000023728.1;CLNALLE=1;CLNCUI=C1847013;CLNDBN=N
+ephronophthisis
+ 4;CLNHGVS=NC_000001.10:g.5964776G>A;CLNORIGIN=1;CLNSIG=5;CLNSRC=OMIM Allelic
+ Variant;CLNSRCID=607215.0003;GENEINFO=NPHP4:261734;LSD;OM;OTHERKG;REF;RSPOS=5
+964776;RV;SAO=1;SSR=0;VC=SNV;VP=050060000601000002110100;dbSNPBuildID=133"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs137852923"
+        },
+        variant-prop {
+          version 5,
+          resource-link preserved,
+          gene-location utr-3,
+          effect no-change,
+          mapping 0,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 5964847,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=SCV000023732.1;CLNALLE=1;CLNCUI=C1846979;CLNDBN=S
+enior-Loken syndrome
+ 4;CLNHGVS=NC_000001.10:g.5964848G>A;CLNORIGIN=1;CLNSIG=5;CLNSRC=OMIM Allelic
+ Variant;CLNSRCID=607215.0007;GENEINFO=NPHP4:261734;LSD;OM;OTHERKG;REF;RSPOS=5
+964848;RV;SAO=1;SSR=0;VC=SNV;VP=050060000601000002110100;dbSNPBuildID=133"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs150855676"
+        },
+        variant-prop {
+          version 5,
+          resource-link preserved,
+          gene-location in-gene,
+          effect no-change,
+          mapping is-assembly-specific,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 6172230,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.6172231G>A;CLNORIGIN=2;CLNSIG=1;CLNSRC=.;CLNSRCID=.;GENEINFO=CHD5:26038;LS
+D;OTHERKG;REF;RSPOS=6172231;SAO=2;SSR=0;VC=SNV;VP=050068000305000002100100;dbS
+NPBuildID=134"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs121908134"
+        },
+        variant-prop {
+          version 5,
+          resource-link preserved,
+          gene-location near-gene-3,
+          effect no-change,
+          mapping is-assembly-specific,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "C"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 6511985,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.6511986A>C;CLNORIGIN=1;CLNSIG=5;CLNSRC=.;CLNSRCID=.;GENEINFO=ESPN:83715;LS
+D;OM;OTHERKG;REF;RSPOS=6511986;SAO=1;SSR=0;VC=SNV;VP=050060000a05000002110100;
+dbSNPBuildID=132"
+          }
+        }
+      }
+    },
+    {
+      data variation {
+        id {
+          db "local",
+          tag str "rs121908135"
+        },
+        variant-prop {
+          version 5,
+          resource-link preserved,
+          gene-location near-gene-3,
+          effect no-change,
+          mapping is-assembly-specific,
+          map-weight is-uniquely-placed,
+          frequency-based-validation 0,
+          genotype 0,
+          quality-check 0
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type snv,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "A"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      location pnt {
+        point 6512060,
+        id local id 1
+      },
+      ext {
+        type str "VcfAttributes",
+        data {
+          {
+            label str "filter",
+            data str "."
+          },
+          {
+            label str "info",
+            data str "CLNACC=.;CLNALLE=1;CLNCUI=.;CLNDBN=.;CLNHGVS=NC_000001.1
+0:g.6512061G>A;CLNORIGIN=1;CLNSIG=5;CLNSRC=.;CLNSRCID=.;GENEINFO=ESPN:83715;LS
+D;OM;OTHERKG;REF;RSPOS=6512061;SAO=1;SSR=0;VC=SNV;VP=050060000a05000002110100;
+dbSNPBuildID=132"
+          }
+        }
+      }
+    }
+  }
+}
