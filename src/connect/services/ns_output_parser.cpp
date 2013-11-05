@@ -79,7 +79,7 @@ CJsonNode CNetScheduleStructuredOutputParser::ParseJSON(const string& json)
 {
     m_Ch = (m_NSOutput = json).c_str();
 
-    while (isspace(*m_Ch))
+    while (isspace((unsigned char) *m_Ch))
         ++m_Ch;
 
     CJsonNode root;
@@ -99,7 +99,7 @@ CJsonNode CNetScheduleStructuredOutputParser::ParseJSON(const string& json)
         INVALID_FORMAT_ERROR();
     }
 
-    while (isspace(*m_Ch))
+    while (isspace((unsigned char) *m_Ch))
         ++m_Ch;
 
     if (*m_Ch != '\0') {
@@ -145,11 +145,11 @@ double CNetScheduleStructuredOutputParser::ParseDouble(size_t len)
 
 bool CNetScheduleStructuredOutputParser::MoreNodes()
 {
-    while (isspace(*m_Ch))
+    while (isspace((unsigned char) *m_Ch))
         ++m_Ch;
     if (*m_Ch != ',')
         return false;
-    while (isspace(*++m_Ch))
+    while (isspace((unsigned char) *++m_Ch))
         ;
     return true;
 }
@@ -158,7 +158,7 @@ CJsonNode CNetScheduleStructuredOutputParser::ParseObject(char closing_char)
 {
     CJsonNode result(CJsonNode::NewObjectNode());
 
-    while (isspace(*m_Ch))
+    while (isspace((unsigned char) *m_Ch))
         ++m_Ch;
 
     if (*m_Ch == closing_char) {
@@ -170,10 +170,10 @@ CJsonNode CNetScheduleStructuredOutputParser::ParseObject(char closing_char)
         // New attribute/value pair
         string attr_name(ParseString(GetRemainder()));
 
-        while (isspace(*m_Ch))
+        while (isspace((unsigned char) *m_Ch))
             ++m_Ch;
         if (*m_Ch == ':' || *m_Ch == '=')
-            while (isspace(*++m_Ch))
+            while (isspace((unsigned char) *++m_Ch))
                 ;
 
         result.SetByKey(attr_name, ParseValue());
@@ -193,7 +193,7 @@ CJsonNode CNetScheduleStructuredOutputParser::ParseArray(char closing_char)
 {
     CJsonNode result(CJsonNode::NewArrayNode());
 
-    while (isspace(*m_Ch))
+    while (isspace((unsigned char) *m_Ch))
         ++m_Ch;
 
     if (*m_Ch == closing_char) {
@@ -237,7 +237,7 @@ CJsonNode CNetScheduleStructuredOutputParser::ParseValue()
     /* Number */
     case '-':
         // Check that there's at least one digit after the minus sign.
-        if (max_len <= 1 || !isdigit(m_Ch[1])) {
+        if (max_len <= 1 || !isdigit((unsigned char) m_Ch[1])) {
             ++m_Ch;
             break;
         }
@@ -249,13 +249,13 @@ CJsonNode CNetScheduleStructuredOutputParser::ParseValue()
         do
             if (++len >= max_len)
                 return CJsonNode::NewIntegerNode(ParseInt(len));
-        while (isdigit(m_Ch[len]));
+        while (isdigit((unsigned char) m_Ch[len]));
 
         // Stumbled upon a non-digit character -- check
         // if it's a fraction part or an exponent part.
         switch (m_Ch[len]) {
         case '.':
-            if (++len == max_len || !isdigit(m_Ch[len])) {
+            if (++len == max_len || !isdigit((unsigned char) m_Ch[len])) {
                 NCBI_THROW2(CStringException, eFormat,
                         "At least one digit after the decimal "
                         "point is required", GetPosition());
@@ -264,7 +264,7 @@ CJsonNode CNetScheduleStructuredOutputParser::ParseValue()
                 if (++len == max_len)
                     return CJsonNode::NewDoubleNode(ParseDouble(len));
 
-                if (!isdigit(m_Ch[len])) {
+                if (!isdigit((unsigned char) m_Ch[len])) {
                     if (m_Ch[len] == 'E' || m_Ch[len] == 'e')
                         break;
 
@@ -277,13 +277,14 @@ CJsonNode CNetScheduleStructuredOutputParser::ParseValue()
         case 'e':
             if (++len == max_len ||
                     (m_Ch[len] == '-' || m_Ch[len] == '+' ?
-                            ++len == max_len || !isdigit(m_Ch[len]) :
-                            !isdigit(m_Ch[len]))) {
+                            ++len == max_len ||
+                                    !isdigit((unsigned char) m_Ch[len]) :
+                            !isdigit((unsigned char) m_Ch[len]))) {
                 m_Ch += len;
                 NCBI_THROW2(CStringException, eFormat,
                         "Invalid exponent specification", GetPosition());
             }
-            while (++len < max_len && isdigit(m_Ch[len]))
+            while (++len < max_len && isdigit((unsigned char) m_Ch[len]))
                 ;
             return CJsonNode::NewDoubleNode(ParseDouble(len));
 
@@ -294,7 +295,7 @@ CJsonNode CNetScheduleStructuredOutputParser::ParseValue()
     /* Constant */
     case 'F': case 'f': case 'N': case 'n':
     case 'T': case 't': case 'Y': case 'y':
-        while (len <= max_len && isalpha(m_Ch[len]))
+        while (len <= max_len && isalpha((unsigned char) m_Ch[len]))
             ++len;
 
         {

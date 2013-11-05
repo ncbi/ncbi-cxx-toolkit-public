@@ -198,7 +198,7 @@ static string s_RemoveHTMLTags(const char* text)
 {
     string result;
 
-    while (isspace(*text))
+    while (isspace((unsigned char) *text))
         ++text;
 
     const char* text_beg = text;
