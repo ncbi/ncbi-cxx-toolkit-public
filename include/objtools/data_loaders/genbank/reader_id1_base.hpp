@@ -50,11 +50,13 @@ public:
 
     bool LoadStringSeq_ids(CReaderRequestResult& result,
                            const string& seq_id);
+    /*
     bool LoadSeq_idSeq_ids(CReaderRequestResult& result,
                            const CSeq_id_Handle& seq_id);
     bool LoadSeq_idBlob_ids(CReaderRequestResult& result,
                             const CSeq_id_Handle& seq_id,
                             const SAnnotSelector* sel);
+    */
     bool LoadBlob(CReaderRequestResult& result,
                   const TBlobId& blob_id);
     bool LoadBlobVersion(CReaderRequestResult& result,
@@ -62,14 +64,6 @@ public:
     bool LoadChunk(CReaderRequestResult& result,
                    const TBlobId& blob_id, TChunkId chunk_id);
 
-    virtual bool GetSeq_idBlob_ids(CReaderRequestResult& result,
-                                   CLoadLockBlob_ids& ids,
-                                   const CSeq_id_Handle& seq_id,
-                                   const SAnnotSelector* sel) = 0;
-    virtual void GetSeq_idSeq_ids(CReaderRequestResult& result,
-                                  CLoadLockSeq_ids& ids,
-                                  const CSeq_id_Handle& seq_id) = 0;
-    
     virtual void GetBlobVersion(CReaderRequestResult& result,
                                 const CBlob_id& blob_id) = 0;
 

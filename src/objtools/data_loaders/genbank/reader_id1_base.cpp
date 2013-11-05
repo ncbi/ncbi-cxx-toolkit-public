@@ -63,7 +63,7 @@ bool CId1ReaderBase::LoadStringSeq_ids(CReaderRequestResult& /*result*/,
     return false;
 }
 
-
+/*
 bool CId1ReaderBase::LoadSeq_idSeq_ids(CReaderRequestResult& result,
                                        const CSeq_id_Handle& seq_id)
 {
@@ -72,18 +72,19 @@ bool CId1ReaderBase::LoadSeq_idSeq_ids(CReaderRequestResult& result,
         return true;
     }
     
+    TSeqIds seq_ids;
     try {
-        GetSeq_idSeq_ids(result, ids, seq_id);
+        GetSeq_idSeq_ids(result, seq_id, seq_ids);
     }
     catch ( CLoaderException& exc ) {
         if ( exc.GetErrCode() == exc.ePrivateData ) {
             // leave ids empty
-            ids->SetState(CBioseq_Handle::fState_confidential|
-                          CBioseq_Handle::fState_no_data);
+            ids.SetNoSeq_ids(CBioseq_Handle::fState_confidential|
+                              CBioseq_Handle::fState_no_data);
         }
         else if ( exc.GetErrCode() == exc.eNoData ) {
             // leave ids empty
-            ids->SetState(CBioseq_Handle::fState_no_data);
+            ids.SetNoSeq_ids(CBioseq_Handle::fState_no_data);
         }
         else if ( exc.GetErrCode() == exc.eNoConnection ) {
             return false;
@@ -92,7 +93,7 @@ bool CId1ReaderBase::LoadSeq_idSeq_ids(CReaderRequestResult& result,
             throw;
         }
     }
-    SetAndSaveSeq_idSeq_ids(result, seq_id, ids);
+    SetAndSaveSeq_idSeq_ids(result, seq_id, ids, 0, seq_ids);
     return true;
 }
 
@@ -114,12 +115,22 @@ bool CId1ReaderBase::LoadSeq_idBlob_ids(CReaderRequestResult& result,
     catch ( CLoaderException& exc ) {
         if (exc.GetErrCode() == exc.ePrivateData) {
             // leave ids empty
-            ids->SetState(CBioseq_Handle::fState_confidential|
-                          CBioseq_Handle::fState_no_data);
+            SetAndSaveNoSeq_idBlob_ids(result,
+                                       seq_id,
+                                       sel,
+                                       ids,
+                                       CBioseq_Handle::fState_confidential|
+                                       CBioseq_Handle::fState_no_data);
+            return true;
         }
         else if (exc.GetErrCode() == exc.eNoData) {
             // leave ids empty
-            ids->SetState(CBioseq_Handle::fState_no_data);
+            SetAndSaveNoSeq_idBlob_ids(result,
+                                       seq_id,
+                                       sel,
+                                       ids,
+                                       CBioseq_Handle::fState_no_data);
+            return true;
         }
         else if ( exc.GetErrCode() == exc.eNoConnection ) {
             return false;
@@ -128,10 +139,10 @@ bool CId1ReaderBase::LoadSeq_idBlob_ids(CReaderRequestResult& result,
             throw;
         }
     }
-    SetAndSaveSeq_idBlob_ids(result, seq_id, sel, ids);
+    SetAndSaveSeq_idBlob_ids(result, seq_id, sel, 0, seq_id, ids);
     return true;
 }
-
+*/
 
 bool CId1ReaderBase::LoadBlob(CReaderRequestResult& result,
                               const TBlobId& blob_id)

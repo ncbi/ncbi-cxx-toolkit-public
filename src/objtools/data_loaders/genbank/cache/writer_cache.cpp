@@ -239,7 +239,7 @@ void CCacheWriter::SaveStringGi(CReaderRequestResult& result,
     }
 
     CLoadLockSeq_ids ids(result, seq_id);
-    if ( ids->IsLoadedGi() ) {
+    if ( ids.IsLoadedGi() ) {
         CStoreBuffer str;
         str.StoreInt4(GI_TO(Int4, ids->GetGi()));
         try {
@@ -275,7 +275,7 @@ void CCacheWriter::SaveSeq_idGi(CReaderRequestResult& result,
     }
 
     CLoadLockSeq_ids ids(result, seq_id);
-    if ( ids->IsLoadedGi() ) {
+    if ( ids.IsLoadedGi() ) {
         CStoreBuffer str;
         str.StoreInt4(GI_TO(Int4, ids->GetGi()));
         try {
@@ -299,7 +299,7 @@ void CCacheWriter::SaveSeq_idAccVer(CReaderRequestResult& result,
     }
 
     CLoadLockSeq_ids ids(result, seq_id);
-    if ( ids->IsLoadedAccVer() ) {
+    if ( ids.IsLoadedAccVer() ) {
         string str;
         if ( CSeq_id_Handle acc = ids->GetAccVer() ) {
             str = acc.AsString();
@@ -325,7 +325,7 @@ void CCacheWriter::SaveSeq_idLabel(CReaderRequestResult& result,
     }
 
     CLoadLockSeq_ids ids(result, seq_id);
-    if ( ids->IsLoadedLabel() ) {
+    if ( ids.IsLoadedLabel() ) {
         const string& str = ids->GetLabel();
         try {
             if ( GetDebugLevel() ) {
@@ -348,7 +348,7 @@ void CCacheWriter::SaveSeq_idTaxId(CReaderRequestResult& result,
     }
 
     CLoadLockSeq_ids ids(result, seq_id);
-    if ( ids->IsLoadedTaxId() ) {
+    if ( ids.IsLoadedTaxId() ) {
         CStoreBuffer str;
         str.StoreInt4(ids->GetTaxId());
         try {
@@ -419,8 +419,10 @@ void CCacheWriter::WriteSeq_ids(const string& key,
 
         CWStream w_stream(writer.release(), 0, 0, CRWStreambuf::fOwnAll);
         CObjectOStreamAsnBinary obj_stream(w_stream);
-        static_cast<CObjectOStream&>(obj_stream).WriteUint4(CStoreBuffer::ToUint4(ids->size()));
-        ITERATE ( CLoadInfoSeq_ids, it, *ids ) {
+        CFixedSeq_ids seq_ids = ids->GetSeq_ids();
+        static_cast<CObjectOStream&>(obj_stream). // cast because of protected
+            WriteUint4(CStoreBuffer::ToUint4(seq_ids.size()));
+        ITERATE ( CFixedSeq_ids, it, seq_ids ) {
             obj_stream << *it->GetSeqId();
         }
     }
@@ -455,26 +457,36 @@ void CCacheWriter::SaveSeq_idBlob_ids(CReaderRequestResult& result,
     CStoreBuffer str;
     str.StoreInt4(BLOB_IDS_MAGIC);
     str.StoreUint4(ids->GetState());
-    str.StoreUint4(str.ToUint4(ids->size()));
-    ITERATE ( CLoadInfoBlob_ids, it, *ids ) {
-        const CBlob_id& id = *it->first;
+    CFixedBlob_ids blob_ids = ids->GetBlob_ids();
+    str.StoreUint4(str.ToUint4(blob_ids.size()));
+    ITERATE ( CFixedBlob_ids, it, blob_ids ) {
+        const CBlob_Info& info = *it;
+        const CBlob_id& id = *info.GetBlob_id();
         str.StoreUint4(id.GetSat());
         str.StoreUint4(id.GetSubSat());
         str.StoreUint4(id.GetSatKey());
-        const CBlob_Info& info = it->second;
         str.StoreUint4(info.GetContentsMask());
-        str.StoreUint4(str.ToUint4(info.GetNamedAnnotNames().size()));
-        ITERATE(CBlob_Info::TNamedAnnotNames, it2, info.GetNamedAnnotNames()) {
-            str.StoreString(*it2);
+        CConstRef<CBlob_Annot_Info> annot_info = info.GetAnnotInfo();
+        if ( annot_info ) {
+            const CBlob_Annot_Info::TNamedAnnotNames& names =
+                annot_info->GetNamedAnnotNames();
+            str.StoreUint4(str.ToUint4(names.size()));
+            ITERATE ( CBlob_Annot_Info::TNamedAnnotNames, it2, names ) {
+                str.StoreString(*it2);
+            }
         }
-        if ( info.GetAnnotInfo().empty() ) {
+        else {
+            str.StoreUint4(0);
+        }
+        if ( !annot_info || annot_info->GetAnnotInfo().empty() ) {
             str.StoreString(kEmptyStr);
         }
         else {
             CNcbiOstrstream stream_str;
             {{
                 CObjectOStreamAsnBinary stream(stream_str);
-                ITERATE( CBlob_Info::TAnnotInfo, it2, info.GetAnnotInfo() ) {
+                ITERATE( CBlob_Annot_Info::TAnnotInfo, it2,
+                         annot_info->GetAnnotInfo() ) {
                     stream << **it2;
                 }
             }}

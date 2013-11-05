@@ -77,11 +77,15 @@ public:
     CLoadInfo(void);
     ~CLoadInfo(void);
 
-    bool IsLoaded(void) const
-        {
-            return m_LoadLock;
-        }
+    bool IsLoaded(const CReaderRequestResult& rr) const;
+    void SetLoaded(double expiration_time);
+    double GetExpirationTime(void) const {
+        return m_ExpirationTime;
+    }
 
+protected:
+    void x_SetLoaded(double expiration_time);
+    
 private:
     friend class CLoadInfoLock;
     friend class CLoadLock_Base;
@@ -89,7 +93,57 @@ private:
     CLoadInfo(const CLoadInfo&);
     CLoadInfo& operator=(const CLoadInfo&);
 
+    volatile double     m_ExpirationTime;
     CInitMutex<CObject> m_LoadLock;
+};
+
+
+class NCBI_XREADER_EXPORT CFixedSeq_ids
+{
+public:
+    typedef vector<CSeq_id_Handle> TList;
+    typedef TList::const_reference const_reference;
+    typedef TList::const_iterator const_iterator;
+
+    CFixedSeq_ids(void);
+    explicit CFixedSeq_ids(const TList& list);
+    CFixedSeq_ids(ENcbiOwnership ownership, TList& list);
+
+    const TList& Get(void) const
+        {
+            return m_Ref->GetData();
+        }
+    operator const TList&(void) const
+        {
+            return Get();
+        }
+
+    bool empty(void) const
+        {
+            return Get().empty();
+        }
+    size_t size(void) const
+        {
+            return Get().size();
+        }
+    const_iterator begin(void) const
+        {
+            return Get().begin();
+        }
+    const_iterator end(void) const
+        {
+            return Get().end();
+        }
+    const_reference front(void) const
+        {
+            return *begin();
+        }
+
+    void clear(void);
+
+private:
+    typedef CObjectFor<TList> TObject;
+    CConstRef<TObject> m_Ref;
 };
 
 
@@ -97,85 +151,89 @@ class NCBI_XREADER_EXPORT CLoadInfoSeq_ids : public CLoadInfo
 {
 public:
     typedef CSeq_id_Handle TSeq_id;
-    typedef vector<TSeq_id> TSeq_ids;
-    typedef TSeq_ids::const_iterator const_iterator;
+    typedef int TState;
+    typedef CFixedSeq_ids TSeq_ids;
 
     CLoadInfoSeq_ids(void);
     CLoadInfoSeq_ids(const CSeq_id_Handle& seq_id);
     CLoadInfoSeq_ids(const string& seq_id);
     ~CLoadInfoSeq_ids(void);
 
-    bool IsLoadedGi(void);
-    TGi GetGi(void) const
-        {
-            _ASSERT(m_GiLoaded);
-            return m_Gi;
-        }
-    void SetLoadedGi(TGi gi);
-
-    bool IsLoadedAccVer(void);
-    CSeq_id_Handle GetAccVer(void) const
-        {
-            _ASSERT(m_AccLoaded);
-            _ASSERT(!m_Acc || m_Acc.GetSeqId()->GetTextseq_Id());
-            return m_Acc;
-        }
-    void SetLoadedAccVer(const CSeq_id_Handle& acc);
-
-    bool IsLoadedLabel(void);
-    const string& GetLabel(void) const
-        {
-            _ASSERT(m_LabelLoaded);
-            return m_Label;
-        }
-    void SetLoadedLabel(const string& label);
-
-    bool IsLoadedTaxId(void);
-    int GetTaxId(void) const
-        {
-            _ASSERT(m_TaxIdLoaded);
-            return m_TaxId;
-        }
-    void SetLoadedTaxId(int taxid);
-
-    const_iterator begin(void) const
-        {
-            return m_Seq_ids.begin();
-        }
-    const_iterator end(void) const
-        {
-            return m_Seq_ids.end();
-        }
-    size_t size(void) const
-        {
-            return m_Seq_ids.size();
-        }
-    bool empty(void) const
-        {
-            return m_Seq_ids.empty();
-        }
-
-    typedef int TState;
     TState GetState(void) const
         {
             return m_State;
         }
-    void SetState(TState state)
+    bool IsEmpty(void) const;
+    TSeq_ids GetSeq_ids(void) const;
+
+    bool SetNoSeq_ids(TState state,
+                      double expiration_time);
+    bool SetLoadedSeq_ids(TState state,
+                          const CFixedSeq_ids& seq_ids,
+                          double expiration_time);
+
+    bool IsLoadedGi(const CReaderRequestResult& rr);
+    TGi GetGi(void) const
         {
-            m_State = state;
+            _ASSERT(m_ExpirationTimeGi > 0);
+            return m_Gi;
         }
-    
+    bool SetLoadedGi(TGi gi, double expiration_time);
+
+    bool IsLoadedAccVer(const CReaderRequestResult& rr);
+    CSeq_id_Handle GetAccVer(void) const;
+    bool SetLoadedAccVer(const CSeq_id_Handle& acc, double expiration_time);
+
+    bool IsLoadedLabel(const CReaderRequestResult& rr);
+    string GetLabel(void) const;
+    bool SetLoadedLabel(const string& label, double expiration_time);
+
+    bool IsLoadedTaxId(const CReaderRequestResult& rr);
+    int GetTaxId(void) const
+        {
+            _ASSERT(m_ExpirationTimeTaxId > 0);
+            return m_TaxId;
+        }
+    bool SetLoadedTaxId(int taxid, double expiration_time);
+
+private:
+    TSeq_ids        m_Seq_ids;
+    volatile double m_ExpirationTimeGi;
+    volatile double m_ExpirationTimeAcc;
+    volatile double m_ExpirationTimeLabel;
+    volatile double m_ExpirationTimeTaxId;
+    TGi             m_Gi;
+    CSeq_id_Handle  m_Acc;
+    string          m_Label;
+    int             m_TaxId;
+    TState          m_State;
+};
+
+
+class NCBI_XREADER_EXPORT CBlob_Annot_Info : public CObject
+{
 public:
-    TSeq_ids    m_Seq_ids;
-    bool        m_GiLoaded;
-    bool        m_AccLoaded;
-    bool        m_LabelLoaded;
-    bool        m_TaxIdLoaded;
-    TGi         m_Gi;
-    CSeq_id_Handle m_Acc;
-    string      m_Label;
-    int         m_TaxId;
-    TState      m_State;
+    typedef set<string> TNamedAnnotNames;
+    typedef vector< CConstRef<CID2S_Seq_annot_Info> > TAnnotInfo;
+    
+    const TNamedAnnotNames& GetNamedAnnotNames(void) const
+        {
+            return m_NamedAnnotNames;
+        }
+
+    const TAnnotInfo& GetAnnotInfo(void) const
+        {
+            return m_AnnotInfo;
+        }
+
+    void AddNamedAnnotName(const string& name);
+    void AddAnnotInfo(const CID2S_Seq_annot_Info& info);
+
+    bool Matches(const SAnnotSelector* sel) const;
+
+private:
+    TNamedAnnotNames    m_NamedAnnotNames;
+    TAnnotInfo          m_AnnotInfo;
 };
 
 
@@ -183,43 +241,86 @@ class NCBI_XREADER_EXPORT CBlob_Info
 {
 public:
     typedef TBlobContentsMask TContentsMask;
-    typedef set<string> TNamedAnnotNames;
 
-    explicit CBlob_Info(TContentsMask contents);
+    CBlob_Info(void);
+    CBlob_Info(CConstRef<CBlob_id> blob_id, TContentsMask contents);
     ~CBlob_Info(void);
+
+    CConstRef<CBlob_id> GetBlob_id(void) const
+        {
+            return m_Blob_id;
+        }
+    DECLARE_OPERATOR_BOOL_REF(m_Blob_id);
 
     TContentsMask GetContentsMask(void) const
         {
             return m_Contents;
         }
-    const TNamedAnnotNames& GetNamedAnnotNames(void) const
-        {
-            return m_NamedAnnotNames;
-        }
+    bool Matches(TContentsMask mask, const SAnnotSelector* sel) const;
 
-    void AddNamedAnnotName(const string& name)
-        {
-            m_NamedAnnotNames.insert(name);
-        }
-    void AddAnnotInfo(const CID2S_Seq_annot_Info& info);
     bool IsSetAnnotInfo(void) const
-        {
-            return !m_AnnotInfo.empty();
-        }
-    typedef vector< CConstRef<CID2S_Seq_annot_Info> > TAnnotInfo;
-    const TAnnotInfo& GetAnnotInfo(void) const
         {
             return m_AnnotInfo;
         }
-
-    bool Matches(const CBlob_id& blob_id,
-                 TContentsMask mask,
-                 const SAnnotSelector* sel) const;
+    CConstRef<CBlob_Annot_Info> GetAnnotInfo(void) const
+        {
+            return m_AnnotInfo;
+        }
+    void SetAnnotInfo(CRef<CBlob_Annot_Info>& annot_info);
 
 private:
-    TContentsMask   m_Contents;
-    TNamedAnnotNames m_NamedAnnotNames;
-    TAnnotInfo m_AnnotInfo;
+    CConstRef<CBlob_id> m_Blob_id;
+    TContentsMask       m_Contents;
+    CConstRef<CBlob_Annot_Info> m_AnnotInfo;
+};
+
+
+class NCBI_XREADER_EXPORT CFixedBlob_ids
+{
+public:
+    typedef vector<CBlob_Info> TList;
+    typedef TList::const_reference const_reference;
+    typedef TList::const_iterator const_iterator;
+
+    CFixedBlob_ids(void);
+    explicit CFixedBlob_ids(const TList& list);
+    CFixedBlob_ids(ENcbiOwnership ownership, TList& list);
+
+    const TList& Get(void) const
+        {
+            return m_Ref->GetData();
+        }
+    operator const TList&(void) const
+        {
+            return Get();
+        }
+
+    bool empty(void) const
+        {
+            return Get().empty();
+        }
+    size_t size(void) const
+        {
+            return Get().size();
+        }
+    const_iterator begin(void) const
+        {
+            return Get().begin();
+        }
+    const_iterator end(void) const
+        {
+            return Get().end();
+        }
+    const_reference front(void) const
+        {
+            return *begin();
+        }
+
+    void clear(void);
+
+private:
+    typedef CObjectFor<TList> TObject;
+    CConstRef<TObject> m_Ref;
 };
 
 
@@ -227,11 +328,8 @@ class NCBI_XREADER_EXPORT CLoadInfoBlob_ids : public CLoadInfo
 {
 public:
     typedef CSeq_id_Handle TSeq_id;
-    typedef TSeq_id TKey;
-    typedef CBlob_id TBlobId;
-    typedef CBlob_Info TBlob_Info;
-    typedef map<CRef<TBlobId>, TBlob_Info, PPtrLess< CRef<TBlobId> > > TBlobIds;
-    typedef TBlobIds::const_iterator const_iterator;
+    typedef int TState;
+    typedef CFixedBlob_ids TBlobIds;
 
     CLoadInfoBlob_ids(const TSeq_id& id, const SAnnotSelector* sel);
     CLoadInfoBlob_ids(const pair<TSeq_id, string>& key);
@@ -242,102 +340,24 @@ public:
             return m_Seq_id;
         }
 
-    const_iterator begin(void) const
-        {
-            return m_Blob_ids.begin();
-        }
-    const_iterator end(void) const
-        {
-            return m_Blob_ids.end();
-        }
-    bool empty(void) const
-        {
-            return m_Blob_ids.empty();
-        }
-    size_t size(void) const
-        {
-            return m_Blob_ids.size();
-        }
-    void clear(void)
-        {
-            m_Blob_ids.clear();
-        }
-
-    TBlob_Info& AddBlob_id(const TBlobId& id, const TBlob_Info& info);
-
-    typedef int TState;
+    bool IsEmpty(void) const;
     TState GetState(void) const
         {
             return m_State;
         }
-    void SetState(TState state)
-        {
-            m_State = state;
-        }
+    TBlobIds GetBlob_ids(void) const;
 
-public:
+    bool SetNoBlob_ids(TState state,
+                       double expiration_time);
+    bool SetLoadedBlob_ids(TState state,
+                           const TBlobIds& blob_ids,
+                           double expiration_time);
+
+private:
     TSeq_id     m_Seq_id;
     TBlobIds    m_Blob_ids;
     TState      m_State;
-
-    // lock/refresh support
-    double      m_RefreshTime;
 };
-
-
-/*
-class NCBI_XREADER_EXPORT CLoadInfoBlob : public CLoadInfo
-{
-public:
-    typedef CBlob_id TBlobId;
-    typedef TBlobId TKey;
-
-    CLoadInfoBlob(const TBlobId& id);
-    ~CLoadInfoBlob(void);
-
-    const TBlobId& GetBlob_id(void) const
-        {
-            return m_Blob_id;
-        }
-
-    CRef<CTSE_Info> GetTSE_Info(void) const;
-
-    enum EBlobState {
-        eState_normal,
-        eState_suppressed_temp,
-        eState_suppressed,
-        eState_withdrawn
-    };
-
-    EBlobState GetBlobState(void) const
-        {
-            return m_Blob_State;
-        }
-    void SetBlobState(EBlobState state)
-        {
-            m_Blob_State = state;
-        }
-    bool IsNotLoadable(void) const
-        {
-            return GetBlobState() >= eState_withdrawn;
-        }
-
-public:
-    TBlobId    m_Blob_id;
-
-    EBlobState m_Blob_State;
-
-    // typedefs for various info
-    typedef set<CSeq_id_Handle> TSeq_ids;
-
-    // blob
-    // if null -> not loaded yet
-    CRef<CTSE_Info> m_TSE_Info;
-
-    // set of Seq-ids with sequences in this blob
-    TSeq_ids        m_Seq_ids;
-};
-*/
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -350,7 +370,7 @@ public:
     ~CLoadInfoLock(void);
 
     void ReleaseLock(void);
-    void SetLoaded(CObject* obj = 0);
+    void SetLoaded(double expiration_time);
     const CLoadInfo& GetLoadInfo(void) const
         {
             return *m_Info;
@@ -382,9 +402,9 @@ public:
 
     bool IsLoaded(void) const
         {
-            return Get().IsLoaded();
+            return Get().IsLoaded(*m_RequestResult);
         }
-    void SetLoaded(CObject* obj = 0);
+    void SetLoaded(double expiration_time);
 
     TInfo& Get(void)
         {
@@ -403,6 +423,8 @@ public:
 protected:
     void Lock(TInfo& info, TMutexSource& src);
 
+    CReaderRequestResult* m_RequestResult;
+
 private:
     CRef<TInfo> m_Info;
     CRef<TLock> m_Lock;
@@ -413,6 +435,8 @@ class NCBI_XREADER_EXPORT CLoadLockBlob_ids : public CLoadLock_Base
 {
 public:
     typedef CLoadInfoBlob_ids TInfo;
+    typedef TInfo::TState TState;
+    typedef TInfo::TBlobIds TBlobIds;
 
     CLoadLockBlob_ids(void)
         {
@@ -449,8 +473,13 @@ public:
             return &Get();
         }
 
-    CBlob_Info& AddBlob_id(const CBlob_id& blob_id,
-                           const CBlob_Info& blob_info);
+    bool SetNoBlob_ids(TState state);
+    bool SetLoadedBlob_ids(TState state,
+                           const TBlobIds& blob_ids);
+    bool SetLoadedBlob_ids(const CLoadLockBlob_ids& ids2);
+
+protected:
+    double GetNewExpirationTime(void) const;
 
 private:
     void x_Initialize(TMutexSource& src, const CSeq_id_Handle& seq_id);
@@ -492,13 +521,39 @@ public:
             return &Get();
         }
 
-    void AddSeq_id(const CSeq_id_Handle& seq_id);
-    void AddSeq_id(const CSeq_id& seq_id);
+    bool SetNoSeq_ids(TInfo::TState state);
+    bool SetLoadedSeq_ids(TInfo::TState state,
+                          const CFixedSeq_ids& seq_ids);
+    bool SetLoadedSeq_ids(const CLoadLockSeq_ids& ids2);
+
+    bool IsLoadedGi(void)
+        {
+            return Get().IsLoadedGi(*m_RequestResult);
+        }
+    bool SetLoadedGi(TGi gi);
+    bool IsLoadedAccVer(void)
+        {
+            return Get().IsLoadedAccVer(*m_RequestResult);
+        }
+    bool SetLoadedAccVer(const CSeq_id_Handle& acc);
+    bool IsLoadedLabel(void)
+        {
+            return Get().IsLoadedLabel(*m_RequestResult);
+        }
+    bool SetLoadedLabel(const string& label);
+    bool IsLoadedTaxId(void)
+        {
+            return Get().IsLoadedTaxId(*m_RequestResult);
+        }
+    bool SetLoadedTaxId(int taxid);
 
     CLoadLockBlob_ids& GetBlob_ids(void)
         {
             return m_Blob_ids;
         }
+
+protected:
+    double GetNewExpirationTime(void) const;
 
 private:
     CLoadLockBlob_ids m_Blob_ids;
@@ -673,6 +728,12 @@ public:
     void AddRetryDelay(double delay) { m_RetryDelay += delay; }
     double GetRetryDelay(void) const { return m_RetryDelay; }
 
+    static double GetCurrentTime(void);
+
+    double GetStartTime(void) const { return m_StartTime; }
+    double GetIdExpirationTime(void) const;
+    virtual double GetIdExpirationTimeout(void) const;
+
 private:
     friend class CLoadInfoLock;
     friend class CReaderAllocatedConnection;
@@ -695,6 +756,7 @@ private:
     double          m_RecursiveTime;
     CReaderAllocatedConnection* m_AllocatedConnection;
     double          m_RetryDelay;
+    double          m_StartTime;
 
 private: // hide methods
     CReaderRequestResult(const CReaderRequestResult&);
@@ -732,6 +794,27 @@ public:
     map<TKeySeq_ids2, CRef<TInfoSeq_ids> >  m_InfoSeq_ids2;
     map<TKeyBlob_ids, CRef<TInfoBlob_ids> > m_InfoBlob_ids;
 };
+
+
+inline
+bool CLoadInfo::IsLoaded(const CReaderRequestResult& rr) const
+{
+    return m_LoadLock && rr.GetStartTime() < GetExpirationTime();
+}
+
+
+inline
+double CLoadLockSeq_ids::GetNewExpirationTime(void) const
+{
+    return m_RequestResult->GetIdExpirationTime();
+}
+
+
+inline
+double CLoadLockBlob_ids::GetNewExpirationTime(void) const
+{
+    return m_RequestResult->GetIdExpirationTime();
+}
 
 
 END_SCOPE(objects)

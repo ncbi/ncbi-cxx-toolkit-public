@@ -104,15 +104,18 @@ int CTestApplication::Run(void)
             dispatcher->LoadSeq_idSeq_ids(request, seq_id);
             CLoadLockSeq_ids seq_ids(request, seq_id);
             NcbiCout << "  ids:";
-            ITERATE ( CLoadInfoSeq_ids, i, *seq_ids ) {
+            CFixedSeq_ids ids2 = seq_ids->GetSeq_ids();
+            ITERATE ( CFixedSeq_ids, i, ids2 ) {
                 NcbiCout << " " << i->AsString();
             }
             NcbiCout << NcbiEndl;
             
-            dispatcher->LoadSeq_idBlob_ids(request, seq_id, 0);
             CLoadLockBlob_ids blob_ids(request, seq_id, 0);
-            ITERATE ( CLoadInfoBlob_ids, i, *blob_ids ) {
-                CConstRef<CBlob_id> blob_id = i->first;
+            dispatcher->LoadSeq_idBlob_ids(request, seq_id, 0);
+            CFixedBlob_ids ids = blob_ids->GetBlob_ids();
+            ITERATE ( CFixedBlob_ids, i, ids ) {
+                const CBlob_Info& blob_info = *i;
+                CConstRef<CBlob_id> blob_id = blob_info.GetBlob_id();
                 NcbiCout << "  " << blob_id->ToString() << NcbiEndl;
 
                 if ( !blob_id->IsMainBlob() ) {

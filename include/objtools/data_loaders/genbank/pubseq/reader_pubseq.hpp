@@ -60,27 +60,19 @@ public:
                       const CSeq_id_Handle& seq_id);
     bool LoadSeq_idAccVer(CReaderRequestResult& result,
                           const CSeq_id_Handle& seq_id);
+
     bool LoadSeq_idSeq_ids(CReaderRequestResult& result,
                            const CSeq_id_Handle& seq_id);
+    bool LoadGiSeq_ids(CReaderRequestResult& result,
+                       const CSeq_id_Handle& seq_id);
+
     bool LoadSeq_idBlob_ids(CReaderRequestResult& result,
                             const CSeq_id_Handle& seq_id,
                             const SAnnotSelector* sel);
 
-    void GetSeq_idSeq_ids(CReaderRequestResult& result,
-                          CLoadLockSeq_ids& ids,
-                          const CSeq_id_Handle& seq_id);
-    void GetGiSeq_ids(CReaderRequestResult& result,
-                      const CSeq_id_Handle& seq_id,
-                      CLoadLockSeq_ids& ids);
-
-    bool GetSeq_idBlob_ids(CReaderRequestResult& result,
-                           CLoadLockBlob_ids& ids,
-                           const CSeq_id_Handle& seq_id,
-                           const SAnnotSelector* sel);
-    bool GetSeq_idInfo(CReaderRequestResult& result,
-                       const CSeq_id_Handle& seq_id,
-                       CLoadLockSeq_ids& seq_ids,
-                       CLoadLockBlob_ids& blob_ids);
+    bool LoadSeq_idInfo(CReaderRequestResult& result,
+                        const CSeq_id_Handle& seq_id,
+                        const SAnnotSelector* with_named_accs);
 
     void GetBlobVersion(CReaderRequestResult& result,
                         const CBlob_id& blob_id);

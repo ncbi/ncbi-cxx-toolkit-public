@@ -150,7 +150,7 @@ bool CGICacheReader::LoadSeq_idAccVer(CReaderRequestResult& result,
         if ( got ) {
             if ( buffer[0] ) {
                 try {
-                    ids->SetLoadedAccVer(CSeq_id_Handle::GetHandle(buffer));
+                    ids.SetLoadedAccVer(CSeq_id_Handle::GetHandle(buffer));
                     return true;
                 }
                 catch ( CException& /*ignored*/ ) {

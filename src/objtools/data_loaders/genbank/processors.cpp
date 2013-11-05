@@ -2389,10 +2389,10 @@ CProcessor_AnnotInfo::TMagic CProcessor_AnnotInfo::GetMagic(void) const
 
 
 void CProcessor_AnnotInfo::LoadBlob(CReaderRequestResult& result,
-                                    const TBlobId& blob_id,
                                     const CBlob_Info& info)
 {
     _ASSERT(info.IsSetAnnotInfo());
+    const CBlob_id& blob_id = *info.GetBlob_id();
     CLoadLockBlob blob(result, blob_id);
     if ( IsLoaded(result, blob_id, kMain_ChunkId, blob) ) {
         NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
@@ -2401,8 +2401,9 @@ void CProcessor_AnnotInfo::LoadBlob(CReaderRequestResult& result,
     }
     
     CRef<CTSE_Chunk_Info> chunk(new CTSE_Chunk_Info(kDelayedMain_ChunkId));
-    const CBlob_Info::TAnnotInfo& annot_infos = info.GetAnnotInfo();
-    ITERATE ( CBlob_Info::TAnnotInfo, it, annot_infos ) {
+    const CBlob_Annot_Info::TAnnotInfo& annot_infos =
+        info.GetAnnotInfo()->GetAnnotInfo();
+    ITERATE ( CBlob_Annot_Info::TAnnotInfo, it, annot_infos ) {
         const CID2S_Seq_annot_Info& annot_info = **it;
         // create special external annotations blob
         CAnnotName name(annot_info.GetName());

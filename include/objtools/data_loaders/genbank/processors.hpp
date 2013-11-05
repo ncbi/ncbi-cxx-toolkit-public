@@ -364,7 +364,6 @@ public:
     TMagic GetMagic(void) const;
 
     static void LoadBlob(CReaderRequestResult& result,
-                         const TBlobId& blob_id,
                          const CBlob_Info& blob_info);
 };
 

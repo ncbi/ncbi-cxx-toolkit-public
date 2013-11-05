@@ -240,7 +240,7 @@ protected:
                            const CID2S_Reply_Get_Chunk& reply);
 
     void x_UpdateLoadedSet(CReaderRequestResult& result,
-                           const SId2LoadedSet& loaded_set,
+                           SId2LoadedSet& data,
                            const SAnnotSelector* sel);
 
     bool x_LoadSeq_idBlob_idsSet(CReaderRequestResult& result,

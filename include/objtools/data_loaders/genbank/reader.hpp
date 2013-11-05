@@ -69,6 +69,7 @@ public:
     typedef int TContentsMask;
     typedef vector<TChunkId> TChunkIds;
     typedef vector<CSeq_id_Handle> TSeqIds;
+    typedef vector<CBlob_Info> TBlobIds;
 
     /// All LoadXxx() methods should return false if
     /// there is no requested data in the reader.
@@ -115,13 +116,12 @@ public:
                            TContentsMask mask,
                            const SAnnotSelector* sel);
     virtual bool LoadBlobs(CReaderRequestResult& result,
-                           CLoadLockBlob_ids blobs,
+                           CLoadLockBlob_ids lock,
                            TContentsMask mask,
                            const SAnnotSelector* sel);
     virtual bool LoadBlob(CReaderRequestResult& result,
                           const CBlob_id& blob_id) = 0;
     virtual bool LoadBlob(CReaderRequestResult& result,
-                          const CBlob_id& blob_id,
                           const CBlob_Info& blob_info);
     virtual bool LoadChunk(CReaderRequestResult& result,
                            const TBlobId& blob_id, TChunkId chunk_id);
@@ -131,13 +131,23 @@ public:
     virtual bool LoadBlobSet(CReaderRequestResult& result,
                              const TSeqIds& seq_ids);
 
+    void SetAndSaveNoStringSeq_ids(CReaderRequestResult& result,
+                                   const string& seq_id,
+                                   TBlobState state) const;
+    void SetAndSaveNoSeq_idSeq_ids(CReaderRequestResult& result,
+                                   const CSeq_id_Handle& seq_id,
+                                   TBlobState state) const;
     void SetAndSaveStringSeq_ids(CReaderRequestResult& result,
-                                 const string& seq_id) const;
+                                 const string& seq_id,
+                                 TBlobState state,
+                                 const CFixedSeq_ids& seq_ids) const;
     void SetAndSaveStringGi(CReaderRequestResult& result,
                             const string& seq_id,
                             TGi gi) const;
     void SetAndSaveSeq_idSeq_ids(CReaderRequestResult& result,
-                                 const CSeq_id_Handle& seq_id) const;
+                                 const CSeq_id_Handle& seq_id,
+                                 TBlobState state,
+                                 const CFixedSeq_ids& seq_ids) const;
     void SetAndSaveSeq_idGi(CReaderRequestResult& result,
                             const CSeq_id_Handle& seq_id,
                             TGi gi) const;
@@ -152,7 +162,13 @@ public:
                                int taxid) const;
     void SetAndSaveSeq_idBlob_ids(CReaderRequestResult& result,
                                   const CSeq_id_Handle& seq_id,
-                                  const SAnnotSelector* sel) const;
+                                  const SAnnotSelector* sel,
+                                  TBlobState state,
+                                  const CFixedBlob_ids& blob_ids) const;
+    void SetAndSaveNoSeq_idBlob_ids(CReaderRequestResult& result,
+                                    const CSeq_id_Handle& seq_id,
+                                    const SAnnotSelector* sel,
+                                    TBlobState state) const;
     void SetAndSaveBlobVersion(CReaderRequestResult& result,
                                const TBlobId& blob_id,
                                TBlobVersion version) const;
@@ -163,38 +179,57 @@ public:
     void SetAndSaveNoBlob(CReaderRequestResult& result,
                           const TBlobId& blob_id,
                           TChunkId chunk_id,
-                          const CLoadLockBlob& blob);
+                          const CLoadLockBlob& lock);
 
+    void SetAndSaveNoStringSeq_ids(CReaderRequestResult& result,
+                                   const string& seq_id,
+                                   CLoadLockSeq_ids& lock,
+                                   TBlobState state) const;
+    void SetAndSaveNoSeq_idSeq_ids(CReaderRequestResult& result,
+                                   const CSeq_id_Handle& seq_id,
+                                   CLoadLockSeq_ids& lock,
+                                   TBlobState state) const;
     void SetAndSaveStringSeq_ids(CReaderRequestResult& result,
                                  const string& seq_id,
-                                 CLoadLockSeq_ids& seq_ids) const;
+                                 CLoadLockSeq_ids& lock,
+                                 TBlobState blob_state,
+                                 const CFixedSeq_ids& seq_ids) const;
     void SetAndSaveStringGi(CReaderRequestResult& result,
                             const string& seq_id,
-                            CLoadLockSeq_ids& seq_ids,
+                            CLoadLockSeq_ids& lock,
                             TGi gi) const;
     void SetAndSaveSeq_idSeq_ids(CReaderRequestResult& result,
                                  const CSeq_id_Handle& seq_id,
-                                 CLoadLockSeq_ids& seq_ids) const;
+                                 CLoadLockSeq_ids& lock,
+                                 TBlobState state,
+                                 const CFixedSeq_ids& seq_ids) const;
     void SetAndSaveSeq_idGi(CReaderRequestResult& result,
                             const CSeq_id_Handle& seq_id,
-                            CLoadLockSeq_ids& seq_ids,
+                            CLoadLockSeq_ids& lock,
                             TGi gi) const;
     void SetAndSaveSeq_idAccVer(CReaderRequestResult& result,
                                 const CSeq_id_Handle& seq_id,
-                                CLoadLockSeq_ids& seq_ids,
+                                CLoadLockSeq_ids& lock,
                                 const CSeq_id& acc_id) const;
     void SetAndSaveSeq_idLabel(CReaderRequestResult& result,
                                const CSeq_id_Handle& seq_id,
-                               CLoadLockSeq_ids& seq_ids,
+                               CLoadLockSeq_ids& lock,
                                const string& label) const;
     void SetAndSaveSeq_idTaxId(CReaderRequestResult& result,
                                const CSeq_id_Handle& seq_id,
-                               CLoadLockSeq_ids& seq_ids,
+                               CLoadLockSeq_ids& lock,
                                int taxid) const;
     void SetAndSaveSeq_idBlob_ids(CReaderRequestResult& result,
                                   const CSeq_id_Handle& seq_id,
                                   const SAnnotSelector* sel,
-                                  CLoadLockBlob_ids& blob_ids) const;
+                                  CLoadLockBlob_ids& lock,
+                                  TBlobState state,
+                                  const CFixedBlob_ids& blob_ids) const;
+    void SetAndSaveNoSeq_idBlob_ids(CReaderRequestResult& result,
+                                    const CSeq_id_Handle& seq_id,
+                                    const SAnnotSelector* sel,
+                                    CLoadLockBlob_ids& lock,
+                                    TBlobState state) const;
     typedef CLoadLockBlob::TAnnotInfo TAnnotInfo;
 
     int SetMaximumConnections(int max);

@@ -206,6 +206,8 @@ public:
                                                  const SAnnotSelector* sel);
     virtual TTSE_LockSet GetExternalAnnotRecords(const CBioseq_Info& bioseq,
                                                  const SAnnotSelector* sel);
+    virtual TTSE_LockSet GetOrphanAnnotRecords(const CSeq_id_Handle& idh,
+                                               const SAnnotSelector* sel);
 
     virtual void GetChunk(TChunk chunk);
     virtual void GetChunks(const TChunkSet& chunks);

@@ -470,7 +470,7 @@ bool CCacheReader::LoadSeq_idGi(CReaderRequestResult& result,
     }
 
     CLoadLockSeq_ids ids(result, seq_id);
-    if ( ids->IsLoadedGi() ) {
+    if ( ids.IsLoadedGi() ) {
         return true;
     }
     
@@ -478,14 +478,14 @@ bool CCacheReader::LoadSeq_idGi(CReaderRequestResult& result,
     if ( str.Found() ) {
         TGi gi = GI_FROM(Int4, str.ParseInt4());
         if ( str.Done() ) {
-            ids->SetLoadedGi(gi);
+            ids.SetLoadedGi(gi);
             return true;
         }
     }
     
     ReadSeq_ids(result, GetIdKey(seq_id), ids);
     
-    return ids->IsLoadedGi();
+    return ids.IsLoadedGi();
 }
 
 
@@ -497,7 +497,7 @@ bool CCacheReader::LoadSeq_idAccVer(CReaderRequestResult& result,
     }
 
     CLoadLockSeq_ids ids(result, seq_id);
-    if ( ids->IsLoadedAccVer() ) {
+    if ( ids.IsLoadedAccVer() ) {
         return true;
     }
 
@@ -509,13 +509,13 @@ bool CCacheReader::LoadSeq_idAccVer(CReaderRequestResult& result,
             CSeq_id id(data);
             acch = CSeq_id_Handle::GetHandle(id);
         }
-        ids->SetLoadedAccVer(acch);
+        ids.SetLoadedAccVer(acch);
         return true;
     }
 
     ReadSeq_ids(result, GetIdKey(seq_id), ids);
     
-    return ids->IsLoadedAccVer();
+    return ids.IsLoadedAccVer();
 }
 
 
@@ -527,19 +527,19 @@ bool CCacheReader::LoadSeq_idLabel(CReaderRequestResult& result,
     }
 
     CLoadLockSeq_ids ids(result, seq_id);
-    if ( ids->IsLoadedLabel() ) {
+    if ( ids.IsLoadedLabel() ) {
         return true;
     }
     
     CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, GetLabelSubkey());
     if ( str.Found() ) {
-        ids->SetLoadedLabel(str.FullString());
+        ids.SetLoadedLabel(str.FullString());
         return true;
     }
 
     ReadSeq_ids(result, GetIdKey(seq_id), ids);
     
-    return ids->IsLoadedLabel();
+    return ids.IsLoadedLabel();
 }
 
 
@@ -551,7 +551,7 @@ bool CCacheReader::LoadSeq_idTaxId(CReaderRequestResult& result,
     }
 
     CLoadLockSeq_ids ids(result, seq_id);
-    if ( ids->IsLoadedTaxId() ) {
+    if ( ids.IsLoadedTaxId() ) {
         return true;
     }
     
@@ -559,7 +559,7 @@ bool CCacheReader::LoadSeq_idTaxId(CReaderRequestResult& result,
     if ( str.Found() ) {
         int taxid = str.ParseInt4();
         if ( str.Done() ) {
-            ids->SetLoadedTaxId(taxid);
+            ids.SetLoadedTaxId(taxid);
             return true;
         }
     }
@@ -580,13 +580,13 @@ bool CCacheReader::LoadAccVers(CReaderRequestResult& result,
             continue;
         }
         CLoadLockSeq_ids lock(result, ids[i]);
-        if ( !lock->IsLoadedAccVer() ) {
+        if ( !lock.IsLoadedAccVer() ) {
             LoadSeq_idAccVer(result, ids[i]);
         }
-        if ( !lock->IsLoadedAccVer() ) {
+        if ( !lock.IsLoadedAccVer() ) {
             LoadSeq_idSeq_ids(result, ids[i]);
         }
-        if ( lock->IsLoadedAccVer() ) {
+        if ( lock.IsLoadedAccVer() ) {
             ret[i] = lock->GetAccVer();
             loaded[i] = true;
             continue;
@@ -608,10 +608,10 @@ bool CCacheReader::LoadGis(CReaderRequestResult& result,
             continue;
         }
         CLoadLockSeq_ids lock(result, ids[i]);
-        if ( !lock->IsLoadedGi() ) {
+        if ( !lock.IsLoadedGi() ) {
             LoadSeq_idGi(result, ids[i]);
         }
-        if ( lock->IsLoadedGi() ) {
+        if ( lock.IsLoadedGi() ) {
             ret[i] = lock->GetGi();
             loaded[i] = true;
             continue;
@@ -633,10 +633,10 @@ bool CCacheReader::LoadLabels(CReaderRequestResult& result,
             continue;
         }
         CLoadLockSeq_ids lock(result, ids[i]);
-        if ( !lock->IsLoadedLabel() ) {
+        if ( !lock.IsLoadedLabel() ) {
             LoadSeq_idLabel(result, ids[i]);
         }
-        if ( lock->IsLoadedLabel() ) {
+        if ( lock.IsLoadedLabel() ) {
             ret[i] = lock->GetLabel();
             loaded[i] = true;
             continue;
@@ -658,10 +658,10 @@ bool CCacheReader::LoadTaxIds(CReaderRequestResult& result,
             continue;
         }
         CLoadLockSeq_ids lock(result, ids[i]);
-        if ( !lock->IsLoadedTaxId() ) {
+        if ( !lock.IsLoadedTaxId() ) {
             LoadSeq_idTaxId(result, ids[i]);
         }
-        if ( lock->IsLoadedTaxId() ) {
+        if ( lock.IsLoadedTaxId() ) {
             ret[i] = lock->GetTaxId();
             loaded[i] = true;
             continue;
@@ -683,7 +683,7 @@ bool CCacheReader::ReadSeq_ids(CReaderRequestResult& result,
         return true;
     }
 
-    CLoadInfoSeq_ids::TSeq_ids seq_ids;
+    TSeqIds seq_ids;
     {{
         CConn conn(result, this);
         if ( GetDebugLevel() ) {
@@ -705,8 +705,7 @@ bool CCacheReader::ReadSeq_ids(CReaderRequestResult& result,
         }
         conn.Release();
     }}
-    ids->m_Seq_ids.swap(seq_ids);
-    ids.SetLoaded();
+    ids.SetLoadedSeq_ids(0, CFixedSeq_ids(eTakeOwnership, seq_ids));
     return true;
 }
 
@@ -727,45 +726,58 @@ bool CCacheReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
     string subkey, true_subkey;
     GetBlob_idsSubkey(sel, subkey, true_subkey);
     CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, subkey);
-    if ( str.Found() ) {
-        if ( str.ParseInt4() != BLOB_IDS_MAGIC ) {
-            return false;
-        }
-        ids->clear();
-        ids->SetState(str.ParseUint4());
-        size_t blob_count = str.ParseUint4();
-        for ( size_t i = 0; i < blob_count; ++i ) {
-            CBlob_id id;
-            id.SetSat(str.ParseUint4());
-            id.SetSubSat(str.ParseUint4());
-            id.SetSatKey(str.ParseUint4());
-            CBlob_Info info(str.ParseUint4());
-            size_t name_count = str.ParseUint4();
-            for ( size_t j = 0; j < name_count; ++j ) {
-                info.AddNamedAnnotName(str.ParseString());
-            }
-            string s = str.ParseString();
-            if ( !s.empty() ) {
-                CObjectIStreamAsnBinary stream(s.data(), s.size());
-                CRef<CID2S_Seq_annot_Info> annot_info;
-                while ( stream.HaveMoreData() ) {
-                    annot_info.Reset(new CID2S_Seq_annot_Info);
-                    stream >> *annot_info;
-                    info.AddAnnotInfo(*annot_info);
-                }
-            }
-            ids.AddBlob_id(id, info);
-        }
-        if ( !true_subkey.empty() && str.ParseString() != true_subkey ) {
-            ids->clear();
-            return false;
-        }
-        ids.SetLoaded();
-        if ( !str.Done() ) {
-            ids->clear();
-            return false;
-        }
+    if ( !str.Found() ) {
+        return false;
     }
+    if ( str.ParseInt4() != BLOB_IDS_MAGIC ) {
+        return false;
+    }
+    
+    int state = str.ParseUint4();
+    TBlobIds blob_ids;
+    size_t blob_count = str.ParseUint4();
+    blob_ids.reserve(blob_count);
+    
+    for ( size_t i = 0; i < blob_count; ++i ) {
+        CRef<CBlob_id> id(new CBlob_id);
+        id->SetSat(str.ParseUint4());
+        id->SetSubSat(str.ParseUint4());
+        id->SetSatKey(str.ParseUint4());
+        CBlob_Info info(id, str.ParseUint4());
+        CRef<CBlob_Annot_Info> annots_info;
+        size_t name_count = str.ParseUint4();
+        if ( name_count ) {
+            annots_info = new CBlob_Annot_Info;
+            for ( size_t j = 0; j < name_count; ++j ) {
+                annots_info->AddNamedAnnotName(str.ParseString());
+            }
+        }
+        string s = str.ParseString();
+        if ( !s.empty() ) {
+            if ( !annots_info ) {
+                annots_info = new CBlob_Annot_Info;
+            }
+            CObjectIStreamAsnBinary stream(s.data(), s.size());
+            CRef<CID2S_Seq_annot_Info> annot_info;
+            while ( stream.HaveMoreData() ) {
+                annot_info.Reset(new CID2S_Seq_annot_Info);
+                stream >> *annot_info;
+                annots_info->AddAnnotInfo(*annot_info);
+            }
+        }
+        if ( annots_info ) {
+            info.SetAnnotInfo(annots_info);
+        }
+        blob_ids.push_back(info);
+    }
+    if ( !true_subkey.empty() && str.ParseString() != true_subkey ) {
+        return false;
+    }
+    if ( !str.Done() ) {
+        return false;
+    }
+    ids.SetLoadedBlob_ids(state, CFixedBlob_ids(eTakeOwnership, blob_ids));
+
     return true;
 }
 

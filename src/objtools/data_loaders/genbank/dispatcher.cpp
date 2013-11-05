@@ -337,7 +337,7 @@ namespace {
 
         bool IsDone(void)
             {
-                return m_Lock->IsLoadedGi();
+                return m_Lock.IsLoadedGi();
             }
         bool Execute(CReader& reader)
             {
@@ -376,7 +376,7 @@ namespace {
 
         bool IsDone(void)
             {
-                return m_Lock->IsLoadedAccVer();
+                return m_Lock.IsLoadedAccVer();
             }
         bool Execute(CReader& reader)
             {
@@ -415,7 +415,7 @@ namespace {
 
         bool IsDone(void)
             {
-                return m_Lock->IsLoadedLabel();
+                return m_Lock.IsLoadedLabel();
             }
         bool Execute(CReader& reader)
             {
@@ -454,7 +454,7 @@ namespace {
 
         bool IsDone(void)
             {
-                return m_Lock->IsLoadedTaxId();
+                return m_Lock.IsLoadedTaxId();
             }
         bool Execute(CReader& reader)
             {
@@ -492,8 +492,7 @@ namespace {
         if ( seq_ids.IsLoaded() &&
              (seq_ids->GetState() & CBioseq_Handle::fState_no_data) ) {
             // mark blob-ids as absent too
-            ids->SetState(seq_ids->GetState());
-            ids.SetLoaded();
+            ids.SetNoBlob_ids(seq_ids->GetState());
             return true;
         }
         return false;
@@ -766,10 +765,11 @@ namespace {
     {
         _ASSERT(blobs.IsLoaded());
 
-        ITERATE ( CLoadInfoBlob_ids, it, *blobs ) {
-            const CBlob_Info& info = it->second;
-            if ( info.Matches(*it->first, mask, sel) ) {
-                if ( !result.IsBlobLoaded(*it->first) ) {
+        CFixedBlob_ids blob_ids = blobs->GetBlob_ids();
+        ITERATE ( CFixedBlob_ids, it, blob_ids ) {
+            const CBlob_Info& info = *it;
+            if ( info.Matches(mask, sel) ) {
+                if ( !result.IsBlobLoaded(*info.GetBlob_id()) ) {
                     return false;
                 }
             }
@@ -887,7 +887,7 @@ namespace {
         bool Execute(CReader& reader)
             {
                 if ( m_BlobInfo ) {
-                    return reader.LoadBlob(GetResult(), m_Key, *m_BlobInfo);
+                    return reader.LoadBlob(GetResult(), *m_BlobInfo);
                 }
                 else {
                     return reader.LoadBlob(GetResult(), m_Key);
@@ -1064,13 +1064,12 @@ namespace {
                     if ( !s_Blob_idsLoaded(blob_ids, seq_ids) ) {
                         return false;
                     }
-                    ITERATE ( CLoadInfoBlob_ids, it, *blob_ids ) {
-                        const CBlob_Info& info = it->second;
-                        if ( (info.GetContentsMask() & fBlobHasCore) == 0 ) {
-                            continue; // skip this blob
-                        }
-                        if ( !result.IsBlobLoaded(*it->first) ) {
-                            return false;
+                    CFixedBlob_ids ids = blob_ids->GetBlob_ids();
+                    ITERATE ( CFixedBlob_ids, it, ids ) {
+                        if ( it->Matches(fBlobHasCore, 0) ) {
+                            if ( !result.IsBlobLoaded(*it->GetBlob_id()) ) {
+                                return false;
+                            }
                         }
                     }
                 }
@@ -1342,10 +1341,9 @@ void CReadDispatcher::LoadBlob(CReaderRequestResult& result,
 
 
 void CReadDispatcher::LoadBlob(CReaderRequestResult& result,
-                               const CBlob_id& blob_id,
                                const CBlob_Info& blob_info)
 {
-    CCommandLoadBlob command(result, blob_id, &blob_info);
+    CCommandLoadBlob command(result, *blob_info.GetBlob_id(), &blob_info);
     Process(command);
 }
 

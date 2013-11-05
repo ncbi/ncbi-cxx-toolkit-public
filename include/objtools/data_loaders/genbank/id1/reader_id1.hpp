@@ -59,21 +59,19 @@ public:
     bool LoadSeq_idGi(CReaderRequestResult& result,
                       const CSeq_id_Handle& seq_id);
 
+    bool LoadSeq_idSeq_ids(CReaderRequestResult& result,
+                           const CSeq_id_Handle& id);
+    bool LoadGiSeq_ids(CReaderRequestResult& result,
+                       const CSeq_id_Handle& seq_id);
+
+    bool LoadSeq_idBlob_ids(CReaderRequestResult& result,
+                            const CSeq_id_Handle& id,
+                            const SAnnotSelector* sel);
+    bool LoadGiBlob_ids(CReaderRequestResult& result,
+                        const CSeq_id_Handle& seq_id);
+
     void GetBlobVersion(CReaderRequestResult& result,
                         const CBlob_id& blob_id);
-    void GetSeq_idSeq_ids(CReaderRequestResult& result,
-                          CLoadLockSeq_ids& ids,
-                          const CSeq_id_Handle& id);
-    bool GetSeq_idBlob_ids(CReaderRequestResult& result,
-                           CLoadLockBlob_ids& ids,
-                           const CSeq_id_Handle& id,
-                           const SAnnotSelector* sel);
-    void GetGiSeq_ids(CReaderRequestResult& result,
-                      const CSeq_id_Handle& seq_id,
-                      CLoadLockSeq_ids& ids);
-    void GetGiBlob_ids(CReaderRequestResult& result,
-                       const CSeq_id_Handle& seq_id,
-                       CLoadLockBlob_ids& ids);
 
     //////////////////////////////////////////////////////////////////
     // Blob loading methods:

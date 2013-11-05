@@ -58,10 +58,12 @@ int main()
 
         CSeq_id_Handle seq_id = CSeq_id_Handle::GetGiHandle(gi);
         CStandaloneRequestResult request(seq_id);
-        CLoadLockBlob_ids ids(request, seq_id, 0);
+        CLoadLockBlob_ids blob_ids(request, seq_id, 0);
         dispatcher->LoadSeq_idBlob_ids(request, seq_id, 0);
-        ITERATE ( CLoadInfoBlob_ids, i, *ids ) {
-            CConstRef<CBlob_id> blob_id = i->first;
+        CFixedBlob_ids ids = blob_ids->GetBlob_ids();
+        ITERATE ( CFixedBlob_ids, i, ids ) {
+            const CBlob_Info& blob_info = *i;
+            CConstRef<CBlob_id> blob_id = blob_info.GetBlob_id();
             cout << "gi: " << gi <<
                 " Sat=" << blob_id->GetSat() <<
                 " SatKey=" << blob_id->GetSatKey() << endl;

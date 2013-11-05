@@ -52,11 +52,15 @@ static inline TThreadSystemID GetThreadId(void)
 }
 
 
+DEFINE_STATIC_FAST_MUTEX(sx_ExpirationTimeMutex);
+
+
 /////////////////////////////////////////////////////////////////////////////
 // CResolveInfo
 /////////////////////////////////////////////////////////////////////////////
 
 CLoadInfo::CLoadInfo(void)
+    : m_ExpirationTime(0)
 {
 }
 
@@ -66,35 +70,130 @@ CLoadInfo::~CLoadInfo(void)
 }
 
 
+inline
+void CLoadInfo::x_SetLoaded(double expiration_time)
+{
+    _ASSERT(expiration_time > 0);
+    if ( !m_LoadLock ) {
+        m_LoadLock.Reset(new CObject);
+        m_ExpirationTime = expiration_time;
+    }
+    else {
+        if ( expiration_time > m_ExpirationTime ) {
+            m_ExpirationTime = expiration_time;
+        }
+    }
+}
+
+
+void CLoadInfo::SetLoaded(double expiration_time)
+{
+    CFastMutexGuard guard(sx_ExpirationTimeMutex);
+    x_SetLoaded(expiration_time);
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CFixedSeq_ids
+/////////////////////////////////////////////////////////////////////////////
+
+CFixedSeq_ids::CFixedSeq_ids(void)
+    : m_Ref(new TObject)
+{
+}
+
+
+CFixedSeq_ids::CFixedSeq_ids(const TList& list)
+    : m_Ref(new TObject(list))
+{
+}
+
+
+CFixedSeq_ids::CFixedSeq_ids(ENcbiOwnership ownership, TList& list)
+{
+    CRef<TObject> ref(new TObject);
+    if ( ownership == eTakeOwnership ) {
+        swap(ref->GetData(), list);
+    }
+    else {
+        ref->GetData() = list;
+    }
+    m_Ref = ref;
+}
+
+
+void CFixedSeq_ids::clear(void)
+{
+    if ( !empty() ) {
+        m_Ref = new TObject;
+    }
+}
+
+/////////////////////////////////////////////////////////////////////////////
+// CFixedBlob_ids
+/////////////////////////////////////////////////////////////////////////////
+
+CFixedBlob_ids::CFixedBlob_ids(void)
+    : m_Ref(new TObject)
+{
+}
+
+
+CFixedBlob_ids::CFixedBlob_ids(const TList& list)
+    : m_Ref(new TObject(list))
+{
+}
+
+
+CFixedBlob_ids::CFixedBlob_ids(ENcbiOwnership ownership, TList& list)
+{
+    CRef<TObject> ref(new TObject);
+    if ( ownership == eTakeOwnership ) {
+        swap(ref->GetData(), list);
+    }
+    else {
+        ref->GetData() = list;
+    }
+    m_Ref = ref;
+}
+
+
+void CFixedBlob_ids::clear(void)
+{
+    if ( !empty() ) {
+        m_Ref = new TObject;
+    }
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // CLoadInfoSeq_ids
 /////////////////////////////////////////////////////////////////////////////
 
 CLoadInfoSeq_ids::CLoadInfoSeq_ids(void)
-    : m_GiLoaded(false),
-      m_AccLoaded(false),
-      m_LabelLoaded(false),
-      m_TaxIdLoaded(false),
+    : m_ExpirationTimeGi(0),
+      m_ExpirationTimeAcc(0),
+      m_ExpirationTimeLabel(0),
+      m_ExpirationTimeTaxId(0),
       m_State(0)
 {
 }
 
 
 CLoadInfoSeq_ids::CLoadInfoSeq_ids(const CSeq_id_Handle& /*seq_id*/)
-    : m_GiLoaded(false),
-      m_AccLoaded(false),
-      m_LabelLoaded(false),
-      m_TaxIdLoaded(false),
+    : m_ExpirationTimeGi(0),
+      m_ExpirationTimeAcc(0),
+      m_ExpirationTimeLabel(0),
+      m_ExpirationTimeTaxId(0),
       m_State(0)
 {
 }
 
 
 CLoadInfoSeq_ids::CLoadInfoSeq_ids(const string& /*seq_id*/)
-    : m_GiLoaded(false),
-      m_AccLoaded(false),
-      m_LabelLoaded(false),
-      m_TaxIdLoaded(false),
+    : m_ExpirationTimeGi(0),
+      m_ExpirationTimeAcc(0),
+      m_ExpirationTimeLabel(0),
+      m_ExpirationTimeTaxId(0),
       m_State(0)
 {
 }
@@ -105,116 +204,196 @@ CLoadInfoSeq_ids::~CLoadInfoSeq_ids(void)
 }
 
 
-bool CLoadInfoSeq_ids::IsLoadedGi(void)
+bool CLoadInfoSeq_ids::SetLoadedSeq_ids(TState state,
+                                        const CFixedSeq_ids& seq_ids,
+                                        double expiration_time)
 {
-    if ( m_GiLoaded ) {
-        return true;
-    }
-    if ( !IsLoaded() ) {
+    CFastMutexGuard guard(sx_ExpirationTimeMutex);
+    if ( expiration_time <= GetExpirationTime() ) {
         return false;
     }
-    ITERATE ( CLoadInfoSeq_ids, it, *this ) {
+    m_State = state;
+    m_Seq_ids = seq_ids;
+    x_SetLoaded(expiration_time);
+    return true;
+}
+
+
+bool CLoadInfoSeq_ids::SetNoSeq_ids(TState state,
+                                    double expiration_time)
+{
+    CFastMutexGuard guard(sx_ExpirationTimeMutex);
+    if ( expiration_time <= GetExpirationTime() ) {
+        return false;
+    }
+    m_State = state;
+    m_Seq_ids.clear();
+    x_SetLoaded(expiration_time);
+    return true;
+}
+
+
+CFixedSeq_ids CLoadInfoSeq_ids::GetSeq_ids(void) const
+{
+    CFastMutexGuard guard(sx_ExpirationTimeMutex);
+    _ASSERT(GetExpirationTime() > 0);
+    return m_Seq_ids;
+}
+
+
+bool CLoadInfoSeq_ids::IsEmpty(void) const
+{
+    return GetSeq_ids().empty();
+}
+
+
+bool CLoadInfoSeq_ids::IsLoadedGi(const CReaderRequestResult& rr)
+{
+    if ( rr.GetStartTime() < m_ExpirationTimeGi ) {
+        return true;
+    }
+    if ( !IsLoaded(rr) ) {
+        return false;
+    }
+    TGi gi = ZERO_GI;
+    TSeq_ids ids = GetSeq_ids();
+    ITERATE ( TSeq_ids, it, ids ) {
         if ( it->Which() == CSeq_id::e_Gi ) {
-            TGi gi;
             if ( it->IsGi() ) {
                 gi = it->GetGi();
             }
             else {
                 gi = it->GetSeqId()->GetGi();
             }
-            SetLoadedGi(gi);
-            return true;
+            break;
         }
     }
-    SetLoadedGi(ZERO_GI);
+    SetLoadedGi(gi, GetExpirationTime());
     return true;
 }
 
 
-void CLoadInfoSeq_ids::SetLoadedGi(TGi gi)
+bool CLoadInfoSeq_ids::SetLoadedGi(TGi gi,
+                                   double expiration_time)
 {
-    _ASSERT(!m_GiLoaded || m_Gi == gi);
+    CFastMutexGuard guard(sx_ExpirationTimeMutex);
+    if ( expiration_time <= m_ExpirationTimeGi ) {
+        return false;
+    }
     m_Gi = gi;
-    m_GiLoaded = true;
+    m_ExpirationTimeGi = expiration_time;
+    return true;
 }
 
 
-bool CLoadInfoSeq_ids::IsLoadedAccVer(void)
+bool CLoadInfoSeq_ids::IsLoadedAccVer(const CReaderRequestResult& rr)
 {
-    if ( m_AccLoaded ) {
+    if ( rr.GetStartTime() < m_ExpirationTimeAcc ) {
         return true;
     }
-    if ( !IsLoaded() ) {
+    if ( !IsLoaded(rr) ) {
         return false;
     }
     CSeq_id_Handle acc;
-    ITERATE ( CLoadInfoSeq_ids, it, *this ) {
+    TSeq_ids ids = GetSeq_ids();
+    ITERATE ( TSeq_ids, it, ids ) {
         if ( !it->IsGi() && it->GetSeqId()->GetTextseq_Id() ) {
             acc = *it;
             break;
         }
     }
-    SetLoadedAccVer(acc);
+    SetLoadedAccVer(acc, GetExpirationTime());
     return true;
 }
 
 
-void CLoadInfoSeq_ids::SetLoadedAccVer(const CSeq_id_Handle& acc)
+CSeq_id_Handle CLoadInfoSeq_ids::GetAccVer(void) const
 {
-    if ( !acc || acc.Which() == CSeq_id::e_Gi ) {
-        _ASSERT(!acc || acc.GetGi() == ZERO_GI);
-        _ASSERT(!m_AccLoaded || m_Acc == CSeq_id_Handle());
-        m_Acc = CSeq_id_Handle();
-    }
-    else {
-        _ASSERT(acc.GetSeqId()->GetTextseq_Id());
-        _ASSERT(!m_AccLoaded || m_Acc == acc);
-        m_Acc = acc;
-    }
-    m_AccLoaded = true;
+    CFastMutexGuard guard(sx_ExpirationTimeMutex);
+    _ASSERT(m_ExpirationTimeAcc > 0);
+    _ASSERT(!m_Acc || m_Acc.GetSeqId()->GetTextseq_Id());
+    return m_Acc;
 }
 
 
-bool CLoadInfoSeq_ids::IsLoadedLabel(void)
+bool CLoadInfoSeq_ids::SetLoadedAccVer(const CSeq_id_Handle& acc,
+                                       double expiration_time)
 {
-    if ( m_LabelLoaded ) {
-        return true;
+    if ( acc && acc.Which() == CSeq_id::e_Gi ) {
+        _ASSERT(acc.GetGi() == ZERO_GI);
+        return SetLoadedAccVer(CSeq_id_Handle(), expiration_time);
     }
-    if ( !IsLoaded() ) {
+    _ASSERT(!acc || acc.GetSeqId()->GetTextseq_Id());
+    CFastMutexGuard guard(sx_ExpirationTimeMutex);
+    if ( expiration_time <= m_ExpirationTimeAcc ) {
         return false;
     }
-    m_Label = objects::GetLabel(m_Seq_ids);
-    m_LabelLoaded = true;
+    m_ExpirationTimeAcc = expiration_time;
+    m_Acc = acc;
     return true;
 }
 
 
-void CLoadInfoSeq_ids::SetLoadedLabel(const string& label)
+bool CLoadInfoSeq_ids::IsLoadedLabel(const CReaderRequestResult& rr)
 {
-    m_Label = label;
-    m_LabelLoaded = true;
+    if ( rr.GetStartTime() < m_ExpirationTimeLabel ) {
+        return true;
+    }
+    if ( !IsLoaded(rr) ) {
+        return false;
+    }
+    TSeq_ids ids = GetSeq_ids();
+    string label = objects::GetLabel(ids);
+    SetLoadedLabel(label, GetExpirationTime());
+    return true;
 }
 
 
-bool CLoadInfoSeq_ids::IsLoadedTaxId(void)
+string CLoadInfoSeq_ids::GetLabel(void) const
 {
-    if ( m_TaxIdLoaded ) {
+    CFastMutexGuard guard(sx_ExpirationTimeMutex);
+    _ASSERT(m_ExpirationTimeLabel > 0);
+    return m_Label;
+}
+
+
+bool CLoadInfoSeq_ids::SetLoadedLabel(const string& label,
+                                      double expiration_time)
+{
+    CFastMutexGuard guard(sx_ExpirationTimeMutex);
+    if ( expiration_time <= m_ExpirationTimeLabel ) {
+        return false;
+    }
+    m_Label = label;
+    m_ExpirationTimeLabel = expiration_time;
+    return true;
+}
+
+
+bool CLoadInfoSeq_ids::IsLoadedTaxId(const CReaderRequestResult& rr)
+{
+    if ( rr.GetStartTime() < m_ExpirationTimeTaxId ) {
         return true;
     }
-    if ( IsLoaded() && (m_State & CBioseq_Handle::fState_no_data) ) {
+    if ( IsLoaded(rr) && (m_State & CBioseq_Handle::fState_no_data) ) {
         // update no taxid for unknown sequences
-        m_TaxId = 0;
-        m_TaxIdLoaded = true;
+        SetLoadedTaxId(0, GetExpirationTime());
         return true;
     }
     return false;
 }
 
 
-void CLoadInfoSeq_ids::SetLoadedTaxId(int taxid)
+bool CLoadInfoSeq_ids::SetLoadedTaxId(int taxid,
+                                      double expiration_time)
 {
+    CFastMutexGuard guard(sx_ExpirationTimeMutex);
+    if ( expiration_time <= m_ExpirationTimeTaxId ) {
+        return false;
+    }
     m_TaxId = taxid;
-    m_TaxIdLoaded = true;
+    m_ExpirationTimeTaxId = expiration_time;
+    return true;
 }
 
 
@@ -242,12 +421,61 @@ CLoadInfoBlob_ids::~CLoadInfoBlob_ids(void)
 }
 
 
-CLoadInfoBlob_ids::TBlob_Info&
-CLoadInfoBlob_ids::AddBlob_id(const TBlobId& id, const TBlob_Info& info)
+CFixedBlob_ids CLoadInfoBlob_ids::GetBlob_ids(void) const
 {
-    _ASSERT(!IsLoaded());
-    return m_Blob_ids.insert(TBlobIds::value_type(Ref(new TBlobId(id)), info))
-        .first->second;
+    CFastMutexGuard guard(sx_ExpirationTimeMutex);
+    _ASSERT(GetExpirationTime() > 0);
+    return m_Blob_ids;
+}
+
+
+bool CLoadInfoBlob_ids::SetNoBlob_ids(TState state,
+                                      double expiration_time)
+{
+    CFastMutexGuard guard(sx_ExpirationTimeMutex);
+    if ( expiration_time <= GetExpirationTime() ) {
+        return false;
+    }
+    m_State = state;
+    m_Blob_ids.clear();
+    x_SetLoaded(expiration_time);
+    return true;
+}
+
+
+bool CLoadInfoBlob_ids::SetLoadedBlob_ids(TState state,
+                                          const CFixedBlob_ids& blob_ids,
+                                          double expiration_time)
+{
+    CFastMutexGuard guard(sx_ExpirationTimeMutex);
+    if ( expiration_time <= GetExpirationTime() ) {
+        return false;
+    }
+    m_State = state;
+    m_Blob_ids = blob_ids;
+    x_SetLoaded(expiration_time);
+    return true;
+}
+
+
+bool CLoadLockBlob_ids::SetNoBlob_ids(TInfo::TState state)
+{
+    return Get().SetNoBlob_ids(state, GetNewExpirationTime());
+}
+
+
+bool CLoadLockBlob_ids::SetLoadedBlob_ids(TInfo::TState state,
+                                          const TInfo::TBlobIds& blob_ids)
+{
+    return Get().SetLoadedBlob_ids(state, blob_ids, GetNewExpirationTime());
+}
+
+
+bool CLoadLockBlob_ids::SetLoadedBlob_ids(const CLoadLockBlob_ids& ids2)
+{
+    return Get().SetLoadedBlob_ids(ids2->GetState(),
+                                   ids2->GetBlob_ids(),
+                                   ids2->GetExpirationTime());
 }
 
 
@@ -298,13 +526,9 @@ void CLoadInfoLock::ReleaseLock(void)
 }
 
 
-void CLoadInfoLock::SetLoaded(CObject* obj)
+void CLoadInfoLock::SetLoaded(double expiration_timeout)
 {
-    _ASSERT(!m_Info->m_LoadLock);
-    if ( !obj ) {
-        obj = new CObject;
-    }
-    m_Info->m_LoadLock.Reset(obj);
+    m_Info->SetLoaded(expiration_timeout);
     ReleaseLock();
 }
 
@@ -315,16 +539,17 @@ void CLoadInfoLock::SetLoaded(CObject* obj)
 
 void CLoadLock_Base::Lock(TInfo& info, TMutexSource& src)
 {
+    m_RequestResult = &src;
     m_Info.Reset(&info);
-    if ( !m_Info->IsLoaded() ) {
+    if ( !m_Info->IsLoaded(*m_RequestResult) ) {
         m_Lock = src.GetLoadLock(m_Info);
     }
 }
 
 
-void CLoadLock_Base::SetLoaded(CObject* obj)
+void CLoadLock_Base::SetLoaded(double expiration_time)
 {
-    m_Lock->SetLoaded(obj);
+    m_Lock->SetLoaded(expiration_time);
 }
 
 
@@ -365,15 +590,48 @@ CLoadLockSeq_ids::CLoadLockSeq_ids(TMutexSource& src,
 }
 
 
-void CLoadLockSeq_ids::AddSeq_id(const CSeq_id_Handle& seq_id)
+bool CLoadLockSeq_ids::SetNoSeq_ids(TInfo::TState state)
 {
-    Get().m_Seq_ids.push_back(seq_id);
+    return Get().SetNoSeq_ids(state, GetNewExpirationTime());
 }
 
 
-void CLoadLockSeq_ids::AddSeq_id(const CSeq_id& seq_id)
+bool CLoadLockSeq_ids::SetLoadedSeq_ids(TInfo::TState state,
+                                        const CFixedSeq_ids& seq_ids)
 {
-    AddSeq_id(CSeq_id_Handle::GetHandle(seq_id));
+    return Get().SetLoadedSeq_ids(state, seq_ids, GetNewExpirationTime());
+}
+
+
+bool CLoadLockSeq_ids::SetLoadedSeq_ids(const CLoadLockSeq_ids& ids2)
+{
+    return Get().SetLoadedSeq_ids(ids2->GetState(),
+                                  ids2->GetSeq_ids(),
+                                  ids2->GetExpirationTime());
+}
+
+
+bool CLoadLockSeq_ids::SetLoadedGi(TGi gi)
+{
+    return Get().SetLoadedGi(gi, GetNewExpirationTime());
+}
+
+
+bool CLoadLockSeq_ids::SetLoadedAccVer(const CSeq_id_Handle& acc)
+{
+    return Get().SetLoadedAccVer(acc, GetNewExpirationTime());
+}
+
+
+bool CLoadLockSeq_ids::SetLoadedLabel(const string& label)
+{
+    return Get().SetLoadedLabel(label, GetNewExpirationTime());
+}
+
+
+bool CLoadLockSeq_ids::SetLoadedTaxId(int taxid)
+{
+    return Get().SetLoadedTaxId(taxid, GetNewExpirationTime());
 }
 
 
@@ -382,8 +640,15 @@ void CLoadLockSeq_ids::AddSeq_id(const CSeq_id& seq_id)
 /////////////////////////////////////////////////////////////////////////////
 
 
-CBlob_Info::CBlob_Info(TContentsMask contents)
-    : m_Contents(contents)
+CBlob_Info::CBlob_Info(void)
+    : m_Contents(0)
+{
+}
+
+
+CBlob_Info::CBlob_Info(CConstRef<CBlob_id> blob_id, TContentsMask contents)
+    : m_Blob_id(blob_id),
+      m_Contents(contents)
 {
 }
 
@@ -393,14 +658,7 @@ CBlob_Info::~CBlob_Info(void)
 }
 
 
-void CBlob_Info::AddAnnotInfo(const CID2S_Seq_annot_Info& info)
-{
-    m_AnnotInfo.push_back(ConstRef(&info));
-}
-
-
-bool CBlob_Info::Matches(const CBlob_id& blob_id,
-                         TContentsMask mask,
+bool CBlob_Info::Matches(TContentsMask mask,
                          const SAnnotSelector* sel) const
 {
     TContentsMask common_mask = GetContentsMask() & mask;
@@ -408,7 +666,7 @@ bool CBlob_Info::Matches(const CBlob_id& blob_id,
         return false;
     }
 
-    if ( CProcessor_ExtAnnot::IsExtAnnot(blob_id) ) {
+    if ( CProcessor_ExtAnnot::IsExtAnnot(*GetBlob_id()) ) {
         // not named accession, but external annots
         return true;
     }
@@ -420,6 +678,42 @@ bool CBlob_Info::Matches(const CBlob_id& blob_id,
 
     // only features
 
+    if ( !IsSetAnnotInfo() ) {
+        // no known annot info -> assume matching
+        return true;
+    }
+    else {
+        return GetAnnotInfo()->Matches(sel);
+    }
+}
+
+
+void CBlob_Info::SetAnnotInfo(CRef<CBlob_Annot_Info>& annot_info)
+{
+    _ASSERT(!IsSetAnnotInfo());
+    m_AnnotInfo = annot_info;
+}
+
+
+/////////////////////////////////////////////////////////////////////////////
+// CBlob_Annot_Info
+/////////////////////////////////////////////////////////////////////////////
+
+
+void CBlob_Annot_Info::AddNamedAnnotName(const string& name)
+{
+    m_NamedAnnotNames.insert(name);
+}
+
+
+void CBlob_Annot_Info::AddAnnotInfo(const CID2S_Seq_annot_Info& info)
+{
+    m_AnnotInfo.push_back(ConstRef(&info));
+}
+
+
+bool CBlob_Annot_Info::Matches(const SAnnotSelector* sel) const
+{
     if ( GetNamedAnnotNames().empty() ) {
         // no filtering by name
         return true;
@@ -488,13 +782,6 @@ CLoadLockBlob_ids::CLoadLockBlob_ids(TMutexSource& src,
     if ( !IsLoaded() ) {
         src.SetRequestedId(seq_id);
     }
-}
-
-
-CBlob_Info& CLoadLockBlob_ids::AddBlob_id(const CBlob_id& blob_id,
-                                          const CBlob_Info& blob_info)
-{
-    return Get().AddBlob_id(blob_id, blob_info);
 }
 
 
@@ -597,8 +884,30 @@ CReaderRequestResult::CReaderRequestResult(const CSeq_id_Handle& requested_id)
       m_RecursionLevel(0),
       m_RecursiveTime(0),
       m_AllocatedConnection(0),
-      m_RetryDelay(0)
+      m_RetryDelay(0),
+      m_StartTime(GetCurrentTime())
 {
+}
+
+
+double CReaderRequestResult::GetCurrentTime(void)
+{
+    time_t sec;
+    long nanosec;
+    CTime::GetCurrentTimeT(&sec, &nanosec);
+    return sec+nanosec*1e-9;
+}
+
+
+double CReaderRequestResult::GetIdExpirationTime(void) const
+{
+    return GetCurrentTime()+GetIdExpirationTimeout();
+}
+
+
+double CReaderRequestResult::GetIdExpirationTimeout(void) const
+{
+    return 2*3600;
 }
 
 
