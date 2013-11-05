@@ -549,7 +549,7 @@ static void TestCgi(const CNcbiArguments& args)
         long l = 0;
         if (!(NcbiCin >> l)  ||  len < 0) {
             NcbiCin.clear();
-            runtime_error("Invalid length of CGI posted data");
+            throw runtime_error("Invalid length of CGI posted data");
         }
         char cs[32];
         assert( ::sprintf(cs, "CONTENT_LENGTH=%ld", (long) l) );
