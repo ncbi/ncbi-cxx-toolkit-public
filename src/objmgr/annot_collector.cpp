@@ -1166,9 +1166,6 @@ CCreatedFeat_Ref::GetMappedFeature(const CAnnotMapping_Info& map,
     else if ( !map.IsMapped() ) {
         ret = &orig_feat;
     }
-    else if ( m_CreatedSeq_feat ) {
-        ret = m_CreatedSeq_feat;
-    }
     else {
         CRef<CSeq_loc> loc = GetMappedLocation(map, orig_feat);
 
@@ -1177,15 +1174,31 @@ CCreatedFeat_Ref::GetMappedFeature(const CAnnotMapping_Info& map,
         m_CreatedSeq_feat.AtomicReleaseTo(mapped_feat);
         if ( !mapped_feat || !mapped_feat->ReferencedOnlyOnce() ) {
             mapped_feat.Reset(new CSeq_feat);
+            // copy all fields from original feature
+            map.InitializeMappedSeq_feat(orig_feat, *mapped_feat);
         }
-        map.InitializeMappedSeq_feat(orig_feat, *mapped_feat);
+        else {
+            // copy only unmapped location/product fields from original feature
+            CSeq_feat& src_nc = const_cast<CSeq_feat&>(orig_feat);
+            if ( !map.IsMappedLocation() ) {
+                mapped_feat->SetLocation(src_nc.SetLocation());
+            }
+            if ( !map.IsMappedProduct() ) {
+                if ( orig_feat.IsSetProduct() )
+                    mapped_feat->SetProduct(src_nc.SetProduct());
+                else
+                    mapped_feat->ResetProduct();
+            }
+        }
 
+        // set mapped location/product field
         if ( map.IsMappedLocation() ) {
             mapped_feat->SetLocation(*loc);
         }
         else if ( map.IsMappedProduct() ) {
             mapped_feat->SetProduct(*loc);
         }
+        // set mapped partial field
         if ( map.IsPartial() ) {
             mapped_feat->SetPartial(true);
         }
