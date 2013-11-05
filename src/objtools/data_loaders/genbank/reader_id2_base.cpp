@@ -1460,7 +1460,9 @@ void CId2ReaderBase::x_UpdateLoadedSet(CReaderRequestResult& result,
                     break;
                 }
             }
-            if ( blob_annot_info ) {
+            if ( blob_annot_info &&
+                 !(blob_annot_info->GetAnnotInfo().empty() &&
+                   blob_annot_info->GetNamedAnnotNames().empty()) ) {
                 blob_info.SetAnnotInfo(blob_annot_info);
             }
             blob_ids.push_back(blob_info);
