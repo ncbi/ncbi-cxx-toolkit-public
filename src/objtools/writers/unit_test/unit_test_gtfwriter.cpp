@@ -63,7 +63,6 @@ USING_SCOPE(objects);
 
 //  ============================================================================
 //  Customization data:
-#define WRITERCLASS CGtfWriter
 const string extInput("asn");
 const string extOutput("gtf");
 const string extErrors("errors");
@@ -179,6 +178,8 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     string test_base, test_type;
     NStr::SplitInTwo(test_name, ".", test_base, test_type);
     cerr << "Creating new test case from " << input << " ..." << endl;
+
+    CErrorLogger logger(errors);
 
     //get a scope
     CRef<CObjectManager> pObjMngr = CObjectManager::GetInstance();
