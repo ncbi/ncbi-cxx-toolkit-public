@@ -210,28 +210,39 @@ void CTable2AsnContext::AddUserTrack(CSeq_descr& SD, const string& type, const s
     SetUserObject(SD, type).SetData().push_back(uf);
 }
 
-void CTable2AsnContext::ApplySourceQualifiers(CRef<CSeq_entry>& entry, const string& src_qualifiers) const
+void CTable2AsnContext::ApplySourceQualifiers(CSerialObject& obj, const string& src_qualifiers) const
 {
     if (src_qualifiers.empty())
         return;
 
-    if (entry.Empty())
-        return;
-
-    switch(entry->Which())
+    CSeq_entry* entry = 0;
+    if (obj.GetThisTypeInfo()->IsType(CSeq_entry::GetTypeInfo()))
+        entry = (CSeq_entry*)(&obj);
+    else
+    if (obj.GetThisTypeInfo()->IsType(CSeq_submit::GetTypeInfo()))
     {
-    case CSeq_entry::e_Seq:
-        x_ApplySourceQualifiers(entry->SetSeq(), m_source_qualifiers);
-        break;
-    case CSeq_entry::e_Set:
-        NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry->SetSet().SetSeq_set())
+        CSeq_submit* submit = (CSeq_submit*)(&obj);
+        NON_CONST_ITERATE(CSeq_submit::TData::TEntrys, it, submit->SetData().SetEntrys())
         {
-            ApplySourceQualifiers(*it, m_source_qualifiers);
+            ApplySourceQualifiers(**it, src_qualifiers);
         }
-        break;
-    default:
-        break;
     }
+
+    if (entry)
+        switch(entry->Which())
+        {
+        case CSeq_entry::e_Seq:
+            x_ApplySourceQualifiers(entry->SetSeq(), m_source_qualifiers);
+            break;
+        case CSeq_entry::e_Set:
+            NON_CONST_ITERATE(CBioseq_set_Base::TSeq_set, it, entry->SetSet().SetSeq_set())
+            {
+                ApplySourceQualifiers(**it, m_source_qualifiers);
+            }
+            break;
+        default:
+            break;
+        }
 }
 
 CUser_object& CTable2AsnContext::SetUserObject(CSeq_descr& descr, const string& type)

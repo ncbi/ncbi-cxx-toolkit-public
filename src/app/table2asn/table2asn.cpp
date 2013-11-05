@@ -455,7 +455,7 @@ int CTbl2AsnApp::Run(void)
         m_reader->LoadDescriptors(args["D"].AsString(), m_context.m_descriptors);
     }
 
-    m_context.ApplySourceQualifiers(m_context.m_entry_template, m_context.m_source_qualifiers);
+    //m_context.ApplySourceQualifiers(m_context.m_entry_template, m_context.m_source_qualifiers);
 
     if (args["H"])
     {
@@ -581,11 +581,11 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     if (!m_context.m_avoid_orf_lookup && !m_context.m_find_open_read_frame.empty())
         fr.FindOpenReadingFrame(*entry);
 
-    //fr.m_replacement_protein = m_replacement_proteins;
+    fr.m_replacement_protein = m_replacement_proteins;
     fr.MergeCDSFeatures(*entry);
     entry->Parentize();
-    //if (m_possible_proteins.NotEmpty())
-    //    fr.AddProteins(*m_possible_proteins, *entry);
+    if (m_possible_proteins.NotEmpty())
+        fr.AddProteins(*m_possible_proteins, *entry);
 
     bool need_update_date = m_context.ApplyCreateDate(*entry);
     if (need_update_date)
@@ -598,12 +598,13 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     }
 
     m_context.ApplyAccession(*entry);
-    m_context.ApplySourceQualifiers(entry, m_context.m_source_qualifiers);
 
     if (avoid_submit_block)
         result = m_context.CreateSeqEntryFromTemplate(entry);
     else
         result = m_context.CreateSubmitFromTemplate(entry);
+
+    m_context.ApplySourceQualifiers(*result, m_context.m_source_qualifiers);
 
     if (m_context.m_RemotePubLookup)
     {

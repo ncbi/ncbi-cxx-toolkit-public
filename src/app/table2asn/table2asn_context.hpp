@@ -83,7 +83,7 @@ public:
 
     void AddUserTrack(objects::CSeq_descr& SD, const string& type, const string& label, const string& data) const;
     void SetOrganismData(objects::CSeq_descr& SD, int genome_code, const string& taxname, int taxid, const string& strain) const;
-    void ApplySourceQualifiers(CRef<objects::CSeq_entry>& bioseq, const string& src_qualifiers) const;
+    void ApplySourceQualifiers(CSerialObject& obj, const string& src_qualifiers) const;
 
     static
     objects::CUser_object& SetUserObject(objects::CSeq_descr& descr, const string& type);
