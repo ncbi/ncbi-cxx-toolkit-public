@@ -40,6 +40,8 @@
 #include <connect/services/netstorage.hpp>
 #include <connect/services/neticache_client.hpp>
 
+#include <corelib/ncbi_param.hpp>
+
 BEGIN_NCBI_SCOPE
 
 
@@ -96,6 +98,12 @@ CNetStorageByKey g_CreateNetStorageByKey(
 
 /// @internal
 void g_SetNetICacheParams(CNetFileID& file_id, CNetICacheClient icache_client);
+
+NCBI_PARAM_DECL(string, filetrack, site);
+typedef NCBI_PARAM_TYPE(filetrack, site) TFileTrack_Site;
+
+NCBI_PARAM_DECL(string, filetrack, api_key);
+typedef NCBI_PARAM_TYPE(filetrack, api_key) TFileTrack_APIKey;
 
 /* @} */
 

@@ -38,6 +38,7 @@
 #include <connect/ncbi_socket.h>
 
 #include <corelib/ncbi_base64.h>
+#include <corelib/ncbiargs.hpp>
 
 #include <time.h>
 #include <string.h>
@@ -49,8 +50,26 @@
 
 BEGIN_NCBI_SCOPE
 
+EFileTrackSite g_StringToFileTrackSite(const char* ft_site_name)
+{
+    if (strcmp(ft_site_name, "submit") == 0 ||
+            strcmp(ft_site_name, "prod") == 0)
+        return eFileTrack_ProdSite;
+    else if (strcmp(ft_site_name, "dsubmit") == 0 ||
+            strcmp(ft_site_name, "dev") == 0)
+        return eFileTrack_DevSite;
+    else if (strcmp(ft_site_name, "qsubmit") == 0 ||
+            strcmp(ft_site_name, "qa") == 0)
+        return eFileTrack_QASite;
+    else {
+        NCBI_THROW_FMT(CArgException, eInvalidArg,
+                "unrecognized FileTrack site '" << ft_site_name << '\'');
+    }
+}
+
 CNetFileID::CNetFileID(CCompoundIDPool::TInstance cid_pool,
-        TNetStorageFlags flags, Uint8 random_number) :
+        TNetStorageFlags flags, Uint8 random_number,
+        const char* ft_site_name) :
     m_CompoundIDPool(cid_pool),
     m_StorageFlags(flags),
     m_Fields(0),
@@ -59,13 +78,15 @@ CNetFileID::CNetFileID(CCompoundIDPool::TInstance cid_pool,
     m_CacheChunkSize(DEFAULT_CACHE_CHUNK_SIZE),
     m_Dirty(true)
 {
+    x_SetFileTrackSite(ft_site_name);
     x_SetUniqueKeyFromRandom();
 }
 
 CNetFileID::CNetFileID(CCompoundIDPool::TInstance cid_pool,
         TNetStorageFlags flags,
         const string& app_domain,
-        const string& unique_key) :
+        const string& unique_key,
+        const char* ft_site_name) :
     m_CompoundIDPool(cid_pool),
     m_StorageFlags(flags),
     m_Fields(fNFID_KeyAndNamespace),
@@ -74,16 +95,9 @@ CNetFileID::CNetFileID(CCompoundIDPool::TInstance cid_pool,
     m_CacheChunkSize(DEFAULT_CACHE_CHUNK_SIZE),
     m_Dirty(true)
 {
+    x_SetFileTrackSite(ft_site_name);
     x_SetUniqueKeyFromUserDefinedKey();
 }
-
-#define NET_FILE_ID_SIGNATURE "NF"
-#define NET_FILE_ID_SIGNATURE_LEN (sizeof(NET_FILE_ID_SIGNATURE) - 1)
-#define MIN_BINARY_ID_LEN (NET_FILE_ID_SIGNATURE_LEN + \
-        sizeof(unsigned char) + /* storage flags */ \
-        sizeof(TNetFileIDFields) + /* field flags */ \
-        1 + /* zero after the key or the ninth byte of the timestamp */ \
-        1) /* zero after the namespace or the ninth byte of the random ID */
 
 #define THROW_INVALID_ID_ERROR(packed_id) \
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg, \
@@ -197,6 +211,52 @@ void CNetFileID::SetNetICacheParams(const string& service_name,
 #endif
 }
 
+void CNetFileID::SetFileTrackSite(EFileTrackSite ft_site)
+{
+    m_Dirty = true;
+
+    m_Fields &= ~(unsigned char) (fNFID_FileTrackDev | fNFID_FileTrackQA);
+
+    if (ft_site == eFileTrack_DevSite)
+        m_Fields |= fNFID_FileTrackDev;
+    else if (ft_site == eFileTrack_QASite)
+        m_Fields |= fNFID_FileTrackQA;
+}
+
+EFileTrackSite CNetFileID::GetFileTrackSite()
+{
+    return m_Fields & fNFID_FileTrackDev ? eFileTrack_DevSite :
+            m_Fields & fNFID_FileTrackQA ? eFileTrack_QASite :
+                    eFileTrack_ProdSite;
+}
+
+string CNetFileID::GetFileTrackURL()
+{
+    switch (GetFileTrackSite()) {
+    default:
+        return "https://submit.ncbi.nlm.nih.gov";
+        break;
+    case eFileTrack_DevSite:
+        return "https://dsubmit.ncbi.nlm.nih.gov";
+        break;
+    case eFileTrack_QASite:
+        return "https://qsubmit.ncbi.nlm.nih.gov";
+    }
+}
+
+void CNetFileID::x_SetFileTrackSite(const char* ft_site_name)
+{
+    switch (g_StringToFileTrackSite(ft_site_name)) {
+    case eFileTrack_DevSite:
+        m_Fields |= fNFID_FileTrackDev;
+        break;
+    case eFileTrack_QASite:
+        m_Fields |= fNFID_FileTrackQA;
+    default:
+        break;
+    }
+}
+
 void CNetFileID::x_SetUniqueKeyFromRandom()
 {
     m_UniqueKey = NStr::NumericToString(m_Timestamp) + '_';
@@ -211,33 +271,8 @@ void CNetFileID::x_SetUniqueKeyFromUserDefinedKey()
 
 void CNetFileID::x_Pack()
 {
-    /*size_t max_binary_id_len = MIN_BINARY_ID_LEN +
-            (m_Fields & fNFID_KeyAndNamespace ?
-                    m_UserKey.length() + m_AppDomain.length() :
-                    sizeof(Uint8) + sizeof(Uint8)); // Timestamp and random.
-
-    if (m_Fields & fNFID_NetICache)
-        max_binary_id_len += m_NCServiceName.length() + 1 +
-                m_CacheName.length() + 1 +
-                sizeof(m_NetCacheIP) +
-                sizeof(m_NetCachePort);
-
-    if (m_StorageFlags & fNST_Cacheable)
-        max_binary_id_len += sizeof(Uint8) + 1;
-
-    if (m_Fields & fNFID_TTL)
-        max_binary_id_len += sizeof(Uint8) + 1;
-
-    unsigned char* binary_id = new unsigned char[max_binary_id_len];
-
-    // 1. Save the signature.
-    memcpy(binary_id, NET_FILE_ID_SIGNATURE, NET_FILE_ID_SIGNATURE_LEN);
-
-    unsigned char* ptr = binary_id + NET_FILE_ID_SIGNATURE_LEN;*/
-
     // 1. Allocate a new CompoundID object.
     CCompoundID cid = m_CompoundIDPool.NewID(eCIC_NetStorageFileID);
-
 
     // 2. Save the storage flags.
     cid.AppendFlags(m_StorageFlags);
@@ -331,6 +366,10 @@ CJsonNode CNetFileID::ToJSON() const
 
     if (m_Fields & fNFID_TTL)
         root.SetInteger("TTL", (Int8) m_TTL);
+
+    if (m_Fields & (fNFID_FileTrackDev | fNFID_FileTrackQA))
+        root.SetString("FileTrackSite",
+                m_Fields & fNFID_FileTrackDev ? "dev" : "qa");
 
     return root;
 }

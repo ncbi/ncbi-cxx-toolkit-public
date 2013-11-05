@@ -89,7 +89,9 @@ struct SFileTrackAPI
 {
     SFileTrackAPI();
 
-    string LoginAndGetSessionKey();
+    string GetAPIKey();
+
+    string LoginAndGetSessionKey(CNetFileID* file_id);
 
     CJsonNode GetFileInfo(CNetFileID* file_id);
 

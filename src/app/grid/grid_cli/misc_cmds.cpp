@@ -183,6 +183,15 @@ int CGridCommandLineInterfaceApp::Cmd_Login()
     }
 #endif
 
+    if (IsOptionSet(eFileTrackSite)) {
+        cid.AppendLabel(LOGIN_TOKEN_FILETRACK_SITE);
+        cid.AppendString(TFileTrack_Site::GetDefault());
+    }
+    if (IsOptionSet(eFileTrackAPIKey)) {
+        cid.AppendLabel(LOGIN_TOKEN_FILETRACK_API_KEY);
+        cid.AppendString(TFileTrack_APIKey::GetDefault());
+    }
+
     PrintLine(cid.ToString());
 
     return 0;

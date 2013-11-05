@@ -185,7 +185,9 @@ enum ENetFileCompoundIDCues {
     eNFCIDC_KeyAndNamespace,
     eNFCIDC_NetICache,
     eNFCIDC_AllowXSiteConn,
-    eNFCIDC_TTL
+    eNFCIDC_TTL,
+    eNFCIDC_FileTrackDev,
+    eNFCIDC_FileTrackQA,
 };
 
 /// @internal
@@ -196,9 +198,23 @@ enum ENetFileIDFields {
     fNFID_AllowXSiteConn    = (1 << eNFCIDC_AllowXSiteConn),
 #endif
     fNFID_TTL               = (1 << eNFCIDC_TTL),
+    fNFID_FileTrackDev      = (1 << eNFCIDC_FileTrackDev),
+    fNFID_FileTrackQA       = (1 << eNFCIDC_FileTrackQA),
 };
 ///< @internal Bitwise OR of ENetFileIDFields
 typedef unsigned char TNetFileIDFields;
+
+/// @internal
+enum EFileTrackSite {
+    eFileTrack_ProdSite,
+    eFileTrack_DevSite,
+    eFileTrack_QASite,
+    eNumberOfFileTrackSites
+};
+
+/// @internal
+NCBI_XCONNECT_EXPORT
+EFileTrackSite g_StringToFileTrackSite(const char* ft_site_name);
 
 /// @internal
 class NCBI_XCONNECT_EXPORT CNetFileID
@@ -206,11 +222,13 @@ class NCBI_XCONNECT_EXPORT CNetFileID
 public:
     CNetFileID(CCompoundIDPool::TInstance cid_pool,
             TNetStorageFlags flags,
-            Uint8 random_number);
+            Uint8 random_number,
+            const char* ft_site_name);
     CNetFileID(CCompoundIDPool::TInstance cid_pool,
             TNetStorageFlags flags,
             const string& app_domain,
-            const string& unique_key);
+            const string& unique_key,
+            const char* ft_site_name);
     CNetFileID(CCompoundIDPool::TInstance cid_pool,
             const string& packed_id);
 
@@ -245,6 +263,10 @@ public:
     Uint4 GetNetCacheIP() const {return m_NetCacheIP;}
     Uint2 GetNetCachePort() const {return m_NetCachePort;}
 
+    void SetFileTrackSite(EFileTrackSite ft_site);
+    EFileTrackSite GetFileTrackSite();
+    string GetFileTrackURL();
+
     void SetCacheChunkSize(size_t cache_chunk_size)
     {
         m_CacheChunkSize = cache_chunk_size;
@@ -277,6 +299,7 @@ public:
     CJsonNode ToJSON() const;
 
 private:
+    void x_SetFileTrackSite(const char* ft_site_name);
     void x_SetUniqueKeyFromRandom();
     void x_SetUniqueKeyFromUserDefinedKey();
 

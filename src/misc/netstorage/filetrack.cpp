@@ -37,6 +37,7 @@
 #include <connect/services/netstorage.hpp>
 #include <connect/services/ns_output_parser.hpp>
 
+#include <misc/netstorage/netstorage.hpp>
 #include <misc/netstorage/error_codes.hpp>
 
 #include <connect/ncbi_gnutls.h>
@@ -50,11 +51,6 @@
 #include <time.h>
 
 #define NCBI_USE_ERRCODE_X  NetStorage_FileTrack
-
-#define FILETRACK_BASEURL "https://dsubmit.ncbi.nlm.nih.gov"
-
-#define FILETRACK_APIKEY \
-    "bqyMqDEHsQ3foORxBO87FMNhXjv9LxuzF9Rbs4HLuiaf2pHOku7D9jDRxxyiCtp2"
 
 #define FILETRACK_SIDCOOKIE "SubmissionPortalSID"
 
@@ -229,7 +225,7 @@ static string s_RemoveHTMLTags(const char* text)
 
 CRef<SFileTrackPostRequest> SFileTrackAPI::StartUpload(CNetFileID* file_id)
 {
-    string session_key(LoginAndGetSessionKey());
+    string session_key(LoginAndGetSessionKey(file_id));
 
     string boundary(GenerateUniqueBoundary());
 
@@ -241,7 +237,7 @@ CRef<SFileTrackPostRequest> SFileTrackAPI::StartUpload(CNetFileID* file_id)
 
     CRef<SFileTrackPostRequest> new_request(
             new SFileTrackPostRequest(this, file_id,
-            FILETRACK_BASEURL "/ft/upload/", boundary, user_header,
+            file_id->GetFileTrackURL() + "/ft/upload/", boundary, user_header,
             s_HTTPParseHeader_SaveStatus));
 
     new_request->SendContentDisposition("file\"; filename=\"contents");
@@ -344,7 +340,8 @@ CJsonNode SFileTrackRequest::ReadJsonResponse()
 
 CRef<SFileTrackRequest> SFileTrackAPI::StartDownload(CNetFileID* file_id)
 {
-    string url(FILETRACK_BASEURL "/ft/byid/" + file_id->GetUniqueKey());
+    string url(file_id->GetFileTrackURL() + "/ft/byid/");
+    url += file_id->GetUniqueKey();
     url += "/contents";
 
     CRef<SFileTrackRequest> new_request(new SFileTrackRequest(this, file_id,
@@ -357,7 +354,8 @@ CRef<SFileTrackRequest> SFileTrackAPI::StartDownload(CNetFileID* file_id)
 
 void SFileTrackAPI::Remove(CNetFileID* file_id)
 {
-    string url(FILETRACK_BASEURL "/ftmeta/files/" + file_id->GetUniqueKey());
+    string url(file_id->GetFileTrackURL() + "/ftmeta/files/");
+    url += file_id->GetUniqueKey();
     url += "/__delete__";
 
     CRef<SFileTrackRequest> new_request(new SFileTrackRequest(this, file_id,
@@ -441,25 +439,40 @@ static EHTTP_HeaderParse s_HTTPParseHeader_GetSID(const char* http_header,
     return eHTTP_HeaderComplete;
 }
 
-string SFileTrackAPI::LoginAndGetSessionKey()
+string SFileTrackAPI::GetAPIKey()
 {
+    return TFileTrack_APIKey::GetDefault();
+}
+
+string SFileTrackAPI::LoginAndGetSessionKey(CNetFileID* file_id)
+{
+    string api_key(GetAPIKey());
+
+    string url(file_id->GetFileTrackURL() + "/accounts/api_login?key=");
+    url += api_key;
+
     string session_key;
 
-    CConn_HttpStream http_stream(
-            FILETRACK_BASEURL "/accounts/api_login?key=" FILETRACK_APIKEY,
-            NULL, kEmptyStr, s_HTTPParseHeader_GetSID, &session_key, NULL, NULL,
+    CConn_HttpStream http_stream(url, NULL, kEmptyStr,
+            s_HTTPParseHeader_GetSID, &session_key, NULL, NULL,
             fHTTP_AutoReconnect, &m_WriteTimeout);
 
     string dummy;
     http_stream >> dummy;
+
+    if (session_key.empty()) {
+        NCBI_THROW_FMT(CNetStorageException, eAuthError,
+                "Error while uploading data to FileTrack: "
+                "authentication error (API key = " << api_key << ").");
+    }
 
     return session_key;
 }
 
 CJsonNode SFileTrackAPI::GetFileInfo(CNetFileID* file_id)
 {
-    string url(FILETRACK_BASEURL "/ftmeta/files/" + file_id->GetUniqueKey());
-
+    string url(file_id->GetFileTrackURL() + "/ftmeta/files/");
+    url += file_id->GetUniqueKey();
     url += '/';
 
     SFileTrackRequest request(this, file_id, url,
@@ -471,7 +484,8 @@ CJsonNode SFileTrackAPI::GetFileInfo(CNetFileID* file_id)
 string SFileTrackAPI::GetFileAttribute(CNetFileID* file_id,
         const string& attr_name)
 {
-    string url(FILETRACK_BASEURL "/ftmeta/files/" + file_id->GetUniqueKey());
+    string url(file_id->GetFileTrackURL() + "/ftmeta/files/");
+    url += file_id->GetUniqueKey();
     url += "/attribs/";
     url += attr_name;
 
@@ -510,7 +524,7 @@ string SFileTrackAPI::GetFileAttribute(CNetFileID* file_id,
 void SFileTrackAPI::SetFileAttribute(CNetFileID* file_id,
         const string& attr_name, const string& attr_value)
 {
-    string session_key(LoginAndGetSessionKey());
+    string session_key(LoginAndGetSessionKey(file_id));
 
     string boundary(GenerateUniqueBoundary());
 
@@ -520,7 +534,8 @@ void SFileTrackAPI::SetFileAttribute(CNetFileID* file_id,
     user_header.append(session_key);
     user_header.append("\r\n", 2);
 
-    string url(FILETRACK_BASEURL "/ftmeta/files/" + file_id->GetUniqueKey());
+    string url(file_id->GetFileTrackURL() + "/ftmeta/files/");
+    url += file_id->GetUniqueKey();
     url += "/attribs/";
 
     SFileTrackPostRequest request(this, file_id, url, boundary,

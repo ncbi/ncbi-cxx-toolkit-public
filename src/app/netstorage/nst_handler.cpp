@@ -1105,7 +1105,8 @@ CNetStorageHandler::x_GetFileID(const CJsonNode &  message)
                                       icache_settings.m_CacheName, client_name);
     CNetFileID          file_id_struct(m_Server->GetCompoundIDPool(),
                                        flags, user_key.m_AppDomain,
-                                       user_key.m_UniqueID);
+                                       user_key.m_UniqueID,
+                                       TFileTrack_Site::GetDefault().c_str());
     g_SetNetICacheParams(file_id_struct, icache_client);
 
     string              file_id = file_id_struct.GetID();

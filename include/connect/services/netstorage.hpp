@@ -65,6 +65,7 @@ public:
     enum EErrCode {
         eInvalidArg,    ///< Caller passed invalid arguments to the API
         eNotExists,     ///< Illegal op applied to non-existent file
+        eAuthError,     ///< Authentication error (e.g. no FileTrack API key)
         eIOError,       ///< I/O error encountered while performing an op
         eServerError,   ///< NetStorage server error
         eTimeout        ///< Timeout encountered while performing an op

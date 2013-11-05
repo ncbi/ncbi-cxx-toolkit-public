@@ -53,8 +53,9 @@
 
 BEGIN_NCBI_SCOPE
 
-#define THROW_IO_EXCEPTION(err_code, message, status) \
-        NCBI_THROW_FMT(CIOException, err_code, message << IO_StatusStr(status));
+NCBI_PARAM_DEF(string, filetrack, site, "prod");
+
+NCBI_PARAM_DEF(string, filetrack, api_key, kEmptyStr);
 
 struct SNetFileAPIImpl;
 
@@ -114,7 +115,8 @@ struct SNetFileAPIImpl : public SNetFileImpl
             CNetICacheClient::TInstance icache_client) :
         m_NetStorage(storage_impl),
         m_NetICacheClient(icache_client),
-        m_FileID(storage_impl->m_CompoundIDPool, flags, random_number),
+        m_FileID(storage_impl->m_CompoundIDPool, flags, random_number,
+                TFileTrack_Site::GetDefault().c_str()),
         m_CurrentLocation(eNFL_Unknown),
         m_IOStatus(eNFS_Closed)
     {
@@ -138,7 +140,8 @@ struct SNetFileAPIImpl : public SNetFileImpl
         m_NetStorage(storage_impl),
         m_NetICacheClient(icache_client),
         m_FileID(storage_impl->m_CompoundIDPool,
-                flags, domain_name, unique_key),
+                flags, domain_name, unique_key,
+                TFileTrack_Site::GetDefault().c_str()),
         m_CurrentLocation(eNFL_Unknown),
         m_IOStatus(eNFS_Closed)
     {

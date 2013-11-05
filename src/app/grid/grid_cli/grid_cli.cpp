@@ -388,6 +388,15 @@ struct SOptionDefinition {
             "previous (complete) aggregation interval (instead of "
             "returning the current but incomplete statistics).", {-1}},
 
+    {OPT_DEF(eOptionWithParameter, eFileTrackSite),
+        "ft-site", "FileTrack site to use: 'submit' (or 'prod'), "
+            "'dsubmit' (or 'dev'), 'qsubmit' (or 'qa'). "
+            "Default: 'submit'.", {-1}},
+
+    {OPT_DEF(eOptionWithParameter, eFileTrackAPIKey),
+        "ft-api-key", "FileTrack API key. When connecting to "
+            "FileTrack directly, an API key is required.", {-1}},
+
     /* Options available only with --extended-cli go below. */
 
     {OPT_DEF(eSwitch, eExtendedOptionDelimiter), NULL, NULL, {-1}},
@@ -511,6 +520,7 @@ struct SCommandDefinition {
         "parameters all at once.\n",
         {eAppUID, eNetCache, eCache, eEnableMirroring,
             eNetSchedule, eQueue, eAuth,
+            eFileTrackSite, eFileTrackAPIKey,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_BlobInfo,
@@ -566,7 +576,8 @@ struct SCommandDefinition {
         ABOUT_NETSTORAGE_OPTION,
         {eOptionalID, eNetStorage, ePersistent, eFastStorage,
             eNetCache, eCache, eTTL, eMovable, eCacheable,
-            eInput, eInputFile, eLoginToken, eAuth, eDebugHTTP,
+            eInput, eInputFile, eLoginToken, eAuth,
+            eFileTrackSite, eFileTrackAPIKey, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_Download,
@@ -588,7 +599,8 @@ struct SCommandDefinition {
         "one for faster file access."
         ABOUT_NETSTORAGE_OPTION,
         {eID, eNetStorage, ePersistent, eFastStorage, eNetCache, eCache,
-            eTTL, eMovable, eCacheable, eLoginToken, eAuth, eDebugHTTP,
+            eTTL, eMovable, eCacheable, eLoginToken, eAuth,
+            eFileTrackSite, eFileTrackAPIKey, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_MkFileID,
@@ -599,7 +611,8 @@ struct SCommandDefinition {
         "'--" PERSISTENT_OPTION "', '--" FAST_STORAGE_OPTION "', '--"
         MOVABLE_OPTION "', and '--" CACHEABLE_OPTION "' options.",
         {eOptionalID, eFileKey, eNamespace, ePersistent, eFastStorage,
-            eNetCache, eCache, eTTL, eMovable, eCacheable, eLoginToken, eAuth,
+            eNetCache, eCache, eTTL, eMovable, eCacheable,
+            eLoginToken, eAuth, eFileTrackSite,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_NetFileInfo,
@@ -629,7 +642,8 @@ struct SCommandDefinition {
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
         {eNetFileID, eAttrName, eAttrValue, eNetStorage,
-            eNetCache, eCache, eLoginToken, eAuth, eDebugHTTP,
+            eNetCache, eCache, eLoginToken, eAuth,
+            eFileTrackAPIKey, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetScheduleCommand, &CGridCommandLineInterfaceApp::Cmd_JobInfo,
@@ -1376,6 +1390,12 @@ int CGridCommandLineInterfaceApp::Run()
                     return 2;
                 }
                 break;
+            case eFileTrackSite:
+                TFileTrack_Site::SetDefault(opt_value);
+                break;
+            case eFileTrackAPIKey:
+                TFileTrack_APIKey::SetDefault(opt_value);
+                break;
             case eDebugHTTP:
                 // Setup error posting
                 SetDiagTrace(eDT_Enable);
@@ -1553,6 +1573,14 @@ bool CGridCommandLineInterfaceApp::ParseLoginToken(const string& token)
                 MarkOptionAsSet(eAllowXSiteConn);
         }
 #endif
+        else if (label == LOGIN_TOKEN_FILETRACK_SITE) {
+            TFileTrack_Site::SetDefault(value_field.GetString());
+            MarkOptionAsSet(eFileTrackSite);
+        } else if (label == LOGIN_TOKEN_FILETRACK_API_KEY) {
+            TFileTrack_APIKey::SetDefault(value_field.GetString());
+            MarkOptionAsSet(eFileTrackAPIKey);
+        }
+
         label_field = label_field.GetNextHomogeneous();
     }
 

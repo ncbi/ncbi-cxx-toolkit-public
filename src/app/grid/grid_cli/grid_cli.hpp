@@ -62,6 +62,8 @@
 #define LOGIN_TOKEN_SESSION_TIMESTAMP_FIELD "ts"
 #define LOGIN_TOKEN_SESSION_UID_FIELD "uid"
 #define LOGIN_TOKEN_ALLOW_XSITE_CONN "xs"
+#define LOGIN_TOKEN_FILETRACK_SITE "fts"
+#define LOGIN_TOKEN_FILETRACK_API_KEY "ftk"
 
 #define LOGIN_TOKEN_OPTION "login-token"
 #define NETCACHE_OPTION "netcache"
@@ -220,6 +222,8 @@ enum EOption {
     eDumpCGIEnv,
     eAggregationInterval,
     ePreviousInterval,
+    eFileTrackSite,
+    eFileTrackAPIKey,
 
     eExtendedOptionDelimiter,
 

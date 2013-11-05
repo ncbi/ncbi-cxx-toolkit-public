@@ -294,8 +294,9 @@ int CGridCommandLineInterfaceApp::Cmd_MkFileID()
         break;
 
     case OPTION_N(1) + OPTION_N(2):
-        file_id.reset(new CNetFileID(m_CompoundIDPool, m_Opts.netstorage_flags,
-                m_Opts.app_domain, m_Opts.id));
+        file_id.reset(new CNetFileID(m_CompoundIDPool,
+                m_Opts.netstorage_flags, m_Opts.app_domain, m_Opts.id,
+                TFileTrack_Site::GetDefault().c_str()));
         break;
 
     case 0:
