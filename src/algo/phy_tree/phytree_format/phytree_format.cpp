@@ -226,7 +226,7 @@ void CPhyTreeFormatter::SimplifyTree(ETreeSimplifyMode method)
         break;
         
     // Collapse all subtrees with common blast name       
-    case eBlastName :
+    case eByBlastName :
     {
         FullyExpand();
         CPhyTreeNodeGroupper groupper 
