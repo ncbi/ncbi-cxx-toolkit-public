@@ -49,7 +49,7 @@ SET LIBDLL=%3%
 SET ARCH=%4%
 SET CFG=%5%
 
-SET COMPILER=msvc10
+SET COMPILER=vs2012
 IF _%SRV_NAME% == _ SET SRV_NAME=%COMPUTERNAME%
 
 SET NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI_UNICODE=1
@@ -100,19 +100,26 @@ GOTO ABORT
 REM ###########################################################################
 :CONFIG
 
-IF %CFG% == DebugDLL           GOTO CONTCFG
-IF %CFG% == DebugMT            GOTO CONTCFG
-IF %CFG% == ReleaseDLL         GOTO CONTCFG
-IF %CFG% == ReleaseMT          GOTO CONTCFG
-IF %CFG% == Unicode_DebugDLL   GOTO CONTCFG
-IF %CFG% == Unicode_DebugMT    GOTO CONTCFG
-IF %CFG% == Unicode_ReleaseDLL GOTO CONTCFG
-IF %CFG% == Unicode_ReleaseMT  GOTO CONTCFG
+IF %CFG% == DebugDLL                 GOTO CONTCFG
+IF %CFG% == DebugMT                  GOTO CONTCFG
+IF %CFG% == ReleaseDLL               GOTO CONTCFG
+IF %CFG% == ReleaseMT                GOTO CONTCFG
+IF %CFG% == Unicode_DebugDLL         GOTO CONTCFG
+IF %CFG% == Unicode_DebugMT          GOTO CONTCFG
+IF %CFG% == Unicode_ReleaseDLL       GOTO CONTCFG
+IF %CFG% == Unicode_ReleaseMT        GOTO CONTCFG
+IF %CFG% == VTune_ReleaseDLL         GOTO CONTCFG
+IF %CFG% == VTune_ReleaseMT          GOTO CONTCFG
+IF %CFG% == VTune_Unicode_ReleaseDLL GOTO CONTCFG
+IF %CFG% == VTune_Unicode_ReleaseMT  GOTO CONTCFG
+
 ECHO FATAL: Unknown configuration name %CFG%.
 ECHO        The following configuration names are recognized:
 ECHO          - DebugDLL DebugMT ReleaseDLL ReleaseMT 
 ECHO          - Unicode_DebugDLL Unicode_DebugMT Unicode_ReleaseDLL Unicode_ReleaseMT
+ECHO          - VTune_ReleaseDLL VTune_ReleaseMT VTune_Unicode_ReleaseMT VTune_Unicode_ReleaseDLL
 GOTO ABORT
+
 :CONTCFG
 TIME /T
 ECHO INFO: Configure "%LIBDLL%\%SOLUTION% [ReleaseDLL|%ARCH%]"
@@ -125,19 +132,26 @@ REM ###########################################################################
 :BUILD
 
 :ARGLOOPB
-IF %CFG% == DebugDLL           GOTO CONTBLD
-IF %CFG% == DebugMT            GOTO CONTBLD
-IF %CFG% == ReleaseDLL         GOTO CONTBLD
-IF %CFG% == ReleaseMT          GOTO CONTBLD
-IF %CFG% == Unicode_DebugDLL   GOTO CONTBLD
-IF %CFG% == Unicode_DebugMT    GOTO CONTBLD
-IF %CFG% == Unicode_ReleaseDLL GOTO CONTBLD
-IF %CFG% == Unicode_ReleaseMT  GOTO CONTBLD
+IF %CFG% == DebugDLL                 GOTO CONTBLD
+IF %CFG% == DebugMT                  GOTO CONTBLD
+IF %CFG% == ReleaseDLL               GOTO CONTBLD
+IF %CFG% == ReleaseMT                GOTO CONTBLD
+IF %CFG% == Unicode_DebugDLL         GOTO CONTBLD
+IF %CFG% == Unicode_DebugMT          GOTO CONTBLD
+IF %CFG% == Unicode_ReleaseDLL       GOTO CONTBLD
+IF %CFG% == Unicode_ReleaseMT        GOTO CONTBLD
+IF %CFG% == VTune_ReleaseDLL         GOTO CONTBLD
+IF %CFG% == VTune_ReleaseMT          GOTO CONTBLD
+IF %CFG% == VTune_Unicode_ReleaseDLL GOTO CONTBLD
+IF %CFG% == VTune_Unicode_ReleaseMT  GOTO CONTBLD
+
 ECHO FATAL: Unknown configuration name %CFG%.
 ECHO        The following configuration names are recognized:
 ECHO          - DebugDLL DebugMT ReleaseDLL ReleaseMT 
 ECHO          - Unicode_DebugDLL Unicode_DebugMT Unicode_ReleaseDLL Unicode_ReleaseMT
+ECHO          - VTune_ReleaseDLL VTune_ReleaseMT VTune_Unicode_ReleaseMT VTune_Unicode_ReleaseDLL
 GOTO ABORT
+
 :CONTBLD
 TIME /T
 ECHO INFO: Building "%LIBDLL%\%SOLUTION% [%CFG%|%ARCH%]"
@@ -156,19 +170,27 @@ ECHO INFO: Checking init
 bash -c "../../scripts/common/check/check_make_win_cfg.sh init; exit $?"
 SET ERRORLEV=0
 :ARGLOOPC
-IF %CFG% == DebugDLL           GOTO CONTCH
-IF %CFG% == DebugMT            GOTO CONTCH
-IF %CFG% == ReleaseDLL         GOTO CONTCH
-IF %CFG% == ReleaseMT          GOTO CONTCH
-IF %CFG% == Unicode_DebugDLL   GOTO CONTCH
-IF %CFG% == Unicode_DebugMT    GOTO CONTCH
-IF %CFG% == Unicode_ReleaseDLL GOTO CONTCH
-IF %CFG% == Unicode_ReleaseMT  GOTO CONTCH
+IF %CFG% == DebugDLL                 GOTO CONTCH
+IF %CFG% == DebugMT                  GOTO CONTCH
+IF %CFG% == ReleaseDLL               GOTO CONTCH
+IF %CFG% == ReleaseMT                GOTO CONTCH
+IF %CFG% == Unicode_DebugDLL         GOTO CONTCH
+IF %CFG% == Unicode_DebugMT          GOTO CONTCH
+IF %CFG% == Unicode_ReleaseDLL       GOTO CONTCH
+IF %CFG% == Unicode_ReleaseMT        GOTO CONTCH
+IF %CFG% == VTune_ReleaseDLL         GOTO CONTCH
+IF %CFG% == VTune_ReleaseMT          GOTO CONTCH
+IF %CFG% == VTune_Unicode_ReleaseDLL GOTO CONTCH
+IF %CFG% == VTune_Unicode_ReleaseMT  GOTO CONTCH
+
+
 ECHO FATAL: Unknown configuration name %CFG%.
 ECHO        The following configuration names are recognized:
 ECHO          - DebugDLL DebugMT ReleaseDLL ReleaseMT 
 ECHO          - Unicode_DebugDLL Unicode_DebugMT Unicode_ReleaseDLL Unicode_ReleaseMT
+ECHO          - VTune_ReleaseDLL VTune_ReleaseMT VTune_Unicode_ReleaseMT VTune_Unicode_ReleaseDLL
 GOTO ABORT
+
 :CONTCH
 ECHO INFO: Create check script for "%LIBDLL%\%SOLUTION% [%CFG%|%ARCH%]"
 bash -c "../../scripts/common/check/check_make_win_cfg.sh create %SOLUTION% %LIBDLL% %CFG%"; exit $?"

@@ -15,8 +15,11 @@ arch="$2"
 #---------------- Configuration ----------------
 
 # Configure with Unicode configurations enabled
+
 NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI_UNICODE=1
 export NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI_UNICODE
+#NCBI_CONFIG____ENABLEDUSERREQUESTS__TWEAKVTUNE=1
+#export NCBI_CONFIG____ENABLEDUSERREQUESTS__TWEAKVTUNE
 
 
 #---------------- Global variables ----------------
@@ -40,7 +43,7 @@ error()
     exit 1
 }
 
-generate_msvc10_error_check_file()
+generate_vs2012_error_check_file()
 {
     cat <<-EOF >$1
 	/.*--* (Reb|B)uild( All | )started: Project:/ {
@@ -193,7 +196,7 @@ done
 # Generate errors check script
 
 check_awk=$build_dir/build_check.awk
-generate_msvc10_error_check_file $check_awk
+generate_vs2012_error_check_file $check_awk
 
 
 # Build
