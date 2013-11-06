@@ -222,6 +222,8 @@ public:
 private:
     impl::stylesheet_impl *pimpl_;
 
+    void attach_refcount (void);
+
     // an xslt::stylesheet cannot yet be copied or assigned to.
     stylesheet (const stylesheet&);
     stylesheet& operator= (const stylesheet&);

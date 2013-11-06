@@ -29,9 +29,9 @@
  */
 
 
-/** @file
+/*
  * Type to specify how to treat XSLT results
-**/
+ */
 
 #ifndef _xmlwrapp_xslt_result_type_hpp_
 #define _xmlwrapp_xslt_result_type_hpp_
@@ -39,16 +39,17 @@
 
 namespace xslt {
 
-    /// Used as a flag which affects how the XSLT results are converted
-    /// to a string
+    // Internal library usage only.
+    // Used as a flag which affects how the XSLT results are converted
+    // to a string
     enum result_treat_type {
-        type_treat_as_doc,      ///< treat the XSLT result as a document;
-                                ///< subsequent output will be affected by
-                                ///< local and global formatting flags.
-        type_no_treat           ///< no treatment;
-                                ///< libxslt is responsible for output
-                                ///< formatting, and formatting flags
-                                ///< will not affect subsequent output.
+        type_treat_as_doc,      // treat the XSLT result as a document;
+                                // subsequent output will be affected by
+                                // local and global formatting flags.
+        type_no_treat           // no treatment;
+                                // libxslt is responsible for output
+                                // formatting, and formatting flags
+                                // will not affect subsequent output.
     };
 
 } // xslt namespace
