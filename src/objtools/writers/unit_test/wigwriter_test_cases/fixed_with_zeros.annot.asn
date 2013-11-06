@@ -1,0 +1,21 @@
+Seq-annot ::= {
+  data graph {
+    {
+      loc int {
+        from 0,
+        to 49,
+        id local str "chr1"
+      },
+      comp 10,
+      a { 470588235294118, 10, -17 },
+      b { 0, 10, 0 },
+      numval 5,
+      graph byte {
+        max 255,
+        min 0,
+        axis 0,
+        values '00000000FF'H
+      }
+    }
+  }
+}
