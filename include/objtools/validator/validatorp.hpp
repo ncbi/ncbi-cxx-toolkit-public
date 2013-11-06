@@ -96,6 +96,8 @@ class CSeq_feat_Handle;
 class CCountries;
 class CInferencePrefixList;
 class CComment_set;
+class CTaxon3_reply;
+class CT3Data;
 
 BEGIN_SCOPE(validator)
 
@@ -304,6 +306,85 @@ private:
 
 };
 
+class NCBI_VALIDATOR_EXPORT CSeqdescEntryPair
+{ 
+public: 
+    CSeqdescEntryPair(const CSeqdesc& seqdesc, const CSeq_entry& entry)
+		: m_Seqdesc(&seqdesc), m_Seqentry(&entry) { }
+	~CSeqdescEntryPair(void){ }
+
+	const CSeqdesc&		GetSeqdesc(void) const { return *m_Seqdesc; }
+	const CSeq_entry&	GetSeqentry(void) const { return *m_Seqentry; }
+private:
+	CConstRef<CSeqdesc> m_Seqdesc;
+	CConstRef<CSeq_entry> m_Seqentry;
+};
+
+
+class NCBI_VALIDATOR_EXPORT COrgrefWithParent
+{
+public:
+	enum EOrgrefParent{
+		eSeqdescParent,
+		eSeqfeatParent
+	};
+
+	COrgrefWithParent(COrg_ref& orgref, const CSeqdescEntryPair* seqdesc_entrypair)
+		: m_Parent(eSeqdescParent), 
+		  m_Orgref(&orgref), 
+		  m_pSeqdesc(seqdesc_entrypair), 
+		  m_pSeqfeat(0) { }
+	COrgrefWithParent(COrg_ref& orgref, const CSeq_feat* seqfeat)
+		: m_Parent(eSeqfeatParent), 
+		  m_Orgref(&orgref), 
+		  m_pSeqdesc(0),
+		  m_pSeqfeat(seqfeat) { }
+	
+	virtual ~COrgrefWithParent(void) { }
+	
+	const COrg_ref&				GetOrgref(void) const { return *m_Orgref; }
+	const CSeqdescEntryPair&	GetSeqdescParent(void) const { return *m_pSeqdesc; }
+	const CSeq_feat&			GetSeqfeatParent(void) const { return *m_pSeqfeat; }
+	bool						HasParentSeqdesc(void) const{ return m_Parent == eSeqdescParent ? true : false; }
+
+protected:
+	EOrgrefParent m_Parent;
+	CRef<COrg_ref> m_Orgref;
+	const CSeqdescEntryPair* m_pSeqdesc; 
+	const CSeq_feat* m_pSeqfeat;
+};
+
+
+class NCBI_VALIDATOR_EXPORT COrgrefWithParent_SpecificHost : public COrgrefWithParent
+{
+public:
+	enum EHostResponseFlags{
+		eNormal				= 0,
+		eMisspelled			= 1 << 0,
+		eIncorrectCapital	= 1 << 1,
+		eAmbiguous			= 1 << 2,
+		eUnrecognized		= 1 << 3
+	};
+
+	typedef int TResponseFlags;
+	COrgrefWithParent_SpecificHost(COrg_ref& orgref, const CSeqdescEntryPair* seqdesc_entrypair,
+								   TResponseFlags choice = eNormal)
+	: COrgrefWithParent(orgref, seqdesc_entrypair), m_Host(choice) { } 
+	COrgrefWithParent_SpecificHost(COrg_ref& orgref, const CSeq_feat* seqfeat,
+								   TResponseFlags choice = eNormal)
+	: COrgrefWithParent(orgref, seqfeat), m_Host(choice) { } 
+
+	~COrgrefWithParent_SpecificHost (void) { }
+
+	TResponseFlags GetTaxonomicResponse(void) const { return m_Host; }
+	void SetTaxonomicResponse(TResponseFlags choice) { m_Host = choice; }
+private:
+	TResponseFlags m_Host;
+};
+
+typedef vector<COrgrefWithParent_SpecificHost> TSpecificHostWithParentList;
+bool   NCBI_VALIDATOR_EXPORT HasMisSpellFlag (const CT3Data& data);
+string NCBI_VALIDATOR_EXPORT FindMatchInOrgRef (string str, const COrg_ref& org);
 
 // ===========================  Central Validation  ==========================
 
@@ -404,13 +485,15 @@ public:
     bool biosource = false, const CSeq_entry *ctx = 0);
     void ValidateCitSub(const CCit_sub& cs, const CSerialObject& obj, const CSeq_entry *ctx = 0);
     void ValidateTaxonomy(const CSeq_entry& se); 
+	CRef<CTaxon3_reply> RequestSpecificHost(const vector<CConstRef<CSeqdesc> > & src_descs, const vector<CConstRef<CSeq_entry> > & desc_ctxs, const vector<CConstRef<CSeq_feat> > & src_feats, TSpecificHostWithParentList& host_list);
     void ValidateSpecificHost (const vector<CConstRef<CSeqdesc> > & src_descs, const vector<CConstRef<CSeq_entry> > & desc_ctxs, const vector<CConstRef<CSeq_feat> > & src_feats);
     void ValidateSpecificHost (const CSeq_entry& se);
     void ValidateTentativeName(const CSeq_entry& se);
     void ValidateTaxonomy(const COrg_ref& org, int genome = CBioSource::eGenome_unknown);
     void ValidateCitations (const CSeq_entry_Handle& seh);
     bool x_IsFarFetchFailure (const CSeq_loc& loc);
-        
+    void GatherSources (const CSeq_entry& se, vector<CConstRef<CSeqdesc> >& src_descs, vector<CConstRef<CSeq_entry> >& desc_ctxs, vector<CConstRef<CSeq_feat> >& src_feats);
+		    
     // getters
     inline CScope* GetScope(void) { return m_Scope; }
 
@@ -593,7 +676,6 @@ private:
     void FindEmbeddedScript (const CSerialObject& obj);
     void FindCollidingSerialNumbers (const CSerialObject& obj);
 
-    void GatherSources (const CSeq_entry& se, vector<CConstRef<CSeqdesc> >& src_descs, vector<CConstRef<CSeq_entry> >& desc_ctxs, vector<CConstRef<CSeq_feat> >& src_feats);
     void GatherTentativeName (const CSeq_entry& se, vector<CConstRef<CSeqdesc> >& usr_descs, vector<CConstRef<CSeq_entry> >& desc_ctxs, vector<CConstRef<CSeq_feat> >& usr_feats);
 
     CLatLonCountryId *x_CalculateLatLonId(float lat_value, float lon_value, string country, string province);
