@@ -67,6 +67,7 @@ struct SChainMember;
 typedef vector<SChainMember*> TContained;
 
 typedef map<Int8,CAlignModel*> TOrigAligns;
+typedef map<Int8,CGeneModel> TUnmodAligns;
 struct SFShiftsCluster;
 class CChainMembers;
 
@@ -138,7 +139,7 @@ private:
     int minpolya;
 
     TOrigAligns orig_aligns;
-    map<Int8,CGeneModel> unmodified_aligns;
+    TUnmodAligns unmodified_aligns;
 
     map<TSignedSeqRange,int> mrna_count;
     map<TSignedSeqRange,int> est_count;
@@ -212,7 +213,7 @@ struct SChainMember
         m_type(eCDS), m_left_cds(0), m_right_cds(0), m_cds(0), m_included(false),  m_postponed(false),
         m_marked_for_deletion(false), m_marked_for_retention(false), 
         m_gapped_connection(false), m_fully_connected_to_part(-1), m_not_for_chaining(false),
-        m_rlimb(numeric_limits<int>::max()),  m_llimb(numeric_limits<int>::max()), m_mem_id(0) {}
+        m_rlimb(numeric_limits<int>::max()),  m_llimb(numeric_limits<int>::max()), m_orig_align(0), m_unmd_align(0), m_mem_id(0) {}
 
     TContained CollectContainedForChain();
     void MarkIncludedForChain();
@@ -244,6 +245,9 @@ struct SChainMember
     int m_rlimb;                       // leftmost compatible rexon
     int m_llimb;                       // leftmost not compatible lexon
 
+    CAlignModel* m_orig_align;
+    CGeneModel* m_unmd_align;
+
     int m_mem_id;
 };
 
@@ -259,7 +263,7 @@ public:
     void ClipToCompleteAlignment(EStatus determinant); // determinant - cap or polya
     void ClipLowCoverageUTR(double utr_clip_threshold, const CGnomonEngine& gnomon);
     void CalculateDropLimits();
-    void CalculatedSupportAndWeightFromMembers();
+    void CalculateSupportAndWeightFromMembers();
     void ClipChain(TSignedSeqRange limits);
 
     void SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool> >& prot_complet, TOrigAligns& orig_aligns, const SMinScor& minscor);
@@ -284,6 +288,7 @@ public:
     double m_core_coverage;
     vector<double> m_coverage;
     double m_splice_weight;
+    CGeneModel m_gapped_helper_align;
 };
 
 
@@ -1563,7 +1568,7 @@ void uniq(C& container)
 class CChainMembers : public vector<SChainMember*> {
 public:
     CChainMembers() { m_extra_cds.push_back(CCDSInfo()); }   // empty cds for utrs; first in the list
-    CChainMembers(TGeneModelList& clust);
+    CChainMembers(TGeneModelList& clust, TOrigAligns& orig_aligns, TUnmodAligns& unmodified_aligns);
     void InsertMember(CGeneModel& algn, SChainMember* copy_ofp = 0);
     void InsertMemberCopyWithCds(const CCDSInfo& cds, SChainMember* copy_ofp);
     void InsertMemberCopyAndStoreCds(const CCDSInfo& cds, SChainMember* copy_ofp);
@@ -1611,6 +1616,10 @@ void CChainMembers::InsertMember(CGeneModel& algn, SChainMember* copy_ofp)
     mbr.m_type = eCDS;
     if(algn.Score() == BadScore()) 
         mbr.m_type = eLeftUTR;
+    if(copy_ofp) {
+        mbr.m_orig_align = copy_ofp->m_orig_align;
+        mbr.m_unmd_align = copy_ofp->m_unmd_align;
+    }
     InsertMember(mbr, copy_ofp);
 }
 
@@ -1651,11 +1660,15 @@ void CChainMembers::DuplicateUTR(SChainMember* copy_ofp)
 }
 
 
-CChainMembers::CChainMembers(TGeneModelList& clust)
+CChainMembers::CChainMembers(TGeneModelList& clust, TOrigAligns& orig_aligns, TUnmodAligns& unmodified_aligns)
 {
     m_extra_cds.push_back(CCDSInfo());      // empty cds for utrs; first in the list
-    NON_CONST_ITERATE(TGeneModelList, itcl, clust) 
+    NON_CONST_ITERATE(TGeneModelList, itcl, clust) {
         InsertMember(*itcl);
+        m_members.back().m_orig_align = orig_aligns[itcl->ID()];
+        if(unmodified_aligns.count(itcl->ID()))
+            m_members.back().m_unmd_align = &unmodified_aligns[itcl->ID()];        
+    }
 }
 
 
@@ -2449,7 +2462,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
     }
     
 
-    CChainMembers allpointers(clust);
+    CChainMembers allpointers(clust, orig_aligns, unmodified_aligns);
     DuplicateNotOriented(allpointers, clust);
     ScoreCdnas(allpointers);
     Duplicate5pendsAndShortCDSes(allpointers, clust);
@@ -3015,7 +3028,7 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
                     unmaparts.push_back(&(*im));
                 }
 
-                CChainMembers unmapointers(unmacl);
+                CChainMembers unmapointers(unmacl, orig_aligns, unmodified_aligns);
                 Duplicate5pendsAndShortCDSes(unmapointers, unmacl);
                 FindContainedAlignments(unmapointers);
                 
@@ -3025,7 +3038,7 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
                 sort(pointers.begin(),pointers.end(),LeftOrderD());
 
                 best_right = FindOptimalChainForProtein(pointers, unmaparts, unma);
-                CChain tmp_chain(*best_right,&unma);
+                CChain tmp_chain(*best_right, &unma);
 
                 // remove connected protein parts which are probably local and unstable  
                 while(best_right != 0 && best_right->m_align->ID() == id) {
@@ -3058,7 +3071,7 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
                 _ASSERT(best_right != 0 && best_right->m_align->ID() == id && !(best_right->m_align->Status()&CGeneModel::eUnmodifiedAlign));
 
                 best_right->m_right_member = 0;
-                CChain new_chain(*best_right,&unma);
+                CChain new_chain(*best_right, &unma);
                 chain = new_chain;
             }
         }
@@ -3202,14 +3215,17 @@ void CChainer::CChainerImpl::CombineCompatibleChains(TChainList& chains) {
                        (itt->FShiftedLen(itt->GetCdsInfo().Cds().GetFrom(),jtt->GetCdsInfo().Cds().GetFrom(),false)-1)%3 != 0)
                         continue;
                 }
-                TMemberPtrSet chain_alignments(itt->m_members.begin(),itt->m_members.end());
-                ITERATE(TContained, i, jtt->m_members) {
-                    chain_alignments.insert(*i);
+
+                set<CGeneModel*> support;
+                ITERATE(TContained, i, itt->m_members) {
+                    support.insert((*i)->m_align);
                 }
-                itt->m_members.resize(chain_alignments.size(),0);
-                copy(chain_alignments.begin(),chain_alignments.end(),itt->m_members.begin());
+                ITERATE(TContained, i, jtt->m_members) {
+                    if(support.insert((*i)->m_align).second)
+                        itt->m_members.push_back(*i);
+                }
                 sort(itt->m_members.begin(),itt->m_members.end(),GenomeOrderD());
-                itt->CalculatedSupportAndWeightFromMembers();
+                itt->CalculateSupportAndWeightFromMembers();
                 chains.erase(jtt);
             }
         }
@@ -3264,8 +3280,10 @@ CChain::CChain(SChainMember& mbr, CGeneModel* gapped_helper) : m_coverage_drop_l
 
     list<CGeneModel> extened_parts;
     vector<CGeneModel*> extened_parts_and_gapped;
-    if(gapped_helper != 0) 
+    if(gapped_helper != 0) {
         extened_parts_and_gapped.push_back(gapped_helper);
+        m_gapped_helper_align = *gapped_helper;
+    }
     ITERATE(TContained, i, m_members) {
         SChainMember* mi = *i;
         CGeneModel align = *mi->m_align;
@@ -3295,7 +3313,7 @@ CChain::CChain(SChainMember& mbr, CGeneModel* gapped_helper) : m_coverage_drop_l
             e->m_ssplice_sig.clear();
     }
 
-    CalculatedSupportAndWeightFromMembers();
+    CalculateSupportAndWeightFromMembers();
 
     m_polya_cap_left_hard_limit = Limits().GetTo()+1;
     m_polya_cap_right_hard_limit = Limits().GetFrom()-1;
@@ -3354,26 +3372,197 @@ void CChain::SetBestPlacement(TOrigAligns& orig_aligns) {
     }
 }
 
+struct SLinker
+{
+    SLinker() : m_member(0), m_value(0), m_left(0), m_not_wanted(false), m_count(0), m_not_wanted_count(0), m_connected(false) {}
+    bool operator<(const SLinker& sl) const { return m_range.GetFrom() < sl.m_range.GetFrom(); }
 
-void CChain::CalculatedSupportAndWeightFromMembers() {
+    SChainMember* m_member;
+    TSignedSeqRange m_range;
+    TSignedSeqRange m_reading_frame;
+    int m_value;
+    SLinker* m_left;
+    bool m_not_wanted;
+    int m_count;
+    int m_not_wanted_count;
+    bool m_connected;
+};
 
-    vector<CSupportInfo> support;
-    support.reserve(m_members.size());
-    const CGeneModel* last_important_align = 0;
+typedef vector<SLinker> TLinkers;
+
+void CChain::CalculateSupportAndWeightFromMembers() {
+
+    TLinkers linkers;
+    ITERATE(TContained, i, m_members) {
+        SChainMember* mi = *i;
+        _ASSERT(mi->m_orig_align);
+
+        SLinker sl;
+        sl.m_member = mi;
+        sl.m_value = 1;
+        ITERATE(CGeneModel::TExons, e, Exons()) {
+            sl.m_range += (mi->m_align->Limits()&e->Limits());
+            sl.m_reading_frame += (mi->m_cds_info->ReadingFrame()&e->Limits()&ReadingFrame());
+        }
+
+        bool pstop_outside_rf = false;
+        for(int is = 0; is < (int)GetCdsInfo().PStops().size() && !pstop_outside_rf; ++is) {
+            const TSignedSeqRange& s = GetCdsInfo().PStops()[is];
+            pstop_outside_rf = Include(sl.m_range,s) && !Include(sl.m_reading_frame,s);  // these alignments were not in the 'original' chain - they were added during deleting compatible chains
+        }
+
+        if(!pstop_outside_rf)
+            linkers.push_back(sl);
+    }
+
+    set<TSignedSeqRange> chain_introns;
+    for(int i = 1; i < (int)Exons().size(); ++i) {
+        if(Exons()[i-1].m_ssplice && Exons()[i].m_fsplice)
+            chain_introns.insert(TSignedSeqRange(Exons()[i-1].GetTo(),Exons()[i].GetFrom()));
+    }
+        
+    Status() &= ~CGeneModel::eChangedByFilter;
+
+    NON_CONST_ITERATE(TLinkers, l, linkers) {
+        SLinker& sl = *l;
+        SChainMember* mi = sl.m_member;
+        CGeneModel& align = *mi->m_align;
+        if(mi->m_unmd_align) {
+            CGeneModel& unma = *mi->m_unmd_align;
+            bool all_introns_included = true;
+            for(int i = 1; all_introns_included && i < (int)unma.Exons().size(); ++i) {
+                if(unma.Exons()[i-1].m_ssplice && unma.Exons()[i].m_fsplice)
+                    all_introns_included = chain_introns.count(TSignedSeqRange(unma.Exons()[i-1].GetTo(),unma.Exons()[i].GetFrom()));
+            }
+            if(!all_introns_included) {   // protein intron was clipped and not restored or part is not in chain
+                sl.m_not_wanted = true;
+                if(align.ID() == m_gapped_helper_align.ID())
+                    Status() |= CGeneModel::eChangedByFilter;
+            } 
+        } else if(align.Status()&CGeneModel::eChangedByFilter) {
+            sl.m_not_wanted = true;
+        } else {
+            CAlignModel& orig_align = *mi->m_orig_align;
+            bool all_introns_included = true;
+            for(int i = 1; all_introns_included && i < (int)orig_align.Exons().size(); ++i) {
+                if(orig_align.Exons()[i-1].m_ssplice && orig_align.Exons()[i].m_fsplice)
+                    all_introns_included = chain_introns.count(TSignedSeqRange(orig_align.Exons()[i-1].GetTo(),orig_align.Exons()[i].GetFrom()));
+            }
+            if(!all_introns_included)   // intron was clipped by UTR clip or part is not in chain
+                sl.m_not_wanted = true; 
+        }
+    }
+
+    if(m_gapped_helper_align.ID()) {
+        int left = m_gapped_helper_align.Limits().GetFrom();
+        for(int i = 0; i < (int)m_gapped_helper_align.Exons().size(); ++i) {
+            if(!m_gapped_helper_align.Exons()[i].m_ssplice) {
+                SLinker sl;
+                sl.m_range = TSignedSeqRange(left,m_gapped_helper_align.Exons()[i].GetTo())&m_range;
+                sl.m_reading_frame = sl.m_range&ReadingFrame();
+                if(sl.m_range.NotEmpty())
+                    linkers.push_back(sl);
+                
+                if(i+1 < (int)m_gapped_helper_align.Exons().size())
+                    left = m_gapped_helper_align.Exons()[i+1].GetFrom();
+            }
+        }
+
+        for(int i = 1; i < (int)Exons().size(); ++i) {
+            if(!Exons()[i-1].m_ssplice || !Exons()[i].m_fsplice) {
+                SLinker sl;
+                sl.m_range = TSignedSeqRange(Exons()[i-1].GetTo(),Exons()[i].GetFrom());
+                sl.m_reading_frame = sl.m_range&ReadingFrame();
+                linkers.push_back(sl);                
+            }
+        }
+    }
+
+    sort(linkers.begin(), linkers.end());
+    for(int i = 0; i < (int)linkers.size(); ++i) {
+        SLinker& sli = linkers[i];
+        if(sli.m_range.GetFrom() == Limits().GetFrom()) {
+            sli.m_count = sli.m_value;
+            if(sli.m_not_wanted)
+                sli.m_not_wanted_count = sli.m_value;
+            sli.m_connected = true;
+        } else {
+            for(int j = i-1; j >= 0; --j) {
+                SLinker& slj = linkers[j];
+                if(slj.m_connected && 
+                   slj.m_range.GetFrom() < sli.m_range.GetFrom() && 
+                   slj.m_range.GetTo() < sli.m_range.GetTo() && 
+                   slj.m_range.GetTo() >= sli.m_range.GetFrom()-1) {   //overlaps and extends and connected to the left end
+
+                    bool divided_pstop = false;
+                    for(int is = 0; is < (int)GetCdsInfo().PStops().size() && !divided_pstop; ++is) {
+                        const TSignedSeqRange& s = GetCdsInfo().PStops()[is];
+                        divided_pstop = (Include(s,slj.m_range.GetTo()) || Include(s,sli.m_range.GetFrom())) && !Include(slj.m_reading_frame,s) && !Include(sli.m_reading_frame,s);
+                    }
+                    if(divided_pstop)  // both alignmnets just touch the pstop without actually crossing it
+                        continue;
+
+                    int new_count = slj.m_count + sli.m_value;
+                    int new_not_wanted_count = slj.m_not_wanted_count;
+                    if(sli.m_not_wanted)
+                        new_not_wanted_count += sli.m_value;
+                    if(!sli.m_connected || new_count < sli.m_count || (new_count == sli.m_count && new_not_wanted_count < sli.m_not_wanted_count)) {
+                        sli.m_count = new_count;
+                        sli.m_not_wanted_count = new_not_wanted_count;
+                        sli.m_connected = true;
+                        sli.m_left = &slj;
+                    }
+                } 
+            }
+        }
+    }
+    SLinker* best_right = 0;
+    for(int i = 0; i < (int)linkers.size(); ++i) {
+        SLinker& sli = linkers[i];
+        if(sli.m_connected && sli.m_range.GetTo() == Limits().GetTo()) {
+            if(best_right == 0 || sli.m_count < best_right->m_count || (sli.m_count == best_right->m_count && sli.m_not_wanted_count < best_right->m_not_wanted_count))
+                best_right = &sli;
+        }
+    }
+    _ASSERT(best_right != 0);
+
+    set<Int8> sp_core;
+    for(SLinker* l = best_right; l != 0; l = l->m_left) {
+        if(l->m_member)
+            sp_core.insert(l->m_member->m_align->ID());
+    }
+    if(m_gapped_helper_align.ID())
+        sp_core.insert(m_gapped_helper_align.ID());
+
+    set<Int8> sp_not_wanted;
+    for(int i = 0; i < (int)linkers.size(); ++i) {
+        SLinker& sli = linkers[i];
+        if(sli.m_member && sli.m_not_wanted) {
+            if(!sp_core.count(sli.m_member->m_align->ID()))
+                sp_not_wanted.insert(sli.m_member->m_align->ID());
+            else
+                Status() |= CGeneModel::eChangedByFilter;
+        }
+    }    
+
     double weight = 0;
     m_splice_weight = 0;
     set<Int8> sp;
-    set<Int8> sp_core;
-
-    map<Int8,int> intronnum;
     TSignedSeqRange protreadingframe;
+    ReplaceSupport(CSupportInfoSet());
+
+    SetType(Type() & (~(eSR | eEST | emRNA | eProt)));
     ITERATE (TContained, it, m_members) {
         const CGeneModel& align = *(*it)->m_align;
-        SetType(Type() | (align.Type() & (eSR | eEST | emRNA | eProt)));
-        protreadingframe += align.GetCdsInfo().ProtReadingFrame();
-        for(int i = 1; i < (int)align.Exons().size(); ++i) {
-            if(align.Exons()[i-1].m_ssplice && align.Exons()[i].m_fsplice)
-                ++intronnum[align.ID()];
+        Int8 id = align.ID();
+        if(!sp_not_wanted.count(id)) {
+            SetType(Type() | (align.Type() & (eSR | eEST | emRNA | eProt)));
+            protreadingframe += align.GetCdsInfo().ProtReadingFrame();       
+            m_splice_weight += (*it)->m_splice_num;            
+            if(sp.insert(id).second) {   // avoid counting parts of splitted aligns
+                weight += align.Weight();
+                AddSupport(CSupportInfo(id,sp_core.count(id)));
+            }
         }
     }
 
@@ -3384,66 +3573,8 @@ void CChain::CalculatedSupportAndWeightFromMembers() {
         cds.SetReadingFrame(reading_frame);
         SetCdsInfo(cds);
     }
-    
 
-    TSignedSeqRange lim;
-    ITERATE (TContained, it, m_members) {
-        const CGeneModel& align = *(*it)->m_align;
-        Int8 id = align.ID();
-            
-        if(sp.insert(id).second) {   // avoid counting parts of splitted aligns
-            weight += align.Weight();
-            m_splice_weight += (*it)->m_splice_num;
-            support.push_back(CSupportInfo(id,false));
-        }
-
-        if(lim.Empty() || !Include(lim,align.Limits())) {
-
-            bool add_some_introns = false;
-            for(int i = (int)align.Exons().size()-1; !add_some_introns && i > 0; --i) {
-                add_some_introns = align.Exons()[i-1].m_ssplice && align.Exons()[i].m_fsplice && 
-                    (lim.Empty() || align.Exons()[i-1].GetTo() >= lim.GetTo());
-           }
-
-            bool pass_some_introns = false;
-            for(int i = 1; last_important_align != 0 && !pass_some_introns && i < (int)(last_important_align->Exons().size()); ++i) {
-                pass_some_introns = last_important_align->Exons()[i-1].m_ssplice && last_important_align->Exons()[i].m_fsplice && 
-                    align.Limits().GetFrom() >= last_important_align->Exons()[i].GetFrom();
-            }
-
-            bool miss_some_introns = false;
-            if(last_important_align != 0) {
-                for(int i = (int)last_important_align->Exons().size()-1; !miss_some_introns && i > 0; --i) {
-                    miss_some_introns = last_important_align->Exons()[i-1].m_ssplice && last_important_align->Exons()[i].m_fsplice &&
-                        align.Limits().GetTo() < last_important_align->Exons()[i].GetFrom();
-                }
-            }
-
-            if(add_some_introns) {
-                if(pass_some_introns) {
-                    sp_core.insert(last_important_align->ID());
-                }
-                last_important_align = (*it)->m_align;
-            } else if(last_important_align != 0 && !pass_some_introns && !miss_some_introns && 
-                      (sp_core.find(id) != sp_core.end() || intronnum[id] > intronnum[last_important_align->ID()])) {
-                last_important_align = (*it)->m_align;
-            }
-        }
-
-        lim += align.Limits();            
-    }
     SetWeight(weight);
-    if(last_important_align != 0) {
-        sp_core.insert(last_important_align->ID());
-    }
-
-    ReplaceSupport(CSupportInfoSet());
-    NON_CONST_ITERATE(vector<CSupportInfo>, s, support) {
-        if(sp_core.find(s->GetId()) != sp_core.end()) {
-            s->SetCore(true);
-        }
-        AddSupport(*s);
-    }
 }
 
 void CChain::RestoreTrimmedEnds(int trim)
@@ -3717,7 +3848,7 @@ void CChain::ClipChain(TSignedSeqRange limits) {
         }
     }
 
-    CalculatedSupportAndWeightFromMembers();
+    CalculateSupportAndWeightFromMembers();
 }
 
 bool BelongToExon(const CGeneModel::TExons& exons, int pos) {
