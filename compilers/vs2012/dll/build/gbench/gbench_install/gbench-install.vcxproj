@@ -136,75 +136,75 @@
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">DebugDLL\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">DebugDLL\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10\10"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10\10"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc10\10"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">DebugDLL\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">DebugDLL\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10.64\10"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10.64\10"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc10.64\10"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ReleaseDLL\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">ReleaseDLL\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10\10"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10\10"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc10\10"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ReleaseDLL\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">ReleaseDLL\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10.64\10"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10.64\10"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc10.64\10"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">Unicode_DebugDLL\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">Unicode_DebugDLL\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10\10"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10\10"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc10\10"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">Unicode_DebugDLL\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">Unicode_DebugDLL\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10.64\10"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10.64\10"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc10.64\10"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">Unicode_ReleaseDLL\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">Unicode_ReleaseDLL\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10\10"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10\10"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc10\10"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">Unicode_ReleaseDLL\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">Unicode_ReleaseDLL\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10.64\10"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10.64\10"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc10.64\10"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">VTune_DebugDLL\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">VTune_DebugDLL\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10\10"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10\10"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc10\10"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">VTune_DebugDLL\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">VTune_DebugDLL\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10.64\10"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10.64\10"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc10.64\10"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">VTune_ReleaseDLL\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">VTune_ReleaseDLL\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10\10"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10\10"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc10\10"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">VTune_ReleaseDLL\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">VTune_ReleaseDLL\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10.64\10"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc10.64\10"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc10.64\10"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak all IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">nmake -f ..\..\..\..\..\..\src\app\gbench\gbench_install\gbench_install.win32.mak clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">gbench-install.exe</NMakeOutput>
   </PropertyGroup>
   <ItemDefinitionGroup>
