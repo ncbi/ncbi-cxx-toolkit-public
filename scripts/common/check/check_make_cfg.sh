@@ -20,7 +20,7 @@
 #    <static|dll>  - type of used libraries (static, dll).
 #    <cfg>         - configuration name
 #                    (Debug, DebugDLL, DebugMT, Release, ReleaseDLL, ReleaseMT,...).
-#    [build_dir]   - path to build tree like ".../msvc800_prj"
+#    [build_dir]   - path to build tree like ".../msvc1000_prj"
 #                    (default: will try determine path from current work
 #                    directory -- root of build tree) 
 #
@@ -131,6 +131,7 @@ if test -n "$NCBI_AUTOMATED_BUILD"; then
          msvc8  ) signature="MSVC_800"  ;;
          msvc9  ) signature="MSVC_900"  ;;
          msvc10 ) signature="MSVC_1000" ;;
+         vs2012 ) signature="VS_2012"   ;;
       esac
       signature="$signature-${x_cfg}"
       case "$x_cfg" in
