@@ -128,7 +128,7 @@ public:
             (*m_pTestNameToInfoMap)[vecFileNamePieces[0]];
 
         // assign object type contained in test input
-        if (sObjType == "entry"  ||  sObjType == "annot") {
+        if (sObjType == "table"  ||  sObjType == "graph") {
             test_info_to_load.mObjType = sObjType;
         }
         else {
@@ -194,7 +194,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CNcbiOfstream ofstr(output.c_str());
     CWiggleWriter* pWriter = sGetWriter(*pScope, ofstr);
 
-    if (test_type == "annot") {
+    if (test_type == "graph") {
         CRef<CSeq_annot> pAnnot(new CSeq_annot);
         *pI >> *pAnnot;
         pWriter->WriteHeader();
@@ -203,7 +203,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
         delete pWriter;
         ofstr.flush();
     }
-    else if (test_type == "entry") {
+    else if (test_type == "table") {
         CRef<CSeq_entry> pEntry(new CSeq_entry);
         *pI >> *pEntry;
         CSeq_entry_Handle seh = pScope->AddTopLevelSeqEntry(*pEntry);
@@ -267,7 +267,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     CNcbiOfstream ofstr(resultName.c_str());
     CWiggleWriter* pWriter = sGetWriter(*pScope, ofstr);
 
-    if (testInfo.mObjType == "annot") {
+    if (testInfo.mObjType == "graph") {
         CRef<CSeq_annot> pAnnot(new CSeq_annot);
         *pI >> *pAnnot;
         pWriter->WriteHeader();
@@ -276,7 +276,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         delete pWriter;
         ofstr.flush();
     }
-    else if (testInfo.mObjType == "entry") {
+    else if (testInfo.mObjType == "table") {
         CRef<CSeq_entry> pEntry(new CSeq_entry);
         *pI >> *pEntry;
         CSeq_entry_Handle seh = pScope->AddTopLevelSeqEntry(*pEntry);
