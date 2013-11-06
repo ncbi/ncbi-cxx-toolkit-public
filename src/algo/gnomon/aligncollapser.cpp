@@ -986,7 +986,7 @@ void CAlignCollapser::FilterAlignments() {
                 --intronnum;
         }
 
-        if(intronnum > 0)
+        if(intronnum > 0 && !(align.Type()&CGeneModel::eNotForChaining))
             align.Status() |= CGeneModel::eChangedByFilter;  
     }
 
@@ -1104,17 +1104,21 @@ void CAlignCollapser::FilterAlignments() {
             if(align.Exons()[ie].Limits().Empty()) {
                 if(ie > 0) {
                     int a = align.Exons()[ie-1].GetTo();
-                    if((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == ePlus)
-                        left_plus[a-m_left_end] = a;
-                    if((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand()== eMinus)
-                        left_minus[a-m_left_end] = a;
+                    if(a <= right_end) {   // TSA could be slightly extended in the area without alignmnets
+                        if((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == ePlus)
+                            left_plus[a-m_left_end] = a;
+                        if((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand()== eMinus)
+                            left_minus[a-m_left_end] = a;
+                    }
                 }
                 if(ie < (int)align.Exons().size()-1) {
                     int b = align.Exons()[ie+1].GetFrom();
-                    if((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == ePlus)
-                        right_plus[b-m_left_end] = b;
-                    if((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand()== eMinus)
-                        right_minus[b-m_left_end] = b;
+                    if(b >= m_left_end) {   // TSA could be slightly extended in the area without alignmnets
+                        if((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand() == ePlus)
+                            right_plus[b-m_left_end] = b;
+                        if((align.Status()&CGeneModel::eUnknownOrientation) || align.Strand()== eMinus)
+                            right_minus[b-m_left_end] = b;
+                    }
                 }
             }
         }
@@ -1155,7 +1159,7 @@ void CAlignCollapser::FilterAlignments() {
             for(int ie = 0; ie < (int)align.Exons().size(); ++ie) {
                 const CModelExon& e = align.Exons()[ie];
  
-                if(!e.m_fsplice && e.Limits().GetLength() > trim && 
+                if(!e.m_fsplice && e.Limits().GetLength() > trim && e.GetTo() <= right_end && 
                    (ie != 0 || (align.Strand() == ePlus && !(align.Status()&CGeneModel::eCap) && !align.HasStart()) || (align.Strand() == eMinus && !(align.Status()&CGeneModel::ePolyA) && !align.HasStop()))) {
                     int l = e.GetFrom();
                     int r = e.GetTo();
@@ -1193,7 +1197,7 @@ void CAlignCollapser::FilterAlignments() {
                     }
                 }
 
-                if(!e.m_ssplice && e.Limits().GetLength() > trim && 
+                if(!e.m_ssplice && e.Limits().GetLength() > trim && e.GetFrom() >= m_left_end &&
                    (ie != (int)align.Exons().size()-1 || (align.Strand() == ePlus && !(align.Status()&CGeneModel::ePolyA) && !align.HasStop()) || (align.Strand() == eMinus && !(align.Status()&CGeneModel::eCap) && !align.HasStart()))) {
                     int l = e.GetFrom();
                     int r = e.GetTo();
