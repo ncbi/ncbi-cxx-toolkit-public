@@ -144,7 +144,8 @@ TMgr-AssemblySpec ::= CHOICE {
         tax-id INTEGER,
         name VisibleString
     },
-    accession VisibleString
+    accession VisibleString,
+    all-assemblies NULL
 }
 
 TMgr-AttrSpec ::= SEQUENCE {
