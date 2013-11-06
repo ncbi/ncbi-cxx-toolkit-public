@@ -4623,7 +4623,7 @@ if test "$with_perl" != "no" ; then
    AC_PATH_PROG(PERL, perl, [], [$PERL_PATH/bin:$PATH])
    if test -x "$PERL"; then
       PERL_ARCHLIB=`$PERL -MConfig -e 'print \$Config{archlibexp};'`
-      PERL_FLAGS=`$PERL -MConfig -e 'print \$Config{cppflags};'`
+      PERL_FLAGS=`$PERL -MConfig -e 'print join " ", grep /^-[[DI]]/, split /\\s+/, \$Config{cppflags};'`
       PERL_INCLUDE="-I$PERL_ARCHLIB/CORE $PERL_FLAGS"
       PERL_DEPS=`$PERL -MConfig -e 'print \$Config{libs};'`
       NCBI_RPATHIFY(PERL_LIBS, $PERL_ARCHLIB/CORE, [ -lperl $PERL_DEPS])
