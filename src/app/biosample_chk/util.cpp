@@ -164,8 +164,8 @@ void CBiosampleFieldDiff::Print(CNcbiOstream& stream)
     stream << m_BiosampleID << "\t";
     stream << m_FieldName << "\t";
     stream << m_SequenceID << "\t";
-    stream << m_SrcVal << "\t";
     stream << m_SampleVal << "\t";
+    stream << m_SrcVal << "\t";
     stream << endl;
 }
 

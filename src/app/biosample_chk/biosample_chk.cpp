@@ -80,6 +80,8 @@
 #include <objmgr/seqdesc_ci.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <sra/data_loaders/wgs/wgsloader.hpp>
+
 #include "util.hpp"
 #include "src_table_column.hpp"
 #include "struc_table_column.hpp"
@@ -175,6 +177,9 @@ private:
     int m_ListType;
 	string m_StructuredCommentPrefix;
 
+    size_t m_Processed;
+    size_t m_Unprocessed;
+
     TSrcTableColumnList m_SrcReportFields;
 	TStructuredCommentTableColumnList m_StructuredCommentReportFields;
 
@@ -187,7 +192,8 @@ private:
 
 CBiosampleChkApp::CBiosampleChkApp(void) :
     m_ObjMgr(0), m_In(0), m_Continue(false),
-    m_Level(0), m_ReportStream(0), m_LogStream(0), m_Mode(e_report_diffs), m_StructuredCommentPrefix("")
+    m_Level(0), m_ReportStream(0), m_LogStream(0), m_Mode(e_report_diffs),
+    m_StructuredCommentPrefix(""), m_Processed(0), m_Unprocessed(0)
 {
     m_SrcReportFields.clear();
 	m_StructuredCommentReportFields.clear();
@@ -275,6 +281,7 @@ void CBiosampleChkApp::ProcessList (const string& fname)
 
     CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
     CGBDataLoader::RegisterInObjectManager(*objmgr);
+    CWGSDataLoader::RegisterInObjectManager(*objmgr);
     CScope scope(*objmgr);
     scope.AddDefaults();
 
@@ -293,10 +300,12 @@ void CBiosampleChkApp::ProcessList (const string& fname)
                         string label = "";
                         id->GetLabel(&label);
                         *m_LogStream << "  (interpreted as " << label << ")" << endl;
+                        m_Unprocessed++;
                     }                
                 }
             } catch (CException& e) {
                 *m_LogStream << e.GetMsg() << endl;
+                m_Unprocessed++;
             }
         }
     }
@@ -709,7 +718,11 @@ void CBiosampleChkApp::PrintTable(CRef<CSeq_table> table)
 void CBiosampleChkApp::PrintDiffs(TBiosampleFieldDiffList & diffs)
 {
     if (diffs.size() == 0) {
-        *m_ReportStream << "No differences found" << endl;
+        if (m_Processed == 0) {
+            *m_ReportStream << "No results processed" << endl;
+        } else {
+            *m_ReportStream << "No differences found" << endl;
+        }
     } else if (diffs.size() == 1) {
         diffs.front()->Print(*m_ReportStream);
     } else {
@@ -740,6 +753,9 @@ void CBiosampleChkApp::PrintDiffs(TBiosampleFieldDiffList & diffs)
             f_next++;
             f_prev++;
         }
+    }
+    if (m_Unprocessed > 0) {
+        *m_ReportStream << m_Unprocessed << " results failed" << endl;
     }
 }
 
@@ -940,6 +956,9 @@ void CBiosampleChkApp::GetBioseqDiffs(CBioseq_Handle bh)
 					}
 				}
             }
+            m_Processed++;
+        } else {
+            m_Unprocessed++;
         }
     }
 }
