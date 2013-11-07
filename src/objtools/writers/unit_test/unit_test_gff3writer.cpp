@@ -189,7 +189,7 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
 
     //get a writer object
     CNcbiIfstream ifstr(input.c_str(), ios::binary);
-    CObjectIStream* pI = CObjectIStream::Open(eSerial_AsnText, ifstr, true);
+    CObjectIStream* pI = CObjectIStream::Open(eSerial_AsnText, ifstr, eTakeOwnership);
 
     CNcbiOfstream ofstr(output.c_str());
     CGff3Writer* pWriter = sGetWriter(*pScope, ofstr);
@@ -261,7 +261,7 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 
     //get a writer object
     CNcbiIfstream ifstr(testInfo.mInFile.GetPath().c_str(), ios::binary);
-    CObjectIStream* pI = CObjectIStream::Open(eSerial_AsnText, ifstr, true);
+    CObjectIStream* pI = CObjectIStream::Open(eSerial_AsnText, ifstr, eTakeOwnership);
 
     string resultName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(resultName.c_str());
