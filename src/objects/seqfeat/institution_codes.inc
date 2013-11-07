@@ -913,6 +913,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CEU	s	Collage of Eastern Utah",
 "CFB	s	Northern Forestry Centre, Canadian Forest Service",
 "CFBP	c	Collection Francaise des Bacteries Phytopathogenes",
+"CFI	s	Genetic Resources and Biotechnology (CENARGEN), EMBRAPA",
 "CFMR	sc	Center for Forest Mycology Research",
 "CFN	s	Clifton College, Biology Department",
 "CFNL	s	Universidad Autonoma de Nuevo Leon",
