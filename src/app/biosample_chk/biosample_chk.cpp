@@ -176,6 +176,7 @@ private:
     int m_Mode;
     int m_ListType;
 	string m_StructuredCommentPrefix;
+    bool m_CompareStructuredComments;
 
     size_t m_Processed;
     size_t m_Unprocessed;
@@ -193,7 +194,7 @@ private:
 CBiosampleChkApp::CBiosampleChkApp(void) :
     m_ObjMgr(0), m_In(0), m_Continue(false),
     m_Level(0), m_ReportStream(0), m_LogStream(0), m_Mode(e_report_diffs),
-    m_StructuredCommentPrefix(""), m_Processed(0), m_Unprocessed(0)
+    m_StructuredCommentPrefix(""), m_CompareStructuredComments(false), m_Processed(0), m_Unprocessed(0)
 {
     m_SrcReportFields.clear();
 	m_StructuredCommentReportFields.clear();
@@ -902,18 +903,21 @@ void CBiosampleChkApp::AddBioseqToTable(CBioseq_Handle bh)
 			AddValueToTable(m_Table, (*it)->GetLabel(), (*it)->GetFromBioSource(src), row);
 		}
 	}
-	while (comm_desc_ci) {
-		const CUser_object& usr = comm_desc_ci->GetUser();
-		TStructuredCommentTableColumnList comm_fields = GetStructuredCommentFields(usr);
-	    ITERATE(TStructuredCommentTableColumnList, it, comm_fields) {
-			string label = (*it)->GetLabel();
-            AddValueToTable(m_Table, (*it)->GetLabel(), (*it)->GetFromComment(usr), row);
-		}
-		++comm_desc_ci;
-		while (comm_desc_ci && !x_IsReportableStructuredComment(*comm_desc_ci)) {
-			++comm_desc_ci;
-		}
-	}
+    
+    if (m_CompareStructuredComments) {
+	    while (comm_desc_ci) {
+		    const CUser_object& usr = comm_desc_ci->GetUser();
+		    TStructuredCommentTableColumnList comm_fields = GetStructuredCommentFields(usr);
+	        ITERATE(TStructuredCommentTableColumnList, it, comm_fields) {
+			    string label = (*it)->GetLabel();
+                AddValueToTable(m_Table, (*it)->GetLabel(), (*it)->GetFromComment(usr), row);
+		    }
+		    ++comm_desc_ci;
+		    while (comm_desc_ci && !x_IsReportableStructuredComment(*comm_desc_ci)) {
+			    ++comm_desc_ci;
+		    }
+	    }
+    }
 	int num_rows = (int)row  + 1;
 	m_Table->SetNum_rows(num_rows);
 }
@@ -950,10 +954,12 @@ void CBiosampleChkApp::GetBioseqDiffs(CBioseq_Handle bh)
 						m_Diffs.insert(m_Diffs.end(), these_diffs.begin(), these_diffs.end());
 					}
                 } else if ((*it)->IsUser()) {
-					if (comm_desc_ci) {
-                        TBiosampleFieldDiffList these_diffs = GetFieldDiffs(sequence_id, *id, comm_desc_ci->GetUser(), (*it)->GetUser());
-                        m_Diffs.insert(m_Diffs.end(), these_diffs.begin(), these_diffs.end());
-					}
+                    if (m_CompareStructuredComments) {
+					    if (comm_desc_ci) {
+                            TBiosampleFieldDiffList these_diffs = GetFieldDiffs(sequence_id, *id, comm_desc_ci->GetUser(), (*it)->GetUser());
+                            m_Diffs.insert(m_Diffs.end(), these_diffs.begin(), these_diffs.end());
+					    }
+                    }
 				}
             }
             m_Processed++;
