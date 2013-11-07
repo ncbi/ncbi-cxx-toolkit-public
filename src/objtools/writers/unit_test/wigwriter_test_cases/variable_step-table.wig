@@ -1,0 +1,20 @@
+track type=wiggle_0
+variableStep chrom=1010 span=1
+4800	1
+4811	3
+4816	1
+4824	7
+4840	2
+4844	1
+4852	1
+
+track type=wiggle_0
+variableStep chrom=1011 span=1
+6800	1
+6806	3
+6808	1.5
+6812	7
+6820	2
+6822	1.57
+6826	1
+

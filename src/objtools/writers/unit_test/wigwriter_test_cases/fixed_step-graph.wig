@@ -1,0 +1,26 @@
+track type=wiggle_0 name="fixedStep2" autoScale=off color=0,200,100 graphType=points maxHeightPixels=100:50:20 priority=20 viewLimits=0:1000 visibility=full
+fixedStep chrom=ref|AC_000017.1 start=1499 step=300 span=300
+1000
+901
+799
+700
+601
+499
+400
+301
+199
+100
+
+track type=wiggle_0 name="fixedStep2" autoScale=off color=0,200,100 graphType=points maxHeightPixels=100:50:20 priority=20 viewLimits=0:1000 visibility=full
+fixedStep chrom=ref|AC_000018.1 start=1499 step=300 span=300
+1000
+901
+799
+700
+601
+499
+400
+301
+199
+100
+

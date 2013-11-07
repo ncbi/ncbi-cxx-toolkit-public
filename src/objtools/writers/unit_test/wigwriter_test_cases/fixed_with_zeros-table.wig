@@ -1,0 +1,6 @@
+track type=wiggle_0
+fixedStep chrom=chr1 span=10 start=1 step=20
+0
+0
+1.2
+

@@ -77,7 +77,6 @@ struct STestInfo {
     CFile mInFile;
     CFile mOutFile;
     CFile mErrorFile;
-    string mObjType;
 };
 typedef string TTestName;
 typedef map<TTestName, STestInfo> TTestNameToInfoMap;
@@ -115,25 +114,15 @@ public:
         const string sFileName = file.GetName();
         vector<string> vecFileNamePieces;
         NStr::Tokenize( sFileName, ".", vecFileNamePieces );
-        BOOST_REQUIRE(vecFileNamePieces.size() == 3);
+        BOOST_REQUIRE(vecFileNamePieces.size() == 2);
 
         string sTestName = vecFileNamePieces[0];
         BOOST_REQUIRE(!sTestName.empty());
-        string sObjType = vecFileNamePieces[1];
-        BOOST_REQUIRE(!sObjType.empty());
-        string sFileType = vecFileNamePieces[2];
+        string sFileType = vecFileNamePieces[1];
         BOOST_REQUIRE(!sFileType.empty());
             
         STestInfo & test_info_to_load =
             (*m_pTestNameToInfoMap)[vecFileNamePieces[0]];
-
-        // assign object type contained in test input
-        if (sObjType == "table"  ||  sObjType == "graph") {
-            test_info_to_load.mObjType = sObjType;
-        }
-        else {
-            BOOST_FAIL("Unknown object type " << sObjType << ".");
-        }
 
         // figure out what type of file we have and set appropriately
         if (sFileType == mExtInput) {
@@ -192,9 +181,9 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
     CObjectIStream* pI = CObjectIStream::Open(eSerial_AsnText, ifstr, true);
 
     CNcbiOfstream ofstr(output.c_str());
-    CWiggleWriter* pWriter = sGetWriter(*pScope, ofstr);
 
-    if (test_type == "graph") {
+    while (!pI->EndOfData()) {
+        CWiggleWriter* pWriter = sGetWriter(*pScope, ofstr);
         CRef<CSeq_annot> pAnnot(new CSeq_annot);
         *pI >> *pAnnot;
         pWriter->WriteHeader();
@@ -203,20 +192,10 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
         delete pWriter;
         ofstr.flush();
     }
-    else if (test_type == "table") {
-        CRef<CSeq_entry> pEntry(new CSeq_entry);
-        *pI >> *pEntry;
-        CSeq_entry_Handle seh = pScope->AddTopLevelSeqEntry(*pEntry);
-        pWriter->WriteHeader();
-        pWriter->WriteSeqEntryHandle(seh);
-        pWriter->WriteFooter();
-        delete pWriter;
-        ofstr.flush();
-    }
     ifstr.close();
     ofstr.close();
 
-    cerr << "    Produced new GTF file " << output << "." << endl;
+    cerr << "    Produced new WIGGLE file " << output << "." << endl;
     cerr << " ... Done." << endl;
 }
 
@@ -236,8 +215,7 @@ void sUpdateAll(CDir& test_cases_dir)
         fFF_Default | fFF_Recursive );
 
     ITERATE(TTestNameToInfoMap, name_to_info_it, testNameToInfoMap) {
-        const string & sName = name_to_info_it->first + 
-            "." + name_to_info_it->second.mObjType;
+        const string & sName = name_to_info_it->first;
         sUpdateCase(test_cases_dir, sName);
     }
 }
@@ -265,23 +243,13 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
 
     string resultName = CDirEntry::GetTmpName();
     CNcbiOfstream ofstr(resultName.c_str());
-    CWiggleWriter* pWriter = sGetWriter(*pScope, ofstr);
 
-    if (testInfo.mObjType == "graph") {
+    while (!pI->EndOfData()) {
+        CWiggleWriter* pWriter = sGetWriter(*pScope, ofstr);
         CRef<CSeq_annot> pAnnot(new CSeq_annot);
         *pI >> *pAnnot;
         pWriter->WriteHeader();
         pWriter->WriteAnnot(*pAnnot);
-        pWriter->WriteFooter();
-        delete pWriter;
-        ofstr.flush();
-    }
-    else if (testInfo.mObjType == "table") {
-        CRef<CSeq_entry> pEntry(new CSeq_entry);
-        *pI >> *pEntry;
-        CSeq_entry_Handle seh = pScope->AddTopLevelSeqEntry(*pEntry);
-        pWriter->WriteHeader();
-        pWriter->WriteSeqEntryHandle(seh);
         pWriter->WriteFooter();
         delete pWriter;
         ofstr.flush();
