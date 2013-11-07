@@ -181,6 +181,20 @@ typedef Uint1 Boolean;
 
 #endif /* _NCBISTD_ */
 
+/** 64-bit integers */
+#ifndef NCBI_CONST_INT8 /* C Toolkit */
+#  ifdef INT64_C /* stdint.h should have this */
+#    define NCBI_CONST_INT8(v)   INT64_C(v)
+#    define NCBI_CONST_UINT8(v)  UINT64_C(v)
+#  elif defined(_MSC_VER)
+#    define NCBI_CONST_INT8(v)   v##i64
+#    define NCBI_CONST_UINT8(v)  v##ui64
+#  else /* Try treating as (unsigned) long long */
+#    define NCBI_CONST_INT8(v)   v##LL
+#    define NCBI_CONST_UINT8(v)  v##ULL
+#  endif
+#endif
+
 /** Copies memory using memcpy and malloc
  * @param orig memory to be copied [in]
  * @param size amount to be copied [in]

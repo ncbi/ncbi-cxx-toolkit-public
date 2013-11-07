@@ -1122,8 +1122,9 @@ static int s_FindNumIdentical(Uint1* query_seq,
                               int max_shift)
 {
     int word_size = 8;         /* word size for k-mer matching */
-    Uint8 hash;
-    Uint8 mask = 0xFFFFFFFFFF; /* mask for computing hash values */
+    Uint8 hash = 0;
+    Uint8 mask = NCBI_CONST_UINT8(0xFFFFFFFFFF); /* mask for computing hash
+                                                    values */
     int query_from = 0;
     int subject_from = 0;
 
