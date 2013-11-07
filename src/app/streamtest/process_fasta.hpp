@@ -82,11 +82,14 @@ public:
     //  ------------------------------------------------------------------------
     {
         try {
+            m_out->Write( m_topseh );
+            /*
             VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, *m_entry) {
                 const CBioseq& bioseq = *bit;
                 m_out->Write( bioseq, 0, true );
                 ++m_objectcount;
             }
+            */
         }
         catch (CException& e) {
             LOG_POST(Error << "error processing seqentry: " << e.what());
