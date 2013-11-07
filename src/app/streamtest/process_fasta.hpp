@@ -36,13 +36,13 @@
 //  ============================================================================
 class CFastaProcess
 //  ============================================================================
-    : public CSeqEntryProcess
+    : public CScopedProcess
 {
 public:
     //  ------------------------------------------------------------------------
     CFastaProcess()
     //  ------------------------------------------------------------------------
-        : CSeqEntryProcess()
+        : CScopedProcess()
         , m_out( 0 )
     {};
 
@@ -57,7 +57,7 @@ public:
         const CArgs& args )
     //  ------------------------------------------------------------------------
     {
-        CSeqEntryProcess::ProcessInitialize( args );
+        CScopedProcess::ProcessInitialize( args );
 
         m_out = new CFastaOstream( args["o"].AsOutputFile() );
     };
@@ -74,7 +74,7 @@ public:
         CRef<CSeq_entry>& se )
     //  ------------------------------------------------------------------------
     {
-        CSeqEntryProcess::SeqEntryInitialize( se );
+        CScopedProcess::SeqEntryInitialize( se );
     };
 
     //  ------------------------------------------------------------------------
