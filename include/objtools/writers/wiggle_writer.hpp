@@ -56,11 +56,14 @@ public:
         const string& = "",
         const string& = "" );
 
+    bool WriteFooter();
+
 protected:
     bool xWriteAnnotTable( const CSeq_annot& );
     bool xWriteAnnotGraphs( const CSeq_annot& );
     
     bool xWriteTrackLine( const CAnnot_descr& );
+    bool xWriteDefaultTrackLine();
     bool xWriteSingleGraph( const CSeq_graph& );
     bool xWriteSingleGraphFixedStep( const CSeq_graph&, size_t );
     bool xWriteSingleGraphRecords( const CSeq_graph&, size_t );

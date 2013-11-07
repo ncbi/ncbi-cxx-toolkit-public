@@ -89,15 +89,27 @@ bool CWiggleWriter::WriteAnnot(
 }
 
 //  ----------------------------------------------------------------------------
+bool CWiggleWriter::WriteFooter()
+//  ----------------------------------------------------------------------------
+{
+    m_Os << endl;
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CWiggleWriter::xWriteAnnotGraphs( const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! annot.CanGetDesc() ) {
-        return false;
+    if (!annot.CanGetDesc()) {
+        if (!xWriteDefaultTrackLine()) {
+            return false;
+        }
     }
-    const CAnnot_descr& descr = annot.GetDesc();
-    if ( ! xWriteTrackLine( descr ) ) {
-        return false;
+    else {
+        const CAnnot_descr& descr = annot.GetDesc();
+        if (!xWriteTrackLine(descr)) {
+            return false;
+        }
     }
 
     const list< CRef<CSeq_graph> >& graphs = annot.GetData().GetGraph();
@@ -131,6 +143,14 @@ bool CWiggleWriter::xWriteSingleGraph( const CSeq_graph& graph )
             return false;
         }
     }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CWiggleWriter::xWriteDefaultTrackLine()
+//  ----------------------------------------------------------------------------
+{
+    m_Os << "track type=wiggle_0" << endl;
     return true;
 }
 
@@ -296,11 +316,15 @@ bool CWiggleWriter::xWriteAnnotTable( const CSeq_annot& annot )
 //  ----------------------------------------------------------------------------
 {
     if (!annot.CanGetDesc()) {
-        return false;
+        if (!xWriteDefaultTrackLine()) {
+            return false;
+        }
     }
-    const CAnnot_descr& descr = annot.GetDesc();
-    if (!xWriteTrackLine(descr)) {
-        return false;
+    else {
+        const CAnnot_descr& descr = annot.GetDesc();
+        if (!xWriteTrackLine(descr)) {
+            return false;
+        }
     }
 
     string chrom;
@@ -327,6 +351,9 @@ bool CWiggleWriter::xIsFixedStepData(
 //    In addition, consecutive in points are equidistant from each other.
 //  ----------------------------------------------------------------------------
 {
+    chrom.clear();
+    span = start = step = 0;
+
     if (!xIsVariableStepData(table, chrom, span)) {
         return false;
     }
@@ -363,45 +390,25 @@ bool CWiggleWriter::xIsVariableStepData(
 //    All table rows have the same ID, and the table has a "span" column. 
 //  ----------------------------------------------------------------------------
 {
-    if (table.GetNum_rows() < 2) {//don't bother
+    chrom.clear();
+    span = 0;
+
+    int numRows = table.GetNum_rows();
+    if (numRows < 2) {//don't bother
         return false;
     }
-    const vector<CRef<CSeqTable_column> > columns = table.GetColumns();
-    bool haveLocation = false;
-    for (size_t u = 0; u < columns.size(); ++u) {
-        const CSeqTable_column_info& header = columns[u]->GetHeader();
-        if (header.IsSetField_name()) {
-            string fieldName = header.GetField_name();
-            if (fieldName == "Seq-table location") {
-                if (!columns[u]->IsSetDefault()) {
-                    return false;
-                }
-                haveLocation = true;
-                if (!xTableGetChromName(table, 0, chrom)) {
-                    return false;
-                }
-                break;
-            }
-        }
+    if (!xTableGetChromName(table, 0, chrom)) {
+        return false;
     }
-    if (!haveLocation) {
-        for (size_t u = 0; u < columns.size(); ++u) {
-            const CSeqTable_column_info& header = columns[u]->GetHeader();
-           if (header.IsSetField_id()) {
-                int fieldId = header.GetField_id();
-                if (fieldId == CSeqTable_column_info::eField_id_location_id) {
-                    if (!columns[u]->IsSetDefault()) {
-                        return false;
-                    }
-                    if (!xTableGetChromName(table, 0, chrom)) {
-                        return false;
-                    }
-                    break;
-                }
-            }
+    for (int i=1; i < numRows; ++i) {
+        string curChrom;
+        if (!xTableGetChromName(table, i, curChrom)  ||  curChrom != chrom) {
+            chrom.clear();
+            return false;
         }
     }
 
+    const vector<CRef<CSeqTable_column> > columns = table.GetColumns();
     for (size_t u = 0; u < columns.size(); ++u) {
         const CSeqTable_column_info& header = columns[u]->GetHeader();
         if (header.IsSetField_name()) {
