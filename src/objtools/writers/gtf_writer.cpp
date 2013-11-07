@@ -63,7 +63,7 @@ CGtfWriter::CGtfWriter(
     CNcbiOstream& ostr,
     unsigned int uFlags ) :
 //  ----------------------------------------------------------------------------
-    CGff2Writer( scope, ostr, m_uFlags )
+    CGff2Writer( scope, ostr, uFlags )
 {
 };
 
