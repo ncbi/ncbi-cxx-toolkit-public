@@ -57,17 +57,27 @@ public:
         const string& = "" );
 
 protected:
-    bool WriteAnnotTable( const CSeq_annot& );
-
-    bool WriteAnnotGraphs( const CSeq_annot& );
+    bool xWriteAnnotTable( const CSeq_annot& );
+    bool xWriteAnnotGraphs( const CSeq_annot& );
     
-    bool WriteSingleGraph( const CSeq_graph& );
-    bool WriteGraphsTrackLine( const CAnnot_descr& );
-    bool WriteSingleGraphFixedStep( const CSeq_graph&, size_t );
-    bool WriteSingleGraphRecords( const CSeq_graph&, size_t );
+    bool xWriteTrackLine( const CAnnot_descr& );
+    bool xWriteSingleGraph( const CSeq_graph& );
+    bool xWriteSingleGraphFixedStep( const CSeq_graph&, size_t );
+    bool xWriteSingleGraphRecords( const CSeq_graph&, size_t );
 
-    bool ContainsData( const CSeq_graph&, size_t );
+    bool xWriteTableFixedStep(const CSeq_table&, const string&, int, int, int);
+    bool xWriteTableVariableStep(const CSeq_table&, const string&, int);
+    bool xWriteTableBedStyle(const CSeq_table&);
 
+    bool xContainsData( const CSeq_graph&, size_t );
+    bool xIsFixedStepData(const CSeq_table&, string&, int&, int&, int&);
+    bool xIsVariableStepData(const CSeq_table&, string&, int&);
+    
+    bool xTableGetChromName(const CSeq_table&, int, string&);
+    bool xTableGetPosIn(const CSeq_table&, int, int&);
+    bool xTableGetPosOut(const CSeq_table&, int, int, int&);
+    bool xTableGetValue(const CSeq_table&, int, double&);
+ 
     size_t m_uTrackSize;
 };
 
