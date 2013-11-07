@@ -162,8 +162,8 @@ for tree in $build_trees ; do
         echo
         echo Start time: $start
         echo "INFO: Configure \"$tree\\$alias\""
-        echo "Command line: " $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg_configure" "-CONFIGURE-" $out
-        $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg_configure" "-CONFIGURE-" $out >/dev/null
+        echo "Command line: " $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg_configure" "_CONFIGURE_" $out
+        $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg_configure" "_CONFIGURE_" $out >/dev/null
         echo
         status=$?
         # Wait a bit to allow compiler to exit and flush logfile
@@ -218,9 +218,9 @@ for tree in $build_trees ; do
             echo Start time: $start
             echo "$tree,$sol,$cfg" >> $build_dir/cfgs.log
             echo "INFO: Building \"$tree\\$cfg\\$alias\""
-            echo "Command line: " $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg" "-BUILD-ALL-" $out
+            echo "Command line: " $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg" "_BUILD_ALL_" $out
             echo
-            $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg" "-BUILD-ALL-" $out >/dev/null
+            $build_dir/build_exec.bat "$tree\\build\\$sol" build "$arch" "$cfg" "_BUILD_ALL_" $out >/dev/null
             status=$?
             # Wait a bit to allow compiler to exit and flush logfile
             sleep 20

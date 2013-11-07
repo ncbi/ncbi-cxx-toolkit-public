@@ -43,7 +43,7 @@ GOTO EXIT
 :CONFIG
 TIME /T
 ECHO INFO: Configure "dll\ncbi"
-msbuild ncbi_cpp_dll.sln /t:"-CONFIGURE-:Rebuild" /p:Configuration=ReleaseDLL
+msbuild ncbi_cpp_dll.sln /t:"_CONFIGURE_:Rebuild" /p:Configuration=ReleaseDLL
 IF ERRORLEVEL 1 GOTO ABORT
 
 SET CFG=%1%
@@ -59,7 +59,7 @@ GOTO EXIT
 :CONTINUE
 TIME /T
 ECHO INFO: Building "dll\ncbi\%CFG%"
-msbuild ncbi_cpp_dll.sln /t:"-BUILD-ALL-" /p:Configuration=%CFG%
+msbuild ncbi_cpp_dll.sln /t:"_BUILD_ALL_" /p:Configuration=%CFG%
 IF ERRORLEVEL 1 GOTO ABORT
 
 SHIFT

@@ -43,27 +43,25 @@ GOTO EXIT
 :CONFIG
 TIME /T
 ECHO INFO: Configure "static\ncbi"
-msbuild ncbi_cpp.sln /t:"-CONFIGURE-:Rebuild" /p:Configuration=ReleaseDLL
+msbuild ncbi_cpp.sln /t:"_CONFIGURE_:Rebuild" /p:Configuration=ReleaseDLL
 IF ERRORLEVEL 1 GOTO ABORT
 
 SET CFG=%1%
 
 :ARGLOOP
-IF %CFG% == Debug GOTO CONTINUE
 IF %CFG% == DebugMT GOTO CONTINUE
 IF %CFG% == DebugDLL GOTO CONTINUE
-IF %CFG% == Release GOTO CONTINUE
 IF %CFG% == ReleaseMT GOTO CONTINUE
 IF %CFG% == ReleaseDLL GOTO CONTINUE
 ECHO INFO: The following configuration names are recognized:
-ECHO       Debug DebugMT DebugDLL Release ReleaseMT ReleaseDLL
+ECHO       DebugMT DebugDLL ReleaseMT ReleaseDLL
 ECHO FATAL: Unknown configuration name %CFG%. Please correct.
 GOTO EXIT
 
 :CONTINUE
 TIME /T
 ECHO INFO: Building "static\ncbi\%CFG%"
-msbuild ncbi_cpp.sln /t:"-BUILD-ALL-" /p:Configuration=%CFG%
+msbuild ncbi_cpp.sln /t:"_BUILD_ALL_" /p:Configuration=%CFG%
 REM vcbuild /M2 /time ncbi_cpp.sln "%CFG%|Win32"
 IF ERRORLEVEL 1 GOTO ABORT
 
