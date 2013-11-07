@@ -44,6 +44,7 @@
 #include <corelib/ncbiexec.hpp>
 
 #include <vector>
+#include <functional>
 #include <algorithm>
 #include <iterator>
 

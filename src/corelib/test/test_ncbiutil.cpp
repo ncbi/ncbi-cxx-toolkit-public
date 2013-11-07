@@ -35,6 +35,7 @@
 #include <corelib/ncbiutil.hpp>
 #include <corelib/ncbiobj.hpp>
 #include <set>
+#include <functional>
 #include <algorithm>
 
 #include <common/test_assert.h>  /* This header must go last */
