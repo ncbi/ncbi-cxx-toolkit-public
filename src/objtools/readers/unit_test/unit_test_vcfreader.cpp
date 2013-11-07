@@ -82,8 +82,6 @@ public:
     { }
 
     void operator()( const CDirEntry & dirEntry ) {
-        const static size_t kInvalidFileNumber = numeric_limits<size_t>::max();
-
         if( ! dirEntry.IsFile() ) {
             return;
         }
