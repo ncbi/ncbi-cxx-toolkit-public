@@ -43,14 +43,23 @@
 #include <objects/seqalign/Spliced_exon_chunk.hpp>
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Prot_pos.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
 #include <objects/general/Object_id.hpp>
 #include <objects/seq/Seq_annot.hpp>
+#include <objects/seqblock/GB_block.hpp>
+#include <objects/seqblock/PIR_block.hpp>
+#include <objects/seqblock/SP_block.hpp>
+#include <objects/seqblock/EMBL_block.hpp>
+#include <objects/seqblock/PRF_block.hpp>
 
 #include <util/checksum.hpp>
 #include <math.h>
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/bioseq_handle.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/impl/synonyms.hpp>
 #include <objmgr/util/sequence.hpp>
 
@@ -154,6 +163,7 @@ void CAlignFilter::SetFilter(const string& filter)
         "SUB",
         "IS_SEG_TYPE",
         "COALESCE",
+        "HAS_DESC_KEYWORD",
         NULL
     };
 
@@ -593,6 +603,91 @@ double CAlignFilter::x_FuncCall(const CQueryParseTree::TNode& node, const CSeq_a
                        "invalid seg type: " + s);
         }
     }
+    else if (NStr::EqualNocase(function, "HAS_DESC_KEYWORD")) {
+        CQueryParseTree::TNode::TNodeList_CI iter =
+            node.SubNodeBegin();
+        CQueryParseTree::TNode::TNodeList_CI end =
+            node.SubNodeEnd();
+        const CQueryParseTree::TNode& node1 = **iter;
+        const string& which = node1.GetValue().GetStrValue();
+        if (which != "query" && which != "subject") {
+            NCBI_THROW(CException, eUnknown,
+                       "Invalid first argument to HAS_DESC_KEYWORD; must be "
+                       "either 'query' or 'subject'");
+        }
+
+        ++iter;
+        if (iter == end) {
+            NCBI_THROW(CException, eUnknown,
+                       "invalid number of nodes: expected 2, got 1");
+        }
+        const CQueryParseTree::TNode& node2 = **iter;
+        const string& keyword = node2.GetValue().GetStrValue();
+        ++iter;
+        if (iter != end) {
+            NCBI_THROW(CException, eUnknown,
+                       "invalid number of nodes: "
+                       "expected 2, got more than 2");
+        }
+
+        const CSeq_id &seq_id = align.GetSeq_id(
+            NStr::EqualNocase(which, "query") ? 0 : 1);
+        CSeq_id_Handle idh =
+            sequence::GetId(seq_id, *m_Scope,
+                            sequence::eGetId_Best);
+        bool found_keyword = false;
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq_id);
+        for (CSeqdesc_CI desc_ci(bsh);
+             desc_ci && !found_keyword; ++desc_ci)
+        {
+            const CGB_block::TKeywords *keywords = NULL;
+            switch (desc_ci->Which()) {
+            case CSeqdesc::e_Genbank:
+                if (desc_ci->GetGenbank().IsSetKeywords()) {
+                    keywords = &desc_ci->GetGenbank().GetKeywords();
+                }
+                break;
+
+            case CSeqdesc::e_Pir:
+                if (desc_ci->GetPir().IsSetKeywords()) {
+                    keywords = &desc_ci->GetPir().GetKeywords();
+                }
+                break;
+
+            case CSeqdesc::e_Sp:
+                if (desc_ci->GetSp().IsSetKeywords()) {
+                    keywords = &desc_ci->GetSp().GetKeywords();
+                }
+                break;
+
+            case CSeqdesc::e_Embl:
+                if (desc_ci->GetEmbl().IsSetKeywords()) {
+                    keywords = &desc_ci->GetEmbl().GetKeywords();
+                }
+                break;
+
+            case CSeqdesc::e_Prf:
+                if (desc_ci->GetPrf().IsSetKeywords()) {
+                    keywords = &desc_ci->GetPrf().GetKeywords();
+                }
+                break;
+
+            default:
+                break;
+            }
+
+            if (keywords) {
+                ITERATE (CGB_block::TKeywords, keyword_it, *keywords) {
+                    if (NStr::EqualNocase(keyword, *keyword_it)) {
+                        found_keyword = true;
+                        break;
+                    }
+                }
+            }
+        }
+    
+        return found_keyword ? 1 : 0;
+    }
     else {
         NCBI_THROW(CException, eUnknown,
                    "function not understood: " + function);
@@ -798,6 +893,43 @@ bool CAlignFilter::x_Query_Op(const CQueryParseTree::TNode& l_node,
     
                 if (type == CQueryParseNode::eEQ) {
                     return other_strand == strand ? !is_not : is_not;
+                } else {
+                    NCBI_THROW(CException, eUnknown,
+                               "unhandled parse node in expression");
+                }
+            }
+        } else if (NStr::EqualNocase(s, "query_refseq_status")  ||
+                   NStr::EqualNocase(s, "subject_refseq_status")) {
+            string val = r_node.GetValue().GetStrValue();
+
+            if (m_IsDryRun) {
+                return false;
+            } else {
+                const CSeq_id &seq_id = align.GetSeq_id(
+                    NStr::EqualNocase(s, "query_refseq_status") ? 0 : 1);
+                CSeq_id_Handle idh =
+                    sequence::GetId(seq_id, *m_Scope,
+                                    sequence::eGetId_Best);
+                if (!idh.GetSeqId()->IsOther()) {
+                    /// Not RefSeq
+                    return is_not;
+                }
+                string status_string = "MODEL";
+                CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq_id);
+                for (CSeqdesc_CI desc_ci(bsh, CSeqdesc::e_User); desc_ci; ++desc_ci) {
+                     const CUser_object &uo = desc_ci->GetUser();
+                     if (uo.GetType().IsStr() &&
+                         uo.GetType().GetStr() == "RefGeneTracking")
+                     {
+                         status_string =
+                            uo.GetField("Status").GetData().GetStr();
+                         break;
+                     }
+                }
+    
+                if (type == CQueryParseNode::eEQ) {
+                    return NStr::EqualNocase(val, status_string)
+                        ? !is_not : is_not;
                 } else {
                     NCBI_THROW(CException, eUnknown,
                                "unhandled parse node in expression");
@@ -1015,8 +1147,10 @@ bool CAlignFilter::x_Match(const CQueryParseTree::TNode& node,
 
 
     default:
-        LOG_POST(Warning << "unhandled parse node in tree");
-        break;
+        try {
+            return x_TermValue(node, align);
+        } catch (CException &e) {
+        }
     }
 
     return false;
