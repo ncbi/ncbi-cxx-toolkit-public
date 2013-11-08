@@ -759,6 +759,16 @@ bool CId2ReaderBase::LoadBlobVersion(CReaderRequestResult& result,
     CID2_Request_Get_Blob_Info& req2 = req.SetRequest().SetGet_blob_info();
     x_SetResolve(req2.SetBlob_id().SetBlob_id(), blob_id);
     x_ProcessRequest(result, req, 0);
+    if ( blob_id.GetSat() == CProcessor_ExtAnnot::eSat_ANNOT &&
+         blob_id.GetSubSat() != CID2_Blob_Id::eSub_sat_main ) {
+        // workaround for possible incorrect reply on request for non-existent
+        // external annotations
+        CLoadLockBlob blob(result, blob_id);
+        if ( !blob.IsSetBlobVersion() ) {
+            ERR_POST_X(2, "ExtAnnot blob version is not loaded: "<<blob_id);
+            blob.SetBlobVersion(0);
+        }
+    }
     return true;
 }
 
