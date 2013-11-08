@@ -277,7 +277,7 @@ namespace DiscRepNmSpc {
       static CBioseq_Handle m_bioseq_hl;  // ?? how about reference?
 
       bool DoesStringMatchSuspectRule(const CBioseq_Handle& bioseq_hl, const string& str, 
-                                             const CSeq_feat& feat, const CSuspect_rule& rule);
+                                            const CSeq_feat& feat, const CSuspect_rule& rule);
       // string ~ rule/constraint
       bool MatchesSuspectProductRule(const string& str, const CSuspect_rule& rule);
       bool IsSearchFuncEmpty(const CSearch_func& func);
@@ -332,7 +332,8 @@ namespace DiscRepNmSpc {
       bool DoesObjectMatchStringConstraint(const CCGPSetData& cgp,
                                                         const CString_constraint& str_cons);
       bool IsLocationConstraintEmpty(const CLocation_constraint& loc_cons);
-      bool DoesStrandMatchConstraint(const CSeq_loc& loc,const CLocation_constraint& loc_cons);
+      bool DoesStrandMatchConstraint(const CSeq_loc& loc,
+                                                     const CLocation_constraint& loc_cons);
       bool DoesBioseqMatchSequenceType(const ESeqtype_constraint& seq_type);
       bool DoesLocationMatchPartialnessConstraint(const CSeq_loc& loc, 
                                                         const CLocation_constraint& loc_cons);
@@ -348,14 +349,14 @@ namespace DiscRepNmSpc {
       string GetFieldValueForObjectEx (const CField_type& field_type, 
                                                           const CString_constraint& str_cons);
       string GetSrcQualValue4FieldType(const CBioSource& biosrc, 
-                  const CSource_qual_choice& src_qual, const CString_constraint* str_cons = 0);
+                 const CSource_qual_choice& src_qual, const CString_constraint* str_cons = 0);
       string GetSequenceQualFromBioseq (const CMolinfo_field& mol_field);
       string GetDBLinkFieldFromUserObject(const CUser_object& user_obj, 
                           EDBLink_field_type dblink_tp, const CString_constraint& str_cons);
       string GetFirstStringMatch(const list <string>& strs,
                                                    const CString_constraint* str_cons = 0);
       string GetFirstStringMatch(const vector <string>& strs,const 
-                                                             CString_constraint* str_cons = 0);
+                                                            CString_constraint* str_cons = 0);
       string GetQualName(ESource_qual src_qual);
       bool IsSubsrcQual(ESource_qual src_qual);
       string GetNotTextqualSrcQualValue(const CBioSource& biosrc, 
@@ -430,19 +431,19 @@ namespace DiscRepNmSpc {
       string GetAuthorListString (const CAuth_list& auth_ls, 
                                const CString_constraint* str_cons = 0, bool use_initials = 0);
       string GetPubFieldFromAffil (const CAffil& affil, EPublication_field field, 
-                                                       const CString_constraint* str_cons = 0);
+                                                      const CString_constraint* str_cons = 0);
       string Get1stStringMatchFromTitle(const CTitle& title, 
                                                     const CString_constraint* str_cons = 0);
       string PrintPartialOrCompleteDate(const CDate& date);
       string GetPubFieldFromCitJour(const CCit_jour& jour, EPublication_field field, 
-                                                       const CString_constraint* str_cons = 0);
+                                                      const CString_constraint* str_cons = 0);
       string GetPubFieldFromImprint (const CImprint& imprint, EPublication_field field, 
                                                       const CString_constraint* str_cons = 0);
       string GetPubFieldFromCitBook (const CCit_book& book, EPublication_field field, 
                                                      const CString_constraint* str_cons = 0); 
       bool DoesPubFieldSpecialMatch (const CPubdesc& pdb_desc, 
                                             const CPub_field_special_constraint& field);
-      string GetConstraintFieldFromObject (const CSeq_feat& seq_feat, const CField_type& field,
+      string GetConstraintFieldFromObject(const CSeq_feat& seq_feat, const CField_type& field,
                                                   const CString_constraint* str_cons = 0);
       string GetRNAQualFromFeature(const CSeq_feat& seq_feat, const CRna_qual& rna_qual, 
                                               const CString_constraint* str_cons = 0);
@@ -605,7 +606,7 @@ namespace DiscRepNmSpc {
       bool CommentHasPhrase(string comment, const string& phrase);
       bool HasLineage(const CBioSource& biosrc, const string& type);
       bool IsBiosrcEukaryotic(const CBioSource& biosrc);
-      bool IsBioseqHasLineage(const CBioseq& bioseq, const string& type, bool has_biosrc=true);
+      bool IsBioseqHasLineage(const CBioseq& bioseq,const string& type, bool has_biosrc=true);
       bool HasTaxonomyID(const CBioSource& biosec);
       void GetProperCItem(CRef <CClickableItem>& c_item, bool* citem1_used);
       void AddSubcategory(CRef <CClickableItem>& c_item, const string& setting_name, 
@@ -614,7 +615,7 @@ namespace DiscRepNmSpc {
            bool halfsize = false, unsigned input_cnt = 0);
       void GetTestItemList(const vector <string>& itemlist, Str2Strs& setting2list, 
                                                                    const string& delim = "$");
-      void RmvRedundancy(vector <string>& item_list); //all CSeqEntry_Feat_desc tests need this
+      void RmvRedundancy(vector <string>& item_list);//all CSeqEntry_Feat_desc tests need this
       bool DoesStringContainPhrase(const string& str, const vector <string>& phrases, 
                             bool case_sensitive=true, bool whole_word=true);
 
@@ -1028,7 +1029,6 @@ namespace DiscRepNmSpc {
 
       string GetName_set() const {return string("ONCALLER_DEFLINE_ON_SET");}
       string GetName_dup() const {return string("DISC_DUP_DEFLINE"); }
-      string GetName_no_tlt() const {return string("DISC_MISSING_DEFLINES"); }
       string GetName_seqch() const {return string("DISC_TITLE_ENDS_WITH_SEQUENCE"); }
   };
 
@@ -1041,16 +1041,6 @@ namespace DiscRepNmSpc {
       virtual string GetName() const {return CSeqEntry_test_on_defline::GetName_seqch();}
   };
 
-  class CSeqEntry_DISC_MISSING_DEFLINES : public CSeqEntry_test_on_defline
-  {
-    public:
-      virtual ~CSeqEntry_DISC_MISSING_DEFLINES () {};
-
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CSeqEntry_test_on_defline::GetName_no_tlt();}
-  };
-
-  
   class CSeqEntry_DISC_DUP_DEFLINE : public CSeqEntry_test_on_defline
   {
     public:
@@ -2025,6 +2015,7 @@ namespace DiscRepNmSpc {
        string GetName_pid () const {return string("MISSING_PROTEIN_ID"); }
        string GetName_prefix() const {return string("INCONSISTENT_PROTEIN_ID_PREFIX"); }
 
+/*
        void TestOnBasesN(const CBioseq& bioseq);
        bool IsDeltaSeqWithFarpointers(const CBioseq& bioseq);
        void AddNsReport(CRef <CClickableItem>& c_item, bool is_n10=true);
@@ -2034,13 +2025,16 @@ namespace DiscRepNmSpc {
        string GetName_5perc() const {return string("DISC_PERCENT_N"); }
        string GetName_10perc() const {return string("DISC_10_PERCENTN"); }
        string GetName_non_nt() const {return string("TEST_UNUSUAL_NT"); }
+*/
 
+/*
        void TestOnMRna(const CBioseq& bioseq);
        string GetName_no_mrna() const {return string("DISC_CDS_WITHOUT_MRNA");}
        string GetName_pid_tid() const {
                              return string("MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS");}
+*/
        string GetFieldValueForObject(const CSeq_feat& seq_feat, 
-                                                           const CFeat_qual_choice& feat_qual);
+                                                          const CFeat_qual_choice& feat_qual);
        CSeqFeatData::ESubtype GetFeatdefFromFeatureType(EMacro_feature_type feat_field_type);
        CConstRef <CSeq_feat> GetmRNAforCDS(const CSeq_feat& cd_feat, 
                                                              const CSeq_entry& seq_entry);
@@ -2474,7 +2468,7 @@ namespace DiscRepNmSpc {
 
     protected:
       vector <int> m_super_idx;
-      string m_no_genes;
+      Str2Obj m_no_genes;
       unsigned m_super_cnt;
 
       void CheckGenesForFeatureType(const vector <const CSeq_feat*>& feats, 
@@ -3119,6 +3113,16 @@ namespace DiscRepNmSpc {
 // new comb: CBioseq_
 
 
+  class CBioseq_DISC_MISSING_DEFLINES : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_DISC_MISSING_DEFLINES () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("DISC_MISSING_DEFLINES");}
+  };
+
   class CBioseq_DISC_BAD_BGPIPE_QUALS : public CBioseqTestAndRepData
   {
     public:
@@ -3394,48 +3398,40 @@ namespace DiscRepNmSpc {
       virtual string GetName() const {return string("DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA");}
   };
 
+  class CBioseq_on_mrna : public CBioseqTestAndRepData
+  {
+    public:
+      CBioseq_on_mrna () {m_noids = false;}
+      virtual ~CBioseq_on_mrna () {};
 
-  class CBioseq_MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS : public CBioseqTestAndRepData
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const = 0;
+
+    protected:
+       bool m_noids;
+
+       string GetName_cds() const {return string("DISC_CDS_WITHOUT_MRNA");}
+       string GetName_ids() const {return string("MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS");}
+  };
+
+  class CBioseq_MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS : public CBioseq_on_mrna
   {
     public:
       virtual ~CBioseq_MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS () {};
 
-      virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {
-                          return string("MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS");}
+      virtual string GetName() const {return CBioseq_on_mrna :: GetName_ids();}
   };
 
-
-
-/*
-  class CBioseq_RRNA_NAME_CONFLICTS : public CBioseqTestAndRepData
-  {
-    public:
-      virtual ~CBioseq_RRNA_NAME_CONFLICTS () {};
-
-      virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("RRNA_NAME_CONFLICTS");}
-
-    protected:
-      bool NameNotStandard(const string& nm);
-  };
-*/
-  
-
-
-  class CBioseq_DISC_CDS_WITHOUT_MRNA : public CBioseqTestAndRepData
+  class CBioseq_DISC_CDS_WITHOUT_MRNA : public CBioseq_on_mrna
   {
     public:
       virtual ~CBioseq_DISC_CDS_WITHOUT_MRNA () {};
 
-      virtual void TestOnObj(const CBioseq& bioseq);
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("DISC_CDS_WITHOUT_MRNA");}
+      virtual string GetName() const {return CBioseq_on_mrna :: GetName_cds();}
   };
-
-
 
   class CBioseq_GENE_PRODUCT_CONFLICT : public CBioseqTestAndRepData
   {
@@ -3917,7 +3913,7 @@ unsigned m_cnt;
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("DUPLICATE_GENE_LOCUS");}
 
-      CRef <GeneralDiscSubDt> AddLocus(const CSeq_feat& seq_feat);
+//      CRef <GeneralDiscSubDt> AddLocus(const CSeq_feat& seq_feat);
   };
 
 

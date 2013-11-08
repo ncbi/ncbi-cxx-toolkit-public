@@ -998,7 +998,7 @@ static const s_test_property test_list[] = {
    {"DISC_SUBMITBLOCK_CONFLICT", fAsndisc | fOncaller},
 
 // tests_on_Bioseq
-   {"DISC_COUNT_NUCLEOTIDES", fAsndisc | fOncaller},
+   {"DISC_MISSING_DEFLINES", fAsndisc},
    {"DISC_QUALITY_SCORES", fDiscrepancy | fAsndisc},
    {"DISC_FEATURE_COUNT_oncaller", fOncaller},  // oncaller tool version
    
@@ -1008,6 +1008,7 @@ static const s_test_property test_list[] = {
    {"INCONSISTENT_PROTEIN_ID_PREFIX", fAsndisc},
 
 // tests_on_Bioseq_na
+   {"DISC_COUNT_NUCLEOTIDES", fAsndisc | fOncaller},
    {"TEST_DEFLINE_PRESENT", fDiscrepancy | fAsndisc},
    {"N_RUNS", fDiscrepancy | fAsndisc},
    {"N_RUNS_14", fAsndisc},
@@ -1178,7 +1179,6 @@ static const s_test_property test_list[] = {
    {"ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH", fAsndisc},
    {"DISC_DUP_DEFLINE", fAsndisc},
    {"DISC_TITLE_ENDS_WITH_SEQUENCE", fDiscrepancy | fAsndisc},
-   {"DISC_MISSING_DEFLINES", fAsndisc},
    {"ONCALLER_DEFLINE_ON_SET", fAsndisc},
    {"DISC_BACTERIAL_TAX_STRAIN_MISMATCH", fDiscrepancy | fAsndisc},
    {"DUP_DISC_CBS_CULTURE_CONFLICT", fAsndisc},
@@ -1245,8 +1245,13 @@ cerr << "tests sz " << sz << endl;
                       CRef <CTestAndRepData>(new CSeqEntry_DISC_SUBMITBLOCK_CONFLICT));
         if (++i >= sz) return;
    }
+   if ( thisTest.tests_run.find("DISC_MISSING_DEFLINES") != thisTest.tests_run.end()) {
+       thisGrp.tests_on_Bioseq.push_back(
+                         CRef <CTestAndRepData>(new CBioseq_DISC_MISSING_DEFLINES));
+        if (++i >= sz) return;
+   }
    if (thisTest.tests_run.find("DISC_COUNT_NUCLEOTIDES") != thisTest.tests_run.end()) {
-        thisGrp.tests_on_Bioseq.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_COUNT_NUCLEOTIDES));
+        thisGrp.tests_on_Bioseq_na.push_back(CRef <CTestAndRepData>(new CBioseq_DISC_COUNT_NUCLEOTIDES));
         if (++i >= sz) return;
    }
    if (thisTest.tests_run.find("DISC_QUALITY_SCORES") != thisTest.tests_run.end()) {
@@ -2057,11 +2062,6 @@ if (i > sz) return;
    if ( thisTest.tests_run.find("DISC_TITLE_ENDS_WITH_SEQUENCE") != thisTest.tests_run.end()) {
        thisGrp.tests_on_SeqEntry_feat_desc.push_back(
                     CRef <CTestAndRepData>(new CSeqEntry_DISC_TITLE_ENDS_WITH_SEQUENCE));
-        if (++i >= sz) return;
-   }
-   if ( thisTest.tests_run.find("DISC_MISSING_DEFLINES") != thisTest.tests_run.end()) {
-       thisGrp.tests_on_SeqEntry_feat_desc.push_back(
-                         CRef <CTestAndRepData>(new CSeqEntry_DISC_MISSING_DEFLINES));
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("ONCALLER_DEFLINE_ON_SET") != thisTest.tests_run.end()) {

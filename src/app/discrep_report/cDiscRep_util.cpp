@@ -1334,7 +1334,7 @@ void CTestAndRepData :: AddSubcategory(CRef <CClickableItem>& c_item, const stri
             c_sub->description = GetIsComment(cnt, desc1) + desc2;
             break;
        case e_HasComment:
-            c_sub->description = GetHasComment(cnt, desc1) + desc2 + desc3; 
+            c_sub->description = GetHasComment(cnt, desc1) + desc2; 
             break;
        case e_DoesComment:
             c_sub->description = GetDoesComment(cnt, desc1) + desc2; 
