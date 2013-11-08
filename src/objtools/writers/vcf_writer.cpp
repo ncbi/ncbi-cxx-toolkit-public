@@ -393,7 +393,7 @@ bool CVcfWriter::x_WriteFeatureRef(
         m_Os << seqstr;
         return true;
     }
-    catch( ... ) {
+    catch(const std::exception&) {
     }
     try {
         typedef CVariation_ref::TData::TSet::TVariations TVARS;
