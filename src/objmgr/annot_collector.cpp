@@ -897,7 +897,102 @@ struct CAnnotObject_Less
                                CScope* scope = 0)
         : type_less(sel, scope)
         {
+            if( sel ) {
+                ignore_far_handle = sel->GetIgnoreFarLocationsForSorting();
+            }
         }
+
+    void x_GetExtremes( TSeqPos &out_from, TSeqPos &out_to, 
+        const CAnnotObject_Ref& obj_ref ) const
+    {
+        out_from = kInvalidSeqPos;
+        out_to = kInvalidSeqPos;
+
+        bool is_circular = ( ignore_far_handle.CanGetInst_Topology() &&
+            ignore_far_handle.GetInst_Topology() == CSeq_inst::eTopology_circular );
+
+        bool all_minus = true;
+        bool all_non_minus = true;
+
+        const CSeq_loc & loc = obj_ref.GetAnnotObject_Info().GetFeatFast()->GetLocation();
+
+        CSeq_loc_CI first_piece;
+        CSeq_loc_CI last_piece;
+
+        TSeqPos lowest = kInvalidSeqPos;
+        TSeqPos highest = kInvalidSeqPos;
+
+        CSeq_loc_CI loc_ci( loc, CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Biological );
+        for( ; loc_ci; ++loc_ci ) {
+            if( ! ignore_far_handle.IsSynonym(loc_ci.GetSeq_id_Handle()) ) {
+                continue;
+            }
+            if( ! first_piece ) {
+                first_piece = loc_ci;
+            }
+            last_piece = loc_ci;
+
+            TSeqPos piece_start = kInvalidSeqPos;
+            TSeqPos piece_stop  = kInvalidSeqPos;
+
+            if( loc_ci.IsSetStrand() && loc_ci.GetStrand() == eNa_strand_minus ) {
+                all_non_minus = false;
+            } else {
+                all_minus = false;
+            }
+
+            piece_start = loc_ci.GetRange().GetFrom();
+            piece_stop  = loc_ci.GetRange().GetTo();
+
+            if( lowest == kInvalidSeqPos ) {
+                lowest = piece_start;
+            } else {
+                lowest = min( lowest, piece_start );
+            }
+
+            if( highest == kInvalidSeqPos ) {
+                highest = piece_stop;
+            } else {
+                highest = max( highest, piece_stop );
+            }
+        }
+
+        // ignore circularity if strandedness is mixed
+        if( ! all_minus && ! all_non_minus ) {
+            is_circular = false;
+        }
+
+        // out_from
+        if (is_circular) {
+            if (all_minus) {
+                if( last_piece ) {
+                    out_from = last_piece.GetRange().GetFrom();
+                }
+            } else {
+                if( first_piece ) {
+                    out_from = first_piece.GetRange().GetFrom();
+                }
+            }
+        } else {
+            out_from = lowest;
+        }
+
+        // out_to
+        if (is_circular) {
+            if (all_minus) {
+                if( first_piece ) {
+                    out_to = first_piece.GetRange().GetTo();
+                }
+            } else {
+                if( last_piece ) {
+                    out_to = last_piece.GetRange().GetTo();
+                }
+            }
+        } else {  
+            out_to = highest;
+        }
+    }
+
     // Compare CRef-s: both must be features
     bool operator()(const CAnnotObject_Ref& x,
                     const CAnnotObject_Ref& y) const
@@ -906,10 +1001,21 @@ struct CAnnotObject_Less
                 return false;
             }
 
-            TSeqPos x_from = x.GetMappingInfo().GetFrom();
-            TSeqPos y_from = y.GetMappingInfo().GetFrom();
-            TSeqPos x_to = x.GetMappingInfo().GetToOpen();
-            TSeqPos y_to = y.GetMappingInfo().GetToOpen();
+            TSeqPos x_from = kInvalidSeqPos;
+            TSeqPos y_from = kInvalidSeqPos;
+            TSeqPos x_to = kInvalidSeqPos;
+            TSeqPos y_to = kInvalidSeqPos;
+
+            if( ignore_far_handle ) {
+                x_GetExtremes( x_from, x_to, x );
+                x_GetExtremes( y_from, y_to, y );
+            } else {
+                x_from = x.GetMappingInfo().GetFrom();
+                y_from = y.GetMappingInfo().GetFrom();
+                x_to = x.GetMappingInfo().GetToOpen();
+                y_to = y.GetMappingInfo().GetToOpen();
+            }
+
             // (from >= to) means circular location.
             // Any circular location is less than (before) non-circular one.
             // If both are circular, compare them regular way.
@@ -929,6 +1035,7 @@ struct CAnnotObject_Less
             return type_less(x, y);
         }
     CAnnotObjectType_Less type_less;
+    CBioseq_Handle ignore_far_handle;
 };
 
 
