@@ -630,15 +630,16 @@ void CFeatureTableReader::AddProteins(const CSeq_entry& possible_proteins, CSeq_
 
                 CRef<CSeq_align> align = aligner.FindAlignment(scope, *protein, *genomic, opts);
 
-                /*
+#ifdef _DEBUG
                 string name;
                 genomic->GetId()->GetLabel(&name);
+                NStr::ReplaceInPlace(name, "|", "_");
 
                 CNcbiOfstream ostr((name + ".align").c_str());
                 ostr << MSerial_AsnText 
                     << MSerial_VerifyNo;
                 ostr << *align;
-                */
+#endif
             }
             catch(CException& )
             {

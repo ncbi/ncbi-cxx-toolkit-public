@@ -124,10 +124,6 @@ private:
     //bool m_Continue;
     //bool m_OnlyAnnots;
 
-    //size_t m_Level;
-    //size_t m_Reported;
-    //size_t m_ReportLevel;
-
     //bool m_DoCleanup;
     //CCleanup m_Cleanup;
 
@@ -139,9 +135,6 @@ private:
 };
 
 CTbl2AsnApp::CTbl2AsnApp(void):
-//m_ObjMgr(0)
-    //, m_In(0), m_Options(0), m_Continue(false), m_OnlyAnnots(false)
-    //m_Level(0), m_Reported(0), m_OutputStream(0), 
     m_LogStream(0)
 {
 }
@@ -503,36 +496,53 @@ int CTbl2AsnApp::Run(void)
             outputdir.Create();
     }
 
-    // Designate where do we get input: single file or a folder or folder structure
-    if ( args["p"] )
+    try
     {
-        CDir directory(args["p"].AsString());
-        if (directory.Exists())
+    // Designate where do we get input: single file or a folder or folder structure
+        if ( args["p"] )
         {
-            CMaskFileName masks;
-            masks.Add("*" +args["x"].AsString());
+            CDir directory(args["p"].AsString());
+            if (directory.Exists())
+            {
+                CMaskFileName masks;
+                masks.Add("*" +args["x"].AsString());
 
-            ProcessOneDirectory (directory, masks, args["E"].AsBoolean());
+                ProcessOneDirectory (directory, masks, args["E"].AsBoolean());
+            }
+        } else {
+            if (args["i"])
+            {
+                m_context.m_current_file = args["i"].AsString();
+                ProcessOneFile ();
+            }
         }
-    } else {
-        if (args["i"])
-        {
-            m_context.m_current_file = args["i"].AsString();
-            ProcessOneFile ();
-        }
+    }
+    catch (CException& e)
+    {
+        m_logger->PutError(*CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error, 
+            "", 0, "", "", "",
+            e.GetMsg()));
     }
 
     m_logger->Dump(*m_LogStream);
+    if (m_logger->Count() == 0)
+        return 0;
+    else
+    {
+        int errors = m_logger->LevelCount(eDiag_Critical) + 
+                     m_logger->LevelCount(eDiag_Error) + 
+                     m_logger->LevelCount(eDiag_Fatal);
+        // all errors reported as failure
+        if (errors > 0)
+            return 1;
+        
+        // only warnings reported as 2 
+        if (m_logger->LevelCount(eDiag_Warning)>0)
+            return 2;
 
-    /*
-    if (m_Reported > 0) {
-    return 1;
-    } else {
-    return 0;
+        // otherwise it's ok
+        return 0;
     }
-    */
-
-    return 0;
 }
 
 
