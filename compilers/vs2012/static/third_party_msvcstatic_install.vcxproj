@@ -279,147 +279,147 @@
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='DebugMT|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='DebugMT|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugMT|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugMT|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='DebugMT|Win32'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='DebugMT|x64'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='DebugMT|x64'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugMT|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugMT|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='DebugMT|x64'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='DebugDLL|Win32'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='DebugDLL|x64'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseMT|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseMT|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseMT|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseMT|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='ReleaseMT|Win32'">dlls-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseMT|x64'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseMT|x64'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseMT|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseMT|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='ReleaseMT|x64'">dlls-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|Win32'">dlls-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='ReleaseDLL|x64'">dlls-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|Win32'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|x64'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|x64'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugMT|x64'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|Win32'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_DebugDLL|x64'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|Win32'">dlls-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|x64'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|x64'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseMT|x64'">dlls-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|Win32'">dlls-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='Unicode_ReleaseDLL|x64'">dlls-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='VTune_DebugMT|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='VTune_DebugMT|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugMT|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugMT|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='VTune_DebugMT|Win32'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='VTune_DebugMT|x64'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='VTune_DebugMT|x64'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugMT|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugMT|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='VTune_DebugMT|x64'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|Win32'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='VTune_DebugDLL|x64'">gbench-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseMT|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseMT|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseMT|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseMT|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseMT|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseMT|Win32'">dlls-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseMT|x64'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseMT|x64'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseMT|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseMT|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseMT|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseMT|x64'">dlls-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|Win32'">dlls-install.exe</NMakeOutput>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">$(Configuration)\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">$(Configuration)\</IntDir>
-    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeBuildCommandLine>
-    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeReBuildCommandLine>
-    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="msvc11.64\11"</NMakeCleanCommandLine>
+    <NMakeBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_install IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeBuildCommandLine>
+    <NMakeReBuildCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_rebuild IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeReBuildCommandLine>
+    <NMakeCleanCommandLine Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">call "$(ProjectDir)..\msvcvars.bat" &amp; nmake -f "$(ProjectDir)\third_party_static_install.mak" msvc_clean IntDir=$(IntDir) MSVC_SRC="vs2012.64"</NMakeCleanCommandLine>
     <NMakeOutput Condition="'$(Configuration)|$(Platform)'=='VTune_ReleaseDLL|x64'">dlls-install.exe</NMakeOutput>
   </PropertyGroup>
   <ItemDefinitionGroup>
