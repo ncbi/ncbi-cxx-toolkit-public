@@ -1547,11 +1547,14 @@ gpinit_access needs connext
 gpinit_access needs ct_ftds64
 gpinit_access needs dbapi
 gpinit_access needs dbapi_driver
+gpinit_access needs gpipe_common
 gpinit_access needs ncbi_xdbapi_ftds
 gpinit_access needs sdbapi
 gpinit_access needs tds_ftds64
+gpinit_access needs xcgi
 gpinit_access needs xconnect
 gpinit_access needs xconnext
+gpinit_access needs xmlwrapp
 gpinit_access needs xncbi
 gpinit_access needs xutil
 gpinit_admin needs asn_cache
