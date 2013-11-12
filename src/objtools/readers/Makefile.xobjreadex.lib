@@ -1,6 +1,6 @@
 # $Id$
 
-WATCHERS = dicuccio ludwigf kornbluh
+WATCHERS = dicuccio ludwigf kornbluh gotvyans
 
 ASN_DEP = seq seqset
 
