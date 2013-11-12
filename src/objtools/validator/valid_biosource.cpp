@@ -2837,8 +2837,7 @@ CRef<CTaxon3_reply> CValidError_imp::RequestSpecificHost
 
                 CRef<COrg_ref> rq(new COrg_ref);
                 rq->SetTaxname(host);
-				CSeqdescEntryPair* seqdesc_entrypair = new CSeqdescEntryPair(**desc_it, **ctx_it);
-				host_list.push_back(COrgrefWithParent_SpecificHost(rq.GetObject(),seqdesc_entrypair));
+				host_list.push_back(COrgrefWithParent_SpecificHost(rq.GetObject(),**desc_it, **ctx_it));
 				org_rq_list.push_back(rq);
             }
         }
@@ -2870,7 +2869,7 @@ CRef<CTaxon3_reply> CValidError_imp::RequestSpecificHost
 
                 CRef<COrg_ref> rq(new COrg_ref);
                 rq->SetTaxname(host);
-				host_list.push_back(COrgrefWithParent_SpecificHost(rq.GetObject(), *feat_it));
+				host_list.push_back(COrgrefWithParent_SpecificHost(rq.GetObject(), **feat_it));
 				org_rq_list.push_back(rq);
             }
         }
@@ -2913,7 +2912,7 @@ void CValidError_imp::ValidateSpecificHost
 					if ((*org_it).HasParentSeqdesc()) {
 						PostObjErr (eDiag_Info, eErr_SEQ_DESCR_AmbiguousSpecificHost,
                                 "Specific host value is ambiguous: " + host,
-                                (*org_it).GetSeqdescParent().GetSeqdesc(), &((*org_it).GetSeqdescParent().GetSeqentry()));
+                                (*org_it).GetSeqdescParent(), &((*org_it).GetSeqentryParent()));
 					} else {
 						PostErr (eDiag_Info, eErr_SEQ_DESCR_AmbiguousSpecificHost,
                                     "Specific host value is ambiguous: " + host,
@@ -2923,7 +2922,7 @@ void CValidError_imp::ValidateSpecificHost
 					if ((*org_it).HasParentSeqdesc()) {
 						PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
 								"Invalid value for specific host: " + host,
-								(*org_it).GetSeqdescParent().GetSeqdesc(), &((*org_it).GetSeqdescParent().GetSeqentry()));
+								(*org_it).GetSeqdescParent(), &((*org_it).GetSeqentryParent()));
 					} else {
 						PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
 								"Invalid value for specific host: " + host,
@@ -2935,7 +2934,7 @@ void CValidError_imp::ValidateSpecificHost
 					if ((*org_it).HasParentSeqdesc()) {
 						PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
 								"Specific host value is misspelled: " + host,
-								(*org_it).GetSeqdescParent().GetSeqdesc(), &((*org_it).GetSeqdescParent().GetSeqentry()));
+								(*org_it).GetSeqdescParent(), &((*org_it).GetSeqentryParent()));
 					} else {
 						PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
 							 "Specific host value is misspelled: " + host,
@@ -2947,7 +2946,7 @@ void CValidError_imp::ValidateSpecificHost
 						if ((*org_it).HasParentSeqdesc()) {
 							PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
 									"Specific host value is incorrectly capitalized: " + host,
-									(*org_it).GetSeqdescParent().GetSeqdesc(), &((*org_it).GetSeqdescParent().GetSeqentry()));
+									(*org_it).GetSeqdescParent(), &((*org_it).GetSeqentryParent()));
 						} else {
 							PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
 								 "Specific host value is incorrectly capitalized: " + host,
@@ -2958,7 +2957,7 @@ void CValidError_imp::ValidateSpecificHost
 					if ((*org_it).HasParentSeqdesc()) {
 						PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
 								"Invalid value for specific host: " + host,
-								(*org_it).GetSeqdescParent().GetSeqdesc(), &((*org_it).GetSeqdescParent().GetSeqentry()));
+								(*org_it).GetSeqdescParent(), &((*org_it).GetSeqentryParent()));
 					} else {
 						PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
 							 "Invalid value for specific host: " + host,

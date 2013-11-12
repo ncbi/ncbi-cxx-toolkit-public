@@ -306,21 +306,6 @@ private:
 
 };
 
-class NCBI_VALIDATOR_EXPORT CSeqdescEntryPair
-{ 
-public: 
-    CSeqdescEntryPair(const CSeqdesc& seqdesc, const CSeq_entry& entry)
-		: m_Seqdesc(&seqdesc), m_Seqentry(&entry) { }
-	~CSeqdescEntryPair(void){ }
-
-	const CSeqdesc&		GetSeqdesc(void) const { return *m_Seqdesc; }
-	const CSeq_entry&	GetSeqentry(void) const { return *m_Seqentry; }
-private:
-	CConstRef<CSeqdesc> m_Seqdesc;
-	CConstRef<CSeq_entry> m_Seqentry;
-};
-
-
 class NCBI_VALIDATOR_EXPORT COrgrefWithParent
 {
 public:
@@ -329,29 +314,33 @@ public:
 		eSeqfeatParent
 	};
 
-	COrgrefWithParent(COrg_ref& orgref, const CSeqdescEntryPair* seqdesc_entrypair)
+	COrgrefWithParent(COrg_ref& orgref, const CSeqdesc& seqdesc, const CSeq_entry& entry)
 		: m_Parent(eSeqdescParent), 
 		  m_Orgref(&orgref), 
-		  m_pSeqdesc(seqdesc_entrypair), 
-		  m_pSeqfeat(0) { }
-	COrgrefWithParent(COrg_ref& orgref, const CSeq_feat* seqfeat)
+		  m_Seqdesc(&seqdesc), 
+		  m_Seqentry(&entry),
+		  m_Seqfeat(null) { }
+	COrgrefWithParent(COrg_ref& orgref, const CSeq_feat& seqfeat)
 		: m_Parent(eSeqfeatParent), 
 		  m_Orgref(&orgref), 
-		  m_pSeqdesc(0),
-		  m_pSeqfeat(seqfeat) { }
+		  m_Seqdesc(null),
+		  m_Seqentry(null),
+		  m_Seqfeat(&seqfeat) { }
 	
 	virtual ~COrgrefWithParent(void) { }
 	
-	const COrg_ref&				GetOrgref(void) const { return *m_Orgref; }
-	const CSeqdescEntryPair&	GetSeqdescParent(void) const { return *m_pSeqdesc; }
-	const CSeq_feat&			GetSeqfeatParent(void) const { return *m_pSeqfeat; }
-	bool						HasParentSeqdesc(void) const{ return m_Parent == eSeqdescParent ? true : false; }
+	const COrg_ref&		GetOrgref(void) const { return *m_Orgref; }
+	const CSeqdesc&		GetSeqdescParent(void) const { return *m_Seqdesc; }
+	const CSeq_entry&	GetSeqentryParent(void) const { return *m_Seqentry; }
+	const CSeq_feat&	GetSeqfeatParent(void) const { return *m_Seqfeat; }
+	bool				HasParentSeqdesc(void) const{ return (m_Parent == eSeqdescParent); }
 
 protected:
 	EOrgrefParent m_Parent;
 	CRef<COrg_ref> m_Orgref;
-	const CSeqdescEntryPair* m_pSeqdesc; 
-	const CSeq_feat* m_pSeqfeat;
+	CConstRef<CSeqdesc> m_Seqdesc; 
+	CConstRef<CSeq_entry> m_Seqentry;
+	CConstRef<CSeq_feat> m_Seqfeat;
 };
 
 
@@ -367,10 +356,11 @@ public:
 	};
 
 	typedef int TResponseFlags;
-	COrgrefWithParent_SpecificHost(COrg_ref& orgref, const CSeqdescEntryPair* seqdesc_entrypair,
+	COrgrefWithParent_SpecificHost(COrg_ref& orgref, const CSeqdesc& seqdesc, 
+								   const CSeq_entry& entry,
 								   TResponseFlags choice = eNormal)
-	: COrgrefWithParent(orgref, seqdesc_entrypair), m_Host(choice) { } 
-	COrgrefWithParent_SpecificHost(COrg_ref& orgref, const CSeq_feat* seqfeat,
+	: COrgrefWithParent(orgref, seqdesc, entry), m_Host(choice) { } 
+	COrgrefWithParent_SpecificHost(COrg_ref& orgref, const CSeq_feat& seqfeat,
 								   TResponseFlags choice = eNormal)
 	: COrgrefWithParent(orgref, seqfeat), m_Host(choice) { } 
 
