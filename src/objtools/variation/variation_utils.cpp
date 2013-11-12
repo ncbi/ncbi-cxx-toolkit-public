@@ -496,7 +496,7 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
                 string ref;
                 CSeq_literal *refref = NULL;
                 x_PrefetchSequence(scope,seq_id);
-                //cout << "Sequence: " <<x_GetSeq(2338228,3) << endl;
+//                cout << "Sequence: " <<x_GetSeq(5510,3) << endl;
                 CVariation_ref& vr = (*feat)->SetData().SetVariation();
                 if (vr.IsSetData() && vr.GetData().IsInstance())
                     x_ProcessInstance(vr.SetData().SetInstance(),(*feat)->SetLocation(),is_deletion,refref,ref,pos_left,pos_right,new_pos_left,new_pos_right);

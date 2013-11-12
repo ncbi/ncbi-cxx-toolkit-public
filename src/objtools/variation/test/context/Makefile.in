@@ -2,9 +2,9 @@
 # Meta-makefile("objtools" project)
 #################################
     
-REQUIRES = objects
+REQUIRES = objects LIBXML LIBXSLT
  
-EXPENDABLE_APP_PROJ = test-context
+EXPENDABLE_APP_PROJ = test-context driver
    
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
