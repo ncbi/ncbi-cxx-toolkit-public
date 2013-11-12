@@ -102,7 +102,10 @@ class CMultiReaderApp
      : public CNcbiApplication
 {
 public:
-    CMultiReaderApp(): m_pErrors( 0 ) {};
+    CMultiReaderApp(): m_pErrors( 0 ) 
+    {
+        SetVersion(CVersionInfo(1, 0, 0));
+    };
     
 protected:
        
@@ -130,7 +133,7 @@ private:
     void xSetMapper(const CArgs&);
     void xSetMessageListener(const CArgs&);
             
-    void xWriteObject(CSerialObject&, CNcbiOstream& );
+    void xWriteObject(const CArgs&, CSerialObject&, CNcbiOstream&);
     void xDumpErrors(CNcbiOstream& );
 
     CFormatGuess::EFormat m_uFormat;
@@ -219,6 +222,19 @@ void CMultiReaderApp::Init(void)
             "fasta",
             "5colftbl",
             "guess") );
+
+    arg_desc->AddDefaultKey("out-format", "FORMAT", 
+        "This sets how the output of this program will be formatted.  "
+        "Note that for some formats some or all values might have no effect.",
+        CArgDescriptions::eString, "asn_text");
+    arg_desc->SetConstraint(
+        "out-format", 
+        &(*new CArgAllow_Strings, 
+            "asn_text",
+            "asn_binary",
+            "xml",
+            "json" ) );
+
 
     arg_desc->AddDefaultKey(
         "flags",
@@ -517,7 +533,7 @@ void CMultiReaderApp::xProcessDefault(
             "File format not supported", 0);
     }
     CRef<CSerialObject> object = pReader->ReadObject(istr, m_pErrors);
-    xWriteObject(*object, ostr);
+    xWriteObject(args, *object, ostr);
 }
 
 //  ----------------------------------------------------------------------------
@@ -534,7 +550,7 @@ void CMultiReaderApp::xProcessWiggle(
     CStreamLineReader lr(istr);
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        xWriteObject(**cit, ostr);
+        xWriteObject(args, **cit, ostr);
     }
 }
 
@@ -565,7 +581,7 @@ void CMultiReaderApp::xProcessBed(
     CStreamLineReader lr(istr);
     CRef<CSeq_annot> pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
     while(pAnnot) {
-        xWriteObject(*pAnnot, ostr);
+        xWriteObject(args, *pAnnot, ostr);
         pAnnot.Reset();
         pAnnot = reader.ReadSeqAnnot(lr, m_pErrors);
     }
@@ -602,7 +618,7 @@ void CMultiReaderApp::xProcessGtf(
     CGtfReader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        xWriteObject(**cit, ostr);
+        xWriteObject(args, **cit, ostr);
     }
 }
 
@@ -622,7 +638,7 @@ void CMultiReaderApp::xProcessGff3(
     CGff3Reader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        xWriteObject(**cit, ostr);
+        xWriteObject(args, **cit, ostr);
     }
 }
 
@@ -639,7 +655,7 @@ void CMultiReaderApp::xProcessGff2(
     CGff2Reader reader(m_iFlags, m_AnnotName, m_AnnotTitle);
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        xWriteObject(**cit, ostr);
+        xWriteObject(args, **cit, ostr);
     }
 }
 
@@ -666,7 +682,7 @@ void CMultiReaderApp::xProcessGvf(
         const list< CRef< CSeq_feat > >& ftable = annot.GetData().GetFtable();
         const CSeq_feat& feat = *(ftable.front());
         const CVariation_ref& varref = feat.GetData().GetVariation();
-        xWriteObject(**cit, ostr);
+        xWriteObject(args, **cit, ostr);
     }
 }
 
@@ -683,7 +699,7 @@ void CMultiReaderApp::xProcessVcf(
     CVcfReader reader( m_iFlags );
     reader.ReadSeqAnnots(annots, istr, m_pErrors);
     for (ANNOTS::iterator cit = annots.begin(); cit != annots.end(); ++cit){
-        xWriteObject(**cit, ostr);
+        xWriteObject(args, **cit, ostr);
     }
 }
 
@@ -702,7 +718,7 @@ void CMultiReaderApp::xProcessNewick(
             CNcbiIstrstream istrstr(strTree.c_str());
             auto_ptr<TPhyTreeNode>  pTree(ReadNewickTree(istrstr) );
             CRef<CBioTreeContainer> btc = MakeBioTreeContainer(pTree.get());
-            xWriteObject(*btc, ostr);
+            xWriteObject(args, *btc, ostr);
             strTree.clear();
         }
         c = istr.get();
@@ -727,7 +743,7 @@ void CMultiReaderApp::xProcessAgp(
     }
 
     NON_CONST_ITERATE (CAgpToSeqEntry::TSeqEntryRefVec, it, reader.GetResult()) {
-        xWriteObject(**it, ostr);
+        xWriteObject(args, **it, ostr);
     }
 }
 
@@ -747,7 +763,7 @@ void CMultiReaderApp::xProcess5ColFeatTable(
             // empty annot
             break;
         }
-        xWriteObject(*pSeqAnnot, ostr);
+        xWriteObject(args, *pSeqAnnot, ostr);
     }
 }
 
@@ -766,7 +782,7 @@ void CMultiReaderApp::xProcessAlignment(
     }
     reader.Read(false, args["force-local-ids"]);
     CRef<CSeq_align> pAlign = reader.GetSeqAlign();
-    xWriteObject(*pAlign, ostr);
+    xWriteObject(args, *pAlign, ostr);
 }
 
 //  ----------------------------------------------------------------------------
@@ -898,6 +914,7 @@ void CMultiReaderApp::xSetFlags(
 
 //  ----------------------------------------------------------------------------
 void CMultiReaderApp::xWriteObject(
+    const CArgs & args,
     CSerialObject& object,                  // potentially modified by mapper
     CNcbiOstream& ostr)
 //  ----------------------------------------------------------------------------
@@ -908,7 +925,20 @@ void CMultiReaderApp::xWriteObject(
     if (m_bCheckOnly) {
         return;
     }
-    ostr << MSerial_AsnText << object;
+    const string out_format = args["out-format"].AsString();
+    auto_ptr<MSerial_Format> pOutFormat;
+    if( out_format == "asn_text" ) {
+        pOutFormat.reset( new MSerial_Format_AsnText );
+    } else if( out_format == "asn_binary" ) {
+        pOutFormat.reset( new MSerial_Format_AsnBinary );
+    } else if( out_format == "xml" ) {
+        pOutFormat.reset( new MSerial_Format_Xml );
+    } else if( out_format == "json" ) {
+        pOutFormat.reset( new MSerial_Format_Json );
+    } else {
+        NCBI_USER_THROW_FMT("Unsupported out-format: " << out_format);
+    }
+    ostr << *pOutFormat << object;
     ostr.flush();
 }
         
