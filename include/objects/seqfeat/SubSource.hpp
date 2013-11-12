@@ -163,6 +163,8 @@ private:
     CSubSource(const CSubSource& value);
     CSubSource& operator=(const CSubSource& value);
 
+    static string x_ParseDateRangeWithDelimiter(const string& orig_date, const string& delim);
+
 };
 
 /////////////////// CSubSource inline methods

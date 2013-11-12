@@ -413,12 +413,41 @@ string CSubSource::GetCollectionDateProblem (const string& date_string)
 }
 
 
+string CSubSource::x_ParseDateRangeWithDelimiter(const string& orig_date, const string& delim)
+{
+    size_t pos = NStr::Find(orig_date, delim, NStr::eNocase);
+    if (pos == string::npos) {
+        return "";
+    }
+    bool month_ambig = false;
+    string first_date = FixDateFormat(orig_date.substr(0, pos), true, month_ambig);
+    if (month_ambig || NStr::IsBlank(first_date)) {
+        return "";
+    }
+    string second_date = FixDateFormat(orig_date.substr(pos + delim.length()), true, month_ambig);
+    if (month_ambig || NStr::IsBlank(second_date)) {
+        return "";
+    }
+    string fix = first_date + "/" + second_date;
+    return fix;
+}
+
+
 string CSubSource::FixDateFormat (const string& orig_date)
 {
     bool month_ambiguous = false;
+
     string fix = FixDateFormat(orig_date, true, month_ambiguous);
     if (month_ambiguous) {
         fix = "";
+    } else if (NStr::IsBlank(fix)) {
+        static const string delimiters[] = {"/", " to ", " and ", "-", "_"};
+        for (size_t i = 0; i < sizeof (delimiters) / sizeof (string); i++) {
+            fix = x_ParseDateRangeWithDelimiter(orig_date, delimiters[i]);
+            if (!NStr::IsBlank(fix)) {
+                break;
+            }
+        }
     }
     return fix;
 }
