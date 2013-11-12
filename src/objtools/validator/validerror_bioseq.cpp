@@ -37,7 +37,7 @@
 #include <corelib/ncbimisc.hpp>
 
 #include <objtools/validator/validatorp.hpp>
-#include "utilities.hpp"
+#include <objtools/validator/utilities.hpp>
 
 #include <serial/enumvalues.hpp>
 #include <serial/iterator.hpp>
@@ -2310,165 +2310,160 @@ static bool HasAssemblyGap (const CBioseq& seq)
 }
 
 
+static EDiagSev GetBioseqEndWarning (bool is_NC, bool isPatent, bool only_local, bool is_circular, EBioseqEndIsType end_is_char)
+{
+    EDiagSev sev;
+
+    if (is_NC || isPatent) {
+        sev = eDiag_Warning;
+    } else if (is_circular) {
+        sev = eDiag_Warning;
+    } else if (only_local) {
+        sev = eDiag_Warning;
+    } else if (end_is_char == eBioseqEndIsType_All) {
+        sev = eDiag_Error;
+    } else {
+        sev = eDiag_Warning;
+    }
+    return sev;
+}
+
+
 void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
 {
-    try {
-        const CSeq_inst& inst = seq.GetInst();
-        CSeq_inst::TRepr repr = 
-            inst.CanGetRepr() ? inst.GetRepr() : CSeq_inst::eRepr_not_set;
-        CSeq_inst::TLength len = inst.CanGetLength() ? inst.GetLength() : 0;
+    // don't bother checking if length is less than 10
+    if (!seq.IsSetInst() || !seq.GetInst().IsSetRepr() 
+        || !seq.GetInst().IsSetLength() || seq.GetInst().GetLength() < 10) {
+        return;
+    }
 
-        if ( (repr == CSeq_inst::eRepr_raw  ||  
-             (repr == CSeq_inst::eRepr_delta  &&  x_IsDeltaLitOnly(inst))) &&
-             len > 10 ) {
-            
-            CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
-            if ( !bsh ) {
-                return;
-            }
+    CSeq_inst::TRepr repr = seq.GetInst().GetRepr();
 
-            bool is_patent = false;
-            bool is_nc = false;
-            bool is_circular = false;
-            if (seq.GetInst().IsSetTopology() && seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular) {
-                is_circular = true;
-            }
-            FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
-                if ((*id_it)->IsPatent()) {
-                    is_patent = true;
-                } else if ((*id_it)->IsOther() && (*id_it)->GetOther().IsSetAccession()
-                    && NStr::StartsWith ((*id_it)->GetOther().GetAccession(), "NC_")) {
-                    is_nc = true;
-                }
-                if (is_patent && is_nc) {
-                    break;
-                }
-            }
-            
-            CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-            
-            EDiagSev sev = eDiag_Warning;
-            string sequence;
-            
-            // check for Ns and gaps at the beginning of the sequence
-            if ( (! is_circular) && ((vec[0] == 'N')  ||  (vec[0] == 'n')) ) {
-                // if 10 or more Ns flag as error (except for NC, patent, or circular), 
-                // otherwise just warning
-                vec.GetSeqData(0, 10, sequence);
-                if (is_nc || is_patent) {
-                    sev = eDiag_Warning;
-                } else if (seq.GetInst().IsSetTopology() && seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular) {
-                    sev = eDiag_Warning;
-                } else if (NStr::StartsWith(sequence, "NNNNNNNNNN")) {
-                    sev = eDiag_Error;
-                } else {
-                    sev = eDiag_Warning;
-                }
-                if (vec.IsInGap(0) || vec.IsInGap(1)) {
-                    PostErr (sev, eErr_SEQ_INST_TerminalGap, 
-                             "Gap at beginning of sequence", seq);
-                } else {
-                    PostErr(sev, eErr_SEQ_INST_TerminalNs, 
-                        "N at beginning of sequence", seq);
-                }
-            }
-            
-            // check for Ns at the end of the sequence
-            sev = eDiag_Warning;
-            if ( (! is_circular) && ((vec[vec.size() - 1] == 'N')  ||  (vec[vec.size() - 1] == 'n')) ) {
-                // if 10 or more Ns flag as error (except for NC, patent, or circular), 
-                // otherwise just warning
-                vec.GetSeqData(vec.size() - 10, vec.size() , sequence);
-                if (is_nc || is_patent) {
-                    sev = eDiag_Warning;
-                } else if (seq.GetInst().IsSetTopology() && seq.GetInst().GetTopology() == CSeq_inst::eTopology_circular) {
-                    sev = eDiag_Warning;
-                } else if (NStr::EndsWith(sequence, "NNNNNNNNNN")) {
-                    sev = eDiag_Error;
-                } else {
-                    sev = eDiag_Warning;
-                }
+    // only check for raw or for delta sequences that are delta lit only
+    if ( repr != CSeq_inst::eRepr_raw  && (repr != CSeq_inst::eRepr_delta  ||  !x_IsDeltaLitOnly(seq.GetInst()))) {
+        return;
+    }
+         
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    if ( !bsh ) {
+        return;
+    }    
+    EBioseqEndIsType begin_n;
+    EBioseqEndIsType begin_gap;
+    EBioseqEndIsType end_n;
+    EBioseqEndIsType end_gap;
+    CheckBioseqEndsForNAndGap(bsh, begin_n, begin_gap, end_n, end_gap);
 
-                if (vec.IsInGap (vec.size() - 2) || vec.IsInGap (vec.size() - 1)) {
-                    PostErr (sev, eErr_SEQ_INST_TerminalGap, 
-                             "Gap at end of sequence", seq);
-                } else {
-                    PostErr(sev, eErr_SEQ_INST_TerminalNs, 
-                        "N at end of sequence", seq);
-                }
+    bool only_local = true;
+    bool is_NC = false;
+    bool is_patent = false;
+    FOR_EACH_SEQID_ON_BIOSEQ (id_it, seq) {
+        if (!(*id_it)->IsLocal()) {
+            only_local = false;
+            if ((*id_it)->IsPatent()) {
+                is_patent = true;
+            } else if ((*id_it)->IsOther() && (*id_it)->GetOther().IsSetAccession()
+                && NStr::StartsWith ((*id_it)->GetOther().GetAccession(), "NC_")) {
+                is_NC = true;
             }
-            
+        }
+    }
+    bool is_circular = false;
+    if (bsh.IsSetInst_Topology() && bsh.GetInst_Topology() == CSeq_inst::eTopology_circular) {
+        is_circular = true;
+    }
+    EDiagSev sev;
+    if (begin_n != eBioseqEndIsType_None) {
+        sev = GetBioseqEndWarning(is_NC, is_patent, only_local, is_circular, begin_n);
+        PostErr(sev, eErr_SEQ_INST_TerminalNs, "N at beginning of sequence", seq);
+    } else if (begin_gap != eBioseqEndIsType_None) {
+        sev = GetBioseqEndWarning(is_NC, is_patent, only_local, is_circular, begin_gap);
+        PostErr (sev, eErr_SEQ_INST_TerminalGap, "Gap at beginning of sequence", seq);
+    }
 
-            if (seq.GetLength() > 0 && !SeqIsPatent(seq)) {
-                // if TSA, check for percentage of Ns and max stretch of Ns
-                if (IsBioseqTSA(seq, m_Scope)) {
-                    if (HasAssemblyGap (seq)) return;
-                    bool n5 = false;
-                    bool n3 = false;
-                    TSeqPos num_ns = 0, this_stretch = 0, max_stretch = 0;
-                    for (size_t i = 0; i < vec.size(); i++) {
-                        if (vec[i] == 'N') {
-                            num_ns++;
-                            if (vec.IsInGap(i)) {
-                                if (max_stretch < this_stretch) {
-                                    max_stretch = this_stretch;
-                                }
-                                this_stretch = 0;
-                            } else {
-                                this_stretch++;
-                                if (this_stretch >= 10) {
-                                    if (i < 20) {
-                                        n5 = true;
-                                    } 
-                                    if (vec.size() > 20 && i > vec.size() - 10) {
-                                        n3 = true;
-                                    }
-                                }
+    if (end_n != eBioseqEndIsType_None) {
+        sev = GetBioseqEndWarning(is_NC, is_patent, only_local, is_circular, end_n);
+        PostErr(sev, eErr_SEQ_INST_TerminalNs, "N at end of sequence", seq);
+    } else if (end_gap != eBioseqEndIsType_None) {
+        sev = GetBioseqEndWarning(is_NC, is_patent, only_local, is_circular, end_gap);
+        PostErr (sev, eErr_SEQ_INST_TerminalGap, "Gap at end of sequence", seq);
+    }
+
+    // don't check N content for patent sequences
+    if (is_patent) {
+        return;
+    }
+
+    try {            
+        CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);                        
+
+        // if TSA, check for percentage of Ns and max stretch of Ns
+        if (IsBioseqTSA(seq, m_Scope)) {
+            if (HasAssemblyGap (seq)) return;
+            bool n5 = false;
+            bool n3 = false;
+            TSeqPos num_ns = 0, this_stretch = 0, max_stretch = 0;
+            for (size_t i = 0; i < vec.size(); i++) {
+                if (vec[i] == 'N') {
+                    num_ns++;
+                    if (vec.IsInGap(i)) {
+                        if (max_stretch < this_stretch) {
+                            max_stretch = this_stretch;
+                        }
+                        this_stretch = 0;
+                    } else {
+                        this_stretch++;
+                        if (this_stretch >= 10) {
+                            if (i < 20) {
+                                n5 = true;
+                            } 
+                            if (vec.size() > 20 && i > vec.size() - 10) {
+                                n3 = true;
                             }
-                        } else {
-                            if (max_stretch < this_stretch) {
-                                max_stretch = this_stretch;
-                            }
-                            this_stretch = 0;
                         }
                     }
+                } else {
                     if (max_stretch < this_stretch) {
                         max_stretch = this_stretch;
                     }
-
-                    int pct_n = (num_ns * 100) / seq.GetLength();
-                    if (pct_n > 10) {
-                        PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentPercent, 
-                                 "Sequence contains " + NStr::IntToString(pct_n) + " percent Ns", seq);
-                    }
-
-                    if (max_stretch >= 15) {
-                        PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
-                                 "Sequence has a stretch of " + NStr::IntToString(max_stretch) + " Ns", seq);
-                    } else {
-                        if (n5) {
-                            PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
-                                     "Sequence has a stretch of at least 10 Ns within the first 20 bases", seq);
-                        }
-                        if (n3) {
-                            PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
-                                     "Sequence has a stretch of at least 10 Ns within the last 20 bases", seq);
-                        }
-                    }
-                } else {
-                    // not TSA, just check for really high N percent
-                    TSeqPos num_ns = 0;
-                    for (size_t i = 0; i < vec.size(); i++) {
-                        if (vec[i] == 'N' && !vec.IsInGap(i)) {
-                            num_ns++;
-                        }
-                    }
-                    int pct_n = (num_ns * 100) / seq.GetLength();
-                    if (pct_n > 50) {
-                        PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentPercent, 
-                                 "Sequence contains " + NStr::IntToString(pct_n) + " percent Ns", seq);
-                    }
+                    this_stretch = 0;
                 }
+            }
+            if (max_stretch < this_stretch) {
+                max_stretch = this_stretch;
+            }
+
+            int pct_n = (num_ns * 100) / seq.GetLength();
+            if (pct_n > 10) {
+                PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentPercent, 
+                            "Sequence contains " + NStr::IntToString(pct_n) + " percent Ns", seq);
+            }
+
+            if (max_stretch >= 15) {
+                PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
+                            "Sequence has a stretch of " + NStr::IntToString(max_stretch) + " Ns", seq);
+            } else {
+                if (n5) {
+                    PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
+                                "Sequence has a stretch of at least 10 Ns within the first 20 bases", seq);
+                }
+                if (n3) {
+                    PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentStretch, 
+                                "Sequence has a stretch of at least 10 Ns within the last 20 bases", seq);
+                }
+            }
+        } else {
+            // not TSA, just check for really high N percent
+            TSeqPos num_ns = 0;
+            for (size_t i = 0; i < vec.size(); i++) {
+                if (vec[i] == 'N' && !vec.IsInGap(i)) {
+                    num_ns++;
+                }
+            }
+            int pct_n = (num_ns * 100) / seq.GetLength();
+            if (pct_n > 50) {
+                PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentPercent, 
+                            "Sequence contains " + NStr::IntToString(pct_n) + " percent Ns", seq);
             }
         }
     } catch ( exception& ) {

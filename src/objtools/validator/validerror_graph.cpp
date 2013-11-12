@@ -37,7 +37,7 @@
 #include <objects/seqres/Seq_graph.hpp>
 #include <objmgr/graph_ci.hpp>
 #include <objtools/validator/validatorp.hpp>
-#include "utilities.hpp"
+#include <objtools/validator/utilities.hpp>
 
 
 BEGIN_NCBI_SCOPE

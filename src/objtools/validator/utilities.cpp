@@ -50,12 +50,12 @@
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/object_manager.hpp>
+#include <objtools/validator/utilities.hpp>
 
 #include <vector>
 #include <algorithm>
 #include <list>
 
-#include "utilities.hpp"
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -1230,7 +1230,7 @@ bool s_PartialAtGapOrNs (
         } else if (tag == sequence::eSeqlocPartial_Nostart && start > 0 && vec.IsInGap(start - 1)) {
             return true;
         }
-    } catch ( exception& ) {
+    } catch ( exception& e) {
         
         return false;
     }
@@ -1280,6 +1280,88 @@ CBioseq_Handle BioseqHandleFromLocation (CScope* m_Scope, const CSeq_loc& loc)
     return bsh;
 }
 
+
+bool s_PosIsNNotGap(CSeqVector& vec, int pos)
+{
+    if (pos >= vec.size()) {
+        return false;
+    } else if (vec[pos] != 'N' && vec[pos] != 'n') {
+        return false;
+    } else if (vec.IsInGap(pos)) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+void CheckBioseqEndsForNAndGap 
+(CBioseq_Handle bsh,
+ EBioseqEndIsType& begin_n,
+ EBioseqEndIsType& begin_gap,
+ EBioseqEndIsType& end_n,
+ EBioseqEndIsType& end_gap)
+{
+    begin_n = eBioseqEndIsType_None;
+    begin_gap = eBioseqEndIsType_None;
+    end_n = eBioseqEndIsType_None;
+    end_gap = eBioseqEndIsType_None;
+
+    try {
+        if (!bsh || bsh.GetInst_Length() < 10 || (bsh.IsSetInst_Topology() && bsh.GetInst_Topology() == CSeq_inst::eTopology_circular)) {
+            return;
+        }
+
+        // check for gap at begining of sequence
+        CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+        if (vec.IsInGap(0) || vec.IsInGap(1)) {
+            begin_gap = eBioseqEndIsType_All;
+            for (int i = 0; i < 10; i++) {
+                if (!vec.IsInGap(i)) {
+                    begin_gap = eBioseqEndIsType_Last;
+                    break;
+                }
+            }
+        }
+
+        // check for gap at end of sequence
+        if (vec.IsInGap (vec.size() - 2) || vec.IsInGap (vec.size() - 1)) {
+            end_gap = eBioseqEndIsType_All;
+            for (int i = vec.size() - 11; i < vec.size(); i++) {
+                if (!vec.IsInGap(i)) {
+                    end_gap = eBioseqEndIsType_Last;
+                    break;
+                }
+            }
+        }
+
+        if (bsh.IsNa()) {
+            // check for N bases at beginning of sequence
+            if (s_PosIsNNotGap(vec, 0) || s_PosIsNNotGap(vec, 1)) {
+                begin_n = eBioseqEndIsType_All;
+                for (int i = 0; i < 10; i++) {
+                    if (!s_PosIsNNotGap(vec, i)) {
+                        begin_n = eBioseqEndIsType_Last;
+                        break;
+                    }
+                }
+            }
+
+            // check for N bases at end of sequence
+            if (s_PosIsNNotGap(vec, vec.size() - 2) || s_PosIsNNotGap(vec, vec.size() - 1)) {
+                end_n = eBioseqEndIsType_All;
+                for (int i = vec.size() - 10; i < vec.size(); i++) {
+                    if (!s_PosIsNNotGap(vec, i)) {
+                        end_n = eBioseqEndIsType_Last;
+                        break;
+                    }
+                }
+            }
+        }
+    } catch ( exception& ) {
+        // if there are exceptions, cannot perform this calculation
+    }
+}
 
 
 END_SCOPE(validator)

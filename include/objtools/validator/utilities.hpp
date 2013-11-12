@@ -145,6 +145,21 @@ bool s_PartialAtGapOrNs (CScope* scope, const CSeq_loc& loc, unsigned int tag);
 
 CBioseq_Handle BioseqHandleFromLocation (CScope* m_Scope, const CSeq_loc& loc);
 
+typedef enum {
+    eBioseqEndIsType_None = 0,
+    eBioseqEndIsType_Last,
+    eBioseqEndIsType_All
+} EBioseqEndIsType;
+
+
+void NCBI_VALIDATOR_EXPORT CheckBioseqEndsForNAndGap 
+(CBioseq_Handle bsh,
+ EBioseqEndIsType& begin_n,
+ EBioseqEndIsType& begin_gap,
+ EBioseqEndIsType& end_n,
+ EBioseqEndIsType& end_gap);
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE

@@ -37,7 +37,7 @@
 #include <objmgr/object_manager.hpp>
 
 #include <objtools/validator/validatorp.hpp>
-#include "utilities.hpp"
+#include <objtools/validator/utilities.hpp>
 
 #include <serial/iterator.hpp>
 #include <serial/enumvalues.hpp>

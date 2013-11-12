@@ -33,7 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <objtools/validator/validatorp.hpp>
-#include "utilities.hpp"
+#include <objtools/validator/utilities.hpp>
 
 #include <objmgr/util/sequence.hpp>
 

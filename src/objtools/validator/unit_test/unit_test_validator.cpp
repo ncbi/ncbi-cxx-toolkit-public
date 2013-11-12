@@ -104,6 +104,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objects/seq/seqport_util.hpp>
 #include <objtools/validator/validator.hpp>
+#include <objtools/validator/utilities.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <corelib/ncbiapp.hpp>
 #include <common/ncbi_export.h>
@@ -2656,7 +2657,8 @@ BOOST_AUTO_TEST_CASE(Test_HistAssemblyMissing)
 BOOST_AUTO_TEST_CASE(Test_TerminalNs)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("NNNNNNNNNAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCCAANNNNNNNNN");
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("NNNNNNNNNNAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCCAANNNNNNNNNN");
+    entry->SetSeq().SetInst().SetLength(62);
 
     STANDARD_SETUP
 
@@ -2665,41 +2667,14 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    // warning level changes for different conditions
-    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("NNNNNNNNNNAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCAANNNNNNNNNN");
+    // warning level changes if not local only    
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("AY123456");
+    expected_errors[1]->SetAccession("AY123456");
     expected_errors[0]->SetSeverity(eDiag_Error);
     expected_errors[1]->SetSeverity(eDiag_Error);
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    /*
-    entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
-    unit_test_util::SetCompleteness(entry, CMolInfo::eCompleteness_complete);
-    expected_errors[0]->SetSeverity(eDiag_Warning);
-    expected_errors[1]->SetSeverity(eDiag_Warning);
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    entry->SetSeq().SetInst().ResetTopology();
-    */
-    unit_test_util::SetCompleteness(entry, CMolInfo::eCompleteness_unknown);
-    scope.RemoveTopLevelSeqEntry(seh);
-    entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
-    seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetAccession("NC_123456");
-    expected_errors[1]->SetAccession("NC_123456");
-    expected_errors[0]->SetSeverity(eDiag_Warning);
-    expected_errors[1]->SetSeverity(eDiag_Warning);
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
-
-    scope.RemoveTopLevelSeqEntry(seh);
-    entry->SetSeq().SetId().front()->SetPatent().SetSeqid(1);
-    entry->SetSeq().SetId().front()->SetPatent().SetCit().SetCountry("USA");
-    entry->SetSeq().SetId().front()->SetPatent().SetCit().SetId().SetNumber("1");
-    seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetAccession("USA1_1");
-    expected_errors[1]->SetAccession("USA1_1");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -2711,35 +2686,35 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[0]->SetAccession("good");
     expected_errors[1]->SetAccession("good");
+    expected_errors[0]->SetSeverity(eDiag_Warning);
+    expected_errors[1]->SetSeverity(eDiag_Warning);
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "HighNContentPercent", "Sequence contains 52 percent Ns"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    // 10 Ns bumps up to error
+    // 10 Ns but just local stays at warning
     scope.RemoveTopLevelSeqEntry(seh);
     entry = unit_test_util::BuildGoodDeltaSeq ();
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLiteral().SetSeq_data().SetIupacna().Set("NNNNNNNNNNCC");
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().back()->SetLiteral().SetSeq_data().SetIupacna().Set("CCNNNNNNNNNN");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetSeverity(eDiag_Error);
-    expected_errors[1]->SetSeverity(eDiag_Error);
     expected_errors[2]->SetErrMsg ("Sequence contains 58 percent Ns");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    // circular topology takes it back to warning
-    /*
-    entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
-    unit_test_util::SetCompleteness(entry, CMolInfo::eCompleteness_complete);
-    expected_errors[0]->SetSeverity(eDiag_Warning);
-    expected_errors[1]->SetSeverity(eDiag_Warning);
+    // 10 Ns but now has non-local ID, error
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetId().front()->SetGenbank().SetAccession("AY123456");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors[0]->SetAccession("AY123456");
+    expected_errors[1]->SetAccession("AY123456");
+    expected_errors[2]->SetAccession("AY123456");
+    expected_errors[0]->SetSeverity(eDiag_Error);
+    expected_errors[1]->SetSeverity(eDiag_Error);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-    */
 
-    // NC and patent IDs keep warning
-    entry->SetSeq().SetInst().ResetTopology();
-    unit_test_util::SetCompleteness(entry, CMolInfo::eCompleteness_unknown);
+    // NC and patent IDs back to warning
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
     seh = scope.AddTopLevelSeqEntry(*entry);
@@ -2809,7 +2784,7 @@ BOOST_AUTO_TEST_CASE(Test_UnexpectedIdentifierChange)
 BOOST_AUTO_TEST_CASE(Test_InternalNsInSeqLit)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodDeltaSeq();
-    unit_test_util::AddToDeltaSeq(entry, "ANNNNNNNNNNNNNNNNNNNNG");
+    unit_test_util::AddToDeltaSeq(entry, "AANNNNNNNNNNNNNNNNNNNNGG");
     SetTech(entry, CMolInfo::eTech_wgs);
 
     STANDARD_SETUP
@@ -2818,9 +2793,9 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsInSeqLit)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    unit_test_util::AddToDeltaSeq(entry, "ANNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNG");
+    unit_test_util::AddToDeltaSeq(entry, "AANNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNGG");
     SetTech(entry, CMolInfo::eTech_htgs_1);
-    expected_errors[0]->SetErrMsg("Run of 81 Ns in delta component 7 that starts at base 77");
+    expected_errors[0]->SetErrMsg("Run of 81 Ns in delta component 7 that starts at base 79");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -2832,9 +2807,9 @@ BOOST_AUTO_TEST_CASE(Test_InternalNsInSeqLit)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    unit_test_util::AddToDeltaSeq(entry, "ANNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNG");
+    unit_test_util::AddToDeltaSeq(entry, "AANNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNGG");
     SetTech(entry, CMolInfo::eTech_unknown);
-    expected_errors[0]->SetErrMsg("Run of 101 Ns in delta component 9 that starts at base 170");
+    expected_errors[0]->SetErrMsg("Run of 101 Ns in delta component 9 that starts at base 174");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -3219,27 +3194,16 @@ BOOST_AUTO_TEST_CASE(Test_TerminalGap)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    // if gap length is 10, severity is still warning because still all local IDS
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().front()->SetLiteral().SetLength(10);
     entry->SetSeq().SetInst().SetExt().SetDelta().Set().back()->SetLiteral().SetLength(10);
     entry->SetSeq().SetInst().SetLength(entry->SetSeq().SetInst().GetLength() + 2);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[2]->SetSeverity(eDiag_Error);
-    expected_errors[3]->SetSeverity(eDiag_Error);
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    /*
-    entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
-    unit_test_util::SetCompleteness(entry, CMolInfo::eCompleteness_complete);
-    expected_errors[2]->SetSeverity(eDiag_Warning);
-    expected_errors[3]->SetSeverity(eDiag_Warning);
-    eval = validator.Validate(seh, options);
-    CheckErrors (*eval, expected_errors);
 
-    entry->SetSeq().SetInst().ResetTopology();
-    */
-    unit_test_util::SetCompleteness(entry, CMolInfo::eCompleteness_unknown);
     scope.RemoveTopLevelSeqEntry(seh);
     entry->SetSeq().SetId().front()->SetOther().SetAccession("NC_123456");
     seh = scope.AddTopLevelSeqEntry(*entry);
@@ -17738,3 +17702,51 @@ BOOST_AUTO_TEST_CASE(Test_FixCountry)
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Wolfskill Orchand, Winters, California"), "");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Yun Shui"), "");
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_CheckEnds)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("NNNNNNNNNNAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCCAANNNNNNNNNN");
+    entry->SetSeq().SetInst().SetLength(62);
+    STANDARD_SETUP
+
+    
+    EBioseqEndIsType begin_n = eBioseqEndIsType_None;
+    EBioseqEndIsType begin_gap = eBioseqEndIsType_None;
+    EBioseqEndIsType end_n = eBioseqEndIsType_None;
+    EBioseqEndIsType end_gap = eBioseqEndIsType_None;
+
+    CBioseq_Handle bsh = seh.GetSeq();
+    CheckBioseqEndsForNAndGap(bsh, begin_n, begin_gap, end_n, end_gap);
+    BOOST_CHECK_EQUAL(begin_n, eBioseqEndIsType_All);
+    BOOST_CHECK_EQUAL(end_n, eBioseqEndIsType_All);
+    BOOST_CHECK_EQUAL(begin_n, eBioseqEndIsType_All);
+    BOOST_CHECK_EQUAL(end_n, eBioseqEndIsType_All);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("NNNNNNNNNAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCCAANNNNNNNNN");
+    entry->SetSeq().SetInst().SetLength(60);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    bsh = seh.GetSeq();
+    CheckBioseqEndsForNAndGap(bsh, begin_n, begin_gap, end_n, end_gap);
+    BOOST_CHECK_EQUAL(begin_n, eBioseqEndIsType_Last);
+    BOOST_CHECK_EQUAL(end_n, eBioseqEndIsType_Last);
+    BOOST_CHECK_EQUAL(begin_n, eBioseqEndIsType_Last);
+    BOOST_CHECK_EQUAL(end_n, eBioseqEndIsType_Last);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("AAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCCAA");
+    entry->SetSeq().SetInst().SetLength(42);
+    seh = scope.AddTopLevelSeqEntry(*entry);
+
+    bsh = seh.GetSeq();
+    CheckBioseqEndsForNAndGap(bsh, begin_n, begin_gap, end_n, end_gap);
+    BOOST_CHECK_EQUAL(begin_n, eBioseqEndIsType_None);
+    BOOST_CHECK_EQUAL(end_n, eBioseqEndIsType_None);
+    BOOST_CHECK_EQUAL(begin_n, eBioseqEndIsType_None);
+    BOOST_CHECK_EQUAL(end_n, eBioseqEndIsType_None);
+
+}
+

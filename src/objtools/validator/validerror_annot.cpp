@@ -33,7 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <objtools/validator/validatorp.hpp>
-#include "utilities.hpp"
+#include <objtools/validator/utilities.hpp>
 
 #include <objects/general/User_object.hpp>
 #include <objects/general/Object_id.hpp>

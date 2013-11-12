@@ -54,7 +54,7 @@
 #include <algorithm>
 
 #include <objtools/validator/validatorp.hpp>
-#include "utilities.hpp"
+#include <objtools/validator/utilities.hpp>
 
 
 BEGIN_NCBI_SCOPE
