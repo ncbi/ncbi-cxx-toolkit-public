@@ -64,6 +64,8 @@ public:
 
     size_t GetNameCount(void) const;
 
+    void ConvertMlToStandard(void);
+
 protected:
     bool GetLabelV1(string* label, TLabelFlags flags) const;
     bool GetLabelV2(string* label, TLabelFlags flags) const;
