@@ -13,13 +13,13 @@
 >650771AF unnamed protein product
 >0806162C unnamed protein product
 >2015436HX unnamed protein product
->1309311A:PDB=1EMD,2CMD unnamed protein product
+>1309311A:PDB=1EMD unnamed protein product
 >1GAV
 >1GAVZ Chain Z
->1GAV|X Chain X
->1GAV|XX Chain x
+>1GAV_X Chain X
+>1GAV_XX Chain x
 >1GAV_! Chain !
->1GAV|VB Chain |
+>1GAV_VB Chain |
 # Leaving off SwissProt IDs, which gain "reviewed" tags over the round trip
 #>q7cqj0 unnamed protein product
 #>A2ASS6.1 unnamed protein product
