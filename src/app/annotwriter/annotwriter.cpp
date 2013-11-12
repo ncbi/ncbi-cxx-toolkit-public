@@ -78,6 +78,7 @@
 #include <objtools/writers/writer_exception.hpp>
 #include <objtools/writers/gtf_writer.hpp>
 #include <objtools/writers/gff3_writer.hpp>
+#include <objtools/writers/gff3flybase_writer.hpp>
 #include <objtools/writers/wiggle_writer.hpp>
 #include <objtools/writers/bed_track_record.hpp>
 #include <objtools/writers/bed_feature_record.hpp>
@@ -179,7 +180,7 @@ void CAnnotWriterApp::Init()
         &(*new CArgAllow_Strings, 
             "gvf",
             "gff", "gff2", 
-            "gff3", 
+            "gff3",
             "gtf", 
             "wig", "wiggle",
             "bed",
@@ -235,6 +236,10 @@ void CAnnotWriterApp::Init()
         "use-extra-quals",
         "GFF dialects: Restore original GFF type and attributes, if possible",
         true );
+    arg_desc->AddFlag(
+        "flybase",
+        "GFF3 only: Use Flybase inerpretation of the GFF3 spec",
+        true );
     }}
     
     SetupArgDescriptions(arg_desc.release());
@@ -254,7 +259,7 @@ int CAnnotWriterApp::Run()
 
     try {
         CNcbiOstream* pOs = xInitOutputStream(args);
-        m_pWriter.Reset(xInitWriter(args,pOs));
+        m_pWriter.Reset(xInitWriter(args, pOs));
 
         if (xTryProcessInputId(args)) {
             pOs->flush();
@@ -556,7 +561,12 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
         xTweakAnnotSelector(args, pWriter->GetAnnotSelector());
         return pWriter;
     }
+
     if (strFormat == "gff3") { 
+        if (args["flybase"]) {
+            CGff3FlybaseWriter* pWriter = new CGff3FlybaseWriter(*m_pScope, *pOs);
+            return pWriter;
+        }
         CGff3Writer* pWriter = new CGff3Writer(*m_pScope, *pOs, xGffFlags(args));
         xTweakAnnotSelector(args, pWriter->GetAnnotSelector());
         return pWriter;
@@ -572,7 +582,8 @@ CWriterBase* CAnnotWriterApp::xInitWriter(
         return pWriter;
     }
     if (strFormat == "wiggle"  ||  strFormat == "wig") {
-        return new CWiggleWriter(*pOs, args["tracksize"].AsInteger());
+        //return new CWiggleWriter(*pOs, args["tracksize"].AsInteger());
+        return new CWiggleWriter(*pOs, 0);
     }
     if (strFormat == "bed") {
         return new CBedWriter(*m_pScope, *pOs, 12);
