@@ -498,8 +498,7 @@ CRef<CSeq_entry> CFastaReader::ReadSet(int max_seqs, IMessageListener * pMessage
             if (max_seqs == 1) {
                 return entry2;
             }
-            if (entry2.NotEmpty())
-              entry->SetSet().SetSeq_set().push_back(entry2);
+            entry->SetSet().SetSeq_set().push_back(entry2);
         } catch (CObjReaderParseException& e) {
             if (e.GetErrCode() == CObjReaderParseException::eEOF) {
                 break;
@@ -742,18 +741,7 @@ bool CFastaReader::ParseIDs(
         flags |= CSeq_id::fParse_RawText;
     }
     try {
-        if (s.find('|') == TStr::npos && !CSeq_id::IsValidLocalID(s))
-        {
-            string temp = NStr::Replace(s, ",", "_");
-            count = CSeq_id::ParseIDs(ids, temp, flags);
-            FASTA_WARNING(LineNumber(),
-                "CFastaReader: Near line " << LineNumber() 
-                << ", the sequence contains 'coma' symbol and replaced with 'underscore' "
-                << "symbol. Please find and correct the sequence id.",
-                ILineError::eProblem_GeneralParsingError, "");
-        }
-        else
-            count = CSeq_id::ParseIDs(ids, s, flags);
+        count = CSeq_id::ParseIDs(ids, s, flags);
     } catch (CSeqIdException&) {
         // swap(ids, old_ids);
     }
@@ -768,16 +756,12 @@ bool CFastaReader::ParseIDs(
         }
     }
     // recheck raw local IDs
-    if (count == 1  &&  ids.back()->IsLocal())
-    {
-        string temp;
-        ids.back()->GetLabel(&temp, 0, CSeq_id::eContent);
-        if (!IsValidLocalID(temp))
-        {
-            //&&  !NStr::StartsWith(s, "lcl|", NStr::eNocase)
-            ids.clear();
-            return false;
-        }
+    if (count == 1  &&  ids.back()->IsLocal()
+        &&  !NStr::StartsWith(s, "lcl|", NStr::eNocase)
+        &&  !IsValidLocalID(s)) {
+        // swap(ids, old_ids);
+        ids.clear();
+        return false;
     }
     // check if ID was too long
     if( count == 1 && s.length() > m_MaxIDLength ){ 
