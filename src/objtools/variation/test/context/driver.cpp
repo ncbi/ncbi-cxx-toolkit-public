@@ -82,14 +82,14 @@ private:
     virtual void Init(void);
     virtual int Run ();
     virtual void Exit(void);
-    int CompareVar(CRef<CVariation> v1, CRef<CVariation> v2, string &content);
-    int CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2, string &content);
+    int CompareVar(CRef<CVariation> v1, CRef<CVariation> v2, string &content, string &description);
+    int CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2, string &content, string &description);
     int CompareLocations(const CSeq_loc& loc1, const CSeq_loc& loc2, int n, string &content);
     template<class T>
     void GetAlleles(T &variations, set<string>& alleles);
-    bool IsVariation(AutoPtr<CObjectIStream>& oistr);
+    bool IsVariation(AutoPtr<CObjectIStream>& oistr, int &n, string &content);
     template<class T>
-    int CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<CObjectIStream>& var_in2, CVariationNormalization::ETargetContext context, CRef<CScope> scope, string &content);
+    int CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<CObjectIStream>& var_in2, CVariationNormalization::ETargetContext context, CRef<CScope> scope, string &content, string &description);
 };
 
 
@@ -99,6 +99,7 @@ void CContextApp::Init(void)
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),"Test Context in Variation objects");
     arg_desc->AddDefaultKey("i", "input", "Folder with input files", CArgDescriptions::eString, "annot/input");
     arg_desc->AddDefaultKey("t", "test", "Folder with test files", CArgDescriptions::eString, "annot/dbsnp");
+    arg_desc->AddDefaultKey("o", "output", "Output file prefix",CArgDescriptions::eOutputFile,"-",CArgDescriptions::fPreOpen);
     arg_desc->AddFlag("vcf", "VCF context",true);
     arg_desc->AddFlag("hgvs", "HGVS context",true);
     arg_desc->AddFlag("varloc", "VarLoc context",true);
@@ -151,7 +152,7 @@ void  CContextApp::GetAlleles(T &variations, set<string>& alleles)
         }
 }
 
-int CContextApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2, string &content)
+int CContextApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2, string &content, string & description) 
 {
     int n = 0;
 
@@ -192,10 +193,36 @@ int CContextApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2, string &co
         n++;
     }
     
+    string description1;
+    if (v1->IsSetExt())
+        for (CVariation::TExt::const_iterator ext = v1->GetExt().begin(); ext != v1->GetExt().end(); ++ext)
+            if ((*ext)->IsSetType() && (*ext)->GetType().IsStr() && (*ext)->GetType().GetStr() == "Description" && (*ext)->IsSetData())
+                for (CUser_object::TData::const_iterator field = (*ext)->GetData().begin(); field != (*ext)->GetData().end(); ++field)
+                    if ((*field)->IsSetData() && (*field)->GetData().IsStr())
+                    {
+                        description1 += (*field)->GetData().GetStr();
+                    }
+    if (description1.empty())
+        description1 = "No input description provided";
+
+    string description2;
+    if (v2->IsSetExt())
+        for (CVariation::TExt::const_iterator ext = v2->GetExt().begin(); ext != v2->GetExt().end(); ++ext)
+            if ((*ext)->IsSetType() && (*ext)->GetType().IsStr() && (*ext)->GetType().GetStr() == "Description" && (*ext)->IsSetData())
+                for (CUser_object::TData::const_iterator field = (*ext)->GetData().begin(); field != (*ext)->GetData().end(); ++field)
+                    if ((*field)->IsSetData() && (*field)->GetData().IsStr())
+                    {
+                        description2 += (*field)->GetData().GetStr();
+                    }
+    if (description2.empty())
+        description2 = "No output description provided";
+
+    description = description1 + " : " + description2;
+
     return n;
 }
 
-int CContextApp::CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2, string &content) 
+int CContextApp::CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2, string &content, string &description) 
 {
     int n = 0;
     CSeq_annot::TData::TFtable::iterator feat1, feat2;
@@ -214,6 +241,32 @@ int CContextApp::CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2, string &co
             content += "Alt alleles do not match\n";
             n++;
         } 
+
+        string description1;
+        if ((*feat1)->IsSetExts())
+            for (CSeq_feat::TExts::const_iterator ext = (*feat1)->GetExts().begin(); ext != (*feat1)->GetExts().end(); ++ext)
+                if ((*ext)->IsSetType() && (*ext)->GetType().IsStr() && (*ext)->GetType().GetStr() == "Description" && (*ext)->IsSetData())
+                    for (CUser_object::TData::const_iterator field = (*ext)->GetData().begin(); field != (*ext)->GetData().end(); ++field)
+                        if ((*field)->IsSetData() && (*field)->GetData().IsStr())
+                        {
+                            description1 += (*field)->GetData().GetStr();
+                        }
+        if (description1.empty())
+            description1 = "No input description provided";
+
+        string description2;
+        if ((*feat2)->IsSetExts())
+            for (CSeq_feat::TExts::const_iterator ext = (*feat2)->GetExts().begin(); ext != (*feat2)->GetExts().end(); ++ext)
+                if ((*ext)->IsSetType() && (*ext)->GetType().IsStr() && (*ext)->GetType().GetStr() == "Description" && (*ext)->IsSetData())
+                    for (CUser_object::TData::const_iterator field = (*ext)->GetData().begin(); field != (*ext)->GetData().end(); ++field)
+                        if ((*field)->IsSetData() && (*field)->GetData().IsStr())
+                        {
+                            description2 += (*field)->GetData().GetStr();
+                        }
+        if (description2.empty())
+            description2 = "No output description provided";
+
+        description = description1 + " : " + description2;
     }
     if (feat1 != v1->SetData().SetFtable().end() || feat2 != v2->SetData().SetFtable().end())
     {
@@ -224,7 +277,7 @@ int CContextApp::CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2, string &co
     return n;
 }
 
-bool  CContextApp::IsVariation(AutoPtr<CObjectIStream>& oistr)
+bool  CContextApp::IsVariation(AutoPtr<CObjectIStream>& oistr, int &n, string &content)
 {
     set<TTypeInfo> matches;
     set<TTypeInfo> candidates;
@@ -235,15 +288,17 @@ bool  CContextApp::IsVariation(AutoPtr<CObjectIStream>& oistr)
     matches   = oistr->GuessDataType(candidates);
     if(matches.size() != 1) 
     {
-        string msg = "Found more than one match for this type of file.  Could not guess data type";
-        NCBI_USER_THROW(msg);
+        n++;
+        content += "Found more than one match for this type of file.  Could not guess data type";
+        return false;
     }
 
     return (*matches.begin())->GetName() == "Variation";
 }
 
 template<class T>
-int CContextApp::CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<CObjectIStream>& var_in2, CVariationNormalization::ETargetContext context, CRef<CScope> scope, string &content)
+int CContextApp::CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<CObjectIStream>& var_in2, CVariationNormalization::ETargetContext context, CRef<CScope> scope, 
+                                   string &content, string &description)
 {
     CRef<T> v1(new T);
     CRef<T> v2(new T);
@@ -265,7 +320,7 @@ int CContextApp::CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<COb
 
     content += strstr.str();
        
-    int n = CompareVar(v1,v2, content); 
+    int n = CompareVar(v1,v2, content, description); 
     return n;
 }
 
@@ -275,6 +330,7 @@ int CContextApp::Run()
     CArgs args = GetArgs();
     string input = args["i"].AsString();
     string test = args["t"].AsString();
+    CNcbiOstream& ostr = args["o"].AsOutputFile();
     bool context_vcf = args["vcf"].AsBoolean();
     bool context_hgvs = args["hgvs"].AsBoolean();
     bool context_varloc = args["varloc"].AsBoolean();
@@ -311,7 +367,6 @@ int CContextApp::Run()
             {
                 num_tests++;
                 xml::node::iterator it = root.insert(root.begin(), xml::node("testcase"));
-                it->get_attributes().insert("name", file2.GetName().c_str());
                 if (context_vcf)
                     it->get_attributes().insert("classname", "VCF");
                 else if (context_hgvs)
@@ -331,23 +386,29 @@ int CContextApp::Run()
                 decomp_stream2.reset(new CDecompressIStream(*fstr, CCompressStream::eGZipFile, CZipCompression::fAllowTransparentRead));
                 var_in2.reset(CObjectIStream::Open(eSerial_AsnText, *decomp_stream2));
     
-
-                bool is_variation = IsVariation(var_in1);
-
-                if (is_variation)
-                    it->get_attributes().insert("type", "Variation");
-                else
-                    it->get_attributes().insert("type", "Seq-annot");
-
                 int n = 0;
                 string content;
-                while (!var_in1->EndOfData() && !var_in2->EndOfData())
+                string description = file2.GetName()+" - ";
+
+                bool is_variation = IsVariation(var_in1,n,content);
+                if (n == 0)
                 {
                     if (is_variation)
-                        n += CorrectAndCompare<CVariation>(var_in1, var_in2, context, scope, content);
+                        it->get_attributes().insert("type", "Variation");
                     else
-                        n += CorrectAndCompare<CSeq_annot>(var_in1, var_in2, context, scope, content);
+                        it->get_attributes().insert("type", "Seq-annot");
+                    
+                    while (!var_in1->EndOfData() && !var_in2->EndOfData())
+                    {
+                        string var_description;
+                        if (is_variation)
+                            n += CorrectAndCompare<CVariation>(var_in1, var_in2, context, scope, content, var_description);
+                        else
+                            n += CorrectAndCompare<CSeq_annot>(var_in1, var_in2, context, scope, content, var_description);
+                        description += var_description;
+                    }
                 }
+                it->get_attributes().insert("name", description.c_str());
 
                 if (n!=0 || !var_in1->EndOfData() || !var_in2->EndOfData())
                 {
@@ -375,7 +436,7 @@ int CContextApp::Run()
 
     xmldoc.set_is_standalone(true);
     xmldoc.set_encoding("ISO-8859-1");
-    NcbiCout << xmldoc;
+    ostr << xmldoc;
     return 0;
 }
 
