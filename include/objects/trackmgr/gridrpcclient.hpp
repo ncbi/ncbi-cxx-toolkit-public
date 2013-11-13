@@ -169,7 +169,7 @@ public:
                       )
         : m_NS_api(CNetScheduleAPI::eAppRegistry, NS_registry_section)
     {
-        LOG_POST(Info << "NS: " << NS_registry_section);
+        LOG_POST(Trace << "NS: " << NS_registry_section);
         static const CNcbiRegistry& cfg = CNcbiApplication::Instance()->GetConfig();
         const string nc_reg(
             NStr::IsBlank(NC_registry_section)
@@ -181,7 +181,7 @@ public:
 
     void x_Init(const string& NC_registry_section)
     {
-        LOG_POST(Info << "NS queue NC: " << NC_registry_section);
+        LOG_POST(Trace << "NS queue NC: " << NC_registry_section);
         m_NC_api = CNetCacheAPI(CNetCacheAPI::eAppRegistry, NC_registry_section);
         m_Grid_cli.reset(new CGridClient(m_NS_api.GetSubmitter(),
                                          m_NC_api,
@@ -219,7 +219,7 @@ public:
                                      job,
                                      timeout_in_seconds
                                     );
-        LOG_POST(Info << "job: " << job.job_id);
+        LOG_POST(Trace << "job: " << job.job_id);
 
         CNetScheduleAPI::EJobStatus status(
             submit_job_handler.WaitForJobCompletion(job, deadline, m_NS_api)
