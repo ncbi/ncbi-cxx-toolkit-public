@@ -172,7 +172,7 @@ string CVDBMgr::FindAccPath(const string& acc) const
 }
 
 
-#define GUARD_SDK
+//#define GUARD_SDK
 #ifdef GUARD_SDK
 DEFINE_STATIC_FAST_MUTEX(sx_SDKMutex);
 # define DECLARE_SDK_GUARD() CFastMutexGuard guard(sx_SDKMutex)
