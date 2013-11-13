@@ -1,0 +1,13 @@
+# $Id$
+
+# Build library "xdiscrepancy_report"
+###############################
+
+SRC = cchecking_class cauto_disc_class cDiscRep_config cDiscRep_tests cDiscRep_output \
+      cDiscRep_util cUtilib cDiscRep_susrule cDiscRep_summ cDiscRep_dt
+
+LIB = xdiscrepancy_report
+
+ASN_DEP = general biblio pub seq seqset submit taxon3
+
+WATCHERS = chenj

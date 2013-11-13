@@ -33,19 +33,18 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
-#include "hDiscRep_app.hpp"
-#include "hchecking_class.hpp"
-#include "hauto_disc_class.hpp"
-#include "hDiscRep_config.hpp"
-#include "hUtilib.hpp"
+//#include <objtools/discrepancy_report/hDiscRep_app.hpp>
+#include <objtools/discrepancy_report/hchecking_class.hpp>
+#include <objtools/discrepancy_report/hauto_disc_class.hpp>
+#include <objtools/discrepancy_report/hDiscRep_config.hpp>
+#include <objtools/discrepancy_report/hUtilib.hpp>
 
 #include <iostream>
 #include <fstream>
 
-USING_NCBI_SCOPE;
-using namespace std;
-using namespace objects;
-using namespace DiscRepNmSpc;
+BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
+USING_SCOPE(DiscRepNmSpc);
 
 static CDiscRepInfo thisInfo;
 static string       strtmp;
@@ -414,3 +413,5 @@ void CRepConfig :: Export(vector <CRef <CClickableText> >& item_list)
    thisGrp.tests_on_BioseqSet.clear();
    thisGrp.tests_on_SubmitBlk.clear();
 };
+
+END_NCBI_SCOPE

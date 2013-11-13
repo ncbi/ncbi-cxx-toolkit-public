@@ -34,10 +34,10 @@
 #include <objects/seqfeat/SeqFeatData.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/misc/sequence_macros.hpp>
-#include "hauto_disc_class.hpp"
+#include <objtools/discrepancy_report/hauto_disc_class.hpp>
 
-using namespace DiscRepNmSpc;
-using namespace DiscRepAutoNmSpc;
+BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 void CAutoDiscClass::x_LookAtSeqEntry_set_set_annot_E_E_data_ftable_E_E_ETC( CSeq_feat & arg0_raw )
 { // type Sequence
@@ -209,5 +209,6 @@ void CAutoDiscClass::LookAtSeqEntry( CSeq_entry & arg0 )
   }
 } // end of LookAtSeqEntry
 
+END_NCBI_SCOPE
 
 

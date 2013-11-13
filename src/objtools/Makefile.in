@@ -6,8 +6,8 @@
 REQUIRES = objects
 
 SUB_PROJ = unit_test_util readers blast lds lds2 data_loaders simple alnmgr cddalignview \
-	test manip format validator asniotest align edit writers \
-	cleanup seqmasks_io eutils align_format snputil uudutil
+	test manip format validator discrepancy_report asniotest align edit writers \
+	cleanup seqmasks_io eutils align_format snputil uudutil 
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta

@@ -49,14 +49,10 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objects/submit/Submit_block.hpp>
 
-#include "hDiscRep_tests.hpp"
-
-using namespace ncbi;
-using namespace objects;
+#include <objtools/discrepancy_report/hDiscRep_tests.hpp>
 
 BEGIN_NCBI_SCOPE
-
-namespace DiscRepNmSpc{
+USING_SCOPE(objects);
 
    class CCheckingClass 
    {
@@ -110,7 +106,6 @@ cerr << "GetNAme " << (*it)->GetName() << endl;
          vector < vector <const CSeqdesc*> * >   m_vec_desc;
          vector < vector <const CSeq_entry*> * > m_vec_entry; 
    };
-};
 
 END_NCBI_SCOPE
 

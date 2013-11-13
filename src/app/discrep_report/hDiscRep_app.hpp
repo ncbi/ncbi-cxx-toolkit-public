@@ -40,13 +40,11 @@ using namespace ncbi;
 
 BEGIN_NCBI_SCOPE
 
-namespace DiscRepNmSpc{
-     class CDiscRepApp : public CNcbiApplication
-     {
-       public:
-         virtual void Init(void);
-         virtual int  Run (void);
-     };
+class CDiscRepApp : public CNcbiApplication
+{
+public:
+    virtual void Init(void);
+    virtual int  Run (void);
 };
 
 END_NCBI_SCOPE

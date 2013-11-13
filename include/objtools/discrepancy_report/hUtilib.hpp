@@ -50,8 +50,8 @@
 #include <memory>
 #include <exception>
 
-using namespace ncbi;
-using namespace objects;
+BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 void MultiTokenize(vector <string>& arr, const string& src, const string& delim);
 
@@ -175,5 +175,7 @@ T* NewDataType(unsigned cnt)
 }
 
 string GetTime();
+
+END_NCBI_SCOPE
 
 #endif

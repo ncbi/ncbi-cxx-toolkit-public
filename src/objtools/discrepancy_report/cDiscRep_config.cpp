@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbimisc.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/fasta.hpp>
@@ -42,17 +43,15 @@
 
 #include <sstream>
 
-#include "hauto_disc_class.hpp"
-#include "hDiscRep_config.hpp"
-#include "hDiscRep_tests.hpp"
-#include "hUtilib.hpp"
-#include "hDiscRep_summ.hpp"
+#include <objtools/discrepancy_report/hauto_disc_class.hpp>
+#include <objtools/discrepancy_report/hDiscRep_config.hpp>
+#include <objtools/discrepancy_report/hDiscRep_tests.hpp>
+#include <objtools/discrepancy_report/hUtilib.hpp>
+#include <objtools/discrepancy_report/hDiscRep_summ.hpp>
 
-using namespace ncbi;
-using namespace objects;
-using namespace DiscRepNmSpc;
-using namespace DiscRepAutoNmSpc;
-using namespace validator;
+BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
+USING_SCOPE(DiscRepNmSpc);
 
 // removed from *_app.cpp
 // Initialization
@@ -121,6 +120,7 @@ map <EMolecule_type, string>               CDiscRepInfo :: moltp_name;
 map <ETechnique_type, CMolInfo::ETech>     CDiscRepInfo :: techtp_mitech;
 map <ETechnique_type, string>              CDiscRepInfo :: techtp_name;
 vector <string>                            CDiscRepInfo :: s_putative_replacements;
+vector <string>                            CDiscRepInfo :: suspect_name_category_names;
 map <ECDSGeneProt_field, string>           CDiscRepInfo :: cgp_field_name;
 map <ECDSGeneProt_feature_type_constraint, string>   CDiscRepInfo :: cgp_feat_name;
 vector <vector <string> >                            CDiscRepInfo :: susterm_summ;
@@ -157,7 +157,6 @@ vector < CRef <CTestAndRepData> >    CTestGrp :: tests_on_BioseqSet;
 vector < CRef <CTestAndRepData> >    CTestGrp :: tests_on_SubmitBlk;
 
 set <string> CDiscTestInfo :: tests_run;
-CSeq_entry_Handle CRepConfig :: m_TopSeqEntry;
 
 static CDiscRepInfo thisInfo;
 static string       strtmp, tmp;
@@ -167,7 +166,7 @@ static CDiscTestInfo thisTest;
 static CTestGrp  thisGrp;
 
 
-// removed from *_app.cpp, for suspect rules in a file
+// removed from *_app.cpp
 const char* fix_type_names[] = {
   "None",
   "Typo",
@@ -192,7 +191,8 @@ CTry* CTry::factory (string type, CSeq_entry_Handle* tse)
    else return (new CTry_sub2);
 };
 
-void CRepConfig :: InitParams(const IRWRegistry& reg)
+
+void CRepConfig :: x_InitParams(const IRWRegistry& reg)
 {
 // cerr << "InitParams " << CTime(CTime::eCurrent).AsString() << endl;
     int i;
@@ -348,31 +348,21 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
     // ini. suspect rule file && susrule_fixtp_summ
     strtmp = reg.Get("RuleFiles", "SuspectRuleFile");
     if (!CFile(strtmp).Exists()) strtmp = "/ncbi/data/product_rules.prt";
-    if (CFile(strtmp).Exists()) 
-                 ReadInBlob(*thisInfo.suspect_prod_rules, strtmp);
+    if (CFile(strtmp).Exists()) ReadInBlob(*thisInfo.suspect_prod_rules, strtmp);
 
     CSummarizeSusProdRule summ_susrule;
-// unsigned ridx = 0;
     ITERATE (list <CRef <CSuspect_rule> >, rit, thisInfo.suspect_prod_rules->Get()) {
        arr.clear();
        EFix_type fixtp = (*rit)->GetRule_type();
-       if (fixtp == eFix_type_typo) 
-                   strtmp = CBioseq_on_SUSPECT_RULE :: GetName_typo();
+       if (fixtp == eFix_type_typo) strtmp = CBioseq_on_SUSPECT_RULE :: GetName_typo();
        else if (fixtp == eFix_type_quickfix) 
                       strtmp = CBioseq_on_SUSPECT_RULE::GetName_qfix();
        else strtmp = CBioseq_on_SUSPECT_RULE :: GetName_name();
-/*
-if (fixtp == eFix_type_database) {
-cerr << "ridx " << ridx << endl;
-cerr << "rule names " << fix_type_names[(int)fixtp] <<endl;
-}
-*/
        arr.push_back(strtmp);  // test_name
        arr.push_back(fix_type_names[(int)fixtp]);  // fixtp_name
        arr.push_back(summ_susrule.SummarizeSuspectRuleEx(**rit));
 
        thisInfo.susrule_summ.push_back(arr);
-// ridx++;
     }
 
     // ini. of susterm_summ for suspect_prod_terms if necessary
@@ -392,7 +382,7 @@ cerr << "rule names " << fix_type_names[(int)fixtp] <<endl;
           // CTestAndRepData can't have these functions overwritten. 
           if (this_term.search_func == CTestAndRepData :: EndsWithPattern)
                 strtmp = "end";
-          else if (this_term.search_func ==CTestAndRepData :: StartsWithPattern)
+          else if (this_term.search_func == CTestAndRepData :: StartsWithPattern)
                  strtmp = "start";
           else strtmp = "contain";
           arr.push_back(strtmp); // test_desc;
@@ -687,6 +677,11 @@ cerr << "rule names " << fix_type_names[(int)fixtp] <<endl;
    thisInfo.s_putative_replacements 
             = NStr::Tokenize(strtmp, ",", thisInfo.s_putative_replacements);
 
+   // ini. of suspect_name_category_names
+   strtmp = reg.Get("StringVecIni", "SuspectNameCategoryNames");
+   thisInfo.suspect_name_category_names
+        = NStr::Tokenize(strtmp, ",", thisInfo.suspect_name_category_names);
+
    // ini. of cgp_field_name
    for (i = eCDSGeneProt_field_cds_comment; i <= eCDSGeneProt_field_codon_start; i++) {
      strtmp = ENUM_METHOD_NAME(ECDSGeneProt_field)()->FindName(i, true);
@@ -976,7 +971,7 @@ void CRepConfig :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
 
     // ini. of comment_rules/validrules.prt for ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX
     CValidError errors;
-    CValidError_imp imp(thisInfo.scope->GetObjectManager(),&errors);
+    validator::CValidError_imp imp(thisInfo.scope->GetObjectManager(),&errors);
     thisInfo.comment_rules = imp.GetStructuredCommentRules();
 
     CCheckingClass myChecker;
@@ -994,8 +989,7 @@ cout << "Number of bioseq: " << myChecker.GetNumBioseq() << endl;
 
 
 static const s_test_property test1_list[] = {
-   {"TAX_LOOKUP_MISSING", fDiscrepancy | fAsndisc},
-   {"TAX_LOOKUP_MISMATCH", fDiscrepancy | fAsndisc},
+   {"SUSPECT_PRODUCT_NAMES", fDiscrepancy | fAsndisc},
 };
 
 static const s_test_property test_list[] = {
@@ -2477,3 +2471,6 @@ void CRepConfDiscrepancy :: Run(CRef <CRepConfig> config)
   CRef <CSeq_entry> seq_ref ((CSeq_entry*)(m_TopSeqEntry.GetCompleteSeq_entry().GetPointer()));
   CheckThisSeqEntry(seq_ref);
 };
+
+
+END_NCBI_SCOPE

@@ -54,17 +54,17 @@
 #include <objmgr/util/sequence.hpp>
 #include <objtools/format/items/qualifiers.hpp>
 
-#include "hDiscRep_config.hpp"
-#include "hDiscRep_tests.hpp"
-#include "hUtilib.hpp"
+#include <objtools/discrepancy_report/hDiscRep_config.hpp>
+#include <objtools/discrepancy_report/hDiscRep_tests.hpp>
+#include <objtools/discrepancy_report/hUtilib.hpp>
 
 #include <sstream> 
 
-USING_NCBI_SCOPE;
+BEGIN_NCBI_SCOPE
 
-using namespace DiscRepNmSpc;
-using namespace objects;
-using namespace sequence;
+USING_SCOPE(DiscRepNmSpc);
+USING_SCOPE(objects);
+USING_SCOPE(sequence);
 
 static string strtmp;
 static vector <string> arr;
@@ -775,14 +775,18 @@ bool CSuspectRuleCheck :: DoesObjectMatchMolinfoFieldConstraint (const CSeq_feat
   const CMolinfo_field& mol_field = mol_cons.GetField();
   switch (mol_field.Which()) {
       case CMolinfo_field::e_Molecule:
-        if (!mol && mol_field.GetMolecule() == eMolecule_type_unknown) return true;
-        else if (mol && mol->GetBiomol() == thisInfo.moltp_biomol[mol_field.GetMolecule()]);
-                   return true; 
+        if (!mol && mol_field.GetMolecule() == eMolecule_type_unknown) {
+            return true;
+        } else if (mol && mol->GetBiomol() == thisInfo.moltp_biomol[mol_field.GetMolecule()]) {
+            return true; 
+        }
         break;
       case CMolinfo_field::e_Technique:
-        if (!mol && mol_field.GetTechnique() == eTechnique_type_unknown) return true;
-        else if (mol && mol->GetTech() == thisInfo.techtp_mitech[mol_field.GetTechnique()]);
-                  return true;
+        if (!mol && mol_field.GetTechnique() == eTechnique_type_unknown) {
+            return true;
+        } else if (mol && mol->GetTech() == thisInfo.techtp_mitech[mol_field.GetTechnique()]) {
+            return true;
+        }
         break;
       case CMolinfo_field::e_Completedness:
         {
@@ -2095,7 +2099,7 @@ bool CSuspectRuleCheck :: DoesFeatureMatchLocationConstraint(const CSeq_feat& fe
   if (loc_cons.GetStrand() != eStrand_constraint_any) {
     if (!m_bioseq_hl) return false;
     else if (m_bioseq_hl.IsAa()) {
-      const CSeq_feat* cds = GetCDSForProduct(m_bioseq_hl);
+      const CSeq_feat* cds = sequence::GetCDSForProduct(m_bioseq_hl);
       if (!cds) return false;
       else if (!DoesStrandMatchConstraint (cds->GetLocation(), loc_cons))
         return false;
@@ -3373,7 +3377,7 @@ bool CSuspectRuleCheck :: DoesFeatureMatchCGPQualConstraint (const CSeq_feat& fe
   CRef <CCGPSetData> cgp_set (new CCGPSetData);
   const CSeqFeatData& feat_dt = feat.GetData();
   if (feat_dt.IsCdregion() || feat_dt.IsProt()) {
-    if (feat_dt.IsProt()) cgp_set->cds = GetCDSForProduct(m_bioseq_hl);
+    if (feat_dt.IsProt()) cgp_set->cds = sequence::GetCDSForProduct(m_bioseq_hl);
     else cgp_set->cds = &feat;
     cgp_set->gene =CTestAndRepData :: GetGeneForFeature(*(cgp_set->cds)).GetPointer(); // ??why return ref
     cgp_set->mrna = GetBestMrnaForCds(*(cgp_set->cds), *thisInfo.scope);
@@ -3516,7 +3520,7 @@ bool CSuspectRuleCheck :: DoesFeatureMatchCGPPseudoConstraint (const CSeq_feat& 
          if (sf_is_pseudo) any_pseudo = true;
        } 
        else if (sf_dt.IsProt()) {
-         const CSeq_feat* cds = GetCDSForProduct(m_bioseq_hl);
+         const CSeq_feat* cds = sequence::GetCDSForProduct(m_bioseq_hl);
          if (cds) {
            CConstRef <CSeq_feat> gene = CTestAndRepData :: GetGeneForFeature (*cds);
            if (gene.NotEmpty() && gene->CanGetPseudo() && gene->GetPseudo()) any_pseudo = true;
@@ -3535,7 +3539,7 @@ bool CSuspectRuleCheck :: DoesFeatureMatchCGPPseudoConstraint (const CSeq_feat& 
          if (sf_is_pseudo) any_pseudo = true;
        } 
        else if (sf_dt.IsProt()) {
-         const CSeq_feat* cds = GetCDSForProduct(m_bioseq_hl);
+         const CSeq_feat* cds = sequence::GetCDSForProduct(m_bioseq_hl);
          if (!cds) {
            mrna = GetBestMrnaForCds(*cds, *thisInfo.scope); //GetmRNAforCDS (cds); above
            if (mrna.NotEmpty() && mrna->CanGetPseudo() && mrna->GetPseudo()) any_pseudo = true;
@@ -3553,7 +3557,7 @@ bool CSuspectRuleCheck :: DoesFeatureMatchCGPPseudoConstraint (const CSeq_feat& 
          if (sf_is_pseudo) any_pseudo = true;
        } 
        else if (sf_dt.IsProt()) {
-         const CSeq_feat* cds = GetCDSForProduct(m_bioseq_hl);
+         const CSeq_feat* cds = sequence::GetCDSForProduct(m_bioseq_hl);
          if (cds && cds->CanGetPseudo() && cds->GetPseudo()) any_pseudo = true;
        } 
        else {
@@ -3788,7 +3792,7 @@ bool CSuspectRuleCheck :: DoesObjectMatchConstraint(const CSeq_feat& data, const
     case CConstraint_choice::e_Translation:
       /* must be coding region or protein feature */
       if (data.GetData().IsProt()) {
-           const CSeq_feat* cds = GetCDSForProduct(m_bioseq_hl);
+           const CSeq_feat* cds = sequence::GetCDSForProduct(m_bioseq_hl);
            if (cds)
               return DoesCodingRegionMatchTranslationConstraint (*cds, cons.GetTranslation());
       }
@@ -3856,7 +3860,7 @@ bool CSuspectRuleCheck :: DoesStringMatchSuspectRule(const CBioseq_Handle& biose
     const CSeq_feat* feat_pnt = const_cast <CSeq_feat*>(&feat);
     /* we want to list the coding region, rather than the protein feature, if we can */
     if (feat.GetData().IsProt()) {
-      const CSeq_feat* cds = GetCDSForProduct(m_bioseq_hl);
+      const CSeq_feat* cds = sequence::GetCDSForProduct(m_bioseq_hl);
       if (cds) feat_pnt = const_cast <CSeq_feat*>(cds);
     }
 
@@ -3869,3 +3873,5 @@ bool CSuspectRuleCheck :: DoesStringMatchSuspectRule(const CBioseq_Handle& biose
 
   return false;
 };
+
+END_NCBI_SCOPE

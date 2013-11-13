@@ -101,12 +101,9 @@
 #include <objtools/format/flat_file_config.hpp>
 #include <objtools/format/flat_file_generator.hpp>
 
-using namespace ncbi;
-using namespace objects;
-
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
-namespace DiscRepNmSpc {
   typedef map < string, string> Str2Str;
   typedef map < string, vector < string > > Str2Strs;
   typedef map<string, unsigned>  Str2UInt;
@@ -3950,8 +3947,6 @@ unsigned m_cnt;
 
        virtual string GetName() const  = 0;
   };
-};
-
 
 END_NCBI_SCOPE
 

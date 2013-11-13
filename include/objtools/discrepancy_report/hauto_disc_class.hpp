@@ -42,16 +42,17 @@
 #include <objects/seq/Map_ext.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
 
-#include "hchecking_class.hpp"
+#include <objtools/discrepancy_report/hchecking_class.hpp>
 
 
-namespace DiscRepAutoNmSpc {
+BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
 
 class CAutoDiscClass { 
 public: 
   CAutoDiscClass(
     CScope & scope,
-    DiscRepNmSpc::CCheckingClass & newSeqEntry ) : 
+    CCheckingClass & newSeqEntry ) : 
     m_Scope(scope), 
     m_NewSeqEntry(newSeqEntry), 
     m_LastArg_x_LookAtSeqEntry_seq_seq(NULL),
@@ -84,13 +85,13 @@ void x_LookAtSeqEntry_set_set_seq_set( Tcontainer_ncbi_cref_cseq_entry_ & arg0 )
   void x_LookAtSeqEntry_set( CBioseq_set & arg0 );
 
   CScope & m_Scope;
-  DiscRepNmSpc::CCheckingClass & m_NewSeqEntry;
+  CCheckingClass & m_NewSeqEntry;
 
   CBioseq* m_LastArg_x_LookAtSeqEntry_seq_seq;
 
   int m_Dummy;
 }; // end of CAutoDiscClass
-};  // end of namespace
 
+END_NCBI_SCOPE
 
 #endif /* HAUTODISCCLASS__HPP */

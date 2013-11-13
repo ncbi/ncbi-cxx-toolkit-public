@@ -32,10 +32,13 @@
  */
 
 #include <ncbi_pch.hpp>
-#include "hDiscRep_config.hpp"
-#include "hDiscRep_tests.hpp"
+#include <objtools/discrepancy_report/hDiscRep_config.hpp>
+#include <objtools/discrepancy_report/hDiscRep_tests.hpp>
 
-using namespace DiscRepNmSpc;
+BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
+USING_SCOPE(DiscRepNmSpc);
+
 CDiscRepInfo::CDiscRepInfo () 
 {
 s_SuspectProductNameData suspect_prod_terms[]={
@@ -415,9 +418,8 @@ s_SuspectProductNameData suspect_prod_terms[]={
   { "unbalanced brackets or parentheses" , CTestAndRepData::ContainsUnbalancedParentheses, eSuspectNameType_InappropriateSymbol, NULL, NULL } ,
   { "long product name that may contain descriptive information more appropriate in a note", CTestAndRepData::IsTooLong, eSuspectNameType_QuickFix, NULL, NULL } ,
   { "Product name begins with possible, potential, predicted or probable.  Please use putative.", CTestAndRepData::StartsWithPutativeReplacement, eSuspectNameType_QuickFix, "putative", CTestAndRepData::UsePutative } ,
-
-  { "CDS", CTestAndRepData::CTestAndRepData::NormalSearch, eSuspectNameType_None, NULL, NULL } ,
-  { "doubtful", CTestAndRepData::CTestAndRepData::NormalSearch, eSuspectNameType_None, NULL, NULL } ,
+  { "CDS", CTestAndRepData::NormalSearch, eSuspectNameType_None, NULL, NULL } ,
+  { "doubtful", CTestAndRepData::NormalSearch, eSuspectNameType_None, NULL, NULL } ,
   { "alternate protein name", CTestAndRepData::IsSingleWordOrWeaselPlusSingleWord, eSuspectNameType_QuickFix, "hypothetical protein", CTestAndRepData::ReplaceWholeNameFunc } , 
   { "conser", CTestAndRepData::IsSingleWordOrWeaselPlusSingleWord, eSuspectNameType_QuickFix, "hypothetical protein", CTestAndRepData::ReplaceWholeNameFunc } , 
   { "conserve", CTestAndRepData::IsSingleWordOrWeaselPlusSingleWord, eSuspectNameType_QuickFix, "hypothetical protein", CTestAndRepData::ReplaceWholeNameFunc } , 
@@ -521,3 +523,5 @@ s_SuspectProductNameData suspect_prod_terms[]={
 };
 
 };
+
+END_NCBI_SCOPE

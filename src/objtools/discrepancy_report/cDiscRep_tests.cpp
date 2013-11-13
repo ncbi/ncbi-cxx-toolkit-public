@@ -94,18 +94,16 @@
 //#include <algo/blast/core/ncbi_std.h>
 
 //#include "hDiscRep_app.hpp"
-#include "hDiscRep_config.hpp"
-#include "hDiscRep_tests.hpp"
-#include "hchecking_class.hpp"
+#include <objtools/discrepancy_report/hDiscRep_config.hpp>
+#include <objtools/discrepancy_report/hDiscRep_tests.hpp>
+#include <objtools/discrepancy_report/hchecking_class.hpp>
 
-#include "hUtilib.hpp"
+#include <objtools/discrepancy_report/hUtilib.hpp>
 
-USING_NCBI_SCOPE;
-using namespace objects;
-using namespace sequence;
-using namespace DiscRepNmSpc;
-using namespace feature;
-using namespace validator;
+BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
+USING_SCOPE(DiscRepNmSpc);
+
 
 static CDiscRepInfo thisInfo;
 static string strtmp(kEmptyStr);
@@ -191,9 +189,9 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithStaticList()
 
      // add coding region rather than protein 
      if (sf_dt.GetSubtype() == CSeqFeatData::eSubtype_prot) {
-         feat_in_use = GetCDSForProduct(m_bioseq_hl);
+         feat_in_use = sequence::GetCDSForProduct(m_bioseq_hl);
          // find BioSource, to check whether we want to run all categories
-         biosrc_p = GetBioSource (m_bioseq_hl);
+         biosrc_p = sequence::GetBioSource (m_bioseq_hl);
      }
      else continue;
 
@@ -349,9 +347,9 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
 
      // add coding region rather than protein
      if (sf_dt.GetSubtype() == CSeqFeatData::eSubtype_prot) {
-         feat_in_use = GetCDSForProduct(m_bioseq_hl);
+         feat_in_use = sequence::GetCDSForProduct(m_bioseq_hl);
          // find BioSource, to check whether we want to run all categories
-         biosrc_p = GetBioSource (m_bioseq_hl);
+         biosrc_p = sequence::GetBioSource (m_bioseq_hl);
      }
      else continue;
      
@@ -364,19 +362,14 @@ cerr << "prot_nm " << prot_nm << endl;
        rule_idx = 0;
        string test_name, summ;
        ITERATE (list <CRef <CSuspect_rule> >, rit, thisInfo.suspect_prod_rules->Get()) {
-         if ( rule_check.DoesStringMatchSuspectRule(m_bioseq_hl, prot_nm, *feat_in_use, **rit)){
-/*
-cerr << "yes ridx " << rule_idx << " prot_nm " << prot_nm << endl;
-cerr << MSerial_AsnText << **rit << endl;
-*/
+         if (rule_check.DoesStringMatchSuspectRule(m_bioseq_hl, prot_nm, *feat_in_use, **rit)){
               thisInfo.test_item_list[GetName()].push_back(
                    NStr::UIntToString((int)(*rit)->GetRule_type()) + "$" 
-                   + NStr::UIntToString(rule_idx) + "@" 
-                   + GetDiscItemText(*feat_in_use));
+                   + NStr::UIntToString(rule_idx) + "@" + GetDiscItemText(*feat_in_use));
               test_name = thisInfo.susrule_summ[rule_idx][0];
               summ = thisInfo.susrule_summ[rule_idx][2];
               thisInfo.test_item_objs[test_name + "$" + summ].push_back(
-                                             CConstRef<CObject>(feat_in_use));
+                                                     CConstRef<CObject>(feat_in_use));
          }
          rule_idx ++;
        }
@@ -403,28 +396,21 @@ void CBioseq_on_SUSPECT_RULE :: GetReportForRules(CRef <CClickableItem>& c_item)
        test_name = thisInfo.susrule_summ[rule_idx][0];
        fixtp_name = thisInfo.susrule_summ[rule_idx][1];
        summ = thisInfo.susrule_summ[rule_idx][2];
-/*
-cerr << "getreport rule_idx " << rule_idx 
-   << "  test_name " << test_name 
-   << " fixtp_name " << fixtp_name
-   << " summ " << summ << endl;
-*/
-       AddSubcategory(name_cat_citem, test_name+"$"+summ, &(rit->second), 
-                 "feature " + summ, "features " + summ,  e_OtherComment);
+       AddSubcategory(name_cat_citem, test_name+"$"+summ, &(rit->second), "feature " + summ, 
+                                                 "features " + summ,  e_OtherComment);
      } 
      name_cat_citem->setting_name = GetName();
      name_cat_citem->description = fixtp_name;
      name_cat_citem->expanded = true;
      c_item->item_list.insert(c_item->item_list.end(), 
-            name_cat_citem->item_list.begin(), name_cat_citem->item_list.end());
+                          name_cat_citem->item_list.begin(), name_cat_citem->item_list.end());
      c_item->subcategories.push_back(name_cat_citem);
      c_item->obj_list.insert(c_item->obj_list.end(), 
-             name_cat_citem->obj_list.begin(), name_cat_citem->obj_list.end());
+                           name_cat_citem->obj_list.begin(), name_cat_citem->obj_list.end());  
    }   
 
-   c_item->description 
-      = GetContainsComment(c_item->item_list.size(), "product_name") 
-          + "suspect phrase or characters";
+   c_item->description = GetContainsComment(c_item->item_list.size(), "product_name") 
+                            + "suspect phrase or characters";
    c_item->expanded = true;
    fixtp2rule_feats.clear();
    rule2feats.clear();
@@ -630,7 +616,7 @@ void CBioseq_DISC_SUSPECT_RRNA_PRODUCTS :: GetReport(CRef <CClickableItem>& c_it
 void CBioseq_TEST_ORGANELLE_PRODUCTS :: TestOnObj(const CBioseq& bioseq)
 {
    CBioseq_Handle bioseq_hl = thisInfo.scope->GetBioseqHandle(bioseq);
-   const CBioSource* biosrc = GetBioSource(bioseq_hl); // biosrc of seqdesc
+   const CBioSource* biosrc = sequence::GetBioSource(bioseq_hl); // biosrc of seqdesc
    if (!biosrc) return;
 
    int genome = biosrc->GetGenome();
@@ -935,8 +921,8 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
                        ITERATE (vector <const CSeq_feat*>, kt, cd_feat) {
                          if (IsPseudoSeqFeatOrXrefGene(*kt)) continue;
                          has_CDs = true;
-                         CConstRef <CSeq_feat> mRNA = GetBestMrnaForCds(**kt, *thisInfo.scope, 
-                                                                       fBestFeat_NoExpensive);
+                         CConstRef <CSeq_feat> mRNA = sequence::GetBestMrnaForCds(**kt, *thisInfo.scope, 
+                                                                       sequence::fBestFeat_NoExpensive);
                          if (mRNA.NotEmpty()) { 
                             thisInfo.test_item_list[GetName_eu_mrna()].push_back("yes");
                             m_check_eu_mrna = false; // is m_check_eu_mrna necessary?
@@ -1008,8 +994,8 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
                && thisTest.tests_run.find(GetName_rbs()) != thisTest.tests_run.end()) {
        ITERATE (vector <const CSeq_feat*>, it, rbs_feat) {
          CConstRef <CSeq_feat>
-             rbs_gene = GetBestOverlappingFeat((*it)->GetLocation(),
-                                      CSeqFeatData::e_Gene, eOverlap_Contained,
+             rbs_gene = sequence::GetBestOverlappingFeat((*it)->GetLocation(),
+                                      CSeqFeatData::e_Gene, sequence::eOverlap_Contained,
                                       *thisInfo.scope);
          if (rbs_gene.NotEmpty())
              thisInfo.test_item_list[GetName_rbs()].push_back(GetDiscItemText(**it));
@@ -1085,7 +1071,7 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
         jt = it + 1;
         if (jt != gene_feat.end()) {
           sequence::ECompare
-              ovp = Compare( (*it)->GetLocation(), (*jt)->GetLocation(), thisInfo.scope);
+              ovp = sequence::Compare( (*it)->GetLocation(), (*jt)->GetLocation(), thisInfo.scope);
           if (ovp == sequence::eSame
                    && (*it)->GetLocation().GetStrand() != (*jt)->GetLocation().GetStrand()){
 
@@ -1740,8 +1726,8 @@ void CBioseq_on_Aa :: GetFeatureList4Gene(const CSeq_feat* gene, const vector <c
       const CGene_ref* feat_gene_ref = (*it)->GetGeneXref();
       if (feat_gene_ref) {
          CConstRef <CSeq_feat> 
-            feat_gene =GetBestOverlappingFeat((*it)->GetLocation(), CSeqFeatData::e_Gene,
-                                       eOverlap_Contained, *thisInfo.scope);
+            feat_gene = sequence::GetBestOverlappingFeat((*it)->GetLocation(), CSeqFeatData::e_Gene,
+                                       sequence::eOverlap_Contained, *thisInfo.scope);
          if (feat_gene.GetPointer() == *it) // ? need to check the pointers
             exist_ls[i] = 1; 
          else exist_ls[i] = 0;
@@ -1872,8 +1858,8 @@ void CBioseq_DISC_FEAT_OVERLAP_SRCFEAT :: TestOnObj(const CBioseq& bioseq)
       if (feat_right < src_left) continue;
       if (feat_left > src_right) break;
       sequence::ECompare 
-         ovp = Compare((*it)->GetLocation(), (*jt)->GetLocation(), thisInfo.scope);
-      if (ovp != eNoOverlap && ovp != eContained && ovp != eSame) {
+         ovp = sequence::Compare((*it)->GetLocation(), (*jt)->GetLocation(), thisInfo.scope);
+      if (ovp != sequence::eNoOverlap && ovp != sequence::eContained && ovp != sequence::eSame) {
          thisInfo.test_item_list[GetName()].push_back(src_desc + "$" + feat_desc);
          thisInfo.test_item_objs[GetName()+"$"+src_desc].push_back(CConstRef <CObject>(*jt));
          if (!i) {
@@ -1922,7 +1908,7 @@ void CBioseq_CDS_TRNA_OVERLAP :: TestOnObj(const CBioseq& bioseq)
          ovlp = sequence::Compare((*it)->GetLocation(), (*jt)->GetLocation(), thisInfo.scope);
        if ( ((cd_str == eNa_strand_minus && trna_str == eNa_strand_minus )
                         || (cd_str != eNa_strand_minus && trna_str != eNa_strand_minus)) 
-             && ovlp != eNoOverlap) {
+             && ovlp != sequence::eNoOverlap) {
           thisInfo.test_item_list[GetName()].push_back(
                           bioseq_cd_desc + "#" + GetDiscItemText(**jt));
        }
@@ -2113,8 +2099,8 @@ void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
         if (ignore[j]) continue;
         const CSeq_loc& loc2 = cd_feat[j]->GetLocation();
         str2 = loc2.GetStrand();
-        sequence:ECompare loc_cmp = Compare(loc1, loc2, thisInfo.scope);
-        if (loc_cmp == eSame || loc_cmp == eContained || loc_cmp == eContains) {
+        sequence::ECompare loc_cmp = sequence::Compare(loc1, loc2, thisInfo.scope);
+        if (loc_cmp == sequence::eSame || loc_cmp == sequence::eContained || loc_cmp == sequence::eContains) {
           desc1 = GetDiscItemText(*cd_feat[i]);
           desc2 = GetDiscItemText(*cd_feat[j]);
           if (StrandOk(str1, str2)) {
@@ -2194,9 +2180,9 @@ void CBioseq_PSEUDO_MISMATCH :: FindPseudoDiscrepancies(const CSeq_feat& seq_fea
     const CGene_ref* xref_gene = seq_feat.GetGeneXref();
     if ( xref_gene ) return;//not empty
     else {
-      CConstRef <CSeq_feat> gene_olp= GetBestOverlappingFeat(seq_feat.GetLocation(),
+      CConstRef <CSeq_feat> gene_olp = sequence::GetBestOverlappingFeat(seq_feat.GetLocation(),
                                                              CSeqFeatData::e_Gene,
-                                                             eOverlap_Contained,
+                                                             sequence::eOverlap_Contained,
                                                              *thisInfo.scope);
       if (gene_olp.Empty()) return;
       if (seq_feat.CanGetPseudo() && seq_feat.GetPseudo() 
@@ -2337,9 +2323,9 @@ bool CBioseqTestAndRepData :: IsPseudoSeqFeatOrXrefGene(const CSeq_feat* seq_fea
      const CSeqFeatData& seq_feat_dt = seq_feat->GetData();
      if (seq_feat_dt.IsGene()) rvl = seq_feat_dt.GetGene().GetPseudo();
      else {
-        CConstRef <CSeq_feat> gene_olp= GetBestOverlappingFeat(seq_feat->GetLocation(),
+        CConstRef <CSeq_feat> gene_olp = sequence::GetBestOverlappingFeat(seq_feat->GetLocation(),
                                                              CSeqFeatData::e_Gene,
-                                                             eOverlap_Contained,
+                                                             sequence::eOverlap_Contained,
                                                              *thisInfo.scope);
         if (gene_olp.Empty()) rvl = false;
         else rvl = IsPseudoSeqFeatOrXrefGene(gene_olp.GetPointer());
@@ -2443,9 +2429,9 @@ void CBioseq_on_Aa :: ReportPartialConflictsForFeatureType(vector <const CSeq_fe
   ITERATE (vector <const CSeq_feat*>, it, seq_feats) {
     gene_feat_4_feat = CConstRef <CSeq_feat> (GetGeneForFeature(**it));
     if (gene_feat_4_feat.NotEmpty()) {
-      feat_loc = Seq_loc_Merge((*it)->GetLocation(), 
+      feat_loc = sequence::Seq_loc_Merge((*it)->GetLocation(), 
                      CSeq_loc::fMerge_Overlapping | CSeq_loc::fSort, thisInfo.scope);
-      gene_loc = Seq_loc_Merge(gene_feat_4_feat->GetLocation(),
+      gene_loc = sequence::Seq_loc_Merge(gene_feat_4_feat->GetLocation(),
                       CSeq_loc::fMerge_Overlapping | CSeq_loc::fSort, thisInfo.scope); 
       feat_strand = feat_loc->GetStrand();
       if (feat_strand == eNa_strand_minus) {
@@ -2712,18 +2698,18 @@ CConstRef <CSeq_feat> CBioseqTestAndRepData :: GetmRNAforCDS(const CSeq_feat& cd
   }
 
   /* try by location if not by xref */
-  CConstRef <CSeq_feat> mRNA = GetBestOverlappingFeat(cd_feat.GetLocation(),
+  CConstRef <CSeq_feat> mRNA = sequence::GetBestOverlappingFeat(cd_feat.GetLocation(),
                                   CSeqFeatData::eSubtype_mRNA,
-                                  eOverlap_Subset,
+                                  sequence::eOverlap_Subset,
                                   *thisInfo.scope);
   if (mRNA.Empty())
-      mRNA = GetBestOverlappingFeat(cd_feat.GetLocation(), CSeqFeatData::eSubtype_mRNA,
-                                                           eOverlap_Contained,
+      mRNA = sequence::GetBestOverlappingFeat(cd_feat.GetLocation(), CSeqFeatData::eSubtype_mRNA,
+                                                           sequence::eOverlap_Contained,
                                                            *thisInfo.scope);
   if (mRNA.Empty()) {
       CConstRef <CBioseq> 
           bioseq = 
-             GetBioseqFromSeqLoc(cd_feat.GetLocation(), *thisInfo.scope).GetCompleteBioseq();
+             sequence::GetBioseqFromSeqLoc(cd_feat.GetLocation(), *thisInfo.scope).GetCompleteBioseq();
       if (bioseq.NotEmpty() && IsmRNASequenceInGenProdSet(*bioseq) )
           mRNA =CConstRef <CSeq_feat> (sequence :: GetmRNAForProduct(*bioseq, thisInfo.scope));
   }
@@ -2742,7 +2728,7 @@ CConstRef <CProt_ref> CBioseqTestAndRepData :: GetProtRefForFeature(const CSeq_f
     if (look_xref) prot_ref.Reset(seq_feat.GetProtXref());
 
     if (prot_ref.Empty() && seq_feat.CanGetProduct()) {
-        CBioseq_Handle bioseq_h = GetBioseqFromSeqLoc(seq_feat.GetProduct(), *thisInfo.scope);
+        CBioseq_Handle bioseq_h = sequence::GetBioseqFromSeqLoc(seq_feat.GetProduct(), *thisInfo.scope);
         if (bioseq_h) {
            for (CFeat_CI prot_ci(bioseq_h, CSeqFeatData::e_Prot); prot_ci; ++prot_ci) {
               prot_ref.Reset( (&(prot_ci->GetOriginalFeature().GetData().GetProt())) );
@@ -3324,9 +3310,9 @@ void CBioseq_GENE_PRODUCT_CONFLICT :: TestOnObj(const CBioseq& bioseq)
      CGene_ref* gene = const_cast <CGene_ref*> ( (*it)->GetGeneXref());
      if (!gene) {
         CConstRef<CSeq_feat> g_olp= 
-                                GetBestOverlappingFeat( (*it)->GetLocation(),
+                                sequence::GetBestOverlappingFeat( (*it)->GetLocation(),
                                                    CSeqFeatData::e_Gene,
-                                                   eOverlap_Contained,
+                                                   sequence::eOverlap_Contained,
                                                    *thisInfo.scope);
         if (g_olp.NotEmpty()) 
             gene = const_cast< CGene_ref* > (&(g_olp->GetData().GetGene()));
@@ -3788,7 +3774,7 @@ void CBioseq_SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME :: TestOnObj(const CBioseq& 
                 || gene_feat_4_feat->GetData().GetGene().GetLocus().empty() ) 
         continue;  // no gene name
     if ((*it)->CanGetProduct()) {
-      CBioseq_Handle bioseq_prot = GetBioseqFromSeqLoc((*it)->GetProduct(),*thisInfo.scope);
+      CBioseq_Handle bioseq_prot = sequence::GetBioseqFromSeqLoc((*it)->GetProduct(),*thisInfo.scope);
       if (bioseq_prot) {
          CFeat_CI feat_it(bioseq_prot, CSeqFeatData :: e_Prot);
          if (feat_it) {
@@ -3834,7 +3820,7 @@ void CBioseqTestAndRepData :: TestOverlapping_ed_Feats(const vector <const CSeq_
                break;
 
            if (isGene && loc_i.GetStrand() != loc_j.GetStrand()) continue;
-           sequence::ECompare ovlp = Compare(loc_i, loc_j, thisInfo.scope);
+           sequence::ECompare ovlp = sequence::Compare(loc_i, loc_j, thisInfo.scope);
            if (isOverlapped) {
                if (ovlp == sequence::eContained || ovlp == sequence::eSame) {
                   thisInfo.test_item_list[setting_name].push_back(
@@ -4159,7 +4145,7 @@ bool CBioseq_DISC_BAD_GENE_STRAND :: AreIntervalStrandsOk(const CSeq_loc& g_loc,
   for (CSeq_loc_CI f_loc_it(f_loc); f_loc_it && !found_bad; ++ f_loc_it) {
      found_match = false;
      for (CSeq_loc_CI g_loc_it(g_loc); g_loc_it && !found_match; ++ g_loc_it) {
-        sequence::ECompare ovlp = Compare(f_loc_it.GetEmbeddingSeq_loc(), 
+        sequence::ECompare ovlp = sequence::Compare(f_loc_it.GetEmbeddingSeq_loc(), 
                                         g_loc_it.GetEmbeddingSeq_loc(), thisInfo.scope);
         if (ovlp == sequence::eContained || ovlp == sequence::eSame) {
           found_match = true;
@@ -4307,7 +4293,7 @@ void CBioseq_DISC_SHORT_INTRON :: TestOnObj(const CBioseq& bioseq)
     partial5 = seq_loc.IsPartialStart(eExtreme_Biological);
     partial3 = seq_loc.IsPartialStop(eExtreme_Biological);
     CConstRef <CBioseq> 
-         bioseq_new = GetBioseqFromSeqLoc(seq_loc, *thisInfo.scope).GetCompleteBioseq();
+         bioseq_new = sequence::GetBioseqFromSeqLoc(seq_loc, *thisInfo.scope).GetCompleteBioseq();
     if ( (*it)->CanGetExcept() && (*it)->GetExcept()) excpt = true;
     else excpt = false;
     strtmp = excpt ? "except" : "empty";
@@ -4718,7 +4704,7 @@ void CBioseq_test_on_protfeat :: TestOnObj(const CBioseq& bioseq)
      // DISC_CDS_PRODUCT_FIND
      if (run_cds) {
         if (is_subtype_prot) {
-             const CSeq_feat* cds = GetCDSForProduct( bioseq, thisInfo.scope );
+             const CSeq_feat* cds = sequence::GetCDSForProduct( bioseq, thisInfo.scope );
              if (cds) desc = GetDiscItemText(*cds);
         }
         ITERATE (Str2Str, jt, thisInfo.cds_prod_find) {
@@ -5025,9 +5011,9 @@ void CBioseq_FEATURE_LOCATION_CONFLICT :: CheckFeatureTypeForLocationDiscrepanci
         }
      }
      else {
-         CConstRef <CSeq_feat> gene_olp= GetBestOverlappingFeat(feat_loc,
+         CConstRef <CSeq_feat> gene_olp = sequence::GetBestOverlappingFeat(feat_loc,
                                                              CSeqFeatData::e_Gene,
-                                                             eOverlap_Contained,
+                                                             sequence::eOverlap_Contained,
                                                              *thisInfo.scope);
 
          if (gene_olp.NotEmpty() && !IsGeneLocationOk(*it, gene_olp.GetPointer())) {
@@ -6103,7 +6089,8 @@ void CBioseq_test_on_cd_4_transl :: TranslExceptOfCDs (const CSeq_feat& cd, bool
      default: break;
   }
 
-  unsigned codon_start, codon_stop, pos, i, codon_len;
+  unsigned codon_start, codon_stop, pos, i;
+  int codon_len;
   ITERATE (list <CRef <CCode_break> >, it, cd.GetData().GetCdregion().GetCode_break()) {
     if ( !((*it)->GetAa().IsNcbieaa()) || (*it)->GetAa().GetNcbieaa() != 42) continue;
     if (!too_long && sequence::GetCoverage((*it)->GetLoc(), thisInfo.scope) > 3) 
@@ -6113,7 +6100,7 @@ void CBioseq_test_on_cd_4_transl :: TranslExceptOfCDs (const CSeq_feat& cd, bool
        i=0;
        for (CSeq_loc_CI loc_ci( (*it)->GetLoc() ); loc_ci && !has_transl; ++loc_ci, i++) {
           pos = sequence::LocationOffset(cd.GetLocation(), loc_ci.GetEmbeddingSeq_loc(),
-                                eOffset_FromLeft, thisInfo.scope);
+                                sequence::eOffset_FromLeft, thisInfo.scope);
           
           if ( (int)pos > -1 &&  (!i || pos <= codon_start)) {
             codon_start = pos;
@@ -6969,13 +6956,13 @@ void CBioseq_RNA_CDS_OVERLAP :: TestOnObj(const CBioseq& bioseq)
     ITERATE (vector <const CSeq_feat*>, jt, cd_feat) {
       const CSeq_loc& loc_i = (*it)->GetLocation();
       const CSeq_loc& loc_j = (*jt)->GetLocation();
-      sequence::ECompare ovlp_com = Compare(loc_j, loc_i, thisInfo.scope);
+      sequence::ECompare ovlp_com = sequence::Compare(loc_j, loc_i, thisInfo.scope);
       subcat_tp = kEmptyStr;
       switch (ovlp_com) {
-        case eSame: subcat_tp = "extrc"; break;
-        case eContained: subcat_tp = "cds_in_rna"; break;
-        case eContains: subcat_tp = "rna_in_cds"; break;
-        case eOverlap: {
+        case sequence::eSame: subcat_tp = "extrc"; break;
+        case sequence::eContained: subcat_tp = "cds_in_rna"; break;
+        case sequence::eContains: subcat_tp = "rna_in_cds"; break;
+        case sequence::eOverlap: {
            strand_i = loc_i.GetStrand();
            strand_j = loc_j.GetStrand();
            if ((strand_i == eNa_strand_minus && strand_j != eNa_strand_minus)
@@ -6984,7 +6971,8 @@ void CBioseq_RNA_CDS_OVERLAP :: TestOnObj(const CBioseq& bioseq)
            else subcat_tp = "overlap_same_strand";
            break;
         }
-        default:;
+        default:
+            break;
       }
       if (!subcat_tp.empty()) {
          thisInfo.test_item_list[GetName()].push_back(subcat_tp +"$" +GetDiscItemText(**jt));
@@ -7104,7 +7092,6 @@ void CBioseq_OVERLAPPING_CDS :: AddToDiscRep(const CSeq_feat* seq_feat)
 {
      string desc = GetDiscItemText(*seq_feat);
      CConstRef <CObject> feat_ref (seq_feat);
-     bool has_comment = false;
      if (seq_feat->CanGetComment()) {
          const string& comm = seq_feat->GetComment();
          if ( string::npos != NStr::FindNoCase(comm, "overlap")
@@ -7113,11 +7100,9 @@ void CBioseq_OVERLAPPING_CDS :: AddToDiscRep(const CSeq_feat* seq_feat)
                         || string::npos != NStr::FindNoCase(comm, "extend") ) {
               thisInfo.test_item_list[GetName()].push_back("comment$" + desc);
               thisInfo.test_item_objs[GetName() + "$comment"].push_back(feat_ref);
-              has_comment = true;
          }
-         
      }
-     if (!has_comment) {
+     else {
         thisInfo.test_item_list[GetName()].push_back("no_comment$" + desc);
         thisInfo.test_item_objs[GetName() + "$no_comment"].push_back(feat_ref);
      }
@@ -7130,9 +7115,9 @@ bool CBioseq_OVERLAPPING_CDS :: HasNoSuppressionWords(const CSeq_feat* seq_feat)
   string prod_nm;
   if (seq_feat->GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion) {
      prod_nm = GetProdNmForCD(*seq_feat);
-     if ( DoesStringContainPhrase(prod_nm, "ABC")
-                    || DoesStringContainPhrase(prod_nm, "transposon", false, false)
-                    || DoesStringContainPhrase(prod_nm, "transposase", false, false))
+     if ( CDiscRepUtil::IsWholeWord(prod_nm, "ABC")
+            || string::npos != NStr::FindNoCase(prod_nm, "transposon")
+            || string::npos != NStr::FindNoCase(prod_nm, "transposase"))
           return false;
      else return true;
   }
@@ -7143,28 +7128,41 @@ bool CBioseq_OVERLAPPING_CDS :: HasNoSuppressionWords(const CSeq_feat* seq_feat)
 
 void CBioseq_OVERLAPPING_CDS :: TestOnObj(const CBioseq& bioseq)
 {
-  bool feat_i_processed = false;
-  vector <const CSeq_feat*>::const_iterator jt;
+  bool sf_i_processed = false;
+  int i, j;
+/*
+  vector <const CSeq_feat*>::iterator jt;
   ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
-    feat_i_processed = false;
     const CSeq_loc& loc_i = (*it)->GetLocation();
-    ENa_strand strandi = loc_i.GetStrand();
-    jt = it;
-    while (++jt != cd_feat.end()) {
-      const CSeq_loc& loc_j = (*jt)->GetLocation();
+    jt = it + 1;
+    if (jt == cd_feat.end()) continue;
+    const CSeq_loc& loc_j = (*jt)->GetLocation();
+    
+    
+  }
+*/
+
+  for (i=0; (int)i< (int)(cd_feat.size() - 1); i++) {
+    sf_i_processed = false;
+    for (j = i+1; j < (int)cd_feat.size(); j++) {
+      const CSeq_loc& loc_i = cd_feat[i]->GetLocation();
+      const CSeq_loc& loc_j = cd_feat[j]->GetLocation();
       if (loc_i.GetStop(eExtreme_Positional) < loc_j.GetStart(eExtreme_Positional)) break;
-      if (!OverlappingProdNmSimilar(GetProdNmForCD(**it), GetProdNmForCD(**jt))) continue;
-      ENa_strand strandj = loc_j.GetStrand();
-      if ((strandi != strandj) && (strandi ==eNa_strand_minus || strandj ==eNa_strand_minus))
-           continue;
-      if ( eNoOverlap != Compare(loc_i, loc_j, thisInfo.scope)) {
-          if (!feat_i_processed) {
-              if ( HasNoSuppressionWords(*it)) AddToDiscRep(*it);
-              feat_i_processed = true;
+      if (!OverlappingProdNmSimilar(GetProdNmForCD(*(cd_feat[i])), 
+                                    GetProdNmForCD(*(cd_feat[j])))) 
+          continue;
+      ENa_strand strand1 = loc_i.GetStrand();
+      ENa_strand strand2 = loc_j.GetStrand();
+      if ((strand1 == eNa_strand_minus && strand2 != eNa_strand_minus)
+          || (strand1 != eNa_strand_minus && strand2 == eNa_strand_minus)) continue;
+      if ( sequence::eNoOverlap != sequence::Compare(loc_i, loc_j, thisInfo.scope)) {
+          if (!sf_i_processed) {
+              if ( HasNoSuppressionWords(cd_feat[i])) AddToDiscRep(cd_feat[i]);
+              sf_i_processed = true;
           }
-          if ( HasNoSuppressionWords(*jt) ) AddToDiscRep(*jt);
+          if ( HasNoSuppressionWords(cd_feat[j]) ) AddToDiscRep(cd_feat[j]);
       }
-    }
+    }  
   }
 }
 
@@ -7176,15 +7174,15 @@ void CBioseq_OVERLAPPING_CDS :: GetReport(CRef <CClickableItem>& c_item)
    GetTestItemList(c_item->item_list, subcat2list);
    c_item->item_list.clear();
    ITERATE (Str2Strs, it, subcat2list) {
-     if (it->first != "comment") {
+     if (it->first == "comment") {
        desc1 = "coding region overlapps";
        desc2 = "coding regions overlap";
-       desc3 = " another coding region with a similar or identical name that do not have the appropriate note text.";
+       desc3 = " another coding region with a similar or identical name that do not have the appropriate note text";
      }
      else {
        desc1 = "coding region overlapps";
        desc2 = "coding regions overlap";
-       desc3 = " another coding region with a similar or identical name but have the appropriate note text.";
+       desc3 = " another coding region with a similar or identical name but have the appropriate note text";
      }
      AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second),desc1, desc2, 
                                                              e_OtherComment, true, desc3);
@@ -7227,9 +7225,9 @@ void CBioseq_test_on_missing_genes :: CheckGenesForFeatureType (const vector <co
           // so for File1fordiscrep.sqn, it needs to check the EXTRA_GENES
           // and MISSING_GENES after the bug is fixed.
           CConstRef < CSeq_feat>
-             gene_olp= GetBestOverlappingFeat( (*it)->GetLocation(),
+             gene_olp = sequence::GetBestOverlappingFeat( (*it)->GetLocation(),
                                                CSeqFeatData::e_Gene,
-                                               eOverlap_Contained,
+                                               sequence::eOverlap_Contained,
                                                *thisInfo.scope);
 
           if (gene_olp.Empty()) 
@@ -9082,16 +9080,10 @@ bool CSeqEntry_test_on_biosrc :: DoTaxonIdsMatch(const COrg_ref& org1, const COr
              || !org2.CanGetDb() || org2.GetDb().empty())
       return false;
 
-//cerr << "222\n";
    ITERATE (vector <CRef <CDbtag> >, it, org1.GetDb()) {
-//cerr << "org1.any " << MSerial_AsnText << **it << endl;
-//cerr << "GetType " << (*it)->GetType() << endl;
        if ((*it)->GetType() == CDbtag::eDbtagType_taxon) {
           ITERATE (vector <CRef <CDbtag> >, jt, org2.GetDb()) {
-//cerr << "org2.any " << MSerial_AsnText << **jt << endl;
              if ((*jt)->GetType() == CDbtag::eDbtagType_taxon) {
-//cerr << "org1.taxon " << MSerial_AsnText << **it << endl;
-//cerr << "org2.taxon " << MSerial_AsnText << **jt << endl;
                 if ((*it)->Match(**jt)) return true;
                 else return false;
              }
@@ -9286,17 +9278,11 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
        db_tax =lookup_tax->GetOrg().CanGetTaxname() ?
                                   lookup_tax->GetOrg().GetTaxname() : kEmptyStr;
        if (m_run_tmiss && org_tax != db_tax) {
-//cerr << "org_tax  " << org_tax << "  |db_tax " << db_tax << endl;
            thisInfo.test_item_list[GetName_tbad()].push_back(desc);
            thisInfo.test_item_objs[GetName_tbad()].push_back(CConstRef <CObject>(&biosrc));
        }
        else {
-
-//cerr << "biosrc.GetOrg1 \n" << MSerial_AsnText << biosrc.GetOrg() <<endl;
-//cerr << "lookup_tax1 \n" << MSerial_AsnText << lookup_tax->GetOrg() << endl;
          if (m_run_tbad && !DoTaxonIdsMatch(biosrc.GetOrg(), lookup_tax->GetOrg())) {
-//cerr << "biosrc.GetOrg2 \n" << MSerial_AsnText << biosrc.GetOrg() <<endl;
-//cerr << "lookup_tax2 \n" << MSerial_AsnText << lookup_tax->GetOrg() << endl;
              thisInfo.test_item_list[GetName_tbad()].push_back(desc);
              thisInfo.test_item_objs[GetName_tbad()].push_back(CConstRef <CObject>(&biosrc));
          }
@@ -9453,21 +9439,27 @@ const list <CRef <CPCRPrimer> >& ls2)
 
 bool CSeqEntry_test_on_biosrc :: SamePCRReaction(const CPCRReaction& pcr1, const CPCRReaction& pcr2)
 {
-  bool has_fwd1 = pcr1.CanGetForward()? true : false;
-  bool has_rev1 = pcr1.CanGetReverse()? true : false;
-  bool has_fwd2 = pcr1.CanGetForward()? true : false;
-  bool has_rev2 = pcr1.CanGetReverse()? true : false;
+    bool has_fwd1 = pcr1.CanGetForward()? true : false;
+    bool has_rev1 = pcr1.CanGetReverse()? true : false;
+    bool has_fwd2 = pcr1.CanGetForward()? true : false;
+    bool has_rev2 = pcr1.CanGetReverse()? true : false;
 
-  if ((has_fwd1 != has_fwd2) || (has_rev1 != has_rev2) || (!has_fwd1 && !has_rev1)) 
-            return false;
-  if (has_fwd1) { 
-    if (SamePrimerList(pcr1.GetForward().Get(), pcr2.GetForward().Get()))
+    if ((has_fwd1 != has_fwd2) || (has_rev1 != has_rev2) || (!has_fwd1 && !has_rev1)) {
+        return false;
+    }
+    if (has_fwd1) { 
+        if (SamePrimerList(pcr1.GetForward().Get(), pcr2.GetForward().Get())) {
+            return (SamePrimerList(pcr1.GetReverse().Get(), pcr2.GetReverse().Get()));
+        }
+    }
+    else if (has_rev1) {
         return (SamePrimerList(pcr1.GetReverse().Get(), pcr2.GetReverse().Get()));
-  }
-  else if (has_rev1)
-       return (SamePrimerList(pcr1.GetReverse().Get(), pcr2.GetReverse().Get()));
-  else return false;
-};
+    }
+    else {
+        return false;
+    }
+    return false;
+}
 
 void CSeqEntry_DISC_REQUIRED_STRAIN :: GetReport(CRef <CClickableItem>& c_item)
 {
@@ -10110,8 +10102,8 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
   thisTest.is_DESC_user_run = true;
 
   CValidError errors;
-  CValidError_imp imp(thisInfo.scope->GetObjectManager(),&errors);
-  CValidError_desc validator(imp);
+  validator::CValidError_imp imp(thisInfo.scope->GetObjectManager(),&errors);
+  validator::CValidError_desc validator(imp);
 
   unsigned i=0, cnt;
   int id;
@@ -10439,7 +10431,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notif
 //cerr << "block_text " << block_text << endl;
   ITERATE (Str2UInt, it, thisInfo.whole_word) {
      if (CTestAndRepData 
-           :: DoesStringContainPhrase(block_text, it->first, false,  (bool)it->second)){
+           :: DoesStringContainPhrase(block_text, it->first, false,  (bool)it->second)) {
        switch (which_block) {
          case CFlatFileConfig::fGenbankBlocks_Locus: /*cerr << "locus\n";*/strtmp = m_mol_desc; break;
          case CFlatFileConfig::fGenbankBlocks_Defline: /*cerr << "defline \n";*/strtmp = m_tlt_desc; break;
@@ -10449,7 +10441,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notif
          case CFlatFileConfig::fGenbankBlocks_Sourcefeat: 
             {
               const CFeatureItemBase& feat_item 
-                            = dynamic_cast<const CFeatureItemBase&> (flat_item);
+                             = dynamic_cast<const CFeatureItemBase&> (flat_item);
               strtmp = GetDiscItemText( feat_item.GetFeat().GetOriginalFeature());
             }
             break;
@@ -12390,3 +12382,5 @@ void CSeqEntry_DISC_CHECK_AUTH_CAPS :: GetReport(CRef <CClickableItem>& c_item)
    c_item->description = GetHasComment(c_item->item_list.size(), "pub") + 
                                                       "incorrect author capitalization.";
 };
+
+END_NCBI_SCOPE

@@ -33,17 +33,17 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiapp.hpp>
+#include <common/ncbi_export.h>
 
 // Object Manager includes
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 
 #include "hDiscRep_app.hpp"
-#include "hDiscRep_config.hpp"
+#include <objtools/discrepancy_report/hDiscRep_config.hpp>
+#include <objtools/discrepancy_report/hUtilib.hpp>
 
 USING_NCBI_SCOPE;
-
-using namespace DiscRepNmSpc;
 
 static string       strtmp, tmp;
 
@@ -95,12 +95,14 @@ int CDiscRepApp :: Run(void)
     
     string report = args["P"].AsString();
     if (report == "t" || report == "s") report = "Asndisc";
-    CRef <CRepConfig> config( CRepConfig :: factory(report) );
+#if 0
+    CRef <DiscRepNmSpc::CRepConfig> config( DiscRepNmSpc::CRepConfig :: factory(report) );
     config->InitParams(GetConfig());
     config->ReadArgs(args);
     config->CollectTests();
     config->Run(config);
-    
+#endif
+
     return 0;
 }
 

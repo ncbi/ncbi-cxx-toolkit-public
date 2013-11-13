@@ -71,16 +71,15 @@
 #include <objmgr/seq_map.hpp>
 #include <util/xregexp/regexp.hpp>
 
-#include "hDiscRep_config.hpp"
-#include "hDiscRep_tests.hpp"
-
-#include "hUtilib.hpp"
+#include <objtools/discrepancy_report/hDiscRep_config.hpp>
+#include <objtools/discrepancy_report/hDiscRep_tests.hpp>
+#include <objtools/discrepancy_report/hUtilib.hpp>
 
 USING_NCBI_SCOPE;
-using namespace objects;
-using namespace sequence;
-using namespace DiscRepNmSpc;
-using namespace feature;
+USING_SCOPE(objects);
+USING_SCOPE(sequence);
+USING_SCOPE(DiscRepNmSpc);
+USING_SCOPE(feature);
 
 
 // definition
@@ -1220,7 +1219,7 @@ const CSeq_feat* CTestAndRepData :: GetCDFeatFromProtFeat(const CSeq_feat& prot)
        bioseq =
            GetBioseqFromSeqLoc(prot.GetLocation(), *thisInfo.scope).GetCompleteBioseq();
    if (bioseq.NotEmpty()) {
-      const CSeq_feat* cds = GetCDSForProduct(*bioseq, thisInfo.scope);
+      const CSeq_feat* cds = sequence::GetCDSForProduct(*bioseq, thisInfo.scope);
       if (cds) return cds;
    }
    return 0;

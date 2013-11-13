@@ -36,12 +36,8 @@
 #include <objects/macro/Structured_comment_field.hpp>
 #include <objects/macro/Word_substitution.hpp>
 
-using namespace ncbi;
-using namespace objects;
-
 BEGIN_NCBI_SCOPE
-
-namespace DiscRepNmSpc{
+USING_SCOPE(objects);
 
    class CSummarizeSusProdRule 
    {
@@ -90,7 +86,6 @@ namespace DiscRepNmSpc{
        string FeatureFieldLabel(const string& feature_name, const CFeat_qual_choice& field);
        string SummarizeReplaceRule (const CReplace_rule& replace);
    };
-};
 
 END_NCBI_SCOPE
 

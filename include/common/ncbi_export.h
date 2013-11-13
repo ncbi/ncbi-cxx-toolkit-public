@@ -901,6 +901,14 @@
 #  define NCBI_VALERR_EXPORT NCBI_DLL_IMPORT
 #endif
 
+/* Export specifier for library discrepancy_report
+ */
+#ifdef NCBI_DISCREPANCY_REPORT_EXPORTS
+#  define NCBI_DISCREPANCY_REPORT_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_DISCREPANCY_REPORT_EXPORT NCBI_DLL_IMPORT
+#endif
+
 /* Export specifier for library cleanup
  */
 #ifdef NCBI_CLEANUP_EXPORTS

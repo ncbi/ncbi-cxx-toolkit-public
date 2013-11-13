@@ -1,0 +1,10 @@
+# $Id$
+
+# Meta-makefile (object utilities)
+##################################
+
+LIB_PROJ = discrepancy_report
+SUB_PROJ = 
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

@@ -54,13 +54,13 @@
 #include <serial/enumvalues.hpp>
 
 
-#include "hUtilib.hpp"
+#include <objtools/discrepancy_report/hUtilib.hpp>
 
 #include <sstream>
 
-using namespace ncbi;
-using namespace objects;
-using namespace std;
+BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
+USING_SCOPE(std);
 
 
 static 	ostringstream output;
@@ -312,3 +312,5 @@ void StrCut(char* s1, char* s2, short loc1, short loc2)
 	s1[i-loc1] = '\0';
 
 } /* end of StrCut() */
+
+END_NCBI_SCOPE

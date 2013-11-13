@@ -36,6 +36,7 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <common/ncbi_export.h>
 
 // Object Manager includes
 #include <objmgr/object_manager.hpp>
@@ -48,15 +49,13 @@
 #include <serial/objhook.hpp>
 #include <serial/serial.hpp>
 
-#include "hDiscRep_tests.hpp"
-#include "clickable_item.hpp"
-
-using namespace ncbi;
-using namespace objects;
+#include <objtools/discrepancy_report/hDiscRep_tests.hpp>
+#include <objtools/discrepancy_report/clickable_item.hpp>
 
 BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
+BEGIN_SCOPE(DiscRepNmSpc)
 
-namespace DiscRepNmSpc {
    typedef map <string, vector < CConstRef <CObject> > > Str2Objs;
 
    class CTry : public CObject 
@@ -142,13 +141,13 @@ namespace DiscRepNmSpc {
         static vector < CRef < CTestAndRepData > > tests_on_SubmitBlk;
    };
 
-   class CRepConfig : public CObject 
+   class NCBI_DISCREPANCY_REPORT_EXPORT CRepConfig : public CObject 
    {
      public:
         virtual ~CRepConfig() { };
 
         // removed from *_app.hpp
-        void InitParams(const IRWRegistry& reg);
+        void InitParams(const IRWRegistry& reg) { x_InitParams(reg); };
         void ReadArgs(const CArgs& args);
         string GetDirStr(const string& src_dir);
         void ProcessArgs(Str2Str& args);
@@ -183,6 +182,7 @@ namespace DiscRepNmSpc {
         bool SuppressItemListForFeatureTypeForOutputFiles(const string& setting_name);
         void StandardWriteDiscRepItems(COutputConfig& oc, const CClickableItem* c_item, const string& prefix, bool list_features_if_subcat);
         bool RmTagInDescp(string& str, const string& tag);
+        void x_InitParams(const IRWRegistry& reg);
    };
 
    class CRepConfAsndisc : public CRepConfig
@@ -324,12 +324,11 @@ namespace DiscRepNmSpc {
         static vector <string>                          suspect_phrases;
         static map <int, string>                        genome_names;
 
-        s_SuspectProductNameData                    suspect_prod_terms[];
-        unsigned GetSusProdTermsLen() { return sizeof(suspect_prod_terms); };
+        vector<s_SuspectProductNameData>                suspect_prod_terms;
+        unsigned GetSusProdTermsLen() { return suspect_prod_terms.size(); };
    };
-};
 
-
+END_SCOPE(DiscRepNmSpc)
 END_NCBI_SCOPE
 
 #endif

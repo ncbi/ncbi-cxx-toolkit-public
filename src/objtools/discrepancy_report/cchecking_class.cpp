@@ -36,15 +36,14 @@
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_entry_handle.hpp>
 
-#include "hchecking_class.hpp"
-#include "hDiscRep_config.hpp"
-#include "hDiscRep_tests.hpp"
-#include "hUtilib.hpp"
+#include <objtools/discrepancy_report/hchecking_class.hpp>
+#include <objtools/discrepancy_report/hDiscRep_config.hpp>
+#include <objtools/discrepancy_report/hDiscRep_tests.hpp>
+#include <objtools/discrepancy_report/hUtilib.hpp>
 
-using namespace ncbi;
-using namespace objects;
-using namespace DiscRepNmSpc;
-using namespace sequence;
+BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
+USING_SCOPE(DiscRepNmSpc);
 
 string strtmp;
 static CDiscRepInfo  thisInfo;
@@ -500,3 +499,5 @@ void CCheckingClass :: CollectRepData()
   x_Clean();
 
 } // CollectRepData()
+
+END_NCBI_SCOPE

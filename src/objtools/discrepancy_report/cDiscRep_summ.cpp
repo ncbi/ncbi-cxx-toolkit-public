@@ -63,14 +63,14 @@
 #include <objects/seq/MolInfo.hpp>
 #include <objmgr/util/sequence.hpp>
 
-#include "hDiscRep_config.hpp"
-#include "hDiscRep_tests.hpp"
-#include "hUtilib.hpp"
-#include "hDiscRep_summ.hpp"
+#include <objtools/discrepancy_report/hDiscRep_config.hpp>
+#include <objtools/discrepancy_report/hDiscRep_tests.hpp>
+#include <objtools/discrepancy_report/hUtilib.hpp>
+#include <objtools/discrepancy_report/hDiscRep_summ.hpp>
 
-using namespace ncbi;
-using namespace objects;
-using namespace DiscRepNmSpc;
+BEGIN_NCBI_SCOPE
+USING_SCOPE(objects);
+USING_SCOPE(DiscRepNmSpc);
 
 static CSuspectRuleCheck rule_check;
 static string strtmp;
@@ -928,3 +928,5 @@ string CSummarizeSusProdRule :: SummarizeSuspectRuleEx(const CSuspect_rule& rule
   if (!rule_desc.empty()) summ += " Description: " + rule_desc;
   return summ;
 };
+
+END_NCBI_SCOPE
