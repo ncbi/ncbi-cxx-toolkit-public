@@ -66,6 +66,7 @@
 #include <objtools/readers/aln_reader.hpp>
 #include <objtools/readers/agp_seq_entry.hpp>
 #include <objtools/readers/readfeat.hpp>
+#include <objtools/readers/fasta.hpp>
 
 #include <algo/phy_tree/phy_node.hpp>
 #include <algo/phy_tree/dist_methods.hpp>
@@ -127,6 +128,7 @@ private:
     void xProcessAlignment(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcessAgp(const CArgs&, CNcbiIstream&, CNcbiOstream&);
     void xProcess5ColFeatTable(const CArgs&, CNcbiIstream&, CNcbiOstream&);
+    void xProcessFasta(const CArgs&, CNcbiIstream&, CNcbiOstream&);
 
     void xSetFormat(const CArgs&, CNcbiIstream&);
     void xSetFlags(const CArgs&, CNcbiIstream&);
@@ -441,6 +443,16 @@ void CMultiReaderApp::Init(void)
         "treat all IDs as local IDs",
         true);
 
+    //
+    // FASTA reader specific arguments:
+    //
+
+    arg_desc->SetCurrentGroup("FASTA READER SPECIFIC");
+
+    arg_desc->AddFlag(
+        "parse-mods", 
+        "Parse FASTA modifiers on deflines.");
+
     arg_desc->SetCurrentGroup("");
 
     SetupArgDescriptions(arg_desc.release());
@@ -510,6 +522,9 @@ CMultiReaderApp::Run(void)
                 break;
             case CFormatGuess::eFiveColFeatureTable:
                 xProcess5ColFeatTable(args, istr, ostr);
+                break;
+            case CFormatGuess::eFasta:
+                xProcessFasta(args, istr, ostr);
                 break;
         }
     }
@@ -765,6 +780,23 @@ void CMultiReaderApp::xProcess5ColFeatTable(
         }
         xWriteObject(args, *pSeqAnnot, ostr);
     }
+}
+
+void CMultiReaderApp::xProcessFasta(
+    const CArgs& args,
+    CNcbiIstream& istr,
+    CNcbiOstream& ostr)
+{
+    CFastaReader::TFlags fFlags = 0;
+    if( args["parse-mods"] ) {
+        fFlags |= CFastaReader::fAddMods;
+    }
+
+    CStreamLineReader line_reader(istr);
+
+    CFastaReader reader(line_reader, fFlags);
+    CRef<CSeq_entry> pSeqEntry = reader.ReadSeqEntry(line_reader, m_pErrors);
+    xWriteObject(args, *pSeqEntry, ostr);
 }
 
 //  ----------------------------------------------------------------------------
