@@ -162,10 +162,17 @@ void CRemoteUpdater::xUpdateOrgTaxname(COrg_ref& org)
     CConstRef<COrg_ref> new_org = m_taxClient->GetOrgRef(taxid, is_species, is_uncultured, blast_name);
     if (new_org.NotEmpty())
     {
-        const COrgName_Base::TMod mods = org.GetOrgname().GetMod();
-        org.Assign(*new_org);
-        if (!mods.empty())
-            org.SetOrgname().SetMod().insert(org.SetOrgname().SetMod().end(), mods.begin(), mods.end());
+        if (org.IsSetOrgname() && org.GetOrgname().IsSetMod()) // we need to preserve mods if they set
+        {
+           const COrgName_Base::TMod mods = org.GetOrgname().GetMod();
+           org.Assign(*new_org);
+           if (!mods.empty())
+               org.SetOrgname().SetMod().insert(org.SetOrgname().SetMod().end(), mods.begin(), mods.end());
+        }
+        else
+        {
+           org.Assign(*new_org);
+        }
     }
 }
 
