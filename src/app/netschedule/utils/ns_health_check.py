@@ -9,7 +9,7 @@
 Netschedule server health check script
 """
 
-import sys, os, cgi, datetime, socket
+import sys, os, cgi, datetime, socket, re
 from distutils.version import StrictVersion
 from optparse import OptionParser
 
@@ -73,8 +73,12 @@ class NSDirectConnect:
     def __init__( self, connPoint ):
         parts = connPoint.split( ":" )
         self.__host = parts[ 0 ]
+        if self.__host == "":
+            self.__host = "localhost"
         self.__port = int( parts[ 1 ] )
         self.__sock = None
+        self.__readBuf = ""
+        self.__replyDelimiter = re.compile( r'\r\n|\n|\r|\0' )
         return
 
     def connect( self, timeout ):
@@ -106,46 +110,40 @@ class NSDirectConnect:
 
     def readSingleLineReply( self ):
         " Reads a single line reply "
-        buf = self.__sock.recv( 8192 )
-        if buf is None:
-            raise UnexpectedNSResponse( "Unexpected NS response: None" )
-        buf = buf.strip()
-        if buf.startswith( "OK:" ):
-            return buf.split( ':', 1 )[ 1 ].strip()
-        if buf.startswith( "ERR:" ):
-            if "shuttingdown" in buf.lower():
+        while True:
+            parts = self.__replyDelimiter.split( self.__readBuf, 1 )
+            if len( parts ) > 1:
+                reply = parts[ 0 ]
+                self.__readBuf = parts[ 1 ]
+                break
+
+            buf = self.__sock.recv( 8192 )
+            if not buf:
+                if self.__readBuf:
+                    return self.__readBuf.strip()
+                raise UnexpectedNSResponse( "Unexpected NS response: None" )
+            self.__readBuf += buf
+
+        if reply.startswith( "OK:" ):
+            return reply.split( ':', 1 )[ 1 ].strip()
+        if reply.startswith( "ERR:" ):
+            if "shuttingdown" in reply.lower():
                 raise NSShuttingDown( "Server is shutting down" )
-            elif "access denied" in buf.lower():
-                raise NSAccessDenied( buf.split( ':', 1 )[ 1 ].strip() )
-            raise NSError( buf.split( ':', 1 )[ 1 ].strip() )
-        raise UnexpectedNSResponse( "Unexpected NS response: " + buf )
+            elif "access denied" in reply.lower():
+                raise NSAccessDenied( reply.split( ':', 1 )[ 1 ].strip() )
+            raise NSError( reply.split( ':', 1 )[ 1 ].strip() )
+        raise UnexpectedNSResponse( "Unexpected NS response: " + reply.strip() )
 
     def readMultiLineReply( self ):
         " Reads a multi line reply "
-        result = []
-        while True:
-            buf = self.__sock.recv( 8192 )
-            if buf is None:
-                raise UnexpectedNSResponse( "Unexpected NS response: None" )
-            buf = buf.strip()
-            for line in buf.splitlines():
-                if line:
-                    content = line.split( ':', 1 )[ 1 ].strip()
-                    if line.startswith( "OK:" ):
-                        result.append( content )
-                        if content == "END":
-                            return result
-                    elif line.startswith( "ERR:" ):
-                        if "shuttingdown" in line.lower():
-                            raise NSShuttingDown( "Server is shutting down" )
-                        elif "access denied" in line.lower():
-                            raise NSAccessDenied( content )
-                        raise NSError( content )
-                    else:
-                        result.append( line.strip() )
-                else:
-                    result.append( line )
-        raise NSError( "Unexpected NS output" )
+        lines = []
+        oneLine = self.readSingleLineReply()
+        while oneLine != "END":
+            if oneLine:
+                lines.append( oneLine )
+            oneLine = self.readSingleLineReply()
+        return lines
+
 
 
 LAST_EXIT_CODE = None
