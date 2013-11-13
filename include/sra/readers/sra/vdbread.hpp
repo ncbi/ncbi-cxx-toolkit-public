@@ -171,6 +171,9 @@ class NCBI_SRAREAD_EXPORT CVDBTable
     : public CSraRef<const VTable>
 {
 public:
+    CVDBTable(void)
+        {
+        }
     CVDBTable(const CVDB& db, const char* table_name)
         {
             Init(db, table_name);
