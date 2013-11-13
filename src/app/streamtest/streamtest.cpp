@@ -54,6 +54,8 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/seq_vector_ci.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 
@@ -80,6 +82,7 @@ USING_SCOPE(validator);
 #include "process_gene_overlap.hpp"
 #include "process_macrotest.hpp"
 #include "process_prosplign.hpp"
+#include "process_seqvector.hpp"
 #include "process_title.hpp"
 #include "process_validate.hpp"
 #include "presenter.hpp"
@@ -166,6 +169,7 @@ void CStreamTestApp::Init()
                                         "gpipe-defline",
                                         "macrotest",
                                         "prosplign",
+                                        "seqvector",
                                         "unindexed-defline",
                                         "validate"));
     
@@ -285,6 +289,9 @@ CStreamTestApp::GetProcess(
     }
     if ( testcase == "prosplign" ) {
         pProcess = new CProsplignProcess;
+    }
+    if ( testcase == "seqvector" ) {
+        pProcess = new CSeqVectorProcess;
     }
     if ( testcase == "unindexed-defline" ) {
         pProcess = new CDeflineProcess;
