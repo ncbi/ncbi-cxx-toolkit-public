@@ -364,14 +364,19 @@ cerr << "prot_nm " << prot_nm << endl;
        rule_idx = 0;
        string test_name, summ;
        ITERATE (list <CRef <CSuspect_rule> >, rit, thisInfo.suspect_prod_rules->Get()) {
-         if (rule_check.DoesStringMatchSuspectRule(m_bioseq_hl, prot_nm, *feat_in_use, **rit)){
+         if ( rule_check.DoesStringMatchSuspectRule(m_bioseq_hl, prot_nm, *feat_in_use, **rit)){
+/*
+cerr << "yes ridx " << rule_idx << " prot_nm " << prot_nm << endl;
+cerr << MSerial_AsnText << **rit << endl;
+*/
               thisInfo.test_item_list[GetName()].push_back(
                    NStr::UIntToString((int)(*rit)->GetRule_type()) + "$" 
-                   + NStr::UIntToString(rule_idx) + "@" + GetDiscItemText(*feat_in_use));
+                   + NStr::UIntToString(rule_idx) + "@" 
+                   + GetDiscItemText(*feat_in_use));
               test_name = thisInfo.susrule_summ[rule_idx][0];
               summ = thisInfo.susrule_summ[rule_idx][2];
               thisInfo.test_item_objs[test_name + "$" + summ].push_back(
-                                                     CConstRef<CObject>(feat_in_use));
+                                             CConstRef<CObject>(feat_in_use));
          }
          rule_idx ++;
        }
@@ -398,21 +403,28 @@ void CBioseq_on_SUSPECT_RULE :: GetReportForRules(CRef <CClickableItem>& c_item)
        test_name = thisInfo.susrule_summ[rule_idx][0];
        fixtp_name = thisInfo.susrule_summ[rule_idx][1];
        summ = thisInfo.susrule_summ[rule_idx][2];
-       AddSubcategory(name_cat_citem, test_name+"$"+summ, &(rit->second), "feature " + summ, 
-                                                 "features " + summ,  e_OtherComment);
+/*
+cerr << "getreport rule_idx " << rule_idx 
+   << "  test_name " << test_name 
+   << " fixtp_name " << fixtp_name
+   << " summ " << summ << endl;
+*/
+       AddSubcategory(name_cat_citem, test_name+"$"+summ, &(rit->second), 
+                 "feature " + summ, "features " + summ,  e_OtherComment);
      } 
      name_cat_citem->setting_name = GetName();
      name_cat_citem->description = fixtp_name;
      name_cat_citem->expanded = true;
      c_item->item_list.insert(c_item->item_list.end(), 
-                          name_cat_citem->item_list.begin(), name_cat_citem->item_list.end());
+            name_cat_citem->item_list.begin(), name_cat_citem->item_list.end());
      c_item->subcategories.push_back(name_cat_citem);
      c_item->obj_list.insert(c_item->obj_list.end(), 
-                           name_cat_citem->obj_list.begin(), name_cat_citem->obj_list.end());  
+             name_cat_citem->obj_list.begin(), name_cat_citem->obj_list.end());
    }   
 
-   c_item->description = GetContainsComment(c_item->item_list.size(), "product_name") 
-                            + "suspect phrase or characters";
+   c_item->description 
+      = GetContainsComment(c_item->item_list.size(), "product_name") 
+          + "suspect phrase or characters";
    c_item->expanded = true;
    fixtp2rule_feats.clear();
    rule2feats.clear();
@@ -7092,6 +7104,7 @@ void CBioseq_OVERLAPPING_CDS :: AddToDiscRep(const CSeq_feat* seq_feat)
 {
      string desc = GetDiscItemText(*seq_feat);
      CConstRef <CObject> feat_ref (seq_feat);
+     bool has_comment = false;
      if (seq_feat->CanGetComment()) {
          const string& comm = seq_feat->GetComment();
          if ( string::npos != NStr::FindNoCase(comm, "overlap")
@@ -7100,9 +7113,11 @@ void CBioseq_OVERLAPPING_CDS :: AddToDiscRep(const CSeq_feat* seq_feat)
                         || string::npos != NStr::FindNoCase(comm, "extend") ) {
               thisInfo.test_item_list[GetName()].push_back("comment$" + desc);
               thisInfo.test_item_objs[GetName() + "$comment"].push_back(feat_ref);
+              has_comment = true;
          }
+         
      }
-     else {
+     if (!has_comment) {
         thisInfo.test_item_list[GetName()].push_back("no_comment$" + desc);
         thisInfo.test_item_objs[GetName() + "$no_comment"].push_back(feat_ref);
      }
@@ -7115,9 +7130,9 @@ bool CBioseq_OVERLAPPING_CDS :: HasNoSuppressionWords(const CSeq_feat* seq_feat)
   string prod_nm;
   if (seq_feat->GetData().GetSubtype() == CSeqFeatData::eSubtype_cdregion) {
      prod_nm = GetProdNmForCD(*seq_feat);
-     if ( CDiscRepUtil::IsWholeWord(prod_nm, "ABC")
-            || string::npos != NStr::FindNoCase(prod_nm, "transposon")
-            || string::npos != NStr::FindNoCase(prod_nm, "transposase"))
+     if ( DoesStringContainPhrase(prod_nm, "ABC")
+                    || DoesStringContainPhrase(prod_nm, "transposon", false, false)
+                    || DoesStringContainPhrase(prod_nm, "transposase", false, false))
           return false;
      else return true;
   }
@@ -7128,41 +7143,28 @@ bool CBioseq_OVERLAPPING_CDS :: HasNoSuppressionWords(const CSeq_feat* seq_feat)
 
 void CBioseq_OVERLAPPING_CDS :: TestOnObj(const CBioseq& bioseq)
 {
-  bool sf_i_processed = false;
-  int i, j;
-/*
-  vector <const CSeq_feat*>::iterator jt;
+  bool feat_i_processed = false;
+  vector <const CSeq_feat*>::const_iterator jt;
   ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
+    feat_i_processed = false;
     const CSeq_loc& loc_i = (*it)->GetLocation();
-    jt = it + 1;
-    if (jt == cd_feat.end()) continue;
-    const CSeq_loc& loc_j = (*jt)->GetLocation();
-    
-    
-  }
-*/
-
-  for (i=0; (int)i< (int)(cd_feat.size() - 1); i++) {
-    sf_i_processed = false;
-    for (j = i+1; j < (int)cd_feat.size(); j++) {
-      const CSeq_loc& loc_i = cd_feat[i]->GetLocation();
-      const CSeq_loc& loc_j = cd_feat[j]->GetLocation();
+    ENa_strand strandi = loc_i.GetStrand();
+    jt = it;
+    while (++jt != cd_feat.end()) {
+      const CSeq_loc& loc_j = (*jt)->GetLocation();
       if (loc_i.GetStop(eExtreme_Positional) < loc_j.GetStart(eExtreme_Positional)) break;
-      if (!OverlappingProdNmSimilar(GetProdNmForCD(*(cd_feat[i])), 
-                                    GetProdNmForCD(*(cd_feat[j])))) 
-          continue;
-      ENa_strand strand1 = loc_i.GetStrand();
-      ENa_strand strand2 = loc_j.GetStrand();
-      if ((strand1 == eNa_strand_minus && strand2 != eNa_strand_minus)
-          || (strand1 != eNa_strand_minus && strand2 == eNa_strand_minus)) continue;
+      if (!OverlappingProdNmSimilar(GetProdNmForCD(**it), GetProdNmForCD(**jt))) continue;
+      ENa_strand strandj = loc_j.GetStrand();
+      if ((strandi != strandj) && (strandi ==eNa_strand_minus || strandj ==eNa_strand_minus))
+           continue;
       if ( eNoOverlap != Compare(loc_i, loc_j, thisInfo.scope)) {
-          if (!sf_i_processed) {
-              if ( HasNoSuppressionWords(cd_feat[i])) AddToDiscRep(cd_feat[i]);
-              sf_i_processed = true;
+          if (!feat_i_processed) {
+              if ( HasNoSuppressionWords(*it)) AddToDiscRep(*it);
+              feat_i_processed = true;
           }
-          if ( HasNoSuppressionWords(cd_feat[j]) ) AddToDiscRep(cd_feat[j]);
+          if ( HasNoSuppressionWords(*jt) ) AddToDiscRep(*jt);
       }
-    }  
+    }
   }
 }
 
@@ -7174,15 +7176,15 @@ void CBioseq_OVERLAPPING_CDS :: GetReport(CRef <CClickableItem>& c_item)
    GetTestItemList(c_item->item_list, subcat2list);
    c_item->item_list.clear();
    ITERATE (Str2Strs, it, subcat2list) {
-     if (it->first == "comment") {
+     if (it->first != "comment") {
        desc1 = "coding region overlapps";
        desc2 = "coding regions overlap";
-       desc3 = " another coding region with a similar or identical name that do not have the appropriate note text";
+       desc3 = " another coding region with a similar or identical name that do not have the appropriate note text.";
      }
      else {
        desc1 = "coding region overlapps";
        desc2 = "coding regions overlap";
-       desc3 = " another coding region with a similar or identical name but have the appropriate note text";
+       desc3 = " another coding region with a similar or identical name but have the appropriate note text.";
      }
      AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second),desc1, desc2, 
                                                              e_OtherComment, true, desc3);
@@ -9080,10 +9082,16 @@ bool CSeqEntry_test_on_biosrc :: DoTaxonIdsMatch(const COrg_ref& org1, const COr
              || !org2.CanGetDb() || org2.GetDb().empty())
       return false;
 
+//cerr << "222\n";
    ITERATE (vector <CRef <CDbtag> >, it, org1.GetDb()) {
+//cerr << "org1.any " << MSerial_AsnText << **it << endl;
+//cerr << "GetType " << (*it)->GetType() << endl;
        if ((*it)->GetType() == CDbtag::eDbtagType_taxon) {
           ITERATE (vector <CRef <CDbtag> >, jt, org2.GetDb()) {
+//cerr << "org2.any " << MSerial_AsnText << **jt << endl;
              if ((*jt)->GetType() == CDbtag::eDbtagType_taxon) {
+//cerr << "org1.taxon " << MSerial_AsnText << **it << endl;
+//cerr << "org2.taxon " << MSerial_AsnText << **jt << endl;
                 if ((*it)->Match(**jt)) return true;
                 else return false;
              }
@@ -9278,11 +9286,17 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
        db_tax =lookup_tax->GetOrg().CanGetTaxname() ?
                                   lookup_tax->GetOrg().GetTaxname() : kEmptyStr;
        if (m_run_tmiss && org_tax != db_tax) {
+//cerr << "org_tax  " << org_tax << "  |db_tax " << db_tax << endl;
            thisInfo.test_item_list[GetName_tbad()].push_back(desc);
            thisInfo.test_item_objs[GetName_tbad()].push_back(CConstRef <CObject>(&biosrc));
        }
        else {
+
+//cerr << "biosrc.GetOrg1 \n" << MSerial_AsnText << biosrc.GetOrg() <<endl;
+//cerr << "lookup_tax1 \n" << MSerial_AsnText << lookup_tax->GetOrg() << endl;
          if (m_run_tbad && !DoTaxonIdsMatch(biosrc.GetOrg(), lookup_tax->GetOrg())) {
+//cerr << "biosrc.GetOrg2 \n" << MSerial_AsnText << biosrc.GetOrg() <<endl;
+//cerr << "lookup_tax2 \n" << MSerial_AsnText << lookup_tax->GetOrg() << endl;
              thisInfo.test_item_list[GetName_tbad()].push_back(desc);
              thisInfo.test_item_objs[GetName_tbad()].push_back(CConstRef <CObject>(&biosrc));
          }
@@ -10425,7 +10439,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notif
 //cerr << "block_text " << block_text << endl;
   ITERATE (Str2UInt, it, thisInfo.whole_word) {
      if (CTestAndRepData 
-           :: DoesStringContainPhrase(block_text, it->first, false,  (bool)it->second)) {
+           :: DoesStringContainPhrase(block_text, it->first, false,  (bool)it->second)){
        switch (which_block) {
          case CFlatFileConfig::fGenbankBlocks_Locus: /*cerr << "locus\n";*/strtmp = m_mol_desc; break;
          case CFlatFileConfig::fGenbankBlocks_Defline: /*cerr << "defline \n";*/strtmp = m_tlt_desc; break;
@@ -10435,7 +10449,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notif
          case CFlatFileConfig::fGenbankBlocks_Sourcefeat: 
             {
               const CFeatureItemBase& feat_item 
-                             = dynamic_cast<const CFeatureItemBase&> (flat_item);
+                            = dynamic_cast<const CFeatureItemBase&> (flat_item);
               strtmp = GetDiscItemText( feat_item.GetFeat().GetOriginalFeature());
             }
             break;

@@ -121,7 +121,6 @@ map <EMolecule_type, string>               CDiscRepInfo :: moltp_name;
 map <ETechnique_type, CMolInfo::ETech>     CDiscRepInfo :: techtp_mitech;
 map <ETechnique_type, string>              CDiscRepInfo :: techtp_name;
 vector <string>                            CDiscRepInfo :: s_putative_replacements;
-vector <string>                            CDiscRepInfo :: suspect_name_category_names;
 map <ECDSGeneProt_field, string>           CDiscRepInfo :: cgp_field_name;
 map <ECDSGeneProt_feature_type_constraint, string>   CDiscRepInfo :: cgp_feat_name;
 vector <vector <string> >                            CDiscRepInfo :: susterm_summ;
@@ -168,7 +167,7 @@ static CDiscTestInfo thisTest;
 static CTestGrp  thisGrp;
 
 
-// removed from *_app.cpp
+// removed from *_app.cpp, for suspect rules in a file
 const char* fix_type_names[] = {
   "None",
   "Typo",
@@ -349,21 +348,31 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
     // ini. suspect rule file && susrule_fixtp_summ
     strtmp = reg.Get("RuleFiles", "SuspectRuleFile");
     if (!CFile(strtmp).Exists()) strtmp = "/ncbi/data/product_rules.prt";
-    if (CFile(strtmp).Exists()) ReadInBlob(*thisInfo.suspect_prod_rules, strtmp);
+    if (CFile(strtmp).Exists()) 
+                 ReadInBlob(*thisInfo.suspect_prod_rules, strtmp);
 
     CSummarizeSusProdRule summ_susrule;
+// unsigned ridx = 0;
     ITERATE (list <CRef <CSuspect_rule> >, rit, thisInfo.suspect_prod_rules->Get()) {
        arr.clear();
        EFix_type fixtp = (*rit)->GetRule_type();
-       if (fixtp == eFix_type_typo) strtmp = CBioseq_on_SUSPECT_RULE :: GetName_typo();
+       if (fixtp == eFix_type_typo) 
+                   strtmp = CBioseq_on_SUSPECT_RULE :: GetName_typo();
        else if (fixtp == eFix_type_quickfix) 
                       strtmp = CBioseq_on_SUSPECT_RULE::GetName_qfix();
        else strtmp = CBioseq_on_SUSPECT_RULE :: GetName_name();
+/*
+if (fixtp == eFix_type_database) {
+cerr << "ridx " << ridx << endl;
+cerr << "rule names " << fix_type_names[(int)fixtp] <<endl;
+}
+*/
        arr.push_back(strtmp);  // test_name
        arr.push_back(fix_type_names[(int)fixtp]);  // fixtp_name
        arr.push_back(summ_susrule.SummarizeSuspectRuleEx(**rit));
 
        thisInfo.susrule_summ.push_back(arr);
+// ridx++;
     }
 
     // ini. of susterm_summ for suspect_prod_terms if necessary
@@ -383,7 +392,7 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
           // CTestAndRepData can't have these functions overwritten. 
           if (this_term.search_func == CTestAndRepData :: EndsWithPattern)
                 strtmp = "end";
-          else if (this_term.search_func == CTestAndRepData :: StartsWithPattern)
+          else if (this_term.search_func ==CTestAndRepData :: StartsWithPattern)
                  strtmp = "start";
           else strtmp = "contain";
           arr.push_back(strtmp); // test_desc;
@@ -677,11 +686,6 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
    strtmp = reg.Get("StringVecIni", "SPutativeReplacements");
    thisInfo.s_putative_replacements 
             = NStr::Tokenize(strtmp, ",", thisInfo.s_putative_replacements);
-
-   // ini. of suspect_name_category_names
-   strtmp = reg.Get("StringVecIni", "SuspectNameCategoryNames");
-   thisInfo.suspect_name_category_names
-        = NStr::Tokenize(strtmp, ",", thisInfo.suspect_name_category_names);
 
    // ini. of cgp_field_name
    for (i = eCDSGeneProt_field_cds_comment; i <= eCDSGeneProt_field_codon_start; i++) {
@@ -990,7 +994,8 @@ cout << "Number of bioseq: " << myChecker.GetNumBioseq() << endl;
 
 
 static const s_test_property test1_list[] = {
-   {"SUSPECT_PRODUCT_NAMES", fDiscrepancy | fAsndisc},
+   {"TAX_LOOKUP_MISSING", fDiscrepancy | fAsndisc},
+   {"TAX_LOOKUP_MISMATCH", fDiscrepancy | fAsndisc},
 };
 
 static const s_test_property test_list[] = {
