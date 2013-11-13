@@ -1,0 +1,6 @@
+#!/bin/bash
+./driver -i annot/input/ -t annot/dbsnp/ $*
+./driver -i annot/input/ -t annot/varloc/ -varloc $*
+./driver -i variation/input/ -t variation/dbsnp/  $*
+./driver -i variation/input/ -t variation/varloc/ -varloc $*
+
