@@ -2129,6 +2129,7 @@ CQueryImpl::HasMoreResultSets(void)
             switch (m_CurRS->GetResultType()) {
             case eDB_StatusResult:
                 delete m_CurRS;
+                m_CurRS = NULL;
                 break;
             case eDB_ParamResult:
                 if (m_CallStmt) {
@@ -2141,6 +2142,7 @@ CQueryImpl::HasMoreResultSets(void)
                     }
                 }
                 delete m_CurRS;
+                m_CurRS = NULL;
                 break;
             case eDB_RowResult:
                 ++m_CurRSNo;
