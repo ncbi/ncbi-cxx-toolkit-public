@@ -1079,7 +1079,9 @@ IsLocalId(const objects::CSeq_id* seqid)
         return retval;
     }
 
-    if (seqid->IsLocal() || seqid->IdentifyAccession() == CSeq_id::eAcc_local) {
+    CSeq_id::EAccessionInfo id_info = seqid->IdentifyAccession();
+    if (seqid->IsLocal() || id_info == CSeq_id::eAcc_local  ||
+    	id_info == CSeq_id::eAcc_general) {
         retval = true;
     }
     return retval;
