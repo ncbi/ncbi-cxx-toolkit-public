@@ -41,7 +41,7 @@ ifeq "" "$(findstring q,$(MAKEFLAGS))"
 DEPFLAGS_ALL = $(DEPFLAGS) $(LOCAL_CPPFLAGS) $(CPPFLAGS)
 D_TAIL = $(DEPFLAGS_ALL) $< $(DEPFLAGS_POST) \
 	 | sed -e '/^\#/b' -e 's%[^ :\\][^ :\\]*%$$(wildcard &)%g' \
-	       -e 's%\$$(wildcard $*@obj_ext@) *:%$*@obj_ext@ $@ :%g' \
+	       -e 's%\$$(wildcard $(*F)@obj_ext@) *:%$*@obj_ext@ $@ :%g' \
 	       -e 's%$(incdir)%$$(incdir)%g' \
 	       -e 's%$(includedir)%$$(includedir)%g' \
 	       -e 's%$(includedir0)%$$(includedir0)%g' $(FIXPCH) > $@_ \
