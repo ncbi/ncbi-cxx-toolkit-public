@@ -21,7 +21,7 @@ MODULES = omssa access biblio blast blastdb blastxml cdd cn3d docsum biotree \
 new_module = $(builddir)/new_module.sh
 
 all all_files sources makefiles directories purge_sources purge_all_sources purge_all_files:
-	cd $(srcdir) || exit 2; \
+	+cd $(srcdir) || exit 2; \
 	for i in $(MODULES); do \
 	  if test -f "$$i/$$i.asn"; then \
 	    MAKE=$(MAKE); export MAKE; \
