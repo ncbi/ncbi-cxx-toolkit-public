@@ -6394,7 +6394,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "USM<PER>	s	Universidad Nacional Mayor de San Marcos, Museo de Historia Natural, Herbario",
 "USMS	s	University of Southern Mississippi, Department of Biological Sciences",
 "USNC	s	Smithsonian Institution, Paleobiology Department",
-"USNM	s	National Museum of Natural History, Smithsonian Institution",
+"USNM	sb	National Museum of Natural History, Smithsonian Institution",
 "USNM:Birds	s	National Museum of Natural History, Smithsonian Institution, Division of Birds",
 "USNM:ENT	s	National Museum of Natural History, Smithsonian Institution, Entomology Collection",
 "USNM:FISH	s	National Museum of Natural History, Smithsonian Institution, National Fish Collection",
