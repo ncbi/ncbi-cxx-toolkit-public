@@ -131,6 +131,14 @@ bool CGff3Writer::WriteAlign(
     const string& strAssAcc )
 //  ----------------------------------------------------------------------------
 {
+    try {
+        align.Validate(true);
+    }
+    catch(CException& e) {
+        string msg("Inconsistent alignment data ");
+        msg += ("\"\"\"" + e.GetMsg() + "\"\"\"");
+        NCBI_THROW(CObjWriterException, eBadInput, msg);
+    }
     if (!CGff2Writer::WriteAlign(align, strAssName, strAssAcc)) {
         return false;
     }
@@ -173,14 +181,6 @@ bool CGff3Writer::x_WriteAlign(
     bool bInvertWidth )
 //  ----------------------------------------------------------------------------
 {
-    try {
-        align.Validate(true);
-    }
-    catch(CException& e) {
-        string msg("Inconsistent alignment data ");
-        msg += ("\"\"\"" + e.GetMsg() + "\"\"\"");
-        NCBI_THROW(CObjWriterException, eBadInput, msg);
-    }
     if ( ! align.IsSetSegs() ) {
         cerr << "Object type not supported." << endl;
         return true;
@@ -215,6 +215,7 @@ bool CGff3Writer::x_WriteAlignDisc(
 
     const CSeq_align_set::Tdata& data = align.GetSegs().GetDisc().Get();
     for ( CASCIT cit = data.begin(); cit != data.end(); ++cit ) {
+
         CRef<CSeq_align> pA(new CSeq_align);
         pA->Assign(**cit);
         if ( align.IsSetScore() ) {
