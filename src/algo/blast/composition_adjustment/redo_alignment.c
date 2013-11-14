@@ -1135,8 +1135,8 @@ Blast_RedoOneMatch(BlastCompo_Alignment ** alignments,
         BlastCompo_SequenceData query = {0,}; 
         /* the composition of this query */
         Blast_AminoAcidComposition * query_composition;  
-        Boolean nearIdenticalStatus; /* are query and subject nearly
-                                        identical in the aligned part?*/
+        Boolean nearIdenticalStatus = TRUE; /* are query and subject nearly
+                                               identical in the aligned part?*/
         Boolean oldNearIdenticalStatus = FALSE; /* were query and subject nearly
                                            identical for previous alignmnet
                                            between the same query and subject*/

@@ -2209,8 +2209,8 @@ s_CreateWordArray(const Uint1* seq_data, Int4 seq_len, Uint8** words)
 {
     int word_size = 8;         /* word size for k-mer matching */
     Uint8* query_hashes;       /* list of hashes for query words */
-    Uint8 mask = 0xFFFFFFFFFF; /* mask for computing hash values */
-
+    Uint8 mask = NCBI_CONST_UINT8(0xFFFFFFFFFF); /* mask for computing hash
+                                                    values */
     int i;
 
     /* if query or subject length is smaller than word size, exit */
