@@ -1539,6 +1539,7 @@ bool CSeqMap::x_DoUpdateSeq_inst(CSeq_inst& inst)
         }
     }
     delta.erase(iter, delta.end());
+    inst.ResetSeq_data();
     return true;
 }
 

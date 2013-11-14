@@ -806,7 +806,9 @@ void CTSE_Info::x_LoadChunk(TChunkId chunk_id) const
 
 void CTSE_Info::x_LoadChunks(const TChunkIds& chunk_ids) const
 {
-    m_Split->x_LoadChunks(chunk_ids);
+    if ( !chunk_ids.empty() ) {
+        m_Split->x_LoadChunks(chunk_ids);
+    }
 }
 
 
