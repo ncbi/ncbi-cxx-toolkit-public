@@ -1711,27 +1711,37 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
     if (ss.empty()) {
         return 0;
     }
-    E_Choice type = s_CheckForFastaTag(ss);
-    if (type == e_not_set) {
-        CRef<CSeq_id> id(new CSeq_id(ss, flags | fParse_NoFASTA));
-        ids.push_back(id);
-        return 1;
-    }
+    SIZE_TYPE count = 0;
     list<CTempString> fasta_pieces;
     NStr::Split(ss, "|", fasta_pieces, NStr::eNoMergeDelims);
-    _ASSERT(fasta_pieces.size() >= 2);
-    SIZE_TYPE count = 0;
-    while ( !fasta_pieces.empty() ) {
-        try {
-            CRef<CSeq_id> id(new CSeq_id);
-            type = id->x_Init(fasta_pieces, type);
-            ids.push_back(id);
-            ++count;
-        } catch (std::exception& e) {
-            if ((flags & fParse_PartialOK) != 0) {
-                ERR_POST_X(7, Warning << e.what());
-            } else {
-                throw;
+    _ASSERT(fasta_pieces.size() > 0);
+    if (fasta_pieces.size() == 1)
+    {
+        CRef<CSeq_id> id(new CSeq_id(ss, flags | fParse_NoFASTA));
+        ids.push_back(id);
+        count = 1;
+    }
+    else
+    {
+        E_Choice type = WhichInverseSeqId(fasta_pieces.front());       
+        if (type == e_not_set)
+        {
+            // unknown database are reported as 'general'
+            fasta_pieces.push_front("gnl");
+            type = e_General;
+        }
+        while ( !fasta_pieces.empty() ) {
+            try {
+                CRef<CSeq_id> id(new CSeq_id);
+                type = id->x_Init(fasta_pieces, type);
+                ids.push_back(id);
+                ++count;
+            } catch (std::exception& e) {
+                if ((flags & fParse_PartialOK) != 0) {
+                    ERR_POST_X(7, Warning << e.what());
+                } else {
+                    throw;
+                }
             }
         }
     }
