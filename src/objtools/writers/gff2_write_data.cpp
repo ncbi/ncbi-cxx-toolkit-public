@@ -491,6 +491,24 @@ CConstRef<CUser_object> sGetUserObjectByType(
 }
     
 //  ----------------------------------------------------------------------------
+CConstRef<CUser_object> sGetUserObjectByType(
+    const list<CRef<CUser_object > >& uos,
+    const string& strType)
+//  ----------------------------------------------------------------------------
+{
+    CConstRef<CUser_object> pResult;
+    typedef list<CRef<CUser_object > >::const_iterator CIT;
+    for (CIT cit=uos.begin(); cit != uos.end(); ++cit) {
+        const CUser_object& uo = **cit;
+        pResult = sGetUserObjectByType(uo, strType);
+        if (pResult) {
+            return pResult;
+        }
+    }
+    return CConstRef<CUser_object>();
+}
+
+//  ----------------------------------------------------------------------------
 bool CGffWriteRecordFeature::x_AssignSource(
     CMappedFeat mf )
 //  ----------------------------------------------------------------------------
@@ -524,6 +542,19 @@ bool CGffWriteRecordFeature::x_AssignSource(
         }
     }
 
+    if (mf.IsSetExts()) {
+        CConstRef<CUser_object> model_evidence = sGetUserObjectByType( 
+            mf.GetExts(), "ModelEvidence" );
+        if ( model_evidence ) {
+            string strMethod;
+            if ( model_evidence->HasField( "Method" ) ) {
+                m_strSource = model_evidence->GetField( 
+                    "Method" ).GetData().GetStr();
+                    return true;
+            }
+        }
+    }
+        
     CScope& scope = mf.GetScope();
     CSeq_id_Handle idh = sequence::GetIdHandle(mf.GetLocation(),
         &mf.GetScope());
