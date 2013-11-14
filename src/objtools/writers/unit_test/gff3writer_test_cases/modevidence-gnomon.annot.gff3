@@ -1,0 +1,13 @@
+##gff-version 3
+#!gff-spec-version 1.20
+#!processor NCBI annotwriter
+NW_004929286.1	Gnomon	gene	1559	3530	.	+	.	ID=gene0;Name=gene.234535925;description=gene.234535925;gbkey=Gene;gene=gene.234535925
+NW_004929286.1	Chainer	mRNA	1559	3530	.	+	.	ID=rna0;Name=rna.229039288;Parent=gene0;gbkey=mRNA;gene=gene.234535925;transcript_id=rna.229039288
+NW_004929286.1	Chainer	exon	1559	1672	.	+	.	ID=id0;Parent=rna0;gbkey=mRNA;gene=gene.234535925;transcript_id=rna.229039288
+NW_004929286.1	Chainer	exon	1838	2055	.	+	.	ID=id1;Parent=rna0;gbkey=mRNA;gene=gene.234535925;transcript_id=rna.229039288
+NW_004929286.1	Chainer	exon	2423	2549	.	+	.	ID=id2;Parent=rna0;gbkey=mRNA;gene=gene.234535925;transcript_id=rna.229039288
+NW_004929286.1	Chainer	exon	3231	3530	.	+	.	ID=id3;Parent=rna0;gbkey=mRNA;gene=gene.234535925;transcript_id=rna.229039288
+NW_004929286.1	Gnomon	CDS	2018	2055	.	+	0	ID=cds0;Name=GNOMON:229039288.p;Parent=rna0;gbkey=CDS;gene=gene.234535925;product=GNOMON:229039288.p;protein_id=GNOMON:229039288.p
+NW_004929286.1	Gnomon	CDS	2423	2549	.	+	1	ID=cds0;Name=GNOMON:229039288.p;Parent=rna0;gbkey=CDS;gene=gene.234535925;product=GNOMON:229039288.p;protein_id=GNOMON:229039288.p
+NW_004929286.1	Gnomon	CDS	3231	3467	.	+	0	ID=cds0;Name=GNOMON:229039288.p;Parent=rna0;gbkey=CDS;gene=gene.234535925;product=GNOMON:229039288.p;protein_id=GNOMON:229039288.p
+###

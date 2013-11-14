@@ -1,0 +1,335 @@
+Seq-annot ::= {
+  desc {
+    region whole gi 528476511,
+    title "GPS_001960025.1: Gnomon Models",
+    name "Gnomon Models"
+  },
+  data ftable {
+    {
+      data gene {
+        desc "gene.234535925"
+      },
+      location int {
+        from 1558,
+        to 3529,
+        strand plus,
+        id gi 528476511
+      },
+      xref {
+        {
+          id local str "rna.229039288"
+        }
+      },
+      ids {
+        local str "gene.234535925"
+      },
+      exts {
+        {
+          type str "ModelEvidence",
+          data {
+            {
+              label str "Method",
+              data str "Gnomon"
+            },
+            {
+              label str "Contig Name",
+              data str "GPS_001960025.1"
+            }
+          }
+        }
+      }
+    },
+    {
+      data rna {
+        type mRNA
+      },
+      product whole general {
+        db "GNOMON",
+        tag str "229039288.m"
+      },
+      location packed-int {
+        {
+          from 1558,
+          to 1671,
+          strand plus,
+          id gi 528476511
+        },
+        {
+          from 1837,
+          to 2054,
+          strand plus,
+          id gi 528476511
+        },
+        {
+          from 2422,
+          to 2548,
+          strand plus,
+          id gi 528476511
+        },
+        {
+          from 3230,
+          to 3529,
+          strand plus,
+          id gi 528476511
+        }
+      },
+      qual {
+        {
+          qual "transcript_id",
+          val "rna.229039288"
+        }
+      },
+      xref {
+        {
+          id local str "gene.234535925"
+        },
+        {
+          id local str "cds.229039288"
+        }
+      },
+      ids {
+        local str "rna.229039288"
+      },
+      exts {
+        {
+          type str "ModelEvidence",
+          data {
+            {
+              label str "Method",
+              data str "Chainer"
+            },
+            {
+              label str "Support",
+              data fields {
+                {
+                  label str "Core",
+                  num 2,
+                  data strs {
+                    "lcl|RNA_SEQ_COLLAPSE.41349.18",
+                    "gi|220675825"
+                  }
+                },
+                {
+                  label str "Proteins",
+                  num 2,
+                  data strs {
+                    "gi|220675825",
+                    "gi|220675827"
+                  }
+                },
+                {
+                  label str "RNASeq",
+                  num 81,
+                  data strs {
+                    "lcl|RNA_SEQ_COLLAPSE.41349.100",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.101",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.102",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.103",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.104",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.106",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.107",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.109",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.11",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.110",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.1119",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.1120",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.1121",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.1296",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.1297",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.1298",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.1299",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.13",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.1300",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.15",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.1608",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.17",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.18",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.195",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.197",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.198",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.199",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.200",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.201",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.202",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.203",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.204",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.205",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.206",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.207",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.208",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.210",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.211",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.212",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.213",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.214",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.215",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.218",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.219",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.220",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.221",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.222",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.223",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.224",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.225",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.226",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.228",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.229",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.230",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.231",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.233",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.37",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.38",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.40",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.41",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.42",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.43",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.44",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.45",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.46",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.47",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.48",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.49",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.50",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.51",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.52",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.53",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.54",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.55",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.56",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.58",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.59",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.60",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.62",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.63",
+                    "lcl|RNA_SEQ_COLLAPSE.41349.99"
+                  }
+                }
+              }
+            },
+            {
+              label str "CDS support",
+              data str "full"
+            },
+            {
+              label str "NMD",
+              data bool FALSE
+            },
+            {
+              label str "avg_base_coverage",
+              data real { 252417999267578, 10, -12 }
+            },
+            {
+              label str "avg_intron_coverage",
+              data real { 666666984558105, 10, -14 }
+            },
+            {
+              label str "coding",
+              data bool TRUE
+            },
+            {
+              label str "coding_propensity",
+              data real { 410528984069824, 10, -13 }
+            },
+            {
+              label str "for_refseq",
+              data bool TRUE
+            },
+            {
+              label str "model_score",
+              data real { 15, 10, 0 }
+            },
+            {
+              label str "pct_ab_initio",
+              data int 0
+            },
+            {
+              label str "pct_introns_with_transcripts",
+              data real { 1, 10, 2 }
+            },
+            {
+              label str "rnaseq_base_coverage",
+              data int 100
+            },
+            {
+              label str "rnaseq_biosamples_introns_full",
+              data int 1
+            },
+            {
+              label str "rnaseq_biosamples_introns_partial",
+              data int 3
+            },
+            {
+              label str "Contig Name",
+              data str "GPS_001960025.1"
+            },
+            {
+              label str "AlignSource",
+              data str "GNOMON:229039288.m"
+            }
+          }
+        }
+      }
+    },
+    {
+      data cdregion {
+        frame one,
+        code {
+          id 1
+        }
+      },
+      product whole general {
+        db "GNOMON",
+        tag str "229039288.p"
+      },
+      location packed-int {
+        {
+          from 2017,
+          to 2054,
+          strand plus,
+          id gi 528476511
+        },
+        {
+          from 2422,
+          to 2548,
+          strand plus,
+          id gi 528476511
+        },
+        {
+          from 3230,
+          to 3466,
+          strand plus,
+          id gi 528476511
+        }
+      },
+      qual {
+        {
+          qual "transcript_id",
+          val "rna.229039288"
+        }
+      },
+      xref {
+        {
+          id local str "rna.229039288"
+        }
+      },
+      ids {
+        local str "cds.229039288"
+      },
+      exts {
+        {
+          type str "ModelEvidence",
+          data {
+            {
+              label str "Method",
+              data str "Gnomon"
+            },
+            {
+              label str "Contig Name",
+              data str "GPS_001960025.1"
+            }
+          }
+        }
+      }
+    }
+  }
+}
