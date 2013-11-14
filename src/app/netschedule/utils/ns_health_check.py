@@ -389,7 +389,14 @@ def testDefaultQueueClassExists( nsConnect ):
 def createTestQueue( nsConnect ):
     " Creates the test purpose dynamic queue "
     printVerbose( "Creating " + DYNAMIC_QUEUE_TO_TEST + " queue" )
-    nsConnect.execute( "QCRE " + DYNAMIC_QUEUE_TO_TEST + " default" )
+    try:
+        nsConnect.execute( "QCRE " + DYNAMIC_QUEUE_TO_TEST + " default" )
+    except Exception, exc:
+        # If many scripts try to create the same queue simultaneously
+        # then an error 'already exists' is generated. Choke it if so.
+        if 'already exists' in str( exc ).lower():
+            return
+        raise
     return
 
 def operationTest( nsConnect ):
