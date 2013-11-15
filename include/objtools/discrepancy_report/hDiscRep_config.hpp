@@ -292,7 +292,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static vector <string>                          suspect_phrases;
         static map <int, string>                        genome_names;
 
-        s_SuspectProductNameData                    suspect_prod_terms[];
+        s_SuspectProductNameData *                   suspect_prod_terms;
         unsigned GetSusProdTermsLen(s_SuspectProductNameData* terms) { 
                   return sizeof(terms);
         }
