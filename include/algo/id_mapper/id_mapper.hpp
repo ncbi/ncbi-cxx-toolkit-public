@@ -79,10 +79,13 @@ public:
         typedef objects::CGC_TypedSeqId::E_Choice E_Choice;
         typedef objects::CGC_SeqIdAlias::E_AliasTypes E_Alias;
 
+        bool Primary; // CGC_Sequence::GetSeq_id(), what the Gencoll considers most important
+                      // When used by Map, Primary == true overrides the next 4 fields
+                      // When used by Guess, it is informing the caller about if it is primary or not.
         E_Choice TypedChoice;
         E_Alias Alias;
-        string External;
-        string Pattern;
+        string External; // outside organization name, like UCSC
+        string Pattern;  // pattern matching, like chr%s to find 'chrMT' matches replicon named 'MT'
         int Role;  // EGC_SequenceRole
 
         enum

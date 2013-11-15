@@ -491,12 +491,17 @@ CGencollIdMapper::x_RecursiveSeqFix(CGC_Sequence& Seq)
 
     // Bad Random GIs
     if (Seq.GetSeq_id().IsGi()) {
-        CTypeConstIterator<CSeq_id> IdIter(Seq);
+        //CTypeConstIterator<CSeq_id> IdIter(Seq);
         bool IsRandom = false;
-        for ( ; IdIter; ++IdIter) {
-            if (NStr::EndsWith(IdIter->GetSeqIdString(), "_random")) {
-                IsRandom = true;
-                break;
+        if (Seq.CanGetSeq_id_synonyms()) {
+            ITERATE (CGC_Sequence::TSeq_id_synonyms, SynIter, Seq.GetSeq_id_synonyms()) {
+                CTypeConstIterator<CSeq_id> IdIter(**SynIter);
+                for ( ; IdIter; ++IdIter) {
+                    if (NStr::EndsWith(IdIter->GetSeqIdString(), "_random")) {
+                        IsRandom = true;
+                        break;
+                    }
+                }
             }
         }
         if (IsRandom) {
@@ -875,6 +880,9 @@ CGencollIdMapper::x_GetIdFromSeqAndSpec(const CGC_Sequence& Seq,
                                         const SIdSpec& Spec
                                        ) const
 {
+    if (Spec.Primary && Seq.CanGetSeq_id()) {
+        return ConstRef(&Seq.GetSeq_id());
+    }
     if (Seq.CanGetSeq_id_synonyms()) {
         ITERATE (CGC_Sequence::TSeq_id_synonyms, it, Seq.GetSeq_id_synonyms()) {
             const CGC_TypedSeqId::E_Choice syn_type = (*it)->Which();
@@ -938,7 +946,12 @@ CGencollIdMapper::x_CanSeqMeetSpec(const CGC_Sequence& Seq,
     }
     //int SeqRole = x_GetRole(Seq);
     bool HasId = false;
-    if (Seq.CanGetSeq_id_synonyms()) {
+    
+    if (Spec.Primary && Seq.CanGetSeq_id()) {
+        HasId = true;
+    }
+    
+    if (!Spec.Primary && Seq.CanGetSeq_id_synonyms()) {
         ITERATE (CGC_Sequence::TSeq_id_synonyms, it, Seq.GetSeq_id_synonyms()) {
             const CGC_TypedSeqId::E_Choice syn_type = (*it)->Which();
             if (syn_type != Spec.TypedChoice) {
@@ -1007,11 +1020,15 @@ CGencollIdMapper::x_MakeSpecForSeq(const CSeq_id& Id,
                                    SIdSpec& Spec
                                   ) const
 {
+    Spec.Primary = false;
     Spec.TypedChoice = CGC_TypedSeqId::e_not_set;
     Spec.Alias = CGC_SeqIdAlias::e_None;
     Spec.Role = SIdSpec::e_Role_NotSet;
     Spec.External.clear();
     Spec.Pattern.clear();
+
+    if(Id.Equals(Seq.GetSeq_id()))
+        Spec.Primary = true;
 
     if (Seq.CanGetRoles()) {
         Spec.Role = x_GetRole(Seq);
@@ -1531,7 +1548,8 @@ CGencollIdMapper::x_Merge_E_Gaps(const E_Gap First, const E_Gap Second) const
 }
 
 CGencollIdMapper::SIdSpec::SIdSpec()
-    : TypedChoice(objects::CGC_TypedSeqId::e_not_set), 
+    : Primary(false),
+      TypedChoice(objects::CGC_TypedSeqId::e_not_set), 
       Alias(objects::CGC_SeqIdAlias::e_None),
       External(kEmptyStr),
       Pattern(kEmptyStr), 
@@ -1553,7 +1571,8 @@ CGencollIdMapper::SIdSpec::operator<(const SIdSpec& Other) const
 bool
 CGencollIdMapper::SIdSpec::operator==(const SIdSpec& Other) const
 {
-    if (!(TypedChoice == Other.TypedChoice &&
+    if (!(Primary == Other.Primary &&
+          TypedChoice == Other.TypedChoice &&
           Alias == Other.Alias &&
           External == Other.External &&
           Pattern == Other.Pattern &&
@@ -1571,6 +1590,12 @@ CGencollIdMapper::SIdSpec::ToString(void) const
     string Result;
     Result.reserve(64);
     
+    if(Primary)
+        Result += "Prim";
+    else
+        Result += "NotPrim";
+    Result += ":";
+
     switch (TypedChoice) {
     case 0:
         Result += "NotSet";

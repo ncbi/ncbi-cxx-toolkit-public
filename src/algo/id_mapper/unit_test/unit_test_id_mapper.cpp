@@ -529,13 +529,110 @@ BOOST_AUTO_TEST_CASE(TestCaseEverythingTest)
 
     CGencollIdMapper::SIdSpec GuessSpec;
     Mapper.Guess(*OrigLoc, GuessSpec);
-    BOOST_CHECK_EQUAL(GuessSpec.ToString(), "Private:NotSet::LG%s:CHRO");
+    BOOST_CHECK_EQUAL(GuessSpec.ToString(), "NotPrim:Private:NotSet::LG%s:CHRO");
 
     CRef<CSeq_loc> RoundTrip = Mapper.Map(*Result, GuessSpec);
 
     // Check that Map results meet expectations
     BOOST_CHECK(RoundTrip->Equals(*OrigLoc));
 }
+
+
+// primary map test
+BOOST_AUTO_TEST_CASE(TestCaseSpecPrimaryMap)
+{
+    // Make a Spec
+    CGencollIdMapper::SIdSpec MapSpec;
+    MapSpec.Primary = true;
+ 
+    // Simple ID
+    CRef<CSeq_loc> OrigLoc(new CSeq_loc());
+    OrigLoc->SetWhole().SetLocal().SetStr("1");
+    
+
+    // Map both RefSeq and Genbank assemblies with the same spec and id
+    CGenomicCollectionsService GCService;
+   
+    {{
+        CConstRef<CGC_Assembly> GenColl(
+            GCService.GetAssembly("GCF_000001405.13",
+                                  CGCClient_GetAssemblyRequest::eLevel_scaffold
+                                 )
+        );
+       
+        // Do a Map
+        CGencollIdMapper Mapper(GenColl);
+        CConstRef<CSeq_loc> Result = Mapper.Map(*OrigLoc, MapSpec);
+        // Check that Map results meet expectations
+        BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), 224589800);
+    }}
+
+
+    {{
+        CConstRef<CGC_Assembly> GenColl(
+            GCService.GetAssembly("GCA_000001405.1",
+                                  CGCClient_GetAssemblyRequest::eLevel_scaffold
+                                 )
+        );
+
+        // Do a Map
+        CGencollIdMapper Mapper(GenColl);
+        CConstRef<CSeq_loc> Result = Mapper.Map(*OrigLoc, MapSpec);
+        // Check that Map results meet expectations
+        BOOST_CHECK_EQUAL(Result->GetId()->GetGi(), 224384768);
+    }}
+
+}
+
+
+// primary guess test
+BOOST_AUTO_TEST_CASE(TestCaseSpecPrimaryGuess)
+{
+    // Simple ID
+    CRef<CSeq_loc> OrigLoc(new CSeq_loc());
+    OrigLoc->SetWhole().SetGi(224589800);
+    
+
+    // Guess both RefSeq and Genbank assemblies with the same spec and id
+    CGenomicCollectionsService GCService;
+   
+    {{
+        CConstRef<CGC_Assembly> GenColl(
+            GCService.GetAssembly("GCF_000001405.13",
+                                  CGCClient_GetAssemblyRequest::eLevel_scaffold
+                                 )
+        );
+       
+        // Do a Map
+        CGencollIdMapper Mapper(GenColl);
+        CGencollIdMapper::SIdSpec GuessSpec;
+        bool Result = Mapper.Guess(*OrigLoc, GuessSpec);
+        // Check that Guess results meet expectations
+        BOOST_CHECK_EQUAL(Result, true);
+        BOOST_CHECK_EQUAL(GuessSpec.ToString(), "Prim:RefSeq:Gi:::CHRO");
+    }}
+
+
+    {{
+        CConstRef<CGC_Assembly> GenColl(
+            GCService.GetAssembly("GCA_000001405.1",
+                                  CGCClient_GetAssemblyRequest::eLevel_scaffold
+                                 )
+        );
+
+        // Do a Map
+        CGencollIdMapper Mapper(GenColl);
+        CGencollIdMapper::SIdSpec GuessSpec;
+        bool Result = Mapper.Guess(*OrigLoc, GuessSpec);
+        // Check that Map results meet expectations
+        BOOST_CHECK_EQUAL(Result, true);
+        BOOST_CHECK_EQUAL(GuessSpec.ToString(), "NotPrim:RefSeq:Gi:::CHRO");
+    }}
+
+}
+
+
+
 
 
 BOOST_AUTO_TEST_SUITE_END();
