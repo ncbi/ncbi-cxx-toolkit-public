@@ -568,7 +568,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_CollecTF, "http://collectf.umbc.edu/" },
     { CDbtag::eDbtagType_ECOCYC, "http://biocyc.org/ECOLI/new-image?type=GENE&object=" },
     { CDbtag::eDbtagType_ENSEMBL, "http://www.ensembl.org/id/" },
-    { CDbtag::eDbtagType_EcoGene, "http://ecogene.org/geneInfo.php?eg_id=" },
+    { CDbtag::eDbtagType_EcoGene, "http://www.ecogene.org/gene/" },
     { CDbtag::eDbtagType_FANTOM_DB, "http://fantom.gsc.riken.jp/db/annotate/main.cgi?masterid=" },
     { CDbtag::eDbtagType_FBOL, "http://www.fungalbarcoding.org/BioloMICS.aspx?Table=Fungal%20barcodes&Fields=All&Rec=" },
     { CDbtag::eDbtagType_FLYBASE, "http://flybase.bio.indiana.edu/.bin/fbidq.html?" },
