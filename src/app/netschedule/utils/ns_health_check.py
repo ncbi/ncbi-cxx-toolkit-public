@@ -249,7 +249,7 @@ def main():
                             "default queue class has not been found" )
             createTestQueue( nsConnect )
         start = datetime.datetime.now()
-        operationTest( nsConnect )
+        operationTest( nsConnect, serviceName )
         end = datetime.datetime.now()
 
     except socket.timeout, exc:
@@ -399,13 +399,19 @@ def createTestQueue( nsConnect ):
         raise
     return
 
-def operationTest( nsConnect ):
+def operationTest( nsConnect, serviceName ):
     """ Tests the following operations:
         SUBMIT -> GET2 -> PUT2 -> SST -> WST """
     printVerbose( "Switching to " + DYNAMIC_QUEUE_TO_TEST + " queue" )
     nsConnect.execute( "SETQUEUE " + DYNAMIC_QUEUE_TO_TEST )
     printVerbose( "Submitting a job to " + DYNAMIC_QUEUE_TO_TEST + " queue" )
-    affinity = str( os.getpid() )
+
+    # affinity = str( os.getpid() )
+    # Use service name as a test job affinity to avoid overflooding the
+    # affinity registry when many instances of the script test the sane NS
+    # instance via different services
+    affinity = serviceName
+
     jobKey = nsConnect.execute( "SUBMIT NoInput aff=" + affinity )
     printVerbose( "Getting job status (WST2)" )
     output = nsConnect.execute( "WST2 " + jobKey )
