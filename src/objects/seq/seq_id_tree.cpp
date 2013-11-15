@@ -2832,6 +2832,37 @@ void CSeq_id_PDB_Tree::FindMatchStr(const string& sid,
 }
 
 
+bool CSeq_id_PDB_Tree::HaveReverseMatch(const CSeq_id_Handle& ) const
+{
+    return true;
+}
+
+
+void CSeq_id_PDB_Tree::FindReverseMatch(const CSeq_id_Handle& id,
+                                        TSeq_id_MatchList& id_list)
+{
+    //_ASSERT(id && id == FindInfo(id.GetSeqId()));
+    id_list.insert(id);
+    CConstRef<CSeq_id> seq_id = id.GetSeqId();
+    const CPDB_seq_id& pid = seq_id->GetPdb();
+    if ( !pid.IsSetRel() )
+        return;
+    // find id without release date
+    TReadLockGuard guard(m_TreeLock);
+    TMolMap::const_iterator mol_it = m_MolMap.find(x_IdToStrKey(pid));
+    if (mol_it == m_MolMap.end())
+        return;
+    ITERATE(TSubMolList, it, mol_it->second) {
+        CConstRef<CSeq_id> seq_id2 = (*it)->GetSeqId();
+        const CPDB_seq_id& pid2 = seq_id2->GetPdb();
+        // Ignore date if set in id
+        if ( pid2.IsSetRel() )
+            continue;
+        id_list.insert(CSeq_id_Handle(*it));
+    }
+}
+
+
 size_t CSeq_id_PDB_Tree::Dump(CNcbiOstream& out,
                               CSeq_id::E_Choice type,
                               int details) const

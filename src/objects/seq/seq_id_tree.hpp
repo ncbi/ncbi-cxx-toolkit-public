@@ -880,6 +880,9 @@ public:
                            TSeq_id_MatchList& id_list) const;
     virtual void FindMatchStr(const string& sid,
                               TSeq_id_MatchList& id_list) const;
+    virtual bool HaveReverseMatch(const CSeq_id_Handle& id) const;
+    virtual void FindReverseMatch(const CSeq_id_Handle& id,
+                                  TSeq_id_MatchList& id_list);
     
     virtual size_t Dump(CNcbiOstream& out,
                         CSeq_id::E_Choice type,
