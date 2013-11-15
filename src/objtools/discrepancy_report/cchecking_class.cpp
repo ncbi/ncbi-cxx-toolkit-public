@@ -50,6 +50,12 @@ static CDiscRepInfo  thisInfo;
 static CDiscTestInfo thisTest;
 static CTestGrp      thisGrp;
 
+void CCheckingClass :: CheckSeqInstMol (CSeq_inst& seq_inst,
+                                                        CBioseq& bioseq)
+{
+
+} // CheckSeqInstMol
+
 CCheckingClass :: CCheckingClass() : num_bioseq(0)
 {
    // subtypes cover type: RBS, exon and intron for IMP;
