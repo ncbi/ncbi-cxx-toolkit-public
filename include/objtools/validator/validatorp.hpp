@@ -1290,6 +1290,7 @@ private:
     void x_ValidateBarcode(const CBioseq& seq);
     void ValidateRawConst(const CBioseq& seq);
     void ValidateNsAndGaps(const CBioseq& seq);
+    void ReportBadAssemblyGap (const CBioseq& seq);
     
     void ValidateMultiIntervalGene (const CBioseq& seq);
     void ValidateMultipleGeneOverlap (const CBioseq_Handle& bsh);

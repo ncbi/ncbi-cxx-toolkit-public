@@ -2286,7 +2286,7 @@ void CValidError_bioseq::x_ValidateTitle(const CBioseq& seq)
     // to create the defline generator once per nuc-prot set
 }
 
-static bool HasAssemblyGap (const CBioseq& seq)
+static bool HasAssemblyOrNullGap (const CBioseq& seq)
 {
     const CSeq_inst& inst = seq.GetInst();
     if (inst.CanGetRepr() && inst.GetRepr() == CSeq_inst::eRepr_delta && inst.CanGetExt()  &&  inst.GetExt().IsDelta()) {
@@ -2294,19 +2294,43 @@ static bool HasAssemblyGap (const CBioseq& seq)
             if ( !(*sg) ) continue;
             if ((**sg).Which() != CDelta_seq::e_Literal) continue;
             const CSeq_literal& lit = (*sg)->GetLiteral();
-            if (lit.IsSetSeq_data() && lit.GetSeq_data().IsGap()) {
-                if (lit.IsSetLength() && lit.GetLength() > 0) return true;
-            }
-        }
-    }
-
-    FOR_EACH_SEQANNOT_ON_BIOSEQ (annot_it, seq) {
-        FOR_EACH_SEQFEAT_ON_SEQANNOT (feat_it, **annot_it) {
-            if ((*feat_it)->GetData().GetSubtype() == CSeqFeatData::eSubtype_assembly_gap) return true;
+            if (! lit.IsSetSeq_data()) return true;
+            if (lit.GetSeq_data().IsGap()) return true;
         }
     }
 
     return false;
+}
+
+
+void CValidError_bioseq::ReportBadAssemblyGap (const CBioseq& seq)
+{
+    const CSeq_inst& inst = seq.GetInst();
+    if (inst.CanGetRepr() && inst.GetRepr() == CSeq_inst::eRepr_delta && inst.CanGetExt()  &&  inst.GetExt().IsDelta()) {
+        ITERATE(CDelta_ext::Tdata, sg, inst.GetExt().GetDelta().Get()) {
+            if ( !(*sg) ) continue;
+            if ((**sg).Which() != CDelta_seq::e_Literal) continue;
+            const CSeq_literal& lit = (*sg)->GetLiteral();
+            if (! lit.IsSetSeq_data()) {
+                PostErr(eDiag_Warning, eErr_SEQ_INST_SeqGapProblem, "TSA Seq_data NULL", seq);
+            } else {
+                const CSeq_data& data = lit.GetSeq_data();
+                if (data.Which() == CSeq_data::e_Gap) {
+                    const CSeq_gap& gap = data.GetGap();
+                    if (gap.IsSetType()) {
+                        int gaptype = gap.GetType();
+                        if (gaptype == CSeq_gap::eType_unknown) {
+                            PostErr(eDiag_Warning, eErr_SEQ_INST_SeqGapProblem, "TSA Seq_gap.unknown", seq);
+                        } else if (gaptype == CSeq_gap::eType_other) {
+                            PostErr(eDiag_Warning, eErr_SEQ_INST_SeqGapProblem, "TSA Seq_gap.other", seq);
+                        }
+                    } else {
+                        PostErr(eDiag_Warning, eErr_SEQ_INST_SeqGapProblem, "TSA Seq_gap NULL", seq);
+                    }
+                }
+            }
+        }
+    }
 }
 
 
@@ -2399,7 +2423,8 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
 
         // if TSA, check for percentage of Ns and max stretch of Ns
         if (IsBioseqTSA(seq, m_Scope)) {
-            if (HasAssemblyGap (seq)) return;
+            ReportBadAssemblyGap (seq);
+            if (HasAssemblyOrNullGap (seq)) return;
             bool n5 = false;
             bool n3 = false;
             TSeqPos num_ns = 0, this_stretch = 0, max_stretch = 0;
@@ -2435,7 +2460,7 @@ void CValidError_bioseq::ValidateNsAndGaps(const CBioseq& seq)
 
             int pct_n = (num_ns * 100) / seq.GetLength();
             if (pct_n > 10) {
-                PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentPercent, 
+                PostErr (eDiag_Warning, eErr_SEQ_INST_HighNContentPercent,
                             "Sequence contains " + NStr::IntToString(pct_n) + " percent Ns", seq);
             }
 
