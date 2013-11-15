@@ -293,7 +293,9 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static map <int, string>                        genome_names;
 
         s_SuspectProductNameData                    suspect_prod_terms[];
-        unsigned GetSusProdTermsLen() { return sizeof(suspect_prod_terms); };
+        unsigned GetSusProdTermsLen(s_SuspectProductNameData* terms) { 
+                  return sizeof(terms);
+        }
    };
 
 END_SCOPE(DiscRepNmSpc)
