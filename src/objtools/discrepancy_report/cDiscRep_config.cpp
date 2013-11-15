@@ -380,7 +380,7 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
 
     // ini. of susterm_summ for suspect_prod_terms if necessary
     if ((thisInfo.suspect_prod_rules->Get()).empty()) {
-       for (i=0; i < (int)thisInfo.GetSusProdTermsLen(); i++) {
+       for (i=0; i < thisInfo.GetSusProdTermsLen(thisInfo.suspect_prod_terms); i++){
           const s_SuspectProductNameData& 
                 this_term = thisInfo.suspect_prod_terms[i];
           arr.clear();
