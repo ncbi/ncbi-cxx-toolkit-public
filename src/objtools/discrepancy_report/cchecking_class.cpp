@@ -45,18 +45,10 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 USING_SCOPE(DiscRepNmSpc);
 
-string strtmp;
+static string strtmp;
 static CDiscRepInfo  thisInfo;
 static CDiscTestInfo thisTest;
 static CTestGrp      thisGrp;
-
-// unused
-bool CCheckingClass :: CanGetOrgMod(const CBioSource& biosrc)
-{
-  if (biosrc.GetOrg().CanGetOrgname() && biosrc.GetOrg().GetOrgname().CanGetMod())
-       return true;
-  else return false;
-};
 
 CCheckingClass :: CCheckingClass() : num_bioseq(0)
 {
@@ -145,73 +137,78 @@ CCheckingClass :: CCheckingClass() : num_bioseq(0)
 void CCheckingClass :: x_Clean()
 {
    NON_CONST_ITERATE (vector <vector <const CSeq_feat*> * >, it, m_vec_sf) {
-     if ( !(*it)->empty() ) (*it)->clear();
+       if ( !(*it)->empty() ) {
+          (*it)->clear();
+       }
    };
 
    NON_CONST_ITERATE (vector < vector <const CSeqdesc*> * >, it, m_vec_desc) {
-       if ( !(*it)->empty() ) (*it)->clear();
+       if ( !(*it)->empty() ) {
+           (*it)->clear();
+       }
    };
 
-   NON_CONST_ITERATE (vector < vector <const CSeq_entry*> * >, it, m_vec_entry) {
-       if ( !(*it)->empty() ) (*it)->clear();
+   NON_CONST_ITERATE (vector < vector <const CSeq_entry*> * >, it, m_vec_entry){
+       if ( !(*it)->empty() ) {
+          (*it)->clear();
+       }
    };
 };
 
 void CCheckingClass :: CollectSeqdescFromSeqEntry(const CSeq_entry_Handle& seq_entry_h)
 {
    for (CSeqdesc_CI seqdesc_it(seq_entry_h, sel_seqdesc, 1); seqdesc_it; ++seqdesc_it) {
-         const CSeq_entry* entry_pt = seq_entry_h.GetCompleteObject().GetPointer();
-         if (seqdesc_it->IsOrg()) {
-               if (seqdesc_it->GetOrg().IsSetOrgMod()) {
-                  CTestAndRepData :: org_orgmod_seqdesc.push_back( &(*seqdesc_it) );
-                  CTestAndRepData :: org_orgmod_seqdesc_seqentry.push_back(entry_pt);
-               }
-         }
-         else if (seqdesc_it->IsMolinfo()) {
-               CTestAndRepData :: molinfo_seqdesc.push_back( &(*seqdesc_it) );
-               CTestAndRepData :: molinfo_seqdesc_seqentry.push_back(entry_pt);
-         }
-         else if ( seqdesc_it->IsPub() ) {
-               CTestAndRepData :: pub_seqdesc.push_back( &(*seqdesc_it) );
-               CTestAndRepData :: pub_seqdesc_seqentry.push_back(entry_pt);
-         }
-         else if ( seqdesc_it->IsComment() ) {
-               CTestAndRepData :: comm_seqdesc.push_back( &(*seqdesc_it) );
-               CTestAndRepData :: comm_seqdesc_seqentry.push_back(entry_pt);
-         }
-         else if ( seqdesc_it->IsSource() ) {
-               CTestAndRepData :: biosrc_seqdesc.push_back( &(*seqdesc_it) );
-               CTestAndRepData :: biosrc_seqdesc_seqentry.push_back(entry_pt);
-               if ( seqdesc_it->GetSource().IsSetOrgMod() ) {
-                  CTestAndRepData :: biosrc_orgmod_seqdesc.push_back( &(*seqdesc_it) );
-                  CTestAndRepData :: biosrc_orgmod_seqdesc_seqentry.push_back(entry_pt);
-               }
-               if ( seqdesc_it->GetSource().CanGetSubtype()) {
-                  CTestAndRepData :: biosrc_subsrc_seqdesc.push_back( &(*seqdesc_it) );
-                  CTestAndRepData :: biosrc_subsrc_seqdesc_seqentry.push_back(entry_pt);
-               }
-         }
-         else if ( seqdesc_it->IsTitle() && seq_entry_h.IsSet()) {  // why IsSet()?
-               CTestAndRepData :: title_seqdesc.push_back( &(*seqdesc_it) );
-               CTestAndRepData :: title_seqdesc_seqentry.push_back(entry_pt);
-         }
-         else if ( seqdesc_it->IsUser()) {
-               CTestAndRepData :: user_seqdesc.push_back( &(*seqdesc_it) );
-               CTestAndRepData :: user_seqdesc_seqentry.push_back(entry_pt);
-         }
+       const CSeq_entry* entry_pt= seq_entry_h.GetCompleteObject().GetPointer();
+       if (seqdesc_it->IsOrg()) {
+           if (seqdesc_it->GetOrg().IsSetOrgMod()) {
+               CTestAndRepData::org_orgmod_seqdesc.push_back( &(*seqdesc_it) );
+               CTestAndRepData::org_orgmod_seqdesc_seqentry.push_back(entry_pt);
+           }
+       } 
+       else if (seqdesc_it->IsMolinfo()) {
+           CTestAndRepData :: molinfo_seqdesc.push_back( &(*seqdesc_it) );
+           CTestAndRepData :: molinfo_seqdesc_seqentry.push_back(entry_pt);
+       }
+       else if ( seqdesc_it->IsPub() ) {
+           CTestAndRepData :: pub_seqdesc.push_back( &(*seqdesc_it) );
+           CTestAndRepData :: pub_seqdesc_seqentry.push_back(entry_pt);
+       }
+       else if ( seqdesc_it->IsComment() ) {
+           CTestAndRepData :: comm_seqdesc.push_back( &(*seqdesc_it) );
+           CTestAndRepData :: comm_seqdesc_seqentry.push_back(entry_pt);
+       }
+       else if ( seqdesc_it->IsSource() ) {
+           CTestAndRepData :: biosrc_seqdesc.push_back( &(*seqdesc_it) );
+           CTestAndRepData :: biosrc_seqdesc_seqentry.push_back(entry_pt);
+           if (seqdesc_it->GetSource().IsSetOrgMod() ) {
+               CTestAndRepData::biosrc_orgmod_seqdesc.push_back(&(*seqdesc_it));
+               CTestAndRepData::biosrc_orgmod_seqdesc_seqentry.push_back(entry_pt);
+           }
+           if (seqdesc_it->GetSource().CanGetSubtype()) {
+               CTestAndRepData :: biosrc_subsrc_seqdesc.push_back( &(*seqdesc_it) );
+               CTestAndRepData :: biosrc_subsrc_seqdesc_seqentry.push_back(entry_pt);
+           }
+       } 
+       else if ( seqdesc_it->IsTitle() && seq_entry_h.IsSet()) {  // why IsSet()?
+           CTestAndRepData :: title_seqdesc.push_back( &(*seqdesc_it) );
+           CTestAndRepData :: title_seqdesc_seqentry.push_back(entry_pt);
+       }
+       else if ( seqdesc_it->IsUser()) {
+           CTestAndRepData :: user_seqdesc.push_back( &(*seqdesc_it) );
+           CTestAndRepData :: user_seqdesc_seqentry.push_back(entry_pt);
+       }
    }
    if (seq_entry_h.IsSet()) {
-     const CBioseq_set& bioseq_set = *(seq_entry_h.GetSet().GetCompleteObject());
-     ITERATE (list <CRef <CSeq_entry> >, it, bioseq_set.GetSeq_set()) {
-        CSeq_entry_Handle subseq_hl = thisInfo.scope->GetSeq_entryHandle( **it );
-        CollectSeqdescFromSeqEntry(subseq_hl);
-     }
+       const CBioseq_set& bioseq_set = *(seq_entry_h.GetSet().GetCompleteObject());
+       ITERATE (list <CRef <CSeq_entry> >, it, bioseq_set.GetSeq_set()) {
+          CSeq_entry_Handle subseq_hl = thisInfo.scope->GetSeq_entryHandle( **it );
+          CollectSeqdescFromSeqEntry(subseq_hl);
+       }
    } 
 };
 
 void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
 {
-  // cerr << "CheckSeqEntry " << CTime(CTime::eCurrent).AsString() << endl;
   // ini.
   thisTest.is_BIOSRC_run = false;
   thisTest.is_Biosrc_Orgmod_run = false;
@@ -227,59 +224,52 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
   GoTests(thisGrp.tests_on_SubmitBlk, *seq_entry);
 
   if (!thisGrp.tests_on_SeqEntry_feat_desc.empty()) {
-     CSeq_entry_Handle seq_entry_h = thisInfo.scope->GetSeq_entryHandle(*seq_entry);
+      CSeq_entry_Handle seq_entry_h = thisInfo.scope->GetSeq_entryHandle(*seq_entry);
 
-     for (CFeat_CI feat_it(seq_entry_h, sel_seqfeat_4_seq_entry); feat_it; ++feat_it) {
-        const CSeq_feat& seq_feat = feat_it->GetOriginalFeature();
-        const CSeqFeatData& seq_feat_dt = seq_feat.GetData();
-        switch (seq_feat_dt.Which()) {
-           case CSeqFeatData::e_Org:
-                  if (seq_feat_dt.GetOrg().IsSetOrgMod()) 
-                     CTestAndRepData::org_orgmod_feat.push_back(&seq_feat); 
-                  break;
-           case CSeqFeatData::e_Pub: 
-                  CTestAndRepData::pub_feat.push_back(&seq_feat); break;
-           case CSeqFeatData::e_Biosrc:
-                  CTestAndRepData::biosrc_feat.push_back(&seq_feat);
-                  if ( seq_feat_dt.GetBiosrc().IsSetOrgMod() ) 
+      for (CFeat_CI feat_it(seq_entry_h, sel_seqfeat_4_seq_entry); feat_it; ++feat_it) {
+          const CSeq_feat& seq_feat = feat_it->GetOriginalFeature();
+          const CSeqFeatData& seq_feat_dt = seq_feat.GetData();
+          switch (seq_feat_dt.Which()) {
+            case CSeqFeatData::e_Org: {
+                if (seq_feat_dt.GetOrg().IsSetOrgMod()) 
+                       CTestAndRepData::org_orgmod_feat.push_back(&seq_feat); 
+                break;
+            }
+            case CSeqFeatData::e_Pub: {
+                CTestAndRepData::pub_feat.push_back(&seq_feat); 
+                break;
+            }
+            case CSeqFeatData::e_Biosrc: {
+                CTestAndRepData::biosrc_feat.push_back(&seq_feat);
+                if ( seq_feat_dt.GetBiosrc().IsSetOrgMod() ) 
                           CTestAndRepData::biosrc_orgmod_feat.push_back(&seq_feat);
-                  if (seq_feat_dt.GetBiosrc().CanGetSubtype())
+                if (seq_feat_dt.GetBiosrc().CanGetSubtype())
                            CTestAndRepData::biosrc_subsrc_feat.push_back(&seq_feat);
-                  break;
-           default: break;
-        }
-     }
+                break;
+            }
+            default: break;
+          }
+      }
 
-     CollectSeqdescFromSeqEntry(seq_entry_h);
+      CollectSeqdescFromSeqEntry(seq_entry_h);
 
-     GoTests(thisGrp.tests_on_SeqEntry_feat_desc, *seq_entry);
+      GoTests(thisGrp.tests_on_SeqEntry_feat_desc, *seq_entry);
   }
 
   GoTests(thisGrp.tests_on_SeqEntry, *seq_entry);
 
   // clean
   x_Clean();
-// cerr << "end " << CTime(CTime::eCurrent).AsString() << endl;
 }
-
-bool CCheckingClass :: SortByFrom(const CSeq_feat* seqfeat1, const CSeq_feat* seqfeat2)
-{
-  return (seqfeat1->GetLocation().GetStart(eExtreme_Positional)
-                          < seqfeat2->GetLocation().GetStart(eExtreme_Positional));
-};
 
 void CCheckingClass :: CheckBioseqSet ( CBioseq_set& bioseq_set)
 {
-  // cerr << "CheckBioseqSet " << CTime(CTime::eCurrent).AsString() << endl;
    thisTest.is_BioSet_run = false;
    GoTests(thisGrp.tests_on_BioseqSet, bioseq_set); 
-  // cerr << "end " << CTime(CTime::eCurrent).AsString() << endl;
 };
 
-void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
+void CCheckingClass :: CheckBioseq (CBioseq& bioseq)
 {
-++num_bioseq;
-//cerr << "bioseq " << num_bioseq << endl;
 // ini.
    thisTest.is_Aa_run = false;
    thisTest.is_AllAnnot_run = false;
@@ -307,37 +297,47 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
    GoTests(thisGrp.tests_on_Bioseq, bioseq);
 
    if (!thisGrp.tests_on_Bioseq_CFeat.empty() 
-             || (!thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet.empty()
+          || (!thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet.empty()
                      && !CTestAndRepData::IsmRNASequenceInGenProdSet(bioseq)) 
-             || !thisGrp.tests_on_Bioseq_CFeat_CSeqdesc.empty() ) {
+          || !thisGrp.tests_on_Bioseq_CFeat_CSeqdesc.empty() ) {
 
-     CBioseq_Handle bioseq_hl = thisInfo.scope->GetBioseqHandle(bioseq);
-     //for (CFeat_CI feat_it(bioseq_hl, sel_seqfeat); feat_it; ++feat_it) 
-     CSeqFeatData::ESubtype subtp;
-     for (CFeat_CI feat_it(bioseq_hl); feat_it; ++feat_it) {
-        const CSeq_feat& seq_feat = (feat_it->GetOriginalFeature());
-        const CSeqFeatData& seq_feat_dt = seq_feat.GetData();
+      CBioseq_Handle bioseq_hl = thisInfo.scope->GetBioseqHandle(bioseq);
+      //for (CFeat_CI feat_it(bioseq_hl, sel_seqfeat); feat_it; ++feat_it) 
+      CSeqFeatData::ESubtype subtp;
+      for (CFeat_CI feat_it(bioseq_hl); feat_it; ++feat_it) {
+          const CSeq_feat& seq_feat = (feat_it->GetOriginalFeature());
+          const CSeqFeatData& seq_feat_dt = seq_feat.GetData();
 
-        CTestAndRepData :: all_feat.push_back(&seq_feat);
+          CTestAndRepData :: all_feat.push_back(&seq_feat);
 
-        if (!(seq_feat_dt.IsProt())) CTestAndRepData::non_prot_feat.push_back(&seq_feat);
+          if (!(seq_feat_dt.IsProt())) {
+               CTestAndRepData::non_prot_feat.push_back(&seq_feat);
+          }
 
-        switch (seq_feat_dt.Which()) {
-          case CSeqFeatData::e_Biosrc:
-               CTestAndRepData::bioseq_biosrc_feat.push_back(&seq_feat); break;
-          case CSeqFeatData::e_Gene:
-                CTestAndRepData::gene_feat.push_back(&seq_feat); break;
-          case CSeqFeatData::e_Prot:
-                CTestAndRepData::prot_feat.push_back(&seq_feat); break;
-          case CSeqFeatData::e_Cdregion:
+          switch (seq_feat_dt.Which()) {
+            case CSeqFeatData::e_Biosrc: {
+                 CTestAndRepData::bioseq_biosrc_feat.push_back(&seq_feat); 
+                 break;
+            }
+            case CSeqFeatData::e_Gene: {
+                 CTestAndRepData::gene_feat.push_back(&seq_feat); 
+                 break;
+            }
+            case CSeqFeatData::e_Prot: {
+                 CTestAndRepData::prot_feat.push_back(&seq_feat); 
+                 break;
+            }
+            case CSeqFeatData::e_Cdregion: {
                 CTestAndRepData::cd_feat.push_back(&seq_feat);
                 CTestAndRepData::mix_feat.push_back(&seq_feat);
                 break;
-          case CSeqFeatData::e_Rna:
+            }
+            case CSeqFeatData::e_Rna: {
                 CTestAndRepData::rna_feat.push_back(&seq_feat);
                 subtp = seq_feat_dt.GetSubtype();
-                if (subtp == CSeqFeatData :: eSubtype_mRNA)
+                if (subtp == CSeqFeatData :: eSubtype_mRNA) {
                        CTestAndRepData::mrna_feat.push_back(&seq_feat);
+                }
                 else {
                    CTestAndRepData::rna_not_mrna_feat.push_back(&seq_feat);
                    switch (subtp) {
@@ -352,7 +352,8 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
                 }
                 CTestAndRepData::mix_feat.push_back(&seq_feat);
                 break;
-          case CSeqFeatData::e_Imp:
+          }
+          case CSeqFeatData::e_Imp: {
                 subtp = seq_feat_dt.GetSubtype();
                 switch (subtp) {
                   case CSeqFeatData::eSubtype_gap:
@@ -384,13 +385,11 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
                        break;
                   default: break;
               }
+          }
           default: break;
         }
      }
 
-// CFeat_CI is sorted:
-//    sort(CTestAndRepData::gene_feat.begin(), CTestAndRepData::gene_feat.end(), CCheckingClass :: SortByFrom);
-     
      if (!thisGrp.tests_on_Bioseq_CFeat_CSeqdesc.empty()) {
         for (CSeqdesc_CI it(bioseq_hl, sel_seqdesc_4_bioseq); it; ++it) {
           switch (it->Which()) {
@@ -416,15 +415,18 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
         GoTests(thisGrp.tests_on_Bioseq_CFeat_CSeqdesc, bioseq);
      }
 
-     if (!thisGrp.tests_on_Bioseq_CFeat.empty())
-              GoTests(thisGrp.tests_on_Bioseq_CFeat, bioseq);
+     if (!thisGrp.tests_on_Bioseq_CFeat.empty()) {
+         GoTests(thisGrp.tests_on_Bioseq_CFeat, bioseq);
+     }
      if (!thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet.empty()
-                               && !CTestAndRepData::IsmRNASequenceInGenProdSet(bioseq))
-               GoTests(thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet, bioseq);
+                               && !CTestAndRepData::IsmRNASequenceInGenProdSet(bioseq)) {
+         GoTests(thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet, bioseq);
+     }
    }
 
-   if (!CTestAndRepData::IsmRNASequenceInGenProdSet(bioseq))
-         GoTests(thisGrp.tests_on_Bioseq_NotInGenProdSet, bioseq);
+   if (!CTestAndRepData::IsmRNASequenceInGenProdSet(bioseq)) {
+       GoTests(thisGrp.tests_on_Bioseq_NotInGenProdSet, bioseq);
+   }
 
    unsigned prev_len = thisGrp.tests_4_once.size();
    if ( bioseq.IsNa() && !thisGrp.tests_on_Bioseq_na.empty()) {
@@ -442,41 +444,33 @@ void CCheckingClass :: CheckBioseq ( CBioseq& bioseq)
        }
    }
 
-   if (bioseq.IsAa() && !thisGrp.tests_on_Bioseq_aa.empty())
+   if (bioseq.IsAa() && !thisGrp.tests_on_Bioseq_aa.empty()) {
         GoTests(thisGrp.tests_on_Bioseq_aa, bioseq);        
+   }
 
    // clean
    x_Clean();
 
 } // CheckBioseq
 
-
-
-void CCheckingClass :: CheckSeqInstMol (CSeq_inst& seq_inst, 
-                                                        CBioseq& bioseq)
-{
-
-} // CheckSeqInstMol
-
-
-
-void CCheckingClass :: GoGetRep(vector <CRef <CTestAndRepData> >& test_category)
+void CCheckingClass :: GoGetRep (vector <CRef <CTestAndRepData> >& test_category)
 {
    NON_CONST_ITERATE (vector <CRef <CTestAndRepData> >, it, test_category) {
        CRef < CClickableItem > c_item (new CClickableItem);
        if (thisInfo.test_item_list.find((*it)->GetName()) != thisInfo.test_item_list.end()) {
-// cerr <<"outptu " << (*it)->GetName() << endl;
             c_item->setting_name = (*it)->GetName();
             c_item->item_list = thisInfo.test_item_list[(*it)->GetName()];
             strtmp = (*it)->GetName();
             if ( strtmp != "DISC_SOURCE_QUALS_ASNDISC"
                         && strtmp != "LOCUS_TAGS"
-                        && strtmp != "INCONSISTENT_PROTEIN_ID_PREFIX")
+                        && strtmp != "INCONSISTENT_PROTEIN_ID_PREFIX") {
                   thisInfo.disc_report_data.push_back(c_item);
+            }
             (*it)->GetReport(c_item); 
        }
-       else if ( (*it)->GetName() == "DISC_FEATURE_COUNT") (*it)->GetReport(c_item); 
-// cerr << "done\n";
+       else if ( (*it)->GetName() == "DISC_FEATURE_COUNT") {
+           (*it)->GetReport(c_item); 
+       } 
    }
 };
 

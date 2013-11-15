@@ -77,7 +77,6 @@
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
-USING_SCOPE(sequence);
 USING_SCOPE(DiscRepNmSpc);
 USING_SCOPE(feature);
 
@@ -515,7 +514,9 @@ CConstRef <CSeq_feat> CTestAndRepData :: GetGeneForFeature(const CSeq_feat& seq_
   }
 
   if (gene) {
-     CBioseq_Handle bioseq_hl =  GetBioseqFromSeqLoc(seq_feat.GetLocation(), *thisInfo.scope);
+     CBioseq_Handle 
+       bioseq_hl =  sequence::GetBioseqFromSeqLoc(seq_feat.GetLocation(), 
+                                                  *thisInfo.scope);
      if (!bioseq_hl) return (CConstRef <CSeq_feat> ());
      CTSE_Handle tse_hl = bioseq_hl.GetTSE_Handle();
      if (gene->CanGetLocus_tag() && !(gene->GetLocus_tag().empty()) ) {
@@ -529,8 +530,10 @@ CConstRef <CSeq_feat> CTestAndRepData :: GetGeneForFeature(const CSeq_feat& seq_
      else return (CConstRef <CSeq_feat>());
   }
   else {
-    return( CConstRef <CSeq_feat> (GetBestOverlappingFeat(seq_feat.GetLocation(), 
-                                  CSeqFeatData::e_Gene, eOverlap_Contained, *thisInfo.scope)));
+    return( CConstRef <CSeq_feat>(GetBestOverlappingFeat(seq_feat.GetLocation(),
+                                                   CSeqFeatData::e_Gene,
+                                                   sequence::eOverlap_Contained,
+                                                   *thisInfo.scope)));
   }
 
   return (CConstRef <CSeq_feat>());
@@ -678,10 +681,12 @@ string CTestAndRepData :: GetProdNmForCD(const CSeq_feat& cd_feat)
      // should be the longest CProt_ref on the bioseq pointed by the cds.GetProduct()
      CConstRef <CSeq_feat> prot_seq_feat;
      if (cd_feat.CanGetProduct()) {
-       prot_seq_feat = CConstRef <CSeq_feat> (
-                                  GetBestOverlappingFeat(cd_feat.GetProduct(),
-                                      CSeqFeatData::e_Prot, eOverlap_Contains,
-                                      *thisInfo.scope));
+         prot_seq_feat 
+             = CConstRef <CSeq_feat> (
+                      sequence::GetBestOverlappingFeat(cd_feat.GetProduct(),
+                                             CSeqFeatData::e_Prot, 
+                                             sequence::eOverlap_Contains,
+                                             *thisInfo.scope));
      }
      if (prot_seq_feat.NotEmpty() && prot_seq_feat->GetData().IsProt()) {
          const CProt_ref& prot = prot_seq_feat->GetData().GetProt();
@@ -1180,11 +1185,14 @@ string CTestAndRepData :: GetLocusTagForFeature(const CSeq_feat& seq_feat)
   }
   else {
     const CGene_ref* gene = seq_feat.GetGeneXref();
-    if (gene) tag = (gene->CanGetLocus_tag()) ? gene->GetLocus_tag() : kEmptyStr;
+    if (gene) {
+         tag = (gene->CanGetLocus_tag()) ? gene->GetLocus_tag() : kEmptyStr;
+    }
     else {
-      CConstRef<CSeq_feat> gene= GetBestOverlappingFeat(seq_feat.GetLocation(),
+      CConstRef<CSeq_feat> 
+         gene= sequence::GetBestOverlappingFeat(seq_feat.GetLocation(),
                                                    CSeqFeatData::e_Gene,
-				                   eOverlap_Contained,
+				                   sequence::eOverlap_Contained,
                                                    *thisInfo.scope);
       if (gene.NotEmpty()) {
            tag = (gene->GetData().GetGene().CanGetLocus_tag()) ? gene->GetData().GetGene().GetLocus_tag() : kEmptyStr;
@@ -1217,9 +1225,10 @@ const CSeq_feat* CTestAndRepData :: GetCDFeatFromProtFeat(const CSeq_feat& prot)
    // pay attention to multiple bioseqs when using GetBioseqFromSeqLoc
    CConstRef <CBioseq>
        bioseq =
-           GetBioseqFromSeqLoc(prot.GetLocation(), *thisInfo.scope).GetCompleteBioseq();
+           sequence::GetBioseqFromSeqLoc(prot.GetLocation(), 
+                                         *thisInfo.scope).GetCompleteBioseq();
    if (bioseq.NotEmpty()) {
-      const CSeq_feat* cds = sequence::GetCDSForProduct(*bioseq, thisInfo.scope);
+      const CSeq_feat* cds= sequence::GetCDSForProduct(*bioseq, thisInfo.scope);
       if (cds) return cds;
    }
    return 0;
@@ -1352,10 +1361,10 @@ void CTestAndRepData :: AddSubcategory(CRef <CClickableItem>& c_item, const stri
      }  
      c_sub->obj_list = thisInfo.test_item_objs[sub_grp_nm];
      if (itemlist && copy2parent) {
-        c_item->item_list.insert(c_item->item_list.end(),
-                                       c_sub->item_list.begin(), c_sub->item_list.end());
-        c_item->obj_list.insert(c_item->obj_list.end(),
-                                       c_sub->obj_list.begin(), c_sub->obj_list.end());
+        copy(c_sub->item_list.begin(), c_sub->item_list.end(),
+             back_inserter( c_item->item_list ));
+        copy(c_sub->obj_list.begin(), c_sub->obj_list.end(),
+             back_inserter( c_item->obj_list ));
      }
      c_item->subcategories.push_back(c_sub);
 };

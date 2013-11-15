@@ -38,6 +38,7 @@
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+USING_SCOPE(DiscRepAutoNmSpc);
 
 void CAutoDiscClass::x_LookAtSeqEntry_set_set_annot_E_E_data_ftable_E_E_ETC( CSeq_feat & arg0_raw )
 { // type Sequence
