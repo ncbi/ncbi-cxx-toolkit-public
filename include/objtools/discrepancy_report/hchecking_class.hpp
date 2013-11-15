@@ -53,6 +53,7 @@
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+BEGIN_SCOPE(DiscRepNmSpc)
 
    class CCheckingClass 
    {
@@ -77,13 +78,9 @@ USING_SCOPE(objects);
          template < class T >
          void GoTests(vector <CRef < CTestAndRepData> >& test_category, const T& obj) 
          {
-            NON_CONST_ITERATE (vector <CRef <CTestAndRepData> >, it, test_category)
-{
-cerr << "GetNAme " << (*it)->GetName() << endl;
-// if ( (*it)->GetName() == "MISSING_STRUCTURED_COMMENT")
+            NON_CONST_ITERATE (vector <CRef <CTestAndRepData> >, it, test_category) {
                   (*it)->TestOnObj(obj);
- cerr << "done\n";
-}
+            }
          };
 
          void GoGetRep(vector < CRef < CTestAndRepData> >& test_category);
@@ -107,6 +104,7 @@ cerr << "GetNAme " << (*it)->GetName() << endl;
          vector < vector <const CSeq_entry*> * > m_vec_entry; 
    };
 
+END_SCOPE(DiscRepNmSpc)
 END_NCBI_SCOPE
 
 #endif // CHECKING_CLASS

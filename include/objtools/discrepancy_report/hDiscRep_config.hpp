@@ -36,7 +36,6 @@
 
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiargs.hpp>
-#include <common/ncbi_export.h>
 
 // Object Manager includes
 #include <objmgr/object_manager.hpp>
@@ -57,26 +56,6 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(DiscRepNmSpc)
 
    typedef map <string, vector < CConstRef <CObject> > > Str2Objs;
-
-   class CTry : public CObject 
-   {
-     public:
-       virtual ~CTry() { };
-
-        int onePlusOne();
-        static CTry* factory (string type, CSeq_entry_Handle* tse);
-   };
-   class CTry_sub1 : public CTry
-   {
-      public:
-        virtual ~CTry_sub1 () {};
-   };
-   class CTry_sub2 : public CTry
-   {
-      public:
-        virtual ~CTry_sub2 () {};
-   };
-
 
    enum ETestCategoryFlags {
       fDiscrepancy = 1 << 0,
@@ -141,22 +120,22 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static vector < CRef < CTestAndRepData > > tests_on_SubmitBlk;
    };
 
-   class NCBI_DISCREPANCY_REPORT_EXPORT CRepConfig : public CObject 
+   class CRepConfig : public CObject 
    {
      public:
         virtual ~CRepConfig() { };
 
         // removed from *_app.hpp
-        void InitParams(const IRWRegistry& reg) { x_InitParams(reg); };
+        void InitParams(const IRWRegistry& reg);
         void ReadArgs(const CArgs& args);
         string GetDirStr(const string& src_dir);
         void ProcessArgs(Str2Str& args);
         void ProcessArgs();
         static void CheckThisSeqEntry(CRef <CSeq_entry> seq_entry);
         void GetOrgModSubtpName(unsigned num1, unsigned num2,
-                                         map <string, COrgMod::ESubtype>& orgmodnm_subtp);
+                              map <string, COrgMod::ESubtype>& orgmodnm_subtp);
         CRef <CSearch_func> MakeSimpleSearchFunc(const string& match_text,
-                                                                 bool whole_word = false);
+                                                     bool whole_word = false);
         void GetTestList();
         void CollectTests();
         virtual void Run(CRef <CRepConfig> config) = 0;
@@ -182,7 +161,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
         bool SuppressItemListForFeatureTypeForOutputFiles(const string& setting_name);
         void StandardWriteDiscRepItems(COutputConfig& oc, const CClickableItem* c_item, const string& prefix, bool list_features_if_subcat);
         bool RmTagInDescp(string& str, const string& tag);
-        void x_InitParams(const IRWRegistry& reg);
    };
 
    class CRepConfAsndisc : public CRepConfig
@@ -218,15 +196,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
         virtual void Run(CRef <CRepConfig> config) { };
    };
-
-/*
-   class CRepConfAll : public CRepConfig 
-   {
-      public:
-        virtual ~CRepConfAll () {};
-        virtual void Export() { };
-   };
-*/
 
    class CDiscRepInfo 
    {
@@ -299,7 +268,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static map <ETechnique_type, CMolInfo::ETech>   techtp_mitech;
         static map <ETechnique_type, string>            techtp_name;
         static vector <string>                          s_putative_replacements;
-        static vector <string>                          suspect_name_category_names;
         static vector <string>                          fix_type_names;
         static map <ECDSGeneProt_field, string>         cgp_field_name;
         static map <ECDSGeneProt_feature_type_constraint, string>          cgp_feat_name;
@@ -324,8 +292,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static vector <string>                          suspect_phrases;
         static map <int, string>                        genome_names;
 
-        vector<s_SuspectProductNameData>                suspect_prod_terms;
-        unsigned GetSusProdTermsLen() { return suspect_prod_terms.size(); };
+        s_SuspectProductNameData                    suspect_prod_terms[];
+        unsigned GetSusProdTermsLen() { return sizeof(suspect_prod_terms); };
    };
 
 END_SCOPE(DiscRepNmSpc)

@@ -103,6 +103,7 @@
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+BEGIN_SCOPE(DiscRepNmSpc)
 
   typedef map < string, string> Str2Str;
   typedef map < string, vector < string > > Str2Strs;
@@ -3948,6 +3949,7 @@ unsigned m_cnt;
        virtual string GetName() const  = 0;
   };
 
+END_SCOPE(DiscRepNmSpc)
 END_NCBI_SCOPE
 
 #endif

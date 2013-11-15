@@ -38,6 +38,7 @@
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
+BEGIN_SCOPE(DiscRepNmSpc)
 
    class CSummarizeSusProdRule 
    {
@@ -87,6 +88,7 @@ USING_SCOPE(objects);
        string SummarizeReplaceRule (const CReplace_rule& replace);
    };
 
+END_SCOPE(DiscRepNmSpc)
 END_NCBI_SCOPE
 
 
