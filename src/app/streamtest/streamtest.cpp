@@ -207,6 +207,17 @@ void CStreamTestApp::Init()
         CArgDescriptions::eString,
         "" );
 
+    arg_desc->AddDefaultKey("gap-mode",
+        "GapMode",
+        "Gap mode",
+        CArgDescriptions::eString,
+        "one-dash");
+    arg_desc->SetConstraint("gap-mode", &(*new CArgAllow_Strings,
+                                          "one-dash",
+                                          "dashes",
+                                          "letters",
+                                          "count"));
+
     SetupArgDescriptions(arg_desc.release());
 }
 

@@ -60,6 +60,7 @@ public:
         CScopedProcess::ProcessInitialize( args );
 
         m_out = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
+        m_gap_mode = args["gap-mode"].AsString();
     };
 
     //  ------------------------------------------------------------------------
@@ -76,6 +77,13 @@ public:
         CScopedProcess::SeqEntryInitialize( se );
     };
 
+    enum EGapType {
+        eGT_one_dash, ///< A single dash, followed by a line break.
+        eGT_dashes,   ///< Multiple inline dashes.
+        eGT_letters,  ///< Multiple inline Ns or Xs as appropriate (default).
+        eGT_count     ///< >?N or >?unk100, as appropriate.
+    };
+
     //  ------------------------------------------------------------------------
     void SeqEntryProcess()
     //  ------------------------------------------------------------------------
@@ -88,14 +96,45 @@ public:
 
                 CSeqVector sv = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
 
+                EGapType gap_type = eGT_letters;
+                if ( m_gap_mode == "one-dash" ) {
+                    gap_type = eGT_one_dash;
+                } else if ( m_gap_mode == "dashes" ) {
+                    gap_type = eGT_dashes;
+                } else if ( m_gap_mode == "letters" ) {
+                    gap_type = eGT_letters;
+                } else if ( m_gap_mode == "count" ) {
+                    gap_type = eGT_count;
+                }
+
                 int pos = 0;
                 for ( CSeqVector_CI sv_iter(sv); (sv_iter); ++sv_iter ) {
-                    CSeqVector::TResidue res = *sv_iter;
-                    *m_out << res;
-                    pos++;
-                    if ( pos >= 60 ) {
-                        pos = 0;
-                        *m_out << endl;
+                    if ( gap_type != eGT_letters && sv_iter.GetGapSizeForward() > 0 ) {
+                        int gap_len = sv_iter.SkipGap();
+                        if ( gap_type == eGT_one_dash ) {
+                            *m_out << "-\n";
+                            pos = 0;
+                        } else if ( gap_type == eGT_dashes ) {
+                            while ( gap_len > 0 ) {
+                                *m_out << "-";
+                                pos++;
+                                if ( pos >= 60 ) {
+                                    pos = 0;
+                                    *m_out << endl;
+                                }
+                                gap_len--;
+                            }
+                        }
+                        // *m_out << endl << "Gap length " << NStr::IntToString (gap_len) << endl;
+                        // pos = 0;
+                    } else {
+                        CSeqVector::TResidue res = *sv_iter;
+                        *m_out << res;
+                        pos++;
+                        if ( pos >= 60 ) {
+                            pos = 0;
+                            *m_out << endl;
+                        }
                     }
                 }
 
@@ -109,6 +148,7 @@ public:
 
 protected:
     CNcbiOstream* m_out;
+    string m_gap_mode;
 };
 
 #endif
