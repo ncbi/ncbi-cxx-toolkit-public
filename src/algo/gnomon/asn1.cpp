@@ -473,12 +473,20 @@ void CAnnotationASN1::CImplementationData::DumpUnusedChains()
     }
 }
 
-void CollectUserField(const CUser_field& field, const string& name, vector<string>& values)
+int CollectUserField(const CUser_field& field, const string& name, vector<string>& values)
 {
+    int count = 0;
     if (field.HasField(name)) {
-        const CUser_field::C_Data::TStrs& strs = field.GetField(name).GetData().GetStrs();
+        const CUser_field& fn =  field.GetField(name);
+        const CUser_field::C_Data::TStrs& strs = fn.GetData().GetStrs();
         copy(strs.begin(), strs.end(), back_inserter(values));
+        if(fn.CanGetNum())
+            count = fn.GetNum();
+        else
+            count = strs.size();
     }
+
+    return count;
 }
 
 CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_user_object(const CGeneModel& model)
@@ -570,10 +578,10 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
                         CollectUserField(support_field, "Core", collected_cores);
                         CollectUserField(support_field, "Proteins", proteins);
                         CollectUserField(support_field, "mRNAs", mrnas);
-                        CollectUserField(support_field, "ESTs", ests);
+                        ests_count += CollectUserField(support_field, "ESTs", ests);
                         CollectUserField(support_field, "RNASeq", short_reads);
-                        CollectUserField(support_field, "longSRA", long_sras);
-                        CollectUserField(support_field, "other", others);
+                        long_sras_count += CollectUserField(support_field, "longSRA", long_sras);
+                        others_count += CollectUserField(support_field, "other", others);
                     }
                 }
             }
