@@ -61,8 +61,11 @@ struct SHspIndex : CObject {
 
 typedef pair<vector<SHspInfo*>, vector<SHspInfo*> > TSortedHsp; 
 
+class COligoSpecificityCheck; // forward declaration
+
 class NCBI_XPRIMER_EXPORT COligoSpecificityTemplate : public CObject {
-public:
+friend class COligoSpecificityCheck; 
+private:
 
     ///bioseq handle for input bioseq
     const CBioseq_Handle& m_TemplateHandle;
