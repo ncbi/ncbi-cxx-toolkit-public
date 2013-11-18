@@ -181,8 +181,8 @@ void CBiosampleFieldDiff::Print(ncbi::CNcbiOstream & stream, const CBiosampleFie
         }
         stream << "\t";
         stream << m_SequenceID << "\t";
-        stream << m_SrcVal << "\t";
         stream << m_SampleVal << "\t";
+        stream << m_SrcVal << "\t";
         stream << endl;
     }
 }
