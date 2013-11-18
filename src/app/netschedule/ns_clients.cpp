@@ -397,6 +397,7 @@ bool CNSClient::Touch(const CNSClientId &  client_id,
     m_Cleared = false;
     m_ControlPort = client_id.GetControlPort();
     m_ClientHost = client_id.GetClientHost();
+    m_Addr = client_id.GetAddress();
     old_session = m_Session;
 
     // Check the session id
