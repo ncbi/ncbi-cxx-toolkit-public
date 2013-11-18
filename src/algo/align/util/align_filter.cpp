@@ -1149,7 +1149,7 @@ bool CAlignFilter::x_Match(const CQueryParseTree::TNode& node,
     default:
         try {
             return x_TermValue(node, align);
-        } catch (CException &e) {
+        } catch (CException &) {
         }
     }
 
