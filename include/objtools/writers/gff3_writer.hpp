@@ -91,6 +91,9 @@ protected:
     bool x_WriteAlignSpliced(
         const CSeq_align&,    
         bool=false );                   // invert width 
+    bool x_WriteAlignSpliced2(
+        const CSeq_align&,    
+        bool=false );                   // invert width 
     virtual bool x_WriteAlignDisc(
         const CSeq_align&,    
         bool=false );                   // invert width 
@@ -137,6 +140,11 @@ protected:
         const CGff3WriteRecordFeature&,
         const CSeq_loc&,
         unsigned int );
+
+    virtual bool xAssignRecordFromAsn(
+        const CMappedFeat&, 
+        CGffFeatureContext&,
+        CGff3WriteRecordFeature&);
 
     string x_GetParentId(
         CMappedFeat );

@@ -211,12 +211,112 @@ bool CGff3WriteRecordFeature::x_AssignType(
 };
 
 //  ----------------------------------------------------------------------------
+bool sIsTransspliced(const CMappedFeat& mf)
+//  ----------------------------------------------------------------------------
+{
+    return (mf.IsSetExcept_text()  &&  mf.GetExcept_text() == "trans-splicing");
+}
+
+//  ----------------------------------------------------------------------------
+bool sGetTranssplicedInPoint(const CSeq_loc& loc, unsigned int& inPoint)
+//  start determined by the minimum start of any sub interval
+//  ----------------------------------------------------------------------------
+{
+    typedef list<CRef<CSeq_interval> >::const_iterator CIT;
+
+    if (!loc.IsPacked_int()) {
+        return false;
+    }
+    const CPacked_seqint& packedInt = loc.GetPacked_int();
+    inPoint = packedInt.GetStart(eExtreme_Biological);
+    const list<CRef<CSeq_interval> >& intvs = packedInt.Get();
+    for (CIT cit = intvs.begin(); cit != intvs.end(); cit++) {
+        const CSeq_interval& intv = **cit;
+        if (intv.GetFrom() < inPoint) {
+            inPoint = intv.GetFrom();
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool sGetTranssplicedOutPoint(const CSeq_loc& loc, unsigned int& outPoint)
+//  stop determined by the maximum stop of any sub interval
+//  ----------------------------------------------------------------------------
+{
+    typedef list<CRef<CSeq_interval> >::const_iterator CIT;
+
+    if (!loc.IsPacked_int()) {
+        return false;
+    }
+    const CPacked_seqint& packedInt = loc.GetPacked_int();
+    outPoint = packedInt.GetStop(eExtreme_Biological);
+    const list<CRef<CSeq_interval> >& intvs = packedInt.Get();
+    for (CIT cit = intvs.begin(); cit != intvs.end(); cit++) {
+        const CSeq_interval& intv = **cit;
+        if (intv.GetTo() > outPoint) {
+            outPoint = intv.GetTo();
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool sGetTranssplicedLocation(
+    const CSeq_loc& loc,
+    unsigned int& inPoint,
+    unsigned int& outPoint,
+    ENa_strand& strand)
+//  ----------------------------------------------------------------------------
+{
+    int strandBalance = 0;
+    typedef list<CRef<CSeq_interval> >::const_iterator CIT;
+
+    if (!loc.IsPacked_int()) {
+        return false;
+    }
+    const CPacked_seqint& packedInt = loc.GetPacked_int();
+    inPoint = packedInt.GetStart(eExtreme_Biological);
+    outPoint = packedInt.GetStop(eExtreme_Biological);
+    strand = eNa_strand_plus;
+
+    const list<CRef<CSeq_interval> >& intvs = packedInt.Get();
+    for (CIT cit = intvs.begin(); cit != intvs.end(); cit++) {
+        const CSeq_interval& intv = **cit;
+        if (intv.GetFrom() < inPoint) {
+            inPoint = intv.GetFrom();
+        }
+        if (intv.GetTo() > outPoint) {
+            outPoint = intv.GetTo();
+        }
+        if (intv.GetStrand() == objects::eNa_strand_minus) {
+            --strandBalance;
+        }
+        else if (intv.GetStrand() == objects::eNa_strand_plus) {
+            ++strandBalance;
+        }
+    }
+    if (strandBalance < 0) {
+        strand = eNa_strand_minus;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::x_AssignStart(
     CMappedFeat mapped_feat )
 //  ----------------------------------------------------------------------------
 {
     if ( m_pLoc ) {
-        m_uSeqStart = m_pLoc->GetStart( eExtreme_Positional );;
+        if (sIsTransspliced(mapped_feat)) {
+            
+            if (!sGetTranssplicedInPoint(*m_pLoc, m_uSeqStart)) {
+                return false;
+            }
+        }
+        else {
+            m_uSeqStart = m_pLoc->GetStart(eExtreme_Positional);
+        }
     }
     CBioseq_Handle bsh = m_fc.BioseqHandle();
     if (!CWriteUtil::IsSequenceCircular(bsh)) {
@@ -246,7 +346,14 @@ bool CGff3WriteRecordFeature::x_AssignStop(
 //  ----------------------------------------------------------------------------
 {
     if ( m_pLoc ) {
-        m_uSeqStop = m_pLoc->GetStop( eExtreme_Positional );
+        if (sIsTransspliced(mapped_feat)) {
+            if (!sGetTranssplicedOutPoint(*m_pLoc, m_uSeqStop)) {
+                return false;
+            }
+        }
+        else {
+            m_uSeqStop = m_pLoc->GetStop(eExtreme_Positional);
+        }
     }
     CBioseq_Handle bsh = m_fc.BioseqHandle();
     if (!CWriteUtil::IsSequenceCircular(bsh)) {

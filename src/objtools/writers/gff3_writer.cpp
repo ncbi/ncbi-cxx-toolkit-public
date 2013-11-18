@@ -75,6 +75,13 @@ USING_SCOPE(objects);
 #define MATCH(sf, tf) ( ((sf) &  CAlnMap::fSeq) && ((tf) &  CAlnMap::fSeq) )
 
 //  ----------------------------------------------------------------------------
+bool sIsTransspliced(const CMappedFeat& mf)
+//  ----------------------------------------------------------------------------
+{
+    return (mf.IsSetExcept_text()  &&  mf.GetExcept_text() == "trans-splicing");
+}
+
+//  ----------------------------------------------------------------------------
 static CConstRef<CSeq_id> s_GetSourceId(
     const CSeq_id& id, CScope& scope )
 //  ----------------------------------------------------------------------------
@@ -262,6 +269,81 @@ bool CGff3Writer::x_WriteAlignDisc(
         if (!x_WriteAlign(*pA, bInvertWidth)) {
             return false;
         }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGff3Writer::x_WriteAlignSpliced2( 
+    const CSeq_align& align,
+    bool bInvertWidth )
+//  ----------------------------------------------------------------------------
+{
+    typedef list<CRef<CSpliced_exon> > EXONS;
+    string idStr("."), methodStr("."), typeStr("."), startStr("."), stopStr("."), 
+        scoreStr("."), strandStr("."), phaseStr("."), attributesStr("");
+
+    const CSpliced_seg& spliced = align.GetSegs().GetSpliced();
+    const EXONS& exons = spliced.GetExons();
+    for (EXONS::const_iterator cit = exons.begin(); cit != exons.end(); ++cit) {
+        const CSpliced_exon& exon = **cit;
+        {{//id
+            idStr.clear();
+            const CSeq_id& genomicId = spliced.GetGenomic_id();
+            CSeq_id_Handle bestH = sequence::GetId(
+                genomicId, *m_pScope, sequence::eGetId_Best);
+            bestH.GetSeqId()->GetLabel(&idStr, CSeq_id::eContent);
+        }}
+        cerr << idStr << '\t';
+        {{//method
+        }}
+        cerr << methodStr << '\t';
+        {{//type
+        }}
+        cerr << typeStr << '\t';
+        {{//start
+            size_t genomicStart = exon.GetGenomic_start()+1;
+            startStr = NStr::IntToString(genomicStart);
+        }}
+        cerr << startStr << '\t';
+        {{//stop
+            size_t genomicEnd = exon.GetGenomic_end()+1;
+            stopStr = NStr::IntToString(genomicEnd);
+        }}
+        cerr << stopStr << '\t';
+        {{//score
+        }}
+        cerr << scoreStr << '\t';
+        {{//strand
+            ENa_strand strand = eNa_strand_plus;
+            try {
+                strand = exon.GetGenomic_strand();
+            }
+            catch(std::exception&) {
+                try {
+                    strand = spliced.GetGenomic_strand();
+                }
+                catch(std::exception&) {}
+            };
+            switch (strand) {
+            default:
+                strandStr = "+";
+                break;
+            case eNa_strand_unknown:
+                strandStr = ".";
+                break;
+            case eNa_strand_minus:
+                strandStr = "-";
+                break;
+            }
+        }}
+        cerr << strandStr << '\t';
+        {{//phase
+        }}
+        cerr << phaseStr << '\t';
+        {{//attributes
+        }}
+        cerr << attributesStr << endl;
     }
     return true;
 }
@@ -527,7 +609,7 @@ bool CGff3Writer::x_WriteSource(
     x_WriteRecord(pSource);
     return true;
 }
-    
+
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteFeature(
     CGffFeatureContext& fc,
@@ -696,6 +778,27 @@ bool CGff3Writer::x_WriteFeatureCds(
 }
 
 //  ----------------------------------------------------------------------------
+bool CGff3Writer::xAssignRecordFromAsn(
+    const CMappedFeat& mf,
+    CGffFeatureContext& context,
+    CGff3WriteRecordFeature& record)
+//  ----------------------------------------------------------------------------
+{
+    if (sIsTransspliced(mf)) {
+        cerr << "";
+    }
+    if (!record.AssignFromAsn(mf, m_uFlags)) {
+        return false;
+    }
+    if (mf.GetFeatType() == CSeqFeatData::e_Rna) {
+        if (!xTryAssignGeneParent(record, context, mf)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteFeatureRna(
     CGffFeatureContext& fc,
     CMappedFeat mf )
@@ -705,10 +808,9 @@ bool CGff3Writer::x_WriteFeatureRna(
         new CGff3WriteRecordFeature( 
             fc,
             string( "rna" ) + NStr::UIntToString( m_uPendingTrnaId++ ) ) );
-    if ( ! pRna->AssignFromAsn( mf, m_uFlags ) ) {
+    if (!xAssignRecordFromAsn(mf, fc, *pRna)) {
         return false;
     }
-    xTryAssignGeneParent(*pRna, fc, mf);
     if ( ! x_WriteRecord( pRna ) ) {
         return false;
     }
