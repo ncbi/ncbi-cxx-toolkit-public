@@ -181,7 +181,8 @@ TMgr-DatasetItem ::= SEQUENCE {
 
 TMgr-DatasetItemSeq ::= SEQUENCE {
     seq-id Seq-id,
-    counts TMgr-AnnotCounts OPTIONAL
+    counts TMgr-AnnotCounts OPTIONAL,
+    seq-id2 Seq-id OPTIONAL
 }
 
 TMgr-DisplayTrackChoice ::= CHOICE {
