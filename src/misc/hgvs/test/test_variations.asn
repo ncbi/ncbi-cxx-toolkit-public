@@ -850,3 +850,236 @@ Variation ::= {
     }
   }
 }
+Variation ::= {
+  name "NM_001100818.1:c.650G>C",
+  description "",
+  placements {
+    {
+      loc pnt {
+        point 947,
+        strand plus,
+        id other {
+          accession "NM_001100818",
+          version 1
+        }
+      },
+      mol cdna,
+      seq {
+        length 1,
+        seq-data iupacna "G"
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 55022
+        }
+      },
+      gene-location 0
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 0
+  },
+  data set {
+    type package,
+    variations {
+      {
+        data instance {
+          type snv,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "C"
+              }
+            }
+          }
+        },
+        consequence {
+          variation {
+            placements {
+              {
+                loc pnt {
+                  point 216,
+                  strand plus,
+                  id other {
+                    accession "NP_001094288",
+                    version 1
+                  }
+                },
+                mol protein,
+                seq {
+                  length 1,
+                  seq-data ncbieaa "G"
+                }
+              },
+              {
+                loc int {
+                  from 946,
+                  to 948,
+                  strand plus,
+                  id other {
+                    accession "NM_001100818",
+                    version 1
+                  }
+                },
+                mol cdna,
+                frame 1,
+                seq {
+                  length 3,
+                  seq-data iupacna "GGC"
+                }
+              }
+            },
+            variant-prop {
+              version 5,
+              effect missense
+            },
+            data instance {
+              type prot-missense,
+              delta {
+                {
+                  seq literal {
+                    length 3,
+                    seq-data iupacna "GCC"
+                  }
+                }
+              }
+            },
+            so-terms {
+              1583
+            }
+          }
+        }
+      },
+      {
+        data instance {
+          type identity,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "G"
+              }
+            }
+          },
+          observation asserted
+        }
+      }
+    }
+  }
+}
+Variation ::= {
+  name "NM_174944.3:c.979_981delACG",
+  description "",
+  placements {
+    {
+      loc int {
+        from 1182,
+        to 1184,
+        strand plus,
+        id other {
+          accession "NM_174944",
+          version 3
+        }
+      },
+      mol cdna,
+      seq {
+        length 3,
+        seq-data iupacna "ACG"
+      },
+      dbxrefs {
+        {
+          db "GeneID",
+          tag id 283629
+        }
+      },
+      gene-location 0
+    }
+  },
+  variant-prop {
+    version 5,
+    gene-location 0
+  },
+  data set {
+    type package,
+    variations {
+      {
+        data instance {
+          type del,
+          delta {
+            {
+              seq this NULL,
+              action del-at
+            }
+          }
+        },
+        consequence {
+          variation {
+            placements {
+              {
+                loc pnt {
+                  point 327,
+                  strand plus,
+                  id other {
+                    accession "NP_777604",
+                    version 2
+                  }
+                },
+                mol protein,
+                seq {
+                  length 1,
+                  seq-data ncbieaa "T"
+                }
+              },
+              {
+                loc int {
+                  from 1185,
+                  to 1187,
+                  strand plus,
+                  id other {
+                    accession "NM_174944",
+                    version 3
+                  }
+                },
+                mol cdna,
+                frame 0,
+                seq {
+                  length 3,
+                  seq-data iupacna "ACC"
+                }
+              }
+            },
+            data instance {
+              type del,
+              delta {
+                {
+                  seq this NULL,
+                  action del-at
+                }
+              }
+            },
+            so-terms {
+              1820
+            }
+          }
+        }
+      },
+      {
+        data instance {
+          type identity,
+          delta {
+            {
+              seq literal {
+                length 3,
+                seq-data iupacna "ACG"
+              }
+            }
+          },
+          observation asserted
+        }
+      }
+    }
+  }
+}

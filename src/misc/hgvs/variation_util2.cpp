@@ -2074,7 +2074,7 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
         if(frameshift_phase == 0) {
 
             //if translations' common suffix is long, will capture the sequence change up to it
-            //  prot_ref_str: CWDADPLKRPTFKQIVQLIEKQISES*   -> C
+            //  prot_ref_str:  CWDADPLKRPTFKQIVQLIEKQISES*  -> C
             //  prot_var_str: LPWDADPLKRPTFKQIVQLIEKQISES*  -> LP
             //
             //Otherwise will capture the change up to terminal codon in either reference or variant translation
@@ -2084,7 +2084,9 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
             //  prot_ref_str: CWDADPLKRPTFKQIVQLIEKQISES*   -> CWD
             //  prot_var_str: WS*                           -> WS*
             size_t suffix_len = GetCommonSuffixLen(prot_ref_str, prot_var_str);
-            if(2 * suffix_len > max(prot_ref_str.size(), prot_var_str.size())) {
+            if(2 * suffix_len >= max(prot_ref_str.size(), prot_var_str.size())) {
+                //Note: '>=' because in edge-case X* -> Y* the common suffix is '*' and we want to truncate. VAR-699
+
                 prot_ref_str.resize(prot_ref_str.size() - suffix_len);
                 prot_var_str.resize(prot_var_str.size() - suffix_len);
             } else if(NStr::EndsWith(prot_var_str, "*") && prot_ref_str.size() > prot_var_str.size()) {
