@@ -1,6 +1,6 @@
 #!/bin/bash
-./driver -i annot/input/ -t annot/dbsnp/ $*
-./driver -i annot/input/ -t annot/varloc/ -varloc $*
-./driver -i variation/input/ -t variation/dbsnp/  $*
-./driver -i variation/input/ -t variation/varloc/ -varloc $*
+./driver -o annot.dbsnp.xml  -i annot/input/ -t annot/dbsnp/ $*
+./driver -o annot.varloc.xml -i annot/input/ -t annot/varloc/ -varloc $*
+./driver -o var.dbsnp.xml    -i variation/input/ -t variation/dbsnp/  $*
+./driver -o var.varloc.xml   -i variation/input/ -t variation/varloc/ -varloc $*
 
