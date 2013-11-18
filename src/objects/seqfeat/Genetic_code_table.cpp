@@ -557,6 +557,15 @@ const CTrans_table& CGen_code_table_imp::GetTransTable (const CGenetic_code& gc)
             {
                 // lookup table by ID
                 int id = (*gcd)->GetId ();
+                // code corrections: Genetic codes 7 and 8 have been removed; 0 means 1
+                // See JIRA ticket GB-3046 for details
+                if (id == 7) {
+                    id = 4;
+                } else if (id == 8) {
+                    id = 1;
+                } else if (id == 0) {
+                    id = 1;
+                }
                 return GetTransTable (id);
             }
             case CGenetic_code::C_E::e_Ncbieaa :
