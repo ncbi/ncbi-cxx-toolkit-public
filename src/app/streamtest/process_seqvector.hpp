@@ -85,14 +85,73 @@ public:
     };
 
     //  ------------------------------------------------------------------------
+    void x_FsaSeqIdWrite(const CBioseq& bioseq)
+    //  ------------------------------------------------------------------------
+    {
+        string gi_string;
+        string accn_string;
+
+        FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, bioseq) {
+            const CSeq_id& sid = **sid_itr;
+            TSEQID_CHOICE chs = sid.Which();
+            switch (chs) {
+                case NCBI_SEQID(Gi):
+                {
+                    const string str = sid.AsFastaString();
+                    gi_string = str;
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+
+        FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, bioseq) {
+            const CSeq_id& sid = **sid_itr;
+            TSEQID_CHOICE chs = sid.Which();
+            switch (chs) {
+                case NCBI_SEQID(Other):
+                case NCBI_SEQID(Genbank):
+                case NCBI_SEQID(Embl):
+                case NCBI_SEQID(Ddbj):
+                case NCBI_SEQID(Tpg):
+                case NCBI_SEQID(Tpe):
+                case NCBI_SEQID(Tpd):
+                {
+                    const string str = sid.AsFastaString();
+                    accn_string = str;
+                    break;
+                }
+                 default:
+                   break;
+            }
+        }
+
+        if (gi_string.empty() || accn_string.empty()) {
+            CSeq_id::WriteAsFasta (*m_out, bioseq);
+        } else {
+            *m_out << gi_string << "|" << accn_string;
+        }
+    }
+
+    //  ------------------------------------------------------------------------
     void SeqEntryProcess()
     //  ------------------------------------------------------------------------
     {
         try {
+            CDeflineGenerator gen (m_topseh);
+
             VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, *m_entry) {
                 const CBioseq& bioseq = *bit;
                 // !!! NOTE CALL TO OBJECT MANAGER !!!
                 const CBioseq_Handle& bsh = m_scope->GetBioseqHandle (bioseq);
+
+                const string& title = gen.GenerateDefline (bsh, 0);
+
+                *m_out << ">";
+                x_FsaSeqIdWrite (bioseq);
+                *m_out << " ";
+                *m_out << title << endl;
 
                 CSeqVector sv = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
 
