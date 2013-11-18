@@ -1039,6 +1039,11 @@ int CNcbiApplogApp::Run(void)
         string params = args["param"].AsString();
         SetInfo();
         NcbiLogP_ReqStartStr(params.c_str());
+        // Add original appname as extra after 'start_request' command
+        if (!m_Info.logsite.empty()) {
+            string extra = "orig_appname=" + NStr::URLEncode(m_Info.appname);
+            NcbiLogP_ExtraStr(extra.c_str());
+        }
         token_gen_type = eRequest;
     } else 
 
@@ -1117,7 +1122,7 @@ int CNcbiApplogApp::Run(void)
                         !NStr::StartsWith(CTempString(CTempString(m_Raw_line), kLoglineNamePos), m_Info.appname)) {
                         throw "Error processing input raw log, line have wrong format";
                     }
-                    m_Raw_line = NStr::Replace(m_Raw_line, m_Info.appname, m_Info.logsite);
+                    m_Raw_line = NStr::Replace(m_Raw_line, m_Info.appname, m_Info.logsite, kLoglineNamePos, 1);
                     // Post it
                     NcbiLogP_Raw(m_Raw_line.c_str());
                     // Add original appname as extra after 'start_app' command
