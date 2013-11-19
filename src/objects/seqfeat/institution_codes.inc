@@ -3482,6 +3482,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MCA	s	Muhlenberg College, Biology Department",
 "MCAS	s	Museo Civico Archeologico e di Scienze Naturali \"F. Eusebio\"",
 "MCBR	s	Museo Civico \"Baldassarre Romano\"",
+"MCC	c	Microbial Culture Collection",
 "MCC-UPLB	c	Microbial Culture Collection",
 "MCCB	s	Museo Civico \"Craveri\"",
 "MCCC	c	Marine Culture Collection of China",
