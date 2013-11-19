@@ -4,7 +4,7 @@
 # Author: J. Chen
 #
 
-EXPENDABLE_APP_PROJ = disc_report 
+EXPENDABLE_APP_PROJ = disc_report api_asndisc asndisc
 EXPENDABLE_LIB_PROJ = 
 
 srcdir = @srcdir@

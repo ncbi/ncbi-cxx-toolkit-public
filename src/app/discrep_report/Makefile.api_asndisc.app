@@ -5,12 +5,13 @@
 #
 
 ###  BASIC PROJECT SETTINGS
-APP = disc_report
-SRC = cApiDisc
+APP = api_asndisc
+SRC = cApiAsndisc
 
-PRE_LIBS = /home/chenj/DisRepLib/trunk/c++/src/objtools/discrepancy_report/libxdiscrepancy_report.a
+PRE_LIBS = /home/chenj/DisRepLib/trunk/c++/lib/libxdiscrepancy_report.a
 
-LIB = xobjread xvalidate valid valerr taxon3 $(XFORMAT_LIBS) xalnmgr xobjutil xconnect tables \
+LIB = xobjread xvalidate valid valerr taxon3 \
+        $(XFORMAT_LIBS) xalnmgr xobjutil xconnect tables \
 	taxon1 submit macro xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
 
 LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
