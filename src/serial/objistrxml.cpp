@@ -2149,7 +2149,7 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                 }
 */
             }
-            if ( SelfClosedTag() || ThisTagIsSelfClosed() || NextTagIsClosing()) {
+            if ( SelfClosedTag() || ThisTagIsSelfClosed()) {
                 m_Attlist = false;
                 TMemberIndex last = classType->GetMembers().LastIndex();
                 if (pos == last) {
@@ -2161,6 +2161,8 @@ CObjectIStreamXml::BeginClassMember(const CClassTypeInfo* classType,
                 }
                 return kInvalidMember;
             }
+            if ( NextTagIsClosing() ) 
+                return kInvalidMember; 
             if (pos <= classType->GetItems().LastIndex()) {
                 const CMemberInfo* mem_info = classType->GetMemberInfo(pos);
                 if (mem_info->GetId().HasNotag() &&
