@@ -76,6 +76,7 @@ pod2usage({-exitval => 0, -verbose => 2}) unless (scalar @ARGV or
                                                   $opt_show_version);
 
 my $exit_code = 0;
+$|++;
 
 # Connect and download files
 my $ftp = &connect_to_ftp() unless ($opt_show_version);
@@ -87,7 +88,14 @@ if ($opt_show_version) {
     print "$_\n" foreach (sort(&get_available_databases()));
 } else {
     my @files = sort(&get_files_to_download());
-    $exit_code = &download(@files);
+    my @files2decompress;
+    $exit_code = &download(\@files, \@files2decompress);
+    if ($exit_code == 1) {
+        foreach (@files2decompress) {
+            $exit_code = &decompress($_);
+            last if ($exit_code != 1);
+        }
+    }
 }
 $ftp->quit() unless ($opt_show_version);
 
@@ -133,9 +141,9 @@ sub get_files_to_download
     my @blast_db_files = $ftp->ls();
     my @retval = ();
 
-    if (DEBUG) {
-        print "DEBUG: Found the following files on ftp site:\n";
-        print "DEBUG: $_\n" for (@blast_db_files);
+    if ($opt_verbose > 2) {
+        print "Found the following files on ftp site:\n";
+        print "$_\n" for (@blast_db_files);
     }
 
     for my $requested_db (@ARGV) {
@@ -162,18 +170,20 @@ sub get_files_to_download
 # these (or the archives) are newer in the FTP site. Returns 0 if no files were
 # downloaded, 1 if at least one file was downloaded (so that this can be the
 # application's exit code)
-sub download($)
+sub download($$)
 {
     my @requested_dbs = @ARGV;
+    my @files2download = @{$_[0]};
+    my $files2decompress = $_[1];
     my $retval = 0;
 
-    for my $file (@_) {
+    for my $file (@files2download) {
 
         my $attempts = 0;   # Download attempts for this file
         if ($opt_verbose and &is_multivolume_db($file) and $file =~ /\.00\./) {
             my $db_name = &extract_db_name($file);
-            my $nvol = &get_num_volumes($db_name, @_);
-            print "Downloading $db_name (" . $nvol . " volumes) ...\n";
+            my $nvol = &get_num_volumes($db_name, @files2download);
+            print "Downloading $db_name (" . $nvol . " volumes) ...\n" unless ($opt_quiet);
         }
 
         # We preserve the checksum files as evidence of the downloaded archive
@@ -207,53 +217,64 @@ download_file:
                     goto download_file;
                 }
             }
-            if ($opt_decompress) {
-                print ", decompressing..." if $opt_verbose;
-                my $decompress_succeeded = &decompress($file);
-                next unless ($decompress_succeeded);
-                unlink $file;   # Clean up archive, but preserve the checksum file
-            }
+            push @$files2decompress, $file if ($opt_decompress);
             print " [OK]\n" if $opt_verbose;
             $retval = 1 if ($retval == 0);
         } else {
-            my $msg = ($opt_decompress 
-                       ? "The contents of $file are up to date in your system." 
-                       : "$file is up to date.");
             if ($opt_decompress and -f $file) {
-                print "Decompressing $file ..." if $opt_verbose;
-                my $decompress_succeeded = &decompress($file);
-                next unless ($decompress_succeeded);
-                unlink $file;   # Clean up archive, but preserve the checksum file
-                $msg = "[OK]";
+                push @$files2decompress, $file;
+                $retval = 1;
+            } else {
+                my $msg = ($opt_decompress 
+                           ? "The contents of $file are up to date in your system." 
+                           : "$file is up to date.");
+                print "$msg\n" if $opt_verbose;
             }
-            print "$msg\n" if $opt_verbose;
         }
     }
     return $retval;
 }
 
+# Try to decompress using /bin/tar as Archive::Tar is known to be slower (as
+# it's pure perl)
+sub _decompress_impl($)
+{
+    my $file = shift;
+    unless ($^O =~ /win/i) {
+        local $ENV{PATH} = "/bin:/usr/bin";
+        my $cmd = "gzip -cd $file 2>/dev/null | tar xf - 2>/dev/null";
+        return 1 unless (system($cmd));
+    }
+    return Archive::Tar->extract_archive($file, 1);
+}
+
 # Decompresses the file passed as its argument
-# Returns 1 on success, and 0 on failure, printing an error to STDERR
+# Returns 1 on success, and 2 on failure, printing an error to STDERR
 sub decompress($)
 {
     my $file = shift;
-    my $succeeded = Archive::Tar->extract_archive($file, 1);
+    print "Decompressing $file ..." unless ($opt_quiet);
+    my $succeeded = &_decompress_impl($file);
     unless ($succeeded) {
         my $msg = "Failed to decompress $file ($Archive::Tar::error), ";
         $msg .= "please do so manually.";
         print STDERR "$msg\n";
-        return 0;
+        return EXIT_FAILURE;
     }
+    unlink $file;   # Clean up archive, but preserve the checksum file
+    print " [OK]\n" unless ($opt_quiet);
     return 1;
 }
 
 sub compute_md5_checksum($)
 {
     my $file = shift;
-    open(DOWNLOADED_FILE, $file);
-    binmode(DOWNLOADED_FILE);
-    my $digest = Digest::MD5->new->addfile(*DOWNLOADED_FILE)->hexdigest;
-    close(DOWNLOADED_FILE);
+    my $digest = "N/A";
+    if (open(DOWNLOADED_FILE, $file)) {
+        binmode(DOWNLOADED_FILE);
+        $digest = Digest::MD5->new->addfile(*DOWNLOADED_FILE)->hexdigest;
+        close(DOWNLOADED_FILE);
+    }
     return $digest;
 }
 
