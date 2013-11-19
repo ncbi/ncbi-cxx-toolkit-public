@@ -3037,6 +3037,22 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
             all_gene_neighborhoods->SetMix().Set().push_back(p.second);
         }
 
+        //VAR-703: need to process both RNAs and CDSes to include IGs.
+        if(mf.GetData().IsRna() || mf.GetData().IsCdregion()) {
+            if(mf.GetData().IsRna() && mf.GetData().GetSubtype() != CSeqFeatData::eSubtype_mRNA) {
+                x_Add(mf.GetLocation(), gene_id, CVariantProperties::eGene_location_conserved_noncoding);
+            }    
+            TLocsPair p = s_GetIntronsAndSpliceSiteLocs(mf.GetLocation());
+            x_Add(*p.first, gene_id, CVariantProperties::eGene_location_intron);
+            size_t i(0);
+            for(CSeq_loc_CI ci(*p.second, CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Biological); ci; ++ci) {
+                x_Add(*ci.GetRangeAsSeq_loc(),
+                      gene_id,
+                      i%2 ? CVariantProperties::eGene_location_acceptor : CVariantProperties::eGene_location_donor);
+                ++i; 
+            } 
+        }
+
         if(mf.GetData().IsCdregion()) {
             TLocsPair p = s_GetStartAndStopCodonsLocs(mf.GetLocation());
             x_Add(*p.first, gene_id, CVariantProperties::eGene_location_in_start_codon);
@@ -3057,19 +3073,6 @@ void CVariationUtil::CVariantPropertiesIndex::x_Index(const CSeq_id_Handle& idh)
             p = s_GetUTRLocs(mf.GetLocation(), *rna_loc);
             x_Add(*p.first, gene_id, CVariantProperties::eGene_location_utr_5);
             x_Add(*p.second, gene_id, CVariantProperties::eGene_location_utr_3);
-        } else if(mf.GetData().IsRna()) {
-            if(mf.GetData().GetSubtype() != CSeqFeatData::eSubtype_mRNA) {
-                x_Add(mf.GetLocation(), gene_id, CVariantProperties::eGene_location_conserved_noncoding);
-            }
-            TLocsPair p = s_GetIntronsAndSpliceSiteLocs(mf.GetLocation());
-            x_Add(*p.first, gene_id, CVariantProperties::eGene_location_intron);
-            size_t i(0);
-            for(CSeq_loc_CI ci(*p.second, CSeq_loc_CI::eEmpty_Skip, CSeq_loc_CI::eOrder_Biological); ci; ++ci) {
-                x_Add(*ci.GetRangeAsSeq_loc(),
-                      gene_id,
-                      i%2 ? CVariantProperties::eGene_location_acceptor : CVariantProperties::eGene_location_donor);
-                ++i;
-            }
         } else if(mf.GetData().IsGene()) {
             if(ft.GetChildren(mf).size() == 0) {
                 x_Add(mf.GetLocation(),
