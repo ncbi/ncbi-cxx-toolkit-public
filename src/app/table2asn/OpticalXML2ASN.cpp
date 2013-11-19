@@ -387,7 +387,8 @@ void COpticalxml2asnOperatorImpl::SetOrganismData(CSeq_descr& SD, const string& 
 
     CBioSource& biosource = CTable2AsnContext::SetBioSource(SD);
     biosource.SetGenome(m_genome);
-    biosource.SetOrg().SetTaxId(context.m_taxid);
+    if (context.m_taxid > 0)
+        biosource.SetOrg().SetTaxId(context.m_taxid);
 
     // Get strain
     if (!context.m_strain.empty())

@@ -95,6 +95,39 @@ T* LeaveAsIs(void)
     return static_cast<T*>(NULL);
 }
 
+class CAutoInitAddBioSource: public CAutoInitRef<CBioSource> 
+{         
+public:
+    CAutoInitAddBioSource(CSeq_descr& descr): 
+      m_descr(descr), m_need_to_add(true)
+      {
+          NON_CONST_ITERATE(CSeq_descr::Tdata, desc_it, m_descr.Set())
+          {
+              if ((**desc_it).IsSource())
+              {
+                  CBioSource& biosource = (**desc_it).SetSource();
+                  Set(&biosource);
+                  m_need_to_add = false;
+                  break;
+              }
+          }
+
+      };
+      ~CAutoInitAddBioSource()
+      {
+          if (m_need_to_add && &Get(LeaveAsIs<CBioSource>) != NULL) 
+          {
+              CRef<CSeqdesc> desc(new CSeqdesc);
+              desc->SetSource(Get()); 
+              m_descr.Set().push_back(desc);
+          }
+      }        
+
+private:
+    bool         m_need_to_add;
+    CSeq_descr&  m_descr;
+};
+
 
 string CSourceModParser::ParseTitle(const CTempString& title, 
     CConstRef<CSeq_id> seqid,
@@ -217,13 +250,8 @@ void CSourceModParser::ApplyAllMods(CBioseq& seq, CTempString organism)
     }
 
     {{
-        CAutoInitRef<CBioSource> bsrc;
+        CAutoInitAddBioSource bsrc(seq.SetDescr());
         x_ApplyMods(bsrc, organism);
-        if (&bsrc.Get(LeaveAsIs<CBioSource>) != NULL) {
-            CRef<CSeqdesc> desc(new CSeqdesc);
-            desc->SetSource(*bsrc);
-            seq.SetDescr().Set().push_back(desc);
-        }
     }}
 
     {{
