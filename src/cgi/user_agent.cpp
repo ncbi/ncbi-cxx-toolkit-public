@@ -750,7 +750,7 @@ const SBrowser s_Browsers[] = {
     { CCgiUserAgent::eMaxthon,      "MyIE2",                    "MyIE2",                    CCgiUserAgent::eEngine_IE,      CCgiUserAgent::ePlatform_Unknown,      fAppComment },
     { CCgiUserAgent::eNetCaptor,    "NetCaptor",                "NetCaptor",                CCgiUserAgent::eEngine_IE,      CCgiUserAgent::ePlatform_Unknown,      fAppComment },
     
-    // Check IE last, after all IE-based browsers               ased browsers
+    // Check IE last, after all IE-based browsers
     { CCgiUserAgent::eIE,           "Internet Explorer",        "Internet Explorer",        CCgiUserAgent::eEngine_IE,      CCgiUserAgent::ePlatform_Unknown,      fProduct },
     { CCgiUserAgent::eIE,           "Internet Explorer",        "MSIE",                     CCgiUserAgent::eEngine_IE,      CCgiUserAgent::ePlatform_Unknown,      fApp },
 
@@ -894,6 +894,7 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
                 s_ParseVersion(m_UserAgent, pos, &m_EngineVersion);
             }
         }
+
         // Ignore next code if the browser type already detected
         if ( m_Browser == eUnknown ) {
 
@@ -950,17 +951,33 @@ void CCgiUserAgent::x_Parse(const string& user_agent)
         x_ParseToken(m_UserAgent, fAppProduct);
     }
 
-    // Try to get engine version for IE-based browsers
-    if ( m_Engine == eEngine_IE ) {
+    // Check Trident engine version and IE v11 and up
+    search = USTR(" Trident/");
+    pos = m_UserAgent.find(search);
+    if (pos != NPOS) {
+        m_Browser = eIE;
+        m_Engine  = eEngine_IE;
+        m_BrowserVersion = m_EngineVersion;
+        pos += search.length();
+        s_ParseVersion(m_UserAgent, pos, &m_EngineVersion);
+    }
+
+    // Try to get browser version for IE-based browsers or old IE
+    if ( m_Engine == eEngine_IE  &&
+         m_BrowserVersion.GetMajor() == -1 )
+    {
+        TUserAgentVersion v;
+        search = USTR(" MSIE ");
+        pos = m_UserAgent.find(search);
+        if (pos != NPOS) {
+            pos += search.length();
+            s_ParseVersion(m_UserAgent, pos, &v);
+        }
+        // Set engine version for IE-based browsers to IE version
         if ( m_Browser == eIE ) {
-            m_EngineVersion = m_BrowserVersion;
+            m_BrowserVersion = v;
         } else {
-            search = USTR(" MSIE ");
-            pos = m_UserAgent.find(search);
-            if (pos != NPOS) {
-                pos += search.length();
-                s_ParseVersion(m_UserAgent, pos, &m_EngineVersion);
-            }
+            m_EngineVersion = v;
         }
     }
 
