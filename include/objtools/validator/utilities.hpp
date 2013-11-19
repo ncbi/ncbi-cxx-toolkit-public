@@ -159,6 +159,23 @@ void NCBI_VALIDATOR_EXPORT CheckBioseqEndsForNAndGap
  EBioseqEndIsType& end_n,
  EBioseqEndIsType& end_gap);
 
+typedef enum {
+    eDuplicate_Not = 0,
+    eDuplicate_Duplicate,
+    eDuplicate_SameIntervalDifferentLabel,
+    eDuplicate_DuplicateDifferentTable,
+    eDuplicate_SameIntervalDifferentLabelDifferentTable
+} EDuplicateFeatureType;
+
+typedef const CSeq_feat::TDbxref TDbtags;
+
+EDuplicateFeatureType NCBI_VALIDATOR_EXPORT IsDuplicate 
+    (CSeq_feat_Handle f1, const CSeq_feat& feat1, 
+     CSeq_feat_Handle f2, const CSeq_feat& feat2,CScope& scope);
+
+bool IsLocFullLength (const CSeq_loc& loc, const CBioseq_Handle& bsh);
+CConstRef <CSeq_feat> GetGeneForFeature (const CSeq_feat& f1, CScope *scope);
+bool PartialsSame (const CSeq_loc& loc1, const CSeq_loc& loc2);
 
 END_SCOPE(validator)
 END_SCOPE(objects)

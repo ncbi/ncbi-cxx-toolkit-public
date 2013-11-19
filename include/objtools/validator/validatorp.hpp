@@ -50,7 +50,7 @@
 #include <objects/valid/Comment_set.hpp>
 
 #include <objtools/validator/validator.hpp>
-
+#include <objtools/validator/utilities.hpp>
 
 #include <objmgr/util/create_defline.hpp>
 
@@ -422,7 +422,6 @@ public:
     typedef const CSeq_graph& TGraph;
     typedef const CSeq_align& TAlign;
     typedef const CSeq_entry& TEntry;
-    typedef const CSeq_feat::TDbxref TDbtags;
     typedef map < const CSeq_feat*, const CSeq_annot* >& TFeatAnnotMap;
 
     // Posts errors.
@@ -828,7 +827,6 @@ protected:
     typedef CValidError_imp::TGraph TGraph;
     typedef CValidError_imp::TAlign TAlign;
     typedef CValidError_imp::TEntry TEntry;
-    typedef CValidError_imp::TDbtags TDbtags;
 
     CValidError_base(CValidError_imp& imp);
     virtual ~CValidError_base();
@@ -1303,7 +1301,6 @@ private:
     bool x_IsSameAsCDS(const CMappedFeat& feat);
     void ValidateSeqFeatContext(const CBioseq& seq);
     EDiagSev x_DupFeatSeverity (const CSeq_feat& curr, const CSeq_feat& prev, bool is_fruitfly, bool viral, bool htgs, bool same_annot, bool same_label);
-    bool x_AreFullLengthCodingRegionsWithDifferentFrames (CSeq_feat_Handle f1, CSeq_feat_Handle f2);
     void x_ReportDupOverlapFeaturePair (CSeq_feat_Handle f1, const CSeq_feat& feat1, CSeq_feat_Handle f2, const CSeq_feat& feat2, bool fruit_fly, bool viral, bool htgs);
     void x_ReportOverlappingPeptidePair (CSeq_feat_Handle f1, CSeq_feat_Handle f2, const CBioseq& bioseq, bool& reported_last_peptide);
     void ValidateDupOrOverlapFeats(const CBioseq& seq);
@@ -1374,8 +1371,6 @@ private:
     bool IsIdIn(const CSeq_id& id, const CBioseq& seq);
     bool SuppressTrailingXMsg(const CBioseq& seq);
     CRef<CSeq_loc> GetLocFromSeq(const CBioseq& seq);
-    bool IsDifferentDbxrefs(const TDbtags& dbxref1,
-                            const TDbtags& dbxref2);
     bool IsHistAssemblyMissing(const CBioseq& seq);
     bool IsFlybaseDbxrefs(const TDbtags& dbxrefs);
     bool GraphsOnBioseq(const CBioseq& seq) const;

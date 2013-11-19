@@ -1364,6 +1364,447 @@ void CheckBioseqEndsForNAndGap
 }
 
 
+bool IsLocFullLength (const CSeq_loc& loc, const CBioseq_Handle& bsh)
+{
+    if (loc.IsInt() 
+        && loc.GetInt().GetFrom() == 0
+        && loc.GetInt().GetTo() == bsh.GetInst_Length() - 1) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+CConstRef <CSeq_feat> GetGeneForFeature (const CSeq_feat& f1, CScope *scope)
+{
+    const CGene_ref * g1 = f1.GetGeneXref();
+    CConstRef <CSeq_feat> gene;
+
+    if (g1) {
+        if (g1->IsSuppressed()) {
+            return gene;
+        }
+        string ref_label;
+        g1->GetLabel(&ref_label);
+
+        CBioseq_Handle bsh = BioseqHandleFromLocation(scope, f1.GetLocation());
+        SAnnotSelector sel(CSeqFeatData::e_Gene);
+        CFeat_CI gene_it(bsh, sel);
+        while (gene_it) {
+            string feat_label;
+            feature::GetLabel(gene_it->GetOriginalFeature(), &feat_label, feature::fFGL_Content, scope);
+            if (NStr::EqualCase(ref_label, feat_label)) {
+                gene.Reset (&(gene_it->GetOriginalFeature()));
+                return gene;
+            }
+            ++gene_it;
+        }
+        return gene;
+    }
+
+    return sequence::GetOverlappingGene (f1.GetLocation(), *scope);
+}
+
+
+bool PartialsSame (const CSeq_loc& loc1, const CSeq_loc& loc2)
+{
+    bool loc1_partial_start =
+        loc1.IsPartialStart(eExtreme_Biological);
+    bool loc1_partial_stop =
+        loc1.IsPartialStop(eExtreme_Biological);
+    bool loc2_partial_start =
+        loc2.IsPartialStart(eExtreme_Biological);
+    bool loc2_partial_stop =
+        loc2.IsPartialStop(eExtreme_Biological);
+    if (loc1_partial_start == loc2_partial_start  &&
+        loc1_partial_stop == loc2_partial_stop) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+
+
+// Code for finding duplicate features
+bool s_IsSameStrand(const CSeq_loc& l1, const CSeq_loc& l2, CScope& scope)
+{
+    ENa_strand s1 = sequence::GetStrand(l1, &scope);
+    ENa_strand s2 = sequence::GetStrand(l2, &scope);
+    if ((s1 == eNa_strand_minus && s2 == eNa_strand_minus)
+        || (s1 != eNa_strand_minus && s2 != eNa_strand_minus)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+inline
+bool s_IsSameSeqAnnot(const CSeq_feat_Handle& f1, const CSeq_feat_Handle& f2, bool& diff_descriptions)
+{
+    bool rval = f1.GetAnnot() == f2.GetAnnot();
+    diff_descriptions = false;
+    if (!rval) {
+        if (!f1.GetAnnot().Seq_annot_IsSetDesc() && !f2.GetAnnot().Seq_annot_IsSetDesc()) {
+            // neither is set
+            diff_descriptions = false;
+        } else if (f1.GetAnnot().Seq_annot_IsSetDesc() && f2.GetAnnot().Seq_annot_IsSetDesc()) {
+            // both are set - are they different?
+            const CAnnot_descr& desc1 = f1.GetAnnot().Seq_annot_GetDesc();
+            const CAnnot_descr& desc2 = f2.GetAnnot().Seq_annot_GetDesc();
+            if (desc1.Get().front()->Which() != desc2.Get().front()->Which()) {
+                diff_descriptions = true;
+            } else {
+                if (desc1.Get().front()->IsName() 
+                    && NStr::EqualNocase(desc1.Get().front()->GetName(), desc2.Get().front()->GetName())) {
+                    diff_descriptions = false;
+                } else if (desc1.Get().front()->IsTitle()
+                    && NStr::EqualNocase(desc1.Get().front()->GetTitle(), desc2.Get().front()->GetTitle())) {
+                    diff_descriptions = false;
+                } else {
+                    diff_descriptions = true;
+                }
+            }
+        } else {
+            diff_descriptions = true;
+        }
+    }
+    return rval;
+}
+
+
+bool s_AreGBQualsIdentical(const CSeq_feat& feat1, const CSeq_feat& feat2)
+{
+    bool rval = true;
+
+    if (!feat1.IsSetQual()) {
+        if (!feat2.IsSetQual()) {
+            return true;
+        } else {
+            return false;
+        }
+    } else if (!feat2.IsSetQual()) {
+        return false;
+    } else {
+        CSeq_feat::TQual::const_iterator gb1 = feat1.GetQual().begin();
+        CSeq_feat::TQual::const_iterator gb1_end = feat1.GetQual().end();
+        CSeq_feat::TQual::const_iterator gb2 = feat2.GetQual().begin();
+        CSeq_feat::TQual::const_iterator gb2_end = feat2.GetQual().end();
+
+        while ((gb1 != gb1_end) && (gb2 != gb2_end) && rval) {
+            if (!(*gb1)->IsSetQual()) {
+                if ((*gb2)->IsSetQual()) {
+                    rval = false;
+                }
+            } else if (!(*gb2)->IsSetQual()) {
+                rval = false;
+            } else if (!NStr::Equal ((*gb1)->GetQual(), (*gb2)->GetQual())) {
+                rval = false;
+            }
+            if (!(*gb1)->IsSetVal()) {
+                if ((*gb2)->IsSetVal()) {
+                    rval = false;
+                }
+            } else if (!(*gb2)->IsSetVal()) {
+                rval = false;
+            } else if (!NStr::Equal ((*gb1)->GetVal(), (*gb2)->GetVal())) {
+                rval = false;
+            }
+            ++gb1;
+            ++gb2;
+        }
+        if (gb1 != gb1_end || gb2 != gb2_end) {
+            rval = false;
+        }
+    }
+    return rval;
+}
+
+
+bool s_AreFeatureLabelsSame(const CSeq_feat& feat, const CSeq_feat& prev, CScope *scope)
+{
+    // compare labels and comments
+    bool same_label = true;
+    const string& curr_comment =
+        feat.IsSetComment() ? feat.GetComment() : kEmptyStr;
+    const string& prev_comment =
+        prev.IsSetComment() ? prev.GetComment() : kEmptyStr;
+    string curr_label = "";
+    string prev_label = "";
+
+    feature::GetLabel(feat,
+        &curr_label, feature::fFGL_Content, scope);
+    feature::GetLabel(prev,
+        &prev_label, feature::fFGL_Content, scope);
+    if (!NStr::EqualNocase(curr_comment, prev_comment) ||
+        !NStr::EqualNocase(curr_label, prev_label) ) {
+        same_label = false;
+    } else if (!s_AreGBQualsIdentical(feat, prev)) {
+        same_label = false;
+    }
+    return same_label;
+}
+
+
+bool s_IsDifferentDbxrefs(const TDbtags& list1, const TDbtags& list2)
+{
+    if (list1.empty()  ||  list2.empty()) {
+        return false;
+    } else if (list1.size() != list2.size()) {
+        return true;
+    }
+
+    TDbtags::const_iterator it1 = list1.begin();
+    TDbtags::const_iterator it2 = list2.begin();
+    for (; it1 != list1.end(); ++it1, ++it2) {
+        if (!NStr::EqualNocase((*it1)->GetDb(), (*it2)->GetDb())) {
+            return true;
+        }
+        string str1 =
+            (*it1)->GetTag().IsStr() ? (*it1)->GetTag().GetStr() : "";
+        string str2 =
+            (*it2)->GetTag().IsStr() ? (*it2)->GetTag().GetStr() : "";
+        if ( str1.empty()  &&  str2.empty() ) {
+            if (!(*it1)->GetTag().IsId()  &&  !(*it2)->GetTag().IsId()) {
+                continue;
+            } else if ((*it1)->GetTag().IsId()  &&  (*it2)->GetTag().IsId()) {
+                if ((*it1)->GetTag().GetId() != (*it2)->GetTag().GetId()) {
+                    return true;
+                }
+            } else {
+                return true;
+            }
+        } else if (!str1.empty() && !str2.empty() && !NStr::EqualNocase(str1, str2)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool s_AreFullLengthCodingRegionsWithDifferentFrames (CSeq_feat_Handle f1, CSeq_feat_Handle f2, CScope* scope)
+{
+    if (!f1.GetData().IsCdregion() || !f2.GetData().IsCdregion()) {
+        return false;
+    }
+
+    int frame1 = 1, frame2 = 1;
+    if (f1.GetData().GetCdregion().IsSetFrame()) {
+        frame1 = f1.GetData().GetCdregion().GetFrame();
+        if (frame1 == 0) {
+            frame1 = 1;
+        }
+    }
+    if (f2.GetData().GetCdregion().IsSetFrame()) {
+        frame2 = f2.GetData().GetCdregion().GetFrame();
+        if (frame2 == 0) {
+            frame2 = 1;
+        }
+    }
+    if (frame1 == frame2) {
+        return false;
+    }
+
+    CBioseq_Handle bsh1 = BioseqHandleFromLocation(scope, f1.GetLocation());
+    if (!IsLocFullLength (f1.GetLocation(), bsh1)) {
+        return false;
+    }
+    CBioseq_Handle bsh2 = BioseqHandleFromLocation(scope, f2.GetLocation());
+    if (!IsLocFullLength (f2.GetLocation(), bsh2)) {
+        return false;
+    }
+
+    return true;
+}
+
+
+bool s_AreDifferentVariations (CSeq_feat_Handle f1, CSeq_feat_Handle f2)
+{
+    if (f1.GetData().GetSubtype() != CSeqFeatData::eSubtype_variation
+        || f2.GetData().GetSubtype() != CSeqFeatData::eSubtype_variation) {
+        return false;
+    }
+    if (!f1.IsSetQual() || !f2.IsSetQual()) {
+        return false;
+    }
+    string replace1 = "";
+
+    ITERATE(CSeq_feat::TQual, q, f1.GetQual()) {
+        if ((*q)->IsSetQual() && NStr::Equal((*q)->GetQual(), "replace") && (*q)->IsSetVal()) {
+            replace1 = (*q)->GetVal();
+            if (!NStr::IsBlank(replace1)) {
+                break;
+            }
+        }
+    }
+
+    string replace2 = "";
+
+    ITERATE(CSeq_feat::TQual, q, f2.GetQual()) {
+        if ((*q)->IsSetQual() && NStr::Equal((*q)->GetQual(), "replace") && (*q)->IsSetVal()) {
+            replace2 = (*q)->GetVal();
+            if (!NStr::IsBlank(replace2)) {
+                break;
+            }
+        }
+    }
+
+    if (!NStr::IsBlank(replace1) && !NStr::Equal(replace1, replace2)) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+
+
+static bool s_AreLinkedToDifferentFeats (CSeq_feat_Handle f1, CSeq_feat_Handle f2, CSeqFeatData::ESubtype s1, CSeqFeatData::ESubtype s2)
+{
+    bool rval = false;
+    
+    if (f1.GetData().GetSubtype() == s1 && f2.GetData().GetSubtype() == s1) {
+        CScope& scope = f1.GetScope();
+        const CSeq_loc& loc = f1.GetLocation();
+        CBioseq_Handle bsh = BioseqHandleFromLocation (&scope, loc);
+        if (bsh) {
+            const CTSE_Handle& tse = bsh.GetTSE_Handle();
+            vector<int> mrna1;
+            vector<int> mrna2;
+
+            FOR_EACH_SEQFEATXREF_ON_SEQFEAT (itx, *(f1.GetSeq_feat())) {
+                if ((*itx)->IsSetId() && (*itx)->GetId().IsLocal() 
+                    && (*itx)->GetId().GetLocal().IsId()) {
+                    int feat_id = (*itx)->GetId().GetLocal().GetId();
+                    vector<CSeq_feat_Handle> handles = tse.GetFeaturesWithId(CSeqFeatData::e_not_set, feat_id);
+                    ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
+                        if (feat_it->IsSetData() 
+                            && feat_it->GetData().GetSubtype() == s2) {
+                            mrna1.push_back (feat_id);
+                            break;
+                        }
+                    }
+                }
+            }
+            FOR_EACH_SEQFEATXREF_ON_SEQFEAT (itx, *(f2.GetSeq_feat())) {
+                if ((*itx)->IsSetId() && (*itx)->GetId().IsLocal() 
+                    && (*itx)->GetId().GetLocal().IsId()) {
+                    int feat_id = (*itx)->GetId().GetLocal().GetId();
+                    vector<CSeq_feat_Handle> handles = tse.GetFeaturesWithId(CSeqFeatData::e_not_set, feat_id);
+                    ITERATE( vector<CSeq_feat_Handle>, feat_it, handles ) {
+                        if (feat_it->IsSetData() 
+                            && feat_it->GetData().GetSubtype() == s2) {
+                            mrna2.push_back (feat_id);
+                        }
+                    }
+                }
+            }
+
+            if (mrna1.size() > 0 && mrna2.size() > 0) {
+                rval = true;
+                ITERATE (vector<int>, i1, mrna1) {
+                    ITERATE (vector<int>, i2, mrna2) {
+                        if (*i1 == *i2) {
+                            rval = false;
+                            break;
+                        }
+                    }
+                    if (!rval) {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    return rval;
+}
+
+
+static bool s_AreCodingRegionsLinkedToDifferentmRNAs (CSeq_feat_Handle f1, CSeq_feat_Handle f2)
+{
+    return s_AreLinkedToDifferentFeats (f1, f2, CSeqFeatData::eSubtype_cdregion, CSeqFeatData::eSubtype_mRNA);
+}
+
+
+bool s_AremRNAsLinkedToDifferentCodingRegions (CSeq_feat_Handle f1, CSeq_feat_Handle f2)
+{
+    return s_AreLinkedToDifferentFeats (f1, f2, CSeqFeatData::eSubtype_mRNA, CSeqFeatData::eSubtype_cdregion);
+}
+
+
+EDuplicateFeatureType 
+IsDuplicate 
+(CSeq_feat_Handle f1, 
+ const CSeq_feat& feat1, 
+ CSeq_feat_Handle f2, 
+ const CSeq_feat& feat2, 
+ CScope& scope)
+{
+    EDuplicateFeatureType dup_type = eDuplicate_Not;
+
+    // subtypes
+    CSeqFeatData::ESubtype feat1_subtype = feat1.GetData().GetSubtype();
+    CSeqFeatData::ESubtype feat2_subtype = feat2.GetData().GetSubtype();
+    // locations
+    const CSeq_loc& feat1_loc = feat1.GetLocation();
+    const CSeq_loc& feat2_loc = feat2.GetLocation();
+
+    // if same subtype
+    if (feat1_subtype == feat2_subtype) {
+        // if same location and strand
+        if (s_IsSameStrand(feat1_loc, feat2_loc, scope)  &&
+            sequence::Compare(feat1_loc, feat2_loc, &scope) == sequence::eSame) {
+
+            // same annot?
+            bool diff_annot_desc = false;
+            bool same_annot = s_IsSameSeqAnnot(f1, f2, diff_annot_desc);
+
+            if (diff_annot_desc) {
+                // don't report if features on different annots with different titles or names
+            } else {
+                // compare labels and comments
+                bool same_label = s_AreFeatureLabelsSame (feat1, feat2, &scope);
+
+                // Report duplicates
+                if ( feat1_subtype == CSeqFeatData::eSubtype_region  &&
+                    s_IsDifferentDbxrefs(feat1.GetDbxref(), feat2.GetDbxref()) ) {
+                    // do not report if both have dbxrefs and they are 
+                    // different.
+                } else if (!same_label && s_AreFullLengthCodingRegionsWithDifferentFrames(f1, f2, &scope)) {
+                    // do not report if both coding regions are full length, have different products,
+                    // and have different frames
+                } else if (s_AreDifferentVariations(f1, f2)) {
+                    // don't report variations if replace quals are different
+                } else if (s_AreCodingRegionsLinkedToDifferentmRNAs(f1, f2)) {
+                    // do not report if features are coding regions linked to different mRNAs
+                } else if (s_AremRNAsLinkedToDifferentCodingRegions(f1, f2)) {
+                    // do not report if features are mRNAs linked to different coding regions
+                } else if ( same_annot ) {
+                    if (same_label) {
+                        dup_type = eDuplicate_Duplicate;
+                    } else if ( feat1_subtype != CSeqFeatData::eSubtype_pub ) {
+                        if (PartialsSame(feat1_loc, feat2_loc)) {
+                            // do not report if partial flags are different
+                            dup_type = eDuplicate_SameIntervalDifferentLabel;
+                        }
+                    }
+                } else {
+                    if (same_label) {
+                        dup_type = eDuplicate_DuplicateDifferentTable;
+                    } else if ( feat2_subtype != CSeqFeatData::eSubtype_pub ) {
+                        dup_type = eDuplicate_SameIntervalDifferentLabelDifferentTable;
+                    }
+                }
+            }
+        }
+    }
+    return dup_type;        
+}
+
+
 END_SCOPE(validator)
 END_SCOPE(objects)
 END_NCBI_SCOPE
