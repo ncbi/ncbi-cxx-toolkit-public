@@ -271,6 +271,8 @@ void CDeflineGenerator::x_SetFlags (
                         m_IsNM = true;
                     } else if (type == NCBI_ACCN(refseq_ncrna)) {
                         m_IsNR = true;
+                    } else if (type == NCBI_ACCN(refseq_unique_prot)) {
+                        m_IsWP = true;
                     }
                 }
                 break;
@@ -576,6 +578,33 @@ void CDeflineGenerator::x_SetBioSrc (
                     break;
                 default:
                     break;
+            }
+        }
+
+        if (m_Source->IsSetOrgname()) {
+            const COrgName& onp = m_Source->GetOrgname();
+            if (onp.IsSetName()) {
+                const COrgName::TName& nam = onp.GetName();
+                if (nam.IsPartial()) {
+                    const CPartialOrgName& pon = nam.GetPartial();
+                    if (pon.IsSet()) {
+                        const CPartialOrgName::Tdata& tx = pon.Get();
+                        ITERATE (CPartialOrgName::Tdata, itr, tx) {
+                            const CTaxElement& te = **itr;
+                            if (te.IsSetFixed_level()) {
+                                int fl = te.GetFixed_level();
+                                if (fl > 0) {
+                                    m_Multispecies = true;
+                                } else if (te.IsSetLevel()) {
+                                    const string& lvl = te.GetLevel();
+                                    if (! NStr::EqualNocase (lvl, "species")) {
+                                        m_Multispecies = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
         }
 
@@ -1809,6 +1838,8 @@ const char * CDeflineGenerator::x_SetPrefix (void)
         } else {
             prefix = "TPA: ";
         }
+    } else if (m_Multispecies) {
+        prefix = "MULTISPECIES: ";
     }
 
     return prefix;

@@ -189,6 +189,7 @@ private:
     bool m_IsNR;
     bool m_IsPatent;
     bool m_IsPDB;
+    bool m_IsWP;
     bool m_ThirdParty;
     bool m_WGSMaster;
     bool m_TSAMaster;
@@ -229,6 +230,7 @@ private:
     /// biosource fields
     CConstRef<CBioSource> m_Source;
     CTempString m_Taxname;
+    bool m_Multispecies;
     CBioSource::TGenome m_Genome;
 
     /// subsource fields
