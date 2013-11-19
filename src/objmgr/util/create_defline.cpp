@@ -206,6 +206,7 @@ void CDeflineGenerator::x_SetFlags (
 
     m_Source.Reset();
     m_Taxname.clear();
+    m_Multispecies = false;
     m_Genome = NCBI_GENOME(unknown);
 
     m_Chromosome.clear();
