@@ -2958,7 +2958,13 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_Version(void)
 {
     LOG_CURRENT_FUNCTION
-    WriteText("OK:").WriteText(NETCACHED_HUMAN_VERSION).WriteText("\n");
+//    WriteText("OK:").WriteText(NETCACHED_HUMAN_VERSION).WriteText("\n");
+    WriteText("OK:server_version=" NETCACHED_VERSION
+              "&storage_version="  NETCACHED_STORAGE_VERSION
+              "&protocol_version=" NETCACHED_PROTOCOL_VERSION
+              "&build_date=" + NStr::URLEncode(NETCACHED_BUILD_DATE) +
+              "&mirrored=" + (NStr::BoolToString( !CNCDistributionConf::GetPeers().empty())))
+        .WriteText("\n");
     return &Me::x_FinishCommand;
 }
 
