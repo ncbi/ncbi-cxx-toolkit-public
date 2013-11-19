@@ -305,8 +305,13 @@ const CItemInfo* CItemsInfo::FindNextMandatory(const CItemInfo* info)
         }
         return info;
     }
+    return FindNextMandatory(info->GetTypeInfo());
+}
+
+const CItemInfo* CItemsInfo::FindNextMandatory(const CTypeInfo* info)
+{
     const CItemInfo* found = 0;
-    TTypeInfo type = FindRealTypeInfo(info->GetTypeInfo());
+    TTypeInfo type = FindRealTypeInfo(info);
     ETypeFamily family = type->GetTypeFamily();
     if (family == eTypeFamilyClass || family == eTypeFamilyChoice) {
         const CClassTypeInfoBase* classType =

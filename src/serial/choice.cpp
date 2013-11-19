@@ -425,17 +425,21 @@ void CChoiceTypeInfoFunctions::WriteChoiceDefault(CObjectOStream& out,
     }
 
     index = choiceType->GetIndex(objectPtr);
-    if ( index == kInvalidMember )
-        out.ThrowError(out.fInvalidData, "cannot write empty choice");
+    if ( index == kInvalidMember ) {
+        if (CItemsInfo::FindNextMandatory(objectType) != NULL) {
+            out.ThrowError(out.fInvalidData, "cannot write empty choice");
+        }
+    } else {
+        variantInfo = choiceType->GetVariantInfo(index);
+        BEGIN_OBJECT_FRAME_OF2(out, eFrameChoiceVariant, variantInfo->GetId());
+        out.BeginChoiceVariant(choiceType, variantInfo->GetId());
 
-    variantInfo = choiceType->GetVariantInfo(index);
-    BEGIN_OBJECT_FRAME_OF2(out, eFrameChoiceVariant, variantInfo->GetId());
-    out.BeginChoiceVariant(choiceType, variantInfo->GetId());
+        variantInfo->WriteVariant(out, objectPtr);
 
-    variantInfo->WriteVariant(out, objectPtr);
+        out.EndChoiceVariant();
+        END_OBJECT_FRAME_OF(out);
+    }
 
-    out.EndChoiceVariant();
-    END_OBJECT_FRAME_OF(out);
     out.EndChoice();
     END_OBJECT_FRAME_OF(out);
 }

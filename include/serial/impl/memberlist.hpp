@@ -92,6 +92,7 @@ public:
 
     static const CTypeInfo* FindRealTypeInfo(const CTypeInfo* info);
     static const CItemInfo* FindNextMandatory(const CItemInfo* info);
+    static const CItemInfo* FindNextMandatory(const CTypeInfo* info);
 
     const CItemInfo* GetItemInfo(TMemberIndex index) const;
     void AddItem(CItemInfo* item);
