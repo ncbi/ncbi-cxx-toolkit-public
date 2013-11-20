@@ -705,7 +705,7 @@ CSeq_id_Textseq_Info::~CSeq_id_Textseq_Info(void)
 
 CSeq_id_Textseq_Info::TKey
 CSeq_id_Textseq_Info::ParseAcc(const string& acc,
-                               const CTextseq_id* tid)
+                               const TVersion* ver)
 {
     TKey key;
     int len = acc.size(), prefix_len = len, most_significant = -1;
@@ -751,8 +751,8 @@ CSeq_id_Textseq_Info::ParseAcc(const string& acc,
     }
     hash = (hash << 8) | (acc_digits << 1);
     key.m_Hash = hash;
-    if ( tid && tid->IsSetVersion() ) {
-        key.SetVersion(tid->GetVersion());
+    if ( ver ) {
+        key.SetVersion(*ver);
     }
     return key;
 }
@@ -813,14 +813,28 @@ CConstRef<CSeq_id> CSeq_id_Textseq_Info::GetPackedSeqId(TPacked param) const
 }
 
 
-CSeq_id_Textseq_Tree::CSeq_id_Textseq_Tree(CSeq_id_Mapper* mapper)
-    : CSeq_id_Which_Tree(mapper)
+CSeq_id_Textseq_Tree::CSeq_id_Textseq_Tree(CSeq_id_Mapper* mapper,
+                                           CSeq_id::E_Choice type)
+    : CSeq_id_Which_Tree(mapper),
+      m_Type(type)
 {
 }
 
 
 CSeq_id_Textseq_Tree::~CSeq_id_Textseq_Tree(void)
 {
+}
+
+
+bool CSeq_id_Textseq_Tree::x_Check(const CSeq_id::E_Choice& type) const
+{
+    return type == m_Type;
+}
+
+
+bool CSeq_id_Textseq_Tree::x_Check(const CSeq_id& id) const
+{
+    return x_Check(id.Which());
 }
 
 
@@ -980,8 +994,9 @@ void CSeq_id_Textseq_Tree::x_Unindex(const CSeq_id_Info* info)
             return;
         }
     }
-    _ASSERT(x_Check(*info->GetSeqId()));
-    const CTextseq_id& tid = x_Get(*info->GetSeqId());
+    CConstRef<CSeq_id> tid_id = info->GetSeqId();
+    _ASSERT(x_Check(*tid_id));
+    const CTextseq_id& tid = x_Get(*tid_id);
     if ( tid.IsSetAccession() ) {
         x_Erase(m_ByAcc, tid.GetAccession(), info);
     }
@@ -992,66 +1007,31 @@ void CSeq_id_Textseq_Tree::x_Unindex(const CSeq_id_Info* info)
 
 
 static inline
-bool x_IsDefaultSwissprotRelease(const CTextseq_id& tid)
+bool x_IsDefaultSwissprotRelease(const string& release)
 {
-    return tid.IsSetRelease() &&
-        (tid.GetRelease() == "reviewed"  ||  tid.GetRelease() == "unreviewed");
+    return release == "reviewed"  ||  release == "unreviewed";
 }
 
 
-void CSeq_id_Textseq_Tree::x_FindStrMatch(TSeq_id_MatchList& id_list,
-                                          bool by_accession,
-                                          const TStringMap& str_map,
-                                          const string& str,
-                                          CSeq_id::E_Choice which,
-                                          const CTextseq_id* tid) const
+static inline
+bool x_IsDefaultSwissprotRelease(const CTextseq_id& tid)
 {
-    for ( TStringMapCI vit = str_map.find(str);
-          vit != str_map.end() && NStr::EqualNocase(vit->first, str);
-          ++vit ) {
-        const CTextseq_id& tst = x_Get(*vit->second->GetSeqId());
-        if ( by_accession ) {
-            // acc.ver should match
-            if ( tid->IsSetVersion() ) {
-                if ( !tst.IsSetVersion() ||
-                     tst.GetVersion() != tid->GetVersion() ) {
-                    continue;
-                }
-            }
-        }
-        else {
-            // name.rel should match
-            if ( tst.IsSetAccession() && tid->IsSetAccession() ) {
-                continue;
-            }
-            if ( tid->IsSetRelease() ) {
-                if ( which != CSeq_id::e_Swissprot || tst.IsSetRelease()  ||
-                     !x_IsDefaultSwissprotRelease(*tid)) {
-                    if ( !tst.IsSetRelease() ||
-                         tst.GetRelease() != tid->GetRelease() ) {
-                        continue;
-                    }
-                }
-            }
-        }
-        id_list.insert(CSeq_id_Handle(vit->second));
-    }
+    return tid.IsSetRelease() && x_IsDefaultSwissprotRelease(tid.GetRelease());
 }
 
 
 void CSeq_id_Textseq_Tree::x_FindMatchByAcc(TSeq_id_MatchList& id_list,
-                                            const string& str,
-                                            CSeq_id::E_Choice which,
-                                            const CTextseq_id* tid) const
+                                            const string& acc,
+                                            const TVersion* ver) const
 {
     if ( !m_PackedMap.empty() ) {
-        if ( TPackedKey key = CSeq_id_Textseq_Info::ParseAcc(str, tid) ) {
+        if ( TPackedKey key = CSeq_id_Textseq_Info::ParseAcc(acc, ver) ) {
             if ( key.IsSetVersion() ) {
                 // only same version
                 TPackedMap_CI it = m_PackedMap.find(key);
                 if ( it != m_PackedMap.end() ) {
                     const CSeq_id_Textseq_Info* info = it->second;
-                    TPacked packed = info->ParseAccNumber(str);
+                    TPacked packed = info->ParseAccNumber(acc);
                     id_list.insert(CSeq_id_Handle(info, packed));
                 }
             }
@@ -1064,26 +1044,136 @@ void CSeq_id_Textseq_Tree::x_FindMatchByAcc(TSeq_id_MatchList& id_list,
                     if ( it->first.EqualAcc(key) ) {
                         const CSeq_id_Textseq_Info* info = it->second;
                         if ( packed == 0 ) {
-                            packed = info->ParseAccNumber(str);
+                            packed = info->ParseAccNumber(acc);
                         }
-                        _ASSERT(packed == info->ParseAccNumber(str));
+                        _ASSERT(packed == info->ParseAccNumber(acc));
                         id_list.insert(CSeq_id_Handle(info, packed));
                     }
                 }
             }
         }
     }
-    x_FindStrMatch(id_list, true, m_ByAcc, str, which, tid);
+
+    for ( TStringMapCI vit = m_ByAcc.find(acc);
+          vit != m_ByAcc.end() && NStr::EqualNocase(vit->first, acc);
+          ++vit ) {
+        if ( ver ) {
+            CConstRef<CSeq_id> tst_id = vit->second->GetSeqId();
+            const CTextseq_id& tst = x_Get(*tst_id);
+            // acc.ver should match
+            if ( !tst.IsSetVersion() || tst.GetVersion() != *ver ) {
+                continue;
+            }
+        }
+        id_list.insert(CSeq_id_Handle(vit->second));
+    }
 }
 
 
-inline
+void CSeq_id_Textseq_Tree::x_FindRevMatchByAcc(TSeq_id_MatchList& id_list,
+                                               const string& acc,
+                                               const TVersion* ver) const
+{
+    if ( !m_PackedMap.empty() ) {
+        if ( TPackedKey key = CSeq_id_Textseq_Info::ParseAcc(acc, ver) ) {
+            TPackedMap_CI it = m_PackedMap.find(key);
+            if ( it != m_PackedMap.end() ) {
+                const CSeq_id_Textseq_Info* info = it->second;
+                TPacked packed = info->ParseAccNumber(acc);
+                id_list.insert(CSeq_id_Handle(info, packed));
+            }
+            if ( key.IsSetVersion() ) {
+                // no version too
+                key.ResetVersion();
+                TPackedMap_CI it = m_PackedMap.find(key);
+                if ( it != m_PackedMap.end() ) {
+                    const CSeq_id_Textseq_Info* info = it->second;
+                    TPacked packed = info->ParseAccNumber(acc);
+                    id_list.insert(CSeq_id_Handle(info, packed));
+                }
+            }
+        }
+    }
+
+    for ( TStringMapCI vit = m_ByAcc.find(acc);
+          vit != m_ByAcc.end() && NStr::EqualNocase(vit->first, acc);
+          ++vit ) {
+        CConstRef<CSeq_id> tst_id = vit->second->GetSeqId();
+        const CTextseq_id& tst = x_Get(*tst_id);
+        if ( tst.IsSetVersion() &&
+             (!ver || tst.GetVersion() != *ver) ) {
+            continue;
+        }
+        id_list.insert(CSeq_id_Handle(vit->second));
+    }
+}
+
+
 void CSeq_id_Textseq_Tree::x_FindMatchByName(TSeq_id_MatchList& id_list,
-                                             const string& str,
-                                             CSeq_id::E_Choice which,
+                                             const string& name,
                                              const CTextseq_id* tid) const
 {
-    x_FindStrMatch(id_list, false, m_ByName, str, which, tid);
+    for ( TStringMapCI vit = m_ByName.find(name);
+          vit != m_ByName.end() && NStr::EqualNocase(vit->first, name);
+          ++vit ) {
+        if ( tid ) {
+            CConstRef<CSeq_id> tst_id = vit->second->GetSeqId();
+            const CTextseq_id& tst = x_Get(*tst_id);
+            // name.rel should match
+            if ( tst.IsSetAccession() && tid->IsSetAccession() ) {
+                // both accessions are set.
+                // if they are the same - match will be found by accession,
+                // otherwise accessions are different and there is no match.
+                continue;
+            }
+            if ( tid->IsSetRelease() ) {
+                if ( tst.IsSetRelease()  ||
+                     !(m_Type == CSeq_id::e_Swissprot &&
+                       x_IsDefaultSwissprotRelease(tid->GetRelease())) ) {
+                    if ( !tst.IsSetRelease() ||
+                         tst.GetRelease() != tid->GetRelease() ) {
+                        continue;
+                    }
+                }
+            }
+        }
+        id_list.insert(CSeq_id_Handle(vit->second));
+    }
+}
+
+
+void CSeq_id_Textseq_Tree::x_FindRevMatchByName(TSeq_id_MatchList& id_list,
+                                                const string& name,
+                                                const CTextseq_id* tid) const
+{
+    /*
+    for ( TStringMapCI vit = m_ByName.find(name);
+          vit != m_ByName.end() && NStr::EqualNocase(vit->first, name);
+          ++vit ) {
+        if ( tid ) {
+            CConstRef<CSeq_id> tst_id = vit->second->GetSeqId();
+            const CTextseq_id& tst = x_Get(*tst_id);
+            // name.rel should match
+            if ( tst.IsSetAccession() && tid->IsSetAccession() ) {
+                // both accessions are set.
+                // if they are the same - match will be found by accession,
+                // otherwise accessions are different and there is no match.
+                continue;
+            }
+            if ( tid->IsSetRelease() ) {
+                if ( tst.IsSetRelease()  ||
+                     !(m_Type == CSeq_id::e_Swissprot &&
+                       x_IsDefaultSwissprotRelease(tid->GetRelease())) ) {
+                    if ( !tst.IsSetRelease() ||
+                         tst.GetRelease() != tid->GetRelease() ) {
+                        continue;
+                    }
+                }
+            }
+        }
+        id_list.insert(CSeq_id_Handle(vit->second));
+    }
+    */
 }
 
 
@@ -1096,11 +1186,35 @@ bool CSeq_id_Textseq_Tree::HaveMatch(const CSeq_id_Handle& ) const
 void CSeq_id_Textseq_Tree::FindMatch(const CSeq_id_Handle& id,
                                      TSeq_id_MatchList& id_list) const
 {
-    id_list.insert(id);
+    bool mine = x_Check(id.Which());
+    if ( mine ) {
+        id_list.insert(id);
+    }
     TReadLockGuard guard(m_TreeLock);
     if ( id.IsPacked() ) {
         const CSeq_id_Textseq_Info* info =
             static_cast<const CSeq_id_Textseq_Info*>(GetInfo(id));
+        if ( !m_ByAcc.empty() ) {
+            // potentially whole search
+            TStringMapCI it = m_ByAcc.lower_bound(info->GetAccPrefix());
+            if ( it != m_ByAcc.end() && info->GoodPrefix(it->first) ) {
+                // have similar accessions
+                CTextseq_id tid;
+                info->Restore(tid, id.GetPacked());
+                x_FindMatchByAcc(id_list, tid.GetAccession(), &tid);
+                // x_FindMatchByAcc will search packed accessions too
+                return;
+            }
+        }
+        // only packed search -> no need to decode
+        if ( !mine ) { // weak matching
+            TPackedMap_CI iter = m_PackedMap.find(info->GetKey());
+            if ( iter == m_PackedMap.end() ) {
+                return;
+            }
+            info = iter->second;
+            id_list.insert(CSeq_id_Handle(info, id.GetPacked()));
+        }
         if ( !info->IsSetVersion() ) {
             // add all known versions
             const TPackedKey& key = info->GetKey();
@@ -1113,25 +1227,16 @@ void CSeq_id_Textseq_Tree::FindMatch(const CSeq_id_Handle& id,
                 }
             }
         }
-        if ( !m_ByAcc.empty() ) {
-            TStringMapCI it = m_ByAcc.lower_bound(info->GetAccPrefix());
-            if ( it != m_ByAcc.end() &&
-                 NStr::StartsWith(it->first, info->GetAccPrefix(),
-                                  NStr::eNocase) ) {
-                // have similar accessions
-                CTextseq_id tid;
-                info->Restore(tid, id.GetPacked());
-                x_FindMatchByAcc(id_list, tid.GetAccession(), id.Which(), &tid);
-            }
-        }
     }
     else {
-        const CTextseq_id& tid = x_Get(*id.GetSeqId());
-        if ( tid.IsSetAccession() ) {
-            x_FindMatchByAcc(id_list, tid.GetAccession(), id.Which(), &tid);
+        CConstRef<CSeq_id> tid_id = id.GetSeqId();
+        const CTextseq_id* tid = tid_id->GetTextseq_Id();
+        _ASSERT(tid);
+        if ( tid->IsSetAccession() ) {
+            x_FindMatchByAcc(id_list, tid->GetAccession(), tid);
         }
-        if ( tid.IsSetName() ) {
-            x_FindMatchByName(id_list, tid.GetName(), id.Which(), &tid);
+        if ( tid->IsSetName() ) {
+            x_FindMatchByName(id_list, tid->GetName(), tid);
         }
     }
 }
@@ -1145,12 +1250,12 @@ void CSeq_id_Textseq_Tree::FindMatchStr(const string& sid,
     SIZE_TYPE dot = sid.find('.');
     if ( dot != NPOS ) {
         string acc = sid.substr(0, dot);
-        x_FindMatchByAcc(id_list, acc, CSeq_id::e_not_set, 0);
-        x_FindMatchByName(id_list, acc, CSeq_id::e_not_set, 0);
+        x_FindMatchByAcc(id_list, acc);
+        x_FindMatchByName(id_list, acc);
     }
     else {
-        x_FindMatchByAcc(id_list, sid, CSeq_id::e_not_set, 0);
-        x_FindMatchByName(id_list, sid, CSeq_id::e_not_set, 0);
+        x_FindMatchByAcc(id_list, sid);
+        x_FindMatchByName(id_list, sid);
     }
 }
 
@@ -1209,10 +1314,21 @@ bool CSeq_id_Textseq_Tree::HaveReverseMatch(const CSeq_id_Handle&) const
 void CSeq_id_Textseq_Tree::FindReverseMatch(const CSeq_id_Handle& id,
                                             TSeq_id_MatchList& id_list)
 {
-    id_list.insert(id);
+    bool mine = x_Check(id.Which());
+    if ( mine ) {
+        id_list.insert(id);
+    }
     if ( id.IsPacked() ) {
         const CSeq_id_Textseq_Info* info =
             static_cast<const CSeq_id_Textseq_Info*>(GetInfo(id));
+        if ( !mine ) { // weak matching
+            TPackedMap_CI iter = m_PackedMap.find(info->GetKey());
+            if ( iter == m_PackedMap.end() ) {
+                return;
+            }
+            info = iter->second;
+            id_list.insert(CSeq_id_Handle(info, id.GetPacked()));
+        }
         if ( info->IsSetVersion() ) {
             TPackedKey key = info->GetKey();
             key.ResetVersion();
@@ -1227,6 +1343,18 @@ void CSeq_id_Textseq_Tree::FindReverseMatch(const CSeq_id_Handle& id,
     CConstRef<CSeq_id> orig_id = id.GetSeqId();
     const CTextseq_id& orig_tid = x_Get(*orig_id);
 
+    if ( !mine ) {
+        // search only existing accessions
+        if ( orig_tid.IsSetAccession() ) {
+            x_FindRevMatchByAcc(id_list, orig_tid.GetAccession(), &orig_tid);
+        }
+        if ( orig_tid.IsSetName() ) {
+            x_FindRevMatchByName(id_list, orig_tid.GetName(), &orig_tid);
+        }
+        return;
+    }
+
+    // mine -> full search and create (TODO: do we really need this?)
     CRef<CSeq_id> tmp(new CSeq_id);
     tmp->Assign(*orig_id);
     CTextseq_id& tid = const_cast<CTextseq_id&>(x_Get(*tmp));
@@ -1324,8 +1452,8 @@ size_t CSeq_id_Textseq_Tree::Dump(CNcbiOstream& out,
             // map value, CSeq_id_Info, CSeq_id, CTextseq_id
             elem_size += 4*kMallocOverhead;
             ITERATE ( TStringMap, it, m_ByAcc ) {
-                const CTextseq_id& id =
-                    *it->second->GetSeqId()->GetTextseq_Id();
+                CConstRef<CSeq_id> id_id = it->second->GetSeqId();
+                const CTextseq_id& id = *id_id->GetTextseq_Id();
                 extra_size += sx_StringMemory(id.GetAccession());
                 if ( id.IsSetName() ) {
                     extra_size += sx_StringMemory(id.GetName());
@@ -1362,7 +1490,8 @@ size_t CSeq_id_Textseq_Tree::Dump(CNcbiOstream& out,
     }}
     if ( details >= CSeq_id_Mapper::eDumpAllIds ) {
         ITERATE ( TStringMap, it, m_ByAcc ) {
-            out << "  " << it->second->GetSeqId()->AsFastaString() << endl;
+            CConstRef<CSeq_id> id = it->second->GetSeqId();
+            out << "  " << id->AsFastaString() << endl;
         }
         ITERATE ( TPackedMap, it, m_PackedMap ) {
             out << "  packed prefix "
@@ -1377,29 +1506,17 @@ size_t CSeq_id_Textseq_Tree::Dump(CNcbiOstream& out,
 /////////////////////////////////////////////////////////////////////////////
 
 CSeq_id_GB_Tree::CSeq_id_GB_Tree(CSeq_id_Mapper* mapper)
-    : CSeq_id_Textseq_Tree(mapper)
+    : CSeq_id_Textseq_Tree(mapper, CSeq_id::e_not_set)
 {
 }
 
 
-bool CSeq_id_GB_Tree::x_Check(const CSeq_id& id) const
+bool CSeq_id_GB_Tree::x_Check(const CSeq_id::E_Choice& type) const
 {
-    return id.IsGenbank()  ||  id.IsEmbl()  ||  id.IsDdbj();
-}
-
-
-const CTextseq_id& CSeq_id_GB_Tree::x_Get(const CSeq_id& id) const
-{
-    switch ( id.Which() ) {
-    case CSeq_id::e_Genbank:
-        return id.GetGenbank();
-    case CSeq_id::e_Embl:
-        return id.GetEmbl();
-    case CSeq_id::e_Ddbj:
-        return id.GetDdbj();
-    default:
-        NCBI_THROW(CIdMapperException, eTypeError, "Invalid seq-id type");
-    }
+    return
+        type == CSeq_id::e_Genbank  ||
+        type == CSeq_id::e_Embl  ||
+        type == CSeq_id::e_Ddbj;
 }
 
 
@@ -1408,20 +1525,8 @@ const CTextseq_id& CSeq_id_GB_Tree::x_Get(const CSeq_id& id) const
 /////////////////////////////////////////////////////////////////////////////
 
 CSeq_id_Pir_Tree::CSeq_id_Pir_Tree(CSeq_id_Mapper* mapper)
-    : CSeq_id_Textseq_Tree(mapper)
+    : CSeq_id_Textseq_Tree(mapper, CSeq_id::e_Pir)
 {
-}
-
-
-bool CSeq_id_Pir_Tree::x_Check(const CSeq_id& id) const
-{
-    return id.IsPir();
-}
-
-
-const CTextseq_id& CSeq_id_Pir_Tree::x_Get(const CSeq_id& id) const
-{
-    return id.GetPir();
 }
 
 
@@ -1430,20 +1535,8 @@ const CTextseq_id& CSeq_id_Pir_Tree::x_Get(const CSeq_id& id) const
 /////////////////////////////////////////////////////////////////////////////
 
 CSeq_id_Swissprot_Tree::CSeq_id_Swissprot_Tree(CSeq_id_Mapper* mapper)
-    : CSeq_id_Textseq_Tree(mapper)
+    : CSeq_id_Textseq_Tree(mapper, CSeq_id::e_Swissprot)
 {
-}
-
-
-bool CSeq_id_Swissprot_Tree::x_Check(const CSeq_id& id) const
-{
-    return id.IsSwissprot();
-}
-
-
-const CTextseq_id& CSeq_id_Swissprot_Tree::x_Get(const CSeq_id& id) const
-{
-    return id.GetSwissprot();
 }
 
 
@@ -1452,20 +1545,8 @@ const CTextseq_id& CSeq_id_Swissprot_Tree::x_Get(const CSeq_id& id) const
 /////////////////////////////////////////////////////////////////////////////
 
 CSeq_id_Prf_Tree::CSeq_id_Prf_Tree(CSeq_id_Mapper* mapper)
-    : CSeq_id_Textseq_Tree(mapper)
+    : CSeq_id_Textseq_Tree(mapper, CSeq_id::e_Prf)
 {
-}
-
-
-bool CSeq_id_Prf_Tree::x_Check(const CSeq_id& id) const
-{
-    return id.IsPrf();
-}
-
-
-const CTextseq_id& CSeq_id_Prf_Tree::x_Get(const CSeq_id& id) const
-{
-    return id.GetPrf();
 }
 
 
@@ -1474,20 +1555,8 @@ const CTextseq_id& CSeq_id_Prf_Tree::x_Get(const CSeq_id& id) const
 /////////////////////////////////////////////////////////////////////////////
 
 CSeq_id_Tpg_Tree::CSeq_id_Tpg_Tree(CSeq_id_Mapper* mapper)
-    : CSeq_id_Textseq_Tree(mapper)
+    : CSeq_id_Textseq_Tree(mapper, CSeq_id::e_Tpg)
 {
-}
-
-
-bool CSeq_id_Tpg_Tree::x_Check(const CSeq_id& id) const
-{
-    return id.IsTpg();
-}
-
-
-const CTextseq_id& CSeq_id_Tpg_Tree::x_Get(const CSeq_id& id) const
-{
-    return id.GetTpg();
 }
 
 
@@ -1496,20 +1565,8 @@ const CTextseq_id& CSeq_id_Tpg_Tree::x_Get(const CSeq_id& id) const
 /////////////////////////////////////////////////////////////////////////////
 
 CSeq_id_Tpe_Tree::CSeq_id_Tpe_Tree(CSeq_id_Mapper* mapper)
-    : CSeq_id_Textseq_Tree(mapper)
+    : CSeq_id_Textseq_Tree(mapper, CSeq_id::e_Tpe)
 {
-}
-
-
-bool CSeq_id_Tpe_Tree::x_Check(const CSeq_id& id) const
-{
-    return id.IsTpe();
-}
-
-
-const CTextseq_id& CSeq_id_Tpe_Tree::x_Get(const CSeq_id& id) const
-{
-    return id.GetTpe();
 }
 
 
@@ -1518,20 +1575,8 @@ const CTextseq_id& CSeq_id_Tpe_Tree::x_Get(const CSeq_id& id) const
 /////////////////////////////////////////////////////////////////////////////
 
 CSeq_id_Tpd_Tree::CSeq_id_Tpd_Tree(CSeq_id_Mapper* mapper)
-    : CSeq_id_Textseq_Tree(mapper)
+    : CSeq_id_Textseq_Tree(mapper, CSeq_id::e_Tpd)
 {
-}
-
-
-bool CSeq_id_Tpd_Tree::x_Check(const CSeq_id& id) const
-{
-    return id.IsTpd();
-}
-
-
-const CTextseq_id& CSeq_id_Tpd_Tree::x_Get(const CSeq_id& id) const
-{
-    return id.GetTpd();
 }
 
 
@@ -1540,20 +1585,8 @@ const CTextseq_id& CSeq_id_Tpd_Tree::x_Get(const CSeq_id& id) const
 /////////////////////////////////////////////////////////////////////////////
 
 CSeq_id_Gpipe_Tree::CSeq_id_Gpipe_Tree(CSeq_id_Mapper* mapper)
-    : CSeq_id_Textseq_Tree(mapper)
+    : CSeq_id_Textseq_Tree(mapper, CSeq_id::e_Gpipe)
 {
-}
-
-
-bool CSeq_id_Gpipe_Tree::x_Check(const CSeq_id& id) const
-{
-    return id.IsGpipe();
-}
-
-
-const CTextseq_id& CSeq_id_Gpipe_Tree::x_Get(const CSeq_id& id) const
-{
-    return id.GetGpipe();
 }
 
 
@@ -1562,20 +1595,8 @@ const CTextseq_id& CSeq_id_Gpipe_Tree::x_Get(const CSeq_id& id) const
 /////////////////////////////////////////////////////////////////////////////
 
 CSeq_id_Named_annot_track_Tree::CSeq_id_Named_annot_track_Tree(CSeq_id_Mapper* mapper)
-    : CSeq_id_Textseq_Tree(mapper)
+    : CSeq_id_Textseq_Tree(mapper, CSeq_id::e_Named_annot_track)
 {
-}
-
-
-bool CSeq_id_Named_annot_track_Tree::x_Check(const CSeq_id& id) const
-{
-    return id.IsNamed_annot_track();
-}
-
-
-const CTextseq_id& CSeq_id_Named_annot_track_Tree::x_Get(const CSeq_id& id) const
-{
-    return id.GetNamed_annot_track();
 }
 
 
@@ -1584,20 +1605,8 @@ const CTextseq_id& CSeq_id_Named_annot_track_Tree::x_Get(const CSeq_id& id) cons
 /////////////////////////////////////////////////////////////////////////////
 
 CSeq_id_Other_Tree::CSeq_id_Other_Tree(CSeq_id_Mapper* mapper)
-    : CSeq_id_Textseq_Tree(mapper)
+    : CSeq_id_Textseq_Tree(mapper, CSeq_id::e_Other)
 {
-}
-
-
-bool CSeq_id_Other_Tree::x_Check(const CSeq_id& id) const
-{
-    return id.IsOther();
-}
-
-
-const CTextseq_id& CSeq_id_Other_Tree::x_Get(const CSeq_id& id) const
-{
-    return id.GetOther();
 }
 
 

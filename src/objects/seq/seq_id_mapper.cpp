@@ -151,6 +151,126 @@ void CSeq_id_Mapper::GetReverseMatchingHandles(const CSeq_id_Handle& idh,
 }
 
 
+bool CSeq_id_Mapper::HaveMatchingHandles(const CSeq_id_Handle& idh,
+                                         EAllowWeakMatch allow_weak_match)
+{
+    if ( HaveMatchingHandles(idh) ) {
+        return true;
+    }
+    if ( allow_weak_match == eNoWeakMatch ) {
+        return false;
+    }
+    const CSeq_id_Which_Tree* base_tree = &x_GetTree(idh);
+    if ( !dynamic_cast<const CSeq_id_Textseq_Tree*>(base_tree) ) {
+        return false;
+    }
+    for ( size_t i = 0; i < m_Trees.size(); ++i ) {
+        const CSeq_id_Which_Tree* tree = m_Trees[i];
+        if ( tree == base_tree ) {
+            continue;
+        }
+        if ( !dynamic_cast<const CSeq_id_Textseq_Tree*>(tree) ) {
+            continue;
+        }
+        if ( tree == m_Trees[CSeq_id::e_Gi] && i != CSeq_id::e_Gi ) {
+            continue;
+        }
+        if ( tree->HaveMatch(idh) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void CSeq_id_Mapper::GetMatchingHandles(const CSeq_id_Handle& idh,
+                                        TSeq_id_HandleSet& h_set,
+                                        EAllowWeakMatch allow_weak_match)
+{
+    GetMatchingHandles(idh, h_set);
+    if ( allow_weak_match == eNoWeakMatch ) {
+        return;
+    }
+    const CSeq_id_Which_Tree* base_tree = &x_GetTree(idh);
+    if ( !dynamic_cast<const CSeq_id_Textseq_Tree*>(base_tree) ) {
+        return;
+    }
+    for ( size_t i = 0; i < m_Trees.size(); ++i ) {
+        const CSeq_id_Which_Tree* tree = m_Trees[i];
+        if ( tree == base_tree ) {
+            continue;
+        }
+        if ( !dynamic_cast<const CSeq_id_Textseq_Tree*>(tree) ) {
+            continue;
+        }
+        if ( tree == m_Trees[CSeq_id::e_Gi] && i != CSeq_id::e_Gi ) {
+            continue;
+        }
+        tree->FindMatch(idh, h_set);
+    }
+}
+
+
+bool CSeq_id_Mapper::HaveReverseMatch(const CSeq_id_Handle& idh,
+                                      EAllowWeakMatch allow_weak_match)
+{
+    if ( HaveReverseMatch(idh) ) {
+        return true;
+    }
+    if ( allow_weak_match == eNoWeakMatch ) {
+        return false;
+    }
+    const CSeq_id_Which_Tree* base_tree = &x_GetTree(idh);
+    if ( !dynamic_cast<const CSeq_id_Textseq_Tree*>(base_tree) ) {
+        return false;
+    }
+    for ( size_t i = 0; i < m_Trees.size(); ++i ) {
+        const CSeq_id_Which_Tree* tree = m_Trees[i];
+        if ( tree == base_tree ) {
+            continue;
+        }
+        if ( !dynamic_cast<const CSeq_id_Textseq_Tree*>(tree) ) {
+            continue;
+        }
+        if ( tree == m_Trees[CSeq_id::e_Gi] && i != CSeq_id::e_Gi ) {
+            continue;
+        }
+        if ( tree->HaveReverseMatch(idh) ) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+void CSeq_id_Mapper::GetReverseMatchingHandles(const CSeq_id_Handle& idh,
+                                               TSeq_id_HandleSet& h_set,
+                                               EAllowWeakMatch allow_weak_match)
+{
+    GetReverseMatchingHandles(idh, h_set);
+    if ( allow_weak_match == eNoWeakMatch ) {
+        return;
+    }
+    const CSeq_id_Which_Tree* base_tree = &x_GetTree(idh);
+    if ( !dynamic_cast<const CSeq_id_Textseq_Tree*>(base_tree) ) {
+        return;
+    }
+    for ( size_t i = 0; i < m_Trees.size(); ++i ) {
+        CSeq_id_Which_Tree* tree = m_Trees[i];
+        if ( tree == base_tree ) {
+            continue;
+        }
+        if ( !dynamic_cast<const CSeq_id_Textseq_Tree*>(tree) ) {
+            continue;
+        }
+        if ( tree == m_Trees[CSeq_id::e_Gi] && i != CSeq_id::e_Gi ) {
+            continue;
+        }
+        tree->FindReverseMatch(idh, h_set);
+    }
+}
+
+
 void CSeq_id_Mapper::GetMatchingHandlesStr(string sid,
                                            TSeq_id_HandleSet& h_set)
 {

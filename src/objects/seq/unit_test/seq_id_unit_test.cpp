@@ -1214,3 +1214,260 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare_Seq_loc)
         }
     }
 }
+
+
+ostream& operator<<(ostream& out, const CSeq_id_Handle::TMatches& ids)
+{
+    ITERATE ( CSeq_id_Handle::TMatches, it, ids ) {
+        if ( it != ids.begin() ) {
+            out << ',';
+        }
+        out << *it;
+    }
+    return out;
+}
+
+
+void s_Match_id(size_t num_ids,
+                const char* const fasta_ids[],
+                const char* const match_to_ids[],
+                const char* const weak_match_to_ids[])
+{
+    vector<CSeq_id_Handle> ids;
+    map<CSeq_id_Handle, CSeq_id_Handle::TMatches> match_to_map;
+    map<CSeq_id_Handle, CSeq_id_Handle::TMatches> weak_match_to_map;
+    map<CSeq_id_Handle, CSeq_id_Handle::TMatches> matching_map;
+    map<CSeq_id_Handle, CSeq_id_Handle::TMatches> weak_matching_map;
+    for ( size_t i = 0; i < num_ids; ++i ) {
+        CSeq_id_Handle id = CSeq_id_Handle::GetHandle(fasta_ids[i]);
+        ids.push_back(id);
+        vector<string> ids;
+        NStr::Tokenize(match_to_ids[i], ",", ids);
+        ITERATE ( vector<string>, it, ids ) {
+            CSeq_id_Handle match_to_id = CSeq_id_Handle::GetHandle(*it);
+            match_to_map[id].insert(match_to_id);
+            matching_map[match_to_id].insert(id);
+        }
+        ids.clear();
+        NStr::Tokenize(weak_match_to_ids[i], ",", ids);
+        ITERATE ( vector<string>, it, ids ) {
+            CSeq_id_Handle match_to_id = CSeq_id_Handle::GetHandle(*it);
+            weak_match_to_map[id].insert(match_to_id);
+            weak_matching_map[match_to_id].insert(id);
+        }
+    }
+    for ( size_t i = 0; i < num_ids; ++i ) {
+        CSeq_id_Handle::TMatches matches;
+        ids[i].GetMatchingHandles(matches);
+        CSeq_id_Handle::TMatches exp_matches = matching_map[ids[i]];
+        exp_matches.insert(ids[i]);
+        if ( matches != exp_matches ) {
+            NcbiCerr << "Bad matches for " << ids[i] << NcbiEndl;
+            NcbiCerr << "got: " << matches << NcbiEndl;
+            NcbiCerr << "exp: " << exp_matches << NcbiEndl;
+        }
+        BOOST_CHECK(matches == exp_matches);
+        ITERATE ( CSeq_id_Handle::TMatches, it, matches ) {
+            BOOST_CHECK(ids[i].MatchesTo(*it));
+        }
+    }
+    for ( size_t i = 0; i < num_ids; ++i ) {
+        CSeq_id_Handle::TMatches matches;
+        ids[i].GetReverseMatchingHandles(matches);
+        CSeq_id_Handle::TMatches exp_matches = match_to_map[ids[i]];
+        exp_matches.insert(ids[i]);
+        const CSeq_id_Handle::TMatches& more_matches = matching_map[ids[i]];
+        exp_matches.insert(more_matches.begin(), more_matches.end());
+        if ( matches != exp_matches ) {
+            NcbiCerr << "Bad rev matches for " << ids[i] << NcbiEndl;
+            NcbiCerr << "got: " << matches << NcbiEndl;
+            NcbiCerr << "exp: " << exp_matches << NcbiEndl;
+        }
+        BOOST_CHECK(matches == exp_matches);
+        ITERATE ( CSeq_id_Handle::TMatches, it, matches ) {
+            BOOST_CHECK(ids[i].MatchesTo(*it)||it->MatchesTo(ids[i]));
+        }
+    }
+    for ( size_t i = 0; i < num_ids; ++i ) {
+        CSeq_id_Handle::TMatches matches;
+        ids[i].GetMatchingHandles(matches, eAllowWeakMatch);
+        CSeq_id_Handle::TMatches exp_matches = weak_matching_map[ids[i]];
+        exp_matches.insert(ids[i]);
+        if ( matches != exp_matches ) {
+            NcbiCerr << "Bad weak matches for " << ids[i] << NcbiEndl;
+            NcbiCerr << "got: " << matches << NcbiEndl;
+            NcbiCerr << "exp: " << exp_matches << NcbiEndl;
+        }
+        BOOST_CHECK(matches == exp_matches);
+        ITERATE ( CSeq_id_Handle::TMatches, it, matches ) {
+            CSeq_id_Handle id2 = *it;
+            if ( ids[i].Which() != id2.Which() ) {
+                CSeq_id id;
+                id.Select(ids[i].Which());
+                const_cast<CTextseq_id&>(*id.GetTextseq_Id())
+                    .Assign(*id2.GetSeqId()->GetTextseq_Id());
+                id2 = CSeq_id_Handle::GetHandle(id);
+            }
+            BOOST_CHECK(ids[i].MatchesTo(id2));
+        }
+    }
+    for ( size_t i = 0; i < num_ids; ++i ) {
+        CSeq_id_Handle::TMatches matches;
+        ids[i].GetReverseMatchingHandles(matches, eAllowWeakMatch);
+        CSeq_id_Handle::TMatches exp_matches = weak_match_to_map[ids[i]];
+        exp_matches.insert(ids[i]);
+        const CSeq_id_Handle::TMatches& more_matches = weak_matching_map[ids[i]];
+        exp_matches.insert(more_matches.begin(), more_matches.end());
+        if ( matches != exp_matches ) {
+            NcbiCerr << "Bad weak rev matches for " << ids[i] << NcbiEndl;
+            NcbiCerr << "got: " << matches << NcbiEndl;
+            NcbiCerr << "exp: " << exp_matches << NcbiEndl;
+        }
+        BOOST_CHECK(matches == exp_matches);
+        ITERATE ( CSeq_id_Handle::TMatches, it, matches ) {
+            CSeq_id_Handle id2 = *it;
+            if ( ids[i].Which() != id2.Which() ) {
+                CSeq_id id;
+                id.Select(ids[i].Which());
+                const_cast<CTextseq_id&>(*id.GetTextseq_Id())
+                    .Assign(*id2.GetSeqId()->GetTextseq_Id());
+                id2 = CSeq_id_Handle::GetHandle(id);
+            }
+            BOOST_CHECK(ids[i].MatchesTo(id2)||id2.MatchesTo(ids[i]));
+        }
+    }
+}
+
+BOOST_AUTO_TEST_CASE(Match_id1)
+{
+    const char* const fasta_ids[] = {
+        "gb|A000001",
+        "gb|A000001.2",
+        "gb|A000001.3",
+        "tpg|A000001",
+        "tpg|A000001.2",
+        "tpg|A000001.3",
+    };
+    const char* const match_to_ids[] = {
+        "",
+        "gb|A000001",
+        "gb|A000001",
+        "",
+        "tpg|A000001",
+        "tpg|A000001",
+    };
+    const char* const weak_match_to_ids[] = {
+        "tpg|A000001",
+        "tpg|A000001,tpg|A000001.2,gb|A000001",
+        "tpg|A000001,tpg|A000001.3,gb|A000001",
+        "gb|A000001",
+        "gb|A000001,gb|A000001.2,tpg|A000001",
+        "gb|A000001,gb|A000001.3,tpg|A000001",
+    };
+    s_Match_id(ArraySize(fasta_ids),
+               fasta_ids, match_to_ids, weak_match_to_ids);
+}
+
+
+BOOST_AUTO_TEST_CASE(Match_id2)
+{
+    const char* const fasta_ids[] = {
+        "gb|A000001",
+        "gb|A000001.2",
+        "gb|A000001.3",
+        "tpg|A000001",
+        "tpg|A000001.2",
+        "tpg|A000001.3",
+        "gb|AAAAAAA",
+        "gb|AAAAAAA.2",
+        "gb|AAAAAAA.4",
+        "tpg|AAAAAAA",
+        "tpg|AAAAAAA.2",
+        "tpg|AAAAAAA.5",
+    };
+    const char* const match_to_ids[] = {
+        "",
+        "gb|A000001",
+        "gb|A000001",
+        "",
+        "tpg|A000001",
+        "tpg|A000001",
+        "",
+        "gb|AAAAAAA",
+        "gb|AAAAAAA",
+        "",
+        "tpg|AAAAAAA",
+        "tpg|AAAAAAA",
+    };
+    const char* const weak_match_to_ids[] = {
+        "tpg|A000001",
+        "tpg|A000001,tpg|A000001.2,gb|A000001",
+        "tpg|A000001,tpg|A000001.3,gb|A000001",
+        "gb|A000001",
+        "gb|A000001,gb|A000001.2,tpg|A000001",
+        "gb|A000001,gb|A000001.3,tpg|A000001",
+        "tpg|AAAAAAA",
+        "tpg|AAAAAAA,tpg|AAAAAAA.2,gb|AAAAAAA",
+        "tpg|AAAAAAA,gb|AAAAAAA",
+        "gb|AAAAAAA",
+        "gb|AAAAAAA,gb|AAAAAAA.2,tpg|AAAAAAA",
+        "gb|AAAAAAA,tpg|AAAAAAA",
+    };
+    s_Match_id(ArraySize(fasta_ids),
+               fasta_ids, match_to_ids, weak_match_to_ids);
+}
+
+
+BOOST_AUTO_TEST_CASE(Match_id3)
+{
+    const char* const fasta_ids[] = {
+        "gb|A000001",
+        "gb|A000001.2",
+        "gb|A000001.3",
+        "tpg|A000001",
+        "tpg|A000001.2",
+        "tpg|A000001.3",
+        "gb|A000002",
+        "gb|A000002.2",
+        "gb|A000002.4",
+        "tpg|A000002",
+        "tpg|A000002.2",
+        "tpg|A000002.5",
+    };
+    const char* const match_to_ids[] = {
+        "",
+        "gb|A000001",
+        "gb|A000001",
+        "",
+        "tpg|A000001",
+        "tpg|A000001",
+        "",
+        "gb|A000002",
+        "gb|A000002",
+        "",
+        "tpg|A000002",
+        "tpg|A000002",
+    };
+    const char* const weak_match_to_ids[] = {
+        "tpg|A000001",
+        "tpg|A000001,tpg|A000001.2,gb|A000001",
+        "tpg|A000001,tpg|A000001.3,gb|A000001",
+        "gb|A000001",
+        "gb|A000001,gb|A000001.2,tpg|A000001",
+        "gb|A000001,gb|A000001.3,tpg|A000001",
+        "tpg|A000002",
+        "tpg|A000002,tpg|A000002.2,gb|A000002",
+        "tpg|A000002,gb|A000002",
+        "gb|A000002",
+        "gb|A000002,gb|A000002.2,tpg|A000002",
+        "gb|A000002,tpg|A000002",
+    };
+    s_Match_id(ArraySize(fasta_ids),
+               fasta_ids, match_to_ids, weak_match_to_ids);
+}
+
+
+NCBITEST_INIT_TREE()
+{
+    NCBITEST_DISABLE(Match_id3);
+}

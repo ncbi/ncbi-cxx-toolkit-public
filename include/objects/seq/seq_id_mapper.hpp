@@ -88,6 +88,16 @@ public:
     bool HaveReverseMatch(const CSeq_id_Handle& id);
     void GetReverseMatchingHandles(const CSeq_id_Handle& id,
                                    TSeq_id_HandleSet& h_set);
+    bool HaveMatchingHandles(const CSeq_id_Handle& id,
+                             EAllowWeakMatch allow_weak_match);
+    void GetMatchingHandles(const CSeq_id_Handle& id,
+                            TSeq_id_HandleSet& h_set,
+                            EAllowWeakMatch allow_weak_match);
+    bool HaveReverseMatch(const CSeq_id_Handle& id,
+                          EAllowWeakMatch allow_weak_match);
+    void GetReverseMatchingHandles(const CSeq_id_Handle& id,
+                                   TSeq_id_HandleSet& h_set,
+                                   EAllowWeakMatch allow_weak_match);
     /// Get the list of string-matching handles, do not create new handles
     void GetMatchingHandlesStr(string sid,
                                TSeq_id_HandleSet& h_set);

@@ -303,6 +303,8 @@ protected:
 
 class CSeq_id_Textseq_Info : public CSeq_id_Info {
 public:
+    typedef CTextseq_id::TVersion TVersion;
+
     struct TKey {
         TKey(void)
             : m_Hash(0), m_Version(0)
@@ -310,7 +312,7 @@ public:
             }
 
         unsigned m_Hash;
-        int m_Version;
+        TVersion m_Version;
         string m_Prefix;
 
         DECLARE_OPERATOR_BOOL(m_Hash != 0);
@@ -344,7 +346,7 @@ public:
         bool IsSetVersion(void) const {
             return (m_Hash & 1) != 0;
         }
-        int GetVersion(void) const {
+        TVersion GetVersion(void) const {
             _ASSERT(IsSetVersion());
             return m_Version;
         }
@@ -352,7 +354,7 @@ public:
             m_Hash &= ~1;
             m_Version = 0;
         }
-        void SetVersion(int version) {
+        void SetVersion(TVersion version) {
             m_Hash |= 1;
             m_Version = version;
         }
@@ -368,18 +370,29 @@ public:
     const string& GetAccPrefix(void) const {
         return m_Key.m_Prefix;
     }
+    bool GoodPrefix(const string& acc) const {
+        return NStr::StartsWith(acc, GetAccPrefix(), NStr::eNocase);
+    }
     int GetAccDigits(void) const {
         return (m_Key.m_Hash & 0xff) >> 1;
     }
     bool IsSetVersion(void) const {
         return m_Key.IsSetVersion();
     }
-    int GetVersion(void) const {
+    TVersion GetVersion(void) const {
         return m_Key.GetVersion();
     }
     void Restore(CTextseq_id& id, TPacked param) const;
 
-    static TKey ParseAcc(const string& acc, const CTextseq_id* tid);
+    static TKey ParseAcc(const string& acc, const TVersion* ver);
+    static TKey ParseAcc(const string& acc, const CTextseq_id* tid) {
+        TVersion ver, *ver_ptr = 0;
+        if ( tid && tid->IsSetVersion() ) {
+            ver = tid->GetVersion();
+            ver_ptr = &ver;
+        }
+        return ParseAcc(acc, ver_ptr);
+    }
     TPacked ParseAccNumber(const string& acc) const;
     TPacked Pack(const CTextseq_id& id) const;
     
@@ -393,7 +406,9 @@ private:
 class CSeq_id_Textseq_Tree : public CSeq_id_Which_Tree
 {
 public:
-    CSeq_id_Textseq_Tree(CSeq_id_Mapper* mapper);
+    typedef CTextseq_id::TVersion TVersion;
+
+    CSeq_id_Textseq_Tree(CSeq_id_Mapper* mapper, CSeq_id::E_Choice type);
     ~CSeq_id_Textseq_Tree(void);
     
     virtual bool Empty(void) const;
@@ -422,11 +437,16 @@ public:
 
 protected:
     virtual void x_Unindex(const CSeq_id_Info* info);
-    virtual bool x_Check(const CSeq_id& id) const = 0;
-    virtual const CTextseq_id& x_Get(const CSeq_id& id) const = 0;
+    virtual bool x_Check(const CSeq_id::E_Choice& type) const;
+    virtual bool x_Check(const CSeq_id& id) const;
+    const CTextseq_id& x_Get(const CSeq_id& id) const {
+        const CTextseq_id* text_id = id.GetTextseq_Id();
+        _ASSERT(text_id);
+        return *text_id;
+    }
     CSeq_id_Info* x_FindStrInfo(CSeq_id::E_Choice type,
                                 const CTextseq_id& tid) const;
-    bool x_GetVersion(int& version, const CSeq_id_Handle& id) const;
+    bool x_GetVersion(TVersion& version, const CSeq_id_Handle& id) const;
 
 private:
     typedef multimap<string, CSeq_id_Info*, PNocase> TStringMap;
@@ -448,21 +468,42 @@ private:
                                 const string& str,
                                 CSeq_id::E_Choice type,
                                 const CTextseq_id& tid) const;
-    void x_FindStrMatch(TSeq_id_MatchList& id_list,
-                        bool by_accession,
-                        const TStringMap& str_map,
-                        const string& str,
-                        CSeq_id::E_Choice which,
-                        const CTextseq_id* tid) const;
-    void x_FindMatchByAcc(TSeq_id_MatchList& id_list,
-                          const string& str,
-                          CSeq_id::E_Choice which,
-                          const CTextseq_id* tid) const;
-    void x_FindMatchByName(TSeq_id_MatchList& id_list,
-                           const string& str,
-                           CSeq_id::E_Choice which,
-                           const CTextseq_id* tid) const;
 
+    void x_FindMatchByAcc(TSeq_id_MatchList& id_list,
+                          const string& acc,
+                          const TVersion* ver = 0) const;
+    void x_FindMatchByAcc(TSeq_id_MatchList& id_list,
+                          const string& acc,
+                          const CTextseq_id* tid) const {
+        TVersion ver, *ver_ptr = 0;
+        if ( tid && tid->IsSetVersion() ) {
+            ver = tid->GetVersion();
+            ver_ptr = &ver;
+        }
+        x_FindMatchByAcc(id_list, acc, ver_ptr);
+    }
+    void x_FindMatchByName(TSeq_id_MatchList& id_list,
+                           const string& name,
+                           const CTextseq_id* tid = 0) const;
+
+    void x_FindRevMatchByAcc(TSeq_id_MatchList& id_list,
+                             const string& acc,
+                             const TVersion* ver = 0) const;
+    void x_FindRevMatchByAcc(TSeq_id_MatchList& id_list,
+                             const string& acc,
+                             const CTextseq_id* tid) const {
+        TVersion ver, *ver_ptr = 0;
+        if ( tid && tid->IsSetVersion() ) {
+            ver = tid->GetVersion();
+            ver_ptr = &ver;
+        }
+        x_FindRevMatchByAcc(id_list, acc, ver_ptr);
+    }
+    void x_FindRevMatchByName(TSeq_id_MatchList& id_list,
+                              const string& name,
+                              const CTextseq_id* tid = 0) const;
+
+    CSeq_id::E_Choice m_Type;
     TStringMap m_ByAcc;
     TStringMap m_ByName; // Used for searching by string
     TPackedMap m_PackedMap;
@@ -478,8 +519,7 @@ class CSeq_id_GB_Tree : public CSeq_id_Textseq_Tree
 public:
     CSeq_id_GB_Tree(CSeq_id_Mapper* mapper);
 protected:
-    virtual bool x_Check(const CSeq_id& id) const;
-    virtual const CTextseq_id& x_Get(const CSeq_id& id) const;
+    virtual bool x_Check(const CSeq_id::E_Choice& type) const;
 };
 
 
@@ -491,9 +531,6 @@ class CSeq_id_Pir_Tree : public CSeq_id_Textseq_Tree
 {
 public:
     CSeq_id_Pir_Tree(CSeq_id_Mapper* mapper);
-protected:
-    virtual bool x_Check(const CSeq_id& id) const;
-    virtual const CTextseq_id& x_Get(const CSeq_id& id) const;
 };
 
 
@@ -505,9 +542,6 @@ class CSeq_id_Swissprot_Tree : public CSeq_id_Textseq_Tree
 {
 public:
     CSeq_id_Swissprot_Tree(CSeq_id_Mapper* mapper);
-protected:
-    virtual bool x_Check(const CSeq_id& id) const;
-    virtual const CTextseq_id& x_Get(const CSeq_id& id) const;
 };
 
 
@@ -519,9 +553,6 @@ class CSeq_id_Prf_Tree : public CSeq_id_Textseq_Tree
 {
 public:
     CSeq_id_Prf_Tree(CSeq_id_Mapper* mapper);
-protected:
-    virtual bool x_Check(const CSeq_id& id) const;
-    virtual const CTextseq_id& x_Get(const CSeq_id& id) const;
 };
 
 
@@ -533,9 +564,6 @@ class CSeq_id_Tpg_Tree : public CSeq_id_Textseq_Tree
 {
 public:
     CSeq_id_Tpg_Tree(CSeq_id_Mapper* mapper);
-protected:
-    virtual bool x_Check(const CSeq_id& id) const;
-    virtual const CTextseq_id& x_Get(const CSeq_id& id) const;
 };
 
 
@@ -547,9 +575,6 @@ class CSeq_id_Tpe_Tree : public CSeq_id_Textseq_Tree
 {
 public:
     CSeq_id_Tpe_Tree(CSeq_id_Mapper* mapper);
-protected:
-    virtual bool x_Check(const CSeq_id& id) const;
-    virtual const CTextseq_id& x_Get(const CSeq_id& id) const;
 };
 
 
@@ -561,9 +586,6 @@ class CSeq_id_Tpd_Tree : public CSeq_id_Textseq_Tree
 {
 public:
     CSeq_id_Tpd_Tree(CSeq_id_Mapper* mapper);
-protected:
-    virtual bool x_Check(const CSeq_id& id) const;
-    virtual const CTextseq_id& x_Get(const CSeq_id& id) const;
 };
 
 
@@ -575,9 +597,6 @@ class CSeq_id_Gpipe_Tree : public CSeq_id_Textseq_Tree
 {
 public:
     CSeq_id_Gpipe_Tree(CSeq_id_Mapper* mapper);
-protected:
-    virtual bool x_Check(const CSeq_id& id) const;
-    virtual const CTextseq_id& x_Get(const CSeq_id& id) const;
 };
 
 
@@ -589,9 +608,6 @@ class CSeq_id_Named_annot_track_Tree : public CSeq_id_Textseq_Tree
 {
 public:
     CSeq_id_Named_annot_track_Tree(CSeq_id_Mapper* mapper);
-protected:
-    virtual bool x_Check(const CSeq_id& id) const;
-    virtual const CTextseq_id& x_Get(const CSeq_id& id) const;
 };
 
 
@@ -603,9 +619,6 @@ class CSeq_id_Other_Tree : public CSeq_id_Textseq_Tree
 {
 public:
     CSeq_id_Other_Tree(CSeq_id_Mapper* mapper);
-protected:
-    virtual bool x_Check(const CSeq_id& id) const;
-    virtual const CTextseq_id& x_Get(const CSeq_id& id) const;
 };
 
 

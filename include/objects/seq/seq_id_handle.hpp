@@ -143,6 +143,12 @@ public:
 };
 
 
+enum EAllowWeakMatch {
+    eNoWeakMatch,
+    eAllowWeakMatch
+};
+
+
 class CSeq_id_Handle
 {
 public:
@@ -221,11 +227,17 @@ public:
     //
     bool NCBI_SEQ_EXPORT HaveMatchingHandles(void) const;
     bool NCBI_SEQ_EXPORT HaveReverseMatch(void) const;
+    bool NCBI_SEQ_EXPORT HaveMatchingHandles(EAllowWeakMatch allow_weak_match) const;
+    bool NCBI_SEQ_EXPORT HaveReverseMatch(EAllowWeakMatch allow_weak_match) const;
 
     //
     typedef set<CSeq_id_Handle> TMatches;
     void NCBI_SEQ_EXPORT GetMatchingHandles(TMatches& matches) const;
     void NCBI_SEQ_EXPORT GetReverseMatchingHandles(TMatches& matches) const;
+    void NCBI_SEQ_EXPORT GetMatchingHandles(TMatches& matches,
+                                            EAllowWeakMatch allow_weak_match) const;
+    void NCBI_SEQ_EXPORT GetReverseMatchingHandles(TMatches& matches,
+                                                   EAllowWeakMatch allow_weak_match) const;
 
     /// True if *this matches to h.
     /// This mean that *this is either the same as h,

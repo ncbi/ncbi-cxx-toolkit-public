@@ -129,6 +129,18 @@ bool CSeq_id_Handle::HaveReverseMatch(void) const
 }
 
 
+bool CSeq_id_Handle::HaveMatchingHandles(EAllowWeakMatch allow_weak_match) const
+{
+    return GetMapper().HaveMatchingHandles(*this, allow_weak_match);
+}
+
+
+bool CSeq_id_Handle::HaveReverseMatch(EAllowWeakMatch allow_weak_match) const
+{
+    return GetMapper().HaveReverseMatch(*this, allow_weak_match);
+}
+
+
 void CSeq_id_Handle::GetMatchingHandles(TMatches& matches) const
 {
     GetMapper().GetMatchingHandles(*this, matches);
@@ -139,6 +151,21 @@ void CSeq_id_Handle::GetReverseMatchingHandles(TMatches& matches) const
 {
     GetMatchingHandles(matches);
     GetMapper().GetReverseMatchingHandles(*this, matches);
+}
+
+
+void CSeq_id_Handle::GetMatchingHandles(TMatches& matches,
+                                        EAllowWeakMatch allow_weak_match) const
+{
+    GetMapper().GetMatchingHandles(*this, matches, allow_weak_match);
+}
+
+
+void CSeq_id_Handle::GetReverseMatchingHandles(TMatches& matches,
+                                               EAllowWeakMatch allow_weak_match) const
+{
+    GetMatchingHandles(matches, allow_weak_match);
+    GetMapper().GetReverseMatchingHandles(*this, matches, allow_weak_match);
 }
 
 
