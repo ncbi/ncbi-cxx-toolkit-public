@@ -83,69 +83,7 @@ void CGffAlignmentRecord::SetTargetLocation(
     strTarget += " ";
     strTarget += (eStrand == eNa_strand_plus) ? "+" : "-";
     m_strAttributes += ( "Target=" + strTarget );
-    
-    // set source field
-    switch( id.Which() ) {
-        default:
-            m_strSource = CSeq_id::SelectionName( id.Which() );
-            NStr::ToUpper( m_strSource );
-        
-        case CSeq_id::e_Local: 
-            m_strSource = "Local";
-            return;
-        case CSeq_id::e_Gibbsq:
-        case CSeq_id::e_Gibbmt:
-        case CSeq_id::e_Giim:
-        case CSeq_id::e_Gi:
-            m_strSource = "GenInfo";
-            return;
-        case CSeq_id::e_Genbank:
-            m_strSource = "Genbank";
-            return;
-        case CSeq_id::e_Swissprot:
-            m_strSource = "SwissProt";
-            return;
-        case CSeq_id::e_Patent:
-            m_strSource = "Patent";
-            return;
-        case CSeq_id::e_Other:
-            // "for historical reasons"
-            m_strSource = "RefSeq";
-            return;
-        case CSeq_id::e_Ddbj:
-            m_strSource = "DDBJ";
-            return;
-        case CSeq_id::e_Embl:
-            m_strSource = "EMBL";
-            return;
-        case CSeq_id::e_Pir:
-            m_strSource = "PIR";
-            return;
-        case CSeq_id::e_Prf:
-            m_strSource = "PRF";
-            return;
-        case CSeq_id::e_Pdb:
-            m_strSource = "PDB";
-            return;
-        case CSeq_id::e_Tpg:
-            m_strSource = "tpg";
-            return;
-        case CSeq_id::e_Tpe:
-            m_strSource = "tpe";
-            return;
-        case CSeq_id::e_Tpd:
-            m_strSource = "tpd";
-            return;
-        case CSeq_id::e_Gpipe:
-            m_strSource = "gpipe";
-            return;
-        case CSeq_id::e_Named_annot_track :
-            m_strSource = "NADB";
-            return;
-        case CSeq_id::e_General:
-            m_strSource = id.GetGeneral().GetDb();
-            return;
-    }
+    CWriteUtil::GetIdType(id, m_strSource);
 }
 
 //  ----------------------------------------------------------------------------
@@ -323,32 +261,11 @@ bool CGffAlignmentRecord::xSetMethodSpliced(
 
     //maybe look at ModelEvidence first?
 
-#define EMIT(str) { m_strSource = str; break; }
-    m_strSource.clear();
     const CSeq_id& genomicId = spliced.GetGenomic_id();
     CSeq_id_Handle bestH = sequence::GetId(
         genomicId, scope, sequence::eGetId_Best);
     const CSeq_id& bestId = *bestH.GetSeqId();
-    switch(bestId.Which()) {
-    default:
-        break;
-    case CSeq_id::e_Local: EMIT("Local");
-    case CSeq_id::e_Gibbsq:
-    case CSeq_id::e_Gibbmt:
-    case CSeq_id::e_Giim:
-    case CSeq_id::e_Gi: EMIT("GenInfo");
-    case CSeq_id::e_Genbank: EMIT("Genbank");
-    case CSeq_id::e_Swissprot: EMIT("SwissProt");
-    case CSeq_id::e_Patent: EMIT("Patent");
-    case CSeq_id::e_Other: EMIT("RefSeq");
-    case CSeq_id::e_General: 
-        EMIT(genomicId.GetGeneral().GetDb());
-    }
-    if (m_strSource.empty()) {
-        m_strSource = CSeq_id::SelectionName(genomicId.Which());
-        NStr::ToUpper(m_strSource);
-    }
-#undef EMIT
+    CWriteUtil::GetIdType(bestId, m_strSource);
     return true;
 }
 

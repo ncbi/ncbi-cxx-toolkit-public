@@ -117,40 +117,62 @@ bool CWriteUtil::GetGenomeString(
 
 //  ----------------------------------------------------------------------------
 bool CWriteUtil::GetIdType(
-    CBioseq_Handle bsh,
-    string& id_type )
+    const CSeq_id& seqId,
+    string& idType )
 //  ----------------------------------------------------------------------------
 {
-#define EMIT(str) { id_type = str; return true; }
+#define EMIT(str) { idType = str; return true; }
+    switch(seqId.Which()) {
+    default:
+        idType = CSeq_id::SelectionName(seqId.Which());
+        NStr::ToUpper(idType);
+        break;
 
+    case CSeq_id::e_Local: EMIT("Local");
+
+    case CSeq_id::e_Gibbsq:
+    case CSeq_id::e_Gibbmt:
+    case CSeq_id::e_Giim:
+    case CSeq_id::e_Gi: EMIT("GenInfo");
+
+    case CSeq_id::e_Genbank: EMIT("Genbank");
+    case CSeq_id::e_Swissprot: EMIT("SwissProt");
+    case CSeq_id::e_Patent: EMIT("Patent");
+    case CSeq_id::e_Other: EMIT("RefSeq");
+    case CSeq_id::e_Ddbj: EMIT("DDBJ");
+    case CSeq_id::e_Embl: EMIT("EMBL");
+    case CSeq_id::e_Pir: EMIT("PIR");
+    case CSeq_id::e_Prf: EMIT("PRF");
+    case CSeq_id::e_Pdb: EMIT("PDB");
+    case CSeq_id::e_Tpg: EMIT("tpg");
+    case CSeq_id::e_Tpe: EMIT("tpe");
+    case CSeq_id::e_Tpd: EMIT("tpd");
+    case CSeq_id::e_Gpipe: EMIT("gpipe");
+    case CSeq_id::e_Named_annot_track: EMIT("NADB");
+    case CSeq_id::e_General: 
+        EMIT(seqId.GetGeneral().GetDb());
+    }
+#undef EMIT
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CWriteUtil::GetIdType(
+    CBioseq_Handle bsh,
+    string& idType )
+//  ----------------------------------------------------------------------------
+{
+    CSeq_id_Handle best_idh;
     try {
-        CSeq_id_Handle best_idh = sequence::GetId(bsh, sequence::eGetId_Best);
+        best_idh = sequence::GetId(bsh, sequence::eGetId_Best);
         if ( !best_idh ) {
             best_idh = sequence::GetId(bsh, sequence::eGetId_Canonical);
         }
-        switch ( best_idh.Which() ) {
-            default:
-                break;
-            case CSeq_id::e_Local: EMIT("Local");
-            case CSeq_id::e_Gibbsq:
-            case CSeq_id::e_Gibbmt:
-            case CSeq_id::e_Giim:
-            case CSeq_id::e_Gi: EMIT("GenInfo");
-            case CSeq_id::e_Genbank: EMIT("Genbank");
-            case CSeq_id::e_Swissprot: EMIT("SwissProt");
-            case CSeq_id::e_Patent: EMIT("Patent");
-            case CSeq_id::e_Other: EMIT("RefSeq");
-            case CSeq_id::e_General: 
-                EMIT(best_idh.GetSeqId()->GetGeneral().GetDb());
-        }
-        id_type = CSeq_id::SelectionName( best_idh.Which() );
-        NStr::ToUpper( id_type );
-        return true;
     }
     catch(...) {
         return false;
     }
-#undef EMIT
+    return GetIdType(*best_idh.GetSeqId(), idType);
 }
 
 //  ----------------------------------------------------------------------------

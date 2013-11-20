@@ -78,6 +78,10 @@ public:
         CBioseq_Handle,
         string& );
 
+    static bool GetIdType(
+        const CSeq_id&,
+        string& );
+
     static bool GetAaName(
         const CCode_break&,
         string& );
