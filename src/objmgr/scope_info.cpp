@@ -651,7 +651,7 @@ SSeqMatch_Scope CDataSource_ScopeInfo::x_GetSeqMatch(const CSeq_id_Handle& idh)
     SSeqMatch_Scope ret = x_FindBestTSE(idh);
     if ( !ret && idh.HaveMatchingHandles() ) {
         CSeq_id_Handle::TMatches ids;
-        idh.GetMatchingHandles(ids);
+        idh.GetMatchingHandles(ids, eAllowWeakMatch);
         ITERATE ( CSeq_id_Handle::TMatches, it, ids ) {
             if ( *it == idh ) // already checked
                 continue;
@@ -1192,7 +1192,7 @@ CTSE_ScopeInfo::ContainsMatchingBioseq(const CSeq_id_Handle& id) const
         }
         if ( id.HaveMatchingHandles() ) {
             CSeq_id_Handle::TMatches ids;
-            id.GetMatchingHandles(ids);
+            id.GetMatchingHandles(ids, eAllowWeakMatch);
             ITERATE ( CSeq_id_Handle::TMatches, it, ids ) {
                 if ( *it != id ) {
                     if ( ContainsBioseq(*it) ) {

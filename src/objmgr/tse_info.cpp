@@ -689,7 +689,7 @@ CTSE_Info::ContainsMatchingBioseq(const CSeq_id_Handle& id) const
     }
     else if ( id.HaveMatchingHandles() ) {
         CSeq_id_Handle::TMatches ids;
-        id.GetMatchingHandles(ids);
+        id.GetMatchingHandles(ids, eAllowWeakMatch);
         ITERATE ( CSeq_id_Handle::TMatches, match_it, ids ) {
             if ( *match_it != id ) {
                 if ( ContainsBioseq(*match_it) ) {
@@ -775,7 +775,7 @@ SSeqMatch_TSE CTSE_Info::GetSeqMatch(const CSeq_id_Handle& id) const
     }
     else if ( id.HaveMatchingHandles() ) {
         CSeq_id_Handle::TMatches ids;
-        id.GetMatchingHandles(ids);
+        id.GetMatchingHandles(ids, eAllowWeakMatch);
         ITERATE ( CSeq_id_Handle::TMatches, match_it, ids ) {
             if ( *match_it != id ) {
                 ret.m_Bioseq = FindBioseq(*match_it);

@@ -1117,7 +1117,7 @@ SSeqMatch_DS CDataSource::x_GetSeqMatch(const CSeq_id_Handle& idh,
     else if ( idh.HaveMatchingHandles() ) { 
         // Try to find the best matching id (not exactly equal)
         CSeq_id_Handle::TMatches hset;
-        idh.GetMatchingHandles(hset);
+        idh.GetMatchingHandles(hset, eAllowWeakMatch);
         ITERATE ( CSeq_id_Handle::TMatches, hit, hset ) {
             if ( *hit == idh ) // already checked
                 continue;
