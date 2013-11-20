@@ -183,7 +183,7 @@ bool CGff3FlybaseWriter::x_WriteAlignDenseg(
                         targetPiece.GetTo() / iTargetWidth ) );
             }
             if (i0 == 0 && iSourceWidth == 3) {
-                record.SetPhase(sourcePiece.GetFrom() % 3);
+                //record.SetPhase(sourcePiece.GetFrom() % 3);
             }
         }
     

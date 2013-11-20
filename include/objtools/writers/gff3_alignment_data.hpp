@@ -48,10 +48,9 @@ class NCBI_XOBJWRITE_EXPORT CGffAlignmentRecord
 {
 public:
     CGffAlignmentRecord(
-            CGffFeatureContext& fc,
             unsigned int uFlags =0,
             unsigned int uRecordId =0):
-        CGffWriteRecord(fc, NStr::UIntToString(uRecordId)),
+        CGffWriteRecord(sDummyContext, NStr::UIntToString(uRecordId)),
         m_uFlags(uFlags),
         m_bIsTrivial(true)
     {
@@ -76,9 +75,6 @@ public:
     void SetScore(
         const CScore& );
 
-    void SetPhase(
-        unsigned int );
-
     void AddInsertion(
         const CAlnMap::TSignedRange& targetPiece ); 
 
@@ -91,48 +87,8 @@ public:
 
     string StrAttributes() const;
 
-    //spliced alignment direct conversion
-    bool xSetIdSpliced(
-        CScope&,
-        const CSeq_align&,
-        const CSpliced_exon&);
-
-    bool xSetMethodSpliced(
-        CScope&,
-        const CSeq_align&,
-        const CSpliced_exon&);
-
-    bool xSetTypeSpliced(
-        CScope&,
-        const CSeq_align&,
-        const CSpliced_exon&);
-
-    bool xSetLocationSpliced(
-        CScope&,
-        const CSeq_align&,
-        const CSpliced_exon&);
-
-    bool xSetPhaseSpliced(
-        CScope&,
-        const CSeq_align&,
-        const CSpliced_exon&);
-
-    bool xSetAttributesSpliced(
-        CScope&,
-        const CSeq_align&,
-        const CSpliced_exon&);
-
-    bool xSetScoresSpliced(
-        CScope&,
-        const CSeq_align&,
-        const CSpliced_exon&);
-
-    bool xSetAlignmentSpliced(
-        CScope&,
-        const CSeq_align&,
-        const CSpliced_exon&);
-
 protected:
+    static CGffFeatureContext sDummyContext;
     unsigned int m_uFlags;
     string m_strAlignment;
     string m_strOtherScores;
@@ -140,6 +96,79 @@ protected:
     CAlnMap::TSignedRange m_targetRange;
     CAlnMap::TSignedRange m_sourceRange;
     bool m_bIsTrivial;
+};
+
+//  ----------------------------------------------------------------------------
+class NCBI_XOBJWRITE_EXPORT CGffDenseSegRecord
+//  ----------------------------------------------------------------------------
+    : public CGffAlignmentRecord
+{
+public:
+    CGffDenseSegRecord(
+            unsigned int uFlags =0,
+            unsigned int uRecordId =0):
+        CGffAlignmentRecord(uFlags, uRecordId)
+    {
+    };
+
+    virtual ~CGffDenseSegRecord() {};
+};
+
+//  ----------------------------------------------------------------------------
+class NCBI_XOBJWRITE_EXPORT CGffSplicedSegRecord
+//  ----------------------------------------------------------------------------
+    : public CGffAlignmentRecord
+{
+public:
+    CGffSplicedSegRecord(
+            unsigned int uFlags =0,
+            unsigned int uRecordId =0):
+        CGffAlignmentRecord(uFlags, uRecordId)
+    {
+    };
+
+    virtual ~CGffSplicedSegRecord() {};
+
+public:
+    bool SetId(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
+
+    bool SetMethod(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
+
+    bool SetType(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
+
+    bool SetLocation(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
+
+    bool SetPhase(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
+
+    bool SetAttributes(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
+
+    bool SetScores(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
+
+    bool SetAlignment(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
 };
 
 END_objects_SCOPE

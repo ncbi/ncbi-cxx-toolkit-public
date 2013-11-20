@@ -43,7 +43,7 @@ class NCBI_XOBJWRITE_EXPORT CGff3FlybaseRecord : public CGffAlignmentRecord {
 public:
     CGff3FlybaseRecord(CGffFeatureContext& fc,
          unsigned int uRecordId =0 ):
-    CGffAlignmentRecord(fc, 0, uRecordId)
+    CGffAlignmentRecord(0, uRecordId)
     {} 
     void SetDefline(const string &defline);
     void SetTaxid(unsigned taxid);

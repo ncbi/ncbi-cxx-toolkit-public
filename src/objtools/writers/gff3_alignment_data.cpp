@@ -49,6 +49,8 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
+CGffFeatureContext CGffAlignmentRecord::sDummyContext;
+
 //  ----------------------------------------------------------------------------
 string CGffAlignmentRecord::StrAttributes() const 
 //  ----------------------------------------------------------------------------
@@ -163,14 +165,6 @@ void CGffAlignmentRecord::SetMatchType(
 }
 
 //  ----------------------------------------------------------------------------
-void CGffAlignmentRecord::SetPhase(
-    unsigned int uPhase )
-//  ----------------------------------------------------------------------------
-{
-    m_puPhase = new unsigned int( uPhase );
-}
-
-//  ----------------------------------------------------------------------------
 void CGffAlignmentRecord::AddInsertion(
     const CAlnMap::TSignedRange& targetPiece )
 //  ----------------------------------------------------------------------------
@@ -233,7 +227,7 @@ void CGffAlignmentRecord::AddMatch(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffAlignmentRecord::xSetIdSpliced(
+bool CGffSplicedSegRecord::SetId(
     CScope& scope,
     const CSeq_align& align,
     const CSpliced_exon& exon)
@@ -250,7 +244,7 @@ bool CGffAlignmentRecord::xSetIdSpliced(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffAlignmentRecord::xSetMethodSpliced(
+bool CGffSplicedSegRecord::SetMethod(
     CScope& scope,
     const CSeq_align& align,
     const CSpliced_exon& exon)
@@ -270,7 +264,7 @@ bool CGffAlignmentRecord::xSetMethodSpliced(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffAlignmentRecord::xSetTypeSpliced(
+bool CGffSplicedSegRecord::SetType(
     CScope& scope,
     const CSeq_align& align,
     const CSpliced_exon& exon)
@@ -288,7 +282,7 @@ bool CGffAlignmentRecord::xSetTypeSpliced(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffAlignmentRecord::xSetLocationSpliced(
+bool CGffSplicedSegRecord::SetLocation(
     CScope& scope,
     const CSeq_align& align,
     const CSpliced_exon& exon)
@@ -312,7 +306,7 @@ bool CGffAlignmentRecord::xSetLocationSpliced(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffAlignmentRecord::xSetPhaseSpliced(
+bool CGffSplicedSegRecord::SetPhase(
     CScope& scope,
     const CSeq_align& align,
     const CSpliced_exon& exon)
@@ -323,7 +317,7 @@ bool CGffAlignmentRecord::xSetPhaseSpliced(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffAlignmentRecord::xSetAttributesSpliced(
+bool CGffSplicedSegRecord::SetAttributes(
     CScope& scope,
     const CSeq_align& align,
     const CSpliced_exon& exon)
@@ -351,7 +345,7 @@ bool CGffAlignmentRecord::xSetAttributesSpliced(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffAlignmentRecord::xSetScoresSpliced(
+bool CGffSplicedSegRecord::SetScores(
     CScope& scope,
     const CSeq_align& align,
     const CSpliced_exon& exon)
@@ -380,7 +374,7 @@ bool CGffAlignmentRecord::xSetScoresSpliced(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffAlignmentRecord::xSetAlignmentSpliced(
+bool CGffSplicedSegRecord::SetAlignment(
     CScope& scope,
     const CSeq_align& align,
     const CSpliced_exon& exon)

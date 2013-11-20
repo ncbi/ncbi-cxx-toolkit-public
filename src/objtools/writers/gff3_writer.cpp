@@ -284,33 +284,31 @@ bool CGff3Writer::x_WriteAlignSpliced(
     typedef list<CRef<CSpliced_exon> > EXONS;
     const EXONS& exons = align.GetSegs().GetSpliced().GetExons();
 
-    CGffFeatureContext dummy;
-
     for (EXONS::const_iterator cit = exons.begin(); cit != exons.end(); ++cit) {
-        CGffAlignmentRecord record(dummy, m_uFlags, m_uRecordId);
+        CGffSplicedSegRecord record(m_uFlags, m_uRecordId);
         const CSpliced_exon& exon = **cit;
-        if (!record.xSetIdSpliced(*m_pScope, align, exon)) {
+        if (!record.SetId(*m_pScope, align, exon)) {
             return false;
         }
-        if (!record.xSetMethodSpliced(*m_pScope, align, exon)) {
+        if (!record.SetMethod(*m_pScope, align, exon)) {
             return false;
         }
-        if (!record.xSetTypeSpliced(*m_pScope, align, exon)) {
+        if (!record.SetType(*m_pScope, align, exon)) {
             return false;
         }
-        if (!record.xSetLocationSpliced(*m_pScope, align, exon)) {
+        if (!record.SetLocation(*m_pScope, align, exon)) {
             return false;
         }
-        if (!record.xSetScoresSpliced(*m_pScope, align, exon)) {
+        if (!record.SetScores(*m_pScope, align, exon)) {
             return false;
         }
-        if (!record.xSetPhaseSpliced(*m_pScope, align, exon)) {
+        if (!record.SetPhase(*m_pScope, align, exon)) {
             return false;
         }
-        if (!record.xSetAttributesSpliced(*m_pScope, align, exon)) {
+        if (!record.SetAttributes(*m_pScope, align, exon)) {
             return false;
         }
-        if (!record.xSetAlignmentSpliced(*m_pScope, align, exon)) {
+        if (!record.SetAlignment(*m_pScope, align, exon)) {
             return false;
         }
         x_WriteAlignment(record);
@@ -365,12 +363,11 @@ bool CGff3Writer::x_WriteAlignDenseg(
         targetStrand = eNa_strand_minus;
     }
 
-    CGffFeatureContext dummy;
     for ( int iSourceRow = 0;  iSourceRow < align_map.GetNumRows();  ++iSourceRow ) {
         if ( iSourceRow == iTargetRow ) {
             continue;
         }
-        CGffAlignmentRecord record(dummy, m_uFlags, m_uRecordId);
+        CGffDenseSegRecord record(m_uFlags, m_uRecordId);
 
         // Obtain and report basic source information:
         CConstRef<CSeq_id> pSourceId =
