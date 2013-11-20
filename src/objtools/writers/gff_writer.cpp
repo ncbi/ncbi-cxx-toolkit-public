@@ -80,7 +80,8 @@ CGff2Writer::CGff2Writer(
     CNcbiOstream& ostr,
     unsigned int uFlags ) :
 //  ----------------------------------------------------------------------------
-    CWriterBase( ostr, uFlags )
+    CWriterBase( ostr, uFlags ),
+    m_bHeaderWritten(false)
 {
     m_pScope.Reset( new CScope( *CObjectManager::GetInstance() ) );
     m_pScope->AddDefaults();
