@@ -161,7 +161,7 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
     virtual CNetServerConnection InitiateWriteCmd(CNetCacheWriter* nc_writer,
             const CNetCacheAPIParameters* parameters);
 
-    IReader* SNetICacheClientImpl::ReadCurrentBlobNotOlderThan(
+    IReader* ReadCurrentBlobNotOlderThan(
         const string& key, const string& subkey, int* version,
         ICache::EBlobVersionValidity* validity,
         unsigned max_age, unsigned* actual_age);
