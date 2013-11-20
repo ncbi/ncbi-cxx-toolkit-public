@@ -336,7 +336,7 @@ public:
             blob_size(0),
             blob_found(false),
             maximum_age(0),
-            actual_age(0),
+            actual_age((unsigned) -1),
             return_current_version(false),
             current_version(0),
             current_version_validity(ICache::eExpired)
