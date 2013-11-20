@@ -58,6 +58,8 @@ public:
         eDP_ServerCheckHint = 1 << 4,
         eDP_Password = 1 << 5,
         eDP_ServerToUse = 1 << 6,
+        eDP_MaxBlobAge = 1 << 7,
+        eDP_ActualBlobAgePtr = 1 << 8,
     };
     typedef unsigned TDefinedParameters;
 
@@ -73,7 +75,9 @@ public:
         m_CachingMode(CNetCacheAPI::eCaching_Disable),
         m_MirroringMode(CNetCacheAPI::eIfKeyMirrored),
         m_ServerCheck(eDefault),
-        m_ServerCheckHint(true)
+        m_ServerCheckHint(true),
+        m_MaxBlobAge(0),
+        m_ActualBlobAgePtr(NULL)
     {
     }
 
@@ -115,6 +119,18 @@ public:
         m_ServerToUse = server_to_use;
     }
 
+    void SetMaxBlobAge(unsigned max_age)
+    {
+        m_DefinedParameters |= eDP_MaxBlobAge;
+        m_MaxBlobAge = max_age;
+    }
+
+    void SetActualBlobAgePtr(unsigned* actual_age)
+    {
+        m_DefinedParameters |= eDP_ActualBlobAgePtr;
+        m_ActualBlobAgePtr = actual_age;
+    }
+
     unsigned GetTTL() const;
     CNetCacheAPI::ECachingMode GetCachingMode() const;
     CNetCacheAPI::EMirroringMode GetMirroringMode() const;
@@ -122,6 +138,8 @@ public:
     bool GetServerCheckHint(bool* server_check_hint) const;
     std::string GetPassword() const;
     CNetServer GetServerToUse() const;
+    unsigned GetMaxBlobAge() const;
+    unsigned* GetActualBlobAgePtr() const;
 
 private:
     TDefinedParameters m_DefinedParameters;
@@ -134,6 +152,8 @@ private:
     bool m_ServerCheckHint;
     std::string m_Password;
     CNetServer m_ServerToUse;
+    unsigned m_MaxBlobAge;
+    unsigned* m_ActualBlobAgePtr;
 };
 
 /* @} */

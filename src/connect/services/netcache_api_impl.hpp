@@ -93,6 +93,10 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
     string MakeCmd(const char* cmd, const CNetCacheAPIParameters* parameters);
     string MakeCmd(const char* cmd_base, const CNetCacheKey& key,
             const CNetCacheAPIParameters* parameters);
+
+    unsigned x_ExtractBlobAge(const CNetServer::SExecResult& exec_result,
+            const char* cmd_name);
+
     CNetService FindOrCreateService(const CNetCacheKey& key);
 
     CNetServer::SExecResult ExecMirrorAware(

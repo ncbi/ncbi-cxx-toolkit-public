@@ -67,6 +67,8 @@ enum ENetCacheNamedParameterTag {
     eNetCacheNPT_ServerCheckHint,
     eNetCacheNPT_Password,
     eNetCacheNPT_ServerToUse,
+    eNetCacheNPT_MaxBlobAge,
+    eNetCacheNPT_ActualBlobAgePtr,
 };
 
 /// Blob life span in seconds. If zero or greater than the
@@ -100,6 +102,14 @@ enum ENetCacheNamedParameterTag {
 /// defined in the constructor or the configuration file.
 #define nc_server_to_use CNamedParameter<CNetServer::TInstance, \
         eNetCacheNPT_ServerToUse>()
+
+/// Do not read the blob if its age is greater than the specified value.
+#define nc_max_age CNamedParameter<unsigned, eNetCacheNPT_MaxBlobAge>()
+
+/// A pointer to an unsigned variable where the actual age of the blob
+/// must be stored.
+#define nc_actual_age CNamedParameter<unsigned*, \
+        eNetCacheNPT_ActualBlobAgePtr>()
 
 /* @} */
 

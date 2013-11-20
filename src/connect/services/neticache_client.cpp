@@ -161,6 +161,11 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
     virtual CNetServerConnection InitiateWriteCmd(CNetCacheWriter* nc_writer,
             const CNetCacheAPIParameters* parameters);
 
+    IReader* SNetICacheClientImpl::ReadCurrentBlobNotOlderThan(
+        const string& key, const string& subkey, int* version,
+        ICache::EBlobVersionValidity* validity,
+        unsigned max_age, unsigned* actual_age);
+
     IReader* GetReadStreamPart(const string& key,
         int version, const string& subkey,
         size_t offset, size_t part_size,
@@ -446,14 +451,31 @@ IReader* SNetICacheClientImpl::GetReadStreamPart(
 
         parameters.LoadNamedParameters(optional);
 
-        string cmd(offset == 0 && part_size == 0 ?
-            MakeStdCmd("READ", blob_id, &parameters) :
-            MakeStdCmd("READPART", blob_id, &parameters,
-                ' ' + NStr::UInt8ToString((Uint8) offset) +
-                ' ' + NStr::UInt8ToString((Uint8) part_size)));
+        const char* cmd_name;
+        string cmd;
+
+        if (offset == 0 && part_size == 0) {
+            cmd_name = "READ";
+            cmd = MakeStdCmd(cmd_name, blob_id, &parameters);
+        } else {
+            cmd_name = "READPART";
+            cmd = MakeStdCmd(cmd_name, blob_id, &parameters,
+                    ' ' + NStr::UInt8ToString((Uint8) offset) +
+                    ' ' + NStr::UInt8ToString((Uint8) part_size));
+        }
+
+        unsigned max_age = parameters.GetMaxBlobAge();
+        if (max_age > 0) {
+            cmd += " age=";
+            cmd += NStr::NumericToString(max_age);
+        }
 
         CNetServer::SExecResult exec_result(
                 StickToServerAndExec(cmd, parameters.GetServerToUse()));
+
+        unsigned* actual_age_ptr = parameters.GetActualBlobAgePtr();
+        if (max_age > 0 && actual_age_ptr != NULL)
+            *actual_age_ptr = x_ExtractBlobAge(exec_result, cmd_name);
 
         return new CNetCacheReader(this, blob_id,
             exec_result, blob_size_ptr, &parameters);
@@ -500,9 +522,23 @@ void CNetICacheClient::GetBlobAccess(const string&     key,
                                      const string&     subkey,
                                      SBlobAccessDescr* blob_descr)
 {
-    blob_descr->reader.reset(m_Impl->GetReadStreamPart(key, version, subkey,
-        0, 0, &blob_descr->blob_size,
-        nc_caching_mode = CNetCacheAPI::eCaching_AppDefault));
+    if (blob_descr->return_current_version) {
+        blob_descr->reader.reset(m_Impl->ReadCurrentBlobNotOlderThan(key, subkey,
+                &blob_descr->current_version,
+                &blob_descr->current_version_validity,
+                blob_descr->maximum_age,
+                &blob_descr->actual_age));
+    } else if (blob_descr->maximum_age > 0) {
+        blob_descr->reader.reset(m_Impl->GetReadStreamPart(key, version, subkey,
+                0, 0, &blob_descr->blob_size,
+                (nc_caching_mode = CNetCacheAPI::eCaching_AppDefault,
+                nc_max_age = blob_descr->maximum_age,
+                nc_actual_age = &blob_descr->actual_age)));
+    } else {
+        blob_descr->reader.reset(m_Impl->GetReadStreamPart(key, version, subkey,
+                0, 0, &blob_descr->blob_size,
+                nc_caching_mode = CNetCacheAPI::eCaching_AppDefault));
+    }
 
     if (blob_descr->reader.get() != NULL) {
         blob_descr->blob_found = true;
@@ -664,12 +700,27 @@ IReader* CNetICacheClient::GetReadStream(const string& key,
         const string& subkey, int* version,
         ICache::EBlobVersionValidity* validity)
 {
+    return m_Impl->ReadCurrentBlobNotOlderThan(key, subkey, version,
+            validity, 0, NULL);
+}
+
+IReader* SNetICacheClientImpl::ReadCurrentBlobNotOlderThan(const string& key,
+        const string& subkey, int* version,
+        ICache::EBlobVersionValidity* validity,
+        unsigned max_age, unsigned* actual_age)
+{
     try {
         string blob_id(s_KeySubkeyToBlobID(key, subkey));
 
-        CNetServer::SExecResult exec_result(m_Impl->StickToServerAndExec(
-                m_Impl->MakeStdCmd("READLAST", blob_id,
-                        &m_Impl->m_DefaultParameters)));
+        string cmd(MakeStdCmd("READLAST", blob_id,
+            &m_DefaultParameters));
+
+        if (max_age > 0) {
+            cmd += " age=";
+            cmd += NStr::NumericToString(max_age);
+        }
+
+        CNetServer::SExecResult exec_result(StickToServerAndExec(cmd));
 
         string::size_type pos = exec_result.response.find("VER=");
 
@@ -691,18 +742,21 @@ IReader* CNetICacheClient::GetReadStream(const string& key,
 
         switch (exec_result.response[pos + sizeof("VALID=") - 1]) {
         case 't': case 'T': case 'y': case 'Y':
-            *validity = eCurrent;
+            *validity = ICache::eCurrent;
             break;
         case 'f': case 'F': case 'n': case 'N':
-            *validity = eExpired;
+            *validity = ICache::eExpired;
             break;
         default:
             NCBI_THROW(CNetCacheException, eInvalidServerResponse,
                 "Invalid format of the VALID field in READLAST output");
         }
 
-        return new CNetCacheReader(m_Impl, blob_id, exec_result,
-            NULL, &m_Impl->m_DefaultParameters);
+        if (max_age > 0)
+            *actual_age = x_ExtractBlobAge(exec_result, "READLAST");
+
+        return new CNetCacheReader(this, blob_id, exec_result,
+                NULL, &m_DefaultParameters);
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() != CNetCacheException::eBlobNotFound)
             throw;

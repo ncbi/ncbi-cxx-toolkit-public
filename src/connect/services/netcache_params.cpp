@@ -63,6 +63,10 @@ void CNetCacheAPIParameters::LoadNamedParameters(
             SetServerCheckHint(Get<bool>(optional));
         else if (optional->Is(eNetCacheNPT_ServerToUse))
             SetServerToUse(Get<CNetServer::TInstance>(optional));
+        else if (optional->Is(eNetCacheNPT_MaxBlobAge))
+            SetMaxBlobAge(Get<unsigned>(optional));
+        else if (optional->Is(eNetCacheNPT_ActualBlobAgePtr))
+            SetActualBlobAgePtr(Get<unsigned*>(optional));
 }
 
 void CNetCacheAPIParameters::SetTTL(unsigned blob_ttl)
@@ -140,6 +144,16 @@ std::string CNetCacheAPIParameters::GetPassword() const
 CNetServer CNetCacheAPIParameters::GetServerToUse() const
 {
     NETCACHE_API_GET_PARAM_IMPL(ServerToUse);
+}
+
+unsigned CNetCacheAPIParameters::GetMaxBlobAge() const
+{
+    NETCACHE_API_GET_PARAM_IMPL(MaxBlobAge);
+}
+
+unsigned* CNetCacheAPIParameters::GetActualBlobAgePtr() const
+{
+    NETCACHE_API_GET_PARAM_IMPL(ActualBlobAgePtr);
 }
 
 END_NCBI_SCOPE

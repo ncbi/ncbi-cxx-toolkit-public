@@ -263,6 +263,20 @@ string SNetCacheAPIImpl::MakeCmd(const char* cmd_base, const CNetCacheKey& key,
     return result;
 }
 
+unsigned SNetCacheAPIImpl::x_ExtractBlobAge(
+        const CNetServer::SExecResult& exec_result, const char* cmd_name)
+{
+    string::size_type pos = exec_result.response.find("AGE=");
+
+    if (pos == string::npos) {
+        NCBI_THROW_FMT(CNetCacheException, eInvalidServerResponse,
+                "No AGE field in " << cmd_name << " output");
+    }
+
+    return NStr::StringToUInt(exec_result.response.c_str() + pos +
+            sizeof("AGE=") - 1, NStr::fAllowTrailingSymbols);
+}
+
 class SNetCacheMirrorTraversal : public IServiceTraversal
 {
 public:
@@ -733,11 +747,18 @@ IReader* SNetCacheAPIImpl::GetPartReader(const string& blob_id,
 
     string stripped_blob_id(key.StripKeyExtensions());
 
-    string cmd(offset == 0 && part_size == 0 ?
-        "GET2 " + stripped_blob_id :
-        "GETPART " + stripped_blob_id + ' ' +
+    const char* cmd_name;
+    string cmd;
+
+    if (offset == 0 && part_size == 0) {
+        cmd_name = "GET2 ";
+        cmd = cmd_name + stripped_blob_id;
+    } else {
+        cmd_name = "GETPART ";
+        cmd = cmd_name + stripped_blob_id + ' ' +
             NStr::UInt8ToString((Uint8) offset) + ' ' +
-            NStr::UInt8ToString((Uint8) part_size));
+            NStr::UInt8ToString((Uint8) part_size);
+    }
 
     CNetCacheAPIParameters parameters(&m_DefaultParameters);
 
@@ -745,7 +766,17 @@ IReader* SNetCacheAPIImpl::GetPartReader(const string& blob_id,
 
     AppendClientIPSessionIDPassword(&cmd, &parameters);
 
+    unsigned max_age = parameters.GetMaxBlobAge();
+    if (max_age > 0) {
+        cmd += " age=";
+        cmd += NStr::NumericToString(max_age);
+    }
+
     CNetServer::SExecResult exec_result(ExecMirrorAware(key, cmd, &parameters));
+
+    unsigned* actual_age_ptr = parameters.GetActualBlobAgePtr();
+    if (max_age > 0 && actual_age_ptr != NULL)
+        *actual_age_ptr = x_ExtractBlobAge(exec_result, cmd_name);
 
     return new CNetCacheReader(this, blob_id,
             exec_result, blob_size_ptr, &parameters);

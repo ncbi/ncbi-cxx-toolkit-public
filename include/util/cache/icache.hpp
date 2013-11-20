@@ -330,16 +330,46 @@ public:
     /// BLOB access descriptor
     struct SBlobAccessDescr
     {
-        SBlobAccessDescr(char* buf_ = 0, size_t buf_size_ = 0)
-            : buf(buf_), buf_size(buf_size_), blob_size(0), blob_found(false)
-            {
-            }
+        SBlobAccessDescr(char* buf_ = 0, size_t buf_size_ = 0) :
+            buf(buf_),
+            buf_size(buf_size_),
+            blob_size(0),
+            blob_found(false),
+            maximum_age(0),
+            actual_age(0),
+            return_current_version(false),
+            current_version(0),
+            current_version_validity(ICache::eExpired)
+        {
+        }
 
         auto_ptr<IReader>  reader;
         char*              buf;
         size_t             buf_size;
         size_t             blob_size;
         bool               blob_found;
+
+        /// Set to a non-zero value to return a version not older
+        /// than the specified value.
+        unsigned maximum_age;
+
+        /// If `maximum_age` is not zero, GetBlobAccess() will set this
+        /// field to the actual blob version age upon return.
+        unsigned actual_age;
+
+        /// If TRUE, the `version` argument of GetBlobAccess() will be
+        /// ignored and the `current_version` and `current_version_validity`
+        /// fields of this structure will be set to the current version
+        /// number and its validity.
+        bool return_current_version;
+
+        /// If `return_current_version` is set, the current version number
+        /// of the blob is stored in the `current_version` field.
+        TBlobVersion current_version;
+
+        /// If `return_current_version` is set, the `current_version_validity`
+        /// field will contain the validity of the returned blob version.
+        EBlobVersionValidity current_version_validity;
     };
 
     /// Get BLOB access using BlobAccessDescr.
