@@ -259,13 +259,13 @@ void CNetFileID::x_SetFileTrackSite(const char* ft_site_name)
 
 void CNetFileID::x_SetUniqueKeyFromRandom()
 {
-    m_UniqueKey = NStr::NumericToString(m_Timestamp) + '@';
+    m_UniqueKey = NStr::NumericToString(m_Timestamp) + '_';
     m_UniqueKey.append(NStr::NumericToString(m_Random));
 }
 
 void CNetFileID::x_SetUniqueKeyFromUserDefinedKey()
 {
-    m_UniqueKey = m_AppDomain + '@';
+    m_UniqueKey = m_AppDomain + '_';
     m_UniqueKey.append(m_UserKey);
 }
 
