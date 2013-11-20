@@ -112,7 +112,9 @@ int CTestICClient::Run(void)
         CNetICacheClient(args["service"].AsString(),
             cache_name, "test_icache"));
 
-    const char test_data[] = "The quick brown fox jumps over the lazy dog.";
+    const static char test_data[] =
+            "The quick brown fox jumps over the lazy dog.";
+    const static size_t data_size = sizeof(test_data) - 1;
 
     string uid = GetDiagContext().GetStringUID();
     string key1 = "TEST_IC_CLIENT_KEY1_" + uid;
@@ -121,8 +123,6 @@ int CTestICClient::Run(void)
     int version = 0;
 
     {{
-    size_t data_size = strlen(test_data) + 1;
-
     cl.Store(key1, version, subkey, test_data, data_size);
     SleepMilliSec(700);
 
@@ -222,6 +222,44 @@ int CTestICClient::Run(void)
             test_buf.size()) << endl;
         cl.Remove(key1, version, subkey);
     }}
+
+#ifdef DISABLED_UNTIL_NC_WITH_AGE_SUPPORT_IS_DEPLOYED
+    NcbiCout << "blob age test" << NcbiEndl;
+    {{
+        ++version;
+        cl.Store(key1, version, subkey, test_data, data_size);
+
+        char buffer[1024];
+
+        ICache::SBlobAccessDescr blob_access(buffer, sizeof(buffer));
+
+        blob_access.return_current_version = true;
+        blob_access.maximum_age = 5;
+
+        SleepSec(2);
+
+        cl.GetBlobAccess(key1, 0, subkey, &blob_access);
+
+        assert(blob_access.blob_found);
+        assert(blob_access.reader.get() == NULL);
+        assert(blob_access.blob_size < blob_access.buf_size);
+        assert(memcmp(blob_access.buf, test_data, data_size) == 0);
+        assert(blob_access.current_version == version);
+        assert(blob_access.current_version_validity == ICache::eCurrent);
+        assert(blob_access.actual_age >= 2);
+
+        blob_access.return_current_version = false;
+        blob_access.maximum_age = 2;
+
+        SleepSec(1);
+
+        cl.GetBlobAccess(key1, version, subkey, &blob_access);
+
+        assert(!blob_access.blob_found);
+
+        cl.Remove(key1, version, subkey);
+    }}
+#endif /* DISABLED_UNTIL_NC_WITH_AGE_SUPPORT_IS_DEPLOYED */
 
     return 0;
 }

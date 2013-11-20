@@ -525,6 +525,56 @@ static int s_ServiceInBlobKeyTest(const string& service)
     return 0;
 }
 
+static int s_BlobAgeTest(const string& service)
+{
+#ifdef DISABLED_UNTIL_NC_WITH_AGE_SUPPORT_IS_DEPLOYED
+    static const int err_code = 32;
+
+    static char data[] = "test_data";
+    static size_t data_size = sizeof(data) - 1;
+
+    CNetCacheAPI nc(service, s_ClientName);
+
+    string blob_id = nc.PutData(data, data_size);
+
+    SleepSec(2);
+
+    try {
+        string buffer;
+
+        unsigned actual_age;
+
+        nc.ReadData(blob_id, buffer,
+                (nc_max_age = 5, nc_actual_age = &actual_age));
+
+        if (buffer != data || actual_age < 2)
+            return err_code;
+    }
+    catch (CException&) {
+        return err_code;
+    }
+
+    SleepSec(1);
+
+    try {
+        string buffer;
+
+        nc.ReadData(blob_id, buffer, nc_max_age = 2);
+
+        return err_code;
+    }
+    catch (CNetCacheException& e) {
+        if (e.GetErrCode() != CNetCacheException::eBlobNotFound)
+            return err_code;
+    }
+    catch (CException&) {
+        return err_code;
+    }
+#endif /* DISABLED_UNTIL_NC_WITH_AGE_SUPPORT_IS_DEPLOYED */
+
+    return 0;
+}
+
 static size_t s_ReadIntoBuffer(IReader* reader, char* buf_ptr, size_t buf_size)
 {
     size_t bytes_read;
@@ -694,6 +744,7 @@ int CTestNetCacheClient::Run(void)
     error_level |= s_PasswordTest(service);
     error_level |= s_AbortTest(service);
     error_level |= s_ServiceInBlobKeyTest(service);
+    error_level |= s_BlobAgeTest(service);
 
     vector<STransactionInfo> log;
     vector<STransactionInfo> log_read;
