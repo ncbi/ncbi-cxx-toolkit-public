@@ -152,7 +152,7 @@ const SUserAgent s_UserAgentTests[] = {
     },
     { "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; WOW64; Trident/4.0; GTB7.1; SLCC2; .NET CLR 2.0.50727; .NET CLR 3.5.30729; .NET CLR 3.0.30729; Media Center PC 6.0; VER#99#80837681486745484888484867; BRI/2; .NET4.0C; 89870769803; Version/11.00284)",
         CCgiUserAgent::eIE,             {  8,  0, -1},
-        CCgiUserAgent::eEngine_IE,      {  8,  0, -1},
+        CCgiUserAgent::eEngine_IE,      {  4,  0, -1},
         { 4, 0, -1},
         CCgiUserAgent::ePlatform_Windows
     },
@@ -179,13 +179,13 @@ const SUserAgent s_UserAgentTests[] = {
     },
     { "Mozilla/4.0 (compatible; MSIE 6.0; MSN 2.5; Windows 98)",
         CCgiUserAgent::eIE,             { 6,  0, -1},
-        CCgiUserAgent::eEngine_IE,      { 6,  0, -1},
+        CCgiUserAgent::eEngine_IE,      {-1, -1, -1},
         { 4, 0, -1},
         CCgiUserAgent::ePlatform_Windows
     },
     { "Mozilla/4.0 (compatible; MSIE 7.0b; Windows NT 6.0)",
         CCgiUserAgent::eIE,             { 7,  0, -1},
-        CCgiUserAgent::eEngine_IE,      { 7,  0, -1},
+        CCgiUserAgent::eEngine_IE,      {-1, -1, -1},
         { 4, 0, -1},
         CCgiUserAgent::ePlatform_Windows
     },
@@ -195,6 +195,13 @@ const SUserAgent s_UserAgentTests[] = {
         { 4, 0, -1},
         CCgiUserAgent::ePlatform_Windows
     },
+    { "Mozilla/5.0 (Windows NT 6.3; Trident/7.0; rv:11.0) like Gecko", // Internet Explorer 11
+        CCgiUserAgent::eIE,             {11,  0, -1},
+        CCgiUserAgent::eEngine_IE,      { 7,  0, -1},
+        { 5, 0, -1},
+        CCgiUserAgent::ePlatform_Windows
+    },
+
 
     // Mozilla compatible
 
@@ -248,7 +255,7 @@ const SUserAgent s_UserAgentTests[] = {
 
     { "Microsoft Internet Explorer/4.0b1 (Windows 95)",
         CCgiUserAgent::eIE,             { 4,  0, -1},
-        CCgiUserAgent::eEngine_IE,      { 4,  0, -1},
+        CCgiUserAgent::eEngine_IE,      {-1, -1, -1},
         {-1, -1, -1},
         CCgiUserAgent::ePlatform_Windows
     },
@@ -393,7 +400,7 @@ const SUserAgent s_UserAgentTests[] = {
 
     { "Mozilla/2.0 (compatible; MSIE 3.02; Windows CE; PPC; 240x320)",
         CCgiUserAgent::eIE,             { 3,  2, -1},
-        CCgiUserAgent::eEngine_IE,      { 3,  2, -1},
+        CCgiUserAgent::eEngine_IE,      {-1, -1, -1},
         { 2,  0, -1},
         CCgiUserAgent::ePlatform_WindowsCE
     },
