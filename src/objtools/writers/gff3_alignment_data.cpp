@@ -402,9 +402,6 @@ bool CGffAlignmentRecord::xSetPhaseSpliced(
 //  ----------------------------------------------------------------------------
 {
     //meaningless for alignments
-
-    //_ASSERT(align.IsSetSegs() && align.GetSegs().IsSpliced());
-    //const CSpliced_seg& spliced = align.GetSegs().GetSpliced();
     return true;
 }
 
@@ -446,28 +443,12 @@ bool CGffAlignmentRecord::xSetScoresSpliced(
     _ASSERT(align.IsSetSegs() && align.GetSegs().IsSpliced());
     const CSpliced_seg& spliced = align.GetSegs().GetSpliced();
 
-    map<string, string> scoreAttrs;
     if (align.IsSetScore()) {
         typedef vector<CRef<CScore> > SCORES;
 
         const SCORES& scores = align.GetScore();
         for (SCORES::const_iterator cit = scores.begin(); cit != scores.end(); ++cit) {
-            const CScore& score = **cit;
-            if (!score.IsSetId() || !score.GetId().IsStr()  ||  !score.IsSetValue()) {
-                continue;
-            }
-            const string& key = score.GetId().GetStr();
-            const CScore::TValue& value = score.GetValue();
-            switch(value.Which()) {
-            default:
-                continue;
-            case CScore::TValue::e_Int:
-                scoreAttrs[key] = NStr::IntToString(value.GetInt());
-                continue;
-            case CScore::TValue::e_Real:
-                scoreAttrs[key] = NStr::DoubleToString(value.GetReal());
-                continue;
-            }
+            SetScore(**cit);
         }
     }
     if (exon.IsSetScores()) {
@@ -475,44 +456,8 @@ bool CGffAlignmentRecord::xSetScoresSpliced(
 
         const SCORES& scores = exon.GetScores().Get();
         for (SCORES::const_iterator cit = scores.begin(); cit != scores.end(); ++cit) {
-            const CScore& score = **cit;
-            if (!score.IsSetId() || !score.GetId().IsStr()  ||  !score.IsSetValue()) {
-                continue;
-            }
-            const string& key = score.GetId().GetStr();
-            const CScore::TValue& value = score.GetValue();
-            if (key == "score") {
-                switch(value.Which()) {
-                default:
-                    continue;
-                case CScore::TValue::e_Int:
-                    m_pdScore = new double(value.GetInt());
-                    continue;
-                case CScore::TValue::e_Real:
-                    m_pdScore = new double(value.GetReal());
-                    continue;
-                }
-            }
-            else {
-                switch(value.Which()) {
-                default:
-                    continue;
-                case CScore::TValue::e_Int:
-                    scoreAttrs[key] = NStr::IntToString(value.GetInt());
-                    continue;
-                case CScore::TValue::e_Real:
-                    scoreAttrs[key] = NStr::DoubleToString(value.GetReal());
-                    continue;
-                }
-            }
+            SetScore(**cit);
         }
-    }
-    for (map<string, string>::const_iterator cit = scoreAttrs.begin(); 
-            cit != scoreAttrs.end(); ++cit) {
-        if (!m_strOtherScores.empty()) {
-            m_strOtherScores += ";";
-        }
-        m_strOtherScores += cit->first + "=" + cit->second;
     }
     return true;
 }
