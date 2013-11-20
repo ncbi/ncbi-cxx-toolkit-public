@@ -274,92 +274,48 @@ bool CGff3Writer::x_WriteAlignDisc(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGff3Writer::x_WriteAlignSpliced2( 
-    const CSeq_align& align,
-    bool bInvertWidth )
-//  ----------------------------------------------------------------------------
-{
-    typedef list<CRef<CSpliced_exon> > EXONS;
-    string idStr("."), methodStr("."), typeStr("."), startStr("."), stopStr("."), 
-        scoreStr("."), strandStr("."), phaseStr("."), attributesStr("");
-
-    const CSpliced_seg& spliced = align.GetSegs().GetSpliced();
-    const EXONS& exons = spliced.GetExons();
-    for (EXONS::const_iterator cit = exons.begin(); cit != exons.end(); ++cit) {
-        const CSpliced_exon& exon = **cit;
-        {{//id
-            idStr.clear();
-            const CSeq_id& genomicId = spliced.GetGenomic_id();
-            CSeq_id_Handle bestH = sequence::GetId(
-                genomicId, *m_pScope, sequence::eGetId_Best);
-            bestH.GetSeqId()->GetLabel(&idStr, CSeq_id::eContent);
-        }}
-        cerr << idStr << '\t';
-        {{//method
-        }}
-        cerr << methodStr << '\t';
-        {{//type
-        }}
-        cerr << typeStr << '\t';
-        {{//start
-            size_t genomicStart = exon.GetGenomic_start()+1;
-            startStr = NStr::IntToString(genomicStart);
-        }}
-        cerr << startStr << '\t';
-        {{//stop
-            size_t genomicEnd = exon.GetGenomic_end()+1;
-            stopStr = NStr::IntToString(genomicEnd);
-        }}
-        cerr << stopStr << '\t';
-        {{//score
-        }}
-        cerr << scoreStr << '\t';
-        {{//strand
-            ENa_strand strand = eNa_strand_plus;
-            try {
-                strand = exon.GetGenomic_strand();
-            }
-            catch(std::exception&) {
-                try {
-                    strand = spliced.GetGenomic_strand();
-                }
-                catch(std::exception&) {}
-            };
-            switch (strand) {
-            default:
-                strandStr = "+";
-                break;
-            case eNa_strand_unknown:
-                strandStr = ".";
-                break;
-            case eNa_strand_minus:
-                strandStr = "-";
-                break;
-            }
-        }}
-        cerr << strandStr << '\t';
-        {{//phase
-        }}
-        cerr << phaseStr << '\t';
-        {{//attributes
-        }}
-        cerr << attributesStr << endl;
-    }
-    return true;
-}
-
-//  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteAlignSpliced( 
     const CSeq_align& align,
     bool bInvertWidth )
 //  ----------------------------------------------------------------------------
 {
-    CRef<CSeq_align> pSa = align.GetSegs().GetSpliced().AsDiscSeg();
-    if ( align.IsSetScore() ) {
-        pSa->SetScore().insert( pSa->SetScore().end(),
-            align.GetScore().begin(), align.GetScore().end() );
+    _ASSERT(align.IsSetSegs() && align.GetSegs().IsSpliced());
+
+    typedef list<CRef<CSpliced_exon> > EXONS;
+    const EXONS& exons = align.GetSegs().GetSpliced().GetExons();
+
+    CGffFeatureContext dummy;
+
+    for (EXONS::const_iterator cit = exons.begin(); cit != exons.end(); ++cit) {
+        CGffAlignmentRecord record(dummy, m_uFlags, m_uRecordId);
+        const CSpliced_exon& exon = **cit;
+        if (!record.xSetIdSpliced(*m_pScope, align, exon)) {
+            return false;
+        }
+        if (!record.xSetMethodSpliced(*m_pScope, align, exon)) {
+            return false;
+        }
+        if (!record.xSetTypeSpliced(*m_pScope, align, exon)) {
+            return false;
+        }
+        if (!record.xSetLocationSpliced(*m_pScope, align, exon)) {
+            return false;
+        }
+        if (!record.xSetScoresSpliced(*m_pScope, align, exon)) {
+            return false;
+        }
+        if (!record.xSetPhaseSpliced(*m_pScope, align, exon)) {
+            return false;
+        }
+        if (!record.xSetAttributesSpliced(*m_pScope, align, exon)) {
+            return false;
+        }
+        if (!record.xSetAlignmentSpliced(*m_pScope, align, exon)) {
+            return false;
+        }
+        x_WriteAlignment(record);
     }
-    return x_WriteAlign(*pSa );
+    return true;
 }
 
 //  ----------------------------------------------------------------------------

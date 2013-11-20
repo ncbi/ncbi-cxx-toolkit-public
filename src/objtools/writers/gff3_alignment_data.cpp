@@ -35,9 +35,15 @@
 #include <objects/general/Dbtag.hpp>
 #include <objects/seqalign/Dense_seg.hpp>
 #include <objects/seqalign/Score.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
+#include <objects/seqalign/Product_pos.hpp>
+#include <objects/seqalign/Score_set.hpp>
+#include <objects/seqalign/Spliced_exon_chunk.hpp>
 
 #include <objtools/writers/gff3_alignment_data.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
+#include <objmgr/util/sequence.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -286,6 +292,291 @@ void CGffAlignmentRecord::AddMatch(
     }
     m_strAlignment += "M";
     m_strAlignment += NStr::IntToString( uSize );
+}
+
+//  ----------------------------------------------------------------------------
+bool CGffAlignmentRecord::xSetIdSpliced(
+    CScope& scope,
+    const CSeq_align& align,
+    const CSpliced_exon& exon)
+//  ----------------------------------------------------------------------------
+{
+    _ASSERT(align.IsSetSegs() && align.GetSegs().IsSpliced());
+    const CSpliced_seg& spliced = align.GetSegs().GetSpliced();
+    m_strId.clear();
+    const CSeq_id& genomicId = spliced.GetGenomic_id();
+    CSeq_id_Handle bestH = sequence::GetId(
+         genomicId, scope, sequence::eGetId_Best);
+    bestH.GetSeqId()->GetLabel(&m_strId, CSeq_id::eContent);
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGffAlignmentRecord::xSetMethodSpliced(
+    CScope& scope,
+    const CSeq_align& align,
+    const CSpliced_exon& exon)
+//  ----------------------------------------------------------------------------
+{
+    _ASSERT(align.IsSetSegs() && align.GetSegs().IsSpliced());
+    const CSpliced_seg& spliced = align.GetSegs().GetSpliced();
+
+    //maybe look at ModelEvidence first?
+
+#define EMIT(str) { m_strSource = str; break; }
+    m_strSource.clear();
+    const CSeq_id& genomicId = spliced.GetGenomic_id();
+    CSeq_id_Handle bestH = sequence::GetId(
+        genomicId, scope, sequence::eGetId_Best);
+    const CSeq_id& bestId = *bestH.GetSeqId();
+    switch(bestId.Which()) {
+    default:
+        break;
+    case CSeq_id::e_Local: EMIT("Local");
+    case CSeq_id::e_Gibbsq:
+    case CSeq_id::e_Gibbmt:
+    case CSeq_id::e_Giim:
+    case CSeq_id::e_Gi: EMIT("GenInfo");
+    case CSeq_id::e_Genbank: EMIT("Genbank");
+    case CSeq_id::e_Swissprot: EMIT("SwissProt");
+    case CSeq_id::e_Patent: EMIT("Patent");
+    case CSeq_id::e_Other: EMIT("RefSeq");
+    case CSeq_id::e_General: 
+        EMIT(genomicId.GetGeneral().GetDb());
+    }
+    if (m_strSource.empty()) {
+        m_strSource = CSeq_id::SelectionName(genomicId.Which());
+        NStr::ToUpper(m_strSource);
+    }
+#undef EMIT
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGffAlignmentRecord::xSetTypeSpliced(
+    CScope& scope,
+    const CSeq_align& align,
+    const CSpliced_exon& exon)
+//  ----------------------------------------------------------------------------
+{
+    _ASSERT(align.IsSetSegs() && align.GetSegs().IsSpliced());
+    const CSpliced_seg& spliced = align.GetSegs().GetSpliced();
+
+    const char* strProtMatch     = "protein_match";
+    const char* strEstMatch      = "EST_match";
+    const char* strTransNucMatch = "translated_nucleotide_match";
+    const char* strCdnaMatch     = "cDNA_match";
+
+    const CSeq_id& genomicId = *sequence::GetId(
+        spliced.GetGenomic_id(), scope, sequence::eGetId_Best).GetSeqId();
+    const CSeq_id& productId =*sequence::GetId(
+        spliced.GetProduct_id(), scope, sequence::eGetId_Best).GetSeqId();
+    CSeq_id::EAccessionInfo genomicInfo = genomicId.IdentifyAccession();
+    CSeq_id::EAccessionInfo productInfo = productId.IdentifyAccession();
+
+    m_strType = "match";
+    if (productInfo & CSeq_id::fAcc_prot) {
+        m_strType = strProtMatch;
+    }
+    else if ((productInfo & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est) {
+        m_strType = strEstMatch;
+    }
+    else if ((productInfo & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_mrna) {
+        m_strType = strCdnaMatch;
+    }
+    else if ((productInfo & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_tsa) {
+        m_strType = strCdnaMatch;
+    }
+    else if (genomicInfo & CSeq_id::fAcc_prot) {
+        m_strType = strTransNucMatch;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGffAlignmentRecord::xSetLocationSpliced(
+    CScope& scope,
+    const CSeq_align& align,
+    const CSpliced_exon& exon)
+//  ----------------------------------------------------------------------------
+{
+    _ASSERT(align.IsSetSegs() && align.GetSegs().IsSpliced());
+    const CSpliced_seg& spliced = align.GetSegs().GetSpliced();
+
+    m_uSeqStart = exon.GetGenomic_start();
+    m_uSeqStop = exon.GetGenomic_end();
+    try {
+        this->m_peStrand = new ENa_strand(exon.GetGenomic_strand());
+    }
+    catch(std::exception&) {
+        try {
+            this->m_peStrand = new ENa_strand(spliced.GetGenomic_strand());
+        }
+        catch(std::exception&) {}
+    };
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGffAlignmentRecord::xSetPhaseSpliced(
+    CScope& scope,
+    const CSeq_align& align,
+    const CSpliced_exon& exon)
+//  ----------------------------------------------------------------------------
+{
+    //meaningless for alignments
+
+    //_ASSERT(align.IsSetSegs() && align.GetSegs().IsSpliced());
+    //const CSpliced_seg& spliced = align.GetSegs().GetSpliced();
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGffAlignmentRecord::xSetAttributesSpliced(
+    CScope& scope,
+    const CSeq_align& align,
+    const CSpliced_exon& exon)
+//  ----------------------------------------------------------------------------
+{
+    //note: depends on xSetLocationSpliced already been called
+
+    _ASSERT(align.IsSetSegs() && align.GetSegs().IsSpliced());
+    const CSpliced_seg& spliced = align.GetSegs().GetSpliced();
+
+    //Target:
+    string targetStr("");
+    const CSeq_id& productId = spliced.GetProduct_id();
+    CSeq_id_Handle bestH = sequence::GetId(
+        productId, scope, sequence::eGetId_Best);
+    bestH.GetSeqId()->GetLabel(&targetStr, CSeq_id::eContent);
+
+    string start = NStr::IntToString(exon.GetProduct_start().AsSeqPos()+1);
+    string stop = NStr::IntToString(exon.GetProduct_end().AsSeqPos()+1);
+    string strand = "+";
+    m_strAttributes += 
+        ";Target=" + targetStr + " " + start + " " + stop + " " + strand;
+
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGffAlignmentRecord::xSetScoresSpliced(
+    CScope& scope,
+    const CSeq_align& align,
+    const CSpliced_exon& exon)
+//  ----------------------------------------------------------------------------
+{
+    _ASSERT(align.IsSetSegs() && align.GetSegs().IsSpliced());
+    const CSpliced_seg& spliced = align.GetSegs().GetSpliced();
+
+    map<string, string> scoreAttrs;
+    if (align.IsSetScore()) {
+        typedef vector<CRef<CScore> > SCORES;
+
+        const SCORES& scores = align.GetScore();
+        for (SCORES::const_iterator cit = scores.begin(); cit != scores.end(); ++cit) {
+            const CScore& score = **cit;
+            if (!score.IsSetId() || !score.GetId().IsStr()  ||  !score.IsSetValue()) {
+                continue;
+            }
+            const string& key = score.GetId().GetStr();
+            const CScore::TValue& value = score.GetValue();
+            switch(value.Which()) {
+            default:
+                continue;
+            case CScore::TValue::e_Int:
+                scoreAttrs[key] = NStr::IntToString(value.GetInt());
+                continue;
+            case CScore::TValue::e_Real:
+                scoreAttrs[key] = NStr::DoubleToString(value.GetReal());
+                continue;
+            }
+        }
+    }
+    if (exon.IsSetScores()) {
+        typedef list<CRef<CScore> > SCORES;
+
+        const SCORES& scores = exon.GetScores().Get();
+        for (SCORES::const_iterator cit = scores.begin(); cit != scores.end(); ++cit) {
+            const CScore& score = **cit;
+            if (!score.IsSetId() || !score.GetId().IsStr()  ||  !score.IsSetValue()) {
+                continue;
+            }
+            const string& key = score.GetId().GetStr();
+            const CScore::TValue& value = score.GetValue();
+            if (key == "score") {
+                switch(value.Which()) {
+                default:
+                    continue;
+                case CScore::TValue::e_Int:
+                    m_pdScore = new double(value.GetInt());
+                    continue;
+                case CScore::TValue::e_Real:
+                    m_pdScore = new double(value.GetReal());
+                    continue;
+                }
+            }
+            else {
+                switch(value.Which()) {
+                default:
+                    continue;
+                case CScore::TValue::e_Int:
+                    scoreAttrs[key] = NStr::IntToString(value.GetInt());
+                    continue;
+                case CScore::TValue::e_Real:
+                    scoreAttrs[key] = NStr::DoubleToString(value.GetReal());
+                    continue;
+                }
+            }
+        }
+    }
+    for (map<string, string>::const_iterator cit = scoreAttrs.begin(); 
+            cit != scoreAttrs.end(); ++cit) {
+        if (!m_strOtherScores.empty()) {
+            m_strOtherScores += ";";
+        }
+        m_strOtherScores += cit->first + "=" + cit->second;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGffAlignmentRecord::xSetAlignmentSpliced(
+    CScope& scope,
+    const CSeq_align& align,
+    const CSpliced_exon& exon)
+//  ----------------------------------------------------------------------------
+{
+    _ASSERT(align.IsSetSegs() && align.GetSegs().IsSpliced());
+    if (!exon.IsSetParts()) {
+        return true;
+    }
+
+    typedef list<CRef<CSpliced_exon_chunk> > CHUNKS;
+
+    const CHUNKS& chunks = exon.GetParts();
+    m_strAlignment.clear();
+    m_bIsTrivial = true;
+    for (CHUNKS::const_iterator cit = chunks.begin(); cit != chunks.end(); ++cit) {
+        const CSpliced_exon_chunk& chunk = **cit;
+        switch (chunk.Which()) {
+        default:
+            break;
+        case CSpliced_exon_chunk::e_Match:
+            m_strAlignment += "M" + NStr::IntToString(chunk.GetMatch());
+            break;
+        case CSpliced_exon_chunk::e_Genomic_ins:
+            m_strAlignment += "D" + NStr::IntToString(chunk.GetGenomic_ins());
+            m_bIsTrivial = false;
+            break;
+        case CSpliced_exon_chunk::e_Product_ins:
+            m_strAlignment += "I" + NStr::IntToString(chunk.GetProduct_ins());
+            m_bIsTrivial = false;
+            break;
+        }
+        m_strAlignment += " ";
+    }
+    return true;
 }
 
 END_objects_SCOPE

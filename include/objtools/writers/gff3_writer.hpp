@@ -91,9 +91,6 @@ protected:
     bool x_WriteAlignSpliced(
         const CSeq_align&,    
         bool=false );                   // invert width 
-    bool x_WriteAlignSpliced2(
-        const CSeq_align&,    
-        bool=false );                   // invert width 
     virtual bool x_WriteAlignDisc(
         const CSeq_align&,    
         bool=false );                   // invert width 

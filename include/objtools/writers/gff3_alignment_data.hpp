@@ -50,10 +50,10 @@ public:
     CGffAlignmentRecord(
             CGffFeatureContext& fc,
             unsigned int uFlags =0,
-            unsigned int uRecordId =0 ):
+            unsigned int uRecordId =0):
         CGffWriteRecord(fc, NStr::UIntToString(uRecordId)),
         m_uFlags(uFlags),
-        m_bIsTrivial(true) 
+        m_bIsTrivial(true)
     {
         m_strType = "match";
         m_strAttributes = string( "ID=" ) + NStr::UIntToString( uRecordId );
@@ -90,6 +90,47 @@ public:
         const CAlnMap::TSignedRange& targetPiece ); 
 
     string StrAttributes() const;
+
+    //spliced alignment direct conversion
+    bool xSetIdSpliced(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
+
+    bool xSetMethodSpliced(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
+
+    bool xSetTypeSpliced(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
+
+    bool xSetLocationSpliced(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
+
+    bool xSetPhaseSpliced(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
+
+    bool xSetAttributesSpliced(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
+
+    bool xSetScoresSpliced(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
+
+    bool xSetAlignmentSpliced(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
 
 protected:
     unsigned int m_uFlags;
