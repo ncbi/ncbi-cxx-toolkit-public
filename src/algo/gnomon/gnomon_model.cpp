@@ -264,22 +264,26 @@ CCDSInfo CCDSInfo::MapFromOrigToEdited(const CAlignMap& amap) const
 {
     CCDSInfo new_cds(false);
 
-    _ASSERT(new_cds.ProtReadingFrame().Empty() && new_cds.ReadingFrame().Empty() && new_cds.Start().Empty() && new_cds.Stop().Empty());
-
     if(ProtReadingFrame().NotEmpty()) {
-        new_cds.SetReadingFrame(amap.MapRangeOrigToEdited(ProtReadingFrame(), false), true);
+        new_cds.SetReadingFrame(amap.MapRangeOrigToEdited(ProtReadingFrame(), true), true);
+        _ASSERT(new_cds.ProtReadingFrame().NotEmpty());
     }
     if(ReadingFrame().NotEmpty()) {
         new_cds.SetReadingFrame(amap.MapRangeOrigToEdited(ReadingFrame(), true), false);
+        _ASSERT(new_cds.ReadingFrame().NotEmpty());
     }
     if(HasStart()) {
         new_cds.SetStart(amap.MapRangeOrigToEdited(Start(), false), ConfirmedStart());
+        _ASSERT(new_cds.HasStart());
     }
     if(HasStop()) {
         new_cds.SetStop(amap.MapRangeOrigToEdited(Stop(), false), ConfirmedStop());
+        _ASSERT(new_cds.HasStop());
     }
     ITERATE(TPStops, i, PStops()) {
-        new_cds.AddPStop(amap.MapRangeOrigToEdited(*i, false));
+        TSignedSeqRange p = amap.MapRangeOrigToEdited(*i, false);
+        _ASSERT(p.NotEmpty());
+        new_cds.AddPStop(p);
     }
     if(HasStart() && MaxCdsLimits().GetFrom() == Start().GetFrom()) {
         new_cds.Set5PrimeCdsLimit(amap.MapOrigToEdited(Start().GetFrom()));
@@ -1520,17 +1524,19 @@ void CollectAttributes(const CAlignModel& a, map<string,string>& attributes)
     }
     attributes["support"].erase(0,1);
 
+    list<string> tp;
     ITERATE(list< CRef<CSeq_id> >, i, a.TrustedProt()) {
-        if(!attributes["TrustedProt"].empty())
-            attributes["TrustedProt"] += ",";
-        attributes["TrustedProt"] += CIdHandler::ToString(**i);      
+        tp.push_back(CIdHandler::ToString(**i));      
     }
+    tp.sort();
+    attributes["TrustedProt"] = NStr::Join(tp,",");
 
+    list<string> tm;
     ITERATE(list< CRef<CSeq_id> >, i, a.TrustedmRNA()) {
-        if(!attributes["TrustedmRNA"].empty())
-            attributes["TrustedmRNA"] += ",";
-        attributes["TrustedmRNA"] += CIdHandler::ToString(**i);      
+        tm.push_back(CIdHandler::ToString(**i));      
     }
+    tm.sort();
+    attributes["TrustedmRNA"] = NStr::Join(tm,",");
 
     if(a.TargetLen() > 0)
         attributes["TargetLen"] = NStr::IntToString(a.TargetLen());  

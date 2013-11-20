@@ -45,6 +45,14 @@ BEGIN_SCOPE(ncbi)
 BEGIN_SCOPE(gnomon)
 USING_SCOPE(sequence);
 
+string GetTargetAcc(int shift, const deque<char>& id_pool) {
+    string target;
+    for(int i = shift; id_pool[i] != 0; ++i)
+        target.push_back(id_pool[i]);
+
+    return target;
+}
+
 CAlignModel CAlignCommon::GetAlignment(const SAlignIndividual& ali, const deque<char>& target_id_pool) const {
 
     CGeneModel a(isPlus() ? ePlus : eMinus, 0, isEST() ? CGeneModel::eEST : CGeneModel::eSR);
@@ -96,24 +104,25 @@ CAlignModel CAlignCommon::GetAlignment(const SAlignIndividual& ali, const deque<
     CAlignMap amap(a.Exons(), a.FrameShifts(), a.Strand());
     CAlignModel align(a, amap);
 
-    string target;
-    for(int i = ali.m_target_id; target_id_pool[i] != 0; ++i)
-        target.push_back(target_id_pool[i]);
-
-    CRef<CSeq_id> target_id(CIdHandler::ToSeq_id(target));
+    CRef<CSeq_id> target_id(CIdHandler::ToSeq_id(GetTargetAcc(ali.m_target_id, target_id_pool)));
     align.SetTargetId(*target_id);
 
     return align;
 };
 
-bool LeftAndLongFirstOrder(const SAlignIndividual& a, const SAlignIndividual& b) {  // left and long first
+struct LeftAndLongFirstOrder {
+    LeftAndLongFirstOrder(const deque<char>& idp) : id_pool(idp) {}
+    const deque<char>& id_pool;
+
+    bool operator() (const SAlignIndividual& a, const SAlignIndividual& b) {  // left and long first
         if(a.m_range == b.m_range)
-            return a.m_target_id < b.m_target_id;
+            return GetTargetAcc(a.m_target_id,id_pool) < GetTargetAcc(b.m_target_id,id_pool);
         else if(a.m_range.GetFrom() != b.m_range.GetFrom())
             return a.m_range.GetFrom() < b.m_range.GetFrom();
         else
             return a.m_range.GetTo() > b.m_range.GetTo();
-}
+    }
+};
 
 bool OriginalOrder(const SAlignIndividual& a, const SAlignIndividual& b) {  // the order in which alignmnets were added
     return a.m_target_id < b.m_target_id;
@@ -1268,7 +1277,7 @@ bool CAlignCollapser::CheckAndInsert(const CAlignModel& align, TAlignModelCluste
 
 void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
 
-    cerr << "Added " << m_count << " alignments to collapser" << endl;
+    cerr << "Added " << m_count << " alignments to collapser for contig " << m_contig_name << endl;
 
     if(m_count == 0)
         return;
@@ -1301,7 +1310,7 @@ void CAlignCollapser::GetCollapsedAlgnments(TAlignModelClusterSet& clsset) {
                     ++total;
             }
         } else {
-            sort(alideque.begin(),alideque.end(),LeftAndLongFirstOrder);
+            sort(alideque.begin(),alideque.end(),LeftAndLongFirstOrder(id_pool));
 
             bool leftisfixed = (alc.isCap() && alc.isPlus()) || (alc.isPolyA() && alc.isMinus());
             bool rightisfixed = (alc.isPolyA() && alc.isPlus()) || (alc.isCap() && alc.isMinus());
@@ -1791,7 +1800,7 @@ void CAlignCollapser::CollapsIdentical() {
         if(!alideque.empty()) {
 
             //remove identicals
-            sort(alideque.begin(),alideque.end(),LeftAndLongFirstOrder);
+            sort(alideque.begin(),alideque.end(),LeftAndLongFirstOrder(id_pool));
             deque<SAlignIndividual>::iterator ali = alideque.begin();
             for(deque<SAlignIndividual>::iterator farp = ali+1; farp != alideque.end(); ++farp) {
                 _ASSERT(farp > ali);

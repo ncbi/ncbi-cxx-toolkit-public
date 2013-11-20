@@ -259,14 +259,14 @@ public:
     void RestoreTrimmedEnds(int trim);
     void RemoveFshiftsFromUTRs();
     void RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigAligns& orig_aligns);
-    void SetOpenForPartialyAlignedProteins(map<string, pair<bool,bool> >& prot_complet, TOrigAligns& orig_aligns);
+    void SetOpenForPartialyAlignedProteins(map<string, pair<bool,bool> >& prot_complet);
     void ClipToCompleteAlignment(EStatus determinant); // determinant - cap or polya
     void ClipLowCoverageUTR(double utr_clip_threshold, const CGnomonEngine& gnomon);
     void CalculateDropLimits();
     void CalculateSupportAndWeightFromMembers();
     void ClipChain(TSignedSeqRange limits);
 
-    void SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool> >& prot_complet, TOrigAligns& orig_aligns, const SMinScor& minscor);
+    void SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool> >& prot_complet, const SMinScor& minscor);
     void CollectTrustedmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& minscor);
     void SetBestPlacement(TOrigAligns& orig_aligns);
     void SetConsistentCoverage();
@@ -618,8 +618,10 @@ static bool DescendingModelOrder(const CChain& a, const CChain& b)
             return true;
         else if(a.Weight() < b.Weight()) 
             return false;
-        else 
+        else if(a.Limits().GetLength() != b.Limits().GetLength())
             return (a.Limits().GetLength() < b.Limits().GetLength());   // everything else equal prefer compact model
+        else
+            return a.ID() < b.ID();
     } else {                       // both noncoding
         double asize = a.m_splice_weight;
         double bsize = b.m_splice_weight;
@@ -643,8 +645,10 @@ static bool DescendingModelOrder(const CChain& a, const CChain& b)
             return true;
         else if(bsize > asize)
             return false;
-        else 
+        else if(a.Limits().GetLength() != b.Limits().GetLength())
             return (a.Limits().GetLength() < b.Limits().GetLength());   // everything else equal prefer compact model
+        else
+            return a.ID() < b.ID();
     }
 }
 
@@ -1104,7 +1108,8 @@ void CChainer::CChainerImpl::TrimAlignmentsIncludedInDifferentGenes(list<CGene>&
             CChain& chain = **ic;
             ITERATE(TContained, im, chain.m_members) {
                 SChainMember& m = **im;
-                if(orig_aligns[m.m_align->ID()]->Continuous())
+                _ASSERT(m.m_orig_align);
+                if(m.m_orig_align->Continuous())
                     gmembers.insert(&m);
             }
         }
@@ -1531,14 +1536,6 @@ struct CdsNumOrder
     }
 };
 
-static bool s_ByExonNumberAndLocation(const CGeneModel& a, const CGeneModel& b)
-    {
-        if (a.Exons().size() != b.Exons().size()) return a.Exons().size() < b.Exons().size();
-        if (a.Strand() != b.Strand()) return a.Strand() < b.Strand();
-        if (a.Limits() != b.Limits()) return a.Limits() < b.Limits();
-        return a.ID() < b.ID(); // to make sort deterministic
-    }
-
 struct ScoreOrder
 {
     bool operator()(const SChainMember* ap, const SChainMember* bp)
@@ -1625,7 +1622,7 @@ void CChainMembers::InsertMember(CGeneModel& algn, SChainMember* copy_ofp)
 
 void CChainMembers::InsertMember(SChainMember& m, SChainMember* copy_ofp)
 {
-    m.m_mem_id = size();
+    m.m_mem_id = size()+1;
     m_members.push_back(m);
     push_back(&m_members.back());
 
@@ -2407,9 +2404,27 @@ void MarkUnwantedLowSupportIntrons(vector<SChainMember*>& pointers, const SMinSc
         (*i)->m_marked_for_deletion = !GoodSupportForIntrons(*(*i)->m_align, minscor, mrna_count, est_count, rnaseq_count); 
 }
 
+struct GModelOrder
+{
+    GModelOrder(TOrigAligns& oa) : orig_aligns(oa) {}
+
+    TOrigAligns& orig_aligns;
+
+    bool operator()(const CGeneModel& a, const CGeneModel& b)
+    {
+        if(a.Limits() != b.Limits())
+            return a.Limits() < b.Limits();
+        else
+            return *orig_aligns[a.ID()]->GetTargetId() < *orig_aligns[ b.ID()]->GetTargetId(); // to make sort deterministic
+    }
+};
+
+
 TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
 {
     if(clust.empty()) return TGeneModelList();
+
+    clust.sort(GModelOrder(orig_aligns));
 
     ITERATE (TGeneModelList, it, clust) {
         const CGeneModel& align = *it;
@@ -2472,6 +2487,7 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
 
     vector<SChainMember*> pointers;
     ITERATE(vector<SChainMember*>, ip, allpointers) {
+        _ASSERT((*ip)->m_orig_align);
         if(!(*ip)->m_not_for_chaining)
             pointers.push_back(*ip);
     }
@@ -2602,7 +2618,6 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
 
         CChain chain(mi);
         chain.RemoveFshiftsFromUTRs();
-
         mi.MarkIncludedForChain();
         chain.ClipToCompleteAlignment(CGeneModel::eCap);
         chain.ClipToCompleteAlignment(CGeneModel::ePolyA);
@@ -2890,6 +2905,32 @@ SChainMember* CChainer::CChainerImpl::FindOptimalChainForProtein(vector<SChainMe
     return best_right;
 }
 
+struct AlignLenOrder
+{
+    AlignLenOrder(TOrigAligns& oa) : orig_aligns(oa) {}
+    TOrigAligns& orig_aligns;
+
+    bool operator()(const vector<CGeneModel*>* ap, const vector<CGeneModel*>* bp)
+    {
+        const vector<CGeneModel*>& partsa = *ap;
+        const vector<CGeneModel*>& partsb = *bp;
+        
+        int align_lena = 0;
+        ITERATE(vector<CGeneModel*>, k, partsa)
+            align_lena += (*k)->AlignLen();
+
+        int align_lenb = 0;
+        ITERATE(vector<CGeneModel*>, k, partsb)
+            align_lenb += (*k)->AlignLen();
+
+        if(align_lena != align_lenb) {
+            return align_lena > align_lenb;
+        } else {
+            return *orig_aligns[partsa.front()->ID()]->GetTargetId() < *orig_aligns[partsb.front()->ID()]->GetTargetId(); // to make sort deterministic
+        }
+    }    
+};
+
 void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, vector<SChainMember*>& pointers_all) {
 
     sort(pointers_all.begin(),pointers_all.end(),LeftOrderD());
@@ -2904,21 +2945,18 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
         }
     }
 
-    typedef multimap< int,vector<CGeneModel*>*,greater<int> > TLenChainMemberPmap;
-    TLenChainMemberPmap gapped_sorted_protein_parts;
+    vector<vector<CGeneModel*>*> gapped_sorted_protein_parts;
     NON_CONST_ITERATE(TIdChainMembermap, ip, protein_parts) {
         vector<CGeneModel*>& parts = ip->second;
         if(parts.size() > 1) {
             sort(parts.begin(),parts.end(),AlignSeqOrder());
-            int align_len = 0;
-            ITERATE(vector<CGeneModel*>, k, parts)
-                align_len += (*k)->AlignLen();
-            gapped_sorted_protein_parts.insert(TLenChainMemberPmap::value_type(align_len,&parts));
+            gapped_sorted_protein_parts.push_back(&parts);
         }
     }
-
-    NON_CONST_ITERATE(TLenChainMemberPmap, ip, gapped_sorted_protein_parts) {  // make chains starting from long proteins
-        vector<CGeneModel*>& parts = *ip->second;
+    sort(gapped_sorted_protein_parts.begin(),gapped_sorted_protein_parts.end(),AlignLenOrder(orig_aligns));
+    
+    NON_CONST_ITERATE(vector<vector<CGeneModel*>*>, ip, gapped_sorted_protein_parts) {  // make chains starting from long proteins
+        vector<CGeneModel*>& parts = **ip;
         Int8 id = parts.front()->ID();
 
         CGeneModel palign(parts.front()->Strand(), id, CGeneModel::eProt);
@@ -3032,8 +3070,11 @@ void CChainer::CChainerImpl::CreateChainsForPartialProteins(TChainList& chains, 
                 Duplicate5pendsAndShortCDSes(unmapointers, unmacl);
                 FindContainedAlignments(unmapointers);
                 
-                ITERATE(vector<SChainMember*>, ip, unmapointers)
+                ITERATE(vector<SChainMember*>, ip, unmapointers) {
+                    _ASSERT((*ip)->m_orig_align);
+                    (*ip)->m_mem_id = -(*ip)->m_mem_id;   // unique m_mem_id
                     pointers.push_back(*ip);
+                }
                 
                 sort(pointers.begin(),pointers.end(),LeftOrderD());
 
@@ -3133,8 +3174,8 @@ void CChainer::CChainerImpl::SetFlagsForChains(TChainList& chains) {
     NON_CONST_ITERATE(TChainList, it, chains) {
         CChain& chain = *it;
         chain.RestoreReasonableConfirmedStart(*m_gnomon, orig_aligns);
-        chain.SetOpenForPartialyAlignedProteins(prot_complet, orig_aligns);
-        chain.SetConfirmedStartStopForCompleteProteins(prot_complet, orig_aligns, minscor);
+        chain.SetOpenForPartialyAlignedProteins(prot_complet);
+        chain.SetConfirmedStartStopForCompleteProteins(prot_complet, minscor);
         chain.CollectTrustedmRNAsProts(orig_aligns, minscor);
         chain.SetBestPlacement(orig_aligns);
         chain.SetConsistentCoverage();
@@ -3375,7 +3416,16 @@ void CChain::SetBestPlacement(TOrigAligns& orig_aligns) {
 struct SLinker
 {
     SLinker() : m_member(0), m_value(0), m_left(0), m_not_wanted(false), m_count(0), m_not_wanted_count(0), m_connected(false) {}
-    bool operator<(const SLinker& sl) const { return m_range.GetFrom() < sl.m_range.GetFrom(); }
+    bool operator<(const SLinker& sl) const {
+        if(m_range != sl.m_range)
+            return m_range < sl.m_range; 
+        else if(!m_member)
+            return true;
+        else if (!sl.m_member)
+            return false;
+        else
+            return m_member->m_mem_id < sl.m_member->m_mem_id;  // to make sort deterministic
+    }
 
     SChainMember* m_member;
     TSignedSeqRange m_range;
@@ -3448,8 +3498,11 @@ void CChain::CalculateSupportAndWeightFromMembers() {
                 if(orig_align.Exons()[i-1].m_ssplice && orig_align.Exons()[i].m_fsplice)
                     all_introns_included = chain_introns.count(TSignedSeqRange(orig_align.Exons()[i-1].GetTo(),orig_align.Exons()[i].GetFrom()));
             }
-            if(!all_introns_included)   // intron was clipped by UTR clip or part is not in chain
-                sl.m_not_wanted = true; 
+            if(!all_introns_included) {   // intron was clipped by UTR clip or part is not in chain
+                sl.m_not_wanted = true;
+                if(align.Type()&eNotForChaining) // if TSA was clipped remove from support if possible
+                    sl.m_value = 10000;
+            } 
         }
     }
 
@@ -3551,14 +3604,14 @@ void CChain::CalculateSupportAndWeightFromMembers() {
     TSignedSeqRange protreadingframe;
     ReplaceSupport(CSupportInfoSet());
 
-    SetType(Type() & (~(eSR | eEST | emRNA | eProt)));
+    SetType(Type() & (~(eSR | eEST | emRNA | eProt | eNotForChaining)));
     ITERATE (TContained, it, m_members) {
         const CGeneModel& align = *(*it)->m_align;
         Int8 id = align.ID();
         if(!sp_not_wanted.count(id)) {
-            SetType(Type() | (align.Type() & (eSR | eEST | emRNA | eProt)));
+            SetType(Type() | (align.Type() & (eSR | eEST | emRNA | eProt | eNotForChaining)));
             protreadingframe += align.GetCdsInfo().ProtReadingFrame();       
-            m_splice_weight += (*it)->m_splice_num;            
+            m_splice_weight += (*it)->m_splice_weight;            
             if(sp.insert(id).second) {   // avoid counting parts of splitted aligns
                 weight += align.Weight();
                 AddSupport(CSupportInfo(id,sp_core.count(id)));
@@ -3604,18 +3657,20 @@ void CChain::RestoreTrimmedEnds(int trim)
     }
 }
 
-void CChain::SetOpenForPartialyAlignedProteins(map<string, pair<bool,bool> >& prot_complet, TOrigAligns& orig_aligns) {
+void CChain::SetOpenForPartialyAlignedProteins(map<string, pair<bool,bool> >& prot_complet) {
     if(ConfirmedStart() || !HasStart() || !HasStop() || OpenCds() || !Open5primeEnd() || (Type()&CGeneModel::eProt) == 0)
         return;
 
     bool found_length_match = false;
     ITERATE (TContained, it, m_members) {
-        CAlignModel* orig_align = orig_aligns[(*it)->m_align->ID()];
+        CAlignModel* orig_align = (*it)->m_orig_align;
+        _ASSERT(orig_align);
         if((orig_align->Type() & CGeneModel::eProt) == 0 || orig_align->TargetLen() == 0)   // not a protein or not known length
             continue;
     
         string accession = orig_align->TargetAccession();
         map<string, pair<bool,bool> >::iterator iter = prot_complet.find(accession);
+        _ASSERT(iter != prot_complet.end());
         if(iter == prot_complet.end() || !iter->second.first || !iter->second.second) // unknown or partial protein
             continue;
 
@@ -3643,7 +3698,8 @@ void CChain::RestoreReasonableConfirmedStart(const CGnomonEngine& gnomon, TOrigA
     TSignedSeqPos rf=0; 
     
     ITERATE (TContained, it, m_members) {
-        CAlignModel* orig_align = orig_aligns[(*it)->m_align->ID()];
+        CAlignModel* orig_align = (*it)->m_orig_align;
+        _ASSERT(orig_align);
         
         if(orig_align->ConfirmedStart() && Include((*it)->m_align->Limits(),orig_align->GetCdsInfo().Start())) {    // right part of orig is included
             if(Strand() == ePlus) {
@@ -4335,6 +4391,7 @@ void CChain::SetConsistentCoverage()
         Status() |= eConsistentCoverage;
 }
 
+/*
 pair<bool,bool> ProteinPartialness(map<string, pair<bool,bool> >& prot_complet, const CAlignModel& align, CScope& scope)
 {
     string accession = align.TargetAccession();
@@ -4357,12 +4414,10 @@ bool RightPartialProtein(map<string, pair<bool,bool> >& prot_complet, const CAli
 {
     return !ProteinPartialness(prot_complet, align, scope).second;
 }
+*/
 
-void CChain::SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool> >& prot_complet, TOrigAligns& orig_aligns, const SMinScor& minscor)
+void CChain::SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool> >& prot_complet, const SMinScor& minscor)
 {
-    CScope scope(*CObjectManager::GetInstance());
-    scope.AddDefaults();
-
     bool setconfstart = false;
     bool setconfstop = false;
 
@@ -4378,8 +4433,14 @@ void CChain::SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool
             if(!ConfirmedStop() && HasStop())
                 setconfstop = true; 
         } else {
-            CAlignModel* orig_align = orig_aligns[(*i)->m_align->ID()];        
+            CAlignModel* orig_align = (*i)->m_orig_align;        
             if(orig_align->TargetLen() == 0)   // protein of not known length
+                continue;
+
+            string accession = orig_align->TargetAccession();
+            map<string, pair<bool,bool> >::iterator iter = prot_complet.find(accession);
+            _ASSERT(iter != prot_complet.end());
+            if(iter == prot_complet.end())
                 continue;
 
             TSignedSeqRange fivep_exon = orig_align->Exons().front().Limits();
@@ -4388,7 +4449,7 @@ void CChain::SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool
                 swap(fivep_exon,threep_exon);
 
             if(!ConfirmedStart() && HasStart() && fivep_exon.IntersectingWith((*i)->m_align->Limits()) && 
-               !LeftPartialProtein(prot_complet, *orig_align, scope) && Include(Limits(),(*i)->m_align->Limits())) {  // protein has start
+               iter->second.first && Include(Limits(),(*i)->m_align->Limits())) {  // protein has start
 
                 TSignedSeqPos not_aligned =  orig_align->GetAlignMap().MapRangeOrigToEdited((*i)->m_align->Limits(),false).GetFrom()-1;
                 if(not_aligned <= (1.-minscor.m_minprotfrac)*orig_align->TargetLen()) {                                                         // well aligned
@@ -4403,7 +4464,7 @@ void CChain::SetConfirmedStartStopForCompleteProteins(map<string, pair<bool,bool
             }
 
             if(!ConfirmedStop() && HasStop() && threep_exon.IntersectingWith((*i)->m_align->Limits()) && 
-               !RightPartialProtein(prot_complet, *orig_align, scope) && Include(Limits(),(*i)->m_align->Limits())) {  // protein has stop  
+               iter->second.second && Include(Limits(),(*i)->m_align->Limits())) {  // protein has stop  
 
                 TSignedSeqPos not_aligned = orig_align->TargetLen()-orig_align->GetAlignMap().MapRangeOrigToEdited((*i)->m_align->Limits(),false).GetTo();
                 if(not_aligned <= (1.-minscor.m_minprotfrac)*orig_align->TargetLen()) {                                                         // well aligned 
@@ -4453,7 +4514,6 @@ void CChain::CollectTrustedmRNAsProts(TOrigAligns& orig_aligns, const SMinScor& 
         ITERATE(Tint8int, i, palignedlen) {
             CAlignModel* orig_align = orig_aligns[i->first];
             if((Continuous() && i->second > 0.8*orig_align->TargetLen()) || i->second > minscor.m_minprotfrac*orig_align->TargetLen())                                 // well aligned trusted protein
-            //            if(i->second > minscor.m_minprotfrac*orig_align->TargetLen())                                 // well aligned trusted protein
                 InsertTrustedProt(*orig_align->TrustedProt().begin());
         }
     }
@@ -4737,39 +4797,14 @@ void CChainer::ScoreCDSes_FilterOutPoorAlignments(TGeneModelList& clust)
 
 void CChainer::CChainerImpl::ScoreCDSes_FilterOutPoorAlignments(TGeneModelList& clust)
 {
-    //    CScope scope(*CObjectManager::GetInstance());
-    //    scope.AddDefaults();
-
-    clust.sort(s_ByExonNumberAndLocation);
-
-    static CGeneModel dummy_align;
-    CGeneModel* prev_align = &dummy_align;
-    
     for(TGeneModelList::iterator itcl = clust.begin(); itcl != clust.end(); ) {
 
         CGeneModel& algn = *itcl;
         CAlignModel* orig = orig_aligns[algn.ID()];
 
-        bool same_as_prev = algn.IdenticalAlign(*prev_align);
-        
-        if (same_as_prev && (prev_align->Status() & CGeneModel::eSkipped)!=0) {
-            const string& reason =  prev_align->GetComment();
-            SkipReason(prev_align = orig, reason);
-            itcl = clust.erase(itcl);
-            continue;
-        }
-
         if ((algn.Type() & CGeneModel::eProt)!=0 || algn.ConfirmedStart()) {   // this includes protein alignments and mRNA with confirmed CDSes
 
-            if (algn.Score()==BadScore()) {
-                if (same_as_prev && !algn.ConfirmedStart()) {
-                    CCDSInfo cdsinfo = prev_align->GetCdsInfo();
-                    algn.SetCdsInfo(cdsinfo);
-                } else {
-                    m_gnomon->GetScore(algn);
-                }
-            }
-           
+            m_gnomon->GetScore(algn);
             double ms = GoodCDNAScore(algn);
 
             if (algn.Score() == BadScore() || (algn.Score() < ms && (algn.Type()&CGeneModel::eProt) && !(algn.Status()&CGeneModel::eBestPlacement) && orig->AlignLen() < minscor.m_minprotfrac*orig->TargetLen())) { // all mRNA with confirmed CDS and best placed or reasonably aligned proteins with known length will get through with any finite score 
@@ -4778,12 +4813,11 @@ void CChainer::CChainerImpl::ScoreCDSes_FilterOutPoorAlignments(TGeneModelList& 
                     ost << "Short alignment " << algn.AlignLen();
                 else
                     ost << "Low score " << algn.Score();
-                SkipReason(prev_align = orig, CNcbiOstrstreamToString(ost));
+                SkipReason(orig, CNcbiOstrstreamToString(ost));
                 itcl = clust.erase(itcl);
                 continue;
             }
         }
-        prev_align = &algn;
         ++itcl;
     }
 }   
@@ -5302,14 +5336,32 @@ void CChainer::CChainerImpl::SetGenomicRange(const TAlignModelList& alignments)
 {
     TSignedSeqRange range = alignments.empty() ? TSignedSeqRange::GetWhole() : TSignedSeqRange::GetEmpty();
 
+    CScope scope(*CObjectManager::GetInstance());
+    scope.AddDefaults();
+
     ITERATE(TAlignModelList, i, alignments) {
         range += i->Limits();
+
+        if(i->Type()&CGeneModel::eProt) {
+            string accession = i->TargetAccession();
+            if(!prot_complet.count(accession)) {
+                CSeqVector protein_seqvec(scope.GetBioseqHandle(*i->GetTargetId()), CBioseq_Handle::eCoding_Iupac);
+                CSeqVector_CI protein_ci(protein_seqvec);
+                prot_complet[accession] = make_pair(*protein_ci == 'M', true);
+            }
+        }
     }
 
     _ASSERT(m_gnomon.get() != NULL);
     m_gnomon->ResetRange(range);
 
     orig_aligns.clear();
+    unmodified_aligns.clear();
+    mrna_count.clear();
+    est_count.clear();
+    rnaseq_count.clear();
+    oriented_introns_plus.clear();
+    oriented_introns_minus.clear();
 }
 
 TransformFunction* CChainer::ProjectCDS(CScope& scope)
@@ -5360,9 +5412,14 @@ void CChainer::CChainerImpl::SetConfirmedStartStopForProteinAlignments(TAlignMod
         if ((algn.Type() & CGeneModel::eProt)!=0) {
             CCDSInfo cds = algn.GetCdsInfo();
             TSignedSeqRange alignedlim = algn.GetAlignMap().MapRangeOrigToEdited(algn.Limits(),false);
-            if(cds.HasStart() && !LeftPartialProtein(prot_complet, algn, scope) && alignedlim.GetFrom() == 0)
+            map<string, pair<bool,bool> >::iterator iter = prot_complet.find(algn.TargetAccession());
+            _ASSERT(iter != prot_complet.end());
+            if(iter == prot_complet.end())
+                continue;
+            
+            if(cds.HasStart() && iter->second.first && alignedlim.GetFrom() == 0)
                 cds.SetStart(cds.Start(),true);
-            if(cds.HasStop() && !RightPartialProtein(prot_complet, algn, scope) && alignedlim.GetTo() == algn.TargetLen()-1)
+            if(cds.HasStop() && iter->second.second && alignedlim.GetTo() == algn.TargetLen()-1)
                 cds.SetStop(cds.Stop(),true);
             if(cds.ConfirmedStart() || cds.ConfirmedStop())
                 algn.SetCdsInfo(cds);
