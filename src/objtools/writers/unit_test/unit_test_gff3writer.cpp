@@ -128,7 +128,7 @@ public:
             (*m_pTestNameToInfoMap)[vecFileNamePieces[0]];
 
         // assign object type contained in test input
-        if (sObjType == "entry"  ||  sObjType == "annot") {
+        if (sObjType == "align"  ||  sObjType == "annot"  ||  sObjType == "entry") {
             test_info_to_load.mObjType = sObjType;
         }
         else {
@@ -200,8 +200,6 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
         pWriter->WriteHeader(*pAnnot);
         pWriter->WriteAnnot(*pAnnot);
         pWriter->WriteFooter();
-        delete pWriter;
-        ofstr.flush();
     }
     else if (test_type == "entry") {
         CRef<CSeq_entry> pEntry(new CSeq_entry);
@@ -210,9 +208,17 @@ void sUpdateCase(CDir& test_cases_dir, const string& test_name)
         pWriter->WriteHeader();
         pWriter->WriteSeqEntryHandle(seh);
         pWriter->WriteFooter();
-        delete pWriter;
-        ofstr.flush();
     }
+    else if (test_type == "align") {
+        CRef<CSeq_align> pAlign(new CSeq_align);
+        *pI >> *pAlign;
+        pWriter->WriteHeader();
+        pWriter->WriteAlign(*pAlign);
+        pWriter->WriteFooter();
+    }
+    delete pWriter;
+    ofstr.flush();
+
     ifstr.close();
     ofstr.close();
 
@@ -273,8 +279,6 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         pWriter->WriteHeader(*pAnnot);
         pWriter->WriteAnnot(*pAnnot);
         pWriter->WriteFooter();
-        delete pWriter;
-        ofstr.flush();
     }
     else if (testInfo.mObjType == "entry") {
         CRef<CSeq_entry> pEntry(new CSeq_entry);
@@ -283,9 +287,16 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
         pWriter->WriteHeader();
         pWriter->WriteSeqEntryHandle(seh);
         pWriter->WriteFooter();
-        delete pWriter;
-        ofstr.flush();
     }
+    else if (testInfo.mObjType == "align") {
+        CRef<CSeq_align> pAlign(new CSeq_align);
+        *pI >> *pAlign;
+        pWriter->WriteHeader();
+        pWriter->WriteAlign(*pAlign);
+        pWriter->WriteFooter();
+    }
+    delete pWriter;
+    ofstr.flush();
     ifstr.close();
     ofstr.close();
 
