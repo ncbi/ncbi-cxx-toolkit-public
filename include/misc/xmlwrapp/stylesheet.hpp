@@ -48,7 +48,6 @@
 #include <misc/xmlwrapp/ownership.hpp>
 #include <misc/xmlwrapp/xslt_init.hpp>
 #include <misc/xmlwrapp/document.hpp>
-#include <misc/xmlwrapp/xslt_result_type.hpp>
 #include <misc/xmlwrapp/extension_function.hpp>
 #include <misc/xmlwrapp/extension_element.hpp>
 

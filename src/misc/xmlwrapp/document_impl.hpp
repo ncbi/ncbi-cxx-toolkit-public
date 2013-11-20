@@ -45,7 +45,6 @@
 // xmlwrapp includes
 #include <misc/xmlwrapp/node.hpp>
 #include <misc/xmlwrapp/dtd.hpp>
-#include <misc/xmlwrapp/xslt_result_type.hpp>
 #include "node_manip.hpp"
 
 // standard includes
@@ -54,9 +53,8 @@
 // libxml includes
 #include <libxml/tree.h>
 #include <libxml/xinclude.h>
-
-// bring in private libxslt stuff (see bug #1927398)
-#include "result.hpp"
+#include <libxslt/xslt.h>
+#include <libxslt/xsltInternals.h>
 
 
 namespace xml {
@@ -71,17 +69,16 @@ struct doc_impl {
     void set_ownership (bool owe);
     bool get_ownership (void) const;
     ~doc_impl (void);
-    xmlDocPtr doc_;
 
-    xslt::impl::result *xslt_result_;
-    xslt::result_treat_type treat_;
+    xmlDocPtr               doc_;
+    xsltStylesheetPtr       xslt_stylesheet_;
 
-    node root_;
-    std::string version_;
-    mutable std::string encoding_;
-    xml::dtd internal_subset_;
-    xml::dtd external_subset_;
-    bool owe_;
+    node                    root_;
+    std::string             version_;
+    mutable std::string     encoding_;
+    xml::dtd                internal_subset_;
+    xml::dtd                external_subset_;
+    bool                    owe_;
 };
 
 } // namespace impl

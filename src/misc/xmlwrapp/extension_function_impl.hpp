@@ -38,6 +38,8 @@
 #ifndef _xmlwrapp_extension_function_impl_hpp_
 #define _xmlwrapp_extension_function_impl_hpp_
 
+#include <libxslt/xsltInternals.h>
+
 namespace xslt {
 
     namespace impl {

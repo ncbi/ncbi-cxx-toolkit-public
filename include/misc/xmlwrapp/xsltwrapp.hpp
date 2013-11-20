@@ -43,7 +43,6 @@
 #include <misc/xmlwrapp/xmlwrapp.hpp>
 #include <misc/xmlwrapp/xslt_exception.hpp>
 #include <misc/xmlwrapp/xslt_init.hpp>
-#include <misc/xmlwrapp/xslt_result_type.hpp>
 #include <misc/xmlwrapp/stylesheet.hpp>
 #include <misc/xmlwrapp/document_proxy.hpp>
 #include <misc/xmlwrapp/xpath_object_type.hpp>

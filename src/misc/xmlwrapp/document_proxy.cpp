@@ -36,7 +36,7 @@
 
 // xmlwrapp includes
 #include <misc/xmlwrapp/document_proxy.hpp>
-#include "result.hpp"
+#include "stylesheet_impl.hpp"
 
 
 
@@ -44,22 +44,41 @@ namespace xml {
 
 
 /* Internal library use only */
-document_proxy::document_proxy (xslt::impl::result *     result,
-                                xslt::result_treat_type  treat) :
-    owner_(true), xslt_result_(result), treat_(treat)
-{}
+document_proxy::document_proxy (void *  result, void *  ssheet) :
+    owner_(true), result_(result), style_sheet_(ssheet)
+{
+    xsltStylesheetPtr   ss = static_cast<xsltStylesheetPtr>(style_sheet_);
+    if (ss->_private)
+        static_cast<xslt::impl::stylesheet_refcount*>
+            (ss->_private)->inc_ref();
+}
 
 
+/* Used by compilers which are unable to avoid it (older ones) */
 document_proxy::document_proxy (const document_proxy &  other) :
-    owner_(true),
-    xslt_result_(xslt::impl::make_copy(other.xslt_result_)),
-    treat_(other.treat_)
-{}
+    owner_(true), result_(NULL), style_sheet_(other.style_sheet_)
+{
+    xmlDocPtr   tmpdoc;
+    if ( (tmpdoc = xmlCopyDoc(static_cast<xmlDocPtr>(other.result_), 1)) == 0)
+        throw std::bad_alloc();
+
+    result_ = tmpdoc;
+
+    xsltStylesheetPtr   ss = static_cast<xsltStylesheetPtr>(style_sheet_);
+    if (ss->_private)
+        static_cast<xslt::impl::stylesheet_refcount*>
+            (ss->_private)->inc_ref();
+}
 
 document_proxy::~document_proxy ()
 {
     if (owner_)
-        delete xslt_result_;
+        xmlFreeDoc(static_cast<xmlDocPtr>(result_));
+
+    xsltStylesheetPtr   ss = static_cast<xsltStylesheetPtr>(style_sheet_);
+    if (ss)
+        if (ss->_private)
+            xslt::impl::destroy_stylesheet(ss);
 }
 
 /* xml::document can grab the ownership */

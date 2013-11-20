@@ -40,13 +40,10 @@
 
 // xmlwrapp includes
 #include <misc/xmlwrapp/errors.hpp>
-#include <misc/xmlwrapp/xslt_result_type.hpp>
+
 
 namespace xslt {
     class stylesheet;
-    namespace impl {
-        class result;
-    }
 }
 
 namespace xml {
@@ -74,16 +71,15 @@ public:
 
 private:
     /* Internal library use only */
-    document_proxy (xslt::impl::result *        result,
-                    xslt::result_treat_type     treat);
+    document_proxy (void *  result, void *  ssheet);
 
 private:
     /* xml::document can grab the ownership */
     void release (void) const;
 
-    mutable bool                owner_;
-    xslt::impl::result *        xslt_result_;
-    xslt::result_treat_type     treat_;
+    mutable bool    owner_;
+    void *          result_;
+    void *          style_sheet_;
 
     friend class document;
     friend class xslt::stylesheet;

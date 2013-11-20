@@ -52,7 +52,6 @@
 #include <misc/xmlwrapp/node.hpp>
 #include <misc/xmlwrapp/errors.hpp>
 #include <misc/xmlwrapp/xml_save.hpp>
-#include <misc/xmlwrapp/xslt_result_type.hpp>
 #include <misc/xmlwrapp/document_proxy.hpp>
 
 // standard includes
@@ -63,14 +62,6 @@
 // Forward declaration for a friend below
 extern "C" { void xslt_ext_func_cb(void *, int); }
 extern "C" { void xslt_ext_element_cb(void*, void*, void*, void*); }
-
-// forward declaration
-namespace xslt {
-    class stylesheet;
-    namespace impl {
-    class result;
-    }
-} // end xslt namespace
 
 namespace xml {
 
@@ -736,8 +727,7 @@ public:
 private:
     impl::doc_impl *pimpl_;
     void set_doc_data (void *data);
-    void set_doc_data_from_xslt (void *data, xslt::impl::result *xr,
-                                 xslt::result_treat_type treat);
+    void set_doc_data_from_xslt (void *data, void *ssheet);
     void* get_doc_data (void);
     void* get_doc_data_read_only (void) const;
     void* release_doc_data (void);

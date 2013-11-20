@@ -43,37 +43,48 @@
 
 // xmlwrapp includes
 #include "document_impl.hpp"
+#include "stylesheet_impl.hpp"
 
 
 using namespace xml;
 using namespace xml::impl;
 
 
-doc_impl::doc_impl (void) : doc_(0), xslt_result_(0), owe_(true) { /* NCBI_FAKE_WARNING */
-    xmlDocPtr tmpdoc;
-    if ( (tmpdoc = xmlNewDoc(0)) == 0) throw std::bad_alloc();
+doc_impl::doc_impl (void) : doc_(0), xslt_stylesheet_(0), owe_(true) { /* NCBI_FAKE_WARNING */
+    xmlDocPtr       tmpdoc;
+    if ( (tmpdoc = xmlNewDoc(0)) == 0)
+        throw std::bad_alloc();
     set_doc_data(tmpdoc, true);
 }
 
-doc_impl::doc_impl (const char *root_name) : doc_(0), xslt_result_(0), root_(root_name), owe_(true) { /* NCBI_FAKE_WARNING */
-    xmlDocPtr tmpdoc;
-    if ( (tmpdoc = xmlNewDoc(0)) == 0) throw std::bad_alloc();
+doc_impl::doc_impl (const char *root_name) : doc_(0), xslt_stylesheet_(0), root_(root_name), owe_(true) { /* NCBI_FAKE_WARNING */
+    xmlDocPtr       tmpdoc;
+    if ( (tmpdoc = xmlNewDoc(0)) == 0)
+        throw std::bad_alloc();
     set_doc_data(tmpdoc, true);
 }
 
-doc_impl::doc_impl (const doc_impl &other) : doc_(0), xslt_result_(0), owe_(true) { /* NCBI_FAKE_WARNING */
-    xmlDocPtr tmpdoc;
-    if ( (tmpdoc = xmlCopyDoc(other.doc_, 1)) == 0) throw std::bad_alloc();
+doc_impl::doc_impl (const doc_impl &other) : doc_(0), xslt_stylesheet_(other.xslt_stylesheet_), owe_(true) { /* NCBI_FAKE_WARNING */
+    xmlDocPtr       tmpdoc;
+    if ( (tmpdoc = xmlCopyDoc(other.doc_, 1)) == 0)
+        throw std::bad_alloc();
     set_doc_data(tmpdoc, false);
+
+    if (xslt_stylesheet_)
+        if (xslt_stylesheet_->_private)
+            static_cast<xslt::impl::stylesheet_refcount*>
+                (xslt_stylesheet_->_private)->inc_ref();
 }
 
 void doc_impl::set_doc_data (xmlDocPtr newdoc, bool root_is_okay) {
     if (doc_ && owe_)
-       xmlFreeDoc(doc_);
+        xmlFreeDoc(doc_);
     doc_ = newdoc;
 
-    if (doc_->version)  version_  = reinterpret_cast<const char*>(doc_->version);
-    if (doc_->encoding) encoding_ = reinterpret_cast<const char*>(doc_->encoding);
+    if (doc_->version)
+        version_  = reinterpret_cast<const char*>(doc_->version);
+    if (doc_->encoding)
+        encoding_ = reinterpret_cast<const char*>(doc_->encoding);
 
     if (root_is_okay) {
         xmlDocSetRootElement(doc_, static_cast<xmlNodePtr>(root_.release_node_data()));
@@ -92,15 +103,15 @@ void doc_impl::set_doc_data (xmlDocPtr newdoc, bool root_is_okay) {
 }
 
 void doc_impl::set_root_node (const node &n) {
-    node &non_const_node = const_cast<node&>(n);
-    xmlNodePtr new_root_node = xmlCopyNode(static_cast<xmlNodePtr>(non_const_node.get_node_data()), 1);
-    if (!new_root_node) throw std::bad_alloc();
+    node &      non_const_node = const_cast<node&>(n);
+    xmlNodePtr  new_root_node = xmlCopyNode(static_cast<xmlNodePtr>(non_const_node.get_node_data()), 1);
+    if (!new_root_node)
+        throw std::bad_alloc();
 
     xmlNodePtr old_root_node = xmlDocSetRootElement(doc_, new_root_node);
     root_.set_node_data(new_root_node);
-    if (old_root_node) xmlFreeNode(old_root_node);
-
-    xslt_result_ = 0;
+    if (old_root_node)
+        xmlFreeNode(old_root_node);
 }
 
 void doc_impl::set_ownership (bool owe) {
@@ -116,6 +127,9 @@ doc_impl::~doc_impl (void) {
         if (doc_)
             xmlFreeDoc(doc_);
     }
-    delete xslt_result_;
+
+    if (xslt_stylesheet_)
+        if (xslt_stylesheet_->_private)
+            xslt::impl::destroy_stylesheet(xslt_stylesheet_);
 }
 

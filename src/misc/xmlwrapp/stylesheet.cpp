@@ -48,7 +48,6 @@
 #include <misc/xmlwrapp/exception.hpp>
 #include <misc/xmlwrapp/xslt_exception.hpp>
 
-#include "result.hpp"
 #include "utility.hpp"
 #include "document_impl.hpp"
 
@@ -98,8 +97,33 @@ namespace xslt {
                 }
             }
         }
-    }
-}
+
+        void save_to_string(xmlDocPtr           doc,
+                            xsltStylesheetPtr   ss,
+                            std::string &       s)
+        {
+            xmlChar *   xml_string;
+            int         xml_string_length;
+
+            if (xsltSaveResultToString(&xml_string,
+                                       &xml_string_length, doc, ss) >= 0)
+            {
+                xml::impl::xmlchar_helper   helper(xml_string);
+                if (xml_string_length)
+                    s.assign(helper.get(), xml_string_length);
+            }
+        }
+
+        bool
+        save_to_file(xmlDocPtr          doc,
+                     xsltStylesheetPtr  ss,
+                     const char *       filename,
+                     int                /* compression_level */)
+        {
+            return xsltSaveResultToFilename(filename, doc, ss, 0) >= 0;
+        }
+    } // End of impl namespace
+} // End of xslt namespace
 
 
 void xslt::impl::stylesheet_impl::clear_nodes (void)
@@ -257,71 +281,6 @@ extern "C" {
 namespace
 {
 
-// implementation of xslt::result using xslt::stylesheet: we pass this object
-// to xml::document for the documents obtained via XSLT so that some operations
-// (currently only saving) could be done differently for them
-class result_impl : public xslt::impl::result
-{
-public:
-    // We don't own the pointers given to us, their lifetime must be greater
-    // than the lifetime of this object.
-    result_impl(xmlDocPtr doc, xsltStylesheetPtr ss) :
-        doc_(doc), ss_(ss)
-    {
-        if (ss_->_private)
-            static_cast<xslt::impl::stylesheet_refcount*>(ss_->_private)->inc_ref();
-    }
-
-    result_impl(const result_impl &  other) :
-        doc_(other.doc_), ss_(other.ss_)
-    {
-        if (ss_->_private)
-            static_cast<xslt::impl::stylesheet_refcount*>(ss_->_private)->inc_ref();
-    }
-
-    virtual ~result_impl()
-    {
-        // result_impl should destroy xslt only if reference counting was
-        // used for the stylesheet. Otherwise the stylesheet will handle
-        // the destruction.
-        if (ss_)
-            if (ss_->_private)
-                xslt::impl::destroy_stylesheet(ss_);
-    }
-
-    virtual void save_to_string(std::string &s) const
-    {
-        xmlChar *xml_string;
-        int xml_string_length;
-
-        if (xsltSaveResultToString(&xml_string,
-                                   &xml_string_length, doc_, ss_) >= 0)
-        {
-            xml::impl::xmlchar_helper helper(xml_string);
-            if (xml_string_length) s.assign(helper.get(), xml_string_length);
-        }
-    }
-
-    virtual bool
-    save_to_file(const char *filename, int /* compression_level */) const
-    {
-        return xsltSaveResultToFilename(filename, doc_, ss_, 0) >= 0;
-    }
-
-private:
-    virtual xmlDocPtr get_raw_doc (void)
-    {
-        return doc_;
-    }
-
-    friend class xml::document;
-    xmlDocPtr           doc_;
-    xsltStylesheetPtr   ss_;
-
-    result_impl & operator=(const result_impl &);
-};
-
-
 void make_vector_param(std::vector<const char*> &v,
                        const xslt::stylesheet::param_type &p)
 {
@@ -449,17 +408,6 @@ xmlDocPtr apply_stylesheet(xslt::impl::stylesheet_impl *s_impl,
 }
 
 } // end of anonymous namespace
-
-
-xslt::impl::result *  xslt::impl::make_copy (xslt::impl::result *  pattern)
-{
-    result_impl *   other_instance = dynamic_cast<result_impl *>(pattern);
-
-    if (other_instance == NULL)
-        throw xslt::exception("Design error: unexpected xslt result type");
-
-    return new result_impl(*other_instance);
-}
 
 
 void xslt::stylesheet::attach_refcount(void)
@@ -694,14 +642,7 @@ xml::document_proxy xslt::stylesheet::apply (const xml::document &doc)
     if ( !xmldoc )
         throw xslt::exception(pimpl_->error_);
 
-    result_impl *   result_impl_ = new result_impl(xmldoc, pimpl_->ss_);
-
-    result_treat_type  treat = type_no_treat;
-    if (xslt::impl::is_xml_output_method(pimpl_->ss_))
-        treat = type_treat_as_doc;
-
-    xml::document_proxy     proxy(result_impl_, treat);
-    return proxy;
+    return xml::document_proxy(xmldoc, pimpl_->ss_);
 }
 
 
@@ -714,13 +655,6 @@ xml::document_proxy xslt::stylesheet::apply (const xml::document &doc,
     if ( !xmldoc )
         throw xslt::exception(pimpl_->error_);
 
-    result_impl *   result_impl_ = new result_impl(xmldoc, pimpl_->ss_);
-
-    result_treat_type  treat = type_no_treat;
-    if (xslt::impl::is_xml_output_method(pimpl_->ss_))
-        treat = type_treat_as_doc;
-
-    xml::document_proxy     proxy(result_impl_, treat);
-    return proxy;
+    return xml::document_proxy(xmldoc, pimpl_->ss_);
 }
 

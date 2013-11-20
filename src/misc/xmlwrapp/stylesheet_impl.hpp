@@ -48,6 +48,10 @@
 #include "extension_function_impl.hpp"
 #include "extension_element_impl.hpp"
 
+namespace xslt {
+    class extension_function;
+    class extension_element;
+}
 
 
 // Typedefs to support extension functions
@@ -109,6 +113,18 @@ namespace xslt {
         // Decrements the stylesheet reference counter and
         // destroys it if the counter reached zero
         void destroy_stylesheet (xsltStylesheetPtr ss);
+
+        // Helper function to detect the XSLT output method
+        bool is_xml_output_method (xsltStylesheetPtr ss);
+
+        // Helper serialization functions
+        void save_to_string(xmlDocPtr           doc,
+                            xsltStylesheetPtr   ss,
+                            std::string &       s);
+        bool save_to_file(xmlDocPtr          doc,
+                          xsltStylesheetPtr  ss,
+                          const char *       filename,
+                          int                compression_level);
     }
 }
 
