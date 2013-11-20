@@ -362,34 +362,11 @@ bool CGffAlignmentRecord::xSetTypeSpliced(
     _ASSERT(align.IsSetSegs() && align.GetSegs().IsSpliced());
     const CSpliced_seg& spliced = align.GetSegs().GetSpliced();
 
-    const char* strProtMatch     = "protein_match";
-    const char* strEstMatch      = "EST_match";
-    const char* strTransNucMatch = "translated_nucleotide_match";
-    const char* strCdnaMatch     = "cDNA_match";
-
     const CSeq_id& genomicId = *sequence::GetId(
         spliced.GetGenomic_id(), scope, sequence::eGetId_Best).GetSeqId();
     const CSeq_id& productId =*sequence::GetId(
         spliced.GetProduct_id(), scope, sequence::eGetId_Best).GetSeqId();
-    CSeq_id::EAccessionInfo genomicInfo = genomicId.IdentifyAccession();
-    CSeq_id::EAccessionInfo productInfo = productId.IdentifyAccession();
-
-    m_strType = "match";
-    if (productInfo & CSeq_id::fAcc_prot) {
-        m_strType = strProtMatch;
-    }
-    else if ((productInfo & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est) {
-        m_strType = strEstMatch;
-    }
-    else if ((productInfo & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_mrna) {
-        m_strType = strCdnaMatch;
-    }
-    else if ((productInfo & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_tsa) {
-        m_strType = strCdnaMatch;
-    }
-    else if (genomicInfo & CSeq_id::fAcc_prot) {
-        m_strType = strTransNucMatch;
-    }
+    SetMatchType(genomicId, productId);
     return true;
 }
 
