@@ -75,6 +75,8 @@
 #include <objtools/discrepancy_report/hDiscRep_tests.hpp>
 #include <objtools/discrepancy_report/hUtilib.hpp>
 
+BEGIN_NCBI_SCOPE
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(DiscRepNmSpc);
@@ -1369,3 +1371,4 @@ void CTestAndRepData :: AddSubcategory(CRef <CClickableItem>& c_item, const stri
      c_item->subcategories.push_back(c_sub);
 };
 
+END_NCBI_SCOPE

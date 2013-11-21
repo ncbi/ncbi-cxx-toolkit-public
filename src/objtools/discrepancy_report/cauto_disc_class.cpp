@@ -37,6 +37,8 @@
 #include <objtools/discrepancy_report/hauto_disc_class.hpp>
 
 BEGIN_NCBI_SCOPE
+
+USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(DiscRepAutoNmSpc);
 
@@ -211,5 +213,3 @@ void CAutoDiscClass::LookAtSeqEntry( CSeq_entry & arg0 )
 } // end of LookAtSeqEntry
 
 END_NCBI_SCOPE
-
-

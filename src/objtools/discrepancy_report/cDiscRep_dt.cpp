@@ -36,7 +36,8 @@
 #include <objtools/discrepancy_report/hDiscRep_tests.hpp>
 
 BEGIN_NCBI_SCOPE
-USING_SCOPE(objects);
+
+USING_NCBI_SCOPE;
 USING_SCOPE(DiscRepNmSpc);
 
 CDiscRepInfo::CDiscRepInfo () 

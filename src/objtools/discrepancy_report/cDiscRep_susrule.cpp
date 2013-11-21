@@ -62,6 +62,8 @@
 
 BEGIN_NCBI_SCOPE
 
+USING_NCBI_SCOPE;
+
 USING_SCOPE(DiscRepNmSpc);
 USING_SCOPE(objects);
 USING_SCOPE(sequence);

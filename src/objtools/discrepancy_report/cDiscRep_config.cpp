@@ -48,6 +48,8 @@
 #include <sstream>
 
 BEGIN_NCBI_SCOPE
+
+USING_NCBI_SCOPE;
 USING_SCOPE (objects);
 USING_SCOPE (DiscRepNmSpc);
 USING_SCOPE (DiscRepAutoNmSpc);
@@ -1140,7 +1142,7 @@ static const s_test_property test_list[] = {
 // tests_on_Bioseq
    {"DISC_MISSING_DEFLINES", fAsndisc},
    {"DISC_QUALITY_SCORES", fDiscrepancy | fAsndisc},
-   {"DISC_FEATURE_COUNT_oncaller", fOncaller},  // oncaller tool version
+   {"TEST_TERMINAL_NS", fDiscrepancy | fAsndisc},
    
 // tests_on_Bioseq_aa
    {"COUNT_PROTEINS", fAsndisc},
@@ -1277,6 +1279,7 @@ static const s_test_property test_list[] = {
    {"DISC_FLATFILE_FIND_ONCALLER", fAsndisc},
    {"DISC_FEATURE_COUNT", fOncaller | fAsndisc}, // asndisc version   
    {"TEST_ALIGNMENT_HAS_SCORE", fDiscrepancy | fAsndisc},
+   {"DISC_FEATURE_COUNT_oncaller", fOncaller},  // oncaller tool version
 
 // tests_on_SeqEntry_feat_desc: all CSeqEntry_Feat_desc tests need RmvRedundancy
    {"DISC_INCONSISTENT_STRUCTURED_COMMENTS", fDiscrepancy | fAsndisc},
@@ -1403,6 +1406,11 @@ void CRepConfig :: GetTestList()
         thisGrp.tests_on_Bioseq.push_back(
                  CRef <CTestAndRepData>(new CBioseq_DISC_QUALITY_SCORES));
         thisInfo.test_item_list["DISC_QUALITY_SCORES"].clear();
+        if (++i >= sz) return;
+   }
+   if (thisTest.tests_run.find("TEST_TERMINAL_NS") != end_it) {
+        thisGrp.tests_on_Bioseq.push_back(
+                 CRef <CTestAndRepData>(new CBioseq_TEST_TERMINAL_NS));
         if (++i >= sz) return;
    }
    if (thisTest.tests_run.find("DISC_FEATURE_COUNT") != end_it) {

@@ -59,6 +59,7 @@
 #include <sstream>
 
 BEGIN_NCBI_SCOPE
+USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(std);
 
