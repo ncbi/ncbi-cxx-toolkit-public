@@ -36,7 +36,6 @@
 #include <objects/macro/Structured_comment_field.hpp>
 #include <objects/macro/Word_substitution.hpp>
 
-
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(DiscRepNmSpc)

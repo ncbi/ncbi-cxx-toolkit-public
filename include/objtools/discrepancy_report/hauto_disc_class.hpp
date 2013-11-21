@@ -44,7 +44,6 @@
 
 #include <objtools/discrepancy_report/hchecking_class.hpp>
 
-
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(DiscRepAutoNmSpc)
