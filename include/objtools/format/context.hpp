@@ -200,6 +200,7 @@ public:
 
     const string &GetFinishingStatus(void) const;
     bool IsGenomeAssembly(void) const;
+    bool IsCrossKingdom(void) const;
 
     NCBI_DEPRECATED bool IsUnverified(void) const;
     enum FUnverified {
@@ -335,6 +336,7 @@ private:
     bool m_HasOperon;
     bool m_HasMultiIntervalGenes;
     bool m_IsGenomeAssembly;
+    bool m_IsCrossKingdom;
     TUnverified m_fUnverified;
     bool m_ShowAnnotCommentAsCOMMENT;
 
@@ -590,6 +592,12 @@ inline
 bool CBioseqContext::IsGenomeAssembly(void) const
 {
     return m_IsGenomeAssembly;
+}
+
+inline
+bool CBioseqContext::IsCrossKingdom(void) const
+{
+    return m_IsCrossKingdom;
 }
 
 inline

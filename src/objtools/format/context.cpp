@@ -116,6 +116,7 @@ CBioseqContext::CBioseqContext
     m_HasOperon(false),
     m_HasMultiIntervalGenes(true), // true is the safe choice if we're not sure
     m_IsGenomeAssembly(false),
+    m_IsCrossKingdom(false),
     m_fUnverified(fUnverified_None),
     m_ShowAnnotCommentAsCOMMENT(false),
     m_FFCtx(ffctx),
@@ -172,6 +173,7 @@ CBioseqContext::CBioseqContext
     m_HasOperon(false),
     m_HasMultiIntervalGenes(true), // true is the safe choice if we're not sure
     m_IsGenomeAssembly(false),
+    m_IsCrossKingdom(false),
     m_fUnverified(fUnverified_None),
     m_ShowAnnotCommentAsCOMMENT(false),
     m_FFCtx(ffctx),
@@ -346,6 +348,29 @@ void CBioseqContext::x_SetTaxname(void)
     for( ; desc_ci; ++desc_ci ) {
         if( desc_ci->IsSource() ) {
             const CBioSource &bsrc = desc_ci->GetSource();
+            if (bsrc.IsSetOrgname()) {
+                const COrgName& onp = bsrc.GetOrgname();
+                if (onp.IsSetName()) {
+                    const COrgName::TName& nam = onp.GetName();
+                    if (nam.IsPartial()) {
+                        const CPartialOrgName& pon = nam.GetPartial();
+                        if (pon.IsSet()) {
+                            const CPartialOrgName::Tdata& tx = pon.Get();
+                            ITERATE (CPartialOrgName::Tdata, itr, tx) {
+                                const CTaxElement& te = **itr;
+                                if (te.IsSetFixed_level()) {
+                                    if (te.GetFixed_level() == 0 && te.IsSetLevel()) {
+                                        const string& lvl = te.GetLevel();
+                                        if (NStr::EqualNocase (lvl, "superkingdom")) {
+                                            m_IsCrossKingdom = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
             if( bsrc.IsSetTaxname() && ! bsrc.GetTaxname().empty() ) {
                 // we found a taxname; we're done
                 m_Taxname = bsrc.GetTaxname();

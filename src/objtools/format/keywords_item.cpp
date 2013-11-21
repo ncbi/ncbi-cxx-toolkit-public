@@ -280,7 +280,6 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
         x_AddKeyword( ctx.GetFinishingStatus() );
     }
 
-    
     if ( ctx.IsTPA() ) {
         // add TPA keywords
         x_AddKeyword("Third Party Data");
@@ -289,7 +288,12 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
         // add RefSeq keyword
         x_AddKeyword("RefSeq");
     }
-    
+
+    if ( ctx.IsCrossKingdom() && ctx.IsRSUniqueProt() ) {
+        // add CrossKingdom keyword
+        x_AddKeyword("CROSS_KINGDOM");
+    }
+
     for (CSeqdesc_CI it(ctx.GetHandle());  it;  ++it) {
         const list<string>* keywords = NULL;
         
