@@ -489,6 +489,28 @@ int CollectUserField(const CUser_field& field, const string& name, vector<string
     return count;
 }
 
+
+string ModelMethod(const CGeneModel& model) {
+    string method;
+    bool ggap = false;
+    for(int i = 1; i < (int)model.Exons().size() && !ggap; ++i) {
+        ggap = model.Exons()[i-1].m_ssplice_sig == "XX" || model.Exons()[i].m_fsplice_sig == "XX";
+    }
+    if(model.Type()&CGeneModel::eChain) {
+        method = ggap ? "Chainer_GapFilled" : "Chainer";
+    } else if(model.Type()&CGeneModel::eGnomon) {
+        if(model.Support().empty())
+            method = "FullAbInitio";
+        else
+            method = ggap ? "PartAbInitio_GapFilled" : "PartAbInitio";
+    } else {
+        method = CGeneModel::TypeToString(model.Type());
+    }
+
+    return method;
+}
+
+
 CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_user_object(const CGeneModel& model)
 {
     CRef< CUser_object > user_obj(new CUser_object);
@@ -496,7 +518,8 @@ CRef< CUser_object > CAnnotationASN1::CImplementationData::create_ModelEvidence_
     type->SetStr("ModelEvidence");
     user_obj->SetType(*type);
 
-    user_obj->AddField("Method",CGeneModel::TypeToString(model.Type()));
+    user_obj->AddField("Method",ModelMethod(model));
+
     if (!model.Support().empty()) {
         CRef<CUser_field> support_field(new CUser_field());
         user_obj->SetData().push_back(support_field);
@@ -670,7 +693,7 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_internal_feature(co
     feature->SetExts().push_back(user);
 
     if (model.Type() & (CGeneModel::eGnomon | CGeneModel::eChain))
-        user->AddField("Method", CGeneModel::TypeToString(model.Type()));
+        user->AddField("Method", ModelMethod(model));
 
     TAttributes attributes;
     CollectAttributes(model, attributes);
@@ -975,8 +998,10 @@ void RestoreModelMethod(const CSeq_feat_Handle& feat, CAlignModel& model)
     _ASSERT( user.GetType().GetStr() == "Model Internal Attributes" || user.GetType().GetStr() == "ModelEvidence" );
     if (user.HasField("Method")) {
         string method = user.GetField("Method").GetData().GetStr();
-        if (method == "Gnomon") model.SetType(CGeneModel::eGnomon);
-        else if (method == "Chainer") model.SetType(CGeneModel::eChain);
+        if (method.find("AbInitio") != string::npos || method.find("Gnomon") != string::npos) 
+            model.SetType(CGeneModel::eGnomon);
+        else if (method.find("Chainer") != string::npos) 
+            model.SetType(CGeneModel::eChain);
     }
 }
 
