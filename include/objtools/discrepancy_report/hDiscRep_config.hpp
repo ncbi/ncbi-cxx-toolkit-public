@@ -139,7 +139,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
         void GetTestList();
         void CollectTests();
         virtual void Run(CRef <CRepConfig> config) = 0;
-        static CSeq_entry_Handle m_TopSeqEntry;
+        static CSeq_entry_Handle* m_TopSeqEntry;
         static CRepConfig* factory(string report_tp, CSeq_entry_Handle* tse_p=0);
         void Export();
         void Export(vector <CRef <CClickableText> >& item_list);
