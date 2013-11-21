@@ -43,3 +43,12 @@ version 6.6.3
 Fixed bug that leads to occasional communication blocking.
 Introduced lifespan_ttl - an absolute maximum of blob life duration.
 Modified SHUTDOWN command by adding drain option (wait untill all blobs are gone).
+
+November 20, 2013
+version 6.6.4
+Added age parameter into blob read commands; corrected prolonging version life to use version ttl.
+Added calculating and reporting blob size forwarded to another server.
+Corrected logging to log connection ID when establishing new connection.
+Corrected logging to make sure to add end-of-line when starting new message.
+Changed log messages to show peer name and port.
+Changed format of VERSION command reply.
