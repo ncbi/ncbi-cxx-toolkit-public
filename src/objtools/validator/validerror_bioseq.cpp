@@ -3439,12 +3439,10 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
     // look for Ns next to gaps 
     if (seq.IsNa() && seq.GetLength() > 1) {
         try {
-            CDelta_ext::Tdata::const_iterator delta_i = seq.GetInst().GetExt().GetDelta().Get().begin();
             TSeqPos pos = 0;
             CSeqVector sv = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-            while (delta_i != seq.GetInst().GetExt().GetDelta().Get().end()) {
+            ITERATE (CDelta_ext::Tdata, delta_i, seq.GetInst().GetExt().GetDelta().Get()) {
                 if (delta_i->Empty()) {
-                    ++delta_i;
                     continue; // Ignore NULLs, reported separately above.
                 }
                 size_t delta_len = s_GetDeltaLen (**delta_i, m_Scope);
@@ -3470,7 +3468,6 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                         }
                     }
                 }
-                ++delta_i;
                 pos += delta_len;
             }                        
         } catch (CException ) {
