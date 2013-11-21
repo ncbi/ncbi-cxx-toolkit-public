@@ -451,6 +451,13 @@ bool CValidError_desc::ValidateStructuredComment
                     }
                     is_valid = false;
                 }
+            } catch (CCoreException) {
+                if (report) {
+                    // field not found, exception thrown
+                    PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadStrucCommInvalidFieldName,
+                             label + " threw an exception", *m_Ctx, desc);
+                }
+                is_valid = false;
             }
 
         } else {

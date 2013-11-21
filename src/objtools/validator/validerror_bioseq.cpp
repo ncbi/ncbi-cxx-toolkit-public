@@ -3443,6 +3443,10 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
             TSeqPos pos = 0;
             CSeqVector sv = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
             while (delta_i != seq.GetInst().GetExt().GetDelta().Get().end()) {
+                if (delta_i->Empty()) {
+                    ++delta_i;
+                    continue; // Ignore NULLs, reported separately above.
+                }
                 size_t delta_len = s_GetDeltaLen (**delta_i, m_Scope);
                 if (sv.IsInGap (pos)) {
                     if (pos > 0) {
