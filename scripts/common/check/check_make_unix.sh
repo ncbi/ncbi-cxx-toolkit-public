@@ -52,6 +52,11 @@ x_top_srcdir=$4
 x_target_dir=$5
 x_out=$6
 
+# Detect Cygwin
+case `uname -s` in
+   CYGWIN* ) cygwin=true  ;;
+   *)        cygwin=false ;;
+esac
 
 # Check for build dir
 if test ! -z "$x_build_dir"; then
@@ -152,6 +157,7 @@ conf_dir="$x_conf_dir"
 compile_dir="$x_compile_dir"
 bin_dir="$x_bin_dir"
 script="$x_out"
+cygwin=$cygwin
 
 res_journal="\$script.journal"
 res_log="\$script.log"
@@ -306,10 +312,11 @@ fi
 
 # Path to test data, used by some scripts and applications
 if test -z "\$NCBI_TEST_DATA"; then
-    case `uname -s` in
-       CYGWIN* ) NCBI_TEST_DATA=//snowman/win-coremake/Scripts/test_data ;;
-       *)        NCBI_TEST_DATA=/am/ncbiapdata/test_data ;;
-    esac
+    if [ \$cygwin = true ]; then
+       NCBI_TEST_DATA=//snowman/win-coremake/Scripts/test_data
+    else
+       NCBI_TEST_DATA=/am/ncbiapdata/test_data
+    fi
     export NCBI_TEST_DATA
 fi
 
@@ -406,8 +413,10 @@ if \$no_report_err && \$no_db_load; then
 fi
 
 if test "\$NCBI_CHECK_SETLIMITS" != "0"; then
-   ulimit -c 1000000 >/dev/null 2>&1;
-   ulimit -v 4000000 >/dev/null 2>&1;
+   ulimit -c 1000000
+   if [ \$cygwin = false ]; then
+      ulimit -v 4000000
+   fi
 fi
 
 
