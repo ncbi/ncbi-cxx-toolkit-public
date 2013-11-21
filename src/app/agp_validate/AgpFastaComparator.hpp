@@ -103,8 +103,13 @@ private:
     typedef pair<string, TSeqPos> TKey;
     typedef map<TKey, TSeqIdSet> TUniqueSeqs;
 
-    void x_GetCompSeqIds( TSeqIdSet & out_compSeqIds,
-                          const std::list<std::string> & agpFiles );
+    bool x_IsLogFileOpen(void) { 
+        return m_pLoadLogFile.get() != NULL; }
+
+    bool x_GetCompAndObjSeqIds( 
+        TSeqIdSet & out_compSeqIds, // components
+        TSeqIdSet & out_objSeqIds,  // objects
+        const std::list<std::string> & agpFiles );
 
     void x_ProcessObjects( const list<string> & filenames,
                            TUniqueSeqs& fasta_ids,

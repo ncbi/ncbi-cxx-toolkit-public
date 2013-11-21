@@ -66,6 +66,18 @@
 #include <objtools/readers/fasta.hpp>
 #include <objtools/readers/reader_exception.hpp>
 
+#ifdef COMP_LOG
+#  error COMP_LOG was already defined
+#endif
+
+// convenience macro for writing to the logfile (if it's open)
+#define COMP_LOG(msg)                           \
+    do {                                        \
+        if( x_IsLogFileOpen() ) {    \
+            *m_pLoadLogFile << msg << endl;     \
+        }                                       \
+    } while(false)
+
 
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
@@ -188,7 +200,21 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
     // quickly scan the AGP files to determine the component
     // Seq-ids
     TSeqIdSet compSeqIds;
-    x_GetCompSeqIds( compSeqIds, agpFiles );
+    TSeqIdSet objSeqIds;
+    if( ! x_GetCompAndObjSeqIds( compSeqIds, objSeqIds, agpFiles ) ) {
+        // error message should've been printed inside x_GetCompAndObjSeqIds
+        return CAgpFastaComparator::eResult_Failure;
+    }
+    if( x_IsLogFileOpen() ) {
+        ITERATE(TSeqIdSet, seq_id_it, compSeqIds) {
+            COMP_LOG("Component seq-id from AGP file(s): " 
+                << seq_id_it->AsString());
+        }
+        ITERATE(TSeqIdSet, seq_id_it, objSeqIds) {
+            COMP_LOG("Object seq-id from AGP file(s): " 
+                << seq_id_it->AsString());
+        }
+    }
 
     // load local component FASTA sequences and Genbank into 
     // local scope for lookups using local data storage
@@ -212,31 +238,50 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
 
         if( eFileType_FASTA != x_GuessFileType( *file_iter ) ) {
             // we support text ASN.1 object files
+            COMP_LOG("Object file: " << *file_iter);
             objfiles.push_back(*file_iter);
             continue;
         }
+
         ifstream file_strm( file_iter->c_str() );
         string line;
-        NcbiGetline(file_strm, line, "\r\n");
-        // extract accession
-        // Get first word, trim final '|' (if any).
-        SIZE_TYPE pos1=line.find(' ' , 1);
-        SIZE_TYPE pos2=line.find('\t', 1);
-        if(pos2<pos1) pos1 = pos2;
-        if(pos1!=NPOS) {
-            pos1--;
-            if(pos1>0 && line[pos1]=='|') pos1--;
+        // look at the ids in the file to try to determine what
+        // 
+        while( NcbiGetline(file_strm, line, "\r\n") ) {
+            // extract accession
+            // Get first word, trim final '|' (if any).
+            if( ! NStr::StartsWith(line, ">") ) {
+                continue;
+            }
+            SIZE_TYPE after_seq_id_pos = line.find_first_of(" \t|");
+            if( after_seq_id_pos == string::npos ) {
+                after_seq_id_pos = line.length();
+            }
+            string acc_long = line.substr(1, (after_seq_id_pos - 1));
+            CRef<CSeq_id> seq_id = s_CustomGetSeqIdFromStr( acc_long, NULL );
+            CSeq_id_Handle acc_h = CSeq_id_Handle::GetHandle(*seq_id);
+
+            COMP_LOG("Sample accession from " << *file_iter 
+                << ": " << acc_h.AsString());
+            if( compSeqIds.find(acc_h) != compSeqIds.end() ) {
+                // component files go into the component object
+                // temporary database
+                COMP_LOG("Component file: " << *file_iter);
+                lds_mgr->AddDataFile( *file_iter );
+                break;
+            } else if( objSeqIds.find(acc_h) != objSeqIds.end() ) {
+                // object files will be remembered for later processing
+                COMP_LOG("Object file: " << *file_iter);
+                objfiles.push_back(*file_iter);
+                break;
+            }
         }
-        string acc_long = line.substr(1, pos1);
-        CRef<CSeq_id> comp_id = s_CustomGetSeqIdFromStr( acc_long, NULL );
-        CSeq_id_Handle acc_h = CSeq_id_Handle::GetHandle(*comp_id);
-        if( compSeqIds.find(acc_h) != compSeqIds.end() ) {
-            // component files go into the component object
-            // temporary database
-            lds_mgr->AddDataFile( *file_iter );
-        } else {
-            // object files will be remembered for later processing
-            objfiles.push_back(*file_iter);
+
+        // no seq-id in the file seems relevant
+        if( ! file_strm ) {
+            // none of the seq-ids seem to be used anywhere
+            cerr << "Warning: This file seems to be unused: '" 
+                << *file_iter << "'" << endl;
         }
     }
     lds_mgr->UpdateData();
@@ -481,7 +526,9 @@ void CAgpFastaComparator::x_Process(const CSeq_entry_Handle seh,
         if( ! vec.CanGetRange(0, bioseq_it->GetBioseqLength()) ) {
             LOG_POST(Error << "  Skipping one: could not load due to error "
                      "in AGP file "
-                     "(length issue or doesn't exist) for " << idh 
+                     "(length issue or does not include range [1, "
+                     << (1+bioseq_it->GetBioseqLength()) << "] or "
+                     "doesn't exist) for " << idh 
                      << " (though issue could be due to failure to resolve "
                      "one of the contigs.  "
                      "Are all necessary components in GenBank or in files "
@@ -522,15 +569,14 @@ void CAgpFastaComparator::x_Process(const CSeq_entry_Handle seh,
             continue;
         }
 
-        if( m_pLoadLogFile.get() != NULL ) {
+        if( x_IsLogFileOpen() ) {
             CNcbiOstrstream os;
             ITERATE (string, i, key.first) {
                 os << setw(2) << setfill('0') << hex << (int)((unsigned char)*i);
             }
-
-            *m_pLoadLogFile << "  " << idh << ": "
+            COMP_LOG("  " << idh << ": "
                 << string(CNcbiOstrstreamToString(os))
-                << " / " << key.second << endl;
+                << " / " << key.second);
         }
 
         ++*in_out_pUniqueBioseqsLoaded;
@@ -572,7 +618,6 @@ void CAgpFastaComparator::x_PrintDetailsOfLengthIssue(
 
         if( p_delta_data == NULL ) {
             LOG_POST(Error << kBugInAgpFastaCompare);
-            m_bSuccess = false;
             return;
         }
 
@@ -595,47 +640,69 @@ void CAgpFastaComparator::x_PrintDetailsOfLengthIssue(
             CBioseq_Handle inner_bioseq_h;
             try {
                 inner_bioseq_h = scope.GetBioseqHandle(seq_id_h);
+                if( ! inner_bioseq_h ) {
+                    LOG_POST(Error << "    Couldn't find bioseq for "
+                         << seq_id_h
+                         << ".  Maybe you need to specify component file(s)." );
+                } else if( ! inner_bioseq_h.IsSetInst_Length() ) {
+                    LOG_POST(Error << "    Could not get length of bioseq for "
+                        << seq_id_h );
+                } else {
+                    const TSeqPos bioseq_len = inner_bioseq_h.GetInst_Length();
+                    if( highest_pnt >= bioseq_len ) {
+                        LOG_POST(Error << "    For "
+                            << seq_id_h
+                            << " length is " << bioseq_len
+                            << " but user tries to access the point "
+                            << (highest_pnt+1) ); // "+1" because user sees 1-based
+                    }
+                }
             } catch(...) {
                 LOG_POST(Error << "    Could not find bioseq for "
                          << seq_id_h
                          << ".  Maybe you need to specify component file(s)." );
-                continue;
-            }
-
-            if( ! inner_bioseq_h.IsSetInst_Length() ) {
-                LOG_POST(Error << "    Could not get length of bioseq for "
-                         << seq_id_h );
-                m_bSuccess = false;
-                continue;
-            }
-
-            const TSeqPos bioseq_len = inner_bioseq_h.GetInst_Length();
-            if( highest_pnt >= bioseq_len ) {
-                LOG_POST(Error << "    For "
-                         << seq_id_h
-                         << " length is " << bioseq_len
-                         << " but user tries to access the point "
-                         << (highest_pnt+1) ); // "+1" because user sees 1-based
-                m_bSuccess = false;
-                continue;
             }
         }
+    } catch(std::exception & ex) {
+        CNcbiOstrstream bioseq_strm;
+        bioseq_strm << MSerial_AsnText << *bioseq_h.GetCompleteBioseq();
+        LOG_POST(Error << kBugInAgpFastaCompare << ": "
+            << Endl() << Endl()
+            << "Raw technical information about error: " << Endl()
+            << ex.what()
+            << Endl()
+            << " Bioseq ASN.1: " << (string)CNcbiOstrstreamToString(bioseq_strm) );
+        return;
     } catch(...) {
         CNcbiOstrstream bioseq_strm;
         bioseq_strm << MSerial_AsnText << *bioseq_h.GetCompleteBioseq();
         LOG_POST(Error << kBugInAgpFastaCompare << ": "
-                 << (string)CNcbiOstrstreamToString(bioseq_strm) );
-        m_bSuccess = false;
+            << "(unknown error)"
+            << " Bioseq ASN.1: " << (string)CNcbiOstrstreamToString(bioseq_strm) );
         return;
     }
 }
 
-void CAgpFastaComparator::x_GetCompSeqIds(
+bool CAgpFastaComparator::x_GetCompAndObjSeqIds(
     TSeqIdSet & out_compSeqIds,
+    TSeqIdSet & out_objSeqIds,
     const std::list<std::string> & agpFiles )
 {
-    // for speed, we do the parsing ourselves, avoiding some
-    // of the weight of a full AGP parser
+    const static CTempString kDelim("\t");
+
+    const static CTempString kNotAGPErr(
+        "This file is not in a recognized AGP format: ");
+
+    // what is held in some of the AGP columns
+    const static int kObjSeqIdCol = 0;
+    const static int kCompTypeCol = 4;
+    const static int kCompSeqIdCol = 5;
+    const static int kMaxColUsed = kCompSeqIdCol;
+
+    vector<CTempString> vecLineTokens;
+
+    // for speed, we do the parsing ourselves with only very minimal
+    // error-checking
     ITERATE( std::list<std::string>, file_iter, agpFiles ) {
         ifstream file_strm(file_iter->c_str());
         string line;
@@ -645,47 +712,44 @@ void CAgpFastaComparator::x_GetCompSeqIds(
                 continue;
             }
 
-            // find 5th column (tab-separated)
-            SIZE_TYPE pos = 0;
-            for( int  ii = 0;
-                 pos != NPOS && pos < (line.length() - 1) && ii < 4 ;
-                 ++ii )
-            {
-                pos = line.find('\t', pos + 1);
-            }
-            if( pos == NPOS ) {
-                continue;
+            vecLineTokens.clear();
+            NStr::Tokenize(line, kDelim, vecLineTokens);
+
+            // are there enough columns for an AGP file?
+            if( vecLineTokens.size() <= kMaxColUsed ){
+                cerr << kNotAGPErr << *file_iter << endl;
+                return false;
             }
 
-            // check if it's a gap
-            const char chCompType = toupper(line[pos+1]);
+            // skip gaps
+            CTempString sComponentType = vecLineTokens[kCompTypeCol];
+            if( sComponentType.length() != 1 ) {
+                cerr << kNotAGPErr << *file_iter << endl;
+                return false;
+            }
+            const char chCompType = toupper(sComponentType[0]);
             if( chCompType == 'N' || chCompType == 'U' ) 
             {
                 // skip gaps
                 continue;
             }
 
-            // find the 6th column (tab-separated)
-            pos = line.find('\t', pos + 1);
-            if( pos == NPOS ) {
-                continue;
-            }
+            // get object Seq-id
+            CRef<CSeq_id> objSeqId = s_CustomGetSeqIdFromStr(
+                vecLineTokens[kObjSeqIdCol], NULL);
+            out_objSeqIds.insert(
+                CSeq_id_Handle::GetHandle(*objSeqId));
 
-            // pos points to tab just before the column we want
-            // find the tab that's after the column we want
-            SIZE_TYPE close_tab_pos = line.find('\t', pos + 1 );
-            if( close_tab_pos != NPOS ) {
-                // we have the column we want.  Make sure it's
-                // not numeric (which would indicate it's just
-                // a gap)
-                CRef<CSeq_id> seq_id =
-                    s_CustomGetSeqIdFromStr( 
-                    line.substr(pos+1, close_tab_pos - pos - 1 ), NULL );
-                out_compSeqIds.insert(
-                    CSeq_id_Handle::GetHandle(*seq_id) );
-            }
+            // get component Seq-id
+            CRef<CSeq_id> comp_seq_id =
+                    s_CustomGetSeqIdFromStr(
+                    vecLineTokens[kCompSeqIdCol], NULL);
+            out_compSeqIds.insert(
+                CSeq_id_Handle::GetHandle(*comp_seq_id) );
         }
     }
+
+    return true;
 }
 
 void CAgpFastaComparator::x_ProcessObjects(
@@ -697,9 +761,7 @@ void CAgpFastaComparator::x_ProcessObjects(
     int iNumSkipped = 0;
 
     LOG_POST(Error << "Processing object file(s)...");
-    if( m_pLoadLogFile.get() != NULL ) {
-        *m_pLoadLogFile << "Processing object file(s)..." << endl;
-    }
+    COMP_LOG(Error << "Processing object file(s)...");
     ITERATE( list<string>, file_iter, filenames ) {
         const string &filename = *file_iter;
         try {
@@ -805,9 +867,7 @@ void CAgpFastaComparator::x_ProcessAgps(const list<string> & filenames,
     int iNumSkipped = 0;
 
     LOG_POST(Error << "Processing AGP...");
-    if( m_pLoadLogFile.get() != NULL ) {
-        *m_pLoadLogFile << "Processing AGP..." << endl;
-    }
+    COMP_LOG(Error << "Processing AGP...");
 
     CRef<CScope> pAgpToSeqEntryScope(new CScope(*CObjectManager::GetInstance()));
     pAgpToSeqEntryScope->AddDefaults();
