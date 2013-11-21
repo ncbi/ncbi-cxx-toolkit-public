@@ -80,19 +80,17 @@ bool CGff3FlybaseWriter::WriteHeader()
 
 //  ----------------------------------------------------------------------------
 bool CGff3FlybaseWriter::x_WriteAlignDisc(
-    const CSeq_align& align,
-    bool bInvertWidth )
+    const CSeq_align& align)
 //  ----------------------------------------------------------------------------
 {
-    CGff3Writer::x_WriteAlignDisc(align, bInvertWidth);
+    CGff3Writer::x_WriteAlignDisc(align);
     m_Os << "###" << endl;
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGff3FlybaseWriter::x_WriteAlignDenseg(
-    const CSeq_align& align,
-    bool bInvertWidth )
+    const CSeq_align& align)
 //  ----------------------------------------------------------------------------
 {
     const CSeq_id& targetId = align.GetSeq_id( 1 );
@@ -105,9 +103,6 @@ bool CGff3FlybaseWriter::x_WriteAlignDenseg(
 
     const CDense_seg& ds = align.GetSegs().GetDenseg();
     CRef<CDense_seg> ds_filled = ds.FillUnaligned();
-    if ( bInvertWidth ) {
-//        ds_filled->ResetWidths();
-    }
 
     CAlnMap align_map( *ds_filled );
 
@@ -211,10 +206,6 @@ bool CGff3FlybaseWriter::x_WriteAlignDenseg(
         }
         if (taxid) {
             record.SetTaxid(taxid);
-        }
-
-        if ( bInvertWidth ) {
-//            record.InvertWidth( 0 );
         }
         x_WriteAlignment( record );
     }

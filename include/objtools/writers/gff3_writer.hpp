@@ -83,17 +83,13 @@ protected:
         CSeq_annot_Handle );
 
     bool x_WriteAlign( 
-        const CSeq_align&,
-        bool=false );                   // invert width 
+        const CSeq_align&);
     virtual bool x_WriteAlignDenseg(
-        const CSeq_align&,
-        bool=false );                   // invert width 
+        const CSeq_align&);
     bool x_WriteAlignSpliced(
-        const CSeq_align&,    
-        bool=false );                   // invert width 
+        const CSeq_align&);
     virtual bool x_WriteAlignDisc(
-        const CSeq_align&,    
-        bool=false );                   // invert width 
+        const CSeq_align&);
 
     virtual bool xTryAssignGeneParent(
         CGff3WriteRecordFeature&,

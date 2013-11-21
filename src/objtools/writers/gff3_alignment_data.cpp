@@ -68,7 +68,7 @@ string CGffAlignmentRecord::StrAttributes() const
 };
 
 //  ----------------------------------------------------------------------------
-void CGffAlignmentRecord::SetTargetLocation(
+void CGffDenseSegRecord::SetTargetLocation(
     const CSeq_id& id,
     ENa_strand eStrand )
 //  ----------------------------------------------------------------------------
@@ -89,7 +89,7 @@ void CGffAlignmentRecord::SetTargetLocation(
 }
 
 //  ----------------------------------------------------------------------------
-void CGffAlignmentRecord::SetSourceLocation(
+void CGffDenseSegRecord::SetSourceLocation(
     const CSeq_id& id,
     ENa_strand eStrand )
 //  ----------------------------------------------------------------------------
@@ -165,7 +165,7 @@ void CGffAlignmentRecord::SetMatchType(
 }
 
 //  ----------------------------------------------------------------------------
-void CGffAlignmentRecord::AddInsertion(
+void CGffDenseSegRecord::AddInsertion(
     const CAlnMap::TSignedRange& targetPiece )
 //  ----------------------------------------------------------------------------
 {
@@ -184,7 +184,7 @@ void CGffAlignmentRecord::AddInsertion(
 }
     
 //  ----------------------------------------------------------------------------
-void CGffAlignmentRecord::AddDeletion(
+void CGffDenseSegRecord::AddDeletion(
     const CAlnMap::TSignedRange& sourcePiece )
 //  ----------------------------------------------------------------------------
 {
@@ -205,7 +205,7 @@ void CGffAlignmentRecord::AddDeletion(
 }
     
 //  ----------------------------------------------------------------------------
-void CGffAlignmentRecord::AddMatch(
+void CGffDenseSegRecord::AddMatch(
     const CAlnMap::TSignedRange& sourcePiece,
     const CAlnMap::TSignedRange& targetPiece )
 //  ----------------------------------------------------------------------------
@@ -227,7 +227,41 @@ void CGffAlignmentRecord::AddMatch(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffSplicedSegRecord::SetId(
+bool CGffSplicedSegRecord::Initialize(
+    CScope& scope,
+    const CSeq_align& align,
+    const CSpliced_exon& exon)
+//  ----------------------------------------------------------------------------
+{
+    if (!xSetId(scope, align, exon)) {
+        return false;
+    }
+    if (!xSetMethod(scope, align, exon)) {
+        return false;
+    }
+    if (!xSetType(scope, align, exon)) {
+        return false;
+    }
+    if (!xSetLocation(scope, align, exon)) {
+        return false;
+    }
+    if (!xSetScores(scope, align, exon)) {
+        return false;
+    }
+    if (!xSetPhase(scope, align, exon)) {
+        return false;
+    }
+    if (!xSetAttributes(scope, align, exon)) {
+        return false;
+    }
+    if (!xSetAlignment(scope, align, exon)) {
+        return false;
+    }
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CGffSplicedSegRecord::xSetId(
     CScope& scope,
     const CSeq_align& align,
     const CSpliced_exon& exon)
@@ -244,7 +278,7 @@ bool CGffSplicedSegRecord::SetId(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffSplicedSegRecord::SetMethod(
+bool CGffSplicedSegRecord::xSetMethod(
     CScope& scope,
     const CSeq_align& align,
     const CSpliced_exon& exon)
@@ -264,7 +298,7 @@ bool CGffSplicedSegRecord::SetMethod(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffSplicedSegRecord::SetType(
+bool CGffSplicedSegRecord::xSetType(
     CScope& scope,
     const CSeq_align& align,
     const CSpliced_exon& exon)
@@ -282,7 +316,7 @@ bool CGffSplicedSegRecord::SetType(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffSplicedSegRecord::SetLocation(
+bool CGffSplicedSegRecord::xSetLocation(
     CScope& scope,
     const CSeq_align& align,
     const CSpliced_exon& exon)
@@ -306,7 +340,7 @@ bool CGffSplicedSegRecord::SetLocation(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffSplicedSegRecord::SetPhase(
+bool CGffSplicedSegRecord::xSetPhase(
     CScope& scope,
     const CSeq_align& align,
     const CSpliced_exon& exon)
@@ -317,7 +351,7 @@ bool CGffSplicedSegRecord::SetPhase(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffSplicedSegRecord::SetAttributes(
+bool CGffSplicedSegRecord::xSetAttributes(
     CScope& scope,
     const CSeq_align& align,
     const CSpliced_exon& exon)
@@ -345,7 +379,7 @@ bool CGffSplicedSegRecord::SetAttributes(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffSplicedSegRecord::SetScores(
+bool CGffSplicedSegRecord::xSetScores(
     CScope& scope,
     const CSeq_align& align,
     const CSpliced_exon& exon)
@@ -374,7 +408,7 @@ bool CGffSplicedSegRecord::SetScores(
 }
 
 //  ----------------------------------------------------------------------------
-bool CGffSplicedSegRecord::SetAlignment(
+bool CGffSplicedSegRecord::xSetAlignment(
     CScope& scope,
     const CSeq_align& align,
     const CSpliced_exon& exon)

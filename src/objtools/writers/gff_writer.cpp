@@ -331,8 +331,7 @@ bool CGff2Writer::WriteAlign(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Writer::x_WriteAlign( 
-    const CSeq_align& align,
-    bool )
+    const CSeq_align& align)
 //  ----------------------------------------------------------------------------
 {
     return false;

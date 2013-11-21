@@ -38,12 +38,12 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 //  ----------------------------------------------------------------------------
-class NCBI_XOBJWRITE_EXPORT CGff3FlybaseRecord : public CGffAlignmentRecord {
+class NCBI_XOBJWRITE_EXPORT CGff3FlybaseRecord : public CGffDenseSegRecord {
 //  ----------------------------------------------------------------------------
 public:
     CGff3FlybaseRecord(CGffFeatureContext& fc,
          unsigned int uRecordId =0 ):
-    CGffAlignmentRecord(0, uRecordId)
+    CGffDenseSegRecord(0, uRecordId)
     {} 
     void SetDefline(const string &defline);
     void SetTaxid(unsigned taxid);

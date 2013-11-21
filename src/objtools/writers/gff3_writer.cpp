@@ -184,8 +184,7 @@ bool CGff3Writer::x_WriteSeqAnnotHandle(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteAlign( 
-    const CSeq_align& align,
-    bool bInvertWidth )
+    const CSeq_align& align )
 //  ----------------------------------------------------------------------------
 {
     if ( ! align.IsSetSegs() ) {
@@ -196,26 +195,19 @@ bool CGff3Writer::x_WriteAlign(
     switch( align.GetSegs().Which() ) {
         default:
             break;
-
         case CSeq_align::TSegs::e_Denseg:
-            return x_WriteAlignDenseg( align, bInvertWidth );
-
+            return x_WriteAlignDenseg( align );
         case CSeq_align::TSegs::e_Spliced:
-            if (!x_WriteAlignSpliced( align, bInvertWidth )) {
-                return false;
-            }
-            return true;
-
+            return x_WriteAlignSpliced( align );
         case CSeq_align::TSegs::e_Disc:
-            return x_WriteAlignDisc( align, bInvertWidth );
+            return x_WriteAlignDisc( align );
     }
     return true;
 }
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteAlignDisc( 
-    const CSeq_align& align,
-    bool bInvertWidth )
+    const CSeq_align& align)
 //  ----------------------------------------------------------------------------
 {
     typedef CSeq_align_set::Tdata::const_iterator CASCIT;
@@ -266,7 +258,7 @@ bool CGff3Writer::x_WriteAlignDisc(
 
             }
         }
-        if (!x_WriteAlign(*pA, bInvertWidth)) {
+        if (!x_WriteAlign(*pA)) {
             return false;
         }
     }
@@ -275,8 +267,7 @@ bool CGff3Writer::x_WriteAlignDisc(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteAlignSpliced( 
-    const CSeq_align& align,
-    bool bInvertWidth )
+    const CSeq_align& align)
 //  ----------------------------------------------------------------------------
 {
     _ASSERT(align.IsSetSegs() && align.GetSegs().IsSpliced());
@@ -287,28 +278,7 @@ bool CGff3Writer::x_WriteAlignSpliced(
     for (EXONS::const_iterator cit = exons.begin(); cit != exons.end(); ++cit) {
         CGffSplicedSegRecord record(m_uFlags, m_uRecordId);
         const CSpliced_exon& exon = **cit;
-        if (!record.SetId(*m_pScope, align, exon)) {
-            return false;
-        }
-        if (!record.SetMethod(*m_pScope, align, exon)) {
-            return false;
-        }
-        if (!record.SetType(*m_pScope, align, exon)) {
-            return false;
-        }
-        if (!record.SetLocation(*m_pScope, align, exon)) {
-            return false;
-        }
-        if (!record.SetScores(*m_pScope, align, exon)) {
-            return false;
-        }
-        if (!record.SetPhase(*m_pScope, align, exon)) {
-            return false;
-        }
-        if (!record.SetAttributes(*m_pScope, align, exon)) {
-            return false;
-        }
-        if (!record.SetAlignment(*m_pScope, align, exon)) {
+        if (!record.Initialize(*m_pScope, align, exon)) {
             return false;
         }
         x_WriteAlignment(record);
@@ -318,8 +288,7 @@ bool CGff3Writer::x_WriteAlignSpliced(
 
 //  ----------------------------------------------------------------------------
 bool CGff3Writer::x_WriteAlignDenseg( 
-    const CSeq_align& align,
-    bool bInvertWidth )
+    const CSeq_align& align)
 //  ----------------------------------------------------------------------------
 {
     const CSeq_id& productId = align.GetSeq_id( 0 );
@@ -334,9 +303,6 @@ bool CGff3Writer::x_WriteAlignDenseg(
     catch(...) {};
     const CDense_seg& ds = align.GetSegs().GetDenseg();
     CRef<CDense_seg> ds_filled = ds.FillUnaligned();
-//    if ( bInvertWidth ) {
-//        ds_filled->ResetWidths();
-//    }
 
     CAlnMap align_map( *ds_filled );
 
@@ -412,16 +378,8 @@ bool CGff3Writer::x_WriteAlignDenseg(
             }
         }
 
-        // Record basic target information:
         record.SetTargetLocation( *pTargetId.GetSeqId(), targetStrand );
-
-        // Refine the match type
-        //cerr << "SourceID:" << pSourceId->AsFastaString() 
-        // << "   TargetID:" << pTargetId.GetSeqId()->AsFastaString();
         record.SetMatchType(*pSourceId, *pTargetId.GetSeqId());
-        //cerr << endl;
-
-        // Add scores, if available:
         if (align.IsSetScore()) {
             const vector<CRef<CScore> >& scores = align.GetScore();
             for (vector<CRef<CScore> >::const_iterator cit = scores.begin(); 
@@ -433,9 +391,6 @@ bool CGff3Writer::x_WriteAlignDenseg(
             ITERATE ( CDense_seg::TScores, score_it, ds.GetScores() ) {
                 record.SetScore( **score_it );
             }
-        }
-        if ( bInvertWidth ) {
-//            record.InvertWidth( 0 );
         }
         x_WriteAlignment( record );
     }

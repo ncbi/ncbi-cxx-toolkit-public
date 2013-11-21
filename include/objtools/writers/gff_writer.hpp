@@ -203,8 +203,7 @@ protected:
         const CSeq_annot& );
 
     virtual bool x_WriteAlign(
-        const CSeq_align&,
-        bool=false );
+        const CSeq_align&);
 
     virtual bool x_WriteSeqEntryHandle(
         CSeq_entry_Handle );

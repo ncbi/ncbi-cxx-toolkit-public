@@ -50,11 +50,9 @@ public:
 
 protected:
     virtual bool x_WriteAlignDenseg(
-    const objects::CSeq_align&,
-        bool=false );                   // invert width 
+        const objects::CSeq_align&);
     virtual bool x_WriteAlignDisc(
-        const objects::CSeq_align&,    
-        bool=false );                   // invert width 
+        const objects::CSeq_align&);
 };
 
 END_NCBI_SCOPE

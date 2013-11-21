@@ -60,30 +60,12 @@ public:
 
     virtual ~CGffAlignmentRecord() {};
 
-    void SetSourceLocation( 
-        const CSeq_id&,
-        ENa_strand );
-
-    void SetTargetLocation( 
-        const CSeq_id&,
-        ENa_strand );
-
     virtual void SetMatchType(
         const CSeq_id&, //source
         const CSeq_id&); //target
 
     void SetScore(
         const CScore& );
-
-    void AddInsertion(
-        const CAlnMap::TSignedRange& targetPiece ); 
-
-    void AddDeletion(
-        const CAlnMap::TSignedRange& sourcePiece ); 
-
-    void AddMatch(
-        const CAlnMap::TSignedRange& sourcePiece,
-        const CAlnMap::TSignedRange& targetPiece ); 
 
     string StrAttributes() const;
 
@@ -93,8 +75,6 @@ protected:
     string m_strAlignment;
     string m_strOtherScores;
 
-    CAlnMap::TSignedRange m_targetRange;
-    CAlnMap::TSignedRange m_sourceRange;
     bool m_bIsTrivial;
 };
 
@@ -112,6 +92,28 @@ public:
     };
 
     virtual ~CGffDenseSegRecord() {};
+
+    void SetSourceLocation( 
+        const CSeq_id&,
+        ENa_strand );
+
+    void SetTargetLocation( 
+        const CSeq_id&,
+        ENa_strand );
+
+    void AddInsertion(
+        const CAlnMap::TSignedRange& targetPiece ); 
+
+    void AddDeletion(
+        const CAlnMap::TSignedRange& sourcePiece ); 
+
+    void AddMatch(
+        const CAlnMap::TSignedRange& sourcePiece,
+        const CAlnMap::TSignedRange& targetPiece ); 
+
+protected:
+    CAlnMap::TSignedRange m_targetRange;
+    CAlnMap::TSignedRange m_sourceRange;
 };
 
 //  ----------------------------------------------------------------------------
@@ -130,42 +132,48 @@ public:
     virtual ~CGffSplicedSegRecord() {};
 
 public:
-    bool SetId(
+    bool Initialize(
         CScope&,
         const CSeq_align&,
         const CSpliced_exon&);
 
-    bool SetMethod(
+protected:
+    bool xSetId(
         CScope&,
         const CSeq_align&,
         const CSpliced_exon&);
 
-    bool SetType(
+    bool xSetMethod(
         CScope&,
         const CSeq_align&,
         const CSpliced_exon&);
 
-    bool SetLocation(
+    bool xSetType(
         CScope&,
         const CSeq_align&,
         const CSpliced_exon&);
 
-    bool SetPhase(
+    bool xSetLocation(
         CScope&,
         const CSeq_align&,
         const CSpliced_exon&);
 
-    bool SetAttributes(
+    bool xSetPhase(
         CScope&,
         const CSeq_align&,
         const CSpliced_exon&);
 
-    bool SetScores(
+    bool xSetAttributes(
         CScope&,
         const CSeq_align&,
         const CSpliced_exon&);
 
-    bool SetAlignment(
+    bool xSetScores(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
+
+    bool xSetAlignment(
         CScope&,
         const CSeq_align&,
         const CSpliced_exon&);
