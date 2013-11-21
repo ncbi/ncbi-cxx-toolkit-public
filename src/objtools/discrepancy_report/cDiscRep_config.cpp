@@ -156,7 +156,7 @@ vector < CRef <CTestAndRepData> >   CTestGrp :: tests_on_BioseqSet;
 vector < CRef <CTestAndRepData> >   CTestGrp :: tests_on_SubmitBlk;
 
 set <string> CDiscTestInfo :: tests_run;
-CSeq_entry_Handle CRepConfig :: m_TopSeqEntry;
+CSeq_entry_Handle* CRepConfig::m_TopSeqEntry=0;
 
 static CDiscRepInfo thisInfo;
 static string       strtmp, tmp;
@@ -382,7 +382,9 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
 
     // ini. of susterm_summ for suspect_prod_terms if necessary
     if ((thisInfo.suspect_prod_rules->Get()).empty()) {
-       for (i=0; i < thisInfo.GetSusProdTermsLen(thisInfo.suspect_prod_terms); i++){
+       for (i=0; 
+            i < (int)thisInfo.GetSusProdTermsLen(thisInfo.suspect_prod_terms); 
+            i++){
           const s_SuspectProductNameData& 
                 this_term = thisInfo.suspect_prod_terms[i];
           arr.clear();
@@ -1366,7 +1368,7 @@ CRepConfig* CRepConfig :: factory(string report_tp, CSeq_entry_Handle* tse_p)
    }
    else if(report_tp ==  "Discrepancy") {
        if (tse_p) {
-           m_TopSeqEntry = *tse_p;
+           m_TopSeqEntry = tse_p;
        }
        else {
             NCBI_THROW(CException, eUnknown, "Missing top seq-entry-handle");
@@ -2635,7 +2637,7 @@ void CRepConfig :: ProcessArgs()
 void CRepConfDiscrepancy :: Run(CRef <CRepConfig> config)
 {
   CRef <CSeq_entry> 
-     seq_ref ((CSeq_entry*)(m_TopSeqEntry.GetCompleteSeq_entry().GetPointer()));
+     seq_ref ((CSeq_entry*)(m_TopSeqEntry->GetCompleteSeq_entry().GetPointer()));
   CheckThisSeqEntry(seq_ref);
 };
 
