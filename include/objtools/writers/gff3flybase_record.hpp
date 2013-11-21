@@ -32,6 +32,7 @@
  */
  
 #include <objtools/writers/gff3_alignment_data.hpp>
+#include <objtools/writers/gff3_denseg_record.hpp>
 #include <objtools/writers/feature_context.hpp>
 
 BEGIN_NCBI_SCOPE

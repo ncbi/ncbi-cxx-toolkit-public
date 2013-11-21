@@ -30,55 +30,56 @@
  *
  */
 
-#ifndef OBJTOOLS_WRITERS___GFF3ALIGNMENTDATA__HPP
-#define OBJTOOLS_WRITERS___GFF3ALIGNMENTDATA__HPP
+#ifndef OBJTOOLS_WRITERS___GFF3DENSEG_RECORD__HPP
+#define OBJTOOLS_WRITERS___GFF3DENSEG_RECORD__HPP
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objtools/alnmgr/alnmap.hpp>
-#include <objtools/writers/gff2_write_data.hpp>
+#include <objtools/writers/gff3_alignment_data.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-class NCBI_XOBJWRITE_EXPORT CGffAlignmentRecord
+class NCBI_XOBJWRITE_EXPORT CGffDenseSegRecord
 //  ----------------------------------------------------------------------------
-    : public CGffWriteRecord
+    : public CGffAlignmentRecord
 {
 public:
-    CGffAlignmentRecord(
+    CGffDenseSegRecord(
             unsigned int uFlags =0,
             unsigned int uRecordId =0):
-        CGffWriteRecord(sDummyContext, NStr::UIntToString(uRecordId)),
-        m_uFlags(uFlags),
-        m_bIsTrivial(true)
+        CGffAlignmentRecord(uFlags, uRecordId)
     {
-        m_strType = "match";
-        m_strAttributes = string( "ID=" ) + NStr::UIntToString( uRecordId );
     };
 
-    virtual ~CGffAlignmentRecord() {};
+    virtual ~CGffDenseSegRecord() {};
 
-    virtual void SetMatchType(
-        const CSeq_id&, //source
-        const CSeq_id&); //target
+    void SetSourceLocation( 
+        const CSeq_id&,
+        ENa_strand );
 
-    void SetScore(
-        const CScore& );
+    void SetTargetLocation( 
+        const CSeq_id&,
+        ENa_strand );
 
-    string StrAttributes() const;
+    void AddInsertion(
+        const CAlnMap::TSignedRange& targetPiece ); 
+
+    void AddDeletion(
+        const CAlnMap::TSignedRange& sourcePiece ); 
+
+    void AddMatch(
+        const CAlnMap::TSignedRange& sourcePiece,
+        const CAlnMap::TSignedRange& targetPiece ); 
 
 protected:
-    static CGffFeatureContext sDummyContext;
-    unsigned int m_uFlags;
-    string m_strAlignment;
-    string m_strOtherScores;
-
-    bool m_bIsTrivial;
+    CAlnMap::TSignedRange m_targetRange;
+    CAlnMap::TSignedRange m_sourceRange;
 };
 
 END_objects_SCOPE
 END_NCBI_SCOPE
 
-#endif // OBJTOOLS_WRITERS___GFF3ALIGNMENTDATA__HPP
+#endif // OBJTOOLS_WRITERS___GFF3DENSEG_RECORD__HPP

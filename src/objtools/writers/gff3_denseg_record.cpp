@@ -41,7 +41,7 @@
 #include <objects/seqalign/Score_set.hpp>
 #include <objects/seqalign/Spliced_exon_chunk.hpp>
 
-#include <objtools/writers/gff3_alignment_data.hpp>
+#include <objtools/writers/gff3_denseg_record.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/sequence.hpp>
 
@@ -49,88 +49,97 @@ BEGIN_NCBI_SCOPE
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
-CGffFeatureContext CGffAlignmentRecord::sDummyContext;
-
 //  ----------------------------------------------------------------------------
-string CGffAlignmentRecord::StrAttributes() const 
-//  ----------------------------------------------------------------------------
-{
-    string str = m_strAttributes;
-    if ( !m_strOtherScores.empty() ) {
-        str += ";";
-        str += m_strOtherScores;
-    }
-    if ( !m_bIsTrivial ) {
-        str += ";Gap=";
-        str += m_strAlignment;
-    }
-    return str; 
-};
-
-//  ----------------------------------------------------------------------------
-void CGffAlignmentRecord::SetScore(
-    const CScore& score )
+void CGffDenseSegRecord::SetSourceLocation(
+    const CSeq_id& id,
+    ENa_strand eStrand )
 //  ----------------------------------------------------------------------------
 {
-    if ( !score.IsSetId() || !score.GetId().IsStr() || !score.IsSetValue() ) {
-        return;
-    }
-    string key = score.GetId().GetStr();
-    double dValue( 0 );
-    if ( score.GetValue().IsInt() ) {
-            dValue = double( score.GetValue().GetInt() );
-    }
-    else {
-        dValue = score.GetValue().GetReal();
-    }
-    if ( key == "score" ) {
-        m_pdScore = new double( dValue );
-    }
-    else {
-        if ( ! m_strOtherScores.empty() ) {
-            m_strOtherScores += ";";
-        }
-        m_strOtherScores += key;
-        m_strOtherScores += "=";
-        m_strOtherScores += NStr::DoubleToString( dValue );
-    }
+    id.GetLabel( &m_strId, CSeq_id::eContent );
+    m_peStrand = new ENa_strand( eStrand );
 }
 
 //  ----------------------------------------------------------------------------
-void CGffAlignmentRecord::SetMatchType(
-    const CSeq_id& source,
-    const CSeq_id& target)
+void CGffDenseSegRecord::SetTargetLocation(
+    const CSeq_id& id,
+    ENa_strand eStrand )
 //  ----------------------------------------------------------------------------
 {
-    const char* strProtMatch     = "protein_match";
-    const char* strEstMatch      = "EST_match";
-    const char* strTransNucMatch = "translated_nucleotide_match";
-    const char* strCdnaMatch     = "cDNA_match";
+    if ( ! m_strAttributes.empty() ) {
+        m_strAttributes += ";";
+    }
+    string strTarget;
+    id.GetLabel( &strTarget, CSeq_id::eContent );
+    strTarget += " ";
+    strTarget += NStr::UIntToString( m_targetRange.GetFrom()+1 );
+    strTarget += " ";
+    strTarget += NStr::UIntToString( m_targetRange.GetTo()+1 );
+    strTarget += " ";
+    strTarget += (eStrand == eNa_strand_plus) ? "+" : "-";
+    m_strAttributes += ( "Target=" + strTarget );
+    CWriteUtil::GetIdType(id, m_strSource);
+}
 
-    CSeq_id::EAccessionInfo source_info = source.IdentifyAccession();
-    CSeq_id::EAccessionInfo target_info = target.IdentifyAccession();
+//  ----------------------------------------------------------------------------
+void CGffDenseSegRecord::AddInsertion(
+    const CAlnMap::TSignedRange& targetPiece )
+//  ----------------------------------------------------------------------------
+{
+    unsigned int uSize = targetPiece.GetLength();
+    if ( 0 == uSize ) {
+        return;
+    }
+    m_bIsTrivial = false;
+    m_targetRange += targetPiece;
 
-    if (target_info & CSeq_id::fAcc_prot) {
-        m_strType = strProtMatch;
+    if ( ! m_strAlignment.empty() ) {
+        m_strAlignment += " ";
+    }
+    m_strAlignment += "I";
+    m_strAlignment += NStr::IntToString( uSize );
+}
+    
+//  ----------------------------------------------------------------------------
+void CGffDenseSegRecord::AddDeletion(
+    const CAlnMap::TSignedRange& sourcePiece )
+//  ----------------------------------------------------------------------------
+{
+    unsigned int uSize = sourcePiece.GetLength();
+    if ( 0 == uSize ) {
         return;
     }
-    if ((target_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_est) {
-        m_strType = strEstMatch;
+    m_bIsTrivial = false;
+    m_sourceRange += sourcePiece;
+    m_uSeqStart = m_sourceRange.GetFrom();
+    m_uSeqStop = m_sourceRange.GetTo();
+
+    if ( ! m_strAlignment.empty() ) {
+        m_strAlignment += " ";
+    }
+    m_strAlignment += "D";
+    m_strAlignment += NStr::IntToString( uSize );
+}
+    
+//  ----------------------------------------------------------------------------
+void CGffDenseSegRecord::AddMatch(
+    const CAlnMap::TSignedRange& sourcePiece,
+    const CAlnMap::TSignedRange& targetPiece )
+//  ----------------------------------------------------------------------------
+{
+    unsigned int uSize = sourcePiece.GetLength();
+    if ( 0 == uSize ) {
         return;
     }
-    if ((target_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_mrna) {
-        m_strType = strCdnaMatch;
-        return;
+    m_sourceRange += sourcePiece;
+    m_targetRange += targetPiece;
+    m_uSeqStart = m_sourceRange.GetFrom();
+    m_uSeqStop = m_sourceRange.GetTo();
+
+    if ( ! m_strAlignment.empty() ) {
+        m_strAlignment += " ";
     }
-    if ((target_info & CSeq_id::eAcc_division_mask) == CSeq_id::eAcc_tsa) {
-        m_strType = strCdnaMatch;
-        return;
-    }
-    if (source_info & CSeq_id::fAcc_prot) {
-        m_strType = strTransNucMatch;
-        return;
-    }
-    //m_strType = "match";
+    m_strAlignment += "M";
+    m_strAlignment += NStr::IntToString( uSize );
 }
 
 END_objects_SCOPE

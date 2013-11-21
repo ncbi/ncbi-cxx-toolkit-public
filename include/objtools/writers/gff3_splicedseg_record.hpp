@@ -30,55 +30,82 @@
  *
  */
 
-#ifndef OBJTOOLS_WRITERS___GFF3ALIGNMENTDATA__HPP
-#define OBJTOOLS_WRITERS___GFF3ALIGNMENTDATA__HPP
+#ifndef OBJTOOLS_WRITERS___GFF3_SPLICEDSEG_RECORD__HPP
+#define OBJTOOLS_WRITERS___GFF3_SPLICEDSEG_RECORD__HPP
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objtools/alnmgr/alnmap.hpp>
 #include <objtools/writers/gff2_write_data.hpp>
+#include <objtools/writers/gff3_alignment_data.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 //  ----------------------------------------------------------------------------
-class NCBI_XOBJWRITE_EXPORT CGffAlignmentRecord
+class NCBI_XOBJWRITE_EXPORT CGffSplicedSegRecord
 //  ----------------------------------------------------------------------------
-    : public CGffWriteRecord
+    : public CGffAlignmentRecord
 {
 public:
-    CGffAlignmentRecord(
+    CGffSplicedSegRecord(
             unsigned int uFlags =0,
             unsigned int uRecordId =0):
-        CGffWriteRecord(sDummyContext, NStr::UIntToString(uRecordId)),
-        m_uFlags(uFlags),
-        m_bIsTrivial(true)
+        CGffAlignmentRecord(uFlags, uRecordId)
     {
-        m_strType = "match";
-        m_strAttributes = string( "ID=" ) + NStr::UIntToString( uRecordId );
     };
 
-    virtual ~CGffAlignmentRecord() {};
+    virtual ~CGffSplicedSegRecord() {};
 
-    virtual void SetMatchType(
-        const CSeq_id&, //source
-        const CSeq_id&); //target
-
-    void SetScore(
-        const CScore& );
-
-    string StrAttributes() const;
+public:
+    bool Initialize(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
 
 protected:
-    static CGffFeatureContext sDummyContext;
-    unsigned int m_uFlags;
-    string m_strAlignment;
-    string m_strOtherScores;
+    bool xSetId(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
 
-    bool m_bIsTrivial;
+    bool xSetMethod(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
+
+    bool xSetType(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
+
+    bool xSetLocation(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
+
+    bool xSetPhase(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
+
+    bool xSetAttributes(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
+
+    bool xSetScores(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
+
+    bool xSetAlignment(
+        CScope&,
+        const CSeq_align&,
+        const CSpliced_exon&);
 };
 
 END_objects_SCOPE
 END_NCBI_SCOPE
 
-#endif // OBJTOOLS_WRITERS___GFF3ALIGNMENTDATA__HPP
+#endif // OBJTOOLS_WRITERS___GFF3_SPLICEDSEG_RECORD__HPP
