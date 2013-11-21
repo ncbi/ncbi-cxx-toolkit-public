@@ -4728,5 +4728,49 @@ void CSeqSearch::x_StorePattern(TPatternInfo& pat_info, string& sequence)
 }
 
 
+void ReverseComplement(CSeq_inst& inst, CScope* scope)
+{
+    switch (inst.GetRepr()) {
+        case CSeq_inst::eRepr_raw:
+            CSeqportUtil::ReverseComplement(&(inst.SetSeq_data()), 0, inst.GetLength());
+            break;
+        case CSeq_inst::eRepr_delta:
+            if (!inst.IsSetExt() || !inst.GetExt().IsDelta()) {
+                NCBI_THROW(CObjmgrUtilException, eBadSequenceType,
+                   "Sequence of this type cannot be reverse-complemented.");
+            }
+            // reverse order of segments
+            inst.SetExt().SetDelta().Set().reverse();
+            // reverse-complement individual segments
+            NON_CONST_ITERATE(CSeq_inst::TExt::TDelta::Tdata, it, inst.SetExt().SetDelta().Set()) {
+                switch ((*it)->Which()) {
+                    case CDelta_seq::e_Literal:
+                        if ((*it)->GetLiteral().IsSetSeq_data()) {    
+                            CSeq_literal& lit = (*it)->SetLiteral();
+                            if (!lit.GetSeq_data().IsGap()) {
+                                CSeqportUtil::ReverseComplement(&(lit.SetSeq_data()), 0, lit.GetLength());
+                            }
+                        }
+                        break;
+                    case CDelta_seq::e_Loc:
+                        {{
+                            CSeq_loc* flip = sequence::SeqLocRevCmpl((*it)->SetLoc(), scope);
+                            (*it)->SetLoc().Assign(*flip);
+                        }}
+                        break;
+                    default:
+                        // do nothing
+                        break;
+                }
+            }
+            break;
+        default:
+            NCBI_THROW(CObjmgrUtilException, eBadSequenceType,
+                "Sequence of this type cannot be reverse-complemented.");
+            break;
+    }
+}
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

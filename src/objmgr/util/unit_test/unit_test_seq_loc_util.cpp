@@ -56,6 +56,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objmgr/util/sequence.hpp>
+#include <objmgr/seq_vector.hpp>
 #include <objects/misc/sequence_macros.hpp>
 
 
@@ -4416,4 +4417,116 @@ BOOST_AUTO_TEST_CASE(Test_SourceToProductFrame)
     TestOneCDS (feat, &scope, 2); 
 
     
+}
+
+
+const char* sc_TestRevCmpEntryRaw = "\
+Seq-entry ::= seq {\
+  id {\
+    local str \"seq_1\" } , \
+  inst {\
+    repr raw,\
+    mol dna,\
+    length 20,\
+    seq-data iupacna \"ATGCATGCAAATTTGGGCCC\"\
+  }\
+}\
+";
+
+
+const char* sc_TestRevCmpEntryDelta = "\
+Seq-entry ::= seq { \
+  id {\
+    local str \"seq_2\" } , \
+  inst { \
+    repr delta,\
+    mol dna,\
+    length 40,\
+    ext delta {\
+      literal {\
+        length 8,\
+        seq-data iupacna \"ATGCATGC\"},\
+      literal {\
+        length 5},\
+      literal {\
+        length 12,\
+        seq-data iupacna \"AAATTTGGGCCC\"},\
+      literal {\
+        length 7,\
+        seq-data gap { type unknown } },\
+      literal {\
+        length 8,\
+        seq-data iupacna \"AATTGGCC\"}\
+    }\
+  }\
+}\
+";
+
+
+const char* sc_TestRevCmpEntryDeltaFar = "\
+Seq-entry ::= seq { \
+  id {\
+    local str \"seq_3\" } , \
+  inst { \
+    repr delta,\
+    mol dna,\
+    length 16,\
+    ext delta {\
+      loc int {\
+        from 0,\
+        to 3,\
+        id local str \"seq_1\" },\
+      literal {\
+        length 5},\
+      loc int {\
+        from 13,\
+        to 19,\
+        id local str \"seq_1\" }\
+    }\
+  }\
+}\
+";
+
+
+BOOST_AUTO_TEST_CASE(Test_RevCompBioseq)
+{
+    CScope scope(*CObjectManager::GetInstance());
+    {{
+        CRef<CSeq_entry> s_Entry (new CSeq_entry);
+        CNcbiIstrstream istr(sc_TestRevCmpEntryRaw);
+        istr >> MSerial_AsnText >> *s_Entry;
+        ReverseComplement(s_Entry->SetSeq().SetInst(), &scope);
+        scope.AddTopLevelSeqEntry(*s_Entry);
+        CBioseq_Handle bsh = scope.GetBioseqHandle(s_Entry->GetSeq());
+        CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
+        string rev = "";
+        vec.GetSeqData(0, bsh.GetInst_Length(), rev);
+        BOOST_CHECK_EQUAL(rev, "GGGCCCAAATTTGCATGCAT");
+    }}
+    {{
+        CRef<CSeq_entry> s_Entry (new CSeq_entry);
+        CNcbiIstrstream istr(sc_TestRevCmpEntryDelta);
+        istr >> MSerial_AsnText >> *s_Entry;
+        ReverseComplement(s_Entry->SetSeq().SetInst(), &scope);
+        scope.AddTopLevelSeqEntry(*s_Entry);
+        CBioseq_Handle bsh = scope.GetBioseqHandle(s_Entry->GetSeq());
+        CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
+        string rev = "";
+        vec.GetSeqData(0, bsh.GetInst_Length(), rev);
+        BOOST_CHECK_EQUAL(rev, "GGCCAATTNNNNNNNGGGCCCAAATTTNNNNNGCATGCAT");
+    }}
+    {{
+        CRef<CSeq_entry> s_Entry (new CSeq_entry);
+        CNcbiIstrstream istr(sc_TestRevCmpEntryDeltaFar);
+        istr >> MSerial_AsnText >> *s_Entry;
+        ReverseComplement(s_Entry->SetSeq().SetInst(), &scope);
+        scope.AddTopLevelSeqEntry(*s_Entry);
+
+        CBioseq_Handle bsh = scope.GetBioseqHandle(s_Entry->GetSeq());
+        CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);
+        
+        string rev = "";
+        vec.GetSeqData(0, bsh.GetInst_Length(), rev);
+        BOOST_CHECK_EQUAL(rev, "ATGCATGNNNNNGCCC");
+    }}
 }

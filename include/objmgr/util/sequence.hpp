@@ -1656,6 +1656,10 @@ protected:
 
 /* @} */
 
+/// Reverse complement a Bioseq in place.
+/// If delta sequence, will also need to reverse order of segments
+void NCBI_XOBJUTIL_EXPORT ReverseComplement(CSeq_inst& seq, CScope* scope);
+
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
