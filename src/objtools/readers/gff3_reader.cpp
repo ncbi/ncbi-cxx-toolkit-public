@@ -363,6 +363,9 @@ bool CGff3Reader::xAnnotPostProcess(
     typedef XREFS::iterator XREFIT;
 
     CSeq_annot& annot = *pAnnot;
+    if (!annot.GetData().IsFtable()) {
+        return true; //don't mess up alignments!!!
+    }
     FTABLE& ftable = annot.SetData().SetFtable();
     for (FEATIT it = ftable.begin(); it != ftable.end(); ++it) {
         CSeq_feat& feat = **it;
