@@ -1,10 +1,10 @@
 [components]
-infrastructure  11.0
-core            11.0
-dbase           11.0
-web             11.0
-objects         11.0
-objtools        11.0
-algo            11.0
-blast           11.0
-app             11.0
+infrastructure  13.0
+core            13.0
+dbase           13.0
+web             13.0
+objects         13.0
+objtools        13.0
+algo            13.0
+blast           13.0
+app             13.0
