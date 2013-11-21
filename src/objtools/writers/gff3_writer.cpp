@@ -82,7 +82,7 @@ bool sIsTransspliced(const CMappedFeat& mf)
 }
 
 //  ----------------------------------------------------------------------------
-static CConstRef<CSeq_id> s_GetSourceId(
+static CConstRef<CSeq_id> sGetSourceId(
     const CSeq_id& id, CScope& scope )
 //  ----------------------------------------------------------------------------
 {
@@ -92,6 +92,65 @@ static CConstRef<CSeq_id> s_GetSourceId(
     catch (CException&) {
     }
     return CConstRef<CSeq_id>(&id);
+}
+
+//  ----------------------------------------------------------------------------
+bool
+sInheritScores(
+    const CSeq_align& alignFrom,
+    CSeq_align& alignTo)
+//  Idea: Inherit down, but only in a score of the same key/id does not already
+//    exist.
+//  ----------------------------------------------------------------------------
+{
+    typedef vector<CRef<CScore> > SCORES;
+
+    if (!alignFrom.IsSetScore()) {
+        return true;
+    }
+    const SCORES& scoresFrom = alignFrom.GetScore();
+    for (SCORES::const_iterator itFrom = scoresFrom.begin(); 
+            itFrom != scoresFrom.end(); ++itFrom) {
+
+        const CScore& scoreFrom = **itFrom;
+
+        if (scoreFrom.GetId().IsStr()) {
+            const string& keyFrom = scoreFrom.GetId().GetStr(); 
+            const SCORES& scoresTo = alignFrom.GetScore();
+            SCORES::const_iterator itTo;
+            for (itTo = scoresTo.begin(); itTo != scoresTo.end(); ++itTo) {
+                const CScore& scoreTo = **itTo;
+                if (scoreTo.GetId().IsStr()) {
+                    const string& keyTo = scoreTo.GetId().GetStr();
+                    if (keyTo == keyFrom) {
+                        break;
+                    }
+                }
+            }
+            if (itTo == scoresTo.end()) {
+                alignTo.SetScore().push_back(*itFrom);
+            }
+        }
+
+        if (scoreFrom.GetId().IsId()) {
+            const CObject_id& idFrom = scoreFrom.GetId();
+            const SCORES& scoresTo = alignFrom.GetScore();
+            SCORES::const_iterator itTo;
+            for (itTo = scoresTo.begin(); itTo != scoresTo.end(); ++itTo) {
+                const CScore& scoreTo = **itTo;
+                if (scoreTo.GetId().IsId()) {
+                    const CObject_id& idTo = scoreTo.GetId();
+                    if (idTo.Match(idFrom)) {
+                        break;
+                    }
+                }
+            }
+            if (itTo == scoresTo.end()) {
+                alignTo.SetScore().push_back(*itFrom);
+            }
+        }
+    }
+    return true;
 }
 
 //  ----------------------------------------------------------------------------
@@ -217,46 +276,8 @@ bool CGff3Writer::x_WriteAlignDisc(
 
         CRef<CSeq_align> pA(new CSeq_align);
         pA->Assign(**cit);
-        if ( align.IsSetScore() ) {
-            CSeq_align::TScore::const_iterator itsc = align.GetScore().begin();
-            for (/**/; itsc != align.GetScore().end(); ++itsc) {
-                const CScore& score = **itsc;
-
-                if (score.GetId().IsStr()) {
-                    const string& key = score.GetId().GetStr(); 
-                    CSeq_align::TScore::const_iterator itpa = pA->GetScore().begin();
-                    for (/**/; itpa != pA->GetScore().end(); ++itpa) {
-                        const CScore& paScore = **itpa;
-                        if (paScore.GetId().IsStr()) {
-                            const string& paKey = paScore.GetId().GetStr();
-                            if (paKey == key) {
-                                break;
-                            }
-                        }
-                    }
-                    if (itpa == pA->GetScore().end()) {
-                        pA->SetScore().push_back(*itsc);
-                    }
-                }
-
-                if (score.GetId().IsId()) {
-                    const CObject_id& id = score.GetId();
-                    CSeq_align::TScore::const_iterator itpa = pA->GetScore().begin();
-                    for (/**/; itpa != pA->GetScore().end(); ++itpa) {
-                        const CScore& paScore = **itpa;
-                        if (paScore.GetId().IsId()) {
-                            const CObject_id& paId = paScore.GetId();
-                            if (paId.Match(id)) {
-                                break;
-                            }
-                        }
-                    }
-                    if (itpa == pA->GetScore().end()) {
-                        pA->SetScore().push_back(*itsc);
-                    }
-                }
-
-            }
+        if (!sInheritScores(align, *pA)) {
+            return false;
         }
         if (!x_WriteAlign(*pA)) {
             return false;
@@ -337,7 +358,7 @@ bool CGff3Writer::x_WriteAlignDenseg(
 
         // Obtain and report basic source information:
         CConstRef<CSeq_id> pSourceId =
-            s_GetSourceId( align_map.GetSeqId(iSourceRow), *m_pScope );
+            sGetSourceId( align_map.GetSeqId(iSourceRow), *m_pScope );
         TSeqPos iSourceWidth = 1;
         if ( static_cast<size_t>( iSourceRow ) < ds.GetWidths().size() ) {
             iSourceWidth = ds.GetWidths()[ iSourceRow ];
