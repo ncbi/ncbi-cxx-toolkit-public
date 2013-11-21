@@ -35,6 +35,8 @@
 
 #include <objects/seq/seq_id_handle.hpp>
 #include <objects/genomecoll/genome_collection__.hpp>
+#include <objmgr/seq_loc_mapper.hpp>
+
 
 BEGIN_NCBI_SCOPE
 
@@ -47,6 +49,7 @@ class CGC_TypedSeqId;
 class CSeq_id;
 class CSeq_interval;
 class CSeq_loc;
+class CSeq_loc_Mapper;
 END_SCOPE(objects)
 
 
@@ -101,6 +104,8 @@ public:
         string ToString(void) const;
         bool operator<(const SIdSpec& Other) const;
         bool operator==(const SIdSpec& Other) const;
+    
+        bool IsSpecMet(const SIdSpec& Guessed) const;
     };
 
     // Derives the spec from a given loc
@@ -123,6 +128,10 @@ public:
     E_Gap IsLocInAGap(const objects::CSeq_loc& Loc) const;
 
     CConstRef<objects::CGC_Assembly> GetInternalGencoll(void) const;
+    
+    void GetSynonyms(const objects::CSeq_id& BaseId, 
+                     list< CConstRef<objects::CSeq_id> >& Synonyms, 
+                     bool NcbiOnly = true) const;
 
 protected:
     void x_Init(void);
@@ -153,7 +162,7 @@ protected:
 
     void x_BuildSeqMap(const objects::CGC_Assembly& assm);
     void x_BuildSeqMap(const objects::CGC_AssemblyUnit& assm);
-    void x_BuildSeqMap(const objects::CGC_Sequence& Seq);
+    void x_BuildSeqMap(const objects::CGC_Sequence& Seq, int Depth=1);
 
     CConstRef<objects::CSeq_id>
     x_GetIdFromSeqAndSpec(const objects::CGC_Sequence& Seq,
@@ -220,10 +229,14 @@ private:
     TAccToVerMap m_AccToVerMap;
 
     vector<string> m_Chromosomes;
+    int m_MaxSequenceDepth;
 
     // All component IDs to the Parent CGC_Sequence
     typedef map<objects::CSeq_id_Handle, TGC_SequenceCRef> TChildToParentMap;
     TChildToParentMap m_ChildToParentMap;
+    
+    typedef CRef<objects::CSeq_loc_Mapper> TSeqLocMapperRef;
+    mutable TSeqLocMapperRef m_UpMapper, m_DownMapper;
 };
 
 

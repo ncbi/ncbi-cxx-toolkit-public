@@ -631,6 +631,38 @@ BOOST_AUTO_TEST_CASE(TestCaseSpecPrimaryGuess)
 
 }
 
+// GetSynonyms test
+BOOST_AUTO_TEST_CASE(TestCaseGetSynonyms)
+{
+    // Fetch Gencoll
+    CGenomicCollectionsService GCService;
+    CConstRef<CGC_Assembly> GenColl(
+        GCService.GetAssembly("GCF_000001405.13",
+                              CGCClient_GetAssemblyRequest::eLevel_scaffold
+                             )
+    );
+
+
+    // Do a GetSynonyms
+    CGencollIdMapper Mapper(GenColl);
+    CRef<CSeq_id> OrigId(new CSeq_id());
+    OrigId->SetLocal().SetStr("chr1");
+
+    list<CConstRef<CSeq_id> > Synonyms;
+    
+    
+    // Check default NCBI-Only synonyms
+    Mapper.GetSynonyms(*OrigId, Synonyms);
+
+    BOOST_CHECK_EQUAL(Synonyms.size(), (size_t)5);
+
+
+    // Check all synonyms
+    Synonyms.clear();
+    Mapper.GetSynonyms(*OrigId, Synonyms, false);
+    
+    BOOST_CHECK_EQUAL(Synonyms.size(), (size_t)7);
+}
 
 
 

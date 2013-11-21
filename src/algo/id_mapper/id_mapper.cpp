@@ -48,7 +48,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_map.hpp>
 #include <objmgr/seq_map_ci.hpp>
-#include <objmgr/seq_loc_mapper.hpp>
+//#include <objmgr/seq_loc_mapper.hpp>
 #include <objmgr/util/obj_sniff.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/format/ostream_text_ostream.hpp>
@@ -178,7 +178,7 @@ CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
     
     SIdSpec GuessSpec;
     Guess(Loc, GuessSpec);
-    if (GuessSpec == Spec) {
+    if (Spec.IsSpecMet(GuessSpec)) {
         CRef<CSeq_loc> Result(new CSeq_loc());
         Result->Assign(Loc);
         return Result;
@@ -208,23 +208,18 @@ CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
             Seq = Found->second;
             if (Seq.NotNull()) {
                 if (x_CanSeqMeetSpec(*Seq, Spec) == e_Down) {
-                    SIdSpec GiSpec = GuessSpec;
-                    GiSpec.Alias = CGC_SeqIdAlias::e_Gi;
-                    CRef<CSeq_loc> GiLoc;
+                    SIdSpec PrimarySpec;
+                    PrimarySpec.Primary = true;
+                    CRef<CSeq_loc> PrimaryLoc;
                     // The up-mapper only works with Locs that have the same ID-type
                     // as the Structure is built from, so this step maps the given-loc 
                     // sideways to that needed ID. The Up-mapped initial result will be
                     // in the same space, but then it will also be side-mapped to the
                     // requested spec.
-                    GiSpec.TypedChoice = CGC_TypedSeqId::e_Genbank;
-                    GiLoc = Map(Loc, GiSpec);
-                    if(GiLoc.IsNull() || GiLoc->IsNull()) {
-                        GiSpec.TypedChoice = CGC_TypedSeqId::e_Refseq;
-                        GiLoc = Map(Loc, GiSpec);
-                    }
+                    PrimaryLoc = Map(Loc, PrimarySpec);
                     CRef<CSeq_loc> Result;
-                    if(GiLoc.NotNull() && !GiLoc->IsNull()) 
-                        Result = x_Map_Down(*GiLoc, *Seq, Spec);
+                    if(PrimaryLoc.NotNull() && !PrimaryLoc->IsNull()) 
+                        Result = x_Map_Down(*PrimaryLoc, *Seq, Spec);
                     else
                         Result = x_Map_Down(Loc, *Seq, Spec);
                     if (Result.NotNull() && !Result->IsNull()) {
@@ -242,22 +237,17 @@ CGencollIdMapper::Map(const objects::CSeq_loc& Loc, const SIdSpec& Spec) const
             Seq = Found->second;
             if (Seq.NotNull()) {
                 if (x_CanSeqMeetSpec(*Seq, Spec) == e_Up) {
-                    SIdSpec GiSpec = GuessSpec;
-                    GiSpec.Alias = CGC_SeqIdAlias::e_Gi;
-                    CRef<CSeq_loc> GiLoc;
+                    SIdSpec PrimarySpec;
+                    PrimarySpec.Primary = true;
+                    CRef<CSeq_loc> PrimaryLoc;
                     // The up-mapper only works with Locs that have the same ID-type
                     // as the Structure is built from, so this step maps the given-loc 
                     // sideways to that needed ID. The Up-mapped initial result will be
                     // in the same space, but then it will also be side-mapped to the
                     // requested spec.
-                    GiSpec.TypedChoice = CGC_TypedSeqId::e_Genbank;
-                    GiLoc = Map(Loc, GiSpec);
-                    if(GiLoc.IsNull() || GiLoc->IsNull()) {
-                        GiSpec.TypedChoice = CGC_TypedSeqId::e_Refseq;
-                        GiLoc = Map(Loc, GiSpec);
-                    }
-                    if(GiLoc.NotNull() && !GiLoc->IsNull()) {
-                        CRef<CSeq_loc> Result = x_Map_Up(*GiLoc, *Seq->GetParent(), Spec);
+                    PrimaryLoc = Map(Loc, PrimarySpec);
+                    if(PrimaryLoc.NotNull() && !PrimaryLoc->IsNull()) {
+                        CRef<CSeq_loc> Result = x_Map_Up(*PrimaryLoc, *Seq->GetParent(), Spec);
                         if (Result.NotNull() && !Result->IsNull()) {
                             return Result;
                         }
@@ -329,6 +319,7 @@ CGencollIdMapper::CanMeetSpec(const objects::CSeq_loc& Loc, const SIdSpec& Spec)
     return false;
 }
 
+
 void
 CGencollIdMapper::x_Init(void)
 {
@@ -353,6 +344,7 @@ CGencollIdMapper::x_Init(void)
 
 //cout << MSerial_AsnText << *m_Assembly;
 
+    m_MaxSequenceDepth = 0;
     x_BuildSeqMap(*m_Assembly);
 
     CTypeConstIterator<CSeq_id> IdIter(*m_Assembly);
@@ -376,10 +368,25 @@ CGencollIdMapper::x_Init(void)
         }
     }
     sort(m_Chromosomes.begin(), m_Chromosomes.end(), s_RevStrLenSort);
-    
-    //SSeqMapSelector  Sel;
-    //UpMapper.Reset(new CSeq_loc_Mapper(*m_Assembly, CSeq_loc_Mapper::eSeqMap_Up, Sel));
-    //DownMapper.Reset(new CSeq_loc_Mapper(*m_Assembly, CSeq_loc_Mapper::eSeqMap_Down, Sel));
+   
+    /* SetResolveCount(0) limits downmapping to just its immediate record,
+     *   so it never down-maps more than one step at a time.
+     * But zero breaks up-mapping. It only returns null.
+     * Leaving Upmapping to SetResolveCount(1) causes it to up-map to top-only,
+     *   But the later calls to Map() will down-map from top if we wanted a middle-level.
+     */
+    {{
+        SSeqMapSelector  Sel;
+        Sel.SetResolveCount(1);
+        m_UpMapper.Reset(new CSeq_loc_Mapper(*m_Assembly, CSeq_loc_Mapper::eSeqMap_Up, Sel));
+    }}
+
+    {{
+        SSeqMapSelector  Sel;
+        //Sel.SetFlags(CSeqMap::fFindAny);
+        Sel.SetResolveCount(0);
+        m_DownMapper.Reset(new CSeq_loc_Mapper(*m_Assembly, CSeq_loc_Mapper::eSeqMap_Down, Sel));
+    }}
 
     m_Assembly->PostRead();
 }
@@ -765,8 +772,10 @@ s_GetSeqIdAlias_GenBankRefSeq(CConstRef<CGC_TypedSeqId> tsid)
 }
 
 void
-CGencollIdMapper::x_BuildSeqMap(const CGC_Sequence& Seq)
+CGencollIdMapper::x_BuildSeqMap(const CGC_Sequence& Seq, int Depth)
 {
+    m_MaxSequenceDepth = max(m_MaxSequenceDepth, Depth);
+
     if (Seq.CanGetSeq_id()) {
         int IdCount = 0;
         CTypeConstIterator<CSeq_id> IdIter(Seq);
@@ -780,10 +789,7 @@ CGencollIdMapper::x_BuildSeqMap(const CGC_Sequence& Seq)
         }
     }
 
-//#warning FIXME: unsure why condition includes Seq.CanGetStructure()
-    if (Seq.CanGetSeq_id_synonyms() &&
-        (!Seq.GetSeq_id_synonyms().empty() || Seq.CanGetStructure())
-       ) {
+    if (Seq.CanGetSeq_id_synonyms()) {
         CConstRef<CGC_Sequence> SeqRef(&Seq);
         ITERATE (CGC_Sequence::TSeq_id_synonyms, it, Seq.GetSeq_id_synonyms()) {
             const CGC_TypedSeqId::E_Choice syn_type = (*it)->Which();
@@ -815,7 +821,7 @@ CGencollIdMapper::x_BuildSeqMap(const CGC_Sequence& Seq)
                 continue;
             }
             ITERATE (CGC_TaggedSequences::TSeqs, SeqIter, (*TagIter)->GetSeqs()) {
-                x_BuildSeqMap(**SeqIter);
+                x_BuildSeqMap(**SeqIter, Depth+1);
             }
         }
     }
@@ -941,7 +947,7 @@ CGencollIdMapper::x_CanSeqMeetSpec(const CGC_Sequence& Seq,
                                    const int Level
                                   ) const
 {
-    if (Level == 3) {
+    if (Level == m_MaxSequenceDepth) {
         return e_No;
     }
     //int SeqRole = x_GetRole(Seq);
@@ -1286,80 +1292,10 @@ CGencollIdMapper::x_Map_Up(const CSeq_loc& SourceLoc,
                            const SIdSpec& Spec
                           ) const
 {
-    CRef<CSeq_loc> Result2;
-    SSeqMapSelector  Sel;
-    Sel.SetFlags(CSeqMap::fFindAny).SetResolveCount(10);
-    CRef<CSeq_loc_Mapper> LocalUp(new CSeq_loc_Mapper(*m_Assembly, CSeq_loc_Mapper::eSeqMap_Up, Sel));
-    Result2 = LocalUp->Map(SourceLoc);
-    if(Result2.IsNull() || Result2->IsNull()) {
-        return CRef<CSeq_loc>();
-    }
-    Result2 = Map(*Result2, Spec);
-    return Result2;
-
-
-    if (x_CanSeqMeetSpec(Seq, Spec) == e_No) {
-        return CRef<CSeq_loc>();
-    }
-    if (!Seq.CanGetStructure()) {
-        return CRef<CSeq_loc>();
-    }
-    const CDelta_ext& Ext = Seq.GetStructure();
-    CRef<CBioseq> Bioseq(new CBioseq);
-    Bioseq->SetInst().SetExt().SetDelta().Assign(Ext);
-    Bioseq->SetInst().SetRepr(CSeq_inst::eRepr_delta);
-    Bioseq->SetInst().SetMol(CSeq_inst::eMol_na);
-
-    CRef<CSeq_id> Id(new CSeq_id());
-    Id->Assign(Seq.GetSeq_id());
-    if (Seq.CanGetSeq_id_synonyms()) {
-        ITERATE (CGC_Sequence::TSeq_id_synonyms, SynIter, Seq.GetSeq_id_synonyms()) {
-            CTypeConstIterator<CSeq_id> SynIdIter(**SynIter);
-            while (SynIdIter) {
-                CRef<CSeq_id> SynId(new CSeq_id());
-                SynId->Assign(*SynIdIter);
-                Bioseq->SetId().push_back(SynId);
-                ++SynIdIter;
-            }
-        }
-    }
-    else {
-        Bioseq->SetId().push_back(Id);
-    }
-
-    if (s_DoesBioseqRecurse(*Bioseq) ) {
-        return CRef<CSeq_loc>();
-    }
-
-    CRef<CSeqMap> SeqMap = CSeqMap::CreateSeqMapForBioseq(*Bioseq);
-    CRef<CSeq_id> MapId(new CSeq_id());
-    MapId->Assign(*Id);
-    // Direction
-    const CSeq_loc_Mapper::ESeqMapDirection Direction = CSeq_loc_Mapper::eSeqMap_Up;
-
-    CConstRef<CSeq_id> SpecId = x_GetIdFromSeqAndSpec(Seq, Spec);
-    if (SpecId) {
-        MapId->Assign(*SpecId);
-    }
-
-    CRef<CSeq_loc_Mapper> Mapper(
-        new CSeq_loc_Mapper(1, *SeqMap, Direction, MapId)
-    );
-    CRef<CSeq_loc> Result = Mapper->Map(SourceLoc);
-    /*if(Result && Result->IsPacked_int()) {
-        cerr << "UP BECAME PACKED INT" << endl;
-        cerr << MSerial_AsnText << SourceLoc;
-        cerr << MSerial_AsnText << *Result;
-        cerr << MSerial_AsnText << *Bioseq;
-        exit(1);
-    }*/
-    if (Result.NotNull()) {
-        if (Result->IsNull()) {
-            Result.Reset();
-        }
-        else {
-            Result = Map(*Result, Spec);
-        }
+    CRef<CSeq_loc> Result;
+    Result = m_UpMapper->Map(SourceLoc); 
+    if(!Result.IsNull() && !Result->IsNull()) {
+        Result = Map(*Result, Spec);
     }
     return Result;
 }
@@ -1370,73 +1306,11 @@ CGencollIdMapper::x_Map_Down(const CSeq_loc& SourceLoc,
                              const SIdSpec& Spec
                             ) const
 {
-    if (!Seq.CanGetStructure()) {
-        return CRef<CSeq_loc>();
+    CRef<CSeq_loc> Result;
+    Result = m_DownMapper->Map(SourceLoc); 
+    if(!Result.IsNull() && !Result->IsNull()) {
+        Result = Map(*Result, Spec);
     }
-    const CDelta_ext& Ext = Seq.GetStructure();
-    CRef<CBioseq> Bioseq(new CBioseq());
-    Bioseq->SetInst().SetExt().SetDelta().Assign(Ext);
-    Bioseq->SetInst().SetRepr(CSeq_inst::eRepr_delta);
-    Bioseq->SetInst().SetMol(CSeq_inst::eMol_na);
-
-    CRef<CSeq_id> Id(new CSeq_id());
-    Id->Assign(Seq.GetSeq_id());
-    if (Seq.CanGetSeq_id_synonyms()) {
-        ITERATE (CGC_Sequence::TSeq_id_synonyms, SynIter, Seq.GetSeq_id_synonyms()) {
-            CTypeConstIterator<CSeq_id> SynIdIter(**SynIter);
-            while (SynIdIter) {
-                CRef<CSeq_id> SynId(new CSeq_id());
-                SynId->Assign(*SynIdIter);
-                Bioseq->SetId().push_back(SynId);
-                ++SynIdIter;
-            }
-        }
-    }
-    else {
-        Bioseq->SetId().push_back(Id);
-    }
-
-    if (s_DoesBioseqRecurse(*Bioseq) ) {
-        return CRef<CSeq_loc>();
-    }
-
-    CRef<CSeqMap> SeqMap = CSeqMap::CreateSeqMapForBioseq(*Bioseq);
-    CRef<CSeq_id> MapId(new CSeq_id());
-    MapId->Assign(*SourceLoc.GetId()); // Parent seq id for the Mapper
-    // Direction
-    const CSeq_loc_Mapper::ESeqMapDirection Direction = CSeq_loc_Mapper::eSeqMap_Down;
-
-    //CConstRef<CSeq_id> SpecId = x_GetIdFromSeqAndSpec(Seq, Spec);
-    //if(SpecId)
-    //    MapId->Assign(*SpecId);
-
-
-    CRef<CSeq_loc_Mapper> Mapper(
-        new CSeq_loc_Mapper(1, *SeqMap, Direction, MapId)
-    );
-
-    CRef<CSeq_loc> Result = Mapper->Map(SourceLoc);
-
-    /*if(Result && Result->IsPacked_int()) {
-        cerr << "DOWN BECAME PACKED INT" << endl;
-        cerr << MSerial_AsnText << SourceLoc;
-        cerr << MSerial_AsnText << *Result;
-        cerr << MSerial_AsnText << *Bioseq;
-        exit(1);
-    }*/
-
-    if (Result.NotNull()) {
-        if (Result->IsNull()) {
-            Result.Reset();
-        }
-        else {
-            //cerr << MSerial_AsnText << *Bioseq;
-            //cerr << MSerial_AsnText << SourceLoc;
-            //cerr << MSerial_AsnText << *Result;
-            Result = Map(*Result, Spec);
-        }
-    }
-
     return Result;
 }
 
@@ -1547,6 +1421,69 @@ CGencollIdMapper::x_Merge_E_Gaps(const E_Gap First, const E_Gap Second) const
     return First;
 }
 
+
+void
+CGencollIdMapper::GetSynonyms(const CSeq_id& BaseId, 
+                              list< CConstRef<CSeq_id> >& Synonyms, 
+                              bool NcbiOnly) const 
+{
+    if (m_Assembly.IsNull()) {
+        return;
+    }
+    
+    CConstRef<CSeq_id> Id(&BaseId);
+    Id = x_NCBI34_Map_IdFix(Id);
+    
+        
+    CConstRef<CGC_Sequence> Seq;
+    const CSeq_id_Handle Idh = CSeq_id_Handle::GetHandle(*Id);
+    TIdToSeqMap::const_iterator Found = m_IdToSeqMap.find(Idh);
+    if (Found != m_IdToSeqMap.end()) {
+        Seq = Found->second;
+        if (Seq.NotNull()) {
+            ITERATE (CGC_Sequence::TSeq_id_synonyms, it, Seq->GetSeq_id_synonyms()) {
+                const CGC_TypedSeqId::E_Choice syn_type = (*it)->Which();
+                
+                CConstRef<CGC_SeqIdAlias> seq_id_alias = s_GetSeqIdAlias_GenBankRefSeq(*it);
+                if (seq_id_alias.NotNull()) {
+                    if (seq_id_alias->IsSetPublic()) {
+                        Synonyms.push_back(ConstRef(&seq_id_alias->GetPublic()));
+                    }
+                    if (seq_id_alias->IsSetGpipe()) {
+                        Synonyms.push_back(ConstRef(&seq_id_alias->GetGpipe()));
+                    }
+                    if (seq_id_alias->IsSetGi()) {
+                        Synonyms.push_back(ConstRef(&seq_id_alias->GetGi()));
+                    }
+                }
+                else if (syn_type == CGC_TypedSeqId::e_External && !NcbiOnly) {
+                    const CGC_External_Seqid& ExternalId = (*it)->GetExternal();
+                    Synonyms.push_back(ConstRef(&ExternalId.GetId()));
+                }
+                else if (syn_type == CGC_TypedSeqId::e_Private && !NcbiOnly) {
+                    const CSeq_id& Private = (*it)->GetPrivate();
+                    Synonyms.push_back(ConstRef(&Private));
+                }
+            }
+        }
+    }
+
+    // de-dupe
+    NON_CONST_ITERATE(list< CConstRef<CSeq_id> >, Outer, Synonyms) {
+        list< CConstRef<CSeq_id> >::iterator Inner = Outer; 
+        ++Inner;
+        for( ;  Inner != Synonyms.end(); ) {
+            if( (*Outer)->Equals(**Inner) ) {
+                Inner = Synonyms.erase(Inner);
+            } else  {
+                ++Inner;
+            }
+        }
+    }
+
+}
+
+
 CGencollIdMapper::SIdSpec::SIdSpec()
     : Primary(false),
       TypedChoice(objects::CGC_TypedSeqId::e_not_set), 
@@ -1654,6 +1591,22 @@ CGencollIdMapper::SIdSpec::ToString(void) const
     }
 
     return Result;
+}
+
+bool
+CGencollIdMapper::SIdSpec::IsSpecMet(const SIdSpec& Guessed) const 
+{
+    if(Primary) {
+        return (Guessed.Primary  && Role == Guessed.Role );
+    } else {
+        return (TypedChoice == Guessed.TypedChoice &&
+                Alias == Guessed.Alias &&
+                External == Guessed.External &&
+                Pattern == Guessed.Pattern  &&
+                Role == Guessed.Role  );
+    }
+
+
 }
 
 
