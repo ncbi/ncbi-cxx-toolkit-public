@@ -2424,7 +2424,16 @@ TGeneModelList CChainer::CChainerImpl::MakeChains(TGeneModelList& clust)
 {
     if(clust.empty()) return TGeneModelList();
 
+#ifdef NCBI_COMPILER_WORKSHOP
+    {{
+      vector<CGeneModel> v;
+      copy(clust.begin(), clust.end(), back_inserter(v));
+      sort(v.begin(), v.end(), GModelOrder(orig_aligns));
+      copy(v.begin(), v.end(), clust.begin());
+    }}
+#else
     clust.sort(GModelOrder(orig_aligns));
+#endif
 
     ITERATE (TGeneModelList, it, clust) {
         const CGeneModel& align = *it;
