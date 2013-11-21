@@ -113,7 +113,7 @@ private:
     CRef<CSeq_feat> create_internal_feature(const SModelData& md);
     CRef<CSeq_feat> create_cdregion_feature(SModelData& md);
     CRef<CSeq_align> model2spliced_seq_align(SModelData& md);
-    CRef<CSpliced_exon> spliced_exon (const CModelExon& e, EStrand strand) const;
+    //    CRef<CSpliced_exon> spliced_exon (const CModelExon& e, EStrand strand) const;
     CRef<CSeq_loc> create_packed_int_seqloc(const CGeneModel& model, TSignedSeqRange limits_on_mrna = TSignedSeqRange::GetWhole());
 
     CRef< CUser_object > create_ModelEvidence_user_object(const CGeneModel& model);
@@ -714,7 +714,8 @@ CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_internal_feature(co
     return feature;
 }
 
-CRef<CSpliced_exon> CAnnotationASN1::CImplementationData::spliced_exon (const CModelExon& e, EStrand strand) const
+//CRef<CSpliced_exon> CAnnotationASN1::CImplementationData::spliced_exon (const CModelExon& e, EStrand strand) const
+CRef<CSpliced_exon> spliced_exon (const CModelExon& e, EStrand strand)
 {
     CRef<CSpliced_exon> se(new CSpliced_exon());
 
@@ -727,6 +728,15 @@ CRef<CSpliced_exon> CAnnotationASN1::CImplementationData::spliced_exon (const CM
         se->SetGenomic_strand(e.m_source.m_strand==ePlus?eNa_strand_plus:eNa_strand_minus);
         se->SetGenomic_start(e.m_source.m_range.GetFrom());
         se->SetGenomic_end(e.m_source.m_range.GetTo());
+    }
+
+    if(e.m_ident > 0) {
+        CRef<CScore> scr(new CScore);
+        scr->SetValue().SetReal(e.m_ident);
+        CRef<CObject_id> id(new CObject_id());
+        id->SetStr("idty");
+        scr->SetId(*id);
+        se->SetScores().Set().push_back(scr);
     }
 
     if (e.m_fsplice) {
@@ -748,9 +758,15 @@ CRef<CSpliced_exon> CAnnotationASN1::CImplementationData::spliced_exon (const CM
     return se;
 }
 
-CRef< CSeq_align > CAnnotationASN1::CImplementationData::model2spliced_seq_align(SModelData& md)
-{
-    const CAlignModel& model = md.model;
+
+CRef<CProduct_pos> NucPosToProtPos(int nultripos) {
+    CRef<CProduct_pos> pos(new CProduct_pos);
+    pos->SetProtpos().SetFrame(nultripos%3 + 1);
+    pos->SetProtpos().SetAmin(nultripos/3);
+    return pos;
+}
+
+CRef<CSeq_align> AlignModelToSeqalign(const CAlignModel& model, CSeq_id& mrnaid, CSeq_id& contigid, bool is_align, bool is_protalign, bool stop_found) {
 
     CRef< CSeq_align > seq_align( new CSeq_align );
 
@@ -761,14 +777,22 @@ CRef< CSeq_align > CAnnotationASN1::CImplementationData::model2spliced_seq_align
     seq_align->SetType(CSeq_align::eType_partial);
     CSpliced_seg& spliced_seg = seq_align->SetSegs().SetSpliced();
 
-    spliced_seg.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
-    spliced_seg.SetProduct_length(model.TargetLen());
+    if(is_protalign) {
+        spliced_seg.SetProduct_type(CSpliced_seg::eProduct_type_protein);
+        int product_length = model.TargetLen()/3;
+        if(stop_found)
+            --product_length;
+        spliced_seg.SetProduct_length(product_length);
+    } else {
+        spliced_seg.SetProduct_type(CSpliced_seg::eProduct_type_transcript);
+        spliced_seg.SetProduct_length(model.TargetLen());
+    }
     if (model.Status() & CAlignModel::ePolyA) {
         spliced_seg.SetPoly_a((model.Status() & CAlignModel::eReversed)? model.PolyALen() - 1 : model.TargetLen() - model.PolyALen());
     }
 
-    spliced_seg.SetProduct_id(*md.mrna_sid);
-    spliced_seg.SetGenomic_id(*contig_sid);
+    spliced_seg.SetProduct_id(mrnaid);
+    spliced_seg.SetGenomic_id(contigid);
     spliced_seg.SetProduct_strand((model.Status() & CGeneModel::eReversed)==0 ? eNa_strand_plus : eNa_strand_minus);
     spliced_seg.SetGenomic_strand(model.Strand()==ePlus?eNa_strand_plus:eNa_strand_minus);
 
@@ -783,8 +807,13 @@ CRef< CSeq_align > CAnnotationASN1::CImplementationData::model2spliced_seq_align
         CRef<CSpliced_exon> se = spliced_exon(*e,model.Strand());
 
         TSignedSeqRange transcript_exon = model.TranscriptExon(i);
-        se->SetProduct_start().SetNucpos(transcript_exon.GetFrom());
-        se->SetProduct_end().SetNucpos(transcript_exon.GetTo());
+        if(is_protalign) {
+            se->SetProduct_start(*NucPosToProtPos(transcript_exon.GetFrom()));
+            se->SetProduct_end(*NucPosToProtPos(transcript_exon.GetTo()));
+        } else {
+            se->SetProduct_start().SetNucpos(transcript_exon.GetFrom());
+            se->SetProduct_end().SetNucpos(transcript_exon.GetTo());
+        }
 
         if(e->Limits().NotEmpty()) {    // normal exon
             int last_chunk = e->GetFrom();
@@ -794,7 +823,10 @@ CRef< CSeq_align > CAnnotationASN1::CImplementationData::model2spliced_seq_align
             
                 if (indel.Loc()-last_chunk > 0) {
                     CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
-                    chunk->SetMatch(indel.Loc()-last_chunk);
+                    if(is_align)
+                        chunk->SetDiag(indel.Loc()-last_chunk);
+                    else
+                        chunk->SetMatch(indel.Loc()-last_chunk);
                     se->SetParts().push_back(chunk);
                     last_chunk = indel.Loc();
                 }
@@ -814,12 +846,18 @@ CRef< CSeq_align > CAnnotationASN1::CImplementationData::model2spliced_seq_align
             }
             if (e->GetFrom() <= last_chunk && last_chunk <= e->GetTo()) {
                 CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
-                chunk->SetMatch(e->GetTo()-last_chunk+1);
+                if(is_align)
+                    chunk->SetDiag(e->GetTo()-last_chunk+1);
+                else
+                    chunk->SetMatch(e->GetTo()-last_chunk+1);
                 se->SetParts().push_back(chunk);
             }
         }  else  {   // gap filler
             CRef< CSpliced_exon_chunk > chunk(new CSpliced_exon_chunk);
-            chunk->SetMatch(e->m_source.m_range.GetLength());
+            if(is_align)
+                chunk->SetDiag(e->m_source.m_range.GetLength());
+            else
+                chunk->SetMatch(e->m_source.m_range.GetLength());
             se->SetParts().push_back(chunk);
         }
 
@@ -836,6 +874,65 @@ CRef< CSeq_align > CAnnotationASN1::CImplementationData::model2spliced_seq_align
                 se.SetParts().reverse();
         }
     }
+
+    return seq_align;
+}
+
+CRef<objects::CSeq_align> CAlignModel::MakeSeqAlign(const string& contig) const {
+
+    bool is_align = !(Type()&(eChain|eGnomon));
+
+    CAlignModel model = *this;
+    if(is_align && (Type()&eProt) && HasStop()) {
+        _ASSERT(GetCdsInfo().IsMappedToGenome());
+        TSignedSeqRange lim = GetCdsInfo().Start()+GetCdsInfo().ReadingFrame();
+        model.Clip(lim,eRemoveExons);   // protein alignments doesn't include stop
+    }
+
+    CRef<CSeq_id> contig_sid(CIdHandler::ToSeq_id(contig));
+    CRef<CSeq_id> mrna_sid(new CSeq_id);
+    mrna_sid->Assign(*GetTargetId());
+    CRef<CSeq_align> seq_align = AlignModelToSeqalign(model, *mrna_sid, *contig_sid, is_align, is_align && (Type()&eProt), is_align && (Type()&eProt) && HasStop());
+
+    if(is_align) {
+        CSpliced_seg& spliced_seg = seq_align->SetSegs().SetSpliced();
+
+        if(Ident() > 0) {
+            int matches = Ident()*seq_align->GetAlignLength()/100.+0.5;
+            seq_align->SetNamedScore("matches", matches);
+        }
+
+        if(Status()&eBestPlacement) 
+            seq_align->SetNamedScore("rank", 1);
+
+        if(Status()&eUnknownOrientation)
+            seq_align->SetNamedScore("ambiguous_orientation", 1);
+
+        if(Weight() > 1)
+            seq_align->SetNamedScore("count", int(Weight()+0.5));
+
+        if(Type()&eProt) {
+            if(HasStart()) {
+                CRef<CSpliced_seg_modifier> modi(new CSpliced_seg_modifier);
+                modi->SetStart_codon_found(true);
+                spliced_seg.SetModifiers().push_back(modi);
+            }
+            if(HasStop()) {
+                CRef<CSpliced_seg_modifier> modi(new CSpliced_seg_modifier);
+                modi->SetStop_codon_found(true);
+                spliced_seg.SetModifiers().push_back(modi);
+            }
+        }
+    }
+
+    return seq_align;
+}
+
+CRef<CSeq_align> CAnnotationASN1::CImplementationData::model2spliced_seq_align(SModelData& md)
+{
+    const CAlignModel& model = md.model;
+
+    CRef<CSeq_align> seq_align = AlignModelToSeqalign(model, *md.mrna_sid, *contig_sid, false, false, false);
 
     CRef<CUser_object> user( new CUser_object);
     user->SetClass("Gnomon");

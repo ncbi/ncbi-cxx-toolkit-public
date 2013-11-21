@@ -697,6 +697,7 @@ public:
     TInDels GetInDels(bool fs_only) const;
     TInDels GetInDels(TSignedSeqPos a, TSignedSeqPos b, bool fs_only) const;
     int PolyALen() const;
+    CRef<objects::CSeq_align> MakeSeqAlign(const string& contig) const;   // should be used for alignments only; for chains and models will produce a Splign alignment of mRNA
 
 private:
     void RecalculateAlignMap();
