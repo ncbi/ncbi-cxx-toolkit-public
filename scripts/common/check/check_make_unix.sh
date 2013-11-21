@@ -406,8 +406,8 @@ if \$no_report_err && \$no_db_load; then
 fi
 
 if test "\$NCBI_CHECK_SETLIMITS" != "0"; then
-   ulimit -c 1000000
-   ulimit -v 4000000
+   ulimit -c 1000000 >/dev/null 2>&1;
+   ulimit -v 4000000 >/dev/null 2>&1;
 fi
 
 
