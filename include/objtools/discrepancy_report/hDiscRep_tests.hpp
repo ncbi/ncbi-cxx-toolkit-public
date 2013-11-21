@@ -3111,6 +3111,16 @@ BEGIN_SCOPE(DiscRepNmSpc)
 // new comb: CBioseq_
 
 
+  class CBioseq_TEST_TERMINAL_NS : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_TEST_TERMINAL_NS () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return string("TEST_TERMINAL_NS");}
+  };
+
   class CBioseq_DISC_MISSING_DEFLINES : public CBioseqTestAndRepData
   {
     public:

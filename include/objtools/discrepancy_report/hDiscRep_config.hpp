@@ -120,7 +120,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static vector < CRef < CTestAndRepData > > tests_on_SubmitBlk;
    };
 
-   class CRepConfig : public CObject 
+   class NCBI_DISCREPANCY_REPORT_EXPORT CRepConfig : public CObject 
    {
      public:
         virtual ~CRepConfig() { };
