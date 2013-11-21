@@ -1,0 +1,244 @@
+Seq-annot ::= {
+  id {
+    local str "NC_000020.10"
+  },
+  data align {
+    {
+      type partial,
+      dim 2,
+      score {
+        {
+          id str "score",
+          value int 106831
+        },
+        {
+          id str "num_ident",
+          value int 122245
+        },
+        {
+          id str "num_mismatch",
+          value int 82
+        },
+        {
+          id str "common_component",
+          value int 1
+        },
+        {
+          id str "filter_score",
+          value int 0
+        },
+        {
+          id str "for_remapping",
+          value int 2
+        },
+        {
+          id str "merge_aligner",
+          value int 1
+        },
+        {
+          id str "rank",
+          value int 1
+        },
+        {
+          id str "reciprocity",
+          value int 3
+        },
+        {
+          id str "bit_score",
+          value real { 197281, 10, 0 }
+        },
+        {
+          id str "pct_identity_gap",
+          value real { 951864, 10, -4 }
+        },
+        {
+          id str "pct_identity_ungap",
+          value real { 99933, 10, -3 }
+        },
+        {
+          id str "pct_identity_gapopen_only",
+          value real { 999207, 10, -4 }
+        },
+        {
+          id str "pct_coverage",
+          value real { 952814, 10, -4 }
+        }
+      },
+      segs denseg {
+        dim 2,
+        numseg 31,
+        ids {
+          other {
+            accession "NW_003315966",
+            version 1
+          },
+          other {
+            accession "NC_000020",
+            version 10
+          }
+        },
+        starts {
+          0,
+          17751746,
+          -1,
+          17832061,
+          80315,
+          17832062,
+          84238,
+          -1,
+          84239,
+          17835985,
+          -1,
+          17836400,
+          84654,
+          17836401,
+          -1,
+          17836678,
+          84931,
+          17836682,
+          -1,
+          17837363,
+          85612,
+          17837372,
+          -1,
+          17839482,
+          87722,
+          17839484,
+          -1,
+          17842196,
+          90434,
+          17842198,
+          -1,
+          17844519,
+          92755,
+          17844536,
+          92857,
+          -1,
+          92858,
+          17844638,
+          -1,
+          17852518,
+          100738,
+          17852519,
+          -1,
+          17858503,
+          106722,
+          17858504,
+          -1,
+          17860145,
+          108363,
+          17860146,
+          -1,
+          17860832,
+          109049,
+          17860834,
+          109152,
+          -1,
+          115208,
+          17860937,
+          -1,
+          17861882,
+          116153,
+          17861883
+        },
+        lens {
+          80315,
+          1,
+          3923,
+          1,
+          415,
+          1,
+          277,
+          4,
+          681,
+          9,
+          2110,
+          2,
+          2712,
+          2,
+          2321,
+          17,
+          102,
+          1,
+          7880,
+          1,
+          5984,
+          1,
+          1641,
+          1,
+          686,
+          2,
+          103,
+          6056,
+          945,
+          1,
+          12232
+        },
+        strands {
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus,
+          plus
+        }
+      }
+    }
+  }
+}
