@@ -63,7 +63,12 @@ CUser_object::~CUser_object(void)
 const CUser_field& CUser_object::GetField(const string& str,
                                           const string& delim) const
 {
-    return *GetFieldRef(str, delim);
+    CConstRef<CUser_field> ref(GetFieldRef(str, delim));
+    if (ref.Empty()) {
+        NCBI_THROW(CCoreException, eNullPtr,
+                   "Unable to find User-field " + str);
+    }
+    return *ref;
 }
 
 

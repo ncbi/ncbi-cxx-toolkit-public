@@ -61,6 +61,9 @@ const CField_rule& CComment_rule::FindFieldRule (const string& field_name) const
             return **it;
         }
     }
+
+    NCBI_THROW (CCoreException, eNullPtr, "FindFieldRule failed");
+
     return *CConstRef<CField_rule>();
 }
 
