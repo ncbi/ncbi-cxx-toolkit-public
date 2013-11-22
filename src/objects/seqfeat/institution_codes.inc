@@ -1127,6 +1127,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CNHS	s	Croydon Natural History and Scientific Society",
 "CNM	s	Cheltenham Naturalists' Association",
 "CNM-CM	c	Filamentous fungus collection of the Spanish National Center for Microbiology",
+"CNM<ESP>	s	Centro Nacional de Microbiologia",
 "CNMC	s	Colorado National Monument",
 "CNMS	s	Colombo National Museum",
 "CNPS	s	Centro Nacional de Pesquisas da Soja",
