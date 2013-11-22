@@ -19,7 +19,7 @@ LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 # These settings are necessary for optimized WorkShop builds, due to
 # BLAST's own use of them.
 CXXFLAGS = $(FAST_CXXFLAGS)
-LDFLAGS = $(FAST_LDFLAGS) $(OPENMP_FLAGS)
+LDFLAGS = $(FAST_LDFLAGS) 
 
 REQUIRES = objects -Cygwin
 ### END COPIED SETTINGS

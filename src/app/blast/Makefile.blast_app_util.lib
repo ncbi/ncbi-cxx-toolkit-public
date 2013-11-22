@@ -6,9 +6,9 @@ LIB = blast_app_util
 SRC = blast_app_util
 LIB_OR_DLL = lib
 
-CFLAGS   = $(FAST_CFLAGS) $(OPENMP_FLAGS)
+CFLAGS   = $(FAST_CFLAGS) 
 CPPFLAGS = -DNCBI_MODULE=BLAST $(ORIG_CPPFLAGS)
-CXXFLAGS = $(FAST_CXXFLAGS) $(OPENMP_FLAGS)
+CXXFLAGS = $(FAST_CXXFLAGS) 
 
 ASN_DEP = blastdb xnetblast
 REQUIRES = objects

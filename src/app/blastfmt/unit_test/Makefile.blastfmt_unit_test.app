@@ -6,7 +6,7 @@ SRC = blast_hitmatrix_wrapper hitmatrix_unit_test
 CPPFLAGS = $(OSMESA_INCLUDE) $(WXWIDGETS_INCLUDE) $(GLEW_INCLUDE) $(ORIG_CPPFLAGS) \
 		   $(BOOST_INCLUDE)
 CXXFLAGS = $(FAST_CXXFLAGS)
-LDFLAGS = $(FAST_LDFLAGS) $(OPENMP_FLAGS)
+LDFLAGS = $(FAST_LDFLAGS) 
 
 LIB_ = $(BLAST_FORMATTER_LIBS) w_hit_matrix gui_glmesa w_gl w_wx w_data \
       gui_graph gui_opengl gui_print gui_objutils gencoll_client gbproj \
