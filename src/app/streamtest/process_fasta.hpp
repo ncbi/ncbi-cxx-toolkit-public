@@ -84,14 +84,14 @@ public:
     //  ------------------------------------------------------------------------
     {
         try {
-            /*
-            m_out->SetAllFlags( CFastaOstream::fNoDupCheck |
+            m_out->SetAllFlags( CFastaOstream::fInstantiateGaps |
+                                CFastaOstream::fAssembleParts |
+                                CFastaOstream::fNoDupCheck |
                                 CFastaOstream::fKeepGTSigns |
                                 CFastaOstream::fNoExpensiveOps );
             if ( m_show_mods ) {
                 m_out->SetFlag( CFastaOstream::fShowModifiers );
             }
-            */
 
             CFastaOstream::EGapMode gap_mode = CFastaOstream::eGM_letters;
             if ( m_gap_mode == "one-dash" ) {
