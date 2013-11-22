@@ -194,7 +194,7 @@ private:
 CBiosampleChkApp::CBiosampleChkApp(void) :
     m_ObjMgr(0), m_In(0), m_Continue(false),
     m_Level(0), m_ReportStream(0), m_LogStream(0), m_Mode(e_report_diffs),
-    m_StructuredCommentPrefix(""), m_CompareStructuredComments(false), m_Processed(0), m_Unprocessed(0)
+    m_StructuredCommentPrefix(""), m_CompareStructuredComments(true), m_Processed(0), m_Unprocessed(0)
 {
     m_SrcReportFields.clear();
 	m_StructuredCommentReportFields.clear();
@@ -927,7 +927,7 @@ void CBiosampleChkApp::GetBioseqDiffs(CBioseq_Handle bh)
 {
     CSeqdesc_CI src_desc_ci(bh, CSeqdesc::e_Source);
 	CSeqdesc_CI comm_desc_ci(bh, CSeqdesc::e_User);
-	while (comm_desc_ci && !NStr::Equal(comm_desc_ci->GetUser().GetType().GetStr(), "StructuredComment")) {
+	while (comm_desc_ci && !x_IsReportableStructuredComment(*comm_desc_ci)) {
 		++comm_desc_ci;
 	}
     if (!src_desc_ci && !comm_desc_ci) {
