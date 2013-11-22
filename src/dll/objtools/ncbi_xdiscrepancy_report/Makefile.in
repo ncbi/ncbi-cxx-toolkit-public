@@ -1,0 +1,8 @@
+#################################
+# $Id$
+#################################
+
+DLL_PROJ = ncbi_xdiscrepancy_report
+
+srcdir = @srcdir@
+include @builddir@/Makefile.meta

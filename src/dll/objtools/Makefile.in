@@ -4,6 +4,7 @@ SUB_PROJ =  \
     ncbi_lds \
     ncbi_lds2 \
     ncbi_validator \
+    ncbi_xdiscrepancy_report \
     ncbi_xloader_blastdb \
     ncbi_xloader_remoteblast \
     ncbi_xloader_cdd \
