@@ -3,7 +3,6 @@
 DLL = ncbi_xdiscrepancy_report
 
 HOSTED_LIBS  = xdiscrepancy_report
-DEPENDENCIES = ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext
+DEPENDENCIES = ncbi_core ncbi_web ncbi_general ncbi_pub ncbi_misc ncbi_seq ncbi_seqext ncbi_xloader_genbank
 
 CPPFLAGS = -DNCBI_DISCREPANCY_REPORT_EXPORTS
-
