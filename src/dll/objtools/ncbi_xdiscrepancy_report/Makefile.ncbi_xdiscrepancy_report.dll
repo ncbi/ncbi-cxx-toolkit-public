@@ -5,5 +5,5 @@ DLL = ncbi_xdiscrepancy_report
 HOSTED_LIBS  = xdiscrepancy_report
 DEPENDENCIES = ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext
 
-CPPFLAGS = -D NCBI_DISCREPANCY_REPORT_EXPORTS
+CPPFLAGS = -DNCBI_DISCREPANCY_REPORT_EXPORTS
 
