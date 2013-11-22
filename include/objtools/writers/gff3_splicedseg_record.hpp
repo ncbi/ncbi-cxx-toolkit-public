@@ -48,20 +48,33 @@ class NCBI_XOBJWRITE_EXPORT CGffSplicedSegRecord
     : public CGffAlignmentRecord
 {
 public:
+    /// Initialize GFF3 output record, to be filled later from a Spliced-seg
+    /// @param uFlags
+    ///   mode flags of the writer creating this record.
+    /// @param uRecordId
+    ///   record ID, used to set the GFF3 ID attribute. 
+    ///
     CGffSplicedSegRecord(
             unsigned int uFlags =0,
             unsigned int uRecordId =0):
         CGffAlignmentRecord(uFlags, uRecordId)
-    {
-    };
+    {};
 
     virtual ~CGffSplicedSegRecord() {};
 
 public:
+    /// Initialize all GFF3 record fields using the provided information
+    /// @param scope
+    ///   scope object used for seq-id lookup and conversion.
+    /// @param align
+    ///   container alignment object of the given Dense-seg.
+    /// @param exon
+    ///   the particular Spliced-exon in the Spliced-seg to be used.
+    ///
     bool Initialize(
-        CScope&,
-        const CSeq_align&,
-        const CSpliced_exon&);
+        CScope& scope,
+        const CSeq_align& align,
+        const CSpliced_exon& exon);
 
 protected:
     bool xSetId(
