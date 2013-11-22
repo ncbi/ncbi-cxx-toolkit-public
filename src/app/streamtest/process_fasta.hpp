@@ -60,6 +60,8 @@ public:
         CScopedProcess::ProcessInitialize( args );
 
         m_out = new CFastaOstream( args["o"].AsOutputFile() );
+        m_gap_mode = args["gap-mode"].AsString();
+        m_show_mods = args["show-mods"];
     };
 
     //  ------------------------------------------------------------------------
@@ -82,14 +84,35 @@ public:
     //  ------------------------------------------------------------------------
     {
         try {
-            m_out->Write( m_topseh );
             /*
-            VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, *m_entry) {
-                const CBioseq& bioseq = *bit;
-                m_out->Write( bioseq, 0, true );
-                ++m_objectcount;
+            m_out->SetAllFlags( CFastaOstream::fNoDupCheck |
+                                CFastaOstream::fKeepGTSigns |
+                                CFastaOstream::fNoExpensiveOps );
+            if ( m_show_mods ) {
+                m_out->SetFlag( CFastaOstream::fShowModifiers );
             }
             */
+
+            CFastaOstream::EGapMode gap_mode = CFastaOstream::eGM_letters;
+            if ( m_gap_mode == "one-dash" ) {
+                gap_mode = CFastaOstream::eGM_one_dash;
+            } else if ( m_gap_mode == "dashes" ) {
+                gap_mode = CFastaOstream::eGM_dashes;
+            } else if ( m_gap_mode == "letters" ) {
+                gap_mode = CFastaOstream::eGM_letters;
+            } else if ( m_gap_mode == "count" ) {
+                gap_mode = CFastaOstream::eGM_count;
+            }
+            m_out->SetGapMode( gap_mode );
+
+            // m_out->Write( m_topseh );
+            VISIT_ALL_BIOSEQS_WITHIN_SEQENTRY (bit, *m_entry) {
+                const CBioseq& bioseq = *bit;
+                // m_out->Write( bioseq, 0, true );
+                const CBioseq_Handle& bsh = (*m_scope).GetBioseqHandle (bioseq);
+                m_out->Write( bsh );
+                ++m_objectcount;
+            }
         }
         catch (CException& e) {
             LOG_POST(Error << "error processing seqentry: " << e.what());
@@ -98,6 +121,8 @@ public:
 
 protected:
     CFastaOstream* m_out;
+    string m_gap_mode;
+    bool m_show_mods;
 };
 
 #endif

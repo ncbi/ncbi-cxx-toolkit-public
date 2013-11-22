@@ -218,6 +218,9 @@ void CStreamTestApp::Init()
                                           "letters",
                                           "count"));
 
+    arg_desc->AddFlag("show-mods",
+        "Show FASTA header mods (e.g. [strain=abc])");
+
     SetupArgDescriptions(arg_desc.release());
 }
 
