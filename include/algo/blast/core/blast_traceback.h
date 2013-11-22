@@ -161,6 +161,7 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
  * @param rps_info RPS database information structure [in]
  * @param pattern_blk PHI BLAST auxiliary data structure [in]
  * @param results Where to save the results after traceback. [out]
+ * @param num_threads Maximum number of threads to spawn [in]
  */
 NCBI_XBLAST_EXPORT
 Int2 
@@ -173,7 +174,8 @@ Blast_RunTracebackSearch(EBlastProgramType program,
    const BlastDatabaseOptions* db_options, 
    const PSIBlastOptions* psi_options, BlastScoreBlk* sbp,
    BlastHSPStream* hsp_stream, const BlastRPSInfo* rps_info, 
-   SPHIPatternSearchBlk* pattern_blk, BlastHSPResults** results);
+   SPHIPatternSearchBlk* pattern_blk, BlastHSPResults** results,
+                         size_t num_threads);
 
 
 /** Entry point from the API level to perform the traceback stage of a BLAST 
@@ -199,6 +201,7 @@ Blast_RunTracebackSearch(EBlastProgramType program,
  * @param results Where to save the results after traceback. [out]
  * @param interrupt_search User specified function to interrupt search [in]
  * @param progress_info User supplied data structure to aid interrupt [in]
+ * @param num_threads Maximum number of threads to spawn [in]
  */
 NCBI_XBLAST_EXPORT
 Int2 
@@ -212,7 +215,8 @@ Blast_RunTracebackSearchWithInterrupt(EBlastProgramType program,
    const PSIBlastOptions* psi_options, BlastScoreBlk* sbp,
    BlastHSPStream* hsp_stream, const BlastRPSInfo* rps_info, 
    SPHIPatternSearchBlk* pattern_blk, BlastHSPResults** results,
-   TInterruptFnPtr interrupt_search, SBlastProgress* progress_info);
+   TInterruptFnPtr interrupt_search, SBlastProgress* progress_info,
+                                      size_t num_threads);
 
 #ifdef __cplusplus
 }

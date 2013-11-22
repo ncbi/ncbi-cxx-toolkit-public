@@ -40,6 +40,7 @@ static char const rcsid[] =
 
 #include <algo/blast/core/blast_hspstream.h>
 #include <algo/blast/core/blast_util.h>
+#include "blast_hspstream_mt_utils.h"
 
 /** Default hit saving stream methods */
 
@@ -541,7 +542,7 @@ fprintf(stderr, "No hits to query %d\n", global_query);
 
    return kBlastHSPStream_Success;
 }
-
+ 
 int BlastHSPStreamBatchRead(BlastHSPStream* hsp_stream,
                             BlastHSPStreamResultBatch* batch) 
 {
@@ -605,20 +606,25 @@ BlastHSPStreamResultBatch *
 Blast_HSPStreamResultBatchFree(BlastHSPStreamResultBatch *batch)                                           
 {                                                                                                          
     if (batch != NULL) {                                                                                   
-        sfree(batch->hsplist_array);                                                                       
+        if (batch->hsplist_array) {
+            sfree(batch->hsplist_array);                                                                       
+        }
         sfree(batch);                                                                                      
     }                                                                                                      
     return NULL;                                                                                           
 }                                                                                                          
                                                                                                            
-void Blast_HSPStreamResultBatchReset(BlastHSPStreamResultBatch *batch)                                     
+BlastHSPStreamResultBatch* Blast_HSPStreamResultBatchReset(BlastHSPStreamResultBatch *batch)                                     
 {                                                                                                          
     Int4 i;                                                                                                
-    for (i = 0; i < batch->num_hsplists; i++) {                                                            
-        batch->hsplist_array[i] =                                                                          
-           Blast_HSPListFree(batch->hsplist_array[i]);                                                     
-    }                                                                                                      
-    batch->num_hsplists = 0;                                                                               
+    if (batch != NULL) {
+        for (i = 0; i < batch->num_hsplists; i++) {                                                            
+            batch->hsplist_array[i] =                                                                          
+               Blast_HSPListFree(batch->hsplist_array[i]);                                                     
+        }                                                                                                      
+        batch->num_hsplists = 0;                                                                               
+    }
+    return batch;
 }                                                
 
 BlastHSPStream* 

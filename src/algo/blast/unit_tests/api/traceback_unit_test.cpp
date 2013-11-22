@@ -305,6 +305,7 @@ BOOST_AUTO_TEST_CASE(testBLASTNTraceBack) {
     BlastHitList* hit_list = results->hitlist_array[0];
     hsp_list = hit_list->hsplist_array[0];
 
+    BOOST_REQUIRE(hsp_list != NULL);
     BOOST_REQUIRE_EQUAL(k_num_hsps_end, hsp_list->hspcnt);
     for (int index=0; index<k_num_hsps_end; index++)
     {
@@ -438,6 +439,7 @@ BOOST_AUTO_TEST_CASE(testBLASTNTraceBackLargeXDrop) {
     BlastHitList* hit_list = results->hitlist_array[0];
     hsp_list = hit_list->hsplist_array[0];
 
+    BOOST_REQUIRE(hsp_list != NULL);
     BOOST_REQUIRE_EQUAL(k_num_hsps_end, hsp_list->hspcnt);
     for (int index=0; index<k_num_hsps_end; index++)
     {
@@ -561,6 +563,7 @@ BOOST_AUTO_TEST_CASE(testBLASTPTraceBack) {
     hsp_list = hit_list->hsplist_array[0];
 
     // One hsp is dropped when the function runs.
+    BOOST_REQUIRE(hsp_list != NULL);
     BOOST_REQUIRE_EQUAL(k_num_hsps_end, hsp_list->hspcnt);
     for (int index=0; index<k_num_hsps_end; index++)
     {
@@ -705,6 +708,7 @@ BOOST_AUTO_TEST_CASE(testTBLASTNTraceBack) {
     BlastHitList* hit_list = results->hitlist_array[0];
     hsp_list = hit_list->hsplist_array[0];
 
+    BOOST_REQUIRE(hsp_list != NULL);
     BOOST_REQUIRE_EQUAL(k_num_hsps_end, hsp_list->hspcnt);
     for (int index=0; index<k_num_hsps_end; index++)
     {

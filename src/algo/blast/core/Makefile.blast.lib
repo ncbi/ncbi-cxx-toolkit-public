@@ -11,15 +11,15 @@ SRC_C = aa_ungapped blast_diagnostics blast_engine blast_extend \
         ncbi_std ncbi_math blast_encoding pattern phi_extend phi_gapalign \
         phi_lookup blast_parameters blast_posit blast_program blast_query_info \
         blast_tune blast_sw blast_dynarray split_query gencode_singleton \
-        index_ungapped
+        index_ungapped blast_traceback_mt_priv blast_hspstream_mt_utils
     
 SRC   = $(SRC_C)
 
 LIB = blast
 
-#CFLAGS  = $(FAST_CFLAGS) -pedantic -std=c99 -Wall -W -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wundef -Winline -Wno-parentheses
-CFLAGS  = $(FAST_CFLAGS)
-LDFLAGS = $(FAST_LDFLAGS)
+#CFLAGS  = $(FAST_CFLAGS) $(OPENMP_FLAGS) -pedantic -std=c99 -Wall -W -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wundef -Winline -Wno-parentheses
+CFLAGS  = $(FAST_CFLAGS)  $(OPENMP_FLAGS)
+LDFLAGS = $(FAST_LDFLAGS) $(OPENMP_FLAGS)
 
 
 WATCHERS = maning madden camacho

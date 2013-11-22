@@ -91,8 +91,6 @@ SplitQuery_GetChunkSize(EProgram program)
             retval = 10000;
             break;
         }
-
-        _TRACE("Using query chunk size " << retval);
     }
 
     const EBlastProgramType prog_type(EProgramToEBlastProgramType(program));
@@ -101,7 +99,7 @@ SplitQuery_GetChunkSize(EProgram program)
         NCBI_THROW(CBlastException, eInvalidArgument, 
                    "Split query chunk size must be divisible by 3");
     }
-
+    _TRACE("Returning query chunk size " << retval << " for " << EProgramToTaskName(program));
     return retval;
 }
 
@@ -250,6 +248,7 @@ CLocalBlast::Run()
     if (m_LocalDbAdapter.NotEmpty() && !m_LocalDbAdapter->IsBlastDb()) {
         m_TbackSearch->SetResultType(eSequenceComparison);
     }
+    m_TbackSearch->SetNumberOfThreads(GetNumberOfThreads());
     CRef<CSearchResultSet> retval = m_TbackSearch->Run();
     retval->SetFilteredQueryRegions(m_PrelimSearch->GetFilteredQueryRegions());
     m_Messages = m_TbackSearch->GetSearchMessages();

@@ -227,6 +227,11 @@ CBlastTracebackSearch::Run()
         SBlastHitsParametersFree(bhp);
     }
     
+    auto_ptr<CAutoEnvironmentVariable> omp_env;
+    if (m_NumThreads > kMinNumThreads) {
+        omp_env.reset(new CAutoEnvironmentVariable("OMP_WAIT_POLICY", "passive"));
+    }
+
     BlastHSPResults * hsp_results(0);
     int status =
         Blast_RunTracebackSearchWithInterrupt(m_OptsMemento->m_ProgramType,
@@ -246,7 +251,7 @@ CBlastTracebackSearch::Run()
                                  phi_lookup_table,
                                  & hsp_results,
                                  m_InternalData->m_FnInterrupt,
-                                 m_InternalData->m_ProgressMonitor->Get());
+                                 m_InternalData->m_ProgressMonitor->Get(), m_NumThreads);
     if (status) {
         NCBI_THROW(CBlastException, eCoreBlastError, "Traceback failed"); 
     }

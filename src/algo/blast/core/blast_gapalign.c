@@ -4215,11 +4215,17 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program,
     } else {        
        /* NB: The left extension includes the starting point 
           [q_start,s_start]; the right extension does not. */
-       score_left = 
-          Blast_SemiGappedAlign(query, subject, q_start+1, s_start+1,
-             &private_q_length, &private_s_length, FALSE, rev_prelim_tback,
-             gap_align, score_params, q_start, FALSE, TRUE,
+       // <AG> score_left = 
+       //    Blast_SemiGappedAlign(query, subject, q_start+1, s_start+1,
+       //       &private_q_length, &private_s_length, FALSE, rev_prelim_tback,
+       //       gap_align, score_params, q_start, FALSE, TRUE,
+       //       fence_hit);
+
+        score_left = ALIGN_EX(query, subject, q_start+1, s_start+1,  &private_q_length, &private_s_length, rev_prelim_tback,
+                              gap_align, 
+                              score_params, q_start, FALSE /*reversed*/, TRUE /*reverse_sequence*/,
              fence_hit);
+
        gap_align->query_start = q_start - private_q_length + 1;
        gap_align->subject_start = s_start - private_s_length + 1;
     }
@@ -4238,10 +4244,16 @@ Int2 BLAST_GappedAlignmentWithTraceback(EBlastProgramType program,
                 &private_q_length, &private_s_length, FALSE, fwd_prelim_tback,
                 gap_align, score_params, q_start, FALSE, switch_seq);
         } else {
+            // <AG> score_right = 
+            //    Blast_SemiGappedAlign(query+q_start, subject+s_start, 
+            //       q_length-q_start-1, s_length-s_start-1, &private_q_length, 
+            //       &private_s_length, FALSE, fwd_prelim_tback, gap_align, 
+            //       score_params, q_start, FALSE, FALSE,
+            //       fence_hit);
             score_right = 
-               Blast_SemiGappedAlign(query+q_start, subject+s_start, 
+               ALIGN_EX(query+q_start, subject+s_start, 
                   q_length-q_start-1, s_length-s_start-1, &private_q_length, 
-                  &private_s_length, FALSE, fwd_prelim_tback, gap_align, 
+                  &private_s_length, fwd_prelim_tback, gap_align, 
                   score_params, q_start, FALSE, FALSE,
                   fence_hit);
         }

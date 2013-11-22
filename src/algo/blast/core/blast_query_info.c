@@ -114,7 +114,7 @@ BlastQueryInfo* BlastQueryInfoFree(BlastQueryInfo* query_info)
     return NULL;
 }
 
-BlastQueryInfo* BlastQueryInfoDup(BlastQueryInfo* query_info)
+BlastQueryInfo* BlastQueryInfoDup(const BlastQueryInfo* query_info)
 {
    BlastQueryInfo* retval = BlastMemDup(query_info, sizeof(BlastQueryInfo));
    Int4 num_contexts = query_info->last_context + 1;

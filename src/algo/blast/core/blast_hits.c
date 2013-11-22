@@ -2909,7 +2909,7 @@ static Int2 s_Blast_HitListGrowHSPListArray(BlastHitList* hit_list)
        (BlastHSPList**) realloc(hit_list->hsplist_array, hit_list->hsplist_current*sizeof(BlastHSPList*));
 
     if (hit_list->hsplist_array == NULL)
-       return -1;
+       return BLASTERR_MEMORY;
 
     return 0;
 }

@@ -52,7 +52,7 @@ BEGIN_SCOPE(blast)
 // Forward declaration
 class IBlastSeqInfoSrc;
 
-class NCBI_XBLAST_EXPORT CBlastTracebackSearch : public CObject
+class NCBI_XBLAST_EXPORT CBlastTracebackSearch : public CObject, public CThreadable
 {
 public:
     /// Create a BlastSeqSrc re-using an already created BlastSeqSrc
@@ -87,6 +87,7 @@ public:
 
     /// Retrieve any error/warning messages that occurred during the search
     TSearchMessages GetSearchMessages() const;
+
 private:
     /// Common initialization performed when doing traceback only
     void x_Init(CRef<IQueryFactory>   qf, 

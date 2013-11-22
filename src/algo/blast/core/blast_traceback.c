@@ -60,12 +60,19 @@ static char const rcsid[] =
 #include <algo/blast/core/blast_setup.h>
 #include <algo/blast/core/blast_kappa.h>
 #include <algo/blast/core/blast_sw.h>
+#include <algo/blast/core/blast_seqsrc.h>
+#include <algo/blast/core/blast_seqsrc_impl.h>
 #include <algo/blast/core/phi_gapalign.h>
 #include <algo/blast/core/gencode_singleton.h>
 #include "blast_gapalign_priv.h"
 #include "blast_psi_priv.h"
 #include "blast_hits_priv.h"
 #include "blast_itree.h"
+#include "blast_traceback_mt_priv.h"
+#include "blast_hspstream_mt_utils.h"
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 /** Window size used to scan HSP for highest score region, where gapped
  * extension starts. 
@@ -496,7 +503,7 @@ Blast_TracebackFromHSPList(EBlastProgramType program_number,
                  score_params, q_start, s_start, FALSE, TRUE,
                  fence_hit);
          } else {
-             BLAST_GappedAlignmentWithTraceback(program_number, query, 
+           BLAST_GappedAlignmentWithTraceback(program_number, query,
                  adjusted_subject, gap_align, score_params, q_start, s_start, 
                  query_length, adjusted_s_length,
                  fence_hit);
@@ -999,7 +1006,7 @@ Int2 s_RPSComputeTraceback(EBlastProgramType program_number,
                            BlastGapAlignStruct* gap_align,
                            BlastScoringParameters* score_params,
                            const BlastExtensionParameters* ext_params,
-                           BlastHitSavingParameters* hit_params,
+                           const BlastHitSavingParameters* hit_params,
                            const BlastRPSInfo* rps_info,                
                            const PSIBlastOptions* psi_options,
                            BlastHSPResults* results,
@@ -1309,161 +1316,270 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                        TInterruptFnPtr interrupt_search, 
                        SBlastProgress* progress_info)
 {
-   Int2 status = 0;
-   BlastHSPResults* results = NULL;
-   BlastHSPList* hsp_list = NULL;
-   BlastScoreBlk* sbp;
-   Int4 default_db_genetic_code = db_options->genetic_code;
- 
-   if (!query_info || !seq_src || !hsp_stream || !results_out) {
-      return -1;
-   }
-   
-   /* Set the raw X-dropoff value for the final gapped extension with 
-      traceback */
-   gap_align->gap_x_dropoff = ext_params->gap_x_dropoff_final;
+    Int2 status = 0;
+    SThreadLocalDataArray* thread_data = SThreadLocalDataArrayNew(1);
+    if ( !thread_data ) {
+        return BLASTERR_MEMORY;
+    }
+    status = SThreadLocalDataArraySetup(thread_data, program_number, 
+                                        score_params->options,
+                                        eff_len_params->options,
+                                        ext_params->options, 
+                                        hit_params->options, query_info, 
+                                        gap_align->sbp,
+                                        (BlastSeqSrc*)seq_src);
+    if (status) {
+        return status;
+    }
+    status = 
+        BLAST_ComputeTraceback_MT(program_number, hsp_stream, query,
+                                  query_info, thread_data, db_options,
+                                  psi_options, rps_info, pattern_blk,
+                                  results_out, interrupt_search,
+                                  progress_info);
+    thread_data = SThreadLocalDataArrayFree(thread_data);
+    return status;
+}
 
-   sbp = gap_align->sbp;
-  
-   /* signal the traceback stage has started */
-   if (progress_info)
-       progress_info->stage = eTracebackSearch;
 
-   results = Blast_HSPResultsNew(query_info->num_queries);
+/** Set the raw X-dropoff value for the final gapped extension with traceback */
+static void
+s_SThreadLocalDataArraySetGapXDropoffFinal(SThreadLocalDataArray* array)
+{
+    if (array) {
+        Uint4 i;
+        for (i = 0; i < array->num_elems; i++) {
+            array->tld[i]->gap_align->gap_x_dropoff = 
+                array->tld[i]->ext_params->gap_x_dropoff_final;
+        }
+    }
+}
 
-   if (Blast_ProgramIsRpsBlast(program_number)) {
-       status =
-           s_RPSComputeTraceback(program_number, hsp_stream, seq_src, default_db_genetic_code,
-                                 query, query_info, gap_align, score_params,
-                                 ext_params, hit_params, rps_info, psi_options, results,
-                                 interrupt_search, progress_info);
-   } else if (ext_params->options->compositionBasedStats > 0 ||
-              ext_params->options->eTbackExt == eSmithWatermanTbck) {
-      /* FIXME partial sequence fetching/translation could lead to fence hit
-         and seg fault */
-      status =
-          Blast_RedoAlignmentCore(program_number, query, query_info, sbp,
-                                  NULL, seq_src, default_db_genetic_code, 
-                                  NULL, hsp_stream, score_params, ext_params, 
-                                  hit_params, psi_options, results);
-   } else {
-      Int4 i = 0;
-      BlastSeqSrcGetSeqArg seq_arg;
-      EBlastEncoding encoding = Blast_TracebackGetEncoding(program_number);
-      Boolean perform_traceback = score_params->options->gapped_calculation;
-      Boolean perform_partial_fetch =  BlastSeqSrcGetSupportsPartialFetching(seq_src);
-      const Boolean kPhiBlast = Blast_ProgramIsPhiBlast(program_number);
-      BlastHSPStreamResultBatch *batch = 
-                      Blast_HSPStreamResultBatchInit(query_info->num_queries);
+Int2
+BLAST_ComputeTraceback_MT(EBlastProgramType program_number,
+                          BlastHSPStream * hsp_stream,
+                          BLAST_SequenceBlk * query,
+                          BlastQueryInfo * query_info,
+                          SThreadLocalDataArray* thread_data,
+                          const BlastDatabaseOptions * db_options,
+                          const PSIBlastOptions * psi_options,
+                          const BlastRPSInfo * rps_info,
+                          SPHIPatternSearchBlk * pattern_blk,
+                          BlastHSPResults ** results_out,
+                          TInterruptFnPtr interrupt_search,
+                          SBlastProgress * progress_info)
+{
+    Int2 retval = 0;
+    BlastHSPResults *results = NULL;
+    BlastScoreBlk *sbp = NULL;
+    BlastScoringParameters* score_params = NULL;
+    const BlastExtensionParameters* ext_params = NULL;
+    const BlastHitSavingParameters* hit_params = NULL;
+    const BlastEffectiveLengthsParameters* eff_len_params = NULL;
+    BlastGapAlignStruct *gap_align = NULL;
+    const BlastSeqSrc* seq_src = NULL;
+    Int4 default_db_genetic_code = db_options->genetic_code;
 
-      memset((void*) &seq_arg, 0, sizeof(seq_arg));
+    if (!query_info || !hsp_stream || !results_out) {
+        return -1;
+    }
 
-      /* Retrieve all HSP lists from the HSPStream that contain
-         hits to the next subject OID. */
-      while (BlastHSPStreamBatchRead(hsp_stream, batch) 
-             != kBlastHSPStream_Eof) {
+    ASSERT(thread_data->num_elems);
+    seq_src = thread_data->tld[0]->seqsrc;
+    gap_align = thread_data->tld[0]->gap_align;
+    score_params = thread_data->tld[0]->score_params;
+    ext_params = thread_data->tld[0]->ext_params;
+    hit_params = thread_data->tld[0]->hit_params;
+    eff_len_params = thread_data->tld[0]->eff_len_params;
 
-         /* check for interrupt */
-         if (interrupt_search && (*interrupt_search)(progress_info) == TRUE) {
-             Blast_HSPStreamResultBatchReset(batch);
-             status = BLASTERR_INTERRUPTED;
-             break;
-         }
+    s_SThreadLocalDataArraySetGapXDropoffFinal(thread_data);
 
-         /* traceback will require fetching the subject sequence */
+    sbp = gap_align->sbp;
 
-         if (perform_traceback) {
+    /* signal the traceback stage has started */
+    if (progress_info)
+        progress_info->stage = eTracebackSearch;
 
-             /* set up partial fetching */
-             if (perform_partial_fetch) {
-                 BLAST_SetupPartialFetching(program_number, 
-                                            (BlastSeqSrc*)seq_src,
+    if (Blast_ProgramIsRpsBlast(program_number)) {
+        results = Blast_HSPResultsNew(query_info->num_queries);
+        retval =
+            s_RPSComputeTraceback(program_number, hsp_stream, seq_src,
+                                  default_db_genetic_code, query, query_info,
+                                  gap_align, score_params, ext_params, hit_params, 
+                                  rps_info, psi_options, results,
+                                  interrupt_search, progress_info);
+    } else if (ext_params->options->compositionBasedStats > 0 ||
+               ext_params->options->eTbackExt == eSmithWatermanTbck) {
+        results = Blast_HSPResultsNew(query_info->num_queries);
+        /* FIXME partial sequence fetching/translation could lead to fence hit
+           and seg fault */
+        retval =
+            Blast_RedoAlignmentCore(program_number, query, query_info, sbp,
+                                    NULL, seq_src, default_db_genetic_code,
+                                    NULL, hsp_stream, score_params, ext_params,
+                                    hit_params, psi_options, results);
+    } else {
+        Int4 i;
+        Uint4 actual_num_threads = 0;
+        BlastHSPStreamResultsBatchArray* batches = NULL;
+        Boolean has_been_interrupted = FALSE;
+        
+        if ( (retval = BlastHSPStreamToHSPStreamResultsBatch(hsp_stream, &batches))) {
+            return retval;
+        }
+        ASSERT(batches);
+        actual_num_threads = MAX(1, MIN(thread_data->num_elems, batches->num_batches));
+        /* Added for testing purposes only */
+        if (getenv("NCBI_BLAST_DISABLE_OPENMP")) {
+            actual_num_threads = 1;
+        }
+        if (actual_num_threads != thread_data->num_elems) {
+            SThreadLocalDataArrayTrim(thread_data, actual_num_threads);
+        }
+        
+#pragma omp parallel for default(none) num_threads(actual_num_threads) schedule(guided) if (actual_num_threads > 1) \
+        shared(retval, thread_data, batches, score_params, program_number, sbp, hit_params, pattern_blk, query, ext_params, query_info, default_db_genetic_code, has_been_interrupted, interrupt_search, progress_info)
+        for (i = 0; i < batches->num_batches; i++) {
+            BlastSeqSrcGetSeqArg seq_arg = {0,};
+            Int4 hsplist_itr = 0;
+            Int2 status = 0;
+            int tid = 0;
+            const Boolean perform_traceback = score_params->options->gapped_calculation;
+            BlastHSPStreamResultBatch* batch = batches->array_of_batches[i];
+            const EBlastEncoding encoding = Blast_TracebackGetEncoding(program_number);
+            BlastSeqSrc* seqsrc = NULL;
+            BlastGapAlignStruct* gap_align = NULL;
+            Boolean perform_partial_fetch = FALSE;
+
+#ifdef _OPENMP
+            tid = omp_get_thread_num();
+#endif
+            seqsrc = thread_data->tld[tid]->seqsrc;
+            gap_align = thread_data->tld[tid]->gap_align;
+            perform_partial_fetch = BlastSeqSrcGetSupportsPartialFetching(seqsrc);
+
+            /* check for interrupt */
+            if (interrupt_search && (*interrupt_search)(progress_info) == TRUE) {
+                batches->array_of_batches[i] = Blast_HSPStreamResultBatchReset(batch);
+#pragma omp critical(retval)
+                { 
+                    retval = BLASTERR_INTERRUPTED;
+                    has_been_interrupted = TRUE; 
+                }
+            }
+#pragma omp flush(has_been_interrupted)
+            if (has_been_interrupted) {
+                batches->array_of_batches[i] = Blast_HSPStreamResultBatchReset(batch);
+                continue;
+            }
+
+            /* setup traceback: will require fetching the subject sequence */
+            if (perform_traceback) {
+
+                /* set up partial fetching */
+                if (perform_partial_fetch) {
+                    BLAST_SetupPartialFetching(program_number, seqsrc,
                                             (const BlastHSPList**)batch->hsplist_array,
                                             batch->num_hsplists);
-            }
+                }
 
-            seq_arg.oid = batch->hsplist_array[0]->oid;
-            seq_arg.encoding = encoding;
-            seq_arg.check_oid_exclusion = TRUE;
-            seq_arg.reset_ranges = FALSE;
-            
-            BlastSequenceBlkClean(seq_arg.seq);
-            if (BlastSeqSrcGetSequence(seq_src, &seq_arg) < 0) {
-               Blast_HSPStreamResultBatchReset(batch);
-               continue;
-            }
+                seq_arg.oid = batch->hsplist_array[0]->oid;
+                seq_arg.encoding = encoding;
+                seq_arg.check_oid_exclusion = TRUE;
+                seq_arg.reset_ranges = FALSE;
 
-            /* If the subject is translated and the BlastSeqSrc implementation
-             * doesn't provide a genetic code string, use the default genetic
-             * code for all subjects (as in the C toolkit) */
-            if (Blast_SubjectIsTranslated(program_number) && 
-                seq_arg.seq->gen_code_string == NULL) {
-                seq_arg.seq->gen_code_string = 
-                    GenCodeSingletonFind(default_db_genetic_code);
-                ASSERT(seq_arg.seq->gen_code_string);
-            }
-            
-            if (BlastSeqSrcGetTotLen(seq_src) == 0) {
-               /* This is not a database search, so effective search spaces
-                * need to be recalculated based on this subject sequence 
-                * length.
-                * NB: The initial word parameters structure is not available 
-                * here, so the small gap cutoff score for linking of HSPs will 
-                * not be updated. Since by default linking is done with uneven 
-                * gap statistics, this can only influence a corner non-default 
-                * case, and is a tradeoff for a benefit of not having to deal 
-                * with ungapped extension parameters in the traceback stage.
-                */
-               if ((status = BLAST_OneSubjectUpdateParameters(program_number, 
+                if (BlastSeqSrcGetSequence(seqsrc, &seq_arg) < 0) {
+                    batches->array_of_batches[i] = Blast_HSPStreamResultBatchReset(batch);
+                    continue;
+                }
+
+                /* If the subject is translated and the BlastSeqSrc implementation
+                * doesn't provide a genetic code string, use the default genetic
+                * code for all subjects (as in the C toolkit) */
+                if (Blast_SubjectIsTranslated(program_number) && 
+                    seq_arg.seq->gen_code_string == NULL) {
+#pragma omp critical(tback_gen_code)
+                    {
+                        seq_arg.seq->gen_code_string = 
+                            GenCodeSingletonFind(default_db_genetic_code);
+#ifndef _OPENMP
+                        ASSERT(seq_arg.seq->gen_code_string);
+#endif
+                    }
+                }
+
+                if (BlastSeqSrcGetTotLen(seqsrc) == 0) {
+                    BlastQueryInfo* qi = thread_data->tld[tid]->query_info;
+                    BlastEffectiveLengthsParameters* elp =
+                        thread_data->tld[tid]->eff_len_params;
+                    BlastHitSavingParameters* hp = 
+                        thread_data->tld[tid]->hit_params;
+                    /* This is not a database search, so effective search spaces
+                    * need to be recalculated based on this subject sequence 
+                    * length.
+                    * NB: The initial word parameters structure is not available 
+                    * here, so the small gap cutoff score for linking of HSPs will 
+                    * not be updated. Since by default linking is done with uneven 
+                    * gap statistics, this can only influence a corner non-default 
+                    * case, and is a tradeoff for a benefit of not having to deal 
+                    * with ungapped extension parameters in the traceback stage.
+                    */
+                    if ((status = BLAST_OneSubjectUpdateParameters(program_number, 
                                 seq_arg.seq->length, score_params->options, 
-                                query_info, sbp, hit_params, 
-                                NULL, eff_len_params)) != 0) {
-                  Blast_HSPStreamResultBatchReset(batch);
-                  break;
-               }
-            }
-         }
+                                qi, sbp, hp, NULL, elp)) != 0) {
+                        batches->array_of_batches[i] = Blast_HSPStreamResultBatchReset(batch);
+#pragma omp critical(retval)
+                        { 
+                            retval = status;
+                            has_been_interrupted = TRUE; 
+                        }
+                        continue;
+                    }
+                }
+            } /* end of set up for traceback */
 
-         /* process all the hits to this subject sequence, one
-            list at a time */
+            /* process all the hits to this subject sequence, one list at a time */
+            for (hsplist_itr = 0; hsplist_itr < batch->num_hsplists; hsplist_itr++) {
+                BlastHSPList* hsp_list = batch->hsplist_array[hsplist_itr];
 
-         for (i = 0; i < batch->num_hsplists; i++) {
+                if (perform_traceback) {
+                    if (Blast_ProgramIsPhiBlast(program_number)) {
+                        s_PHITracebackFromHSPList(program_number, hsp_list, query, 
+                                        seq_arg.seq, gap_align, sbp, 
+                                        score_params, hit_params, 
+                                        query_info, pattern_blk);
+                    } else {
+                        Boolean fence_hit = FALSE;
+                        Blast_TracebackFromHSPList(program_number, hsp_list, query,
+                                         seq_arg.seq, query_info, 
+                                         gap_align, sbp, score_params,
+                                         ext_params->options, hit_params,
+                                         seq_arg.seq->gen_code_string,
+                                         &fence_hit);
 
-            hsp_list = batch->hsplist_array[i];
+                        if (fence_hit) {
+                            /* Disable range support and refetch the 
+                            (whole) subject sequence */
 
-            if (perform_traceback) {
-               if (kPhiBlast) {
-                  s_PHITracebackFromHSPList(program_number, hsp_list, query, 
-                                            seq_arg.seq, gap_align, sbp, 
-                                            score_params, hit_params, 
-                                            query_info, pattern_blk);
-               } else {
-                  Boolean fence_hit = FALSE;
-                  Blast_TracebackFromHSPList(program_number, hsp_list, query,
-                                             seq_arg.seq, query_info, 
-                                             gap_align, sbp, score_params,
-                                             ext_params->options, hit_params,
-                                             seq_arg.seq->gen_code_string,
-                                             &fence_hit);
-                    
-                  if (fence_hit) {
-                     /* Disable range support and refetch the 
-                        (whole) subject sequence */
-                        
-                     seq_arg.reset_ranges = TRUE;
-                     BlastSeqSrcReleaseSequence(seq_src, &seq_arg);
-                     BlastSeqSrcGetSequence(seq_src, &seq_arg);
-                        
-                     /* The C toolkit will erase genetic_code, so do it again */
-                     if (Blast_SubjectIsTranslated(program_number) && 
-                         seq_arg.seq->gen_code_string == NULL) {
-                         seq_arg.seq->gen_code_string = 
-                             GenCodeSingletonFind(default_db_genetic_code);
-                         ASSERT(seq_arg.seq->gen_code_string);
-                     }
-            
-                     /* Retry the alignment with fence_hit set*/
-                     Blast_TracebackFromHSPList(program_number, hsp_list, 
+                            seq_arg.reset_ranges = TRUE;
+                            BlastSeqSrcReleaseSequence(seqsrc, &seq_arg);
+                            BlastSeqSrcGetSequence(seqsrc, &seq_arg);
+
+                            /* The C toolkit will erase genetic_code, so do it again */
+                            if (Blast_SubjectIsTranslated(program_number) && 
+                                seq_arg.seq->gen_code_string == NULL) {
+#pragma omp critical(tback_gen_code)
+                                {
+                                    seq_arg.seq->gen_code_string = 
+                                        GenCodeSingletonFind(default_db_genetic_code);
+#ifndef _OPENMP
+                                    ASSERT(seq_arg.seq->gen_code_string);
+#endif
+                                }
+                            }
+
+                            /* Retry the alignment with fence_hit set*/
+                            Blast_TracebackFromHSPList(program_number, hsp_list, 
                                                 query, seq_arg.seq, 
                                                 query_info, gap_align,
                                                 sbp, score_params, 
@@ -1471,92 +1587,100 @@ BLAST_ComputeTraceback(EBlastProgramType program_number,
                                                 hit_params, 
                                                 seq_arg.seq->gen_code_string,
                                                 &fence_hit);
-                     ASSERT(fence_hit == FALSE);
-                  } /* fence_hit */
-               }    /* !phi_blast */
+#ifndef _OPENMP
+                            ASSERT(fence_hit == FALSE);
+#endif
+                        } /* fence_hit */
+                    }    /* !phi_blast */
 
-            } else {
-               /* traceback skipped; compute bit scores for searches 
-                  where the traceback phase is seperated from the 
-                  preliminary search. */
-             
-               Blast_HSPListGetBitScores(hsp_list, FALSE, sbp);
+                } else {
+                    /* traceback skipped; compute bit scores for searches 
+                       where the traceback phase is seperated from the 
+                       preliminary search. */
+                    Blast_HSPListGetBitScores(hsp_list, FALSE, sbp);
+                }
+
+                /* Free HSP list if all HSPs have been deleted. */
+
+                batch->hsplist_array[hsplist_itr] = NULL;
+                if (hsp_list->hspcnt == 0) {
+                    hsp_list = Blast_HSPListFree(hsp_list);
+                }
+                else {
+                    Blast_HSPResultsInsertHSPList(thread_data->tld[tid]->results, hsp_list, 
+                                  hit_params->options->hitlist_size);
+                }
+            }      /* loop over one HSPList batch */
+            if (perform_traceback) {
+                BlastSeqSrcReleaseSequence(seqsrc, &seq_arg);
+                BlastSequenceBlkFree(seq_arg.seq);
             }
-         
-            /* Free HSP list if all HSPs have been deleted. */
+        } /* end of omp parallel for */
+        batches = BlastHSPStreamResultsBatchArrayFree(batches);
 
-            batch->hsplist_array[i] = NULL;
-            if (hsp_list->hspcnt == 0) {
-               hsp_list = Blast_HSPListFree(hsp_list);
-            }
-            else {
-               Blast_HSPResultsInsertHSPList(results, hsp_list, 
-                                          hit_params->options->hitlist_size);
-            }
-         }      /* loop over one HSPList batch */
+        /* Reduce results from all threads and continue with business as usual */
+        results = SThreadLocalDataArrayConsolidateResults(thread_data);
+        ASSERT(results);
 
-         if (perform_traceback) {
-            BlastSeqSrcReleaseSequence(seq_src, &seq_arg);
-         }
+        /* post-traceback pipes */
+        BlastHSPStreamTBackClose(hsp_stream, results);
 
-      }         /* loop over all batches */
+    } /* end of else */
 
-      batch = Blast_HSPStreamResultBatchFree(batch);
-      /* post-traceback pipes */
-      BlastHSPStreamTBackClose(hsp_stream, results);
+    // -RMH-: Apply masklevel filter
+    if (results && hit_params->mask_level < 101) {
+        // printf("Masklevel being invoked at level: %d\n",
+        // hit_params->mask_level );
 
-      BlastSequenceBlkFree(seq_arg.seq);
-   }
+        Int4 totalCnt = 0;
+        Int4 rmIdx;
+        Int4 hspIdx;
+        for (rmIdx = 0; rmIdx < results->num_queries; rmIdx++) {
+            if (results->hitlist_array[rmIdx] == NULL)
+                continue;
+            for (hspIdx = 0;
+                 hspIdx < results->hitlist_array[rmIdx]->hsplist_count;
+                 hspIdx++)
+                totalCnt +=
+                    results->hitlist_array[rmIdx]->hsplist_array[hspIdx]->
+                    hspcnt;
+        }
+        // printf("Before masklevel total = %d\n", totalCnt );
 
+        Blast_HSPResultsApplyMasklevel(results, query_info,
+                                       hit_params->mask_level, query->length);
 
-   // -RMH-: Apply masklevel filter
-   if ( results && hit_params->mask_level < 101 )
-   {
-     //printf("Masklevel being invoked at level: %d\n", hit_params->mask_level );
-                          
-     Int4 totalCnt = 0;   
-     Int4 rmIdx;          
-     Int4 hspIdx;         
-     for ( rmIdx = 0; rmIdx < results->num_queries; rmIdx++ )
-     {                    
-       if ( results->hitlist_array[rmIdx] == NULL )
-         continue;
-       for ( hspIdx = 0; hspIdx < results->hitlist_array[rmIdx]->hsplist_count; hspIdx++ )
-        totalCnt += results->hitlist_array[rmIdx]->hsplist_array[hspIdx]->hspcnt;  
-     }
-     //printf("Before masklevel total = %d\n", totalCnt );
-   
-     Blast_HSPResultsApplyMasklevel( results, query_info,
-                                     hit_params->mask_level, query->length );
+        totalCnt = 0;
+        for (rmIdx = 0; rmIdx < results->num_queries; rmIdx++) {
+            if (results->hitlist_array[rmIdx] == NULL)
+                continue;
+            for (hspIdx = 0;
+                 hspIdx < results->hitlist_array[rmIdx]->hsplist_count;
+                 hspIdx++)
+                totalCnt +=
+                    results->hitlist_array[rmIdx]->hsplist_array[hspIdx]->
+                    hspcnt;
+        }
+        // printf("After masklevel total = %d\n", totalCnt );
+    }
+    // -RMH-: end of change
 
-     totalCnt = 0;
-     for ( rmIdx = 0; rmIdx < results->num_queries; rmIdx++ )
-     {
-       if ( results->hitlist_array[rmIdx] == NULL )
-         continue;
-       for ( hspIdx = 0; hspIdx < results->hitlist_array[rmIdx]->hsplist_count; hspIdx++ )
-        totalCnt += results->hitlist_array[rmIdx]->hsplist_array[hspIdx]->hspcnt;
-     }
-     //printf("After masklevel total = %d\n", totalCnt );
-   }
-   // -RMH-: end of change
+    /* Re-sort the hit lists according to their best e-values, because they
+       could have changed. Only do this for a database search. */
+    if (BlastSeqSrcGetTotLen(seq_src) > 0)
+        Blast_HSPResultsSortByEvalue(results);
 
-   /* Re-sort the hit lists according to their best e-values, because
-      they could have changed. Only do this for a database search. */
-   if (BlastSeqSrcGetTotLen(seq_src) > 0)
-      Blast_HSPResultsSortByEvalue(results);
-
-   /* Eliminate extra hits from results, if preliminary hit list size is larger
-      than the final hit list size */
+    /* Eliminate extra hits from results, if preliminary hit list size is
+       larger than the final hit list size */
     s_BlastPruneExtraHits(results, hit_params->options->hitlist_size);
 
-    if (status == BLASTERR_INTERRUPTED) {
+    if (retval == BLASTERR_INTERRUPTED) {
         results = Blast_HSPResultsFree(results);
     }
 
     *results_out = results;
 
-    return status;
+    return retval;
 }
 
 Int2 
@@ -1569,12 +1693,14 @@ Blast_RunTracebackSearch(EBlastProgramType program,
    const BlastDatabaseOptions* db_options, 
    const PSIBlastOptions* psi_options, BlastScoreBlk* sbp,
    BlastHSPStream* hsp_stream, const BlastRPSInfo* rps_info,
-   SPHIPatternSearchBlk* pattern_blk, BlastHSPResults** results)
+                         SPHIPatternSearchBlk* pattern_blk, BlastHSPResults** results, 
+                         size_t num_threads)
 {
    return Blast_RunTracebackSearchWithInterrupt(program,
           query, query_info, seq_src, score_options, ext_options,
           hit_options, eff_len_options, db_options, psi_options, sbp,
-          hsp_stream, rps_info, pattern_blk, results, NULL, NULL);
+                                                hsp_stream, rps_info, pattern_blk, results, NULL, NULL, 
+                                                num_threads);
 }
 
 Int2 
@@ -1588,40 +1714,32 @@ Blast_RunTracebackSearchWithInterrupt(EBlastProgramType program,
    const PSIBlastOptions* psi_options, BlastScoreBlk* sbp,
    BlastHSPStream* hsp_stream, const BlastRPSInfo* rps_info,
    SPHIPatternSearchBlk* pattern_blk, BlastHSPResults** results,
-   TInterruptFnPtr interrupt_search,  SBlastProgress* progress_info)
+                                      TInterruptFnPtr interrupt_search,  SBlastProgress* progress_info, 
+                                      size_t num_threads)
 {
-   Int2 status = 0;
-   BlastScoringParameters* score_params = NULL; /**< Scoring parameters */
-   BlastExtensionParameters* ext_params = NULL; /**< Gapped extension 
-                                                   parameters */
-   BlastHitSavingParameters* hit_params = NULL; /**< Hit saving parameters*/
-   BlastEffectiveLengthsParameters* eff_len_params = NULL; /**< Parameters
-                                        for effective lengths calculations */
-   BlastGapAlignStruct* gap_align = NULL; /**< Gapped alignment structure */
+    const int N_T = ((num_threads == 0) ? 1 : num_threads);
+    Int2 status = 0;
+    SThreadLocalDataArray* thread_data = SThreadLocalDataArrayNew(N_T);
 
-   status = 
-      BLAST_GapAlignSetUp(program, seq_src, score_options, eff_len_options, 
-         ext_options, hit_options, query_info, sbp, &score_params, 
-         &ext_params, &hit_params, &eff_len_params, &gap_align);
-   if (status)
-      return status;
+    if (thread_data == NULL) {
+        return BLASTERR_MEMORY;
+    } 
 
-   /* Prohibit any subsequent writing to the HSP stream. */
-   BlastHSPStreamClose(hsp_stream);
+    status = SThreadLocalDataArraySetup(thread_data, program,
+                                        score_options, eff_len_options,
+                                        ext_options, hit_options, query_info,
+                                        sbp, (BlastSeqSrc*)seq_src);
+    if (status) {
+       return status;
+    }
 
-   status = 
-      BLAST_ComputeTraceback(program, hsp_stream, query, query_info,
-                             seq_src, gap_align, score_params, ext_params, 
-                             hit_params, eff_len_params, db_options, psi_options,
-                             rps_info, pattern_blk, results, interrupt_search, progress_info);
+    /* Prohibit any subsequent writing to the HSP stream. */
+    BlastHSPStreamClose(hsp_stream);
 
-   /* Do not destruct score block here */
-   gap_align->sbp = NULL;
-   BLAST_GapAlignStructFree(gap_align);
-
-   score_params = BlastScoringParametersFree(score_params);
-   hit_params = BlastHitSavingParametersFree(hit_params);
-   ext_params = BlastExtensionParametersFree(ext_params);
-   eff_len_params = BlastEffectiveLengthsParametersFree(eff_len_params);
-   return status;
+    status = 
+       BLAST_ComputeTraceback_MT(program, hsp_stream, query, query_info,
+                                 thread_data, db_options, psi_options,
+                                 rps_info, pattern_blk, results, interrupt_search, progress_info);
+    thread_data = SThreadLocalDataArrayFree(thread_data);
+    return status;
 }

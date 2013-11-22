@@ -82,9 +82,10 @@ BlastHSPStreamResultBatch * Blast_HSPStreamResultBatchFree(
 
 /** free the list of HSPLists within a batch
  * @param batch Structure to reset
+ * @return the input batch
  */
 NCBI_XBLAST_EXPORT
-void Blast_HSPStreamResultBatchReset(BlastHSPStreamResultBatch *batch);
+BlastHSPStreamResultBatch* Blast_HSPStreamResultBatchReset(BlastHSPStreamResultBatch *batch);
 
 /** Default implementation of BlastHSPStream */
 typedef struct BlastHSPStream {

@@ -84,7 +84,7 @@ BlastQueryInfo* BlastQueryInfoFree(BlastQueryInfo* query_info);
 
 /** Duplicates the query information structure */
 NCBI_XBLAST_EXPORT
-BlastQueryInfo* BlastQueryInfoDup(BlastQueryInfo* query_info);
+BlastQueryInfo* BlastQueryInfoDup(const BlastQueryInfo* query_info);
 
 /** Given a context from BLAST engine core, return the query index.
  * @param context Context saved in a BlastHSP structure [in]

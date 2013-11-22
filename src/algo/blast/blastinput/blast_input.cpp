@@ -126,7 +126,7 @@ CBlastInput::GetNextSeqLocBatch(CScope& scope)
             abort();
         }
     }
-
+    _TRACE("Read " << retval.size() << " queries");
     return retval;
 }
 
@@ -165,7 +165,7 @@ CBlastInput::GetNextSeqBatch(CScope& scope)
 
         retval->AddQuery(q);
     }
-
+    _TRACE("Read " << retval->Size() << " queries");
     return retval;
 }
 

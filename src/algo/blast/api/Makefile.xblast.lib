@@ -83,14 +83,14 @@ DLL_LIB = xalgoblastdbindex composition_adjustment xalgowinmask \
 	blastdb xnetblastcli xnetblast scoremat xconnect tables \
 	$(SOBJMGR_LIBS)
 
-CFLAGS   = $(FAST_CFLAGS)
+CFLAGS   = $(FAST_CFLAGS) $(OPENMP_FLAGS)
 CPPFLAGS = -DNCBI_MODULE=BLAST $(ORIG_CPPFLAGS)
 # Strict gcc flags
-#CFLAGS  = $(FAST_CFLAGS) -pedantic -std=c99 -Wall -W -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wundef -Winline -Wno-parentheses
-CXXFLAGS = $(FAST_CXXFLAGS)
-LDFLAGS  = $(FAST_LDFLAGS)
+#CFLAGS  = $(FAST_CFLAGS) $(OPENMP_FLAGS) -pedantic -std=c99 -Wall -W -Wstrict-prototypes -Wmissing-prototypes -Wmissing-declarations -Wundef -Winline -Wno-parentheses
+CXXFLAGS = $(FAST_CXXFLAGS) $(OPENMP_FLAGS)
+LDFLAGS  = $(FAST_LDFLAGS) $(OPENMP_FLAGS)
 
 .core_%.c: # $(srcdir)/../core/%.c
 	echo '#include "$(srcdir)/../core/$*.c"' > $@
 
-WATCHERS = coulouri maning morgulis boratyng madden camacho fongah2
+WATCHERS = maning morgulis boratyng madden camacho fongah2
