@@ -193,7 +193,7 @@ struct MarkupCappedEst : public TransformFunction {
 };
 
 struct MarkupTrustedGenes : public TransformFunction {
-    MarkupTrustedGenes(set<string>& _trusted_genes);
+    MarkupTrustedGenes(const set<string>& _trusted_genes);
     const set<string>& trusted_genes;
 
     virtual void transform_align(CAlignModel& align);
