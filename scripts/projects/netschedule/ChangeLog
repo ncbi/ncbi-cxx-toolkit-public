@@ -1,3 +1,12 @@
+Release 4.16.11 based on SC-11 (2013-11-25)
+
+Improvements:
+    * NetSchedule: client peer address is not updated when the same client
+      comes from another host (JIRA: CXX-4472)
+    * NetSchedule -- to wrap each queue's (as well as total) logged stats into
+      its own request (JIRA: CXX-4488)
+
+
 Release 4.16.10 based on SC-11 (2013-09-16)
 
 Improvements:
