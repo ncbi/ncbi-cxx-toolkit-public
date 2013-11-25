@@ -8,6 +8,6 @@ SRC = cchecking_class cauto_disc_class cDiscRep_config cDiscRep_tests cDiscRep_o
 
 LIB = xdiscrepancy_report
 
-ASN_DEP = general biblio pub seq seqset submit taxon3
+ASN_DEP = general biblio pub seq seqset submit taxon3 macro valid
 
 WATCHERS = chenj
