@@ -889,6 +889,7 @@ Optional Packages:
  --with-bundles          build bundles in addition to dylibs on Mac OS X
  --with-bin-release      build executables suitable for public release
  --with-mt               compile in a MultiThread-safe manner
+ --with-openmp           enable OpenMP extensions for all projects
  --with-64               compile to 64-bit code
  --with-universal        build universal binaries on Mac OS X
  --with-universal=CPUs   build universal binaries targeting the given CPUs
@@ -1990,6 +1991,12 @@ if test "${with_mt+set}" = set; then
 
 fi;
 
+# Check whether --with-openmp or --without-openmp was given.
+if test "${with_openmp+set}" = set; then
+  withval="$with_openmp"
+
+fi;
+
 # Check whether --with-64 or --without-64 was given.
 if test "${with_64+set}" = set; then
   withval="$with_64"
@@ -3012,7 +3019,7 @@ fi;
 x_with_list="\
 debug max-debug symbols optimization profiling tcheck dll static static-exe \
 plugin-auto-load bundles bin-release mt 64 universal exe runpath hard-runpath \
-lfs limited-linker \
+lfs limited-linker openmp \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
@@ -3194,6 +3201,15 @@ echo "$as_me: error: incompatible options: --without-debug but --with-max-debug"
 else
     : ${with_symbols=yes}
     : ${with_optimization=no}
+fi
+
+if test "$with_openmp" = yes; then
+   if test "$with_mt" = no; then
+      { { echo "$as_me:$LINENO: error: incompatible options: --without-mt but --with-openmp" >&5
+echo "$as_me: error: incompatible options: --without-mt but --with-openmp" >&2;}
+   { (exit 1); exit 1; }; }
+   fi
+   : ${with_mt=yes}
 fi
 
 #### Check for special options
@@ -5137,6 +5153,10 @@ echo "$as_me: error: Do not know how to build MT-safe with compiler $CXX $compil
          : ${OPENMP_FLAGS=-xopenmp=parallel}
          ;;
    esac
+   if test "$with_openmp" = yes; then
+      MT_FLAG="$MT_FLAG $OPENMP_FLAGS"
+      OPENMP_FLAGS=
+   fi
    mt_sfx="MT"
              WithFeatures="$WithFeatures${WithFeaturesSep}MT"; WithFeaturesSep=" "
 else
@@ -20810,6 +20830,13 @@ if test "$ac_cv_search_fuse_loop" != no; then
 fi
 
 LIBS=$orig_LIBS
+# Temporarily drop OpenMP flags for this test, as some toolchains count
+# its support library's indirect use of librt when building applications
+# but not when building shared libraries with --no-undefined.
+orig_CXXFLAGS=$CXXFLAGS
+orig_LDFLAGS=$LDFLAGS
+CXXFLAGS=`echo $CXXFLAGS | sed -e 's/[^ ]*openmp[^ ]*//g'`
+LDFLAGS=`echo $LDFLAGS | sed -e 's/[^ ]*openmp[^ ]*//g'`
 saved_LIBS=$LIBS
  echo "$as_me:$LINENO: checking for library containing clock_gettime" >&5
 echo $ECHO_N "checking for library containing clock_gettime... $ECHO_C" >&6
@@ -20944,6 +20971,8 @@ fi
 
  LIBS=$saved_LIBS
 
+CXXFLAGS=$orig_CXXFLAGS
+LDFLAGS=$orig_LDFLAGS
 saved_LIBS=$LIBS
  echo "$as_me:$LINENO: checking for library containing cplus_demangle" >&5
 echo $ECHO_N "checking for library containing cplus_demangle... $ECHO_C" >&6

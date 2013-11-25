@@ -143,6 +143,8 @@ AC_ARG_WITH(bin-release,
    [ --with-bin-release      build executables suitable for public release])
 AC_ARG_WITH(mt,
    [ --with-mt               compile in a MultiThread-safe manner])
+AC_ARG_WITH(openmp,
+   [ --with-openmp           enable OpenMP extensions for all projects])
 AC_ARG_WITH(64,
    [ --with-64               compile to 64-bit code])
 AC_ARG_WITH(universal,
@@ -495,7 +497,7 @@ AC_ARG_WITH(manuals,
 x_with_list="\
 debug max-debug symbols optimization profiling tcheck dll static static-exe \
 plugin-auto-load bundles bin-release mt 64 universal exe runpath hard-runpath \
-lfs limited-linker \
+lfs limited-linker openmp \
 autodep suffix hostspec version execopy bincopy lib-rebuilds lib-rebuilds=ask \
 deactivation makefile-auto-update projects flat-makefile configure-dialog \
 check ncbi-public strip pch caution ccache distcc \
@@ -612,6 +614,13 @@ if test "$with_debug" = no; then
 else
     : ${with_symbols=yes}
     : ${with_optimization=no}
+fi
+
+if test "$with_openmp" = yes; then
+   if test "$with_mt" = no; then
+      AC_MSG_ERROR([incompatible options: --without-mt but --with-openmp])
+   fi
+   : ${with_mt=yes} 
 fi
 
 #### Check for special options
@@ -1012,6 +1021,10 @@ if test "$with_mt" = "yes" ; then
          : ${OPENMP_FLAGS=-xopenmp=parallel}
          ;;
    esac
+   if test "$with_openmp" = yes; then
+      MT_FLAG="$MT_FLAG $OPENMP_FLAGS"
+      OPENMP_FLAGS=
+   fi
    mt_sfx="MT"
    NCBI_FEATURE(MT)
 else
@@ -3709,7 +3722,16 @@ LIBS=$orig_LIBS
 dnl NCBI_CHECK_LIBS(FUSE, fuse, fuse_loop)
 AC_SEARCH_LIBS(fuse_loop, fuse, [NCBI_PACKAGE(FUSE)])
 LIBS=$orig_LIBS
+# Temporarily drop OpenMP flags for this test, as some toolchains count
+# its support library's indirect use of librt when building applications
+# but not when building shared libraries with --no-undefined.
+orig_CXXFLAGS=$CXXFLAGS
+orig_LDFLAGS=$LDFLAGS
+CXXFLAGS=`echo $CXXFLAGS | sed -e 's/[[^ ]]*openmp[[^ ]]*//g'`
+LDFLAGS=`echo $LDFLAGS | sed -e 's/[[^ ]]*openmp[[^ ]]*//g'`
 NCBI_CHECK_LIBS(RT, rt posix4, clock_gettime)
+CXXFLAGS=$orig_CXXFLAGS
+LDFLAGS=$orig_LDFLAGS
 NCBI_CHECK_LIBS(DEMANGLE, demangle, cplus_demangle)
 # Add to (orig_)LIBS if present for the sake of corelib and the
 # following call to AC_CHECK_FUNCS.
