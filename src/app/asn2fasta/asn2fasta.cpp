@@ -223,8 +223,8 @@ void CAsn2FastaApp::Init(void)
 int CAsn2FastaApp::Run(void)
 //  --------------------------------------------------------------------------
 {
-	// initialize conn library
-	CONNECT_Init(&GetConfig());
+    // initialize conn library
+    CONNECT_Init(&GetConfig());
 
     const CArgs&   args = GetArgs();
 
@@ -292,31 +292,31 @@ int CAsn2FastaApp::Run(void)
                     seh = ObtainSeqEntryFromSeqEntry(*is);
                 }
                 return 0;
-			}
-			else if ( asn_type == "bioseq" ) {				
-				//
+            }
+            else if ( asn_type == "bioseq" ) {                
+                //
                 //  Read object as a bioseq, wrap it into a seq_entry, then
                 //  process the wrapped bioseq as a seq_entry:
-				//
+                //
                 seh = ObtainSeqEntryFromBioseq(*is);
                 if ( !seh ) {
                     NCBI_THROW(CException, eUnknown,
                                "Unable to construct Seq-entry object" );
                 }
                 HandleSeqEntry(seh);
-			}
-			else if ( asn_type == "bioseq-set" ) {
-				//
-				//  Read object as a bioseq_set, wrap it into a seq_entry, then
-				//  process the wrapped bioseq_set as a seq_entry:
-				//
+            }
+            else if ( asn_type == "bioseq-set" ) {
+                //
+                //  Read object as a bioseq_set, wrap it into a seq_entry, then
+                //  process the wrapped bioseq_set as a seq_entry:
+                //
                 seh = ObtainSeqEntryFromBioseqSet(*is);
                 if ( !seh ) {
                     NCBI_THROW(CException, eUnknown,
                                "Unable to construct Seq-entry object" );
                 }
                 HandleSeqEntry(seh);
-			}
+            }
             else if ( asn_type == "any" ) {
                 //
                 //  Try the first three in turn:
@@ -452,6 +452,8 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
     CFilteringFastaOstream fasta_os( *m_Os, x_GetFilterIncludes(GetArgs()));
 
     fasta_os.SetAllFlags(
+        CFastaOstream::fInstantiateGaps |
+        CFastaOstream::fAssembleParts |
         CFastaOstream::fNoDupCheck |
         CFastaOstream::fKeepGTSigns |
         CFastaOstream::fNoExpensiveOps);
