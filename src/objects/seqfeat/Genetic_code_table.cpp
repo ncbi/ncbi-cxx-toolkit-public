@@ -729,7 +729,7 @@ const char * CGen_code_table_imp::sm_GenCodeTblMemStr [] =
     "sncbieaa \"---M---------------M---------------M---------------M------------\" } ,\n",
     "{ name \"Candidate Division SR1 and Gracilibacteria\" , id 25 ,\n",
     "ncbieaa  \"FFLLSSSSYY**CCGWLLLLPPPPHHQQRRRRIIIMTTTTNNKKSSRRVVVVAAAADDEEGGGG\",\n",
-    "sncbieaa \"---M---------------M---------------M----------------------------\" } };\n",
+    "sncbieaa \"---M-------------------------------M---------------M------------\" } };\n",
     0  // to indicate that there is no more data
 };
 
