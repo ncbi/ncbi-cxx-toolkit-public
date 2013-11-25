@@ -125,6 +125,7 @@ private:
     void ProcessBioseqHandle(CBioseq_Handle bh);
     void ProcessSeqEntry(CRef<CSeq_entry> se);
     void ProcessSeqEntry(void);
+    void ProcessSet(void);
     void ProcessSeqSubmit(void);
     void ProcessInput (void);
     void ProcessList (const string& fname);
@@ -133,6 +134,7 @@ private:
     void ProcessOneFile(string fname);
     void ProcessReleaseFile(const CArgs& args);
     CRef<CSeq_entry> ReadSeqEntry(void);
+    CRef<CBioseq_set> ReadBioseqSet(void);
 
     void PrintResults(TBiosampleFieldDiffList& diffs);
     void PrintDiffs(TBiosampleFieldDiffList& diffs);
@@ -145,6 +147,7 @@ private:
     void x_ClearCoordinatedSubSources(CBioSource& src);
     CRef<CSeq_entry> ProcessSeqEntry(const string& fname);
     CRef<CSeq_submit> ProcessSeqSubmit(const string& fname);
+    CRef<CBioseq_set> ProcessSet(const string& fname);
     void ProcessInput (const string& fname);
     vector<CRef<CSeqdesc> > GetBiosampleDescriptors(string fname);
     vector<CRef<CSeqdesc> > GetBiosampleDescriptorsFromSeqSubmit();
@@ -270,6 +273,8 @@ void CBiosampleChkApp::ProcessInput (void)
         ProcessSeqSubmit();
     } else if ( header == "Seq-entry" ) {           // Seq-entry
         ProcessSeqEntry();
+    } else if (header == "Bioseq-set" ) {  // Bioseq-set
+        ProcessSet();
     } else {
         NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
     }
@@ -349,6 +354,8 @@ void CBiosampleChkApp::ProcessInput (const string& fname)
         ProcessSeqSubmit(fname + ".out");
     } else if ( header == "Seq-entry" ) {           // Seq-entry
         ProcessSeqEntry(fname + ".out");
+    } else if (header == "Bioseq-set" ) {  // Bioseq-set
+        ProcessSet(fname + ".out");
     } else {
         NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
     }
@@ -477,6 +484,7 @@ vector<CRef<CSeqdesc> > CBiosampleChkApp::GetBiosampleDescriptors(string fname)
         descriptors = GetBiosampleDescriptorsFromSeqSubmit();
     } else if ( header == "Seq-entry" ) {           // Seq-entry
         descriptors = GetBiosampleDescriptorsFromSeqEntry();
+
     } else {
         NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
     }
@@ -672,6 +680,15 @@ CRef<CSeq_entry> CBiosampleChkApp::ReadSeqEntry(void)
     m_In->Read(ObjectInfo(*se), CObjectIStream::eNoFileHeader);
 
     return se;
+}
+
+
+CRef<CBioseq_set> CBiosampleChkApp::ReadBioseqSet(void)
+{
+    CRef<CBioseq_set> set(new CBioseq_set());
+    m_In->Read(ObjectInfo(*set), CObjectIStream::eNoFileHeader);
+
+    return set;
 }
 
 
@@ -1035,6 +1052,42 @@ CRef<CSeq_entry> CBiosampleChkApp::ProcessSeqEntry(const string& fname)
     os << *se;
 
     return se;
+}
+
+
+void CBiosampleChkApp::ProcessSet(void)
+{
+    // Get Bioseq-set to process
+    CRef<CBioseq_set> set(ReadBioseqSet());
+    if (set && set->IsSetSeq_set()) {
+        ITERATE(CBioseq_set::TSeq_set, se, set->GetSeq_set()) {
+            ProcessSeqEntry(*se);
+        }
+    }
+}
+
+
+CRef<CBioseq_set> CBiosampleChkApp::ProcessSet(const string& fname)
+{
+    // Get Bioseq-set to process
+    CRef<CBioseq_set> set(ReadBioseqSet());
+
+    if (set && set->IsSetSeq_set()) {
+        ITERATE(CBioseq_set::TSeq_set, se, set->GetSeq_set()) {
+            ProcessSeqEntry(*se);
+        }
+    }
+
+    ios::openmode mode = ios::out;
+    CNcbiOfstream os(fname.c_str(), mode);
+    if (!os)
+    {
+        NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
+    }
+    os << MSerial_AsnText;
+    os << *set;
+
+    return set;
 }
 
 
