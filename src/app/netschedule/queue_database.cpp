@@ -2310,7 +2310,8 @@ void CQueueDataBase::RunServiceThread(void)
     // Once in 100 seconds
     m_ServiceThread.Reset(new CServiceThread(
                                 *m_Server, m_Host, *this,
-                                m_Server->IsLogStatisticsThread()));
+                                m_Server->IsLogStatisticsThread(),
+                                m_Server->GetStatInterval()));
     m_ServiceThread->Run();
 }
 

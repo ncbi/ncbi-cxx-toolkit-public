@@ -53,13 +53,16 @@ public:
     CServiceThread(CNetScheduleServer &  server,
                    CBackgroundHost &     host,
                    CQueueDataBase &      qdb,
-                   const bool &          logging)
-    : CThreadNonStop(10),   // Once in 10 seconds
+                   const bool &          logging,
+                   const unsigned int &  statistics_interval)
+    : CThreadNonStop(1),    // Once in 1 seconds
       m_Server(server),
       m_Host(host),
       m_QueueDB(qdb),
       m_StatisticsLogging(logging),
-      m_LastStatisticsOutput(0)
+      m_StatisticsInterval(statistics_interval),
+      m_LastStatisticsOutput(0),
+      m_LastDrainCheck(0)
     {}
 
     virtual void DoJob(void);
@@ -81,7 +84,9 @@ private:
     CBackgroundHost &       m_Host;
     CQueueDataBase &        m_QueueDB;
     const bool &            m_StatisticsLogging;
+    const unsigned int &    m_StatisticsInterval;
     time_t                  m_LastStatisticsOutput;
+    time_t                  m_LastDrainCheck;
 };
 
 

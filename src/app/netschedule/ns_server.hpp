@@ -72,6 +72,7 @@ public:
     const bool &  IsLogCleaningThread() const         { return m_LogCleaningThreadFlag; }
     const bool &  IsLogExecutionWatcherThread() const { return m_LogExecutionWatcherThreadFlag; }
     const bool &  IsLogStatisticsThread() const       { return m_LogStatisticsThreadFlag; }
+    const unsigned int &  GetStatInterval() const     { return m_StatInterval; }
 
     unsigned GetCommandNumber();
 
@@ -176,6 +177,7 @@ private:
     unsigned int                                m_MarkdelBatchSize; // Max # of jobs to be marked for deletion
     unsigned int                                m_ScanBatchSize;    // Max # of scanned jobs
     double                                      m_PurgeTimeout;     // Interval between purges
+    unsigned int                                m_StatInterval;
 
     unsigned int                                m_MaxAffinities;
     string                                      m_NodeID;           // From the ini file

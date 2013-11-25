@@ -64,6 +64,7 @@ CNetScheduleServer::CNetScheduleServer()
       m_MarkdelBatchSize(200),
       m_ScanBatchSize(10000),
       m_PurgeTimeout(0.1),
+      m_StatInterval(10),
       m_MaxAffinities(10000),
       m_NodeID("not_initialized"),
       m_SessionID("s" + x_GenerateGUID())
@@ -154,6 +155,14 @@ string CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
                         ", " + NStr::BoolToString(new_val) + "]";
     }
     m_LogStatisticsThreadFlag = new_val;
+
+    if (m_StatInterval != params.stat_interval) {
+        s_AddSeparator(what_changed);
+        what_changed += "\"stat_interval\" [" +
+                        NStr::NumericToString(m_StatInterval) +
+                        ", " + NStr::NumericToString(params.stat_interval) + "]";
+    }
+    m_StatInterval = params.stat_interval;
 
 
     string  accepted_hosts = m_AdminHosts.SetHosts(params.admin_hosts);

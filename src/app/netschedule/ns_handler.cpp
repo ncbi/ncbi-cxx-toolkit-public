@@ -3123,6 +3123,7 @@ string CNetScheduleHandler::x_GetServerSection(void) const
            "markdel_batch_size=\"" + NStr::NumericToString(m_Server->GetMarkdelBatchSize()) + "\"\n"
            "scan_batch_size=\"" + NStr::NumericToString(m_Server->GetScanBatchSize()) + "\"\n"
            "purge_timeout=\"" + NStr::NumericToString(m_Server->GetPurgeTimeout()) + "\"\n"
+           "stat_interval=\"" + NStr::NumericToString(m_Server->GetStatInterval()) + "\"\n"
            "max_affinities=\"" + NStr::NumericToString(m_Server->GetMaxAffinities()) + "\"\n"
            "admin_host=\"" + m_Server->GetAdminHosts().GetAsFromConfig() + "\"\n"
            "admin_client_name=\"" + m_Server->GetAdminClientNames() + "\"\n"

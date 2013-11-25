@@ -51,43 +51,26 @@ void  CServiceThread::DoJob(void)
     if (!m_Host.ShouldRun())
         return;
 
+    time_t      current_time = time(0);
+
     // Check for shutdown is done every 10 seconds
-    x_CheckDrainShutdown();
+    if (current_time - m_LastDrainCheck >= 10) {
+        x_CheckDrainShutdown();
+        m_LastDrainCheck = current_time;
+    }
 
     if (!m_StatisticsLogging)
         return;
 
-    time_t      current_time = time(0);
-    if (current_time - m_LastStatisticsOutput < 100)
-        return;     // Wait some more
+    if (current_time - m_LastStatisticsOutput >= m_StatisticsInterval) {
+        // Here: it's time to log counters
+        m_LastStatisticsOutput = current_time;
 
-    // Here: it's time to log counters
-    m_LastStatisticsOutput = current_time;
-
-    CRef<CRequestContext>   ctx;
-
-    // Prepare the logging context
-    ctx.Reset(new CRequestContext());
-    ctx->SetRequestID();
-
-
-    CDiagContext &      diag_context = GetDiagContext();
-
-    diag_context.SetRequestContext(ctx);
-    diag_context.PrintRequestStart()
-                .Print("_type", "statistics_thread");
-
-    // Print statistics for all the queues
-    size_t      aff_count = 0;
-    m_QueueDB.PrintStatistics(aff_count);
-    CStatisticsCounters::PrintTotal(aff_count);
-
-    // Close the logging context
-    ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
-    diag_context.PrintRequestStop();
-    ctx.Reset();
-    diag_context.SetRequestContext(NULL);
-    return;
+        // Print statistics for all the queues
+        size_t      aff_count = 0;
+        m_QueueDB.PrintStatistics(aff_count);
+        CStatisticsCounters::PrintTotal(aff_count);
+    }
 }
 
 
@@ -103,7 +86,6 @@ void  CServiceThread::x_CheckDrainShutdown(void)
         return;     // There are still jobs
 
     m_Server.SetShutdownFlag();
-    return;
 }
 
 

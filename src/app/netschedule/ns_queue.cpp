@@ -38,6 +38,7 @@
 #include "ns_precise_time.hpp"
 #include "ns_rollback.hpp"
 #include "queue_database.hpp"
+#include "ns_handler.hpp"
 
 #include <corelib/ncbi_system.hpp> // SleepMilliSec
 #include <corelib/request_ctx.hpp>
@@ -3308,23 +3309,37 @@ bool CQueue::x_UnregisterGetListener(const CNSClientId &  client,
 
 void CQueue::PrintStatistics(size_t &  aff_count) const
 {
+    CRef<CRequestContext>   ctx;
+    ctx.Reset(new CRequestContext());
+    ctx->SetRequestID();
+
+    CDiagContext &      diag_context = GetDiagContext();
+
+    diag_context.SetRequestContext(ctx);
+    CDiagContext_Extra      extra = diag_context.PrintRequestStart();
+
     size_t      affinities = m_AffinityRegistry.size();
     aff_count += affinities;
 
     // The member is called only if there is a request context
-    CDiagContext_Extra extra = GetDiagContext().Extra()
-        .Print("queue", GetQueueName())
-        .Print("affinities", affinities)
-        .Print("pending", CountStatus(CNetScheduleAPI::ePending))
-        .Print("running", CountStatus(CNetScheduleAPI::eRunning))
-        .Print("canceled", CountStatus(CNetScheduleAPI::eCanceled))
-        .Print("failed", CountStatus(CNetScheduleAPI::eFailed))
-        .Print("done", CountStatus(CNetScheduleAPI::eDone))
-        .Print("reading", CountStatus(CNetScheduleAPI::eReading))
-        .Print("confirmed", CountStatus(CNetScheduleAPI::eConfirmed))
-        .Print("readfailed", CountStatus(CNetScheduleAPI::eReadFailed));
+    extra.Print("_type", "statistics_thread")
+         .Print("queue", GetQueueName())
+         .Print("affinities", affinities)
+         .Print("pending", CountStatus(CNetScheduleAPI::ePending))
+         .Print("running", CountStatus(CNetScheduleAPI::eRunning))
+         .Print("canceled", CountStatus(CNetScheduleAPI::eCanceled))
+         .Print("failed", CountStatus(CNetScheduleAPI::eFailed))
+         .Print("done", CountStatus(CNetScheduleAPI::eDone))
+         .Print("reading", CountStatus(CNetScheduleAPI::eReading))
+         .Print("confirmed", CountStatus(CNetScheduleAPI::eConfirmed))
+         .Print("readfailed", CountStatus(CNetScheduleAPI::eReadFailed));
     m_StatisticsCounters.PrintTransitions(extra);
     extra.Flush();
+
+    ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
+    diag_context.PrintRequestStop();
+    ctx.Reset();
+    diag_context.SetRequestContext(NULL);
 }
 
 

@@ -63,6 +63,7 @@ struct SNS_Parameters : SServer_Parameters
                                         // during one Purge() call
     double          purge_timeout;      // Timeout in seconds between
                                         // Purge() calls
+    unsigned int    stat_interval;      // Interval between statistics output
     unsigned int    max_affinities;     // Max number of affinities a client
                                         // can report as preferred.
 

@@ -35,6 +35,7 @@
 
 #include "queue_database.hpp"
 #include "ns_statistics_counters.hpp"
+#include "ns_handler.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -497,10 +498,18 @@ void CStatisticsCounters::CountOutdatedPick(void)
 
 void  CStatisticsCounters::PrintTotal(size_t  affinities)
 {
-    CDiagContext_Extra      extra = GetDiagContext().Extra();
+    CRef<CRequestContext>   ctx;
+    ctx.Reset(new CRequestContext());
+    ctx->SetRequestID();
+
+    CDiagContext &      diag_context = GetDiagContext();
+
+    diag_context.SetRequestContext(ctx);
+    CDiagContext_Extra      extra = diag_context.PrintRequestStart();
 
     // Prints the total counters
-    extra.Print("counters", "total")
+    extra.Print("_type", "statistics_thread")
+         .Print("counters", "total")
          .Print("submits", s_SubmitCounterTotal.Get())
          .Print("ns_submit_rollbacks", s_NSSubmitRollbackCounterTotal.Get())
          .Print("picked_as_outdated", s_PickedAsOutdatedTotal.Get())
@@ -548,6 +557,11 @@ void  CStatisticsCounters::PrintTotal(size_t  affinities)
          .Print("Reading_ReadFailed_timeout",
                 s_ToReadFailedDueToTimeoutCounterTotal.Get());
     extra.Flush();
+
+    ctx->SetRequestStatus(CNetScheduleHandler::eStatus_OK);
+    diag_context.PrintRequestStop();
+    ctx.Reset();
+    diag_context.SetRequestContext(NULL);
 }
 
 

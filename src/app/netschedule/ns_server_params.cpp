@@ -59,6 +59,7 @@ static unsigned int     default_del_batch_size = 100;
 static unsigned int     default_markdel_batch_size = 200;
 static unsigned int     default_scan_batch_size = 10000;
 static double           default_purge_timeout = 0.1;
+static unsigned int     default_stat_interval = 10;
 static unsigned int     default_max_affinities = 10000;
 static unsigned int     default_affinity_high_mark_percentage = 90;
 static unsigned int     default_affinity_low_mark_percentage = 50;
@@ -116,6 +117,15 @@ void SNS_Parameters::Read(const IRegistry& reg, const string& sname,
     scan_batch_size = GetIntNoErr("scan_batch_size", default_scan_batch_size);
     purge_timeout = GetDoubleNoErr("purge_timeout", default_purge_timeout);
     CheckGarbageCollectorSettings(silent);
+
+    stat_interval = GetIntNoErr("stat_interval", default_stat_interval);
+    if (stat_interval < 1) {
+        if (!silent)
+            LOG_POST(Warning <<
+                "INI file sets the statistics thread interval < 1. "
+                "Assume 1 instead.");
+        stat_interval = 1;
+    }
 
     // Affinity GC settings
     affinity_high_mark_percentage = GetIntNoErr("affinity_high_mark_percentage",
