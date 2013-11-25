@@ -1856,33 +1856,38 @@ static EIO_Status s_VT_Open
  const STimeout* timeout)
 {
     SFTPConnector* xxx = (SFTPConnector*) connector->handle;
+    unsigned short ntry = 0;
     EIO_Status status;
 
     assert(!xxx->what  &&  !xxx->data  &&  !xxx->cntl);
-    assert(!BUF_Size(xxx->wbuf)  &&  !BUF_Size(xxx->rbuf));
-    status = SOCK_CreateEx(xxx->info->host, xxx->info->port, timeout,
-                           &xxx->cntl, 0, 0, fSOCK_KeepAlive
-                           | (xxx->flag & fFTP_LogControl
-                              ? fSOCK_LogOn : fSOCK_LogDefault));
-    if (status == eIO_Success) {
-        SOCK_DisableOSSendDelay(xxx->cntl, 1/*yes,disable*/);
-        SOCK_SetTimeout(xxx->cntl, eIO_ReadWrite, timeout);
-        status  = x_FTPLogin(xxx);
-    } else
-        assert(!xxx->cntl);
-    if (status == eIO_Success)
-        status  = x_FTPBinary(xxx);
-    if (status == eIO_Success  &&  *xxx->info->path)
-        status  = x_FTPDir(xxx, 0,  xxx->info->path);
-    if (status == eIO_Success) {
-        xxx->send = xxx->open = xxx->rclr = 0/*false*/;
-        assert(xxx->sync);
-        xxx->rest = 0;
-    } else if (xxx->cntl) {
-        SOCK_Abort(xxx->cntl);
-        SOCK_Close(xxx->cntl);
-        xxx->cntl = 0;
-    }
+    do {
+        assert(!BUF_Size(xxx->wbuf)  &&  !BUF_Size(xxx->rbuf));
+        status = SOCK_CreateEx(xxx->info->host, xxx->info->port, timeout,
+                               &xxx->cntl, 0, 0, fSOCK_KeepAlive
+                               | (xxx->flag & fFTP_LogControl
+                                  ? fSOCK_LogOn : fSOCK_LogDefault));
+        if (status == eIO_Success) {
+            SOCK_DisableOSSendDelay(xxx->cntl, 1/*yes,disable*/);
+            SOCK_SetTimeout(xxx->cntl, eIO_ReadWrite, timeout);
+            status  = x_FTPLogin(xxx);
+        } else
+            assert(!xxx->cntl);
+        if (status == eIO_Success)
+            status  = x_FTPBinary(xxx);
+        if (status == eIO_Success  &&  *xxx->info->path)
+            status  = x_FTPDir(xxx, 0,  xxx->info->path);
+        if (status == eIO_Success) {
+            xxx->send = xxx->open = xxx->rclr = 0/*false*/;
+            assert(xxx->sync);
+            xxx->rest = 0;
+            break;
+        }
+        if (xxx->cntl) {
+            SOCK_Abort(xxx->cntl);
+            SOCK_Close(xxx->cntl);
+            xxx->cntl = 0;
+        }
+    } while (++ntry < xxx->info->max_try);
     assert(!xxx->what  &&  !xxx->data);
     xxx->r_status = status;
     xxx->w_status = status;
@@ -2218,7 +2223,7 @@ extern CONNECTOR s_CreateConnector(const SConnNetInfo*  info,
         (info  &&  info->scheme != eURL_Unspec  &&  info->scheme != eURL_Ftp)){
         return 0;
     }
-    if (!(ccc = (SConnector*)    malloc(sizeof(SConnector))))
+    if (!(ccc = (SConnector*) malloc(sizeof(SConnector))))
         return 0;
     if (!(xxx = (SFTPConnector*) malloc(sizeof(*xxx)))) {
         free(ccc);
