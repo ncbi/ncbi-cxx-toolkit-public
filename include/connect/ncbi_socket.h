@@ -1807,7 +1807,7 @@ typedef struct {
     const char*    host;    /**< Host name/IP (or path for non-IP SOCK)      */
     unsigned short port;    /**< Port = 0 for non-IP SOCK                    */
     EIO_Event      event;   /**< Meaningful only for eSOCK_ErrIO             */
-    EIO_Status     status;  /**< status code about to be returned (if known) */
+    EIO_Status     status;  /**< Status code about to be returned (if known) */
 } SSOCK_ErrInfo;
 
 
