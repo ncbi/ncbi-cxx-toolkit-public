@@ -2199,8 +2199,40 @@ vector<string> CCountries::x_Tokenize(const string& val)
 }
 
 
+bool s_ContainsWholeWord(const string& test, const string& word, NStr::ECase case_sense)
+{
+    size_t pos = NStr::Find(test, word, 0, string::npos, NStr::eFirst, case_sense);
+    while (pos != string::npos) {
+        if ((pos == 0 || !isalpha(test.c_str()[pos - 1]))
+            && !isalpha(test.c_str()[pos + word.length()])) {
+            return true;
+        }
+        pos = NStr::Find(test, word, pos + 1, string::npos, NStr::eFirst, case_sense);
+    }
+
+    return false;
+}
+
+
+bool s_SuppressCountryFix(const string& test)
+{
+    if (s_ContainsWholeWord(test, "Sea", NStr::eNocase)) {
+        return true;
+    } else if (s_ContainsWholeWord(test, "USSR", NStr::eNocase)) {
+        return true;
+    }
+    return false;
+}
+
+
 string CCountries::NewFixCountry (const string& test)
 {
+    // change requested for JIRA:SQD-1410
+    if (s_SuppressCountryFix(test)) {
+        return "";
+    }
+
+
     string input = test;
     if (NStr::StartsWith(input, "\"")) {
         input = input.substr(1);

@@ -17647,7 +17647,7 @@ BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_FixCountry)
+BOOST_AUTO_TEST_CASE(Test_NewFixCountry)
 {
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Kenya."), "Kenya");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("U.S.A."), "USA");
@@ -17701,6 +17701,7 @@ BOOST_AUTO_TEST_CASE(Test_FixCountry)
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Wissenkerke, Keihoogteweg, the Netherlands"), "Netherlands: Wissenkerke, Keihoogteweg");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Wolfskill Orchand, Winters, California"), "");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Yun Shui"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("USSR: Kazakhstan, Kurtu"), "");
 }
 
 
