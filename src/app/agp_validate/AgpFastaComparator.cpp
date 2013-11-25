@@ -527,7 +527,7 @@ void CAgpFastaComparator::x_Process(const CSeq_entry_Handle seh,
             LOG_POST(Error << "  Skipping one: could not load due to error "
                      "in AGP file "
                      "(length issue or does not include range [1, "
-                     << (1+bioseq_it->GetBioseqLength()) << "] or "
+                     << bioseq_it->GetBioseqLength() << "] or "
                      "doesn't exist) for " << idh 
                      << " (though issue could be due to failure to resolve "
                      "one of the contigs.  "
