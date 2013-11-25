@@ -64,62 +64,8 @@ typedef pair<vector<SHspInfo*>, vector<SHspInfo*> > TSortedHsp;
 class COligoSpecificityCheck; // forward declaration
 
 class NCBI_XPRIMER_EXPORT COligoSpecificityTemplate : public CObject {
-friend class COligoSpecificityCheck; 
-private:
 
-    ///bioseq handle for input bioseq
-    const CBioseq_Handle& m_TemplateHandle;
-
-    ///seqid
-    CConstRef<CSeq_id> m_Id;
-
-    ///the processed sorted hit list corresponding to the input seqalign
-    vector<TSortedHsp> m_SortHit;      
-  
-    ///sort the hit
-    void x_SortHit(const CSeq_align_set& input);
-
-    ///the requested length margin  for non-specific template
-    TSeqPos m_ProductLenMargin;
-
-    ///minimal continuous match required
-    int m_WordSize;
-
-    ///total mismatches allowed by user
-    TSeqPos m_AllowedTotalMismatch;  
-
-    ///3' end mismatches
-    TSeqPos m_Allowed3EndMismatch;   
-    
-    ///total max allowed mismatch
-    TSeqPos m_MaxMismatch;
-
-    ///range on the input template
-    CRange<TSeqPos> m_TemplateRange;
-
-    //set up interval tree
-    vector<CIntervalTree*> m_RangeTreeListPlusStrand;
-    vector<CIntervalTree*> m_RangeTreeListMinusStrand;
-
-    ///count splice variants as non-specific?
-    bool m_AllowTranscriptVariants;
-
-    ///user specified hits that can be disregarded for specificity checking
-    vector<TSeqPos> m_AllowedSeqidIndex;
-
-    bool m_UseITree;
-
-    ///the length or region at the 3' end for checking mismatches
-    TSeqPos m_MismatchRegionLength3End;
-
-    int m_MaxHSPSize;
-
-    ///the number non-specific targets to return
-    int m_NumNonSpecificTarget;
-
-    CSeq_id::EAccessionInfo m_TemplateType;
-
-
+public:
     ///constructor
     ///@template_handle: bioseq represents the pcr template
     ///@param input_seqalign: the alignment represening the PCR template hits from
@@ -213,6 +159,62 @@ private:
     void SetMismatchRegionLength3End(TSeqPos length) {
         m_MismatchRegionLength3End = length;
     }
+
+friend class COligoSpecificityCheck; 
+private:
+
+    ///bioseq handle for input bioseq
+    const CBioseq_Handle& m_TemplateHandle;
+
+    ///seqid
+    CConstRef<CSeq_id> m_Id;
+
+    ///the processed sorted hit list corresponding to the input seqalign
+    vector<TSortedHsp> m_SortHit;      
+  
+    ///sort the hit
+    void x_SortHit(const CSeq_align_set& input);
+
+    ///the requested length margin  for non-specific template
+    TSeqPos m_ProductLenMargin;
+
+    ///minimal continuous match required
+    int m_WordSize;
+
+    ///total mismatches allowed by user
+    TSeqPos m_AllowedTotalMismatch;  
+
+    ///3' end mismatches
+    TSeqPos m_Allowed3EndMismatch;   
+    
+    ///total max allowed mismatch
+    TSeqPos m_MaxMismatch;
+
+    ///range on the input template
+    CRange<TSeqPos> m_TemplateRange;
+
+    //set up interval tree
+    vector<CIntervalTree*> m_RangeTreeListPlusStrand;
+    vector<CIntervalTree*> m_RangeTreeListMinusStrand;
+
+    ///count splice variants as non-specific?
+    bool m_AllowTranscriptVariants;
+
+    ///user specified hits that can be disregarded for specificity checking
+    vector<TSeqPos> m_AllowedSeqidIndex;
+
+    bool m_UseITree;
+
+    ///the length or region at the 3' end for checking mismatches
+    TSeqPos m_MismatchRegionLength3End;
+
+    int m_MaxHSPSize;
+
+    ///the number non-specific targets to return
+    int m_NumNonSpecificTarget;
+
+    CSeq_id::EAccessionInfo m_TemplateType;
+
 };
 
 class NCBI_XPRIMER_EXPORT COligoSpecificityCheck : public CObject {
