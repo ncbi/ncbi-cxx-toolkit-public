@@ -219,8 +219,8 @@ typedef void        (*FHTTP_Cleanup)
  * If "net_info" does not explicitly specify an HTTP request method (i.e. it
  * has it as "eReqMethod_Any"), then the actual method sent to the HTTP server
  * depends on whether any data have been written to the connection with
- * CONN_Write():  the presense of pending data will cause POST request (with a
- * "Content-Length:" tag provided automatically and reflecting the total
+ * CONN_Write():  the presense of pending data will cause a POST request (with
+ * a "Content-Length:" tag supplied automatically and reflecting the total
  * pending data size), and GET request method will result in the absence of any
  * data.  An explicit value for the request method will cause the specified
  * request to be used regardless of pending data, and will flag an error if any
@@ -242,9 +242,10 @@ typedef void        (*FHTTP_Cleanup)
  *     @note
  *       If <user_header> is neither a NULL pointer nor an empty string, then:
  *       - it must NOT contain any "empty lines":  "\r\n\r\n";
- *       - it should be terminated by a single "\r\n";
+ *       - multiple tags must be separated by "\r\n" (*not* just "\n");
+ *       - it should be terminated by a single "\r\n" (will be added, if not);
  *       - it gets inserted to the HTTP header "as is", without any automatic
- *         checking and / or encoding;
+ *         checking and / or encoding (except for the trailing "\r\n");
  *       - the "user_header" specified in the arguments overrides any user
  *         header that can be provided via the "net_info" argument, see
  *         ConnNetInfo_OverrideUserHeader() from <connect/ncbi_connutil.h>.

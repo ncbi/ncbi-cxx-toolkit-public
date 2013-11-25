@@ -316,16 +316,13 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
             break;
         case eRetry_Authenticate:
             if (uuu->net_info->req_method == eReqMethod_Connect)
-                fail = -1;
+                fail = 2;
             /*FALLTHRU*/
         case eRetry_ProxyAuthenticate:
             if (!fail) {
-                if (retry->data  &&  strncasecmp(retry->data, "basic ", 6)==0){
-                    fail = x_Authorize(uuu, retry);
-                    if (fail < 0)
-                        fail = 2;
-                } else
-                    fail = -1;
+                fail =
+                    retry->data  &&  strncasecmp(retry->data, "basic ", 6) == 0
+                    ? x_Authorize(uuu, retry) : -2;
             }
             if (fail) {
                 CORE_LOGF_X(3, eLOG_Error,
@@ -334,8 +331,9 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
                              url           ? url  : "",
                              retry->mode == eRetry_Authenticate
                              ? "Authorization" : "Proxy authorization",
-                             fail < 0 ? "not yet implemented" :
-                             fail > 1 ? "prohibited" : "failed",
+                             fail >  1 ? "not allowed with CONNECT" :
+                             fail < -1 ? "not implemented" :
+                             fail >  0 ? "failed" : "prohibited",
                              "(["[!retry->data],
                              retry->data ? retry->data : "NULL",
                              ")]"[!retry->data]));
