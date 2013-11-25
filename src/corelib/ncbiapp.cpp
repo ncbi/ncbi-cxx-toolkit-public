@@ -1293,7 +1293,7 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
             mem_size_limit = (size_t)(GetPhysicalMemorySize() * percents / 100);
         } else {
             // Size in MB
-            mem_size_limit = (size_t)(NStr::StringToUInt(s) * 1024 * 1024);
+            mem_size_limit = NStr::StringToSizet(s) * 1024 * 1024;
         }
         SetMemoryLimit(mem_size_limit);
     }
