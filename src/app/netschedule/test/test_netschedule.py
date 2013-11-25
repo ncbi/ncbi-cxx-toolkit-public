@@ -35,7 +35,7 @@ netstat = "/bin/netstat"
 netcat = "/usr/bin/netcat"
 
 
-latestNetscheduleVersion = "4.16.10"
+latestNetscheduleVersion = "4.16.11"
 
 
 # The map below describes what tests should be excluded for a certain
@@ -47,6 +47,7 @@ excludeTestsMap = \
                   1000, 1100, 1101, 1102, 1103, 1104, 1105, 1106, 1107 ],
     "4.16.9":   [ 214, 215,
                   1000, 1100, 1101, 1102, 1103, 1104, 1105, 1106, 1107 ],
+    "4.16.10":  [ ],
     "4.16.10":  [ ]
 }
 
