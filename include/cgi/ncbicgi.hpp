@@ -1,5 +1,5 @@
-#ifndef NCBICGI__HPP
-#define NCBICGI__HPP
+#ifndef CGI___NCBICGI__HPP
+#define CGI___NCBICGI__HPP
 
 /*  $Id$
 * ===========================================================================
@@ -61,7 +61,7 @@ class CCgiEntryReaderContext;
 ///
 ///  CCgiCookie::
 ///
-/// The CGI send-cookie class
+/// HTTP cookie class
 ///
 
 
@@ -83,14 +83,21 @@ public:
     /// The cookie name cannot be changed during its whole timelife
     const string& GetName(void) const;
 
+    /// Whether the cookie is sent as a part of HTTP request or HTTP response
     enum EWriteMethod {
         eHTTPResponse,
         eHTTPRequest
     };
+
     /// Compose and write to output stream "os":
+    /// @param wmethod
+    /// - eHTTPResponse:
     ///  "Set-Cookie: name=value; expires=date; path=val_path; domain=dom_name;
-    ///   secure\n"
-    /// Here, only "name=value" is mandatory, and other parts are optional
+    ///   secure\r\n"
+    ///   Here, only "name=value" is mandatory, and other parts are optional
+    /// - eHTTPRequest:
+    ///  "name=value"
+    ///   Here, only "name=value" is printed, all other parts are ignored
     CNcbiOstream& Write(CNcbiOstream& os, 
                         EWriteMethod wmethod = eHTTPResponse,
                         EUrlEncode   flag = eUrlEncode_SkipMarkChars) const;
@@ -1139,4 +1146,4 @@ inline void CCgiRequest::x_SetSession(CCgiSession& session)
 
 END_NCBI_SCOPE
 
-#endif  /* NCBICGI__HPP */
+#endif  /* CGI___NCBICGI__HPP */
