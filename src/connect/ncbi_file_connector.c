@@ -366,7 +366,7 @@ extern CONNECTOR FILE_CreateConnectorEx
 
     if (!(ifnlen | ofnlen))
         return 0;
-    if (!(ccc = (SConnector*)     malloc(sizeof(SConnector))))
+    if (!(ccc = (SConnector*) malloc(sizeof(SConnector))))
         return 0;
     if (!(xxx = (SFileConnector*) malloc(sizeof(*xxx) + ifnlen + ofnlen))) {
         free(ccc);
