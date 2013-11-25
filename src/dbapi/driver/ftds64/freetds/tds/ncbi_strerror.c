@@ -242,6 +242,10 @@ static const char* s_StrErrorInternal(int error)
         {EAI_NONAME + EAI_BASE,
                                  "Host/service name not known"},
 #  endif /*EAI_NONAME*/
+#  ifdef EAI_OVERFLOW
+        {EAI_OVERFLOW + EAI_BASE,
+                                 "Buffer overflow"},
+#  endif /*EAI_OVERFLOW*/
 #  ifdef EAI_SERVICE
         {EAI_SERVICE + EAI_BASE,
                                  "Service name not supported for socket type"},
@@ -250,6 +254,27 @@ static const char* s_StrErrorInternal(int error)
         {EAI_SOCKTYPE + EAI_BASE,
                                  "Socket type not supported"},
 #  endif /*EAI_SOCKTYPE*/
+        /* GNU extensions */
+#  ifdef EAI_ALLDONE
+        {EAI_ALLDONE + EAI_BASE,
+                                 "All requests done"},
+#  endif /*EAI_ALLDONE*/
+#  ifdef EAI_CANCELED
+        {EAI_CANCELED + EAI_BASE,
+                                 "Request canceled"},
+#  endif /*EAI_BADFLAGS*/
+#  ifdef EAI_INPROGRESS
+        {EAI_INPROGRESS + EAI_BASE,
+                                 "Processing request in progress"},
+#  endif /*EAI_INPROGRESS*/
+#  ifdef EAI_INTR
+        {EAI_INTR + EAI_BASE,
+                                 "Interrupted by a signal"},
+#  endif /*EAI_INTR*/
+#  ifdef EAI_NOTCANCELED
+        {EAI_NOTCANCELED + EAI_BASE,
+                                 "Request not canceled"},
+#  endif /*EAI_NOTCANCELED*/
 #  ifdef NCBI_OS_MSWIN
 #    define DNS_BASE 0
 #  else
