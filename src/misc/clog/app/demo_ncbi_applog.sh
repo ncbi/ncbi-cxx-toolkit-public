@@ -52,7 +52,7 @@ if [ $? -ne 0 -o -z "$request_token" ] ; then
     Error "start_request(1)"
 fi
 $APPLOG post  $request_token -message "request message"     || Error "post(r1)"
-$APPLOG extra '' -param="k3=v3"                             || Error "extra(r1)"
+$APPLOG extra $request_token -param="k3=v3"                 || Error "extra(r1)"
 $APPLOG stop_request $request_token -status=200 -input=11 -output=13 >/dev/null 2>&1 || Error "stop_request(r1)"
 
 # --- Posting between requests
@@ -63,7 +63,7 @@ request_token=`$APPLOG start_request '' -sid=request2 -rid=2 -client=5.6.7.8 -pa
 if [ $? -ne 0 -o -z "$request_token" ] ; then
     Error "start_request(2)"
 fi
-$APPLOG extra '' -param="k4=v4" || Error "extra(r2)"
+$APPLOG extra $request_token -param="k4=v4" || Error "extra(r2)"
 token=`$APPLOG stop_request $request_token -status=600 -input=21 -output=23` || Error "stop_request(r2)"
 
 # --- Stop 
