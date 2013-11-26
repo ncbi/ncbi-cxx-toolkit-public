@@ -60,6 +60,8 @@
 #include <corelib/ncbi_autoinit.hpp>
 #include <objects/seq/Seq_ext.hpp>
 
+#include <objtools/readers/fasta.hpp>
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(sequence);
@@ -122,9 +124,90 @@ namespace
         return pNextId;
     }
 
+
+    CBioseq_Handle s_FastaToBioseqHandle(
+        const string & sFasta,
+        CSeq_inst::TMol eInputMol )
+    {
+        // wrap sFasta as an ILineReader
+        CMemoryLineReader line_reader(sFasta.data(), sFasta.length());
+
+        CRef<CMessageListenerLevel> pMsgListener(
+            new CMessageListenerLevel(eDiag_Warning) );
+
+        CFastaReader::TFlags fFlags = CFastaReader::fParseGaps |
+            CFastaReader::fDLOptional |
+            CFastaReader::fNoSplit |
+            CFastaReader::fLeaveAsText |
+            CFastaReader::fForceType;
+        if( eInputMol == CSeq_inst::eMol_na ) {
+            fFlags |= CFastaReader::fAssumeNuc;
+        } else if( eInputMol == CSeq_inst::eMol_aa ) {
+            fFlags |= CFastaReader::fAssumeProt;
+        } else {
+            BOOST_FAIL("Invalid input-mol");
+        }
+        CFastaReader fasta_reader(line_reader, fFlags);
+
+        CRef<CSeq_entry> pSeqEntry =
+            fasta_reader.ReadOneSeq(pMsgListener.GetPointer());
+        CRef<CBioseq> pBioseq( & pSeqEntry->SetSeq() );
+
+        pBioseq->SetId().clear();
+        pBioseq->SetId().push_back(s_GetNextSeqId());
+
+        CRef<CScope> pScope( new CScope(*CObjectManager::GetInstance()));
+        pScope->AddDefaults();
+
+        return pScope->AddBioseq(*pBioseq);
+    }
+
+
+    void WriteBioseqAsFasta(
+        ostream & out_strm,
+        const CBioseq_Handle & bioseq_h )
+    {
+        CFastaOstream fasta_ostream( out_strm );
+        fasta_ostream.SetWidth(1000000);
+        fasta_ostream.SetFlag(CFastaOstream::fShowModifiers);
+        fasta_ostream.SetFlag(CFastaOstream::fShowGapModifiers);
+        fasta_ostream.SetGapMode(CFastaOstream::eGM_count);
+        fasta_ostream.WriteSequence(bioseq_h);
+    }
+
+
+    void s_FastasWorkCorrectly(
+        const string & sFasta_input,
+        const string & sFasta_expected_output,
+        CSeq_inst::TMol eInputMol = CSeq_inst::eMol_na)
+    {
+        CSequenceAmbigTrimmer trimmer(
+            CSequenceAmbigTrimmer::eMeaningOfAmbig_OnlyCompletelyUnknown,
+            CSequenceAmbigTrimmer::fFlags_DoNotTrimSeqGap );
+
+        CBioseq_Handle bioseq_handle1 = s_FastaToBioseqHandle(
+            sFasta_input, eInputMol);
+        trimmer.DoTrim(bioseq_handle1);
+        CNcbiOstrstream fasta1_strm;
+        WriteBioseqAsFasta(
+            fasta1_strm, bioseq_handle1 );
+
+        CBioseq_Handle bioseq_handle2 = s_FastaToBioseqHandle(
+            sFasta_expected_output, eInputMol);
+        CNcbiOstrstream fasta2_strm;
+        WriteBioseqAsFasta(
+            fasta2_strm, bioseq_handle2 );
+
+        BOOST_CHECK_EQUAL(
+            (string)CNcbiOstrstreamToString(fasta1_strm),
+            (string)CNcbiOstrstreamToString(fasta2_strm));
+    }
+    
+
     CBioseq_Handle s_SequenceToBioseqHandle(
         const string & sInputSeq,
-        CSeq_inst::TMol eInputMol )
+        CSeq_inst::TMol eInputMol
+        )
     {
         CRef<CBioseq> pBioseq( new CBioseq );
 
@@ -338,6 +421,64 @@ namespace
         annot_eh.AddFeat( *pFeat );
     }
 }
+
+
+// Test CSequenceAmbigTrimmer::fFlags_DoNotTrimSeqGap
+BOOST_AUTO_TEST_CASE(SequenceAmbigTrimmer_TestDoNotTrimSeqGap)
+{
+    const string kSeqGap = ">?42 [gap-type=between-scaffolds] [linkage-evidence=align_genus]\n";
+
+    // test just seq-gap
+    s_FastasWorkCorrectly(kSeqGap, kSeqGap);
+
+    // test when seq-gap touches the left side
+    s_FastasWorkCorrectly(kSeqGap + string(20, 'A'),
+        kSeqGap + string(20, 'A'));
+
+    // test when N's, then seq-gap
+    s_FastasWorkCorrectly(string(5, 'N') + "\n" + kSeqGap + string(20, 'A'),
+        kSeqGap + string(20, 'A'));
+    s_FastasWorkCorrectly(string(52, 'N') + "\n" + kSeqGap + string(20, 'A'),
+        kSeqGap + string(20, 'A'));
+
+    // test when bases, then N's, then seq-gap
+    s_FastasWorkCorrectly(
+        string(4, 'C') + string(52, 'N') + "\n" + kSeqGap + string(20, 'A'),
+        kSeqGap + string(20, 'A'));
+    s_FastasWorkCorrectly(
+        string(4, 'C') + string(6, 'N') + "\n" + kSeqGap + string(20, 'A'),
+        kSeqGap + string(20, 'A'));
+    s_FastasWorkCorrectly(
+        string(35, 'C') + string(52, 'N') + "\n" + kSeqGap + string(20, 'A'),
+        string(35, 'C') + string(52, 'N') + "\n" + kSeqGap + string(20, 'A'));
+
+    // test when N's then bases then seq-gap
+    s_FastasWorkCorrectly(
+        string(48, 'N') + string(35, 'C') + "\n" + kSeqGap + string(20, 'A'),
+        string(35, 'C') + "\n" + kSeqGap + string(20, 'A'));
+    s_FastasWorkCorrectly(
+        string(47, 'N') + string(1, 'C') + "\n" + kSeqGap + string(20, 'A'),
+        string(1, 'C') + "\n" + kSeqGap + string(20, 'A'));
+
+    // test prot
+    s_FastasWorkCorrectly(
+        kSeqGap + string(20, 'W'),
+        kSeqGap + string(20, 'W'),
+        CSeq_inst::eMol_aa);
+    s_FastasWorkCorrectly(
+        string(12, 'X') + "\n" + kSeqGap + string(20, 'W'),
+        kSeqGap + string(20, 'W'),
+        CSeq_inst::eMol_aa);
+
+    // test when trimming would occur from right
+    s_FastasWorkCorrectly(
+        kSeqGap + string(8, 'X'),
+        kSeqGap);
+    s_FastasWorkCorrectly(
+        kSeqGap + string(4, 'T') + string(8, 'X'),
+        kSeqGap + string(4, 'T'));
+}
+
 
 // example:
 // const SFoo abc[] = { ..., ..., ...};
@@ -632,5 +773,4 @@ BOOST_AUTO_TEST_CASE(SequenceAmbigTrimmer_GeneralTests)
             eCurrMeaning );
     }
 }
-
 

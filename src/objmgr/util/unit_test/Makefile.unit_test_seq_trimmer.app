@@ -5,7 +5,7 @@ SRC = unit_test_seq_trimmer
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = test_boost xobjutil $(SOBJMGR_LIBS)
+LIB  = $(OBJREAD_LIBS) xobjutil test_boost $(SOBJMGR_LIBS)
 LIBS = $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = Boost.Test.Included

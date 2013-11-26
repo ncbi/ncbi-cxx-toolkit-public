@@ -490,6 +490,10 @@ void CSequenceAmbigTrimmer::x_EdgeSeqMapGapAdjust(
         ( seqvec.IsNucleotide() ? & m_arrNucAmbigLookupTable :
         seqvec.IsProtein() ? & m_arrProtAmbigLookupTable :
         NULL );
+    if( ! pAmbigLookupTable ) {
+        NCBI_USER_THROW(
+            "Unable to determine molecule type of sequence");
+    }
 
     TSignedSeqPos newStartOfGoodBases = in_out_uStartOfGoodBasesSoFar;
     while( ! s_IsEmptyRange(newStartOfGoodBases, uEndOfGoodBasesSoFar, iTrimDirection) &&
@@ -500,12 +504,20 @@ void CSequenceAmbigTrimmer::x_EdgeSeqMapGapAdjust(
             seqvec.GetSeqMap().FindSegment(
             newStartOfGoodBases, &seqvec.GetScope() );
         if( gap_seqmap_ci.GetType() == CSeqMap::eSeqData ) {
-            while( ! s_IsEmptyRange(newStartOfGoodBases, uEndOfGoodBasesSoFar, iTrimDirection) &&
+            const TSignedSeqPos end_of_segment = 
+                x_SegmentGetEndInclusive(gap_seqmap_ci, iTrimDirection);
+
+            while( ! s_IsEmptyRange(newStartOfGoodBases, end_of_segment, iTrimDirection) &&
+                ! s_IsEmptyRange(newStartOfGoodBases, uEndOfGoodBasesSoFar, iTrimDirection) &&
                 (*pAmbigLookupTable)[ seqvec[newStartOfGoodBases] - kFirstCharInLookupTable] )
             {
                 newStartOfGoodBases += iTrimDirection;
             }
         } else if( gap_seqmap_ci.GetType() == CSeqMap::eSeqGap ) {
+            if(m_fFlags & fFlags_DoNotTrimSeqGap) {
+                // do not trim past Seq-gaps here
+                break;
+            }
             newStartOfGoodBases = iTrimDirection + x_SegmentGetEndInclusive(gap_seqmap_ci, iTrimDirection);
         } else {
             // this is not a gap segment
@@ -587,6 +599,12 @@ void CSequenceAmbigTrimmer::x_CountAmbigInRange(
                 min(
                     1 + abs(segmentEndPosInclusive - segmentStartPosInclusive),
                     1 + abs(segmentStartPosInclusive - iEndPosInclusive_arg) );
+            if(m_fFlags & fFlags_DoNotTrimSeqGap) {
+                // if fFlags_DoNotTrimSeqGap is set, then we return 0 ambig
+                // bases to make sure no rule is triggered
+                out_result = SAmbigCount(iTrimDirection);
+                return;
+            }
             // gaps are always ambiguous no matter what our definition
             // of ambiguous is.
             out_result.num_ambig_bases += numBasesInGapInRange;

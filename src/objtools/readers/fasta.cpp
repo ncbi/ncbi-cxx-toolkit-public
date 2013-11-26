@@ -346,21 +346,22 @@ CRef<CSeq_entry> CFastaReader::ReadOneSeq(IMessageListener * pMessageListener)
                         eEOF );
             break;
         }
-        if (c == '>') {
-            if (need_defline) {
-                ParseDefLine(*++GetLineReader(), pMessageListener);
-                need_defline = false;
-                continue;
+        if (c == '>' ) {
+            CTempString next_line = *++GetLineReader();
+            if( NStr::StartsWith(next_line, ">?") ) {
+                // This is actually a data line. an assembly gap, in particular, which
+                // we handle farther below
+                GetLineReader().UngetLine();
             } else {
-                CTempString next_line = *++GetLineReader();
-                if (next_line.size() > 2  &&  next_line[1] == '?'
-                    &&  ParseGapLine(next_line, pMessageListener) ) {
+                if(need_defline) {
+                    ParseDefLine(next_line, pMessageListener);
+                    need_defline = false;
                     continue;
                 } else {
                     GetLineReader().UngetLine();
+                    // start of the next sequence
+                    break;
                 }
-                // start of the next sequence
-                break;
             }
         } else if (c == '[') {
             return x_ReadSegSet(pMessageListener);
@@ -748,7 +749,7 @@ bool CFastaReader::ParseIDs(
             count = CSeq_id::ParseIDs(ids, temp, flags);
             FASTA_WARNING(LineNumber(),
                 "CFastaReader: Near line " << LineNumber() 
-                << ", the sequence contains 'coma' symbol and replaced with 'underscore' "
+                << ", the sequence contains 'comma' symbol and replaced with 'underscore' "
                 << "symbol. Please find and correct the sequence id.",
                 ILineError::eProblem_GeneralParsingError, "");
         }
@@ -942,6 +943,11 @@ void CFastaReader::CheckDataLine(
 void CFastaReader::ParseDataLine(
     const TStr& s, IMessageListener * pMessageListener)
 {
+    if( NStr::StartsWith(s, ">?") ) {
+        ParseGapLine(s, pMessageListener);
+        return;
+    }
+
     CheckDataLine(s, pMessageListener);
 
     size_t len = min(s.length(), s.find(';')); // ignore ;-delimited comments

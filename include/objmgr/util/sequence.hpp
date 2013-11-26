@@ -1243,6 +1243,8 @@ public:
         fFlags_DoNotTrimBeginning = (1 << 0), ///< 0x01 ("Beginning" as defined by CSeqVector)
         fFlags_DoNotTrimEnd       = (1 << 1), ///< 0x02 ("End" as defined by CSeqVector)
 
+        fFlags_DoNotTrimSeqGap    = (1 << 2), ///< 0x04 (Seq-gaps are not considered trimmable if this flag is set, only letter gaps (e.g. N's for nucs))
+
         // we might support this in the future
         // fFlags_TrimAnnot         = (1 << 3)   ///< 0x08 (Trim annots based on trimmed bioseq location)
     };
