@@ -1301,7 +1301,7 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
                 Uint8 bytes = NStr::StringToUInt8_DataSize(s);
                 if ( bytes > get_limits(mem_size_limit).max() ) {
                     NCBI_THROW(CAppException, eLoadConfig,
-                               "Configuration file error:  [NCBI.HeapSizeLimit] is too big");
+                               "Configuration file error:  [NCBI.MemorySizeLimit] is too big");
                 }
                 mem_size_limit = (size_t)bytes;
             }
