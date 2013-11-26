@@ -1275,8 +1275,7 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
             NCBI_THROW(CAppException, eLoadConfig,
                        "Configuration file error:  [NCBI.HeapSizeLimit] < 0");
         }
-        mem_size_limit *= 1024 * 1024;
-        SetMemoryLimit(mem_size_limit);
+        SetMemoryLimit(size_t(mem_size_limit) * 1024 * 1024);
     }
     // [NCBI.MemorySizeLimit]
     if ( !reg->Get("NCBI", "MemorySizeLimit").empty() ) {
@@ -1292,8 +1291,20 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
             }
             mem_size_limit = (size_t)(GetPhysicalMemorySize() * percents / 100);
         } else {
-            // Size in MB
-            mem_size_limit = NStr::StringToSizet(s) * 1024 * 1024;
+            try {
+                // Size is specified in MB by default if no suffixes
+                // (converted without exception)
+                mem_size_limit = NStr::StringToSizet(s) * 1024 * 1024;
+            }
+            catch (CStringException&) {
+                // Otherwise, size have suffix (MB, GB, etc)
+                Uint8 bytes = NStr::StringToUInt8_DataSize(s);
+                if ( bytes > get_limits(mem_size_limit).max() ) {
+                    NCBI_THROW(CAppException, eLoadConfig,
+                               "Configuration file error:  [NCBI.HeapSizeLimit] is too big");
+                }
+                mem_size_limit = (size_t)bytes;
+            }
         }
         SetMemoryLimit(mem_size_limit);
     }
@@ -1305,7 +1316,7 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
             NCBI_THROW(CAppException, eLoadConfig,
                        "Configuration file error:  [NCBI.CpuTimeLimit] < 0");
         }
-        SetCpuTimeLimit(cpu_time_limit);
+        SetCpuTimeLimit(size_t(cpu_time_limit));
     }
 
     // TRACE and POST filters
