@@ -1194,8 +1194,6 @@ int CNcbiApplogApp::Run(void)
                                 params = orig_appname + "&" + params;
                             }
                             string s = m_Raw_line.substr(0, pos) + params;
-                            // Replace state: "PB" -> "P "
-                            s[16] = ' ';
                             NcbiLogP_Raw(s.c_str());
                         }
                         break;
