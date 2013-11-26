@@ -132,15 +132,16 @@ public:
             os << "Executable path: " << app->GetProgramExecutablePath()
                     << "\nPID: " << CProcess::GetCurrentPid() << "\n";
 
+        CNetScheduleAPI ns_api(node.GetNetScheduleAPI());
+
         os << "Host name: " << CSocketAPI::gethostname() <<
                 "\nControl port: " << control_server->GetControlPort() <<
                 "\nNetCache client name: " << node.GetNetCacheAPI().
                         GetService().GetServerPool().GetClientName() <<
                 "\nNetSchedule client name: " << node.GetClientName() <<
                 "\nQueue name: " << node.GetQueueName() <<
-                "\nNode ID: " << node.GetNetScheduleAPI()->m_ClientNode <<
-                "\nNode session: " <<
-                        node.GetNetScheduleAPI()->m_ClientSession << "\n";
+                "\nNode ID: " << ns_api->m_ClientNode <<
+                "\nNode session: " << ns_api->m_ClientSession << "\n";
 
         if (node.GetMaxThreads() > 1)
             os << "Maximum job threads: " << node.GetMaxThreads() << "\n";
@@ -152,6 +153,28 @@ public:
             os << "The node is processing an exclusive job\n";
 
         CGridGlobals::GetInstance().GetJobWatcher().Print(os);
+
+        os << "NetSchedule service: " <<
+                ns_api.GetService().GetServiceName() << "\n";
+
+        os << "NetSchedule servers:";
+        try {
+            for (CNetServiceIterator it = ns_api.GetService().
+                    Iterate(CNetService::eIncludePenalized); it; ++it)
+                os << ' ' << (*it).GetServerAddress();
+            os << "\n";
+        }
+        catch (CNetSrvConnException&) {
+            os << " N/A\n";
+        }
+
+        os << "Preferred affinities:";
+        CNetScheduleExecutor ns_executor(node.GetNSExecutor());
+        CFastMutexGuard guard(ns_executor->m_PreferredAffMutex);
+        ITERATE(set<string>, aff, ns_executor->m_PreferredAffinities) {
+            os << ' ' << *aff;
+        }
+        os << "\n";
 
         os << "OK:END\n";
     }
