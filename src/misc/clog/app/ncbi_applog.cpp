@@ -113,7 +113,8 @@ const char* kDefaultCGI = "http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncb
 
 /// Regular expression to check lines of raw logs.
 const char* kApplogRegexp = "^\\d{5}/\\d{3}/\\d{4}/[NSPRBE ]{3}[0-9A-Z]{16} \\d{4}/\\d{4} \\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}";
-const int   kLoglineNamePos = 126;
+const int   kLoglineNamePos   = 126;
+const int   kLoglineParamsPos = kLoglineNamePos + 15;
 
 /// Declare the parameter for logging CGI
 NCBI_PARAM_DECL(string, NCBI, NcbiApplogCGI); 
@@ -1031,18 +1032,25 @@ int CNcbiApplogApp::Run(void)
     if (cmd == "start_request") {
         m_Info.sid_req = args["sid"].AsString();
         m_Info.rid = args["rid"].AsInteger();
-        // It will be increased back inside C Logging API
+        // It will be increased back inside the C Logging API
         if (m_Info.rid) {
             m_Info.rid--;
         }
         m_Info.client = args["client"].AsString();
         string params = args["param"].AsString();
         SetInfo();
-        NcbiLogP_ReqStartStr(params.c_str());
-        // Add original appname as extra after 'start_request' command
-        if (!m_Info.logsite.empty()) {
+        // If logsite present, replace original name with it
+        if (m_Info.logsite.empty()) {
+            NcbiLogP_ReqStartStr(params.c_str());
+        } else {
+            // and add original appname as part of start request parameters
             string extra = "orig_appname=" + NStr::URLEncode(m_Info.appname);
-            NcbiLogP_ExtraStr(extra.c_str());
+            if (params.empty()) {
+                NcbiLogP_ReqStartStr(extra.c_str());
+            } else {
+                params = extra + "&" + params;
+                NcbiLogP_ReqStartStr(params.c_str());
+            }
         }
         token_gen_type = eRequest;
     } else 
@@ -1101,7 +1109,19 @@ int CNcbiApplogApp::Run(void)
         double ts     = args["time"  ].AsDouble();
         string params = args["param" ].AsString();
         SetInfo();
-        NcbiLogP_PerfStr(status, ts, params.c_str());
+        // If logsite present, replace original name with it
+        if (m_Info.logsite.empty()) {
+            NcbiLogP_PerfStr(status, ts, params.c_str());
+        } else {
+            // and add original appname as part of perf parameters
+            string extra = "orig_appname=" + NStr::URLEncode(m_Info.appname);
+            if (params.empty()) {
+                NcbiLogP_PerfStr(status, ts, extra.c_str());
+            } else {
+                params = extra + "&" + params;
+                NcbiLogP_PerfStr(status, ts, params.c_str());
+            }
+        }
     } else  
 
     // -----  raw  -----------------------------------------------------------
@@ -1112,24 +1132,88 @@ int CNcbiApplogApp::Run(void)
         // We already have first line in m_Raw_line, 
         // process it and all remaining lines.
         CRegexp re(kApplogRegexp);
+        bool no_logsite = (m_Info.logsite.empty() || m_Info.logsite == m_Info.appname);
+        string orig_appname;
+        if ( !no_logsite ) {
+            orig_appname = "orig_appname=" + m_Info.appname;
+        }
         do {
             if (re.IsMatch(m_Raw_line)) {
-                if (m_Info.logsite.empty() || m_Info.logsite == m_Info.appname) {
+                if ( no_logsite ) {
                     NcbiLogP_Raw(m_Raw_line.c_str());
                 } else {
                     // Use logsite name instead of appname if necessary.
+
                     if (m_Raw_line.length() <= kLoglineNamePos + 1  ||
                         !NStr::StartsWith(CTempString(CTempString(m_Raw_line), kLoglineNamePos), m_Info.appname)) {
                         throw "Error processing input raw log, line have wrong format";
                     }
+                    // Replace app name
                     m_Raw_line = NStr::Replace(m_Raw_line, m_Info.appname, m_Info.logsite, kLoglineNamePos, 1);
-                    // Post it
-                    NcbiLogP_Raw(m_Raw_line.c_str());
-                    // Add original appname as extra after 'start_app' command
-                    if (NStr::StartsWith(CTempString(CTempString(m_Raw_line), kLoglineNamePos + m_Info.logsite.size() + 1), "start")) {
-                        string extra = m_Raw_line.substr(0, kLoglineNamePos + 1 + m_Info.logsite.size())
-                                       + "extra         orig_appname=" + m_Info.appname;
-                        NcbiLogP_Raw(extra.c_str());
+
+                    /// Command type for original name to logsite substitution.
+                    typedef enum {
+                        eCmdAppStart,
+                        eCmdRequestStart,
+                        eCmdPerf,
+                        eCmdOther
+                    } ECmdType;
+
+                    CTempString cmdstr(CTempString(m_Raw_line), kLoglineNamePos + m_Info.logsite.size() + 1);
+                    ECmdType cmd = eCmdOther;
+                    if (NStr::StartsWith(cmdstr, "start")) {
+                        cmd = eCmdAppStart;
+                    } else if (NStr::StartsWith(cmdstr, "request-start")) {
+                        cmd = eCmdRequestStart;
+                    } else if (NStr::StartsWith(cmdstr, "perf")) {
+                        cmd = eCmdPerf;
+                    }
+                    size_t param_ofs = 0;
+
+                    switch (cmd)  {
+                    case eCmdPerf:
+                        {
+                            // Find end of status and time, parameters starts after last space
+                            size_t start = kLoglineParamsPos + m_Info.logsite.size();
+                            size_t pos = m_Raw_line.find_last_of(' ');
+                            if (pos == NPOS || pos <= kLoglineNamePos) {
+                                throw "Error processing input raw log, perf line have wrong format";
+                            }
+                            param_ofs = pos - start + 1;
+                        }
+                        // fall through
+
+                    case eCmdRequestStart:
+                        // Modify parameters for 'request-start' and 'perf' commands
+                        {
+                            size_t pos = kLoglineParamsPos + m_Info.logsite.size() + param_ofs;
+                            string params = NStr::TruncateSpaces(m_Raw_line.substr(pos, NPOS));
+                            if ( params.empty() ) {
+                                params = orig_appname;
+                            } else {
+                                params = orig_appname + "&" + params;
+                            }
+                            string s = m_Raw_line.substr(0, pos) + params;
+                            // Replace state: "PB" -> "P "
+                            s[16] = ' ';
+                            NcbiLogP_Raw(s.c_str());
+                        }
+                        break;
+
+                    case eCmdOther:
+                    case eCmdAppStart:
+                        // Post it as is
+                        NcbiLogP_Raw(m_Raw_line.c_str());
+                        if (cmd == eCmdAppStart) {
+                            // Add original appname as extra after 'start_app' command,
+                            // constructing it from original raw line
+                            string s = m_Raw_line.substr(0, kLoglineNamePos + 1 + m_Info.logsite.size())
+                                       + "extra         " + orig_appname;
+                            // Replace state: "PB" -> "P "
+                            s[16] = ' ';
+                            NcbiLogP_Raw(s.c_str());
+                        }
+                        break;
                     }
                 }
             }
