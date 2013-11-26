@@ -27,7 +27,7 @@ COPY: $srcdir/src/app/blast/update_blastdb.pl $installdir/bin
 
 POSTBUILD: $srcdir/scripts/projects/blast/post_build/make_installers.py -v $version $platform $installdir
 
-DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-mt --with-build-root=$srcdir/ReleaseMT
+DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-openmp --with-mt --with-build-root=$srcdir/ReleaseMT
 
 # Each line describes a single configuration
 # The format is as follows:
@@ -40,18 +40,18 @@ DEFAULT_CONFIGURE_FLAGS: --without-debug --with-strip --with-mt --with-build-roo
 # ICC gives us about 10% improvement in the core2 microarchitecture, so prefer
 # that. The build-root is needed so that rpmbuild can find the proper directories
 # to copy the binaries from
-Linux32-Centos   : icc : ICC.sh            --with-strip --without-debug --without-pcre --with-mt --with-flat-makefile
-Linux64-Centos   : icc : ICC.sh            --with-strip --without-debug --without-pcre --with-mt --with-flat-makefile
-#Linux64-Centos     : gcc-debug : GCC.sh            --with-strip --with-debug --without-pcre --with-mt --with-flat-makefile
+Linux32-Centos   : icc : ICC.sh            --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile
+Linux64-Centos   : icc : ICC.sh            --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile
+#Linux64-Centos     : gcc-debug : GCC.sh            --with-strip --with-debug --without-pcre --with-mt --with-openmp --with-flat-makefile
 
 DEFAULT_CONFIGURATIONS: Linux32-Centos:icc Linux64-Centos:icc
 
 Win32_10    : plain : static  32  ReleaseMT
 Win64_10    : plain : static  64  ReleaseMT
 
-SunOSx86    : plain : WorkShop59.sh 64  --with-strip --without-debug --without-pcre --with-mt --with-flat-makefile
-SunOSSparc  : plain : WorkShop59.sh 64  --with-strip --without-debug --without-pcre --with-mt --with-flat-makefile
+SunOSx86    : plain : WorkShop59.sh 64  --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile
+SunOSSparc  : plain : WorkShop59.sh 64  --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile
 
-IntelMAC    : universal : GCC.sh 4.0     --without-debug --without-pcre --with-mt --with-flat-makefile --with-universal=i386,x86_64 --with-ncbi-public
+IntelMAC    : universal : GCC.sh 4.0     --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-universal=i386,x86_64 --with-ncbi-public
 
 USE_COMPONENTS
