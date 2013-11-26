@@ -756,7 +756,7 @@ void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
                 }
             }
             alnseg.AddRow(CSeq_loc_Mapper_Base::eSplicedRow_Gen,
-                *gen_id, part_gen_start, m_HaveStrands, gen_strand);
+                *ex_gen_id, part_gen_start, m_HaveStrands, ex_gen_strand);
 
             int part_prod_start;
             // Check the product strand only if product sequence is not
@@ -775,7 +775,7 @@ void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
                 }
             }
             alnseg.AddRow(CSeq_loc_Mapper_Base::eSplicedRow_Prod,
-                *prod_id, part_prod_start, m_HaveStrands, prod_strand);
+                *ex_prod_id, part_prod_start, m_HaveStrands, ex_prod_strand);
         }
     }
     else {
