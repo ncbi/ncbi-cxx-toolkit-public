@@ -6276,6 +6276,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UNL<PRT>	s	Centro de Estratigrafia e Paleobiologia da Universidade Nova de Lisboa",
 "UNL<USA-NE>	s	University of Nebraska State Museum",
 "UNLO	s	Universidad Nacional Experimental de los Llanos Occidental",
+"UNLP	s	Universidad Nacional de La Plata",
 "UNLV	s	University of Nevada, Las Vegas, Department of Biological Sciences",
 "UNM	s	University of New Mexico, Department of Biology",
 "UNMC	s	University of New Mexico",
