@@ -209,6 +209,32 @@ CVariationUtil::ETestStatus CVariationUtil::CheckExonBoundary(const CVariantPlac
     return ePass;
 }
 
+void SwapLtGtFuzz(CInt_fuzz& fuzz)
+{
+    if(fuzz.IsLim() && fuzz.GetLim() == CInt_fuzz::eLim_gt) {
+        fuzz.SetLim(CInt_fuzz::eLim_lt);
+    } else if(fuzz.IsLim() && fuzz.GetLim() == CInt_fuzz::eLim_lt) {
+        fuzz.SetLim(CInt_fuzz::eLim_gt);
+    }
+}
+
+//loc is presumed Int-loc
+void ApplyOffsetFuzz(CSeq_loc& loc, const CInt_fuzz& offset_fuzz, bool is_start)
+{
+    bool minus_strand = loc.GetStrand() == eNa_strand_minus;
+    CInt_fuzz& fuzz = (minus_strand == is_start) ? loc.SetInt().SetFuzz_to() 
+                                                 : loc.SetInt().SetFuzz_from();
+    if(!fuzz.Which()) { //will not apply this fuzz if mapping itself was fuzzy
+        fuzz.Assign(offset_fuzz);
+        if(minus_strand) {
+            SwapLtGtFuzz(fuzz);
+        }
+        if(fuzz.IsRange()) { 
+            //fuzz range coordinates are invalid after remapping
+            fuzz.SetLim(CInt_fuzz::eLim_unk);
+        }
+    }
+}
 
 void CVariationUtil::s_ResolveIntronicOffsets(CVariantPlacement& p)
 {
@@ -235,17 +261,26 @@ void CVariationUtil::s_ResolveIntronicOffsets(CVariantPlacement& p)
         NCBI_THROW(CException, eUnknown, "Complex location");
     }
 
+    bool minus_strand = loc->GetStrand() == eNa_strand_minus;
     if(p.IsSetStart_offset()) {
-        TSeqPos& bio_start_ref = loc->GetStrand() == eNa_strand_minus ? loc->SetInt().SetTo() : loc->SetInt().SetFrom();
-        bio_start_ref += p.GetStart_offset() * (loc->GetStrand() == eNa_strand_minus ? -1 : 1);
+        TSeqPos& bio_start_ref = minus_strand ? loc->SetInt().SetTo() : loc->SetInt().SetFrom();
+        bio_start_ref += p.GetStart_offset() * (minus_strand ? -1 : 1);
         p.ResetStart_offset();
-        p.ResetStart_offset_fuzz(); //note: might need to combine with loc's fuzz somehow
     }
 
     if(p.IsSetStop_offset()) {
         TSeqPos& bio_stop_ref = loc->GetStrand() == eNa_strand_minus ? loc->SetInt().SetFrom() : loc->SetInt().SetTo();
-        bio_stop_ref += p.GetStop_offset() * (loc->GetStrand() == eNa_strand_minus ? -1 : 1);
+        bio_stop_ref += p.GetStop_offset() * (minus_strand ? -1 : 1);
         p.ResetStop_offset();
+    }
+
+    if(p.IsSetStart_offset_fuzz()) {
+        ApplyOffsetFuzz(*loc, p.GetStart_offset_fuzz(), true);
+        p.ResetStart_offset_fuzz();
+    }
+
+    if(p.IsSetStop_offset_fuzz()) {
+        ApplyOffsetFuzz(*loc, p.GetStop_offset_fuzz(), false);
         p.ResetStop_offset_fuzz();
     }
 
