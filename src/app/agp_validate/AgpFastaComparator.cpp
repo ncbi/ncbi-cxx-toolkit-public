@@ -253,7 +253,7 @@ CAgpFastaComparator::EResult CAgpFastaComparator::Run(
             if( ! NStr::StartsWith(line, ">") ) {
                 continue;
             }
-            SIZE_TYPE after_seq_id_pos = line.find_first_of(" \t|");
+            SIZE_TYPE after_seq_id_pos = line.find_first_of(" \t");
             if( after_seq_id_pos == string::npos ) {
                 after_seq_id_pos = line.length();
             }
