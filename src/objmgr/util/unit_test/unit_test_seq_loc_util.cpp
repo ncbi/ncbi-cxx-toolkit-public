@@ -4488,6 +4488,52 @@ Seq-entry ::= seq { \
 ";
 
 
+const char* sc_TestRevCmpError = "\
+Seq-entry ::= seq { \
+    id { \
+        local str \"Euplotes\", \
+        general { \
+            db \"NCBIFILE\", \
+            tag str \"Euplotes vannus GPx mRNA sequence-2013-05-16.sqn/Euplotes\" \
+        }, \
+        general { \
+            db \"TMSMART\", \
+            tag id 37854013 \
+        }, \
+        genbank { \
+            accession \"KF049698\" \
+        } \
+    }, \
+    inst { \
+        repr raw, \
+        mol rna, \
+        length 549, \
+        strand ss, \
+        seq-data ncbi2na '3AA0FF0FDF0E8F4D775209D503777F89CDE40E33E3A41DD2\
+DDF9E37E70A1C4090D78FB81BE7DC0EEA74702947389078788D4E30BD2E102BFD037F9FD5F9052\
+F6B9D0894A8706288D227FE44A3031A2603D4BEFE300C86D0EA8631D3DADFC4F7909B0F5D5D4E3\
+D741221C7A21354E81FE50BDF8D04982882DBE2CFF854880496820ECF5003E08177E8C80'H \
+    }, \
+    annot { \
+    { \
+        data ftable { \
+        { \
+            data rna { \
+            type mRNA \
+            }, \
+            location int { \
+            from 0, \
+            to 548, \
+            strand plus, \
+            id local str \"Euplotes\" \
+            } \
+        } \
+        } \
+    } \
+    } \
+} \
+";
+
 BOOST_AUTO_TEST_CASE(Test_RevCompBioseq)
 {
     CScope scope(*CObjectManager::GetInstance());
@@ -4528,5 +4574,34 @@ BOOST_AUTO_TEST_CASE(Test_RevCompBioseq)
         string rev = "";
         vec.GetSeqData(0, bsh.GetInst_Length(), rev);
         BOOST_CHECK_EQUAL(rev, "ATGCATGNNNNNGCCC");
+    }}
+
+    {{
+        CRef<CSeq_entry> s_Entry (new CSeq_entry);
+        CNcbiIstrstream istr(sc_TestRevCmpError);
+        istr >> MSerial_AsnText >> *s_Entry;
+        CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*s_Entry);
+        CSeqVector orig_vec(scope.GetBioseqHandle(s_Entry->GetSeq()), CBioseq_Handle::eCoding_Iupac);
+        string orig = "";
+        orig_vec.GetSeqData(0, s_Entry->GetSeq().GetLength(), orig);
+        scope.RemoveTopLevelSeqEntry(seh);
+
+        ReverseComplement(s_Entry->SetSeq().SetInst(), &scope);
+        scope.AddTopLevelSeqEntry(*s_Entry);
+
+        CBioseq_Handle bsh = scope.GetBioseqHandle(s_Entry->GetSeq());
+        CSeqVector vec(bsh, CBioseq_Handle::eCoding_Iupac);        
+        
+        string rev = "";
+        vec.GetSeqData(0, bsh.GetInst_Length(), rev);
+        string expected = "CTATCCAAGAGGTTCTTCAATTTTTGGAATACATTCTTCCGGCTGTTTCTCTGGGTCAAAATACTCAACG\
+ACTTCTCCTTCGCTGTTGATCAAGAACTTGGCAAAGTTCCATGGGATGTCTCCAGTAGTCTCTGTTGAGG\
+AATCATGGAGGGAGGAATTACGCTTGCAGAATGTAAAGACCGAATGAGTATCGTCCCCATTGACGTCTAT\
+TTTATCAAACAACTGGAATTTCGCTCCGTATTTATCCTGTGCAAAAGCTCTGATCTCCTCGTTAGTCCCT\
+GGCTCTTGAGCACCGAACTGGTTGCAAGGGAAAGCAAAGATTTGAAAACCTTTGTCACTGAACTTATCAT\
+GGATCTCAGTCAGTTGCTCATAGTGGCCTTTAGTGAGCCCACATTTAGAAGCAACGTTCACAATCAGGAT\
+TGCTTTGTAGTCCTTAGCAAGATCAGCAAGAGACTGAGAGTTGCCATCAATATCATTTGCAGATAGCTCA\
+AAGAGAGATTTGGGAGCTTCTGGAGAGGATGAATCCATTAAGAAATTAAAATTCCCCAT";
+        BOOST_CHECK_EQUAL(rev, expected);
     }}
 }
