@@ -2032,8 +2032,10 @@ void CNewCleanup_imp::DbtagBC (
             while( pos_of_first_space < str.length() && ! isspace(str[pos_of_first_space]) ) {
                 ++pos_of_first_space;
             }
-            SET_FIELD ( oid, Id, NStr::StringToUInt(str.substr(0, pos_of_first_space)) );
-            ChangeMade (CCleanupChange::eChangeDbxrefs);
+            if( ! 0x80000000 & NStr::StringToUInt(str.substr(0, pos_of_first_space))) {
+                SET_FIELD ( oid, Id, NStr::StringToUInt(str.substr(0, pos_of_first_space)) );
+                ChangeMade (CCleanupChange::eChangeDbxrefs);
+            }
         } catch (CStringException&) {
             // just leave things as are
         }
