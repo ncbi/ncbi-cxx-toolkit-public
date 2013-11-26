@@ -315,7 +315,8 @@ static string s_ReadStrFromBUF(BUF buf)
 {
     size_t size = BUF_Size(buf);
     string ret(size, '\0');
-    BUF_Read(buf, &ret[0], size);
+    if (size > 0)
+        BUF_Read(buf, &ret[0], size);
     return ret;
 }
 
