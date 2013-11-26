@@ -66,7 +66,7 @@ if NCBICXX_TESTING_REQS=1 $(3) -q requirements; then \
     fi ; \
 else \
     echo "NOTE:  skipping project \"$(1)\" due to unmet requirements"; \
-    [ $(5) = .app ] || $(3) mark-as-disabled || true ; \
+    [ "$(5)" = .app ] || $(3) mark-as-disabled || true ; \
 fi
 
 endef
@@ -88,10 +88,10 @@ $(call make_one_leaf_proj,$(1),,$(MAKE_USR),$(2),,:,1,$(3))
   endef
   # 1: target
   define make_each_usr_proj
-@test -f requirements  ||  $(TOUCH) -t 197607040000 requirements
++@test -f requirements  ||  $(TOUCH) -t 197607040000 requirements
 $(foreach p,$(ALL_USR_PROJ),$(ign)$(call make_one_usr_proj,$(p),$(1),))
 $(foreach p,$(ALL_XUSR_PROJ),-$(call make_one_usr_proj,$(p),$(1),1))
-@test -s requirements  ||  $(RM) -f requirements
++@test -s requirements  ||  $(RM) -f requirements
   endef
 endif
 
@@ -206,7 +206,7 @@ $(has_usr_real): %.real: %_l.real ;
 
 $(has_usr_locked) $(has_usr_nonusr): configurables
 
-ifeq "$(sources:%=$(ANY_USR_PROJ))" ""
+ifeq "$(sources:%=$(ANY_USR_PROJ)$(ANY_UNIX_PROJ))" ""
   $(has_usr_usr): ;
 else
   all.usr: sources.usr ;
