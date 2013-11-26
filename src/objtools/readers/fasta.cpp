@@ -1153,17 +1153,6 @@ bool CFastaReader::ParseGapLine(
             // try to continue the best we can
             uGapSize = 1;
         }
-        if( eIsKnown != SGap::eKnownSize_Yes && 
-            uGapSize != 100) 
-        {
-            FASTA_WARNING(LineNumber(), 
-                "CFastaReader: Unknown-size gaps must have a nominal "
-                "length of 100, at line  " << LineNumber(),
-                ILineError::eProblem_InvalidLengthAutoCorrected,
-                "gapline" );
-            // force to correct value
-            uGapSize = 100;
-        }
         sRemainingLine = sRemainingLine.substr(sDigits.length());
         NStr::TruncateSpacesInPlace(sRemainingLine, NStr::eTrunc_Begin);
     }
