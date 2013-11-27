@@ -453,6 +453,10 @@ void CMultiReaderApp::Init(void)
         "parse-mods", 
         "Parse FASTA modifiers on deflines.");
 
+    arg_desc->AddFlag(
+        "parse-gaps", 
+        "Make a delta sequence if gaps found.");
+
     arg_desc->SetCurrentGroup("");
 
     SetupArgDescriptions(arg_desc.release());
@@ -788,8 +792,12 @@ void CMultiReaderApp::xProcessFasta(
     CNcbiOstream& ostr)
 {
     CFastaReader::TFlags fFlags = 0;
+    fFlags |= CFastaReader::fNoSplit;
     if( args["parse-mods"] ) {
         fFlags |= CFastaReader::fAddMods;
+    }
+    if( args["parse-gaps"] ) {
+        fFlags |= CFastaReader::fParseGaps;
     }
 
     CStreamLineReader line_reader(istr);
