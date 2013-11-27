@@ -3414,7 +3414,8 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    BlastInitHSP* init_hsp_array;
    Int4 q_start, s_start, q_end, s_end;
    Boolean is_prot;
-   Boolean restricted_alignment = FALSE;
+   Boolean* restricted_align_array = NULL; /* if allocated, restricted
+                                              alignment option per query */
    Boolean is_greedy;
    Boolean is_rpsblast = Blast_ProgramIsRpsBlast(program_number);
    Int4 max_offset;
@@ -3432,6 +3433,9 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    const int kHspNumMax = BlastHspNumMax(TRUE, hit_options);
    const double kRestrictedMult = 0.68;/* fraction of the ordinary cutoff score
                                         used for approximate gapped alignment */
+   Int4 redo_index = -1; /* these are used for recomputing alignmnets if the */
+   Int4 redo_query = -1; /* approximate alignment score is inconclusive */
+   BlastIntervalTree *private_tree = NULL;
 
    if (!query || !subject || !gap_align || !score_params || !ext_params ||
        !hit_params || !init_hitlist || !hsp_list_ptr)
@@ -3452,12 +3456,59 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
       away and recomputed optimally */
 
    if (hit_params->restricted_align && !score_params->options->is_ooframe) {
-      init_hsp = init_hitlist->init_hsp_array;
-      if (init_hsp->ungapped_data &&
-          init_hsp->ungapped_data->score < (Int4)(kRestrictedMult *
-                                         hit_params->cutoff_score_min)) {
-          restricted_alignment = TRUE;
-      }
+       int i;
+       Boolean found[query_info->last_context + 1];
+       memset(found, 0, (query_info->last_context + 1) * sizeof(Boolean));
+
+       restricted_align_array = 
+           (Boolean*)calloc(Blast_GetQueryIndexFromContext(
+                                               query_info->last_context,
+                                               program_number) + 1,
+                            sizeof(Boolean));
+
+       /* find the first ungapped alignment for each query and determine
+          whetherto use approximate gapped alignment for the query */
+       for (i = 0;i < init_hitlist->total;i++) {
+           int contxt; /* context */
+           int query_index = -1;
+           Int4 q_off;
+
+           init_hsp = &init_hitlist->init_hsp_array[i];
+           /* find query index */
+           q_off = init_hsp->offsets.qs_offsets.q_off;
+           for (contxt = query_info->first_context;
+                contxt <= query_info->last_context; contxt++) {
+
+               if (q_off >= query_info->contexts[contxt].query_offset &&
+                   q_off < query_info->contexts[contxt].query_offset +
+                   query_info->contexts[contxt].query_length) {
+
+                   query_index = Blast_GetQueryIndexFromContext(contxt,
+                                                                program_number);
+                   break;
+               }
+           }
+           ASSERT(query_index >= 0);
+
+           /* if this is not the first initial hit for the query, disregard it */
+           if (found[query_index]) {
+               continue;
+           }
+
+           found[query_index] = TRUE;
+
+           /* use approximate gapped alignment if the highest scoring ungapped
+              alignment scores below the reduced cutoff */
+           if (init_hsp->ungapped_data && init_hsp->ungapped_data->score <
+               (Int4)(kRestrictedMult *
+                      hit_params->cutoffs[contxt].cutoff_score)) {
+
+               restricted_align_array[query_index] = TRUE;
+           }
+           else {
+               restricted_align_array[query_index] = FALSE;
+           }
+       }
    }
 
    if (is_rpsblast) {
@@ -3522,6 +3573,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
       BlastInitHSP tmp_init_hsp;
       BlastUngappedData tmp_ungapped_data;
       int query_index=0;
+      Boolean restricted_alignment = FALSE;
 
       /* make a local copy of the initial HSP */
 
@@ -3535,9 +3587,24 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
       s_AdjustHspOffsetsAndGetQueryData(query, query_info, init_hsp, 
                                         &query_tmp, &context);
 
+      query_index = Blast_GetQueryIndexFromContext(context, program_number);
+
+      /* If redo_index > -1 and redo_query > -1, the main loop is recomputing
+         gappaed alignments for a single query, becuase the approximate
+         alignment score was inconclusive. This recomputing was triggered when
+         index was equal to redo_index. Until index reaches redo_index again,
+         skip all concatenated queries with index different from redo_query */
+
+      if (index < redo_index && query_index != redo_query) {
+          continue;
+      }
+
+      if (restricted_align_array && restricted_align_array[query_index]) {
+          restricted_alignment = TRUE;
+      }
+
       if (hit_params->low_score)
       {
-      	query_index = Blast_GetQueryIndexFromContext(context, program_number);
       	if (!found_high_score[query_index])
          continue;
       }
@@ -3567,7 +3634,11 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
       tmp_hsp.subject.end = s_end;
       tmp_hsp.subject.frame = subject->frame;
 
-      if (!BlastIntervalTreeContainsHSP(tree, &tmp_hsp, query_info,
+      /* use priate interval tree when recomputing alignments */
+      if ((index <= redo_index && query_index == redo_query &&
+           !BlastIntervalTreeContainsHSP(private_tree, &tmp_hsp, query_info,
+                                          hit_options->min_diag_separation))
+          || !BlastIntervalTreeContainsHSP(tree, &tmp_hsp, query_info,
                                     hit_options->min_diag_separation))
       {
          BlastHSP* new_hsp;
@@ -3620,14 +3691,59 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                    alignments and recomputing them exactly. */
 
                 Int4 index2;
-                restricted_alignment = FALSE;
-                Blast_IntervalTreeReset(tree);
+                BlastHSPList* new_hsp_list = Blast_HSPListNew(kHspNumMax);
+                ASSERT(restricted_align_array);
+                restricted_align_array[query_index] = FALSE;
+
+                /* remove all HSPs computed for the current query */
                 for (index2 = 0; index2 < hsp_list->hspcnt; index2++) {
-                   hsp_list->hsp_array[index2] = 
-                             Blast_HSPFree(hsp_list->hsp_array[index2]);
+                    Int4 context2 = hsp_list->hsp_array[index2]->context;
+                    Int4 q_index2 = Blast_GetQueryIndexFromContext(context2,
+                                                               program_number);
+
+                    if (q_index2 != query_index) {
+
+                        Blast_HSPListSaveHSP(new_hsp_list,
+                                             hsp_list->hsp_array[index2]);
+                        hsp_list->hsp_array[index2] = NULL;
+                    }
+                    else {
+                        hsp_list->hsp_array[index2] =
+                            Blast_HSPFree(hsp_list->hsp_array[index2]);
+                    }
                 }
-                hsp_list->hspcnt = 0;
-                index = -1;   /* restart the loop over ungapped alignments */
+                Blast_HSPListFree(hsp_list);
+                hsp_list = new_hsp_list;
+
+                /* create private interval tree for the recomputed alignments;
+                   this is easier than removing nodes from the main tree */
+
+                if (!private_tree) {
+                    if (Blast_SubjectIsTranslated(program_number) &&
+                        score_params->options->is_ooframe) { 
+                        ASSERT(program_number == eBlastTypeTblastn);
+                    
+                        private_tree = Blast_IntervalTreeInit(0, query->length+1,
+                                     0, 2*(subject->length + CODON_LENGTH)+1);
+                    }
+                    else {
+                        private_tree = Blast_IntervalTreeInit(0, query->length+1,
+                                                  0, subject->length+1);
+                    }
+                    if (!private_tree) {
+                        status = BLASTERR_MEMORY;
+                        break;
+                    }
+                }
+                else {
+                    Blast_IntervalTreeReset(private_tree);
+                }
+
+                /* restart the loop over initial hits to recompute
+                   alignments for the current query */
+                redo_index = index;
+                redo_query = query_index;
+                index = -1;   
                 continue;
             }
          } else if (is_greedy) {
@@ -3703,6 +3819,16 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
                                      eQueryAndSubject);
              if (status)
                  break;
+
+             if (index < redo_index) {
+                 ASSERT(private_tree);
+                 status = BlastIntervalTreeAddHSP(new_hsp, private_tree,
+                                                  query_info,
+                                                  eQueryAndSubject);
+                 if (status) {
+                     break;
+                 }
+             }
          }
          else {
             /* a greedy alignment may have traceback associated with it;
@@ -3716,7 +3842,13 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
    }   
 
    sfree(found_high_score);
+   if (restricted_align_array) {
+       sfree(restricted_align_array);
+   }
 
+   if (private_tree) {
+       private_tree = Blast_IntervalTreeFree(private_tree);
+   }
    tree = Blast_IntervalTreeFree(tree);
    if (rpsblast_pssms) {
        gap_align->sbp->psi_matrix->pssm->data = rpsblast_pssms;
