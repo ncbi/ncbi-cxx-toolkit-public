@@ -1,0 +1,33 @@
+Variation ::= {
+  name "NM_004638.3:c.-284_-283insTGGGAGG",
+  data set {
+    type package,
+    variations {
+      {
+        placements {
+          {
+            loc int {
+              from 2,
+              to 3,
+              strand plus,
+              id gi 314122240
+            },
+            mol unknown
+          }
+        },
+        data instance {
+          type ins,
+          delta {
+            {
+              seq literal {
+                length 7,
+                seq-data iupacna "TGGGAGG"
+              },
+              action ins-before
+            }
+          }
+        }
+      }
+    }
+  }
+}

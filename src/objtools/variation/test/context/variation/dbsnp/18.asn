@@ -1,0 +1,33 @@
+Variation ::= {
+  name "NC_000007.13:g.126096600_126096601insA",
+  data set {
+    type package,
+    variations {
+      {
+        placements {
+          {
+            loc int {
+              from 126096573,
+              to 126096600,
+              strand plus,
+              id gi 224589819
+            },
+            mol unknown
+          }
+        },
+        data instance {
+          type ins,
+          delta {
+            {
+              seq literal {
+                length 1,
+                seq-data iupacna "A"
+              },
+              action ins-before
+            }
+          }
+        }
+      }
+    }
+  }
+}

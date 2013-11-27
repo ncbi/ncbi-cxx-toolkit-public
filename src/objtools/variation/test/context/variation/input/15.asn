@@ -1,0 +1,79 @@
+Variation ::= {
+  id {
+    db "dbSNP",
+    tag str "rs15"
+  },
+  variant-prop {
+    version 5,
+    resource-link preserved,
+    gene-location 0,
+    effect no-change,
+    mapping 0,
+    frequency-based-validation 0,
+    genotype 0,
+    quality-check 0
+  },
+  data set {
+    type package,
+    variations {
+      {
+        placements {
+          {
+            loc pnt {
+              point 22845781,
+              id other {
+                accession "NC_000022",
+                version 10
+              }
+            },
+            mol genomic
+          }
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "T"
+                    },
+                    action ins-before
+                  }
+                }
+              }
+            }
+          }
+        },
+        ext {
+          {
+            type str "VcfAttributes",
+            data {
+              {
+                label str "filter",
+                data str "PASS"
+              },
+              {
+                label str "info",
+                data str "DB"
+              }
+            }
+          },
+          {
+            type str "Description",
+            data {
+              {
+                label str "Input",
+                data str "This SNP inserts one T *almost* at the beginning of
+ a stretch of Ts"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

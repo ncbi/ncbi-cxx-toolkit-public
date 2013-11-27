@@ -1,0 +1,79 @@
+Variation ::= {
+  id {
+    db "dbSNP",
+    tag str "rs14"
+  },
+  variant-prop {
+    version 5,
+    resource-link preserved,
+    gene-location 0,
+    effect no-change,
+    mapping 0,
+    frequency-based-validation 0,
+    genotype 0,
+    quality-check 0
+  },
+  data set {
+    type package,
+    variations {
+      {
+        placements {
+          {
+            loc pnt {
+              point 10689131,
+              id other {
+                accession "NT_005612",
+                version 16
+              }
+            },
+            mol genomic
+          }
+        },
+        data set {
+          type package,
+          variations {
+            {
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 3,
+                      seq-data iupacna "GCT"
+                    },
+                    action ins-before
+                  }
+                }
+              }
+            }
+          }
+        },
+        ext {
+          {
+            type str "VcfAttributes",
+            data {
+              {
+                label str "filter",
+                data str "PASS"
+              },
+              {
+                label str "info",
+                data str "DB"
+              }
+            }
+          },
+          {
+            type str "Description",
+            data {
+              {
+                label str "Output dbSNP Context",
+                data str "This insertion *should not shift*, as it is out of
+ sync with the context"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
