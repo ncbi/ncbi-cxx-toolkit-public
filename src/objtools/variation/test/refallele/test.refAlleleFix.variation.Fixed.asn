@@ -26,11 +26,7 @@ Variation ::= {
                 version 10
               }
             },
-            mol genomic,
-            seq {
-              length 1,
-              seq-data iupacna "G"
-            }
+            mol genomic
           }
         },
         data set {
@@ -48,19 +44,22 @@ Variation ::= {
                   }
                 }
               }
+            },
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
+              }
             }
           }
-        }
-      }
-    }
-  },
-  ext {
-    {
-      type str "Description",
-      data {
-        {
-          label str "Output RefAllele Fix",
-          data str "This record need nothing done to it"
         }
       }
     }
@@ -94,11 +93,7 @@ Variation ::= {
                 version 10
               }
             },
-            mol genomic,
-            seq {
-              length 1,
-              seq-data iupacna "G"
-            }
+            mol genomic
           }
         },
         data set {
@@ -116,19 +111,22 @@ Variation ::= {
                   }
                 }
               }
+            },
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
+              }
             }
           }
-        }
-      }
-    }
-  },
-  ext {
-    {
-      type str "Description",
-      data {
-        {
-          label str "Output RefAllele Fix",
-          data str "This SNV record needs the ref and alt to swap."
         }
       }
     }
@@ -162,11 +160,7 @@ Variation ::= {
                 version 10
               }
             },
-            mol genomic,
-            seq {
-              length 1,
-              seq-data iupacna "G"
-            }
+            mol genomic
           }
         },
         data set {
@@ -196,21 +190,24 @@ Variation ::= {
                     }
                   }
                 },
-               observation 5
+                observation 5
+              }
+            },
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "G"
+                    }
+                  }
+                },
+                observation reference
               }
             }
           }
-        }
-      }
-    }
-  },
-  ext {
-    {
-      type str "Description",
-      data {
-        {
-          label str "Output RefAllele Fix",
-          data str "This SNV record needs the ref altered, and the original ref added to the alt list as a new leaf node"
         }
       }
     }

@@ -46,7 +46,7 @@ public:
     static void CorrectRefAllele(CRef<CSeq_annot>& v, CScope& scope);
     static void CorrectRefAllele(CVariation_ref& var, CScope& scope, const string& new_ref); 
 private:
-    static string GetRefAlleleFromVP(CRef<CVariantPlacement> vp, CScope& scope);
+    static string GetRefAlleleFromVP(CRef<CVariantPlacement> vp, CScope& scope, TSeqPos length);
     static string GetAlleleFromLoc(const CSeq_loc& loc, CScope& scope);
     static void FixAlleles(CRef<CVariation> v, string old_ref, string new_ref);
     static void FixAlleles(CVariation_ref& vr, string old_ref, string new_ref) ;

@@ -120,12 +120,9 @@ int CCorrectRefAlleleApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
         n++;
     }
 
-    if (v1->SetData().SetSet().SetVariations().front()->SetPlacements().front()->SetSeq().SetSeq_data().SetIupacna().Set() !=
-        v2->SetData().SetSet().SetVariations().front()->SetPlacements().front()->SetSeq().SetSeq_data().SetIupacna().Set())
-    {
-        ERR_POST(Error << "Reference allele does not match" << Endm);
-        n++;
-    }
+    //if (v1->SetData().SetSet().SetVariations().front()->SetPlacements().front()->SetSeq().SetSeq_data().SetIupacna().Set() !=
+    //   v2->SetData().SetSet().SetVariations().front()->SetPlacements().front()->SetSeq().SetSeq_data().SetIupacna().Set())
+   
 
     CVariation::TData::TSet::TVariations::iterator vi2 = v2->SetData().SetSet().SetVariations().begin();
     for (CVariation::TData::TSet::TVariations::iterator vi1 = v1->SetData().SetSet().SetVariations().begin(); 
@@ -140,6 +137,7 @@ int CCorrectRefAlleleApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
         }
 
         set<string> alleles1, alleles2;
+        string ref1,ref2;
         for (CVariation::TData::TSet::TVariations::iterator var2 = (*vi1)->SetData().SetSet().SetVariations().begin(); var2 != (*vi1)->SetData().SetSet().SetVariations().end(); ++var2)
             if ( (*var2)->IsSetData() && (*var2)->SetData().IsInstance() && (*var2)->SetData().SetInstance().IsSetDelta() && !(*var2)->SetData().SetInstance().SetDelta().empty()
                  && (*var2)->SetData().SetInstance().SetDelta().front()->IsSetSeq() && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().IsLiteral()
@@ -147,7 +145,10 @@ int CCorrectRefAlleleApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
                  && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().IsIupacna())
             {
                 string a = (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(); 
-                alleles1.insert(a);
+                if ((*var2)->GetData().GetInstance().IsSetObservation() && (int((*var2)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference))
+                    ref1 = a;
+                else
+                    alleles1.insert(a);                    
             }
         for (CVariation::TData::TSet::TVariations::iterator var2 = (*vi2)->SetData().SetSet().SetVariations().begin(); var2 != (*vi2)->SetData().SetSet().SetVariations().end(); ++var2)
             if ( (*var2)->IsSetData() && (*var2)->SetData().IsInstance() && (*var2)->SetData().SetInstance().IsSetDelta() && !(*var2)->SetData().SetInstance().SetDelta().empty()
@@ -156,11 +157,19 @@ int CCorrectRefAlleleApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
                  && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().IsIupacna())
             {
                 string a = (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(); 
-                alleles2.insert(a);
+                if ((*var2)->GetData().GetInstance().IsSetObservation() && (int((*var2)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference))
+                    ref2 = a;
+                else
+                    alleles2.insert(a);                    
             }
-        if (!equal(alleles1.begin(), alleles1.end(), alleles2.begin()))
+        if (alleles1.size() != alleles2.size() || !equal(alleles1.begin(), alleles1.end(), alleles2.begin()))
         {
             ERR_POST(Error << "Alt alleles do not match" << Endm);
+            n++;
+        }
+        if (ref1 != ref2)
+        {
+            ERR_POST(Error << "Reference allele does not match" << Endm);
             n++;
         }
     }
@@ -202,7 +211,7 @@ int CCorrectRefAlleleApp::CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2)
             ERR_POST(Error << "Reference allele does not match" << Endm);
             n++;
         }
-        if (!equal(alleles1.begin(), alleles1.end(), alleles2.begin()))
+        if (alleles1.size() != alleles2.size() || !equal(alleles1.begin(), alleles1.end(), alleles2.begin()))
         {
             ERR_POST(Error << "Alt alleles do not match" << Endm);
             n++;
