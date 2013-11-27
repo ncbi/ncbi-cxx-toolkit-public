@@ -3457,8 +3457,7 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
 
    if (hit_params->restricted_align && !score_params->options->is_ooframe) {
        int i;
-       Boolean found[query_info->last_context + 1];
-       memset(found, 0, (query_info->last_context + 1) * sizeof(Boolean));
+       Boolean* found = calloc(query_info->last_context + 1, sizeof(Boolean));
 
        restricted_align_array = 
            (Boolean*)calloc(Blast_GetQueryIndexFromContext(
@@ -3508,6 +3507,9 @@ Int2 BLAST_GetGappedScore (EBlastProgramType program_number,
            else {
                restricted_align_array[query_index] = FALSE;
            }
+       }
+       if (found) {
+           free(found);
        }
    }
 
