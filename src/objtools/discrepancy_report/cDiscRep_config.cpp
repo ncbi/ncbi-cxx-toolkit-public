@@ -1209,7 +1209,7 @@ static const s_test_property test_list[] = {
    {"ONCALLER_GENE_MISSING", fAsndisc},
    {"ONCALLER_SUPERFLUOUS_GENE", fAsndisc},
    {"MISSING_GENES", fDiscrepancy | fAsndisc},
-   {"EXTRA_GENES", fAsndisc},
+   {"EXTRA_GENES", fDiscrepancy | fAsndisc},
    //tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_EXTRA_MISSING_GENES"));
    {"OVERLAPPING_CDS", fDiscrepancy | fAsndisc},
    {"RNA_CDS_OVERLAP", fDiscrepancy | fAsndisc},
@@ -1237,7 +1237,7 @@ static const s_test_property test_list[] = {
    {"DUPLICATE_GENE_LOCUS", fDiscrepancy | fAsndisc},
    {"MISSING_LOCUS_TAGS", fDiscrepancy | fAsndisc},
    {"DUPLICATE_LOCUS_TAGS", fAsndisc},
-   {"INCONSISTENT_LOCUS_TAG_PREFIX", fAsndisc},
+   {"INCONSISTENT_LOCUS_TAG_PREFIX", fDiscrepancy | fAsndisc},
    {"BAD_LOCUS_TAG_FORMAT", fAsndisc},
    {"FEATURE_LOCATION_CONFLICT", fDiscrepancy | fAsndisc},
 
@@ -1829,15 +1829,17 @@ void CRepConfig :: GetTestList()
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("DUPLICATE_LOCUS_TAGS") != end_it
-        || thisTest.tests_run.find("INCONSISTENT_LOCUS_TAG_PREFIX") != end_it
         || thisTest.tests_run.find("BAD_LOCUS_TAG_FORMAT") != end_it) {
        thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet.push_back(
            CRef <CTestAndRepData>(new CBioseq_on_locus_tags));
         if (thisTest.tests_run.find("DUPLICATE_LOCUS_TAGS") != end_it) i++;
-        if (thisTest.tests_run.find("INCONSISTENT_LOCUS_TAG_PREFIX")!=end_it)
-             i++;
         if (thisTest.tests_run.find("BAD_LOCUS_TAG_FORMAT") != end_it) i++;
         if (i >= sz) return;
+   }
+   if ( thisTest.tests_run.find("INCONSISTENT_LOCUS_TAG_PREFIX") != end_it) {
+       thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet.push_back(
+            CRef <CTestAndRepData>(new  CBioseq_INCONSISTENT_LOCUS_TAG_PREFIX));
+       if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("FEATURE_LOCATION_CONFLICT") != end_it) {
        thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet.push_back(

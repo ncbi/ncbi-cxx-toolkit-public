@@ -595,7 +595,7 @@ void CBioseq_DISC_SUSPECT_RRNA_PRODUCTS :: GetReport(CRef <CClickableItem>& c_it
    unsigned rule_idx;
    ITERATE (Str2Strs, sit, tse2rule_feats) {
       if (sit != tse2rule_feats.begin()) {
-        CRef <CClickableItem> c_item (new CClickableItem);
+        c_item.Reset(new CClickableItem);
         c_item->setting_name = GetName();
         thisInfo.disc_report_data.push_back(c_item);
       } 
@@ -4776,7 +4776,6 @@ bool CBioseq_MISSING_LOCUS_TAGS :: x_IsLocationDirSub(const CSeq_loc& seq_locati
 };
 
 
-static string alnum_str("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ");
 void CBioseq_on_locus_tags :: TestOnObj(const CBioseq& bioseq) 
 {
   if (thisTest.is_LocusTag_run) return;
@@ -4787,38 +4786,46 @@ void CBioseq_on_locus_tags :: TestOnObj(const CBioseq& bioseq)
 
   size_t pos;
   ITERATE (vector <const CSeq_feat*>, jt, gene_feat) {
+
      const CGene_ref& gene = (*jt)->GetData().GetGene();
      if (gene.GetPseudo()) continue;  
      test_desc = GetDiscItemText(**jt);
+     CConstRef <CObject> gene_ref(*jt);
      if (gene.CanGetLocus_tag()) {
         locus_tag = gene.GetLocus_tag();
         if (!locus_tag.empty()) {
-           thisInfo.test_item_list[GetName()].push_back( locus_tag + "$" + test_desc);
+/*
+           thisInfo.test_item_list[GetName()].push_back( 
+                                             locus_tag + "$" + test_desc);
+*/
            pos = locus_tag.find('_');
            if (pos != string::npos) {
               strtmp = locus_tag.substr(0, pos);
-              thisInfo.test_item_list[GetName()+"_prefix"].push_back(strtmp + "$" + test_desc);
-              thisInfo.test_item_objs[GetName()+"_prefix"].push_back(CConstRef <CObject>(*jt));
+              thisInfo.test_item_list[GetName_incons()].push_back(
+                                                     strtmp + "$" + test_desc);
+              thisInfo.test_item_objs[GetName_incons() +"$" + strtmp]
+                         .push_back(gene_ref);
               if (!isalpha(strtmp[0])) {
-                 thisInfo.test_item_list[GetName()+ "_bad"].push_back(test_desc);
-                 thisInfo.test_item_objs[GetName()+"_bad"].push_back(CConstRef <CObject>(*jt));
+                 thisInfo.test_item_list[GetName()+"_bad"].push_back(test_desc);
+                 thisInfo.test_item_objs[GetName()+"_bad"].push_back(gene_ref);
               }
               else {
                  strtmp += CTempString(locus_tag).substr(pos+1);
-                 thisInfo.test_item_list[GetName()+ "_bad"].push_back(test_desc);
-                 thisInfo.test_item_objs[GetName()+"_bad"].push_back(CConstRef <CObject>(*jt));
+                 thisInfo.test_item_list[GetName()+"_bad"].push_back(test_desc);
+                 thisInfo.test_item_objs[GetName()+"_bad"].push_back(gene_ref);
               } 
            }
            else {
               thisInfo.test_item_list[GetName()+ "_bad"].push_back(test_desc);
-              thisInfo.test_item_objs[GetName()+"_bad"].push_back(CConstRef <CObject>(*jt));
+              thisInfo.test_item_objs[GetName()+"_bad"].push_back(gene_ref);
            }
 
            // if adjacent gene has the same locus;
            if ((jt+1) != gene_feat.end()) {
              const CGene_ref& gene_adj = (*(jt+1))->GetData().GetGene();
-             if (gene_adj.CanGetLocus_tag() && !gene_adj.GetPseudo() 
-                                            && !gene_adj.GetLocus_tag().empty() ) {
+             if (gene_adj.CanGetLocus_tag() 
+                      && !gene_adj.GetPseudo() 
+                      && !gene_adj.GetLocus_tag().empty() ) {
                 locus_tag_adj = gene_adj.GetLocus_tag();
                 if (locus_tag_adj == locus_tag 
                    && ( (*jt)->GetLocation().GetStop(eExtreme_Positional) 
@@ -4843,7 +4850,6 @@ void CBioseq_on_locus_tags :: TestOnObj(const CBioseq& bioseq)
 void CBioseq_on_locus_tags :: GetReport(CRef <CClickableItem>& c_item)
 {
    bool run_dup = (thisTest.tests_run.find(GetName_dup()) != end_it);
-   bool run_incons = (thisTest.tests_run.find(GetName_incons()) != end_it);
    bool run_badtag = (thisTest.tests_run.find(GetName_badtag()) != end_it);
 
 // DUPLICATE_LOCUS_TAGS
@@ -4857,10 +4863,11 @@ void CBioseq_on_locus_tags :: GetReport(CRef <CClickableItem>& c_item)
             CRef <CClickableItem> c_sub (new CClickableItem);
             c_sub->item_list = it->second;
             c_sub->setting_name = GetName_dup();
-            c_sub->description
-                  = GetHasComment(c_sub->item_list.size(), "gene") + "locus tag " + it->first;
-            if (thisInfo.report == "Asndisc" || thisInfo.report == "Discrepancy") 
+            c_sub->description = GetHasComment(c_sub->item_list.size(), "gene")
+                                   + "locus tag " + it->first;
+            if (thisInfo.report== "Asndisc" || thisInfo.report== "Discrepancy"){
                       thisInfo.disc_report_data.push_back(c_sub);
+            }
             else {
                c_item.Reset(new CClickableItem);
                c_item->setting_name = GetName_dup();
@@ -4884,30 +4891,13 @@ void CBioseq_on_locus_tags :: GetReport(CRef <CClickableItem>& c_item)
          }
          DUP_LOCUS_TAGS_adj_genes.clear();
      }
-     if (thisInfo.report != "Asndisc" && thisInfo.report != "Discrepancy" 
-                                      && !c_item->subcategories.empty()) {
+     if (thisInfo.report != "Asndisc" 
+               && thisInfo.report != "Discrepancy" 
+               && !c_item->subcategories.empty()) {
           c_item->description = GetHasComment(c_item->item_list.size(), "gene") 
                                  + "duplicate locus tags.";
           thisInfo.disc_report_data.push_back(c_item);
      }
-   }
-
-
-// inconsistent locus tags: 
-   if (run_incons
-        && thisInfo.test_item_list.find(GetName()+"_prefix") != thisInfo.test_item_list.end()){
-     Str2Strs prefix2dups;
-     GetTestItemList(thisInfo.test_item_list[GetName()+"_prefix"], prefix2dups);
-     thisInfo.test_item_list[GetName()+"_prefix"].clear();
-     ITERATE (Str2Strs, it, prefix2dups) {
-        c_item.Reset(new CClickableItem);
-        c_item->setting_name = GetName_incons();
-        c_item->item_list = it->second;
-        c_item->description = GetHasComment(c_item->item_list.size(),"feature") 
-                                        +"locus tag prefix " + it->first;
-        c_item->obj_list = thisInfo.test_item_objs[GetName()+"_prefix"];
-        thisInfo.disc_report_data.push_back(c_item);
-     } 
    }
 
 // bad formats: BAD_LOCUS_TAG_FORMAT
@@ -4916,13 +4906,30 @@ void CBioseq_on_locus_tags :: GetReport(CRef <CClickableItem>& c_item)
      c_item.Reset(new CClickableItem);
      c_item->setting_name = GetName_badtag();
      c_item->item_list = thisInfo.test_item_list[GetName()+"_bad"]; 
-     c_item->description 
-             = GetIsComment(c_item->item_list.size(), "locus tag") + "incorrectly formatted.";
+     c_item->description = GetIsComment(c_item->item_list.size(), "locus tag") 
+                            + "incorrectly formatted.";
      c_item->obj_list = thisInfo.test_item_objs[GetName()+"_bad"];
      thisInfo.disc_report_data.push_back(c_item);
    }
 };
 
+void CBioseq_INCONSISTENT_LOCUS_TAG_PREFIX :: GetReport(CRef <CClickableItem>& c_item)
+{
+  Str2Strs prefix2dups;
+  GetTestItemList(c_item->item_list, prefix2dups);
+  c_item->item_list.clear();
+  ITERATE (Str2Strs, it, prefix2dups) {
+     if (it != prefix2dups.begin()) {
+        c_item.Reset(new CClickableItem);
+        c_item->setting_name = GetName_incons();
+        thisInfo.disc_report_data.push_back(c_item);
+     }
+     c_item->item_list = it->second;
+     c_item->description = GetHasComment(c_item->item_list.size(),"feature") 
+                           +"locus tag prefix " + it->first;
+     c_item->obj_list = thisInfo.test_item_objs[GetName() + "$" + it->first];
+  }
+};
 
 void CBioseq_DISC_FEATURE_COUNT :: TestOnObj(const CBioseq& bioseq)
 {
@@ -5678,11 +5685,11 @@ void CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX :: MakeRep(const Str2Strs& item_map,
    string setting_name = GetName();
    ITERATE (Str2Strs, it, item_map) {
      if (it->second.size() > 1) {
-       CRef <CClickableItem> c_item (new CClickableItem);
+       CRef <CClickableItem> c_item(new CClickableItem);
        c_item->setting_name = setting_name;
        c_item->item_list = it->second;
        c_item->description
-          = GetHasComment(c_item->item_list.size(), desc1) + desc2 + it->first + ".";
+          =GetHasComment(c_item->item_list.size(), desc1) + desc2 + it->first +".";
        thisInfo.disc_report_data.push_back(c_item);
      }
    }
@@ -7705,7 +7712,9 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
      qual_nm = it->first;
      qvlu2src.clear();
      GetTestItemList(it->second, qvlu2src, "#");
-     if (qvlu2src.size() == 1 && qvlu2src.begin()->second.size() > 1) all_same = true;
+     if (qvlu2src.size() == 1 && qvlu2src.begin()->second.size() > 1) {
+           all_same = true;
+     }
      else {
         all_same = false;
         all_unique = true;
@@ -7715,7 +7724,8 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
                    && jt->first != "multi_dup"
                    && jt->first != "multi_all_dif"
                    && jt->second.size() > 1) {
-            all_unique = false; break;
+              all_unique = false; 
+              break;
           }
         }
      } 
@@ -7731,28 +7741,36 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
      multi_type_cnt += multi_dup ? 1 : 0;
      multi_type_cnt += multi_all_dif? 1 : 0;
 
-     if (qual_nm == "note") qual_nm += "-subsrc";
+     if (qual_nm == "note") {
+         qual_nm += "-subsrc";
+     }
      c_item->description = qual_nm;
      if (all_present) {
          c_item->description += " (all present, ";
          if (all_same) {
             c_item->description += "all same";
             AddSubcategory(c_item, setting_name, 0, "source",
-               + " '" + qvlu2src.begin()->first + "' for " + qual_nm, e_HasComment, 
+               + " '" + qvlu2src.begin()->first + "' for " + qual_nm, e_HasComment,
                true, kEmptyStr, false, (qvlu2src.begin()->second).size());
          }
          else if (all_unique) {
                  c_item->description += "all unique";
                  if (setting_name == GetName_asn1_oncall()) {
                     ITERATE (Str2Strs, jt, qvlu2src) { 
-                       if ( jt->first != "missing" && jt->first != "multi_same"
-                                   && jt->first != "multi_dup" && jt->first != "multi_all_dif")
+                       if ( jt->first != "missing" 
+                                   && jt->first != "multi_same"
+                                   && jt->first != "multi_dup" 
+                                   && jt->first != "multi_all_dif") {
                            c_item->item_list.push_back((jt->second)[0]);
+                       }
                     }
                  }
                  else {
                     AddSubcategory(c_item, setting_name, 0, "source", 
-                      (string)"unique " +(qvlu2src.size() >1?"values":"value")+" for "+qual_nm,
+                         (string)"unique " 
+                             + (qvlu2src.size() > 1 ? "values" : "value")
+                             + " for " 
+                             + qual_nm,
                           e_HasComment, true, kEmptyStr, false, qvlu2src.size());
                  }
          }
@@ -7761,57 +7779,71 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
            unsigned uni_cnt=0;
            vector <string> uni_sub;
            ITERATE (Str2Strs, jt, qvlu2src) {
-             if ( jt->first == "missing" || jt->first == "multi_same"
-                         || jt->first == "multi_dup" || jt->first == "multi_all_dif")
+             if ( jt->first == "missing" 
+                         || jt->first == "multi_same"
+                         || jt->first == "multi_dup" 
+                         || jt->first == "multi_all_dif") {
                     continue;
+             }
              unsigned sz = (jt->second).size();
              if (sz > 1) {
-                 vstr_p = (setting_name == GetName_asn1_oncall()) ? &(jt->second) : 0;
+                 vstr_p 
+                    = (setting_name == GetName_asn1_oncall()) ? &(jt->second) : 0;
                  AddSubcategory(c_item, setting_name, vstr_p, "source", 
-                     (string)"'" + jt->first + "' for " + qual_nm, e_HasComment, false,
-                      kEmptyStr, false, sz);
+                     (string)"'" + jt->first + "' for " + qual_nm, e_HasComment, 
+                      false, kEmptyStr, false, sz);
              }
              else  {
                uni_cnt ++;
-               if (setting_name == GetName_asn1_oncall()) uni_sub.push_back((jt->second)[0]);
+               if (setting_name == GetName_asn1_oncall()) {
+                     uni_sub.push_back((jt->second)[0]);
+               }
              }
            }
            if (uni_cnt) {
               vstr_p = (setting_name == GetName_asn1_oncall()) ? &uni_sub : 0;
               AddSubcategory(c_item, setting_name, vstr_p, "source", 
-                  (string)"unique " + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm, 
+                  (string)"unique " 
+                        + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm, 
                    e_HasComment, false, kEmptyStr, false, uni_cnt); 
           }
          }
      }
      else {
         c_item->description += " (some missing, ";
-        vstr_p = (setting_name == GetName_asn1_oncall()) ? &qvlu2src["missing"] : 0;
-        AddSubcategory(c_item, setting_name, 0, "source", "missing " + qual_nm, e_IsComment,
-           true, kEmptyStr, false, qvlu2src["missing"].size());
+        vstr_p 
+            = (setting_name == GetName_asn1_oncall()) ? &qvlu2src["missing"] : 0;
+        AddSubcategory(c_item, setting_name, 0, "source", "missing " + qual_nm, 
+           e_IsComment, true, kEmptyStr, false, qvlu2src["missing"].size());
         if (all_same) {
             c_item->description += "all same";
-            vstr_p = (setting_name == GetName_asn1_oncall()) ? &(qvlu2src.begin()->second):0;
+            vstr_p = (setting_name == GetName_asn1_oncall()) ? &(qvlu2src.begin()->second) : 0;
             AddSubcategory(c_item, setting_name, 0, "source", 
-                 " '" + qvlu2src.begin()->first + "' for " + qual_nm, e_HasComment, true,
-                 kEmptyStr, false, (qvlu2src.begin()->second).size());
+                 " '" + qvlu2src.begin()->first + "' for " + qual_nm, e_HasComment,
+                 true, kEmptyStr, false, (qvlu2src.begin()->second).size());
         }
         else if (all_unique) {
            c_item->description += "all unique"; 
            vector <string> arr;
            unsigned uni_cnt = 0;
            ITERATE (Str2Strs, jt, qvlu2src) {
-              if ( jt->first == "missing" || jt->first == "multi_same"
-                         || jt->first == "multi_dup" || jt->first == "multi_all_dif")
+              if ( jt->first == "missing" 
+                        || jt->first == "multi_same"
+                        || jt->first == "multi_dup" 
+                        || jt->first == "multi_all_dif") {
                     continue;
+              }
               if (jt->second.size() == 1) {
                  uni_cnt ++;
-                 if (setting_name == GetName_asn1_oncall()) arr.push_back((jt->second)[0]);
+                 if (setting_name == GetName_asn1_oncall()) {
+                      arr.push_back((jt->second)[0]);
+                 }
               }
            }
            vstr_p = (setting_name == GetName_asn1_oncall()) ? &arr : 0;
            AddSubcategory(c_item, setting_name, vstr_p, "source", 
-                  (string)"unique " + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm, 
+                  (string)"unique " 
+                        + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm, 
                    e_HasComment, false, kEmptyStr, false, uni_cnt);
            arr.clear();
         }
@@ -7820,15 +7852,19 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
            unsigned uni_cnt=0, sz;
            vector <string> uni_sub;
            ITERATE (Str2Strs, jt, qvlu2src) {
-             if ( jt->first == "missing" || jt->first == "multi_same"
-                         || jt->first == "multi_dup" || jt->first == "multi_all_dif")
+             if ( jt->first == "missing" 
+                         || jt->first == "multi_same"
+                         || jt->first == "multi_dup" 
+                         || jt->first == "multi_all_dif") {
                     continue;
+             }
              sz = (jt->second).size();
              if (sz > 1) {
-                 vstr_p = (setting_name == GetName_asn1_oncall()) ? &jt->second : 0;
+                 vstr_p 
+                     = (setting_name == GetName_asn1_oncall()) ? &jt->second : 0;
                  AddSubcategory(c_item, setting_name, vstr_p, "source", 
-                     "'" + jt->first + "' for " + qual_nm, e_HasComment, false, kEmptyStr,
-                     false, sz);
+                     "'" + jt->first + "' for " + qual_nm, e_HasComment, false, 
+                     kEmptyStr, false, sz);
              }
              else  {
                  uni_cnt ++;
@@ -7838,50 +7874,63 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
            if (uni_cnt) {
              vstr_p = (setting_name == GetName_asn1_oncall()) ? &uni_sub : 0; 
              AddSubcategory(c_item, setting_name, vstr_p, "source", 
-                   (string)"unique " + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm,
+                   (string)"unique " 
+                         + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm,
                     e_HasComment, false, kEmptyStr, false, uni_cnt);
           }
         }
      }
 
      //multiple
-     unsigned sz = qvlu2src["multi_same"].size() 
-                        + qvlu2src["multi_dup"].size() + qvlu2src["multi_all_dif"].size();
+     unsigned 
+         sz = qvlu2src["multi_same"].size() 
+                + qvlu2src["multi_dup"].size() + qvlu2src["multi_all_dif"].size();
      string ext_desc;
      if ( multi_type_cnt) {
           c_item->description += ", some multi";
           CRef <CClickableItem> c_sub (new CClickableItem);
           c_sub->setting_name = setting_name;
-          if (multi_type_cnt == 1) 
+          if (multi_type_cnt == 1) {
               ext_desc = multi_same ? ", same_value" 
-                                       : (multi_dup ? ", some dupplicates" : kEmptyStr);
+                                  : (multi_dup ? ", some dupplicates" : kEmptyStr);
+          }
           else {
               ext_desc = kEmptyStr;
               if (multi_same) {
-                 c_sub->subcategories.push_back(MultiItem(
-                              qual_nm, qvlu2src["multi_same"], ", same value", setting_name));
+                 c_sub->subcategories.push_back(MultiItem(qual_nm, 
+                                                          qvlu2src["multi_same"], 
+                                                          ", same value", 
+                                                          setting_name));
               }
-              if (multi_dup) 
-                 c_sub->subcategories.push_back(MultiItem(
-                          qual_nm, qvlu2src["multi_dup"], ", some duplicates", setting_name));
-              if (multi_all_dif) 
-                 c_sub->subcategories.push_back(MultiItem(
-                             qual_nm, qvlu2src["multi_all_dif"], kEmptyStr, setting_name));
+              if (multi_dup) {
+                 c_sub->subcategories.push_back(MultiItem( qual_nm, 
+                                                           qvlu2src["multi_dup"], 
+                                                           ", some duplicates", 
+                                                           setting_name));
+              }
+              if (multi_all_dif) {
+                 c_sub->subcategories.push_back(MultiItem(qual_nm, 
+                                                         qvlu2src["multi_all_dif"],
+                                                         kEmptyStr, 
+                                                         setting_name));
+              }
           }
           c_sub->description = GetHasComment(sz, "source") 
-                                   + "multiple " + qual_nm + " qualifiers" + ext_desc;
+                                + "multiple " + qual_nm + " qualifiers" + ext_desc;
           c_item->subcategories.push_back(c_sub);
      }
      
      c_item->description += ")";
-     if (setting_name == GetName_asn1_oncall()) c_main->subcategories.push_back(c_item);
+     if (setting_name == GetName_asn1_oncall()) {
+            c_main->subcategories.push_back(c_item);
+     }
      else {
-        c_item->item_list.clear();
-        thisInfo.disc_report_data.push_back(c_item);
-        if (it != qnm2qvlu_src.end()) {  // for next
+        if (it != qnm2qvlu_src.begin() ) {
              c_item.Reset(new CClickableItem);
              c_item->setting_name = setting_name;
         }
+        c_item->item_list.clear();
+        thisInfo.disc_report_data.push_back(c_item);
      }
    }  // it
 
@@ -7914,7 +7963,7 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
          c_item.Reset(new CClickableItem);
          c_item->setting_name = setting_name;
          c_item->description = GetHasComment(cnt, "source") 
-                                      + "two or more qualifiers with the same value";
+                                   + "two or more qualifiers with the same value";
          c_item->item_list.push_back(biosrc_nm);
          c_item->subcategories = sub;
          thisInfo.disc_report_data.push_back(c_item);
@@ -11414,6 +11463,7 @@ void CSeqEntry_INCONSISTENT_BIOSOURCE :: GetReport(CRef <CClickableItem>& c_item
 
 void CBioseq_TEST_TERMINAL_NS :: TestOnObj(const CBioseq& bioseq)
 {
+/*
    validator :: EBioseqEndIsType begin_n, begin_gap, end_n, end_gap;
    validator::CheckBioseqEndsForNAndGap(thisInfo.scope->GetBioseqHandle(bioseq),
                                         begin_n, 
@@ -11425,6 +11475,7 @@ void CBioseq_TEST_TERMINAL_NS :: TestOnObj(const CBioseq& bioseq)
      thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(bioseq));
      thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(&bioseq));
    }
+*/
 };
 
 void CBioseq_TEST_TERMINAL_NS :: GetReport(CRef <CClickableItem>& c_item)
