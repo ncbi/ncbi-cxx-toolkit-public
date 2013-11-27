@@ -440,6 +440,7 @@ static const char* const kBuiltInGuide[] = {
     "2+6  KG  gb_gss",
     "2+6  KH  gb_patent",
     "2+6  KI  gb_con",
+    "2+6  KJ  gb_dirsub",
     "2+6  K?  gb_other_nuc",
     "2+6  LA  ddbj_other_nuc",
     "2+6  LB  ddbj_other_nuc",
@@ -667,10 +668,10 @@ static const char* const kBuiltInGuide[] = {
     "special  CAK26553           embl_tpa_prot",
     "special  CAK26777-CAK26786  embl_tpa_prot",
     "special  CAK32514           embl_tpa_prot",
-    "special  CAL07996-CAL08005  embl_tpa_prot",
+    "special  CAK32639           embl_tpa_prot",
+    "special  CAL07997           embl_tpa_prot",
+    "special  CAL08000-CAL08005  embl_tpa_prot",
     "special  CAL10024           embl_tpa_prot",
-    "special  CAL18285           embl_tpa_prot",
-    "special  CAL23232-CAL23233  embl_tpa_prot",
     "special  CAL36192           embl_tpa_prot",
     "special  CAL36432-CAL36433  embl_tpa_prot",
     "special  CAL41938-CAL41942  embl_tpa_prot",
@@ -9616,7 +9617,10 @@ static const char* const kBuiltInGuide[] = {
     "special  CCD22089-CCD22162  embl_tpa_prot",
     "special  CCE69367-CCE71257  embl_tpa_prot",
     "special  CCH35981-CCH35984  embl_tpa_prot",
+    "special  CDI30255-CDI40096  embl_tpa_prot",
+    "special  CDK02602-CDK08087  embl_tpa_prot",
+    "special  CDK08089-CDK12444  embl_tpa_prot",
     "## Err on the side of caution on as yet unassigned IDs, and hope that",
     "## there's not *too* much more backfilling.",
-    "#special CDC17867-CZZ99999  unreserved_prot"
+    "#special CDK12655-CZZ99999  unreserved_prot"
 };
