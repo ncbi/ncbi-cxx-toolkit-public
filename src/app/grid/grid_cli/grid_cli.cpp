@@ -1524,8 +1524,8 @@ bool CGridCommandLineInterfaceApp::ParseLoginToken(const string& token)
 
     string user;
     string host;
-    Uint8 pid;
-    Int8 timestamp;
+    Uint8 pid = 0;
+    Int8 timestamp = 0;
     string uid;
 
     while (label_field) {
