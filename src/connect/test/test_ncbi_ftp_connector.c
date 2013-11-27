@@ -105,9 +105,9 @@ int main(int argc, char* argv[])
     CORE_LOGF(eLOG_Note, ("Connecting to ftp://%s:%s@%s%s/",
                           TEST_USER, TEST_PASS, TEST_HOST, buf));
     /* Run the tests */
-    connector = FTP_CreateDownloadConnector(TEST_HOST, TEST_PORT,
-                                            TEST_USER, TEST_PASS,
-                                            TEST_PATH, flag);
+    connector = FTP_CreateConnectorSimple(TEST_HOST, TEST_PORT,
+                                          TEST_USER, TEST_PASS,
+                                          TEST_PATH, flag, 0);
 
     if (CONN_CreateEx(connector,
                       fCONN_Supplement | fCONN_Untie, &conn) != eIO_Success) {
