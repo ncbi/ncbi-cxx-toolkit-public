@@ -1316,7 +1316,7 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
             NCBI_THROW(CAppException, eLoadConfig,
                        "Configuration file error:  [NCBI.CpuTimeLimit] < 0");
         }
-        SetCpuTimeLimit(size_t(cpu_time_limit));
+        SetCpuTimeLimit((unsigned int)cpu_time_limit, 5, NULL, NULL);
     }
 
     // TRACE and POST filters
