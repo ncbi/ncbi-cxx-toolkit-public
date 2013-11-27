@@ -39,7 +39,7 @@
  * 2) you are going to use this API code in multi-thread application, and
  * 3) "gethostbyname()" gets called somewhere else in your code, and
  * 4) you are aware that GLIBC implementation is rather heavy (creates tons of
- *    test sockets on the fly), yet you prefer to use that API nontheless
+ *    test sockets on the fly), yet you prefer to use that API nonetheless
  */
 
 /* #define HAVE_GETADDRINFO 1 */
