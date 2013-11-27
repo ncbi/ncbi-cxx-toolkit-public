@@ -1874,8 +1874,10 @@ static EIO_Status s_VT_Open
             assert(!xxx->cntl);
         if (status == eIO_Success)
             status  = x_FTPBinary(xxx);
-        if (status == eIO_Success  &&  *xxx->info->path)
+        if (status == eIO_Success  &&  *xxx->info->path
+            &&  !(xxx->flag & fFTP_IgnorePath)) {
             status  = x_FTPDir(xxx, 0,  xxx->info->path);
+        }
         if (status == eIO_Success) {
             xxx->send = xxx->open = xxx->rclr = 0/*false*/;
             assert(xxx->sync);
@@ -2237,13 +2239,46 @@ extern CONNECTOR s_CreateConnector(const SConnNetInfo*  info,
     }
     if (xxx->info->scheme == eURL_Unspec)
         xxx->info->scheme  = eURL_Ftp;
-    if (host  &&  *host)
-        strcpy(xxx->info->host, host);
-    xxx->info->port = port ? port : CONN_PORT_FTP;
-    strcpy(xxx->info->user, user  &&  *user ? user : "ftp");
-    strcpy(xxx->info->pass, pass            ? pass : "-none");
-    strcpy(xxx->info->path, path            ? path : "");
     *xxx->info->args = '\0';
+    if (!info) {
+        if (host  &&  *host)
+            strcpy(xxx->info->host,               host);
+        xxx->info->port =                         port;
+        strcpy(xxx->info->user, user  &&  *user ? user : "ftp");
+        strcpy(xxx->info->pass, pass            ? pass : "-none");
+        strcpy(xxx->info->path, path            ? path : "");
+        flag &= ~fFTP_IgnorePath;
+    } else if (!(flag & fFTP_LogAll)) {
+        switch (info->debug_printout) {
+        case eDebugPrintout_Some:
+            flag |= fFTP_LogControl;
+            break;
+        case eDebugPrintout_Data:
+            flag |= fFTP_LogAll;
+            break;
+        }
+    }
+    if (!xxx->info->port)
+        xxx->info->port = CONN_PORT_FTP;
+    xxx->info->req_method = eReqMethod_Any;
+    xxx->info->stateless = 0;
+    xxx->info->lb_disable = 0;
+    xxx->info->http_proxy_leak = 0;
+    if (!(flag & fFTP_UseProxy)) {
+        xxx->info->http_proxy_host[0] = '\0';
+        xxx->info->http_proxy_port    =   0;
+        xxx->info->http_proxy_user[0] = '\0';
+        xxx->info->http_proxy_pass[0] = '\0';
+        xxx->info->proxy_host[0]      = '\0';
+        ConnNetInfo_SetUserHeader(xxx->info, 0);
+        if (xxx->info->http_referer) {
+            free((void*) xxx->info->http_referer);
+            xxx->info->http_referer = 0;
+        }
+    } else
+        CORE_LOG(eLOG_Critical, "fFTP_UseProxy not yet implemented");
+    if (xxx->info->debug_printout)
+        ConnNetInfo_Log(xxx->info, eLOG_Note, CORE_GetLOG());
 
     /* some uninited fields are taken care of in s_VT_Open */
     xxx->cmcb    = cmcb ? *cmcb : kNoCmcb;
@@ -2286,16 +2321,4 @@ extern CONNECTOR FTP_CreateConnector(const SConnNetInfo*  info,
                                      const SFTP_Callback* cmcb)
 {
     return s_CreateConnector(info, 0,    0,    0,    0,    0,    flag, cmcb);
-}
-
-
-/*DEPRECATED*/
-extern CONNECTOR FTP_CreateDownloadConnector(const char*    host,
-                                             unsigned short port,
-                                             const char*    user,
-                                             const char*    pass,
-                                             const char*    path,
-                                             TFTP_Flags     flag)
-{
-    return s_CreateConnector(0,    host, port, user, pass, path, flag, 0);
 }

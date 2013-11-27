@@ -38,12 +38,6 @@
 
 #include <connect/ncbi_connutil.h>
 
-#ifndef NCBI_DEPRECATED
-#  define NCBI_FTP_CONNECTOR_DEPRECATED
-#else
-#  define NCBI_FTP_CONNECTOR_DEPRECATED NCBI_DEPRECATED
-#endif
-
 
 /** @addtogroup Connectors
  *
@@ -66,11 +60,12 @@ enum EFTP_Flag {
     fFTP_UseActive    = 0x20,  /* use only active  mode for data connection  */
     fFTP_UseTypeL8    = 0x40,  /* use "TYPE L8" instead of "TYPE I" for data */
     fFTP_UncleanIAC   = 0x80,  /* do not escape IAC(\'377') in pathnames     */
-    fFTP_IgnoreProxy  = 0x100, /* do not use HTTP proxy even if provided     */
+    fFTP_IgnorePath   = 0x100, /* do not auto-chdir(net_info->path) at login */
     fFTP_UncorkUpload = 0x200, /* do not use TCP_CORK for uploads (poor perf)*/
     fFTP_NoSizeChecks = 0x400, /* do not check sizes of data transfers       */
     fFTP_NoExtensions = 0x800, /* do not use EPSV/EPRT protocol extensions   */
-    fFTP_DelayRestart = 0x1000 /* delay RESTart until an actual xfer command */
+    fFTP_DelayRestart = 0x1000,/* delay RESTart until an actual xfer command */
+    fFTP_UseProxy     = 0x2000 /* use proxy settings to establish connections*/
 };
 typedef unsigned int TFTP_Flags;  /* bitwise OR of EFTP_Flag */
 
@@ -313,19 +308,13 @@ extern NCBI_XCONNECT_EXPORT CONNECTOR FTP_CreateConnectorSimple
 );
 
 
-/* Same as above but use fields provided by the connection structure */
+/* Same as above but use fields provided by the connection structure.
+ * Note:  info->timeout is only used for tunneling, not for FTP xfers */
 extern NCBI_XCONNECT_EXPORT CONNECTOR FTP_CreateConnector
 (const SConnNetInfo*  info,   /* all connection params including HTTP proxy  */
  TFTP_Flags           flag,   /* mostly for logging socket data [optional]   */
  const SFTP_Callback* cmcb    /* command callback [optional]                 */
 );
-
-
-/* Same as above:  do not use for the obsolete naming */
-NCBI_FTP_CONNECTOR_DEPRECATED
-extern NCBI_XCONNECT_EXPORT CONNECTOR FTP_CreateDownloadConnector
-(const char* host, unsigned short port, const char* user,
- const char* pass, const char*    path, TFTP_Flags  flag);
 
 
 #ifdef __cplusplus
