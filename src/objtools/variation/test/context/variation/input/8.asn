@@ -3,23 +3,6 @@ Variation ::= {
     db "local",
     tag str "rs111033223"
   },
-  placements {
-    {
-      loc int {
-        from 76895771,
-        to 76895792,
-        id other {
-          accession "NC_000011",
-          version 9
-        }
-      },
-      mol genomic,
-      seq {
-        length 22,
-        seq-data iupacna "GAGGCGGGGACACCAGGGCCTG"
-      }
-    }
-  },
   variant-prop {
     version 5,
     resource-link 0,
@@ -34,29 +17,63 @@ Variation ::= {
     type package,
     variations {
       {
-        data instance {
-          type del,
-          delta {
+        placements {
+          {
+            loc int {
+              from 76895771,
+              to 76895792,
+              id other {
+                accession "NC_000011",
+                version 9
+              }
+            },
+            mol genomic
+          }
+        },
+        data set {
+          type package,
+          variations {
             {
-              seq this NULL,
-              action del-at
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 22,
+                      seq-data iupacna "GAGGCGGGGACACCAGGGCCTG"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type del,
+                delta {
+                  {
+                    seq this NULL,
+                    action del-at
+                  }
+                }
+              }
             }
           }
-        }
-      }
-    }
-  },
-  ext {
-    {
-      type str "VcfAttributes",
-      data {
-        {
-          label str "filter",
-          data str "."
         },
-        {
-          label str "info",
-          data str "RS=111033223;RSPOS=76895772"
+        ext {
+          {
+            type str "VcfAttributes",
+            data {
+              {
+                label str "filter",
+                data str "."
+              },
+              {
+                label str "info",
+                data str "RS=111033223;RSPOS=76895772"
+              }
+            }
+          }
         }
       }
     }

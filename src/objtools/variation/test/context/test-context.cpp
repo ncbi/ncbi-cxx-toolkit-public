@@ -83,7 +83,7 @@ private:
     int CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2);
     int CompareLocations(const CSeq_loc& loc1, const CSeq_loc& loc2, int n);
     template<class T>
-    void GetAlleles(T &variations, set<string>& alleles);
+    void GetAlleles(T &variations, set<string>& alleles, string &ref);
     bool IsVariation(AutoPtr<CObjectIStream>& oistr);
     template<class T>
     int CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<CObjectIStream>& var_in2, CVariationNormalization::ETargetContext context, CRef<CScope> scope, bool verbose);
@@ -136,7 +136,7 @@ int CContextApp::CompareLocations(const CSeq_loc& loc1, const CSeq_loc& loc2, in
 }
 
 template<class T>
-void  CContextApp::GetAlleles(T &variations, set<string>& alleles)
+void  CContextApp::GetAlleles(T &variations, set<string>& alleles, string &ref)
 {
     for (typename T::iterator var2 = variations.begin(); var2 != variations.end(); ++var2)
         if ( (*var2)->IsSetData() && (*var2)->SetData().IsInstance() && (*var2)->SetData().SetInstance().IsSetDelta() && !(*var2)->SetData().SetInstance().SetDelta().empty()
@@ -145,14 +145,38 @@ void  CContextApp::GetAlleles(T &variations, set<string>& alleles)
              && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().IsIupacna())
         {
             string a = (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(); 
-            alleles.insert(a);
+
+            if ((*var2)->GetData().GetInstance().IsSetObservation() && (int((*var2)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference))
+                ref = a;
+            else
+                alleles.insert(a);
         }
 }
 
-int CContextApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
+int CContextApp::CompareVar(CRef<CVariation> v1_orig, CRef<CVariation> v2_orig)
 {
     int n = 0;
+    CRef<CVariation> v1 = v1_orig;
+    CRef<CVariation> v2 = v2_orig;
+    bool same_level = true;
+    if (!v1->IsSetPlacements())
+    {
+        v1 = v1_orig->SetData().SetSet().SetVariations().front();
+        same_level = !same_level;
+    }
+    
+    if (!v2->IsSetPlacements())
+    {
+        v2 = v2_orig->SetData().SetSet().SetVariations().front();
+        same_level = !same_level;
+    }
 
+    if (!same_level)
+    {
+        ERR_POST(Error << "Placement level does not match" << Endm);
+        n++;
+    }
+    
     if (v1->SetPlacements().size() != v2->SetPlacements().size())
     {
         ERR_POST(Error << "Placement size does not match" << Endm);
@@ -161,17 +185,13 @@ int CContextApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
 // checking only position on the first placement?
     n = CompareLocations(v1->SetPlacements().front()->GetLoc(),v2->SetPlacements().front()->GetLoc(),n);
    
-    string ref1,ref2;
-    if (v1->SetPlacements().front()->IsSetSeq() && v1->SetPlacements().front()->GetSeq().IsSetSeq_data() && v1->SetPlacements().front()->GetSeq().GetSeq_data().IsIupacna())
-        ref1 = v1->SetPlacements().front()->SetSeq().SetSeq_data().SetIupacna().Set();
-    if (v2->SetPlacements().front()->IsSetSeq() && v2->SetPlacements().front()->GetSeq().IsSetSeq_data() && v2->SetPlacements().front()->GetSeq().GetSeq_data().IsIupacna())
-        ref2 = v2->SetPlacements().front()->SetSeq().SetSeq_data().SetIupacna().Set();
+    string ref1,ref2; 
+    // if (v1->SetPlacements().front()->IsSetSeq() && v1->SetPlacements().front()->GetSeq().IsSetSeq_data() && v1->SetPlacements().front()->GetSeq().GetSeq_data().IsIupacna())
+    //    ref1 = v1->SetPlacements().front()->SetSeq().SetSeq_data().SetIupacna().Set();
+    //if (v2->SetPlacements().front()->IsSetSeq() && v2->SetPlacements().front()->GetSeq().IsSetSeq_data() && v2->SetPlacements().front()->GetSeq().GetSeq_data().IsIupacna())
+    //     ref2 = v2->SetPlacements().front()->SetSeq().SetSeq_data().SetIupacna().Set();
 
-    if (ref1 != ref2)
-    {
-        ERR_POST(Error << "Ref allele in VariantPlacement do not match" << Endm);
-        n++;
-    }
+    
 
     if (v1->SetData().SetSet().SetVariations().size() !=
         v2->SetData().SetSet().SetVariations().size() )
@@ -181,10 +201,16 @@ int CContextApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
     }
 
     set<string> alleles1, alleles2;
-    GetAlleles(v1->SetData().SetSet().SetVariations(), alleles1);
-    GetAlleles(v2->SetData().SetSet().SetVariations(), alleles2);
-    
-    if (!equal(alleles1.begin(), alleles1.end(), alleles2.begin()))
+    GetAlleles(v1->SetData().SetSet().SetVariations(), alleles1,ref1);
+    GetAlleles(v2->SetData().SetSet().SetVariations(), alleles2,ref2);
+
+    if (ref1 != ref2)
+    {
+        ERR_POST(Error << "Ref allele in VariantPlacement do not match" << Endm);
+        n++;
+    }
+
+    if (alleles1.size() != alleles2.size() || !equal(alleles1.begin(), alleles1.end(), alleles2.begin()))
     {
         ERR_POST(Error << "Alt alleles do not match" << Endm);
         n++;
@@ -204,10 +230,17 @@ int CContextApp::CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2)
         CVariation_ref& vr1 = (*feat1)->SetData().SetVariation();
         CVariation_ref& vr2 = (*feat2)->SetData().SetVariation();
         set<string> alleles1,alleles2;
-        GetAlleles(vr1.SetData().SetSet().SetVariations(),alleles1);
-        GetAlleles(vr2.SetData().SetSet().SetVariations(),alleles2);
+        string ref1,ref2;
+        GetAlleles(vr1.SetData().SetSet().SetVariations(),alleles1,ref1);
+        GetAlleles(vr2.SetData().SetSet().SetVariations(),alleles2,ref2);
        
-        if (!equal(alleles1.begin(), alleles1.end(), alleles2.begin()))
+        if (ref1 != ref2)
+        {
+            ERR_POST(Error << "Ref allele in VariantPlacement do not match" << Endm);
+            n++;
+        }
+
+        if (alleles1.size() != alleles2.size() || !equal(alleles1.begin(), alleles1.end(), alleles2.begin()))
         {
             ERR_POST(Error << "Alt alleles do not match" << Endm);
             n++;

@@ -357,10 +357,12 @@ int CVariationNormalization_base_cache::x_GetSeqSize()
 } 
 
 template<class T>
-void CVariationNormalization_base<T>::x_Shift(CRef<CVariation>& v, CScope &scope)
+void CVariationNormalization_base<T>::x_Shift(CRef<CVariation>& v_orig, CScope &scope)
 {
-    if (v->IsSetPlacements())
-        for (CVariation::TPlacements::iterator vp1 =  v->SetPlacements().begin(); vp1 != v->SetPlacements().end(); ++vp1)
+    CRef<CVariation> v = v_orig;
+    if (!v_orig->IsSetPlacements() && v_orig->IsSetData() && v_orig->GetData().IsSet() && v_orig->GetData().GetSet().IsSetVariations())
+        v = v_orig->SetData().SetSet().SetVariations().front();
+    for (CVariation::TPlacements::iterator vp1 =  v->SetPlacements().begin(); vp1 != v->SetPlacements().end(); ++vp1)
         {
             int pos_left=-1,pos_right=-1;
           
@@ -382,7 +384,7 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CVariation>& v, CScope &scope
                 else
                     NCBI_THROW(CException, eUnknown, "Placement is neither point nor interval");
                 string ref;
-                if ((*vp1)->IsSetSeq() && (*vp1)->GetSeq().IsSetSeq_data() && (*vp1)->GetSeq().GetSeq_data().IsIupacna()) // TODO
+                if ((*vp1)->IsSetSeq() && (*vp1)->GetSeq().IsSetSeq_data() && (*vp1)->GetSeq().GetSeq_data().IsIupacna()) 
                     ref = (*vp1)->SetSeq().SetSeq_data().SetIupacna().Set();
 
                 int new_pos_left = -1;
@@ -413,7 +415,10 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CVariation>& v, CScope &scope
                             new_pos_right = pos_right;
                         else if (new_pos_right != pos_right)
                             NCBI_THROW(CException, eUnknown, "Right position is ambiguous due to different leaf alleles");
-                        x_ModifyLocation((*vp1)->SetLoc(),(*vp1)->SetSeq(),ref,pos_left,pos_right);
+                        if ((*vp1)->IsSetSeq() && (*vp1)->GetSeq().IsSetSeq_data() && (*vp1)->GetSeq().GetSeq_data().IsIupacna()) 
+                            x_ModifyLocation((*vp1)->SetLoc(),(*vp1)->SetSeq(),ref,pos_left,pos_right);
+                        x_ModifyLocation((*vp1)->SetLoc(),*refref,ref,pos_left,pos_right);
+                        
                     }
                 }
             }

@@ -3,19 +3,6 @@ Variation ::= {
     db "dbSNP",
     tag str "rs4"
   },
-  placements {
-    {
-      loc int {
-        from 10689124,
-        to 10689125,
-        id other {
-          accession "NT_005612",
-          version 16
-        }
-      },
-      mol genomic
-    }
-  },
   variant-prop {
     version 5,
     resource-link preserved,
@@ -30,42 +17,62 @@ Variation ::= {
     type package,
     variations {
       {
-        data instance {
-          type ins,
-          delta {
+        placements {
+          {
+            loc int {
+              from 10689124,
+              to 10689125,
+              id other {
+                accession "NT_005612",
+                version 16
+              }
+            },
+            mol genomic
+          }
+        },
+        data set {
+          type package,
+          variations {
             {
-              seq literal {
-                length 3,
-                seq-data iupacna "TGC"
-              },
-              action ins-before
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 3,
+                      seq-data iupacna "TGC"
+                    },
+                    action ins-before
+                  }
+                }
+              }
             }
           }
-        }
-      }
-    }
-  },
-  ext {
-    {
-      type str "VcfAttributes",
-      data {
-        {
-          label str "filter",
-          data str "PASS"
         },
-        {
-          label str "info",
-          data str "DB"
-        }
-      }
-    },
-    {
-      type str "Description",
-      data {
-        {
-          label str "Output dbSNP Context",
-          data str "This is left shifted to insert before ..25, and then se as
- an interval from 24 to 25"
+        ext {
+          {
+            type str "VcfAttributes",
+            data {
+              {
+                label str "filter",
+                data str "PASS"
+              },
+              {
+                label str "info",
+                data str "DB"
+              }
+            }
+          },
+          {
+            type str "Description",
+            data {
+              {
+                label str "Output dbSNP Context",
+                data str "This is left shifted to insert before ..25, and then
+ se as an interval from 24 to 25"
+              }
+            }
+          }
         }
       }
     }

@@ -3,18 +3,6 @@ Variation ::= {
     db "dbSNP",
     tag str "rs2"
   },
-  placements {
-    {
-      loc pnt {
-        point 2338230,
-        id other {
-          accession "NC_000001",
-          version 10
-        }
-      },
-      mol genomic
-    }
-  },
   variant-prop {
     version 5,
     resource-link preserved,
@@ -29,41 +17,61 @@ Variation ::= {
     type package,
     variations {
       {
-        data instance {
-          type ins,
-          delta {
+        placements {
+          {
+            loc pnt {
+              point 2338230,
+              id other {
+                accession "NC_000001",
+                version 10
+              }
+            },
+            mol genomic
+          }
+        },
+        data set {
+          type package,
+          variations {
             {
-              seq literal {
-                length 1,
-                seq-data iupacna "T"
-              },
-              action ins-before
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "T"
+                    },
+                    action ins-before
+                  }
+                }
+              }
             }
           }
-        }
-      }
-    }
-  },
-  ext {
-    {
-      type str "VcfAttributes",
-      data {
-        {
-          label str "filter",
-          data str "PASS"
         },
-        {
-          label str "info",
-          data str "DB"
-        }
-      }
-    },
-    {
-      type str "Description",
-      data {
-        {
-          label str "Input",
-          data str "This is inserting a second T, left of the original first T at pos 2338230 (0-based)"
+        ext {
+          {
+            type str "VcfAttributes",
+            data {
+              {
+                label str "filter",
+                data str "PASS"
+              },
+              {
+                label str "info",
+                data str "DB"
+              }
+            }
+          },
+          {
+            type str "Description",
+            data {
+              {
+                label str "Input",
+                data str "This is inserting a second T, left of the original
+ first T at pos 2338230 (0-based)"
+              }
+            }
+          }
         }
       }
     }

@@ -3,18 +3,6 @@ Variation ::= {
     db "dbSNP",
     tag str "rs5"
   },
-  placements {
-    {
-      loc pnt {
-        point 10689132,
-        id other {
-          accession "NT_005612",
-          version 16
-        }
-      },
-      mol genomic
-    }
-  },
   variant-prop {
     version 5,
     resource-link preserved,
@@ -29,41 +17,61 @@ Variation ::= {
     type package,
     variations {
       {
-        data instance {
-          type ins,
-          delta {
+        placements {
+          {
+            loc pnt {
+              point 10689132,
+              id other {
+                accession "NT_005612",
+                version 16
+              }
+            },
+            mol genomic
+          }
+        },
+        data set {
+          type package,
+          variations {
             {
-              seq literal {
-                length 3,
-                seq-data iupacna "TCG"
-              },
-              action ins-before
+              data instance {
+                type ins,
+                delta {
+                  {
+                    seq literal {
+                      length 3,
+                      seq-data iupacna "TCG"
+                    },
+                    action ins-before
+                  }
+                }
+              }
             }
           }
-        }
-      }
-    }
-  },
-  ext {
-    {
-      type str "VcfAttributes",
-      data {
-        {
-          label str "filter",
-          data str "PASS"
         },
-        {
-          label str "info",
-          data str "DB"
-        }
-      }
-    },
-    {
-      type str "Description",
-      data {
-        {
-          label str "dbSNP Output Context",
-          data str "This insertion is out-of-sync with the repeat, and cannot be shifted"
+        ext {
+          {
+            type str "VcfAttributes",
+            data {
+              {
+                label str "filter",
+                data str "PASS"
+              },
+              {
+                label str "info",
+                data str "DB"
+              }
+            }
+          },
+          {
+            type str "Description",
+            data {
+              {
+                label str "dbSNP Output Context",
+                data str "This insertion is out-of-sync with the repeat, and
+ cannot be shifted"
+              }
+            }
+          }
         }
       }
     }

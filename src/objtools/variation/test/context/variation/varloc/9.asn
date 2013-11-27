@@ -3,23 +3,6 @@ Variation ::= {
     db "dbSNP",
     tag str "rs9"
   },
-  placements {
-    {
-      loc int {
-        from 10689125,
-        to 10689127,
-        id other {
-          accession "NT_005612",
-          version 16
-        }
-      },
-      mol genomic,
-      seq {
-        length 3,
-        seq-data iupacna "TGC"
-      }
-    }
-  },
   variant-prop {
     version 5,
     resource-link preserved,
@@ -34,39 +17,73 @@ Variation ::= {
     type package,
     variations {
       {
-        data instance {
-          type del,
-          delta {
+        placements {
+          {
+            loc int {
+              from 10689125,
+              to 10689127,
+              id other {
+                accession "NT_005612",
+                version 16
+              }
+            },
+            mol genomic
+          }
+        },
+        data set {
+          type package,
+          variations {
             {
-              seq this NULL,
-              action del-at
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 3,
+                      seq-data iupacna "TGC"
+                    }
+                  }
+                },
+                observation reference
+              }
+            },
+            {
+              data instance {
+                type del,
+                delta {
+                  {
+                    seq this NULL,
+                    action del-at
+                  }
+                }
+              }
             }
           }
-        }
-      }
-    }
-  },
-  ext {
-    {
-      type str "VcfAttributes",
-      data {
-        {
-          label str "filter",
-          data str "PASS"
         },
-        {
-          label str "info",
-          data str "DB"
-        }
-      }
-    },
-    {
-      type str "Description",
-      data {
-        {
-          label str "Input",
-          data str "This deletion is in a triplet repeat.  It should be
+        ext {
+          {
+            type str "VcfAttributes",
+            data {
+              {
+                label str "filter",
+                data str "PASS"
+              },
+              {
+                label str "info",
+                data str "DB"
+              }
+            }
+          },
+          {
+            type str "Description",
+            data {
+              {
+                label str "Input",
+                data str "This deletion is in a triplet repeat.  It should be
  shifted left and right"
+              }
+            }
+          }
         }
       }
     }

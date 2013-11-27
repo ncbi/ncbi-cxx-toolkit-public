@@ -3,22 +3,6 @@ Variation ::= {
     db "dbSNP",
     tag str "rs7"
   },
-  placements {
-    {
-      loc pnt {
-        point 2338272,
-        id other {
-          accession "NC_000001",
-          version 10
-        }
-      },
-      mol genomic,
-      seq {
-        length 1,
-        seq-data iupacna "C"
-      }
-    }
-  },
   variant-prop {
     version 5,
     resource-link preserved,
@@ -33,38 +17,71 @@ Variation ::= {
     type package,
     variations {
       {
-        data instance {
-          type del,
-          delta {
+        placements {
+          {
+            loc pnt {
+              point 2338272,
+              id other {
+                accession "NC_000001",
+                version 10
+              }
+            },
+            mol genomic
+          }
+        },
+        data set {
+          type package,
+          variations {
             {
-              seq this NULL,
-              action del-at
+              data instance {
+                type del,
+                delta {
+                  {
+                    seq this NULL,
+                    action del-at
+                  }
+                }
+              }
+            },
+            {
+              data instance {
+                type identity,
+                delta {
+                  {
+                    seq literal {
+                      length 1,
+                      seq-data iupacna "C"
+                    }
+                  }
+                },
+                observation reference
+              }
             }
           }
-        }
-      }
-    }
-  },
-  ext {
-    {
-      type str "VcfAttributes",
-      data {
-        {
-          label str "filter",
-          data str "PASS"
         },
-        {
-          label str "info",
-          data str "DB"
-        }
-      }
-    },
-    {
-      type str "Description",
-      data {
-        {
-          label str "Input",
-          data str "This is deleting a C in a run of 5 C's."
+        ext {
+          {
+            type str "VcfAttributes",
+            data {
+              {
+                label str "filter",
+                data str "PASS"
+              },
+              {
+                label str "info",
+                data str "DB"
+              }
+            }
+          },
+          {
+            type str "Description",
+            data {
+              {
+                label str "Input",
+                data str "This is deleting a C in a run of 5 C's."
+              }
+            }
+          }
         }
       }
     }
