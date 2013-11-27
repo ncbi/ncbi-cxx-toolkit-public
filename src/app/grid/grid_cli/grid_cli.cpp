@@ -1002,7 +1002,7 @@ struct SCommandDefinition {
         /*"\n\nValid output format options for this operation: "
         "\"raw\""/ *, \"xml\", \"json\"* /".  If none specified, "
         "\"raw\" is assumed."*/,
-        {eNetCache, /*eOutputFormat,*/ eLoginToken, eAuth,
+        {eNetCache, eNetSchedule, /*eOutputFormat,*/ eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eAdministrativeCommand, &CGridCommandLineInterfaceApp::Cmd_SanityCheck,

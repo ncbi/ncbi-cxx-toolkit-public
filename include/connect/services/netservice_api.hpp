@@ -125,6 +125,7 @@ class NCBI_XCONNECT_EXPORT CNetService
 
     enum ECmdOutputStyle {
         eSingleLineOutput,
+        eUrlEncodedOutput,
         eMultilineOutput,
         eMultilineOutput_NoHeaders,
         eMultilineOutput_NetCacheStyle

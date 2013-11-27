@@ -313,6 +313,13 @@ void CNetScheduleAdmin::PrintServerStatistics(CNcbiOstream& output_stream,
         output_stream, CNetService::eMultilineOutput_NetCacheStyle);
 }
 
+void CNetScheduleAdmin::PrintHealth(CNcbiOstream& output_stream)
+{
+    string cmd("HEALTH");
+    g_AppendClientIPAndSessionID(cmd);
+    m_Impl->m_API->m_Service.PrintCmdOutput(cmd,
+            output_stream, CNetService::eUrlEncodedOutput);
+}
 
 void CNetScheduleAdmin::GetQueueList(TQueueList& qlist)
 {

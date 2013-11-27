@@ -801,6 +801,8 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAdmin
     void PrintServerStatistics(CNcbiOstream& output_stream,
         EStatisticsOptions opt = eStatisticsBrief);
 
+    void PrintHealth(CNcbiOstream& output_stream);
+
     void DumpQueue(CNcbiOstream& output_stream,
         const string& start_after_job = kEmptyStr,
         size_t job_count = 0,

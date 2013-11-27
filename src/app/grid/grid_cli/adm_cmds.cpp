@@ -169,10 +169,18 @@ int CGridCommandLineInterfaceApp::Cmd_Stats()
 
 int CGridCommandLineInterfaceApp::Cmd_Health()
 {
-    if (SetUp_AdminCmd(eReadOnlyAdminCmd) != eNetCacheAdmin)
+    switch (SetUp_AdminCmd(eReadOnlyAdminCmd)) {
+    case eNetCacheAdmin:
+        m_NetCacheAdmin.PrintHealth(NcbiCout);
+        return 0;
+
+    case eNetScheduleAdmin:
+        m_NetScheduleAdmin.PrintHealth(NcbiCout);
+        return 0;
+
+    default:
         return 2;
-    m_NetCacheAdmin.PrintHealth(NcbiCout);
-    return 0;
+    }
 }
 
 #define CHECK_FAILED_RETVAL 10

@@ -607,22 +607,38 @@ void CNetService::PrintCmdOutput(const string& cmd,
 
         CNetServer::SExecResult exec_result((*it).ExecWithRetry(cmd));
 
-        if (output_style == eSingleLineOutput)
+        switch (output_style) {
+        case eSingleLineOutput:
             output_stream << exec_result.response << endl;
-        else {
-            CNetServerMultilineCmdOutput output(exec_result);
+            break;
 
-            if (output_style == eMultilineOutput_NetCacheStyle)
-                output->SetNetCacheCompatMode();
+        case eUrlEncodedOutput:
+            {
+                CUrlArgs url_parser(exec_result.response);
 
-            string line;
+                ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
+                    output_stream << field->name <<
+                            ": " << field->value << endl;
+                }
+            }
+            break;
 
-            while (output.ReadLine(line))
-                output_stream << line << endl;
+        default:
+            {
+                CNetServerMultilineCmdOutput output(exec_result);
 
-            if (load_balanced)
-                output_stream << endl;
+                if (output_style == eMultilineOutput_NetCacheStyle)
+                    output->SetNetCacheCompatMode();
+
+                string line;
+
+                while (output.ReadLine(line))
+                    output_stream << line << endl;
+            }
         }
+
+        if (load_balanced)
+            output_stream << endl;
     }
 }
 
