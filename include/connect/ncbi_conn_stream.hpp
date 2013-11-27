@@ -606,19 +606,19 @@ class NCBI_XCONNECT_EXPORT CConn_ServiceStream : public CConn_IOStream
 public:
     CConn_ServiceStream
     (const string&         service,
-     TSERV_Type            types       = fSERV_Any,
-     const SConnNetInfo*   net_info    = 0,
-     const SSERVICE_Extra* params      = 0,
-     const STimeout*       timeout     = kDefaultTimeout,
-     size_t                buf_size    = kConn_DefaultBufSize);
+     TSERV_Type            types    = fSERV_Any,
+     const SConnNetInfo*   net_info = 0,
+     const SSERVICE_Extra* params   = 0,
+     const STimeout*       timeout  = kDefaultTimeout,
+     size_t                buf_size = kConn_DefaultBufSize);
 
     CConn_ServiceStream
     (const string&         service,
      const string&         user_header,
-     TSERV_Type            types       = fSERV_Any,
-     const SSERVICE_Extra* params      = 0,
-     const STimeout*       timeout     = kDefaultTimeout,
-     size_t                buf_size    = kConn_DefaultBufSize);
+     TSERV_Type            types    = fSERV_Any,
+     const SSERVICE_Extra* params   = 0,
+     const STimeout*       timeout  = kDefaultTimeout,
+     size_t                buf_size = kConn_DefaultBufSize);
 
 private:
     // Disable copy constructor and assignment.
@@ -698,9 +698,9 @@ public:
     CConn_PipeStream
     (const string&         cmd,
      const vector<string>& args,
-     CPipe::TCreateFlags   create_flags = 0,
-     const STimeout*       timeout      = kDefaultTimeout,
-     size_t                buf_size     = kConn_DefaultBufSize
+     CPipe::TCreateFlags   flags    = 0,
+     const STimeout*       timeout  = kDefaultTimeout,
+     size_t                buf_size = kConn_DefaultBufSize
      );
     virtual ~CConn_PipeStream();
 
@@ -766,6 +766,14 @@ public:
      size_t               buf_size = kConn_DefaultBufSize
      );
 
+    CConn_FtpStream
+    (const SConnNetInfo&  net_info,
+     TFTP_Flags           flag     = 0,
+     const SFTP_Callback* cmcb     = 0,
+     const STimeout*      timeout  = kDefaultTimeout,
+     size_t               buf_size = kConn_DefaultBufSize
+     );
+
     /// Abort any command in progress, read and discard all input data,
     /// clear stream error state when successful (eIO_Success returns).
     /// @note The call empties both the stream and the underlying CONN.
@@ -800,6 +808,18 @@ public:
      size_t               buf_size = kConn_DefaultBufSize
      );
 
+    CConn_FTPDownloadStream
+    (const SConnNetInfo&  net_info,
+     TFTP_Flags           flag     = 0,
+     const SFTP_Callback* cmcb     = 0,
+     Uint8                offset   = 0, ///< file offset to begin download from
+     const STimeout*      timeout  = kDefaultTimeout,
+     size_t               buf_size = kConn_DefaultBufSize
+     );
+
+protected:
+    void x_InitDownload(const string& file, Uint8 offset);
+
 private:
     // Disable copy constructor and assignment.
     CConn_FTPDownloadStream(const CConn_FTPDownloadStream&);
@@ -813,22 +833,33 @@ class NCBI_XCONNECT_EXPORT CConn_FTPUploadStream : public CConn_FtpStream
 {
 public:
     CConn_FTPUploadStream
-    (const string&   host,
-     const string&   user,
-     const string&   pass,
-     const string&   file    = kEmptyStr,
-     const string&   path    = kEmptyStr,
-     unsigned short  port    = 0, ///< 0 means default (21 for FTP)
-     TFTP_Flags      flag    = 0,
-     Uint8           offset  = 0, ///< file offset to start upload at
-     const STimeout* timeout = kDefaultTimeout
+    (const string&       host,
+     const string&       user,
+     const string&       pass,
+     const string&       file    = kEmptyStr,
+     const string&       path    = kEmptyStr,
+     unsigned short      port    = 0, ///< 0 means default (21 for FTP)
+     TFTP_Flags          flag    = 0,
+     Uint8               offset  = 0, ///< file offset to start upload at
+     const STimeout*     timeout = kDefaultTimeout
      );
+
+    CConn_FTPUploadStream
+    (const SConnNetInfo& net_info,
+     TFTP_Flags          flag    = 0,
+     Uint8               offset  = 0, ///< file offset to start upload at
+     const STimeout*     timeout = kDefaultTimeout
+     );
+
+protected:
+    void x_InitUpload(const string& file, Uint8 offset);
 
 private:
     // Disable copy constructor and assignment.
     CConn_FTPUploadStream(const CConn_FTPUploadStream&);
     CConn_FTPUploadStream& operator= (const CConn_FTPUploadStream&);
 };
+
 
 
 #ifdef NCBI_CONN_STREAM_EXPERIMENTAL_API
@@ -844,6 +875,7 @@ CConn_IOStream* NcbiOpenURL(const string& url,
                             size_t        buf_size = kConn_DefaultBufSize);
 
 #endif //NCBI_CONN_STREAM_EXPERIMENTAL_API
+
 
 
 END_NCBI_SCOPE

@@ -636,7 +636,6 @@ int main(int argc, const char* argv[])
         ERR_POST(Warning << "Username not provided, defaulted to `ftp'");
         strcpy(net_info->user, "ftp");
     }
-    ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
 
     // Reassemble the URL from the connection parameters
     url = ConnNetInfo_URL(net_info);
@@ -677,14 +676,8 @@ int main(int argc, const char* argv[])
     SFTP_Callback ftpcb = { x_FtpCallback, &dlcbdata };
 
     // Create FTP stream
-    CConn_FtpStream ftp(net_info->host,
-                        net_info->user,
-                        net_info->pass,
-                        kEmptyStr/*path*/,
-                        net_info->port,
-                        flags,
-                        &ftpcb,
-                        net_info->timeout);
+    CConn_FtpStream ftp(*net_info, flags | fFTP_IgnorePath,
+                        &ftpcb, net_info->timeout);
 
     // Print out some server info
     if (!(ftp << "STAT" << NcbiFlush)) {

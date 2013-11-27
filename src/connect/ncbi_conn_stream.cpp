@@ -284,17 +284,25 @@ static CONNECTOR s_SocketConnectorBuilder(const SConnNetInfo* net_info,
         if (timeout == kDefaultTimeout)
             timeout  = net_info->timeout;
         if (!proxy  &&  net_info->debug_printout) {
-            const SConnNetInfo* x_net_info;
-            if (timeout != net_info->timeout) {
-                SConnNetInfo* xx_net_info = ConnNetInfo_Clone(net_info);
-                if (xx_net_info)
-                    xx_net_info->timeout = timeout;
-                x_net_info = xx_net_info;
-            } else
-                x_net_info = net_info;
+            SConnNetInfo* x_net_info = ConnNetInfo_Clone(net_info);
+            if (x_net_info) {
+                x_net_info->req_method = eReqMethod_Any;
+                x_net_info->stateless = 0;
+                x_net_info->lb_disable = 0;
+                x_net_info->http_proxy_host[0] = '\0';
+                x_net_info->http_proxy_port    =   0;
+                x_net_info->http_proxy_user[0] = '\0';
+                x_net_info->http_proxy_pass[0] = '\0';
+                x_net_info->proxy_host[0]      = '\0';
+                ConnNetInfo_SetUserHeader(x_net_info, 0);
+                if (x_net_info->http_referer) {
+                    free((void*) x_net_info->http_referer);
+                    x_net_info->http_referer = 0;
+                }
+                x_net_info->timeout = timeout;
+            }
             ConnNetInfo_Log(x_net_info, eLOG_Note, CORE_GetLOG());
-            if (x_net_info != net_info)
-                ConnNetInfo_Destroy((SConnNetInfo*) x_net_info);
+            ConnNetInfo_Destroy(x_net_info);
         }
         status = SOCK_CreateEx(host, net_info->port, timeout, &sock,
                                data, size, flags);
@@ -375,7 +383,7 @@ struct Deleter<SConnNetInfo>
 };
 
 
-static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo* x_net_info,
+static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo* net_info,
                                         const char*         url,
                                         const char*         host,
                                         unsigned short      port,
@@ -391,48 +399,45 @@ static CONNECTOR s_HttpConnectorBuilder(const SConnNetInfo* x_net_info,
 {
     size_t len;
     AutoPtr<SConnNetInfo>
-        net_info(x_net_info
-                 ? ConnNetInfo_Clone(x_net_info) : ConnNetInfo_Create(0));
-    if (!net_info.get()) {
+        x_net_info(net_info
+                   ? ConnNetInfo_Clone(net_info) : ConnNetInfo_Create(0));
+    if (!x_net_info.get()) {
         NCBI_THROW(CIO_Exception, eUnknown,
                    "CConn_HttpStream::CConn_HttpStream():  Out of memory");
     }
-    if (url  &&  !ConnNetInfo_ParseURL(net_info.get(), url)) {
+    if (url  &&  !ConnNetInfo_ParseURL(x_net_info.get(), url)) {
         NCBI_THROW(CIO_Exception, eInvalidArg,
                    "CConn_HttpStream::CConn_HttpStream():  Bad URL");
     }
     if (host) {
-        if ((len = *host ? strlen(host) : 0) >= sizeof(net_info->host)) {
+        if ((len = *host ? strlen(host) : 0) >= sizeof(x_net_info->host)) {
             NCBI_THROW(CIO_Exception, eInvalidArg,
                        "CConn_HttpStream::CConn_HttpStream():  Host too long");
         }
-        memcpy(net_info->host, host, ++len);
+        memcpy(x_net_info->host, host, ++len);
     }
     if (port)
-        net_info->port = port;
+        x_net_info->port = port;
     if (path) {
-        if ((len = *path ? strlen(path) : 0) >= sizeof(net_info->path)) {
+        if ((len = *path ? strlen(path) : 0) >= sizeof(x_net_info->path)) {
             NCBI_THROW(CIO_Exception, eInvalidArg,
                        "CConn_HttpStream::CConn_HttpStream():  Path too long");
         }
-        memcpy(net_info->path, path, ++len);
+        memcpy(x_net_info->path, path, ++len);
     }
     if (args) {
-        if ((len = *args ? strlen(args) : 0) >= sizeof(net_info->args)) {
+        if ((len = *args ? strlen(args) : 0) >= sizeof(x_net_info->args)) {
             NCBI_THROW(CIO_Exception, eInvalidArg,
                        "CConn_HttpStream::CConn_HttpStream():  Args too long");
         }
-        memcpy(net_info->args, args, ++len);
+        memcpy(x_net_info->args, args, ++len);
     }
     if (user_header  &&  *user_header)
-        ConnNetInfo_OverrideUserHeader(net_info.get(), user_header);
-    x_SetupUserAgent(net_info.get());
-    if (timeout  &&  timeout != kDefaultTimeout) {
-        net_info->tmo     = *timeout;
-        net_info->timeout = &net_info->tmo;
-    } else if (!timeout)
-        net_info->timeout = kInfiniteTimeout/*0*/;
-    return HTTP_CreateConnectorEx(net_info.get(), flags,
+        ConnNetInfo_OverrideUserHeader(x_net_info.get(), user_header);
+    x_SetupUserAgent(x_net_info.get());
+    if (timeout != kDefaultTimeout)
+        x_net_info->timeout = timeout;
+    return HTTP_CreateConnectorEx(x_net_info.get(), flags,
                                   parse_header, user_data, adjust, cleanup);
 }
 
@@ -599,28 +604,25 @@ void CConn_HttpStream::x_Cleanup(void* data)
 
 static CONNECTOR s_ServiceConnectorBuilder(const char*           service,
                                            TSERV_Type            types,
-                                           const SConnNetInfo*   x_net_info,
+                                           const SConnNetInfo*   net_info,
                                            const char*           user_header,
                                            const SSERVICE_Extra* params,
                                            const STimeout*       timeout)
 {
     AutoPtr<SConnNetInfo>
-        net_info(x_net_info ?
-                 ConnNetInfo_Clone(x_net_info) : ConnNetInfo_Create(service));
-    if (!net_info.get()) {
+        x_net_info(net_info ?
+                   ConnNetInfo_Clone(net_info) : ConnNetInfo_Create(service));
+    if (!x_net_info.get()) {
         NCBI_THROW(CIO_Exception, eUnknown,
                    "CConn_ServiceStream::CConn_ServiceStream(): "
                    " Out of memory");
     }
     if (user_header  &&  *user_header)
-        ConnNetInfo_OverrideUserHeader(net_info.get(), user_header);
-    x_SetupUserAgent(net_info.get());
-    if (timeout  &&  timeout != kDefaultTimeout) {
-        net_info->tmo     = *timeout;
-        net_info->timeout = &net_info->tmo;
-    } else if (!timeout)
-        net_info->timeout = kInfiniteTimeout/*0*/;
-    return SERVICE_CreateConnectorEx(service, types, net_info.get(), params);
+        ConnNetInfo_OverrideUserHeader(x_net_info.get(), user_header);
+    x_SetupUserAgent(x_net_info.get());
+    if (timeout != kDefaultTimeout)
+        x_net_info->timeout = timeout;
+    return SERVICE_CreateConnectorEx(service, types, x_net_info.get(), params);
 }
 
 
@@ -741,7 +743,7 @@ void CConn_MemoryStream::ToVector(vector<char>* vec)
         _ASSERT(s == size);
 #ifdef NCBI_COMPILER_WORKSHOP
         if (s < 0) {
-            s = 0; // WS6 weirdness to sometimes return -1 from sgetn() :-/
+            s = 0;  // WS6 weirdness to sometimes return -1 from sgetn() :-/
         }
 #endif //NCBI_COMPILER_WORKSHOP
         vec->resize(s);  // NB: just in case, essentially NOOP when s == size
@@ -751,21 +753,20 @@ void CConn_MemoryStream::ToVector(vector<char>* vec)
 
 static CONNECTOR s_PipeConnectorBuilder(const string&         cmd,
                                         const vector<string>& args,
-                                        CPipe::TCreateFlags   create_flags,
+                                        CPipe::TCreateFlags   flags,
                                         CPipe*&               pipe)
 {
     pipe = new CPipe;
-    return PIPE_CreateConnector(cmd, args, create_flags,
-                                pipe, eNoOwnership);
+    return PIPE_CreateConnector(cmd, args, flags, pipe, eNoOwnership);
 }
 
 
 CConn_PipeStream::CConn_PipeStream(const string&         cmd,
                                    const vector<string>& args,
-                                   CPipe::TCreateFlags   create_flags,
+                                   CPipe::TCreateFlags   flags,
                                    const STimeout*       timeout,
                                    size_t                buf_size)
-    : CConn_IOStream(s_PipeConnectorBuilder(cmd, args, create_flags, m_Pipe),
+    : CConn_IOStream(s_PipeConnectorBuilder(cmd, args, flags, m_Pipe),
                      timeout, buf_size)
 {
     return;
@@ -792,6 +793,29 @@ CConn_NamedPipeStream::CConn_NamedPipeStream(const string&   pipename,
 }
 
 
+static CONNECTOR s_FtpConnectorBuilder(const SConnNetInfo*  net_info,
+                                       TFTP_Flags           flag,
+                                       const SFTP_Callback* cmcb,
+                                       const STimeout*      timeout)
+{
+    _ASSERT(net_info);
+    if (timeout == kDefaultTimeout)
+        timeout  = net_info->timeout;
+    const SConnNetInfo* x_net_info;
+    if (timeout != net_info->timeout) {
+        SConnNetInfo* xx_net_info = ConnNetInfo_Clone(net_info);
+        if (xx_net_info)
+            xx_net_info->timeout = timeout;
+        x_net_info = xx_net_info;
+    } else
+        x_net_info = net_info;
+    CONNECTOR c = FTP_CreateConnector(x_net_info, flag, cmcb);
+    if (x_net_info != net_info)
+        ConnNetInfo_Destroy((SConnNetInfo*) x_net_info);
+    return c;
+}
+ 
+
 /* For data integrity and unambigous interpretation, FTP streams are not
  * buffered at the level of C++ STL streambuf because of the way they execute
  * read / write operations on the mix of FTP commands and data.
@@ -811,6 +835,18 @@ CConn_FtpStream::CConn_FtpStream(const string&        host,
     : CConn_IOStream(FTP_CreateConnectorSimple(host.c_str(), port,
                                                user.c_str(), pass.c_str(),
                                                path.c_str(), flag, cmcb),
+                     timeout, buf_size, fConn_Untie | fConn_ReadBuffered)
+{
+    return;
+}
+
+
+CConn_FtpStream::CConn_FtpStream(const SConnNetInfo&  net_info,
+                                 TFTP_Flags           flag,
+                                 const SFTP_Callback* cmcb,
+                                 const STimeout*      timeout,
+                                 size_t               buf_size)
+    : CConn_IOStream(s_FtpConnectorBuilder(&net_info, flag, cmcb, timeout),
                      timeout, buf_size, fConn_Untie | fConn_ReadBuffered)
 {
     return;
@@ -865,23 +901,42 @@ CConn_FTPDownloadStream::CConn_FTPDownloadStream(const string&        host,
     : CConn_FtpStream(host, user, pass, path, port, flag, cmcb,
                       timeout, buf_size)
 {
+    if (!file.empty())
+        x_InitDownload(file, offset);
+}
+
+
+CConn_FTPDownloadStream::CConn_FTPDownloadStream(const SConnNetInfo&  net_info,
+                                                 TFTP_Flags           flag,
+                                                 const SFTP_Callback* cmcb,
+                                                 Uint8                offset,
+                                                 const STimeout*      timeout,
+                                                 size_t               buf_size)
+    : CConn_FtpStream(net_info, flag | fFTP_IgnorePath, cmcb,
+                      timeout, buf_size)
+{
+    if (net_info.path[0])
+        x_InitDownload(net_info.path, offset);
+}
+
+
+void CConn_FTPDownloadStream::x_InitDownload(const string& file, Uint8 offset)
+{
     // Use '\n' here instead of NcbiFlush to avoid (and thus make silent)
     // flush errors on retrieval of inexistent (or bad) files / directories..
-    if (!file.empty()) {
-        EIO_Status status;
-        if (offset) {
-            write("REST ", 5) << NStr::UInt8ToString(offset) << '\n';
-            status  = Status(eIO_Write);
-        } else
-            status  = eIO_Success;
-        if (good()  &&  status == eIO_Success) {
-            bool directory = NStr::EndsWith(file, '/');
-            write(directory ? "NLST " : "RETR ", 5) << file << '\n';
-            status  = Status(eIO_Write);
-        }
-        if (status != eIO_Success)
-            setstate(NcbiBadbit);
+    EIO_Status status;
+    if (offset) {
+        write("REST ", 5) << NStr::UInt8ToString(offset) << '\n';
+        status  = Status(eIO_Write);
+    } else
+        status  = eIO_Success;
+    if (good()  &&  status == eIO_Success) {
+        bool directory = NStr::EndsWith(file, '/');
+        write(directory ? "NLST " : "RETR ", 5) << file << '\n';
+        status  = Status(eIO_Write);
     }
+    if (status != eIO_Success)
+        setstate(NcbiBadbit);
 }
 
 
@@ -894,18 +949,36 @@ CConn_FTPUploadStream::CConn_FTPUploadStream(const string&   host,
                                              TFTP_Flags      flag,
                                              Uint8           offset,
                                              const STimeout* timeout)
-    : CConn_FtpStream(host, user, pass, path, port, flag, 0/*cmcb*/, timeout)
+    : CConn_FtpStream(host, user, pass, path, port, flag, 0/*cmcb*/,
+                      timeout)
 {
-    if (!file.empty()) {
-        EIO_Status status;
-        if (offset) {
-            write("REST ", 5) << NStr::UInt8ToString(offset) << NcbiFlush;
-            status = Status(eIO_Write);
-        } else
-            status = eIO_Success;
-        if (good()  &&  status == eIO_Success)
-            write("STOR ", 5) << file << NcbiFlush;
-    }
+    if (!file.empty())
+        x_InitUpload(file, offset);
+}
+
+
+CConn_FTPUploadStream::CConn_FTPUploadStream(const SConnNetInfo& net_info,
+                                             TFTP_Flags          flag,
+                                             Uint8               offset,
+                                             const STimeout*     timeout)
+    : CConn_FtpStream(net_info, flag | fFTP_IgnorePath, 0/*cmcb*/,
+                      timeout)
+{
+    if (net_info.path[0])
+        x_InitUpload(net_info.path, offset);
+}
+
+
+void CConn_FTPUploadStream::x_InitUpload(const string& file, Uint8 offset)
+{
+    EIO_Status status;
+    if (offset) {
+        write("REST ", 5) << NStr::UInt8ToString(offset) << NcbiFlush;
+        status = Status(eIO_Write);
+    } else
+        status = eIO_Success;
+    if (good()  &&  status == eIO_Success)
+        write("STOR ", 5) << file << NcbiFlush;
 }
 
 
@@ -961,56 +1034,51 @@ CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
 
     unsigned int   host;
     unsigned short port;
-    if (url.size() == CSocketAPI::StringToHostPort(url, &host, &port) && port){
-        if (net_info.get())
-            net_info->req_method = eReqMethod_Connect;
+    if (url.size() == CSocketAPI::StringToHostPort(url, &host, &port)  &&  port
+        &&  net_info.get()) {
+        net_info->req_method = eReqMethod_Connect;
     }
 
     if (ConnNetInfo_ParseURL(net_info.get(), url.c_str())) {
         _ASSERT(net_info);  // otherwise ConnNetInfo_ParseURL() would fail
         if (net_info->req_method == eReqMethod_Connect) {
-            return new CConn_SocketStream(*net_info, 0, 0,
-                                          fSOCK_LogDefault, net_info->timeout,
-                                          buf_size);
+            return new CConn_SocketStream(*net_info, 0, 0, fSOCK_LogDefault,
+                                          net_info->timeout, buf_size);
         }
         switch (net_info->scheme) {
         case eURL_Https:
         case eURL_Http:
             return new CConn_HttpStream(net_info.get(), kEmptyStr, 0, 0, 0, 0,
-                                        fHTTP_AutoReconnect, kDefaultTimeout,
-                                        buf_size);
+                                        fHTTP_AutoReconnect,
+                                        kDefaultTimeout, buf_size);
         case eURL_File:
             if (*net_info->host  ||  net_info->port)
                 break; /*not supported*/
             _ASSERT(!*net_info->args);
-            if (net_info->debug_printout)
+            if (net_info->debug_printout) {
+                net_info->req_method = eReqMethod_Any;
+                net_info->firewall = 0;
+                net_info->stateless = 0;
+                net_info->lb_disable = 0;
+                net_info->http_proxy_leak = 0;
+                net_info->http_proxy_host[0] = '\0';
+                net_info->http_proxy_port    =   0;
+                net_info->http_proxy_user[0] = '\0';
+                net_info->http_proxy_pass[0] = '\0';
+                net_info->proxy_host[0]      = '\0';
+                net_info->max_try = 0;
+                net_info->timeout = kInfiniteTimeout;
+                ConnNetInfo_SetUserHeader(net_info.get(), 0);
+                if (net_info->http_referer) {
+                    free((void*) net_info->http_referer);
+                    net_info->http_referer = 0;
+                }
                 ConnNetInfo_Log(net_info.get(), eLOG_Note, CORE_GetLOG());
+            }
             return new CConn_FileStream(net_info->path);
         case eURL_Ftp:
-            if (net_info->debug_printout)
-                ConnNetInfo_Log(net_info.get(), eLOG_Note, CORE_GetLOG());
-            return new CConn_FTPDownloadStream(net_info->host,
-                                               net_info->path,
-                                               net_info->user,
-                                               net_info->pass,
-                                               kEmptyStr/*path*/,
-                                               net_info->port,
-                                               (net_info->debug_printout
-                                                == eDebugPrintout_Some
-                                                ? fFTP_LogControl
-                                                : net_info->debug_printout
-                                                == eDebugPrintout_Data
-                                                ? fFTP_LogAll
-                                                : 0) |
-                                               (net_info->req_method
-                                                == eReqMethod_Post
-                                                ? fFTP_UsePassive
-                                                : net_info->req_method
-                                                == eReqMethod_Get
-                                                ? fFTP_UseActive
-                                                : 0), 0, 0,
-                                               net_info->timeout,
-                                               buf_size);
+            return new CConn_FTPDownloadStream(*net_info, 0, 0, 0,
+                                               net_info->timeout, buf_size);
         default:
             break;
         }
