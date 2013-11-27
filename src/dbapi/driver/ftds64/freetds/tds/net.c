@@ -85,6 +85,10 @@
 #include <poll.h>
 #endif /* HAVE_POLL_H */
 
+#if HAVE_NETDB_H
+#include <netdb.h>
+#endif /* HAVE_NETDB_H */
+
 #include "tds.h"
 #include "tdsstring.h"
 #include "replacements.h"
