@@ -426,8 +426,22 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
     if (!sock  &&  (!proxy  ||  net_info->http_proxy_leak)) {
         const char* host = (net_info->firewall  &&  *net_info->proxy_host
                             ? net_info->proxy_host : net_info->host);
-        if (!proxy  &&  net_info->debug_printout)
+        if (!proxy  &&  net_info->debug_printout) {
+            net_info->req_method = eReqMethod_Any;
+            net_info->stateless = 0;
+            net_info->lb_disable = 0;
+            net_info->http_proxy_host[0] = '\0';
+            net_info->http_proxy_port    =   0;
+            net_info->http_proxy_user[0] = '\0';
+            net_info->http_proxy_pass[0] = '\0';
+            net_info->proxy_host[0]      = '\0';
+            ConnNetInfo_SetUserHeader(net_info, 0);
+            if (net_info->http_referer) {
+                free((void*) net_info->http_referer);
+                net_info->http_referer = 0;
+            }
             ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
+        }
         status = SOCK_CreateEx(host, net_info->port, net_info->timeout, &sock,
                                data, size, flags);
         assert(!sock ^ !(status != eIO_Success));
