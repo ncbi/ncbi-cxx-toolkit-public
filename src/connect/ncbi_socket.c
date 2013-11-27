@@ -37,7 +37,9 @@
  *    (USE_NCBICONF is not #define'd), and
  * 1) your platform has "getaddrinfo()" and "getnameinfo()", and
  * 2) you are going to use this API code in multi-thread application, and
- * 3) "gethostbyname()" gets called somewhere else in your code
+ * 3) "gethostbyname()" gets called somewhere else in your code, and
+ * 4) you are aware that GLIBC implementation is rather heavy (creates tons of
+ *    test sockets on the fly), yet you prefer to use that API nontheless
  */
 
 /* #define HAVE_GETADDRINFO 1 */
@@ -271,7 +273,7 @@ static const char* s_StrError(SOCK sock, int error)
         if (sslerror) {
             const char* strerr = sslerror(sock->session == SESSION_INVALID
                                           ? 0 : sock->session, error);
-            if (strerr)
+            if (strerr  &&  *strerr)
                 return MSWIN_STRDUP(strerr);
         }
     }
@@ -1124,7 +1126,7 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
             UTIL_ReleaseBuffer(strerr);
         }
 
-#endif /*HAVE_GETADDR_INFO && !__GLIBC__*/
+#endif /*HAVE_GETADDRINFO && !__GLIBC__*/
     }
 
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
