@@ -277,11 +277,12 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
     vector< AutoPtr<CConn_HttpStream> > http;
     for (size_t n = 0;  n < sizeof(x_Tests) / sizeof(x_Tests[0]);  ++n) {
         char user_header[80];
-        _ASSERT(strlen(x_Tests[n].host) < sizeof(net_info->host) - 1);
+        _ASSERT(::strlen(x_Tests[n].host) < sizeof(net_info->host) - 1);
         ::strcpy(net_info->host, x_Tests[n].host);
-        if (x_Tests[n].vhost)
-            sprintf(user_header, "Host: %s", x_Tests[n].vhost);
-        else
+        if (x_Tests[n].vhost) {
+            _ASSERT(::strlen(x_Tests[n].vhost) + 6 < sizeof(user_header) - 1);
+            ::sprintf(user_header, "Host: %s", x_Tests[n].vhost);
+        } else
             *user_header = '\0';
         SAuxData* auxdata = new SAuxData(m_Canceled, 0);
         http.push_back(new CConn_HttpStream(net_info, user_header, s_AnyHeader,
