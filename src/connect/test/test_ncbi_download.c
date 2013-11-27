@@ -58,7 +58,7 @@ int main(int argc, const char* argv[])
                            fLOG_OmitNoteLevel | fLOG_DateTime);
     CORE_SetLOGFILE(stderr, 0/*false*/);
 
-    net_info = ConnNetInfo_Create(argv[1]);
+    net_info = ConnNetInfo_Create(service);
     if (argc > 2)
         strncpy0(net_info->host, argv[2], sizeof(net_info->host) - 1);
 
