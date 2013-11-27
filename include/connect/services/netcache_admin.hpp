@@ -55,11 +55,18 @@ class NCBI_XCONNECT_EXPORT CNetCacheAdmin
 {
     NCBI_NET_COMPONENT(NetCacheAdmin);
 
+    /// Shutdown options
+    ///
+    enum EShutdownOption {
+        eNormalShutdown,    ///< Normal shutdown is requested.
+        eDrain,             ///< Wait for all blobs to expire.
+    };
+
     /// Shutdown the server daemon.
     ///
     /// @note
     ///  Protected to avoid a temptation to call it from time to time. :)
-    void ShutdownServer();
+    void ShutdownServer(EShutdownOption shutdown_option = eNormalShutdown);
 
     /// Reload configuration parameters from the same source.
     void ReloadServerConfig();

@@ -429,7 +429,8 @@ int CGridCommandLineInterfaceApp::Cmd_Shutdown()
 {
     switch (SetUp_AdminCmd(eSevereAdminCmd)) {
     case eNetCacheAdmin:
-        m_NetCacheAdmin.ShutdownServer();
+        m_NetCacheAdmin.ShutdownServer(IsOptionSet(eDrain) ?
+                CNetCacheAdmin::eDrain : CNetCacheAdmin::eNormalShutdown);
         return 0;
 
     case eNetScheduleAdmin:

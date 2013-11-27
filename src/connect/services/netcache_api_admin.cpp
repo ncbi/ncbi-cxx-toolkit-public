@@ -39,10 +39,12 @@
 
 BEGIN_NCBI_SCOPE
 
-void CNetCacheAdmin::ShutdownServer()
+void CNetCacheAdmin::ShutdownServer(EShutdownOption shutdown_option)
 {
-    m_Impl->m_API->m_Service.ExecOnAllServers(
-            m_Impl->m_API->MakeCmd("SHUTDOWN"));
+    string cmd(m_Impl->m_API->MakeCmd("SHUTDOWN"));
+    if (shutdown_option == eDrain)
+        cmd += " drain=1";
+    m_Impl->m_API->m_Service.ExecOnAllServers(cmd);
 }
 
 void CNetCacheAdmin::ReloadServerConfig()

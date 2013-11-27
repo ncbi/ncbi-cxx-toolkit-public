@@ -1054,8 +1054,9 @@ struct SCommandDefinition {
         "server or a worker node process.\n\n"
         "Additional options '--" NOW_OPTION "' and '--" DIE_OPTION
         "' are applicable only to worker nodes and NetStorage servers.\n\n"
-        "The '--" DRAIN_OPTION "' option is supported only by "
-        "NetSchedule servers version 4.11.0 and up.",
+        "The '--" DRAIN_OPTION "' option is supported by NetSchedule "
+        "servers version 4.11.0 and up and by NetCache servers version "
+        "6.6.3 and up.",
         {eNetCache, eNetSchedule, eNetStorage, eWorkerNode, eNow, eDie, eDrain,
             eCompatMode, eLoginToken, eAuth, eClientNode, eClientSession,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
