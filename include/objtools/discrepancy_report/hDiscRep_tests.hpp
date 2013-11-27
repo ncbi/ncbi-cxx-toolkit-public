@@ -3762,6 +3762,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
   {
     public:
       virtual ~CBioseq_INCONSISTENT_LOCUS_TAG_PREFIX() { };
+      virtual void GetReport(CRef <CClickableItem>& c_item);
 
       virtual string GetName() const {return CBioseq_on_locus_tags::GetName_incons();}
   };
