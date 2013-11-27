@@ -580,6 +580,7 @@ static void s_GnuTlsExit(void)
  
 static const char* s_GnuTlsError(void* session/*unused*/, int error)
 {
+    /* GNUTLS defines only negative error codes */
     return error < 0 ? gnutls_strerror(error) : 0;
 }
 
