@@ -133,7 +133,7 @@ extern bool SetHeapLimit(size_t max_size,
 ///   memory limit. Use default handler if passed as NULL.
 /// @param parameter
 ///   Parameter carried into the print handler. Can be passed as NULL.
-///   Usefull if singular handler is used for setting some limits.
+///   Useful if singular handler is used for setting some limits.
 ///   See also SetCpuTimeLimit().
 /// @return 
 ///   Completion status.
@@ -224,6 +224,7 @@ extern bool SetCpuTimeLimit(unsigned int          max_cpu_time,
                             TLimitsPrintHandler   handler, 
                             TLimitsPrintParameter parameter);
 
+NCBI_DEPRECATED
 NCBI_XNCBI_EXPORT
 extern bool SetCpuTimeLimit(size_t                max_cpu_time,
                             TLimitsPrintHandler   handler = NULL, 

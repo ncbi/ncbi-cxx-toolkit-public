@@ -147,10 +147,8 @@ static void Test_CpuLimit(void)
     LOG_POST("\nCPU time limit test\n");
 
     // Use our own handler
+    // To use default handler, use NULL instead of PrintHandler
     assert( SetCpuTimeLimit(1, 5, PrintHandler, NULL) );
-    
-    // To use default handler, use NULL instead PrintHandler, or uncomment next line:
-    //assert( SetCpuTimeLimit(1) );
 
     double a = 0.0;
     while (a <= get_limits(a).max()) {
