@@ -739,7 +739,7 @@ void CAsnvalApp::PrintValidErrItem
             {
                 string msg = NStr::XmlEncode(item.GetMsg());
                 if (!m_StartXML) {
-                    os << "<asnvalidate version=\"" << ASNVAL_APP_VER << "\" severity cutoff=\""
+                    os << "<asnvalidate version=\"" << ASNVAL_APP_VER << "\" severity_cutoff=\""
                     << s_GetSeverityLabel(m_LowCutoff) << "\">" << endl;
                     m_StartXML = true;
                 }
