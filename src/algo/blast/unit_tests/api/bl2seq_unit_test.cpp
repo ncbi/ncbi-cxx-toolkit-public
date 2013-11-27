@@ -490,12 +490,12 @@ void testBlastHitCounts(CBl2Seq& blaster, EBl2seqTest test_id)
         break;
     case eTblastx_555_555:
         BOOST_CHECK_EQUAL(2590, (int)ungapped_stats->lookup_hits);
-        BOOST_CHECK_EQUAL(61, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(57, ungapped_stats->init_extends);
         BOOST_CHECK_EQUAL(41, ungapped_stats->good_init_extends);
         break;
     case eTblastx_many_hits:
         BOOST_CHECK_EQUAL(18587, (int)ungapped_stats->lookup_hits);
-        BOOST_CHECK_EQUAL(362, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(348, ungapped_stats->init_extends);
         BOOST_CHECK_EQUAL(66, ungapped_stats->good_init_extends);
         break;
     case eBlastp_129295_7662354:
@@ -514,7 +514,7 @@ void testBlastHitCounts(CBl2Seq& blaster, EBl2seqTest test_id)
         break;
     case eBlastp_multi_q:
         BOOST_CHECK_EQUAL(2129, (int)ungapped_stats->lookup_hits);
-        BOOST_CHECK_EQUAL(78, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(76, ungapped_stats->init_extends);
         BOOST_CHECK_EQUAL(14, ungapped_stats->good_init_extends);
         BOOST_CHECK_EQUAL(8, gapped_stats->extensions);
         BOOST_CHECK_EQUAL(8, gapped_stats->good_extensions);
@@ -556,7 +556,7 @@ void testBlastHitCounts(CBl2Seq& blaster, EBl2seqTest test_id)
         break;
     case eBlastx_oof:
         BOOST_CHECK_EQUAL(5950, (int)ungapped_stats->lookup_hits);
-        BOOST_CHECK_EQUAL(159, ungapped_stats->init_extends);
+        BOOST_CHECK_EQUAL(155, ungapped_stats->init_extends);
         BOOST_CHECK_EQUAL(6, ungapped_stats->good_init_extends);
         BOOST_CHECK_EQUAL(2, gapped_stats->extensions);
         BOOST_CHECK_EQUAL(2, gapped_stats->good_extensions);

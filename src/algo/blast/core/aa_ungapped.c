@@ -563,6 +563,20 @@ s_BlastAaWordFinder_TwoHit(const BLAST_SequenceBlk * subject,
                    extension, the query context must first be found */
 
                 curr_context = BSearchContextInfo(query_offset, query_info);
+
+                /* Check if the last hit hits current query. Because last_hit
+                   is never reset, it may contain a hit to the previous
+                   concatenated query */
+
+                if (query_offset - diff <
+                    query_info->contexts[curr_context].query_offset) {
+                    
+                    /* there was no last hit for this diagnol; start a new hit */
+                    diag_array[diag_coord].last_hit =
+                        subject_offset + diag_offset;
+                    continue;
+                }
+
                 cutoffs = word_params->cutoffs + curr_context;
                 score = s_BlastAaExtendTwoHit(matrix, subject, query,
                                               last_hit + wordsize,
