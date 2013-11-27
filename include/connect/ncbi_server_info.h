@@ -249,12 +249,12 @@ extern NCBI_XCONNECT_EXPORT char* SERV_WriteInfo
  *           0.0 means not to use the described rate increase at all (default
  *           rate calculation is used, which only slightly increases rates
  *           of locally run servers).
- *           Negative value denotes that locally run server should
- *           be taken in first place, regardless of its rate, if that rate
- *           is larger than percent of expressed by the absolute value
- *           of this coefficient of the average rate coefficient of other
- *           servers for the same service.  That is, -5 instructs to
- *           ignore locally run server if its status is less than 5% of
+ *           Negative value denotes that locally run server should be taken
+ *           in the first place, regardless of its rate, if that rate
+ *           is as large as the percent (expressed by the absolute value
+ *           of this coefficient) of the average rate coefficient of other
+ *           servers for the same service.  In other words, -5 instructs to
+ *           ignore locally run server only if its rate is less than 5% of
  *           average status of remaining servers for the same service.
  *
  *    Content type indication:
@@ -269,8 +269,7 @@ extern NCBI_XCONNECT_EXPORT char* SERV_WriteInfo
  *           This tag is not allowed in DNS server specifications.
  *
  *    Local server:
- *       L=no           (default for non-DNS specs)
- *       L=yes          (default for DNS specs)
+ *       L={yes|no}     [default is set by SERV_SetLocalServerDefault()]
  *           Local servers are accessible only by local clients (from within
  *           the Intranet) or direct clients of LBSMD, and are not accessible
  *           by the outside users (i.e. via network dispatching).
@@ -322,14 +321,14 @@ extern NCBI_XCONNECT_EXPORT char* SERV_WriteInfo
  *    Stateful server:
  *       S=no           (default)
  *       S=yes
- *           Indication of stateful server, which allows only dedicated socket
- *           (stateful) connections.
+ *           indicates whether a server is stateful, which only allows context
+ *           bearing, dedicated socket (stateful) connections.
  *           This tag is not allowed for HTTP* and DNS servers.
  *
  *    Validity period:
  *       T=integer      [0 = default]
- *           specifies the time in seconds this server entry is valid
- *           without update. (If equal to 0 then defaulted by
+ *           specifies the time in seconds that this server entry is valid for
+ *           without an update. (If equal to 0 then defaulted by
  *           the LBSM Daemon to some reasonable value.)
  *
  *
