@@ -187,10 +187,10 @@ typedef enum {
  * @return
  *  Non-zero value if the requested operation was successful.
  * @par <b>NOTE:</b>
- *  The "-1" value is reserved for unset handler;  you also
- *  may want to return "-1" if your locking function does no locking, and
- *  you don't consider it as an error, but still want the caller to be
- *  ware of this "rightful non-doing" as opposed to the "rightful doing".
+ *  The "-1" value is reserved for unset handler;  you also may want to
+ *  return "-1" if your locking function does no locking, and you don't
+ *  consider it as an error, but still want the caller to be aware of this
+ *  "rightful non-doing" as opposed to the "rightful doing".
  * @sa
  *   MT_LOCK_Create, MT_LOCK_Delete
  */
