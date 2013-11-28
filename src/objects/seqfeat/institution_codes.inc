@@ -3963,7 +3963,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MTMG	s	McGill University, Macdonald Campus, Plant Science Department",
 "MTN	s	Malton Field Naturalists' Society",
 "MTQA	s	Museum of Tropical Queensland",
-"MTSN	s	Museo Tridentino di Scienze Naturali",
+"MTSN	s	Trento Museum of Natural Sciences",
 "MTSU	s	Middle Tennessee State University, Biology Department",
 "MTUF	s	University Museum, Tokyo University of Fisheries",
 "MU<TUR>	c	Mugla University Collection of Microorganisms",
