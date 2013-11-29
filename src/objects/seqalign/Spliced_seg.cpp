@@ -357,6 +357,14 @@ s_ExonToDenseg(const CSpliced_exon& exon,
     for (unsigned int i = 0; i < product_lens.size(); ++i) {
         lens.push_back(max(product_lens[i], genomic_lens[i]));
     }
+
+    if (exon.IsSetProduct_strand()) {
+        product_strand = exon.GetProduct_strand();
+    }
+    if (exon.IsSetGenomic_strand()) {
+        genomic_strand = exon.GetGenomic_strand();
+    }
+
     vector<TSignedSeqPos> product_starts;
     product_starts =
         s_CalculateStarts(product_lens, product_strand,
@@ -373,8 +381,10 @@ s_ExonToDenseg(const CSpliced_exon& exon,
         starts.push_back(product_starts[i]);  // product row first
         starts.push_back(genomic_starts[i]);
     }
-    ds->SetIds().push_back(CRef<CSeq_id>(SerialClone(product_id)));
-    ds->SetIds().push_back(CRef<CSeq_id>(SerialClone(genomic_id)));
+    ds->SetIds().push_back(CRef<CSeq_id>(SerialClone(
+        exon.IsSetProduct_id() ? exon.GetProduct_id() : product_id)));
+    ds->SetIds().push_back(CRef<CSeq_id>(SerialClone(
+        exon.IsSetGenomic_id() ? exon.GetGenomic_id() : genomic_id)));
 
     // Set strands, unless they're both plus
     if (!(product_strand == eNa_strand_plus
