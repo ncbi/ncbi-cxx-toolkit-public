@@ -35,34 +35,50 @@ REM     %2% - Solution file name without extention (relative path from build dir
 REM     %3% - Type of used libraries (static, dll).
 REM     %4% - 32/64-bits architerture.
 REM     %5% - Configuration name(s)
-REM           (DEFAULT, DebugDLL, DebugMT, ReleaseDLL, ReleaseMT, Unicode_*).
-REM           By default build DebugDLL and ReleaseDLL only.
+REM           (DebugDLL, DebugMT, ReleaseDLL, ReleaseMT, Unicode_*).
+REM           By default (if not specified) build DebugDLL and ReleaseDLL only.
+REM     ... - Options (--with-openmp)
 REM
 REM ===========================================================================
 
 
+
+rem --- Configuration
+
+set compiler=vs2012
+set default_cfgs=ReleaseDLL DebugDLL
+
+rem Always configure with additional Unicode configurations
+if _%SRV_NAME% == _ set SRV_NAME=%COMPUTERNAME%
+
 call msvcvars.bat > NUL
+set archw=Win32
+if _%arch%_ == _64_ set archw=x64
 
-SET CMD=%1%
-SET SOLUTION=%2%
-SET LIBDLL=%3%
-SET ARCH=%4%
-SET CFG=%5%
 
-SET COMPILER=vs2012
-IF _%SRV_NAME% == _ SET SRV_NAME=%COMPUTERNAME%
+rem --- Required parameters
 
-SET NCBI_CONFIG____ENABLEDUSERREQUESTS__NCBI_UNICODE=1
+set cmd=%~1%
+set solution=%~2
+set libdll=%~3
+set arch=%~4
 
-IF _%CMD% == _        GOTO NOARGS
-IF _%SOLUTION% == _   GOTO USAGE
-IF _%LIBDLL% == _     GOTO USAGE
-IF _%ARCH% == _       GOTO USAGE
-IF _%CFG% == _        GOTO BUILDDEF
-IF _%CFG% == _DEFAULT GOTO BUILDDEF
-GOTO CHECKCMD
+shift
+shift
+shift
+shift
 
+if "%cmd%"      == ""  goto NOARGS
+if "%solution%" == ""  goto USAGE
+if "%libdll%"   == ""  goto USAGE
+if "%arch%"     == ""  goto USAGE
+
+goto PARSEARGS
+
+
+rem --------------------------------------------------------------------------------
 :NOARGS
+
 if exist configure_make.bat (
   configure_make.bat
 ) else (
@@ -71,162 +87,134 @@ if exist configure_make.bat (
 
 :USAGE
 
-ECHO FATAL: Invalid parameters. See script description.
-ECHO FATAL: %0 %1 %2 %3 %4 %5 %6 %7 %8 %9
-GOTO ABORT
+echo FATAL: Invalid parameters. See script description.
+echo FATAL: Passed arguments: %*
+goto ABORT
 
 
-:BUILDDEF
 
-CALL %0 %CMD% %SOLUTION% %LIBDLL% %ARCH% ReleaseDLL DebugDLL
-GOTO EXIT
+rem --------------------------------------------------------------------------------
+rem Parse arguments
+:PARSEARGS
+
+set with_openmp=
+set cfgs=
+set unknown=
+
+:PARSEARGSLOOP
+if "%1" == "" goto ENDPARSEARGS
+if "%1" == "--with-openmp"       (set with_openmp=%1 & goto CONTINUEPARSEARGS)
+if "%1" == "DebugDLL"            (set cfgs=%cfgs% %1 & goto CONTINUEPARSEARGS)
+if "%1" == "DebugMT"             (set cfgs=%cfgs% %1 & goto CONTINUEPARSEARGS)
+if "%1" == "ReleaseDLL"          (set cfgs=%cfgs% %1 & goto CONTINUEPARSEARGS)
+if "%1" == "ReleaseMT"           (set cfgs=%cfgs% %1 & goto CONTINUEPARSEARGS)
+if "%1" == "Unicode_DebugDLL"    (set cfgs=%cfgs% %1 & goto CONTINUEPARSEARGS)
+if "%1" == "Unicode_DebugMT"     (set cfgs=%cfgs% %1 & goto CONTINUEPARSEARGS)
+if "%1" == "Unicode_ReleaseDLL"  (set cfgs=%cfgs% %1 & goto CONTINUEPARSEARGS) 
+if "%1" == "Unicode_ReleaseMT"   (set cfgs=%cfgs% %1 & goto CONTINUEPARSEARGS)
+set unknown=%unknown% %1
+:CONTINUEPARSEARGS
+shift
+goto PARSEARGSLOOP
+
+:ENDPARSEARGS
+
+if not "%unknown%" == "" (
+   echo FATAL: Unknown configuration names or options specified:%unknown%.
+   echo %cmd%
+   goto ABORT
+)
+
+if "%cfgs%" == "" set cfgs=%default_cfgs%
+
+rem -- Check command
+
+if _%cmd% == _configure goto CONFIG
+if _%cmd% == _make      goto CONFIG
+if _%cmd% == _build     goto CFGLOOP
+if _%cmd% == _check     goto CFGLOOP
+echo FATAL: Unknown action name %cmd%. Please correct.
+echo The following action names are recognized: configure, build, make, check.
+goto ABORT
 
 
-:CHECKCMD
-
-SET ARCHW=Win32
-if _%ARCH%_ == _64_ SET ARCHW=x64
-
-IF _%CMD% == _configure GOTO CONFIG
-IF _%CMD% == _make      GOTO CONFIG
-IF _%CMD% == _build     GOTO BUILD
-IF _%CMD% == _check     GOTO CHECK
-
-ECHO The following action names are recognized: configure, build, make, check.
-ECHO FATAL: Unknown action name %CMD%. Please correct.
-GOTO ABORT
-
-
-REM ###########################################################################
+rem --------------------------------------------------------------------------------
+rem Configure: always use ReleaseDLL
 :CONFIG
 
-IF %CFG% == DebugDLL                 GOTO CONTCFG
-IF %CFG% == DebugMT                  GOTO CONTCFG
-IF %CFG% == ReleaseDLL               GOTO CONTCFG
-IF %CFG% == ReleaseMT                GOTO CONTCFG
-IF %CFG% == Unicode_DebugDLL         GOTO CONTCFG
-IF %CFG% == Unicode_DebugMT          GOTO CONTCFG
-IF %CFG% == Unicode_ReleaseDLL       GOTO CONTCFG
-IF %CFG% == Unicode_ReleaseMT        GOTO CONTCFG
-IF %CFG% == VTune_ReleaseDLL         GOTO CONTCFG
-IF %CFG% == VTune_ReleaseMT          GOTO CONTCFG
-IF %CFG% == VTune_Unicode_ReleaseDLL GOTO CONTCFG
-IF %CFG% == VTune_Unicode_ReleaseMT  GOTO CONTCFG
+rem --- Process options
+if not "%with_openmp%" == "" (
+   echo INFO: Ebable OpenMP.
+   bash -c "./build_util.sh %with_openmp%; exit $?"
+   if errorlevel 1 goto ABORT
+)
 
-ECHO FATAL: Unknown configuration name %CFG%.
-ECHO        The following configuration names are recognized:
-ECHO          - DebugDLL DebugMT ReleaseDLL ReleaseMT 
-ECHO          - Unicode_DebugDLL Unicode_DebugMT Unicode_ReleaseDLL Unicode_ReleaseMT
-ECHO          - VTune_ReleaseDLL VTune_ReleaseMT VTune_Unicode_ReleaseMT VTune_Unicode_ReleaseDLL
-GOTO ABORT
-
-:CONTCFG
-TIME /T
-ECHO INFO: Configure "%LIBDLL%\%SOLUTION% [ReleaseDLL|%ARCH%]"
-%DEVENV% %LIBDLL%\build\%SOLUTION%.sln /build "ReleaseDLL|%ARCHW%" /project "_CONFIGURE_"
-IF ERRORLEVEL 1 GOTO ABORT
-IF NOT _%CMD% == _make GOTO COMPLETE
+time /t
+echo INFO: Configure "%libdll%\%solution% [ReleaseDLL|%arch%]"
+%DEVENV% %libdll%\build\%solution%.sln /build "ReleaseDLL|%archw%" /project "_CONFIGURE_"
+if errorlevel 1 goto ABORT
+if not _%cmd% == _make goto COMPLETE
 
 
-REM ###########################################################################
-:BUILD
+rem --------------------------------------------------------------------------------
+rem Process all configurations
+:CFGLOOP
 
-:ARGLOOPB
-IF %CFG% == DebugDLL                 GOTO CONTBLD
-IF %CFG% == DebugMT                  GOTO CONTBLD
-IF %CFG% == ReleaseDLL               GOTO CONTBLD
-IF %CFG% == ReleaseMT                GOTO CONTBLD
-IF %CFG% == Unicode_DebugDLL         GOTO CONTBLD
-IF %CFG% == Unicode_DebugMT          GOTO CONTBLD
-IF %CFG% == Unicode_ReleaseDLL       GOTO CONTBLD
-IF %CFG% == Unicode_ReleaseMT        GOTO CONTBLD
-IF %CFG% == VTune_ReleaseDLL         GOTO CONTBLD
-IF %CFG% == VTune_ReleaseMT          GOTO CONTBLD
-IF %CFG% == VTune_Unicode_ReleaseDLL GOTO CONTBLD
-IF %CFG% == VTune_Unicode_ReleaseMT  GOTO CONTBLD
-
-ECHO FATAL: Unknown configuration name %CFG%.
-ECHO        The following configuration names are recognized:
-ECHO          - DebugDLL DebugMT ReleaseDLL ReleaseMT 
-ECHO          - Unicode_DebugDLL Unicode_DebugMT Unicode_ReleaseDLL Unicode_ReleaseMT
-ECHO          - VTune_ReleaseDLL VTune_ReleaseMT VTune_Unicode_ReleaseMT VTune_Unicode_ReleaseDLL
-GOTO ABORT
-
-:CONTBLD
-TIME /T
-ECHO INFO: Building "%LIBDLL%\%SOLUTION% [%CFG%|%ARCH%]"
-%DEVENV% %LIBDLL%\build\%SOLUTION%.sln /build "%CFG%|%ARCHW%" /project "_BUILD_ALL_"
-IF ERRORLEVEL 1 GOTO ABORT
-SHIFT
-IF _%5% == _ GOTO COMPLETE
-SET CFG=%5%
-GOTO ARGLOOPB
+for %%c in (%cfgs%) do (
+   time /t
+   if _%cmd% == _make (
+      call :make %%c
+   )
+   if _%cmd% == _check (
+      call :check %%c
+   )
+   if _%cmd% == _build (
+      call :make %%c
+      if errorlevel 1 goto ABORT
+      call :check %%c
+   )
+   if errorlevel 1 goto ABORT
+)
+goto COMPLETE
 
 
-REM ###########################################################################
-:CHECK
+rem --------------------------------------------------------------------------------
+rem Subroutines
 
-ECHO INFO: Checking init
-bash -c "../../scripts/common/check/check_make_win_cfg.sh init; exit $?"
-SET ERRORLEV=0
-:ARGLOOPC
-IF %CFG% == DebugDLL                 GOTO CONTCH
-IF %CFG% == DebugMT                  GOTO CONTCH
-IF %CFG% == ReleaseDLL               GOTO CONTCH
-IF %CFG% == ReleaseMT                GOTO CONTCH
-IF %CFG% == Unicode_DebugDLL         GOTO CONTCH
-IF %CFG% == Unicode_DebugMT          GOTO CONTCH
-IF %CFG% == Unicode_ReleaseDLL       GOTO CONTCH
-IF %CFG% == Unicode_ReleaseMT        GOTO CONTCH
-IF %CFG% == VTune_ReleaseDLL         GOTO CONTCH
-IF %CFG% == VTune_ReleaseMT          GOTO CONTCH
-IF %CFG% == VTune_Unicode_ReleaseDLL GOTO CONTCH
-IF %CFG% == VTune_Unicode_ReleaseMT  GOTO CONTCH
+:make
+   echo INFO: Building "%libdll%\%solution% [%1|%arch%]"
+   %DEVENV% %libdll%\build\%solution%.sln /build "%1|%archw%" /project "_BUILD_ALL_"
+   exit /b %errorlevel%
 
-
-ECHO FATAL: Unknown configuration name %CFG%.
-ECHO        The following configuration names are recognized:
-ECHO          - DebugDLL DebugMT ReleaseDLL ReleaseMT 
-ECHO          - Unicode_DebugDLL Unicode_DebugMT Unicode_ReleaseDLL Unicode_ReleaseMT
-ECHO          - VTune_ReleaseDLL VTune_ReleaseMT VTune_Unicode_ReleaseMT VTune_Unicode_ReleaseDLL
-GOTO ABORT
-
-:CONTCH
-ECHO INFO: Create check script for "%LIBDLL%\%SOLUTION% [%CFG%|%ARCH%]"
-bash -c "../../scripts/common/check/check_make_win_cfg.sh create %SOLUTION% %LIBDLL% %CFG%"; exit $?"
-IF ERRORLEVEL 1 GOTO ABORT
-ECHO INFO: Checking "%LIBDLL%\%SOLUTION% [%CFG%|%ARCH%]"
-SET CHECKSH=%LIBDLL%/build/%SOLUTION%.check/%CFG%/check.sh
-bash -c "%CHECKSH% run; exit $?"
-IF ERRORLEVEL 1 SET ERRORLEV=1
-bash -c "cp %CHECKSH%.journal check.sh.%LIBDLL%_%CFG%.journal; cp %CHECKSH%.log check.sh.%LIBDLL%_%CFG%.log"
-
-REM Load testsuite results into DB works only if NCBI_AUTOMATED_BUILD is set to 1
-IF .%NCBI_AUTOMATED_BUILD% == .1 GOTO LOADDB
-GOTO NOLOADDB
-:LOADDB
-bash -c "%CHECKSH% load_to_db; exit $?"
-IF ERRORLEVEL 1 SET ERRORLEV=1
-:NOLOADDB
-
-SHIFT
-IF _%5% == _ GOTO CHECKEND
-SET CFG=%5%
-GOTO ARGLOOPC
-:CHECKEND
-COPY /Y /B check.sh.*.journal check.sh.journal
-COPY /Y /B check.sh.*.log     check.sh.log
-IF %ERRORLEV%==0 GOTO COMPLETE
+:check
+   echo INFO: Checking init
+   bash -c "../../scripts/common/check/check_make_win_cfg.sh init; exit $?"
+   set err=0
+   echo INFO: Create check script for "%libdll%\%solution% [%1|%arch%]"
+   bash -c "../../scripts/common/check/check_make_win_cfg.sh create %solution% %libdll% %1; exit $?"
+   if errorlevel 1 exit /b %errorlevel%
+   echo INFO: Checking "%libdll%\%solution% [%1|%arch%]"
+   SET CHECKSH=%libdll%/build/%solution%.check/%1/check.sh
+   bash -c "%CHECKSH% run; exit $?"
+   if errorlevel 1 set err=1
+   bash -c "cp %CHECKSH%.journal check.sh.%libdll%_%1.journal; cp %CHECKSH%.log check.sh.%libdll%_%1.log"
+   rem Load testsuite results into DB works only if NCBI_AUTOMATED_BUILD is set to 1
+   if _%NCBI_AUTOMATED_BUILD% == _1 (
+      bash -c "%CHECKSH% load_to_db; exit $?"
+      if errorlevel 1 set err=1
+   )
+   copy /y /b check.sh.*.journal check.sh.journal
+   copy /y /b check.sh.*.log     check.sh.log
+   exit /b %err%
 
 
-REM ###########################################################################
+rem --------------------------------------------------------------------------------
 
 :ABORT
-ECHO INFO: %CMD% failed.
-EXIT /b 1
+echo INFO: %cmd% failed.
+exit /b 1
 
 :COMPLETE
-ECHO INFO: %CMD% complete.
+echo INFO: %cmd% complete.
+exit /b 0
 
-:EXIT
-EXIT /b %ERRORLEVEL%

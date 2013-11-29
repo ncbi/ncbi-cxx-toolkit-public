@@ -36,16 +36,25 @@ REM     %3% - 32/64-bits architerture.
 REM     %4% - Configuration name(s)
 REM           (DEFAULT, DebugDLL, DebugMT, ReleaseDLL, ReleaseMT, Unicode_*).
 REM           By default build DebugDLL and ReleaseDLL only.
+REM     ... - Options (--with-openmp)
 REM
 REM ===========================================================================
 
 
-IF _%2 == _dll GOTO DLL
+set cmd=%~1
+set libdll=%~2
+set arch=%~3
 
-:STATIC
-@call make.bat %1 ncbi_cpp %2 %3 %4 %5 %6 %7 %8 %9
-EXIT %ERRORLEVEL%
+shift
+shift
+shift
 
-:DLL
-@call make.bat %1 ncbi_cpp_dll %2 %3 %4 %5 %6 %7 %8 %9
-EXIT %ERRORLEVEL%
+goto:%libdll% 2>NUL
+
+:static
+echo @call make.bat %cmd% ncbi_cpp     %libdll% %arch% %1 %2 %3 %4 %5 %6 %7 %8 %9
+exit %ERRORLEVEL%
+
+:dll
+echo @call make.bat %cmd% ncbi_cpp_dll %libdll% %arch% %1 %2 %3 %4 %5 %6 %7 %8 %9
+exit %ERRORLEVEL%
