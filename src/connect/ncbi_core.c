@@ -144,14 +144,6 @@ static int/*bool*/ s_CORE_MT_Lock_default_handler(void*    unused,
 
 #  else
 
-    static int once = 0;
-
-    if (!once) {
-        ++once;
-        CORE_LOG(eLOG_Critical,
-                 "Attempted use of unimplemented default CORE MT_Lock");
-        assert(0);
-    }
     return -1/*not implemented*/;
 
 #  endif /*NCBI_..._THREADS*/
