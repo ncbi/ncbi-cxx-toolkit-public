@@ -1077,6 +1077,11 @@ CConn_IOStream* NcbiOpenURL(const string& url, size_t buf_size)
             }
             return new CConn_FileStream(net_info->path);
         case eURL_Ftp:
+            if (!net_info->user[0]) {
+                strcpy(net_info->user, "ftp");
+                if (!net_info->pass[0])
+                    strcpy(net_info->pass, "-none@");
+            }
             return new CConn_FTPDownloadStream(*net_info, 0, 0, 0,
                                                net_info->timeout, buf_size);
         default:
