@@ -260,6 +260,7 @@ static EIO_Status s_FTPReply(SFTPConnector* xxx, int* code,
     int        c = 0;
 
     if (xxx->cntl) {
+        char reason[40];
         status = x_FTPParseReply(xxx, &c, line, maxlinelen, parser);
         if (status != eIO_Timeout)
             xxx->sync = 1/*true*/;
@@ -272,15 +273,17 @@ static EIO_Status s_FTPReply(SFTPConnector* xxx, int* code,
                 status = eIO_NotSupported/*account*/;
             else if (c == 110  &&  (xxx->data  ||  xxx->send))
                 status = eIO_NotSupported/*restart mark*/;
-        }
+            sprintf(reason, "code %d", c);
+        } else
+            sprintf(reason, "status %s", IO_StatusStr(status));
         if (status == eIO_Closed   ||  c == 221) {
             SOCK cntl = xxx->cntl;
             xxx->cntl = 0;
             if (status == eIO_Closed) {
                 CORE_LOGF_X(10, eLOG_Error,
-                            ("[FTP%s%s]  Lost connection to server @ %s:%hu",
+                            ("[FTP%s%s]  Lost connection @ %s:%hu (%s)",
                              xxx->what ? "; " : "", xxx->what ? xxx->what : "",
-                             xxx->info->host, xxx->info->port));
+                             xxx->info->host, xxx->info->port, reason));
             }
             if (xxx->data)
                 x_FTPCloseData(xxx, eIO_Close/*silent close*/, 0);
@@ -352,11 +355,12 @@ static EIO_Status s_FTPCommandEx(SFTPConnector* xxx,
         status = SOCK_Write(xxx->cntl, line, cmdlen, 0, eIO_WritePersist);
         if (off  &&  log != eOff) {
             SOCK_SetDataLogging(xxx->cntl, log);
-            if (log == eOn  ||  SOCK_SetDataLoggingAPI(eDefault) == eOn)
+            if (log == eOn  ||  SOCK_SetDataLoggingAPI(eDefault) == eOn) {
                 CORE_LOGF_X(4, eLOG_Trace,
                             ("Sending FTP %.*s command (%s)",
                              (int) strcspn(line, " \t"), line,
                              IO_StatusStr(status)));
+            }
         }
         if (line != x_buf)
             free(line);
@@ -559,7 +563,7 @@ static EIO_Status x_FTPLogin(SFTPConnector* xxx)
         return status;
     if (code == 120)
         return eIO_Timeout;
-    if (code != 220  ||  !*xxx->info->user)
+    if (code != 220)
         return eIO_Unknown;
     status = s_FTPCommand(xxx, "USER", xxx->info->user);
     if (status != eIO_Success)
@@ -586,9 +590,8 @@ static EIO_Status x_FTPLogin(SFTPConnector* xxx)
         return status;
     if (xxx->flag & fFTP_LogControl) {
         CORE_LOGF_X(3, eLOG_Trace,
-                    ("[FTP]  Server ready @ %s:%hu, features = 0x%02X",
-                     xxx->info->host, xxx->info->port,
-                     (unsigned int) xxx->feat));
+                    ("[FTP; %s:%hu]  Server ready, features = 0x%02X",
+                     xxx->info->host, xxx->info->port, xxx->feat));
     }
     if (xxx->feat &  fFtpFeature_EPSV)
         xxx->feat |= fFtpFeature_APSV;
@@ -1890,6 +1893,11 @@ static EIO_Status s_VT_Open
             xxx->cntl = 0;
         }
     } while (++ntry < xxx->info->max_try);
+    if (1 < xxx->info->max_try  &&  xxx->info->max_try <= ntry) {
+        CORE_LOGF_X(13, eLOG_Error,
+                    ("[FTP; %s:%hu]  Too many failed attempts (%hu), giving up"
+                     , xxx->info->host, xxx->info->port, ntry));
+    }
     assert(!xxx->what  &&  !xxx->data);
     xxx->r_status = status;
     xxx->w_status = status;
@@ -2245,7 +2253,7 @@ extern CONNECTOR s_CreateConnector(const SConnNetInfo*  info,
             strcpy(xxx->info->host,               host);
         xxx->info->port =                         port;
         strcpy(xxx->info->user, user  &&  *user ? user : "ftp");
-        strcpy(xxx->info->pass, pass            ? pass : "-none");
+        strcpy(xxx->info->pass, pass            ? pass : "-none@");
         strcpy(xxx->info->path, path            ? path : "");
         flag &= ~fFTP_IgnorePath;
     } else if (!(flag & fFTP_LogAll)) {
