@@ -49,7 +49,7 @@ IntelMAC          : GCC-universal  : GCC.sh           --without-debug --with-mt 
 IntelMAC          : GCC            : GCC.sh           --without-debug --with-mt    --without-runpath --with-flat-makefile
 
 
-Win32_10          : 1000-static-32 : static 32 ReleaseDLL
+Win32_10          : 1000-static-32 : static 32 ReleaseDLL --with-openmp --without-debug
 Win64_10          : 1000-static-64 : static 64 ReleaseDLL
 
 XCode             : plain          : Xcode.sh 30
