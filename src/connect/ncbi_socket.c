@@ -1440,24 +1440,6 @@ static int/*bool*/ s_SetOobInline(TSOCK_Handle x_sock, int/*bool*/ on_off)
 #endif /*SO_OOBINLINE*/
 
 
-static EIO_Status s_Status(SOCK sock, EIO_Event direction)
-{
-    assert(sock  &&  sock->sock != SOCK_INVALID);
-    switch (direction) {
-    case eIO_Read:
-        return sock->type != eDatagram  &&  sock->eof
-            ? eIO_Closed : (EIO_Status) sock->r_status;
-    case eIO_Write:
-        return (EIO_Status) sock->w_status;
-    default:
-        /*should never get here*/
-        assert(0);
-        break;
-    }
-    return eIO_InvalidArg;
-}
-
-
 #if !defined(NCBI_OS_MSWIN)  &&  defined(FD_SETSIZE)
 static int/*bool*/ x_TryLowerSockFileno(SOCK sock)
 {
@@ -2578,7 +2560,7 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
                 TSOCK_socklen_t mlen = (TSOCK_socklen_t) sizeof(m);
                 if (getsockopt(sock->sock, SOL_IP, IP_MTU, &m, &mlen) != 0) {
                     const char* strerr = SOCK_STRERROR(SOCK_ERRNO);
-                    sprintf(mtu, ", MTU unknown (%s)", strerr);
+                    sprintf(mtu, ", MTU unknown (%.80s)", strerr);
                     UTIL_ReleaseBuffer(strerr);
                 } else
                     sprintf(mtu, ", MTU = %d", m);
@@ -2828,13 +2810,15 @@ static EIO_Status s_Read_(SOCK    sock,
     EIO_Status status;
     int/*bool*/ done;
 
+    assert(sock->type & eSocket);
+
     if (sock->type != eDatagram  &&  peek >= 0) {
         *n_read = 0;
         status = s_WritePending(sock, SOCK_GET_TIMEOUT(sock, r), 0, 0);
         if (sock->pending)
             return status;
         if (!size  &&  peek >= 0)
-            return s_Status(sock, eIO_Read);
+            return sock->eof ? eIO_Closed : sock->r_status;
     }
 
     if (sock->type == eDatagram  ||  peek >= 0) {
@@ -2967,7 +2951,9 @@ static EIO_Status s_Read(SOCK    sock,
                          int     peek)
 {
     EIO_Status status = s_Read_(sock, buf, size, n_read, peek);
-    if (s_ErrHook  &&  status != eIO_Success) {
+    if (s_ErrHook  &&  status != eIO_Success
+        &&  (status != eIO_Closed
+             ||  !(sock->r_status == eIO_Success  &&  sock->eof))) {
         SSOCK_ErrInfo info;
         memset(&info, 0, sizeof(info));
         info.type = eSOCK_ErrIO;
@@ -3049,7 +3035,7 @@ static EIO_Status s_SelectStallsafe(size_t                n,
                        sock->w_status != eIO_Closed  &&
                        (sock->pending | sock->w_len));
                 s_WritePending(sock, &zero, 1/*writeable*/, 0);
-                if (s_Status(sock, eIO_Read) == eIO_Closed) {
+                if (sock->r_status == eIO_Closed  ||  sock->eof) {
                     polls[i].revent = eIO_Read;
                     pending = 0;
                 } else
@@ -3069,7 +3055,7 @@ static EIO_Status s_SelectStallsafe(size_t                n,
                         ||  (sock->r_on_w == eDefault
                              &&  s_ReadOnWrite == eOn)));
                 s_Read_(sock, 0, 0, &dummy, -1/*upread*/);
-                if (s_Status(sock, eIO_Write) == eIO_Closed) {
+                if (sock->w_status == eIO_Closed) {
                     polls[i].revent = eIO_Write;
                     pending = 0;
                 } else
@@ -6647,23 +6633,27 @@ extern EIO_Status SOCK_PushBack(SOCK        sock,
 extern EIO_Status SOCK_Status(SOCK      sock,
                               EIO_Event direction)
 {
-    if (!sock)
-        return eIO_InvalidArg;
-    switch (direction) {
-    case eIO_Open:
-    case eIO_Read:
-    case eIO_Write:
-        if (sock->sock == SOCK_INVALID)
-            return eIO_Closed;
-        if (sock->pending)
-            return eIO_Timeout;
-        if (direction == eIO_Open)
+    if (sock) {
+        switch (direction) {
+        case eIO_Open:
+        case eIO_Read:
+        case eIO_Write:
+            if (sock->sock == SOCK_INVALID)
+                return eIO_Closed;
+            if (sock->pending)
+                return eIO_Timeout;
+            if (direction == eIO_Read) {
+                return sock->type == eSocket  &&  sock->eof
+                    ? eIO_Closed : (EIO_Status) sock->r_status;
+            }
+            if (direction == eIO_Write)
+                return (EIO_Status) sock->w_status;
             return eIO_Success;
-        break;
-    default:
-        return eIO_InvalidArg;
+        default:
+            break;
+        }
     }
-    return s_Status(sock, direction);
+    return eIO_InvalidArg;
 }
 
 
