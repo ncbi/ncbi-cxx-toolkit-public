@@ -1075,7 +1075,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_PushBack
  *   - eIO_Unknown    - if an error has been detected during last data I/O
  *                      (applicable only to eIO_Read or eIO_Write);
  *   - eIO_InvalidArg - if "direction" is not one of the allowed above;
- *   - eIO_Success    - otherwise (also covers eIO_Timeout in last data I/O).
+ *   - eIO_Success    - otherwise.
  *
  * @note  eIO_Open merely checks whether the socket still exists (i.e. open as
  *        a system object), and that SOCK_CloseEx() has not been called on it.
