@@ -1054,7 +1054,8 @@ void CBiosampleChkApp::ProcessBioseqForUpdate(CBioseq_Handle bh)
         CRef<CSeq_descr> descr = GetBiosampleData(*id);
         if (descr) {
             m_Descriptors.clear();
-            m_Descriptors.insert(m_Descriptors.end(), descr->Set().begin(), descr->Set().end());
+            copy(descr->Set().begin(), descr->Set().end(),
+                back_inserter(m_Descriptors));
             PushToRecord(bh);
             m_Descriptors.clear();
         }
