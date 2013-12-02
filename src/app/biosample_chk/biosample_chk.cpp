@@ -119,15 +119,17 @@ private:
     CObjectIStream* OpenFile(string fname, const CArgs& args);
 
     void GetBioseqDiffs(CBioseq_Handle bh);
-    void AddBioseqToTable(CBioseq_Handle bh);
+    bool DoDiffsContainConflicts();
+    void AddBioseqToTable(CBioseq_Handle bh, bool with_id = false);
     void PushToRecord(CBioseq_Handle bh);
 
+    void ProcessBioseqForUpdate(CBioseq_Handle bh);
     void ProcessBioseqHandle(CBioseq_Handle bh);
     void ProcessSeqEntry(CRef<CSeq_entry> se);
     void ProcessSeqEntry(void);
     void ProcessSet(void);
     void ProcessSeqSubmit(void);
-    void ProcessInput (void);
+    void ProcessAsnInput (void);
     void ProcessList (const string& fname);
     void ProcessFileList (const string& fname);
     void ProcessOneDirectory(const string& dir_name, bool recurse);
@@ -145,10 +147,6 @@ private:
     // for mode 3, biosample_push
     void UpdateBioSource (CBioseq_Handle bh, const CBioSource& src);
     void x_ClearCoordinatedSubSources(CBioSource& src);
-    CRef<CSeq_entry> ProcessSeqEntry(const string& fname);
-    CRef<CSeq_submit> ProcessSeqSubmit(const string& fname);
-    CRef<CBioseq_set> ProcessSet(const string& fname);
-    void ProcessInput (const string& fname);
     vector<CRef<CSeqdesc> > GetBiosampleDescriptors(string fname);
     vector<CRef<CSeqdesc> > GetBiosampleDescriptorsFromSeqSubmit();
     vector<CRef<CSeqdesc> > GetBiosampleDescriptorsFromSeqEntry();
@@ -162,12 +160,15 @@ private:
 
     CNcbiOstream* m_ReportStream;
     CNcbiOstream* m_LogStream;
+    CNcbiOfstream* m_AsnOut;
 
     enum E_Mode {
         e_report_diffs = 1,     // Default - report diffs between biosources on records with biosample accessions
                                 // and biosample data
         e_generate_biosample,
-        e_push
+        e_push,
+        e_take_from_biosample,        // update with qualifiers from BioSample, stop if conflict
+        e_take_from_biosample_force   // update with qualifiers from BioSample, no stop on conflict
     };
 
     enum E_ListType {
@@ -196,7 +197,7 @@ private:
 
 CBiosampleChkApp::CBiosampleChkApp(void) :
     m_ObjMgr(0), m_In(0), m_Continue(false),
-    m_Level(0), m_ReportStream(0), m_LogStream(0), m_Mode(e_report_diffs),
+    m_Level(0), m_ReportStream(0), m_AsnOut(0), m_LogStream(0), m_Mode(e_report_diffs),
     m_StructuredCommentPrefix(""), m_CompareStructuredComments(true), m_Processed(0), m_Unprocessed(0)
 {
     m_SrcReportFields.clear();
@@ -240,9 +241,9 @@ void CBiosampleChkApp::Init(void)
         CArgDescriptions::eOutputFile);
 
     arg_desc->AddDefaultKey(
-        "m", "mode", "Mode (1 report diffs, 2 generate biosample table, 3 push source info from one file (-i) to others (-p))",
+        "m", "mode", "Mode (1 report diffs, 2 generate biosample table, 3 push source info from one file (-i) to others (-p),\n4 update with source qualifiers from BioSample unless conflict,5 update with source qualifiers from BioSample (continue with conflict))",
         CArgDescriptions::eInteger, "1");
-    CArgAllow* constraint = new CArgAllow_Integers(e_report_diffs, e_push);
+    CArgAllow* constraint = new CArgAllow_Integers(e_report_diffs, e_take_from_biosample_force);
     arg_desc->SetConstraint("m", constraint);
 
 	arg_desc->AddOptionalKey(
@@ -260,7 +261,7 @@ void CBiosampleChkApp::Init(void)
 }
 
 
-void CBiosampleChkApp::ProcessInput (void)
+void CBiosampleChkApp::ProcessAsnInput (void)
 {
     // Process file based on its content
     // Unless otherwise specifien we assume the file in hand is
@@ -340,46 +341,44 @@ void CBiosampleChkApp::ProcessFileList (const string& fname)
 }
 
 
-void CBiosampleChkApp::ProcessInput (const string& fname)
-{
-    // Process file based on its content
-    // Unless otherwise specifien we assume the file in hand is
-    // a Seq-entry ASN.1 file, other option are a Seq-submit or NCBI
-    // Release file (batch processing) where we process each Seq-entry
-    // at a time.
-
-	string header = m_In->ReadFileHeader();
-
-    if (header == "Seq-submit" ) {  // Seq-submit
-        ProcessSeqSubmit(fname + ".out");
-    } else if ( header == "Seq-entry" ) {           // Seq-entry
-        ProcessSeqEntry(fname + ".out");
-    } else if (header == "Bioseq-set" ) {  // Bioseq-set
-        ProcessSet(fname + ".out");
-    } else {
-        NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
-    }
-}
-
-
 void CBiosampleChkApp::ProcessOneFile(string fname)
 {
     const CArgs& args = GetArgs();
 
-    bool need_to_close = false;
+    bool need_to_close_report = false;
+    bool need_to_close_asn = false;
 
-    if (!m_ReportStream) {
+    if (!m_ReportStream && (m_Mode == e_report_diffs || m_Mode == e_generate_biosample || m_Mode == e_take_from_biosample)) {
         string path = fname;
         size_t pos = NStr::Find(path, ".", 0, string::npos, NStr::eLast);
         if (pos != string::npos) {
             path = path.substr(0, pos);
         }
         path = path + ".val";
-
-        m_ReportStream = new CNcbiOfstream(path.c_str());
-        need_to_close = true;
         m_Table.Reset(new CSeq_table());
-		m_Table->SetNum_rows(0);
+        m_Table->SetNum_rows(0);
+        m_ReportStream = new CNcbiOfstream(path.c_str());
+        if (!m_ReportStream)
+        {
+            NCBI_THROW(CException, eUnknown, "Unable to open " + path);
+        }
+        need_to_close_report = true;
+    }
+    if (!m_AsnOut && (m_Mode == e_push || m_Mode == e_take_from_biosample || m_Mode == e_take_from_biosample_force)) {
+        string path = fname;
+        size_t pos = NStr::Find(path, ".", 0, string::npos, NStr::eLast);
+        if (pos != string::npos) {
+            path = path.substr(0, pos);
+        }
+        path = path + ".out";
+        ios::openmode mode = ios::out;
+        m_AsnOut = new CNcbiOfstream(path.c_str(), mode);
+        if (!m_AsnOut)
+        {
+            NCBI_THROW(CException, eUnknown, "Unable to open " + path);
+        }
+        *m_AsnOut << MSerial_AsnText;
+        need_to_close_asn = true;
     }
 
     m_Diffs.clear();
@@ -392,11 +391,10 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
             break;
         case e_none:
             m_In.reset(OpenFile(fname, args));
-            if (m_Mode == e_push) {
-                ProcessInput(fname);
-            } else {
-                ProcessInput ();
+            if (!m_In->InGoodState()) {
+                NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
             }
+            ProcessAsnInput();
             break;        
     }
 
@@ -407,14 +405,20 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
     // TODO! Must free diffs
     m_Diffs.clear();
     
-    if (need_to_close) {
-        if (m_Mode == e_generate_biosample) {
+    if (need_to_close_report) {
+        if (m_Mode == e_generate_biosample || m_Mode == e_take_from_biosample) {
             PrintTable(m_Table);
             m_Table->Reset();
             m_Table = new CSeq_table();
             m_Table->SetNum_rows(0);
         }
+        m_ReportStream->flush();
         m_ReportStream = 0;
+    }
+    if (need_to_close_asn) {
+        m_AsnOut->flush();
+        m_AsnOut->close();
+        m_AsnOut = 0;
     }
 }
 
@@ -531,8 +535,23 @@ int CBiosampleChkApp::Run(void)
     const CArgs& args = GetArgs();
     Setup(args);
 
+    m_Mode = args["m"].AsInteger();
     if (args["o"]) {
-        m_ReportStream = &(args["o"].AsOutputFile());
+        if (m_Mode == e_report_diffs || m_Mode == e_generate_biosample || m_Mode == e_take_from_biosample) {
+            m_ReportStream = &(args["o"].AsOutputFile());
+            if (!m_ReportStream)
+            {
+                NCBI_THROW(CException, eUnknown, "Unable to open " + args["o"].AsString());
+            }
+        } else {
+            ios::openmode mode = ios::out;
+            m_AsnOut = new CNcbiOfstream(args["o"].AsString().c_str(), mode);
+            if (!m_AsnOut)
+            {
+                NCBI_THROW(CException, eUnknown, "Unable to open " + args["o"].AsString());
+            }
+            *m_AsnOut << MSerial_AsnText;
+        }
     }
             
     m_LogStream = args["L"] ? &(args["L"].AsOutputFile()) : &NcbiCout;
@@ -541,7 +560,6 @@ int CBiosampleChkApp::Run(void)
 		m_StructuredCommentPrefix = "##" + m_StructuredCommentPrefix;
 	}
 
-    m_Mode = args["m"].AsInteger();
     m_SrcReportFields.clear();
 	m_StructuredCommentReportFields.clear();
 
@@ -583,7 +601,7 @@ int CBiosampleChkApp::Run(void)
 			m_Table->SetNum_rows(0);
         }
 		ProcessOneDirectory (args["p"].AsString(), args["u"]);
-        if (m_Mode == e_generate_biosample) {
+        if (m_Mode == e_generate_biosample || m_Mode == e_take_from_biosample) {
 			if (m_Table->GetNum_rows() > 0) {
 			    PrintTable(m_Table);
 			}
@@ -595,7 +613,7 @@ int CBiosampleChkApp::Run(void)
 				m_Table->SetNum_rows(0);
             }
 		    ProcessOneFile (args["i"].AsString());
-            if (m_Mode == e_generate_biosample) {
+            if (m_Mode == e_generate_biosample || m_Mode == e_take_from_biosample) {
 				if (m_Table->GetNum_rows() > 0) {
 					PrintTable(m_Table);
 				}
@@ -856,10 +874,10 @@ const string kAffilDept = "Department";
 
 // This function is for generating a table of biosample values for a bioseq
 // that does not currently have a biosample ID
-void CBiosampleChkApp::AddBioseqToTable(CBioseq_Handle bh)
+void CBiosampleChkApp::AddBioseqToTable(CBioseq_Handle bh, bool with_id)
 {
     vector<string> biosample_ids = GetBiosampleIDs(bh);
-    if (biosample_ids.size() > 0) {
+    if (biosample_ids.size() > 0 && !with_id) {
 		// do not collect if already has biosample ID
 		return;
 	}
@@ -935,6 +953,9 @@ void CBiosampleChkApp::AddBioseqToTable(CBioseq_Handle bh)
 		    }
 	    }
     }
+    if (with_id && biosample_ids.size() > 0) {
+        AddValueToTable(m_Table, "BioSample ID", biosample_ids[0], row);
+    }
 	int num_rows = (int)row  + 1;
 	m_Table->SetNum_rows(num_rows);
 }
@@ -987,6 +1008,29 @@ void CBiosampleChkApp::GetBioseqDiffs(CBioseq_Handle bh)
 }
 
 
+bool CBiosampleChkApp::DoDiffsContainConflicts()
+{
+    if (m_Diffs.empty()) {
+        return false;;
+    }
+
+    bool rval = false;
+    bool printed_header = false;
+
+    ITERATE (TBiosampleFieldDiffList, it, m_Diffs) {
+        if (!NStr::IsBlank((*it)->GetSrcVal())) {
+            if (!printed_header) {
+                *m_LogStream << "Conflict found for " << (*it)->GetSequenceId() << " for " << (*it)->GetBioSample() << endl;
+                printed_header = true;
+            }
+            *m_LogStream << "\t" << (*it)->GetFieldName() << ":" << (*it)->GetSrcVal() << "\t" << (*it)->GetSampleVal() << endl;
+            rval = true;
+        }
+    }
+    return rval;
+}
+
+
 void CBiosampleChkApp::PushToRecord(CBioseq_Handle bh)
 {
     ITERATE(vector<CRef<CSeqdesc> >, it, m_Descriptors) {
@@ -994,6 +1038,28 @@ void CBiosampleChkApp::PushToRecord(CBioseq_Handle bh)
             UpdateBioSource(bh, (*it)->GetSource());
         }
     }
+}
+
+
+void CBiosampleChkApp::ProcessBioseqForUpdate(CBioseq_Handle bh)
+{
+    vector<string> biosample_ids = GetBiosampleIDs(bh);
+
+    if (biosample_ids.size() == 0) {
+        // for report mode, do not report if no biosample ID
+        return;
+    }
+
+    ITERATE(vector<string>, id, biosample_ids) {
+        CRef<CSeq_descr> descr = GetBiosampleData(*id);
+        if (descr) {
+            m_Descriptors.clear();
+            m_Descriptors.insert(m_Descriptors.end(), descr->Set().begin(), descr->Set().end());
+            PushToRecord(bh);
+            m_Descriptors.clear();
+        }
+    }
+
 }
 
 
@@ -1008,6 +1074,21 @@ void CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh)
             break;
         case e_push:
             PushToRecord(bh);
+            break;
+        case e_take_from_biosample:
+            m_Diffs.clear();
+            GetBioseqDiffs(bh);
+            if (DoDiffsContainConflicts()) {
+                string sequence_id;
+                bh.GetId().front().GetSeqId()->GetLabel(&sequence_id);
+                *m_LogStream << "Conflicts found for  " << sequence_id << endl;
+                AddBioseqToTable(bh, true);
+            } else {
+                ProcessBioseqForUpdate(bh);
+            }
+            break;
+        case e_take_from_biosample_force:
+            ProcessBioseqForUpdate(bh);
             break;
     }
 }
@@ -1032,26 +1113,11 @@ void CBiosampleChkApp::ProcessSeqEntry(void)
     CRef<CSeq_entry> se(ReadSeqEntry());
 
     ProcessSeqEntry(se);
-}
 
-
-CRef<CSeq_entry> CBiosampleChkApp::ProcessSeqEntry(const string& fname)
-{
-    // Get seq-entry to process
-    CRef<CSeq_entry> se(ReadSeqEntry());
-
-    ProcessSeqEntry(se);
-
-    ios::openmode mode = ios::out;
-    CNcbiOfstream os(fname.c_str(), mode);
-    if (!os)
-    {
-        NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
+    // write out copy after processing, if requested
+    if (m_AsnOut) {
+        *m_AsnOut << *se;
     }
-    os << MSerial_AsnText;
-    os << *se;
-
-    return se;
 }
 
 
@@ -1064,30 +1130,11 @@ void CBiosampleChkApp::ProcessSet(void)
             ProcessSeqEntry(*se);
         }
     }
-}
 
-
-CRef<CBioseq_set> CBiosampleChkApp::ProcessSet(const string& fname)
-{
-    // Get Bioseq-set to process
-    CRef<CBioseq_set> set(ReadBioseqSet());
-
-    if (set && set->IsSetSeq_set()) {
-        ITERATE(CBioseq_set::TSeq_set, se, set->GetSeq_set()) {
-            ProcessSeqEntry(*se);
-        }
+    // write out copy after processing, if requested
+    if (m_AsnOut) {
+        *m_AsnOut << *set;
     }
-
-    ios::openmode mode = ios::out;
-    CNcbiOfstream os(fname.c_str(), mode);
-    if (!os)
-    {
-        NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
-    }
-    os << MSerial_AsnText;
-    os << *set;
-
-    return set;
 }
 
 
@@ -1098,13 +1145,18 @@ void CBiosampleChkApp::ProcessSeqSubmit(void)
     // Get seq-submit to process
     m_In->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
 
-    // Validae Seq-submit
+    // Process Seq-submit
     CRef<CScope> scope = BuildScope();
     if (ss->GetData().IsEntrys()) {
         ITERATE(CSeq_submit::TData::TEntrys, se, ss->GetData().GetEntrys()) {
             ProcessSeqEntry(*se);
         }
     }
+    // write out copy after processing, if requested
+    if (m_AsnOut) {
+        *m_AsnOut << *ss;
+    }
+
 }
 
 
@@ -1209,35 +1261,6 @@ void CBiosampleChkApp::UpdateBioSource (CBioseq_Handle bh, const CBioSource& src
         }
     }
 }
-
-
-CRef<CSeq_submit> CBiosampleChkApp::ProcessSeqSubmit(const string& fname)
-{
-    CRef<CSeq_submit> ss(new CSeq_submit);
-
-    // Get seq-submit to process
-    m_In->Read(ObjectInfo(*ss), CObjectIStream::eNoFileHeader);
-
-    // Update Seq-submit
-    CRef<CScope> scope = BuildScope();
-    if (ss->GetData().IsEntrys()) {
-        ITERATE(CSeq_submit::TData::TEntrys, se, ss->GetData().GetEntrys()) {
-            ProcessSeqEntry(*se);
-        }
-    }
-    ios::openmode mode = ios::out;
-    CNcbiOfstream os(fname.c_str(), mode);
-    if (!os)
-    {
-        NCBI_THROW(CException, eUnknown, "Unable to open " + fname);
-    }
-    os << MSerial_AsnText;
-    os << *ss;
-
-    return ss;
-}
-
-
 
 
 void CBiosampleChkApp::Setup(const CArgs& args)
