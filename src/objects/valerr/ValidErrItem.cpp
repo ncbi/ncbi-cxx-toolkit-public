@@ -306,6 +306,9 @@ the whole of a sequence." } },
    { eErr_SEQ_INST_SeqGapProblem,
    { "SeqGapProblem",
 "Inconsistent data in Seq-gap fields." } },
+   { eErr_SEQ_INST_WGSMasterLacksStrucComm,
+   { "WGSMasterLacksStrucComm",
+"WGS Master records require a Genome Assembly Data structured comment user object." } },
 
 /* SEQ_DESCR */
 

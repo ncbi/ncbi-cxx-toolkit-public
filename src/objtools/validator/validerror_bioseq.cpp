@@ -7126,6 +7126,46 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
         PostErr (eDiag_Warning, eErr_SEQ_DESCR_FinishedStatusForWGS, "WGS record %s should not have Finished status", seq);
     }
 
+    bool wgs_master = false;
+    EDiagSev sev =  eDiag_Error;
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+    if ( bsh ) {
+        FOR_EACH_SEQID_ON_BIOSEQ_HANDLE (sid_itr, bsh) {
+            CSeq_id_Handle sid = *sid_itr;
+            switch (sid.Which()) {
+                case NCBI_SEQID(Embl):
+                case NCBI_SEQID(Ddbj):
+                {
+                    sev = eDiag_Warning;
+                    // flow through
+                }
+                case NCBI_SEQID(Other):
+                case NCBI_SEQID(Genbank):
+                {
+                    CConstRef<CSeq_id> id = sid.GetSeqId();
+                    const CTextseq_id& tsid = *id->GetTextseq_Id ();
+                    if (tsid.IsSetAccession()) {
+                        const string& acc = tsid.GetAccession ();
+                        TACCN_CHOICE type = CSeq_id::IdentifyAccession (acc);
+                        TACCN_CHOICE div = (TACCN_CHOICE) (type & NCBI_ACCN(division_mask));
+                        if ( div == NCBI_ACCN(wgs) ) 
+                        {
+                            if( (type & CSeq_id::fAcc_master) != 0 ) {
+                                wgs_master = true;
+                            }
+                        }
+                    }
+                    break;
+                }
+                default:
+                    break;
+            }
+        }
+    }
+    if (wgs_master && ! is_genome_assembly) {
+       PostErr (sev, eErr_SEQ_INST_WGSMasterLacksStrucComm, "WGS master without Genome Assembly Data user object", seq);
+    }
+
     if ( num_gb > 1 ) {
         PostErr(eDiag_Error, eErr_SEQ_DESCR_Inconsistent,
             "Multiple GenBank blocks", ctx, *last_gb);
