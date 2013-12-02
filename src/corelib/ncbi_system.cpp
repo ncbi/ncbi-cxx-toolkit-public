@@ -841,13 +841,33 @@ bool GetMemoryUsage(size_t* total, size_t* resident, size_t* shared)
         memset(&t, '\0', sizeof(t));
         if (times(&t) != (clock_t)(-1)) {
             clock_t ticks = t.tms_utime + t.tms_stime;
-            *total    = _DIV0(ru.ru_ixrss + ru.ru_idrss + ru.ru_isrss, ticks);
             *resident = _DIV0(ru.ru_idrss,                             ticks);
             *shared   = _DIV0(ru.ru_ixrss,                             ticks);
-            return true;
+            *total    = _DIV0(ru.ru_ixrss + ru.ru_idrss + ru.ru_isrss, ticks);
+#  ifdef NCBI_OS_DARWIN
+            if (*total > 0)
+#  endif
+                return true;
         }
     }
 #  undef _DIV0
+#  ifdef NCBI_OS_DARWIN
+#    ifdef MACH_TASK_BASIC_INFO
+    task_flavor_t               flavor       = MACH_TASK_BASIC_INFO;
+    struct mach_task_basic_info t_info;
+    mach_msg_type_number_t      t_info_count = MACH_TASK_BASIC_INFO_COUNT;
+#    else
+    task_flavor_t          flavor       = TASK_BASIC_INFO;
+    struct task_basic_info t_info;
+    mach_msg_type_number_t t_info_count = TASK_BASIC_INFO_COUNT;
+#    endif
+    if (task_info(mach_task_self(), flavor, (task_info_t)&t_info,
+                  &t_info_count) == KERN_SUCCESS) {
+        *total = *resident = t_info.resident_size;
+        *shared = 0; // unavailable, even with mach_task_basic_info
+        return true;
+    }
+#  endif
 #endif
     return false;
 }
