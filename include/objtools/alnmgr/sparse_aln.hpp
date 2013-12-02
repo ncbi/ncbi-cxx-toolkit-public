@@ -244,7 +244,7 @@ public:
     }
 
     /// Convert alignment range (genomic coordinates) on the selected row
-    /// to reas sequence range.
+    /// to real sequence range.
     /// NOTE: Need to use template since there are many range types:
     /// TRng, TAlnRng, TRange, TSignedRange etc.
     template<class _TRange>
@@ -253,6 +253,19 @@ public:
         if (aln_range.Empty()  ||  aln_range.IsWhole()) return aln_range;
         int w = GetBaseWidth(row);
         return _TRange(aln_range.GetFrom()/w, aln_range.GetToOpen()/w - 1);
+    }
+
+    /// Get start and stop frames for the selected row/range.
+    /// 0 - no frame (native coordinates are genomic)
+    /// 1..3 - frame value for protein coordinates
+    typedef pair<int, int> TFrames;
+    template<class _TRange>
+    TFrames AlnRangeToNativeFrames(TNumrow row, _TRange aln_range) const
+    {
+        if (aln_range.Empty() || aln_range.IsWhole()) return TFrames(0, 0);
+        int w = GetBaseWidth(row);
+        if (w == 1) return TFrames(0, 0);
+        return TFrames(aln_range.GetFrom() % w + 1, aln_range.GetTo() % w + 1);
     }
 
     /// Convert sequence range to alignment range (genomic coordinates).
