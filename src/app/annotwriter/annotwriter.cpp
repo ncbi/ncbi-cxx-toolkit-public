@@ -508,17 +508,22 @@ CObjectIStream* CAnnotWriterApp::xInitInputStream(
 {
     ESerialDataFormat serial = eSerial_AsnText;
     CNcbiIstream* pInputStream = &NcbiCin;
+    const char* infile = args["i"].AsString().c_str();
     
     bool bDeleteOnClose = false;
     if (args["i"]) {
-        pInputStream = new CNcbiIfstream(args["i"].AsString().c_str(), ios::binary);
+        pInputStream = new CNcbiIfstream(infile, ios::binary);
+        if (pInputStream->fail()) {
+            NCBI_THROW(CObjWriterException, eArgErr, 
+                "annotwriter: Unable to open input file");
+        }
         bDeleteOnClose = true;
     }
     CObjectIStream* pI = CObjectIStream::Open( 
         serial, *pInputStream, (bDeleteOnClose ? eTakeOwnership : eNoOwnership));
     if (!pI) {
         NCBI_THROW(CObjWriterException, eArgErr, 
-            "xInitInputStream: Unable to open input file");
+            "annotwriter: Unable to open input file");
     }
     return pI;
 }
