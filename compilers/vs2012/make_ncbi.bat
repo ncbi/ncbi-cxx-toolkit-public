@@ -52,9 +52,9 @@ shift
 goto:%libdll% 2>NUL
 
 :static
-echo @call make.bat %cmd% ncbi_cpp     %libdll% %arch% %1 %2 %3 %4 %5 %6 %7 %8 %9
+@call make.bat %cmd% ncbi_cpp     %libdll% %arch% %1 %2 %3 %4 %5 %6 %7 %8 %9
 exit %ERRORLEVEL%
 
 :dll
-echo @call make.bat %cmd% ncbi_cpp_dll %libdll% %arch% %1 %2 %3 %4 %5 %6 %7 %8 %9
+@call make.bat %cmd% ncbi_cpp_dll %libdll% %arch% %1 %2 %3 %4 %5 %6 %7 %8 %9
 exit %ERRORLEVEL%
