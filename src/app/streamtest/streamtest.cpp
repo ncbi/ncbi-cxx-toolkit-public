@@ -34,6 +34,7 @@
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
 #include <corelib/ncbi_system.hpp>
+#include <corelib/ncbitime.hpp>
 
 #include <serial/iterator.hpp>
 #include <serial/objistr.hpp>
@@ -220,6 +221,9 @@ void CStreamTestApp::Init()
 
     arg_desc->AddFlag("show-mods",
         "Show FASTA header mods (e.g. [strain=abc])");
+
+    arg_desc->AddFlag("debug",
+        "Show debugging information");
 
     SetupArgDescriptions(arg_desc.release());
 }

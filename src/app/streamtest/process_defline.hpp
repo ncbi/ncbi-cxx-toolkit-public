@@ -112,6 +112,11 @@ public:
             m_skip_virtual = true;
             m_skip_segmented = true;
         }
+
+        m_debug = args["debug"];
+
+        m_timer = CStopWatch();
+        m_timer.Start();
     };
 
     //  ------------------------------------------------------------------------
@@ -223,6 +228,11 @@ public:
                 if (okay) {
                     const string& title = gen.GenerateDefline (bioseq, *m_scope, m_flags);
 
+                    size_t total, resident, shared;
+                    if ( m_debug && GetMemoryUsage ( &total, &resident, &shared) ) {
+                        *m_out << "Tot " << total << ", Res " << resident;
+                        *m_out << ", Shr " << shared << ", Sec " << m_timer.Restart() << " - ";
+                    }
                     *m_out << ">";
                     x_FastaSeqIdWrite (bioseq);
                     *m_out << " ";
@@ -312,6 +322,8 @@ protected:
     bool m_skip_segmented;
     bool m_do_indexed;
     bool m_gpipe_mode;
+    bool m_debug;
+    CStopWatch m_timer;
 };
 
 #endif
