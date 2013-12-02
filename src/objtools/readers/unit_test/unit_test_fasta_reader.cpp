@@ -1086,9 +1086,6 @@ BOOST_AUTO_TEST_CASE(TestNonDeltaGaps)
             kDefline + "\n" +
             kNucsBeforeGap + sGapString + kNucsAfterGap + "\n";
 
-        const bool bGapLenUnknown = 
-            ( NStr::Find(sGapString, "?unk") != NPOS );
-
         // if there are substantive mods on the gaps, a warning
         // is expected
         TWarnVec expectedWarnings;
