@@ -39,5 +39,4 @@ rm -rf $RPM_BUILD_ROOT
 %_bindir/*
 
 %changelog
-See release notes in http://www.ncbi.nlm.nih.gov/books/NBK131777
-
+* See release notes in http://www.ncbi.nlm.nih.gov/books/NBK131777
