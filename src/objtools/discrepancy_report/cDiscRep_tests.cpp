@@ -1992,8 +1992,9 @@ void CBioseq_DISC_FEAT_OVERLAP_SRCFEAT :: TestOnObj(const CBioseq& bioseq)
   string src_desc, feat_desc;
   unsigned src_left, src_right, feat_left, feat_right;
   unsigned i;
+  bool src_added;
   ITERATE (vector <const CSeq_feat*>, it, bioseq_biosrc_feat) {
-    i=0;
+    src_added = false;
     src_desc = GetDiscItemText(**it);
     src_left = (*it)->GetLocation().GetStart(eExtreme_Positional);
     src_right = (*it)->GetLocation().GetStop(eExtreme_Positional);
@@ -2005,17 +2006,18 @@ void CBioseq_DISC_FEAT_OVERLAP_SRCFEAT :: TestOnObj(const CBioseq& bioseq)
       if (feat_right < src_left) continue;
       if (feat_left > src_right) break;
       sequence::ECompare 
-         ovp = sequence::Compare((*it)->GetLocation(), (*jt)->GetLocation(), thisInfo.scope);
+         ovp = sequence::Compare((*jt)->GetLocation(), (*it)->GetLocation(), thisInfo.scope);
       if (ovp != sequence::eNoOverlap 
               && ovp != sequence::eContained 
               && ovp != sequence::eSame) {
          thisInfo.test_item_list[GetName()].push_back(src_desc +"$" +feat_desc);
          thisInfo.test_item_objs[GetName() + "$" + src_desc].push_back(
                                                    CConstRef <CObject>(*jt));
-         if (!i) {
+         if (!src_added) {
+             thisInfo.test_item_list[GetName()].push_back(src_desc +"$" +src_desc);
              thisInfo.test_item_objs[GetName() +" $" + src_desc].push_back(
                                                 CConstRef <CObject>(*it));
-             i++;
+             src_added = true;
          }
       }
     }
@@ -8575,16 +8577,10 @@ bool CSeqEntry_test_on_biosrc :: DoTaxonIdsMatch(const COrg_ref& org1, const COr
              || !org2.CanGetDb() || org2.GetDb().empty())
       return false;
 
-//cerr << "222\n";
    ITERATE (vector <CRef <CDbtag> >, it, org1.GetDb()) {
-//cerr << "org1.any " << MSerial_AsnText << **it << endl;
-//cerr << "GetType " << (*it)->GetType() << endl;
        if ((*it)->GetType() == CDbtag::eDbtagType_taxon) {
           ITERATE (vector <CRef <CDbtag> >, jt, org2.GetDb()) {
-//cerr << "org2.any " << MSerial_AsnText << **jt << endl;
              if ((*jt)->GetType() == CDbtag::eDbtagType_taxon) {
-//cerr << "org1.taxon " << MSerial_AsnText << **it << endl;
-//cerr << "org2.taxon " << MSerial_AsnText << **jt << endl;
                 if ((*it)->Match(**jt)) return true;
                 else return false;
              }
@@ -8769,29 +8765,27 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
 
   // TAX_LOOKUP_MISSING, TAX_LOOKUP_MISMATCH
   string org_tax, db_tax;
-  org_tax = biosrc.GetOrg().CanGetTaxname()? biosrc.GetOrg().GetTaxname() : kEmptyStr;
+  org_tax 
+     = biosrc.GetOrg().CanGetTaxname()? biosrc.GetOrg().GetTaxname() : kEmptyStr;
   if (m_run_tmiss || m_run_tbad) {
      CRef <CTaxon2_data> lookup_tax = thisInfo.tax_db_conn.Lookup(biosrc.GetOrg());
      if (lookup_tax.Empty() || !(lookup_tax->CanGetOrg())) {
-         if (m_run_tmiss)  thisInfo.test_item_list[GetName_tmiss()].push_back(desc); 
+         if (m_run_tmiss) {
+              thisInfo.test_item_list[GetName_tmiss()].push_back(desc); 
+              thisInfo.test_item_objs[GetName_tmiss()].push_back(src_ref);
+         }
      }
      else {
        db_tax =lookup_tax->GetOrg().CanGetTaxname() ?
                                   lookup_tax->GetOrg().GetTaxname() : kEmptyStr;
        if (m_run_tmiss && org_tax != db_tax) {
-//cerr << "org_tax  " << org_tax << "  |db_tax " << db_tax << endl;
            thisInfo.test_item_list[GetName_tbad()].push_back(desc);
-           thisInfo.test_item_objs[GetName_tbad()].push_back(CConstRef <CObject>(&biosrc));
+           thisInfo.test_item_objs[GetName_tbad()].push_back(src_ref);
        }
        else {
-
-//cerr << "biosrc.GetOrg1 \n" << MSerial_AsnText << biosrc.GetOrg() <<endl;
-//cerr << "lookup_tax1 \n" << MSerial_AsnText << lookup_tax->GetOrg() << endl;
-         if (m_run_tbad && !DoTaxonIdsMatch(biosrc.GetOrg(), lookup_tax->GetOrg())) {
-//cerr << "biosrc.GetOrg2 \n" << MSerial_AsnText << biosrc.GetOrg() <<endl;
-//cerr << "lookup_tax2 \n" << MSerial_AsnText << lookup_tax->GetOrg() << endl;
+         if (m_run_tbad && !DoTaxonIdsMatch(biosrc.GetOrg(),lookup_tax->GetOrg())){
              thisInfo.test_item_list[GetName_tbad()].push_back(desc);
-             thisInfo.test_item_objs[GetName_tbad()].push_back(CConstRef <CObject>(&biosrc));
+             thisInfo.test_item_objs[GetName_tbad()].push_back(src_ref);
          }
        }
      }
@@ -8804,8 +8798,9 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
   }
 
   // DISC_MISSING_VIRAL_QUALS
-  if (m_run_quals && HasLineage(biosrc, "Viruses")) 
+  if (m_run_quals && HasLineage(biosrc, "Viruses")) {
          AddMissingViralQualsDiscrepancies(biosrc, desc);
+  }
 
   // MORE_OR_SPEC_NAMES_IDENTIFIED_BY
   if ( m_run_iden && HasMoreOrSpecNames( biosrc, CSubSource::eSubtype_identified_by)) {
@@ -8839,19 +8834,12 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
             if (b_ci->IsAa()) continue;
             CConstRef <CBioseq> bioseq = b_ci->GetCompleteBioseq();
             if (IsBioseqHasLineage(*bioseq, "Eukaryota", false)) {
-                 thisInfo.test_item_list[GetName_map()].push_back(GetDiscItemText(*bioseq)); 
+                 thisInfo.test_item_list[GetName_map()].push_back(
+                                                      GetDiscItemText(*bioseq)); 
                  thisInfo.test_item_objs[GetName_map()].push_back(
-                                                   CConstRef <CObject>(bioseq.GetPointer())); 
+                                         CConstRef <CObject>(bioseq.GetPointer()));
             }
          }
-/*
-         if (biosrc_seqdesc_seqentry[idx]->IsSeq()) {
-             const CBioseq& bioseq = biosrc_seqdesc_seqentry[idx]->GetSeq();
-             if (IsBioseqHasLineage(bioseq, "Eukaryota", false) && !bioseq.IsAa()) 
-                 thisInfo.test_item_list[GetName_map()].push_back(GetDiscItemText(bioseq)); 
-         }
-         else AddEukaryoticBioseqsToReport(biosrc_seqdesc_seqentry[idx]->GetSet());
-*/
        }
      }
   }
@@ -9868,7 +9856,6 @@ void CSeqEntry_TEST_HAS_PROJECT_ID :: GetReport(CRef <CClickableItem>& c_item)
 
 CFlatFileConfig::CGenbankBlockCallback::EBioseqSkip CFlatfileTextFind::notify_bioseq(CBioseqContext& ctx )
 {
-// cerr << "notify_bioseq \n";
    m_taxname = ctx.GetTaxname();
    CBioseq_Handle& bioseq_hl = ctx.GetHandle();
    if (!bioseq_hl) return (eBioseqSkip_Yes);
@@ -9903,14 +9890,12 @@ CFlatFileConfig::CGenbankBlockCallback::EBioseqSkip CFlatfileTextFind::notify_bi
 
 CFlatFileConfig::CGenbankBlockCallback::EAction   CFlatfileTextFind::notify(string& block_text, const CBioseqContext& ctx, const CSourceItem& source_item)
 {
-// cerr << "notify sourceItem\n";
   block_text = block_text.substr(0, block_text.find("ORGANISM")); // double check  
   return unified_notify(block_text, ctx, source_item, CFlatFileConfig::fGenbankBlocks_Source);
 };
 
 CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::notify(string& block_text, const CBioseqContext& ctx, const CFeatureItem& feature_item)
 {
-//cerr << "notify feature_item\n";
    size_t pos = block_text.find("/translation=\"");
    string trans_str;
    if (pos != string::npos) {
@@ -9928,33 +9913,46 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::notify(string
 
 CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notify( string & block_text, const CBioseqContext& ctx, const IFlatItem & flat_item, CFlatFileConfig::FGenbankBlocks which_block )
 {
-//cerr << "unified_notify\n";
   block_text =CTestAndRepData::FindReplaceString(block_text, m_taxname, "", false, true);
-//cerr << "block_text " << block_text << endl;
   ITERATE (Str2UInt, it, thisInfo.whole_word) {
      if (CTestAndRepData 
            :: DoesStringContainPhrase(block_text, it->first, false,  (bool)it->second)){
        switch (which_block) {
-         case CFlatFileConfig::fGenbankBlocks_Locus: /*cerr << "locus\n";*/strtmp = m_mol_desc; break;
-         case CFlatFileConfig::fGenbankBlocks_Defline: /*cerr << "defline \n";*/strtmp = m_tlt_desc; break;
-         case CFlatFileConfig::fGenbankBlocks_Keywords:/* cerr << "keyword\n";*/strtmp = m_gbk_desc; break;
-         case CFlatFileConfig::fGenbankBlocks_Reference:/* cerr << "refer\n";*/strtmp = m_pub_desc; break;
-         case CFlatFileConfig::fGenbankBlocks_Source:/* cerr << "src\n";*/strtmp = m_src_desc; break;
+         case CFlatFileConfig::fGenbankBlocks_Locus: {
+                 strtmp = m_mol_desc; 
+                 break;
+         }
+         case CFlatFileConfig::fGenbankBlocks_Defline: {
+                 strtmp = m_tlt_desc; 
+                 break;
+         }
+         case CFlatFileConfig::fGenbankBlocks_Keywords: {
+                 strtmp = m_gbk_desc; 
+                 break;
+         }
+         case CFlatFileConfig::fGenbankBlocks_Reference: {
+                 strtmp = m_pub_desc; 
+                 break;
+         }
+         case CFlatFileConfig::fGenbankBlocks_Source: {
+                 strtmp = m_src_desc; 
+                 break;
+         }
          case CFlatFileConfig::fGenbankBlocks_Sourcefeat: 
             {
               const CFeatureItemBase& feat_item 
                             = dynamic_cast<const CFeatureItemBase&> (flat_item);
               strtmp = GetDiscItemText( feat_item.GetFeat().GetOriginalFeature());
+              break;
             }
-            break;
          case CFlatFileConfig::fGenbankBlocks_FeatAndGap:
             {
               const CFeatureItemBase& feat_item 
                              = dynamic_cast<const CFeatureItemBase&> (flat_item);
               strtmp = GetDiscItemText( feat_item.GetFeat().GetOriginalFeature());
+              break;
             }
-            break;
-         default: /*cerr << "def\n";*/strtmp = m_bioseq_desc;
+         default: strtmp = m_bioseq_desc;
        };
        thisInfo.test_item_list[m_setting_name].push_back(
             thisInfo.fix_data[it->first] + "$" + it->first + "#" + strtmp);
