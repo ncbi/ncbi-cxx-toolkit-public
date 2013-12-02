@@ -247,7 +247,7 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
 
     if (uuu->major_fault >= uuu->net_info->max_try) {
         msg = extract != eEM_Drop  &&  uuu->major_fault > 1
-            ? "[HTTP%s%s]  Too many failed attempts (%d), giving up" : "";
+            ? "[HTTP%s%s]  Too many failed attempts (%hu), giving up" : "";
     } else if (retry  &&  retry->mode) {
         char*  url = ConnNetInfo_URL(uuu->net_info);
         int secure = 0/*false(yet)*/;
@@ -367,7 +367,7 @@ static EIO_Status s_Adjust(SHttpConnector* uuu,
                                              uuu->user_data,
                                              uuu->major_fault)) {
         msg = extract != eEM_Drop  &&  uuu->major_fault > 1
-            ? "[HTTP%s%s]  Retry attempts (%d) exhausted, giving up" : "";
+            ? "[HTTP%s%s]  Retry attempts (%hu) exhausted, giving up" : "";
     } else
         return eIO_Success;
 
