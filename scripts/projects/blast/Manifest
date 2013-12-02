@@ -46,12 +46,12 @@ Linux64-Centos   : icc : ICC.sh            --with-strip --without-debug --withou
 
 DEFAULT_CONFIGURATIONS: Linux32-Centos:icc Linux64-Centos:icc
 
-Win32_10    : plain : static  32  ReleaseMT
-Win64_10    : plain : static  64  ReleaseMT
+Win32_10    : plain : static  32  ReleaseMT --with-openmp
+Win64_10    : plain : static  64  ReleaseMT --with-openmp
 
 SunOSx86    : plain : WorkShop59.sh 64  --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile
 SunOSSparc  : plain : WorkShop59.sh 64  --with-strip --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile
 
-IntelMAC    : universal : GCC.sh 4.0     --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-universal=i386,x86_64 --with-ncbi-public
+IntelMAC    : universal : GCC.sh 4.2     --without-debug --without-pcre --with-mt --with-openmp --with-flat-makefile --with-universal=i386,x86_64 --with-ncbi-public
 
 USE_COMPONENTS
