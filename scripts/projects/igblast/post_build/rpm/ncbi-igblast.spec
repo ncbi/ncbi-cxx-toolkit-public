@@ -39,6 +39,6 @@ rm -rf $RPM_BUILD_ROOT
 %_prefix/share/igblast/internal_data
 
 %changelog
-* Tue Mar 20 2012 Christiam Camacho <camacho@ncbi.nlm.nih.gov>
+* Tue Mar 20 2012 <blast-help@ncbi.nlm.nih.gov>
 - See ChangeLog file
 
