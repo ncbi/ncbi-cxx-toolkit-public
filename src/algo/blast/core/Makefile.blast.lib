@@ -23,3 +23,7 @@ LDFLAGS = $(FAST_LDFLAGS)
 
 
 WATCHERS = maning madden camacho
+
+
+USES_LIBRARIES =  \
+    composition_adjustment connect tables
