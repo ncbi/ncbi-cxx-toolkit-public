@@ -1,2 +1,6 @@
 LIB = variation
 SRC = variation__ variation___
+
+
+USES_LIBRARIES =  \
+    biblio general medline pub seq seqcode sequtil xncbi xser xutil
