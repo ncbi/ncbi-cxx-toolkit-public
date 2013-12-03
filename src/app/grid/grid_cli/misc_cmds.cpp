@@ -50,7 +50,7 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
     CNetScheduleKey ns_key;
 
     if (CNetCacheKey::ParseBlobKey(m_Opts.id.c_str(),
-            m_Opts.id.length(), &nc_key)) {
+            m_Opts.id.length(), &nc_key, m_CompoundIDPool)) {
         printf(m_Opts.output_format == eJSON ?
 
                 "{\n"

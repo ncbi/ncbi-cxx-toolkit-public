@@ -292,8 +292,10 @@ CNetServerMultilineCmdOutput::CNetServerMultilineCmdOutput(
 }
 
 /*************************************************************************/
-SNetServerInPool::SNetServerInPool(unsigned host, unsigned short port) :
-    m_Address(host, port)
+SNetServerInPool::SNetServerInPool(unsigned host, unsigned short port,
+        INetServerProperties* server_properties) :
+    m_Address(host, port),
+    m_ServerProperties(server_properties)
 {
     m_FreeConnectionListHead = NULL;
     m_FreeConnectionListSize = 0;

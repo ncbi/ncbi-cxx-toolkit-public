@@ -57,15 +57,14 @@ inline string g_MakeBaseCmd(const string& cmd_name, const string& job_key)
     return cmd;
 }
 
-struct SServerProperties : public CObject
+struct SNetScheduleServerProperties : public INetServerProperties
 {
-    SServerProperties(SNetServerInPool* _server_in_pool) :
-        server_in_pool(_server_in_pool),
+    SNetScheduleServerProperties() :
         affs_synced(false)
     {
     }
 
-    SNetServerInPool* server_in_pool;
+    CFastMutex m_Mutex;
 
     string ns_node;
     string ns_session;
@@ -83,7 +82,9 @@ public:
     bool NeedToSubmitAffinities(SNetServerImpl* server_impl);
     void SetAffinitiesSynced(SNetServerImpl* server_impl, bool affs_synced);
 
-    CRef<SServerProperties> x_GetServerProperties(SNetServerImpl* server_impl);
+    CRef<SNetScheduleServerProperties> x_GetServerProperties(SNetServerImpl* server_impl);
+
+    virtual CRef<INetServerProperties> AllocServerProperties();
 
     virtual void OnInit(CObject* api_impl,
         CConfig* config, const string& config_section);
@@ -94,13 +95,9 @@ public:
     string m_Auth;
     CRef<INetEventHandler> m_EventHandler;
 
-    CFastMutex m_ServerPropsMutex;
-
-    typedef map<SNetServerInPool*, CRef<SServerProperties> > TServerProperties;
-    TServerProperties m_ServerProperties;
-
-    typedef map<string, SServerProperties*> TServerPropertiesByNode;
-    TServerPropertiesByNode m_ServerPropsByNode;
+    CFastMutex m_ServerByNodeMutex;
+    typedef map<string, SNetServerInPool*> TServerByNode;
+    TServerByNode m_ServerByNode;
 
     bool m_WorkerNodeCompatMode;
 };

@@ -91,9 +91,16 @@ struct SNetServerConnectionImpl : public CObject
     CSocket m_Socket;
 };
 
+class INetServerProperties : public CObject
+{
+};
 
 class INetServerConnectionListener : public CObject
 {
+public:
+    virtual CRef<INetServerProperties> AllocServerProperties() = 0;
+
+// Event handlers.
 public:
     virtual void OnInit(CObject* api_impl,
         CConfig* config, const string& config_section) = 0;
@@ -122,7 +129,8 @@ public:
 
 struct SNetServerInPool : public CObject
 {
-    SNetServerInPool(unsigned host, unsigned short port);
+    SNetServerInPool(unsigned host, unsigned short port,
+            INetServerProperties* server_properties);
 
     // Releases a reference to the parent service object,
     // and if that was the last reference, the service object
@@ -149,6 +157,9 @@ struct SNetServerInPool : public CObject
     CNetServerPool m_ServerPool;
 
     SServerAddress m_Address;
+
+    // API-specific server properties.
+    CRef<INetServerProperties> m_ServerProperties;
 
     SNetServerConnectionImpl* m_FreeConnectionListHead;
     int m_FreeConnectionListSize;

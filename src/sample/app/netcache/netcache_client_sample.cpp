@@ -399,7 +399,8 @@ void CSampleNetCacheClient::DemoIWriterIReader(void)
             // available, without an error.  Therefore, bytes_read must
             // always be used after the read instead of read_size.
             size_t bytes_read;
-            ERW_Result rw_res = reader->Read(my_buf, read_size, &bytes_read);
+            ERW_Result rw_res = reader->Read(my_buf,
+                    (size_t) read_size, &bytes_read);
             my_buf[bytes_read] = '\0';
 
             if (rw_res == eRW_Success) {

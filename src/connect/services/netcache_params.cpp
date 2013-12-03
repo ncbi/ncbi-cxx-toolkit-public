@@ -67,6 +67,8 @@ void CNetCacheAPIParameters::LoadNamedParameters(
             SetMaxBlobAge(Get<unsigned>(optional));
         else if (optional->Is(eNetCacheNPT_ActualBlobAgePtr))
             SetActualBlobAgePtr(Get<unsigned*>(optional));
+        else if (optional->Is(eNetCacheNPT_UseCompoundID))
+            SetUseCompoundID(Get<bool>(optional));
 }
 
 void CNetCacheAPIParameters::SetTTL(unsigned blob_ttl)
@@ -154,6 +156,11 @@ unsigned CNetCacheAPIParameters::GetMaxBlobAge() const
 unsigned* CNetCacheAPIParameters::GetActualBlobAgePtr() const
 {
     NETCACHE_API_GET_PARAM_IMPL(ActualBlobAgePtr);
+}
+
+bool CNetCacheAPIParameters::GetUseCompoundID() const
+{
+    NETCACHE_API_GET_PARAM_IMPL(UseCompoundID);
 }
 
 END_NCBI_SCOPE

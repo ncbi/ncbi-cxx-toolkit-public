@@ -209,9 +209,11 @@ bool SNetServiceIterator_RandomPivot::Prev()
 }
 
 SNetServerPoolImpl::SNetServerPoolImpl(const string& api_name,
-        const string& client_name) :
+        const string& client_name,
+        INetServerConnectionListener* listener) :
     m_APIName(api_name),
     m_ClientName(client_name),
+    m_Listener(listener),
     m_EnforcedServerHost(0),
     m_LBSMAffinityName(kEmptyStr),
     m_LBSMAffinityValue(NULL),
@@ -381,14 +383,15 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
                 "smart_service_retries", CConfig::eErr_NoThrow, true);
     }
 
-    m_ServerPool->Init(config, section);
+    m_ServerPool->Init(config, section, m_Listener.GetPointerOrNull());
 
     m_Listener->OnInit(api_impl, config, section);
 
     Construct();
 }
 
-void SNetServerPoolImpl::Init(CConfig* config, const string& section)
+void SNetServerPoolImpl::Init(CConfig* config, const string& section,
+        INetServerConnectionListener* listener)
 {
     if (config != NULL) {
         if (m_ClientName.empty()) {
@@ -519,6 +522,8 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section)
     if (!m_LBSMAffinityName.empty())
         m_LBSMAffinityValue = LBSMD_GetHostParameter(SERV_LOCALHOST,
             m_LBSMAffinityName.c_str());
+
+    m_Listener = listener;
 }
 
 SDiscoveredServers* SNetServiceImpl::AllocServerGroup(
@@ -654,7 +659,8 @@ SNetServerInPool* SNetServerPoolImpl::FindOrCreateServerImpl(
     if (!loc.second)
         return loc.first->second;
 
-    SNetServerInPool* server = new SNetServerInPool(host, port);
+    SNetServerInPool* server = new SNetServerInPool(host, port,
+            m_Listener->AllocServerProperties().GetPointerOrNull());
 
     loc.first->second = server;
 

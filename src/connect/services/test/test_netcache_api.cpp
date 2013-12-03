@@ -476,7 +476,7 @@ static int s_ServiceInBlobKeyTest(const string& service)
     CNetCacheKey key(blob_id);
 
     if (key.GetServiceName().empty() ||
-            !key.GetFlag(CNetCacheKey::eNCKey_SingleServer))
+            !key.GetFlag(CNetCacheKey::fNCKey_SingleServer))
         return err_code;
 
     string mangled_blob_id;
@@ -519,7 +519,7 @@ static int s_ServiceInBlobKeyTest(const string& service)
     key.Assign(blob_id);
 
     if (key.GetServiceName().empty() ||
-            key.GetFlag(CNetCacheKey::eNCKey_SingleServer))
+            key.GetFlag(CNetCacheKey::fNCKey_SingleServer))
         return err_code;
 
     return 0;

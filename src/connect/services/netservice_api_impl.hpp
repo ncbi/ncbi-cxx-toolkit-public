@@ -82,9 +82,11 @@ struct SDiscoveredServers : public CObject
 struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
 {
     // Construct a new object.
-    SNetServerPoolImpl(const string& api_name, const string& client_name);
+    SNetServerPoolImpl(const string& api_name, const string& client_name,
+            INetServerConnectionListener* listener);
 
-    void Init(CConfig* config, const string& section);
+    void Init(CConfig* config, const string& section,
+            INetServerConnectionListener* listener);
 
     SNetServerInPool* FindOrCreateServerImpl(
         unsigned host, unsigned short port);
@@ -94,6 +96,7 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
 
     string m_APIName;
     string m_ClientName;
+    CRef<INetServerConnectionListener> m_Listener;
 
     unsigned m_EnforcedServerHost;
     unsigned short m_EnforcedServerPort;
@@ -205,7 +208,7 @@ struct NCBI_XCONNECT_EXPORT SNetServiceImpl : public CObject
     SNetServiceImpl(const string& api_name, const string& client_name,
             INetServerConnectionListener* listener) :
         m_Listener(listener),
-        m_ServerPool(new SNetServerPoolImpl(api_name, client_name)),
+        m_ServerPool(new SNetServerPoolImpl(api_name, client_name, listener)),
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         m_AllowXSiteConnections(false),
 #endif

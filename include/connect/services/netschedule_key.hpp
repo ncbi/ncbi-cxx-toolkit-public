@@ -33,7 +33,7 @@
  *
  */
 
-#include <connect/services/compound_id.hpp>
+#include "compound_id.hpp"
 
 #include <connect/connect_export.h>
 #include <connect/ncbi_connutil.h>

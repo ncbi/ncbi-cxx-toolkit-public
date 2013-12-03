@@ -513,15 +513,15 @@ bool CNetScheduleNotificationHandler::CheckRequestJobNotification(
     {{
         CNetScheduleServerListener* listener = executor->m_API->GetListener();
 
-        CFastMutexGuard guard(listener->m_ServerPropsMutex);
+        CFastMutexGuard guard(listener->m_ServerByNodeMutex);
 
-        CNetScheduleServerListener::TServerPropertiesByNode::iterator
-            server_props_it(listener->m_ServerPropsByNode.find(attr_values[0]));
+        CNetScheduleServerListener::TServerByNode::iterator
+            server_props_it(listener->m_ServerByNode.find(attr_values[0]));
 
-        if (server_props_it == listener->m_ServerPropsByNode.end())
+        if (server_props_it == listener->m_ServerByNode.end())
             return false;
 
-        known_server = server_props_it->second->server_in_pool;
+        known_server = server_props_it->second;
     }}
 
     *server = new SNetServerImpl(executor->m_API->m_Service, executor->

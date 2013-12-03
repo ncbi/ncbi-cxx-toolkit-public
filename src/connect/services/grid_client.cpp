@@ -85,7 +85,7 @@ void CGridClient::CancelJob(const string& job_key)
 }
 void CGridClient::RemoveDataBlob(const string& data_key)
 {
-    if (CNetCacheKey::IsValidKey(data_key))
+    if (CNetCacheKey::IsValidKey(data_key, m_NetCacheAPI.GetCompoundIDPool()))
         m_NetCacheAPI.Remove(data_key);
 }
 
@@ -296,7 +296,8 @@ string CGridClient::GetProgressMessage()
         else {
             string progress_message_key;
             if (m_Job.progress_msg[1] != ' ')
-                if (CNetCacheKey::IsValidKey(m_Job.progress_msg))
+                if (CNetCacheKey::IsValidKey(m_Job.progress_msg,
+                        m_NetCacheAPI.GetCompoundIDPool()))
                     progress_message_key = m_Job.progress_msg;
                 else
                     return m_Job.progress_msg;
@@ -357,7 +358,8 @@ void CGridClient::x_RenewAllJobBlobs(time_t job_exptime)
     if (!m_Job.progress_msg.empty() &&
             !x_ProlongJobFieldLifetime(m_Job.progress_msg, ttl) &&
             CNetCacheKey::ParseBlobKey(m_Job.progress_msg.data(),
-                    m_Job.progress_msg.length(), NULL))
+                    m_Job.progress_msg.length(), NULL,
+                    m_NetCacheAPI.GetCompoundIDPool()))
         x_ProlongBlobLifetime(m_Job.progress_msg, ttl);
 }
 

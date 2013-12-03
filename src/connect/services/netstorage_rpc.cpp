@@ -327,6 +327,10 @@ class CNetStorageServerListener : public INetServerConnectionListener
 public:
     CNetStorageServerListener(const CJsonNode& hello) : m_Hello(hello) {}
 
+public:
+    virtual CRef<INetServerProperties> AllocServerProperties();
+
+public:
     virtual void OnInit(CObject* api_impl,
         CConfig* config, const string& config_section);
     virtual void OnConnected(CNetServerConnection::TInstance conn_impl);
@@ -368,6 +372,11 @@ struct SNetStorageRPC : public SNetStorageImpl
 
     CAtomicCounter m_RequestNumber;
 };
+
+CRef<INetServerProperties> CNetStorageServerListener::AllocServerProperties()
+{
+    return CRef<INetServerProperties>(new INetServerProperties);
+}
 
 void CNetStorageServerListener::OnInit(CObject* /*api_impl*/,
         CConfig* /*config*/, const string& /*config_section*/)

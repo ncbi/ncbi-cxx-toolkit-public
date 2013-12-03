@@ -154,6 +154,7 @@ enum EOption {
     eSize,
     eTTL,
     eEnableMirroring,
+    eUseCompoundID,
     eNetStorage,
     eFileKey,
     eNamespace,

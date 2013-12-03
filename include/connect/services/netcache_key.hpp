@@ -37,6 +37,8 @@
 /// NetCache client specs.
 ///
 
+#include "compound_id.hpp"
+
 #include <connect/connect_export.h>
 
 #include <corelib/ncbistl.hpp>
@@ -61,25 +63,28 @@ struct NCBI_XCONNECT_EXPORT CNetCacheKey
 public:
     /// Blob and blob key features.
     enum ENCKeyFlag {
-        eNCKey_SingleServer = 1 << 0,   ///< Mark this blob as not mirrored.
-        eNCKey_NoServerCheck = 1 << 1,  ///< Disable the check for whether
+        fNCKey_SingleServer = 1 << 0,   ///< Mark this blob as not mirrored.
+        fNCKey_NoServerCheck = 1 << 1,  ///< Disable the check for whether
                                         ///< the server IP is still in service.
     };
     typedef unsigned TNCKeyFlags;       ///< Binary OR of ENCKeyFlag.
 
     /// Create the key out of string
-    explicit CNetCacheKey(const string& key_str);
+    explicit CNetCacheKey(const string& key_str,
+            CCompoundIDPool::TInstance id_pool = NULL);
 
     /// Create an empty object for later use with ParseBlobKey() or Assign().
     CNetCacheKey() {}
 
     /// Parse the specified blob ID and initializes this object.
     /// @throws CNetCacheException if key format is not recognized.
-    void Assign(const string& key_str);
+    void Assign(const string& key_str,
+            CCompoundIDPool::TInstance id_pool = NULL);
 
     /// Parse blob key string into a CNetCacheKey structure
     static bool ParseBlobKey(const char* key_str,
-        size_t key_len, CNetCacheKey* key_obj);
+            size_t key_len, CNetCacheKey* key_obj,
+            CCompoundIDPool::TInstance id_pool = NULL);
 
     bool HasExtensions() const {return m_PrimaryKeyLength < m_Key.length();}
 
@@ -126,14 +131,20 @@ public:
         const string& service_name,
         TNCKeyFlags flags);
 
+    static string KeyToCompoundID(
+        const string& key_str,
+        CCompoundIDPool id_pool);
+
     /// Parse blob key, extract id
     static unsigned int GetBlobId(const string& key_str);
 
-    static bool IsValidKey(const char* key_str, size_t key_len)
-        { return ParseBlobKey(key_str, key_len, NULL); }
+    static bool IsValidKey(const char* key_str, size_t key_len,
+            CCompoundIDPool::TInstance id_pool = NULL)
+        { return ParseBlobKey(key_str, key_len, NULL, id_pool); }
 
-    static bool IsValidKey(const string& key)
-        { return IsValidKey(key.c_str(), key.length()); }
+    static bool IsValidKey(const string& key,
+            CCompoundIDPool::TInstance id_pool = NULL)
+        { return IsValidKey(key.c_str(), key.length(), id_pool); }
 
     const string& GetKey() const;
     unsigned GetId() const;

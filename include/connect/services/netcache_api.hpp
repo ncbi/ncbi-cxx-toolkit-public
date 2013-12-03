@@ -69,6 +69,7 @@ enum ENetCacheNamedParameterTag {
     eNetCacheNPT_ServerToUse,
     eNetCacheNPT_MaxBlobAge,
     eNetCacheNPT_ActualBlobAgePtr,
+    eNetCacheNPT_UseCompoundID,
 };
 
 /// Blob life span in seconds. If zero or greater than the
@@ -110,6 +111,9 @@ enum ENetCacheNamedParameterTag {
 /// must be stored.
 #define nc_actual_age CNamedParameter<unsigned*, \
         eNetCacheNPT_ActualBlobAgePtr>()
+
+/// Whether to return NetCache keys in CompoundID format.
+#define nc_use_compound_id CNamedParameter<bool, eNetCacheNPT_UseCompoundID>()
 
 /* @} */
 
@@ -463,6 +467,9 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     /// This method is for use by the grid_cli utility only.
     /// @internal
     void SetEventHandler(INetEventHandler* event_handler);
+
+    /// @internal
+    CCompoundIDPool GetCompoundIDPool();
 };
 
 NCBI_DEPRECATED_CLASS NCBI_XCONNECT_EXPORT CNetCachePasswordGuard

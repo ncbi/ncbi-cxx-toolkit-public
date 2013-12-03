@@ -60,6 +60,7 @@ public:
         eDP_ServerToUse = 1 << 6,
         eDP_MaxBlobAge = 1 << 7,
         eDP_ActualBlobAgePtr = 1 << 8,
+        eDP_UseCompoundID = 1 << 9,
     };
     typedef unsigned TDefinedParameters;
 
@@ -69,7 +70,8 @@ public:
             eDP_TTL |
             eDP_CachingMode |
             eDP_MirroringMode |
-            eDP_Password),
+            eDP_Password |
+            eDP_UseCompoundID),
         m_Defaults(NULL),
         m_TTL(0),
         m_CachingMode(CNetCacheAPI::eCaching_Disable),
@@ -77,7 +79,8 @@ public:
         m_ServerCheck(eDefault),
         m_ServerCheckHint(true),
         m_MaxBlobAge(0),
-        m_ActualBlobAgePtr(NULL)
+        m_ActualBlobAgePtr(NULL),
+        m_UseCompoundID(false)
     {
     }
 
@@ -131,6 +134,12 @@ public:
         m_ActualBlobAgePtr = actual_age;
     }
 
+    void SetUseCompoundID(bool use_compound_id)
+    {
+        m_DefinedParameters |= eDP_UseCompoundID;
+        m_UseCompoundID = use_compound_id;
+    }
+
     unsigned GetTTL() const;
     CNetCacheAPI::ECachingMode GetCachingMode() const;
     CNetCacheAPI::EMirroringMode GetMirroringMode() const;
@@ -140,6 +149,7 @@ public:
     CNetServer GetServerToUse() const;
     unsigned GetMaxBlobAge() const;
     unsigned* GetActualBlobAgePtr() const;
+    bool GetUseCompoundID() const;
 
 private:
     TDefinedParameters m_DefinedParameters;
@@ -154,6 +164,7 @@ private:
     CNetServer m_ServerToUse;
     unsigned m_MaxBlobAge;
     unsigned* m_ActualBlobAgePtr;
+    bool m_UseCompoundID;
 };
 
 /* @} */

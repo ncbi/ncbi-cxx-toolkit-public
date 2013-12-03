@@ -179,7 +179,7 @@ int CGridCommandLineInterfaceApp::Cmd_BlobInfo()
         CNetServerMultilineCmdOutput output;
 
         if (!icache_mode) {
-            PrintBlobMeta(CNetCacheKey(m_Opts.id));
+            PrintBlobMeta(CNetCacheKey(m_Opts.id, m_CompoundIDPool));
 
             output = m_NetCacheAPI.GetBlobInfo(m_Opts.id);
         } else {
@@ -351,13 +351,27 @@ int CGridCommandLineInterfaceApp::Cmd_PutBlob()
     string blob_key = m_Opts.id;
 
     if (!icache_mode) {
-        if (IsOptionSet(ePassword))
+        switch (IsOptionSet(ePassword, 1) | IsOptionSet(eUseCompoundID, 2)) {
+        case 1:
             writer.reset(m_NetCacheAPI.PutData(&blob_key,
                     (nc_blob_ttl = m_Opts.ttl,
                     nc_blob_password = m_Opts.password)));
-        else
+            break;
+        case 2:
+            writer.reset(m_NetCacheAPI.PutData(&blob_key,
+                    (nc_blob_ttl = m_Opts.ttl,
+                    nc_use_compound_id = true)));
+            break;
+        case 3:
+            writer.reset(m_NetCacheAPI.PutData(&blob_key,
+                    (nc_blob_ttl = m_Opts.ttl,
+                    nc_blob_password = m_Opts.password,
+                    nc_use_compound_id = true)));
+            break;
+        default:
             writer.reset(m_NetCacheAPI.PutData(&blob_key,
                     nc_blob_ttl = m_Opts.ttl));
+        }
     } else {
         ParseICacheKey();
 

@@ -148,6 +148,9 @@ struct SOptionDefinition {
     {OPT_DEF(eSwitch, eEnableMirroring),
         "enable-mirroring", "Enable NetCache mirroring functionality.", {-1}},
 
+    {OPT_DEF(eSwitch, eUseCompoundID),
+        "use-compound-id", "Return key in CompoundID format.", {-1}},
+
     {OPT_DEF(eOptionWithParameter, eNetStorage),
         "nst|" NETSTORAGE_OPTION, "NetStorage service name "
             "or server address.", {-1}},
@@ -546,7 +549,8 @@ struct SCommandDefinition {
         "Read data from the standard input (or a file) until EOF is "
         "encountered and save the received data as a NetCache blob."
         ICACHE_KEY_FORMAT_EXPLANATION,
-        {eOptionalID, eNetCache, eCache, ePassword, eTTL, eEnableMirroring,
+        {eOptionalID, eNetCache, eCache, ePassword, eTTL,
+            eEnableMirroring, eUseCompoundID,
             eInput, eInputFile, eCompatMode, eLoginToken, eAuth,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 

@@ -35,15 +35,35 @@
 
 BEGIN_NCBI_SCOPE
 
+struct SNetCacheServerProperties : public INetServerProperties
+{
+    SNetCacheServerProperties() :
+        mirroring_checked(false),
+        mirrored(false)
+    {
+    }
+
+    CFastMutex m_Mutex;
+
+    bool mirroring_checked;
+    bool mirrored;
+};
+
 class NCBI_XCONNECT_EXPORT CNetCacheServerListener :
     public INetServerConnectionListener
 {
+public:
+    virtual CRef<INetServerProperties> AllocServerProperties();
+
 public:
     virtual void OnInit(CObject* api_impl,
         CConfig* config, const string& config_section);
     virtual void OnConnected(CNetServerConnection::TInstance conn_impl);
     virtual void OnError(const string& err_msg, SNetServerImpl* server);
     virtual void OnWarning(const string& warn_msg, SNetServerImpl* server);
+
+    static CRef<SNetCacheServerProperties> x_GetServerProperties(
+            SNetServerImpl* server_impl);
 
     string m_Auth;
     CRef<INetEventHandler> m_EventHandler;
@@ -122,6 +142,8 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
     bool m_CacheOutput;
 
     CNetCacheAPIParameters m_DefaultParameters;
+
+    CCompoundIDPool m_CompoundIDPool;
 };
 
 struct SNetCacheAdminImpl : public CObject
