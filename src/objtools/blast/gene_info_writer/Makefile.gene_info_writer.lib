@@ -7,3 +7,8 @@ LIB = gene_info_writer
 SRC = gene_info_writer
 
 ASN_DEP = blastdb
+
+
+USES_LIBRARIES =  \
+    biblio blastdb gene_info general genome_collection medline pub \
+    seq seqcode seqdb seqedit seqset sequtil xncbi xobjmgr xser xutil
