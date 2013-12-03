@@ -71,3 +71,13 @@ SRC = \
 DLL_LIB = xobjread
 
 CPPFLAGS = $(ORIG_CPPFLAGS)
+
+
+USES_LIBRARIES =  \
+    biblio blast blast_services blastdb cdd cn3d composition_adjustment \
+    connect creaders entrez2 entrez2cli general genome_collection \
+    id1 id1cli medline mmdb ncbimime pub scoremat seq seqcode seqdb \
+    seqedit seqmasks_io seqset sequtil submit tables taxon1 variation \
+    xalgoblastdbindex xalgodustmask xalgowinmask xalnmgr xblast xconnect \
+    xncbi xnetblast xnetblastcli xobjmgr xobjread xobjutil xregexp \
+    xser xutil
