@@ -2,3 +2,7 @@ LIB = asn_sample_lib
 SRC = asn_sample_lib__ asn_sample_lib___
 
 WATCHERS = gouriano
+
+
+USES_LIBRARIES =  \
+    xncbi xser xutil
