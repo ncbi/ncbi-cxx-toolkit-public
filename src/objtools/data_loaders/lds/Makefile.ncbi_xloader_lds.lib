@@ -14,3 +14,9 @@ CPPFLAGS = $(ORIG_CPPFLAGS)
 DLL_LIB = bdb lds
 
 WATCHERS = vasilche
+
+
+USES_LIBRARIES =  \
+    bdb biblio creaders general genome_collection lds medline pub \
+    seq seqcode seqedit seqset sequtil submit variation xncbi xobjmgr \
+    xobjread xobjutil xser xutil
