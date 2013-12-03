@@ -16,3 +16,7 @@ PROJ_TAG = core
 LIBS     = $(NETWORK_LIBS) $(ORIG_LIBS)
 
 WATCHERS = lavr
+
+
+USES_LIBRARIES =  \
+    connect xncbi
