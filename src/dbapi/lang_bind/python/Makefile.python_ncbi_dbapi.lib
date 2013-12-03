@@ -14,3 +14,7 @@ DLL_LIB = dbapi dbapi_driver$(DLL) $(XCONNEXT) xconnect xutil xncbi
 LIBS    = $(RUNPATH_ORIGIN)/python_ncbi_dbapi/$(NCBI_PACKAGE_VERSION) $(ORIG_LIBS)
 
 WATCHERS = ucko
+
+
+USES_LIBRARIES =  \
+    dbapi_driver
