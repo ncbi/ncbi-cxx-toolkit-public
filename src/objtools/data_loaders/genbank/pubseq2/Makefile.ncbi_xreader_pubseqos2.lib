@@ -15,3 +15,9 @@ DLL_LIB = dbapi_driver$(DLL) ncbi_xreader$(DLL) $(XCONNEXT) xconnect
 CPPFLAGS = $(ORIG_CPPFLAGS) $(CMPRS_INCLUDE)
 
 WATCHERS = vasilche
+
+
+USES_LIBRARIES =  \
+    biblio connect connext dbapi_driver general genome_collection \
+    id1 id2 medline ncbi_xreader pub seq seqcode seqedit seqset seqsplit \
+    sequtil xcompress xconnect xconnext xncbi xobjmgr xser xutil
