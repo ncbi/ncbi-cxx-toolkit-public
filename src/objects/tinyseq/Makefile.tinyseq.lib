@@ -1,2 +1,6 @@
 LIB = tinyseq
 SRC = tinyseq__ tinyseq___
+
+
+USES_LIBRARIES =  \
+    xncbi xser xutil
