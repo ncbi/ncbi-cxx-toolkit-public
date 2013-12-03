@@ -10,3 +10,7 @@ SRC = thrdalgs thrdatd thrdbwfi thrdcpal thrdcpll thrdcprl \
 	thrdttbi thrdzsc
 
 LIB = xstruct_thread
+
+
+USES_LIBRARIES =  \
+    xncbi xutil
