@@ -9,3 +9,7 @@ REQUIRES = Boost.Test.Included
 
 WATCHERS = vakatov
 PROJ_TAG = test
+
+
+USES_LIBRARIES =  \
+    xncbi
