@@ -13,3 +13,9 @@ DLL_LIB = biotree
 CPPFLAGS = $(ORIG_CPPFLAGS) -I$(srcdir) -D__C99FEATURES__
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
+
+
+USES_LIBRARIES =  \
+    biblio biotree fastme general genome_collection medline pub seq \
+    seqcode seqedit seqset sequtil tables xalnmgr xncbi xobjmgr xobjutil \
+    xser xutil
