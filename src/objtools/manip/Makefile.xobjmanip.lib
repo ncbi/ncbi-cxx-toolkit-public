@@ -6,3 +6,7 @@ LIB = xobjmanip
 SRC = sage_manip
 
 WATCHERS = dicuccio
+
+
+USES_LIBRARIES =  \
+    general xncbi xser xutil
