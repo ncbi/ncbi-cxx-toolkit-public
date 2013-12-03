@@ -15,3 +15,9 @@ LDFLAGS  = $(FAST_LDFLAGS)
 CPPFLAGS = $(ORIG_CPPFLAGS) $(PCRE_INCLUDE)
 
 WATCHERS = dicuccio
+
+
+USES_LIBRARIES =  \
+    biblio connect general genome_collection medline pub seq seqcode \
+    seqedit seqset sequtil tables taxon1 xalnmgr xconnect xncbi xobjmgr \
+    xobjutil xregexp xser xutil
