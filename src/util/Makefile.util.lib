@@ -16,3 +16,7 @@ LIBS = $(ORIG_LIBS)
 
 WATCHERS = vakatov kornbluh
 
+
+
+USES_LIBRARIES =  \
+    xncbi
