@@ -12,3 +12,7 @@ LIB_OR_DLL = both
 DLL_LIB = dbapi dbapi_driver$(DLL) xncbi
 
 WATCHERS = kuznets
+
+
+USES_LIBRARIES =  \
+    dbapi dbapi_driver xncbi
