@@ -6,3 +6,7 @@ SRC = ctools asn_connection
 LIB    = xctools
 
 WATCHERS = gouriano
+
+
+USES_LIBRARIES =  \
+    connect tables xncbi
