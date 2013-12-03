@@ -11,3 +11,9 @@ LIB    = xobjedit
 ASN_DEP = seqset
 
 WATCHERS = bollin kornbluh
+
+
+USES_LIBRARIES =  \
+    biblio connect general genome_collection medline pub seq seqcode \
+    seqedit seqset sequtil taxon3 xconnect xncbi xobjmgr xobjutil \
+    xser xutil
