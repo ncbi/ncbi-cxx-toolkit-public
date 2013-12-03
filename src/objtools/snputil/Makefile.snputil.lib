@@ -10,3 +10,8 @@ SRC = snp_utils snp_bitfield \
 ASN_DEP = seqset variation
 
 WATCHERS = rudnev
+
+
+USES_LIBRARIES =  \
+    biblio general genome_collection medline pub seq seqcode seqedit \
+    seqset sequtil variation xncbi xobjmgr xser xutil
