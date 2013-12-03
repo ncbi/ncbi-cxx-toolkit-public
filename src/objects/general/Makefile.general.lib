@@ -1,2 +1,6 @@
 LIB = general
 SRC = general__ general___ uoconv
+
+
+USES_LIBRARIES =  \
+    xncbi xser xutil
