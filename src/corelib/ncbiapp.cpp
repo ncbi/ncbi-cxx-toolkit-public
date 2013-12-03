@@ -1292,12 +1292,12 @@ void CNcbiApplication::x_HonorStandardSettings( IRegistry* reg)
             mem_size_limit = (size_t)(GetPhysicalMemorySize() * percents / 100);
         } else {
             try {
-                // Size is specified in MB by default if no suffixes
+                // Size is specified in MiB by default if no suffixes
                 // (converted without exception)
                 mem_size_limit = NStr::StringToSizet(s) * 1024 * 1024;
             }
             catch (CStringException&) {
-                // Otherwise, size have suffix (MB, GB, etc)
+                // Otherwise, size have suffix (MiB, G, GB, etc)
                 Uint8 bytes = NStr::StringToUInt8_DataSize(s);
                 if ( bytes > get_limits(mem_size_limit).max() ) {
                     NCBI_THROW(CAppException, eLoadConfig,
