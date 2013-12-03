@@ -6,3 +6,8 @@ SRC = id_mapper
 ASN_DEP = genome_collection seqset
 
 WATCHERS = boukn meric
+
+
+USES_LIBRARIES =  \
+    biblio general genome_collection medline pub seq seqcode seqedit \
+    seqset sequtil xncbi xobjmgr xser xutil
