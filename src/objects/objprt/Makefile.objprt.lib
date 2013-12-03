@@ -1,2 +1,6 @@
 LIB = objprt
 SRC = objprt__ objprt___
+
+
+USES_LIBRARIES =  \
+    xncbi xser xutil
