@@ -14,3 +14,8 @@ DLL_LIB = xregexp $(PCRE_LIB)
 LIB = xcleanup
 
 LIBS = $(PCRE_LIBS)
+
+
+USES_LIBRARIES =  \
+    biblio general genome_collection medline pub seq seqcode seqedit \
+    seqset sequtil submit xncbi xobjmgr xobjutil xregexp xser xutil
