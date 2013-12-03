@@ -4,3 +4,7 @@ SRC = linkout__ linkout___
 LIB = linkout
 
 WATCHERS = grichenk
+
+
+USES_LIBRARIES =  \
+    xncbi xser xutil
