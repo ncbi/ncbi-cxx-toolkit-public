@@ -341,7 +341,7 @@ void CVDBCursor::SetParam(const char* name, const CTempString& value) const
 }
 
 
-static const size_t kCacheSize = 8;
+static const size_t kCacheSize = 7;
 
 
 CVDBObjectCacheBase::CVDBObjectCacheBase(void)
