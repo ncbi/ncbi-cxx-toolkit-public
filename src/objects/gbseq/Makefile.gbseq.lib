@@ -1,2 +1,6 @@
 LIB = gbseq
 SRC = gbseq__ gbseq___
+
+
+USES_LIBRARIES =  \
+    xncbi xser xutil
