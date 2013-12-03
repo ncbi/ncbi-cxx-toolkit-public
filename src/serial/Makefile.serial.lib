@@ -19,3 +19,7 @@ SRC = \
 LIB    = xser
 
 WATCHERS = gouriano
+
+
+USES_LIBRARIES =  \
+    xncbi xutil
