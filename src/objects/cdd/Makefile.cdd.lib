@@ -1,2 +1,7 @@
 LIB = cdd
 SRC = cdd__ cdd___
+
+
+USES_LIBRARIES =  \
+    biblio cn3d general medline mmdb pub scoremat seq seqcode seqset \
+    sequtil xncbi xser xutil
