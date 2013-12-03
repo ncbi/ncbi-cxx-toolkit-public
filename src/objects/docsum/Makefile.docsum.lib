@@ -1,2 +1,6 @@
 LIB = docsum
 SRC = docsum__ docsum___
+
+
+USES_LIBRARIES =  \
+    xncbi xser xutil
