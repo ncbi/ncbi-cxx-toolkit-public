@@ -10,3 +10,8 @@ ASN_DEP = einfo esearch egquery epost elink esummary espell uilist \
           ehistory
 
 WATCHERS = grichenk
+
+
+USES_LIBRARIES =  \
+    connect egquery ehistory einfo elink epost esearch espell esummary \
+    uilist xconnect xncbi xser xutil
