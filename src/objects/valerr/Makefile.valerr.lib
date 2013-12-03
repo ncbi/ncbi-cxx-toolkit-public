@@ -2,3 +2,7 @@ LIB = valerr
 SRC = valerr__ valerr___
 
 ASN_DEP = seqset
+
+
+USES_LIBRARIES =  \
+    xncbi xser xutil
