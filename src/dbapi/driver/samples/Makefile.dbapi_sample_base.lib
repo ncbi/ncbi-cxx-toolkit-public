@@ -6,3 +6,7 @@ LIB = dbapi_sample_base
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SYBASE_INCLUDE)
 
 WATCHERS = ucko
+
+
+USES_LIBRARIES =  \
+    connect connext dbapi_driver xconnect xconnext xncbi xutil
