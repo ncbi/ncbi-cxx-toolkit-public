@@ -11,3 +11,7 @@ DLL_LIB =  $(BZ2_LIB)  $(Z_LIB)  $(LZO_LIB)
 LIBS    =  $(BZ2_LIBS) $(Z_LIBS) $(LZO_LIBS) $(ORIG_LIBS)
 
 WATCHERS = ivanov
+
+
+USES_LIBRARIES =  \
+    xncbi xutil
