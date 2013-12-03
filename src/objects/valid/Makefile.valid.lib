@@ -1,3 +1,7 @@
 # $Id$
 LIB = valid
 SRC = valid__ valid___
+
+
+USES_LIBRARIES =  \
+    xncbi xregexp xser xutil
