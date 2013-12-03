@@ -9,3 +9,7 @@ LIB = trackmgr
 LIB_OR_DLL = lib
 
 WATCHERS = meric clausen
+
+
+USES_LIBRARIES =  \
+    biblio general medline pub seq seqcode sequtil xncbi xser xutil
