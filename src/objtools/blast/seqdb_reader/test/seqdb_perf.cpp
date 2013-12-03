@@ -175,7 +175,7 @@ CSeqDBPerfApp::x_ScanDatabase()
     } // end of omp parallel
 
     sw.Stop();
-    uint64_t bases = static_cast<uint64_t>(num_letters / sw.Elapsed());
+    Uint8 bases = static_cast<Uint8>(num_letters / sw.Elapsed());
     cout << "Scanning rate: " 
          << NStr::NumericToString(bases, NStr::fWithCommas) 
          << " bases/second" << endl;
