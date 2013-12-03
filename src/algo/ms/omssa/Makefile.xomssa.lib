@@ -19,3 +19,9 @@ LIB = xomssa
 CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
+
+
+USES_LIBRARIES =  \
+    biblio blast blastdb composition_adjustment connect general genome_collection \
+    medline omssa pepXML pub seq seqcode seqdb seqedit seqset sequtil \
+    tables xcompress xconnect xncbi xobjmgr xregexp xser xutil
