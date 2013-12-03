@@ -13,3 +13,7 @@ LIBS = $(ORIG_LIBS)
 
 WATCHERS = kazimird
 
+
+
+USES_LIBRARIES =  \
+    connect xconnect xconnserv xncbi xthrserv xutil
