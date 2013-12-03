@@ -5,3 +5,7 @@ SRC = basic_sample_lib
 
 
 WATCHERS = gouriano
+
+
+USES_LIBRARIES =  \
+    xncbi
