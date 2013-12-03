@@ -1,2 +1,7 @@
 LIB = scoremat
 SRC = scoremat__ scoremat___
+
+
+USES_LIBRARIES =  \
+    biblio general medline pub seq seqcode seqset sequtil xncbi xser \
+    xutil
