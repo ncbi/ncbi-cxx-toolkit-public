@@ -12,3 +12,10 @@ LIB = xvalidate
 ASN_DEP = general biblio pub seq seqset submit taxon3 valerr valid
 
 WATCHERS = bollin kornbluh
+
+
+USES_LIBRARIES =  \
+    biblio connect gbseq general genome_collection medlars medline \
+    mla mlacli pub pubmed seq seqcode seqedit seqset sequtil submit \
+    tables taxon3 valerr valid xalnmgr xconnect xformat xncbi xobjmgr \
+    xobjutil xregexp xser xutil
