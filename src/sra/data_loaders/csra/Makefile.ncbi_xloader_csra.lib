@@ -20,3 +20,8 @@ LIBS =  $(CMPRS_LIBS) $(ORIG_LIBS)
 CPPFLAGS = $(SRA_INCLUDE) -DNCBI_XLOADER_CSRA_EXPORTS $(ORIG_CPPFLAGS)
 
 WATCHERS = vasilche
+
+
+USES_LIBRARIES =  \
+    biblio general genome_collection medline ncbi-vdb-read pub seq \
+    seqcode seqedit seqset sequtil sraread xncbi xobjmgr xser xutil
