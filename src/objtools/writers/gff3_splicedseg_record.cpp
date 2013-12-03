@@ -130,10 +130,16 @@ bool CGffSplicedSegRecord::xSetType(
     _ASSERT(align.IsSetSegs() && align.GetSegs().IsSpliced());
     const CSpliced_seg& spliced = align.GetSegs().GetSpliced();
 
-    const CSeq_id& genomicId = *sequence::GetId(
-        spliced.GetGenomic_id(), scope, sequence::eGetId_Best).GetSeqId();
-    const CSeq_id& productId =*sequence::GetId(
-        spliced.GetProduct_id(), scope, sequence::eGetId_Best).GetSeqId();
+    CSeq_id_Handle genomicH = sequence::GetId(
+        spliced.GetGenomic_id(), scope, sequence::eGetId_Best);
+    CSeq_id_Handle productH = sequence::GetId(
+        spliced.GetProduct_id(), scope, sequence::eGetId_Best);
+    if (!genomicH || !productH) {
+        // MSS-225: There _are_ accessions that are not in ID (yet). 
+        return true;
+    }
+    const CSeq_id& genomicId = *genomicH.GetSeqId();
+    const CSeq_id& productId =*productH.GetSeqId();
     SetMatchType(genomicId, productId);
     return true;
 }
@@ -190,7 +196,12 @@ bool CGffSplicedSegRecord::xSetAttributes(
     const CSeq_id& productId = spliced.GetProduct_id();
     CSeq_id_Handle bestH = sequence::GetId(
         productId, scope, sequence::eGetId_Best);
-    bestH.GetSeqId()->GetLabel(&targetStr, CSeq_id::eContent);
+    if (bestH) {
+        bestH.GetSeqId()->GetLabel(&targetStr, CSeq_id::eContent);
+    }
+    else {
+        productId.GetLabel(&targetStr, CSeq_id::eContent);
+    }
 
     string start = NStr::IntToString(exon.GetProduct_start().AsSeqPos()+1);
     string stop = NStr::IntToString(exon.GetProduct_end().AsSeqPos()+1);
