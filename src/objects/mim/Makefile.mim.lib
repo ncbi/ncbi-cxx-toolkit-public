@@ -1,2 +1,6 @@
 LIB = mim
 SRC = mim__ mim___
+
+
+USES_LIBRARIES =  \
+    xncbi xser xutil
