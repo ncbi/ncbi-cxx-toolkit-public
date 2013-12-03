@@ -22,3 +22,7 @@ CXXFLAGS_darwin = -fno-inline
 CXXFLAGS = $(ORIG_CXXFLAGS) $(CXXFLAGS_$(OSTYPE))
 
 WATCHERS = ucko
+
+
+USES_LIBRARIES =  \
+    xncbi
