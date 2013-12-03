@@ -1209,11 +1209,9 @@ void CSeq_id_Textseq_Tree::FindMatch(const CSeq_id_Handle& id,
         // only packed search -> no need to decode
         if ( !mine ) { // weak matching
             TPackedMap_CI iter = m_PackedMap.find(info->GetKey());
-            if ( iter == m_PackedMap.end() ) {
-                return;
+            if ( iter != m_PackedMap.end() ) {
+                id_list.insert(CSeq_id_Handle(iter->second, id.GetPacked()));
             }
-            info = iter->second;
-            id_list.insert(CSeq_id_Handle(info, id.GetPacked()));
         }
         if ( !info->IsSetVersion() ) {
             // add all known versions
@@ -1222,8 +1220,7 @@ void CSeq_id_Textseq_Tree::FindMatch(const CSeq_id_Handle& id,
                   it != m_PackedMap.end() && it->first.SameHashNoVer(key);
                   ++it ) {
                 if ( it->first.EqualAcc(key) ) {
-                    const CSeq_id_Textseq_Info* info = it->second;
-                    id_list.insert(CSeq_id_Handle(info, id.GetPacked()));
+                    id_list.insert(CSeq_id_Handle(it->second, id.GetPacked()));
                 }
             }
         }
@@ -1323,11 +1320,9 @@ void CSeq_id_Textseq_Tree::FindReverseMatch(const CSeq_id_Handle& id,
             static_cast<const CSeq_id_Textseq_Info*>(GetInfo(id));
         if ( !mine ) { // weak matching
             TPackedMap_CI iter = m_PackedMap.find(info->GetKey());
-            if ( iter == m_PackedMap.end() ) {
-                return;
+            if ( iter != m_PackedMap.end() ) {
+                id_list.insert(CSeq_id_Handle(iter->second, id.GetPacked()));
             }
-            info = iter->second;
-            id_list.insert(CSeq_id_Handle(info, id.GetPacked()));
         }
         if ( info->IsSetVersion() ) {
             TPackedKey key = info->GetKey();
@@ -1367,11 +1362,15 @@ void CSeq_id_Textseq_Tree::FindReverseMatch(const CSeq_id_Handle& id,
         // A only
         tid.Reset();
         tid.SetAccession(orig_tid.GetAccession());
-        id_list.insert(FindOrCreate(*tmp));
+        if ( CSeq_id_Handle h = FindInfo(*tmp) ) {
+            id_list.insert(h);
+        }
         if ( v  &&  (N  ||  r) ) {
             // A.v
             tid.SetVersion(orig_tid.GetVersion());
-            id_list.insert(FindOrCreate(*tmp));
+            if ( CSeq_id_Handle h = FindInfo(*tmp) ) {
+                id_list.insert(h);
+            }
         }
         if ( N ) {
             // Collect all alternative names

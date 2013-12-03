@@ -162,7 +162,7 @@ public:
     explicit CSeq_id_Handle(const CSeq_id_Info* info, TPacked packed = 0)
         : m_Info(info), m_Packed(packed)
         {
-            _ASSERT(info);
+            _ASSERT(info || !packed);
         }
     CSeq_id_Handle(ENull /*null*/)
         : m_Info(null), m_Packed(0)
