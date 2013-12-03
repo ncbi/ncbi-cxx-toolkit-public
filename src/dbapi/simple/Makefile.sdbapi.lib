@@ -5,3 +5,8 @@ LIB = sdbapi
 
 WATCHERS = ucko
 
+
+
+USES_LIBRARIES =  \
+    connect connext ct_ftds64 dbapi dbapi_driver ncbi_xdbapi_ftds \
+    tds_ftds64 xconnect xconnext xncbi xutil
