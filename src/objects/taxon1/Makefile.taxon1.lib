@@ -4,3 +4,8 @@ LIB = taxon1
 SRC = taxon1__ taxon1___ taxon1 cache utils ctreecont
 
 WATCHERS = domrach
+
+
+USES_LIBRARIES =  \
+    biblio connect general medline pub seq seqcode sequtil xconnect \
+    xncbi xser xutil
