@@ -9,3 +9,7 @@ WATCHERS = thiessen
 SRC = block_align
 
 LIB = xstruct_dp
+
+
+USES_LIBRARIES =  \
+    xncbi
