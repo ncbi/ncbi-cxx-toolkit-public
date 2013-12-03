@@ -4,3 +4,7 @@ LIB = epost
 SRC = epost__ epost___
 
 WATCHERS = grichenk
+
+
+USES_LIBRARIES =  \
+    xncbi xser xutil
