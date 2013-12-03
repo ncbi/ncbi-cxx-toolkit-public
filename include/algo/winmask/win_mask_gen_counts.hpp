@@ -217,7 +217,7 @@ private:
 
     string input;                   /**<\internal input file (or list of input files) */
     CRef< CSeqMaskerOstat > ustat;  /**<\internal object used to output the unit counts statistics */
-    Uint4 max_mem;                  /**<\internal available memory in bytes */
+    Uint8 max_mem;                  /**<\internal available memory in bytes */
     Uint4 unit_size;                /**<\internal n-mer length in base pairs */
     Uint8 genome_size;              /**<\internal genome size in bases */
     Uint4 min_count;                /**<\internal minimal n-mer count to consider */

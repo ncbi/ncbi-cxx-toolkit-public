@@ -140,7 +140,7 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     bool use_ba )
 :   input( arg_input ),
     ustat( CSeqMaskerOstatFactory::create( sformat, os, use_ba ) ),
-    max_mem( mem_avail*1024*1024 ), unit_size( arg_unit_size ),
+    max_mem( mem_avail*1024*1024ULL ), unit_size( arg_unit_size ),
     genome_size( arg_genome_size ),
     min_count( arg_min_count == 0 ? 1 : arg_min_count ), 
     max_count( 500 ),
@@ -184,7 +184,7 @@ CWinMaskCountsGenerator::CWinMaskCountsGenerator(
     bool use_ba )
 :   input( arg_input ),
     ustat( CSeqMaskerOstatFactory::create( sformat, output, use_ba ) ),
-    max_mem( mem_avail*1024*1024 ), unit_size( arg_unit_size ),
+    max_mem( mem_avail*1024*1024ULL ), unit_size( arg_unit_size ),
     genome_size( arg_genome_size ),
     min_count( arg_min_count == 0 ? 1 : arg_min_count ), 
     max_count( 500 ),
@@ -270,19 +270,17 @@ void CWinMaskCountsGenerator::operator()()
     // Estimate the length of the prefix. 
     // Prefix length is unit_size - suffix length, where suffix length
     // is max N: (4**N) < max_mem.
-    Uint1 prefix_size( 0 ), suffix_size( 0 );
+    Uint1 prefix_size( 0 ), suffix_size( unit_size );
+    Uint8 n_units( max_mem/sizeof( Uint4 ) );
 
-    for( Uint4 suffix_exp( 1 ); suffix_size <= unit_size; 
-         ++suffix_size, suffix_exp *= 4 ) {
-        if( suffix_exp >= max_mem/sizeof( Uint4 ) ) {
-            prefix_size = unit_size - (--suffix_size);
-        }
+    while( suffix_size > 0 ) {
+        Uint8 units_needed( 1<<(2*suffix_size) );
+        if( units_needed <= n_units ) break; 
+        --suffix_size;
     }
 
-    if( prefix_size == 0 ) {
-        suffix_size = unit_size;
-    }
-
+    NCBI_ASSERT( suffix_size > 0, "suffix size is 0" );
+    prefix_size = unit_size - suffix_size;
     ustat->setUnitSize( unit_size );
 
     // Now process for each prefix.
@@ -463,31 +461,25 @@ void CWinMaskCountsGenerator::process( Uint4 prefix,
 
     for( Uint4 i( 0 ); i < vector_size; ++i )
     {
-        Uint4 ri = 0; 
+        Uint4 u( prefix + i ), ru( 0 );
 
         if( counts[i] > 0 )
         {
-            ri = reverse_complement( i, unit_size );
-
-            if( i == ri )
-                ++total_ecodes; 
-            else total_ecodes += 2;
+            ru = reverse_complement( u, unit_size );
+            if( u == ru ) ++total_ecodes; else total_ecodes += 2;
         }
 
         if( counts[i] >= min_count )
         {
             if( counts[i] >= max_count )
-                if( i == ri )
-                    ++score_counts[max_count - 1];
+                if( u == ru ) ++score_counts[max_count - 1];
                 else score_counts[max_count - 1] += 2;
-            else if( i == ri )
-                ++score_counts[counts[i] - 1];
+            else if( u == ru ) ++score_counts[counts[i] - 1];
             else score_counts[counts[i] - 1] += 2;
 
             if( do_output )
-                ustat->setUnitCount( prefix + i,
-                                     (counts[i] > t_high) ? t_high
-                                                          : counts[i] );
+                ustat->setUnitCount( 
+                        u, (counts[i] > t_high) ? t_high : counts[i] );
         }
     }
 }
