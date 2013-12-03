@@ -2,3 +2,7 @@ LIB = xsd_sample_lib
 SRC = xsd_sample_lib__ xsd_sample_lib___
 
 WATCHERS = gouriano
+
+
+USES_LIBRARIES =  \
+    xncbi xser xutil
