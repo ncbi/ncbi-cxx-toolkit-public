@@ -1,2 +1,7 @@
 LIB = proj
 SRC = proj__ proj___
+
+
+USES_LIBRARIES =  \
+    biblio general medline pub pubmed seq seqcode seqset sequtil \
+    xncbi xser xutil
