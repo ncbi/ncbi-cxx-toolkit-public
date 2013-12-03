@@ -4,3 +4,8 @@ LIB = taxon3
 SRC = taxon3__ taxon3___ taxon3
 
 WATCHERS = bollin
+
+
+USES_LIBRARIES =  \
+    biblio connect general medline pub seq seqcode sequtil xconnect \
+    xncbi xser xutil
