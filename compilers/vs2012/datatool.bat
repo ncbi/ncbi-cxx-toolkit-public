@@ -134,7 +134,9 @@ if "%PREBUILT_DATATOOL_EXE%"=="bootstrap" (
   )
 ) else (
   set DEF_DT=%DEFDT_LOCATION%\msvc\%DEFDT_VERSION%\%DT%
-  set DT_COPY_HERE=YES
+  if not "%COPY_DATATOOL_EXE%"=="NO" (
+    set DT_COPY_HERE=YES
+  )
 )
 if exist "%DEF_DT%" (
   set DATATOOL_EXE=%DEF_DT%
