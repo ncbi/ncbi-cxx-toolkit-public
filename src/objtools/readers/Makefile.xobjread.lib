@@ -22,3 +22,8 @@ SRC = read_util format_guess_ex \
 
 DLL_LIB = creaders
 
+
+
+USES_LIBRARIES =  \
+    biblio creaders general medline pub seq seqcode seqset sequtil \
+    submit xncbi xser xutil
