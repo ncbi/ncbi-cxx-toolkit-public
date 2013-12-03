@@ -20,3 +20,7 @@ LIBS    = $(NETWORK_LIBS)
 DLL_LIB = xthrserv xconnect xutil
 
 WATCHERS = kazimird
+
+
+USES_LIBRARIES =  \
+    connect xconnect xncbi xthrserv xutil
