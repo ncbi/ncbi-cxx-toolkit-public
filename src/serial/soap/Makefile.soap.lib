@@ -8,3 +8,7 @@ SRC = soap_message soap_readhook soap_writehook soap_client \
 LIB = xsoap
 
 WATCHERS = gouriano
+
+
+USES_LIBRARIES =  \
+    connect xconnect xncbi xser xutil
