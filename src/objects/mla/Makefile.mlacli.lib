@@ -2,3 +2,8 @@ ASN_DEP = mla
 
 LIB = mlacli
 SRC = mla_client mla_client_
+
+
+USES_LIBRARIES =  \
+    biblio connect general medlars medline mla pub pubmed xconnect \
+    xncbi xser xutil
