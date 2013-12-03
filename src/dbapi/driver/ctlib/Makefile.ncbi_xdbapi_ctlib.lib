@@ -17,3 +17,7 @@ DLL_DLIB = $(DLL_LIB) xncbi
 LIBS = $(SYBASE_LIBS) $(SYBASE_DLLS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 WATCHERS = ucko
+
+
+USES_LIBRARIES =  \
+    dbapi_driver xncbi
