@@ -14,3 +14,7 @@ DLL_DLIB = $(DLL_LIB) xncbi
 LIBS = $(MYSQL_LIBS) $(Z_LIBS) $(ORIG_LIBS)
 
 WATCHERS = ucko
+
+
+USES_LIBRARIES =  \
+    dbapi_driver xncbi
