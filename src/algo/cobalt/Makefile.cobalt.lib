@@ -14,3 +14,12 @@ ASN_DEP = seq seqset biotree xnetblast blastdb
 
 CXXFLAGS  = $(FAST_CXXFLAGS)
 LDFLAGS = $(FAST_LDFLAGS)
+
+
+USES_LIBRARIES =  \
+    biblio biotree blast blast_services blastdb composition_adjustment \
+    connect creaders fastme general genome_collection medline pub \
+    scoremat seq seqcode seqdb seqedit seqmasks_io seqset sequtil \
+    submit tables variation xalgoalignnw xalgoblastdbindex xalgodustmask \
+    xalgophytree xalgowinmask xalnmgr xblast xconnect xncbi xnetblast \
+    xnetblastcli xobjmgr xobjread xobjutil xser xutil
