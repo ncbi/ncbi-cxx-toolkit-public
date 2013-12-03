@@ -1,2 +1,6 @@
 LIB = blastxml
 SRC = blastxml__ blastxml___
+
+
+USES_LIBRARIES =  \
+    xncbi xser xutil
