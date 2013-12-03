@@ -7,3 +7,7 @@ query_parser_bison.tab.c : query_parser_bison.y
 	bison -v -p ncbi_q_ -o query_parser_bison.tab.c query_parser_bison.y
 
 WATCHERS = kuznets
+
+
+USES_LIBRARIES =  \
+    xncbi
