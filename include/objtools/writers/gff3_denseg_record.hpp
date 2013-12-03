@@ -35,6 +35,7 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <objects/seqalign/Dense_seg.hpp>
 #include <objtools/alnmgr/alnmap.hpp>
 #include <objtools/writers/gff3_alignment_data.hpp>
 
@@ -47,36 +48,93 @@ class NCBI_XOBJWRITE_EXPORT CGffDenseSegRecord
     : public CGffAlignmentRecord
 {
 public:
+    /// Initialize GFF3 output record, to be filled later from a Dense-seg
+    /// @param uFlags
+    ///   mode flags of the writer creating this record.
+    /// @param uRecordId
+    ///   record ID, used to set the GFF3 ID attribute. 
+    ///
     CGffDenseSegRecord(
             unsigned int uFlags =0,
             unsigned int uRecordId =0):
         CGffAlignmentRecord(uFlags, uRecordId)
-    {
-    };
+    {};
 
     virtual ~CGffDenseSegRecord() {};
 
-    void SetSourceLocation( 
-        const CSeq_id&,
-        ENa_strand );
+public:
+    /// Initialize all GFF3 record fields using the provided information
+    /// @param scope
+    ///   scope object used for seq-id lookup and conversion.
+    /// @param align
+    ///   container alignment object of the given Dense-seg.
+    /// @param alnMap
+    ///   alignment map created from the given Dense-seg.
+    /// @param row
+    ///   row in the alignment map this record should be constructed from.
+    bool Initialize(
+        CScope& scope,
+        const CSeq_align& align,
+        const CAlnMap& alnMap,
+        unsigned int row);
 
-    void SetTargetLocation( 
-        const CSeq_id&,
-        ENa_strand );
+protected:
+    bool xInitAlignmentIds(
+        CScope&,
+        const CSeq_align&,
+        const CAlnMap&,
+        unsigned int row);
 
-    void AddInsertion(
+    bool xSetId(
+        CScope&,
+        const CSeq_align&,
+        const CAlnMap&,
+        unsigned int row);
+
+    bool xSetMethod(
+        CScope&,
+        const CSeq_align&,
+        const CAlnMap&,
+        unsigned int row);
+    
+    bool xSetType(
+        CScope&,
+        const CSeq_align&,
+        const CAlnMap&,
+        unsigned int row);
+
+    bool xSetAlignment(
+        CScope&,
+        const CSeq_align&,
+        const CAlnMap&,
+        unsigned int row);
+
+    bool xSetScores(
+        CScope&,
+        const CSeq_align&,
+        const CAlnMap&,
+        unsigned int row);
+
+    bool xSetAttributes(
+        CScope&,
+        const CSeq_align&,
+        const CAlnMap&,
+        unsigned int row);
+
+    void xAddInsertion(
         const CAlnMap::TSignedRange& targetPiece ); 
 
-    void AddDeletion(
+    void xAddDeletion(
         const CAlnMap::TSignedRange& sourcePiece ); 
 
-    void AddMatch(
+    void xAddMatch(
         const CAlnMap::TSignedRange& sourcePiece,
         const CAlnMap::TSignedRange& targetPiece ); 
 
-protected:
-    CAlnMap::TSignedRange m_targetRange;
-    CAlnMap::TSignedRange m_sourceRange;
+    CConstRef<CSeq_id> mpSourceId;
+    CConstRef<CSeq_id> mpTargetId;
+    CAlnMap::TSignedRange mTargetRange;
+    CAlnMap::TSignedRange mSourceRange;
 };
 
 END_objects_SCOPE

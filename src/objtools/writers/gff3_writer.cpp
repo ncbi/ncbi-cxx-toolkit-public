@@ -314,108 +314,17 @@ bool CGff3Writer::x_WriteAlignDenseg(
     const CSeq_align& align)
 //  ----------------------------------------------------------------------------
 {
-    const CSeq_id& productId = align.GetSeq_id( 0 );
-    CBioseq_Handle bsh = m_pScope->GetBioseqHandle( productId );
-    CSeq_id_Handle pTargetId = bsh.GetSeq_id_Handle();
-    try {
-        CSeq_id_Handle best = sequence::GetId(bsh, sequence::eGetId_Best);
-        if (best) {
-            pTargetId = best;
-        }
-    }
-    catch(...) {};
-    const CDense_seg& ds = align.GetSegs().GetDenseg();
-    CRef<CDense_seg> ds_filled = ds.FillUnaligned();
+    CRef<CDense_seg> dsFilled = align.GetSegs().GetDenseg().FillUnaligned();
+    CAlnMap alnMap(*dsFilled);
 
-    CAlnMap align_map( *ds_filled );
+    unsigned int numRows = alnMap.GetNumRows();
+    for (int sourceRow = 1; sourceRow < numRows; ++sourceRow) {
 
-    int iTargetRow = -1;
-    for ( int row = 0;  row < align_map.GetNumRows();  ++row ) {
-        if ( sequence::IsSameBioseq( 
-            align_map.GetSeqId( row ), *pTargetId.GetSeqId(), m_pScope ) ) {
-            iTargetRow = row;
-            break;
-        }
-    }
-    if ( iTargetRow == -1 ) {
-        cerr << "No alignment row containing primary ID." << endl;
-        return false;
-    }
-
-    TSeqPos iTargetWidth = 1;
-    if ( static_cast<size_t>( iTargetRow ) < ds.GetWidths().size() ) {
-        iTargetWidth = ds.GetWidths()[ iTargetRow ];
-    }
-
-    ENa_strand targetStrand = eNa_strand_plus;
-    if ( align_map.StrandSign( iTargetRow ) != 1 ) {
-        targetStrand = eNa_strand_minus;
-    }
-
-    for ( int iSourceRow = 0;  iSourceRow < align_map.GetNumRows();  ++iSourceRow ) {
-        if ( iSourceRow == iTargetRow ) {
-            continue;
-        }
         CGffDenseSegRecord record(m_uFlags, m_uRecordId);
-
-        // Obtain and report basic source information:
-        CConstRef<CSeq_id> pSourceId =
-            sGetSourceId( align_map.GetSeqId(iSourceRow), *m_pScope );
-        TSeqPos iSourceWidth = 1;
-        if ( static_cast<size_t>( iSourceRow ) < ds.GetWidths().size() ) {
-            iSourceWidth = ds.GetWidths()[ iSourceRow ];
+        if (!record.Initialize(*m_pScope, align, alnMap, sourceRow)) {
+            return false;
         }
-        ENa_strand sourceStrand = eNa_strand_plus;
-        if ( align_map.StrandSign( iSourceRow ) != 1 ) {
-            sourceStrand = eNa_strand_minus;
-        }
-        record.SetSourceLocation( *pSourceId, sourceStrand );
-
-        // Place insertions, deletion, matches, compute resulting source and target 
-        //  ranges:
-        for ( int i0 = 0;  i0 < align_map.GetNumSegs();  ++i0 ) {
-
-            CAlnMap::TSignedRange targetPiece = align_map.GetRange( iTargetRow, i0);
-            CAlnMap::TSignedRange sourcePiece = align_map.GetRange( iSourceRow, i0 );
-            CAlnMap::TSegTypeFlags targetFlags = align_map.GetSegType( iTargetRow, i0 );
-            CAlnMap::TSegTypeFlags sourceFlags = align_map.GetSegType( iSourceRow, i0 );
-
-            if ( INSERTION( targetFlags, sourceFlags ) ) {
-                record.AddInsertion( CAlnMap::TSignedRange( 
-                    targetPiece.GetFrom() / iTargetWidth, 
-                    targetPiece.GetTo() / iTargetWidth ) );
-            }
-            if ( DELETION( targetFlags, sourceFlags ) ) {
-                record.AddDeletion( CAlnMap::TSignedRange( 
-                    sourcePiece.GetFrom() / iSourceWidth, 
-                    sourcePiece.GetTo() / iSourceWidth ) );
-            }
-            if ( MATCH( targetFlags, sourceFlags ) ) {
-                record.AddMatch( 
-                    CAlnMap::TSignedRange( 
-                        sourcePiece.GetFrom() / iSourceWidth, 
-                        sourcePiece.GetTo() / iSourceWidth ), 
-                    CAlnMap::TSignedRange( 
-                        targetPiece.GetFrom() / iTargetWidth, 
-                        targetPiece.GetTo() / iTargetWidth ) );
-            }
-        }
-
-        record.SetTargetLocation( *pTargetId.GetSeqId(), targetStrand );
-        record.SetMatchType(*pSourceId, *pTargetId.GetSeqId());
-        if (align.IsSetScore()) {
-            const vector<CRef<CScore> >& scores = align.GetScore();
-            for (vector<CRef<CScore> >::const_iterator cit = scores.begin(); 
-                    cit != scores.end(); ++cit) {
-                record.SetScore(**cit);
-            }
-        }
-        if ( ds.IsSetScores() ) {
-            ITERATE ( CDense_seg::TScores, score_it, ds.GetScores() ) {
-                record.SetScore( **score_it );
-            }
-        }
-        x_WriteAlignment( record );
+        x_WriteAlignment(record);
     }
     return true;
 }
