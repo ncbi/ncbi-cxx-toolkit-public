@@ -15,3 +15,11 @@ CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
 WATCHERS = madden camacho maning
+
+
+USES_LIBRARIES =  \
+    biblio blast blast_services blastdb composition_adjustment connect \
+    creaders general genome_collection medline pub scoremat seq seqcode \
+    seqdb seqedit seqmasks_io seqset sequtil submit tables variation \
+    xalgoblastdbindex xalgodustmask xalgowinmask xalnmgr xblast xconnect \
+    xncbi xnetblast xnetblastcli xobjmgr xobjread xobjutil xser xutil
