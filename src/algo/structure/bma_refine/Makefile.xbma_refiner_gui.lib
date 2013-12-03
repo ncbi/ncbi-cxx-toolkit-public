@@ -15,3 +15,7 @@ LIB =   xbma_refiner_gui
 SRC =   InterfaceGUI
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(WXWIDGETS_INCLUDE)
+
+
+USES_LIBRARIES =  \
+    wx_tools xncbi
