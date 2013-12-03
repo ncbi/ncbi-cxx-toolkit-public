@@ -5285,6 +5285,12 @@ public:
             if((align.Status()&CGeneModel::eCap) == 0)
                 b -= trim;
         }
+
+        //don't trim gapfillers
+        if(align.Exons().front().m_ssplice_sig == "XX")
+            a = align.Limits().GetFrom();
+        if(align.Exons().back().m_fsplice_sig == "XX")
+            b = align.Limits().GetTo();
         
         if(!align.ReadingFrame().Empty()) {  // avoid trimming confirmed CDSes
             TSignedSeqRange cds_on_genome = align.RealCdsLimits();
