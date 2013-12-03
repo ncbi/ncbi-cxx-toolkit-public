@@ -686,9 +686,6 @@ void CSeq_align_Mapper_Base::InitExon(const CSpliced_seg& spliced,
             exon.GetScores(), m_SegsScores);
     }
 
-    bool is_prot_prod =
-        spliced.GetProduct_type() == CSpliced_seg::eProduct_type_protein;
-
     m_HaveStrands =
         spliced.IsSetGenomic_strand() || spliced.IsSetProduct_strand();
     ENa_strand gen_strand = spliced.IsSetGenomic_strand() ?
