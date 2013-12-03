@@ -10,3 +10,7 @@ LIB    = dbapi
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SYBASE_INCLUDE)
 
 WATCHERS = ucko
+
+
+USES_LIBRARIES =  \
+    dbapi_driver xncbi
