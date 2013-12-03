@@ -12,3 +12,16 @@ CXXFLAGS = $(FAST_CXXFLAGS)
 
 ASN_DEP = blastdb xnetblast
 REQUIRES = objects
+
+
+USES_LIBRARIES =  \
+    align_format biblio blast blast_services blastdb blastdb_format \
+    blastinput blastxml composition_adjustment connect connext creaders \
+    dbapi_driver gene_info general genome_collection id1 id2 medline \
+    ncbi_xloader_blastdb ncbi_xloader_blastdb_rmt ncbi_xloader_genbank \
+    ncbi_xreader ncbi_xreader_cache ncbi_xreader_id1 ncbi_xreader_id2 \
+    ncbi_xreader_pubseqos pub scoremat seq seqcode seqdb seqedit \
+    seqmasks_io seqset seqsplit sequtil submit tables taxon1 variation \
+    xalgoblastdbindex xalgodustmask xalgowinmask xalnmgr xblast xblastformat \
+    xcgi xcompress xconnect xconnext xhtml xncbi xnetblast xnetblastcli \
+    xobjmgr xobjread xobjutil xser xutil
