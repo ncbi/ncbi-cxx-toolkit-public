@@ -12,3 +12,7 @@ LIB = xcgi
 CPPFLAGS = $(ORIG_CPPFLAGS) $(FASTCGI_INCLUDE)
 
 WATCHERS = vakatov
+
+
+USES_LIBRARIES =  \
+    xncbi xutil
