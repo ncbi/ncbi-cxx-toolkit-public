@@ -14,3 +14,9 @@ CPPFLAGS = $(SQLITE3_INCLUDE) $(ORIG_CPPFLAGS)
 DLL_LIB = lds2
 
 WATCHERS = grichenk
+
+
+USES_LIBRARIES =  \
+    biblio creaders general genome_collection lds2 medline pub seq \
+    seqcode seqedit seqset sequtil sqlitewrapp submit variation xcompress \
+    xncbi xobjmgr xobjread xser xutil
