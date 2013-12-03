@@ -14,3 +14,10 @@ LDFLAGS  = $(FAST_LDFLAGS)
 ASN_DEP = seqset
 
 WATCHERS = morgulis
+
+
+USES_LIBRARIES =  \
+    biblio blast blastdb composition_adjustment connect creaders \
+    general genome_collection medline pub seq seqcode seqdb seqedit \
+    seqset sequtil submit tables variation xncbi xobjmgr xobjread \
+    xobjutil xser xutil
