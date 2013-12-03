@@ -15,3 +15,7 @@ DLL_DLIB = $(DLL_LIB) xncbi
 LIBS = $(RUNPATH_ORIGIN) $(KRB5_LIBS) $(ICONV_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS)
 
 WATCHERS = ucko
+
+
+USES_LIBRARIES =  \
+    ct_ftds64 dbapi_driver tds_ftds64 xncbi
