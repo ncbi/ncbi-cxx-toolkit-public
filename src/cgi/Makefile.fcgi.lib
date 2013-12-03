@@ -12,3 +12,7 @@ LIB = xfcgi
 CPPFLAGS = $(ORIG_CPPFLAGS) $(FASTCGI_INCLUDE) -DNCBI_XFCGI_EXPORTS
 
 WATCHERS = vakatov
+
+
+USES_LIBRARIES =  \
+    xncbi xutil
