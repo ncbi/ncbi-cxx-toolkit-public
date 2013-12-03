@@ -13,3 +13,8 @@ DLL_LIB = $(SRAREAD_LDEP) $(SOBJMGR_LDEP)
 CPPFLAGS = $(ORIG_CPPFLAGS) $(SRA_INCLUDE) -DNCBI_SRAREAD_EXPORTS
 
 WATCHERS = vasilche
+
+
+USES_LIBRARIES =  \
+    biblio general medline ncbi-vdb-read pub seq seqcode seqset sequtil \
+    xncbi xser xutil
