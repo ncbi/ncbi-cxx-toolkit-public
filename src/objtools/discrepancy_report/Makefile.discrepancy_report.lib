@@ -11,3 +11,13 @@ LIB = xdiscrepancy_report
 ASN_DEP = general biblio pub seq seqset submit taxon3 macro valid
 
 WATCHERS = chenj
+
+
+USES_LIBRARIES =  \
+    biblio connect connext creaders dbapi_driver gbseq general genome_collection \
+    id1 id2 macro medlars medline mla mlacli ncbi_xloader_genbank \
+    ncbi_xreader ncbi_xreader_cache ncbi_xreader_id1 ncbi_xreader_id2 \
+    ncbi_xreader_pubseqos pub pubmed seq seqcode seqedit seqset seqsplit \
+    sequtil submit tables taxon1 taxon3 valerr valid variation xalnmgr \
+    xcompress xconnect xconnext xformat xncbi xobjmgr xobjread xobjutil \
+    xregexp xser xutil xvalidate
