@@ -14,3 +14,7 @@ LIB = bdb
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BERKELEYDB_INCLUDE)
 
 WATCHERS = kuznets
+
+
+USES_LIBRARIES =  \
+    xncbi xutil
