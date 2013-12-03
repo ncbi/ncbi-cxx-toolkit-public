@@ -10,3 +10,8 @@ LIB = xunittestutil
 ASN_DEP = general biblio pub seq seqset submit
 
 WATCHERS = bollin kornbluh
+
+
+USES_LIBRARIES =  \
+    biblio general genome_collection medline pub seq seqcode seqedit \
+    seqset sequtil xncbi xobjmgr xobjutil xser xutil
