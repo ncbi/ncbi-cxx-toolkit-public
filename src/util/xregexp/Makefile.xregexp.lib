@@ -10,3 +10,7 @@ DLL_LIB = $(PCRE_LIB)
 LIBS    = $(PCRE_LIBS)
 
 WATCHERS = ivanov
+
+
+USES_LIBRARIES =  \
+    xncbi
