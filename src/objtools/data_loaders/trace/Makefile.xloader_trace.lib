@@ -9,3 +9,9 @@ LIB = ncbi_xloader_trace
 SRC = trace_chgr
 
 ASN_DEP = id1
+
+
+USES_LIBRARIES =  \
+    biblio connect general genome_collection id1 id1cli medline pub \
+    seq seqcode seqedit seqset sequtil xconnect xncbi xobjmgr xser \
+    xutil
