@@ -12,3 +12,9 @@ CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
 WATCHERS = chetvern souvorov
+
+
+USES_LIBRARIES =  \
+    biblio connect general genome_collection medline pub seq seqcode \
+    seqedit seqset sequtil tables taxon1 xalgoseq xalnmgr xconnect \
+    xncbi xobjmgr xobjutil xregexp xser xutil
