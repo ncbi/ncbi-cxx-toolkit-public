@@ -4,3 +4,7 @@ LIB = ehistory
 SRC = ehistory__ ehistory___
 
 WATCHERS = grichenk
+
+
+USES_LIBRARIES =  \
+    xncbi xser xutil
