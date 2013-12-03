@@ -9,3 +9,9 @@ SRC = glimmer_reader idmapper idmapper_builtin idmapper_config \
 	  idmapper_database source_mod_parser_wrapper
 
 DLL_LIB = xobjread
+
+
+USES_LIBRARIES =  \
+    biblio creaders general genome_collection medline pub seq seqcode \
+    seqedit seqset sequtil submit variation xncbi xobjmgr xobjread \
+    xobjutil xser xutil
