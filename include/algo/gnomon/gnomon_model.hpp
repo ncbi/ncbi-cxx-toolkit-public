@@ -123,7 +123,7 @@ public:
         return (IsDeletion() && Loc() >= a && Loc() <= b+1) ||
             (IsInsertion() && Loc() <= b && a <= Loc()+Len()-1);
     }
-    bool operator<(const CInDelInfo& fsi) const
+    bool operator<(const CInDelInfo& fsi) const    // source is ignored!!!!!!!!!!!
     {
         if(m_loc != fsi.m_loc)
             return m_loc < fsi.m_loc;

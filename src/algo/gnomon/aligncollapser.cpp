@@ -388,6 +388,199 @@ void CAlignCollapser::ClipNotSupportedFlanks(CAlignModel& align, double clip_thr
     }
 }
 
+#define PROT_CLIP 60
+#define PROT_CLIP_FRAC 0.1
+
+void CAlignCollapser::ClipProteinToStartStop(CAlignModel& align) {
+
+    int maxclip = min(PROT_CLIP, (int)(align.TargetLen()*PROT_CLIP_FRAC+0.5));
+    TSignedSeqRange tlim = align.TranscriptLimits();
+    int leftclip = maxclip-tlim.GetFrom();
+    int rightclip = maxclip-(align.TargetLen()-tlim.GetTo()-1);
+    if(align.Strand() == eMinus)
+        swap(leftclip, rightclip);
+
+    TSignedSeqRange r(align.Limits());
+    if(leftclip > 0)
+        r.SetFrom(min(align.Limits().GetFrom()+leftclip,align.Exons().front().GetTo()-2));
+    if(rightclip > 0)
+        r.SetTo(max(align.Exons().back().GetFrom()+2,align.Limits().GetTo()-rightclip));
+    r = align.GetAlignMap().ShrinkToRealPoints(r, true);
+
+    if(r.NotEmpty()) {
+        if(r.GetFrom() > align.Exons().front().GetTo())
+            r.SetFrom(align.Limits().GetFrom());
+        if(r.GetTo() < align.Exons().back().GetFrom())
+            r.SetTo(align.Limits().GetTo());
+        if(r != align.Limits()) {
+
+            CGeneModel editedmodel = align;
+            editedmodel.SetCdsInfo(CCDSInfo());
+            vector<TSignedSeqRange> transcript_exons;
+            for(int i = 0; i < (int)align.Exons().size(); ++i) {
+                transcript_exons.push_back(align.TranscriptExon(i));
+            }
+            TInDels indels = align.GetInDels(false);
+
+            CGeneModel am = align;
+            am.Clip(r,CGeneModel::eRemoveExons);
+            if(!am.FrameShifts().empty())  // frameshift in the main body
+                return;
+
+            int left_ext = (r.GetFrom()-align.Limits().GetFrom())/3;
+            int right_ext = (align.Limits().GetTo()-r.GetTo())/3;
+            am.ExtendLeft(left_ext*3);
+            am.ExtendRight(right_ext*3);
+            CCDSInfo cds;
+            cds.SetReadingFrame(am.Limits(),true);
+            am.SetCdsInfo(cds);
+            string protseq = am.GetProtein(m_contigrv);
+
+            if(align.Strand() == eMinus)
+                swap(left_ext, right_ext);
+
+            size_t star = protseq.find("*", left_ext);
+            if(star != string::npos && star < protseq.length()-right_ext)  // stop in the main body
+                return;
+            
+            TSignedSeqRange left_term;
+            size_t m = string::npos;
+            CSeqVector protein_seqvec(m_scope->GetBioseqHandle(*align.GetTargetId()), CBioseq_Handle::eCoding_Iupac);
+            if(protein_seqvec[0] == 'M') {
+                size_t last_star = protseq.find_last_of("*",left_ext-1);
+                m = protseq.find("M", (last_star ==string::npos) ? 0 : last_star+1);   // first start after possible stop
+                if(m != string::npos && (int)m < left_ext) {
+                    left_term = am.GetAlignMap().MapRangeEditedToOrig(TSignedSeqRange(3*m,3*m+2),false);
+                    _ASSERT(left_term.NotEmpty());
+                }
+            }
+
+            TSignedSeqRange right_term;
+            star = protseq.find("*", (m == string::npos) ? 0 : m+1);   // first stop after possible start
+            if(star != string::npos && star >= protseq.length()-right_ext) {
+                right_term = am.GetAlignMap().MapRangeEditedToOrig(TSignedSeqRange(3*star,3*star+2),false);
+                _ASSERT(right_term.NotEmpty());
+            }
+
+            if(align.Strand() == eMinus)
+                swap(left_term, right_term);
+
+            TSignedSeqRange clip(editedmodel.Limits());
+            bool new_left = false;
+            bool new_right = false;
+
+            if(left_term.NotEmpty() && (left_term.GetFrom() > align.Limits().GetFrom() || !align.LeftComplete())) {
+                _ASSERT(left_term.GetTo() < r.GetFrom());
+                new_left = true;
+                clip.SetFrom(left_term.GetFrom());
+                for(int l = 0; l < (int)indels.size(); ++l) {
+                    if(indels[l].Loc() <= r.GetFrom())
+                        indels.erase(indels.begin()+l--);
+                }
+            }
+
+            if(right_term.NotEmpty() && (right_term.GetTo() < align.Limits().GetTo() || !align.RightComplete())) {
+                _ASSERT(right_term.GetFrom() > r.GetTo());
+                new_right = true;
+                clip.SetTo(right_term.GetTo());
+                for(int l = 0; l < (int)indels.size(); ++l) {
+                    if(indels[l].Loc() > r.GetTo())
+                        indels.erase(indels.begin()+l--);
+                }
+            }
+
+            if(new_left || new_right) {
+                editedmodel.Clip(clip, CGeneModel::eRemoveExons);
+                
+                CCDSInfo cds = align.GetCdsInfo();
+                TSignedSeqRange rf = cds.ReadingFrame();
+                TSignedSeqRange start = cds.Start();
+                TSignedSeqRange stop = cds.Stop();
+
+                string comment;
+
+                TSignedSeqRange atlim = align.GetAlignMap().MapRangeOrigToEdited(r, false);
+                if(new_left) {
+                    if(align.Strand() == ePlus) {
+                        start = left_term;
+                        rf.SetFrom(start.GetTo()+1);
+
+                        int newf = atlim.GetFrom()-(r.GetFrom()-start.GetFrom());
+                        if(newf < 0) {
+                            int insertlen = abs(newf);
+                            indels.insert(indels.begin(), CInDelInfo(start.GetTo()+1, insertlen, true));
+                            newf = 0;
+                        }
+                        transcript_exons.front().SetFrom(newf);
+
+                        comment = "Clipped to start";
+                    } else {
+                        stop = left_term;
+                        rf.SetFrom(stop.GetTo()+1);
+
+                        int newt = atlim.GetTo()+(r.GetFrom()-left_term.GetFrom());
+                        if(newt > align.TargetLen()-1) {
+                            int insertlen = newt-align.TargetLen()+1;
+                            indels.insert(indels.begin(), CInDelInfo(stop.GetTo()+1, insertlen, true));
+                            newt = align.TargetLen()-1;
+                        }
+                        transcript_exons.front().SetTo(newt);
+
+                        comment = "Clipped to stop";
+                    }
+                }
+
+                if(new_right) {
+                    if(!comment.empty())
+                        comment += " ";
+                    if(align.Strand() == ePlus) {
+                        stop = right_term;
+                        rf.SetTo(stop.GetFrom()-1);
+
+                        int newt = atlim.GetTo()+(stop.GetTo()-r.GetTo());
+                        if(newt > align.TargetLen()-1) {
+                            int insertlen = newt-align.TargetLen()+1;
+                            indels.push_back(CInDelInfo(stop.GetFrom()-insertlen, insertlen, true));
+                            newt = align.TargetLen()-1;
+                        }
+                        transcript_exons.back().SetTo(newt);
+
+                        comment += "Clipped to stop";
+                    } else {
+                        start = right_term;
+                        rf.SetTo(start.GetFrom()-1);
+
+                        int newf = atlim.GetFrom()-(start.GetTo()-r.GetTo());
+                        if(newf < 0) {
+                            int insertlen = abs(newf);
+                            indels.push_back(CInDelInfo(start.GetFrom()-insertlen, insertlen, true));
+                            newf = 0;
+                        }
+                        transcript_exons.back().SetFrom(newf);
+
+                        comment += "Clipped to start";
+                    }
+                }
+                
+                cds.SetReadingFrame(rf,true);
+                cds.SetStart(start);
+                cds.SetStop(stop);
+
+                CAlignMap editedamap(editedmodel.Exons(), transcript_exons, indels, align.Orientation(), align.GetAlignMap().TargetLen());
+                CAlignModel editedalign(editedmodel, editedamap);
+                editedalign.SetTargetId(*align.GetTargetId());
+                TSignedSeqRange editedtlim = editedalign.TranscriptLimits();
+                editedalign.SetCdsInfo(cds);
+#ifdef _DEBUG 
+                editedalign.AddComment(comment);
+#endif    
+
+                align = editedalign;
+            }
+        }
+    }
+}
+
 
 #define CUT_MARGIN 15
 
@@ -430,41 +623,6 @@ bool CAlignCollapser::RemoveNotSupportedIntronsFromProt(CAlignModel& align) {
                 keepdoing = true;
                 break;
             }
-        }
-    }
-
-    if(!align.TrustedProt().empty() && (align.Status()&CGeneModel::eBestPlacement)) {
-
-        double cov = 0;
-        int nt = 0;
-        ITERATE(CGeneModel::TExons, e, align.Exons()) {
-            for(int i = e->GetFrom(); i <= e->GetTo(); ++i) {
-                cov += m_coverage[i-m_left_end];
-                ++nt;
-            }
-        }
-        cov /= nt;
-
-        CGeneModel am = align;
-        string protseq = am.GetProtein(m_contigrv);
-        protseq.resize(protseq.length()-1);
-        int pstop = protseq.find("*");
-        bool ps = false;
-        if(pstop != (int)string::npos) {
-            ps = true;
-            CAlignMap amp = am.GetAlignMap();
-            int tcds = amp.MapRangeOrigToEdited(align.GetCdsInfo().Cds()).GetFrom();
-            while(pstop != (int)string::npos) {
-                int p = amp.MapEditedToOrig(tcds+3*pstop);
-                if(p >= 0) {
-                    cerr << "Pstopinfo\t" << align.ID() << '\t' << align.TargetLen() << '\t' << 3*pstop << '\t' << p << '\t' << m_coverage[p-m_left_end] << '\t' << m_coverage[p-m_left_end]/cov*100 << '\t' << protseq << endl;
-                }
-        
-                pstop = protseq.find("*",pstop+1);
-            }
-        }
-        ITERATE(TInDels, i, align.FrameShifts()) {
-            cerr << "Fshiftinfo\t" << align.ID() << '\t' << i->Loc() << '\t' << m_coverage[i->Loc()-m_left_end] << '\t' << m_coverage[i->Loc()-m_left_end]/cov*100 << '\t' << protseq << endl;
         }
     }
 
@@ -582,11 +740,26 @@ bool CAlignCollapser::RemoveNotSupportedIntronsFromTranscript(CAlignModel& align
     return good_alignment;
 }
 
+struct GenomicGapsOrder {
+    bool operator()(const CInDelInfo& a, const CInDelInfo& b) const
+    {
+        if(a != b)
+            return a < b;
+        else
+            return a.GetSource().m_acc < b.GetSource().m_acc;
+    }
+};
+
+
 
 void CAlignCollapser::FilterAlignments() {
 
-    //    if(!m_filtersr && !m_filterest && !m_filtermrna && !m_filterprots)
-    //        return;
+    NON_CONST_ITERATE(TAlignModelList, i, m_aligns_for_filtering_only) {
+        CAlignModel& align = *i;
+        if(align.Type()&CAlignModel::eProt) {
+            ClipProteinToStartStop(align);
+        }
+    }
 
     CArgs args = CNcbiApplication::Instance()->GetArgs();
 
@@ -1150,7 +1323,7 @@ void CAlignCollapser::FilterAlignments() {
         if(align.Status()&CGeneModel::eUnmodifiedAlign)
             continue;
 
-        const CAlignMap& amap = align.GetAlignMap();
+        CAlignMap amap = align.GetAlignMap();
 
         if((align.Type()&CGeneModel::eEST) && !m_filterest)
             continue;
@@ -1251,8 +1424,8 @@ void CAlignCollapser::FilterAlignments() {
     }
 
     //clean genomic gaps
-    sort(m_align_gaps.begin(),m_align_gaps.end());
-    m_align_gaps.erase( unique(m_align_gaps.begin(),m_align_gaps.end()), m_align_gaps.end() );
+    sort(m_align_gaps.begin(),m_align_gaps.end(),GenomicGapsOrder());                            // if the sequence same accsession is used
+    m_align_gaps.erase( unique(m_align_gaps.begin(),m_align_gaps.end()), m_align_gaps.end() );   // uses == for CInDelInfo which ignores accession
 
     total += m_aligns_for_filtering_only.size();
     

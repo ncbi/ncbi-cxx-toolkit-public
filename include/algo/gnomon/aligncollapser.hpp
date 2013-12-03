@@ -143,6 +143,7 @@ private:
     void CleanExonEdge(int ie, CAlignModel& align, const string& transcript, bool right_edge) const; 
     CAlignModel FillGapsInAlignmentAndAddToGenomicGaps(const CAlignModel& align, int fill);
     bool CheckAndInsert(const CAlignModel& align, TAlignModelClusterSet& clsset) const;
+    void ClipProteinToStartStop(CAlignModel& align);
     bool RemoveNotSupportedIntronsFromProt(CAlignModel& align);
     bool RemoveNotSupportedIntronsFromTranscript(CAlignModel& align) const;
     void ClipNotSupportedFlanks(CAlignModel& align, double clip_threshold);

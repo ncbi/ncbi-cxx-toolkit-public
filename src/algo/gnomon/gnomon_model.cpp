@@ -1123,14 +1123,14 @@ void CGeneModel::RecalculateLimits()
 
 void CGeneModel::ExtendLeft(int amount)
 {
-    _ASSERT(amount>0);
+    _ASSERT(amount>=0);
     MyExons().front().AddFrom(-amount);
     RecalculateLimits();
 }
 
 void CGeneModel::ExtendRight(int amount)
 {
-    _ASSERT(amount>0);
+    _ASSERT(amount>=0);
     MyExons().back().AddTo(amount);
     RecalculateLimits();
 }
