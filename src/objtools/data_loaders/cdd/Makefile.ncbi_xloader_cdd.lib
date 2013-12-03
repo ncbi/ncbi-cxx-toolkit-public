@@ -9,3 +9,8 @@ LIB = ncbi_xloader_cdd
 SRC = cdd
 
 ASN_DEP = seqset
+
+
+USES_LIBRARIES =  \
+    biblio connect general genome_collection medline pub seq seqcode \
+    seqedit seqset sequtil xconnect xncbi xobjmgr xser xutil
