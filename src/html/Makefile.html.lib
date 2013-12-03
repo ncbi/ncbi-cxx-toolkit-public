@@ -8,3 +8,7 @@ SRC = node html htmlhelper page pager selection components \
 LIB = xhtml
 
 WATCHERS = ivanov
+
+
+USES_LIBRARIES =  \
+    xncbi
