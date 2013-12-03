@@ -21,3 +21,9 @@ SRC = seq_masker seq_masker_score_mean seq_masker_score_mean_glob \
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
+
+
+USES_LIBRARIES =  \
+    biblio blastdb creaders general genome_collection medline pub \
+    seq seqcode seqdb seqedit seqmasks_io seqset sequtil submit variation \
+    xncbi xobjmgr xobjread xobjutil xser xutil
