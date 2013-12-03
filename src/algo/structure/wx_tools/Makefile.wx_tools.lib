@@ -11,3 +11,7 @@ LIB =   wx_tools
 SRC =   wx_tools
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(WXWIDGETS_INCLUDE)
+
+
+USES_LIBRARIES =  \
+    xncbi
