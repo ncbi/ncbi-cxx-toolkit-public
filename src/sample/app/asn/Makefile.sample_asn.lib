@@ -10,3 +10,7 @@ LIB = sample_asn
 ASN_DEP = general
 
 WATCHERS = gouriano
+
+
+USES_LIBRARIES =  \
+    general xncbi xser xutil
