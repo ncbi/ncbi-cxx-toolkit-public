@@ -10,3 +10,8 @@ LIB = xobjutil
 
 WATCHERS = ucko vasilche kornbluh
 
+
+
+USES_LIBRARIES =  \
+    biblio general genome_collection medline pub seq seqcode seqedit \
+    seqset sequtil xncbi xobjmgr xser xutil
