@@ -160,6 +160,7 @@ bool CNetCacheKey::ParseBlobKey(const char* key_str,
                     }
             } while (ch < ch_end);
         }
+#ifndef NO_COMPOUND_ID_SUPPORT
     } else if (id_pool != NULL) {
         try {
             CCompoundIDPool pool_obj(id_pool);
@@ -225,6 +226,7 @@ bool CNetCacheKey::ParseBlobKey(const char* key_str,
         catch (CCompoundIDException&) {
             return false;
         }
+#endif /* NO_COMPOUND_ID_SUPPORT */
     }
 
     return true;
@@ -330,6 +332,7 @@ void CNetCacheKey::GenerateBlobKey(string* key, unsigned id,
     AddExtensions(*key, service_name, flags);
 }
 
+#ifndef NO_COMPOUND_ID_SUPPORT
 string CNetCacheKey::KeyToCompoundID(const string& key_str,
         CCompoundIDPool id_pool)
 {
@@ -360,6 +363,7 @@ string CNetCacheKey::KeyToCompoundID(const string& key_str,
 
     return nc_key_cid.ToString();
 }
+#endif /* NO_COMPOUND_ID_SUPPORT */
 
 unsigned int
 CNetCacheKey::GetBlobId(const string& key_str)

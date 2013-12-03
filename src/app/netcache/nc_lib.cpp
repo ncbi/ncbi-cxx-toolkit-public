@@ -45,6 +45,7 @@ static unsigned int GetSelf() {return 1;}
 #include "../../util/checksum.cpp"
 #include "../../util/md5.cpp"
 #include "../../connect/services/netservice_protocol_parser.cpp"
+#define NO_COMPOUND_ID_SUPPORT
 #include "../../connect/services/netcache_key.cpp"
 #undef HAVE_SQLITE3ASYNC_H
 #undef HAVE_SQLITE3_UNLOCK_NOTIFY
