@@ -4,3 +4,8 @@ LIB = id1cli
 SRC = id1_client id1_client_
 
 WATCHERS = vasilche
+
+
+USES_LIBRARIES =  \
+    biblio connect general id1 medline pub seq seqcode seqset sequtil \
+    xconnect xncbi xser xutil
