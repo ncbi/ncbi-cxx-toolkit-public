@@ -4,3 +4,7 @@ LIB = esearch
 SRC = esearch__ esearch___
 
 WATCHERS = grichenk
+
+
+USES_LIBRARIES =  \
+    xncbi xser xutil
