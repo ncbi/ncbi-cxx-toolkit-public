@@ -8,3 +8,8 @@ CPPFLAGS = -DNCBI_MODULE=BLASTDB $(ORIG_CPPFLAGS)
 ASN_DEP = blastdb seqset
 
 WATCHERS = camacho
+
+
+USES_LIBRARIES =  \
+    biblio blastdb general genome_collection medline pub seq seqcode \
+    seqdb seqedit seqset sequtil xncbi xobjmgr xser xutil
