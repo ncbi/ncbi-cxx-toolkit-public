@@ -1,2 +1,7 @@
 LIB = pcassay
 SRC = pcassay__ pcassay___
+
+
+USES_LIBRARIES =  \
+    biblio general medline pcsubstance pub seq seqcode sequtil xncbi \
+    xser xutil
