@@ -9,3 +9,7 @@ LIB = xgridcgi
 CPPFLAGS = $(ORIG_CPPFLAGS) $(FASTCGI_INCLUDE)
 
 WATCHERS = vakatov kazimird
+
+
+USES_LIBRARIES =  \
+    connect xcgi xconnect xconnserv xhtml xncbi xthrserv xutil
