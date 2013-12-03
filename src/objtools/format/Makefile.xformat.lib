@@ -19,3 +19,9 @@ SRC = accession_item basecount_item comment_item contig_item date_item \
       gather_iter html_anchor_item inst_info_map gene_finder flat_qual_slots
 
 WATCHERS = ludwigf dicuccio kornbluh
+
+
+USES_LIBRARIES =  \
+    biblio connect gbseq general genome_collection medlars medline \
+    mla mlacli pub pubmed seq seqcode seqedit seqset sequtil submit \
+    tables xalnmgr xconnect xncbi xobjmgr xobjutil xser xutil
