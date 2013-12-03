@@ -4,3 +4,7 @@ LIB = espell
 SRC = espell__ espell___
 
 WATCHERS = grichenk
+
+
+USES_LIBRARIES =  \
+    xncbi xser xutil
