@@ -99,6 +99,10 @@ public:
     typedef map<string, SNetServerInPool*> TServerByNode;
     TServerByNode m_ServerByNode;
 
+    // Make sure the worker node does not attempt to submit its
+    // preferred affinities from two threads.
+    CFastMutex m_AffinitySubmissionMutex;
+
     bool m_WorkerNodeCompatMode;
 };
 

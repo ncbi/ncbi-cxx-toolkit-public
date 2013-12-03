@@ -297,8 +297,11 @@ void SNetScheduleExecutorImpl::ClaimNewPreferredAffinity(
                         (*it).GetServerAddress() <<
                         " of a new affinity " << e);
 
-                m_API->GetListener()->SetAffinitiesSynced(
-                        it.GetServer(), false);
+                CNetScheduleServerListener* listener = m_API->GetListener();
+
+                CFastMutexGuard guard(listener->m_AffinitySubmissionMutex);
+
+                listener->SetAffinitiesSynced(it.GetServer(), false);
             }
     }
 }
@@ -334,10 +337,15 @@ bool SNetScheduleExecutorImpl::ExecGET(SNetServerImpl* server,
         if (e.GetErrCode() != CNetScheduleException::ePrefAffExpired)
             throw;
 
-        CNetScheduleServerListener* listener = m_API->GetListener();
-        listener->SetAffinitiesSynced(server, false);
-        server->ConnectAndExec(MkSETAFFCmd(), exec_result);
-        listener->SetAffinitiesSynced(server, true);
+        {
+            CNetScheduleServerListener* listener = m_API->GetListener();
+
+            CFastMutexGuard guard(listener->m_AffinitySubmissionMutex);
+
+            listener->SetAffinitiesSynced(server, false);
+            server->ConnectAndExec(MkSETAFFCmd(), exec_result);
+            listener->SetAffinitiesSynced(server, true);
+        }
 
         server->ConnectAndExec(get_cmd, exec_result, NULL, &get_cmd_listener);
     }
@@ -719,6 +727,8 @@ void CNetScheduleGETCmdListener::OnExec(
 
             CNetScheduleServerListener* listener =
                     m_Executor->m_API->GetListener();
+
+            CFastMutexGuard guard(listener->m_AffinitySubmissionMutex);
 
             if (listener->NeedToSubmitAffinities(conn_impl->m_Server)) {
                 conn.Exec(m_Executor->MkSETAFFCmd());
