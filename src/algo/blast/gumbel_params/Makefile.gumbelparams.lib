@@ -11,3 +11,7 @@ LDFLAGS  = $(FAST_LDFLAGS)
 
 WATCHERS = boratyng madden camacho
 
+
+
+USES_LIBRARIES =  \
+    tables xncbi xutil
