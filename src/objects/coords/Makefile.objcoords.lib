@@ -3,3 +3,7 @@
 SRC = objcoords__ objcoords___ 
 LIB = objcoords
 
+
+
+USES_LIBRARIES =  \
+    xncbi xser xutil
