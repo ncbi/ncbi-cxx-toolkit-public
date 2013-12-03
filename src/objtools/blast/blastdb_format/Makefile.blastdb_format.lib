@@ -17,3 +17,8 @@ CPPFLAGS = -DNCBI_MODULE=BLASTDB $(ORIG_CPPFLAGS)
 # CXXFLAGS = $(FAST_CXXFLAGS)
 #
 # LIB_OR_DLL = dll
+
+
+USES_LIBRARIES =  \
+    biblio blastdb general genome_collection medline pub seq seqcode \
+    seqdb seqedit seqset sequtil xncbi xobjmgr xobjutil xser xutil
