@@ -20,3 +20,8 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(CMPRS_INCLUDE)
 DLL_LIB = $(SOBJMGR_LIBS)
 
 WATCHERS = vasilche
+
+
+USES_LIBRARIES =  \
+    biblio general genome_collection medline pub seq seqcode seqedit \
+    seqset seqsplit sequtil xcompress xncbi xobjmgr xser xutil
