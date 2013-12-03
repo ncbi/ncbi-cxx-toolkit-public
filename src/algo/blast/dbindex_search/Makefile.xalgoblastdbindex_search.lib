@@ -10,3 +10,8 @@ LDFLAGS  = $(FAST_LDFLAGS)
 ASN_DEP = seqset
 
 WATCHERS = morgulis
+
+
+USES_LIBRARIES =  \
+    biblio general genome_collection medline pub seq seqcode seqedit \
+    seqset sequtil xncbi xobjmgr xser xutil
