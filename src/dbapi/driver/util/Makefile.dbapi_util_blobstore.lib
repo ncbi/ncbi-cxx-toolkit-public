@@ -14,3 +14,7 @@ DLL_LIB = dbapi_driver$(DLL) xcompress $(CMPRS_LIB) xutil xncbi
 LIBS    = $(CMPRS_LIBS) $(ORIG_LIBS)
 
 WATCHERS = ucko
+
+
+USES_LIBRARIES =  \
+    dbapi_driver xcompress xncbi xutil
