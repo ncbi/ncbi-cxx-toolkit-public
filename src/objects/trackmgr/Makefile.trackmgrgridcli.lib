@@ -11,3 +11,8 @@ LIB_OR_DLL = lib
 ASN_DEP = trackmgr
 
 WATCHERS = meric clausen
+
+
+USES_LIBRARIES =  \
+    biblio connect general medline pub seq seqcode sequtil trackmgr \
+    xcompress xconnect xconnserv xncbi xser xthrserv xutil
