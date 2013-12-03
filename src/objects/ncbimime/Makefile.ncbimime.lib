@@ -1,2 +1,7 @@
 LIB = ncbimime
 SRC = ncbimime__ ncbimime___
+
+
+USES_LIBRARIES =  \
+    biblio cdd cn3d general medline mmdb pub scoremat seq seqcode \
+    seqset sequtil xncbi xser xutil
