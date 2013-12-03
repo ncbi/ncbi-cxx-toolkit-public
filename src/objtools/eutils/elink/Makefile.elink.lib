@@ -4,3 +4,7 @@ LIB = elink
 SRC = elink__ elink___
 
 WATCHERS = grichenk
+
+
+USES_LIBRARIES =  \
+    xncbi xser xutil
