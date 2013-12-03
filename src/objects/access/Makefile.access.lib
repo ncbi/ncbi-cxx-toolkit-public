@@ -1,2 +1,6 @@
 LIB = access
 SRC = access__ access___
+
+
+USES_LIBRARIES =  \
+    xncbi xser xutil
