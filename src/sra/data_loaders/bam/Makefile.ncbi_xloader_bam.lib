@@ -18,3 +18,9 @@ LIBS =  $(CMPRS_LIBS) $(ORIG_LIBS)
 CPPFLAGS = $(SRA_INCLUDE) -DNCBI_XLOADER_BAM_EXPORTS $(ORIG_CPPFLAGS)
 
 WATCHERS = vasilche
+
+
+USES_LIBRARIES =  \
+    bamread biblio creaders general genome_collection medline ncbi-vdb-read \
+    pub seq seqcode seqedit seqset sequtil submit variation xncbi \
+    xobjmgr xobjread xobjreadex xobjutil xser xutil
