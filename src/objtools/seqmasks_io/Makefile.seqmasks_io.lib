@@ -15,3 +15,9 @@ ASN_DEP = seqset
 DLL_LIB = seqdb blastdb
 
 WATCHERS = morgulis camacho
+
+
+USES_LIBRARIES =  \
+    biblio blastdb creaders general genome_collection medline pub \
+    seq seqcode seqdb seqedit seqset sequtil submit variation xncbi \
+    xobjmgr xobjread xobjutil xser xutil
