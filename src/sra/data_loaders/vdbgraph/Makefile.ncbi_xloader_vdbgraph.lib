@@ -19,3 +19,8 @@ DLL_LIB = sraread$(STATIC) $(SRAREAD_LDEP) $(SOBJMGR_LIBS)
 CPPFLAGS = $(SRA_INCLUDE) -DNCBI_XLOADER_VDBGRAPH_EXPORTS $(ORIG_CPPFLAGS)
 
 WATCHERS = vasilche
+
+
+USES_LIBRARIES =  \
+    biblio general genome_collection medline ncbi-vdb-read pub seq \
+    seqcode seqedit seqset sequtil sraread xncbi xobjmgr xser xutil
