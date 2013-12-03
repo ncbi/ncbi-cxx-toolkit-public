@@ -15,3 +15,8 @@ LIBS = $(CMPRS_LIBS) $(ORIG_LIBS)
 CPPFLAGS = $(SQLITE3_INCLUDE) $(CMPRS_INCLUDE) $(ORIG_CPPFLAGS)
 
 WATCHERS = grichenk
+
+
+USES_LIBRARIES =  \
+    biblio creaders general medline pub seq seqcode seqset sequtil \
+    sqlitewrapp submit variation xcompress xncbi xobjread xser xutil
