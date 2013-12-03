@@ -14,3 +14,7 @@ CPPFLAGS = $(ORIG_CPPFLAGS) \
 LIBS  = $(IMAGE_LIBS) $(ORIG_LIBS)
 
 WATCHERS = dicuccio
+
+
+USES_LIBRARIES =  \
+    xncbi
