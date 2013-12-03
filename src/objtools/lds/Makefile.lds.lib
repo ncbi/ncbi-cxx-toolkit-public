@@ -12,3 +12,9 @@ SRC = lds lds_reader lds_query \
 DLL_LIB = bdb
 
 WATCHERS = vasilche
+
+
+USES_LIBRARIES =  \
+    bdb biblio creaders general genome_collection medline pub seq \
+    seqcode seqedit seqset sequtil submit variation xncbi xobjmgr \
+    xobjread xobjutil xser xutil
