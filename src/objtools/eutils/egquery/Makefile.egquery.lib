@@ -4,3 +4,7 @@ LIB = egquery
 SRC = egquery__ egquery___
 
 WATCHERS = grichenk
+
+
+USES_LIBRARIES =  \
+    xncbi xser xutil
