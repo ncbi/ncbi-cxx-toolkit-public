@@ -8,3 +8,7 @@ LIB    = test_mt
 USE_PCH = no
 WATCHERS = grichenk
 PROJ_TAG = test
+
+
+USES_LIBRARIES =  \
+    xncbi
