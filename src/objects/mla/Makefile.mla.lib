@@ -1,2 +1,6 @@
 LIB = mla
 SRC = mla__ mla___
+
+
+USES_LIBRARIES =  \
+    biblio general medlars medline pub pubmed xncbi xser xutil
