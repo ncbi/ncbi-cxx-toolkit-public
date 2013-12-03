@@ -13,3 +13,7 @@ SRC = $(ASN:%=%__) $(ASN:%=%___) seqport_util \
       seq_loc_from_string seq_loc_reverse_complementer
 
 WATCHERS = vasilche grichenk
+
+
+USES_LIBRARIES =  \
+    biblio general medline pub seqcode sequtil xncbi xser xutil
