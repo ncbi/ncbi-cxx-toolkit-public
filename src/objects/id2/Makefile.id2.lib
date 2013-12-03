@@ -2,3 +2,8 @@ LIB = id2
 SRC = id2__ id2___
 
 WATCHERS = vasilche
+
+
+USES_LIBRARIES =  \
+    biblio general medline pub seq seqcode seqset seqsplit sequtil \
+    xncbi xser xutil
