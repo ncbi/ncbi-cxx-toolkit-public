@@ -18,6 +18,9 @@ n_ok=0
 n_err=0
 sum_list=''
 
+GRID_CLI_LOGIN_TOKEN=''
+export GRID_CLI_LOGIN_TOKEN
+
 for service in `echo $services $hosts`; do
    echo "-------------------------------------------------------"
    printf '%-40s' "Testing service '$service'"
