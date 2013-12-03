@@ -1,2 +1,6 @@
 LIB = pubmed
 SRC = pubmed__ pubmed___
+
+
+USES_LIBRARIES =  \
+    biblio general medline xncbi xser xutil
