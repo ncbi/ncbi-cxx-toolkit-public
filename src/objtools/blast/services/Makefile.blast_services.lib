@@ -13,3 +13,8 @@ CPPFLAGS = -DNCBI_MODULE=NETBLAST $(ORIG_CPPFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
+
+
+USES_LIBRARIES =  \
+    biblio connect general medline pub scoremat seq seqcode seqset \
+    sequtil xconnect xncbi xnetblast xnetblastcli xser xutil
