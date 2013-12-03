@@ -8,3 +8,8 @@ LIBS     = $(NETWORK_LIBS)
 LIB_OR_DLL = lib
 
 WATCHERS = kazimird
+
+
+USES_LIBRARIES =  \
+    connect connssl ncbi_xcache_netcache xconnect xconnserv xncbi \
+    xthrserv xutil
