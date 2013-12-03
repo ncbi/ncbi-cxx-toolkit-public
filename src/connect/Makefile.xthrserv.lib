@@ -7,3 +7,7 @@ LIBS     = $(NETWORK_LIBS)
 DLL_LIB  = xutil xconnect
 
 WATCHERS = vakatov
+
+
+USES_LIBRARIES =  \
+    connect xconnect xncbi xutil
