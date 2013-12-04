@@ -1049,22 +1049,43 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare)
         "NC_000001.9",
         "Nc_000001.9",
         "ref|NC_000001.9|chr1_build36",
+        "gnl|ti|-623121231214", // 64-bit id
         "gnl|ti|-12312",
         "gnl|ti|0",
+        "gnl|ti|0",
+        "gnl|ti|12312",
         "gnl|ti|12312",
         "gnl|ti|3231212",
+        "gnl|ti|3231212",
+        "gnl|ti|42312324",
         "gnl|ti|42312324",
         "gnl|TI|52312123124",
-        "gnl|ti|623121231214",
+        "gnl|ti|623121231214", // 64-bit id
+        "gnl|ti|+ 0", // non-integer ids
+        "gnl|ti|+0",
+        "gnl|ti|- 0",
+        "gnl|ti|-0",
+        "gnl|ti|-012",
         "gnl|ti|22312-234",
         "gnl|TI|str",
+        "gnl|trace|-623121231214", // 64-bit id
         "gnl|TRACE|-12312",
         "gnl|TRACE|0",
+        "gnl|TRACE|0",
+        "gnl|TRACE|0",
+        "gnl|TRACE|12312",
         "gnl|TRACE|12312",
         "gnl|trace|3231212",
+        "gnl|trace|3231212",
+        "gnl|TRACE|42312324",
         "gnl|TRACE|42312324",
         "gnl|TRACE|52312123124",
-        "gnl|trace|623121231214",
+        "gnl|trace|623121231214", // 64-bit id
+        "gnl|TRACE|+ 0", // non-integer ids
+        "gnl|TRACE|+0",
+        "gnl|TRACE|- 0",
+        "gnl|trace|-0",
+        "gnl|trace|-012",
         "gnl|TRACE|22312-234",
         "gnl|trace|str",
     };
@@ -1073,9 +1094,21 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare)
     vector<TRef> ids;
     for ( size_t i = 0; i < ArraySize(sc_Ids); ++i ) {
         ids.push_back(TRef(new CSeq_id(sc_Ids[i])));
-        if ( i > 0 && ids[i]->IsLocal() && ids[i]->Equals(*ids[i-1]) ) {
-            int id = ids[i]->GetLocal().GetId();
-            ids[i]->SetLocal().SetStr(NStr::NumericToString(id));
+        if ( ids.back()->IsLocal() ) {
+            BOOST_CHECK_EQUAL(ids.back()->AsFastaString(), sc_Ids[i]);
+            if ( i > 0 && strcmp(sc_Ids[i], sc_Ids[i-1]) == 0 ) {
+                int id = ids[i]->GetLocal().GetId();
+                ids[i]->SetLocal().SetStr(NStr::NumericToString(id));
+                BOOST_CHECK_EQUAL(ids.back()->AsFastaString(), sc_Ids[i]);
+            }
+        }
+        if ( ids.back()->IsGeneral() ) {
+            BOOST_CHECK_EQUAL(ids.back()->AsFastaString(), sc_Ids[i]);
+            if ( i > 0 && strcmp(sc_Ids[i], sc_Ids[i-1]) == 0 ) {
+                int id = ids[i]->GetGeneral().GetTag().GetId();
+                ids[i]->SetGeneral().SetTag().SetStr(NStr::NumericToString(id));
+                BOOST_CHECK_EQUAL(ids.back()->AsFastaString(), sc_Ids[i]);
+            }
         }
     }
     CRandom rnd(1);
@@ -1084,6 +1117,12 @@ BOOST_AUTO_TEST_CASE(s_TestSeq_id_Compare)
     }
     vector<TRef> sorted_ids = ids;
     sort(sorted_ids.begin(), sorted_ids.end(), PPtrLess<TRef>());
+    if ( false ) {
+        // dump sorted ids
+        ITERATE ( vector<TRef>, it, sorted_ids ) {
+            NcbiCout << (*it)->AsFastaString() << NcbiEndl;
+        }
+    }
     for ( size_t i = 0; i < sorted_ids.size(); ++i ) {
         BOOST_CHECK_EQUAL(sorted_ids[i]->CompareOrdered(*sorted_ids[i]), 0);
         for ( size_t j = 0; j < i; ++j ) {

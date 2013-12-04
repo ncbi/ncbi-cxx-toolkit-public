@@ -97,11 +97,21 @@ CObject_id::E_Choice CObject_id::GetIdType(Int8& value) const
             // valid zero as a string
             return CObject_id::e_Id;
         }
-        // non-zero value
-        if ( GetStr()[0] == '0' ) {
-            // leading zeroes are not allowed
-            value = 0;
-            return CObject_id::e_Str;
+        if ( value > 0 ) {
+            // non-zero positive value
+            if ( GetStr()[0] == '0' || GetStr()[0] == '+' ) {
+                // redundant '+' or leading zeroes are not allowed
+                value = 0;
+                return CObject_id::e_Str;
+            }
+        }
+        else {
+            // non-zero negative value
+            if ( GetStr()[1] == '0' ) {
+                // leading zeroes are not allowed
+                value = 0;
+                return CObject_id::e_Str;
+            }
         }
         // valid non-zero value as a string
         return CObject_id::e_Id;

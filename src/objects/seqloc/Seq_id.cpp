@@ -2033,7 +2033,8 @@ CSeq_id& CSeq_id::Set(E_Choice           the_type,
             dbt.SetDb(acc);
             CObject_id& oid = dbt.SetTag();
             the_id = NStr::StringToNonNegativeInt(name);
-            if (the_id >= 0  &&  (name.size() == 1 || name[0] != '0')) {
+            if (the_id >= 0  && 
+                (name.size() == 1 || (name[0] != '0' && name[0] != '+'))) {
                 oid.SetId(the_id);
             } else {
                 oid.SetStr(name);
