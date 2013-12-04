@@ -2148,6 +2148,24 @@ SImplementation::x_MapFeature(const objects::CSeq_feat* feature_on_mrna,
         bool is_partial_3prime =
             this_loc_mapped->IsPartialStop(eExtreme_Biological);
 
+        CSeq_loc_CI it1 = loc_it;
+        bool last_range = !++it1;
+        if (is_partial_3prime && last_range &&
+            align.GetSegs().IsSpliced() &&
+            align.GetSegs().GetSpliced().IsSetPoly_a() &&
+            feature_on_mrna->GetData().IsCdregion() &&
+            !this_loc->IsPartialStop(eExtreme_Biological))
+        {
+            TSeqPos missing_end =
+                this_loc->GetTotalRange().GetTo() -
+                equiv->GetEquiv().Get().back()->GetTotalRange().GetTo();
+            if (missing_end < 3) {
+                /// alignment truncates last one or two bases of CDS; stop codon
+                /// completed by poly-a tail. This should not be annotated as partial
+                is_partial_3prime = false;
+            }
+        }
+
         this_loc_mapped = loc->Intersect(sub,
                                          CSeq_loc::fSort,
                                          NULL);
@@ -2797,11 +2815,35 @@ void CFeatureGenerator::SImplementation::x_HandleRnaExceptions(CSeq_feat& feat,
                  partial_unaligned_section);
 }
 
+static CRef<CSeq_loc> s_MapSingleAA(
+    TSeqPos pos, CRef<CSeq_id> mapped_protein_id,
+    const CRangeCollection<TSeqPos> &product_ranges,
+    CRef<CSeq_loc_Mapper> to_mrna, CRef<CSeq_loc_Mapper> to_genomic)
+{
+    CRef<CSeq_loc> mapped;
+    if (to_mrna) {
+        ITERATE (CRangeCollection<TSeqPos>, range_it, product_ranges) {
+            if (range_it->GetLength() > pos) {
+                pos += range_it->GetFrom();
+                break;
+            } else {
+                pos -= range_it->GetLength();
+            }
+        }
+        CSeq_loc base_loc(*mapped_protein_id, pos, pos);
+        CRef<CSeq_loc> mrna_loc = to_mrna->Map(base_loc);
+        mapped = to_genomic->Map(*mrna_loc);
+        mapped->SetPartialStart(false, eExtreme_Biological);
+        mapped->SetPartialStop(false, eExtreme_Biological);
+    }
+    return mapped;
+}
+
 
 void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
                                   const CSeq_align* align,
                                   const CSeq_feat* cds_feat_on_query_mrna,
-                                  const CSeq_feat* cds_feat_on_transcribed_mrna,
+				  const CSeq_feat* cds_feat_on_transcribed_mrna,
                                   list<CRef<CSeq_loc> >* transcribed_mrna_seqloc_refs,
                                   TSeqPos *clean_match_count)
 {
@@ -2889,6 +2931,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
 
     int cds_start_on_mrna = 0;
     int frame_on_mrna = 0;
+    bool filled_by_polya = false;
 
     if (align != NULL) {
         CBioseq bioseq;
@@ -2896,13 +2939,18 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
         CSeqVector seq(bioseq, m_scope.GetPointer(),
                        CBioseq_Handle::eCoding_Iupac);
 
+        CRef<CSeq_loc_Mapper> genomic_to_mrna(
+            new CSeq_loc_Mapper(*align, CSeq_loc_Mapper::eSplicedRow_Prod));
+
         int cds_len_on_query_mrna = GetLength(feat.GetLocation(), NULL);
+        int missing_end = 0;
         if (cds_feat_on_query_mrna) {
-            cds_start_on_mrna
-                = cds_feat_on_query_mrna->GetLocation().GetStrand() != eNa_strand_minus
-                ? cds_feat_on_query_mrna->GetLocation().GetStart(eExtreme_Biological)
-                : cds_feat_on_query_mrna->GetLocation().GetStop(eExtreme_Biological);
+            cds_start_on_mrna =
+                cds_feat_on_query_mrna->GetLocation().GetStart(eExtreme_Positional);
             cds_len_on_query_mrna = GetLength(cds_feat_on_query_mrna->GetLocation(), NULL);
+            CRef<CSeq_loc> aligned_cds = genomic_to_mrna->Map(feat.GetLocation());
+            missing_end = cds_feat_on_query_mrna->GetLocation().GetStop(eExtreme_Positional)
+                        - aligned_cds->GetStop(eExtreme_Positional);
 
             if (cds_feat_on_query_mrna->GetData().GetCdregion().IsSetFrame()) {
                 switch (cds_feat_on_query_mrna->GetData().GetCdregion().GetFrame()) {
@@ -2919,6 +2967,19 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
         }
         string mrna;
         seq.GetSeqData(cds_start_on_mrna + frame_on_mrna, cds_start_on_mrna + cds_len_on_query_mrna, mrna);
+        if ((missing_end == 1 || missing_end == 2) &&
+            !feat.GetLocation().IsPartialStop(eExtreme_Biological) &&
+            align->GetSegs().IsSpliced() &&
+            align->GetSegs().GetSpliced().CanGetPoly_a())
+        {
+            /// One or two bases at end replaced by poly-a
+            filled_by_polya = true;
+            for (size_t pos = mrna.size() - 1 - missing_end;
+                 pos < mrna.size(); ++pos)
+            {
+                mrna[pos] = 'A';
+            }
+        }
 
         const CGenetic_code *code = NULL;
         if (feat.GetData().GetCdregion().IsSetCode()) {
@@ -2942,17 +3003,10 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
 
         // deal with code breaks
         // NB: these should be folded into the translation machinery instead...
-        if (feat.GetData().GetCdregion().IsSetCode_break()) {
-            CRef<CSeq_loc_Mapper> genomic_to_mrna;
-            if (corrected_cds_feat_on_transcribed_mrna) {
-                genomic_to_mrna.Reset(
-                                      new CSeq_loc_Mapper(*align, CSeq_loc_Mapper::eSplicedRow_Prod));
-            }
-
+        if (feat.GetData().GetCdregion().IsSetCode_break() && corrected_cds_feat_on_transcribed_mrna)
+        {
             ITERATE (CCdregion::TCode_break, it,
                      feat.GetData().GetCdregion().GetCode_break()) {
-
-                if (!genomic_to_mrna) continue;
 
                 const CSeq_loc& cb_on_genome = (*it)->GetLoc();
                 CRef<CSeq_loc> cb_on_mrna = genomic_to_mrna->Map(cb_on_genome);
@@ -3053,8 +3107,7 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
         }
     }
 
-
-    if ((xlate.size() == product_ranges.GetTo()+2  ||
+    if ((xlate.size() == product_ranges.GetTo() + (filled_by_polya ? 1 : 2)  ||
          product_ranges.GetTo() == TSeqRange::GetWholeTo()) &&
         xlate[xlate.size() - 1] == '*')
     { /// strip a terminal stop
@@ -3115,21 +3168,8 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
     string::const_iterator it2_end = xlate.end();
 
     for ( ;  it1 != it1_end  &&  it2 != it2_end;  ++it1, ++it2) {
-        CRef<CSeq_loc> mapped;
-        if (to_mrna) {
-            TSeqPos pos = it1 - actual.begin();
-            ITERATE (CRangeCollection<TSeqPos>, range_it, product_ranges) {
-                if (range_it->GetLength() > pos) {
-                    pos += range_it->GetFrom();
-                    break;
-                } else {
-                    pos -= range_it->GetLength();
-                }
-            }
-            CSeq_loc base_loc(*mapped_protein_id, pos, pos);
-            CRef<CSeq_loc> mrna_loc = to_mrna->Map(base_loc);
-            mapped = to_genomic->Map(*mrna_loc);
-        }
+        CRef<CSeq_loc> mapped = s_MapSingleAA(it1 - actual.begin(),
+             mapped_protein_id, product_ranges, to_mrna, to_genomic);
         if (*it2 == '*' && mapped) {
             /// Inte5rnal stop codon; annotate with a code-break instead
             /// of an exception
@@ -3163,6 +3203,23 @@ void CFeatureGenerator::SImplementation::x_HandleCdsExceptions(CSeq_feat& feat,
                 (mapped->IsInt() && mapped->GetTotalRange().GetLength() == 3)))
         {
             ++*clean_match_count;
+        }
+    }
+
+    if (has_stop && filled_by_polya) {
+        CRef<CSeq_loc> mapped = s_MapSingleAA(xlate.size(), mapped_protein_id,
+                                       product_ranges, to_mrna, to_genomic);
+        if (mapped) {
+            AddCodeBreak(feat, *mapped, '*');
+            if (feat.IsSetComment()) {
+                feat.SetComment() += "; ";
+            } else {
+                feat.SetComment("");
+            }
+            feat.SetComment() += "stop codon completed by the addition of "
+                                 "3' A residues to the mRNA";
+        } else {
+            has_stop = false;
         }
     }
 
