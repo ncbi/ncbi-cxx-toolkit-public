@@ -227,6 +227,8 @@ bool CNetCacheKey::ParseBlobKey(const char* key_str,
             return false;
         }
 #endif /* NO_COMPOUND_ID_SUPPORT */
+    } else {
+        return false;
     }
 
     return true;
