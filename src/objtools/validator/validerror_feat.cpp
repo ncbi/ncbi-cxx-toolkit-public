@@ -5238,6 +5238,20 @@ static bool s_CDS5primePartialTest (const CSeq_feat& feat, CScope *scope)
 }
 
 
+static const char* const sc_BypassCdsPartialCheckText[] = {
+  "RNA editing",
+  "annotated by transcript or proteomic data",
+  "artificial frameshift",
+  "mismatches in translation",
+  "rearrangement required for product",
+  "reasons given in citation",
+  "translated product replaced",
+  "unclassified translation discrepancy"
+};
+typedef CStaticArraySet<const char*, PCase_CStr> TBypassCdsPartialCheckSet;
+DEFINE_STATIC_ARRAY_MAP(TBypassCdsPartialCheckSet, sc_BypassCdsPartialCheck, sc_BypassCdsPartialCheckText);
+
+
 void CValidError_feat::ValidateCDSPartial(const CSeq_feat& feat)
 {
     if ( !feat.CanGetProduct()  ||  !feat.CanGetLocation() ) {
@@ -5247,6 +5261,15 @@ void CValidError_feat::ValidateCDSPartial(const CSeq_feat& feat)
     CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetProduct());
     if ( !bsh ) {
         return;
+    }
+
+    if (feat.CanGetExcept()  &&  feat.GetExcept()  &&  feat.CanGetExcept_text()) {
+        const string& except_text = feat.GetExcept_text();
+        ITERATE (TBypassCdsPartialCheckSet, it, sc_BypassCdsPartialCheck) {
+            if (NStr::FindNoCase(except_text, *it) != NPOS) {
+                return;  // biological exception
+            }
+        }
     }
 
     CSeqdesc_CI sd(bsh, CSeqdesc::e_Molinfo);
