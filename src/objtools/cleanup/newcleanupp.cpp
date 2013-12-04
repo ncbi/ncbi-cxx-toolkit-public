@@ -2032,8 +2032,13 @@ void CNewCleanup_imp::DbtagBC (
             while( pos_of_first_space < str.length() && ! isspace(str[pos_of_first_space]) ) {
                 ++pos_of_first_space;
             }
-            if( ! 0x80000000 & NStr::StringToUInt(str.substr(0, pos_of_first_space))) {
-                SET_FIELD ( oid, Id, NStr::StringToUInt(str.substr(0, pos_of_first_space)) );
+            CTempString sStrOfNum(str, 0, pos_of_first_space);
+
+            // only convert str to int if it fits into the non-negative side
+            // of an int.
+            int value = NStr::StringToInt(sStrOfNum, NStr::fConvErr_NoThrow);
+            if( value > 0 || (value == 0 && all_zero) ) {
+                SET_FIELD ( oid, Id, NStr::StringToUInt(sStrOfNum) );
                 ChangeMade (CCleanupChange::eChangeDbxrefs);
             }
         } catch (CStringException&) {
