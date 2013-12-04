@@ -61,6 +61,11 @@ public:
 
         m_out = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
         m_gap_mode = args["gap-mode"].AsString();
+
+        m_debug = args["debug"];
+
+        m_timer = CStopWatch();
+        m_timer.Start();
     };
 
     //  ------------------------------------------------------------------------
@@ -197,6 +202,13 @@ public:
                     }
                 }
 
+
+                size_t total, resident, shared;
+                if ( m_debug && GetMemoryUsage ( &total, &resident, &shared) ) {
+                    *m_out << "Tot " << total << ", Res " << resident;
+                    *m_out << ", Shr " << shared << ", Sec " << m_timer.Restart() << " - ";
+                }
+
                 *m_out << endl;
             }
         }
@@ -208,6 +220,8 @@ public:
 protected:
     CNcbiOstream* m_out;
     string m_gap_mode;
+    bool m_debug;
+    CStopWatch m_timer;
 };
 
 #endif
