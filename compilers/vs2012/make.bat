@@ -162,14 +162,14 @@ rem Process all configurations
 
 for %%c in (%cfgs%) do (
    time /t
-   if _%cmd% == _make (
-      call :make %%c
+   if _%cmd% == _build (
+      call :build %%c
    )
    if _%cmd% == _check (
       call :check %%c
    )
-   if _%cmd% == _build (
-      call :make %%c
+   if _%cmd% == _make (
+      call :build %%c
       if errorlevel 1 goto ABORT
       call :check %%c
    )
@@ -181,7 +181,7 @@ goto COMPLETE
 rem --------------------------------------------------------------------------------
 rem Subroutines
 
-:make
+:build
    echo INFO: Building "%libdll%\%solution% [%1|%arch%]"
    %DEVENV% %libdll%\build\%solution%.sln /build "%1|%archw%" /project "_BUILD_ALL_"
    exit /b %errorlevel%
