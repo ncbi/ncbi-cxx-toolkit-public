@@ -218,7 +218,8 @@ CAlignSort::CAlignSort(CScope &scope,
         LOG_POST(Info << "default physical memory size = " << m_MemoryLimit);
     }
 
-    m_TmpPath = CDirEntry::NormalizePath(CDirEntry::CreateAbsolutePath(tmp_path));
+    m_TmpPath = CDirEntry::NormalizePath(
+        CDirEntry::CreateAbsolutePath(tmp_path), eFollowLinks);
     CDir d(m_TmpPath);
     if ( !d.Exists()  &&  !d.CreatePath() ) {
          NCBI_THROW(CException, eUnknown,
