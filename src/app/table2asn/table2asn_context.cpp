@@ -431,9 +431,14 @@ CRef<CSerialObject> CTable2AsnContext::CreateSeqEntryFromTemplate(CRef<CSeq_entr
                 CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
                 pub->SetSub().SetDate(*date);
             }
-            CRef<CSeqdesc> pubdesc(new CSeqdesc);
+            CRef<CSeqdesc> pubdesc = LocateDesc(object->SetDescr(), CSeqdesc::e_Pub);
+            if (pubdesc.IsNull())
+            {
+                pubdesc.Reset(new CSeqdesc);
+                object->SetDescr().Set().push_back(pubdesc);
+            }
             pubdesc->SetPub().SetPub().Set().push_back(pub);
-            object->SetDescr().Set().push_back(pubdesc);
+            object->Parentize();
         }
 #if 0
         if (m_submit_template->IsSetSub() &&
