@@ -3,7 +3,7 @@
 # Meta-makefile("ALGO" project)
 #################################
 
-APP_PROJ = cpgdemo regexplocdemo xcompareannotsdemo demo_gene_model
+APP_PROJ = cpgdemo regexplocdemo xcompareannotsdemo demo_gene_model adapter_search
 PROJ_TAG = demo
 
 
