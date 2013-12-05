@@ -852,6 +852,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "CCNU	s	Central China Normal University, Biology Department",
 "CCO	s	Carleton University, Biology Department",
 "CCOS<CHE>	c	Culture Collection of Switzerland",
+"CCPF	c	Collection of Phytopathogenic Fungi",
 "CCR	s	Chichester District Museum",
 "CCRI	c	Collection du Centre de Recherche en Infectiologie",
 "CCRI<IND>	scb	The Central Coffee Research Institute",
