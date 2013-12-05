@@ -172,7 +172,7 @@ void NAdapterSearch
 
     // Can get two more 10-mers out of last 12-mer
     if(words_size > 0 && words_size < m_len) {
-        size_t len = min(size_t(2), m_len - words_size);
+        size_t len = min<size_t>(2, m_len - words_size);
         TWord w = *(begin + words_size);
         for(size_t i = 0; i < len; i++) {
             size_t pos = words_size + i;
@@ -386,7 +386,7 @@ NAdapterSearch::TWord NAdapterSearch
     for(; !top_words.empty(); top_words.pop()) {
         sup = top_words.top().first;
         word = top_words.top().second;
-        sumlogs += log(sup + 1);
+        sumlogs += log(sup + 1.0);
     }
 
     double gmean = n == 0 ? 0 : exp(sumlogs / n) - 1;
@@ -507,8 +507,8 @@ const NAdapterSearch::CSimpleUngappedAligner::SMatch&
        
         // score is proportional to the length, and penalized
         // proportonally to the log of unaligned length 
-        double a_score = a.len - log(1 + a_un)*5;
-        double b_score = b.len - log(1 + b_un)*5;
+        double a_score = a.len - log(1.0 + a_un)*5;
+        double b_score = b.len - log(1.0 + b_un)*5;
         return a_score < b_score ? b : a;
     }
 }
