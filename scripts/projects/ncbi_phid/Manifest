@@ -1,0 +1,24 @@
+#
+# Filename: Manifest
+#
+# $Id$
+#
+# Author: Alexey Rafanovich
+#
+# Purpose: This file holds all the supported configurations of a package
+#          It is used by release configurator.
+#
+
+DEFAULT_CONFIGURATIONS: Linux64-Centos:GCC
+
+POSTBUILD: { cp -rv --preserve=mode,timestamps $srcdir/src/internal/cppcore/applog/perl/blib/lib/Log/NcbiApplog.pm $installdir/bin/; }
+POSTBUILD: { cp -rv --preserve=mode,timestamps $srcdir/src/internal/cppcore/applog/perl/t/* $installdir/tests/; }
+
+# Each line describes a single configuration
+# The format is as follows:
+# <HardwareIdentifier> : <ReleaseSuffix> : <CompilerConfigurationScriptWithKeys>
+# Configuration script is relative to c++/compilers/unix/ .
+# Release configurator assumes that this script will eventually call standard configure script and pass all options
+# to it. So some standard options may be added by release configurator, such as --build-root-sfx, --with-projects,
+# --with-distcc, --with-action etc.
+Linux64-Centos  : GCC   : GCC.sh --without-debug --with-mt --with-internal --without-sss --with-flat-makefile
