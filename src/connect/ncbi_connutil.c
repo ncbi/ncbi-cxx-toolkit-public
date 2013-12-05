@@ -1618,18 +1618,19 @@ extern SOCK URL_Connect
  const char*     args,
  EReqMethod      req_method,
  size_t          content_length,
- const STimeout* c_timeout,
+ const STimeout* o_timeout,
  const STimeout* rw_timeout,
  const char*     user_hdr,
  int/*bool*/     encode_args,
  TSOCK_Flags     flags)
 {
     SOCK sock = 0;
-    EIO_Status st = URL_ConnectEx(host, port, path, args,
-                                  req_method, content_length,
-                                  c_timeout, rw_timeout,
-                                  user_hdr, encode_args, flags, &sock);
-    return st == eIO_Success ? sock : 0;
+    verify(URL_ConnectEx(host, port, path, args,
+                         req_method, content_length,
+                         o_timeout, rw_timeout,
+                         user_hdr, encode_args, flags, &sock) == eIO_Success
+           ||  !sock);
+    return sock;
 }
 
 
