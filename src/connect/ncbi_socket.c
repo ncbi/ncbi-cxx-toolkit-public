@@ -6023,7 +6023,6 @@ extern EIO_Status SOCK_CreateOnTop(const void* handle,
                                    size_t      handle_size,
                                    SOCK*       sock)
 {
-    *sock = 0;
     return SOCK_CreateOnTopEx(handle, handle_size, sock, 0,0,fSOCK_LogDefault);
 }
 
