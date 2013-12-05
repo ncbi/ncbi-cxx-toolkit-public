@@ -39,6 +39,16 @@
 
 #define NCBI_USE_ERRCODE_X   Dbapi_Dblib_Cmds
 
+#undef NCBI_DATABASE_THROW
+#undef NCBI_DATABASE_RETHROW
+
+#define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
+    NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
+        GetDbgInfo(), GetConnection(), &GetBindParams())
+#define NCBI_DATABASE_RETHROW(prev_ex, ex_class, message, err_code, severity) \
+    NCBI_DATABASE_RETHROW_ANNOTATED(prev_ex, ex_class, message, err_code, \
+        severity, GetDbgInfo(), GetConnection(), &GetBindParams())
+
 BEGIN_NCBI_SCOPE
 
 
@@ -51,8 +61,7 @@ CDBL_CursorCmd::CDBL_CursorCmd(CDBL_Connection& conn,
                                DBPROCESS* cmd,
                                const string& cursor_name,
                                const string& query) :
-    CDBL_Cmd(conn, cmd),
-    impl::CBaseCmd(conn, cursor_name, query),
+    CDBL_Cmd(conn, cmd, cursor_name, query),
     m_LCmd(0),
     m_Res(0)
 {

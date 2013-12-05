@@ -43,6 +43,36 @@
 BEGIN_NCBI_SCOPE
 
 
+
+#ifdef _DEBUG
+static void s_TraceParams(const CDBParams& params,
+                          const CDiagCompileInfo& info) {
+    if (dynamic_cast<const impl::CCachedRowInfo*>(&params)) {
+        return;
+    }
+    for (unsigned int i = 0, n = params.GetNum();  i < n;  ++i) {
+        const CDB_Object* obj   = params.GetValue(i);
+        const string&     name  = params.GetName(i);
+        string            value = obj ? obj->GetLogString() : string("(null)");
+        if (name.empty()) { // insertion, typically bulk
+            CNcbiDiag(info, eDiag_Trace).GetRef()
+                << "Column #" << (i + 1) << " = " << value
+                << Endm;
+        } else {
+            CNcbiDiag(info, eDiag_Trace).GetRef()
+                << "Parameter #" << (i + 1) << " (" << name << ") = " << value
+                << Endm;
+        }
+    }
+}
+// Cite caller.
+#  define TRACE_PARAMS(params) s_TraceParams(params, DIAG_COMPILE_INFO)
+#else
+#  define TRACE_PARAMS(params) ((void)0)
+#endif
+
+
+
 ////////////////////////////////////////////////////////////////////////////
 //  CDBParamVariant::
 //
@@ -162,7 +192,8 @@ CTempString CDBParamVariant::MakeName(const CTempString& name,
                             format = eNamedName;
                         }
                     } else {
-                        DATABASE_DRIVER_ERROR("Invalid parameter format.", 1);
+                        DATABASE_DRIVER_ERROR("Invalid parameter format: "
+                                              + string(name), 1);
                     }
                     break;
                 case '@' :
@@ -262,6 +293,7 @@ bool CDB_Connection::IsAlive()
 CDB_LangCmd* CDB_Connection::LangCmd(const string& lang_query)
 {
     CHECK_CONNECTION(m_ConnImpl);
+    _TRACE("Sending SQL: " << lang_query);
     return m_ConnImpl->LangCmd(lang_query);
 }
 
@@ -274,6 +306,7 @@ CDB_RPCCmd* CDB_Connection::RPC(const string& rpc_name)
 CDB_BCPInCmd* CDB_Connection::BCPIn(const string& table_name)
 {
     CHECK_CONNECTION(m_ConnImpl);
+    _TRACE("Performing bulk insertion into " << table_name);
     return m_ConnImpl->BCPIn(table_name);
 }
 
@@ -282,6 +315,7 @@ CDB_CursorCmd* CDB_Connection::Cursor(const string& cursor_name,
                                       unsigned int  batch_size)
 {
     CHECK_CONNECTION(m_ConnImpl);
+    _TRACE("Opening cursor for " << query);
     return m_ConnImpl->Cursor(cursor_name, query, batch_size);
 }
 
@@ -613,6 +647,7 @@ CDBParams& CDB_LangCmd::GetDefineParams(void)
 bool CDB_LangCmd::Send()
 {
     CHECK_COMMAND( m_CmdImpl );
+    TRACE_PARAMS(m_CmdImpl->GetBindParams());
     return m_CmdImpl->Send();
 }
 
@@ -705,6 +740,8 @@ CDBParams& CDB_RPCCmd::GetDefineParams(void)
 bool CDB_RPCCmd::Send()
 {
     CHECK_COMMAND( m_CmdImpl );
+    _TRACE("Calling remote procedure " << GetProcName());
+    TRACE_PARAMS(m_CmdImpl->GetBindParams());
     return m_CmdImpl->Send();
 }
 
@@ -832,6 +869,9 @@ bool CDB_BCPInCmd::Bind(unsigned int column_num, CDB_Object* value)
 bool CDB_BCPInCmd::SendRow()
 {
     CHECK_COMMAND( m_CmdImpl );
+    if (m_CmdImpl->m_RowsSent++ == 0) {
+        TRACE_PARAMS(m_CmdImpl->GetBindParams());
+    }
     return m_CmdImpl->Send();
 }
 
@@ -844,12 +884,19 @@ bool CDB_BCPInCmd::Cancel()
 bool CDB_BCPInCmd::CompleteBatch()
 {
     CHECK_COMMAND( m_CmdImpl );
+    if (m_CmdImpl->m_BatchesSent++ == 0  &&  m_CmdImpl->m_RowsSent > 1) {
+        _TRACE("Sent a batch of " << m_CmdImpl->m_RowsSent << " rows");
+    }
     return m_CmdImpl->CommitBCPTrans();
 }
 
 bool CDB_BCPInCmd::CompleteBCP()
 {
     CHECK_COMMAND( m_CmdImpl );
+    if (m_CmdImpl->m_BatchesSent > 1) {
+        _TRACE("Sent " << m_CmdImpl->m_RowsSent << " rows, in "
+               << m_CmdImpl->m_BatchesSent << " batches");
+    }
     return m_CmdImpl->EndBCP();
 }
 
@@ -895,6 +942,7 @@ CDBParams& CDB_CursorCmd::GetDefineParams(void)
 CDB_Result* CDB_CursorCmd::Open()
 {
     CHECK_COMMAND( m_CmdImpl );
+    TRACE_PARAMS(m_CmdImpl->GetBindParams());
     return m_CmdImpl->OpenCursor();
 }
 

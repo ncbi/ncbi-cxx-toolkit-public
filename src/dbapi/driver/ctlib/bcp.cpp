@@ -39,6 +39,11 @@
 
 #define NCBI_USE_ERRCODE_X   Dbapi_CTlib_Cmds
 
+#undef NCBI_DATABASE_THROW
+#define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
+    NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
+        GetDbgInfo(), GetConnection(), &GetBindParams())
+// No use of NCBI_DATABASE_RETHROW or DATABASE_DRIVER_*_EX here.
 
 BEGIN_NCBI_SCOPE
 
@@ -55,8 +60,7 @@ namespace ftds64_ctlib
 
 CTL_BCPInCmd::CTL_BCPInCmd(CTL_Connection& conn,
                            const string& table_name)
-: CTL_CmdBase(conn)
-, impl::CBaseCmd(conn, table_name)
+: CTL_CmdBase(conn, table_name)
 , m_RowCount(0)
 {
     CheckSF(

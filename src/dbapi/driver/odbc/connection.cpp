@@ -46,6 +46,11 @@
 
 #define NCBI_USE_ERRCODE_X   Dbapi_Odbc_Conn
 
+#undef NCBI_DATABASE_THROW
+#define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
+    NCBI_ODBC_THROW(ex_class, message, err_code, severity)
+// No use of NCBI_DATABASE_RETHROW or DATABASE_DRIVER_*_EX here.
+
 BEGIN_NCBI_SCOPE
 
 bool IsBCPCapable(void)
@@ -73,7 +78,8 @@ CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
         IsBCPCapable()
         ),
     m_Link(NULL),
-    m_Reporter(0, SQL_HANDLE_DBC, NULL, &cntx.GetReporter()),
+    m_ActiveStmt(NULL),
+    m_Reporter(0, SQL_HANDLE_DBC, NULL, this, &cntx.GetReporter()),
     m_query_timeout(cntx.GetTimeout()),
     m_cancel_timeout(cntx.GetCancelTimeout())
 {
@@ -92,7 +98,9 @@ CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
     // This might look strange, but in current design all errors related to
     // opening of a connection to a database are reported by a DriverContext.
     // Have fun.
-    cntx.SetupErrorReporter(params);
+    // cntx.SetupErrorReporter(params);
+    CODBC_Reporter::CTempConnectionGuard GUARD
+        (const_cast<CODBC_Reporter&>(cntx.GetReporter()), *this);
 
     x_SetupErrorReporter(params);
 
@@ -335,9 +343,6 @@ bool CODBC_Connection::IsAlive(void)
 
 CODBC_LangCmd* CODBC_Connection::xLangCmd(const string& lang_query)
 {
-    string extra_msg = "SQL Command: \"" + lang_query + "\"";
-    m_Reporter.SetExtraMsg( extra_msg );
-
     CODBC_LangCmd* lcmd = new CODBC_LangCmd(*this, lang_query);
     return lcmd;
 }
@@ -350,9 +355,6 @@ CDB_LangCmd* CODBC_Connection::LangCmd(const string& lang_query)
 
 CDB_RPCCmd* CODBC_Connection::RPC(const string& rpc_name)
 {
-    string extra_msg = "RPC Command: " + rpc_name;
-    m_Reporter.SetExtraMsg( extra_msg );
-
     CODBC_RPCCmd* rcmd = new CODBC_RPCCmd(*this, rpc_name);
     return Create_RPCCmd(*rcmd);
 }
@@ -365,9 +367,6 @@ CDB_BCPInCmd* CODBC_Connection::BCPIn(const string& table_name)
         DATABASE_DRIVER_ERROR( err_message, 410003 );
     }
 
-    string extra_msg = "BCP Table: " + table_name;
-    m_Reporter.SetExtraMsg( extra_msg );
-
     CODBC_BCPInCmd* bcmd = new CODBC_BCPInCmd(*this, m_Link, table_name);
     return Create_BCPInCmd(*bcmd);
 }
@@ -377,10 +376,6 @@ CDB_CursorCmd* CODBC_Connection::Cursor(const string& cursor_name,
                                       const string& query,
                                       unsigned int  batch_size)
 {
-    string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \""+
-        query + "\"";
-    m_Reporter.SetExtraMsg( extra_msg );
-
 #if 1
     CODBC_CursorCmdExpl* ccmd = new CODBC_CursorCmdExpl(*this,
                                                         cursor_name,
@@ -477,6 +472,9 @@ CODBC_Connection::~CODBC_Connection()
         }
     }
     NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
+    if (m_ActiveStmt) {
+        m_ActiveStmt->m_IsActive = false;
+    }
 }
 
 
@@ -820,8 +818,9 @@ bool CODBC_Connection::x_SendData(CDB_ITDescriptor::ETDescriptorType descr_type,
 CStatementBase::CStatementBase(CODBC_Connection& conn, const string& query) :
     impl::CBaseCmd(conn, query),
     m_RowCount(-1),
-    m_ConnectPtr(&conn),
-    m_Reporter(&conn.GetMsgHandlers(), SQL_HANDLE_STMT, NULL, &conn.m_Reporter)
+    m_Reporter(&conn.GetMsgHandlers(), SQL_HANDLE_STMT, NULL, &conn,
+               &conn.m_Reporter),
+    m_IsActive(true)
 {
     x_Init();
 }
@@ -831,8 +830,9 @@ CStatementBase::CStatementBase(CODBC_Connection& conn,
                                const string& query) :
     impl::CBaseCmd(conn, cursor_name, query),
     m_RowCount(-1),
-    m_ConnectPtr(&conn),
-    m_Reporter(&conn.GetMsgHandlers(), SQL_HANDLE_STMT, NULL, &conn.m_Reporter)
+    m_Reporter(&conn.GetMsgHandlers(), SQL_HANDLE_STMT, NULL, &conn,
+               &conn.m_Reporter),
+    m_IsActive(true)
 {
     x_Init();
 }
@@ -840,14 +840,21 @@ CStatementBase::CStatementBase(CODBC_Connection& conn,
 void
 CStatementBase::x_Init(void)
 {
-    SQLRETURN rc = SQLAllocHandle(SQL_HANDLE_STMT, m_ConnectPtr->m_Link, &m_Cmd);
+    if (GetConnection().m_ActiveStmt) {
+        GetConnection().m_ActiveStmt->m_IsActive = false;
+    }
+    GetConnection().m_ActiveStmt = this;
+
+    SQLRETURN rc
+        = SQLAllocHandle(SQL_HANDLE_STMT, GetConnection().m_Link, &m_Cmd);
 
     if(rc == SQL_ERROR) {
-        m_ConnectPtr->ReportErrors();
+        GetConnection().ReportErrors();
     }
     m_Reporter.SetHandle(m_Cmd);
 
-    SQLUINTEGER query_timeout = static_cast<SQLUINTEGER>(m_ConnectPtr->GetTimeout());
+    SQLUINTEGER query_timeout
+        = static_cast<SQLUINTEGER>(GetConnection().GetTimeout());
     switch(SQLSetStmtAttr(GetHandle(),
                        SQL_ATTR_QUERY_TIMEOUT,
                        (SQLPOINTER)static_cast<uintptr_t>(query_timeout),
@@ -872,6 +879,9 @@ CStatementBase::~CStatementBase(void)
         }
     }
     NCBI_CATCH_ALL_X( 2, NCBI_CURRENT_FUNCTION )
+    if (m_IsActive) {
+        GetConnection().m_ActiveStmt = NULL;
+    }
 }
 
 bool
@@ -1447,14 +1457,16 @@ CStatementBase::RowCount() const
 bool
 CStatementBase::Close(void) const
 {
-    SQLUINTEGER cancel_timeout = static_cast<SQLUINTEGER>(m_ConnectPtr->GetCancelTimeout());
+    SQLUINTEGER cancel_timeout
+        = static_cast<SQLUINTEGER>(GetConnection().GetCancelTimeout());
     SQLSetStmtAttr(GetHandle(),
                    SQL_ATTR_QUERY_TIMEOUT,
                    (SQLPOINTER)static_cast<uintptr_t>(cancel_timeout),
                    0);
     try {
         bool result = CheckRC( SQLFreeStmt(m_Cmd, SQL_CLOSE) );
-        SQLUINTEGER query_timeout = static_cast<SQLUINTEGER>(m_ConnectPtr->GetTimeout());
+        SQLUINTEGER query_timeout
+            = static_cast<SQLUINTEGER>(GetConnection().GetTimeout());
         SQLSetStmtAttr(GetHandle(),
                        SQL_ATTR_QUERY_TIMEOUT,
                        (SQLPOINTER)static_cast<uintptr_t>(query_timeout),
@@ -1462,7 +1474,8 @@ CStatementBase::Close(void) const
         return result;
     }
     catch (CDB_Exception&) {
-        SQLUINTEGER query_timeout = static_cast<SQLUINTEGER>(m_ConnectPtr->GetTimeout());
+        SQLUINTEGER query_timeout
+            = static_cast<SQLUINTEGER>(GetConnection().GetTimeout());
         SQLSetStmtAttr(GetHandle(),
                        SQL_ATTR_QUERY_TIMEOUT,
                        (SQLPOINTER)static_cast<uintptr_t>(query_timeout),

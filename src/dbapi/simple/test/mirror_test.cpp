@@ -58,7 +58,8 @@ public:
                     q.SetSql("drop table #t");
                     q.Execute();
                 }
-                catch (CSDB_Exception&) {
+                catch (CSDB_Exception& ex) {
+                    _TRACE(ex);
                     //
                 }
                 q.SetSql("create table #t (tt varchar(100))");

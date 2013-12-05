@@ -176,7 +176,8 @@ s_ConvertionNotSupported(const char* one_type, EDB_Type other_type)
 {
     NCBI_THROW(CSDB_Exception, eUnsupported,
                "Conversion between " + string(one_type) + " and "
-               + CDB_Object::GetTypeName(other_type) + " is not supported");
+               + CDB_Object::GetTypeName(other_type, false)
+               + " is not supported");
 }
 
 #ifdef NCBI_COMPILER_WORKSHOP
@@ -573,7 +574,8 @@ s_ConvertValue(const CVariant& from_var, Int4& to_val)
         ||  temp_val > numeric_limits<Int4>::max())
     {
         NCBI_THROW(CSDB_Exception, eOutOfBounds,
-                   "Value for Int4 is out of bounds");
+                   "Value for Int4 is out of bounds: "
+                   + NStr::NumericToString(temp_val));
     }
     to_val = Int4(temp_val);
 }
@@ -608,7 +610,8 @@ s_ConvertValue(const CVariant& from_var, short& to_val)
         ||  temp_val > numeric_limits<short>::max())
     {
         NCBI_THROW(CSDB_Exception, eOutOfBounds,
-                   "Value for short is out of bounds");
+                   "Value for short is out of bounds: "
+                   + NStr::NumericToString(temp_val));
     }
     to_val = short(temp_val);
 }
@@ -643,7 +646,8 @@ s_ConvertValue(const CVariant& from_var, unsigned char& to_val)
         ||  temp_val > numeric_limits<unsigned char>::max())
     {
         NCBI_THROW(CSDB_Exception, eOutOfBounds,
-                   "Value for unsigned char is out of bounds");
+                   "Value for unsigned char is out of bounds: "
+                   + NStr::NumericToString(temp_val));
     }
     to_val = static_cast<unsigned char>(temp_val);
 }
@@ -675,7 +679,8 @@ s_ConvertValue(const CVariant& from_var, bool& to_val)
     if (temp_val != 0  &&  temp_val != 1)
     {
         NCBI_THROW(CSDB_Exception, eOutOfBounds,
-                   "Value for bool is out of bounds");
+                   "Value for bool is out of bounds: "
+                   + NStr::NumericToString(temp_val));
     }
     to_val = temp_val == 1;
 }
@@ -1093,7 +1098,8 @@ CSDBAPI::UpdateMirror(const string& dbservice,
         if (conn_params.GetParam("single_server") != "true") {
             NCBI_THROW(CSDB_Exception, eInconsistent,
                        "UpdateMirror cannot be used when configuration file "
-                       "doesn't have exclusive_server=true");
+                       "doesn't have exclusive_server=true (for " + dbservice
+                       + ')');
         }
         CDBConnectionFactory* factory
                               = dynamic_cast<CDBConnectionFactory*>(i_factory);
@@ -1255,7 +1261,7 @@ CSDBAPI::UpdateMirror(const string& dbservice,
                 if (++cnt_switches == 10) {
                     NCBI_THROW(CSDB_Exception, eInconsistent,
                                "Mirror database switches too frequently or "
-                               "it isn't mirrored");
+                               "it isn't mirrored: " + service_name);
                 }
             }
             else if (success  &&  server_name == mir_info.master) {
@@ -1514,7 +1520,9 @@ CBulkInsertImpl::x_CheckCanWrite(int col)
     }
     if (col != 0  &&  col > int(m_Cols.size())) {
         NCBI_THROW(CSDB_Exception, eInconsistent,
-                   "Too many values were written to CBulkInsert");
+                   "Too many values were written to CBulkInsert: "
+                   + NStr::NumericToString(col) + " > "
+                   + NStr::NumericToString(m_Cols.size()));
     }
 }
 
@@ -1563,7 +1571,9 @@ CBulkInsertImpl::EndRow(void)
     x_CheckCanWrite(0);
     if (m_ColsWritten != int(m_Cols.size())) {
         NCBI_THROW(CSDB_Exception, eInconsistent,
-                   "Not enough values were written to CBulkInsert");
+                   "Not enough values were written to CBulkInsert: "
+                   + NStr::NumericToString(m_ColsWritten) + " != "
+                   + NStr::NumericToString(m_Cols.size()));
     }
     try {
         m_BI->AddRow();
@@ -2256,7 +2266,10 @@ CQueryImpl::GetColumn(const CDBParamVariant& col) const
     }
     if (pos <= 0  ||  pos > int(m_Fields.size())) {
         NCBI_THROW(CSDB_Exception, eNotExist,
-                   "No such column in the result set");
+                   "No such column in the result set: "
+                   + (col.IsPositional()
+                      ? NStr::NumericToString(col.GetPosition())
+                      : col.GetName()));
     }
     return *m_Fields[pos - 1];
 }
@@ -2497,7 +2510,8 @@ CQuery::CField::AsVector(void) const
     EDB_Type var_type = var_val.GetType();
     if (var_type != eDB_Image  &&  var_type != eDB_Text) {
         NCBI_THROW(CSDB_Exception, eUnsupported,
-                   "Method is unsupported for this type of data");
+                   string("Method is unsupported for this type of data: ")
+                   + CDB_Object::GetTypeName(var_type, false));
     }
     string value = var_val.GetString();
     // WorkShop cannot eat string::iterators in vector<>::insert (although due
@@ -2517,7 +2531,8 @@ CQuery::CField::AsIStream(void) const
     EDB_Type var_type = var_val.GetType();
     if (var_type != eDB_Image  &&  var_type != eDB_Text) {
         NCBI_THROW(CSDB_Exception, eUnsupported,
-                   "Method is unsupported for this type of data");
+                   string("Method is unsupported for this type of data: ")
+                   + CDB_Object::GetTypeName(var_type, false));
     }
     m_ValueForStream = var_val.GetString();
     m_IStream.reset
@@ -2538,7 +2553,8 @@ CQuery::CField::GetOStream(size_t blob_size, EAllowLog log_it /* = eEnableLog */
     EDB_Type var_type = var_val.GetType();
     if (m_IsParam  ||  (var_type != eDB_Image  &&  var_type != eDB_Text)) {
         NCBI_THROW(CSDB_Exception, eUnsupported,
-                   "Method is unsupported for this type of data");
+                   string("Method is unsupported for this type of data: ")
+                   + CDB_Object::GetTypeName(var_type, false));
     }
     try {
         IConnection* conn = m_Query->GetConnection()->CloneConnection();
@@ -2562,7 +2578,8 @@ CQuery::CField::GetBookmark(void) const
     EDB_Type var_type = var_val.GetType();
     if (m_IsParam  ||  (var_type != eDB_Image  &&  var_type != eDB_Text)) {
         NCBI_THROW(CSDB_Exception, eUnsupported,
-                  "Method is unsupported for this type of data");
+                   string("Method is unsupported for this type of data: ")
+                   + CDB_Object::GetTypeName(var_type, false));
     }
     CRef<CBlobBookmarkImpl> bm(new CBlobBookmarkImpl(m_Query->GetDatabase(),
                                                      var_val.ReleaseITDescriptor()));

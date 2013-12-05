@@ -41,6 +41,11 @@
 
 #define NCBI_USE_ERRCODE_X   Dbapi_Odbc_Cmds
 
+#undef NCBI_DATABASE_THROW
+#define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
+    NCBI_ODBC_THROW(ex_class, message, err_code, severity)
+// No use of NCBI_DATABASE_RETHROW or DATABASE_DRIVER_*_EX here.
+
 BEGIN_NCBI_SCOPE
 
 

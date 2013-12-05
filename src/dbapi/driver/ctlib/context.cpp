@@ -1080,14 +1080,16 @@ static
 void PassException(CDB_Exception& ex,
                    const string&  server_name,
                    const string&  user_name,
-                   CS_INT         severity
+                   CS_INT         severity,
+                   const CDBParams* params
                    )
 {
     ex.SetServerName(server_name);
     ex.SetUserName(user_name);
     ex.SetSybaseSeverity(severity);
+    ex.SetParams(params);
 
-    if (ex.GetSeverity() != eDiag_Info) {
+    /* if (ex.GetSeverity() != eDiag_Info) */ {
         string msg =
             " SERVER: '" + server_name +
             "' USER: '" + user_name + "'" +
@@ -1135,7 +1137,7 @@ HandleConnStatus(CS_CONNECTION* conn,
                     "Got timeout on ct_cancel(CS_CANCEL_ALL)",
                     msg->msgnumber);
 
-                PassException(ex, server_name, user_name, msg->severity);
+                PassException(ex, server_name, user_name, msg->severity, NULL);
             }
 #endif
             default:
@@ -1228,9 +1230,12 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
         }
 
         impl::CDBHandlerStack* handlers;
-        if (ctl_conn)
+        const CDBParams*       params = NULL;
+        if (ctl_conn) {
             handlers = &ctl_conn->GetMsgHandlers();
-        else
+            message += ctl_conn->GetDbgInfo();
+            params = ctl_conn->GetBindParams();
+        } else
             handlers = &ctl_ctx->GetCtxHandlerStack();
         if (handlers->HandleMessage(msg->severity, msg->msgnumber, msg->msgstring))
             return CS_SUCCEED;
@@ -1251,7 +1256,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                 message,
                 msg->msgnumber);
 
-            PassException(ex, server_name, user_name, msg->severity);
+            PassException(ex, server_name, user_name, msg->severity, params);
             return CS_SUCCEED;
         }
 #endif
@@ -1265,7 +1270,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                                eDiag_Info,
                                msg->msgnumber);
 
-            PassException(ex, server_name, user_name, msg->severity);
+            PassException(ex, server_name, user_name, msg->severity, params);
 
             break;
         }
@@ -1276,7 +1281,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                 message,
                 msg->msgnumber);
 
-            PassException(ex, server_name, user_name, msg->severity);
+            PassException(ex, server_name, user_name, msg->severity, params);
 
             return HandleConnStatus(con, msg, server_name, user_name);
 
@@ -1291,7 +1296,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                               eDiag_Error,
                               msg->msgnumber);
 
-            PassException(ex, server_name, user_name, msg->severity);
+            PassException(ex, server_name, user_name, msg->severity, params);
 
             break;
         }
@@ -1303,7 +1308,7 @@ CS_RETCODE CTLibContext::CTLIB_cterr_handler(CS_CONTEXT* context,
                 eDiag_Critical,
                 msg->msgnumber);
 
-            PassException(ex, server_name, user_name, msg->severity);
+            PassException(ex, server_name, user_name, msg->severity, params);
 
             break;
         }
@@ -1398,6 +1403,7 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         }
 
         impl::CDBHandlerStack* handlers;
+        const CDBParams*       params = NULL;
         if (ctl_conn)
             handlers = &ctl_conn->GetMsgHandlers();
         else
@@ -1408,13 +1414,17 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
         if ( msg->text ) {
             message += msg->text;
         }
+        if (ctl_conn) {
+            message += ctl_conn->GetDbgInfo();
+            params = ctl_conn->GetBindParams();
+        }
 
         if (msg->msgnumber == 1205 /*DEADLOCK*/) {
             CDB_DeadlockEx ex(DIAG_COMPILE_INFO,
                               0,
                               message);
 
-            PassException(ex, server_name, user_name, msg->severity);
+            PassException(ex, server_name, user_name, msg->severity, params);
         }
         else if (msg->msgnumber == 1771  ||  msg->msgnumber == 1708) {
             // "Maximum row size exceeds allowable width. It is being rounded down to 32767 bytes."
@@ -1440,7 +1450,8 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                               msg->proc,
                               (int) msg->line);
 
-                PassException(ex, server_name, user_name, msg->severity);
+                PassException(ex, server_name, user_name, msg->severity,
+                              params);
             }
             else if (msg->sqlstatelen > 1  &&
                      (msg->sqlstate[0] != 'Z'  ||  msg->sqlstate[1] != 'Z')) {
@@ -1452,7 +1463,8 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                               (const char*) msg->sqlstate,
                               (int) msg->line);
 
-                PassException(ex, server_name, user_name, msg->severity);
+                PassException(ex, server_name, user_name, msg->severity,
+                              params);
             }
             else {
                 CDB_DSEx ex(DIAG_COMPILE_INFO,
@@ -1461,7 +1473,8 @@ CS_RETCODE CTLibContext::CTLIB_srverr_handler(CS_CONTEXT* context,
                             sev,
                             (int) msg->msgnumber);
 
-                PassException(ex, server_name, user_name, msg->severity);
+                PassException(ex, server_name, user_name, msg->severity,
+                              params);
             }
         }
     } catch (...) {

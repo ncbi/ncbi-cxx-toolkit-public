@@ -31,6 +31,8 @@
 
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/exception.hpp>
+#include <dbapi/driver/interfaces.hpp>
+#include <dbapi/driver/impl/dbapi_impl_connection.hpp>
 #include <dbapi/error_codes.hpp>
 #include <corelib/ncbi_safe_static.hpp>
 
@@ -44,6 +46,15 @@ BEGIN_NCBI_SCOPE
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_Exception::
 //
+
+CDB_Exception::SParams::~SParams(void)
+{
+    ITERATE (TParams, it, params) {
+        if (it->value != NULL) {
+            free(it->value);
+        }
+    }
+}
 
 EDB_Severity
 CDB_Exception::Severity(void) const
@@ -105,6 +116,44 @@ const char* CDB_Exception::SeverityString(EDB_Severity sev)
 }
 
 
+void CDB_Exception::SetFromConnection(const impl::CConnection& connection)
+{
+    if (GetServerName().empty()  &&  !connection.ServerName().empty()) {
+        SetServerName(connection.ServerName());
+        AddToMessage(" SERVER: '" + connection.ServerName() + '\'');
+    }
+    if (GetUserName().empty()  &&  !connection.UserName().empty()) {
+        SetUserName(connection.UserName());
+        AddToMessage(" USER: '" + connection.UserName() + '\'');
+    }
+    if ( !connection.GetDatabaseName().empty()
+        &&  GetMsg().find(" DATABASE: ") == NPOS) {
+        AddToMessage(" DATABASE: '" + connection.GetDatabaseName() + '\'');
+    }
+}
+
+
+void
+CDB_Exception::SetParams(const CDBParams* params)
+{
+    unsigned int n = params ? params->GetNum() : 0;
+    if (n == 0) {
+        return;
+    }
+    if (m_Params.Empty()) {
+        m_Params.Reset(new SParams);
+    }
+    
+    SParams::TParams& my_params = m_Params->params;
+    my_params.resize(n);
+    for (unsigned int i = 0;  i < n;  ++i) {
+        my_params[i].name = params->GetName(i);
+        my_params[i].value
+            = (params->GetValue(i) ? params->GetValue(i)->Clone() : NULL);
+    }
+}
+
+
 void
 CDB_Exception::ReportExtra(ostream& out) const
 {
@@ -115,6 +164,9 @@ CDB_Exception::ReportExtra(ostream& out) const
 void
 CDB_Exception::x_StartOfWhat(ostream& out) const
 {
+    if ( !GetExtraMsg().empty()  &&  GetMsg().find(GetExtraMsg()) == NPOS) {
+        out << GetExtraMsg() << ' ';
+    }
     out << "[";
     out << SeverityString();
     out << " #";
@@ -131,7 +183,25 @@ CDB_Exception::x_EndOfWhat(ostream& out) const
 //     out << "<<<";
 //     out << GetMsg();
 //     out << ">>>";
+    if ( !m_Params.Empty()  &&  !m_Params->params.empty() ) {
+        out << " [Parameters: ";
+        const char* delim = kEmptyCStr;
+        ITERATE (SParams::TParams, it, m_Params->params) {
+            out << delim;
+            if ( !it->name.empty() ) {
+                out << it->name << " = ";
+            }
+            if (it->value) {
+                out << it->value->GetLogString();
+            } else {
+                out << "(null)";
+            }
+            delim = ", ";
+        }
+        out << ']';
+    }
 }
+
 
 void
 CDB_Exception::x_Assign(const CException& src)
@@ -144,6 +214,8 @@ CDB_Exception::x_Assign(const CException& src)
     m_ServerName = other.m_ServerName;
     m_UserName = other.m_UserName;
     m_SybaseSeverity = other.m_SybaseSeverity;
+    m_ExtraMsg = other.m_ExtraMsg;
+    m_Params = other.m_Params;
 }
 
 

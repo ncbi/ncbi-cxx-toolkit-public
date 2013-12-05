@@ -41,6 +41,12 @@
 
 #define NCBI_USE_ERRCODE_X   Dbapi_CTlib_Cmds
 
+#undef NCBI_DATABASE_THROW
+#define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
+    NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
+        GetDbgInfo(), GetConnection(), &GetBindParams())
+// No use of NCBI_DATABASE_RETHROW or DATABASE_DRIVER_*_EX here.
+
 BEGIN_NCBI_SCOPE
 
 #ifdef FTDS_IN_USE
@@ -53,15 +59,36 @@ namespace ftds64_ctlib
 //  CTL_Cmd::
 //
 
-CTL_CmdBase::CTL_CmdBase(CTL_Connection& conn)
-: m_RowCount(-1)
-, m_Connect(&conn)
+CTL_CmdBase::CTL_CmdBase(CTL_Connection& conn, const string& query)
+: CBaseCmd(conn, query)
+, m_RowCount(-1)
+, m_IsActive(true)
 {
+    if (conn.m_ActiveCmd) {
+        conn.m_ActiveCmd->m_IsActive = false;
+    }
+    conn.m_ActiveCmd = this;
+}
+
+
+CTL_CmdBase::CTL_CmdBase(CTL_Connection& conn, const string& cursor_name,
+                         const string& query)
+: CBaseCmd(conn, cursor_name, query)
+, m_RowCount(-1)
+, m_IsActive(true)
+{
+    if (conn.m_ActiveCmd) {
+        conn.m_ActiveCmd->m_IsActive = false;
+    }
+    conn.m_ActiveCmd = this;
 }
 
 
 CTL_CmdBase::~CTL_CmdBase(void)
 {
+    if (m_IsActive) {
+        GetConnection().m_ActiveCmd = NULL;
+    }
 }
 
 
@@ -70,10 +97,24 @@ CTL_CmdBase::~CTL_CmdBase(void)
 //  CTL_Cmd::
 //
 
-CTL_Cmd::CTL_Cmd(CTL_Connection& conn)
-: CTL_CmdBase(conn)
+CTL_Cmd::CTL_Cmd(CTL_Connection& conn, const string& query)
+: CTL_CmdBase(conn, query)
 , m_Cmd(NULL)
 , m_Res(NULL)
+{
+    x_Init();
+}
+
+CTL_Cmd::CTL_Cmd(CTL_Connection& conn, const string& cursor_name,
+                 const string& query)
+: CTL_CmdBase(conn, cursor_name, query)
+, m_Cmd(NULL)
+, m_Res(NULL)
+{
+    x_Init();
+}
+
+void CTL_Cmd::x_Init(void)
 {
     CHECK_DRIVER_ERROR(!GetConnection().IsAlive() || !GetConnection().IsOpen(),
                        "Connection is not open or already dead." + GetDbgInfo(),
@@ -130,8 +171,7 @@ void CTL_Cmd::DropSybaseCmd(void)
     if (!IsDead()) {
 #if 0
     if (Check(ct_cmd_drop(x_GetSybaseCmd())) != CS_SUCCEED) {
-        throw CDB_ClientEx(eDiag_Fatal, 122060, "::~CTL_CursorCmd",
-                          "ct_cmd_drop failed");
+        DATABASE_DRIVER_FATAL("ct_cmd_drop failed", 122060);
     }
 #else
     Check(ct_cmd_drop(x_GetSybaseCmd()));
@@ -473,8 +513,7 @@ void CTL_Cmd::GetRowCount(int* cnt)
 
 CTL_LRCmd::CTL_LRCmd(CTL_Connection& conn,
                      const string& query)
-: CTL_Cmd(conn)
-, impl::CBaseCmd(conn, query)
+: CTL_Cmd(conn, query)
 {
 }
 

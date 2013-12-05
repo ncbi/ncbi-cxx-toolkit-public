@@ -310,6 +310,9 @@ private:
     bool            m_IsOpen;
     bool            m_IsDeclared;
     const string    m_CmdName;
+
+    unsigned int    m_RowsSent;
+    unsigned int    m_BatchesSent;
 };
 
 

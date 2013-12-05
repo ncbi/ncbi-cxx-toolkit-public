@@ -234,7 +234,6 @@ void CStatement::x_Send(const string& sql)
 
     SetFailed(false);
 
-    _TRACE("Sending SQL: " + sql);
     m_cmd = m_conn->GetCDB_Connection()->LangCmd(sql);
 
     ExecuteLast();

@@ -38,6 +38,15 @@
 
 #define NCBI_USE_ERRCODE_X   Dbapi_CTlib_Cmds
 
+#undef NCBI_DATABASE_THROW
+#undef NCBI_DATABASE_RETHROW
+
+#define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
+    NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
+        GetDbgInfo(), GetConnection(), &GetBindParams())
+#define NCBI_DATABASE_RETHROW(prev_ex, ex_class, message, err_code, severity) \
+    NCBI_DATABASE_RETHROW_ANNOTATED(prev_ex, ex_class, message, err_code, \
+        severity, GetDbgInfo(), GetConnection(), &GetBindParams())
 
 BEGIN_NCBI_SCOPE
 
@@ -57,8 +66,7 @@ CTL_CursorCmd::CTL_CursorCmd(CTL_Connection& conn,
                              const string& query,
                              unsigned int fetch_size
                              )
-: CTL_Cmd(conn)
-, impl::CBaseCmd(conn, cursor_name, query)
+: CTL_Cmd(conn, cursor_name, query)
 , m_FetchSize(fetch_size)
 {
     string extra_msg = "Cursor Name: \"" + cursor_name + "\"; SQL Command: \""+
@@ -524,8 +532,7 @@ CTL_CursorCmdExpl::CTL_CursorCmdExpl(CTL_Connection& conn,
                                      const string& cursor_name,
                                      const string& query,
                                      unsigned int fetch_size)
-    : CTL_Cmd(conn),
-      impl::CBaseCmd(conn, cursor_name, query),
+    : CTL_Cmd(conn, cursor_name, query),
       m_LCmd(NULL),
       m_Res(NULL)
 {

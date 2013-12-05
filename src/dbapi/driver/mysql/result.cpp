@@ -33,6 +33,11 @@
 #include <ncbi_pch.hpp>
 #include <dbapi/driver/mysql/interfaces.hpp>
 
+#undef NCBI_DATABASE_THROW
+#define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
+    NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
+        GetDbgInfo(), GetConnection(), GetBindParams())
+// No use of NCBI_DATABASE_RETHROW or DATABASE_DRIVER_*_EX here.
 
 BEGIN_NCBI_SCOPE
 

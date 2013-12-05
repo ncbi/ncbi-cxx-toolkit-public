@@ -37,6 +37,11 @@
 
 #define NCBI_USE_ERRCODE_X   Dbapi_Mysql_Cmds
 
+#undef NCBI_DATABASE_THROW
+#define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
+    NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
+        GetDbgInfo(), GetConnection(), &GetBindParams())
+// No use of NCBI_DATABASE_RETHROW or DATABASE_DRIVER_*_EX here.
 
 BEGIN_NCBI_SCOPE
 
@@ -45,8 +50,13 @@ CMySQL_LangCmd::CMySQL_LangCmd(CMySQL_Connection& conn,
                                const string&      lang_query) :
     impl::CBaseCmd(conn, lang_query),
     m_Connect(&conn),
-    m_HasMoreResults(false)
+    m_HasMoreResults(false),
+    m_IsActive(false)
 {
+    if (conn.m_ActiveCmd) {
+        conn.m_ActiveCmd->m_IsActive = false;
+    }
+    conn.m_ActiveCmd = this;
 }
 
 
@@ -104,6 +114,9 @@ CMySQL_LangCmd::~CMySQL_LangCmd()
         Cancel();
     }
     NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
+    if (m_IsActive) {
+        GetConnection().m_ActiveCmd = NULL;
+    }
 }
 
 int CMySQL_LangCmd::LastInsertId() const

@@ -422,7 +422,9 @@ protected:
         GetNativeConnection().SetDead(flag);
     }
 
-    string GetDbgInfo(void) const
+    string GetDbgInfo(void) const;
+
+    string GetBaseDbgInfo(void) const
     {
         return " " + GetExecCntxInfo();
     }
@@ -443,8 +445,11 @@ private:
     CS_CONNECTION* x_GetSybaseConn(void) const { return m_Handle.GetNativeHandle(); }
     bool x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type);
 
+    const CDBParams* GetBindParams(void) const;
+
     CTLibContext*       m_Cntx;
     ctlib::Connection   m_Handle;
+    CTL_CmdBase*        m_ActiveCmd;
 };
 
 
@@ -454,10 +459,13 @@ private:
 //  CTL_CmdBase::
 //
 
-class CTL_CmdBase
+class CTL_CmdBase : public impl::CBaseCmd
 {
+    friend class CTL_Connection;
 public:
-    CTL_CmdBase(CTL_Connection& conn);
+    CTL_CmdBase(CTL_Connection& conn, const string& query);
+    CTL_CmdBase(CTL_Connection& conn, const string& cursor_name,
+                const string& query);
     virtual ~CTL_CmdBase(void);
 
 protected:
@@ -506,16 +514,19 @@ protected:
     {
         GetConnection().SetDead(flag);
     }
-    void CheckIsDead(void) const
+    void CheckIsDead(void) // const
     {
         if (IsDead()) {
-            DATABASE_DRIVER_ERROR("Connection has died." + GetDbgInfo(), 122010);
+            NCBI_DATABASE_THROW_ANNOTATED(CDB_ClientEx, "Connection has died.",
+                                          122010, eDiag_Error, GetDbgInfo(),
+                                          GetConnection(), &GetBindParams());
         }
     }
 
-    string GetDbgInfo(void) const
+    string GetDbgInfo(bool want_space = true) const
     {
-        return " " + GetExecCntxInfo() + " " + GetConnection().GetExecCntxInfo();
+        return (want_space ? string(" ") : kEmptyStr) + GetExecCntxInfo() + " "
+            + GetConnection().GetExecCntxInfo();
     }
 
 protected:
@@ -523,7 +534,7 @@ protected:
     string          m_ExecCntxInfo;
 
 private:
-    CTL_Connection* m_Connect;
+    bool            m_IsActive;
 };
 
 
@@ -538,7 +549,9 @@ class CTL_Cmd : public CTL_CmdBase
     friend class CTL_CursorResultExpl;
 
 public:
-    CTL_Cmd(CTL_Connection& conn);
+    CTL_Cmd(CTL_Connection& conn, const string& query);
+    CTL_Cmd(CTL_Connection& conn, const string& cursor_name,
+            const string& query);
     virtual ~CTL_Cmd(void);
 
 protected:
@@ -582,6 +595,8 @@ protected:
     void DropSybaseCmd(void);
 
 private:
+    void x_Init(void);
+
     CS_COMMAND*     m_Cmd;
     CTL_RowResult*  m_Res;
 };
@@ -591,7 +606,7 @@ private:
 //
 //  CTL_LangCmd::
 //
-class CTL_LRCmd : public CTL_Cmd, public impl::CBaseCmd
+class CTL_LRCmd : public CTL_Cmd
 {
 public:
     CTL_LRCmd(CTL_Connection& conn,
@@ -678,9 +693,7 @@ private:
 //  CTL_CursorCmd::
 //
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorCmd :
-    CTL_Cmd,
-    public impl::CBaseCmd
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorCmd : CTL_Cmd
 {
     friend class CTL_Connection;
 
@@ -725,9 +738,7 @@ private:
 //  CTL_CursorCmdExpl::
 //  Explicit cursor (based on T-SQL)
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorCmdExpl :
-    CTL_Cmd,
-    public impl::CBaseCmd
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_CursorCmdExpl : CTL_Cmd
 {
     friend class CTL_Connection;
 
@@ -775,9 +786,7 @@ private:
 //  CTL_BCPInCmd::
 //
 
-class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_BCPInCmd :
-    CTL_CmdBase,
-    public impl::CBaseCmd
+class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_BCPInCmd : CTL_CmdBase
 {
     friend class CTL_Connection;
 
@@ -945,7 +954,7 @@ protected:
     //
     string GetDbgInfo(void) const
     {
-        return " " + GetConnection().GetExecCntxInfo();
+        return GetConnection().GetDbgInfo();
     }
 
     static EDB_Type ConvDataType_Ctlib2DBAPI(const CS_DATAFMT& fmt);
@@ -970,10 +979,18 @@ protected:
     {
         return GetConnection().IsDead();
     }
+    
+    const CDBParams* GetBindParams(void) const 
+    {
+        return m_Connect ? m_Connect->GetBindParams() : NULL;
+    }
+
     void CheckIsDead(void) const
     {
         if (IsDead()) {
-            DATABASE_DRIVER_ERROR("Connection has died." + GetDbgInfo(), 122011);
+            NCBI_DATABASE_THROW_ANNOTATED(CDB_ClientEx, "Connection has died.",
+                                          122011, eDiag_Error, GetDbgInfo(),
+                                          GetConnection(), GetBindParams());
         }
     }
 
@@ -1130,26 +1147,43 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 inline
+string CTL_Connection::GetDbgInfo(void) const {
+    return m_ActiveCmd ? m_ActiveCmd->GetDbgInfo() : GetBaseDbgInfo();
+}
+
+inline
+const CDBParams* CTL_Connection::GetBindParams(void) const {
+#ifdef FTDS_IN_USE
+    return m_ActiveCmd ? &m_ActiveCmd->GetBindParams() : NULL;
+#else
+    // With Sybase ctlib, calling CTL_RPCCmd::GetBindParams within an
+    // error handler can deadlock, but specifically testing for it
+    // fails because dynamic_cast only reliably handles types known to
+    // the main executable, as opposed to plugins.  No other derived
+    // classes override GetBindParams anyway.
+    return m_ActiveCmd ? &m_ActiveCmd->impl::CBaseCmd::GetBindParams() : NULL;
+#endif
+}
+
+inline
 CTL_Connection&
 CTL_CmdBase::GetConnection(void)
 {
-    _ASSERT(m_Connect);
-    return *m_Connect;
+    return static_cast<CTL_Connection&>(GetConnImpl());
 }
 
 inline
 const CTL_Connection&
 CTL_CmdBase::GetConnection(void) const
 {
-    _ASSERT(m_Connect);
-    return *m_Connect;
+    return static_cast<CTL_Connection&>(GetConnImpl());
 }
 
 inline
 CS_RETCODE
 CTL_CmdBase::Check(CS_RETCODE rc)
 {
-    return GetConnection().Check(rc, GetExecCntxInfo());
+    return GetConnection().Check(rc, GetDbgInfo(false));
 }
 
 inline

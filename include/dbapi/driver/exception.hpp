@@ -47,6 +47,12 @@
 
 BEGIN_NCBI_SCOPE
 
+class CDB_Object;
+class CDBParams;
+
+BEGIN_SCOPE(impl)
+class CConnection;
+END_SCOPE(impl)
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Helper macro for default database exception implementation.
@@ -124,6 +130,17 @@ public:
     };
     typedef EErrCode EType;
 
+    struct SParam {
+        string      name;
+        CDB_Object* value;
+    };
+    struct NCBI_DBAPIDRIVER_EXPORT SParams : public CObject {
+        ~SParams(void);
+
+        typedef vector<SParam> TParams;
+        TParams params;
+    };
+
     // access
     // DEPRECATED, Will be removed soon.
     NCBI_DEPRECATED
@@ -152,8 +169,15 @@ public:
     void SetUserName(const string& name) { m_UserName = name;          }
     const string& GetUserName(void) const { return m_UserName;         }
 
+    void SetFromConnection(const impl::CConnection& connection);
+
     void SetExtraMsg(const string& msg) { m_ExtraMsg = msg;            }
     const string& GetExtraMsg(void) const { return m_ExtraMsg;         }
+
+    void SetParams(const CDBParams* params);
+    void SetParams(const CDBParams& params) { SetParams(&params); }
+    CConstRef<SParams> GetParams(void) const { return m_Params; }
+    
 
     /// WARNING !!! Sybase severity value can be provided by Sybase/FreeTDS
     /// ctlib/dblib drivers only.
@@ -196,6 +220,7 @@ private:
     string  m_UserName;
     int     m_SybaseSeverity;
     string  m_ExtraMsg;
+    CRef<SParams> m_Params;
 };
 
 
@@ -339,6 +364,24 @@ public:
 class NCBI_DBAPIDRIVER_EXPORT CDB_ClientEx : public CDB_Exception
 {
 public:
+    CDB_ClientEx(const CDiagCompileInfo& info,
+                 const CException* prev_exception,
+                 const string& message,
+                 EDiagSev severity,
+                 int db_err_code,
+                 const string& dbg_info,
+                 const impl::CConnection& connection,
+                 const CDBParams* params)
+       : CDB_Exception(info, prev_exception, CDB_Exception::eClient,
+                       message, severity, db_err_code)
+    {
+        // Many callers already supply it.
+        if ( !NStr::EndsWith(message, dbg_info) ) {
+            AddToMessage(dbg_info);
+        }
+        SetFromConnection(connection);
+        SetParams(params);
+    }
     CDB_ClientEx(const CDiagCompileInfo& info,
                  const CException* prev_exception,
                  const string& message,
@@ -571,6 +614,16 @@ typedef CDB_UserHandler_Diag CDB_UserHandler_Default;
     err_code, severity ) \
     throw exception_class( DIAG_COMPILE_INFO, \
         &(prev_exception), (message), severity, err_code )
+
+// Driver code typically redefines NCBI_DATABASE_(RE)THROW in terms of these.
+#define NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
+                                      dbg_info, conn, params) \
+    throw ex_class(DIAG_COMPILE_INFO, NULL, (message), severity, err_code, \
+                   dbg_info, conn, params)
+#define NCBI_DATABASE_RETHROW_ANNOTATED(prev_ex, ex_class, message, err_code, \
+                                        severity, dbg_info, conn, params) \
+    throw ex_class(DIAG_COMPILE_INFO, &(prev_ex), (message), severity, \
+                   err_code, dbg_info, conn, params)
 
 #define DATABASE_DRIVER_ERROR( message, err_code ) \
     NCBI_DATABASE_THROW( CDB_ClientEx, message, err_code, eDiag_Error )

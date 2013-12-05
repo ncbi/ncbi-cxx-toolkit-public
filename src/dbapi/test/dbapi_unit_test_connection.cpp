@@ -262,15 +262,17 @@ BOOST_AUTO_TEST_CASE(Test_DropConnection)
                     auto_ptr<CDB_LangCmd> auto_stmt(auto_conn->LangCmd(sql));
                     auto_stmt->Send();
                     auto_stmt->DumpResults();
-                } catch (const CDB_Exception&) {
+                } catch (const CDB_Exception& ex) {
                     // Ignore it ...
+                    _TRACE(ex);
                 }
 
                 try {
                     auto_ptr<CDB_RPCCmd> auto_stmt(auto_conn->RPC("sp_who"));
                     auto_stmt->Send();
                     auto_stmt->DumpResults();
-                } catch (const CDB_Exception&) {
+                } catch (const CDB_Exception& ex) {
+                    _TRACE(ex);
                     conn_killed = true;
                 }
 
@@ -458,9 +460,10 @@ public:
         try {
             conn.SetDatabaseName(GetDBName());
         }
-        catch(const CDB_Exception&) {
+        catch(const CDB_Exception& ex) {
             // LOG_POST(Warning << "Db not accessible: " << GetDBName() <<
             //             ", Server name: " << conn.ServerName());
+            _TRACE(ex);
             return eTempInvalidConn;
             // return eInvalidConn;
         }
@@ -510,9 +513,10 @@ public:
         try {
             conn.SetDatabaseName(GetDBName());
         }
-        catch(const CDB_Exception&) {
+        catch(const CDB_Exception& ex) {
             // LOG_POST(Warning << "Db not accessible: " << GetDBName() <<
             //             ", Server name: " << conn.ServerName());
+            _TRACE(ex);
             return eTempInvalidConn;
             // return eInvalidConn;
         }

@@ -44,6 +44,7 @@ BEGIN_NCBI_SCOPE
 CMySQL_Connection::CMySQL_Connection(CMySQLContext& cntx,
                                      const CDBConnParams& params) :
     impl::CConnection(cntx, params),
+    m_ActiveCmd(NULL),
     m_IsOpen(false)
 {
     SetServerType(CDBConnParams::eMySQL);
@@ -76,6 +77,9 @@ CMySQL_Connection::~CMySQL_Connection()
         Close();
     }
     NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
+    if (m_ActiveCmd) {
+        m_ActiveCmd->m_IsActive = false;
+    }
 }
 
 

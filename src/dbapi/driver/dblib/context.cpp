@@ -426,6 +426,30 @@ bool CDBLibContext::DBLIB_SetMaxNofConns(int n)
 }
 
 
+static
+void s_PassException(CDB_Exception& ex, const string& server_name,
+                     const string& user_name, CS_INT severity,
+                     const CDBParams* params)
+{
+    ex.SetServerName(server_name);
+    ex.SetUserName(user_name);
+    ex.SetSybaseSeverity(severity);
+    ex.SetParams(params);
+
+    if (ex.GetSeverity() != eDiag_Info) {
+        string msg =
+            " SERVER: '" + server_name +
+            "' USER: '" + user_name + "'" +
+            (ex.GetExtraMsg().empty() ? "" : " CONTEXT: '" +
+             ex.GetExtraMsg() + "'")
+            ;
+        ex.AddToMessage(msg);
+    }
+
+    GetDBLExceptionStorage().Accept(ex);
+}
+
+
 int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
                                        int           severity,
                                        int           dberr,
@@ -436,6 +460,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     string server_name;
     string user_name;
     string message = dberrstr;
+    const CDBParams* params = NULL;
 
     CFastMutexGuard ctx_mg(s_CtxMutex);
 
@@ -445,6 +470,8 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
     if ( link ) {
         server_name = link->ServerName();
         user_name = link->UserName();
+        message += link->GetDbgInfo();
+        params = link->GetBindParams();
     }
 
     switch (dberr) {
@@ -457,11 +484,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
                              message,
                              dberr);
 
-            ex.SetServerName(server_name);
-            ex.SetUserName(user_name);
-            ex.SetSybaseSeverity(severity);
-
-            GetDBLExceptionStorage().Accept(ex);
+            s_PassException(ex, server_name, user_name, severity, params);
         }
         return INT_TIMEOUT;
 
@@ -471,11 +494,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
                               0,
                               message);
 
-            ex.SetServerName(server_name);
-            ex.SetUserName(user_name);
-            ex.SetSybaseSeverity(severity);
-
-            GetDBLExceptionStorage().Accept(ex);
+            s_PassException(ex, server_name, user_name, severity, params);
 
             return INT_CANCEL;
         }
@@ -494,11 +513,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
                             eDiag_Info,
                             dberr);
 
-            ex.SetServerName(server_name);
-            ex.SetUserName(user_name);
-            ex.SetSybaseSeverity(severity);
-
-            GetDBLExceptionStorage().Accept(ex);
+            s_PassException(ex, server_name, user_name, severity, params);
         }
         break;
     case EXNONFATAL:
@@ -512,11 +527,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
                             eDiag_Error,
                             dberr);
 
-            ex.SetServerName(server_name);
-            ex.SetUserName(user_name);
-            ex.SetSybaseSeverity(severity);
-
-            GetDBLExceptionStorage().Accept(ex);
+            s_PassException(ex, server_name, user_name, severity, params);
         }
         break;
     case EXTIME:
@@ -526,11 +537,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
                              message,
                              dberr);
 
-            ex.SetServerName(server_name);
-            ex.SetUserName(user_name);
-            ex.SetSybaseSeverity(severity);
-
-            GetDBLExceptionStorage().Accept(ex);
+            s_PassException(ex, server_name, user_name, severity, params);
         }
         return INT_TIMEOUT;
     default:
@@ -541,11 +548,7 @@ int CDBLibContext::DBLIB_dberr_handler(DBPROCESS*    dblink,
                             eDiag_Critical,
                             dberr);
 
-            ex.SetServerName(server_name);
-            ex.SetUserName(user_name);
-            ex.SetSybaseSeverity(severity);
-
-            GetDBLExceptionStorage().Accept(ex);
+            s_PassException(ex, server_name, user_name, severity, params);
         }
         break;
     }
@@ -565,6 +568,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
     string server_name;
     string user_name;
     string message = msgtxt;
+    const CDBParams* params = NULL;
 
     if (msgno == 5701 || msgno == 5703 || msgno == 5704)
         return;
@@ -577,6 +581,8 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
     if ( link ) {
         server_name = link->ServerName();
         user_name = link->UserName();
+        message += link->GetDbgInfo();
+        params = link->GetBindParams();
     } else {
         server_name = srvname;
     }
@@ -586,16 +592,12 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
                           0,
                           message);
 
-        ex.SetServerName(server_name);
-        ex.SetUserName(user_name);
-        ex.SetSybaseSeverity(severity);
-
-        GetDBLExceptionStorage().Accept(ex);
+        s_PassException(ex, server_name, user_name, severity, params);
     }
     else if (msgno == 1708  ||  msgno == 1771) {
         // "Maximum row size exceeds allowable width. It is being rounded down to 32767 bytes."
         // "Row size (32767 bytes) could exceed row size limit, which is 1962 bytes."
-        ERR_POST_X(6, Warning << msgtxt);
+        ERR_POST_X(6, Warning << message);
     }
     else {
         EDiagSev sev =
@@ -612,11 +614,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
                          procname,
                          line);
 
-            ex.SetServerName(server_name);
-            ex.SetUserName(user_name);
-            ex.SetSybaseSeverity(severity);
-
-            GetDBLExceptionStorage().Accept(ex);
+            s_PassException(ex, server_name, user_name, severity, params);
         } else {
             CDB_DSEx ex(DIAG_COMPILE_INFO,
                         0,
@@ -624,11 +622,7 @@ void CDBLibContext::DBLIB_dbmsg_handler(DBPROCESS*    dblink,
                         sev,
                         msgno);
 
-            ex.SetServerName(server_name);
-            ex.SetUserName(user_name);
-            ex.SetSybaseSeverity(severity);
-
-            GetDBLExceptionStorage().Accept(ex);
+            s_PassException(ex, server_name, user_name, severity, params);
         }
     }
 }

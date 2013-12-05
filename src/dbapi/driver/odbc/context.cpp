@@ -176,10 +176,12 @@ CODBCContextRegistry::StaticClearAll(void)
 CODBC_Reporter::CODBC_Reporter(impl::CDBHandlerStack* hs,
                                SQLSMALLINT ht,
                                SQLHANDLE h,
+                               const CODBC_Connection* connection,
                                const CODBC_Reporter* parent_reporter)
 : m_HStack(hs)
 , m_Handle(h)
 , m_HType(ht)
+, m_Connection(connection)
 , m_ParentReporter(parent_reporter)
 {
 }
@@ -191,11 +193,20 @@ CODBC_Reporter::~CODBC_Reporter(void)
 string
 CODBC_Reporter::GetExtraMsg(void) const
 {
-    if ( m_ParentReporter != NULL ) {
-        return " " + m_ExtraMsg + " " + m_ParentReporter->GetExtraMsg();
+    const CODBC_Reporter* next = this;
+    // Start one level up when establishing a new connection.
+    if (m_ParentReporter == NULL  &&  m_Connection != NULL) {
+        next = &m_Connection->m_Reporter;
     }
 
-    return " " + m_ExtraMsg;
+    string result;
+    do {
+        result += " ";
+        result += next->m_ExtraMsg;
+        next    = next->m_ParentReporter;
+    } while (next != NULL);
+
+    return result;
 }
 
 void CODBC_Reporter::ReportErrors(void) const
@@ -231,14 +242,14 @@ void CODBC_Reporter::ReportErrors(void) const
                                     err_msg,
                                     NativeError);
 
-                    m_HStack->PostMsg(&to);
+                    x_PostMsg(to);
                 }
 				else if(util::strncmp(SqlState, _T_NCBI_ODBC("40001"), 5) == 0) {
 					// deadlock
                     CDB_DeadlockEx dl(DIAG_COMPILE_INFO,
                                     0,
                                     err_msg);
-                    m_HStack->PostMsg(&dl);
+                    x_PostMsg(dl);
                 }
                 else if (NativeError == 1708  ||  NativeError == 1771) {
                     ERR_POST_X(3, Warning << err_msg);
@@ -252,7 +263,7 @@ void CODBC_Reporter::ReportErrors(void) const
                                 NativeError,
                                 CODBCString(SqlState).AsLatin1(),
                                 0);
-                    m_HStack->PostMsg(&se);
+                    x_PostMsg(se);
                 }
                 continue;
 
@@ -269,7 +280,7 @@ void CODBC_Reporter::ReportErrors(void) const
                                 err_msg,
                                 eDiag_Warning,
                                 777);
-                    m_HStack->PostMsg(&dse);
+                    x_PostMsg(dse);
                 }
 
                 continue;
@@ -284,7 +295,7 @@ void CODBC_Reporter::ReportErrors(void) const
                                     err_msg,
                                     eDiag_Warning,
                                     420016);
-                    m_HStack->PostMsg(&ce);
+                    x_PostMsg(ce);
                 }
 
                 break;
@@ -292,6 +303,42 @@ void CODBC_Reporter::ReportErrors(void) const
         }
 
         break;
+    }
+}
+
+void CODBC_Reporter::ReportError(CDB_Exception& ex) const
+{
+    string extra_msg = GetExtraMsg();
+    if ( !NStr::EndsWith(ex.GetMsg(), extra_msg) ) {
+        ex.AddToMessage(extra_msg);
+    }
+    x_PostMsg(ex, true);
+}
+
+void CODBC_Reporter::x_PostMsg(CDB_Exception& ex, bool always_throw) const
+{
+    const CDBParams* params = NULL;
+    if (m_Connection != NULL) {
+        const string& conn_msg = m_Connection->m_Reporter.m_ExtraMsg;
+        // Explicitly setting the exception's server name and user name fields
+        // keeps SetFromConnection from duplicating SERVER: and USER: info.
+        if (ex.GetServerName().empty() && conn_msg.find(" SERVER: ") != NPOS) {
+            ex.SetServerName(m_Connection->ServerName());
+        }
+        if (ex.GetUserName().empty()  &&  conn_msg.find(" USER: ") != NPOS) {
+            ex.SetUserName(m_Connection->UserName());
+        }
+        params = m_Connection->GetBindParams();
+    }
+
+    if (always_throw) {
+        if (m_Connection) {
+            ex.SetFromConnection(*m_Connection);
+        }
+        ex.SetParams(params);
+        throw ex;
+    } else {
+        m_HStack->PostMsg(&ex, kEmptyStr, m_Connection, params);
     }
 }
 

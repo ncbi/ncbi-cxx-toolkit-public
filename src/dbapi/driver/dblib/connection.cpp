@@ -60,7 +60,8 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
     impl::CConnection(cntx, params, true),
     m_DBLibCtx(&cntx),
     m_Login(NULL),
-    m_Link(NULL)
+    m_Link(NULL),
+    m_ActiveCmd(NULL)
 {
     m_Login = GetDBLibCtx().Check(dblogin());
     _ASSERT(m_Login);
@@ -155,6 +156,13 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
     dbsetuserdata(GetDBLibConnection(), (BYTE*) this);
     CheckFunctCall();
 }
+
+
+#undef NCBI_DATABASE_THROW
+#define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
+    NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
+        GetDbgInfo(), *this, GetBindParams())
+// No use of NCBI_DATABASE_RETHROW or DATABASE_DRIVER_*_EX here.
 
 
 bool CDBL_Connection::IsAlive()
@@ -308,6 +316,9 @@ CDBL_Connection::~CDBL_Connection()
         Close();
     }
     NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
+    if (m_ActiveCmd) {
+        m_ActiveCmd->m_IsActive = false;
+    }
 }
 
 
@@ -591,15 +602,22 @@ RETCODE CDBL_Connection::CheckDead(RETCODE rc)
 
 void CDBL_Connection::CheckFunctCall(void)
 {
-    GetDBLExceptionStorage().Handle(GetMsgHandlers(), GetExtraMsg());
+    GetDBLExceptionStorage().Handle(GetMsgHandlers(), GetExtraMsg(), this,
+                                    GetBindParams());
 }
 
 
 void CDBL_Connection::CheckFunctCall(const string& extra_msg)
 {
-    GetDBLExceptionStorage().Handle(GetMsgHandlers(), extra_msg);
+    GetDBLExceptionStorage().Handle(GetMsgHandlers(), extra_msg, this,
+                                    GetBindParams());
 }
 
+
+#undef NCBI_DATABASE_THROW
+#define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
+    NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
+        GetDbgInfo(), GetConnection(), &GetBindParams())
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -610,7 +628,7 @@ void CDBL_Connection::CheckFunctCall(const string& extra_msg)
 CDBL_SendDataCmd::CDBL_SendDataCmd(CDBL_Connection& conn,
                                    DBPROCESS* cmd,
                                    size_t nof_bytes) :
-    CDBL_Cmd(conn, cmd),
+    CDBL_Cmd(conn, cmd, kEmptyStr),
     impl::CSendDataCmd(conn, nof_bytes)
 {
 }
@@ -664,7 +682,7 @@ CDBL_SendDataCmd::~CDBL_SendDataCmd()
     try {
         DetachSendDataIntf();
 
-        GetConnection().DropCmd(*this);
+        GetConnection().DropCmd(*(impl::CSendDataCmd*)this);
 
         Cancel();
     }

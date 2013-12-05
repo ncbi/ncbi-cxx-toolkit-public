@@ -39,7 +39,52 @@
 
 #define NCBI_USE_ERRCODE_X   Dbapi_Dblib_Cmds
 
+#undef NCBI_DATABASE_THROW
+#define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
+    NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
+        GetDbgInfo(), GetConnection(), &GetBindParams())
+// No use of NCBI_DATABASE_RETHROW or DATABASE_DRIVER_*_EX here.
+
 BEGIN_NCBI_SCOPE
+
+/////////////////////////////////////////////////////////////////////////////
+//
+//  CDBL_Cmd::
+//
+
+CDBL_Cmd::CDBL_Cmd(CDBL_Connection& conn, DBPROCESS* cmd, const string& query)
+    : CBaseCmd(conn, query),
+      // m_HasFailed(false),
+      m_RowCount(-1),
+      m_IsActive(true),
+      m_Cmd(cmd)
+{
+    if (conn.m_ActiveCmd) {
+        conn.m_ActiveCmd->m_IsActive = false;
+    }
+    conn.m_ActiveCmd = this;
+}
+
+CDBL_Cmd::CDBL_Cmd(CDBL_Connection& conn, DBPROCESS* cmd,
+                   const string& cursor_name, const string& query)
+    : CBaseCmd(conn, cursor_name, query),
+      // m_HasFailed(false),
+      m_RowCount(-1),
+      m_IsActive(true),
+      m_Cmd(cmd)
+{
+    if (conn.m_ActiveCmd) {
+        conn.m_ActiveCmd->m_IsActive = false;
+    }
+    conn.m_ActiveCmd = this;
+}
+
+CDBL_Cmd::~CDBL_Cmd(void)
+{
+    if (m_IsActive) {
+        GetConnection().m_ActiveCmd = NULL;
+    }
+}
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -49,8 +94,7 @@ BEGIN_NCBI_SCOPE
 CDBL_LangCmd::CDBL_LangCmd(CDBL_Connection& conn,
                            DBPROCESS* cmd,
                            const string& lang_query)
-: CDBL_Cmd(conn, cmd)
-, impl::CBaseCmd(conn, lang_query)
+: CDBL_Cmd(conn, cmd, lang_query)
 , m_Res(0)
 , m_Status(0)
 {

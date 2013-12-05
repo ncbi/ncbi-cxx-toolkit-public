@@ -36,6 +36,14 @@
 
 #define NCBI_USE_ERRCODE_X   Dbapi_Odbc_Cmds
 
+#undef NCBI_DATABASE_THROW
+#undef NCBI_DATABASE_RETHROW
+
+#define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
+    NCBI_ODBC_THROW(ex_class, message, err_code, severity)
+#define NCBI_DATABASE_RETHROW(prev_ex, ex_class, message, err_code, severity) \
+    NCBI_ODBC_RETHROW(prev_ex, ex_class, message, err_code, severity)
+
 
 BEGIN_NCBI_SCOPE
 
@@ -51,6 +59,8 @@ CODBC_CursorCmdBase::CODBC_CursorCmdBase(CODBC_Connection& conn,
 : CStatementBase(conn, cursor_name, query)
 , m_CursCmd(conn, query)
 {
+    SetDbgInfo("Cursor Name: \"" + cursor_name + "\"; SQL Command: \""
+               + query + "\"");
 }
 
 CODBC_CursorCmdBase::~CODBC_CursorCmdBase(void)

@@ -97,6 +97,7 @@ public:
     ~CMemStore();
 
     size_t Read        (void*       buff, size_t nof_bytes);
+    size_t Peek        (void*       buff, size_t nof_bytes) const;
     size_t Append      (const void* buff, size_t nof_bytes);
     size_t Write       (const void* buff, size_t nof_bytes);
     size_t Insert      (const void* buff, size_t nof_bytes);

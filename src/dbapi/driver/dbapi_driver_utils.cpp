@@ -89,8 +89,7 @@ CDBBindedParams::CDBBindedParams(CDB_Params& bindings)
 
 unsigned int CDBBindedParams::GetNum(void) const
 {
-    DATABASE_DRIVER_ERROR( "Methods GetNum is not implemented yet.", 122002 );
-    return 0;
+    return m_Bindings->NofParams();
 }
 
 const string& 
@@ -98,15 +97,20 @@ CDBBindedParams::GetName(
         const CDBParamVariant& param, 
         CDBParamVariant::ENameFormat format) const
 {
-    DATABASE_DRIVER_ERROR( "Methods GetName is not implemented yet.", 122002 );
-
-    return kEmptyStr;
+    if (param.IsPositional()) {
+        return m_Bindings->GetParamName(param.GetPosition());
+    } else {
+        return param.GetName(); // XXX - confirm presence?
+    }
 }
 
 unsigned int CDBBindedParams::GetIndex(const CDBParamVariant& param) const
 {
-    DATABASE_DRIVER_ERROR( "Methods GetIndex is not implemented yet.", 122002 );
-    return 0;
+    if (param.IsPositional()) {
+        return param.GetPosition(); // XXX - check range?
+    } else {
+        return m_Bindings->GetParamNum(param.GetName());
+    }
 }
 
 size_t CDBBindedParams::GetMaxSize(const CDBParamVariant& param) const
@@ -117,8 +121,18 @@ size_t CDBBindedParams::GetMaxSize(const CDBParamVariant& param) const
 
 EDB_Type CDBBindedParams::GetDataType(const CDBParamVariant& param) const
 {
-    DATABASE_DRIVER_ERROR( "Methods GetDataType is not implemented yet.", 122002 );
-    return eDB_UnsupportedType;
+    const CDB_Object* v = GetValue(param);
+    return v == NULL ? eDB_UnsupportedType : v->GetType();
+}
+
+const CDB_Object* CDBBindedParams::GetValue(const CDBParamVariant& param) const
+{
+    try {
+        int i = GetIndex(param);
+        return m_Bindings->GetParam(i);
+    } catch (exception&) {
+        return NULL;
+    }
 }
 
 CDBParams::EDirection CDBBindedParams::GetDirection(const CDBParamVariant& param) const
@@ -278,7 +292,7 @@ CCachedRowInfo::GetIndex(const CDBParamVariant& param) const
         return FindParamPosInternal(param.GetName());
     }
 
-    DATABASE_DRIVER_ERROR("Parameter name not found.", 1);
+    DATABASE_DRIVER_ERROR("Parameter name not found: " + param.GetName(), 1);
 
     return 0;
 }

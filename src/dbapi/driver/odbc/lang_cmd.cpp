@@ -40,6 +40,11 @@
 
 #define NCBI_USE_ERRCODE_X   Dbapi_Odbc_Cmds
 
+#undef NCBI_DATABASE_THROW
+#define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
+    NCBI_ODBC_THROW(ex_class, message, err_code, severity)
+// No use of NCBI_DATABASE_RETHROW or DATABASE_DRIVER_*_EX here.
+
 BEGIN_NCBI_SCOPE
 
 
@@ -60,8 +65,7 @@ CODBC_LangCmd::CODBC_LangCmd(
         DATABASE_DRIVER_ERROR( "SQLSetStmtAttr failed (memory corruption suspected)", 420014 );
     }
 */
-    // string extra_msg = "SQL Command: \"" + lang_query + "\"";
-    // m_Reporter.SetExtraMsg( extra_msg );
+    SetDbgInfo("SQL Command: \"" + lang_query + "\"");
 
 }
 

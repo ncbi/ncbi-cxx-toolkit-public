@@ -238,7 +238,9 @@ CVariant::CVariant(EDB_Type type, size_t size)
     case eDB_UnsupportedType:
         break;
     }
-    NCBI_THROW(CVariantException, eVariant, "Unsupported type");
+    NCBI_THROW(CVariantException, eVariant,
+               string("Unsupported type: ")
+               + CDB_Object::GetTypeName(type, false));
 }
 
 
@@ -301,7 +303,9 @@ CVariant::CVariant(const CTime& v, EDateTimeFormat fmt)
         m_data = new CDB_DateTime(v);
         break;
     default:
-        NCBI_THROW(CVariantException, eVariant, "CVariant::ctor(): unsupported datetime type");
+        NCBI_THROW(CVariantException, eVariant,
+                   "CVariant::ctor(): unsupported datetime type "
+                   + NStr::IntToString(fmt));
     }
 
     if (v.IsEmpty()) {
@@ -834,7 +838,10 @@ bool operator<(const CVariant& v1, const CVariant& v2)
     }
     else {
         if( v1.GetType() != v2.GetType() ) {
-            NCBI_THROW(CVariantException, eVariant, "Cannot compare different types");
+            NCBI_THROW(CVariantException, eVariant,
+                       string("Cannot compare different types ")
+                       + CDB_Object::GetTypeName(v1.GetType(), false) + " and "
+                       + CDB_Object::GetTypeName(v2.GetType(), false));
         }
 
         switch( v1.GetType() ) {
@@ -866,7 +873,9 @@ bool operator<(const CVariant& v1, const CVariant& v2)
             less = v1.GetCTime() < v2.GetCTime();
             break;
         default:
-            NCBI_THROW(CVariantException, eVariant, "Type not supported");
+            NCBI_THROW(CVariantException, eVariant,
+                       string("Type not supported: ")
+                       + CDB_Object::GetTypeName(v1.GetType(), false));
         }
     }
     return less;
@@ -881,7 +890,10 @@ bool operator==(const CVariant& v1, const CVariant& v2)
     }
     else {
         if( v1.GetType() != v2.GetType() ) {
-            NCBI_THROW(CVariantException, eVariant, "Cannot compare different types");
+            NCBI_THROW(CVariantException, eVariant,
+                       string("Cannot compare different types ")
+                       + CDB_Object::GetTypeName(v1.GetType(), false) + " and "
+                       + CDB_Object::GetTypeName(v2.GetType(), false));
         }
 
         switch( v1.GetType() ) {
@@ -918,7 +930,9 @@ bool operator==(const CVariant& v1, const CVariant& v2)
             less = v1.GetCTime() == v2.GetCTime();
             break;
         default:
-            NCBI_THROW(CVariantException, eVariant, "Type not supported");
+            NCBI_THROW(CVariantException, eVariant,
+                       string("Type not supported: ")
+                       + CDB_Object::GetTypeName(v1.GetType(), false));
         }
     }
     return less;

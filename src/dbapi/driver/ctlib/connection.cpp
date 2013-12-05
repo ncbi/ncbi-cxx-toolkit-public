@@ -98,6 +98,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 : impl::CConnection(cntx, params, true)
 , m_Cntx(&cntx)
 , m_Handle(cntx, *this)
+, m_ActiveCmd(NULL)
 {
 #ifdef FTDS_IN_USE
     int tds_version = 0;
@@ -197,7 +198,8 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 #endif
         )
     {
-        DATABASE_DRIVER_ERROR( "Cannot connection's properties." + GetDbgInfo(), 100011 );
+        DATABASE_DRIVER_ERROR("Cannot set connection's properties."
+                              + GetDbgInfo(), 100011);
     }
 
     if (cntx.GetLocale()) {
@@ -306,10 +308,18 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 }
 
 
+#undef NCBI_DATABASE_THROW
+#define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
+    NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
+        GetDbgInfo(), *this, GetBindParams())
+// No use of NCBI_DATABASE_RETHROW or DATABASE_DRIVER_*_EX here.
+
+
 CS_RETCODE
 CTL_Connection::Check(CS_RETCODE rc)
 {
-    GetCTLExceptionStorage().Handle(GetMsgHandlers(), GetExtraMsg());
+    GetCTLExceptionStorage().Handle(GetMsgHandlers(), GetExtraMsg(), this,
+                                    GetBindParams());
 
     return rc;
 }
@@ -318,7 +328,8 @@ CTL_Connection::Check(CS_RETCODE rc)
 CS_RETCODE
 CTL_Connection::Check(CS_RETCODE rc, const string& extra_msg)
 {
-    GetCTLExceptionStorage().Handle(GetMsgHandlers(), extra_msg);
+    GetCTLExceptionStorage().Handle(GetMsgHandlers(), extra_msg, this,
+                                    GetBindParams());
 
     return rc;
 }
@@ -546,6 +557,9 @@ CTL_Connection::~CTL_Connection()
         Close();
     }
     NCBI_CATCH_ALL_X( 1, NCBI_CURRENT_FUNCTION )
+    if (m_ActiveCmd) {
+        m_ActiveCmd->m_IsActive = false;
+    }
 }
 
 
@@ -926,6 +940,11 @@ CTL_Connection::x_ProcessResultInternal(CS_COMMAND* cmd, CS_INT res_type)
     return false;
 }
 
+
+#undef NCBI_DATABASE_THROW
+#define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
+    NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
+        GetDbgInfo(), GetConnection(), &GetBindParams())
 
 /////////////////////////////////////////////////////////////////////////////
 //

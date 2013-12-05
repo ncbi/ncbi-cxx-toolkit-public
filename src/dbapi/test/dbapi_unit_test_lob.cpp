@@ -1157,7 +1157,8 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream)
                             BOOST_CHECK_EQUAL(data_len, read_data_len + 1);
                         }
                     }
-                    catch( const CDB_Exception& ) {
+                    catch( const CDB_Exception& ex) {
+                        _TRACE(ex);
                         rs->Close();
                     }
                 }

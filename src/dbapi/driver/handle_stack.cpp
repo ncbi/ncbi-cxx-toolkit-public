@@ -33,6 +33,7 @@
 #include <string.h>
 #include <algorithm>
 
+#include <dbapi/driver/impl/dbapi_impl_connection.hpp>
 #include <dbapi/driver/impl/handle_stack.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -124,9 +125,24 @@ CDBHandlerStack& CDBHandlerStack::operator= (const CDBHandlerStack& s)
 }
 
 
-void CDBHandlerStack::PostMsg(CDB_Exception* ex, const string& extra_msg) const
+void CDBHandlerStack::x_AddDetails(CDB_Exception& ex, const string& extra_msg,
+                                   const CConnection* conn,
+                                   const CDBParams* params) const
 {
-    ex->SetExtraMsg(extra_msg);
+    ex.SetExtraMsg(extra_msg);
+    if (conn != NULL) {
+        ex.SetFromConnection(*conn);
+    }
+    if (params != NULL  &&  ex.GetParams().Empty()) {
+        ex.SetParams(params);
+    }
+}
+
+void CDBHandlerStack::PostMsg(CDB_Exception* ex, const string& extra_msg,
+                              const CConnection* connection,
+                              const CDBParams* params) const
+{
+    x_AddDetails(*ex, extra_msg, connection, params);
     REVERSE_ITERATE(TContainer, cit, m_Stack) {
         if ( cit->NotNull() && cit->GetNCObject().GetHandler()->HandleIt(ex) )
         {
@@ -137,10 +153,12 @@ void CDBHandlerStack::PostMsg(CDB_Exception* ex, const string& extra_msg) const
 
 
 bool CDBHandlerStack::HandleExceptions(const CDB_UserHandler::TExceptions&  exeptions,
-                                       const string&                        extra_msg) const
+                                       const string& extra_msg,
+                                       const CConnection* connection,
+                                       const CDBParams* params) const
 {
     ITERATE(CDB_UserHandler::TExceptions, it, exeptions) {
-        (*it)->SetExtraMsg(extra_msg);
+        x_AddDetails(**it, extra_msg, connection, params);
     }
 
     REVERSE_ITERATE(TContainer, cit, m_Stack) {

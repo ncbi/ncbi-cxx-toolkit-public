@@ -154,6 +154,18 @@ size_t CMemStore::Read(void* buff, size_t size)
 }
 
 
+size_t CMemStore::Peek(void* buff, size_t size) const
+{
+    // Work with a partial shallow copy to avoid code duplication.
+    // (No need for m_First, m_Last, or m_Size.)
+    CMemStore ms2(m_BlockSize);
+    ms2.m_Current  = m_Current;
+    ms2.m_Pos      = m_Pos;
+    ms2.m_BlockPos = m_BlockPos;
+    return ms2.Read(buff, size);
+}
+
+
 CMemStore::TSize CMemStore::x_SeekCURR(CMemStore::TSize offset)
 {
     if ( !m_Current )

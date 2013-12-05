@@ -49,9 +49,9 @@ void
 ReportTypeConvError(EDB_Type from_type, EDB_Type to_type)
 {
     string err_str("Cannot convert type " );
-    err_str += CDB_Object::GetTypeName(from_type);
+    err_str += CDB_Object::GetTypeName(from_type, false);
     err_str += " to type ";
-    err_str += CDB_Object::GetTypeName(to_type);
+    err_str += CDB_Object::GetTypeName(to_type, false);
     
     DATABASE_DRIVER_ERROR(err_str, 101100);
 }
@@ -61,7 +61,7 @@ void
 ReportTypeConvError(EDB_Type from_type, const char* to_type)
 {
     string err_str("Cannot convert type " );
-    err_str += CDB_Object::GetTypeName(from_type);
+    err_str += CDB_Object::GetTypeName(from_type, false);
     err_str += " to type ";
     err_str += to_type;
     
@@ -95,7 +95,12 @@ CheckType(const CDB_Object& value, EDB_Type type1, EDB_Type type2)
     EDB_Type cur_type = value.GetType();
 
     if (!(cur_type == type1 || cur_type == type2)) {
-        DATABASE_DRIVER_ERROR("Invalid type conversion.", 101100);
+        DATABASE_DRIVER_ERROR(string("Invalid type conversion: have ")
+                              + CDB_Object::GetTypeName(cur_type, false)
+                              + " but need either "
+                              + CDB_Object::GetTypeName(type1, false)
+                              + " or " + CDB_Object::GetTypeName(type2, false),
+                              101100);
     }
 }
 

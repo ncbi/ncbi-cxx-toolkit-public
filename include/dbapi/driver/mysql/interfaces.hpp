@@ -131,11 +131,22 @@ protected:
     virtual void SetTimeout(size_t nof_secs);
     virtual void SetCancelTimeout(size_t nof_secs);
 
+    string GetDbgInfo(void) const;
+
+    string GetBaseDbgInfo(void) const
+    {
+        return " " + GetExecCntxInfo();
+    }
+
 private:
     friend class CMySQL_LangCmd;
     friend class CMySQL_RowResult;
 
+    // for NCBI_DATABASE_THROW_ANNOTATED
+    const CDBParams* GetBindParams(void) const;
+
     MYSQL          m_MySQL;
+    CMySQL_LangCmd* m_ActiveCmd;
     bool m_IsOpen;
 };
 
@@ -148,8 +159,6 @@ private:
 
 class NCBI_DBAPIDRIVER_MYSQL_EXPORT CMySQL_LangCmd : public impl::CBaseCmd
 {
-    friend class CMySQL_Connection;
-
 protected:
     CMySQL_LangCmd(CMySQL_Connection& conn,
                    const string&      lang_query);
@@ -164,18 +173,42 @@ protected:
     virtual int         RowCount() const;
     int                 LastInsertId() const;
 
+    void SetExecCntxInfo(const string& info)
+    {
+        m_ExecCntxInfo = info;
+    }
+    const string& GetExecCntxInfo(void) const
+    {
+        return m_ExecCntxInfo;
+    }
+    string GetDbgInfo(void) const
+    {
+        return " " + GetExecCntxInfo() + " "
+            + GetConnection().GetExecCntxInfo();
+    }
+
 public:
     string EscapeString(const char* str, unsigned long len);
 
 private:
+    friend class CMySQL_Connection;
+
     CMySQL_Connection& GetConnection(void)
     {
         _ASSERT(m_Connect);
         return *m_Connect;
     }
 
+    const CMySQL_Connection& GetConnection(void) const
+    {
+        _ASSERT(m_Connect);
+        return *m_Connect;
+    }
+
     CMySQL_Connection* m_Connect;
+    string             m_ExecCntxInfo;
     bool               m_HasMoreResults;
+    bool               m_IsActive;
 };
 
 
@@ -204,6 +237,23 @@ protected:
     virtual I_ITDescriptor* GetImageOrTextDescriptor();
     virtual bool            SkipItem();
 
+    const CMySQL_Connection& GetConnection() const
+    {
+        _ASSERT(m_Connect);
+        return *m_Connect;
+    }
+
+    string GetDbgInfo(void) const
+    {
+        return GetConnection().GetDbgInfo();
+    }
+
+    const CDBParams* GetBindParams(void) const 
+    {
+        return GetConnection().GetBindParams();
+    }
+
+
 private:
     MYSQL_RES*         m_Result;
     MYSQL_ROW          m_Row;
@@ -227,6 +277,16 @@ NCBI_EntryPoint_xdbapi_mysql(
 
 } // extern C
 
+/////////////////////////////////////////////////////////////////////////////
+inline
+string CMySQL_Connection::GetDbgInfo(void) const {
+    return m_ActiveCmd ? m_ActiveCmd->GetDbgInfo() : GetBaseDbgInfo();
+}
+
+inline
+const CDBParams* CMySQL_Connection::GetBindParams(void) const {
+    return m_ActiveCmd ? &m_ActiveCmd->GetBindParams() : NULL;
+}
 
 END_NCBI_SCOPE
 

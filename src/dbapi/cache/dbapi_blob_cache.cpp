@@ -208,7 +208,7 @@ public:
             } else {
                 NCBI_THROW(CDBAPI_ICacheException,
                            eCannotReadBLOB,
-                           "BLOB data is NULL");
+                           "BLOB data is NULL for query " + sel_blob_sql);
             }
             if (m_BlobSize) {
                 if (m_BlobSize <= m_MemBufferSize) {
@@ -493,10 +493,10 @@ private:
         } // while
         cg.Close();
 
+        string ins_blob_sql =
+            "INSERT INTO dbo.cache_data (cache_key, version, subkey, data) "
+            "VALUES( ";
         {  // BLOB does not exist, INSERT required
-            string ins_blob_sql =
-                "INSERT INTO dbo.cache_data (cache_key, version, subkey, data) "
-                "VALUES( ";
             s_MakeValueList(m_Key, m_Version, m_SubKey, &ins_blob_sql);
             // it should be NULL here but it gives an error with FTDS :(
             // if porting to normal RDBMS it may need attention
@@ -524,7 +524,8 @@ private:
             } // while
         }
 
-        NCBI_THROW(CDBAPI_ICacheException, eCannotCreateBLOB, "BLOB INSERT failed");
+        NCBI_THROW(CDBAPI_ICacheException, eCannotCreateBLOB,
+                   "BLOB INSERT failed.  Failed query: " + ins_blob_sql);
         return eRW_Success;
     }
 

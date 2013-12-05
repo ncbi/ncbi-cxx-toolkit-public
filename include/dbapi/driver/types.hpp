@@ -34,7 +34,7 @@
 
 
 #include <corelib/ncbitime.hpp>
-#include <corelib/ncbi_limits.h>
+#include <corelib/ncbi_param.hpp>
 
 
 /** @addtogroup DbTypes
@@ -303,7 +303,10 @@ public:
     static CDB_Object* Create(EDB_Type type, size_t size = 1);
 
     // Get human-readable type name for db_type
-    static const char* GetTypeName(EDB_Type db_type);
+    static const char* GetTypeName(EDB_Type db_type,
+                                   bool throw_on_unknown = true);
+
+    string GetLogString(void) const;
 
 protected:
     void SetNULL(bool flag = true) { m_Null = flag; }
@@ -837,6 +840,7 @@ public:
 
     // data manipulations
     virtual size_t Read     (void* buff, size_t nof_bytes);
+    virtual size_t Peek     (void* buff, size_t nof_bytes) const;
     virtual size_t Append   (const void* buff, size_t nof_bytes);
     virtual void   Truncate (size_t nof_bytes = kMax_Int);
     virtual bool   MoveTo   (size_t byte_number);
@@ -1037,6 +1041,10 @@ protected:
     Uint1         m_Scale;
     unsigned char m_Body[33];
 };
+
+
+NCBI_PARAM_DECL_EXPORT(NCBI_DBAPIDRIVER_EXPORT, unsigned int, dbapi, max_logged_param_length);
+typedef NCBI_PARAM_TYPE(dbapi, max_logged_param_length) TDbapi_MaxLoggedParamLength;
 
 
 END_NCBI_SCOPE

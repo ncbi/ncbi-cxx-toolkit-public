@@ -461,10 +461,12 @@ CBlobStoreBase::ReadTableDescr()
     CDB_Connection* con = GetConn();
 
     /* derive information regarding the table */
-    auto_ptr<CDB_LangCmd> lcmd(con->LangCmd("select * from " + m_Table + " where 1=0"));
+    string sql = "SELECT * FROM " + m_Table + " WHERE 1=0";
+    auto_ptr<CDB_LangCmd> lcmd(con->LangCmd(sql));
     if(!lcmd->Send()) {
         ReleaseConn(con);
-        DATABASE_DRIVER_ERROR( "Failed to send a command to the server", 1000030 );
+        DATABASE_DRIVER_ERROR("Failed to send a command to the server: " + sql,
+                              1000030);
     }
 
     unsigned int n;
@@ -559,7 +561,8 @@ CBlobStoreBase::SetTextSizeServerSide(CDB_Connection* pConn, size_t textSize)
 
     if(!lcmd->Send())
     {
-        DATABASE_DRIVER_ERROR( "Failed to send a command to the server", 1000035 );
+        DATABASE_DRIVER_ERROR("Failed to send a command to the server: " + s,
+                              1000035);
     }
 
     while(lcmd->HasMoreResults())
@@ -574,7 +577,7 @@ CBlobStoreBase::SetTextSizeServerSide(CDB_Connection* pConn, size_t textSize)
                 r->GetItem(&status);
                 if(status.Value() != 0)
                 {
-                    DATABASE_DRIVER_ERROR( "Wrong status", 1000036 );
+                    DATABASE_DRIVER_ERROR( "Wrong status for " + s, 1000036 );
                 }
             }
         }
@@ -607,12 +610,14 @@ bool CBlobStoreBase::Exists(const string& blob_id)
     CDB_Connection* con = GetConn();
 
     /* check the key */
-    auto_ptr<CDB_LangCmd> lcmd(con->LangCmd("if EXISTS(select * from "+m_Table+" where "+
-                               m_KeyColName+"='"+blob_id+"') select 1"));
+    string sql = ("IF EXISTS(SELECT * FROM " + m_Table + " WHERE "
+                  + m_KeyColName + "='" + blob_id + "') SELECT 1");
+    auto_ptr<CDB_LangCmd> lcmd(con->LangCmd(sql));
     if(!lcmd->Send()) {
         lcmd.reset();
         ReleaseConn(con);
-        DATABASE_DRIVER_ERROR( "Failed to send a command to the server", 1000030 );
+        DATABASE_DRIVER_ERROR("Failed to send a command to the server: " + sql,
+                              1000030);
     }
 
     bool re = false;
@@ -637,12 +642,14 @@ void CBlobStoreBase::Delete(const string& blob_id)
     CDB_Connection* con = GetConn();
 
     /* check the key */
-    auto_ptr<CDB_LangCmd> lcmd(con->LangCmd("delete "+m_Table+" where "+
-                               m_KeyColName+"='"+blob_id+"'"));
+    string sql = ("DELETE " + m_Table + " WHERE " + m_KeyColName + "='"
+                  + blob_id + "'");
+    auto_ptr<CDB_LangCmd> lcmd(con->LangCmd(sql));
     if(!lcmd->Send()) {
         lcmd.reset();
         ReleaseConn(con);
-        DATABASE_DRIVER_ERROR( "Failed to send a command to the server", 1000030 );
+        DATABASE_DRIVER_ERROR("Failed to send a command to the server: " + sql,
+                              1000030);
     }
 
     lcmd->DumpResults();
@@ -666,7 +673,9 @@ istream* CBlobStoreBase::OpenForRead(const string& blob_id)
     if(!lcmd->Send()) {
         lcmd.reset();
         ReleaseConn(con);
-        DATABASE_DRIVER_ERROR( "Failed to send a command to the server", 1000030 );
+        DATABASE_DRIVER_ERROR("Failed to send a command to the server: "
+                              + m_ReadQuery + " (with @blob_id = " + blob_id
+                              + ')', 1000030);
     }
 
     while(lcmd->HasMoreResults()) {

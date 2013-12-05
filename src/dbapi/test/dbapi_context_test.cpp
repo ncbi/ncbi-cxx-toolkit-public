@@ -81,8 +81,9 @@ CContextThread::Main(void)
     try {
         m_DS = m_DM.MakeDs(GetArgs().GetConnParams());
         return m_DS;
-    } catch (const CDB_ClientEx&) {
+    } catch (const CDB_ClientEx& ex) {
         // Ignore it ...
+        _TRACE(ex);
     } catch (...) {
         _ASSERT(false);
     }

@@ -121,7 +121,7 @@ public:
     {
         return m_Format;
     }
-    string GetName(void) const
+    const string& GetName(void) const
     {
         return m_Name;
     }
@@ -193,6 +193,12 @@ public:
     /// @param param
     ///   Column number or name
     virtual EDB_Type GetDataType(const CDBParamVariant& param) const = 0;
+
+    /// Get value of column.
+    ///
+    /// @param param
+    ///   Column number or name
+    virtual const CDB_Object* GetValue(const CDBParamVariant& param) const = 0;
 
     /// Get parameter's direction (in/out/inout).
     ///

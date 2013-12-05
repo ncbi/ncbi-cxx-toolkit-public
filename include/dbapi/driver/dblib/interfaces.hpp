@@ -54,6 +54,7 @@ BEGIN_NCBI_SCOPE
 
 class CDBLibContext;
 class CDBL_Connection;
+class CDBL_Cmd;
 class CDBL_LangCmd;
 class CDBL_RPCCmd;
 class CDBL_CursorCmd;
@@ -264,15 +265,20 @@ private:
     void CheckFunctCall(void);
     void CheckFunctCall(const string& extra_msg);
 
-    string GetDbgInfo(void) const
+    string GetDbgInfo(void) const;
+
+    string GetBaseDbgInfo(void) const
     {
         return " " + GetExecCntxInfo();
     }
 
 private:
+    const CDBParams* GetBindParams(void) const;
+
     CDBLibContext* m_DBLibCtx;
     LOGINREC*      m_Login;
     DBPROCESS*     m_Link;
+    CDBL_Cmd*      m_ActiveCmd;
 };
 
 
@@ -282,31 +288,26 @@ private:
 ///  CDBL_Cmd::
 ///
 
-class CDBL_Cmd
+class CDBL_Cmd : public impl::CBaseCmd
 {
+    friend class CDBL_Connection;
 public:
     CDBL_Cmd(CDBL_Connection& conn,
-             DBPROCESS*       cmd
-             ) :
-//         m_HasFailed(false),
-        m_RowCount(-1),
-        m_Connect(&conn),
-        m_Cmd(cmd)
-    {
-    }
-    ~CDBL_Cmd(void)
-    {
-    }
+             DBPROCESS*       cmd,
+             const string&    query);
+    CDBL_Cmd(CDBL_Connection& conn,
+             DBPROCESS*       cmd,
+             const string&    cursor_name,
+             const string&    query);
+    ~CDBL_Cmd(void);
 
     CDBL_Connection& GetConnection(void)
     {
-        _ASSERT(m_Connect);
-        return *m_Connect;
+        return static_cast<CDBL_Connection&>(GetConnImpl());
     }
     const CDBL_Connection& GetConnection(void) const
     {
-        _ASSERT(m_Connect);
-        return *m_Connect;
+        return static_cast<const CDBL_Connection&>(GetConnImpl());
     }
 
     DBPROCESS* GetCmd(void) const
@@ -317,11 +318,11 @@ public:
 
     RETCODE Check(RETCODE rc)
     {
-        return GetConnection().Check(rc, GetExecCntxInfo());
+        return GetConnection().Check(rc, GetDbgInfo(false));
     }
     void CheckFunctCall(void)
     {
-        GetConnection().CheckFunctCall(GetExecCntxInfo());
+        GetConnection().CheckFunctCall(GetDbgInfo(false));
     }
 
     void SetExecCntxInfo(const string& info)
@@ -333,9 +334,10 @@ public:
         return m_ExecCntxInfo;
     }
 
-    string GetDbgInfo(void) const
+    string GetDbgInfo(bool want_space = true) const
     {
-        return " " + GetExecCntxInfo() + " " + GetConnection().GetExecCntxInfo();
+        return (want_space ? string(" ") : kEmptyStr) + GetExecCntxInfo() + " "
+            + GetConnection().GetExecCntxInfo();
     }
 
 protected:
@@ -344,8 +346,8 @@ protected:
     string           m_ExecCntxInfo;
 
 private:
-    CDBL_Connection* m_Connect;
     DBPROCESS*       m_Cmd;
+    bool             m_IsActive;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -353,9 +355,7 @@ private:
 ///  CDBL_LangCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_LangCmd :
-    CDBL_Cmd,
-    public impl::CBaseCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_LangCmd : CDBL_Cmd
 {
     friend class CDBL_Connection;
 
@@ -391,9 +391,7 @@ private:
 ///  CTL_RPCCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RPCCmd :
-    CDBL_Cmd,
-    public impl::CBaseCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_RPCCmd : CDBL_Cmd
 {
     friend class CDBL_Connection;
 
@@ -431,9 +429,7 @@ private:
 ///  CDBL_CursorCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_CursorCmd :
-    CDBL_Cmd,
-    public impl::CBaseCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_CursorCmd : CDBL_Cmd
 {
     friend class CDBL_Connection;
 
@@ -479,9 +475,7 @@ private:
 ///  CDBL_BCPInCmd::
 ///
 
-class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BCPInCmd :
-    CDBL_Cmd,
-    public impl::CBaseCmd
+class NCBI_DBAPIDRIVER_DBLIB_EXPORT CDBL_BCPInCmd : CDBL_Cmd
 {
     friend class CDBL_Connection;
 
@@ -524,6 +518,8 @@ protected:
 protected:
     virtual size_t SendChunk(const void* chunk_ptr, size_t nof_bytes);
     virtual bool   Cancel(void);
+    virtual int    RowCount(void) const
+        { return -1; }
 };
 
 
@@ -607,6 +603,11 @@ protected:
     string GetDbgInfo(void) const
     {
         return " " + GetConnection().GetExecCntxInfo();
+    }
+
+    const CDBParams* GetBindParams(void) const 
+    {
+        return m_Connect ? m_Connect->GetBindParams() : NULL;
     }
 
 private:
@@ -904,6 +905,22 @@ protected:
     bool                m_TimeStamp_is_NULL;
 };
 
+
+/////////////////////////////////////////////////////////////////////////////
+inline
+string CDBL_Connection::GetDbgInfo(void) const {
+    return m_ActiveCmd ? m_ActiveCmd->GetDbgInfo() : GetBaseDbgInfo();
+}
+
+inline
+const CDBParams* CDBL_Connection::GetBindParams(void) const {
+    // Calling CDBL_RPCCmd::GetBindParams within an error handler can
+    // deadlock, but specifically testing for it fails because
+    // dynamic_cast only reliably handles types known to the main
+    // executable, as opposed to plugins.  No other derived classes
+    // override GetBindParams anyway.
+    return m_ActiveCmd ? &m_ActiveCmd->impl::CBaseCmd::GetBindParams() : NULL;
+}
 
 inline
 impl::CResult*

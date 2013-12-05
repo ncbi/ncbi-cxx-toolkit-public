@@ -39,6 +39,11 @@
 
 #define NCBI_USE_ERRCODE_X   Dbapi_Dblib_Cmds
 
+#undef NCBI_DATABASE_THROW
+#define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
+    NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
+        GetDbgInfo(), GetConnection(), &GetBindParams())
+// No use of NCBI_DATABASE_RETHROW or DATABASE_DRIVER_*_EX here.
 
 BEGIN_NCBI_SCOPE
 
@@ -51,8 +56,7 @@ BEGIN_NCBI_SCOPE
 CDBL_RPCCmd::CDBL_RPCCmd(CDBL_Connection& conn,
                          DBPROCESS* cmd,
                          const string& proc_name) :
-    CDBL_Cmd(conn, cmd),
-    impl::CBaseCmd(conn, proc_name),
+    CDBL_Cmd(conn, cmd, proc_name),
     m_Res(0),
     m_Status(0)
 {

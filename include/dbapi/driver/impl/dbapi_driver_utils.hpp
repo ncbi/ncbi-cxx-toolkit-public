@@ -114,6 +114,7 @@ public:
     virtual unsigned int GetIndex(const CDBParamVariant& param) const;
     virtual size_t GetMaxSize(const CDBParamVariant& param) const;
     virtual EDB_Type GetDataType(const CDBParamVariant& param) const;
+    virtual const CDB_Object* GetValue(const CDBParamVariant& param) const;
     virtual EDirection GetDirection(const CDBParamVariant& param) const;
 
     /// This method stores pointer to data.

@@ -38,6 +38,15 @@
 
 #define NCBI_USE_ERRCODE_X   Dbapi_CTlib_Results
 
+#undef NCBI_DATABASE_THROW
+#undef NCBI_DATABASE_RETHROW
+
+#define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
+    NCBI_DATABASE_THROW_ANNOTATED(ex_class, message, err_code, severity, \
+        GetDbgInfo(), GetConnection(), GetBindParams())
+#define NCBI_DATABASE_RETHROW(prev_ex, ex_class, message, err_code, severity) \
+    NCBI_DATABASE_RETHROW_ANNOTATED(prev_ex, ex_class, message, err_code, \
+        severity, GetDbgInfo(), GetConnection(), GetBindParams())
 
 BEGIN_NCBI_SCOPE
 

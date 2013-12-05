@@ -39,6 +39,15 @@
 
 #define NCBI_USE_ERRCODE_X   Dbapi_Odbc_Results
 
+#undef NCBI_DATABASE_THROW
+#undef NCBI_DATABASE_RETHROW
+
+#define NCBI_DATABASE_THROW(ex_class, message, err_code, severity) \
+    NCBI_ODBC_THROW(ex_class, message, err_code, severity)
+#define NCBI_DATABASE_RETHROW(prev_ex, ex_class, message, err_code, severity) \
+    NCBI_ODBC_RETHROW(prev_ex, ex_class, message, err_code, severity)
+
+
 BEGIN_NCBI_SCOPE
 
 /////////////////////////////////////////////////////////////////////////////

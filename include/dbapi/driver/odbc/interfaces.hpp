@@ -103,11 +103,16 @@ public:
     CODBC_Reporter(impl::CDBHandlerStack* hs,
                    SQLSMALLINT ht,
                    SQLHANDLE h,
+                   const CODBC_Connection* connection = NULL,
                    const CODBC_Reporter* parent_reporter = NULL);
     ~CODBC_Reporter(void);
 
 public:
     void ReportErrors(void) const;
+
+    NCBI_NORETURN
+    void ReportError(CDB_Exception& ex) const;
+
     void SetHandlerStack(impl::CDBHandlerStack& hs) {
         m_HStack = &hs;
     }
@@ -122,8 +127,31 @@ public:
     }
     string GetExtraMsg(void) const;
 
+    // Needed for correct reporting of errors establishing new connections.
+    class CTempConnectionGuard
+    {
+    public:
+        CTempConnectionGuard(CODBC_Reporter& rptr, CODBC_Connection& conn)
+            : m_Reporter(rptr)
+        {
+            _ASSERT(rptr.m_Connection == NULL);
+            rptr.m_Connection = &conn;
+        }
+
+        ~CTempConnectionGuard()
+        {
+            m_Reporter.m_Connection = NULL;
+        }
+
+    private:
+        CODBC_Reporter& m_Reporter;
+    };
+    friend class CTempConnectionGuard;
+
 private:
     CODBC_Reporter(void);
+
+    void x_PostMsg(CDB_Exception& ex, bool always_throw = false) const;
 
 private:
     impl::CDBHandlerStack*  m_HStack;
@@ -131,6 +159,7 @@ private:
     SQLSMALLINT             m_HType;
     const CODBC_Reporter*   m_ParentReporter;
     string                  m_ExtraMsg;
+    const CODBC_Connection* m_Connection;
 };
 
 
@@ -197,6 +226,12 @@ public:
 protected:
     virtual impl::CConnection* MakeIConnection(const CDBConnParams& params);
 
+    NCBI_NORETURN
+    void ReportError(CDB_Exception& ex) const
+    {
+        m_Reporter.ReportError(ex);
+    }
+
 private:
     SQLHENV         m_Context;
     SQLUINTEGER     m_PacketSize;
@@ -234,6 +269,7 @@ class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_Connection : public impl::CConnection
     friend class CODBC_SendDataCmd;
     friend class CODBC_CursorCmd;
     friend class CODBC_CursorCmdExpl;
+    friend class CODBC_Reporter;
 
 protected:
     CODBC_Connection(CODBCContext& cntx,
@@ -289,6 +325,9 @@ protected:
     virtual string GetDriverName(void) const;
 
 protected:
+    // for NCBI_DATABASE_THROW_ANNOTATED
+    const CDBParams* GetBindParams(void) const;
+
     string GetDbgInfo(void) const
     {
         return m_Reporter.GetExtraMsg();
@@ -296,6 +335,12 @@ protected:
     void ReportErrors(void)
     {
         m_Reporter.ReportErrors();
+    }
+
+    NCBI_NORETURN
+    void ReportError(CDB_Exception& ex) const
+    {
+        m_Reporter.ReportError(ex);
     }
 
 private:
@@ -311,7 +356,7 @@ private:
     void x_SetupErrorReporter(const CDBConnParams& params);
 
     const SQLHDBC   m_Link;
-
+    CStatementBase* m_ActiveStmt;
     CODBC_Reporter  m_Reporter;
     size_t          m_query_timeout;
     size_t          m_cancel_timeout;
@@ -321,6 +366,7 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 class CStatementBase : public impl::CBaseCmd
 {
+    friend class CODBC_Connection;
 public:
     CStatementBase(CODBC_Connection& conn, const string& query);
     CStatementBase(CODBC_Connection& conn, const string& cursor_name, const string& query);
@@ -333,11 +379,11 @@ public:
     }
     CODBC_Connection& GetConnection(void)
     {
-        return *m_ConnectPtr;
+        return static_cast<CODBC_Connection&>(GetConnImpl());
     }
     const CODBC_Connection& GetConnection(void) const
     {
-        return *m_ConnectPtr;
+        return static_cast<const CODBC_Connection&>(GetConnImpl());
     }
 
 public:
@@ -352,6 +398,21 @@ public:
     void ReportErrors(void) const
     {
         m_Reporter.ReportErrors();
+    }
+
+    NCBI_NORETURN
+    void ReportError(CDB_Exception& ex) const
+    {
+        m_Reporter.ReportError(ex);
+    }
+
+    CDBParams& GetBindParams(void)
+    {
+        return CBaseCmd::GetBindParams();
+    }
+    const CDBParams& GetBindParams(void) const
+    {
+        return const_cast<CStatementBase*>(this)->CBaseCmd::GetBindParams();
     }
 
 public:
@@ -403,9 +464,9 @@ protected:
 private:
     void x_Init(void);
 
-    CODBC_Connection*   m_ConnectPtr;
     SQLHSTMT            m_Cmd;
     CODBC_Reporter      m_Reporter;
+    bool                m_IsActive;
 };
 
 /////////////////////////////////////////////////////////////////////////////
@@ -727,9 +788,24 @@ protected:
     {
         GetStatementBase().ReportErrors();
     }
+
+    NCBI_NORETURN
+    void ReportError(CDB_Exception& ex) const
+    {
+        GetStatementBase().ReportError(ex);
+    }
+
     string GetDbgInfo(void) const
     {
         return GetStatementBase().GetDbgInfo();
+    }
+    const CDBParams* GetBindParams(void) const 
+    {
+        return &m_Stmt.GetBindParams();
+    }
+    const CODBC_Connection& GetConnection(void) const
+    {
+        return GetStatementBase().GetConnection();
     }
     void Close(void)
     {
@@ -842,6 +918,13 @@ protected:
         m_Res = res;
     }
 
+    NCBI_NORETURN
+    void ReportError(CDB_Exception& ex) const
+    {
+        m_Cmd->ReportError(ex);
+    }
+
+
 protected:
     // data
     CODBC_LangCmd* m_Cmd;
@@ -860,6 +943,24 @@ protected:
 protected:
     virtual bool Fetch(void);
 };
+
+#define NCBI_ODBC_THROW(ex_class, message, err_code, severity) \
+    do { \
+        ex_class ex(DIAG_COMPILE_INFO, NULL, (message), severity, err_code); \
+        ReportError(ex); \
+    } while (0)
+#define NCBI_ODBC_RETHROW(prev_ex, ex_class, message, err_code, severity) \
+    do { \
+        ex_class ex(DIAG_COMPILE_INFO, &(prev_ex), (message), severity, \
+                    err_code); \
+        ReportError(ex); \
+    } while (0)
+
+///////////////////////////////////////////////////////////////////////////
+inline
+const CDBParams* CODBC_Connection::GetBindParams(void) const {
+    return m_ActiveStmt ? &m_ActiveStmt->GetBindParams() : NULL;
+}
 
 END_NCBI_SCOPE
 

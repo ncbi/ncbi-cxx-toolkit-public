@@ -75,6 +75,8 @@ CBaseCmd::CBaseCmd(impl::CConnection& conn,
 , m_HasFailed(false)
 , m_IsOpen(false)
 , m_IsDeclared(false)
+, m_RowsSent(0)
+, m_BatchesSent(0)
 {
 }
 
@@ -90,6 +92,8 @@ CBaseCmd::CBaseCmd(impl::CConnection& conn,
 , m_IsOpen(false)
 , m_IsDeclared(false)
 , m_CmdName(cursor_name)
+, m_RowsSent(0)
+, m_BatchesSent(0)
 {
 }
 
