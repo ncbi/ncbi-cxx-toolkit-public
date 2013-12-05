@@ -742,22 +742,22 @@ bool CFastaReader::ParseIDs(
     if (TestFlag(fParseRawID)) {
         flags |= CSeq_id::fParse_RawText;
     }
-    try {
-        if (s.find('|') == TStr::npos && !CSeq_id::IsValidLocalID(s))
-        {
-            string temp = NStr::Replace(s, ",", "_");
-            count = CSeq_id::ParseIDs(ids, temp, flags);
-            FASTA_WARNING(LineNumber(),
-                "CFastaReader: Near line " << LineNumber() 
-                << ", the sequence contains 'comma' symbol and replaced with 'underscore' "
-                << "symbol. Please find and correct the sequence id.",
-                ILineError::eProblem_GeneralParsingError, "");
-        }
-        else
-            count = CSeq_id::ParseIDs(ids, s, flags);
-    } catch (CSeqIdException&) {
-        // swap(ids, old_ids);
+
+    if (s.find(',') != TStr::npos && s.find('|') == TStr::npos)
+    {
+        string temp = NStr::Replace(s, ",", "_");
+        count = CSeq_id::ParseIDs(ids, temp, flags);
+        FASTA_WARNING(LineNumber(),
+            "CFastaReader: Near line " << LineNumber() 
+            << ", the sequence contains 'comma' symbol and replaced with 'underscore' "
+            << "symbol. Please find and correct the sequence id.",
+            ILineError::eProblem_GeneralParsingError, "");
     }
+    else
+    {
+        count = CSeq_id::ParseIDs(ids, s, flags);
+    }
+
     // numerics become local, if requested
     if( m_iFlags & CReaderBase::fNumericIdsAsLocal ) {
         NON_CONST_ITERATE(CBioseq::TId, id_it, ids) {

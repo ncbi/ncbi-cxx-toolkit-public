@@ -1717,6 +1717,12 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
     _ASSERT(fasta_pieces.size() > 0);
     if (fasta_pieces.size() == 1)
     {
+        if (fasta_pieces.front().find(':') != CTempString::npos)
+        {
+            NCBI_THROW(CSeqIdException, eFormat,
+                string("Colon is not allowed in local id ") + string(ss));
+        }
+
         CRef<CSeq_id> id(new CSeq_id(ss, flags | fParse_NoFASTA));
         ids.push_back(id);
         count = 1;
@@ -1768,7 +1774,7 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
                    "Unsupported ID type " + string(typestr));
     }
 
-    CTempString fields[3];
+    vector<CTempString> fields(3);
     SIZE_TYPE   min_fields, max_fields;
     E_Choice    next_type = e_not_set;
     switch (type) {
@@ -1886,6 +1892,24 @@ CSeq_id::E_Choice CSeq_id::x_Init(list<CTempString>& fasta_pieces,
         break; // avoid compiler warnings
     }
 
+    if (type == e_General && !fields[0].empty() && !fields[1].empty())
+    {
+        // check for the colon
+        if (fields[1].find(':') != CTempString::npos)
+        {
+            NCBI_THROW(CSeqIdException, eFormat,
+                "Colon is not allowed in 3rd token " + NStr::Join(fields, "|"));
+        }
+    }
+    if (type == e_Local && !fields[0].empty())
+    {
+        // check for the colon
+        if (fields[0].find(':') != CTempString::npos)
+        {
+            NCBI_THROW(CSeqIdException, eFormat,
+                "Colon is not allowed in local id " + NStr::Join(fields, "|"));
+        }
+    }
     Set(type, fields[0] /* acc */, fields[1] /* name */, ver,
         fields[2] /* rel */);
 
