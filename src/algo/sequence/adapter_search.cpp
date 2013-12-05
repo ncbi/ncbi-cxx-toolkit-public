@@ -94,13 +94,11 @@ void NAdapterSearch::s_Translate(
         size_t seq_size, 
         bool revcomp, TWords& words)
 {
-    NCBI_ASSERT(MER_LENGTH == 12, "expected MER_LENGTH == 12");
-
-    if(seq_size < (MER_LENGTH - 1)) {
+    if(seq_size < MER_LENGTH) {
         words.resize(0);
         return;
     } else {
-        words.resize(seq_size);
+        words.resize(seq_size - (MER_LENGTH - 1));
     }
 
     //(A,C,G,T,*) -> (0, 1, 2, 3, 0)
@@ -123,32 +121,36 @@ void NAdapterSearch::s_Translate(
         0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
     };
 
+    // mask of set bits; spanning MER_LENGTH-1 letters
+    TWord mask = (1 << ((MER_LENGTH - 1) * 2)) - 1;
+
     if(!revcomp) {
-        for(size_t i = 0; i < seq_size; i++) {
-            words[i] = char2letter[static_cast<int>(seq[i])];
+        TWord w0 = 0;
+        for(size_t i = 0; i < MER_LENGTH; i++) {
+            Uint1 c = char2letter[static_cast<int>(seq[i])];
+            w0 = (w0 << 2) | c;
+        }
+        words[0] = w0;
+        
+        int k = MER_LENGTH - 1;
+        for(size_t i = 1; i < words.size(); i++) {
+            Uint1 c = char2letter[static_cast<int>(seq[i + k])];
+            words[i] = ((words[i - 1] & mask) << 2) | c;
         }
     } else {
-        for(size_t i = 0; i < seq_size; i++) {
-            words[i] = 3 - char2letter[static_cast<int>(seq[seq_size - 1 - i])];
+        TWord w0 = 0;
+        for(size_t i = 0; i < MER_LENGTH; i++) {
+            Uint1 c = 3 - char2letter[static_cast<int>(seq[seq_size - 1 - i])];
+            w0 = (w0 << 2) | c;
+        }
+        words[0] = w0;
+
+        int k = seq_size - MER_LENGTH;
+        for(size_t i = 1; i < words.size(); i++) {
+            Uint1 c = 3 - char2letter[static_cast<int>(seq[k - i])];
+            words[i] = ((words[i - 1] & mask) << 2) | c;
         }
     }
-
-    //convert to 4-mers
-    for(size_t i = 0; i + 3 < seq_size; i++) {
-        words[i] = words[i]     << 6
-                 | words[i + 1] << 4
-                 | words[i + 2] << 2
-                 | words[i + 3];
-    }
-
-    //convert to 12-mers
-    for(size_t i = 0; i + 8 < seq_size; i++) {
-        words[i] = words[i]      << 16
-                 | words[i + 4]  << 8
-                 | words[i + 8];
-    }
-
-    words.resize(seq_size - (MER_LENGTH - 1));
 }
 
 
@@ -170,7 +172,7 @@ void NAdapterSearch
 
     // Can get two more 10-mers out of last 12-mer
     if(words_size > 0 && words_size < m_len) {
-        size_t len = min(2UL, m_len - words_size);
+        size_t len = min(size_t(2), m_len - words_size);
         TWord w = *(begin + words_size);
         for(size_t i = 0; i < len; i++) {
             size_t pos = words_size + i;
@@ -574,7 +576,7 @@ void NAdapterSearch::CSimpleUngappedAligner::Init(const char* seq, size_t len)
     m_subseq_ranges.clear();
 
     m_vec_index.resize(1 << (MER_LENGTH*2));
-    fill(m_vec_index.begin(), m_vec_index.end(), NULLPOS);
+    fill(m_vec_index.begin(), m_vec_index.end(), (TPos)NULLPOS);
 
     m_positions.clear();
     m_map_index.clear();

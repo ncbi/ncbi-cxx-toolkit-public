@@ -342,8 +342,12 @@ public:
         // Special values in vec-index.
         // MULTIPOS indicates that the multiple pos-values
         // for this word reside in the map-index.
-        static const TPos NULLPOS  = -1;
-        static const TPos MULTIPOS = -2;
+        // Note: not using "static const TPos NULLPOS = -1; etc" 
+        // due to compiler-specific issues
+        enum {
+            NULLPOS  = -1,
+            MULTIPOS = -2
+        };
 
    private:
         /// Create a match in diag/antidiag coordspace for a matched word.
