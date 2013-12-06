@@ -502,6 +502,22 @@ CTaxon1::OrgRefAdjust( COrg_ref& inp_orgRef, const COrg_ref& db_orgRef,
     PRemoveSynAnamorph rsa( inp_orgRef.GetTaxname() );
     remove_if( lDstMod.begin(), lDstMod.end(), rsa );
 
+    // Remove duplicated modifiers
+    for( COrgName::TMod::iterator i = lDstMod.begin();
+	 i != lDstMod.end();
+	 ++i ) {
+	COrgName::TMod::iterator ii = i;
+	for( COrgName::TMod::iterator j = ++ii;
+	 j != lDstMod.end(); ) {
+	    if( (*i)->GetSubtype() == (*j)->GetSubtype() &&
+		NStr::EqualNocase( (*i)->GetSubname(), (*j)->GetSubname() ) ) {
+		j = lDstMod.erase( j );
+	    } else {
+		++j;
+	    }
+	}
+    }
+
     // Reset destination modifiers if empty
     if( lDstMod.size() == 0 ) {
         on.ResetMod();
@@ -668,7 +684,7 @@ CTaxon1::Lookup(const COrg_ref& inp_orgRef )
     // Check if this taxon is in cache
     CTaxon2_data* pData = 0;
     COrgName::TMod hitMod;
-    int tax_id = 0; //GetTaxIdByOrgRef( inp_orgRef );
+    int tax_id = 0;
 
     if( LookupByOrgRef( inp_orgRef, &tax_id, hitMod )
         && tax_id > 0
@@ -676,7 +692,6 @@ CTaxon1::Lookup(const COrg_ref& inp_orgRef )
 
         CTaxon2_data* pNewData = new CTaxon2_data();
 
-        //        SerialAssign<CTaxon2_data>( *pNewData, *pData  );
         COrg_ref* pOrf = new COrg_ref;
         pOrf->Assign( inp_orgRef );
         if( pOrf->IsSetOrgname() && pOrf->GetOrgname().IsSetMod() ) {
