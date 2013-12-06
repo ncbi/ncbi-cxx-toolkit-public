@@ -297,7 +297,10 @@ s_ReadVariableParams(void)
                        kNCStorage_RegSection, "write_back_soft_size_limit", "4 GB")));
     SetWBHardSizeLimit(NStr::StringToUInt8_DataSize(reg.GetString(
                        kNCStorage_RegSection, "write_back_hard_size_limit", "6 GB")));
-    SetWBWriteTimeout(reg.GetInt(kNCStorage_RegSection, "write_back_timeout", 1000));
+
+    int to2 = reg.GetInt(kNCStorage_RegSection, "write_back_timeout", 1000);
+    int to1 = reg.GetInt(kNCStorage_RegSection, "write_back_timeout_startup", to2);
+    SetWBWriteTimeout(to1, to2);
     SetWBFailedWriteDelay(reg.GetInt(kNCStorage_RegSection, "write_back_failed_delay", 2));
 
     return true;

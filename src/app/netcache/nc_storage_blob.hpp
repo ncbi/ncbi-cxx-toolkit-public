@@ -281,8 +281,9 @@ private:
 
 void SetWBSoftSizeLimit(Uint8 limit);
 void SetWBHardSizeLimit(Uint8 limit);
-void SetWBWriteTimeout(int timeout);
+void SetWBWriteTimeout(int timeout1, int timeout2);
 void SetWBFailedWriteDelay(int delay);
+void SetWBInitialSyncComplete(void);
 
 
 class CWBMemDeleter : public CSrvRCUUser

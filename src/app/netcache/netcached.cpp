@@ -484,6 +484,7 @@ CNCServer::InitialSyncComplete(void)
 {
     INFO("Initial synchronization complete");
     s_InitiallySynced = true;
+    SetWBInitialSyncComplete();
 }
 
 void

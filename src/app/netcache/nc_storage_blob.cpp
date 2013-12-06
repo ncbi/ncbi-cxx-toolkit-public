@@ -39,11 +39,12 @@ BEGIN_NCBI_SCOPE
 static size_t s_WBSoftSizeLimit = NCBI_CONST_UINT8(2000000000);
 static size_t s_WBHardSizeLimit = NCBI_CONST_UINT8(3000000000);
 static int s_WBWriteTimeout = 1000;
+static int s_WBWriteTimeout2 = 1000;
 static Uint2 s_WBFailedWriteDelay = 2;
 
-static size_t s_WBCurSize = 0;
-static size_t s_WBReleasableSize = 0;
-static size_t s_WBReleasingSize = 0;
+static ssize_t s_WBCurSize = 0;
+static ssize_t s_WBReleasableSize = 0;
+static ssize_t s_WBReleasingSize = 0;
 static SWriteBackData* s_WBData = NULL;
 static CWriteBackControl* s_WBControl = NULL;
 static TVerDataMap* s_VersMap = NULL;
@@ -103,9 +104,15 @@ SetWBHardSizeLimit(Uint8 limit)
 }
 
 void
-SetWBWriteTimeout(int timeout)
+SetWBWriteTimeout(int timeout1, int timeout2)
 {
-    s_WBWriteTimeout = timeout;
+    s_WBWriteTimeout = timeout1;
+    s_WBWriteTimeout2 = timeout2;
+}
+void
+SetWBInitialSyncComplete(void)
+{
+    s_WBWriteTimeout = s_WBWriteTimeout2;
 }
 
 void
@@ -212,8 +219,9 @@ static char*
 s_AllocWriteBackMem(Uint4 mem_size, CSrvTransConsumer* consumer)
 {
     char* mem = NULL;
-    if (s_WBCurSize - s_WBReleasingSize + mem_size < s_WBHardSizeLimit
-        ||  s_WBReleasableSize < mem_size
+    if (s_WBCurSize <= s_WBReleasingSize
+        || (size_t)(s_WBCurSize - s_WBReleasingSize) + mem_size < s_WBHardSizeLimit
+        ||  s_WBReleasableSize < (ssize_t)mem_size
         ||  CTaskServer::IsInShutdown())
     {
         mem = (char*)malloc(mem_size);
@@ -274,7 +282,7 @@ s_FreeWriteBackMem(char* mem, Uint4 mem_size, Uint4 sub_releasing)
 static void
 s_ReleaseMemory(size_t soft_limit)
 {
-    if (s_WBCurSize - s_WBReleasingSize <= soft_limit)
+    if (s_WBCurSize - s_WBReleasingSize <= (ssize_t)soft_limit)
         return;
 
     size_t to_free = s_WBCurSize - s_WBReleasingSize - soft_limit;
@@ -393,7 +401,7 @@ CWriteBackControl::ExecuteSlice(TSrvThreadNum /* thr_num */)
     if (CTaskServer::IsInShutdown())
         return;
 
-    size_t was_cur_size = s_WBCurSize;
+    ssize_t was_cur_size = s_WBCurSize;
     Uint4 was_del_size = Uint4(s_WBToDelList.size());
 
     Uint4 cnt_datas = CTaskServer::GetMaxRunningThreads();
@@ -424,7 +432,7 @@ CWriteBackControl::ExecuteSlice(TSrvThreadNum /* thr_num */)
 void
 CWriteBackControl::ReadState(SNCStateStat& state)
 {
-    state.wb_size = s_WBCurSize;
+    state.wb_size = (ssize_t(s_WBCurSize) > 0? s_WBCurSize: 0);
     state.wb_releasable = (ssize_t(s_WBReleasableSize) > 0? s_WBReleasableSize: 0);
     state.wb_releasing = (ssize_t(s_WBReleasingSize) > 0? s_WBReleasingSize: 0);
 }
