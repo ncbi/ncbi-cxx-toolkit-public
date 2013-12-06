@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov
+ * Author:  Denis Vakatov, Andrei Gourianov
  *
  *
  */
@@ -807,14 +807,20 @@ public:
     /// @param name
     ///    Name of the parameter(flag) to check
     /// @param constraint
-    ///    Constraint class
+    ///    Constraint object
     /// @param negate
     ///    Flag indicates if this is inverted(NOT) constaint
     /// 
     /// @sa
     ///   See "CArgAllow_***" classes for some pre-defined constraints
     void SetConstraint(const string&      name,
-                       CArgAllow*         constraint,
+                       const CArgAllow*   constraint,
+                       EConstraintNegate  negate = eConstraint);
+
+    /// This version of SetConstraint doesn't take the ownership of object
+    /// 'constraint'. Rather, it creates and uses a clone of the object.
+    void SetConstraint(const string&      name,
+                       const CArgAllow&   constraint,
                        EConstraintNegate  negate = eConstraint);
 
     /// Dependencies between arguments.
@@ -1317,17 +1323,15 @@ public:
     /// Print constraints in XML format
     virtual void PrintUsageXml(CNcbiOstream& out) const;
 
+    virtual ~CArgAllow(void);
+
+    virtual CArgAllow* Clone(void) const = 0;
+
 protected:
     // In the absence of the following constructor, new compilers (as required
     // by the new C++ standard) may fill the object memory with zeros,
     // erasing flags set by CObject::operator new (see CXX-1808)
     CArgAllow(void) {}
-
-    /// Protected destructor.
-    ///
-    /// Prohibit from the allocation on stack or in the static data segment,
-    /// and from the explicit deallocation by "delete".
-    virtual ~CArgAllow(void);
 };
 
 
@@ -1374,6 +1378,10 @@ public:
     /// Constructor for user defined eUser class.
     CArgAllow_Symbols(const string& symbol_set);
 
+    /// Add allowed symbols
+    CArgAllow_Symbols& Allow(ESymbolClass  symbol_class);
+    CArgAllow_Symbols& Allow(const string& symbol_set);
+
 protected:
     /// Verify if specified value is allowed.
     virtual bool Verify(const string& value) const;
@@ -1384,13 +1392,13 @@ protected:
     /// Print constraints in XML format
     virtual void PrintUsageXml(CNcbiOstream& out) const;
 
-    /// Protected destructor.
-    virtual ~CArgAllow_Symbols(void);
+    CArgAllow_Symbols(void) {
+    }
+    virtual CArgAllow* Clone(void) const;
 
-    ESymbolClass m_SymbolClass; ///< Symbol class for constraint
-    string       m_SymbolSet;   ///< Use if  m_SymbolClass == eUser
+    typedef pair<ESymbolClass, string> TSymClass;
+    set< TSymClass > m_SymClass;
 };
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1425,6 +1433,10 @@ protected:
 
     /// Print constraints in XML format
     virtual void PrintUsageXml(CNcbiOstream& out) const;
+
+    CArgAllow_String(void) {
+    }
+    virtual CArgAllow* Clone(void) const;
 };
 
 
@@ -1457,12 +1469,19 @@ public:
     ///   String to add to the set of allowed string values
     CArgAllow_Strings* Allow(const string& value);
 
+    /// Add allowed string values
+    /// @param value
+    ///   String to add to the set of allowed string values
+    CArgAllow_Strings& AllowValue(const string& value);
+
     /// Short notation operator for adding allowed string values
     /// @param value
     ///   String to add to the set of allowed string values
     /// @sa
     ///   Allow()
-    CArgAllow_Strings& operator,(const string& value) { return *Allow(value); }
+    CArgAllow_Strings& operator,(const string& value) {
+        return AllowValue(value);
+    }
 
 protected:
     /// Verify if specified value is allowed.
@@ -1474,17 +1493,14 @@ protected:
     /// Print constraints in XML format
     virtual void PrintUsageXml(CNcbiOstream& out) const;
 
-    /// Protected destructor.
-    virtual ~CArgAllow_Strings(void);
+    virtual CArgAllow* Clone(void) const;
 
-private:
     /// Type of the container that contains the allowed string values
     /// @sa m_Strings
     typedef set<string, PNocase_Conditional> TStrings;
 
     TStrings     m_Strings;  ///< Set of allowed string values
 };
-
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -1501,8 +1517,15 @@ private:
 class NCBI_XNCBI_EXPORT CArgAllow_Int8s : public CArgAllow
 {
 public:
+    /// Constructor specifying an allowed integer value.
+    CArgAllow_Int8s(Int8 x_value);
+
     /// Constructor specifying range of allowed integer values.
     CArgAllow_Int8s(Int8 x_min, Int8 x_max);
+
+    /// Add allow values
+    CArgAllow_Int8s& AllowRange(Int8 from, Int8 to);
+    CArgAllow_Int8s& Allow(Int8 value);
 
 protected:
     /// Verify if specified value is allowed.
@@ -1514,8 +1537,13 @@ protected:
     /// Print constraints in XML format
     virtual void PrintUsageXml(CNcbiOstream& out) const;
 
-    Int8 m_Min;  ///< Minimum value of range
-    Int8 m_Max;  ///< Maximum value of range 
+    CArgAllow_Int8s(void) {
+    }
+    virtual CArgAllow* Clone(void) const;
+
+
+    typedef pair<Int8, Int8> TInterval;
+    set< TInterval >  m_MinMax;
 };
 
 
@@ -1534,12 +1562,18 @@ protected:
 class NCBI_XNCBI_EXPORT CArgAllow_Integers : public CArgAllow_Int8s
 {
 public:
+    /// Constructor specifying an allowed integer value.
+    CArgAllow_Integers(int x_value);
     /// Constructor specifying range of allowed integer values.
     CArgAllow_Integers(int x_min, int x_max);
 
 protected:
     /// Get usage information.
     virtual string GetUsage(void) const;
+
+    CArgAllow_Integers(void) {
+    }
+    virtual CArgAllow* Clone(void) const;
 };
 
 
@@ -1558,8 +1592,15 @@ protected:
 class NCBI_XNCBI_EXPORT CArgAllow_Doubles : public CArgAllow
 {
 public:
+    /// Constructor specifying an allowed integer value.
+    CArgAllow_Doubles(double x_value);
+
     /// Constructor specifying range of allowed double values.
     CArgAllow_Doubles(double x_min, double x_max);
+
+    /// Add allowed values
+    CArgAllow_Doubles& AllowRange(double from, double to);
+    CArgAllow_Doubles& Allow(double value);
 
 protected:
     /// Verify if specified value is allowed.
@@ -1571,9 +1612,12 @@ protected:
     /// Print constraints in XML format
     virtual void PrintUsageXml(CNcbiOstream& out) const;
 
-private:
-    double m_Min;   ///< Minimum value of range
-    double m_Max;   ///< Maximum value of range 
+    CArgAllow_Doubles(void) {
+    }
+    virtual CArgAllow* Clone(void) const;
+
+    typedef pair<double,double> TInterval;
+    set< TInterval >  m_MinMax;
 };
 
 
@@ -1628,7 +1672,7 @@ public:
 
     /// Set argument constraint.
     virtual 
-    void SetConstraint(CArgAllow*                           constraint,
+    void SetConstraint(const CArgAllow*                     constraint,
                        CArgDescriptions::EConstraintNegate  negate 
                                     = CArgDescriptions::eConstraint);
 

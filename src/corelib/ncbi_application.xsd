@@ -137,7 +137,7 @@
       </xs:element>
       <xs:element name="String">
         <xs:complexType>
-          <xs:choice>
+          <xs:choice maxOccurs="unbounded">
             <xs:element name="type" type="char_type"/>
             <xs:element name="charset" type="xs:string"/>
           </xs:choice>
@@ -153,7 +153,7 @@
       </xs:element>
       <xs:element name="Int8s">
         <xs:complexType>
-          <xs:sequence>
+          <xs:sequence maxOccurs="unbounded">
             <xs:element name="min" type="xs:long"/>
             <xs:element name="max" type="xs:long"/>
           </xs:sequence>
@@ -161,7 +161,7 @@
       </xs:element>
       <xs:element name="Integers">
         <xs:complexType>
-          <xs:sequence>
+          <xs:sequence maxOccurs="unbounded">
             <xs:element name="min" type="xs:int"/>
             <xs:element name="max" type="xs:int"/>
           </xs:sequence>
@@ -169,7 +169,7 @@
       </xs:element>
       <xs:element name="Doubles">
         <xs:complexType>
-          <xs:sequence>
+          <xs:sequence maxOccurs="unbounded">
             <xs:element name="min" type="xs:double"/>
             <xs:element name="max" type="xs:double"/>
           </xs:sequence>

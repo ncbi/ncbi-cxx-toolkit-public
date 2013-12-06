@@ -807,7 +807,7 @@ void CArgDesc::VerifyDefault(void) const
 }
 
 
-void CArgDesc::SetConstraint(CArgAllow*                          constraint,
+void CArgDesc::SetConstraint(const CArgAllow*                   constraint,
                              CArgDescriptions::EConstraintNegate)
 {
     NCBI_THROW(CArgException, eConstraint, s_ArgExptMsg(GetName(),
@@ -1107,7 +1107,7 @@ CArgValue* CArgDescMandatory::ProcessDefault(void) const
 
 
 void CArgDescMandatory::SetConstraint
-(CArgAllow*                          constraint,
+(const CArgAllow*                    constraint,
  CArgDescriptions::EConstraintNegate negate)
 {
     m_Constraint       = constraint;
@@ -2046,10 +2046,10 @@ void CArgDescriptions::AddNegatedFlagAlias(const string& alias,
 
 
 void CArgDescriptions::SetConstraint(const string&      name, 
-                                     CArgAllow*         constraint,
+                                     const CArgAllow*   constraint,
                                      EConstraintNegate  negate)
 {
-    CRef<CArgAllow> safe_delete(constraint);
+    CConstRef<CArgAllow> safe_delete(constraint);
 
     TArgsI it = x_Find(name);
     if (it == m_Args.end()) {
@@ -2057,6 +2057,12 @@ void CArgDescriptions::SetConstraint(const string&      name,
             "Attempt to set constraint for undescribed argument: "+ name);
     }
     (*it)->SetConstraint(constraint, negate);
+}
+void CArgDescriptions::SetConstraint(const string&      name,
+                                     const CArgAllow&   constraint,
+                                     EConstraintNegate  negate)
+{
+    SetConstraint(name, constraint.Clone(), negate);
 }
 
 
@@ -3591,7 +3597,6 @@ void CCommandArgDescriptions::PrintUsageXml(CNcbiOstream& out) const
 
 CArgAllow::~CArgAllow(void)
 {
-    return;
 }
 
 void CArgAllow::PrintUsageXml(CNcbiOstream& ) const
@@ -3673,17 +3678,17 @@ static string s_GetSymbolClass(CArgAllow_Symbols::ESymbolClass symbol_class)
 //
 
 CArgAllow_Symbols::CArgAllow_Symbols(ESymbolClass symbol_class)
-    : CArgAllow(),
-      m_SymbolClass(symbol_class)
+    : CArgAllow()
 {
+    Allow( symbol_class);
     return;
 }
 
 
 CArgAllow_Symbols::CArgAllow_Symbols(const string& symbol_set)
-    : CArgAllow(),
-      m_SymbolClass(eUser), m_SymbolSet(symbol_set)
+    : CArgAllow()
 {
+    Allow( symbol_set);
     return;
 }
 
@@ -3693,32 +3698,62 @@ bool CArgAllow_Symbols::Verify(const string& value) const
     if (value.length() != 1)
         return false;
 
-    return s_IsAllowedSymbol(value[0], m_SymbolClass, m_SymbolSet);
+    ITERATE( set< TSymClass >, pi,  m_SymClass) {
+        if (s_IsAllowedSymbol(value[0], pi->first, pi->second)) {
+            return true;
+        }
+    }
+    return false;
 }
 
 
 string CArgAllow_Symbols::GetUsage(void) const
 {
-    return "one symbol: " + s_GetUsageSymbol(m_SymbolClass, m_SymbolSet);
+    string usage;
+    ITERATE( set< TSymClass >, pi,  m_SymClass) {
+        if (!usage.empty()) {
+            usage += ", or ";
+        }
+        usage += s_GetUsageSymbol(pi->first, pi->second);
+    }
+
+    return "one symbol: " + usage;
 }
 
 void CArgAllow_Symbols::PrintUsageXml(CNcbiOstream& out) const
 {
     out << "<" << "Symbols" << ">" << endl;
-    if (m_SymbolClass != eUser) {
-        s_WriteXmlLine( out, "type", s_GetSymbolClass(m_SymbolClass).c_str());
-    } else {
-        ITERATE( string, p, m_SymbolSet) {
-            string c;
-            s_WriteXmlLine( out, "value", c.append(1,*p).c_str());
+    ITERATE( set< TSymClass >, pi,  m_SymClass) {
+        if (pi->first != eUser) {
+            s_WriteXmlLine( out, "type", s_GetSymbolClass(pi->first).c_str());
+        } else {
+            ITERATE( string, p, pi->second) {
+                string c;
+                s_WriteXmlLine( out, "value", c.append(1,*p).c_str());
+            }
         }
     }
     out << "</" << "Symbols" << ">" << endl;
 }
 
-CArgAllow_Symbols::~CArgAllow_Symbols(void)
+CArgAllow_Symbols&
+CArgAllow_Symbols::Allow(CArgAllow_Symbols::ESymbolClass symbol_class)
 {
-    return;
+    m_SymClass.insert( make_pair(symbol_class, kEmptyStr) );
+    return *this;
+}
+
+CArgAllow_Symbols& CArgAllow_Symbols::Allow(const string& symbol_set)
+{
+    m_SymClass.insert( make_pair(eUser, symbol_set ));
+    return *this;
+}
+
+CArgAllow* CArgAllow_Symbols::Clone(void) const
+{
+    CArgAllow_Symbols* clone = new CArgAllow_Symbols;
+    clone->m_SymClass = m_SymClass;
+    return clone;
 }
 
 
@@ -3743,30 +3778,52 @@ CArgAllow_String::CArgAllow_String(const string& symbol_set)
 
 bool CArgAllow_String::Verify(const string& value) const
 {
-    for (string::const_iterator it = value.begin();  it != value.end(); ++it) {
-        if ( !s_IsAllowedSymbol(*it, m_SymbolClass, m_SymbolSet) )
-            return false;
+    ITERATE( set< TSymClass >, pi,  m_SymClass) {
+        string::const_iterator it;
+        for (it = value.begin();  it != value.end(); ++it) {
+            if ( !s_IsAllowedSymbol(*it, pi->first, pi->second) )
+                break;;
+        }
+        if (it == value.end()) {
+            return true;
+        }
     }
-    return true;
+    return false;
 }
 
 
 string CArgAllow_String::GetUsage(void) const
 {
-    return "to contain only symbols: " +
-        s_GetUsageSymbol(m_SymbolClass, m_SymbolSet);
+    string usage;
+    ITERATE( set< TSymClass >, pi,  m_SymClass) {
+        if (!usage.empty()) {
+            usage += ", or ";
+        }
+        usage += s_GetUsageSymbol(pi->first, pi->second);
+    }
+
+    return "to contain only symbols: " + usage;
 }
 
 
 void CArgAllow_String::PrintUsageXml(CNcbiOstream& out) const
 {
     out << "<" << "String" << ">" << endl;
-    if (m_SymbolClass != eUser) {
-        s_WriteXmlLine( out, "type", s_GetSymbolClass(m_SymbolClass).c_str());
-    } else {
-        s_WriteXmlLine( out, "charset", m_SymbolSet.c_str());
+    ITERATE( set< TSymClass >, pi,  m_SymClass) {
+        if (pi->first != eUser) {
+            s_WriteXmlLine( out, "type", s_GetSymbolClass(pi->first).c_str());
+        } else {
+            s_WriteXmlLine( out, "charset", pi->second.c_str());
+        }
     }
     out << "</" << "String" << ">" << endl;
+}
+
+CArgAllow* CArgAllow_String::Clone(void) const
+{
+    CArgAllow_String* clone = new CArgAllow_String;
+    clone->m_SymClass = m_SymClass;
+    return clone;
 }
 
 
@@ -3841,49 +3898,76 @@ void CArgAllow_Strings::PrintUsageXml(CNcbiOstream& out) const
 }
 
 
-CArgAllow_Strings::~CArgAllow_Strings(void)
+CArgAllow_Strings& CArgAllow_Strings::AllowValue(const string& value)
 {
-    return;
+    return *Allow(value);
 }
 
+CArgAllow* CArgAllow_Strings::Clone(void) const
+{
+    CArgAllow_Strings* clone = new CArgAllow_Strings(m_Strings.key_comp().GetCase());
+    clone->m_Strings = m_Strings;
+    return clone;
+}
 
 
 ///////////////////////////////////////////////////////
 //  CArgAllow_Int8s::
 //
 
+CArgAllow_Int8s::CArgAllow_Int8s(Int8 x_)
+    : CArgAllow()
+{
+    Allow( x_);
+}
+
 CArgAllow_Int8s::CArgAllow_Int8s(Int8 x_min, Int8 x_max)
     : CArgAllow()
 {
-    if (x_min <= x_max) {
-        m_Min = x_min;
-        m_Max = x_max;
-    } else {
-        m_Min = x_max;
-        m_Max = x_min;
-    }
+    AllowRange(x_min, x_max);
 }
 
 
 bool CArgAllow_Int8s::Verify(const string& value) const
 {
     Int8 val = s_StringToInt8(value);
-    return (m_Min <= val  &&  val <= m_Max);
+    ITERATE( set< TInterval >, pi, m_MinMax) {
+        if (pi->first <= val && val<= pi->second) {
+            return true;
+        }
+    }
+    return false;
 }
 
 
 string CArgAllow_Int8s::GetUsage(void) const
 {
-    if (m_Min == m_Max) {
-        return NStr::Int8ToString(m_Min);
-    } else if (m_Min == kMin_I8 && m_Max != kMax_I8) {
-        return string("less or equal to ") + NStr::Int8ToString(m_Max);
-    } else if (m_Min != kMin_I8 && m_Max == kMax_I8) {
-        return string("greater or equal to ") + NStr::Int8ToString(m_Min);
-    } else if (m_Min == kMin_I8 && m_Max == kMax_I8) {
-        return kEmptyStr;
+    if (m_MinMax.size() == 1) {
+        Int8 x_min = m_MinMax.begin()->first;
+        Int8 x_max = m_MinMax.begin()->second;
+        if (x_min == x_max) {
+            return NStr::Int8ToString(x_min);
+        } else if (x_min == kMin_I8 && x_max != kMax_I8) {
+            return string("less or equal to ") + NStr::Int8ToString(x_max);
+        } else if (x_min != kMin_I8 && x_max == kMax_I8) {
+            return string("greater or equal to ") + NStr::Int8ToString(x_min);
+        } else if (x_min == kMin_I8 && x_max == kMax_I8) {
+            return kEmptyStr;
+        }
     }
-    return NStr::Int8ToString(m_Min) + ".." + NStr::Int8ToString(m_Max);
+    string usage;
+    ITERATE( set< TInterval >, pi, m_MinMax) {
+        if (!usage.empty()) {
+            usage += ", ";
+        }
+        if (pi->first == pi->second) {
+            usage += NStr::Int8ToString(pi->first);
+        } else {
+            usage += NStr::Int8ToString(pi->first) + ".." + NStr::Int8ToString(pi->second);
+        }
+
+    }
+    return usage;
 }
 
 
@@ -3894,9 +3978,30 @@ void CArgAllow_Int8s::PrintUsageXml(CNcbiOstream& out) const
         tag = "Integers";
     }
     out << "<" << tag << ">" << endl;
-    s_WriteXmlLine( out, "min", NStr::Int8ToString(m_Min).c_str());
-    s_WriteXmlLine( out, "max", NStr::Int8ToString(m_Max).c_str());
+    ITERATE( set< TInterval >, pi, m_MinMax) {
+        s_WriteXmlLine( out, "min", NStr::Int8ToString(pi->first).c_str());
+        s_WriteXmlLine( out, "max", NStr::Int8ToString(pi->second).c_str());
+    }
     out << "</" << tag << ">" << endl;
+}
+
+CArgAllow_Int8s& CArgAllow_Int8s::AllowRange(Int8 from, Int8 to)
+{
+    m_MinMax.insert( make_pair(from,to) );
+    return *this;
+}
+
+CArgAllow_Int8s& CArgAllow_Int8s::Allow(Int8 value)
+{
+    m_MinMax.insert( make_pair(value,value) );
+    return *this;
+}
+
+CArgAllow* CArgAllow_Int8s::Clone(void) const
+{
+    CArgAllow_Int8s* clone = new CArgAllow_Int8s;
+    clone->m_MinMax = m_MinMax;
+    return clone;
 }
 
 
@@ -3905,6 +4010,11 @@ void CArgAllow_Int8s::PrintUsageXml(CNcbiOstream& out) const
 //  CArgAllow_Integers::
 //
 
+CArgAllow_Integers::CArgAllow_Integers(int x_)
+    : CArgAllow_Int8s(x_)
+{
+}
+
 CArgAllow_Integers::CArgAllow_Integers(int x_min, int x_max)
     : CArgAllow_Int8s(x_min, x_max)
 {
@@ -3912,16 +4022,27 @@ CArgAllow_Integers::CArgAllow_Integers(int x_min, int x_max)
 
 string CArgAllow_Integers::GetUsage(void) const
 {
-    if (m_Min == m_Max) {
-        return NStr::Int8ToString(m_Min);
-    } else if (m_Min == kMin_Int && m_Max != kMax_Int) {
-        return string("less or equal to ") + NStr::Int8ToString(m_Max);
-    } else if (m_Min != kMin_Int && m_Max == kMax_Int) {
-        return string("greater or equal to ") + NStr::Int8ToString(m_Min);
-    } else if (m_Min == kMin_Int && m_Max == kMax_Int) {
-        return kEmptyStr;
+    if (m_MinMax.size() == 1) {
+        Int8 x_min = m_MinMax.begin()->first;
+        Int8 x_max = m_MinMax.begin()->second;
+        if (x_min == x_max) {
+            return NStr::Int8ToString(x_min);
+        } else if (x_min == kMin_Int && x_max != kMax_Int) {
+            return string("less or equal to ") + NStr::Int8ToString(x_max);
+        } else if (x_min != kMin_Int && x_max == kMax_Int) {
+            return string("greater or equal to ") + NStr::Int8ToString(x_min);
+        } else if (x_min == kMin_Int && x_max == kMax_Int) {
+            return kEmptyStr;
+        }
     }
-    return NStr::Int8ToString(m_Min) + ".." + NStr::Int8ToString(m_Max);
+    return CArgAllow_Int8s::GetUsage();;
+}
+
+CArgAllow* CArgAllow_Integers::Clone(void) const
+{
+    CArgAllow_Integers* clone = new CArgAllow_Integers;
+    clone->m_MinMax = m_MinMax;
+    return clone;
 }
 
 
@@ -3929,48 +4050,94 @@ string CArgAllow_Integers::GetUsage(void) const
 //  CArgAllow_Doubles::
 //
 
+CArgAllow_Doubles::CArgAllow_Doubles(double x_value)
+    : CArgAllow()
+{
+    Allow(x_value);
+}
+
 CArgAllow_Doubles::CArgAllow_Doubles(double x_min, double x_max)
     : CArgAllow()
 {
-    if (x_min <= x_max) {
-        m_Min = x_min;
-        m_Max = x_max;
-    } else {
-        m_Min = x_max;
-        m_Max = x_min;
-    }
+    AllowRange( x_min, x_max );
 }
 
 
 bool CArgAllow_Doubles::Verify(const string& value) const
 {
     double val = NStr::StringToDouble(value, NStr::fDecimalPosixOrLocal);
-    return (m_Min <= val  &&  val <= m_Max);
+    ITERATE( set< TInterval >, pi, m_MinMax) {
+        if (pi->first <= val && val<= pi->second) {
+            return true;
+        }
+    }
+    return false;
 }
 
 
 string CArgAllow_Doubles::GetUsage(void) const
 {
-    if (m_Min == m_Max) {
-        return NStr::DoubleToString(m_Min);
-    } else if (m_Min == kMin_Double && m_Max != kMax_Double) {
-        return string("less or equal to ") + NStr::DoubleToString(m_Max);
-    } else if (m_Min != kMin_Double && m_Max == kMax_Double) {
-        return string("greater or equal to ") + NStr::DoubleToString(m_Min);
-    } else if (m_Min == kMin_Double && m_Max == kMax_Double) {
-        return kEmptyStr;
+    if (m_MinMax.size() == 1) {
+        double x_min = m_MinMax.begin()->first;
+        double x_max = m_MinMax.begin()->second;
+        if (x_min == x_max) {
+            return NStr::DoubleToString(x_min);
+        } else if (x_min == kMin_Double && x_max != kMax_Double) {
+            return string("less or equal to ") + NStr::DoubleToString(x_max);
+        } else if (x_min != kMin_Double && x_max == kMax_Double) {
+            return string("greater or equal to ") + NStr::DoubleToString(x_min);
+        } else if (x_min == kMin_Double && x_max == kMax_Double) {
+            return kEmptyStr;
+        }
     }
-    return NStr::DoubleToString(m_Min) + ".." + NStr::DoubleToString(m_Max);
+    string usage;
+    ITERATE( set< TInterval >, pi, m_MinMax) {
+        if (!usage.empty()) {
+            usage += ", ";
+        }
+        if (pi->first == pi->second) {
+            usage += NStr::DoubleToString(pi->first);
+        } else {
+            usage += NStr::DoubleToString(pi->first) + ".." + NStr::DoubleToString(pi->second);
+        }
+
+    }
+    return usage;
 }
 
 
 void CArgAllow_Doubles::PrintUsageXml(CNcbiOstream& out) const
 {
     out << "<" << "Doubles" << ">" << endl;
-    s_WriteXmlLine( out, "min", NStr::DoubleToString(m_Min).c_str());
-    s_WriteXmlLine( out, "max", NStr::DoubleToString(m_Max).c_str());
+    ITERATE( set< TInterval >, pi, m_MinMax) {
+        s_WriteXmlLine( out, "min", NStr::DoubleToString(pi->first).c_str());
+        s_WriteXmlLine( out, "max", NStr::DoubleToString(pi->second).c_str());
+    }
     out << "</" << "Doubles" << ">" << endl;
 }
+
+CArgAllow_Doubles& CArgAllow_Doubles::AllowRange(double from, double to)
+{
+    m_MinMax.insert( make_pair(from,to) );
+    return *this;
+}
+
+CArgAllow_Doubles& CArgAllow_Doubles::Allow(double value)
+{
+    m_MinMax.insert( make_pair(value,value) );
+    return *this;
+}
+
+CArgAllow* CArgAllow_Doubles::Clone(void) const
+{
+    CArgAllow_Doubles* clone = new CArgAllow_Doubles;
+    clone->m_MinMax = m_MinMax;
+    return clone;
+}
+
+
+///////////////////////////////////////////////////////
+// CArgException
 
 const char* CArgException::GetErrCodeString(void) const
 {

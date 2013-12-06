@@ -60,24 +60,37 @@ static void s_InitTest0(CArgDescriptions& arg_desc)
         ("barfooetc",
          "This is a mandatory plain (named positional) argument",
          CArgDescriptions::eString);
+#if 0
+    arg_desc.SetConstraint
+        ("barfooetc",
+         CArgAllow_Strings()
+         .AllowValue("foo")
+         .AllowValue("bar")
+         .AllowValue("etc"));
+#else
     arg_desc.SetConstraint
         ("barfooetc", &(*new CArgAllow_Strings, "foo", "bar", "etc"));
+#endif
 
     arg_desc.AddDefaultKey
         ("kd8", "DefaultKey8",
          "This is an optional Int8 key argument, with default value",
          CArgDescriptions::eInt8, "123456789012");
     arg_desc.SetConstraint
-        ("kd8", new CArgAllow_Int8s(-2, NStr::StringToInt8("123456789022")));
-
+        ("kd8",
+         CArgAllow_Int8s(-2, NCBI_CONST_INT8(123456789022))
+         .AllowRange(-10,-9)
+         .Allow(-15));
 
     arg_desc.AddDefaultKey
         ("kd", "DefaultKey",
          "This is an optional integer key argument, with default value",
          CArgDescriptions::eInteger, "123");
     arg_desc.SetConstraint
-        ("kd", new CArgAllow_Integers(0, 200));
-
+        ("kd",
+         CArgAllow_Integers(0, 200)
+         .AllowRange(300, 310)
+         .Allow(400));
 
     arg_desc.AddExtra
         (0,  // no mandatory extra args
@@ -92,7 +105,7 @@ static void s_InitTest0(CArgDescriptions& arg_desc)
          "This is a mandatory alpha-num key argument",
          CArgDescriptions::eString);
     arg_desc.SetConstraint
-        ("k", new CArgAllow_String(CArgAllow_Symbols::eAlnum));
+        ("k", CArgAllow_String(CArgAllow_Symbols::eAlnum).Allow("$#"));
     arg_desc.AddAlias("-key", "k");
 
     arg_desc.AddOptionalKey
@@ -109,7 +122,8 @@ static void s_InitTest0(CArgDescriptions& arg_desc)
          "This is an optional named positional argument with default value",
          CArgDescriptions::eString, "a");
     arg_desc.SetConstraint
-        ("one_symbol", new CArgAllow_Symbols(" aB\tCd"));
+        ("one_symbol",
+         CArgAllow_Symbols(" aB\tCd").Allow(CArgAllow_Symbols::eDigit));
 
     arg_desc.AddOptionalPositional
         ("notakey",
