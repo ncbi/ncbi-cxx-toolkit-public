@@ -287,7 +287,7 @@ public:
     virtual CArgValue* ProcessDefault(void) const;
 
     virtual 
-    void SetConstraint(const CArgAllow*                    constraint, 
+    void SetConstraint(CArgAllow*                          constraint, 
                        CArgDescriptions::EConstraintNegate negate);
     virtual const CArgAllow* GetConstraint(void) const;
     virtual bool IsConstraintInverted() const;

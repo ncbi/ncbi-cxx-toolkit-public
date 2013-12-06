@@ -807,7 +807,7 @@ void CArgDesc::VerifyDefault(void) const
 }
 
 
-void CArgDesc::SetConstraint(const CArgAllow*                   constraint,
+void CArgDesc::SetConstraint(CArgAllow*   constraint,
                              CArgDescriptions::EConstraintNegate)
 {
     NCBI_THROW(CArgException, eConstraint, s_ArgExptMsg(GetName(),
@@ -1107,7 +1107,7 @@ CArgValue* CArgDescMandatory::ProcessDefault(void) const
 
 
 void CArgDescMandatory::SetConstraint
-(const CArgAllow*                    constraint,
+(CArgAllow*                          constraint,
  CArgDescriptions::EConstraintNegate negate)
 {
     m_Constraint       = constraint;
@@ -2046,10 +2046,10 @@ void CArgDescriptions::AddNegatedFlagAlias(const string& alias,
 
 
 void CArgDescriptions::SetConstraint(const string&      name, 
-                                     const CArgAllow*   constraint,
+                                     CArgAllow*         constraint,
                                      EConstraintNegate  negate)
 {
-    CConstRef<CArgAllow> safe_delete(constraint);
+    CRef<CArgAllow> safe_delete(constraint);
 
     TArgsI it = x_Find(name);
     if (it == m_Args.end()) {
@@ -2062,7 +2062,7 @@ void CArgDescriptions::SetConstraint(const string&      name,
                                      const CArgAllow&   constraint,
                                      EConstraintNegate  negate)
 {
-    const CArgAllow* onheap = constraint.Clone();
+    CArgAllow* onheap = constraint.Clone();
     if (!onheap) {
         NCBI_THROW(CArgException, eConstraint,
             "Clone method not implemented for: "+ name);

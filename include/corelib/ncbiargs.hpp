@@ -814,7 +814,7 @@ public:
     /// @sa
     ///   See "CArgAllow_***" classes for some pre-defined constraints
     void SetConstraint(const string&      name,
-                       const CArgAllow*   constraint,
+                       CArgAllow*         constraint,
                        EConstraintNegate  negate = eConstraint);
 
     /// This version of SetConstraint doesn't take the ownership of object
@@ -1674,7 +1674,7 @@ public:
 
     /// Set argument constraint.
     virtual 
-    void SetConstraint(const CArgAllow*                     constraint,
+    void SetConstraint(CArgAllow*                           constraint,
                        CArgDescriptions::EConstraintNegate  negate 
                                     = CArgDescriptions::eConstraint);
 
