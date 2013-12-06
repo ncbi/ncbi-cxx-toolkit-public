@@ -1325,7 +1325,9 @@ public:
 
     virtual ~CArgAllow(void);
 
-    virtual CArgAllow* Clone(void) const = 0;
+    virtual CArgAllow* Clone(void) const {
+        return NULL;
+    }
 
 protected:
     // In the absence of the following constructor, new compilers (as required
