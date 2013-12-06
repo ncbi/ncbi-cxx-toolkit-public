@@ -65,7 +65,8 @@ public:
     /// @sa CRegexp
     CArgAllow_Regexp(const string& pattern);
 
-protected:
+    virtual ~CArgAllow_Regexp(void);
+
     /// @param value
     ///   Argument value to match against the Perl regular expression
     /// @sa CArgAllow_Regexp()
@@ -77,8 +78,7 @@ protected:
     /// Print constraints in XML format
     virtual void PrintUsageXml(CNcbiOstream& out) const;
 
-    /// Protected destructor.
-    virtual ~CArgAllow_Regexp(void);
+    virtual CArgAllow* Clone(void) const;
 
 private:
     const string  m_Pattern;  ///< Regexp pattern to match against

@@ -51,6 +51,12 @@ CArgAllow_Regexp::CArgAllow_Regexp(const string& pattern)
 }
 
 
+CArgAllow_Regexp::~CArgAllow_Regexp(void)
+{
+    return;
+}
+
+
 bool CArgAllow_Regexp::Verify(const string& value) const
 {
     return value.compare(const_cast<CRegexp&>(m_Regexp).GetMatch(value)) == 0;
@@ -62,6 +68,7 @@ string CArgAllow_Regexp::GetUsage(void) const
     return "to match Perl regular expression: '" + m_Pattern + "'";
 }
 
+
 void CArgAllow_Regexp::PrintUsageXml(CNcbiOstream& out) const
 {
     out << "<" << "Regexp" << ">" << endl;
@@ -69,10 +76,13 @@ void CArgAllow_Regexp::PrintUsageXml(CNcbiOstream& out) const
     out << "</" << "Regexp" << ">" << endl;
 }
 
-CArgAllow_Regexp::~CArgAllow_Regexp(void)
+
+CArgAllow* CArgAllow_Regexp::Clone(void) const
 {
-    return;
+    CArgAllow_Regexp* clone = new CArgAllow_Regexp(m_Pattern);
+    return clone;
 }
+
 
 
 END_NCBI_SCOPE
