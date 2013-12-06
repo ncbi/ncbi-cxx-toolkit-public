@@ -586,17 +586,17 @@ void CBedReader::xSetFeatureLocationThick(
         location->SetInt().SetFrom(from);
         location->SetInt().SetTo(to);
     }
-    else {
-        AutoPtr<CObjReaderLineException> pErr(
-            CObjReaderLineException::Create(
-            eDiag_Error,
-            0,
-            "Invalid data line: \"ThickStop\" less than \"ThickStart\"." ) );
-        pErr->Throw();
+    else if (from > to) {
+        //below: flip commenting to switch from null locations to impossible 
+        // intervals
+        //location->SetInt().SetFrom(from);
+        //location->SetInt().SetTo(to);
+        location->SetNull();
     }
 
-    location->SetStrand(xGetStrand(fields));
-    
+    if (!location->IsNull()) {
+        location->SetStrand(xGetStrand(fields));
+    }
     CRef<CSeq_id> id = CReadUtil::AsSeqId(fields[0], m_iFlags, false);
     location->SetId(*id);
     feature->SetLocation(*location);
@@ -845,7 +845,14 @@ void CBedReader::xSetFeatureBedData(
         return;
     }
     vector<string> srgb;
-    NStr::Tokenize(fields[8], ",", srgb);
+    if (fields[8] == "0"  ||  fields[8] == ".") {
+        srgb.push_back("0");
+        srgb.push_back("0");
+        srgb.push_back("0");
+    }
+    else {
+        NStr::Tokenize(fields[8], ",", srgb);
+    }
     if (srgb.size() != 3)
     {
         AutoPtr<CObjReaderLineException> pErr(
