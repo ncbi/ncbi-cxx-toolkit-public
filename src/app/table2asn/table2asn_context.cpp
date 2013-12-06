@@ -273,17 +273,13 @@ CUser_object& CTable2AsnContext::SetUserObject(CSeq_descr& descr, const string& 
 
 CBioSource& CTable2AsnContext::SetBioSource(CSeq_descr& SD)
 {
-    NON_CONST_ITERATE(CSeq_descr::Tdata, desc_it, SD.Set())
+    CRef<CSeqdesc> source_desc = LocateDesc(SD, CSeqdesc::e_Source);
+    if (source_desc.Empty())
     {
-        if ((**desc_it).IsSource())
-        {
-            CBioSource& biosource = (**desc_it).SetSource();
-            return biosource;
-        }
+        source_desc.Reset(new CSeqdesc());
+        source_desc->Select(CSeqdesc::e_Source);
+        SD.Set().push_back(source_desc);
     }
-    CRef<CSeqdesc> source_desc(new CSeqdesc());
-    source_desc->Select(CSeqdesc::e_Source);
-    SD.Set().push_back(source_desc);
     return source_desc->SetSource();
 }
 

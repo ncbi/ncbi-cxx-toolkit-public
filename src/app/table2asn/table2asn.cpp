@@ -106,12 +106,6 @@ private:
     void ProcessRNAFile(const string& pathname, CSeq_entry& result);
     void ProcessPRTFile(const string& pathname, CSeq_entry& result);
 
-#if 0
-    CRef<CSeq_feat> ReadSeqFeat(void);
-    CRef<CBioSource> ReadBioSource(void);
-    CRef<CPubdesc> ReadPubdesc(void);
-#endif
-
     CRef<CScope> BuildScope(void);
 
     CRef<CObjectManager> m_ObjMgr;
@@ -624,7 +618,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     if (avoid_submit_block)
     {
         // we need to fix cit-sub date
-        COpticalxml2asnOperator::UpdatePubDate(*result);
+        //COpticalxml2asnOperator::UpdatePubDate(*result);
     }
 
 

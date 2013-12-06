@@ -48,6 +48,8 @@
 #include <objects/pub/Pub.hpp>
 #include <objects/seqfeat/Org_ref_.hpp>
 #include <objects/taxon1/taxon1.hpp>
+#include <objects/biblio/Cit_art.hpp>
+#include <objects/biblio/ArticleIdSet.hpp>
 
 #include <objmgr/object_manager.hpp>
 #include <objtools/readers/message_listener.hpp>
@@ -66,32 +68,40 @@ USING_SCOPE(objects);
 namespace
 {
 
-void UpdatePub(CMLAClient& mlaClient, CPub& pub)
+// the method is not used at the momment
+#if 0
+void UpdatePub(CMLAClient& mlaClient, CRef<CPub>& pub)
 {
-    CRef<CPub> new_pub;
-
     try {
-        switch(pub.Which()) {
+        switch(pub->Which()) {
+        case CPub::e_Article:
+            {
+                //const int pmid = pub->GetArticle().GetIds().Get();
+                //const int pmid = pub.GetPmid().Get();
+                //CPubMedId req(pmid);
+                //CMLAClient::TReply reply;
+                //new_pub = mlaClient.AskGetpubpmid(req, &reply);
+            }
+            break;
         case CPub::e_Pmid:
             {
-                const int pmid = pub.GetPmid().Get();
+                const int pmid = pub->GetPmid().Get();
 
                 CPubMedId req(pmid);
                 CMLAClient::TReply reply;
-                new_pub = mlaClient.AskGetpubpmid(req, &reply);
-                pub.Assign(*new_pub);
+                pub = mlaClient.AskGetpubpmid(req, &reply);
+                //pub->SetPmid().Set(pmid);
             }
             break;
         case CPub::e_Muid:
             {
-                const int muid = pub.GetMuid();
+                const int muid = pub->GetMuid();
 
                 const int pmid = mlaClient.AskUidtopmid(muid);
                 if( pmid > 0 ) {
                     CPubMedId req(pmid);
                     CMLAClient::TReply reply;
-                    new_pub = mlaClient.AskGetpubpmid(req, &reply);
-                    pub.Assign(*new_pub);
+                    //pub = mlaClient.AskGetpubpmid(req, &reply);
                 }
             }
             break;
@@ -103,6 +113,7 @@ void UpdatePub(CMLAClient& mlaClient, CPub& pub)
         // don't worry if we can't look it up
     }
 
+#if 0
     if( new_pub ) {
         // authors come back in a weird format that we need
         // to convert to ISO
@@ -110,7 +121,9 @@ void UpdatePub(CMLAClient& mlaClient, CPub& pub)
 
         //new_pubs.push_back(new_pub);
     }
+#endif
 }
+#endif
 
 }
 
@@ -209,9 +222,9 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_entry& entry)
 {
     if (entry.IsSet())
     {
-        NON_CONST_ITERATE(CSeq_entry::TSet::TSeq_set, it, entry.SetSet().SetSeq_set())
+        NON_CONST_ITERATE(CBioseq_set::TSeq_set, it2, entry.SetSet().SetSeq_set())
         {
-            xUpdatePubReferences(**it);
+            xUpdatePubReferences(**it2);
         }
     }
 
@@ -222,12 +235,22 @@ void CRemoteUpdater::xUpdatePubReferences(CSeq_entry& entry)
     {
         if ((**it).IsPub())
         {
-            NON_CONST_ITERATE( CPub_equiv::Tdata, pubit, (**it).SetPub().SetPub().Set())
+            if ((**it).GetPub().IsSetPub())
             {
-                if (m_mlaClient.Empty())
-                    m_mlaClient.Reset(new CMLAClient);
+                CPub_equiv::Tdata& arr = (**it).SetPub().SetPub().Set();
+                // update pmid only if it's single element, pretend tbl2asn behaviour
+                if (arr.size() == 1 && (*arr.front()).IsPmid())
+                {
+                    if (m_mlaClient.Empty())
+                        m_mlaClient.Reset(new CMLAClient);
 
-                UpdatePub(*m_mlaClient, **pubit);
+                    const int pmid = arr.front()->GetPmid().Get();
+
+                    CPubMedId req(pmid);
+                    CMLAClient::TReply reply;
+                    arr.push_back(m_mlaClient->AskGetpubpmid(req, &reply));                    
+                    entry.Parentize();
+                }
             }
         }
     }
