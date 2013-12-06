@@ -1325,9 +1325,14 @@ public:
 
     virtual ~CArgAllow(void);
 
-    virtual CArgAllow* Clone(void) const {
-        return NULL;
-    }
+    /// Create object's clone, moving it from stack memory into heap.
+    /// The method is required only when using objects created on stack.
+    ///
+    /// NOTE: Default implementation returns NULL.
+    /// Inherited classes must override this method.
+    ///
+    /// @sa CArgDescriptions::SetConstraint
+    virtual CArgAllow* Clone(void) const;
 
 protected:
     // In the absence of the following constructor, new compilers (as required

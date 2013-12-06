@@ -3608,6 +3608,11 @@ void CArgAllow::PrintUsageXml(CNcbiOstream& ) const
 {
 }
 
+CArgAllow* CArgAllow::Clone(void) const
+{
+    return NULL;
+}
+
 ///////////////////////////////////////////////////////
 //  s_IsSymbol() -- check if the symbol belongs to one of standard character
 //                  classes from <ctype.h>, or to user-defined symbol set
