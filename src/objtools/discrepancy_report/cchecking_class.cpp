@@ -424,10 +424,10 @@ void CCheckingClass :: CheckBioseq (CBioseq& bioseq)
      }
 
      if (!thisGrp.tests_on_Bioseq_CFeat.empty()) {
-         GoTests(thisGrp.tests_on_Bioseq_CFeat, bioseq);
+          GoTests(thisGrp.tests_on_Bioseq_CFeat, bioseq);
      }
      if (!thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet.empty()
-                               && !CTestAndRepData::IsmRNASequenceInGenProdSet(bioseq)) {
+                        && !CTestAndRepData::IsmRNASequenceInGenProdSet(bioseq)) {
          GoTests(thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet, bioseq);
      }
    }

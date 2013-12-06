@@ -365,7 +365,7 @@ void CRepConfig :: x_InputRepToGbenchItem(const CClickableItem& c_item,  CClicka
 {
    if (!c_item.item_list.empty()) {
       item.SetObjdescs().insert(item.SetObjdescs().end(), 
-                                          c_item.item_list.begin(), c_item.item_list.end());
+                   c_item.item_list.begin(), c_item.item_list.end());
       if (!c_item.obj_list.empty()) {
             item.SetObjects().insert(item.SetObjects().end(), c_item.obj_list.begin(),
                  c_item.obj_list.end());

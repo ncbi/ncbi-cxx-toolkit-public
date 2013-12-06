@@ -451,8 +451,10 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
       thisInfo.feattype_featdef[(EMacro_feature_type)i]
           = CSeqFeatData :: SubtypeNameToValue(strtmp);
       arr = NStr::Tokenize(tmp, "_", arr);
-      if (!arr.empty()) tmp = NStr::Join(arr, "-");
-      arr.clear();
+      if (!arr.empty()) {
+          tmp = NStr::Join(arr, "-");
+          arr.clear();
+      }
       thisInfo.feattype_name[(EMacro_feature_type)i] = tmp;
     }
 
@@ -514,8 +516,10 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
       thisInfo.feattype_featdef[(EMacro_feature_type)i]
           = CSeqFeatData :: SubtypeNameToValue(strtmp);
       arr = NStr::Tokenize(tmp, "_", arr);
-      if (!arr.empty()) tmp = NStr::Join(arr, "-");
-      arr.clear();
+      if (!arr.empty()) {
+         tmp = NStr::Join(arr, "-");
+         arr.clear();
+      }
       thisInfo.feattype_name[(EMacro_feature_type)i] = tmp;
     }
     
@@ -557,9 +561,16 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
                  ->FindValue(rnafield_val));
 
        arr.clear();
-       arr = NStr::Tokenize(strtmp, "-", arr);
-       if (arr[0] == "ncrna") arr[0] = "ncRNA";
-       else if (arr[1] == "id") arr[1] = "ID";
+       if (strtmp.find("-") != string::npos) {
+           arr = NStr::Tokenize(strtmp, "-", arr);
+       }
+       else arr.push_back(strtmp);
+       if (arr[0] == "ncrna") {
+              arr[0] = "ncRNA";
+       }
+       else if (arr.size() >=2 && arr[1] == "id") {
+             arr[1] = "ID";
+       }
        thisInfo.rnafield_names[(ERna_field)i] = NStr::Join(arr, " ");
     }
 
@@ -792,8 +803,13 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
 
    // ini. of s_putative_replacements
    strtmp = reg.Get("StringVecIni", "SPutativeReplacements");
-   thisInfo.s_putative_replacements 
+   if (!strtmp.empty()) {
+     thisInfo.s_putative_replacements 
             = NStr::Tokenize(strtmp, ",", thisInfo.s_putative_replacements);
+   }
+   else {
+      NCBI_THROW(CException, eUnknown, "Missing SPutativeReplacements\n");
+   }
 
    // ini. of cgp_field_name
    for (i = eCDSGeneProt_field_cds_comment; 
@@ -802,8 +818,8 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
      strtmp = ENUM_METHOD_NAME(ECDSGeneProt_field)()->FindName(i, true);
      arr.clear();
      if (strtmp != "codon-start") {
+         arr = NStr::Tokenize(strtmp, "-", arr);
          if (arr[0] != "mat") {
-           arr = NStr::Tokenize(strtmp, "-", arr);
            if (arr[0] == "cds") {
                arr[0] = "CDS";
            }
@@ -1136,6 +1152,12 @@ void CRepConfig :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
     // collect disc report
     myChecker.CollectRepData();
 };  // CheckThisSeqEntry()
+
+/*
+static const s_test_property test1_list[] = {
+   {"DISC_FEAT_OVERLAP_SRCFEAT", fDiscrepancy | fAsndisc},
+};
+*/
 
 static const s_test_property test_list[] = {
 // tests_on_SubmitBlk

@@ -1991,7 +1991,6 @@ void CBioseq_DISC_FEAT_OVERLAP_SRCFEAT :: TestOnObj(const CBioseq& bioseq)
 {
   string src_desc, feat_desc;
   unsigned src_left, src_right, feat_left, feat_right;
-  unsigned i;
   bool src_added;
   ITERATE (vector <const CSeq_feat*>, it, bioseq_biosrc_feat) {
     src_added = false;
@@ -2220,8 +2219,8 @@ bool CBioseq_CONTAINED_CDS :: x_IgnoreContainedCDS(const CSeq_feat* sft)
 
 void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
 {
-   set <string> contained_this_strand, last_this_strand;
-   set <string> contained_other_strand, last_other_strand;
+   set <string> contained_this_strand;
+   set <string> contained_other_strand;
    ENa_strand str1, str2;
    unsigned i=0, j=0;
    string desc1, desc2;
@@ -2235,14 +2234,22 @@ void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
       i++;
    }
 
+   unsigned left1, right1, left2, right2;
    for (i=0; (int)i< (int)(cd_feat.size()-1); i++) {
      if (ignore[i]) continue;
+     CConstRef <CObject> cdi_ref(cd_feat[i]);
      const CSeq_loc& loc1 = cd_feat[i]->GetLocation();
      str1 = loc1.GetStrand();
+     left1 = loc1.GetStart(eExtreme_Positional);
+     right1 = loc1.GetStop(eExtreme_Positional);
      for (j=i+1; j< cd_feat.size(); j++) {
         if (ignore[j]) continue;
+        CConstRef <CObject> cdj_ref (cd_feat[j]);
         const CSeq_loc& loc2 = cd_feat[j]->GetLocation();
         str2 = loc2.GetStrand();
+        left2 = loc2.GetStart(eExtreme_Positional);
+        right2 = loc2.GetStop(eExtreme_Positional);
+        if (right1 < left2 || right2 < left1) continue;
         sequence::ECompare 
             loc_cmp = sequence::Compare(loc1, loc2, thisInfo.scope);
         if (loc_cmp == sequence::eSame 
@@ -2254,41 +2261,27 @@ void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
              if (contained_this_strand.find(desc1) 
                       == contained_this_strand.end()) {
                 thisInfo.test_item_list[GetName()].push_back("same$" + desc1);
-                thisInfo.test_item_objs[GetName() + "$same"].push_back(
-                                               CConstRef <CObject>(cd_feat[i]));
-                last_this_strand.insert(desc1); 
-                if (contained_this_strand.empty()) {
-                    contained_this_strand = last_this_strand;
-                }
+                thisInfo.test_item_objs[GetName() + "$same"].push_back(cdi_ref);
+                contained_this_strand.insert(desc1); 
              }
-             if (contained_this_strand.find(desc2) == contained_this_strand.end()) {
+             if (contained_this_strand.find(desc2) == contained_this_strand.end()){
                 thisInfo.test_item_list[GetName()].push_back("same$" + desc2);
-                thisInfo.test_item_objs[GetName() + "$same"].push_back(
-                                               CConstRef <CObject>(cd_feat[j]));
-                last_this_strand.insert(desc2);
-                if (contained_this_strand.empty()) { 
-                     contained_this_strand = last_this_strand;
-                }
+                thisInfo.test_item_objs[GetName() + "$same"].push_back(cdj_ref);
+                contained_this_strand.insert(desc2);
              }
           } 
           else {
-             if (contained_other_strand.find(desc1) == contained_other_strand.end()) {
+             if (contained_other_strand.find(desc1) 
+                                 == contained_other_strand.end()) {
                 thisInfo.test_item_list[GetName()].push_back("opposite$" + desc1);
-                thisInfo.test_item_objs[GetName() + "$opposite"].push_back(
-                                               CConstRef <CObject>(cd_feat[i]));
-                 last_other_strand.insert(desc1);
-                 if (contained_other_strand.empty()) {
-                      contained_other_strand = last_other_strand;
-                 }
+                thisInfo.test_item_objs[GetName() +"$opposite"].push_back(cdi_ref);
+                contained_other_strand.insert(desc1);
              }
-             if (contained_other_strand.find(desc2) == contained_other_strand.end()) {
+             if (contained_other_strand.find(desc2) 
+                              == contained_other_strand.end()) {
                 thisInfo.test_item_list[GetName()].push_back("opposite$" + desc2);
-                thisInfo.test_item_objs[GetName()+"$opposite"].push_back(
-                                               CConstRef <CObject>(cd_feat[j]));
-                last_other_strand.insert(desc2);
-                if (contained_other_strand.empty()) {
-                     contained_other_strand = last_other_strand;
-                }
+                thisInfo.test_item_objs[GetName()+"$opposite"].push_back(cdj_ref);
+                contained_other_strand.insert(desc2);
              }
           }
         }
@@ -2296,8 +2289,6 @@ void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
    }
    contained_this_strand.clear();
    contained_other_strand.clear();
-   last_this_strand.clear();
-   last_other_strand.clear();
 };
 
 
@@ -4658,6 +4649,7 @@ void CBioseq_FEATURE_LOCATION_CONFLICT :: CheckFeatureTypeForLocationDiscrepanci
 
 void CBioseq_FEATURE_LOCATION_CONFLICT :: TestOnObj(const CBioseq& bioseq)
 {
+return;
   if (bioseq.IsAa()) return;
   if (!IsBioseqHasLineage(bioseq, "Eukaryota", false))
            CheckFeatureTypeForLocationDiscrepancies(cd_feat, "Coding region");        
@@ -4714,6 +4706,7 @@ void CBioseq_FEATURE_LOCATION_CONFLICT :: GetReport(CRef <CClickableItem>& c_ite
 
 void CBioseq_MISSING_LOCUS_TAGS :: TestOnObj(const CBioseq& bioseq) 
 {
+return;
    ITERATE (vector <const CSeq_feat*>, jt, gene_feat) {
      const CGene_ref& gene = (*jt)->GetData().GetGene();
      if (gene.GetPseudo()) continue;
@@ -4780,6 +4773,7 @@ bool CBioseq_MISSING_LOCUS_TAGS :: x_IsLocationDirSub(const CSeq_loc& seq_locati
 
 void CBioseq_on_locus_tags :: TestOnObj(const CBioseq& bioseq) 
 {
+return;
   if (thisTest.is_LocusTag_run) return;
   thisTest.is_LocusTag_run = true;
 
@@ -7166,6 +7160,7 @@ CRef <GeneralDiscSubDt> CBioseq_DUPLICATE_GENE_LOCUS :: AddLocus(const CSeq_feat
 
 void CBioseq_DUPLICATE_GENE_LOCUS :: TestOnObj(const CBioseq& bioseq)
 {
+return;
   Str2SubDt locus_list;
   Str2SubDt :: iterator it;
   string locus, location;
@@ -11461,7 +11456,6 @@ void CSeqEntry_INCONSISTENT_BIOSOURCE :: GetReport(CRef <CClickableItem>& c_item
 
 void CBioseq_TEST_TERMINAL_NS :: TestOnObj(const CBioseq& bioseq)
 {
-/*
    validator :: EBioseqEndIsType begin_n, begin_gap, end_n, end_gap;
    validator::CheckBioseqEndsForNAndGap(thisInfo.scope->GetBioseqHandle(bioseq),
                                         begin_n, 
@@ -11473,7 +11467,6 @@ void CBioseq_TEST_TERMINAL_NS :: TestOnObj(const CBioseq& bioseq)
      thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(bioseq));
      thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(&bioseq));
    }
-*/
 };
 
 void CBioseq_TEST_TERMINAL_NS :: GetReport(CRef <CClickableItem>& c_item)
