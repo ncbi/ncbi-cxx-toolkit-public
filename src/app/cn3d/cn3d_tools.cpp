@@ -41,9 +41,11 @@
 #include <unistd.h>
 
 #elif defined(__WXMAC__)
-// full paths needed to void having to add -I/Developer/Headers/FlatCarbon to all modules...
+// full paths used to avoid adding extra -I option to point at FlatCarbon to compile flags for all modules...
+// Under OSX 10.6 and earlier, /Developer was a root-level directory.  With 10.8, it is buried under XCode's tools.
 //#include "/Developer/Headers/FlatCarbon/Types.h"
-#include "/Developer/Headers/FlatCarbon/InternetConfig.h"
+//#include "/Developer/Headers/FlatCarbon/InternetConfig.h"
+#include "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX10.6.sdk/Developer/Headers/FlatCarbon/InternetConfig.h"
 #endif
 
 #include <corelib/ncbistd.hpp>

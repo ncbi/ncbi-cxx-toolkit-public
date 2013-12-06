@@ -49,6 +49,7 @@
 
 #elif defined(__WXMAC__)
 //#include <Fonts.h>
+#include <AGL/agl.h>
 //#include <OpenGL/gl.h>
 #include <OpenGL/glu.h>
 #endif
@@ -1946,21 +1947,21 @@ bool OpenGLRenderer::SetGLFont(int firstChar, int nChars, int fontBase)
 #elif defined(__WXMAC__)
 
 //  Offsets to font family, style determined empirically.  
-//  'aglUseFont' deprecated w/o replacement as of OSX 10.5, but this code no longer appears necessary.
-/*
+//  'aglUseFont' deprecated w/o replacement as of OSX 10.5; code compiles but no longer 
+//  appears to do anything useful.
     int fontFamily = GetGLFont().GetFamily() - wxFONTFAMILY_DEFAULT;
     int fontSize = GetGLFont().GetPointSize();
     int fontStyle = GetGLFont().GetStyle() - wxFONTSTYLE_NORMAL;
-//    TRACEMSG("OpenGLRenderer::SetGLFont() - fontFamily/fontSize/fontStyle " << fontFamily << "/" << fontSize << "/" << fontStyle);
+//    TRACEMSG("OpenGLRenderer::SetGLFont() - fontBase/fontFamily/fontSize/fontStyle " << fontBase << "/" << fontFamily << "/" << fontSize << "/" << fontStyle);
 
+//  As aglUseFont no longer returns GL_TRUE, do not annoy users w/ the error message.
     if (aglUseFont(aglGetCurrentContext(),
                    (GLint) fontFamily, 
                    fontStyle, (GLint) fontSize,
                    firstChar, nChars, fontBase) != GL_TRUE) {
-        ERRORMSG("OpenGLRenderer::SetGLFont() - aglUseFont() failed: " << aglErrorString(aglGetError()));
+//        ERRORMSG("OpenGLRenderer::SetGLFont() - aglUseFont() failed: " << aglErrorString(aglGetError()));
         okay = false;
     }
-*/
 #endif
 
     return okay;
