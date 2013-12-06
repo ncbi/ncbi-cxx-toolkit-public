@@ -60,17 +60,12 @@ static void s_InitTest0(CArgDescriptions& arg_desc)
         ("barfooetc",
          "This is a mandatory plain (named positional) argument",
          CArgDescriptions::eString);
-#if 0
     arg_desc.SetConstraint
         ("barfooetc",
          CArgAllow_Strings()
          .AllowValue("foo")
          .AllowValue("bar")
          .AllowValue("etc"));
-#else
-    arg_desc.SetConstraint
-        ("barfooetc", &(*new CArgAllow_Strings, "foo", "bar", "etc"));
-#endif
 
     arg_desc.AddDefaultKey
         ("kd8", "DefaultKey8",
