@@ -94,7 +94,7 @@ private:
 public:
     ///////////////////////////////////////////////////////////////////////
     //
-    class IAdapterDetector
+    class NCBI_XALGOSEQ_EXPORT IAdapterDetector
     {
     public:
         /// An adapter sequence is presumed to occur at least
@@ -167,7 +167,7 @@ public:
 
 
     /// This class assembles adapter sequence based on distribution of word counts
-    class CUnpairedAdapterDetector : public IAdapterDetector
+    class NCBI_XALGOSEQ_EXPORT CUnpairedAdapterDetector : public IAdapterDetector
     {
     public:
         CUnpairedAdapterDetector()
@@ -195,7 +195,7 @@ public:
     };
 
 
-    class CPairedEndAdapterDetector : public IAdapterDetector
+    class NCBI_XALGOSEQ_EXPORT CPairedEndAdapterDetector : public IAdapterDetector
     {
     public:
 
@@ -209,7 +209,7 @@ public:
         ///  ATATATAT  | ACGTACGT
         ///  ACGTACGT  |
         ///  CGCGCGCG  |
-        class CConsensusPattern
+        class NCBI_XALGOSEQ_EXPORT CConsensusPattern
         {
         public:
             static const size_t NMERS10 = 1048576; //total count of possible 10-mers: 4^10
@@ -279,7 +279,7 @@ public:
 
     /// Find ungapped alignment of queries to a subject
     /// The subject sequence is presumed to be fairly short (~100 bases, few kb max)
-    class CSimpleUngappedAligner
+    class NCBI_XALGOSEQ_EXPORT CSimpleUngappedAligner
     {
     public:
         typedef Int2 TPos;

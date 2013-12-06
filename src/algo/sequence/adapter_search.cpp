@@ -32,6 +32,7 @@
 
 #include <cmath>
 #include <algorithm>
+#include <functional>
 #include <vector>
 #include <set>
 #include <queue>
