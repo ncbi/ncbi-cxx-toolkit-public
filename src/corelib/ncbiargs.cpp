@@ -2067,7 +2067,7 @@ void CArgDescriptions::SetConstraint(const string&      name,
         NCBI_THROW(CArgException, eConstraint,
             "Clone method not implemented for: "+ name);
     }
-    SetConstraint(name, constraint.Clone(), negate);
+    SetConstraint(name, onheap, negate);
 }
 
 
