@@ -142,6 +142,7 @@ enum EErrType {
     eErr_SEQ_INST_SeqLitGapFuzzNot100,
     eErr_SEQ_INST_SeqGapProblem,
     eErr_SEQ_INST_WGSMasterLacksStrucComm,
+    eErr_SEQ_INST_TSAMasterLacksStrucComm,
     ERR_CODE_END(SEQ_INST),
 
     ERR_CODE_BEGIN(SEQ_DESCR) = 1000,

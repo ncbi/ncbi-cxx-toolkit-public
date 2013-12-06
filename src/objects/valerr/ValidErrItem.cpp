@@ -309,6 +309,9 @@ the whole of a sequence." } },
    { eErr_SEQ_INST_WGSMasterLacksStrucComm,
    { "WGSMasterLacksStrucComm",
 "WGS Master records require a Genome Assembly Data structured comment user object." } },
+   { eErr_SEQ_INST_TSAMasterLacksStrucComm,
+   { "TSAMasterLacksStrucComm",
+"TSA Master records require an Assembly Data structured comment user object." } },
 
 /* SEQ_DESCR */
 

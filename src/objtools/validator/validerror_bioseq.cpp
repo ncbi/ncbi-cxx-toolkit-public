@@ -6710,6 +6710,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
     bool is_organelle = false;
 
     bool is_genome_assembly = false;
+    bool is_assembly = false;
     bool is_finished_status = false;
 
     // some validation is for descriptors that affect a bioseq, 
@@ -6962,6 +6963,8 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                                     const string& prefix = (*field)->GetData().GetStr();
                                     if (NStr::EqualCase(prefix, "##Genome-Assembly-Data-START##")) {
                                         is_genome_assembly = true;
+                                    } else if (NStr::EqualCase(prefix, "##Assembly-Data-START##")) {
+                                        is_assembly = true;
                                     }
                                 } else if (NStr::EqualNocase((*field)->GetLabel().GetStr(), "Current Finishing Status")) {
                                     const string& prefix = (*field)->GetData().GetStr();
@@ -7127,6 +7130,7 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
     }
 
     bool wgs_master = false;
+    bool tsa_master = false;
     EDiagSev sev =  eDiag_Error;
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
     if ( bsh ) {
@@ -7154,6 +7158,12 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                                 wgs_master = true;
                             }
                         }
+                        if ( div == NCBI_ACCN(tsa) )
+                        {
+                            if( (type & CSeq_id::fAcc_master) != 0 ) {
+                                tsa_master = true;
+                            }
+                        }
                     }
                     break;
                 }
@@ -7164,6 +7174,9 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
     }
     if (wgs_master && ! is_genome_assembly) {
        PostErr (sev, eErr_SEQ_INST_WGSMasterLacksStrucComm, "WGS master without Genome Assembly Data user object", seq);
+    }
+    if (tsa_master && ! is_assembly) {
+       PostErr (sev, eErr_SEQ_INST_TSAMasterLacksStrucComm, "TSA master without Assembly Data user object", seq);
     }
 
     if ( num_gb > 1 ) {
