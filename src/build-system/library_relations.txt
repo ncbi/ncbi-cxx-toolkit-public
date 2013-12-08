@@ -2077,6 +2077,7 @@ gpipe_xml needs seq
 gpipe_xml needs seqcode
 gpipe_xml needs sequtil
 gpipe_xml needs taxon1
+gpipe_xml needs taxon3
 gpipe_xml needs tds_ftds64
 gpipe_xml needs xcgi
 gpipe_xml needs xconnect
