@@ -242,6 +242,8 @@ enum EErrType {
     eErr_SEQ_DESCR_RefGeneTrackingOnNucProtSet,
     eErr_SEQ_DESCR_InconsistentDates,
     eErr_SEQ_DESCR_MultipleTaxonIDs,
+    eErr_SEQ_DESCR_ScaffoldLacksBioProject,
+    eErr_SEQ_DESCR_CompleteGenomeLacksBioProject,
     ERR_CODE_END(SEQ_DESCR),
 
 

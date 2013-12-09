@@ -643,6 +643,12 @@ other. Please make them consistent." } },
    { eErr_SEQ_DESCR_MultipleTaxonIDs,
    { "MultipleTaxonIDs",
 "There are multiple BioSources with multiple taxonIDs in this RefSeq record." } },
+   { eErr_SEQ_DESCR_ScaffoldLacksBioProject,
+   { "ScaffoldLacksBioProject",
+"There is no BioProject database link for this scaffold record." } },
+   { eErr_SEQ_DESCR_CompleteGenomeLacksBioProject,
+   { "CompleteGenomeLacksBioProject",
+"There is no BioProject database link for this complete genome record." } },
 
 /* SEQ_GENERIC */
 

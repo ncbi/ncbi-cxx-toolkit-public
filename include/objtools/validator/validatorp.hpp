@@ -1379,6 +1379,7 @@ private:
     bool x_IsActiveFin(const CBioseq& seq) const;
     bool x_IsMicroRNA(const CBioseq& seq) const;
     bool x_IsDeltaLitOnly(const CSeq_inst& inst) const;
+    bool x_ShowBioProjectWarning(const CBioseq& seq);
 
     void ValidatemRNAGene (const CBioseq& seq);
 

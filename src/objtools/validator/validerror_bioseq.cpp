@@ -884,6 +884,89 @@ void CValidError_bioseq::ValidateInst(const CBioseq& seq)
 }
 
 
+bool CValidError_bioseq::x_ShowBioProjectWarning(const CBioseq& seq)
+
+{
+    bool is_wgs = false;
+
+    FOR_EACH_DESCRIPTOR_ON_BIOSEQ (it, seq) {
+        const CSeqdesc& desc = **it;
+        switch ( desc.Which() ) {
+            case CSeqdesc::e_User:
+                if (desc.GetUser().IsSetType()) {
+                    const CUser_object& usr = desc.GetUser();
+                    const CObject_id& oi = usr.GetType();
+                    if (oi.IsStr() && NStr::CompareNocase(oi.GetStr(), "DBLink") == 0) {
+                        FOR_EACH_USERFIELD_ON_USEROBJECT (ufd_it, usr) {
+                            const CUser_field& fld = **ufd_it;
+                            if (FIELD_IS_SET_AND_IS(fld, Label, Str)) {
+                                const string &label_str = GET_FIELD(fld.GetLabel(), Str);
+                                if (NStr::EqualNocase(label_str, "BioProject")) {
+                                    return false;
+                                }
+                            }
+                        }
+                    }
+                }
+                break;
+            case CSeqdesc::e_Molinfo:
+                if (desc.GetMolinfo().IsSetTech()) {
+                    if (desc.GetMolinfo().GetTech() == CMolInfo::eTech_wgs) {
+                        is_wgs = true;
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    bool is_gb = false, is_refseq = false, is_ng = false;
+
+    FOR_EACH_SEQID_ON_BIOSEQ (sid_itr, seq) {
+        const CSeq_id& sid = **sid_itr;
+        switch (sid.Which()) {
+            case CSeq_id::e_Genbank:
+            case CSeq_id::e_Embl:
+            case CSeq_id::e_Ddbj:
+                is_gb = true;
+                break;
+            case CSeq_id::e_Other:
+                {
+                    is_refseq = true;
+                    if (sid.GetOther().IsSetAccession()) {
+                        string acc = sid.GetOther().GetAccession().substr(0, 3);
+                        if (acc == "NG_") {
+                            is_ng = true;
+                        }
+                    }
+                }
+                break;
+            default:
+                break;
+        }
+    }
+
+    if (is_refseq) {
+        if (is_ng) return false;
+    } else if (is_gb) {
+        if (! is_wgs) return false;
+    } else {
+        return false;
+    }
+
+    const CSeq_inst & inst = seq.GetInst();
+    CSeq_inst::TRepr repr = inst.GetRepr();
+
+    if ( repr == CSeq_inst::eRepr_delta ) {
+        if (x_IsDeltaLitOnly(inst)) return false;
+    } else {
+        return false;
+    }
+
+    return true;
+}
+
 void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
 {
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
@@ -983,6 +1066,11 @@ void CValidError_bioseq::ValidateBioseqContext(const CBioseq& seq)
         if ( !m_Imp.IsNoBioSource() ) {
             CheckSoureDescriptor(bsh);
             //CheckForBiosourceOnBioseq(seq);
+        }
+
+        if (x_ShowBioProjectWarning (seq)) {
+            PostErr(eDiag_Warning, eErr_SEQ_DESCR_ScaffoldLacksBioProject,
+                "BioProject entries not present on CON record", seq);
         }
 
     } catch ( const exception& e ) {
