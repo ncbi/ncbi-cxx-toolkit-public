@@ -159,8 +159,8 @@ private:
     size_t m_Level;
 
     CNcbiOstream* m_ReportStream;
-    CNcbiOstream* m_LogStream;
     CNcbiOfstream* m_AsnOut;
+    CNcbiOstream* m_LogStream;
 
     enum E_Mode {
         e_report_diffs = 1,     // Default - report diffs between biosources on records with biosample accessions
@@ -737,7 +737,7 @@ void CBiosampleChkApp::PrintTable(CRef<CSeq_table> table)
 		*m_ReportStream << (*it)->GetHeader().GetTitle() << "\t";
 	}
 	*m_ReportStream << endl;
-	for (size_t row = 0; row < table->GetNum_rows(); row++) {
+	for (size_t row = 0; row < (size_t)table->GetNum_rows(); row++) {
 		ITERATE(CSeq_table::TColumns, it, table->GetColumns()) {
 			if (row < (*it)->GetData().GetString().size()) {
 				*m_ReportStream << (*it)->GetData().GetString()[row] << "\t";

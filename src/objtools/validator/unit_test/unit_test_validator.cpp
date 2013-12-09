@@ -17710,7 +17710,10 @@ BOOST_AUTO_TEST_CASE(Test_CheckEnds)
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     entry->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("NNNNNNNNNNAAATTGGCCAAAATTGGCCAAAATTGGCCAAAATTGGCCCAANNNNNNNNNN");
     entry->SetSeq().SetInst().SetLength(62);
-    STANDARD_SETUP
+    CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+    CScope scope(*objmgr);
+    scope.AddDefaults();
+    CSeq_entry_Handle seh = scope.AddTopLevelSeqEntry(*entry);
 
     
     EBioseqEndIsType begin_n = eBioseqEndIsType_None;

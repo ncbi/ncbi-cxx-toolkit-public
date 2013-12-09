@@ -6485,13 +6485,13 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
 
     
     CBioseq_Handle prot_handle;
-    const CSeq_id* protid = x_GetCDSProduct(feat, 
-                                            report_errors,
-                                            transl_prot.length(),
-                                            prot_handle,
-                                            farstr,
-                                            has_errors,
-                                            other_than_mismatch);
+    x_GetCDSProduct(feat, 
+                    report_errors,
+                    transl_prot.length(),
+                    prot_handle,
+                    farstr,
+                    has_errors,
+                    other_than_mismatch);
 
     size_t num_mismatches = 0;
     size_t len = 0;
