@@ -888,6 +888,7 @@ bool CValidError_bioseq::x_ShowBioProjectWarning(const CBioseq& seq)
 
 {
     bool is_wgs = false;
+    bool is_grc = false;
 
     FOR_EACH_DESCRIPTOR_ON_BIOSEQ (it, seq) {
         const CSeqdesc& desc = **it;
@@ -913,6 +914,14 @@ bool CValidError_bioseq::x_ShowBioProjectWarning(const CBioseq& seq)
                 if (desc.GetMolinfo().IsSetTech()) {
                     if (desc.GetMolinfo().GetTech() == CMolInfo::eTech_wgs) {
                         is_wgs = true;
+                    }
+                }
+                break;
+            case CSeqdesc::e_Title:
+                {
+                    string title = desc.GetTitle();
+                    if (NStr::StartsWith(title, "GRC")) {
+                        is_grc = true;
                     }
                 }
                 break;
@@ -950,7 +959,7 @@ bool CValidError_bioseq::x_ShowBioProjectWarning(const CBioseq& seq)
     if (is_refseq) {
         if (is_ng) return false;
     } else if (is_gb) {
-        if (! is_wgs) return false;
+        if (! is_wgs && ! is_grc) return false;
     } else {
         return false;
     }
