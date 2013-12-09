@@ -74,7 +74,7 @@ else
 endif
 
 JUST_TOUCH = 0
-ifneq "$(patsubst %,$(LDD_R),wildcard $(XDLL))" ""
+ifneq "$(patsubst %,$(LDD_R),$(wildcard $(XDLL)))" ""
   DLL_DEP = $(wildcard $(XDLL_LIBS:%=$(libdir)/@lib_pre@%@dll_ext@))
   ifneq "$(DLL_DEP)" ""
     ifeq "" "$(findstring q,$(MAKEFLAGS))"
