@@ -11,7 +11,7 @@ SRC = seq_entry_edit promote autodef_available_modifier autodef \
 
 LIB    = xobjedit
 
-ASN_DEP = seqset comment_set field_rule 
+ASN_DEP = seqset
 
 WATCHERS = bollin kornbluh
 
