@@ -71,7 +71,7 @@ rebuild-libs:
 	$(foreach l,$(XLIBDEP),$(call rebuild_lib,$(l)))
 
 JUST_RUN_LDD = 0
-ifneq "$(LDD_R)" ""
+ifneq "$(patsubst %,$(LDD_R),wildcard $(XDLL))" ""
   DLL_DEP = $(wildcard $(XAPP_LIB:%=$(libdir)/@lib_pre@%@dll_ext@))
   ifneq "$(DLL_DEP)" ""
     ifeq "" "$(findstring q,$(MAKEFLAGS))"
