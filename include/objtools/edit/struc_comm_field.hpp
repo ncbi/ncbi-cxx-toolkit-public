@@ -1,0 +1,114 @@
+/*  $Id$
+ * ===========================================================================
+ *
+ *                            PUBLIC DOMAIN NOTICE
+ *               National Center for Biotechnology Information
+ *
+ *  This software/database is a "United States Government Work" under the
+ *  terms of the United States Copyright Act.  It was written as part of
+ *  the author's official duties as a United States Government employee and
+ *  thus cannot be copyrighted.  This software/database is freely available
+ *  to the public for use. The National Library of Medicine and the U.S.
+ *  Government have not placed any restriction on its use or reproduction.
+ *
+ *  Although all reasonable efforts have been taken to ensure the accuracy
+ *  and reliability of the software and data,  the NLM and the U.S.
+ *  Government do not and cannot warrant the performance or results that
+ *  may be obtained by using this software or data. The NLM and the U.S.
+ *  Government disclaim all warranties,  express or implied,  including
+ *  warranties of performance,  merchantability or fitness for any particular
+ *  purpose.
+ *
+ *  Please cite the author in any work or product based on this material.
+ *
+ * ===========================================================================
+ *
+ * Authors:  Colleen Bollin
+ */
+#ifndef _STRUC_COMM_FIELD_H_
+#define _STRUC_COMM_FIELD_H_
+
+#include <corelib/ncbistd.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/User_field.hpp>
+#include <objects/valid/Comment_set.hpp>
+
+#include <objmgr/scope.hpp>
+
+#include <objtools/edit/field_handler.hpp>
+#include <objtools/edit/string_constraint.hpp>
+
+BEGIN_NCBI_SCOPE
+BEGIN_SCOPE(objects)
+
+class CComment_set;
+class CComment_rule;
+class CField_rule;
+class CField_set;
+
+
+BEGIN_SCOPE(edit)
+
+
+class NCBI_XOBJEDIT_EXPORT CStructuredCommentField : public CFieldHandler
+{
+public:
+
+    CStructuredCommentField (const string& prefix, const string& field_name) : m_Prefix(prefix), m_FieldName(field_name) 
+            { NormalizePrefix(m_Prefix);
+              m_ConstraintFieldName = ""; 
+              m_StringConstraint = NULL; };
+
+    virtual vector<CConstRef<CObject> > GetObjects(CBioseq_Handle bsh);
+    virtual vector<CConstRef<CObject> > GetObjects(CSeq_entry_Handle seh, const string& constraint_field, CRef<CStringConstraint> string_constraint);
+    virtual vector<CRef<CApplyObject> > GetApplyObjects(CBioseq_Handle bsh);
+    virtual vector<CConstRef<CObject> > GetRelatedObjects(const CObject& object, CRef<CScope> scope);
+    virtual vector<CConstRef<CObject> > GetRelatedObjects(const CApplyObject& object);
+
+    virtual bool IsEmpty(const CObject& object) const;
+
+    virtual string GetVal(const CObject& object);
+    virtual vector<string> GetVals(const CObject& object);
+
+    virtual void ClearVal(CObject& object);
+
+    virtual CSeqFeatData::ESubtype GetFeatureSubtype() { return CSeqFeatData::eSubtype_bad; };
+    virtual CSeqdesc::E_Choice GetDescriptorSubtype() { return CSeqdesc::e_User; };
+    virtual void SetConstraint(const string& field_name, CConstRef<CStringConstraint> string_constraint);
+    virtual bool AllowMultipleValues() { return false; }
+    virtual bool SetVal(CObject& object, const string & newValue, EExistingText existing_text = eExistingText_replace_old);
+    bool SetVal(CUser_field& field, const string & newValue, EExistingText existing_text);
+    virtual string GetLabel() const { return m_Prefix + " " + m_FieldName; };
+    bool IsStructuredCommentForThisField (const CUser_object& user) const;
+    static bool IsStructuredComment (const CUser_object& user);
+    static string GetPrefix (const CUser_object& user);
+    static vector<string> GetFieldNames(const string& prefix);
+    static CRef<CUser_object> MakeUserObject(const string& prefix);
+    static void NormalizePrefix(string& prefix);
+
+protected:
+    string m_Prefix;
+    string m_FieldName;
+    string m_ConstraintFieldName;
+    CRef<CStringConstraint> m_StringConstraint;
+
+};
+
+
+class NCBI_XOBJEDIT_EXPORT CGenomeAssemblyComment
+{
+public:
+    static CRef<CUser_object> MakeUserObject();
+    static void SetAssemblyMethod(CUser_object& obj, string val);
+    static void SetGenomeCoverage(CUser_object& obj, string val);
+    static void SetSequencingTechnology(CUser_object& obj, string val);
+};
+
+
+
+END_SCOPE(edit)
+END_SCOPE(objects)
+END_NCBI_SCOPE
+
+#endif
+    // _STRUC_COMM_FIELD_H_
