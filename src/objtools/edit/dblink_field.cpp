@@ -46,6 +46,7 @@ BEGIN_SCOPE(edit)
 
 const string kDBLink = "DBLink";
 
+
 bool CDBLinkField::SetVal(CObject& object, const string & newValue, EExistingText existing_text)
 {
     bool rval = false;
@@ -456,7 +457,13 @@ CRef<CUser_object> CDBLinkField::MakeUserObject()
 }
 
 
-CRef<CUser_object> CDBLink::MakeUserObject()
+CDBLink::CDBLink()
+{
+    m_User = MakeEmptyUserObject();
+}
+
+
+CRef<CUser_object> CDBLink::MakeEmptyUserObject()
 {
     CRef<CUser_object> obj = CDBLinkField::MakeUserObject();
     return obj;
@@ -502,6 +509,98 @@ void CDBLink::SetAssembly(CUser_object& obj, string val, EExistingText existing_
 {
     CDBLinkField field(CDBLinkField::eDBLinkFieldType_Assembly);
     field.SetVal(obj, val, existing_text);
+}
+
+
+CDBLink& CDBLink::SetBioSample(string val, EExistingText existing_text)
+{
+    SetBioSample(*m_User, val, existing_text);
+    return *this;
+}
+
+
+CDBLink& CDBLink::SetBioProject(string val, EExistingText existing_text)
+{
+    SetBioProject(*m_User, val, existing_text);
+    return *this;
+}
+
+
+CDBLink& CDBLink::SetTrace(string val, EExistingText existing_text)
+{
+    SetTrace(*m_User, val, existing_text);
+    return *this;
+}
+
+
+CDBLink& CDBLink::SetProbeDB(string val, EExistingText existing_text)
+{
+    SetProbeDB(*m_User, val, existing_text);
+    return *this;
+}
+
+
+CDBLink& CDBLink::SetSRA(string val, EExistingText existing_text)
+{
+    SetSRA(*m_User, val, existing_text);
+    return *this;
+}
+
+
+CDBLink& CDBLink::SetAssembly(string val, EExistingText existing_text)
+{
+    SetAssembly(*m_User, val, existing_text);
+    return *this;
+}
+
+
+vector<string> CDBLink::GetBioSample(CUser_object& obj)
+{
+    CDBLinkField field(CDBLinkField::eDBLinkFieldType_BioSample);
+    return field.GetVals(obj);
+}
+
+
+vector<string> CDBLink::GetBioProject(CUser_object& obj)
+{
+    CDBLinkField field(CDBLinkField::eDBLinkFieldType_BioProject);
+    return field.GetVals(obj);
+}
+
+
+vector<string> CDBLink::GetTrace(CUser_object& obj)
+{
+    CDBLinkField field(CDBLinkField::eDBLinkFieldType_Trace);
+    return field.GetVals(obj);
+}
+
+
+vector<string> CDBLink::GetProbeDB(CUser_object& obj)
+{
+    CDBLinkField field(CDBLinkField::eDBLinkFieldType_ProbeDB);
+    return field.GetVals(obj);
+}
+
+
+vector<string> CDBLink::GetSRA(CUser_object& obj)
+{
+    CDBLinkField field(CDBLinkField::eDBLinkFieldType_SRA);
+    return field.GetVals(obj);
+}
+
+
+vector<string> CDBLink::GetAssembly(CUser_object& obj)
+{
+    CDBLinkField field(CDBLinkField::eDBLinkFieldType_Assembly);
+    return field.GetVals(obj);
+}
+
+
+CRef<CUser_object> CDBLink::MakeUserObject()
+{
+    CRef<CUser_object> obj(new CUser_object());
+    obj->Assign(*m_User);
+    return obj;
 }
 
 

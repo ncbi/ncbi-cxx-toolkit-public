@@ -520,32 +520,187 @@ CRef<CUser_object> CStructuredCommentField::MakeUserObject(const string& prefix)
 
 
 const string kGenomeAssemblyData = "Genome-Assembly-Data";
-CRef<CUser_object> CGenomeAssemblyComment::MakeUserObject()
+const string kAssemblyMethod = "Assembly Method";
+const string kGenomeCoverage = "Genome Coverage";
+const string kSequencingTechnology = "Sequencing Technology";
+
+CGenomeAssemblyComment::CGenomeAssemblyComment()
+{
+    m_User = MakeEmptyUserObject();
+}
+
+
+
+CRef<CUser_object> CGenomeAssemblyComment::MakeEmptyUserObject()
 {
     CRef<CUser_object> obj = CStructuredCommentField::MakeUserObject(kGenomeAssemblyData);
     return obj;
 }
 
 
-void CGenomeAssemblyComment::SetAssemblyMethod(CUser_object& obj, string val)
+void CGenomeAssemblyComment::SetAssemblyMethod(CUser_object& obj, string val, EExistingText existing_text)
 {
-    CStructuredCommentField field(kGenomeAssemblyData, "Assembly Method");
-    field.SetVal(obj, val);
+    CStructuredCommentField field(kGenomeAssemblyData, kAssemblyMethod);
+    field.SetVal(obj, val, existing_text);
 }
 
 
-void CGenomeAssemblyComment::SetGenomeCoverage(CUser_object& obj, string val)
+void CGenomeAssemblyComment::x_GetAssemblyMethodProgramAndVersion(string val, string& program, string& version)
 {
-    CStructuredCommentField field(kGenomeAssemblyData, "Genome Coverage");
-    field.SetVal(obj, val);
+    program = val;
+    version = "";
+    size_t pos = NStr::Find(val, " v.");
+    if (pos != string::npos) {
+        program = val.substr(0, pos);
+        version = val.substr(pos + 3);
+        NStr::TruncateSpacesInPlace(program);
+        NStr::TruncateSpacesInPlace(version);
+    }
 }
 
 
-void CGenomeAssemblyComment::SetSequencingTechnology(CUser_object& obj, string val)
+string CGenomeAssemblyComment::x_GetAssemblyMethodFromProgramAndVersion(const string& program, const string& version)
 {
-    CStructuredCommentField field(kGenomeAssemblyData, "Sequencing Technology");
-    field.SetVal(obj, val);
+    string new_val = program;
+    if (!NStr::IsBlank(version)) {
+        if (!NStr::IsBlank(program)) {
+            new_val += " ";
+        }
+        new_val += "v. ";
+        new_val += version;
+    }
+    return new_val;
 }
+
+
+void CGenomeAssemblyComment::SetAssemblyMethodProgram(CUser_object& obj, string val, EExistingText existing_text)
+{
+    CStructuredCommentField field(kGenomeAssemblyData, kAssemblyMethod);
+    string previous = field.GetVal(obj);
+    string program = "";
+    string version = "";
+    x_GetAssemblyMethodProgramAndVersion(previous, program, version);
+    if (AddValueToString(program, val, existing_text)) {
+        string new_val = x_GetAssemblyMethodFromProgramAndVersion(program, version);
+        field.SetVal(obj, new_val, eExistingText_replace_old);
+    }
+}
+
+
+void CGenomeAssemblyComment::SetAssemblyMethodVersion(CUser_object& obj, string val, EExistingText existing_text)
+{
+    CStructuredCommentField field(kGenomeAssemblyData, kAssemblyMethod);
+    string previous = field.GetVal(obj);
+    string program = "";
+    string version = "";
+    x_GetAssemblyMethodProgramAndVersion(previous, program, version);
+    if (AddValueToString(version, val, existing_text)) {
+        string new_val = x_GetAssemblyMethodFromProgramAndVersion(program, version);
+        field.SetVal(obj, new_val, eExistingText_replace_old);
+    }
+}
+
+
+void CGenomeAssemblyComment::SetGenomeCoverage(CUser_object& obj, string val, EExistingText existing_text)
+{
+    CStructuredCommentField field(kGenomeAssemblyData, kGenomeCoverage);
+    field.SetVal(obj, val, existing_text);
+}
+
+
+void CGenomeAssemblyComment::SetSequencingTechnology(CUser_object& obj, string val, EExistingText existing_text)
+{
+    CStructuredCommentField field(kGenomeAssemblyData, kSequencingTechnology);
+    field.SetVal(obj, val, existing_text);
+}
+
+
+string CGenomeAssemblyComment::GetAssemblyMethod(CUser_object& obj)
+{
+    CStructuredCommentField field(kGenomeAssemblyData, kAssemblyMethod);
+    return field.GetVal(obj);
+}
+
+
+string CGenomeAssemblyComment::GetAssemblyMethodProgram(CUser_object& obj)
+{
+    CStructuredCommentField field(kGenomeAssemblyData, kAssemblyMethod);
+    string method = field.GetVal(obj);
+    string program = "";
+    string version = "";
+    x_GetAssemblyMethodProgramAndVersion(method, program, version);
+    return program;
+}
+
+
+string CGenomeAssemblyComment::GetAssemblyMethodVersion(CUser_object& obj)
+{
+    CStructuredCommentField field(kGenomeAssemblyData, kAssemblyMethod);
+    string method = field.GetVal(obj);
+    string program = "";
+    string version = "";
+    x_GetAssemblyMethodProgramAndVersion(method, program, version);
+    return version;
+}
+
+
+string CGenomeAssemblyComment::GetGenomeCoverage(CUser_object& obj)
+{
+    CStructuredCommentField field(kGenomeAssemblyData, kGenomeCoverage);
+    return field.GetVal(obj);
+}
+
+
+string CGenomeAssemblyComment::GetSequencingTechnology(CUser_object& obj)
+{
+    CStructuredCommentField field(kGenomeAssemblyData, kSequencingTechnology);
+    return field.GetVal(obj);
+}
+
+
+CGenomeAssemblyComment& CGenomeAssemblyComment::SetAssemblyMethod(string val, EExistingText existing_text)
+{
+    SetAssemblyMethod(*m_User, val, existing_text);
+    return *this;
+}
+
+
+CGenomeAssemblyComment& CGenomeAssemblyComment::SetAssemblyMethodProgram(string val, EExistingText existing_text)
+{
+    SetAssemblyMethodProgram(*m_User, val, existing_text);
+    return *this;
+}
+
+
+CGenomeAssemblyComment& CGenomeAssemblyComment::SetAssemblyMethodVersion(string val, EExistingText existing_text)
+{
+    SetAssemblyMethodVersion(*m_User, val, existing_text);
+    return *this;
+}
+
+
+CGenomeAssemblyComment& CGenomeAssemblyComment::SetGenomeCoverage(string val, EExistingText existing_text)
+{
+    SetGenomeCoverage(*m_User, val, existing_text);
+    return *this;
+}
+
+
+CGenomeAssemblyComment& CGenomeAssemblyComment::SetSequencingTechnology(string val, EExistingText existing_text)
+{
+    SetSequencingTechnology(*m_User, val, existing_text);
+    return *this;
+}
+
+
+CRef<CUser_object> CGenomeAssemblyComment::MakeUserObject()
+{
+    CRef<CUser_object> obj(new CUser_object());
+    obj->Assign(*m_User);
+    return obj;
+}
+
+
 
 
 END_SCOPE(edit)

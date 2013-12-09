@@ -173,7 +173,7 @@ BOOST_AUTO_TEST_CASE(Test_AddBiosample)
 
 BOOST_AUTO_TEST_CASE(Test_GenomeAssemblyData)
 {
-    CRef<CUser_object> user = edit::CGenomeAssemblyComment::MakeUserObject();
+    CRef<CUser_object> user = edit::CGenomeAssemblyComment::MakeEmptyUserObject();
     BOOST_CHECK_EQUAL(user->GetType().GetStr(), "StructuredComment");
     BOOST_CHECK_EQUAL(user->GetData().front()->GetLabel().GetStr(), "StructuredCommentPrefix");
     BOOST_CHECK_EQUAL(user->GetData().front()->GetData().GetStr(), "##Genome-Assembly-Data-START##");
@@ -183,30 +183,62 @@ BOOST_AUTO_TEST_CASE(Test_GenomeAssemblyData)
     edit::CGenomeAssemblyComment::SetAssemblyMethod(*user, "method");
     BOOST_CHECK_EQUAL(user->GetData().back()->GetLabel().GetStr(), "Assembly Method");
     BOOST_CHECK_EQUAL(user->GetData().back()->GetData().GetStr(), "method");
+    BOOST_CHECK_EQUAL(edit::CGenomeAssemblyComment::GetAssemblyMethod(*user), "method");
 
     edit::CGenomeAssemblyComment::SetGenomeCoverage(*user, "coverage");
     BOOST_CHECK_EQUAL(user->GetData().back()->GetLabel().GetStr(), "Genome Coverage");
     BOOST_CHECK_EQUAL(user->GetData().back()->GetData().GetStr(), "coverage");
+    BOOST_CHECK_EQUAL(edit::CGenomeAssemblyComment::GetGenomeCoverage(*user), "coverage");
 
     edit::CGenomeAssemblyComment::SetSequencingTechnology(*user, "tech");
     BOOST_CHECK_EQUAL(user->GetData().back()->GetLabel().GetStr(), "Sequencing Technology");
     BOOST_CHECK_EQUAL(user->GetData().back()->GetData().GetStr(), "tech");
+    BOOST_CHECK_EQUAL(edit::CGenomeAssemblyComment::GetSequencingTechnology(*user), "tech");
+
+
+    // alternate creation method
+    edit::CGenomeAssemblyComment gnm_asm_cmt;
+    CRef<CUser_object> other_user = gnm_asm_cmt.SetAssemblyMethodProgram("program")
+                    .SetAssemblyMethodVersion("version")
+                    .SetGenomeCoverage("cv")
+                    .SetSequencingTechnology("st")
+                    .MakeUserObject();
+    BOOST_CHECK_EQUAL(edit::CGenomeAssemblyComment::GetAssemblyMethodProgram(*other_user), "program");
+    BOOST_CHECK_EQUAL(edit::CGenomeAssemblyComment::GetAssemblyMethodVersion(*other_user), "version");
+    BOOST_CHECK_EQUAL(edit::CGenomeAssemblyComment::GetAssemblyMethod(*other_user), "program v. version");
+    BOOST_CHECK_EQUAL(edit::CGenomeAssemblyComment::GetGenomeCoverage(*other_user), "cv");
+    BOOST_CHECK_EQUAL(edit::CGenomeAssemblyComment::GetSequencingTechnology(*other_user), "st");
 
 }
 
 
 BOOST_AUTO_TEST_CASE(Test_DBLink)
 {
-    CRef<CUser_object> user = edit::CDBLink::MakeUserObject();
+    CRef<CUser_object> user = edit::CDBLink::MakeEmptyUserObject();
     BOOST_CHECK_EQUAL(user->GetType().GetStr(), "DBLink");
 
     edit::CDBLink::SetBioSample(*user, "biosample");
     BOOST_CHECK_EQUAL(user->GetData().back()->GetLabel().GetStr(), "BioSample");
     BOOST_CHECK_EQUAL(user->GetData().back()->GetData().GetStrs().front(), "biosample");
+    vector<string> bs_vals = edit::CDBLink::GetBioSample(*user);
+    BOOST_CHECK_EQUAL(bs_vals[0], "biosample");
 
     edit::CDBLink::SetBioProject(*user, "bioproject");
     BOOST_CHECK_EQUAL(user->GetData().back()->GetLabel().GetStr(), "BioProject");
     BOOST_CHECK_EQUAL(user->GetData().back()->GetData().GetStrs().front(), "bioproject");
+    vector<string> bp_vals = edit::CDBLink::GetBioProject(*user);
+    BOOST_CHECK_EQUAL(bp_vals[0], "bioproject");
+
+
+    // alternate creation method
+    edit::CDBLink dblink;
+    CRef<CUser_object> other_user = dblink.SetBioSample("a")
+                    .SetBioProject("b")
+                    .MakeUserObject();
+    bs_vals = edit::CDBLink::GetBioSample(*other_user);
+    BOOST_CHECK_EQUAL(bs_vals[0], "a");
+    bp_vals = edit::CDBLink::GetBioProject(*user);
+    BOOST_CHECK_EQUAL(bp_vals[0], "bioproject");
 
 
 }

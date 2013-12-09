@@ -98,10 +98,33 @@ protected:
 class NCBI_XOBJEDIT_EXPORT CGenomeAssemblyComment
 {
 public:
-    static CRef<CUser_object> MakeUserObject();
-    static void SetAssemblyMethod(CUser_object& obj, string val);
-    static void SetGenomeCoverage(CUser_object& obj, string val);
-    static void SetSequencingTechnology(CUser_object& obj, string val);
+    CGenomeAssemblyComment();
+    ~CGenomeAssemblyComment() {};
+    static CRef<CUser_object> MakeEmptyUserObject();
+    static void SetAssemblyMethod(CUser_object& obj, string val, EExistingText existing_text = eExistingText_replace_old);
+    static void SetAssemblyMethodProgram(CUser_object& obj, string val, EExistingText existing_text = eExistingText_replace_old);
+    static void SetAssemblyMethodVersion(CUser_object& obj, string val, EExistingText existing_text = eExistingText_replace_old);
+    static void SetGenomeCoverage(CUser_object& obj, string val, EExistingText existing_text = eExistingText_replace_old);
+    static void SetSequencingTechnology(CUser_object& obj, string val, EExistingText existing_text = eExistingText_replace_old);
+
+    static string GetAssemblyMethod(CUser_object& obj);
+    static string GetAssemblyMethodProgram(CUser_object& obj);
+    static string GetAssemblyMethodVersion(CUser_object& obj);
+    static string GetGenomeCoverage(CUser_object& obj);
+    static string GetSequencingTechnology(CUser_object& obj);
+
+    CGenomeAssemblyComment& SetAssemblyMethod(string val, EExistingText existing_text = eExistingText_replace_old);
+    CGenomeAssemblyComment& SetAssemblyMethodProgram(string val, EExistingText existing_text = eExistingText_replace_old);
+    CGenomeAssemblyComment& SetAssemblyMethodVersion(string val, EExistingText existing_text = eExistingText_replace_old);
+    CGenomeAssemblyComment& SetGenomeCoverage(string val, EExistingText existing_text = eExistingText_replace_old);
+    CGenomeAssemblyComment& SetSequencingTechnology(string val, EExistingText existing_text = eExistingText_replace_old);
+    CRef<CUser_object> MakeUserObject();
+
+protected:
+    CRef<CUser_object> m_User;
+
+    static void x_GetAssemblyMethodProgramAndVersion(string val, string& program, string& version);
+    static string x_GetAssemblyMethodFromProgramAndVersion(const string& program, const string& version);
 };
 
 
