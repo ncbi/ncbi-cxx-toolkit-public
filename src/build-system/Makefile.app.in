@@ -76,8 +76,8 @@ ifneq "$(LDD_R)" ""
   ifneq "$(DLL_DEP)" ""
     ifeq "" "$(findstring q,$(MAKEFLAGS))"
       ifneq (,$(filter-out $(ALT_GOALS),$(if $(MAKECMDGOALS),$(MAKECMDGOALS),all)))
-        LATEST := $(word 1,$(shell /bin/ls -t $(XAPP) $(XOBJ) $(XLIBDEP) 2>/dev/null))
-        ifeq "$(XAPP)" "$(LATEST)"
+        NEWER := $(shell /usr/bin/find $(XOBJ) $(XOBJ2) $(XLIBDEP) -newer $(XAPP) 2>/dev/null)
+        ifeq "$(NEWER)" ""
           JUST_RUN_LDD = 1
         endif
       endif
@@ -117,10 +117,10 @@ $(XAPP): $(DLL_DEP) $(XOBJ) $(XLIBDEP)
 	if [ $$relink_after_all = true ]; then \
 	    $(MAKE) -f $(MAKEFILE) $(MFLAGS) $(XAPP) LDD_R=; \
 	else \
-	    touch $(XAPP); \
+	    $(TOUCH) $(XAPP); \
 	fi
 else
-$(XAPP): $(XOBJ) $(XLIBDEP)
+$(XAPP): $(XOBJ) $(XOBJ2) $(XLIBDEP)
 	@-$(RM) .$(XAPP).stamp
 	$(LINK_WRAPPER) $(LINK) $(LDFLAGS) $(APP_LDFLAGS) $(XOBJ) $(XOBJ2) $(PRE_LIBS) $(XLIB) $(XAPP_LIBS) @f_outexe@$(XAPP) $(LINK_FILTER)
 	$(STRIP) $(XAPP)

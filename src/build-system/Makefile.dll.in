@@ -73,33 +73,64 @@ else
   make_dll_link = :
 endif
 
-$(XDLL): $(XDLLOBJ) $(XDLL_LIBDEP)
+JUST_TOUCH = 0
+ifneq "$(LDD_R)" ""
+  DLL_DEP = $(wildcard $(XDLL_LIBS:%=$(libdir)/@lib_pre@%@dll_ext@))
+  ifneq "$(DLL_DEP)" ""
+    ifeq "" "$(findstring q,$(MAKEFLAGS))"
+      ifneq (,$(filter-out $(ALT_GOALS),$(if $(MAKECMDGOALS),$(MAKECMDGOALS),all)))
+        NEWER := $(shell find $(XDLLOBJ) $(XOBJ) $(XDLL_LIBDEP) -newer $(XDLL) 2>/dev/null)
+        ifeq "$(NEWER)" ""
+          JUST_TOUCH = 1
+        endif
+      endif
+    else
+      $(XDLL): $(DLL_DEP)
+    endif
+  endif
+endif
+
+ifeq "$(JUST_TOUCH)" "1"
+ $(XDLL): $(DLL_DEP) $(XDLLOBJ) $(XOBJ) $(XDLL_LIBDEP)
+	@$(TOUCH) $(XDLL)
+	@has_dll_loadable@@$(TOUCH) $(XDLL_LOADABLE)
+ ifneq "$(BINCOPY)" "@:"
+  ifneq "$(srcdir)" "."
+   ifneq "$(filter-out /.,$(wildcard $(libdir)/.))" ""
+	@$(TOUCH) $(libdir)/$(XDLL)
+	@has_dll_loadable@@$(TOUCH) $(libdir)/$(XDLL_LOADABLE)
+   endif
+  endif
+ endif
+else
+ $(XDLL): $(XDLLOBJ) $(XOBJ) $(XDLL_LIBDEP)
 	-$(RM) $(XDLL) .$(XDLL).stamp
 	@has_dll_loadable@-$(RM) $(XDLL_LOADABLE)
 	$(LINK_WRAPPER) $(LINK_DLL) $(XDLL) $(LDFLAGS_DLL) $(DLL_LDFLAGS) $(XDLLOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
 	@has_dll_loadable@$(LINK_WRAPPER) $(LINK_LOADABLE) $(XDLL_LOADABLE) $(LDFLAGS_DLL) $(DLL_LDFLAGS) $(XDLLOBJ) $(XOBJ) $(XDLL_LIB) $(LIBS) $(LINK_FILTER)
-ifeq "$(wildcard $(XDLLDEP))" ""
+ ifeq "$(wildcard $(XDLLDEP))" ""
 	@echo $(srcdir) $(CURDIR) $(TMPL) > $(XDLLDEP)
 	@$(TOUCH) -r $(XDLL) $(XDLLDEP)
 	@$(RM) $(status_dir)/.$(LIB).disabled
-endif
-ifneq "$(BINCOPY)" "@:"
+ endif
+ ifneq "$(BINCOPY)" "@:"
   ifneq "$(srcdir)" "."
-    ifneq "$(filter-out /.,$(wildcard $(libdir)/.))" ""
+   ifneq "$(filter-out /.,$(wildcard $(libdir)/.))" ""
 	@if [ -w $(libdir) ]; then \
 	    echo $(BINCOPY) $(XDLL) $(libdir) && \
 	    $(BINCOPY) $(XDLL) $(libdir) && \
 	    $(call make_dll_link,$(XDLL),$(XDLL_LINK)) ; \
 	fi
-      ifneq "$(has_dll_loadable)" "@"
+    ifneq "$(has_dll_loadable)" "@"
 	@if [ -w $(libdir) ]; then \
 	    echo $(BINCOPY) $(XDLL_LOADABLE) $(libdir) && \
 	    $(BINCOPY) $(XDLL_LOADABLE) $(libdir) && \
 	    $(call make_dll_link,$(XDLL_LOADABLE),$(XDLL_LOADABLE_LINK)) ; \
 	fi
-      endif
     endif
+   endif
   endif
+ endif
 endif
 
 EXPORTED_DLLDEP = $(XDLL)
