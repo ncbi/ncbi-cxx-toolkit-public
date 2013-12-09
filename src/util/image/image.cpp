@@ -184,7 +184,7 @@ void CImage::SetDepth(size_t depth)
             }
         }
         break;
-        
+
     default:
         {{
             string msg("CImage::SetDepth(): invalid depth: ");
@@ -240,14 +240,14 @@ CImage* CImage::GetSubImage(size_t x, size_t y, size_t w, size_t h) const
         NCBI_THROW(CImageException, eInvalidImage, msg);
     }
 
-    if (x + w >= m_Width) {
-        LOG_POST_X(1, Warning << "CImage::GetSubImage(): clamping width to " << w);
+    if (x + w > m_Width) {
         w = m_Width - x;
+        LOG_POST_X(1, Warning << "CImage::GetSubImage(): clamping width to " << w);
     }
 
-    if (y + h >= m_Width) {
-        LOG_POST_X(2, Warning << "CImage::GetSubImage(): clamping width to " << w);
+    if (y + h > m_Height) {
         h = m_Height - y;
+        LOG_POST_X(2, Warning << "CImage::GetSubImage(): clamping height to " << h);
     }
 
     CRef<CImage> image(new CImage(w, h, m_Depth));
