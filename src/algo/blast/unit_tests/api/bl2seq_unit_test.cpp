@@ -1332,6 +1332,49 @@ BOOST_AUTO_TEST_CASE(ProteinBlastMultipleQueriesWithInvalidSeqId) {
     BOOST_REQUIRE(!res->GetResults(1,1).HasAlignments());
 }
 
+// JIRA:SB-1242
+BOOST_AUTO_TEST_CASE(ProteinBlastMultipleQueriesWithBadQuery) {
+    vector<TIntId> q_gis, s_gis;
+
+    // Setup the queries
+    q_gis.push_back(296863684);    // All X's
+    q_gis.push_back(129295);        
+
+    // setup the subjects
+    s_gis.push_back(129296);
+
+    TSeqLocVector queries;
+    ITERATE(vector<TIntId>, itr, q_gis) {
+        CRef<CSeq_loc> loc(new CSeq_loc());
+        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+
+        CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
+        scope->AddDefaults();
+        queries.push_back(SSeqLoc(loc, scope));
+    }
+
+    TSeqLocVector subjects;
+    ITERATE(vector<TIntId>, itr, s_gis) {
+        CRef<CSeq_loc> loc(new CSeq_loc());
+        loc->SetWhole().SetGi(GI_FROM(TIntId, *itr));
+
+        CScope* scope = new CScope(CTestObjMgr::Instance().GetObjMgr());
+        scope->AddDefaults();
+        subjects.push_back(SSeqLoc(loc, scope));
+    }
+
+    // BLAST by concatenating all queries
+    CBl2Seq blaster4all(queries, subjects, eBlastp);
+    TSeqAlignVector sas_v = blaster4all.Run(); 
+
+    TSearchMessages m;
+    blaster4all.GetMessages(m);
+    BOOST_REQUIRE_EQUAL(subjects.size()*queries.size(), sas_v.size());
+
+    BOOST_REQUIRE(!m[0].empty());
+    BOOST_REQUIRE(m[1].empty());
+}
+
 BOOST_AUTO_TEST_CASE(NucleotideBlastMultipleQueriesWithInvalidSeqId) {
     CRef<CSeq_id> id1(new CSeq_id(CSeq_id::e_Gi, 555));
     auto_ptr<SSeqLoc> sl1(CTestObjMgr::Instance().CreateSSeqLoc(*id1));

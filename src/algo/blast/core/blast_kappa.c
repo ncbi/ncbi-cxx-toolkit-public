@@ -2397,11 +2397,18 @@ s_GetAlignParams(BlastKappa_GappingParamsContext * context,
     double near_identical_cutoff_bits = NEAR_IDENTICAL_BITS_PER_POSITION;
 
     /* score block is already scaled by context->localScalingFactor */
-    double near_identical_cutoff;
-    ASSERT(context->sbp->kbp_gap[queryInfo->first_context]);
-    near_identical_cutoff =
-        (near_identical_cutoff_bits * NCBIMATH_LN2)
-        / context->sbp->kbp_gap[queryInfo->first_context]->Lambda;
+    double near_identical_cutoff=0;
+    Int4 index;
+    for (index = queryInfo->first_context;
+                     index <= queryInfo->last_context; ++index) {
+
+        if ((queryInfo->contexts[index].is_valid)) {
+    		near_identical_cutoff =
+       		 (near_identical_cutoff_bits * NCBIMATH_LN2)
+        		/ context->sbp->kbp_gap[index]->Lambda;
+		break;
+	}
+    }
     
     if (do_link_hsps) {
         ASSERT(hitParams->link_hsp_params != NULL);
