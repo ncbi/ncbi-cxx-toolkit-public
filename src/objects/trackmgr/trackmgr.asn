@@ -67,7 +67,8 @@ TMgr-DisplayTrackRequest ::= SEQUENCE {
     identity TMgr-Identity OPTIONAL,
     authorization TMgr-TrackACL-Authorization OPTIONAL,
     flags SEQUENCE {
-        include-stats BOOLEAN DEFAULT FALSE
+        include-stats BOOLEAN DEFAULT FALSE,
+        include-default-tracks BOOLEAN DEFAULT TRUE
     } OPTIONAL
 }
 
