@@ -13,7 +13,7 @@ CPPFLAGS = -DNCBI_MODULE=BLASTDB $(ORIG_CPPFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
-WATCHERS = maning camacho fongah2 rackerst
+WATCHERS = camacho fongah2 rackerst
 
 
 USES_LIBRARIES =  \

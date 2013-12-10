@@ -11,4 +11,4 @@ LDFLAGS   = $(FAST_LDFLAGS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-WATCHERS = maning madden camacho
+WATCHERS = madden camacho

@@ -1,4 +1,4 @@
-WATCHERS = maning 
+WATCHERS = camacho 
 
 APP = blastdbcmd
 SRC = blastdbcmd

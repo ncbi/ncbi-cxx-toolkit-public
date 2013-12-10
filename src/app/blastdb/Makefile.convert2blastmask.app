@@ -1,4 +1,4 @@
-WATCHERS = camacho maning 
+WATCHERS = camacho 
 
 REQUIRES = objects
 

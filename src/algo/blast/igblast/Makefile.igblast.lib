@@ -14,7 +14,7 @@ CFLAGS   = $(FAST_CFLAGS)
 CXXFLAGS = $(FAST_CXXFLAGS)
 LDFLAGS  = $(FAST_LDFLAGS)
 
-WATCHERS = madden camacho maning
+WATCHERS = madden camacho
 
 
 USES_LIBRARIES =  \

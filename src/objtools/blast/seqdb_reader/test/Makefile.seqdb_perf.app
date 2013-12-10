@@ -11,7 +11,7 @@ LDFLAGS   = $(FAST_LDFLAGS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
-WATCHERS = maning madden camacho
+WATCHERS = madden camacho
 
 CHECK_REQUIRES = in-house-resources
 CHECK_CMD = seqdb_perf -db pataa -dbtype prot -scan_uncompressed -num_threads 4 /CHECK_NAME = scan_blastdb_mt

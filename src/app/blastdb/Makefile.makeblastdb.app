@@ -1,4 +1,4 @@
-WATCHERS = camacho maning 
+WATCHERS = camacho 
 
 APP = makeblastdb
 SRC = makeblastdb masked_range_set

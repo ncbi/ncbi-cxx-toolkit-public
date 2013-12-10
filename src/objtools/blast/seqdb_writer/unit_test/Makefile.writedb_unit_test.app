@@ -16,4 +16,4 @@ CHECK_REQUIRES = in-house-resources
 CHECK_CMD = writedb_unit_test
 CHECK_COPY = writedb_unit_test.ini data
 
-WATCHERS = maning madden camacho
+WATCHERS = madden camacho

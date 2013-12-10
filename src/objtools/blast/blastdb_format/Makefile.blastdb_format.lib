@@ -1,6 +1,6 @@
 # $Id$
 
-WATCHERS = maning camacho
+WATCHERS = camacho
 
 ASN_DEP = blastdb seqset
 

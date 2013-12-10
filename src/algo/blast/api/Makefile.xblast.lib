@@ -93,7 +93,7 @@ LDFLAGS  = $(FAST_LDFLAGS)
 .core_%.c: # $(srcdir)/../core/%.c
 	echo '#include "$(srcdir)/../core/$*.c"' > $@
 
-WATCHERS = maning morgulis boratyng madden camacho fongah2
+WATCHERS = morgulis boratyng madden camacho fongah2
 
 USES_LIBRARIES =  \
     biblio blastdb composition_adjustment connect creaders general \

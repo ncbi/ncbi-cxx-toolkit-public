@@ -1,4 +1,4 @@
-WATCHERS = camacho maning 
+WATCHERS = camacho 
 
 APP = blastdb_aliastool
 SRC = blastdb_aliastool

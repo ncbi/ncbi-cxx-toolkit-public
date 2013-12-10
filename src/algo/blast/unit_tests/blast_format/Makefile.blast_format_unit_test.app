@@ -21,4 +21,4 @@ REQUIRES = Boost.Test.Included
 
 CHECK_TIMEOUT = 300
 
-WATCHERS = jianye zaretska maning madden camacho
+WATCHERS = jianye zaretska madden camacho
