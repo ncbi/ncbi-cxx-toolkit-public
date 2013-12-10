@@ -331,6 +331,51 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& test) THROWS((CExc
 }
 
 
+bool CSubSource::IsCollectionDateAfterTime(const string& collection_date, time_t t, bool& bad_format)
+{
+    bad_format = false;
+    bool in_future = false;
+    vector<string> pieces;
+    NStr::Tokenize(collection_date, "/", pieces);
+    if (pieces.size() > 2) {
+        bad_format = true;
+    } else {
+        ITERATE(vector<string>, it, pieces) {
+            CRef<CDate> coll_date = DateFromCollectionDate (*it);
+            if (!coll_date) {
+                bad_format = true;
+            } else if (IsCollectionDateAfterTime(*coll_date, t)) {
+                in_future = true;
+            }
+        }
+    }
+    return in_future;
+}
+
+
+bool CSubSource::IsCollectionDateAfterTime(const CDate& collection_date, time_t t)
+{
+    struct tm *tm;
+    tm = localtime(&t);
+
+    bool in_future = false;
+    if (collection_date.GetStd().GetYear() > tm->tm_year + 1900) {
+        in_future = true;
+    } else if (collection_date.GetStd().GetYear() == tm->tm_year + 1900
+                && collection_date.GetStd().IsSetMonth()) {
+        if (collection_date.GetStd().GetMonth() > tm->tm_mon + 1) {
+            in_future = true;
+        } else if (collection_date.GetStd().GetMonth() == tm->tm_mon + 1
+                    && collection_date.GetStd().IsSetDay()) {
+            if (collection_date.GetStd().GetDay() > tm->tm_mday) {
+                in_future = true;
+            }
+        }
+    }
+    return in_future;
+}
+
+
 void CSubSource::IsCorrectDateFormat(const string& date_string, bool& bad_format, bool& in_future)
 {
     bad_format = false;
@@ -371,25 +416,11 @@ void CSubSource::IsCorrectDateFormat(const string& date_string, bool& bad_format
         }
 
         if (!bad_format) {         
-            struct tm *tm;
             time_t t;
 
             time(&t);
-            tm = localtime(&t);
 
-            if (coll_date->GetStd().GetYear() > tm->tm_year + 1900) {
-                in_future = true;
-            } else if (coll_date->GetStd().GetYear() == tm->tm_year + 1900
-                       && coll_date->GetStd().IsSetMonth()) {
-                if (coll_date->GetStd().GetMonth() > tm->tm_mon + 1) {
-                    in_future = true;
-                } else if (coll_date->GetStd().GetMonth() == tm->tm_mon + 1
-                           && coll_date->GetStd().IsSetDay()) {
-                    if (coll_date->GetStd().GetDay() > tm->tm_mday) {
-                        in_future = true;
-                    }
-                }
-            }
+            in_future = IsCollectionDateAfterTime(*coll_date, t);
         }
     } catch (CException ) {
         bad_format = true;

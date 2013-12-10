@@ -95,6 +95,8 @@ public:
 
     static void IsCorrectDateFormat(const string& date_string, bool& bad_format, bool& in_future);
     static string GetCollectionDateProblem (const string& date_string);
+    static bool IsCollectionDateAfterTime(const string& collection_date, time_t t, bool& bad_format);
+    static bool IsCollectionDateAfterTime(const CDate& collection_date, time_t t);
 
     static bool IsISOFormatDate (const string& orig_date);
     static CRef<CDate> GetDateFromISODate(const string& orig_date);
