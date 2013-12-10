@@ -17702,6 +17702,7 @@ BOOST_AUTO_TEST_CASE(Test_NewFixCountry)
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Wolfskill Orchand, Winters, California"), "");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Yun Shui"), "");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("USSR: Kazakhstan, Kurtu"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("USA:"), "USA");
 }
 
 

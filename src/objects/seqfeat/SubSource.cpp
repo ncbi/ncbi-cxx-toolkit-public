@@ -1593,6 +1593,9 @@ bool CCountries::IsValid(const string& country)
     size_t pos = country.find(':');
 
     if ( pos != string::npos ) {
+        if (pos == country.length() - 1) {
+            return false;
+        }
         name = country.substr(0, pos);
     }
 
@@ -1614,6 +1617,9 @@ bool CCountries::IsValid(const string& country, bool& is_miscapitalized)
 
     if ( pos != string::npos ) {
         name = country.substr(0, pos);
+        if (pos == country.length() - 1) {
+            return false;
+        }
     }
 
     is_miscapitalized = false;
@@ -2242,7 +2248,10 @@ string CCountries::NewFixCountry (const string& test)
     }
     NStr::TruncateSpacesInPlace(input);
 
-
+    if (NStr::EndsWith(input, ":")) {
+        input = input.substr(0, input.length() - 1);
+        NStr::TruncateSpacesInPlace(input);
+    }
 
     if (IsValid(input)) {
         return input;
