@@ -376,6 +376,13 @@ bool CSubSource::IsCollectionDateAfterTime(const CDate& collection_date, time_t 
 }
 
 
+bool CSubSource::IsCollectionDateAfterTime(const CDate& collection_date, CTime& ctime)
+{
+    time_t t = ctime.GetTimeT();
+    return IsCollectionDateAfterTime(collection_date, t);
+}
+
+
 void CSubSource::IsCorrectDateFormat(const string& date_string, bool& bad_format, bool& in_future)
 {
     bad_format = false;
