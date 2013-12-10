@@ -44,6 +44,8 @@
 
 #include <objects/seqset/gb_release_file.hpp>
 
+#include <sra/data_loaders/wgs/wgsloader.hpp>
+
 #include <util/compress/zlib.hpp>
 #include <util/compress/stream.hpp>
 #include <objmgr/util/sequence.hpp>
@@ -235,6 +237,7 @@ int CAsn2FastaApp::Run(void)
                    "Could not create object manager");
     }
     CGBDataLoader::RegisterInObjectManager(*m_Objmgr);
+    CWGSDataLoader::RegisterInObjectManager(*m_Objmgr, CObjectManager::eDefault);
     m_Scope.Reset(new CScope(*m_Objmgr));
     m_Scope->AddDefaults();
 

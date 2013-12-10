@@ -65,6 +65,8 @@
 #include <objtools/validator/validator.hpp>
 #include <objtools/writers/agp_write.hpp>
 
+#include <sra/data_loaders/wgs/wgsloader.hpp>
+
 #include <algo/align/prosplign/prosplign.hpp>
 
 USING_NCBI_SCOPE;
@@ -186,6 +188,9 @@ void CStreamTestApp::Init()
 
     arg_desc->AddFlag("gbload",
         "Use GenBank data loader");
+
+    arg_desc->AddFlag("wgsload",
+        "Use WGS data loader");
 
     arg_desc->AddFlag( "rf", 
         "Generate final report" );

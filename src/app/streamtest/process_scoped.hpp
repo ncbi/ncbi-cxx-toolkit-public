@@ -63,6 +63,9 @@ public:
             if ( args["gbload"] ) {
                 CGBDataLoader::RegisterInObjectManager(*m_objmgr);
             }
+            if ( args["wgsload"] ) {
+                CWGSDataLoader::RegisterInObjectManager(*m_objmgr, CObjectManager::eDefault);
+            }
         }
     };
 
