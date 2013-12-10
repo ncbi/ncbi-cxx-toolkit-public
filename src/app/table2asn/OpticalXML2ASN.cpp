@@ -32,10 +32,6 @@
 
 #include <ncbi_pch.hpp>
 
-
-
-#include <misc/xmlwrapp/xmlwrapp.hpp>
-
 #include <objects/seq/Bioseq.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
@@ -64,9 +60,9 @@
 
 #include <objtools/readers/message_listener.hpp>
 
-#include <common/test_assert.h>  /* This header must go last */
+#include <misc/xmlwrapp/xmlwrapp.hpp>
 
-using namespace xml;
+#include <common/test_assert.h>  /* This header must go last */
 
 BEGIN_NCBI_SCOPE
 
@@ -209,83 +205,6 @@ int COpticalxml2asnOperatorImpl::Run(void)
 }
 
 #endif
-
-int COpticalxml2asnOperatorImpl::GetOpticalXMLData(const string& FileIn)
-{
-    error_messages msg;
-    document *doc;
-
-    try {
-        CNcbiIfstream in(FileIn.c_str());
-        doc = new document(in, &msg);
-    }
-    catch(...) {
-        m_logger->PutError(*CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error, "", 0, 
-            "No data found in " + FileIn + ": " + msg.print()));
-        return -1;
-    }
-
-    node& root = doc->get_root_node();
-    node::const_iterator child(root.begin()), child_end(root.end());
-    for (; child != child_end; ++child) {
-        if (strcmp(child->get_name(), "RESTRICTION_MAP") == 0) {
-            // Get chromosome name
-            string name;
-            const attributes& at = child->get_attributes();
-            attributes::const_iterator ait = at.find("ID");
-
-            string id = ait->get_value();
-            SIZE_TYPE l = NStr::FindNoCase(id, "chromosome");
-            if (l != NPOS) {
-                vector<string> tok;
-                NStr::TokenizePattern(id.substr(l), " ", tok, NStr::eMergeDelims);
-                if (tok.size() > 1) {
-                    name = tok[1];
-                    if ((l = NStr::Find(name, ",")) != NPOS)
-                        name = name.substr(0,l);
-                }
-            }
-            if (name.empty()) {
-                m_logger->PutError(
-                    *CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0, 
-                    "No chromosome name found in RESTRICTION_MAP - ID '" + id + "' was used"));
-                name = id;
-            }
-
-            bool is_linear(true);
-            node::const_iterator it = child->begin();
-            for (; it != child->end() && NStr::Compare(it->get_name(),"MAP_DISPLAY"); ++it);
-            if (it != child->end()) {
-                const attributes& at = it->get_attributes();
-                attributes::const_iterator ait = at.find("CIRCULAR");
-                if (strcmp(ait->get_value(), "true") == 0)
-                    is_linear = false;
-            }
-            COpticalChrData chr(name, at.find("ENZYME")->get_value(), is_linear);
-
-            // Get fragments
-            it = child->begin();
-            while (it != child->end() && NStr::Compare(it->get_name(),"FRAGMENTS"))
-                ++it;
-            if (it != child->end()) {
-                for (node::const_iterator fit = it->begin(); fit != it->end(); ++fit) {
-                    if (NStr::Compare(fit->get_name(), "F") == 0) {
-                        const attributes& at = fit->get_attributes();
-                        attributes::const_iterator ait = at.find("I");
-                        int n = atoi(ait->get_value());
-                        ait = at.find("S");
-                        int lng = atoi(ait->get_value());
-                        chr.m_fragments.push_back(make_pair(n, lng));
-                    }
-                }
-            }
-            chr.sortFragments();
-            chr.SetLength();
-            m_vchr.push_back(chr);
-        }
-    }
-    return m_vchr.size();
-}
 
 
 void COpticalxml2asnOperatorImpl::SetOpticalDescr(CSeq_descr& SD, const CTable2AsnContext& context)
@@ -479,6 +398,82 @@ void COpticalxml2asnOperator::UpdatePubDate(CSerialObject& obj)
 }
 
 
+using namespace xml;
+int COpticalxml2asnOperatorImpl::GetOpticalXMLData(const string& FileIn)
+{
+    error_messages msg;
+    document *doc;
 
+    try {
+        CNcbiIfstream in(FileIn.c_str());
+        doc = new document(in, &msg);
+    }
+    catch(...) {
+        m_logger->PutError(*CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Error, "", 0, 
+            "No data found in " + FileIn + ": " + msg.print()));
+        return -1;
+    }
+
+    node& root = doc->get_root_node();
+    node::const_iterator child(root.begin()), child_end(root.end());
+    for (; child != child_end; ++child) {
+        if (strcmp(child->get_name(), "RESTRICTION_MAP") == 0) {
+            // Get chromosome name
+            string name;
+            const attributes& at = child->get_attributes();
+            attributes::const_iterator ait = at.find("ID");
+
+            string id = ait->get_value();
+            SIZE_TYPE l = NStr::FindNoCase(id, "chromosome");
+            if (l != NPOS) {
+                vector<string> tok;
+                NStr::TokenizePattern(id.substr(l), " ", tok, NStr::eMergeDelims);
+                if (tok.size() > 1) {
+                    name = tok[1];
+                    if ((l = NStr::Find(name, ",")) != NPOS)
+                        name = name.substr(0,l);
+                }
+            }
+            if (name.empty()) {
+                m_logger->PutError(
+                    *CLineError::Create(CLineError::eProblem_GeneralParsingError, eDiag_Warning, "", 0, 
+                    "No chromosome name found in RESTRICTION_MAP - ID '" + id + "' was used"));
+                name = id;
+            }
+
+            bool is_linear(true);
+            node::const_iterator it = child->begin();
+            for (; it != child->end() && NStr::Compare(it->get_name(),"MAP_DISPLAY"); ++it);
+            if (it != child->end()) {
+                const attributes& at = it->get_attributes();
+                attributes::const_iterator ait = at.find("CIRCULAR");
+                if (strcmp(ait->get_value(), "true") == 0)
+                    is_linear = false;
+            }
+            COpticalChrData chr(name, at.find("ENZYME")->get_value(), is_linear);
+
+            // Get fragments
+            it = child->begin();
+            while (it != child->end() && NStr::Compare(it->get_name(),"FRAGMENTS"))
+                ++it;
+            if (it != child->end()) {
+                for (node::const_iterator fit = it->begin(); fit != it->end(); ++fit) {
+                    if (NStr::Compare(fit->get_name(), "F") == 0) {
+                        const attributes& at = fit->get_attributes();
+                        attributes::const_iterator ait = at.find("I");
+                        int n = atoi(ait->get_value());
+                        ait = at.find("S");
+                        int lng = atoi(ait->get_value());
+                        chr.m_fragments.push_back(make_pair(n, lng));
+                    }
+                }
+            }
+            chr.sortFragments();
+            chr.SetLength();
+            m_vchr.push_back(chr);
+        }
+    }
+    return m_vchr.size();
+}
 
 END_NCBI_SCOPE
