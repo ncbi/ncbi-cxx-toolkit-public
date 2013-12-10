@@ -543,6 +543,10 @@ int CBiosampleChkApp::Run(void)
             {
                 NCBI_THROW(CException, eUnknown, "Unable to open " + args["o"].AsString());
             }
+            if (m_Mode == e_take_from_biosample) {
+                m_Table.Reset(new CSeq_table());
+                m_Table->SetNum_rows(0);
+            }
         } else {
             ios::openmode mode = ios::out;
             m_AsnOut = new CNcbiOfstream(args["o"].AsString().c_str(), mode);
