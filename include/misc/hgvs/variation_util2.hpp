@@ -162,14 +162,15 @@ public:
     /// Reverse-complement seq-literals, flip strand on the seq-locs.
     void FlipStrand(CDelta_item& di) const;
 
+    enum { kMaxAttachSeqLen = 100000} ; //VAR-724
     /// If have offsets (intronic) or too long, return false;
     /// else set seq field on the placement and return true.
-    bool AttachSeq(CVariantPlacement& p, TSeqPos max_len = 1000);
+    bool AttachSeq(CVariantPlacement& p, TSeqPos max_len = kMaxAttachSeqLen);
 
     //Call AttachSeq on every placement; Try to find asserted-type subvariation.
     //If the asserted sequence is different from the attached reference, add 
     //corresponding exception object to the placement. Return true iff there were no exceptions added
-    bool AttachSeq(CVariation& v, TSeqPos max_len = 1000);
+    bool AttachSeq(CVariation& v, TSeqPos max_len = kMaxAttachSeqLen);
 
 
     CVariantPlacement::TMol GetMolType(const CSeq_id& id);
