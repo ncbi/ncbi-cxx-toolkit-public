@@ -842,7 +842,8 @@ bool CBiosampleChkApp::x_IsReportableStructuredComment(const CSeqdesc& desc)
         string prefix = s_GetStructuredCommentPrefix(user);
         if (NStr::IsBlank (m_StructuredCommentPrefix)) {
             if (!NStr::StartsWith(prefix, "##Genome-Assembly-Data", NStr::eNocase)
-                && !NStr::StartsWith(prefix, "##Assembly-Data", NStr::eNocase)) {
+                && !NStr::StartsWith(prefix, "##Assembly-Data", NStr::eNocase)
+                && !NStr::StartsWith(prefix, "##Genome-Annotation-Data", NStr::eNocase)) {
 		        rval = true;
             }
         } else if (NStr::StartsWith(prefix, m_StructuredCommentPrefix)) {
@@ -1023,7 +1024,7 @@ bool CBiosampleChkApp::DoDiffsContainConflicts()
                 *m_LogStream << "Conflict found for " << (*it)->GetSequenceId() << " for " << (*it)->GetBioSample() << endl;
                 printed_header = true;
             }
-            *m_LogStream << "\t" << (*it)->GetFieldName() << ":" << (*it)->GetSrcVal() << "\t" << (*it)->GetSampleVal() << endl;
+            *m_LogStream << "\t" << (*it)->GetFieldName() << ": BioSource contains \"" << (*it)->GetSrcVal() << "\", BioSample contains \"" << (*it)->GetSampleVal() << "\"" << endl;
             rval = true;
         }
     }
