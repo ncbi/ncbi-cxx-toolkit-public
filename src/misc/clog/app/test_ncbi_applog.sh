@@ -31,9 +31,9 @@ Log() {
 # Parts of regular expressions (for checks)
 guid='[0-9A-Z]\{16\}'
 tm='[0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}T[0-9]\{2\}:[0-9]\{2\}:[0-9]\{2\}\.[0-9]\{3\}'
-std="$guid 0000/0000 $tm TESTHOST        UNK_CLIENT      TESTSID                  test_ncbi_applog"
-req1="$guid 0000/0000 $tm TESTHOST        1\.2\.3\.4         request1                 test_ncbi_applog"
-req2="$guid 0000/0000 $tm TESTHOST        5\.6\.7\.8         request2                 test_ncbi_applog"
+std="$guid [0-9]\{4,\}/0000 $tm TESTHOST        UNK_CLIENT      TESTSID                  test_ncbi_applog"
+req1="$guid [0-9]\{4,\}/0000 $tm TESTHOST        1\.2\.3\.4         request1                 test_ncbi_applog"
+req2="$guid [0-9]\{4,\}/0000 $tm TESTHOST        5\.6\.7\.8         request2                 test_ncbi_applog"
 
 # Cleanup
 trap 'rm -f test_ncbi_applog.err test_ncbi_applog.log test_ncbi_applog.perf test_ncbi_applog.trace' 0 1 2 3 15

@@ -747,6 +747,24 @@ void CNcbiApplogApp::SetInfo()
     g_ctx->tid    = 0;
     g_info->psn   = 0;
     g_ctx->tsn    = 0;
+    
+    // We dont have serial posting numbers, so replace it with
+    // generated ID, it should increase with each posting and this is enough.
+    // Next formula used:
+    //     ((time from app start in microseconds) / 100) % numeric_limits<Uint4>::max()
+    
+    if ( m_Info.app_start_time.sec ) {
+        TNcbiLog_Counter sn = 0;
+        time_t sec;
+        long   ns;
+        CTime::GetCurrentTimeT(&sec, &ns);
+        double ts = (sec - m_Info.app_start_time.sec) * kMicroSecondsPerSecond/100 + 
+                    ((double)ns - m_Info.app_start_time.ns) /
+                    (kNanoSecondsPerSecond/kMicroSecondsPerSecond) / 100;
+        sn = TNcbiLog_Counter(ts) % numeric_limits<Uint4>::max();
+        g_info->psn = sn;
+    }
+    
     g_info->state = m_Info.state;
     g_info->rid   = m_Info.rid;
     g_ctx->rid    = m_Info.rid;
