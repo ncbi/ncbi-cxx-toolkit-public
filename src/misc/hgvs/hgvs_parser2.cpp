@@ -467,19 +467,37 @@ CHgvsParser::SFuzzyInt CHgvsParser::x_int_fuzz(TIterator const& i, const CContex
     return fuzzy_int;
 }
 
+
+
+/* In HGVS:
+ * the nucleotide 3' of the translation stop codon is *1, the next *2, etc.
+ * # there is no nucleotide 0
+ * # nucleotide 1 is the A of the ATG-translation initiation codon
+ * # the nucleotide 5' of the ATG-translation initiation codon is -1, the previous -2, etc.
+ *
+ * I.e. need to adjust if dealing with positive coordinates, except for *-relative ones.
+ */
+template<typename T>
+T AdjustHgvsCoord(T val, size_t offset, bool adjust)
+{
+    val += offset;
+    if(adjust && val > offset) { 
+        // note: val may be unsigned, so check for (val+offset > offset)
+        // instead of (val > 0)
+        val -= 1;
+    }
+    return val;
+}
+
 CRef<CSeq_point> CHgvsParser::x_abs_pos(TIterator const& i, const CContext& context)
 {
     HGVS_ASSERT_RULE(i, eID_abs_pos);
     TIterator it = i->children.begin();
 
-    CRef<CSeq_point> pnt(new CSeq_point);
-    pnt->SetId().Assign(context.GetId());
-    pnt->SetStrand(eNa_strand_plus);
     TSignedSeqPos offset(0);
-
-    bool is_relative_to_stop_codon = false;
+    bool adjust = true; //see AdjustHgvsCoord comments above
     if(i->children.size() == 2) {
-        is_relative_to_stop_codon = true;
+        adjust = false;
         string s(it->value.begin(), it->value.end());
         if(s != "*") {
             HGVS_THROW(eGrammatic, "Expected literal '*'");
@@ -500,28 +518,23 @@ CRef<CSeq_point> CHgvsParser::x_abs_pos(TIterator const& i, const CContext& cont
         }
     }
 
-    SFuzzyInt int_fuzz = x_int_fuzz(it, context);
-    if(int_fuzz.value > 0 && !is_relative_to_stop_codon) {
-        /* In HGVS:
-         * the nucleotide 3' of the translation stop codon is *1, the next *2, etc.
-         * # there is no nucleotide 0
-         * # nucleotide 1 is the A of the ATG-translation initiation codon
-         * # the nucleotide 5' of the ATG-translation initiation codon is -1, the previous -2, etc.
-         * I.e. need to adjust if dealing with positive coordinates, except for *-relative ones.
-         */
-        offset--;
-    }
+    CRef<CSeq_point> pnt(new CSeq_point);
+    {{
+        SFuzzyInt int_fuzz = x_int_fuzz(it, context);
 
-    if(int_fuzz.fuzz.IsNull()) {
-        pnt->SetPoint(offset + int_fuzz.value);
-    } else {
-        pnt->SetPoint(offset + int_fuzz.value);
-        pnt->SetFuzz(*int_fuzz.fuzz);
-        if(pnt->GetFuzz().IsRange()) {
-            pnt->SetFuzz().SetRange().SetMin() += offset;
-            pnt->SetFuzz().SetRange().SetMax() += offset;
+        pnt->SetId().Assign(context.GetId());
+        pnt->SetStrand(eNa_strand_plus);
+        pnt->SetPoint(AdjustHgvsCoord(int_fuzz.value, offset, adjust));
+
+        if(!int_fuzz.fuzz.IsNull()) {
+            pnt->SetFuzz(*int_fuzz.fuzz);
+            if(pnt->GetFuzz().IsRange()) {
+                CInt_fuzz_Base::TRange& r = pnt->SetFuzz().SetRange();
+                r.SetMin(AdjustHgvsCoord(r.GetMin(), offset, adjust));
+                r.SetMax(AdjustHgvsCoord(r.GetMax(), offset, adjust));
+            }
         }
-    }
+    }}
 
     return pnt;
 }
@@ -551,10 +564,17 @@ CHgvsParser::SOffsetPoint CHgvsParser::x_general_pos(TIterator const& i, const C
         TIterator it = i->children.end() - 1;
         ofpnt.offset = x_int_fuzz(it, context);
         --it;
+
+        //adjust for sign; convert +? or -? offsets to 
+        //0> or 0<
         string s_sign(it->value.begin(), it->value.end());
         int sign1 = s_sign == "-" ? -1 : 1;
         ofpnt.offset.value *= sign1;
-        if(ofpnt.offset.fuzz &&
+        if(ofpnt.offset.fuzz && ofpnt.offset.fuzz->IsRange()) {
+            ofpnt.offset.fuzz->SetRange().SetMin() *= sign1;
+            ofpnt.offset.fuzz->SetRange().SetMax() *= sign1;
+        } else if(ofpnt.offset.fuzz &&
+           ofpnt.offset.value == 0 &&     
            ofpnt.offset.fuzz->IsLim() &&
            ofpnt.offset.fuzz->GetLim() == CInt_fuzz::eLim_unk)
         {

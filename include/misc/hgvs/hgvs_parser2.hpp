@@ -842,7 +842,7 @@ private:
     /// if no atg_pos, assume that not dealing with coordinate systems (simply return abs-pos)
     ///otherwise, convert to hgvs coordinates:
     //  adjust by 1, adjust relative to atg_pos, and adjust by -1 if nonpositive.
-    static long s_GetHgvsPos(long abs_pos, const TSeqPos* atg_pos);
+    static TSignedSeqPos s_GetHgvsPos(TSeqPos abs_pos, const TSeqPos* atg_pos);
 
     /// this function may be used to create hgvs-coordinates (if ref_pos is not null), or
     /// to create a fuzzy hgvs-number specification (e.g. for multipliers, or fuzzy offset values), where pos is not adjusted

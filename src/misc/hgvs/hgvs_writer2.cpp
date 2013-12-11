@@ -422,12 +422,12 @@ string CHgvsParser::x_LocToSeqStr(const CSeq_loc& loc)
 }
 
 
-long CHgvsParser::s_GetHgvsPos(long abs_pos, const TSeqPos* atg_pos)
+TSignedSeqPos CHgvsParser::s_GetHgvsPos(TSeqPos abs_pos, const TSeqPos* atg_pos)
 {
     if(!atg_pos) {
         return abs_pos;
     } else {
-        long pos = (long)abs_pos + 1 - *atg_pos; //hgvs absolute coordinates are 1-based.
+        TSignedSeqPos pos = (TSignedSeqPos)abs_pos + 1 - *atg_pos; //hgvs absolute coordinates are 1-based.
         if(pos <= 0) {
             pos--;
         }
@@ -435,30 +435,44 @@ long CHgvsParser::s_GetHgvsPos(long abs_pos, const TSeqPos* atg_pos)
     }
 }
 
-string CHgvsParser::s_IntWithFuzzToStr(long pos, const TSeqPos* hgvs_ref_pos, bool with_sign, const CInt_fuzz* fuzz)
-{
-    long hgvs_pos = s_GetHgvsPos(pos, hgvs_ref_pos);
-    string out = NStr::LongToString(abs(hgvs_pos));
 
-    if(fuzz) {
-        if(fuzz->IsRange()) {
-            string from = NStr::LongToString(s_GetHgvsPos(fuzz->GetRange().GetMin(), hgvs_ref_pos));
-            string to = NStr::LongToString(s_GetHgvsPos(fuzz->GetRange().GetMax(), hgvs_ref_pos));
-            out = "(" + from + "_" + to + ")";
-        } else if(fuzz->IsLim()) {
-            if(fuzz->GetLim() == CInt_fuzz::eLim_gt || fuzz->GetLim() == CInt_fuzz::eLim_tr) {
-                out = "(" + out + "_?)";
-            } else if(fuzz->GetLim() == CInt_fuzz::eLim_lt || fuzz->GetLim() == CInt_fuzz::eLim_tl) {
-                out = "(?_" + out + ")";
-            } else {
-                out = "(" + out + ")";
-            }
-        }
+string CHgvsParser::s_IntWithFuzzToStr(
+    long pos, 
+    const TSeqPos* hgvs_ref_pos, 
+    bool with_sign, 
+    const CInt_fuzz* fuzz)
+{
+/* 
+ * with_sign indicates whether the sign is mandatory and must be factored out 
+ * (as offset part of an intronic expression)
+ * In this case we'll prefix the sign in the end, and will adjust for sign
+ * of values inside the expressions by multiplying by k
+ */
+    long hgvs_pos = s_GetHgvsPos(pos, hgvs_ref_pos);
+    int sign = hgvs_pos >= 0 ? 1 : -1;
+    int k = (with_sign && sign == -1) ? -1 : 1;
+
+    string val = "";
+    if(fuzz && fuzz->IsRange()) {
+        string from = NStr::LongToString(k*s_GetHgvsPos(fuzz->GetRange().GetMin(), hgvs_ref_pos));
+        string to   = NStr::LongToString(k*s_GetHgvsPos(fuzz->GetRange().GetMax(), hgvs_ref_pos));
+        val = "(" + from + "_" + to + ")";
+    } else {
+        val = NStr::LongToString(k*hgvs_pos);
+        val =   !fuzz ? 
+                     val
+              : !fuzz->IsLim() ?
+                    "(" + val + ")"
+              : fuzz->GetLim() == CInt_fuzz::eLim_gt || fuzz->GetLim() == CInt_fuzz::eLim_tr ?
+                    "(" + val + "_?)"
+              : fuzz->GetLim() == CInt_fuzz::eLim_lt || fuzz->GetLim() == CInt_fuzz::eLim_tl ?
+                    "(?_" + val + ")"
+              :     "(" + val + ")";
     }
-    if(with_sign || hgvs_pos < 0) {
-        out = (hgvs_pos >= 0 ? "+" : "-") + out;
-    }
-    return out;
+
+    return (!with_sign  ? "" 
+           : sign >= 0  ? "+" 
+           :              "-") + val;
 }
 
 string CHgvsParser::s_SeqIdToHgvsStr(const CVariantPlacement& vp, CScope* scope)
