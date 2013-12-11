@@ -97,6 +97,7 @@ public:
     virtual void SeqEntryFinalize()
     //  ------------------------------------------------------------------------
     {
+        m_scope->ResetHistory();
         m_scope.Reset();
         CSeqEntryProcess::SeqEntryFinalize();
     };
