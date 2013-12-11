@@ -2020,6 +2020,7 @@ CNCMessageHandler::x_ReportBlobNotFound(void)
     WriteText(s_MsgForStatus[eStatus_NotFound]);
     if (m_AgeCur != 0) {
         WriteText(", AGE=").WriteNumber(m_AgeCur);
+        WriteText(", VER=").WriteNumber(m_BlobAccess->GetCurBlobVersion());
     }
     WriteText("\n");
     return &Me::x_FinishCommand;
