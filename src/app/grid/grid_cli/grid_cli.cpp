@@ -89,6 +89,10 @@ struct SOptionDefinition {
         "allow-xsite-conn", "Allow cross-site connections.", {-1}},
 #endif
 
+    {OPT_DEF(eSwitch, eNoConnRetries),
+        "no-conn-retries", "Do not attempt to reconnect to "
+            "services after the first connection failure.", {-1}},
+
     {OPT_DEF(eOptionWithParameter, eLoginToken),
         LOGIN_TOKEN_OPTION, "Login token (see the '"
             LOGIN_COMMAND "' command).", {-1}},
@@ -523,7 +527,7 @@ struct SCommandDefinition {
         "parameters all at once.\n",
         {eAppUID, eNetCache, eCache, eEnableMirroring,
             eNetSchedule, eQueue, eAuth,
-            eFileTrackSite, eFileTrackAPIKey,
+            eFileTrackSite, eFileTrackAPIKey, eNoConnRetries,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetCacheCommand, &CGridCommandLineInterfaceApp::Cmd_BlobInfo,
@@ -1103,9 +1107,6 @@ int CGridCommandLineInterfaceApp::Run()
     const string max_find_lbname_retries("max_find_lbname_retries");
     if (!reg.HasEntry(netservice_api_section, max_find_lbname_retries))
         reg.Set(netservice_api_section, max_find_lbname_retries, "0");
-    const string connection_max_retries("connection_max_retries");
-    if (!reg.HasEntry(netservice_api_section, connection_max_retries))
-        reg.Set(netservice_api_section, connection_max_retries, "0");
 
     const SCommandDefinition* cmd_def;
     const int* cmd_opt;
@@ -1441,6 +1442,12 @@ int CGridCommandLineInterfaceApp::Run()
                     }
         while (--opt_id >= 0);
 
+        if (IsOptionSet(eNoConnRetries)) {
+            const string connection_max_retries("connection_max_retries");
+            if (!reg.HasEntry(netservice_api_section, connection_max_retries))
+                reg.Set(netservice_api_section, connection_max_retries, "0");
+        }
+
         if (m_Opts.auth.empty())
             m_Opts.auth = GRID_APP_NAME;
 
@@ -1578,7 +1585,10 @@ bool CGridCommandLineInterfaceApp::ParseLoginToken(const string& token)
                 MarkOptionAsSet(eAllowXSiteConn);
         }
 #endif
-        else if (label == LOGIN_TOKEN_FILETRACK_SITE) {
+        else if (label == LOGIN_TOKEN_NO_CONN_RETRIES) {
+            if (value_field.GetBoolean())
+                MarkOptionAsSet(eNoConnRetries);
+        } else if (label == LOGIN_TOKEN_FILETRACK_SITE) {
             TFileTrack_Site::SetDefault(value_field.GetString());
             MarkOptionAsSet(eFileTrackSite);
         } else if (label == LOGIN_TOKEN_FILETRACK_API_KEY) {

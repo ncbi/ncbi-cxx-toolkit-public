@@ -62,6 +62,7 @@
 #define LOGIN_TOKEN_SESSION_TIMESTAMP_FIELD "ts"
 #define LOGIN_TOKEN_SESSION_UID_FIELD "uid"
 #define LOGIN_TOKEN_ALLOW_XSITE_CONN "xs"
+#define LOGIN_TOKEN_NO_CONN_RETRIES "r0"
 #define LOGIN_TOKEN_FILETRACK_SITE "fts"
 #define LOGIN_TOKEN_FILETRACK_API_KEY "ftk"
 
@@ -137,6 +138,7 @@ enum EOption {
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
     eAllowXSiteConn,
 #endif
+    eNoConnRetries,
     eLoginToken,
     eAuth,
     eInput,

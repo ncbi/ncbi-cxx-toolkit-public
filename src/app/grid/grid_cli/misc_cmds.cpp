@@ -183,6 +183,11 @@ int CGridCommandLineInterfaceApp::Cmd_Login()
     }
 #endif
 
+    if (IsOptionSet(eNoConnRetries)) {
+        cid.AppendLabel(LOGIN_TOKEN_NO_CONN_RETRIES);
+        cid.AppendBoolean(true);
+    }
+
     if (IsOptionSet(eFileTrackSite)) {
         cid.AppendLabel(LOGIN_TOKEN_FILETRACK_SITE);
         cid.AppendString(TFileTrack_Site::GetDefault());
