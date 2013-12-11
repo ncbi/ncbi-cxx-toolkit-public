@@ -406,25 +406,31 @@ void SNetServerPoolImpl::Init(CConfig* config, const string& section,
             m_LBSMAffinityName = config->GetString(section,
                 "use_lbsm_affinity", CConfig::eErr_NoThrow, kEmptyStr);
 
-        unsigned long timeout = s_SecondsToMilliseconds(config->GetString(
+        unsigned long conn_timeout = s_SecondsToMilliseconds(config->GetString(
             section, "connection_timeout", CConfig::eErr_NoThrow, "0"), 0);
 
-        NcbiMsToTimeout(&m_ConnTimeout, timeout > 0 ? timeout :
+        NcbiMsToTimeout(&m_ConnTimeout, conn_timeout > 0 ? conn_timeout :
             SECONDS_DOUBLE_TO_MS_UL(CONNECTION_TIMEOUT_DEFAULT));
 
-        timeout = s_SecondsToMilliseconds(config->GetString(
+        unsigned long comm_timeout = s_SecondsToMilliseconds(config->GetString(
             section, "communication_timeout", CConfig::eErr_NoThrow, "0"), 0);
 
-        if (timeout > 0)
-            NcbiMsToTimeout(&m_CommTimeout, timeout);
+        if (comm_timeout > 0)
+            NcbiMsToTimeout(&m_CommTimeout, comm_timeout);
         else
             m_CommTimeout = s_GetDefaultCommTimeout();
 
-        NcbiMsToTimeout(&m_FirstServerTimeout,
-                s_SecondsToMilliseconds(config->GetString(section,
-                "first_server_timeout", CConfig::eErr_NoThrow,
-                NCBI_AS_STRING(FIRST_SERVER_TIMEOUT_DEFAULT)),
-                SECONDS_DOUBLE_TO_MS_UL(FIRST_SERVER_TIMEOUT_DEFAULT)));
+        unsigned long first_srv_timeout = s_SecondsToMilliseconds(
+                config->GetString(section, "first_server_timeout",
+                CConfig::eErr_NoThrow, "0"), 0);
+
+        if (first_srv_timeout > 0)
+            NcbiMsToTimeout(&m_FirstServerTimeout, first_srv_timeout);
+        else if (comm_timeout > 0)
+            m_FirstServerTimeout = m_CommTimeout;
+        else
+            NcbiMsToTimeout(&m_FirstServerTimeout,
+                    SECONDS_DOUBLE_TO_MS_UL(FIRST_SERVER_TIMEOUT_DEFAULT));
 
         m_ServerThrottlePeriod = config->GetInt(section,
             "throttle_relaxation_period", CConfig::eErr_NoThrow,
