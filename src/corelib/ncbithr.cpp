@@ -107,17 +107,18 @@ void CUsedTlsBases::ClearAll(void)
 void CUsedTlsBases::Register(CTlsBase* tls)
 {
     CMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
-    if (tls->m_AutoDestroy) {
-        tls->AddReference();
+    if ( m_UsedTls.insert(tls).second ) {
+        if (tls->m_AutoDestroy) {
+            tls->AddReference();
+        }
     }
-    m_UsedTls.insert(tls);
 }
 
 
 void CUsedTlsBases::Deregister(CTlsBase* tls)
 {
     CMutexGuard tls_cleanup_guard(s_TlsCleanupMutex);
-    m_UsedTls.erase(tls);
+    xncbi_Verify(m_UsedTls.erase(tls));
     if (tls->m_AutoDestroy) {
         tls->RemoveReference();
     }
