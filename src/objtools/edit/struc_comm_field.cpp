@@ -88,7 +88,7 @@ bool CStructuredCommentField::SetVal(CObject& object, const string & newValue, E
             CRef<CUser_field> new_field(new CUser_field());
             new_field->SetLabel().SetStr(m_FieldName);
             if (SetVal(*new_field, newValue, eExistingText_replace_old)) {
-                user->SetData().push_back(new_field);
+                x_InsertFieldAtCorrectPosition(*user, new_field);
                 rval = true;
             }
         }
@@ -99,6 +99,50 @@ bool CStructuredCommentField::SetVal(CObject& object, const string & newValue, E
         }
     }
     return rval;
+}
+
+
+/// Assumes that User-object fields are already mostly in order
+void CStructuredCommentField::x_InsertFieldAtCorrectPosition(CUser_object& user, CRef<CUser_field> field)
+{
+    if (!field) {
+        return;
+    }
+    if (!user.IsSetData()) {
+        // no fields yet, just add the field
+        user.SetData().push_back(field);
+        return;
+    }
+    string this_field_label = field->GetLabel().GetStr();
+
+    vector<string> field_names = GetFieldNames(m_Prefix);
+    if (field_names.size() == 0) {
+        // no information about field order, just add to end
+        user.SetData().push_back(field);
+        return;
+    }
+
+    vector<string>::iterator sit = field_names.begin();
+    CUser_object::TData::iterator fit = user.SetData().begin();
+    while (sit != field_names.end() && fit != user.SetData().end()) {
+        string field_label = (*fit)->GetLabel().GetStr();
+        if (NStr::EqualNocase(field_label, kStructuredCommentPrefix)
+            || NStr::EqualNocase(field_label, kStructuredCommentSuffix)) {
+            // skip
+            fit++;
+        } else if (NStr::EqualNocase(*sit, (*fit)->GetLabel().GetStr())) {
+            sit++;
+            fit++;
+        } else if (NStr::EqualNocase(*sit, this_field_label)) {
+            // insert field here
+            user.SetData().insert(fit, field);
+            return;
+        } else {
+            // field is missing
+            sit++;
+        }
+    }
+    user.SetData().push_back(field);
 }
 
 
@@ -414,6 +458,24 @@ void CStructuredCommentField::NormalizePrefix(string& prefix)
 }
 
 
+string CStructuredCommentField::MakePrefixFromRoot(const string& root)
+{
+    string prefix = root;
+    NormalizePrefix(prefix);
+    prefix = "##" + prefix + "-START##";
+    return prefix;
+}
+
+
+string CStructuredCommentField::MakeSuffixFromRoot(const string& root)
+{
+    string suffix = root;
+    NormalizePrefix(suffix);
+    suffix = "##" + suffix + "-END##";
+    return suffix;
+}
+
+
 string CStructuredCommentField::GetPrefix (const CUser_object& user)
 {
     if (!IsStructuredComment(user) || !user.IsSetData()) {
@@ -444,12 +506,11 @@ static bool s_FieldRuleCompare (
 }
 
 
-#if 0
 CRef<CComment_set> ReadCommentRules()
 {
     CRef<CComment_set> rules(NULL);
 
-    string fname = g_FindDataFile("E:/ncbi/data/validrules.prt");
+    string fname = g_FindDataFile("validrules.prt");
     if (fname.empty()) {
         // do nothing
     } else {
@@ -469,16 +530,13 @@ CRef<CComment_set> ReadCommentRules()
     }
     return rules;
 }
-#endif
 
 
 vector<string> CStructuredCommentField::GetFieldNames(const string& prefix)
 {
     vector<string> options;
 
-#if 0
-    string prefix_to_use = prefix;
-    NormalizePrefix(prefix_to_use);
+    string prefix_to_use = MakePrefixFromRoot(prefix);
 
     // look up mandatory and required field names from validator rules
     CRef<CComment_set> rules = ReadCommentRules();
@@ -493,7 +551,7 @@ vector<string> CStructuredCommentField::GetFieldNames(const string& prefix)
             // no rule for this prefix, can't list fields
         }
     }
-#endif
+
     return options;
 }
 
@@ -504,15 +562,17 @@ CRef<CUser_object> CStructuredCommentField::MakeUserObject(const string& prefix)
     obj->SetType().SetStr(kStructuredComment);
 
     if (!NStr::IsBlank(prefix)) {
-        string value = prefix;
-        NormalizePrefix(value);
+        string root = prefix;
+        NormalizePrefix(root);
         CRef<CUser_field> p(new CUser_field());
         p->SetLabel().SetStr(kStructuredCommentPrefix);
-        p->SetData().SetStr("##" + value + "-START##");
+        string pre = MakePrefixFromRoot(root);
+        p->SetData().SetStr(pre);
         obj->SetData().push_back(p);
         CRef<CUser_field> s(new CUser_field());
         s->SetLabel().SetStr(kStructuredCommentSuffix);
-        s->SetData().SetStr("##" + value + "-END##");
+        string suf = MakeSuffixFromRoot(root);
+        s->SetData().SetStr(suf);
         obj->SetData().push_back(s);
     }
     return obj;
@@ -529,6 +589,12 @@ CGenomeAssemblyComment::CGenomeAssemblyComment()
     m_User = MakeEmptyUserObject();
 }
 
+
+CGenomeAssemblyComment::CGenomeAssemblyComment(CUser_object& user)
+{
+    m_User.Reset(new CUser_object());
+    m_User->Assign(user);
+}
 
 
 CRef<CUser_object> CGenomeAssemblyComment::MakeEmptyUserObject()

@@ -23,6 +23,7 @@ HOSTED_LIBS    = xalnmgr   \
                  xobjedit  \
                  xcleanup  \
                  valerr    \
+                 valid     \
                  blast_services \
                  blastdb_format \
                  snputil \

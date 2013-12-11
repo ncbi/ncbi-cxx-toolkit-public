@@ -2,7 +2,7 @@
 
 DLL = ncbi_validator
 
-HOSTED_LIBS    = xvalidate valid
+HOSTED_LIBS    = xvalidate
 
 DEPENDENCIES   = ncbi_core ncbi_general ncbi_pub ncbi_seq ncbi_seqext
 

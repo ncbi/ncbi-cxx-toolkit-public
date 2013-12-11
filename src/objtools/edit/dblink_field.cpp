@@ -463,6 +463,13 @@ CDBLink::CDBLink()
 }
 
 
+CDBLink::CDBLink(CUser_object& user)
+{
+    m_User.Reset(new CUser_object());
+    m_User->Assign(user);
+}
+
+
 CRef<CUser_object> CDBLink::MakeEmptyUserObject()
 {
     CRef<CUser_object> obj = CDBLinkField::MakeUserObject();

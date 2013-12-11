@@ -151,6 +151,7 @@
 #  define NCBI_UNIT_TEST_UTIL_EXPORTS
 #  define NCBI_UUDUTIL_EXPORTS
 #  define NCBI_VALERR_EXPORTS
+#  define NCBI_VALID_EXPORTS
 #  define NCBI_BLASTDB_FORMAT_EXPORTS
 #endif
 
@@ -899,6 +900,14 @@
 #  define NCBI_VALERR_EXPORT NCBI_DLL_EXPORT
 #else
 #  define NCBI_VALERR_EXPORT NCBI_DLL_IMPORT
+#endif
+
+/* Export specifier for library valid
+ */
+#ifdef NCBI_VALID_EXPORTS
+#  define NCBI_VALID_EXPORT NCBI_DLL_EXPORT
+#else
+#  define NCBI_VALID_EXPORT NCBI_DLL_IMPORT
 #endif
 
 /* Export specifier for library discrepancy_report

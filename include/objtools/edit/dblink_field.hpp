@@ -95,6 +95,7 @@ class NCBI_XOBJEDIT_EXPORT CDBLink
 {
 public:
     CDBLink();
+    CDBLink(CUser_object& user);
     ~CDBLink() {};
     static CRef<CUser_object> MakeEmptyUserObject();
     static void SetBioSample(CUser_object& obj, string val, EExistingText existing_text = eExistingText_replace_old);

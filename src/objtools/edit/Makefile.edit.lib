@@ -11,12 +11,12 @@ SRC = seq_entry_edit promote autodef_available_modifier autodef \
 
 LIB    = xobjedit
 
-ASN_DEP = seqset
+ASN_DEP = seqset valid
 
 WATCHERS = bollin kornbluh
 
 
 USES_LIBRARIES =  \
-    biblio connect general genome_collection medline pub seq seqcode \
+    biblio connect general genome_collection medline pub seq seqcode valid \
     seqedit seqset sequtil taxon3 xconnect xncbi xobjmgr xobjutil \
     xser xutil

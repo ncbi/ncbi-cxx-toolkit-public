@@ -85,6 +85,8 @@ public:
     static vector<string> GetFieldNames(const string& prefix);
     static CRef<CUser_object> MakeUserObject(const string& prefix);
     static void NormalizePrefix(string& prefix);
+    static string MakePrefixFromRoot(const string& root);
+    static string MakeSuffixFromRoot(const string& root);
 
 protected:
     string m_Prefix;
@@ -92,6 +94,7 @@ protected:
     string m_ConstraintFieldName;
     CRef<CStringConstraint> m_StringConstraint;
 
+    void x_InsertFieldAtCorrectPosition(CUser_object& user, CRef<CUser_field> field);
 };
 
 
@@ -99,6 +102,7 @@ class NCBI_XOBJEDIT_EXPORT CGenomeAssemblyComment
 {
 public:
     CGenomeAssemblyComment();
+    CGenomeAssemblyComment(CUser_object& user);
     ~CGenomeAssemblyComment() {};
     static CRef<CUser_object> MakeEmptyUserObject();
     static void SetAssemblyMethod(CUser_object& obj, string val, EExistingText existing_text = eExistingText_replace_old);

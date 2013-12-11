@@ -50,7 +50,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 /////////////////////////////////////////////////////////////////////////////
-class NCBI_VALIDATOR_EXPORT CDependent_field_rule : public CDependent_field_rule_Base
+class NCBI_VALID_EXPORT CDependent_field_rule : public CDependent_field_rule_Base
 {
     typedef CDependent_field_rule_Base Tparent;
 public:

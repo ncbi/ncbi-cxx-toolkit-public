@@ -51,7 +51,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 /////////////////////////////////////////////////////////////////////////////
-class NCBI_VALIDATOR_EXPORT CComment_rule : public CComment_rule_Base
+class NCBI_VALID_EXPORT CComment_rule : public CComment_rule_Base
 {
     typedef CComment_rule_Base Tparent;
 public:

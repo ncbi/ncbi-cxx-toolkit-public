@@ -171,6 +171,17 @@ BOOST_AUTO_TEST_CASE(Test_AddBiosample)
 }
 
 
+BOOST_AUTO_TEST_CASE(StructuredCommentField)
+{
+    vector<string> field_names = edit::CStructuredCommentField::GetFieldNames("Genome-Assembly-Data");
+    if (field_names.size() == 13) {
+        BOOST_CHECK_EQUAL(field_names[0], "Finishing Goal");
+    } else {
+        BOOST_CHECK_EQUAL(field_names.size(), 13);
+    }
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_GenomeAssemblyData)
 {
     CRef<CUser_object> user = edit::CGenomeAssemblyComment::MakeEmptyUserObject();
@@ -208,6 +219,19 @@ BOOST_AUTO_TEST_CASE(Test_GenomeAssemblyData)
     BOOST_CHECK_EQUAL(edit::CGenomeAssemblyComment::GetAssemblyMethod(*other_user), "program v. version");
     BOOST_CHECK_EQUAL(edit::CGenomeAssemblyComment::GetGenomeCoverage(*other_user), "cv");
     BOOST_CHECK_EQUAL(edit::CGenomeAssemblyComment::GetSequencingTechnology(*other_user), "st");
+
+
+    // check the order
+    edit::CGenomeAssemblyComment gnm_asm_cmt2;
+    other_user = gnm_asm_cmt2.SetAssemblyMethodProgram("program")
+                    .SetAssemblyMethodVersion("version")
+                    .SetSequencingTechnology("st")
+                    .SetGenomeCoverage("cv")
+                    .MakeUserObject();
+
+    BOOST_CHECK_EQUAL(other_user->GetData()[2]->GetLabel().GetStr(), "Assembly Method");
+    BOOST_CHECK_EQUAL(other_user->GetData()[3]->GetLabel().GetStr(), "Genome Coverage");
+    BOOST_CHECK_EQUAL(other_user->GetData()[4]->GetLabel().GetStr(), "Sequencing Technology");
 
 }
 

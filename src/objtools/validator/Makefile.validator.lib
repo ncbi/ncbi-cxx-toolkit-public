@@ -9,7 +9,7 @@ SRC = lat_lon_country_map validator validatorp valid_biosource valid_pub \
       validerror_feat validerror_graph utilities valid_cmdargs
 LIB = xvalidate
 
-ASN_DEP = general biblio pub seq seqset submit taxon3 valerr valid
+ASN_DEP = general biblio pub seq seqset submit taxon3 valerr
 
 WATCHERS = bollin kornbluh
 
@@ -17,5 +17,5 @@ WATCHERS = bollin kornbluh
 USES_LIBRARIES =  \
     biblio connect gbseq general genome_collection medlars medline \
     mla mlacli pub pubmed seq seqcode seqedit seqset sequtil submit \
-    tables taxon3 valerr valid xalnmgr xconnect xformat xncbi xobjmgr \
+    tables taxon3 valerr xalnmgr xconnect xformat xncbi xobjmgr \
     xobjutil xregexp xser xutil
