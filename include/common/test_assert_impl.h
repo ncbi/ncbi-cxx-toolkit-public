@@ -152,6 +152,16 @@ static int (*_SDPM)(void) = _SuppressDiagPopupMessages;
 #endif
 #define  _TROUBLE assert(0)
 
+/* Often, both _DEBUG_ARG and _ASSERT are used together
+   Once we redefine one, we should redefine another as well
+*/
+#ifndef _DEBUG
+# ifdef _DEBUG_ARG
+#  undef _DEBUG_ARG
+# endif
+# define _DEBUG_ARG(x) x
+#endif
+
 #endif /* NCBI_MSWIN_NO_POPUP */
 
 #endif /* COMMON__TEST_ASSERT_IMPL__H */
