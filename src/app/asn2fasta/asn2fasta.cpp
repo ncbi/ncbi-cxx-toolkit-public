@@ -41,6 +41,7 @@
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
+#include <objtools/cleanup/cleanup.hpp>
 
 #include <objects/seqset/gb_release_file.hpp>
 
@@ -292,6 +293,7 @@ int CAsn2FastaApp::Run(void)
                         cerr << "Resolution error: Sequence dropped." << endl;
                     }
                     m_Scope->RemoveTopLevelSeqEntry(seh);
+                    m_Scope->ResetHistory();
                     seh = ObtainSeqEntryFromSeqEntry(*is);
                 }
                 return 0;
@@ -349,6 +351,7 @@ int CAsn2FastaApp::Run(void)
                     }
                     HandleSeqEntry(seh);
                     m_Scope->RemoveTopLevelSeqEntry(seh);
+                    m_Scope->ResetHistory();
                     streampos = is->GetStreamPos();
                 }
             }
@@ -445,6 +448,7 @@ bool CAsn2FastaApp::HandleSeqEntry(CRef<CSeq_entry>& se)
     CSeq_entry_Handle seh = m_Scope->AddTopLevelSeqEntry(*se);
     bool ret = HandleSeqEntry(seh);
     m_Scope->RemoveTopLevelSeqEntry(seh);
+    m_Scope->ResetHistory();
     return ret;
 }
 
@@ -481,6 +485,10 @@ bool CAsn2FastaApp::HandleSeqEntry(CSeq_entry_Handle& seh)
     if( GetArgs()["width"] ) {
         fasta_os.SetWidth( GetArgs()["width"].AsInteger() );
     }
+
+    // CCleanup cleanup;
+    // cleanup.BasicCleanup( seh );
+
     if (m_DeflineOnly) {
         for (CBioseq_CI bioseq_it(seh);  bioseq_it;  ++bioseq_it) {
             fasta_os.WriteTitle(*bioseq_it);
