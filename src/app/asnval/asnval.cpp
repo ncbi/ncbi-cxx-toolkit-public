@@ -767,5 +767,5 @@ void CAsnvalApp::PrintValidErrItem
 
 int main(int argc, const char* argv[])
 {
-    return CAsnvalApp().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CAsnvalApp().AppMain(argc, argv);
 }
