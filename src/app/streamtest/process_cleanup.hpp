@@ -43,6 +43,7 @@ public:
     CCleanupProcess()
     //  ------------------------------------------------------------------------
         : CSeqEntryProcess()
+        , m_out( 0 )
     {};
 
     //  ------------------------------------------------------------------------
@@ -57,6 +58,8 @@ public:
     //  ------------------------------------------------------------------------
     {
         CSeqEntryProcess::ProcessInitialize( args );
+
+        m_out = args["o"] ? &(args["o"].AsOutputFile()) : &cout;
     };
 
     //  ------------------------------------------------------------------------
@@ -66,12 +69,16 @@ public:
         try {
             CCleanup cleanup;
             cleanup.BasicCleanup( *m_entry );
+
+            *m_out << MSerial_AsnText << *m_entry << endl;
         }
         catch (CException& e) {
             LOG_POST(Error << "error processing seqentry: " << e.what());
         }
     };
 
+protected:
+    CNcbiOstream* m_out;
 };
 
 #endif
