@@ -208,6 +208,10 @@ protected:
                        const TBlobId& blob_id,
                        TChunkId chunk_id,
                        CNcbiIstream& stream);
+    void x_SetBlobVersionAsCurrent(CReaderRequestResult& result,
+                                   const string& key,
+                                   const string& subkey,
+                                   TBlobVersion version);
 
     ESwitch m_JoinedBlobVersion;
 };

@@ -300,14 +300,38 @@ int CCacheReader::GetMaximumConnectionsLimit(void) const
 
 
 namespace {
-    class CParseBuffer {
+    class CParseBuffer : public IReader {
     public:
-        CParseBuffer(ICache* cache,
-                     const string& key, int version, const string& subkey);
+        typedef CLoadInfo::TExpirationTime TExpirationTime;
+
+        CParseBuffer(CReaderRequestResult& result, ICache* cache,
+                     const string& key, const string& subkey);
+        CParseBuffer(CReaderRequestResult& result, ICache* cache,
+                     const string& key, const string& subkey,
+                     int version);
+        CParseBuffer(CReaderRequestResult& result, ICache* cache,
+                     const string& key, const string& subkey,
+                     int* get_current_version);
 
         bool Found(void) const
             {
                 return m_Descr.blob_found;
+            }
+        bool FoundSome(void) const
+            {
+                return m_Descr.actual_age != unsigned(-1);
+            }
+        TExpirationTime GetExpirationTime(void) const
+            {
+                return m_ExpirationTime;
+            }
+        bool GotCurrentVersion(void) const
+            {
+                return m_Descr.return_current_version_supported;
+            }
+        bool CurrentVersionExpired(void) const
+            {
+                return GetExpirationTime() == TExpirationTime(-1);
             }
         bool Done(void) const
             {
@@ -331,8 +355,42 @@ namespace {
             }
         string ParseString(void);
         string FullString(void);
+
+        IReader* GetReader(void);
+
+        virtual ERW_Result Read(void*   buf,
+                                size_t  count,
+                                size_t* bytes_read = 0)
+            {
+                if ( !m_Size ) {
+                    if ( bytes_read ) {
+                        *bytes_read = 0;
+                    }
+                    return eRW_Eof;
+                }
+                count = min(count, m_Size);
+                memcpy(buf, m_Ptr, count);
+                if ( bytes_read ) {
+                    *bytes_read = count;
+                }
+                m_Ptr += count;
+                m_Size -= count;
+                return eRW_Success;
+            }
+        virtual ERW_Result PendingCount(size_t* count)
+            {
+                *count = m_Size;
+                return eRW_Success;
+            }
         
     protected:
+        void x_Init(CReaderRequestResult& result,
+                    ICache* cache,
+                    const string& key,
+                    const string& subkey,
+                    int version,
+                    int* get_current_version,
+                    bool set_expiration_time);
         bool x_Eof(void) const;
         const char* x_NextBytes(size_t size);
         
@@ -342,28 +400,105 @@ namespace {
 
         char m_Buffer[4096];
         ICache::SBlobAccessDescr m_Descr;
+        TExpirationTime m_ExpirationTime;
         const char* m_Ptr;
         size_t m_Size;
     };
 
-    CParseBuffer::CParseBuffer(ICache* cache,
-                               const string& key,
-                               int version,
-                               const string& subkey)
-        : m_Descr(m_Buffer, sizeof(m_Buffer)), m_Ptr(0), m_Size(0)
+    void CParseBuffer::x_Init(CReaderRequestResult& result,
+                              ICache* cache,
+                              const string& key,
+                              const string& subkey,
+                              int version,
+                              int* get_current_version,
+                              bool set_expiration_time)
     {
-        if ( SCacheInfo::GetDebugLevel() ) {
-            LOG_POST(Info<<"CCache:Read: "<<key<<","<<subkey<<","<<version);
+        if ( set_expiration_time ) {
+            m_Descr.maximum_age = result.GetIdExpirationTimeout();
+        }
+        if ( get_current_version ) {
+            m_Descr.return_current_version = true;
         }
         cache->GetBlobAccess(key, version, subkey, &m_Descr);
-        if ( !m_Descr.reader.get() ) {
+        
+        if ( SCacheInfo::GetDebugLevel() ) {
+            CNcbiOstrstream str;
+            str << "Cache:Read";
+            if ( get_current_version ) {
+                str << "V";
+            }
+            str << ": "<<key<<","<<subkey;
+            if ( !get_current_version ) {
+                str << ","<<version;
+            }
+            if ( !Found() ) {
+                str << " not found";
+            }
+            else {
+                str << " found";
+                if ( get_current_version && GotCurrentVersion() ) {
+                    str << ", version="<<m_Descr.current_version;
+                }
+            }
+            str << ", age="<<int(m_Descr.actual_age);
+            LOG_POST(Info<<str.rdbuf());
+        }
+        m_ExpirationTime = result.GetNewIdExpirationTime();
+        if ( FoundSome() ) {
+            if ( m_Descr.actual_age > m_ExpirationTime ) {
+                m_ExpirationTime = TExpirationTime(-1);
+            }
+            else {
+                m_ExpirationTime -= m_Descr.actual_age;
+            }
+        }
+        if ( get_current_version ) {
+            if ( GotCurrentVersion() ) {
+                *get_current_version = m_Descr.current_version;
+            }
+            else {
+                m_ExpirationTime = TExpirationTime(-1);
+                *get_current_version = 0;
+            }
+        }
+        if ( Found() && !m_Descr.reader.get() ) {
             m_Ptr = m_Descr.buf;
             m_Size = m_Descr.blob_size;
         }
     }
     
+    CParseBuffer::CParseBuffer(CReaderRequestResult& result,
+                               ICache* cache,
+                               const string& key,
+                               const string& subkey)
+        : m_Descr(m_Buffer, sizeof(m_Buffer)), m_Ptr(0), m_Size(0)
+    {
+        x_Init(result, cache, key, subkey, 0, 0, true);
+    }
+
+    CParseBuffer::CParseBuffer(CReaderRequestResult& result,
+                               ICache* cache,
+                               const string& key,
+                               const string& subkey,
+                               int version)
+        : m_Descr(m_Buffer, sizeof(m_Buffer)), m_Ptr(0), m_Size(0)
+    {
+        x_Init(result, cache, key, subkey, version, 0, false);
+    }
+
+    CParseBuffer::CParseBuffer(CReaderRequestResult& result,
+                               ICache* cache,
+                               const string& key,
+                               const string& subkey,
+                               int* get_current_version)
+        : m_Descr(m_Buffer, sizeof(m_Buffer)), m_Ptr(0), m_Size(0)
+    {
+        x_Init(result, cache, key, subkey, 0, get_current_version, true);
+    }
+    
     string CParseBuffer::ParseString(void)
     {
+        _ASSERT(Found());
         string ret;
         size_t size = ParseUint4();
         if ( m_Ptr ) {
@@ -382,6 +517,7 @@ namespace {
 
     string CParseBuffer::FullString(void)
     {
+        _ASSERT(Found());
         string ret;
         if ( m_Ptr ) {
             ret.assign(m_Ptr, m_Size);
@@ -389,11 +525,8 @@ namespace {
             m_Size = 0;
         }
         else {
-            for ( ;; ) {
-                size_t count = 0;
-                if ( m_Descr.reader->Read(m_Buffer, sizeof(m_Buffer), &count) != eRW_Success ) {
-                    break;
-                }
+            size_t count = 0;
+            while ( m_Descr.reader->Read(m_Buffer, sizeof(m_Buffer), &count) == eRW_Success ) {
                 ret.append(m_Buffer, count);
             }
         }
@@ -402,6 +535,7 @@ namespace {
     
     const char* CParseBuffer::x_NextBytes(size_t size)
     {
+        _ASSERT(Found());
         const char* ret = m_Ptr;
         if ( ret ) {
             if ( m_Size >= size ) {
@@ -430,9 +564,19 @@ namespace {
 
     bool CParseBuffer::x_Eof(void) const
     {
+        _ASSERT(Found());
         char buffer[1];
         size_t count;
         return m_Descr.reader->Read(buffer, 1, &count) == eRW_Eof;
+    }
+
+    IReader* CParseBuffer::GetReader(void)
+    {
+        _ASSERT(Found());
+        if ( !m_Descr.reader.get() ) {
+            return this;
+        }
+        return m_Descr.reader.get();
     }
 }
 
@@ -474,11 +618,11 @@ bool CCacheReader::LoadSeq_idGi(CReaderRequestResult& result,
         return true;
     }
     
-    CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, GetGiSubkey());
+    CParseBuffer str(result, m_IdCache, GetIdKey(seq_id), GetGiSubkey());
     if ( str.Found() ) {
         TGi gi = GI_FROM(Int4, str.ParseInt4());
         if ( str.Done() ) {
-            ids.SetLoadedGi(gi);
+            ids->SetLoadedGi(gi, str.GetExpirationTime());
             return true;
         }
     }
@@ -501,7 +645,7 @@ bool CCacheReader::LoadSeq_idAccVer(CReaderRequestResult& result,
         return true;
     }
 
-    CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, GetAccVerSubkey());
+    CParseBuffer str(result, m_IdCache, GetIdKey(seq_id), GetAccVerSubkey());
     if ( str.Found() ) {
         string data = str.FullString();
         CSeq_id_Handle acch;
@@ -509,7 +653,7 @@ bool CCacheReader::LoadSeq_idAccVer(CReaderRequestResult& result,
             CSeq_id id(data);
             acch = CSeq_id_Handle::GetHandle(id);
         }
-        ids.SetLoadedAccVer(acch);
+        ids->SetLoadedAccVer(acch, str.GetExpirationTime());
         return true;
     }
 
@@ -531,9 +675,9 @@ bool CCacheReader::LoadSeq_idLabel(CReaderRequestResult& result,
         return true;
     }
     
-    CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, GetLabelSubkey());
+    CParseBuffer str(result, m_IdCache, GetIdKey(seq_id), GetLabelSubkey());
     if ( str.Found() ) {
-        ids.SetLoadedLabel(str.FullString());
+        ids->SetLoadedLabel(str.FullString(), str.GetExpirationTime());
         return true;
     }
 
@@ -555,11 +699,11 @@ bool CCacheReader::LoadSeq_idTaxId(CReaderRequestResult& result,
         return true;
     }
     
-    CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, GetTaxIdSubkey());
+    CParseBuffer str(result, m_IdCache, GetIdKey(seq_id), GetTaxIdSubkey());
     if ( str.Found() ) {
         int taxid = str.ParseInt4();
         if ( str.Done() ) {
-            ids.SetLoadedTaxId(taxid);
+            ids->SetLoadedTaxId(taxid, str.GetExpirationTime());
             return true;
         }
     }
@@ -683,29 +827,24 @@ bool CCacheReader::ReadSeq_ids(CReaderRequestResult& result,
         return true;
     }
 
-    TSeqIds seq_ids;
-    {{
-        CConn conn(result, this);
-        if ( GetDebugLevel() ) {
-            LOG_POST(Info<<"CCache:Read: "<<key<<","<<GetSeq_idsSubkey());
-        }
-        auto_ptr<IReader> reader
-            (m_IdCache->GetReadStream(key, 0, GetSeq_idsSubkey()));
-        if ( !reader.get() ) {
-            conn.Release();
-            return false;
-        }
-        CRStream r_stream(reader.release(), 0, 0, CRWStreambuf::fOwnAll);
-        CObjectIStreamAsnBinary obj_stream(r_stream);
-        size_t count = static_cast<CObjectIStream&>(obj_stream).ReadUint4();
-        for ( size_t i = 0; i < count; ++i ) {
-            CSeq_id id;
-            obj_stream >> id;
-            seq_ids.push_back(CSeq_id_Handle::GetHandle(id));
-        }
+    CConn conn(result, this);
+    CParseBuffer str(result, m_IdCache, key, GetSeq_idsSubkey());
+    if ( !str.Found() ) {
         conn.Release();
-    }}
-    ids.SetLoadedSeq_ids(0, CFixedSeq_ids(eTakeOwnership, seq_ids));
+        return false;
+    }
+    CRStream r_stream(str.GetReader());
+    CObjectIStreamAsnBinary obj_stream(r_stream);
+    size_t count = static_cast<CObjectIStream&>(obj_stream).ReadUint4();
+    TSeqIds seq_ids;
+    for ( size_t i = 0; i < count; ++i ) {
+        CSeq_id id;
+        obj_stream >> id;
+        seq_ids.push_back(CSeq_id_Handle::GetHandle(id));
+    }
+    ids->SetLoadedSeq_ids(0, CFixedSeq_ids(eTakeOwnership, seq_ids),
+                          str.GetExpirationTime());
+    conn.Release();
     return true;
 }
 
@@ -725,7 +864,7 @@ bool CCacheReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
     
     string subkey, true_subkey;
     GetBlob_idsSubkey(sel, subkey, true_subkey);
-    CParseBuffer str(m_IdCache, GetIdKey(seq_id), 0, subkey);
+    CParseBuffer str(result, m_IdCache, GetIdKey(seq_id), subkey);
     if ( !str.Found() ) {
         return false;
     }
@@ -776,7 +915,8 @@ bool CCacheReader::LoadSeq_idBlob_ids(CReaderRequestResult& result,
     if ( !str.Done() ) {
         return false;
     }
-    ids.SetLoadedBlob_ids(state, CFixedBlob_ids(eTakeOwnership, blob_ids));
+    ids->SetLoadedBlob_ids(state, CFixedBlob_ids(eTakeOwnership, blob_ids),
+                           str.GetExpirationTime());
 
     return true;
 }
@@ -789,7 +929,7 @@ bool CCacheReader::LoadBlobVersion(CReaderRequestResult& result,
         return false;
     }
     
-    CParseBuffer str(m_IdCache, GetBlobKey(blob_id), 0, GetBlobVersionSubkey());
+    CParseBuffer str(result, m_IdCache, GetBlobKey(blob_id), GetBlobVersionSubkey());
     if ( str.Found() ) {
         int version = str.ParseInt4();
         if ( str.Done() ) {
@@ -805,6 +945,22 @@ bool CCacheReader::LoadBlob(CReaderRequestResult& result,
                             const TBlobId& blob_id)
 {
     return LoadChunk(result, blob_id, CProcessor::kMain_ChunkId);
+}
+
+
+void CCacheReader::x_SetBlobVersionAsCurrent(CReaderRequestResult& result,
+                                             const string& key,
+                                             const string& subkey,
+                                             TBlobVersion version)
+{
+    // current blob version is still valid
+    if ( GetDebugLevel() ) {
+        LOG_POST(Info<<"Cache:SetBlobVersionAsCurrent"<<
+                 "("<<key<<", "<<subkey<<", "<<version<<")");
+    }
+    CConn conn(result, this);
+    m_BlobCache->SetBlobVersionAsCurrent(key, subkey, version);
+    conn.Release();
 }
 
 
@@ -824,48 +980,42 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
     string key = GetBlobKey(blob_id);
     string subkey = GetBlobSubkey(blob, chunk_id);
     if ( !blob.IsSetBlobVersion() ) {
+        bool know_has_blobs = false;
         if ( m_JoinedBlobVersion != eOff ) {
             do { // artificial one-time cycle to allow breaking
                 CConn conn(result, this);
-                TBlobVersion version;
-                ICache::EBlobVersionValidity validity;
-                auto_ptr<IReader> reader;
-                try {
-                    if ( GetDebugLevel() ) {
-                        LOG_POST(Info<<"CCache:ReadV: "<<key<<","<<subkey);
+                TBlobVersion version = 0;
+                CParseBuffer str(result, m_BlobCache, key, subkey, &version);
+                if ( !str.GotCurrentVersion() ) {
+                    // joined blob version is not supported by ICache
+                    conn.Release();
+                    if ( m_JoinedBlobVersion != eOff ) {
+                        if ( m_JoinedBlobVersion == eOn ) {
+                            ERR_POST("CCacheReader: "
+                                     "stopped to get current blob version");
+                        }
+                        m_JoinedBlobVersion = eOff;
                     }
-                    reader.reset(m_BlobCache->GetReadStream(key, subkey,
-                                                            &version,
-                                                            &validity));
+                    break;
+                }
+                else {
+                    // joined blob version is supported by ICache
                     if ( m_JoinedBlobVersion == eDefault ) {
-                        // joined blob version is supported by ICache
                         m_JoinedBlobVersion = eOn;
                     }
                 }
-                catch ( CException& /*ignored*/ ) {
-                    if ( m_JoinedBlobVersion == eOn ) {
-                        // we know already that joined blob version
-                        // is supported by ICache -> it's a transient exception
-                        throw;
-                    }
-                    // joined blob version is not supported by ICache
-                    m_JoinedBlobVersion = eOff;
+                if ( !str.Found() ) {
                     conn.Release();
-                    break; // continue with separate blob version
+                    know_has_blobs = str.FoundSome();
+                    break;
                 }
-                if ( !reader.get() ) {
-                    // no any blob data
-                    conn.Release();
-                    return false;
-                }
-                if ( validity != ICache::eCurrent ) {
+                else if ( str.CurrentVersionExpired() ) {
                     // check if blob version is still the same
 
                     // read the blob to allow next ICache command
                     CConn_MemoryStream data;
                     {{
-                        CRStream stream(reader.release(),
-                                        0, 0, CRWStreambuf::fOwnAll);
+                        CRStream stream(str.GetReader());
                         data << stream.rdbuf();
                     }}
                     conn.Release();
@@ -879,11 +1029,7 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
                         // pass the request to the next reader.
                         return false;
                     }
-                    // current blob version is still valid
-                    if ( GetDebugLevel() ) {
-                        LOG_POST(Info<<"SetBlobVersionAsCurrent("<<key<<", "<<subkey<<", "<<version<<")");
-                    }
-                    m_BlobCache->SetBlobVersionAsCurrent(key, subkey, version);
+                    x_SetBlobVersionAsCurrent(result, key, subkey, version);
                     x_ProcessBlob(result, blob_id, chunk_id, data);
                     return true;
                 }
@@ -891,8 +1037,7 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
                     // current blob version is valid
                     blob.SetBlobVersion(version);
                     {{
-                        CRStream stream(reader.release(),
-                                        0, 0, CRWStreambuf::fOwnAll);
+                        CRStream stream(str.GetReader());
                         x_ProcessBlob(result, blob_id, chunk_id, stream);
                     }}
                     conn.Release();
@@ -901,32 +1046,48 @@ bool CCacheReader::LoadChunk(CReaderRequestResult& result,
             } while ( false );
             // failed, continue with old-style version
         }
-        {{
+
+        if ( !know_has_blobs ) {
             CConn conn(result, this);
-            if ( !m_BlobCache->HasBlobs(key, subkey) ) {
-                conn.Release();
+            bool has_blobs = m_BlobCache->HasBlobs(key, subkey);
+            conn.Release();
+            if ( !has_blobs ) {
+                // shurely there are no versions
                 return false;
             }
-        }}
-        m_Dispatcher->LoadBlobVersion(result, blob_id);
+        }
+
         if ( !blob.IsSetBlobVersion() ) {
+            // get blob version from other readers (e.g. ID2)
+            if ( m_JoinedBlobVersion != eOff ) {
+                m_Dispatcher->LoadBlobVersion(result, blob_id, this);
+            }
+            else {
+                m_Dispatcher->LoadBlobVersion(result, blob_id);
+            }
+        }
+        if ( !blob.IsSetBlobVersion() ) {
+            // Cannot determine the blob verion ->
+            // pass the request to the next reader.
             return false;
+        }
+        
+        if ( m_JoinedBlobVersion != eOff ) {
+            x_SetBlobVersionAsCurrent(result, key, subkey,
+                                      blob.GetBlobVersion());
         }
     }
     TBlobVersion version = blob.GetBlobVersion();
     _ASSERT(version);
 
     CConn conn(result, this);
-    if ( GetDebugLevel() ) {
-        LOG_POST(Info<<"CCache:Read: "<<key<<","<<subkey<<","<<version);
-    }
-    auto_ptr<IReader> reader(m_BlobCache->GetReadStream(key, version, subkey));
-    if ( !reader.get() ) {
+    CParseBuffer buffer(result, m_BlobCache, key, subkey, version);
+    if ( !buffer.Found() ) {
         conn.Release();
         return false;
     }
 
-    CRStream stream(reader.release(), 0, 0, CRWStreambuf::fOwnAll);
+    CRStream stream(buffer.GetReader());
     x_ProcessBlob(result, blob_id, chunk_id, stream);
     conn.Release();
     return true;

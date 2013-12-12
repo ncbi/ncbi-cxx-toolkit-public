@@ -59,5 +59,7 @@
 #define NCBI_GBLOADER_PARAM_ID_GC_SIZE "ID_GC_SIZE"
 /* Whether to open first connection immediately or not (default: true) */
 #define NCBI_GBLOADER_PARAM_PREOPEN  "preopen"
+/* Expiration timeout of id resolution information in seconds (must be > 0) */
+#define NCBI_GBLOADER_PARAM_ID_EXPIRATION_TIMEOUT "ID_EXPIRATION_TIMEOUT"
 
 #endif

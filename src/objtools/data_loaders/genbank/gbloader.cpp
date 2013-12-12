@@ -96,6 +96,7 @@ static const char* const DEFAULT_DRV_ORDER = "ID2:ID1";
 #define GBLOADER_NAME "GBLOADER"
 
 #define DEFAULT_ID_GC_SIZE 10000
+#define DEFAULT_ID_EXPIRATION_TIMEOUT 2*3600 // 2 hours
 
 class CGBReaderRequestResult : public CReaderRequestResult
 {
@@ -125,7 +126,7 @@ public:
 
     CInitMutexPool& GetMutexPool(void) { return m_Loader->m_MutexPool; }
 
-    virtual double GetIdExpirationTimeout(void) const;
+    virtual TExpirationTime GetIdExpirationTimeout(void) const;
 
     friend class CGBDataLoader;
 
@@ -482,6 +483,22 @@ void CGBDataLoader::x_CreateDriver(const CGBLoaderParams& params)
     m_LoadMapSeq_ids.SetMaxSize(queue_size);
     m_LoadMapSeq_ids2.SetMaxSize(queue_size);
     m_LoadMapBlob_ids.SetMaxSize(queue_size);
+
+    m_IdExpirationTimeout = DEFAULT_ID_EXPIRATION_TIMEOUT;
+    if ( gb_params ) {
+        try {
+            string param =
+                GetParam(gb_params, NCBI_GBLOADER_PARAM_ID_EXPIRATION_TIMEOUT);
+            if ( !param.empty() ) {
+                Uint4 timeout = NStr::StringToNumeric<Uint4>(param);
+                if ( timeout > 0 ) {
+                    m_IdExpirationTimeout = timeout;
+                }
+            }
+        }
+        catch ( CException& /*ignored*/ ) {
+        }
+    }
     
     m_Dispatcher = new CReadDispatcher;
     
@@ -1543,9 +1560,10 @@ void CGBReaderRequestResult::GetLoadedBlob_ids(const CSeq_id_Handle& idh,
 }
 
 
-double CGBReaderRequestResult::GetIdExpirationTimeout(void) const
+CGBDataLoader::TExpirationTimeout
+CGBReaderRequestResult::GetIdExpirationTimeout(void) const
 {
-    return 2*3600;
+    return m_Loader->GetIdExpirationTimeout();
 }
 
 

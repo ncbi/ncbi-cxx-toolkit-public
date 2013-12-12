@@ -731,9 +731,9 @@ bool CPubseqReader::LoadSeq_idInfo(CReaderRequestResult& result,
                     }
                     blob_ids.push_back(CBlob_Info(blob_id, fBlobHasAllLocal));
                 }
-                if ( !with_named_accs ) {
+                if ( !with_named_accs || named_gi == ZERO_GI ) {
                     // no need to read named annot accessions
-                    SetAndSaveSeq_idBlob_ids(result, seq_id, 0, 0,
+                    SetAndSaveSeq_idBlob_ids(result, seq_id, with_named_accs, 0,
                                              CFixedBlob_ids(eTakeOwnership, blob_ids));
                 }
             }

@@ -71,7 +71,7 @@ CLoadInfo::~CLoadInfo(void)
 
 
 inline
-void CLoadInfo::x_SetLoaded(double expiration_time)
+void CLoadInfo::x_SetLoaded(TExpirationTime expiration_time)
 {
     _ASSERT(expiration_time > 0);
     if ( !m_LoadLock ) {
@@ -86,7 +86,7 @@ void CLoadInfo::x_SetLoaded(double expiration_time)
 }
 
 
-void CLoadInfo::SetLoaded(double expiration_time)
+void CLoadInfo::SetLoaded(TExpirationTime expiration_time)
 {
     CFastMutexGuard guard(sx_ExpirationTimeMutex);
     x_SetLoaded(expiration_time);
@@ -206,7 +206,7 @@ CLoadInfoSeq_ids::~CLoadInfoSeq_ids(void)
 
 bool CLoadInfoSeq_ids::SetLoadedSeq_ids(TState state,
                                         const CFixedSeq_ids& seq_ids,
-                                        double expiration_time)
+                                        TExpirationTime expiration_time)
 {
     CFastMutexGuard guard(sx_ExpirationTimeMutex);
     if ( expiration_time <= GetExpirationTime() ) {
@@ -220,7 +220,7 @@ bool CLoadInfoSeq_ids::SetLoadedSeq_ids(TState state,
 
 
 bool CLoadInfoSeq_ids::SetNoSeq_ids(TState state,
-                                    double expiration_time)
+                                    TExpirationTime expiration_time)
 {
     CFastMutexGuard guard(sx_ExpirationTimeMutex);
     if ( expiration_time <= GetExpirationTime() ) {
@@ -274,7 +274,7 @@ bool CLoadInfoSeq_ids::IsLoadedGi(const CReaderRequestResult& rr)
 
 
 bool CLoadInfoSeq_ids::SetLoadedGi(TGi gi,
-                                   double expiration_time)
+                                   TExpirationTime expiration_time)
 {
     CFastMutexGuard guard(sx_ExpirationTimeMutex);
     if ( expiration_time <= m_ExpirationTimeGi ) {
@@ -317,7 +317,7 @@ CSeq_id_Handle CLoadInfoSeq_ids::GetAccVer(void) const
 
 
 bool CLoadInfoSeq_ids::SetLoadedAccVer(const CSeq_id_Handle& acc,
-                                       double expiration_time)
+                                       TExpirationTime expiration_time)
 {
     if ( acc && acc.Which() == CSeq_id::e_Gi ) {
         _ASSERT(acc.GetGi() == ZERO_GI);
@@ -358,7 +358,7 @@ string CLoadInfoSeq_ids::GetLabel(void) const
 
 
 bool CLoadInfoSeq_ids::SetLoadedLabel(const string& label,
-                                      double expiration_time)
+                                      TExpirationTime expiration_time)
 {
     CFastMutexGuard guard(sx_ExpirationTimeMutex);
     if ( expiration_time <= m_ExpirationTimeLabel ) {
@@ -385,7 +385,7 @@ bool CLoadInfoSeq_ids::IsLoadedTaxId(const CReaderRequestResult& rr)
 
 
 bool CLoadInfoSeq_ids::SetLoadedTaxId(int taxid,
-                                      double expiration_time)
+                                      TExpirationTime expiration_time)
 {
     CFastMutexGuard guard(sx_ExpirationTimeMutex);
     if ( expiration_time <= m_ExpirationTimeTaxId ) {
@@ -430,7 +430,7 @@ CFixedBlob_ids CLoadInfoBlob_ids::GetBlob_ids(void) const
 
 
 bool CLoadInfoBlob_ids::SetNoBlob_ids(TState state,
-                                      double expiration_time)
+                                      TExpirationTime expiration_time)
 {
     CFastMutexGuard guard(sx_ExpirationTimeMutex);
     if ( expiration_time <= GetExpirationTime() ) {
@@ -445,7 +445,7 @@ bool CLoadInfoBlob_ids::SetNoBlob_ids(TState state,
 
 bool CLoadInfoBlob_ids::SetLoadedBlob_ids(TState state,
                                           const CFixedBlob_ids& blob_ids,
-                                          double expiration_time)
+                                          TExpirationTime expiration_time)
 {
     CFastMutexGuard guard(sx_ExpirationTimeMutex);
     if ( expiration_time <= GetExpirationTime() ) {
@@ -526,7 +526,7 @@ void CLoadInfoLock::ReleaseLock(void)
 }
 
 
-void CLoadInfoLock::SetLoaded(double expiration_timeout)
+void CLoadInfoLock::SetLoaded(TExpirationTime expiration_timeout)
 {
     m_Info->SetLoaded(expiration_timeout);
     ReleaseLock();
@@ -547,7 +547,7 @@ void CLoadLock_Base::Lock(TInfo& info, TMutexSource& src)
 }
 
 
-void CLoadLock_Base::SetLoaded(double expiration_time)
+void CLoadLock_Base::SetLoaded(TExpirationTime expiration_time)
 {
     m_Lock->SetLoaded(expiration_time);
 }
@@ -877,6 +877,14 @@ void CLoadLockBlob::SetBlobVersion(TBlobVersion version)
 /////////////////////////////////////////////////////////////////////////////
 
 
+// helper method to get system time for expiration
+static
+CLoadInfo::TExpirationTime GetCurrentTime(void)
+{
+    return time(0);
+}
+
+
 CReaderRequestResult::CReaderRequestResult(const CSeq_id_Handle& requested_id)
     : m_Level(0),
       m_Cached(false),
@@ -890,22 +898,15 @@ CReaderRequestResult::CReaderRequestResult(const CSeq_id_Handle& requested_id)
 }
 
 
-double CReaderRequestResult::GetCurrentTime(void)
+CLoadInfo::TExpirationTime
+CReaderRequestResult::GetNewIdExpirationTime(void) const
 {
-    time_t sec;
-    long nanosec;
-    CTime::GetCurrentTimeT(&sec, &nanosec);
-    return sec+nanosec*1e-9;
+    return GetStartTime()+GetIdExpirationTimeout();
 }
 
 
-double CReaderRequestResult::GetIdExpirationTime(void) const
-{
-    return GetCurrentTime()+GetIdExpirationTimeout();
-}
-
-
-double CReaderRequestResult::GetIdExpirationTimeout(void) const
+CLoadInfo::TExpirationTime
+CReaderRequestResult::GetIdExpirationTimeout(void) const
 {
     return 2*3600;
 }
@@ -1161,31 +1162,34 @@ void CReaderRequestResult::ReleaseLocks(void)
 }
 
 
-double CReaderRequestResult::StartRecursion(void)
+CReaderRequestResultRecursion::CReaderRequestResultRecursion(
+    CReaderRequestResult& result)
+    : CStopWatch(eStart),
+      m_Result(result)
 {
-    double rec_time = m_RecursiveTime;
-    m_RecursiveTime = 0;
-    ++m_RecursionLevel;
-    return rec_time;
+    m_SaveTime = result.m_RecursiveTime;
+    result.m_RecursiveTime = 0;
+    ++result.m_RecursionLevel;
 }
 
 
-void CReaderRequestResult::EndRecursion(double saved_time)
+CReaderRequestResultRecursion::~CReaderRequestResultRecursion(void)
 {
-    _ASSERT(m_RecursionLevel>0);
-    m_RecursiveTime += saved_time;
-    --m_RecursionLevel;
+    _ASSERT(m_Result.m_RecursionLevel>0);
+    m_Result.m_RecursiveTime += m_SaveTime;
+    --m_Result.m_RecursionLevel;
 }
 
 
-double CReaderRequestResult::GetCurrentRequestTime(double time)
+double CReaderRequestResultRecursion::GetCurrentRequestTime(void) const
 {
-    double rec_time = m_RecursiveTime;
+    double time = Elapsed();
+    double rec_time = m_Result.m_RecursiveTime;
     if ( rec_time > time ) {
         return 0;
     }
     else {
-        m_RecursiveTime = time;
+        m_Result.m_RecursiveTime = time;
         return time - rec_time;
     }
 }

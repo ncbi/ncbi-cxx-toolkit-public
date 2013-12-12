@@ -1148,7 +1148,7 @@ void CReadDispatcher::Process(CReadDispatcherCommand& command,
         do {
             ++retry_count;
             try {
-                CReaderRequestResult::CRecurse r(command.GetResult());
+                CReaderRequestResultRecursion r(command.GetResult());
                 if ( !command.Execute(reader) ) {
                     retry_count = kMax_Int;
                 }
@@ -1420,10 +1420,10 @@ void CReadDispatcher::SetAndSaveBlobVersion(CReaderRequestResult& result,
 
 
 void CReadDispatcher::LogStat(CReadDispatcherCommand& command,
-                              CStopWatch& sw)
+                              CReaderRequestResultRecursion& recursion)
 {
     CReaderRequestResult& result = command.GetResult();
-    double time = result.GetCurrentRequestTime(sw.Elapsed());
+    double time = recursion.GetCurrentRequestTime();
     CGBRequestStatistics& stat = sx_Statistics[command.GetStatistics()];
     stat.AddTime(time);
     if ( CollectStatistics() >= 2 ) {
@@ -1432,7 +1432,7 @@ void CReadDispatcher::LogStat(CReadDispatcherCommand& command,
         if ( idh ) {
             descr = descr + " for " + idh.AsString();
         }
-        LOG_POST_X(8, setw(result.GetRecursionLevel()) << "" <<
+        LOG_POST_X(8, setw(recursion.GetRecursionLevel()) << "" <<
                    "Dispatcher: read " <<
                    descr << " in " <<
                    setiosflags(ios::fixed) <<
@@ -1442,11 +1442,11 @@ void CReadDispatcher::LogStat(CReadDispatcherCommand& command,
 
 
 void CReadDispatcher::LogStat(CReadDispatcherCommand& command,
-                              CStopWatch& sw,
+                              CReaderRequestResultRecursion& recursion,
                               double size)
 {
     CReaderRequestResult& result = command.GetResult();
-    double time = result.GetCurrentRequestTime(sw.Elapsed());
+    double time = recursion.GetCurrentRequestTime();
     CGBRequestStatistics& stat = sx_Statistics[command.GetStatistics()];
     stat.AddTimeSize(time, size);
     if ( CollectStatistics() >= 2 ) {
@@ -1455,7 +1455,7 @@ void CReadDispatcher::LogStat(CReadDispatcherCommand& command,
         if ( idh ) {
             descr = descr + " for " + idh.AsString();
         }
-        LOG_POST_X(9, setw(result.GetRecursionLevel()) << "" <<
+        LOG_POST_X(9, setw(recursion.GetRecursionLevel()) << "" <<
                    descr << " in " <<
                    setiosflags(ios::fixed) <<
                    setprecision(3) <<

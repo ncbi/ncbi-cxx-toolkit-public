@@ -46,6 +46,7 @@ BEGIN_SCOPE(objects)
 
 class CBlob_id;
 class CReaderRequestResult;
+class CReaderRequestResultRecursion;
 class CReadDispatcher;
 class CWriter;
 class CID2_Reply_Data;
@@ -144,56 +145,50 @@ protected:
     CWriter* GetWriter(const CReaderRequestResult& result) const;
 
     static int CollectStatistics(void); // 0 - no stats, >1 - verbose
-    static void LogStat(CReaderRequestResult& result,
-                        CStopWatch& sw,
+    static void LogStat(CReaderRequestResultRecursion& recursion,
                         const CBlob_id& blob_id,
                         CGBRequestStatistics::EStatType stat_type,
                         const char* descr,
                         double size);
-    static void LogStat(CReaderRequestResult& result,
-                        CStopWatch& sw,
+    static void LogStat(CReaderRequestResultRecursion& recursion,
                         const CBlob_id& blob_id,
                         int chunk_id,
                         CGBRequestStatistics::EStatType stat_type,
                         const char* descr,
                         double size);
-    static void LogStat(CReaderRequestResult& result,
-                        CStopWatch& sw,
+    static void LogStat(CReaderRequestResultRecursion& recursion,
                         const CBlob_id& blob_id,
                         CGBRequestStatistics::EStatType stat_type,
                         const char* descr,
                         CNcbiStreampos size)
     {
-        LogStat(result, sw, blob_id, stat_type, descr, double(size));
+        LogStat(recursion, blob_id, stat_type, descr, double(size));
     }
-    static void LogStat(CReaderRequestResult& result,
-                        CStopWatch& sw,
+    static void LogStat(CReaderRequestResultRecursion& recursion,
                         const CBlob_id& blob_id,
                         int chunk_id,
                         CGBRequestStatistics::EStatType stat_type,
                         const char* descr,
                         CNcbiStreampos size)
     {
-        LogStat(result, sw, blob_id, chunk_id, stat_type, descr, double(size));
+        LogStat(recursion, blob_id, chunk_id, stat_type, descr, double(size));
     }
-    static void LogStat(CReaderRequestResult& result,
-                        CStopWatch& sw,
+    static void LogStat(CReaderRequestResultRecursion& recursion,
                         const CBlob_id& blob_id,
                         CGBRequestStatistics::EStatType stat_type,
                         const char* descr,
                         size_t size)
     {
-        LogStat(result, sw, blob_id, stat_type, descr, double(size));
+        LogStat(recursion, blob_id, stat_type, descr, double(size));
     }
-    static void LogStat(CReaderRequestResult& result,
-                        CStopWatch& sw,
+    static void LogStat(CReaderRequestResultRecursion& recursion,
                         const CBlob_id& blob_id,
                         int chunk_id,
                         CGBRequestStatistics::EStatType stat_type,
                         const char* descr,
                         size_t size)
     {
-        LogStat(result, sw, blob_id, chunk_id, stat_type, descr, double(size));
+        LogStat(recursion, blob_id, chunk_id, stat_type, descr, double(size));
     }
 };
 

@@ -322,6 +322,14 @@ public:
                     ICache::eDropAll);
     void CloseCache(void);
 
+    // expiration timout in seconds, must be positive
+    typedef Uint4 TExpirationTimeout;
+    TExpirationTimeout GetIdExpirationTimeout(void) const
+        {
+            return m_IdExpirationTimeout;
+        }
+    void SetIdExpirationTimeout(TExpirationTimeout timeout);
+
 protected:
     friend class CGBReaderRequestResult;
 
@@ -360,6 +368,8 @@ private:
 
     // Information about all available caches
     CGBReaderCacheManager   m_CacheManager;
+
+    TExpirationTimeout      m_IdExpirationTimeout;
 
     //
     // private code

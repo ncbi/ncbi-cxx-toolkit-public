@@ -815,6 +815,9 @@ bool CId2ReaderBase::LoadBlobs(CReaderRequestResult& result,
         // shortcut - we know Seq-id -> Blob-id resolution
         return LoadBlobs(result, ids, mask, sel);
     }
+    else if ( m_Dispatcher->GetWriter(result, CWriter::eBlobWriter) ) {
+        return CReader::LoadBlobs(result, seq_id, mask, sel);
+    }
     else {
         CID2_Request req;
         CID2_Request_Get_Blob_Info& req2 = req.SetRequest().SetGet_blob_info();
@@ -823,7 +826,7 @@ bool CId2ReaderBase::LoadBlobs(CReaderRequestResult& result,
         x_SetDetails(req2.SetGet_data(), mask);
         x_SetExclude_blobs(req2, seq_id, result);
         x_ProcessRequest(result, req, sel);
-        return true;
+        return ids.IsLoaded();
     }
 }
 

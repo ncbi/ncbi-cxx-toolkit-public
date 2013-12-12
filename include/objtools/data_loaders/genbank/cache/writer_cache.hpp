@@ -82,6 +82,89 @@ public:
     virtual void InitializeCache(CReaderCacheManager& cache_manager,
                                  const TPluginManagerParamTree* params);
     virtual void ResetCache(void);
+
+protected:
+    class CStoreBuffer {
+    public:
+        CStoreBuffer(void)
+            : m_Buffer(m_Buffer0),
+              m_End(m_Buffer0+sizeof(m_Buffer0)),
+              m_Ptr(m_Buffer)
+            {
+            }
+        ~CStoreBuffer(void)
+            {
+                x_FreeBuffer();
+            }
+        
+        const char* data(void) const
+            {
+                return m_Buffer;
+            }
+        size_t size(void) const
+            {
+                return m_Ptr - m_Buffer;
+            }
+        void CheckSpace(size_t size);
+        void StoreUint4(Uint4 v)
+            {
+                CheckSpace(4);
+                x_StoreUint4(v);
+            }
+        void StoreInt4(Int4 v)
+            {
+                StoreUint4(v);
+            }
+        void StoreString(const string& s);
+
+        static Uint4 ToUint4(size_t size)
+            {
+                Uint4 ret = Uint4(size);
+                if ( ret != size ) {
+                    NCBI_THROW(CLoaderException, eLoaderFailed,
+                               "Uint4 overflow");
+                }
+                return ret;
+            }
+    protected:
+        void x_FreeBuffer(void);
+        void x_StoreUint4(Uint4 v)
+            {
+                m_Ptr[0] = v>>24;
+                m_Ptr[1] = v>>16;
+                m_Ptr[2] = v>>8;
+                m_Ptr[3] = v;
+                m_Ptr += 4;
+            }
+
+    private:
+        CStoreBuffer(const CStoreBuffer&);
+        void operator=(const CStoreBuffer&);
+
+        char m_Buffer0[256];
+        char* m_Buffer;
+        char* m_End;
+        char* m_Ptr;
+    };
+
+    friend class CStoreBuffer;
+
+    void x_WriteId(const string& key,
+                   const string& subkey,
+                   const char* data,
+                   size_t size);
+    void x_WriteId(const string& key,
+                   const string& subkey,
+                   const string& str)
+        {
+            x_WriteId(key, subkey, str.data(), str.size());
+        }
+    void x_WriteId(const string& key,
+                   const string& subkey,
+                   const CStoreBuffer& str)
+        {
+            x_WriteId(key, subkey, str.data(), str.size());
+        }
 };
 
 

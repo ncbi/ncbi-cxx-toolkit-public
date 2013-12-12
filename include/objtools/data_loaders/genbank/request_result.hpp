@@ -77,14 +77,16 @@ public:
     CLoadInfo(void);
     ~CLoadInfo(void);
 
+    typedef Uint4 TExpirationTime; // UTC time, seconds since epoch (1970)
+
     bool IsLoaded(const CReaderRequestResult& rr) const;
-    void SetLoaded(double expiration_time);
-    double GetExpirationTime(void) const {
+    void SetLoaded(TExpirationTime expiration_time);
+    TExpirationTime GetExpirationTime(void) const {
         return m_ExpirationTime;
     }
 
 protected:
-    void x_SetLoaded(double expiration_time);
+    void x_SetLoaded(TExpirationTime expiration_time);
     
 private:
     friend class CLoadInfoLock;
@@ -93,7 +95,7 @@ private:
     CLoadInfo(const CLoadInfo&);
     CLoadInfo& operator=(const CLoadInfo&);
 
-    volatile double     m_ExpirationTime;
+    volatile TExpirationTime     m_ExpirationTime;
     CInitMutex<CObject> m_LoadLock;
 };
 
@@ -167,10 +169,10 @@ public:
     TSeq_ids GetSeq_ids(void) const;
 
     bool SetNoSeq_ids(TState state,
-                      double expiration_time);
+                      TExpirationTime expiration_time);
     bool SetLoadedSeq_ids(TState state,
                           const CFixedSeq_ids& seq_ids,
-                          double expiration_time);
+                          TExpirationTime expiration_time);
 
     bool IsLoadedGi(const CReaderRequestResult& rr);
     TGi GetGi(void) const
@@ -178,15 +180,18 @@ public:
             _ASSERT(m_ExpirationTimeGi > 0);
             return m_Gi;
         }
-    bool SetLoadedGi(TGi gi, double expiration_time);
+    bool SetLoadedGi(TGi gi,
+                     TExpirationTime expiration_time);
 
     bool IsLoadedAccVer(const CReaderRequestResult& rr);
     CSeq_id_Handle GetAccVer(void) const;
-    bool SetLoadedAccVer(const CSeq_id_Handle& acc, double expiration_time);
+    bool SetLoadedAccVer(const CSeq_id_Handle& acc,
+                         TExpirationTime expiration_time);
 
     bool IsLoadedLabel(const CReaderRequestResult& rr);
     string GetLabel(void) const;
-    bool SetLoadedLabel(const string& label, double expiration_time);
+    bool SetLoadedLabel(const string& label,
+                        TExpirationTime expiration_time);
 
     bool IsLoadedTaxId(const CReaderRequestResult& rr);
     int GetTaxId(void) const
@@ -194,14 +199,15 @@ public:
             _ASSERT(m_ExpirationTimeTaxId > 0);
             return m_TaxId;
         }
-    bool SetLoadedTaxId(int taxid, double expiration_time);
+    bool SetLoadedTaxId(int taxid,
+                        TExpirationTime expiration_time);
 
 private:
     TSeq_ids        m_Seq_ids;
-    volatile double m_ExpirationTimeGi;
-    volatile double m_ExpirationTimeAcc;
-    volatile double m_ExpirationTimeLabel;
-    volatile double m_ExpirationTimeTaxId;
+    volatile TExpirationTime m_ExpirationTimeGi;
+    volatile TExpirationTime m_ExpirationTimeAcc;
+    volatile TExpirationTime m_ExpirationTimeLabel;
+    volatile TExpirationTime m_ExpirationTimeTaxId;
     TGi             m_Gi;
     CSeq_id_Handle  m_Acc;
     string          m_Label;
@@ -348,10 +354,10 @@ public:
     TBlobIds GetBlob_ids(void) const;
 
     bool SetNoBlob_ids(TState state,
-                       double expiration_time);
+                       TExpirationTime expiration_time);
     bool SetLoadedBlob_ids(TState state,
                            const TBlobIds& blob_ids,
-                           double expiration_time);
+                           TExpirationTime expiration_time);
 
 private:
     TSeq_id     m_Seq_id;
@@ -369,8 +375,10 @@ class NCBI_XREADER_EXPORT CLoadInfoLock : public CObject
 public:
     ~CLoadInfoLock(void);
 
+    typedef CLoadInfo::TExpirationTime TExpirationTime;
+
     void ReleaseLock(void);
-    void SetLoaded(double expiration_time);
+    void SetLoaded(TExpirationTime expiration_time);
     const CLoadInfo& GetLoadInfo(void) const
         {
             return *m_Info;
@@ -400,11 +408,13 @@ public:
     typedef CLoadInfoLock TLock;
     typedef CReaderRequestResult TMutexSource;
 
+    typedef CLoadInfo::TExpirationTime TExpirationTime;
+
     bool IsLoaded(void) const
         {
             return Get().IsLoaded(*m_RequestResult);
         }
-    void SetLoaded(double expiration_time);
+    void SetLoaded(TExpirationTime expiration_time);
 
     TInfo& Get(void)
         {
@@ -479,7 +489,7 @@ public:
     bool SetLoadedBlob_ids(const CLoadLockBlob_ids& ids2);
 
 protected:
-    double GetNewExpirationTime(void) const;
+    TExpirationTime GetNewExpirationTime(void) const;
 
 private:
     void x_Initialize(TMutexSource& src, const CSeq_id_Handle& seq_id);
@@ -553,7 +563,7 @@ public:
         }
 
 protected:
-    double GetNewExpirationTime(void) const;
+    TExpirationTime GetNewExpirationTime(void) const;
 
 private:
     CLoadLockBlob_ids m_Blob_ids;
@@ -582,44 +592,47 @@ private:
 };
 
 /*
-class NCBI_XREADER_EXPORT CLoadLockBlob : public CLoadLock_Base
-{
-public:
-    typedef CLoadInfoBlob TInfo;
+  class NCBI_XREADER_EXPORT CLoadLockBlob : public CLoadLock_Base
+  {
+  public:
+  typedef CLoadInfoBlob TInfo;
 
-    CLoadLockBlob(TMutexSource& src, const CBlob_id& blob_id);
+  CLoadLockBlob(TMutexSource& src, const CBlob_id& blob_id);
     
-    TInfo& Get(void)
-        {
-            return static_cast<TInfo&>(CLoadLock_Base::Get());
-        }
-    const TInfo& Get(void) const
-        {
-            return static_cast<const TInfo&>(CLoadLock_Base::Get());
-        }
-    TInfo& operator*(void)
-        {
-            return Get();
-        }
-    TInfo* operator->(void)
-        {
-            return &Get();
-        }
-    const TInfo& operator*(void) const
-        {
-            return Get();
-        }
-    const TInfo* operator->(void) const
-        {
-            return &Get();
-        }
-};
+  TInfo& Get(void)
+  {
+  return static_cast<TInfo&>(CLoadLock_Base::Get());
+  }
+  const TInfo& Get(void) const
+  {
+  return static_cast<const TInfo&>(CLoadLock_Base::Get());
+  }
+  TInfo& operator*(void)
+  {
+  return Get();
+  }
+  TInfo* operator->(void)
+  {
+  return &Get();
+  }
+  const TInfo& operator*(void) const
+  {
+  return Get();
+  }
+  const TInfo* operator->(void) const
+  {
+  return &Get();
+  }
+  };
 */
 
 
 /////////////////////////////////////////////////////////////////////////////
 // whole request lock
 /////////////////////////////////////////////////////////////////////////////
+
+
+class CReaderRequestResultRecursion;
 
 
 class NCBI_XREADER_EXPORT CReaderRequestResult
@@ -640,6 +653,7 @@ public:
     typedef size_t TLevel;
     typedef int TBlobVersion;
     typedef int TBlobState;
+    typedef CLoadInfo::TExpirationTime TExpirationTime;
 
     virtual CGBDataLoader* GetLoaderPtr(void);
 
@@ -697,46 +711,19 @@ public:
     const CSeq_id_Handle& GetRequestedId(void) const { return m_RequestedId; }
     void SetRequestedId(const CSeq_id_Handle& requested_id);
 
-    int GetRecursionLevel(void) const
-        {
-            return m_RecursionLevel;
-        }
-    double StartRecursion(void);
-    void EndRecursion(double saved_time);
-    friend class CRecurse;
-    class CRecurse : public CStopWatch
-    {
-    public:
-        CRecurse(CReaderRequestResult& result)
-            : CStopWatch(eStart),
-              m_Result(result),
-              m_SaveTime(result.StartRecursion())
-            {
-            }
-        ~CRecurse(void)
-            {
-                m_Result.EndRecursion(m_SaveTime);
-            }
-    private:
-        CReaderRequestResult& m_Result;
-        double m_SaveTime;
-    };
-
-    double GetCurrentRequestTime(double time);
-
     void ClearRetryDelay(void) { m_RetryDelay = 0; }
     void AddRetryDelay(double delay) { m_RetryDelay += delay; }
     double GetRetryDelay(void) const { return m_RetryDelay; }
 
-    static double GetCurrentTime(void);
-
-    double GetStartTime(void) const { return m_StartTime; }
-    double GetIdExpirationTime(void) const;
-    virtual double GetIdExpirationTimeout(void) const;
+    // expiration support
+    TExpirationTime GetStartTime(void) const { return m_StartTime; }
+    TExpirationTime GetNewIdExpirationTime(void) const;
+    virtual TExpirationTime GetIdExpirationTimeout(void) const;
 
 private:
     friend class CLoadInfoLock;
     friend class CReaderAllocatedConnection;
+    friend class CReaderRequestResultRecursion;
 
     void ReleaseLoadLock(const CRef<CLoadInfo>& info);
 
@@ -756,7 +743,7 @@ private:
     double          m_RecursiveTime;
     CReaderAllocatedConnection* m_AllocatedConnection;
     double          m_RetryDelay;
-    double          m_StartTime;
+    TExpirationTime m_StartTime;
 
 private: // hide methods
     CReaderRequestResult(const CReaderRequestResult&);
@@ -796,24 +783,51 @@ public:
 };
 
 
+class CReaderRequestResultRecursion : public CStopWatch
+{
+public:
+    CReaderRequestResultRecursion(CReaderRequestResult& result);
+    ~CReaderRequestResultRecursion(void);
+    CReaderRequestResult& GetResult(void) const
+        {
+            return m_Result;
+        }
+    // return current recursion level
+    int GetRecursionLevel(void) const
+        {
+            return m_Result.m_RecursionLevel;
+        }
+    // return current request processing time within recursion
+    double GetCurrentRequestTime(void) const;
+private:
+    CReaderRequestResult& m_Result;
+    double m_SaveTime;
+private: // to prevent copying
+    CReaderRequestResultRecursion(const CReaderRequestResultRecursion&);
+    void operator=(const CReaderRequestResultRecursion&);
+};
+
+
 inline
 bool CLoadInfo::IsLoaded(const CReaderRequestResult& rr) const
 {
-    return m_LoadLock && rr.GetStartTime() < GetExpirationTime();
+    return m_LoadLock && rr.GetStartTime() <= GetExpirationTime();
 }
 
 
 inline
-double CLoadLockSeq_ids::GetNewExpirationTime(void) const
+CLoadInfo::TExpirationTime
+CLoadLockSeq_ids::GetNewExpirationTime(void) const
 {
-    return m_RequestResult->GetIdExpirationTime();
+    return m_RequestResult->GetNewIdExpirationTime();
 }
 
 
 inline
-double CLoadLockBlob_ids::GetNewExpirationTime(void) const
+CLoadInfo::TExpirationTime
+CLoadLockBlob_ids::GetNewExpirationTime(void) const
 {
-    return m_RequestResult->GetIdExpirationTime();
+    return m_RequestResult->GetNewIdExpirationTime();
 }
 
 

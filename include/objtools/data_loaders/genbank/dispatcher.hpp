@@ -155,9 +155,9 @@ public:
     static int CollectStatistics(void); // 0 - no stats, >1 - verbose
 
     static void LogStat(CReadDispatcherCommand& command,
-                        CStopWatch& sw);
+                        CReaderRequestResultRecursion& recursion);
     static void LogStat(CReadDispatcherCommand& command,
-                        CStopWatch& sw, double size);
+                        CReaderRequestResultRecursion& recursion, double size);
 
 private:
     typedef map< TLevel,       CRef<CReader> >    TReaders;

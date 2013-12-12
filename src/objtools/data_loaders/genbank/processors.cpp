@@ -41,7 +41,7 @@
 
 #include <objtools/data_loaders/genbank/reader_snp.hpp>
 #include <objtools/data_loaders/genbank/split_parser.hpp>
-#include <objtools/data_loaders/genbank/gbloader.hpp>
+//#include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/error_codes.hpp>
 
 #include <objmgr/impl/tse_split_info.hpp>
@@ -802,11 +802,11 @@ void CProcessor_ID1::ProcessObjStream(CReaderRequestResult& result,
         SetSeqEntryReadHooks(obj_stream);
 
         {{
-            CReaderRequestResult::CRecurse r(result);
+            CReaderRequestResultRecursion r(result);
                 
             obj_stream >> reply;
             
-            LogStat(result, r, blob_id,
+            LogStat(r, blob_id,
                     CGBRequestStatistics::eStat_LoadBlob,
                     "CProcessor_ID1: read data",
                     obj_stream.GetStreamPos());
@@ -1019,13 +1019,13 @@ void CProcessor_ID1_SNP::ProcessObjStream(CReaderRequestResult& result,
     CRef<CSeq_entry> seq_entry;
     {{
         {{
-            CReaderRequestResult::CRecurse r(result);
+            CReaderRequestResultRecursion r(result);
             
             CSeq_annot_SNP_Info_Reader::Parse(obj_stream,
                                               Begin(reply),
                                               set_info);
             
-            LogStat(result, r, blob_id,
+            LogStat(r, blob_id,
                     CGBRequestStatistics::eStat_LoadSNPBlob,
                     "CProcessor_ID1: read SNP data",
                     obj_stream.GetStreamPos());
@@ -1126,11 +1126,11 @@ void CProcessor_SE::ProcessObjStream(CReaderRequestResult& result,
         SetSeqEntryReadHooks(obj_stream);
 
         {{
-            CReaderRequestResult::CRecurse r(result);
+            CReaderRequestResultRecursion r(result);
             
             obj_stream >> *seq_entry;
 
-            LogStat(result, r, blob_id,
+            LogStat(r, blob_id,
                     CGBRequestStatistics::eStat_LoadBlob,
                     "CProcessor_SE: read seq-entry",
                     obj_stream.GetStreamPos());
@@ -1210,13 +1210,13 @@ void CProcessor_SE_SNP::ProcessObjStream(CReaderRequestResult& result,
         }
 
         {{
-            CReaderRequestResult::CRecurse r(result);
+            CReaderRequestResultRecursion r(result);
             
             CSeq_annot_SNP_Info_Reader::Parse(obj_stream,
                                               Begin(*seq_entry),
                                               set_info);
             
-            LogStat(result, r, blob_id,
+            LogStat(r, blob_id,
                     CGBRequestStatistics::eStat_ParseSNPBlob,
                     "CProcessor_SE_SNP: parse SNP data",
                     obj_stream.GetStreamPos());
@@ -1297,11 +1297,11 @@ void CProcessor_St_SE::ProcessObjStream(CReaderRequestResult& result,
     TBlobState blob_state;
 
     {{
-        CReaderRequestResult::CRecurse r(result);
+        CReaderRequestResultRecursion r(result);
         
         blob_state = ReadBlobState(obj_stream);
         
-        LogStat(result, r, blob_id,
+        LogStat(r, blob_id,
                 CGBRequestStatistics::eStat_LoadBlob,
                 "CProcessor_St_SE: read state",
                 obj_stream.GetStreamPos());
@@ -1511,13 +1511,13 @@ void CProcessor_St_SE_SNPT::ProcessStream(CReaderRequestResult& result,
     CTSE_SetObjectInfo set_info;
 
     {{
-        CReaderRequestResult::CRecurse r(result);
+        CReaderRequestResultRecursion r(result);
         Int8 size = NcbiStreamposToInt8(stream.tellg());
         
         CSeq_annot_SNP_Info_Reader::Read(stream, Begin(*seq_entry), set_info);
 
         size = NcbiStreamposToInt8(stream.tellg()) - size;
-        LogStat(result, r, blob_id,
+        LogStat(r, blob_id,
                 CGBRequestStatistics::eStat_LoadSNPBlob,
                 "CProcessor_St_SE_SNPT: read SNP table",
                 double(size));
@@ -1594,12 +1594,12 @@ void CProcessor_ID2::ProcessObjStream(CReaderRequestResult& result,
     CID2_Reply_Data data;
 
     {{
-        CReaderRequestResult::CRecurse r(result);
+        CReaderRequestResultRecursion r(result);
         
         blob_state = obj_stream.ReadInt4();
         obj_stream >> data;
         
-        LogStat(result, r, blob_id,
+        LogStat(r, blob_id,
                 CGBRequestStatistics::eStat_LoadBlob,
                 "CProcessor_ID2: read data",
                 obj_stream.GetStreamPos());
@@ -1642,11 +1642,11 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
         CRef<CSeq_entry> entry(new CSeq_entry);
 
         {{
-            CReaderRequestResult::CRecurse r(result);
+            CReaderRequestResultRecursion r(result);
             
             x_ReadData(data, Begin(*entry), data_size);
             
-            LogStat(result, r, blob_id,
+            LogStat(r, blob_id,
                     CGBRequestStatistics::eStat_ParseBlob,
                     "CProcessor_ID2: parsed Seq-entry",
                     data_size);
@@ -1686,11 +1686,11 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
         CRef<CID2S_Split_Info> split_info(new CID2S_Split_Info);
 
         {{
-            CReaderRequestResult::CRecurse r(result);
+            CReaderRequestResultRecursion r(result);
             
             x_ReadData(data, Begin(*split_info), data_size);
             
-            LogStat(result, r, blob_id,
+            LogStat(r, blob_id,
                     CGBRequestStatistics::eStat_ParseSplit,
                     "CProcessor_ID2: parsed split info",
                     data_size);
@@ -1706,11 +1706,11 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
             }
 
             {{
-                CReaderRequestResult::CRecurse r(result);
+                CReaderRequestResultRecursion r(result);
                 
                 x_ReadData(*skel, Begin(split_info->SetSkeleton()), data_size);
                 
-                LogStat(result, r, blob_id,
+                LogStat(r, blob_id,
                         CGBRequestStatistics::eStat_ParseChunk,
                         "CProcessor_ID2: parsed Seq-entry",
                         data_size);
@@ -1759,12 +1759,12 @@ void CProcessor_ID2::ProcessData(CReaderRequestResult& result,
         CRef<CID2S_Chunk> chunk(new CID2S_Chunk);
         
         {{
-            CReaderRequestResult::CRecurse r(result);
+            CReaderRequestResultRecursion r(result);
             
             x_ReadData(data, Begin(*chunk), data_size);
             CSplitParser::Load(chunk_info, *chunk);
             
-            LogStat(result, r, blob_id, chunk_info.GetChunkId(),
+            LogStat(r, blob_id, chunk_info.GetChunkId(),
                     CGBRequestStatistics::eStat_ParseChunk,
                     "CProcessor_ID2: parsed split chunk",
                     data_size);
@@ -2007,13 +2007,13 @@ void CProcessor_ID2_Split::ProcessObjStream(CReaderRequestResult& result,
     CID2_Reply_Data split_data;
 
     {{
-        CReaderRequestResult::CRecurse r(result);
+        CReaderRequestResultRecursion r(result);
         
         blob_state = obj_stream.ReadInt4();
         split_version = obj_stream.ReadInt4();
         obj_stream >> split_data;
         
-        LogStat(result, r, blob_id,
+        LogStat(r, blob_id,
                 CGBRequestStatistics::eStat_LoadSplit,
                 "CProcessor_ID2_Split: read skel",
                 obj_stream.GetStreamPos());
@@ -2103,14 +2103,14 @@ void CProcessor_ID2AndSkel::ProcessObjStream(CReaderRequestResult& result,
     CID2_Reply_Data split_data, skel_data;
 
     {{
-        CReaderRequestResult::CRecurse r(result);
+        CReaderRequestResultRecursion r(result);
         
         blob_state = obj_stream.ReadInt4();
         split_version = obj_stream.ReadInt4();
         obj_stream >> split_data;
         obj_stream >> skel_data;
         
-        LogStat(result, r, blob_id,
+        LogStat(r, blob_id,
                 CGBRequestStatistics::eStat_LoadSplit,
                 "CProcessor_ID2AndSkel: read skel",
                 obj_stream.GetStreamPos());
@@ -2498,28 +2498,28 @@ namespace {
 }
 
 
-void CProcessor::LogStat(CReaderRequestResult& result,
-                         CStopWatch& sw,
+void CProcessor::LogStat(CReaderRequestResultRecursion& recursion,
                          const CBlob_id& blob_id,
                          CGBRequestStatistics::EStatType stat_type,
                          const char* descr,
                          double size)
 {
-    CCommandParseBlob cmd(result, stat_type, descr, blob_id);
-    CReadDispatcher::LogStat(cmd, sw, size);
+    CCommandParseBlob cmd(recursion.GetResult(),
+                          stat_type, descr, blob_id);
+    CReadDispatcher::LogStat(cmd, recursion, size);
 }
 
 
-void CProcessor::LogStat(CReaderRequestResult& result,
-                         CStopWatch& sw,
+void CProcessor::LogStat(CReaderRequestResultRecursion& recursion,
                          const CBlob_id& blob_id,
                          int chunk_id,
                          CGBRequestStatistics::EStatType stat_type,
                          const char* descr,
                          double size)
 {
-    CCommandParseBlob cmd(result, stat_type, descr, blob_id, chunk_id);
-    CReadDispatcher::LogStat(cmd, sw, size);
+    CCommandParseBlob cmd(recursion.GetResult(),
+                          stat_type, descr, blob_id, chunk_id);
+    CReadDispatcher::LogStat(cmd, recursion, size);
 }
 
 
