@@ -741,6 +741,64 @@ void CNWFormatter::SSegment::ImproveFromRight(const char* seq1, const char* seq2
     }
 }
 
+//check if 100% extension is possible, returns the length of possible extension
+int CNWFormatter::SSegment::CanExtendRight(const vector<char>& mrna, const vector<char>& genomic) const
+{
+    int mind0 = m_box[1] + 1;
+    int mind = mind0;
+    int gind = m_box[3] + 1;
+    for(; mind < mrna.size() && gind < genomic.size(); ++gind, ++mind) {
+        if( mrna[mind] != genomic[gind] ) break;
+    }
+    return mind - mind0;
+}
+
+
+//check if 100% extension is possible, returns the length of possible extension
+int CNWFormatter::SSegment::CanExtendLeft(const vector<char>& mrna, const vector<char>& genomic) const
+{
+    int mind0 = m_box[0] - 1;
+    int mind = mind0;
+    int gind = m_box[2] - 1;
+    for(; mind >= 0 && gind >= 0; --mind, --gind) {
+        if( mrna[mind] != genomic[gind] ) break;
+    }
+    return mind0 - mind;
+}
+
+//do extend, 100% identity in extension is implied
+void CNWFormatter::SSegment::ExtendRight(const vector<char>& mrna, const vector<char>& genomic, int ext_len, const CNWAligner* aligner)
+{
+    if(ext_len > 0) {
+        m_box[1] += ext_len;
+        m_box[3] += ext_len;
+        m_details.append(ext_len, 'M');
+        Update(aligner);
+        // fix annotation
+        const size_t ann_dim = m_annot.size();
+        if(ann_dim > 2 && m_annot[ann_dim - 3] == '>') {
+            m_annot[ann_dim - 2] =  (m_box[3] + 1) < genomic.size() ? genomic[m_box[3] + 1] : ' ';
+            m_annot[ann_dim - 1] =  (m_box[3] + 2) < genomic.size() ? genomic[m_box[3] + 2] : ' ';
+        }
+    }
+}
+
+//do extend, 100% identity in extension is implied
+void CNWFormatter::SSegment::ExtendLeft(const vector<char>& mrna, const vector<char>& genomic, int ext_len, const CNWAligner* aligner)
+{
+    if(ext_len > 0) {
+        m_box[0] -= ext_len;
+        m_box[2] -= ext_len;
+        m_details.insert(m_details.begin(), ext_len, 'M');
+        Update(aligner);
+        //fix annotation
+        if( ( m_annot.size() > 2 ) && ( m_annot[2]  == '<' ) ) {
+            m_annot[1] =  (m_box[2] - 1) >= 0 ? genomic[m_box[2] - 1] : ' ';
+            m_annot[0] =  (m_box[2] - 2) >= 0 ? genomic[m_box[2] - 2] : ' ';
+        }
+    }
+}
+
 
 void CNWFormatter::SSegment::Update(const CNWAligner* paligner)
 {
