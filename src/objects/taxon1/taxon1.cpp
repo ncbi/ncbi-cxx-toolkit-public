@@ -188,7 +188,7 @@ CTaxon1::Fini(void)
 
         req.SetFini();
 
-        if( SendRequest( req, resp ) ) {
+        if( SendRequest( req, resp, false ) ) {
             if( !resp.IsFini() ) {
                 SetLastError( "Response type is not Fini" );
             }
@@ -1535,7 +1535,7 @@ CTaxon1::GetBlastName(int tax_id, string& blast_name_out )
 }
 
 bool
-CTaxon1::SendRequest( CTaxon1_req& req, CTaxon1_resp& resp )
+CTaxon1::SendRequest( CTaxon1_req& req, CTaxon1_resp& resp, bool bShouldReconnect )
 {
     unsigned nIterCount( 0 );
     unsigned fail_flags( 0 );
@@ -1565,23 +1565,25 @@ CTaxon1::SendRequest( CTaxon1_req& req, CTaxon1_resp& resp )
             return true;
         }
         } catch( CEofException& /*eoe*/ ) {
-	    bNeedReconnect = true;
+	    bNeedReconnect = bShouldReconnect;
         } catch( exception& e ) {
 	    SetLastError( e.what() );
-	    bNeedReconnect = true;
+	    bNeedReconnect = bShouldReconnect;
         }
         fail_flags = m_pIn->GetFailFlags();
-        bNeedReconnect |= (fail_flags & ( CObjectIStream::eReadError
-                          |CObjectIStream::eFail
-                          |CObjectIStream::eNotOpen )
-                   ? true : false);
+        bNeedReconnect |= bShouldReconnect &&
+	    (fail_flags & ( CObjectIStream::eReadError
+			    |CObjectIStream::eFail
+			    |CObjectIStream::eNotOpen )
+	     ? true : false);
         } catch( exception& e ) {
             SetLastError( e.what() );
             fail_flags = m_pOut->GetFailFlags();
-            bNeedReconnect = (fail_flags & ( CObjectOStream::eWriteError
-                                             |CObjectOStream::eFail
-                                             |CObjectOStream::eNotOpen )
-                              ? true : false);
+            bNeedReconnect = bShouldReconnect &&
+		(fail_flags & ( CObjectOStream::eWriteError
+				|CObjectOStream::eFail
+				|CObjectOStream::eNotOpen )
+		 ? true : false);
         }
 
         if( !bNeedReconnect )

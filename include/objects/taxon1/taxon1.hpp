@@ -494,7 +494,7 @@ private:
     TGCMap                   m_gcStorage;
 
     void             Reset(void);
-    bool             SendRequest(CTaxon1_req& req, CTaxon1_resp& resp);
+    bool             SendRequest(CTaxon1_req& req, CTaxon1_resp& resp, bool bShouldReconnect = true);
     void             SetLastError(const char* err_msg);
     void             PopulateReplaced(COrg_ref& org, COrgName::TMod& lMods);
     bool             LookupByOrgRef(const COrg_ref& inp_orgRef, int* pTaxid,
