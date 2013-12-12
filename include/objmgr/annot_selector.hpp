@@ -607,6 +607,7 @@ struct NCBI_XOBJMGR_EXPORT SAnnotSelector : public SAnnotTypeSelector
     bool ExcludedAnnotName(const CAnnotName& name) const;
 
     /// Add named annot accession (NA*) in the search.
+    SAnnotSelector& ResetNamedAnnotAccessions(void);
     SAnnotSelector& IncludeNamedAnnotAccession(const string& acc,
                                                int zoom_level = 0);
     /// 
