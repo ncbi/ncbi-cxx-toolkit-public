@@ -373,8 +373,8 @@ private:
 };
 
 typedef vector<COrgrefWithParent_SpecificHost> TSpecificHostWithParentList;
-bool   NCBI_VALIDATOR_EXPORT HasMisSpellFlag (const CT3Data& data);
-string NCBI_VALIDATOR_EXPORT FindMatchInOrgRef (string str, const COrg_ref& org);
+bool NCBI_VALIDATOR_EXPORT HasMisSpellFlag (const CT3Data& data);
+bool NCBI_VALIDATOR_EXPORT FindMatchInOrgRef (string str, const COrg_ref& org);
 
 // ===========================  Central Validation  ==========================
 

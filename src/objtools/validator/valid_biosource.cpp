@@ -2766,15 +2766,17 @@ bool HasMisSpellFlag (const CT3Data& data)
 }
 
 
-string FindMatchInOrgRef (string str, const COrg_ref& org)
+bool FindMatchInOrgRef (string str, const COrg_ref& org)
 {
     string match = "";
+	bool found_common = false;
 
     if (NStr::IsBlank(str)) {
         // do nothing;
     } else if (org.IsSetTaxname() && NStr::EqualNocase(str, org.GetTaxname())) {
         match = org.GetTaxname();
     } else if (org.IsSetCommon() && NStr::EqualNocase(str, org.GetCommon())) {
+		found_common = true;
         match = org.GetCommon();
     } else {
         FOR_EACH_SYN_ON_ORGREF (syn_it, org) {
@@ -2796,7 +2798,11 @@ string FindMatchInOrgRef (string str, const COrg_ref& org)
             }
         }
     }
-    return match;
+    if (found_common) {
+		NStr::EqualNocase(str, match);
+	} else {
+		NStr::EqualCase(str, match);
+	}
 }
 
 CRef<CTaxon3_reply> CValidError_imp::RequestSpecificHost
@@ -2941,8 +2947,7 @@ void CValidError_imp::ValidateSpecificHost
 							 (*org_it).GetSeqfeatParent());
 					}
 				} else if ((*reply_it)->GetData().IsSetOrg()) {
-					string match = FindMatchInOrgRef (host, (*reply_it)->GetData().GetOrg());
-					if (!NStr::EqualCase(match, host)) {
+					if ( ! FindMatchInOrgRef (host, (*reply_it)->GetData().GetOrg())) {
 						if ((*org_it).HasParentSeqdesc()) {
 							PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
 									"Specific host value is incorrectly capitalized: " + host,
@@ -3429,8 +3434,7 @@ void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
                         PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
                                     "Specific host value is misspelled: " + host, org);
                     } else if ((*reply_it)->GetData().IsSetOrg()) {
-                        string match = FindMatchInOrgRef (host, (*reply_it)->GetData().GetOrg());
-                        if (!NStr::EqualCase(match, host)) {
+                        if ( ! FindMatchInOrgRef (host, (*reply_it)->GetData().GetOrg())) {
                             PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
                                         "Specific host value is incorrectly capitalized: " + host, org);
                         }
