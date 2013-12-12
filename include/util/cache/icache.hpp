@@ -337,6 +337,7 @@ public:
             blob_found(false),
             maximum_age(0),
             actual_age((unsigned) -1),
+            return_current_version_supported(false),
             return_current_version(false),
             current_version(0),
             current_version_validity(ICache::eExpired)
@@ -356,6 +357,9 @@ public:
         /// If `maximum_age` is not zero, GetBlobAccess() will set this
         /// field to the actual blob version age upon return.
         unsigned actual_age;
+
+        /// If TRUE, the ICache instance supports return_current_version.
+        bool return_current_version_supported;
 
         /// If TRUE, the `version` argument of GetBlobAccess() will be
         /// ignored and the `current_version` and `current_version_validity`
