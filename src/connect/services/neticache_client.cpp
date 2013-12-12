@@ -162,7 +162,9 @@ struct SNetICacheClientImpl : public SNetCacheAPIImpl, protected CConnIniter
             const CNetCacheAPIParameters* parameters);
 
     IReader* ReadCurrentBlobNotOlderThan(
-        const string& key, const string& subkey, int* version,
+        const string& key, const string& subkey,
+        size_t* blob_size_ptr,
+        int* version,
         ICache::EBlobVersionValidity* validity,
         unsigned max_age, unsigned* actual_age);
 
@@ -523,7 +525,9 @@ void CNetICacheClient::GetBlobAccess(const string&     key,
                                      SBlobAccessDescr* blob_descr)
 {
     if (blob_descr->return_current_version) {
+        blob_descr->return_current_version_supported = true;
         blob_descr->reader.reset(m_Impl->ReadCurrentBlobNotOlderThan(key, subkey,
+                &blob_descr->blob_size,
                 &blob_descr->current_version,
                 &blob_descr->current_version_validity,
                 blob_descr->maximum_age,
@@ -700,12 +704,14 @@ IReader* CNetICacheClient::GetReadStream(const string& key,
         const string& subkey, int* version,
         ICache::EBlobVersionValidity* validity)
 {
-    return m_Impl->ReadCurrentBlobNotOlderThan(key, subkey, version,
-            validity, 0, NULL);
+    return m_Impl->ReadCurrentBlobNotOlderThan(key, subkey, NULL,
+            version, validity, 0, NULL);
 }
 
 IReader* SNetICacheClientImpl::ReadCurrentBlobNotOlderThan(const string& key,
-        const string& subkey, int* version,
+        const string& subkey,
+        size_t* blob_size_ptr,
+        int* version,
         ICache::EBlobVersionValidity* validity,
         unsigned max_age, unsigned* actual_age)
 {
@@ -756,10 +762,15 @@ IReader* SNetICacheClientImpl::ReadCurrentBlobNotOlderThan(const string& key,
             *actual_age = x_ExtractBlobAge(exec_result, "READLAST");
 
         return new CNetCacheReader(this, blob_id, exec_result,
-                NULL, &m_DefaultParameters);
+                blob_size_ptr, &m_DefaultParameters);
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() != CNetCacheException::eBlobNotFound)
             throw;
+        if (max_age > 0) {
+            CNetServer::SExecResult exec_result;
+            exec_result.response = e.GetMsg();
+            *actual_age = x_ExtractBlobAge(exec_result, "READLAST");
+        }
         return NULL;
     }
 }
