@@ -4054,7 +4054,7 @@ static int ValidateAccessionFormat (string accession)
             return 0;
           }
         }
-        if (accession [0] == 'A' || accession [0] == 'Y') {
+        if (accession [0] == 'A' || accession [0] == 'W' || accession [0] == 'Y') {
           if (accession [1] == 'P') return 0;
         }
       }
