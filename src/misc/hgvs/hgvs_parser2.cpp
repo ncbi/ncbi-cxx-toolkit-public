@@ -478,10 +478,10 @@ CHgvsParser::SFuzzyInt CHgvsParser::x_int_fuzz(TIterator const& i, const CContex
  * I.e. need to adjust if dealing with positive coordinates, except for *-relative ones.
  */
 template<typename T>
-T AdjustHgvsCoord(T val, size_t offset, bool adjust)
+T AdjustHgvsCoord(T val, TSeqPos offset, bool adjust)
 {
     val += offset;
-    if(adjust && val > offset) { 
+    if(adjust && val > (T)offset) { 
         // note: val may be unsigned, so check for (val+offset > offset)
         // instead of (val > 0)
         val -= 1;
@@ -494,7 +494,7 @@ CRef<CSeq_point> CHgvsParser::x_abs_pos(TIterator const& i, const CContext& cont
     HGVS_ASSERT_RULE(i, eID_abs_pos);
     TIterator it = i->children.begin();
 
-    TSignedSeqPos offset(0);
+    TSeqPos offset(0);
     bool adjust = true; //see AdjustHgvsCoord comments above
     if(i->children.size() == 2) {
         adjust = false;
