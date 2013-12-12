@@ -2799,9 +2799,9 @@ bool FindMatchInOrgRef (string str, const COrg_ref& org)
         }
     }
     if (found_common) {
-		NStr::EqualNocase(str, match);
+		return NStr::EqualNocase(str, match);
 	} else {
-		NStr::EqualCase(str, match);
+		return NStr::EqualCase(str, match);
 	}
 }
 
