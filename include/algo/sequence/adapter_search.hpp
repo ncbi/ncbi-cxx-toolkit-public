@@ -114,9 +114,9 @@ public:
             SParams() 
               : min_support(100)
               , top_n(1000) 
-              , min_init_factor(10)
-              , min_ext_factor_adj(0.5)
-              , min_ext_factor_top(0.2)
+              , min_init_factor(10.0f)
+              , min_ext_factor_adj(0.5f)
+              , min_ext_factor_top(0.2f)
             {}
 
             // An originating word must be overrepresented by a factor of

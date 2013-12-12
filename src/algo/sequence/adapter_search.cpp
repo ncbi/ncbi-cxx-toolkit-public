@@ -390,7 +390,7 @@ NAdapterSearch::TWord NAdapterSearch
         sumlogs += log(sup + 1.0);
     }
 
-    double gmean = n == 0 ? 0 : exp(sumlogs / n) - 1;
+    size_t gmean = n == 0 ? 0 : exp(sumlogs / n) - 1;
 
     ERR_POST(Info 
           << "Seed: "
