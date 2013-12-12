@@ -2073,6 +2073,7 @@ gpipe_val needs xutil
 gpipe_xml needs biblio
 gpipe_xml needs connect
 gpipe_xml needs connext
+gpipe_xml needs connssl
 gpipe_xml needs ct_ftds64
 gpipe_xml needs dbapi
 gpipe_xml needs dbapi_driver
