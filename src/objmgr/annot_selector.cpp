@@ -414,6 +414,14 @@ SAnnotSelector& SAnnotSelector::SetDataSource(const string& source)
 
 
 SAnnotSelector&
+SAnnotSelector::ResetNamedAnnotAccessions(void)
+{
+    m_NamedAnnotAccessions.reset();
+    return *this;
+}
+
+
+SAnnotSelector&
 SAnnotSelector::IncludeNamedAnnotAccession(const string& acc,
                                            int zoom_level)
 {
