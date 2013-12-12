@@ -28,33 +28,33 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <objects/seqloc/Seq_point.hpp>
+
 #include <objects/general/Object_id.hpp>
+#include <objects/general/User_object.hpp>
+#include <objects/general/Dbtag.hpp>
+
+#include <objects/seqloc/Seq_point.hpp>
+#include <objects/seqloc/Seq_loc_equiv.hpp>
 
 #include <objects/seqalign/Seq_align.hpp>
 #include <objects/seqalign/Spliced_seg.hpp>
 #include <objects/seqalign/Spliced_exon.hpp>
 #include <objects/seqalign/Product_pos.hpp>
 #include <objects/seqalign/Prot_pos.hpp>
-#include <objmgr/seq_loc_mapper.hpp>
 
-
-#include <objects/seq/seqport_util.hpp>
-
-#include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/variation/Variation.hpp>
 #include <objects/variation/VariantPlacement.hpp>
 #include <objects/variation/VariationMethod.hpp>
 
+#include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Variation_inst.hpp>
 #include <objects/seqfeat/Delta_item.hpp>
 #include <objects/seqfeat/Ext_loc.hpp>
-
-#include <objects/general/Dbtag.hpp>
-#include <objects/general/Object_id.hpp>
-
 #include <objects/seqfeat/SeqFeatXref.hpp>
+#include <objects/seqfeat/BioSource.hpp>
 
+#include <objects/seq/seqport_util.hpp>
 #include <objects/seq/Seq_literal.hpp>
 #include <objects/seq/Seq_data.hpp>
 #include <objects/seq/Numbering.hpp>
@@ -62,13 +62,12 @@
 #include <objects/seq/Annot_descr.hpp>
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seq/Seq_descr.hpp>
-#include <objects/seqfeat/BioSource.hpp>
-#include <objects/general/User_object.hpp>
-#include <objects/seqloc/Seq_loc_equiv.hpp>
 
 #include <serial/iterator.hpp>
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/seq_vector.hpp>
+#include <objmgr/seq_loc_mapper.hpp>
+
 #include <misc/hgvs/hgvs_parser2.hpp>
 #include <misc/hgvs/variation_util2.hpp>
 
@@ -364,7 +363,7 @@ string Ncbieaa2HgvsAA(const string& prot_str)
     return out;
 }
 
-string CHgvsParser::x_SeqLiteralToStr(const CSeq_literal& literal, bool translate)
+string CHgvsParser::x_SeqLiteralToStr(const CSeq_literal& literal, bool translate, bool is_mito)
 {
     string out("");
 
@@ -382,10 +381,13 @@ string CHgvsParser::x_SeqLiteralToStr(const CSeq_literal& literal, bool translat
             const string& nuc_str = sd->GetIupacna().Get();
 
             if(translate) {
+                CGenetic_code code;
+                code.SetId(is_mito ? 2 : 1);
                 CSeqTranslator::Translate(
                         nuc_str,
                         out,
-                        CSeqTranslator::fIs5PrimePartial);
+                        CSeqTranslator::fIs5PrimePartial,
+                        &code);
                 out = Ncbieaa2HgvsAA(out);
             } else {
                 out = nuc_str;
@@ -719,21 +721,25 @@ TSeqPos CHgvsParser::x_GetInstLength(const CVariation_inst& inst, const CVariant
     return len;
 }
 
+bool IsMitochondrion(CBioseq_Handle bsh)
+{
+    const CBioSource* bs = sequence::GetBioSource(bsh);
+    return bs && bs->GetGenome() == CBioSource::eGenome_mitochondrion;
+}
+
 string CHgvsParser::x_AsHgvsInstExpression(
         const CVariation& variation,
         CConstRef<CVariantPlacement> placement,
         CConstRef<CSeq_literal> explicit_asserted_seq)
 {
-    const CVariation_inst& inst = variation.GetData().GetInstance();
-
-    string inst_str = "";
 
     CBioseq_Handle bsh;
     if(placement) {
         bsh = m_scope->GetBioseqHandle(sequence::GetId(placement->GetLoc(), NULL));
     }
+    bool is_mito = bsh && IsMitochondrion(bsh);
 
-
+    const CVariation_inst& inst = variation.GetData().GetInstance();
     bool is_prot_inst =
             inst.GetType() == CVariation_inst::eType_prot_missense
          || inst.GetType() == CVariation_inst::eType_prot_nonsense
@@ -795,10 +801,11 @@ string CHgvsParser::x_AsHgvsInstExpression(
 
     string asserted_seq_str =
            !asserted_seq                                     ? ""
-         : asserted_seq->GetLength() < s_max_literal_length  ? x_SeqLiteralToStr(*asserted_seq, is_prot)
+         : asserted_seq->GetLength() < s_max_literal_length  ? x_SeqLiteralToStr(*asserted_seq, is_prot, is_mito)
          :                                                     NStr::NumericToString(asserted_seq->GetLength());
 
 
+    string inst_str = "";
     bool append_delta = false;
     if(inst.GetType() == CVariation_inst::eType_identity
        || inst.GetType() == CVariation_inst::eType_prot_silent)
@@ -904,7 +911,7 @@ string CHgvsParser::x_AsHgvsInstExpression(
                     //length of extension is one less than the length of the sequence that replaces first or last AA
                 }
 
-                string variant_str = x_SeqLiteralToStr(*literal, is_prot);
+                string variant_str = x_SeqLiteralToStr(*literal, is_prot, is_mito);
                 if(inst_str == variant_str + ">") {
                     //instead of "G>G" etc want to report "G="
                     inst_str[inst_str.size() - 1] = '='; //overwrite '>' with '='

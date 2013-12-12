@@ -46,6 +46,7 @@
 #include <objects/seqblock/GB_block.hpp>
 
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqfeat/Genetic_code.hpp>
 #include <objects/seqfeat/Variation_ref.hpp>
 #include <objects/seqfeat/Phenotype.hpp>
 #include <objects/seqfeat/Variation_inst.hpp>
@@ -1624,13 +1625,18 @@ void CVariationUtil::AttachProteinConsequences(CVariation& v, const CSeq_id* tar
 }
 
 //translate IUPACNA literal; do not translate last partial codon.
-string Translate(const string& nuc_str)
+string Translate(const string& nuc_str, bool is_mito)
 {
     string prot_str;
+    
+    CGenetic_code code;
+    code.SetId(is_mito ? 2 : 1);
+
     CSeqTranslator::Translate(
             nuc_str,
             prot_str,
-            CSeqTranslator::fIs5PrimePartial);
+            CSeqTranslator::fIs5PrimePartial,
+            &code);
 
     //truncate everything past the first stop
     size_t stop_pos = prot_str.find('*');
@@ -2064,8 +2070,9 @@ CRef<CVariation> CVariationUtil::TranslateNAtoAA(
 
     string nuc_ref_str = nuc_ref_prefix + downstream_cds_suffix_seq_str;
     string nuc_var_str = nuc_var_prefix + downstream_cds_suffix_seq_str;
-    string prot_ref_str = Translate(nuc_ref_str);
-    string prot_var_str = Translate(nuc_var_str);
+
+    string prot_ref_str = Translate(nuc_ref_str, p->GetMol() == CVariantPlacement::eMol_mitochondrion);
+    string prot_var_str = Translate(nuc_var_str, p->GetMol() == CVariantPlacement::eMol_mitochondrion);
     int num_ref_codons = (nuc_ref_prefix.size() + 2) / 3;
     int num_var_codons = (nuc_var_prefix.size() + 2) / 3;
 

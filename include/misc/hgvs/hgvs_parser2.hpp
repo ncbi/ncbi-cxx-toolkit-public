@@ -892,12 +892,11 @@ private:
     /// Get literal seq at location
     string x_LocToSeqStr(const CSeq_loc& loc);
 
-    /// Inverse of raw_seq_or_len rule.
     /// translate=true will translate nucleotide literal to prot as appropriate.
     /// It is intended for cases where delta literal in a protein variation is
     /// specified as codons rather than AAs; For HGVS purposes we can't use NAs
     /// in a protein context.
-    string x_SeqLiteralToStr(const CSeq_literal& literal, bool translate);
+    string x_SeqLiteralToStr(const CSeq_literal& literal, bool translate, bool is_mito);
 
 private:
     CRef<CScope> m_scope;
