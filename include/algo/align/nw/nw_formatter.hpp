@@ -124,6 +124,14 @@ public:
         size_t GapLength(); //count total gap length                              
         bool IsLowComplexityExon(const char *rna_seq);
         
+        //check if 100% extension is possible, returns the length of possible extension
+        int CanExtendRight(const vector<char>& mrna, const vector<char>& genomic) const;
+        int CanExtendLeft(const vector<char>& mrna, const vector<char>& genomic) const;
+
+        //do extend, 100% identity in extension is implied
+        void ExtendRight(const vector<char>& mrna, const vector<char>& genomic, int ext_len, const CNWAligner* aligner);
+        void ExtendLeft(const vector<char>& mrna, const vector<char>& genomic, int ext_len, const CNWAligner* aligner);
+
         void Update(const CNWAligner* aligner); // recompute members
         const char* GetDonor(void) const;       // raw pointers to parts of annot
         const char* GetAcceptor(void) const;    // or zero if less than 2 chars
