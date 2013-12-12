@@ -56,8 +56,8 @@ CDBL_Cmd::CDBL_Cmd(CDBL_Connection& conn, DBPROCESS* cmd, const string& query)
     : CBaseCmd(conn, query),
       // m_HasFailed(false),
       m_RowCount(-1),
-      m_IsActive(true),
-      m_Cmd(cmd)
+      m_Cmd(cmd),
+      m_IsActive(true)
 {
     if (conn.m_ActiveCmd) {
         conn.m_ActiveCmd->m_IsActive = false;
@@ -70,8 +70,8 @@ CDBL_Cmd::CDBL_Cmd(CDBL_Connection& conn, DBPROCESS* cmd,
     : CBaseCmd(conn, cursor_name, query),
       // m_HasFailed(false),
       m_RowCount(-1),
-      m_IsActive(true),
-      m_Cmd(cmd)
+      m_Cmd(cmd),
+      m_IsActive(true)
 {
     if (conn.m_ActiveCmd) {
         conn.m_ActiveCmd->m_IsActive = false;
