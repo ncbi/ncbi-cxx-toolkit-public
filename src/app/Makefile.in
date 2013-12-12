@@ -10,7 +10,8 @@ SUB_PROJ = asn2asn asn2fasta asn2flat asnval id1_fetch blast convert_seq \
            bdb_env_keeper nw_aligner speedtest idmapper formatguess \
            multireader read_blast_result splign hfilter \
            annotwriter compart streamtest lds2_indexer discrep_report biosample_chk \
-           gap_stats table2asn
+           gap_stats table2asn \
+           srcchk
 
 EXPENDABLE_SUB_PROJ = split_cache wig2table netcache rmblastn
 
