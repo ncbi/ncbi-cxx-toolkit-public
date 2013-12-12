@@ -3,8 +3,8 @@
 APP = autodef_demo
 SRC = autodef_demo
 
-LIB = xregexp $(PCRE_LIB) xobjedit taxon3 xconnect xobjutil $(SOBJMGR_LIBS)
+LIB = xobjedit xobjutil valid taxon3 xconnect xregexp $(PCRE_LIB) $(SOBJMGR_LIBS)
 
-LIBS = $(DL_LIBS) $(ORIG_LIBS) $(NETWORK_LIBS) $(PCRE_LIBS)
+LIBS = $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 WATCHERS = bollin
