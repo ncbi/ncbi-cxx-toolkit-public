@@ -3783,6 +3783,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MNHN:M	s	Museum National d'Histoire Naturelle, Mammal collection",
 "MNHN:P	s	Museum National d'Histoire Naturelle, Paleontology Collection",
 "MNHN<CUB>	s	Museo Nacional de Historia Natural, Departamento de Colecciones",
+"MNHN<URY>	s	Museo Nacional de Historia  Natural de Montevideo",
 "MNHNCH	s	Museo Nacional de Historia Natural de Chile",
 "MNHNCU	s	Museo Nacional de Historia Natural, Havana",
 "MNHNJP	s	Universidad Nacional Mayor de San Marcos",
