@@ -194,25 +194,25 @@ CDataSource_ScopeInfo::GetTSE_LockSet(void) const
 }
 
 
-static CStaticTls<CUnlockedTSEsGuard> st_Guard;
+static DECLARE_TLS_VAR(CUnlockedTSEsGuard*, st_Guard);
 
 
 CUnlockedTSEsGuard::CUnlockedTSEsGuard(void)
 {
-    if ( !st_Guard.GetValue() ) {
-        st_Guard.SetValue(this);
+    if ( !st_Guard ) {
+        st_Guard = this;
     }
 }
 
 
 CUnlockedTSEsGuard::~CUnlockedTSEsGuard(void)
 {
-    if ( st_Guard.GetValue() == this ) {
+    if ( st_Guard == this ) {
         while ( !m_UnlockedTSEsInternal.empty() ) {
             TUnlockedTSEsInternal locks;
             swap(m_UnlockedTSEsInternal, locks);
         }
-        st_Guard.SetValue(0);
+        st_Guard = 0;
     }
 }
 
@@ -222,8 +222,8 @@ void CUnlockedTSEsGuard::SaveLock(const CTSE_Lock& lock)
     if ( !s_GetScopePostponeDelete() ) {
         return;
     }
-    _ASSERT(st_Guard.GetValue());
-    if ( CUnlockedTSEsGuard* guard = st_Guard.GetValue() ) {
+    _ASSERT(st_Guard);
+    if ( CUnlockedTSEsGuard* guard = st_Guard ) {
         guard->m_UnlockedTSEsLock.push_back(ConstRef(&*lock));
     }
 }
@@ -234,8 +234,8 @@ void CUnlockedTSEsGuard::SaveInternal(const CTSE_ScopeInternalLock& lock)
     if ( !s_GetScopePostponeDelete() ) {
         return;
     }
-    _ASSERT(st_Guard.GetValue());
-    if ( CUnlockedTSEsGuard* guard = st_Guard.GetValue() ) {
+    _ASSERT(st_Guard);
+    if ( CUnlockedTSEsGuard* guard = st_Guard ) {
         guard->m_UnlockedTSEsInternal.push_back(lock);
     }
 }
@@ -246,8 +246,8 @@ void CUnlockedTSEsGuard::SaveInternal(const TUnlockedTSEsInternal& locks)
     if ( !s_GetScopePostponeDelete() ) {
         return;
     }
-    _ASSERT(st_Guard.GetValue());
-    if ( CUnlockedTSEsGuard* guard = st_Guard.GetValue() ) {
+    _ASSERT(st_Guard);
+    if ( CUnlockedTSEsGuard* guard = st_Guard ) {
         guard->m_UnlockedTSEsInternal.insert
             (guard->m_UnlockedTSEsInternal.end(), locks.begin(), locks.end());
     }
