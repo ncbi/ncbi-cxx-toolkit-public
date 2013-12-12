@@ -39,7 +39,7 @@
 
 
 #if defined(NCBI_PACKAGE) && NCBI_PACKAGE
-#define GRID_APP_VERSION "a part of NCBI Grid " NCBI_PACKAGE_VERSION
+#define GRID_APP_VERSION "Grid " NCBI_PACKAGE_VERSION
 #elif defined(NCBI_DEVELOPMENT_VER)
 #define GRID_APP_VERSION "codebase version " \
         NCBI_AS_STRING(NCBI_DEVELOPMENT_VER)
