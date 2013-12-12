@@ -14,6 +14,7 @@ from distutils.version import StrictVersion
 from optparse import OptionParser
 
 OLD_MODE = True
+MAX_OLD_MODE_VALUE = 99
 
 BASE_SUPPRESS_CODE = 100
 BASE_DOWN_CODE = 105
@@ -537,6 +538,10 @@ if __name__ == "__main__":
         elif returnValue >= BASE_DOWN_CODE and \
             returnValue <= (BASE_DOWN_CODE + 4):
             returnValue = 100
+
+        if returnValue == 100:
+            returnValue = MAX_OLD_MODE_VALUE
+
         printVerbose( "Adjusted to: " + str( returnValue ) )
 
     sys.exit( returnValue )
