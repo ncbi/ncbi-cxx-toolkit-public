@@ -311,7 +311,7 @@ bool DoesObjectMatchFieldConstraint (const CObject& object, const string& field_
     if (NStr::IsBlank(field_name) || !string_constraint) {
         return true;
     }
-    bool rval = false;
+    
     CRef<CFieldHandler> fh = CFieldHandlerFactory::Create(field_name); 
     if (!fh) {
         return false;
@@ -333,7 +333,7 @@ bool DoesApplyObjectMatchFieldConstraint (const CApplyObject& object, const stri
     if (NStr::IsBlank(field_name) || !string_constraint) {
         return true;
     }
-    bool rval = false;
+    
     CRef<CFieldHandler> fh = CFieldHandlerFactory::Create(field_name); 
     if (!fh) {
         return false;
