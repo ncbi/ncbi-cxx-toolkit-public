@@ -217,6 +217,8 @@ protected:
 #if HAVE_NCBI_C
     friend class CObjectIStream::AsnIo;
 #endif
+    void ResetThisState(void);
+    virtual void ResetState(void);
 
 private:
     virtual EPointerType ReadPointerType(void);

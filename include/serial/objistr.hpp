@@ -999,6 +999,8 @@ public:
 protected:
     CObjectIStream(ESerialDataFormat format);
     CObjectIStream(CNcbiIstream& in, bool deleteIn = false);
+    // reset state machine
+    virtual void ResetState(void);
 
     typedef size_t TObjectIndex;
     // low level readers

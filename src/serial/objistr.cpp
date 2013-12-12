@@ -459,6 +459,11 @@ CObjectIStream::~CObjectIStream(void)
     }
 }
 
+void CObjectIStream::ResetState(void)
+{
+    SetMemberDefault(0);
+}
+
 void CObjectIStream::Open(CByteSourceReader& reader)
 {
     Close();
@@ -773,6 +778,7 @@ void CObjectIStream::SetStreamOffset(CNcbiStreampos pos)
 void CObjectIStream::SetStreamPos(CNcbiStreampos pos)
 {
     SetFailFlags(fNoError);
+    ResetState();
     m_Input.SetStreamPos(pos);
 }
 

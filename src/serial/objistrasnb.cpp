@@ -68,18 +68,7 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(EFixNonPrint how)
     : CObjectIStream(eSerial_AsnBinary)
 {
     FixNonPrint(how);
-#if CHECK_INSTREAM_STATE
-    m_CurrentTagState = eTagStart;
-#endif
-#if CHECK_INSTREAM_LIMITS
-    m_CurrentTagLimit = 0;
-#endif
-    m_CurrentTagLength = 0;
-    m_SkipNextTag = false;
-#if USE_DEF_LEN
-    m_CurrentDataLimit = 0;
-    m_DataLimits.reserve(16);
-#endif
+    ResetThisState();
 }
 
 CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
@@ -87,18 +76,7 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
     : CObjectIStream(eSerial_AsnBinary)
 {
     FixNonPrint(how);
-#if CHECK_INSTREAM_STATE
-    m_CurrentTagState = eTagStart;
-#endif
-#if CHECK_INSTREAM_LIMITS
-    m_CurrentTagLimit = 0;
-#endif
-    m_CurrentTagLength = 0;
-    m_SkipNextTag = false;
-#if USE_DEF_LEN
-    m_CurrentDataLimit = 0;
-    m_DataLimits.reserve(16);
-#endif
+    ResetThisState();
     Open(in);
 }
 
@@ -108,18 +86,7 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
     : CObjectIStream(eSerial_AsnBinary)
 {
     FixNonPrint(how);
-#if CHECK_INSTREAM_STATE
-    m_CurrentTagState = eTagStart;
-#endif
-#if CHECK_INSTREAM_LIMITS
-    m_CurrentTagLimit = 0;
-#endif
-    m_CurrentTagLength = 0;
-    m_SkipNextTag = false;
-#if USE_DEF_LEN
-    m_CurrentDataLimit = 0;
-    m_DataLimits.reserve(16);
-#endif
+    ResetThisState();
     Open(in, deleteIn ? eTakeOwnership : eNoOwnership);
 }
 
@@ -129,18 +96,7 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CNcbiIstream& in,
     : CObjectIStream(eSerial_AsnBinary)
 {
     FixNonPrint(how);
-#if CHECK_INSTREAM_STATE
-    m_CurrentTagState = eTagStart;
-#endif
-#if CHECK_INSTREAM_LIMITS
-    m_CurrentTagLimit = 0;
-#endif
-    m_CurrentTagLength = 0;
-    m_SkipNextTag = false;
-#if USE_DEF_LEN
-    m_CurrentDataLimit = 0;
-    m_DataLimits.reserve(16);
-#endif
+    ResetThisState();
     Open(in, deleteIn);
 }
 
@@ -149,18 +105,7 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(CByteSourceReader& reader,
     : CObjectIStream(eSerial_AsnBinary)
 {
     FixNonPrint(how);
-#if CHECK_INSTREAM_STATE
-    m_CurrentTagState = eTagStart;
-#endif
-#if CHECK_INSTREAM_LIMITS
-    m_CurrentTagLimit = 0;
-#endif
-    m_CurrentTagLength = 0;
-    m_SkipNextTag = false;
-#if USE_DEF_LEN
-    m_CurrentDataLimit = 0;
-    m_DataLimits.reserve(16);
-#endif
+    ResetThisState();
     Open(reader);
 }
 
@@ -170,19 +115,34 @@ CObjectIStreamAsnBinary::CObjectIStreamAsnBinary(const char* buffer,
     : CObjectIStream(eSerial_AsnBinary)
 {
     FixNonPrint(how);
+    ResetThisState();
+    OpenFromBuffer(buffer, size);
+}
+
+void CObjectIStreamAsnBinary::ResetThisState(void)
+{
 #if CHECK_INSTREAM_STATE
     m_CurrentTagState = eTagStart;
 #endif
 #if CHECK_INSTREAM_LIMITS
     m_CurrentTagLimit = 0;
+    while (!m_Limits.empty()) {
+        m_Limits.pop();
+    }
 #endif
     m_CurrentTagLength = 0;
     m_SkipNextTag = false;
 #if USE_DEF_LEN
     m_CurrentDataLimit = 0;
+    m_DataLimits.clear();
     m_DataLimits.reserve(16);
 #endif
-    OpenFromBuffer(buffer, size);
+}
+
+void CObjectIStreamAsnBinary::ResetState(void)
+{
+    CObjectIStream::ResetState();
+    ResetThisState();
 }
 
 CObjectIStreamAsnBinary::TLongTag
