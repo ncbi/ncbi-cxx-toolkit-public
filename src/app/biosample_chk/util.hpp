@@ -48,7 +48,7 @@
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
-CRef< CSeq_descr > GetBiosampleData(string accession);
+CRef< CSeq_descr > GetBiosampleData(string accession, bool use_dev_server);
 
 vector<string> GetBiosampleIDs(CBioseq_Handle bh);
 vector<string> GetBioProjectIDs(CBioseq_Handle bh);

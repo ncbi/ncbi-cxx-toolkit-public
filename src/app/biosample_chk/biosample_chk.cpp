@@ -181,6 +181,7 @@ private:
     int m_ListType;
 	string m_StructuredCommentPrefix;
     bool m_CompareStructuredComments;
+    bool m_UseDevServer;
 
     size_t m_Processed;
     size_t m_Unprocessed;
@@ -227,6 +228,7 @@ void CBiosampleChkApp::Init(void)
     arg_desc->AddDefaultKey
         ("x", "String", "File Selection Substring", CArgDescriptions::eString, ".sqn");
     arg_desc->AddFlag("u", "Recurse");
+    arg_desc->AddFlag("d", "Use development Biosample server");
 
     arg_desc->AddDefaultKey("a", "a", 
                             "ASN.1 Type (a Automatic, z Any, e Seq-entry, b Bioseq, s Bioseq-set, m Seq-submit, t Batch Bioseq-set, u Batch Seq-submit) or accession list (l)",
@@ -563,6 +565,8 @@ int CBiosampleChkApp::Run(void)
 	if (!NStr::IsBlank(m_StructuredCommentPrefix) && !NStr::StartsWith(m_StructuredCommentPrefix, "##")) {
 		m_StructuredCommentPrefix = "##" + m_StructuredCommentPrefix;
 	}
+
+    m_UseDevServer = args["d"].AsBoolean();
 
     m_SrcReportFields.clear();
 	m_StructuredCommentReportFields.clear();
@@ -997,7 +1001,7 @@ void CBiosampleChkApp::GetBioseqDiffs(CBioseq_Handle bh)
     bh.GetId().front().GetSeqId()->GetLabel(&sequence_id);
 
     ITERATE(vector<string>, id, biosample_ids) {
-        CRef<CSeq_descr> descr = GetBiosampleData(*id);
+        CRef<CSeq_descr> descr = GetBiosampleData(*id, m_UseDevServer);
         if (descr) {
             ITERATE(CSeq_descr::Tdata, it, descr->Get()) {
                 if ((*it)->IsSource()) {
@@ -1075,7 +1079,7 @@ void CBiosampleChkApp::ProcessBioseqForUpdate(CBioseq_Handle bh)
     }
 
     ITERATE(vector<string>, id, biosample_ids) {
-        CRef<CSeq_descr> descr = GetBiosampleData(*id);
+        CRef<CSeq_descr> descr = GetBiosampleData(*id, m_UseDevServer);
         if (descr) {
             m_Descriptors.clear();
             copy(descr->Set().begin(), descr->Set().end(),
