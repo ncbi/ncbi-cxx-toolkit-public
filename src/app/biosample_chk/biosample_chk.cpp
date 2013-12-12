@@ -570,7 +570,7 @@ int CBiosampleChkApp::Run(void)
     if (!NStr::IsBlank(m_StructuredCommentPrefix) && m_Mode != e_generate_biosample) {
         // error
         *m_LogStream << "Structured comment prefix is only appropriate for generating a biosample table." << endl;
-        return 0;
+        return 1;
     }
 
     // Process file based on its content
@@ -590,11 +590,11 @@ int CBiosampleChkApp::Run(void)
         if (m_ListType != e_none) {
             // error
             *m_LogStream << "List type (-a l or -a f) is not appropriate for push mode." << endl;
-            return 0;
+            return 1;
         } else if (!args["p"] || !args["i"]) {
             // error
             *m_LogStream << "Both directory containing contigs (-p) and master file (-i) are required for push mode." << endl;
-            return 0;
+            return 1;
         } else {
             m_Descriptors = GetBiosampleDescriptors(args["i"].AsString());
             ProcessOneDirectory (args["p"].AsString(), args["u"]);
@@ -625,7 +625,7 @@ int CBiosampleChkApp::Run(void)
         }
     }
 
-    return 1;
+    return 0;
 }
 
 
@@ -970,10 +970,19 @@ void CBiosampleChkApp::GetBioseqDiffs(CBioseq_Handle bh)
 {
     CSeqdesc_CI src_desc_ci(bh, CSeqdesc::e_Source);
 	CSeqdesc_CI comm_desc_ci(bh, CSeqdesc::e_User);
-	while (comm_desc_ci && !x_IsReportableStructuredComment(*comm_desc_ci)) {
+    vector<string> user_labels;
+    vector<CConstRef<CUser_object> > user_objs;    
+	while (comm_desc_ci) {
+        if (x_IsReportableStructuredComment(*comm_desc_ci)) {
+            const CUser_object& user = comm_desc_ci->GetUser();
+            string prefix = s_GetStructuredCommentPrefix(user);
+            CConstRef<CUser_object> obj(&user);
+            user_labels.push_back(prefix);
+            user_objs.push_back(obj);
+        }
 		++comm_desc_ci;
 	}
-    if (!src_desc_ci && !comm_desc_ci) {
+    if (!src_desc_ci && user_labels.size() == 0) {
         return;
     }
 
@@ -996,12 +1005,22 @@ void CBiosampleChkApp::GetBioseqDiffs(CBioseq_Handle bh)
                         TBiosampleFieldDiffList these_diffs = GetFieldDiffs(sequence_id, *id, src_desc_ci->GetSource(), (*it)->GetSource());
 						m_Diffs.insert(m_Diffs.end(), these_diffs.begin(), these_diffs.end());
 					}
-                } else if ((*it)->IsUser()) {
+                } else if ((*it)->IsUser() && x_IsReportableStructuredComment(**it)) {
                     if (m_CompareStructuredComments) {
-					    if (comm_desc_ci) {
-                            TBiosampleFieldDiffList these_diffs = GetFieldDiffs(sequence_id, *id, comm_desc_ci->GetUser(), (*it)->GetUser());
-                            m_Diffs.insert(m_Diffs.end(), these_diffs.begin(), these_diffs.end());
-					    }
+                        string this_prefix = s_GetStructuredCommentPrefix((*it)->GetUser());
+                        bool found = false;
+                        vector<string>::iterator sit = user_labels.begin();
+                        vector<CConstRef<CUser_object> >::iterator uit = user_objs.begin();
+                        while (sit != user_labels.end() && uit != user_objs.end()) {
+                            if (NStr::EqualNocase(*sit, this_prefix)) {
+                                TBiosampleFieldDiffList these_diffs = GetFieldDiffs(sequence_id, *id, **uit, (*it)->GetUser());
+                                m_Diffs.insert(m_Diffs.end(), these_diffs.begin(), these_diffs.end());
+                                found = true;
+                            }
+                            ++sit;
+                            ++uit;
+                        }
+					    
                     }
 				}
             }
