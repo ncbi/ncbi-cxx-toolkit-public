@@ -2890,7 +2890,7 @@ public:
     /// Convert into UTF8 from a Unicode character buffer
     ///
     /// @param src
-    ///   Source chracter buffer
+    ///   Source character buffer
     /// @param tchar_count
     ///   Number of characters in the buffer;
     ///   If it equals to NPOS, buffer is assumed to be zero-terminated
@@ -2904,6 +2904,79 @@ public:
     static CStringUTF8 AsUTF8(const wchar_t*        src,
                               SIZE_TYPE             tchar_count = NPOS);
 #endif
+
+    /// Convert Unicode C++ string into UTF8 and append it to existing string
+    ///
+    /// @param dest
+    ///   Existing UTF8 string
+    /// @param src
+    ///   Source Unicode string
+    /// return
+    ///   reference to modified dest string
+    template <typename TChar>
+    static CStringUTF8& Append(CStringUTF8&               dest,
+                               const basic_string<TChar>& src);
+
+    /// Convert Unicode character buffer into UTF8 and append it to existing string
+    ///
+    /// @param dest
+    ///   Existing UTF8 string
+    /// @param src
+    ///   Source Unicode character buffer
+    /// @param tchar_count
+    ///   Number of characters in the buffer;
+    ///   If it equals to NPOS, buffer is assumed to be zero-terminated
+    /// return
+    ///   reference to modified dest string
+    template <typename TChar>
+    static CStringUTF8& Append(CStringUTF8&  dest,
+                               const TChar*  src,
+                               SIZE_TYPE     tchar_count = NPOS);
+
+    /// Convert Unicode symbol into UTF8 and append it to existing string
+    ///
+    /// @param dest
+    ///   Existing UTF8 string
+    /// @param ch
+    ///   Unicode symbol
+    /// return
+    ///   reference to modified dest string
+    template <typename TChar>
+    static CStringUTF8& Append(CStringUTF8& dest, TChar ch);
+
+    /// Convert non-Unicode C++ string into UTF8 and append it to existing string
+    ///
+    /// @param dest
+    ///   Existing UTF8 string
+    /// @param src
+    ///   Source string
+    /// @param encoding
+    ///   Character encoding of the source string
+    /// @param validate
+    ///   Verify the character encoding of the source
+    /// return
+    ///   reference to modified dest string
+    static CStringUTF8& Append(CStringUTF8&       dest,
+                               const CTempString& src,
+                               EEncoding          encoding, 
+                               EValidate          validate = eNoValidate);
+
+    /// Convert non-Unicode character into UTF8 and append it to existing string
+    ///
+    /// @param dest
+    ///   Existing UTF8 string
+    /// @param ch
+    ///   Character
+    /// @param encoding
+    ///   Character encoding
+    /// @param validate
+    ///   Verify the character encoding of the source
+    /// return
+    ///   reference to modified dest string
+    static CStringUTF8& Append(CStringUTF8& dest,
+                               char         ch,
+                               EEncoding    encoding, 
+                               EValidate    validate = eNoValidate);
 
     /// Convert UTF8 string into a single-byte character representation
     ///
@@ -5190,6 +5263,48 @@ CUtf8::AsUTF8(const wchar_t* src, SIZE_TYPE tchar_count) {
     return  x_Append(u8, src, tchar_count);
 }
 #endif
+
+template <typename TChar> inline CStringUTF8&
+CUtf8::Append(CStringUTF8& u8, const TChar* src, SIZE_TYPE tchar_count) {
+    return CNotImplemented<TChar>::Cannot_convert_to_UTF8_string();
+}
+template <> inline CStringUTF8&
+CUtf8::Append(CStringUTF8& u8, const TUnicodeSymbol* src, SIZE_TYPE tchar_count) {
+    return  x_Append(u8, src, tchar_count);
+}
+template <> inline CStringUTF8&
+CUtf8::Append(CStringUTF8& u8, const TCharUCS4* src, SIZE_TYPE tchar_count) {
+    return  x_Append(u8, src, tchar_count);
+}
+template <> inline CStringUTF8&
+CUtf8::Append(CStringUTF8& u8, const TCharUCS2* src, SIZE_TYPE tchar_count) {
+    return  x_Append(u8, src, tchar_count);
+}
+#if defined(HAVE_WSTRING)
+template <> inline CStringUTF8&
+CUtf8::Append(CStringUTF8& u8, const wchar_t* src, SIZE_TYPE tchar_count) {
+    return  x_Append(u8, src, tchar_count);
+}
+#endif
+template <typename TChar> inline CStringUTF8&
+CUtf8::Append(CStringUTF8& dest, const basic_string<TChar>& src) {
+    return CUtf8::Append<TChar>(dest, src.data(), src.size());
+}
+template <typename TChar> inline CStringUTF8&
+CUtf8::Append(CStringUTF8& u8, TChar src) {
+    return CUtf8::Append<TChar>(u8,&src,1);
+}
+
+inline CStringUTF8&
+CUtf8::Append(CStringUTF8& u8, const CTempString& src,
+              EEncoding   encoding, EValidate validate) {
+    return  x_Append(u8,src,encoding,validate);
+}
+inline CStringUTF8&
+CUtf8::Append(CStringUTF8& u8, char src,
+              EEncoding encoding, EValidate  validate) {
+    return  CUtf8::Append(u8,CTempString(&src,1),encoding,validate);
+}
 
 template <typename TChar> inline basic_string<TChar>
 CUtf8::AsBasicString(const CTempString& str) {

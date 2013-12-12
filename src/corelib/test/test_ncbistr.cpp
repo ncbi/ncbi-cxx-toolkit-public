@@ -2952,6 +2952,7 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
 #endif
     string ssab("ab");
     wss.append(1,0x61).append(1,0x62).append(1,0x0).append(1,0x63);
+    wss2.append(1,0x61).append(1,0x62);
     {
 // string to string
         string u8test( CUtf8::AsUTF8(sample, eEncoding_ISO8859_1));
@@ -2967,6 +2968,21 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
 //        u8test = CUtf8::AsUTF8( sample.c_str(), 1);
 //        u8test = CUtf8::AsUTF8( sample);
 //        u8test = CUtf8::AsBasicString<char>(sample);
+
+        
+        u8test.clear();
+        CUtf8::Append(u8test,ssab, eEncoding_ISO8859_1);
+        CUtf8::Append(u8test, CTempString(ssab.data(), ssab.size()), eEncoding_ISO8859_1);
+        CUtf8::Append(u8test,ssab[0], eEncoding_ISO8859_1);
+        CUtf8::Append(u8test, 'a', eEncoding_ISO8859_1);
+        CUtf8::Append(u8test, TUnicodeSymbol(0x62));
+        BOOST_CHECK_EQUAL(u8test,"ababaab");
+
+// should not compile!
+//        CUtf8::Append(u8test, 'a');
+//        CUtf8::Append(u8test,ssab);
+//        CUtf8::Append(u8test,ssab.data(), ssab.size());
+//        CUtf8::Append(u8test,ssab[0]);
     }
     {
 // wide string to string
@@ -2987,6 +3003,12 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
         string ss = CUtf8::AsSingleByteString(w8test2,eEncoding_UTF8);
         ss = CUtf8::AsSingleByteString(w8test2,eEncoding_Ascii);
         BOOST_CHECK_EQUAL(ss,ssab);
+
+        w8test.clear();
+        CUtf8::Append(w8test,wss2);
+        CUtf8::Append(w8test, wss2.data(), wss2.size());
+        CUtf8::Append(w8test,wss2[0]);
+        BOOST_CHECK_EQUAL(w8test,"ababa");
     }
     {
 // string or wide string to CStringUTF8
@@ -3041,6 +3063,11 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
         xxxwss = CUtf8::AsBasicString<xxxMywchar>(w8test);
         xxxwss = CUtf8::AsBasicString<xxxMywchar>(w8test, 0);
         xxxwss = CUtf8::AsBasicString<xxxMywchar>(w8test, 0, CUtf8::eNoValidate);
+
+        xxxwss.append(1,1000);
+        CUtf8::Append(w8test,xxxwss);
+        CUtf8::Append(w8test,xxxwss.data(), xxxwss.size());
+        CUtf8::Append(w8test,xxxwss[0]);
     }
 #endif
     {
@@ -3048,18 +3075,33 @@ BOOST_AUTO_TEST_CASE(s_CUtf8)
         basic_string<xxxMywchar> xxxwss;
         string w8test( CUtf8::AsUTF8(xxxwss));
         xxxwss = CUtf8::AsBasicString<xxxMywchar>(w8test);
+
+        xxxwss.append(1,1000);
+        CUtf8::Append(w8test,xxxwss);
+        CUtf8::Append(w8test,xxxwss.data(), xxxwss.size());
+        CUtf8::Append(w8test,xxxwss[0]);
     }
     {
         typedef unsigned int xxxMywchar;
         basic_string<xxxMywchar> xxxwss;
         string w8test( CUtf8::AsUTF8(xxxwss));
         xxxwss = CUtf8::AsBasicString<xxxMywchar>(w8test);
+
+        xxxwss.append(1,1000);
+        CUtf8::Append(w8test,xxxwss);
+        CUtf8::Append(w8test,xxxwss.data(), xxxwss.size());
+        CUtf8::Append(w8test,xxxwss[0]);
     }
     {
         typedef unsigned long xxxMywchar;
         basic_string<xxxMywchar> xxxwss;
         string w8test( CUtf8::AsUTF8(xxxwss));
         xxxwss = CUtf8::AsBasicString<xxxMywchar>(w8test);
+
+        xxxwss.append(1,1000);
+        CUtf8::Append(w8test,xxxwss);
+        CUtf8::Append(w8test,xxxwss.data(), xxxwss.size());
+        CUtf8::Append(w8test,xxxwss[0]);
     }
     {
 // iteration
