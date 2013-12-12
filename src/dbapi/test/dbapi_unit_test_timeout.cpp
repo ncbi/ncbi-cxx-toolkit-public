@@ -66,7 +66,7 @@ static void s_WaitForDelay(IConnection& conn)
     try {
         auto_stmt->SendSql("waitfor delay '0:00:04'");
         BOOST_CHECK(auto_stmt->HasMoreResults());
-    } catch(const CDB_TimeoutEx& ex) {
+    } catch(const CDB_TimeoutEx& _DEBUG_ARG(ex)) {
         _TRACE(ex);
         timeout_was_reported = true;
         auto_stmt->Cancel();

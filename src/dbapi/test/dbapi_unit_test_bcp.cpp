@@ -1203,7 +1203,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Overflow)
             {
                 bi->AddRow();
                 bi->Complete();
-            } catch(const CDB_Exception& ex)
+            } catch(const CDB_Exception& _DEBUG_ARG(ex))
             {
                 _TRACE(ex);
                 exception_catched = true;
@@ -1276,7 +1276,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Overflow)
             {
                 bi->AddRow();
                 bi->Complete();
-            } catch(const CDB_Exception& ex)
+            } catch(const CDB_Exception& _DEBUG_ARG(ex))
             {
                 _TRACE(ex);
                 exception_catched = true;
@@ -1878,7 +1878,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing2)
 
                     BOOST_FAIL("Exception was not thrown");
                 }
-                catch (CDB_ClientEx& ex) {
+                catch (CDB_ClientEx& _DEBUG_ARG(ex)) {
                     // exception must be thrown
                     _TRACE(ex);
                 }
@@ -2447,7 +2447,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Late_Bind)
                 bi->Bind(2, &name);
                 BOOST_FAIL("Exception after late binding wasn't thrown");
             }
-            catch (CDB_Exception& ex) {
+            catch (CDB_Exception& _DEBUG_ARG(ex)) {
                 _TRACE(ex);
                 exception_thrown = true;
                 // ok

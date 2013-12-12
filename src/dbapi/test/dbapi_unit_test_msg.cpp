@@ -209,7 +209,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler)
                         GetArgs().GetServerName()
                         );
                 }
-                catch( const CDB_Exception& ex) {
+                catch( const CDB_Exception& _DEBUG_ARG(ex)) {
                     // Ignore it
                     _TRACE(ex);
                     BOOST_CHECK( drv_err_handler->GetSucceed() );
@@ -229,7 +229,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler)
                 try {
                     s_ES_01_Internal(*local_conn);
                 }
-                catch( const CDB_Exception& ex) {
+                catch( const CDB_Exception& _DEBUG_ARG(ex)) {
                     // Ignore it
                     _TRACE(ex);
                     BOOST_CHECK( !drv_err_handler->GetSucceed() );
@@ -248,7 +248,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler)
                 try {
                     s_ES_01_Internal(*conn);
                 }
-                catch( const CDB_Exception& ex) {
+                catch( const CDB_Exception& _DEBUG_ARG(ex)) {
                     // Ignore it
                     _TRACE(ex);
                     BOOST_CHECK( !drv_err_handler->GetSucceed() );
@@ -264,7 +264,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler)
                 try {
                     s_ES_01_Internal(*local_conn);
                 }
-                catch( const CDB_Exception& ex) {
+                catch( const CDB_Exception& _DEBUG_ARG(ex)) {
                     // Ignore it
                     _TRACE(ex);
                     BOOST_CHECK( msg_handler->GetSucceed() );
@@ -287,7 +287,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler)
                 try {
                     s_ES_01_Internal(*conn);
                 }
-                catch( const CDB_Exception& ex) {
+                catch( const CDB_Exception& _DEBUG_ARG(ex)) {
                     // Ignore it
                     _TRACE(ex);
                     BOOST_CHECK( !drv_err_handler->GetSucceed() );
@@ -316,7 +316,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler)
                 try {
                     s_ES_01_Internal(*local_conn);
                 }
-                catch( const CDB_Exception& ex) {
+                catch( const CDB_Exception& _DEBUG_ARG(ex)) {
                     // Ignore it
                     _TRACE(ex);
                     BOOST_CHECK( !drv_err_handler->GetSucceed() );
@@ -333,7 +333,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler)
                 try {
                     s_ES_01_Internal(*local_conn);
                 }
-                catch( const CDB_Exception& ex) {
+                catch( const CDB_Exception& _DEBUG_ARG(ex)) {
                     // Ignore it
                     _TRACE(ex);
                     BOOST_CHECK( msg_handler->GetSucceed() );
@@ -354,7 +354,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler)
                 try {
                     s_ES_01_Internal(*new_conn);
                 }
-                catch( const CDB_Exception& ex) {
+                catch( const CDB_Exception& _DEBUG_ARG(ex)) {
                     // Ignore it
                     _TRACE(ex);
                     BOOST_CHECK( drv_err_handler->GetSucceed() );
@@ -371,7 +371,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler)
                 try {
                     s_ES_01_Internal(*new_conn);
                 }
-                catch( const CDB_Exception& ex) {
+                catch( const CDB_Exception& _DEBUG_ARG(ex)) {
                     // Ignore it
                     _TRACE(ex);
                     BOOST_CHECK( msg_handler->GetSucceed() );
@@ -391,7 +391,7 @@ BOOST_AUTO_TEST_CASE(Test_UserErrorHandler)
                 try {
                     s_ES_01_Internal(*conn);
                 }
-                catch( const CDB_Exception& ex) {
+                catch( const CDB_Exception& _DEBUG_ARG(ex)) {
                     // Ignore it
                     _TRACE(ex);
                     BOOST_CHECK( drv_err_handler->GetSucceed() );
@@ -804,7 +804,7 @@ BOOST_AUTO_TEST_CASE(Test_Exception_Safety)
         try {
             // Try to insert duplicate value ...
             auto_stmt->ExecuteUpdate("INSERT " + table_name + "(id) VALUES(17)");
-        } catch (const CDB_Exception& ex) {
+        } catch (const CDB_Exception& _DEBUG_ARG(ex)) {
             // ignore it ...
             _TRACE(ex);
         }
@@ -812,7 +812,7 @@ BOOST_AUTO_TEST_CASE(Test_Exception_Safety)
         try {
             // execute invalid statement ...
             auto_stmt->ExecuteUpdate("ISERT " + table_name + "(id) VALUES(17)");
-        } catch (const CDB_Exception& ex) {
+        } catch (const CDB_Exception& _DEBUG_ARG(ex)) {
             // ignore it ...
             _TRACE(ex);
         }

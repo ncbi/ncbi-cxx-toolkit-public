@@ -58,7 +58,7 @@ public:
                     q.SetSql("drop table #t");
                     q.Execute();
                 }
-                catch (CSDB_Exception& ex) {
+                catch (CSDB_Exception& _DEBUG_ARG(ex)) {
                     _TRACE(ex);
                     //
                 }

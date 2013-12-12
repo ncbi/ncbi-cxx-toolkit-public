@@ -3169,7 +3169,7 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
                 try {
                     auto_stmt->SendSql("SELECT oops FROM sysobjects");
                     BOOST_CHECK( auto_stmt->HasMoreResults() );
-                } catch(const CDB_Exception& ex)
+                } catch(const CDB_Exception& _DEBUG_ARG(ex))
                 {
                     _TRACE(ex);
                     auto_stmt->Cancel();
@@ -3189,7 +3189,7 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
                     auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
                     BOOST_CHECK(rs.get() != NULL);
                     rs->Next();
-                } catch(const CDB_Exception& ex)
+                } catch(const CDB_Exception& _DEBUG_ARG(ex))
                 {
                     _TRACE(ex);
                     auto_stmt->Cancel();
@@ -3213,7 +3213,7 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
                     }
                     BOOST_CHECK(i > 0);
                     rs->Next();
-                } catch(const CDB_Exception& ex)
+                } catch(const CDB_Exception& _DEBUG_ARG(ex))
                 {
                     _TRACE(ex);
                     auto_stmt->Cancel();
@@ -3234,7 +3234,7 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
                 try {
                     auto_stmt.reset(GetConnection().GetCallableStatement("sp_wrong"));
                     auto_stmt->ExecuteUpdate();
-                } catch(const CDB_Exception& ex)
+                } catch(const CDB_Exception& _DEBUG_ARG(ex))
                 {
                     _TRACE(ex);
                     auto_stmt->Cancel();
@@ -3242,7 +3242,7 @@ BOOST_AUTO_TEST_CASE(Test_Query_Cancelation)
 
                 try {
                     auto_stmt->ExecuteUpdate();
-                } catch(const CDB_Exception& ex)
+                } catch(const CDB_Exception& _DEBUG_ARG(ex))
                 {
                     _TRACE(ex);
                     auto_stmt->Cancel();

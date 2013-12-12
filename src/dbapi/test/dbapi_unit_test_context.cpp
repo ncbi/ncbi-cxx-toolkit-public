@@ -74,7 +74,7 @@ BOOST_AUTO_TEST_CASE(Test_SetLogStream)
                 try {
                     auto_stmt->SendSql("SELECT oops FROM sysobjects");
                     BOOST_CHECK( auto_stmt->HasMoreResults() );
-                } catch(const CDB_Exception& ex) {
+                } catch(const CDB_Exception& _DEBUG_ARG(ex)) {
                     _TRACE(ex);
                     auto_stmt->Cancel();
                 }
@@ -133,7 +133,7 @@ BOOST_AUTO_TEST_CASE(Test_SetLogStream)
                     try {
                         auto_stmt->SendSql("SELECT oops FROM sysobjects");
                         BOOST_CHECK( auto_stmt->HasMoreResults() );
-                    } catch(const CDB_Exception& ex) {
+                    } catch(const CDB_Exception& _DEBUG_ARG(ex)) {
                         _TRACE(ex);
                         auto_stmt->Cancel();
                     }
@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE(Test_SetLogStream)
                     try {
                         auto_stmt->SendSql("SELECT oops FROM sysobjects");
                         BOOST_CHECK( auto_stmt->HasMoreResults() );
-                    } catch(const CDB_Exception& ex) {
+                    } catch(const CDB_Exception& _DEBUG_ARG(ex)) {
                         _TRACE(ex);
                         auto_stmt->Cancel();
                     }
