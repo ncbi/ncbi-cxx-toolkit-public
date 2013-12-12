@@ -1606,11 +1606,9 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             
             // fix annotation
             const size_t ann_dim = s.m_annot.size();
-    		++q;
             if(ann_dim > 2 && s.m_annot[ann_dim - 3] == '>') {
                 s.m_annot[ann_dim - 2] = q < qe? *q: ' ';
-                ++q;
-                s.m_annot[ann_dim - 1] = q < qe? *q: ' ';
+                s.m_annot[ann_dim - 1] = q < (qe-1)? *(q+1): ' ';
             }           
         }
     
@@ -1864,75 +1862,114 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
             if(ii->m_exon) ++exon_count0;
         }
 
-        //drop low complexity terminal exons
-        bool first_exon = true;
-        TSegment *last_exon = NULL;
-        NON_CONST_ITERATE(TSegmentDeque, ii, segments) {
-            if(ii->m_exon) {
-                //first exon
-                if(first_exon && ii->IsLowComplexityExon(Seq1) ) {
-                    ii->SetToGap();
+
+        //extend 100% near gaps and flanks
+        if (test_type == kTestType_20_28_90_cut20 )  { // test mode
+            bool first_exon = true;
+            TSegment *last_exon = NULL;
+            for(size_t k0 = 0; k0 < seg_dim; ++k0) {                
+                TSegment& s = segments[k0];
+                int ext_len = 0;
+                int ext_max = 0;
+                if(s.m_exon) {
+                    if(first_exon) {
+                        first_exon = false;
+                        ext_len = s.CanExtendLeft(m_mrna, m_genomic);
+                        s.ExtendLeft(m_mrna, m_genomic, ext_len, m_aligner);
+                    } else if( !segments[k0-1].m_exon ) {//extend near gap
+                      //extend previous exon to right
+                        ext_len = last_exon->CanExtendRight(m_mrna, m_genomic);
+                        //exons should not intersect
+                        ext_max = min(s.m_box[0] - last_exon->m_box[1], s.m_box[2] - last_exon->m_box[3]) - 1;
+                        last_exon->ExtendRight(m_mrna, m_genomic, min(ext_len, ext_max), m_aligner);
+                      //extend current exon to left
+                        ext_len = s.CanExtendLeft(m_mrna, m_genomic);
+                        ext_max = min(s.m_box[0] - last_exon->m_box[1], s.m_box[2] - last_exon->m_box[3]) - 1;
+                        s.ExtendLeft(m_mrna, m_genomic, min(ext_len, ext_max), m_aligner);
+                    }
+                    last_exon = &s;
                 }
-                first_exon = false;
-                last_exon = &*ii;            
+            }
+            if(last_exon != 0) {
+                int ext_len = last_exon->CanExtendRight(m_mrna, m_genomic);
+                last_exon->ExtendRight(m_mrna, m_genomic, ext_len, m_aligner);
             }
         }
-        //last exon
-        if(exon_count0 > 1 && !first_exon) {
-            if(last_exon->IsLowComplexityExon(Seq1) ) {
-                last_exon->SetToGap();
+                        
+
+        //PARTIAL TRIMMING OF TERMINAL EXONS
+        if( test_type == kTestType_production_default) {//default production
+            // Go from the ends and see if we can improve term exons
+            //note that it continue trimming of exons until s.m_idty is high
+            size_t k0 (0);
+            while(k0 < seg_dim) {
+
+                TSegment& s = segments[k0];
+                if(s.m_exon) {
+                    
+                    const size_t len (1 + s.m_box[1] - s.m_box[0]);
+                    const double min_idty (len >= kMinTermExonSize?
+                                           m_MinExonIdty:
+                                           max(m_MinExonIdty, kMinTermExonIdty));
+                    s.ImproveFromLeft(Seq1, Seq2, m_aligner);                
+                    if(s.m_idty >= min_idty) {
+                        break;
+                    }
+                }
+                ++k0;
             }
-        }
-        
 
-        // Go from the ends and see if we can improve term exons
-        size_t k0 (0);
-        while(k0 < seg_dim) {
+            int k1 (seg_dim - 1);
+            while(k1 >= int(k0)) {
 
-            TSegment& s = segments[k0];
-            if(s.m_exon) {
+                TSegment& s (segments[k1]);
+                if(s.m_exon) {
 
-                const size_t len (1 + s.m_box[1] - s.m_box[0]);
-                const double min_idty (len >= kMinTermExonSize?
-                                       m_MinExonIdty:
-                                       max(m_MinExonIdty, kMinTermExonIdty));
+                    const size_t len (1 + s.m_box[1] - s.m_box[0]);
+                    const double min_idty (len >= kMinTermExonSize?
+                                           m_MinExonIdty:
+                                           max(m_MinExonIdty, kMinTermExonIdty));
+                    s.ImproveFromRight(Seq1, Seq2, m_aligner);                
+                     if(s.m_idty >= min_idty) {
+                        break;
+                    }
+                }
+                --k1;
+            }
+        } else if (test_type == kTestType_20_28_90 || test_type == kTestType_20_28_90_cut20 )  { // test mode
+            //trim terminal exons only
+            bool first_exon = true;
+            TSegment *last_exon = NULL;
+            NON_CONST_ITERATE(TSegmentDeque, ii, segments) {
+                if(ii->m_exon) {
+                    //first exon
+                    if(first_exon) {
+                        if(test_type == kTestType_20_28_90_cut20) {
+                            ii->ImproveFromLeft1(Seq1, Seq2, m_aligner);                
+                        } else {
+                            ii->ImproveFromLeft(Seq1, Seq2, m_aligner);                
+                        }
+                        first_exon = false;
+                    }
+                    last_exon = &*ii;//single exon is being trimmed from both sides.            
+                }
+            }
+            //last exon
+            if( last_exon != 0 ) {
                 if(test_type == kTestType_20_28_90_cut20) {
-                        s.ImproveFromLeft1(Seq1, Seq2, m_aligner);                
+                    last_exon->ImproveFromRight1(Seq1, Seq2, m_aligner);                
                 } else {
-                        s.ImproveFromLeft(Seq1, Seq2, m_aligner);                
-                }
-                if(s.m_idty >= min_idty) {
-                    break;
+                    last_exon->ImproveFromRight(Seq1, Seq2, m_aligner);                
                 }
             }
-            ++k0;
+
+        } else {
+              string msg = "test type \"" + test_type + "\" is not supported.";
+              NCBI_THROW(CAlgoAlignException, eBadParameter, msg.c_str());
         }
 
-        int k1 (seg_dim - 1);
-        while(k1 >= int(k0)) {
-
-            TSegment& s (segments[k1]);
-            if(s.m_exon) {
-
-                const size_t len (1 + s.m_box[1] - s.m_box[0]);
-                const double min_idty (len >= kMinTermExonSize?
-                                       m_MinExonIdty:
-                                       max(m_MinExonIdty, kMinTermExonIdty));
-                if(test_type == kTestType_20_28_90_cut20) {
-                        s.ImproveFromRight1(Seq1, Seq2, m_aligner);                
-                } else {
-                        s.ImproveFromRight(Seq1, Seq2, m_aligner);                
-                }
-                 if(s.m_idty >= min_idty) {
-                    break;
-                }
-            }
-            --k1;
-        }
-        
-
-        //trim exons near <GAP>s
-        for(k0 = 0; k0 < seg_dim; ++k0) {
+        //partial trimming, exons near <GAP>s
+        for(size_t k0 = 0; k0 < seg_dim; ++k0) {
             if(!segments[k0].m_exon) {
                 if( k0 > 0 && segments[k0-1].m_exon) {
                     if(test_type == kTestType_20_28_90_cut20) {
@@ -1940,7 +1977,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                     } else {
                             segments[k0-1].ImproveFromRight(Seq1, Seq2, m_aligner);                
                     }
-               }
+                }
                 if( k0 + 1 < seg_dim && segments[k0+1].m_exon) {
                     if(test_type == kTestType_20_28_90_cut20) {
                             segments[k0+1].ImproveFromLeft1(Seq1, Seq2, m_aligner);                
@@ -1951,59 +1988,105 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
             }
         }
 
+        //drop low complexity terminal exons
+        {{
+            bool first_exon = true;
+            TSegment *last_exon = NULL;
+            NON_CONST_ITERATE(TSegmentDeque, ii, segments) {
+                if(ii->m_exon) {
+                    //first exon
+                    if(first_exon) {
+                        if(ii->IsLowComplexityExon(Seq1) ) {
+                            ii->SetToGap();
+                        }
+                        first_exon = false;
+                    } else {//make sure that if exon is single, it is checked once
+                        last_exon = &*ii;            
+                    }
+                }
+            }
+            //last exon
+            if( last_exon != 0 ) {
+                if(last_exon->IsLowComplexityExon(Seq1) ) {
+                    last_exon->SetToGap();
+                }
+            } 
+        }}
 
         // turn to gaps exons with low identity
         for(size_t k (0); k < seg_dim; ++k) {
-
             TSegment& s (segments[k]);
             if(s.m_exon == false) continue;
-            
+
             bool drop (false);
 
- 
-      // DEFAULT PRODUCTION
-         if( test_type == kTestType_production_default ) {//default production
             if(s.m_idty < m_MinExonIdty) {
                 drop = true; // always make gaps on low identity
-            }
-            else if (s.m_idty < .9 && s.m_len < 20) {
-
-                // same for short exons preceded/followed by non-consensus splices
+            } else if (s.m_idty < .9 && s.m_len < 20) {
+                // 20_90 rule for short exons preceded/followed by non-consensus splices
                 bool nc_prev (false), nc_next (false);
                 if(k > 0 && segments[k-1].m_exon) {
                     nc_prev = ! TSegment::s_IsConsensusSplice(
-                                 segments[k-1].GetDonor(),
-                                 s.GetAcceptor());
+                                    segments[k-1].GetDonor(),
+                                    s.GetAcceptor());
                 }
-
                 if(k + 1 < seg_dim && segments[k+1].m_exon) {
                     nc_next = ! TSegment::s_IsConsensusSplice(
-                                 s.GetDonor(),
-                                 segments[k+1].GetAcceptor());
+                                    s.GetDonor(),
+                                    segments[k+1].GetAcceptor());
                 }
-
                 drop = nc_prev || nc_next;
             }
-       //20_28_90 TEST MODE
-         } else if (test_type == kTestType_20_28_90 || test_type == kTestType_20_28_90_cut20 )  { // test mode
-            if(s.m_idty < m_MinExonIdty) {
-                drop = true; // always make gaps on low identity
-            } else { // deal with exons adjacent to gaps
-                bool adj = false;
-                if(k > 0 && ( ! segments[k-1].m_exon ) &&  (int)s.m_box[0] >= 20 ) {//gap on left
-                    adj = true;
-                }
-                if(k + 1 < seg_dim && (! segments[k+1].m_exon ) && ( (int)SeqLen1 - (int)s.m_box[1] - 1 ) >= 20 ) {//gap on right
-                    adj = true;
-                }
-                if(k == 0 && (int)s.m_box[0] >= 20) {//gap at the beginning
-                    adj = true;
-                }
-                if( k + 1 == seg_dim && ( (int)SeqLen1 - (int)s.m_box[1] - 1 ) >= 20) {//gap at the end
-                    adj = true;
+
+                
+            //20_28_90 TEST MODE
+           // turn to gaps exons with combination of shortness and low identity
+           if (test_type == kTestType_20_28_90 || test_type == kTestType_20_28_90_cut20 )  { // test mode
+                // deal with exons adjacent to gaps
+                enum EAdjustExon {
+                    eNo,
+                    eSoft, //for exons close to mRNA edge
+                    eHard
+                } adj;
+                adj = eNo;
+
+                if(k == 0) {//the first segment is an exon 
+                    if( (int)s.m_box[0] >= 20 ) {
+                        NCBI_THROW(CAlgoAlignException, eInternal, "missing gap at the beginning");
+                    } else {
+                        adj = eSoft;
+                    }
                 }
 
-                if(adj) {
+                if( k + 1 == seg_dim ) {//the last segment is an exon
+                    if( ( (int)SeqLen1 - (int)s.m_box[1] - 1 ) >= 20 ) {
+                        NCBI_THROW(CAlgoAlignException, eInternal, "missing gap at the end");
+                    } else {
+                        adj = eSoft;
+                    }
+                }
+
+                if(k > 0 && ( ! segments[k-1].m_exon ) ) {//gap on left
+                    if( (int)s.m_box[0] >= 20 ) {
+                        adj = eHard;
+                    } else {
+                        adj = eSoft;
+                    }
+                }
+
+                if(k + 1 < seg_dim && (! segments[k+1].m_exon ) ) {//gap on right
+                    if(  ( (int)SeqLen1 - (int)s.m_box[1] - 1 ) >= 20 ) {
+                        adj = eHard;
+                    } else {
+                        if(adj = eNo) adj = eSoft;//prevent switch from Hard to Soft
+                    }
+                }
+                
+                if(adj == eSoft) {//20_90 rule
+                    if (s.m_idty < .9 && s.m_len < 20) {
+                        drop = true;
+                    }
+                } else if(adj == eHard) {
                     if( s.m_len < 20 ) {// 20 rule
                         drop = true;
                     }
@@ -2011,17 +2094,12 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                         drop = true;
                     }
                 }
-
-            }
-         } else {
-              string msg = "test type \"" + test_type + "\" is not supported.";
-              NCBI_THROW(CAlgoAlignException, eBadParameter, msg.c_str());
-         }
+           }
+           if(drop) {
+               s.SetToGap();
+           }
+        }
             
-         if(drop) {
-             s.SetToGap();
-         }
-        } 
 
         // turn to gaps short weak terminal exons
         {{
@@ -2063,36 +2141,25 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         }}
 
         // turn to gaps extra-short exons preceded/followed by gaps
-
-      // DEFAULT PRODUCTION
-        if( test_type == kTestType_production_default ) {//default production
-            bool gap_prev (false);
-            for(size_t k (0); k < seg_dim; ++k) {
-                
-                TSegment& s (segments[k]);
-                if(s.m_exon == false) {
-                    gap_prev = true;
-                }
-                else {
-                    size_t length (s.m_box[1] - s.m_box[0] + 1);
-                    bool gap_next (false);
-                    if(k + 1 < seg_dim) {
-                        gap_next = !segments[k+1].m_exon;
-                    }
-                    if(length <= 10 && (gap_prev || gap_next)) {
-                        s.SetToGap();
-                    }
-                    gap_prev = false;
-                }
-            }
-       //20_28_90 TEST MODE
-        } else if (test_type == kTestType_20_28_90 || test_type == kTestType_20_28_90_cut20 )  { // test mode
-            //already took care of, see above
-        } else {
-              string msg = "test type \"" + test_type + "\" is not supported.";
-              const char * msgc = msg.c_str();
-              NCBI_THROW(CAlgoAlignException, eBadParameter, msgc);
-        }
+          bool gap_prev (false);
+          for(size_t k (0); k < seg_dim; ++k) {
+              
+              TSegment& s (segments[k]);
+              if(s.m_exon == false) {
+                  gap_prev = true;
+              }
+              else {
+                  size_t length (s.m_box[1] - s.m_box[0] + 1);
+                  bool gap_next (false);
+                  if(k + 1 < seg_dim) {
+                      gap_next = !segments[k+1].m_exon;
+                  }
+                  if(length <= 10 && (gap_prev || gap_next)) {
+                      s.SetToGap();
+                  }
+                  gap_prev = false;
+              }
+          }
 
         // indicate any slack space on the left
         if(segments[0].m_box[0] > 0) {
