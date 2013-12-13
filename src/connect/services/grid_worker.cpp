@@ -1457,8 +1457,8 @@ bool CGridWorkerNode::x_PerformTimelineAction(
 {
     if (timeline_entry->IsDiscoveryAction()) {
         ++m_DiscoveryIteration;
-        for (CNetServiceIterator it =
-                m_NetScheduleAPI.GetService().Iterate(); it; ++it) {
+        for (CNetServiceIterator it = m_NetScheduleAPI.GetService().Iterate(
+                CNetService::eIncludePenalized); it; ++it) {
             m_TimelineSearchPattern.m_ServerAddress =
                     (*it)->m_ServerInPool->m_Address;
             TTimelineEntries::iterator existing_entry(
