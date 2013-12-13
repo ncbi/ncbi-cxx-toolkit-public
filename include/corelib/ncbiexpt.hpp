@@ -545,9 +545,9 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// case the error code value must be the first in the combination.
 #define NCBI_THROW(exception_class, err_code, message)                  \
     do {                                                                \
-        USING_SCOPE(ncbi_ex_manip);                                     \
+        USING_SCOPE(NCBI_NS_NCBI::ncbi_ex_manip);                       \
         NCBI_EXCEPTION_THROW(NCBI_EXCEPTION(exception_class, err_code,  \
-            message));                                                  \
+                                            message));                  \
     } while (0)
 
 /// Throw a quick-and-dirty runtime exception of type 'CException' with
@@ -567,20 +567,20 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
     NCBI_THROW_FMT(NCBI_NS_NCBI::CException, eUnknown, message)
 
 /// Generic macro to make an exception, given the exception class,
-/// previous exception , error code and message string.
-#define NCBI_EXCEPTION_EX(prev_exception, exception_class, err_code, message)\
-    NCBI_EXCEPTION_VAR_EX(NCBI_EXCEPTION_EMPTY_NAME, &(prev_exception),      \
+/// previous exception, error code and message string.
+#define NCBI_EXCEPTION_EX(prev_exception, exception_class, err_code, message) \
+    NCBI_EXCEPTION_VAR_EX(NCBI_EXCEPTION_EMPTY_NAME, &(prev_exception), \
                           exception_class, err_code, message)
 
 /// Generic macro to re-throw an exception.
 /// The err_code argument may include manipulators to set additional
 /// options, e.g. eMyErrCode | Console | Severity(eDiag_Info). In any
 /// case the error code value must be the first in the combination.
-#define NCBI_RETHROW(prev_exception, exception_class, err_code, message)    \
-    do {                                                                    \
-        USING_SCOPE(ncbi_ex_manip);                                         \
-        throw NCBI_EXCEPTION_EX(prev_exception, exception_class,            \
-            err_code, message);                                             \
+#define NCBI_RETHROW(prev_exception, exception_class, err_code, message) \
+    do {                                                                \
+        USING_SCOPE(NCBI_NS_NCBI::ncbi_ex_manip);                       \
+        throw NCBI_EXCEPTION_EX(prev_exception, exception_class,        \
+                                err_code, message);                     \
     } while (0)
 
 /// The same as NCBI_RETHROW but with message processed as output to ostream.
@@ -588,8 +588,9 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
     NCBI_RETHROW(prev_exception, exception_class, err_code, FORMAT(message))
 
 /// Generic macro to re-throw the same exception.
-#define NCBI_RETHROW_SAME(prev_exception, message)              \
-    do { prev_exception.AddBacklog(DIAG_COMPILE_INFO, message, prev_exception.GetSeverity()); \
+#define NCBI_RETHROW_SAME(prev_exception, message)                \
+    do { prev_exception.AddBacklog(DIAG_COMPILE_INFO, message,    \
+                                   prev_exception.GetSeverity()); \
     throw; }  while (0)
 
 /// Generate a report on the exception.
@@ -606,9 +607,9 @@ const T& DbgPrintNP(const CDiagCompileInfo& info,
 /// given subcode.
 #define NCBI_REPORT_EXCEPTION_XX(err_name, err_subcode, title, ex)   \
     NCBI_CHECK_ERR_SUBCODE_X_NAME(err_name, err_subcode);            \
-    NCBI_NS_NCBI::CExceptionReporter::ReportDefaultEx(               \
-                NCBI_ERRCODE_X_NAME(err_name), err_subcode,          \
-                DIAG_COMPILE_INFO, title, ex, NCBI_NS_NCBI::eDPF_Default)
+    NCBI_NS_NCBI::CExceptionReporter::ReportDefaultEx                \
+    (NCBI_ERRCODE_X_NAME(err_name), err_subcode,                     \
+     DIAG_COMPILE_INFO, title, ex, NCBI_NS_NCBI::eDPF_Default)
 
 
 
