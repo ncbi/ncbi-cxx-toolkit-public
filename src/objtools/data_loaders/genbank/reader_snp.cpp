@@ -298,16 +298,38 @@ void CSeq_annot_SNP_Info_Reader::Parse(CObjectIStream& in,
 /////////////////////////////////////////////////////////////////////////////
 // reading and storing in binary format
 
-static void write_unsigned(CNcbiOstream& stream, unsigned n)
+static void write_unsigned(CNcbiOstream& stream,
+                           size_t n,
+                           const char* name)
 {
-    stream.write(reinterpret_cast<const char*>(&n), sizeof(n));
+    if ( sizeof(n) > 4 && Uint4(n) != n ) {
+        NCBI_THROW_FMT(CLoaderException, eLoaderFailed,
+                       "write_unsigned overflow for "<<name<<": "<<n);
+    }
+    char c[4] = {
+        char(n >> 24),
+        char(n >> 16),
+        char(n >>  8),
+        char(n      )
+    };
+    stream.write(c, sizeof(c));
 }
 
 
-static unsigned read_unsigned(CNcbiIstream& stream)
+static unsigned read_unsigned(CNcbiIstream& stream,
+                              const char* name)
 {
-    unsigned n;
-    stream.read(reinterpret_cast<char*>(&n), sizeof(n));
+    char c[4];
+    stream.read(c, sizeof(c));
+    if ( !stream ) {
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   string("Cannot read ")+name);
+    }
+    unsigned n =
+        (Uint1(c[0])<<24) | 
+        (Uint1(c[1])<<16) |
+        (Uint1(c[2])<< 8) |
+        (Uint1(c[3])    );
     return n;
 }
 
@@ -323,16 +345,26 @@ static void write_size(CNcbiOstream& stream, size_t size)
 }
 
 
-static size_t read_size(CNcbiIstream& stream)
+static size_t read_size(CNcbiIstream& stream, const char* name)
 {
     size_t size = 0;
+    static const int total_bits = sizeof(size)*8;
     int shift = 0;
-    char c = char(1<<7);
-    while ( c & (1<<7) ) {
+    Uint1 c;
+    do {
         c = stream.get();
-        size |= size_t(c & ((1<<7)-1)) << shift;
+        if ( !stream ) {
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       string("Cannot read ")+name);
+        }
+        size_t bits = c & ((1<<7)-1);
+        if ( shift+7 > total_bits && (c>>(total_bits-shift)) != 0 ) {
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       string("read_size overflow for ")+name);
+        }
+        size |= bits << shift;
         shift += 7;
-    }
+    } while ( c & (1<<7) );
     return size;
 }
 
@@ -355,25 +387,25 @@ void LoadIndexedStringsFrom(CNcbiIstream& stream,
                             size_t max_length)
 {
     strings.Clear();
-    size_t count = read_size(stream);
-    if ( !stream || (count > unsigned(max_index+1)) ) {
+    size_t count = read_size(stream, "SNP table strings count");
+    if ( count > unsigned(max_index+1) ) {
         NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "Bad format of SNP table");
+                   "SNP table string count is too big");
     }
     strings.Resize(count);
     AutoPtr<char, ArrayDeleter<char> > buf(new char[max_length]);
     for (size_t idx = 0; idx < strings.GetSize(); ++idx) {
-        size_t size = read_size(stream);
-        if ( !stream || (size > max_length) ) {
+        size_t size = read_size(stream, "SNP table string size");
+        if ( size > max_length ) {
             strings.Clear();
             NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "Bad format of SNP table");
+                       "SNP table string is too long");
         }
         stream.read(buf.get(), size);
         if ( !stream ) {
             strings.Clear();
             NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "Bad format of SNP table");
+                       "Cannot read SNP table string");
         }
         strings.SetString(idx).assign(buf.get(), buf.get() + size);
     }
@@ -399,13 +431,15 @@ void LoadIndexedOctetStringsFrom(CNcbiIstream& stream,
                                  size_t max_length)
 {
     strings.Clear();
-    size_t element_size = read_size(stream);
+    size_t element_size =
+        read_size(stream, "SNP table OCTET STRING element size");
     if ( element_size ) {
-        size_t total_size = read_size(stream);
-        if ( !stream || element_size == 0 || total_size%element_size != 0 ||
+        size_t total_size =
+            read_size(stream, "SNP table OCTET STRING total size");
+        if ( element_size == 0 || total_size%element_size != 0 ||
              total_size > element_size*(max_index+1) ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "Bad format of SNP table");
+                       "SNP table OCTET STRING count is too big");
         }
         CIndexedOctetStrings::TOctetString s;
         s.resize(total_size);
@@ -413,7 +447,7 @@ void LoadIndexedOctetStringsFrom(CNcbiIstream& stream,
         if ( !stream ) {
             strings.Clear();
             NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "Bad format of SNP table");
+                       "Cannot read SNP table OCTET STRING");
         }
         strings.SetTotalString(element_size, s);
     }
@@ -464,7 +498,7 @@ void CSeq_annot_SNP_Info_Reader::Write(CNcbiOstream& stream,
                                        const CConstObjectInfo& object,
                                        const CTSE_SetObjectInfo& set_info)
 {
-    write_unsigned(stream, MAGIC);
+    write_unsigned(stream, MAGIC, "SNP table magic number");
 
     CRef<CSeq_annot_WriteHook> hook(new CSeq_annot_WriteHook);
     {{
@@ -474,7 +508,8 @@ void CSeq_annot_SNP_Info_Reader::Write(CNcbiOstream& stream,
         obj_stream.Write(object);
     }}
 
-    write_unsigned(stream, set_info.m_Seq_annot_InfoMap.size());
+    write_unsigned(stream, set_info.m_Seq_annot_InfoMap.size(),
+                   "number of SNP table annots");
     ITERATE ( CTSE_SetObjectInfo::TSeq_annot_InfoMap, it,
               set_info.m_Seq_annot_InfoMap ) {
         TAnnotToIndex::const_iterator iter = hook->m_Index.find(it->first);
@@ -482,8 +517,12 @@ void CSeq_annot_SNP_Info_Reader::Write(CNcbiOstream& stream,
             NCBI_THROW(CLoaderException, eLoaderFailed,
                        "Orphan CSeq_annot_SNP_Info");
         }
-        write_unsigned(stream, iter->second);
+        write_unsigned(stream, iter->second, "SNP table annot index");
         x_Write(stream, *it->second.m_SNP_annot_Info);
+    }
+    if ( !stream ) {
+        NCBI_THROW(CLoaderException, eLoaderFailed,
+                   "SNP table store failed");
     }
 }
 
@@ -492,11 +531,7 @@ void CSeq_annot_SNP_Info_Reader::Read(CNcbiIstream& stream,
                                       const CObjectInfo& object,
                                       CTSE_SetObjectInfo& set_info)
 {
-    unsigned magic = read_unsigned(stream);
-    if ( !stream ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "Bad format of SNP table");
-    }
+    unsigned magic = read_unsigned(stream, "SNP table magic number");
     if ( magic != MAGIC ) {
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "Incompatible version of SNP table");
@@ -509,9 +544,9 @@ void CSeq_annot_SNP_Info_Reader::Read(CNcbiIstream& stream,
         obj_stream.Read(object);
     }}
 
-    unsigned count = read_unsigned(stream);
+    unsigned count = read_unsigned(stream, "number of SNP table annots");
     for ( unsigned i = 0; i < count; ++i ) {
-        unsigned index = read_unsigned(stream);
+        unsigned index = read_unsigned(stream, "SNP table annot index");
         if ( index >= hook->m_Index.size() ) {
             NCBI_THROW(CLoaderException, eLoaderFailed,
                        "Orphan CSeq_annot_SNP_Info");
@@ -566,8 +601,8 @@ void CSeq_annot_SNP_Info_Reader::x_Write(CNcbiOstream& stream,
                                          const CSeq_annot_SNP_Info& snp_info)
 {
     // header
-    write_unsigned(stream, MAGIC);
-    write_unsigned(stream, GI_TO(unsigned int, snp_info.GetGi()));
+    write_unsigned(stream, MAGIC, "SNP table magic number");
+    write_unsigned(stream, GI_TO(unsigned, snp_info.GetGi()), "SNP table GI");
 
     // strings
     StoreIndexedStringsTo(stream, snp_info.m_Comments);
@@ -595,16 +630,12 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
     snp_info.Reset();
 
     // header
-    unsigned magic = read_unsigned(stream);
-    if ( !stream ) {
-        NCBI_THROW(CLoaderException, eLoaderFailed,
-                   "Bad format of SNP table");
-    }
+    unsigned magic = read_unsigned(stream, "SNP table magic number");
     if ( magic != MAGIC ) {
         NCBI_THROW(CLoaderException, eLoaderFailed,
                    "Incompatible version of SNP table");
     }
-    snp_info.x_SetGi(GI_FROM(unsigned int, read_unsigned(stream)));
+    snp_info.x_SetGi(GI_FROM(unsigned, read_unsigned(stream, "SNP table GI")));
 
     // strings
     LoadIndexedStringsFrom(stream,
@@ -629,11 +660,15 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
                                 kMax_QualityLength);
 
     // simple Set_Info
-    size_t count = read_size(stream);
-    if ( stream ) {
+    size_t count = read_size(stream, "SNP table simple SNP count");
+    if ( count ) {
         snp_info.m_SNP_Set.resize(count);
         stream.read(reinterpret_cast<char*>(&snp_info.m_SNP_Set[0]),
                     count*sizeof(SSNP_Info));
+        if ( !stream ) {
+            NCBI_THROW(CLoaderException, eLoaderFailed,
+                       "Cannot read SNP table simple SNPs");
+        }
     }
     size_t comments_size = snp_info.m_Comments.GetSize();
     size_t alleles_size = snp_info.m_Alleles.GetSize();
@@ -646,14 +681,14 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
              index >= comments_size ) {
             snp_info.Reset();
             NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "Bad format of SNP table");
+                       "SNP table bad comment index");
         }
         index = it->m_ExtraIndex;
         if ( index != SSNP_Info::kNo_ExtraIndex &&
              index >= extra_size ) {
             snp_info.Reset();
             NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "Bad format of SNP table");
+                       "SNP table bad extra index");
         }
         switch ( it->m_Flags & SSNP_Info::fQualityCodesMask ) {
         case 0:
@@ -663,7 +698,7 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
             if ( index >= quality_str_size ) {
                 snp_info.Reset();
                 NCBI_THROW(CLoaderException, eLoaderFailed,
-                           "Bad format of SNP table");
+                           "SNP table bad quality code str index");
             }
             break;
         case SSNP_Info::fQualityCodesOs:
@@ -671,13 +706,13 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
             if ( index >= quality_os_size ) {
                 snp_info.Reset();
                 NCBI_THROW(CLoaderException, eLoaderFailed,
-                           "Bad format of SNP table");
+                           "SNP table bad quality code os index");
             }
             break;
         default:
             snp_info.Reset();
             NCBI_THROW(CLoaderException, eLoaderFailed,
-                       "Bad format of SNP table");
+                       "SNP table bad quality code type");
         }
         for ( int i = SSNP_Info::kMax_AllelesCount-1; i >= 0; --i ) {
             index = it->m_AllelesIndices[i];
@@ -685,7 +720,7 @@ void CSeq_annot_SNP_Info_Reader::x_Read(CNcbiIstream& stream,
                  index >= alleles_size ) {
                 snp_info.Reset();
                 NCBI_THROW(CLoaderException, eLoaderFailed,
-                           "Bad format of SNP table");
+                           "SNP table bad allele index");
             }
         }
     }
