@@ -59,8 +59,10 @@ BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 BEGIN_SCOPE(blast)
 
-CImportStrategy::CImportStrategy(CRef<objects::CBlast4_request> request)
- : m_Request(request)
+    CImportStrategy::CImportStrategy(CRef<objects::CBlast4_request> request,
+                                     bool ignore_unsupported_options)
+    : m_Request(request),
+      m_IgnoreUnsupportedOptions(ignore_unsupported_options)
 {
 
     if (m_Request.Empty()) {
@@ -82,7 +84,8 @@ CImportStrategy::FetchData()
     const CBlast4_queue_search_request& req(m_Request->GetBody().GetQueue_search());
     m_OptionsBuilder.reset(new CBlastOptionsBuilder(req.GetProgram(),
                                                     req.GetService(),
-                                  CBlastOptions::eBoth));
+                                                    CBlastOptions::eBoth,
+                                                    m_IgnoreUnsupportedOptions));
 
     // Create the BLAST options
     const CBlast4_parameters* algo_opts(0);

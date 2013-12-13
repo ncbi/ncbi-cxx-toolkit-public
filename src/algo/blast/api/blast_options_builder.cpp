@@ -47,14 +47,15 @@ BEGIN_SCOPE(blast)
 CBlastOptionsBuilder::
 CBlastOptionsBuilder(const string                & program,
                      const string                & service,
-                     CBlastOptions::EAPILocality   locality)
+                     CBlastOptions::EAPILocality   locality,
+                     bool ignore_unsupported_options)
     : m_Program        (program),
       m_Service        (service),
       m_PerformCulling (false),
       m_HspRangeMax    (0),
       m_QueryRange     (TSeqRange::GetEmpty()),
       m_Locality       (locality),
-      m_IgnoreUnsupportedOptions(false),
+      m_IgnoreUnsupportedOptions(ignore_unsupported_options),
       m_ForceMbIndex   (false)
 {
 }

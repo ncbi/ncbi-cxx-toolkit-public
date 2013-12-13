@@ -101,7 +101,8 @@ class NCBI_XBLAST_EXPORT CImportStrategy : public CObject
 {
 public:
     /// Constructor, imports the CBlast4_request
-    CImportStrategy(CRef<objects::CBlast4_request> request);
+    CImportStrategy(CRef<objects::CBlast4_request> request,
+                    bool ignore_unsupported_options = false);
 
     /// Builds and returns the OptionsHandle
     CRef<blast::CBlastOptionsHandle> GetOptionsHandle() ;
@@ -155,6 +156,7 @@ public:
 
     /// Return the BlastOptions builder used in this class
     CBlastOptionsBuilder& GetOptionsBuilder() {
+
         if (m_OptionsBuilder.get() == NULL) {
             FetchData();
         }
@@ -170,6 +172,8 @@ private:
     CRef<objects::CBlast4_request> m_Request;
     string m_Service;
     auto_ptr<CBlastOptionsBuilder> m_OptionsBuilder;
+    /// ignore unsupported options when creating blast options builder object
+    bool m_IgnoreUnsupportedOptions;
 
     /// Prohibit copy constructor
     CImportStrategy(const CImportStrategy& rhs);

@@ -72,7 +72,8 @@ public:
     CBlastOptionsBuilder(const string                & program,
                          const string                & service,
                          CBlastOptions::EAPILocality   locality
-                             = CBlastOptions::eLocal);
+                         = CBlastOptions::eLocal,
+                         bool ignore_unsupported_options = false);
     
     /// Build and return options as a CBlastOptionsHandle.
     ///
