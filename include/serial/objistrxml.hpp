@@ -225,6 +225,8 @@ protected:
     void BeginChars(CharBlock& );
     size_t ReadChars(CharBlock& block, char* dst, size_t length);
 
+    virtual void ResetState(void);
+
 private:
     bool OutsideTag(void) const;
     bool InsideTag(void) const;

@@ -469,6 +469,12 @@ public:
     ///
     /// @param pos
     ///   stream position
+    /// @note
+    ///   Potentially, this is a dangerous method.
+    ///   Serial stream is a state machine, which should be set correctly.
+    ///   Setting stream position resets the state, which is enough
+    ///   in many practically interesting scenarios - for example,
+    ///   when reading whole objects in client app
     void   SetStreamPos(CNcbiStreampos pos);
 
     /// Get current stack trace as string.

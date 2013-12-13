@@ -52,6 +52,11 @@ CObjectStack::~CObjectStack(void)
     delete[] m_Stack;
 }
 
+void CObjectStack::ResetState(void)
+{
+    m_PathValid = false;
+}
+
 void CObjectStack::UnendedFrame(void)
 {
 }

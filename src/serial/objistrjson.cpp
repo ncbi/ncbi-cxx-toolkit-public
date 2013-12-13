@@ -61,6 +61,13 @@ CObjectIStreamJson::~CObjectIStreamJson(void)
 {
 }
 
+void CObjectIStreamJson::ResetState(void)
+{
+    CObjectIStream::ResetState();
+    m_LastTag.clear();
+    m_RejectedTag.clear();
+}
+
 string CObjectIStreamJson::GetPosition(void) const
 {
     return "line "+NStr::SizetToString(m_Input.GetLine());

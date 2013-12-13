@@ -161,6 +161,7 @@ public:
     void WatchPathHooks(bool set=true);
 protected:
     virtual void x_SetPathHooks(bool set) = 0;
+    virtual void ResetState(void);
 
 private:
     TFrame& PushFrame(void);

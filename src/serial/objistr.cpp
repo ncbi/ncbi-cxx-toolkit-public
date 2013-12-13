@@ -461,6 +461,8 @@ CObjectIStream::~CObjectIStream(void)
 
 void CObjectIStream::ResetState(void)
 {
+    CObjectStack::ResetState();
+    m_DiscardCurrObject = false;
     SetMemberDefault(0);
 }
 
@@ -517,7 +519,7 @@ void CObjectIStream::Close(void)
             m_Objects->Clear();
         ClearStack();
         m_Fail = fNotOpen;
-        SetMemberDefault(0);
+        ResetState();
     }
 }
 
@@ -850,7 +852,7 @@ CObjectIStream::GetRegisteredObject(CReadObjectInfo::TObjectIndex index)
 // root reader
 void CObjectIStream::SkipFileHeader(TTypeInfo typeInfo)
 {
-    SetMemberDefault(0);
+    ResetState();
     if (!m_MonitorType) {
         m_MonitorType = (!x_HavePathHooks() && m_ReqMonitorType.size()==1) ?
             m_ReqMonitorType.front() : 0;
@@ -870,7 +872,7 @@ void CObjectIStream::SkipFileHeader(TTypeInfo typeInfo)
 
 void CObjectIStream::EndOfRead(void)
 {
-    SetMemberDefault(0);
+    ResetState();
     m_MonitorType = 0;
     if ( m_Objects )
         m_Objects->Clear();

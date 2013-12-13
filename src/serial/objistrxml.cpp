@@ -69,6 +69,21 @@ CObjectIStreamXml::~CObjectIStreamXml(void)
 {
 }
 
+void CObjectIStreamXml::ResetState(void)
+{
+    CObjectIStream::ResetState();
+    m_TagState = eTagOutside;
+    m_LastTag.clear();
+    m_RejectedTag.clear();
+    m_Attlist = false;
+    m_IsNil = false;;
+    m_LastPrimitive.clear();
+    m_CurrNsPrefix.clear();
+    m_Utf8Buf.clear();
+    m_Utf8Pos = m_Utf8Buf.begin();
+    m_SkipNextTag = false;
+}
+
 EEncoding CObjectIStreamXml::GetEncoding(void) const
 {
     return m_Encoding;

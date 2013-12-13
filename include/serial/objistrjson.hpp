@@ -178,6 +178,8 @@ protected:
     virtual TObjectIndex ReadObjectPointer(void);
     virtual string ReadOtherPointer(void);
 
+    virtual void ResetState(void);
+
 private:
 
     char GetChar(void);
