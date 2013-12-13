@@ -3,11 +3,11 @@
 # Adjust ICC flags to avoid problematic references to __libm_sse2_* functions.
 
 ifeq "$(COMPILER)-$(DEBUG_SFX)$(DLL)" "icc-Release"
-  coiled_coil.o: $(srcdir)/coiled_coil.cpp
+  coiled_coil.o prot_prop.o: %.o: $(srcdir)/%.cpp
 	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) -fno-builtin-exp \
 	    -fno-builtin-pow $< -o $@ $(CXX_FILTER)
 
-  prot_prop.o: $(srcdir)/prot_prop.cpp
+  adapter_search.o: $(srcdir)/adapter_search.cpp
 	$(CXX_WRAPPER) $(CXX) $(CXXFLAGS_ALL) -fno-builtin-exp $< -o $@ \
 	    $(CXX_FILTER)
 endif
