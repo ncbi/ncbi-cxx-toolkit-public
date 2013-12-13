@@ -1,0 +1,300 @@
+Seq-annot ::= {
+  desc {
+    title "Clone Paired Reads",
+    name "pairedReads",
+    user {
+      type str "Track Data",
+      data {
+        {
+          label str "useScore",
+          data str "1"
+        }
+      }
+    },
+    user {
+      type str "NCBI_BED_COLUMN_COUNT",
+      data {
+        {
+          label str "NCBI_BED_COLUMN_COUNT",
+          data int 13
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 1,
+      data region "chr22",
+      location int {
+        from 1000,
+        to 4999,
+        strand plus,
+        id local str "chr22"
+      },
+      title "cloneA",
+      xref {
+        {
+          id local id 2
+        },
+        {
+          id local id 3
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 960
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 2,
+      data region "chr22",
+      location int {
+        from 1000,
+        to 4999,
+        strand plus,
+        id local str "chr22"
+      },
+      title "cloneA",
+      xref {
+        {
+          id local id 1
+        },
+        {
+          id local id 3
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 960
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "thick"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 3,
+      data region "chr22",
+      location packed-int {
+        {
+          from 1000,
+          to 1567,
+          strand plus,
+          id local str "chr22"
+        },
+        {
+          from 4512,
+          to 5000,
+          strand plus,
+          id local str "chr22"
+        }
+      },
+      title "cloneA",
+      xref {
+        {
+          id local id 1
+        },
+        {
+          id local id 2
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 960
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "block"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 4,
+      data region "chr22",
+      location int {
+        from 2000,
+        to 5999,
+        strand minus,
+        id local str "chr22"
+      },
+      title "cloneB",
+      xref {
+        {
+          id local id 5
+        },
+        {
+          id local id 6
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 900
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 5,
+      data region "chr22",
+      location int {
+        from 2000,
+        to 5999,
+        strand minus,
+        id local str "chr22"
+      },
+      title "cloneB",
+      xref {
+        {
+          id local id 4
+        },
+        {
+          id local id 6
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 900
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "thick"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 6,
+      data region "chr22",
+      location packed-int {
+        {
+          from 2000,
+          to 2433,
+          strand minus,
+          id local str "chr22"
+        },
+        {
+          from 5601,
+          to 6000,
+          strand minus,
+          id local str "chr22"
+        }
+      },
+      title "cloneB",
+      xref {
+        {
+          id local id 4
+        },
+        {
+          id local id 5
+        }
+      },
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data int 900
+            },
+            {
+              label str "color",
+              data str "0 0 0"
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "block"
+            }
+          }
+        }
+      }
+    }
+  }
+}

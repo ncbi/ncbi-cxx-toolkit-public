@@ -1,8 +1,8 @@
 Line No    : 2
 Severity   : Error
-Message    : Invalid data line: Bad color value.
+Message    : Invalid data line: Bad value count in "blockStarts".
 
 Line No    : 3
 Severity   : Error
-Message    : Invalid data line: Bad color value.
+Message    : Invalid data line: Bad value count in "blockStarts".
 
