@@ -13,7 +13,8 @@ SRC = agp_write \
       gvf_writer gvf_write_data \
       wiggle_writer \
       bed_writer bed_track_record bed_feature_record \
-      vcf_writer
+      vcf_writer \
+	  src_writer
       
 WATCHERS = ludwigf boukn kornbluh
 
