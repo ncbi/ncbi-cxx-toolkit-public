@@ -6130,7 +6130,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UFPEDA	c	Universidade Federal de Pernambuco",
 "UFRG	s	Instituto de Biologia",
 "UFRGS	s	Universidade Federale do Rio Grande do Sul",
-"UFRJ	s	Universidade Federal Rural do Rio de Janeiro, Area de Fitopatologia, Departamento de Entomologia e Fitopatologia",
+"UFRJ	sc	Universidade Federal Rural do Rio de Janeiro, Area de Fitopatologia, Departamento de Entomologia e Fitopatologia",
 "UFRJIM	c	Departamento de Microbiologia Medica",
 "UFRN	s	Universidade Federal do Rio Grande do Norte",
 "UFS	s	Nyabyeya Forestry College, Department of Environmental Forestry",
