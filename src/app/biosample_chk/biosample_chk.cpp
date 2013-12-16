@@ -577,6 +577,10 @@ int CBiosampleChkApp::Run(void)
         return 1;
     }
 
+    if (m_Mode == e_report_diffs) {
+        m_CompareStructuredComments = false;
+    }
+
     // Process file based on its content
     // Unless otherwise specified we assume the file in hand is
     // a Seq-entry ASN.1 file, other option are a Seq-submit or NCBI
