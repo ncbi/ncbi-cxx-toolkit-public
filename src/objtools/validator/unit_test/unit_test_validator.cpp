@@ -1174,6 +1174,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    WriteOutTemp(entry);
 
     CLEAR_ERRORS
     cds->ResetExcept();
@@ -1185,8 +1186,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_StopInProtein)
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    WriteOutTemp(entry);
 
-    entry->SetSet().SetSeq_set().front()->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCTAAAAATAAGAGTAAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    nuc->SetSeq().SetInst().SetSeq_data().SetIupacna().Set("ATGCCCTAAAAATAAGAGTAAAACTAAGGGATGCCCAGAAAAACAGAGATAAACTAAGGG");
 
     // write out seq-entry
     WriteOutTemp(entry);

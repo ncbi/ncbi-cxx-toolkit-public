@@ -284,6 +284,110 @@ bool COrgMod::IsInstitutionCodeValid(const string& inst_coll, string &voucher_ty
     return rval;
 }
 
+
+string 
+COrgMod::IsCultureCollectionValid(const string& culture_collection)
+{
+    if (NStr::Find(culture_collection, ":") == string::npos) {
+        return "Culture_collection should be structured, but is not";
+    } else {
+        return IsStructuredVoucherValid(culture_collection, "c");
+    }
+}
+
+
+string 
+COrgMod::IsSpecimenVoucherValid(const string& specimen_voucher)
+{
+    return IsStructuredVoucherValid(specimen_voucher, "s");
+}
+
+
+string 
+COrgMod::IsBiomaterialValid(const string& biomaterial)
+{
+    return IsStructuredVoucherValid(biomaterial, "b");
+}
+
+
+string 
+COrgMod::IsStructuredVoucherValid(const string& val, const string& v_type)
+{
+    string inst_code = "";
+    string coll_code = "";
+    string inst_coll = "";
+    string id = "";
+    if (!ParseStructuredVoucher(val, inst_code, coll_code, id)) {
+        if (NStr::IsBlank(inst_code)) {
+            return "Voucher is missing institution code";
+        }
+        if (NStr::IsBlank(id)) {
+             return "Voucher is missing specific identifier";
+        }
+        return "";
+    }
+
+    if (NStr::IsBlank (coll_code)) {
+        inst_coll = inst_code;
+    } else {
+        inst_coll = inst_code + ":" + coll_code;
+    }    
+
+    // first, check combination of institution and collection (if collection found)
+    string voucher_type;
+    bool is_miscapitalized;
+    bool needs_country;
+    bool erroneous_country;
+    string correct_cap;
+    if (COrgMod::IsInstitutionCodeValid(inst_coll, voucher_type, is_miscapitalized, correct_cap, needs_country, erroneous_country)) {
+        if (needs_country) {
+            return "Institution code " + inst_coll + " needs to be qualified with a <COUNTRY> designation";
+        } else if (erroneous_country) {
+            return "Institution code " + inst_coll + " should not be qualified with a <COUNTRY> designation";
+        } else if (is_miscapitalized) {
+            return "Institution code " + inst_coll + " exists, but correct capitalization is " + correct_cap;
+        } else {   
+            if (NStr::FindNoCase(v_type, voucher_type) == string::npos) {
+                if (NStr::FindNoCase (voucher_type, "b") != string::npos) {
+                    return "Institution code " + inst_coll + " should be bio_material";
+                } else if (NStr::FindNoCase (voucher_type, "c") != string::npos) {
+                    return "Institution code " + inst_coll + " should be culture_collection";
+                } else if (NStr::FindNoCase (voucher_type, "s") != string::npos) {
+                    return "Institution code " + inst_coll + " should be specimen_voucher";
+                }
+            }
+            return "";
+        } 
+    } else if (NStr::StartsWith(inst_coll, "personal", NStr::eNocase)) {
+        if (NStr::EqualNocase (inst_code, "personal") && NStr::IsBlank (coll_code)) {
+            return "Personal collection does not have name of collector";
+        }
+        return "";
+    } else if (NStr::IsBlank(coll_code)) {
+        return "Institution code " + inst_coll + " is not in list";
+    } else if (IsInstitutionCodeValid(inst_code, voucher_type, is_miscapitalized, correct_cap, needs_country, erroneous_country)) {
+        if (needs_country) {
+            return "Institution code in " + inst_coll + " needs to be qualified with a <COUNTRY> designation";
+        } else if (erroneous_country) {
+            return "Institution code " + inst_code + " should not be qualified with a <COUNTRY> designation";
+        } else if (is_miscapitalized) {
+            return "Institution code " + inst_code + " exists, but correct capitalization is " + correct_cap;
+        } else if (NStr::Equal (coll_code, "DNA")) {
+            // DNA is a valid collection for any institution (using bio_material)
+            if (!NStr::Equal (voucher_type, "b")) {
+                return "DNA should be bio_material";
+            }
+        } else {
+            return "Institution code " + inst_code + " exists, but collection "
+                        + inst_coll + " is not in list";
+        }
+    } else {
+        return "Institution code " + inst_coll + " is not in list";
+    }
+    return "";
+}
+
+
 const string &
 COrgMod::GetInstitutionFullName( const string &short_name )
 {

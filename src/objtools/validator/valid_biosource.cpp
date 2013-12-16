@@ -3663,6 +3663,7 @@ bool CPCRSetList::AreSetsUnique(void)
 // ===== for validating instituation and collection codes in specimen-voucher, ================
 void CValidError_imp::ValidateOrgModVoucher(const COrgMod& orgmod, const CSerialObject& obj, const CSeq_entry *ctx)
 {
+
     if (!orgmod.IsSetSubtype() || !orgmod.IsSetSubname() || NStr::IsBlank(orgmod.GetSubname())) {
         return;
     }
@@ -3670,125 +3671,48 @@ void CValidError_imp::ValidateOrgModVoucher(const COrgMod& orgmod, const CSerial
     int subtype = orgmod.GetSubtype();
     string val = orgmod.GetSubname();
 
-    if (NStr::Find(val, ":") == string::npos) {
-      if (subtype == COrgMod::eSubtype_culture_collection) {
-            PostObjErr(eDiag_Error, eErr_SEQ_DESCR_UnstructuredVoucher, 
-                       "Culture_collection should be structured, but is not",
-                       obj, ctx);
-      }
-        return;
+    string error = "";
+    switch (subtype) {
+        case COrgMod::eSubtype_culture_collection:
+            error = COrgMod::IsCultureCollectionValid(val);
+            break;
+        case COrgMod::eSubtype_bio_material:
+            error = COrgMod::IsBiomaterialValid(val);
+            break;
+        case COrgMod::eSubtype_specimen_voucher:
+            error = COrgMod::IsSpecimenVoucherValid(val);
+            break;
+        default:
+            break;
     }
 
-    string inst_code = "";
-    string coll_code = "";
-    string inst_coll = "";
-    string id = "";
-    if (!COrgMod::ParseStructuredVoucher(val, inst_code, coll_code, id)) {
-        if (NStr::IsBlank(inst_code)) {
-            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 
-                        "Voucher is missing institution code",
-                        obj, ctx);
+    if (NStr::IsBlank(error)) {
+        // do nothing
+    } else if (NStr::FindNoCase(error, "should be structured") != string::npos) {
+        PostObjErr(eDiag_Error, eErr_SEQ_DESCR_UnstructuredVoucher, error, obj, ctx);
+    } else if (NStr::FindNoCase(error, "missing institution code") != string::npos) {
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, error, obj, ctx);
+    } else if (NStr::FindNoCase(error, "missing specific identifier") != string::npos) {
+        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadVoucherID, error, obj, ctx);
+    } else if (NStr::FindNoCase(error, "should be") != string::npos) {
+        EDiagSev level = eDiag_Info;
+        if (NStr::StartsWith(error, "DNA")) {
+            level = eDiag_Warning;
         }
-        if (NStr::IsBlank(id)) {
-            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadVoucherID, 
-                        "Voucher is missing specific identifier",
-                        obj, ctx);
-        }
-        return;
+        PostObjErr(level, eErr_SEQ_DESCR_WrongVoucherType, error, obj, ctx);
+    } else if (NStr::StartsWith(error, "Personal")) {
+        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_MissingPersonalCollectionName, 
+                    error, obj, ctx);
+    } else if (NStr::FindNoCase(error, "should not be qualified with a <COUNTRY> designation") != string::npos) {
+        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCountry, error, obj, ctx);
+    } else if (NStr::FindNoCase(error, "needs to be qualified with a <COUNTRY> designation") != string::npos) {
+        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, error, obj, ctx);
+    } else if (NStr::FindNoCase(error, " exists, but collection ") != string::npos) {
+        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCollectionCode, error, obj, ctx);
+    } else {
+        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, error, obj, ctx);
     }
 
-    if (NStr::IsBlank (coll_code)) {
-        inst_coll = inst_code;
-    } else {
-        inst_coll = inst_code + ":" + coll_code;
-    }    
-
-    // first, check combination of institution and collection (if collection found)
-    string voucher_type;
-    bool is_miscapitalized;
-    bool needs_country;
-    bool erroneous_country;
-    string correct_cap;
-    if (COrgMod::IsInstitutionCodeValid(inst_coll, voucher_type, is_miscapitalized, correct_cap, needs_country, erroneous_country)) {
-        if (needs_country) {
-            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 
-                        "Institution code " + inst_coll + " needs to be qualified with a <COUNTRY> designation",
-                        obj, ctx);
-            return;
-        } else if (erroneous_country) {
-            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCountry, 
-                        "Institution code " + inst_coll + " should not be qualified with a <COUNTRY> designation",
-                        obj, ctx);
-            return;
-        } else if (is_miscapitalized) {
-            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 
-                        "Institution code " + inst_coll + " exists, but correct capitalization is " + correct_cap,
-                        obj, ctx);
-            return;
-        } else {   
-            if ((subtype == COrgMod::eSubtype_bio_material && NStr::FindNoCase (voucher_type, "b") == string::npos) ||
-                (subtype == COrgMod::eSubtype_culture_collection && NStr::FindNoCase (voucher_type, "c") == string::npos) ||
-                (subtype == COrgMod::eSubtype_specimen_voucher && NStr::FindNoCase (voucher_type, "s") == string::npos)) {
-                if (NStr::FindNoCase (voucher_type, "b") != string::npos) {
-                    PostObjErr (eDiag_Info, eErr_SEQ_DESCR_WrongVoucherType, 
-                                "Institution code " + inst_coll + " should be bio_material", 
-                                obj, ctx);
-                } else if (NStr::FindNoCase (voucher_type, "c") != string::npos) {
-                    PostObjErr (eDiag_Info, eErr_SEQ_DESCR_WrongVoucherType, 
-                                "Institution code " + inst_coll + " should be culture_collection",
-                                obj, ctx);
-                } else if (NStr::FindNoCase (voucher_type, "s") != string::npos) {
-                    PostObjErr (eDiag_Info, eErr_SEQ_DESCR_WrongVoucherType, 
-                                "Institution code " + inst_coll + " should be specimen_voucher",
-                                obj, ctx);
-                }
-            }
-            return;
-        } 
-    } else if (NStr::StartsWith(inst_coll, "personal", NStr::eNocase)) {
-        if (NStr::EqualNocase (inst_code, "personal") && NStr::IsBlank (coll_code)) {
-            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_MissingPersonalCollectionName, 
-                        "Personal collection does not have name of collector",
-                        obj, ctx);
-        }
-        return;
-    } else if (NStr::IsBlank(coll_code)) {
-        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 
-                    "Institution code " + inst_coll + " is not in list",
-                    obj, ctx);
-        return;
-    } else if (COrgMod::IsInstitutionCodeValid(inst_code, voucher_type, is_miscapitalized, correct_cap, needs_country, erroneous_country)) {
-        if (needs_country) {
-            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 
-                        "Institution code in " + inst_coll + " needs to be qualified with a <COUNTRY> designation",
-                        obj, ctx);
-        } else if (erroneous_country) {
-            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCountry, 
-                        "Institution code " + inst_code + " should not be qualified with a <COUNTRY> designation",
-                        obj, ctx);
-        } else if (is_miscapitalized) {
-            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 
-                        "Institution code " + inst_code + " exists, but correct capitalization is " + correct_cap,
-                        obj, ctx);
-
-        } else if (NStr::Equal (coll_code, "DNA")) {
-            // DNA is a valid collection for any institution (using bio_material)
-            if (!NStr::Equal (voucher_type, "b")) {
-                PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_WrongVoucherType, 
-                            "DNA should be bio_material",
-                            obj, ctx);
-            }
-        } else {
-            PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadCollectionCode, 
-                        "Institution code " + inst_code + " exists, but collection "
-                        + inst_coll + " is not in list",
-                        obj, ctx);
-        }
-    } else {
-        PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadInstitutionCode, 
-                    "Institution code " + inst_coll + " is not in list",
-                    obj, ctx);
-    }    
 }
 
 
