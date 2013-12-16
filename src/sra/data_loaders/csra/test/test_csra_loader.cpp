@@ -1000,7 +1000,6 @@ BOOST_AUTO_TEST_CASE(ShortSeq2)
 
     CRef<CSeq_id> read_id(new CSeq_id("gnl|SRA|SRR035417.1.1"));
 
-    typedef CRange<TSeqPos> TRange;
     CSeq_id_Handle read_idh = CSeq_id_Handle::GetHandle(*read_id);
 
     CBioseq_Handle read = scope.GetBioseqHandle(read_idh);
@@ -1037,7 +1036,6 @@ BOOST_AUTO_TEST_CASE(ShortSeq3)
 
     CRef<CSeq_id> read_id(new CSeq_id("gnl|SRA|ERR003990.1.1"));
 
-    typedef CRange<TSeqPos> TRange;
     CSeq_id_Handle read_idh = CSeq_id_Handle::GetHandle(*read_id);
 
     CBioseq_Handle read = scope.GetBioseqHandle(read_idh);
@@ -1074,7 +1072,6 @@ BOOST_AUTO_TEST_CASE(ShortSeq4)
 
     CRef<CSeq_id> read_id(new CSeq_id("gnl|SRA|SRR749060.1.1"));
 
-    typedef CRange<TSeqPos> TRange;
     CSeq_id_Handle read_idh = CSeq_id_Handle::GetHandle(*read_id);
 
     CBioseq_Handle read = scope.GetBioseqHandle(read_idh);
@@ -1116,7 +1113,6 @@ BOOST_AUTO_TEST_CASE(ShortSeq5)
 
     CRef<CSeq_id> read_id(new CSeq_id("gnl|SRA|SRR500739.422766.2"));
 
-    typedef CRange<TSeqPos> TRange;
     CSeq_id_Handle read_idh = CSeq_id_Handle::GetHandle(*read_id);
 
     CBioseq_Handle read = scope.GetBioseqHandle(read_idh);
