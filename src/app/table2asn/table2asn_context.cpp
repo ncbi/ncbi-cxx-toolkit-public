@@ -60,8 +60,11 @@
 #include <objects/pub/Pub_equiv.hpp>
 
 #include "table2asn_context.hpp"
+#include "objtools/edit/dblink_field.hpp"
 
 #include <common/test_assert.h>  /* This header must go last */
+
+#ifdef 0
 
 BEGIN_NCBI_SCOPE
 
@@ -89,27 +92,13 @@ bool x_ApplyCreateDate(CSeq_entry& entry)
 void x_ApplySourceQualifiers(CBioseq& bioseq, CSourceModParser& smp)
 {
     CSourceModParser::TMods unused_mods = smp.GetMods(CSourceModParser::fUnusedMods);
-    CUser_object::TData data;
     NON_CONST_ITERATE(CSourceModParser::TMods, mod, unused_mods)
     {
-        if (NStr::CompareNocase(mod->key, "bioproject")==0 ||
-            NStr::CompareNocase(mod->key, "biosample")==0)
-        {
-            string key = mod->key.c_str();
-            NStr::ToLower(key);
-            key[0] = toupper(key[0]);
-            key[3] = toupper(key[3]);
-
-            CRef<CUser_field> field(new CUser_field);
-            field->SetLabel().SetStr(key);
-            field->SetData().SetStr(mod->value);
-            data.push_back(field);                
-        }
-    }
-    if (!data.empty())
-    {
-        CUser_object::TData& existing_data = CTable2AsnContext::SetUserObject(bioseq.SetDescr(), "DBLink").SetData();
-        existing_data.insert(existing_data.end(), data.begin(), data.end());
+        if (NStr::CompareNocase(mod->key, "bioproject")==0)
+            edit::CDBLink::SetBioProject(CTable2AsnContext::SetUserObject(bioseq.SetDescr(), "DBLink"), mod->value);
+        else
+        if (NStr::CompareNocase(mod->key, "biosample")==0)
+            edit::CDBLink::SetBioSample(CTable2AsnContext::SetUserObject(bioseq.SetDescr(), "DBLink"), mod->value);
     }
 }
 
@@ -489,3 +478,4 @@ void CTable2AsnContext::MergeWithTemplate(CSeq_entry& entry) const
 
 END_NCBI_SCOPE
 
+#endif

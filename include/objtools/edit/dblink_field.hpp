@@ -98,12 +98,12 @@ public:
     CDBLink(CUser_object& user);
     ~CDBLink() {};
     static CRef<CUser_object> MakeEmptyUserObject();
-    static void SetBioSample(CUser_object& obj, string val, EExistingText existing_text = eExistingText_replace_old);
-    static void SetBioProject(CUser_object& obj, string val, EExistingText existing_text = eExistingText_replace_old);
-    static void SetTrace(CUser_object& obj, string val, EExistingText existing_text = eExistingText_replace_old);
-    static void SetProbeDB(CUser_object& obj, string val, EExistingText existing_text = eExistingText_replace_old);
-    static void SetSRA(CUser_object& obj, string val, EExistingText existing_text = eExistingText_replace_old);
-    static void SetAssembly(CUser_object& obj, string val, EExistingText existing_text = eExistingText_replace_old);
+    static void SetBioSample(CUser_object& obj, const string& val, EExistingText existing_text = eExistingText_replace_old);
+    static void SetBioProject(CUser_object& obj, const string& val, EExistingText existing_text = eExistingText_replace_old);
+    static void SetTrace(CUser_object& obj, const string& val, EExistingText existing_text = eExistingText_replace_old);
+    static void SetProbeDB(CUser_object& obj, const string& val, EExistingText existing_text = eExistingText_replace_old);
+    static void SetSRA(CUser_object& obj, const string& val, EExistingText existing_text = eExistingText_replace_old);
+    static void SetAssembly(CUser_object& obj, const string& val, EExistingText existing_text = eExistingText_replace_old);
 
     static vector<string> GetBioSample(CUser_object& obj);
     static vector<string> GetBioProject(CUser_object& obj);
@@ -112,12 +112,12 @@ public:
     static vector<string> GetSRA(CUser_object& obj);
     static vector<string> GetAssembly(CUser_object& obj);
 
-    CDBLink& SetBioSample(string val, EExistingText existing_text = eExistingText_replace_old);
-    CDBLink& SetBioProject(string val, EExistingText existing_text = eExistingText_replace_old);
-    CDBLink& SetTrace(string val, EExistingText existing_text = eExistingText_replace_old);
-    CDBLink& SetProbeDB(string val, EExistingText existing_text = eExistingText_replace_old);
-    CDBLink& SetSRA(string val, EExistingText existing_text = eExistingText_replace_old);
-    CDBLink& SetAssembly(string val, EExistingText existing_text = eExistingText_replace_old);
+    CDBLink& SetBioSample(const string& val, EExistingText existing_text = eExistingText_replace_old);
+    CDBLink& SetBioProject(const string& val, EExistingText existing_text = eExistingText_replace_old);
+    CDBLink& SetTrace(const string& val, EExistingText existing_text = eExistingText_replace_old);
+    CDBLink& SetProbeDB(const string& val, EExistingText existing_text = eExistingText_replace_old);
+    CDBLink& SetSRA(const string& val, EExistingText existing_text = eExistingText_replace_old);
+    CDBLink& SetAssembly(const string& val, EExistingText existing_text = eExistingText_replace_old);
     CRef<CUser_object> MakeUserObject();
 
 protected:

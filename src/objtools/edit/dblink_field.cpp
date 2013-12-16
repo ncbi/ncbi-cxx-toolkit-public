@@ -134,7 +134,11 @@ bool CDBLinkField::SetVal(CUser_field& field, const string & newValue, EExisting
         field.SetData().SetStrs().push_back(newValue);
         rval = true;
     }
-
+   
+    if (rval && field.IsSetData() && field.GetData().IsStrs())
+    {
+        field.SetNum(field.GetData().GetStrs().size());
+    }
     return rval;
 }
 
@@ -477,84 +481,84 @@ CRef<CUser_object> CDBLink::MakeEmptyUserObject()
 }
 
 
-void CDBLink::SetBioSample(CUser_object& obj, string val, EExistingText existing_text)
+void CDBLink::SetBioSample(CUser_object& obj, const string& val, EExistingText existing_text)
 {
     CDBLinkField field(CDBLinkField::eDBLinkFieldType_BioSample);
     field.SetVal(obj, val, existing_text);
 }
 
 
-void CDBLink::SetBioProject(CUser_object& obj, string val, EExistingText existing_text)
+void CDBLink::SetBioProject(CUser_object& obj, const string& val, EExistingText existing_text)
 {
     CDBLinkField field(CDBLinkField::eDBLinkFieldType_BioProject);
     field.SetVal(obj, val, existing_text);
 }
 
 
-void CDBLink::SetTrace(CUser_object& obj, string val, EExistingText existing_text)
+void CDBLink::SetTrace(CUser_object& obj, const string& val, EExistingText existing_text)
 {
     CDBLinkField field(CDBLinkField::eDBLinkFieldType_Trace);
     field.SetVal(obj, val, existing_text);
 }
 
 
-void CDBLink::SetProbeDB(CUser_object& obj, string val, EExistingText existing_text)
+void CDBLink::SetProbeDB(CUser_object& obj, const string& val, EExistingText existing_text)
 {
     CDBLinkField field(CDBLinkField::eDBLinkFieldType_ProbeDB);
     field.SetVal(obj, val, existing_text);
 }
 
 
-void CDBLink::SetSRA(CUser_object& obj, string val, EExistingText existing_text)
+void CDBLink::SetSRA(CUser_object& obj, const string& val, EExistingText existing_text)
 {
     CDBLinkField field(CDBLinkField::eDBLinkFieldType_SRA);
     field.SetVal(obj, val, existing_text);
 }
 
 
-void CDBLink::SetAssembly(CUser_object& obj, string val, EExistingText existing_text)
+void CDBLink::SetAssembly(CUser_object& obj, const string& val, EExistingText existing_text)
 {
     CDBLinkField field(CDBLinkField::eDBLinkFieldType_Assembly);
     field.SetVal(obj, val, existing_text);
 }
 
 
-CDBLink& CDBLink::SetBioSample(string val, EExistingText existing_text)
+CDBLink& CDBLink::SetBioSample(const string& val, EExistingText existing_text)
 {
     SetBioSample(*m_User, val, existing_text);
     return *this;
 }
 
 
-CDBLink& CDBLink::SetBioProject(string val, EExistingText existing_text)
+CDBLink& CDBLink::SetBioProject(const string& val, EExistingText existing_text)
 {
     SetBioProject(*m_User, val, existing_text);
     return *this;
 }
 
 
-CDBLink& CDBLink::SetTrace(string val, EExistingText existing_text)
+CDBLink& CDBLink::SetTrace(const string& val, EExistingText existing_text)
 {
     SetTrace(*m_User, val, existing_text);
     return *this;
 }
 
 
-CDBLink& CDBLink::SetProbeDB(string val, EExistingText existing_text)
+CDBLink& CDBLink::SetProbeDB(const string& val, EExistingText existing_text)
 {
     SetProbeDB(*m_User, val, existing_text);
     return *this;
 }
 
 
-CDBLink& CDBLink::SetSRA(string val, EExistingText existing_text)
+CDBLink& CDBLink::SetSRA(const string& val, EExistingText existing_text)
 {
     SetSRA(*m_User, val, existing_text);
     return *this;
 }
 
 
-CDBLink& CDBLink::SetAssembly(string val, EExistingText existing_text)
+CDBLink& CDBLink::SetAssembly(const string& val, EExistingText existing_text)
 {
     SetAssembly(*m_User, val, existing_text);
     return *this;

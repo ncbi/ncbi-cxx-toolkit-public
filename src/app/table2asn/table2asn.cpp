@@ -60,6 +60,7 @@
 #include <objects/general/Date.hpp>
 
 #include <objtools/readers/message_listener.hpp>
+#include "table2asn_validator.hpp"
 
 #include <common/test_assert.h>  /* This header must go last */
 
@@ -603,6 +604,11 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     m_context.ApplyAccession(*entry);
 
+    if (m_context.m_RemotePubLookup)
+    {
+        m_remote_updater->UpdatePubReferences(*entry);
+    }
+
     if (avoid_submit_block)
         result = m_context.CreateSeqEntryFromTemplate(entry);
     else
@@ -610,16 +616,14 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
 
     m_context.ApplySourceQualifiers(*result, m_context.m_source_qualifiers);
 
-    if (m_context.m_RemotePubLookup)
-    {
-        m_remote_updater->UpdatePubReferences(*result);
-    }
-
     if (avoid_submit_block)
     {
         // we need to fix cit-sub date
         //COpticalxml2asnOperator::UpdatePubDate(*result);
     }
+
+    //CTable2AsnValidator validator;
+    //validator.Validate(*entry);
 
 
 }
