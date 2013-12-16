@@ -64,8 +64,6 @@
 
 #include <common/test_assert.h>  /* This header must go last */
 
-#ifdef 0
-
 BEGIN_NCBI_SCOPE
 
 USING_SCOPE(objects);
@@ -477,5 +475,3 @@ void CTable2AsnContext::MergeWithTemplate(CSeq_entry& entry) const
 
 
 END_NCBI_SCOPE
-
-#endif
