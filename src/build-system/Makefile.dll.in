@@ -91,17 +91,32 @@ ifneq "$(patsubst %,$(LDD_R),$(wildcard $(XDLL)))" ""
 endif
 
 ifeq "$(JUST_TOUCH)" "1"
- $(XDLL): $(DLL_DEP) $(XDLLOBJ) $(XOBJ) $(XDLL_LIBDEP)
+ MAKEFILE = $(builddir)/Makefile.lib.tmpl
+ retouch:
 	@$(TOUCH) $(XDLL)
 	@has_dll_loadable@@$(TOUCH) $(XDLL_LOADABLE)
  ifneq "$(BINCOPY)" "@:"
   ifneq "$(srcdir)" "."
    ifneq "$(filter-out /.,$(wildcard $(libdir)/.))" ""
-	@$(TOUCH) $(libdir)/$(XDLL)
-	@has_dll_loadable@@$(TOUCH) $(libdir)/$(XDLL_LOADABLE)
+	@$(BINTOUCH) $(libdir)/$(XDLL)
+	@has_dll_loadable@@$(BINTOUCH) $(libdir)/$(XDLL_LOADABLE)
    endif
   endif
  endif
+ .PHONY: retouch
+
+ $(XDLL): $(DLL_DEP) $(XDLLOBJ) $(XOBJ) $(XDLL_LIBDEP)
+# This is not entirely straightforward, because the above check doesn't
+# account for object files rebuilt on the fly (as they typically are).
+	relink_after_all=false; \
+	for x in $?; do \
+	    case $$x in *@dll_ext@) ;; *) relink_after_all=true ;; esac; \
+	done; \
+	if [ $$relink_after_all = true ]; then \
+	    $(MAKE) -f $(MAKEFILE) $(MFLAGS) $(XDLL) LDD_R=; \
+	else \
+	    $(MAKE) -f $(MAKEFILE) $(MFLAGS) retouch; \
+	fi
 else
  $(XDLL): $(XDLLOBJ) $(XOBJ) $(XDLL_LIBDEP)
 	-$(RM) $(XDLL) .$(XDLL).stamp
