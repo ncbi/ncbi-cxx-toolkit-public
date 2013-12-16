@@ -878,8 +878,8 @@ void CLoadLockBlob::SetBlobVersion(TBlobVersion version)
 
 
 // helper method to get system time for expiration
-static
-CLoadInfo::TExpirationTime GetCurrentTime(void)
+static inline
+CLoadInfo::TExpirationTime sx_GetCurrentTime(void)
 {
     return time(0);
 }
@@ -893,7 +893,7 @@ CReaderRequestResult::CReaderRequestResult(const CSeq_id_Handle& requested_id)
       m_RecursiveTime(0),
       m_AllocatedConnection(0),
       m_RetryDelay(0),
-      m_StartTime(GetCurrentTime())
+      m_StartTime(sx_GetCurrentTime())
 {
 }
 
