@@ -141,8 +141,6 @@ public:
             TQueueIter queue_iter =
                 m_Queue.insert(m_Queue.end(), TQueueValue(key, value));
                                
-            typedef typename TIndex::value_type insert_type;
-            
             _VERIFY(m_Index.insert(TIndexValue(key, queue_iter)).second);
 
             _ASSERT(m_Queue.size() == m_Index.size());
@@ -165,8 +163,6 @@ public:
             TQueueIter queue_iter =
                 m_Queue.insert(m_Queue.end(), TQueueValue(key, value));
                                
-            typedef typename TIndex::value_type insert_type;
-            
             _VERIFY(m_Index.insert(TIndexValue(key, queue_iter)).second);
 
             _ASSERT(m_Queue.size() == m_Index.size());
