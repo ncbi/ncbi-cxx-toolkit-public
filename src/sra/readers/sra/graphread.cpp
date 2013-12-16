@@ -668,7 +668,6 @@ CVDBGraphSeqIterator::GetAnnot(COpenRange<TSeqPos> range0,
         loc->SetInt().SetTo(range.GetTo());
         
         bool as_table = false;
-        typedef SGraphTableCursor::TGraphV TValue;
         if ( content & fGraphMainAsTable ) {
             if ( content & fGraphMainAsGraph ) {
                 // select best
