@@ -55,7 +55,7 @@ CAutoDefModifierCombo::CAutoDefModifierCombo() : m_UseModifierLabels(false),
                                                  m_ExcludeCfOrgs(false),
                                                  m_ExcludeNrOrgs(false),
                                                  m_ExcludeAffOrgs(false),
-                                                 m_KeepParen(false),
+                                                 m_KeepParen(true),
                                                  m_KeepAfterSemicolon(false),
                                                  m_HIVCloneIsolateRule(ePreferClone)
 

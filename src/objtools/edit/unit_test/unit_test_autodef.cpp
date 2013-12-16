@@ -87,6 +87,7 @@
 #include <objects/seqfeat/SubSource.hpp>
 #include <objects/seqfeat/Imp_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
+#include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqloc/Seq_id.hpp>
 #include <objects/seqloc/PDB_seq_id.hpp>
 #include <objects/seqloc/Giimport_id.hpp>
@@ -556,6 +557,58 @@ BOOST_AUTO_TEST_CASE(Test_DocsumTitle_Physet)
     AddTitle(set, defline);
     CheckDeflineMatches(set, true);
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_GB_3108)
+{
+    CRef<CSeq_entry> entry = BuildSequence();
+    CRef<CSeqdesc> desc = AddSource (entry, "Fusarium incarnatum");
+    CRef<CSeq_feat> feat1(new CSeq_feat());
+    feat1->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    feat1->SetData().SetRna().SetExt().SetName("5.8S ribosomal RNA");
+    AddFeat(feat1, entry);
+    feat1->SetLocation().SetInt().SetTo(19);
+    feat1->SetLocation().SetPartialStart(true, eExtreme_Biological);
+    CRef<CSeq_feat> feat2(new CSeq_feat());
+    feat2->SetData().SetRna().SetType(CRNA_ref::eType_miscRNA);
+    feat2->SetData().SetRna().SetExt().SetName("internal transcribed spacer 2");
+    AddFeat(feat2, entry);
+    feat2->SetLocation().SetInt().SetFrom(20);
+    feat2->SetLocation().SetInt().SetTo(39);
+
+    CRef<CSeq_feat> feat3(new CSeq_feat());
+    feat3->SetData().SetRna().SetType(CRNA_ref::eType_rRNA);
+    feat3->SetData().SetRna().SetExt().SetName("28S ribosomal RNA");
+    AddFeat(feat3, entry);
+    feat3->SetLocation().SetInt().SetFrom(40);
+    feat3->SetLocation().SetInt().SetTo(59);
+    feat3->SetLocation().SetPartialStop(true, eExtreme_Biological);
+
+    AddTitle(entry, "Fusarium incarnatum 5.8S ribosomal RNA gene, partial sequence; internal transcribed spacer 2, complete sequence; and 28S ribosomal RNA gene, partial sequence.");
+
+    CheckDeflineMatches(entry);
+
+    feat2->SetData().SetRna().SetType(CRNA_ref::eType_other);
+    CheckDeflineMatches(entry);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_GB_3099)
+{
+    CRef<CSeq_entry> seq = unit_test_util::BuildGoodNucProtSet();
+    unit_test_util::SetTaxname(seq, "Influenza A virus (A/USA/RVD1_H1/2011(H1N1))");
+    string defline = "Influenza A virus (A/USA/RVD1_H1/2011(H1N1)) hemagglutinin (HA) gene, complete cds.";
+    CRef<CSeq_entry> nuc = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(seq);
+    AddTitle(nuc, defline);
+    unit_test_util::SetNucProtSetProductName(seq, "hemagglutinin");
+    CRef<CSeq_feat> gene(new CSeq_feat());
+    gene->SetData().SetGene().SetLocus("HA");
+    AddFeat(gene, nuc);
+
+    CheckDeflineMatches(seq, true);
+}
+
 
 
 
