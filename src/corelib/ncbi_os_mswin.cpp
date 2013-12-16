@@ -42,7 +42,7 @@
 // Hopefully this makes UID/GID compatible with what CYGWIN reports
 #define CYGWIN_MAGIC_ID_OFFSET  10000
 
-// Security acess info
+// Security access info
 #define ACCOUNT_SECURITY_INFO  (OWNER_SECURITY_INFORMATION | \
                                 GROUP_SECURITY_INFORMATION)
 
@@ -118,22 +118,33 @@ static PSID x_GetAccountSidByName(const string& account, SID_NAME_USE type = (SI
 
 // Get account name by SID.
 // Note: *domatch is reset to 0 if the account type has no domain match.
+#include <stdio.h>
+#include <tchar.h>
 
 static bool x_GetAccountNameBySid(PSID sid, string* account, int* domatch = 0)
 {
     _ASSERT(account);
 
+    // Use predefined buffers for account/domain names to avoid additional
+    // step to get its sizes. According to MSDN max account/domain size
+    // do not exceed MAX_ACCOUNT_LEN symbols (char or wchar).
+
     TXChar   account_name[MAX_ACCOUNT_LEN + 2];
     TXChar   domain_name [MAX_ACCOUNT_LEN + 2];
-    DWORD    account_size = sizeof(account_name)/sizeof(account_name[0])-1;
-    DWORD    domain_size  = sizeof(domain_name)/sizeof(domain_name[0])-1;
+    DWORD    account_size = sizeof(account_name)/sizeof(account_name[0]) - 1;
+    DWORD    domain_size  = sizeof(domain_name)/sizeof(domain_name[0]) - 1;
     SID_NAME_USE use;
 
-    if ( !LookupAccountSid(NULL, sid, account_name, &account_size,
-                           domatch ? domain_name : NULL, &domain_size, &use) ){
+    // Always get both account & domain name, even we don't need last.
+    // Because if domain name is NULL, this function can throw unhandled
+    // exception in Unicode builds on some platforms.
+    if ( !LookupAccountSid(NULL, sid, 
+                           account_name, &account_size,
+                           domain_name,  &domain_size, &use) ) {
         CNcbiError::SetFromWindowsError();
         return false;
     }
+
     // Save account information
     account_name[account_size] = _TX('\0');
     account->assign(_T_STDSTRING(account_name));
