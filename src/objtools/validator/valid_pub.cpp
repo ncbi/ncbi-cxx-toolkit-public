@@ -1188,37 +1188,39 @@ static bool s_CuratedRefSeqLowerToWarning (const CBioseq& seq)
     return false;
 }
 
-static bool s_IsWgsContig (const CBioseq& seq) 
+static bool s_IsWgs_or_TSA_Contig (const CBioseq& seq) 
 {
     CSeq_inst::ERepr rp = seq.GetInst().GetRepr();
     if (rp == CSeq_inst::eRepr_virtual) return false;
     IF_EXISTS_CLOSEST_MOLINFO (mi_ref, seq, NULL) {
         const CMolInfo& molinf = (*mi_ref).GetMolinfo();
         if (molinf.GetTech() == NCBI_TECH(wgs)) return true;
+        if (molinf.GetTech() == NCBI_TECH(tsa)) return true;
     }
     return false;
 }
-
-
 
 void CValidError_imp::ReportMissingPubs(const CSeq_entry& se, const CCit_sub* cs)
 {
     if ( m_NoPubs ) {
         if ( !m_IsGPS  &&  !cs) {
             CBioseq_CI b_it(m_Scope->GetSeq_entryHandle(se));
-            if (b_it && !s_IsNoncuratedRefSeq(*(b_it->GetCompleteBioseq()))  
-                      && !s_IsGpipe(*(b_it->GetCompleteBioseq()))
-                      && !s_IsWgsContig(*(b_it->GetCompleteBioseq()))) {
-                EDiagSev sev = eDiag_Error;
-                if (s_CuratedRefSeqLowerToWarning(*(b_it)->GetCompleteBioseq())) {
-                    sev = eDiag_Warning;
+            if (b_it)
+            {
+                CConstRef<CBioseq> bioseq = b_it->GetCompleteBioseq();
+                if (   !s_IsNoncuratedRefSeq(*bioseq)  
+                    && !s_IsGpipe(*bioseq)
+                    && !s_IsWgs_or_TSA_Contig(*bioseq) ) {
+                        EDiagSev sev = eDiag_Error;
+                        if (s_CuratedRefSeqLowerToWarning(*bioseq)) {
+                            sev = eDiag_Warning;
+                        }
+                        PostErr(sev, eErr_SEQ_DESCR_NoPubFound, 
+                            "No publications anywhere on this entire record.", se);
                 }
-                PostErr(sev, eErr_SEQ_DESCR_NoPubFound, 
-                    "No publications anywhere on this entire record.", se);
             }
         } 
     }
-
 }
 
 
