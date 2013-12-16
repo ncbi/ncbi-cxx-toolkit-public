@@ -701,6 +701,10 @@ const char* CCoreException::GetErrCodeString(void) const
         (NCBI_COMPILER_MSVC && (_MSC_VER >= 1400) && __STDC_WANT_SECURE_LIB__)
 // MT: Store pointer to the strerror message in TLS
 static CStaticTls<char> s_TlsStrerrorMessage;
+static void s_TlsStrerrorMessageCleanup(char* msg, void* /* data */)
+{
+    delete [] msg;
+}
 #endif
 
 extern const char*  Ncbi_strerror(int errnum)
@@ -717,11 +721,7 @@ extern const char*  Ncbi_strerror(int errnum)
 #  endif
     char* ptr = new char[ tmp.size() + 1];
     strcpy(ptr, tmp.c_str());
-    char* p = s_TlsStrerrorMessage.GetValue();
-    if (p) {
-        delete [] p;
-    }
-    s_TlsStrerrorMessage.SetValue(ptr);
+    s_TlsStrerrorMessage.SetValue(ptr, s_TlsStrerrorMessageCleanup);
     return ptr;
 #else
     return NcbiSys_strerror(errnum);
@@ -732,13 +732,13 @@ extern const char*  Ncbi_strerror(int errnum)
 
 // MT: Store pointer to the last error message in TLS
 static CStaticTls<char> s_TlsErrorMessage;
+static void s_TlsErrorMessageCleanup(char* msg, void* /* data */)
+{
+    LocalFree(msg);
+}
 
 const char* CLastErrorAdapt::GetErrCodeString(int errnum)
 {
-    char* p = s_TlsErrorMessage.GetValue();
-    if (p) {
-        LocalFree(p);
-    }
     TXChar* xptr = NULL;
     FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER |
                   FORMAT_MESSAGE_FROM_SYSTEM     |
@@ -763,7 +763,7 @@ const char* CLastErrorAdapt::GetErrCodeString(int errnum)
         }
     }
     // Save pointer
-    s_TlsErrorMessage.SetValue(ptr);
+    s_TlsErrorMessage.SetValue(ptr, s_TlsErrorMessageCleanup);
     return ptr;
 }
 
