@@ -470,6 +470,19 @@ public:
     ///
     int GetMaxTaxId( void );
 
+    //---------------------------------------------------
+    // This function constructs the "display common name" for the taxid following this algorithm:
+    //  Return first non-empty value from the following sequence:
+    //  1) the GenBank common name
+    //  2) the common name if there is only one
+    //  3) if taxid is below species level
+    //    a) the corresponding species GenBank common name
+    //    b) the corresponding species common name if there is only one
+    //  4) the Blast inherited blast name
+    // Returns: true on success, false in case of error
+    ///
+    bool GetDisplayCommonName( int tax_id, string& disp_name_out );
+
 private:
     friend class COrgRefCache;
 

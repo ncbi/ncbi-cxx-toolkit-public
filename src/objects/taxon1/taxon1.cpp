@@ -2424,5 +2424,103 @@ CTaxon1::GetMaxTaxId( void )
     return m_plCache->m_nMaxTaxId;
 }
 
+//---------------------------------------------------
+// This function constructs the "display common name" for the taxid following this algorithm:
+//  Return first non-empty value from the following sequence:
+//  1) the GenBank common name
+//  2) the common name if there is only one
+//  3) if taxid is subspecies
+//    a) the species GenBank common name
+//    b) the species common name if there is only one
+//  4) the Blast inherited blast name
+// Returns: true on success, false in case of error
+///
+bool
+CTaxon1::GetDisplayCommonName( int tax_id, string& disp_name_out )
+{
+    CTaxon1Node* pNode = 0;
+    SetLastError(NULL);
+    if( !TAXON1_IS_INITED ) {
+	if( !Init() ) { 
+	    return false;
+	}
+    }
+    if( m_plCache->LookupAndAdd( tax_id, &pNode ) && pNode ) {
+	tax_id = pNode->GetTaxId(); // get rid of secondary taxid
+	short cn = m_plCache->GetPreferredCommonNameClass();
+	list< CRef< CTaxon1_name > > lNames;
+	if( GetAllNamesEx(tax_id, lNames) ) {
+	    // 1)
+	    ITERATE( list< CRef< CTaxon1_name > >, ci, lNames ) {
+		if( (*ci)->GetCde() == cn ) { // we have a winner
+		    disp_name_out = (*ci)->GetOname();
+		    return true;
+		}
+	    }
+	    // 2)
+	    cn = m_plCache->GetCommonNameClass();
+	    list< CRef< CTaxon1_name > >::const_iterator lend = lNames.end();
+	    ITERATE( list< CRef< CTaxon1_name > >, ci, lNames ) {
+		if( (*ci)->GetCde() == cn ) { // we might have a winner
+		    if( lend == lNames.end() ) {
+			lend = ci;
+		    } else { // another common name found
+			lend = lNames.end();
+			break;
+		    }
+		}
+	    }
+	    if( lend != lNames.end() ) {
+		disp_name_out = (*lend)->GetOname();
+		return true;
+	    }
+	}
+	// 3)
+// 	if( pNode->GetRank() == m_plCache->GetSubspeciesRank() ) {
+	    // Get corresponding species
+	    int species_id = GetSpecies(tax_id);
+	    if( species_id < 0 ) {
+		return false;
+	    } else if( species_id > 0 && species_id != tax_id ) {
+		lNames.clear();
+		cn = m_plCache->GetPreferredCommonNameClass();
+		if( GetAllNamesEx(species_id, lNames) ) {
+		    // 3a)
+		    ITERATE( list< CRef< CTaxon1_name > >, ci, lNames ) {
+			if( (*ci)->GetCde() == cn ) { // we have a winner
+			    disp_name_out = (*ci)->GetOname();
+			    return true;
+			}
+		    }
+		    // 3b)
+		    cn = m_plCache->GetCommonNameClass();
+		    list< CRef< CTaxon1_name > >::const_iterator lend = lNames.end();
+		    ITERATE( list< CRef< CTaxon1_name > >, ci, lNames ) {
+			if( (*ci)->GetCde() == cn ) { // we might have a winner
+			    if( lend == lNames.end() ) {
+				lend = ci;
+			    } else { // another common name found
+				lend = lNames.end();
+				break;
+			    }
+			}
+		    }
+		    if( lend != lNames.end() ) {
+			disp_name_out = (*lend)->GetOname();
+			return true;
+		    }
+		}
+	    }
+// 	}
+	// 4)
+	if( !GetBlastName(tax_id, disp_name_out ) ) {
+	    return false;
+	}
+    } else {
+	return false;
+    }
+    return true;
+}
+
 END_objects_SCOPE
 END_NCBI_SCOPE
