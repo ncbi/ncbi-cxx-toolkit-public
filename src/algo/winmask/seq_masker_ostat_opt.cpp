@@ -109,7 +109,8 @@ void CSeqMaskerOstatOpt::createCacheBitArray( Uint4 ** cba )
 {
     *cba = 0;
     typedef vector< Uint4 >::size_type size_type;
-    Uint8 total = (unit_bit_size == 32) ? 0x100000000ULL : (1<<unit_bit_size);
+    Uint8 total = (unit_bit_size == 32) ? 0x100000000ULL 
+                                        : (1ULL<<unit_bit_size);
     Uint8 divisor = 8*sizeof( Uint4 );
     _TRACE( "divisor: " << divisor << " size: " << 
             (total/(2048*divisor)) << " KB" );
