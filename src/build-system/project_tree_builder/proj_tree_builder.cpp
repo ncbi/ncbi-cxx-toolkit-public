@@ -2821,7 +2821,10 @@ void CProjectTreeBuilder::UpdateGraphDep( CProjectTreeBuilder::TFiles files)
                 set<string> t;
                 GetApp().m_GraphDepPrecedes[libname] = t;
             }
-            GetApp().m_GraphDepPrecedes[libname].insert( libdep.begin(), libdep.end());
+//            GetApp().m_GraphDepPrecedes[libname].insert( libdep.begin(), libdep.end());
+            ITERATE(list<string>, l, libdep) {
+                GetApp().m_GraphDepPrecedes[libname].insert(*l);
+            }
         }
     }
 }
