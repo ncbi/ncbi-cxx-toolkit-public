@@ -496,42 +496,6 @@ string CStructuredCommentField::GetPrefix (const CUser_object& user)
 }
 
 
-static bool s_FieldRuleCompare (
-    const CRef<CField_rule>& p1,
-    const CRef<CField_rule>& p2
-)
-
-{
-    return NStr::Compare(p1->GetField_name(), p2->GetField_name()) < 0;
-}
-
-
-CRef<CComment_set> ReadCommentRules()
-{
-    CRef<CComment_set> rules(NULL);
-
-    string fname = g_FindDataFile("validrules.prt");
-    if (fname.empty()) {
-        // do nothing
-    } else {
-        auto_ptr<CObjectIStream> in;
-        in.reset(CObjectIStream::Open(fname, eSerial_AsnText));
-        string header = in->ReadFileHeader();
-        rules.Reset(new CComment_set());
-        in->Read(ObjectInfo(*rules), CObjectIStream::eNoFileHeader);        
-        if (rules->IsSet()) {
-            NON_CONST_ITERATE(CComment_set::Tdata, it, rules->Set()) {
-                if (!(*it)->GetRequire_order() && (*it)->IsSetFields()) {
-                    CField_set& fields = (*it)->SetFields();
-                    fields.Set().sort(s_FieldRuleCompare);
-                }
-            }
-        }       
-    }
-    return rules;
-}
-
-
 vector<string> CStructuredCommentField::GetFieldNames(const string& prefix)
 {
     vector<string> options;
@@ -539,7 +503,7 @@ vector<string> CStructuredCommentField::GetFieldNames(const string& prefix)
     string prefix_to_use = MakePrefixFromRoot(prefix);
 
     // look up mandatory and required field names from validator rules
-    CRef<CComment_set> rules = ReadCommentRules();
+    CConstRef<CComment_set> rules = CComment_set::GetCommentRules();
 
     if (rules) {
         try {

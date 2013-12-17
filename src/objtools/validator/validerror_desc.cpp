@@ -614,7 +614,7 @@ bool CValidError_desc::ValidateStructuredComment
             PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue, 
                     pfx + " is not a valid value for StructuredCommentPrefix", *m_Ctx, desc);   
         }
-        CRef<CComment_set> comment_rules = m_Imp.GetStructuredCommentRules();
+        CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
         if (comment_rules) {
             try {
                 const CComment_rule& rule = comment_rules->FindCommentRule(prefix.GetData().GetStr());

@@ -59,7 +59,8 @@ public:
     // destructor
     ~CComment_set(void);
 
-    const CComment_rule& FindCommentRule (const string& prefix);
+    const CComment_rule& FindCommentRule (const string& prefix) const;
+    static CConstRef<CComment_set> GetCommentRules();
 
 private:
     // Prohibit copy constructor and assignment operator

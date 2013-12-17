@@ -615,8 +615,6 @@ public:
 
     bool IsTransgenic(const CBioSource& bsrc);
 
-    CRef<CComment_set> GetStructuredCommentRules(void);
-
 private:
 
     // This is so we can temporarily set m_Scope in a function
@@ -700,7 +698,6 @@ private:
     // validation data read from external files
     static auto_ptr<CLatLonCountryMap> m_LatLonCountryMap;
     static auto_ptr<CLatLonCountryMap> m_LatLonWaterMap;
-    CRef<CComment_set> m_StructuredCommentRules;
 
     // error repoitory
     CValidError*       m_ErrRepository;

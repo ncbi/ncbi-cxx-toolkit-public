@@ -2822,37 +2822,6 @@ static bool s_FieldRuleCompare (
 }
 
 
-CRef<CComment_set> CValidError_imp::GetStructuredCommentRules(void)
-{
-    if (m_StructuredCommentRules) {
-        return m_StructuredCommentRules;
-    }
-    // note - may want to do this initialization later, when needed
-    string fname = g_FindDataFile("validrules.prt");
-    if (fname.empty()) {
-        ERR_POST_X(2, Info << "Unable to load structured comment rules.");
-    } else {
-        auto_ptr<CObjectIStream> in;
-        in.reset(CObjectIStream::Open(fname, eSerial_AsnText));
-        string header = in->ReadFileHeader();
-
-        m_StructuredCommentRules.Reset(new CComment_set());
-        in->Read(ObjectInfo(*m_StructuredCommentRules), CObjectIStream::eNoFileHeader);        
-        if (m_StructuredCommentRules->IsSet()) {
-            NON_CONST_ITERATE(CComment_set::Tdata, it, m_StructuredCommentRules->Set()) {
-                if (!(*it)->GetRequire_order() && (*it)->IsSetFields()) {
-                    CField_set& fields = (*it)->SetFields();
-                    fields.Set().sort(s_FieldRuleCompare);
-                }
-            }
-        }
-        
-    }
-
-    return m_StructuredCommentRules;
-}
-
-
 void CValidError_imp::Setup(const CSeq_entry_Handle& seh) 
 {
     // "Save" the Seq-entry
