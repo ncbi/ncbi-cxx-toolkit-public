@@ -44,6 +44,34 @@
 BEGIN_NCBI_SCOPE
 
 
+class CSymResolver;
+class CExpansionRule
+{
+public:
+    enum EExpRule {
+        eNoop,
+        eReplace,
+        eAppend
+    };
+
+    CExpansionRule(void);
+    CExpansionRule(const string& textrule);
+    CExpansionRule(const CExpansionRule& other);
+    CExpansionRule& operator= (const CExpansionRule& other);
+
+    void Reset();
+    void Init(const string& textrule,
+        CSymResolver* resolver=NULL,  const CSimpleMakeFileContents* data=NULL);
+
+    string ApplyRule( const string& value) const;
+    void  ApplyRule( list<string>& value) const;
+
+private:
+    EExpRule m_Rule;
+    string m_Lvalue;
+    string m_Rvalue;
+};
+
 class CSymResolver
 {
 public:
@@ -72,6 +100,9 @@ public:
     static bool   IsDefine   (const string& param);
     static bool   HasDefine   (const string& param);
     static string StripDefine(const string& define);
+    static string TrimDefine(const string& define);
+    string FilterDefine(const string& define, CExpansionRule& rule,
+                        const CSimpleMakeFileContents& data);
 
 private:
     void Clear(void);

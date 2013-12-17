@@ -29,6 +29,7 @@
 
 #include <ncbi_pch.hpp>
 #include "resolver.hpp"
+#include "msvc_prj_utils.hpp"
 #include <corelib/ncbistr.hpp>
 #include "ptb_err_codes.hpp"
 
@@ -208,6 +209,20 @@ bool CSymResolver::HasDefine(const string& param)
     return (param.find("$(") != string::npos && param.find(")") != string::npos );
 }
 
+string CSymResolver::TrimDefine(const string& define)
+{
+    string::size_type start, end;
+    string trimmed( define);
+    while ((start = trimmed.find("$(")) != string::npos) {
+        end = trimmed.rfind(")");
+        if (end == string::npos) {
+            break;;
+        }
+        trimmed.erase(start,end);
+    }
+    return trimmed;
+}
+
 
 void CSymResolver::LoadFrom(const string& file_path, 
                             CSymResolver * resolver)
@@ -267,6 +282,99 @@ string FilterDefine(const string& define)
     }
     res += ')';
     return res;
+}
+
+string CSymResolver::FilterDefine(const string& define, CExpansionRule& rule,
+    const CSimpleMakeFileContents& data)
+{
+    rule.Reset();
+    if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
+        if ( !CSymResolver::IsDefine(define) )
+            return define;
+        string::size_type start = define.find(':');
+        string::size_type end = define.rfind(')');
+        if (start != string::npos && end != string::npos && end > start) {
+            string textrule = define.substr(start+1, end-start-1);
+            rule.Init(textrule, this, &data);
+            string toreplace(":");
+            toreplace += textrule;
+            return NStr::Replace(define, toreplace, "");
+        }
+    }
+    return ncbi::FilterDefine(define);
+}
+
+CExpansionRule::CExpansionRule(void)
+{
+    Reset();
+}
+CExpansionRule::CExpansionRule(const string& textrule)
+{
+    Init(textrule);
+}
+CExpansionRule::CExpansionRule(const CExpansionRule& other)
+{
+    m_Rule = other.m_Rule;
+    m_Lvalue = other.m_Lvalue;
+    m_Rvalue = other.m_Rvalue;
+}
+CExpansionRule& CExpansionRule::operator= (const CExpansionRule& other)
+{
+    if (this != &other) {
+        m_Rule = other.m_Rule;
+        m_Lvalue = other.m_Lvalue;
+        m_Rvalue = other.m_Rvalue;
+    }
+    return *this;
+}
+void CExpansionRule::Reset()
+{
+   m_Rule = eNoop;
+}
+void CExpansionRule::Init(const string& textrule,
+    CSymResolver* resolver,  const CSimpleMakeFileContents* data)
+{
+    Reset();
+    if (NStr::SplitInTwo(textrule, "=", m_Lvalue, m_Rvalue)) {
+        m_Rule = eReplace;
+        m_Lvalue = NStr::TruncateSpaces(m_Lvalue);
+        m_Rvalue = NStr::TruncateSpaces(m_Rvalue);
+        if (m_Lvalue.empty() || (m_Lvalue == "%" && NStr::StartsWith(m_Rvalue, "%"))) {
+            m_Rule = eAppend;
+            NStr::ReplaceInPlace(m_Rvalue, "%", "");
+            if (resolver) {
+                list<string> resolved;
+                if (data) {
+                    resolver->Resolve(m_Rvalue, &resolved, *data);
+                } else {
+                    resolver->Resolve(m_Rvalue, &resolved);
+                }
+                if (!resolved.empty()) {
+                    m_Rvalue = resolved.front();
+                }
+            }
+        }
+    }
+}
+
+string CExpansionRule::ApplyRule( const string& value) const
+{
+    if (m_Rule == eNoop) {
+        return value;
+    } else if (m_Rule == eReplace && !m_Lvalue.empty()) {
+        return NStr::Replace(value, m_Lvalue, m_Rvalue);
+    }
+//    else if (m_Rule == eAppend)
+    return value + m_Rvalue;
+}
+
+void  CExpansionRule::ApplyRule( list<string>& value) const
+{
+    if (m_Rule != eNoop) {
+        for (list<string>::iterator i = value.begin(); i != value.end(); ++i) {
+            *i = ApplyRule(*i);;
+        }
+    }
 }
 
 

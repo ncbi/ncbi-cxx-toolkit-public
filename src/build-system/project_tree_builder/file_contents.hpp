@@ -69,12 +69,17 @@ public:
 	    const CSimpleMakeFileContents& contents);
 
     CSimpleMakeFileContents(const string& file_path, EMakeFileType type);
+    CSimpleMakeFileContents(const string& file_path);
 
     ~CSimpleMakeFileContents(void);
 
     /// Key-Value(s) pairs
     typedef map< string, list<string> > TContents;
     TContents m_Contents;
+
+    bool IsEmpty(void) const {
+        return m_Contents.empty();
+    }
 
     static void LoadFrom(const string& file_path, CSimpleMakeFileContents* fc);
     void AddDefinition( const string& key, const string& value);
@@ -83,6 +88,7 @@ public:
     bool DoesValueContain(const string& key, const string& value, bool ifnokey=true) const;
     bool GetPathValue(const string& key, string& value) const;
     bool GetValue(const string& key, string& value) const;
+    bool GetValue(const string& key, list<string>& value) const;
     
     enum EHowToCollect {
         eAsIs,
@@ -110,8 +116,9 @@ public:
         m_Parent = parent;
     }
 
-private:
     void Clear(void);
+
+private:
 
     void SetFrom(const CSimpleMakeFileContents& contents);
 
@@ -141,6 +148,7 @@ private:
     EMakeFileType m_Type;
     string m_Filename;
     const CSimpleMakeFileContents* m_Parent;
+    bool m_Raw;
 };
 
 

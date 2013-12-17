@@ -131,54 +131,6 @@ private:
     set<string> m_ExcludedSources;
 };
 
-static bool s_IsProducedByDatatool(const string&    src_path_abs,
-                                   const CProjItem& project)
-{
-    if ( project.m_DatatoolSources.empty() ) {
-        ITERATE( list<CProjKey>, d, project.m_Depends) {
-            if (d->Type() == CProjKey::eDataSpec) {
-                CProjectItemsTree::TProjects::const_iterator n = 
-                               GetApp().GetWholeTree().m_Projects.find(*d);
-                if (n != GetApp().GetWholeTree().m_Projects.end()) {
-                    if (s_IsProducedByDatatool(src_path_abs, n->second)) {
-                        return true;
-                    }
-                }
-            }
-        }
-        return false;
-    }
-
-    string src_base;
-    CDirEntry::SplitPath(src_path_abs, NULL, &src_base);
-
-    // guess name.asn file name from name__ or name___
-    string asn_base;
-    if ( NStr::EndsWith(src_base, "___") ) {
-        asn_base = src_base.substr(0, src_base.length() -3);
-    } else if ( NStr::EndsWith(src_base, "__") ) {
-        asn_base = src_base.substr(0, src_base.length() -2);
-    } else {
-        return false;
-    }
-    string asn_name = asn_base + ".asn";
-    string dtd_name = asn_base + ".dtd";
-    string xsd_name = asn_base + ".xsd";
-    string wsdl_name = asn_base + ".wsdl";
-
-    //try to find this name in datatool generated sources container
-    ITERATE(list<CDataToolGeneratedSrc>, p, project.m_DatatoolSources) {
-        const CDataToolGeneratedSrc& asn = *p;
-        if ((asn.m_SourceFile == asn_name) ||
-            (asn.m_SourceFile == dtd_name) ||
-            (asn.m_SourceFile == xsd_name) ||
-            (asn.m_SourceFile == wsdl_name))
-            return true;
-    }
-    return false;
-}
-
-
 static bool s_IsInsideDatatoolSourceDir(const string& src_path_abs)
 {
     string dir_name;
@@ -299,7 +251,7 @@ CMsvcPrjFilesCollector::CollectSources(void)
             }
             m_SourceFiles.push_back(t);
         } 
-        else if ( s_IsProducedByDatatool(abs_path, *m_Project) ||
+        else if ( IsProducedByDatatool(abs_path, *m_Project) ||
                   s_IsInsideDatatoolSourceDir(abs_path) ) {
             // .cpp file extension
             m_SourceFiles.push_back(

@@ -147,6 +147,8 @@ public:
     bool m_External;
     bool m_StyleObjcpp;
     string m_MkName;
+
+    CSimpleMakeFileContents m_DataSource;
 private:
     void Clear(void);
     void SetFrom(const CProjItem& item);

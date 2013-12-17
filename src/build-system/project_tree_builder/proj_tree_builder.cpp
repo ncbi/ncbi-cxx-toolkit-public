@@ -264,9 +264,11 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                             msvc_prj.Append(new_vals,val);
                         }
                     } else {
+                        CExpansionRule exprule;
                         list<string> resolved_def;
-                        string val_define = FilterDefine(val);
+                        string val_define = resolver.FilterDefine(val, exprule, p->second);
 	                    resolver.Resolve(val_define, &resolved_def, p->second);
+                        exprule.ApplyRule(resolved_def);
 	                    if ( resolved_def.empty() ) {
                             defs_unresolved.insert(val);
 		                    new_vals.push_back(val_define); //not resolved - keep old val
@@ -504,13 +506,31 @@ void SMakeProjectT::CreateDefines(const list<string>& cpp_flags,
 
 
 void SMakeProjectT::Create3PartyLibs(const list<string>& libs_flags, 
-                                     list<string>*       libs_list)
+                                     list<string>*       libs_list,
+                                     const string* mkname)
 {
+    list<string> unkflags;
+    list<CProjKey> libs3;
     libs_list->clear();
     ITERATE(list<string>, p, libs_flags) {
         const string& flag = *p;
         if ( IsConfigurableDefine(flag) ) {
             libs_list->push_back(StripConfigurableDefine(flag));    
+        } else if (NStr::StartsWith(flag, "-l")) {
+            libs3.push_back( CProjKey(CProjKey::eLib, flag.substr(2)));
+        } else {
+            unkflags.push_back(flag);
+        }
+    }
+    if (mkname && !libs3.empty() &&
+        CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
+        list<string> liborder;
+        VerifyLibDepends(libs3, *mkname, liborder);
+        if (!liborder.empty()) {
+            GetApp().m_3PartyLibraryOrder[*mkname] = unkflags;
+            ITERATE( list<string>, s, liborder) {
+                GetApp().m_3PartyLibraryOrder[*mkname].push_back("-l" + *s);
+            }
         }
     }
 }
@@ -665,12 +685,37 @@ void SMakeProjectT::CreateFullPathes(const string&      dir,
     }
 }
 
-void  SMakeProjectT::VerifyLibDepends(
-     const list<CProjKey>&  depends_ids, const string& mkname)
+static
+void s_CollectAllLeaves(map<string, set<string> >& source,
+                        const string& branch, set<string>& all)
 {
+    if (all.find(branch) != all.end()) {
+        return;
+    }
+    all.insert(branch);
+    const set<string>& branches(source[branch]);
+    ITERATE(set<string>, b, branches) {
+        s_CollectAllLeaves(source, *b, all);
+    }
+}
+
+void  SMakeProjectT::VerifyLibDepends(
+     list<CProjKey>&  depends_ids_arg, const string& mkname, list<string>& liborder)
+{
+    if (depends_ids_arg.empty()) {
+        return;
+    }
+    if (GetApp().m_GraphDepPrecedes.empty()) {
+        return;
+    }
+    CProjBulderApp& app(GetApp());
     list<string> warnings;
     list<string> original;
     list<string> duplicates;
+    list<string> missing;
+    set<string> alldepends;
+    list<CProjKey>  depends_ids( depends_ids_arg);
+
     for(list<CProjKey>::const_iterator p = depends_ids.begin();
         p != depends_ids.end(); ++p) {
         for(list<CProjKey>::const_iterator i = p;
@@ -681,11 +726,37 @@ void  SMakeProjectT::VerifyLibDepends(
             }
         }
         original.push_back(p->Id());
+        s_CollectAllLeaves( app.m_GraphDepPrecedes, p->Id(), alldepends);
+    }
+    ITERATE( set<string>, s, alldepends) {
+        list<CProjKey>::const_iterator p = depends_ids.begin();
+        for(; p != depends_ids.end(); ++p) {
+            if (p->Id() == *s) {
+                break;
+            }
+        }
+        if (p == depends_ids.end()) {
+            for(p = depends_ids.begin(); p != depends_ids.end(); ++p) {
+                if (app.m_GraphDepIncludes[p->Id()].find(*s) != app.m_GraphDepIncludes[p->Id()].end()) {
+                    break;
+                }
+            }
+            if (p == depends_ids.end()) {
+                missing.push_back(*s);
+            }
+        }
+    }
+    if (!missing.empty()) {
+        warnings.push_back("missing dependencies: " + NStr::Join(missing,","));
+        if (app.m_AddMissingDep) {
+            ITERATE( list<string>, m,  missing) {
+                depends_ids.push_back(CProjKey(CProjKey::eLib, *m));
+            }
+        }
     }
     if (!duplicates.empty()) {
         warnings.push_back("duplicate dependencies: " + NStr::Join(duplicates,","));
     }
-    CProjBulderApp& app(GetApp());
 #if 1
     set<string> projlibs;
     bool fix = !duplicates.empty();
@@ -737,6 +808,20 @@ void  SMakeProjectT::VerifyLibDepends(
         }
         warnings.push_back("present     library order: " + NStr::Join(original,","));
         warnings.push_back("recommended library order: " + NStr::Join(advice,","));
+
+        if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
+            list<string> advice_full;
+            ITERATE( list<string>, a, advice) {
+                for(list<CProjKey>::const_iterator p = depends_ids.begin();
+                    p != depends_ids.end(); ++p) {
+                    if (*a == p->Id()) {
+                        advice_full.push_back( p->FullId());
+                        break;
+                    }
+                }
+            }
+            liborder = advice_full;//advice;
+        }
     }
     if (!warnings.empty()) {
         warnings.push_front("====== Library order warnings ======");
@@ -779,6 +864,9 @@ void  SMakeProjectT::VerifyLibDepends(
         }
     }
 #endif
+    if (depends_ids_arg.size() != depends_ids.size()) {
+        depends_ids_arg = depends_ids;
+    }
 }
 
 void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
@@ -791,6 +879,14 @@ void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
     const CMsvcSite& site = GetApp().GetSite();
     ITERATE(list<string>, p, depends_libs) {
         string id = *p;
+        string suffix;
+        if (NStr::EndsWith(id,"-dll")) {
+            suffix = "-dll";
+            NStr::ReplaceInPlace(id, suffix, "");
+        } else if (NStr::EndsWith(id,"-static")) {
+            suffix = "-static";
+            NStr::ReplaceInPlace(id, suffix, "");
+        }
         if(CSymResolver::IsDefine(id)) {
             string def;
             GetApp().GetSite().ResolveDefine(CSymResolver::StripDefine(id), def);
@@ -800,19 +896,20 @@ void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
                 id = *r;
                 if (!site.IsLibWithChoice(id) ||
                      site.GetChoiceForLib(id) == CMsvcSite::eLib) {
-                    depends_ids->push_back(CProjKey(CProjKey::eLib, id));
+                    depends_ids->push_back(CProjKey(CProjKey::eLib, id, suffix));
                 }
             }
+        } else if (SMakeProjectT::IsConfigurableDefine(id)) {
         } else {
             if (!site.IsLibWithChoice(id) ||
                  site.GetChoiceForLib(id) == CMsvcSite::eLib) {
-                depends_ids->push_back(CProjKey(CProjKey::eLib, id));
+                depends_ids->push_back(CProjKey(CProjKey::eLib, id, suffix));
             }
         }
     }
 
     if (mkname != NULL && !GetApp().IsScanningWholeTree()) {
-        VerifyLibDepends(*depends_ids, *mkname);
+        VerifyLibDepends(*depends_ids, *mkname, GetApp().m_LibraryOrder[ *mkname]);
     }
 
     depends_ids->sort();
@@ -999,9 +1096,13 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     if (k != makefile.m_Contents.end()) {
 //        depends = k->second;
         ITERATE(list<string>, i, k->second) {
+#if 0
             depends.push_back(
                 NStr::Replace(NStr::Replace(*i, "-dll", kEmptyStr),
                               "-static", kEmptyStr));
+#else
+            depends.push_back( *i);
+#endif
         }
     }
     //Adjust depends by information from msvc Makefile
@@ -1061,7 +1162,7 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     }
     if (k != makefile.m_Contents.end()) {
         const list<string> libs_flags = k->second;
-        SMakeProjectT::Create3PartyLibs(libs_flags, &libs_3_party);
+        SMakeProjectT::Create3PartyLibs(libs_flags, &libs_3_party, &applib_mfilepath);
     }
     
     //CPPFLAGS
@@ -1105,6 +1206,7 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     project.m_NcbiCLibs = ncbi_clibs;
     project.m_StyleObjcpp = style_objcpp;
     project.m_MkName = applib_mfilepath;
+    project.m_DataSource = CSimpleMakeFileContents(applib_mfilepath);;
 
     //DATATOOL_SRC
     list<CDataToolGeneratedSrc> datatool_sources;
@@ -1261,6 +1363,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         return CProjKey();
     }
 
+//    const CSimpleMakeFileContents& makefile = m->second;
     string full_makefile_name = CDirEntry(applib_mfilepath).GetName();
     string full_makefile_path = applib_mfilepath;
 
@@ -1428,13 +1531,17 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
             }
             if (k != m->second.m_Contents.end()) {
                 ITERATE(list<string>, i, k->second) {
+#if 0
                     dll_depends.push_back(
                         NStr::Replace(NStr::Replace(*i, "-dll", kEmptyStr),
                               "-static", kEmptyStr));
+#else
+                    dll_depends.push_back(*i);
+#endif
                 }
             }
             list<CProjKey> dll_depends_ids;
-            SMakeProjectT::ConvertLibDepends(dll_depends, &dll_depends_ids, &applib_mfilepath);
+            SMakeProjectT::ConvertLibDepends(dll_depends, &dll_depends_ids /*, &applib_mfilepath*/);
             copy(dll_depends_ids.begin(), 
                     dll_depends_ids.end(), 
                     back_inserter(depends_ids));
@@ -1468,6 +1575,7 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         IdentifySlnGUID(source_base_dir, proj_key));
     (tree->m_Projects[proj_key]).m_StyleObjcpp = style_objcpp;
     (tree->m_Projects[proj_key]).m_MkName = applib_mfilepath;
+    (tree->m_Projects[proj_key]).m_DataSource = CSimpleMakeFileContents(applib_mfilepath);
 
     k = m->second.m_Contents.find("HEADER_EXPORT");
     if (k != m->second.m_Contents.end()) {
@@ -1652,7 +1760,7 @@ CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
     k = m->second.m_Contents.find("DEPENDENCIES");
     if (k != m->second.m_Contents.end()) {
         const list<string> depends = k->second;
-        SMakeProjectT::ConvertLibDepends(depends, &depends_ids, &applib_mfilepath);
+        SMakeProjectT::ConvertLibDepends(depends, &depends_ids /*, &applib_mfilepath*/);
     }
 
     list<string> requires;
@@ -1677,6 +1785,7 @@ CProjKey SDllProjectT::DoCreate(const string& source_base_dir,
     tree->m_Projects[proj_key].m_External = true;
     tree->m_Projects[proj_key].m_StyleObjcpp = style_objcpp;
     tree->m_Projects[proj_key].m_MkName = applib_mfilepath;
+    tree->m_Projects[proj_key].m_DataSource = CSimpleMakeFileContents(applib_mfilepath);;
     
     k = m->second.m_Contents.find("HOSTED_LIBS");
     if (k != m->second.m_Contents.end()) {
@@ -2153,16 +2262,24 @@ CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
     resolver.Append( GetApp().GetSite().GetMacros());
     ITERATE(list<string>, p, metadata_files) {
 	    string fileloc(CDirEntry::ConcatPath(
-	               root_src_path, CDirEntry::ConvertToOSPath(*p)));
+	                root_src_path, CDirEntry::ConvertToOSPath(*p)));
 	    if (!CDirEntry(fileloc).Exists() && !GetApp().m_ExtSrcRoot.empty()) {
 	        fileloc = CDirEntry::ConcatPath( CDirEntry::ConcatPath(
 	            GetApp().m_ExtSrcRoot,
 	                GetApp().GetConfig().Get("ProjectTree", "src")),
 	                    CDirEntry::ConvertToOSPath(*p));
 	    }
-	    resolver.Append( CSymResolver(fileloc), true);;
+        if (!CDirEntry(fileloc).Exists()) {
+            fileloc = CDirEntry::ConcatPath(CDirEntry(GetApp().m_Solution).GetDir(),*p);
+        }
+        if (CDirEntry(fileloc).Exists()) {
+            LOG_POST(Info << "Resolve macros using rules from " << fileloc);
+	        resolver.Append( CSymResolver(fileloc), true);;
+        }
 	}
     ResolveDefs(resolver, subtree_makefiles);
+    UpdateGraphDep( subtree_makefiles.m_Lib);
+
 
     // Build projects tree
     CProjectItemsTree::CreateFrom(root_src_path,
@@ -2691,6 +2808,23 @@ void CProjectTreeBuilder::ProcessUserProjFile(const string& file_name,
 	}
 }
 
+void CProjectTreeBuilder::UpdateGraphDep( CProjectTreeBuilder::TFiles files)
+{
+    ITERATE( CProjectTreeBuilder::TFiles, f, files) {
+        const CSimpleMakeFileContents& fc( f->second);
+        string libname;
+        fc.GetValue("LIB", libname);
+        list<string> libdep;
+        fc.GetValue("USES_LIBRARIES", libdep);
+        if (!libdep.empty()) {
+            if (GetApp().m_GraphDepPrecedes.find(libname) == GetApp().m_GraphDepPrecedes.end()) {
+                set<string> t;
+                GetApp().m_GraphDepPrecedes[libname] = t;
+            }
+            GetApp().m_GraphDepPrecedes[libname].insert( libdep.begin(), libdep.end());
+        }
+    }
+}
 
 //recursive resolving
 void CProjectTreeBuilder::ResolveDefs(CSymResolver& resolver, 
@@ -2767,9 +2901,11 @@ void CProjectTreeBuilder::AddDatatoolSourcesDepends(CProjectItemsTree* tree)
 
     // 1. Collect all projects with datatool-generated-sources
     map<string, CProjKey> whole_datatool_ids;
-    s_CollectDatatoolIds(GetApp().GetWholeTree(), &whole_datatool_ids);
-
-
+    bool whole_collected = false;
+    if (GetApp().IsScanningWholeTree()) {
+        whole_collected = true;
+        s_CollectDatatoolIds(GetApp().GetWholeTree(), &whole_datatool_ids);
+    }
 
     // 2. Extent tree to accomodate more ASN projects if necessary
     bool tree_extented = false;
@@ -2792,6 +2928,10 @@ void CProjectTreeBuilder::AddDatatoolSourcesDepends(CProjectItemsTree* tree)
                     map<string, CProjKey>::const_iterator j = 
                         datatool_ids.find(module);
                     if (j == datatool_ids.end()) {
+                        if (!whole_collected) {
+                            whole_collected = true;
+                            s_CollectDatatoolIds(GetApp().GetWholeTree(), &whole_datatool_ids);
+                        }
                         j = whole_datatool_ids.find(module);
                         if (j != whole_datatool_ids.end()) {
                             const CProjKey& depends_id = j->second;

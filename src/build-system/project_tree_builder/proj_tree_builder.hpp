@@ -113,7 +113,8 @@ struct SMakeProjectT
 
     
     static void   Create3PartyLibs        (const list<string>& libs_flags, 
-                                           list<string>*       libs_list);
+                                           list<string>*       libs_list,
+                                           const string* mkname = NULL);
 
     static void   DoResolveDefs           (CSymResolver&              resolver,
                                            CProjectItemsTree::TFiles& files,
@@ -129,8 +130,9 @@ struct SMakeProjectT
 
     static bool   IsUserProjFile          (const string& name);
 
-    static void   VerifyLibDepends       ( const list<CProjKey>&  depends_ids,
-                                           const string& mkname);
+    static void   VerifyLibDepends       ( list<CProjKey>&  depends_ids,
+                                           const string& mkname,
+                                           list<string>& liborder);
 
     static void   ConvertLibDepends       (const list<string>& depends_libs, 
                                            list<CProjKey>*     depends_ids,
@@ -369,6 +371,7 @@ private:
                                     EMakeFileType type,
                                     const CSimpleMakeFileContents* parent);
 
+    static void UpdateGraphDep( TFiles files);
     static void ResolveDefs(CSymResolver& resolver, SMakeFiles& makefiles);
 
     

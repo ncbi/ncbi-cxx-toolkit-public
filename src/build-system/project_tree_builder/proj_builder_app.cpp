@@ -417,6 +417,8 @@ CProjBulderApp::CProjBulderApp(void)
     m_AllDllBuild = false;
     m_InteractiveCfg = false;
     m_Dtdep = false;
+    m_AddMissingDep = false;
+    m_CMakeMode = false;
     m_Ide = 0;
     m_ExitCode = 0;
 }
@@ -514,6 +516,8 @@ void CProjBulderApp::Init(void)
                             "Run interactively. Can only be used by PTB GUI shell!");
     arg_desc->AddFlag      ("dtdep", 
                             "Add dependency on datatool where needed.");
+    arg_desc->AddFlag      ("noadddep", 
+                            "Do not add missing dependencies.");
 
     arg_desc->AddOptionalKey("args", "args_file",
                              "Read arguments from a file",
@@ -611,6 +615,16 @@ int CProjBulderApp::Run(void)
                         m_IncDir);
     m_AllDllBuild = GetSite().IsProvided("DLL_BUILD");
 
+#if 0
+    // this is just a task; it is to be run very rarely
+    {
+        bool b = m_ScanWholeTree;
+        m_ScanWholeTree = true;
+        CMakefilePatch::PatchTreeMakefiles(GetWholeTree());
+        m_ScanWholeTree = b;
+        return 0;
+    }
+#endif
     // Build projects tree
 #ifndef _DEBUG
     {
@@ -697,17 +711,21 @@ int CProjBulderApp::Run(void)
         m_ExitCode = 0;
     }
     PTB_INFO("Creating projects...");
-    if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
-        GenerateMsvcProjects(prj_tree);
+    if (IsCMakeMode()) {
+//        CMakeGenerator::GenerateCMakeTree(prj_tree);
+    } else {
+        if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
+            GenerateMsvcProjects(prj_tree);
+        }
+        else if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
+            GenerateUnixProjects(prj_tree);
+        }
+        else {
+            GenerateMacProjects(prj_tree);
+        }
+        ReportGeneratedFiles();
+        ReportProjectWatchers();
     }
-    else if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
-        GenerateUnixProjects(prj_tree);
-    }
-    else {
-        GenerateMacProjects(prj_tree);
-    }
-    ReportGeneratedFiles();
-    ReportProjectWatchers();
     //
     PTB_INFO("Done.  Elapsed time = " << sw.Elapsed() << " seconds");
     return m_ExitCode;
@@ -984,6 +1002,7 @@ void CProjBulderApp::CollectLibToLibDependencies(
 void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
 {
     map< string, list< string > > path_to_target;
+    string solution_dir(CDirEntry(m_Solution).GetDir());
     CNcbiOfstream ofs(m_Solution.c_str(), IOS_BASE::out | IOS_BASE::trunc);
     if (!ofs.is_open()) {
         NCBI_THROW(CProjBulderAppException, eFileOpen, m_Solution);
@@ -1494,6 +1513,29 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
             ofs << " " << rel_path << dotfiles << dotreal;
             ofs << endl << endl;
         }
+
+// recommended library order
+        if (p->first.Type() == CProjKey::eApp || p->first.Type() == CProjKey::eDll) {
+            const list<string>& liborder  = m_LibraryOrder[       p->second.m_MkName];
+            const list<string>& lib3order = m_3PartyLibraryOrder[ p->second.m_MkName];
+            string filename(
+                CDirEntry::ConcatPath(solution_dir,
+                    CDirEntry::CreateRelativePath( GetProjectTreeInfo().m_Src, p->second.GetPath() + ".libdep")));
+            if (!liborder.empty() ||  !lib3order.empty()) {
+                CNcbiOfstream ofs(filename.c_str(), IOS_BASE::out | IOS_BASE::trunc);
+                if (ofs.is_open()) {
+                    if (!liborder.empty()) {
+                        ofs << "GENERATED_LIB_ORDER = -l" << NStr::Join(liborder," -l") << endl;
+                    }
+                    if (!lib3order.empty()) {
+                        ofs << "GENERATED_LIB3PARTY_ORDER = " << NStr::Join(lib3order," ") << endl;
+                    }
+                }
+            }
+            else {
+                CFile(filename).Remove();
+            }
+        }
     }
 
 // folder targets -----------------------------------------------------------
@@ -1797,6 +1839,7 @@ void CProjBulderApp::ParseArguments(void)
                         CDirEntry::CreateRelativePath(m_Root, m_Subtree));
     }
     m_Solution       = CDirEntry::NormalizePath(args["solution"].AsString());
+    m_CMakeMode = NStr::CompareNocase(CDirEntry(m_Solution).GetName(), "cmake?") == 0;
     if (m_Solution == "\"\"") {
         m_Solution = "";
     }
@@ -1905,6 +1948,7 @@ void CProjBulderApp::ParseArguments(void)
 #endif
     m_InteractiveCfg = (bool)args["i"];
     m_Dtdep = (bool)args["dtdep"];
+    m_AddMissingDep = !((bool)args["noadddep"]);
 
     // Solution
     PTB_INFO("Solution: " << m_Solution);
@@ -2131,8 +2175,15 @@ void CProjBulderApp::AddCustomMetaData(const string& file)
 void CProjBulderApp::GetMetaDataFiles(list<string>* files) const
 {
     *files = m_CustomMetaData;
-    NStr::Split(GetConfig().Get("ProjectTree", "MetaData"), LIST_SEPARATOR,
-                *files);
+    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
+        NStr::Split(GetConfig().Get("ProjectTree", "MetaData"), LIST_SEPARATOR,
+                    *files);
+    } else {
+        string name(GetApp().GetSite().GetConfigureEntry("MetaData"));
+        if (!name.empty()) {
+            files->push_back( name);
+        }
+    }
 }
 
 void CProjBulderApp::AddCustomConfH(const string& file)

@@ -49,11 +49,17 @@ CProjKey::CProjKey(TProjType type, const string& project_id)
  m_Id  (project_id)
 {
 }
-
+CProjKey::CProjKey(TProjType type, const string& project_id, const string& id_suffix)
+:m_Type(type),
+ m_Id  (project_id),
+ m_Suffix(id_suffix)
+{
+}
 
 CProjKey::CProjKey(const CProjKey& key)
 :m_Type(key.m_Type),
- m_Id  (key.m_Id)
+ m_Id  (key.m_Id),
+ m_Suffix(key.m_Suffix)
 {
 }
 
@@ -63,6 +69,7 @@ CProjKey& CProjKey::operator= (const CProjKey& key)
     if (this != &key) {
         m_Type = key.m_Type;
         m_Id   = key.m_Id;
+        m_Suffix = key.m_Suffix;
     }
     return *this;
 }
@@ -105,6 +112,10 @@ CProjKey::TProjType CProjKey::Type(void) const
 const string& CProjKey::Id(void) const
 {
     return m_Id;
+}
+string CProjKey::FullId(void) const
+{
+    return m_Id + m_Suffix;
 }
 
 
@@ -176,6 +187,7 @@ void CProjItem::Clear(void)
     m_External = false;
     m_StyleObjcpp = false;
     m_MkName.clear();
+    m_DataSource.Clear();
 }
 
 
@@ -216,6 +228,7 @@ void CProjItem::SetFrom(const CProjItem& item)
     m_External = item.m_External;
     m_StyleObjcpp = item.m_StyleObjcpp;
     m_MkName = item.m_MkName;
+    m_DataSource = item.m_DataSource;
 }
 
 string CProjItem::GetPath(void) const

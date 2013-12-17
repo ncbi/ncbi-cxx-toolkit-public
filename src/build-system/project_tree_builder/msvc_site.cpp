@@ -81,10 +81,13 @@ CMsvcSite::CMsvcSite(const string& reg_path)
         // unix
         string unix_cfg = m_Registry.Get(CMsvc7RegSettings::GetMsvcSection(),"MetaData");
         if (!unix_cfg.empty()) {
-            if (!GetApp().m_BuildRoot.empty()) {
-                unix_cfg = CDirEntry::ConcatPath(GetApp().m_BuildRoot,unix_cfg);
+            string fileloc(CDirEntry::ConcatPath( CDirEntry(GetApp().m_Solution).GetDir(),unix_cfg));
+            if (!CFile(fileloc).Exists()) {
+                if (!GetApp().m_BuildRoot.empty()) {
+                    fileloc = CDirEntry::ConcatPath(GetApp().m_BuildRoot,unix_cfg);
+                }
             }
-            if (CFile(unix_cfg).Exists()) {
+            if (CFile(fileloc).Exists()) {
                 CSimpleMakeFileContents::LoadFrom(unix_cfg,&m_UnixMakeDef);
             }
         }

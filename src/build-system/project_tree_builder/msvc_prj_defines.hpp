@@ -50,6 +50,7 @@
 
 /// Separator for list values in registry
 #define LIST_SEPARATOR      " \t\n\r,;"
+#define LIST_SEPARATOR_LIBS " \t\n\r"
 
 
 #define MSVC_REG_SECTION            "msvc"

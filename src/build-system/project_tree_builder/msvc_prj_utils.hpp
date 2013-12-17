@@ -63,6 +63,7 @@ public:
 
     CProjKey(void);
     CProjKey(TProjType type, const string& project_id);
+    CProjKey(TProjType type, const string& project_id, const string& id_suffix);
     CProjKey(const CProjKey& key);
     CProjKey& operator= (const CProjKey& key);
     ~CProjKey(void);
@@ -73,10 +74,12 @@ public:
 
     TProjType     Type(void) const;
     const string& Id  (void) const;
+    string FullId  (void) const;
 
 private:
     TProjType m_Type;
     string    m_Id;
+    string    m_Suffix;
 
 };
 
@@ -609,6 +612,11 @@ private:
     CDllSrcFilesDistr& operator= (const CDllSrcFilesDistr&);
 };
 
+
+class CProjItem;
+class CDataToolGeneratedSrc;
+const CDataToolGeneratedSrc*
+IsProducedByDatatool(const string&  src_path_abs, const CProjItem& project);
 
 END_NCBI_SCOPE
 

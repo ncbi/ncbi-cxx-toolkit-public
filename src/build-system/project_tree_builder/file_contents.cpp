@@ -50,7 +50,7 @@ string MakeFileTypeAsString(EMakeFileType type)
 
 //-----------------------------------------------------------------------------
 CSimpleMakeFileContents::CSimpleMakeFileContents(void)
-    : m_Type( eMakeType_Undefined ), m_Parent(NULL)
+    : m_Type( eMakeType_Undefined ), m_Parent(NULL), m_Raw(false)
 {
 }
 
@@ -78,6 +78,15 @@ CSimpleMakeFileContents::CSimpleMakeFileContents(
     LoadFrom(file_path, this);
     m_Type = type;
     m_Parent = NULL;
+    m_Raw = false;
+}
+
+CSimpleMakeFileContents::CSimpleMakeFileContents(const string& file_path)
+{
+    LoadFrom(file_path, this);
+    m_Type = eMakeType_Undefined;
+    m_Parent = NULL;
+    m_Raw = true;
 }
 
 
@@ -92,6 +101,7 @@ void CSimpleMakeFileContents::Clear(void)
     m_Type = eMakeType_Undefined;
     m_Filename.erase();
     m_Parent = NULL;
+    m_Raw = false;
 }
 
 
@@ -101,6 +111,7 @@ void CSimpleMakeFileContents::SetFrom(const CSimpleMakeFileContents& contents)
     m_Type = contents.m_Type;
     m_Filename = contents.m_Filename;
     m_Parent = contents.m_Parent;
+    m_Raw = contents.m_Raw;
 }
 
 
@@ -114,6 +125,7 @@ void CSimpleMakeFileContents::LoadFrom(const string&  file_path,
     if ( !ifs )
         NCBI_THROW(CProjBulderAppException, eFileOpen, file_path);
 
+    fc->m_Filename = file_path;
     parser.StartParse();
 
     string strline;
@@ -121,7 +133,6 @@ void CSimpleMakeFileContents::LoadFrom(const string&  file_path,
 	    parser.AcceptLine(strline);
 
     parser.EndParse();
-    fc->m_Filename = file_path;
 }
 
 void CSimpleMakeFileContents::AddDefinition(const string& key,
@@ -167,6 +178,17 @@ bool CSimpleMakeFileContents::GetPathValue(const string& key, string& value) con
     return false;
 }
 
+bool CSimpleMakeFileContents::GetValue(const string& key, list<string>& value) const
+{
+    value.clear();
+    TContents::const_iterator k = m_Contents.find(key);
+    if (k == m_Contents.end()) {
+        return false;
+    }
+    value = k->second;
+    return true;
+}
+
 bool CSimpleMakeFileContents::GetValue(const string& key, string& value) const
 {
     value.erase();
@@ -185,7 +207,7 @@ bool CSimpleMakeFileContents::GetValue(const string& key, string& value) const
         value += ' ';
         value += *i;
     }
-    if (!value.empty()) {
+    if (!value.empty() && !m_Raw) {
         string::size_type start, end, done = 0;
         while ((start = value.find("$(", done)) != string::npos) {
             end = value.find(")", start);
@@ -202,9 +224,11 @@ bool CSimpleMakeFileContents::GetValue(const string& key, string& value) const
                 value = NStr::Replace(value, raw_macro, definition);
             }
         }
-        value = NStr::Replace(value,"-dll",kEmptyStr);
         value = NStr::Replace(value,"-l",kEmptyStr);
+#if 0
+        value = NStr::Replace(value,"-dll",kEmptyStr);
         value = NStr::Replace(value,"-static",kEmptyStr);
+#endif
     }
     return true;
 }
@@ -390,12 +414,26 @@ void CSimpleMakeFileContents::AddReadyKV(const SKeyValue& kv)
     if ( kv.m_Key.empty() ) 
 	    return;
 
-    list<string> values;
-    NStr::Split(kv.m_Value, LIST_SEPARATOR, values);
-
     if (kv.m_Key == "CHECK_CMD") {
         m_Contents[kv.m_Key].push_back( kv.m_Value);
     } else {
+        list<string> values;
+        if (NStr::EndsWith(kv.m_Key,"LIBS")) {
+            NStr::Split(kv.m_Value, LIST_SEPARATOR_LIBS, values);
+        } else {
+            NStr::Split(kv.m_Value, LIST_SEPARATOR, values);
+        }
+        NON_CONST_ITERATE(list<string>, v, values) {
+            string::size_type start, end;
+            while ((start = v->find("${")) != string::npos) {
+                end = v->rfind("}");
+                if (end == string::npos || end < start) {
+                    break;;
+                }
+                v->replace(start+1, 1, 1, '(');
+                v->replace(    end, 1, 1, ')');
+            }
+        }
         m_Contents[kv.m_Key] = values;
     }
 }

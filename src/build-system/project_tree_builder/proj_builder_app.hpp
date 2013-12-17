@@ -133,6 +133,8 @@ public:
     bool m_AllDllBuild;
     bool m_InteractiveCfg;
     bool m_Dtdep;
+    bool m_AddMissingDep;
+    bool m_CMakeMode;
     int m_Ide;
     string m_Arch;
 
@@ -142,8 +144,11 @@ public:
     map<string, set<string> >  m_GraphDepIncludes;
     map<string, set<string> >  m_GraphDepPrecedes;
     map<string, size_t >  m_GraphDepRank;
+    map<string, list<string> > m_LibraryOrder;
+    map<string, list<string> > m_3PartyLibraryOrder;
 
 public:
+    bool IsCMakeMode(void) const {return m_CMakeMode;}
 
     bool UseAbsolutePath(const string& path) const;
     void AddCustomMetaData(const string& file);
