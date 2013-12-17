@@ -92,7 +92,7 @@ vector <string>                     CDiscRepInfo :: kIntergenicSpacerNames;
 vector <string>                     CDiscRepInfo :: taxnm_env;
 vector <string>                     CDiscRepInfo :: virus_lineage;
 vector <string>                     CDiscRepInfo :: strain_tax;
-CRef <CComment_set>                 CDiscRepInfo :: comment_rules;
+CConstRef <CComment_set>            CDiscRepInfo :: comment_rules;
 Str2UInt                            CDiscRepInfo :: whole_word;
 Str2Str                             CDiscRepInfo :: fix_data;
 CRef <CSuspect_rule_set>            CDiscRepInfo :: orga_prod_rules (new CSuspect_rule_set);
@@ -1138,9 +1138,7 @@ void CRepConfig :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
     thisInfo.scope->AddDefaults();
 
     // ini. of comment_rules/validrules.prt for ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX
-    CValidError errors;
-    validator::CValidError_imp imp(thisInfo.scope->GetObjectManager(),&errors);
-    thisInfo.comment_rules = imp.GetStructuredCommentRules();
+    thisInfo.comment_rules = CComment_set::GetCommentRules();
 
     CCheckingClass myChecker;
     myChecker.CheckSeqEntry(seq_entry);
