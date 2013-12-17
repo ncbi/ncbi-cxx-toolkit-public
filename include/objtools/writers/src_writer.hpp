@@ -34,6 +34,11 @@
 
 #include <corelib/ncbistd.hpp>
 #include <objmgr/bioseq_handle.hpp>
+#include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/seqfeat/OrgName.hpp>
+#include <objects/seqfeat/SubSource.hpp>
+#include <objects/seqfeat/OrgMod.hpp>
 #include <objects/seqtable/Seq_table.hpp>
 #include <objects/seqfeat/PCRPrimerSet.hpp>
 
@@ -44,29 +49,18 @@ BEGIN_objects_SCOPE
 class NCBI_XOBJWRITE_EXPORT CSrcWriter:
     public CObject
 //  ============================================================================
-{
+{    
 public:
     typedef map<string, int> COLUMNMAP;
     typedef vector<string> FIELDS;
     typedef bool (CSrcWriter::*HANDLER)(const CBioSource&);
+    typedef map<string, CSrcWriter::HANDLER> HANDLERMAP;
 
 public:
-    static const string DELIMITER;
-    static const string keyId;
-    static const string keyTaxname;
-    static const string keyGenome;
-    static const string keyOrigin;
-    static const string keyDivision;
-    static const string keyPcrPrimersFwdNames;
-    static const string keyPcrPrimersFwdSequences;
-    static const string keyPcrPrimersRevNames;
-    static const string keyPcrPrimersRevSequences;
-    static const string keyOrgCommon;
-    static const string keyOrgnameLineage;
-
     CSrcWriter(
-        unsigned int flags=0 ) :
-        mFlags( flags ) {
+            unsigned int flags=0) :
+        mFlags(flags),
+        mDelimiter("\t") {
         xInit();
     };
 
@@ -82,6 +76,11 @@ public:
         const vector<CBioseq_Handle>&,
         const FIELDS&,
         CNcbiOstream&);
+
+    void SetDelimiter(
+        const string& delimiter) {
+        mDelimiter = delimiter;
+    };
 
     static bool ValidateFields(
         const FIELDS fields);
@@ -102,24 +101,30 @@ protected:
     virtual bool xGatherOrgCommon(const CBioSource&);
     virtual bool xGatherOrgnameLineage(const CBioSource&);
     virtual bool xGatherPcrPrimers(const CBioSource&);
+    virtual bool xGatherDb(const CBioSource&);
 
     virtual bool xFormatTabDelimited(CNcbiOstream&);
 
-    HANDLER xGetHandler(const string&);
+    static HANDLER xGetHandler(const string&);
     static string xPrimerSetNames(const CPCRPrimerSet&);
     static string xPrimerSetSequences(const CPCRPrimerSet&);
+    static bool xIsSubsourceTypeSuppressed(CSubSource::TSubtype);
+    static bool xIsOrgmodTypeSuppressed(COrgMod::TSubtype);
 
     void xPrepareTableColumn(const string&, const string&, const string& ="");
     void xAppendColumnValue(const string&, const string&);
+    bool xValueNeedsQuoting(const string&);
+    string xDequotedValue(const string&);
 
 public:
-    static const FIELDS sRecognizedFields;
     static const FIELDS sDefaultFields;
 
 protected:
+    static HANDLERMAP sHandlerMap;
     CRef<CSeq_table> mSrcTable;
     COLUMNMAP mColnameToIndex;
     unsigned int mFlags;
+    string mDelimiter;
 };
 
 END_objects_SCOPE

@@ -59,8 +59,6 @@ public:
 private:
     CNcbiOstream* xInitOutputStream(
         const CArgs&);
-    bool xTryProcessId(
-        const CArgs&);
     bool xTryProcessIdFile(
         const CArgs&);
     bool xGetDesiredFields(
@@ -87,27 +85,27 @@ void CSrcChkApp::Init()
     
     // input
     {{
-        arg_desc->AddOptionalKey( "i", "InputFile", 
-            "Input file name", CArgDescriptions::eInputFile );
-        arg_desc->AddOptionalKey( "id", "InputID",
-            "Input ID (accession or GI number)", CArgDescriptions::eString );
-        arg_desc->AddOptionalKey( "ids", "IDsFile", 
+        arg_desc->AddOptionalKey("i", "IDsFile", 
             "IDs file name", CArgDescriptions::eInputFile );
     }}
 
     // parameters
     {{
-        arg_desc->AddOptionalKey( "f", "FieldsList",
+        arg_desc->AddOptionalKey("f", "FieldsList",
             "List of fields", CArgDescriptions::eString );
-        arg_desc->AddOptionalKey( "F", "FieldsFile",
+        arg_desc->AddOptionalKey("F", "FieldsFile",
             "File of fields", CArgDescriptions::eInputFile );
     }}
     // output
     {{ 
-        arg_desc->AddOptionalKey( "o", "OutputFile", 
+        arg_desc->AddOptionalKey("o", "OutputFile", 
             "Output file name", CArgDescriptions::eOutputFile );
     }}
-
+    {{
+    //  misc
+        arg_desc->AddDefaultKey("delim", "Delimiter",
+            "Column value delimiter", CArgDescriptions::eString, "\t");
+    }}
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -124,10 +122,6 @@ int CSrcChkApp::Run()
     m_pScope->AddDefaults();
 
     m_pWriter.Reset(xInitWriter(args));
-
-    if (xTryProcessId(args)) {
-        return 0;
-    }
     if (xTryProcessIdFile(args)) {
         return 0;
     }
@@ -139,7 +133,7 @@ bool CSrcChkApp::xTryProcessIdFile(
     const CArgs& args)
 //  -----------------------------------------------------------------------------
 {
-    if(!args["ids"]) {
+    if(!args["i"]) {
         return false;
     }
     CNcbiOstream* pOs = xInitOutputStream(args);
@@ -147,7 +141,12 @@ bool CSrcChkApp::xTryProcessIdFile(
     const streamsize maxLineSize(100);
     char line[maxLineSize];
 
-    CNcbiIstream& ifstr = args["ids"].AsInputFile();
+    CSrcWriter::FIELDS desiredFields;
+    if (!xGetDesiredFields(args, desiredFields)) {
+        return false;
+    }
+
+    CNcbiIstream& ifstr = args["i"].AsInputFile();
     vector<CBioseq_Handle> vecBsh;
     while (!ifstr.eof()) {
         ifstr.getline(line, maxLineSize);
@@ -163,35 +162,10 @@ bool CSrcChkApp::xTryProcessIdFile(
         }
         vecBsh.push_back(bsh);
     }
-    CSrcWriter::FIELDS desiredFields;
-    if (!xGetDesiredFields(args, desiredFields)) {
-        return false;
-    }
     if (!m_pWriter->WriteBioseqHandles(vecBsh, desiredFields, *pOs)) {
         return false;
     }
     return true;
-}    
-
-//  -----------------------------------------------------------------------------
-bool CSrcChkApp::xTryProcessId(
-    const CArgs& args)
-//  -----------------------------------------------------------------------------
-{
-    if(!args["id"]) {
-        return false;
-    }
-    CSeq_id_Handle seqh = CSeq_id_Handle::GetHandle(args["id"].AsString());
-    CBioseq_Handle bsh = m_pScope->GetBioseqHandle(seqh);
-    if (!bsh) {
-        return false;
-    }
-    CNcbiOstream* pOs = xInitOutputStream(args);
-    CSrcWriter::FIELDS desiredFields;
-    if (!xGetDesiredFields(args, desiredFields)) {
-        return false;
-    }
-    return m_pWriter->WriteBioseqHandle(bsh, desiredFields, *pOs);
 }    
 
 //  -----------------------------------------------------------------------------
@@ -208,7 +182,7 @@ bool CSrcChkApp::xGetDesiredFields(
     if (args["F"]) {
         const streamsize maxLineSize(100);
         char line[maxLineSize];
-        CNcbiIstream& ifstr = args["ids"].AsInputFile();
+        CNcbiIstream& ifstr = args["F"].AsInputFile();
         while (!ifstr.eof()) {
             ifstr.getline(line, maxLineSize);
             if (line[0] == 0  ||  line[0] == '#') {
@@ -252,7 +226,9 @@ CSrcWriter* CSrcChkApp::xInitWriter(
     const CArgs& args)
 //  ----------------------------------------------------------------------------
 {
-    return new CSrcWriter(0);
+    CSrcWriter* pWriter = new CSrcWriter(0);
+    pWriter->SetDelimiter(args["delim"].AsString());
+    return pWriter;
 }
 
 END_NCBI_SCOPE
