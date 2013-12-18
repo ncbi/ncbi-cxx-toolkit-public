@@ -129,7 +129,7 @@ int main(int argc, char* argv[])
     }
 
     /* Run the tests */
-    flags = fHTTP_KeepHeader | fHTTP_UrlCodec | fHTTP_UrlEncodeArgs;
+    flags = fHTTP_KeepHeader | fHTTP_UrlCodec | fHCC_UrlEncodeArgs/*obsolete*/;
     connector = HTTP_CreateConnector(0, user_header, flags);
     CONN_TestConnector(connector, &timeout, data_file, fTC_SingleBouncePrint);
 
