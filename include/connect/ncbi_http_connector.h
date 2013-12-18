@@ -110,7 +110,7 @@ enum EHTTP_Flag {
     fHTTP_AutoReconnect   = 0x1,  /**< See HTTP_CreateConnectorEx()          */
     fHTTP_Flushable       = 0x2,  /**< Connector will really flush on Flush()*/
     fHTTP_KeepHeader      = 0x4,  /**< Keep HTTP header (see limitations)    */
-    fHTTP_UrlEncodeArgs   = 0x8,  /**< URL-encode "info->args" (w/o fragment)*/
+    /*fHTTP_UrlEncodeArgs = 0x8,       URL-encode "info->args" (w/o fragment)*/
     fHTTP_UrlDecodeInput  = 0x10, /**< URL-decode response body              */
     fHTTP_UrlEncodeOutput = 0x20, /**< URL-encode all output data            */
     fHTTP_UrlCodec        = 0x30, /**< fHTTP_UrlDecodeInput | ...EncodeOutput*/
@@ -131,7 +131,7 @@ typedef enum {
     fHCC_UrlDecodeInput   = fHTTP_UrlDecodeInput,
     fHCC_UrlEncodeOutput  = fHTTP_UrlEncodeOutput,
     fHCC_UrlCodec         = fHTTP_UrlCodec,
-    fHCC_UrlEncodeArgs    = fHTTP_UrlEncodeArgs,
+    fHCC_UrlEncodeArgs    = 0x8,  /**< NB: Error-prone semantics, don't use! */
     fHCC_DropUnread       = fHTTP_DropUnread,
     fHCC_NoUpread         = fHTTP_NoUpread,
     fHCC_Flushable        = fHTTP_Flushable,
