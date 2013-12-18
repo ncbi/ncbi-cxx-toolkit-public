@@ -39,7 +39,7 @@ XLIB_FLAGS = $(runpath) @f_libpath@$(libdir)
 XLIB    = $(XLIB_FLAGS) $(XAPP_LIB:%=@lib_l_pre@%@lib_l_ext@)
 XLIBDEP = $(XAPP_LIB:%=$(status_dir)/.%.dep)
 
-ifneq "" "$(wildcard Makefile.$(TMPL).app.libdep)"
+ifneq "" "" # "$(wildcard Makefile.$(TMPL).app.libdep)"
   include Makefile.$(TMPL).app.libdep
   ifneq "" "$(GENERATED_LIB_ORDER)"
     XLIB = $(XLIB_FLAGS) $(GENERATED_LIB_ORDER)
