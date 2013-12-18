@@ -528,8 +528,15 @@ bool CAutoDef::x_AddMiscRNAFeatures(CBioseq_Handle bh, const CSeq_feat& cf, cons
     if (cf.GetData().Which() == CSeqFeatData::e_Rna) {
         comment = cf.GetNamedQual("product");
         if (NStr::IsBlank(comment)
-            && cf.GetData().GetRna().GetExt().Which() == CRNA_ref::C_Ext::e_Name) {
-            comment = cf.GetData().GetRna().GetExt().GetName();
+            && cf.IsSetData()
+            && cf.GetData().IsRna()
+            && cf.GetData().GetRna().IsSetExt()) {
+            if (cf.GetData().GetRna().GetExt().IsName()) {
+                comment = cf.GetData().GetRna().GetExt().GetName();
+            } else if (cf.GetData().GetRna().GetExt().IsGen()
+                       && cf.GetData().GetRna().GetExt().GetGen().IsSetProduct()) {
+                comment = cf.GetData().GetRna().GetExt().GetGen().GetProduct();
+            }
         }
     }
 
