@@ -585,7 +585,7 @@ extern NCBI_XCONNECT_EXPORT unsigned short LSOCK_GetPort
  * @param timeout
  *  [in]  the connect timeout (infinite if NULL)
  * @param sock
- *  [out] handle of the created socket
+ *  [out] handle of socket created
  * @param data
  *  [in]  initial output data block (may be NULL)
  * @param size
@@ -2131,13 +2131,34 @@ extern NCBI_XCONNECT_EXPORT size_t SOCK_HostPortToString
  */
 
 /*fwdecl*/
+struct SNcbiCred;
+/** Opaque type for credentials */
+typedef struct SNcbiCred* NCBI_CRED;
+
+/*fwdecl*/
 struct SOCKSSL_struct;
+/** Opaque type for SSL impelentation */
 typedef const struct SOCKSSL_struct* SOCKSSL;
 
 
+/** SSL setup callback */
 typedef SOCKSSL (*FSSLSetup)(void);
 
+
+/** Store SSL setup callback until actual initialization.
+ * @param setup
+ *  non-NULL SSL setup routine
+ */
 extern NCBI_XCONNECT_EXPORT void SOCK_SetupSSL(FSSLSetup setup);
+
+
+/** Take SSL setup callback and then init the entire API (SOCK + SSL).
+ * @param setup
+ *  non-NULL SSL setup routine
+ * @return
+ *  eIO_Success if successful, other code on error.
+ */ 
+extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_SetupSSLEx(FSSLSetup setup);
 
 
 #ifdef __cplusplus
