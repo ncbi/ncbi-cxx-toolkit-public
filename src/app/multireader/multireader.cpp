@@ -220,7 +220,6 @@ void CMultiReaderApp::Init(void)
             "newick", "tree", "tre",
             "vcf",
             "aln", "align",
-            "hgvs",
             "fasta",
             "5colftbl",
             "guess") );
