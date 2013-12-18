@@ -227,7 +227,7 @@ typedef struct LSOCK_tag {
     WSAEVENT         event;     /* event bound to I/O                        */
 #endif /*!NCBI_OS_MSWIN*/
 
-    void*            context;   /* per-server credentials                    */
+    void*            context;   /* per-server session/credentials (not impl) */
 
 #ifdef NCBI_OS_UNIX
     char             path[1];   /* must go last                              */
@@ -278,6 +278,7 @@ typedef struct SOCK_tag {
 #endif /*!NCBI_OS_MSWIN*/
 
     void*            session;   /* secure session id if secure, else 0       */
+    NCBI_CRED        cred;      /* secure session credentials, 0 if none     */
 
     /* timeouts */
     struct timeval   r_tv;      /* finite read  timeout value                */
@@ -352,6 +353,30 @@ typedef struct SOCK_tag {
 #endif /*NCBI_OS_MSWIN && _WIN64*/
 
 
+/* initial socket data & respective private ctors */
+typedef struct {
+    const void* data;
+    size_t      size;
+    NCBI_CRED   cred;
+} SSOCK_Init;
+
+
+EIO_Status SOCK_CreateInternal(const char*     host,
+                               unsigned short  port,
+                               const STimeout* timeout,
+                               SOCK*           sock,
+                               SSOCK_Init*     init,
+                               TSOCK_Flags     flags);
+
+
+EIO_Status SOCK_CreateOnTopInternal(const void* handle,
+                                    size_t      handle_size,
+                                    SOCK*       sock,
+                                    SSOCK_Init* init,
+                                    TSOCK_Flags flags);
+
+
+/* Global data */
 extern const char g_kNcbiSockNameAbbr[];
 
 

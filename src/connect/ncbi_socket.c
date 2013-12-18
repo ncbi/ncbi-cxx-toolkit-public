@@ -767,14 +767,14 @@ static EIO_Status s_Init(void)
 #if defined(NCBI_OS_MSWIN)
     {{
         WSADATA wsadata;
-        int x_error = WSAStartup(MAKEWORD(1,1), &wsadata);
-        if (x_error) {
+        int error = WSAStartup(MAKEWORD(1,1), &wsadata);
+        if (error) {
             const char* strerr;
 
             CORE_UNLOCK;
-            strerr = SOCK_STRERROR(x_error);
+            strerr = SOCK_STRERROR(error);
             CORE_LOG_ERRNO_EXX(3, eLOG_Error,
-                               x_error, strerr,
+                               error, strerr,
                                "[SOCK::InitializeAPI] "
                                " Failed WSAStartup()");
             UTIL_ReleaseBuffer(strerr);
@@ -845,15 +845,13 @@ static EIO_Status s_InitAPI_(int secure)
             } else
                 status = eIO_NotSupported;
         } else {
-#ifdef HAVE_LIBGNUTLS
             static int once = 1/*true*/;
             if (once) {
                 once = 0/*false*/;
-                CORE_LOG(eLOG_Critical, "Secure socket layer (GNUTLS) has not"
-                         " been properly initialized in the NCBI toolkit. "
+                CORE_LOG(eLOG_Critical, "Secure socket layer (SSL) has not"
+                         " been properly initialized in the NCBI Toolkit. "
                          " Have you forgotten to call SOCK_SetupSSL()?");
             }
-#endif /*HAVE_LIBGNUTLS*/
             status = eIO_NotSupported;
         }
     }
@@ -917,12 +915,12 @@ extern EIO_Status SOCK_ShutdownAPI(void)
 
 #ifdef NCBI_OS_MSWIN
     {{
-        int x_error = WSACleanup() ? SOCK_ERRNO : 0;
+        int error = WSACleanup() ? SOCK_ERRNO : 0;
         CORE_UNLOCK;
-        if (x_error) {
-            const char* strerr = SOCK_STRERROR(x_error);
+        if (error) {
+            const char* strerr = SOCK_STRERROR(error);
             CORE_LOG_ERRNO_EXX(4, eLOG_Warning,
-                               x_error, strerr,
+                               error, strerr,
                                "[SOCK::ShutdownAPI] "
                                " Failed WSACleanup()");
             UTIL_ReleaseBuffer(strerr);
@@ -986,35 +984,36 @@ extern ESOCK_IOWaitSysAPI SOCK_SetIOWaitSysAPI(ESOCK_IOWaitSysAPI api)
 
 static int s_gethostname(char* name, size_t namelen, ESwitch log)
 {
-    int/*bool*/ error;
+    int/*bool*/ failed;
 
     CORE_TRACE("[SOCK::gethostname]");
 
     name[0] = name[namelen - 1] = '\0';
     if (gethostname(name, (int) namelen) != 0) {
         if (log) {
-            int x_error = SOCK_ERRNO;
-            const char* strerr = SOCK_STRERROR(x_error);
+            int error = SOCK_ERRNO;
+            const char* strerr = SOCK_STRERROR(error);
             CORE_LOG_ERRNO_EXX(103, eLOG_Error,
-                               x_error, strerr,
+                               error, strerr,
                                "[SOCK_gethostname] "
                                " Failed gethostname()");
             UTIL_ReleaseBuffer(strerr);
         }
-        error = 1/*true*/;
+        failed = 1/*true*/;
     } else if (name[namelen - 1]) {
         if (log) {
             CORE_LOG_X(104, eLOG_Error,
                        "[SOCK_gethostname] "
                        " Buffer too small");
         }
-        error = 1/*true*/;
+        failed = 1/*true*/;
     } else
-        error = 0/*false*/;
+        failed = 0/*false*/;
 
     CORE_TRACEF(("[SOCK::gethostname] "
-                 " \"%.*s\"%s", (int) namelen, name, error ? " (error)" : ""));
-    if (error)
+                 " \"%.*s\"%s", (int) namelen, name,
+                 failed ? " (failed)" : ""));
+    if (failed)
         *name = '\0';
     return *name ? 0/*success*/ : -1/*failure*/;
 }
@@ -1034,25 +1033,25 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
     CORE_TRACEF(("[SOCK::gethostbyname]  \"%s\"", hostname));
 
     if ((host = inet_addr(hostname)) == htonl(INADDR_NONE)) {
-        int x_error;
+        int error;
 #if defined(HAVE_GETADDRINFO)  &&  !defined(__GLIBC__)
         struct addrinfo hints, *out = 0;
         memset(&hints, 0, sizeof(hints));
         hints.ai_family = AF_INET; /* currently, we only handle IPv4 */
-        if ((x_error = getaddrinfo(hostname, 0, &hints, &out)) == 0  &&  out) {
+        if ((error = getaddrinfo(hostname, 0, &hints, &out)) == 0  &&  out) {
             struct sockaddr_in* sin = (struct sockaddr_in*) out->ai_addr;
             assert(sin->sin_family == AF_INET);
             host = sin->sin_addr.s_addr;
         } else {
             if (log) {
                 const char* strerr;
-                if (x_error == EAI_SYSTEM)
-                    x_error  = SOCK_ERRNO;
+                if (error == EAI_SYSTEM)
+                    error  = SOCK_ERRNO;
                 else
-                    x_error += EAI_BASE;
-                strerr = SOCK_STRERROR(x_error);
+                    error += EAI_BASE;
+                strerr = SOCK_STRERROR(error);
                 CORE_LOGF_ERRNO_EXX(105, eLOG_Warning,
-                                    x_error, strerr,
+                                    error, strerr,
                                     ("[SOCK_gethostbyname] "
                                      " Failed getaddrinfo(\"%.*s\")",
                                      MAXHOSTNAMELEN, hostname));
@@ -1069,12 +1068,12 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
         struct hostent x_he;
         char x_buf[1024];
 
-        x_error = 0;
+        error = 0;
 #    if   HAVE_GETHOSTBYNAME_R == 5
-        he = gethostbyname_r(hostname, &x_he, x_buf, sizeof(x_buf), &x_error);
+        he = gethostbyname_r(hostname, &x_he, x_buf, sizeof(x_buf), &error);
 #    elif HAVE_GETHOSTBYNAME_R == 6
         if (gethostbyname_r(hostname, &x_he, x_buf, sizeof(x_buf),
-                            &he, &x_error) != 0) {
+                            &he, &error) != 0) {
             assert(he == 0);
             he = 0;
         }
@@ -1082,10 +1081,10 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
 #      error "Unknown HAVE_GETHOSTBYNAME_R value"
 #    endif /*HAVE_GETHOSTNBYNAME_R == N*/
         if (!he) {
-            if (!x_error  &&  (x_error = SOCK_ERRNO) == ERANGE)
+            if (!error  &&  (error = SOCK_ERRNO) == ERANGE)
                 log = eOn;
             else
-                x_error += DNS_BASE;
+                error += DNS_BASE;
         }
 #  else
         static const char suffix[] = "";
@@ -1095,12 +1094,12 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
 #    endif /*!SOCK_GHB_THREAD_SAFE*/
 
         he = gethostbyname(hostname);
-        x_error = he ? 0 : h_errno + DNS_BASE;
+        error = he ? 0 : h_errno + DNS_BASE;
 #  endif /*HAVE_GETHOSTBYNAME_R*/
 
         if (!he || he->h_addrtype != AF_INET || he->h_length != sizeof(host)) {
             if (he)
-                x_error = EINVAL;
+                error = EINVAL;
             host = 0;
         } else
             memcpy(&host, he->h_addr, sizeof(host));
@@ -1114,12 +1113,12 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
         if (!host  &&  log) {
             const char* strerr;
 #  ifdef NETDB_INTERNAL
-            if (x_error == NETDB_INTERNAL + DNS_BASE)
-                x_error  = SOCK_ERRNO;
+            if (error == NETDB_INTERNAL + DNS_BASE)
+                error  = SOCK_ERRNO;
 #  endif /*NETDB_INTERNAL*/
-            strerr = SOCK_STRERROR(x_error);
+            strerr = SOCK_STRERROR(error);
             CORE_LOGF_ERRNO_EXX(106, eLOG_Warning,
-                                x_error, strerr,
+                                error, strerr,
                                 ("[SOCK_gethostbyname] "
                                  " Failed gethostbyname%s(\"%.*s\")",
                                  suffix, MAXHOSTNAMELEN, hostname));
@@ -1203,7 +1202,7 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
                  ? addr : "(unknown)"));
 
     if (host) {
-        int x_error;
+        int error;
 #if defined(HAVE_GETNAMEINFO)  &&  !defined(__GLIBC__)
         struct sockaddr_in sin;
 
@@ -1213,18 +1212,18 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
 #  endif /*HAVE_SIN_LEN*/
         sin.sin_family      = AF_INET; /* we only handle IPv4 currently */
         sin.sin_addr.s_addr = host;
-        if ((x_error = getnameinfo((struct sockaddr*) &sin, sizeof(sin),
-                                   name, namelen, 0, 0, 0)) != 0  ||  !*name) {
+        if ((error = getnameinfo((struct sockaddr*) &sin, sizeof(sin),
+                                 name, namelen, 0, 0, 0)) != 0  ||  !*name) {
             if (SOCK_ntoa(host, name, namelen) != 0) {
-                if (x_error == EAI_SYSTEM)
-                    x_error  = SOCK_ERRNO;
-                else if (x_error)
-                    x_error += EAI_BASE;
+                if (error == EAI_SYSTEM)
+                    error  = SOCK_ERRNO;
+                else if (error)
+                    error += EAI_BASE;
                 else {
 #  ifdef ENOSPC
-                    x_error  = ENOSPC;
+                    error  = ENOSPC;
 #  else
-                    x_error  = ERANGE;
+                    error  = ERANGE;
 #  endif /*ENOSPC*/
                     log = eOn;
                 }
@@ -1235,9 +1234,9 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
                 const char* strerr;
                 if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
                     sprintf(addr, "0x%08X", (unsigned int) ntohl(host));
-                strerr = SOCK_STRERROR(x_error);
+                strerr = SOCK_STRERROR(error);
                 CORE_LOGF_ERRNO_EXX(107, eLOG_Warning,
-                                    x_error, strerr,
+                                    error, strerr,
                                     ("[SOCK_gethostbyaddr] "
                                      " Failed getnameinfo(%s)",
                                      addr));
@@ -1252,13 +1251,13 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
         struct hostent x_he;
         char x_buf[1024];
 
-        x_error = 0;
+        error = 0;
 #    if   HAVE_GETHOSTBYADDR_R == 7
         he = gethostbyaddr_r((char*) &host, sizeof(host), AF_INET, &x_he,
-                             x_buf, sizeof(x_buf), &x_error);
+                             x_buf, sizeof(x_buf), &error);
 #    elif HAVE_GETHOSTBYADDR_R == 8
         if (gethostbyaddr_r((char*) &host, sizeof(host), AF_INET, &x_he,
-                            x_buf, sizeof(x_buf), &he, &x_error) != 0) {
+                            x_buf, sizeof(x_buf), &he, &error) != 0) {
             assert(he == 0);
             he = 0;
         }
@@ -1266,10 +1265,10 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
 #      error "Unknown HAVE_GETHOSTBYADDR_R value"
 #    endif /*HAVE_GETHOSTBYADDR_R == N*/
         if (!he) {
-            if (!x_error  &&  (x_error = SOCK_ERRNO) == ERANGE)
+            if (!error  &&  (error = SOCK_ERRNO) == ERANGE)
                 log = eOn;
             else
-                x_error += DNS_BASE;
+                error += DNS_BASE;
         }
 #  else /*HAVE_GETHOSTBYADDR_R*/
         static const char suffix[] = "";
@@ -1279,15 +1278,15 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
 #    endif /*!SOCK_GHB_THREAD_SAFE*/
 
         he = gethostbyaddr((char*) &host, sizeof(host), AF_INET);
-        x_error = he ? 0 : h_errno + DNS_BASE;
+        error = he ? 0 : h_errno + DNS_BASE;
 #  endif /*HAVE_GETHOSTBYADDR_R*/
 
         if (!he  ||  strlen(he->h_name) >= namelen) {
             if (he  ||  SOCK_ntoa(host, name, namelen) != 0) {
 #ifdef ENOSPC
-                x_error = ENOSPC;
+                error = ENOSPC;
 #else
-                x_error = ERANGE;
+                error = ERANGE;
 #endif /*ENOSPC*/
                 name[0] = '\0';
                 log = eOn;
@@ -1305,14 +1304,14 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
         if (!name  &&  log) {
             const char* strerr;
 #  ifdef NETDB_INTERNAL
-            if (x_error == NETDB_INTERNAL + DNS_BASE)
-                x_error  = SOCK_ERRNO;
+            if (error == NETDB_INTERNAL + DNS_BASE)
+                error  = SOCK_ERRNO;
 #  endif /*NETDB_INTERNAL*/
             if (SOCK_ntoa(host, addr, sizeof(addr)) != 0)
                 sprintf(addr, "0x%08X", (unsigned int) ntohl(host));
-            strerr = SOCK_STRERROR(x_error);
+            strerr = SOCK_STRERROR(error);
             CORE_LOGF_ERRNO_EXX(108, eLOG_Warning,
-                                x_error, strerr,
+                                error, strerr,
                                 ("[SOCK_gethostbyaddr] "
                                  " Failed gethostbyaddr%s(%s)",
                                  suffix, addr));
@@ -1706,11 +1705,11 @@ static EIO_Status s_Select_(size_t                n,
             }
             /* NB: ready */
         } else { /* nfds < 0 */
-            int x_error = SOCK_ERRNO;
-            if (x_error != SOCK_EINTR) {
-                const char* strerr = SOCK_STRERROR(x_error);
+            int error = SOCK_ERRNO;
+            if (error != SOCK_EINTR) {
+                const char* strerr = SOCK_STRERROR(error);
                 CORE_LOGF_ERRNO_EXX(5, eLOG_Warning,
-                                    x_error, strerr,
+                                    error, strerr,
                                     ("%s[SOCK::Select] "
                                      " Failed select()",
                                      n == 1 ? s_ID(polls[0].sock, _id) : ""));
@@ -1724,7 +1723,7 @@ static EIO_Status s_Select_(size_t                n,
                 return eIO_Interrupt;
             } else
                 continue;
-            assert(x_error != SOCK_EINTR  &&  ready);
+            assert(error != SOCK_EINTR  &&  ready);
         }
         break;
     }
@@ -2349,10 +2348,10 @@ static EIO_Status s_Select(size_t                n,
                         break;
                     }
                     if (WSAEnumNetworkEvents(sock->sock, what[m], &e) != 0) {
-                        int x_error = SOCK_ERRNO;
-                        const char* strerr = SOCK_STRERROR(x_error);
+                        int error = SOCK_ERRNO;
+                        const char* strerr = SOCK_STRERROR(error);
                         CORE_LOGF_ERRNO_EXX(136, eLOG_Error,
-                                            x_error, strerr,
+                                            error, strerr,
                                             ("%s[SOCK::Select] "
                                              " Failed WSAEnumNetworkEvents",
                                              s_ID(sock, _id)));
@@ -2500,6 +2499,7 @@ static inline void x_tvcpy(struct timeval* dst, struct timeval* src)
  */
 static EIO_Status s_IsConnected_(SOCK                  sock,
                                  const struct timeval* tv,
+                                 const char**          what,
                                  int*                  error,
                                  int/*bool*/           writeable)
 {
@@ -2507,6 +2507,7 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
     EIO_Status status;
     SSOCK_Poll poll;
 
+    *what = 0;
     *error = 0;
     if (sock->w_status == eIO_Closed)
         return eIO_Closed;
@@ -2607,17 +2608,9 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
                     x_tvcpy(&sock->w_tv, &wtv);
                 if ((sock->r_tv_set = rtv_set) != 0)
                     x_tvcpy(&sock->r_tv, &rtv);
-                if (status != eIO_Success) {
-                    if (status != eIO_Timeout) {
-                        const char* strerr = s_StrError(sock, *error);
-                        CORE_LOGF_ERRNO_EXX(126, eLOG_Trace,
-                                            *error, strerr,
-                                            ("%s[SOCK::IsConnected] "
-                                             " Failed SSL hello",
-                                             s_ID(sock, _id)));
-                        UTIL_ReleaseBuffer(strerr);
-                    }
-                } else
+                if (status != eIO_Success)
+                    *what = "SSL hello";
+                else
                     sock->pending = 0;
             } else
                 status = eIO_NotSupported;
@@ -2631,8 +2624,9 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
 
 static EIO_Status s_IsConnected(SOCK sock, const struct timeval* tv)
 {
-    int        unused;
-    EIO_Status status = s_IsConnected_(sock, tv, &unused, 0);
+    const char* what;
+    int         unused;
+    EIO_Status  status = s_IsConnected_(sock, tv, &what, &unused, 0);
     if (s_ErrHook  &&  status != eIO_Success  &&  status != eIO_Timeout) {
         SSOCK_ErrInfo info;
         memset(&info, 0, sizeof(info));
@@ -2680,13 +2674,13 @@ static EIO_Status s_Recv(SOCK    sock,
     /* read from the socket */
     readable = 0/*false*/;
     for (;;) { /* optionally auto-resume if interrupted */
+        int error;
+
         int x_read = recv(sock->sock, buf,
 #ifdef NCBI_OS_MSWIN
                           /*WINSOCK wants it weird*/ (int)
 #endif /*NCBI_OS_MSWIN*/
                           size, 0/*flags*/);
-        int x_error;
-
 #ifdef NCBI_OS_MSWIN
         /* recv() resets IO event recording */
         sock->readable = sock->closing;
@@ -2694,11 +2688,11 @@ static EIO_Status s_Recv(SOCK    sock,
 
         /* success/EOF? */
         if (x_read >= 0  ||
-            (x_read < 0  &&  ((x_error = SOCK_ERRNO) == SOCK_ENOTCONN    ||
-                              x_error                == SOCK_ETIMEDOUT   ||
-                              x_error                == SOCK_ENETRESET   ||
-                              x_error                == SOCK_ECONNRESET  ||
-                              x_error                == SOCK_ECONNABORTED))) {
+            (x_read < 0  &&  ((error = SOCK_ERRNO) == SOCK_ENOTCONN    ||
+                              error                == SOCK_ETIMEDOUT   ||
+                              error                == SOCK_ENETRESET   ||
+                              error                == SOCK_ECONNRESET  ||
+                              error                == SOCK_ECONNABORTED))) {
             /* statistics & logging */
             if ((x_read < 0  &&  sock->log != eOff)  ||
                 ((sock->log == eOn || (sock->log == eDefault && s_Log == eOn))
@@ -2707,8 +2701,8 @@ static EIO_Status s_Recv(SOCK    sock,
                         ? (sock->n_read & sock->n_written
                            ? eLOG_Error : eLOG_Trace)
                         : eLOG_Note, sock, eIO_Read,
-                        x_read < 0 ? (void*) &x_error :
-                        x_read > 0 ? buf              : 0,
+                        x_read < 0 ? (void*) &error :
+                        x_read > 0 ? buf            : 0,
                         (size_t)(x_read < 0 ? 0 : x_read), 0);
             }
 
@@ -2731,7 +2725,7 @@ static EIO_Status s_Recv(SOCK    sock,
             break/*success*/;
         }
 
-        if (x_error == SOCK_EWOULDBLOCK  ||  x_error == SOCK_EAGAIN) {
+        if (error == SOCK_EWOULDBLOCK  ||  error == SOCK_EAGAIN) {
             /* blocked -- wait for data to come;  return if timeout/error */
             EIO_Status status;
             SSOCK_Poll poll;
@@ -2763,10 +2757,10 @@ static EIO_Status s_Recv(SOCK    sock,
             continue/*read again*/;
         }
 
-        if (x_error != SOCK_EINTR) {
-            const char* strerr = SOCK_STRERROR(x_error);
+        if (error != SOCK_EINTR) {
+            const char* strerr = SOCK_STRERROR(error);
             CORE_LOGF_ERRNO_EXX(7, eLOG_Trace,
-                                x_error, strerr,
+                                error, strerr,
                                 ("%s[SOCK::Recv] "
                                  " Failed recv()",
                                  s_ID(sock, _id)));            
@@ -2818,7 +2812,7 @@ static EIO_Status s_Read_(SOCK    sock,
         if (sock->pending)
             return status;
         if (!size  &&  peek >= 0)
-            return sock->eof ? eIO_Closed : sock->r_status;
+            return sock->eof ? eIO_Closed : (EIO_Status) sock->r_status;
     }
 
     if (sock->type == eDatagram  ||  peek >= 0) {
@@ -2864,15 +2858,15 @@ static EIO_Status s_Read_(SOCK    sock,
             x_buf    = (char*) buf + *n_read;
 
         if (sock->session) {
-            int x_error;
+            int error;
             FSSLRead sslread = s_SSL ? s_SSL->Read : 0;
             assert(sock->session != SESSION_INVALID);
             if (!sslread) {
                 status = eIO_NotSupported;
                 break/*error*/;
             }
-            status = sslread(sock->session, x_buf, n_todo, &x_read, &x_error);
-            assert(status == eIO_Success  ||  x_error);
+            status = sslread(sock->session, x_buf, n_todo, &x_read, &error);
+            assert(status == eIO_Success  ||  error);
             assert(status == eIO_Success  ||  !x_read);
 
             /* statistics & logging */
@@ -2880,7 +2874,7 @@ static EIO_Status s_Read_(SOCK    sock,
                 sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
                 s_DoLog(x_read > 0 ? eLOG_Note : eLOG_Trace, sock, eIO_Read,
                         x_read > 0 ? x_buf :
-                        status == eIO_Success ? 0 : (void*) &x_error,
+                        status == eIO_Success ? 0 : (void*) &error,
                         status != eIO_Success ? 0 : x_read, " [decrypt]");
             }
 
@@ -3144,19 +3138,21 @@ static EIO_Status s_Send(SOCK        sock,
         return eIO_Closed;
 
     for (;;) { /* optionally auto-resume if interrupted */
-        int x_error = 0;
+        int error = 0;
+
         int x_written = send(sock->sock, (void*) data,
 #ifdef NCBI_OS_MSWIN
                              /*WINSOCK wants it weird*/ (int)
 #endif /*NCBI_OS_MSWIN*/
                              size, flag < 0 ? MSG_OOB : 0);
+
         if (x_written >= 0  ||
-            (x_written < 0  &&  ((x_error= SOCK_ERRNO) == SOCK_EPIPE       ||
-                                 x_error               == SOCK_ENOTCONN    ||
-                                 x_error               == SOCK_ETIMEDOUT   ||
-                                 x_error               == SOCK_ENETRESET   ||
-                                 x_error               == SOCK_ECONNRESET  ||
-                                 x_error               == SOCK_ECONNABORTED))){
+            (x_written < 0  &&  ((error = SOCK_ERRNO) == SOCK_EPIPE       ||
+                                 error                == SOCK_ENOTCONN    ||
+                                 error                == SOCK_ETIMEDOUT   ||
+                                 error                == SOCK_ENETRESET   ||
+                                 error                == SOCK_ECONNRESET  ||
+                                 error                == SOCK_ECONNABORTED))) {
             /* statistics & logging */
             if ((x_written <= 0  &&  sock->log != eOff)  ||
                 ((sock->log == eOn || (sock->log == eDefault && s_Log == eOn))
@@ -3165,7 +3161,7 @@ static EIO_Status s_Send(SOCK        sock,
                         ? (sock->n_read & sock->n_written
                            ? eLOG_Error : eLOG_Trace)
                         : eLOG_Note, sock, eIO_Write,
-                        x_written <= 0 ? (void*) &x_error : data,
+                        x_written <= 0 ? (void*) &error : data,
                         (size_t)(x_written <= 0 ? 0 : x_written),
                         flag < 0 ? "" : 0);
             }
@@ -3177,7 +3173,7 @@ static EIO_Status s_Send(SOCK        sock,
                 break/*success*/;
             }
             if (x_written < 0) {
-                if (x_error != SOCK_EPIPE)
+                if (error != SOCK_EPIPE)
                     sock->r_status = eIO_Closed;
                 sock->w_status = eIO_Closed;
                 break/*closed*/;
@@ -3189,9 +3185,9 @@ static EIO_Status s_Send(SOCK        sock,
 
         /* blocked -- retry if unblocked before the timeout expires
          * (use stall protection if specified) */
-        if (x_error == SOCK_EWOULDBLOCK  ||  x_error == SOCK_EAGAIN
+        if (error == SOCK_EWOULDBLOCK  ||  error == SOCK_EAGAIN
 #ifdef NCBI_OS_MSWIN
-            ||  x_error == WSAENOBUFS
+            ||  error == WSAENOBUFS
 #endif /*NCBI_OS_MSWIN*/
             ) {
             SSOCK_Poll            poll;
@@ -3204,7 +3200,7 @@ static EIO_Status s_Send(SOCK        sock,
 
             /* special send()'s semantics of IO event recording reset */
             sock->writable = 0/*false*/;
-            if (x_error == WSAENOBUFS) {
+            if (error == WSAENOBUFS) {
                 if (size < SOCK_BUF_CHUNK_SIZE) {
                     s_AddTimeout(&waited, wait_buf_ms);
                     if (s_IsSmallerTimeout(SOCK_GET_TIMEOUT(sock, w),&waited)){
@@ -3246,7 +3242,7 @@ static EIO_Status s_Send(SOCK        sock,
             status = s_SelectStallsafe(1, &poll, timeout, 0);
             assert(poll.event == eIO_Write);
 #ifdef NCBI_OS_MSWIN
-            if (x_error == WSAENOBUFS) {
+            if (error == WSAENOBUFS) {
                 assert(timeout == &slice);
                 sock->writable = writable/*restore*/;
                 if (status == eIO_Timeout)
@@ -3265,11 +3261,11 @@ static EIO_Status s_Send(SOCK        sock,
             continue/*write again*/;
         }
 
-        if (x_error != SOCK_EINTR) {
+        if (error != SOCK_EINTR) {
             char _id[MAXIDLEN];
-            const char* strerr = SOCK_STRERROR(x_error);
+            const char* strerr = SOCK_STRERROR(error);
             CORE_LOGF_ERRNO_EXX(11, eLOG_Trace,
-                                x_error, strerr,
+                                error, strerr,
                                 ("%s[SOCK::Send] "
                                  " Failed send()",
                                  s_ID(sock, _id)));
@@ -3337,21 +3333,21 @@ static EIO_Status s_WriteData(SOCK        sock,
     assert(sock->type == eSocket  &&  !sock->pending  &&  size > 0);
 
     if (sock->session) {
-        int x_error;
+        int error;
         EIO_Status status;
         FSSLWrite sslwrite = s_SSL ? s_SSL->Write : 0;
         assert(sock->session != SESSION_INVALID);
         if (!sslwrite  ||  oob)
             return eIO_NotSupported;
-        status = sslwrite(sock->session, data, size, n_written, &x_error);
+        status = sslwrite(sock->session, data, size, n_written, &error);
         assert((status == eIO_Success) == (*n_written > 0));
-        assert(status == eIO_Success  ||  x_error);
+        assert(status == eIO_Success  ||  error);
 
         /* statistics & logging */
         if ((status != eIO_Success  &&  sock->log != eOff)  ||
             sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn)) {
             s_DoLog(*n_written > 0 ? eLOG_Note : eLOG_Trace, sock, eIO_Write,
-                    status == eIO_Success ? data : (void*) &x_error,
+                    status == eIO_Success ? data : (void*) &error,
                     status != eIO_Success ? 0    : *n_written, " [encrypt]");
         }
 
@@ -3379,18 +3375,20 @@ static EIO_Status s_WritePending(SOCK                  sock,
     assert(sock->type == eSocket  &&  sock->sock != SOCK_INVALID);
 
     if (sock->pending) {
-        int x_error;
-        status = s_IsConnected_(sock, tv, &x_error, writeable);
+        const char* what;
+        int         error;
+        status = s_IsConnected_(sock, tv, &what, &error, writeable);
         if (status != eIO_Success) {
             if (status != eIO_Timeout) {
                 char _id[MAXIDLEN];
-                const char* strerr = s_StrError(sock, x_error);
+                const char* strerr = s_StrError(sock, error);
                 CORE_LOGF_ERRNO_EXX(12, sock->log != eOff
                                     ? eLOG_Error : eLOG_Trace,
-                                    x_error, strerr,
+                                    error, strerr,
                                     ("%s[SOCK::WritePending] "
-                                     " Failed pending connect(): %s",
+                                     " Failed %s: %s",
                                      s_ID(sock, _id),
+                                     what ? what : "pending connect()",
                                      IO_StatusStr(status)));
                 UTIL_ReleaseBuffer(strerr);
                 sock->w_status = status;
@@ -3518,7 +3516,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
                              EIO_Event             dir,
                              const struct timeval* tv)
 {
-    int        x_error;
+    int        error;
     char       _id[MAXIDLEN];
     EIO_Status status = eIO_Success;
     int        how = SOCK_SHUTDOWN_WR;
@@ -3589,15 +3587,15 @@ static EIO_Status s_Shutdown(SOCK                  sock,
                         wtv = sock->w_tv;
                     SOCK_SET_TIMEOUT(sock, r, tv);
                     SOCK_SET_TIMEOUT(sock, w, tv);
-                    status = sslclose(sock->session, how, &x_error);
+                    status = sslclose(sock->session, how, &error);
                     if ((sock->w_tv_set = wtv_set) != 0)
                         x_tvcpy(&sock->w_tv, &wtv);
                     if ((sock->r_tv_set = rtv_set) != 0)
                         x_tvcpy(&sock->r_tv, &rtv);
                     if (status != eIO_Success) {
-                        const char* strerr = s_StrError(sock, x_error);
+                        const char* strerr = s_StrError(sock, error);
                         CORE_LOGF_ERRNO_EXX(127, eLOG_Trace,
-                                            x_error, strerr,
+                                            error, strerr,
                                             ("%s[SOCK::%s] "
                                              " Failed SSL bye",
                                              s_ID(sock, _id),
@@ -3644,9 +3642,9 @@ static EIO_Status s_Shutdown(SOCK                  sock,
 #  endif /*NCBI_OS_UNIX*/
 
     if (s_Initialized > 0  &&  shutdown(sock->sock, how) != 0) {
-        x_error = SOCK_ERRNO;
+        error = SOCK_ERRNO;
 #  ifdef NCBI_OS_MSWIN
-        if (x_error == WSANOTINITIALISED)
+        if (error == WSANOTINITIALISED)
             s_Initialized = -1/*deinited*/;
         else
 #  endif /*NCBI_OS_MSWIN*/
@@ -3654,14 +3652,14 @@ static EIO_Status s_Shutdown(SOCK                  sock,
 #  if   defined(NCBI_OS_LINUX)/*bug in the Linux kernel to report*/  || \
         defined(NCBI_OS_IRIX)                                        || \
         defined(NCBI_OS_OSF1)
-            x_error != SOCK_ENOTCONN
+            error != SOCK_ENOTCONN
 #  else
-            x_error != SOCK_ENOTCONN  ||  sock->pending
+            error != SOCK_ENOTCONN  ||  sock->pending
 #  endif /*UNIX flavors*/
             ) {
-            const char* strerr = SOCK_STRERROR(x_error);
+            const char* strerr = SOCK_STRERROR(error);
             CORE_LOGF_ERRNO_EXX(16, eLOG_Trace,
-                                x_error, strerr,
+                                error, strerr,
                                 ("%s[SOCK::Shutdown] "
                                  " Failed shutdown(%s)",
                                  s_ID(sock, _id), dir == eIO_Read ? "R" :
@@ -3680,8 +3678,8 @@ static EIO_Status s_Shutdown(SOCK                  sock,
 static EIO_Status s_Close_(SOCK sock, int abort)
 {
     char       _id[MAXIDLEN];
-    int        x_error;
     EIO_Status status;
+    int        error;
 
     assert(sock->sock != SOCK_INVALID);
     BUF_Erase(sock->r_buf);
@@ -3722,9 +3720,9 @@ static EIO_Status s_Close_(SOCK sock, int abort)
                 &&  setsockopt(sock->sock, SOL_SOCKET, SO_LINGER,
                                (char*) &lgr, sizeof(lgr)) != 0
                 &&  abort >= 0  &&  sock->connected) {
-                const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+                const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
                 CORE_LOGF_ERRNO_EXX(17, eLOG_Trace,
-                                    x_error, strerr,
+                                    error, strerr,
                                     ("%s[SOCK::%s] "
                                      " Failed setsockopt(SO_LINGER)",
                                      s_ID(sock, _id),
@@ -3738,9 +3736,9 @@ static EIO_Status s_Close_(SOCK sock, int abort)
                 if (setsockopt(sock->sock, IPPROTO_TCP, TCP_LINGER2,
                                (char*) &no, sizeof(no)) != 0
                     &&  !abort  &&  sock->connected) {
-                    const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+                    const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
                     CORE_LOGF_ERRNO_EXX(18, eLOG_Trace,
-                                        x_error, strerr,
+                                        error, strerr,
                                         ("%s[SOCK::Close] "
                                          " Failed setsockopt(TCP_LINGER2)",
                                          s_ID(sock, _id)));
@@ -3765,10 +3763,10 @@ static EIO_Status s_Close_(SOCK sock, int abort)
         /* set the socket back to blocking mode */
         if (s_Initialized > 0
             &&  linger  &&  !s_SetNonblock(sock->sock, 0/*false*/)) {
-            const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+            const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
             assert(!abort);
             CORE_LOGF_ERRNO_EXX(19, eLOG_Trace,
-                                x_error, strerr,
+                                error, strerr,
                                 ("%s[SOCK::Close] "
                                  " Cannot set socket back to blocking mode",
                                  s_ID(sock, _id)));
@@ -3811,32 +3809,32 @@ static EIO_Status s_Close_(SOCK sock, int abort)
             /* error */
             if (s_Initialized <= 0)
                 break;
-            x_error = SOCK_ERRNO;
+            error = SOCK_ERRNO;
 #ifdef NCBI_OS_MSWIN
-            if (x_error == WSANOTINITIALISED) {
+            if (error == WSANOTINITIALISED) {
                 s_Initialized = -1/*deinited*/;
                 break;
             }
 #endif /*NCBI_OS_MSWIN*/
-            if (x_error == SOCK_ENOTCONN/*already closed by now*/
+            if (error == SOCK_ENOTCONN/*already closed by now*/
                 ||  (!(sock->n_read | sock->n_written)
-                     &&  (x_error == SOCK_ENETRESET   ||
-                          x_error == SOCK_ECONNRESET  ||
-                          x_error == SOCK_ECONNABORTED))) {
+                     &&  (error == SOCK_ENETRESET   ||
+                          error == SOCK_ECONNRESET  ||
+                          error == SOCK_ECONNABORTED))) {
                 break;
             }
-            if (abort  ||  x_error != SOCK_EINTR) {
-                const char* strerr = SOCK_STRERROR(x_error);
+            if (abort  ||  error != SOCK_EINTR) {
+                const char* strerr = SOCK_STRERROR(error);
                 CORE_LOGF_ERRNO_EXX(21, abort == 1 ? eLOG_Warning : eLOG_Error,
-                                    x_error, strerr,
+                                    error, strerr,
                                     ("%s[SOCK::%s] "
                                      " Failed close()",
                                      s_ID(sock, _id),
                                      abort ? "Abort" : "Close"));
                 UTIL_ReleaseBuffer(strerr);
-                if (abort > 1  ||  x_error != SOCK_EINTR) {
+                if (abort > 1  ||  error != SOCK_EINTR) {
                     status =
-                        x_error == SOCK_ETIMEDOUT ? eIO_Timeout : eIO_Unknown;
+                        error == SOCK_ETIMEDOUT ? eIO_Timeout : eIO_Unknown;
                     break;
                 }
                 if (abort)
@@ -3903,10 +3901,10 @@ static EIO_Status s_Connect_(SOCK            sock,
 #endif /*NCBI_OS_UNIX*/
     } addr;
     char            _id[MAXIDLEN];
-    int             x_error;
     TSOCK_socklen_t addrlen;
     TSOCK_Handle    x_sock;
     EIO_Status      status;
+    int             error;
     int             n;
 
     assert(sock->type == eSocket  &&  sock->side == eSOCK_Client);
@@ -3922,13 +3920,13 @@ static EIO_Status s_Connect_(SOCK            sock,
         assert(sock->session == SESSION_INVALID);
         if (!sslcreate) {
             session = 0;
-            x_error = 0;
+            error = 0;
         } else
-            session = sslcreate(eSOCK_Client, sock, &x_error);
+            session = sslcreate(eSOCK_Client, sock, sock->cred, &error);
         if (!session) {
-            const char* strerr = s_StrError(sock, x_error);
+            const char* strerr = s_StrError(sock, error);
             CORE_LOGF_ERRNO_EXX(131, eLOG_Error,
-                                x_error, strerr,
+                                error, strerr,
                                 ("%s[SOCK::Connect] "
                                  " Failed to initialize secure session",
                                  s_ID(sock, _id)));
@@ -3988,9 +3986,9 @@ static EIO_Status s_Connect_(SOCK            sock,
 
     /* create the new socket */
     if ((x_sock = socket(addr.sa.sa_family, SOCK_STREAM, 0)) == SOCK_INVALID) {
-        const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+        const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(23, eLOG_Error,
-                            x_error, strerr,
+                            error, strerr,
                             ("%s[SOCK::Connect] "
                              " Cannot create socket",
                              s_ID(sock, _id)));
@@ -4019,10 +4017,9 @@ static EIO_Status s_Connect_(SOCK            sock,
     }
     /* NB: WSAEventSelect() sets non-blocking automatically */
     if (WSAEventSelect(sock->sock, sock->event, SOCK_EVENTS) != 0) {
-        int x_error = SOCK_ERRNO;
-        const char* strerr = SOCK_STRERROR(x_error);
+        const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(123, eLOG_Error,
-                            x_error, strerr,
+                            error, strerr,
                             ("%s[SOCK::Connect] "
                              " Failed to bind IO event",
                              s_ID(sock, _id)));
@@ -4033,9 +4030,9 @@ static EIO_Status s_Connect_(SOCK            sock,
 #else
     /* set non-blocking mode */
     if (!s_SetNonblock(x_sock, 1/*true*/)) {
-        const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+        const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(24, eLOG_Error,
-                            x_error, strerr,
+                            error, strerr,
                             ("%s[SOCK::Connect] "
                              " Cannot set socket to non-blocking mode",
                              s_ID(sock, _id)));
@@ -4048,9 +4045,9 @@ static EIO_Status s_Connect_(SOCK            sock,
     if (sock->port) {
 #ifdef SO_KEEPALIVE
         if (sock->keepalive  &&  !s_SetKeepAlive(x_sock, 1/*true*/)) {
-            const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+            const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
             CORE_LOGF_ERRNO_EXX(151, eLOG_Warning,
-                                x_error, strerr,
+                                error, strerr,
                                 ("%s[SOCK::Connect] "
                                  " Failed setsockopt(KEEPALIVE)",
                                  s_ID(sock, _id)));
@@ -4059,9 +4056,9 @@ static EIO_Status s_Connect_(SOCK            sock,
 #endif /*SO_KEEPALIVE*/
 #ifdef SO_OOBINLINE
         if (!s_SetOobInline(x_sock, 1/*true*/)) {
-            const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+            const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
             CORE_LOGF_ERRNO_EXX(135, eLOG_Warning,
-                                x_error, strerr,
+                                error, strerr,
                                 ("%s[SOCK::Connect] "
                                  " Failed setsockopt(OOBINLINE)",
                                  s_ID(sock, _id)));
@@ -4075,13 +4072,13 @@ static EIO_Status s_Connect_(SOCK            sock,
 #ifdef NCBI_OS_MSWIN
         DWORD err = GetLastError();
         strerr = s_WinStrerror(err);
-        x_error = err;
+        error = err;
 #else
-        x_error = errno;
-        strerr = SOCK_STRERROR(x_error);
+        error = errno;
+        strerr = SOCK_STRERROR(error);
 #endif /*NCBI_OS_MSWIN*/
         CORE_LOGF_ERRNO_EXX(129, eLOG_Warning,
-                            x_error, strerr ? strerr : "",
+                            error, strerr ? strerr : "",
                             ("%s[SOCK::Connect] "
                              " Cannot set socket close-on-exec mode",
                              s_ID(sock, _id)));
@@ -4101,11 +4098,11 @@ static EIO_Status s_Connect_(SOCK            sock,
 #endif /*NCBI_OS_MSWIN*/
     for (n = 0; ; n = 1) { /* optionally auto-resume if interrupted */
         if (connect(x_sock, &addr.sa, addrlen) == 0) {
-            x_error = 0;
+            error = 0;
             break;
         }
-        x_error = SOCK_ERRNO;
-        if (x_error != SOCK_EINTR  ||  sock->i_on_sig == eOn
+        error = SOCK_ERRNO;
+        if (error != SOCK_EINTR  ||  sock->i_on_sig == eOn
             ||  (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal)) {
             break;
         }
@@ -4113,24 +4110,24 @@ static EIO_Status s_Connect_(SOCK            sock,
 
     /* statistics & logging */
     if (sock->log == eOn  ||  (sock->log == eDefault  &&  s_Log == eOn))
-        s_DoLog(eLOG_Note, sock, eIO_Open, 0, 0, x_error ? 0 : "");
+        s_DoLog(eLOG_Note, sock, eIO_Open, 0, 0, error ? 0 : "");
 
-    if (x_error) {
-        if (((n == 0  &&  x_error != SOCK_EINPROGRESS)  ||
-             (n != 0  &&  x_error != SOCK_EALREADY))
-            &&  x_error != SOCK_EWOULDBLOCK) {
-            if (x_error != SOCK_EINTR) {
-                const char* strerr = SOCK_STRERROR(x_error);
+    if (error) {
+        if (((n == 0  &&  error != SOCK_EINPROGRESS)  ||
+             (n != 0  &&  error != SOCK_EALREADY))
+            &&  error != SOCK_EWOULDBLOCK) {
+            if (error != SOCK_EINTR) {
+                const char* strerr = SOCK_STRERROR(error);
                 CORE_LOGF_ERRNO_EXX(25, sock->log != eOff
                                     ? eLOG_Error : eLOG_Trace,
-                                    x_error, strerr,
+                                    error, strerr,
                                     ("%s[SOCK::Connect] "
                                      " Failed connect()",
                                      s_ID(sock, _id)));
                 UTIL_ReleaseBuffer(strerr);
-                if (x_error == SOCK_ECONNREFUSED
+                if (error == SOCK_ECONNREFUSED
 #ifdef NCBI_OS_UNIX
-                    ||  (sock->path[0]  &&  x_error == ENOENT)
+                    ||  (sock->path[0]  &&  error == ENOENT)
 #endif /*NCBI_OS_UNIX*/
                     ) {
                     status = eIO_Closed;
@@ -4145,11 +4142,12 @@ static EIO_Status s_Connect_(SOCK            sock,
     } else
         sock->pending = sock->session ? 1 : 0;
 
-    if (!x_error  ||  !timeout  ||  (timeout->sec | timeout->usec)) {
+    if (!error  ||  !timeout  ||  (timeout->sec | timeout->usec)) {
+        const char* what;
         struct timeval tv;
         const struct timeval* x_tv = s_to2tv(timeout, &tv);
 
-        status = s_IsConnected_(sock, x_tv, &x_error, !x_error);
+        status = s_IsConnected_(sock, x_tv, &what, &error, !error);
         if (status != eIO_Success) {
             char buf[80];
             const char* reason;
@@ -4163,13 +4161,14 @@ static EIO_Status s_Connect_(SOCK            sock,
             } else
                 reason = IO_StatusStr(status);
             {
-                const char* strerr = s_StrError(sock, x_error);
+                const char* strerr = s_StrError(sock, error);
                 CORE_LOGF_ERRNO_EXX(26, sock->log != eOff
                                     ? eLOG_Error : eLOG_Trace,
-                                    x_error, strerr,
+                                    error, strerr,
                                     ("%s[SOCK::Connect] "
-                                     " Failed pending connect(): %s",
-                                     s_ID(sock, _id), reason));
+                                     " Failed %s: %s", s_ID(sock, _id),
+                                     what ? what : "pending connect()",
+                                     reason));
                 UTIL_ReleaseBuffer(strerr);
             }
             s_Close_(sock, -1/*abort*/);
@@ -4220,6 +4219,7 @@ static EIO_Status s_Create(const char*     hostpath,
                            SOCK*           sock,
                            const void*     data,
                            size_t          size,
+                           NCBI_CRED       cred,
                            TSOCK_Flags     flags)
 {
     size_t       x_n = port ? 0 : strlen(hostpath);
@@ -4249,11 +4249,11 @@ static EIO_Status s_Create(const char*     hostpath,
         strcpy(x_sock->path, hostpath);
 #endif /*NCBI_OS_UNIX*/
 
-    /* setup the I/O data buffer properties */
+    /* setup initial data */
     BUF_SetChunkSize(&x_sock->r_buf, SOCK_BUF_CHUNK_SIZE);
     if (size) {
-        if (BUF_SetChunkSize(&x_sock->w_buf, size) < size  ||
-            !BUF_Write(&x_sock->w_buf, data, size)) {
+        if (BUF_SetChunkSize(&x_sock->w_buf, size) < size
+            ||  !BUF_Write(&x_sock->w_buf, data, size)) {
             CORE_LOGF_ERRNO_X(27, eLOG_Error, errno,
                               ("%s[SOCK::Create] "
                                " Cannot store initial data",
@@ -4262,6 +4262,8 @@ static EIO_Status s_Create(const char*     hostpath,
             return eIO_Unknown;
         }
     }
+    if (x_sock->session)
+        x_sock->cred = cred;
 
     /* connect */
     status = s_Connect(x_sock, hostpath, port, timeout);
@@ -4278,6 +4280,7 @@ static EIO_Status s_CreateOnTop(const void* handle,
                                 SOCK*       sock,
                                 const void* data,
                                 size_t      size,
+                                NCBI_CRED   cred,
                                 TSOCK_Flags flags)
 {
     union {
@@ -4292,8 +4295,8 @@ static EIO_Status s_CreateOnTop(const void* handle,
 #ifdef NCBI_OS_MSWIN
     WSAEVENT        event;
 #endif /*NCBI_OS_MSWIN*/
+    int             error;
     SOCK            x_sock;
-    int             x_error;
     TSOCK_socklen_t peerlen;
     size_t          socklen;
     BUF             w_buf = 0;
@@ -4326,9 +4329,9 @@ static EIO_Status s_CreateOnTop(const void* handle,
     peer.sa.sa_len = peerlen;
 #endif /*HAVE_SIN_LEN*/
     if (getpeername(fd, &peer.sa, &peerlen) != 0) {
-        const char* strerr = s_StrError(0, x_error = SOCK_ERRNO);
+        const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(148, eLOG_Error,
-                            x_error, strerr,
+                            error, strerr,
                             ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
                              " Invalid OS socket handle",
                              x_id, (unsigned int) fd));
@@ -4392,9 +4395,9 @@ static EIO_Status s_CreateOnTop(const void* handle,
     }
     /* NB: WSAEventSelect() sets non-blocking automatically */
     if (WSAEventSelect(fd, event, SOCK_EVENTS) != 0) {
-        const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+        const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(162, eLOG_Error,
-                            x_error, strerr,
+                            error, strerr,
                             ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
                              " Failed to bind IO event",
                              x_id, (unsigned int) fd));
@@ -4405,9 +4408,9 @@ static EIO_Status s_CreateOnTop(const void* handle,
 #else
     /* set to non-blocking mode */
     if (!s_SetNonblock(fd, 1/*true*/)) {
-        const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+        const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(50, eLOG_Error,
-                            x_error, strerr,
+                            error, strerr,
                             ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
                              " Cannot set socket to non-blocking mode",
                              x_id, (unsigned int) fd));
@@ -4478,13 +4481,13 @@ static EIO_Status s_CreateOnTop(const void* handle,
         void* session;
         if (!sslcreate) {
             session = 0;
-            x_error = 0;
+            error = 0;
         } else
-            session = sslcreate(eSOCK_Client, x_sock, &x_error);
+            session = sslcreate(eSOCK_Client, x_sock, cred, &error);
         if (!session) {
-            const char* strerr = s_StrError(x_sock, x_error);
+            const char* strerr = s_StrError(x_sock, error);
             CORE_LOGF_ERRNO_EXX(132, eLOG_Error,
-                                x_error, strerr,
+                                error, strerr,
                                 ("%s[SOCK::CreateOnTop] "
                                  " Failed to initialize secure session",
                                  s_ID(x_sock, _id)));
@@ -4503,9 +4506,9 @@ static EIO_Status s_CreateOnTop(const void* handle,
     if (x_sock->port) {
 #ifdef SO_KEEPALIVE
         if (!s_SetKeepAlive(fd, x_sock->keepalive)) {
-            const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+            const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
             CORE_LOGF_ERRNO_EXX(153, eLOG_Warning,
-                                x_error, strerr,
+                                error, strerr,
                                 ("%s[SOCK::CreateOnTop] "
                                  " Failed setsockopt(KEEPALIVE)",
                                  s_ID(x_sock, _id)));
@@ -4514,9 +4517,9 @@ static EIO_Status s_CreateOnTop(const void* handle,
 #endif /*SO_KEEPALIVE*/
 #ifdef SO_OOBINLINE
         if (!s_SetOobInline(fd, 1/*true*/)) {
-            const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+            const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
             CORE_LOGF_ERRNO_EXX(138, eLOG_Warning,
-                                x_error, strerr,
+                                error, strerr,
                                 ("%s[SOCK::CreateOnTop] "
                                  " Failed setsockopt(OOBINLINE)",
                                  s_ID(x_sock, _id)));
@@ -4530,13 +4533,13 @@ static EIO_Status s_CreateOnTop(const void* handle,
 #ifdef NCBI_OS_MSWIN
         DWORD err = GetLastError();
         strerr = s_WinStrerror(err);
-        x_error = err;
+        error = err;
 #else
-        x_error = errno;
-        strerr = SOCK_STRERROR(x_error);
+        error = errno;
+        strerr = SOCK_STRERROR(error);
 #endif /*NCBI_OS_MSWIN*/
         CORE_LOGF_ERRNO_EXX(124, eLOG_Warning,
-                            x_error, strerr ? strerr : "",
+                            error, strerr ? strerr : "",
                             ("%s[SOCK::CreateOnTop] "
                              " Cannot modify socket close-on-exec mode",
                              s_ID(x_sock, _id)));
@@ -4549,9 +4552,9 @@ static EIO_Status s_CreateOnTop(const void* handle,
 
     memset(&lgr, 0, sizeof(lgr));
     if (setsockopt(fd, SOL_SOCKET, SO_LINGER, (char*) &lgr, sizeof(lgr)) != 0){
-        const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+        const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(43, eLOG_Warning,
-                            x_error, strerr,
+                            error, strerr,
                             ("%s[SOCK::CreateOnTop] "
                              " Failed setsockopt(SO_NOLINGER)",
                              s_ID(x_sock, _id)));
@@ -4588,8 +4591,8 @@ static EIO_Status s_CreateListening(const char*    path,
 #ifdef NCBI_OS_MSWIN
     WSAEVENT        event;
 #endif /*NCBI_OS_MSWIN*/
+    int             error;
     TSOCK_Handle    x_lsock;
-    int             x_error;
     TSOCK_socklen_t addrlen;
     char            _id[MAXIDLEN];
     unsigned int    x_id = ++s_ID_Counter;
@@ -4627,7 +4630,7 @@ static EIO_Status s_CreateListening(const char*    path,
 
     /* create new(listening) socket */
     if ((x_lsock = socket(addr.sa.sa_family, SOCK_STREAM, 0)) == SOCK_INVALID){
-        const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+        const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         if (!path) {
             if (port)
                 sprintf(_id, ":%hu", port);
@@ -4637,7 +4640,7 @@ static EIO_Status s_CreateListening(const char*    path,
         } else
             cp = path;
         CORE_LOGF_ERRNO_EXX(34, eLOG_Error,
-                            x_error, strerr,
+                            error, strerr,
                             ("LSOCK#%u[?]@%s: [LSOCK::Create] "
                              " Failed socket()", x_id, cp));
         UTIL_ReleaseBuffer(strerr);
@@ -4677,13 +4680,13 @@ static EIO_Status s_CreateListening(const char*    path,
             failed = "REUSEADDR";
 #endif /*NCBI_OS_MSWIN...*/
         if (failed) {
-            const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+            const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
             if (port)
                 sprintf(_id, "%hu", port);
             else
                 strcpy (_id, "?");
             CORE_LOGF_ERRNO_EXX(35, eLOG_Error,
-                                x_error, strerr,
+                                error, strerr,
                                 ("LSOCK#%u[%u]@:%s: [LSOCK::Create] "
                                  " Failed setsockopt(%s)", x_id,
                                  (unsigned int) x_lsock, _id, failed));
@@ -4720,13 +4723,13 @@ static EIO_Status s_CreateListening(const char*    path,
         u = 0/*dummy*/;
 #endif /*NCBI_OS_UNIX*/
     }
-    x_error = bind(x_lsock, &addr.sa, addrlen) != 0 ? SOCK_ERRNO : 0;
+    error = bind(x_lsock, &addr.sa, addrlen) != 0 ? SOCK_ERRNO : 0;
 #ifdef NCBI_OS_UNIX
     if (path)
         umask(u);
 #endif /*NCBI_OS_UNIX*/
-    if (x_error) {
-        const char* strerr = SOCK_STRERROR(x_error);
+    if (error) {
+        const char* strerr = SOCK_STRERROR(error);
         if (!path) {
             if (!port) {
                 SOCK_ntoa(addr.in.sin_addr.s_addr, _id, sizeof(_id));
@@ -4738,15 +4741,15 @@ static EIO_Status s_CreateListening(const char*    path,
             cp = _id;
         } else
             cp = path;
-        CORE_LOGF_ERRNO_EXX(36, x_error != SOCK_EADDRINUSE
+        CORE_LOGF_ERRNO_EXX(36, error != SOCK_EADDRINUSE
                             ? eLOG_Error : eLOG_Trace,
-                            x_error, strerr,
+                            error, strerr,
                             ("LSOCK#%u[%u]@%s: [LSOCK::Create] "
                              " Failed bind()",
                              x_id, (unsigned int) x_lsock, cp));
         UTIL_ReleaseBuffer(strerr);
         SOCK_CLOSE(x_lsock);
-        return x_error != SOCK_EADDRINUSE ? eIO_Unknown : eIO_Closed;
+        return error != SOCK_EADDRINUSE ? eIO_Unknown : eIO_Closed;
     }
     if (path)
 #ifdef NCBI_OS_IRIX
@@ -4755,12 +4758,12 @@ static EIO_Status s_CreateListening(const char*    path,
             ;
     else if (!port) {
         assert(addr.in.sin_family == AF_INET);
-        x_error = getsockname(x_lsock, &addr.sa, &addrlen) != 0
+        error = getsockname(x_lsock, &addr.sa, &addrlen) != 0
             ? SOCK_ERRNO : 0;
-        if (x_error  ||  addr.sa.sa_family != AF_INET  ||  !addr.in.sin_port) {
-            const char* strerr = SOCK_STRERROR(x_error);
+        if (error  ||  addr.sa.sa_family != AF_INET  ||  !addr.in.sin_port) {
+            const char* strerr = SOCK_STRERROR(error);
             CORE_LOGF_ERRNO_EXX(150, eLOG_Error,
-                                x_error, strerr,
+                                error, strerr,
                                 ("LSOCK#%u[%u]@:?: [LSOCK::Create] "
                                  " Cannot obtain free socket port",
                                  x_id, (unsigned int) x_lsock));
@@ -4789,10 +4792,10 @@ static EIO_Status s_CreateListening(const char*    path,
     }
     /* NB: WSAEventSelect() sets non-blocking automatically */
     if (WSAEventSelect(x_lsock, event, FD_CLOSE/*X*/ | FD_ACCEPT/*A*/) != 0) {
-        const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+        const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         assert(!path);
         CORE_LOGF_ERRNO_EXX(119, eLOG_Error,
-                            x_error, strerr,
+                            error, strerr,
                             ("LSOCK#%u[%u]@:%hu: [LSOCK::Create] "
                              " Failed to bind IO event",
                              x_id, (unsigned int) x_lsock, port));
@@ -4804,14 +4807,14 @@ static EIO_Status s_CreateListening(const char*    path,
 #else
     /* set non-blocking mode */
     if (!s_SetNonblock(x_lsock, 1/*true*/)) {
-        const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+        const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         if (!path) {
             sprintf(_id, ":%hu", port);
             cp = _id;
         } else
             cp = path;
         CORE_LOGF_ERRNO_EXX(38, eLOG_Error,
-                            x_error, strerr,
+                            error, strerr,
                             ("LSOCK#%u[%u]@%s: [LSOCK::Create] "
                              " Cannot set socket to non-blocking mode",
                              x_id, (unsigned int) x_lsock, cp));
@@ -4823,14 +4826,14 @@ static EIO_Status s_CreateListening(const char*    path,
 
     /* listen */
     if (listen(x_lsock, backlog) != 0) {
-        const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+        const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         if (!path) {
             sprintf(_id, ":%hu", port);
             cp = _id;
         } else
             cp = path;
         CORE_LOGF_ERRNO_EXX(37, eLOG_Error,
-                            x_error, strerr,
+                            error, strerr,
                             ("LSOCK#%u[%u]@%s: [LSOCK::Create] "
                              " Failed listen(%hu)",
                              x_id, (unsigned int) x_lsock, cp, backlog));
@@ -4870,10 +4873,10 @@ static EIO_Status s_CreateListening(const char*    path,
 #ifdef NCBI_OS_MSWIN
         DWORD err = GetLastError();
         strerr = s_WinStrerror(err);
-        x_error = err;
+        error = err;
 #else
-        x_error = errno;
-        strerr = SOCK_STRERROR(x_error);
+        error = errno;
+        strerr = SOCK_STRERROR(error);
 #endif /*NCBI_OS_MSWIN*/
         if (!path) {
             sprintf(_id, ":%hu", port);
@@ -4881,7 +4884,7 @@ static EIO_Status s_CreateListening(const char*    path,
         } else
             cp = path;
         CORE_LOGF_ERRNO_EXX(110, eLOG_Warning,
-                            x_error, strerr ? strerr : "",
+                            error, strerr ? strerr : "",
                             ("LSOCK#%u[%u]@%s: [LSOCK::Create] "
                              " Cannot set socket close-on-exec mode",
                              x_id, (unsigned int) x_lsock, cp));
@@ -4933,8 +4936,8 @@ static EIO_Status s_Accept(LSOCK           lsock,
 #ifdef NCBI_OS_MSWIN
     WSAEVENT        event;
 #endif /*NCBI_OS_MSWIN*/
+    int             error;
     TSOCK_Handle    x_sock;
-    int             x_error;
     TSOCK_socklen_t addrlen;
     char            _id[MAXIDLEN];
 
@@ -4996,9 +4999,9 @@ static EIO_Status s_Accept(LSOCK           lsock,
 #endif /*NCBI_OS_MSWIN*/
     }
     if ((x_sock = accept(lsock->sock, &addr.sa, &addrlen)) == SOCK_INVALID) {
-        const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+        const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(40, eLOG_Error,
-                            x_error, strerr,
+                            error, strerr,
                             ("%s[LSOCK::Accept] "
                              " Failed accept()",
                              s_ID((SOCK) lsock, _id)));
@@ -5039,10 +5042,10 @@ static EIO_Status s_Accept(LSOCK           lsock,
     }
     /* NB: WSAEventSelect() sets non-blocking automatically */
     if (WSAEventSelect(x_sock, event, SOCK_EVENTS) != 0) {
-        int x_error = SOCK_ERRNO;
-        const char* strerr = SOCK_STRERROR(x_error);
+        int error = SOCK_ERRNO;
+        const char* strerr = SOCK_STRERROR(error);
         CORE_LOGF_ERRNO_EXX(121, eLOG_Error,
-                            x_error, strerr,
+                            error, strerr,
                             ("SOCK#%u[%u]@%s: [LSOCK::Accept] "
                              " Failed to bind IO event",
                              x_id, (unsigned int) x_sock,
@@ -5055,9 +5058,9 @@ static EIO_Status s_Accept(LSOCK           lsock,
 #else
     /* man accept(2) notes that non-blocking state may not be inherited */
     if (!s_SetNonblock(x_sock, 1/*true*/)) {
-        const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+        const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(41, eLOG_Error,
-                            x_error, strerr,
+                            error, strerr,
                             ("SOCK#%u[%u]@%s: [LSOCK::Accept] "
                              " Cannot set socket to non-blocking mode",
                              x_id, (unsigned int) x_sock,
@@ -5114,9 +5117,9 @@ static EIO_Status s_Accept(LSOCK           lsock,
 
     if (port) {
         if (s_ReuseAddress == eOn  &&  !s_SetReuseAddress(x_sock, 1)) {
-            const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+            const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
             CORE_LOGF_ERRNO_EXX(42, eLOG_Warning,
-                                x_error, strerr,
+                                error, strerr,
                                 ("%s[LSOCK::Accept] "
                                  " Failed setsockopt(REUSEADDR)",
                                  s_ID(*sock, _id)));
@@ -5125,9 +5128,9 @@ static EIO_Status s_Accept(LSOCK           lsock,
 
 #ifdef SO_KEEPALIVE
         if ((*sock)->keepalive  &&  !s_SetKeepAlive(x_sock, 1)) {
-            const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+            const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
             CORE_LOGF_ERRNO_EXX(152, eLOG_Warning,
-                                x_error, strerr,
+                                error, strerr,
                                 ("%s[LSOCK::Accept] "
                                  " Failed setsockopt(KEEPALIVE)",
                                  s_ID(*sock, _id)));
@@ -5136,9 +5139,9 @@ static EIO_Status s_Accept(LSOCK           lsock,
 #endif /*SO_KEEPALIVE*/
 #ifdef SO_OOBINLINE
         if (!s_SetOobInline(x_sock, 1/*true*/)) {
-            const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+            const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
             CORE_LOGF_ERRNO_EXX(137, eLOG_Warning,
-                                x_error, strerr,
+                                error, strerr,
                                 ("%s[LSOCK::Accept] "
                                  " Failed setsockopt(OOBINLINE)",
                                  s_ID(*sock, _id)));
@@ -5152,13 +5155,13 @@ static EIO_Status s_Accept(LSOCK           lsock,
 #ifdef NCBI_OS_MSWIN
         DWORD err = GetLastError();
         strerr = s_WinStrerror(err);
-        x_error = err;
+        error = err;
 #else
-        x_error = errno;
-        strerr = SOCK_STRERROR(x_error);
+        error = errno;
+        strerr = SOCK_STRERROR(error);
 #endif /*NCBI_OS_MSWIN*/
         CORE_LOGF_ERRNO_EXX(128, eLOG_Warning,
-                            x_error, strerr ? strerr : "",
+                            error, strerr ? strerr : "",
                             ("%s[LSOCK::Accept] "
                              " Cannot set socket close-on-exec mode",
                              s_ID(*sock, _id)));
@@ -5179,7 +5182,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
 
 static EIO_Status s_CloseListening(LSOCK lsock)
 {
-    int        x_error;
+    int        error;
     EIO_Status status;
 
     assert(lsock->sock != SOCK_INVALID);
@@ -5222,17 +5225,17 @@ static EIO_Status s_CloseListening(LSOCK lsock)
             /* error */
             if (s_Initialized <= 0)
                 break;
-            x_error = SOCK_ERRNO;
+            error = SOCK_ERRNO;
 #ifdef NCBI_OS_MSWIN
-            if (x_error == WSANOTINITIALISED) {
+            if (error == WSANOTINITIALISED) {
                 s_Initialized = -1/*deinited*/;
                 break;
             }
 #endif /*NCBI_OS_MSWIN*/
-            if (x_error != SOCK_EINTR) {
-                const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+            if (error != SOCK_EINTR) {
+                const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
                 CORE_LOGF_ERRNO_EXX(45, eLOG_Error,
-                                    x_error, strerr,
+                                    error, strerr,
                                     ("LSOCK#%u[%u]: [LSOCK::Close] "
                                      " Failed close()",
                                      lsock->id, (unsigned int) lsock->sock));
@@ -5286,8 +5289,8 @@ static EIO_Status s_RecvMsg(SOCK            sock,
     }
 
     for (;;) { /* auto-resume if either blocked or interrupted (optional) */
-        int                x_error;
         int                x_read;
+        int                error;
         struct sockaddr_in sin;
         TSOCK_socklen_t    sinlen = (TSOCK_socklen_t) sizeof(sin);
         memset(&sin, 0, sizeof(sin));
@@ -5340,10 +5343,10 @@ static EIO_Status s_RecvMsg(SOCK            sock,
             break;
         }
 
-        x_error = SOCK_ERRNO;
+        error = SOCK_ERRNO;
 
         /* blocked -- retry if unblocked before the timeout expires */
-        if (x_error == SOCK_EWOULDBLOCK  ||  x_error == SOCK_EAGAIN) {
+        if (error == SOCK_EWOULDBLOCK  ||  error == SOCK_EAGAIN) {
             SSOCK_Poll poll;
             poll.sock   = sock;
             poll.event  = eIO_Read;
@@ -5356,7 +5359,7 @@ static EIO_Status s_RecvMsg(SOCK            sock,
                 assert(poll.revent == eIO_Read);
                 continue/*read again*/;
             }
-        } else if (x_error == SOCK_EINTR) {
+        } else if (error == SOCK_EINTR) {
             if (sock->i_on_sig == eOn  ||
                 (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)) {
                 sock->r_status = status = eIO_Interrupt;
@@ -5364,9 +5367,9 @@ static EIO_Status s_RecvMsg(SOCK            sock,
             }
             continue;
         } else {
-            const char* strerr = SOCK_STRERROR(x_error);
+            const char* strerr = SOCK_STRERROR(error);
             CORE_LOGF_ERRNO_EXX(94, eLOG_Trace,
-                                x_error, strerr,
+                                error, strerr,
                                 ("%s[DSOCK::RecvMsg] "
                                  " Failed recvfrom()",
                                  s_ID(sock, w)));
@@ -5451,7 +5454,7 @@ static EIO_Status s_SendMsg(SOCK           sock,
     sin.sin_port        = htons(x_port);
 
     for (;;) { /* optionally auto-resume if interrupted */
-        int x_error;
+        int error;
         int x_written;
 
         if ((x_written = sendto(sock->sock, x_msg,
@@ -5492,10 +5495,10 @@ static EIO_Status s_SendMsg(SOCK           sock,
         sock->writable = 0/*false*/;
 #endif /*NCBI_OS_MSWIN*/
 
-        x_error = SOCK_ERRNO;
+        error = SOCK_ERRNO;
 
         /* blocked -- retry if unblocked before the timeout expires */
-        if (x_error == SOCK_EWOULDBLOCK  ||  x_error == SOCK_EAGAIN) {
+        if (error == SOCK_EWOULDBLOCK  ||  error == SOCK_EAGAIN) {
             SSOCK_Poll poll;
             poll.sock   = sock;
             poll.event  = eIO_Write;
@@ -5508,7 +5511,7 @@ static EIO_Status s_SendMsg(SOCK           sock,
                 assert(poll.revent == eIO_Write);
                 continue;
             }
-        } else if (x_error == SOCK_EINTR) {
+        } else if (error == SOCK_EINTR) {
             if (sock->i_on_sig == eOn  ||
                 (sock->i_on_sig == eDefault  &&  s_InterruptOnSignal == eOn)) {
                 sock->w_status = status = eIO_Interrupt;
@@ -5516,13 +5519,13 @@ static EIO_Status s_SendMsg(SOCK           sock,
             }
             continue;
         } else {
-            const char* strerr = SOCK_STRERROR(x_error);
+            const char* strerr = SOCK_STRERROR(error);
             if (!host  &&  !port)
                 w[0] = '\0';
             else
                 SOCK_HostPortToString(x_host, x_port, w, sizeof(w)/2);
             CORE_LOGF_ERRNO_EXX(91, eLOG_Trace,
-                                x_error, strerr,
+                                error, strerr,
                                 ("%s[DSOCK::SendMsg] "
                                  " Failed sendto(%s)",
                                  s_ID(sock, w + sizeof(w)/2), w));
@@ -5940,15 +5943,21 @@ extern unsigned short LSOCK_GetPort(LSOCK         lsock,
  */
 
 
-extern EIO_Status SOCK_Create(const char*     host,
-                              unsigned short  port, 
-                              const STimeout* timeout,
-                              SOCK*           sock)
+EIO_Status SOCK_CreateInternal(const char*     host,
+                               unsigned short  port,
+                               const STimeout* timeout,
+                               SOCK*           sock,
+                               SSOCK_Init*     init,
+                               TSOCK_Flags     flags)
 {
+    const void* data = init ? init->data : 0;
+    size_t      size = init ? init->size : 0;
+    NCBI_CRED   cred = init ? init->cred : 0;
+
     *sock = 0;
     if (!host  ||  !port)
         return eIO_InvalidArg;
-    return s_Create(host, port, timeout, sock, 0, 0, fSOCK_LogDefault);
+    return s_Create(host, port, timeout, sock, data, size, cred, flags);
 }
 
 
@@ -5960,10 +5969,23 @@ extern EIO_Status SOCK_CreateEx(const char*     host,
                                 size_t          size,
                                 TSOCK_Flags     flags)
 {
-    *sock = 0;
-    if (!host  ||  !port)
-        return eIO_InvalidArg;
-    return s_Create(host, port, timeout, sock, data, size, flags);
+    SSOCK_Init init;
+    init.data = data;
+    init.size = size;
+    init.cred = 0;
+
+    return SOCK_CreateInternal(host, port, timeout, sock,
+                               &init, flags);
+}
+
+
+extern EIO_Status SOCK_Create(const char*     host,
+                              unsigned short  port, 
+                              const STimeout* timeout,
+                              SOCK*           sock)
+{
+    return SOCK_CreateInternal(host, port, timeout, sock,
+                               0, fSOCK_LogDefault);
 }
 
 
@@ -5978,20 +6000,23 @@ extern EIO_Status SOCK_CreateUNIX(const char*     path,
     if (!path  ||  !*path)
         return eIO_InvalidArg;
 #ifdef NCBI_OS_UNIX
-    return s_Create(path, 0, timeout, sock, data, size, flags);
+    return s_Create(path, 0, timeout, sock, data, size, 0, flags);
 #else
     return eIO_NotSupported;
 #endif /*NCBI_OS_UNIX*/
 }
 
 
-extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
-                                     size_t      handle_size,
-                                     SOCK*       sock,
-                                     const void* data,
-                                     size_t      size,
-                                     TSOCK_Flags flags)
+EIO_Status SOCK_CreateOnTopInternal(const void* handle,
+                                    size_t      handle_size,
+                                    SOCK*       sock,
+                                    SSOCK_Init* init,
+                                    TSOCK_Flags flags)
 {
+    const void* data = init ? init->data : 0;
+    size_t      size = init ? init->size : 0;
+    NCBI_CRED   cred = init ? init->cred : 0;
+
     *sock = 0;
     if (!handle_size) {
         TSOCK_Handle fd     = SOCK_INVALID;
@@ -6002,7 +6027,7 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
             assert(fd != SOCK_INVALID);
             SOCK_CloseEx(xsock, 0/*do not destroy*/);
             status  = s_CreateOnTop(&fd, sizeof(fd), sock,
-                                    data, size, flags);
+                                    data, size, cred, flags);
             if (status != eIO_Success) {
                 SOCK_CloseOSHandle(&fd, sizeof(fd));
                 assert(!*sock);
@@ -6015,7 +6040,25 @@ extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
         }
         return status;
     }
-    return s_CreateOnTop(handle, handle_size, sock, data, size, flags);
+    return s_CreateOnTop(handle, handle_size, sock,
+                         data, size, cred, flags);
+}
+
+
+extern EIO_Status SOCK_CreateOnTopEx(const void* handle,
+                                     size_t      handle_size,
+                                     SOCK*       sock,
+                                     const void* data,
+                                     size_t      size,
+                                     TSOCK_Flags flags)
+{
+    SSOCK_Init init;
+    init.data = data;
+    init.size = size;
+    init.cred = 0;
+
+    return SOCK_CreateOnTopInternal(handle, handle_size, sock,
+                                    &init, flags);
 }
 
 
@@ -6023,7 +6066,8 @@ extern EIO_Status SOCK_CreateOnTop(const void* handle,
                                    size_t      handle_size,
                                    SOCK*       sock)
 {
-    return SOCK_CreateOnTopEx(handle, handle_size, sock, 0,0,fSOCK_LogDefault);
+    return SOCK_CreateOnTopInternal(handle, handle_size, sock,
+                                    0, fSOCK_LogDefault);
 }
 
 
@@ -6187,7 +6231,7 @@ extern EIO_Status SOCK_CloseOSHandle(const void* handle, size_t handle_size)
 
     status = eIO_Success;
     for (;;) { /* close persistently - retry if interrupted by a signal */
-        int x_error;
+        int error;
 
         if (SOCK_CLOSE(fd) == 0)
             break;
@@ -6195,21 +6239,21 @@ extern EIO_Status SOCK_CloseOSHandle(const void* handle, size_t handle_size)
         /* error */
         if (s_Initialized <= 0)
             break;
-        x_error = SOCK_ERRNO;
+        error = SOCK_ERRNO;
 #ifdef NCBI_OS_MSWIN
-        if (x_error == WSANOTINITIALISED) {
+        if (error == WSANOTINITIALISED) {
             s_Initialized = -1/*deinited*/;
             break;
         }
 #endif /*NCBI_OS_MSWIN*/
-        if (x_error == SOCK_ENOTCONN    ||
-            x_error == SOCK_ENETRESET   ||
-            x_error == SOCK_ECONNRESET  ||
-            x_error == SOCK_ECONNABORTED) {
+        if (error == SOCK_ENOTCONN    ||
+            error == SOCK_ENETRESET   ||
+            error == SOCK_ECONNRESET  ||
+            error == SOCK_ECONNABORTED) {
             break;
         }
-        if (x_error != SOCK_EINTR) {
-            status = x_error == SOCK_ETIMEDOUT ? eIO_Timeout : eIO_Unknown;
+        if (error != SOCK_EINTR) {
+            status = error == SOCK_ETIMEDOUT ? eIO_Timeout : eIO_Unknown;
             break;
         }
         /* Maybe in an Ex version of this call someday...
@@ -6965,10 +7009,10 @@ extern void SOCK_SetCork(SOCK sock, int/*bool*/ on_off)
 #ifdef TCP_CORK
     if (setsockopt(sock->sock, IPPROTO_TCP, TCP_CORK,
                    (char*) &on_off, sizeof(on_off)) != 0) {
-        int x_error = SOCK_ERRNO;
-        const char* strerr = SOCK_STRERROR(x_error);
+        int error = SOCK_ERRNO;
+        const char* strerr = SOCK_STRERROR(error);
         CORE_LOGF_ERRNO_EXX(160, eLOG_Warning,
-                            x_error, strerr,
+                            error, strerr,
                             ("%s[SOCK::SetCork] "
                              " Failed setsockopt(%sTCP_CORK)",
                              s_ID(sock, _id), on_off ? "" : "!"));
@@ -7002,10 +7046,10 @@ extern void SOCK_DisableOSSendDelay(SOCK sock, int/*bool*/ on_off)
 #ifdef TCP_NODELAY
     if (setsockopt(sock->sock, IPPROTO_TCP, TCP_NODELAY,
                    (char*) &on_off, sizeof(on_off)) != 0) {
-        int x_error = SOCK_ERRNO;
-        const char* strerr = SOCK_STRERROR(x_error);
+        int error = SOCK_ERRNO;
+        const char* strerr = SOCK_STRERROR(error);
         CORE_LOGF_ERRNO_EXX(75, eLOG_Warning,
-                            x_error, strerr,
+                            error, strerr,
                             ("%s[SOCK::DisableOSSendDelay] "
                              " Failed setsockopt(%sTCP_NODELAY)",
                              s_ID(sock, _id), on_off ? "" : "!"));
@@ -7032,8 +7076,8 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
 #ifdef NCBI_OS_MSWIN
     HANDLE       event;
 #endif /*NCBI_OS_MSWIN*/
+    int          error;
     TSOCK_Handle x_sock;
-    int          x_error;
     unsigned int x_id = ++s_ID_Counter * 1000;
 
     *sock = 0;
@@ -7044,9 +7088,9 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
 
     /* create new datagram socket */
     if ((x_sock = socket(AF_INET, SOCK_DGRAM, 0)) == SOCK_INVALID) {
-        const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+        const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(76, eLOG_Error,
-                            x_error, strerr,
+                            error, strerr,
                             ("DSOCK#%u[?]: [DSOCK::Create] "
                              " Cannot create socket",
                              x_id));
@@ -7069,10 +7113,9 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
     }
     /* NB: WSAEventSelect() sets non-blocking automatically */
     if (WSAEventSelect(x_sock, event, SOCK_EVENTS) != 0) {
-        int x_error = SOCK_ERRNO;
-        const char* strerr = SOCK_STRERROR(x_error);
+        const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(140, eLOG_Error,
-                            x_error, strerr,
+                            error, strerr,
                             ("DSOCK#%u[%u]: [DSOCK::Create] "
                              " Failed to bind IO event",
                              x_id, (unsigned int) x_sock));
@@ -7084,9 +7127,9 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
 #else
     /* set to non-blocking mode */
     if (!s_SetNonblock(x_sock, 1/*true*/)) {
-        const char* strerr = SOCK_STRERROR(x_error = SOCK_ERRNO);
+        const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(77, eLOG_Error,
-                            x_error, strerr,
+                            error, strerr,
                             ("DSOCK#%u[%u]: [DSOCK::Create] "
                              " Cannot set socket to non-blocking mode",
                              x_id, (unsigned int) x_sock));
@@ -7130,13 +7173,13 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
 #ifdef NCBI_OS_MSWIN
         DWORD err = GetLastError();
         strerr = s_WinStrerror(err);
-        x_error = err;
+        error = err;
 #else
-        x_error = errno;
-        strerr = SOCK_STRERROR(x_error);
+        error = errno;
+        strerr = SOCK_STRERROR(error);
 #endif /*NCBI_OS_MSWIN*/
         CORE_LOGF_ERRNO_EXX(130, eLOG_Warning,
-                            x_error, strerr ? strerr : "",
+                            error, strerr ? strerr : "",
                             ("%s[DSOCK::Create]  Cannot set"
                              " socket close-on-exec mode",
                              s_ID(*sock, _id)));
@@ -7157,11 +7200,12 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
 
 extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
 {
+    char _id[MAXIDLEN];
+    int error;
     union {
         struct sockaddr    sa;
         struct sockaddr_in in;
     } addr;
-    char _id[MAXIDLEN];
 
     if (sock->sock == SOCK_INVALID) {
         CORE_LOGF_X(79, eLOG_Error,
@@ -7188,27 +7232,25 @@ extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
     addr.in.sin_addr.s_addr = htonl(INADDR_ANY);
     addr.in.sin_port        = htons(port);
     if (bind(sock->sock, &addr.sa, sizeof(addr.in)) != 0) {
-        int x_error = SOCK_ERRNO;
-        const char* strerr = SOCK_STRERROR(x_error);
-        CORE_LOGF_ERRNO_EXX(80, x_error != SOCK_EADDRINUSE
+        const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
+        CORE_LOGF_ERRNO_EXX(80, error != SOCK_EADDRINUSE
                             ? eLOG_Error : eLOG_Trace,
-                            x_error, strerr,
+                            error, strerr,
                             ("%s[DSOCK::Bind] "
                              " Failed bind(:%hu)",
                              s_ID(sock, _id), port));
         UTIL_ReleaseBuffer(strerr);
-        return x_error != SOCK_EADDRINUSE ? eIO_Unknown : eIO_Closed;
+        return error != SOCK_EADDRINUSE ? eIO_Unknown : eIO_Closed;
     }
     if (!port) {
-        int x_error;
         TSOCK_socklen_t addrlen = sizeof(addr);
         assert(addr.sa.sa_family == AF_INET);
-        x_error = getsockname(sock->sock, &addr.sa, &addrlen) != 0
+        error = getsockname(sock->sock, &addr.sa, &addrlen) != 0
             ? SOCK_ERRNO : 0;
-        if (x_error  ||  addr.sa.sa_family != AF_INET  ||  !addr.in.sin_port) {
-            const char* strerr = SOCK_STRERROR(x_error);
+        if (error  ||  addr.sa.sa_family != AF_INET  ||  !addr.in.sin_port) {
+            const char* strerr = SOCK_STRERROR(error);
             CORE_LOGF_ERRNO_EXX(114, eLOG_Error,
-                                x_error, strerr,
+                                error, strerr,
                                 ("%s[DSOCK::Bind] "
                                  " Cannot obtain free socket port",
                                  s_ID(sock, _id)));
@@ -7298,14 +7340,14 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
         peer.sin_family      = AF_UNSPEC;
 #endif /*AF_UNSPEC*/
     if (connect(sock->sock, (struct sockaddr*) &peer, sizeof(peer)) != 0) {
-        int x_error = SOCK_ERRNO;
-        const char* strerr = SOCK_STRERROR(x_error);
+        int error = SOCK_ERRNO;
+        const char* strerr = SOCK_STRERROR(error);
         if (host)
             SOCK_HostPortToString(host, port, addr, sizeof(addr));
         else
             *addr = '\0';
         CORE_LOGF_ERRNO_EXX(85, eLOG_Error,
-                            x_error, strerr,
+                            error, strerr,
                             ("%s[DSOCK::Connect] "
                              " Failed %sconnect%s%s%s",
                              s_ID(sock, _id), *addr ? "" : "to dis",
@@ -7531,10 +7573,10 @@ extern EIO_Status DSOCK_SetBroadcast(SOCK sock, int/*bool*/ broadcast)
 #  endif /*NCBI_OS_MSWIN*/
         if (setsockopt(sock->sock, SOL_SOCKET, SO_BROADCAST,
                        (const char*) &bcast, sizeof(bcast)) != 0) {
-            int x_error = SOCK_ERRNO;
-            const char* strerr = SOCK_STRERROR(x_error);
+            int error = SOCK_ERRNO;
+            const char* strerr = SOCK_STRERROR(error);
             CORE_LOGF_ERRNO_EXX(102, eLOG_Error,
-                                x_error, strerr,
+                                error, strerr,
                                 ("%s[DSOCK::SetBroadcast] "
                                  " Failed setsockopt(%sBROADCAST)",
                                  s_ID(sock, _id), bcast ? "" : "NO"));
@@ -7692,11 +7734,11 @@ extern ESwitch SOCK_SetReuseAddressAPI(ESwitch on_off)
 extern void SOCK_SetReuseAddress(SOCK sock, int/*bool*/ on_off)
 {
     if (sock->sock != SOCK_INVALID && !s_SetReuseAddress(sock->sock, on_off)) {
-        int x_error = SOCK_ERRNO;
         char _id[MAXIDLEN];
-        const char* strerr = SOCK_STRERROR(x_error);
+        int error = SOCK_ERRNO;
+        const char* strerr = SOCK_STRERROR(error);
         CORE_LOGF_ERRNO_EXX(74, eLOG_Warning,
-                            x_error, strerr,
+                            error, strerr,
                             ("%s[SOCK::SetReuseAddress] "
                              " Failed setsockopt(%sREUSEADDR)",
                              s_ID(sock, _id), on_off ? "" : "NO"));
@@ -8050,11 +8092,18 @@ extern size_t SOCK_HostPortToString(unsigned int   host,
 
 
 /******************************************************************************
- *  SECURE SOCKET LAYER
+ *  SECURE SOCKET LAYER SUPPORT
  */
 
 
 extern void SOCK_SetupSSL(FSSLSetup setup)
 {
     s_SSLSetup = setup;
+}
+
+
+extern EIO_Status SOCK_SetupSSLEx(FSSLSetup setup)
+{
+    SOCK_SetupSSL(setup);
+    return s_InitAPI(1/*secure*/);
 }
