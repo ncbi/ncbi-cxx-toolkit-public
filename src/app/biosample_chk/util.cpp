@@ -361,6 +361,23 @@ static IgnoreConflictData sIgnoreConflictList[] = {
 
 static const int kNumIgnoreConflictList = sizeof (sIgnoreConflictList) / sizeof (IgnoreConflictData);
 
+bool s_SameExceptPrecision (double val1, double val2)
+{
+    if (val1 > 180.0 || val2 > 180.0) {
+        return false;
+    }
+    char buf1[20];
+    char buf2[20];
+    sprintf(buf1, "%0.2f", val1);
+    sprintf(buf2, "%0.2f", val2);
+    if (strcmp(buf1, buf2) == 0) {
+        return true;
+    } else {
+        return false;
+    }
+}
+    
+
 static bool s_ShouldIgnoreConflict(string label, string src_val, string sample_val)
 {
     int i;
@@ -387,6 +404,26 @@ static bool s_ShouldIgnoreConflict(string label, string src_val, string sample_v
                     break;
             }
             break;
+        }
+    }
+    // special handling for lat-lon
+    if (!rval && NStr::EqualNocase(label, "lat-lon")) {
+        bool src_format_correct, src_precision_correct,
+             src_lat_in_range, src_lon_in_range;
+        double src_lat_value, src_lon_value;
+        CSubSource::IsCorrectLatLonFormat(src_val, src_format_correct, src_precision_correct,
+                                          src_lat_in_range, src_lon_in_range,
+                                          src_lat_value, src_lon_value);
+        bool smpl_format_correct, smpl_precision_correct,
+             smpl_lat_in_range, smpl_lon_in_range;
+        double smpl_lat_value, smpl_lon_value;
+        CSubSource::IsCorrectLatLonFormat(sample_val, smpl_format_correct, smpl_precision_correct,
+                                          smpl_lat_in_range, smpl_lon_in_range,
+                                          smpl_lat_value, smpl_lon_value);
+        if (src_format_correct && smpl_format_correct 
+            && s_SameExceptPrecision(src_lat_value, smpl_lat_value)
+            && s_SameExceptPrecision(src_lon_value, smpl_lon_value)) {
+            rval = true;
         }
     }
     return rval;
