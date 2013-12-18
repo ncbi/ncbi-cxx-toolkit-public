@@ -118,7 +118,7 @@ sInheritScores(
 
         if (scoreFrom.GetId().IsStr()) {
             const string& keyFrom = scoreFrom.GetId().GetStr(); 
-            const SCORES& scoresTo = alignFrom.GetScore();
+            const SCORES& scoresTo = alignTo.GetScore();
             SCORES::const_iterator itTo;
             for (itTo = scoresTo.begin(); itTo != scoresTo.end(); ++itTo) {
                 const CScore& scoreTo = **itTo;
