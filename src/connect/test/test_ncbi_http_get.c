@@ -36,17 +36,32 @@
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
 #include <errno.h>
+#ifdef NCBI_OS_MSWIN
+#  include <io.h>      /* for access() */
+#  ifndef   R_OK
+#    define R_OK  4    /* per MSDN     */
+#  endif /*!R_OK*/
+#endif /*NCBI_OS_MSWIN*/
 #include <stdlib.h>
 #include <time.h>
-#if defined(NCBI_OS_UNIX)  &&  defined(HAVE_USLEEP)
-#  include <unistd.h>
-#endif /*NCBI_OS_UNIX && HAVE_USLEEP*/
+#ifdef NCBI_OS_UNIX
+#  include <unistd.h>  /* for access() and maybe usleep() */
+#endif /*NCBI_OS_UNIX*/
+#ifdef HAVE_LIBGNUTLS
+#  include <gnutls/gnutls.h>
+#  define GNUTLS_PKCS12_TYPE  GNUTLS_X509_FMT_PEM/*or _DER*/
+#  define GNUTLS_PKCS12_FILE  "test_ncbi_http_get.p12"
+#  define GNUTLS_PKCS12_PASS  "pkcs12pass"
+#endif /*HAVE_LIBGNUTLS*/
 
 #include "test_assert.h"  /* This header must go last */
 
 
 int main(int argc, char* argv[])
 {
+#ifdef HAVE_LIBGNUTLS
+    gnutls_certificate_credentials_t xcred = 0;
+#endif /*HAVE_LIBGNUTLS*/
     CONNECTOR     connector;
     SConnNetInfo* net_info;
     char          blk[512];
@@ -64,7 +79,7 @@ int main(int argc, char* argv[])
     if (argc < 2  ||  !*argv[1])
         CORE_LOG(eLOG_Fatal, "URL has to be supplied on the command line");
     if (argc > 3)
-        CORE_LOG(eLOG_Fatal, "Command cannot take more than 2 arguments");
+        CORE_LOG(eLOG_Fatal, "Cannot take more than 2 arguments");
     if (argc == 3) {
         fp = strcmp(argv[2], "-") == 0 ? stdin : fopen(argv[2], "rb");
         if (!fp) {
@@ -81,23 +96,45 @@ int main(int argc, char* argv[])
     } else
         flags = 0;
 
-    ConnNetInfo_GetValue(0, "USESSL", blk, 32, "");
-    if (ConnNetInfo_Boolean(blk)) {
-#ifdef HAVE_LIBGNUTLS
-        CORE_LOG(eLOG_Note,    "SSL request acknowledged");
-        SOCK_SetupSSL(NcbiSetupGnuTls);
-#else
-        CORE_LOG(eLOG_Warning, "SSL requested but may be not supported");
-#endif /*HAVE_LIBGNUTLS*/
-    }
-
     CORE_LOG(eLOG_Note, "Creating network info structure");
     if (!(net_info = ConnNetInfo_Create(0)))
         CORE_LOG(eLOG_Fatal, "Cannot create network info structure");
 
     CORE_LOGF(eLOG_Note, ("Parsing URL \"%s\"", argv[1]));
     if (!ConnNetInfo_ParseURL(net_info, argv[1]))
-        CORE_LOG(eLOG_Fatal, "URL parse failed");
+        CORE_LOG(eLOG_Fatal, "Cannot parse URL");
+
+    ConnNetInfo_GetValue(0, "USESSL", blk, 32, "");
+    if (net_info->scheme == eURL_Https  &&  ConnNetInfo_Boolean(blk)) {
+#ifdef HAVE_LIBGNUTLS
+        status = SOCK_SetupSSLEx(NcbiSetupGnuTls);
+        CORE_LOGF(eLOG_Note, ("SSL request acknowledged: %s",
+                              IO_StatusStr(status)));
+        if (access(GNUTLS_PKCS12_FILE, R_OK) == 0) {
+            int err;
+            if ((err = gnutls_certificate_allocate_credentials(&xcred)) != 0 ||
+                (err = gnutls_certificate_set_x509_simple_pkcs12_file
+                 (xcred, GNUTLS_PKCS12_FILE,
+                  GNUTLS_PKCS12_TYPE, GNUTLS_PKCS12_PASS))              != 0) {
+                CORE_LOGF(eLOG_Error,
+                          ("Cannot load PKCS#12 credentials from \"%s\": %s",
+                           GNUTLS_PKCS12_FILE, gnutls_strerror(err)));
+            } else {
+                NCBI_CRED cred = NcbiCredGnuTls(xcred);
+                if (cred) {
+                    net_info->credentials = cred;
+                    CORE_LOG(eLOG_Note, "PKCS#12 credentials loaded"
+                             " from \"" GNUTLS_PKCS12_FILE "\"");
+                } else {
+                    CORE_LOG_ERRNO(eLOG_Error, errno,
+                                   "Cannot create NCBI_CRED");
+                }
+            }
+        }
+#else
+        CORE_LOG(eLOG_Warning, "SSL requested but may be not supported");
+#endif /*HAVE_LIBGNUTLS*/
+    }
 
     CORE_LOGF(eLOG_Note, ("Creating HTTP%s connector",
                           &"S"[net_info->scheme != eURL_Https]));
@@ -153,9 +190,16 @@ int main(int argc, char* argv[])
 
     } while (status == eIO_Success  ||  status == eIO_Timeout);
 
-    ConnNetInfo_Destroy(net_info);
     CORE_LOG(eLOG_Note, "Closing connection");
     CONN_Close(conn);
+
+    if (net_info->credentials)
+        free(net_info->credentials);
+#ifdef HAVE_LIBGNUTLS
+    if (xcred)
+        gnutls_certificate_free_credentials(xcred);
+#endif /*HAVE_LIBGNUTLS*/
+    ConnNetInfo_Destroy(net_info);
 
     CORE_LOG(eLOG_Note, "Completed successfully");
     CORE_SetLOG(0);
