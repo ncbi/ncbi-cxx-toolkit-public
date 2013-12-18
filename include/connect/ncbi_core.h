@@ -106,9 +106,9 @@ typedef enum {
 
 /** I/O event (or direction).
  * @par <b>NOTE:</b>
- *  Internally, these constants are used as bit-values,
- *  and thus should not be changed in this header.  On the other hand,
- *  user code should not rely on the values of these constants, either.
+ *  Internally, these constants are used as bit-values, and therefore must not
+ *  be changed in this header.  On the other hand, user code should not rely
+ *  on the values of these constants, either.
  * @sa
  *  SOCK_Wait, SOCK_Poll, CONN_Wait, SOCK_SetTimeout, CONN_SetTimeout
  */
@@ -116,7 +116,7 @@ typedef enum {
     eIO_Open      = 0x0, /**< also serves as no-event indicator in SOCK_Poll */
     eIO_Read      = 0x1, /**< read                                           */
     eIO_Write     = 0x2, /**< write                                          */
-    eIO_ReadWrite = 0x3, /**< eIO_Read | eIO_Write                           */
+    eIO_ReadWrite = 0x3, /**< eIO_Read | eIO_Write (also, eCONN_OnFlush)     */
     eIO_Close     = 0x4  /**< also serves as an error indicator in SOCK_Poll */
 } EIO_Event;
 
