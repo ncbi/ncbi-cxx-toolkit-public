@@ -248,7 +248,7 @@ private:
     // Cancellation
     SCONN_Callback        m_CB[3];
     CConstIRef<ICanceled> m_Canceled;
-    static EIO_Status x_IsCanceled(CONN conn, ECONN_Callback type, void* data);
+    static EIO_Status x_IsCanceled(CONN conn, TCONN_Callback type, void* data);
 
     // Disable copy constructor and assignment.
     CConn_IOStream(const CConn_IOStream&);

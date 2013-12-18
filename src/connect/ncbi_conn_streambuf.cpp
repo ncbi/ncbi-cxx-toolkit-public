@@ -226,7 +226,7 @@ EIO_Status CConn_Streambuf::x_Close(bool close)
 
 
 EIO_Status CConn_Streambuf::x_OnClose(CONN           _DEBUG_ARG(conn),
-                                      ECONN_Callback _DEBUG_ARG(type),
+                                      TCONN_Callback _DEBUG_ARG(type),
                                       void*          data)
 {
     CConn_Streambuf* sb = static_cast<CConn_Streambuf*>(data);

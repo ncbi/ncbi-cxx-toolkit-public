@@ -450,7 +450,7 @@ static EIO_Status x_FtpCallback(void* data, const char* cmd, const char* arg)
 
 
 static EIO_Status x_ConnectionCallback(CONN           conn,
-                                       ECONN_Callback type,
+                                       TCONN_Callback type,
                                        void*          data)
 {
     bool update = type == eCONN_OnClose  ||  s_Signaled ? true : false;
@@ -472,7 +472,7 @@ static EIO_Status x_ConnectionCallback(CONN           conn,
     } else if (s_Signaled) {
         status = eIO_Interrupt;
         _ASSERT(update);
-    } else if (type == eCONN_OnTimeout) {
+    } else if (type & eCONN_OnTimeout) {
         status = dlcbdata->Timeout(false);
         update = true;
     } else if ((status = dlcbdata->Timeout(true)) == eIO_Success
@@ -609,8 +609,9 @@ int main(int argc, const char* argv[])
     const char* url = argc > 1  &&  *argv[1] ? argv[1] : kDefaultTestURL;
     if (argc > 2) {
         s_Throttler = NStr::StringToInt(argv[2]);
-        if (argc > 3)
+        if (argc > 3) {
             offset = NStr::StringToUInt8(argv[3]);
+        }
     }
 
     // Initialize all connection parameters for FTP and log them out
@@ -745,8 +746,8 @@ int main(int argc, const char* argv[])
     // Set all relevant CONN callbacks
     const SCONN_Callback conncb = { x_ConnectionCallback, &dlcbdata };
     CONN_SetCallback(ftp.GetCONN(), eCONN_OnRead,    &conncb, 0/*dontcare*/);
-    CONN_SetCallback(ftp.GetCONN(), eCONN_OnTimeout, &conncb, 0/*dontcare*/);
     CONN_SetCallback(ftp.GetCONN(), eCONN_OnClose,   &conncb, dlcbdata.CB());
+    CONN_SetCallback(ftp.GetCONN(), eCONN_OnTimeout, &conncb, 0/*dontcare*/);
 
     // Stack up all necessary stream processors to drive up the stream
     CProcessor* processor = new CNullProcessor(ftp, &dlcbdata);

@@ -191,7 +191,7 @@ EIO_Status CConn_IOStream::SetCanceledCallback(const ICanceled* canceled)
 
 
 EIO_Status CConn_IOStream::x_IsCanceled(CONN           conn,
-                                        ECONN_Callback type,
+                                        TCONN_Callback type,
                                         void*          data)
 {
     _ASSERT(conn  &&  data);

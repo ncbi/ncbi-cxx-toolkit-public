@@ -121,7 +121,7 @@ private:
 
     EIO_Status          x_Close(bool close);
 
-    static EIO_Status   x_OnClose(CONN conn, ECONN_Callback type, void* data);
+    static EIO_Status   x_OnClose(CONN conn, TCONN_Callback type, void* data);
 
     string              x_Message(const char* msg);
 

@@ -170,19 +170,21 @@ typedef struct SConnectionTag {
 } SConnection;
 
 
-static EIO_Status x_Callback(CONN conn, ECONN_Callback type)
+static EIO_Status x_Callback(CONN conn, ECONN_Callback type, unsigned int flag)
 {
     EIO_Status     status;
     FCONN_Callback func;
     void*          data;
 
+    assert(!flag  ||  (type == eCONN_OnTimeout
+                       &&  (flag | eIO_ReadWrite) == eIO_ReadWrite));
     assert(conn  &&  (int) type >= 0  &&  (int) type < CONN_N_CALLBACKS);
     if (conn->state == eCONN_Unusable)
         return eIO_Closed;
     if (!(func = conn->cb[type].func))
         return type == eCONN_OnTimeout ? eIO_Timeout : eIO_Success;
     data = conn->cb[type].data;
-    status = (*func)(conn, type, data);
+    status = (*func)(conn, (TCONN_Callback) type | flag, data);
     if (status == eIO_Interrupt)
         conn->state = eCONN_Cancel;
     return status;
@@ -193,16 +195,22 @@ static EIO_Status x_Flush(CONN conn, const STimeout* timeout)
 {
     EIO_Status status;
 
-    if ((status = x_Callback(conn, eCONN_OnFlush)) != eIO_Success)
+    if ((status = x_Callback(conn, eCONN_OnFlush, 0)) != eIO_Success)
         return status;
 
     /* call current connector's "FLUSH" method */
     if (conn->meta.flush) {
         if (timeout == kDefaultTimeout)
             timeout  = conn->meta.default_timeout;
-        status = conn->meta.flush(conn->meta.c_flush, timeout);
-        if (status != eIO_Success)
-            return status;
+        for (;;) {
+            status = conn->meta.flush(conn->meta.c_flush, timeout);
+            if (status == eIO_Success)
+                break;
+            if (status == eIO_Timeout)
+                status  = x_Callback(conn, eCONN_OnTimeout, eCONN_OnFlush);
+            if (status != eIO_Success)
+                return status;
+        }
     }
     conn->flags |= fCONN_Flush;
     return eIO_Success;
@@ -240,7 +248,7 @@ static EIO_Status x_ReInit(CONN conn, CONNECTOR connector, int/*bool*/ close)
 
         if (!x_conn) {
             /* re-init with same connector does not cause the callback */
-            status = x_Callback(conn, eCONN_OnClose);
+            status = x_Callback(conn, eCONN_OnClose, 0);
         }
 
         if (conn->state & eCONN_Open) {
@@ -615,7 +623,7 @@ static EIO_Status s_CONN_Write
     }
 
     for (;;) {
-        if ((status = x_Callback(conn, eCONN_OnWrite)) != eIO_Success)
+        if ((status = x_Callback(conn, eCONN_OnWrite, 0)) != eIO_Success)
             break;
 
         /* call current connector's "WRITE" method */
@@ -633,7 +641,8 @@ static EIO_Status s_CONN_Write
         }
         if (!size  ||  status != eIO_Timeout)
             break;
-        if ((status = x_Callback(conn, eCONN_OnTimeout)) != eIO_Success)
+        status = x_Callback(conn, eCONN_OnTimeout, eCONN_OnWrite);
+        if (status != eIO_Success)
             break;
     }
 
@@ -807,7 +816,7 @@ static EIO_Status s_CONN_Read
             buf = (char*) buf + x_read;
         }
 
-        if ((status = x_Callback(conn, eCONN_OnRead)) != eIO_Success)
+        if ((status = x_Callback(conn, eCONN_OnRead, 0)) != eIO_Success)
             break;
 
         x_read = 0;
@@ -833,7 +842,8 @@ static EIO_Status s_CONN_Read
         }
         if (!size  ||  *n_read  ||  status != eIO_Timeout)
             break;
-        if ((status = x_Callback(conn, eCONN_OnTimeout)) != eIO_Success)
+        status = x_Callback(conn, eCONN_OnTimeout, eCONN_OnRead);
+        if (status != eIO_Success)
             break;
     }
 
