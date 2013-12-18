@@ -71,6 +71,9 @@
 #include <objmgr/seq_annot_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
+#include <serial/objostrxml.hpp>
+#include <misc/xmlwrapp/xmlwrapp.hpp>
+
 #include <common/test_assert.h>  /* This header must go last */
 
 
@@ -79,6 +82,8 @@ using namespace objects;
 using namespace validator;
 
 const char * ASNVAL_APP_VER = "10.0";
+
+//#define USE_XMLWRAPP_LIBS
 
 /////////////////////////////////////////////////////////////////////////////
 //
@@ -94,6 +99,7 @@ public:
     virtual void Init(void);
     virtual int  Run (void);
 
+    // CReadClassMemberHook override
     void ReadClassMember(CObjectIStream& in,
         const CObjectInfo::CMemberIterator& member);
 
@@ -104,16 +110,24 @@ private:
     CObjectIStream* OpenFile(const CArgs& args);
     CObjectIStream* OpenFile(string fname, const CArgs& args);
 
+    CConstRef<CValidError> ProcessSeqEntry(CSeq_entry& se);
     CConstRef<CValidError> ProcessSeqEntry(void);
     CConstRef<CValidError> ProcessSeqSubmit(void);
     CConstRef<CValidError> ProcessSeqAnnot(void);
     CConstRef<CValidError> ProcessSeqFeat(void);
     CConstRef<CValidError> ProcessBioSource(void);
     CConstRef<CValidError> ProcessPubdesc(void);
+    CConstRef<CValidError> ProcessBioseqset(void);
+    CConstRef<CValidError> ProcessBioseq(void);
+
     CConstRef<CValidError> ValidateInput (void);
     void ValidateOneDirectory(string dir_name, bool recurse);
     void ValidateOneFile(string fname);
     void ProcessReleaseFile(const CArgs& args);
+
+    void ConstructOutputStreams();
+    void DestroyOutputStreams();
+
     CRef<CSeq_entry> ReadSeqEntry(void);
     CRef<CSeq_feat> ReadSeqFeat(void);
     CRef<CBioSource> ReadBioSource(void);
@@ -132,7 +146,7 @@ private:
         eVerbosity_min = 1, eVerbosity_max = 4
     };
 
-    void PrintValidErrItem(const CValidErrItem& item, CNcbiOstream& os, EVerbosity verbosity);
+    void PrintValidErrItem(const CValidErrItem& item);
 
     CRef<CObjectManager> m_ObjMgr;
     auto_ptr<CObjectIStream> m_In;
@@ -142,9 +156,7 @@ private:
 
     size_t m_Level;
     size_t m_Reported;
-    size_t m_ReportLevel;
-
-    bool m_StartXML;
+    EDiagSev m_ReportLevel;
 
     bool m_DoCleanup;
     CCleanup m_Cleanup;
@@ -152,14 +164,21 @@ private:
     EDiagSev m_LowCutoff;
     EDiagSev m_HighCutoff;
 
+    EVerbosity m_verbosity;
+    string     m_obj_type;
+
     CNcbiOstream* m_ValidErrorStream;
     CNcbiOstream* m_LogStream;
+#ifdef USE_XMLWRAPP_LIBS
+    auto_ptr<CObjectOStreamXml> m_ostr_xml;
+#endif
 };
 
 
 CAsnvalApp::CAsnvalApp(void) :
     m_ObjMgr(0), m_In(0), m_Options(0), m_Continue(false), m_OnlyAnnots(false),
-    m_Level(0), m_Reported(0), m_ValidErrorStream(0), m_LogStream(0)
+    m_Level(0), m_Reported(0), m_verbosity(eVerbosity_min),
+    m_ValidErrorStream(0), m_LogStream(0)
 {
 }
 
@@ -243,7 +262,26 @@ CConstRef<CValidError> CAsnvalApp::ValidateInput (void)
     // Release file (batch processing) where we process each Seq-entry
     // at a time.
     CConstRef<CValidError> eval;
+    // ASN.1 Type (a Automatic, z Any, e Seq-entry, b Bioseq, s Bioseq-set, m Seq-submit, t Batch Bioseq-set, u Batch Seq-submit",
     string header = m_In->ReadFileHeader();
+    if (header.empty() && !m_obj_type.empty())
+    {
+        switch (m_obj_type[0])
+        {
+        case 'e':
+            header = "Seq-entry";
+            break;
+        case 'm':
+            header = "Seq-submit";
+            break;
+        case 's':
+            header = "Bioseq-set";
+            break;
+        case 'b':
+            header = "Bioseq";
+            break;
+        }
+    }
 
     if (header == "Seq-submit" ) {  // Seq-submit
         eval = ProcessSeqSubmit();
@@ -253,13 +291,18 @@ CConstRef<CValidError> CAsnvalApp::ValidateInput (void)
         eval = ProcessSeqAnnot();
     } else if (header == "Seq-feat" ) {             // Seq-feat
         eval = ProcessSeqFeat();
-    } else if (header == "BioSource" ) {             // BioSource
+    } else if (header == "BioSource" ) {            // BioSource
         eval = ProcessBioSource();
-    } else if (header == "Pubdesc" ) {             // Pubdesc
+    } else if (header == "Pubdesc" ) {              // Pubdesc
         eval = ProcessPubdesc();
+    } else if (header == "Bioseq-set" ) {           // Bioseq-set
+        eval = ProcessBioseqset();
+    } else if (header == "Bioseq" ) {               // Bioseq
+        eval = ProcessBioseq();
     } else {
         NCBI_THROW(CException, eUnknown, "Unhandled type " + header);
     }
+
     return eval;
 }
 
@@ -268,7 +311,7 @@ void CAsnvalApp::ValidateOneFile(string fname)
 {
     const CArgs& args = GetArgs();
 
-    bool need_to_close = false;
+    auto_ptr<CNcbiOfstream> local_stream;
 
     if (!m_ValidErrorStream) {
         string path = fname;
@@ -278,8 +321,10 @@ void CAsnvalApp::ValidateOneFile(string fname)
         }
         path = path + ".val";
 
-        m_ValidErrorStream = new CNcbiOfstream(path.c_str());
-        need_to_close = true;
+        local_stream.reset(new CNcbiOfstream(path.c_str()));
+        m_ValidErrorStream = local_stream.get();
+
+        ConstructOutputStreams();
     }
     m_In.reset(OpenFile(fname, args));
     if ( NStr::Equal(args["a"].AsString(), "t")) {          // Release file
@@ -294,14 +339,7 @@ void CAsnvalApp::ValidateOneFile(string fname)
         }
 
     }
-    if (need_to_close) {
-        if (m_StartXML) {
-            // close XML
-            *m_ValidErrorStream << "</asnvalidate>" << endl;
-            m_StartXML = false;
-        }
-        m_ValidErrorStream = 0;
-    }
+    DestroyOutputStreams();
 }
 
 
@@ -352,11 +390,12 @@ int CAsnvalApp::Run(void)
 
     // note - the C Toolkit uses 0 for SEV_NONE, but the C++ Toolkit uses 0 for SEV_INFO
     // adjust here to make the inputs to asnvalidate match asnval expectations
-    m_ReportLevel = args["R"].AsInteger() - 1;
+    m_ReportLevel = static_cast<EDiagSev>(args["R"].AsInteger() - 1);
     m_LowCutoff = static_cast<EDiagSev>(args["Q"].AsInteger() - 1);
     m_HighCutoff = static_cast<EDiagSev>(args["P"].AsInteger() - 1);
 
     m_DoCleanup = args["cleanup"] && args["cleanup"].AsBoolean();
+    m_verbosity = static_cast<EVerbosity>(args["v"].AsInteger());
 
     // Process file based on its content
     // Unless otherwise specifien we assume the file in hand is
@@ -364,7 +403,15 @@ int CAsnvalApp::Run(void)
     // Release file (batch processing) where we process each Seq-entry
     // at a time.
     m_Reported = 0;
-    m_StartXML = false;
+
+    m_obj_type = args["a"].AsString();
+
+    if (args["b"] && m_obj_type == "a")
+    {
+        NCBI_THROW(CException, eUnknown, "Specific argument -a must be used along with -b flags" );
+    }
+
+    ConstructOutputStreams();
 
     if ( args["p"] ) {
         ValidateOneDirectory (args["p"].AsString(), args["u"]);
@@ -374,11 +421,7 @@ int CAsnvalApp::Run(void)
         }
     }
 
-    if (m_StartXML) {
-        // close XML
-        *m_ValidErrorStream << "</asnvalidate>" << endl;
-        m_StartXML = false;
-    }
+    DestroyOutputStreams();
 
     if (m_Reported > 0) {
         return 1;
@@ -435,9 +478,9 @@ void CAsnvalApp::ReadClassMember
                     // CConstRef<CValidError> eval = validator.Validate(*se, &scope, m_Options);
                     CStopWatch sw(CStopWatch::eStart);
                     CConstRef<CValidError> eval = validator.Validate(seh, m_Options);
-                    if (m_ValidErrorStream) {
-                        *m_ValidErrorStream << "Elapsed = " << sw.Elapsed() << endl;
-                    }
+                    //if (m_ValidErrorStream) {
+                    //    *m_ValidErrorStream << "Elapsed = " << sw.Elapsed() << endl;
+                    //}
                     if ( eval ) {
                         PrintValidError(eval, GetArgs());
                     }
@@ -481,20 +524,48 @@ CRef<CSeq_entry> CAsnvalApp::ReadSeqEntry(void)
     return se;
 }
 
+CConstRef<CValidError> CAsnvalApp::ProcessBioseq(void)
+{
+    // Get seq-entry to validate
+    CRef<CSeq_entry> se(new CSeq_entry);
+    CBioseq& bioseq = se->SetSeq();
+
+    m_In->Read(ObjectInfo(bioseq), CObjectIStream::eNoFileHeader);
+
+    // Validate Seq-entry
+    return ProcessSeqEntry(*se);
+}
+
+CConstRef<CValidError> CAsnvalApp::ProcessBioseqset(void)
+{
+    // Get seq-entry to validate
+    CRef<CSeq_entry> se(new CSeq_entry);
+    CBioseq_set& bioseqset = se->SetSet();
+
+    m_In->Read(ObjectInfo(bioseqset), CObjectIStream::eNoFileHeader);
+    // Validate Seq-entry
+    return ProcessSeqEntry(*se);
+}
+
 
 CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(void)
 {
     // Get seq-entry to validate
     CRef<CSeq_entry> se(ReadSeqEntry());
 
+    return ProcessSeqEntry(*se);
+}
+
+CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(CSeq_entry& se)
+{
     // Validate Seq-entry
     CValidator validator(*m_ObjMgr);
     CRef<CScope> scope = BuildScope();
     if (m_DoCleanup) {        
         m_Cleanup.SetScope (scope);
-        m_Cleanup.BasicCleanup (*se);
+        m_Cleanup.BasicCleanup (se);
     }
-    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*se);
+    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(se);
 
     if ( m_OnlyAnnots ) {
         for (CSeq_annot_CI ni(seh); ni; ++ni) {
@@ -506,7 +577,7 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(void)
         }
         return CConstRef<CValidError>();
     }
-    return validator.Validate(*se, scope, m_Options);
+    return validator.Validate(se, scope, m_Options);
 }
 
 
@@ -644,15 +715,7 @@ CObjectIStream* CAsnvalApp::OpenFile
 (const CArgs& args)
 {
     // file name
-    string fname = args["i"].AsString();
-
-    // file format 
-    ESerialDataFormat format = eSerial_AsnText;
-    if ( args["b"] ) {
-        format = eSerial_AsnBinary;
-    }
-
-    return CObjectIStream::Open(fname, format);
+    return OpenFile(args["i"].AsString(), args);
 }
 
 
@@ -660,10 +723,7 @@ CObjectIStream* CAsnvalApp::OpenFile
 (string fname, const CArgs& args)
 {
     // file format 
-    ESerialDataFormat format = eSerial_AsnText;
-    if ( args["b"] ) {
-        format = eSerial_AsnBinary;
-    }
+    ESerialDataFormat format = args["b"].AsBoolean() ? eSerial_AsnBinary : eSerial_AsnText;
 
     return CObjectIStream::Open(fname, format);
 }
@@ -672,8 +732,6 @@ void CAsnvalApp::PrintValidError
 (CConstRef<CValidError> errors, 
  const CArgs& args)
 {
-    EVerbosity verbosity = static_cast<EVerbosity>(args["v"].AsInteger());
-
     if ( errors->TotalSize() == 0 ) {
         return;
     }
@@ -688,7 +746,7 @@ void CAsnvalApp::PrintValidError
         if (args["E"] && !(NStr::EqualNocase(args["E"].AsString(), vit->GetErrCode()))) {
             continue;
         }
-        PrintValidErrItem(*vit, *m_ValidErrorStream, verbosity);
+        PrintValidErrItem(*vit);
     }
     m_ValidErrorStream->flush();
 }
@@ -707,12 +765,10 @@ static string s_GetSeverityLabel (EDiagSev sev)
 }
 
 
-void CAsnvalApp::PrintValidErrItem
-(const CValidErrItem& item,
- CNcbiOstream& os,
- EVerbosity verbosity)
+void CAsnvalApp::PrintValidErrItem(const CValidErrItem& item)
 {
-    switch (verbosity) {
+    CNcbiOstream& os = *m_ValidErrorStream;
+    switch (m_verbosity) {
         case eVerbosity_Normal:
             os << s_GetSeverityLabel(item.GetSeverity()) 
                << ": valid [" << item.GetErrGroup() << "." << item.GetErrCode() <<"] "
@@ -735,14 +791,15 @@ void CAsnvalApp::PrintValidErrItem
                << s_GetSeverityLabel(item.GetSeverity()) << "\t"
                << item.GetErrGroup() << "_" << item.GetErrCode() << endl;
             break;
+#ifdef USE_XMLWRAPP_LIBS
+        case eVerbosity_XML:
+            {
+                m_ostr_xml->WriteObject(&item, item.GetThisTypeInfo());
+            }
+#else
         case eVerbosity_XML:
             {
                 string msg = NStr::XmlEncode(item.GetMsg());
-                if (!m_StartXML) {
-                    os << "<asnvalidate version=\"" << ASNVAL_APP_VER << "\" severity_cutoff=\""
-                    << s_GetSeverityLabel(m_LowCutoff) << "\">" << endl;
-                    m_StartXML = true;
-                }
                 if (item.IsSetFeatureId()) {
                     os << "  <message severity=\"" << s_GetSeverityLabel(item.GetSeverity())
                        << "\" seq-id=\"" << item.GetAccnver() 
@@ -756,8 +813,40 @@ void CAsnvalApp::PrintValidErrItem
                        << "\">" << msg << "</message>" << endl;
                 }
             }
+#endif
             break;
     }
+}
+
+void CAsnvalApp::ConstructOutputStreams()
+{
+    if (m_ValidErrorStream && m_verbosity == eVerbosity_XML)
+    {
+#ifdef USE_XMLWRAPP_LIBS
+        m_ostr_xml.reset(new CObjectOStreamXml(*m_ValidErrorStream, false));
+        m_ostr_xml->SetEncoding(eEncoding_Ascii);
+        m_ostr_xml->SetReferenceDTD(false);
+        m_ostr_xml->WriteFileHeader(CValidErrItem::GetTypeInfo());
+        m_ostr_xml->SetUseIndentation(true);
+        m_ostr_xml->Flush();
+        *m_ValidErrorStream << endl << "<asnvalidate>" << endl;
+#else
+        *m_ValidErrorStream << "<asnvalidate version=\"" << ASNVAL_APP_VER << "\" severity_cutoff=\""
+        << s_GetSeverityLabel(m_LowCutoff) << "\">" << endl;
+#endif
+    }
+}
+
+void CAsnvalApp::DestroyOutputStreams()
+{
+#ifdef USE_XMLWRAPP_LIBS
+    if (m_ostr_xml.get())
+    {
+        m_ostr_xml.reset();
+        *m_ValidErrorStream << endl << "</asnvalidate>" << endl;
+    }
+#endif
+    m_ValidErrorStream = 0;
 }
 
 
