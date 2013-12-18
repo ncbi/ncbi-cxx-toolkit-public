@@ -448,7 +448,7 @@ int main(int argc, const char* argv[])
     LOG_POST(Info << "Test 5 of 9: Big buffer bounce via HTTP");
     CConn_HttpStream ios(0, "User-Header: My header\r\n", 0, 0, 0, 0,
                          fHTTP_AutoReconnect | fHTTP_Flushable |
-                         fHTTP_UrlEncodeArgs);
+                         fHCC_UrlEncodeArgs/*obsolete now*/);
 
     char *buf1 = new char[kBufferSize + 1];
     char *buf2 = new char[kBufferSize + 2];
