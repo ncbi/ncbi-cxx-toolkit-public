@@ -2872,13 +2872,14 @@ static EIO_Status s_Read_(SOCK    sock,
             /* statistics & logging */
             if ((status != eIO_Success  &&  sock->log != eOff)  ||
                 sock->log == eOn  ||  (sock->log == eDefault && s_Log == eOn)){
-                s_DoLog(x_read > 0 ? eLOG_Note : eLOG_Trace, sock, eIO_Read,
-                        x_read > 0 ? x_buf :
-                        status == eIO_Success ? 0 : (void*) &error,
+                s_DoLog(x_read ? eLOG_Note : eLOG_Trace, sock, eIO_Read,
+                        x_read ? x_buf :
+                        status != eIO_Closed  ||  !sock->eof ?
+                        (void*) &error : 0,
                         status != eIO_Success ? 0 : x_read, " [decrypt]");
             }
 
-            if (status == eIO_Closed) {
+            if (status == eIO_Closed  &&  !sock->eof) {
                 sock->r_status = eIO_Closed;
                 sock->eof = 1/*true*/;
                 break/*bad error*/;
