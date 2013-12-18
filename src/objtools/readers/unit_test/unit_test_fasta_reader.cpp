@@ -49,6 +49,7 @@
 #include <objects/seqset/Seq_entry.hpp>
 
 #include <objtools/readers/fasta.hpp>
+#include <objtools/readers/fasta_exception.hpp>
 
 #include <serial/objistr.hpp>
 
@@ -183,7 +184,7 @@ namespace {
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah\n"
-            "ACGTACGTACGTNNNNNNNNNNNNNNNTUYYYYYYYYYYYYYYYYYYYYYYYYYYTACGT\n"
+            "ACGTACGTACGTNNNNNNNNNNNNNNNTNYYYYYYYYYYYYYYYYYYYYYYYYYYTACGT\n"
         },
 
         {
@@ -326,6 +327,64 @@ namespace {
             sTextASN.data(), sTextASN.length() ) );
         pObjIStrm->Read( &*pObj,
             pObj->GetThisTypeInfo() );
+    }
+}
+
+BOOST_AUTO_TEST_CASE(TestBadResidues)
+{
+    const string kData = 
+        ">Seq1\n"
+        "ACUTACGTACGTACGTACGTACGTACGTAC/TACGTACGTACGTACGT\n"
+        "ACUTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT\n"
+        "ACUTACGTACGTACGTACGTACGTACUTACGTACGTACGTACGTACGT\n";
+    const static CFastaReader::TFlags kFlags = 
+        CFastaReader::fAssumeNuc | 
+        CFastaReader::fForceType |
+        CFastaReader::fValidate;
+
+    CMemoryLineReader line_reader( kData.c_str(), kData.length() );
+    CFastaReader fasta_reader( line_reader, kFlags );
+    try {
+        fasta_reader.ReadOneSeq();
+        BOOST_ERROR("Bad residue did not cause exception to be thrown");
+    } catch(const CBadResiduesException & bad_residue_ex) {
+
+        typedef CBadResiduesException::SBadResiduePositions::TBadIndexMap
+            TBadIndexMap;
+        const TBadIndexMap & bad_index_map =
+            bad_residue_ex.GetBadResiduePositions().m_BadIndexMap;
+        TBadIndexMap::const_iterator bad_index_it = bad_index_map.begin();
+
+        BOOST_CHECK_EQUAL(bad_index_it->first, 2);
+        vector<TSeqPos> vecExpectedPositions;
+        vecExpectedPositions.push_back(2);
+        vecExpectedPositions.push_back(30);
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            bad_index_it->second.begin(),
+            bad_index_it->second.end(),
+            vecExpectedPositions.begin(),
+            vecExpectedPositions.end());
+
+        ++bad_index_it;
+        BOOST_CHECK_EQUAL(bad_index_it->first, 3);
+        vecExpectedPositions.clear();
+        vecExpectedPositions.push_back(2);
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            bad_index_it->second.begin(),
+            bad_index_it->second.end(),
+            vecExpectedPositions.begin(),
+            vecExpectedPositions.end());
+
+        ++bad_index_it;
+        BOOST_CHECK_EQUAL(bad_index_it->first, 4);
+        vecExpectedPositions.clear();
+        vecExpectedPositions.push_back(2);
+        vecExpectedPositions.push_back(26);
+        BOOST_CHECK_EQUAL_COLLECTIONS(
+            bad_index_it->second.begin(),
+            bad_index_it->second.end(),
+            vecExpectedPositions.begin(),
+            vecExpectedPositions.end());
     }
 }
 
