@@ -51,7 +51,7 @@ CDB_Exception::SParams::~SParams(void)
 {
     ITERATE (TParams, it, params) {
         if (it->value != NULL) {
-            free(it->value);
+            delete it->value;
         }
     }
 }
