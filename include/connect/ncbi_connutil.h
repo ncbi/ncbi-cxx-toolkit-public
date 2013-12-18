@@ -176,6 +176,7 @@ typedef struct {  /* NCBI_FAKE_WARNING: ICC */
     const STimeout* timeout;          /* ptr to I/O timeout(infinite if NULL)*/
     const char*     http_user_header; /* user header to add to HTTP request  */
     const char*     http_referer;     /* default referrer (when not spec'd)  */
+    NCBI_CRED       credentials;      /* connection credentials (optional)   */
 
     /* the following field(s) are for the internal use only -- don't touch!  */
     STimeout        tmo;              /* default storage for finite timeout  */
@@ -539,59 +540,59 @@ extern NCBI_XCONNECT_EXPORT void ConnNetInfo_Destroy(SConnNetInfo* info);
  * the value of "content_length":  results in GET when no content is expected
  * ("content_length"==0), and POST when "content_length" provided non-zero. 
  *
- * For GET/POST(or ANY) methods the call attempts to provide the "Host:" HTTP
+ * For GET/POST(or ANY) methods the call attempts to provide a "Host:" HTTP
  * tag using information from the "host" and "port" parameters if the tag is
- * not present within the "user_header" (notwithstanding below, the port part
- * of the tag does not get added for non-specified "port" passed as 0).
- * Note that the result of the above said courtesy can be incorrect for HTTP
+ * not present within "user_header" (notwithstanding below, the port part of
+ * the tag does not get added for non-specified "port" passed as 0).  Note
+ * that the result of the above said auto-magic can be incorrect for HTTP
  * retrievals through a proxy server (since the built tag would correspond
- * to the proxy connection point, not the actual resource as it should have).
- * Which is why the "Host:" tag courtesy is to be discontinued in the future.
+ * to the proxy connection point, not the actual resource as it should have),
+ * which is why the "Host:" tag courtesy is to be discontinued in the future.
  *
  * If "port" is not specified (0) it will be assigned automatically to a
- * well-known standard value depending on the "fSOCK_Secure" bit in the
- * "flags" parameter, when connecting to an HTTP server.
+ * well-known standard value depending on the "fSOCK_Secure" bit in the "flags"
+ * parameter, when connecting to an HTTP server.
  *
  * The "content_length" must specify the exact(!) amount of data that is going
- * to POST (or be sent with CONNECT request) to HTTPD (0 if none).
+ * to POST (or be sent with CONNECT request) to the HTTP server (0 if none).
  * The "Content-Length" header gets always added in all POST requests, yet it
  * is always omitted in all other requests.
  *
  * If string "user_header" is not NULL/empty, then it *must* be terminated with
  * a single(!) '\r\n'.
  *
- * If the actual request is going to be either GET or POST, "encode_args" set
- * to TRUE will cause "args" to be URL-encoded (ignored otherwise).
+ * The "cred" parameter is only used to pass additional connection credentials
+ * for secure connections, and is ignored otherwise.
+ *
+ * @note Unlike deprecated URL_Connect(), this call never encodes any "args".
  *
  * If the request method is "eReqMethod_Connect", then the connection is
  * assumed to be tunneled via a proxy, so "path" must specify a "host:port"
  * pair to connect to;  "content_length" can provide initial size of the data
- * been tunneled, in which case "args" must be a pointer to such data, but the
- * "Content-Length" header does not get added, and "encode_args" is ignored.
+ * been tunneled, in which case "args" must be a pointer to such data, but no
+ * "Content-Length" header tag gets added.
  *
  * If "*sock" is non-NULL, the call _does not_ create a new socket, but builds
- * the HTTP data stream on top of the passed socket.  If the result is
- * successful, the original SOCK handle will be closed by SOCK_Close(), which
- * means that in order for this to work, the passed "*sock" should have been
- * created with "fSOCK_KeepOnClose" set, and a new handle will be returned via
- * the same last parameter.  In case of errors, the original "*sock" will be
- * destroyed/closed and the last parameter will be updated to return as NULL.
+ * an HTTP(S) data stream on top of the passed socket.  Regardless of the
+ * completion status, the original SOCK handle will be closed as if with
+ * SOCK_Close(), but in case of success, a new SOCK handle will be returned
+ * via the same last parameter, yet in case of errors, the last parameter will
+ * be updated to read as NULL.
  *
  * On success, return eIO_Success and non-NULL handle of a socket via the last
  * parameter.
  *
- * ATTENTION:  due to the very essence of the HTTP connection, you may
+ * ATTENTION:  due to the very essence of the HTTP/1.0 connection, you may
  *             perform only one { WRITE, ..., WRITE, READ, ..., READ } cycle,
- *             if doing a GET or a POST.
+ *             if doing either a GET or a POST.
+ *
  * The returned socket must be exipicitly closed by "SOCK_Close()" when
  * no longer needed.
- * On error, return a specific code (last parameter may not be updated),
- * and no socket gets created.
  *
- * NOTE: The returned socket may not be immediately readable/writeable if open
- *       and/or read/write timeouts were passed as {0,0}, meaning that both
- *       connection and HTTP header write operation may still be pending in
- *       the resultant socket.  It is responsibility of the application to
+ * NOTE: The returned socket may not be immediately readable/writeable if
+ *       either open or read/write timeouts were passed as {0,0}, meaning that
+ *       both connection and HTTP header write operation may still be pending
+ *       in the resultant socket.  It is responsibility of the application to
  *       analyze the actual socket state in this case (see "ncbi_socket.h").
  * @sa
  *  SOCK_Create, SOCK_CreateOnTop, SOCK_Wait, SOCK_Abort, SOCK_Close
@@ -604,27 +605,35 @@ extern NCBI_XCONNECT_EXPORT EIO_Status URL_ConnectEx
  const char*     args,            /* may be NULL or empty                    */
  EReqMethod      req_method,      /* ANY selects method by "content_length"  */
  size_t          content_length,
- const STimeout* c_timeout,       /* timeout for the CONNECT stage           */
+ const STimeout* o_timeout,       /* timeout for an OPEN stage               */
  const STimeout* rw_timeout,      /* timeout for READ and WRITE              */
  const char*     user_header,
- int/*bool*/     encode_args,     /* URL-encode the "args", if any           */
+ NCBI_CRED       cred,            /* connection credentials, if any          */
  TSOCK_Flags     flags,           /* additional socket requirements          */
  SOCK*           sock             /* returned socket (on eIO_Success only)   */
  );
 
 /* Equivalent to the above except that it returns a non-NULL socket handle
- * on success, and NULL on error without providing a reason for the failure. */
-extern NCBI_XCONNECT_EXPORT SOCK URL_Connect
+ * on success, and NULL on error without providing a reason for the failure.
+ * @note DO NOT USE THIS CALL!
+ * CAUTION:  If requested, "args" can get encoded but will do that as a whole!
+ */
+#ifndef NCBI_DEPRECATED
+#  define NCBI_CONNUTIL_DEPRECATED
+#else
+#  define NCBI_CONNUTIL_DEPRECATED NCBI_DEPRECATED
+#endif
+extern NCBI_XCONNECT_EXPORT NCBI_CONNUTIL_DEPRECATED SOCK URL_Connect
 (const char*     host,            /* must be provided                        */
  unsigned short  port,            /* may be 0, defaulted to either 80 or 443 */
  const char*     path,            /* must be provided                        */
  const char*     args,            /* may be NULL or empty                    */
  EReqMethod      req_method,      /* ANY selects method by "content_length"  */
  size_t          content_length,
- const STimeout* c_timeout,       /* timeout for the CONNECT stage           */
+ const STimeout* o_timeout,       /* timeout for an OPEN stage               */
  const STimeout* rw_timeout,      /* timeout for READ and WRITE              */
  const char*     user_header,
- int/*bool*/     encode_args,     /* URL-encode the "args", if any           */
+ int/*bool*/     encode_args,     /* URL-encode "args" entirely (CAUTION!)   */
  TSOCK_Flags     flags            /* additional socket requirements          */
  );
 
@@ -804,9 +813,9 @@ extern NCBI_XCONNECT_EXPORT char* MIME_ComposeContentTypeEx
  *        if they separated from the content type by at least one space) will
  *        be ignored, e.g. these are valid content type strings:
  *           "   Content-Type: text/plain  foobar"
- *           "  text/html \r\n  barfoo coocoo ....\n boooo"
+ *           "  text/html \r\n  barfoo baz ....\n etc"
  *
- * PERFORMANCE NOTE:  this call uses heap allocations internally.
+ * PERFORMANCE NOTE:  this call uses dynamic heap allocations internally.
  *
  * If it does not match any of NCBI MIME type/subtypes/encodings, then
  * return TRUE, eMIME_T_Unknown, eMIME_Unknown or eENCOD_None, respectively.
