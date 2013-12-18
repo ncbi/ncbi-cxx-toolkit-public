@@ -30,7 +30,7 @@
  *
  * @file
  * File Description:
- *   Formal and dataless ("pure virtual") definition of a simple SSL API.
+ *   Formal definition of a simple SSL API.
  *
  */
 
@@ -40,6 +40,17 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+
+typedef enum {
+    eNcbiCred_GnuTls = 0x484FFB94
+} ENcbiCred;
+
+
+struct SNcbiCred {
+    ENcbiCred type;
+    void*     data;
+};
 
 
 /* Read up to "size" bytes into buffer "buf", and return the number of bytes
@@ -70,7 +81,8 @@ typedef EIO_Status  (*FSSLPush)  (SOCK sock, const void* data, size_t size,
 
 
 typedef EIO_Status  (*FSSLInit)  (FSSLPull pull, FSSLPush push);
-typedef void*       (*FSSLCreate)(ESOCK_Side side, SOCK sock, int* error);
+typedef void*       (*FSSLCreate)(ESOCK_Side side, SOCK sock,
+                                  NCBI_CRED cred, int* error);
 typedef EIO_Status  (*FSSLOpen)  (void* session, int* error);
 
 /* See FSSLPull for behavior.  When non-eIO_Success code gets returned,
