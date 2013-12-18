@@ -85,7 +85,7 @@ NCBI_C_DEFINE_ERRCODE_X(Connect_Util,     303,   8);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Dispd,    304,   2);
 NCBI_C_DEFINE_ERRCODE_X(Connect_FTP,      305,  13);
 NCBI_C_DEFINE_ERRCODE_X(Connect_HeapMgr,  306,  33);
-NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,     307,  20);
+NCBI_C_DEFINE_ERRCODE_X(Connect_HTTP,     307,  21);
 NCBI_C_DEFINE_ERRCODE_X(Connect_LBSMD,    308,   8);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Sendmail, 309,  33);
 NCBI_C_DEFINE_ERRCODE_X(Connect_Service,  310,   9);
