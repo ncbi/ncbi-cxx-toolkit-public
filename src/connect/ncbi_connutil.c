@@ -32,6 +32,7 @@
  */
 
 #include "ncbi_ansi_ext.h"
+#include "ncbi_connssl.h"
 #include "ncbi_priv.h"
 #include "ncbi_servicep.h"
 #include <connect/ncbi_connutil.h>
@@ -413,6 +414,9 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     ConnNetInfo_GetValue(0, REG_CONN_HTTP_REFERER, str, sizeof(str),
                          DEF_CONN_HTTP_REFERER);
     info->http_referer = *str ? strdup(str) : 0;
+
+    /* credentials */
+    info->credentials = 0;
 
     /* store the service name, which this structure has been created for */
     strcpy((char*) info->svc, service ? service : "");
@@ -1146,6 +1150,29 @@ static const char* x_Firewall(unsigned int firewall)
 }
 
 
+static const char* x_CredInfo(NCBI_CRED cred, char buf[])
+{
+    int who, what;
+    if (!cred)
+        return "NULL";
+    who  = (cred->type / 100) * 100;
+    what =  cred->type % 100;
+    switch (who) {
+    case eNcbiCred_GnuTls:
+        switch (what) {
+        case 0:
+            return "(GNUTLS X.509 Cert)";
+        default:
+            sprintf(buf, "(GNUTLS #%u)", what);
+            return buf;
+        }
+     default:
+        break;
+    }
+    return x_Num(cred->type, buf);
+}
+
+
 static void s_SaveStringQuot(char* s, const char* name,
                              const char* str, int/*bool*/ quote)
 {
@@ -1190,7 +1217,7 @@ static void s_SaveUserHeader(char* s, const char* name,
 
 extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
 {
-    char   buf[40];
+    char   buf[80];
     size_t uhlen;
     size_t len;
     char*  s;
@@ -1299,6 +1326,8 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
                                            : x_Num(info->debug_printout,buf)));
     s_SaveUserHeader(s, "http_user_header",info->http_user_header, uhlen);
     s_SaveString    (s, "http_referer",    info->http_referer);
+    if (info->credentials)
+        s_SaveKeyval(s, "credentials",     x_CredInfo(info->credentials, buf));
     strcat(s, "#################### [END] SConnNetInfo\n");
 
     assert(strlen(s) < len);
@@ -1353,6 +1382,7 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
                 &"/"[! path  ||  *path == '/'], path ? path : "",
                 &"?"[!*args  ||  *args == '#'], args);
     }
+    assert(!url  ||  *url);
     return url;
 }
 
@@ -1410,7 +1440,7 @@ extern EIO_Status URL_ConnectEx
  const STimeout* o_timeout,
  const STimeout* rw_timeout,
  const char*     user_hdr,
- int/*bool*/     encode_args,
+ NCBI_CRED       cred,
  TSOCK_Flags     flags,
  SOCK*           sock)
 {
@@ -1420,12 +1450,12 @@ extern EIO_Status URL_ConnectEx
     SOCK        s;
     BUF         buf;
     char*       hdr;
-    const char* temp;
+    SSOCK_Init  init;
     EIO_Status  status;
     int         add_hdr;
     size_t      hdr_len;
     char        hdr_buf[80];
-    size_t      args_len = 0;
+    size_t      args_len;
     size_t      user_hdr_len = user_hdr  &&  *user_hdr ? strlen(user_hdr) : 0;
     const char* x_req_method; /* "CONNECT " / "HEAD" / "POST " / "GET " */
 
@@ -1442,6 +1472,13 @@ extern EIO_Status URL_ConnectEx
     }
     s = *sock;
     *sock = 0;
+
+    /* FIXME:  check to be removed */
+    if (cred  &&  cred < (NCBI_CRED) 4096) {
+        CORE_LOG(eLOG_Critical, "[URL_ConnectEx]  Obsolete feature"
+                 " 'encode_args' is no longer allowed");
+        return x_URLConnectErrorReturn(s, eIO_InvalidArg);
+    }
 
     /* select request method and its verbal representation */
     if (req_method == eReqMethod_Any)
@@ -1483,6 +1520,7 @@ extern EIO_Status URL_ConnectEx
 
     hdr_len = 0;
     if (add_hdr) {
+        const char* temp;
         assert(req_method != eReqMethod_Connect);
         for (temp = user_hdr;  temp  &&  *temp;  temp = strchr(temp, '\n')) {
             if (temp != user_hdr)
@@ -1492,34 +1530,13 @@ extern EIO_Status URL_ConnectEx
                 break;
             }
         }
-
-        if (port)
-            hdr_len = (size_t)(add_hdr ? sprintf(hdr_buf, ":%hu", port) : 0);
-        else
+        args_len = args ? strcspn(args, "#") : 0;
+        if (!port)
             port = flags & fSOCK_Secure ? CONN_PORT_HTTPS : CONN_PORT_HTTP;
-
-        if (args  &&  (args_len = strcspn(args, "#")) > 0) {
-            /* URL-encode "args", if any specified */
-            if (encode_args) {
-                size_t rd_len, wr_len;
-                size_t size = 3 * args_len;
-                char* x_args = (char*) malloc(size);
-                if (!x_args) {
-                    CORE_LOGF_ERRNO_X(8, eLOG_Error, errno,
-                                      ("[URL_Connect]  Out of memory (%lu)",
-                                       (unsigned long) size));
-                    return x_URLConnectErrorReturn(s, eIO_Unknown);
-                }
-                URL_Encode(args, args_len, &rd_len, x_args, size, &wr_len);
-                assert(args_len == rd_len);
-                args_len = wr_len;
-                temp = x_args;
-            } else
-                temp = args;
-        } else
-            temp = 0;
+        else if (add_hdr)
+            hdr_len = (size_t) sprintf(hdr_buf, ":%hu", port);
     } else
-        temp = 0;
+        args_len = 0;
 
     buf = 0;
     errno = 0;
@@ -1529,7 +1546,7 @@ extern EIO_Status URL_ConnectEx
         !BUF_Write(&buf, path,           strlen(path))          ||
         (args_len
          &&  (!BUF_Write(&buf, "?",      1)                     ||
-              !BUF_Write(&buf, temp,     args_len)))            ||
+              !BUF_Write(&buf, args,     args_len)))            ||
         !BUF_Write      (&buf, kHttpVer, sizeof(kHttpVer) - 1)  ||
 
         (add_hdr
@@ -1561,12 +1578,8 @@ extern EIO_Status URL_ConnectEx
                           ("[URL_Connect]  Cannot build HTTP header for"
                            " %s:%hu", host, port));
         BUF_Destroy(buf);
-        if (temp  &&  temp != args)
-            free((void*) temp);
         return x_URLConnectErrorReturn(s, eIO_Unknown);
     }
-    if (temp  &&  temp != args)
-        free((void*) temp);
 
     if (!(hdr = (char*) malloc(hdr_len = BUF_Size(buf)))
         ||  BUF_Read(buf, hdr, hdr_len) != hdr_len) {
@@ -1581,15 +1594,20 @@ extern EIO_Status URL_ConnectEx
     }
     BUF_Destroy(buf);
 
+    memset(&init, 0, sizeof(init));
+    init.data = hdr;
+    init.size = hdr_len;
+    init.cred = cred;
+
     if (s) {
         /* resuse connection */
-        status = SOCK_CreateOnTopEx(s, 0, sock,
-                                    hdr, hdr_len, flags);
+        status = SOCK_CreateOnTopInternal(s, 0, sock,
+                                          &init, flags);
         SOCK_Destroy(s);
     } else {
         /* connect to HTTPD */
-        status = SOCK_CreateEx(host, port, o_timeout, sock,
-                               hdr, hdr_len, flags);
+        status = SOCK_CreateInternal(host, port, o_timeout, sock,
+                                     &init, flags);
     }
     free(hdr);
 
@@ -1624,12 +1642,38 @@ extern SOCK URL_Connect
  int/*bool*/     encode_args,
  TSOCK_Flags     flags)
 {
-    SOCK sock = 0;
+    SOCK   sock;
+    char*  temp;
+    size_t args_len;
+
+    if (req_method != eReqMethod_Connect  &&  args  &&  encode_args
+        &&  (args_len = strcspn(args, "#")) > 0) {
+        /* URL-encode "args", if any specified */
+        size_t rd_len, wr_len;
+        size_t size = 3 * args_len;
+        if (!(temp = (char*) malloc(size + 1))) {
+            CORE_LOGF_ERRNO_X(8, eLOG_Error, errno,
+                              ("[URL_Connect]  Out of memory (%lu)",
+                               (unsigned long)(size + 1)));
+            return 0;
+        }
+        URL_Encode(args, args_len, &rd_len, temp, size, &wr_len);
+        assert(rd_len == args_len);
+        assert(wr_len <= size);
+        temp[wr_len] = '\0';
+        args = temp;
+    } else
+        temp = 0;
+
+    sock = 0;
     verify(URL_ConnectEx(host, port, path, args,
                          req_method, content_length,
                          o_timeout, rw_timeout,
-                         user_hdr, encode_args, flags, &sock) == eIO_Success
+                         user_hdr, 0/*cred*/, flags, &sock) == eIO_Success
            ||  !sock);
+
+    if (temp)
+        free(temp);
     return sock;
 }
 
