@@ -113,8 +113,10 @@ static struct gcry_thread_cbs gcry_threads_user = {
 #  ifdef __cplusplus
 extern "C" {
 #  endif /*__cplusplus*/
+
 static EIO_Status  s_GnuTlsInit  (FSSLPull pull, FSSLPush push);
-static void*       s_GnuTlsCreate(ESOCK_Side side, SOCK sock, int* error);
+static void*       s_GnuTlsCreate(ESOCK_Side side, SOCK sock,
+                                  NCBI_CRED cred, int* error);
 static EIO_Status  s_GnuTlsOpen  (void* session, int* error);
 static EIO_Status  s_GnuTlsRead  (void* session,       void* buf,  size_t size,
                                   size_t* done, int* error);
@@ -128,28 +130,13 @@ static const char* s_GnuTlsError (void* session, int error);
 static void        x_GnuTlsLogger(int level, const char* message);
 static ssize_t     x_GnuTlsPull  (gnutls_transport_ptr_t,       void*, size_t);
 static ssize_t     x_GnuTlsPush  (gnutls_transport_ptr_t, const void*, size_t);
+
 #  ifdef __cplusplus
 }
 #  endif /*__cplusplus*/
 
 
 #  if defined(LIBGNUTLS_VERSION_NUMBER)  ||  !defined(NCBI_OS_SOLARIS)
-static const int kGnuTlsChiperPrio[] = {
-    GNUTLS_CIPHER_3DES_CBC,
-    GNUTLS_CIPHER_ARCFOUR_128,
-    GNUTLS_CIPHER_ARCFOUR_40,
-    0
-};
-static const int kGnuTlsProtoPrio[] = {
-    /* These are all enum values rather than macros,
-     * so direct conditionalization isn't possible. */
-#    ifdef LIBGNUTLS_VERSION_NUMBER
-    GNUTLS_TLS1_1,
-#    endif /*LIBGNUTLS_VERSION_NUMBER*/
-    GNUTLS_TLS1,
-    GNUTLS_SSL3,
-    0
-};
 static const int kGnuTlsCertPrio[] = {
     GNUTLS_CRT_X509,
     /*GNUTLS_CRT_OPENPGP,*/
@@ -158,19 +145,6 @@ static const int kGnuTlsCertPrio[] = {
 static const int kGnuTlsCompPrio[] = {
     GNUTLS_COMP_ZLIB,
     GNUTLS_COMP_NULL,
-    0
-};
-static const int kGnuTlsMacPrio[] = {
-    GNUTLS_MAC_SHA,
-    GNUTLS_MAC_MD5,
-    0
-};
-static const int kGnuTlsKxPrio[] = {
-    GNUTLS_KX_RSA,
-    GNUTLS_KX_DHE_DSS,
-    GNUTLS_KX_DHE_RSA,
-    GNUTLS_KX_ANON_DH,
-    GNUTLS_KX_RSA_EXPORT,
     0
 };
 #  endif /*LIBGNUTLS_VERSION_NUMBER || !NCBI_OS_SOLARIS*/
@@ -303,13 +277,15 @@ static EIO_Status x_ErrorToStatus(int error,
 }
 
 
-static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock, int* error)
+static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock,
+                            NCBI_CRED cred, int* error)
 {
     gnutls_transport_ptr_t  ptr = (gnutls_transport_ptr_t) sock;
     gnutls_connection_end_t end = (side == eSOCK_Client
                                    ? GNUTLS_CLIENT
                                    : GNUTLS_SERVER);
     gnutls_session_t session;
+    char val[128];
     int err;
 
     if (end == GNUTLS_SERVER) {
@@ -318,23 +294,33 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock, int* error)
         return 0;
     }
 
+    if (cred  &&  (cred->type != eNcbiCred_GnuTls  ||  !cred->data)) {
+        *error = 0;
+        return 0;
+    }
+
+    if (!ConnNetInfo_GetValue(0, "GNUTLS_PRIORITY", val, sizeof(val), 0))
+        *val = '\0';
+
     if ((*error = gnutls_init(&session, end)) != GNUTLS_E_SUCCESS/*0*/)
         return 0;
 
-    if ((err = gnutls_set_default_priority(session))                     !=0 ||
+    if ((err = gnutls_set_default_priority(session))                   != 0  ||
 #  if defined(LIBGNUTLS_VERSION_NUMBER)  ||  !defined(NCBI_OS_SOLARIS)
-        (err = gnutls_cipher_set_priority(session, kGnuTlsChiperPrio))   !=0 ||
-        (err = gnutls_compression_set_priority(session, kGnuTlsCompPrio))!=0 ||
-        (err = gnutls_certificate_type_set_priority(session,
-                                                    kGnuTlsCertPrio))    !=0 ||
-        (err = gnutls_protocol_set_priority(session, kGnuTlsProtoPrio))  !=0 ||
-        (err = gnutls_mac_set_priority(session, kGnuTlsMacPrio))         !=0 ||
-        (err = gnutls_kx_set_priority(session, kGnuTlsKxPrio))           !=0 ||
+        ( *val  &&
+         (err = gnutls_priority_set_direct(session, val, 0))           != 0) ||
+        (!*val  &&
+         (err = gnutls_compression_set_priority(session,
+                                                kGnuTlsCompPrio))      != 0) ||
+        (!*val  &&
+         (err = gnutls_certificate_type_set_priority(session,
+                                                     kGnuTlsCertPrio)) != 0) ||
 #  endif /*LIBGNUTLS_VERSION_NUMBER || !NCBI_OS_SOLARIS*/
         (err = gnutls_credentials_set(session, GNUTLS_CRD_CERTIFICATE,
-                                      s_GnuTlsCredCert))                 !=0 ||
+                                      cred ? cred->data :
+                                      s_GnuTlsCredCert))               != 0  ||
         (err = gnutls_credentials_set(session, GNUTLS_CRD_ANON,
-                                      s_GnuTlsCredAnon))                 !=0) {
+                                      s_GnuTlsCredAnon))               != 0) {
         gnutls_deinit(session);
         *error = err;
         return 0;
@@ -507,13 +493,13 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
 {
     gnutls_anon_client_credentials_t acred;
     gnutls_certificate_credentials_t xcred;
-    char value[32];
+    char val[32];
 
     assert(!s_GnuTlsCredAnon);
 
-    ConnNetInfo_GetValue(0, "GNUTLS_LOGLEVEL", value, sizeof(value), "");
-    if (*value) {
-        int level = atoi(value);
+    ConnNetInfo_GetValue(0, "GNUTLS_LOGLEVEL", val, sizeof(val), "");
+    if (*val) {
+        int level = atoi(val);
         s_GnuTlsLogLevel = level < 0 ? 0 : level;
         if (s_GnuTlsLogLevel > 0) {
             gnutls_global_set_log_function(x_GnuTlsLogger);
@@ -573,6 +559,7 @@ static void s_GnuTlsExit(void)
     gnutls_certificate_free_credentials(xcred);
     gnutls_anon_free_client_credentials(acred);
     gnutls_global_deinit();
+
     gnutls_global_set_log_level(s_GnuTlsLogLevel = 0);
     gnutls_global_set_log_function(0);
 }
@@ -607,4 +594,15 @@ extern SOCKSSL NcbiSetupGnuTls(void)
     CORE_LOG(eLOG_Critical, "Unavailable GNUTLS feature requested");
     return 0;
 #endif /*HAVE_LIBGNUTLS*/
+}
+
+
+extern NCBI_CRED NcbiCredGnuTls(void* xcred)
+{
+    struct SNcbiCred* cred = calloc(xcred ? 2 : 1, sizeof(*cred));
+    if (cred  &&  xcred) {
+        cred->type = eNcbiCred_GnuTls;
+        cred->data = xcred;
+    }
+    return cred;
 }
