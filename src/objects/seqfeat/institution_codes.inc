@@ -5249,6 +5249,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "SBMN	s	Santa Barbara Museum of Natural History",
 "SBMNH	s	Santa Barbara Museum of Natural History",
 "SBNHM	s	Santa Barbara Natural History Museum",
+"SBP	s	Station Biologique de Paimpont",
 "SBSC	s	Robert A. Vines Environmental Science Center",
 "SBSFU	c	School of Biological Sciences",
 "SBT	s	Bergius Foundation",
