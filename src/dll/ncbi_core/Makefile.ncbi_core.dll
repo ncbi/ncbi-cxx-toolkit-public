@@ -12,10 +12,10 @@ HOSTED_LIBS    = xncbi     \
                  xutil     \
                  xthrserv  \
                  xconnserv \
-                 xxconnect  \
-                 xconnect \
-                 connect \
-                 xser    \
+                 xxconnect \
+                 xconnect  \
+                 connect   \
+                 xser      \
                  xqueryparse
 
 CPPFLAGS = -DNCBI_CORE_EXPORTS
