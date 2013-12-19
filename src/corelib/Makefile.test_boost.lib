@@ -1,6 +1,6 @@
 # $Id$
 
-SRC = test_boost
+SRC = test_boost teamcity_messages
 LIB = test_boost
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)

@@ -2041,6 +2041,18 @@ init_unit_test_suite(int argc, char* argv[])
     return NCBI_NS_NCBI::s_GetTestApp().InitTestFramework(argc, argv);
 }
 
+
+// Note: including of a cpp file is unfortunate however there is no
+//       possibility to add it into the Makefile. Both files, test_boost.cpp
+//       and teamcity_boost.cpp include some boost header files which in turn
+//       have some implemented functions. Having them in two compilation units
+//       result in broken linkage.
+//
+// Note 2: teamcity_boost.cpp uses BOOST_GLOBAL_FIXTURE() which installs
+//         teamcity formatters if the tests are executed under teamcity.
+#include "teamcity_boost.cpp"
+
+
 // This main() is mostly a copy from Boost's unit_test_main.ipp
 int
 main(int argc, char* argv[])
