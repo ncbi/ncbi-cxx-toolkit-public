@@ -152,6 +152,70 @@ END_NCBI_SCOPE
 
 BEGIN_NCBI_SCOPE
 
+template <typename T>
+struct SAutoMinMaxLimits
+{
+    typedef numeric_limits<T> TStdLim;
+    static T max(void) { return TStdLim::max(); }
+
+    /// For non-integral types, yield a huge negative value rather than a
+    /// tiny positive one.
+#if defined(NCBI_HAVE_CXX11)  &&  !defined(NCBI_COMPILER_ICC)
+    // Be conservative with ICC, which could wind up using a libstdc++
+    // lacking lowest() despite running in C++ '11 mode itself.
+    static T min(void) { return TStdLim::lowest(); }
+#else
+    static T min(void)
+    {
+        return TStdLim::is_integer ? TStdLim::min() : T(-TStdLim::max());
+    }
+#endif
+};
+
+struct SAutoMax
+{
+    template <typename T>
+    operator T(void) const { return SAutoMinMaxLimits<T>::max(); }
+};
+
+/// Generic stand-in for type-specific kMax_* constants from ncbi_limits.h,
+/// useful in any context with exactly one preferred type.
+static const SAutoMax kMax_Auto = {};
+
+struct SAutoMin
+{
+    template <typename T>
+    operator T(void) const { return SAutoMinMaxLimits<T>::min(); }
+};
+
+/// Generic stand-in for type-specific kMin_* constants from ncbi_limits.h,
+/// useful in any context with exactly one preferred type.  NB: For
+/// non-integral types, yields a huge negative value rather than a tiny
+/// positive one.
+static const SAutoMin kMin_Auto = {};
+
+
+#define NCBI_FORBID_AUTOMINMAX_OPERATION(op, T1, T2) \
+template <typename T> \
+inline bool operator op(const T1&, const T2&) { \
+    typename T::T1##T2##OperationNotSupported tmp; \
+    return false; \
+}
+
+#define NCBI_FORBID_AUTOMINMAX_OPERATIONS(op) \
+NCBI_FORBID_AUTOMINMAX_OPERATION(op, SAutoMax, T) \
+NCBI_FORBID_AUTOMINMAX_OPERATION(op, SAutoMin, T) \
+NCBI_FORBID_AUTOMINMAX_OPERATION(op, T, SAutoMax) \
+NCBI_FORBID_AUTOMINMAX_OPERATION(op, T, SAutoMin)
+
+NCBI_FORBID_AUTOMINMAX_OPERATIONS(==)
+NCBI_FORBID_AUTOMINMAX_OPERATIONS(!=)
+NCBI_FORBID_AUTOMINMAX_OPERATIONS(<)
+NCBI_FORBID_AUTOMINMAX_OPERATIONS(<=)
+NCBI_FORBID_AUTOMINMAX_OPERATIONS(>)
+NCBI_FORBID_AUTOMINMAX_OPERATIONS(>=)
+
+
 /// Generic template to get STD limits by a variable.
 /// Typical use:
 /// <pre>

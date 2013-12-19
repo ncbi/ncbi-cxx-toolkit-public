@@ -155,36 +155,6 @@ struct SGreaterThanTypeMax<false, false>
 //
 template <typename CP, typename FROM> class CConvPolicy;
 
-////////////////////////////////////////////////////////////////////////////////
-template <class T, bool is_signed = std::numeric_limits<T>::is_signed>
-struct SNumericLimits : public std::numeric_limits<T>
-{
-    static T min(void)
-    {
-        typedef std::numeric_limits<T> TBase;
-        return (( !TBase::is_integer  ||  TBase::min() > 0)
-                ? T(-TBase::max()) : TBase::min());
-    }
-}; 
-
-template <class T>
-struct SNumericLimits<T, false> : public std::numeric_limits<T>
-{
-}; 
-
-template <>
-struct SNumericLimits<bool, false> : public std::numeric_limits<bool>
-{
-    static unsigned char min(void)
-    {
-        return static_cast<unsigned char>(std::numeric_limits<bool>::min());
-    }
-    static unsigned char max(void)
-    {
-        return static_cast<unsigned char>(std::numeric_limits<bool>::max());
-    }
-}; 
-
 
 ////////////////////////////////////////////////////////////////////////////////
 template <bool to_is_integer, bool from_is_integer>
@@ -194,8 +164,8 @@ struct SConvertUsingRunTimeCP
     static 
     TO Convert(const FROM& value)
     {
-        if (value < SNumericLimits<TO>::min() || value > SNumericLimits<TO>::max()) 
-        {
+        const TO min_allowed = kMin_Auto, max_allowed = kMax_Auto;
+        if (value < min_allowed  ||  value > max_allowed) {
             NCBI_REPORT_CONVERSION_ERROR(value);
         }
 
@@ -211,14 +181,16 @@ struct SConvertUsingRunTimeCP<true, true>
     static 
     TO Convert(const FROM& value)
     {
-        const bool from_is_signed = SNumericLimits<FROM>::is_signed;
-        const bool to_is_signed = SNumericLimits<TO>::is_signed;
-        const bool same_sign = from_is_signed == to_is_signed; 
+        const bool from_is_signed = numeric_limits<FROM>::is_signed;
+        const bool to_is_signed   = numeric_limits<TO  >::is_signed;
+        const bool same_sign      = from_is_signed == to_is_signed; 
 
-        if (SLessThanTypeMin<from_is_signed, to_is_signed>::Check(value, SNumericLimits<TO>::min())
-            || SGreaterThanTypeMax<same_sign, from_is_signed>::Check(value, SNumericLimits<TO>::max())
-           ) 
-        {
+        const TO min_allowed = kMin_Auto, max_allowed = kMax_Auto;
+
+        if (SLessThanTypeMin<from_is_signed, to_is_signed>::Check(
+                value, min_allowed)
+            ||  SGreaterThanTypeMax<same_sign, from_is_signed>::Check(
+                value, max_allowed)) {
             NCBI_REPORT_CONVERSION_ERROR(value);
         }
 
@@ -231,8 +203,8 @@ template <typename TO, typename FROM>
 inline
 TO ConvertUsingRunTimeCP(const FROM& value)
 {
-    const bool to_is_integer = SNumericLimits<TO>::is_integer;
-    const bool from_is_integer = SNumericLimits<FROM>::is_integer;
+    const bool to_is_integer   = numeric_limits<TO>::is_integer;
+    const bool from_is_integer = numeric_limits<FROM>::is_integer;
 
     return SConvertUsingRunTimeCP<
         to_is_integer, 
