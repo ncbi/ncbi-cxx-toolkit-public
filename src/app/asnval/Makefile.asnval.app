@@ -14,7 +14,7 @@ LIB = xvalidate xcleanup $(XFORMAT_LIBS) xalnmgr xobjutil \
 
 LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(NETWORK_LIBS) $(ORIG_LIBS) $(LIBXML_LIBS)
 
-REQUIRES = objects -Cygwin
+REQUIRES = objects LIBXML LIBXSLT -Cygwin
 
 
-WATCHERS = bollin kornbluh
+WATCHERS = bollin kornbluh gotvyans
