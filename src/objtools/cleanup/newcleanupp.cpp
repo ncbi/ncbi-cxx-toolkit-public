@@ -3179,6 +3179,11 @@ void CNewCleanup_imp::GBQualBC (
     }
     x_ChangeTransposonToMobileElement(gbq);
     x_ChangeInsertionSeqToMobileElement(gbq);
+
+    if (NStr::EqualNocase(GET_FIELD(gbq, Qual), "mobile_element")) {
+        SET_FIELD( gbq, Qual, "mobile_element_type" );
+        ChangeMade(CCleanupChange::eChangeQualifiers);
+    }
 }
 
 static 
@@ -3487,10 +3492,10 @@ CNewCleanup_imp::EAction CNewCleanup_imp::GBQualSeqFeatBC(CGb_qual& gb_qual, CSe
         x_MendSatelliteQualifier( val );
     }
 
-    if( NStr::EqualNocase( qual, "mobile_element" ) ) {
+    if( NStr::EqualNocase( qual, "mobile_element_type" ) ) {
         // trim spaces around first colon but only if there are no colons
         // with spaces before and after
-        if( NPOS == NStr::Find(val, " :") || NPOS == NStr::Find(val, ": ") ) {
+        if( NPOS != NStr::Find(val, " :") || NPOS != NStr::Find(val, ": ") ) {
             if( s_RegexpReplace( val, "[ ]*:[ ]*", ":", 1 ) ) {
                 ChangeMade(CCleanupChange::eCleanQualifiers);
             }
