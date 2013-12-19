@@ -417,6 +417,8 @@ namespace {
             m_Descr.maximum_age = result.GetIdExpirationTimeout();
         }
         if ( get_current_version ) {
+            // Decrease blob version timeout for easier debugging
+            // m_Descr.maximum_age /= 10;
             m_Descr.return_current_version = true;
         }
         cache->GetBlobAccess(key, version, subkey, &m_Descr);
@@ -441,6 +443,9 @@ namespace {
                 }
             }
             str << ", age="<<int(m_Descr.actual_age);
+            if ( m_Descr.current_version ) {
+                str << ", ver="<<m_Descr.current_version;
+            }
             LOG_POST(Info<<str.rdbuf());
         }
         m_ExpirationTime = result.GetNewIdExpirationTime();
