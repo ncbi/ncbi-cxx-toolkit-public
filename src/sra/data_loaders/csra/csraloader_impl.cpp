@@ -1299,7 +1299,7 @@ void CCSRARefSeqInfo::x_LoadRangesStat(void)
     vector<SRefStat> stat(kNumStat);
     TSeqPos ref_length =
         CCSraRefSeqIterator(*m_File, GetRefSeqId()).GetSeqLength();
-    TSeqPos ref_begin = 0, ref_end_min = 0, ref_end = ref_length, max_len = 0;
+    TSeqPos ref_begin = 0, ref_end = ref_length, max_len = 0;
     double stat_len = 0, stat_cnt = 0;
     const unsigned scan_first = 1;
     if ( scan_first ) {
@@ -1319,7 +1319,6 @@ void CCSRARefSeqInfo::x_LoadRangesStat(void)
             return;
         }
         ref_begin = stat[0].m_RefPosFirst;
-        ref_end_min = stat[0].m_RefPosLast;
         max_len = stat[0].m_RefLenMax;
         stat_len = stat[0].GetStatLen();
         stat_cnt = stat[0].GetStatCount();
