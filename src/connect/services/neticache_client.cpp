@@ -766,10 +766,18 @@ IReader* SNetICacheClientImpl::ReadCurrentBlobNotOlderThan(const string& key,
     } catch (CNetCacheException& e) {
         if (e.GetErrCode() != CNetCacheException::eBlobNotFound)
             throw;
+        const string& msg = e.GetMsg();
         if (max_age > 0) {
             CNetServer::SExecResult exec_result;
-            exec_result.response = e.GetMsg();
+            exec_result.response = msg;
             *actual_age = x_ExtractBlobAge(exec_result, "READLAST");
+        }
+
+        string::size_type pos = msg.find("VER=");
+        if (pos != string::npos) {
+            *version = (int) NStr::StringToUInt(
+                msg.c_str() + pos + sizeof("VER=") - 1,
+                NStr::fAllowTrailingSymbols);
         }
         return NULL;
     }
