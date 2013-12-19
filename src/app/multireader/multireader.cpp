@@ -861,7 +861,7 @@ void CMultiReaderApp::xSetFormat(
         m_uFormat = CFormatGuess::eNewick;
     }
     if (NStr::StartsWith(strProgramName, "gvf") || format == "gvf") {
-        m_uFormat = CFormatGuess::eGtf;
+        m_uFormat = CFormatGuess::eGvf;
     }
     if (NStr::StartsWith(strProgramName, "aln") || format == "align" ||
         format == "aln") {
