@@ -51,11 +51,13 @@ BOOST_AUTO_TEST_CASE(Test_ConnParamsDatabase)
             CQuery query = db.NewQuery("select db_name()");
 
             query.Execute();
+            query.RequireRowCount(1);
             BOOST_CHECK( query.HasMoreResultSets() );
             CQuery::iterator it = query.begin();
             BOOST_CHECK( it != query.end() );
             const  string db_name = it[1].AsString();
             BOOST_CHECK_EQUAL(db_name, target_db_name);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
     }
     catch(const CException& ex) {
@@ -82,12 +84,14 @@ BOOST_AUTO_TEST_CASE(Test_CloneConnection)
         // Check that database was set correctly with the new connection ...
         {
             query.Execute();
+            query.RequireRowCount(1);
             BOOST_CHECK( query.HasMoreResultSets() );
             CQuery::iterator it = query.begin();
             BOOST_CHECK( it != query.end() );
             const  string db_name = it[1].AsString();
             BOOST_CHECK_EQUAL(db_name, target_db_name);
         }
+        BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -108,6 +112,7 @@ BOOST_AUTO_TEST_CASE(Test_ConnParams)
         db.Connect();
         CQuery query = db.NewQuery("SELECT @@version");
         query.Execute();
+        query.RequireRowCount(1);
         query.PurgeResults();
     }
 
@@ -123,6 +128,7 @@ BOOST_AUTO_TEST_CASE(Test_ConnParams)
         db.Connect();
         CQuery query = db.NewQuery("SELECT @@version");
         query.Execute();
+        query.RequireRowCount(1);
         query.PurgeResults();
     }
 }

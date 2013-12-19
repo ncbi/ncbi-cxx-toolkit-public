@@ -49,21 +49,26 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
             // Clean table ...
             query.SetSql("DELETE FROM "+ GetTableName());
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             // Insert data ...
             sql  = " INSERT INTO " + GetTableName() + "(int_field, text_field)";
             sql += " VALUES(0, '')";
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             sql  = " SELECT text_field FROM " + GetTableName();
             // sql += " FOR UPDATE OF text_field";
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(1);
 
             CQuery::iterator it = query.SingleSet().begin();
             CBlobBookmark bm = it[1].GetBookmark();
-            query.PurgeResults();
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             ostream& out = bm.GetOStream(clob_value.size(), CQuery::eDisableLog);
             out.write(clob_value.data(), clob_value.size());
@@ -76,6 +81,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(1);
             ITERATE(CQuery, it, query.SingleSet()) {
                 BOOST_CHECK(!it[1].IsNull());
 
@@ -86,6 +92,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                 BOOST_CHECK_EQUAL(clob_value, str_value);
                 // Int8 value = rs->GetVariant(1).GetInt8();
             }
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Test NULL values ...
@@ -98,6 +105,8 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                 sql  = " DELETE FROM " + GetTableName();
                 query.SetSql(sql);
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
                 // Insert data ...
                 vector<CBlobBookmark> bms;
@@ -114,6 +123,9 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                     // Execute a statement with parameters ...
                     query.SetSql(sql);
                     query.Execute();
+                    query.RequireRowCount(0);
+                    BOOST_CHECK_NO_THROW
+                        (query.VerifyDone(CQuery::eAllResultSets));
 
                     query.ClearParameters();
 
@@ -123,8 +135,11 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                     if (ind % 2 == 0) {
                         query.SetSql(sql);
                         query.Execute();
+                        query.RequireRowCount(1);
 
                         bms.push_back(query.begin()[1].GetBookmark());
+                        BOOST_CHECK_NO_THROW
+                            (query.VerifyDone(CQuery::eAllResultSets));
                     }
                 }
                 ITERATE(vector<CBlobBookmark>, it, bms) {
@@ -145,6 +160,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
 
                 query.SetSql(sql);
                 query.Execute();
+                query.RequireRowCount(rec_num);
 
                 CQuery::iterator it = query.begin();
                 for (long ind = 0; ind < rec_num; ++ind, ++it) {
@@ -157,6 +173,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                         BOOST_CHECK(it[1].IsNull());
                     }
                 }
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
         } // Test NULL values ...
     }
@@ -189,29 +206,37 @@ BOOST_AUTO_TEST_CASE(Test_LOB_NewConn)
             try {
                 query.SetSql(sql);
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
             catch (CSDB_Exception& ex) {
                 LOG_POST(Info << ex);
             }
             query.SetSql("DELETE FROM "+ table_name);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             // Insert data ...
             sql  = " INSERT INTO " + table_name + "(int_field, text_field)";
             sql += " VALUES(0, '')";
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             sql  = " SELECT text_field FROM " + table_name;
             // sql += " FOR UPDATE OF text_field";
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(1);
 
             ITERATE(CQuery, it, query.SingleSet()) {
                 ostream& out = it[1].GetOStream(clob_value.size(), CQuery::eDisableLog);
                 out.write(clob_value.data(), clob_value.size());
                 out.flush();
             }
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Retrieve data ...
@@ -220,6 +245,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_NewConn)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(1);
             ITERATE(CQuery, it, query.SingleSet()) {
                 BOOST_CHECK(!it[1].IsNull());
 
@@ -230,6 +256,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_NewConn)
                 BOOST_CHECK_EQUAL(clob_value, str_value);
                 // Int8 value = rs->GetVariant(1).GetInt8();
             }
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Test NULL values ...
@@ -242,6 +269,8 @@ BOOST_AUTO_TEST_CASE(Test_LOB_NewConn)
                 sql  = " DELETE FROM " + table_name;
                 query.SetSql(sql);
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
                 // Insert data ...
                 for (long ind = 0; ind < rec_num; ++ind) {
@@ -257,6 +286,9 @@ BOOST_AUTO_TEST_CASE(Test_LOB_NewConn)
                     // Execute a statement with parameters ...
                     query.SetSql(sql);
                     query.Execute();
+                    query.RequireRowCount(0);
+                    BOOST_CHECK_NO_THROW
+                        (query.VerifyDone(CQuery::eAllResultSets));
 
                     query.ClearParameters();
 
@@ -266,6 +298,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_NewConn)
                     if (ind % 2 == 0) {
                         query.SetSql(sql);
                         query.Execute();
+                        query.RequireRowCount(1);
 
                         ITERATE(CQuery, it, query.SingleSet()) {
                             ostream& out = it[1].GetOStream(clob_value.size(),
@@ -273,6 +306,8 @@ BOOST_AUTO_TEST_CASE(Test_LOB_NewConn)
                             out.write(clob_value.data(), clob_value.size());
                             out.flush();
                         }
+                        BOOST_CHECK_NO_THROW
+                            (query.VerifyDone(CQuery::eAllResultSets));
                     }
                 }
 
@@ -287,6 +322,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_NewConn)
 
                 query.SetSql(sql);
                 query.Execute();
+                query.RequireRowCount(rec_num);
 
                 CQuery::iterator it = query.begin();
                 for (long ind = 0; ind < rec_num; ++ind, ++it) {
@@ -299,6 +335,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_NewConn)
                         BOOST_CHECK(it[1].IsNull());
                     }
                 }
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
         } // Test NULL values ...
     }
@@ -323,6 +360,8 @@ BOOST_AUTO_TEST_CASE(Test_LOB2)
             // Clean table ...
             query.SetSql("DELETE FROM "+ GetTableName());
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             // Insert empty CLOB.
             {
@@ -332,6 +371,9 @@ BOOST_AUTO_TEST_CASE(Test_LOB2)
                 query.SetSql(sql);
                 for (int i = 0; i < num_of_records; ++i) {
                     query.Execute();
+                    query.RequireRowCount(0);
+                    BOOST_CHECK_NO_THROW
+                        (query.VerifyDone(CQuery::eAllResultSets));
                 }
             }
 
@@ -342,6 +384,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB2)
 
                 query.SetSql(sql);
                 query.Execute();
+                query.RequireRowCount(num_of_records);
 
                 vector<CBlobBookmark> bms;
                 ITERATE(CQuery, it, query.SingleSet()) {
@@ -353,6 +396,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB2)
                     out.write(clob_value, sizeof(clob_value) - 1);
                     out.flush();
                 }
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
         }
 
@@ -362,12 +406,14 @@ BOOST_AUTO_TEST_CASE(Test_LOB2)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(num_of_records);
             ITERATE(CQuery, it, query.SingleSet()) {
                 BOOST_CHECK( !it[1].IsNull() );
 
                 size_t blob_size = it[1].AsString().size();
                 BOOST_CHECK_EQUAL(sizeof(clob_value) - 1, blob_size);
             }
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
     }
     catch(const CException& ex) {
@@ -401,12 +447,16 @@ BOOST_AUTO_TEST_CASE(Test_LOB2_NewConn)
             try {
                 query.SetSql(sql);
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
             catch (CSDB_Exception& ex) {
                 LOG_POST(Info << ex);
             }
             query.SetSql("DELETE FROM "+ table_name);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             // Insert empty CLOB.
             {
@@ -416,6 +466,9 @@ BOOST_AUTO_TEST_CASE(Test_LOB2_NewConn)
                 query.SetSql(sql);
                 for (int i = 0; i < num_of_records; ++i) {
                     query.Execute();
+                    query.RequireRowCount(0);
+                    BOOST_CHECK_NO_THROW
+                        (query.VerifyDone(CQuery::eAllResultSets));
                 }
             }
 
@@ -426,6 +479,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB2_NewConn)
 
                 query.SetSql(sql);
                 query.Execute();
+                query.RequireRowCount(num_of_records);
 
                 ITERATE(CQuery, it, query.SingleSet()) {
                     ostream& out = it[1].GetOStream(sizeof(clob_value) - 1,
@@ -433,6 +487,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB2_NewConn)
                     out.write(clob_value, sizeof(clob_value) - 1);
                     out.flush();
                 }
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
         }
 
@@ -442,12 +497,14 @@ BOOST_AUTO_TEST_CASE(Test_LOB2_NewConn)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(num_of_records);
             ITERATE(CQuery, it, query.SingleSet()) {
                 BOOST_CHECK( !it[1].IsNull() );
 
                 size_t blob_size = it[1].AsString().size();
                 BOOST_CHECK_EQUAL(sizeof(clob_value) - 1, blob_size);
             }
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
     }
     catch(const CException& ex) {
@@ -481,6 +538,8 @@ BOOST_AUTO_TEST_CASE(Test_LOB3)
             // Clean table ...
             query.SetSql("DELETE FROM "+ GetTableName());
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             // Insert data ...
             {
@@ -494,6 +553,9 @@ BOOST_AUTO_TEST_CASE(Test_LOB3)
                 for (int i = 0; i < num_of_records; ++i) {
                     // Execute statement with parameters ...
                     query.Execute();
+                    query.RequireRowCount(0);
+                    BOOST_CHECK_NO_THROW
+                        (query.VerifyDone(CQuery::eAllResultSets));
                 }
 
                 query.ClearParameters();
@@ -506,6 +568,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB3)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(num_of_records);
             ITERATE(CQuery, it, query.SingleSet()) {
                 BOOST_CHECK( !it[1].IsNull() );
                 string text_str = it[1].AsString();
@@ -519,6 +582,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB3)
                 BOOST_CHECK_EQUAL(clob_value.size(), image_blob_size);
                 BOOST_CHECK(NStr::Compare(clob_value, image_str) == 0);
             }
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
     }
     catch(const CException& ex) {
@@ -547,11 +611,15 @@ BOOST_AUTO_TEST_CASE(Test_LOB4)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             // Insert data ...
             sql = "INSERT INTO " + table_name + "(text01) VALUES ('abcdef')";
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             // Update data ...
             sql =
@@ -561,6 +629,8 @@ BOOST_AUTO_TEST_CASE(Test_LOB4)
                 ;
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Retrieve data ...
@@ -569,10 +639,12 @@ BOOST_AUTO_TEST_CASE(Test_LOB4)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(1);
             ITERATE(CQuery, it, query.SingleSet()) {
                 BOOST_CHECK( !it[1].IsNull() );
                 BOOST_CHECK_EQUAL(it[1].AsString(), clob_value);
             }
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
     }
     catch(const CException& ex) {
@@ -604,6 +676,8 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple)
                 ") \n";
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             // Insert data ...
 
@@ -614,6 +688,8 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple)
 
                 query.SetSql(sql);
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
 
             // Update LOB value.
@@ -624,6 +700,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple)
 
                 query.SetSql(sql);
                 query.Execute();
+                query.RequireRowCount(1);
 
                 vector<CBlobBookmark> bms;
                 ITERATE(CQuery, it, query.SingleSet()) {
@@ -638,6 +715,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple)
                     out.flush();
                     BOOST_CHECK(out.good());
                 }
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
         }
 
@@ -648,6 +726,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(1);
             ITERATE(CQuery, it, query.SingleSet()) {
                 for (int pos = 1; pos <= 4; ++pos) {
                     BOOST_CHECK( !it[pos].IsNull() );
@@ -657,6 +736,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple)
                     BOOST_CHECK_EQUAL(value, clob_value);
                 }
             }
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
     }
     catch(const CException& ex) {
@@ -690,12 +770,16 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_NewConn)
             try {
                 query.SetSql(sql);
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
             catch (CSDB_Exception& ex) {
                 LOG_POST(Info << ex);
             }
             query.SetSql("DELETE FROM "+ table_name);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             // Insert data ...
 
@@ -706,6 +790,8 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_NewConn)
 
                 query.SetSql(sql);
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
 
             // Update LOB value.
@@ -716,6 +802,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_NewConn)
 
                 query.SetSql(sql);
                 query.Execute();
+                query.RequireRowCount(1);
 
                 ITERATE(CQuery, it, query.SingleSet()) {
                     for (int pos = 1; pos <= 4; ++pos) {
@@ -726,6 +813,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_NewConn)
                         BOOST_CHECK(out.good());
                     }
                 }
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
         }
 
@@ -736,6 +824,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_NewConn)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(1);
             ITERATE(CQuery, it, query.SingleSet()) {
                 for (int pos = 1; pos <= 4; ++pos) {
                     BOOST_CHECK( !it[pos].IsNull() );
@@ -745,6 +834,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_NewConn)
                     BOOST_CHECK_EQUAL(value, clob_value);
                 }
             }
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
     }
     catch(const CException& ex) {
@@ -778,17 +868,22 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream)
             // Clean table ...
             query.SetSql("DELETE FROM "+ GetTableName());
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             // Insert data ...
             sql  = " INSERT INTO " + GetTableName() + "(int_field, text_field)";
             sql += " VALUES(0, '')";
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             sql  = " SELECT text_field FROM " + GetTableName();
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(1);
 
             vector<CBlobBookmark> bms;
             ITERATE(CQuery, it, query.SingleSet()) {
@@ -807,25 +902,31 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream)
                 BOOST_CHECK_EQUAL(ostrm.fail(), false);
                 BOOST_CHECK_EQUAL(ostrm.good(), true);
             }
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             query.SetSql("SELECT datalength(text_field) FROM " + GetTableName());
             query.Execute();
+            query.RequireRowCount(1);
 
             ITERATE(CQuery, it, query.SingleSet()) {
                 write_data_len = it[1].AsInt4();
                 BOOST_CHECK_EQUAL( data_len, write_data_len );
             }
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Retrieve data ...
         {
             query.SetSql("set textsize 2000000");
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             sql = "SELECT id, int_field, text_field FROM "+ GetTableName();
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(1);
             ITERATE(CQuery, it, query.SingleSet()) {
                 istream& strm = it[3].AsIStream();
                 int j = 0;
@@ -839,6 +940,7 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream)
                 // Calculate a trailing space.
                 BOOST_CHECK_EQUAL(data_len, read_data_len + 1);
             }
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
     }
     catch(const CException& ex) {
@@ -882,23 +984,30 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream_NewConn)
             try {
                 query.SetSql(sql);
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
             catch (CSDB_Exception& ex) {
                 LOG_POST(Info << ex);
             }
             query.SetSql("DELETE FROM "+ table_name);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             // Insert data ...
             sql  = " INSERT INTO " + table_name + "(int_field, text_field)";
             sql += " VALUES(0, '')";
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             sql  = " SELECT text_field FROM " + table_name;
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(1);
 
             ITERATE(CQuery, it, query.SingleSet()) {
                 ostream& ostrm = it[1].GetOStream(data_len, CQuery::eDisableLog);
@@ -913,25 +1022,31 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream_NewConn)
                 BOOST_CHECK_EQUAL(ostrm.fail(), false);
                 BOOST_CHECK_EQUAL(ostrm.good(), true);
             }
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             query.SetSql("SELECT datalength(text_field) FROM " + table_name);
             query.Execute();
+            query.RequireRowCount(1);
 
             ITERATE(CQuery, it, query.SingleSet()) {
                 write_data_len = it[1].AsInt4();
                 BOOST_CHECK_EQUAL( data_len, write_data_len );
             }
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Retrieve data ...
         {
             query.SetSql("set textsize 2000000");
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             sql = "SELECT id, int_field, text_field FROM "+ table_name;
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(1);
             ITERATE(CQuery, it, query.SingleSet()) {
                 istream& strm = it[3].AsIStream();
                 int j = 0;
@@ -945,6 +1060,7 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream_NewConn)
                 // Calculate a trailing space.
                 BOOST_CHECK_EQUAL(data_len, read_data_len + 1);
             }
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
     }
     catch(const CException& ex) {

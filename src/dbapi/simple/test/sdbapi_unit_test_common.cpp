@@ -105,12 +105,16 @@ NCBITEST_AUTO_INIT()
     // Create the table
     query.SetSql(sql);
     query.Execute();
+    query.RequireRowCount(0);
+    query.VerifyDone(CQuery::eAllResultSets);
 
     sql  = " CREATE UNIQUE INDEX #ind01 ON " + GetTableName() + "( id ) \n";
 
     // Create an index
     query.SetSql(sql);
     query.Execute();
+    query.RequireRowCount(0);
+    query.VerifyDone(CQuery::eAllResultSets);
 
     sql  = " CREATE TABLE #dbapi_bcp_table2 ( \n";
     sql += "    id INT NULL, \n";
@@ -123,6 +127,8 @@ NCBITEST_AUTO_INIT()
 
     query.SetSql(sql);
     query.Execute();
+    query.RequireRowCount(0);
+    query.VerifyDone(CQuery::eAllResultSets);
 
     sql  = " CREATE TABLE #test_unicode_table ( \n";
     sql += "    id NUMERIC(18, 0) IDENTITY NOT NULL, \n";
@@ -133,6 +139,8 @@ NCBITEST_AUTO_INIT()
     // Create table
     query.SetSql(sql);
     query.Execute();
+    query.RequireRowCount(0);
+    query.VerifyDone(CQuery::eAllResultSets);
 }
 
 NCBITEST_AUTO_FINI()

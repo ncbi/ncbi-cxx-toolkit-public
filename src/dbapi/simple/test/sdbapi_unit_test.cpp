@@ -52,6 +52,8 @@ CTestTransaction::CTestTransaction(
     if ( m_TransBehavior != eNoTrans ) {
         CQuery query = m_Conn.NewQuery("BEGIN TRANSACTION");
         query.Execute();
+        query.RequireRowCount(0);
+        BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
     }
 }
 
@@ -61,9 +63,13 @@ CTestTransaction::~CTestTransaction(void)
         if ( m_TransBehavior == eTransCommit ) {
             CQuery query = m_Conn.NewQuery("COMMIT TRANSACTION");
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         } else if ( m_TransBehavior == eTransRollback ) {
             CQuery query = m_Conn.NewQuery("ROLLBACK TRANSACTION");
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
     }
     catch( ... ) {
@@ -88,6 +94,7 @@ BOOST_AUTO_TEST_CASE(Test_Unicode_Simple)
 
         query.SetSql(sql);
         query.Execute();
+        query.RequireRowCount(1);
         BOOST_CHECK(query.HasMoreResultSets());
 
         CQuery::iterator it = query.begin();
@@ -95,10 +102,12 @@ BOOST_AUTO_TEST_CASE(Test_Unicode_Simple)
             read_bytes = it[1].AsString().size();
             BOOST_CHECK_EQUAL(size_t(14), read_bytes);
         }
+        BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
         sql = "select 1 as Tag, null as Parent, 1 as [x!1!id] for xml explicit";
         query.SetSql(sql);
         query.Execute();
+        query.RequireRowCount(1);
         BOOST_CHECK(query.HasMoreResultSets());
 
         it = query.begin();
@@ -106,6 +115,7 @@ BOOST_AUTO_TEST_CASE(Test_Unicode_Simple)
             read_bytes = it[1].AsString().size();
             BOOST_CHECK_EQUAL(size_t(11), read_bytes);
         }
+        BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
     }
     catch(const CSDB_Exception& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -149,12 +159,16 @@ BOOST_AUTO_TEST_CASE(Test_UnicodeNB)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Clean table ...
         {
             query.SetSql("DELETE FROM " + table_name);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Insert data ...
@@ -163,11 +177,15 @@ BOOST_AUTO_TEST_CASE(Test_UnicodeNB)
         // string sql = "INSERT INTO " + table_name + "(nvc255_field) VALUES('" + utf8_str_ger + "')";
         query.SetSql(sql);
         query.Execute();
+        query.RequireRowCount(0);
+        BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
         sql = "INSERT INTO " + table_name + "(nvc255_field) VALUES(N'" + utf8_str_rus + "')";
         // sql = "INSERT INTO " + table_name + "(nvc255_field) VALUES('" + utf8_str_rus + "')";
         query.SetSql(sql);
         query.Execute();
+        query.RequireRowCount(0);
+        BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
         // Retrieve data ...
         {
@@ -179,6 +197,7 @@ BOOST_AUTO_TEST_CASE(Test_UnicodeNB)
             CStringUTF8 utf8_sql(CUtf8::AsUTF8(sql, eEncoding_Windows_1252));
             query.SetSql(utf8_sql);
             query.Execute();
+            query.RequireRowCount(2);
 
             BOOST_CHECK( query.HasMoreResultSets() );
 
@@ -204,7 +223,7 @@ BOOST_AUTO_TEST_CASE(Test_UnicodeNB)
             BOOST_CHECK_EQUAL( utf8_str_rus.size(), nvc255_value.size() );
             BOOST_CHECK_EQUAL( NStr::PrintableString(utf8_str_rus), NStr::PrintableString(nvc255_value) );
 
-            query.PurgeResults();
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
     }
     catch(const CSDB_Exception& ex) {
@@ -223,9 +242,11 @@ GetNumOfRecords(CQuery& query, const string& table_name)
     query.ClearParameters();
     query.SetSql("select count(*) FROM " + table_name);
     query.Execute();
+    query.RequireRowCount(1);
     ITERATE(CQuery, it, query.SingleSet()) {
         cur_rec_num = it[1].AsInt4();
     }
+    BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
     return cur_rec_num;
 }
 
@@ -269,6 +290,8 @@ BOOST_AUTO_TEST_CASE(Test_Unicode)
         {
             query.SetSql("DELETE FROM " + table_name);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Insert data ...
@@ -282,18 +305,24 @@ BOOST_AUTO_TEST_CASE(Test_Unicode)
             query.SetParameter("@nvc_val", utf8_str_utf8);
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             //
             BOOST_CHECK( utf8_str_1252_rus.size() > 0 );
             query.SetParameter("@nvc_val", utf8_str_1252_rus);
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             //
             BOOST_CHECK( utf8_str_1252_ger.size() > 0 );
             query.SetParameter("@nvc_val", utf8_str_1252_ger);
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             query.ClearParameters();
         }
@@ -307,6 +336,7 @@ BOOST_AUTO_TEST_CASE(Test_Unicode)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(3);
 
             BOOST_CHECK( query.HasMoreResultSets() );
 
@@ -338,7 +368,7 @@ BOOST_AUTO_TEST_CASE(Test_Unicode)
                 CUtf8::AsSingleByteString(utf8_ger, eEncoding_Windows_1252);
             BOOST_CHECK_EQUAL( NStr::PrintableString(str_ger), NStr::PrintableString(value_ger) );
 
-            query.PurgeResults();
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
     }
     catch(const CSDB_Exception& ex) {
@@ -361,6 +391,8 @@ BOOST_AUTO_TEST_CASE(Test_Insert)
         // Clean table ...
         query.SetSql( "DELETE FROM " + GetTableName() );
         query.Execute();
+        query.RequireRowCount(0);
+        BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
         // Insert data ...
         {
@@ -370,6 +402,8 @@ BOOST_AUTO_TEST_CASE(Test_Insert)
                 "VALUES(1, '" + test_msg + "')"
                 );
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             // Using parameters ...
             sql = "INSERT INTO " + GetTableName() +
@@ -379,11 +413,15 @@ BOOST_AUTO_TEST_CASE(Test_Insert)
             query.SetParameter( "@vc_val", test_msg);
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             query.SetParameter( "@id", 3 );
             query.SetParameter( "@vc_val", small_msg);
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Retrieve data ...
@@ -396,6 +434,7 @@ BOOST_AUTO_TEST_CASE(Test_Insert)
             query.ClearParameters();
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(3);
 
             BOOST_CHECK( query.HasMoreResultSets() );
 
@@ -412,6 +451,8 @@ BOOST_AUTO_TEST_CASE(Test_Insert)
             BOOST_CHECK( it != query.end() );
             string small_value1 = it[2].AsString();
             BOOST_CHECK_EQUAL( small_msg, small_value1 );
+
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
     }
     catch(const CException& ex) {
@@ -437,11 +478,15 @@ BOOST_AUTO_TEST_CASE(Test_UNIQUE)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             sql = "INSERT INTO #test_unique(id) VALUES(1)";
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Retrieve data ...
@@ -450,9 +495,11 @@ BOOST_AUTO_TEST_CASE(Test_UNIQUE)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(1);
             ITERATE(CQuery, it, query.SingleSet()) {
                 value = it[2].AsString();
             }
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Insert retrieved data back into the table ...
@@ -463,6 +510,8 @@ BOOST_AUTO_TEST_CASE(Test_UNIQUE)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Retrieve data again ...
@@ -471,14 +520,80 @@ BOOST_AUTO_TEST_CASE(Test_UNIQUE)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(2);
             ITERATE(CQuery, it, query.SingleSet()) {
                 BOOST_CHECK( !it[2].IsNull() );
             }
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
     }
     catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);
     }
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Verify correct handling of usage errors.
+BOOST_AUTO_TEST_CASE(Test_RequireRowCount)
+{
+    try {
+        auto_ptr<CQuery> query(new CQuery(GetDatabase().NewQuery()));
+
+        query->SetSql("select 1");
+        // called too soon (before Execute)
+        BOOST_CHECK_THROW(query->RequireRowCount(1), CSDB_Exception);
+        query->Execute();
+        query->RequireRowCount(0);
+        BOOST_CHECK_THROW(query->begin(), CSDB_Exception);
+        query->VerifyDone();
+
+        query->Execute();
+        query->RequireRowCount(2, kMax_Auto);
+        query->begin();
+        BOOST_CHECK_THROW(query->HasMoreResultSets(), CSDB_Exception);
+        query->VerifyDone();
+
+        query->SetSql("select 1 where 0=1");
+        query->Execute();
+        BOOST_CHECK_THROW(query->RequireRowCount(1, kMax_Auto); query->begin(),
+                          CSDB_Exception);
+        query->PurgeResults();
+
+        // Call a procedure yielding two result sets -- the first with
+        // one row, the second with more.
+        if (GetArgs().GetServerType() == eSqlSrvMsSql) {
+            query->SetSql("exec sp_help @objname='sp_helptext'");
+        } else {
+            query->SetSql("exec sp_helpuser @name_in_db='dbo'");
+        }
+        query->Execute();
+        query->RequireRowCount(1); // correct only for the first result set
+        query->MultiSet();
+        BOOST_CHECK(query->HasMoreResultSets());
+        query->begin();
+        BOOST_CHECK(query->HasMoreResultSets());
+        query->begin();
+        BOOST_CHECK_THROW(query->HasMoreResultSets(), CSDB_Exception);
+        query->VerifyDone();
+
+        {{
+            query->Execute();
+            query->RequireRowCount(0, 2);
+            CQuery::CRowIterator it = query->SingleSet().begin();
+            ++it;
+            BOOST_CHECK_THROW(query->HasMoreResultSets(), CSDB_Exception);
+            query->VerifyDone();
+        }}
+
+        query->SetSql("select 1");
+        query->Execute();
+        query->RequireRowCount(2, kMax_Auto);
+        ERR_POST(Warning
+                 << "Set bad minimum count; expect a library warning.");
+        BOOST_CHECK_NO_THROW(query.reset());
+    } catch (const CException& ex) {
+        DBAPI_BOOST_FAIL(ex);
+    } 
 }
 
 ///////////////////////////////////////////////////////////////////////////////

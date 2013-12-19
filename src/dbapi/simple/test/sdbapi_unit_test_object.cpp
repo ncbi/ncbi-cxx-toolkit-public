@@ -55,6 +55,8 @@ BOOST_AUTO_TEST_CASE(Test_DateTime)
 
                 query.SetSql( sql );
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
 
             {
@@ -65,6 +67,8 @@ BOOST_AUTO_TEST_CASE(Test_DateTime)
 
                     query.SetSql( sql );
                     query.Execute();
+                    query.RequireRowCount(0);
+                    BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
                 }
 
                 // Retrieve data ...
@@ -73,18 +77,22 @@ BOOST_AUTO_TEST_CASE(Test_DateTime)
 
                     query.SetSql( sql );
                     query.Execute();
+                    query.RequireRowCount(1);
                     BOOST_CHECK( query.HasMoreResultSets() );
                     CQuery::iterator it = query.begin();
                     BOOST_CHECK( it != query.end() );
                     BOOST_CHECK( !it[2].IsNull());
                     dt_value = it[2].AsDateTime();
                     BOOST_CHECK( !dt_value.IsEmpty() );
+                    BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
                 }
 
                 // Insert data using parameters ...
                 {
                     query.SetSql( "DELETE FROM #test_datetime" );
                     query.Execute();
+                    query.RequireRowCount(0);
+                    BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
                     query.SetParameter( "@dt_val", dt_value );
 
@@ -93,6 +101,8 @@ BOOST_AUTO_TEST_CASE(Test_DateTime)
 
                     query.SetSql( sql );
                     query.Execute();
+                    query.RequireRowCount(0);
+                    BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
                 }
 
                 // Retrieve data again ...
@@ -103,18 +113,22 @@ BOOST_AUTO_TEST_CASE(Test_DateTime)
                     query.ClearParameters();
                     query.SetSql( sql );
                     query.Execute();
+                    query.RequireRowCount(1);
                     BOOST_CHECK( query.HasMoreResultSets() );
                     CQuery::iterator it = query.begin();
                     BOOST_CHECK( it != query.end() );
                     BOOST_CHECK( !it[2].IsNull());
                     CTime dt_value2 = it[2].AsDateTime();
                     BOOST_CHECK_EQUAL( dt_value.AsString(), dt_value2.AsString() );
+                    BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
                 }
 
                 // Insert NULL data using parameters ...
                 {
                     query.SetSql( "DELETE FROM #test_datetime" );
                     query.Execute();
+                    query.RequireRowCount(0);
+                    BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
                     query.SetNullParameter( "@dt_val", eSDB_DateTime );
 
@@ -123,6 +137,8 @@ BOOST_AUTO_TEST_CASE(Test_DateTime)
 
                     query.SetSql( sql );
                     query.Execute();
+                    query.RequireRowCount(0);
+                    BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
                 }
 
 
@@ -134,10 +150,12 @@ BOOST_AUTO_TEST_CASE(Test_DateTime)
                     query.ClearParameters();
                     query.SetSql( sql );
                     query.Execute();
+                    query.RequireRowCount(1);
                     BOOST_CHECK( query.HasMoreResultSets() );
                     CQuery::iterator it = query.begin();
                     BOOST_CHECK( it != query.end() );
                     BOOST_CHECK( it[2].IsNull());
+                    BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
                 }
             }
         }
@@ -170,6 +188,8 @@ BOOST_AUTO_TEST_CASE(Test_Numeric)
 
             query.SetSql( sql );
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
     // First test ...
@@ -181,6 +201,8 @@ BOOST_AUTO_TEST_CASE(Test_Numeric)
 
                 query.SetSql( sql );
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
 
             // Retrieve data ...
@@ -190,6 +212,7 @@ BOOST_AUTO_TEST_CASE(Test_Numeric)
                 query.SetSql( sql );
                 query.Execute();
                 BOOST_CHECK( query.HasMoreResultSets() );
+                query.RequireRowCount(1);
                 CQuery::iterator it = query.begin();
                 BOOST_CHECK( it != query.end() );
 
@@ -197,12 +220,15 @@ BOOST_AUTO_TEST_CASE(Test_Numeric)
                 BOOST_CHECK(!it[2].IsNull());
                 BOOST_CHECK_EQUAL(it[1].AsString(), str_value);
                 BOOST_CHECK_EQUAL(it[2].AsString(), str_value);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
 
             // Insert data using parameters ...
             {
                 query.SetSql( "DELETE FROM " + table_name );
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
                 sql = "INSERT INTO " + table_name + "(num_field1, num_field2) "
                     "VALUES(@value1, @value2)";
@@ -215,6 +241,8 @@ BOOST_AUTO_TEST_CASE(Test_Numeric)
 
                     query.SetSql( sql );
                     query.Execute();
+                    query.RequireRowCount(0);
+                    BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
                 }
 
                 // ClearParamList is necessary here ...
@@ -228,6 +256,7 @@ BOOST_AUTO_TEST_CASE(Test_Numeric)
 
                 query.SetSql( sql );
                 query.Execute();
+                query.RequireRowCount(1);
                 BOOST_CHECK( query.HasMoreResultSets() );
                 CQuery::iterator it = query.begin();
                 BOOST_CHECK( it != query.end() );
@@ -236,6 +265,7 @@ BOOST_AUTO_TEST_CASE(Test_Numeric)
                 BOOST_CHECK(!it[2].IsNull());
                 BOOST_CHECK_EQUAL(it[1].AsString(), str_value);
                 BOOST_CHECK_EQUAL(it[2].AsString(), str_value);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
         }
     }
@@ -264,6 +294,8 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
 
             query.SetSql( sql );
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // SQL value injection technique ...
@@ -274,6 +306,8 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
 
                 query.SetSql( sql );
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
 
             const string msg(8001, 'Z');
@@ -285,6 +319,8 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
 
                 query.SetSql( sql );
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
 
             // Actual check ...
@@ -293,11 +329,13 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
 
                 query.SetSql( sql );
                 query.Execute();
+                query.RequireRowCount(1);
                 ITERATE(CQuery, it, query.SingleSet()) {
                     const string value = it[1].AsString();
                     BOOST_CHECK_EQUAL(value.size(), msg.size());
                     BOOST_CHECK_EQUAL(value, msg);
                 }
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
         }
 
@@ -311,6 +349,8 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
 
                 query.SetSql( sql );
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
 
             // Insert data into the table ...
@@ -321,6 +361,8 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
                 query.SetParameter( "@vc_max", msg );
                 query.SetSql( sql );
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
 
             // Actual check ...
@@ -329,11 +371,13 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX)
 
                 query.SetSql( sql );
                 query.Execute();
+                query.RequireRowCount(1);
                 ITERATE(CQuery, it, query.SingleSet()) {
                     const string value = it[1].AsString();
                     BOOST_CHECK_EQUAL(value.size(), msg.size());
                     // BOOST_CHECK_EQUAL(value, msg);
                 }
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
         }
 
@@ -368,6 +412,8 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX_BCP)
 
             query.SetSql( sql );
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         {
@@ -377,6 +423,8 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX_BCP)
 
                 query.SetSql( sql );
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
 
             // Insert data into the table ...
@@ -396,11 +444,13 @@ BOOST_AUTO_TEST_CASE(Test_VARCHAR_MAX_BCP)
 
                 query.SetSql( sql );
                 query.Execute();
+                query.RequireRowCount(1);
                 ITERATE(CQuery, it, query.SingleSet()) {
                     const string value = it[1].AsString();
                     BOOST_CHECK_EQUAL(value.size(), msg.size());
                     BOOST_CHECK_EQUAL(value, msg);
                 }
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
         }
     }
@@ -432,6 +482,8 @@ BOOST_AUTO_TEST_CASE(Test_CHAR)
 
             query.SetSql( sql );
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Parameters ...
@@ -444,6 +496,8 @@ BOOST_AUTO_TEST_CASE(Test_CHAR)
 
                 query.SetSql( sql );
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
 
             // Insert data into the table ...
@@ -454,6 +508,8 @@ BOOST_AUTO_TEST_CASE(Test_CHAR)
                 query.SetParameter( "@char1", "" );
                 query.SetSql( sql );
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
 
             // Actual check ...
@@ -465,11 +521,13 @@ BOOST_AUTO_TEST_CASE(Test_CHAR)
 
                 query.SetSql( sql );
                 query.Execute();
+                query.RequireRowCount(1);
                 ITERATE(CQuery, it, query.SingleSet()) {
                     const string value = it[1].AsString();
                     BOOST_CHECK_EQUAL(value.size(), 1U);
                     BOOST_CHECK_EQUAL(value, string(" "));
                 }
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
         }
 
@@ -495,14 +553,20 @@ BOOST_AUTO_TEST_CASE(Test_NTEXT)
         sql = "SET TEXTSIZE 2147483647";
         query.SetSql( sql );
         query.Execute();
+        query.RequireRowCount(0);
+        BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
         sql = "create table " + kTableName + " (n integer, txt_fld ntext)";
         query.SetSql( sql );
         query.Execute();
+        query.RequireRowCount(0);
+        BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
         sql = "insert into " + kTableName + " values (1, '" + kInsValue + "')";
         query.SetSql( sql );
         query.Execute();
+        query.RequireRowCount(0);
+        BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
         CBulkInsert bi = GetDatabase().NewBulkInsert(kTableName, 10);
         bi.Bind(1, eSDB_Int4);
@@ -520,10 +584,12 @@ BOOST_AUTO_TEST_CASE(Test_NTEXT)
         sql = "SELECT n, txt_fld from " + kTableName;
         query.SetSql( sql );
         query.Execute();
+        query.RequireRowCount(4);
         ITERATE(CQuery, it, query.SingleSet()) {
             string var = it["txt_fld"].AsString();
             BOOST_CHECK_EQUAL(var, kInsValue);
         }
+        BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
     }
     catch(const CSDB_Exception& ex) {
         DBAPI_BOOST_FAIL(ex);
@@ -546,10 +612,14 @@ BOOST_AUTO_TEST_CASE(Test_NVARCHAR)
         sql = "create table " + kTableName + " (n integer, nvc9 nvarchar(9))";
         query.SetSql(sql);
         query.Execute();
+        query.RequireRowCount(0);
+        BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
         sql = "insert into " + kTableName + " values (1, '" + kText + "')";
         query.SetSql(sql);
         query.Execute();
+        query.RequireRowCount(0);
+        BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
         CBulkInsert bi = GetDatabase().NewBulkInsert(kTableName, 10);
         bi.Bind(1, eSDB_Int4);
@@ -567,10 +637,12 @@ BOOST_AUTO_TEST_CASE(Test_NVARCHAR)
         sql = "SELECT n, nvc9 from " + kTableName;
         query.SetSql(sql);
         query.Execute();
+        query.RequireRowCount(4);
         ITERATE (CQuery, it, query.SingleSet()) {
             string var = it[2].AsString();
             BOOST_CHECK_EQUAL(var, kText);
         }
+        BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
     } catch(const CException& ex) {
         DBAPI_BOOST_FAIL(ex);

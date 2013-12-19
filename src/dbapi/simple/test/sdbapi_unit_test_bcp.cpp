@@ -56,6 +56,8 @@ BOOST_AUTO_TEST_CASE(Test_DateTimeBCP)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Insert data using BCP ...
@@ -66,6 +68,8 @@ BOOST_AUTO_TEST_CASE(Test_DateTimeBCP)
             {
                 query.SetSql("DELETE FROM " + table_name);
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
                 CBulkInsert bi = GetDatabase().NewBulkInsert(table_name, 1);
 
@@ -77,6 +81,7 @@ BOOST_AUTO_TEST_CASE(Test_DateTimeBCP)
 
                 query.SetSql("SELECT * FROM " + table_name);
                 query.Execute();
+                query.RequireRowCount(1);
                 query.PurgeResults();
                 int nRows = query.GetRowCount();
                 BOOST_CHECK_EQUAL(nRows, 1);
@@ -88,6 +93,7 @@ BOOST_AUTO_TEST_CASE(Test_DateTimeBCP)
 
                 query.SetSql(sql);
                 query.Execute();
+                query.RequireRowCount(1);
                 BOOST_CHECK( query.HasMoreResultSets() );
                 CQuery::iterator it = query.begin();
                 BOOST_CHECK( it != query.end() );
@@ -97,12 +103,15 @@ BOOST_AUTO_TEST_CASE(Test_DateTimeBCP)
                 CTime dt_value2 = it[2].AsDateTime();
                 BOOST_CHECK( !dt_value2.IsEmpty() );
                 BOOST_CHECK_EQUAL( dt_value2.AsString(), t.AsString() );
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
 
             // Insert NULL data using parameters ...
             {
                 query.SetSql("DELETE FROM " + table_name);
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
                 CBulkInsert bi = GetDatabase().NewBulkInsert(table_name, 1);
 
@@ -114,6 +123,7 @@ BOOST_AUTO_TEST_CASE(Test_DateTimeBCP)
 
                 query.SetSql("SELECT * FROM " + table_name);
                 query.Execute();
+                query.RequireRowCount(1);
                 query.PurgeResults();
                 int nRows = query.GetRowCount();
                 BOOST_CHECK_EQUAL(nRows, 1);
@@ -125,11 +135,12 @@ BOOST_AUTO_TEST_CASE(Test_DateTimeBCP)
 
                 query.SetSql(sql);
                 query.Execute();
+                query.RequireRowCount(1);
                 BOOST_CHECK( query.HasMoreResultSets() );
                 CQuery::iterator it = query.begin();
                 BOOST_CHECK( it != query.end() );
-
                 BOOST_CHECK( it[2].IsNull() );
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
         }
     }
@@ -156,6 +167,8 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob)
                 // Clean table ...
                 query.SetSql("DELETE FROM "+ table_name);
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
 
             // Insert data ...
@@ -189,6 +202,8 @@ BOOST_AUTO_TEST_CASE(Test_BulkInsertBlob)
                 // Clean table ...
                 query.SetSql("DELETE FROM "+ table_name);
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
 
             // Insert data ...
@@ -237,6 +252,8 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Overflow)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         string str_data = string(data_size, 'O');
@@ -262,6 +279,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Overflow)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(1);
             BOOST_CHECK( query.HasMoreResultSets() );
             CQuery::iterator it = query.begin();
             BOOST_CHECK( it != query.end() );
@@ -269,6 +287,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Overflow)
             BOOST_CHECK(!it[1].IsNull());
             string str_value = it[1].AsString();
             BOOST_CHECK_EQUAL( string::size_type(column_size), str_value.size() );
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Initialize ...
@@ -277,6 +296,8 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Overflow)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             sql =
                 "CREATE TABLE #test_bulk_overflow ( \n"
@@ -285,6 +306,8 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Overflow)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Insert data ...
@@ -330,6 +353,8 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
             // Create the table
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
 
@@ -341,6 +366,8 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
             // Clean table ...
             query.SetSql("DELETE FROM " + table_name);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             // Insert data ...
             {
@@ -366,6 +393,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
 
                 query.SetSql(sql);
                 query.Execute();
+                query.RequireRowCount(num_of_tests);
 
                 BOOST_CHECK( query.HasMoreResultSets() );
                 CQuery::iterator it = query.begin();
@@ -382,8 +410,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
                                       );
                 }
 
-                // Dump results ...
-                query.PurgeResults();
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
         }
 
@@ -393,6 +420,8 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
             // Clean table ...
             query.SetSql("DELETE FROM " + table_name);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             // INT collumn ...
             {
@@ -420,6 +449,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
 
                     query.SetSql(sql);
                     query.Execute();
+                    query.RequireRowCount(num_of_tests);
 
                     BOOST_CHECK( query.HasMoreResultSets() );
                     CQuery::iterator it = query.begin();
@@ -430,14 +460,15 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
                         BOOST_CHECK_EQUAL( expected_value, value );
                     }
 
-                    // Dump results ...
-                    query.PurgeResults();
+                    BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
                 }
             }
 
             // Clean table ...
             query.SetSql("DELETE FROM " + table_name);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             // BIGINT collumn ...
             {
@@ -467,6 +498,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
 
                     query.SetSql(sql);
                     query.Execute();
+                    query.RequireRowCount(num_of_tests);
 
                     BOOST_CHECK( query.HasMoreResultSets() );
                     CQuery::iterator it = query.begin();
@@ -479,6 +511,8 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
 
                     // Dump results ...
                     query.PurgeResults();
+                    BOOST_CHECK_NO_THROW(
+                        query.VerifyDone(CQuery::eAllResultSets));
                 }
             }
         }
@@ -492,6 +526,8 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
                     "create table #__blki_test ( name char(32), value bigint null )"
                     );
                 query.Execute();
+                query.RequireRowCount(0);
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
 
             // First test ...
@@ -511,11 +547,13 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
 
         // VARCHAR ...
         {
-            int num_of_tests = 7;
+            int num_of_tests = 6;
 
             // Clean table ...
             query.SetSql("DELETE FROM " + table_name);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             // Insert data ...
             {
@@ -524,7 +562,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
                 bi.Bind(1, eSDB_Int4);
                 bi.Bind(2, eSDB_String);
 
-                for(int i = 1; i < num_of_tests; ++i ) {
+                for(int i = 1; i <= num_of_tests; ++i ) {
                     bi << i;
                     int str_len = 0;
                     switch (i) {
@@ -565,6 +603,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
 
                 query.SetSql(sql);
                 query.Execute();
+                query.RequireRowCount(num_of_tests);
                 ITERATE(CQuery, it, query.SingleSet()) {
                     Int4 i = it[1].AsInt4();
                     string col1 = it[2].AsString();
@@ -603,6 +642,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing)
                         break;
                     };
                 }
+                BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
             }
         }
     }
@@ -636,6 +676,8 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing2)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Insert data ...
@@ -657,6 +699,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing2)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(1);
 
             BOOST_CHECK( query.HasMoreResultSets() );
             CQuery::iterator it = query.begin();
@@ -669,8 +712,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing2)
             BOOST_CHECK( !it[4].IsNull() );
             BOOST_CHECK( !it[4].AsDateTime().IsEmpty() );
 
-            // Dump results ...
-            query.PurgeResults();
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Second test
@@ -678,6 +720,8 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing2)
             sql = "DELETE FROM " + table_name;
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
             CBulkInsert bi = GetDatabase().NewBulkInsert(table_name, 100);
 
@@ -723,6 +767,8 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing3)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Insert data ...
@@ -772,6 +818,8 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing4)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Insert data ...
@@ -861,6 +909,8 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing7)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Insert data ...
@@ -922,6 +972,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing7)
         {
             query.SetSql("select * from " + table_name + " order by id");
             query.Execute();
+            query.RequireRowCount(test_num);
             int j = 0;
             ITERATE(CQuery, it, query) {
                 BOOST_CHECK_EQUAL(it["i1"].AsInt4(), i1);
@@ -947,6 +998,7 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Writing7)
                 ++j;
             }
             BOOST_CHECK_EQUAL(j, test_num);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
     }
     catch(const CException& ex) {
@@ -974,6 +1026,8 @@ BOOST_AUTO_TEST_CASE(Test_Bulk_Late_Bind)
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 
         // Check that data cannot be binded after rows sending

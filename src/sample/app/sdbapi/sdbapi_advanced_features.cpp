@@ -95,7 +95,8 @@ int CSdbapiTest::Run()
                     end";
             query.SetSql(sql);
             query.Execute();
-            query.PurgeResults();
+            query.RequireRowCount(0);
+            query.VerifyDone();
 
             sql = "create table SelectSample (\
                     int_val int not null, \
@@ -105,7 +106,8 @@ int CSdbapiTest::Run()
                     text_val text not null)";
             query.SetSql(sql);
             query.Execute();
-            query.PurgeResults();
+            query.RequireRowCount(0);
+            query.VerifyDone();
 
             sql = "insert SelectSample values (1, 2.5, '11/05/2005', 'Test string1', 'TextBlobTextBlobTextBlobTextBlobTextBlob') \
                   insert SelectSample values (2, 3.3, '11/06/2005', 'Test string2', 'TextBlobTextBlobTextBlobTextBlobTextBlob') \
@@ -114,7 +116,8 @@ int CSdbapiTest::Run()
                   insert SelectSample values (5, 6.6, '11/09/2005', 'Test string5', 'TextBlobTextBlobTextBlobTextBlobTextBlob')";
             query.SetSql(sql);
             query.Execute();
-            query.PurgeResults();
+            query.RequireRowCount(0);
+            query.VerifyDone();
 
 
             sql = "select int_val, fl_val, date_val, str_val from SelectSample";
@@ -123,6 +126,7 @@ int CSdbapiTest::Run()
 
             query.SetSql(sql);
             query.Execute();
+            query.RequireRowCount(5);
 
             bool show_names = true;
             ITERATE(CQuery, row, query) {
@@ -148,7 +152,8 @@ int CSdbapiTest::Run()
 #endif
 
             }
-            query.PurgeResults();
+
+            query.VerifyDone();
             NcbiCout << "Rows : " << query.GetRowCount() << endl;
         }
         catch(CSDB_Exception& e) {
@@ -165,7 +170,8 @@ int CSdbapiTest::Run()
                 end";
         query.SetSql(sql);
         query.Execute();
-        query.PurgeResults();
+        query.RequireRowCount(0);
+        query.VerifyDone();
 
         sql = "create table BulkSample (\
                 id int not null, \
@@ -174,7 +180,8 @@ int CSdbapiTest::Run()
                 date datetime not null)";
         query.SetSql(sql);
         query.Execute();
-        query.PurgeResults();
+        query.RequireRowCount(0);
+        query.VerifyDone();
 
         try {
             //Initialize table using bulk insert
@@ -203,7 +210,8 @@ int CSdbapiTest::Run()
                 end";
         query.SetSql(sql);
         query.Execute();
-        query.PurgeResults();
+        query.RequireRowCount(0);
+        query.VerifyDone();
 
         if(NStr::CompareNocase(server, "DBAPI_DEV1") == 0
            ||  NStr::CompareNocase(server, "DBAPI_SYB_TEST") == 0)
@@ -240,7 +248,8 @@ end";
         }
         query.SetSql(sql);
         query.Execute();
-        query.PurgeResults();
+        query.RequireRowCount(0);
+        query.VerifyDone();
 
         float f = 2.999f;
 
@@ -251,6 +260,7 @@ end";
         query.SetParameter("@f", f);
         query.SetParameter("@o", 0, eSDB_Int4, eSP_InOut);
         query.ExecuteSP("SampleProc");
+        query.RequireRowCount(1, kMax_Auto);
 
         ITERATE(CQuery, row, query.SingleSet()) {
             if(row[1].AsInt4() == 2121) {
@@ -269,6 +279,7 @@ end";
                          << endl;
             }
         }
+        query.VerifyDone();
         NcbiCout << "Output param: "
                  << query.GetParameter("@o").AsInt4()
                  << endl;
@@ -292,7 +303,8 @@ end";
                 end";
         query.SetSql(sql);
         query.Execute();
-        query.PurgeResults();
+        query.RequireRowCount(0);
+        query.VerifyDone();
 
 
         sql = "create table BlobSample (\
@@ -300,7 +312,8 @@ end";
                 blob2 text null, blob text null, unique (id))";
         query.SetSql(sql);
         query.Execute();
-        query.PurgeResults();
+        query.RequireRowCount(0);
+        query.VerifyDone();
 
         // Write BLOB several times
         const int COUNT = 5;
@@ -323,18 +336,22 @@ end";
         query.SetSql("select 'Written blob size' as size, datalength(blob) \
                         from BlobSample where id = 1");
         query.Execute();
+        query.RequireRowCount(1);
 
         ITERATE(CQuery, row, query.SingleSet()) {
             NcbiCout << row[1].AsString() << ": "
                      << row[2].AsInt4() << endl;
         }
 
+        query.VerifyDone();
+
         // ExecuteUpdate rowcount test
         NcbiCout << "Rowcount test..." << endl;
         sql = "update BlobSample set blob ='deleted'";
         query.SetSql(sql);
         query.Execute();
-        query.PurgeResults();
+        query.RequireRowCount(0);
+        query.VerifyDone();
         NcbiCout << "Rows updated: " << query.GetRowCount() << endl;
 
         // drop BlobSample table
@@ -342,7 +359,8 @@ end";
         sql = "drop table BlobSample";
         query.SetSql(sql);
         query.Execute();
-        query.PurgeResults();
+        query.RequireRowCount(0);
+        query.VerifyDone();
         NcbiCout << "Done." << endl;
     }
     catch(out_of_range) {

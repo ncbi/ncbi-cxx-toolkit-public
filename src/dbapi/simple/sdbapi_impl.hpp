@@ -139,13 +139,15 @@ public:
     void PurgeResults(void);
     void BeginNewRS(void);
     void Next(void);
+    void RequireRowCount(unsigned int min_rows, unsigned int max_rows);
+    void VerifyDone(CQuery::EHowMuch how_much = CQuery::eThisResultSet);
     const CQuery::CField& GetColumn(const CDBParamVariant& col) const;
     const CVariant& GetFieldValue(const CQuery::CField& field);
     bool IsFinished(void) const;
 
     void SetIgnoreBounds(bool is_ignore);
     unsigned int GetResultSetNo(void);
-    unsigned int GetRowNo(void);
+    unsigned int GetRowNo(CQuery::EHowMuch how_much = CQuery::eAllResultSets);
     int GetRowCount(void);
     int GetStatus(void);
     int GetTotalColumns(void);
@@ -159,6 +161,7 @@ private:
     void x_CheckCanWork(bool need_rs = false) const;
     void x_SetOutParameter(const string& name, const CVariant& value);
     void x_ClearAllParams(void);
+    void x_CheckRowCount(void);
     bool x_Fetch(void);
     void x_InitBeforeExec(void);
     void x_InitRSFields(void);
@@ -179,8 +182,12 @@ private:
     bool                m_RSBeginned;
     bool                m_RSFinished;
     bool                m_Executed;
+    bool                m_ReportedWrongRowCount;
     unsigned int        m_CurRSNo;
     unsigned int        m_CurRowNo;
+    unsigned int        m_CurRelRowNo;
+    unsigned int        m_MinRowCount;
+    unsigned int        m_MaxRowCount;
     int                 m_RowCount;
     int                 m_Status;
     TColNumsMap         m_ColNums;

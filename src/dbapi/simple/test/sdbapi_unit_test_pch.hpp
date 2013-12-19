@@ -135,6 +135,12 @@ const string& GetTableName(void);
 CDatabase& GetDatabase(void);
 const CTestArguments& GetArgs(void);
 
+inline
+static int s_ServerInfoRows(void)
+{
+    return (GetArgs().GetServerType() == eSqlSrvMsSql) ? 29 : 30;
+}
+
 size_t GetNumOfRecords(CQuery& query, const string& table_name);
 
 extern const char* msg_record_expected;

@@ -1830,8 +1830,12 @@ CQueryImpl::CQueryImpl(CDatabaseImpl* db_impl)
       m_RSBeginned(false),
       m_RSFinished(true),
       m_Executed(false),
+      m_ReportedWrongRowCount(false),
       m_CurRSNo(0),
       m_CurRowNo(0),
+      m_CurRelRowNo(0),
+      m_MinRowCount(0),
+      m_MaxRowCount(kMax_Auto),
       m_RowCount(-1),
       m_Status(-1)
 {
@@ -1971,6 +1975,7 @@ inline void
 CQueryImpl::SetSql(CTempString sql)
 {
     x_CheckCanWork();
+
     m_Sql = sql;
     m_Executed = false;
 }
@@ -1978,6 +1983,17 @@ CQueryImpl::SetSql(CTempString sql)
 void
 CQueryImpl::x_Close(void)
 {
+    if (m_CurRS != NULL) {
+        try {
+            VerifyDone(CQuery::eAllResultSets);
+        } catch (CSDB_Exception& e) {
+            ERR_POST_X(13, Warning << e);
+        }
+        if (m_CurRSNo != 0) {
+            _TRACE(m_CurRowNo << " row(s) from query.");
+        }
+    }
+
     delete m_CurRS;
     m_CurRS = NULL;
     if (m_CallStmt) {
@@ -1998,9 +2014,13 @@ CQueryImpl::x_InitBeforeExec(void)
     m_IgnoreBounds = false;
     m_RSBeginned = false;
     m_RSFinished = true;
+    m_ReportedWrongRowCount = false;
     m_CurRSNo = 0;
     m_CurRowNo = 0;
+    m_CurRelRowNo = 0;
     m_RowCount = 0;
+    m_MinRowCount = 0;
+    m_MaxRowCount = kMax_Auto;
     m_Status = -1;
 }
 
@@ -2054,6 +2074,7 @@ CQueryImpl::SetIgnoreBounds(bool is_ignore)
 {
     x_CheckCanWork();
     m_IgnoreBounds = is_ignore;
+    x_CheckRowCount();
 }
 
 inline unsigned int
@@ -2064,10 +2085,14 @@ CQueryImpl::GetResultSetNo(void)
 }
 
 inline unsigned int
-CQueryImpl::GetRowNo(void)
+CQueryImpl::GetRowNo(CQuery::EHowMuch how_much)
 {
     x_CheckCanWork();
-    return m_CurRowNo;
+    if (m_IgnoreBounds  ||  how_much == CQuery::eAllResultSets) {
+        return m_CurRowNo;
+    } else {
+        return m_CurRelRowNo;
+    }
 }
 
 inline int
@@ -2087,16 +2112,49 @@ CQueryImpl::GetStatus(void)
     return m_Status;
 }
 
+void CQueryImpl::x_CheckRowCount(void)
+{
+    if (m_ReportedWrongRowCount) {
+        return;
+    }
+
+    unsigned int n;
+    if ( !m_IgnoreBounds ) {
+        n = m_CurRelRowNo;
+    } else if (m_RowCount > 0) {
+        n = m_RowCount;
+    } else {
+        n = m_CurRowNo;
+    }
+
+    if (n > m_MaxRowCount) {
+        m_ReportedWrongRowCount = true;
+        NCBI_THROW(CSDB_Exception, eWrongParams,
+                   "Too many rows returned (limited to "
+                   + NStr::NumericToString(m_MaxRowCount) + ')');
+    } else if (m_RSFinished  &&  n < m_MinRowCount) {
+        m_ReportedWrongRowCount = true;
+        NCBI_THROW(CSDB_Exception, eWrongParams,
+                   "Not enough rows returned ("
+                   + NStr::NumericToString(m_CurRowNo) + '/'
+                   + NStr::NumericToString(m_MinRowCount) + ')');
+    }
+}
+
 inline bool
 CQueryImpl::x_Fetch(void)
 {
     try {
         if (m_CurRS->Next()) {
             ++m_CurRowNo;
+            ++m_CurRelRowNo;
+            x_CheckRowCount();
             return true;
         }
         else {
             m_RSFinished = true;
+            _TRACE(m_CurRelRowNo << " row(s) in set.");
+            x_CheckRowCount();
             return false;
         }
     }
@@ -2156,6 +2214,10 @@ CQueryImpl::HasMoreResultSets(void)
                 break;
             case eDB_RowResult:
                 ++m_CurRSNo;
+                if ( !m_IgnoreBounds ) {
+                    m_ReportedWrongRowCount = false;
+                }
+                m_CurRelRowNo = 0;
                 x_InitRSFields();
                 return true;
             case eDB_ComputeResult:
@@ -2165,6 +2227,8 @@ CQueryImpl::HasMoreResultSets(void)
         }
     }
     SDBAPI_CATCH_LOWLEVEL()
+
+    _TRACE(m_CurRowNo << " row(s) from query.");
 
     if (m_CallStmt) {
         m_Status = m_CallStmt->GetReturnStatus();
@@ -2204,8 +2268,17 @@ inline void
 CQueryImpl::PurgeResults(void)
 {
     x_CheckCanWork();
-    while (HasMoreResultSets())
-        BeginNewRS();
+    for (;;) {
+        try {
+            if (HasMoreResultSets()) {
+                BeginNewRS();
+            } else {
+                break;
+            }
+        } catch (CSDB_Exception& e) {
+            ERR_POST_X(14, Warning << e);
+        }
+    }
 }
 
 inline int
@@ -2244,6 +2317,70 @@ CQueryImpl::Next(void)
     while (!x_Fetch()  &&  m_IgnoreBounds  &&  HasMoreResultSets())
         m_RSBeginned = true;
     m_RSBeginned = true;
+}
+
+inline void
+CQueryImpl::RequireRowCount(unsigned int min_rows, unsigned int max_rows)
+{
+    if ( !m_Executed ) {
+        NCBI_THROW(CSDB_Exception, eInconsistent,
+                   "RequireRowCount must follow Execute or ExecuteSP,"
+                   " which reset any requirements.");
+    }
+    if (min_rows > max_rows) {
+        NCBI_THROW(CSDB_Exception, eWrongParams,
+                   "Inconsistent row-count constraints: "
+                   + NStr::NumericToString(min_rows) + " > "
+                   + NStr::NumericToString(max_rows));
+    }
+    x_CheckCanWork();
+    _TRACE("RequireRowCount(" << min_rows << ", " << max_rows << ')');
+    m_MinRowCount = min_rows;
+    m_MaxRowCount = max_rows;
+    if (m_CurRS != NULL) {
+        x_CheckRowCount();
+    }
+}
+
+inline void
+CQueryImpl::VerifyDone(CQuery::EHowMuch how_much)
+{
+    x_CheckCanWork();
+
+    bool missed_results = false;
+    bool want_all = m_IgnoreBounds  ||  how_much == CQuery::eAllResultSets;
+
+    for (;;) {
+        try {
+            if (m_RSFinished) {
+                x_CheckRowCount();
+            } else if (m_CurRS) {
+                // Tolerate having read just enough rows, unless that number
+                // was zero but not necessarily required to be.
+                missed_results
+                    = x_Fetch()  ||  ( !m_RSBeginned  &&  m_MaxRowCount > 0);
+            }
+        } catch (...) {
+            if (want_all) {
+                PurgeResults();
+            } else {
+                HasMoreResultSets();
+            }
+            throw;
+        }
+
+        // We always want the effect of HasMoreResultSets.
+        if (HasMoreResultSets()  &&  want_all) {
+            BeginNewRS();
+        } else {
+            break;
+        }
+    }
+
+    if (missed_results) {
+        NCBI_THROW(CSDB_Exception, eInconsistent,
+                   "Result set had unread rows.");
+    }
 }
 
 inline bool
@@ -2764,9 +2901,9 @@ CQuery::GetResultSetNo(void)
 }
 
 unsigned int
-CQuery::GetRowNo(void)
+CQuery::GetRowNo(EHowMuch how_much)
 {
-    return m_Impl->GetRowNo();
+    return m_Impl->GetRowNo(how_much);
 }
 
 int
@@ -2791,6 +2928,24 @@ void
 CQuery::PurgeResults(void)
 {
     m_Impl->PurgeResults();
+}
+
+void
+CQuery::RequireRowCount(unsigned int n)
+{
+    m_Impl->RequireRowCount(n, n);
+}
+
+void
+CQuery::RequireRowCount(unsigned int min_rows, unsigned int max_rows)
+{
+    m_Impl->RequireRowCount(min_rows, max_rows);
+}
+
+void
+CQuery::VerifyDone(EHowMuch how_much)
+{
+    m_Impl->VerifyDone(how_much);
 }
 
 int

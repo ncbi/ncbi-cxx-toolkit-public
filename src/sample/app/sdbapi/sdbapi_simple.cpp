@@ -244,6 +244,7 @@ void CSdbapiSimpleApp::DemoStoredProc(void)
     // Execute the stored procedure.
     NcbiCout << "\nExecuting stored proc \"" << proc_name << "\":" << NcbiEndl;
     query.ExecuteSP(proc_name);
+    // query.RequireRowCount(...);
 
     // Print the results.
     //
@@ -255,6 +256,9 @@ void CSdbapiSimpleApp::DemoStoredProc(void)
             << row[1].AsInt4() << "    "
             << row[2].AsFloat() << NcbiEndl;
     }
+
+    // Confirm having read all results.
+    query.VerifyDone();
 
     // Print the number of result rows.
     NcbiCout
@@ -283,6 +287,7 @@ void CSdbapiSimpleApp::DemoStaticSql(void)
     NcbiCout << "\nExecuting static SQL \"" << sql << "\":" << NcbiEndl;
     CQuery query = m_Db.NewQuery(sql);
     query.Execute();
+    // query.RequireRowCount(...);
 
     // Print the results.
     //
@@ -292,6 +297,7 @@ void CSdbapiSimpleApp::DemoStaticSql(void)
     ITERATE(CQuery, row, query.SingleSet()) {
         NcbiCout << row[1].AsString() << NcbiEndl;
     }
+    query.VerifyDone();
 }
 
 
@@ -331,6 +337,7 @@ void CSdbapiSimpleApp::DemoParamerizedSql(void)
     NcbiCout << "\nExecuting parameterized SQL \"" << sql << "\":" << NcbiEndl;
     query.SetSql(sql);
     query.Execute();
+    // query.RequireRowCount(...);
 
     // Print the results.
     //
@@ -345,6 +352,7 @@ void CSdbapiSimpleApp::DemoParamerizedSql(void)
             << row[4].AsInt4() << "    "
             << row[5].AsString() << NcbiEndl;
     }
+    query.VerifyDone();
 }
 
 
@@ -392,6 +400,7 @@ void CSdbapiSimpleApp::DemoDynamicSql(void)
     CQuery query = m_Db.NewQuery();
     query.SetSql(sql);
     query.Execute();
+    // query.RequireRowCount(...);
 
     // Print the results.
     //
@@ -406,6 +415,7 @@ void CSdbapiSimpleApp::DemoDynamicSql(void)
             << row[4].AsInt4() << "    "
             << row[5].AsString() << NcbiEndl;
     }
+    query.VerifyDone();
 }
 
 

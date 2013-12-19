@@ -453,11 +453,13 @@ public:
     void SetSql(CTempString sql);
     /// Execute sql statement.
     /// All result sets left from previous statement or stored procedure
-    /// execution are purged.
+    /// execution are purged.  The query reverts to MultiSet mode, with
+    /// no row count requirements.
     void Execute(void);
     /// Execute stored procedure with given name.
     /// All result sets left from previous statement or stored procedure
-    /// execution are purged.
+    /// execution are purged.  The query reverts to MultiSet mode, with
+    /// no row count requirements.
     void ExecuteSP(CTempString sp);
 
     /// Get number of rows read after statement execution.
@@ -478,6 +480,36 @@ public:
     /// Purge all remaining result sets.
     void PurgeResults(void);
 
+    /// Whether to consider just the current result set or all result
+    /// sets, in MultiSet mode.  (In SingleSet mode, always consider all.)
+    enum EHowMuch {
+        eThisResultSet,
+        eAllResultSets
+    };
+
+    /// Indicate precisely how many rows the active query should return.
+    /// In MultiSet mode, the requirement applies to individual result
+    /// sets.  (Callers may specify the requirement for each set as it
+    /// comes up, or let it carry over unchanged.)  Any call to this
+    /// method must follow Execute or ExecuteSP, which reset any such
+    /// requirements.
+    void RequireRowCount(unsigned int n);
+    /// Indicate the minimum and maximum number of rows the active query
+    /// should return.  In MultiSet mode, the requirement applies to
+    /// individual result sets.  (Callers may specify the requirement
+    /// for each set as it comes up, or let it carry over unchanged.)
+    /// Any call to this method must follow Execute or ExecuteSP, which
+    /// reset any such requirements.
+    /// @param min_rows
+    ///  Minimum valid row count.
+    /// @param max_rows
+    ///  Maximum valid row count.  (kMax_Auto for no limit.)
+    void RequireRowCount(unsigned int min_rows, unsigned int max_rows);
+    /// Ensure that no unread rows remain, and that the total number of
+    /// rows satisfies any constraints specified by RequireRowCount.
+    /// Throw an exception (after purging any unread rows) if not.
+    void VerifyDone(EHowMuch how_much = eThisResultSet);
+
     /// Get total number of columns in the current result set
     int GetTotalColumns(void);
     /// Get name of the column with given number in the current result set.
@@ -491,9 +523,10 @@ public:
     unsigned int GetResultSetNo(void);
     /// Get row number currently active.
     /// Row numbers are assigned consecutively to each row in all result
-    /// sets returned starting with 1. Row number is not reset after
-    /// passing result set boundary.
-    unsigned int GetRowNo(void);
+    /// sets returned starting with 1.  With eAllResultSets (default) or
+    /// in MultiSet mode, row number is not reset after passing result set
+    /// boundary.
+    unsigned int GetRowNo(EHowMuch how_much = eAllResultSets);
 
     /// Convert this query to work like only one result set was returned
     /// effectively merging all result sets together. If some result sets
