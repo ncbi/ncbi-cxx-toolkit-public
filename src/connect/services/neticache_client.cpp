@@ -767,7 +767,7 @@ IReader* SNetICacheClientImpl::ReadCurrentBlobNotOlderThan(const string& key,
         if (e.GetErrCode() != CNetCacheException::eBlobNotFound)
             throw;
         const string& msg = e.GetMsg();
-        if (max_age > 0) {
+        if (max_age > 0 && msg.find("AGE=") != string::npos) {
             CNetServer::SExecResult exec_result;
             exec_result.response = msg;
             *actual_age = x_ExtractBlobAge(exec_result, "READLAST");
