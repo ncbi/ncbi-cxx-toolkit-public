@@ -545,6 +545,8 @@ nelle\)$" ,
     prefix "##Genome-Assembly-Data-START##" ,
     fields {
       {
+        field-name "Assembly Provider" } ,
+      {
         field-name "Finishing Goal" ,
         match-expression "^\([Ss][Tt][Aa][Nn][Dd][Aa][Rr][Dd] [Dd][Rr][Aa][Ff][Tt]\|[Hh][Ii][Gg][Hh]-[Qq][Uu][Aa][Ll][Ii][Tt][Yy] [Dd][Rr][Aa][Ff][Tt]\|[Ii][Mm][Pp][Rr][Oo][Vv][Ee][Dd] [Hh][Ii][Gg][Hh]-[Qq][Uu][Aa][Ll][Ii][Tt][Yy] [Dd][Rr][Aa][Ff][Tt]\|Annotation-Directed Improvement\|Noncontiguous Finished\|Finished\)$" ,
         severity info } ,
