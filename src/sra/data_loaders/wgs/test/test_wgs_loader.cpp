@@ -443,6 +443,9 @@ BOOST_AUTO_TEST_CASE(FetchSeq15)
 }
 
 
+static const bool s_MakeFasta = 0;
+
+
 BOOST_AUTO_TEST_CASE(Scaffold2Fasta)
 {
     CStopWatch sw(CStopWatch::eStart);
@@ -458,9 +461,11 @@ BOOST_AUTO_TEST_CASE(Scaffold2Fasta)
     auto_ptr<CNcbiOstream> out;
     auto_ptr<CFastaOstream> fasta;
 
-    string outfile_name = "out.fsa";
-    out.reset(new CNcbiOfstream(outfile_name.c_str()));
-    fasta.reset(new CFastaOstream(*out));
+    if ( s_MakeFasta ) {
+        string outfile_name = "out.fsa";
+        out.reset(new CNcbiOfstream(outfile_name.c_str()));
+        fasta.reset(new CFastaOstream(*out));
+    }
 
     for ( CWGSScaffoldIterator it(wgs_db, start_row); it; ++it ) {
         ++count;
@@ -473,6 +478,48 @@ BOOST_AUTO_TEST_CASE(Scaffold2Fasta)
             fasta->Write(scaffold);
         }
     }
+    NcbiCout << "Scanned in "<<sw.Elapsed() << NcbiEndl;
+}
+
+
+BOOST_AUTO_TEST_CASE(Scaffold2Fasta2)
+{
+    CStopWatch sw(CStopWatch::eStart);
+    CVDBMgr mgr;
+    CWGSDb wgs_db(mgr, "ALWZ01");
+    size_t limit_count = 30000, start_row = 1, count = 0;
+
+    CRef<CObjectManager> om(CObjectManager::GetInstance());
+    CScope scope(*CObjectManager::GetInstance());
+    CWGSDataLoader::RegisterInObjectManager(*om, CObjectManager::eDefault, 0);
+    scope.AddDefaults();
+
+    auto_ptr<CNcbiOstream> out;
+    auto_ptr<CFastaOstream> fasta;
+
+    if ( s_MakeFasta ) {
+        string outfile_name = "out.fsa";
+        out.reset(new CNcbiOfstream(outfile_name.c_str()));
+        fasta.reset(new CFastaOstream(*out));
+    }
+
+    CScope::TIds ids;
+    for ( CWGSScaffoldIterator it(wgs_db, start_row); it; ++it ) {
+        ++count;
+        if (limit_count > 0 && count > limit_count)
+            break;
+
+        ids.push_back(CSeq_id_Handle::GetHandle(*it.GetAccSeq_id()));
+    }
+
+    CScope::TBioseqHandles handles = scope.GetBioseqHandles(ids);
+    ITERATE ( CScope::TBioseqHandles, it, handles ) {
+        CBioseq_Handle scaffold = *it;
+        if ( fasta.get() ) {
+            fasta->Write(scaffold);
+        }
+    }
+
     NcbiCout << "Scanned in "<<sw.Elapsed() << NcbiEndl;
 }
 
@@ -501,3 +548,25 @@ BOOST_AUTO_TEST_CASE(WithdrawnCheck)
                       CBioseq_Handle::fState_no_data |
                       CBioseq_Handle::fState_withdrawn);
 }
+
+
+BOOST_AUTO_TEST_CASE(TPGTest)
+{
+    CRef<CObjectManager> om(CObjectManager::GetInstance());
+    CScope scope(*CObjectManager::GetInstance());
+
+    string wgs_root = "/panfs/pan1/id_dumps/WGS/tmp";
+    string wgs_prefix = "DAAH01";
+    string wgs_dbpath = wgs_root+"/"+wgs_prefix;
+    CWGSDataLoader::SLoaderParams wgs_loader_params;
+    wgs_loader_params.m_WGSVolPath = wgs_root;
+    CWGSDataLoader::RegisterInObjectManager(*om,  wgs_loader_params, CObjectManager::eDefault);
+    scope.AddDefaults();
+
+    CBioseq_Handle bh;
+
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("DAAH01000001.1"));
+    BOOST_CHECK(bh);
+}
+
+
