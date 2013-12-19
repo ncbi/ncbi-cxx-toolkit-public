@@ -174,10 +174,11 @@ BOOST_AUTO_TEST_CASE(Test_AddBiosample)
 BOOST_AUTO_TEST_CASE(StructuredCommentField)
 {
     vector<string> field_names = edit::CStructuredCommentField::GetFieldNames("Genome-Assembly-Data");
-    if (field_names.size() == 13) {
-        BOOST_CHECK_EQUAL(field_names[0], "Finishing Goal");
+    if (field_names.size() == 14) {
+        BOOST_CHECK_EQUAL(field_names[0], "Assembly Provider");
+        BOOST_CHECK_EQUAL(field_names[1], "Finishing Goal");
     } else {
-        BOOST_CHECK_EQUAL(field_names.size(), 13);
+        BOOST_CHECK_EQUAL(field_names.size(), 14);
     }
 }
 
