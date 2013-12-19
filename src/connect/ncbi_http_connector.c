@@ -141,7 +141,7 @@ typedef struct {
     BUF               w_buf;          /* storage to accumulate output data   */
     size_t            w_len;          /* pending message body size           */
 
-    TNCBI_BigCount    expected;       /* expected to receive until EOF       */
+    TNCBI_BigCount    expected;       /* expected to receive before EOF      */
     TNCBI_BigCount    received;       /* actually received so far            */
 } SHttpConnector;
 

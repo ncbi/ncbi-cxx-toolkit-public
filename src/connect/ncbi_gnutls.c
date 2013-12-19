@@ -295,6 +295,7 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock,
     }
 
     if (cred  &&  (cred->type != eNcbiCred_GnuTls  ||  !cred->data)) {
+        /*FIXME: there's a NULL(data)-terminated array of credentials */
         *error = 0;
         return 0;
     }

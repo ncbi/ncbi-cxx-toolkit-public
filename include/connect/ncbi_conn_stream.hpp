@@ -43,7 +43,7 @@
  *
  *   CConn_HttpStream
  *      I/O stream based on HTTP connector (that is, the stream, which
- *      connects to HTTP server and exchanges information using HTTP
+ *      connects to HTTP server and exchanges information using HTTP(S)
  *      protocol).
  *
  *   CConn_ServiceStream
@@ -232,7 +232,7 @@ public:
 
     /// @return
     ///   Internal CONNection handle, which is still owned and used by
-    ///   the stream (or NULL if no such connection exists)
+    ///   the stream (or NULL if no such handle exists)
     /// @note
     ///   Connection can have additional flags set for I/O processing.
     /// @sa
@@ -403,7 +403,7 @@ public:
     ///
     /// scheme                          -- must be http or unspecified, checked
     /// host:port                       -- target server
-    /// http_proxy_host:http_proxy_port -- HTTP proxy server to tunnel via
+    /// http_proxy_host:http_proxy_port -- HTTP proxy server to tunnel thru
     /// http_proxy_user:http_proxy_pass -- credentials for the proxy, if needed
     /// http_proxy_leak                 -- ignore bad proxy and connect direct
     /// timeout                         -- timeout to connect to HTTP proxy
@@ -454,7 +454,7 @@ public:
      size_t          buf_size = kConn_DefaultBufSize);
 
     /// This variant uses an existing CSocket to build a stream up on it.
-    /// NOTE:  it revokes all ownership of the "socket"'s internals
+    /// NOTE:  this always revokes all ownership of the "socket"'s internals
     /// (effectively leaving the CSocket empty);  CIO_Exception(eInvalidArg)
     /// is thrown if the internal SOCK is not owned by the passed CSocket.
     /// More details:  <ncbi_socket_connector.h>::SOCK_CreateConnectorOnTop().
@@ -479,30 +479,29 @@ private:
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// This stream exchanges data with an HTTP server located at the URL:
-/// http://host[:port]/path[?args]
+/// http[s]://host[:port]/path[?args]
 ///
 /// Note that "path" must include a leading slash, "args" can be empty,
 /// in which case the '?' does not get appended to the path.
 ///
 /// "User_header" (if not empty) should be a sequence of lines in the form
-/// 'HTTP-tag: Tag value', with each line separated by a CR LF sequence,
-/// and the last line terminated by a CR LF sequence.  For example:
-/// Content-Encoding: gzip\r\nContent-Length: 123\r\n
+/// 'HTTP-tag: Tag value', with each line separated by a CR LF sequence, and
+/// the last line optionally terminated with a CR LF sequence.  For example:
+/// "Content-Encoding: gzip\r\nContent-Type: application/octet-stream"
 /// It is included in the HTTP-header of each transaction.
 ///
-/// More elaborate specification of the server can be done via
-/// SConnNetInfo structure, which otherwise will be created with the
-/// use of a standard registry section to obtain default values from
-/// (details: <connect/ncbi_connutil.h>).  No user header is added if
-/// the argument is passed as default (or empty string).  To make
-/// sure the user header is passed empty, delete it from net_info
-/// by ConnNetInfo_DeleteUserHeader(net_info).
+/// More elaborate specification(s) of the server can be made via the
+/// SConnNetInfo structure, which otherwise will be created with the use of a
+/// standard registry section to obtain default values from
+/// (details: <connect/ncbi_connutil.h>).  To make sure the actual user header
+/// is empty, remember to delete it from "net_info" with
+/// ConnNetInfo_DeleteUserHeader(net_info).
 ///
 /// THTTP_Flags and other details: <connect/ncbi_http_connector.h>.
 ///
-/// Provided "timeout" is set at connection level, and if different from
-/// kDefaultTimeout, it overrides a value supplied by HTTP connector
-/// (the latter value is kept in SConnNetInfo::timeout).
+/// Provided "timeout" is set at the connection level, and if different from
+/// kDefaultTimeout, it overrides a value supplied by the HTTP connector
+/// (the latter value is kept at SConnNetInfo::timeout).
 ///
 
 class NCBI_XCONNECT_EXPORT CConn_HttpStream : public CConn_IOStream
@@ -592,12 +591,12 @@ private:
 /// service is implemented as one of the specified server "types"
 /// (details: <connect/ncbi_server_info.h>).
 ///
-/// Additional specifications can be passed in the SConnNetInfo structure,
+/// Additional specifications can be passed in an SConnNetInfo structure,
 /// otherwise created by using the service name as a registry section
 /// to obtain the information from (details: <connect/ncbi_connutil.h>).
 ///
-/// Provided "timeout" is set at connection level, and if different from
-/// kDefaultTimeout, it overrides the value supplied by underlying connector
+/// Provided "timeout" is set at the connection level, and if different from
+/// kDefaultTimeout, it overrides the value supplied by an underlying connector
 /// (the latter value is kept in SConnNetInfo::timeout).
 ///
 
@@ -648,16 +647,16 @@ public:
     /// Build a stream on top of an existing data area of a specified size.
     /// The contents of the area is what will be read first from the stream.
     /// Writing to the stream will _not_ modify the contents of the area.
-    /// The written data will appear following the initial data block when
-    /// read from the stream.
+    /// When read from the stream, the written data will appear following the
+    /// initial data block.
     /// Ownership of the area pointed to by "ptr" is controlled by the "owner"
     /// parameter, and if the ownership is passed to the stream the area will
-    /// be deleted by "delete[] (char*)" at the stream dtor.  That is,
+    /// be deleted by "delete[] (char*)" from the stream destructor.  That is,
     /// if there are any requirements to be considered for deleting the area
-    /// (like deleting an object or an array of objects), then the
-    /// ownership must not be passed to the stream.
-    /// Note that the area pointed to by "ptr" should not be changed
-    /// while it is still holding the data yet to be read from the stream.
+    /// (like deleting an object or an array of objects), then the ownership
+    /// must not be passed to the stream.
+    /// Note that the area pointed to by "ptr" should not be changed while it
+    /// is still holding the data yet to be read from the stream.
     CConn_MemoryStream(const void* ptr,
                        size_t      size,
                        EOwnership  owner/**no default for safety*/,
@@ -666,10 +665,10 @@ public:
     virtual ~CConn_MemoryStream();
 
     /// The CConnMemoryStream::To* methods allow to obtain unread portion of
-    /// the stream in a single container (as a string or a vector) so that all
-    /// data is kept in sequential memory locations.
-    /// Note that the operation is considered an extraction, so it empties
-    /// the stream.
+    /// the stream into a single container (as a string or a vector) so that
+    /// all data is kept in sequential memory locations.
+    /// Note that the operation is considered an extraction, so it effectively
+    /// empties the stream.
     void    ToString(string*);      ///< fill in the data, NULL is not accepted
     void    ToVector(vector<char>*);///< fill in the data, NULL is not accepted
 
@@ -745,8 +744,8 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 ///
-/// CConn_FtpStream is an elaborate FTP client, can be used for both
-/// data downloading and/or uploading to and from an FTP server.
+/// CConn_FtpStream is an elaborate FTP client, can be used for data
+/// downloading and/or uploading to and from an FTP server.
 /// See <connect/ncbi_ftp_connector.h> for detailed explanations
 /// of supported features.
 ///
