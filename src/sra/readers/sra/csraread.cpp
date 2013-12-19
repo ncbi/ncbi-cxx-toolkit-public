@@ -204,6 +204,22 @@ CCSraDb_Impl::SSeqTableCursor::SSeqTableCursor(const CCSraDb_Impl& db)
 }
 
 
+CCSraDb_Impl::SSeqTableCursor::SSeqTableCursor(const CVDBTable& table)
+    : m_Cursor(table),
+      INIT_VDB_COLUMN(SPOT_GROUP),
+      INIT_VDB_COLUMN(READ_TYPE),
+      INIT_VDB_COLUMN(READ_LEN),
+      INIT_VDB_COLUMN(READ_START),
+      INIT_VDB_COLUMN(READ),
+      INIT_VDB_COLUMN(QUALITY),
+      INIT_OPTIONAL_VDB_COLUMN(PRIMARY_ALIGNMENT_ID),
+      INIT_VDB_COLUMN(TRIM_LEN),
+      INIT_VDB_COLUMN(TRIM_START),
+      INIT_OPTIONAL_VDB_COLUMN(NAME)
+{
+}
+
+
 CCSraDb_Impl::CCSraDb_Impl(CVDBMgr& mgr, const string& csra_path,
                            IIdMapper* ref_id_mapper,
                            int ref_id_type)
@@ -387,11 +403,24 @@ CRef<CCSraDb_Impl::SSeqTableCursor> CCSraDb_Impl::Seq(void)
 {
     CRef<SSeqTableCursor> curs = m_Seq.Get();
     if ( !curs ) {
-        if ( m_Db ) {
-            curs = new SSeqTableCursor(m_Db);
+        if ( 1 ) {
+            if ( m_Db ) {
+                curs = new SSeqTableCursor(m_Db);
+            }
+            else {
+                curs = new SSeqTableCursor(*this);
+            }
         }
         else {
-            curs = new SSeqTableCursor(*this);
+            if ( !m_SeqTable ) {
+                if ( m_Db ) {
+                    m_SeqTable = CVDBTable(m_Db, "SEQUENCE");
+                }
+                else {
+                    m_SeqTable = CVDBTable(m_Mgr, GetCSraPath());
+                }
+            }
+            curs = new SSeqTableCursor(m_SeqTable);
         }
     }
     return curs;

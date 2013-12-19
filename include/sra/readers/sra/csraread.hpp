@@ -180,6 +180,7 @@ protected:
     struct SSeqTableCursor : public CObject {
         SSeqTableCursor(const CVDB& db);
         SSeqTableCursor(const CCSraDb_Impl& db);
+        SSeqTableCursor(const CVDBTable& table);
 
         CVDBTable m_Table;
         CVDBCursor m_Cursor;
@@ -227,6 +228,7 @@ private:
 
     CVDBObjectCache<SRefTableCursor> m_Ref;
     CVDBObjectCache<SAlnTableCursor> m_Aln[2];
+    CVDBTable m_SeqTable;
     CVDBObjectCache<SSeqTableCursor> m_Seq;
 
     TSeqPos m_RowSize; // cached size of refseq row in bases
