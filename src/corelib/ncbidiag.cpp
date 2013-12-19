@@ -3253,8 +3253,8 @@ private:
 void CDiagBuffer::Flush(void)
 {
     if ( m_InUse || !m_Diag ) {
-        if (!m_InUse  &&  m_Stream  &&  m_Stream->pcount() > 0) {
-            string message(m_Stream->str(), m_Stream->pcount());
+        if (!m_InUse  &&  m_Stream  &&  m_Stream->pcount()) {
+            string message(m_Stream->str(), size_t(m_Stream->pcount()));
             m_Stream->rdbuf()->freeze(false);
             // Can not use Reset() without CNcbiDiag.
             m_Stream->rdbuf()->PUBSEEKOFF(0, IOS_BASE::beg, IOS_BASE::out);
@@ -5338,7 +5338,7 @@ void CFileHandleDiagHandler::Reopen(TReopenFlags flags)
             CNcbiOstrstream str_os;
             str_os << *it;
             if (write(new_handle->GetHandle(), str_os.str(),
-                      (unsigned int)str_os.pcount())) {/*dummy*/};
+                      size_t(str_os.pcount()))) {/*dummy*/};
             str_os.rdbuf()->freeze(false);
         }
         m_Messages.reset();
@@ -5391,7 +5391,7 @@ void CFileHandleDiagHandler::Post(const SDiagMessage& mess)
         CNcbiOstrstream str_os;
         str_os << mess;
         if (write(handle->GetHandle(), str_os.str(),
-            (unsigned int)str_os.pcount())) {/*dummy*/};
+                  size_t(str_os.pcount()))) {/*dummy*/};
         str_os.rdbuf()->freeze(false);
 
         handle->RemoveReference();
@@ -6258,7 +6258,7 @@ s_GetExceptionText(const CException* pex)
     string text(pex->GetMsg());
     ostrstream os;
     pex->ReportExtra(os);
-    if (os.pcount() != 0) {
+    if (os.pcount()) {
         text += " (";
         text += (string) CNcbiOstrstreamToString(os);
         text += ')';
