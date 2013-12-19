@@ -38,8 +38,9 @@
 #include <errno.h>
 #ifdef NCBI_OS_MSWIN
 #  include <io.h>      /* for access() */
+#  define   access  _access
 #  ifndef   R_OK
-#    define R_OK  4    /* per MSDN     */
+#    define R_OK    4  /* per MSDN     */
 #  endif /*!R_OK*/
 #endif /*NCBI_OS_MSWIN*/
 #include <stdlib.h>
