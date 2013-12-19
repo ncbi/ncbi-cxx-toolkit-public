@@ -99,8 +99,8 @@ bool CGtfRecord::MakeChildRecord(
 
     m_uSeqStart = location.GetFrom();
     m_uSeqStop = location.GetTo();
-    if ( parent.m_pdScore ) {
-        m_pdScore = new double( *(parent.m_pdScore) );
+    if ( parent.m_pScore ) {
+        m_pScore = new string( *(parent.m_pScore) );
     }
     if ( parent.m_peStrand ) {
         m_peStrand = new ENa_strand( *(parent.m_peStrand) );

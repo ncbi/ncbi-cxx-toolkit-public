@@ -127,7 +127,7 @@ protected:
     unsigned int m_uSeqStop;
     string m_strSource;
     string m_strType;
-    double* m_pdScore;
+    string* m_pScore;
     ENa_strand* m_peStrand;
     unsigned int* m_puPhase;
     string m_strAttributes;    

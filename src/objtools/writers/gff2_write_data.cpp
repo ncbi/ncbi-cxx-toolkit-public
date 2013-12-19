@@ -75,7 +75,7 @@ CGffWriteRecord::CGffWriteRecord(
     m_uSeqStop( 0 ),
     m_strSource( "." ),
     m_strType( "." ),
-    m_pdScore( 0 ),
+    m_pScore( 0 ),
     m_peStrand( 0 ),
     m_puPhase( 0 )
 //  ----------------------------------------------------------------------------
@@ -94,13 +94,13 @@ CGffWriteRecord::CGffWriteRecord(
     m_uSeqStop( other.m_uSeqStop ),
     m_strSource( other.m_strSource ),
     m_strType( other.m_strType ),
-    m_pdScore( 0 ),
+    m_pScore( 0 ),
     m_peStrand( 0 ),
     m_puPhase( 0 )
 //  ----------------------------------------------------------------------------
 {
-    if ( other.m_pdScore ) {
-        m_pdScore = new double( *(other.m_pdScore) );
+    if ( other.m_pScore ) {
+        m_pScore = new string( *(other.m_pScore) );
     }
     if ( other.m_peStrand ) {
         m_peStrand = new ENa_strand( *(other.m_peStrand) );
@@ -117,7 +117,7 @@ CGffWriteRecord::CGffWriteRecord(
 CGffWriteRecord::~CGffWriteRecord()
 //  ----------------------------------------------------------------------------
 {
-    delete m_pdScore;
+    delete m_pScore;
     delete m_peStrand;
     delete m_puPhase; 
 };
@@ -185,10 +185,10 @@ string CGffWriteRecord::StrSeqStop() const
 string CGffWriteRecord::StrScore() const
 //  ----------------------------------------------------------------------------
 {
-    if ( ! m_pdScore ) {
+    if ( ! m_pScore ) {
         return ".";
     }
-    return NStr::DoubleToString( *m_pdScore );
+    return *m_pScore;
 }
 
 //  ----------------------------------------------------------------------------
@@ -578,7 +578,7 @@ bool CGffWriteRecordFeature::x_AssignScore(
             continue;
         }
         if ( (*it)->GetQual() == "gff_score" ) {
-            m_pdScore = new double( NStr::StringToDouble( (*it)->GetVal() ) );
+            m_pScore = new string((*it)->GetVal());
             return true;
         }
     }

@@ -76,15 +76,15 @@ void CGffAlignmentRecord::SetScore(
         return;
     }
     string key = score.GetId().GetStr();
-    double dValue( 0 );
+    string value;
     if ( score.GetValue().IsInt() ) {
-            dValue = double( score.GetValue().GetInt() );
+            value = NStr::IntToString(score.GetValue().GetInt());
     }
     else {
-        dValue = score.GetValue().GetReal();
+        value = NStr::DoubleToString(score.GetValue().GetReal());
     }
     if ( key == "score" ) {
-        m_pdScore = new double( dValue );
+        m_pScore = new string(value);
     }
     else {
         if ( ! m_strOtherScores.empty() ) {
@@ -92,7 +92,7 @@ void CGffAlignmentRecord::SetScore(
         }
         m_strOtherScores += key;
         m_strOtherScores += "=";
-        m_strOtherScores += NStr::DoubleToString( dValue );
+        m_strOtherScores += value;
     }
 }
 
