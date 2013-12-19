@@ -160,16 +160,16 @@ struct SAutoMinMaxLimits
 
     /// For non-integral types, yield a huge negative value rather than a
     /// tiny positive one.
-#if defined(NCBI_HAVE_CXX11)  &&  !defined(NCBI_COMPILER_ICC)
-    // Be conservative with ICC, which could wind up using a libstdc++
-    // lacking lowest() despite running in C++ '11 mode itself.
-    static T min(void) { return TStdLim::lowest(); }
-#else
     static T min(void)
     {
+#if defined(NCBI_HAVE_CXX11)  &&  !defined(NCBI_COMPILER_ICC)
+        // Be conservative with ICC, which could wind up using a libstdc++
+        // lacking lowest() despite running in C++ '11 mode itself.
+        return TStdLim::lowest();
+#else
         return TStdLim::is_integer ? TStdLim::min() : T(-TStdLim::max());
-    }
 #endif
+    }
 };
 
 struct SAutoMax
@@ -195,14 +195,15 @@ struct SAutoMin
 static const SAutoMin kMin_Auto = {};
 
 
-#define NCBI_FORBID_AUTOMINMAX_OPERATION(op, T1, T2) \
+#if !defined(NCBI_COMPILER_GCC)  ||  NCBI_COMPILER_VERSION >= 410
+#  define NCBI_FORBID_AUTOMINMAX_OPERATION(op, T1, T2) \
 template <typename T> \
 inline bool operator op(const T1&, const T2&) { \
     typename T::T1##T2##OperationNotSupported tmp; \
     return false; \
 }
 
-#define NCBI_FORBID_AUTOMINMAX_OPERATIONS(op) \
+#  define NCBI_FORBID_AUTOMINMAX_OPERATIONS(op) \
 NCBI_FORBID_AUTOMINMAX_OPERATION(op, SAutoMax, T) \
 NCBI_FORBID_AUTOMINMAX_OPERATION(op, SAutoMin, T) \
 NCBI_FORBID_AUTOMINMAX_OPERATION(op, T, SAutoMax) \
@@ -214,6 +215,7 @@ NCBI_FORBID_AUTOMINMAX_OPERATIONS(<)
 NCBI_FORBID_AUTOMINMAX_OPERATIONS(<=)
 NCBI_FORBID_AUTOMINMAX_OPERATIONS(>)
 NCBI_FORBID_AUTOMINMAX_OPERATIONS(>=)
+#endif
 
 
 /// Generic template to get STD limits by a variable.
