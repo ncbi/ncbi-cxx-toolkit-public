@@ -1843,6 +1843,30 @@ bool CFeatTree::x_AssignParentByRef(CFeatInfo& info)
     return true;
 }
 
+enum EStrandMatchRule {
+    eStrandMatch_all,
+    eStrandMatch_at_least_one,
+    eStrandMatch_any
+};
+// Check what strand match is required
+static EStrandMatchRule s_GetStrandMatchRule(const STypeLink& link,
+                                             const CFeatTree::CFeatInfo& info,
+                                             const CFeatTree* tree)
+{
+    if ( link.m_ParentType == CSeqFeatData::eSubtype_gene ) {
+        if ( link.m_StartType == CSeqFeatData::eSubtype_variation &&
+             tree->GetSNPStrandMode() == tree->eSNPStrand_both ) {
+            // try snp rev
+            return eStrandMatch_any;
+        }
+        if ( info.m_Feat.IsSetExcept_text() &&
+             info.m_Feat.GetExcept_text().find("trans-splicing") != NPOS ) {
+            return eStrandMatch_at_least_one;
+        }
+    }
+    return eStrandMatch_all;
+}
+
 
 static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                                   TBestArray& bests,
@@ -1929,8 +1953,11 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                 CFeatTree::CFeatInfo& info = *ci->m_Info;
                 const CSeq_loc& c_loc = info.m_Feat.GetLocation();
                 CRef<CSeq_loc> c_loc2;
+                ENa_strand c_loc2_strand = eNa_strand_unknown;
                 EOverlapType overlap_type =
                     sx_GetOverlapType(link, c_loc, circular_length);
+                EStrandMatchRule strand_match_rule =
+                    s_GetStrandMatchRule(link, info, tree);
 
                 // skip non-overlapping parents
                 while ( pi != pe &&
@@ -1968,10 +1995,10 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                     Int8 overlap;
                     try {
                         overlap = TestForOverlap64(p_loc,
-                                                    c_loc,
-                                                    overlap_type,
-                                                    circular_length,
-                                                    scope);
+                                                   c_loc,
+                                                   overlap_type,
+                                                   circular_length,
+                                                   scope);
                     }
                     catch ( CException& /*ignored*/ ) {
                         overlap = -1;
@@ -1980,20 +2007,35 @@ static void s_CollectBestOverlaps(CFeatTree::TFeatArray& features,
                         ci->m_Best->CheckBest(quality, overlap, pc->m_Info);
                         continue;
                     }
-                    if ( link.m_StartType != CSeqFeatData::eSubtype_variation ||
-                         tree->GetSNPStrandMode() != tree->eSNPStrand_both ) {
+                    if ( strand_match_rule == eStrandMatch_all ) {
+                        // strands mismatch -> no overlap
                         continue;
                     }
-                    if ( !c_loc2 ) {
-                        c_loc2 = SerialClone(c_loc);
-                        ENa_strand strand = GetStrand(*c_loc2, scope);
-                        if ( strand == eNa_strand_plus ||
-                             strand == eNa_strand_minus ) {
-                            c_loc2->FlipStrand();
+                    if ( info.m_MultiId || pc->m_Info->m_MultiId ) {
+                        // cannot compare strands on multi-id locations
+                        continue;
+                    }
+                    ENa_strand pstrand = GetStrand(p_loc, scope);
+                    if ( pstrand == eNa_strand_other ) {
+                        // parent has mixed strands -> no overlap
+                        continue;
+                    }
+                    if ( pstrand == eNa_strand_unknown ) {
+                        pstrand = eNa_strand_plus;
+                    }
+                    if ( strand_match_rule == eStrandMatch_at_least_one &&
+                         GetStrand(c_loc) != eNa_strand_other ) {
+                        // child's strand is single and doesn't match
+                        continue;
+                    }
+                    if ( !c_loc2 || c_loc2_strand != pstrand ) {
+                        // adjust strand to parent
+                        if ( !c_loc2 ) {
+                            c_loc2 = SerialClone(c_loc);
                         }
-                        else if ( strand == eNa_strand_unknown ) {
-                            c_loc2->SetStrand(eNa_strand_minus);
-                        }
+                        // force
+                        c_loc2->SetStrand(pstrand);
+                        c_loc2_strand = pstrand;
                     }
                     try {
                         overlap = TestForOverlap64(p_loc,
