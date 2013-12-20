@@ -127,6 +127,7 @@ bool CDiscTestInfo :: is_CdTransl_run;
 bool CDiscTestInfo :: is_Comment_run;
 bool CDiscTestInfo :: is_Defl_run;
 bool CDiscTestInfo :: is_DESC_user_run;
+bool CDiscTestInfo :: is_FeatCnt_run;
 bool CDiscTestInfo :: is_Genes_run;
 bool CDiscTestInfo :: is_Genes_oncall_run;
 bool CDiscTestInfo :: is_GP_Set_run;
@@ -617,7 +618,8 @@ void CBioseq_DISC_SUSPECT_RRNA_PRODUCTS :: GetReport(CRef <CClickableItem>& c_it
 void CBioseq_TEST_ORGANELLE_PRODUCTS :: TestOnObj(const CBioseq& bioseq)
 {
    CBioseq_Handle bioseq_hl = thisInfo.scope->GetBioseqHandle(bioseq);
-   const CBioSource* biosrc = sequence::GetBioSource(bioseq_hl); //try bioseq_biosrc
+   const CBioSource* 
+         biosrc = sequence::GetBioSource(bioseq_hl); //try bioseq_biosrc
    if (!biosrc) {
        return;
    }
@@ -651,11 +653,12 @@ void CBioseq_TEST_ORGANELLE_PRODUCTS :: TestOnObj(const CBioseq& bioseq)
           ITERATE (list <CRef <CSuspect_rule> >, rit, 
                                             thisInfo.orga_prod_rules->Get()) {
              if (!comment.empty() 
-                    && rule_check.DoesStringMatchSuspectRule(bioseq_hl, 
-                                                             comment, 
-                                                             **it, **rit)){
-                thisInfo.test_item_list[GetName()].push_back(
-                                                      GetDiscItemText(**it));
+                    && rule_check.DoesStringMatchSuspectRule(
+                           bioseq_hl, comment, **it, **rit)){
+                thisInfo.test_item_list[GetName()]
+                           .push_back(GetDiscItemText(**it));
+                thisInfo.test_item_objs[GetName()]
+                           .push_back(CConstRef <CObject>(*it));
                 break;
              }
           }
@@ -668,7 +671,7 @@ void CBioseq_TEST_ORGANELLE_PRODUCTS :: TestOnObj(const CBioseq& bioseq)
    ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
      CFeat_CI feat_ci(*thisInfo.scope, 
                       (*it)->GetLocation(), 
-                      CSeqFeatData :: eSubtype_prot); 
+                      CSeqFeatData :: eSubtype_prot);   // why using CFeat_CI?
      if (feat_ci) {
        const CProt_ref& 
            prot_ref = feat_ci->GetOriginalFeature().GetData().GetProt(); 
@@ -677,10 +680,12 @@ void CBioseq_TEST_ORGANELLE_PRODUCTS :: TestOnObj(const CBioseq& bioseq)
              ITERATE (list <CRef <CSuspect_rule> >, rit, 
                                            thisInfo.orga_prod_rules->Get()){
                 if (!(*nit).empty() 
-                      && rule_check.DoesStringMatchSuspectRule(bioseq_hl, 
-                                                         *nit, **it, **rit)) {
-                  thisInfo.test_item_list[GetName()].push_back(
-                                                        GetDiscItemText(**it));
+                      && rule_check.DoesStringMatchSuspectRule(
+                              bioseq_hl, *nit, **it, **rit)) {
+                  thisInfo.test_item_list[GetName()]
+                             .push_back(GetDiscItemText(**it));
+                  thisInfo.test_item_objs[GetName()]
+                             .push_back(CConstRef <CObject>(*it));
                   break;
                 } 
              }
@@ -692,6 +697,7 @@ void CBioseq_TEST_ORGANELLE_PRODUCTS :: TestOnObj(const CBioseq& bioseq)
 
 void CBioseq_TEST_ORGANELLE_PRODUCTS :: GetReport(CRef <CClickableItem>& c_item)
 {
+  c_item->obj_list = thisInfo.test_item_objs[GetName()];
   c_item->description 
         = GetIsComment(c_item->item_list.size(), "suspect products") 
            + "not organelled.";
@@ -819,15 +825,16 @@ void CBioseq_TEST_MRNA_OVERLAPPING_PSEUDO_GENE :: TestOnObj(const CBioseq& biose
      CConstRef <CSeq_feat> gene = GetGeneForFeature(**it);
      if (gene.NotEmpty() && gene->CanGetPseudo() && gene->GetPseudo()) {
         thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));  
+        thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(*it));  
      }
   }
 };
 
 void CBioseq_TEST_MRNA_OVERLAPPING_PSEUDO_GENE :: GetReport(CRef <CClickableItem>& c_item)
 {
-   c_item->description
-     = GetHasComment(c_item->item_list.size(), "Pseudogene") 
-        + "overlapping mRNAs.";
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
+   c_item->description = GetHasComment(c_item->item_list.size(), "Pseudogene") 
+                           + "overlapping mRNAs.";
 };
 
 
@@ -941,15 +948,18 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
             const CBioSource& biosrc = (*it)->GetSource();
             const int genome = biosrc.GetGenome();
             src_desc = GetDiscItemText(**it, bioseq);
+            CConstRef <CObject> src_ref(*it); 
             is_retro = HasLineage(biosrc, "Retroviridae");
             if ( genome != (int)CBioSource :: eGenome_proviral 
                       && is_retro
                       && thisTest.tests_run.find(GetName_retro()) != end_it ) {
                 thisInfo.test_item_list[GetName_retro()].push_back(src_desc);
+                thisInfo.test_item_objs[GetName_retro()].push_back(src_ref);
             }
             else if (genome == CBioSource :: eGenome_proviral && !is_retro
                          && thisTest.tests_run.find(GetName_nonr()) != end_it) {
-                 thisInfo.test_item_list[GetName_nonr()].push_back(src_desc);
+                thisInfo.test_item_list[GetName_nonr()].push_back(src_desc);
+                thisInfo.test_item_objs[GetName_nonr()].push_back(src_ref);
             }
          }
       }
@@ -972,8 +982,8 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
                          has_CDs = true;
                          CConstRef <CSeq_feat> 
                             mRNA = sequence::GetBestMrnaForCds(**kt, 
-                                                               *thisInfo.scope, 
-                                               sequence::fBestFeat_NoExpensive);
+                                           *thisInfo.scope, 
+                                           sequence::fBestFeat_NoExpensive);
                          if (mRNA.NotEmpty()) { 
                               thisInfo.test_item_list[GetName_eu_mrna()]
                                    .push_back("yes");
@@ -1005,6 +1015,7 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
                          == CBioSource :: eGenome_proviral ) {
                   thisInfo.test_item_list[GetName_rnapro()].push_back(
                                                               bioseq_desc);
+                  thisInfo.test_item_objs[GetName_rnapro()].push_back(seq_ref);
                   break;
               }
            }
@@ -1041,9 +1052,12 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
          const CBioSource& biosrc = (*it)->GetSource();
          ITERATE (vector <string>, jt, thisInfo.virus_lineage) {
             if (HasLineage(biosrc, *jt)) {
-                ITERATE (vector <const CSeq_feat*>, kt, gene_feat)
-                    thisInfo.test_item_list[GetName_vir()].push_back(
-                                                     GetDiscItemText(**kt));
+                ITERATE (vector <const CSeq_feat*>, kt, gene_feat) {
+                    thisInfo.test_item_list[GetName_vir()]
+                               .push_back(GetDiscItemText(**kt));
+                    thisInfo.test_item_objs[GetName_vir()]
+                               .push_back(CConstRef <CObject>(*kt));
+                }
                 has_virus = true;
                 break;
             }
@@ -1059,21 +1073,23 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
                && thisTest.tests_run.find(GetName_rbs()) != end_it) {
        ITERATE (vector <const CSeq_feat*>, it, rbs_feat) {
          CConstRef <CSeq_feat>
-             rbs_gene 
-                = sequence::GetBestOverlappingFeat((*it)->GetLocation(),
-                                                    CSeqFeatData::e_Gene, 
+           rbs_gene 
+               = sequence::GetBestOverlappingFeat((*it)->GetLocation(),
+                                                   CSeqFeatData::e_Gene, 
                                                    sequence::eOverlap_Contained,
-                                                    *thisInfo.scope);
+                                                   *thisInfo.scope);
          if (rbs_gene.NotEmpty()) {
-             thisInfo.test_item_list[GetName_rbs()].push_back(
-                                                 GetDiscItemText(**it));
+             thisInfo.test_item_list[GetName_rbs()]
+                         .push_back( GetDiscItemText(**it));
+             thisInfo.test_item_objs[GetName_rbs()]
+                         .push_back(CConstRef <CObject> (*it));
          }
        }
    }
 
    // DISC_EXON_INTRON_CONFLICT
    if (thisTest.tests_run.find(GetName_ei()) != end_it) {
-     string seq_id_desc(BioseqToBestSeqIdString(bioseq,CSeq_id::e_Genbank)+"$");
+     string seq_id_desc(BioseqToBestSeqIdString(bioseq,CSeq_id::e_Genbank));
      unsigned i=0;
      if (gene_feat.empty()) {
          /* no genes - just do all exons and introns present */
@@ -1104,12 +1120,12 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
    // DISC_GENE_PARTIAL_CONFLICT
    // ReportPartialConflictsForFeatureType (bsp, 0, FEATDEF_intron, "intron")
    if (thisTest.tests_run.find(GetName_pgene()) != end_it) {
-      ReportPartialConflictsForFeatureType (intron_feat, (string)"intron");
-      ReportPartialConflictsForFeatureType (exon_feat, (string)"exon");
-      ReportPartialConflictsForFeatureType (promoter_feat, (string)"promoter");
-      ReportPartialConflictsForFeatureType (rna_feat, (string)"RNA");
-      ReportPartialConflictsForFeatureType (utr3_feat, (string)"3' URT");
-      ReportPartialConflictsForFeatureType (utr5_feat, (string)"5' URT");
+      ReportPartialConflictsForFeatureType (intron_feat, "intron");
+      ReportPartialConflictsForFeatureType (exon_feat, "exon");
+      ReportPartialConflictsForFeatureType (promoter_feat, "promoter");
+      ReportPartialConflictsForFeatureType (rna_feat, "RNA");
+      ReportPartialConflictsForFeatureType (utr3_feat, "3' URT");
+      ReportPartialConflictsForFeatureType (utr5_feat, "5' URT");
       if (!IsBioseqHasLineage(bioseq, "Eukaryota") || IsMrnaSequence ()) {
           ReportPartialConflictsForFeatureType (cd_feat, "coding region", true);
       }
@@ -1118,21 +1134,18 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
 
    if (!IsmRNASequenceInGenProdSet(bioseq)) {
       // SHORT_CONTIG
-      if (len < 200 
-               && thisTest.tests_run.find(GetName_contig()) != end_it ) {
+      if (len < 200 && thisTest.tests_run.find(GetName_contig()) != end_it ) {
           thisInfo.test_item_list[GetName_contig()].push_back(bioseq_desc);
           thisInfo.test_item_objs[GetName_contig()].push_back(seq_ref);
       }
 
       // SHORT_SEQUENCES
       if (bioseq_set.Empty() || bioseq_set->GetClass() != CBioseq_set::eClass_parts) {
-          if (len < 200 
-                  && thisTest.tests_run.find(GetName_200seq()) != end_it ) {
+          if (len < 200 && thisTest.tests_run.find(GetName_200seq()) != end_it){
               thisInfo.test_item_list[GetName_200seq()].push_back(bioseq_desc);
               thisInfo.test_item_objs[GetName_200seq()].push_back(seq_ref);
           }
-          else if (len < 50 
-                   && thisTest.tests_run.find(GetName_50seq()) != end_it ) {
+          else if (len <50 && thisTest.tests_run.find(GetName_50seq())!=end_it){
               thisInfo.test_item_list[GetName_50seq()].push_back(bioseq_desc);
               thisInfo.test_item_objs[GetName_50seq()].push_back(seq_ref);
           }
@@ -1176,6 +1189,7 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
    if (thisTest.tests_run.find(GetName_unv()) != end_it
            && BioseqHasKeyword (bioseq, "UNVERIFIED")) {
       thisInfo.test_item_list[GetName_unv()].push_back(bioseq_desc);
+      thisInfo.test_item_objs[GetName_unv()].push_back(seq_ref);
    }
 };
 
@@ -1190,12 +1204,14 @@ void CBioseq_EUKARYOTE_SHOULD_HAVE_MRNA :: GetReport(CRef <CClickableItem>& c_it
 
 void CBioseq_RNA_PROVIRAL :: GetReport(CRef <CClickableItem>& c_item)
 {
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description
        = GetIsComment(c_item->item_list.size(), "RNA bioseq") + "proviral";
 };
 
 void CBioseq_DISC_RETROVIRIDAE_DNA :: GetReport(CRef <CClickableItem>& c_item)
 {   
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description
      = GetOtherComment(c_item->item_list.size(), 
                        "Retroviridae biosource on DNA sequences is",
@@ -1205,6 +1221,7 @@ void CBioseq_DISC_RETROVIRIDAE_DNA :: GetReport(CRef <CClickableItem>& c_item)
 
 void CBioseq_NON_RETROVIRIDAE_PROVIRAL :: GetReport(CRef <CClickableItem>& c_item)
 {
+  c_item->obj_list = thisInfo.test_item_objs[GetName()];
   c_item->description = GetIsComment(c_item->item_list.size(), 
                                      "non-Retroviridae biosource") 
                          + "proviral.";
@@ -1212,6 +1229,7 @@ void CBioseq_NON_RETROVIRIDAE_PROVIRAL :: GetReport(CRef <CClickableItem>& c_ite
 
 void CBioseq_TEST_COUNT_UNVERIFIED :: GetReport(CRef <CClickableItem>& c_item) 
 {
+  c_item->obj_list = thisInfo.test_item_objs[GetName()];
   c_item->description = GetIsComment(c_item->item_list.size(), "sequence") 
                          + "unverified.";
 };
@@ -1292,7 +1310,8 @@ void CBioseq_DISC_GENE_PARTIAL_CONFLICT :: GetReport(CRef <CClickableItem>& c_it
   Str2Strs label2lists;
   GetTestItemList(c_item->item_list, label2lists);
   c_item->item_list.clear();
-  bool has_other = false;
+  CRef <CClickableItem> citem_other (new CClickableItem);
+  citem_other->setting_name = GetName();
   ITERATE (Str2Strs, it, label2lists) {
     strtmp = kEmptyStr;
     if (it->first.find("coding region") != string::npos) {
@@ -1302,28 +1321,33 @@ void CBioseq_DISC_GENE_PARTIAL_CONFLICT :: GetReport(CRef <CClickableItem>& c_it
             strtmp = "misc_feature";
     }
     if (!strtmp.empty()) {
-        AddSubcategory(c_item, GetName(), &(it->second), 
+        AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second), 
                    strtmp + " location conflicts ",
                    strtmp + " locations conflict ", e_OtherComment, true,
                    "with partialness of overlapping gene.", true);
     }
     else {
-      if (!has_other) {
-        CRef <CClickableItem> citem_other (new CClickableItem);
-        ITERATE (Str2Strs, jt, label2lists) {
-           if (jt->first.find("coding region") == string::npos
-                  && jt->first.find("misc_feature") == string::npos) {
-                AddSubcategory(citem_other, GetName(), &(jt->second), jt->first,
-                               jt->first, e_OtherComment, true, "", true);
-           }
-        }
+        AddSubcategory(citem_other, GetName() + "$" + it->first, 
+                               &(it->second), it->first,
+                               it->first, e_OtherComment, true, "", true);
+    }
+  }
+  if (!citem_other->item_list.empty()) {
+        citem_other->description
+          = GetOtherComment(citem_other->item_list.size(), 
+               "feature that is not coding regions or misc_feature conflicts",
+               "features that are not coding regions or misc_features conflict")
+              + " with partialness of overlapping gene.";
+        copy(citem_other->item_list.begin(), citem_other->item_list.end(),
+              back_inserter(c_item->item_list));
+        copy(citem_other->obj_list.begin(), citem_other->obj_list.end(),
+              back_inserter(c_item->obj_list));
+/*
         AddSubcategory(c_item, GetName(), &(citem_other->item_list),
               "feature that is not coding regions or misc_feature conflicts",
               "features that are not coding regions or misc_features conflict",               e_OtherComment,
               true, " with partialness of overlapping gene.", true);
-        has_other = true;
-      }
-    }
+*/
   }
   c_item->description
        = GetOtherComment(c_item->item_list.size()/2,
@@ -1338,8 +1362,8 @@ void CBioseq_DISC_EXON_INTRON_CONFLICT :: GetReport(CRef <CClickableItem>& c_ite
    GetTestItemList(c_item->item_list, seq2cflts);
    c_item->item_list.clear();
    ITERATE (Str2Strs, it, seq2cflts) {
-     AddSubcategory(c_item, GetName(), &(it->second), "introns and exon",
-                      "location conflicts on " + it->first, e_HasComment);
+     AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second), 
+        "introns and exon", "location conflicts on " + it->first, e_HasComment);
    }
    c_item->description 
          = GetIsComment(c_item->item_list.size(), "introns and exon")
@@ -1349,6 +1373,7 @@ void CBioseq_DISC_EXON_INTRON_CONFLICT :: GetReport(CRef <CClickableItem>& c_ite
 
 void CBioseq_DISC_RBS_WITHOUT_GENE :: GetReport(CRef <CClickableItem>& c_item)
 {
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description
       = GetDoesComment(c_item->item_list.size(), "RBS feature") 
          + "not have overlapping genes";
@@ -1385,10 +1410,12 @@ void CBioseq_on_mRNA :: TestOnObj(const CBioseq& bioseq)
   }
 
   string desc(GetDiscItemText(bioseq));
+  CConstRef <CObject> seq_ref(&bioseq);
   // TEST_EXON_ON_MRNA
   if ( !exon_feat.empty() 
                && thisTest.tests_run.find(GetName_exon()) != end_it ) {
       thisInfo.test_item_list[GetName_exon()].push_back(desc);
+      thisInfo.test_item_objs[GetName_exon()].push_back(seq_ref);
   }
 
   // TEST_BAD_MRNA_QUAL
@@ -1397,20 +1424,23 @@ void CBioseq_on_mRNA :: TestOnObj(const CBioseq& bioseq)
        const CBioSource& biosrc = (*it)->GetSource();
        if ( biosrc.CanGetSubtype()) {
          if (IsSubSrcPresent(biosrc, CSubSource::eSubtype_germline) 
-               || IsSubSrcPresent(biosrc, CSubSource::eSubtype_rearranged)) {
-           thisInfo.test_item_list[GetName_qual()].push_back(
-                                               GetDiscItemText(**it, bioseq));
+                 || IsSubSrcPresent(biosrc, CSubSource::eSubtype_rearranged)) {
+            thisInfo.test_item_list[GetName_qual()]
+                       .push_back(GetDiscItemText(**it, bioseq));
+            thisInfo.test_item_objs[GetName_qual()]
+                       .push_back(CConstRef <CObject>(*it));
          }
        }
      }
   }
 
-  // TEST_MRNA_SEQUENCE_MINUS_ST
+  // TEST_MRNA_SEQUENCE_MINUS_STRAND_FEATURES
   if (thisTest.tests_run.find(GetName_str()) != end_it) {
      ITERATE (vector <const CSeq_feat*>, it, all_feat) {
         if ( (*it)->GetData().GetSubtype() != CSeqFeatData::eSubtype_primer_bind
                    && (*it)->GetLocation().GetStrand() == eNa_strand_minus) {
            thisInfo.test_item_list[GetName_str()].push_back(desc);
+           thisInfo.test_item_objs[GetName_str()].push_back(seq_ref);
         }
      }
   }
@@ -1423,8 +1453,13 @@ void CBioseq_on_mRNA :: TestOnObj(const CBioseq& bioseq)
       if ( (!(*it)->CanGetPseudo() || !(*it)->GetPseudo())
                 && ( !(*it)->CanGetComment() 
                         || (*it)->GetComment().find(strtmp) == string::npos) ){
-         if (cnt) thisInfo.test_item_list[GetName_mcds()].push_back(desc);
-         else cnt++;
+         if (cnt) {
+              thisInfo.test_item_list[GetName_mcds()].push_back(desc);
+              thisInfo.test_item_objs[GetName_mcds()].push_back(seq_ref);
+         }
+         else {
+            cnt++;
+         }
       }
     }
   }
@@ -1432,12 +1467,14 @@ void CBioseq_on_mRNA :: TestOnObj(const CBioseq& bioseq)
 
 void CBioseq_MULTIPLE_CDS_ON_MRNA :: GetReport(CRef <CClickableItem>& c_item)
 {
+  c_item->obj_list = thisInfo.test_item_objs[GetName()];
   c_item->description = GetHasComment(c_item->item_list.size(), "mRNA bioseq")
                            + "multiple CDS features";
 };
 
-void CBioseq_TEST_MRNA_SEQUENCE_MINUS_ST :: GetReport(CRef <CClickableItem>& c_item)
+void CBioseq_TEST_MRNA_SEQUENCE_MINUS_STRAND_FEATURES :: GetReport(CRef <CClickableItem>& c_item)
 {
+  c_item->obj_list = thisInfo.test_item_objs[GetName()];
   c_item->description = GetHasComment(c_item->item_list.size(), "mRNA sequence")
                         + "features on the complement strand.";
 };
@@ -1445,6 +1482,7 @@ void CBioseq_TEST_MRNA_SEQUENCE_MINUS_ST :: GetReport(CRef <CClickableItem>& c_i
 
 void CBioseq_TEST_BAD_MRNA_QUAL :: GetReport(CRef <CClickableItem>& c_item)
 {
+  c_item->obj_list = thisInfo.test_item_objs[GetName()];
   c_item->description = GetHasComment(c_item->item_list.size(), "mRNA sequence")
                          + "germline or rearranged qualifier";
 };
@@ -1452,6 +1490,7 @@ void CBioseq_TEST_BAD_MRNA_QUAL :: GetReport(CRef <CClickableItem>& c_item)
 
 void CBioseq_TEST_EXON_ON_MRNA :: GetReport(CRef <CClickableItem>& c_item)
 {
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description = GetHasComment(c_item->item_list.size(), "mRNA bioseq")
                          + "exon features";
 };
@@ -1485,10 +1524,12 @@ void CBioseq_ONCALLER_HIV_RNA_INCONSISTENT :: TestOnObj(const CBioseq& bioseq)
    }
 
    thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(bioseq));
+   thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(&bioseq));
 };
 
 void CBioseq_ONCALLER_HIV_RNA_INCONSISTENT :: GetReport(CRef <CClickableItem>& c_item)
 {
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description 
         = GetHasComment(c_item->item_list.size(), "HIV RNA bioseq") 
           + "inconsistent location/moltype";
@@ -1552,26 +1593,33 @@ void CBioseq_DISC_CDS_HAS_NEW_EXCEPTION :: GetReport(CRef <CClickableItem>& c_it
 void CBioseq_DISC_MITOCHONDRION_REQUIRED :: TestOnObj(const CBioseq& bioseq)
 {
    bool needs_mitochondrial = false;
-   string comm;
+   string comm, desc;
    if (D_loop_feat.empty()) {
       ITERATE (vector <const CSeq_feat*>, it, miscfeat_feat) {
-         if ((*it)->CanGetComment() && !( (comm = (*it)->GetComment()).empty())
+         if ((*it)->CanGetComment() 
+                 && !( (comm = (*it)->GetComment()).empty())
                  && NStr::FindNoCase(comm, "control region") != string::npos) {
              needs_mitochondrial = true; 
              break;
          }
       }
    }
-   else needs_mitochondrial = true; 
+   else {
+      needs_mitochondrial = true; 
+   }
   
+   
    if (needs_mitochondrial) {
-     string desc = GetDiscItemText(bioseq);
+     desc = GetDiscItemText(bioseq);
+     CConstRef <CObject> seq_ref (&bioseq);
      if (bioseq_biosrc_seqdesc.empty()) {
          thisInfo.test_item_list[GetName()].push_back(desc);
+         thisInfo.test_item_objs[GetName()].push_back(seq_ref);
      }
      ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
         if ((*it)->GetSource().GetGenome() !=CBioSource::eGenome_mitochondrion){
              thisInfo.test_item_list[GetName()].push_back(desc); 
+             thisInfo.test_item_objs[GetName()].push_back(seq_ref);
              break;
         }
      }
@@ -1582,6 +1630,7 @@ void CBioseq_DISC_MITOCHONDRION_REQUIRED :: TestOnObj(const CBioseq& bioseq)
 void CBioseq_DISC_MITOCHONDRION_REQUIRED :: GetReport(CRef <CClickableItem>& c_item)
 {
    unsigned cnt = c_item->item_list.size();
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description
        = GetHasComment(cnt, "bioseq") 
          + "D-loop or control region misc_feature, but "
@@ -1606,11 +1655,14 @@ void CBioseq_DISC_MICROSATELLITE_REPEAT_TYPE :: TestOnObj(const CBioseq& bioseq)
           else if ( qual_qual == "rpt_type" && qual_val == "tandem") {
               is_tandem = true;
           }
-          if (is_microsatellite && is_tandem) break;
+          if (is_microsatellite && is_tandem) {
+              break;
+          }
         }
      }
      if (is_microsatellite && !is_tandem) {
         thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
+        thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(*it));
      }
    }
 };
@@ -1618,6 +1670,7 @@ void CBioseq_DISC_MICROSATELLITE_REPEAT_TYPE :: TestOnObj(const CBioseq& bioseq)
 
 void CBioseq_DISC_MICROSATELLITE_REPEAT_TYPE :: GetReport(CRef <CClickableItem>& c_item)
 {
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description 
        = GetDoesComment(c_item->item_list.size(), "microsatellite") 
          + "not have a repeat type of tandem";
@@ -1679,8 +1732,8 @@ void CBioseq_test_on_suspect_phrase :: GetRepOfSuspPhrase(CRef <CClickableItem>&
    string s_desc(phrase_loc_4_1 + " contains ");
    string p_desc(phrase_loc_4_mul + " contain ");
    ITERATE (Str2Strs, it, tp2feats) {
-     AddSubcategory(c_item, setting_name, &(it->second), s_desc, p_desc,
-                    e_OtherComment, true, "'" + it->first + "'");
+     AddSubcategory(c_item, setting_name + "$" + it->first, &(it->second), 
+                   s_desc, p_desc, e_OtherComment, true, "'" + it->first + "'");
    }
    c_item->description
        = GetOtherComment(c_item->item_list.size(), s_desc, p_desc) 
@@ -1692,14 +1745,17 @@ void CBioseq_test_on_suspect_phrase :: CheckForProdAndComment(const CSeq_feat& s
 {
    string prod_str = GetRNAProductString(seq_feat);                   
    string desc(GetDiscItemText(seq_feat));
+   CConstRef <CObject> sf_ref(&seq_feat);
    string comm;
    ITERATE (vector <string>, it, thisInfo.suspect_rna_product_names) {
       if (DoesStringContainPhrase(prod_str, *it, false)) {
         thisInfo.test_item_list[GetName_rna_comm()].push_back(*it + "$" + desc);
+        thisInfo.test_item_objs[GetName_rna_comm() +"$"+ *it].push_back(sf_ref);
       }
       else if (seq_feat.CanGetComment() 
                  && DoesStringContainPhrase(seq_feat.GetComment(), *it, false)){
         thisInfo.test_item_list[GetName_rna_comm()].push_back(*it + "$" + desc);
+        thisInfo.test_item_objs[GetName_rna_comm() +"$"+ *it].push_back(sf_ref);
       }
    }
 };
@@ -1716,8 +1772,12 @@ void CBioseq_DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS :: GetReport(CRef <CClickableI
 
 void CBioseq_DISC_mRNA_ON_WRONG_SEQUENCE_TYPE :: TestOnObj(const CBioseq& bioseq)
 {
-  if (bioseq.GetInst().GetMol() != CSeq_inst :: eMol_dna) return;
-  if (!IsBioseqHasLineage(bioseq, "Eukaryota")) return;
+  if (bioseq.GetInst().GetMol() != CSeq_inst :: eMol_dna) {
+          return;
+  }
+  if (!IsBioseqHasLineage(bioseq, "Eukaryota")) {
+        return;
+  }
   bool is_genomic = false;
   ITERATE (vector <const CSeqdesc*>, it, bioseq_molinfo) {
      if ( (*it)->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_genomic) {
@@ -1725,7 +1785,9 @@ void CBioseq_DISC_mRNA_ON_WRONG_SEQUENCE_TYPE :: TestOnObj(const CBioseq& bioseq
          break;
      }
   }
-  if (!is_genomic) return;
+  if (!is_genomic) {
+       return;
+  }
   ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
      CBioSource :: EGenome 
           genome = (CBioSource::EGenome)(*it)->GetSource().GetGenome();
@@ -1737,6 +1799,7 @@ void CBioseq_DISC_mRNA_ON_WRONG_SEQUENCE_TYPE :: TestOnObj(const CBioseq& bioseq
   }
   ITERATE (vector <const CSeq_feat*>, it, mrna_feat) {
      thisInfo.test_item_list[GetName()].push_back( GetDiscItemText((**it)));
+     thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject> (*it));
   }
 };
 
@@ -1744,6 +1807,7 @@ void CBioseq_DISC_mRNA_ON_WRONG_SEQUENCE_TYPE :: TestOnObj(const CBioseq& bioseq
 void CBioseq_DISC_mRNA_ON_WRONG_SEQUENCE_TYPE :: GetReport(CRef <CClickableItem>& c_item)
 {
    unsigned cnt = c_item->item_list.size();
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description 
       = GetIsComment(cnt, "mRNA")
         + "located on eukaryotic sequences that do not have genomic or plasmid "
@@ -1767,7 +1831,8 @@ void CBioseq_on_Aa :: CompareIntronExonList(const string& seq_id_desc, const vec
          i_idx ++;
    }
    if (i_idx < e_sz) {
-     intron_start=intron_ls[i_idx]->GetLocation().GetStart(eExtreme_Biological);
+     intron_start
+         = intron_ls[i_idx]->GetLocation().GetStart(eExtreme_Biological);
      intron_stop = intron_ls[i_idx]->GetLocation().GetStop(eExtreme_Biological);
    }
    else has_intron = false;
@@ -1777,9 +1842,14 @@ void CBioseq_on_Aa :: CompareIntronExonList(const string& seq_id_desc, const vec
    if (intron_start < exon_start) {
       if (intron_stop != exon_start - 1) {
         thisInfo.test_item_list[setting_name].push_back(
-                              seq_id_desc + GetDiscItemText(*exon_ls[e_idx]));
+                          seq_id_desc + "$" + GetDiscItemText(*exon_ls[e_idx]));
         thisInfo.test_item_list[setting_name].push_back(
-                              seq_id_desc + GetDiscItemText(*intron_ls[e_idx]));
+                        seq_id_desc + "$" + GetDiscItemText(*intron_ls[e_idx]));
+
+        thisInfo.test_item_objs[setting_name + "$" + seq_id_desc].push_back(
+                                      CConstRef <CObject>(exon_ls[e_idx]));
+        thisInfo.test_item_objs[setting_name + "$" + seq_id_desc].push_back(
+                                      CConstRef <CObject>(intron_ls[e_idx]));
       }
       while (i_idx < i_sz && !m_i_exist[i_idx]) {
            i_idx ++;
@@ -1803,13 +1873,19 @@ void CBioseq_on_Aa :: CompareIntronExonList(const string& seq_id_desc, const vec
         if (intron_start !=exon_stop + 1 || intron_stop != next_exon_start - 1){
           if (intron_start != exon_stop + 1) {
               thisInfo.test_item_list[setting_name].push_back(
-                           seq_id_desc + GetDiscItemText(*exon_ls[e_idx]));
+                         seq_id_desc + "$" + GetDiscItemText(*exon_ls[e_idx]));
+              thisInfo.test_item_objs[setting_name + "$" + seq_id_desc]
+                      .push_back(CConstRef <CObject>(exon_ls[e_idx]));
           }
           thisInfo.test_item_list[setting_name].push_back(
-                           seq_id_desc + GetDiscItemText(*intron_ls[i_idx]));
+                        seq_id_desc + "$" + GetDiscItemText(*intron_ls[i_idx]));
+          thisInfo.test_item_objs[setting_name + "$" + seq_id_desc]
+                  .push_back(CConstRef <CObject>(intron_ls[i_idx]));
           if (intron_stop != next_exon_start - 1) {
               thisInfo.test_item_list[setting_name].push_back(
-                           seq_id_desc + GetDiscItemText(*exon_ls[e_idx]));
+                          seq_id_desc + "$" + GetDiscItemText(*exon_ls[e_idx]));
+              thisInfo.test_item_objs[setting_name + "$" + seq_id_desc]
+                      .push_back(CConstRef <CObject>(exon_ls[e_idx]));
           }
         }
         while ( ++ i_idx < i_sz && !m_i_exist[i_idx]);
@@ -1826,9 +1902,13 @@ void CBioseq_on_Aa :: CompareIntronExonList(const string& seq_id_desc, const vec
   if (i_idx < i_sz) {
       if (intron_start != exon_stop + 1) {
           thisInfo.test_item_list[setting_name].push_back(
-                           seq_id_desc + GetDiscItemText(*exon_ls[e_idx]));
+                          seq_id_desc + "$" + GetDiscItemText(*exon_ls[e_idx]));
           thisInfo.test_item_list[setting_name].push_back(
-                           seq_id_desc + GetDiscItemText(*intron_ls[i_idx]));
+                        seq_id_desc + "$" + GetDiscItemText(*intron_ls[i_idx]));
+          thisInfo.test_item_objs[setting_name + "$" + seq_id_desc]
+                  .push_back(CConstRef <CObject>(exon_ls[e_idx]));
+          thisInfo.test_item_objs[setting_name + "$" + seq_id_desc]
+                  .push_back(CConstRef <CObject>(exon_ls[i_idx]));
       }
   }
 };
@@ -1870,11 +1950,14 @@ void CBioseq_DISC_FEATURE_MOLTYPE_MISMATCH :: TestOnObj(const CBioseq& bioseq)
    }
 
    string desc = GetDiscItemText(bioseq);
+   CConstRef <CObject> seq_ref (&bioseq);
    if (!rrna_feat.empty()) {
        thisInfo.test_item_list[GetName()].push_back(desc);
+       thisInfo.test_item_objs[GetName()].push_back(seq_ref);
    }
    else if (!otherRna_feat.empty()) {
        thisInfo.test_item_list[GetName()].push_back(desc);
+       thisInfo.test_item_objs[GetName()].push_back(seq_ref);
    }
 };
 
@@ -1882,6 +1965,7 @@ void CBioseq_DISC_FEATURE_MOLTYPE_MISMATCH :: TestOnObj(const CBioseq& bioseq)
 
 void CBioseq_DISC_FEATURE_MOLTYPE_MISMATCH :: GetReport(CRef <CClickableItem>& c_item)
 {
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description = GetHasComment(c_item->item_list.size(), "sequence") 
                          + "rRNA or misc_RNA features but are not genomic DNA.";
 };
@@ -2108,7 +2192,7 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
       if ((*it)->GetSource().GetOrg().CanGetTaxname()) {
         taxnm = (*it)->GetSource().GetOrg().GetTaxname();
         tax_desc = GetDiscItemText(**it, bioseq);
-        src_ref = CConstRef <CObject>(*it);
+        src_ref.Reset(*it);
         break;
       }
    }
@@ -2117,7 +2201,10 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
    bool add = false;
    if (!taxnm.empty() && !bioseq_title.empty()) {
       desc = GetDiscItemText(*(bioseq_title[0]), bioseq);
-      if (!bioseq_title.empty()) title = bioseq_title[0]->GetTitle();
+      CConstRef <CObject> title_ref(bioseq_title[0]);
+      if (!bioseq_title.empty()) {
+             title = bioseq_title[0]->GetTitle();
+      }
 
       // INCONSISTENT_SOURCE_DEFLINE
       if (!title.empty()
@@ -2129,8 +2216,7 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
                                                        taxnm + "$" + desc);
             strtmp = GetName_inc() + "$" + taxnm;
             thisInfo.test_item_objs[strtmp].push_back(src_ref);
-            thisInfo.test_item_objs[strtmp].push_back(
-                                         CConstRef <CObject>(bioseq_title[0]));
+            thisInfo.test_item_objs[strtmp].push_back(title_ref);
          }
       }
       
@@ -2155,9 +2241,12 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
                  add = true;      
             }
         }
-        else add = true; // missing in defline
+        else {
+           add = true; // missing in defline
+        }
         if (add) {
            thisInfo.test_item_list[GetName_missing()].push_back(desc);
+           thisInfo.test_item_objs[GetName_missing()].push_back(title_ref);
         }
       }
    }
@@ -2166,6 +2255,7 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
 
 void CBioseq_TEST_TAXNAME_NOT_IN_DEFLINE :: GetReport(CRef <CClickableItem>& c_item)
 {
+  c_item->obj_list = thisInfo.test_item_objs[GetName()];
   c_item->description = GetDoesComment(c_item->item_list.size(), "defline")
             + "not contain the complete taxname.";
 };
@@ -2629,6 +2719,10 @@ void CBioseq_on_Aa :: ReportPartialConflictsForFeatureType(vector <const CSeq_fe
                                strtmp + "$" + GetDiscItemText(**it));
         thisInfo.test_item_list[GetName_pgene()].push_back(
                               strtmp + "$" +GetDiscItemText(*gene_feat_4_feat));
+        thisInfo.test_item_objs[GetName_pgene() + "$" + strtmp]
+                  .push_back(CConstRef <CObject>(*it));
+        thisInfo.test_item_objs[GetName_pgene() + "$" + strtmp]
+                  .push_back(CConstRef <CObject>(gene_feat_4_feat));
       }
     }
   }
@@ -2650,12 +2744,15 @@ void CBioseq_DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA :: TestOnObj(const CBioseq& bios
 {
    if (IsBioseqHasLineage(bioseq, "Bacteria") && !mrna_feat.empty()) {
        thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(bioseq));
+       thisInfo.test_item_objs[GetName()]
+                  .push_back(CConstRef <CObject>(&bioseq));
    }
 };
 
 
 void CBioseq_DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA :: GetReport(CRef <CClickableItem>& c_item)
 {
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description
      = GetHasComment(c_item->item_list.size(), "bacterial sequence") 
         + "mRNA features.";
@@ -3389,7 +3486,10 @@ bool CBioseq_DISC_SUSPICIOUS_NOTE_TEXT :: HasSuspiciousStr(const string& str, st
 {
   sus_str = kEmptyStr;
   ITERATE (vector <string>, it, thisInfo.suspicious_notes) {
-    if (NStr::FindNoCase(str, *it) != string::npos) { sus_str = *it; return true;}
+    if (NStr::FindNoCase(str, *it) != string::npos) { 
+         sus_str = *it; 
+         return true;
+    }
   }
   return false;
 };
@@ -3400,31 +3500,53 @@ void CBioseq_DISC_SUSPICIOUS_NOTE_TEXT :: TestOnObj(const CBioseq& bioseq)
   string sus_str, sus_str2, desc;
   ITERATE (vector <const CSeq_feat*>, it, gene_feat) {
     desc = GetDiscItemText(**it);
-    if ( (*it)->CanGetComment() && HasSuspiciousStr((*it)->GetComment(), sus_str))
+    CConstRef <CObject> gene_ref (*it);
+    if ( (*it)->CanGetComment() 
+           && HasSuspiciousStr((*it)->GetComment(), sus_str)) {
         thisInfo.test_item_list[GetName()].push_back(sus_str + "$" + desc);
+        thisInfo.test_item_objs[GetName() + "$" + sus_str].push_back(gene_ref);
+    }
     if ( (*it)->GetData().GetGene().CanGetDesc()
-                  && HasSuspiciousStr((*it)->GetData().GetGene().GetDesc(), sus_str2)
-                  && sus_str != sus_str2) 
+            && HasSuspiciousStr((*it)->GetData().GetGene().GetDesc(), sus_str2)
+            && sus_str != sus_str2) {
         thisInfo.test_item_list[GetName()].push_back(sus_str + "$" + desc);
+        thisInfo.test_item_objs[GetName() + "$" + sus_str].push_back(gene_ref);
+    }
   }
 
   ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
-    if ( (*it)->CanGetComment() && HasSuspiciousStr((*it)->GetComment(), sus_str))
-          thisInfo.test_item_list[GetName()].push_back(sus_str + "$" + GetDiscItemText(**it));
+    if ( (*it)->CanGetComment() 
+             && HasSuspiciousStr((*it)->GetComment(), sus_str)) {
+      thisInfo.test_item_list[GetName()].push_back(
+                                        sus_str + "$" + GetDiscItemText(**it));
+      thisInfo.test_item_objs[GetName() + "$" + sus_str].push_back(
+                                                      CConstRef <CObject>(*it));
+    }
   }
   
   ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
-    if ( (*it)->GetData().GetSubtype() != CSeqFeatData::eSubtype_prot) continue; 
+    if ( (*it)->GetData().GetSubtype() != CSeqFeatData::eSubtype_prot) {
+          continue; 
+    }
     // FEATDEF_PROT
     if ( (*it)->GetData().GetProt().CanGetDesc() 
-                    && HasSuspiciousStr((*it)->GetData().GetProt().GetDesc(), sus_str))
-          thisInfo.test_item_list[GetName()].push_back(sus_str + "$" + GetDiscItemText(**it));
+           && HasSuspiciousStr((*it)->GetData().GetProt().GetDesc(), sus_str)) {
+       thisInfo.test_item_list[GetName()].push_back(
+                                        sus_str + "$" + GetDiscItemText(**it));
+      thisInfo.test_item_objs[GetName() + "$" + sus_str].push_back(
+                                                      CConstRef <CObject>(*it));
+    }
 
   }
   
   ITERATE (vector <const CSeq_feat*>, it, miscfeat_feat) {
-    if ( (*it)->CanGetComment() && HasSuspiciousStr((*it)->GetComment(), sus_str) )
-          thisInfo.test_item_list[GetName()].push_back(sus_str + "$" + GetDiscItemText(**it));
+    if ( (*it)->CanGetComment() 
+           && HasSuspiciousStr((*it)->GetComment(), sus_str) ) {
+      thisInfo.test_item_list[GetName()].push_back(
+                                       sus_str + "$" + GetDiscItemText(**it));
+      thisInfo.test_item_objs[GetName() + "$" + sus_str].push_back(
+                                                      CConstRef <CObject>(*it));
+    }
   }
 };
 
@@ -3436,11 +3558,12 @@ void CBioseq_DISC_SUSPICIOUS_NOTE_TEXT :: GetReport(CRef <CClickableItem>& c_ite
   GetTestItemList(c_item->item_list, sus_str2list);
   c_item->item_list.clear();
   ITERATE (Str2Strs, it, sus_str2list) {
-    AddSubcategory(c_item, GetName(), &(it->second),"note text", it->first, e_ContainsComment);
+    AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second),
+                   "note text", it->first, e_ContainsComment);
   }
 
-  c_item->description 
-    = GetContainsComment(c_item->item_list.size(),"note text") + "suspicious phrases";
+  c_item->description = GetContainsComment(c_item->item_list.size(),"note text")
+                         + "suspicious phrases";
 };
 
 
@@ -3756,13 +3879,17 @@ bool CBioseq_DISC_BAD_GENE_STRAND :: AreIntervalStrandsOk(const CSeq_loc& g_loc,
   for (CSeq_loc_CI f_loc_it(f_loc); f_loc_it && !found_bad; ++ f_loc_it) {
      found_match = false;
      for (CSeq_loc_CI g_loc_it(g_loc); g_loc_it && !found_match; ++ g_loc_it) {
-        sequence::ECompare ovlp = sequence::Compare(f_loc_it.GetEmbeddingSeq_loc(), 
-                                        g_loc_it.GetEmbeddingSeq_loc(), thisInfo.scope);
+        sequence::ECompare 
+            ovlp = sequence::Compare(f_loc_it.GetEmbeddingSeq_loc(), 
+                                     g_loc_it.GetEmbeddingSeq_loc(), 
+                                     thisInfo.scope);
         if (ovlp == sequence::eContained || ovlp == sequence::eSame) {
           found_match = true;
           feat_strand = f_loc_it.GetStrand();
           gene_strand = g_loc_it.GetStrand();
-          if (!StrandOk(feat_strand, gene_strand)) found_bad = true;
+          if (!StrandOk(feat_strand, gene_strand)) {
+               found_bad = true;
+          }
         }
      }
   }
@@ -3783,8 +3910,10 @@ void CBioseq_DISC_BAD_GENE_STRAND :: TestOnObj(const CBioseq& bioseq)
     ITERATE (vector <const CSeq_feat*>, jt, all_feat) {
        const CSeq_loc& f_loc = (*jt)->GetLocation();
        const CSeqFeatData& seq_feat_dt = (*jt)->GetData();
-       if ( seq_feat_dt.IsGene() 
-              || seq_feat_dt.GetSubtype() == CSeqFeatData::eSubtype_primer_bind) continue;
+       if (seq_feat_dt.IsGene() 
+              || seq_feat_dt.GetSubtype() ==CSeqFeatData::eSubtype_primer_bind){
+           continue;
+       }
        f_left = f_loc.GetStart(eExtreme_Positional);
        f_right = f_loc.GetStop(eExtreme_Positional);
        g_left = g_loc.GetStart(eExtreme_Positional);
@@ -3794,19 +3923,46 @@ void CBioseq_DISC_BAD_GENE_STRAND :: TestOnObj(const CBioseq& bioseq)
           if (g_loc.IsMix()) {
              bool has_strand_plus = false, has_strand_minus = false;
              ITERATE (list <CRef <CSeq_loc> >, it, g_loc.GetMix().Get()) {
-                if ( (*it)->GetStrand() == eNa_strand_plus) has_strand_plus = true;
-                else if ( (*it)->GetStrand() == eNa_strand_minus) has_strand_minus = true;
-                if (has_strand_plus && has_strand_minus) break; 
+                if ( (*it)->GetStrand() == eNa_strand_plus) {
+                    has_strand_plus = true;
+                }
+                else if ( (*it)->GetStrand() == eNa_strand_minus) {
+                    has_strand_minus = true;
+                }
+                if (has_strand_plus && has_strand_minus) {
+                    break; 
+                }
              }
-             if (has_strand_plus && has_strand_minus) g_mixed_strand = true;
+             if (has_strand_plus && has_strand_minus) {
+                  g_mixed_strand = true;
+             }
           }
-          if (g_mixed_strand) is_error = !AreIntervalStrandsOk(g_loc, f_loc);
-          else if (!StrandOk(f_loc.GetStrand(), g_loc.GetStrand())) is_error = true;
-          if (is_error)
+          if (g_mixed_strand) {
+             is_error = !AreIntervalStrandsOk(g_loc, f_loc);
+          }
+          else if (!StrandOk(f_loc.GetStrand(), g_loc.GetStrand())) {
+             is_error = true;
+          }
+          if (is_error) {
             thisInfo.test_item_list[GetName()].push_back(
-                                         GetDiscItemText(**it)+"$" + GetDiscItemText(**jt));
+                         GetDiscItemText(**it) + "$" + GetDiscItemText(**jt));
+            strtmp = GetName() + "$" + GetDiscItemText(**it);
+            if (thisInfo.test_item_objs.find(strtmp) 
+                       == thisInfo.test_item_objs.end()) {
+                thisInfo.test_item_objs[strtmp]
+                           .push_back(CConstRef <CObject>(*it));
+            }
+            strtmp = GetName() + "$" + GetDiscItemText(**jt);
+            if (thisInfo.test_item_objs.find(strtmp) 
+                       == thisInfo.test_item_objs.end()) {
+                thisInfo.test_item_objs[strtmp]
+                           .push_back(CConstRef <CObject>(*jt));
+            }
+          }
        } 
-       if (f_left > g_right) break;
+       if (f_left > g_right) {
+           break;
+       }
     }
   }
 };
@@ -3814,6 +3970,27 @@ void CBioseq_DISC_BAD_GENE_STRAND :: TestOnObj(const CBioseq& bioseq)
 
 void CBioseq_DISC_BAD_GENE_STRAND :: GetReport(CRef <CClickableItem>& c_item)
 {
+   Str2Strs gene2feat;
+   GetTestItemList(c_item->item_list, gene2feat);
+   c_item->item_list.clear();
+   ITERATE (Str2Strs, it, gene2feat) {
+     CRef <CClickableItem> c_sub (new CClickableItem);
+     c_sub->setting_name = GetName();
+     c_sub->item_list.push_back(it->first);
+     c_sub->item_list.push_back(it->second[0]);
+     c_sub->obj_list.push_back(
+                thisInfo.test_item_objs[GetName() + "$" + it->first][0]); 
+     c_sub->obj_list.push_back(
+                thisInfo.test_item_objs[GetName() + "$" + it->second[0]][0]);
+     c_sub->description = "Gene and feature strands conflict";
+     c_item->subcategories.push_back(c_sub); 
+     copy(c_sub->item_list.begin(), c_sub->item_list.end(),
+           back_inserter(c_item->item_list));
+     copy(c_sub->obj_list.begin(), c_sub->obj_list.end(),
+            back_inserter(c_item->obj_list));
+   }
+
+/*
    vector <string> rep_arr;
    c_item->item_list.clear();
    ITERATE (vector <string>, it, thisInfo.test_item_list[GetName()]) {
@@ -3826,6 +4003,7 @@ void CBioseq_DISC_BAD_GENE_STRAND :: GetReport(CRef <CClickableItem>& c_item)
      copy(rep_arr.begin(), rep_arr.end(), back_inserter(c_item->item_list));
      rep_arr.clear(); 
    }
+*/
 
    c_item->description 
       = GetOtherComment(c_item->item_list.size()/2, 
@@ -3835,22 +4013,28 @@ void CBioseq_DISC_BAD_GENE_STRAND :: GetReport(CRef <CClickableItem>& c_item)
 
 
 
-bool CBioseq_DISC_SHORT_INTRON :: PosIsAt5End(unsigned pos, CConstRef <CBioseq>& bioseq)
+bool CBioseq_DISC_SHORT_INTRON :: PosIsAt5End(unsigned pos, const CBioseq& bioseq)
 {
   unsigned seq_end = 0;
 
   if (!pos) return true;
   else {
-    const CSeq_inst& seq_inst = bioseq->GetInst();
-    if (seq_inst.GetRepr() != CSeq_inst::eRepr_seg) return false;
+    const CSeq_inst& seq_inst = bioseq.GetInst();
+    if (seq_inst.GetRepr() != CSeq_inst::eRepr_seg) {
+        return false;
+    }
     else {
       if (seq_inst.CanGetExt()) {
          const CSeq_ext& seq_ext = seq_inst.GetExt();
-         if (seq_ext.Which() != CSeq_ext :: e_Seg) return false;
+         if (seq_ext.Which() != CSeq_ext :: e_Seg) {
+             return false;
+         }
          else {
            ITERATE (list <CRef <CSeq_loc> >, it, seq_ext.GetSeg().Get()) {
              seq_end += sequence::GetCoverage(**it, thisInfo.scope);
-             if (pos == seq_end) return true;
+             if (pos == seq_end) {
+                  return true;
+             }
            }
         }
       }
@@ -3861,22 +4045,30 @@ bool CBioseq_DISC_SHORT_INTRON :: PosIsAt5End(unsigned pos, CConstRef <CBioseq>&
 
 
 
-bool CBioseq_DISC_SHORT_INTRON :: PosIsAt3End(const unsigned pos, CConstRef <CBioseq>& bioseq)
+bool CBioseq_DISC_SHORT_INTRON :: PosIsAt3End(const unsigned pos, const CBioseq& bioseq)
 {
   unsigned seq_end = 0;
 
-  if (pos == bioseq->GetLength() - 1) return true;
+  if (pos == (bioseq.GetLength() - 1))  {
+       return true;
+  }
   else {
-   const CSeq_inst& seq_inst = bioseq->GetInst();
-   if (seq_inst.GetRepr() != CSeq_inst::eRepr_seg) return false;
+   const CSeq_inst& seq_inst = bioseq.GetInst();
+   if (seq_inst.GetRepr() != CSeq_inst::eRepr_seg) {
+        return false;
+   }
    else {
      if (seq_inst.CanGetExt()) {
         const CSeq_ext& seq_ext = seq_inst.GetExt();
-        if (seq_ext.Which() != CSeq_ext :: e_Seg) return false;
+        if (seq_ext.Which() != CSeq_ext :: e_Seg) {
+            return false;
+        }
         else {
           ITERATE (list <CRef <CSeq_loc> >, it, seq_ext.GetSeg().Get()) {
             seq_end += sequence::GetCoverage(**it, thisInfo.scope);
-            if (pos == seq_end -1) return true;
+            if (pos == seq_end -1) {
+                return true;
+            }
           }
         }
     }
@@ -3894,34 +4086,35 @@ void CBioseq_DISC_SHORT_INTRON :: TestOnObj(const CBioseq& bioseq)
   unsigned start, stop;
   string desc_txt;
   ITERATE (vector <const CSeq_feat*>, it, intron_feat) {
-    if (IsPseudoSeqFeatOrXrefGene(*it)) continue;
+    if (IsPseudoSeqFeatOrXrefGene(*it)) {
+        continue;
+    }
     const CSeq_loc& seq_loc = (*it)->GetLocation();
-    if (sequence::GetCoverage(seq_loc, thisInfo.scope) >= 11) continue;
+    if (sequence::GetCoverage(seq_loc, thisInfo.scope) >= 11) {
+         continue;
+    }
     strand = seq_loc.GetStrand();
     partial5 = partial3 = false;
     start = seq_loc.GetTotalRange().GetFrom();
     stop = seq_loc.GetTotalRange().GetTo();
     partial5 = seq_loc.IsPartialStart(eExtreme_Biological);
     partial3 = seq_loc.IsPartialStop(eExtreme_Biological);
-    CConstRef <CBioseq> 
-         bioseq_new = sequence::GetBioseqFromSeqLoc(seq_loc, *thisInfo.scope).GetCompleteBioseq();
-    if ( (*it)->CanGetExcept() && (*it)->GetExcept()) excpt = true;
-    else excpt = false;
+    excpt = ( (*it)->CanGetExcept() && (*it)->GetExcept())? true : false;
     strtmp = excpt ? "except" : "empty";
     desc_txt = strtmp + "$" + GetDiscItemText(**it);
-//    desc_txt = (excpt)? GetDiscItemText(**it) : "except$" + GetDiscItemText(**it);      
-    if (bioseq_new.Empty()) {
-       thisInfo.test_item_list[GetName()].push_back(desc_txt);
-       thisInfo.test_item_objs[GetName()+"$"+strtmp].push_back(CConstRef <CObject>(&bioseq));
+    CConstRef <CObject> sf_ref (*it);
+    if ( (partial5 && strand!= eNa_strand_minus && PosIsAt5End(start, bioseq))
+            || (partial3 && strand == eNa_strand_minus 
+                             && PosIsAt5End(stop, bioseq) )
+            || (partial5 && strand == eNa_strand_minus 
+                             && PosIsAt3End(start, bioseq))
+            || (partial3 && strand != eNa_strand_minus 
+                             && PosIsAt3End(stop, bioseq)) ) {
+       continue;
     }
-    else if ( (partial5 && strand!=eNa_strand_minus && PosIsAt5End(start, bioseq_new))
-             || (partial3 && strand==eNa_strand_minus && PosIsAt5End(stop, bioseq_new) )
-             || (partial5 && strand==eNa_strand_minus && PosIsAt3End(start, bioseq_new))
-             || (partial3 && strand!=eNa_strand_minus && PosIsAt3End(stop, bioseq_new)) )
-           continue;
     else {
        thisInfo.test_item_list[GetName()].push_back(desc_txt);
-       thisInfo.test_item_objs[GetName()+"$"+strtmp].push_back(CConstRef <CObject>(&bioseq));
+       thisInfo.test_item_objs[GetName() + "$" + strtmp].push_back(sf_ref);
     }
   }  
 
@@ -3929,21 +4122,28 @@ void CBioseq_DISC_SHORT_INTRON :: TestOnObj(const CBioseq& bioseq)
   unsigned last_start, last_stop;
   ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
     found_short = false;
-    if ( (*it)->CanGetExcept() && (*it)->GetExcept() ) continue;
+    if ( (*it)->CanGetExcept() && (*it)->GetExcept() ) {
+            continue;
+    }
     CSeq_loc_CI loc_it( (*it)->GetLocation() );
     last_start = loc_it.GetRange().GetFrom();
     last_stop = loc_it.GetRange().GetTo();
     for (++loc_it; loc_it; ++loc_it) {
       start = loc_it.GetRange().GetFrom();
       stop = loc_it.GetRange().GetTo();
-      if (abs((int)(start - last_stop)) < 11 || abs ((int)(stop - last_start)) < 11) {
-               found_short = true; break;
+      if (abs((int)(start - last_stop)) < 11 
+            || abs ((int)(stop - last_start)) < 11) {
+           found_short = true; 
+           break;
       }
       last_start = start;
       last_stop = stop; 
     }
-    if (found_short) 
-         thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
+    if (found_short) {
+       thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
+       thisInfo.test_item_objs[GetName() + "$empty"].push_back(
+                                                    CConstRef <CObject>(*it));
+    }
   }
 };
 
@@ -3951,66 +4151,42 @@ void CBioseq_DISC_SHORT_INTRON :: TestOnObj(const CBioseq& bioseq)
 
 void CBioseq_DISC_SHORT_INTRON :: GetReport(CRef <CClickableItem>& c_item)
 {
-/*
-  vector <string> rep_arr;
-  vector <string> with_exception;
-  bool any_no_exception = false;
-*/
   Str2Strs exc2seqs;
   GetTestItemList(c_item->item_list, exc2seqs);
   c_item->item_list.clear();
-  if (exc2seqs.size() == 1 && exc2seqs.begin()->first == "except") {
+  if (exc2seqs.size() == 1 ) {
     c_item->item_list = exc2seqs.begin()->second;
-    c_item->obj_list = thisInfo.test_item_objs[GetName() + "$except"];
-    c_item->description= GetIsComment(c_item->item_list.size(), "intron")
-                                       + "shorter than 11 nt and have an exception";
+    c_item->description = GetIsComment(c_item->item_list.size(), "intron")
+                           + "shorter than 11 nt";
+    if (exc2seqs.begin()->first == "except") {
+       strtmp = "$except";
+       c_item->description += ".";
+    }
+    else {
+       strtmp = "$empty";
+       c_item->description += " and have an exception";
+    }
+    c_item->obj_list = thisInfo.test_item_objs[GetName() + strtmp];
   }
   else {
     ITERATE (Str2Strs, it, exc2seqs) {
       if (it->first == "empty") {
-        c_item->obj_list = thisInfo.test_item_objs[GetName() + "$empty"];
-        c_item->item_list = it->second;
-        c_item->description
-           = GetIsComment(c_item->item_list.size(), "intron") + "shorter than 11 nt.";
+          copy(it->second.begin(), it->second.end(), 
+               back_inserter(c_item->item_list));
+          strtmp = GetName() + "$empty";
+          copy(thisInfo.test_item_objs[strtmp].begin(),
+               thisInfo.test_item_objs[strtmp].end(),
+               back_inserter(c_item->obj_list));
       }
       else {
-        AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second), "intron",
+        AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second), 
+                       "intron",
                        "shorter than 11 nt and have an exception", e_IsComment);
       }
+      c_item->description = GetIsComment(c_item->item_list.size(), "intron") 
+                             + "shorter than 11 nt.";
     }
   }
-  
-/*
-  ITERATE (vector <string>, it, thisInfo.test_item_list[GetName()]) {
-    rep_arr = NStr::Tokenize(*it, "$", rep_arr);
-    if (rep_arr.size() == 1) {
-          any_no_exception = true;
-          c_item->item_list.push_back(*it);
-    }
-    else {
-      with_exception.push_back(rep_arr[1]);
-      c_item->item_list.push_back(rep_arr[1]);
-    }
-    rep_arr.clear(); 
-  }
-
-  if (any_no_exception) {
-     c_item->description
-         = GetIsComment(c_item->item_list.size(), "intron") + "shorter than 11 nt.";
-     if (!with_exception.empty()) {
-       CRef <CClickableItem> c_sub (new CClickableItem);
-       c_sub->setting_name = GetName();
-       c_sub->item_list = with_exception;
-       c_sub->description = GetIsComment(c_sub->item_list.size(), "intron")
-                                       + "shorter than 11 nt and have an exception";
-       c_item->subcategories.push_back(c_sub);
-     }
-  }
-  else {
-    c_item->description= GetIsComment(c_item->item_list.size(), "intron")
-                                       + "shorter than 11 nt and have an exception";
-  }
-*/
 };
 
 
@@ -4208,22 +4384,26 @@ void CBioseq_RNA_NO_PRODUCT :: TestOnObj(const CBioseq& bioseq)
   string pseudo;
   ITERATE (vector <const CSeq_feat*>, it, rna_feat) {
      CSeqFeatData :: ESubtype subtype = (*it)->GetData().GetSubtype();
-     if (IsPseudoSeqFeatOrXrefGene(*it)) pseudo = "pseudo";
-     else pseudo = "not pseudo";
+     pseudo = IsPseudoSeqFeatOrXrefGene(*it) ? "pseudo" : "not pseudo";
      if (subtype == CSeqFeatData :: eSubtype_otherRNA) {
         if ((*it)->CanGetComment()) {
           strtmp = (*it)->GetComment();
-          if ((NStr::FindNoCase(strtmp.substr(0, 9), "contains ") != string::npos)
-              || (NStr::FindNoCase(strtmp.substr(0, 11), "may contain") != string::npos))
+          if ((NStr::FindNoCase(strtmp.substr(0,9), "contains ") !=string::npos)
+                 || (NStr::FindNoCase(strtmp.substr(0, 11), "may contain") 
+                          != string::npos)) {
              continue;
+          }
         }
      }
-     else if (subtype == CSeqFeatData :: eSubtype_tmRNA) continue;
+     else if (subtype == CSeqFeatData :: eSubtype_tmRNA) {
+        continue;
+     }
      
      if (GetRNAProductString(**it).empty()) {
-        thisInfo.test_item_list[GetName()].push_back(pseudo + "$" +GetDiscItemText(**it));
+        thisInfo.test_item_list[GetName()].push_back(
+                                     pseudo + "$" +GetDiscItemText(**it));
         thisInfo.test_item_objs[GetName() + "$" + pseudo].push_back(
-                                                        CConstRef <CObject>(*it));
+                                               CConstRef <CObject>(*it));
      }
   }
 };
@@ -4235,36 +4415,24 @@ void CBioseq_RNA_NO_PRODUCT :: GetReport(CRef <CClickableItem>& c_item)
   vector <string> rep_arr;
   GetTestItemList(c_item->item_list, sub_ls);
   c_item->item_list.clear();
-/*
-  ITERATE (vector <string>, it, thisInfo.test_item_list[setting_name]) {
-    rep_arr = NStr::Tokenize(*it, "$", rep_arr);
-    sub_ls[rep_arr[0]].push_back(rep_arr[1]); 
-    rep_arr.clear();
-  }
-*/
   unsigned cnt;
   if (sub_ls.size() == 1) {
     c_item->item_list = sub_ls.begin()->second;
     cnt = c_item->item_list.size();
-    c_item->obj_list = thisInfo.test_item_objs[GetName()+ "$" + sub_ls.begin()->first];
-    c_item->description = GetHasComment(cnt, "RNA feature") 
-           + "no product and " + ( (cnt>1) ? "are " : "is ") + sub_ls.begin()->first + ".";
+    c_item->obj_list 
+       = thisInfo.test_item_objs[GetName()+ "$" + sub_ls.begin()->first];
+    c_item->description 
+       = GetHasComment(cnt, "RNA feature") 
+         + "no product and " + ( (cnt>1) ? "are " : "is ") 
+         + sub_ls.begin()->first + ".";
   }
   else {
     ITERATE (Str2Strs, it, sub_ls) {
       cnt = (it->second).size(); 
-      AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second), "RNA feature", 
-                    (string)"no product and " +((cnt >1) ? "are " : "is ") + it->first + ".", 
-                    e_HasComment);
-/*
-      CRef <CClickableItem> c_sub (new CClickableItem);
-      c_sub->setting_name = setting_name;
-      c_sub->item_list = it->second;
-      cnt = c_sub->item_list.size();
-      c_sub->description = GetHasComment(cnt, "RNA feature") 
-             + "no product and " + ( (cnt >1) ? "are " : "is ") + it->first + "."; 
-      c_item->subcategories.push_back(c_sub);
-*/
+      AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second), 
+              "RNA feature", 
+       (string)"no product and " +((cnt >1) ? "are " : "is ") + it->first + ".",
+               e_HasComment);
     }
   }
 };
@@ -4277,8 +4445,10 @@ bool CBioseq_test_on_protfeat :: EndsWithPattern(const string& pattern, const li
   ITERATE (list <string>, it, strs) {
      len_str = (*it).size();
      if (len_str >= len_patt 
-              && NStr::EqualNocase(CTempString(*it).substr(len_str - len_patt), pattern))
+          && NStr::EqualNocase(CTempString(*it).substr(len_str - len_patt), 
+                               pattern)) {
           return true;
+     }
   }
   return false;
 };
@@ -4318,33 +4488,46 @@ void CBioseq_test_on_protfeat :: TestOnObj(const CBioseq& bioseq)
      // DISC_CDS_PRODUCT_FIND
      if (run_cds) {
         if (is_subtype_prot) {
-             const CSeq_feat* cds = sequence::GetCDSForProduct( bioseq, thisInfo.scope );
-             if (cds) desc = GetDiscItemText(*cds);
+             const CSeq_feat* 
+                 cds = sequence::GetCDSForProduct( bioseq, thisInfo.scope );
+             if (cds) {
+                   desc = GetDiscItemText(*cds);
+                   prot_ref.Reset(cds);
+             }
         }
         ITERATE (Str2Str, jt, thisInfo.cds_prod_find) {
           func = jt->second;
           head_desc = kEmptyStr;
           if (func == "EndsWithPattern") {
-            if (EndsWithPattern(jt->first, names)) head_desc = "end# with " + jt->first;
+            if (EndsWithPattern(jt->first, names)) {
+                    head_desc = "end# with " + jt->first;
+            }
           }
           else if (func == "ContainsPseudo") {
-            if (ContainsPseudo(jt->first,names)) head_desc = "contain# '" + jt->first + "'";
+            if (ContainsPseudo(jt->first,names)) {
+                 head_desc = "contain# '" + jt->first + "'";
+            }
           }
           else if (func == "ContainsWholeWord") {
-            if ( ContainsWholeWord(jt->first, names) ) 
+            if ( ContainsWholeWord(jt->first, names) ) {
                      head_desc = "contain# '" + jt->first + "'";
+            }
           }
           if (!head_desc.empty()) {
-            thisInfo.test_item_list[GetName_cds()].push_back(head_desc + "$" + desc);
-            thisInfo.test_item_objs[GetName_cds() + "$" + head_desc].push_back(prot_ref);
+            thisInfo.test_item_list[GetName_cds()].push_back(
+                                                 head_desc + "$" + desc);
+            thisInfo.test_item_objs[GetName_cds() + "$" + head_desc]
+                      .push_back(prot_ref);
           }
         }
      }
 
      // DISC_PROTEIN_NAMES
      if ( run_pnm && is_subtype_prot) {
-        thisInfo.test_item_list[GetName_pnm()].push_back( *(names.begin()) + "$" + desc);
-        thisInfo.test_item_objs[GetName_pnm() + "$" + *(names.begin())].push_back(prot_ref);
+        thisInfo.test_item_list[GetName_pnm()].push_back(
+                                         *(names.begin()) + "$" + desc);
+        thisInfo.test_item_objs[GetName_pnm() + "$" + *(names.begin())]
+                  .push_back(prot_ref);
      }
    }
 };
@@ -4927,6 +5110,7 @@ void CBioseq_INCONSISTENT_LOCUS_TAG_PREFIX :: GetReport(CRef <CClickableItem>& c
   }
 };
 
+/*
 void CBioseq_DISC_FEATURE_COUNT :: TestOnObj(const CBioseq& bioseq)
 {
    CBioseq_Handle bioseq_hl = thisInfo.scope->GetBioseqHandle(bioseq);
@@ -5051,6 +5235,7 @@ void CBioseq_DISC_FEATURE_COUNT :: GetReport(CRef <CClickableItem>& c_item)
    DISC_FEATURE_COUNT_protfeat_nul_list.clear();
    DISC_FEATURE_COUNT_list.clear();
 };
+*/
 
 
 /*
@@ -5480,30 +5665,6 @@ string CSeqEntry_INCONSISTENT_BIOSOURCE :: DescribeBioSourceDifferences(const CB
 };
 
 
-void CBioseqTestAndRepData :: TestProteinID(const CBioseq& bioseq)
-{
-   bool has_pid;
-   ITERATE (list <CRef <CSeq_id> >, it, bioseq.GetId()) {
-     if ((*it)->IsGeneral()) {
-       const CDbtag& dbtag = (*it)->GetGeneral();
-       if (!dbtag.IsSkippable()) {
-          has_pid = true;
-          strtmp = dbtag.GetDb();
-          if (!strtmp.empty())
-                thisInfo.test_item_list[GetName_prefix()].push_back(
-                                             dbtag.GetDb() + "$" + GetDiscItemText(bioseq));
-          break;
-       }
-       else has_pid = false; 
-     }
-   }
-
-   if (!has_pid) 
-       thisInfo.test_item_list[GetName_pid()].push_back(GetDiscItemText(bioseq));
-};
-
-
-
 // new comb.
 void CBioseq_test_on_genprod_set :: TestOnObj(const CBioseq& bioseq)
 {
@@ -5628,7 +5789,7 @@ void CBioseq_test_on_prot :: TestOnObj(const CBioseq& bioseq)
        thisInfo.test_item_objs[GetName_cnt()].push_back(seq_ref);
    }
 
-   // INCONSISTENT_PROTEIN_ID_PREFIX, MISSING_PROTEIN_ID
+   // INCONSISTENT_PROTEIN_ID, MISSING_PROTEIN_ID
    bool run_prefix = (thisTest.tests_run.find(GetName_prefix()) != end_it);
    bool run_id = (thisTest.tests_run.find(GetName_id()) != end_it);
    bool has_pid = false;
@@ -5676,7 +5837,7 @@ void CBioseq_MISSING_PROTEIN_ID:: GetReport(CRef <CClickableItem>& c_item)
 };
 
 
-void CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX :: MakeRep(const Str2Strs& item_map, const string& desc1, const string& desc2)
+void CBioseq_INCONSISTENT_PROTEIN_ID :: MakeRep(const Str2Strs& item_map, const string& desc1, const string& desc2)
 {
    string setting_name = GetName();
    ITERATE (Str2Strs, it, item_map) {
@@ -5692,7 +5853,7 @@ void CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX :: MakeRep(const Str2Strs& item_map,
 };
 
 
-void CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX :: GetReport(CRef <CClickableItem>& c_item)
+void CBioseq_INCONSISTENT_PROTEIN_ID :: GetReport(CRef <CClickableItem>& c_item)
 {
    Str2Strs db2list, prefix2list;
    GetTestItemList(c_item->item_list, db2list);
@@ -6003,11 +6164,16 @@ void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
     ITERATE (vector <const CSeq_feat*>, it, trna_feat) {
        len = sequence::GetCoverage((*it)->GetLocation(), thisInfo.scope);
        trna_desc = GetDiscItemText(**it); 
-       if ( len > 90) 
+       CConstRef <CObject> trna_ref (*it);
+       if ( len > 90) {
           thisInfo.test_item_list[GetName_len()].push_back("long$" + trna_desc);
+          thisInfo.test_item_objs[GetName_len() + "$long"].push_back(trna_ref);
+       }
        else if (len < 50) {
-         if ( (*it)->CanGetPartial() && !(*it)->GetPartial())
-            thisInfo.test_item_list[GetName_len()].push_back("short$" + trna_desc);
+         if ( (*it)->CanGetPartial() && !(*it)->GetPartial()) {
+           thisInfo.test_item_list[GetName_len()].push_back("short$"+trna_desc);
+           thisInfo.test_item_objs[GetName_len() +"$short"].push_back(trna_ref);
+         }
        }
     }
   }
@@ -6027,8 +6193,10 @@ void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
        partial3 = (*it)->GetLocation().IsPartialStop(eExtreme_Biological);
        if (!partial5 && !partial3
                      && sequence::GetCoverage((*it)->GetLocation(), thisInfo.scope) < 200) {  
-            thisInfo.test_item_list[GetName_lnc()].push_back(GetDiscItemText(**it));
-            thisInfo.test_item_objs[GetName_lnc()].push_back(CConstRef <CObject>(*it));
+            thisInfo.test_item_list[GetName_lnc()]
+                        .push_back(GetDiscItemText(**it));
+            thisInfo.test_item_objs[GetName_lnc()]
+                        .push_back(CConstRef <CObject>(*it));
        }
     }
   }
@@ -6111,8 +6279,9 @@ void CBioseq_FIND_BADLEN_TRNAS :: GetReport(CRef <CClickableItem>& c_item)
         thisInfo.disc_report_data.push_back(c_item);
      }
      c_item->item_list = it->second;
+     c_item->obj_list = thisInfo.test_item_objs[GetName() + "$" + it->first];
      c_item->description 
-                = GetIsComment(c_item->item_list.size(), "tRNAs") + "too " + it->first;
+        = GetIsComment(c_item->item_list.size(), "tRNAs") + "too " + it->first;
    }
 };
 
@@ -6213,6 +6382,7 @@ void CBioseq_test_on_molinfo :: TestOnObj(const CBioseq& bioseq)
    bool run_link = (thisTest.tests_run.find(GetName_link()) != end_it);
 
    string desc(GetDiscItemText(bioseq));
+   CConstRef <CObject> seq_ref(&bioseq);
    if (bioseq.IsNa()) {
      if (run_mrna || run_tsa) {
         ITERATE (vector <const CSeqdesc*>, it, bioseq_molinfo) {
@@ -6220,34 +6390,45 @@ void CBioseq_test_on_molinfo :: TestOnObj(const CBioseq& bioseq)
           // MOLTYPE_NOT_MRNA
           if (run_mrna && (molinfo.GetBiomol() != CMolInfo :: eBiomol_mRNA)) {
               thisInfo.test_item_list[GetName_mrna()].push_back(desc);
-              thisInfo.test_item_objs[GetName_mrna()].push_back(CConstRef <CObject>(&bioseq));
+              thisInfo.test_item_objs[GetName_mrna()].push_back(seq_ref);
           }
 
           // TECHNIQUE_NOT_TSA
           if (run_tsa && molinfo.GetTech() != CMolInfo :: eTech_tsa) {
               thisInfo.test_item_list[GetName_tsa()].push_back(desc);
-              thisInfo.test_item_objs[GetName_tsa()].push_back(CConstRef <CObject>(&bioseq));
+              thisInfo.test_item_objs[GetName_tsa()].push_back(seq_ref);
           }
         }
      }
    }
    else if (run_link && bioseq.GetInst().GetMol() == CSeq_inst::eMol_rna) {
       // DISC_POSSIBLE_LINKER
-      if (!IsMrnaSequence()
-            || (bioseq.IsSetLength() && bioseq.GetLength() < 30) ) return;
+      if (!IsMrnaSequence() || (bioseq.IsSetLength() && bioseq.GetLength() < 30)){
+           return;
+      }
       else {
-        CSeqVector seq_vec = thisInfo.scope->GetBioseqHandle(bioseq).GetSeqVector(
-                                             CBioseq_Handle::eCoding_Iupac, eNa_strand_plus);
+        CSeqVector 
+            seq_vec = thisInfo.scope->GetBioseqHandle(bioseq).GetSeqVector(
+                                CBioseq_Handle::eCoding_Iupac, eNa_strand_plus);
         unsigned tail_len = 0;
         bool found_linker = false;
         for (CSeqVector_CI seq_ci(seq_vec.end());  
-                               !found_linker && (seq_ci > seq_vec.end() - 30); -- seq_ci) {
-           if (*seq_ci == 'A') tail_len++;
-           else if (tail_len > 20) found_linker = true;
-           else tail_len = 0;
+                !found_linker && (seq_ci > seq_vec.end() - 30); 
+                -- seq_ci) {
+           if (*seq_ci == 'A') {
+                  tail_len++;
+           }
+           else if (tail_len > 20) {
+                 found_linker = true;
+           }
+           else {
+              tail_len = 0;
+           }
         }
-        if (!found_linker)
+        if (!found_linker) {
            thisInfo.test_item_list[GetName_link()].push_back(desc);
+           thisInfo.test_item_objs[GetName_link()].push_back(seq_ref);
+        }
       }
    }
 };
@@ -6255,6 +6436,7 @@ void CBioseq_test_on_molinfo :: TestOnObj(const CBioseq& bioseq)
 
 void CBioseq_DISC_POSSIBLE_LINKER :: GetReport(CRef <CClickableItem>& c_item)
 { 
+  c_item->obj_list = thisInfo.test_item_objs[GetName()];
   c_item->description = GetHasComment(c_item->item_list.size(), "bioseq") 
                          + "linker sequence after the poly-A tail";
 };
@@ -6460,67 +6642,6 @@ void CBioseq_DISC_LONG_NO_ANNOTATION :: GetReport(CRef <CClickableItem>& c_item)
   c_item->description = GetIsComment(len, "bioseq") + "longer than 5000nt and " 
                                + ( (len == 1)? "has" : "have") + " no features.";
 };
-
-
-
-/*
-void CBioseq_MISSING_PROTEIN_ID :: TestOnObj(const CBioseq& bioseq)
-{
-   if (thisInfo.test_item_list.find(GetName_prefix()) == thisInfo.test_item_list.end())
-     TestProteinID(bioseq);
-};
-
-
-void CBioseq_MISSING_PROTEIN_ID :: GetReport(CRef <CClickableItem>& c_item)
-{
-  unsigned cnt = c_item->item_list.size();
-  c_item->description = GetHasComment(cnt, "protein") 
-                         + "invalid " + ( (cnt > 1)? "IDs." : "ID." ); 
-};
-*/
-
-
-/*
-//not tested yet
-void CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX :: TestOnObj(const CBioseq& bioseq)
-{
-   if (thisInfo.test_item_list.find(GetName_pid()) == thisInfo.test_item_list.end())
-     TestProteinID(bioseq);
-};
-
-
-void CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX :: MakeRep(const Str2Strs& item_map, const string& desc1, const string& desc2) 
-{
-   string setting_name = GetName();
-   ITERATE (Str2Strs, it, item_map) {
-     if (it->second.size() > 1) {
-       CRef <CClickableItem> c_item (new CClickableItem);
-       c_item->setting_name = setting_name;
-       c_item->item_list = it->second;
-       c_item->description 
-          = GetHasComment(c_item->item_list.size(), desc1) + desc2 + it->first + ".";
-       thisInfo.disc_report_data.push_back(c_item);
-     }
-   }
-};
-
-
-void CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX :: GetReport(CRef <CClickableItem>& c_item)
-{
-   Str2Strs db2list, prefix2list;
-   GetTestItemList(c_item->item_list, db2list);
-
-   GetTestItemList(c_item->item_list, prefix2list);
-   c_item->item_list.clear();
-
-   // ReportInconsistentGlobalDiscrepancyStrings
-   if (db2list.size() > 1) MakeRep(db2list, "sequence", "protein ID prefix ");
-
-   // ReportInconsistentGlobalDiscrepancyPrefixes
-   if (prefix2list.size() > 1) MakeRep(prefix2list, "feature", "locus tag prefix ");
-};
-*/
-
 
 void CBioseq_TEST_DEFLINE_PRESENT :: TestOnObj(const CBioseq& bioseq)
 {
@@ -7334,7 +7455,7 @@ bool CSeqEntry_test_on_tax_cflts :: s_StringHasVoucherSN(const string& vou_nm)
 };
 
 
-void CSeqEntry_test_on_tax_cflts :: RunTests(const CBioSource& biosrc, const string& desc)
+void CSeqEntry_test_on_tax_cflts :: RunTests(const CBioSource& biosrc, const string& desc, CConstRef <CObject> obj_ref)
 {
    string tax_nm;
    tax_nm = biosrc.IsSetTaxname() ? biosrc.GetTaxname() : kEmptyStr;
@@ -7342,29 +7463,43 @@ void CSeqEntry_test_on_tax_cflts :: RunTests(const CBioSource& biosrc, const str
    else tax_nm = "$" + tax_nm + "#";
    string tax_desc(tax_nm + desc);
 
+   string desc_tmp;
    ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrg().GetOrgname().GetMod()) {
-     strtmp = (*it)->GetSubname();
+     strtmp = (*it)->GetSubname() + tax_desc;
+     desc_tmp = "$" + strtmp + "#" + tax_nm;
      switch ( (*it)->GetSubtype() ) {
 
        // DISC_SPECVOUCHER_TAXNAME_MISMATCH
        case COrgMod::eSubtype_specimen_voucher: 
-             if (m_run_vou && !s_StringHasVoucherSN(strtmp)) 
-                 thisInfo.test_item_list[GetName_vou()].push_back(strtmp + tax_desc);
+             if (m_run_vou && !s_StringHasVoucherSN(strtmp)) {
+                 thisInfo.test_item_list[GetName_vou()].push_back(strtmp);
+                 thisInfo.test_item_objs[GetName_vou() + desc_tmp]
+                           .push_back(obj_ref);
+             }
              break;
        // DISC_STRAIN_TAXNAME_MISMATCH
        case COrgMod::eSubtype_strain:
-             if (m_run_str)
-                thisInfo.test_item_list[GetName_str()].push_back(strtmp + tax_desc);
+             if (m_run_str) {
+                thisInfo.test_item_list[GetName_str()].push_back(strtmp);
+                thisInfo.test_item_objs[GetName_str() + desc_tmp]
+                          .push_back(obj_ref);
+             }
              break;
        // DISC_CULTURE_TAXNAME_MISMATCH
        case COrgMod::eSubtype_culture_collection:
-             if (m_run_cul)
-                thisInfo.test_item_list[GetName_cul()].push_back(strtmp + tax_desc);
+             if (m_run_cul) {
+                thisInfo.test_item_list[GetName_cul()].push_back(strtmp);
+                thisInfo.test_item_objs[GetName_str() + desc_tmp]
+                          .push_back(obj_ref);
+             }
              break;
        // DISC_BIOMATERIAL_TAXNAME_MISMATCH
        case COrgMod::eSubtype_bio_material:
-             if (m_run_biom)  
-                 thisInfo.test_item_list[GetName_biom()].push_back(strtmp + tax_desc);
+             if (m_run_biom) { 
+                 thisInfo.test_item_list[GetName_biom()].push_back(strtmp);
+                 thisInfo.test_item_objs[GetName_str() + desc_tmp]
+                          .push_back(obj_ref);
+             }
              break;
        default: break;
      }
@@ -7383,13 +7518,14 @@ void CSeqEntry_test_on_tax_cflts :: TestOnObj(const CSeq_entry& seq_entry)
    m_run_biom = (thisTest.tests_run.find(GetName_biom()) != end_it);
 
    string desc;
-   ITERATE (vector <const CSeq_feat*>, it, biosrc_orgmod_feat)
-      RunTests( (*it)->GetData().GetBiosrc(), GetDiscItemText(**it));
+   ITERATE (vector <const CSeq_feat*>, it, biosrc_orgmod_feat) {
+      RunTests( (*it)->GetData().GetBiosrc(), GetDiscItemText(**it), CConstRef <CObject> (*it));
+   }
   
    unsigned i=0;
    ITERATE (vector <const CSeqdesc*>, it, biosrc_orgmod_seqdesc) {
       desc = GetDiscItemText( **it, *(biosrc_orgmod_seqdesc_seqentry[i]));
-      RunTests((*it)->GetSource(), desc);
+      RunTests((*it)->GetSource(), desc, CConstRef <CObject>(*it));
       i++;
    }
 };
@@ -7400,22 +7536,29 @@ void CSeqEntry_test_on_tax_cflts :: GetReport_cflts(CRef <CClickableItem>& c_ite
    Str2Strs qual2tax_seqs, tax2seqs;
    GetTestItemList(c_item->item_list, qual2tax_seqs);
    c_item->item_list.clear();
+   string qual;
+   vector <CConstRef <CObject> >* obj_ls;
    if (qual2tax_seqs.size() == 1) {
        tax2seqs.clear();
        GetTestItemList(qual2tax_seqs.begin()->second, tax2seqs, "#");
+       qual = qual2tax_seqs.begin()->first;
        if (tax2seqs.size() > 1) {
           ITERATE (Str2Strs, jt, tax2seqs) {
              copy(jt->second.begin(), jt->second.end(),
                   back_inserter( c_item->item_list));
+             strtmp = "$" + qual + "#" + jt->first;
+             obj_ls = &(thisInfo.test_item_objs[GetName() + strtmp]);
+             copy(obj_ls->begin(), obj_ls->end(), 
+                   back_inserter(c_item->obj_list));
           }
           c_item->description 
               = GetHasComment(c_item->item_list.size(), "biosource") 
-                 + qual_nm + " " + qual2tax_seqs.begin()->first 
-                 + " but do not have the same taxnames.";
+                 + qual_nm + " " + qual + " but do not have the same taxnames.";
        }
    }
    else {
      ITERATE (Str2Strs, it, qual2tax_seqs) {
+       qual = it->first;
        tax2seqs.clear();
        GetTestItemList(it->second, tax2seqs, "#");
        if (tax2seqs.size() > 1) {
@@ -7423,13 +7566,18 @@ void CSeqEntry_test_on_tax_cflts :: GetReport_cflts(CRef <CClickableItem>& c_ite
            ITERATE (Str2Strs, jt, tax2seqs) {
              copy(jt->second.begin(), jt->second.end(),
                   back_inserter( c_sub->item_list));
+             strtmp = "$" + qual + "#" + jt->first;
+             obj_ls = &(thisInfo.test_item_objs[GetName() + strtmp]);
+             copy(obj_ls->begin(), obj_ls->end(), 
+                   back_inserter(c_sub->obj_list));
            }
            c_sub->description
                = GetHasComment(c_sub->item_list.size(), "biosource") 
-                  + qual_nm + " " + it->first 
-                  + " but do not have the same taxnames.";    
+                  + qual_nm + " " + qual+ " but do not have the same taxnames.";
            copy(c_sub->item_list.begin(), c_sub->item_list.end(),
                 back_inserter( c_item->item_list));
+           copy(c_sub->obj_list.begin(), c_sub->obj_list.end(),
+                back_inserter( c_item->obj_list));
            c_item->subcategories.push_back(c_sub);
        }   
      }
@@ -7504,9 +7652,12 @@ CRef <CClickableItem> CSeqEntry_test_on_quals :: MultiItem(const string& qual_na
 {
     CRef <CClickableItem> c_sub (new CClickableItem);
     c_sub->setting_name = setting_name;
-    c_sub->description = "  " + GetHasComment(multi_list.size(), "source") + "multiple "
-                         + qual_name + " qualifiers" + ext_desc;
-    if (setting_name == GetName_asn1_oncall()) c_sub->item_list = multi_list;
+    c_sub->description 
+         = "  " + GetHasComment(multi_list.size(), "source") + "multiple "
+            + qual_name + " qualifiers" + ext_desc;
+    if (setting_name == GetName_sq_oncall()) {
+          c_sub->item_list = multi_list;
+    }
     return (c_sub);
 };
 
@@ -7622,7 +7773,7 @@ string CTestAndRepData :: GetSrcQualValue(const CBioSource& biosrc, const string
 
 
 
-void CSeqEntry_test_on_quals :: GetQualDistribute(Str2Ints& qual2src_idx, const vector <string>& desc_ls, const vector <CConstRef <CBioSource> >& src_ls, const string& setting_name, unsigned pre_cnt, unsigned tot_cnt)
+void CSeqEntry_test_on_quals :: GetQualDistribute(Str2Ints& qual2src_idx, const vector <string>& desc_ls, const vector <CConstRef <CBioSource> >& src_ls, const vector <CConstRef <CObject> >& objs, const string& setting_name, unsigned pre_cnt, unsigned tot_cnt)
 {
   int pre_idx, cur_idx, i;
   string qual_name, src_qual_vlu, src_txt;
@@ -7640,48 +7791,120 @@ void CSeqEntry_test_on_quals :: GetQualDistribute(Str2Ints& qual2src_idx, const 
      pre_idx = -1;
      ITERATE (vector <int>, jt, it->second) {
        cur_idx = *jt;
-       if (cur_idx < pre_idx || cur_idx > (int)tot_cnt -1) continue; 
-       if (pre_idx +1 != cur_idx) {  // have missing
-    //      strtmp = (qual_name == "location") ? "$genomic#" : "$missing#";
-          strtmp = "$missing#";
-          for ( i = pre_idx+1; i < cur_idx; i++) 
-               thisInfo.test_item_list[setting_name].push_back(qual_name+ strtmp +desc_ls[i]);
-                //qual_nm2qual_vlus[qual_name].qual_vlu2src["genomic"].push_back(desc_ls[i]);
+       if (cur_idx < pre_idx || cur_idx > (int)tot_cnt -1) {
+            continue; 
        }
-       src_qual_vlu= GetSrcQualValue(*src_ls[cur_idx], qual_name, is_subsrc);
+       if (pre_idx +1 != cur_idx) {  // have missing
+          strtmp = "missing";
+          for ( i = pre_idx+1; i < cur_idx; i++) {
+               strtmp = qual_name + "$missing#" + desc_ls[i];
+               thisInfo.test_item_list[setting_name].push_back(strtmp);
+               strtmp = setting_name + "$" + qual_name + "#missing";
+               thisInfo.test_item_objs[strtmp].push_back(objs[i]);
+          }
+       }
+       src_qual_vlu= GetSrcQualValue(*src_ls[cur_idx], 
+                                      qual_name, 
+                                      is_subsrc);
        src_txt = desc_ls[cur_idx];
-       thisInfo.test_item_list[setting_name].push_back(
-                                          qual_name+"$"+ src_qual_vlu + "#" + src_txt);
-       //qual_nm2qual_vlus[qual_name].qual_vlu2src[src_qual_vlu].push_back(src_txt);
+       strtmp = qual_name + "$" + src_qual_vlu + "#" + src_txt;
+       thisInfo.test_item_list[setting_name].push_back(strtmp);
+       strtmp = setting_name + "$" + qual_name + "#" + src_qual_vlu;
+       thisInfo.test_item_objs[strtmp].push_back(objs[cur_idx]);
 
        // have multiple qualifiers? 
        eMultiQual multi_type;
        CheckForMultiQual(qual_name, *src_ls[cur_idx], multi_type, is_subsrc);
-       strtmp = kEmptyStr;
        switch (multi_type) {
-          case e_same: strtmp = "$multi_same#"; break;
-          case e_dup:  strtmp = "$multi_dup#"; break;
-          case e_all_dif: strtmp = "$multi_all_dif#"; break;
-          default: break;
+          case e_same: strtmp = "multi_same"; 
+                       break;
+          case e_dup:  strtmp = "multi_dup"; 
+                       break;
+          case e_all_dif: strtmp = "multi_all_dif"; 
+                          break;
+          default: strtmp = kEmptyStr;
+                   break;
        }
-       if (!strtmp.empty()) 
-          thisInfo.test_item_list[setting_name].push_back(qual_name + strtmp + src_txt);
+       if (!strtmp.empty()) {
+          strtmp = qual_name + "$" + strtmp + "#" + src_txt;
+          thisInfo.test_item_list[setting_name].push_back(strtmp);
+          string strtmp2 = setting_name + "$" + qual_name + "#" + strtmp;
+          thisInfo.test_item_objs[strtmp].push_back(objs[cur_idx]);
+       }
 
        // biosrc_val_qualnm:
        strtmp = src_txt + "$" + src_qual_vlu + "#" + qual_name;
        thisInfo.test_item_list[setting_name + "_src"].push_back(strtmp);
+       strtmp = setting_name + "_src$" + src_txt + "#" + src_qual_vlu;
+       thisInfo.test_item_objs[strtmp].push_back(objs[cur_idx]);
 
        pre_idx = cur_idx;
      }
 
-   //  strtmp = (qual_name == "location") ? "$genomic#" : "$missing#";
      strtmp = "$missing#";
-     //for (i = cur_idx +1; i < (int)src_ls.size(); i++)
-     for (i = cur_idx + 1; i < (int)tot_cnt; i++)
-           thisInfo.test_item_list[setting_name].push_back(qual_name + strtmp +desc_ls[i]);
+     for (i = cur_idx + 1; i < (int)tot_cnt; i++) {
+          strtmp = qual_name + "$missing#" + desc_ls[i];
+          thisInfo.test_item_list[setting_name].push_back(strtmp);
+          strtmp = setting_name + "$" + qual_name + "#missing";
+          thisInfo.test_item_objs[strtmp].push_back(objs[i]); 
+     }
   }
 };
 
+void CSeqEntry_test_on_quals :: ProcessUniQuals(const Str2Strs& qvlu2src, const string& setting_nm, const string& qual_nm, CRef <CClickableItem>& c_item)
+{
+   vector <string> uni_sub;
+   vector <CConstRef <CObject> > uni_sub_obj;
+   unsigned uni_cnt=0, sz;
+   string qual_vlu;
+
+   const vector <string>* vstr_p;
+   ITERATE (Str2Strs, jt, qvlu2src) {
+      qual_vlu = jt->first; 
+      if ( qual_vlu == "missing" || qual_vlu == "multi_same"
+              || qual_vlu == "multi_dup" || qual_vlu == "multi_all_dif") {
+           continue;
+      }
+      sz = (jt->second).size();
+      strtmp = setting_nm + "$" + qual_nm + "#" + qual_vlu;
+      if (sz > 1) {
+	  vstr_p = (setting_nm == GetName_sq_oncall()) ? &(jt->second) : 0;
+          AddSubcategory(c_item, strtmp, vstr_p, "source", 
+                     (string)"'" + qual_vlu + "' for " + qual_nm, 
+                      e_HasComment, false, kEmptyStr, false, sz);
+      }
+      else  {
+          uni_cnt ++;
+          if (setting_nm == GetName_sq_oncall()) {
+              uni_sub.push_back((jt->second)[0]);
+              uni_sub_obj.push_back(thisInfo.test_item_objs[strtmp][0]);
+          }
+      }
+   }
+
+   if (uni_cnt) {
+       strtmp = (string)"unique "
+                  + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm;
+       if (setting_nm == GetName_sq_oncall()) {
+           CRef <CClickableItem> c_sub (new CClickableItem);
+           c_sub->setting_name = setting_nm;
+           c_sub->item_list = uni_sub;
+           c_sub->obj_list = uni_sub_obj;
+           c_sub->description 
+                    = GetHasComment(c_sub->item_list.size(), "source") + strtmp;
+           copy(c_sub->item_list.begin(), c_sub->item_list.end(),
+                         back_inserter( c_item->item_list ));
+           copy(c_sub->obj_list.begin(), c_sub->obj_list.end(),
+                         back_inserter( c_item->obj_list ));
+       }
+       else {
+           AddSubcategory(c_item, setting_nm, 0, "source", strtmp,
+                   e_HasComment, false, kEmptyStr, false, uni_cnt); 
+       }
+       uni_sub.clear();
+       uni_sub_obj.clear();
+   }
+};
 
 void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, const string& setting_name)
 {
@@ -7692,12 +7915,12 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
    bool all_same, all_unique, all_present;
    bool multi_same, multi_dup, multi_all_dif;
    unsigned multi_type_cnt;
-   string qual_nm;
+   string qual_nm, qual_vlu;
    const vector <string>* vstr_p = 0;
 
    Str2Strs qvlu2src;
    CRef <CClickableItem> c_main (new CClickableItem);
-   if (setting_name == GetName_asn1_oncall()) {
+   if (setting_name == GetName_sq_oncall()) {
      c_main = c_item;
      c_main->setting_name = setting_name;
      c_main->description = "Source Qualifer Report";
@@ -7729,9 +7952,10 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
      
      all_present = (qvlu2src.find("missing") == qvlu2src.end())? true : false;
 
-     multi_same = (qvlu2src.find("multi_same") == qvlu2src.end()) ? false : true;
+     multi_same = (qvlu2src.find("multi_same") ==qvlu2src.end()) ? false : true;
      multi_dup = (qvlu2src.find("multi_dup") == qvlu2src.end()) ? false : true;
-     multi_all_dif= (qvlu2src.find("multi_all_dif") == qvlu2src.end()) ? false : true;
+     multi_all_dif
+         = (qvlu2src.find("multi_all_dif") == qvlu2src.end()) ? false : true;
 
      multi_type_cnt = 0;
      multi_type_cnt += multi_same ? 1 : 0;
@@ -7742,39 +7966,50 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
          qual_nm += "-subsrc";
      }
      c_item->description = qual_nm;
+     unsigned sz;
      if (all_present) {
          c_item->description += " (all present, ";
          if (all_same) {
+            qual_vlu = qvlu2src.begin()->first;
             c_item->description += "all same";
-            AddSubcategory(c_item, setting_name, 0, "source",
-               + " '" + qvlu2src.begin()->first + "' for " + qual_nm, e_HasComment,
-               true, kEmptyStr, false, (qvlu2src.begin()->second).size());
+            AddSubcategory(c_item, 
+				   setting_name,
+                           0, 
+                           "source",
+                           " '" + qual_vlu + "' for " + qual_nm, 
+                           e_HasComment, 
+                           true, 
+                           kEmptyStr, 
+                           false, 
+                           (qvlu2src.begin()->second).size());
          }
          else if (all_unique) {
-                 c_item->description += "all unique";
-                 if (setting_name == GetName_asn1_oncall()) {
-                    ITERATE (Str2Strs, jt, qvlu2src) { 
-                       if ( jt->first != "missing" 
-                                   && jt->first != "multi_same"
-                                   && jt->first != "multi_dup" 
-                                   && jt->first != "multi_all_dif") {
-                           c_item->item_list.push_back((jt->second)[0]);
-                       }
-                    }
-                 }
-                 else {
-                    AddSubcategory(c_item, setting_name, 0, "source", 
-                         (string)"unique " 
-                             + (qvlu2src.size() > 1 ? "values" : "value")
-                             + " for " 
-                             + qual_nm,
-                          e_HasComment, true, kEmptyStr, false, qvlu2src.size());
-                 }
+            c_item->description += "all unique";
+            if (setting_name == GetName_sq_oncall()) {
+               ITERATE (Str2Strs, jt, qvlu2src) { 
+                  if ( jt->first != "missing" 
+                            && jt->first != "multi_same"
+                            && jt->first != "multi_dup" 
+                            && jt->first != "multi_all_dif") {
+                      c_item->item_list.push_back((jt->second)[0]);
+                      strtmp = setting_name + "$" + qual_nm + "#" + jt->first;
+                      c_item->obj_list.push_back(
+                                           thisInfo.test_item_objs[strtmp][0]);
+                  }
+               }
+            }
+            else {
+               strtmp = (string)"unique " 
+                           + (qvlu2src.size() > 1 ? "values" : "value")
+                           + " for " + qual_nm,
+               AddSubcategory(c_item, setting_name, 0, "source", strtmp,
+                     e_HasComment, true, kEmptyStr, false, qvlu2src.size());
+            }
          }
          else {
            c_item->description += "some duplicate";
-           unsigned uni_cnt=0;
-           vector <string> uni_sub;
+           ProcessUniQuals(qvlu2src, setting_name, qual_nm, c_item);
+/*
            ITERATE (Str2Strs, jt, qvlu2src) {
              if ( jt->first == "missing" 
                          || jt->first == "multi_same"
@@ -7783,46 +8018,69 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
                     continue;
              }
              unsigned sz = (jt->second).size();
+             qual_vlu = jt->first;
+             strtmp = setting_name + "$" + qual_nm + "#" + qual_vlu;
              if (sz > 1) {
-                 vstr_p 
-                    = (setting_name == GetName_asn1_oncall()) ? &(jt->second) : 0;
-                 AddSubcategory(c_item, setting_name, vstr_p, "source", 
-                     (string)"'" + jt->first + "' for " + qual_nm, e_HasComment, 
-                      false, kEmptyStr, false, sz);
+		 vstr_p = (setting_name == GetName_asn1_oncall()) ?
+                              &(jt->second) : 0;
+                 AddSubcategory(c_item, strtmp, vstr_p, "source", 
+                     (string)"'" + qual_vlu + "' for " + qual_nm, 
+                      e_HasComment, false, kEmptyStr, false, sz);
              }
              else  {
                uni_cnt ++;
                if (setting_name == GetName_asn1_oncall()) {
                      uni_sub.push_back((jt->second)[0]);
+                     uni_sub_obj.push_back(thisInfo.test_item_objs[strtmp][0]);
                }
              }
            }
            if (uni_cnt) {
-              vstr_p = (setting_name == GetName_asn1_oncall()) ? &uni_sub : 0;
-              AddSubcategory(c_item, setting_name, vstr_p, "source", 
-                  (string)"unique " 
-                        + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm, 
+              strtmp = (string)"unique "
+                        + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm;
+              if (setting_name == GetName_asn1_oncall()) {
+                 CRef <CClickableItem> c_sub (new CClickableItem);
+                 c_sub->setting_name = setting_name;
+                 c_sub->item_list = uni_sub;
+                 c_sub->obj_list = uni_sub_obj;
+                 c_sub->description 
+                    = GetHasComment(c_sub->item_list.size(), "source") + strtmp;
+                 copy(c_sub->item_list.begin(), c_sub->item_list.end(),
+                         back_inserter( c_item->item_list ));
+                 copy(c_sub->obj_list.begin(), c_sub->obj_list.end(),
+                         back_inserter( c_item->obj_list ));
+              }
+              else {
+                AddSubcategory(c_item, setting_name, 0, "source", strtmp,
                    e_HasComment, false, kEmptyStr, false, uni_cnt); 
+              }
+              uni_sub.clear();
+              uni_sub_obj.clear();
           }
+*/
          }
      }
      else {
         c_item->description += " (some missing, ";
         vstr_p 
-            = (setting_name == GetName_asn1_oncall()) ? &qvlu2src["missing"] : 0;
-        AddSubcategory(c_item, setting_name, 0, "source", "missing " + qual_nm, 
+            = (setting_name == GetName_sq_oncall()) ? &qvlu2src["missing"] :0;
+        strtmp = setting_name + "$" + qual_nm + "#missing";
+        AddSubcategory(c_item, strtmp, vstr_p, "source", "missing " + qual_nm, 
            e_IsComment, true, kEmptyStr, false, qvlu2src["missing"].size());
         if (all_same) {
             c_item->description += "all same";
-            vstr_p = (setting_name == GetName_asn1_oncall()) ? &(qvlu2src.begin()->second) : 0;
-            AddSubcategory(c_item, setting_name, 0, "source", 
-                 " '" + qvlu2src.begin()->first + "' for " + qual_nm, e_HasComment,
+            vstr_p = (setting_name == GetName_sq_oncall()) ? 
+                        &(qvlu2src.begin()->second) : 0;
+            qual_vlu = qvlu2src.begin()->first;
+            strtmp = setting_name + "$" + qual_nm + "#" + qual_vlu;
+            AddSubcategory(c_item, strtmp, vstr_p, "source", 
+                 " '" + qual_vlu + "' for " + qual_nm, e_HasComment,
                  true, kEmptyStr, false, (qvlu2src.begin()->second).size());
         }
         else if (all_unique) {
            c_item->description += "all unique"; 
-           vector <string> arr;
-           unsigned uni_cnt = 0;
+           ProcessUniQuals(qvlu2src, setting_name, qual_nm, c_item);
+/*
            ITERATE (Str2Strs, jt, qvlu2src) {
               if ( jt->first == "missing" 
                         || jt->first == "multi_same"
@@ -7832,56 +8090,95 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
               }
               if (jt->second.size() == 1) {
                  uni_cnt ++;
+                 strtmp = setting_name + "$" + qual_nm + "#" + jt->first;
                  if (setting_name == GetName_asn1_oncall()) {
-                      arr.push_back((jt->second)[0]);
+                      uni_sub.push_back((jt->second)[0]);
+                      uni_sub_obj.push_back(thisInfo.test_item_objs[strtmp][0])
                  }
               }
            }
-           vstr_p = (setting_name == GetName_asn1_oncall()) ? &arr : 0;
-           AddSubcategory(c_item, setting_name, vstr_p, "source", 
-                  (string)"unique " 
-                        + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm, 
-                   e_HasComment, false, kEmptyStr, false, uni_cnt);
-           arr.clear();
+           if (uni_cnt) {
+              if (setting_name == GetName_asn1_oncall()) {
+                 CRef <CClickableItem> c_sub (new CClickableItem);
+                 c_sub->setting_name = setting_name;
+                 c_sub->item_list = uni_sub;
+                 c_sub->obj_list = uni_sub_obj;
+                 c_sub->description
+                    = GetHasComment(c_sub->item_list.size(), "source") + strtmp;
+                 copy(c_sub->item_list.begin(), c_sub->item_list.end(),
+                         back_inserter( c_item->item_list ));
+                 copy(c_sub->obj_list.begin(), c_sub->obj_list.end(),
+                         back_inserter( c_item->obj_list ));
+              }
+              else {
+                 AddSubcategory(c_item, setting_name, 0, "source", 
+                     (string)"unique " 
+                        + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm,
+                      e_HasComment, false, kEmptyStr, false, uni_cnt);
+              }
+              uni_sub.clear();
+              uni_sub_obj.clear();
+           }
+*/
         }
         else {
            c_item->description += "some duplicate";
-           unsigned uni_cnt=0, sz;
-           vector <string> uni_sub;
+           ProcessUniQuals(qvlu2src, setting_name, qual_nm, c_item);
+/*
            ITERATE (Str2Strs, jt, qvlu2src) {
-             if ( jt->first == "missing" 
-                         || jt->first == "multi_same"
-                         || jt->first == "multi_dup" 
-                         || jt->first == "multi_all_dif") {
+             qual_vlu = jt->first;
+             if ( qual_vlu == "missing" 
+                         || qual_vlu == "multi_same"
+                         || qual_vlu == "multi_dup" 
+                         || qual_vlu == "multi_all_dif") {
                     continue;
              }
              sz = (jt->second).size();
+             strtmp = setting_name + "$" + qual_nm + "#" + qual_vlu;
              if (sz > 1) {
                  vstr_p 
-                     = (setting_name == GetName_asn1_oncall()) ? &jt->second : 0;
-                 AddSubcategory(c_item, setting_name, vstr_p, "source", 
-                     "'" + jt->first + "' for " + qual_nm, e_HasComment, false, 
+                     = (setting_name == GetName_asn1_oncall()) ? &jt->second :0;
+                 AddSubcategory(c_item, strtmp, vstr_p, "source", 
+                     "'" + qual_vlu + "' for " + qual_nm, e_HasComment, false, 
                      kEmptyStr, false, sz);
              }
              else  {
                  uni_cnt ++;
-                 uni_sub.push_back((jt->second)[0]);
+                 if (setting_name == GetName_asn1_oncall()) {
+                    uni_sub.push_back((jt->second)[0]);
+                    uni_sub_obj.push_back(thisInfo.test_item_objs[strtmp][0]);
+                 }
              }
            }
            if (uni_cnt) {
-             vstr_p = (setting_name == GetName_asn1_oncall()) ? &uni_sub : 0; 
-             AddSubcategory(c_item, setting_name, vstr_p, "source", 
+              if (setting_name == GetName_asn1_oncall()) {
+                 CRef <CClickableItem> c_sub (new CClickableItem);
+                 c_sub->setting_name = setting_name;
+                 c_sub->item_list = uni_sub;
+                 c_sub->obj_list = uni_sub_obj;
+                 c_sub->description
+                    = GetHasComment(c_sub->item_list.size(), "source") + strtmp;
+                 copy(c_sub->item_list.begin(), c_sub->item_list.end(),
+                         back_inserter( c_item->item_list ));
+                 copy(c_sub->obj_list.begin(), c_sub->obj_list.end(),
+                         back_inserter( c_item->obj_list ));
+             }
+             else {
+                 AddSubcategory(c_item, setting_name, 0, "source", 
                    (string)"unique " 
-                         + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm,
+                        + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm,
                     e_HasComment, false, kEmptyStr, false, uni_cnt);
+             }
+             uni_sub.clear();
+             uni_sub_obj.clear();
           }
+*/
         }
      }
 
      //multiple
-     unsigned 
-         sz = qvlu2src["multi_same"].size() 
-                + qvlu2src["multi_dup"].size() + qvlu2src["multi_all_dif"].size();
+     sz = qvlu2src["multi_same"].size() 
+              + qvlu2src["multi_dup"].size() + qvlu2src["multi_all_dif"].size();
      string ext_desc;
      if ( multi_type_cnt) {
           c_item->description += ", some multi";
@@ -7889,36 +8186,37 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
           c_sub->setting_name = setting_name;
           if (multi_type_cnt == 1) {
               ext_desc = multi_same ? ", same_value" 
-                                  : (multi_dup ? ", some dupplicates" : kEmptyStr);
+                              : (multi_dup ? ", some dupplicates" : kEmptyStr);
           }
           else {
               ext_desc = kEmptyStr;
               if (multi_same) {
                  c_sub->subcategories.push_back(MultiItem(qual_nm, 
-                                                          qvlu2src["multi_same"], 
+                                                         qvlu2src["multi_same"],
                                                           ", same value", 
                                                           setting_name));
               }
               if (multi_dup) {
                  c_sub->subcategories.push_back(MultiItem( qual_nm, 
-                                                           qvlu2src["multi_dup"], 
-                                                           ", some duplicates", 
-                                                           setting_name));
+                                                         qvlu2src["multi_dup"], 
+                                                         ", some duplicates", 
+                                                         setting_name));
               }
               if (multi_all_dif) {
                  c_sub->subcategories.push_back(MultiItem(qual_nm, 
-                                                         qvlu2src["multi_all_dif"],
-                                                         kEmptyStr, 
-                                                         setting_name));
+                                                      qvlu2src["multi_all_dif"],
+                                                      kEmptyStr, 
+                                                      setting_name));
               }
           }
-          c_sub->description = GetHasComment(sz, "source") 
-                                + "multiple " + qual_nm + " qualifiers" + ext_desc;
+          c_sub->description 
+               = GetHasComment(sz, "source") 
+                   + "multiple " + qual_nm + " qualifiers" + ext_desc;
           c_item->subcategories.push_back(c_sub);
      }
      
      c_item->description += ")";
-     if (setting_name == GetName_asn1_oncall()) {
+     if (setting_name == GetName_sq_oncall()) {
             c_main->subcategories.push_back(c_item);
      }
      else {
@@ -7932,38 +8230,54 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
    }  // it
 
  // biosrc has 2 qual with same value: biosrc2qualvlu_nm
-    string biosrc_nm, quals;
+    string biosrc_nm, quals, src_qual_vlu;
     unsigned cnt = 0;
     vector < CRef <CClickableItem> > sub;
     Str2Strs biosrc2qualvlu_nm, vlu2nms;
-    GetTestItemList(thisInfo.test_item_list[setting_name + "_src"], biosrc2qualvlu_nm);
+    GetTestItemList(thisInfo.test_item_list[setting_name + "_src"], 
+                    biosrc2qualvlu_nm);
     thisInfo.test_item_list[setting_name + "_src"].clear();
+    bool has_same_vu_mul_quals_src = false;
     ITERATE (Str2Strs, it, biosrc2qualvlu_nm) {
          biosrc_nm = it->first;
-         vlu2nms.clear();
          GetTestItemList(it->second, vlu2nms);
+         if (!has_same_vu_mul_quals_src) {
+             ITERATE (Str2Strs, jt, vlu2nms) {
+                if (jt->second.size() > 1) {
+                   has_same_vu_mul_quals_src = true;
+                   c_item.Reset(new CClickableItem);
+                   thisInfo.disc_report_data.push_back(c_item);
+                   break;
+                }
+             }
+         }
          ITERATE (Str2Strs, jt, vlu2nms) {
+           src_qual_vlu = jt->first;
            if (jt->second.size() > 1) {
               cnt ++;
               quals = NStr::Join(jt->second, ", ");
               CRef <CClickableItem> c_sub (new CClickableItem);
               c_sub->setting_name = setting_name;
-              c_sub->description = 
-                "BioSource has value '" + jt->first + "' for these qualifiers: " + quals;
-              sub.push_back(c_sub);
-              if (setting_name == GetName_asn1_oncall()) c_sub->item_list.push_back(biosrc_nm);
+              c_sub->description 
+                   = "BioSource has value '" + jt->first 
+                        + "' for these qualifiers: " + quals;
+              c_item->subcategories.push_back(c_sub);
+              c_item->item_list.push_back(biosrc_nm);
+              strtmp =setting_name +"_src$" + biosrc_nm + "#" + src_qual_vlu;
+              c_item->obj_list.push_back(thisInfo.test_item_objs[strtmp][0]);
+              if (setting_name == GetName_sq_oncall()) {
+                   c_sub->item_list.push_back(biosrc_nm);
+                   c_sub->obj_list = thisInfo.test_item_objs[strtmp];
+              }
            }
          }
+         vlu2nms.clear();
     }
  
-    if (!sub.empty()) {
-         c_item.Reset(new CClickableItem);
+    if (cnt) {
          c_item->setting_name = setting_name;
          c_item->description = GetHasComment(cnt, "source") 
-                                   + "two or more qualifiers with the same value";
-         c_item->item_list.push_back(biosrc_nm);
-         c_item->subcategories = sub;
-         thisInfo.disc_report_data.push_back(c_item);
+                                 + "two or more qualifiers with the same value";
     }
 };
 
@@ -7971,97 +8285,105 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
 bool CSeqEntry_test_on_quals :: GetQual2SrcIdx(const vector <CConstRef <CBioSource> >& src_ls, const vector <string>& desc_ls, Str2Ints& qual2src_idx, unsigned pre_cnt, unsigned tot_cnt)
 {
    bool fwd_nm, fwd_seq, rev_nm, rev_seq;
-   unsigned i=0;
+   unsigned i = pre_cnt ? pre_cnt-1: 0;
    bool has_newqual = false;
-//   ITERATE (vector <CConstRef <CBioSource> >, it, src_ls) {
-   for (i= (pre_cnt? pre_cnt-1:0); i < tot_cnt; i++) { 
-    const CConstRef <CBioSource>* it = &(src_ls[i]);
-    if ( (*it)->IsSetTaxname() ) {
+   for (i; i < tot_cnt; i++) { 
+      CBioSource* it = (CBioSource*)(src_ls[i].GetPointer());
+      if ( it->IsSetTaxname() ) {
            has_newqual = true;
            qual2src_idx["taxname"].push_back(i);
-    }
-    if ( (*it)->GetOrg().GetTaxId() ) {
+      }
+      if ( it->GetOrg().GetTaxId() ) {
           has_newqual = true;
           qual2src_idx["taxid"].push_back(i);
-    }
+      }
 
-    // add subtypes & orgmods
-    if ( (*it)->CanGetSubtype() ) {
-       has_newqual = true;
-       ITERATE (list <CRef <CSubSource> >, jt, (*it)->GetSubtype()) {
-         strtmp = (*jt)->GetSubtypeName((*jt)->GetSubtype(), CSubSource::eVocabulary_insdc);
-         qual2src_idx[strtmp + "$subsrc"].push_back(i);
-       }
-    }
+      // add subtypes & orgmods
+      if ( it->CanGetSubtype() ) {
+         has_newqual = true;
+         ITERATE (list <CRef <CSubSource> >, jt, it->GetSubtype()) {
+           strtmp = (*jt)->GetSubtypeName((*jt)->GetSubtype(), 
+                                           CSubSource::eVocabulary_insdc);
+           qual2src_idx[strtmp + "$subsrc"].push_back(i);
+         }
+      }
 
-    if ( (*it)->IsSetOrgname() && (*it)->GetOrgname().CanGetMod() ) {
-       has_newqual = true;
-       ITERATE (list <CRef <COrgMod> >, jt, (*it)->GetOrgname().GetMod() ) {
-          strtmp = (*jt)->GetSubtypeName((*jt)->GetSubtype(), COrgMod::eVocabulary_insdc);
-          if (strtmp != "old_name" && strtmp != "old_lineage" && strtmp != "gb_acronym"
-                         && strtmp != "gb_anamorph" && strtmp != "gb_synonym")
-              qual2src_idx[strtmp].push_back(i);
-       }
-    }
+      if ( it->IsSetOrgname() && it->GetOrgname().CanGetMod() ) {
+         has_newqual = true;
+         ITERATE (list <CRef <COrgMod> >, jt, it->GetOrgname().GetMod() ) {
+            strtmp = (*jt)->GetSubtypeName((*jt)->GetSubtype(), 
+                                            COrgMod::eVocabulary_insdc);
+            if (strtmp != "old_name" 
+                   && strtmp != "old_lineage" && strtmp != "gb_acronym"
+                   && strtmp != "gb_anamorph" && strtmp != "gb_synonym") {
+                qual2src_idx[strtmp].push_back(i);
+            }
+         }
+      }
    
-    // add PCR primers
-    if ( (*it)->CanGetPcr_primers() ) {
-       fwd_nm = fwd_seq = rev_nm = rev_seq = false;
-       ITERATE (list <CRef <CPCRReaction> >, jt, (*it)->GetPcr_primers().Get()) {
-          if ( !fwd_nm && !fwd_seq && (*jt)->CanGetForward() ) {
-            ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetForward().Get()) {
-               if ( !fwd_nm && (*kt)->CanGetName() ) {
-                  strtmp = (*kt)->GetName();
-                  if (!strtmp.empty()) {
-                      qual2src_idx["fwd_primer_name"].push_back(i);
-                      has_newqual = fwd_nm = true;
-                  }
-               }
-               if ( !fwd_seq && (*kt)->CanGetSeq() ) {
-                  strtmp = (*kt)->GetSeq();
-                  if (!strtmp.empty()) {
-                     has_newqual = fwd_seq = true;
-                     qual2src_idx["fwd_primer_seq"].push_back(i);
-                  }
-               }
-               if (fwd_nm && fwd_seq) break; 
+      // add PCR primers
+      if ( it->CanGetPcr_primers() ) {
+         fwd_nm = fwd_seq = rev_nm = rev_seq = false;
+         ITERATE (list <CRef <CPCRReaction> >, jt, it->GetPcr_primers().Get()) {
+            if ( !fwd_nm && !fwd_seq && (*jt)->CanGetForward() ) {
+              ITERATE (list <CRef <CPCRPrimer> >, kt,(*jt)->GetForward().Get()){
+                 if ( !fwd_nm && (*kt)->CanGetName() ) {
+                    strtmp = (*kt)->GetName();
+                    if (!strtmp.empty()) {
+                        qual2src_idx["fwd_primer_name"].push_back(i);
+                        has_newqual = fwd_nm = true;
+                    }
+                 }
+                 if ( !fwd_seq && (*kt)->CanGetSeq() ) {
+                    strtmp = (*kt)->GetSeq();
+                    if (!strtmp.empty()) {
+                       has_newqual = fwd_seq = true;
+                       qual2src_idx["fwd_primer_seq"].push_back(i);
+                    }
+                 }
+                 if (fwd_nm && fwd_seq) break; 
+              }
             }
-          }
-          if ( !rev_nm && !rev_seq && (*jt)->CanGetReverse() ) {
-            ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetReverse().Get()) {
-               if (!rev_nm && (*kt)->CanGetName() ) {
-                  strtmp = (*kt)->GetName();
-                  if (!strtmp.empty()) {
-                      has_newqual = rev_nm = true;
-                      qual2src_idx["rev_primer_name"].push_back(i);
-                  }
-               }
-               if (!rev_seq && (*kt)->CanGetSeq() ) {
-                  strtmp = (*kt)->GetSeq();
-                  if (!strtmp.empty()) {
-                      has_newqual = rev_seq = true;
-                      qual2src_idx["rev_primer_seq"].push_back(i);
-                  }
-               }
-               if (rev_nm && rev_seq) break;
+            if ( !rev_nm && !rev_seq && (*jt)->CanGetReverse() ) {
+              ITERATE (list <CRef <CPCRPrimer> >, kt,(*jt)->GetReverse().Get()){
+                 if (!rev_nm && (*kt)->CanGetName() ) {
+                    strtmp = (*kt)->GetName();
+                    if (!strtmp.empty()) {
+                        has_newqual = rev_nm = true;
+                        qual2src_idx["rev_primer_name"].push_back(i);
+                    }
+                 }
+                 if (!rev_seq && (*kt)->CanGetSeq() ) {
+                    strtmp = (*kt)->GetSeq();
+                    if (!strtmp.empty()) {
+                        has_newqual = rev_seq = true;
+                        qual2src_idx["rev_primer_seq"].push_back(i);
+                    }
+                 }
+                 if (rev_nm && rev_seq) {
+                     break;
+                 }
+              }
             }
-          }
-          if (fwd_nm && fwd_seq && rev_nm && rev_seq) break;
-       }
-    }
+            if (fwd_nm && fwd_seq && rev_nm && rev_seq) {
+                break;
+            }
+         }
+      }
     
-    // genomic
-    if ((*it)->GetGenome() != CBioSource::eGenome_unknown) {
+      // genomic
+      if (it->GetGenome() != CBioSource::eGenome_unknown) {
          has_newqual = true;
          qual2src_idx["location"].push_back(i);
-    }
-  } 
-  return has_newqual;
+      }
+   } 
+   return has_newqual;
 };
 
 
 static vector <string> comb_desc_ls;  // global in C
 static vector <CConstRef <CBioSource> > comb_src_ls;  // global in C
+static vector <CConstRef <CObject> > objs;
 static Str2Ints comb_qual2src_idx;
 void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
 {
@@ -8069,11 +8391,13 @@ void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
    thisTest.is_Quals_run = true;
 
    vector <string> this_desc_ls;
-   vector <CConstRef <CBioSource> > this_src_ls;  // local in C
+/* why is the 'local' needed?
+   vector <CConstRef <CObject> > this_src_ls;  // local in C
    Str2Ints this_qual2src_idx;  // local in C
+*/
  
-   bool run_asn1 = (thisTest.tests_run.find(GetName_asn1()) != end_it);
-   bool run_oncall= (thisTest.tests_run.find(GetName_asn1_oncall())!=end_it);
+   bool run_sq = (thisTest.tests_run.find(GetName_sq()) != end_it);
+   bool run_oncall= (thisTest.tests_run.find(GetName_sq_oncall())!=end_it);
    bool run_bad = (thisTest.tests_run.find(GetName_bad()) != end_it);
 
    unsigned pre_cnt = comb_src_ls.size(); 
@@ -8083,8 +8407,11 @@ void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
      comb_desc_ls.push_back(desc); // for combine_seqentry_reports
      const CBioSource& biosrc = (*it)->GetData().GetBiosrc();
      comb_src_ls.push_back(CConstRef <CBioSource> (&biosrc));  // for combine_seqentry_reports
+     objs.push_back(CConstRef <CObject> (*it));
+/*
      this_desc_ls.push_back(desc);
-     this_src_ls.push_back(CConstRef <CBioSource> (&biosrc));
+     this_src_ls.push_back(CConstRef <CObject> (&biosrc));
+*/
    }
 
    unsigned i=0;
@@ -8094,25 +8421,37 @@ void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
       this_desc_ls.push_back(desc);
       const CBioSource& biosrc = (*it)->GetSource();
       comb_src_ls.push_back(CConstRef <CBioSource> (&biosrc));
-      this_src_ls.push_back(CConstRef <CBioSource> (&biosrc));
+      objs.push_back(CConstRef <CObject>(*it));
+//      this_src_ls.push_back(CConstRef <CBioSource> (&biosrc));
       i++;
    }
    unsigned tot_cnt = comb_src_ls.size();
 
-   bool has_newqual =
-         GetQual2SrcIdx(comb_src_ls, comb_desc_ls, comb_qual2src_idx, pre_cnt, tot_cnt);
-   if (run_bad) 
-        GetQualDistribute(comb_qual2src_idx, comb_desc_ls, comb_src_ls, GetName_bad(), pre_cnt, tot_cnt);
-/*
-   GetQual2SrcIdx(this_src_ls, this_desc_ls, this_qual2src_idx);
-   if (run_bad) GetQualDistribute(this_qual2src_idx, this_desc_ls, this_src_ls, GetName_bad());
-*/
+   bool has_newqual = GetQual2SrcIdx(comb_src_ls, 
+                                     comb_desc_ls, 
+                                     comb_qual2src_idx, 
+                                     pre_cnt, 
+                                     tot_cnt);
+   if (run_bad) { 
+        GetQualDistribute(comb_qual2src_idx, 
+                          comb_desc_ls, 
+                          comb_src_ls, 
+                          objs,
+                          GetName_bad(), 
+                          pre_cnt, 
+                          tot_cnt);
+   }
 
-   strtmp = run_asn1? GetName_asn1() : GetName_asn1_oncall();
-   if (has_newqual && (run_asn1 || run_oncall)
-         && thisInfo.test_item_list.find(strtmp)== thisInfo.test_item_list.end()) {
-       if (run_asn1) thisInfo.test_item_list[GetName_asn1()].push_back("yes");
-       if (run_oncall) thisInfo.test_item_list[GetName_asn1_oncall()].push_back("yes");
+   strtmp = run_sq? GetName_sq() : GetName_sq_oncall();
+   if (has_newqual && ( run_sq || run_oncall)
+                   && ( thisInfo.test_item_list.find(strtmp)
+                            == thisInfo.test_item_list.end())) {
+       if (run_sq) {
+             thisInfo.test_item_list[GetName_sq()].push_back("yes");
+       }
+       if (run_oncall) {
+           thisInfo.test_item_list[GetName_sq_oncall()].push_back("yes");
+       }
    }
 };
 
@@ -8126,9 +8465,8 @@ void CSeqEntry_DISC_SRC_QUAL_PROBLEM :: GetReport(CRef <CClickableItem>& c_item)
 void CSeqEntry_DISC_SOURCE_QUALS_ASNDISC :: GetReport(CRef <CClickableItem>& c_item)
 {
    thisInfo.test_item_list[GetName()].clear();
-//   GetQual2SrcIdx(comb_src_ls, comb_desc_ls, comb_qual2src_idx);
-   GetQualDistribute(comb_qual2src_idx, comb_desc_ls, comb_src_ls, GetName(), 
-                                                              0, comb_src_ls.size());
+   GetQualDistribute(comb_qual2src_idx, comb_desc_ls, comb_src_ls, objs,
+                                              GetName(), 0, comb_src_ls.size());
    c_item->item_list = thisInfo.test_item_list[GetName()];
    GetReport_quals(c_item, GetName());
 };
@@ -8137,9 +8475,8 @@ void CSeqEntry_DISC_SOURCE_QUALS_ASNDISC :: GetReport(CRef <CClickableItem>& c_i
 void CSeqEntry_DISC_SOURCE_QUALS_ASNDISC_oncaller :: GetReport(CRef <CClickableItem>& c_item)
 {
    thisInfo.test_item_list.clear();
-//   GetQual2SrcIdx(comb_src_ls, comb_desc_ls, comb_qual2src_idx);
-   GetQualDistribute(comb_qual2src_idx, comb_desc_ls, comb_src_ls, GetName(),
-              0, comb_src_ls.size());
+   GetQualDistribute(comb_qual2src_idx, comb_desc_ls, comb_src_ls, objs, 
+                                  GetName(), 0, comb_src_ls.size());
    c_item->item_list = thisInfo.test_item_list[GetName()];
    GetReport_quals(c_item, GetName());
 };
@@ -8213,7 +8550,7 @@ void CSeqEntry_test_on_biosrc_orgmod :: BacterialTaxShouldEndWithStrain(const CB
 };
 
 
-void CSeqEntry_test_on_biosrc_orgmod :: BiosrcHasConflictingStrainAndCultureCollectionValues(const CBioSource& biosrc, const string& desc)
+void CSeqEntry_test_on_biosrc_orgmod :: BiosrcHasConflictingStrainAndCultureCollectionValues(const CBioSource& biosrc, const string& desc, CConstRef <CObject> obj_ref)
 {
    bool has_match = false, has_conflict = false;
    string extra_str(kEmptyStr), subnm1, subnm2;
@@ -8232,61 +8569,84 @@ void CSeqEntry_test_on_biosrc_orgmod :: BiosrcHasConflictingStrainAndCultureColl
                    break;
             }
             else {
-               extra_str = "        " + (*it)->GetSubtypeName( (*it)->GetSubtype(),
-                                                     COrgMod::eVocabulary_insdc ) + ": "
-                                + (*it)->GetSubname() + "\n        "
-                                + (*jt)->GetSubtypeName( (*jt)->GetSubtype(),
-                                                     COrgMod::eVocabulary_insdc ) + ": "
-                                + (*jt)->GetSubname();
+               extra_str = "        " 
+                            + (*it)->GetSubtypeName((*it)->GetSubtype(),
+                                                    COrgMod::eVocabulary_insdc)
+                            + ": " + (*it)->GetSubname() + "\n        "
+                            + (*jt)->GetSubtypeName((*jt)->GetSubtype(),
+                                                    COrgMod::eVocabulary_insdc)
+                            + ": " + (*jt)->GetSubname();
                has_conflict = true;
             }
          }
        };
-       if (has_match) break;
+       if (has_match) {
+           break;
+       }
      }
    }
-   if (has_conflict && !has_match)
-       thisInfo.test_item_list[GetName_cul()].push_back(desc + "\n" + extra_str); 
+   if (has_conflict && !has_match) {
+     thisInfo.test_item_list[GetName_cul()].push_back(desc + "\n" + extra_str); 
+     thisInfo.test_item_objs[GetName_cul()].push_back(obj_ref);
+   }
 };
 
-void CSeqEntry_test_on_biosrc_orgmod :: RunTests(const CBioSource& biosrc, const string& desc)
+void CSeqEntry_test_on_biosrc_orgmod :: RunTests(const CBioSource& biosrc, const string& desc, CConstRef <CObject> obj_ref)
 {
   // DUP_DISC_ATCC_CULTURE_CONFLICT
-  if (m_run_atcc && IsStrainInCultureCollectionForBioSource(biosrc, "ATCC ", "ATCC:"))
-        thisInfo.test_item_list[GetName_atcc()].push_back(desc);
+  if (m_run_atcc 
+        && IsStrainInCultureCollectionForBioSource(biosrc, "ATCC ", "ATCC:")) {
+      thisInfo.test_item_list[GetName_atcc()].push_back(desc);
+      thisInfo.test_item_objs[GetName_atcc()].push_back(obj_ref);
+  }
          
   // DUP_DISC_CBS_CULTURE_CONFLICT
-  if (m_run_cbs && IsStrainInCultureCollectionForBioSource(biosrc, "CBS ", "CBS:"))
-          thisInfo.test_item_list[GetName_cbs()].push_back(desc);
+  if (m_run_cbs 
+           && IsStrainInCultureCollectionForBioSource(biosrc, "CBS ", "CBS:")) {
+      thisInfo.test_item_list[GetName_cbs()].push_back(desc);
+      thisInfo.test_item_objs[GetName_cbs()].push_back(obj_ref);
+  }
 
   // DISC_BACTERIAL_TAX_STRAIN_MISMATCH
-  if (m_run_mism) BacterialTaxShouldEndWithStrain(biosrc, desc);
+  if (m_run_mism) {
+         BacterialTaxShouldEndWithStrain(biosrc, desc);
+  }
 
   // ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH
-  if (m_run_cul) BiosrcHasConflictingStrainAndCultureCollectionValues(biosrc, desc);
+  if (m_run_cul) {
+    BiosrcHasConflictingStrainAndCultureCollectionValues(biosrc, desc, obj_ref);
+  }
 
   // DISC_BACTERIA_MISSING_STRAIN
   if (m_run_sp && HasMissingBacteriaStrain(biosrc)) {
        thisInfo.test_item_list[GetName_sp_strain()].push_back(desc);
+       thisInfo.test_item_objs[GetName_sp_strain()].push_back(obj_ref);
   }
 
   // DISC_METAGENOME_SOURCE
-  if (m_run_meta && IsOrgModPresent(biosrc, COrgMod::eSubtype_metagenome_source)) 
+  if (m_run_meta 
+          && IsOrgModPresent(biosrc, COrgMod::eSubtype_metagenome_source)) {
       thisInfo.test_item_list[GetName_meta()].push_back(desc); 
+      thisInfo.test_item_objs[GetName_meta()].push_back(obj_ref); 
+  }
 
   // ONCALLER_CHECK_AUTHORITY
   bool has_tax = false;
   if (biosrc.IsSetTaxname() && !biosrc.GetTaxname().empty()) {
       has_tax = true;
-      if (m_run_auth && DoAuthorityAndTaxnameConflict(biosrc))
-        thisInfo.test_item_list[GetName_auth()].push_back(desc);
+      if (m_run_auth && DoAuthorityAndTaxnameConflict(biosrc)) {
+          thisInfo.test_item_list[GetName_auth()].push_back(desc);
+          thisInfo.test_item_objs[GetName_auth()].push_back(obj_ref);
+      }
   }
 
   // ONCALLER_MULTIPLE_CULTURE_COLLECTION
   if (m_run_mcul) {
       string cul_vlus;
-      if (HasMultipleCultureCollection(biosrc, cul_vlus))
-         thisInfo.test_item_list[GetName_mcul()].push_back(desc + " " + cul_vlus);
+      if (HasMultipleCultureCollection(biosrc, cul_vlus)) {
+         thisInfo.test_item_list[GetName_mcul()].push_back(desc +" " +cul_vlus);
+         thisInfo.test_item_objs[GetName_mcul()].push_back(obj_ref);
+      }
   }
 
   // DISC_HUMAN_HOST
@@ -8296,6 +8656,7 @@ void CSeqEntry_test_on_biosrc_orgmod :: RunTests(const CBioSource& biosrc, const
      ITERATE (vector <string>, it, arr) {
        if ( DoesStringContainPhrase(*it, "human", false, true) ) {
          thisInfo.test_item_list[GetName_human()].push_back(desc); 
+         thisInfo.test_item_objs[GetName_human()].push_back(obj_ref); 
          break;
        }
      }
@@ -8303,12 +8664,16 @@ void CSeqEntry_test_on_biosrc_orgmod :: RunTests(const CBioSource& biosrc, const
   }
 
   // TEST_UNNECESSARY_ENVIRONMENTAL
-  if (m_run_env && has_tax && HasUnnecessaryEnvironmental(biosrc))
+  if (m_run_env && has_tax && HasUnnecessaryEnvironmental(biosrc)) {
       thisInfo.test_item_list[GetName_env()].push_back(desc);
+      thisInfo.test_item_objs[GetName_env()].push_back(obj_ref);
+   }
 
   // TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE
-  if (m_run_amp && AmpPrimersNoEnvSample(biosrc))
+  if (m_run_amp && AmpPrimersNoEnvSample(biosrc)) {
      thisInfo.test_item_list[GetName_amp()].push_back(desc);
+     thisInfo.test_item_objs[GetName_amp()].push_back(obj_ref);
+  }
 };
 
 
@@ -8328,6 +8693,7 @@ bool CSeqEntry_test_on_biosrc_orgmod :: AmpPrimersNoEnvSample(const CBioSource& 
 
 void CSeqEntry_TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE :: GetReport(CRef <CClickableItem>& c_item)
 {
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description = GetHasComment(c_item->item_list.size(), "biosource") 
      + "'amplified with species-specific primers' note but no environmental-sample qualifier.";
 };
@@ -8362,6 +8728,7 @@ bool CSeqEntry_test_on_biosrc_orgmod :: HasUnnecessaryEnvironmental(const CBioSo
 
 void CSeqEntry_TEST_UNNECESSARY_ENVIRONMENTAL :: GetReport(CRef <CClickableItem>& c_item)
 {
+  c_item->obj_list = thisInfo.test_item_objs[GetName()];
   c_item->description = GetHasComment(c_item->item_list.size(), "biosource") 
                         + "unnecessary environmental qualifier";
 };
@@ -8370,6 +8737,7 @@ void CSeqEntry_TEST_UNNECESSARY_ENVIRONMENTAL :: GetReport(CRef <CClickableItem>
 void CSeqEntry_DISC_HUMAN_HOST :: GetReport(CRef <CClickableItem>& c_item)
 {
    unsigned cnt = c_item->item_list.size();
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description
      = GetHasComment(cnt, "organism") + "'human' host qualifier" + (cnt >1 ? "s" : "");
 };
@@ -8398,6 +8766,7 @@ bool CSeqEntry_test_on_biosrc_orgmod :: HasMultipleCultureCollection (const CBio
 
 void CSeqEntry_ONCALLER_MULTIPLE_CULTURE_COLLECTION :: GetReport(CRef <CClickableItem>& c_item)
 {
+  c_item->obj_list = thisInfo.test_item_objs[GetName()];
   c_item->description = GetHasComment(c_item->item_list.size(), "organism") 
                        + "multiple culture-collection qualifiers.";
 };
@@ -8424,15 +8793,17 @@ bool CSeqEntry_test_on_biosrc_orgmod :: DoAuthorityAndTaxnameConflict(const CBio
 
 void CSeqEntry_ONCALLER_CHECK_AUTHORITY :: GetReport(CRef <CClickableItem>& c_item)
 {
-  c_item->description 
-     = GetHasComment(c_item->item_list.size(), "biosource") + "taxname/authority conflict";
+  c_item->obj_list = thisInfo.test_item_objs[GetName()];
+  c_item->description = GetHasComment(c_item->item_list.size(), "biosource") 
+                          + "taxname/authority conflict";
 };
 
 
 void CSeqEntry_DISC_METAGENOME_SOURCE :: GetReport(CRef <CClickableItem>& c_item)
 {
-  c_item->description
-    = GetHasComment(c_item->item_list.size(), "biosource") + "metagenome_source qualifier";
+  c_item->obj_list = thisInfo.test_item_objs[GetName()];
+  c_item->description = GetHasComment(c_item->item_list.size(), "biosource") 
+                         + "metagenome_source qualifier";
 };
 
 
@@ -8458,6 +8829,7 @@ bool CSeqEntry_test_on_biosrc_orgmod :: HasMissingBacteriaStrain(const CBioSourc
 
 void CSeqEntry_DISC_BACTERIA_MISSING_STRAIN :: GetReport(CRef <CClickableItem>& c_item)
 {
+  c_item->obj_list = thisInfo.test_item_objs[GetName()];
   c_item->description
      = GetHasComment(c_item->item_list.size(), "bacterial biosource")
        + "taxname 'Genus sp. strain' but no strain";
@@ -8482,13 +8854,16 @@ void CSeqEntry_test_on_biosrc_orgmod :: TestOnObj(const CSeq_entry& seq_entry)
    m_run_amp = (thisTest.tests_run.find(GetName_amp()) != end_it);
 
    string desc;
-   ITERATE (vector <const CSeq_feat*>, it, biosrc_orgmod_feat)
-     RunTests((*it)->GetData().GetBiosrc(), GetDiscItemText(**it));
+   ITERATE (vector <const CSeq_feat*>, it, biosrc_orgmod_feat) {
+     RunTests((*it)->GetData().GetBiosrc(), 
+               GetDiscItemText(**it), 
+               CConstRef <CObject>(*it));
+   }
 
    unsigned i=0;
    ITERATE (vector <const CSeqdesc*>, it, biosrc_orgmod_seqdesc) {
       desc = GetDiscItemText(**it, *(biosrc_orgmod_seqdesc_seqentry[i]));
-      RunTests((*it)->GetSource(), desc);
+      RunTests((*it)->GetSource(), desc, CConstRef <CObject>(*it));
       i++;
    }
 };
@@ -8496,15 +8871,18 @@ void CSeqEntry_test_on_biosrc_orgmod :: TestOnObj(const CSeq_entry& seq_entry)
 void CSeqEntry_DUP_DISC_ATCC_CULTURE_CONFLICT :: GetReport(CRef <CClickableItem>& c_item)
 {
   RmvRedundancy(c_item->item_list); 
-  c_item->description = GetHasComment(c_item->item_list.size(), "biosource")
-                          + "conflicting ATCC strain and culture collection values.";
+  c_item->obj_list = thisInfo.test_item_objs[GetName()];
+  c_item->description 
+       = GetHasComment(c_item->item_list.size(), "biosource")
+         + "conflicting ATCC strain and culture collection values.";
 };
 
 void CSeqEntry_DUP_DISC_CBS_CULTURE_CONFLICT :: GetReport(CRef <CClickableItem>& c_item)
 {
    RmvRedundancy(c_item->item_list); 
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description = GetHasComment(c_item->item_list.size(), "biosource")
-                          + "conflicting CBS strain and culture collection values.";
+                      + "conflicting CBS strain and culture collection values.";
 };
 
 void CSeqEntry_DISC_BACTERIAL_TAX_STRAIN_MISMATCH :: GetReport(CRef <CClickableItem>& c_item)
@@ -8518,6 +8896,7 @@ void CSeqEntry_DISC_BACTERIAL_TAX_STRAIN_MISMATCH :: GetReport(CRef <CClickableI
 void CSeqEntry_ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH :: GetReport(CRef <CClickableItem>& c_item) 
 {
    RmvRedundancy(c_item->item_list); 
+   c_item->obj_list = thisInfo.test_item_objs[GetName()]; // redundancy?
    c_item->description = GetHasComment(c_item->item_list.size(), "organism")
                           + "conflicting strain and culture-collection values";
 };
@@ -8681,31 +9060,6 @@ void CSeqEntry_test_on_biosrc :: AddMissingViralQualsDiscrepancies(const CBioSou
 };
 
 
-bool CSeqEntry_test_on_biosrc :: HasMoreOrSpecNames(const CBioSource& biosrc, CSubSource::ESubtype subtype, bool check_mul_nm_only)
-{
-   string name;
-   vector <string> name_ls;
-   if (biosrc.CanGetSubtype()) {
-     ITERATE (list <CRef <CSubSource> >, it, biosrc.GetSubtype()) {
-       if ( (*it)->GetSubtype() == subtype) {
-          name = (*it)->GetName();
-          name_ls = NStr::Tokenize(name, ",;", name_ls, NStr::eMergeDelims);
-          if (name_ls.size() >= 3) return true;
-          else if (!check_mul_nm_only) {
-            ITERATE (vector <string>, jt, thisInfo.spec_words_biosrc)
-              if (NStr::FindNoCase(name, *jt) != string::npos) return true;
-          }
-          if (!check_mul_nm_only) {
-              ITERATE (vector <string>, it, m_submit_text)
-                  if ( (*it) == name) return true;
-          }
-       }
-     }
-   }
-   return false;
-};
-
-
 bool CSeqEntry_test_on_biosrc :: IsMissingRequiredClone (const CBioSource& biosrc)
 {
    bool has_clone = false, needs_clone = false;
@@ -8731,31 +9085,30 @@ bool CSeqEntry_test_on_biosrc :: IsMissingRequiredClone (const CBioSource& biosr
 };
 
 
-void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string& desc, int idx)
+void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string& desc, CConstRef <CObject> obj_ref, int idx)
 {
-  CConstRef <CObject> src_ref (&biosrc);
   // DISC_REQUIRED_STRAIN
   if (m_run_strain && x_IsMissingRequiredStrain(biosrc)) {
       thisInfo.test_item_list[GetName_strain()].push_back(desc);
-      thisInfo.test_item_objs[GetName_strain()].push_back(src_ref);
+      thisInfo.test_item_objs[GetName_strain()].push_back(obj_ref);
   }
   
   // DISC_REQUIRED_CLONE
   if (m_run_clone && IsMissingRequiredClone(biosrc)) {
       thisInfo.test_item_list[GetName_clone()].push_back(desc);
-      thisInfo.test_item_objs[GetName_clone()].push_back(src_ref);
+      thisInfo.test_item_objs[GetName_clone()].push_back(obj_ref);
   }
 
   // ONCALLER_MULTISRC
   if (m_run_mult && HasMulSrc( biosrc )) {
       thisInfo.test_item_list[GetName_mult()].push_back(desc);
-      thisInfo.test_item_objs[GetName_mult()].push_back(src_ref);
+      thisInfo.test_item_objs[GetName_mult()].push_back(obj_ref);
   }
 
   // DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE
   if (m_run_iso && IsBacterialIsolate(biosrc)) {  
       thisInfo.test_item_list[GetName_iso()].push_back(desc);
-      thisInfo.test_item_objs[GetName_iso()].push_back(src_ref);
+      thisInfo.test_item_objs[GetName_iso()].push_back(obj_ref);
   }
 
   // TAX_LOOKUP_MISSING, TAX_LOOKUP_MISMATCH
@@ -8767,7 +9120,7 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
      if (lookup_tax.Empty() || !(lookup_tax->CanGetOrg())) {
          if (m_run_tmiss) {
               thisInfo.test_item_list[GetName_tmiss()].push_back(desc); 
-              thisInfo.test_item_objs[GetName_tmiss()].push_back(src_ref);
+              thisInfo.test_item_objs[GetName_tmiss()].push_back(obj_ref);
          }
      }
      else {
@@ -8775,12 +9128,12 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
                                   lookup_tax->GetOrg().GetTaxname() : kEmptyStr;
        if (m_run_tmiss && org_tax != db_tax) {
            thisInfo.test_item_list[GetName_tbad()].push_back(desc);
-           thisInfo.test_item_objs[GetName_tbad()].push_back(src_ref);
+           thisInfo.test_item_objs[GetName_tbad()].push_back(obj_ref);
        }
        else {
          if (m_run_tbad && !DoTaxonIdsMatch(biosrc.GetOrg(),lookup_tax->GetOrg())){
              thisInfo.test_item_list[GetName_tbad()].push_back(desc);
-             thisInfo.test_item_objs[GetName_tbad()].push_back(src_ref);
+             thisInfo.test_item_objs[GetName_tbad()].push_back(obj_ref);
          }
        }
      }
@@ -8789,7 +9142,7 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
   // DISC_INFLUENZA_DATE_MISMATCH
   if (m_run_flu && DoInfluenzaStrainAndCollectionDateMisMatch(biosrc)) {
      thisInfo.test_item_list[GetName_flu()].push_back(desc);
-     thisInfo.test_item_objs[GetName_flu()].push_back(src_ref);
+     thisInfo.test_item_objs[GetName_flu()].push_back(obj_ref);
   }
 
   // DISC_MISSING_VIRAL_QUALS
@@ -8797,24 +9150,13 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
          AddMissingViralQualsDiscrepancies(biosrc, desc);
   }
 
-  // MORE_OR_SPEC_NAMES_IDENTIFIED_BY
-  if ( m_run_iden && HasMoreOrSpecNames( biosrc, CSubSource::eSubtype_identified_by)) {
-     thisInfo.test_item_list[GetName_iden()].push_back(desc);
-     thisInfo.test_item_objs[GetName_iden()].push_back(src_ref);
-  }
-
-  // MORE_NAMES_COLLECTED_BY
-  if ( m_run_col && HasMoreOrSpecNames( biosrc, CSubSource::eSubtype_collected_by, true)){
-        thisInfo.test_item_list[GetName_col()].push_back(desc);
-        thisInfo.test_item_objs[GetName_col()].push_back(src_ref);
-  }
-
   // DIVISION_CODE_CONFLICTS
   if (m_run_div) {
      string div_code;
      if (biosrc.IsSetDivision() && !(div_code= biosrc.GetDivision()).empty()) {
         thisInfo.test_item_list[GetName_div()].push_back(div_code + "$" + desc);
-        thisInfo.test_item_objs[GetName_div() + "$" + div_code].push_back(src_ref);
+        thisInfo.test_item_objs[GetName_div() + "$" + div_code]
+                   .push_back(obj_ref);
      }
   }
 
@@ -8825,14 +9167,16 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
        has_map = IsSubSrcPresent(biosrc, CSubSource :: eSubtype_map);
        has_chrom = IsSubSrcPresent(biosrc, CSubSource :: eSubtype_chromosome);
        if (has_map && !has_chrom) {
-         for (CBioseq_CI b_ci(*thisInfo.scope, *(biosrc_seqdesc_seqentry[idx]));b_ci; ++b_ci){
+         for (CBioseq_CI b_ci(*thisInfo.scope, *(biosrc_seqdesc_seqentry[idx]));
+                  b_ci; 
+                  ++b_ci){
             if (b_ci->IsAa()) continue;
             CConstRef <CBioseq> bioseq = b_ci->GetCompleteBioseq();
             if (IsBioseqHasLineage(*bioseq, "Eukaryota", false)) {
-                 thisInfo.test_item_list[GetName_map()].push_back(
-                                                      GetDiscItemText(*bioseq)); 
-                 thisInfo.test_item_objs[GetName_map()].push_back(
-                                         CConstRef <CObject>(bioseq.GetPointer()));
+                 thisInfo.test_item_list[GetName_map()]
+                             .push_back( GetDiscItemText(*bioseq)); 
+                 thisInfo.test_item_objs[GetName_map()]
+                           .push_back(CConstRef <CObject>(bioseq.GetPointer()));
             }
          }
        }
@@ -8842,13 +9186,13 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
   // DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER
   if (m_run_trin && FindTrinomialWithoutQualifier(biosrc)) {
       thisInfo.test_item_list[GetName_trin()].push_back(desc);
-      thisInfo.test_item_objs[GetName_trin()].push_back(src_ref);
+      thisInfo.test_item_objs[GetName_trin()].push_back(obj_ref);
   }
 
   // DISC_METAGENOMIC
   if (m_run_meta && IsSubSrcPresent(biosrc, CSubSource::eSubtype_metagenomic)) {
       thisInfo.test_item_list[GetName_meta()].push_back(desc); 
-      thisInfo.test_item_objs[GetName_meta()].push_back(src_ref);
+      thisInfo.test_item_objs[GetName_meta()].push_back(obj_ref);
   }
 
   // TEST_SP_NOT_UNCULTURED
@@ -8856,10 +9200,11 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
     unsigned len;
     if (!org_tax.empty()) {
        len = org_tax.size();
-       if (len >= 4 && CTempString(org_tax).substr(len-4) == " sp."
-                    && !NStr::EqualNocase(org_tax.substr(0, 11), "uncultured ")) {
+       if (len >= 4 
+              && CTempString(org_tax).substr(len-4) == " sp."
+              && !NStr::EqualNocase(org_tax.substr(0, 11), "uncultured ")) {
           thisInfo.test_item_list[GetName_sp()].push_back(desc);
-          thisInfo.test_item_objs[GetName_sp()].push_back(src_ref);
+          thisInfo.test_item_objs[GetName_sp()].push_back(obj_ref);
        }
     }
   }
@@ -8867,7 +9212,7 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
   // TEST_MISSING_PRIMER
   if (m_run_prim && MissingPrimerValue(biosrc)) {
        thisInfo.test_item_list[GetName_prim()].push_back(desc);
-       thisInfo.test_item_objs[GetName_prim()].push_back(src_ref);
+       thisInfo.test_item_objs[GetName_prim()].push_back(obj_ref);
   }
  
   // ONCALLER_COUNTRY_COLON
@@ -8880,7 +9225,7 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
            arr = NStr::Tokenize(*it, ":", arr);
            if (arr.size() > 2) {
               thisInfo.test_item_list[GetName_cty()].push_back(desc); 
-              thisInfo.test_item_objs[GetName_cty()].push_back(src_ref);
+              thisInfo.test_item_objs[GetName_cty()].push_back(obj_ref);
               break;
            }
          }
@@ -8896,7 +9241,7 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
      for (jt = pcr_ls.begin(); jt != pcr_ls.end(); jt++) {
         if ( (it != jt) && SamePCRReaction(**it, **jt)) {
            thisInfo.test_item_list[GetName_pcr()].push_back(desc);
-           thisInfo.test_item_objs[GetName_pcr()].push_back(src_ref);
+           thisInfo.test_item_objs[GetName_pcr()].push_back(obj_ref);
         }
      }
   }
@@ -9072,55 +9417,15 @@ void CSeqEntry_test_on_biosrc :: AddEukaryoticBioseqsToReport(const CBioseq_set&
 };
 
 
-
-void CSeqEntry_test_on_biosrc :: GetSubmitText(const CAuth_list& authors)
-{
-   if (authors.CanGetAffil()) {
-     const CAffil& affil = authors.GetAffil();
-     if (affil.IsStd()) {
-        if (affil.GetStd().CanGetAffil()) {
-             strtmp = affil.GetStd().GetAffil();
-             if (!strtmp.empty()) m_submit_text.push_back(strtmp);
-        }
-        if (affil.GetStd().CanGetDiv()) {
-             strtmp = affil.GetStd().GetDiv();
-             if (!strtmp.empty()) m_submit_text.push_back(strtmp);
-        }
-     }
-   }
-};
-
-
-void CSeqEntry_test_on_biosrc :: FindSpecSubmitText()
-{
-  string inst(kEmptyStr), dept(kEmptyStr);
-  if (thisInfo.seq_submit.NotEmpty()) {
-    GetSubmitText(thisInfo.seq_submit->GetSub().GetCit().GetAuthors());
-  }
-
-  ITERATE (vector <const CSeq_feat*>, it, pub_feat) {
-     ITERATE (list < CRef < CPub > >, jt, (*it)->GetData().GetPub().GetPub().Get())
-       if ( (*jt)->IsSetAuthors()) GetSubmitText((*jt)->GetAuthors());
-  }
-
-  ITERATE (vector <const CSeqdesc*>, it, pub_seqdesc) {
-     ITERATE (list < CRef < CPub > >, jt, (*it)->GetPub().GetPub().Get())
-       if ( (*jt)->IsSetAuthors()) GetSubmitText((*jt)->GetAuthors());
-  }
-
-};
-
 void CSeqEntry_test_on_biosrc :: TestOnObj(const CSeq_entry& seq_entry)
 {
    if (thisTest.is_BIOSRC_run) return;
    thisTest.is_BIOSRC_run = true;
 
    m_run_clone = (thisTest.tests_run.find(GetName_clone()) != end_it);
-   m_run_col = (thisTest.tests_run.find(GetName_col()) != end_it);
    m_run_cty = (thisTest.tests_run.find(GetName_cty()) != end_it);
    m_run_div = (thisTest.tests_run.find(GetName_div()) != end_it);
    m_run_flu = (thisTest.tests_run.find(GetName_flu()) != end_it);
-   m_run_iden = (thisTest.tests_run.find(GetName_iden()) != end_it);
    m_run_iso = (thisTest.tests_run.find(GetName_iso()) != end_it);
    m_run_map = (thisTest.tests_run.find(GetName_map()) != end_it);
    m_run_meta = (thisTest.tests_run.find(GetName_meta()) != end_it);
@@ -9134,17 +9439,16 @@ void CSeqEntry_test_on_biosrc :: TestOnObj(const CSeq_entry& seq_entry)
    m_run_tmiss = (thisTest.tests_run.find(GetName_tmiss()) != end_it);
    m_run_trin = (thisTest.tests_run.find(GetName_trin()) != end_it);
 
-   m_submit_text.clear(); 
-   FindSpecSubmitText();
-
    string desc;
    ITERATE (vector <const CSeq_feat*>, it, biosrc_feat)
-     RunTests((*it)->GetData().GetBiosrc(), GetDiscItemText(**it));
+     RunTests((*it)->GetData().GetBiosrc(), 
+               GetDiscItemText(**it), 
+               CConstRef <CObject>(*it));
 
    unsigned i=0;
    ITERATE (vector <const CSeqdesc*>, it, biosrc_seqdesc) {
      desc = GetDiscItemText( **it, *(biosrc_seqdesc_seqentry[i]));
-     RunTests((*it)->GetSource(), desc, (int)i);
+     RunTests((*it)->GetSource(), desc, CConstRef <CObject>(*it), (int)i);
      i++;
    };
 };
@@ -9182,24 +9486,6 @@ void CSeqEntry_DIVISION_CODE_CONFLICTS :: GetReport(CRef <CClickableItem>& c_ite
      c_item->description = "Division code conflicts found.";
    }
 };
-
-
-
-void CSeqEntry_MORE_NAMES_COLLECTED_BY :: GetReport(CRef <CClickableItem>& c_item)
-{
-   c_item->obj_list = thisInfo.test_item_objs[GetName()];
-   c_item->description = GetHasComment(c_item->item_list.size(), "biosource")
-                          + "3 or more names in collected-by.";
-};
-
-
-void CSeqEntry_MORE_OR_SPEC_NAMES_IDENTIFIED_BY :: GetReport(CRef <CClickableItem>& c_item)
-{
-   c_item->obj_list = thisInfo.test_item_objs[GetName()];
-   c_item->description = GetHasComment(c_item->item_list.size(), "biosource")
-                          + "3 or more names or suspect text in identified-by.";
-};
-
 
 void CSeqEntry_DISC_MISSING_VIRAL_QUALS :: GetReport(CRef <CClickableItem>& c_item)
 {
@@ -9591,22 +9877,21 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
   validator::CValidError_desc validator(imp);
 
   unsigned i=0, cnt;
-  int id;
   string bioseq_desc, type_str, user_desc;
   Str2Int bioseq2cnt;
+  map <string, CConstRef <CObject> > bioseq2ref;
 
-  for (CBioseq_CI b_ci(*thisInfo.scope, seq_entry, CSeq_inst::eMol_na); b_ci; ++b_ci) {
+  for (CBioseq_CI b_ci(*thisInfo.scope, seq_entry, CSeq_inst::eMol_na); 
+          b_ci; ++b_ci) {
      CConstRef <CBioseq> bsq_ref = b_ci->GetCompleteBioseq();
-     m_bioseq2geno_comm[GetDiscItemText(*bsq_ref)]= CConstRef <CObject>(bsq_ref);
+     m_bioseq2geno_comm[GetDiscItemText(*bsq_ref)]
+               = CConstRef <CObject>(bsq_ref.GetPointer());
   }
   for (CBioseq_CI b_ci(*thisInfo.scope, seq_entry); b_ci; ++b_ci) {
      CConstRef <CBioseq> bsq_ref = b_ci->GetCompleteBioseq();
-     m_seqs_no_pid[GetDiscItemText(*bsq_ref)]= CConstRef <CObject>(bsq_ref);
+     m_seqs_no_pid[GetDiscItemText(*bsq_ref)]
+                 = CConstRef <CObject>(bsq_ref.GetPointer());
   }
-
-  bioseq2cnt.clear();
-  CConstRef <CBioseq> seq_ref;
-  CConstRef <CBioseq_set> set_ref;
 
   bool run_gcomm = (thisTest.tests_run.find(GetName_gcomm()) != end_it);
   bool run_proj = (thisTest.tests_run.find(GetName_proj()) != end_it);
@@ -9616,6 +9901,7 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
   bool run_bproj = (thisTest.tests_run.find(GetName_bproj()) != end_it);
   bool run_prefix = (thisTest.tests_run.find(GetName_prefix()) != end_it);
 
+  string id;
   ITERATE (vector <const CSeqdesc*>, it, user_seqdesc) {
     const CUser_object& user_obj = (*it)->GetUser();
     if ( !(user_obj.GetType().IsStr()) ) { 
@@ -9639,18 +9925,27 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
     }
 
     // TEST_HAS_PROJECT_ID
-    if (run_proj && type_str == "GenomeProjectsDB" && user_obj.HasField("ProjectID")
-         && user_obj.GetField("ProjectID").GetData().IsInt()) {
-      id = user_obj.GetField("ProjectID").GetData().GetInt();
+    if (run_proj 
+            && type_str == "GenomeProjectsDB" 
+            && user_obj.HasField("ProjectID")
+            && user_obj.GetField("ProjectID").GetData().IsInt()) {
+      id = NStr::IntToString(user_obj.GetField("ProjectID").GetData().GetInt());
       for (CBioseq_CI bb_ci = b_ci; bb_ci; ++bb_ci) {
-         bioseq_desc = GetDiscItemText(*bb_ci->GetCompleteBioseq());
+         bioseq_desc = GetDiscItemText(*(bb_ci->GetCompleteBioseq()));
+         CConstRef <CObject> seq_ref(bb_ci->GetCompleteBioseq().GetPointer());
          if (bb_ci->IsAa()) {
-              PROJECT_ID_prot[id].push_back(bioseq_desc);
-              thisInfo.test_item_list[GetName_proj()].push_back("prot$" + bioseq_desc);
+       //       PROJECT_ID_prot[id].push_back(bioseq_desc);
+              thisInfo.test_item_list[GetName_proj()]
+                         .push_back("prot$" + id + "#" + bioseq_desc);
+              thisInfo.test_item_objs[GetName_proj() + "$prot#" + id]
+                         .push_back(seq_ref);
          }
          else {
-              PROJECT_ID_nuc[id].push_back(bioseq_desc);
-              thisInfo.test_item_list[GetName_proj()].push_back("nuc$" + bioseq_desc);
+        //      PROJECT_ID_nuc[id].push_back(bioseq_desc);
+              thisInfo.test_item_list[GetName_proj()]
+                         .push_back("nuc$" + id + "#" + bioseq_desc);
+              thisInfo.test_item_objs[GetName_proj() + "$nuc#" + id]
+                         .push_back(seq_ref);
          }
       }
     }
@@ -9659,14 +9954,20 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
     if (run_oncall || run_scomm) {
        cnt = (type_str == "StructuredComment") ? 1 : 0;
        for (CBioseq_CI bb_ci = b_ci; bb_ci; ++bb_ci) {
-          bioseq_desc = GetDiscItemText(*bb_ci->GetCompleteBioseq());
+          CConstRef <CBioseq> seq_ref = bb_ci->GetCompleteBioseq();
           if (!bb_ci->IsAa()) {
              if (bioseq2cnt.find(bioseq_desc) != bioseq2cnt.end()) {
-                if (cnt)
-                   bioseq2cnt[bioseq_desc]
-                            = bioseq2cnt[bioseq_desc] ? bioseq2cnt[bioseq_desc]++ : cnt;
+                bioseq2ref[bioseq_desc] 
+                    = CConstRef <CObject>(seq_ref.GetPointer());
+                if (cnt) {
+                   bioseq2cnt[bioseq_desc] 
+                        = bioseq2cnt[bioseq_desc] 
+                              ?  bioseq2cnt[bioseq_desc]++ : cnt;
+                }
              }
-             else bioseq2cnt[bioseq_desc] = cnt;
+             else {
+                bioseq2cnt[bioseq_desc] = cnt;
+             }
           }
        }
     }
@@ -9674,7 +9975,7 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
     // MISSING_PROJECT
     if (run_mproj) {
         if (type_str == "GenomeProjectsDB" 
-                  || (type_str == "DBLink" && user_obj.HasField("BioProject")) ) {
+                  || (type_str == "DBLink" && user_obj.HasField("BioProject"))){
            for (CBioseq_CI bb_ci = b_ci; bb_ci; ++bb_ci) {
                 CConstRef <CBioseq> bsq_ref = bb_ci->GetCompleteBioseq();
                 m_seqs_no_pid[GetDiscItemText(*bsq_ref)].Reset();
@@ -9683,23 +9984,32 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
     }
 
     // ONCALLER_BIOPROJECT_ID
-    if (run_bproj && type_str == "DBLink" && user_obj.HasField("BioProject")
-                  && user_obj.GetField("BioProject").GetData().IsStrs()) {
-       const vector <CStringUTF8>& ids = user_obj.GetField("BioProject").GetData().GetStrs();
-       if (!ids.empty() && !CUtf8::AsSingleByteString(ids[0], eEncoding_Ascii).empty()) {
+    if (run_bproj 
+            && type_str == "DBLink" && user_obj.HasField("BioProject")
+            && user_obj.GetField("BioProject").GetData().IsStrs()) {
+       const vector <CStringUTF8>& 
+            ids = user_obj.GetField("BioProject").GetData().GetStrs();
+       if (!ids.empty() 
+             && !CUtf8::AsSingleByteString(ids[0], eEncoding_Ascii).empty()) {
          for (CBioseq_CI bb_ci = b_ci; bb_ci; ++bb_ci) {
-           thisInfo.test_item_list[GetName_bproj()].push_back(
-                            GetDiscItemText( *(bb_ci->GetCompleteBioseq())) );
+           CConstRef <CBioseq> seq_ref = bb_ci->GetCompleteBioseq();
+           thisInfo.test_item_list[GetName_bproj()]
+                      .push_back( GetDiscItemText(*seq_ref));
+           thisInfo.test_item_objs[GetName_bproj()]
+                      .push_back(CConstRef <CObject> ( seq_ref.GetPointer()));
          }
        }
     }
 
     // ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX
-    if (run_prefix && type_str == "StructuredComment"   // 3 cond. added for C++ api
-                    && user_obj.HasField("StructuredCommentPrefix") 
-                    && user_obj.HasField("StructuredCommentSuffix"))
+    if (run_prefix 
+             && type_str == "StructuredComment"  
+             && user_obj.HasField("StructuredCommentPrefix") 
+             && user_obj.HasField("StructuredCommentSuffix")) {
 // temp. off                    && validator.ValidateStructuredComment(user_obj, **it))
        thisInfo.test_item_list[GetName_prefix()].push_back(user_desc); 
+       thisInfo.test_item_objs[GetName_prefix()].push_back(CConstRef <CObject>(*it)); 
+    }
 
     i++;
   }
@@ -9717,11 +10027,18 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
 // ONCALLER_MISSING_STRUCTURED_COMMENTS, MISSING_STRUCTURED_COMMENT
    if (run_oncall || run_scomm) {
       ITERATE (Str2Int, it, bioseq2cnt) {
-        if (run_oncall)
-             thisInfo.test_item_list[GetName_oncall_scomm()].push_back(
-                                NStr::IntToString(it->second) + "$" + it->first);
-        if (run_scomm && !it->second)
-          thisInfo.test_item_list[GetName_scomm()].push_back(it->first);
+        if (run_oncall) {
+             strtmp = NStr::IntToString(it->second);
+             thisInfo.test_item_list[GetName_oncall_scomm()]
+                        .push_back(strtmp + "$" + it->first);
+             thisInfo.test_item_objs[GetName_oncall_scomm() + "$" + strtmp]
+                       .push_back(bioseq2ref[it->first]);
+        }
+        if (run_scomm && !it->second) {
+            thisInfo.test_item_list[GetName_scomm()].push_back(it->first);
+            thisInfo.test_item_objs[GetName_scomm()]
+                       .push_back(bioseq2ref[it->first]);
+        }
       }
    }
 
@@ -9732,27 +10049,32 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
          thisInfo.test_item_objs[GetName_mproj()].push_back(it->second);
       }
    }
+
+   bioseq2cnt.clear();
 };
 
 void CSeqEntry_ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX :: GetReport(CRef <CClickableItem>& c_item)
 {
-  c_item->description = GetIsComment(c_item->item_list.size(), "structured comment")
-                       + "invalid but would be valid with a different prefix.";
+  c_item->obj_list = thisInfo.test_item_objs[GetName()];
+  c_item->description 
+         = GetIsComment(c_item->item_list.size(), "structured comment")
+             + "invalid but would be valid with a different prefix.";
 };
 
 void CSeqEntry_MISSING_STRUCTURED_COMMENT :: GetReport(CRef <CClickableItem>& c_item)
 {
-  RmvRedundancy(c_item->item_list);   // all CSeqEntry_Feat_desc tests need this.
+  RmvRedundancy(c_item->item_list);  // all CSeqEntry_Feat_desc tests need this.
+  c_item->obj_list = thisInfo.test_item_objs[GetName()];
   c_item->description = GetDoesComment(c_item->item_list.size(), "sequence") 
                            + "not include structured comments.";
 };
 
 void CSeqEntry_ONCALLER_BIOPROJECT_ID :: GetReport(CRef <CClickableItem>& c_item)
 {
-  RmvRedundancy(c_item->item_list);   // all CSeqEntry_Feat_desc tests need this.
-
-  c_item->description 
-        = GetContainsComment(c_item->item_list.size(), "sequence") + "BioProject IDs.";
+  RmvRedundancy(c_item->item_list);  // all CSeqEntry_Feat_desc tests need this.
+  c_item->obj_list = thisInfo.test_item_objs[GetName()];
+  c_item->description = GetContainsComment(c_item->item_list.size(), "sequence")
+                           + "BioProject IDs.";
 };
 
 void CSeqEntry_MISSING_PROJECT :: GetReport(CRef <CClickableItem>& c_item)
@@ -9764,7 +10086,7 @@ void CSeqEntry_MISSING_PROJECT :: GetReport(CRef <CClickableItem>& c_item)
 
 void CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS :: GetReport(CRef <CClickableItem>& c_item)
 {
-  RmvRedundancy(c_item->item_list);   // all CSeqEntry_Feat_desc tests need this.
+  RmvRedundancy(c_item->item_list); // all CSeqEntry_Feat_desc tests need this.
 
   Str2Strs bioseq2cnt;
   GetTestItemList(c_item->item_list, bioseq2cnt); //bioseq2cnt Globle in 1 or multi file?
@@ -9772,19 +10094,18 @@ void CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS :: GetReport(CRef <CClickabl
   string desc;
   if (bioseq2cnt.size() > 1) {
     ITERATE (Str2Strs, it, bioseq2cnt) {
-       desc =
-         (it->first=="1"||it->first=="0")? " structured comment":" structured comments";
-       AddSubcategory(c_item,  GetName(), &(it->second), "sequence", it->first + desc,
-                          e_HasComment, false);
+       desc = (it->first == "1" || it->first == "0")
+                   ? " structured comment":" structured comments";
+       AddSubcategory(c_item,  GetName() + "$" + it->first, &(it->second), 
+                      "sequence", it->first + desc, e_HasComment, false);
     }
-    c_item->description = "Sequences have different numbers of structured comments.";
+    c_item->description 
+         = "Sequences have different numbers of structured comments.";
   }
 };
 
 void CSeqEntry_MISSING_GENOMEASSEMBLY_COMMENTS :: GetReport(CRef <CClickableItem>& c_item)
 {
-//  RmvRedundancy(c_item->item_list);   // all CSeqEntry_Feat_desc tests need this.
-
   c_item->obj_list = thisInfo.test_item_objs[GetName()];
   c_item->description = GetIsComment(c_item->item_list.size(), "bioseq")
                             + "missing GenomeAssembly structured comments.";
@@ -9796,55 +10117,103 @@ void CSeqEntry_TEST_HAS_PROJECT_ID :: GetReport(CRef <CClickableItem>& c_item)
    RmvRedundancy(c_item->item_list);   // all CSeqEntry_Feat_desc tests need this.
 
    unsigned prot_cnt = 0, nuc_cnt = 0, prot_id1 = 0, nuc_id1 = 0;
-   Str2Strs mol2list;
+   Str2Strs mol2list, prot_id2seqs, nuc_id2seqs;
    GetTestItemList(c_item->item_list, mol2list);
    c_item->item_list.clear();
    ITERATE (Str2Strs, it, mol2list) {
-     if (it->first == "prot") prot_cnt = it->second.size();
-     else nuc_cnt = it->second.size();
+     if (it->first == "prot") {
+         prot_cnt = it->second.size();
+         GetTestItemList(it->second, prot_id2seqs, "#");
+     }
+     else {
+        nuc_cnt = it->second.size();
+        GetTestItemList(it->second, nuc_id2seqs, "#");
+     }
    }
 
-   string tot_add_desc, prot_add_desc, nuc_add_desc;
-   if (PROJECT_ID_prot.size() <= 1 && PROJECT_ID_nuc.size() <= 1) {
-      if (prot_cnt)  prot_id1 = PROJECT_ID_prot.begin()->first;
-      if (nuc_cnt) nuc_id1 = PROJECT_ID_nuc.begin()->first;
-      if ( (prot_id1 == nuc_id1) ||  !(prot_id1 * nuc_id1)) tot_add_desc = "(all same)";
-      else tot_add_desc = " (some different)";
+   string tot_desc, prot_desc, nuc_desc;
+//   if (PROJECT_ID_prot.size() <= 1 && PROJECT_ID_nuc.size() <= 1) {
+   if (prot_cnt <= 1 && nuc_cnt <= 1) {
+      if (prot_cnt)  {
+//            prot_id1 = PROJECT_ID_prot.begin()->first;
+          prot_id1 = NStr::StringToUInt(prot_id2seqs.begin()->first);
+      }
+      if (nuc_cnt) {
+//          nuc_id1 = PROJECT_ID_nuc.begin()->first;
+          nuc_id1 = NStr::StringToUInt(nuc_id2seqs.begin()->first);
+      }
+      if ( (prot_id1 == nuc_id1) ||  !(prot_id1 * nuc_id1)) {
+            tot_desc = "(all same)";
+      }
+      else tot_desc = " (some different)";
    }
 
-   if (prot_cnt && PROJECT_ID_prot.size() > 1) prot_add_desc = "(some different)";
-   else prot_add_desc = "(all same)";
+//   if (prot_cnt && PROJECT_ID_prot.size() > 1) {
+   if (prot_cnt && prot_id2seqs.size() > 1) {
+        prot_desc = "(some different)";
+   }
+   else {
+        prot_desc = "(all same)";
+   }
 
-   if (nuc_cnt && PROJECT_ID_nuc.size() > 1) nuc_add_desc = "(some different)";
-   else nuc_add_desc = "(all same)";
+   if (nuc_cnt && nuc_id2seqs.size() > 1) {
+         nuc_desc = "(some different)";
+   }
+   else {
+       nuc_desc = "(all same)";
+   }
 
    if (prot_cnt && !nuc_cnt) {
-       c_item->item_list = mol2list.begin()->second;
-       c_item->description = GetOtherComment(c_item->item_list.size(),
-                                 "protein sequence has project ID ",
-                                 "protein sequences have project IDs " + tot_add_desc);
+       ITERATE (Str2Strs, it, prot_id2seqs) {
+          copy(it->second.begin(), it->second.end(), 
+              back_inserter(c_item->item_list));
+          vector <CConstRef <CObject> >*
+            objs = &(thisInfo.test_item_objs[GetName() + "$prot#" + it->first]);
+          copy(objs->begin(), objs->end(), back_inserter(c_item->obj_list));
+       }
+       c_item->description 
+           = GetOtherComment(c_item->item_list.size(),
+             "protein sequence has project ID ",
+             "protein sequences have project IDs " + prot_desc);
    }
    else if (!prot_cnt && nuc_cnt) {
-       c_item->item_list = mol2list.begin()->second;
-       c_item->description = GetOtherComment(c_item->item_list.size(),
-                                "nucleotide sequence has project ID ",
-                                "nucleotide sequences have project IDs " + tot_add_desc);
+       //c_item->item_list = mol2list.begin()->second;
+       ITERATE (Str2Strs, it, nuc_id2seqs) {
+          copy(it->second.begin(), it->second.end(), 
+                 back_inserter(c_item->item_list));
+          vector <CConstRef <CObject> >*
+            objs = &(thisInfo.test_item_objs[GetName() + "$nuc#" + it->first]);
+          copy(objs->begin(), objs->end(), back_inserter(c_item->obj_list));
+       }
+       c_item->description 
+          = GetOtherComment(c_item->item_list.size(),
+             "nucleotide sequence has project ID ",
+             "nucleotide sequences have project IDs " + nuc_desc);
    }
    else {
        c_item->description 
                = GetOtherComment(prot_cnt + nuc_cnt, "sequence has project ID ",
-                                "sequencs have project IDs " + tot_add_desc);
-       AddSubcategory(c_item, GetName(), &mol2list["nuc"],
-           "nucleotide sequence has project ID", "nucleotide sequences have project IDs",
-           e_OtherComment, false);
-       AddSubcategory(c_item, GetName(), &mol2list["prot"], "protein sequence has project ID",
-                       "protein sequences have project IDs", e_OtherComment, false);
+                                "sequencs have project IDs " + tot_desc);
+       ITERATE (Str2Strs, it, nuc_id2seqs) {
+          AddSubcategory(c_item, GetName() + "$nuc#" + it->first, 
+                         &it->second, "nucleotide sequence has project ID", 
+                         "nucleotide sequences have project IDs",
+                          e_OtherComment, false);
+       }
+       ITERATE (Str2Strs, it, prot_id2seqs) {
+          AddSubcategory(c_item, GetName() + "$prot#" + it->first, 
+                         &it->second, "protein sequence has project ID",
+                         "protein sequences have project IDs", 
+                          e_OtherComment, false);
+       }
 
-       //c_item->expanded = true;  what does the expanded work for?
+       c_item->expanded = true; 
    }
 
+/*
    PROJECT_ID_prot.clear();
    PROJECT_ID_nuc.clear();
+*/
 };
 
 // new method
@@ -9853,7 +10222,9 @@ CFlatFileConfig::CGenbankBlockCallback::EBioseqSkip CFlatfileTextFind::notify_bi
 {
    m_taxname = ctx.GetTaxname();
    CBioseq_Handle& bioseq_hl = ctx.GetHandle();
-   if (!bioseq_hl) return (eBioseqSkip_Yes);
+   if (!bioseq_hl) {
+      return (eBioseqSkip_Yes);
+   }
    CConstRef <CBioseq> bioseq_ref = bioseq_hl.GetCompleteObject();
    m_bioseq_desc = GetDiscItemText(*bioseq_ref);
 
@@ -9862,18 +10233,23 @@ CFlatFileConfig::CGenbankBlockCallback::EBioseqSkip CFlatfileTextFind::notify_bi
      switch (it->Which()) {
         case CSeqdesc::e_Source:
             m_src_desc = GetDiscItemText(*it, *bioseq_ref);
+            m_obj_ref.Reset(&(*it));
             break;
         case CSeqdesc::e_Molinfo:
             m_mol_desc = GetDiscItemText(*it, *bioseq_ref);
+            m_obj_ref.Reset(&(*it));
             break;
         case CSeqdesc::e_Title:
             m_tlt_desc = GetDiscItemText(*it, *bioseq_ref);
+            m_obj_ref.Reset(&(*it));
             break;
         case CSeqdesc::e_Pub:
             m_pub_desc = GetDiscItemText(*it, *bioseq_ref);
+            m_obj_ref.Reset(&(*it));
             break;
         case CSeqdesc::e_Genbank:
             m_gbk_desc = GetDiscItemText(*it, *bioseq_ref);
+            m_obj_ref.Reset(&(*it));
             break;
         default: break;
      }
@@ -9886,7 +10262,8 @@ CFlatFileConfig::CGenbankBlockCallback::EBioseqSkip CFlatfileTextFind::notify_bi
 CFlatFileConfig::CGenbankBlockCallback::EAction   CFlatfileTextFind::notify(string& block_text, const CBioseqContext& ctx, const CSourceItem& source_item)
 {
   block_text = block_text.substr(0, block_text.find("ORGANISM")); // double check  
-  return unified_notify(block_text, ctx, source_item, CFlatFileConfig::fGenbankBlocks_Source);
+  return unified_notify(block_text, ctx, source_item, 
+                                       CFlatFileConfig::fGenbankBlocks_Source);
 };
 
 CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::notify(string& block_text, const CBioseqContext& ctx, const CFeatureItem& feature_item)
@@ -9898,59 +10275,69 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::notify(string
      block_text = block_text.substr(0, pos-1);
      pos = CTempString(strtmp).substr(14).find("\"");
      if (pos != string::npos) {
-       if (pos < strtmp.size() - 1) block_text += CTempString(strtmp).substr(pos+1);
+       if (pos < strtmp.size() - 1) {
+           block_text += CTempString(strtmp).substr(pos+1);
+       }
      }
    }
    return unified_notify(block_text, ctx, feature_item, 
-                                            CFlatFileConfig::fGenbankBlocks_FeatAndGap);
+                                    CFlatFileConfig::fGenbankBlocks_FeatAndGap);
 };
 
 
 CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notify( string & block_text, const CBioseqContext& ctx, const IFlatItem & flat_item, CFlatFileConfig::FGenbankBlocks which_block )
 {
-  block_text =CTestAndRepData::FindReplaceString(block_text, m_taxname, "", false, true);
+  block_text 
+    =CTestAndRepData::FindReplaceString(block_text, m_taxname, "", false, true);
   ITERATE (Str2UInt, it, thisInfo.whole_word) {
-     if (CTestAndRepData 
-           :: DoesStringContainPhrase(block_text, it->first, false,  (bool)it->second)){
+     CConstRef <CObject> obj_ref;
+     if (CTestAndRepData :: DoesStringContainPhrase(
+                             block_text, it->first, false,  (bool)it->second)){
        switch (which_block) {
          case CFlatFileConfig::fGenbankBlocks_Locus: {
                  strtmp = m_mol_desc; 
+                 obj_ref = m_obj_ref;
                  break;
          }
          case CFlatFileConfig::fGenbankBlocks_Defline: {
                  strtmp = m_tlt_desc; 
+                 obj_ref = m_obj_ref;
                  break;
          }
          case CFlatFileConfig::fGenbankBlocks_Keywords: {
                  strtmp = m_gbk_desc; 
+                 obj_ref = m_obj_ref;
                  break;
          }
          case CFlatFileConfig::fGenbankBlocks_Reference: {
                  strtmp = m_pub_desc; 
+                 obj_ref = m_obj_ref;
                  break;
          }
          case CFlatFileConfig::fGenbankBlocks_Source: {
                  strtmp = m_src_desc; 
+                 obj_ref = m_obj_ref;
                  break;
          }
          case CFlatFileConfig::fGenbankBlocks_Sourcefeat: 
-            {
-              const CFeatureItemBase& feat_item 
-                            = dynamic_cast<const CFeatureItemBase&> (flat_item);
-              strtmp = GetDiscItemText( feat_item.GetFeat().GetOriginalFeature());
-              break;
-            }
          case CFlatFileConfig::fGenbankBlocks_FeatAndGap:
             {
               const CFeatureItemBase& feat_item 
-                             = dynamic_cast<const CFeatureItemBase&> (flat_item);
-              strtmp = GetDiscItemText( feat_item.GetFeat().GetOriginalFeature());
+                            = dynamic_cast<const CFeatureItemBase&> (flat_item);
+              const CSeq_feat& sf = feat_item.GetFeat().GetOriginalFeature();
+              strtmp = GetDiscItemText(sf);
+              obj_ref.Reset(&sf);
               break;
             }
          default: strtmp = m_bioseq_desc;
+                  obj_ref = m_obj_ref;
        };
-       thisInfo.test_item_list[m_setting_name].push_back(
-            thisInfo.fix_data[it->first] + "$" + it->first + "#" + strtmp);
+       strtmp = thisInfo.fix_data[it->first] + "$" + it->first + "#" + strtmp;
+       thisInfo.test_item_list[m_setting_name].push_back(strtmp);
+//            thisInfo.fix_data[it->first] + "$" + it->first + "#" + strtmp);
+       strtmp 
+        = m_setting_name + "$" + thisInfo.fix_data[it->first] + "#" + it->first;
+       thisInfo.test_item_objs[strtmp].push_back(obj_ref);
      }
   } 
 
@@ -9978,7 +10365,9 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: TestOnObj(const CSeq_entry& seq_en
 void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: AddCItemToReport(const string& ls_type, const string& setting_name, CRef <CClickableItem>& c_item)
 {
    Str2Strs wrds2ls;
-   if (m_fixable2ls.size() == 1 && m_fixable2ls.begin()->first != ls_type) return;
+   if (m_fixable2ls.size() == 1 && m_fixable2ls.begin()->first != ls_type) {
+        return;
+   }
    ITERATE (Str2Strs, it, m_fixable2ls) {
      if (it->first == ls_type) {
         wrds2ls.clear();
@@ -9991,8 +10380,10 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: AddCItemToReport(const string& ls_
               thisInfo.disc_report_data.push_back(c_item);
            }
            c_item->item_list = jt->second;
+           strtmp = setting_name + "$" + it->first + "#" + jt->first;
+           c_item->obj_list = thisInfo.test_item_objs[strtmp];
            c_item->description
-                   = GetContainsComment(c_item->item_list.size(), "object") + jt->first;
+           = GetContainsComment(c_item->item_list.size(), "object") + jt->first;
         }
      }
    }
@@ -10005,8 +10396,14 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: GetReport(CRef <CClickableItem>& c
    GetTestItemList(c_item->item_list, m_fixable2ls); 
    c_item->item_list.clear();
    m_citem1 = true;
-   AddCItemToReport("no", GetName_nofix(), c_item);
-   AddCItemToReport("yes", GetName_fix(), c_item); 
+   if (thisTest.tests_run.find(GetName()) != end_it
+          || thisTest.tests_run.find(GetName_nofix()) != end_it) {
+       AddCItemToReport("no", GetName_nofix(), c_item);
+   }
+   if (thisTest.tests_run.find(GetName()) != end_it
+          || thisTest.tests_run.find(GetName_fix()) != end_it) {
+      AddCItemToReport("yes", GetName_fix(), c_item); 
+   }
 };
 
 bool CSeqEntry_ONCALLER_STRAIN_TAXNAME_CONFLICT :: StrainConflictsTaxname(const COrg_ref& org)
@@ -10022,8 +10419,9 @@ bool CSeqEntry_ONCALLER_STRAIN_TAXNAME_CONFLICT :: StrainConflictsTaxname(const 
           if (NStr::EqualNocase((*iit).substr(0, len), *it)) {
              strtmp = CTempString(*iit).substr(len);
              NStr::TruncateSpacesInPlace(strtmp);
-             if (strtmp != tax_nm) return true;
-             break;
+             if (strtmp != tax_nm) {
+                 return true;
+             }
           }
         }
       }
@@ -10038,41 +10436,50 @@ void CSeqEntry_ONCALLER_STRAIN_TAXNAME_CONFLICT :: TestOnObj(const CSeq_entry& s
    bool has_tax;
    ITERATE (vector <const CSeq_feat*>, it, biosrc_orgmod_feat) {
      const CBioSource& biosrc = (*it)->GetData().GetBiosrc();
-     has_tax = (biosrc.IsSetTaxname() && !biosrc.GetTaxname().empty()) ? true : false;
-     if (has_tax && StrainConflictsTaxname(biosrc.GetOrg()))
+     has_tax = (biosrc.IsSetTaxname() && !biosrc.GetTaxname().empty());
+     if (has_tax && StrainConflictsTaxname(biosrc.GetOrg())) {
         thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
+        thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(*it));
+     }
    }
 
    ITERATE (vector <const CSeq_feat*>, it, org_orgmod_feat) {
       const COrg_ref& org = (*it)->GetData().GetOrg();
-      has_tax = (org.IsSetTaxname() && !org.GetTaxname().empty()) ? true : false;
-      if (has_tax && StrainConflictsTaxname(org))
+      has_tax = (org.IsSetTaxname() && !org.GetTaxname().empty());
+      if (has_tax && StrainConflictsTaxname(org)) {
         thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
+        thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(*it));
+      }
    }
 
    unsigned i=0;
    ITERATE (vector <const CSeqdesc*>, it, biosrc_orgmod_seqdesc) {
      const CBioSource& biosrc = (*it)->GetSource();
-     has_tax = (biosrc.IsSetTaxname() && !biosrc.GetTaxname().empty()) ? true : false;
-     if ( has_tax && StrainConflictsTaxname(biosrc.GetOrg()))
+     has_tax = (biosrc.IsSetTaxname() && !biosrc.GetTaxname().empty());
+     if ( has_tax && StrainConflictsTaxname(biosrc.GetOrg())) {
          thisInfo.test_item_list[GetName()].push_back(
-                             GetDiscItemText(**it, *(biosrc_orgmod_seqdesc_seqentry[i])));
+               GetDiscItemText(**it, *(biosrc_orgmod_seqdesc_seqentry[i])));
+         thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(*it));
+     }
      i++;
    };
    
    i=0;
    ITERATE (vector <const CSeqdesc*>, it, org_orgmod_seqdesc) {
      const COrg_ref& org = (*it)->GetOrg();
-     has_tax = (org.IsSetTaxname() && !org.GetTaxname().empty()) ? true : false;
-     if (StrainConflictsTaxname( org ))
+     has_tax = (org.IsSetTaxname() && !org.GetTaxname().empty());
+     if (has_tax && StrainConflictsTaxname( org )) {
          thisInfo.test_item_list[GetName()].push_back(
-                             GetDiscItemText(**it, *(org_orgmod_seqdesc_seqentry[i])));
+                      GetDiscItemText(**it, *(org_orgmod_seqdesc_seqentry[i])));
+         thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(*it));
+     }
      i++;
    }
 };
 
 void CSeqEntry_ONCALLER_STRAIN_TAXNAME_CONFLICT :: GetReport(CRef <CClickableItem>& c_item)
 {
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description = GetHasComment(c_item->item_list.size(), "sequence") 
                            + "conflicts between type strain and organism name.";
 };
@@ -10080,12 +10487,16 @@ void CSeqEntry_ONCALLER_STRAIN_TAXNAME_CONFLICT :: GetReport(CRef <CClickableIte
 bool CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM :: HasSmallSeqset(const CSeq_entry& seq_entry)
 {
    if (seq_entry.IsSet()) {
-      if (seq_entry.GetSet().GetClass() == CBioseq_set::eClass_small_genome_set)
+     if (seq_entry.GetSet().GetClass() == CBioseq_set::eClass_small_genome_set){
           return true;
-      else {
-         ITERATE (list <CRef <CSeq_entry> >, it, seq_entry.GetSet().GetSeq_set()) 
-            if (HasSmallSeqset(**it)) return true;
-      }
+     }
+     else {
+        ITERATE(list <CRef <CSeq_entry> >, it, seq_entry.GetSet().GetSeq_set()){
+            if (HasSmallSeqset(**it)) {
+                return true;
+            }
+        }
+     }
    } 
 
    return false;
@@ -10093,7 +10504,9 @@ bool CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM :: HasSmallSeqset(const CSeq_entry&
 
 void CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM :: TestOnObj(const CSeq_entry& seq_entry)
 {
-   if (!HasSmallSeqset(seq_entry)) return;
+   if (!HasSmallSeqset(seq_entry)) {
+        return;
+   }
    string pre_taxname, pre_isolate, pre_strain;
    pre_taxname = pre_isolate = pre_strain = kEmptyStr;
    bool all_taxnames_same, all_isolates_same, all_strains_same;
@@ -10104,22 +10517,33 @@ void CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM :: TestOnObj(const CSeq_entry& seq_
    ITERATE (vector <const CSeqdesc*>, it, biosrc_seqdesc) {
       const CBioSource& biosrc = (*it)->GetSource();
       desc = GetDiscItemText(**it, *biosrc_seqdesc_seqentry[i]);
+      CConstRef <CObject> obj_ref(*it);
       if (HasLineage(biosrc, "Viruses")) {
-         if (!IsSubSrcPresent(biosrc, CSubSource::eSubtype_segment))
-           thisInfo.test_item_list[GetName()].push_back("missing$" + desc);
+         if (!IsSubSrcPresent(biosrc, CSubSource::eSubtype_segment)) {
+             thisInfo.test_item_list[GetName()].push_back("missing$" + desc);
+             thisInfo.test_item_objs[GetName() + "$missing"].push_back(obj_ref);
+         }
       }
       if (all_taxnames_same) {
          desc = GetSrcQualValue(biosrc, "taxname");
-         if (pre_taxname.empty() && !desc.empty()) pre_taxname = desc;
-         else if (desc != pre_taxname) all_taxnames_same = false;  
+         if (pre_taxname.empty() && !desc.empty()) {
+                pre_taxname = desc;
+         }
+         else if (desc != pre_taxname) {
+             all_taxnames_same = false;  
+         }
       }
       if (all_isolates_same) {
          arr.clear();
          GetOrgModValues(biosrc, COrgMod::eSubtype_isolate, arr);
          all_isolates_same = AllVecElesSame(arr);
          if (all_isolates_same) {
-           if (pre_isolate.empty() && !arr[0].empty()) pre_isolate = arr[0];
-           else if (arr[0] != pre_isolate) all_isolates_same = false;
+           if (pre_isolate.empty() && !arr[0].empty()) {
+                pre_isolate = arr[0];
+           }
+           else if (arr[0] != pre_isolate) {
+               all_isolates_same = false;
+           }
          }
       }
       if (all_strains_same) {
@@ -10127,16 +10551,25 @@ void CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM :: TestOnObj(const CSeq_entry& seq_
          GetOrgModValues(biosrc, COrgMod::eSubtype_strain, arr);
          all_strains_same = AllVecElesSame(arr);
          if (all_strains_same) {
-            if (pre_strain.empty() && !arr[0].empty()) pre_strain = arr[0];
-            else if (arr[0] != pre_strain) all_strains_same = false;
+            if (pre_strain.empty() && !arr[0].empty()) {
+                  pre_strain = arr[0];
+            }
+            else if (arr[0] != pre_strain) {
+               all_strains_same = false;
+            }
          }
       }
    }
  
-   if (!all_taxnames_same) strtmp = "taxname$" + desc_entry;
-   if (!all_isolates_same) strtmp = "isolate$" + desc_entry;
-   if (!all_strains_same) strtmp = "strain$" + desc_entry;
-   thisInfo.test_item_list[GetName()].push_back(strtmp);
+   if (!all_taxnames_same) {
+       thisInfo.test_item_list[GetName()].push_back("taxname$1");
+   }
+   if (!all_isolates_same) {
+       thisInfo.test_item_list[GetName()].push_back("isolate$1");
+   }
+   if (!all_strains_same) {
+       thisInfo.test_item_list[GetName()].push_back("strain$1");
+   }
 };
 
 void CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM :: GetReport(CRef <CClickableItem>& c_item)
@@ -10151,39 +10584,56 @@ void CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM :: GetReport(CRef <CClickableItem>&
              c_item->setting_name = GetName();
              thisInfo.disc_report_data.push_back(c_item);
      } 
-     c_item->item_list = it->second;
      if (it->first == "missing") {
+        c_item->item_list = it->second;
+        c_item->obj_list = thisInfo.test_item_objs[GetName() + "$missing"];
         cnt = it->second.size(); 
         c_item->description = GetOtherComment(cnt, "biosourc", "biosource")
-          + " should have segment qualifier but " + ( cnt>1? "do not" : "does not"); 
+                                 + " should have segment qualifier but " 
+                                 + ( cnt>1? "do not" : "does not"); 
      }
-     else c_item->description = "Not all biosources have same " + it->first;
+     else {
+         c_item->description = "Not all biosources have same " + it->first;
+     }
    }
 };
 
 
 bool CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: CitSubMatchExceptDate(const CCit_sub& cit1, const CCit_sub& cit2)
 {
-   if (Blob2Str(cit1.GetAuthors()) != Blob2Str(cit2.GetAuthors())) return false; 
-   if (cit1.CanGetImp() != cit2.CanGetImp()) return false;
-   else if (cit1.CanGetImp() && Blob2Str(cit1.GetImp()) != Blob2Str(cit2.GetImp())) 
+   if (Blob2Str(cit1.GetAuthors()) != Blob2Str(cit2.GetAuthors())) {
+       return false; 
+   }
+   if (cit1.CanGetImp() != cit2.CanGetImp()) {
+       return false;
+   }
+   else if (cit1.CanGetImp() 
+               && Blob2Str(cit1.GetImp()) != Blob2Str(cit2.GetImp())) {
          return false;
+   }
    string desc1 = cit1.CanGetDescr()? cit1.GetDescr() : kEmptyStr;
    string desc2 = cit2.CanGetDescr()? cit2.GetDescr() : kEmptyStr;
-   if (desc1 != desc2) return false;
+   if (desc1 != desc2) {
+         return false;
+   }
    int med1 = cit1.CanGetMedium()? cit2.GetMedium() : 0;
    int med2 = cit2.CanGetMedium() ? cit2.GetMedium() : 0; 
-   if (med1 != med2) return false;
+   if (med1 != med2) {
+         return false;
+   }
    return true; 
 };
 
 
 bool CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: DateMatch(const CSubmit_block& blk1, const CSubmit_block& blk2) 
 {
-   if (blk1.CanGetReldate() != blk2.CanGetReldate()) return false;
+   if (blk1.CanGetReldate() != blk2.CanGetReldate()) {
+       return false;
+   }
    else if (blk1.CanGetReldate()
-            && CDate::eCompare_same != blk1.GetReldate().Compare(blk2.GetReldate()))
+              && CDate::eCompare_same != blk1.GetReldate().Compare(blk2.GetReldate())) {
       return false;
+   }
 
    return true;
 };
@@ -10193,7 +10643,7 @@ static vector <string> SUBMIT_BLKs;
 string CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: SubmitBlockMatchExceptDate(const CSubmit_block& this_blk)
 {
    CSubmit_block blk_in_ls;
-   bool match = true;
+   bool match;
    string ctat, this_ctat, str1, str2;
    this_ctat = Blob2Str(this_blk.GetContact());
    int subtp1, subtp2;
@@ -10202,37 +10652,51 @@ string CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: SubmitBlockMatchExceptDate(const C
       blk_in_ls.Reset();
       Str2Blob(*it, blk_in_ls);
       ctat = Blob2Str(blk_in_ls.GetContact());
-      if (this_ctat != ctat) match = false;
-      else if (!CitSubMatchExceptDate(this_blk.GetCit(), blk_in_ls.GetCit())) match = false;
-      else if ( this_blk.GetHup() != blk_in_ls.GetHup()) match = false;
-      else if ( this_blk.GetHup() && !DateMatch(this_blk, blk_in_ls)) match = false;
+      if (this_ctat != ctat
+             || !CitSubMatchExceptDate(this_blk.GetCit(), blk_in_ls.GetCit())
+             || (this_blk.GetHup() != blk_in_ls.GetHup())
+             || ( this_blk.GetHup() && !DateMatch(this_blk, blk_in_ls))) {
+          match = false;
+      }
       else {
          subtp1 = blk_in_ls.CanGetSubtype() ? blk_in_ls.GetSubtype() : 0;
          subtp2 = this_blk.CanGetSubtype() ? this_blk.GetSubtype() : 0;
-         if (subtp1 != subtp2) match = false;
+         if (subtp1 != subtp2) {
+             match = false;
+         }
          else {
             str1 = blk_in_ls.CanGetTool() ? blk_in_ls.GetTool() : kEmptyStr;
             str2 = this_blk.CanGetTool() ? this_blk.GetTool() : kEmptyStr;
-            if (str1 != str2) match = false;
+            if (str1 != str2) {
+                match = false;
+            }
             else {
               str1 = blk_in_ls.CanGetUser_tag() ? blk_in_ls.GetUser_tag() : kEmptyStr;
               str2 = this_blk.CanGetUser_tag() ? this_blk.GetUser_tag() : kEmptyStr;
-              if (str1 != str2) match = false;
+              if (str1 != str2) {
+                   match = false;
+              }
               else {
                  str1 = blk_in_ls.CanGetComment() ? blk_in_ls.GetComment() : kEmptyStr;
                  str2 = this_blk.CanGetComment() ? this_blk.GetComment() : kEmptyStr;
-                 if (str1 != str2) match = false;
+                 if (str1 != str2) {
+                      match = false;
+                 }
+                 else {
+                    match = true;
+                 }
               }
             } 
          }
       }
 
-      if (match) return (NStr::UIntToString(i) + "$");
+      if (match) {
+           return (NStr::UIntToString(i));
+      }
       i++;
-      match = true;
    }
    SUBMIT_BLKs.push_back(Blob2Str(this_blk));
-   return (NStr::UIntToString((unsigned)SUBMIT_BLKs.size()) + "$");
+   return (NStr::UIntToString((unsigned)SUBMIT_BLKs.size()));
 };
 
 
@@ -10240,42 +10704,68 @@ string CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: SubmitBlockMatchExceptDate(const C
 void CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: TestOnObj(const CSeq_entry& seq_entry)
 {
    string desc;
-   if (!thisInfo.seq_submit->IsEntrys()) desc = "0$";
+   if (thisInfo.seq_submit.Empty()) { // missing_list
+      if (seq_entry.IsSeq()) {
+         thisInfo.test_item_list[GetName()]
+                   .push_back("missing$" + GetDiscItemText(seq_entry.GetSeq()));
+         thisInfo.test_item_objs[GetName() + "$missing"]
+                   .push_back(CConstRef <CObject>(&seq_entry.GetSeq()));
+      }
+      else {
+         thisInfo.test_item_list[GetName()]
+                   .push_back("missing$" + GetDiscItemText(seq_entry.GetSet()));
+         thisInfo.test_item_objs[GetName() + "$missing"]
+                   .push_back(CConstRef <CObject>(&seq_entry.GetSet()));
+      }
+   };   
+
+   string idx;
+   if (SUBMIT_BLKs.empty()) {
+       SUBMIT_BLKs.push_back(Blob2Str(thisInfo.seq_submit->GetSub()));
+       idx = "0";
+   }   
    else {
-     if (SUBMIT_BLKs.empty()) SUBMIT_BLKs.push_back(Blob2Str(thisInfo.seq_submit->GetSub()));
-     else desc = SubmitBlockMatchExceptDate(thisInfo.seq_submit->GetSub());
+        idx = SubmitBlockMatchExceptDate(thisInfo.seq_submit->GetSub());
    }
-   if (seq_entry.IsSeq()) desc += GetDiscItemText(seq_entry.GetSeq());
-   else desc += GetDiscItemText(seq_entry.GetSet());
-   thisInfo.test_item_list[GetName()].push_back(desc);
+   CConstRef <CObject> obj_ref;
+   if (seq_entry.IsSeq()) {
+       desc = GetDiscItemText(seq_entry.GetSeq());
+       obj_ref = CConstRef <CObject>(&seq_entry.GetSeq());
+   }
+   else {
+       desc = GetDiscItemText(seq_entry.GetSet());
+       obj_ref = CConstRef <CObject>(&seq_entry.GetSet());
+   }
+   thisInfo.test_item_list[GetName()].push_back(idx + "$" + desc);
+   thisInfo.test_item_objs[GetName() + "$" + idx].push_back(obj_ref);
 };
 
 
 void CSeqEntry_DISC_SUBMITBLOCK_CONFLICT :: GetReport(CRef <CClickableItem>& c_item)
 {
-   Str2Strs blk2ords;
-   GetTestItemList(c_item->item_list, blk2ords);
+   Str2Strs blk2objs;
+   GetTestItemList(c_item->item_list, blk2objs);
    c_item->item_list.clear();
-   if (blk2ords.size() > 1) {
-      ITERATE (Str2Strs, it, blk2ords) {
-        strtmp = (it->first == "0") ? "no submit-block" : "identical submit-blocks";
-        AddSubcategory(c_item, GetName(), &(it->second),"record", strtmp, e_HasComment, false);
-      }
-      c_item->description = "SubmitBlock Conflicts";
+   ITERATE (Str2Strs, it, blk2objs) {
+      strtmp 
+        =(it->first =="missing")? "no submit-block" : "identical submit-blocks";
+      AddSubcategory(c_item, GetName() + "$" + it->first,
+                     &(it->second), "record", strtmp, e_HasComment, false);
    }
+   c_item->description = "SubmitBlock Conflicts";
 };
 
 
+/*
 void CSeqEntry_DISC_INCONSISTENT_MOLTYPES :: AddMolinfoToBioseqsOfSet(const CBioseq_set& set, const string& desc)
 {
-//   const CEnumeratedTypeValues* mol_vlu = CSeq_inst::GetTypeInfo_enum_EMol(); 
    ITERATE (list < CRef < CSeq_entry > >, it, set.GetSeq_set()) {
      if ((*it)->IsSeq()) {
          const CBioseq& bioseq = (*it)->GetSeq();
          if ( !bioseq.IsAa() ) {
               thisInfo.test_item_list[GetName()].push_back( 
                          desc + CSeq_inst::ENUM_METHOD_NAME(EMol)()->FindName(
-                                                             bioseq.GetInst().GetMol(), false) 
+                                             bioseq.GetInst().GetMol(), false) 
                          + "#" 
                          + GetDiscItemText(bioseq));
          }
@@ -10283,20 +10773,32 @@ void CSeqEntry_DISC_INCONSISTENT_MOLTYPES :: AddMolinfoToBioseqsOfSet(const CBio
      else AddMolinfoToBioseqsOfSet((*it)->GetSet(), desc);
   }
 };
+*/
 
 
 
 void CSeqEntry_DISC_INCONSISTENT_MOLTYPES :: TestOnObj(const CSeq_entry& seq_entry)
 {
-   string desc;
-//   const CEnumeratedTypeValues* biomol_vlu = CMolInfo::GetTypeInfo_enum_EBiomol();
- //  const CEnumeratedTypeValues* mol_vlu = CSeq_inst::GetTypeInfo_enum_EMol(); 
+   string mol_nm, biomol_nm, entry_no;
    unsigned i=0;
+   mol_nm 
+      = CSeq_inst::ENUM_METHOD_NAME(EMol)()->FindName(CSeq_inst::eMol_aa,false);
    ITERATE (vector <const CSeqdesc*>, it, molinfo_seqdesc) {
-      desc = NStr::UIntToString(m_entry_no) + "$" 
-              + CMolInfo::ENUM_METHOD_NAME(EBiomol)()->FindName(
-                                                       (*it)->GetMolinfo().GetBiomol(), false)
-              + " ";
+      entry_no = NStr::UIntToString(m_entry_no);
+      biomol_nm = CMolInfo::ENUM_METHOD_NAME(EBiomol)()->FindName(
+                                     (*it)->GetMolinfo().GetBiomol(), false);
+      strtmp = entry_no + "$" + biomol_nm + " " + mol_nm;
+      for (CBioseq_CI b_ci(*thisInfo.scope, *molinfo_seqdesc_seqentry[i], CSeq_inst::eMol_aa);
+                b_ci;
+                ++ b_ci) {
+          CConstRef <CBioseq> seq_ref = b_ci->GetCompleteBioseq();    
+          thisInfo.test_item_list[GetName()]
+                     .push_back(strtmp + "#" + GetDiscItemText(*seq_ref));
+          strtmp = "$" + entry_no + "#" + biomol_nm + " " + mol_nm;
+          thisInfo.test_item_objs[GetName() + strtmp]
+                     .push_back(CConstRef <CObject> (seq_ref.GetPointer()));
+      }
+/*
       if ( molinfo_seqdesc_seqentry[i]->IsSeq()) {
         const CBioseq& bioseq = molinfo_seqdesc_seqentry[i]->GetSeq();
         if (!bioseq.IsAa()) {
@@ -10306,7 +10808,8 @@ void CSeqEntry_DISC_INCONSISTENT_MOLTYPES :: TestOnObj(const CSeq_entry& seq_ent
                          + "#" + GetDiscItemText(bioseq));
         }
       } 
-      else AddMolinfoToBioseqsOfSet(molinfo_seqdesc_seqentry[i]->GetSet(), desc);
+      else AddMolinfoToBioseqsOfSet(molinfo_seqdesc_seqentry[i]->GetSet(),desc);
+*/
       i++;
    }
 
@@ -10316,39 +10819,45 @@ void CSeqEntry_DISC_INCONSISTENT_MOLTYPES :: TestOnObj(const CSeq_entry& seq_ent
 
 void CSeqEntry_DISC_INCONSISTENT_MOLTYPES :: GetReport(CRef <CClickableItem>& c_item)
 {
-  RmvRedundancy(c_item->item_list);
+  RmvRedundancy(c_item->item_list); // how about redund. of obj_list?
   Str2Strs entry2moltps, moltp2seqs;  
   GetTestItemList(c_item->item_list, entry2moltps);
   c_item->item_list.clear();
+  string entry_no, mol_tp;
   ITERATE (Str2Strs, it, entry2moltps) {
+    entry_no = it->first;
     moltp2seqs.clear();
-    GetTestItemList(it->second, moltp2seqs);
+    GetTestItemList(it->second, moltp2seqs, "#");
     if (moltp2seqs.size() > 1) {
        ITERATE (Str2Strs, jt, moltp2seqs) {
-         AddSubcategory(c_item, GetName(), &(jt->second), "sequence", "moltype" + jt->first,
-                          e_HasComment); 
+         mol_tp = jt->first;
+         strtmp = GetName() + "$" + entry_no + "#" + mol_tp;
+         AddSubcategory(c_item, strtmp, &(jt->second), "sequence", 
+                        "moltype " + mol_tp, e_HasComment); 
        } 
     }
   } 
-  if (c_item->subcategories.empty()) c_item->description = "Moltypes are consistent";
-  else c_item->description 
-        = NStr::UIntToString((unsigned)c_item->item_list.size()) 
+  if (c_item->subcategories.empty()) {
+           c_item->description = "Moltypes are consistent";
+  }
+  else {
+      c_item->description 
+           = NStr::UIntToString((unsigned)c_item->item_list.size()) 
              + "sequences have inconsistent moltypes"; 
+  }
 };
 
 
 void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ExtractNonAaBioseqsOfSet(const string& tax_hap, const CBioseq_set& set)
 {
-   ITERATE (list < CRef < CSeq_entry > >, it, set.GetSeq_set()) {
-      if ((*it)->IsSeq()) {
-        if (! ((*it)->GetSeq().IsAa()) ) 
-           m_tax_hap2seqs[tax_hap].push_back(CConstRef <CBioseq> (&(*it)->GetSeq()));
+   CBioseq_set_Handle set_hl = thisInfo.scope->GetBioseq_setHandle(set);
+   for (CBioseq_CI seq_ci(set_hl); seq_ci; ++seq_ci) {
+      if (!(seq_ci->IsAa())) {
+           m_tax_hap2seqs[tax_hap].push_back(
+                            CConstRef <CBioseq> (seq_ci->GetCompleteBioseq()));
       }
-      else ExtractNonAaBioseqsOfSet(tax_hap, (*it)->GetSet());
    }
 };
-
-
 
 bool CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: SeqMatch(const CConstRef <CBioseq>& seq1, int beg1, const CConstRef <CBioseq>& seq2, int beg2, unsigned& len, bool Ndiff)
 {
@@ -10369,8 +10878,6 @@ bool CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: SeqMatch(const CConstRef <CBioseq>& se
    }
    return true;
 };
-
-
 
 bool CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: SeqsMatch(const vector <CConstRef <CBioseq> >& seqs, bool Ndiff)
 {
@@ -10405,11 +10912,13 @@ bool CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: SeqsMatch(const vector <CConstRef <CBi
 void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ReportOneHaplotypeSequenceMismatch(Str2Seqs::const_iterator& iter, bool Ndiff)
 {
    strtmp = (string)"seq_diff_" + (Ndiff ? "N" : "strict") 
-                                 + "_" + NStr::UIntToString(m_entry_cnt) + "$";
-   string tax_hap(iter->first);
+                                 + "_" + NStr::UIntToString(m_entry_cnt);
    ITERATE (vector <CConstRef <CBioseq> >, it, iter->second) {
      thisInfo.test_item_list[GetName()].push_back(
-                strtmp + iter->first + "@" + GetDiscItemText(**it));
+                strtmp + "$" + iter->first + "@" + GetDiscItemText(**it));
+     strtmp = "$" + strtmp + "@" + iter->first;
+     thisInfo.test_item_objs[GetName() + "$" + strtmp].push_back(
+                                                   CConstRef <CObject> (*it));
    }
 };
 
@@ -10422,8 +10931,12 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ReportHaplotypeSequenceMismatchForList
       Ndiff_mismatch = strict_mismatch = false;
       Ndiff_mismatch = SeqsMatch(it->second);
       strict_mismatch = SeqsMatch(it->second, false);
-      if (Ndiff_mismatch) ReportOneHaplotypeSequenceMismatch(it);
-      if (strict_mismatch) ReportOneHaplotypeSequenceMismatch(it, false);
+      if (Ndiff_mismatch) {
+           ReportOneHaplotypeSequenceMismatch(it);
+      }
+      if (strict_mismatch) {
+           ReportOneHaplotypeSequenceMismatch(it, false);
+      }
    }
 
    /* now look for sequence that match but have different haplotypes */
@@ -10440,84 +10953,191 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ReportHaplotypeSequenceMismatchForList
    }
 
    unsigned j, len1, len2;
-   vector <string> seqs_Ndiff, seqs_strict;
-   string desc1, desc2;
+//   vector <string> seqs_Ndiff, seqs_strict;
+   vector <unsigned> seqs_Ndiff_idx, seqs_strict_idx;
+   string desc;
    bool mismatch, match_strict, match_Ndiff;
    for (i=0; (int)i < (int)(seqs.size()-1); i++) {
       if (seqs[i].Empty()) continue;
       len1 = seqs[i]->IsSetLength() ? seqs[i]->GetLength() : 0; 
+/*
       desc1 = GetDiscItemText(*seqs[i]) + ": " + hap_tps[hap_idx[i]];
+      CConstRef <CObject> obj1 (seqs[i].GetPointer());
+*/
       mismatch = false;
       for (j=i+1; j < seqs.size(); j++) {
          if (seqs[j].Empty()) continue;
          len2 = seqs[j]->IsSetLength() ? seqs[j]->GetLength() : 0;
          if (len1 == len2) {
            match_strict = match_Ndiff = false;
+/*
            desc2 = GetDiscItemText(*seqs[j]) + ": " + hap_tps[hap_idx[j]];
+           CConstRef <CObject> obj2 (seqs[j].GetPointer());
+*/
            if (SeqMatch(seqs[i], 0, seqs[j], 0, len1) ) {
-               if (seqs_Ndiff.empty()) seqs_Ndiff.push_back(desc1);
+/*
+               if (seqs_Ndiff.empty()) {
+                   seqs_Ndiff.push_back(desc1);
+               }
                seqs_Ndiff.push_back(desc2);
+*/
+               if (seqs_Ndiff_idx.empty()) {
+                   seqs_Ndiff_idx.push_back(i);
+               }
+               seqs_Ndiff_idx.push_back(j);
                match_Ndiff = true;  
            }
            if (SeqMatch(seqs[i], 0, seqs[j], 0, len1, false)) {
-               if (seqs_strict.empty()) seqs_strict.push_back(desc1);
+/*
+               if (seqs_strict.empty()) {
+                   seqs_strict.push_back(desc1);
+               }
                seqs_strict.push_back(desc2);
+*/
+               if (seqs_strict_idx.empty()) {
+                   seqs_strict_idx.push_back(i);
+               }
+               seqs_strict_idx.push_back(j);
                match_strict = true;
            }
-           if (match_Ndiff || match_strict) seqs[j].Reset();
-           if (hap_tps[hap_idx[j]] != hap_tps[hap_idx[i]]) mismatch = true;
+           if (match_Ndiff || match_strict) {
+               seqs[j].Reset();
+           }
+           if (hap_tps[hap_idx[j]] != hap_tps[hap_idx[i]]) {
+                 mismatch = true;
+           }
          } 
       }
       if (mismatch) {
           strtmp = "seq_same_N_" + NStr::UIntToString(m_entry_cnt) + "$";
-          ITERATE (vector <string>, it, seqs_Ndiff) 
-             thisInfo.test_item_list[GetName()].push_back(strtmp + *it); 
+          ITERATE (vector <unsigned>, it, seqs_Ndiff_idx) {
+             desc = GetDiscItemText(*seqs[*it]) + ": " + hap_tps[hap_idx[*it]];
+             thisInfo.test_item_list[GetName()].push_back(strtmp + "$" + desc); 
+             thisInfo.test_item_objs[GetName() + "$" + strtmp].push_back(
+                                  CConstRef <CObject>(seqs[*it].GetPointer()));
+          }
           strtmp = "seq_same_strict_" + NStr::UIntToString(m_entry_cnt) + "$" 
-                                                     + NStr::UIntToString(i) + "#";
-          ITERATE (vector <string>, it, seqs_strict)
-             thisInfo.test_item_list[GetName()].push_back(strtmp + *it);
+                                                  + NStr::UIntToString(i) + "#";
+          ITERATE (vector <unsigned>, it, seqs_strict_idx) {
+             desc = GetDiscItemText(*seqs[*it]) + ": " + hap_tps[hap_idx[*it]];
+             thisInfo.test_item_list[GetName()].push_back(strtmp + "$" + desc);
+             thisInfo.test_item_objs[GetName() + "$" + strtmp].push_back(
+                                  CConstRef <CObject>(seqs[*it].GetPointer()));
+          }
       }
+      seqs_Ndiff_idx.clear();
+      seqs_strict_idx.clear();
    }
 };
 
 
 
 // new comb 
+
+void CSeqEntry_on_biosrc_subsrc :: GetSubmitText(const CAuth_list& authors)
+{
+   if (authors.CanGetAffil()) {
+     const CAffil& affil = authors.GetAffil();
+     if (affil.IsStd()) {
+        if (affil.GetStd().CanGetAffil()) {
+             strtmp = affil.GetStd().GetAffil();
+             if (!strtmp.empty()) m_submit_text.push_back(strtmp);
+        }
+        if (affil.GetStd().CanGetDiv()) {
+             strtmp = affil.GetStd().GetDiv();
+             if (!strtmp.empty()) m_submit_text.push_back(strtmp);
+        }
+     }
+   }
+};
+
+
+void CSeqEntry_on_biosrc_subsrc :: FindSpecSubmitText()
+{
+  string inst(kEmptyStr), dept(kEmptyStr);
+  if (thisInfo.seq_submit.NotEmpty()) {
+    GetSubmitText(thisInfo.seq_submit->GetSub().GetCit().GetAuthors());
+  }
+
+  ITERATE (vector <const CSeq_feat*>, it, pub_feat) {
+     ITERATE (list < CRef < CPub > >, jt, (*it)->GetData().GetPub().GetPub().Get())
+       if ( (*jt)->IsSetAuthors()) GetSubmitText((*jt)->GetAuthors());
+  }
+
+  ITERATE (vector <const CSeqdesc*>, it, pub_seqdesc) {
+     ITERATE (list < CRef < CPub > >, jt, (*it)->GetPub().GetPub().Get())
+       if ( (*jt)->IsSetAuthors()) GetSubmitText((*jt)->GetAuthors());
+  }
+
+};
+
 void CSeqEntry_on_biosrc_subsrc :: TestOnObj(const CSeq_entry& seq_entry)
 {
    if (thisTest.is_Subsrc_run) return;
    thisTest.is_Subsrc_run = true;
 
+   m_run_iden = (thisTest.tests_run.find(GetName_iden()) != end_it);
    m_run_col = (thisTest.tests_run.find(GetName_col()) != end_it);
    m_run_orgi = (thisTest.tests_run.find(GetName_orgi()) != end_it);
    m_run_orgc = (thisTest.tests_run.find(GetName_orgc()) != end_it);
    m_run_end = (thisTest.tests_run.find(GetName_end()) != end_it);
    m_run_uncul = (thisTest.tests_run.find(GetName_uncul()) != end_it);
+
+   if (m_run_iden) {
+      m_submit_text.clear();
+      FindSpecSubmitText();
+   };
+
    string desc;
    ITERATE (vector <const CSeq_feat*>, it, biosrc_subsrc_feat) {
-      RunTests( (*it)->GetData().GetBiosrc(), GetDiscItemText(**it));
+      RunTests( (*it)->GetData().GetBiosrc(), 
+                 GetDiscItemText(**it),
+                 CConstRef <CObject>(*it));
    }
 
    unsigned i=0;
    ITERATE (vector <const CSeqdesc*>, it, biosrc_subsrc_seqdesc) {
      desc = GetDiscItemText(**it, *(biosrc_subsrc_seqdesc_seqentry[i]));
-     RunTests( (*it)->GetSource(), desc);
+     RunTests( (*it)->GetSource(), desc, CConstRef <CObject>(*it));
      i++;
    }
 };
 
 bool CSeqEntry_on_biosrc_subsrc :: Has3Names(const vector <string> arr)
 {
-   vector <string> names_arr;
+   vector <string> names;
    unsigned cnt=0;
    ITERATE (vector <string>, it, arr) {
-      names_arr = NStr::Tokenize(*it, ",; ", names_arr, NStr::eMergeDelims);
-      ITERATE (vector <string>, jt, names_arr)
+      names= NStr::Tokenize(*it, ",; ", names, NStr::eMergeDelims);
+      ITERATE (vector <string>, jt, names) {
          if ( (*it) == "and") cnt++;
-      if ((int)(names_arr.size() - cnt) > 2) return true;
+      }
+      if ((names.size() - cnt) > 2) {
+              return true;
+      }
+      names.clear();
    }
    return false;
 };
+
+bool CSeqEntry_on_biosrc_subsrc :: HasSpecNames(const vector <string> arr)
+{
+   ITERATE (vector <string>, it, arr) {
+      ITERATE (vector <string>, jt, thisInfo.spec_words_biosrc) {
+         if (NStr::FindNoCase(*it, *jt) != string::npos) {
+             return true;
+         }
+      }
+
+      ITERATE (vector <string>, jt, m_submit_text) {
+          if ( (*it) == *jt) {
+             return true;
+          }
+      }
+   };
+   return false;
+};
+
 
 const char*  RemovableCultureNotes[] = {
  "[uncultured (using universal primers)]",
@@ -10565,7 +11185,7 @@ unsigned sz)
    return false;
 };
 
-void CSeqEntry_on_biosrc_subsrc :: RunTests(const CBioSource& biosrc, const string& desc)
+void CSeqEntry_on_biosrc_subsrc :: RunTests(const CBioSource& biosrc, const string& desc, CConstRef <CObject> obj_ref)
 {
    vector <string> arr;
    // UNCULTURED_NOTES_ONCALLER
@@ -10573,8 +11193,9 @@ void CSeqEntry_on_biosrc_subsrc :: RunTests(const CBioSource& biosrc, const stri
       GetSubSrcValues(biosrc, CSubSource::eSubtype_other, arr);
       ITERATE (vector <string>, it, arr) {
         if ( x_HasUnculturedNotes(*it, RemovableCultureNotes, rmv_size)
-                          || x_HasUnculturedNotes(*it, ReplaceableCultureNotes, rpl_size) )
+              || x_HasUnculturedNotes(*it, ReplaceableCultureNotes, rpl_size) )
            thisInfo.test_item_list[GetName_uncul()].push_back(desc);      
+           thisInfo.test_item_objs[GetName_uncul()].push_back(obj_ref);      
       }
       arr.clear();
    }
@@ -10582,7 +11203,20 @@ void CSeqEntry_on_biosrc_subsrc :: RunTests(const CBioSource& biosrc, const stri
    // ONCALLER_MORE_NAMES_COLLECTED_BY
    if (m_run_col) {
       GetSubSrcValues(biosrc, CSubSource::eSubtype_collected_by, arr);
-      if (Has3Names(arr)) thisInfo.test_item_list[GetName_col()].push_back(desc);
+      if (Has3Names(arr)) {
+          thisInfo.test_item_list[GetName_col()].push_back(desc);
+          thisInfo.test_item_objs[GetName_col()].push_back(obj_ref);
+      }
+      arr.clear();
+   }
+
+   // ONCALLER_MORE_OR_SPEC_NAMES_IDENTIFIED_BY
+   if (m_run_iden) {
+      GetSubSrcValues(biosrc, CSubSource::eSubtype_identified_by, arr);
+      if (Has3Names(arr) || HasSpecNames(arr)) {
+           thisInfo.test_item_list[GetName_iden()].push_back(desc);
+           thisInfo.test_item_objs[GetName_iden()].push_back(obj_ref);
+      }
       arr.clear();
    }
 
@@ -10592,13 +11226,19 @@ void CSeqEntry_on_biosrc_subsrc :: RunTests(const CBioSource& biosrc, const stri
       // ONCALLER_SUSPECTED_ORG_IDENTIFIED
       if (m_run_orgi
             && IsSubSrcPresent(biosrc, CSubSource::eSubtype_identified_by)
-            && (tax_nm == "Homo sapiens" || tax_nm.find("uncultured") != string::npos))
+            && (tax_nm == "Homo sapiens" 
+                     || tax_nm.find("uncultured") != string::npos)) {
          thisInfo.test_item_list[GetName_orgi()].push_back(desc);
+         thisInfo.test_item_objs[GetName_orgi()].push_back(obj_ref);
+      }
 
       // ONCALLER_SUSPECTED_ORG_COLLECTED
-      if (m_run_orgc && IsSubSrcPresent(biosrc, CSubSource::eSubtype_collected_by)
-                     && tax_nm == "Homo sapiens")
+      if (m_run_orgc 
+              && IsSubSrcPresent(biosrc, CSubSource::eSubtype_collected_by)
+              && tax_nm == "Homo sapiens") {
           thisInfo.test_item_list[GetName_orgc()].push_back(desc);
+          thisInfo.test_item_objs[GetName_orgc()].push_back(obj_ref);
+      }
    }
    
    // END_COLON_IN_COUNTRY
@@ -10606,8 +11246,11 @@ void CSeqEntry_on_biosrc_subsrc :: RunTests(const CBioSource& biosrc, const stri
       GetSubSrcValues(biosrc, CSubSource::eSubtype_country, arr);
       size_t pos;
       ITERATE (vector <string>, it, arr) {
-        if ( ( (pos = (*it).find_last_of(":")) != string::npos ) && pos == (*it).size()-1)
+        if ( ( (pos = (*it).find_last_of(":")) != string::npos ) 
+                 && pos == (*it).size()-1) {
            thisInfo.test_item_list[GetName_end()].push_back(desc);
+           thisInfo.test_item_objs[GetName_end()].push_back(obj_ref);
+        }
       }
       arr.clear();
    }
@@ -10615,36 +11258,48 @@ void CSeqEntry_on_biosrc_subsrc :: RunTests(const CBioSource& biosrc, const stri
 
 void CSeqEntry_UNCULTURED_NOTES_ONCALLER:: GetReport(CRef <CClickableItem>& c_item)
 {
-     c_item->description
-        = GetHasComment(c_item->item_list.size(), "biosource") + "uncultured notes.";
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
+   c_item->description = GetHasComment(c_item->item_list.size(), "biosource") 
+                            + "uncultured notes.";
 };
 
 void CSeqEntry_END_COLON_IN_COUNTRY :: GetReport(CRef <CClickableItem>& c_item)
 {
-   c_item->description 
-      = GetOtherComment(c_item->item_list.size(), "country source ends", 
-                                                       "country sources end")
-        + " with a colon.";
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
+   c_item->description = GetOtherComment(c_item->item_list.size(), 
+                                   "country source ends", "country sources end")
+                          + " with a colon.";
 };
 
 
 void CSeqEntry_ONCALLER_SUSPECTED_ORG_COLLECTED :: GetReport(CRef <CClickableItem>& c_item)
 {
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description = GetHasComment(c_item->item_list.size(), "biosource")
                          + "collected-by and suspect organism";
 };
 
 void CSeqEntry_ONCALLER_SUSPECTED_ORG_IDENTIFIED :: GetReport(CRef <CClickableItem>& c_item)
 {
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description = GetHasComment(c_item->item_list.size(), "biosource")
                          + "identified-by and suspect organism";
 };
 
 void CSeqEntry_ONCALLER_MORE_NAMES_COLLECTED_BY :: GetReport(CRef <CClickableItem>& c_item)
 {
+  c_item->obj_list = thisInfo.test_item_objs[GetName()];
   c_item->description = GetHasComment(c_item->item_list.size(), "biosource") 
                        + "3 or more names in collected-by.";
 };
+
+void CSeqEntry_ONCALLER_MORE_OR_SPEC_NAMES_IDENTIFIED_BY :: GetReport(CRef <CClickableItem>& c_item)
+{
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
+   c_item->description = GetHasComment(c_item->item_list.size(), "biosource")
+                          + "3 or more names or suspect text in identified-by.";
+};
+
 
 // new comb
 
@@ -10654,8 +11309,9 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: TestOnObj(const CSeq_entry& seq_entry)
    m_tax_hap2seqs.clear();
    
    // why m_entry_cnt???
-   if (thisInfo.test_item_list.find(GetName()) == thisInfo.test_item_list.end()) 
+   if (thisInfo.test_item_list.find(GetName()) ==thisInfo.test_item_list.end()){
         m_entry_cnt = 0;
+   }
    else m_entry_cnt ++;
    string tax_nm, hap_tp;
    unsigned i=0;
@@ -10667,7 +11323,7 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: TestOnObj(const CSeq_entry& seq_entry)
                      && !(hap_tp = (*it)->GetName()).empty()) {
                if (biosrc_subsrc_seqdesc_seqentry[i]->IsSet()) {
                   ExtractNonAaBioseqsOfSet(tax_nm +"#" + hap_tp, 
-                                            biosrc_subsrc_seqdesc_seqentry[i]->GetSet());
+                                  biosrc_subsrc_seqdesc_seqentry[i]->GetSet());
                }
                break;
            }
@@ -10676,11 +11332,13 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: TestOnObj(const CSeq_entry& seq_entry)
      i++;
    }
 
-   if (!m_tax_hap2seqs.empty()) ReportHaplotypeSequenceMismatchForList();
+   if (!m_tax_hap2seqs.empty()) {
+        ReportHaplotypeSequenceMismatchForList();
+   }
 };
 
 
-void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: MakeCitem4DiffSeqs(CRef <CClickableItem>& c_item, const vector <string> tax_hap_seqs, bool Ndiff)
+void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: MakeCitem4DiffSeqs(CRef <CClickableItem>& c_item, const vector <string> tax_hap_seqs, const string& match_tp, bool Ndiff)
 {
    Str2Strs tax_hap2seqs;
    GetTestItemList(tax_hap_seqs, tax_hap2seqs, "@");
@@ -10691,23 +11349,26 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: MakeCitem4DiffSeqs(CRef <CClickableIte
       tax_nm = it->first.substr(0, pos);
       hap_tp = CTempString(it->first).substr(pos+1);
       strtmp = "organism " + tax_nm + " haplotype " + hap_tp 
-          + " but the sequences do not match " 
-          + (Ndiff ? "(allowing N to match any)." : "(strict match).");
-      AddSubcategory(c_item, GetName(), &(it->second), "sequence", strtmp, e_HasComment);
+               + " but the sequences do not match " 
+               + (Ndiff ? "(allowing N to match any)." : "(strict match).");
+      AddSubcategory(c_item, GetName()+ "$" + match_tp + "@" + it->first, 
+                     &(it->second), "sequence", strtmp, e_HasComment);
    }
 
 };
 
 
-void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: MakeCitem4SameSeqs(CRef <CClickableItem>& c_item, const vector <string>& idx_seqs, bool Ndiff)
+void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: MakeCitem4SameSeqs(CRef <CClickableItem>& c_item, const vector <string>& idx_seqs, const string& match_tp, bool Ndiff)
 {
    Str2Strs idx2seqs;
    GetTestItemList(idx_seqs, idx2seqs, "#");
-   strtmp = (string)"identical " + (Ndiff ? "(allowing N to match any)" : "(strict match)")
-            + " but have different haplotypes.";
-   ITERATE (Str2Strs, it, idx2seqs)
-      AddSubcategory(c_item, GetName(), &(it->second), "sequences", strtmp);
-
+   strtmp = (string)"identical " 
+             + (Ndiff ? "(allowing N to match any)" : "(strict match)")
+             + " but have different haplotypes.";
+   ITERATE (Str2Strs, it, idx2seqs) {
+      AddSubcategory(c_item, GetName() + "$" + match_tp + "@" + it->first, 
+                     &(it->second), "sequences", strtmp);
+   }
 };
 
 
@@ -10722,16 +11383,16 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: GetReport(CRef <CClickableItem>& c_ite
    string tax_nm, hap_tp;
    ITERATE (Str2Strs, it, match_tp2ls) {
      if (it->first.find("seq_diff_N") != string::npos) {
-         MakeCitem4DiffSeqs(csub_N, it->second);
+         MakeCitem4DiffSeqs(csub_N, it->second, it->first);
      }
      else if (it->first.find("seq_same_N") != string::npos) {
-         MakeCitem4SameSeqs(csub_N, it->second);
+         MakeCitem4SameSeqs(csub_N, it->second, it->first);
      }
      else if (it->first.find("seq_diff_strict") != string::npos) {
-         MakeCitem4DiffSeqs(csub_strict, it->second,true);
+         MakeCitem4DiffSeqs(csub_strict, it->second, it->first, false);
      }
-     else {
-        MakeCitem4DiffSeqs(csub_strict, it->second, true);  // "seq_same_strict"
+     else { // "seq_same_strict"
+        MakeCitem4SameSeqs(csub_strict, it->second, it->first, false);  
      }
    }
 
@@ -10743,6 +11404,8 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: GetReport(CRef <CClickableItem>& c_ite
      c_item->subcategories.push_back(csub_N);
      copy( csub_N->item_list.begin(), csub_N->item_list.end(),
            back_inserter(c_item->item_list));
+     copy( csub_N->obj_list.begin(), csub_N->obj_list.end(),
+           back_inserter(c_item->obj_list));
    }
    if (csub_strict.NotEmpty()) {
       csub_strict->description
@@ -10753,6 +11416,8 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: GetReport(CRef <CClickableItem>& c_ite
       c_item->subcategories.push_back(csub_strict);
       copy(csub_strict->item_list.begin(), csub_strict->item_list.end(),
            back_inserter( c_item->item_list));
+      copy(csub_strict->obj_list.begin(), csub_strict->obj_list.end(),
+           back_inserter( c_item->obj_list));
    }
    c_item->description = "Haplotype Problem Report";
 };
@@ -10768,7 +11433,6 @@ CConstRef <CCit_sub> CSeqEntry_test_on_pub :: CitSubFromPubEquiv(const list <CRe
    }
    return (CConstRef <CCit_sub>());
 };
-
 
 
 static string uni_str("University of");
@@ -10872,84 +11536,110 @@ string CSeqEntry_test_on_pub :: GetAuthNameList(const CAuthor& auth, bool use_in
 };
 
 
-void CSeqEntry_test_on_pub :: CheckTitleAndAuths(CConstRef <CCit_sub>& cit_sub, const string& desc)
+void CSeqEntry_test_on_pub :: CheckTitleAndAuths(CConstRef <CCit_sub>& cit_sub, const string& desc, CConstRef <CObject> obj_ref)
 {
    string title = cit_sub->CanGetDescr()? cit_sub->GetDescr() : kEmptyStr;
    string authors(kEmptyStr);
    switch (cit_sub->GetAuthors().GetNames().Which()) {
         case CAuth_list::C_Names::e_Std:
-                ITERATE (list <CRef <CAuthor> >, it, cit_sub->GetAuthors().GetNames().GetStd())
+                ITERATE (list <CRef <CAuthor> >, it, 
+                            cit_sub->GetAuthors().GetNames().GetStd()) {
                       authors += ", " + GetAuthNameList(**it);
+                }
                 break;
         case CAuth_list::C_Names::e_Ml:
-                ITERATE (list <string>, it, cit_sub->GetAuthors().GetNames().GetMl())
+                ITERATE (list <string>, it, 
+                               cit_sub->GetAuthors().GetNames().GetMl()) {
                       authors += ", " + *it; 
+                }
                 break;
         case CAuth_list::C_Names::e_Str:
-                ITERATE (list <string>, it, cit_sub->GetAuthors().GetNames().GetStr())
+                ITERATE (list <string>, it, 
+                             cit_sub->GetAuthors().GetNames().GetStr()) {
                       authors += ", " + *it; 
+                }
                 break;
         default: break;
    };
 
-   if (!authors.empty())  authors = CTempString(authors).substr(2);
-   thisInfo.test_item_list[GetName_tlt()].push_back(title + "$" + authors + "#" + desc);
+   if (!authors.empty())  {
+          authors = CTempString(authors).substr(2);
+   }
+   thisInfo.test_item_list[GetName_tlt()].push_back(
+                               title + "$" + authors + "#" + desc);
+   thisInfo.test_item_objs[GetName_tlt() + "$" + title + "#" + authors]
+             .push_back(obj_ref);
 };
 
 
-void CSeqEntry_test_on_pub :: RunTests(const list <CRef <CPub> >& pubs, const string& desc)
+void CSeqEntry_test_on_pub :: RunTests(const list <CRef <CPub> >& pubs, const string& desc, CConstRef <CObject> obj_ref)
 {
    CConstRef <CCit_sub> cit_sub = CitSubFromPubEquiv(pubs);
    if (cit_sub.NotEmpty()) {
 
-       // DISC_CITSUB_AFFIL_DUP_TEXT
-       if (m_run_dup) {
+      // DISC_CITSUB_AFFIL_DUP_TEXT
+      if (m_run_dup) {
           if (cit_sub->GetAuthors().CanGetAffil()) {
              const CAffil& affil = cit_sub->GetAuthors().GetAffil();
              if (affil.IsStd() && affil.GetStd().CanGetStreet()
-                 && !(affil.GetStd().GetStreet().empty())
-                 && AffilStreetContainsDuplicateText(cit_sub->GetAuthors().GetAffil())) {
+                   && !(affil.GetStd().GetStreet().empty())
+                   && AffilStreetContainsDuplicateText(cit_sub->GetAuthors().GetAffil())) {
                 thisInfo.test_item_list[GetName_dup()].push_back(desc);
+                thisInfo.test_item_objs[GetName_dup()].push_back(obj_ref);
              }
           }
-       }
+      }
 
       // DISC_USA_STATE
-      if (m_run_usa && !CorrectUSAStates(cit_sub))
+      if (m_run_usa && !CorrectUSAStates(cit_sub)) {
          thisInfo.test_item_list[GetName_usa()].push_back(desc);
+         thisInfo.test_item_objs[GetName_usa()].push_back(obj_ref);
+      }
   
       // DISC_TITLE_AUTHOR_CONFLICT;
-      if (m_run_tlt) CheckTitleAndAuths(cit_sub, desc);
+      if (m_run_tlt) {
+            CheckTitleAndAuths(cit_sub, desc, obj_ref);
+      }
 
 
-      // DISC_CITSUBAFFIL_CONFLICT
+      // DISC_CITSUBAFFIL_CONFLICT: need attention
       if (m_run_aff) {
           string affil_str, grp_str;   // either affil_str or grp_str is unnecessary
           GetGroupedAffilString(cit_sub->GetAuthors(), affil_str, grp_str);
           if (!grp_str.empty()) {
-             thisInfo.test_item_list[GetName_aff()].push_back(grp_str + "$" + desc);
+             thisInfo.test_item_list[GetName_aff()].push_back(
+                                                     grp_str + "$" + desc);
+             thisInfo.test_item_objs[GetName_aff() + "$" + grp_str]
+                       .push_back(obj_ref);
              m_has_cit = true;
           }
       }
 
       // DISC_MISSING_AFFIL
       if (m_run_noaff && cit_sub->GetAuthors().CanGetAffil()) {
-         if (IsMissingAffil(cit_sub->GetAuthors().GetAffil()))
+         if (IsMissingAffil(cit_sub->GetAuthors().GetAffil())) {
             thisInfo.test_item_list[GetName_noaff()].push_back(desc);
+            thisInfo.test_item_objs[GetName_noaff()].push_back(obj_ref);
+         }
       } 
    }
 
    // DISC_CHECK_AUTH_CAPS, DISC_CHECK_AUTH_NAME
-   if (m_run_cap || m_run_missing) 
-          CheckBadAuthCapsOrNoFirstLastNamesInPubdesc(pubs, desc);
+   if (m_run_cap || m_run_missing) {
+       CheckBadAuthCapsOrNoFirstLastNamesInPubdesc(pubs, desc, obj_ref);
+   }
 
    // DISC_UNPUB_PUB_WITHOUT_TITLE
-   if (m_run_unp && DoesPubdescContainUnpubPubWithoutTitle(pubs))
+   if (m_run_unp && DoesPubdescContainUnpubPubWithoutTitle(pubs)) {
       thisInfo.test_item_list[GetName_unp()].push_back(desc);
+      thisInfo.test_item_objs[GetName_unp()].push_back(obj_ref);
+   }
 
    // ONCALLER_CONSORTIUM
-   if (m_run_cons && PubHasConsortium(pubs)) 
+   if (m_run_cons && PubHasConsortium(pubs)) {
       thisInfo.test_item_list[GetName_cons()].push_back(desc);
+      thisInfo.test_item_objs[GetName_cons()].push_back(obj_ref);
+   }
 };
 
 
@@ -10984,9 +11674,10 @@ bool CSeqEntry_test_on_pub :: PubHasConsortium(const list <CRef <CPub> >& pubs)
 
 void CSeqEntry_ONCALLER_CONSORTIUM :: GetReport(CRef <CClickableItem>& c_item)
 {
-  c_item->description
-    = GetOtherComment(c_item->item_list.size(), "publication/submitter block has", 
-                                         "publications/submitter blocks have") 
+  c_item->obj_list = thisInfo.test_item_objs[GetName()];
+  c_item->description = GetOtherComment(c_item->item_list.size(), 
+                                        "publication/submitter block has", 
+                                        "publications/submitter blocks have") 
        + " consortium";
 };
 
@@ -11099,6 +11790,7 @@ bool CSeqEntry_test_on_pub :: DoesPubdescContainUnpubPubWithoutTitle(const list 
 
 void CSeqEntry_DISC_UNPUB_PUB_WITHOUT_TITLE :: GetReport(CRef <CClickableItem>& c_item)
 {
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description 
        = GetHasComment(c_item->item_list.size(), "unpublished pub") + "no title";
 };
@@ -11116,24 +11808,33 @@ void CSeqEntry_DISC_CITSUBAFFIL_CONFLICT :: GetReport(CRef <CClickableItem>& c_i
    GetTestItemList(c_item->item_list, affil2pubs);
    c_item->item_list.clear();
    if (affil2pubs.size() == 1) {
-      if ( affil2pubs.begin()->first != "no affil" ) { // Make no report if all values match
-            c_item->description = kEmptyStr;
+      if ( affil2pubs.begin()->first != "no affil" ) { 
+         // Make no report if all values match
+         c_item->description = kEmptyStr;
       }
-      else c_item->description = "All citsub have no affiliations";
+      else {
+         c_item->description = "All citsub have no affiliations";
+      }
    }
    else {
-      vector <string> subcat_pub, no_affil_pubs;
+      vector <string> subcat_pub, no_affil_pubs, arr;
       ITERATE (Str2Strs, it, affil2pubs) {
-         if (it->first == "no affil") no_affil_pubs = it->second;
+         if (it->first == "no affil") {
+             no_affil_pubs = it->second;
+         }
          else {
-            subcat_pub = NStr::Tokenize(it->first, ",", subcat_pub);  
-            NON_CONST_ITERATE (vector <string>, jt, subcat_pub)
-               (*jt) = (*jt) + "$" + it->second[0];
+            arr.clear();
+            arr = NStr::Tokenize(it->first, ",", arr);  
+            ITERATE (vector <string>, jt, arr) {
+                 subcat_pub.push_back((*jt) + "$" + it->second[0]);
+            }
          }
       }
-      if (!no_affil_pubs.empty()) 
-          AddSubcategory(c_item, GetName(), &no_affil_pubs, "Cit-sub", "no affiliation", 
-                                                                          e_HasComment, false);
+      if (!no_affil_pubs.empty()) { 
+          AddSubcategory(c_item, GetName() + "$" + "no affil", 
+                         &no_affil_pubs, "Cit-sub", "no affiliation", 
+                         e_HasComment, false);
+      }
       Str2Strs subcat2pubs, subvlu2pubs;
       GetTestItemList(subcat_pub, subcat2pubs, "@");
       subcat_pub.clear();
@@ -11144,7 +11845,8 @@ void CSeqEntry_DISC_CITSUBAFFIL_CONFLICT :: GetReport(CRef <CClickableItem>& c_i
             CRef <CClickableItem> c_sub (new CClickableItem);
             c_sub->setting_name = GetName();
             ITERATE (Str2Strs, jt, subvlu2pubs)
-               AddSubcategory(c_sub, GetName(), &(jt->second), "affiliation", 
+               AddSubcategory(c_sub, GetName() + "$" + it->first, 
+                              &(jt->second), "affiliation", 
                                       it->first + " value '" + jt->first + "'", e_HasComment);
             c_sub->description = "Affiliations have different values for " + it->first;
             c_item->subcategories.push_back(c_sub);
@@ -11198,62 +11900,69 @@ void CSeqEntry_test_on_pub :: TestOnObj(const CSeq_entry& seq_entry)
 
    m_has_cit = false;
 
-   m_run_dup = (thisTest.tests_run.find(GetName_dup()) != end_it)? 
-               true:false;
-   m_run_cap = (thisTest.tests_run.find(GetName_cap()) != end_it)? 
-                true:false;
-   m_run_usa = (thisTest.tests_run.find(GetName_usa()) != end_it)? 
-                true:false;
-   m_run_tlt = (thisTest.tests_run.find(GetName_tlt()) != end_it)? 
-                true:false;
-   m_run_aff = (thisTest.tests_run.find(GetName_aff()) != end_it)? 
-                true:false;
-   m_run_unp = (thisTest.tests_run.find(GetName_unp()) != end_it)? 
-                true:false;
-   m_run_noaff = (thisTest.tests_run.find(GetName_noaff()) != end_it)?
-                   true:false;
-   m_run_cons = (thisTest.tests_run.find(GetName_cons()) != end_it)?
-                true:false;
-   m_run_missing = (thisTest.tests_run.find(GetName_missing()) != end_it)?
-                     true:false;
+   m_run_dup = (thisTest.tests_run.find(GetName_dup()) != end_it);
+   m_run_cap = (thisTest.tests_run.find(GetName_cap()) != end_it);
+   m_run_usa = (thisTest.tests_run.find(GetName_usa()) != end_it);
+   m_run_tlt = (thisTest.tests_run.find(GetName_tlt()) != end_it);
+   m_run_aff = (thisTest.tests_run.find(GetName_aff()) != end_it);
+   m_run_unp = (thisTest.tests_run.find(GetName_unp()) != end_it);
+   m_run_noaff = (thisTest.tests_run.find(GetName_noaff()) != end_it);
+   m_run_cons = (thisTest.tests_run.find(GetName_cons()) != end_it);
+   m_run_missing = (thisTest.tests_run.find(GetName_missing()) != end_it);
+
    string desc;
    ITERATE (vector <const CSeq_feat*>, it, pub_feat) {
-      const list <CRef <CPub> >& pubs = (*it)->GetData().GetPub().GetPub().Get();
-      RunTests(pubs, GetDiscItemText(**it));
+      const list <CRef <CPub> >& pubs =(*it)->GetData().GetPub().GetPub().Get();
+      RunTests(pubs, GetDiscItemText(**it), CConstRef <CObject>(*it));
    };
 
    unsigned i=0;
    ITERATE (vector <const CSeqdesc*>, it, pub_seqdesc) {
       desc = GetDiscItemText(**it, *(pub_seqdesc_seqentry[i]));
       const list <CRef <CPub> >& pubs = (*it)->GetPub().GetPub().Get();
-      RunTests(pubs, desc);
+      RunTests(pubs, desc, CConstRef <CObject>(*it));
       i++;
    };
 
    CSubmit_block this_submit_blk;
+   CConstRef <CObject> obj_ref;
    if (thisInfo.seq_submit.NotEmpty()) {
-      if (seq_entry.IsSeq()) desc = GetDiscItemText(seq_entry.GetSeq());
-      else desc = GetDiscItemText(seq_entry.GetSet());
+      if (seq_entry.IsSeq()) {
+          desc = GetDiscItemText(seq_entry.GetSeq());
+          obj_ref.Reset(&(seq_entry.GetSeq()));
+      }
+      else {
+          desc = GetDiscItemText(seq_entry.GetSet());
+          obj_ref.Reset(&(seq_entry.GetSet()));
+      }
 
-      const CAuth_list& auths = thisInfo.seq_submit->GetSub().GetCit().GetAuthors();
+      const CAuth_list& 
+          auths = thisInfo.seq_submit->GetSub().GetCit().GetAuthors();
       // DISC_CITSUB_AFFIL_DUP_TEXT
       if (m_run_dup && auths.CanGetAffil() 
-                              && AffilStreetContainsDuplicateText(auths.GetAffil())) {
+                 && AffilStreetContainsDuplicateText(auths.GetAffil())) {
           size_t pos = desc.find(": ");
-          strtmp = desc.substr(0, pos + 2) + "Cit-sub for " + CTempString(desc).substr(pos+3);
+          strtmp = desc.substr(0, pos + 2) + "Cit-sub for " 
+                    + CTempString(desc).substr(pos+3);
           thisInfo.test_item_list[GetName_dup()].push_back(strtmp);
+          thisInfo.test_item_objs[GetName_dup()].push_back(obj_ref);
       }
 
       // DISC_CHECK_AUTH_CAPS
-      if ( m_run_cap && HasBadAuthorName(auths)) 
-                    thisInfo.test_item_list[GetName_cap()].push_back(desc);
+      if ( m_run_cap && HasBadAuthorName(auths)) {
+           thisInfo.test_item_list[GetName_cap()].push_back(desc);
+           thisInfo.test_item_objs[GetName_cap()].push_back(obj_ref);
+      }
 
-      // DISC_CITSUBAFFIL_CONFLICT
+      // DISC_CITSUBAFFIL_CONFLICT: need attention
       if (m_run_aff) {
          string affil_str, grp_str;
          GetGroupedAffilString(auths, affil_str, grp_str); // one of affil_str/grp_str unused
          if (!grp_str.empty()) {
-            thisInfo.test_item_list[GetName_aff()].push_back(grp_str + "$" + desc);
+            thisInfo.test_item_list[GetName_aff()].push_back(
+                                               grp_str + "$" + desc);
+            thisInfo.test_item_objs[GetName_aff() + "$" + grp_str]
+                       .push_back(obj_ref);
             m_has_cit = true;
          }
       }
@@ -11262,30 +11971,39 @@ void CSeqEntry_test_on_pub :: TestOnObj(const CSeq_entry& seq_entry)
       const CContact_info& contact = thisInfo.seq_submit->GetSub().GetContact();
       desc = GetDiscItemText(*thisInfo.seq_submit);
       if (m_run_noaff) {
-         if (!contact.CanGetContact() || !contact.GetContact().CanGetAffil()
-                                  || IsMissingAffil(contact.GetContact().GetAffil())) {
+         if (!contact.CanGetContact() 
+                 || !contact.GetContact().CanGetAffil()
+                 || IsMissingAffil(contact.GetContact().GetAffil())) {
              thisInfo.test_item_list[GetName_noaff()].push_back(desc);
+             thisInfo.test_item_objs[GetName_noaff()].push_back(obj_ref);
          }
-         else if (!auths.CanGetAffil() || IsMissingAffil(auths.GetAffil())) 
+         else if (!auths.CanGetAffil() || IsMissingAffil(auths.GetAffil())) { 
               thisInfo.test_item_list[GetName_noaff()].push_back(desc);
+              thisInfo.test_item_objs[GetName_noaff()].push_back(obj_ref);
+         }
       }
 
      // ONCALLER_CONSORTIUM
-     if ( m_run_cons && 
-               ( (contact.CanGetContact() && AuthorHasConsortium(contact.GetContact()))
-                   || AuthListHasConsortium(auths) ))
+     if ( m_run_cons 
+            && ( (contact.CanGetContact() 
+                        && AuthorHasConsortium(contact.GetContact()))
+                   || AuthListHasConsortium(auths) )) {
         thisInfo.test_item_list[GetName_cons()].push_back(desc);
+        thisInfo.test_item_objs[GetName_cons()].push_back(obj_ref);
+     }
    }
  
-   if (m_run_aff && !m_has_cit) 
+   if (m_run_aff && !m_has_cit) {
        thisInfo.test_item_list[GetName_aff()].push_back("no cit");
+   }
 };
 
 
 void CSeqEntry_DISC_MISSING_AFFIL :: GetReport(CRef <CClickableItem>& c_item)
 {
-   c_item->description 
-          = GetIsComment(c_item->item_list.size(), "citsub") + "missing affiliation";
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
+   c_item->description = GetIsComment(c_item->item_list.size(), "citsub") 
+                           + "missing affiliation";
 };
 
 
@@ -11301,16 +12019,19 @@ void CSeqEntry_DISC_TITLE_AUTHOR_CONFLICT :: GetReport(CRef <CClickableItem>& c_
          CRef <CClickableItem> c_tlt (new CClickableItem);
          c_tlt->setting_name = GetName();
          ITERATE (Str2Strs, jt, auth2feats) {
-           AddSubcategory(c_tlt, GetName(), &(jt->second), "article", 
+           AddSubcategory(c_tlt, GetName() + "$" + it->first + "#" + jt->first,
+                &(jt->second), "article", 
                 "title '" + it->first + "' and author list '" + jt->first + "'",
-                          e_HasComment, true);
+                e_HasComment, true);
          }
          c_tlt->description 
              = NStr::UIntToString((unsigned)c_tlt->item_list.size()) 
                + " articles have title '" + it->first 
                + " but do not have the same author list";
          copy(c_tlt->item_list.begin(), c_tlt->item_list.end(),
-              back_inserter(c_item->item_list));
+                 back_inserter(c_item->item_list));
+         copy(c_tlt->obj_list.begin(), c_tlt->obj_list.end(),
+                 back_inserter(c_item->obj_list));
          c_item->subcategories.push_back(c_tlt);
       } 
    };
@@ -11323,6 +12044,7 @@ void CSeqEntry_DISC_TITLE_AUTHOR_CONFLICT :: GetReport(CRef <CClickableItem>& c_
 void CSeqEntry_DISC_USA_STATE :: GetReport(CRef <CClickableItem>& c_item)
 {
    sort(c_item->item_list.begin(), c_item->item_list.end());
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description = GetIsComment(c_item->item_list.size(), "cit-sub") 
                           + "missing state abbreviations.";
 };
@@ -11330,8 +12052,9 @@ void CSeqEntry_DISC_USA_STATE :: GetReport(CRef <CClickableItem>& c_item)
 
 void CSeqEntry_DISC_CITSUB_AFFIL_DUP_TEXT :: GetReport(CRef <CClickableItem>& c_item)
 {
-   c_item->description
-     = GetHasComment(c_item->item_list.size(), "Cit-sub pub") + "duplicate affil text.";
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
+   c_item->description = GetHasComment(c_item->item_list.size(), "Cit-sub pub") 
+                          + "duplicate affil text.";
 };
 // new comb
 
@@ -11456,6 +12179,7 @@ void CSeqEntry_INCONSISTENT_BIOSOURCE :: GetReport(CRef <CClickableItem>& c_item
 
 void CBioseq_TEST_TERMINAL_NS :: TestOnObj(const CBioseq& bioseq)
 {
+/*
    validator :: EBioseqEndIsType begin_n, begin_gap, end_n, end_gap;
    validator::CheckBioseqEndsForNAndGap(thisInfo.scope->GetBioseqHandle(bioseq),
                                         begin_n, 
@@ -11467,6 +12191,7 @@ void CBioseq_TEST_TERMINAL_NS :: TestOnObj(const CBioseq& bioseq)
      thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(bioseq));
      thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(&bioseq));
    }
+*/
 };
 
 void CBioseq_TEST_TERMINAL_NS :: GetReport(CRef <CClickableItem>& c_item)
@@ -11483,7 +12208,8 @@ void CBioseq_DISC_MISSING_DEFLINES :: TestOnObj(const CBioseq& bioseq)
        title_ci(thisInfo.scope->GetBioseqHandle(bioseq), CSeqdesc::e_Title);
     if (!bioseq.IsAa() && !title_ci) {
         thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(bioseq));
-        thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(&bioseq));
+        thisInfo.test_item_objs[GetName()]
+                   .push_back(CConstRef <CObject>(&bioseq));
     }
 };
  
@@ -11522,7 +12248,7 @@ void CSeqEntry_test_on_defline :: TestOnObj(const CSeq_entry& seq_entry)
        title = NStr::ToUpper(title); 
        if (run_dup) {
           thisInfo.test_item_list[GetName_dup()].push_back(title + "$" + desc);
-          thisInfo.test_item_objs[GetName_dup() + "$" + title].push_back(sd_ref);
+          thisInfo.test_item_objs[GetName_dup() +"$" + title].push_back(sd_ref);
        }
 
        // DISC_TITLE_ENDS_WITH_SEQUENCE
@@ -11613,6 +12339,151 @@ void CSeqEntry_ONCALLER_DEFLINE_ON_SET :: GetReport(CRef <CClickableItem>& c_ite
 //new comb
 
 
+void CBioseq_on_feat_cnt :: TestOnObj(const CBioseq& bioseq)
+{
+   if (thisTest.is_FeatCnt_run) return;
+   thisTest.is_FeatCnt_run = true;
+
+   string feat_nm;
+   Str2Int feat_cnt_ls;
+   string desc = GetDiscItemText(bioseq);
+   CConstRef <CObject> seq_ref (&bioseq);
+   ITERATE (vector <const CSeq_feat*>, it, non_prot_feat) {
+      feat_nm = ( (*it)->GetData().IsProt() )? "A_" : "nA_";
+      feat_nm = (*it)->GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
+      if (feat_cnt_ls.find(feat_nm) == feat_cnt_ls.end()) {
+         feat_cnt_ls[feat_nm] = 1;
+      }
+      else {
+         feat_cnt_ls[feat_nm] ++;
+      }
+   }    
+   if (thisTest.tests_run.find(GetName_oncaller()) != end_it) {
+      ITERATE (Str2Int, it, feat_cnt_ls) {
+          thisInfo.test_item_list[GetName_oncaller()].push_back(
+                         it->first + "$" + NStr::IntToString(it->second));
+      }
+
+      feat_cnt_ls.clear();
+   }
+   if (thisTest.tests_run.find(GetName_gen()) != end_it) {
+      if (feat_cnt_ls.empty()) {
+        strtmp = bioseq.IsAa() ? "missing_A" : "missing_nA";
+        thisInfo.test_item_list[GetName_gen()].push_back(strtmp +"$" + desc);
+        thisInfo.test_item_objs[GetName_gen() + "$" +strtmp].push_back(seq_ref);
+      }
+      ITERATE (Str2Int, it, feat_cnt_ls) { // feat$cnt@bsq;
+         strtmp = it->first + "$" + NStr::UIntToString(it->second) + "@" + desc;
+         thisInfo.test_item_list[GetName_gen()].push_back(strtmp);
+         strtmp = "$" + it->first + "&" + NStr::UIntToString(it->second);
+         thisInfo.test_item_objs[GetName_gen() + strtmp].push_back(seq_ref);
+      }
+   }
+};
+
+void CBioseq_DISC_FEATURE_COUNT_oncaller :: GetReport(CRef <CClickableItem>& c_item)
+{
+   Str2Strs feat2cnt_seq, cnt2seq;
+   GetTestItemList(c_item->item_list, feat2cnt_seq);
+   c_item->item_list.clear();
+   vector <CConstRef <CObject> >* a_ls, *na_ls, *missing_ls;
+   
+   string feat_nm, cnt_str;
+   unsigned i_cnt, tot_cnt;
+   ITERATE (Str2Strs, it, feat2cnt_seq) {  // feat$cnt@seq
+      if (it->first == "missing_A") {
+          a_ls = &(thisInfo.test_item_objs[GetName() + "$" + it->first]);
+      }
+      else if (it->first == "missing_nA") {
+          na_ls = &(thisInfo.test_item_objs[GetName() + "$" + it->first]);
+      }
+   }
+   string cnt;
+   ITERATE (Str2Strs, it, feat2cnt_seq) {
+      if (it->first.find("missing") == string::npos) {
+         cnt2seq.clear();
+         GetTestItemList(it->second, cnt2seq, "@");
+         feat_nm = it->first.substr(3); 
+         if (it->first.find("nA_") != string::npos) { 
+            if (!na_ls->empty()) {
+              cnt2seq["0"] = feat2cnt_seq["missing_nA"];
+              missing_ls = na_ls;
+            }
+         }
+         else {
+           if (!a_ls->empty()) {
+              cnt2seq["0"] = feat2cnt_seq["missing_A"];
+              missing_ls = a_ls;
+           }
+         }
+         if (cnt2seq.size() ==1 ) {
+            cnt = cnt2seq.begin()->first;
+            strtmp = GetName() + "$" + feat_nm + "@" + cnt;
+            AddSubcategory(c_item, strtmp, &(cnt2seq.begin()->second), 
+                           feat_nm + ": " + cnt + " presents", 
+                           feat_nm + ": " + cnt + " present", 
+                           e_OtherComment, false);
+         }  
+         else {
+            CRef <CClickableItem> c_sub (new CClickableItem);
+            c_sub->setting_name = GetName();
+            tot_cnt = 0;
+            ITERATE (Str2Strs, jt, cnt2seq) {
+               if (it->first == "0") {
+                  i_cnt = jt->second.size();
+                  CRef <CClickableItem> c_seq_sub(new CClickableItem);
+                  c_seq_sub->setting_name = GetName();
+                  c_seq_sub->item_list = jt->second;
+                  c_seq_sub->obj_list = *missing_ls;
+                  c_seq_sub->description = GetHasComment(i_cnt, "bioseq")
+                                             + "0 " + feat_nm + " feature.";
+                  c_sub->subcategories.push_back(c_seq_sub);
+               }
+               else {
+                  i_cnt = NStr::StringToUInt(jt->first);
+                  tot_cnt ++;
+                  strtmp = GetName() + "$" + feat_nm + "@" + jt->first;
+                  string desc = jt->first + " " + feat_nm
+                                   + GetNoun(i_cnt, " feature");
+                  AddSubcategory(c_sub, strtmp, &(jt->second),
+                         "bioseq", desc, e_HasComment, false);
+               }
+               tot_cnt += i_cnt;
+            }
+            c_sub->description = feat_nm + ": " + NStr::UIntToString(tot_cnt)
+                                  + GetNoun(tot_cnt, "present") 
+                                  + " (inconsistent).";
+            c_item->subcategories.push_back(c_sub);
+         }
+      }
+   }
+
+   c_item->description = "Feature Count";
+};
+
+void CBioseq_DISC_FEATURE_COUNT :: GetReport(CRef <CClickableItem>& c_item)
+{
+   Str2Strs feat2cnt;
+   GetTestItemList(c_item->item_list, feat2cnt);
+   c_item->item_list.clear();
+    
+   unsigned cnt;
+   ITERATE (Str2Strs, it, feat2cnt) {
+      if (it != feat2cnt.begin()) {
+         c_item.Reset(new CClickableItem);
+         c_item->setting_name = GetName();
+         thisInfo.disc_report_data.push_back(c_item);
+      }
+      cnt = 0;
+      ITERATE (vector <string>, jt, it->second) {
+          cnt += NStr::StringToUInt(*jt);
+      }
+      c_item->description 
+         = it->first + ": " + it->second[0] + ( (cnt>1)? " present" : "presents");
+   }
+};
+
+/*
 void CSeqEntry_DISC_FEATURE_COUNT :: TestOnObj(const CSeq_entry& seq_entry)
 {  
    Str2Int feat_count_list;
@@ -11655,6 +12526,7 @@ void CSeqEntry_DISC_FEATURE_COUNT :: GetReport(CRef <CClickableItem>& c_item)
        c_item->description = arr[0] + ": " + arr[1] + ((cnt>1)? " present" : " presents");
    }
 };
+*/
 
 
 // new comb
@@ -11716,7 +12588,6 @@ void CSeqEntry_ONCALLER_COMMENT_PRESENT :: GetReport(CRef <CClickableItem>& c_it
 
 
 
-//bool CSeqEntry_DISC_CHECK_AUTH_CAPS :: IsNameCapitalizationOk(const string& name)
 bool CSeqEntry_test_on_pub :: IsNameCapitalizationOk(const string& name)
 {
   if (name.empty()) return (true);
@@ -11731,7 +12602,9 @@ bool CSeqEntry_test_on_pub :: IsNameCapitalizationOk(const string& name)
     if (isalpha (name[pos])) {
       if (!need_cap) {
           needed_lower = true;
-          if (!isupper(name[pos])) found_lower = true;
+          if (!isupper(name[pos])) {
+               found_lower = true;
+          }
       }
 
       /* check to see if this is a short name */
@@ -11763,7 +12636,6 @@ bool CSeqEntry_test_on_pub :: IsNameCapitalizationOk(const string& name)
 }; //IsNameCapitalizationOK
 
 
-//bool CSeqEntry_DISC_CHECK_AUTH_CAPS :: IsAuthorInitialsCapitalizationOk(const string& nm_init)
 bool CSeqEntry_test_on_pub :: IsAuthorInitialsCapitalizationOk(const string& nm_init)
 {
    strtmp = nm_init;
@@ -11819,21 +12691,34 @@ bool CSeqEntry_test_on_pub ::  AuthNoFirstLastNames(const CAuth_list& auths)
    return false;
 };
 
-void CSeqEntry_test_on_pub :: CheckBadAuthCapsOrNoFirstLastNamesInPubdesc(const list <CRef <CPub> >& pubs, const string& desc)
+void CSeqEntry_test_on_pub :: CheckBadAuthCapsOrNoFirstLastNamesInPubdesc(const list <CRef <CPub> >& pubs, const string& desc, CConstRef <CObject> obj_ref)
 {
   bool isBadCap = false, isMissing = false;
   bool has_pmid = false;
-  ITERATE (list <CRef <CPub> >, it, pubs)
-    if ( (*it)->IsPmid() ) has_pmid = true;
+  ITERATE (list <CRef <CPub> >, it, pubs) {
+    if ( (*it)->IsPmid() ) {
+        has_pmid = true;
+        break;
+    }
+  }
   
   ITERATE (list <CRef <CPub> >, it, pubs) {
     if ( !(*it)->IsProc() && (*it)->IsSetAuthors() ) {
-      if (m_run_cap && !isBadCap && (isBadCap = HasBadAuthorName( (*it)->GetAuthors() ) ))
+      if (m_run_cap 
+             && !isBadCap 
+             && (isBadCap = HasBadAuthorName( (*it)->GetAuthors() ) )) {
           thisInfo.test_item_list[GetName_cap()].push_back(desc);
-      if (m_run_missing && !isMissing && !has_pmid 
-                            && (isMissing = AuthNoFirstLastNames( (*it)->GetAuthors() )))
+          thisInfo.test_item_objs[GetName_cap()].push_back(obj_ref);
+      }
+      if (m_run_missing 
+               && !isMissing && !has_pmid 
+               && (isMissing = AuthNoFirstLastNames( (*it)->GetAuthors() ))) {
           thisInfo.test_item_list[GetName_missing()].push_back(desc);
-      if ((!m_run_cap || isBadCap) && (!m_run_missing || isMissing)) return; 
+          thisInfo.test_item_objs[GetName_missing()].push_back(obj_ref);
+      }
+      if ( (!m_run_cap || isBadCap) && (!m_run_missing || isMissing) ) {
+            return; 
+      }
     }
   }
 
@@ -11842,13 +12727,16 @@ void CSeqEntry_test_on_pub :: CheckBadAuthCapsOrNoFirstLastNamesInPubdesc(const 
 void CSeqEntry_DISC_CHECK_AUTH_NAME :: GetReport(CRef <CClickableItem>& c_item)
 {
    RmvRedundancy(c_item->item_list);
-   c_item->description = GetOtherComment(c_item->item_list.size(), "pub", "pubs") 
-                            + " missing author's first or last name";
+   c_item->obj_list = thisInfo.test_item_objs[GetName()]; // how to redun.?
+   c_item->description 
+          = GetOtherComment(c_item->item_list.size(), "pub", "pubs") 
+            + " missing author's first or last name";
 };
 
 void CSeqEntry_DISC_CHECK_AUTH_CAPS :: GetReport(CRef <CClickableItem>& c_item)
 {
    RmvRedundancy(c_item->item_list);
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];  // how about redun.?
    c_item->description = GetHasComment(c_item->item_list.size(), "pub") + 
                                                       "incorrect author capitalization.";
 };

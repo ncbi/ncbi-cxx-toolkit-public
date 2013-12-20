@@ -60,6 +60,7 @@ void CCheckingClass :: CheckSeqInstMol (CSeq_inst& seq_inst,
 
 CCheckingClass :: CCheckingClass() : num_bioseq(0)
 {
+/*
    // subtypes cover type: RBS, exon and intron for IMP;
    sel_seqfeat.IncludeFeatType(CSeqFeatData::e_Gene)
               .IncludeFeatType(CSeqFeatData::e_Cdregion)
@@ -68,6 +69,7 @@ CCheckingClass :: CCheckingClass() : num_bioseq(0)
               .IncludeFeatSubtype(CSeqFeatData::eSubtype_exon)
               .IncludeFeatSubtype(CSeqFeatData::eSubtype_intron)
               .IncludeFeatType(CSeqFeatData::e_Prot);
+*/
 
    sel_seqfeat_4_seq_entry.IncludeFeatType(CSeqFeatData::e_Pub)
                           .IncludeFeatType(CSeqFeatData::e_Biosrc);
@@ -232,7 +234,8 @@ void CCheckingClass :: CheckSeqEntry(CRef <CSeq_entry> seq_entry)
   GoTests(thisGrp.tests_on_SubmitBlk, *seq_entry);
 
   if (!thisGrp.tests_on_SeqEntry_feat_desc.empty()) {
-      CSeq_entry_Handle seq_entry_h = thisInfo.scope->GetSeq_entryHandle(*seq_entry);
+      CSeq_entry_Handle 
+          seq_entry_h = thisInfo.scope->GetSeq_entryHandle(*seq_entry);
 
       for (CFeat_CI feat_it(seq_entry_h, sel_seqfeat_4_seq_entry); feat_it; ++feat_it) {
           const CSeq_feat& seq_feat = feat_it->GetOriginalFeature();
@@ -287,6 +290,7 @@ void CCheckingClass :: CheckBioseq (CBioseq& bioseq)
    thisTest.is_BASES_N_run = false; // no needed?
    thisTest.is_CDs_run = false;
    thisTest.is_CdTransl_run = false;
+   thisTest.is_FeatCnt_run = false;
    thisTest.is_Genes_run = false;
    thisTest.is_Genes_oncall_run = false;
    thisTest.is_GP_Set_run = false;
@@ -310,7 +314,6 @@ void CCheckingClass :: CheckBioseq (CBioseq& bioseq)
           || !thisGrp.tests_on_Bioseq_CFeat_CSeqdesc.empty() ) {
 
       CBioseq_Handle bioseq_hl = thisInfo.scope->GetBioseqHandle(bioseq);
-      //for (CFeat_CI feat_it(bioseq_hl, sel_seqfeat); feat_it; ++feat_it) 
       CSeqFeatData::ESubtype subtp;
       for (CFeat_CI feat_it(bioseq_hl); feat_it; ++feat_it) {
           const CSeq_feat& seq_feat = (feat_it->GetOriginalFeature());
@@ -318,7 +321,7 @@ void CCheckingClass :: CheckBioseq (CBioseq& bioseq)
 
           CTestAndRepData :: all_feat.push_back(&seq_feat);
 
-          if (!(seq_feat_dt.IsProt())) {
+          if (seq_feat_dt.GetSubtype() != CSeqFeatData::eSubtype_prot) {
                CTestAndRepData::non_prot_feat.push_back(&seq_feat);
           }
 

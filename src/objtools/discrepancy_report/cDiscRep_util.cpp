@@ -1333,10 +1333,16 @@ void CTestAndRepData :: AddSubcategory(CRef <CClickableItem>& c_item, const stri
 {    
      size_t pos;
      CRef <CClickableItem> c_sub (new CClickableItem);
-     if ( (pos = sub_grp_nm.find("$")) != string::npos)
+     if ( (pos = sub_grp_nm.find("$")) != string::npos) {
          c_sub->setting_name = sub_grp_nm.substr(0, pos);
-     else c_sub->setting_name = sub_grp_nm;
-     if (itemlist) c_sub->item_list = *itemlist;
+     }
+     else {
+         c_sub->setting_name = sub_grp_nm;
+     }
+     if (itemlist) {
+         c_sub->item_list = *itemlist;
+         c_sub->obj_list = thisInfo.test_item_objs[sub_grp_nm];
+     }
      unsigned cnt = itemlist ? c_sub->item_list.size() : input_cnt;
      cnt = halfsize ? cnt/2 : cnt; 
      switch ( comm ) {
@@ -1361,7 +1367,6 @@ void CTestAndRepData :: AddSubcategory(CRef <CClickableItem>& c_item, const stri
        default:
            NCBI_THROW(CException, eUnknown, "Bad comment type.");
      }  
-     c_sub->obj_list = thisInfo.test_item_objs[sub_grp_nm];
      if (itemlist && copy2parent) {
         copy(c_sub->item_list.begin(), c_sub->item_list.end(),
              back_inserter( c_item->item_list ));
