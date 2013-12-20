@@ -60,9 +60,19 @@ public:
 
     operator string() const
     {
-        static const CEnumeratedTypeValues* lvls =
-            GetTypeInfo_enum_ETMgr_MessageLevel();
+        static const CEnumeratedTypeValues* lvls = GetTypeInfo_enum_ETMgr_MessageLevel();
         return lvls->FindName(GetLevel(), false) + ": " + GetMessage();
+    }
+
+    static int GetDefaultMesgLevel(void)
+    {
+        return eTMgr_MessageLevel_info;
+    }
+
+    static int GetMesgLevel(const string& level)
+    {
+        static const CEnumeratedTypeValues* lvls = GetTypeInfo_enum_ETMgr_MessageLevel();
+        return lvls->FindValue(level);
     }
 
 private:
