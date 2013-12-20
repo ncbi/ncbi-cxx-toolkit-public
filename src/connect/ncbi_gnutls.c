@@ -513,10 +513,10 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
 #  ifdef HAVE_LIBGCRYPT
 #    if   defined(NCBI_POSIX_THREADS)
     if (gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_pthread) != 0)
-        return eIO_NotSupported;
+        goto errout;
 #    elif defined(NCBI_THREADS)
     if (gcry_control(GCRYCTL_SET_THREAD_CBS, &gcry_threads_user) != 0)
-        return eIO_NotSupported;
+        goto errout;
 #    elif defined(_MT)
     CORE_LOG(eLOG_Critical,"LIBGCRYPT uninitialized: Unknown threading model");
 #    endif /*NCBI_POSIX_THREADS*/
@@ -524,16 +524,16 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
 
     if (!pull  ||  !push  ||  !gnutls_check_version(LIBGNUTLS_VERSION)
         ||  gnutls_global_init() != GNUTLS_E_SUCCESS/*0*/) {
-        return eIO_NotSupported;
+        goto errout;
     }
     if (gnutls_anon_allocate_client_credentials(&acred) != 0) {
         gnutls_global_deinit();
-        return eIO_NotSupported;
+        goto errout;
     }
     if (gnutls_certificate_allocate_credentials(&xcred) != 0) {
         gnutls_anon_free_client_credentials(acred);
         gnutls_global_deinit();
-        return eIO_NotSupported;
+        goto errout;
     }
 
     s_GnuTlsCredAnon = acred;
@@ -542,6 +542,11 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
     s_Push           = push;
 
     return eIO_Success;
+
+ errout:
+    gnutls_global_set_log_level(s_GnuTlsLogLevel = 0);
+    gnutls_global_set_log_function(0);
+    return eIO_NotSupported;
 }
 
 
