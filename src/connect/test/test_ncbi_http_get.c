@@ -68,6 +68,7 @@ int main(int argc, char* argv[])
     char          blk[512];
     EIO_Status    status;
     THTTP_Flags   flags;
+    NCBI_CRED     cred;
     CONN          conn;
     FILE*         fp;
     time_t        t;
@@ -81,12 +82,9 @@ int main(int argc, char* argv[])
         CORE_LOG(eLOG_Fatal, "URL has to be supplied on the command line");
     if (argc > 3)
         CORE_LOG(eLOG_Fatal, "Cannot take more than 2 arguments");
-    if (argc == 3) {
-        fp = strcmp(argv[2], "-") == 0 ? stdin : fopen(argv[2], "rb");
-        if (!fp) {
-            CORE_LOGF_ERRNO(eLOG_Error, errno, ("Cannot open \"%s\"",
-                                                argv[2] ? argv[2] : ""));
-        }
+    if (argc == 3
+        &&  !(fp = strcmp(argv[2], "-") == 0 ? stdin : fopen(argv[2], "rb"))) {
+        CORE_LOGF_ERRNO(eLOG_Error, errno, ("Cannot open \"%s\"", argv[2]));
     } else
         fp = 0;
 
@@ -100,11 +98,13 @@ int main(int argc, char* argv[])
     CORE_LOG(eLOG_Note, "Creating network info structure");
     if (!(net_info = ConnNetInfo_Create(0)))
         CORE_LOG(eLOG_Fatal, "Cannot create network info structure");
+    assert(!net_info->credentials);
 
     CORE_LOGF(eLOG_Note, ("Parsing URL \"%s\"", argv[1]));
     if (!ConnNetInfo_ParseURL(net_info, argv[1]))
         CORE_LOG(eLOG_Fatal, "Cannot parse URL");
 
+    cred = 0;
     ConnNetInfo_GetValue(0, "USESSL", blk, 32, "");
     if (net_info->scheme == eURL_Https  &&  ConnNetInfo_Boolean(blk)) {
 #ifdef HAVE_LIBGNUTLS
@@ -120,17 +120,12 @@ int main(int argc, char* argv[])
                 CORE_LOGF(eLOG_Error,
                           ("Cannot load PKCS#12 credentials from \"%s\": %s",
                            GNUTLS_PKCS12_FILE, gnutls_strerror(err)));
-            } else {
-                NCBI_CRED cred = NcbiCredGnuTls(xcred);
-                if (cred) {
-                    net_info->credentials = cred;
-                    CORE_LOG(eLOG_Note, "PKCS#12 credentials loaded"
-                             " from \"" GNUTLS_PKCS12_FILE "\"");
-                } else {
-                    CORE_LOG_ERRNO(eLOG_Error, errno,
-                                   "Cannot create NCBI_CRED");
-                }
-            }
+            } else if ((cred = NcbiCredGnuTls(xcred)) != 0) {
+                net_info->credentials = cred;
+                CORE_LOG(eLOG_Note, "PKCS#12 credentials loaded"
+                         " from \"" GNUTLS_PKCS12_FILE "\"");
+            } else
+                CORE_LOG_ERRNO(eLOG_Error, errno, "Cannot create NCBI_CRED");
         }
 #else
         CORE_LOG(eLOG_Warning, "SSL requested but may be not supported");
@@ -141,6 +136,10 @@ int main(int argc, char* argv[])
                           &"S"[net_info->scheme != eURL_Https]));
     if (!(connector = HTTP_CreateConnector(net_info, 0, flags)))
         CORE_LOG(eLOG_Fatal, "Cannot create HTTP connector");
+    /* Could have destroyed net_info at this point here if we did not use the
+     * timeout off of it below, so at least unlink the credentials, if any...
+     */
+    net_info->credentials = 0;
 
     CORE_LOG(eLOG_Note, "Creating connection");
     if (CONN_Create(connector, &conn) != eIO_Success)
@@ -191,16 +190,17 @@ int main(int argc, char* argv[])
 
     } while (status == eIO_Success  ||  status == eIO_Timeout);
 
-    CORE_LOG(eLOG_Note, "Closing connection");
-    CONN_Close(conn);
+    ConnNetInfo_Destroy(net_info); /* done using the timeout field */
 
-    if (net_info->credentials)
-        free(net_info->credentials);
+    CORE_LOG(eLOG_Note, "Closing connection");
+    CONN_Close(conn);  /* this makes sure credentials are no longer accessed */
+
+    if (cred)
+        free(cred);
 #ifdef HAVE_LIBGNUTLS
     if (xcred)
         gnutls_certificate_free_credentials(xcred);
 #endif /*HAVE_LIBGNUTLS*/
-    ConnNetInfo_Destroy(net_info);
 
     CORE_LOG(eLOG_Note, "Completed successfully");
     CORE_SetLOG(0);
