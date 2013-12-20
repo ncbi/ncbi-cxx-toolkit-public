@@ -261,6 +261,15 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
            << "Mime-Version: 1.0" << HTTP_EOL;
     }
 
+    // Dirty hack (JQuery JSONP for browsers that don't support CORS)
+    if ( !m_JQuery_Callback.empty() ) {
+        CCgiResponse* self = const_cast<CCgiResponse*>(this);
+        if (m_IsMultipart == eMultipart_none)
+            self->SetHeaderValue(sm_ContentTypeName, "text/javascript");
+        else
+            self->m_JQuery_Callback.erase();
+    }
+
     // Default content type (if it's not specified by user already)
     switch (m_IsMultipart) {
     case eMultipart_none:
@@ -353,6 +362,11 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
     // End of header (empty line)
     os << HTTP_EOL;
 
+    // Dirty hack (JQuery JSONP for browsers that don't support CORS)
+    if ( !m_JQuery_Callback.empty() ) {
+        os << m_JQuery_Callback << '(';
+    }
+
     if (m_RequestMethod == CCgiRequest::eMethod_HEAD  &&  &os == m_Output) {
         try {
             m_Output->setstate(ios_base::badbit);
@@ -365,6 +379,14 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
     }
 
     return os;
+}
+
+
+void CCgiResponse::Finalize(void) const
+{
+    if (!m_JQuery_Callback.empty()  &&  m_Output  &&  m_HeaderWritten) {
+        *m_Output <<  ')';
+    }
 }
 
 
@@ -533,6 +555,27 @@ NCBI_PARAM_DEF_EX(string, CGI, CORS_Max_Age, kEmptyStr,
 typedef NCBI_PARAM_TYPE(CGI, CORS_Max_Age) TCORS_MaxAge;
 
 
+// Param to enable JQuery JSONP hack to allow cross-origin resource sharing
+// for browsers that don't support CORS (e.g. IE versions earlier than 11).
+// If it is set to true and the HTTP request contains entry "callback" whose
+// value starts with "JQuery_" (case-insensitive, configurable), then:
+//  - Set the response Content-Type to "text/javascript"
+//  - Wrap the response content into: "JQuery_foobar(original_content)"
+NCBI_PARAM_DECL(bool, CGI, CORS_JQuery_Callback_Enable);
+NCBI_PARAM_DEF_EX(bool, CGI, CORS_JQuery_Callback_Enable, false,
+                  eParam_NoThread, CGI_CORS_JQUERY_CALLBACK_ENABLE);
+typedef NCBI_PARAM_TYPE(CGI, CORS_JQuery_Callback_Enable)
+    TCORS_JQuery_Callback_Enable;
+
+// If ever need to use a prefix other than "JQuery_" for the JQuery JSONP hack
+// callback name (above). Use symbol '*' if any name is good.
+NCBI_PARAM_DECL(string, CGI, CORS_JQuery_Callback_Prefix);
+NCBI_PARAM_DEF_EX(string, CGI, CORS_JQuery_Callback_Prefix, "JQuery_",
+                  eParam_NoThread, CGI_CORS_JQUERY_CALLBACK_PREFIX);
+typedef NCBI_PARAM_TYPE(CGI, CORS_JQuery_Callback_Prefix)
+    TCORS_JQuery_Callback_Prefix;
+
+
 // Return true if the origin matches an element in the allowed origins
 // (space separated regexps).
 static bool CORS_IsValidOrigin(string& origin, const string& allowed)
@@ -561,7 +604,8 @@ static bool CORS_IsValidOrigin(string& origin, const string& allowed)
 }
 
 
-void CCgiResponse::InitCORSHeaders(const string& origin)
+void CCgiResponse::InitCORSHeaders(const string& origin,
+                                   const string& jquery_callback)
 {
     if ( !TCORS_Enable::GetDefault() ) {
         return;
@@ -569,16 +613,42 @@ void CCgiResponse::InitCORSHeaders(const string& origin)
 
     // string origin = m_Request->GetRandomProperty("ORIGIN");
     string allowed_origin = origin;
-    if ( !CORS_IsValidOrigin(allowed_origin, TCORS_AllowOrigin::GetDefault()) ) {
+    if ( !CORS_IsValidOrigin(allowed_origin,
+                             TCORS_AllowOrigin::GetDefault()) ) {
         return;
     }
-    // Add headers for cross-origin resource sharing.
-    SetHeaderValue("Access-Control-Allow-Origin", allowed_origin);
-    SetHeaderValue("Access-Control-Allow-Headers", TCORS_AllowHeaders::GetDefault());
-    SetHeaderValue("Access-Control-Allow-Methods", TCORS_AllowMethods::GetDefault());
-    SetHeaderValue("Access-Control-Allow-Credentials", TCORS_AllowCredentials::GetDefault());
-    SetHeaderValue("Access-Control-Expose-Headers", TCORS_ExposeHeaders::GetDefault());
-    SetHeaderValue("Access-Control-Max-Age", TCORS_MaxAge::GetDefault());
+
+    // Add headers for cross-origin resource sharing
+    SetHeaderValue("Access-Control-Allow-Origin",
+                   allowed_origin);
+    SetHeaderValue("Access-Control-Allow-Headers",
+                   TCORS_AllowHeaders::GetDefault());
+    SetHeaderValue("Access-Control-Allow-Methods",
+                   TCORS_AllowMethods::GetDefault());
+    SetHeaderValue("Access-Control-Allow-Credentials",
+                   TCORS_AllowCredentials::GetDefault());
+    SetHeaderValue("Access-Control-Expose-Headers",
+                   TCORS_ExposeHeaders::GetDefault());
+    SetHeaderValue("Access-Control-Max-Age",
+                   TCORS_MaxAge::GetDefault());
+
+
+    //
+    // Temporary JQuery based hack for browsers that don't yet support CORS
+    //
+
+    // string jquery_callback = m_Request->GetEntry("callback");
+    if (TCORS_JQuery_Callback_Enable::GetDefault()
+        &&  (m_RequestMethod == CCgiRequest::eMethod_GET  || 
+             m_RequestMethod == CCgiRequest::eMethod_POST)
+        &&  !jquery_callback.empty()) {
+        string prefix = TCORS_JQuery_Callback_Prefix::GetDefault();
+        if (prefix != "*"  &&
+            !NStr::StartsWith(jquery_callback, prefix, NStr::eNocase)) {
+            return;
+        }
+        m_JQuery_Callback = jquery_callback;
+    }
 }
 
 

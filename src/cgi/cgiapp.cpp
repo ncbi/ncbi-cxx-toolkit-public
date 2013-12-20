@@ -287,6 +287,7 @@ int CCgiApplication::Run(void)
                     SetHTTPStatus(500);
                     m_ErrorStatus = true;
                 } else {
+                    m_Context->GetResponse().Finalize();
                     if (m_Cache.get()) {
                         m_Context->GetResponse().Flush();
                         if (m_IsResultReady) {

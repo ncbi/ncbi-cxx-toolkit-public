@@ -161,13 +161,24 @@ public:
     /// Check if 'Content-Range' header is set.
     bool HaveContentRange(void) const;
 
-    /// Initialize cross-origin resource sharing (CORS) headers. The origin
-    /// must match allowed origins for the CORS to be enabled.
     /// This method is called automatically by CCgiContext.
-    void InitCORSHeaders(const string& origin);
+    /// Initialize cross-origin resource sharing (CORS) headers.
+    /// @param origin
+    ///  Must match allowed origins for the CORS to be enabled.
+    /// @param jquery_callback
+    ///  Used to enable JQuery JSONP hack to allow cross-origin resource
+    ///  sharing for browsers that don't support CORS (e.g. IE versions
+    ///  earlier than 11). For more info about this (hopefully temporary) hack
+    ///  see the sources.
+    void InitCORSHeaders(const string& origin,
+                         const string& jquery_callback = kEmptyStr);
 
     /// Set HTTP request method.
     void SetRequestMethod(CCgiRequest::ERequestMethod method);
+
+    /// Called after successful call (no exception, zero code) of
+    /// ProcessRequest(). Do not call it directly from the user code!
+    void Finalize(void) const;
 
 public:
     void x_SetSession(const CCgiSession& session);
@@ -218,6 +229,9 @@ private:
     NCBI_PARAM_DECL(bool, CGI, ThrowOnBadOutput);
     typedef NCBI_PARAM_TYPE(CGI, ThrowOnBadOutput) TCGI_ThrowOnBadOutput;
     TCGI_ThrowOnBadOutput m_ThrowOnBadOutput;
+
+    //
+    string m_JQuery_Callback;
 };
 
 

@@ -151,7 +151,8 @@ CCgiContext::CCgiContext(CCgiApplication&        app,
 
 void CCgiContext::x_InitCORS(void)
 {
-    m_Response.InitCORSHeaders(m_Request->GetRandomProperty("ORIGIN"));
+    m_Response.InitCORSHeaders(m_Request->GetRandomProperty("ORIGIN"),
+                               m_Request->GetEntry("callback"));
 }
 
 
