@@ -40,13 +40,13 @@
 1.1.1.41	Isocitrate dehydrogenase (NAD(+))
 1.1.1.42	Isocitrate dehydrogenase (NADP(+))
 1.1.1.43	Phosphogluconate 2-dehydrogenase
-1.1.1.44	Phosphogluconate dehydrogenase (decarboxylating)
+1.1.1.44	Phosphogluconate dehydrogenase (NADP(+)-dependent, decarboxylating)
 1.1.1.45	L-gulonate 3-dehydrogenase
 1.1.1.46	L-arabinose 1-dehydrogenase
-1.1.1.47	Glucose 1-dehydrogenase
+1.1.1.47	Glucose 1-dehydrogenase (NAD(P)(+))
 1.1.1.48	D-galactose 1-dehydrogenase
-1.1.1.49	Glucose-6-phosphate dehydrogenase
-1.1.1.50	3-alpha-hydroxysteroid 3-dehydrogenase (B-specific)
+1.1.1.49	Glucose-6-phosphate dehydrogenase (NADP(+))
+1.1.1.50	3-alpha-hydroxysteroid 3-dehydrogenase (Si-specific)
 1.1.1.51	3(or 17)-beta-hydroxysteroid dehydrogenase
 1.1.1.52	3-alpha-hydroxycholanate dehydrogenase
 1.1.1.53	3-alpha-(or 20-beta)-hydroxysteroid dehydrogenase
@@ -70,7 +70,7 @@
 1.1.1.75	(R)-aminopropanol dehydrogenase
 1.1.1.76	(S,S)-butanediol dehydrogenase
 1.1.1.77	Lactaldehyde reductase
-1.1.1.78	Methylglyoxal reductase (NADH-dependent)
+1.1.1.78	Methylglyoxal reductase (NADH)
 1.1.1.79	Glyoxylate reductase (NADP(+))
 1.1.1.80	Isopropanol dehydrogenase (NADP(+))
 1.1.1.81	Hydroxypyruvate reductase
@@ -111,7 +111,7 @@
 1.1.1.118	Glucose 1-dehydrogenase (NAD(+))
 1.1.1.119	Glucose 1-dehydrogenase (NADP(+))
 1.1.1.120	Galactose 1-dehydrogenase (NADP(+))
-1.1.1.121	Aldose 1-dehydrogenase
+1.1.1.121	Aldose 1-dehydrogenase (NAD(+))
 1.1.1.122	D-threo-aldose 1-dehydrogenase
 1.1.1.123	Sorbose 5-dehydrogenase (NADP(+))
 1.1.1.124	Fructose 5-dehydrogenase (NADP(+))
@@ -145,7 +145,6 @@
 1.1.1.154	Ureidoglycolate dehydrogenase
 1.1.1.156	Glycerol 2-dehydrogenase (NADP(+))
 1.1.1.157	3-hydroxybutyryl-CoA dehydrogenase
-1.1.1.158	UDP-N-acetylmuramate dehydrogenase
 1.1.1.159	7-alpha-hydroxysteroid dehydrogenase
 1.1.1.160	Dihydrobunolol dehydrogenase
 1.1.1.162	Erythrulose reductase
@@ -154,7 +153,7 @@
 1.1.1.165	2-alkyn-1-ol dehydrogenase
 1.1.1.166	Hydroxycyclohexanecarboxylate dehydrogenase
 1.1.1.167	Hydroxymalonate dehydrogenase
-1.1.1.168	2-dehydropantolactone reductase (A-specific)
+1.1.1.168	2-dehydropantolactone reductase (Re-specific)
 1.1.1.169	2-dehydropantoate 2-reductase
 1.1.1.170	3-beta-hydroxysteroid-4-alpha-carboxylate 3-dehydrogenase (decarboxylating)
 1.1.1.172	2-oxoadipate reductase
@@ -195,8 +194,8 @@
 1.1.1.210	3-beta-(or 20-alpha)-hydroxysteroid dehydrogenase
 1.1.1.211	Long-chain-3-hydroxyacyl-CoA dehydrogenase
 1.1.1.212	3-oxoacyl-[acyl-carrier-protein] reductase (NADH)
-1.1.1.213	3-alpha-hydroxysteroid dehydrogenase (A-specific)
-1.1.1.214	2-dehydropantolactone reductase (B-specific)
+1.1.1.213	3-alpha-hydroxysteroid dehydrogenase (Re-specific)
+1.1.1.214	2-dehydropantolactone reductase (Si-specific)
 1.1.1.215	Gluconate 2-dehydrogenase
 1.1.1.216	Farnesol dehydrogenase
 1.1.1.217	Benzyl-2-methyl-hydroxybutyrate dehydrogenase
@@ -227,7 +226,6 @@
 1.1.1.243	Carveol dehydrogenase
 1.1.1.244	Methanol dehydrogenase
 1.1.1.245	Cyclohexanol dehydrogenase
-1.1.1.246	Pterocarpin synthase
 1.1.1.247	Codeinone reductase (NADPH)
 1.1.1.248	Salutaridine reductase (NADPH)
 1.1.1.250	D-arabinitol 2-dehydrogenase
@@ -251,9 +249,9 @@
 1.1.1.269	2-(S)-hydroxypropyl-CoM dehydrogenase
 1.1.1.270	3-beta-hydroxysteroid 3-dehydrogenase
 1.1.1.271	GDP-L-fucose synthase
-1.1.1.272	(R)-2-hydroxyacid dehydrogenase
+1.1.1.272	D-2-hydroxyacid dehydrogenase (NADP(+))
 1.1.1.273	Vellosimine dehydrogenase
-1.1.1.274	2,5-didehydrogluconate reductase
+1.1.1.274	2,5-didehydrogluconate reductase (2-dehydro-D-gluconate-forming)
 1.1.1.275	(+)-trans-carveol dehydrogenase
 1.1.1.276	Serine 3-dehydrogenase
 1.1.1.277	3-beta-hydroxy-5-beta-steroid dehydrogenase
@@ -324,6 +322,24 @@
 1.1.1.343	Phosphogluconate dehydrogenase (NAD(+)-dependent, decarboxylating)
 1.1.1.344	dTDP-6-deoxy-L-talose 4-dehydrogenase (NAD(P)(+))
 1.1.1.345	D-2-hydroxyacid dehydrogenase (NAD(+))
+1.1.1.346	2,5-didehydrogluconate reductase (2-dehydro-L-gulonate-forming)
+1.1.1.347	Geraniol dehydrogenase (NAD(+))
+1.1.1.348	Vestitone reductase
+1.1.1.349	Norsolorinic acid ketoreductase
+1.1.1.350	Ureidoglycolate dehydrogenase (NAD(+))
+1.1.1.351	Phosphogluconate dehydrogenase (NAD(P)(+)-dependent, decarboxylating)
+1.1.1.352	5'-hydroxyaverantin dehydrogenase
+1.1.1.353	Versiconal hemiacetal acetate reductase
+1.1.1.354	Farnesol dehydrogenase (NAD(+))
+1.1.1.355	2'-dehydrokanamycin reductase
+1.1.1.356	GDP-L-colitose synthase
+1.1.1.357	3-alpha-hydroxysteroid 3-dehydrogenase
+1.1.1.358	2-dehydropantolactone reductase
+1.1.1.359	Aldose 1-dehydrogenase (NAD(P)(+))
+1.1.1.360	Glucose/galactose 1-dehydrogenase
+1.1.1.361	Glucose-6-phosphate 3-dehydrogenase
+1.1.1.362	Aklaviketone reductase
+1.1.1.363	Glucose-6-phosphate dehydrogenase (NAD(P)(+))
 1.1.1.n4	(-)-trans-carveol dehydrogenase
 1.1.1.n5	3-methylmalate dehydrogenase
 1.1.1.n6	D-chiro-inositol 3-dehydrogenase
@@ -331,7 +347,6 @@
 1.1.1.n9	D-galacturonate reductase
 1.1.1.n11	Succinic semialdehyde reductase
 1.1.1.n12	(3R)-hydroxyacyl-CoA dehydrogenase
-1.1.1.n14	Geraniol dehydrogenase (NAD(+))
 1.1.2.2	Mannitol dehydrogenase (cytochrome)
 1.1.2.3	L-lactate dehydrogenase (cytochrome)
 1.1.2.4	D-lactate dehydrogenase (cytochrome)
@@ -371,15 +386,17 @@
 1.1.3.42	Prosolanapyrone-II oxidase
 1.1.3.43	Paromamine 6'-oxidase
 1.1.3.44	6'''-hydroxyneomycin C oxidase
+1.1.3.45	Aclacinomycin-N oxidase
 1.1.4.1	Vitamin-K-epoxide reductase (warfarin-sensitive)
 1.1.4.2	Vitamin-K-epoxide reductase (warfarin-insensitive)
-1.1.5.2	Quinoprotein glucose dehydrogenase
+1.1.5.2	Quinoprotein glucose dehydrogenase (PQQ, quinone)
 1.1.5.3	Glycerol-3-phosphate dehydrogenase
 1.1.5.4	Malate dehydrogenase (quinone)
 1.1.5.5	Alcohol dehydrogenase (quinone)
 1.1.5.6	Formate dehydrogenase-N
 1.1.5.7	Cyclic alcohol dehydrogenase (quinone)
 1.1.5.8	Quinate dehydrogenase (quinone)
+1.1.5.9	Glucose 1-dehydrogenase (FAD, quinone)
 1.1.5.n1	Quinoprotein inositol dehydrogenase
 1.1.9.1	Alcohol dehydrogenase (azurin)
 1.1.98.2	Glucose-6-phosphate dehydrogenase (coenzyme-F420)
@@ -391,7 +408,6 @@
 1.1.99.6	D-2-hydroxy-acid dehydrogenase
 1.1.99.7	Lactate--malate transhydrogenase
 1.1.99.9	Pyridoxine 5-dehydrogenase
-1.1.99.10	Glucose dehydrogenase (acceptor)
 1.1.99.11	Fructose 5-dehydrogenase
 1.1.99.12	Sorbose dehydrogenase
 1.1.99.13	Glucoside 3-dehydrogenase
@@ -412,7 +428,7 @@
 1.1.99.35	Soluble quinoprotein glucose dehydrogenase
 1.1.99.36	Alcohol dehydrogenase (nicotinoprotein)
 1.1.99.37	Methanol dehydrogenase (nicotinoprotein)
-1.1.99.38	2-deoxy-scyllo-inosamine dehydrogenase (SAM-dependent)
+1.1.99.38	2-deoxy-scyllo-inosamine dehydrogenase (AdoMet-dependent)
 1.2.1.2	Formate dehydrogenase
 1.2.1.3	Aldehyde dehydrogenase (NAD(+))
 1.2.1.4	Aldehyde dehydrogenase (NADP(+))
@@ -488,6 +504,8 @@
 1.2.1.84	Alcohol-forming fatty acyl-CoA reductase
 1.2.1.85	2-hydroxymuconate-6-semialdehyde dehydrogenase
 1.2.1.86	Geranial dehydrogenase
+1.2.1.87	Propanal dehydrogenase (CoA-propanoylating)
+1.2.1.88	L-glutamate gamma-semialdehyde dehydrogenase
 1.2.1.n2	Fatty acyl-CoA reductase
 1.2.2.1	Formate dehydrogenase (cytochrome)
 1.2.2.3	Formate dehydrogenase (cytochrome c-553)
@@ -507,7 +525,6 @@
 1.2.4.4	3-methyl-2-oxobutanoate dehydrogenase (2-methylpropanoyl-transferring)
 1.2.5.1	Pyruvate dehydrogenase (quinone)
 1.2.7.1	Pyruvate synthase
-1.2.7.2	2-oxobutyrate synthase
 1.2.7.3	2-oxoglutarate synthase
 1.2.7.4	Carbon-monoxide dehydrogenase (ferredoxin)
 1.2.7.5	Aldehyde ferredoxin oxidoreductase
@@ -521,6 +538,7 @@
 1.2.99.5	Formylmethanofuran dehydrogenase
 1.2.99.6	Carboxylate reductase
 1.2.99.7	Aldehyde dehydrogenase (FAD-independent)
+1.2.99.8	Glyceraldehyde dehydrogenase (FAD-containing)
 1.3.1.1	Dihydrouracil dehydrogenase (NAD(+))
 1.3.1.2	Dihydropyrimidine dehydrogenase (NADP(+))
 1.3.1.3	Delta(4)-3-oxosteroid 5-beta-reductase
@@ -529,7 +547,7 @@
 1.3.1.7	Meso-tartrate dehydrogenase
 1.3.1.8	Acyl-CoA dehydrogenase (NADP(+))
 1.3.1.9	Enoyl-[acyl-carrier-protein] reductase (NADH)
-1.3.1.10	Enoyl-[acyl-carrier-protein] reductase (NADPH, B-specific)
+1.3.1.10	Enoyl-[acyl-carrier-protein] reductase (NADPH, Si-specific)
 1.3.1.11	2-coumarate reductase
 1.3.1.12	Prephenate dehydrogenase
 1.3.1.13	Prephenate dehydrogenase (NADP(+))
@@ -544,7 +562,6 @@
 1.3.1.22	3-oxo-5-alpha-steroid 4-dehydrogenase (NADP(+))
 1.3.1.24	Biliverdin reductase
 1.3.1.25	1,6-dihydroxycyclohexa-2,4-diene-1-carboxylate dehydrogenase
-1.3.1.26	Dihydrodipicolinate reductase
 1.3.1.27	2-hexadecenal reductase
 1.3.1.28	2,3-dihydro-2,3-dihydroxybenzoate dehydrogenase
 1.3.1.29	Cis-1,2-dihydro-1,2-dihydroxynaphthalene dehydrogenase
@@ -556,7 +573,7 @@
 1.3.1.36	Geissoschizine dehydrogenase
 1.3.1.37	Cis-2-enoyl-CoA reductase (NADPH)
 1.3.1.38	Trans-2-enoyl-CoA reductase (NADPH)
-1.3.1.39	Enoyl-[acyl-carrier-protein] reductase (NADPH, A-specific)
+1.3.1.39	Enoyl-[acyl-carrier-protein] reductase (NADPH, Re-specific)
 1.3.1.40	2-hydroxy-6-oxo-6-phenylhexa-2,4-dienoate reductase
 1.3.1.41	Xanthommatin reductase
 1.3.1.42	12-oxophytodienoate reductase
@@ -610,6 +627,13 @@
 1.3.1.95	Acryloyl-CoA reductase (NADH)
 1.3.1.96	Botryococcus squalene synthase
 1.3.1.97	Botryococcene synthase
+1.3.1.98	UDP-N-acetylmuramate dehydrogenase
+1.3.1.99	Iridoid synthase
+1.3.1.100	Chanoclavine-I aldehyde reductase
+1.3.1.101	2,3-bis-O-geranylgeranyl-sn-glycerol 1-phosphate reductase (NAD(P)H)
+1.3.1.102	2-alkenal reductase (NADP(+))
+1.3.1.103	2-haloacrylate reductase
+1.3.1.104	Enoyl-[acyl-carrier-protein] reductase
 1.3.2.3	L-galactonolactone dehydrogenase
 1.3.3.3	Coproporphyrinogen oxidase
 1.3.3.4	Protoporphyrinogen oxidase
@@ -621,6 +645,8 @@
 1.3.3.10	Tryptophan alpha,beta-oxidase
 1.3.3.11	Pyrroloquinoline-quinone synthase
 1.3.3.12	L-galactonolactone oxidase
+1.3.3.13	Albonoursin synthase
+1.3.3.14	Aclacinomycin-A oxidase
 1.3.5.1	Succinate dehydrogenase (ubiquinone)
 1.3.5.2	Dihydroorotate dehydrogenase (quinone)
 1.3.5.3	Protoporphyrinogen IX dehydrogenase (menaquinone)
@@ -636,7 +662,6 @@
 1.3.7.7	Ferredoxin:protochlorophyllide reductase (ATP-dependent)
 1.3.7.8	Benzoyl-CoA reductase
 1.3.7.9	4-hydroxybenzoyl-CoA reductase
-1.3.7.10	Pentalenolactone synthase
 1.3.8.1	Short-chain acyl-CoA dehydrogenase
 1.3.8.2	4,4'-diapophytoene desaturase
 1.3.8.3	(R)-benzylsuccinyl-CoA dehydrogenase
@@ -669,6 +694,8 @@
 1.3.99.30	Phytoene desaturase (3,4-didehydrolycopene-forming)
 1.3.99.31	Phytoene desaturase (lycopene-forming)
 1.3.99.32	Glutaryl-CoA dehydrogenase (non-decarboxylating)
+1.3.99.33	Urocanate reductase
+1.3.99.34	2,3-bis-O-geranylgeranyl-sn-glycerol 1-phosphate reductase (donor)
 1.3.99.n1	3-hydroxybenzoyl-CoA reductase
 1.4.1.1	Alanine dehydrogenase
 1.4.1.2	Glutamate dehydrogenase
@@ -731,7 +758,6 @@
 1.5.1.9	Saccharopine dehydrogenase (NAD(+), L-glutamate-forming)
 1.5.1.10	Saccharopine dehydrogenase (NADP(+), L-glutamate-forming)
 1.5.1.11	D-octopine dehydrogenase
-1.5.1.12	1-pyrroline-5-carboxylate dehydrogenase
 1.5.1.15	Methylenetetrahydrofolate dehydrogenase (NAD(+))
 1.5.1.16	D-lysopine dehydrogenase
 1.5.1.17	Alanopine dehydrogenase
@@ -762,6 +788,7 @@
 1.5.1.44	Festuclavine dehydrogenase
 1.5.1.45	FAD reductase (NAD(P)H)
 1.5.1.46	Agroclavine dehydrogenase
+1.5.1.47	Dihydromethanopterin reductase
 1.5.3.1	Sarcosine oxidase
 1.5.3.2	N-methyl-L-amino-acid oxidase
 1.5.3.4	N(6)-methyl-lysine oxidase
@@ -796,13 +823,17 @@
 1.5.99.12	Cytokinin dehydrogenase
 1.5.99.13	D-proline dehydrogenase
 1.5.99.14	6-hydroxypseudooxynicotine dehydrogenase
-1.6.1.1	NAD(P)(+) transhydrogenase (B-specific)
-1.6.1.2	NAD(P)(+) transhydrogenase (AB-specific)
+1.6.1.1	NAD(P)(+) transhydrogenase (Si-specific)
+1.6.1.2	NAD(P)(+) transhydrogenase (Re/Si-specific)
+1.6.1.3	NAD(P)(+) transhydrogenase
 1.6.2.2	Cytochrome-b5 reductase
 1.6.2.4	NADPH--hemoprotein reductase
 1.6.2.5	NADPH--cytochrome-c2 reductase
 1.6.2.6	Leghemoglobin reductase
-1.6.3.1	NAD(P)H oxidase
+1.6.3.1	NAD(P)H oxidase (H(2)O(2)-forming)
+1.6.3.2	NAD(P)H oxidase (H(2)O-forming)
+1.6.3.3	NADH oxidase (H(2)O(2)-forming)
+1.6.3.4	NADH oxidase (H(2)O-forming)
 1.6.5.2	NAD(P)H dehydrogenase (quinone)
 1.6.5.3	NADH:ubiquinone reductase (H(+)-translocating)
 1.6.5.4	Monodehydroascorbate reductase (NADH)
@@ -829,7 +860,8 @@
 1.7.1.11	4-(dimethylamino)phenylazoxybenzene reductase
 1.7.1.12	N-hydroxy-2-acetamidofluorene reductase
 1.7.1.13	PreQ(1) synthase
-1.7.1.14	Nitric oxide reductase (NAD(P), nitrous oxide-forming)
+1.7.1.14	Nitric oxide reductase (NAD(P)(+), nitrous oxide-forming)
+1.7.1.15	Nitrite reductase (NADH)
 1.7.2.1	Nitrite reductase (NO-forming)
 1.7.2.2	Nitrite reductase (cytochrome; ammonia-forming)
 1.7.2.3	Trimethylamine-N-oxide reductase (cytochrome c)
@@ -840,6 +872,7 @@
 1.7.3.2	Acetylindoxyl oxidase
 1.7.3.3	Factor independent urate hydroxylase
 1.7.3.5	3-aci-nitropropanoate oxidase
+1.7.3.6	Hydroxylamine oxidase (cytochrome)
 1.7.5.1	Nitrate reductase (quinone)
 1.7.5.2	Nitric oxide reductase (menaquinol)
 1.7.6.1	Nitrite dismutase
@@ -864,6 +897,8 @@
 1.8.1.15	Mycothione reductase
 1.8.1.16	Glutathione amide reductase
 1.8.1.17	Dimethylsulfone reductase
+1.8.1.18	NAD(P)H sulfur oxidoreductase (CoA-dependent)
+1.8.1.19	Sulfide dehydrogenase
 1.8.2.1	Sulfite dehydrogenase
 1.8.2.2	Thiosulfate dehydrogenase
 1.8.2.3	Sulfide-cytochrome-c reductase (flavocytochrome c)
@@ -913,6 +948,7 @@
 1.10.3.10	Ubiquinol oxidase (H(+)-transporting)
 1.10.3.11	Ubiquinol oxidase
 1.10.3.12	Menaquinol oxidase (H(+)-transporting)
+1.10.3.13	Caldariellaquinol oxidase (H(+)-transporting)
 1.10.9.1	Plastoquinol--plastocyanin reductase
 1.10.99.2	Ribosyldihydronicotinamide dehydrogenase (quinone)
 1.10.99.3	Violaxanthin de-epoxidase
@@ -936,6 +972,7 @@
 1.11.1.19	Dye decolorizing peroxidase
 1.11.1.20	Prostamide/prostaglandin F(2-alpha) synthase
 1.11.1.21	Catalase peroxidase
+1.11.1.22	Hydroperoxy fatty acid reductase
 1.11.2.1	Unspecific peroxygenase
 1.11.2.2	Myeloperoxidase
 1.11.2.3	Plant seed peroxygenase
@@ -943,12 +980,14 @@
 1.12.1.2	Hydrogen dehydrogenase
 1.12.1.3	Hydrogen dehydrogenase (NADP(+))
 1.12.1.4	Hydrogenase (NAD(+), ferredoxin)
+1.12.1.5	Hydrogen dehydrogenase (NAD(P)(+))
 1.12.2.1	Cytochrome-c3 hydrogenase
 1.12.5.1	Hydrogen:quinone oxidoreductase
 1.12.7.2	Ferredoxin hydrogenase
 1.12.98.1	Coenzyme F420 hydrogenase
 1.12.98.2	5,10-methenyltetrahydromethanopterin hydrogenase
 1.12.98.3	Methanosarcina-phenazine hydrogenase
+1.12.98.4	Sulfhydrogenase
 1.12.99.6	Hydrogenase (acceptor)
 1.13.11.1	Catechol 1,2-dioxygenase
 1.13.11.2	Catechol 2,3-dioxygenase
@@ -1017,7 +1056,9 @@
 1.13.11.71	Carotenoid-9',10'-cleaving dioxygenase
 1.13.11.72	2-hydroxyethylphosphonate dioxygenase
 1.13.11.73	Methylphosphonate synthase
-1.13.11.n1	2-aminophenol 1,6-dioxygenase
+1.13.11.74	2-aminophenol 1,6-dioxygenase
+1.13.11.75	All-trans-8'-apo-beta-carotenal 15,15'-oxygenase
+1.13.11.76	2-amino-5-chlorophenol 1,6-dioxygenase
 1.13.12.1	Arginine 2-monooxygenase
 1.13.12.2	Lysine 2-monooxygenase
 1.13.12.3	Tryptophan 2-monooxygenase
@@ -1033,6 +1074,8 @@
 1.13.12.17	Dichloroarcyriaflavin A synthase
 1.13.12.18	Dinoflagellate luciferase
 1.13.12.19	2-oxuglutarate dioxygenase (ethylene-forming)
+1.13.12.20	Noranthrone monooxygenase
+1.13.12.21	Tetracenomycin-F1 monooxygenase
 1.13.99.1	Inositol oxygenase
 1.13.99.3	Tryptophan 2'-dioxygenase
 1.14.11.1	Gamma-butyrobetaine dioxygenase
@@ -1070,7 +1113,14 @@
 1.14.11.34	2-oxoglutarate/L-arginine monooxygenase/decarboxylase (succinate-forming)
 1.14.11.35	1-deoxypentalenic acid 11-beta-hydroxylase
 1.14.11.36	Pentalenolactone F synthase
-1.14.11.n1	L-asparagine oxygenase
+1.14.11.37	Kanamycin B dioxygenase
+1.14.11.38	Verruculogen synthase
+1.14.11.39	L-asparagine oxygenase
+1.14.11.40	Enduracididine beta-hydroxylase
+1.14.11.41	L-arginine hydroxylase
+1.14.11.42	tRNA(Phe) (7-(3-amino-3-carboxypropyl)wyosine(37)-C(2))-hydroxylase
+1.14.11.43	(S)-dichlorprop dioxygenase (2-oxoglutarate)
+1.14.11.44	(R)-dichlorprop dioxygenase (2-oxoglutarate)
 1.14.11.n2	Methylcytosine dioxygenase
 1.14.11.n3	L-proline cis-4-hydroxylase
 1.14.11.n4	Ankyrin-repeat-histidine dioxagenase
@@ -1159,7 +1209,7 @@
 1.14.13.67	Quinine 3-monooxygenase
 1.14.13.68	4-hydroxyphenylacetaldehyde oxime monooxygenase
 1.14.13.69	Alkene monooxygenase
-1.14.13.70	Sterol 14-demethylase
+1.14.13.70	Sterol 14-alpha-demethylase
 1.14.13.71	N-methylcoclaurine 3'-monooxygenase
 1.14.13.72	Methylsterol monooxygenase
 1.14.13.73	Tabersonine 16-hydroxylase
@@ -1175,7 +1225,6 @@
 1.14.13.83	Precorrin-3B synthase
 1.14.13.84	4-hydroxyacetophenone monooxygenase
 1.14.13.85	Glyceollin synthase
-1.14.13.86	2-hydroxyisoflavanone synthase
 1.14.13.87	Licodione synthase
 1.14.13.88	Flavonoid 3',5'-hydroxylase
 1.14.13.89	Isoflavone 2'-hydroxylase
@@ -1225,7 +1274,7 @@
 1.14.13.133	Pentalenene oxygenase
 1.14.13.134	Beta-amyrin 11-oxidase
 1.14.13.135	1-hydroxy-2-naphthoate hydroxylase
-1.14.13.136	Isoflavonoid synthase
+1.14.13.136	2-hydroxyisoflavanone synthase
 1.14.13.137	Indole-2-monooxygenase
 1.14.13.138	Indolin-2-one monooxygenase
 1.14.13.139	3-hydroxyindolin-2-one monooxygenase
@@ -1260,6 +1309,17 @@
 1.14.13.169	Sphinganine C(4)-monooxygenase
 1.14.13.170	Pentalenolactone D synthase
 1.14.13.171	Neopentalenolactone D synthase
+1.14.13.172	Salicylate 5-hydroxylase
+1.14.13.173	11-oxo-beta-amyrin 30-oxidase
+1.14.13.174	Averantin hydroxylase
+1.14.13.175	Aflatoxin B synthase
+1.14.13.176	Tryprostatin B 6-hydroxylase
+1.14.13.177	Fumitremorgin C monooxygenase
+1.14.13.178	Methylxanthine N(1)-demethylase
+1.14.13.179	Methylxanthine N(3)-demethylase
+1.14.13.180	Aklavinone 12-hydroxylase
+1.14.13.181	13-deoxydaunorubicin hydroxylase
+1.14.13.182	2-heptyl-3-hydroxy-4(1H)-quinolone synthase
 1.14.13.n5	Dihomomethionine N-hydroxylase
 1.14.13.n6	Hexahomomethionine N-hydroxylase
 1.14.13.n7	4-nitrophenol 2-hydroxylase
@@ -1274,6 +1334,7 @@
 1.14.14.11	Styrene monooxygenase
 1.14.14.12	3-hydroxy-9,10-secoandrosta-1,3,5(10)-triene-9,17-dione monooxygenase
 1.14.14.13	4-(gamma-L-glutamylamino)butanoyl-[BtrI acyl-carrier protein] monooxygenase
+1.14.14.14	Aromatase
 1.14.15.1	Camphor 5-monooxygenase
 1.14.15.3	Alkane 1-monooxygenase
 1.14.15.4	Steroid 11-beta-monooxygenase
@@ -1284,6 +1345,8 @@
 1.14.15.9	Spheroidene monooxygenase
 1.14.15.10	(+)-camphor 6-endo-hydroxylase
 1.14.15.11	Pentalenic acid synthase
+1.14.15.12	Pimeloyl-[acyl-carrier protein] synthase
+1.14.15.13	Pulcherriminic acid synthase
 1.14.16.1	Phenylalanine 4-monooxygenase
 1.14.16.2	Tyrosine 3-monooxygenase
 1.14.16.3	Anthranilate 3-monooxygenase
@@ -1303,8 +1366,12 @@
 1.14.19.5	Delta(11)-fatty-acid desaturase
 1.14.19.6	Delta(12)-fatty-acid desaturase
 1.14.19.7	(S)-2-hydroxypropylphosphonic acid epoxidase
+1.14.19.8	Pentalenolactone synthase
+1.14.19.n4	Stearoyl-CoA 9-desaturase
+1.14.19.n5	Versicolorin B desaturase
 1.14.20.1	Deacetoxycephalosporin-C synthase
 1.14.20.2	2,4-dihydroxy-1,4-benzoxazin-3-one-glucoside dioxygenase
+1.14.20.3	(5R)-carbapenem-3-carboxylate synthase
 1.14.21.1	(S)-stylopine synthase
 1.14.21.2	(S)-cheilanthifoline synthase
 1.14.21.3	Berbamunine synthase
@@ -1313,9 +1380,11 @@
 1.14.21.6	Lathosterol oxidase
 1.14.21.7	Biflaviolin synthase
 1.14.21.8	Pseudobaptigenin synthase
+1.14.21.9	Mycocyclosin synthase
+1.14.21.10	Fumitremorgin C synthase
 1.14.99.1	Prostaglandin-endoperoxide synthase
 1.14.99.2	Kynurenine 7,8-hydroxylase
-1.14.99.3	Heme oxygenase
+1.14.99.3	Heme oxygenase (biliverdin-producing)
 1.14.99.4	Progesterone monooxygenase
 1.14.99.9	Steroid 17-alpha-monooxygenase
 1.14.99.10	Steroid 21-monooxygenase
@@ -1342,13 +1411,13 @@
 1.14.99.38	Cholesterol 25-hydroxylase
 1.14.99.39	Ammonia monooxygenase
 1.14.99.40	5,6-dimethylbenzimidazole synthase
-1.14.99.41	All-trans-8'-apo-beta-carotenal 15,15'-oxygenase
 1.14.99.42	Zeaxanthin 7,8-dioxygenase
 1.14.99.43	Beta-amyrin 24-hydroxylase
 1.14.99.44	Diapolycopene oxygenase
 1.14.99.45	Carotene epsilon-monooxygenase
 1.14.99.46	Pyrimidine monooxygenase
 1.14.99.47	(+)-larreatricin hydroxylase
+1.14.99.48	Heme oxygenase (staphylobilin-producing)
 1.14.99.n4	Carotenoid 9,10-dioxygenase
 1.15.1.1	Superoxide dismutase
 1.15.1.2	Superoxide reductase
@@ -1371,6 +1440,7 @@
 1.17.1.4	Xanthine dehydrogenase
 1.17.1.5	Nicotinate dehydrogenase
 1.17.1.7	3-oxo-5,6-dehydrosuberyl-CoA semialdehyde dehydrogenase
+1.17.1.8	4-hydroxy-tetrahydrodipicolinate reductase
 1.17.2.1	Nicotinate dehydrogenase (cytochrome)
 1.17.2.2	Lupanine 17-hydroxylase (cytochrome c)
 1.17.3.1	Pteridine oxidase
@@ -1393,6 +1463,7 @@
 1.18.1.4	Rubredoxin--NAD(P)(+) reductase
 1.18.1.5	Putidaredoxin--NAD(+) reductase
 1.18.1.6	Adrenodoxin-NADP(+) reductase
+1.18.1.7	Ferredoxin--NAD(P)(+) reductase (naphthalene dioxygenase ferredoxin-specific)
 1.18.6.1	Nitrogenase
 1.19.6.1	Nitrogenase (flavodoxin)
 1.20.1.1	Phosphonate dehydrogenase
@@ -1410,15 +1481,19 @@
 1.21.3.6	Aureusidin synthase
 1.21.3.7	Tetrahydrocannabinolic acid synthase
 1.21.3.8	Cannabidiolic acid synthase
+1.21.3.9	Dichlorochromopyrrolate synthase
 1.21.4.1	D-proline reductase (dithiol)
 1.21.4.2	Glycine reductase
 1.21.4.3	Sarcosine reductase
 1.21.4.4	Betaine reductase
 1.21.99.1	Beta-cyclopiazonate dehydrogenase
 1.22.1.1	Iodotyrosine deiodinase
+1.23.1.1	(+)-pinoresinol reductase
+1.23.1.2	(+)-lariciresinol reductase
+1.23.1.3	(-)-pinoresinol reductase
+1.23.1.4	(-)-lariciresinol reductase
 1.97.1.1	Chlorate reductase
 1.97.1.2	Pyrogallol hydroxytransferase
-1.97.1.3	Sulfur reductase
 1.97.1.4	[Formate-C-acetyltransferase]-activating enzyme
 1.97.1.8	Tetrachloroethene reductive dehalogenase
 1.97.1.9	Selenate reductase
@@ -1541,7 +1616,7 @@
 2.1.1.129	Inositol 4-methyltransferase
 2.1.1.130	Precorrin-2 C(20)-methyltransferase
 2.1.1.131	Precorrin-3B C(17)-methyltransferase
-2.1.1.132	Precorrin-6Y C(5,15)-methyltransferase (decarboxylating)
+2.1.1.132	Precorrin-6B C(5,15)-methyltransferase (decarboxylating)
 2.1.1.133	Precorrin-4 C(11)-methyltransferase
 2.1.1.136	Chlorophenol O-methyltransferase
 2.1.1.137	Arsenite methyltransferase
@@ -1555,7 +1630,6 @@
 2.1.1.146	(Iso)eugenol O-methyltransferase
 2.1.1.147	Corydaline synthase
 2.1.1.148	Thymidylate synthase (FAD)
-2.1.1.149	Myricetin O-methyltransferase
 2.1.1.150	Isoflavone 7-O-methyltransferase
 2.1.1.151	Cobalt-factor II C(20)-methyltransferase
 2.1.1.152	Precorrin-6A synthase (deacetylating)
@@ -1602,7 +1676,7 @@
 2.1.1.193	16S rRNA (uracil(1498)-N(3))-methyltransferase
 2.1.1.195	Cobalt-precorrin-5B (C(1))-methyltransferase
 2.1.1.196	Cobalt-precorrin-7 (C(15))-methyltransferase (decarboxylating)
-2.1.1.197	Malonyl-CoA O-methyltransferase
+2.1.1.197	Malonyl-[acyl-carrier protein] O-methyltransferase
 2.1.1.198	16S rRNA (cytidine(1402)-2'-O)-methyltransferase
 2.1.1.199	16S rRNA (cytosine(1402)-N(4))-methyltransferase
 2.1.1.200	tRNA (cytidine(32)/uridine(32)-2'-O)-methyltransferase
@@ -1627,7 +1701,7 @@
 2.1.1.219	tRNA (adenine(57)-N(1)/adenine(58)-N(1))-methyltransferase
 2.1.1.220	tRNA (adenine(58)-N(1))-methyltransferase
 2.1.1.221	tRNA (guanine(9)-N(1))-methyltransferase
-2.1.1.222	2-polyprenyl-6-hydroxyphenyl methylase
+2.1.1.222	2-polyprenyl-6-hydroxyphenol methylase
 2.1.1.223	tRNA(1)(Val) (adenine(37)-N(6))-methyltransferase
 2.1.1.224	23S rRNA (adenine(2503)-C(8))-methyltransferase
 2.1.1.225	tRNA:m(4)X modification enzyme
@@ -1671,11 +1745,35 @@
 2.1.1.263	Botryococcene C-methyltransferase
 2.1.1.264	23S rRNA (guanine(2069)-N(7))-methyltransferase
 2.1.1.265	Tellurite methyltransferase
+2.1.1.266	23S rRNA (adenine(2030)-N(6))-methyltransferase
+2.1.1.267	Flavonoid 3',5'-methyltransferase
+2.1.1.268	tRNA(Thr) (cytosine(32)-N(3))-methyltransferase
+2.1.1.269	Dimethylsulfoniopropionate demethylase
+2.1.1.270	(+)-6a-hydroxymaackiain 3-O-methyltransferase
+2.1.1.271	Cobalt-precorrin-4 methyltransferase
+2.1.1.272	Cobalt-factor III methyltransferase
+2.1.1.273	Benzoate O-methyltransferase
+2.1.1.274	Salicylate carboxymethyltransferase
+2.1.1.275	Gibberellin A(9) O-methyltransferase
+2.1.1.276	Gibberellin A(4) carboxyl methyltransferase
+2.1.1.277	Anthranilate O-methyltransferase
+2.1.1.278	Indole-3-acetate O-methyltransferase
+2.1.1.279	Trans-anol O-methyltransferase
+2.1.1.280	Selenocysteine Se-methyltransferase
+2.1.1.281	Phenylpyruvate C(3)-methyltransferase
+2.1.1.282	tRNA(Phe) [7-((3-amino-3-carboxypropyl)-4-demethyl)wyosine(37)-N(4)]-methyltransferase
+2.1.1.283	Emodin O-methyltransferase
+2.1.1.284	8-demethylnovobiocic acid C(8)-methyltransferase
+2.1.1.285	Demethyldecarbamoylnovobiocin O-methyltransferase
+2.1.1.286	25S rRNA (adenine(2142)-N(1))-methyltransferase
+2.1.1.287	25S rRNA (adenine(645)-N(1))-methyltransferase
+2.1.1.288	Aklanonic acid methyltransferase
 2.1.1.n1	Resorcinol O-methyltransferase
-2.1.1.n3	Selenocysteine Se-methyltransferase
 2.1.1.n4	Thiocyanate methyltransferase
 2.1.1.n7	5-pentadecatrienyl resorcinol O-methyltransferase
 2.1.1.n8	Small RNA 2'-O-methyltransferase
+2.1.1.n11	Methylphosphotriester-DNA--[protein]-cysteine S-methyltransferase
+2.1.1.n12	2-phytyl-1,4-naphtoquinone methyltransferase
 2.1.2.1	Glycine hydroxymethyltransferase
 2.1.2.2	Phosphoribosylglycinamide formyltransferase
 2.1.2.3	Phosphoribosylaminoimidazolecarboxamide formyltransferase
@@ -1697,6 +1795,9 @@
 2.1.3.9	N-acetylornithine carbamoyltransferase
 2.1.3.10	Malonyl-S-ACP:biotin-protein carboxyltransferase
 2.1.3.11	N-succinylornithine carbamoyltransferase
+2.1.3.12	Decarbamoylnovobiocin carbamoyltransferase
+2.1.3.13	ATP carbamoyltransferase
+2.1.3.14	Tobramycin carbamoyltransferase
 2.1.4.1	Glycine amidinotransferase
 2.1.4.2	Scyllo-inosamine-4-phosphate amidinotransferase
 2.2.1.1	Transketolase
@@ -1811,7 +1912,6 @@
 2.3.1.101	Formylmethanofuran--tetrahydromethanopterin N-formyltransferase
 2.3.1.102	N(6)-hydroxylysine O-acetyltransferase
 2.3.1.103	Sinapoylglucose--sinapoylglucose O-sinapoyltransferase
-2.3.1.104	1-alkenylglycerophosphocholine O-acyltransferase
 2.3.1.105	Alkylglycerophosphate 2-O-acetyltransferase
 2.3.1.106	Tartronate O-hydroxycinnamoyltransferase
 2.3.1.107	Deacetylvindoline O-acetyltransferase
@@ -1856,9 +1956,9 @@
 2.3.1.148	Glycerophospholipid acyltransferase (CoA-dependent)
 2.3.1.149	Platelet-activating factor acetyltransferase
 2.3.1.150	Salutaridinol 7-O-acetyltransferase
-2.3.1.151	Benzophenone synthase
+2.3.1.151	2,3',4,6-tetrahydroxybenzophenone synthase
 2.3.1.152	Alcohol O-cinnamoyltransferase
-2.3.1.153	Anthocyanin 5-aromatic acyltransferase
+2.3.1.153	Anthocyanin 5-(6'''-hydroxycinnamoyltransferase)
 2.3.1.154	Propionyl-CoA C(2)-trimethyltridecanoyltransferase
 2.3.1.155	Acetyl-CoA C-myristoyltransferase
 2.3.1.156	Phloroisovalerophenone synthase
@@ -1908,7 +2008,7 @@
 2.3.1.200	Lipoyl amidotransferase
 2.3.1.201	UDP-2-acetamido-3-amino-2,3-dideoxy-glucuronate N-acetyltransferase
 2.3.1.202	UDP-4-amino-4,6-dideoxy-N-acetyl-beta-L-altrosamine N-acetyltransferase
-2.3.1.203	UDP-4-amino-4,6-dideoxy-N-acetyl-alpha-D-glucosamine N-acetyltransferase
+2.3.1.203	UDP-N-acetylbacillosamine N-acetyltransferase
 2.3.1.204	Octanoyl-[GcvH]:protein N-octanoyltransferase
 2.3.1.205	Fumigaclavine B O-acetyltransferase
 2.3.1.206	3,5,7-trioxododecanoyl-CoA synthase
@@ -1916,15 +2016,32 @@
 2.3.1.208	4-hydroxycoumarin synthase
 2.3.1.209	dTDP-4-amino-4,6-dideoxy-D-glucose acyltransferase
 2.3.1.210	dTDP-4-amino-4,6-dideoxy-D-galactose acyltransferase
+2.3.1.211	Bisdemethoxycurcumin synthase
+2.3.1.212	Benzalacetone synthase
+2.3.1.213	Cyanidin 3-O-(6-O-glucosyl-2-O-xylosylgalactoside) 6'''-O-hydroxycinnamoyltransferase
+2.3.1.214	Pelargonidin 3-O-(6-caffeoylglucoside) 5-O-(6-O-malonylglucoside) 4'''-malonyltransferase
+2.3.1.215	Anthocyanidin 3-O-glucoside 6''-O-acyltransferase
+2.3.1.216	5,7-dihydroxy-2-methylchromone synthase
+2.3.1.217	Curcumin synthase
+2.3.1.218	Phenylpropanoylacetyl-CoA synthase
+2.3.1.219	Demethoxycurcumin synthase
+2.3.1.220	2,4,6-trihydroxybenzophenone synthase
+2.3.1.221	Noranthrone synthase
+2.3.1.222	Phosphate propanoyltransferase
+2.3.1.223	3-oxo-5,6-didehydrosuberyl-CoA thiolase
+2.3.1.224	Acetyl-CoA-benzylalcohol acetyltransferase
+2.3.1.225	Protein S-acyltransferase
+2.3.1.226	Carboxymethylproline synthase
+2.3.1.227	GDP-perosamine N-acetyltransferase
+2.3.1.228	Isovaleryl-homoserine lactone synthase
+2.3.1.229	4-coumaroyl-homoserine lactone synthase
 2.3.1.n2	Phosphate acyltransferase
 2.3.1.n3	Glycerol-3-phosphate acyltransferase (acyl-phosphate transferring)
 2.3.1.n4	1-acyl-sn-glycerol-3-phosphate acyltransferase
 2.3.1.n5	Glycerol-3-phosphate acyltransferase (acyl-[acyl-carrier-protein]-transferring)
 2.3.1.n6	1-acylglycerophosphoserine O-acyltransferase
 2.3.1.n7	1-acylglycerophosphoethanolamine O-acyltransferase
-2.3.1.n9	Bisdemethoxycurcumin synthase
-2.3.1.n10	Phosphate propanoyltransferase
-2.3.1.n11	3-oxo-5,6-dehydrosuberyl-CoA thiolase
+2.3.1.n12	Sinapoyl-beta-D-glucose:anthocyanin sinapoyltransferase
 2.3.2.1	D-glutamyltransferase
 2.3.2.2	Gamma-glutamyltransferase
 2.3.2.3	Lysyltransferase
@@ -1944,6 +2061,9 @@
 2.3.2.17	N-acetylmuramoyl-L-alanyl-D-glutamyl-L-lysyl-(N(6)-glycyl)-D-alanyl-D-alanine-diphosphoundecaprenyl-N-acetylglucosamine:glycine glycyltransferase
 2.3.2.18	N-acetylmuramoyl-L-alanyl-D-glutamyl-L-lysyl-(N(6)-triglycine)-D-alanyl-D-alanine-diphosphoundecaprenyl-N-acetylglucosamine:glycine glycyltransferase
 2.3.2.19	Ribostamycin:4-(gamma-L-glutamylamino)-(S)-2-hydroxybutanoyl-[BtrI acyl-carrier protein] 4-(gamma-L-glutamylamino)-(S)-2-hydroxybutanoate transferase
+2.3.2.20	Cyclo(L-leucyl-L-phenylalanyl) synthase
+2.3.2.21	Cyclo(L-tyrosyl-L-tyrosyl) synthase
+2.3.2.22	Cyclo(L-leucyl-L-leucyl) synthase
 2.3.3.1	Citrate (Si)-synthase
 2.3.3.2	Decylcitrate synthase
 2.3.3.3	Citrate (Re)-synthase
@@ -1959,7 +2079,7 @@
 2.3.3.13	2-isopropylmalate synthase
 2.3.3.14	Homocitrate synthase
 2.3.3.15	Sulfoacetaldehyde acetyltransferase
-2.4.1.1	Phosphorylase
+2.4.1.1	Glycogen phosphorylase
 2.4.1.2	Dextrin dextranase
 2.4.1.4	Amylosucrase
 2.4.1.5	Dextransucrase
@@ -2168,7 +2288,7 @@
 2.4.1.234	Kaempferol 3-O-galactosyltransferase
 2.4.1.236	Flavanone 7-O-glucoside 2''-O-beta-L-rhamnosyltransferase
 2.4.1.237	Flavonol 7-O-beta-glucosyltransferase
-2.4.1.238	Anthocyanin 3'-O-beta-glucosyltransferase
+2.4.1.238	Delphinidin 3,5-di-O-glucoside 3'-O-glucosyltransferase
 2.4.1.239	Flavonol-3-O-glucoside glucosyltransferase
 2.4.1.240	Flavonol-3-O-glycoside glucosyltransferase
 2.4.1.241	Digalactosyldiacylglycerol synthase
@@ -2205,7 +2325,7 @@
 2.4.1.272	Soyasapogenol B glucuronide galactosyltransferase
 2.4.1.273	Soyasaponin III rhamnosyltransferase
 2.4.1.274	Glucosylceramide beta-1,4-galactosyltransferase
-2.4.1.275	Lactotriaosylceramide beta-1,4-galactosyltransferase
+2.4.1.275	Neolactotriaosylceramide beta-1,4-galactosyltransferase
 2.4.1.276	Zeaxanthin glucosyltransferase
 2.4.1.277	Glycosyltransferase DesVII
 2.4.1.278	Desosaminyl transferase EryCIII
@@ -2224,6 +2344,22 @@
 2.4.1.291	N-acetylgalactosamine-N,N'-diacetylbacillosaminyl-diphospho-undecaprenol 4-alpha-N-acetylgalactosaminyltransferase
 2.4.1.292	GalNAc-alpha-(1->4)-GalNAc-alpha-(1->3)-diNAcBac-PP-undecaprenol alpha-1,4-N-acetyl-D-galactosaminyltransferase
 2.4.1.293	GalNAc(5)-diNAcBac-PP-undecaprenol beta-1,3-glucosyltransferase
+2.4.1.294	Cyanidin 3-O-galactosyltransferase
+2.4.1.295	Anthocyanin 3-O-sambubioside 5-O-glucosyltransferase
+2.4.1.296	Anthocyanidin 3-O-coumaroylrutinoside 5-O-glucosyltransferase
+2.4.1.297	Anthocyanidin 3-O-glucoside 2''-O-glucosyltransferase
+2.4.1.298	Anthocyanidin 3-O-glucoside 5-O-glucosyltransferase
+2.4.1.299	Cyanidin 3-O-glucoside 5-O-glucosyltransferase (acyl-glucose)
+2.4.1.300	Cyanidin 3-O-glucoside 7-O-glucosyltransferase (acyl-glucose)
+2.4.1.301	2'-deamino-2'-hydroxyneamine 1-alpha-D-kanosaminyltransferase
+2.4.1.302	L-noviosyl transferase
+2.4.1.303	UDP-Gal:alpha-D-GlcNAc-diphosphoundecaprenol beta-1,3-galactosyltransferase
+2.4.1.304	UDP-Gal:alpha-D-GlcNAc-diphosphoundecaprenol beta-1,4-galactosyltransferase
+2.4.1.305	UDP-Glc:alpha-D-GlcNAc-glucosaminyl-diphosphoundecaprenol beta-1,3-glucosyltransferase
+2.4.1.306	UDP-GalNAc:alpha-D-GalNAc-diphosphoundecaprenol alpha-1,3-N-acetylgalactosaminyltransferase
+2.4.1.307	UDP-Gal:alpha-D-GalNAc-1,3-alpha-D-GalNAc-diphosphoundecaprenol beta-1,3-galactosyltransferase
+2.4.1.308	GDP-Fuc:beta-D-Gal-1,3-alpha-D-GalNAc-1,3-alpha-GalNAc-diphosphoundecaprenol alpha-1,2-fucosyltransferase
+2.4.1.309	UDP-Gal:alpha-L-Fuc-1,2-beta-Gal-1,3-alpha-GalNAc-1,3-alpha-GalNAc-diphosphoundecaprenol alpha-1,3-galactosyltransferase
 2.4.1.n2	Loliose synthase
 2.4.2.1	Purine-nucleoside phosphorylase
 2.4.2.2	Pyrimidine-nucleoside phosphorylase
@@ -2235,7 +2371,6 @@
 2.4.2.8	Hypoxanthine phosphoribosyltransferase
 2.4.2.9	Uracil phosphoribosyltransferase
 2.4.2.10	Orotate phosphoribosyltransferase
-2.4.2.11	Nicotinate phosphoribosyltransferase
 2.4.2.12	Nicotinamide phosphoribosyltransferase
 2.4.2.14	Amidophosphoribosyltransferase
 2.4.2.15	Guanosine phosphorylase
@@ -2246,7 +2381,6 @@
 2.4.2.20	Dioxotetrahydropyrimidine phosphoribosyltransferase
 2.4.2.21	Nicotinate-nucleotide--dimethylbenzimidazole phosphoribosyltransferase
 2.4.2.22	Xanthine phosphoribosyltransferase
-2.4.2.23	Deoxyuridine phosphorylase
 2.4.2.24	1,4-beta-D-xylan synthase
 2.4.2.25	Flavone apiosyltransferase
 2.4.2.26	Protein xylosyltransferase
@@ -2272,6 +2406,12 @@
 2.4.2.46	Galactan 5-O-arabinofuranosyltransferase
 2.4.2.47	Arabinofuranan 3-O-arabinosyltransferase
 2.4.2.48	tRNA-guanine(15) transglycosylase
+2.4.2.49	Neamine phosphoribosyltransferase
+2.4.2.50	Cyanidin 3-O-galactoside 2''-O-xylosyltransferase
+2.4.2.51	Anthocyanidin 3-O-glucoside 2'''-O-xylosyltransferase
+2.4.2.52	Triphosphoribosyl-dephospho-CoA synthase
+2.4.2.53	Undecaprenyl-phosphate 4-deoxy-4-formamido-L-arabinose transferase
+2.4.2.54	Beta-ribofuranosylaminobenzene 5'-phosphate synthase
 2.4.99.1	Beta-galactoside alpha-2,6-sialyltransferase
 2.4.99.2	Monosialoganglioside sialyltransferase
 2.4.99.3	Alpha-N-acetylgalactosaminide alpha-2,6-sialyltransferase
@@ -2385,6 +2525,17 @@
 2.5.1.101	N,N'-diacetyllegionaminate synthase
 2.5.1.102	Geranylpyrophosphate--olivetolic acid geranyltransferase
 2.5.1.103	Presqualene diphosphate synthase
+2.5.1.104	N(1)-aminopropylagmatine synthase
+2.5.1.105	7,8-dihydropterin-6-yl-methyl-4-(beta-D-ribofuranosyl)aminobenzene 5'-phosphate synthase
+2.5.1.106	Tryprostatin B synthase
+2.5.1.107	Verruculogen prenyltransferase
+2.5.1.108	2-(3-amino-3-carboxypropyl)histidine synthase
+2.5.1.109	Brevianamide F prenyltransferase (deoxybrevianamide E-forming)
+2.5.1.110	12-alpha,13-alpha-dihydroxyfumitremorgin C prenyltransferase
+2.5.1.111	4-hydroxyphenylpyruvate 3-dimethylallyltransferase
+2.5.1.n4	Adenylate dimethylallyltransferase (ADP/ATP-dependent)
+2.5.1.n5	O-phosphoserine sulfhydrylase
+2.5.1.n8	Homogentisate phytyltransferase
 2.6.1.1	Aspartate transaminase
 2.6.1.2	Alanine transaminase
 2.6.1.3	Cysteine transaminase
@@ -2415,7 +2566,7 @@
 2.6.1.31	Pyridoxamine--oxaloacetate transaminase
 2.6.1.32	Valine--3-methyl-2-oxovalerate transaminase
 2.6.1.33	dTDP-4-amino-4,6-dideoxy-D-glucose transaminase
-2.6.1.34	UDP-2-acetamido-4-amino-2,4,6-trideoxyglucose transaminase
+2.6.1.34	UDP-N-acetylbacillosamine transaminase
 2.6.1.35	Glycine--oxaloacetate transaminase
 2.6.1.36	L-lysine 6-transaminase
 2.6.1.37	2-aminoethylphosphonate--pyruvate transaminase
@@ -2469,7 +2620,6 @@
 2.6.1.88	Methionine transaminase
 2.6.1.89	dTDP-3-amino-3,6-dideoxy-alpha-D-glucopyranose transaminase
 2.6.1.90	dTDP-3-amino-3,6-dideoxy-alpha-D-galactopyranose transaminase
-2.6.1.91	UDP-4-amino-4,6-dideoxy-N-acetyl-alpha-D-glucosamine transaminase
 2.6.1.92	UDP-4-amino-4,6-dideoxy-N-acetyl-beta-L-altrosamine transaminase
 2.6.1.93	Neamine transaminase
 2.6.1.94	2'-deamino-2'-hydroxyneamine transaminase
@@ -2478,9 +2628,13 @@
 2.6.1.97	Archaeosine synthase
 2.6.1.98	UDP-2-acetamido-2-deoxy-ribo-hexuluronate aminotransferase
 2.6.1.99	L-tryptophan--pyruvate aminotransferase
+2.6.1.100	L-glutamine:2-deoxy-scyllo-inosose aminotransferase
+2.6.1.101	L-glutamine:3-amino-2,3-dideoxy-scyllo-inosose aminotransferase
+2.6.1.102	GDP-perosamine synthase
 2.6.3.1	Oximinotransferase
 2.6.99.1	dATP(dGTP)--DNA purinetransferase
 2.6.99.2	Pyridoxine 5'-phosphate synthase
+2.6.99.3	O-ureido-L-serine synthase
 2.7.1.1	Hexokinase
 2.7.1.2	Glucokinase
 2.7.1.3	Ketohexokinase
@@ -2625,6 +2779,8 @@
 2.7.1.175	Maltokinase
 2.7.1.176	UDP-N-acetylglucosamine kinase
 2.7.1.177	L-threonine kinase
+2.7.1.178	2-dehydro-3-deoxyglucono/galactono-kinase
+2.7.1.179	Kanosamine kinase
 2.7.2.1	Acetate kinase
 2.7.2.2	Carbamate kinase
 2.7.2.3	Phosphoglycerate kinase
@@ -2726,8 +2882,6 @@
 2.7.7.51	Adenylylsulfate--ammonia adenylyltransferase
 2.7.7.52	RNA uridylyltransferase
 2.7.7.53	ATP adenylyltransferase
-2.7.7.54	Phenylalanine adenylyltransferase
-2.7.7.55	Anthranilate adenylyltransferase
 2.7.7.56	tRNA nucleotidyltransferase
 2.7.7.57	N-methylphosphoethanolamine cytidylyltransferase
 2.7.7.58	(2,3-dihydroxybenzoyl)adenylate synthase
@@ -2756,6 +2910,10 @@
 2.7.7.81	Pseudaminic acid cytidylyltransferase
 2.7.7.82	CMP-N,N'-diacetyllegionaminic acid synthase
 2.7.7.83	UDP-N-acetylgalactosamine diphosphorylase
+2.7.7.84	2'-5' oligoadenylate synthase
+2.7.7.85	Diadenylate cyclase
+2.7.7.86	Cyclic GMP-AMP synthase
+2.7.7.87	L-threonylcarbamoyladenylate synthase
 2.7.7.n1	Adenosine monophosphate-protein transferase
 2.7.8.1	Ethanolaminephosphotransferase
 2.7.8.2	Diacylglycerol cholinephosphotransferase
@@ -2780,12 +2938,10 @@
 2.7.8.22	1-alkenyl-2-acylglycerol choline phosphotransferase
 2.7.8.23	Carboxyvinyl-carboxyphosphonate phosphorylmutase
 2.7.8.24	Phosphatidylcholine synthase
-2.7.8.25	Triphosphoribosyl-dephospho-CoA synthase
 2.7.8.26	Adenosylcobinamide-GDP ribazoletransferase
 2.7.8.27	Sphingomyelin synthase
 2.7.8.28	2-phospho-L-lactate transferase
 2.7.8.29	L-serine-phosphatidylethanolamine phosphatidyltransferase
-2.7.8.30	Undecaprenyl-phosphate 4-deoxy-4-formamido-L-arabinose transferase
 2.7.8.31	Undecaprenyl-phosphate glucose phosphotransferase
 2.7.8.32	3-O-alpha-D-mannopyranosyl-alpha-D-mannopyranose xylosylphosphotransferase
 2.7.8.33	UDP-N-acetylglucosamine--undecaprenyl-phosphate N-acetylglucosaminephosphotransferase
@@ -2793,6 +2949,9 @@
 2.7.8.35	UDP-N-acetylglucosamine--decaprenyl-phosphate N-acetylglucosaminephosphotransferase
 2.7.8.36	Undecaprenyl phosphate N,N'-diacetylbacillosamine 1-phosphate transferase
 2.7.8.37	Alpha-D-ribose 1-methylphosphonate 5-triphosphate synthase
+2.7.8.38	Archaetidylserine synthase
+2.7.8.39	Archaetidylinositol phosphate synthase
+2.7.8.40	UDP-N-acetylgalactosamine-undecaprenyl-phosphate N-acetylgalactosaminephosphotransferase
 2.7.9.1	Pyruvate, phosphate dikinase
 2.7.9.2	Pyruvate, water dikinase
 2.7.9.3	Selenide, water dikinase
@@ -2885,6 +3044,7 @@
 2.8.2.33	N-acetylgalactosamine 4-sulfate 6-O-sulfotransferase
 2.8.2.34	Glycochenodeoxycholate sulfotransferase
 2.8.2.35	Dermatan 4-sulfotransferase
+2.8.2.n2	Thyroxine sulfotransferase
 2.8.3.1	Propionate CoA-transferase
 2.8.3.2	Oxalate CoA-transferase
 2.8.3.3	Malonate CoA-transferase
@@ -2901,6 +3061,7 @@
 2.8.3.15	Succinyl-CoA:(R)-benzylsuccinate CoA-transferase
 2.8.3.16	Formyl-CoA transferase
 2.8.3.17	Cinnamoyl-CoA:phenyllactate CoA-transferase
+2.8.3.18	Succinyl-CoA:acetate CoA-transferase
 2.8.4.1	Coenzyme-B sulfoethylthiotransferase
 2.8.4.2	Arsenate-mycothiol transferase
 2.9.1.1	L-seryl-tRNA(Sec) selenium transferase
@@ -2992,6 +3153,8 @@
 3.1.1.91	2-oxo-3-(5-oxofuran-2-ylidene)propanoate lactonase
 3.1.1.92	4-sulfomuconolactone hydrolase
 3.1.1.93	Mycophenolic acid acyl-glucuronide esterase
+3.1.1.94	Versiconal hemiacetal acetate esterase
+3.1.1.95	Aclacinomycin methylesterase
 3.1.2.1	Acetyl-CoA hydrolase
 3.1.2.2	Palmitoyl-CoA hydrolase
 3.1.2.3	Succinyl-CoA hydrolase
@@ -3018,6 +3181,7 @@
 3.1.2.27	Choloyl-CoA hydrolase
 3.1.2.28	1,4-dihydroxy-2-naphthoyl-CoA hydrolase
 3.1.2.29	Fluoroacetyl-CoA thioesterase
+3.1.2.n2	(3S)-malyl-CoA thioesterase
 3.1.3.1	Alkaline phosphatase
 3.1.3.2	Acid phosphatase
 3.1.3.3	Phosphoserine phosphatase
@@ -3103,6 +3267,11 @@
 3.1.3.86	Phosphatidylinositol-3,4,5-trisphosphate 5-phosphatase
 3.1.3.87	2-hydroxy-3-keto-5-methylthiopentenyl-1-phosphate phosphatase
 3.1.3.88	5''-phosphoribostamycin phosphatase
+3.1.3.89	5'-deoxynucleotidase
+3.1.3.90	Maltose 6'-phosphate phosphatase
+3.1.3.91	7-methylguanosine nucleotidase
+3.1.3.92	Kanosamine-6-phosphate phosphatase
+3.1.3.n5	L-galactose 1-phosphate phosphatase
 3.1.4.1	Phosphodiesterase I
 3.1.4.2	Glycerophosphocholine phosphodiesterase
 3.1.4.3	Phospholipase C
@@ -3132,6 +3301,8 @@
 3.1.4.52	Cyclic-guanylate-specific phosphodiesterase
 3.1.4.53	3',5'-cyclic-AMP phosphodiesterase
 3.1.4.54	N-acetylphosphatidylethanolamine-hydrolyzing phospholipase D
+3.1.4.55	Phosphoribosyl 1,2-cyclic phosphate phosphodiesterase
+3.1.4.56	7,8-dihydroneopterin 2',3'-cyclic phosphate phosphodiesterase
 3.1.5.1	dGTPase
 3.1.6.1	Arylsulfatase
 3.1.6.2	Steryl-sulfatase
@@ -3150,10 +3321,10 @@
 3.1.6.16	Monomethyl-sulfatase
 3.1.6.17	D-lactate-2-sulfatase
 3.1.6.18	Glucuronate-2-sulfatase
+3.1.6.19	(R)-specific secondary-alkylsulfatase
 3.1.7.1	Prenyl-diphosphatase
 3.1.7.2	Guanosine-3',5'-bis(diphosphate) 3'-diphosphatase
 3.1.7.3	Monoterpenyl-diphosphatase
-3.1.7.4	Sclareol cyclase
 3.1.7.5	Geranylgeranyl diphosphate diphosphatase
 3.1.7.6	Farnesyl diphosphatase
 3.1.7.7	Drimenol cyclase
@@ -3259,7 +3430,7 @@
 3.2.1.52	Beta-N-acetylhexosaminidase
 3.2.1.53	Beta-N-acetylgalactosaminidase
 3.2.1.54	Cyclomaltodextrinase
-3.2.1.55	Alpha-N-arabinofuranosidase
+3.2.1.55	Non-reducing end alpha-L-arabinofuranosidase
 3.2.1.56	Glucuronosyl-disulfoglucosamine glucuronidase
 3.2.1.57	Isopullulanase
 3.2.1.58	Glucan 1,3-beta-glucosidase
@@ -3290,7 +3461,7 @@
 3.2.1.85	6-phospho-beta-galactosidase
 3.2.1.86	6-phospho-beta-glucosidase
 3.2.1.87	Capsular-polysaccharide endo-1,3-alpha-galactosidase
-3.2.1.88	Beta-L-arabinosidase
+3.2.1.88	Non-reducing end beta-L-arabinopyranosidase
 3.2.1.89	Arabinogalactan endo-beta-1,4-galactanase
 3.2.1.91	Cellulose 1,4-beta-cellobiosidase (non-reducing end)
 3.2.1.92	Peptidoglycan beta-N-acetylmuramidase
@@ -3382,6 +3553,8 @@
 3.2.1.182	4-hydroxy-7-methoxy-3-oxo-3,4-dihydro-2H-1,4-benzoxazin-2-yl glucoside beta-D-glucosidase
 3.2.1.183	UDP-N-acetylglucosamine 2-epimerase (hydrolyzing)
 3.2.1.184	UDP-N,N'-diacetylbacillosamine 2-epimerase (hydrolyzing)
+3.2.1.185	Non-reducing end beta-L-arabinofuranosidase
+3.2.1.186	Protodioscin 26-O-beta-D-glucosidase
 3.2.1.n1	Blood group B branched chain alpha-1,3-galactosidase
 3.2.1.n2	Blood group B linear chain alpha-1,3-galactosidase
 3.2.1.n3	Dictyostelium lysozyme A
@@ -3425,6 +3598,7 @@
 3.3.2.9	Microsomal epoxide hydrolase
 3.3.2.10	Soluble epoxide hydrolase
 3.3.2.11	Cholesterol-5,6-oxide hydrolase
+3.3.2.12	Oxepin-CoA hydrolase
 3.4.11.1	Leucyl aminopeptidase
 3.4.11.2	Membrane alanyl aminopeptidase
 3.4.11.3	Cystinyl aminopeptidase
@@ -3939,6 +4113,8 @@
 3.5.3.21	Methylenediurea deaminase
 3.5.3.22	Proclavaminate amidinohydrolase
 3.5.3.23	N-succinylarginine dihydrolase
+3.5.3.24	N(1)-aminopropylagmatine ureohydrolase
+3.5.3.25	N(omega)-hydroxy-L-arginine amidinohydrolase
 3.5.4.1	Cytosine deaminase
 3.5.4.2	Adenine deaminase
 3.5.4.3	Guanine deaminase
@@ -3952,7 +4128,6 @@
 3.5.4.11	Pterin deaminase
 3.5.4.12	dCMP deaminase
 3.5.4.13	dCTP deaminase
-3.5.4.14	Deoxycytidine deaminase
 3.5.4.15	Guanosine deaminase
 3.5.4.16	GTP cyclohydrolase I
 3.5.4.17	Adenosine-phosphate deaminase
@@ -3971,7 +4146,13 @@
 3.5.4.30	dCTP deaminase (dUMP-forming)
 3.5.4.31	S-methyl-5'-thioadenosine deaminase
 3.5.4.32	8-oxoguanine deaminase
-3.5.4.n2	GTP cyclohydrolase (cyclic phosphate forming)
+3.5.4.33	tRNA(adenine(34)) deaminase
+3.5.4.34	tRNA(Ala)(adenine(37)) deaminase
+3.5.4.35	tRNA(cytosine(8)) deaminase
+3.5.4.36	mRNA(cytosine(6666)) deaminase
+3.5.4.37	Double-stranded RNA adenine deaminase
+3.5.4.38	Single-stranded DNA cytosine deaminase
+3.5.4.39	GTP cyclohydrolase IV
 3.5.5.1	Nitrilase
 3.5.5.2	Ricinine nitrilase
 3.5.5.4	Cyanoalanine nitrilase
@@ -3992,7 +4173,7 @@
 3.6.1.2	Trimetaphosphatase
 3.6.1.3	Adenosinetriphosphatase
 3.6.1.5	Apyrase
-3.6.1.6	Nucleoside-diphosphatase
+3.6.1.6	Nucleoside diphosphate phosphatase
 3.6.1.7	Acylphosphatase
 3.6.1.8	ATP diphosphatase
 3.6.1.9	Nucleotide diphosphatase
@@ -4001,7 +4182,7 @@
 3.6.1.12	dCTP diphosphatase
 3.6.1.13	ADP-ribose diphosphatase
 3.6.1.14	Adenosine-tetraphosphatase
-3.6.1.15	Nucleoside-triphosphatase
+3.6.1.15	Nucleoside-triphosphate phosphatase
 3.6.1.16	CDP-glycerol diphosphatase
 3.6.1.17	Bis(5'-nucleosyl)-tetraphosphatase (asymmetrical)
 3.6.1.18	FAD diphosphatase
@@ -4031,11 +4212,13 @@
 3.6.1.56	2-hydroxy-dATP diphosphatase
 3.6.1.57	UDP-2,4-diacetamido-2,4,6-trideoxy-beta-L-altropyranose hydrolase
 3.6.1.58	8-oxo-dGDP phosphatase
-3.6.1.59	M(7)GpppX diphosphatase
+3.6.1.59	5'-(N(7)-methyl 5'-triphosphoguanosine)-(mRNA) diphosphatase
 3.6.1.60	Diadenosine hexaphosphate hydrolase (AMP-forming)
 3.6.1.61	Diadenosine hexaphosphate hydrolase (ATP-forming)
-3.6.1.62	M(7)GpppN-mRNA hydrolase
+3.6.1.62	5'-(N(7)-methylguanosine 5'-triphospho)-(mRNA) hydrolase
 3.6.1.63	Alpha-D-ribose 1-methylphosphonate 5-triphosphate diphosphatase
+3.6.1.64	Inosine diphosphate phosphatase
+3.6.1.65	(d)CTP diphosphatase
 3.6.1.n1	D-tyrosyl-tRNA(Tyr) hydrolase
 3.6.1.n2	L-cysteinyl-tRNA(Pro)
 3.6.1.n3	L-cysteinyl-tRNA(Cys) hydrolase
@@ -4045,7 +4228,7 @@
 3.6.3.1	Phospholipid-translocating ATPase
 3.6.3.2	Magnesium-importing ATPase
 3.6.3.3	Cadmium-exporting ATPase
-3.6.3.4	Copper-exporting ATPase
+3.6.3.4	Cu(2+)-exporting ATPase
 3.6.3.5	Zinc-exporting ATPase
 3.6.3.6	Proton-exporting ATPase
 3.6.3.7	Sodium-exporting ATPase
@@ -4093,7 +4276,8 @@
 3.6.3.51	Mitochondrial protein-transporting ATPase
 3.6.3.52	Chloroplast protein-transporting ATPase
 3.6.3.53	Ag(+)-exporting ATPase
-3.6.3.n1	Cu(+) exporting ATPase
+3.6.3.54	Cu(+) exporting ATPase
+3.6.3.55	Tungstate-importing ATPase
 3.6.4.1	Myosin ATPase
 3.6.4.2	Dynein ATPase
 3.6.4.3	Microtubule-severing ATPase
@@ -4128,8 +4312,6 @@
 3.7.1.12	Cobalt-precorrin 5A hydrolase
 3.7.1.13	2-hydroxy-6-oxo-6-(2-aminophenyl)hexa-2,4-dienoate hydrolase
 3.7.1.14	2-hydroxy-6-oxonona-2,4-dienedioate hydrolase
-3.7.1.15	(+)-caryolan-1-ol synthase
-3.7.1.16	Oxepin-CoA hydrolase
 3.7.1.17	4,5-9,10-diseco-3-hydroxy-5,9,17-trioxoandrosta-1(10),2-diene-4-oate hydrolase
 3.7.1.18	6-oxocamphor hydrolase
 3.7.1.19	2,6-dihydroxypseudooxynicotine hydrolase
@@ -4288,9 +4470,12 @@
 4.1.2.48	Low-specificity L-threonine aldolase
 4.1.2.49	L-allo-threonine aldolase
 4.1.2.50	6-carboxytetrahydropterin synthase
+4.1.2.51	2-dehydro-3-deoxy-D-gluconate aldolase
+4.1.2.52	4-hydroxy-2-oxoheptanedioate aldolase
+4.1.2.53	2-keto-3-deoxy-L-rhamnonate aldolase
+4.1.2.54	L-threo-3-deoxy-hexylosonate aldolase
 4.1.2.n2	2-hydroxyphytanoyl-CoA lyase
-4.1.2.n3	2-keto-3-deoxy-L-rhamnonate aldolase
-4.1.2.n4	4-hydroxy-2-oxo-heptane-1,7-dioate aldolase
+4.1.2.n6	2-amino-4,5-dihydroxy-6-oxo-7-(phosphonooxy)heptanoate synthase
 4.1.3.1	Isocitrate lyase
 4.1.3.3	N-acetylneuraminate lyase
 4.1.3.4	Hydroxymethylglutaryl-CoA lyase
@@ -4313,18 +4498,22 @@
 4.1.3.39	4-hydroxy-2-oxovalerate aldolase
 4.1.3.40	Chorismate lyase
 4.1.3.41	3-hydroxy-D-aspartate aldolase
+4.1.3.42	(4S)-4-hydroxy-2-oxoglutarate aldolase
+4.1.3.43	4-hydroxy-2-oxohexanoate aldolase
+4.1.3.44	tRNA 4-demethylwyosine synthase (AdoMet-dependent)
 4.1.99.1	Tryptophanase
 4.1.99.2	Tyrosine phenol-lyase
 4.1.99.3	Deoxyribodipyrimidine photo-lyase
-4.1.99.5	Octadecanal decarbonylase
+4.1.99.5	Aldehyde oxygenase (deformylating)
 4.1.99.11	Benzylsuccinate synthase
 4.1.99.12	3,4-dihydroxy-2-butanone-4-phosphate synthase
 4.1.99.13	(6-4)DNA photolyase
 4.1.99.14	Spore photoproduct lyase
 4.1.99.16	Geosmin synthase
 4.1.99.17	Phosphomethylpyrimidine synthase
-4.1.99.18	Cyclic pyranopterin monophosphate synthase
+4.1.99.18	Cyclic pyranopterin phosphate synthase
 4.1.99.19	2-iminoacetate synthase
+4.1.99.20	3-amino-4-hydroxybenzoate synthase
 4.2.1.1	Carbonate dehydratase
 4.2.1.2	Fumarate hydratase
 4.2.1.3	Aconitate hydratase
@@ -4442,6 +4631,15 @@
 4.2.1.135	UDP-N-acetylglucosamine 4,6-dehydratase (configuration-retaining)
 4.2.1.136	ADP-dependent NAD(P)H-hydrate dehydratase
 4.2.1.137	Sporulenol synthase
+4.2.1.138	(+)-caryolan-1-ol synthase
+4.2.1.139	Medicarpin synthase
+4.2.1.140	Gluconate/galactonate dehydratase
+4.2.1.141	2-dehydro-3-deoxy-D-arabinonate dehydratase
+4.2.1.142	5'-oxoaverantin cyclase
+4.2.1.143	Versicolorin B synthase
+4.2.1.144	3-amino-5-hydroxybenzoate synthase
+4.2.1.145	Capreomycidine synthase
+4.2.1.146	L-galactonate dehydratase
 4.2.2.1	Hyaluronate lyase
 4.2.2.2	Pectate lyase
 4.2.2.3	Poly(beta-D-mannuronate) lyase
@@ -4607,12 +4805,17 @@
 4.2.3.138	(+)-epi-alpha-bisabolol synthase
 4.2.3.139	Valerena-4,7(11)-diene synthase
 4.2.3.140	Cis-abienol synthase
+4.2.3.141	Sclareol synthase
+4.2.3.142	7-epizingiberene synthase ((2Z,6Z)-farnesyl diphosphate cyclizing)
+4.2.3.143	Kunzeaol synthase
+4.2.3.144	Geranyllinalool synthase
 4.2.3.n2	Delta-selinene synthase
 4.2.3.n11	Selinene synthase
 4.2.99.12	Carboxymethyloxysuccinate lyase
 4.2.99.18	DNA-(apurinic or apyrimidinic site) lyase
 4.2.99.20	2-succinyl-6-hydroxy-2,4-cyclohexadiene-1-carboxylate synthase
 4.2.99.21	Isochorismate lyase
+4.2.99.22	Tuliposide A-converting enzyme
 4.3.1.1	Aspartate ammonia-lyase
 4.3.1.2	Methylaspartate ammonia-lyase
 4.3.1.3	Histidine ammonia-lyase
@@ -4634,7 +4837,6 @@
 4.3.1.23	Tyrosine ammonia-lyase
 4.3.1.24	Phenylalanine ammonia-lyase
 4.3.1.25	Phenylalanine/tyrosine ammonia-lyase
-4.3.1.26	Chromopyrrolate synthase
 4.3.1.27	Threo-3-hydroxy-D-aspartate ammonia-lyase
 4.3.1.28	L-lysine cyclodeaminase
 4.3.2.1	Argininosuccinate lyase
@@ -4650,9 +4852,9 @@
 4.3.3.5	4'-demethylrebeccamycin synthase
 4.3.3.6	Pyridoxal 5'-phosphate synthase (glutamine hydrolyzing)
 4.3.3.7	4-hydroxy-tetrahydrodipicolinate synthase
-4.3.3.n1	3,4-AHBA synthase
 4.3.99.2	Carboxybiotin decarboxylase
 4.3.99.3	7-carboxy-7-deazaguanine synthase
+4.3.99.4	Choline trimethylamine-lyase
 4.4.1.1	Cystathionine gamma-lyase
 4.4.1.2	Homocysteine desulfhydrase
 4.4.1.3	Dimethylpropiothetin dethiomethylase
@@ -4676,6 +4878,7 @@
 4.4.1.24	(2R)-sulfolactate sulfo-lyase
 4.4.1.25	L-cysteate sulfo-lyase
 4.4.1.26	Olivetolic acid cyclase
+4.4.1.27	Carbon disulfide lyase
 4.5.1.1	DDT-dehydrochlorinase
 4.5.1.2	3-chloro-D-alanine dehydrochlorinase
 4.5.1.3	Dichloromethane dehalogenase
@@ -4688,6 +4891,7 @@
 4.6.1.13	Phosphatidylinositol diacylglycerol-lyase
 4.6.1.14	Glycosylphosphatidylinositol diacylglycerol-lyase
 4.6.1.15	FAD-AMP lyase (cyclizing)
+4.7.1.1	Alpha-D-ribose 1-methylphosphonate 5-phosphate C-P-lyase
 4.99.1.1	Ferrochelatase
 4.99.1.2	Alkylmercury lyase
 4.99.1.3	Sirohydrochlorin cobaltochelatase
@@ -4714,6 +4918,7 @@
 5.1.1.16	Protein-serine epimerase
 5.1.1.17	Isopenicillin-N epimerase
 5.1.1.18	Serine racemase
+5.1.1.19	O-ureido-serine racemase
 5.1.1.n1	L-Ala-D/L-Glu epimerase
 5.1.2.1	Lactate racemase
 5.1.2.2	Mandelate racemase
@@ -4746,6 +4951,8 @@
 5.1.3.23	UDP-2,3-diacetamido-2,3-dideoxyglucuronic acid 2-epimerase
 5.1.3.24	N-acetylneuraminate epimerase
 5.1.3.25	dTDP-L-rhamnose 4-epimerase
+5.1.3.26	N-acetyl-alpha-D-glucosaminyl-diphospho-ditrans,octacis-undecaprenol 4-epimerase
+5.1.3.27	dTDP-4-dehydro-6-deoxy-D-glucose 3-epimerase
 5.1.3.n2	L-fucose mutarotase
 5.1.3.n3	L-rhamnose mutarotase
 5.1.99.1	Methylmalonyl-CoA epimerase
@@ -4796,6 +5003,8 @@
 5.3.2.4	TDP-4-oxo-6-deoxy-alpha-D-glucose-3,4-oxoisomerase (dTDP-3-dehydro-6-deoxy-alpha-D-glucopyranose-forming)
 5.3.2.5	2,3-diketo-5-methylthiopentyl-1-phosphate enolase
 5.3.2.6	2-hydroxymuconate tautomerase
+5.3.2.7	Ascopyrone tautomerase
+5.3.2.8	4-oxalomesaconate tautomerase
 5.3.3.1	Steroid Delta-isomerase
 5.3.3.2	Isopentenyl-diphosphate Delta-isomerase
 5.3.3.3	Vinylacetyl-CoA Delta-isomerase
@@ -4810,8 +5019,6 @@
 5.3.3.12	L-dopachrome isomerase
 5.3.3.13	Polyenoic fatty acid isomerase
 5.3.3.14	Trans-2-decenoyl-[acyl-carrier-protein] isomerase
-5.3.3.15	Ascopyrone tautomerase
-5.3.3.16	4-oxalomesaconate tautomerase
 5.3.3.17	Trans-2,3-dihydro-3-hydroxyanthranilate isomerase
 5.3.3.18	2-(1,2-epoxy-1,2-dihydrophenyl)acetyl-CoA isomerase
 5.3.4.1	Protein disulfide-isomerase
@@ -4827,8 +5034,7 @@
 5.3.99.n1	2-keto-myo-inositol isomerase
 5.4.1.1	Lysolecithin acylmutase
 5.4.1.2	Precorrin-8X methylmutase
-5.4.2.1	Phosphoglycerate mutase
-5.4.2.2	Phosphoglucomutase
+5.4.2.2	Phosphoglucomutase (alpha-D-glucose-1,6-bisphosphate-dependent)
 5.4.2.3	Phosphoacetylglucosamine mutase
 5.4.2.4	Bisphosphoglycerate mutase
 5.4.2.5	Phosphoglucomutase (glucose-cofactor)
@@ -4837,6 +5043,8 @@
 5.4.2.8	Phosphomannomutase
 5.4.2.9	Phosphoenolpyruvate mutase
 5.4.2.10	Phosphoglucosamine mutase
+5.4.2.11	Phosphoglycerate mutase (2,3-diphosphoglycerate-dependent)
+5.4.2.12	Phosphoglycerate mutase (2,3-diphosphoglycerate-independent)
 5.4.3.2	Lysine 2,3-aminomutase
 5.4.3.3	Beta-lysine 5,6-aminomutase
 5.4.3.4	D-lysine 5,6-aminomutase
@@ -4845,6 +5053,8 @@
 5.4.3.7	Leucine 2,3-aminomutase
 5.4.3.8	Glutamate-1-semialdehyde 2,1-aminomutase
 5.4.3.9	Glutamate 2,3-aminomutase
+5.4.3.10	Phenylalanine aminomutase (L-beta-phenylalanine forming)
+5.4.3.11	Phenylalanine aminomutase (D-beta-phenylalanine forming)
 5.4.4.1	(Hydroxyamino)benzene mutase
 5.4.4.2	Isochorismate synthase
 5.4.4.3	3-(hydroxyamino)phenol mutase
@@ -4907,6 +5117,7 @@
 5.4.99.56	Tirucalladienol synthase
 5.4.99.57	Baruol synthase
 5.4.99.58	Methylornithine synthase
+5.4.99.59	dTDP-fucopyranose mutase
 5.5.1.1	Muconate cycloisomerase
 5.5.1.2	3-carboxy-cis,cis-muconate cycloisomerase
 5.5.1.3	Tetrahydroxypteridine cycloisomerase
@@ -4927,6 +5138,8 @@
 5.5.1.18	Lycopene epsilon-cyclase
 5.5.1.19	Lycopene beta-cyclase
 5.5.1.20	Prosolanapyrone-III cycloisomerase
+5.5.1.22	(-)-bornyl diphosphate synthase
+5.5.1.23	Aklanonic acid methyl ester cyclase
 5.5.1.n1	D-ribose pyranase
 5.99.1.1	Thiocyanate isomerase
 5.99.1.2	DNA topoisomerase
@@ -5010,6 +5223,8 @@
 6.3.1.12	D-aspartate ligase
 6.3.1.13	L-cysteine:1D-myo-inositol 2-amino-2-deoxy-alpha-D-glucopyranoside ligase
 6.3.1.14	Diphthine--ammonia ligase
+6.3.1.15	8-demethylnovobiocic acid synthase
+6.3.1.16	Carbapenam-3-carboxylate synthase
 6.3.2.1	Pantoate--beta-alanine ligase
 6.3.2.2	Glutamate--cysteine ligase
 6.3.2.3	Glutathione synthase
@@ -5046,6 +5261,7 @@
 6.3.2.37	UDP-N-acetylmuramoyl-L-alanyl-D-glutamate--D-lysine ligase
 6.3.2.38	N(2)-citryl-N(6)-acetyl-N(6)-hydroxylysine synthase
 6.3.2.39	Aerobactin synthase
+6.3.2.40	Cyclopeptine synthase
 6.3.2.n2	Pup--protein ligase
 6.3.2.n3	ISG15--protein ligase
 6.3.2.n4	Alpha-aminoadipate--LysW ligase
@@ -5054,8 +5270,9 @@
 6.3.3.2	5-formyltetrahydrofolate cyclo-ligase
 6.3.3.3	Dethiobiotin synthase
 6.3.3.4	(Carboxyethyl)arginine beta-lactam-synthase
+6.3.3.5	O-ureido-D-serine cyclo-ligase
 6.3.4.1	GMP synthase
-6.3.4.2	CTP synthase
+6.3.4.2	CTP synthase (glutamine hydrolyzing)
 6.3.4.3	Formate--tetrahydrofolate ligase
 6.3.4.4	Adenylosuccinate synthase
 6.3.4.5	Argininosuccinate synthase
@@ -5074,6 +5291,9 @@
 6.3.4.18	5-(carboxyamino)imidazole ribonucleotide synthase
 6.3.4.19	tRNA(Ile)-lysidine synthetase
 6.3.4.20	7-cyano-7-deazaguanine synthase
+6.3.4.21	Nicotinate phosphoribosyltransferase
+6.3.4.22	tRNA(Ile)(2)-agmatinylcytidine synthase
+6.3.4.23	Formate--phosphoribosylaminoimidazolecarboxamide ligase
 6.3.5.1	NAD(+) synthase (glutamine-hydrolyzing)
 6.3.5.2	GMP synthase (glutamine-hydrolyzing)
 6.3.5.3	Phosphoribosylformylglycinamidine synthase
@@ -5095,6 +5315,7 @@
 6.5.1.1	DNA ligase (ATP)
 6.5.1.2	DNA ligase (NAD(+))
 6.5.1.3	RNA ligase (ATP)
-6.5.1.4	RNA-3'-phosphate cyclase
+6.5.1.4	RNA 3'-terminal-phosphate cyclase (ATP)
+6.5.1.5	RNA 3'-terminal-phosphate cyclase (GTP)
 6.6.1.1	Magnesium chelatase
 6.6.1.2	Cobaltochelatase
