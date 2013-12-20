@@ -7,7 +7,7 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 REQUIRES = Boost.Test.Included
 
-WATCHERS = vakatov
+WATCHERS = vakatov satskyse
 PROJ_TAG = test
 
 
