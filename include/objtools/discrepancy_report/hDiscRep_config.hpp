@@ -138,7 +138,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
                                                      bool whole_word = false);
         void GetTestList();
         void CollectTests();
-        virtual void Run(CRef <CRepConfig> config) = 0;
+        virtual void Run(CRef <CRepConfig> config);
         static CSeq_entry_Handle* m_TopSeqEntry;
         static CRepConfig* factory(string report_tp, CSeq_entry_Handle* tse_p=0);
         void Export();
@@ -150,16 +150,23 @@ BEGIN_SCOPE(DiscRepNmSpc)
         vector <string> m_enabled, m_disabled;
         string m_outsuffix, m_outdir, m_insuffix, m_indir, m_file_tp;
         bool m_dorecurse;
-        void x_InputRepToGbenchItem(const CClickableItem& c_item, CClickableText& item);
+        void x_InputRepToGbenchItem(const CClickableItem& c_item, 
+                                     CClickableText& item);
         string x_GetDesc4GItem(string desc);
 
         void WriteDiscRepSummary();
-        void WriteDiscRepSubcategories(const vector <CRef <CClickableItem> >& subcategories, unsigned ident=1);
+        void WriteDiscRepSubcategories(
+                         const vector <CRef <CClickableItem> >& subcategories, 
+                         unsigned ident=1);
         void WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_rep_dt, 
                                  bool use_flag, bool IsSubcategory=false);
-        void WriteDiscRepItems(CRef <CClickableItem> c_item, const string& prefix);
+        void WriteDiscRepItems(CRef <CClickableItem> c_item, 
+                               const string& prefix);
         bool SuppressItemListForFeatureTypeForOutputFiles(const string& setting_name);
-        void StandardWriteDiscRepItems(COutputConfig& oc, const CClickableItem* c_item, const string& prefix, bool list_features_if_subcat);
+        void StandardWriteDiscRepItems(COutputConfig& oc, 
+                                       const CClickableItem* c_item, 
+                                       const string& prefix, 
+                                       bool list_features_if_subcat);
         bool RmTagInDescp(string& str, const string& tag);
    };
 
@@ -185,16 +192,12 @@ BEGIN_SCOPE(DiscRepNmSpc)
    {
       public:
         virtual ~CRepConfDiscrepancy () {};
-
-        virtual void Run(CRef <CRepConfig> config);
    };
 
    class CRepConfOncaller : public CRepConfig
    {
       public:
         virtual ~CRepConfOncaller () {};
-
-        virtual void Run(CRef <CRepConfig> config) { };
    };
 
    class CDiscRepInfo 
@@ -241,7 +244,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static vector <string>                    taxnm_env;
         static vector <string>                    virus_lineage;
         static vector <string>                    strain_tax;
-        static CConstRef <CComment_set>                comment_rules;
+        static CConstRef <CComment_set>           comment_rules;
         static Str2UInt                           whole_word;
         static Str2Str                            fix_data;
         static CRef <CSuspect_rule_set>           orga_prod_rules;

@@ -175,6 +175,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       static bool   is_Comment_run;
       static bool   is_Defl_run; // checked
       static bool   is_DESC_user_run; // checked
+      static bool   is_FeatCnt_run;
       static bool   is_Genes_run;
       static bool   is_Genes_oncall_run;
       static bool   is_GP_Set_run;
@@ -589,14 +590,21 @@ BEGIN_SCOPE(DiscRepNmSpc)
       static vector <const CSeq_entry*> molinfo_seqdesc_seqentry;
       static vector <const CSeq_entry*> org_orgmod_seqdesc_seqentry;
 
-      static string FindReplaceString(const string& src, const string& search_str,
-          const string& replacement_str, bool case_sensitive=true, bool whole_word=true);
+      static string FindReplaceString(const string& src, 
+                                      const string& search_str,
+                                      const string& replacement_str, 
+                                      bool case_sensitive = true, 
+                                      bool whole_word = true);
 
-      static bool DoesStringContainPhrase(const string& str, const string& phrase, 
-                            bool case_sensitive=true, bool whole_word=true);
+      static bool DoesStringContainPhrase(const string& str, 
+                                          const string& phrase, 
+                                          bool case_sensitive = true, 
+                                          bool whole_word=true);
       static void GetSeqFeatLabel(const CSeq_feat& seq_feat, string& label);      
-      static string GetSrcQualValue(const CBioSource& biosrc, const string& qual_name,
-                              bool is_subsrc = false, const CString_constraint* str_cons = 0);
+      static string GetSrcQualValue(const CBioSource& biosrc, 
+                                    const string& qual_name, 
+                                    bool is_subsrc = false, 
+                                    const CString_constraint* str_cons = 0);
       static CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& seq_feat);
 
     protected:
@@ -810,17 +818,28 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual string GetName() const =0;
 
     protected:
-      string GetName_col() const {return string("ONCALLER_MORE_NAMES_COLLECTED_BY"); }
-      string GetName_orgi() const {return string("ONCALLER_SUSPECTED_ORG_IDENTIFIED"); }
-      string GetName_orgc() const {return string("ONCALLER_SUSPECTED_ORG_COLLECTED"); }
+      string GetName_iden() const {
+                  return string("ONCALLER_MORE_OR_SPEC_NAMES_IDENTIFIED_BY"); }
+      string GetName_col() const {
+                  return string("ONCALLER_MORE_NAMES_COLLECTED_BY"); }
+      string GetName_orgi() const {
+                  return string("ONCALLER_SUSPECTED_ORG_IDENTIFIED"); }
+      string GetName_orgc() const {
+                  return string("ONCALLER_SUSPECTED_ORG_COLLECTED"); }
       string GetName_end() const {return string("END_COLON_IN_COUNTRY"); }
       string GetName_uncul() const {return string("UNCULTURED_NOTES_ONCALLER");}
 
-      bool m_run_col, m_run_orgi, m_run_orgc, m_run_end, m_run_uncul;
+      vector <string> m_submit_text;
+      bool m_run_iden,m_run_col, m_run_orgi, m_run_orgc, m_run_end, m_run_uncul;
 
       bool x_HasUnculturedNotes(const string& str, const char** notes, unsigned sz);
       bool Has3Names(const vector <string> arr);
-      void RunTests(const CBioSource& biosrc, const string& desc);
+      bool HasSpecNames(const vector <string> arr);
+      void RunTests(const CBioSource& biosrc, 
+                    const string& desc,
+                    CConstRef <CObject> obj_ref);
+      void GetSubmitText(const CAuth_list& authors);
+      void FindSpecSubmitText();
   };
 
   class CSeqEntry_UNCULTURED_NOTES_ONCALLER : public CSeqEntry_on_biosrc_subsrc
@@ -867,6 +886,17 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual string GetName() const { return CSeqEntry_on_biosrc_subsrc::GetName_col();}
   };
 
+  class CSeqEntry_ONCALLER_MORE_OR_SPEC_NAMES_IDENTIFIED_BY : public CSeqEntry_on_biosrc_subsrc
+  {
+    public:
+      virtual ~CSeqEntry_ONCALLER_MORE_OR_SPEC_NAMES_IDENTIFIED_BY() {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const { 
+                         return CSeqEntry_on_biosrc_subsrc::GetName_iden();}
+  };
+
+
   class CSeqEntry_test_on_pub : public CSeqEntryTestAndRepData
   {
     public:
@@ -876,7 +906,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
       virtual string GetName() const =0;
 
-      static string GetAuthNameList(const CAuthor& auth, bool use_initials = false);
+      static string GetAuthNameList(const CAuthor& auth, 
+                                    bool use_initials = false);
 
     protected:
       enum E_Status {
@@ -887,8 +918,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
         e_submitter_block
       };
 
-      bool m_has_cit, m_run_dup, m_run_cap, m_run_usa, m_run_tlt, m_run_aff, m_run_unp;
-      bool m_run_noaff, m_run_cons, m_run_missing;
+      bool m_has_cit, m_run_dup, m_run_cap, m_run_usa, m_run_tlt, m_run_aff;
+      bool m_run_unp, m_run_noaff, m_run_cons, m_run_missing;
       string GetName_dup() const {return string("DISC_CITSUB_AFFIL_DUP_TEXT");}
       string GetName_cap() const {return string("DISC_CHECK_AUTH_CAPS"); }
       string GetName_usa() const {return string("DISC_USA_STATE"); }
@@ -908,8 +939,12 @@ BEGIN_SCOPE(DiscRepNmSpc)
       string Get1stTitle(const CTitle::C_E& title);
       string GetTitleFromPub(const CPub& pub);
       bool DoesPubdescContainUnpubPubWithoutTitle(const list <CRef <CPub> >& pubs);
-      void GetGroupedAffilString(const CAuth_list& authors, string& affil_str,string& grp_str);
-      void RunTests(const list <CRef <CPub> >& pubs, const string& desc);
+      void GetGroupedAffilString(const CAuth_list& authors, 
+                                 string& affil_str,
+                                 string& grp_str);
+      void RunTests(const list <CRef <CPub> >& pubs, 
+                     const string& desc,
+                     CConstRef <CObject> obj_ref);
       CConstRef <CCit_sub> CitSubFromPubEquiv(const list <CRef <CPub> >& pubs);
       bool AffilStreetContainsDuplicateText(const CAffil& affil);
       bool AffilStreetEndsWith(const string& street, const string& end_str);
@@ -917,11 +952,14 @@ BEGIN_SCOPE(DiscRepNmSpc)
       bool IsAuthorInitialsCapitalizationOk(const string& nm_init);
       bool NameIsBad(const CRef <CAuthor>& auth_nm);
       bool HasBadAuthorName(const CAuth_list& auths);
-      void CheckBadAuthCapsOrNoFirstLastNamesInPubdesc(const list <CRef <CPub> >& pubs, 
-                                                                       const string& desc);
+      void CheckBadAuthCapsOrNoFirstLastNamesInPubdesc(
+                    const list <CRef <CPub> >& pubs, 
+                    const string& desc,
+                    CConstRef <CObject> obj_ref);
       bool AuthNoFirstLastNames(const CAuth_list& auths);
       bool CorrectUSAStates(CConstRef <CCit_sub>& cit_sub);
-      void CheckTitleAndAuths(CConstRef <CCit_sub>& cit_sub, const string& desc);
+      void CheckTitleAndAuths(CConstRef <CCit_sub>& cit_sub,
+                              const string& desc, CConstRef <CObject> obj_ref);
   };
 
   class CSeqEntry_DISC_CHECK_AUTH_NAME :  public CSeqEntry_test_on_pub
@@ -1069,17 +1107,23 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual string GetName() const =0;
 
    protected:
-      string GetName_vou() const {return string("DISC_SPECVOUCHER_TAXNAME_MISMATCH"); }
-      string GetName_str() const {return string("DISC_STRAIN_TAXNAME_MISMATCH"); }
-      string GetName_cul() const {return string("DISC_CULTURE_TAXNAME_MISMATCH"); }
-      string GetName_biom() const {return string("DISC_BIOMATERIAL_TAXNAME_MISMATCH"); }
+      string GetName_vou() const {
+                       return string("DISC_SPECVOUCHER_TAXNAME_MISMATCH"); }
+      string GetName_str() const {
+                       return string("DISC_STRAIN_TAXNAME_MISMATCH"); }
+      string GetName_cul() const {
+                       return string("DISC_CULTURE_TAXNAME_MISMATCH"); }
+      string GetName_biom() const {
+                       return string("DISC_BIOMATERIAL_TAXNAME_MISMATCH"); }
 
       bool m_run_vou, m_run_str, m_run_cul, m_run_biom;
  
       bool s_StringHasVoucherSN(const string& vou_nm);
-      void RunTests(const CBioSource& biosrc, const string& desc);
-      void GetReport_cflts(CRef <CClickableItem>& c_item, const string& setting_name, 
-                                                              const string& qual_nm);
+      void RunTests(const CBioSource& biosrc, 
+                      const string& desc, 
+                      CConstRef <CObject> obj_ref);
+      void GetReport_cflts(CRef <CClickableItem>& c_item, 
+                           const string& setting_name, const string& qual_nm);
   };
 
   class CSeqEntry_DISC_BIOMATERIAL_TAXNAME_MISMATCH : public CSeqEntry_test_on_tax_cflts
@@ -1087,7 +1131,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_BIOMATERIAL_TAXNAME_MISMATCH () {};
 
-      virtual string GetName() const { return CSeqEntry_test_on_tax_cflts::GetName_biom();}
+      virtual string GetName() const {
+                      return CSeqEntry_test_on_tax_cflts::GetName_biom();}
       virtual void GetReport(CRef <CClickableItem>& c_item) {
           GetReport_cflts(c_item, GetName(), "biomaterial");
       };
@@ -1098,7 +1143,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_CULTURE_TAXNAME_MISMATCH () {};
 
-      virtual string GetName() const { return CSeqEntry_test_on_tax_cflts::GetName_cul();}
+      virtual string GetName() const { 
+                         return CSeqEntry_test_on_tax_cflts::GetName_cul();}
       virtual void GetReport(CRef <CClickableItem>& c_item) {
           GetReport_cflts(c_item, GetName(), "culture collection");
       };
@@ -1110,7 +1156,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_STRAIN_TAXNAME_MISMATCH () {};
 
-      virtual string GetName() const { return CSeqEntry_test_on_tax_cflts::GetName_str();}
+      virtual string GetName() const { 
+                       return CSeqEntry_test_on_tax_cflts::GetName_str();}
       virtual void GetReport(CRef <CClickableItem>& c_item) {
           GetReport_cflts(c_item, GetName(), "strain");
       };
@@ -1122,7 +1169,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_SPECVOUCHER_TAXNAME_MISMATCH () {};
 
-      virtual string GetName() const { return CSeqEntry_test_on_tax_cflts::GetName_vou();}
+      virtual string GetName() const { 
+                            return CSeqEntry_test_on_tax_cflts::GetName_vou();}
       virtual void GetReport(CRef <CClickableItem>& c_item) {
           GetReport_cflts(c_item, GetName(), "specimen voucher");
       };
@@ -1139,30 +1187,39 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual string GetName() const =0;
 
     protected:
-      string GetName_asn1() const {return string("DISC_SOURCE_QUALS_ASNDISC"); }
-      string GetName_asn1_oncall() const {
-                                      return string("DISC_SOURCE_QUALS_ASNDISC_oncaller"); }
+      string GetName_sq() const {return string("DISC_SOURCE_QUALS_ASNDISC"); }
+      string GetName_sq_oncall() const {
+                        return string("DISC_SOURCE_QUALS_ASNDISC_oncaller"); }
       string GetName_bad() const {return string("DISC_SRC_QUAL_PROBLEM"); }
 
-      void GetQualDistribute(Str2Ints& qual2src_idx, const vector <string>& desc_ls, 
-             const vector <CConstRef <CBioSource> >& src_ls, const string& setting_name,
-             unsigned pre_cnt, unsigned tot_cnt);
-      void GetReport_quals(CRef <CClickableItem>& c_item, const string& setting_name);
+      void GetQualDistribute(Str2Ints& qual2src_idx, 
+                             const vector <string>& desc_ls, 
+                             const vector <CConstRef <CBioSource> >& src_ls, 
+                             const vector <CConstRef <CObject> >& objs, 
+                             const string& setting_name,
+                             unsigned pre_cnt, 
+                             unsigned tot_cnt);
+      void GetReport_quals(CRef <CClickableItem>& c_item, 
+                           const string& setting_name);
       bool GetQual2SrcIdx(const vector <CConstRef <CBioSource> >& src_ls, 
-              const vector <string>& desc_ls, Str2Ints& qual2src_idx, unsigned pre_cnt, 
-              unsigned tot_cnt);
+                  const vector <string>& desc_ls, Str2Ints& qual2src_idx, 
+                  unsigned pre_cnt, unsigned tot_cnt);
       void GetMultiSubSrcVlus(const CBioSource& biosrc, const string& type_name,
-             vector <string>& multi_vlus);
+                              vector <string>& multi_vlus);
       void GetMultiOrgModVlus(const CBioSource& biosrc, const string& type_name,
-                                                                  vector <string>& multi_vlus);
+                              vector <string>& multi_vlus);
       void GetMultiPrimerVlus(const CBioSource& biosrc, const string& qual_name,
-                                                                  vector <string>& multi_vlus);
+                              vector <string>& multi_vlus);
       CRef <CClickableItem> MultiItem(const string& qual_name,
-        const vector <string>& multi_list, const string& ext_desc, const string& setting_name);
+                                      const vector <string>& multi_list, 
+                                      const string& ext_desc, 
+                                      const string& setting_name);
       void CheckForMultiQual(const string& qual_name, const CBioSource& biosrc,
-                                                      eMultiQual& multi_type, bool is_subsrc);
+                             eMultiQual& multi_type, bool is_subsrc);
       void GetMultiQualVlus(const string& qual_name, const CBioSource& biosrc,
-                                                  vector <string>& multi_vlus, bool is_subsrc);
+                            vector <string>& multi_vlus, bool is_subsrc);
+      void ProcessUniQuals(const Str2Strs& qvlu2src, const string& setting_nm, 
+                          const string& qual_nm, CRef <CClickableItem>& c_item);
   };
 
 
@@ -1172,7 +1229,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_DISC_SRC_QUAL_PROBLEM () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const { return CSeqEntry_test_on_quals::GetName_bad();}
+      virtual string GetName() const { 
+                              return CSeqEntry_test_on_quals::GetName_bad();}
   };
 
 
@@ -1182,7 +1240,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_DISC_SOURCE_QUALS_ASNDISC () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const { return CSeqEntry_test_on_quals::GetName_asn1();}
+      virtual string GetName() const { 
+                        return CSeqEntry_test_on_quals::GetName_sq();}
   };
 
 
@@ -1192,7 +1251,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_DISC_SOURCE_QUALS_ASNDISC_oncaller () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const { return CSeqEntry_test_on_quals::GetName_asn1_oncall();}
+      virtual string GetName() const { 
+                      return CSeqEntry_test_on_quals::GetName_sq_oncall();}
   };
 
 
@@ -1206,57 +1266,71 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual string GetName() const =0;
  
     protected:
-      string GetName_mism() const {return string("DISC_BACTERIAL_TAX_STRAIN_MISMATCH");}
-      string GetName_cul() const {return 
-                                    string("ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH");}
-      string GetName_cbs() const {return string("DUP_DISC_CBS_CULTURE_CONFLICT");}
-      string GetName_atcc() const {return string("DUP_DISC_ATCC_CULTURE_CONFLICT");}
-      string GetName_sp_strain() const {return string("DISC_BACTERIA_MISSING_STRAIN");}
+      string GetName_mism() const {
+                    return string("DISC_BACTERIAL_TAX_STRAIN_MISMATCH");}
+      string GetName_cul() const {
+                 return string("ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH");}
+      string GetName_cbs() const {
+                    return string("DUP_DISC_CBS_CULTURE_CONFLICT");}
+      string GetName_atcc() const {
+                    return string("DUP_DISC_ATCC_CULTURE_CONFLICT");}
+      string GetName_sp_strain() const {
+                    return string("DISC_BACTERIA_MISSING_STRAIN");}
       string GetName_meta() const {return string("DISC_METAGENOME_SOURCE");}
       string GetName_auth() const {return string("ONCALLER_CHECK_AUTHORITY");}
-      string GetName_mcul() const {return string("ONCALLER_MULTIPLE_CULTURE_COLLECTION");}
+      string GetName_mcul() const {
+                    return string("ONCALLER_MULTIPLE_CULTURE_COLLECTION");}
       string GetName_human() const {return string("DISC_HUMAN_HOST");}
-      string GetName_env() const {return string("TEST_UNNECESSARY_ENVIRONMENTAL");}
+      string GetName_env() const {
+                    return string("TEST_UNNECESSARY_ENVIRONMENTAL");}
       string GetName_amp() const {
-                           return string("TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE");}
+               return string("TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE");}
 
       bool m_run_mism, m_run_cul, m_run_cbs, m_run_atcc, m_run_sp, m_run_meta;
       bool m_run_auth, m_run_mcul, m_run_human, m_run_env, m_run_amp;
 
       bool AmpPrimersNoEnvSample(const CBioSource& biosrc);
       bool HasUnnecessaryEnvironmental(const CBioSource& biosrc);
-      bool HasMultipleCultureCollection (const CBioSource& biosrc, string& cul_vlus);
+      bool HasMultipleCultureCollection (const CBioSource& biosrc, 
+                                         string& cul_vlus);
       bool DoAuthorityAndTaxnameConflict(const CBioSource& biosrc);
       bool HasMissingBacteriaStrain(const CBioSource& biosrc);
       bool IsMissingRequiredStrain(const CBioSource& biosrc);
       bool IsStrainInCultureCollectionForBioSource(const CBioSource& biosrc, 
                         const string& strain_head, const string& culture_head);
-      void RunTests(const CBioSource& biosrc, const string& desc);
-      void BiosrcHasConflictingStrainAndCultureCollectionValues(const CBioSource& biosrc, 
-                                                                         const string& desc);
-      void BacterialTaxShouldEndWithStrain(const CBioSource& biosrc, const string& desc);
-
-      bool HasConflict(const list <CRef <COrgMod> >& mods, const string& subname_rest, 
-                               const COrgMod::ESubtype& check_type, const string& check_head);
+      void RunTests(const CBioSource& biosrc, 
+                      const string& desc,
+                      CConstRef <CObject> obj_ref);
+      void BiosrcHasConflictingStrainAndCultureCollectionValues(
+               const CBioSource& biosrc, const string& desc, 
+               CConstRef <CObject> obj_ref);
+      void BacterialTaxShouldEndWithStrain(
+               const CBioSource& biosrc, const string& desc);
+      bool HasConflict(const list <CRef <COrgMod> >& mods, 
+               const string& subname_rest, const COrgMod::ESubtype& check_type,
+               const string& check_head);
   };
 
   class CSeqEntry_TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE 
-                                              : public CSeqEntry_test_on_biosrc_orgmod
+                                    : public CSeqEntry_test_on_biosrc_orgmod
   {
     public:
       virtual ~CSeqEntry_TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CSeqEntry_test_on_biosrc_orgmod::GetName_amp();}
+      virtual string GetName() const {
+                      return CSeqEntry_test_on_biosrc_orgmod::GetName_amp();}
   };
 
-  class CSeqEntry_TEST_UNNECESSARY_ENVIRONMENTAL : public CSeqEntry_test_on_biosrc_orgmod
+  class CSeqEntry_TEST_UNNECESSARY_ENVIRONMENTAL 
+                                   : public CSeqEntry_test_on_biosrc_orgmod
   {
     public:
       virtual ~CSeqEntry_TEST_UNNECESSARY_ENVIRONMENTAL () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CSeqEntry_test_on_biosrc_orgmod::GetName_env();}
+      virtual string GetName() const {
+                 return CSeqEntry_test_on_biosrc_orgmod::GetName_env();}
   };
 
   class CSeqEntry_DISC_HUMAN_HOST : public CSeqEntry_test_on_biosrc_orgmod
@@ -1265,7 +1339,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_DISC_HUMAN_HOST () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CSeqEntry_test_on_biosrc_orgmod::GetName_human();}
+      virtual string GetName() const {
+                 return CSeqEntry_test_on_biosrc_orgmod::GetName_human();}
   };
 
 
@@ -1275,7 +1350,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_ONCALLER_MULTIPLE_CULTURE_COLLECTION () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CSeqEntry_test_on_biosrc_orgmod::GetName_mcul();}
+      virtual string GetName() const {
+                     return CSeqEntry_test_on_biosrc_orgmod::GetName_mcul();}
   };
 
 
@@ -1285,17 +1361,19 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_ONCALLER_CHECK_AUTHORITY () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CSeqEntry_test_on_biosrc_orgmod::GetName_auth();}
+      virtual string GetName() const {
+                    return CSeqEntry_test_on_biosrc_orgmod::GetName_auth();}
   };
 
 
-  class CSeqEntry_DISC_METAGENOME_SOURCE : public CSeqEntry_test_on_biosrc_orgmod
+  class CSeqEntry_DISC_METAGENOME_SOURCE: public CSeqEntry_test_on_biosrc_orgmod
   {
     public:
       virtual ~CSeqEntry_DISC_METAGENOME_SOURCE () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CSeqEntry_test_on_biosrc_orgmod::GetName_meta();}
+      virtual string GetName() const {
+                      return CSeqEntry_test_on_biosrc_orgmod::GetName_meta();}
   };
 
 
@@ -1306,7 +1384,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const { 
-                            return CSeqEntry_test_on_biosrc_orgmod::GetName_sp_strain();}
+                 return CSeqEntry_test_on_biosrc_orgmod::GetName_sp_strain();}
   };
 
   class CSeqEntry_DUP_DISC_ATCC_CULTURE_CONFLICT : public CSeqEntry_test_on_biosrc_orgmod
@@ -1315,7 +1393,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_DUP_DISC_ATCC_CULTURE_CONFLICT () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const { return CSeqEntry_test_on_biosrc_orgmod::GetName_atcc();}
+      virtual string GetName() const { 
+                    return CSeqEntry_test_on_biosrc_orgmod::GetName_atcc();}
   };
 
  
@@ -1325,7 +1404,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_DUP_DISC_CBS_CULTURE_CONFLICT () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const { return CSeqEntry_test_on_biosrc_orgmod::GetName_cbs();}
+      virtual string GetName() const { 
+                    return CSeqEntry_test_on_biosrc_orgmod::GetName_cbs();}
   };
 
   
@@ -1335,7 +1415,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_DISC_BACTERIAL_TAX_STRAIN_MISMATCH () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const { return CSeqEntry_test_on_biosrc_orgmod::GetName_mism();}
+      virtual string GetName() const { 
+               return CSeqEntry_test_on_biosrc_orgmod::GetName_mism();}
   }; 
 
  
@@ -1345,7 +1426,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const { return CSeqEntry_test_on_biosrc_orgmod::GetName_cul();}
+      virtual string GetName() const { 
+                      return CSeqEntry_test_on_biosrc_orgmod::GetName_cul();}
   };
 
 
@@ -1458,40 +1540,39 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual string GetName() const =0;
 
     protected:
-      vector <string> m_submit_text;
-      bool m_run_trin, m_run_iso, m_run_mult, m_run_tmiss, m_run_tbad, m_run_flu, m_run_quals;
-      bool m_run_iden, m_run_col, m_run_div, m_run_map, m_run_clone, m_run_meta, m_run_sp;
-      bool m_run_prim, m_run_cty, m_run_pcr, m_run_strain;
+      bool m_run_trin, m_run_iso, m_run_mult, m_run_tmiss, m_run_tbad;
+      bool m_run_flu, m_run_quals, m_run_div, m_run_map;
+      bool m_run_clone, m_run_meta, m_run_sp, m_run_prim, m_run_cty, m_run_pcr;
+      bool m_run_strain;
 
       string GetName_trin() const {
                       return string("DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER"); }
       string GetName_iso() const {
-                        return string("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE"); }
+                      return string("DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE"); }
       string GetName_mult() const {return string("ONCALLER_MULTISRC"); }
       string GetName_tmiss() const {return string("TAX_LOOKUP_MISSING"); }
       string GetName_tbad () const {return string("TAX_LOOKUP_MISMATCH"); }
-      string GetName_flu() const {return string("DISC_INFLUENZA_DATE_MISMATCH"); }
+      string GetName_flu() const{return string("DISC_INFLUENZA_DATE_MISMATCH");}
       string GetName_quals() const {return string("DISC_MISSING_VIRAL_QUALS"); }
-      string GetName_iden() const {return string("MORE_OR_SPEC_NAMES_IDENTIFIED_BY"); }
-      string GetName_col() const {return string("MORE_NAMES_COLLECTED_BY"); }
       string GetName_div() const {return string("DIVISION_CODE_CONFLICTS");}
-      string GetName_map() const {return string("DISC_MAP_CHROMOSOME_CONFLICT");}
+      string GetName_map() const{return string("DISC_MAP_CHROMOSOME_CONFLICT");}
       string GetName_clone() const {return string("DISC_REQUIRED_CLONE");}
       string GetName_meta() const {return string("DISC_METAGENOMIC");}
       string GetName_sp() const {return string("TEST_SP_NOT_UNCULTURED");}
       string GetName_prim() const {return string("TEST_MISSING_PRIMER");}
       string GetName_cty() const {return string("ONCALLER_COUNTRY_COLON");}
-      string GetName_pcr() const {return string("ONCALLER_DUPLICATE_PRIMER_SET");}
+      string GetName_pcr() const {
+                           return string("ONCALLER_DUPLICATE_PRIMER_SET");}
       string GetName_strain() const {return string("DISC_REQUIRED_STRAIN"); }
 
       bool x_IsMissingRequiredStrain(const CBioSource& biosrc);
       void IniMap(const list <CRef <CPCRPrimer> >& ls, Str2Int& map);
       bool SamePrimerList(const list <CRef <CPCRPrimer> >& ls1, 
-                                               const list <CRef <CPCRPrimer> >& ls2);
+                          const list <CRef <CPCRPrimer> >& ls2);
       bool SamePCRReaction(const CPCRReaction& pcr1, const CPCRReaction& pcr2);
       bool MissingPrimerValue(const CBioSource& biosrc);
       void IsFwdRevDataPresent(const CRef <CPCRPrimer>& primer, 
-                                                  bool& has_seq, bool& has_name);
+                               bool& has_seq, bool& has_name);
       bool FindTrinomialWithoutQualifier(const CBioSource& biosrc);
       bool IsMissingRequiredClone (const CBioSource& biosrc);
       void AddEukaryoticBioseqsToReport(const CBioseq_set& set);
@@ -1500,13 +1581,14 @@ BEGIN_SCOPE(DiscRepNmSpc)
       bool DoTaxonIdsMatch(const COrg_ref& org1, const COrg_ref& org2);
       bool DoInfluenzaStrainAndCollectionDateMisMatch(const CBioSource& biosrc);
       void AddMissingViralQualsDiscrepancies(const CBioSource& biosrc, 
-                                                            const string& desc);
-      bool HasMoreOrSpecNames(const CBioSource& biosrc, CSubSource::ESubtype subtype, 
-                                                         bool check_mul_nm_only = false);
-      void GetSubmitText(const CAuth_list& authors);
-      void FindSpecSubmitText();
+                                             const string& desc);
+      bool HasMoreOrSpecNames(const CBioSource& biosrc, 
+             CSubSource::ESubtype subtype, bool check_mul_nm_only = false);
 
-      void RunTests(const CBioSource& biosrc, const string& desc, int idx = -1);
+      void RunTests(const CBioSource& biosrc, 
+                     const string& desc, 
+                     CConstRef <CObject> obj_ref,
+                     int idx = -1);
   };
 
   class CSeqEntry_DISC_REQUIRED_STRAIN : public CSeqEntry_test_on_biosrc
@@ -1515,16 +1597,18 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_DISC_REQUIRED_STRAIN () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const { return CSeqEntry_test_on_biosrc::GetName_strain();}
+      virtual string GetName() const { 
+                       return CSeqEntry_test_on_biosrc::GetName_strain();}
   };
 
-  class CSeqEntry_ONCALLER_DUPLICATE_PRIMER_SET : public CSeqEntry_test_on_biosrc
+  class CSeqEntry_ONCALLER_DUPLICATE_PRIMER_SET: public CSeqEntry_test_on_biosrc
   {
     public:
       virtual ~CSeqEntry_ONCALLER_DUPLICATE_PRIMER_SET () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_pcr();}
+      virtual string GetName() const {
+                              return CSeqEntry_test_on_biosrc::GetName_pcr();}
   };
 
   class CSeqEntry_ONCALLER_COUNTRY_COLON : public CSeqEntry_test_on_biosrc
@@ -1533,7 +1617,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_ONCALLER_COUNTRY_COLON () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_cty();}
+      virtual string GetName() const {
+                            return CSeqEntry_test_on_biosrc::GetName_cty();}
   };
 
   class CSeqEntry_TEST_MISSING_PRIMER : public CSeqEntry_test_on_biosrc
@@ -1542,7 +1627,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_TEST_MISSING_PRIMER () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_prim();}
+      virtual string GetName() const {
+                             return CSeqEntry_test_on_biosrc::GetName_prim();}
   };
 
   class CSeqEntry_TEST_SP_NOT_UNCULTURED : public CSeqEntry_test_on_biosrc
@@ -1551,7 +1637,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_TEST_SP_NOT_UNCULTURED () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_sp();}
+      virtual string GetName() const {
+                           return CSeqEntry_test_on_biosrc::GetName_sp();}
   };
 
   class CSeqEntry_DISC_METAGENOMIC : public CSeqEntry_test_on_biosrc
@@ -1560,7 +1647,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_DISC_METAGENOMIC () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_meta();}
+      virtual string GetName() const {
+                         return CSeqEntry_test_on_biosrc::GetName_meta();}
   };
 
   class CSeqEntry_DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER : public CSeqEntry_test_on_biosrc
@@ -1569,7 +1657,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_trin();}
+      virtual string GetName() const {
+                          return CSeqEntry_test_on_biosrc::GetName_trin();}
   };
 
   class CSeqEntry_DISC_REQUIRED_CLONE : public CSeqEntry_test_on_biosrc
@@ -1578,16 +1667,18 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_DISC_REQUIRED_CLONE () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_clone();}
+      virtual string GetName() const {
+                            return CSeqEntry_test_on_biosrc::GetName_clone();}
   };
 
-  class CSeqEntry_DISC_MAP_CHROMOSOME_CONFLICT :  public CSeqEntry_test_on_biosrc
+  class CSeqEntry_DISC_MAP_CHROMOSOME_CONFLICT : public CSeqEntry_test_on_biosrc
   {
     public:
       virtual ~CSeqEntry_DISC_MAP_CHROMOSOME_CONFLICT () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_map();}
+      virtual string GetName() const {return 
+                             CSeqEntry_test_on_biosrc::GetName_map();}
   };
 
   class CSeqEntry_DIVISION_CODE_CONFLICTS :  public CSeqEntry_test_on_biosrc
@@ -1596,25 +1687,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CSeqEntry_DIVISION_CODE_CONFLICTS () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_div();}
-  };
-
-  class CSeqEntry_MORE_NAMES_COLLECTED_BY : public CSeqEntry_test_on_biosrc
-  {
-    public:
-      virtual ~CSeqEntry_MORE_NAMES_COLLECTED_BY () {};
-
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_col();}
-  };
-
-  class CSeqEntry_MORE_OR_SPEC_NAMES_IDENTIFIED_BY : public CSeqEntry_test_on_biosrc
-  {
-    public:
-      virtual ~CSeqEntry_MORE_OR_SPEC_NAMES_IDENTIFIED_BY () {};
-
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CSeqEntry_test_on_biosrc::GetName_iden();}
+      virtual string GetName() const {
+                          return CSeqEntry_test_on_biosrc::GetName_div();}
   };
 
   class CSeqEntry_DISC_MISSING_VIRAL_QUALS : public CSeqEntry_test_on_biosrc
@@ -1725,6 +1799,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
        string m_taxname, m_bioseq_desc, m_setting_name; 
        string m_src_desc, m_mol_desc, m_tlt_desc, m_pub_desc, m_gbk_desc;
        vector <CSeqdesc::E_Choice> m_seqdesc_sel;
+       CConstRef <CObject> m_obj_ref;
   };
 
   class CSeqEntry_TEST_ALIGNMENT_HAS_SCORE : public CSeqEntryTestAndRepData
@@ -1748,7 +1823,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("DISC_FLATFILE_FIND_ONCALLER");}
+      virtual string GetName() const {
+                           return string("DISC_FLATFILE_FIND_ONCALLER");}
     
     private:
       Str2Strs m_fixable2ls; 
@@ -1757,8 +1833,9 @@ BEGIN_SCOPE(DiscRepNmSpc)
       void AddCItemToReport(const string& ls_type, const string& setting_name, 
                                                       CRef <CClickableItem>& c_item);
       string GetName_nofix() const {
-                         return string("DISC_FLATFILE_FIND_ONCALLER_UNFIXABLE");}
-      string GetName_fix() const {return string("DISC_FLATFILE_FIND_ONCALLER_FIXABLE");}
+                        return string("DISC_FLATFILE_FIND_ONCALLER_UNFIXABLE");}
+      string GetName_fix() const {
+                        return string("DISC_FLATFILE_FIND_ONCALLER_FIXABLE");}
   };
 
   class CSeqEntry_ONCALLER_STRAIN_TAXNAME_CONFLICT : public CSeqEntryTestAndRepData
@@ -1815,7 +1892,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
     private:
       unsigned m_entry_no;
-      void AddMolinfoToBioseqsOfSet(const CBioseq_set& set, const string& desc);
+//      void AddMolinfoToBioseqsOfSet(const CBioseq_set& set, const string& desc);
   };
 
 
@@ -1839,9 +1916,11 @@ BEGIN_SCOPE(DiscRepNmSpc)
       void ReportOneHaplotypeSequenceMismatch(Str2Seqs::const_iterator& iter, bool Ndiff=true);
       void ReportHaplotypeSequenceMismatchForList();
       void MakeCitem4DiffSeqs(CRef <CClickableItem>& c_item, 
-                            const vector <string> tax_hap_seqs, bool Ndiff = true);
+                            const vector <string> tax_hap_seqs, 
+                            const string& match_tp, bool Ndiff = true);
       void MakeCitem4SameSeqs(CRef <CClickableItem>& c_item, 
-                            const vector <string>& idx_seqs, bool Ndiff = true);
+                            const vector <string>& idx_seqs, 
+                            const string& match_tp, bool Ndiff = true);
   };
 
 
@@ -1906,6 +1985,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
   };
 
 
+/*
   class CSeqEntry_DISC_FEATURE_COUNT : public CSeqEntryTestAndRepData
   {
     public:
@@ -1915,6 +1995,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("DISC_FEATURE_COUNT_oncaller");}
   };
+*/
 
 
 // new comb
@@ -2009,35 +2090,13 @@ BEGIN_SCOPE(DiscRepNmSpc)
        void TestExtraMissingGenes(const CBioseq& bioseq);
        bool GeneRefMatchForSuperfluousCheck (const CGene_ref& gene, const CGene_ref* g_xref);
 
-       void TestProteinID(const CBioseq& bioseq);
-       string GetName_pid () const {return string("MISSING_PROTEIN_ID"); }
-       string GetName_prefix() const {return string("INCONSISTENT_PROTEIN_ID_PREFIX"); }
-
-/*
-       void TestOnBasesN(const CBioseq& bioseq);
-       bool IsDeltaSeqWithFarpointers(const CBioseq& bioseq);
-       void AddNsReport(CRef <CClickableItem>& c_item, bool is_n10=true);
-       string GetName_n10() const {return string("N_RUNS"); }
-       string GetName_n14() const {return string("N_RUNS_14"); }
-       string GetName_0() const {return string("ZERO_BASECOUNT"); }
-       string GetName_5perc() const {return string("DISC_PERCENT_N"); }
-       string GetName_10perc() const {return string("DISC_10_PERCENTN"); }
-       string GetName_non_nt() const {return string("TEST_UNUSUAL_NT"); }
-*/
-
-/*
-       void TestOnMRna(const CBioseq& bioseq);
-       string GetName_no_mrna() const {return string("DISC_CDS_WITHOUT_MRNA");}
-       string GetName_pid_tid() const {
-                             return string("MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS");}
-*/
        string GetFieldValueForObject(const CSeq_feat& seq_feat, 
-                                                          const CFeat_qual_choice& feat_qual);
+                                     const CFeat_qual_choice& feat_qual);
        CSeqFeatData::ESubtype GetFeatdefFromFeatureType(EMacro_feature_type feat_field_type);
        CConstRef <CSeq_feat> GetmRNAforCDS(const CSeq_feat& cd_feat, 
-                                                             const CSeq_entry& seq_entry);
+                                           const CSeq_entry& seq_entry);
        CConstRef <CProt_ref> GetProtRefForFeature(const CSeq_feat& seq_feat, 
-                                                                        bool look_xref=true);
+                                                  bool look_xref=true);
        bool IsLocationOrganelle(int genome);
        bool ProductsMatchForRefSeq(const string& feat_prod, const string& mRNA_prod);
        bool IsMrnaSequence();
@@ -2378,7 +2437,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
     protected:
       string GetName_exon() const {return string("TEST_EXON_ON_MRNA"); }
       string GetName_qual() const {return string("TEST_BAD_MRNA_QUAL"); }
-      string GetName_str() const {return string("TEST_MRNA_SEQUENCE_MINUS_ST"); }
+      string GetName_str() const {
+                  return string("TEST_MRNA_SEQUENCE_MINUS_STRAND_FEATURES"); }
       string GetName_mcds() const {return string("MULTIPLE_CDS_ON_MRNA"); }
   };
 
@@ -2391,10 +2451,10 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual string GetName() const {return CBioseq_on_mRNA::GetName_mcds();}
   };
 
-  class CBioseq_TEST_MRNA_SEQUENCE_MINUS_ST : public CBioseq_on_mRNA
+  class CBioseq_TEST_MRNA_SEQUENCE_MINUS_STRAND_FEATURES :public CBioseq_on_mRNA
   {
     public:
-      virtual ~CBioseq_TEST_MRNA_SEQUENCE_MINUS_ST () {};
+      virtual ~CBioseq_TEST_MRNA_SEQUENCE_MINUS_STRAND_FEATURES () {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return CBioseq_on_mRNA::GetName_str();}
@@ -2796,7 +2856,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     protected:
       string GetName_cnt () const {return string("COUNT_PROTEINS"); }
       string GetName_id() const {return string("MISSING_PROTEIN_ID"); }
-      string GetName_prefix() const {return string("INCONSISTENT_PROTEIN_ID_PREFIX"); }
+      string GetName_prefix() const {return string("INCONSISTENT_PROTEIN_ID"); }
   };
 
 
@@ -2820,10 +2880,10 @@ BEGIN_SCOPE(DiscRepNmSpc)
   };
 
 
-  class CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX : public CBioseq_test_on_prot
+  class CBioseq_INCONSISTENT_PROTEIN_ID: public CBioseq_test_on_prot
   {
     public:
-      virtual ~CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX () {};
+      virtual ~CBioseq_INCONSISTENT_PROTEIN_ID() {};
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return CBioseq_test_on_prot::GetName_prefix(); }
@@ -3602,8 +3662,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual string GetName() const {return string("DISC_SHORT_INTRON");}
 
     private:
-      bool PosIsAt3End(const unsigned pos, CConstRef <CBioseq>& bioseq);
-      bool PosIsAt5End(unsigned pos, CConstRef <CBioseq>& bioseq);
+      bool PosIsAt3End(const unsigned pos, const CBioseq& bioseq);
+      bool PosIsAt5End(unsigned pos, const CBioseq& bioseq);
   };
 
 
@@ -3746,7 +3806,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
     protected:
       string GetName_dup() const { return string("DUPLICATE_LOCUS_TAGS"); }
-      string GetName_incons() const { return string("INCONSISTENT_LOCUS_TAG_PREFIX"); }
+      string GetName_incons() const {
+                             return string("INCONSISTENT_LOCUS_TAG_PREFIX"); }
       string GetName_badtag() const { return string("BAD_LOCUS_TAG_FORMAT"); }
   };
 
@@ -3755,7 +3816,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DUPLICATE_LOCUS_TAGS() { };
 
-      virtual string GetName() const {return CBioseq_on_locus_tags::GetName_dup();}
+      virtual string GetName() const {
+                               return CBioseq_on_locus_tags::GetName_dup();}
   };
 
   class CBioseq_INCONSISTENT_LOCUS_TAG_PREFIX : public CBioseq_on_locus_tags
@@ -3764,7 +3826,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_INCONSISTENT_LOCUS_TAG_PREFIX() { };
       virtual void GetReport(CRef <CClickableItem>& c_item);
 
-      virtual string GetName() const {return CBioseq_on_locus_tags::GetName_incons();}
+      virtual string GetName() const {
+                            return CBioseq_on_locus_tags::GetName_incons();}
   };
 
   class CBioseq_BAD_LOCUS_TAG_FORMAT : public CBioseq_on_locus_tags
@@ -3772,9 +3835,44 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_BAD_LOCUS_TAG_FORMAT() { };
 
-      virtual string GetName() const {return CBioseq_on_locus_tags::GetName_badtag();}
+      virtual string GetName() const {
+                            return CBioseq_on_locus_tags::GetName_badtag();}
   };
 
+  class CBioseq_on_feat_cnt : public CBioseqTestAndRepData
+  {
+    public:
+      virtual ~CBioseq_on_feat_cnt () {};
+
+      virtual void TestOnObj(const CBioseq& bioseq);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
+      virtual string GetName() const = 0;
+ 
+    protected:
+      string GetName_oncaller () const {
+                             return string("DISC_FEATURE_COUNT_oncaller"); }
+      string GetName_gen() const {return string("DISC_FEATURE_COUNT"); }
+  };
+
+  class CBioseq_DISC_FEATURE_COUNT_oncaller : public CBioseq_on_feat_cnt
+  {
+    public: 
+      virtual ~CBioseq_DISC_FEATURE_COUNT_oncaller () {};
+    
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {
+                     return CBioseq_on_feat_cnt::GetName_oncaller(); }
+  };
+
+  class CBioseq_DISC_FEATURE_COUNT : public CBioseq_on_feat_cnt
+  {
+    public:
+      virtual ~CBioseq_DISC_FEATURE_COUNT() {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_on_feat_cnt::GetName_gen();}
+  };
+/*
   class CBioseq_DISC_FEATURE_COUNT : public CBioseqTestAndRepData
   {
     public:
@@ -3784,6 +3882,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("DISC_FEATURE_COUNT");}
   };
+*/
 
 
 
@@ -3807,42 +3906,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return string("FIND_OVERLAPPED_GENES");}
   };
-
-
-
-/*
-  class CBioseq_MISSING_PROTEIN_ID : public CBioseqTestAndRepData
-  {
-    public:
-      virtual ~CBioseq_MISSING_PROTEIN_ID () {};
-
-      virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("MISSING_PROTEIN_ID");}
-
-    private:
-      string GetName_prefix() const {return string("INCONSISTENT_PROTEIN_ID_PREFIX");}
-  };
-*/
-
-
-/*
-  class CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX : public CBioseqTestAndRepData
-  {
-    public:
-      virtual ~CBioseq_INCONSISTENT_PROTEIN_ID_PREFIX () {};
-
-      virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("INCONSISTENT_PROTEIN_ID_PREFIX");}
-
-   private:
-      string GetName_pid() const {return string("MISSING_PROTEIN_ID"); }
-      void MakeRep(const Str2Strs& item_map, const string& desc1, const string& desc2);
-  };
-
-*/
-
 
   class CBioseq_TEST_DEFLINE_PRESENT : public CBioseqTestAndRepData
   {

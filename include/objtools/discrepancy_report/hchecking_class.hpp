@@ -93,7 +93,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
          bool CanGetOrgMod(const CBioSource& biosrc);
          void CollectSeqdescFromSeqEntry(const CSeq_entry_Handle& seq_entry_h);
 
-         SAnnotSelector sel_seqfeat, sel_seqfeat_4_seq_entry;
+         SAnnotSelector sel_seqfeat_4_seq_entry;
          vector <CSeqdesc :: E_Choice> sel_seqdesc, sel_seqdesc_4_bioseq;
 
          int num_bioseq;
