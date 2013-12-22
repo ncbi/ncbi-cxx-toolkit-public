@@ -68,7 +68,7 @@ struct SAsnConn_Cbdata {
 };
 
 
-static EIO_Status s_AsnClose(CONN conn, ECONN_Callback type, void* data)
+static EIO_Status s_AsnClose(CONN conn, TCONN_Callback type, void* data)
 {
     EIO_Status status;
     struct SAsnConn_Cbdata* cbdata = (struct SAsnConn_Cbdata*) data;
