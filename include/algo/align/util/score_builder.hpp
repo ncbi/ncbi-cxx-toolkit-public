@@ -59,6 +59,10 @@ public:
     CScoreBuilder(blast::CBlastOptionsHandle& options);
     ~CScoreBuilder();
 
+
+    void SetGapOpen(int gapopen)        { m_GapOpen = gapopen; }
+    void SetGapExtend(int gapextend)    { m_GapExtend = gapextend; }
+
     /// @name Functions to add scores directly to Seq-aligns
     /// @{
 
