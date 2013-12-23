@@ -570,7 +570,7 @@ typedef NCBI_PARAM_TYPE(CGI, CORS_JQuery_Callback_Enable)
 // If ever need to use a prefix other than "JQuery_" for the JQuery JSONP hack
 // callback name (above). Use symbol '*' if any name is good.
 NCBI_PARAM_DECL(string, CGI, CORS_JQuery_Callback_Prefix);
-NCBI_PARAM_DEF_EX(string, CGI, CORS_JQuery_Callback_Prefix, "JQuery_",
+NCBI_PARAM_DEF_EX(string, CGI, CORS_JQuery_Callback_Prefix, "*",
                   eParam_NoThread, CGI_CORS_JQUERY_CALLBACK_PREFIX);
 typedef NCBI_PARAM_TYPE(CGI, CORS_JQuery_Callback_Prefix)
     TCORS_JQuery_Callback_Prefix;
@@ -639,8 +639,9 @@ void CCgiResponse::InitCORSHeaders(const string& origin,
 
     // string jquery_callback = m_Request->GetEntry("callback");
     if (TCORS_JQuery_Callback_Enable::GetDefault()
-        &&  (m_RequestMethod == CCgiRequest::eMethod_GET  || 
-             m_RequestMethod == CCgiRequest::eMethod_POST)
+        &&  (m_RequestMethod == CCgiRequest::eMethod_GET   || 
+             m_RequestMethod == CCgiRequest::eMethod_POST  ||
+             m_RequestMethod == CCgiRequest::eMethod_Other)
         &&  !jquery_callback.empty()) {
         string prefix = TCORS_JQuery_Callback_Prefix::GetDefault();
         if (prefix != "*"  &&
