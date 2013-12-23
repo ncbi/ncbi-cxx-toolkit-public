@@ -5845,8 +5845,8 @@ void CBioseq_INCONSISTENT_PROTEIN_ID :: MakeRep(const Str2Strs& item_map, const 
        CRef <CClickableItem> c_item(new CClickableItem);
        c_item->setting_name = setting_name;
        c_item->item_list = it->second;
-       c_item->description
-          =GetHasComment(c_item->item_list.size(), desc1) + desc2 + it->first +".";
+       c_item->description = GetHasComment(c_item->item_list.size(), desc1) 
+                             + desc2 + it->first +".";
        thisInfo.disc_report_data.push_back(c_item);
      }
    }
@@ -5862,10 +5862,14 @@ void CBioseq_INCONSISTENT_PROTEIN_ID :: GetReport(CRef <CClickableItem>& c_item)
    c_item->item_list.clear();
 
    // ReportInconsistentGlobalDiscrepancyStrings
-   if (db2list.size() > 1) MakeRep(db2list, "sequence", "protein ID prefix ");
+   if (db2list.size() > 1) {
+       MakeRep(db2list, "sequence", "protein ID prefix ");
+   }
 
    // ReportInconsistentGlobalDiscrepancyPrefixes
-   if (prefix2list.size() > 1) MakeRep(prefix2list, "feature", "locus tag prefix ");
+   if (prefix2list.size() > 1) {
+       MakeRep(prefix2list, "feature", "locus tag prefix ");
+   }
 };
 
 
@@ -9274,19 +9278,24 @@ const list <CRef <CPCRPrimer> >& ls2)
 
 bool CSeqEntry_test_on_biosrc :: SamePCRReaction(const CPCRReaction& pcr1, const CPCRReaction& pcr2)
 {
-  bool has_fwd1 = pcr1.CanGetForward()? true : false;
-  bool has_rev1 = pcr1.CanGetReverse()? true : false;
-  bool has_fwd2 = pcr1.CanGetForward()? true : false;
-  bool has_rev2 = pcr1.CanGetReverse()? true : false;
+  bool has_fwd1 = pcr1.CanGetForward();
+  bool has_rev1 = pcr1.CanGetReverse();
+  bool has_fwd2 = pcr1.CanGetForward();
+  bool has_rev2 = pcr1.CanGetReverse();
 
-  if ((has_fwd1 != has_fwd2) || (has_rev1 != has_rev2) || (!has_fwd1 && !has_rev1)) 
-            return false;
-  if (has_fwd1) { 
-    if (SamePrimerList(pcr1.GetForward().Get(), pcr2.GetForward().Get()))
-        return (SamePrimerList(pcr1.GetReverse().Get(), pcr2.GetReverse().Get()));
+  if ((has_fwd1 != has_fwd2) 
+             || (has_rev1 != has_rev2) 
+             || (!has_fwd1 && !has_rev1)) {
+      return false;
   }
-  else if (has_rev1)
-       return (SamePrimerList(pcr1.GetReverse().Get(), pcr2.GetReverse().Get()));
+  if (has_fwd1) { 
+    if (SamePrimerList(pcr1.GetForward().Get(), pcr2.GetForward().Get())) {
+      return (SamePrimerList(pcr1.GetReverse().Get(), pcr2.GetReverse().Get()));
+    }
+  }
+  else if (has_rev1) {
+     return (SamePrimerList(pcr1.GetReverse().Get(), pcr2.GetReverse().Get()));
+  }
   else return false;
 };
 
@@ -12360,23 +12369,23 @@ void CBioseq_on_feat_cnt :: TestOnObj(const CBioseq& bioseq)
    }    
    if (thisTest.tests_run.find(GetName_oncaller()) != end_it) {
       ITERATE (Str2Int, it, feat_cnt_ls) {
-          thisInfo.test_item_list[GetName_oncaller()].push_back(
+          thisInfo.test_item_list[GetName_gen()].push_back(
                          it->first + "$" + NStr::IntToString(it->second));
       }
-
-      feat_cnt_ls.clear();
    }
    if (thisTest.tests_run.find(GetName_gen()) != end_it) {
       if (feat_cnt_ls.empty()) {
         strtmp = bioseq.IsAa() ? "missing_A" : "missing_nA";
-        thisInfo.test_item_list[GetName_gen()].push_back(strtmp +"$" + desc);
-        thisInfo.test_item_objs[GetName_gen() + "$" +strtmp].push_back(seq_ref);
+        thisInfo.test_item_list[GetName_oncaller()]
+                    .push_back(strtmp +"$" + desc);
+        thisInfo.test_item_objs[GetName_oncaller() + "$" +strtmp]
+                   .push_back(seq_ref);
       }
       ITERATE (Str2Int, it, feat_cnt_ls) { // feat$cnt@bsq;
          strtmp = it->first + "$" + NStr::UIntToString(it->second) + "@" + desc;
-         thisInfo.test_item_list[GetName_gen()].push_back(strtmp);
+         thisInfo.test_item_list[GetName_oncaller()].push_back(strtmp);
          strtmp = "$" + it->first + "&" + NStr::UIntToString(it->second);
-         thisInfo.test_item_objs[GetName_gen() + strtmp].push_back(seq_ref);
+         thisInfo.test_item_objs[GetName_oncaller() +strtmp].push_back(seq_ref);
       }
    }
 };

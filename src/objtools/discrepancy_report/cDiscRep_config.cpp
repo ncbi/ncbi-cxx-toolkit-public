@@ -1152,11 +1152,9 @@ void CRepConfig :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
     myChecker.CollectRepData();
 };  // CheckThisSeqEntry()
 
-/*
 static const s_test_property test1_list[] = {
-   {"DISC_FEAT_OVERLAP_SRCFEAT", fDiscrepancy | fAsndisc},
+   {"DISC_FEATURE_COUNT", fAsndisc}
 };
-*/
 
 static const s_test_property test_list[] = {
 // tests_on_SubmitBlk
@@ -2687,7 +2685,7 @@ void CRepConfig :: ProcessArgs()
 void CRepConfig :: Run(CRef <CRepConfig> config)
 {
   CRef <CSeq_entry> 
-     seq_ref ((CSeq_entry*)(m_TopSeqEntry->GetCompleteSeq_entry().GetPointer()));
+    seq_ref ((CSeq_entry*)(m_TopSeqEntry->GetCompleteSeq_entry().GetPointer()));
   CheckThisSeqEntry(seq_ref);
 };
 
