@@ -94,6 +94,46 @@ public:
 };
 
 
+/// Exception thrown when the requested blob is
+/// older than the requested age.
+///
+class CNetCacheBlobTooOldException : public CNetCacheException
+{
+public:
+    typedef CNetCacheException TParent;
+    enum EErrCode {
+        ///< The blob is older than the requested age.
+        eBlobTooOld,
+    };
+
+    virtual const char* GetErrCodeString() const
+    {
+        switch (GetErrCode()) {
+        case eBlobTooOld:               return "eBlobTooOld";
+        default:                        return CException::GetErrCodeString();
+        }
+    }
+
+    unsigned GetAge() const
+    {
+        const char* age = strstr(GetMsg().c_str(), "AGE=");
+        if (age == NULL)
+            return (unsigned) -1;
+        return (unsigned) atoi(age + sizeof("AGE=") - 1);
+    }
+
+    int GetVersion() const
+    {
+        const char* ver = strstr(GetMsg().c_str(), "VER=");
+        if (ver == NULL)
+            return 0;
+        return atoi(ver + sizeof("VER=") - 1);
+    }
+
+    NCBI_EXCEPTION_DEFAULT(CNetCacheBlobTooOldException, CNetCacheException);
+};
+
+
 /* @} */
 
 

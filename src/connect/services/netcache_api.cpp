@@ -197,8 +197,13 @@ void CNetCacheServerListener::OnError(
 
     static const char s_BlobNotFoundMsg[] = "BLOB not found";
     if (NStr::strncmp(err_msg.c_str(), s_BlobNotFoundMsg,
-        sizeof(s_BlobNotFoundMsg) - 1) == 0)
-        NCBI_THROW(CNetCacheException, eBlobNotFound, message);
+            sizeof(s_BlobNotFoundMsg) - 1) == 0) {
+        if (strstr(err_msg.c_str(), "AGE=") != NULL) {
+            NCBI_THROW(CNetCacheBlobTooOldException, eBlobTooOld, message);
+        } else {
+            NCBI_THROW(CNetCacheException, eBlobNotFound, message);
+        }
+    }
 
     static const char s_AccessDenied[] = "Access denied";
     if (NStr::strncmp(err_msg.c_str(), s_AccessDenied,
