@@ -46,12 +46,50 @@ public:
                     const string& namespace_name);
     ~CSoapHttpClient(void);
 
+    /// Set SOAP server URL
     void SetServerUrl(const string& server_url);
+    
+    /// Get SOAP server URL
     const string& GetServerUrl(void) const;
+    
+    /// Set default namespace name
+    ///
+    /// NOTE: 
+    ///   Client does not use this name directly,
+    ///   it only stores it.
     void SetDefaultNamespaceName(const string& namespace_name);
+
+    /// Get default namespace name
     const string& GetDefaultNamespaceName(void) const;
 
+    /// Set additional HTTP user header to use in Invoke calls.
+    /// When communicating with SOAP server, the client adds
+    /// this text AS IS into HTTP header.
+    void SetUserHeader(const string& user_header);
+
+    /// Get additional HTTP user header.
+    const string&  GetUserHeader(void) const;
+
+
+    /// Register incoming object type.
+    /// This is needed so that the SOAP message parser could recognize
+    /// these objects in incoming data and parse them correctly
+    ///
+    /// @param type_getter
+    ///   Function that returns TTypeInfo information
     void RegisterObjectType(TTypeInfoGetter type_getter);
+
+    /// Invoke SOAP server procedure synchronously:
+    /// send 'request' and receive 'response'.
+    ///
+    /// @param response
+    ///   Server response
+    /// @param request
+    ///   Client request
+    /// @param fault
+    ///   On failure, Fault message returned by the server.
+    /// @param soap_action
+    ///   HTTP SOAPAction header
     void Invoke(CSoapMessage& response, const CSoapMessage& request,
                 CConstRef<CSoapFault>* fault=0,
                 const string& soap_action = kEmptyStr) const;
@@ -69,6 +107,7 @@ protected:
 private:
     string m_ServerUrl;
     string m_DefNamespace;
+    string m_UserHeader;
     vector< TTypeInfoGetter >  m_Types;
     bool m_OmitScopePrefixes;
 };

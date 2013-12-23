@@ -69,6 +69,15 @@ const string& CSoapHttpClient::GetDefaultNamespaceName(void) const
     return m_DefNamespace;
 }
 
+void CSoapHttpClient::SetUserHeader(const string& user_header)
+{
+    m_UserHeader = user_header;
+}
+const string&  CSoapHttpClient::GetUserHeader(void) const
+{
+    return m_UserHeader;
+}
+
 void CSoapHttpClient::RegisterObjectType(TTypeInfoGetter type_getter)
 {
     if (find(m_Types.begin(), m_Types.end(), type_getter) == m_Types.end()) {
@@ -103,9 +112,14 @@ void CSoapHttpClient::Invoke(CSoapMessage& response,
 // http://www.w3.org/TR/2000/NOTE-SOAP-20000508/#_Toc478383528
 // "An HTTP client MUST use this header field when issuing a SOAP HTTP Request"
 
+    string header;
+    header = "SOAPAction: \"" + soap_action + "\"\r\n";
+    if (!m_UserHeader.empty()) {
+        header += m_UserHeader;
+        header += "\r\n";
+    }
     CConn_HttpStream http(m_ServerUrl, 0,
-        "SOAPAction: \"" + soap_action + "\"\r\n"
-        + string(MIME_ComposeContentTypeEx(eMIME_T_Text, eMIME_Xml,
+        header + string(MIME_ComposeContentTypeEx(eMIME_T_Text, eMIME_Xml,
         eENCOD_None, content_type, sizeof(content_type) - 1)),
         x_ParseHttpHeader);
 
