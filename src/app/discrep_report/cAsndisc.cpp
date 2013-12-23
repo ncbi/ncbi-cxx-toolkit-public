@@ -26,7 +26,7 @@
  * Author:  Jie Chen
  *
  * File Description:
- *   Main() of Cpp Discrepany Report
+ *   Main() of Cpp Discrepany Report, stand-alone asndisc application
  *
  */
 
@@ -38,12 +38,8 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 
-#include "/home/chenj/DisRepLib/trunk/c++/include/objtools/discrepancy_report/hDiscRep_config.hpp"
-#include "/home/chenj/DisRepLib/trunk/c++/include/objtools/discrepancy_report/hUtilib.hpp"
-/*
 #include <objtools/discrepancy_report/hDiscRep_config.hpp>
 #include <objtools/discrepancy_report/hUtilib.hpp>
-*/
 
 #include "hAsndisc.hpp"
 
@@ -86,9 +82,9 @@ void CDiscRepApp::Init(void)
                    "Report type: Asndisc, Discrepancy, Oncaller, TSA, Genome, Big Sequence, MegaReport, Include Tag, Include Tag for Superuser",
                    CArgDescriptions::eString, "Asndisc");
 
-    arg_desc->AddDefaultKey("S", "SummaryReport", "Summary Report: 'T'=true, 'F' =false", 
-                                CArgDescriptions::eBoolean, "F");
-
+    arg_desc->AddDefaultKey("S", "SummaryReport", 
+                            "Summary Report: 'T'=true, 'F' =false", 
+                            CArgDescriptions::eBoolean, "F");
 
     SetupArgDescriptions(arg_desc.release());  // call CreateArgs
 };
@@ -100,7 +96,8 @@ int CDiscRepApp :: Run(void)
     
     string report = args["P"].AsString();
     if (report == "t" || report == "s") report = "Asndisc";
-    CRef <DiscRepNmSpc::CRepConfig> config( DiscRepNmSpc::CRepConfig :: factory(report) );
+    CRef <DiscRepNmSpc::CRepConfig> 
+           config( DiscRepNmSpc::CRepConfig :: factory(report) );
     CMetaRegistry:: SEntry entry = CMetaRegistry :: Load("disc_report.ini");
     CRef <IRWRegistry> reg(entry.registry);
     config->InitParams(*reg);

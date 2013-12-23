@@ -41,8 +41,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 
-//#include <objtools/discrepancy_report/hDiscRep_config.hpp>
-#include "/home/chenj/DisRepLib/trunk/c++/include/objtools/discrepancy_report/hDiscRep_config.hpp"
+#include <objtools/discrepancy_report/hDiscRep_config.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(DiscRepNmSpc);
@@ -63,8 +62,10 @@ void GetAsndiscReport(int argc, const char* argv[])
     }
 
     string report = args["P"];
-    if (report.empty()) 
-        NCBI_THROW(CException, eUnknown, "Missing the input file which is namdatory");
+    if (report.empty()) {
+        NCBI_THROW(CException, eUnknown, 
+                           "Missing the input file which is mandatory");
+    }
     if (report == "t" || report == "s") report = "Asndisc";
     CRef <CRepConfig> config (CRepConfig::factory(report));
     config->ProcessArgs(args);
@@ -78,8 +79,7 @@ void GetAsndiscReport(int argc, const char* argv[])
 
 int main(int argc, const char* argv[])
 {
-//  SetDiagTrace(eDT_Enable);
-  SetDiagPostLevel(eDiag_Error);
+    SetDiagPostLevel(eDiag_Error);
 
     GetAsndiscReport(argc, argv);
 }

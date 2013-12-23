@@ -41,8 +41,7 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 
-// #include <objtools/discrepancy_report/hDiscRep_config.hpp>
-#include "/home/chenj/DisRepLib/trunk/c++/include/objtools/discrepancy_report/hDiscRep_config.hpp"
+#include <objtools/discrepancy_report/hDiscRep_config.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(DiscRepNmSpc);
@@ -53,7 +52,8 @@ USING_SCOPE(DiscRepNmSpc);
 
 void GetDiscrepancyReport(int argc, const char* argv[])
 {
-    auto_ptr <CObjectIStream> ois (CObjectIStream::Open(eSerial_AsnText,"L819.kc.sqn"));
+    auto_ptr <CObjectIStream> 
+            ois (CObjectIStream::Open(eSerial_AsnText,"ASM1812v1.sqn"));
     string strtmp = ois->ReadFileHeader();
     ois->SetStreamPos(0);
     CRef <CSeq_submit> seq_submit (new CSeq_submit);
@@ -61,20 +61,25 @@ void GetDiscrepancyReport(int argc, const char* argv[])
     if (strtmp == "Seq-submit") {
        *ois >> *seq_submit;
        if (seq_submit->IsEntrys()) {
-         NON_CONST_ITERATE (list <CRef <CSeq_entry> >, it, seq_submit->SetData().SetEntrys())
-            seq_entry.Reset(&(**it));
+         NON_CONST_ITERATE (list <CRef <CSeq_entry> >, it, 
+                                       seq_submit->SetData().SetEntrys()) {
+               seq_entry.Reset(&(**it));
+         }
        }
     }
     else if (strtmp == "Seq-entry") {
        *ois >> *seq_entry;
     }
 
+    ois->Close();
+
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
     CRef <CScope> scope (new CScope(*object_manager));
     scope->AddTopLevelSeqEntry(*seq_entry);   
     CSeq_entry_Handle seq_handle = scope->GetSeq_entryHandle(*seq_entry);
 
-    CRef <CRepConfig> config (CRepConfig::factory((string)"Discrepancy", &seq_handle));
+    CRef <CRepConfig> 
+          config (CRepConfig::factory((string)"Discrepancy", &seq_handle));
     config->ProcessArgs();
 
     CMetaRegistry:: SEntry entry = CMetaRegistry :: Load("disc_report.ini");
@@ -88,12 +93,11 @@ void GetDiscrepancyReport(int argc, const char* argv[])
 
 int main(int argc, const char* argv[])
 {
-// Usage discrep_oncaller
+// Usage disc_report
 
-//  SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Error);
 
     GetDiscrepancyReport(argc, argv);
-    cerr << "Program exists normally\n";
+    cerr << "Program existed normally\n";
 }
 
