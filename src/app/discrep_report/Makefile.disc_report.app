@@ -8,10 +8,9 @@
 APP = disc_report
 SRC = cApiDisc
 
-PRE_LIBS = /home/chenj/DisRepLib/trunk/c++/src/objtools/discrepancy_report/libxdiscrepancy_report.a
-
-LIB = xobjread xvalidate valid valerr taxon3 $(XFORMAT_LIBS) xalnmgr xobjutil xconnect tables \
-	taxon1 submit macro xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
+LIB = xdiscrepancy_report xobjread xvalidate valid valerr taxon3 \
+        $(XFORMAT_LIBS) xalnmgr xobjutil xconnect tables \
+        taxon1 submit macro xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
 
 LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
