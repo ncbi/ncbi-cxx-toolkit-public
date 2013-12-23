@@ -168,6 +168,32 @@ static bool s_UnbalancedParentheses (string str)
 }
 
 
+const char* sm_ValidSexQualifierValues[] = {
+  "asexual",
+  "bisexual",
+  "diecious",
+  "dioecious",
+  "female",
+  "hermaphrodite",
+  "male",
+  "monecious",
+  "monoecious",
+  "unisexual",
+};
+
+static bool s_IsValidSexQualifierValue (string str)
+
+{
+    str = NStr::ToLower(str);
+    size_t max = sizeof(sm_ValidSexQualifierValues) / sizeof(const char*);
+
+    const char* *begin = sm_ValidSexQualifierValues;
+    const char* *end = &(sm_ValidSexQualifierValues[max]);
+
+    return find(begin, end, str) != end;
+}
+
+
 const char* sm_ValidModifiedPrimerBases[] = {
   "ac4c",
   "chm5u",
@@ -955,6 +981,66 @@ static bool IsUnexpectedViralOrgModQualifier (COrgMod::TSubtype subtype)
   return rval;
 }
 
+CBioSourceKind& CBioSourceKind::operator=(const CBioSource& bsrc)
+{
+   SetNotGood();
+
+   if (bsrc.IsSetGenome())
+   {
+       CBioSource::EGenome genome = (CBioSource::EGenome) bsrc.GetGenome();
+       switch (genome)
+       {
+//       case CBioSource::eGenome_genomic: break;
+//       case CBioSource::eGenome_plastid: break;
+//       case CBioSource::eGenome_macronuclear: break;
+//       case CBioSource::eGenome_extrachrom: break;
+//       case CBioSource::eGenome_plasmid: break;
+//       case CBioSource::eGenome_transposon: break;
+//       case CBioSource::eGenome_insertion_seq: break;
+//       case CBioSource::eGenome_proviral: break;
+//       case CBioSource::eGenome_virion: break;
+//       case CBioSource::eGenome_endogenous_virus: break;
+       case CBioSource::eGenome_chloroplast:
+       case CBioSource::eGenome_chromoplast:
+       case CBioSource::eGenome_kinetoplast:
+       case CBioSource::eGenome_mitochondrion:
+       case CBioSource::eGenome_cyanelle:
+       case CBioSource::eGenome_nucleomorph:
+       case CBioSource::eGenome_apicoplast:
+       case CBioSource::eGenome_leucoplast:
+       case CBioSource::eGenome_proplastid:
+       case CBioSource::eGenome_hydrogenosome:
+       case CBioSource::eGenome_chromatophore:
+           m_organelle = true;
+           break;
+       case CBioSource::eGenome_chromosome: 
+           m_eukaryote = true;
+           break;
+//       case CBioSource::eGenome_chromatophore: break;
+       //default:
+       //    NCBI_ASSERT(0, "Not fully implemented switch statement");
+       }
+   }
+   else
+   if (bsrc.IsSetLineage())
+   {
+       const string& lineage = bsrc.GetLineage();
+       if (NStr::StartsWith(lineage, "Eukaryota"))
+           m_eukaryote = true;
+       else
+       if (NStr::StartsWith(lineage, "Bacteria"))
+           m_bacteria = true;
+       else
+       if (NStr::StartsWith(lineage, "Archaea"))
+           m_archaea = true;
+       //else
+       //    NCBI_ASSERT(0, "Not fully implemented switch statement");
+   }
+
+   return *this;
+}
+
+
 
 void CValidError_imp::ValidateBioSource
 (const CBioSource&    bsrc,
@@ -1156,7 +1242,7 @@ void CValidError_imp::ValidateBioSource
                 if (isAnimal || isPlant) {
                     /* always allow /sex, but now check values */
                     const string str = (*ssit)->GetName();
-                    if (! CSubSource::IsValidSexQualifierValue(str))  {
+                    if (! s_IsValidSexQualifierValue(str))  {
                         PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency,
                             "Invalid value (" + str + ") for /sex qualifier", obj, ctx);
                     }
@@ -1168,7 +1254,7 @@ void CValidError_imp::ValidateBioSource
                         "Unexpected use of /sex qualifier", obj, ctx);
                 } else {
                     const string str = (*ssit)->GetName();
-                    if (! CSubSource::IsValidSexQualifierValue(str)) {
+                    if (! s_IsValidSexQualifierValue(str)) {
                         // otherwise values are restricted to specific list
                         PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency,
                             "Invalid value (" + str + ") for /sex qualifier", obj, ctx);
@@ -1183,7 +1269,7 @@ void CValidError_imp::ValidateBioSource
             if (isAnimal || isPlant || isViral) {
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
                     "Unexpected use of /mating_type qualifier", obj, ctx);
-            } else if (CSubSource::IsValidSexQualifierValue((*ssit)->GetName())) {
+            } else if (s_IsValidSexQualifierValue((*ssit)->GetName())) {
                 // complain if one of the values that should go in /sex
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
                     "Unexpected use of /mating_type qualifier", obj, ctx);
@@ -2133,6 +2219,8 @@ void CValidError_imp::ValidateBioSourceForSeq
  const CSeq_entry    *ctx,
  const CBioseq_Handle& bsh)
 {
+    m_biosource_kind = source;
+
     if ( source.IsSetIs_focus() ) {
         // skip proteins, segmented bioseqs, or segmented parts
         if ( !bsh.IsAa()  &&

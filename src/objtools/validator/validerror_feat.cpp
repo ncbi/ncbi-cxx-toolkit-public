@@ -112,7 +112,7 @@ CValidError_feat::~CValidError_feat(void)
 }
 
 
-static bool s_IsValidECNumberFormat (string str)
+static bool s_IsValidECNumberFormat (const string& str)
 {
     char     ch;
     bool     is_ambig;
@@ -2619,7 +2619,7 @@ void CValidError_feat::x_ValidateProtECNumbers(const CProt_ref& prot, const CSeq
             PostErr(eDiag_Warning, eErr_SEQ_FEAT_BadEcNumberFormat,
                     (*it) + " is not in proper EC_number format", feat);
         } else {
-            string ec_number = *it;
+            const string& ec_number = *it;
             CProt_ref::EECNumberStatus status = CProt_ref::GetECNumberStatus (ec_number);
             switch (status) {
                 case CProt_ref::eEC_deleted:
@@ -7550,8 +7550,9 @@ void CValidError_feat::ValidateCharactersInField (string value, string field_nam
                  field_name + " ends with undesired character", feat);
     }
     if (NStr::EndsWith (value, "-")) {
-        PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadTrailingHyphen, 
-                 field_name + " ends with hyphen", feat);
+        if (!m_Imp.IsGpipe() || !m_Imp.BioSourceKind().IsOrganismEukaryote() )
+            PostErr (eDiag_Warning, eErr_SEQ_FEAT_BadTrailingHyphen, 
+                field_name + " ends with hyphen", feat);
     }
 }
 

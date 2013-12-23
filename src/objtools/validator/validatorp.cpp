@@ -3010,7 +3010,7 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
             m_NumGraph;
     }
 
-    if (CNcbiApplication::Instance()->GetProgramDisplayName() == "tbl2asn") {
+    if (CNcbiApplication::Instance()->GetProgramDisplayName() == "table2asn") {
         m_IsTbl2Asn = true;
     }
 }

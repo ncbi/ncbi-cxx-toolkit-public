@@ -376,6 +376,74 @@ typedef vector<COrgrefWithParent_SpecificHost> TSpecificHostWithParentList;
 bool NCBI_VALIDATOR_EXPORT HasMisSpellFlag (const CT3Data& data);
 bool NCBI_VALIDATOR_EXPORT FindMatchInOrgRef (string str, const COrg_ref& org);
 
+class CBioSourceKind
+{
+public:
+    CBioSourceKind(const CBioSource& bsrc);
+    CBioSourceKind();
+    CBioSourceKind& operator=(const CBioSource& bsrc);
+
+    bool IsOrganismBacteria() const;
+    bool IsOrganismEukaryote() const;
+    bool IsOrganismArchaea() const;
+    bool IsSourceOrganelle() const;
+    bool IsGood() const;
+    void SetNotGood();
+protected:
+    bool m_bacteria:  1;
+    bool m_eukaryote: 1;
+    bool m_archaea:   1;
+    bool m_organelle: 1;
+};
+
+inline
+CBioSourceKind::CBioSourceKind()
+{
+    SetNotGood();
+}
+
+inline
+CBioSourceKind::CBioSourceKind(const CBioSource& bsrc)
+{
+    operator=(bsrc);
+}
+
+inline
+void CBioSourceKind::SetNotGood()
+{
+   m_bacteria = false;
+   m_eukaryote = false;
+   m_archaea = false;
+   m_organelle = false; 
+}
+
+inline
+bool CBioSourceKind::IsGood() const
+{
+    return m_bacteria | m_eukaryote | m_archaea | m_organelle; 
+}
+
+inline
+bool CBioSourceKind::IsOrganismBacteria() const
+{
+    return m_bacteria;
+}
+inline
+bool CBioSourceKind::IsOrganismEukaryote() const
+{
+    return m_eukaryote;
+}
+inline
+bool CBioSourceKind::IsOrganismArchaea() const
+{
+    return m_archaea;
+}
+inline
+bool CBioSourceKind::IsSourceOrganelle() const
+{
+    return m_organelle;
+}
+
 // ===========================  Central Validation  ==========================
 
 // CValidError_imp provides the entry point to the validation process.
@@ -543,6 +611,7 @@ public:
     inline bool DoesAnyProteinHaveGeneralID(void) const { return m_ProteinHasGeneralID; }
     inline bool IsINSDInSep(void) const { return m_IsINSDInSep; }
     inline bool IsGeneious(void) const { return m_IsGeneious; }
+    inline const CBioSourceKind& BioSourceKind() const { return m_biosource_kind; }
 
     // counting number of misplaced features
     inline void ResetMisplacedFeatureCount (void) { m_NumMisplacedFeatures = 0; }
@@ -758,6 +827,8 @@ private:
     bool m_IsINSDInSep;
     bool m_FarFetchFailure;
     bool m_IsGeneious;
+
+    CBioSourceKind m_biosource_kind;
 
     bool m_IsTbl2Asn;
 
