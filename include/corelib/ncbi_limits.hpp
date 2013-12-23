@@ -152,7 +152,8 @@ END_NCBI_SCOPE
 
 BEGIN_NCBI_SCOPE
 
-template <typename T>
+// The formal is_signed parameter helps avoid warnings under MSVC.
+template <typename T, bool is_signed = numeric_limits<T>::is_signed>
 struct SAutoMinMaxLimits
 {
     typedef numeric_limits<T> TStdLim;
@@ -170,6 +171,14 @@ struct SAutoMinMaxLimits
         return TStdLim::is_integer ? TStdLim::min() : T(-TStdLim::max());
 #endif
     }
+};
+
+template <typename T>
+struct SAutoMinMaxLimits<T, false>
+{
+    typedef numeric_limits<T> TStdLim;
+    static T max(void) { return TStdLim::max(); }
+    static T min(void) { return 0; }
 };
 
 struct SAutoMax
