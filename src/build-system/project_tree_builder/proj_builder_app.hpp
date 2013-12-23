@@ -212,7 +212,7 @@ public:
     
 private:
     void    LoadProjectTags(const string& filename);
-    string  FindDepGraph(const string& root) const;
+    bool    FindDepGraph(const string& root, list<string>& found) const;
     void    LoadDepGraph(const string& filename);
     void  InsertDep(vector< set<string> >& graph, const string& dep);
 

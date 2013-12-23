@@ -2278,7 +2278,7 @@ CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
         }
 	}
     ResolveDefs(resolver, subtree_makefiles);
-    UpdateGraphDep( subtree_makefiles.m_Lib);
+    UpdateDepGraph( subtree_makefiles.m_Lib);
 
 
     // Build projects tree
@@ -2808,8 +2808,12 @@ void CProjectTreeBuilder::ProcessUserProjFile(const string& file_name,
 	}
 }
 
-void CProjectTreeBuilder::UpdateGraphDep( CProjectTreeBuilder::TFiles files)
+void CProjectTreeBuilder::UpdateDepGraph( CProjectTreeBuilder::TFiles files)
 {
+    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
+        return;
+    }
+    const CMsvcSite& site = GetApp().GetSite();
     ITERATE( CProjectTreeBuilder::TFiles, f, files) {
         const CSimpleMakeFileContents& fc( f->second);
         string libname;
@@ -2823,7 +2827,21 @@ void CProjectTreeBuilder::UpdateGraphDep( CProjectTreeBuilder::TFiles files)
             }
 //            GetApp().m_GraphDepPrecedes[libname].insert( libdep.begin(), libdep.end());
             ITERATE(list<string>, l, libdep) {
-                GetApp().m_GraphDepPrecedes[libname].insert(*l);
+                list<string> dep_list;
+                string dep(*l);
+                list<string> first_list;
+                if (CSymResolver::IsDefine(dep)) {
+                    string resolved;
+                    site.ResolveDefine(CSymResolver::StripDefine(dep), resolved);
+                    dep = resolved;
+                }
+                NStr::Split(dep, LIST_SEPARATOR_LIBS, dep_list);
+                ITERATE(list<string>, d, dep_list) {
+                    if (d->at(0) == '-' || libname == *d) {
+                        continue;
+                    }
+                    GetApp().m_GraphDepPrecedes[libname].insert(*d);
+                }
             }
         }
     }

@@ -418,23 +418,55 @@ void CSimpleMakeFileContents::AddReadyKV(const SKeyValue& kv)
         m_Contents[kv.m_Key].push_back( kv.m_Value);
     } else {
         list<string> values;
-        if (NStr::EndsWith(kv.m_Key,"LIBS")) {
+//        if (NStr::EndsWith(kv.m_Key,"LIBS")) {
+        if (NStr::FindCase(kv.m_Key,"LIB") != NPOS ||
+            NStr::FindCase(kv.m_Value," -l") != NPOS) {
             NStr::Split(kv.m_Value, LIST_SEPARATOR_LIBS, values);
         } else {
             NStr::Split(kv.m_Value, LIST_SEPARATOR, values);
         }
+// change '{' into '(', because I rely on that in many places
         NON_CONST_ITERATE(list<string>, v, values) {
             string::size_type start, end;
             while ((start = v->find("${")) != string::npos) {
-                end = v->rfind("}");
-                if (end == string::npos || end < start) {
-                    break;;
-                }
                 v->replace(start+1, 1, 1, '(');
+            }
+            while ((end = v->find("}")) != string::npos) {
                 v->replace(    end, 1, 1, ')');
             }
         }
-        m_Contents[kv.m_Key] = values;
+        list<string>& dest = m_Contents[kv.m_Key];
+        string value;
+        size_t start_count=0, end_count=0;
+        ITERATE(list<string>, v, values) {
+            string::size_type start, end;
+            if (!value.empty()) {
+                value += ' ';
+            }
+            value += *v;
+            for (start=0; (start = v->find("$(", start)) != string::npos; ++start)
+                ++start_count;
+            for (end=0; (end = v->find(")", end)) != string::npos; ++end)
+                ++end_count;
+            if (start_count == end_count) {
+// very primitive  GNU make  built-in expansion functions
+                if (NStr::StartsWith(value, "$(addsuffix")) {
+                    string first, second;
+                    string func, arg;
+                    NStr::SplitInTwo(CSymResolver::StripDefine(value), ",", first, second);
+                    NStr::SplitInTwo(first, " ", func, arg);
+                    list<string> tmp;
+                    NStr::Split(second, " ", tmp);
+                    ITERATE(list<string>, t, tmp) {
+                        dest.push_back(*t+arg);
+                    }
+                } else {
+                    dest.push_back(value);
+                }
+                start_count = end_count = 0;
+                value.clear();
+            }
+        }
     }
 }
 

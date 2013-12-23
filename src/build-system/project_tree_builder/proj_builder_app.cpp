@@ -2291,13 +2291,15 @@ const SProjectTreeInfo& CProjBulderApp::GetProjectTreeInfo(void)
     }
 
     //dependencies
-    string depsfile = FindDepGraph(m_ProjectTreeInfo->m_Root);
-    if (depsfile.empty() && !m_ExtSrcRoot.empty()) {
-        depsfile = FindDepGraph(m_ExtSrcRoot);
+    list<string> depsfile;
+    if (!FindDepGraph(m_ProjectTreeInfo->m_Root, depsfile) && !m_ExtSrcRoot.empty()) {
+        FindDepGraph(m_ExtSrcRoot, depsfile);
     }
     if (!depsfile.empty()) {
-        PTB_INFO("Library dependencies graph: " << depsfile);
-        LoadDepGraph(depsfile);
+        ITERATE(list<string>, d, depsfile) {
+            PTB_INFO("Library dependencies graph: " << *d);
+            LoadDepGraph(*d);
+        }
     }
     
     /// <include> branch of tree
@@ -2521,22 +2523,27 @@ void CProjBulderApp::LoadProjectTags(const string& filename)
     m_RegisteredProjectTags.insert("internal");
 }
 
-string CProjBulderApp::FindDepGraph(const string& root) const
+bool  CProjBulderApp::FindDepGraph(const string& root, list<string>& found) const
 {
+    found.clear();
     list<string> locations;
     string locstr(GetConfig().Get("ProjectTree", "DepGraph"));
     NStr::Split(locstr, LIST_SEPARATOR, locations);
     for (list<string>::const_iterator l = locations.begin(); l != locations.end(); ++l) {
         CDirEntry fileloc(CDirEntry::ConcatPath(root,CDirEntry::ConvertToOSPath(*l)));
         if (fileloc.Exists() && fileloc.IsFile()) {
-            return fileloc.GetPath();
+            found.push_back(fileloc.GetPath());
         }
     }
-    return kEmptyStr;
+    return !found.empty();
 }
 
 void   CProjBulderApp::LoadDepGraph(const string& filename)
 {
+    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
+        return;
+    }
+    const CMsvcSite& site = GetSite();
     CNcbiIfstream ifs(filename.c_str(), IOS_BASE::in);
     if ( ifs.is_open() ) {
         string line;
@@ -2551,10 +2558,47 @@ void   CProjBulderApp::LoadDepGraph(const string& filename)
                 string first  = *l++;
                 string second = *l++;
                 string third  = *l++;
+
+                list<string> first_list;
+                if (CSymResolver::IsDefine(first)) {
+                    string resolved;
+                    site.ResolveDefine(CSymResolver::StripDefine(first), resolved);
+                    first = resolved;
+                }
+                NStr::Split(first, LIST_SEPARATOR_LIBS, first_list);
+
+                list<string> third_list;
+                if (CSymResolver::IsDefine(third)) {
+                    string resolved;
+                    site.ResolveDefine(CSymResolver::StripDefine(third), resolved);
+                    third = resolved;
+                }
+                NStr::Split(third, LIST_SEPARATOR_LIBS, third_list);
+
                 if (second == "includes") {
-                    m_GraphDepIncludes[first].insert(third);
+                    ITERATE(list<string>, f, first_list) {
+                        if (f->at(0) == '-') {
+                            continue;
+                        }
+                        ITERATE(list<string>, t, third_list) {
+                            if (t->at(0) == '-' || *f == *t) {
+                                continue;
+                            }
+                            m_GraphDepIncludes[*f].insert(*t);
+                        }
+                    }
                 } else if (second == "needs") {
-                    m_GraphDepPrecedes[first].insert(third);
+                    ITERATE(list<string>, f, first_list) {
+                        if (f->at(0) == '-') {
+                            continue;
+                        }
+                        ITERATE(list<string>, t, third_list) {
+                            if (t->at(0) == '-' || *f == *t) {
+                                continue;
+                            }
+                            m_GraphDepPrecedes[*f].insert(*t);
+                        }
+                    }
                 }
             }
         }

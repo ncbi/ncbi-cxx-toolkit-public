@@ -371,7 +371,7 @@ private:
                                     EMakeFileType type,
                                     const CSimpleMakeFileContents* parent);
 
-    static void UpdateGraphDep( TFiles files);
+    static void UpdateDepGraph( TFiles files);
     static void ResolveDefs(CSymResolver& resolver, SMakeFiles& makefiles);
 
     
