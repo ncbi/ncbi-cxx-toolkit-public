@@ -469,8 +469,8 @@ void CCheckingClass :: GoGetRep (vector <CRef <CTestAndRepData> >& test_category
    NON_CONST_ITERATE (vector <CRef <CTestAndRepData> >, it, test_category) {
        CRef < CClickableItem > c_item (new CClickableItem);
        strtmp = (*it)->GetName();
-       if (thisInfo.test_item_list.find(strtmp) != thisInfo.test_item_list.end()) {
-
+       if (thisInfo.test_item_list.find(strtmp) 
+                                    != thisInfo.test_item_list.end()) {
             c_item->setting_name = strtmp;
             c_item->item_list = thisInfo.test_item_list[strtmp];
             if ( strtmp != "DISC_SOURCE_QUALS_ASNDISC"

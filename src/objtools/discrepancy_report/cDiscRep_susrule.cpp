@@ -1848,7 +1848,7 @@ bool CSuspectRuleCheck :: DoesObjectMatchStringConstraint(const CBioSource& bios
    GetStringsFromObject(biosrc, strs);
    ITERATE (vector <string>, it, strs) {
       if (DoesSingleStringMatchConstraint(*it, &str_cons)) {
-          arr.clear();
+          strs.clear();
           return true;
       }
    }
@@ -1915,7 +1915,9 @@ bool CSuspectRuleCheck :: DoesObjectMatchStringConstraint(const CSeq_feat& feat,
    bool rval = false;
    ITERATE (vector <string>, it, strs) { 
        rval = DoesSingleStringMatchConstraint(*it, &str_cons); 
-       if (rval) break;
+       if (rval) {
+            break;
+       }
    }
    if (!rval) {
      string str(kEmptyStr);
@@ -3847,11 +3849,15 @@ void CSuspectRuleCheck :: GetStringsFromObject(const CSeq_feat& feat, vector <st
 
 bool CSuspectRuleCheck :: DoesObjectMatchConstraintChoiceSet(const CSeq_feat& feat, const CConstraint_choice_set& c_set)
 {
-  GetStringsFromObject(feat, arr);
+  vector <string> strs_in_feat;
+  GetStringsFromObject(feat, strs_in_feat);
   ITERATE (list <CRef <CConstraint_choice> >, sit, c_set.Get()) {
-     if (!DoesObjectMatchConstraint(feat, arr, **sit)) return false;
+     if (!DoesObjectMatchConstraint(feat, strs_in_feat, **sit)) {
+           strs_in_feat.clear();
+           return false;
+     }
   }
-  arr.clear();
+  strs_in_feat.clear();
   return true;
 };
 
@@ -3863,13 +3869,22 @@ bool CSuspectRuleCheck :: DoesStringMatchSuspectRule(const CBioseq_Handle& biose
     /* we want to list the coding region, rather than the protein feature, if we can */
     if (feat.GetData().IsProt()) {
       const CSeq_feat* cds = sequence::GetCDSForProduct(m_bioseq_hl);
-      if (cds) feat_pnt = const_cast <CSeq_feat*>(cds);
+      if (cds) {
+          feat_pnt = const_cast <CSeq_feat*>(cds);
+      }
     }
 
-    if (!rule.CanGetFeat_constraint()) return true;
+    if (!rule.CanGetFeat_constraint()) {
+         return true;
+    }
     else {
-        if (!feat_pnt) return false;
-        else return  DoesObjectMatchConstraintChoiceSet (*feat_pnt, rule.GetFeat_constraint());
+        if (!feat_pnt) {
+            return false;
+        }
+        else {
+          return  DoesObjectMatchConstraintChoiceSet (*feat_pnt, 
+                                                    rule.GetFeat_constraint());
+        }
     }
   }
 

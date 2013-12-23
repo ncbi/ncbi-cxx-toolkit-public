@@ -320,7 +320,8 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
        string test_name, summ;
        ITERATE (list <CRef <CSuspect_rule> >, rit, 
                                    thisInfo.suspect_prod_rules->Get()) {
-         if ( rule_check.DoesStringMatchSuspectRule(m_bioseq_hl, 
+
+         if (rule_check.DoesStringMatchSuspectRule(m_bioseq_hl, 
                                                     prot_nm, 
                                                     *feat_in_use, **rit)){
               thisInfo.test_item_list[GetName()].push_back(
@@ -4381,10 +4382,11 @@ void CBioseq_TEST_UNUSUAL_NT :: GetReport(CRef <CClickableItem>& c_item)
 
 void CBioseq_RNA_NO_PRODUCT :: TestOnObj(const CBioseq& bioseq)
 {
-  string pseudo;
   ITERATE (vector <const CSeq_feat*>, it, rna_feat) {
      CSeqFeatData :: ESubtype subtype = (*it)->GetData().GetSubtype();
-     pseudo = IsPseudoSeqFeatOrXrefGene(*it) ? "pseudo" : "not pseudo";
+     if (IsPseudoSeqFeatOrXrefGene(*it)) {
+            continue;
+     }
      if (subtype == CSeqFeatData :: eSubtype_otherRNA) {
         if ((*it)->CanGetComment()) {
           strtmp = (*it)->GetComment();
@@ -4400,10 +4402,8 @@ void CBioseq_RNA_NO_PRODUCT :: TestOnObj(const CBioseq& bioseq)
      }
      
      if (GetRNAProductString(**it).empty()) {
-        thisInfo.test_item_list[GetName()].push_back(
-                                     pseudo + "$" +GetDiscItemText(**it));
-        thisInfo.test_item_objs[GetName() + "$" + pseudo].push_back(
-                                               CConstRef <CObject>(*it));
+        thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**it));
+        thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(*it));
      }
   }
 };
@@ -4411,30 +4411,11 @@ void CBioseq_RNA_NO_PRODUCT :: TestOnObj(const CBioseq& bioseq)
 
 void CBioseq_RNA_NO_PRODUCT :: GetReport(CRef <CClickableItem>& c_item)
 {
-  Str2Strs sub_ls;
-  vector <string> rep_arr;
-  GetTestItemList(c_item->item_list, sub_ls);
-  c_item->item_list.clear();
-  unsigned cnt;
-  if (sub_ls.size() == 1) {
-    c_item->item_list = sub_ls.begin()->second;
-    cnt = c_item->item_list.size();
-    c_item->obj_list 
-       = thisInfo.test_item_objs[GetName()+ "$" + sub_ls.begin()->first];
-    c_item->description 
-       = GetHasComment(cnt, "RNA feature") 
-         + "no product and " + ( (cnt>1) ? "are " : "is ") 
-         + sub_ls.begin()->first + ".";
-  }
-  else {
-    ITERATE (Str2Strs, it, sub_ls) {
-      cnt = (it->second).size(); 
-      AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second), 
-              "RNA feature", 
-       (string)"no product and " +((cnt >1) ? "are " : "is ") + it->first + ".",
-               e_HasComment);
-    }
-  }
+  c_item->obj_list = thisInfo.test_item_objs[GetName()];
+  unsigned cnt = c_item->item_list.size();
+  c_item->description 
+      = GetHasComment(cnt, "RNA feature") 
+         + "no product and " + ( (cnt>1) ? "are " : "is ") + " not pseudo.";
 };
 
 
