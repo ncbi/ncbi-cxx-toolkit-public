@@ -73,6 +73,9 @@ const CComment_rule& CComment_set::FindCommentRule (const string& prefix) const
             return **it;
         }
     }
+
+    NCBI_THROW (CCoreException, eNullPtr, "FindCommentRule failed");
+
     return *CConstRef<CComment_rule>();
 }
 
