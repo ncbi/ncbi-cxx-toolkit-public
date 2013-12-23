@@ -168,32 +168,6 @@ static bool s_UnbalancedParentheses (string str)
 }
 
 
-const char* sm_ValidSexQualifierValues[] = {
-  "asexual",
-  "bisexual",
-  "diecious",
-  "dioecious",
-  "female",
-  "hermaphrodite",
-  "male",
-  "monecious",
-  "monoecious",
-  "unisexual",
-};
-
-static bool s_IsValidSexQualifierValue (string str)
-
-{
-    str = NStr::ToLower(str);
-    size_t max = sizeof(sm_ValidSexQualifierValues) / sizeof(const char*);
-
-    const char* *begin = sm_ValidSexQualifierValues;
-    const char* *end = &(sm_ValidSexQualifierValues[max]);
-
-    return find(begin, end, str) != end;
-}
-
-
 const char* sm_ValidModifiedPrimerBases[] = {
   "ac4c",
   "chm5u",
@@ -1182,7 +1156,7 @@ void CValidError_imp::ValidateBioSource
                 if (isAnimal || isPlant) {
                     /* always allow /sex, but now check values */
                     const string str = (*ssit)->GetName();
-                    if (! s_IsValidSexQualifierValue(str))  {
+                    if (! CSubSource::IsValidSexQualifierValue(str))  {
                         PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency,
                             "Invalid value (" + str + ") for /sex qualifier", obj, ctx);
                     }
@@ -1194,7 +1168,7 @@ void CValidError_imp::ValidateBioSource
                         "Unexpected use of /sex qualifier", obj, ctx);
                 } else {
                     const string str = (*ssit)->GetName();
-                    if (! s_IsValidSexQualifierValue(str)) {
+                    if (! CSubSource::IsValidSexQualifierValue(str)) {
                         // otherwise values are restricted to specific list
                         PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency,
                             "Invalid value (" + str + ") for /sex qualifier", obj, ctx);
@@ -1209,7 +1183,7 @@ void CValidError_imp::ValidateBioSource
             if (isAnimal || isPlant || isViral) {
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
                     "Unexpected use of /mating_type qualifier", obj, ctx);
-            } else if (s_IsValidSexQualifierValue((*ssit)->GetName())) {
+            } else if (CSubSource::IsValidSexQualifierValue((*ssit)->GetName())) {
                 // complain if one of the values that should go in /sex
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
                     "Unexpected use of /mating_type qualifier", obj, ctx);

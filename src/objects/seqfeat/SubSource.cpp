@@ -1322,6 +1322,36 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
 }
 
 
+const char* sm_ValidSexQualifierValues[] = {
+  "asexual",
+  "bisexual",
+  "diecious",
+  "dioecious",
+  "female",
+  "hermaphrodite",
+  "male",
+  "monecious",
+  "monoecious",
+  "unisexual",
+};
+
+
+bool CSubSource::IsValidSexQualifierValue (const string& value)
+
+{
+    string str = value;
+    NStr::ToLower(str);
+    size_t max = sizeof(sm_ValidSexQualifierValues) / sizeof(const char*);
+
+    const char* *begin = sm_ValidSexQualifierValues;
+    const char* *end = &(sm_ValidSexQualifierValues[max]);
+
+    return find(begin, end, str) != end;
+}
+
+
+
+
 // =============================================================================
 //                                 Country Names
 // =============================================================================
