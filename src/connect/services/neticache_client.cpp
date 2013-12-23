@@ -763,22 +763,12 @@ IReader* SNetICacheClientImpl::ReadCurrentBlobNotOlderThan(const string& key,
 
         return new CNetCacheReader(this, blob_id, exec_result,
                 blob_size_ptr, &m_DefaultParameters);
-    } catch (CNetCacheException& e) {
-        if (e.GetErrCode() != CNetCacheException::eBlobNotFound)
-            throw;
-        const string& msg = e.GetMsg();
-        if (max_age > 0 && msg.find("AGE=") != string::npos) {
-            CNetServer::SExecResult exec_result;
-            exec_result.response = msg;
-            *actual_age = x_ExtractBlobAge(exec_result, "READLAST");
-        }
+    } catch (CNetCacheBlobTooOldException& e) {
+        if (actual_age != NULL)
+            *actual_age = e.GetAge();
+        if (version != NULL)
+            *version = e.GetVersion();
 
-        string::size_type pos = msg.find("VER=");
-        if (pos != string::npos) {
-            *version = (int) NStr::StringToUInt(
-                msg.c_str() + pos + sizeof("VER=") - 1,
-                NStr::fAllowTrailingSymbols);
-        }
         return NULL;
     }
 }
