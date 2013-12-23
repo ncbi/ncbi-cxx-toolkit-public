@@ -344,6 +344,9 @@ void CBioseqContext::x_SetHasMultiIntervalGenes(void)
 void CBioseqContext::x_SetTaxname(void)
 {
     // look for taxname in Seqdescs
+    int num_super_kingdom = 0;
+    bool super_kingdoms_different = false;
+    string super_kingdom_name;
     CSeqdesc_CI desc_ci( m_Handle, CSeqdesc::e_Source );
     for( ; desc_ci; ++desc_ci ) {
         if( desc_ci->IsSource() ) {
@@ -362,7 +365,15 @@ void CBioseqContext::x_SetTaxname(void)
                                     if (te.GetFixed_level() == 0 && te.IsSetLevel()) {
                                         const string& lvl = te.GetLevel();
                                         if (NStr::EqualNocase (lvl, "superkingdom")) {
-                                            m_IsCrossKingdom = true;
+                                            num_super_kingdom++;
+                                            if (super_kingdom_name.empty() && te.IsSetName()) {
+                                                super_kingdom_name = te.GetName();
+                                            } else if (te.IsSetName() && ! NStr::EqualNocase (super_kingdom_name, te.GetName())) {
+                                                super_kingdoms_different = true;
+                                            }
+                                            if (num_super_kingdom > 1 && super_kingdoms_different) {
+                                                m_IsCrossKingdom = true;
+                                            }
                                         }
                                     }
                                 }
@@ -372,11 +383,15 @@ void CBioseqContext::x_SetTaxname(void)
                 }
             }
             if( bsrc.IsSetTaxname() && ! bsrc.GetTaxname().empty() ) {
-                // we found a taxname; we're done
+                // we found a taxname; but need to look at all descriptors to set m_IsCrossKingdom, so keep going
                 m_Taxname = bsrc.GetTaxname();
-                return;
+                // return;
             }
         }
+    }
+
+    if (! m_Taxname.empty()) {
+        return;
     }
 
     // fall back on the Seq-feats
