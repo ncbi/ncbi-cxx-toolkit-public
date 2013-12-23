@@ -443,7 +443,7 @@ void CValidError_imp::ValidatePubArticle
                     && (!imp.IsSetPrepub() || imp.GetPrepub() != CImprint::ePrepub_in_press)) {
                     bool noVol = !imp.IsSetVolume() || NStr::IsBlank(imp.GetVolume());
                     bool noPages = !imp.IsSetPages() || NStr::IsBlank(imp.GetPages());
-                    if (!noVol && !noPages) {
+                    if (!noVol && !noPages && uid == 0) {
                         PostObjErr (eDiag_Warning, eErr_GENERIC_PublicationInconsistency, 
                                  "Ahead-of-print without in-press", obj, ctx);
                     }
