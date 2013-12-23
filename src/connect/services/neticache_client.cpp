@@ -766,8 +766,7 @@ IReader* SNetICacheClientImpl::ReadCurrentBlobNotOlderThan(const string& key,
     } catch (CNetCacheBlobTooOldException& e) {
         if (actual_age != NULL)
             *actual_age = e.GetAge();
-        if (version != NULL)
-            *version = e.GetVersion();
+        *version = e.GetVersion();
 
         return NULL;
     }
