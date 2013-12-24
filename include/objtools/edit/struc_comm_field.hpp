@@ -87,6 +87,9 @@ public:
     static void NormalizePrefix(string& prefix);
     static string MakePrefixFromRoot(const string& root);
     static string MakeSuffixFromRoot(const string& root);
+    static string KeywordForPrefix(const string& prefix);
+    static string PrefixForKeyword(const string& keyword);
+    static vector<string> GetKeywordList();
 
 protected:
     string m_Prefix;

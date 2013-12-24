@@ -543,6 +543,59 @@ CRef<CUser_object> CStructuredCommentField::MakeUserObject(const string& prefix)
 }
 
 
+typedef SStaticPair<const char*, const char*> TKeywordPrefix;
+
+const TKeywordPrefix s_StructuredCommentKeywords[] = {
+  {"GSC:MIGS:2.1", "MIGS-Data"},
+  {"GSC:MIMS:2.1", "MIMS-Data"},
+  {"GSC:MIENS:2.1", "MIENS-Data"},
+  {"GSC:MIxS;MIGS:3.0", "MIGS:3.0-Data"},
+  {"GSC:MIxS;MIMS:3.0", "MIMS:3.0-Data"},
+  {"GSC:MIxS;MIMARKS:3.0", "MIMARKS:3.0-Data"} };
+
+static size_t k_NumStructuredCommentKeywords = sizeof(s_StructuredCommentKeywords) / sizeof(TKeywordPrefix);
+
+string CStructuredCommentField::KeywordForPrefix(const string& prefix)
+{
+    size_t i;
+    string compare = prefix;
+    NormalizePrefix(compare);
+
+    for (i = 0; i < k_NumStructuredCommentKeywords; i++) {
+        if (NStr::Equal(compare.c_str(), s_StructuredCommentKeywords[i].second)) {
+            return s_StructuredCommentKeywords[i].first;
+        }
+    }
+    return "";
+}
+
+
+string CStructuredCommentField::PrefixForKeyword(const string& keyword)
+{
+    size_t i;
+
+    for (i = 0; i < k_NumStructuredCommentKeywords; i++) {
+        if (NStr::Equal(keyword.c_str(), s_StructuredCommentKeywords[i].first)) {
+            return s_StructuredCommentKeywords[i].second;
+        }
+    }
+    return "";
+}
+
+
+vector<string> CStructuredCommentField::GetKeywordList()
+{
+    vector<string> keywords;
+
+    size_t i;
+
+    for (i = 0; i < k_NumStructuredCommentKeywords; i++) {
+        keywords.push_back(s_StructuredCommentKeywords[i].first);
+    }
+    return keywords;
+}
+
+
 const string kGenomeAssemblyData = "Genome-Assembly-Data";
 const string kAssemblyMethod = "Assembly Method";
 const string kGenomeCoverage = "Genome Coverage";

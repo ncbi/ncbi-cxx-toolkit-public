@@ -180,7 +180,18 @@ BOOST_AUTO_TEST_CASE(StructuredCommentField)
     } else {
         BOOST_CHECK_EQUAL(field_names.size(), 14);
     }
+
+    string keyword = edit::CStructuredCommentField::KeywordForPrefix("MIGS:3.0-Data");
+    BOOST_CHECK_EQUAL(keyword, "GSC:MIxS;MIGS:3.0");
+
+    string prefix = edit::CStructuredCommentField::PrefixForKeyword("GSC:MIxS;MIMS:3.0");
+    BOOST_CHECK_EQUAL(prefix, "MIMS:3.0-Data");
+
+    vector<string> keywords = edit::CStructuredCommentField::GetKeywordList();
+    BOOST_CHECK_EQUAL(keywords[0], "GSC:MIGS:2.1");
 }
+
+
 
 
 BOOST_AUTO_TEST_CASE(Test_GenomeAssemblyData)
