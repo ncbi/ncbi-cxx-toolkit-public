@@ -436,6 +436,7 @@ void CSimpleMakeFileContents::AddReadyKV(const SKeyValue& kv)
             }
         }
         list<string>& dest = m_Contents[kv.m_Key];
+        dest.clear();
         string value;
         size_t start_count=0, end_count=0;
         ITERATE(list<string>, v, values) {
