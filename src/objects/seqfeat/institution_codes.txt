@@ -4312,6 +4312,7 @@ NMMBP	s	National Museum of Marine Biology and Aquarium
 NMMH	s	North Manchurian Museum
 NMML	s	National Marine Mammal Laboratory
 NMMNH	s	New Mexico Museum of Natural History and Science
+NMMNH:Mamm	s	New Mexico Museum of Natural History and Science, Mammal collection
 NMN	s	Northamptonshire Natural History Society
 NMND	s	National Museum of Natural History, New Delhi
 NMNH<IND>	s	National Museum of Natural History, New Delhi
@@ -6436,6 +6437,7 @@ UVV	s	Universita di Venezia, Dipartimento de Scienze Ambientali
 UW	s	University of Washington Fish Collection
 UWA	s	University of Western Australia, Botany Department
 UWBM	s	University of Washington, Burke Museum
+UWBM:Mamm	s	University of Washington, Burke Museum, Burke Museum's mammal collection
 UWC	s	University of the Western Cape, Botany Department
 UWCC<USA-WA>	c	University of Washington Culture Collection
 UWCP	s	University of Wroclaw
