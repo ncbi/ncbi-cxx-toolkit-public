@@ -40,7 +40,7 @@ export NCBI_APPLOG_TOKEN
 
 $APPLOG post  '' -message "app error message"                        || Error "post_app_err"
 $APPLOG post  '' -severity trace -message "app trace message"        || Error "post_app_trace"
-$APPLOG perf  '' -time 1.2                                           || Error "perf_app_1"
+$APPLOG perf  '' -status=0 -time 1.2                                 || Error "perf_app_1"
 $APPLOG perf  '' -status=404 -time=4.5 -param="k1=v1&k2=v2"          || Error "perf_app_2"
 $APPLOG extra ''                                                     || Error "extra_app_1"
 $APPLOG extra '' -param="extra1=1"                                   || Error "extra_app_2"
@@ -59,7 +59,7 @@ $APPLOG extra $request_token -param="k3=v3"                          || Error "e
 $APPLOG stop_request $request_token -status=200 -input=11 -output=13 >/dev/null 2>&1 || Error "stop_request(1)"
 
 # --- Posting between requests
-$APPLOG post         '' -message "message posted between requests"   || Error "post_app_between"
+$APPLOG post '' -message "message posted between requests"   || Error "post_app_between"
 
 # --- Request 2
 request_token=`$APPLOG start_request '' -sid=request2 -rid=2 -client=5.6.7.8 -param="r21=v3&r22=v4"`

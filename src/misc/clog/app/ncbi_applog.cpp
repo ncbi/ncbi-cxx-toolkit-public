@@ -57,16 +57,13 @@
 
  /*
  Command lines:
-    ncbi_applog start_app     -pid PID -appname NAME [-host HOST] [-sid SID] [-logsite SITE]
-                                      [-timestamp TIME]  // -> app_token
-    ncbi_applog stop_app      <token> [-status STATUS] [-timestamp TIME]
-    ncbi_applog start_request <token> [-sid SID] [-rid RID] [-client IP] [-param PAIRS]
-                                      [-timestamp TIME]  // -> request_token
-    ncbi_applog stop_request  <token> [-status STATUS] [-input N] [-output N]
-                                      [-timestamp TIME]  // -> app_token
+    ncbi_applog start_app     -pid PID -appname NAME [-host HOST] [-sid SID] [-logsite SITE] [-timestamp TIME]  // -> app_token
+    ncbi_applog stop_app      <token> -status STATUS [-timestamp TIME]
+    ncbi_applog start_request <token> [-sid SID] [-rid RID] [-client IP] [-param PAIRS] [-timestamp TIME]  // -> request_token
+    ncbi_applog stop_request  <token> -status STATUS [-input N] [-output N] [-timestamp TIME]  // -> app_token
     ncbi_applog post          <token> [-severity SEV] [-timestamp TIME] -message MSG
     ncbi_applog extra         <token> [-param PAIRS]  [-timestamp TIME]
-    ncbi_applog perf          <token> [-status STATUS] -time TIMESPAN [-param PAIRS] [-timestamp TIME]
+    ncbi_applog perf          <token> -status STATUS -time TIMESPAN [-param PAIRS] [-timestamp TIME]
     ncbi_applog parse_token   <token> [-appname] [-client] [-guid] [-host] [-logsite]
                                       [-pid] [-rid] [-sid] [-srvport] [-app_start_time] [-req_start_time]
 
@@ -256,8 +253,8 @@ void CNcbiApplogApp::Init(void)
         );
         arg->AddOpening
             ("token", "Session token, obtained from stdout for <start_app> or <start_request> command.", CArgDescriptions::eString);
-        arg->AddDefaultKey
-            ("status", "STATUS", "Exit status of the application.", CArgDescriptions::eInteger, "0");
+        arg->AddKey
+            ("status", "STATUS", "Exit status of the application.", CArgDescriptions::eInteger);
         arg->AddDefaultKey
             ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
             CArgDescriptions::eString, kEmptyStr);
@@ -310,8 +307,8 @@ void CNcbiApplogApp::Init(void)
         );
         arg->AddOpening
             ("token", "Session token, obtained from stdout for <start_request> command.", CArgDescriptions::eString);
-        arg->AddDefaultKey
-            ("status", "STATUS", "Exit status of the request.", CArgDescriptions::eInteger, "0");
+        arg->AddKey
+            ("status", "STATUS", "Exit status of the request (HTTP status code).", CArgDescriptions::eInteger);
         arg->AddDefaultKey
             ("input", "N", "Input data read during the request execution, in bytes.", CArgDescriptions::eInteger, "0");
         arg->AddDefaultKey
@@ -383,8 +380,8 @@ void CNcbiApplogApp::Init(void)
 //        arg->SetDetailedDescription();
         arg->AddOpening
             ("token", "Session token, obtained from stdout for <start_app> or <start_request> command.", CArgDescriptions::eString);
-        arg->AddDefaultKey
-            ("status", "STATUS", "Exit status of the application.", CArgDescriptions::eInteger, "0");
+        arg->AddKey
+            ("status", "STATUS", "Status of the operation.", CArgDescriptions::eInteger);
         arg->AddKey
             ("time", "TIMESPAN", "Timespan parameter for performance logging.", CArgDescriptions::eDouble);
         arg->AddDefaultKey
@@ -685,11 +682,11 @@ ETokenType CNcbiApplogApp::ParseToken()
         }
     }
     if (!(have_name  &&  have_pid  &&  have_guid  &&  have_atime)) {
-        throw "Token string have wrong format"; 
+        throw "Token string has wrong format"; 
     }
     if (type == eRequest) {
         if (!(have_rid  &&  have_rtime)) {
-            throw "Token string have wrong format (request token type expected)"; 
+            throw "Token string has wrong format (request token type expected)"; 
         }
     }
     return type;
@@ -882,7 +879,7 @@ int CNcbiApplogApp::Run(void)
         }
         size_t pos = m_Raw_line.find(' ', kLoglineNamePos + 1);
         if (pos == NPOS) {
-            throw "Error processing input raw log, line have wrong format";
+            throw "Error processing input raw log, line has wrong format";
         }
         m_Info.appname = m_Raw_line.substr(kLoglineNamePos, pos - kLoglineNamePos);
     
@@ -1079,7 +1076,7 @@ int CNcbiApplogApp::Run(void)
     if (cmd == "stop_request") {
         if (token_par_type != eRequest) {
             // All other commands don't need this check, it can work with any token type
-            throw "Token string have wrong format (request token type expected)"; 
+            throw "Token string has wrong format (request token type expected)"; 
         }
         int status  = args["status"].AsInteger();
         int n_read  = args["input" ].AsInteger();
@@ -1164,7 +1161,7 @@ int CNcbiApplogApp::Run(void)
 
                     if (m_Raw_line.length() <= kLoglineNamePos + 1  ||
                         !NStr::StartsWith(CTempString(CTempString(m_Raw_line), kLoglineNamePos), m_Info.appname)) {
-                        throw "Error processing input raw log, line have wrong format";
+                        throw "Error processing input raw log, line has wrong format";
                     }
                     // Replace app name
                     m_Raw_line = NStr::Replace(m_Raw_line, m_Info.appname, m_Info.logsite, kLoglineNamePos, 1);
@@ -1195,7 +1192,7 @@ int CNcbiApplogApp::Run(void)
                             size_t start = kLoglineParamsPos + m_Info.logsite.size();
                             size_t pos = m_Raw_line.find_last_of(' ');
                             if (pos == NPOS || pos <= kLoglineNamePos) {
-                                throw "Error processing input raw log, perf line have wrong format";
+                                throw "Error processing input raw log, perf line has wrong format";
                             }
                             param_ofs = pos - start + 1;
                         }
@@ -1241,14 +1238,13 @@ int CNcbiApplogApp::Run(void)
 
     // -----------------------------------------------------------------------
 
-    // Deinitialize logging API
+    // De-initialize logging API
     UpdateInfo();
     NcbiLog_Destroy();
 
     // Print token (start_app, start_request)
     if (token_gen_type != eUndefined) {
-        string token = GenerateToken(token_gen_type);
-        cout << token;
+        cout << GenerateToken(token_gen_type);
     }
     return 0;
 

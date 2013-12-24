@@ -65,7 +65,7 @@ export NCBI_APPLOG_TOKEN
 
 Log 'post  "" -message "error message"'                 'post(3)'  "^00123/000/0000/P  $std Error: error message"
 Log 'post  "" -severity trace -message "trace message"' 'post(4)'  "^00123/000/0000/P  $std Trace: trace message"
-Log 'perf  "" -time 1.2'                                'perf(1)'  "^00123/000/0000/P  $std perf          0 1.200000"
+Log 'perf  "" -status 1 -time 1.2'                      'perf(1)'  "^00123/000/0000/P  $std perf          1 1.200000"
 Log 'perf  "" -status=404 -time=4.5 -param="k1=1&k2=2"' 'perf(2)'  "^00123/000/0000/P  $std perf          404 4.500000 k1=1&k2=2"
 Log 'extra ""'                                          'extra(1)' "^00123/000/0000/P  $std extra"
 Log 'extra "" -param="extra1=1"'                        'extra(2)' "^00123/000/0000/P  $std extra         extra1=1"
