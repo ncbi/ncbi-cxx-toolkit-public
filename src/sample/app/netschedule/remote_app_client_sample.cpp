@@ -111,7 +111,7 @@ int CRemoteAppClientSampleApp::Run(void)
         return 0;
     }
 
-    CNetCacheAPI netcache_api(GetConfig());
+    CNetCacheAPI netcache_api(GetGridClient().GetNetCacheAPI());
 
     if (args["jobinfo"]) {
         PrintJobInfo(args["jobinfo"].AsString(), netcache_api);
@@ -231,7 +231,7 @@ int CRemoteAppClientSampleApp::Run(void)
 
 void CRemoteAppClientSampleApp::ShowBlob(const string& blob_key)
 {
-    CNetCacheAPI nc_api(GetConfig());
+    CNetCacheAPI nc_api(GetGridClient().GetNetCacheAPI());
     auto_ptr<CNcbiIstream> is(nc_api.GetIStream(blob_key));
     NcbiStreamCopy(NcbiCout, *is);
     NcbiCout << NcbiEndl;
