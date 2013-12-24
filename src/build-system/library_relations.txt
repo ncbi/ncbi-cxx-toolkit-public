@@ -422,6 +422,7 @@ biosample needs xconnect
 biosample needs xconnext
 biosample needs xmlwrapp
 biosample needs xncbi
+biosample needs xregexp
 biosample needs xser
 biosample needs xutil
 biotree needs general
