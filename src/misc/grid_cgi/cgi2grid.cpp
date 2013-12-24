@@ -72,7 +72,7 @@ CNcbiOstream& CGI2GRID_ComposeHtmlPage(CCgiApplication&    app,
     CNetScheduleAPI ns_client(app.GetConfig());
     ns_client.SetProgramVersion("Cgi_Tunnel2Grid ver 1.0.0");
 
-    CNetCacheAPI netcache_api(app.GetConfig());
+    CNetCacheAPI netcache_api(app.GetConfig(), kEmptyStr, ns_client);
     grid_client.reset(new CGridClient(ns_client.GetSubmitter(), netcache_api,
                                       CGridClient::eManualCleanup,
                                       CGridClient::eProgressMsgOn)

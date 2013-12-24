@@ -194,7 +194,7 @@ void CGridCgiApplication::InitGridClient()
         m_NSClient.SetProgramVersion(GetProgramVersion());
     }
     if (!m_NetCacheAPI)
-        m_NetCacheAPI = CNetCacheAPI(GetConfig());
+        m_NetCacheAPI = CNetCacheAPI(GetConfig(), kEmptyStr, m_NSClient);
 
     m_GridClient.reset(new CGridClient(m_NSClient.GetSubmitter(), m_NetCacheAPI,
                                        automatic_cleanup? 
