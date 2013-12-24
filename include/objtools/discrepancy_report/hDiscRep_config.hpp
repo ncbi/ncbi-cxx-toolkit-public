@@ -244,7 +244,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static vector <string>                    taxnm_env;
         static vector <string>                    virus_lineage;
         static vector <string>                    strain_tax;
-        static CConstRef <CComment_set>           comment_rules;
         static Str2UInt                           whole_word;
         static Str2Str                            fix_data;
         static CRef <CSuspect_rule_set>           orga_prod_rules;
