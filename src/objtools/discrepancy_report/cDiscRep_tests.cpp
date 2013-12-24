@@ -9995,8 +9995,8 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
     if (run_prefix 
              && type_str == "StructuredComment"  
              && user_obj.HasField("StructuredCommentPrefix") 
-             && user_obj.HasField("StructuredCommentSuffix")) {
-// temp. off                    && validator.ValidateStructuredComment(user_obj, **it))
+             && user_obj.HasField("StructuredCommentSuffix")
+             && validator.ValidateStructuredComment(user_obj, **it)) {
        thisInfo.test_item_list[GetName_prefix()].push_back(user_desc); 
        thisInfo.test_item_objs[GetName_prefix()].push_back(CConstRef <CObject>(*it)); 
     }
@@ -12348,13 +12348,13 @@ void CBioseq_on_feat_cnt :: TestOnObj(const CBioseq& bioseq)
          feat_cnt_ls[feat_nm] ++;
       }
    }    
-   if (thisTest.tests_run.find(GetName_oncaller()) != end_it) {
+   if (thisTest.tests_run.find(GetName_gen()) != end_it) {
       ITERATE (Str2Int, it, feat_cnt_ls) {
           thisInfo.test_item_list[GetName_gen()].push_back(
                          it->first + "$" + NStr::IntToString(it->second));
       }
    }
-   if (thisTest.tests_run.find(GetName_gen()) != end_it) {
+   if (thisTest.tests_run.find(GetName_oncaller()) != end_it) {
       if (feat_cnt_ls.empty()) {
         strtmp = bioseq.IsAa() ? "missing_A" : "missing_nA";
         thisInfo.test_item_list[GetName_oncaller()]

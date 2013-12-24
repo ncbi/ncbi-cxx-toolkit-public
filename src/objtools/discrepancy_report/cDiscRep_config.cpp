@@ -92,7 +92,6 @@ vector <string>                     CDiscRepInfo :: kIntergenicSpacerNames;
 vector <string>                     CDiscRepInfo :: taxnm_env;
 vector <string>                     CDiscRepInfo :: virus_lineage;
 vector <string>                     CDiscRepInfo :: strain_tax;
-CConstRef <CComment_set>            CDiscRepInfo :: comment_rules;
 Str2UInt                            CDiscRepInfo :: whole_word;
 Str2Str                             CDiscRepInfo :: fix_data;
 CRef <CSuspect_rule_set>            CDiscRepInfo :: orga_prod_rules (new CSuspect_rule_set);
@@ -1137,10 +1136,6 @@ void CRepConfig :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
     CGBDataLoader::RegisterInObjectManager(*object_manager);
     thisInfo.scope->AddDefaults();
 
-    // ini. of comment_rules/validrules.prt for ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX
-    
-    thisInfo.comment_rules = CComment_set :: GetCommentRules();
-
     CCheckingClass myChecker;
     myChecker.CheckSeqEntry(seq_entry);
 
@@ -1151,10 +1146,6 @@ void CRepConfig :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
     // collect disc report
     myChecker.CollectRepData();
 };  // CheckThisSeqEntry()
-
-static const s_test_property test1_list[] = {
-   {"DISC_FEATURE_COUNT", fAsndisc}
-};
 
 static const s_test_property test_list[] = {
 // tests_on_SubmitBlk
