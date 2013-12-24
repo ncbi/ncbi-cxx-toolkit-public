@@ -94,18 +94,27 @@ int CDiscRepApp :: Run(void)
     // Crocess command line args:  get GI to load
     const CArgs& args = GetArgs();
     
-    string report = args["P"].AsString();
-    if (report == "t" || report == "s") report = "Asndisc";
-    CRef <DiscRepNmSpc::CRepConfig> 
+    try {
+       string report = args["P"].AsString();
+       if (report == "t" || report == "s") report = "Asndisc";
+       CRef <DiscRepNmSpc::CRepConfig> 
            config( DiscRepNmSpc::CRepConfig :: factory(report) );
-    CMetaRegistry:: SEntry entry = CMetaRegistry :: Load("disc_report.ini");
-    CRef <IRWRegistry> reg(entry.registry);
-    config->InitParams(*reg);
-    config->ReadArgs(args);
-    config->CollectTests();
-    config->Run(config);
+       CMetaRegistry:: SEntry entry = CMetaRegistry :: Load("disc_report.ini");
+       CRef <IRWRegistry> reg(entry.registry);
+       config->InitParams(*reg);
+       config->ReadArgs(args);
+       config->CollectTests();
+       config->Run(config);
 
-    return 0;
+       return 0;
+    }
+    catch (CException& eu) {
+       string err_msg(eu.GetMsg());
+       if (err_msg == "Input path or input file must be specified") {
+          err_msg = eu.GetMsg() + "\nPlease use 'asndisc -help' to get the usage, description of all arguments";
+       }
+       ERR_POST(err_msg);
+    } 
 }
 
 
@@ -121,6 +130,6 @@ int main(int argc, const char* argv[])
   try {
     return CDiscRepApp().AppMain(argc, argv);
   } catch(CException& eu) {
-     ERR_POST( "throw an error: " << eu.GetMsg());
+     ERR_POST(eu.GetMsg());
   }
 }

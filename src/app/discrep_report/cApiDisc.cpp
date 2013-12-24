@@ -53,7 +53,7 @@ USING_SCOPE(DiscRepNmSpc);
 void GetDiscrepancyReport(int argc, const char* argv[])
 {
     auto_ptr <CObjectIStream> 
-            ois (CObjectIStream::Open(eSerial_AsnText,"ASM1812v1.sqn"));
+            ois (CObjectIStream::Open(eSerial_AsnText,"test.sqn"));
     string strtmp = ois->ReadFileHeader();
     ois->SetStreamPos(0);
     CRef <CSeq_submit> seq_submit (new CSeq_submit);
@@ -95,9 +95,14 @@ int main(int argc, const char* argv[])
 {
 // Usage disc_report
 
-    SetDiagPostLevel(eDiag_Error);
+   try {
+      SetDiagPostLevel(eDiag_Error);
 
-    GetDiscrepancyReport(argc, argv);
-    cerr << "Program existed normally\n";
+      GetDiscrepancyReport(argc, argv);
+      cerr << "Program existed normally\n";
+   }
+   catch (CException& eu) {
+      ERR_POST(eu.GetMsg());
+   };
 }
 

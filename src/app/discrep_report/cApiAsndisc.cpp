@@ -79,8 +79,12 @@ void GetAsndiscReport(int argc, const char* argv[])
 
 int main(int argc, const char* argv[])
 {
-    SetDiagPostLevel(eDiag_Error);
-
-    GetAsndiscReport(argc, argv);
+    try {
+       SetDiagPostLevel(eDiag_Error);
+       GetAsndiscReport(argc, argv);
+    }
+    catch (CException& eu) {
+       ERR_POST( err_msg);
+    }
 }
 
