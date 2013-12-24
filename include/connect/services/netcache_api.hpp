@@ -37,8 +37,8 @@
 /// NetCache client specs.
 ///
 
+#include "netschedule_api.hpp"
 #include "netcache_admin.hpp"
-#include "netservice_api.hpp"
 #include "netcache_api_expt.hpp"
 #include "netcache_key.hpp"
 #include "named_parameters.hpp"
@@ -162,7 +162,8 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///   parameters in.  If empty string is passed, then the section
     ///   name "netcache_api" will be used.
     explicit CNetCacheAPI(EAppRegistry use_app_reg,
-        const string& conf_section = kEmptyStr);
+            const string& conf_section = kEmptyStr,
+            CNetScheduleAPI::TInstance ns_api = NULL);
 
     /// Constructs a CNetCacheAPI object and initializes it with
     /// parameters read from the specified registry object.
@@ -173,7 +174,8 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///   parameters in.  If empty string is passed, then the section
     ///   name "netcache_api" will be used.
     explicit CNetCacheAPI(const IRegistry& reg,
-        const string& conf_section = kEmptyStr);
+            const string& conf_section = kEmptyStr,
+            CNetScheduleAPI::TInstance ns_api = NULL);
 
     /// Constructs a CNetCacheAPI object and initializes it with
     /// parameters read from the specified configuration object.
@@ -184,12 +186,15 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     ///   parameters.  If empty string is passed, then the section
     ///   name "netcache_api" will be used.
     explicit CNetCacheAPI(CConfig* conf,
-        const string& conf_section = kEmptyStr);
+            const string& conf_section = kEmptyStr,
+            CNetScheduleAPI::TInstance ns_api = NULL);
 
-    explicit CNetCacheAPI(const string& client_name);
+    explicit CNetCacheAPI(const string& client_name,
+            CNetScheduleAPI::TInstance ns_api = NULL);
 
     /// Construct client, working with the specified service
-    CNetCacheAPI(const string& service_name, const string& client_name);
+    CNetCacheAPI(const string& service_name, const string& client_name,
+            CNetScheduleAPI::TInstance ns_api = NULL);
 
     /// Put BLOB to server.  This method is blocking and waits
     /// for a confirmation from NetCache after all data is

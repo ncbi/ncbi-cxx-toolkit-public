@@ -87,6 +87,41 @@ CRef<INetServerProperties> CNetCacheServerListener::AllocServerProperties()
     return CRef<INetServerProperties>(new SNetCacheServerProperties);
 }
 
+CConfig* CNetCacheServerListener::LoadConfigFromAltSource(CObject* api_impl,
+        string* new_section_name)
+{
+    SNetCacheAPIImpl* nc_impl = static_cast<SNetCacheAPIImpl*>(api_impl);
+
+    auto_ptr<CConfig::TParamTree> result;
+
+    if (nc_impl->m_NetScheduleAPI) {
+        CNetScheduleAPI::TQueueParams queue_params;
+
+        nc_impl->m_NetScheduleAPI.GetQueueParams(queue_params);
+
+        ITERATE(CNetScheduleAPI::TQueueParams, param_it, queue_params) {
+            if (NStr::StartsWith(param_it->first, "nc::")) {
+                string param_name(param_it->first);
+                param_name.erase(0, sizeof("nc::") - 1);
+                if (result.get() == NULL) {
+                    result.reset(new CConfig::TParamTree);
+                    *new_section_name = "netcache_conf_from_netschedule";
+                }
+                result->AddNode(CConfig::TParamValue(param_name, param_it->second));
+            }
+        }
+    }
+
+    if (result.get() == NULL)
+        return NULL;
+
+    CConfig* config = new CConfig(result.get());
+
+    result.release();
+
+    return config;
+}
+
 void CNetCacheServerListener::OnInit(CObject* api_impl,
     CConfig* config, const string& config_section)
 {
@@ -117,35 +152,17 @@ void CNetCacheServerListener::OnInit(CObject* api_impl,
         nc_impl->m_CacheOutput = config->GetBool(config_section,
             "cache_output", CConfig::eErr_NoThrow, false);
 
-        string enable_mirroring(config->GetString(config_section,
-                "enable_mirroring", CConfig::eErr_NoThrow, kEmptyStr));
+        nc_impl->m_DefaultParameters.SetMirroringMode(
+            config->GetString(config_section, "enable_mirroring",
+                CConfig::eErr_NoThrow, kEmptyStr));
 
-        if (!enable_mirroring.empty()) {
-            NStr::ReplaceInPlace(enable_mirroring, "_", kEmptyStr);
+        nc_impl->m_DefaultParameters.SetServerCheck(
+            config->GetString(config_section,
+                "server_check", CConfig::eErr_NoThrow, kEmptyStr));
 
-            nc_impl->m_DefaultParameters.SetMirroringMode(
-                NStr::CompareNocase(enable_mirroring, "ifkeymirrored") == 0 ||
-                NStr::CompareNocase(enable_mirroring, "onread") == 0 ?
-                    CNetCacheAPI::eIfKeyMirrored :
-                        NStr::StringToBool(enable_mirroring) ?
-                            CNetCacheAPI::eMirroringEnabled :
-                            CNetCacheAPI::eMirroringDisabled);
-        }
-
-        string server_check(config->GetString(config_section,
-            "server_check", CConfig::eErr_NoThrow, kEmptyStr));
-
-        if (!server_check.empty())
-            nc_impl->m_DefaultParameters.SetServerCheck(
-                NStr::CompareNocase(server_check, "auto") == 0 ?
-                    eDefault : NStr::StringToBool(server_check) ? eOn : eOff);
-
-        server_check = config->GetString(config_section,
-            "server_check_hint", CConfig::eErr_NoThrow, kEmptyStr);
-
-        if (!server_check.empty())
-            nc_impl->m_DefaultParameters.SetServerCheckHint(
-                    NStr::StringToBool(server_check));
+        nc_impl->m_DefaultParameters.SetServerCheckHint(
+            config->GetString(config_section,
+                "server_check_hint", CConfig::eErr_NoThrow, kEmptyStr));
 
         if (config->GetBool(config_section,
                 "use_compound_id", CConfig::eErr_NoThrow, false))
@@ -248,9 +265,11 @@ static const char* const s_NetCacheConfigSections[] = {
 };
 
 SNetCacheAPIImpl::SNetCacheAPIImpl(CConfig* config, const string& section,
-        const string& service, const string& client_name) :
+        const string& service, const string& client_name,
+        CNetScheduleAPI::TInstance ns_api) :
     m_Service(new SNetServiceImpl("NetCacheAPI", client_name,
         new CNetCacheServerListener)),
+    m_NetScheduleAPI(ns_api),
     m_DefaultParameters(eVoid)
 {
     m_Service->Init(this, service, config, section, s_NetCacheConfigSections);
@@ -263,6 +282,7 @@ SNetCacheAPIImpl::SNetCacheAPIImpl(SNetServerInPool* server,
     m_TempDir(parent->m_TempDir),
     m_CacheInput(parent->m_CacheInput),
     m_CacheOutput(parent->m_CacheOutput),
+    m_NetScheduleAPI(parent->m_NetScheduleAPI),
     m_DefaultParameters(parent->m_DefaultParameters)
 {
 }
@@ -438,30 +458,39 @@ CNetCachePasswordGuard::CNetCachePasswordGuard(CNetCacheAPI::TInstance nc_api,
 }
 
 CNetCacheAPI::CNetCacheAPI(CNetCacheAPI::EAppRegistry /* use_app_reg */,
-        const string& conf_section /* = kEmptyStr */) :
-    m_Impl(new SNetCacheAPIImpl(NULL, conf_section, kEmptyStr, kEmptyStr))
+        const string& conf_section /* = kEmptyStr */,
+        CNetScheduleAPI::TInstance ns_api) :
+    m_Impl(new SNetCacheAPIImpl(NULL, conf_section,
+            kEmptyStr, kEmptyStr, ns_api))
 {
 }
 
-CNetCacheAPI::CNetCacheAPI(const IRegistry& reg, const string& conf_section)
+CNetCacheAPI::CNetCacheAPI(const IRegistry& reg, const string& conf_section,
+        CNetScheduleAPI::TInstance ns_api)
 {
     CConfig conf(reg);
-    m_Impl = new SNetCacheAPIImpl(&conf, conf_section, kEmptyStr, kEmptyStr);
+    m_Impl = new SNetCacheAPIImpl(&conf, conf_section,
+            kEmptyStr, kEmptyStr, ns_api);
 }
 
-CNetCacheAPI::CNetCacheAPI(CConfig* conf, const string& conf_section) :
-    m_Impl(new SNetCacheAPIImpl(conf, conf_section, kEmptyStr, kEmptyStr))
+CNetCacheAPI::CNetCacheAPI(CConfig* conf, const string& conf_section,
+        CNetScheduleAPI::TInstance ns_api) :
+    m_Impl(new SNetCacheAPIImpl(conf, conf_section,
+            kEmptyStr, kEmptyStr, ns_api))
 {
 }
 
-CNetCacheAPI::CNetCacheAPI(const string& client_name) :
-    m_Impl(new SNetCacheAPIImpl(NULL, kEmptyStr, kEmptyStr, client_name))
+CNetCacheAPI::CNetCacheAPI(const string& client_name,
+        CNetScheduleAPI::TInstance ns_api) :
+    m_Impl(new SNetCacheAPIImpl(NULL,
+            kEmptyStr, kEmptyStr, client_name, ns_api))
 {
 }
 
 CNetCacheAPI::CNetCacheAPI(const string& service_name,
-        const string& client_name) :
-    m_Impl(new SNetCacheAPIImpl(NULL, kEmptyStr, service_name, client_name))
+        const string& client_name, CNetScheduleAPI::TInstance ns_api) :
+    m_Impl(new SNetCacheAPIImpl(NULL,
+            kEmptyStr, service_name, client_name, ns_api))
 {
 }
 
@@ -989,7 +1018,7 @@ public:
                     CVersionInfo::eNonCompatible) {
             CConfig config(params);
             return new SNetCacheAPIImpl(&config, m_DriverName,
-                kEmptyStr, kEmptyStr);
+                kEmptyStr, kEmptyStr, NULL);
         }
         return NULL;
     }

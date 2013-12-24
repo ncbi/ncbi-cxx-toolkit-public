@@ -55,7 +55,7 @@ void CGridClientApp::Init(void)
     CNetScheduleAPI ns_api(GetConfig());
     ns_api.SetProgramVersion(GetProgramVersion());
 
-    CNetCacheAPI nc_api(GetConfig());
+    CNetCacheAPI nc_api(GetConfig(), kEmptyStr, ns_api);
 
     m_GridClient.reset(new CGridClient(ns_api.GetSubmitter(),
         nc_api, cleanup, pmsg));

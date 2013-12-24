@@ -46,7 +46,9 @@ void CGridCommandLineInterfaceApp::SetUp_NetCacheCmd(
 
     switch (api_class) {
     case eNetCacheAPI:
-        m_NetCacheAPI = CNetCacheAPI(m_Opts.nc_service, m_Opts.auth);
+        m_NetCacheAPI = CNetCacheAPI(m_Opts.nc_service,
+                m_Opts.auth, m_NetScheduleAPI);
+
         if (!m_Opts.id.empty() && IsOptionExplicitlySet(eNetCache)) {
             string host, port;
 

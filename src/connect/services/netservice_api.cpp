@@ -319,9 +319,7 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
 
                 if (section_param_tree != NULL)
                     app_reg_config.reset(new CConfig(section_param_tree));
-                else if (*default_section == NULL)
-                    app_reg_config.reset(new CConfig(*reg));
-                else {
+                else if (*default_section != NULL) {
                     section = *default_section++;
                     continue;
                 }
@@ -350,6 +348,11 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
 
     m_ServiceName = service_name;
     NStr::TruncateSpacesInPlace(m_ServiceName);
+
+    if (config == NULL &&
+            (config = m_Listener->LoadConfigFromAltSource(api_impl,
+                    &section)) != NULL)
+        app_reg_config.reset(config);
 
     if (config != NULL) {
         if (m_ServiceName.empty()) {

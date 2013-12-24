@@ -56,6 +56,8 @@ public:
     virtual CRef<INetServerProperties> AllocServerProperties();
 
 public:
+    virtual CConfig* LoadConfigFromAltSource(CObject* api_impl,
+        string* new_section_name);
     virtual void OnInit(CObject* api_impl,
         CConfig* config, const string& config_section);
     virtual void OnConnected(CNetServerConnection::TInstance conn_impl);
@@ -72,7 +74,8 @@ public:
 struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
 {
     SNetCacheAPIImpl(CConfig* config, const string& section,
-        const string& service, const string& client_name);
+            const string& service, const string& client_name,
+            CNetScheduleAPI::TInstance ns_api);
 
     // For use by SNetICacheClientImpl
     SNetCacheAPIImpl(SNetServiceImpl* service_impl) :
@@ -140,6 +143,8 @@ struct NCBI_XCONNECT_EXPORT SNetCacheAPIImpl : public CObject
     string m_TempDir;
     bool m_CacheInput;
     bool m_CacheOutput;
+
+    CNetScheduleAPI m_NetScheduleAPI;
 
     CNetCacheAPIParameters m_DefaultParameters;
 

@@ -364,7 +364,7 @@ void CCgi2RCgiApp::Init()
     // does not allow obsolete clients to submit or execute jobs.
     m_NetScheduleAPI.SetProgramVersion(GRID_APP_VERSION_INFO);
 
-    m_NetCacheAPI = CNetCacheAPI(config);
+    m_NetCacheAPI = CNetCacheAPI(config, kEmptyStr, m_NetScheduleAPI);
 
     m_GridClient.reset(new CGridClient(
         m_NetScheduleAPI.GetSubmitter(),

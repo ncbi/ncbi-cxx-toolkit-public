@@ -38,10 +38,10 @@
 /// NetSchedule client specs.
 ///
 
-#include <connect/services/netschedule_key.hpp>
-#include <connect/services/netschedule_api_expt.hpp>
-#include <connect/services/netservice_api.hpp>
-#include <connect/services/compound_id.hpp>
+#include "netschedule_key.hpp"
+#include "netschedule_api_expt.hpp"
+#include "netservice_api.hpp"
+#include "compound_id.hpp"
 
 #include <corelib/plugin_manager.hpp>
 
@@ -225,6 +225,9 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     };
 
     const SServerParams& GetServerParams();
+
+    typedef map<string, string> TQueueParams;
+    void GetQueueParams(TQueueParams& queue_params);
 
     /// Get job details
     EJobStatus GetJobDetails(CNetScheduleJob& job, time_t* job_exptime = NULL);

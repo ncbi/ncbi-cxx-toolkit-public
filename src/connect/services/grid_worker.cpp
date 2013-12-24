@@ -925,7 +925,7 @@ void CGridWorkerNode::Init()
     reg.Set(kNetScheduleAPIDriverName, "discover_low_priority_servers", "true");
 
     m_NetScheduleAPI = CNetScheduleAPI(reg);
-    m_NetCacheAPI = CNetCacheAPI(reg);
+    m_NetCacheAPI = CNetCacheAPI(reg, kEmptyStr, m_NetScheduleAPI);
 }
 
 int CGridWorkerNode::Run(

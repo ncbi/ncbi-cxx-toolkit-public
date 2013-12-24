@@ -234,7 +234,7 @@ const char* const* CRemoteAppJob:: x_GetEnv()
 
 CRemoteAppJob::CRemoteAppJob(const IWorkerNodeInitContext& context,
         const CRemoteAppLauncher& remote_app_launcher) :
-    m_NetCacheAPI(context.GetConfig()),
+    m_NetCacheAPI(context.GetNetCacheAPI()),
     m_RemoteAppLauncher(remote_app_launcher)
 {
     CGridGlobals::GetInstance().SetReuseJobObject(true);

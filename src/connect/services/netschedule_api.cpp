@@ -240,6 +240,12 @@ CRef<INetServerProperties> CNetScheduleServerListener::AllocServerProperties()
     return CRef<INetServerProperties>(new SNetScheduleServerProperties);
 }
 
+CConfig* CNetScheduleServerListener::LoadConfigFromAltSource(
+    CObject* /*api_impl*/, string* /*new_section_name*/)
+{
+    return NULL;
+}
+
 void CNetScheduleServerListener::OnInit(
     CObject* api_impl, CConfig* config, const string& config_section)
 {
@@ -663,6 +669,19 @@ const CNetScheduleAPI::SServerParams& SNetScheduleAPIImpl::GetServerParams()
 const CNetScheduleAPI::SServerParams& CNetScheduleAPI::GetServerParams()
 {
     return m_Impl->GetServerParams();
+}
+
+void CNetScheduleAPI::GetQueueParams(
+        CNetScheduleAPI::TQueueParams& queue_params)
+{
+    string cmd("GETP2");
+    g_AppendClientIPAndSessionID(cmd);
+
+    CUrlArgs url_parser(m_Impl->m_Service.FindServerAndExec(cmd).response);
+
+    ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
+        queue_params[field->name] = field->value;
+    }
 }
 
 void CNetScheduleAPI::GetProgressMsg(CNetScheduleJob& job)

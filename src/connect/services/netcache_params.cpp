@@ -100,6 +100,33 @@ void CNetCacheAPIParameters::SetPassword(const string& password)
     }
 }
 
+void CNetCacheAPIParameters::SetMirroringMode(const string& mirroring_mode)
+{
+    if (!mirroring_mode.empty()) {
+        string enable_mirroring(NStr::Replace(mirroring_mode, "_", kEmptyStr));
+
+        SetMirroringMode(
+                NStr::CompareNocase(enable_mirroring, "ifkeymirrored") == 0 ||
+                NStr::CompareNocase(enable_mirroring, "onread") == 0 ?
+                        CNetCacheAPI::eIfKeyMirrored :
+                        StringToBool(enable_mirroring) ?
+                                CNetCacheAPI::eMirroringEnabled :
+                                CNetCacheAPI::eMirroringDisabled);
+    }
+}
+
+void CNetCacheAPIParameters::SetServerCheck(const string& server_check)
+{
+    if (!server_check.empty())
+        SetServerCheck(NStr::CompareNocase(server_check, "auto") == 0 ?
+                eDefault : StringToBool(server_check) ? eOn : eOff);
+}
+
+void CNetCacheAPIParameters::SetServerCheckHint(const string& server_check_hint)
+{
+    if (!server_check_hint.empty())
+        SetServerCheckHint(StringToBool(server_check_hint));
+}
 
 #define NETCACHE_API_GET_PARAM_IMPL(param_name) \
     return m_Defaults == NULL || (m_DefinedParameters & eDP_##param_name) ? \
@@ -161,6 +188,17 @@ unsigned* CNetCacheAPIParameters::GetActualBlobAgePtr() const
 bool CNetCacheAPIParameters::GetUseCompoundID() const
 {
     NETCACHE_API_GET_PARAM_IMPL(UseCompoundID);
+}
+
+bool CNetCacheAPIParameters::StringToBool(const string& bool_str,
+        bool default_value)
+{
+    try {
+        return NStr::StringToBool(bool_str);
+    }
+    catch (CStringException&) {
+        return default_value;
+    }
 }
 
 END_NCBI_SCOPE

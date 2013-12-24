@@ -102,17 +102,23 @@ public:
         m_MirroringMode = mirroring_mode;
     }
 
+    void SetMirroringMode(const string& mirroring_mode);
+
     void SetServerCheck(ESwitch server_check)
     {
         m_DefinedParameters |= eDP_ServerCheck;
         m_ServerCheck = server_check;
     }
 
+    void SetServerCheck(const string& server_check);
+
     void SetServerCheckHint(bool server_check_hint)
     {
         m_DefinedParameters |= eDP_ServerCheckHint;
         m_ServerCheckHint = server_check_hint;
     }
+
+    void SetServerCheckHint(const string& server_check_hint);
 
     void SetPassword(const string& password);
 
@@ -150,6 +156,9 @@ public:
     unsigned GetMaxBlobAge() const;
     unsigned* GetActualBlobAgePtr() const;
     bool GetUseCompoundID() const;
+
+    static bool StringToBool(const string& bool_str,
+            bool default_value = false);
 
 private:
     TDefinedParameters m_DefinedParameters;

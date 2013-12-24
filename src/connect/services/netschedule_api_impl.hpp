@@ -86,6 +86,8 @@ public:
 
     virtual CRef<INetServerProperties> AllocServerProperties();
 
+    virtual CConfig* LoadConfigFromAltSource(CObject* api_impl,
+        string* new_section_name);
     virtual void OnInit(CObject* api_impl,
         CConfig* config, const string& config_section);
     virtual void OnConnected(CNetServerConnection::TInstance conn_impl);
