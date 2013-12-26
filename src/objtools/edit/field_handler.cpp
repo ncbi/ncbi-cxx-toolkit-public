@@ -42,6 +42,7 @@
 #include <objmgr/seq_annot_handle.hpp>
 #include <objtools/edit/field_handler.hpp>
 #include <objtools/edit/dblink_field.hpp>
+#include <objtools/edit/gb_block_field.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -253,16 +254,17 @@ CFieldHandlerFactory::Create(const string& field_name)
     if (NStr::EqualNocase(field_name, kGenomeProjectID)) {
         return CRef<CFieldHandler>(new CGenomeProjectField());
     }
-    if (QualifierNamesAreEquivalent(field_name, kCommentDescriptorLabel)) {
+#endif
+    if (CFieldHandler::QualifierNamesAreEquivalent(field_name, kCommentDescriptorLabel)) {
         return CRef<CFieldHandler>(new CCommentDescField());
     }
-    if (QualifierNamesAreEquivalent(field_name, kDefinitionLineLabel)) {
+    if (CFieldHandler::QualifierNamesAreEquivalent(field_name, kDefinitionLineLabel)) {
         return CRef<CFieldHandler>( new CDefinitionLineField());
     }
-    if (NStr::EqualNocase(field_name, kGenbankBlockKeyword)) {
-        return CRef<CFieldHandler>(new CGenbankKeywordField());
+    CGBBlockField::EGBBlockFieldType gbblock_field = CGBBlockField::GetTypeForLabel(field_name);
+    if (gbblock_field != CGBBlockField::eGBBlockFieldType_Unknown) {
+        return CRef<CFieldHandler>(new CGBBlockField(gbblock_field));
     }
-#endif
 
     // empty
     CRef<CFieldHandler> empty;

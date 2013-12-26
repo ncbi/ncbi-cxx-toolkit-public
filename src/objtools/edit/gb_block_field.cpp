@@ -233,7 +233,7 @@ string CGBBlockField::GetLabelForType(EGBBlockFieldType field_type)
     string rval = "";
     switch (field_type) {
         case eGBBlockFieldType_Keyword:
-            rval = "Keyword";
+            rval = kGenbankBlockKeyword;
             break;
         case eGBBlockFieldType_ExtraAccession:
             rval = "Extra Accession";

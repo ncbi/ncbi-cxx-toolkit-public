@@ -309,5 +309,64 @@ BOOST_AUTO_TEST_CASE(Test_GBBlock)
 }
 
 
+// Comment descriptors
+BOOST_AUTO_TEST_CASE(Test_CommentDescriptors)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    STANDARD_SETUP
+
+    CBioseq_CI bi(seh, CSeq_inst::eMol_na);
+
+    CRef<edit::CFieldHandler> comment_field = edit::CFieldHandlerFactory::Create("comment descriptor");
+    if (!comment_field) {
+        BOOST_CHECK_EQUAL("Unable to create comment field handler", "Error");
+    } else {
+        vector<CRef<edit::CApplyObject> > apply_objects = comment_field->GetApplyObjects(*bi);
+    
+        BOOST_CHECK_EQUAL(apply_objects.size(), 1);    
+   
+        comment_field->SetVal(apply_objects[0]->SetObject(), "my comment", edit::eExistingText_replace_old);
+        apply_objects[0]->ApplyChange();
+
+        CSeqdesc_CI d(*bi, CSeqdesc::e_Comment);
+        if (!d) {
+            BOOST_CHECK_EQUAL("Missing Comment Descriptor", "Error");
+        } else {
+            BOOST_CHECK_EQUAL(d->GetComment(), "my comment");
+        }
+    }
+}
+
+
+// Comment descriptors
+BOOST_AUTO_TEST_CASE(Test_DefinitionLine)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    STANDARD_SETUP
+
+    CBioseq_CI bi(seh, CSeq_inst::eMol_na);
+
+    CRef<edit::CFieldHandler> defline = edit::CFieldHandlerFactory::Create("definition line");
+    if (!defline) {
+        BOOST_CHECK_EQUAL("Unable to create definition line handler", "Error");
+    } else {
+        vector<CRef<edit::CApplyObject> > apply_objects = defline->GetApplyObjects(*bi);
+    
+        BOOST_CHECK_EQUAL(apply_objects.size(), 1);    
+   
+        defline->SetVal(apply_objects[0]->SetObject(), "my defline", edit::eExistingText_replace_old);
+        apply_objects[0]->ApplyChange();
+
+        CSeqdesc_CI d(*bi, CSeqdesc::e_Title);
+        if (!d) {
+            BOOST_CHECK_EQUAL("Missing Title Descriptor", "Error");
+        } else {
+            BOOST_CHECK_EQUAL(d->GetTitle(), "my defline");
+        }
+    }
+}
+
+
+
 END_SCOPE(objects)
 END_NCBI_SCOPE

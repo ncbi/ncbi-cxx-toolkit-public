@@ -157,6 +157,121 @@ vector<CConstRef<CObject> > CTextDescriptorField::GetRelatedObjects(const CApply
 }
 
 
+string CCommentDescField::GetVal(const CObject& object)
+{
+    const CSeqdesc * obj_desc = dynamic_cast<const CSeqdesc *>(&object);
+    if (obj_desc && obj_desc->IsComment()) {
+        return obj_desc->GetComment();
+    } else {
+        return "";
+    }
+}
+
+
+vector<string> CCommentDescField::GetVals(const CObject& object)
+{
+    vector<string> vals;
+    vals.push_back(GetVal(object));
+    return vals;
+}
+
+
+bool CCommentDescField::IsEmpty(const CObject& object) const
+{
+    const CSeqdesc * obj_desc = dynamic_cast<const CSeqdesc *>(&object);
+    if (obj_desc && obj_desc->IsComment() && !NStr::IsBlank(obj_desc->GetComment())) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+void CCommentDescField::ClearVal(CObject& object)
+{
+    CSeqdesc * obj_desc = dynamic_cast<CSeqdesc *>(&object);
+    if (obj_desc) {
+        obj_desc->SetComment(" ");
+    }
+}
+
+
+bool CCommentDescField::SetVal(CObject& object, const string& val, EExistingText existing_text)
+{
+    bool rval = false;
+    CSeqdesc * obj_desc = dynamic_cast<CSeqdesc *>(&object);
+    if (!obj_desc) {
+        return false;
+    }
+    string curr_val = "";
+    if (obj_desc->IsComment()) {
+        curr_val = obj_desc->GetComment();
+    }
+    if (AddValueToString(curr_val, val, existing_text)) {
+        obj_desc->SetComment(curr_val);
+        rval = true;
+    }
+    return rval;
+}
+
+
+string CDefinitionLineField::GetVal(const CObject& object)
+{
+    const CSeqdesc * obj_desc = dynamic_cast<const CSeqdesc *>(&object);
+    if (obj_desc && obj_desc->IsTitle()) {
+        return obj_desc->GetTitle();
+    } else {
+        return "";
+    }
+}
+
+
+vector<string> CDefinitionLineField::GetVals(const CObject& object)
+{
+    vector<string> vals;
+    vals.push_back(GetVal(object));
+    return vals;
+}
+
+
+bool CDefinitionLineField::IsEmpty(const CObject& object) const
+{
+    const CSeqdesc * obj_desc = dynamic_cast<const CSeqdesc *>(&object);
+    if (obj_desc && obj_desc->IsTitle() && !NStr::IsBlank(obj_desc->GetTitle())) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
+void CDefinitionLineField::ClearVal(CObject& object)
+{
+    CSeqdesc * obj_desc = dynamic_cast<CSeqdesc *>(&object);
+    if (obj_desc) {
+        obj_desc->SetTitle(" ");
+    }
+}
+
+
+bool CDefinitionLineField::SetVal(CObject& object, const string& val, EExistingText existing_text)
+{
+    bool rval = false;
+    CSeqdesc * obj_desc = dynamic_cast<CSeqdesc *>(&object);
+    if (!obj_desc) {
+        return false;
+    }
+    string curr_val = "";
+    if (obj_desc->IsTitle()) {
+        curr_val = obj_desc->GetTitle();
+    }
+    if (AddValueToString(curr_val, val, existing_text)) {
+        obj_desc->SetTitle(curr_val);
+        rval = true;
+    }
+    return rval;
+}
+
 
 END_SCOPE(edit)
 END_SCOPE(objects)

@@ -113,6 +113,9 @@ NCBI_XOBJEDIT_EXPORT bool DoesApplyObjectMatchFieldConstraint (const CApplyObjec
 
 
 static const string kFieldTypeSeqId = "SeqId";
+const string kDefinitionLineLabel = "Definition Line";
+const string kCommentDescriptorLabel = "Comment Descriptor";
+const string kGenbankBlockKeyword = "Keyword";
 
 END_SCOPE(edit)
 END_SCOPE(objects)

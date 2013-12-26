@@ -69,6 +69,31 @@ protected:
 };
 
 
+class NCBI_XOBJEDIT_EXPORT CCommentDescField : public CTextDescriptorField
+{
+public:
+    CCommentDescField () { m_Subtype = CSeqdesc::e_Comment; };
+
+    virtual string GetVal(const CObject& object);
+    virtual vector<string> GetVals(const CObject& object);
+    virtual bool IsEmpty(const CObject& object) const;
+    virtual void ClearVal(CObject& object);
+    virtual bool SetVal(CObject& object, const string& val, EExistingText existing_text);
+};
+
+
+class NCBI_XOBJEDIT_EXPORT CDefinitionLineField : public CTextDescriptorField
+{
+public:
+    CDefinitionLineField () { m_Subtype = CSeqdesc::e_Title; };
+    virtual string GetVal(const CObject& object);
+    virtual vector<string> GetVals(const CObject& object);
+    virtual bool IsEmpty(const CObject& object) const;
+    virtual void ClearVal(CObject& object);
+    virtual bool SetVal(CObject& object, const string& val, EExistingText existing_text);
+};
+
+
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
