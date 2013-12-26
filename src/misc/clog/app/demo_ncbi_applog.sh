@@ -56,7 +56,7 @@ $APPLOG post  $request_token -severity trace -message "request trace message" ||
 $APPLOG perf  $request_token -time 3.4                               || Error "perf_request(1)_1"
 $APPLOG perf  $request_token -status=505 -time=50.6 -param="name=r1" || Error "perf_request(1)_2"
 $APPLOG extra $request_token -param="k3=v3"                          || Error "extra_request(1)"
-$APPLOG stop_request $request_token -status=200 -input=11 -output=13 >/dev/null 2>&1 || Error "stop_request(1)"
+$APPLOG stop_request $request_token -status=200 -input=11 -output=13 || Error "stop_request(1)"
 
 # --- Posting between requests
 $APPLOG post '' -message "message posted between requests"   || Error "post_app_between"

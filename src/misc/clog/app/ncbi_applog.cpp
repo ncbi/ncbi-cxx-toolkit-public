@@ -28,22 +28,23 @@
  * File Description:
  *      Command-line utility to log to AppLog (JIRA: CXX-2439).
  * Note:
- *  1) Utility returns tokens for 'start_app', 'start_request' and
- *     'stop_request' commands, that should be used as parameter for any
- *     subsequent calls. The 'stop_request' command return the same token as 
- *     'start_app', so you can use any for logging between requests.
- *  2) This utility tries to log locally (to /log) by default. If it can't
+ *  1) This utility tries to log locally (to /log) by default. If it can't
  *     do that then it try to call a CGI that does the logging
  *     (on other machine). CGI can be specified in the .ini file.
  *     If not specified, use  default at
  *     http://intranet.ncbi.nlm.nih.gov/ieb/ToolBox/util/ncbi_applog.cgi
- *  3) Utility does not implement any checks for correct commands order,
+ *  2) Utility does not implement any checks for correct commands order,
  *     because it unable save context between calls. Please control this
  *     yourself. But some arguments checks can be done inside the C Logging
  *     API, in this case ncbi_applog terminates with non-zero error code
  *     and error message printed to stdout.
- *  4) No MT support. This utility assume that it can be called from 
+ *  3) No MT support. This utility assume that it can be called from 
  *     single-thread scripts or application only. Please add MT-guards yourself.
+ *  4) Utility returns tokens for 'start_app', 'start_request' and
+ *     'stop_request' commands, that should be used as parameter for any
+ *     subsequent calls. You can use token from any previous 'start_request'
+ *     command for new requests as well, but between requests only token
+ *     from 'start_app' should be used.
  *  5) The -timestamp parameter allow to post messages happened in the past.
        But be aware, if you start to use -timestamp parameter, use it for all
        subsequent calls to ncbi_applog as well, at least with the same timestamp
@@ -60,8 +61,8 @@
     ncbi_applog start_app     -pid PID -appname NAME [-host HOST] [-sid SID] [-logsite SITE] [-timestamp TIME]  // -> app_token
     ncbi_applog stop_app      <token> -status STATUS [-timestamp TIME]
     ncbi_applog start_request <token> [-sid SID] [-rid RID] [-client IP] [-param PAIRS] [-timestamp TIME]  // -> request_token
-    ncbi_applog stop_request  <token> -status STATUS [-input N] [-output N] [-timestamp TIME]  // -> app_token
-    ncbi_applog post          <token> [-severity SEV] [-timestamp TIME] -message MSG
+    ncbi_applog stop_request  <token> -status STATUS [-input N] [-output N] [-timestamp TIME]
+    ncbi_applog post          <token> [-severity SEV] [-timestamp TIME] -message MESSAGE
     ncbi_applog extra         <token> [-param PAIRS]  [-timestamp TIME]
     ncbi_applog perf          <token> -status STATUS -time TIMESPAN [-param PAIRS] [-timestamp TIME]
     ncbi_applog parse_token   <token> [-appname] [-client] [-guid] [-host] [-logsite]
@@ -217,7 +218,7 @@ void CNcbiApplogApp::Init(void)
             "Starting logging. You should specify a name of application for that you log and its PID at least. "
             "First, utility tries to log locally (to /log) by default. If it can't do that then it try to call "
             "a CGI that does the logging on other machine, or log to stderr on error."
-            "Returns logging token that should be used for any subsequent calls."
+            "Returns logging token that should be used for any subsequent app related calls."
         );
         arg->AddKey
             ("pid", "PID", "Process ID of the application.", CArgDescriptions::eInteger);
@@ -276,7 +277,7 @@ void CNcbiApplogApp::Init(void)
             "to this request. The <stop_request> command invalidate it."
         );
         arg->AddOpening
-            ("token", "Session token, obtained from stdout for <start_app> command.", CArgDescriptions::eString);
+            ("token", "Session token, obtained from stdout for <start_app> command or previous request.", CArgDescriptions::eString);
         arg->AddDefaultKey
             ("sid", "SID", "Session ID.", CArgDescriptions::eString, kEmptyStr);
         arg->AddDefaultKey
@@ -341,7 +342,7 @@ void CNcbiApplogApp::Init(void)
         arg->SetConstraint
             ("severity", &(*new CArgAllow_Strings, "trace", "info", "warning", "error", "critical"));
         arg->AddKey
-            ("message", "MSG", "Posting message.", CArgDescriptions::eString);
+            ("message", "MESSAGE", "Posting message.", CArgDescriptions::eString);
         arg->AddDefaultKey
             ("timestamp", "TIME", "Posting time if differ from current (YYYY-MM-DDThh:mm:ss, MM/DD/YY hh:mm:ss, time_t).", 
             CArgDescriptions::eString, kEmptyStr);
@@ -1033,7 +1034,7 @@ int CNcbiApplogApp::Run(void)
     } else 
 
     // -----  stop_app  ------------------------------------------------------
-    // ncbi_applog stop_app <token> [-status STATUS]
+    // ncbi_applog stop_app <token> -status STATUS
 
     if (cmd == "stop_app") {
         int status = args["status"].AsInteger();
@@ -1071,7 +1072,7 @@ int CNcbiApplogApp::Run(void)
     } else 
 
     // -----  stop_request  --------------------------------------------------
-    // ncbi_applog stop_request <token> [-status STATUS] [-input N] [-output N] -> token
+    // ncbi_applog stop_request <token> -status STATUS [-input N] [-output N]
     
     if (cmd == "stop_request") {
         if (token_par_type != eRequest) {
@@ -1083,11 +1084,10 @@ int CNcbiApplogApp::Run(void)
         int n_write = args["output"].AsInteger();
         SetInfo();
         NcbiLog_ReqStop(status, (size_t)n_read, (size_t)n_write);
-        token_gen_type = eApp;
     } else 
     
     // -----  post  ----------------------------------------------------------
-    // ncbi_applog post <token> [-severity SEV] -message MSG
+    // ncbi_applog post <token> [-severity SEV] -message MESSAGE
     
     if (cmd == "post") {
         string sev = args["severity"].AsString();
@@ -1117,7 +1117,7 @@ int CNcbiApplogApp::Run(void)
     } else 
 
     // -----  perf  ----------------------------------------------------------
-    // ncbi_applog perf <token> -time N.N [-param PAIRS]
+    // ncbi_applog perf <token> -status STATUS -time N.N [-param PAIRS]
 
     if (cmd == "perf") {
         int    status = args["status"].AsInteger();
