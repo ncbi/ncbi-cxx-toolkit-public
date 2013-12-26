@@ -366,7 +366,7 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
        if (fixtp == eFix_type_typo) {
            strtmp = CBioseq_on_SUSPECT_RULE :: GetName_typo();
        }
-       else if (fixtp == eFix_type_quickfix) {
+       else if (fixtp == eFix_type_quickfix || (*rit)->CanGetReplace() ) {
            strtmp = CBioseq_on_SUSPECT_RULE::GetName_qfix();
        }
        else {
@@ -1056,8 +1056,7 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
       = output_f.empty() ? 0 : new CNcbiOfstream((m_outdir + output_f).c_str());
     strtmp = args["S"];
     thisInfo.output_config.summary_report 
-       = (NStr::EqualNocase(strtmp, "true") || NStr::EqualNocase(strtmp, "t")) 
-          ? true : false;
+       = (NStr::EqualNocase(strtmp, "true") || NStr::EqualNocase(strtmp, "t"));
 
     // enabled and disabled tests
     strtmp = (args.find("e") != args.end()) ? args["e"] : kEmptyStr;
