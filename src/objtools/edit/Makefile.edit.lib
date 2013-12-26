@@ -7,7 +7,7 @@ SRC = seq_entry_edit promote autodef_available_modifier autodef \
       autodef_feature_clause_base autodef_feature_clause autodef_mod_combo \
       autodef_source_desc autodef_source_group \
       field_handler string_constraint seqid_guesser dblink_field \
-      struc_comm_field
+      struc_comm_field text_desc_field gb_block_field
 
 LIB    = xobjedit
 

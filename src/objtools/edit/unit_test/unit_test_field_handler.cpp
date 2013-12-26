@@ -110,6 +110,7 @@
 #include <objtools/edit/field_handler.hpp>
 #include <objtools/edit/dblink_field.hpp>
 #include <objtools/edit/struc_comm_field.hpp>
+#include <objtools/edit/gb_block_field.hpp>
 
 // for writing out tmp files
 
@@ -277,6 +278,34 @@ BOOST_AUTO_TEST_CASE(Test_DBLink)
     BOOST_CHECK_EQUAL(bp_vals[0], "bioproject");
 
 
+}
+
+
+// GBBlock Fields
+BOOST_AUTO_TEST_CASE(Test_GBBlock)
+{
+
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    STANDARD_SETUP
+
+    CBioseq_CI bi(seh, CSeq_inst::eMol_na);
+    edit::CGBBlockField gb_block_field(edit::CGBBlockField::eGBBlockFieldType_Keyword);
+
+    vector<CRef<edit::CApplyObject> > apply_objects = gb_block_field.GetApplyObjects(*bi);
+    
+    BOOST_CHECK_EQUAL(apply_objects.size(), 1);    
+   
+    gb_block_field.SetVal(apply_objects[0]->SetObject(), "my keyword", edit::eExistingText_add_qual);
+    apply_objects[0]->ApplyChange();
+
+    CSeqdesc_CI d(*bi, CSeqdesc::e_Genbank);
+    if (!d) {
+        BOOST_CHECK_EQUAL("Missing Genbank Block Descriptor", "Error");
+    } else if (!d->GetGenbank().IsSetKeywords()) {
+        BOOST_CHECK_EQUAL("Keywords not set", "Error");
+    } else {
+        BOOST_CHECK_EQUAL(d->GetGenbank().GetKeywords().front(), "my keyword");
+    }
 }
 
 
