@@ -111,7 +111,7 @@ int CDiscRepApp :: Run(void)
     catch (CException& eu) {
        string err_msg(eu.GetMsg());
        if (err_msg == "Input path or input file must be specified") {
-          err_msg = eu.GetMsg() + "\nPlease use 'asndisc -help' to get the usage, description of all arguments";
+          err_msg = "You need to supply at least an input file (-i) or a path in which to find input files (-p). Please see 'asndisc -help' for additional details.";
        }
        ERR_POST(err_msg);
     } 
