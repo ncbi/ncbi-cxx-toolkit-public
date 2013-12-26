@@ -61,13 +61,7 @@ void GetAsndiscReport(int argc, const char* argv[])
       args[arr[0]] = arr[1];  
     }
 
-    string report = args["P"];
-    if (report.empty()) {
-        NCBI_THROW(CException, eUnknown, 
-                           "Missing the input file which is mandatory");
-    }
-    if (report == "t" || report == "s") report = "Asndisc";
-    CRef <CRepConfig> config (CRepConfig::factory(report));
+    CRef <CRepConfig> config (CRepConfig::factory("Asndisc"));
     config->ProcessArgs(args);
 
     CMetaRegistry:: SEntry entry = CMetaRegistry :: Load("disc_report.ini");
@@ -84,7 +78,11 @@ int main(int argc, const char* argv[])
        GetAsndiscReport(argc, argv);
     }
     catch (CException& eu) {
-       ERR_POST( eu.GetMsg());
+       string err_msg(eu.GetMsg());
+       if (err_msg == "Input path or input file must be specified") {
+            err_msg = "You need to supply at least an input file (i=) or a path in which to find input files (p=). Please see 'asndisc -help' for additional details, and use the format arg=arg_value to input arguments.";
+       }
+       ERR_POST(err_msg);
     }
 }
 
