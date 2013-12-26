@@ -1024,12 +1024,10 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
     m_file_tp = args["a"];
 
     // report category
-    thisInfo.output_config.add_output_tag 
-         = (thisInfo.report == "t") ? true : false;
-    thisInfo.output_config.add_extra_output_tag 
-         = (thisInfo.report == "s") ? true : false;
+    thisInfo.output_config.add_output_tag = (thisInfo.report == "t");
+    thisInfo.output_config.add_extra_output_tag = (thisInfo.report == "s");
     if (thisInfo.report == "t" || thisInfo.report == "s") {
-          thisInfo.report = "Discrepancy";
+          thisInfo.report = "Asndisc";
     }
 
     // output
