@@ -84,7 +84,7 @@ int main(int argc, const char* argv[])
        GetAsndiscReport(argc, argv);
     }
     catch (CException& eu) {
-       ERR_POST( err_msg);
+       ERR_POST( eu.GetMsg());
     }
 }
 
