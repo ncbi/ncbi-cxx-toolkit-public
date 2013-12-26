@@ -349,7 +349,7 @@ void SNetServiceImpl::Init(CObject* api_impl, const string& service_name,
     m_ServiceName = service_name;
     NStr::TruncateSpacesInPlace(m_ServiceName);
 
-    if (config == NULL &&
+    if (m_ServiceName.empty() && config == NULL &&
             (config = m_Listener->LoadConfigFromAltSource(api_impl,
                     &section)) != NULL)
         app_reg_config.reset(config);
