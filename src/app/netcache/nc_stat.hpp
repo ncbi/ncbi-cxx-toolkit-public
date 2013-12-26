@@ -69,6 +69,7 @@ public:
     static Uint4 GetCntRunningCmds(void);
     static void DumpAllStats(void);
     void PrintToSocket(CSrvSocketTask* sock);
+    void PrintState(CSrvSocketTask& sock);
 
     static void AddSyncServer(Uint8 srv_id);
     static bool AddUnknownServer(Uint8 srv_id);

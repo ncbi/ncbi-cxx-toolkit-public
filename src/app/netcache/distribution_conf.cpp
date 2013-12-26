@@ -82,6 +82,7 @@ static CAtomicCounter s_BlobId;
 static TNCPeerList s_Peers;
 static string   s_MirroringSizeFile;
 static string   s_PeriodicLogFile;
+static string   s_CopyDelayLogFile;
 static FILE*    s_CopyDelayLog = NULL;
 static Uint1    s_CntActiveSyncs = 4;
 static Uint1    s_MaxSyncsOneServer = 2;
@@ -237,7 +238,8 @@ CNCDistributionConf::Initialize(Uint2 control_port)
     s_MirroringSizeFile = reg.Get(kNCReg_NCPoolSection, "mirroring_log_file");
     s_PeriodicLogFile   = reg.Get(kNCReg_NCPoolSection, "periodic_log_file");
 
-    s_CopyDelayLog = fopen(reg.Get(kNCReg_NCPoolSection, "copy_delay_log_file").c_str(), "a");
+    s_CopyDelayLogFile = reg.Get(kNCReg_NCPoolSection, "copy_delay_log_file");
+    s_CopyDelayLog = fopen(s_CopyDelayLogFile.c_str(), "a");
 
     try {
         s_CntSlotBuckets = reg.GetInt(kNCReg_NCPoolSection, "cnt_slot_buckets", 10);
@@ -295,6 +297,77 @@ CNCDistributionConf::Finalize(void)
 {
     if (s_CopyDelayLog)
         fclose(s_CopyDelayLog);
+}
+
+void CNCDistributionConf::WriteSetup(CSrvSocketTask& task)
+{
+    string is("\": "),iss("\": \""), eol(",\n\"");
+
+    //self
+    task.WriteText(eol).WriteText(kNCReg_NCServerPrefix).WriteNumber(0).WriteText(iss);
+    task.WriteText(s_SelfName).WriteText("\"");
+    task.WriteText(eol).WriteText(kNCReg_NCServerSlotsPrefix).WriteNumber(0).WriteText(is).WriteText("[");
+    ITERATE( vector<Uint2>, s, s_SelfSlots) {
+        if (s != s_SelfSlots.begin()) {
+            task.WriteText(",");
+        }
+        task.WriteNumber(*s);
+    }
+    task.WriteText("]");
+
+    // peers
+    int idx=1;
+    ITERATE( TNCPeerList, p, s_Peers) {
+        task.WriteText(eol).WriteText(kNCReg_NCServerPrefix).WriteNumber(idx).WriteText(iss);
+        task.WriteText(p->second).WriteText("\"");
+
+        Uint8 srv_id = p->first;
+        vector<Uint2> slots;
+        // find slots servers by this peer
+        ITERATE(TSlot2SrvMap, it_slot, s_RawSlot2Servers) {
+            Uint2 slot = it_slot->first;
+            const TServersList& srvs = it_slot->second;
+            if (find(srvs.begin(), srvs.end(), srv_id) != srvs.end()) {
+                slots.push_back(slot);
+            }
+        }
+        task.WriteText(eol).WriteText(kNCReg_NCServerSlotsPrefix).WriteNumber(idx).WriteText(is).WriteText("[");
+        ITERATE( vector<Uint2>, s, slots) {
+            if (s != slots.begin()) {
+                task.WriteText(",");
+            }
+            task.WriteNumber(*s);
+        }
+        task.WriteText("]");
+        ++idx;
+    }
+
+    task.WriteText(eol).WriteText("mirroring_log_file" ).WriteText(iss).WriteText(s_MirroringSizeFile).WriteText("\"");
+    task.WriteText(eol).WriteText("periodic_log_file"  ).WriteText(iss).WriteText(s_PeriodicLogFile  ).WriteText("\"");
+    task.WriteText(eol).WriteText("copy_delay_log_file").WriteText(iss).WriteText(s_CopyDelayLogFile ).WriteText("\"");
+    task.WriteText(eol).WriteText("sync_log_file"      ).WriteText(iss).WriteText(s_SyncLogFileName  ).WriteText("\"");
+
+    task.WriteText(eol).WriteText("cnt_slot_buckets"           ).WriteText(is).WriteNumber(s_CntSlotBuckets);
+    task.WriteText(eol).WriteText("max_active_syncs"           ).WriteText(is).WriteNumber(s_CntActiveSyncs);
+    task.WriteText(eol).WriteText("max_syncs_one_server"       ).WriteText(is).WriteNumber(s_MaxSyncsOneServer);
+    task.WriteText(eol).WriteText("deferred_priority"          ).WriteText(is).WriteNumber(s_SyncPriority);
+    task.WriteText(eol).WriteText("max_peer_connections"       ).WriteText(is).WriteNumber(s_MaxPeerTotalConns);
+    task.WriteText(eol).WriteText("max_peer_bg_connections"    ).WriteText(is).WriteNumber(s_MaxPeerBGConns);
+    task.WriteText(eol).WriteText("peer_errors_for_throttle"   ).WriteText(is).WriteNumber(s_CntErrorsToThrottle);
+    task.WriteText(eol).WriteText("peer_throttle_period"       ).WriteText(is).WriteNumber(s_PeerThrottlePeriod/kUSecsPerSecond);
+    task.WriteText(eol).WriteText("peer_communication_timeout" ).WriteText(is).WriteNumber(s_PeerTimeout);
+    task.WriteText(eol).WriteText("peer_blob_list_timeout"     ).WriteText(is).WriteNumber(s_BlobListTimeout);
+    task.WriteText(eol).WriteText("small_blob_max_size"        ).WriteText(is).WriteNumber(s_SmallBlobBoundary/1024);
+    task.WriteText(eol).WriteText("max_instant_queue_size"     ).WriteText(is).WriteNumber(s_MaxMirrorQueueSize);
+    task.WriteText(eol).WriteText("max_slot_log_records"       ).WriteText(is).WriteNumber(s_MaxSlotLogEvents);
+    task.WriteText(eol).WriteText("clean_slot_log_reserve"     ).WriteText(is).WriteNumber(s_CleanLogReserve);
+    task.WriteText(eol).WriteText("max_clean_log_batch"        ).WriteText(is).WriteNumber(s_MaxCleanLogBatch);
+    task.WriteText(eol).WriteText("min_forced_clean_log_period").WriteText(is).WriteNumber(s_MinForcedCleanPeriod/kUSecsPerSecond);
+    task.WriteText(eol).WriteText("clean_log_attempt_interval" ).WriteText(is).WriteNumber(s_CleanAttemptInterval);
+    task.WriteText(eol).WriteText("deferred_sync_interval"     ).WriteText(is).WriteNumber(s_PeriodicSyncInterval/kUSecsPerSecond);
+    task.WriteText(eol).WriteText("deferred_sync_timeout"      ).WriteText(is).WriteNumber(s_PeriodicSyncTimeout/ kUSecsPerSecond);
+    task.WriteText(eol).WriteText("failed_sync_retry_delay"    ).WriteText(is).WriteNumber(s_FailedSyncRetryDelay/kUSecsPerSecond);
+    task.WriteText(eol).WriteText("network_error_timeout"      ).WriteText(is).WriteNumber(s_NetworkErrorTimeout/ kUSecsPerSecond);
 }
 
 TServersList

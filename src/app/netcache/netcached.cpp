@@ -473,6 +473,29 @@ CNCServer::GetAppSetup(const TStringMap& client_params)
     return static_cast<const SNCSpecificParams*>(cur_set->entries[0].value.GetPointer());
 }
 
+void CNCServer::WriteAppSetup(CSrvSocketTask& task, const SNCSpecificParams* params)
+{
+    string is("\": "), eol(",\n\"");
+    task.WriteText(eol).WriteText(kNCReg_DisableClient).WriteText(is).WriteText(NStr::BoolToString(params->disable));
+    task.WriteText(eol).WriteText(kNCReg_ProlongOnRead).WriteText(is).WriteText(NStr::BoolToString(params->prolong_on_read));
+    task.WriteText(eol).WriteText(kNCReg_SearchOnRead ).WriteText(is).WriteText(NStr::BoolToString(params->srch_on_read));
+    task.WriteText(eol).WriteText(kNCReg_FastOnMain   ).WriteText(is).WriteText(NStr::BoolToString(params->fast_on_main));
+    task.WriteText(eol).WriteText(kNCReg_PassPolicy   ).WriteText(is);
+    task.WriteText("\"");
+    switch (params->pass_policy) {
+    case eNCOnlyWithoutPass:  task.WriteText("no_password");   break;
+    case eNCOnlyWithPass:     task.WriteText("with_password"); break;
+    case eNCBlobPassAny:      task.WriteText("any");           break;
+    }
+    task.WriteText("\"");
+    task.WriteText(eol).WriteText(kNCReg_LifespanTTL).WriteText(is).WriteNumber(params->lifespan_ttl);
+    task.WriteText(eol).WriteText(kNCReg_MaxTTL     ).WriteText(is).WriteNumber(params->max_ttl);
+    task.WriteText(eol).WriteText(kNCReg_BlobTTL    ).WriteText(is).WriteNumber(params->blob_ttl);
+    task.WriteText(eol).WriteText(kNCReg_VerTTL     ).WriteText(is).WriteNumber(params->ver_ttl);
+    task.WriteText(eol).WriteText(kNCReg_TTLUnit    ).WriteText(is).WriteNumber(params->ttl_unit);
+    task.WriteText(eol).WriteText(kNCReg_Quorum     ).WriteText(is).WriteNumber(params->quorum);
+}
+
 bool
 CNCServer::IsInitiallySynced(void)
 {

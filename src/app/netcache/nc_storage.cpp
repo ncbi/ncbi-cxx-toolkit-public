@@ -1000,6 +1000,46 @@ CNCBlobStorage::Finalize(void)
     s_UnlockInstanceGuard();
 }
 
+void CNCBlobStorage::WriteSetup(CSrvSocketTask& task)
+{
+    string is("\": "),iss("\": \""), eol(",\n\""), str("_str"), eos("\"");
+    task.WriteText(eol).WriteText(kNCStorage_PathParam        ).WriteText(iss).WriteText(   s_Path).WriteText(eos);
+    task.WriteText(eol).WriteText(kNCStorage_FilePrefixParam  ).WriteText(iss).WriteText(   s_Prefix).WriteText(eos);
+    task.WriteText(eol).WriteText(kNCStorage_GuardNameParam   ).WriteText(iss).WriteText(   s_GuardName).WriteText(eos);
+    task.WriteText(eol).WriteText(kNCStorage_GCBatchParam     ).WriteText(is ).WriteNumber( s_GCBatchSize);
+    task.WriteText(eol).WriteText(kNCStorage_FileSizeParam    ).WriteText(str).WriteText(iss)
+                                                   .WriteText(NStr::UInt8ToString_DataSize( s_NewFileSize)).WriteText(eos);
+    task.WriteText(eol).WriteText(kNCStorage_FileSizeParam    ).WriteText(is ).WriteNumber( s_NewFileSize);
+    task.WriteText(eol).WriteText(kNCStorage_GarbagePctParam  ).WriteText(is ).WriteNumber( s_MaxGarbagePct);
+    task.WriteText(eol).WriteText(kNCStorage_MinDBSizeParam   ).WriteText(str).WriteText(iss)
+                                                   .WriteText(NStr::UInt8ToString_DataSize( s_MinDBSize)).WriteText(eos);
+    task.WriteText(eol).WriteText(kNCStorage_MinDBSizeParam   ).WriteText(is ).WriteNumber( s_MinDBSize);
+    task.WriteText(eol).WriteText(kNCStorage_MoveLifeParam    ).WriteText(is ).WriteNumber( s_MinMoveLife);
+    task.WriteText(eol).WriteText(kNCStorage_FailedMoveParam  ).WriteText(is ).WriteNumber( s_FailedMoveDelay);
+    task.WriteText(eol).WriteText(kNCStorage_MinRecNoSaveParam).WriteText(is ).WriteNumber( s_MinRecNoSavePeriod);
+    task.WriteText(eol).WriteText(kNCStorage_FlushTimeParam   ).WriteText(is ).WriteNumber( s_FlushTimePeriod);
+    task.WriteText(eol).WriteText(kNCStorage_ExtraGCOnParam   ).WriteText(is ).WriteNumber( s_ExtraGCOnSize);
+    task.WriteText(eol).WriteText(kNCStorage_ExtraGCOffParam  ).WriteText(is ).WriteNumber( s_ExtraGCOffSize);
+    task.WriteText(eol).WriteText(kNCStorage_StopWriteOnParam ).WriteText(is ).WriteNumber( s_StopWriteOnSize);
+    task.WriteText(eol).WriteText(kNCStorage_StopWriteOffParam).WriteText(is ).WriteNumber( s_StopWriteOffSize);
+    task.WriteText(eol).WriteText(kNCStorage_MinFreeDiskParam ).WriteText(str).WriteText(iss)
+                                                   .WriteText(NStr::UInt8ToString_DataSize( s_DiskFreeLimit)).WriteText(eos);
+    task.WriteText(eol).WriteText(kNCStorage_MinFreeDiskParam ).WriteText(is ).WriteNumber( s_DiskFreeLimit);
+    task.WriteText(eol).WriteText(kNCStorage_DiskCriticalParam).WriteText(str).WriteText(iss)
+                                                   .WriteText(NStr::UInt8ToString_DataSize( s_DiskCritical)).WriteText(eos);
+    task.WriteText(eol).WriteText(kNCStorage_DiskCriticalParam).WriteText(is ).WriteNumber( s_DiskCritical);
+    task.WriteText(eol).WriteText("db_limit_percentage_alert" ).WriteText(is ).WriteNumber( s_WarnLimitOnPct);
+    task.WriteText(eol).WriteText("db_limit_percentage_alert_delta").WriteText(is).WriteNumber(s_WarnLimitOffPct);
+    task.WriteText(eol).WriteText("write_back_soft_size_limit").WriteText(str).WriteText(iss)
+                                                   .WriteText(NStr::UInt8ToString_DataSize( GetWBSoftSizeLimit())).WriteText(eos);
+    task.WriteText(eol).WriteText("write_back_soft_size_limit").WriteText(is ).WriteNumber( GetWBSoftSizeLimit());
+    task.WriteText(eol).WriteText("write_back_hard_size_limit").WriteText(str).WriteText(iss)
+                                                   .WriteText(NStr::UInt8ToString_DataSize( GetWBHardSizeLimit())).WriteText(eos);
+    task.WriteText(eol).WriteText("write_back_hard_size_limit").WriteText(is ).WriteNumber( GetWBHardSizeLimit());
+    task.WriteText(eol).WriteText("write_back_timeout"        ).WriteText(is ).WriteNumber( GetWBWriteTimeout());
+    task.WriteText(eol).WriteText("write_back_failed_delay"   ).WriteText(is ).WriteNumber( GetWBFailedWriteDelay());
+}
+
 void
 CNCBlobStorage::PackBlobKey(string*      packed_key,
                             CTempString  cache_name,

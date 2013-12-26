@@ -206,6 +206,7 @@ public:
 
     void PrintToLogs(CRequestContext* ctx, CSrvPrintProxy& proxy);
     void PrintToSocket(CSrvPrintProxy& proxy);
+    void PrintState(CSrvSocketTask& sock);
 
 public:
     void SchedJiffyStat(Uint8 jiffy_len, Uint8 max_slice,

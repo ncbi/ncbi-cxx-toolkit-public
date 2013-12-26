@@ -801,6 +801,29 @@ CNCStat::PrintToLogs(CTempString stat_name)
     m_StatLock.Unlock();
 }
 
+void CNCStat::PrintState(CSrvSocketTask& task)
+{
+    string is("\": "), iss("\": \""), eol(",\n\""), str("_str");
+    task.WriteText(eol).WriteText("db_files"     ).WriteText(is ).WriteNumber( m_EndState.db_files);
+    task.WriteText(eol).WriteText("db_size"      ).WriteText(str).WriteText(iss)
+                                     .WriteText( NStr::UInt8ToString_DataSize( m_EndState.db_size)).WriteText("\"");
+    task.WriteText(eol).WriteText("db_size"      ).WriteText(is ).WriteNumber( m_EndState.db_size);
+    task.WriteText(eol).WriteText("db_garb"      ).WriteText(is ).WriteNumber( m_EndState.db_garb);
+    task.WriteText(eol).WriteText("cnt_blobs"    ).WriteText(is ).WriteNumber( m_EndState.cnt_blobs);
+    task.WriteText(eol).WriteText("cnt_keys"     ).WriteText(is ).WriteNumber( m_EndState.cnt_keys);
+    task.WriteText(eol).WriteText("wb_size"      ).WriteText(str).WriteText(iss)
+                                      .WriteText(NStr::UInt8ToString_DataSize( m_EndState.wb_size)).WriteText("\"");
+    task.WriteText(eol).WriteText("wb_size"      ).WriteText(is ).WriteNumber( m_EndState.wb_size);
+    task.WriteText(eol).WriteText("wb_releasable").WriteText(str).WriteText(iss)
+                                      .WriteText(NStr::UInt8ToString_DataSize( m_EndState.wb_releasable)).WriteText("\"");
+    task.WriteText(eol).WriteText("wb_releasable").WriteText(is ).WriteNumber( m_EndState.wb_releasable);
+    task.WriteText(eol).WriteText("wb_releasing" ).WriteText(str).WriteText(iss)
+                                      .WriteText(NStr::UInt8ToString_DataSize( m_EndState.wb_releasing)).WriteText("\"");
+    task.WriteText(eol).WriteText("wb_releasing" ).WriteText(is ).WriteNumber( m_EndState.wb_releasing);
+    task.WriteText(eol).WriteText("progress_cmds").WriteText(is ).WriteNumber( m_EndState.progress_cmds);
+    m_SrvStat->PrintState(task);
+}
+
 void
 CNCStat::PrintToSocket(CSrvSocketTask* sock)
 {

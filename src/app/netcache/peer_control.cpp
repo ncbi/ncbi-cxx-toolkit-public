@@ -655,7 +655,7 @@ CNCPeerControl::x_SlotsInitiallySynced(Uint2 cnt_slots, bool aborted)
         bool succeeded = true;
         if (cnt_slots != 1) {
             INFO("Initial sync: Server "
-                << CNCDistributionConf::GetFullPeerName(m_SrvId) << " is out of reach");
+                << CNCDistributionConf::GetFullPeerName(m_SrvId) << " is out of reach (timeout)");
             succeeded = false;
         }
         m_SlotsToInitSync -= cnt_slots;

@@ -85,6 +85,8 @@ public:
     static bool Initialize(bool do_reinit);
     static void Finalize(void);
 
+    static void WriteSetup(CSrvSocketTask& task);
+
     static bool IsCleanStart(void);
     static bool NeedStopWrite(void);
     static bool AcceptWritesFromPeers(void);

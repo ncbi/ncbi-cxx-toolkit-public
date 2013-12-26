@@ -286,6 +286,13 @@ CSrvStat::PrintToLogs(CRequestContext* ctx, CSrvPrintProxy& proxy)
     x_PrintUnstructured(proxy);
 }
 
+void CSrvStat::PrintState(CSrvSocketTask& task)
+{
+    string is("\": "), eol(",\n\"");
+    task.WriteText(eol).WriteText("cnt_threads").WriteText(is).WriteNumber(m_EndState.cnt_threads);
+    task.WriteText(eol).WriteText("cnt_sockets").WriteText(is).WriteNumber(m_EndState.cnt_sockets);
+}
+
 void
 CSrvStat::PrintToSocket(CSrvPrintProxy& proxy)
 {

@@ -279,6 +279,11 @@ private:
 };
 
 
+Uint8 GetWBSoftSizeLimit(void);
+Uint8 GetWBHardSizeLimit(void);
+int GetWBWriteTimeout(void);
+int GetWBFailedWriteDelay(void);
+
 void SetWBSoftSizeLimit(Uint8 limit);
 void SetWBHardSizeLimit(Uint8 limit);
 void SetWBWriteTimeout(int timeout1, int timeout2);

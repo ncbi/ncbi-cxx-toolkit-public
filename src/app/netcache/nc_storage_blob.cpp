@@ -91,6 +91,19 @@ s_IsCurVerOlder(const SNCBlobVerData* cur_ver, const SNCBlobVerData* new_ver)
     return true;
 }
 
+Uint8 GetWBSoftSizeLimit(void) {
+    return s_WBSoftSizeLimit;
+}
+Uint8 GetWBHardSizeLimit(void) {
+    return s_WBHardSizeLimit;
+}
+int GetWBWriteTimeout(void) {
+    return s_WBWriteTimeout;
+}
+int GetWBFailedWriteDelay(void) {
+    return s_WBFailedWriteDelay;
+}
+
 void
 SetWBSoftSizeLimit(Uint8 limit)
 {

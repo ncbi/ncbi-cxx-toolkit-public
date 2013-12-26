@@ -1191,8 +1191,15 @@ static CNCMessageHandler::SCommandDef s_CommandMap[] = {
     // Read full ini-file used by NetCache for configuration.
     { "GETCONF",
         {&CNCMessageHandler::x_DoCmd_GetConfig,      "GETCONF"},
+        { 
+          // Netcached.ini section name
+          { "section", eNSPT_Str,  eNSPA_Optional },
+          // when section name is "netcache", setup for this port
+          { "port",    eNSPT_Str,  eNSPA_Optional },
+          // when section name is "netcache", setup for this cache
+          { "cache",   eNSPT_Str,  eNSPA_Optional },
           // Client IP for application sending the command.
-        { { "ip",      eNSPT_Str,  eNSPA_Optchain },
+          { "ip",      eNSPT_Str,  eNSPA_Optchain },
           // Session ID for application sending the command.
           { "sid",     eNSPT_Str,  eNSPA_Optional } } },
 
@@ -1676,6 +1683,7 @@ CNCMessageHandler::x_AssignCmdParams(void)
     CNCBlobStorage::PackBlobKey(&m_BlobKey, cache_name, blob_key, blob_subkey);
     if (cache_name.empty()) {
         m_AppSetup = m_BaseAppSetup;
+        m_ClientParams.erase("cache");
     }
     else if (cache_name == m_PrevCache) {
         m_AppSetup = m_PrevAppSetup;
@@ -2973,10 +2981,46 @@ CNCMessageHandler::State
 CNCMessageHandler::x_DoCmd_GetConfig(void)
 {
     LOG_CURRENT_FUNCTION
-    CNcbiOstrstream str;
-    CTaskServer::GetConfRegistry().Write(str);
-    string conf = CNcbiOstrstreamToString(str);
-    WriteText(conf).WriteText("\nOK:END\n");
+    TNSProtoParams& params = m_ParsedCmd.params;
+    if (params.find("section") != params.end()) {
+        string section(params["section"]);
+        WriteText("{\"").WriteText(section).WriteText("\": {\n\"section\": \"");
+        WriteText(section).WriteText("\"");
+        if (section == "netcache") {
+            TStringMap client;
+            client = m_ClientParams;
+            if (params.find("port") != params.end()) {
+                client["port"] = params["port"];
+            }
+            if (params.find("cache") != params.end()) {
+                client["cache"] = params["cache"];
+            }
+            ITERATE(TStringMap, p, client) {
+                string iss("\": \""), eol(",\n\"");
+                WriteText(eol).WriteText("__client__").WriteText(p->first).WriteText(iss).WriteText(p->second).WriteText("\"");
+            }
+            CNCServer::WriteAppSetup(*this, CNCServer::GetAppSetup(client));
+//        } else if (section == "task_server") {
+        } else if (section == "storage") {
+            CNCBlobStorage::WriteSetup(*this);
+        } else if (section == "mirror") {
+            CNCDistributionConf::WriteSetup(*this);
+        } else if (section == "stat") {
+            CSrvRef<CNCStat> stat = CNCStat::GetStat("life", false);
+            if (stat) {
+                stat->PrintState(*this);
+            }
+        } else {
+            WriteText(",\n\"error\": \"Unknown section name, valid names: netcache, storage, mirror\"");
+        }
+        WriteText("\n}}");
+    } else {
+        CNcbiOstrstream str;
+        CTaskServer::GetConfRegistry().Write(str);
+        string conf = CNcbiOstrstreamToString(str);
+        WriteText(conf);
+    }
+    WriteText("\nOK:END\n");
     return &Me::x_FinishCommand;
 }
 
