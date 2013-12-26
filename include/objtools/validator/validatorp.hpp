@@ -1064,7 +1064,8 @@ private:
          bool& product_replaced,
          bool& mixed_population,
          bool& low_quality,
-         bool& rna_editing);
+         bool& rna_editing,
+         bool& transcript_or_proteomic);
     void x_CheckCDSFrame
         (const CSeq_feat& feat,
          const bool report_errors,

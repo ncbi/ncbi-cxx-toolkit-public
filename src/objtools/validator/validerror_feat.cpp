@@ -1453,8 +1453,6 @@ void CValidError_feat::ValidateCdregion (
     }
     ValidateCdsProductId(feat);
 
-    x_ValidateCdregionCodebreak(cdregion, feat);
-
     CBioseq_Handle bsh = BioseqHandleFromLocation(m_Scope, feat.GetLocation());
 
     if ( cdregion.IsSetOrf()  &&  cdregion.GetOrf ()  &&
@@ -5907,7 +5905,8 @@ void CValidError_feat::x_GetExceptionFlags
  bool& product_replaced,
  bool& mixed_population,
  bool& low_quality,
- bool& rna_editing)
+ bool& rna_editing,
+ bool& transcript_or_proteomic)
 {
     ITERATE (TBypassCdsTransCheckSet, it, sc_BypassCdsTransCheck) {
         if (NStr::FindNoCase(except_text, *it) != NPOS) {
@@ -6365,7 +6364,7 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
         rearrange_except = false, product_replaced = false,
         mixed_population = false, low_quality = false,
         report_errors = true, other_than_mismatch = false,
-        rna_editing = false;
+        rna_editing = false, transcript_or_proteomic = false;
     string farstr;
     
     if (!m_Imp.IgnoreExceptions() &&
@@ -6381,7 +6380,8 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
                              product_replaced,
                              mixed_population,
                              low_quality,
-                             rna_editing);
+                             rna_editing,
+                             transcript_or_proteomic);
     }
 
     string comment_text = "";
@@ -6466,7 +6466,11 @@ void CValidError_feat::ValidateCdTrans(const CSeq_feat& feat)
     } else if (part_loc & eSeqlocPartial_Stop) {
         no_end = true;
     }
-        
+
+    if (report_errors) {
+      x_ValidateCdregionCodebreak(cdregion, feat);
+    }
+
     // check for code break not on a codon
     if (x_ValidateCodeBreakNotOnCodon(feat, location, cdregion, report_errors)) {
         has_errors = true;

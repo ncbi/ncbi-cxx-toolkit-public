@@ -11554,10 +11554,10 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_TranslExceptPhase)
 
     STANDARD_SETUP
 
-    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "TranslExceptPhase", 
-                              "transl_except qual out of frame."));
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Error, "Range",
                                                  "Code-break location not in coding region - may be frame problem"));
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "TranslExceptPhase", 
+                              "transl_except qual out of frame."));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
