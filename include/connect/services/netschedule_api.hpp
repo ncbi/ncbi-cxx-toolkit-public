@@ -227,6 +227,7 @@ class NCBI_XCONNECT_EXPORT CNetScheduleAPI
     const SServerParams& GetServerParams();
 
     typedef map<string, string> TQueueParams;
+    void GetQueueParams(const string& queue_name, TQueueParams& queue_params);
     void GetQueueParams(TQueueParams& queue_params);
 
     /// Get job details

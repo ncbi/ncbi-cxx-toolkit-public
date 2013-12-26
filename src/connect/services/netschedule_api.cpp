@@ -672,6 +672,28 @@ const CNetScheduleAPI::SServerParams& CNetScheduleAPI::GetServerParams()
 }
 
 void CNetScheduleAPI::GetQueueParams(
+        const string& queue_name, TQueueParams& queue_params)
+{
+    string cmd;
+
+    if (queue_name.empty())
+        cmd = "QINF2 " + m_Impl->m_Queue;
+    else {
+        SNetScheduleAPIImpl::VerifyQueueNameAlphabet(queue_name);
+
+        cmd = "QINF2 " + queue_name;
+    }
+
+    g_AppendClientIPAndSessionID(cmd);
+
+    CUrlArgs url_parser(m_Impl->m_Service.FindServerAndExec(cmd).response);
+
+    ITERATE(CUrlArgs::TArgs, field, url_parser.GetArgs()) {
+        queue_params[field->name] = field->value;
+    }
+}
+
+void CNetScheduleAPI::GetQueueParams(
         CNetScheduleAPI::TQueueParams& queue_params)
 {
     string cmd("GETP2");

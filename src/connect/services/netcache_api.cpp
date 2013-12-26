@@ -97,12 +97,13 @@ CConfig* CNetCacheServerListener::LoadConfigFromAltSource(CObject* api_impl,
     if (nc_impl->m_NetScheduleAPI) {
         CNetScheduleAPI::TQueueParams queue_params;
 
-        nc_impl->m_NetScheduleAPI.GetQueueParams(queue_params);
+        nc_impl->m_NetScheduleAPI.GetQueueParams(
+                nc_impl->m_NetScheduleAPI.GetQueueName(), queue_params);
 
         ITERATE(CNetScheduleAPI::TQueueParams, param_it, queue_params) {
-            if (NStr::StartsWith(param_it->first, "nc::")) {
+            if (NStr::StartsWith(param_it->first, "nc.")) {
                 string param_name(param_it->first);
-                param_name.erase(0, sizeof("nc::") - 1);
+                param_name.erase(0, sizeof("nc.") - 1);
                 if (result.get() == NULL) {
                     result.reset(new CConfig::TParamTree);
                     *new_section_name = "netcache_conf_from_netschedule";
@@ -110,6 +111,27 @@ CConfig* CNetCacheServerListener::LoadConfigFromAltSource(CObject* api_impl,
                 result->AddNode(CConfig::TParamValue(param_name, param_it->second));
             }
         }
+
+        if (result.get() == NULL)
+            try {
+                nc_impl->m_NetScheduleAPI.GetQueueParams(queue_params);
+
+                ITERATE(CNetScheduleAPI::TQueueParams, param_it, queue_params) {
+                    if (NStr::StartsWith(param_it->first, "nc::")) {
+                        string param_name(param_it->first);
+                        param_name.erase(0, sizeof("nc::") - 1);
+                        if (result.get() == NULL) {
+                            result.reset(new CConfig::TParamTree);
+                            *new_section_name =
+                                    "netcache_conf_from_netschedule_GETP2";
+                        }
+                        result->AddNode(CConfig::TParamValue(param_name,
+                                param_it->second));
+                    }
+                }
+            }
+            catch (CNetScheduleException&) {
+            }
     }
 
     if (result.get() == NULL)
