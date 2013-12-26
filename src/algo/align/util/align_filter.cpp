@@ -630,16 +630,17 @@ double CAlignFilter::x_FuncCall(const CQueryParseTree::TNode& node, const CSeq_a
                        "expected 2, got more than 2");
         }
 
-        const CSeq_id &seq_id = align.GetSeq_id(
-            NStr::EqualNocase(which, "query") ? 0 : 1);
-        CSeq_id_Handle idh =
-            sequence::GetId(seq_id, *m_Scope,
-                            sequence::eGetId_Best);
         bool found_keyword = false;
-        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq_id);
-        for (CSeqdesc_CI desc_ci(bsh);
-             desc_ci && !found_keyword; ++desc_ci)
-        {
+        if (!m_IsDryRun) {
+          const CSeq_id &seq_id = align.GetSeq_id(
+              NStr::EqualNocase(which, "query") ? 0 : 1);
+          CSeq_id_Handle idh =
+              sequence::GetId(seq_id, *m_Scope,
+                              sequence::eGetId_Best);
+          CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq_id);
+          for (CSeqdesc_CI desc_ci(bsh);
+               desc_ci && !found_keyword; ++desc_ci)
+          {
             const CGB_block::TKeywords *keywords = NULL;
             switch (desc_ci->Which()) {
             case CSeqdesc::e_Genbank:
@@ -684,6 +685,7 @@ double CAlignFilter::x_FuncCall(const CQueryParseTree::TNode& node, const CSeq_a
                     }
                 }
             }
+          }
         }
     
         return found_keyword ? 1 : 0;
