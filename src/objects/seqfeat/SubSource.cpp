@@ -1332,6 +1332,7 @@ const char* sm_ValidSexQualifierValues[] = {
   "male",
   "monecious",
   "monoecious",
+  "neuter",
   "unisexual",
 };
 
