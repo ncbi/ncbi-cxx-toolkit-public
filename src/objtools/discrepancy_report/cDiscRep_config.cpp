@@ -2663,13 +2663,6 @@ void CRepConfAsndisc :: Run(CRef <CRepConfig> config)
     thisInfo.tax_db_conn.Fini();
 }; // Run()
 
-void CRepConfig :: ProcessArgs()
-{
-    m_enabled.clear();
-    m_disabled.clear();
-};
-
-// void CRepConfDiscrepancy :: Run(CRef <CRepConfig> config)
 void CRepConfig :: Run(CRef <CRepConfig> config)
 {
   CRef <CSeq_entry> 
