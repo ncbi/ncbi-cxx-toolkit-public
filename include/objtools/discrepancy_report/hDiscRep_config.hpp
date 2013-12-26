@@ -123,6 +123,10 @@ BEGIN_SCOPE(DiscRepNmSpc)
    class NCBI_DISCREPANCY_REPORT_EXPORT CRepConfig : public CObject 
    {
      public:
+        CRepConfig() { 
+            m_enabled.clear();
+            m_disabled.clear();
+        }
         virtual ~CRepConfig() { };
 
         // removed from *_app.hpp
@@ -130,7 +134,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
         void ReadArgs(const CArgs& args);
         string GetDirStr(const string& src_dir);
         void ProcessArgs(Str2Str& args);
-        void ProcessArgs();
         static void CheckThisSeqEntry(CRef <CSeq_entry> seq_entry);
         void GetOrgModSubtpName(unsigned num1, unsigned num2,
                               map <string, COrgMod::ESubtype>& orgmodnm_subtp);
