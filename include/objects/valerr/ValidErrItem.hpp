@@ -501,6 +501,10 @@ enum EErrType {
     eErr_SEQ_FEAT_ExtraProteinFeature,
     eErr_SEQ_FEAT_AssemblyGapAdjacentToNs,
     eErr_SEQ_FEAT_AssemblyGapCoversSequence,
+    eErr_SEQ_FEAT_FeatureBeginsOrEndsWithN,
+    eErr_SEQ_FEAT_FeatureIsMostlyNs,
+    eErr_SEQ_FEAT_CDSonMinusStrandTranscribedRNA,
+    eErr_SEQ_FEAT_MultipleGenCodes,
     ERR_CODE_END(SEQ_FEAT),
 
     ERR_CODE_BEGIN(SEQ_ALIGN) = 5000,

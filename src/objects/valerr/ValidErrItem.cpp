@@ -1557,6 +1557,18 @@ same id type" } },
    { eErr_SEQ_FEAT_AssemblyGapCoversSequence,
    { "AssemblyGapCoversSequence",
 "Assembly_gap features must not cover actual bases in the sequence." } },
+   { eErr_SEQ_FEAT_FeatureBeginsOrEndsWithN,
+   { "FeatureBeginsOrEndsWithN",
+"The feature starts or stops with an N." } },
+   { eErr_SEQ_FEAT_FeatureIsMostlyNs,
+   { "FeatureIsMostlyNs",
+"The feature contains more than 50% of Ns." } },
+   { eErr_SEQ_FEAT_CDSonMinusStrandTranscribedRNA,
+   { "CDSonMinusStrandTranscribedRNA",
+"Coding regions should be on the plus strand of transcribed RNA molecules." } },
+   { eErr_SEQ_FEAT_MultipleGenCodes,
+   { "MultipleGenCodes",
+"The genetic codes are the same for all CDS features on one Bioseq." } },
 
 
 /* SEQ_ALIGN */

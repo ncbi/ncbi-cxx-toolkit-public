@@ -4751,6 +4751,8 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
             }
         }
 
+        int firstcdsgencode = 0;
+        bool mixedcdsgencodes = false;
         if (m_AllFeatIt) {
             m_AllFeatIt->Rewind();            
             for ( CFeat_CI fi = *m_AllFeatIt; fi; ++fi ) {
@@ -4798,6 +4800,16 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                         }
                     }
                     ValidateBadGeneOverlap (feat);
+
+                    const CCdregion& cdregion = feat.GetData().GetCdregion();
+                    if ( cdregion.CanGetCode() ) {
+                        int cdsgencode = cdregion.GetCode().GetId();
+                        if (firstcdsgencode == 0) {
+                            firstcdsgencode = cdsgencode;
+                        } else if (firstcdsgencode != cdsgencode) {
+                            mixedcdsgencodes = true;
+                        }
+                    }
                 } else if (fi->GetFeatSubtype() == CSeqFeatData::eSubtype_mRNA) {
                     nummrna++;
                     if (feat.IsSetProduct()) {
@@ -4933,6 +4945,15 @@ void CValidError_bioseq::ValidateSeqFeatContext(const CBioseq& seq)
                 }
             }  // end of for loop
         } // end of branch where features are present
+
+        if (mixedcdsgencodes) {
+            EDiagSev sev = eDiag_Error;
+            if (IsSynthetic(seq)) {
+                sev = eDiag_Warning;
+            }
+            PostErr (sev, eErr_SEQ_FEAT_MultipleGenCodes,
+                     "Multiple CDS genetic codes on sequence", seq);
+        }
 
         // if no full length prot feature on a part of a segmented bioseq
         // search for such feature on the master bioseq
