@@ -99,6 +99,10 @@ CNetStorageByKey g_CreateNetStorageByKey(
 /// @internal
 void g_SetNetICacheParams(CNetFileID& file_id, CNetICacheClient icache_client);
 
+NCBI_PARAM_DECL(string, netstorage_api, backend_storage);
+typedef NCBI_PARAM_TYPE(netstorage_api, \
+        backend_storage) TNetStorageAPI_BackendStorage;
+
 NCBI_PARAM_DECL(string, filetrack, site);
 typedef NCBI_PARAM_TYPE(filetrack, site) TFileTrack_Site;
 

@@ -53,8 +53,9 @@
 
 BEGIN_NCBI_SCOPE
 
-NCBI_PARAM_DEF(string, filetrack, site, "prod");
+NCBI_PARAM_DEF(string, netstorage_api, backend_storage, "netcache, filetrack");
 
+NCBI_PARAM_DEF(string, filetrack, site, "prod");
 NCBI_PARAM_DEF(string, filetrack, api_key, kEmptyStr);
 
 struct SNetFileAPIImpl;
@@ -80,6 +81,7 @@ struct SNetStorageAPIImpl : public SNetStorageImpl
     CCompoundIDPool m_CompoundIDPool;
     CNetICacheClient m_NetICacheClient;
     TNetStorageFlags m_DefaultFlags;
+    TNetStorageFlags m_AvailableStorageMask;
 
     SFileTrackAPI m_FileTrackAPI;
 };
@@ -88,8 +90,22 @@ SNetStorageAPIImpl::SNetStorageAPIImpl(
         CNetICacheClient::TInstance icache_client,
         TNetStorageFlags default_flags) :
     m_NetICacheClient(icache_client),
-    m_DefaultFlags(default_flags)
+    m_DefaultFlags(default_flags),
+    m_AvailableStorageMask(0)
 {
+    string backend_storage(TNetStorageAPI_BackendStorage::GetDefault());
+
+    if (strstr(backend_storage.c_str(), "netcache") != NULL)
+        m_AvailableStorageMask |= fNST_Fast;
+    if (strstr(backend_storage.c_str(), "filetrack") != NULL)
+        m_AvailableStorageMask |= fNST_Persistent;
+
+    m_DefaultFlags &= m_AvailableStorageMask;
+
+    if (m_DefaultFlags == 0)
+        m_DefaultFlags = m_AvailableStorageMask;
+
+    m_AvailableStorageMask |= fNST_Movable | fNST_Cacheable;
 }
 
 enum ENetFileIOStatus {
@@ -313,9 +329,10 @@ void SNetFileAPIImpl::ChooseLocation()
     TNetStorageFlags flags = m_FileID.GetStorageFlags();
 
     if (flags == 0)
-        m_CurrentLocation = SetNetICacheClient() ?
-                eNFL_NetCache : eNFL_FileTrack;
-    else if (flags & fNST_Persistent)
+        flags = (SetNetICacheClient() ? fNST_Fast : fNST_Persistent) &
+                m_NetStorage->m_AvailableStorageMask;
+
+    if (flags & fNST_Persistent)
         m_CurrentLocation = eNFL_FileTrack;
     else {
         DemandNetCache();
@@ -974,6 +991,9 @@ void SNetFileAPIImpl::Write(const void* buffer, size_t buf_size)
 
 CNetFile SNetStorageAPIImpl::Create(TNetStorageFlags flags)
 {
+    // Restrict to available storage backends.
+    flags &= m_AvailableStorageMask;
+
     Uint8 random_number = 0;
 
 #ifndef NCBI_OS_MSWIN
@@ -1011,6 +1031,8 @@ CNetFile SNetStorageAPIImpl::Create(TNetStorageFlags flags)
 
 CNetFile SNetStorageAPIImpl::Open(const string& file_id, TNetStorageFlags flags)
 {
+    flags &= m_AvailableStorageMask;
+
     CRef<SNetFileAPIImpl, CNetComponentCounterLocker<SNetFileAPIImpl> >
             netfile(new SNetFileAPIImpl(this, file_id));
 
@@ -1057,6 +1079,8 @@ string SNetStorageAPIImpl::MoveFile(SNetFileAPIImpl* orig_file,
 string SNetStorageAPIImpl::Relocate(const string& file_id,
         TNetStorageFlags flags)
 {
+    flags &= m_AvailableStorageMask;
+
     if (flags == 0)
         return file_id;
 
@@ -1123,7 +1147,9 @@ struct SNetStorageByKeyAPIImpl : public SNetStorageByKeyImpl
 CNetFile SNetStorageByKeyAPIImpl::Open(const string& unique_key,
         TNetStorageFlags flags)
 {
-    return new SNetFileAPIImpl(m_APIImpl, m_APIImpl->GetDefaultFlags(flags),
+    return new SNetFileAPIImpl(m_APIImpl,
+            m_APIImpl->GetDefaultFlags(flags) &
+                    m_APIImpl->m_AvailableStorageMask,
             m_DomainName, unique_key, m_APIImpl->m_NetICacheClient);
 }
 
@@ -1135,7 +1161,8 @@ string SNetStorageByKeyAPIImpl::Relocate(const string& unique_key,
                     m_DomainName, unique_key, m_APIImpl->m_NetICacheClient));
 
     CRef<SNetFileAPIImpl, CNetComponentCounterLocker<SNetFileAPIImpl> >
-            new_file(new SNetFileAPIImpl(m_APIImpl, flags,
+            new_file(new SNetFileAPIImpl(m_APIImpl,
+                    flags & m_APIImpl->m_AvailableStorageMask,
                     m_DomainName, unique_key, m_APIImpl->m_NetICacheClient));
 
     return m_APIImpl->MoveFile(orig_file, new_file);
@@ -1164,26 +1191,31 @@ void SNetStorageByKeyAPIImpl::Remove(const string& key, TNetStorageFlags flags)
 CNetStorage g_CreateNetStorage(CNetICacheClient::TInstance icache_client,
         TNetStorageFlags default_flags)
 {
-    return new SNetStorageAPIImpl(icache_client, default_flags);
+    return new SNetStorageAPIImpl(icache_client != NULL ? icache_client :
+            CNetICacheClient(CNetICacheClient::eAppRegistry), default_flags);
 }
 
 CNetStorage g_CreateNetStorage(TNetStorageFlags default_flags)
 {
-    return new SNetStorageAPIImpl(NULL, default_flags);
+    return new SNetStorageAPIImpl(
+            CNetICacheClient(CNetICacheClient::eAppRegistry), default_flags);
 }
 
 CNetStorageByKey g_CreateNetStorageByKey(
         CNetICacheClient::TInstance icache_client,
         const string& domain_name, TNetStorageFlags default_flags)
 {
-    return new SNetStorageByKeyAPIImpl(icache_client,
+    return new SNetStorageByKeyAPIImpl(icache_client != NULL ? icache_client :
+            CNetICacheClient(CNetICacheClient::eAppRegistry),
             domain_name, default_flags);
 }
 
 CNetStorageByKey g_CreateNetStorageByKey(const string& domain_name,
         TNetStorageFlags default_flags)
 {
-    return new SNetStorageByKeyAPIImpl(NULL, domain_name, default_flags);
+    return new SNetStorageByKeyAPIImpl(
+            CNetICacheClient(CNetICacheClient::eAppRegistry),
+            domain_name, default_flags);
 }
 
 END_NCBI_SCOPE
