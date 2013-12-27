@@ -344,6 +344,12 @@ string CNetScheduleServer::GetQueueConfig(void) const
 }
 
 
+string CNetScheduleServer::GetNetcacheApiSectionConfig(void) const
+{
+    return m_QueueDB->GetNetcacheApiSectionConfig();
+}
+
+
 bool CNetScheduleServer::AdminHostValid(unsigned host) const
 {
     return m_AdminHosts.IsAllowed(host);

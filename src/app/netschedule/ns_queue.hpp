@@ -125,6 +125,7 @@ public:
     void GetMaxIOSizesAndNCAPI(unsigned int &  max_input_size,
                                unsigned int &  max_output_size,
                                map<string, string> & netcache_api) const;
+    void GetNCAPI(map<string, string> & netcache_api) const;
 
     bool GetRefuseSubmits(void) const { return m_RefuseSubmits; }
     void SetRefuseSubmits(bool  val)  { m_RefuseSubmits = val;  }

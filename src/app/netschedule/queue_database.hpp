@@ -188,8 +188,9 @@ public:
     string GetQueueClassesConfig(void) const;
     string GetQueueInfo(void) const;
     string GetQueueConfig(void) const;
+    string GetNetcacheApiSectionConfig(void) const;
 
-    map< string, string >  GetNCApiSection(const string &  section_name);
+    map< string, string >  GetNCApiSection(const string &  section_name) const;
 
 private:
     // No copy
@@ -252,7 +253,7 @@ private:
     unsigned int        m_PurgeJobScanned;      // Scanned job ID within status
 
     // netcache_api sections support
-    CFastMutex                              m_NCApiSectionsGuard;
+    mutable CFastMutex                      m_NCApiSectionsGuard;
     map< string, map< string, string > >    m_NetCacheApiSections;
 
     bool x_PurgeQueue(CQueue &                queue,

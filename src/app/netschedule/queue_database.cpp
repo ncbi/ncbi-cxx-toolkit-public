@@ -1650,16 +1650,23 @@ string CQueueDataBase::PrintJobsStat(void)
 
 string CQueueDataBase::GetQueueClassesInfo(void) const
 {
-    string              output;
-    CFastMutexGuard     guard(m_ConfigureLock);
+    string                  output;
+    map<string, string>     netcache_api;
+    CFastMutexGuard         guard(m_ConfigureLock);
     for (TQueueParams::const_iterator  k = m_QueueClasses.begin();
          k != m_QueueClasses.end(); ++k) {
         if (!output.empty())
             output += "\n";
+
+        netcache_api = GetNCApiSection(k->second.netcache_api_section_name);
         // false - not to include qclass
         // false - not URL encoded format
         output += "OK:[qclass " + k->first + "]\n" +
                   k->second.GetPrintableParameters(false, false);
+
+        for (map<string, string>::const_iterator  k = netcache_api.begin();
+             k != netcache_api.end(); ++k)
+            output += "\nOK:nc." + k->first + ": " + k->second;
     }
     return output;
 }
@@ -1682,16 +1689,23 @@ string CQueueDataBase::GetQueueClassesConfig(void) const
 
 string CQueueDataBase::GetQueueInfo(void) const
 {
-    string              output;
-    CFastMutexGuard     guard(m_ConfigureLock);
+    string                  output;
+    map<string, string>     netcache_api;
+    CFastMutexGuard         guard(m_ConfigureLock);
     for (TQueueInfo::const_iterator  k = m_Queues.begin();
          k != m_Queues.end(); ++k) {
         if (!output.empty())
             output += "\n";
+
+        k->second.second->GetNCAPI(netcache_api);
         // true - include qclass
         // false - not URL encoded format
         output += "OK:[queue " + k->first + "]\n" +
                   x_SingleQueueInfo(k).GetPrintableParameters(true, false);
+
+        for (map<string, string>::const_iterator  k = netcache_api.begin();
+             k != netcache_api.end(); ++k)
+            output += "\nOK:nc." + k->first + ": " + k->second;
     }
     return output;
 }
@@ -1711,8 +1725,26 @@ string CQueueDataBase::GetQueueConfig(void) const
 }
 
 
+string CQueueDataBase::GetNetcacheApiSectionConfig(void) const
+{
+    string              output;
+    for (map< string, map< string, string > >::const_iterator
+            k = m_NetCacheApiSections.begin();
+            k != m_NetCacheApiSections.end(); ++k) {
+        if (!output.empty())
+            output += "\n";
+        output += "[" + k->first + "]\n";
+        for (map< string, string >::const_iterator j = k->second.begin();
+             j != k->second.end(); ++j) {
+            output += j->first + "=\"" + j->second + "\"\n";
+        }
+    }
+    return output;
+}
+
+
 map< string, string >
-CQueueDataBase::GetNCApiSection(const string &  section_name)
+CQueueDataBase::GetNCApiSection(const string &  section_name) const
 {
     CFastMutexGuard     guard(m_NCApiSectionsGuard);
     map< string, map< string, string > >::const_iterator  found =

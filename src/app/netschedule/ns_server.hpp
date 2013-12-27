@@ -98,6 +98,7 @@ public:
     string GetQueueClassesConfig(void) const;
     string GetQueueInfo(void) const;
     string GetQueueConfig(void) const;
+    string GetNetcacheApiSectionConfig(void) const;
 
     bool GetRefuseSubmits() const               { return m_RefuseSubmits; }
     void SetRefuseSubmits(bool  val)            { m_RefuseSubmits = val;  }

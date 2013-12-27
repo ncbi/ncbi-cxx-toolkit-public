@@ -2316,7 +2316,8 @@ void CNetScheduleHandler::x_ProcessGetConf(CQueue*)
                        x_GetDiagSection() +
                        x_GetBdbSection() +
                        m_Server->GetQueueClassesConfig() +
-                       m_Server->GetQueueConfig());
+                       m_Server->GetQueueConfig() +
+                       m_Server->GetNetcacheApiSectionConfig());
     } else {
         // The original config file (the one used at the startup)
         // has been requested
@@ -2462,11 +2463,14 @@ void CNetScheduleHandler::x_ProcessQueueInfo(CQueue*)
         CQueue *            queue_ptr;
         size_t              jobs_per_state[g_ValidJobStatusesSize];
         string              jobs_part;
+        string              nc_api_part;
+        map<string, string> netcache_api;
         size_t              total = 0;
 
         queue_ref.Reset(m_Server->OpenQueue(m_CommandArguments.qname));
         queue_ptr = queue_ref.GetPointer();
         queue_ptr->GetJobsPerState("", "", jobs_per_state);
+        queue_ptr->GetNCAPI(netcache_api);
 
         for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
             jobs_part += "&" +
@@ -2476,9 +2480,14 @@ void CNetScheduleHandler::x_ProcessQueueInfo(CQueue*)
         }
         jobs_part += "&Total=" + NStr::NumericToString(total);
 
+        for (map<string, string>::const_iterator  k = netcache_api.begin();
+             k != netcache_api.end(); ++k)
+            nc_api_part += "&nc." + NStr::URLEncode(k->first) + "=" +
+                           NStr::URLEncode(k->second);
+
         // Include queue classes and use URL encoding
         x_WriteMessage("OK:" + params.GetPrintableParameters(true, true) +
-                       jobs_part);
+                       jobs_part + nc_api_part);
     }
     else
         x_WriteMessage("OK:" + NStr::NumericToString(params.kind) + "\t" +

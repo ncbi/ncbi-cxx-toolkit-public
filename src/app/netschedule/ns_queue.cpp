@@ -266,10 +266,14 @@ void CQueue::GetMaxIOSizesAndNCAPI(unsigned int &  max_input_size,
 
     max_input_size = qp.GetMaxInputSize();
     max_output_size = qp.GetMaxOutputSize();
-    netcache_api = m_QueueDB.GetNCApiSection(m_NCAPISectionName);
-    return;
+    GetNCAPI(netcache_api);
 }
 
+
+void CQueue::GetNCAPI(map<string, string> & netcache_api) const
+{
+    netcache_api = m_QueueDB.GetNCApiSection(m_NCAPISectionName);
+}
 
 // Used while loading the status matrix.
 // The access to the DB is not protected here.
