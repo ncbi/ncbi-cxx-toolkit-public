@@ -841,7 +841,11 @@ IReader* CNetCacheAPI::GetData(const string& key, size_t* blob_size,
 {
     try {
         return GetReader(key, blob_size, optional);
-    } catch (CNetCacheException& e) {
+    }
+    catch (CNetCacheBlobTooOldException&) {
+        return NULL;
+    }
+    catch (CNetCacheException& e) {
         switch (e.GetErrCode()) {
         case CNetCacheException::eBlobNotFound:
         case CNetCacheException::eAccessDenied:

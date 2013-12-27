@@ -481,7 +481,11 @@ IReader* SNetICacheClientImpl::GetReadStreamPart(
 
         return new CNetCacheReader(this, blob_id,
             exec_result, blob_size_ptr, &parameters);
-    } catch (CNetCacheException& e) {
+    }
+    catch (CNetCacheBlobTooOldException&) {
+        return NULL;
+    }
+    catch (CNetCacheException& e) {
         if (e.GetErrCode() != CNetCacheException::eBlobNotFound)
             throw;
         return NULL;
