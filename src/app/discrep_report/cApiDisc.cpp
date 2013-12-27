@@ -98,6 +98,10 @@ void GetDiscrepancyReport(int argc, const char* argv[])
     CRef <CRepConfig> 
           config (CRepConfig::factory((string)"Discrepancy", &seq_handle));
 
+    if (!CFile("disc_report.ini").Exists()) {
+           NCBI_THROW(CException, eUnknown,
+                   "Configuration file disc_report.ini is missing.");
+    }
     CMetaRegistry:: SEntry entry = CMetaRegistry :: Load("disc_report.ini");
     CRef <IRWRegistry> reg(entry.registry); 
     config->InitParams(*reg);

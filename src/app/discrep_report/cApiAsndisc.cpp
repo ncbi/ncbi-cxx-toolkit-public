@@ -64,6 +64,10 @@ void GetAsndiscReport(int argc, const char* argv[])
     CRef <CRepConfig> config (CRepConfig::factory("Asndisc"));
     config->ProcessArgs(args);
 
+    if (!CFile("disc_report.ini").Exists()) {
+           NCBI_THROW(CException, eUnknown,
+                   "Configuration file disc_report.ini is missing.");
+    }
     CMetaRegistry:: SEntry entry = CMetaRegistry :: Load("disc_report.ini");
     CRef <IRWRegistry> reg(entry.registry); 
     config->InitParams(*reg);
