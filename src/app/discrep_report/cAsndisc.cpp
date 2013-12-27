@@ -41,12 +41,17 @@
 #include <objtools/discrepancy_report/hDiscRep_config.hpp>
 #include <objtools/discrepancy_report/hUtilib.hpp>
 
-#include "hAsndisc.hpp"
-
 USING_NCBI_SCOPE;
 USING_SCOPE(DiscRepNmSpc);
 
 static string       strtmp, tmp;
+
+class CDiscRepApp : public CNcbiApplication
+{
+public:
+    virtual void Init(void);
+    virtual int  Run (void);
+};
 
 void CDiscRepApp::Init(void)
 {
