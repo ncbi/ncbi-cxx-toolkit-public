@@ -80,7 +80,8 @@ int main(int argc, const char* argv[])
     catch (CException& eu) {
        string err_msg(eu.GetMsg());
        if (err_msg == "Input path or input file must be specified") {
-            err_msg = "You need to supply at least an input file (i=) or a path in which to find input files (p=). Please see 'asndisc -help' for additional details, and use the format arg=arg_value to input arguments.";
+            err_msg = "You need to supply an input file (i=myfile).";
+//            err_msg = "You need to supply at least an input file (i=) or a path in which to find input files (p=). Please see 'asndisc -help' for additional details, and use the format arg=arg_value to input arguments.";
        }
        ERR_POST(err_msg);
     }

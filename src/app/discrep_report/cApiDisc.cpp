@@ -52,8 +52,25 @@ USING_SCOPE(DiscRepNmSpc);
 
 void GetDiscrepancyReport(int argc, const char* argv[])
 {
-    auto_ptr <CObjectIStream> 
-            ois (CObjectIStream::Open(eSerial_AsnText,"test.sqn"));
+    if (argc < 2) {
+       NCBI_THROW(CException, eUnknown,
+                  "Input path or input file must be specified");
+    }
+    vector <string> arr;
+    string in_file(kEmptyStr);
+    for (unsigned i=1; i< argc; i++) {
+       arr = NStr::Tokenize(argv[i], "=", arr); 
+       if (arr[0] == "i") {
+           in_file = arr[1];
+           break;
+       }
+    }
+
+    if (in_file.empty()) {
+         NCBI_THROW(CException, eUnknown,
+                  "Input path or input file must be specified");
+    }
+    auto_ptr <CObjectIStream> ois(CObjectIStream::Open(eSerial_AsnText,in_file));
     string strtmp = ois->ReadFileHeader();
     ois->SetStreamPos(0);
     CRef <CSeq_submit> seq_submit (new CSeq_submit);
@@ -80,7 +97,6 @@ void GetDiscrepancyReport(int argc, const char* argv[])
 
     CRef <CRepConfig> 
           config (CRepConfig::factory((string)"Discrepancy", &seq_handle));
-    config->ProcessArgs();
 
     CMetaRegistry:: SEntry entry = CMetaRegistry :: Load("disc_report.ini");
     CRef <IRWRegistry> reg(entry.registry); 
@@ -93,16 +109,20 @@ void GetDiscrepancyReport(int argc, const char* argv[])
 
 int main(int argc, const char* argv[])
 {
-// Usage disc_report
+// Usage disc_report i=data_file
 
    try {
       SetDiagPostLevel(eDiag_Error);
-
       GetDiscrepancyReport(argc, argv);
       cerr << "Program existed normally\n";
    }
    catch (CException& eu) {
-      ERR_POST(eu.GetMsg());
+       string err_msg(eu.GetMsg());
+       if (err_msg == "Input path or input file must be specified") {
+            err_msg = "You need to supply an input file (i=myfild)";
+//            err_msg = "You need to supply at least an input file (i=) or a path in which to find input files (p=). Please see 'asndisc -help' for additional details, and use the format arg=arg_value to input arguments.";
+       }
+       ERR_POST(err_msg);
    };
 }
 
