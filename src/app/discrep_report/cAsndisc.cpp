@@ -104,6 +104,10 @@ int CDiscRepApp :: Run(void)
        if (report == "t" || report == "s") report = "Asndisc";
        CRef <DiscRepNmSpc::CRepConfig> 
            config( DiscRepNmSpc::CRepConfig :: factory(report) );
+       if (!CFile("disc_report.ini").Exists()) {
+           NCBI_THROW(CException, eUnknown,
+                   "Configuration file disc_report.ini is missing.");
+       }
        CMetaRegistry:: SEntry entry = CMetaRegistry :: Load("disc_report.ini");
        CRef <IRWRegistry> reg(entry.registry);
        config->InitParams(*reg);
