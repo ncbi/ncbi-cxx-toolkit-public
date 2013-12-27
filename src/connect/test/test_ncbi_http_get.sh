@@ -14,6 +14,10 @@ if [ -r $NCBI_TEST_DATA/proxy/test_ncbi_proxy.$n ]; then
   proxy="$n"
 fi
 
+if [ -r $NCBI_TEST_DATA/x.509/test_ncbi_http_get ]; then
+  .     $NCBI_TEST_DATA/x.509/test_ncbi_http_get
+fi
+
 ssl="`expr '(' $$ / 10 ')' '%' 2`"
 if [ "$ssl" = "1" -a "`echo $FEATURES | grep -vic '[-]GNUTLS'`" = "1" ]; then
   # for netstat

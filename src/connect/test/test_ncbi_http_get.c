@@ -51,8 +51,8 @@
 #ifdef HAVE_LIBGNUTLS
 #  include <gnutls/gnutls.h>
 #  define GNUTLS_PKCS12_TYPE  GNUTLS_X509_FMT_PEM/*or _DER*/
-#  define GNUTLS_PKCS12_FILE  "test_ncbi_http_get.p12"
-#  define GNUTLS_PKCS12_PASS  "pkcs12pass"
+#  define GNUTLS_PKCS12_FILE  "TEST_NCBI_HTTP_GET_CERT"
+#  define GNUTLS_PKCS12_PASS  "TEST_NCBI_HTTP_GET_PASS"
 #endif /*HAVE_LIBGNUTLS*/
 
 #include "test_assert.h"  /* This header must go last */
@@ -108,22 +108,27 @@ int main(int argc, char* argv[])
     ConnNetInfo_GetValue(0, "USESSL", blk, 32, "");
     if (net_info->scheme == eURL_Https  &&  ConnNetInfo_Boolean(blk)) {
 #ifdef HAVE_LIBGNUTLS
+        const char* file;
+        const char* pass;
         status = SOCK_SetupSSLEx(NcbiSetupGnuTls);
         CORE_LOGF(eLOG_Note, ("SSL request acknowledged: %s",
                               IO_StatusStr(status)));
-        if (access(GNUTLS_PKCS12_FILE, R_OK) == 0) {
+        file = ConnNetInfo_GetValue(0, GNUTLS_PKCS12_FILE,
+                                    blk,                 sizeof(blk)/2 - 1, 0);
+        pass = ConnNetInfo_GetValue(0, GNUTLS_PKCS12_PASS,
+                                    blk + sizeof(blk)/2, sizeof(blk)/2 - 1, 0);
+        if (file  &&  access(file, R_OK) == 0) {
             int err;
             if ((err = gnutls_certificate_allocate_credentials(&xcred)) != 0 ||
                 (err = gnutls_certificate_set_x509_simple_pkcs12_file
-                 (xcred, GNUTLS_PKCS12_FILE,
-                  GNUTLS_PKCS12_TYPE, GNUTLS_PKCS12_PASS))              != 0) {
+                 (xcred, file, GNUTLS_PKCS12_TYPE, pass) != 0)) {
                 CORE_LOGF(eLOG_Error,
                           ("Cannot load PKCS#12 credentials from \"%s\": %s",
-                           GNUTLS_PKCS12_FILE, gnutls_strerror(err)));
+                           file, gnutls_strerror(err)));
             } else if ((cred = NcbiCredGnuTls(xcred)) != 0) {
                 net_info->credentials = cred;
-                CORE_LOG(eLOG_Note, "PKCS#12 credentials loaded"
-                         " from \"" GNUTLS_PKCS12_FILE "\"");
+                CORE_LOGF(eLOG_Note, ("PKCS#12 credentials loaded from \"%s\"",
+                                      file));
             } else
                 CORE_LOG_ERRNO(eLOG_Error, errno, "Cannot create NCBI_CRED");
         }
