@@ -207,7 +207,7 @@ static EIO_Status x_Flush(CONN conn, const STimeout* timeout)
             if (status == eIO_Success)
                 break;
             if (status == eIO_Timeout)
-                status  = x_Callback(conn, eCONN_OnTimeout, eCONN_OnFlush);
+                status  = x_Callback(conn, eCONN_OnTimeout, eIO_ReadWrite);
             if (status != eIO_Success)
                 return status;
         }
@@ -641,7 +641,7 @@ static EIO_Status s_CONN_Write
         }
         if (!size  ||  status != eIO_Timeout)
             break;
-        status = x_Callback(conn, eCONN_OnTimeout, eCONN_OnWrite);
+        status = x_Callback(conn, eCONN_OnTimeout, eIO_Write);
         if (status != eIO_Success)
             break;
     }
@@ -842,7 +842,7 @@ static EIO_Status s_CONN_Read
         }
         if (!size  ||  *n_read  ||  status != eIO_Timeout)
             break;
-        status = x_Callback(conn, eCONN_OnTimeout, eCONN_OnRead);
+        status = x_Callback(conn, eCONN_OnTimeout, eIO_Read);
         if (status != eIO_Success)
             break;
     }
