@@ -65,7 +65,7 @@ CApplyObject::CApplyObject(CBioseq_Handle bsh, const CSeqdesc& desc)
 }
 
 
-CApplyObject::CApplyObject(CBioseq_Handle bsh, const CSeqdesc::E_Choice subtype)
+CApplyObject::CApplyObject(CBioseq_Handle bsh, CSeqdesc::E_Choice subtype)
 {
     m_SEH = bsh.GetParentEntry();
     if (subtype != CSeqdesc::e_Molinfo && subtype != CSeqdesc::e_Title) {
