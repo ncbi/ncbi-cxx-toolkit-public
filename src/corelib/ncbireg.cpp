@@ -553,12 +553,13 @@ IRWRegistry* IRWRegistry::Read(CNcbiIstream& is, TFlags flags,
 
 
 IRWRegistry* IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags,
-                                 const string& /* path */)
+                                 const string& path)
 {
     // Whether to consider this read to be (unconditionally) non-modifying
     TFlags layer         = (flags & fTransient) ? fTransient : fPersistent;
     TFlags impact        = layer | fJustCore;
-    bool   non_modifying = Empty(impact)  &&  !Modified(impact);
+    bool   was_empty     = Empty(impact);
+    bool   non_modifying = was_empty  &&  !Modified(impact);
     bool   ignore_errors = (flags & fIgnoreErrors) > 0;
 
     // Adjust flags for Set() fSectionlessEntries must survive this change
@@ -568,6 +569,7 @@ IRWRegistry* IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags,
     SIZE_TYPE line;         // # of the line being parsed
     string    section(kEmptyStr);      // current section name
     string    comment;      // current comment
+    string    in_path = path.empty() ? kEmptyStr : (" in " + path);
 
     for (line = 1;  NcbiGetlineEOL(is, str);  ++line) {
         try {
@@ -601,18 +603,18 @@ IRWRegistry* IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags,
                 SIZE_TYPE end = str.find_first_of(']', beg + 1);
                 if (end == NPOS) {
                     NCBI_THROW2(CRegistryException, eSection,
-                                "Invalid registry section(']' is missing): `"
-                                + str + "'", line);
+                                "Invalid registry section" + in_path
+                                + " (']' is missing): `" + str + "'", line);
                 }
                 section = NStr::TruncateSpaces(str.substr(beg, end - beg));
                 if (section.empty()) {
                     NCBI_THROW2(CRegistryException, eSection,
-                                "Unnamed registry section: `" + str + "'",
-                                line);
+                                "Unnamed registry section" + in_path + ": `"
+                                + str + "'", line);
                 } else if ( !s_IsNameSection(section, flags) ) {
                     NCBI_THROW2(CRegistryException, eSection,
-                                "Invalid registry section name: `"
-                                + str + "'", line);
+                                "Invalid registry section name" + in_path
+                                + ": `" + str + "'", line);
                 }
                 // add section comment
                 if ( !comment.empty() ) {
@@ -626,14 +628,14 @@ IRWRegistry* IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags,
                 string name, value;
                 if ( !NStr::SplitInTwo(str, "=", name, value) ) {
                     NCBI_THROW2(CRegistryException, eEntry,
-                                "Invalid registry entry format: '" + str + "'",
-                                line);
+                                "Invalid registry entry format" + in_path
+                                + ": '" + str + "'", line);
                 }
                 NStr::TruncateSpacesInPlace(name);
                 if ( !s_IsNameSection(name, flags) ) {
                     NCBI_THROW2(CRegistryException, eEntry,
-                                "Invalid registry entry name: '" + str + "'",
-                                line);
+                                "Invalid registry entry name" + in_path + ": '"
+                                + str + "'", line);
                 }
             
                 NStr::TruncateSpacesInPlace(value);
@@ -672,8 +674,8 @@ IRWRegistry* IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags,
                     } else {
                         NCBI_THROW2(CRegistryException, eValue,
                                     "Single(unescaped) '\"' in the middle "
-                                    "of registry value: '" + str + "'",
-                                    line);
+                                    "of registry value" + in_path + ": '"
+                                    + str + "'", line);
                     }
                 }
 
@@ -681,8 +683,8 @@ IRWRegistry* IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags,
                     value = NStr::ParseEscapes(value.substr(beg, end - beg));
                 } catch (CStringException&) {
                     NCBI_THROW2(CRegistryException, eValue,
-                                "Badly placed '\\' in the registry value: '"
-                                + str + "'", line);
+                                "Badly placed '\\' in the registry value"
+                                + in_path + ": '" + str + "'", line);
 
                 }
                 TFlags set_flags = flags;
@@ -697,6 +699,11 @@ IRWRegistry* IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags,
                         value += ' ';
                         value += old_value;
                     }
+                } else if (was_empty  &&  HasEntry(section, name, flags)) {
+                    ERR_POST_X(8, Warning
+                               << "Found multiple [" << section << "] "
+                               << name << " settings" << in_path
+                               << "; using the one from line " << line);
                 }
                 Set(section, name, value, set_flags, comment);
                 comment.erase();
@@ -712,8 +719,8 @@ IRWRegistry* IRWRegistry::x_Read(CNcbiIstream& is, TFlags flags,
     }
 
     if ( !is.eof() ) {
-        ERR_POST_X(4, "Error reading the registry after line " << line << ": "
-                       << str);
+        ERR_POST_X(4, "Error reading the registry after line " << line
+                   << in_path << ": " << str);
     }
 
     if ( non_modifying ) {
