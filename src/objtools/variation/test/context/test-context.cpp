@@ -83,10 +83,11 @@ private:
     int CompareVar(CRef<CSeq_annot> v1, CRef<CSeq_annot> v2);
     int CompareLocations(const CSeq_loc& loc1, const CSeq_loc& loc2, int n);
     template<class T>
-    void GetAlleles(T &variations, set<string>& alleles, string &ref);
+    void GetAlleles(T &variations, set<string>& alleles, string &ref, int *type = NULL);
     bool IsVariation(AutoPtr<CObjectIStream>& oistr);
     template<class T>
     int CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<CObjectIStream>& var_in2, CVariationNormalization::ETargetContext context, CRef<CScope> scope, bool verbose);
+    void CheckShiftable(AutoPtr<CObjectIStream>& var_in1, CRef<CScope> scope);
 };
 
 
@@ -100,6 +101,7 @@ void CContextApp::Init(void)
     arg_desc->AddFlag("vcf", "VCF context",true);
     arg_desc->AddFlag("hgvs", "HGVS context",true);
     arg_desc->AddFlag("varloc", "VarLoc context",true);
+    arg_desc->AddFlag("c", "Check is shiftable?",true);
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -136,20 +138,25 @@ int CContextApp::CompareLocations(const CSeq_loc& loc1, const CSeq_loc& loc2, in
 }
 
 template<class T>
-void  CContextApp::GetAlleles(T &variations, set<string>& alleles, string &ref)
+void  CContextApp::GetAlleles(T &variations, set<string>& alleles, string &ref, int *type)
 {
     for (typename T::iterator var2 = variations.begin(); var2 != variations.end(); ++var2)
-        if ( (*var2)->IsSetData() && (*var2)->SetData().IsInstance() && (*var2)->SetData().SetInstance().IsSetDelta() && !(*var2)->SetData().SetInstance().SetDelta().empty()
+        if ( (*var2)->IsSetData() && (*var2)->SetData().IsInstance())
+        {
+            if ((*var2)->SetData().SetInstance().IsSetDelta() && !(*var2)->SetData().SetInstance().SetDelta().empty()
              && (*var2)->SetData().SetInstance().SetDelta().front()->IsSetSeq() && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().IsLiteral()
              && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().IsSetSeq_data() 
              && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().IsIupacna())
-        {
-            string a = (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(); 
-
-            if ((*var2)->GetData().GetInstance().IsSetObservation() && (int((*var2)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference))
-                ref = a;
-            else
-                alleles.insert(a);
+            {
+                string a = (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(); 
+                
+                if ((*var2)->GetData().GetInstance().IsSetObservation() && (int((*var2)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference))
+                    ref = a;
+                else
+                    alleles.insert(a);
+            }
+            if (type && !((*var2)->GetData().GetInstance().IsSetObservation() && (int((*var2)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference)))
+                *type = (*var2)->GetData().GetInstance().GetType();
         }
 }
 
@@ -310,6 +317,28 @@ int CContextApp::CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<COb
     return n;
 }
 
+void CContextApp::CheckShiftable(AutoPtr<CObjectIStream>& var_in1, CRef<CScope> scope)
+{
+    CRef<CSeq_annot> v1(new CSeq_annot);
+    *var_in1 >> *v1;
+    for (CSeq_annot::TData::TFtable::iterator feat1 = v1->SetData().SetFtable().begin(); feat1 != v1->SetData().SetFtable().end(); ++feat1)
+    {
+        CVariation_ref& vr1 = (*feat1)->SetData().SetVariation();
+        set<string> alleles;
+        string ref;
+        int type;
+        GetAlleles(vr1.SetData().SetSet().SetVariations(),alleles,ref,&type);
+        if (ref.empty() && alleles.size() == 1)
+            ref = *alleles.begin();
+        bool r = CVariationNormalization::IsShiftable((*feat1)->GetLocation(),ref, *scope, type);
+        if (r)
+            cerr << "Yes" << endl;
+        else
+            cerr << "No" << endl;
+    }
+
+}
+
 int CContextApp::Run() 
 {
 
@@ -319,6 +348,7 @@ int CContextApp::Run()
     bool context_vcf = args["vcf"].AsBoolean();
     bool context_hgvs = args["hgvs"].AsBoolean();
     bool context_varloc = args["varloc"].AsBoolean();
+    bool check = args["c"].AsBoolean();
 
     AutoPtr<CNcbiIstream> fstr;
     if(args["f"])
@@ -342,6 +372,12 @@ int CContextApp::Run()
 
     AutoPtr<CDecompressIStream>	decomp_stream1(new CDecompressIStream(istr, CCompressStream::eGZipFile, CZipCompression::fAllowTransparentRead));
     AutoPtr<CObjectIStream> var_in1(CObjectIStream::Open(eSerial_AsnText, *decomp_stream1));
+
+    if (check)
+    {
+        CheckShiftable(var_in1,scope);
+        return 0;
+    }
 
     AutoPtr<CDecompressIStream>	decomp_stream2;
     AutoPtr<CObjectIStream> var_in2;

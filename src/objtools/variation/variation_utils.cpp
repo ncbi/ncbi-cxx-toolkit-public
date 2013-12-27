@@ -357,7 +357,7 @@ string CVariationNormalization_base_cache::x_CompactifySeq(string a)
     return result;
 }
 
-void CVariationNormalization_base_cache::x_PrefetchSequence(CScope &scope, CRef<CSeq_id> seq_id)
+void CVariationNormalization_base_cache::x_PrefetchSequence(CScope &scope, CRef<CSeq_id> seq_id, ENa_strand strand)
 {
     string accession;
     seq_id->GetLabel(&accession);
@@ -366,10 +366,10 @@ void CVariationNormalization_base_cache::x_PrefetchSequence(CScope &scope, CRef<
         m_Accession = accession;
         const CBioseq_Handle& bsh = scope.GetBioseqHandle( *seq_id );
 #ifdef SEQVEC_CACHE
-        m_seq_vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+        m_seq_vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac,strand);
 #else
         m_Sequence.clear();     
-        CSeqVector seq_vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+        CSeqVector seq_vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac,strand);
         seq_vec.GetSeqData(0, seq_vec.size(), m_Sequence);
 #endif
     }
@@ -432,7 +432,11 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CVariation>& v_orig, CScope &
                 bool is_deletion = false;
                 CSeq_literal *refref = NULL;
 
-                x_PrefetchSequence(scope,seq_id);
+                ENa_strand strand = eNa_strand_unknown;
+                if ((*vp1)->GetLoc().IsSetStrand())
+                    strand = (*vp1)->GetLoc().GetStrand();
+
+                x_PrefetchSequence(scope,seq_id,strand);
                 if (v->IsSetData() && v->SetData().IsInstance())
                     x_ProcessInstance(v->SetData().SetInstance(),(*vp1)->SetLoc(),is_deletion,refref,ref,pos_left,pos_right,new_pos_left,new_pos_right);
                 else if (v->IsSetData() && v->GetData().IsSet() && v->GetData().GetSet().IsSetVariations())
@@ -540,7 +544,12 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
                 bool is_deletion = false;
                 string ref;
                 CSeq_literal *refref = NULL;
-                x_PrefetchSequence(scope,seq_id);
+
+                ENa_strand strand = eNa_strand_unknown;
+                if ((*feat)->GetLocation().IsSetStrand())
+                    strand = (*feat)->GetLocation().GetStrand();
+
+                x_PrefetchSequence(scope,seq_id,strand);
 //                cout << "Sequence: " <<x_GetSeq(5510,3) << endl;
                 CVariation_ref& vr = (*feat)->SetData().SetVariation();
                 if (vr.IsSetData() && vr.GetData().IsInstance())
@@ -573,12 +582,61 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
     }
 }
 
+template<class T>
+bool CVariationNormalization_base<T>::x_IsShiftable(const CSeq_loc &loc, string &ref, CScope &scope, int type)
+{
+    if (type != CVariation_inst::eType_ins && type != CVariation_inst::eType_del)
+        NCBI_THROW(CException, eUnknown, "Only insertions or deletions can currently be processed");
+
+    m_Type = type;
+    int pos_left = -1;
+    int pos_right = -1;
+    CRef<CSeq_id> seq_id(new CSeq_id);
+    if (loc.IsPnt() && loc.GetPnt().IsSetPoint() && loc.GetPnt().IsSetId())
+    {
+        seq_id->Assign(loc.GetPnt().GetId());
+        pos_left = loc.GetPnt().GetPoint();
+        pos_right = pos_left;
+    }
+    else if (loc.IsInt() && loc.GetInt().IsSetId())
+    {
+        seq_id->Assign(loc.GetInt().GetId());
+        pos_left = loc.GetInt().GetFrom();
+        pos_right = loc.GetInt().GetTo();
+    }
+    else
+        NCBI_THROW(CException, eUnknown, "Location is neither point nor interval");
+
+    ENa_strand strand = eNa_strand_unknown;
+    if (loc.IsSetStrand())
+        strand = loc.GetStrand();
+    x_PrefetchSequence(scope,seq_id,strand);
+    int old_pos_left = pos_left;
+    int old_pos_right = pos_right;
+    if (!ref.empty()) 
+    {
+        if (type == CVariation_inst::eType_del)
+        {
+            int pos = pos_right - ref.size() + 1;
+            x_ProcessShift(ref, pos_left,pos);
+            pos_right = pos + ref.size()-1;
+        }
+        else
+        {  
+            string compact = x_CompactifySeq(ref);
+            string orig_compact = compact;
+            x_ProcessShift(compact, pos_left,pos_right);
+        }
+    }
+    bool unchanged = (pos_left == old_pos_left) && (pos_right == old_pos_right);
+    return !unchanged;
+}
+
 bool CVariationNormalizationLeft::x_ProcessShift(string &a, int &pos,int &pos_right)
 {
     string orig_a = a;
     int length = a.size();
     int orig_pos = pos;
-                            
     bool found_left = false;
 
     string b;
@@ -856,6 +914,11 @@ void CVariationNormalization::AlterToHGVSVar(CRef<CSeq_annot>& var, CScope& scop
 void CVariationNormalization::NormalizeAmbiguousVars(CRef<CVariation>& var, CScope &scope)
 {
     CVariationNormalizationInt::x_Shift(var,scope);
+}
+
+bool CVariationNormalization::IsShiftable(const CSeq_loc &loc, string a, CScope &scope, int type)
+{
+    return CVariationNormalizationInt::x_IsShiftable(loc,a,scope,type);
 }
 
 void CVariationNormalization::NormalizeAmbiguousVars(CRef<CSeq_annot>& var, CScope &scope)

@@ -58,7 +58,7 @@ class CVariationNormalization_base_cache
 {
 public:
     static int x_GetSeqSize();
-    static void x_PrefetchSequence(CScope &scope, CRef<CSeq_id> seq_id);
+    static void x_PrefetchSequence(CScope &scope, CRef<CSeq_id> seq_id, ENa_strand strand = eNa_strand_unknown);
     static string x_GetSeq(int pos, int length);
 
 protected:
@@ -85,6 +85,7 @@ public:
     static void x_ProcessInstance(CVariation_inst &inst, CSeq_loc &loc, bool &is_deletion,  CSeq_literal *&refref, string &ref, int &pos_left, int &pos_right, int &new_pos_left, int &new_pos_right);    
     static bool x_ProcessShift(string &a, int &pos_left, int &pos_right) {return T::x_ProcessShift(a,pos_left,pos_right);}
     static void x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right) {T::x_ModifyLocation(loc,literal,a,pos_left,pos_right);}
+    static bool x_IsShiftable(const CSeq_loc &loc, string &ref, CScope &scope, int type);
 };
 
 class CVariationNormalizationLeft : public CVariationNormalization_base<CVariationNormalizationLeft>
@@ -165,5 +166,6 @@ public:
 
     static void AlterToVarLoc(CRef<CVariation>& var, CScope& scope);
     static void AlterToVarLoc(CRef<CSeq_annot>& var, CScope& scope);
- 
+
+    static bool IsShiftable(const CSeq_loc &loc, string ref, CScope &scope, int type); 
 };
