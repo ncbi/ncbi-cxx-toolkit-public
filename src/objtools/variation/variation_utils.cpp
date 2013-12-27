@@ -107,7 +107,7 @@ void CVariationUtilities::CorrectRefAllele(CRef<CVariation_ref>& var, CScope& sc
 {
     CVariation_ref& vr = *var;
     if (!vr.IsSetLocation())
-        NCBI_THROW(CException, eUnknown, "Location is not set in input Seq-annot");
+        NCBI_THROW(CException, eUnknown, "Location is not set in input Variation-ref");
     string new_ref = GetAlleleFromLoc(vr.GetLocation(),scope);
     CorrectRefAllele(vr,scope,new_ref);
 }
@@ -274,6 +274,46 @@ void CVariationUtilities::FixAlleles(CRef<CVariation> v, string old_ref, string 
 
 }
 
+bool CVariationUtilities::IsReferenceCorrect(const CSeq_feat& feat, string& wrong_ref, string& correct_ref, CScope& scope)
+{
+    wrong_ref.clear();
+    correct_ref.clear();
+    if (feat.IsSetData() && feat.GetData().IsVariation() && feat.IsSetLocation())
+    {
+        const CSeq_loc& loc = feat.GetLocation(); 
+        correct_ref = GetAlleleFromLoc(loc,scope);
+   
+        const CVariation_ref& vr = feat.GetData().GetVariation();
+        if (!vr.IsSetData() || !vr.GetData().IsSet() || !vr.GetData().GetSet().IsSetVariations())
+            NCBI_THROW(CException, eUnknown, "Set of Variation-inst is not set in input Seq-feat");
+
+        for (CVariation_ref::TData::TSet::TVariations::const_iterator inst = vr.GetData().GetSet().GetVariations().begin(); inst != vr.GetData().GetSet().GetVariations().end(); ++inst)
+        {
+            if ((*inst)->IsSetData() && (*inst)->GetData().IsInstance() && (*inst)->GetData().GetInstance().IsSetObservation() && 
+                (int((*inst)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference) &&
+                (*inst)->GetData().GetInstance().IsSetDelta() && !(*inst)->GetData().GetInstance().GetDelta().empty() && (*inst)->GetData().GetInstance().GetDelta().front()->IsSetSeq() 
+                && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().IsLiteral()
+                && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().IsSetSeq_data() 
+                && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
+            {
+                wrong_ref  = (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().GetIupacna().Get(); 
+            }
+        }
+        
+    }
+    else
+        NCBI_THROW(CException, eUnknown, "Feature is not a Variation or Location is not set");
+    
+    if (correct_ref.empty())
+        NCBI_THROW(CException, eUnknown, "Cannot access correct reference allele at given location");
+    
+    if (wrong_ref.empty())
+        NCBI_THROW(CException, eUnknown, "Old reference allele not found in input Seq-feat");
+    
+    return (wrong_ref == correct_ref);
+}
+
+
 // Variation Normalization
 #ifdef SEQVEC_CACHE
 CSeqVector CVariationNormalization_base_cache::m_seq_vec;
@@ -299,7 +339,7 @@ void CVariationNormalization_base_cache::x_rotate_right(string &v)
 string CVariationNormalization_base_cache::x_CompactifySeq(string a)
 {
     string result = a;
-    for (int i=1; i<= a.size() / 2; i++)
+    for (unsigned int i=1; i<= a.size() / 2; i++)
         if (a.size() % i == 0)
         {
             int k = a.size() / i;

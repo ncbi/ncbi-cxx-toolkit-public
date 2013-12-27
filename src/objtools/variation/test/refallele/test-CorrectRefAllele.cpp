@@ -85,6 +85,7 @@ private:
     template<class T>
     int CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, AutoPtr<CObjectIStream>& var_in2, CRef<CScope> scope, bool verbose);
     void GetAlleles(CVariation_ref& vr, string& new_ref, set<string>& alleles);
+    void CheckReferenceAlleleInSeqFeat( AutoPtr<CObjectIStream>& var_in1, CRef<CScope> scope);
 };
 
 
@@ -93,8 +94,9 @@ void CCorrectRefAlleleApp::Init(void)
     auto_ptr<CArgDescriptions> arg_desc(new CArgDescriptions);
     arg_desc->SetUsageContext(GetArguments().GetProgramBasename(),"Correct Ref Allele in Variation objects");
     arg_desc->AddDefaultKey("i", "input", "Input file",CArgDescriptions::eInputFile, "-", CArgDescriptions::fPreOpen);
-    arg_desc->AddDefaultKey("f", "fixed", "Fixed file",CArgDescriptions::eInputFile,"fixed",CArgDescriptions::fPreOpen);
+    arg_desc->AddDefaultKey("f", "fixed", "Fixed file",CArgDescriptions::eInputFile,"-",CArgDescriptions::fPreOpen);
     arg_desc->AddFlag("v", "Verbose output",true);
+    arg_desc->AddFlag("c", "Check ref allele",true);
     SetupArgDescriptions(arg_desc.release());
 }
 
@@ -272,12 +274,25 @@ int CCorrectRefAlleleApp::CorrectAndCompare(AutoPtr<CObjectIStream>& var_in1, Au
     return n;
 }
 
+
+void CCorrectRefAlleleApp::CheckReferenceAlleleInSeqFeat( AutoPtr<CObjectIStream>& var_in1, CRef<CScope> scope)
+{
+    CRef<CSeq_annot> annot(new CSeq_annot);
+    *var_in1 >> *annot;
+    for (CSeq_annot::TData::TFtable::iterator feat = annot->SetData().SetFtable().begin(); feat != annot->SetData().SetFtable().end(); ++feat)
+    {
+        string input_ref,output_ref;
+        bool r = CVariationUtilities::IsReferenceCorrect(**feat,input_ref,output_ref,*scope);
+        cerr << r<<" "<<input_ref<<" "<<output_ref<<endl;
+    }
+}
+
 int CCorrectRefAlleleApp::Run() 
 {
     CArgs args = GetArgs();
     CNcbiIstream& istr = args["i"].AsInputFile();
-    CNcbiIstream& fstr = args["f"].AsInputFile();
     bool verbose = args["v"].AsBoolean();
+    bool check = args["c"].AsBoolean();
 
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
     CRef<CScope> scope(new CScope(*object_manager));
@@ -286,7 +301,13 @@ int CCorrectRefAlleleApp::Run()
 
     AutoPtr<CDecompressIStream>	decomp_stream1(new CDecompressIStream(istr, CCompressStream::eGZipFile, CZipCompression::fAllowTransparentRead));
     AutoPtr<CObjectIStream> var_in1(CObjectIStream::Open(eSerial_AsnText, *decomp_stream1));
+    if (check)
+    {
+        CheckReferenceAlleleInSeqFeat(var_in1,scope);
+        return 0;
+    }
 
+    CNcbiIstream& fstr = args["f"].AsInputFile();
     AutoPtr<CDecompressIStream>	decomp_stream2(new CDecompressIStream(fstr, CCompressStream::eGZipFile, CZipCompression::fAllowTransparentRead));
     AutoPtr<CObjectIStream> var_in2(CObjectIStream::Open(eSerial_AsnText, *decomp_stream2));
 
