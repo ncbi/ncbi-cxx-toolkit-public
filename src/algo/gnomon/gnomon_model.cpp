@@ -216,7 +216,7 @@ CCDSInfo CCDSInfo::MapFromEditedToOrig(const CAlignMap& amap) const
     CCDSInfo new_cds(true);
 
     if(ProtReadingFrame().NotEmpty()) {
-        TSignedSeqRange prot_rf = amap.MapRangeEditedToOrig(ProtReadingFrame(), false);
+        TSignedSeqRange prot_rf = amap.MapRangeEditedToOrig(ProtReadingFrame(), true);
         if(prot_rf.NotEmpty())
             new_cds.SetReadingFrame(prot_rf, true);
         else
