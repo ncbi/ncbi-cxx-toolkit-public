@@ -433,7 +433,7 @@ static bool s_TarChecksum(TBlock* block, bool isgnu)
     memset(h->checksum, ' ', sizeof(h->checksum));
     unsigned long checksum = 0;
     const unsigned char* p = (const unsigned char*) block->buffer;
-    for (size_t i = 0; i < sizeof(block->buffer); i++) {
+    for (size_t i = 0;  i < sizeof(block->buffer);  ++i) {
         checksum += *p++;
     }
     // ustar:       '\0'-terminated checksum
@@ -608,7 +608,7 @@ static string s_SizeOrMajorMinor(const CTarEntryInfo& info)
         unsigned int major = info.GetMajor();
         unsigned int minor = info.GetMinor();
         return s_MajorMinor(major) + ',' + s_MajorMinor(minor);
-    } else if (info.GetType() == CTarEntryInfo::eDir ||
+    } else if (info.GetType() == CTarEntryInfo::eDir  ||
                info.GetType() == CTarEntryInfo::eSymLink) {
         return string("-");
     }
@@ -682,7 +682,7 @@ static string s_OffsetAsString(size_t offset)
 
 static bool memcchr(const char* s, char c, size_t len)
 {
-    for (size_t i = 0;  i < len;  i++) {
+    for (size_t i = 0;  i < len;  ++i) {
         if (s[i] != c)
             return true;
     }
@@ -714,10 +714,13 @@ static string s_Printable(const char* field, size_t maxsize, bool text)
 
 #define _STR(s) #s
 
-#define TAR_PRINTABLE(field, text)                                      \
+#define TAR_PRINTABLE_EX(field, text, size)                             \
     "@" + s_OffsetAsString((size_t) offsetof(SHeader, field)) +         \
     "[" _STR(field) "]:" + string(13 - sizeof(_STR(field)), ' ') +      \
-    '"' + s_Printable(h->field, sizeof(h->field), text  ||  ex) + '"'
+    '"' + s_Printable(h->field, size, text  ||  ex) + '"'
+
+#define TAR_PRINTABLE(field, text)                                      \
+    TAR_PRINTABLE_EX(field, text, sizeof(h->field))
 
 
 static string s_DumpSparseMap(const SHeader* h, const char* sparse,
@@ -971,7 +974,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         break;
     case 'N':
         if (fmt == eTar_OldGNU) {
-            tname = "GNU extension: long filename";
+            tname = "GNU extension (obsolete): long filename(s)";
         }
         break;
     case 'S':
@@ -1073,6 +1076,7 @@ static string s_DumpHeader(const SHeader* h, ETar_Format fmt, bool ex = false)
         switch (fmt) {
         case eTar_Star:
             if (h->typeflag[0] == 'S') {
+                dump += TAR_PRINTABLE_EX(star.prefix, true, 107);
                 const char* extent = h->star.prefix + 107;
                 ok = s_DecodeUint8(val, extent, 12);
                 dump += "@"
@@ -1305,7 +1309,7 @@ CTar::~CTar()
     m_FileStream = 0;
 
     // Delete owned masks
-    for (size_t i = 0;  i < sizeof(m_Mask) / sizeof(m_Mask[0]);  i++) {
+    for (size_t i = 0;  i < sizeof(m_Mask) / sizeof(m_Mask[0]);  ++i) {
         SetMask(0, eNoOwnership, EMaskType(i));
     }
 
@@ -1802,7 +1806,7 @@ static bool s_ParsePAXInt(Uint8* valp, const char* str, size_t len, bool dot)
 
 static bool s_AllLowerCase(const char* str, size_t len)
 {
-    for (size_t i = 0;  i < len;  i++) {
+    for (size_t i = 0;  i < len;  ++i) {
         unsigned char c = (unsigned char) str[i];
         if (!isalpha(c)  ||  !islower(c))
             return false;
@@ -1865,7 +1869,7 @@ CTar::EStatus CTar::x_ParsePAXData(const string& buffer)
             return eFailure;
         }
         bool done = false;
-        for (size_t n = 0;  n < sizeof(parser) / sizeof(parser[0]);  n++) {
+        for (size_t n = 0;  n < sizeof(parser) / sizeof(parser[0]);  ++n) {
             if (strlen(parser[n].key) == klen
                 &&  strncmp(parser[n].key, k, klen) == 0) {
                 if (!parser[n].val) {
@@ -1999,7 +2003,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
     // Get checksum from header
     if (!s_OctalToNum(val, h->checksum, sizeof(h->checksum))) {
         // We must allow all zero bytes here in case of pad/zero blocks
-        for (size_t i = 0;  i < sizeof(block->buffer);  i++) {
+        for (size_t i = 0;  i < sizeof(block->buffer);  ++i) {
             if (block->buffer[i]) {
                 TAR_THROW_EX(this, eUnsupportedTarFormat,
                              "Bad checksum", h, fmt);
@@ -2014,13 +2018,13 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
     int ssum = 0;
     unsigned int usum = 0;
     const char* p = block->buffer;
-    for (size_t i = 0;  i < sizeof(block->buffer);  i++)  {
+    for (size_t i = 0;  i < sizeof(block->buffer);  ++i)  {
         ssum +=                 *p;
         usum += (unsigned char)(*p);
         p++;
     }
     p = h->checksum;
-    for (size_t j = 0;  j < sizeof(h->checksum);  j++) {
+    for (size_t j = 0;  j < sizeof(h->checksum);  ++j) {
         ssum -=                 *p  - ' ';
         usum -= (unsigned char)(*p) - ' ';
         p++;
@@ -3373,7 +3377,7 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
         if (!path->SetTimeT(&modification, &last_access, &creation)) {
             int x_errno = errno;
             TAR_THROW(this, eRestoreAttrs,
-                      "Cannot restore date/time for '" + path->GetPath() + '\''
+                      "Cannot restore date/time of '" + path->GetPath() + '\''
                       + s_OSReason(x_errno));
         }
     }
@@ -3438,7 +3442,7 @@ void CTar::x_RestoreAttrs(const CTarEntryInfo& info,
             int x_errno = errno;
             TAR_THROW(this, eRestoreAttrs,
                       "Cannot " + string(perm ? "change" : "restore")
-                      + " mode bits for '" + path->GetPath() + '\''
+                      + " mode bits of '" + path->GetPath() + '\''
                       + s_OSReason(x_errno));
         }
     }
