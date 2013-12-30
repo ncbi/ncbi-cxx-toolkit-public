@@ -87,7 +87,7 @@ typedef vector< CRef<CBiosampleFieldDiff> > TBiosampleFieldDiffList;
 
 
 TBiosampleFieldDiffList GetFieldDiffs(string sequence_id, string biosample_id, const CBioSource& src, const CBioSource& sample);
-TBiosampleFieldDiffList GetFieldDiffs(string sequence_id, string biosample_id, const CUser_object& src, const CUser_object& sample);
+TBiosampleFieldDiffList GetFieldDiffs(string sequence_id, string biosample_id, CConstRef<CUser_object> src, CConstRef<CUser_object> sample);
 
 CRef<objects::CSeqTable_column> FindSeqTableColumnByName (CRef<objects::CSeq_table> values_table, string column_name);
 void AddValueToColumn (CRef<CSeqTable_column> column, string value, size_t row);

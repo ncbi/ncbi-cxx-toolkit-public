@@ -1022,20 +1022,24 @@ void CBiosampleChkApp::GetBioseqDiffs(CBioseq_Handle bh)
 					}
                 } else if ((*it)->IsUser() && x_IsReportableStructuredComment(**it)) {
                     if (m_CompareStructuredComments) {
+                        CConstRef<CUser_object> sample(&(*it)->GetUser());
                         string this_prefix = s_GetStructuredCommentPrefix((*it)->GetUser());
                         bool found = false;
                         vector<string>::iterator sit = user_labels.begin();
                         vector<CConstRef<CUser_object> >::iterator uit = user_objs.begin();
                         while (sit != user_labels.end() && uit != user_objs.end()) {
                             if (NStr::EqualNocase(*sit, this_prefix)) {
-                                TBiosampleFieldDiffList these_diffs = GetFieldDiffs(sequence_id, *id, **uit, (*it)->GetUser());
+                                TBiosampleFieldDiffList these_diffs = GetFieldDiffs(sequence_id, *id, *uit, sample);
                                 m_Diffs.insert(m_Diffs.end(), these_diffs.begin(), these_diffs.end());
                                 found = true;
                             }
                             ++sit;
                             ++uit;
                         }
-					    
+				        if (!found) {
+                            TBiosampleFieldDiffList these_diffs = GetFieldDiffs(sequence_id, *id, CConstRef<CUser_object>(NULL), sample);
+                            m_Diffs.insert(m_Diffs.end(), these_diffs.begin(), these_diffs.end());                           
+                        }
                     }
 				}
             }

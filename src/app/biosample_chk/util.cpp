@@ -483,6 +483,39 @@ TBiosampleFieldDiffList GetFieldDiffs(string sequence_id, string biosample_id, c
 }
 
 
+TBiosampleFieldDiffList GetFieldDiffs(string sequence_id, string biosample_id, CConstRef<CUser_object> src, CConstRef<CUser_object> sample)
+{
+    TBiosampleFieldDiffList rval;
+
+    vector<CConstRef<CUser_object> > src_list;
+    if (src) {
+        src_list.push_back(src);
+    }
+    if (sample) {
+        src_list.push_back(sample);
+    }
+
+    TStructuredCommentTableColumnList field_list = GetAvailableFields (src_list);
+
+    ITERATE(TStructuredCommentTableColumnList, it, field_list) {
+        string src_val = "";
+        if (src) {
+            src_val = (*it)->GetFromComment(*src);
+        }
+        string sample_val = "";
+        if (sample) {
+            (*it)->GetFromComment(*sample);
+        }
+        if (!s_ShouldIgnoreConflict((*it)->GetLabel(), src_val, sample_val)) {
+            CRef<CBiosampleFieldDiff> diff(new CBiosampleFieldDiff(sequence_id, biosample_id, (*it)->GetLabel(), src_val, sample_val));
+            rval.push_back(diff);
+        }
+    }
+
+    return rval;
+}
+
+
 CRef<CSeqTable_column> FindSeqTableColumnByName (CRef<CSeq_table> values_table, string column_name)
 {
     ITERATE (CSeq_table::TColumns, cit, values_table->GetColumns()) {
