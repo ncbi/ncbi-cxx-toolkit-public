@@ -1179,30 +1179,47 @@ string CAutoDef::x_GetFeatureClauseProductEnding(const string& feature_clauses,
 string CAutoDef::GetOneFeatureClauseList(CBioseq_Handle bh, unsigned int genome_val)
 {
     string feature_clauses = "";
-    if (m_FeatureListType == eListAllFeatures) {
-        feature_clauses = " " + x_GetFeatureClauses(bh);
-        string ending = x_GetFeatureClauseProductEnding(feature_clauses, bh);
-        if (m_AltSpliceFlag) {
-            if (NStr::IsBlank(ending)) {
-                ending = "; alternatively spliced";
-            } else {
-                ending += ", alternatively spliced";
+    switch (m_FeatureListType) {
+        case eListAllFeatures:
+            {{
+            feature_clauses = " " + x_GetFeatureClauses(bh);
+            string ending = x_GetFeatureClauseProductEnding(feature_clauses, bh);
+            if (m_AltSpliceFlag) {
+                if (NStr::IsBlank(ending)) {
+                    ending = "; alternatively spliced";
+                } else {
+                    ending += ", alternatively spliced";
+                }
             }
-        }
-        feature_clauses += ending;
-        if (NStr::IsBlank(feature_clauses)) {
-            feature_clauses = ".";
-        } else {
-            feature_clauses += ".";
-        }
-    } else if (m_FeatureListType == eCompleteSequence) {
-        feature_clauses = ", complete sequence";
-    } else if (m_FeatureListType == eCompleteGenome) {
-        string organelle = OrganelleByGenome(genome_val);
-        if (!NStr::IsBlank(organelle)) {
-            feature_clauses = " " + organelle;
-        }
-        feature_clauses += ", complete genome";
+            feature_clauses += ending;
+            if (NStr::IsBlank(feature_clauses)) {
+                feature_clauses = ".";
+            } else {
+                feature_clauses += ".";
+            }
+            }} 
+        break;
+        case eCompleteSequence:
+            feature_clauses = ", complete sequence";
+            break;
+        case eCompleteGenome:
+            {{
+            string organelle = OrganelleByGenome(genome_val);
+            if (!NStr::IsBlank(organelle)) {
+                feature_clauses = " " + organelle;
+            }
+            feature_clauses += ", complete genome";
+            }}
+            break;
+        case ePartialSequence:
+            feature_clauses += ", partial sequence";
+            break;
+        case ePartialGenome:
+            feature_clauses += ", partial genome";
+            break;
+        case eSequence:
+            feature_clauses += ", sequence";
+            break;
     }
     return feature_clauses;
 }

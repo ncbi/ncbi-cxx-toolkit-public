@@ -61,7 +61,10 @@ public:
     enum EFeatureListType {
         eListAllFeatures = 0,
         eCompleteSequence,
-        eCompleteGenome
+        eCompleteGenome,
+        ePartialSequence,
+        ePartialGenome,
+        eSequence
     };
     
     enum EMiscFeatRule {
