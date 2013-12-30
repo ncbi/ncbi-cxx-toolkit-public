@@ -2867,6 +2867,30 @@ bool FindMatchInOrgRef (string str, const COrg_ref& org)
 	}
 }
 
+
+static const string sIgnoreHostWordList[] = {
+  "cf.",
+  "cf ",
+  "aff ",
+  "aff.",
+  "near",
+  "nr.",
+  "nr "
+};
+
+
+static const int kNumIgnoreHostWordList = sizeof (sIgnoreHostWordList) / sizeof (string);
+
+void s_AdjustSpecificHostForTaxServer (string& spec_host)
+{
+    for (int i = 0; i < kNumIgnoreHostWordList; i++) {
+        NStr::ReplaceInPlace(spec_host, sIgnoreHostWordList[i], "");
+    }
+    NStr::ReplaceInPlace(spec_host, "  ", " ");
+    NStr::TruncateSpacesInPlace(spec_host);
+}
+
+
 CRef<CTaxon3_reply> CValidError_imp::RequestSpecificHost
 (const vector<CConstRef<CSeqdesc> > & src_descs,
  const vector<CConstRef<CSeq_entry> > & desc_ctxs,
@@ -2885,6 +2909,7 @@ CRef<CTaxon3_reply> CValidError_imp::RequestSpecificHost
                 && (*mod_it)->IsSetSubname()
                 && isupper ((*mod_it)->GetSubname().c_str()[0])) {
                    string host = (*mod_it)->GetSubname();
+                s_AdjustSpecificHostForTaxServer(host);
                 size_t pos = NStr::Find(host, " ");
                 if (pos != string::npos) {
                     if (NStr::StartsWith(host.substr(pos + 1), "hybrid ")) {
