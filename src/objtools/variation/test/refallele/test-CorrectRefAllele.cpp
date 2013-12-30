@@ -147,7 +147,10 @@ int CCorrectRefAlleleApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
                  && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().IsIupacna())
             {
                 string a = (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(); 
-                if ((*var2)->GetData().GetInstance().IsSetObservation() && (int((*var2)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference))
+                if (
+                     (*var2)->GetData().GetInstance().GetType() == CVariation_inst::eType_identity 
+                    //(*var2)->GetData().GetInstance().IsSetObservation() && (int((*var2)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference)
+                    )
                     ref1 = a;
                 else
                     alleles1.insert(a);                    
@@ -159,7 +162,10 @@ int CCorrectRefAlleleApp::CompareVar(CRef<CVariation> v1, CRef<CVariation> v2)
                  && (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().IsIupacna())
             {
                 string a = (*var2)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set(); 
-                if ((*var2)->GetData().GetInstance().IsSetObservation() && (int((*var2)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference))
+                if (
+                    (*var2)->GetData().GetInstance().GetType() == CVariation_inst::eType_identity 
+                    //(*var2)->GetData().GetInstance().IsSetObservation() && (int((*var2)->GetData().GetInstance().GetObservation()) & int(CVariation_inst::eObservation_reference)) == int(CVariation_inst::eObservation_reference)
+                    )
                     ref2 = a;
                 else
                     alleles2.insert(a);                    
@@ -188,7 +194,10 @@ void CCorrectRefAlleleApp::GetAlleles(CVariation_ref& vr, string& new_ref, set<s
             && (*inst)->GetData().GetInstance().GetDelta().front()->GetSeq().GetLiteral().GetSeq_data().IsIupacna())
         {
             string a = (*inst)->SetData().SetInstance().SetDelta().front()->SetSeq().SetLiteral().SetSeq_data().SetIupacna().Set();
-            if (((*inst)->GetData().GetInstance().IsSetObservation() && ((*inst)->GetData().GetInstance().GetObservation() & CVariation_inst::eObservation_reference) == CVariation_inst::eObservation_reference))
+            if (
+                 (*inst)->GetData().GetInstance().GetType() == CVariation_inst::eType_identity 
+                //(*inst)->GetData().GetInstance().IsSetObservation() && ((*inst)->GetData().GetInstance().GetObservation() & CVariation_inst::eObservation_reference) == CVariation_inst::eObservation_reference
+                )
                 new_ref = a;
             else
                 alleles.insert(a);
