@@ -2812,16 +2812,6 @@ static bool s_SeqLocHasGI (const CSeq_loc& loc)
 }
 
 
-static bool s_FieldRuleCompare (
-    const CRef<CField_rule>& p1,
-    const CRef<CField_rule>& p2
-)
-
-{
-    return NStr::Compare(p1->GetField_name(), p2->GetField_name()) < 0;
-}
-
-
 void CValidError_imp::Setup(const CSeq_entry_Handle& seh) 
 {
     // "Save" the Seq-entry
