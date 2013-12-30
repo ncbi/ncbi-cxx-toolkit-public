@@ -146,6 +146,7 @@ public:
     map<string, size_t >  m_GraphDepRank;
     map<string, list<string> > m_LibraryOrder;
     map<string, list<string> > m_3PartyLibraryOrder;
+    set<string> m_3PartyLibs;
 
 public:
     bool IsCMakeMode(void) const {return m_CMakeMode;}

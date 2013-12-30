@@ -132,7 +132,8 @@ struct SMakeProjectT
 
     static void   VerifyLibDepends       ( list<CProjKey>&  depends_ids,
                                            const string& mkname,
-                                           list<string>& liborder);
+                                           list<string>& liborder,
+                                           const set<string>* libs_to_ignore = nullptr);
 
     static void   ConvertLibDepends       (const list<string>& depends_libs, 
                                            list<CProjKey>*     depends_ids,

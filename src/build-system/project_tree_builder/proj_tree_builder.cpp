@@ -511,13 +511,15 @@ void SMakeProjectT::Create3PartyLibs(const list<string>& libs_flags,
 {
     list<string> unkflags;
     list<CProjKey> libs3;
-    libs_list->clear();
     ITERATE(list<string>, p, libs_flags) {
         const string& flag = *p;
-        if ( IsConfigurableDefine(flag) ) {
+        if (flag == "#") {
+            break;
+        } else if ( IsConfigurableDefine(flag) ) {
             libs_list->push_back(StripConfigurableDefine(flag));    
         } else if (NStr::StartsWith(flag, "-l")) {
             libs3.push_back( CProjKey(CProjKey::eLib, flag.substr(2)));
+            GetApp().m_3PartyLibs.insert(flag.substr(2));
         } else {
             unkflags.push_back(flag);
         }
@@ -700,7 +702,8 @@ void s_CollectAllLeaves(map<string, set<string> >& source,
 }
 
 void  SMakeProjectT::VerifyLibDepends(
-     list<CProjKey>&  depends_ids_arg, const string& mkname, list<string>& liborder)
+     list<CProjKey>&  depends_ids_arg, const string& mkname, list<string>& liborder,
+     const set<string>* libs_to_ignore)
 {
     if (depends_ids_arg.empty()) {
         return;
@@ -742,7 +745,10 @@ void  SMakeProjectT::VerifyLibDepends(
                 }
             }
             if (p == depends_ids.end()) {
-                missing.push_back(*s);
+                if (libs_to_ignore == nullptr || 
+                    libs_to_ignore->find(*s) == libs_to_ignore->end()) {
+                    missing.push_back(*s);
+                }
             }
         }
     }
@@ -909,7 +915,8 @@ void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
     }
 
     if (mkname != NULL && !GetApp().IsScanningWholeTree()) {
-        VerifyLibDepends(*depends_ids, *mkname, GetApp().m_LibraryOrder[ *mkname]);
+        VerifyLibDepends(*depends_ids, *mkname, GetApp().m_LibraryOrder[ *mkname],
+            &GetApp().m_3PartyLibs);
     }
 
     depends_ids->sort();
@@ -1065,7 +1072,7 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
         return CProjKey();
     }
 
-    //sources - relative  pathes from source_base_dir
+    //sources - relative  paths from source_base_dir
     //We'll create relative pathes from them
     CProjSRCResolver src_resolver(applib_mfilepath, 
                                   source_base_dir, k->second);
@@ -1083,6 +1090,21 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
         }
     }
     
+    //LIBS
+    list<string> libs_3_party;
+    k = makefile.m_Contents.find("LIBS");
+    if (GetApp().GetBuildType().GetType() == CBuildType::eStatic) {
+        CSimpleMakeFileContents::TContents::const_iterator tmp_k =
+            makefile.m_Contents.find("STATIC_LIBS");
+        if (tmp_k != makefile.m_Contents.end()) {
+            k = tmp_k;
+        }
+    }
+    if (k != makefile.m_Contents.end()) {
+        const list<string> libs_flags = k->second;
+        SMakeProjectT::Create3PartyLibs(libs_flags, &libs_3_party, &applib_mfilepath);
+    }
+
     //depends
     list<string> depends;
     k = makefile.m_Contents.find("LIB");
@@ -1148,21 +1170,6 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     if (makefile.CollectValues("REQUIRES", req_lst,
         CSimpleMakeFileContents::eSortUnique)) {
         project_makefile.Redefine(req_lst,requires);
-    }
-
-    //LIBS
-    list<string> libs_3_party;
-    k = makefile.m_Contents.find("LIBS");
-    if (GetApp().GetBuildType().GetType() == CBuildType::eStatic) {
-        CSimpleMakeFileContents::TContents::const_iterator tmp_k =
-            makefile.m_Contents.find("STATIC_LIBS");
-        if (tmp_k != makefile.m_Contents.end()) {
-            k = tmp_k;
-        }
-    }
-    if (k != makefile.m_Contents.end()) {
-        const list<string> libs_flags = k->second;
-        SMakeProjectT::Create3PartyLibs(libs_flags, &libs_3_party, &applib_mfilepath);
     }
     
     //CPPFLAGS
@@ -1464,6 +1471,19 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         }
     }
 
+    string dll_host;
+    string lib_or_dll;
+    k = m->second.m_Contents.find("LIB_OR_DLL");
+    if (k != m->second.m_Contents.end()) {
+        lib_or_dll = k->second.front();
+    }
+    if (NStr::CompareNocase(lib_or_dll,"dll") == 0 ||
+        NStr::CompareNocase(lib_or_dll,"both") == 0) {
+		dll_host = proj_id;
+    }
+    bool need_dll = (!dll_host.empty() &&
+                      GetApp().GetBuildType().GetType() == CBuildType::eDll);
+
     //requires
     list<string> requires;
     list<string> req_lst;
@@ -1486,7 +1506,8 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
     }
     if (k != m->second.m_Contents.end()) {
         const list<string> libs_flags = k->second;
-        SMakeProjectT::Create3PartyLibs(libs_flags, &libs_3_party);
+        SMakeProjectT::Create3PartyLibs(libs_flags, &libs_3_party,
+            need_dll ? &applib_mfilepath : NULL);
     }
     //CPPFLAGS
     list<string> include_dirs;
@@ -1506,17 +1527,11 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         style_objcpp = find(cxx_flags.begin(), cxx_flags.end(), "objective-c++") != cxx_flags.end();
     }
     
-    string lib_or_dll;
-    k = m->second.m_Contents.find("LIB_OR_DLL");
-    if (k != m->second.m_Contents.end()) {
-        lib_or_dll = k->second.front();
-    }
     bool isbundle = false;
     k = m->second.m_Contents.find("DLL_TYPE");
     if (k != m->second.m_Contents.end() && k->second.front() == "plugin") {
         isbundle = true;
     }
-    string dll_host;
 //    if (!lib_or_dll.empty() ||
 //        CMsvc7RegSettings::GetMsvcPlatform() >= CMsvc7RegSettings::eUnix) {
 //        if (GetApp().GetBuildType().GetType() == CBuildType::eDll) {
@@ -1541,22 +1556,11 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
                 }
             }
             list<CProjKey> dll_depends_ids;
-            SMakeProjectT::ConvertLibDepends(dll_depends, &dll_depends_ids /*, &applib_mfilepath*/);
+            SMakeProjectT::ConvertLibDepends(dll_depends, &dll_depends_ids, 
+                need_dll ? &applib_mfilepath : NULL);
             copy(dll_depends_ids.begin(), 
                     dll_depends_ids.end(), 
                     back_inserter(depends_ids));
-            if (NStr::CompareNocase(lib_or_dll,"dll") == 0 ||
-                NStr::CompareNocase(lib_or_dll,"both") == 0) {
-#if 0
-                if (CMsvc7RegSettings::GetMsvcPlatform() < CMsvc7RegSettings::eUnix) {
-                    dll_host = proj_id;
-                } else {
-                    dll_host =  proj_name;
-                }
-#else
-		        dll_host = proj_id;
-#endif
-            }
 //        }
 //    }
 
