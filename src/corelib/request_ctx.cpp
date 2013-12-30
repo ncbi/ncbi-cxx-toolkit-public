@@ -406,6 +406,28 @@ void CRequestContext::SetAllowedSessionIDFormat(ESessionIDFormat fmt)
 }
 
 
+CRef<CRequestContext> CRequestContext::Clone(void) const
+{
+    CRef<CRequestContext> ret(new CRequestContext);
+    ret->m_RequestID = m_RequestID;
+    ret->m_AppState = m_AppState;
+    ret->m_ClientIP = m_ClientIP;
+    ret->m_SessionID.SetString(m_SessionID.GetOriginalString());
+    ret->m_HitID = m_HitID;
+    ret->m_SubHitID = m_SubHitID;
+    ret->m_ReqStatus = m_ReqStatus;
+    ret->m_ReqTimer = m_ReqTimer;
+    ret->m_BytesRd = m_BytesRd;
+    ret->m_BytesWr = m_BytesWr;
+    ret->m_Properties = m_Properties;
+    ret->m_PropSet = m_PropSet;
+    ret->m_IsRunning = m_IsRunning;
+    ret->m_AutoIncOnPost = m_AutoIncOnPost;
+    ret->m_Flags = m_Flags;
+    return ret;
+}
+
+
 const char* CRequestContextException::GetErrCodeString(void) const
 {
     switch (GetErrCode()) {

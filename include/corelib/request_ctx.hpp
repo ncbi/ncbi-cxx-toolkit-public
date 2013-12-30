@@ -198,6 +198,17 @@ public:
     static ESessionIDFormat GetAllowedSessionIDFormat(void);
     static void SetAllowedSessionIDFormat(ESessionIDFormat fmt);
 
+    /// Copy current request context to a new one. The method can be used
+    /// to process a single request in several threads which share the same
+    /// information (request id, session id etc.).
+    /// NOTE: The new context is not linked to the parent one. No further
+    /// changes in a context are copied to its clones. It's the developer's
+    /// responsibility to track multiple clones and make sure that they are
+    /// used properly (e.g. status is set by just one thread; only one
+    /// request-stop is printed and no clones continue to log the same request
+    /// after it's stopped).
+    CRef<CRequestContext> Clone(void) const;
+
 private:
     // Prohibit copying
     CRequestContext(const CRequestContext&);
