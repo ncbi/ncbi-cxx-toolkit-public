@@ -632,8 +632,15 @@ int CBiosampleChkApp::Run(void)
 			}
         }
     }
-
-    return 0;
+    
+    if (m_Unprocessed > 0) {
+        if (m_Mode != e_report_diffs) {
+            *m_LogStream << m_Unprocessed << " results failed" << endl;
+        } 
+        return 1;
+    } else {
+        return 0;
+    }
 }
 
 
@@ -1035,6 +1042,7 @@ void CBiosampleChkApp::GetBioseqDiffs(CBioseq_Handle bh)
             m_Processed++;
         } else {
             m_Unprocessed++;
+            *m_LogStream << "Failed to retrieve BioSample data for  " << *id << endl;
         }
     }
 }

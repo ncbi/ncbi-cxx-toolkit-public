@@ -80,15 +80,18 @@ CRef< CSeq_descr >
 GetBiosampleData(string accession, bool use_dev_server)
 {
     string host = use_dev_server ? "iwebdev2" : "intranet";
-    string path = "/biosample/fetch.cgi";
+    string path = use_dev_server ? "/biosample/dev/fetch.cgi" : "/biosample/fetch.cgi";
     string args = "accession=" + accession + "&format=asn1";
     CConn_HttpStream http_stream(host, path, args);
     auto_ptr<CObjectIStream> in_stream;
     in_stream.reset(new CObjectIStreamAsn(http_stream));
  
-		CRef< CSeq_descr > response(new CSeq_descr());
-		*in_stream >> *response;
-
+	CRef< CSeq_descr > response(new CSeq_descr());
+    try {
+	    *in_stream >> *response;
+    } catch (...) {
+        response.Reset(NULL);
+    }
     return response;
 }
 
