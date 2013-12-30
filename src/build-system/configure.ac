@@ -1675,12 +1675,8 @@ if test -z "$CONF_f_runpath" ; then
     solaris* )
       CONF_f_runpath="-R"
       ;;
-    linux*:GCC | *bsd*:GCC | cygwin*:GCC | osf*:GCC )
+    linux*:[[GI]]CC | *bsd*:GCC | cygwin*:GCC | osf*:GCC )
       CONF_f_runpath="-Wl,-rpath,"
-      ;;
-    linux*:ICC )
-      # trying to use "-Wl,-rpath," here sends "ld" to endless 100% CPU loop
-      CONF_f_runpath="-Xlinker -rpath -Xlinker "
       ;;
     irix*:* | linux*:KCC | *:Compaq )
       CONF_f_runpath="-rpath "
@@ -2438,7 +2434,7 @@ elif test -n "$with_runpath"  -a  "$with_runpath" != "yes" ; then
       fi
       ;;
     *:ICC )
-      runpath="$runpath -Xlinker -rpath-link -Xlinker \$(libdir)"
+      runpath="$runpath -Wl,-rpath-link,\$(libdir)"
       ;;
    esac
 elif test "$with_runpath" = "yes"  -o  "$with_dll" != "no" ; then
