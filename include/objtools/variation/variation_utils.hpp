@@ -31,11 +31,15 @@
 * ===========================================================================
 */
 
+#include <objects/variation/Variation.hpp>
+#include <objects/variation/VariantPlacement.hpp>
+
+
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 using namespace std;
 
-#define MAX_LEN 1000
+
 //#define SEQVEC_CACHE
 
 class CVariationUtilities
@@ -51,6 +55,7 @@ private:
     static string GetAlleleFromLoc(const CSeq_loc& loc, CScope& scope);
     static void FixAlleles(CRef<CVariation> v, string old_ref, string new_ref);
     static void FixAlleles(CVariation_ref& vr, string old_ref, string new_ref) ;
+    static const unsigned int MAX_LEN=1000;
 };
 
 
@@ -85,7 +90,8 @@ public:
     static void x_ProcessInstance(CVariation_inst &inst, CSeq_loc &loc, bool &is_deletion,  CSeq_literal *&refref, string &ref, int &pos_left, int &pos_right, int &new_pos_left, int &new_pos_right);    
     static bool x_ProcessShift(string &a, int &pos_left, int &pos_right) {return T::x_ProcessShift(a,pos_left,pos_right);}
     static void x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right) {T::x_ModifyLocation(loc,literal,a,pos_left,pos_right);}
-    static bool x_IsShiftable(const CSeq_loc &loc, string &ref, CScope &scope, int type);
+    static bool x_IsShiftable(CSeq_loc &loc, string &ref, CScope &scope, int type);
+    static void x_ExpandLocation(CSeq_loc &loc, int pos_left, int pos_right);
 };
 
 class CVariationNormalizationLeft : public CVariationNormalization_base<CVariationNormalizationLeft>
@@ -167,5 +173,5 @@ public:
     static void AlterToVarLoc(CRef<CVariation>& var, CScope& scope);
     static void AlterToVarLoc(CRef<CSeq_annot>& var, CScope& scope);
 
-    static bool IsShiftable(const CSeq_loc &loc, string ref, CScope &scope, int type); 
+    static bool IsShiftable(CSeq_loc &loc, string &ref, CScope &scope, int type); 
 };

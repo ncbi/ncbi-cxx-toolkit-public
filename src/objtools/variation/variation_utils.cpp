@@ -583,7 +583,7 @@ void CVariationNormalization_base<T>::x_Shift(CRef<CSeq_annot>& annot, CScope &s
 }
 
 template<class T>
-bool CVariationNormalization_base<T>::x_IsShiftable(const CSeq_loc &loc, string &ref, CScope &scope, int type)
+bool CVariationNormalization_base<T>::x_IsShiftable(CSeq_loc &loc, string &ref, CScope &scope, int type)
 {
     if (type != CVariation_inst::eType_ins && type != CVariation_inst::eType_del)
         NCBI_THROW(CException, eUnknown, "Only insertions or deletions can currently be processed");
@@ -626,10 +626,55 @@ bool CVariationNormalization_base<T>::x_IsShiftable(const CSeq_loc &loc, string 
             string compact = x_CompactifySeq(ref);
             string orig_compact = compact;
             x_ProcessShift(compact, pos_left,pos_right);
+            while (orig_compact != compact)
+            {
+                x_rotate_left(ref);
+                x_rotate_left(orig_compact);
+            }
         }
     }
+    else
+        NCBI_THROW(CException, eUnknown, "Submitted allele is empty");
     bool unchanged = (pos_left == old_pos_left) && (pos_right == old_pos_right);
+    x_ExpandLocation(loc,pos_left,pos_right);
     return !unchanged;
+}
+
+template<class T>
+void CVariationNormalization_base<T>::x_ExpandLocation(CSeq_loc &loc, int pos_left, int pos_right) 
+{
+    if (pos_left == pos_right)
+    {
+        if (loc.IsPnt())
+            loc.SetPnt().SetPoint(pos_left);
+        else
+        {
+            CSeq_point pnt;
+            pnt.SetPoint(pos_left);
+            if (loc.GetInt().IsSetStrand())
+                pnt.SetStrand( loc.GetInt().GetStrand() );
+            pnt.SetId().Assign(loc.GetInt().GetId());
+            loc.SetPnt().Assign(pnt);
+        }
+    }
+    else
+    {
+        if (loc.IsInt())
+        {
+            loc.SetInt().SetFrom(pos_left);
+            loc.SetInt().SetTo(pos_right);
+        }
+        else
+        {
+            CSeq_interval interval;
+            interval.SetFrom(pos_left);
+            interval.SetTo(pos_right);
+            if (loc.GetPnt().IsSetStrand())
+                interval.SetStrand( loc.GetPnt().GetStrand() );
+            interval.SetId().Assign(loc.GetPnt().GetId());
+            loc.SetInt().Assign(interval);
+        }
+    }
 }
 
 bool CVariationNormalizationLeft::x_ProcessShift(string &a, int &pos,int &pos_right)
@@ -764,38 +809,7 @@ void CVariationNormalizationRight::x_ModifyLocation(CSeq_loc &loc, CSeq_literal 
 
 void CVariationNormalizationInt::x_ModifyLocation(CSeq_loc &loc, CSeq_literal &literal, string a, int pos_left, int pos_right) 
 {
-    if (pos_left == pos_right)
-    {
-        if (loc.IsPnt())
-            loc.SetPnt().SetPoint(pos_left);
-        else
-        {
-            CSeq_point pnt;
-            pnt.SetPoint(pos_left);
-            if (loc.GetInt().IsSetStrand())
-                pnt.SetStrand( loc.GetInt().GetStrand() );
-            pnt.SetId().Assign(loc.GetInt().GetId());
-            loc.SetPnt().Assign(pnt);
-        }
-    }
-    else
-    {
-        if (loc.IsInt())
-        {
-            loc.SetInt().SetFrom(pos_left);
-            loc.SetInt().SetTo(pos_right);
-        }
-        else
-        {
-            CSeq_interval interval;
-            interval.SetFrom(pos_left);
-            interval.SetTo(pos_right);
-            if (loc.GetPnt().IsSetStrand())
-                interval.SetStrand( loc.GetPnt().GetStrand() );
-            interval.SetId().Assign(loc.GetPnt().GetId());
-            loc.SetInt().Assign(interval);
-        }
-    }
+    x_ExpandLocation(loc, pos_left, pos_right);
     literal.SetSeq_data().SetIupacna().Set(a);
 }
 
@@ -916,7 +930,7 @@ void CVariationNormalization::NormalizeAmbiguousVars(CRef<CVariation>& var, CSco
     CVariationNormalizationInt::x_Shift(var,scope);
 }
 
-bool CVariationNormalization::IsShiftable(const CSeq_loc &loc, string a, CScope &scope, int type)
+bool CVariationNormalization::IsShiftable(CSeq_loc &loc, string &a, CScope &scope, int type)
 {
     return CVariationNormalizationInt::x_IsShiftable(loc,a,scope,type);
 }

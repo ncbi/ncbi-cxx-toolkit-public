@@ -51,8 +51,6 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
-#include <objects/variation/Variation.hpp>
-#include <objects/variation/VariantPlacement.hpp>
 #include <objects/general/Dbtag.hpp>
 #include <objects/misc/sequence_macros.hpp>
 
@@ -330,7 +328,7 @@ void CContextApp::CheckShiftable(AutoPtr<CObjectIStream>& var_in1, CRef<CScope> 
         GetAlleles(vr1.SetData().SetSet().SetVariations(),alleles,ref,&type);
         if (ref.empty() && alleles.size() == 1)
             ref = *alleles.begin();
-        bool r = CVariationNormalization::IsShiftable((*feat1)->GetLocation(),ref, *scope, type);
+        bool r = CVariationNormalization::IsShiftable((*feat1)->SetLocation(),ref, *scope, type);
         if (r)
             cerr << "Yes" << endl;
         else
