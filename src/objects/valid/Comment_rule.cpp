@@ -40,6 +40,10 @@
 // generated includes
 #include <objects/valid/Comment_rule.hpp>
 #include <objects/valid/Field_set.hpp>
+#include <objects/valid/Dependent_field_set.hpp>
+#include <objects/valid/Dependent_field_rule.hpp>
+#include <objects/general/User_field.hpp>
+#include <objects/general/Object_id.hpp>
 
 // generated classes
 
@@ -65,6 +69,202 @@ const CField_rule& CComment_rule::FindFieldRule (const string& field_name) const
     NCBI_THROW (CCoreException, eNullPtr, "FindFieldRule failed");
 
     return *CConstRef<CField_rule>();
+}
+
+
+CComment_rule::TErrorList CComment_rule::IsValid(const CUser_object& user) const
+{
+    TErrorList errors;
+
+    CField_rule::TSeverity sev;
+
+    CField_set::Tdata::const_iterator field_rule = GetFields().Get().begin();
+    CUser_object::TData::const_iterator field = user.GetData().begin();
+    while (field_rule != GetFields().Get().end()
+           && field != user.GetData().end()) {
+        if ((*field)->IsSetLabel()) {
+            string label = "";
+            if ((*field)->GetLabel().IsStr()) {
+                label = (*field)->GetLabel().GetStr();
+            } else {
+                label = NStr::IntToString((*field)->GetLabel().GetId());
+            }
+            // skip suffix and prefix
+            if (NStr::Equal(label, "StructuredCommentPrefix")
+                || NStr::Equal(label, "StructuredCommentSuffix")) {
+                ++field;
+                continue;
+            }
+            string expected_field = (*field_rule)->GetField_name();
+            if (NStr::Equal(expected_field, label)) {
+                // field in correct order
+                // is value correct?
+                string value = "";
+                if ((*field)->GetData().IsStr()) {
+                    value = ((*field)->GetData().GetStr());
+                } else if ((*field)->GetData().IsInt()) {
+                    value = NStr::IntToString((*field)->GetData().GetInt());
+                }
+                if (!(*field_rule)->DoesStringMatchRuleExpression(value)) {
+                    // post error about not matching format
+                    sev = (*field_rule)->GetSeverity();
+                    if (NStr::EqualNocase (label, "Finishing Goal") 
+                        && NStr::EqualNocase(GetPrefix(), "##Genome-Assembly-Data-START##")) {
+                        sev = eSeverity_level_error;
+                    } else if (NStr::EqualNocase (label, "Current Finishing Status")
+                               && NStr::EqualNocase(GetPrefix(), "##Genome-Assembly-Data-START##")) {
+                        sev = eSeverity_level_error;
+                    }
+                    errors.push_back(TError(sev, value + " is not a valid value for " + label));  
+                }
+                ++field;
+                ++field_rule;
+            } else {
+                // find rule for this field
+                try {
+                    // find field for this rule and validate it
+                    try {
+                        const CUser_field& other_field = user.GetField(expected_field);
+                        if (GetRequire_order()) {
+                            errors.push_back(TError((*field_rule)->GetSeverity(),
+                                             expected_field + " field is out of order"));
+                        }
+                        string value = "";
+                        if (other_field.GetData().IsStr()) {
+                            value = (other_field.GetData().GetStr());
+                        } else if (other_field.GetData().IsInt()) {
+                            value = NStr::IntToString(other_field.GetData().GetInt());
+                        }
+                        if (!(*field_rule)->DoesStringMatchRuleExpression(value)) {
+                            // post error about not matching format
+                            errors.push_back(TError((*field_rule)->GetSeverity(),
+                                        value + " is not a valid value for " + expected_field));  
+                        }
+                    } catch (CException ) {
+                        if ((*field_rule)->IsSetRequired() && (*field_rule)->GetRequired()) {
+                            errors.push_back(TError((*field_rule)->GetSeverity(),
+                                        "Required field " + (*field_rule)->GetField_name() + " is missing"));
+                        }
+                    }
+                    ++field_rule;
+                } catch (CException ) {
+                    if (!IsSetAllow_unlisted()) {
+                        errors.push_back(TError(eSeverity_level_error,
+                                     label + " is not a valid field name"));
+                    }
+                    ++field;
+                }
+            }
+        } else {
+            // post error about field without label
+            errors.push_back(TError(eSeverity_level_error,
+                     "Structured Comment contains field without label"));                            
+            ++field;
+        }
+    }
+
+    while (field_rule != GetFields().Get().end()) {
+        if ((*field_rule)->IsSetRequired() && (*field_rule)->GetRequired()) {
+            errors.push_back(TError((*field_rule)->GetSeverity(),
+                        "Required field " + (*field_rule)->GetField_name() + " is missing"));
+        }
+        ++field_rule;
+    }
+
+    while (field != user.GetData().end()) {
+        // skip suffix and prefix
+        if ((*field)->IsSetLabel()) {
+            string label = "";
+            if ((*field)->GetLabel().IsStr()) {
+                label = (*field)->GetLabel().GetStr();
+            } else {
+                label = NStr::IntToString((*field)->GetLabel().GetId());
+            }
+            if (NStr::Equal(label, "StructuredCommentPrefix")
+                || NStr::Equal(label, "StructuredCommentSuffix")) {
+                ++field;
+                continue;
+            }
+            try {
+                const CField_rule& field_rule = FindFieldRule(label);
+                const CUser_field& other_field = user.GetField(label);
+                if (&other_field != (*field)) {
+                    errors.push_back(TError(field_rule.GetSeverity(),
+                                 "Multiple values for " + label + " field"));   
+                }
+            } catch (CException ) {
+                if (!IsSetAllow_unlisted()) {
+                    // field not found, not legitimate field name
+                    errors.push_back(TError(eSeverity_level_error,
+                                label + " is not a valid field name")); 
+                }
+            }
+
+        } else {           
+            // post error about field without label
+            errors.push_back(TError(eSeverity_level_warning,
+                         "Structured Comment contains field without label"));                            
+        }
+        ++field;
+    }
+
+    // now look at dependent rules
+    ITERATE (CDependent_field_set::Tdata, depend_rule, GetDependent_rules().Get()) {
+        try {
+            string depend_field_name = (*depend_rule)->GetMatch_name();
+            const CUser_field& depend_field = user.GetField(depend_field_name);
+            string value = "";
+            if (depend_field.GetData().IsStr()) {
+                value = (depend_field.GetData().GetStr());
+            } else if (depend_field.GetData().IsInt()) {
+                value = NStr::IntToString(depend_field.GetData().GetInt());
+            }
+            if (((!(*depend_rule)->IsSetInvert_match() || !(*depend_rule)->GetInvert_match()) && (*depend_rule)->DoesStringMatchRuleExpression(value))
+                || ((*depend_rule)->IsSetInvert_match() && (*depend_rule)->GetInvert_match() && !(*depend_rule)->DoesStringMatchRuleExpression(value))) {
+                // other rules apply
+                ITERATE (CField_set::Tdata, other_rule, (*depend_rule)->GetOther_fields().Get()) {
+                    try {
+                        string other_field_name = (*other_rule)->GetField_name();
+                        const CUser_field& other_field = user.GetField(other_field_name);
+                        string other_value = "";
+                        if (other_field.GetData().IsStr()) {
+                            other_value = (other_field.GetData().GetStr());
+                        } else if (other_field.GetData().IsInt()) {
+                            other_value = NStr::IntToString(other_field.GetData().GetInt());
+                        }
+                        if (!(*other_rule)->DoesStringMatchRuleExpression(other_value)) {
+                            // post error about not matching format
+                            errors.push_back(TError((*other_rule)->GetSeverity(),
+                                         other_value + " is not a valid value for " + other_field_name
+                                         + " when " + depend_field_name + " has value '" + value + "'"));
+                        }
+
+                    } catch (CException) {
+                        // unable to find field
+                        if ((*other_rule)->IsSetRequired() && (*other_rule)->GetRequired()) {
+                            errors.push_back(TError((*other_rule)->GetSeverity(),
+                                        "Required field " + (*other_rule)->GetField_name() + " is missing when "
+                                        + depend_field_name + " has value '" + value + "'"));
+                        }
+                    }
+                }
+                ITERATE (CField_set::Tdata, other_rule, (*depend_rule)->GetDisallowed_fields().Get()) {
+                    try {
+                        string other_field_name = (*other_rule)->GetField_name();
+                        // found field that should not be present
+                        errors.push_back(TError((*other_rule)->GetSeverity(),
+                                         other_field_name + " is not a valid field name when " + depend_field_name + " has value '" + value + "'"));                            
+                    } catch (CException ) {
+                        // did not find field, good
+                    }
+                }
+            }
+        } catch (CException ) {
+            // field not found
+        }
+    }
+
+    return errors;
 }
 
 

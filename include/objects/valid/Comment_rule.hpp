@@ -43,10 +43,13 @@
 // generated includes
 #include <objects/valid/Comment_rule_.hpp>
 #include <objects/valid/Field_rule.hpp>
+#include <objects/general/User_object.hpp>
 
 // generated classes
 
 BEGIN_NCBI_SCOPE
+
+class objects::CUser_object;
 
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
@@ -61,6 +64,10 @@ public:
     ~CComment_rule(void);
 
     const CField_rule& FindFieldRule (const string& field_name) const;
+
+    typedef pair<CField_rule::TSeverity, string> TError;
+    typedef vector<TError> TErrorList;
+    TErrorList IsValid(const CUser_object& user) const;
 
 private:
     // Prohibit copy constructor and assignment operator

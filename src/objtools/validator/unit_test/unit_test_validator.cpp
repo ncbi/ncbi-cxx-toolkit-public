@@ -17758,3 +17758,42 @@ BOOST_AUTO_TEST_CASE(Test_CheckEnds)
 
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_SQD_313)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    SetOrgMod(entry, COrgMod::eSubtype_nat_host, "Jatropha cf.");
+
+    STANDARD_SETUP
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+}
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_292)
+{
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    CRef<CSeqdesc> create_date(new CSeqdesc());
+    create_date->SetCreate_date().SetStd().SetMonth(6);
+    create_date->SetCreate_date().SetStd().SetDay(12);
+    create_date->SetCreate_date().SetStd().SetYear(1998);
+    entry->SetSet().SetDescr().Set().push_back(create_date);
+    CRef<CSeqdesc> update_date(new CSeqdesc());
+    update_date->SetUpdate_date().SetStd().SetMonth(6);
+    update_date->SetUpdate_date().SetStd().SetDay(11);
+    update_date->SetUpdate_date().SetStd().SetYear(1998);
+    entry->SetSet().SetDescr().Set().push_back(update_date);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "InconsistentDates",
+                              "Inconsistent create_date [Jun 12, 1998] and update_date [Jun 11, 1998]"));
+    expected_errors.push_back(new CExpectedError("prot", eDiag_Warning, "InconsistentDates",
+                              "Inconsistent create_date [Jun 12, 1998] and update_date [Jun 11, 1998]"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+}
