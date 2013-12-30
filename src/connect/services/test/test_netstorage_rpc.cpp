@@ -41,7 +41,7 @@
 USING_NCBI_SCOPE;
 
 #define APP_NAME "test_netstorage_rpc"
-#define NETSTORAGE_SERVICE_NAME "NST_Test"
+#define NETSTORAGE_SERVICE_NAME "ST_Test"
 #define NETCACHE_SERVICE_NAME "NC_UnitTest"
 #define CACHE_NAME "nst_test"
 
