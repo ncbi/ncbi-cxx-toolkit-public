@@ -248,3 +248,4 @@ string CGBBlockField::GetLabelForType(EGBBlockFieldType field_type)
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
+

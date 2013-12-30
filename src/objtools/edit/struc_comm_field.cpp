@@ -789,3 +789,4 @@ CRef<CUser_object> CGenomeAssemblyComment::MakeUserObject()
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
+

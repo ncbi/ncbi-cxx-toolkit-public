@@ -276,3 +276,4 @@ bool CDefinitionLineField::SetVal(CObject& object, const string& val, EExistingT
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
+

@@ -184,3 +184,4 @@ void CStringConstraint::Assign(const CStringConstraint& other)
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
+

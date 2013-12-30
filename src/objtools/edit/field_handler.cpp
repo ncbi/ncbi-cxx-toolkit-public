@@ -357,3 +357,4 @@ bool DoesApplyObjectMatchFieldConstraint (const CApplyObject& object, const stri
 END_SCOPE(edit)
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
