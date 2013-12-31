@@ -49,6 +49,9 @@
 #include <common/test_assert.h>  /* This header must go last */
 
 
+// special task
+#define DO_PATCHTREEMAKEFILES  0
+
 BEGIN_NCBI_SCOPE
 
 
@@ -615,7 +618,7 @@ int CProjBulderApp::Run(void)
                         m_IncDir);
     m_AllDllBuild = GetSite().IsProvided("DLL_BUILD");
 
-#if 0
+#if DO_PATCHTREEMAKEFILES
     // this is just a task; it is to be run very rarely
     {
         bool b = m_ScanWholeTree;
@@ -2540,9 +2543,11 @@ bool  CProjBulderApp::FindDepGraph(const string& root, list<string>& found) cons
 
 void   CProjBulderApp::LoadDepGraph(const string& filename)
 {
+#if !DO_PATCHTREEMAKEFILES
     if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
         return;
     }
+#endif
     const CMsvcSite& site = GetSite();
     CNcbiIfstream ifs(filename.c_str(), IOS_BASE::in);
     if ( ifs.is_open() ) {
@@ -2568,13 +2573,16 @@ void   CProjBulderApp::LoadDepGraph(const string& filename)
                 NStr::Split(first, LIST_SEPARATOR_LIBS, first_list);
 
                 list<string> third_list;
+#if DO_PATCHTREEMAKEFILES
+                third_list.push_back(third);
+#else
                 if (CSymResolver::IsDefine(third)) {
                     string resolved;
                     site.ResolveDefine(CSymResolver::StripDefine(third), resolved);
                     third = resolved;
                 }
                 NStr::Split(third, LIST_SEPARATOR_LIBS, third_list);
-
+#endif
                 if (second == "includes") {
                     ITERATE(list<string>, f, first_list) {
                         if (f->at(0) == '-') {
@@ -2604,6 +2612,7 @@ void   CProjBulderApp::LoadDepGraph(const string& filename)
         }
     }
 
+#if !DO_PATCHTREEMAKEFILES
     vector< set<string> > graph;
     for (map<string, set<string> >::const_iterator d= m_GraphDepPrecedes.begin();
             d!= m_GraphDepPrecedes.end(); ++d) {
@@ -2614,6 +2623,7 @@ void   CProjBulderApp::LoadDepGraph(const string& filename)
             m_GraphDepRank[*l] = s;
         }
     }
+#endif
 }
 
 void  CProjBulderApp::InsertDep(vector< set<string> >& graph, const string& dep)

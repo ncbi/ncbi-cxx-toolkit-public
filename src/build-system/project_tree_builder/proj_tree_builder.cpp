@@ -2282,7 +2282,7 @@ CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
         }
 	}
     ResolveDefs(resolver, subtree_makefiles);
-    UpdateDepGraph( subtree_makefiles.m_Lib);
+//    UpdateDepGraph( subtree_makefiles.m_Lib);
 
 
     // Build projects tree
