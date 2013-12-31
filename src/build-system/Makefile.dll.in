@@ -58,8 +58,8 @@ XDLL_LIB_FLAGS = $(runpath) @f_libpath@$(libdir)
 XDLL_LIB      = $(XDLL_LIB_FLAGS) $(XDLL_LIBS:%=@lib_l_pre@%@lib_l_ext@)
 XDLL_LIBDEP   = $(XDLL_LIBS:%=$(status_dir)/.%.dep)
 
-ifneq "" "" # "$(wildcard Makefile.$(TMPL).lib.libdep)"
-  include Makefile.$(TMPL).lib.libdep
+ifneq "" "$(wildcard Makefile.$(TMPL).dll.libdep)"
+  include Makefile.$(TMPL).dll.libdep
   ifneq "" "$(GENERATED_LIB_ORDER)"
     XDLL_LIB = $(XDLL_LIB_FLAGS) $(GENERATED_LIB_ORDER)
   endif
