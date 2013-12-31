@@ -47,6 +47,8 @@ Gaps                   : 5 (N)
   fragment, linkage yes: 5
 - break it, linkage no : 0
 
+Most frequent N gap_length (40.0% or 2 lines): 50
+
 Object names     :  1
   LACBIscaffold_1:  1
 

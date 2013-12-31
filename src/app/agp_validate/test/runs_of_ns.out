@@ -5,10 +5,10 @@
 	NOTE: assuming AGP version 1.1 since linkage evidence (column 9) is empty
 
 8:chr1	213444	353377	4	D	AC202463.29	1	139934	+
-	ERROR: run(s) of Ns within the component span: 3149..3248, 7330..7429, 12474..12573, 20380..20479, 22525..22624, 27547..27646, 29718..29817, ...
+	WARNING: run(s) of Ns within the component span: 3149..3248, 7330..7429, 12474..12573, 20380..20479, 22525..22624, 27547..27646, 29718..29817, ...
 
 13:chr1	528403	703460	9	D	AC202471.13	1	175058	+
-	ERROR: run(s) of Ns within the component span: 4987..5086, 7511..7610, 16156..16255, 18728..18827, 20895..20994, 23105..23204, 25480..25579, ...
+	WARNING: run(s) of Ns within the component span: 4987..5086, 7511..7610, 16156..16255, 18728..18827, 20895..20994, 23105..23204, 25480..25579, ...
 
 2 errors, no warnings, 1 note.
   Count Code  Description
@@ -33,6 +33,8 @@ Gaps                   :  4 (N)
   fragment, linkage yes:  3
 - break it, linkage no :  1
 	telomere       :  1
+
+Most frequent N gap_length (75.0% or 3 lines): 5000
 
 Object names:  1
   chr1      :  1

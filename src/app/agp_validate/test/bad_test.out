@@ -248,6 +248,8 @@ Gaps                   : 91 (N)
 	contig         :  9
 	telomere       :  1
 
+Most frequent N gap_length (28.6% or 26 lines): 100
+
 Object names:  6
   chrZ      :  1
   chrY      :  1

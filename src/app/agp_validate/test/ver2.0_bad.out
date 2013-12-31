@@ -24,6 +24,8 @@ Gaps                   : 72 (N)
   scaffold, linkage yes: 72
 - break it, linkage no :  0
 
+Most frequent N gap_length (2.8% or 2 lines): 39
+
 Linkage evidence:
   paired-ends: 72
 
@@ -62,6 +64,8 @@ Gaps                   : 24 (N)
 	contig         : 21
 	centromere     :  1
 	telomere       :  2
+
+Most frequent N gap_length (87.5% or 21 lines): 50000
 
 Object names:  1
   chrY      :  1
@@ -121,6 +125,8 @@ Gaps                   : 125 (N:113, U:12)
 	short_arm      :   1
 	heterochromatin:   1
 	telomere       :   3
+
+Most frequent N gap_length (22.1% or 25 lines): 50000
 
 Linkage evidence:
   paired-ends :  77

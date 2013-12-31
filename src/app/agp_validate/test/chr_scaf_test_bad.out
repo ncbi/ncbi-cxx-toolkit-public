@@ -90,6 +90,8 @@ Gaps                   : 22 (N)
 - break it, linkage no : 22
 	contig         : 22
 
+Most frequent N gap_length (100.0% or 22 lines): 50000
+
 Object names:  1
   chrY      :  1
 
@@ -338,6 +340,8 @@ Gaps                   : 72 (N)
 - do not break scaffold: 72
   fragment, linkage yes: 72
 - break it, linkage no :  0
+
+Most frequent N gap_length (27.8% or 20 lines): 100
 
 Object names         :  23
   EG1_scaffold[1..23]:  23

@@ -28,6 +28,8 @@ Gaps                   : 4 (N)
   fragment, linkage yes: 4
 - break it, linkage no : 0
 
+Most frequent N gap_length (75.0% or 3 lines): 12714
+
 Object names             :  5
   MICPUCscaffold_[1..111]:  4
   >MICPUCscaffold_21     :  1
