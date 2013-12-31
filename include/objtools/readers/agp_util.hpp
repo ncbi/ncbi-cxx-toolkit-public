@@ -534,6 +534,7 @@ public:
 
         E_UnknownScaf,       // CAgpValidateReader
         E_UnusedScaf,        // CAgpValidateReader
+        E_SameGapLength,     // CAgpValidateReader
         E_Last, E_First=1, E_LastToSkipLine=E_ObjRangeNeComp,
 
         // Warnings.

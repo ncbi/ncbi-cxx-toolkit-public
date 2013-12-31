@@ -72,6 +72,8 @@ void CAgpValidateReader::Reset(bool for_chr_from_scaf)
   memset(m_CompOri, 0, sizeof(m_CompOri));
   memset(m_GapTypeCnt, 0, sizeof(m_GapTypeCnt));
   m_ln_ev_flags2count.clear();
+  m_Ngap_ln2count.clear();
+  m_Ugap_ln2count.clear();
 
   m_max_comp_beg=m_max_obj_beg=0;
   m_has_partial_comp=m_has_comp_of_unknown_len=false;
@@ -152,6 +154,17 @@ void CAgpValidateReader::OnGapOrComponent()
   if( m_this_row->IsGap() ) {
     m_GapCount++;
     m_gapsInLastObject++;
+
+    // count number of gaps for each gap length
+    TMapIntInt* p_gap_len2count;
+    if(m_this_row->component_type=='N') {
+      p_gap_len2count = &m_Ngap_ln2count;
+    }
+    else {
+      p_gap_len2count = &m_Ugap_ln2count;
+    }
+    TMapIntIntResult res = p_gap_len2count->insert(TPairIntInt( m_this_row->gap_length, 1));
+    if(!res.second) res.first->second++;
 
     int i = m_this_row->gap_type;
     if(m_this_row->linkage) i+= CAgpRow::eGapCount;
@@ -903,6 +916,35 @@ void CAgpValidateReader::x_PrintTotals(CNcbiOstream& out, bool use_xml) // witho
           );
       }
     }
+
+    if(m_Ngap_ln2count.size()) {
+
+      int mf_len=0;
+      int mf_len_cnt=0;
+      int gap_cnt=0; // only N or only U
+      for(TMapIntInt::iterator it = m_Ngap_ln2count.begin();  it != m_Ngap_ln2count.end(); ++it) {
+        if(mf_len_cnt < it->second) {
+          mf_len_cnt = it->second;
+          mf_len = it->first;
+        }
+        gap_cnt+=it->second;
+      }
+
+      if(mf_len_cnt>1) {
+        xprint.line();
+        string pct;
+        NStr::DoubleToString(pct, 100.0*mf_len_cnt/gap_cnt, 1, NStr::fDoubleFixed);
+
+        string label = "Most frequent N gap_length (" + pct + "% or " +
+          NStr::IntToString(mf_len_cnt) + " lines): ";
+
+        string tag = "MostFrequentNGapLen pct=\"" + pct + "\" cnt=\"" +
+          NStr::IntToString(mf_len_cnt) + "\"";
+
+        xprint.line(label, mf_len, tag);
+      }
+    }
+
   }
 
   if( m_agp_version == eAgpVersion_2_0 && m_ln_ev_flags2count.size() ) {

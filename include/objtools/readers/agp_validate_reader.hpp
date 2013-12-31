@@ -254,6 +254,10 @@ protected:
   typedef pair<int,int> TPairIntInt;
   TMapIntInt m_ln_ev_flags2count;
 
+  typedef pair<TMapIntInt::iterator, bool> TMapIntIntResult;
+  TMapIntInt m_Ngap_ln2count;
+  TMapIntInt m_Ugap_ln2count;
+
   // an optional callback object
   IAgpRowOutput* m_row_output;
 

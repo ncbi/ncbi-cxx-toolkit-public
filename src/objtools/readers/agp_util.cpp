@@ -73,7 +73,8 @@ const CAgpErr::TStr CAgpErr::s_msg[]= {
 
     "scaffold X was not defined in any of \"Scaffold from component\" files",
     "scaffold X is not used in any of \"Chromosome from scaffold\" files",
-    kEmptyCStr, //"expecting X gaps per chromosome", // => expecting {2 telomere,1 centromere,not more than 1 short_arm)..., found 3
+    //"expecting X gaps per chromosome", // => expecting {2 telomere,1 centromere,not more than 1 short_arm)..., found 3
+    "same gap_length=X in all gap lines, and component_type='N' ('U' is required for gaps of unknown size)",
     kEmptyCStr,
     kEmptyCStr,
 
