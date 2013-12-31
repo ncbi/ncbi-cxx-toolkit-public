@@ -49,7 +49,7 @@
 #include <serial/serial.hpp>
 
 #include <objtools/discrepancy_report/hDiscRep_tests.hpp>
-#include <objtools/discrepancy_report/clickable_item.hpp>
+#include <objtools/discrepancy_report/hDiscRep_output.hpp>
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
@@ -68,23 +68,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
    struct s_test_property {
       string name;
       int category;
-   };
-
-   struct s_fataltag {
-        string setting_name;
-        const char* description;
-        const char* notag_description;
-   };
-
-   class COutputConfig 
-   {
-      public:
-        bool     use_flag;
-        //ofstream output_f;
-        CNcbiOstream*  output_f;
-        bool     summary_report;
-        bool     add_output_tag;
-        bool     add_extra_output_tag;
    };
 
    class CSeqEntryReadHook : public CSkipClassMemberHook
@@ -141,36 +124,14 @@ BEGIN_SCOPE(DiscRepNmSpc)
                                                      bool whole_word = false);
         void GetTestList();
         void CollectTests();
-        virtual void Run(CRef <CRepConfig> config);
+        virtual void Run();
         static CSeq_entry_Handle* m_TopSeqEntry;
         static CRepConfig* factory(string report_tp, CSeq_entry_Handle* tse_p=0);
-        void Export();
-        void Export(vector <CRef <CClickableText> >& item_list);
-        void AddListOutputTags();
-        bool NeedsTag(const string& setting_name, const string& desc, 
-                             const s_fataltag* tags, const unsigned& tags_cnt);
+
      protected:
         vector <string> m_enabled, m_disabled;
         string m_outsuffix, m_outdir, m_insuffix, m_indir, m_file_tp;
         bool m_dorecurse;
-        void x_InputRepToGbenchItem(const CClickableItem& c_item, 
-                                     CClickableText& item);
-        string x_GetDesc4GItem(string desc);
-
-        void WriteDiscRepSummary();
-        void WriteDiscRepSubcategories(
-                         const vector <CRef <CClickableItem> >& subcategories, 
-                         unsigned ident=1);
-        void WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_rep_dt, 
-                                 bool use_flag, bool IsSubcategory=false);
-        void WriteDiscRepItems(CRef <CClickableItem> c_item, 
-                               const string& prefix);
-        bool SuppressItemListForFeatureTypeForOutputFiles(const string& setting_name);
-        void StandardWriteDiscRepItems(COutputConfig& oc, 
-                                       const CClickableItem* c_item, 
-                                       const string& prefix, 
-                                       bool list_features_if_subcat);
-        bool RmTagInDescp(string& str, const string& tag);
    };
 
    class CRepConfAsndisc : public CRepConfig
@@ -178,7 +139,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       public:
         virtual ~CRepConfAsndisc () {};
 
-        virtual void Run(CRef <CRepConfig> config);
+        virtual void Run();
      
       private:
         void x_ReadAsn1(ESerialDataFormat datafm = eSerial_AsnText);
