@@ -5,7 +5,7 @@ SRC = unit_test_validator wrong_qual
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB  = xvalidate xunittestutil $(XFORMAT_LIBS) xalnmgr xobjutil valid valerr taxon3 gbseq submit \
+LIB  = xvalidate xobjedit xunittestutil $(XFORMAT_LIBS) xalnmgr xobjutil valid valerr taxon3 gbseq submit \
        tables xregexp $(PCRE_LIB) test_boost $(OBJMGR_LIBS) 
 LIBS = $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
