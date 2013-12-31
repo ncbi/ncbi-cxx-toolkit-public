@@ -3208,7 +3208,7 @@ string CBioseq_TEST_UNUSUAL_MISC_RNA :: GetTrnaProductString(const CTrna_ext& tr
         aa = aa_dt.GetNcbistdaa();
         break;
       default:
-        NCBI_THROW(CException, eUnknown, "GetTrnaProductString: can't get from.");
+        NCBI_THROW(CException, eUnknown,"GetTrnaProductString: can't get from.");
   }
 
   if (from != eSeq_code_type_ncbieaa) {

@@ -33,10 +33,8 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 
-//#include <objtools/discrepancy_report/hDiscRep_app.hpp>
-#include <objtools/discrepancy_report/hchecking_class.hpp>
-#include <objtools/discrepancy_report/hauto_disc_class.hpp>
 #include <objtools/discrepancy_report/hDiscRep_config.hpp>
+#include <objtools/discrepancy_report/hDiscRep_output.hpp>
 #include <objtools/discrepancy_report/hUtilib.hpp>
 
 #include <iostream>
@@ -53,11 +51,11 @@ static string       strtmp;
 static COutputConfig& oc = thisInfo.output_config;
 static CTestGrp     thisGrp;
 
-static s_fataltag extra_fatal [] = {
+static const s_fataltag extra_fatal [] = {
         {"MISSING_GENOMEASSEMBLY_COMMENTS", NULL, NULL}
 };
 
-static s_fataltag disc_fatal[] = {
+static const s_fataltag disc_fatal[] = {
         {"BAD_LOCUS_TAG_FORMAT", NULL, NULL},
         {"DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS", NULL, NULL},
         {"DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA", NULL, NULL},
@@ -101,10 +99,10 @@ static s_fataltag disc_fatal[] = {
         {"TEST_OVERLAPPING_RRNAS", NULL, NULL}
 };
 
-static unsigned disc_cnt = sizeof(disc_fatal)/sizeof(s_fataltag);
-static unsigned extra_cnt = sizeof(extra_fatal)/sizeof(s_fataltag);
+static const unsigned disc_cnt = sizeof(disc_fatal)/sizeof(s_fataltag);
+static const unsigned extra_cnt = sizeof(extra_fatal)/sizeof(s_fataltag);
 
-bool CRepConfig :: NeedsTag(const string& setting_name, const string& desc, const s_fataltag* tags, const unsigned& cnt)
+bool CDiscRepOutput :: x_NeedsTag(const string& setting_name, const string& desc, const s_fataltag* tags, const unsigned& cnt)
 {
    unsigned i;
    for (i =0; i< cnt; i++) {
@@ -120,7 +118,7 @@ bool CRepConfig :: NeedsTag(const string& setting_name, const string& desc, cons
 };
 
 
-void CRepConfig :: AddListOutputTags()
+void CDiscRepOutput :: x_AddListOutputTags()
 {
   string setting_name, desc, sub_desc;
   bool na_cnt_grt1 = false;
@@ -140,12 +138,12 @@ void CRepConfig :: AddListOutputTags()
      desc = (*it)->description;
      NON_CONST_ITERATE (vector <CRef <CClickableItem> >, sit, (*it)->subcategories) {
         sub_desc = (*sit)->description;
-        if (NeedsTag(setting_name, sub_desc, disc_fatal, disc_cnt)
+        if (x_NeedsTag(setting_name, sub_desc, disc_fatal, disc_cnt)
                || (oc.add_extra_output_tag 
-                      && NeedsTag(setting_name, sub_desc, extra_fatal, extra_cnt)) ){
+                      && x_NeedsTag(setting_name, sub_desc, extra_fatal, extra_cnt)) ){
            if (setting_name == "DISC_SOURCE_QUALS_ASNDISC") {
              if (sub_desc.find("some missing") != string::npos
-                                   || sub_desc.find("some duplicate") != string::npos)
+                       || sub_desc.find("some duplicate") != string::npos)
                   (*sit)->description = "FATAL: " + (*sit)->description;
 
            }
@@ -153,35 +151,43 @@ void CRepConfig :: AddListOutputTags()
         }
      }
 
-     if (NeedsTag(setting_name, desc, disc_fatal, disc_cnt)
-              || (oc.add_extra_output_tag 
-                               && NeedsTag(setting_name, desc, extra_fatal, extra_cnt))) {
+     if (x_NeedsTag(setting_name, desc, disc_fatal, disc_cnt)
+            || (oc.add_extra_output_tag 
+                   && x_NeedsTag(setting_name, desc, extra_fatal, extra_cnt))) {
         if (setting_name == "DISC_SOURCE_QUALS_ASNDISC") {
-          if (NStr::FindNoCase(desc, "taxname (all present, all unique)") != string::npos) {
-             if (na_cnt_grt1) (*it)->description = "FATAL: " + (*it)->description;
+          if (NStr::FindNoCase(desc, "taxname (all present, all unique)") 
+                  != string::npos) {
+             if (na_cnt_grt1) {
+                   (*it)->description = "FATAL: " + (*it)->description;
+             }
           }
           else if (desc.find("some missing") != string::npos 
-                       || desc.find("some duplicate") != string::npos)
+                       || desc.find("some duplicate") != string::npos) {
               (*it)->description = "FATAL: " + (*it)->description;
+          }
         }
-        else (*it)->description = "FATAL: " + (*it)->description;
+        else {
+          (*it)->description = "FATAL: " + (*it)->description;
+        }
      } 
   } 
 };
 
-void CRepConfig :: Export()
+void CDiscRepOutput :: Export()
 {
-  if (oc.add_output_tag || oc.add_extra_output_tag) AddListOutputTags();
+  if (oc.add_output_tag || oc.add_extra_output_tag) {
+       x_AddListOutputTags();
+  }
 
-  *(oc.output_f) << "Discrepancy Report Results\n\n"
-       << "Summary\n";
-  WriteDiscRepSummary();
+  *(oc.output_f) << "Discrepancy Report Results\n\n" << "Summary\n";
+  x_WriteDiscRepSummary();
 
   *(oc.output_f) << "\n\nDetailed Report\n";
-  WriteDiscRepDetails(thisInfo.disc_report_data, oc.use_flag);
-};  // Discrepancy:: Export
+  x_WriteDiscRepDetails(thisInfo.disc_report_data, oc.use_flag);
 
-bool CRepConfig :: RmTagInDescp(string& str, const string& tag)
+};  // Asndisc:: Export
+
+bool CDiscRepOutput :: x_RmTagInDescp(string& str, const string& tag)
 {
   string::size_type pos;
 
@@ -190,57 +196,64 @@ bool CRepConfig :: RmTagInDescp(string& str, const string& tag)
       str =  CTempString(str).substr(tag.size());
       return true;
   }
-  else return ( false );
+  else {
+     return false;
+  }
 }
 
 
-void CRepConfig :: WriteDiscRepSummary()
+void CDiscRepOutput :: x_WriteDiscRepSummary()
 {
   string desc;
 
   ITERATE (vector <CRef < CClickableItem > >, it, thisInfo.disc_report_data) {
       desc = (*it)->description;
       if ( desc.empty()) continue;
+
       // FATAL tag
-      if (RmTagInDescp(desc, "FATAL: ")) *(oc.output_f)  << "FATAL:";
+      if (x_RmTagInDescp(desc, "FATAL: ")) *(oc.output_f)  << "FATAL:";
       *(oc.output_f) << (*it)->setting_name << ": " << desc << endl;
-      if ("SUSPECT_PRODUCT_NAMES" == (*it)->setting_name)
-            WriteDiscRepSubcategories((*it)->subcategories);
+      if ("SUSPECT_PRODUCT_NAMES" == (*it)->setting_name) {
+            x_WriteDiscRepSubcategories((*it)->subcategories);
+      }
   }
   
 } // WriteDiscrepancyReportSummary
 
 
-void CRepConfig :: WriteDiscRepSubcategories(const vector <CRef <CClickableItem> >& subcategories, unsigned ident)
+void CDiscRepOutput:: x_WriteDiscRepSubcategories(const vector <CRef <CClickableItem> >& subcategories, unsigned ident)
 {
    unsigned i;
    ITERATE (vector <CRef <CClickableItem> >, it, subcategories) {
       for (i=0; i< ident; i++) *(oc.output_f) << "\t"; 
       *(oc.output_f) << (*it)->description  << endl; 
-      WriteDiscRepSubcategories( (*it)->subcategories, ident+1);
+      x_WriteDiscRepSubcategories( (*it)->subcategories, ident+1);
    }
 } // WriteDiscRepSubcategories
 
 
-
-bool OkToExpand(CRef < CClickableItem > c_item) 
+bool CDiscRepOutput :: x_OkToExpand(CRef < CClickableItem > c_item) 
 {
-  if (c_item->setting_name == "DISC_FEATURE_COUNT") return false;
+  if (c_item->setting_name == "DISC_FEATURE_COUNT") {
+       return false;
+  }
   else if ( (c_item->item_list.empty()/*||oc.expand_report_categories[c_item->setting_name]*/)
-             && !(c_item->subcategories.empty()) ) 
+             && !(c_item->subcategories.empty()) ) {
       return true;
-  else return false;
-}; // OkToExpand
+  }
+  else {
+     return false;
+  }
+};
 
-
-
-void CRepConfig :: WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_rep_dt, bool use_flag, bool IsSubcategory)
+void CDiscRepOutput :: x_WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_rep_dt, bool use_flag, bool IsSubcategory)
 {
   string prefix, desc;
   unsigned i;
   NON_CONST_ITERATE (vector < CRef < CClickableItem > >, it, disc_rep_dt) {
       desc = (*it)->description;
       if ( desc.empty() ) continue;
+
       // prefix
       if (use_flag) {
           prefix = "DiscRep_";
@@ -250,7 +263,7 @@ void CRepConfig :: WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_re
       }
  
       // FATAL tag
-      if (RmTagInDescp(desc, "FATAL: ")) prefix = "FATAL:" + prefix;
+      if (x_RmTagInDescp(desc, "FATAL: ")) prefix = "FATAL:" + prefix;
 
       // summary report
       if (oc.summary_report) {
@@ -269,15 +282,18 @@ void CRepConfig :: WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_re
             if (ptr == NULL || ptr != prefix)
               SetStringValue (&prefix, "FATAL", ExistingTextOption_prefix_colon 
 */
-        WriteDiscRepItems((*it), prefix);
+         x_WriteDiscRepItems((*it), prefix);
       }
-      if ( OkToExpand ((*it)) ) {
-        for (i = 0; i< (*it)->subcategories.size() -1; i++)
+      if ( x_OkToExpand ((*it)) ) {
+        for (i = 0; i< (*it)->subcategories.size() -1; i++) {
               (*it)->subcategories[i]->next_sibling = true;
-        if (use_flag && (*it)->setting_name == "DISC_INCONSISTENT_BIOSRC_DEFLINE") {
-          WriteDiscRepDetails ( (*it)->subcategories, false, false);
-        } else {
-          WriteDiscRepDetails ( (*it)->subcategories, oc.use_flag, true);
+        }
+        if (use_flag 
+               && (*it)->setting_name == "DISC_INCONSISTENT_BIOSRC_DEFLINE") {
+           x_WriteDiscRepDetails ( (*it)->subcategories, false, false);
+        } 
+        else {
+           x_WriteDiscRepDetails ( (*it)->subcategories, oc.use_flag, true);
         }
       } 
   }
@@ -285,7 +301,7 @@ void CRepConfig :: WriteDiscRepDetails(vector <CRef < CClickableItem > > disc_re
 
 
 
-bool CRepConfig :: SuppressItemListForFeatureTypeForOutputFiles(const string& setting_name)
+bool CDiscRepOutput :: x_SuppressItemListForFeatureTypeForOutputFiles(const string& setting_name)
 {
   if (setting_name == "DISC_FEATURE_COUNT"
        || setting_name == "DISC_MISSING_SRC_QUAL"
@@ -293,24 +309,25 @@ bool CRepConfig :: SuppressItemListForFeatureTypeForOutputFiles(const string& se
        || setting_name == "DISC_DUP_SRC_QUAL_DATA"
        || setting_name == "DISC_SOURCE_QUALS_ASNDISC") {
     return true;
-  } else return false;
+  } 
+  else {
+     return false;
+  }
 
 }; // SuppressItemListForFeatureTypeForOutputFiles
 
 
 
-void CRepConfig :: WriteDiscRepItems(CRef <CClickableItem> c_item, const string& prefix)
+void CDiscRepOutput :: x_WriteDiscRepItems(CRef <CClickableItem> c_item, const string& prefix)
 {
    if (oc.use_flag && 
-         SuppressItemListForFeatureTypeForOutputFiles (c_item->setting_name)) {
-       if (!prefix.empty()) *(oc.output_f) << prefix;
+         x_SuppressItemListForFeatureTypeForOutputFiles (c_item->setting_name)) {
+       if (!prefix.empty()) {
+            *(oc.output_f) << prefix;
+       }
        string desc = c_item->description;
-       RmTagInDescp(desc, "FATAL: ");
+       x_RmTagInDescp(desc, "FATAL: ");
        *(oc.output_f) << desc << endl;
-ITERATE (vector <string>, it, c_item->item_list) {  // necessary?
-  *(oc.output_f) << *it << endl;
-//cerr << c_item->setting_name << "  " << *it << endl;
-};
 /* unnecessary
     for (vnp = c_item->subcategories; vnp != NULL; vnp = vnp->next) {
           dip = vnp->data.ptrvalue;
@@ -325,20 +342,22 @@ ITERATE (vector <string>, it, c_item->item_list) {  // necessary?
 */
   } 
   else {
-     StandardWriteDiscRepItems (oc, c_item, prefix, true);
+     x_StandardWriteDiscRepItems (oc, c_item, prefix, true);
   }
   if ((!c_item->next_sibling && c_item->subcategories.empty()) 
-        || (!c_item->subcategories.empty() && !c_item->item_list.empty()) ) // for !OkToExpand
-             *(oc.output_f) << endl;
+        || (!c_item->subcategories.empty() && !c_item->item_list.empty()) ) {// for !OkToExpand
+
+      *(oc.output_f) << endl;
+ }
   
 } // WriteDiscRepItems()
 
 
-void CRepConfig :: StandardWriteDiscRepItems(COutputConfig& oc, const CClickableItem* c_item, const string& prefix, bool list_features_if_subcat)
+void CDiscRepOutput :: x_StandardWriteDiscRepItems(COutputConfig& oc, const CClickableItem* c_item, const string& prefix, bool list_features_if_subcat)
 {
   if (!prefix.empty())  *(oc.output_f) << prefix;
   string desc = c_item->description;
-  RmTagInDescp(desc, "FATAL: ");
+  x_RmTagInDescp(desc, "FATAL: ");
   *(oc.output_f) << desc << endl;
 
   if (c_item->subcategories.empty() || list_features_if_subcat) {
@@ -349,26 +368,34 @@ void CRepConfig :: StandardWriteDiscRepItems(COutputConfig& oc, const CClickable
              vnp = list_copy;
            }
         */
-      ITERATE (vector <string>, it, c_item->item_list) *(oc.output_f) << *it << endl;
+      ITERATE (vector <string>, it, c_item->item_list) {
+         *(oc.output_f) << *it << endl;
+      }
   }
 
 }; // StandardWriteDiscRepItems()
 
-string CRepConfig :: x_GetDesc4GItem(string desc)
+string CDiscRepOutput :: x_GetDesc4GItem(string desc)
 {
    // FATAL tag
-   if (RmTagInDescp(desc, "FATAL: ")) return ("FATAL: " + desc);
-   else return desc;
+   if (x_RmTagInDescp(desc, "FATAL: ")) {
+        return ("FATAL: " + desc);
+   }
+   else {
+        return desc;
+   }
 };
 
-void CRepConfig :: x_InputRepToGbenchItem(const CClickableItem& c_item,  CClickableText& item) 
+void CDiscRepOutput :: x_OutputRepToGbenchItem(const CClickableItem& c_item,  CClickableText& item) 
 {
    if (!c_item.item_list.empty()) {
       item.SetObjdescs().insert(item.SetObjdescs().end(), 
-                   c_item.item_list.begin(), c_item.item_list.end());
+                                c_item.item_list.begin(), 
+                                c_item.item_list.end());
       if (!c_item.obj_list.empty()) {
-            item.SetObjects().insert(item.SetObjects().end(), c_item.obj_list.begin(),
-                 c_item.obj_list.end());
+            item.SetObjects().insert(item.SetObjects().end(), 
+                                     c_item.obj_list.begin(),
+                                     c_item.obj_list.end());
       }
    }
    if (!c_item.subcategories.empty()) {
@@ -378,25 +405,372 @@ void CRepConfig :: x_InputRepToGbenchItem(const CClickableItem& c_item,  CClicka
             if (desc.empty()) continue;
             desc = x_GetDesc4GItem(desc);
             CRef <CClickableText> sub (new CClickableText(desc));             
-            x_InputRepToGbenchItem(**sit, *sub);
+            x_OutputRepToGbenchItem(**sit, *sub);
             item.SetSubitems().push_back(sub);
       }
    }
-   if (c_item.expanded) item.SetOwnExpanded();
+   if (c_item.expanded) {
+         item.SetOwnExpanded();
+   }
 };
 
-void CRepConfig :: Export(vector <CRef <CClickableText> >& item_list)
+
+void CDiscRepOutput :: x_InitializeOnCallerToolPriorities()
 {
-   if (oc.add_output_tag || oc.add_extra_output_tag) AddListOutputTags(); 
+  m_sOnCallerToolPriorities["DISC_COUNT_NUCLEOTIDES"] = 1;
+  m_sOnCallerToolPriorities["DISC_DUP_DEFLINE"] = 2;
+  m_sOnCallerToolPriorities["DISC_MISSING_DEFLINES"] = 3;
+  m_sOnCallerToolPriorities["TEST_TAXNAME_NOT_IN_DEFLINE"] = 4;
+  m_sOnCallerToolPriorities["TEST_HAS_PROJECT_ID"] = 5;
+  m_sOnCallerToolPriorities["ONCALLER_BIOPROJECT_ID"] = 6;
+  m_sOnCallerToolPriorities["ONCALLER_DEFLINE_ON_SET"] = 7;
+  m_sOnCallerToolPriorities["TEST_UNWANTED_SET_WRAPPER"] = 8;
+  m_sOnCallerToolPriorities["TEST_COUNT_UNVERIFIED"] = 9;
+  m_sOnCallerToolPriorities["DISC_SRC_QUAL_PROBLEM"] = 10;
+  m_sOnCallerToolPriorities["DISC_FEATURE_COUNT_oncaller"] = 11;
+  m_sOnCallerToolPriorities["NO_ANNOTATION"] = 12;
+  m_sOnCallerToolPriorities["DISC_FEATURE_MOLTYPE_MISMATCH"] = 13;
+  m_sOnCallerToolPriorities["TEST_ORGANELLE_NOT_GENOMIC"] = 14;
+  m_sOnCallerToolPriorities["DISC_INCONSISTENT_MOLTYPES"] = 15;
+  m_sOnCallerToolPriorities["DISC_CHECK_AUTH_CAPS"] = 16;
+  m_sOnCallerToolPriorities["ONCALLER_CONSORTIUM"] = 17;
+  m_sOnCallerToolPriorities["DISC_UNPUB_PUB_WITHOUT_TITLE"] = 18;
+  m_sOnCallerToolPriorities["DISC_TITLE_AUTHOR_CONFLICT"] = 19;
+  m_sOnCallerToolPriorities["DISC_SUBMITBLOCK_CONFLICT"] = 20;
+  m_sOnCallerToolPriorities["DISC_CITSUBAFFIL_CONFLICT"] = 21;
+  m_sOnCallerToolPriorities["DISC_CHECK_AUTH_NAME"] = 22;
+  m_sOnCallerToolPriorities["DISC_MISSING_AFFIL"] = 23;
+  m_sOnCallerToolPriorities["DISC_USA_STATE"] = 24;
+  m_sOnCallerToolPriorities["DISC_CITSUB_AFFIL_DUP_TEXT"] = 25;
+  m_sOnCallerToolPriorities["DISC_DUP_SRC_QUAL"] = 26;
+  m_sOnCallerToolPriorities["DISC_MISSING_SRC_QUAL"] = 27; 
+  m_sOnCallerToolPriorities["DISC_DUP_SRC_QUAL_DATA"] = 28;
+  m_sOnCallerToolPriorities["ONCALLER_DUPLICATE_PRIMER_SET"] = 29; 
+  m_sOnCallerToolPriorities["ONCALLER_MORE_NAMES_COLLECTED_BY"] = 30;
+  m_sOnCallerToolPriorities["ONCALLER_MORE_OR_SPEC_NAMES_IDENTIFIED_BY"] = 31;
+  m_sOnCallerToolPriorities["ONCALLER_SUSPECTED_ORG_IDENTIFIED"] = 32;
+  m_sOnCallerToolPriorities["ONCALLER_SUSPECTED_ORG_COLLECTED"] = 33;
+  m_sOnCallerToolPriorities["DISC_MISSING_VIRAL_QUALS"] = 34;
+  m_sOnCallerToolPriorities["DISC_INFLUENZA_DATE_MISMATCH"] = 35; 
+  m_sOnCallerToolPriorities["DISC_HUMAN_HOST"] = 36;
+  m_sOnCallerToolPriorities["DISC_SPECVOUCHER_TAXNAME_MISMATCH"] = 37;
+  m_sOnCallerToolPriorities["DISC_BIOMATERIAL_TAXNAME_MISMATCH"] = 38;
+  m_sOnCallerToolPriorities["DISC_CULTURE_TAXNAME_MISMATCH"] = 39;
+  m_sOnCallerToolPriorities["DISC_STRAIN_TAXNAME_MISMATCH"] = 40;
+  m_sOnCallerToolPriorities["DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE"] = 41;
+  m_sOnCallerToolPriorities["DISC_BACTERIA_MISSING_STRAIN"] = 42;
+  m_sOnCallerToolPriorities["ONCALLER_STRAIN_TAXNAME_CONFLICT"] = 43; 
+  m_sOnCallerToolPriorities["TEST_SP_NOT_UNCULTURED"] = 44;
+  m_sOnCallerToolPriorities["DISC_REQUIRED_CLONE"] = 45; 
+  m_sOnCallerToolPriorities["TEST_UNNECESSARY_ENVIRONMENTAL"] = 46;
+  m_sOnCallerToolPriorities["TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE"] =47;
+  m_sOnCallerToolPriorities["ONCALLER_MULTISRC"] = 48;
+  m_sOnCallerToolPriorities["ONCALLER_COUNTRY_COLON"] = 49;
+  m_sOnCallerToolPriorities["END_COLON_IN_COUNTRY"] = 50;
+  m_sOnCallerToolPriorities["DUP_DISC_ATCC_CULTURE_CONFLICT"] = 51;
+  m_sOnCallerToolPriorities["DUP_DISC_CBS_CULTURE_CONFLICT"] = 52;
+  m_sOnCallerToolPriorities["ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH"] = 53; 
+  m_sOnCallerToolPriorities["ONCALLER_MULTIPLE_CULTURE_COLLECTION"] = 54;
+  m_sOnCallerToolPriorities["DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER"] = 55;
+  m_sOnCallerToolPriorities["ONCALLER_CHECK_AUTHORITY"] = 56;
+  m_sOnCallerToolPriorities["DISC_MAP_CHROMOSOME_CONFLICT"] = 57; 
+  m_sOnCallerToolPriorities["DISC_METAGENOMIC"] = 58;
+  m_sOnCallerToolPriorities["DISC_METAGENOME_SOURCE"] = 59; 
+  m_sOnCallerToolPriorities["DISC_RETROVIRIDAE_DNA"] = 60;
+  m_sOnCallerToolPriorities["NON_RETROVIRIDAE_PROVIRAL"] = 61;
+  m_sOnCallerToolPriorities["ONCALLER_HIV_RNA_INCONSISTENT"] = 62;
+  m_sOnCallerToolPriorities["RNA_PROVIRAL"] = 63;
+  m_sOnCallerToolPriorities["TEST_BAD_MRNA_QUAL"] = 64; 
+  m_sOnCallerToolPriorities["DISC_MITOCHONDRION_REQUIRED"] = 65;
+  m_sOnCallerToolPriorities["TEST_UNWANTED_SPACER"] = 66;
+  m_sOnCallerToolPriorities["TEST_SMALL_GENOME_SET_PROBLEM"] = 67;
+  m_sOnCallerToolPriorities["ONCALLER_SUPERFLUOUS_GENE"] = 68;
+  m_sOnCallerToolPriorities["ONCALLER_GENE_MISSING"] = 69;
+  m_sOnCallerToolPriorities["DISC_GENE_PARTIAL_CONFLICT"] = 70;
+  m_sOnCallerToolPriorities["DISC_BAD_GENE_STRAND"] = 71;
+  m_sOnCallerToolPriorities["TEST_UNNECESSARY_VIRUS_GENE"] = 72;
+  m_sOnCallerToolPriorities["NON_GENE_LOCUS_TAG"] = 73;
+  m_sOnCallerToolPriorities["DISC_RBS_WITHOUT_GENE"] = 74;
+  m_sOnCallerToolPriorities["ONCALLER_ORDERED_LOCATION"] = 75;
+  m_sOnCallerToolPriorities["MULTIPLE_CDS_ON_MRNA"] = 76;
+  m_sOnCallerToolPriorities["DISC_CDS_WITHOUT_MRNA"] = 77;
+  m_sOnCallerToolPriorities["DISC_mRNA_ON_WRONG_SEQUENCE_TYPE"] = 78;
+  m_sOnCallerToolPriorities["DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA"] = 79;
+  m_sOnCallerToolPriorities["TEST_MRNA_OVERLAPPING_PSEUDO_GENE"] = 80;
+  m_sOnCallerToolPriorities["TEST_EXON_ON_MRNA"] = 81;
+  m_sOnCallerToolPriorities["DISC_CDS_HAS_NEW_EXCEPTION"] = 82; 
+  m_sOnCallerToolPriorities["DISC_SHORT_INTRON"] = 83;
+  m_sOnCallerToolPriorities["DISC_EXON_INTRON_CONFLICT"] = 84;
+  m_sOnCallerToolPriorities["PSEUDO_MISMATCH"] = 85;
+  m_sOnCallerToolPriorities["RNA_NO_PRODUCT"] = 86;
+  m_sOnCallerToolPriorities["FIND_BADLEN_TRNAS"] = 87;
+  m_sOnCallerToolPriorities["DISC_MICROSATELLITE_REPEAT_TYPE"] = 88; 
+  m_sOnCallerToolPriorities["DISC_SHORT_RRNA"] = 89;
+  m_sOnCallerToolPriorities["DISC_POSSIBLE_LINKER"] = 90; 
+  m_sOnCallerToolPriorities["DISC_HAPLOTYPE_MISMATCH"] = 91;
+  m_sOnCallerToolPriorities["DISC_FLATFILE_FIND_ONCALLER"] = 92;
+  m_sOnCallerToolPriorities["DISC_CDS_PRODUCT_FIND"] = 93;
+  m_sOnCallerToolPriorities["DISC_SUSPICIOUS_NOTE_TEXT"] = 94;
+  m_sOnCallerToolPriorities["DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS"] = 95; 
+  m_sOnCallerToolPriorities["DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA"] = 96;
+  m_sOnCallerToolPriorities["ONCALLER_COMMENT_PRESENT"] = 97;
+  m_sOnCallerToolPriorities["SUSPECT_PRODUCT_NAME"] = 98;
+  m_sOnCallerToolPriorities["UNCULTURED_NOTES_ONCALLER"] = 99;
+};
+
+void CDiscRepOutput :: x_InitializeOnCallerToolGroups()
+{
+   m_sOnCallerToolGroups["DISC_FEATURE_MOLTYPE_MISMATCH"] = eMol;
+   m_sOnCallerToolGroups["TEST_ORGANELLE_NOT_GENOMIC"] = eMol;
+   m_sOnCallerToolGroups["DISC_INCONSISTENT_MOLTYPES"] = eMol;
+
+   m_sOnCallerToolGroups["DISC_CHECK_AUTH_CAPS"] = eCitSub;
+   m_sOnCallerToolGroups["ONCALLER_CONSORTIUM"] = eCitSub;
+   m_sOnCallerToolGroups["DISC_UNPUB_PUB_WITHOUT_TITLE"] = eCitSub;
+   m_sOnCallerToolGroups["DISC_TITLE_AUTHOR_CONFLICT"] = eCitSub;
+   m_sOnCallerToolGroups["DISC_SUBMITBLOCK_CONFLICT"] = eCitSub;
+   m_sOnCallerToolGroups["DISC_CITSUBAFFIL_CONFLICT"] = eCitSub;
+   m_sOnCallerToolGroups["DISC_CHECK_AUTH_NAME"] = eCitSub;
+   m_sOnCallerToolGroups["DISC_MISSING_AFFIL"] = eCitSub;
+   m_sOnCallerToolGroups["DISC_USA_STATE"] = eCitSub;
+   m_sOnCallerToolGroups["DISC_CITSUB_AFFIL_DUP_TEXT"] = eCitSub;
+   
+   m_sOnCallerToolGroups["DISC_DUP_SRC_QUAL"] = eSource;
+   m_sOnCallerToolGroups["DISC_MISSING_SRC_QUAL"] = eSource;
+   m_sOnCallerToolGroups["DISC_DUP_SRC_QUAL_DATA"] = eSource;
+   m_sOnCallerToolGroups["DISC_MISSING_VIRAL_QUALS"] = eSource;
+   m_sOnCallerToolGroups["DISC_INFLUENZA_DATE_MISMATCH"] = eSource;
+   m_sOnCallerToolGroups["DISC_HUMAN_HOST"] = eSource;
+   m_sOnCallerToolGroups["DISC_SPECVOUCHER_TAXNAME_MISMATCH"] = eSource;
+   m_sOnCallerToolGroups["DISC_BIOMATERIAL_TAXNAME_MISMATCH"] = eSource;
+   m_sOnCallerToolGroups["DISC_CULTURE_TAXNAME_MISMATCH"] = eSource;
+   m_sOnCallerToolGroups["DISC_STRAIN_TAXNAME_MISMATCH"] = eSource;
+   m_sOnCallerToolGroups["DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE"] = eSource;
+   m_sOnCallerToolGroups["DISC_BACTERIA_MISSING_STRAIN"] = eSource;
+   m_sOnCallerToolGroups["ONCALLER_STRAIN_TAXNAME_CONFLICT"] = eSource;
+   m_sOnCallerToolGroups["TEST_SP_NOT_UNCULTURED"] = eSource;
+   m_sOnCallerToolGroups["DISC_REQUIRED_CLONE"] = eSource;
+   m_sOnCallerToolGroups["TEST_UNNECESSARY_ENVIRONMENTAL"] = eSource;
+   m_sOnCallerToolGroups["TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE"] = eSource;
+   m_sOnCallerToolGroups["ONCALLER_MULTISRC"] = eSource;
+   m_sOnCallerToolGroups["ONCALLER_COUNTRY_COLON"] = eSource;
+   m_sOnCallerToolGroups["END_COLON_IN_COUNTRY"] = eSource;
+   m_sOnCallerToolGroups["DUP_DISC_ATCC_CULTURE_CONFLICT"] = eSource;
+   m_sOnCallerToolGroups["DUP_DISC_CBS_CULTURE_CONFLICT"] = eSource;
+   m_sOnCallerToolGroups["ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH"] = eSource;
+   m_sOnCallerToolGroups["ONCALLER_MULTIPLE_CULTURE_COLLECTION"] = eSource;
+   m_sOnCallerToolGroups["DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER"] = eSource;
+   m_sOnCallerToolGroups["ONCALLER_CHECK_AUTHORITY"] = eSource;
+   m_sOnCallerToolGroups["DISC_MAP_CHROMOSOME_CONFLICT"] = eSource;
+   m_sOnCallerToolGroups["DISC_METAGENOMIC"] = eSource;
+   m_sOnCallerToolGroups["DISC_METAGENOME_SOURCE"] = eSource;
+   m_sOnCallerToolGroups["DISC_RETROVIRIDAE_DNA"] = eSource;
+   m_sOnCallerToolGroups["NON_RETROVIRIDAE_PROVIRAL"] = eSource;
+   m_sOnCallerToolGroups["ONCALLER_HIV_RNA_INCONSISTENT"] = eSource;
+   m_sOnCallerToolGroups["RNA_PROVIRAL"] = eSource;
+   m_sOnCallerToolGroups["TEST_BAD_MRNA_QUAL"] = eSource;
+   m_sOnCallerToolGroups["DISC_MITOCHONDRION_REQUIRED"] = eSource;
+   m_sOnCallerToolGroups["TEST_UNWANTED_SPACER"] = eSource;
+   m_sOnCallerToolGroups["TEST_SMALL_GENOME_SET_PROBLEM"] = eSource;
+   m_sOnCallerToolGroups["ONCALLER_DUPLICATE_PRIMER_SET"] = eSource;
+   m_sOnCallerToolGroups["ONCALLER_MORE_NAMES_COLLECTED_BY"] = eSource;
+   m_sOnCallerToolGroups["ONCALLER_MORE_OR_SPEC_NAMES_IDENTIFIED_BY"] = eSource;
+   m_sOnCallerToolGroups["ONCALLER_SUSPECTED_ORG_IDENTIFIED"] = eSource;
+   m_sOnCallerToolGroups["ONCALLER_SUSPECTED_ORG_COLLECTED"] = eSource;
+
+   m_sOnCallerToolGroups["ONCALLER_SUPERFLUOUS_GENE"] = eFeature;
+   m_sOnCallerToolGroups["ONCALLER_GENE_MISSING"] = eFeature;
+   m_sOnCallerToolGroups["DISC_GENE_PARTIAL_CONFLICT"] = eFeature;
+   m_sOnCallerToolGroups["DISC_BAD_GENE_STRAND"] = eFeature;
+   m_sOnCallerToolGroups["TEST_UNNECESSARY_VIRUS_GENE"] = eFeature;
+   m_sOnCallerToolGroups["NON_GENE_LOCUS_TAG"] = eFeature;
+   m_sOnCallerToolGroups["DISC_RBS_WITHOUT_GENE"] = eFeature;
+   m_sOnCallerToolGroups["ONCALLER_ORDERED_LOCATION"] = eFeature;
+   m_sOnCallerToolGroups["MULTIPLE_CDS_ON_MRNA"] = eFeature;
+   m_sOnCallerToolGroups["DISC_CDS_WITHOUT_MRNA"] = eFeature;
+   m_sOnCallerToolGroups["DISC_mRNA_ON_WRONG_SEQUENCE_TYPE"] = eFeature;
+   m_sOnCallerToolGroups["DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA"] = eFeature;
+   m_sOnCallerToolGroups["TEST_MRNA_OVERLAPPING_PSEUDO_GENE"] = eFeature;
+   m_sOnCallerToolGroups["TEST_EXON_ON_MRNA"] = eFeature;
+   m_sOnCallerToolGroups["DISC_CDS_HAS_NEW_EXCEPTION"] = eFeature;
+   m_sOnCallerToolGroups["DISC_SHORT_INTRON"] = eFeature;
+   m_sOnCallerToolGroups["DISC_EXON_INTRON_CONFLICT"] = eFeature;
+   m_sOnCallerToolGroups["PSEUDO_MISMATCH"] = eFeature;
+   m_sOnCallerToolGroups["RNA_NO_PRODUCT"] = eFeature;
+   m_sOnCallerToolGroups["FIND_BADLEN_TRNA"] = eFeature;
+   m_sOnCallerToolGroups["DISC_MICROSATELLITE_REPEAT_TYPE"] = eFeature;
+   m_sOnCallerToolGroups["DISC_SHORT_RRNA"] = eFeature;
+
+   m_sOnCallerToolGroups["DISC_FLATFILE_FIND_ONCALLER"] = eSuspectText;
+   m_sOnCallerToolGroups["DISC_FLATFILE_FIND_ONCALLER_FIXABLE"] = eSuspectText;
+   m_sOnCallerToolGroups["DISC_FLATFILE_FIND_ONCALLER_UNFIXABLE"] = eSuspectText;
+   m_sOnCallerToolGroups["DISC_CDS_PRODUCT_FIND"] = eSuspectText;
+   m_sOnCallerToolGroups["DISC_SUSPICIOUS_NOTE_TEXT:"] = eSuspectText;
+   m_sOnCallerToolGroups["DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS"] = eSuspectText;
+   m_sOnCallerToolGroups["DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA"] = eSuspectText;
+   m_sOnCallerToolGroups["ONCALLER_COMMENT_PRESENT"] = eSuspectText;
+   m_sOnCallerToolGroups["SUSPECT_PRODUCT_NAME"] = eSuspectText;
+   m_sOnCallerToolGroups["UNCULTURED_NOTES_ONCALLER"] = eSuspectText;
+};
+
+void CDiscRepOutput :: x_OrderResult(Int2Int& ord2i_citem)
+{
+   unsigned i=0;
+   ITERATE (vector <CRef <CClickableItem> >, it, thisInfo.disc_report_data) {
+      ord2i_citem[m_sOnCallerToolPriorities[(*it)->setting_name]] = i;
+      i++;
+   }
+};
+
+void CDiscRepOutput :: x_GroupResult(map <EOnCallerGrp, string> grp_idx_str) 
+{
+   ITERATE (vector <CRef <CClickableItem> >, it, thisInfo.disc_report_data) {
+      EOnCallerGrp e_grp = m_sOnCallerToolGroups[(*it)->setting_name];
+      if (grp_idx_str.find(e_grp) == grp_idx_str.end()) {
+          grp_idx_str[e_grp] = NStr::IntToString((int)e_grp);
+      }
+      else {
+          grp_idx_str[e_grp] += ("," + NStr::IntToString((int)e_grp));
+      }
+   }
+};
+
+void CDiscRepOutput :: x_ReorderAndGroupOnCallerResults(Int2Int& ord2i_citem, map <EOnCallerGrp, string>& grp_idx_str)
+{
+   x_InitializeOnCallerToolPriorities();
+   x_InitializeOnCallerToolGroups();
+   x_OrderResult(ord2i_citem);
+   x_GroupResult(grp_idx_str);
+};
+
+string CDiscRepOutput :: x_GetGrpName(EOnCallerGrp e_grp)
+{
+   switch (e_grp) {
+      case eMol: return string("Molecule type tests");
+      case eCitSub: return string("Cit-sub type tests");
+      case eSource: return string("Source tests");
+      case eFeature: return string("Feature tests");
+      case eSuspectText: return string("Suspect text tests");
+      default:
+        NCBI_THROW(CException, eUnknown, 
+           "Unknown Oncaller Tool group type: " + NStr::IntToString((int)e_grp));
+   };
+   return kEmptyStr;
+};
+
+CRef <CClickableItem> CDiscRepOutput :: x_CollectSameGroupToGbench(Int2Int& ord2i_citem, EOnCallerGrp e_grp, const string& grp_idxes)
+{
+    vector <string> arr;
+    arr = NStr::Tokenize(grp_idxes, ",", arr);
+    Int2Int sub_ord2idx;
+    unsigned idx;
+    CRef <CClickableItem> new_item (new CClickableItem);
+    new_item->description = x_GetGrpName(e_grp);
+    ITERATE (vector <string>, it, arr) {
+        idx = NStr::StringToUInt(*it);
+        strtmp = thisInfo.disc_report_data[idx]->setting_name;
+        sub_ord2idx[m_sOnCallerToolPriorities[strtmp]] = idx;
+    }
+    switch (e_grp) {
+       case eMol: 
+       case eCitSub:
+       case eSource:
+       case eFeature:
+       {
+          ITERATE (Int2Int, it, sub_ord2idx) {
+             new_item->subcategories.push_back(
+                                      thisInfo.disc_report_data[it->second]);
+             ord2i_citem[it->first] = -1;
+          }  
+          break;
+       }
+       case eSuspectText:
+       {
+          unsigned typo_cnt = 0;
+          ITERATE (Int2Int, it, sub_ord2idx) {
+             if (thisInfo.disc_report_data[it->second]->setting_name
+                     == "SUSPECT_PRODUCT_NAME") {
+                NON_CONST_ITERATE (vector <CRef <CClickableItem> >, 
+                         sit, 
+                         thisInfo.disc_report_data[it->second]->subcategories) {
+                    if ((*sit)->description == "Typo") {
+                        ITERATE (vector <CRef <CClickableItem> >, ssit, 
+                                    (*sit)->subcategories) {
+                           typo_cnt += (*ssit)->item_list.size();
+                        }
+                        
+                       (*sit)->description 
+                          = CTestAndRepData::GetContainsComment(typo_cnt,
+                                                                "product name")
+                             + "typos.";
+                       new_item->subcategories.push_back(*sit);
+                       break;
+                    }
+                }
+             }
+             else {
+                new_item->subcategories.push_back(
+                                        thisInfo.disc_report_data[it->second]);
+             }
+             ord2i_citem[it->first] = -1;
+             if (new_item->subcategories.empty()) {
+                new_item.Reset(0);
+             }
+          }
+          break;
+       }
+       default: break;
+    }
+
+    return new_item;
+};
+
+void CDiscRepOutput :: x_SendItemToGbench(CRef <CClickableItem> citem, vector <CRef <CClickableText> >& item_list)
+{
+   string desc = citem->description;
+   if ( desc.empty()) return;
+   desc = x_GetDesc4GItem(desc);
+   CRef <CClickableText> item (new CClickableText(desc));
+   x_OutputRepToGbenchItem(*citem, *item);
+   item_list.push_back(item);
+};
+
+void CDiscRepOutput :: Export(vector <CRef <CClickableText> >& item_list)
+{
+   if (oc.add_output_tag || oc.add_extra_output_tag) {
+      x_AddListOutputTags(); 
+   }
    string desc;
-   ITERATE (vector <CRef < CClickableItem > >, it, thisInfo.disc_report_data) {
-      desc = (*it)->description;
-      if ( desc.empty()) continue;
-      desc = x_GetDesc4GItem(desc);
-      CRef <CClickableText> item (new CClickableText(desc));             
-      x_InputRepToGbenchItem(**it, *item);
-      item_list.push_back(item);
-   } 
+   if (thisInfo.report == "Oncaller") {
+       Int2Int ord2i_citem, sub_ord2idx;
+       map <EOnCallerGrp, string> grp_idx_str;
+       vector <string> arr;
+       x_ReorderAndGroupOnCallerResults(ord2i_citem, grp_idx_str);
+       ITERATE (Int2Int, it, ord2i_citem) {
+          if (it->second < 0) continue;
+          CRef <CClickableItem> this_item 
+                 = thisInfo.disc_report_data[it->second];
+          if (m_sOnCallerToolGroups.find(this_item->setting_name) 
+                    != m_sOnCallerToolGroups.end()){
+             EOnCallerGrp e_grp = m_sOnCallerToolGroups[this_item->setting_name];
+             CRef <CClickableItem> 
+                 new_item(x_CollectSameGroupToGbench(ord2i_citem, 
+                                                     e_grp,
+                                                     grp_idx_str[e_grp]));
+             if (new_item.NotEmpty()) {
+                  x_SendItemToGbench(new_item, item_list);
+             }
+          }
+          else {
+             x_SendItemToGbench(this_item, item_list);
+          }
+       }
+   }
+   else {
+     ITERATE (vector <CRef < CClickableItem > >, it, thisInfo.disc_report_data){
+        x_SendItemToGbench(*it, item_list);
+     } 
+   }
    thisInfo.disc_report_data.clear();
    thisInfo.test_item_list.clear();
    thisInfo.test_item_objs.clear();

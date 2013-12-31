@@ -163,6 +163,7 @@ static list <string>  strs;
 static vector <string> arr;
 static CDiscTestInfo thisTest;
 static CTestGrp  thisGrp;
+static CDiscRepOutput output_obj;
 
 const char* fix_type_names[] = {
   "None",
@@ -2513,7 +2514,7 @@ void CSeqEntryReadHook :: SkipClassMember(CObjectIStream& in, const CObjectTypeI
    for ( ; iter; ++iter ) {
       iter >> *entry; // Read a single Seq-entry from the stream.
       CRepConfig::CheckThisSeqEntry(entry);  // Process the Seq-entry
-      thisInfo.config->Export(); 
+      output_obj.Export(); 
       thisInfo.disc_report_data.clear();
       thisInfo.test_item_list.clear();
    }
@@ -2558,8 +2559,9 @@ void CRepConfAsndisc :: x_CatenatedSeqEntry()
 
 void CRepConfAsndisc :: x_ProcessOneFile()
 {
-   if (!CFile(thisInfo.infile).Exists())
-      NCBI_THROW(CException, eUnknown, "Can't read file " + thisInfo.infile);
+   if (!CFile(thisInfo.infile).Exists()) {
+      NCBI_THROW(CException, eUnknown, "File not found: " + thisInfo.infile);
+   }
    switch (m_file_tp[0]) {
       case 'a': x_GuessFile(); 
                 break;
@@ -2593,7 +2595,7 @@ void CRepConfAsndisc :: x_ProcessDir(const CDir& dir, bool one_ofile)
           thisInfo.output_config.output_f 
              = new CNcbiOfstream(
                     ( strtmp + (*it)->GetBase() + m_outsuffix ).c_str());     
-          thisInfo.config->Export();
+          output_obj.Export();
           thisInfo.disc_report_data.clear();
           thisInfo.test_item_list.clear(); 
         }
@@ -2639,21 +2641,19 @@ void CRepConfig :: CollectTests()
    GetTestList();
 };
 
-void CRepConfAsndisc :: Run(CRef <CRepConfig> config)
+void CRepConfAsndisc :: Run()
 {
-   thisInfo.config  = config;
-
    // read input file/path and go tests
    CDir dir(m_indir);
    if (!dir.Exists()) {
        x_ProcessOneFile();
-       config->Export();
+       output_obj.Export();
    }
    else {
        bool one_ofile = (bool)thisInfo.output_config.output_f; 
        x_ProcessDir(dir, one_ofile);
        if (one_ofile) {
-          config->Export(); // run a global check 
+          output_obj.Export(); // run a global check 
        }
    }
    thisInfo.disc_report_data.clear();
@@ -2663,7 +2663,7 @@ void CRepConfAsndisc :: Run(CRef <CRepConfig> config)
     thisInfo.tax_db_conn.Fini();
 }; // Run()
 
-void CRepConfig :: Run(CRef <CRepConfig> config)
+void CRepConfig :: Run()
 {
   CRef <CSeq_entry> 
     seq_ref ((CSeq_entry*)(m_TopSeqEntry->GetCompleteSeq_entry().GetPointer()));
