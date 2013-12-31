@@ -8,7 +8,7 @@
 APP = disc_report
 SRC = cApiDisc
 
-LIB = xdiscrepancy_report xobjread xvalidate valid valerr taxon3 \
+LIB = xdiscrepancy_report xobjread xvalidate xobjedit valid valerr taxon3 \
         $(XFORMAT_LIBS) xalnmgr xobjutil xconnect tables \
         taxon1 submit macro xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
 

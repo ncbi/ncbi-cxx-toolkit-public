@@ -8,7 +8,7 @@
 
 APP = asnvalidate
 SRC = asnval
-LIB = xvalidate xcleanup $(XFORMAT_LIBS) xalnmgr xobjutil \
+LIB = xvalidate xobjedit xcleanup $(XFORMAT_LIBS) xalnmgr xobjutil \
       valid valerr submit taxon3 gbseq xmlwrapp\
       tables xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
 
