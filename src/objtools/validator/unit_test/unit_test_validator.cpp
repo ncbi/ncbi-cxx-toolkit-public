@@ -109,6 +109,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <common/ncbi_export.h>
 #include <objtools/unit_test_util/unit_test_util.hpp>
+#include <objtools/edit/struc_comm_field.hpp>
 
 
 // for writing out tmp files
@@ -17809,3 +17810,32 @@ BOOST_AUTO_TEST_CASE(Test_SQD_292)
     CheckErrors (*eval, expected_errors);
 
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_1470)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
+    edit::CGenomeAssemblyComment gac1;
+    gac1.SetAssemblyMethodProgram("a");
+    gac1.SetAssemblyMethodVersion("1");
+    gac1.SetGenomeCoverage("3x");
+    gac1.SetSequencingTechnology("foo");
+
+    CRef<CSeqdesc> sd1(new CSeqdesc());
+    sd1->SetUser(*(gac1.MakeUserObject()));
+    entry->SetSeq().SetDescr().Set().push_back(sd1);
+
+    CRef<CSeqdesc> sd2(new CSeqdesc());
+    sd2->SetUser(*(gac1.MakeUserObject()));
+    entry->SetSeq().SetDescr().Set().push_back(sd2);
+    
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "MultipleComments",
+                              "Multiple structured comments with prefix Genome-Assembly-Data"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+}
+

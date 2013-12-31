@@ -1387,6 +1387,7 @@ private:
     void x_ValidateLocusTagGeneralMatch(const CBioseq_Handle& seq);
 
     void ValidateSeqDescContext(const CBioseq& seq);
+    void CheckForMultipleStructuredComments(const CBioseq& seq);
     void x_ValidateStructuredCommentContext(const CSeqdesc& desc, const CBioseq& seq);
     void ValidateGBBlock (const CGB_block& gbblock, const CBioseq& seq, const CSeqdesc& desc);
     void ValidateMolInfoContext(const CMolInfo& minfo, int& seq_biomol, int& tech, int& completeness,

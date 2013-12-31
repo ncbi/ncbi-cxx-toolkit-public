@@ -121,6 +121,7 @@
 #include <objmgr/seq_annot_handle.hpp>
 
 #include <objtools/error_codes.hpp>
+#include <objtools/edit/struc_comm_field.hpp>
 
 #include <algorithm>
 
@@ -6794,6 +6795,48 @@ static string s_GetKeywordForStructuredComment (const CUser_object& obj)
 }
 
 
+void CValidError_bioseq::CheckForMultipleStructuredComments(const CBioseq& seq)
+{
+    // list of structured comment prefixes
+    vector<string> sc_prefixes;
+
+    CSeqdesc_CI di(m_Scope->GetBioseqHandle(seq), CSeqdesc::e_User);
+    while (di) {
+        const CUser_object& obj = di->GetUser();
+        if (edit::CStructuredCommentField::IsStructuredComment(obj)) {
+            string prefix = edit::CStructuredCommentField::GetPrefix(obj);
+            if (!NStr::IsBlank(prefix)) {
+                sc_prefixes.push_back(prefix);
+            }
+        }
+        ++di;
+    }
+
+    sort(sc_prefixes.begin(), sc_prefixes.end());
+    int num_seen = 0;
+    string previous = "";
+    ITERATE(vector<string>, it, sc_prefixes) {
+        if (NStr::EqualNocase(previous, *it)) {
+            num_seen++;
+        } else {
+            if (num_seen > 1) {
+                PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleComments, 
+                        "Multiple structured comments with prefix " + previous,
+                        seq);
+            }
+            previous = *it;
+            num_seen = 1;
+        }
+    }
+    if (num_seen > 1) {
+        PostErr(eDiag_Error, eErr_SEQ_DESCR_MultipleComments, 
+                "Multiple structured comments with prefix " + previous,
+                seq);
+    } 
+
+}
+
+
 // Validate CSeqdesc within the context of a bioseq. 
 // See: CValidError_desc for validation of standalone CSeqdesc,
 // and CValidError_descr for validation of descriptors in the context
@@ -6899,7 +6942,6 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
             keywords.push_back (*key);
         }
     }
-
 
     for ( CSeqdesc_CI di(m_CurrentHandle); di; ++ di ) {
         const CSeqdesc& desc = *di;
@@ -7329,6 +7371,8 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
 
     ValidateModifDescriptors (seq);
     ValidateMoltypeDescriptors (seq);
+
+    CheckForMultipleStructuredComments(seq);
 }
 
 
