@@ -9399,7 +9399,7 @@ BOOST_AUTO_TEST_CASE(Test_PKG_INSDRefSeqPackaging)
 
     expected_errors.push_back(new CExpectedError("AY123456", eDiag_Error, "INSDRefSeqPackaging",
                                                  "INSD and RefSeq records should not be present in the same set"));
-    expected_errors.push_back(new CExpectedError("AY123456", eDiag_Error, "NoOrganismInTitle",
+    expected_errors.push_back(new CExpectedError("NC_123456", eDiag_Error, "NoOrganismInTitle",
                                                  "RefSeq nucleotide title does not start with organism name"));
     expected_errors.push_back(new CExpectedError("AY123456", eDiag_Warning, "ComponentMissingTitle",
                               "Nucleotide component of pop/phy/mut/eco/wgs set is missing its title"));
