@@ -10,7 +10,6 @@ EntrezCache_g needs $(CMPRS_LIBS)
 EntrezCache_g needs $(COMPRESS_LIBS)
 EntrezCache_g needs $(DL_LIBS)
 EntrezCache_g needs $(EUTILS_LIBS)
-EntrezCache_g needs $(NCBI_C_ncbi)
 EntrezCache_g needs $(NETWORK_LIBS)
 EntrezCache_g needs $(SEQ_LIBS)
 EntrezCache_g needs $(SOBJMGR_LIBS)
@@ -49,7 +48,6 @@ EntrezCache_g needs seqdb
 EntrezCache_g needs seqedit
 EntrezCache_g needs seqset
 EntrezCache_g needs sequtil
-EntrezCache_g needs tables
 EntrezCache_g needs tea_crypt
 EntrezCache_g needs uilist
 EntrezCache_g needs xcgi
@@ -90,7 +88,6 @@ GMC needs $(FTDS_LIBS)
 GMC needs $(GNUTLS_LIBS)
 GMC needs $(LIBXML_LIBS)
 GMC needs $(LIBXSLT_LIBS)
-GMC needs $(NCBI_C_ncbi)
 GMC needs $(NETWORK_LIBS)
 GMC needs $(SDBAPI_LIB)
 GMC needs $(SEQ_LIBS)
@@ -117,7 +114,6 @@ GMC needs seq
 GMC needs seqcode
 GMC needs sequtil
 GMC needs softparse
-GMC needs tables
 GMC needs taxon1
 GMC needs tds_ftds64
 GMC needs xcgi
@@ -329,7 +325,6 @@ alndbaccess needs $(CONNEXT)
 alndbaccess needs $(DL_LIBS)
 alndbaccess needs $(FTDS_LIB)
 alndbaccess needs $(FTDS_LIBS)
-alndbaccess needs $(NCBI_C_ncbi)
 alndbaccess needs $(NETWORK_LIBS)
 alndbaccess needs $(SEQ_LIBS)
 alndbaccess needs $(Z_LIB)
@@ -356,7 +351,6 @@ alndbaccess needs pub
 alndbaccess needs seq
 alndbaccess needs seqcode
 alndbaccess needs sequtil
-alndbaccess needs tables
 alndbaccess needs tds_ftds64
 alndbaccess needs tea_crypt
 alndbaccess needs xcgi
@@ -400,7 +394,6 @@ asnmuxdblb needs $(BZ2_LIBS)
 asnmuxdblb needs $(CMPRS_LIB)
 asnmuxdblb needs $(CMPRS_LIBS)
 asnmuxdblb needs $(COMPRESS_LIBS)
-asnmuxdblb needs $(NCBI_C_ncbi)
 asnmuxdblb needs $(NETWORK_LIBS)
 asnmuxdblb needs $(Z_LIB)
 asnmuxdblb needs $(Z_LIBS)
@@ -410,7 +403,6 @@ asnmuxdblb needs dbloadb_asn
 asnmuxdblb needs generic_db_asn
 asnmuxdblb needs generic_db_utils
 asnmuxdblb needs mux
-asnmuxdblb needs tables
 asnmuxdblb needs xcgi
 asnmuxdblb needs xcompress
 asnmuxdblb needs xconnect
@@ -461,7 +453,6 @@ auxcommcpp_g needs $(BZ2_LIBS)
 auxcommcpp_g needs $(CMPRS_LIB)
 auxcommcpp_g needs $(CMPRS_LIBS)
 auxcommcpp_g needs $(COMPRESS_LIBS)
-auxcommcpp_g needs $(NCBI_C_ncbi)
 auxcommcpp_g needs $(NETWORK_LIBS)
 auxcommcpp_g needs $(SEQ_LIBS)
 auxcommcpp_g needs $(Z_LIB)
@@ -489,7 +480,6 @@ auxcommcpp_g needs seqcode
 auxcommcpp_g needs seqset
 auxcommcpp_g needs sequtil
 auxcommcpp_g needs splitdbasncpp_g
-auxcommcpp_g needs tables
 auxcommcpp_g needs xcgi
 auxcommcpp_g needs xcompress
 auxcommcpp_g needs xconnect
@@ -502,13 +492,11 @@ auxnet_g needs $(BZ2_LIBS)
 auxnet_g needs $(CMPRS_LIB)
 auxnet_g needs $(CMPRS_LIBS)
 auxnet_g needs $(COMPRESS_LIBS)
-auxnet_g needs $(NCBI_C_ncbi)
 auxnet_g needs $(NETWORK_LIBS)
 auxnet_g needs $(Z_LIB)
 auxnet_g needs $(Z_LIBS)
 auxnet_g needs connect
 auxnet_g needs generic_db_utils
-auxnet_g needs tables
 auxnet_g needs xcompress
 auxnet_g needs xconnect
 auxnet_g needs xncbi
@@ -620,13 +608,9 @@ bl2seqasn_g needs xncbi
 bl2seqasn_g needs xnetblast
 bl2seqasn_g needs xser
 bl2seqasn_g needs xutil
-blast needs $(NCBI_C_ncbi)
-blast needs $(NETWORK_LIBS)
 blast needs $(NETWORK_LIBS)
 blast needs composition_adjustment
 blast needs connect
-blast needs connect
-blast needs tables
 blast needs tables
 blast_app_util needs $(BLAST_DB_DATA_LOADER_LIBS)
 blast_app_util needs $(BLAST_FORMATTER_MINIMAL_LIBS)
@@ -949,13 +933,11 @@ cache_g needs $(BZ2_LIBS)
 cache_g needs $(CMPRS_LIB)
 cache_g needs $(CMPRS_LIBS)
 cache_g needs $(COMPRESS_LIBS)
-cache_g needs $(NCBI_C_ncbi)
 cache_g needs $(NETWORK_LIBS)
 cache_g needs $(Z_LIB)
 cache_g needs $(Z_LIBS)
 cache_g needs connect
 cache_g needs generic_db_utils
-cache_g needs tables
 cache_g needs xcompress
 cache_g needs xconnect
 cache_g needs xncbi
@@ -1121,7 +1103,6 @@ dbassist needs $(COMPRESS_LIBS)
 dbassist needs $(DL_LIBS)
 dbassist needs $(FTDS_LIB)
 dbassist needs $(FTDS_LIBS)
-dbassist needs $(NCBI_C_ncbi)
 dbassist needs $(NETWORK_LIBS)
 dbassist needs $(Z_LIB)
 dbassist needs $(Z_LIBS)
@@ -1137,7 +1118,6 @@ dbassist needs generic_db_asn
 dbassist needs generic_db_utils
 dbassist needs mux
 dbassist needs ncbi_xdbapi_ftds
-dbassist needs tables
 dbassist needs tds_ftds64
 dbassist needs tea_crypt
 dbassist needs xcgi
@@ -1162,7 +1142,6 @@ dbloadb needs $(BZ2_LIBS)
 dbloadb needs $(CMPRS_LIB)
 dbloadb needs $(CMPRS_LIBS)
 dbloadb needs $(COMPRESS_LIBS)
-dbloadb needs $(NCBI_C_ncbi)
 dbloadb needs $(NETWORK_LIBS)
 dbloadb needs $(Z_LIB)
 dbloadb needs $(Z_LIBS)
@@ -1173,7 +1152,6 @@ dbloadb needs dbloadb_asn
 dbloadb needs generic_db_asn
 dbloadb needs generic_db_utils
 dbloadb needs mux
-dbloadb needs tables
 dbloadb needs tea_crypt
 dbloadb needs xcgi
 dbloadb needs xcompress
@@ -1414,13 +1392,11 @@ event_g needs $(BZ2_LIBS)
 event_g needs $(CMPRS_LIB)
 event_g needs $(CMPRS_LIBS)
 event_g needs $(COMPRESS_LIBS)
-event_g needs $(NCBI_C_ncbi)
 event_g needs $(NETWORK_LIBS)
 event_g needs $(Z_LIB)
 event_g needs $(Z_LIBS)
 event_g needs connect
 event_g needs generic_db_utils
-event_g needs tables
 event_g needs xcompress
 event_g needs xconnect
 event_g needs xncbi
@@ -1873,7 +1849,6 @@ generic_db_core needs $(CONNEXT)
 generic_db_core needs $(DL_LIBS)
 generic_db_core needs $(FTDS_LIB)
 generic_db_core needs $(FTDS_LIBS)
-generic_db_core needs $(NCBI_C_ncbi)
 generic_db_core needs $(NETWORK_LIBS)
 generic_db_core needs $(Z_LIB)
 generic_db_core needs $(Z_LIBS)
@@ -1890,7 +1865,6 @@ generic_db_core needs generic_db_asn
 generic_db_core needs generic_db_utils
 generic_db_core needs mux
 generic_db_core needs ncbi_xdbapi_ftds
-generic_db_core needs tables
 generic_db_core needs tds_ftds64
 generic_db_core needs tea_crypt
 generic_db_core needs xcgi
@@ -1904,13 +1878,11 @@ generic_db_tmpl_utils needs $(BZ2_LIBS)
 generic_db_tmpl_utils needs $(CMPRS_LIB)
 generic_db_tmpl_utils needs $(CMPRS_LIBS)
 generic_db_tmpl_utils needs $(COMPRESS_LIBS)
-generic_db_tmpl_utils needs $(NCBI_C_ncbi)
 generic_db_tmpl_utils needs $(NETWORK_LIBS)
 generic_db_tmpl_utils needs $(Z_LIB)
 generic_db_tmpl_utils needs $(Z_LIBS)
 generic_db_tmpl_utils needs connect
 generic_db_tmpl_utils needs generic_db_utils
-generic_db_tmpl_utils needs tables
 generic_db_tmpl_utils needs xcompress
 generic_db_tmpl_utils needs xconnect
 generic_db_tmpl_utils needs xncbi
@@ -1921,12 +1893,10 @@ generic_db_utils needs $(BZ2_LIBS)
 generic_db_utils needs $(CMPRS_LIB)
 generic_db_utils needs $(CMPRS_LIBS)
 generic_db_utils needs $(COMPRESS_LIBS)
-generic_db_utils needs $(NCBI_C_ncbi)
 generic_db_utils needs $(NETWORK_LIBS)
 generic_db_utils needs $(Z_LIB)
 generic_db_utils needs $(Z_LIBS)
 generic_db_utils needs connect
-generic_db_utils needs tables
 generic_db_utils needs xcompress
 generic_db_utils needs xconnect
 generic_db_utils needs xncbi
@@ -4207,7 +4177,6 @@ idgen needs $(COMPRESS_LIBS)
 idgen needs $(DL_LIBS)
 idgen needs $(FTDS_LIB)
 idgen needs $(FTDS_LIBS)
-idgen needs $(NCBI_C_ncbi)
 idgen needs $(NETWORK_LIBS)
 idgen needs $(Z_LIB)
 idgen needs $(Z_LIBS)
@@ -4224,7 +4193,6 @@ idgen needs generic_db_asn
 idgen needs generic_db_utils
 idgen needs mux
 idgen needs ncbi_xdbapi_ftds
-idgen needs tables
 idgen needs tds_ftds64
 idgen needs tea_crypt
 idgen needs xcgi
@@ -4810,7 +4778,6 @@ ls_cli needs $(CMPRS_LIBS)
 ls_cli needs $(COMPRESS_LIBS)
 ls_cli needs $(LIBSSSUTILS)
 ls_cli needs $(NCBILS2_LIB)
-ls_cli needs $(NCBI_C_ncbi)
 ls_cli needs $(NETWORK_LIBS)
 ls_cli needs $(Z_LIB)
 ls_cli needs $(Z_LIBS)
@@ -4825,7 +4792,6 @@ ls_cli needs mux
 ls_cli needs ncbils2_asn
 ls_cli needs ncbils2_cli
 ls_cli needs ncbils2_cmn
-ls_cli needs tables
 ls_cli needs tea_crypt
 ls_cli needs xcgi
 ls_cli needs xcompress
@@ -4988,13 +4954,11 @@ mux needs $(BZ2_LIBS)
 mux needs $(CMPRS_LIB)
 mux needs $(CMPRS_LIBS)
 mux needs $(COMPRESS_LIBS)
-mux needs $(NCBI_C_ncbi)
 mux needs $(NETWORK_LIBS)
 mux needs $(Z_LIB)
 mux needs $(Z_LIBS)
 mux needs connect
 mux needs generic_db_utils
-mux needs tables
 mux needs xcgi
 mux needs xcompress
 mux needs xconnect
@@ -5030,7 +4994,6 @@ muxex_g needs $(BZ2_LIBS)
 muxex_g needs $(CMPRS_LIB)
 muxex_g needs $(CMPRS_LIBS)
 muxex_g needs $(COMPRESS_LIBS)
-muxex_g needs $(NCBI_C_ncbi)
 muxex_g needs $(NETWORK_LIBS)
 muxex_g needs $(SEQ_LIBS)
 muxex_g needs $(Z_LIB)
@@ -5057,7 +5020,6 @@ muxex_g needs seqcode
 muxex_g needs seqset
 muxex_g needs sequtil
 muxex_g needs splitdbasncpp_g
-muxex_g needs tables
 muxex_g needs xcgi
 muxex_g needs xcompress
 muxex_g needs xconnect
@@ -6809,7 +6771,6 @@ softparse needs $(FTDS_LIBS)
 softparse needs $(GNUTLS_LIBS)
 softparse needs $(LIBXML_LIBS)
 softparse needs $(LIBXSLT_LIBS)
-softparse needs $(NCBI_C_ncbi)
 softparse needs $(NETWORK_LIBS)
 softparse needs $(SDBAPI_LIB)
 softparse needs $(SEQ_LIBS)
@@ -6835,7 +6796,6 @@ softparse needs sdbapi
 softparse needs seq
 softparse needs seqcode
 softparse needs sequtil
-softparse needs tables
 softparse needs taxon1
 softparse needs tds_ftds64
 softparse needs xcompress
@@ -6857,7 +6817,6 @@ spcgi needs $(FTDS_LIBS)
 spcgi needs $(GNUTLS_LIBS)
 spcgi needs $(LIBXML_LIBS)
 spcgi needs $(LIBXSLT_LIBS)
-spcgi needs $(NCBI_C_ncbi)
 spcgi needs $(NETWORK_LIBS)
 spcgi needs $(SDBAPI_LIB)
 spcgi needs $(SEQ_LIBS)
@@ -6884,7 +6843,6 @@ spcgi needs seq
 spcgi needs seqcode
 spcgi needs sequtil
 spcgi needs softparse
-spcgi needs tables
 spcgi needs taxon1
 spcgi needs tds_ftds64
 spcgi needs xcgi
@@ -7083,13 +7041,11 @@ tea_crypt needs $(BZ2_LIBS)
 tea_crypt needs $(CMPRS_LIB)
 tea_crypt needs $(CMPRS_LIBS)
 tea_crypt needs $(COMPRESS_LIBS)
-tea_crypt needs $(NCBI_C_ncbi)
 tea_crypt needs $(NETWORK_LIBS)
 tea_crypt needs $(Z_LIB)
 tea_crypt needs $(Z_LIBS)
 tea_crypt needs connect
 tea_crypt needs generic_db_utils
-tea_crypt needs tables
 tea_crypt needs xcompress
 tea_crypt needs xconnect
 tea_crypt needs xncbi
