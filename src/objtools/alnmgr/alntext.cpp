@@ -165,12 +165,14 @@ char CProteinAlignText::MatchChar(size_t i)
 {
     char m = SPACE_CHAR;
     if (m_translation[i] != SPACE_CHAR && m_protein[i] != SPACE_CHAR) {
-        if (m_translation[i] == m_protein[i]) {
-            m = MATCH_CHAR;
-        } else if(m_matrix.s[(int)toupper(m_protein[i])]
-                            [(int)toupper(m_translation[i])] > 0)
-        {
-            m = POSIT_CHAR;
+        if(toupper(m_protein[i]) != 'X') {
+            if (m_translation[i] == m_protein[i]) {
+                m = MATCH_CHAR;
+            } else if(m_matrix.s[(int)toupper(m_protein[i])]
+                      [(int)toupper(m_translation[i])] > 0)
+                {
+                    m = POSIT_CHAR;
+                }
         }
     }
     return m;
