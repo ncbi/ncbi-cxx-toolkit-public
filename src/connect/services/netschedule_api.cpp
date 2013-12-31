@@ -251,19 +251,18 @@ void CNetScheduleServerListener::OnInit(
 {
     SNetScheduleAPIImpl* ns_impl = static_cast<SNetScheduleAPIImpl*>(api_impl);
 
-    if (ns_impl->m_Queue.empty()) {
-        if (config == NULL)
-            ns_impl->m_Queue = "noname";
-        else {
-            ns_impl->m_Queue = config->GetString(config_section,
-                "queue_name", CConfig::eErr_NoThrow, kEmptyStr);
-            if (ns_impl->m_Queue.empty())
-                ns_impl->m_Queue = "noname";
-            else
-                SNetScheduleAPIImpl::VerifyQueueNameAlphabet(ns_impl->m_Queue);
-        }
-    } else
+    if (!ns_impl->m_Queue.empty())
         SNetScheduleAPIImpl::VerifyQueueNameAlphabet(ns_impl->m_Queue);
+    else if (config == NULL)
+        ns_impl->m_Queue = "noname";
+    else {
+        ns_impl->m_Queue = config->GetString(config_section,
+            "queue_name", CConfig::eErr_NoThrow, kEmptyStr);
+        if (!ns_impl->m_Queue.empty())
+            SNetScheduleAPIImpl::VerifyQueueNameAlphabet(ns_impl->m_Queue);
+        else
+            ns_impl->m_Queue = "noname";
+    }
     if (config == NULL) {
         ns_impl->m_AffinityPreference = CNetScheduleExecutor::eAnyJob;
         ns_impl->m_UseEmbeddedStorage = true;
