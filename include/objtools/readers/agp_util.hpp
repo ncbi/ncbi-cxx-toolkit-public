@@ -85,8 +85,8 @@ public:
     virtual ~CAgpRow();
 
     static CRef<CAgpRow> New(
-        CAgpErr* arg, EAgpVersion agp_version = eAgpVersion_auto, 
-        CAgpReader* reader=NULL) 
+        CAgpErr* arg, EAgpVersion agp_version = eAgpVersion_auto,
+        CAgpReader* reader=NULL)
     {
         return Ref(new CAgpRow(arg, agp_version, reader));
     }
@@ -602,7 +602,7 @@ public:
 
     static const char* ErrorWarningOrNote(int code)
     {
-        if(code<W_First || code>W_Last) return "ERROR";
+        if((code<W_First || code>W_Last) && code!=G_NsWithinCompSpan) return "ERROR";
         if(code==W_ShortGap || code==W_AssumingVersion) return "NOTE";
         return "WARNING";
     }
@@ -680,7 +680,7 @@ public:
     static void PrintTotalsXml(CNcbiOstream& ostr, int e_count, int w_count, int note_count, int skipped_count);
 
     CAgpErrEx(
-        CNcbiOstream* out=&cerr, 
+        CNcbiOstream* out=&cerr,
         bool use_xml=false,
         EOwnership eOwnsOut = eNoOwnership);
 
