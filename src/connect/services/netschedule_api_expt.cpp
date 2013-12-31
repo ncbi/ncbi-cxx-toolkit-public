@@ -63,7 +63,8 @@ static const TExceptionMapElem s_NSExceptionArray[] = {
     {"eTooManyPreferredAffinities", CNetScheduleException::eTooManyPreferredAffinities},
     {"eTryAgain", CNetScheduleException::eTryAgain},
     {"eUnknownQueue", CNetScheduleException::eUnknownQueue},
-    {"eUnknownQueueClass", CNetScheduleException::eUnknownQueueClass}
+    {"eUnknownQueueClass", CNetScheduleException::eUnknownQueueClass},
+    {"eUnknownService", CNetScheduleException::eUnknownService},
 };
 typedef CStaticArrayMap<const char*, CException::TErrCode, PNocase_CStr> TNSExceptionMap;
 DEFINE_STATIC_ARRAY_MAP(TNSExceptionMap, s_NSExceptionMap, s_NSExceptionArray);
@@ -89,6 +90,7 @@ unsigned CNetScheduleException::ErrCodeToHTTPStatusCode() const
     case eInvalidJobStatus:                     return 409;
     case eUnknownQueue:                         return 404;
     case eUnknownQueueClass:                    return 404;
+    case eUnknownService:                       return 404;
     case eTooManyPendingJobs:                   return 503;
     case eDataTooLong:                          return 413;
     case eInvalidClient:                        return 400;

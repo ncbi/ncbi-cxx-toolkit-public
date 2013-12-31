@@ -74,6 +74,7 @@ public:
         eInvalidJobStatus,
         eUnknownQueue,
         eUnknownQueueClass,
+        eUnknownService,
         eTooManyPendingJobs,
         eDataTooLong,
         eInvalidClient,
@@ -102,6 +103,7 @@ public:
         case eInvalidJobStatus:    return "eInvalidJobStatus";
         case eUnknownQueue:        return "eUnknownQueue";
         case eUnknownQueueClass:   return "eUnknownQueueClass";
+        case eUnknownService:      return "eUnknownService";
         case eTooManyPendingJobs:  return "eTooManyPendingJobs";
         case eDataTooLong:         return "eDataTooLong";
         case eInvalidClient:       return "eInvalidClient";
