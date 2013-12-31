@@ -5994,10 +5994,22 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadCollectionDate)
     unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "1-05-2010");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    
+    // range has bad format
+    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "");
+    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "21-Oct-2013-20-Oct-2015");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
    
     unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "");
     unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "31-Dec-2099");
     expected_errors[0]->SetErrMsg("Collection_date is in the future");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    // range in future
+    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "");
+    unit_test_util::SetSubSource (entry, CSubSource::eSubtype_collection_date, "21-Oct-2013/20-Oct-2015");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 

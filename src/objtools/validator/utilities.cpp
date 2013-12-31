@@ -331,7 +331,9 @@ static bool s_IsDescOnSeqEntry (const CSeq_entry& entry, const CSeqdesc& desc)
 static string s_GetAccessionForSeqdesc (CSeq_entry_Handle seh, const CSeqdesc& desc, CScope& scope, int* version)
 {
     if (!seh) {
-        return kEmptyStr;
+        return kEmptyStr;\
+    } else if (seh.IsSeq()) {
+        return s_GetBioseqAcc(*(seh.GetSeq().GetCompleteBioseq()), scope, version);
     } else if (s_IsDescOnSeqEntry (*(seh.GetCompleteSeq_entry()), desc)) {
         if (seh.IsSeq()) {
             return s_GetBioseqAcc(*(seh.GetSeq().GetCompleteBioseq()), scope, version);

@@ -7827,16 +7827,10 @@ void CValidError_bioseq::ValidateUpdateDateContext
         string update_str = GetDateString(update);
 
         CSeq_entry *ctx = seq.GetParentEntry();
-        CSeq_entry *use_ctx = ctx->GetParentEntry();
-        if (use_ctx == NULL || !use_ctx->IsSet() 
-            || !use_ctx->GetSet().IsSetClass()
-            || use_ctx->GetSet().GetClass() != CBioseq_set::eClass_nuc_prot) {
-            use_ctx = ctx;
-        }
         PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentDates,
             "Inconsistent create_date [" + create_str + 
             "] and update_date [" + update_str + "]",
-            *use_ctx, desc);
+            *ctx, desc);
     }
 }
 
