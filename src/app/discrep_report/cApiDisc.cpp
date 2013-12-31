@@ -58,7 +58,7 @@ void GetDiscrepancyReport(int argc, const char* argv[])
     }
     vector <string> arr;
     string in_file(kEmptyStr);
-    for (unsigned i=1; i< argc; i++) {
+    for (int i=1; i< argc; i++) {
        arr = NStr::Tokenize(argv[i], "=", arr); 
        if (arr[0] == "i") {
            in_file = arr[1];
@@ -106,9 +106,10 @@ void GetDiscrepancyReport(int argc, const char* argv[])
     CRef <IRWRegistry> reg(entry.registry); 
     config->InitParams(*reg);
     config->CollectTests();
-    config->Run(config);
+    config->Run();
     vector <CRef <CClickableText> > item_list;
-    config->Export(item_list);
+    CDiscRepOutput output_obj;
+    output_obj.Export(item_list);
 };
 
 int main(int argc, const char* argv[])

@@ -113,7 +113,7 @@ int CDiscRepApp :: Run(void)
        config->InitParams(*reg);
        config->ReadArgs(args);
        config->CollectTests();
-       config->Run(config);
+       config->Run();
 
        return 0;
     }
