@@ -7232,6 +7232,7 @@ valerr needs xser
 valerr needs xutil
 valid needs $(PCRE_LIB)
 valid needs $(PCRE_LIBS)
+valid needs general
 valid needs xncbi
 valid needs xregexp
 valid needs xser
