@@ -7475,7 +7475,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
 
     int i = 0;
     ITERATE(vector<string>, it, required_fields) {
-        expected_errors.push_back(new CExpectedError("good", levels[i], "BadStrucCommMissingField",
+        expected_errors.push_back(new CExpectedError("good", levels[i], "BadStrucCommInvalidFieldValue",
                                   "Required field " + *it + " is missing"));
         i++;
     }
@@ -7527,7 +7527,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     required_fields.push_back("sequencing_meth");
 
     ITERATE(vector<string>, it, required_fields) {
-        expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadStrucCommMissingField",
+        expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadStrucCommInvalidFieldValue",
                                   "Required field " + *it + " is missing"));
     }
 
@@ -7546,7 +7546,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     field->SetData().SetStr("Singer");
     desc->SetUser().SetData().push_back(field);
 
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStrucCommMissingField",
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStrucCommInvalidFieldValue",
                                   "Required field Assembly Method is missing when Sequencing Technology has value 'Singer'"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -7554,7 +7554,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadStructuredCommentFormat)
     CLEAR_ERRORS
 
     field->SetData().SetStr("something else");
-    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStrucCommMissingField",
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadStrucCommInvalidFieldValue",
                                   "Required field Assembly Method is missing when Sequencing Technology has value 'something else'"));
     
     eval = validator.Validate(seh, options);
