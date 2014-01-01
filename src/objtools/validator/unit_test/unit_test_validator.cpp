@@ -7722,7 +7722,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingKeyword)
 
     expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadKeyword",
                                                  "Structured Comment is non-compliant, keyword should be removed"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadStrucCommMissingField",
+    expected_errors.push_back(new CExpectedError("good", eDiag_Info, "BadStrucCommInvalidFieldValue",
                                                  "Required field finishing_strategy is missing when investigation_type has value 'eukaryote'"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
