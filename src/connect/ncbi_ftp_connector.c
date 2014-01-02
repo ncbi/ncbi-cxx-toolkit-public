@@ -275,7 +275,7 @@ static EIO_Status s_FTPReply(SFTPConnector* xxx, int* code,
                 status = eIO_NotSupported/*restart mark*/;
             sprintf(reason, "code %d", c);
         } else
-            sprintf(reason, "status %s", IO_StatusStr(status));
+            strncpy0(reason, IO_StatusStr(status), sizeof(reason) - 1);
         if (status == eIO_Closed   ||  c == 221) {
             SOCK cntl = xxx->cntl;
             xxx->cntl = 0;
