@@ -381,7 +381,7 @@ enum ETar_Format {
 
 
 /// POSIX "ustar" tar archive member header
-typedef struct SHeader {      // byte offset
+typedef struct STarHeader {   // byte offset
     char name[100];           //   0
     char mode[8];             // 100
     char uid[8];              // 108
@@ -2570,17 +2570,17 @@ void CTar::x_WriteEntryInfo(const string& name)
 }
 
 
-bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
+bool CTar::x_PackName(STarHeader* h, const CTarEntryInfo& info, bool link)
 {
-    char*      storage = link ? h->linkname         : h->name;
     size_t        size = link ? sizeof(h->linkname) : sizeof(h->name);
     const string& name = link ? info.GetLinkName()  : info.GetName();
+    char*          dst = link ? h->linkname         : h->name;
     const char*    src = name.c_str();
     size_t         len = name.size();
 
     if (len <= size) {
         // Name fits!
-        memcpy(storage, src, len);
+        memcpy(dst, src, len);
         return true;
     }
 
@@ -2599,7 +2599,7 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
     }
 
     // Still, store the initial part in the original header
-    memcpy(storage, src, size);
+    memcpy(dst, src, size);
 
     // Prepare extended block header with the long name info (old GNU style)
     _ASSERT(!OFFSET_OF(m_BufferPos)  &&  m_BufferPos < m_BufferSize);
@@ -2627,13 +2627,8 @@ bool CTar::x_PackName(SHeader* h, const CTarEntryInfo& info, bool link)
     // Write the header
     x_WriteArchive(sizeof(block->buffer));
 
-    // Store the full name in the extended block
-    AutoPtr< char, ArrayDeleter<char> > buf_ptr(new char[len]);
-    storage = buf_ptr.get();
-    memcpy(storage, src, len);
-
-    // Write the extended block (will be aligned as necessary)
-    x_WriteArchive(len, storage);
+    // Store the full name in the extended block (will be aligned as necessary)
+    x_WriteArchive(len, src);
 
     return true;
 }

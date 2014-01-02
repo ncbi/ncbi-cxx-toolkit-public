@@ -303,12 +303,12 @@ string CTarTest::x_Pos(const CTarEntryInfo& info)
 {
     Uint8 header_pos = info.GetPosition(CTarEntryInfo::ePos_Header);
     Uint8 data_pos   = info.GetPosition(CTarEntryInfo::ePos_Data);
-    Uint8 size       = info.GetSize();
     _ASSERT((header_pos & 0777) == 0  &&  (data_pos & 0777) == 0);
     if (!(m_Flags & fVerbose))
         return kEmptyStr;
     string pos(" at block "
                + NStr::UInt8ToString(header_pos >> 9, NStr::fWithCommas));
+    Uint8 size = info.GetSize();
     if (size) {
         pos += (" (data at "
                 + NStr::UInt8ToString(data_pos >> 9, NStr::fWithCommas)

@@ -121,7 +121,7 @@ mkdir  $test_base.1                                                             
 echo "`date` *** Checking the resultant archive"
 echo
 
-dd if=$test_base.tar bs=123 2>/dev/null | $test_tar -T -f -                              ||  exit 1
+dd if=$test_base.tar bs=234 2>/dev/null | $test_tar -T -f -                              ||  exit 1
 
 echo
 echo "`date` *** Checking simple update"

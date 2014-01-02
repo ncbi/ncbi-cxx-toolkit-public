@@ -177,13 +177,6 @@ public:
         ePos_Data
     };
 
-    // Constructor.
-    CTarEntryInfo(Uint8 pos = 0)
-        : m_Type(eUnknown), m_HeaderSize(0), m_Pos(pos)
-    {
-        memset(&m_Stat, 0, sizeof(m_Stat));
-    }
-
     // No setters -- they are not needed for access by the user, and
     // thus are done directly from CTar for the sake of performance.
 
@@ -209,10 +202,17 @@ public:
     Uint8         GetPosition(EPos which)   const
     { return which == ePos_Header ? m_Pos : m_Pos + m_HeaderSize; }
 
-    // Comparison operator
+    // Comparison operator.
     bool operator == (const CTarEntryInfo& info) const;
 
 protected:
+    // Constructor.
+    CTarEntryInfo(Uint8 pos = 0)
+        : m_Type(eUnknown), m_HeaderSize(0), m_Pos(pos)
+    {
+        memset(&m_Stat, 0, sizeof(m_Stat));
+    }
+
     EType         m_Type;       ///< Type
     string        m_Name;       ///< Entry name
     string        m_LinkName;   ///< Link name if type is e{Sym|Hard}Link
@@ -226,7 +226,10 @@ protected:
 };
 
 
-// User creatable info for streaming into tar
+/// User-creatable info for streaming into a tar.
+/// Since the entry info is built largerly incomplete, all getters have been
+/// disabled;  should some be needed they could be brought back by subclassing
+/// and redeclaring the necessary one(s) in the public part of the new class.
 class CTarUserEntryInfo : protected CTarEntryInfo
 {
 public:
@@ -240,12 +243,12 @@ public:
 };
 
 
-/// Nice TOC(table of contents) printout
+/// Nice TOC(table of contents) printout.
 NCBI_XUTIL_EXPORT ostream& operator << (ostream&, const CTarEntryInfo&);
 
 
-/// Forward declaration of tar header used internally
-struct SHeader;
+/// Forward declaration of a tar header used internally.
+struct STarHeader;
 
 
 //////////////////////////////////////////////////////////////////////////////
@@ -645,7 +648,7 @@ private:
     EStatus x_ReadEntryInfo(bool dump, bool pax);
 
     // Pack either name or linkname into archive entry header.
-    bool x_PackName(SHeader* header, const CTarEntryInfo& info, bool link);
+    bool x_PackName(STarHeader* header, const CTarEntryInfo& info, bool link);
 
     // Write information for current entry into the archive.
     void x_WriteEntryInfo(const string& name);
