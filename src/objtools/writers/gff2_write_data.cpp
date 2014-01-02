@@ -295,8 +295,18 @@ bool CGffWriteRecord::CorrectLocation(
     if ( interval.CanGetFrom() ) {
         m_uSeqStart = interval.GetFrom();
     }
+    if (interval.IsPartialStart(eExtreme_Biological)) {
+        DropAttribute("start_range");
+        string min = NStr::IntToString(m_uSeqStart + 1);
+        SetAttribute("start_range", string(".,") + min);
+    }
     if ( interval.CanGetTo() ) {
         m_uSeqStop = interval.GetTo();
+    }
+    if (interval.IsPartialStop(eExtreme_Biological)) {
+        DropAttribute("end_range");
+        string max = NStr::IntToString(m_uSeqStop + 1);
+        SetAttribute("end_range", max + string(",."));
     }
     if ( interval.IsSetStrand() ) {
         if ( 0 == m_peStrand ) {

@@ -316,6 +316,10 @@ bool CGff3WriteRecordFeature::x_AssignStart(
         }
         else {
             m_uSeqStart = m_pLoc->GetStart(eExtreme_Positional);
+            if (m_pLoc->IsPartialStart(eExtreme_Biological)) {
+                string min = NStr::IntToString(m_uSeqStart + 1);
+                SetAttribute("start_range", string(".,") + min);
+            }
         }
     }
     CBioseq_Handle bsh = m_fc.BioseqHandle();
@@ -353,6 +357,10 @@ bool CGff3WriteRecordFeature::x_AssignStop(
         }
         else {
             m_uSeqStop = m_pLoc->GetStop(eExtreme_Positional);
+            if (m_pLoc->IsPartialStop(eExtreme_Biological)) {
+                string max = NStr::IntToString(m_uSeqStop + 1);
+                SetAttribute("end_range", max + string(",."));
+            }
         }
     }
     CBioseq_Handle bsh = m_fc.BioseqHandle();
@@ -419,6 +427,8 @@ string CGff3WriteRecordFeature::StrAttributes() const
     x_StrAttributesAppendValueGff3("Note", attrs, strAttributes);
     x_StrAttributesAppendValueGff3("Dbxref", attrs, strAttributes);
     x_StrAttributesAppendValueGff3("Ontology_term", attrs, strAttributes);
+    x_StrAttributesAppendValueGff3("start_range", attrs, strAttributes);
+    x_StrAttributesAppendValueGff3("end_range", attrs, strAttributes);
 
     while (!attrs.empty()) {
         x_StrAttributesAppendValueGff3(attrs.begin()->first, attrs, strAttributes);
