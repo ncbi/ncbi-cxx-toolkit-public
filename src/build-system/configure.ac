@@ -5444,12 +5444,12 @@ if test "$with_wxwidgets" = "no" ; then
 else
    NCBI_PACKAGE(wxWidgets)
    case "`"$wxconf" $wxcfflags --version`" in
-      2.[[89]].* | 2.[[0-9]][[0-9]]* )
+      1.* | 2.[[0-7]].*)
+         wxlibs=std
+         ;;
+      * )
          NCBI_PACKAGE(wx2.8)
          wxlibs=std,richtext,aui
-         ;;
-      *)
-         wxlibs=std
          ;;
    esac
    # The "yes" may have been cached; get the actual settings again if needed
