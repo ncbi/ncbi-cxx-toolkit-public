@@ -230,6 +230,7 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt2)
             query.SetSql(sql);
             query.Execute();
             query.RequireRowCount(0);
+            BOOST_CHECK_NO_THROW(query.SingleSet().begin());
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
         }
 

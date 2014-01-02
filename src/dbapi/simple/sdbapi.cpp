@@ -2255,6 +2255,10 @@ CQueryImpl::BeginNewRS(void)
         Execute();
     }
     if (!HasMoreResultSets()) {
+        if (m_IgnoreBounds  &&  m_CurRowNo == 0  &&  m_RowCount == -1) {
+            // OK to have no results whatsoever in SingleSet mode.
+            return;
+        }
         NCBI_THROW(CSDB_Exception, eClosed,
                    "All result sets in CQuery were already iterated through");
     }
