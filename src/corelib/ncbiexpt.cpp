@@ -251,6 +251,13 @@ void CException::AddBacklog(const CDiagCompileInfo& info,
 
 void CException::AddToMessage(const string& add_msg)
 {
+    if (add_msg.empty()) {
+        return;
+    }
+
+    if (m_Msg.empty()  &&  m_Predecessor != NULL) {
+        m_Msg = m_Predecessor->GetMsg();
+    }
     m_Msg += add_msg;
 }
 
@@ -404,6 +411,17 @@ CException::TErrCode CException::GetErrCode (void) const
     return typeid(*this) == typeid(CException) ?
         (TErrCode) x_GetErrCode() :
         (TErrCode) CException::eInvalid;
+}
+
+
+const string& CException::GetMsg(void) const
+{
+    for (const CException* ex = this;  ex != NULL;  ex = ex->m_Predecessor) {
+        if ( !ex->m_Msg.empty() ) {
+            return ex->m_Msg;
+        }
+    }
+    return kEmptyStr;
 }
 
 

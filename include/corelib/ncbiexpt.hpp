@@ -868,7 +868,7 @@ public:
     TErrCode GetErrCode(void) const;
 
     /// Get message string.
-    const string& GetMsg(void) const { return m_Msg; }
+    const string& GetMsg(void) const;
 
     /// Get "previous" exception from the backlog.
     const CException* GetPredecessor(void) const { return m_Predecessor; }
