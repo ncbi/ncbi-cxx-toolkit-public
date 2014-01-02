@@ -10,7 +10,7 @@
 13:chr1	528403	703460	9	D	AC202471.13	1	175058	+
 	WARNING: run(s) of Ns within the component span: 4987..5086, 7511..7610, 16156..16255, 18728..18827, 20895..20994, 23105..23204, 25480..25579, ...
 
-2 errors, no warnings, 1 note.
+No errors, 2 warnings, 1 note.
   Count Code  Description
       1  w58  assuming AGP version X
       2  g79  run(s) of Ns within the component span
