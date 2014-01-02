@@ -137,7 +137,7 @@ public:
                    size_type pos = 0) const;
 
     /// Find the first instance of a given character string within the
-    /// current string in a backward direction, beginning at an optional offset.
+    /// current string in a forward direction, beginning at an optional offset.
     size_type find(char match, size_type pos = 0) const;
 
     /// Find the first instance of the entire matching string within the
