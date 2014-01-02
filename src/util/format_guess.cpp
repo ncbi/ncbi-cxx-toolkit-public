@@ -856,6 +856,42 @@ CFormatGuess::TestFormatNewick(
     EMode /* not used */ )
 {
 //  -----------------------------------------------------------------------------
+    // newick trees can be found in nexus files. check for that first as a special case
+    if ( ! EnsureTestBuffer() || ! EnsureSplitLines() ) {
+        return false;
+    }
+
+    // Alignment files come in all different shapes and broken formats,
+    // and some of them are hard to recognize as such, in particular
+    // if they have been hacked up in a text editor.
+
+    // This functions only concerns itself with the ones that are
+    // easy to recognize.
+
+    // Note: We can live with false negatives. Avoid false positives
+    // at all cost.
+
+    bool is_nexus = false;
+    bool has_trees = false;
+    ITERATE( list<string>, it, m_TestLines ) {
+        if ( NPOS != it->find( "#NEXUS" ) ) {
+            is_nexus = true;
+        }
+
+        // case insensitive
+        if (NPOS != NStr::FindNoCase(*it, "begin trees;")) { 
+            has_trees = true;
+        }
+    }
+
+    // In a nexus file with a tree, we will just read in the tree (ignoring for now
+    // the alignment)
+    if (is_nexus ) {
+        if (has_trees)
+            return true;
+        return false;
+    }
+
     //  special newick consideration:
     //  newick files may come with all data cramped into a single run-on line,
     //  that single oversized line may not have a line terminator
