@@ -57,9 +57,16 @@ CSrcWriter::HANDLERMAP CSrcWriter::sHandlerMap;
 //  Default Fields:
 //  ----------------------------------------------------------------------------
 static const string arrDefaultFields[] = {
-    "id",
+    "db",
+    "div",
+    "genome",
+    "lineage",
+    "orgmod",
+    "origin",
+    "pcr-primers",
+    "subtype",
     "taxname",
-    "division",
+    "org.common",
 };
 const size_t countDefaultFields = sizeof(arrDefaultFields)/sizeof(string);
 
