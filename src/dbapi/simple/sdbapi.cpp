@@ -2252,8 +2252,7 @@ CQueryImpl::BeginNewRS(void)
 {
     x_CheckCanWork();
     if (!m_Executed) {
-        NCBI_THROW(CSDB_Exception, eClosed,
-                   "CQuery::Execute() was not called");
+        Execute();
     }
     if (!HasMoreResultSets()) {
         NCBI_THROW(CSDB_Exception, eClosed,
