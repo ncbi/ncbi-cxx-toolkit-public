@@ -17722,6 +17722,20 @@ BOOST_AUTO_TEST_CASE(Test_NewFixCountry)
 }
 
 
+BOOST_AUTO_TEST_CASE(Fix_Structured_Voucher)
+{
+    string val = "USNM<USA>:12345";
+    COrgMod::FixStructuredVoucher(val, "s");
+    BOOST_CHECK_EQUAL(val, "USNM:12345");
+
+    // can't fix, needs country code
+    val = "ABS<CHN>:12345";
+    COrgMod::FixStructuredVoucher(val, "s");
+    BOOST_CHECK_EQUAL(val, "ABS<CHN>:12345");
+
+}
+
+
 BOOST_AUTO_TEST_CASE(Test_CheckEnds)
 {
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();

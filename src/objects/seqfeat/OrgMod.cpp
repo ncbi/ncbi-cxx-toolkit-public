@@ -388,6 +388,63 @@ COrgMod::IsStructuredVoucherValid(const string& val, const string& v_type)
 }
 
 
+string COrgMod::MakeStructuredVoucher(const string& inst, const string& coll, const string& id)
+{
+    string rval = "";
+    if (NStr::IsBlank(inst) && NStr::IsBlank(coll) && NStr::IsBlank(id)) {
+        rval = "";
+    } else if (NStr::IsBlank(inst) && NStr::IsBlank(coll)) {
+        rval = id;
+    } else if (NStr::IsBlank(coll)) {
+        rval = inst + ":" + id;
+    } else {
+        rval = inst + ":" + coll + ":" + id;
+    }
+    return rval;
+}
+
+
+bool 
+COrgMod::FixStructuredVoucher(string& val, const string& v_type)
+{
+    string inst_code = "";
+    string coll_code = "";
+    string id = "";
+    if (!ParseStructuredVoucher(val, inst_code, coll_code, id)
+        || NStr::IsBlank(inst_code)) {
+        return false;
+    }
+    bool rval = false;
+    bool found = false;
+    s_InitializeInstitutionCollectionCodeMaps();
+
+    TInstitutionCodeMap::iterator it = s_InstitutionCodeTypeMap.begin();
+
+    string new_inst_code = inst_code;
+    while ((!found) && (it != s_InstitutionCodeTypeMap.end())) {
+        if (NStr::Find(it->second, v_type) != string::npos) {
+            if (NStr::EqualNocase (it->first, inst_code)) {
+                if (!NStr::Equal (it->first, inst_code)) {
+                    new_inst_code = it->first;
+                    rval = true;
+                }
+                found = true;
+            } else if (NStr::StartsWith(inst_code, it->first)
+                       && inst_code.c_str()[it->first.length()] == '<') {
+                new_inst_code = it->first;
+                rval = true;
+            }
+        }
+        ++it;
+    }
+
+
+    if (rval) {
+        val = MakeStructuredVoucher(new_inst_code, coll_code, id);
+    }
+}
+
+
 const string &
 COrgMod::GetInstitutionFullName( const string &short_name )
 {
