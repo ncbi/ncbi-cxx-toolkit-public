@@ -158,6 +158,8 @@ protected:
         return *m_CTL_Context;
     }
 
+    CS_RETCODE CheckWhileOpening(CS_RETCODE rc);
+
 private:
     CTLibContext*   m_CTL_Context;
     CTL_Connection* m_CTL_Conn;
@@ -332,6 +334,7 @@ private:
 class NCBI_DBAPIDRIVER_CTLIB_EXPORT CTL_Connection : public impl::CConnection
 {
     friend class CTLibContext;
+    friend class ctlib::Connection;
     friend class ncbi::CDB_Connection;
     friend class CTL_Cmd;
     friend class CTL_CmdBase;
@@ -411,6 +414,8 @@ protected:
     ///          false - if not
     virtual bool Close(void);
 
+    CS_RETCODE CheckWhileOpening(CS_RETCODE rc);
+
     CS_RETCODE CheckSFB(CS_RETCODE rc, const char* msg, unsigned int msg_num);
 
     bool IsDead(void) const
@@ -448,8 +453,8 @@ private:
     const CDBParams* GetBindParams(void) const;
 
     CTLibContext*       m_Cntx;
-    ctlib::Connection   m_Handle;
     CTL_CmdBase*        m_ActiveCmd;
+    ctlib::Connection   m_Handle;
 };
 
 
@@ -1146,6 +1151,14 @@ private:
 
 
 /////////////////////////////////////////////////////////////////////////////
+namespace ctlib {
+    inline
+    CS_RETCODE Connection::CheckWhileOpening(CS_RETCODE rc)
+    {
+        return GetCTLConn().CheckWhileOpening(rc);
+    }
+}
+
 inline
 string CTL_Connection::GetDbgInfo(void) const {
     return m_ActiveCmd ? m_ActiveCmd->GetDbgInfo() : GetBaseDbgInfo();

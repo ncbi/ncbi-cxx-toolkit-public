@@ -100,7 +100,7 @@ class CStatementBase;
 class NCBI_DBAPIDRIVER_ODBC_EXPORT CODBC_Reporter
 {
 public:
-    CODBC_Reporter(impl::CDBHandlerStack* hs,
+    CODBC_Reporter(const impl::CDBHandlerStack* hs,
                    SQLSMALLINT ht,
                    SQLHANDLE h,
                    const CODBC_Connection* connection = NULL,
@@ -127,34 +127,13 @@ public:
     }
     string GetExtraMsg(void) const;
 
-    // Needed for correct reporting of errors establishing new connections.
-    class CTempConnectionGuard
-    {
-    public:
-        CTempConnectionGuard(CODBC_Reporter& rptr, CODBC_Connection& conn)
-            : m_Reporter(rptr)
-        {
-            _ASSERT(rptr.m_Connection == NULL);
-            rptr.m_Connection = &conn;
-        }
-
-        ~CTempConnectionGuard()
-        {
-            m_Reporter.m_Connection = NULL;
-        }
-
-    private:
-        CODBC_Reporter& m_Reporter;
-    };
-    friend class CTempConnectionGuard;
-
 private:
     CODBC_Reporter(void);
 
     void x_PostMsg(CDB_Exception& ex, bool always_throw = false) const;
 
 private:
-    impl::CDBHandlerStack*  m_HStack;
+    const impl::CDBHandlerStack* m_HStack;
     SQLHANDLE               m_Handle;
     SQLSMALLINT             m_HType;
     const CODBC_Reporter*   m_ParentReporter;
@@ -220,7 +199,7 @@ public:
         return m_UseDSN;
     }
 
-    bool CheckSIE(int rc, SQLHDBC con);
+    bool CheckSIE(int rc, SQLHDBC con, const CODBC_Reporter& opening_reporter);
     void SetupErrorReporter(const CDBConnParams& params);
 
 protected:
@@ -239,8 +218,6 @@ private:
     bool            m_UseDSN;
     CODBCContextRegistry* m_Registry;
     int             m_TDSVersion;
-
-    void x_ReportConError(SQLHDBC con);
 
     void x_AddToRegistry(void);
     void x_RemoveFromRegistry(void);
@@ -352,7 +329,8 @@ private:
     void x_SetConnAttributesBefore(const CODBCContext& cntx,
                                    const CDBConnParams& params);
     void x_Connect(CODBCContext& cntx,
-                   const CDBConnParams& params) const;
+                   const CDBConnParams& params,
+                   const CODBC_Reporter& opening_reporter) const;
     void x_SetupErrorReporter(const CDBConnParams& params);
 
     const SQLHDBC   m_Link;

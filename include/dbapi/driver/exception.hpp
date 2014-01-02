@@ -52,6 +52,7 @@ class CDBParams;
 
 BEGIN_SCOPE(impl)
 class CConnection;
+class CDBHandlerStack;
 END_SCOPE(impl)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -587,6 +588,25 @@ public:
 
     virtual bool HandleIt(CDB_Exception* ex);
     virtual bool HandleAll(const TExceptions& exceptions);
+};
+
+
+////////////////////////////////////////////////////////////////////////////////
+class NCBI_DBAPIDRIVER_EXPORT CDB_UserHandler_Deferred : public CDB_UserHandler
+{
+public:
+    CDB_UserHandler_Deferred(const impl::CDBHandlerStack& ultimate_handlers);
+    ~CDB_UserHandler_Deferred(void);
+    
+    bool HandleIt(CDB_Exception* ex);
+    bool HandleAll(const TExceptions& exceptions);
+
+    void Flush(EDiagSev max_severity = eDiagSevMax);
+
+private:
+    TExceptions                  m_SavedExceptions;
+    const impl::CDBHandlerStack& m_UltimateHandlers;
+    CFastMutex                   m_Mutex;
 };
 
 

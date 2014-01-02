@@ -188,6 +188,10 @@ CDBConnParamsBase::GetConnValidator(void) const
     return m_Validator;
 }
 
+const CDBHandlerStack& CDBConnParamsBase::GetOpeningMsgHandlers(void) const
+{
+    return m_OpeningMsgHandlers;
+}
 
 string
 CDBConnParamsBase::GetParam(const string& key) const

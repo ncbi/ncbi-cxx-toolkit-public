@@ -34,6 +34,7 @@
 
 #include <corelib/ncbienv.hpp>
 #include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
+#include <dbapi/driver/impl/handle_stack.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -72,6 +73,7 @@ public:
     virtual Uint2 GetPort(void) const;
 
     virtual CRef<IConnValidator> GetConnValidator(void) const;
+    virtual const CDBHandlerStack& GetOpeningMsgHandlers(void) const;
 
 	virtual string GetParam(const string& key) const;
 
@@ -124,6 +126,11 @@ protected:
         m_Validator = validator;
     }
 
+    CDBHandlerStack& SetOpeningMsgHandlers(void)
+    {
+        return m_OpeningMsgHandlers;
+    }
+
 	void SetParam(const string& key, const string& value)
     {
         m_UnclassifiedParamMap[key] = value;
@@ -149,6 +156,7 @@ private:
     Uint4                 m_Host;
     Uint2                 m_PortNumber;
     CRef<IConnValidator>  m_Validator;
+    CDBHandlerStack       m_OpeningMsgHandlers;
 	TUnclassifiedParamMap m_UnclassifiedParamMap;
 };
 
@@ -215,6 +223,11 @@ public:
         impl::CDBConnParamsBase::SetConnValidator(validator);
     }
 
+    impl::CDBHandlerStack& SetOpeningMsgHandlers(void)
+    {
+        return impl::CDBConnParamsBase::SetOpeningMsgHandlers();
+    }
+
 	void SetParam(const string& key, const string& value)
     {
         impl::CDBConnParamsBase::SetParam(key, value);
@@ -278,6 +291,11 @@ public:
     void SetConnValidator(const CRef<IConnValidator>& validator)
     {
         impl::CDBConnParamsBase::SetConnValidator(validator);
+    }
+
+    impl::CDBHandlerStack& SetOpeningMsgHandlers(void)
+    {
+        return impl::CDBConnParamsBase::SetOpeningMsgHandlers();
     }
 
 	void SetParam(const string& key, const string& value)

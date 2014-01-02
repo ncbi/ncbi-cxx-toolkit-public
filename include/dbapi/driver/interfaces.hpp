@@ -274,6 +274,7 @@ public:
     virtual Uint2  GetPort(void) const = 0;
 
     virtual CRef<IConnValidator> GetConnValidator(void) const = 0;
+    virtual const impl::CDBHandlerStack& GetOpeningMsgHandlers(void) const = 0;
     
     /// Parameters, which are not listed above explicitly, should be retrieved via
     /// SetParam() method.
@@ -334,6 +335,7 @@ public:
     virtual Uint2  GetPort(void) const;
 
     virtual CRef<IConnValidator> GetConnValidator(void) const;
+    virtual const impl::CDBHandlerStack& GetOpeningMsgHandlers(void) const;
 
     virtual string GetParam(const string& key) const;
 

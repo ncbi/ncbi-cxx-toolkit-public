@@ -220,7 +220,7 @@ Connection::Connection(CTLibContext& context,
 , m_IsOpen(false)
 , m_IsDead(false)
 {
-    if (GetCTLContext().Check(ct_con_alloc(GetCTLContext().CTLIB_GetContext(),
+    if (CheckWhileOpening(ct_con_alloc(GetCTLContext().CTLIB_GetContext(),
                                    &m_Handle)) != CS_SUCCEED) {
         DATABASE_DRIVER_ERROR( "Cannot allocate a connection handle.", 100011 );
     }
@@ -299,7 +299,7 @@ bool Connection::Open(const CDBConnParams& params)
             server_name = params.GetServerName();
         }
 
-        rc = GetCTLContext().Check(ct_connect(GetNativeHandle(),
+        rc = CheckWhileOpening(ct_connect(GetNativeHandle(),
                                 const_cast<char*>(server_name.data()),
                                 server_name.size()));
 #else
@@ -310,7 +310,7 @@ bool Connection::Open(const CDBConnParams& params)
                 server_name += " " + NStr::IntToString(params.GetPort());
             }
 
-            GetCTLContext().Check(ct_con_props(GetNativeHandle(),
+            CheckWhileOpening(ct_con_props(GetNativeHandle(),
                                 CS_SET,
                                 CS_SERVERADDR,
                                 (CS_VOID*)server_name.data(),
@@ -321,14 +321,14 @@ bool Connection::Open(const CDBConnParams& params)
             // ct_connect (when client encoding is unrecognized) and thus
             // after throwing an exception from Check one should make
             // mandatory call to ct_close().
-            rc = GetCTLContext().Check(ct_connect(GetNativeHandle(),
+            rc = CheckWhileOpening(ct_connect(GetNativeHandle(),
                                     NULL,
                                     CS_UNUSED));
         } else {
             server_name = params.GetServerName();
 
             // See comment above
-            rc = GetCTLContext().Check(ct_connect(GetNativeHandle(),
+            rc = CheckWhileOpening(ct_connect(GetNativeHandle(),
                                     const_cast<char*>(server_name.data()),
                                     server_name.size()));
         }
@@ -336,7 +336,7 @@ bool Connection::Open(const CDBConnParams& params)
         server_name = params.GetServerName();
 
         // See comment above
-        rc = GetCTLContext().Check(ct_connect(GetNativeHandle(),
+        rc = CheckWhileOpening(ct_connect(GetNativeHandle(),
                                 const_cast<char*>(server_name.data()),
                                 server_name.size()));
 

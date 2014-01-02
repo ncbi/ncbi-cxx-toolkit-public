@@ -112,6 +112,7 @@ CConnection::CConnection(CDriverContext& dc,
 {
     _ASSERT(m_MsgHandlers.GetSize() == dc.GetConnHandlerStack().GetSize());
     _ASSERT(m_MsgHandlers.GetSize() > 0);
+    m_OpeningMsgHandlers = params.GetOpeningMsgHandlers();
 
     CheckCanOpen();
 }

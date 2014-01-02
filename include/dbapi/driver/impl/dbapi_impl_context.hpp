@@ -179,6 +179,10 @@ public:
     {
         return m_ConnHandlers;
     }
+    const CDBHandlerStack& GetCtxHandlerStack(void) const
+    {
+        return m_CntxHandlers;
+    }
 
     virtual void SetClientCharset(const string& charset);
     const string& GetClientCharset(void) const
@@ -219,10 +223,6 @@ protected:
     void CloseAllConn(void);
     void DeleteAllConn(void);
 
-    const CDBHandlerStack& GetCtxHandlerStack(void) const
-    {
-        return m_CntxHandlers;
-    }
     CDBHandlerStack& GetCtxHandlerStack(void)
     {
         return m_CntxHandlers;

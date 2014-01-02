@@ -732,6 +732,73 @@ CDB_UserHandler_Exception::HandleAll(const TExceptions& exceptions)
 
 
 ////////////////////////////////////////////////////////////////////////////////
+//  CDB_UserHandler_Deferred::
+//
+
+CDB_UserHandler_Deferred::CDB_UserHandler_Deferred
+(const impl::CDBHandlerStack& ultimate_handlers)
+    : m_UltimateHandlers(ultimate_handlers)
+{
+}
+
+CDB_UserHandler_Deferred::~CDB_UserHandler_Deferred(void)
+{
+    if ( !m_SavedExceptions.empty() ) {
+        ERR_POST_X(8, Warning << "Internal bug: Found unreported exceptions."
+                   << CStackTrace());
+        bool done = false;
+        while ( !done ) {
+            try {
+                Flush();
+                done = true;
+            } catch (CException& ex) {
+                ERR_POST(ex);
+            }
+        }
+    }
+}
+
+bool CDB_UserHandler_Deferred::HandleIt(CDB_Exception* ex)
+{
+    CFastMutexGuard LOCK(m_Mutex);
+    _TRACE(*ex);
+    m_SavedExceptions.push_back(ex->Clone());
+    return true;
+}
+
+bool CDB_UserHandler_Deferred::HandleAll(const TExceptions& exceptions)
+{
+    CFastMutexGuard LOCK(m_Mutex);
+    ITERATE (TExceptions, ex, exceptions) {
+        _TRACE(**ex);
+        m_SavedExceptions.push_back((*ex)->Clone());
+    }
+    return true;
+}
+
+void CDB_UserHandler_Deferred::Flush(EDiagSev max_severity)
+{
+    CFastMutexGuard LOCK(m_Mutex);
+    ERASE_ITERATE (TExceptions, it, m_SavedExceptions) {
+        auto_ptr<CDB_Exception> ex(*it);
+        VECTOR_ERASE(it, m_SavedExceptions);
+        if (ex->GetSeverity() > max_severity) {
+            ex->SetSeverity(max_severity);
+        }
+        if (max_severity < eDiag_Error) {
+            try {
+                m_UltimateHandlers.PostMsg(ex.get());
+            } catch (CDB_Exception& ex2) {
+                ERR_POST(ex2);
+            }
+        } else { 
+            m_UltimateHandlers.PostMsg(ex.get());
+        }    
+    }
+}
+
+
+////////////////////////////////////////////////////////////////////////////////
 //  CDB_UserHandler_Exception_ODBC::
 //
 

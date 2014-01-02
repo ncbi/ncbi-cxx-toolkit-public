@@ -173,7 +173,7 @@ CODBCContextRegistry::StaticClearAll(void)
 //
 //  CODBC_Reporter::
 //
-CODBC_Reporter::CODBC_Reporter(impl::CDBHandlerStack* hs,
+CODBC_Reporter::CODBC_Reporter(const impl::CDBHandlerStack* hs,
                                SQLSMALLINT ht,
                                SQLHANDLE h,
                                const CODBC_Connection* connection,
@@ -481,17 +481,18 @@ void CODBCContext::SetPacketSize(SQLUINTEGER packet_size)
 }
 
 
-bool CODBCContext::CheckSIE(int rc, SQLHDBC con)
+bool CODBCContext::CheckSIE(int rc, SQLHDBC con,
+                            const CODBC_Reporter& opening_reporter)
 {
     CMutexGuard mg(m_CtxMtx);
 
     switch(rc) {
     case SQL_SUCCESS_WITH_INFO:
-        x_ReportConError(con);
+        opening_reporter.ReportErrors();
     case SQL_SUCCESS:
         return true;
     case SQL_ERROR:
-        x_ReportConError(con);
+        opening_reporter.ReportErrors();
         SQLFreeHandle(SQL_HANDLE_DBC, con);
         break;
     default:
@@ -500,16 +501,6 @@ bool CODBCContext::CheckSIE(int rc, SQLHDBC con)
     }
 
     return false;
-}
-
-
-void CODBCContext::x_ReportConError(SQLHDBC con)
-{
-    m_Reporter.SetHandleType(SQL_HANDLE_DBC);
-    m_Reporter.SetHandle(con);
-    m_Reporter.ReportErrors();
-    m_Reporter.SetHandleType(SQL_HANDLE_ENV);
-    m_Reporter.SetHandle(m_Context);
 }
 
 

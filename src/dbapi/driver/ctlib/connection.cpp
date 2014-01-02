@@ -97,8 +97,8 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
                                const CDBConnParams& params)
 : impl::CConnection(cntx, params, true)
 , m_Cntx(&cntx)
-, m_Handle(cntx, *this)
 , m_ActiveCmd(NULL)
+, m_Handle(cntx, *this)
 {
 #ifdef FTDS_IN_USE
     int tds_version = 0;
@@ -141,13 +141,13 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
         "; USER: " + params.GetUserName();
     SetExtraMsg(extra_msg);
 
-    GetCTLibContext().Check(ct_callback(NULL,
+    CheckWhileOpening(ct_callback(NULL,
                            x_GetSybaseConn(),
                            CS_SET,
                            CS_CLIENTMSG_CB,
                            (CS_VOID*) CTLibContext::CTLIB_cterr_handler));
 
-    GetCTLibContext().Check(ct_callback(NULL,
+    CheckWhileOpening(ct_callback(NULL,
                            x_GetSybaseConn(),
                            CS_SET,
                            CS_SERVERMSG_CB,
@@ -162,32 +162,32 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
     }
 
 
-    if (GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
+    if (CheckWhileOpening(ct_con_props(x_GetSybaseConn(),
                                 CS_SET,
                                 CS_USERNAME,
                                 (void*) params.GetUserName().data(),
                                 params.GetUserName().size(),
                                 NULL)) != CS_SUCCEED
-        || GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
+        || CheckWhileOpening(ct_con_props(x_GetSybaseConn(),
                                    CS_SET,
                                    CS_PASSWORD,
                                    (void*) params.GetPassword().data(),
                                    params.GetPassword().size(),
                                    NULL)) != CS_SUCCEED
-        || GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
+        || CheckWhileOpening(ct_con_props(x_GetSybaseConn(),
                                    CS_SET,
                                    CS_APPNAME,
                                    (void*) GetCDriverContext().GetApplicationName().data(),
                                    GetCDriverContext().GetApplicationName().size(),
                                    NULL)) != CS_SUCCEED
-        || GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
+        || CheckWhileOpening(ct_con_props(x_GetSybaseConn(),
                                    CS_SET,
                                    CS_HOSTNAME,
                                    (void*) hostname,
                                    CS_NULLTERM,
                                    NULL)) != CS_SUCCEED
 #ifdef FTDS_IN_USE
-        || GetCTLibContext().Check(ct_con_props(
+        || CheckWhileOpening(ct_con_props(
                                    x_GetSybaseConn(), 
                                    CS_SET, 
                                    CS_TDS_VERSION, 
@@ -214,7 +214,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
         }
     }
 //     if ( !GetCDriverContext().GetHostName().empty() ) {
-//         GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
+//         CheckWhileOpening(ct_con_props(x_GetSybaseConn(),
 //                                 CS_SET,
 //                                 CS_HOSTNAME,
 //                                 (void*) GetCDriverContext().GetHostName().data(),
@@ -225,7 +225,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
     if (cntx.GetPacketSize() > 0) {
         CS_INT packet_size = cntx.GetPacketSize();
 
-        GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
+        CheckWhileOpening(ct_con_props(x_GetSybaseConn(),
                                 CS_SET,
                                 CS_PACKETSIZE,
                                 (void*) &packet_size,
@@ -237,7 +237,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
     if (cntx.GetLoginRetryCount() > 0) {
         CS_INT login_retry_count = cntx.GetLoginRetryCount();
 
-        GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
+        CheckWhileOpening(ct_con_props(x_GetSybaseConn(),
                                 CS_SET,
                                 CS_RETRY_COUNT,
                                 (void*) &login_retry_count,
@@ -250,7 +250,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
     if (cntx.GetLoginLoopDelay() > 0) {
         CS_INT login_loop_delay = cntx.GetLoginLoopDelay();
 
-        GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
+        CheckWhileOpening(ct_con_props(x_GetSybaseConn(),
                                 CS_SET,
                                 CS_LOOP_DELAY,
                                 (void*) &login_loop_delay,
@@ -260,7 +260,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
 #endif
 
     CS_BOOL flag = CS_TRUE;
-    GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
+    CheckWhileOpening(ct_con_props(x_GetSybaseConn(),
                             CS_SET,
                             CS_BULK_LOGIN,
                             &flag,
@@ -268,7 +268,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
                             NULL));
 
     if (params.GetParam("secure_login") == "true") {
-        GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
+        CheckWhileOpening(ct_con_props(x_GetSybaseConn(),
                                 CS_SET,
                                 CS_SEC_ENCRYPTION,
                                 &flag,
@@ -277,7 +277,7 @@ CTL_Connection::CTL_Connection(CTLibContext& cntx,
     }
 
     CTL_Connection* link = this;
-    GetCTLibContext().Check(ct_con_props(x_GetSybaseConn(),
+    CheckWhileOpening(ct_con_props(x_GetSybaseConn(),
                             CS_SET,
                             CS_USERDATA,
                             &link,
@@ -332,6 +332,19 @@ CTL_Connection::Check(CS_RETCODE rc, const string& extra_msg)
                                     GetBindParams());
 
     return rc;
+}
+
+CS_RETCODE
+CTL_Connection::CheckWhileOpening(CS_RETCODE rc)
+{
+    const impl::CDBHandlerStack& handlers = GetOpeningMsgHandlers();
+    if (handlers.GetSize() > 0) {
+        GetCTLExceptionStorage().Handle(handlers, GetExtraMsg(), this,
+                                        GetBindParams());
+        return rc;
+    } else {
+        return GetCTLibContext().Check(rc);
+    }
 }
 
 CS_RETCODE CTL_Connection::CheckSFB(CS_RETCODE rc,

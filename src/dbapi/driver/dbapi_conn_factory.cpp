@@ -33,6 +33,7 @@
 #include <dbapi/driver/dbapi_svc_mapper.hpp>
 #include <dbapi/driver/dbapi_driver_conn_params.hpp>
 #include <dbapi/driver/impl/dbapi_driver_utils.hpp>
+#include <dbapi/driver/impl/dbapi_impl_context.hpp>
 #include <dbapi/driver/public.hpp>
 #include <dbapi/error_codes.hpp>
 #include <corelib/ncbiapp.hpp>
@@ -236,6 +237,8 @@ public:
     virtual string GetServerName(void) const;
     virtual Uint4 GetHost(void) const;
     virtual Uint2  GetPort(void) const;
+    virtual const impl::CDBHandlerStack& GetOpeningMsgHandlers(void) const;
+    impl::CDBHandlerStack& SetOpeningMsgHandlers(void);
 
 private:
     // Non-copyable.
@@ -246,6 +249,7 @@ private:
     const string m_ServerName;
     const Uint4  m_Host;
     const Uint2  m_Port;
+    impl::CDBHandlerStack m_OpeningMsgHandlers;
 };
 
 
@@ -283,8 +287,25 @@ Uint2 CDB_DBLB_Delegate::GetPort(void) const
     return m_Port;
 }
 
+const impl::CDBHandlerStack& CDB_DBLB_Delegate::GetOpeningMsgHandlers(void)
+    const
+{
+    return m_OpeningMsgHandlers;
+}
+
+impl::CDBHandlerStack& CDB_DBLB_Delegate::SetOpeningMsgHandlers(void)
+{
+    return m_OpeningMsgHandlers;
+}
 
 ///////////////////////////////////////////////////////////////////////////////
+CDBConnectionFactory::SOpeningContext::SOpeningContext
+(I_DriverContext& driver_ctx_in)
+    : driver_ctx(driver_ctx_in), conn_status(IConnValidator::eInvalidConn),
+      retries(0)
+{
+}
+
 CDB_Connection*
 CDBConnectionFactory::MakeDBConnection(
     I_DriverContext& ctx,
@@ -297,9 +318,26 @@ CDBConnectionFactory::MakeDBConnection(
     CDB_Connection* t_con = NULL;
     CRuntimeData& rt_data = GetRuntimeData(params.GetConnValidator());
     TSvrRef dsp_srv = rt_data.GetDispatchedServer(params.GetServerName());
-    unsigned int retries = 0;
-    IConnValidator::EConnStatus conn_status = IConnValidator::eInvalidConn;
 
+    // Prepare to collect messages, whose proper severity depends on whether
+    // ANY attempt succeeds.
+    impl::CDBHandlerStack ultimate_handlers;
+    {{
+        const impl::CDriverContext* ctx_impl
+            = dynamic_cast<impl::CDriverContext*>(&ctx);
+        if (params.GetOpeningMsgHandlers().GetSize() > 0) {
+            ultimate_handlers = params.GetOpeningMsgHandlers();
+        } else if (ctx_impl != NULL) {
+            ultimate_handlers = ctx_impl->GetCtxHandlerStack();
+        } else {
+            ultimate_handlers.Push(&CDB_UserHandler::GetDefault());
+        }
+    }}
+    SOpeningContext opening_ctx(ctx);
+    CRef<CDB_UserHandler_Deferred> handler
+        (new CDB_UserHandler_Deferred(ultimate_handlers));
+    opening_ctx.handlers.Push(&*handler);
+    
     // Store original query timeout ...
     unsigned int query_timeout = ctx.GetTimeout();
 
@@ -312,7 +350,7 @@ CDBConnectionFactory::MakeDBConnection(
         // because a named connection pool has been used before.
         // Dispatch server name ...
 
-        t_con = DispatchServerName(ctx, params, conn_status, retries);
+        t_con = DispatchServerName(opening_ctx, params);
     } else {
         // Server name is already dispatched ...
         string single_server(params.GetParam("single_server"));
@@ -324,7 +362,7 @@ CDBConnectionFactory::MakeDBConnection(
 
             // Clean previous info ...
             rt_data.SetDispatchedServer(params.GetServerName(), TSvrRef());
-            t_con = DispatchServerName(ctx, params, conn_status, retries);
+            t_con = DispatchServerName(opening_ctx, params);
         } else {
             // We do not need to re-dispatch it ...
 
@@ -337,18 +375,19 @@ CDBConnectionFactory::MakeDBConnection(
                         dsp_srv->GetHost(),
                         dsp_srv->GetPort(),
                         params);
+                cur_params.SetOpeningMsgHandlers() = opening_ctx.handlers;
 
                 // MakeValidConnection may return NULL here because a newly
                 // created connection may not pass validation.
-                t_con = MakeValidConnection(ctx,
+                t_con = MakeValidConnection(opening_ctx,
                                             // cur_conn_attr,
-                                            cur_params,
-                                            conn_status);
+                                            cur_params);
 
             } catch(const CDB_Exception& ex) {
                 m_Errors.push_back(ex.Clone());
                 if (params.GetConnValidator()) {
-                    conn_status = params.GetConnValidator()->ValidateException(ex);
+                    opening_ctx.conn_status
+                        = params.GetConnValidator()->ValidateException(ex);
                 }
             }
 
@@ -357,14 +396,14 @@ CDBConnectionFactory::MakeDBConnection(
                 if (single_server != "true") {
                     // Server might be temporarily unavailable ...
                     // Check conn_status ...
-                    if (conn_status == IConnValidator::eTempInvalidConn) {
+                    if (opening_ctx.conn_status
+                        == IConnValidator::eTempInvalidConn) {
                         rt_data.IncNumOfValidationFailures(params.GetServerName(),
                                                            dsp_srv);
                     }
 
                     // Re-dispatch ...
-                    t_con = DispatchServerName(ctx, params, conn_status,
-                                               retries);
+                    t_con = DispatchServerName(opening_ctx, params);
                 }
             } else {
                 // Dispatched server is already set, but calling of this method
@@ -382,17 +421,16 @@ CDBConnectionFactory::MakeDBConnection(
         t_con->SetTimeout(query_timeout);
     }
 
-    x_LogConnection(ctx, t_con, params, conn_status, retries);
+    handler->Flush((t_con == NULL) ? eDiagSevMax : eDiag_Warning);
+    x_LogConnection(opening_ctx, t_con, params);
 
     return t_con;
 }
 
 CDB_Connection*
 CDBConnectionFactory::DispatchServerName(
-    I_DriverContext& ctx,
-    const CDBConnParams& params,
-    IConnValidator::EConnStatus& conn_status,
-    unsigned int& retries)
+    SOpeningContext& ctx,
+    const CDBConnParams& params)
 {
     CDB_Connection* t_con = NULL;
     // I_DriverContext::SConnAttr curr_conn_attr(conn_attr);
@@ -482,24 +520,25 @@ CDBConnectionFactory::DispatchServerName(
 
         // Try to connect up to a given number of attempts ...
         unsigned int attepmpts = GetMaxNumOfConnAttempts();
-        conn_status = IConnValidator::eInvalidConn;
+        ctx.conn_status = IConnValidator::eInvalidConn;
 
         // We don't check value of conn_status inside of a loop below by design.
         for (; !t_con && attepmpts > 0; --attepmpts) {
             try {
-                const CDB_DBLB_Delegate cur_params(
+                CDB_DBLB_Delegate cur_params(
                         cur_srv_name,
                         cur_host,
                         cur_port,
                         params);
+                cur_params.SetOpeningMsgHandlers() = ctx.handlers;
                 t_con = MakeValidConnection(ctx,
                                             // curr_conn_attr,
-                                            cur_params,
-                                            conn_status);
+                                            cur_params);
             } catch(const CDB_Exception& ex) {
                 m_Errors.push_back(ex.Clone());
                 if (params.GetConnValidator()) {
-                    conn_status = params.GetConnValidator()->ValidateException(ex);
+                    ctx.conn_status
+                        = params.GetConnValidator()->ValidateException(ex);
                 }
             }
         }
@@ -508,10 +547,10 @@ CDBConnectionFactory::DispatchServerName(
             return t_con;
         }
         else if (!t_con) {
-            ++retries;
+            ++ctx.retries;
             bool need_exclude = true;
             if (cur_srv_name == service_name  &&  cur_host == 0  &&  cur_port == 0
-                &&  (conn_status != IConnValidator::eTempInvalidConn
+                &&  (ctx.conn_status != IConnValidator::eTempInvalidConn
                         ||  (GetMaxNumOfValidationAttempts()
                              &&  rt_data.GetNumOfValidationFailures(service_name)
                                                >= GetMaxNumOfValidationAttempts())))
@@ -524,7 +563,7 @@ CDBConnectionFactory::DispatchServerName(
             if (need_exclude) {
                 // Server might be temporarily unavailable ...
                 // Check conn_status ...
-                if (conn_status == IConnValidator::eTempInvalidConn) {
+                if (ctx.conn_status == IConnValidator::eTempInvalidConn) {
                     rt_data.IncNumOfValidationFailures(service_name, dsp_srv);
                 } else {
                     // conn_status == IConnValidator::eInvalidConn
@@ -547,14 +586,13 @@ CDBConnectionFactory::DispatchServerName(
 
 CDB_Connection*
 CDBConnectionFactory::MakeValidConnection(
-    I_DriverContext& ctx,
-    const CDBConnParams& params,
-    IConnValidator::EConnStatus& conn_status)
+    SOpeningContext& ctx,
+    const CDBConnParams& params)
 {
     _TRACE("Trying to connect to server '" << params.GetServerName()
           << "', host " << params.GetHost() << ", port " << params.GetPort());
 
-    auto_ptr<CDB_Connection> conn(CtxMakeConnection(ctx, params));
+    auto_ptr<CDB_Connection> conn(CtxMakeConnection(ctx.driver_ctx, params));
 
     if (conn.get())
     {
@@ -571,17 +609,25 @@ CDBConnectionFactory::MakeValidConnection(
             validator.Push(CRef<IConnValidator>(&use_db_validator));
         }
 
-        conn_status = IConnValidator::eInvalidConn;
+        ctx.conn_status = IConnValidator::eInvalidConn;
         try {
-            conn_status = validator.Validate(*conn);
-            if (conn_status != IConnValidator::eValidConn) {
+            ctx.conn_status = validator.Validate(*conn);
+            if (ctx.conn_status != IConnValidator::eValidConn) {
+                CDB_Exception ex(DIAG_COMPILE_INFO, NULL,
+                                 CDB_Exception::EErrCode(0),
+                                 "Validation failed against "
+                                 + params.GetServerName(),
+                                 eDiag_Error, 0);
+                // m_Errors.push_back(ex.Clone());
+                ctx.handlers.PostMsg(&ex);
                 return NULL;
             }
         } catch (const CDB_Exception& ex) {
             if (params.GetConnValidator().NotNull()) {
-                conn_status = params.GetConnValidator()->ValidateException(ex);
+                ctx.conn_status
+                    = params.GetConnValidator()->ValidateException(ex);
             }
-            if (conn_status != IConnValidator::eValidConn) {
+            if (ctx.conn_status != IConnValidator::eValidConn) {
                 m_Errors.push_back(ex.Clone());
                 return NULL;
             }
@@ -635,11 +681,9 @@ CDBConnectionFactory::WorkWithSingleServer(const string& validator_name,
     rt_data.SetDispatchedServer(service_name, svr);
 }
 
-void CDBConnectionFactory::x_LogConnection(const I_DriverContext& ctx,
+void CDBConnectionFactory::x_LogConnection(const SOpeningContext& ctx,
                                            const CDB_Connection* connection,
-                                           const CDBConnParams& params,
-                                           IConnValidator::EConnStatus& conn_status,
-                                           unsigned int retries)
+                                           const CDBConnParams& params)
 {
     CDBServer stub_dsp_srv;
 
@@ -656,7 +700,7 @@ void CDBConnectionFactory::x_LogConnection(const I_DriverContext& ctx,
 
     {{
         const char* status_str = "???";
-        switch (conn_status) {
+        switch (ctx.conn_status) {
         case IConnValidator::eValidConn:
             status_str = "valid";
             break;
@@ -712,7 +756,8 @@ void CDBConnectionFactory::x_LogConnection(const I_DriverContext& ctx,
     }
 
     {{
-        string driver_name = ((connection == NULL) ? ctx.GetDriverName()
+        string driver_name = ((connection == NULL)
+                              ? ctx.driver_ctx.GetDriverName()
                               : connection->GetDriverName());
         if ( !driver_name.empty() ) {
             extra.Print("dbapi_driver", driver_name);
@@ -721,7 +766,7 @@ void CDBConnectionFactory::x_LogConnection(const I_DriverContext& ctx,
 
     extra.Print("dbapi_name_mapper", rt_data.GetDBServiceMapper().GetName());
 
-    extra.Print("dbapi_retries", retries);
+    extra.Print("dbapi_retries", ctx.retries);
 }
 
 

@@ -36,6 +36,7 @@
 #include <corelib/ncbimtx.hpp>
 #include <corelib/impl/ncbi_dbsvcmapper.hpp>
 #include <dbapi/driver/dbapi_driver_conn_mgr.hpp>
+#include <dbapi/driver/impl/handle_stack.hpp>
 #include <map>
 #include <vector>
 #include <memory>
@@ -151,28 +152,31 @@ protected:
         const CDBConnParams& params);
 
 private:
-    // Methods
-    CDB_Connection* DispatchServerName(
-        I_DriverContext& ctx,
-        const CDBConnParams& params,
-        IConnValidator::EConnStatus& conn_status,
-        unsigned int& retries);
+    struct SOpeningContext {
+        SOpeningContext(I_DriverContext& driver_ctx_in);
 
-    CDB_Connection* MakeValidConnection(
-        I_DriverContext& ctx,
-        const CDBConnParams& params,
-        IConnValidator::EConnStatus& conn_status);
+        I_DriverContext&            driver_ctx;
+        IConnValidator::EConnStatus conn_status;
+        impl::CDBHandlerStack       handlers;
+        unsigned int                retries;
+        // params deliberately left out (potentially call-specific)
+    };
+
+    // Methods
+    CDB_Connection* DispatchServerName(SOpeningContext& ctx,
+                                       const CDBConnParams& params);
+
+    CDB_Connection* MakeValidConnection(SOpeningContext& ctx,
+                                        const CDBConnParams& params);
 
     virtual CDB_UserHandler::TExceptions* GetExceptions(void);
 
     unsigned int CalculateConnectionTimeout(const I_DriverContext& ctx) const;
     unsigned int CalculateLoginTimeout(const I_DriverContext& ctx) const;
 
-    void x_LogConnection(const I_DriverContext& ctx,
+    void x_LogConnection(const SOpeningContext& ctx,
                          const CDB_Connection* connection,
-                         const CDBConnParams& params,
-                         IConnValidator::EConnStatus& conn_status,
-                         unsigned int retries);
+                         const CDBConnParams& params);
 
 private:
     typedef map<string, CRuntimeData> TValidatorSet;

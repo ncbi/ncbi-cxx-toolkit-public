@@ -99,14 +99,15 @@ CODBC_Connection::CODBC_Connection(CODBCContext& cntx,
     // opening of a connection to a database are reported by a DriverContext.
     // Have fun.
     // cntx.SetupErrorReporter(params);
-    CODBC_Reporter::CTempConnectionGuard GUARD
-        (const_cast<CODBC_Reporter&>(cntx.GetReporter()), *this);
+    CODBC_Reporter opening_reporter(&params.GetOpeningMsgHandlers(),
+                                    SQL_HANDLE_DBC, m_Link, this,
+                                    &cntx.GetReporter());
 
     x_SetupErrorReporter(params);
 
     x_SetConnAttributesBefore(cntx, params);
 
-    x_Connect(cntx, params);
+    x_Connect(cntx, params, opening_reporter);
 }
 
 
@@ -124,7 +125,8 @@ CODBC_Connection::x_SetupErrorReporter(const CDBConnParams& params)
 
 void CODBC_Connection::x_Connect(
     CODBCContext& cntx,
-    const CDBConnParams& params) const
+    const CDBConnParams& params,
+    const CODBC_Reporter& opening_reporter) const
 {
     SQLRETURN rc;
     string server_name;
@@ -198,7 +200,7 @@ void CODBC_Connection::x_Connect(
                         password_ss.size());
     }
 
-    if (!cntx.CheckSIE(rc, m_Link)) {
+    if (!cntx.CheckSIE(rc, m_Link, opening_reporter)) {
         string err;
 
         err += "Cannot connect to the server '" + server_name;

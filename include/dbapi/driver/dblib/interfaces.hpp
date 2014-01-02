@@ -265,6 +265,14 @@ private:
     void CheckFunctCall(void);
     void CheckFunctCall(const string& extra_msg);
 
+    template <typename T>
+    T CheckWhileOpening(T rc)
+    {
+        CheckFunctCallWhileOpening();
+        return rc;
+    }
+    void CheckFunctCallWhileOpening(void);
+
     string GetDbgInfo(void) const;
 
     string GetBaseDbgInfo(void) const

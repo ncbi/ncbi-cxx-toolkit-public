@@ -119,6 +119,12 @@ CDBConnParamsDelegate::GetConnValidator(void) const
     return m_Other.GetConnValidator();
 }
 
+const impl::CDBHandlerStack& CDBConnParamsDelegate::GetOpeningMsgHandlers(void)
+    const
+{
+    return m_Other.GetOpeningMsgHandlers();
+}
+
 string CDBConnParamsDelegate::GetParam(const string& key) const
 {
     return m_Other.GetParam(key);

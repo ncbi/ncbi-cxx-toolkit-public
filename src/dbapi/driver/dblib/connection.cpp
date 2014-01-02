@@ -63,7 +63,7 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
     m_Link(NULL),
     m_ActiveCmd(NULL)
 {
-    m_Login = GetDBLibCtx().Check(dblogin());
+    m_Login = CheckWhileOpening(dblogin());
     _ASSERT(m_Login);
 
     const string err_str(
@@ -101,7 +101,7 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
 
     server_name = params.GetServerName();
 
-    m_Link = GetDBLibCtx().Check(dbopen(m_Login, (char*) server_name.c_str()));
+    m_Link = CheckWhileOpening(dbopen(m_Login, (char*) server_name.c_str()));
 
 
     /*  Error: Could not open interface file.
@@ -125,10 +125,10 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
 
         CHECK_DRIVER_ERROR(rc != SUCCEED, "dbsetconnect failed.", 200001);
 
-        m_Link = GetDBLibCtx().Check(dbopen(m_Login, NULL));
+        m_Link = CheckWhileOpening(dbopen(m_Login, NULL));
     } else {
         server_name = params.GetServerName();
-        m_Link = GetDBLibCtx().Check(dbopen(m_Login, (char*) server_name.c_str()));
+        m_Link = CheckWhileOpening(dbopen(m_Login, (char*) server_name.c_str()));
     }
     */
 
@@ -136,7 +136,7 @@ CDBL_Connection::CDBL_Connection(CDBLibContext& cntx,
     // It doesn't work currently ...
 //     if (dbprocess) {
 //         CHECK_DRIVER_ERROR(
-//             GetDBLibCtx().Check(dbsetopt(
+//             CheckWhileOpening(dbsetopt(
 //                 dbprocess,
 //                 DBBUFFER,
 //                 const_cast<char*>(NStr::UIntToString(GetBufferSize()).c_str()),
@@ -611,6 +611,18 @@ void CDBL_Connection::CheckFunctCall(const string& extra_msg)
 {
     GetDBLExceptionStorage().Handle(GetMsgHandlers(), extra_msg, this,
                                     GetBindParams());
+}
+
+
+void CDBL_Connection::CheckFunctCallWhileOpening(void)
+{
+    const impl::CDBHandlerStack& handlers = GetOpeningMsgHandlers();
+    if (handlers.GetSize() > 0) {
+        GetDBLExceptionStorage().Handle(handlers, GetExtraMsg(),
+                                        this, GetBindParams());
+    } else {
+        GetDBLibCtx().CheckFunctCall();
+    }
 }
 
 

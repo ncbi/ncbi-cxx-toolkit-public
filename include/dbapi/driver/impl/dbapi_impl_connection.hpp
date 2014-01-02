@@ -284,11 +284,18 @@ protected:
         m_ServerType = type;
     }
 
+    const CDBHandlerStack& GetOpeningMsgHandlers(void) const
+    {
+        _ASSERT( !m_OpenFinished );
+        return m_OpeningMsgHandlers;
+    }
+
 private:
     typedef deque<impl::CCommand*>  TCommandList;
 
     CDriverContext*                 m_DriverContext;
     CDBHandlerStack                 m_MsgHandlers;
+    CDBHandlerStack                 m_OpeningMsgHandlers;
     TCommandList                    m_CMDs;
     CInterfaceHook<CDB_Connection>  m_Interface;
     CDB_ResultProcessor*            m_ResProc;
