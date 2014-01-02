@@ -1534,7 +1534,6 @@ void CDiagContext::SetHostIP(const string& ip)
         ERR_POST("Bad host IP value: " << ip);
         return;
     }
-
     m_HostIP = ip;
 }
 
