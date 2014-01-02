@@ -3058,6 +3058,7 @@ gui_config needs xmlwrapp
 gui_config needs xncbi
 gui_config needs xnetblast
 gui_config needs xnetblastcli
+gui_config needs xobjedit
 gui_config needs xobjmgr
 gui_config needs xobjread
 gui_config needs xobjutil
@@ -3199,6 +3200,7 @@ gui_core needs xmlwrapp
 gui_core needs xncbi
 gui_core needs xnetblast
 gui_core needs xnetblastcli
+gui_core needs xobjedit
 gui_core needs xobjmgr
 gui_core needs xobjread
 gui_core needs xobjreadex
@@ -3341,6 +3343,7 @@ gui_framework needs xmlwrapp
 gui_framework needs xncbi
 gui_framework needs xnetblast
 gui_framework needs xnetblastcli
+gui_framework needs xobjedit
 gui_framework needs xobjmgr
 gui_framework needs xobjread
 gui_framework needs xobjreadex
@@ -3468,6 +3471,7 @@ gui_objects needs xmlwrapp
 gui_objects needs xncbi
 gui_objects needs xnetblast
 gui_objects needs xnetblastcli
+gui_objects needs xobjedit
 gui_objects needs xobjmgr
 gui_objects needs xobjread
 gui_objects needs xobjutil
@@ -3551,6 +3555,7 @@ gui_objutils needs xmlwrapp
 gui_objutils needs xncbi
 gui_objutils needs xnetblast
 gui_objutils needs xnetblastcli
+gui_objutils needs xobjedit
 gui_objutils needs xobjmgr
 gui_objutils needs xobjread
 gui_objutils needs xobjutil
@@ -3721,6 +3726,7 @@ guide_tree needs xmlwrapp
 guide_tree needs xncbi
 guide_tree needs xnetblast
 guide_tree needs xnetblastcli
+guide_tree needs xobjedit
 guide_tree needs xobjmgr
 guide_tree needs xobjread
 guide_tree needs xobjutil
@@ -3884,6 +3890,7 @@ hgvs_name needs xmlwrapp
 hgvs_name needs xncbi
 hgvs_name needs xnetblast
 hgvs_name needs xnetblastcli
+hgvs_name needs xobjedit
 hgvs_name needs xobjmgr
 hgvs_name needs xobjread
 hgvs_name needs xobjutil
@@ -7559,6 +7566,7 @@ w_aln_crossaln needs xmlwrapp
 w_aln_crossaln needs xncbi
 w_aln_crossaln needs xnetblast
 w_aln_crossaln needs xnetblastcli
+w_aln_crossaln needs xobjedit
 w_aln_crossaln needs xobjmgr
 w_aln_crossaln needs xobjread
 w_aln_crossaln needs xobjutil
@@ -7669,6 +7677,7 @@ w_aln_multi needs xmlwrapp
 w_aln_multi needs xncbi
 w_aln_multi needs xnetblast
 w_aln_multi needs xnetblastcli
+w_aln_multi needs xobjedit
 w_aln_multi needs xobjmgr
 w_aln_multi needs xobjread
 w_aln_multi needs xobjutil
@@ -7776,6 +7785,7 @@ w_aln_score needs xmlwrapp
 w_aln_score needs xncbi
 w_aln_score needs xnetblast
 w_aln_score needs xnetblastcli
+w_aln_score needs xobjedit
 w_aln_score needs xobjmgr
 w_aln_score needs xobjread
 w_aln_score needs xobjutil
@@ -7883,6 +7893,7 @@ w_aln_table needs xmlwrapp
 w_aln_table needs xncbi
 w_aln_table needs xnetblast
 w_aln_table needs xnetblastcli
+w_aln_table needs xobjedit
 w_aln_table needs xobjmgr
 w_aln_table needs xobjread
 w_aln_table needs xobjutil
@@ -7990,6 +8001,7 @@ w_data needs xmlwrapp
 w_data needs xncbi
 w_data needs xnetblast
 w_data needs xnetblastcli
+w_data needs xobjedit
 w_data needs xobjmgr
 w_data needs xobjread
 w_data needs xobjutil
@@ -8119,6 +8131,7 @@ w_edit needs xmlwrapp
 w_edit needs xncbi
 w_edit needs xnetblast
 w_edit needs xnetblastcli
+w_edit needs xobjedit
 w_edit needs xobjmgr
 w_edit needs xobjread
 w_edit needs xobjreadex
@@ -8227,6 +8240,7 @@ w_feat_table needs xmlwrapp
 w_feat_table needs xncbi
 w_feat_table needs xnetblast
 w_feat_table needs xnetblastcli
+w_feat_table needs xobjedit
 w_feat_table needs xobjmgr
 w_feat_table needs xobjread
 w_feat_table needs xobjutil
@@ -8334,6 +8348,7 @@ w_gl needs xmlwrapp
 w_gl needs xncbi
 w_gl needs xnetblast
 w_gl needs xnetblastcli
+w_gl needs xobjedit
 w_gl needs xobjmgr
 w_gl needs xobjread
 w_gl needs xobjutil
@@ -8442,6 +8457,7 @@ w_grid_widget needs xmlwrapp
 w_grid_widget needs xncbi
 w_grid_widget needs xnetblast
 w_grid_widget needs xnetblastcli
+w_grid_widget needs xobjedit
 w_grid_widget needs xobjmgr
 w_grid_widget needs xobjread
 w_grid_widget needs xobjutil
@@ -8574,6 +8590,7 @@ w_hapmap needs xmlwrapp
 w_hapmap needs xncbi
 w_hapmap needs xnetblast
 w_hapmap needs xnetblastcli
+w_hapmap needs xobjedit
 w_hapmap needs xobjmgr
 w_hapmap needs xobjread
 w_hapmap needs xobjutil
@@ -8683,6 +8700,7 @@ w_hit_matrix needs xmlwrapp
 w_hit_matrix needs xncbi
 w_hit_matrix needs xnetblast
 w_hit_matrix needs xnetblastcli
+w_hit_matrix needs xobjedit
 w_hit_matrix needs xobjmgr
 w_hit_matrix needs xobjread
 w_hit_matrix needs xobjutil
@@ -8806,6 +8824,7 @@ w_loaders needs xmlwrapp
 w_loaders needs xncbi
 w_loaders needs xnetblast
 w_loaders needs xnetblastcli
+w_loaders needs xobjedit
 w_loaders needs xobjmgr
 w_loaders needs xobjread
 w_loaders needs xobjreadex
@@ -8914,6 +8933,7 @@ w_macro_edit needs xmlwrapp
 w_macro_edit needs xncbi
 w_macro_edit needs xnetblast
 w_macro_edit needs xnetblastcli
+w_macro_edit needs xobjedit
 w_macro_edit needs xobjmgr
 w_macro_edit needs xobjread
 w_macro_edit needs xobjutil
@@ -9023,6 +9043,7 @@ w_object_list needs xmlwrapp
 w_object_list needs xncbi
 w_object_list needs xnetblast
 w_object_list needs xnetblastcli
+w_object_list needs xobjedit
 w_object_list needs xobjmgr
 w_object_list needs xobjread
 w_object_list needs xobjutil
@@ -9136,6 +9157,7 @@ w_phylo_tree needs xmlwrapp
 w_phylo_tree needs xncbi
 w_phylo_tree needs xnetblast
 w_phylo_tree needs xnetblastcli
+w_phylo_tree needs xobjedit
 w_phylo_tree needs xobjmgr
 w_phylo_tree needs xobjread
 w_phylo_tree needs xobjutil
@@ -9245,6 +9267,7 @@ w_seq needs xmlwrapp
 w_seq needs xncbi
 w_seq needs xnetblast
 w_seq needs xnetblastcli
+w_seq needs xobjedit
 w_seq needs xobjmgr
 w_seq needs xobjread
 w_seq needs xobjutil
@@ -9376,6 +9399,7 @@ w_seq_graphic needs xmlwrapp
 w_seq_graphic needs xncbi
 w_seq_graphic needs xnetblast
 w_seq_graphic needs xnetblastcli
+w_seq_graphic needs xobjedit
 w_seq_graphic needs xobjmgr
 w_seq_graphic needs xobjread
 w_seq_graphic needs xobjutil
@@ -9485,6 +9509,7 @@ w_seq_text needs xmlwrapp
 w_seq_text needs xncbi
 w_seq_text needs xnetblast
 w_seq_text needs xnetblastcli
+w_seq_text needs xobjedit
 w_seq_text needs xobjmgr
 w_seq_text needs xobjread
 w_seq_text needs xobjutil
@@ -9593,6 +9618,7 @@ w_seq_tree needs xmlwrapp
 w_seq_tree needs xncbi
 w_seq_tree needs xnetblast
 w_seq_tree needs xnetblastcli
+w_seq_tree needs xobjedit
 w_seq_tree needs xobjmgr
 w_seq_tree needs xobjread
 w_seq_tree needs xobjutil
@@ -9725,6 +9751,7 @@ w_snp_bins needs xmlwrapp
 w_snp_bins needs xncbi
 w_snp_bins needs xnetblast
 w_snp_bins needs xnetblastcli
+w_snp_bins needs xobjedit
 w_snp_bins needs xobjmgr
 w_snp_bins needs xobjread
 w_snp_bins needs xobjutil
@@ -9832,6 +9859,7 @@ w_snp_filter needs xmlwrapp
 w_snp_filter needs xncbi
 w_snp_filter needs xnetblast
 w_snp_filter needs xnetblastcli
+w_snp_filter needs xobjedit
 w_snp_filter needs xobjmgr
 w_snp_filter needs xobjread
 w_snp_filter needs xobjutil
@@ -9964,6 +9992,7 @@ w_snp_ld needs xmlwrapp
 w_snp_ld needs xncbi
 w_snp_ld needs xnetblast
 w_snp_ld needs xnetblastcli
+w_snp_ld needs xobjedit
 w_snp_ld needs xobjmgr
 w_snp_ld needs xobjread
 w_snp_ld needs xobjutil
@@ -10097,6 +10126,7 @@ w_snp_track needs xmlwrapp
 w_snp_track needs xncbi
 w_snp_track needs xnetblast
 w_snp_track needs xnetblastcli
+w_snp_track needs xobjedit
 w_snp_track needs xobjmgr
 w_snp_track needs xobjread
 w_snp_track needs xobjutil
@@ -10189,6 +10219,7 @@ w_taxtree needs xmlwrapp
 w_taxtree needs xncbi
 w_taxtree needs xnetblast
 w_taxtree needs xnetblastcli
+w_taxtree needs xobjedit
 w_taxtree needs xobjmgr
 w_taxtree needs xobjread
 w_taxtree needs xobjutil
@@ -10297,6 +10328,7 @@ w_text_widget needs xmlwrapp
 w_text_widget needs xncbi
 w_text_widget needs xnetblast
 w_text_widget needs xnetblastcli
+w_text_widget needs xobjedit
 w_text_widget needs xobjmgr
 w_text_widget needs xobjread
 w_text_widget needs xobjutil
@@ -10403,6 +10435,7 @@ w_wx needs xmlwrapp
 w_wx needs xncbi
 w_wx needs xnetblast
 w_wx needs xnetblastcli
+w_wx needs xobjedit
 w_wx needs xobjmgr
 w_wx needs xobjread
 w_wx needs xobjutil
@@ -11377,6 +11410,7 @@ xdiscrepancy_report needs xcompress
 xdiscrepancy_report needs xconnect
 xdiscrepancy_report needs xformat
 xdiscrepancy_report needs xncbi
+xdiscrepancy_report needs xobjedit
 xdiscrepancy_report needs xobjmgr
 xdiscrepancy_report needs xobjread
 xdiscrepancy_report needs xobjutil
@@ -11832,6 +11866,7 @@ xgraphiccgi needs xmlwrapp
 xgraphiccgi needs xncbi
 xgraphiccgi needs xnetblast
 xgraphiccgi needs xnetblastcli
+xgraphiccgi needs xobjedit
 xgraphiccgi needs xobjmgr
 xgraphiccgi needs xobjread
 xgraphiccgi needs xobjutil
@@ -12752,6 +12787,7 @@ xsvcgi needs xmlwrapp
 xsvcgi needs xncbi
 xsvcgi needs xnetblast
 xsvcgi needs xnetblastcli
+xsvcgi needs xobjedit
 xsvcgi needs xobjmgr
 xsvcgi needs xobjread
 xsvcgi needs xobjutil
@@ -12880,6 +12916,7 @@ xsvdata needs xmlwrapp
 xsvdata needs xncbi
 xsvdata needs xnetblast
 xsvdata needs xnetblastcli
+xsvdata needs xobjedit
 xsvdata needs xobjmgr
 xsvdata needs xobjread
 xsvdata needs xobjreadex
@@ -12967,6 +13004,7 @@ xsvlink needs xmlwrapp
 xsvlink needs xncbi
 xsvlink needs xnetblast
 xsvlink needs xnetblastcli
+xsvlink needs xobjedit
 xsvlink needs xobjmgr
 xsvlink needs xobjread
 xsvlink needs xobjutil
@@ -13051,6 +13089,7 @@ xsvnaa needs xmlwrapp
 xsvnaa needs xncbi
 xsvnaa needs xnetblast
 xsvnaa needs xnetblastcli
+xsvnaa needs xobjedit
 xsvnaa needs xobjmgr
 xsvnaa needs xobjread
 xsvnaa needs xobjutil
@@ -13171,6 +13210,7 @@ xsvsearchcgi needs xmlwrapp
 xsvsearchcgi needs xncbi
 xsvsearchcgi needs xnetblast
 xsvsearchcgi needs xnetblastcli
+xsvsearchcgi needs xobjedit
 xsvsearchcgi needs xobjmgr
 xsvsearchcgi needs xobjread
 xsvsearchcgi needs xobjutil
@@ -13237,6 +13277,7 @@ xvalidate needs xalnmgr
 xvalidate needs xconnect
 xvalidate needs xformat
 xvalidate needs xncbi
+xvalidate needs xobjedit
 xvalidate needs xobjmgr
 xvalidate needs xobjutil
 xvalidate needs xregexp
