@@ -435,17 +435,17 @@ namespace {
             }
             if ( !Found() ) {
                 str << " not found";
+                if ( get_current_version && GotCurrentVersion() ) {
+                    str << ", ver="<<m_Descr.current_version;
+                }
             }
             else {
                 str << " found";
                 if ( get_current_version && GotCurrentVersion() ) {
-                    str << ", version="<<m_Descr.current_version;
+                    str << ", ver="<<m_Descr.current_version;
                 }
             }
             str << ", age="<<int(m_Descr.actual_age);
-            if ( m_Descr.current_version ) {
-                str << ", ver="<<m_Descr.current_version;
-            }
             LOG_POST(Info<<str.rdbuf());
         }
         m_ExpirationTime = result.GetNewIdExpirationTime();
