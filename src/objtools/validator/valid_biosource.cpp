@@ -2881,7 +2881,7 @@ static const string sIgnoreHostWordList[] = {
 
 static const int kNumIgnoreHostWordList = sizeof (sIgnoreHostWordList) / sizeof (string);
 
-void s_AdjustSpecificHostForTaxServer (string& spec_host)
+void AdjustSpecificHostForTaxServer (string& spec_host)
 {
     for (int i = 0; i < kNumIgnoreHostWordList; i++) {
         NStr::ReplaceInPlace(spec_host, sIgnoreHostWordList[i], "");
@@ -2909,7 +2909,7 @@ CRef<CTaxon3_reply> CValidError_imp::RequestSpecificHost
                 && (*mod_it)->IsSetSubname()
                 && isupper ((*mod_it)->GetSubname().c_str()[0])) {
                    string host = (*mod_it)->GetSubname();
-                s_AdjustSpecificHostForTaxServer(host);
+                AdjustSpecificHostForTaxServer(host);
                 size_t pos = NStr::Find(host, " ");
                 if (pos != string::npos) {
                     if (NStr::StartsWith(host.substr(pos + 1), "hybrid ")) {

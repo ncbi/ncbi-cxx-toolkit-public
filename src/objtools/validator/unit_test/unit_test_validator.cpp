@@ -110,6 +110,9 @@
 #include <common/ncbi_export.h>
 #include <objtools/unit_test_util/unit_test_util.hpp>
 #include <objtools/edit/struc_comm_field.hpp>
+#include <objects/taxon3/taxon3.hpp>
+#include <objects/taxon3/Taxon3_reply.hpp>
+#include <objtools/validator/validatorp.hpp>
 
 
 // for writing out tmp files
@@ -211,6 +214,53 @@ void CheckErrors(const CValidError& eval,
     if (problem_found) {
         WriteErrors (eval, false);
     }
+}
+
+string FixSpecificHost( string& host, string& error_msg)
+{
+	/* returns a suggested fix for the specific host, if there is one, or an empty string otherwise */
+	string fixhost = kEmptyStr;
+	if (NStr::IsBlank(host)) {
+		error_msg = "Host is empty";
+		return fixhost;
+	}
+	
+	AdjustSpecificHostForTaxServer(host);
+	vector<CRef<COrg_ref> > org_req_list;
+	CRef<COrg_ref> req(new COrg_ref());
+	req->SetTaxname(host);
+	org_req_list.push_back(req);
+	
+	CTaxon3 taxon3;
+	taxon3.Init();
+	CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_req_list);
+	if (reply && reply->GetReply().size() == 1) {
+		CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+		if ((*reply_it)->IsError()) {
+			string err_str = "?";
+			if ((*reply_it)->GetError().IsSetMessage()) {
+				err_str = (*reply_it)->GetError().GetMessage();
+			}	
+			if (NStr::Find(err_str, "ambiguous") != NPOS) {
+				error_msg = "Specific host value is ambiguous: " + host;
+				} else {
+				error_msg = "Invalid value for specific host: " + host;
+			}
+		} else if ((*reply_it)->IsData()) {
+			if (HasMisSpellFlag((*reply_it)->GetData())) {
+				error_msg = "Specific host value is misspelled: " + host;
+				fixhost = (*reply_it)->GetData().GetOrg().GetTaxname();
+			} else if ( ! FindMatchInOrgRef(host, (*reply_it)->GetData().GetOrg())) {
+				error_msg = "Specific host value is incorrectly capitalized: " + host;
+				fixhost = (*reply_it)->GetData().GetOrg().GetTaxname();
+			} else {
+				error_msg = "Invalid value for specific host: " + host;
+			}
+		}
+	} else  {
+		error_msg = "Unknown error when requesting fix for specific host: " + host;
+	}
+	return fixhost;	
 }
 
 
@@ -6369,6 +6419,30 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadSpecificHost)
     CLEAR_ERRORS
 }
 
+BOOST_AUTO_TEST_CASE(Fix_SpecificHost)
+{
+	string hostfix, error_msg;
+	string host = "Pinus";
+	hostfix = FixSpecificHost(host, error_msg);
+	BOOST_CHECK_EQUAL(error_msg, string("Specific host value is ambiguous: Pinus"));
+	BOOST_CHECK_EQUAL(hostfix, kEmptyStr);
+
+	host = "Homo supiens";
+	hostfix = FixSpecificHost(host, error_msg);	
+	BOOST_CHECK_EQUAL(error_msg, string("Invalid value for specific host: Homo supiens"));
+	BOOST_CHECK_EQUAL(hostfix, kEmptyStr);
+			
+	host = "Gallus Gallus";
+	hostfix = FixSpecificHost(host, error_msg);
+	BOOST_CHECK_EQUAL(error_msg, string("Specific host value is incorrectly capitalized: Gallus Gallus"));
+	BOOST_CHECK_EQUAL(hostfix, string("Gallus gallus"));
+	
+	host = "Eschericia coli";
+	hostfix = FixSpecificHost(host, error_msg);
+	BOOST_CHECK_EQUAL(error_msg, string("Specific host value is misspelled: Eschericia coli"));
+	BOOST_CHECK_EQUAL(hostfix, string("Escherichia coli"));
+
+}
 
 BOOST_AUTO_TEST_CASE(Test_Descr_RefGeneTrackingIllegalStatus)
 {
