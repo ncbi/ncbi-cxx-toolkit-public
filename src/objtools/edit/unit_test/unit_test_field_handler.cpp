@@ -370,3 +370,4 @@ BOOST_AUTO_TEST_CASE(Test_DefinitionLine)
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
