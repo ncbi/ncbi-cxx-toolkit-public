@@ -555,7 +555,7 @@ BOOST_AUTO_TEST_CASE(TPGTest)
     CRef<CObjectManager> om(CObjectManager::GetInstance());
     CScope scope(*CObjectManager::GetInstance());
 
-    string wgs_root = "/panfs/pan1/id_dumps/WGS/tmp";
+    string wgs_root = "//panfs/pan1/id_dumps/WGS/tmp";
     string wgs_prefix = "DAAH01";
     string wgs_dbpath = wgs_root+"/"+wgs_prefix;
     CWGSDataLoader::SLoaderParams wgs_loader_params;
