@@ -1165,6 +1165,28 @@ void CCgiRequest::x_Init
 }
 
 
+static CTempStringEx x_LastWord(const CTempStringEx& forward)
+{
+    if ( forward.empty() ) {
+        return kEmptyStr;
+    }
+
+    vector<CTempStringEx> words;
+    NStr::Tokenize(forward, ", \t", words, NStr::eMergeDelims);
+    if ( !words.size() ) {
+        return kEmptyStr;
+    }
+
+    size_t i;
+    for (i = 0;  i < words.size();  ++i) {
+        if (words[i].find(':') == NPOS  ||  !NStr::IsIPAddress(words[i])) {
+            break;
+        }
+    }
+    return i ? words[i - 1] : CTempStringEx();
+}
+
+
 void CCgiRequest::x_SetClientIpProperty(TFlags flags) const
 {
     if ((flags & fSkipDiagProperties) != 0) {
@@ -1175,9 +1197,14 @@ void CCgiRequest::x_SetClientIpProperty(TFlags flags) const
         return;
     }
     // Set client IP for diagnostics
+    bool internal = !x_GetPropertyByName("HTTP_CAF_INTERNAL").empty();
+    bool external = !x_GetPropertyByName("HTTP_CAF_EXTERNAL").empty();
     string client;
-    if ( x_GetPropertyByName("HTTP_CAF_EXTERNAL").empty() ) {
+    if ( internal  ||  !external ) {
         client = x_GetPropertyByName("HTTP_CLIENT_HOST");
+    } else if ( !internal ) {
+        // FIXME:  This is a special crutch, and must eventually be gone!
+        client = x_LastWord(x_GetPropertyByName("HTTP_X_FORWARDED_FOR_IPV6"));
     }
     if ( client.empty() ) {
         client = x_GetPropertyByName("HTTP_CAF_PROXIED_HOST");
@@ -1190,9 +1217,6 @@ void CCgiRequest::x_SetClientIpProperty(TFlags flags) const
     }
     if ( !client.empty() ) {
         CDiagContext::GetRequestContext().SetClientIP(client);
-    }
-    else {
-        CDiagContext::GetRequestContext().UnsetClientIP();
     }
 }
 
