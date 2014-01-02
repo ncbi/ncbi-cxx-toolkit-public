@@ -40,8 +40,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 3 indels compared to this genomic
- sequence",
+      comment "The RefSeq transcript has 1 frameshift, 2 non-frameshifting
+ indels compared to this genomic sequence",
       product whole other {
         accession "NM_012133",
         version 4
@@ -184,8 +184,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 17 substitutions and 11 indels
- compared to this genomic sequence",
+      comment "The RefSeq transcript has 17 substitutions, 4 frameshifts, 7
+ non-frameshifting indels compared to this genomic sequence",
       product whole other {
         accession "NM_012133",
         version 4
@@ -398,8 +398,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 17 substitutions and 11 indels
- compared to this genomic sequence",
+      comment "The RefSeq transcript has 17 substitutions, 4 frameshifts, 7
+ non-frameshifting indels compared to this genomic sequence",
       product whole other {
         accession "NM_012133",
         version 4
@@ -762,8 +762,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq protein has 4 indels compared to this genomic
- sequence",
+      comment "The RefSeq protein has 3 frameshifts, 1 non-frameshifting indel
+ compared to this genomic sequence",
       product whole gi 109134349,
       location packed-int {
         {
@@ -983,8 +983,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq protein has 4 indels compared to this genomic
- sequence",
+      comment "The RefSeq protein has 3 frameshifts, 1 non-frameshifting indel
+ compared to this genomic sequence",
       product whole gi 109134349,
       location packed-int {
         {

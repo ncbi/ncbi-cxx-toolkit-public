@@ -272,8 +272,8 @@ Seq-annot ::= {
         ext name "collagen, type XVIII, alpha 1, transcript variant 2"
       },
       except TRUE,
-      comment "The RefSeq transcript has 1 indel compared to this genomic
- sequence",
+      comment "The RefSeq transcript has 1 non-frameshifting indel compared to
+ this genomic sequence",
       product whole gi 110611232,
       location packed-int {
         {
@@ -545,7 +545,7 @@ Seq-annot ::= {
       },
       except TRUE,
       comment "isoform 2 precursor is encoded by transcript variant 2; The
- RefSeq protein has 1 indel compared to this genomic sequence",
+ RefSeq protein has 1 non-frameshifting indel compared to this genomic sequence",
       product whole gi 110611233,
       location packed-int {
         {
@@ -901,8 +901,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 2 indels and aligns at 99% coverage
- compared to this genomic sequence",
+      comment "The RefSeq transcript has 2 non-frameshifting indels and aligns
+ at 99% coverage compared to this genomic sequence",
       product whole gi 110611232,
       location packed-int {
         {
@@ -1186,8 +1186,8 @@ Seq-annot ::= {
       },
       except TRUE,
       comment "isoform 2 precursor is encoded by transcript variant 2; The
- RefSeq protein has 2 substitutions and 2 indels compared to this genomic
- sequence",
+ RefSeq protein has 2 substitutions, 2 non-frameshifting indels compared to
+ this genomic sequence",
       product whole gi 110611233,
       location packed-int {
         {
@@ -1506,8 +1506,9 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 17 substitutions and 5 indels and
- aligns at 59% coverage compared to this genomic sequence",
+      comment "The RefSeq transcript has 17 substitutions, 4 frameshifts, 1
+ non-frameshifting indel and aligns at 59% coverage compared to this genomic
+ sequence",
       product whole other {
         accession "NM_012133",
         version 4
@@ -1721,8 +1722,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq protein has 4 indels and aligns at 50% coverage
- compared to this genomic sequence",
+      comment "The RefSeq protein has 3 frameshifts, 1 non-frameshifting indel
+ and aligns at 50% coverage compared to this genomic sequence",
       product whole gi 109134349,
       location packed-int {
         {
@@ -1941,8 +1942,9 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 17 substitutions and 5 indels and
- aligns at 59% coverage compared to this genomic sequence",
+      comment "The RefSeq transcript has 17 substitutions, 4 frameshifts, 1
+ non-frameshifting indel and aligns at 59% coverage compared to this genomic
+ sequence",
       product whole other {
         accession "NM_012133",
         version 4
@@ -2156,8 +2158,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq protein has 4 indels and aligns at 50% coverage
- compared to this genomic sequence",
+      comment "The RefSeq protein has 3 frameshifts, 1 non-frameshifting indel
+ and aligns at 50% coverage compared to this genomic sequence",
       product whole gi 109134349,
       location packed-int {
         {
@@ -2376,8 +2378,8 @@ Seq-annot ::= {
       },
       partial TRUE,
       except TRUE,
-      comment "The RefSeq transcript has 1 indel and aligns at 59% coverage
- compared to this genomic sequence",
+      comment "The RefSeq transcript has 1 frameshift and aligns at 59%
+ coverage compared to this genomic sequence",
       product whole other {
         accession "NM_012133",
         version 4
