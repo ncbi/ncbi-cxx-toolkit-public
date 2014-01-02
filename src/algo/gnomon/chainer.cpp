@@ -430,7 +430,12 @@ bool CGene::IsAllowedAlternative(const CGeneModel& a, int maxcomposite) const
     if(front()->PStop() || !front()->FrameShifts().empty())
         return false;
 
-    for(int i = 1; i < (int)a.Exons().size(); ++i) {   // check for gapfillers
+    // check for gapfillers  
+    for(int i = 1; i < (int)front()->Exons().size(); ++i) {
+        if(front()->Exons()[i-1].m_ssplice_sig == "XX" || front()->Exons()[i].m_fsplice_sig == "XX")
+            return false;
+    }
+    for(int i = 1; i < (int)a.Exons().size(); ++i) {
         if(a.Exons()[i-1].m_ssplice_sig == "XX" || a.Exons()[i].m_fsplice_sig == "XX")
             return false;
     }
