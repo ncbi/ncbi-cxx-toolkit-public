@@ -49,8 +49,6 @@
 
 BEGIN_NCBI_SCOPE
 
-class objects::CUser_object;
-
 BEGIN_objects_SCOPE // namespace ncbi::objects::
 
 /////////////////////////////////////////////////////////////////////////////
