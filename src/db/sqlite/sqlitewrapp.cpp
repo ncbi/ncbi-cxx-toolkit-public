@@ -483,6 +483,12 @@ void
 CSQLITE_Connection::SetupNewConnection(sqlite3* handle)
 {
     sqlite3_extended_result_codes(handle, 1);
+
+    if (m_Flags & fReadOnly) {
+        // The database is read-only, do not execute any PRAGMA commands.
+        return;
+    }
+
     x_ExecuteSql(handle, "PRAGMA read_uncommitted = 1");
     x_ExecuteSql(handle, "PRAGMA count_changes = 0");
     x_ExecuteSql(handle, "PRAGMA legacy_file_format = OFF");

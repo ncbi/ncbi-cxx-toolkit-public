@@ -229,6 +229,9 @@ public:
 #endif
                          ,
 
+        fReadOnly      = 0x8000, ///< The DB is read-only, ignore all flags
+                                 ///< and do not execute any PRAGMA commands.
+
         /// Default value of all flags
         eDefaultFlags = fDefaultMT + fDefaultVacuum + fDefaultJournal
                         + fDefaultSync + fDefaultTemp + fDefaultWrites

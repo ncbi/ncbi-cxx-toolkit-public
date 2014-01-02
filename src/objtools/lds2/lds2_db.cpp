@@ -45,9 +45,18 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 
 
-CLDS2_Database::CLDS2_Database(const string& db_file)
+// Default flags - minimize the overhead.
+const CSQLITE_Connection::TOperationFlags kDefaultLDS2DBFlags =
+    CSQLITE_Connection::eDefaultFlags |
+    CSQLITE_Connection::fExternalMT |
+    CSQLITE_Connection::fVacuumManual |
+    CSQLITE_Connection::fJournalOff |
+    CSQLITE_Connection::fSyncOff;
+
+CLDS2_Database::CLDS2_Database(const string& db_file, EAccessMode mode)
     : m_DbFile(db_file),
-      m_DbFlags(CSQLITE_Connection::eDefaultFlags)
+      m_DbFlags(kDefaultLDS2DBFlags),
+      m_Mode(mode)
 {
 }
 
@@ -365,12 +374,7 @@ CSQLITE_Connection& CLDS2_Database::x_GetConn(void) const
             LDS2_THROW(eInvalidDbFile, "Empty database file name.");
         }
         db_conn.Connection.reset(new CSQLITE_Connection(m_DbFile,
-            CSQLITE_Connection::fExternalMT |
-            CSQLITE_Connection::eDefaultFlags |
-            CSQLITE_Connection::fVacuumManual |
-            CSQLITE_Connection::fJournalOff |
-            CSQLITE_Connection::fSyncOff
-            ));
+            m_Mode == eRead ? CSQLITE_Connection::fReadOnly : m_DbFlags));
         db_conn.Connection->SetCacheSize(
             (unsigned int)TSQLiteCacheSize::GetDefault());
     }
@@ -404,6 +408,8 @@ void CLDS2_Database::x_ExecuteSqls(const char* sqls[], size_t len)
 
 void CLDS2_Database::Create(void)
 {
+    SetAccessMode(eWrite);
+
     LOG_POST_X(1, Info << "LDS2: Creating database " <<  m_DbFile);
 
     // Close the connection if any
@@ -428,8 +434,18 @@ void CLDS2_Database::SetSQLiteFlags(int flags)
 }
 
 
-void CLDS2_Database::Open(void)
+void CLDS2_Database::SetAccessMode(EAccessMode mode)
 {
+    if (mode != m_Mode) {
+        m_Mode = mode;
+        x_ResetDbConnection();
+    }
+}
+
+
+void CLDS2_Database::Open(EAccessMode mode)
+{
+    SetAccessMode(mode);
     x_GetConn();
 }
 
@@ -999,13 +1015,17 @@ void CLDS2_Database::Analyze(void)
 
 void CLDS2_Database::BeginRead(void)
 {
-    x_GetConn().ExecuteSql("begin transaction;");
+    if (m_Mode != eRead) {
+        x_GetConn().ExecuteSql("begin transaction;");
+    }
 }
 
 
 void CLDS2_Database::EndRead(void)
 {
-    x_GetConn().ExecuteSql("end transaction;");
+    if (m_Mode != eRead) {
+        x_GetConn().ExecuteSql("end transaction;");
+    }
 }
 
 

@@ -239,18 +239,24 @@ struct SLDS2_Annot
 class NCBI_LDS2_EXPORT CLDS2_Database : public CObject
 {
 public:
-    CLDS2_Database(const string& db_file);
+    /// Database access mode flags.
+    enum EAccessMode {
+        eRead,  ///< Read-only access.
+        eWrite  ///< Read/write access.
+    };
+
+    CLDS2_Database(const string& db_file, EAccessMode mode = eWrite);
 
     ~CLDS2_Database(void);
 
     /// Create the database. If the LDS2 database already exists all data will
-    /// be cleaned up.
+    /// be cleaned up. Access mode is automatically set to read/write.
     /// NOTE: The function may fail if the db has been accessed from other
     /// threads and some of the threads are still alive.
     void Create(void);
 
     /// Open LDS2 database. If the database does not exist, throws exception.
-    void Open(void);
+    void Open(EAccessMode mode = eWrite);
 
     /// Get database file name.
     const string& GetDbFile(void) const { return m_DbFile; }
@@ -259,6 +265,11 @@ public:
     int GetSQLiteFlags(void) const { return m_DbFlags; }
     /// Set SQLite flags. This funtion resets the db connection.
     void SetSQLiteFlags(int flags);
+
+    /// Get current access mode.
+    EAccessMode GetAccessMode(void) const { return m_Mode; }
+    /// Set new access mode, re-open the database.
+    void SetAccessMode(EAccessMode mode);
 
     typedef set<string> TStringSet;
 
@@ -461,6 +472,7 @@ private:
     int                             m_DbFlags;
     // Connections and prepared statements are per-thread.
     mutable CRef<TDbConnectionsTls> m_DbConn;
+    EAccessMode                     m_Mode;
 };
 
 

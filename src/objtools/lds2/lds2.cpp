@@ -971,12 +971,6 @@ void CLDS2_Manager::SetDbFile(const string& db_file)
 {
     m_Files.clear();
     m_Db.Reset(new CLDS2_Database(db_file));
-    m_Db->SetSQLiteFlags(
-        CSQLITE_Connection::eDefaultFlags |
-        CSQLITE_Connection::fVacuumManual |
-        CSQLITE_Connection::fJournalMemory |
-        // SyncOn slows down the database write access. Turn it off.
-        CSQLITE_Connection::fSyncOff);
 }
 
 

@@ -35,6 +35,7 @@
 #include <corelib/plugin_manager.hpp>
 #include <corelib/plugin_manager_impl.hpp>
 #include <corelib/plugin_manager_store.hpp>
+#include <corelib/ncbi_param.hpp>
 #include <serial/objistr.hpp>
 #include <serial/serial.hpp>
 #include <objects/general/Object_id.hpp>
@@ -54,6 +55,24 @@
 #define NCBI_USE_ERRCODE_X   Objtools_LDS2_Loader
 
 BEGIN_NCBI_SCOPE
+
+const char* kLDS2_Lock = "lock";
+const char* kLDS2_NoLock = "nolock";
+
+// Default lock mode for LDS2 database - must be defined outside of the
+// objects namespace.
+NCBI_PARAM_ENUM_DECL(objects::CLDS2_DataLoader::ELockMode, LDS2, DataLoader_Lock);
+NCBI_PARAM_ENUM_ARRAY(objects::CLDS2_DataLoader::ELockMode, LDS2, DataLoader_Lock)
+{
+    {kLDS2_Lock, objects::CLDS2_DataLoader::eLockDatabase},
+    {kLDS2_NoLock, objects::CLDS2_DataLoader::eDoNotLockDatabase}
+};
+
+NCBI_PARAM_ENUM_DEF_EX(objects::CLDS2_DataLoader::ELockMode, LDS2, DataLoader_Lock,
+                       objects::CLDS2_DataLoader::eLockDatabase,
+                       eParam_NoThread, LDS2_DATALOADER_LOCK);
+typedef NCBI_PARAM_TYPE(LDS2, DataLoader_Lock) TLDS2_LockMode;
+
 
 BEGIN_SCOPE(objects)
 
@@ -93,8 +112,7 @@ CLDS2_DataLoader::TRegisterLoaderInfo
 CLDS2_DataLoader::RegisterInObjectManager(
     CObjectManager&            om,
     CObjectManager::EIsDefault is_default,
-    CObjectManager::TPriority  priority
-    )
+    CObjectManager::TPriority  priority)
 {
     TSimpleMaker maker;
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
@@ -108,10 +126,10 @@ CLDS2_DataLoader::RegisterInObjectManager(
     const string&              db_path,
     CFastaReader::TFlags       fasta_flags,
     CObjectManager::EIsDefault is_default,
-    CObjectManager::TPriority  priority
-    )
+    CObjectManager::TPriority  priority,
+    ELockMode lock_mode)
 {
-    CLDS2_LoaderMaker maker(db_path, fasta_flags);
+    CLDS2_LoaderMaker maker(db_path, fasta_flags, lock_mode);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
 }
@@ -123,30 +141,35 @@ CLDS2_DataLoader::RegisterInObjectManager(
     CLDS2_Database&            lds_db,
     CFastaReader::TFlags       fasta_flags,
     CObjectManager::EIsDefault is_default,
-    CObjectManager::TPriority  priority)
+    CObjectManager::TPriority  priority,
+    ELockMode lock_mode)
 {
-    CLDS2_LoaderMaker maker(lds_db, fasta_flags);
+    CLDS2_LoaderMaker maker(lds_db, fasta_flags, lock_mode);
     CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
     return maker.GetRegisterInfo();
 }
 
 
 CLDS2_DataLoader::
-CLDS2_LoaderMaker::CLDS2_LoaderMaker(const string&        db_path,
-                                     CFastaReader::TFlags fasta_flags)
+CLDS2_LoaderMaker::CLDS2_LoaderMaker(const string&               db_path,
+                                     CFastaReader::TFlags        fasta_flags,
+                                     CLDS2_DataLoader::ELockMode lock_mode)
     : m_DbPath(db_path),
-      m_FastaFlags(fasta_flags)
+      m_FastaFlags(fasta_flags),
+      m_LockMode(lock_mode)
 {
     m_Name = CLDS2_DataLoader::GetLoaderNameFromArgs(db_path);
 }
 
 
 CLDS2_DataLoader::
-CLDS2_LoaderMaker::CLDS2_LoaderMaker(CLDS2_Database&      db,
-                                     CFastaReader::TFlags fasta_flags)
+CLDS2_LoaderMaker::CLDS2_LoaderMaker(CLDS2_Database&             db,
+                                     CFastaReader::TFlags        fasta_flags,
+                                     CLDS2_DataLoader::ELockMode lock_mode)
     : m_Db(&db),
       m_DbPath(db.GetDbFile()),
-      m_FastaFlags(fasta_flags)
+      m_FastaFlags(fasta_flags),
+      m_LockMode(lock_mode)
 {
     m_Name = CLDS2_DataLoader::GetLoaderNameFromArgs(m_DbPath);
 }
@@ -157,8 +180,14 @@ CLDS2_DataLoader::CLDS2_LoaderMaker::CreateLoader(void) const
 {
     LDS2_GUARD();
 
+    CLDS2_DataLoader::ELockMode lock_mode = m_LockMode;
+    if (lock_mode == CLDS2_DataLoader::eDefaultLockMode) {
+        lock_mode = TLDS2_LockMode::GetDefault();
+    }
     if ( !m_Db ) {
-        m_Db.Reset(new CLDS2_Database(m_DbPath));
+        m_Db.Reset(new CLDS2_Database(m_DbPath,
+            lock_mode == eLockDatabase ?
+            CLDS2_Database::eWrite : CLDS2_Database::eRead));
     }
     CLDS2_DataLoader* dl = new CLDS2_DataLoader(m_Name, *m_Db, m_FastaFlags);
     return dl;
@@ -679,6 +708,19 @@ CDataLoader* CLDS2_DataLoaderCF::CreateAndRegister(
     CFastaReader::TFlags fasta_flags =
         NStr::StringToInt(fasta_flags_str, 0, 0);
 
+    CLDS2_DataLoader::ELockMode lock_mode = CLDS2_DataLoader::eDefaultLockMode;
+    string lock_mode_str =
+        GetParam(GetDriverName(), params,
+        kCFParam_LDS2_LockMode, false, kEmptyStr);
+    if ( !lock_mode_str.empty() ) {
+        if ( NStr::EqualNocase(kLDS2_Lock, lock_mode_str) ) {
+            lock_mode = CLDS2_DataLoader::eLockDatabase;
+        }
+        else if ( NStr::EqualNocase(kLDS2_NoLock, lock_mode_str) ) {
+            lock_mode = CLDS2_DataLoader::eDoNotLockDatabase;
+        }
+    }
+
     if ( !db_path.empty() ) {
         // Use db path
         return CLDS2_DataLoader::RegisterInObjectManager(
@@ -686,7 +728,8 @@ CDataLoader* CLDS2_DataLoaderCF::CreateAndRegister(
             db_path,
             fasta_flags,
             GetIsDefault(params),
-            GetPriority(params)).GetLoader();
+            GetPriority(params),
+            lock_mode).GetLoader();
     }
     // IsDefault and Priority arguments may be specified
     return CLDS2_DataLoader::RegisterInObjectManager(

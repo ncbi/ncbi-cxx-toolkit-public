@@ -118,7 +118,9 @@ void CLDS2TestApplication::Init(void)
 
     arg_desc->AddFlag("stress", "Run stress test.");
 
-    arg_desc->AddFlag("gzip", "Use gzip compression for data");
+    arg_desc->AddFlag("gzip", "Use gzip compression for data.");
+
+    arg_desc->AddFlag("readonly", "Test an existing database in read-only mode.");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -216,8 +218,9 @@ void CLDS2TestApplication::x_TestDatabase(const string& id)
     string sep = "";
     CLDS2_Database::TBlobSet blobs;
 
+    // If the manager does not exist, run in read-only mode.
     CRef<CLDS2_Database> db(
-        m_Mgr ? m_Mgr->GetDatabase() : new CLDS2_Database(m_DbFile));
+        m_Mgr ? m_Mgr->GetDatabase() : new CLDS2_Database(m_DbFile, CLDS2_Database::eRead));
     SLDS2_Blob blob = db->GetBlobInfo(idh);
     cout << "Main blob id: " << blob.id;
     if (blob.id > 0) {
@@ -488,6 +491,10 @@ int CLDS2TestApplication::Run(void)
     if (m_DbFile != ":memory:") {
         m_Mgr.Reset();
     }
+    else if ( args["readonly"] ) {
+        // Reopen database in read-only mode.
+        m_Mgr->GetDatabase()->Open(CLDS2_Database::eRead);
+    }
 
     if ( args["id"] ) {
         x_TestDatabase(args["id"].AsString());
@@ -561,7 +568,6 @@ int CLDS2TestApplication::Run(void)
 
     return 0;
 }
-
 
 int main(int argc, const char* argv[])
 {

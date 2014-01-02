@@ -50,14 +50,28 @@ BEGIN_SCOPE(objects)
 
 // Parameter names used by loader factory
 
-const string kCFParam_LDS2_DbPath     = "DbPath";   // = string
-const string kCFParam_LDS2_FastaFlags = "FastaFlags"; // = int
+#define kCFParam_LDS2_DbPath     "DbPath"     // = string
+#define kCFParam_LDS2_FastaFlags "FastaFlags" // = int
+#define kCFParam_LDS2_LockMode   "LockMode"   // = lock | nolock
 
 
 class NCBI_XLOADER_LDS2_EXPORT CLDS2_DataLoader : public CDataLoader
 {
 public:
     typedef SRegisterLoaderInfo<CLDS2_DataLoader> TRegisterLoaderInfo;
+
+    /// Database lock control. By default the database is locked so
+    /// that no other process can access it while the data loader
+    /// exists. The default mode can be changed throug env/ini
+    /// value LDS2_DATALOADER_LOCK = {lock | nolock}. If an explicit
+    /// mode is set in the code, the env/ini parameter is ignored.
+    /// NOTE: To set locks the database must be writable.
+    enum ELockMode {
+        eDefaultLockMode,   ///< Use LDS2_DATALOADER_LOCK parameter,
+                            ///< lock by default.
+        eLockDatabase,      ///< Lock the database.
+        eDoNotLockDatabase  ///< Do not lock the database.
+    };
 
     /// Argument-less loader - for compatibility only, unusable.
     static TRegisterLoaderInfo RegisterInObjectManager(
@@ -72,7 +86,8 @@ public:
         const string&              db_path,
         CFastaReader::TFlags       fasta_flags = -1,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
-        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
+        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet,
+        ELockMode lock_mode = eDefaultLockMode);
     static string GetLoaderNameFromArgs(const string& db_path);
 
     /// Use the existing LDS2 database object and optional fasta flags.
@@ -81,7 +96,8 @@ public:
         CLDS2_Database&            lds_db,
         CFastaReader::TFlags       fasta_flags = -1,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
-        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet);
+        CObjectManager::TPriority  priority = CObjectManager::kPriority_NotSet,
+        ELockMode lock_mode = eDefaultLockMode);
     static string GetLoaderNameFromArgs(CLDS2_Database& lds_db);
 
     // Public constructor not to break CSimpleClassFactoryImpl code
@@ -126,14 +142,17 @@ private:
     {
     public:
         CLDS2_LoaderMaker(const string&        db_path,
-                          CFastaReader::TFlags fasta_flags);
+                          CFastaReader::TFlags fasta_flags,
+                          CLDS2_DataLoader::ELockMode lock_mode);
         CLDS2_LoaderMaker(CLDS2_Database&      db,
-                          CFastaReader::TFlags fasta_flags);
+                          CFastaReader::TFlags fasta_flags,
+                          CLDS2_DataLoader::ELockMode lock_mode);
         virtual CDataLoader* CreateLoader(void) const;
     private:
         mutable CRef<CLDS2_Database> m_Db;
         string                       m_DbPath;
         CFastaReader::TFlags         m_FastaFlags;
+        CLDS2_DataLoader::ELockMode  m_LockMode;
     };
     friend class CLDS2_LoaderMaker;
 
