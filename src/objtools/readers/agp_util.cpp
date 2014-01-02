@@ -248,7 +248,7 @@ const CAgpRow::TStr CAgpRow::gap_types[CAgpRow::eGapCount] = {
     "telomere"
 };
 
-CSafeStatic<CAgpRow::TMapStrEGap> CAgpRow::gap_type_codes( 
+CSafeStatic<CAgpRow::TMapStrEGap> CAgpRow::gap_type_codes(
     & CAgpRow::gap_type_codes_creator, NULL );
 
 // static
@@ -1251,8 +1251,8 @@ void CAgpErrEx::PrintMessageXml(CNcbiOstream& ostr, int code, const string& deta
 
 
 //// class CAgpErrEx - constructor
-CAgpErrEx::CAgpErrEx(CNcbiOstream* out, bool use_xml, EOwnership eOwnsOut) : 
-    m_use_xml(use_xml), 
+CAgpErrEx::CAgpErrEx(CNcbiOstream* out, bool use_xml, EOwnership eOwnsOut) :
+    m_use_xml(use_xml),
     m_messages( new CNcbiOstrstream() ),
     m_out(out)
 {
@@ -1494,16 +1494,23 @@ string CAgpErrEx::SkipMsg(const string& str, bool skip_other)
 
 int CAgpErrEx::CountTotals(int from, int to)
 {
+    int count=0;
     if(to==E_First) {
         //// One argument: count errors/warnings/genbank errors/given type
         if     (from==E_Last) { from=E_First; to=E_Last; }
-        else if(from==W_Last) { from=W_First; to=W_Last; }
-        else if(from==G_Last) { from=G_First; to=G_Last; }
+        else if(from==W_Last) { from=W_First; to=W_Last;
+            // out of range warning
+            count = m_MsgCount[G_NsWithinCompSpan];
+        }
+        else if(from==G_Last) {
+            from=G_First; to=G_Last;
+            // out of range warning
+            count -= m_MsgCount[G_NsWithinCompSpan];
+        }
         else if(from<CODE_Last)  return m_MsgCount[from];
         else return -1; // Invalid "from"
     }
 
-    int count=0;
     for(int i=from; i<to; i++) {
         count += m_MsgCount[i];
     }
