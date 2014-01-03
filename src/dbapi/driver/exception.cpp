@@ -441,7 +441,11 @@ public:
 
     CDB_UserHandler* Set(CDB_UserHandler* h);
 
+    virtual bool HandleAll(const TExceptions& exceptions);
     virtual bool HandleIt(CDB_Exception* ex);
+    virtual bool HandleMessage(int severity, int msgnum,
+                               const string& message);
+
     virtual ~CDB_UserHandler_Wrapper();
 
 private:
@@ -478,9 +482,22 @@ CDB_UserHandler_Wrapper::~CDB_UserHandler_Wrapper()
 
 bool CDB_UserHandler_Wrapper::HandleIt(CDB_Exception* ex)
 {
-    return m_Handler ? m_Handler->HandleIt(ex) : true;
+    return m_Handler ? m_Handler->HandleIt(ex) : false;
 }
 
+
+bool CDB_UserHandler_Wrapper::HandleAll(const TExceptions& exceptions)
+{
+    return m_Handler ? m_Handler->HandleAll(exceptions) : false;
+}
+
+
+bool CDB_UserHandler_Wrapper::HandleMessage(int severity, int msgnum,
+                                            const string& message)
+{
+    return m_Handler ? m_Handler->HandleMessage(severity, msgnum, message)
+        : false;
+}
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -532,7 +549,17 @@ CDB_UserHandler* CDB_UserHandler::SetDefault(CDB_UserHandler* h)
 
 bool CDB_UserHandler::HandleAll(const TExceptions& /* exceptions */)
 {
+    // return x_HandleAll(exceptions);
     return false;
+}
+
+bool CDB_UserHandler::x_HandleAll(const TExceptions& exceptions)
+{
+    bool handled_any = false;
+    ITERATE (TExceptions, it, exceptions) {
+        handled_any |= HandleIt(*it);
+    }
+    return handled_any;
 }
 
 bool CDB_UserHandler::HandleMessage(int /* severity */,
@@ -599,6 +626,12 @@ bool CDB_UserHandler_Diag::HandleIt(CDB_Exception* ex)
 }
 
 
+bool CDB_UserHandler_Diag::HandleAll(const TExceptions& exceptions)
+{
+    return x_HandleAll(exceptions);
+}
+
+
 
 /////////////////////////////////////////////////////////////////////////////
 //  CDB_UserHandler_Stream::
@@ -651,6 +684,12 @@ bool CDB_UserHandler_Stream::HandleIt(CDB_Exception* ex)
     *m_Output << endl;
 
     return m_Output->good();
+}
+
+
+bool CDB_UserHandler_Stream::HandleAll(const TExceptions& exceptions)
+{
+    return x_HandleAll(exceptions);
 }
 
 

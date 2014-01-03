@@ -538,6 +538,10 @@ public:
     NCBI_DEPRECATED string GetExtraMsg(void) const;
     /// Method is deprecated. Use CDB_Exception::SetExtraMsg() instead.
     NCBI_DEPRECATED void SetExtraMsg(const string& msg) const;
+
+protected:
+    /// Simply call HandleIt on each exception.
+    bool x_HandleAll(const TExceptions& exceptions);
 };
 
 
@@ -551,6 +555,8 @@ public:
     // Print "*ex" to the standard C++ Toolkit diagnostics, with "prefix".
     // Always return TRUE (i.e. always process the "ex").
     virtual bool HandleIt(CDB_Exception* ex);
+
+    virtual bool HandleAll(const TExceptions& exceptions);
 
 private:
     string m_Prefix;     // string to prefix each message with
@@ -569,6 +575,8 @@ public:
     // Print "*ex" to the output stream "os", with "prefix" (as set by  c-tor).
     // Return TRUE (i.e. process the "ex") unless write to "os" failed.
     virtual bool HandleIt(CDB_Exception* ex);
+
+    virtual bool HandleAll(const TExceptions& exceptions);
 
 private:
     mutable CFastMutex  m_Mtx;
