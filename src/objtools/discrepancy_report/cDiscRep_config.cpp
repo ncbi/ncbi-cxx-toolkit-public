@@ -67,12 +67,12 @@ CRef <CSuspect_rule_set >           CDiscRepInfo::suspect_prod_rules(new CSuspec
 vector < vector <string> >          CDiscRepInfo :: susrule_summ;
 vector <string> 	            CDiscRepInfo :: weasels;
 CRef <CSeq_submit>                  CDiscRepInfo :: seq_submit(new CSeq_submit);
-string                              CDiscRepInfo :: expand_defline_on_set;
+bool                                CDiscRepInfo :: expand_defline_on_set;
+bool                                CDiscRepInfo :: expand_srcqual_report;
 string                              CDiscRepInfo :: report_lineage;
 vector <string>                     CDiscRepInfo :: strandsymbol;
 bool                                CDiscRepInfo :: exclude_dirsub;
-Str2UInt                            CDiscRepInfo :: rRNATerms;
-Str2UInt                            CDiscRepInfo :: rRNATerms_ignore_partial;
+Str2CombDt                          CDiscRepInfo :: rRNATerms;
 vector <string>                     CDiscRepInfo :: bad_gene_names_contained;
 vector <string>                     CDiscRepInfo :: no_multi_qual;
 vector <string>                     CDiscRepInfo :: short_auth_nms;
@@ -82,7 +82,7 @@ vector <string>                     CDiscRepInfo :: trna_list;
 vector <string>                     CDiscRepInfo :: rrna_standard_name;
 Str2UInt                            CDiscRepInfo :: desired_aaList;
 CTaxon1                             CDiscRepInfo :: tax_db_conn;
-list <string>                       CDiscRepInfo :: state_abbrev;
+Str2Str                             CDiscRepInfo :: state_abbrev;
 Str2Str                             CDiscRepInfo :: cds_prod_find;
 vector <string>                     CDiscRepInfo :: s_pseudoweasels;
 vector <string>                     CDiscRepInfo :: suspect_rna_product_names;
@@ -92,8 +92,7 @@ vector <string>                     CDiscRepInfo :: kIntergenicSpacerNames;
 vector <string>                     CDiscRepInfo :: taxnm_env;
 vector <string>                     CDiscRepInfo :: virus_lineage;
 vector <string>                     CDiscRepInfo :: strain_tax;
-Str2UInt                            CDiscRepInfo :: whole_word;
-Str2Str                             CDiscRepInfo :: fix_data;
+Str2CombDt                          CDiscRepInfo :: fix_data;
 CRef <CSuspect_rule_set>            CDiscRepInfo :: orga_prod_rules (new CSuspect_rule_set);
 vector <string>                     CDiscRepInfo :: skip_bracket_paren;
 vector <string>                     CDiscRepInfo :: ok_num_prefix;
@@ -189,40 +188,38 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
 
     // get other parameters from *.ini
     thisInfo.expand_defline_on_set 
-         = reg.Get("OncallerTool", "EXPAND_DEFLINE_ON_SET");
-    if (thisInfo.expand_defline_on_set.empty()) {
-      NCBI_THROW(CException, eUnknown, "Missing config parameters.");
-    }
+         = reg.GetBool("OncallerTool", "EXPAND_DEFLINE_ON_SET", true);
+    thisInfo.expand_srcqual_report
+         = reg.GetBool("OncallerTool", "EXPAND_SRCQUAL_REPORT", true);
 
     // ini. of srcqual_keywords
-    strs.clear();
-    reg.EnumerateEntries("Srcqual-keywords", &strs);
-    ITERATE (list <string>, it, strs) {
-      thisInfo.srcqual_keywords[*it]= reg.Get("Srcqual-keywords", *it);
-    }
-    
+    thisInfo.srcqual_keywords["forma-specialis"] = " f. sp.";
+    thisInfo.srcqual_keywords["forma"] = " f.";
+    thisInfo.srcqual_keywords["sub-species"] = " subsp.";
+    thisInfo.srcqual_keywords["variety"] = " var.";
+    thisInfo.srcqual_keywords["pathovar"] = " pv.";
+
     // ini. of s_pseudoweasels
-    strtmp = reg.Get("StringVecIni", "SPseudoWeasels");
+    strtmp = "pseudouridine,pseudoazurin,pseudouridylate";
     thisInfo.s_pseudoweasels 
         = NStr::Tokenize(strtmp, ",", thisInfo.s_pseudoweasels);
 
     // ini. of suspect_rna_product_names
-    strtmp = reg.Get("StringVecIni", "SuspectRnaProdNms");
-    thisInfo.suspect_rna_product_names 
-        = NStr::Tokenize(strtmp, ",", thisInfo.suspect_rna_product_names);
+    thisInfo.suspect_rna_product_names.push_back("gene");
+    thisInfo.suspect_rna_product_names.push_back("genes");
 
     // ini. of new_exceptions
-    strtmp = reg.Get("StringVecIni", "NewExceptions");
+    strtmp = "annotated by transcript or proteomic data,heterogeneous population sequenced,low-quality sequence region,unextendable partial coding region";
     thisInfo.new_exceptions 
         = NStr::Tokenize(strtmp, ",", thisInfo.new_exceptions);
 
     // ini. of kIntergenicSpacerNames
-    strtmp = reg.Get("StringVecIni", "KIntergenicSpacerNames");
+    strtmp = "trnL-trnF intergenic spacer,trnH-psbA intergenic spacer,trnS-trnG intergenic spacer,trnF-trnL intergenic spacer,psbA-trnH intergenic spacer,trnG-trnS intergenic spacer";
     thisInfo.kIntergenicSpacerNames 
          = NStr::Tokenize(strtmp, ",", thisInfo.kIntergenicSpacerNames);
     
     // ini. of weasels
-    strtmp = reg.Get("StringVecIni", "Weasels");
+    strtmp = "candidate,hypothetical,novel,possible,potential,predicted,probable,putative,candidate,uncharacterized,unique";
     thisInfo.weasels = NStr::Tokenize(strtmp, ",", thisInfo.weasels);
 
     // ini. of strandsymbol
@@ -234,101 +231,287 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
     thisInfo.strandsymbol.push_back("r");
 
     // ini. of rRNATerms
-    strs.clear();
-    reg.EnumerateEntries("RRna-terms", &strs);
-    ITERATE (list <string>, it, strs) {
-       arr.clear();
-       arr = NStr::Tokenize(reg.Get("RRna-terms", *it), ",", arr);
-       strtmp = (*it == "5-8S") ? "5.8S" : *it;
-       thisInfo.rRNATerms[strtmp] = NStr::StringToUInt(arr[0]);
-       thisInfo.rRNATerms_ignore_partial[strtmp] = NStr::StringToUInt(arr[1]);
+    const char* rRnaTerms[] = {
+        "16S,1000,0",
+        "18S,1000,0",
+        "23S,2000,0",
+        "25s,1000,0",
+        "26S,1000,0",
+        "28S,3300,0",
+        "small,1000,0",
+        "large,1000,0",
+        "5.8S,130,1",
+        "5S,90,1"
+    };
+    for (i=0; i< (int)(sizeof(rRnaTerms)/sizeof(char*)); i++) {
+        arr.clear();
+        arr = NStr::Tokenize(rRnaTerms[i], ",", arr);
+        thisInfo.rRNATerms[arr[0]].i_val = NStr::StringToInt(arr[1]);
+        thisInfo.rRNATerms[arr[0]].b_val = (arr[2] == "1");
     }
 
     // ini. of no_multi_qual
-    strtmp = reg.Get("StringVecIni", "NoMultiQual");
-    thisInfo.no_multi_qual 
-        = NStr::Tokenize(strtmp, ",", thisInfo.no_multi_qual);
+    strtmp = "location,taxname,taxid";
+    thisInfo.no_multi_qual =NStr::Tokenize(strtmp, ",", thisInfo.no_multi_qual);
   
     // ini. of bad_gene_names_contained
-    strtmp = reg.Get("StringVecIni", "BadGeneNamesContained");
+    strtmp = "putative,fragment,gene,orf,like";
     thisInfo.bad_gene_names_contained 
         = NStr::Tokenize(strtmp, ",", thisInfo.bad_gene_names_contained);
 
     // ini. of suspicious notes
-    strtmp = reg.Get("StringVecIni", "Suspicious_notes");
+    strtmp = "characterised,recognised,characterisation,localisation,tumour,uncharacterised,oxydase,colour,localise,faecal,orthologue,paralogue,homolog,homologue,intronless gene";
     thisInfo.suspicious_notes 
         = NStr::Tokenize(strtmp, ",", thisInfo.suspicious_notes);
 
     // ini. of spec_words_biosrc;
-    strtmp = reg.Get("StringVecIni", "SpecWordsBiosrc");
+    strtmp = "institute,institution,University,College";
     thisInfo.spec_words_biosrc 
         = NStr::Tokenize(strtmp, ",", thisInfo.spec_words_biosrc);
 
     // ini. of trna_list:
-    strtmp = reg.Get("StringVecIni", "TrnaList");
-    thisInfo.trna_list 
-        = NStr::Tokenize(strtmp, ",", thisInfo.trna_list);
+    strtmp = "tRNA-Gap,tRNA-Ala,tRNA-Asx,tRNA-Cys,tRNA-Asp,tRNA-Glu,tRNA-Phe,tRNA-Gly,tRNA-His,tRNA-Ile,tRNA-Xle,tRNA-Lys,tRNA-Leu,tRNA-Met,tRNA-Asn,tRNA-Pyl,tRNA-Pro,tRNA-Gln,tRNA-Arg,tRNA-Ser,tRNA-Thr,tRNA-Sec,tRNA-Val,tRNA-Trp,tRNA-OTHER,tRNA-Tyr,tRNA-Glx,tRNA-TERM";
+    thisInfo.trna_list = NStr::Tokenize(strtmp, ",", thisInfo.trna_list);
 
     // ini. of rrna_standard_name
-    strtmp = reg.Get("StringVecIni", "RrnaStandardName");
+    strtmp = "5S ribosomal RNA,5.8S ribosomal RNA,12S ribosomal RNA,16S ribosomal RNA,18S ribosomal RNA,23S ribosomal RNA,26S ribosomal RNA,28S ribosomal RNA,large subunit ribosomal RNA,small subunit ribosomal RNA";
     thisInfo.rrna_standard_name 
         = NStr::Tokenize(strtmp,",",thisInfo.rrna_standard_name);
 
     // ini. of short_auth_nms
-    strtmp = reg.Get("StringVecIni", "ShortAuthNms");
+    strtmp = "de la,del,de,da,du,dos,la,le,van,von,der,den,di";
     thisInfo.short_auth_nms 
          = NStr::Tokenize(strtmp, ",", thisInfo.short_auth_nms);
 
     // ini. of desired_aaList
-    reg.EnumerateEntries("Descred_aaList", &strs);
-    ITERATE (list <string>, it, strs) {
-       thisInfo.desired_aaList[*it] 
-           = NStr::StringToUInt(reg.Get("Desired_aaList", *it));
-    }
+    thisInfo.desired_aaList["Ala"] = 1;
+    thisInfo.desired_aaList["Asx"] = 0;
+    thisInfo.desired_aaList["Cys"] = 1;
+    thisInfo.desired_aaList["Asp"] = 1;
+    thisInfo.desired_aaList["Glu"] = 1;
+    thisInfo.desired_aaList["Phe"] = 1;
+    thisInfo.desired_aaList["Gly"] = 1;
+    thisInfo.desired_aaList["His"] = 1;
+    thisInfo.desired_aaList["Ile"] = 1;
+    thisInfo.desired_aaList["Xle"] = 0;
+    thisInfo.desired_aaList["Lys"] = 1;
+    thisInfo.desired_aaList["Leu"] = 2;
+    thisInfo.desired_aaList["Met"] = 1;
+    thisInfo.desired_aaList["Asn"] = 1;
+    thisInfo.desired_aaList["Pro"] = 1;
+    thisInfo.desired_aaList["Gln"] = 1;
+    thisInfo.desired_aaList["Arg"] = 1;
+    thisInfo.desired_aaList["Ser"] = 2;
+    thisInfo.desired_aaList["Thr"] = 1;
+    thisInfo.desired_aaList["Val"] = 1;
+    thisInfo.desired_aaList["Trp"] = 1;
+    thisInfo.desired_aaList["Xxx"] = 0;
+    thisInfo.desired_aaList["Tyr"] = 1;
+    thisInfo.desired_aaList["Glx"] = 0;
+    thisInfo.desired_aaList["Sec"] = 0;
+    thisInfo.desired_aaList["Pyl"] = 0;
+    thisInfo.desired_aaList["Ter"] = 0;
 
     // ini. of tax_db_conn: taxonomy db connection
     thisInfo.tax_db_conn.Init();
 
     // ini. of usa_state_abbv;
-    reg.EnumerateEntries("US-state-abbrev-fixes", &(thisInfo.state_abbrev));
+    thisInfo.state_abbrev["AL"] = "Alabama";
+    thisInfo.state_abbrev["AK"] = "Alaska";
+    thisInfo.state_abbrev["AZ"] = "Arizona";
+    thisInfo.state_abbrev["AR"] = "Arkansas";
+    thisInfo.state_abbrev["CA"] = "California";
+    thisInfo.state_abbrev["CO"] = "Colorado";
+    thisInfo.state_abbrev["CT"] = "Connecticut";
+    thisInfo.state_abbrev["DC"] = "Washington DC";
+    thisInfo.state_abbrev["DE"] = "Delaware";
+    thisInfo.state_abbrev["FL"] = "Florida";
+    thisInfo.state_abbrev["GA"] = "Georgia";
+    thisInfo.state_abbrev["HI"] = "Hawaii";
+    thisInfo.state_abbrev["ID"] = "Idaho";
+    thisInfo.state_abbrev["IL"] = "Illinois";
+    thisInfo.state_abbrev["IN"] = "Indiana";
+    thisInfo.state_abbrev["IA"] = "Iowa";
+    thisInfo.state_abbrev["KS"] = "Kansas";
+    thisInfo.state_abbrev["KY"] = "Kentucky";
+    thisInfo.state_abbrev["LA"] = "Louisiana";
+    thisInfo.state_abbrev["ME"] = "Maine";
+    thisInfo.state_abbrev["MD"] = "Maryland";
+    thisInfo.state_abbrev["MA"] = "Massachusetts";
+    thisInfo.state_abbrev["MI"] = "Michigan";
+    thisInfo.state_abbrev["MN"] = "Minnesota";
+    thisInfo.state_abbrev["MS"] = "Mississippi";
+    thisInfo.state_abbrev["MO"] = "Missouri";
+    thisInfo.state_abbrev["MT"] = "Montana";
+    thisInfo.state_abbrev["NE"] = "Nebraska";
+    thisInfo.state_abbrev["NV"] = "Nevada";
+    thisInfo.state_abbrev["NH"] = "New Hampshire";
+    thisInfo.state_abbrev["NJ"] = "New Jersey";
+    thisInfo.state_abbrev["NM"] = "New Mexico";
+    thisInfo.state_abbrev["NY"] = "New York";
+    thisInfo.state_abbrev["NC"] = "North Carolina";
+    thisInfo.state_abbrev["ND"] = "North Dakota";
+    thisInfo.state_abbrev["OH"] = "Ohio";
+    thisInfo.state_abbrev["OK"] = "Oklahoma";
+    thisInfo.state_abbrev["OR"] = "Oregon";
+    thisInfo.state_abbrev["PA"] = "Pennsylvania";
+    thisInfo.state_abbrev["PR"] = "Puerto Rico";
+    thisInfo.state_abbrev["RI"] = "Rhode Island";
+    thisInfo.state_abbrev["SC"] = "South Carolina";
+    thisInfo.state_abbrev["SD"] = "South Dakota";
+    thisInfo.state_abbrev["TN"] = "Tennessee";
+    thisInfo.state_abbrev["TX"] = "Texas";
+    thisInfo.state_abbrev["UT"] = "Utah";
+    thisInfo.state_abbrev["VT"] = "Vermont";
+    thisInfo.state_abbrev["VA"] = "Virginia";
+    thisInfo.state_abbrev["WA"] = "Washington";
+    thisInfo.state_abbrev["WV"] = "West Virginia";
+    thisInfo.state_abbrev["WI"] = "Wisconsin";
+    thisInfo.state_abbrev["WY"] = "Wyoming";
 
     // ini. of cds_prod_find
-    strs.clear();
-    reg.EnumerateEntries("Cds-product-find", &strs);
-    ITERATE (list <string>, it, strs) {
-      strtmp = ( *it == "related-to") ? "related to" : *it;
-      thisInfo.cds_prod_find[strtmp]= reg.Get("Cds-product-find", *it);
-    }
+    thisInfo.cds_prod_find["-like"] = "EndsWithPattern";
+    thisInfo.cds_prod_find["pseudo"] = "ContainsPseudo";
+    thisInfo.cds_prod_find["fragment"] = "ContainsWholeWord";
+    thisInfo.cds_prod_find["similar"] = "ContainsWholeWord";
+    thisInfo.cds_prod_find["frameshift"] = "ContainsWholeWord";
+    thisInfo.cds_prod_find["partial"]  = "ContainsWholeWord";
+    thisInfo.cds_prod_find["homolog"]  = "ContainsWholeWord";
+    thisInfo.cds_prod_find["homologue"]  = "ContainsWholeWord";
+    thisInfo.cds_prod_find["paralog"]  = "ContainsWholeWord";
+    thisInfo.cds_prod_find["paralogue"]  = "ContainsWholeWord";
+    thisInfo.cds_prod_find["ortholog"]  = "ContainsWholeWord";
+    thisInfo.cds_prod_find["orthologue"]  = "ContainsWholeWord";
+    thisInfo.cds_prod_find["gene"]  = "ContainsWholeWord";
+    thisInfo.cds_prod_find["genes"]  = "ContainsWholeWord";
+    thisInfo.cds_prod_find["related to"]  = "ContainsWholeWord";
+    thisInfo.cds_prod_find["terminus"]  = "ContainsWholeWord";
+    thisInfo.cds_prod_find["N-terminus"] = "ContainsWholeWord";
+    thisInfo.cds_prod_find["C-terminus"] = "ContainsWholeWord";
+    thisInfo.cds_prod_find["characterised"] = "ContainsWholeWord";
+    thisInfo.cds_prod_find["recognised"] = "ContainsWholeWord";
+    thisInfo.cds_prod_find["characterisation"] = "ContainsWholeWord";
+    thisInfo.cds_prod_find["localisation"] = "ContainsWholeWord";
+    thisInfo.cds_prod_find["tumour"] = "ContainsWholeWord";
+    thisInfo.cds_prod_find["uncharacterised"] = "ContainsWholeWord";
+    thisInfo.cds_prod_find["oxydase"] = "ContainsWholeWord";
+    thisInfo.cds_prod_find["colour"] = "ContainsWholeWord";
+    thisInfo.cds_prod_find["localise"] = "ContainsWholeWord";
+    thisInfo.cds_prod_find["faecal"] = "ContainsWholeWord";
+    thisInfo.cds_prod_find["frame"] = "Empty";
+    thisInfo.cds_prod_find["related"] = "EndsWithPattern";
 
     // ini. of taxnm_env
-    strtmp = reg.Get("StringVecIni", "TaxnameEnv");
+    strtmp = "uncultured,enrichment culture,metagenome,environmental,unidentified";
     thisInfo.taxnm_env = NStr::Tokenize(strtmp, ",", thisInfo.taxnm_env);
 
     // ini. of virus_lineage
-    strtmp = reg.Get("StringVecIni", "VirusLineage");
+    strtmp = "Picornaviridae,Potyviridae,Flaviviridae,Togaviridae";
     thisInfo.virus_lineage 
         = NStr::Tokenize(strtmp, ",", thisInfo.virus_lineage); 
 
     // ini. of strain_tax
-    strtmp = reg.Get("StringVecIni", "StrainsConflictTax");
+    strtmp = "type strain of,holotype strain of,paratype strain of,isotype strain of";
     thisInfo.strain_tax = NStr::Tokenize(strtmp, ",", thisInfo.strain_tax);
 
     // ini. of spell_data for flat file text check
-    strs.clear();
-    reg.EnumerateEntries("SpellFixData", &strs);
-    ITERATE (list <string>, it, strs) {
-      arr.clear();
-      arr = NStr::Tokenize(reg.Get("SpellFixData", *it), ",", arr);
-      strtmp = ( *it == "nuclear-shutting") ? "nuclear shutting" : *it;
-      thisInfo.fix_data[strtmp] = arr[0].empty()? "no" : "yes";
-      thisInfo.whole_word[strtmp]= NStr::StringToUInt(arr[1]);
+    const char* fix_data[] = {
+         "Agricultutral,agricultural,0",
+         "Bacilllus,Bacillus,0",
+         "Enviromental,Environmental,0",
+         "Insitiute,institute,0",
+         "Instutite,institute,0",
+         "Instutute,Institute,0",
+         "Instutute,Institute,0",
+         "P.R.Chian,P.R. China,0",
+         "PRChian,PR China,0",
+         "Scieces,Sciences,0",
+         "agricultral,agricultural,0",
+         "agriculturral,agricultural,0",
+         "biotechnlogy,biotechnology,0",
+         "biotechnolgy,biotechnology,0",
+         "biotechology,biotechnology,0",
+         "caputre,capture,1",
+         "casette,cassette,1",
+         "catalize,catalyze,0",
+         "charaterization,characterization,1",
+         "charaterization,characterization,0",
+         "clonging,cloning,0",
+         "consevered,conserved,0",
+         "cotaining,containing,0",
+         "cytochome,cytochrome,1",
+         "diveristy,diversity,1",
+         "enivronment,environment,0",
+         "enviroment,environment,0",
+         "genone,genome,1",
+         "homologue,homolog,1",
+         "hypotethical,hypothetical,0",
+         "hypotetical,hypothetical,0",
+         "hypothetcial,hypothetical,0",
+         "hypothteical,hypothetical,0",
+         "indepedent,independent,0",
+         "insititute,institute,0",
+         "insitute,institute,0",
+         "institue,institute,0",
+         "instute,institute,0",
+         "muesum,museum,1",
+         "musuem,museum,1",
+         "nuclear-shutting,nuclear shuttling,1",
+         "phylogentic,phylogenetic,0",
+         "protien,protein,0",
+         "puatative,putative,0",
+         "putaitve,putative,0",
+         "putaive,putative,0",
+         "putataive,putative,0",
+         "putatitve,putative,0",
+         "putatuve,putative,0",
+         "putatvie,putative,0",
+         "pylogeny,phylogeny,0",
+         "resaerch,research,0",
+         "reseach,research,0",
+         "reserach,research,1",
+         "reserch,research,0",
+         "ribosoml,ribosomal,0",
+         "ribossomal,ribosomal,0",
+         "scencies,sciences,0",
+         "scinece,science,0",
+         "simmilar,similar,0",
+         "structual,structural,0",
+         "subitilus,subtilis,0",
+         "sulfer,sulfur,0",
+         "technlogy,technology,0",
+         "technolgy,technology,0",
+         "transcirbed,transcribed,0",
+         "transcirption,transcription,1",
+         "uiniversity,university,0",
+         "uinversity,university,0",
+         "univercity,university,0",
+         "univerisity,university,0",
+         "univeristy,university,0",
+         "univesity,university,0",
+         "unversity,university,1",
+         "uviversity,university,0",
+         "anaemia,,0",
+         "haem,,0",
+         "haemagglutination,,0",
+         "heam,,0",
+         "mithocon,,0"
+    };
+    for (i=0; i < (int)(sizeof(fix_data)/sizeof(char*)); i++) {
+        arr.clear();
+        arr = NStr::Tokenize(fix_data[i], ",", arr);
+        thisInfo.fix_data[arr[0]].s_val = arr[1].empty()? "no" : "yes";
+        thisInfo.fix_data[arr[0]].b_val = (arr[0] == "1");
     }
     arr.clear();
 
     // ini of orga_prod_rules:
-    strtmp = reg.Get("RuleFiles", "OrganelleProductRuleFile");
+    strtmp = reg.GetString("RuleFiles", "OrganelleProductRuleFile", "/ncbi/data/organelle_products.prt");
     if (CFile(strtmp).Exists()) {
         ReadInBlob(*thisInfo.orga_prod_rules, strtmp);
+    }
+    else {
+      NCBI_THROW(CException, eUnknown, "Organelle products file not found: " + strtmp);
     }
 
     // ini. of matloc_names & matloc_notpresent_names;
@@ -351,12 +534,12 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
     }
 
     // ini. suspect rule file && susrule_fixtp_summ
-    strtmp = reg.Get("RuleFiles", "SuspectRuleFile");
-    if (!CFile(strtmp).Exists()) {
-         strtmp = "/ncbi/data/product_rules.prt";
-    }
+    strtmp = reg.GetString("RuleFiles", "PRODUCT_RULES_LIST", "/ncbi/data/product_rules.prt");
     if (CFile(strtmp).Exists()) {
         ReadInBlob(*thisInfo.suspect_prod_rules, strtmp);
+    }
+    else {
+       NCBI_THROW(CException, eUnknown, "Product rules file not found: " + strtmp);
     }
 
     CSummarizeSusProdRule summ_susrule;
@@ -417,12 +600,12 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
     }
 
     // ini of skip_bracket_paren
-    strtmp = reg.Get("StringVecIni", "SkipBracketOrParen");
+    strtmp = "(NAD(P)H),(NAD(P)),(I),(II),(III),(NADPH),(NAD+),(NAPPH/NADH),(NADP+),[acyl-carrier protein],[acyl-carrier-protein],(acyl carrier protein)";
     thisInfo.skip_bracket_paren 
         = NStr::Tokenize(strtmp, ",", thisInfo.skip_bracket_paren);
 
     // ini of ok_num_prefix
-    strtmp = reg.Get("StringVecIni", "OkNumberPrefix");
+    strtmp = "DUF,UPF,IS,TIGR,UCP,PUF,CHP";
     thisInfo.ok_num_prefix
         = NStr::Tokenize(strtmp, ",", thisInfo.ok_num_prefix);
 
@@ -575,7 +758,7 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
     }
 
     // ini. of rnatype_names
-    strtmp = reg.Get("StringVecIni", "RnaTypeMap");
+    strtmp = "preRNA,mRNA,tRNA,rRNA,ncRNA,tmRNA,misc_RNA";
     thisInfo.rnatype_names 
         = NStr::Tokenize(strtmp, ",", thisInfo.rnatype_names);
     
@@ -596,7 +779,7 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
     thisInfo.strand_strname[CSeq_inst::eStrand_other] = "other";
  
     // ini of dblink_names
-    strtmp = reg.Get("StringVecIni", "DblinkNames");
+    strtmp = "Trace Assembly Archive,BioSample,ProbeDB,Sequence Read Archive,BioProject,Assembly";
     thisInfo.dblink_names = NStr::Tokenize(strtmp, ",", thisInfo.dblink_names);
  
     // ini of srcqual_orgmod, srcqual_subsrc, srcqual_names
@@ -750,7 +933,7 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
    thisInfo.pub_class_quals[output.str()] = "patent";
 
    // ini of months
-   strtmp = reg.Get("StringVecIni", "Months");
+   strtmp = "Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec";
    thisInfo.months = NStr::Tokenize(strtmp, ",", thisInfo.months);
 
    // ini of moltp_biomol: BiomolFromMoleculeType(), and moltp_name
@@ -802,14 +985,9 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
    }
 
    // ini. of s_putative_replacements
-   strtmp = reg.Get("StringVecIni", "SPutativeReplacements");
-   if (!strtmp.empty()) {
-     thisInfo.s_putative_replacements 
+   strtmp = "possible,potential,predicted,probable";
+   thisInfo.s_putative_replacements 
             = NStr::Tokenize(strtmp, ",", thisInfo.s_putative_replacements);
-   }
-   else {
-      NCBI_THROW(CException, eUnknown, "Missing SPutativeReplacements\n");
-   }
 
    // ini. of cgp_field_name
    for (i = eCDSGeneProt_field_cds_comment; 
@@ -889,14 +1067,14 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
    }
 
    // ini. of spe_pubfield_label;
-   strtmp = reg.Get("StringVecIni", "SpecPubFieldWords");
+   strtmp = "is present,is not present,is all caps,is all lowercase,is all punctuation";
    arr.clear();
    arr = NStr::Tokenize(strtmp, ",", arr);
    for (i = CPub_field_special_constraint_type::e_Is_present; 
         i <= CPub_field_special_constraint_type::e_Is_all_punct; i++) {
        thisInfo.spe_pubfield_label[(CPub_field_special_constraint_type::E_Choice)i] = arr[i-1];
-
    }
+
    // ini. of featqual_leg_name
    for (i = eFeat_qual_legal_allele; i <= eFeat_qual_legal_pcr_conditions; i++){
       strtmp = ENUM_METHOD_NAME(EFeat_qual_legal)()->FindName(i, true);
@@ -909,12 +1087,13 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
    }
     
    // ini. of miscfield_names
-   strtmp = reg.Get("StringVecIni", "MiscFieldNames");
+   strtmp = "Genome Project ID,Comment Descriptor,Definition Line,Keyword";
    thisInfo.miscfield_names 
        = NStr::Tokenize(strtmp, ",", thisInfo.miscfield_names);
 
    // ini. of loctype_names;
-   strtmp = reg.Get("StringVecIni", "LocationType");
+   strtmp 
+       = " ,with single interval,with joined intervals,with ordered intervals";
    thisInfo.loctype_names 
         = NStr::Tokenize(strtmp, ",", thisInfo.loctype_names);
  
@@ -966,7 +1145,7 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
    }
    
    // ini of suspect_rna_rules;
-   strtmp = reg.Get("StringVecIni", "SusRrnaProdNames");
+   strtmp = "domain,partial,5s_rRNA,16s_rRNA,23s_rRNA";
    arr.clear();
    arr = NStr::Tokenize(strtmp, ",", arr);
    ITERATE (vector <string>, it, arr) {
@@ -987,7 +1166,7 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
                               summ_susrule.SummarizeSuspectRuleEx(*this_rule));
 
    // ini. of suspect_phrases
-   strtmp = reg.Get("StringVecIni", "SuspectPhrases");
+   strtmp = "fragment,frameshift,%,E-value,E value,Evalue,...";
    thisInfo.suspect_phrases 
        = NStr::Tokenize(strtmp, ",", thisInfo.suspect_phrases); 
 

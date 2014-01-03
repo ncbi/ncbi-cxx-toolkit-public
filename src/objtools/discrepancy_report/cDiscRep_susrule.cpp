@@ -1811,12 +1811,18 @@ bool CSuspectRuleCheck :: MatchesSearchFunc(const string& str, const CSearch_fun
 bool CSuspectRuleCheck :: IsStringConstraintEmpty(const CString_constraint* constraint)
 {
    if (!constraint) return true;
-   if (constraint->GetIs_all_caps() || constraint->GetIs_all_lower()
-                                                       || constraint->GetIs_all_punct())
+   if (constraint->GetIs_all_caps() 
+          || constraint->GetIs_all_lower()
+          || constraint->GetIs_all_punct()) {
       return false;
-   else if (!constraint->CanGetMatch_text() || constraint->GetMatch_text().empty())
+   }
+   else if (!constraint->CanGetMatch_text() 
+                || constraint->GetMatch_text().empty()) {
         return true;
-   else return false;
+   {
+   else {
+      return false;
+   }
 };
 
 bool CSuspectRuleCheck :: IsSearchFuncEmpty(const CSearch_func& func)
@@ -1834,12 +1840,16 @@ bool CSuspectRuleCheck :: IsSearchFuncEmpty(const CSearch_func& func)
 bool CSuspectRuleCheck :: MatchesSuspectProductRule(const string& str, const CSuspect_rule& rule)
 {
    if (!IsSearchFuncEmpty(rule.GetFind())
-            && !MatchesSearchFunc(str, rule.GetFind()))
+            && !MatchesSearchFunc(str, rule.GetFind())) {
         return false;
+   }
    else if ( rule.CanGetExcept() && !IsSearchFuncEmpty(rule.GetExcept())
-                 && MatchesSearchFunc (str, rule.GetExcept()))
+                 && MatchesSearchFunc (str, rule.GetExcept())) {
         return false;
-   else return true;
+   }
+   else {
+      return true;
+   }
 };
 
 bool CSuspectRuleCheck :: DoesObjectMatchStringConstraint(const CBioSource& biosrc, const CString_constraint& str_cons)
@@ -1864,26 +1874,41 @@ bool CSuspectRuleCheck :: DoesObjectMatchStringConstraint(const CCGPSetData& cgp
   bool all_match = true, any_match = false;
   vector <string> strs;
   if (cgp.gene) {
-       m_bioseq_hl = GetBioseqFromSeqLoc(cgp.gene->GetLocation(), *thisInfo.scope);
+       m_bioseq_hl 
+         = GetBioseqFromSeqLoc(cgp.gene->GetLocation(), *thisInfo.scope);
        GetStringsFromObject(*cgp.gene, strs);
-       if (DoesObjectMatchStringConstraint ( *cgp.gene, strs, str_cons)) any_match = true;
-       else any_match = false;
+       if (DoesObjectMatchStringConstraint ( *cgp.gene, strs, str_cons)) {
+          any_match = true;
+       }
+       else {
+          any_match = false;
+       }
        strs.clear();
   }
   if (cgp.cds && (!any_match || all_match)) {
-      m_bioseq_hl = GetBioseqFromSeqLoc(cgp.cds->GetLocation(), *thisInfo.scope);
+      m_bioseq_hl 
+          = GetBioseqFromSeqLoc(cgp.cds->GetLocation(), *thisInfo.scope);
       strs.clear();
       GetStringsFromObject(*cgp.cds, strs);
-      if (DoesObjectMatchStringConstraint( *cgp.cds, strs, str_cons)) any_match = true;
-      else all_match = false;
+      if (DoesObjectMatchStringConstraint( *cgp.cds, strs, str_cons)) {
+         any_match = true;
+      }
+      else {
+         all_match = false;
+      }
       strs.clear();
   }
   if (cgp.mrna && (!any_match || all_match)) {
-      m_bioseq_hl = GetBioseqFromSeqLoc(cgp.mrna->GetLocation(), *thisInfo.scope);
+      m_bioseq_hl 
+         = GetBioseqFromSeqLoc(cgp.mrna->GetLocation(), *thisInfo.scope);
       strs.clear();
       GetStringsFromObject(*cgp.mrna, strs);
-      if (DoesObjectMatchStringConstraint( *cgp.mrna, strs, str_cons)) any_match = true;
-      else all_match = false;
+      if (DoesObjectMatchStringConstraint( *cgp.mrna, strs, str_cons)) {
+         any_match = true;
+      }
+      else {
+         all_match = false;
+      }
       strs.clear();
   }
   if (cgp.prot  && (!any_match || all_match)) {

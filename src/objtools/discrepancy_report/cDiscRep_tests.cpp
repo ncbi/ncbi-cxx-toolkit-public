@@ -2802,10 +2802,10 @@ bool CBioseqTestAndRepData :: x_IsShortrRNA(const CSeq_feat* sft)
    if (sft->CanGetPartial() && sft->GetPartial()) return false;
    unsigned len = sequence::GetCoverage(sft->GetLocation(), thisInfo.scope);
    string rrna_name = GetRNAProductString(*sft);
-   ITERATE (Str2UInt, jt, thisInfo.rRNATerms) {
+   ITERATE (Str2CombDt, jt, thisInfo.rRNATerms) {
       if (NStr::FindNoCase(rrna_name, jt->first) != string::npos
-              && len < jt->second
-              && !thisInfo.rRNATerms_ignore_partial[jt->first] ) {
+              && len < (unsigned)jt->second.i_val
+              && !jt->second.b_val ) {
         return true;
       }
    }
@@ -5947,7 +5947,9 @@ void CBioseq_test_on_rna :: FindMissingRNAsInList()
   vector <unsigned>  num_present;
   Str2Strs aa_seqfeat;
   num_present.reserve(thisInfo.desired_aaList.size());
-  for (unsigned i=0; i< thisInfo.desired_aaList.size(); i++) num_present.push_back(0);
+  for (unsigned i=0; i< thisInfo.desired_aaList.size(); i++) {
+          num_present.push_back(0);
+  }
 
   string context_label;
   unsigned i; 
@@ -5966,17 +5968,19 @@ void CBioseq_test_on_rna :: FindMissingRNAsInList()
 
   i=0; 
   ITERATE (Str2UInt, it, thisInfo.desired_aaList) {
-    if (num_present[i] < it->second) 
-       thisInfo.test_item_list[GetName_tcnt()].push_back(
-          "Sequence " + m_best_id_str + " is missing trna-" + it->first + "$" + m_bioseq_desc);
-                            //   it->first + "_missing$" + m_bioseq_desc);
+    if (num_present[i] < it->second)  {
+       //   it->first + "_missing$" + m_bioseq_desc);
+       strtmp = "Sequence " + m_best_id_str + " is missing trna-" + it->first + "$" + m_bioseq_desc;
+       thisInfo.test_item_list[GetName_tcnt()].push_back(strtmp);
+    }
     else if (num_present[i] > it->second) {
        strtmp = "Sequence " + m_best_id_str + " has " + NStr::UIntToString(num_present[i]) 
               + " trna-" + it->first + (num_present[i]==1 ? " feature." : " features.") + "$";
        thisInfo.test_item_list[GetName_tcnt()].push_back(
                                                strtmp + m_bioseq_desc);
-       ITERATE (vector <string>, jt, aa_seqfeat[it->first])
+       ITERATE (vector <string>, jt, aa_seqfeat[it->first]) {
            thisInfo.test_item_list[GetName_tcnt()].push_back(strtmp + *jt);
+       }
     }
     i++;    
   }
@@ -7910,6 +7914,9 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
      c_main->setting_name = setting_name;
      c_main->description = "Source Qualifer Report";
      c_main->item_list.clear();
+     if (thisInfo.expand_srcqual_report) {
+        c_main->expanded = true;
+     }
      c_item = CRef <CClickableItem> (new CClickableItem);
    }
 
@@ -8417,6 +8424,7 @@ void CSeqEntry_test_on_quals :: TestOnObj(const CSeq_entry& seq_entry)
                                      comb_qual2src_idx, 
                                      pre_cnt, 
                                      tot_cnt);
+   // DISC_SRC_QUAL_PROBLEM
    if (run_bad) { 
         GetQualDistribute(comb_qual2src_idx, 
                           comb_desc_ls, 
@@ -10279,10 +10287,11 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notif
 {
   block_text 
     =CTestAndRepData::FindReplaceString(block_text, m_taxname, "", false, true);
-  ITERATE (Str2UInt, it, thisInfo.whole_word) {
+  //ITERATE (Str2UInt, it, thisInfo.whole_word) {
+  ITERATE (Str2CombDt, it, thisInfo.fix_data) {
      CConstRef <CObject> obj_ref;
-     if (CTestAndRepData :: DoesStringContainPhrase(
-                             block_text, it->first, false,  (bool)it->second)){
+     if (CTestAndRepData :: DoesStringContainPhrase( 
+                           block_text, it->first, false,  it->second.b_val)){
        switch (which_block) {
          case CFlatFileConfig::fGenbankBlocks_Locus: {
                  strtmp = m_mol_desc; 
@@ -10322,11 +10331,11 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notif
          default: strtmp = m_bioseq_desc;
                   obj_ref = m_obj_ref;
        };
-       strtmp = thisInfo.fix_data[it->first] + "$" + it->first + "#" + strtmp;
-       thisInfo.test_item_list[m_setting_name].push_back(strtmp);
-//            thisInfo.fix_data[it->first] + "$" + it->first + "#" + strtmp);
        strtmp 
-        = m_setting_name + "$" + thisInfo.fix_data[it->first] + "#" + it->first;
+         = thisInfo.fix_data[it->first].s_val + "$" + it->first + "#" + strtmp;
+       thisInfo.test_item_list[m_setting_name].push_back(strtmp);
+       strtmp = m_setting_name + "$" + thisInfo.fix_data[it->first].s_val 
+                 + "#" + it->first;
        thisInfo.test_item_objs[strtmp].push_back(obj_ref);
      }
   } 
@@ -11482,8 +11491,11 @@ bool CSeqEntry_test_on_pub :: CorrectUSAStates(CConstRef <CCit_sub>& cit_sub)
                                    || !isupper(state[0]) || !isupper(state[1]))
                           return false;
                    else {
-                        ITERATE (list <string>, it, thisInfo.state_abbrev) 
-                              if (state == *it) return true;
+                        ITERATE (Str2Str, it, thisInfo.state_abbrev) {
+                           if (state == it->second) {
+                                 return true;
+                           }
+                        }
                         return false;
                    }
                }
@@ -12321,9 +12333,9 @@ void CSeqEntry_ONCALLER_DEFLINE_ON_SET :: GetReport(CRef <CClickableItem>& c_ite
       c_item->subcategories.push_back(c_sub); 
    }
 
-   if (thisInfo.expand_defline_on_set == "true" 
-                              || thisInfo.expand_defline_on_set == "TRUE")
-     c_item->expanded = true;
+   if (thisInfo.expand_defline_on_set) {
+       c_item->expanded = true;
+   }
 };
 
 //new comb
