@@ -760,6 +760,10 @@ CDB_UserHandler_Deferred::~CDB_UserHandler_Deferred(void)
 
 bool CDB_UserHandler_Deferred::HandleIt(CDB_Exception* ex)
 {
+    if (ex == NULL) {
+        return false;
+    }
+
     CFastMutexGuard LOCK(m_Mutex);
     _TRACE(*ex);
     m_SavedExceptions.push_back(ex->Clone());
@@ -770,6 +774,9 @@ bool CDB_UserHandler_Deferred::HandleAll(const TExceptions& exceptions)
 {
     CFastMutexGuard LOCK(m_Mutex);
     ITERATE (TExceptions, ex, exceptions) {
+        if (*ex == NULL) {
+            continue;
+        }
         _TRACE(**ex);
         m_SavedExceptions.push_back((*ex)->Clone());
     }
