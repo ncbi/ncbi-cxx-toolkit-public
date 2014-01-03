@@ -261,21 +261,27 @@ void CAnnotationASN1::CImplementationData::AddModel(const CAlignModel& model)
          cds_feat_ptr = cds_feat.GetPointer();
     }
 
-    CRef<CSeq_entry> model_products(new CSeq_entry);
-    nucprots->push_back(model_products);
+    try {
+        CRef<CSeq_entry> model_products(new CSeq_entry);
+        nucprots->push_back(model_products);
 
-    CRef<CSeq_feat> mrna_feat = feature_generator->ConvertAlignToAnnot(*align, *gnomon_models_annot, model_products->SetSet(), model.GeneID(), cds_feat_ptr);
+        CRef<CSeq_feat> mrna_feat = feature_generator->ConvertAlignToAnnot(*align, *gnomon_models_annot, model_products->SetSet(), model.GeneID(), cds_feat_ptr);
 
-    DumpEvidence(md);
+        DumpEvidence(md);
 
-    CRef< CUser_object > user_obj = create_ModelEvidence_user_object(model);
-    mrna_feat->SetExts().push_back(user_obj);
+        CRef< CUser_object > user_obj = create_ModelEvidence_user_object(model);
+        mrna_feat->SetExts().push_back(user_obj);
 
-    if (model_alignments != NULL) {
-        model_alignments->push_back(align);
+        if (model_alignments != NULL) {
+            model_alignments->push_back(align);
+        }
+
+        AddInternalFeature(md);
     }
-
-    AddInternalFeature(md);
+    catch (CException& e) {
+        cerr << MSerial_AsnText << *align;
+        throw;
+    }
 }
 
 CRef<CSeq_feat> CAnnotationASN1::CImplementationData::create_cdregion_feature(SModelData& md)
