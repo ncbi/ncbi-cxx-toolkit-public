@@ -120,7 +120,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
         virtual ~CRepConfig() { };
 
         // removed from *_app.hpp
-        void InitParams(const IRWRegistry& reg);
+        void InitParams(const IRWRegistry* reg);
         void ReadArgs(const CArgs& args);
         string GetDirStr(const string& src_dir);
         void ProcessArgs(Str2Str& args);
