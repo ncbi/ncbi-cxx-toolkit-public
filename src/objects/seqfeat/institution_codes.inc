@@ -6221,6 +6221,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "UMMZ	s	University of Michigan, Museum of Zoology",
 "UMMZ:MC	s	University of Michigan, Museum of Zoology, Mollusk Collection",
 "UMNH	s	Utah Museum of Natural History",
+"UMNH:Mamm	s	Utah Museum of Natural History, Mammal collection",
 "UMO<GBR>	s	University Museum of Natural History",
 "UMO<USA-ME>	s	University of Maine",
 "UMO<USA-MO>	s	University of Missouri, Museum Support Center",
