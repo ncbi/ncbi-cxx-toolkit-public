@@ -55,7 +55,7 @@ void GetAsndiscReport(int argc, const char* argv[])
 {
     vector <string> arr;
     Str2Str args;
-    for (unsigned i=1; i< argc; i++) {
+    for (int i=1; i< argc; i++) {
       arr.clear();
       arr = NStr::Tokenize(argv[i], "=", arr);
       args[arr[0]] = arr[1];  
@@ -64,15 +64,15 @@ void GetAsndiscReport(int argc, const char* argv[])
     CRef <CRepConfig> config (CRepConfig::factory("Asndisc"));
     config->ProcessArgs(args);
 
-    if (!CFile("disc_report.ini").Exists()) {
-           NCBI_THROW(CException, eUnknown,
-                   "Configuration file disc_report.ini is missing.");
+    CRef <IRWRegistry> reg(0);
+    if (CFile("disc_report.ini").Exists()) {
+         CMetaRegistry:: SEntry 
+                 entry = CMetaRegistry :: Load("disc_report.ini");
+         reg.Reset(entry.registry); 
     }
-    CMetaRegistry:: SEntry entry = CMetaRegistry :: Load("disc_report.ini");
-    CRef <IRWRegistry> reg(entry.registry); 
-    config->InitParams(*reg);
+    config->InitParams(reg);
     config->CollectTests();
-    config->Run(config);
+    config->Run();
 };
 
 int main(int argc, const char* argv[])
