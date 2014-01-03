@@ -466,6 +466,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributes(
     if ( !x_AssignAttributesMiscFeature( mf ) ) {
         return false;
     }
+    
     switch( mf.GetData().GetSubtype() ) {
         default:
             break;
@@ -565,6 +566,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributesMrna(
 //  ----------------------------------------------------------------------------
 {
     return (
+        x_AssignAttributePartial( mapped_feat )  &&
         x_AssignAttributeGene( mapped_feat ) );
 }
 
@@ -591,6 +593,7 @@ bool CGff3WriteRecordFeature::x_AssignAttributesCds(
 //  ----------------------------------------------------------------------------
 {
     return (
+        x_AssignAttributePartial( mapped_feat )  &&
         x_AssignAttributeProteinId( mapped_feat )  &&
         x_AssignAttributeTranslationTable( mapped_feat )  &&
         x_AssignAttributeCodeBreak( mapped_feat ) );
@@ -666,14 +669,15 @@ bool CGff3WriteRecordFeature::x_AssignAttributeNote(
 
 //  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::x_AssignAttributePartial(
-    CMappedFeat mapped_feat )
+    CMappedFeat mf )
 //  ----------------------------------------------------------------------------
 {
-    if ( ! mapped_feat.IsSetPartial() ) {
-        return true;
-    }
-    if ( mapped_feat.GetPartial() == true ) {
-        SetAttribute("partial", "true");
+    CSeqFeatData::ESubtype subtype = mf.GetData().GetSubtype();
+    if (mf.IsSetPartial()) {
+        if (mf.GetPartial() == true) {
+            SetAttribute("partial", "true");
+            return true;
+        }
     }
     return true;
 }
