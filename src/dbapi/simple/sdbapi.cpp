@@ -2111,7 +2111,7 @@ inline int
 CQueryImpl::GetStatus(void)
 {
     x_CheckCanWork();
-    if (m_CurRS  ||  m_Stmt->HasMoreResults()  ||  m_Status < 0) {
+    if (m_CurRS  ||  m_Stmt->HasMoreResults()  ||  m_RowCount < 0) {
         NCBI_THROW(CSDB_Exception, eInconsistent,
                    "CQuery::GetStatus called with some results still unread.");
     } else {
