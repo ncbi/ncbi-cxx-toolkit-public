@@ -2063,7 +2063,7 @@ void CValidError_feat::ValidateAcceptor
 
 void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
 {
-    bool report_errors = true, has_errors = false;
+    bool report_errors = true, has_errors = false, ribo_slip = false;
 
     const CSeq_loc& loc = feat.GetLocation();
     
@@ -2079,8 +2079,12 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
         return;
     }
     if (feat.IsSetExcept() && feat.IsSetExcept_text()
-        && (NStr::FindNoCase (feat.GetExcept_text(), "ribosomal slippage") != string::npos
-            || NStr::FindNoCase (feat.GetExcept_text(), "artificial frameshift") != string::npos
+        && (NStr::FindNoCase (feat.GetExcept_text(), "ribosomal slippage") != string::npos)) {
+        report_errors = false;
+        ribo_slip = true;
+    }
+    if (feat.IsSetExcept() && feat.IsSetExcept_text()
+        && (NStr::FindNoCase (feat.GetExcept_text(), "artificial frameshift") != string::npos
             || NStr::FindNoCase (feat.GetExcept_text(), "nonconsensus splice site") != string::npos
             || NStr::FindNoCase (feat.GetExcept_text(), "adjusted for low-quality genome") != string::npos
             || NStr::FindNoCase (feat.GetExcept_text(), "heterogeneous population sequenced") != string::npos
@@ -2241,7 +2245,7 @@ void CValidError_feat::ValidateSplice(const CSeq_feat& feat, bool check_all)
         }
     }                   
 
-    if (!report_errors  &&  !has_errors) {
+    if (!report_errors  &&  !has_errors  &&  !ribo_slip) {
         PostErr(eDiag_Warning, eErr_SEQ_FEAT_UnnecessaryException,
             "feature has exception but passes splice site test", feat);
     }

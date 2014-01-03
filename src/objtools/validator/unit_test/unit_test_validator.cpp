@@ -13359,11 +13359,11 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_UnnecessaryException)
     exon->SetData().SetImp().SetKey("exon");
     exon->SetLocation().Assign(*(cds->SetLocation().SetMix().Set().front()));
     cds->SetExcept(true);
-    cds->SetExcept_text("ribosomal slippage");
+    cds->SetExcept_text("artificial frameshift");
     mrna->SetExcept(true);
-    mrna->SetExcept_text("ribosomal slippage");
+    mrna->SetExcept_text("artificial frameshift");
     exon->SetExcept(true);
-    exon->SetExcept_text("ribosomal slippage");
+    exon->SetExcept_text("artificial frameshift");
     seh = scope.AddTopLevelSeqEntry(*entry);
 
     expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "UnnecessaryException",
