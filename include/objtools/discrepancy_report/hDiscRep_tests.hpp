@@ -114,6 +114,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
   typedef map <string, Str2Strs> Str2MapStr2Strs;
   typedef map <string, vector <CConstRef <CBioseq> > > Str2Seqs;
   typedef map <string, CConstRef <CObject> > Str2Obj;
+  typedef map <string, bool> Str2Bool;
 
   enum ESuspectNameType {
      eSuspectNameType_None = 0,

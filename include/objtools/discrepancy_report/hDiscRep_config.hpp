@@ -56,6 +56,13 @@ USING_SCOPE(objects);
 BEGIN_SCOPE(DiscRepNmSpc)
 
    typedef map <string, vector < CConstRef <CObject> > > Str2Objs;
+   
+   struct s_CombData {
+      int    i_val;
+      string s_val;
+      bool   b_val;
+   };
+   typedef map <string, s_CombData> Str2CombDt;
 
    enum ETestCategoryFlags {
       fDiscrepancy = 1 << 0,
@@ -182,13 +189,13 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static vector < vector <string> >         susrule_summ;
         static vector <string> 		          weasels;
         static CRef <CSeq_submit>                 seq_submit;
-        static string                             expand_defline_on_set;
+        static bool                               expand_defline_on_set;
+        static bool                               expand_srcqual_report;
         static string                             report_lineage;
         static vector <string>                    strandsymbol;
         static bool                               exclude_dirsub;
 
-        static Str2UInt                           rRNATerms;
-        static Str2UInt                           rRNATerms_ignore_partial;
+        static Str2CombDt                         rRNATerms;
         static vector <string>                    bad_gene_names_contained;
         static vector <string>                    no_multi_qual;
         static vector <string>                    rrna_standard_name; 
@@ -198,7 +205,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static vector <string>                    trna_list; 
         static Str2UInt                           desired_aaList;
         static CTaxon1                            tax_db_conn;
-        static list <string>                      state_abbrev;
+        static Str2Str                            state_abbrev;
         static Str2Str                            cds_prod_find;
         static vector <string>                    s_pseudoweasels;
         static vector <string>                    suspect_rna_product_names;
@@ -208,8 +215,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static vector <string>                    taxnm_env;
         static vector <string>                    virus_lineage;
         static vector <string>                    strain_tax;
-        static Str2UInt                           whole_word;
-        static Str2Str                            fix_data;
+        static Str2CombDt                         fix_data;
         static CRef <CSuspect_rule_set>           orga_prod_rules;
         static vector <string>                    skip_bracket_paren;
         static vector <string>                    ok_num_prefix;
