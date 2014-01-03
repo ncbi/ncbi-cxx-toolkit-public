@@ -520,6 +520,10 @@ void SMakeProjectT::Create3PartyLibs(const list<string>& libs_flags,
         } else if (NStr::StartsWith(flag, "-l")) {
             libs3.push_back( CProjKey(CProjKey::eLib, flag.substr(2)));
             GetApp().m_3PartyLibs.insert(flag.substr(2));
+        } else if ( NStr::CompareCase(flag, "-framework") == 0 ) {
+            if (p != libs_flags.end()) {
+                GetApp().m_3PartyLibs.insert(*(++p));
+            }
         } else {
             unkflags.push_back(flag);
         }
@@ -754,7 +758,7 @@ void  SMakeProjectT::VerifyLibDepends(
     }
     if (!missing.empty()) {
         warnings.push_back("missing dependencies: " + NStr::Join(missing,","));
-        if (app.m_AddMissingDep) {
+        if (app.m_AddMissingDep && libs_to_ignore != nullptr) {
             ITERATE( list<string>, m,  missing) {
                 depends_ids.push_back(CProjKey(CProjKey::eLib, *m));
             }
@@ -830,7 +834,11 @@ void  SMakeProjectT::VerifyLibDepends(
         }
     }
     if (!warnings.empty()) {
-        warnings.push_front("====== Library order warnings ======");
+        if (libs_to_ignore == nullptr) {
+            warnings.push_front("====== Library order warnings (3rd party libs) ======");
+        } else {
+            warnings.push_front("====== Library order warnings (toolkit libs) ======");
+        }
         PTB_WARNING_EX(mkname,ePTB_InvalidMakefile,
             NStr::Join(warnings,"\n"));
     }

@@ -2583,28 +2583,24 @@ void   CProjBulderApp::LoadDepGraph(const string& filename)
                 }
                 NStr::Split(third, LIST_SEPARATOR_LIBS, third_list);
 #endif
-                if (second == "includes") {
-                    ITERATE(list<string>, f, first_list) {
-                        if (f->at(0) == '-') {
-                            continue;
-                        }
-                        ITERATE(list<string>, t, third_list) {
-                            if (t->at(0) == '-' || *f == *t) {
-                                continue;
-                            }
-                            m_GraphDepIncludes[*f].insert(*t);
-                        }
+                ITERATE(list<string>, f, first_list) {
+                    if (f->at(0) == '-') {
+                        continue;
                     }
-                } else if (second == "needs") {
-                    ITERATE(list<string>, f, first_list) {
-                        if (f->at(0) == '-') {
+                    ITERATE(list<string>, t, third_list) {
+                        if (t->at(0) == '-' || *f == *t) {
                             continue;
                         }
-                        ITERATE(list<string>, t, third_list) {
-                            if (t->at(0) == '-' || *f == *t) {
-                                continue;
-                            }
+                        if (second == "includes") {
+                            m_GraphDepIncludes[*f].insert(*t);
+                        } else if (second == "includes3party") {
+                            m_GraphDepIncludes[*f].insert(*t);
+                            m_3PartyLibs.insert(*t);
+                        } else if (second == "needs") {
                             m_GraphDepPrecedes[*f].insert(*t);
+                        } else if (second == "needs3party") {
+                            m_GraphDepPrecedes[*f].insert(*t);
+                            m_3PartyLibs.insert(*t);
                         }
                     }
                 }
