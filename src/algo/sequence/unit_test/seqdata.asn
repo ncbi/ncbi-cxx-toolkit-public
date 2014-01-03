@@ -19814,3 +19814,168 @@ MPGATLDDIYIALTKEEDYEXHSV"
     }
   }
 }
+Bioseq-set ::= {
+  class nuc-prot,
+  seq-set {
+    seq {
+      id {
+        local str "CDNA_54"
+      },
+      descr {
+        molinfo {
+          biomol transcribed-RNA,
+          completeness unknown
+        }
+      },
+      inst {
+        repr raw,
+        mol rna,
+        length 1026,
+        seq-data ncbi2na '77296D9FDABDDE367DB6F650EFE28809492D7D2A08EA298A2096
+3E39EB8220980A0A29002081020A37A23A2B6278BE0D7E978333F111B7E23B30CC7009204E3D5F
+7A480092002324250F02D1FE5E3AC04AF8E6837E801C453340F97BA0F2D0A5E961045BCF9C0B03
+0EFBBA85E8595DE8208FB17E89F742FE28E28A74A4BB3E91D4B9D130EAE094E808B73AE8EFEEF3
+A1650C803A3DCF384EC5D8A0AABBB72438FDDF77A2DFCEC200D3C0800427FE021E82F080807F1E
+90EFC2C410BD03B68CF83802B831D41C512DCCAEE95FE3237796AB5D3B48446A403C29FC00C440
+0F7D44C7A8290248CE88779220FCE93F4F548D7002F808BA882F508A09C00588D32803E0'H,
+        hist {
+          assembly {
+            {
+              type partial,
+              segs spliced {
+                product-id general {
+                  db "GNOMON",
+                  tag str "274883640.m"
+                },
+                genomic-id gi 90683044,
+                product-strand plus,
+                genomic-strand plus,
+                product-type transcript,
+                exons {
+                  {
+                    product-start nucpos 0,
+                    product-end nucpos 375,
+                    genomic-start 0,
+                    genomic-end 375,
+                    genomic-id gi 387493762,
+                    genomic-strand plus,
+                    parts {
+                      match 376
+                    },
+                    donor-after-exon {
+                      bases "XX"
+                    }
+                  },
+                  {
+                    product-start nucpos 376,
+                    product-end nucpos 499,
+                    genomic-start 1784,
+                    genomic-end 1907,
+                    parts {
+                      match 124
+                    },
+                    acceptor-before-exon {
+                      bases ""
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 500,
+                    product-end nucpos 621,
+                    genomic-start 500,
+                    genomic-end 621,
+                    genomic-id gi 387493762,
+                    genomic-strand plus,
+                    parts {
+                      match 122
+                    },
+                    acceptor-before-exon {
+                      bases "XX"
+                    },
+                    donor-after-exon {
+                      bases "XX"
+                    }
+                  },
+                  {
+                    product-start nucpos 622,
+                    product-end nucpos 739,
+                    genomic-start 4140,
+                    genomic-end 4257,
+                    parts {
+                      match 118
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 740,
+                    product-end nucpos 804,
+                    genomic-start 4546,
+                    genomic-end 4610,
+                    parts {
+                      match 65
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 805,
+                    product-end nucpos 883,
+                    genomic-start 4693,
+                    genomic-end 4771,
+                    parts {
+                      match 79
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    },
+                    donor-after-exon {
+                      bases "GT"
+                    }
+                  },
+                  {
+                    product-start nucpos 884,
+                    product-end nucpos 1025,
+                    genomic-start 5805,
+                    genomic-end 5946,
+                    parts {
+                      match 142
+                    },
+                    acceptor-before-exon {
+                      bases "AG"
+                    }
+                  }
+                },
+                product-length 1026
+              },
+              id {
+                id 274883640
+              },
+              ext {
+                {
+                  type str "CFeatureGenerator",
+                  data {
+                    {
+                      label str "Flags",
+                      data int 14183
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

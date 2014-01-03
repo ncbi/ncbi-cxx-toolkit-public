@@ -117,7 +117,14 @@ void CGeneModel::SetFeatureExceptions(CSeq_feat& feat,
     generator.SetFeatureExceptions(feat, align);
 }
 
-const char* k_except_text_for_gap_filled_gnomon_model = "annotated by transcript or proteomic data";
+const char* k_except_text_for_gap_filled_gnomon_model =
+    "annotated by transcript or proteomic data";
+const char* k_rna_comment =
+    "The sequence of the model RefSeq transcript was modified relative "
+    "to this genomic sequence to represent the inferred CDS";
+const char* k_cds_comment =
+    "The sequence of the model RefSeq protein was modified relative "
+    "to this genomic sequence to represent the inferred CDS";
 
 void CGeneModel::SetPartialFlags(CScope& scope,
                                  CRef<CSeq_feat> gene_feat,
@@ -3606,9 +3613,7 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
                               .GetCode_break().size();
         }
         if (inserted_bases || deleted_bases) {
-            rna_comment =
-            "The sequence of the model RefSeq transcript was modified relative "
-            "to this genomic sequence to represent the inferred complete CDS";
+            rna_comment = k_rna_comment;
         }
         if (inserted_bases) {
             rna_comment += ": inserted " + s_Count(inserted_bases, "base")
@@ -3620,9 +3625,7 @@ void CFeatureGenerator::SImplementation::x_SetComment(CSeq_feat& rna_feat,
                          + " in " + s_Count(delete_codons.size(), "codon");
         }
         if (cds_inserted_bases || cds_deleted_bases || code_breaks) {
-            cds_comment =
-              "The sequence of the model RefSeq protein was modified relative "
-              "to this genomic sequence to represent the inferred complete CDS";
+            cds_comment = k_cds_comment;
         }
         if (cds_inserted_bases) {
             cds_comment += ": inserted " + s_Count(cds_inserted_bases, "base")
@@ -3663,13 +3666,23 @@ void CFeatureGenerator::SImplementation::x_SetCommentForGapFilledModel
  TSeqPos insert_length)
 {
     _ASSERT(insert_length > 0);
-    string comment = "added " + s_Count(insert_length, "base") + " not found in genome assembly";
+    string comment;
+    if (feat.GetData().IsRna()) {
+        comment = k_rna_comment;
+    } else if (feat.GetData().IsCdregion()) {
+        comment = k_cds_comment;
+    }
+    comment += ":";
     if (!feat.IsSetComment()) {
         feat.SetComment(comment);
-        /// If comment is already set, check it doesn't already contain our text
     } else if (feat.GetComment().find(comment) == string::npos) {
-        feat.SetComment() += "; " + comment;
+        feat.SetComment() += " " + comment;
+    } else {
+        feat.SetComment() += ";";
     }
+
+    comment = " added " + s_Count(insert_length, "base") + " not found in genome assembly";
+    feat.SetComment() += comment;
 }
 
 CRef<CSeq_loc> CFeatureGenerator::SImplementation::MergeSeq_locs(const CSeq_loc* loc1, const CSeq_loc* loc2)
@@ -4033,6 +4046,7 @@ SImplementation::ConvertMixedAlignToAnnot(const CSeq_align& input_align,
 
     set<CSeq_id_Handle> insert_ids;
     TSeqPos insert_length = 0;
+    TSeqPos cds_insert_length = 0;
 
     align.Reset(new CSeq_align);
     align->Assign(input_align);
@@ -4045,6 +4059,19 @@ SImplementation::ConvertMixedAlignToAnnot(const CSeq_align& input_align,
             if (!seqid.Match(*genomic_seqid)) {
                 insert_ids.insert(CSeq_id_Handle::GetHandle(seqid));
                 insert_length += exon.GetGenomic_end()-exon.GetGenomic_start()+1;
+
+                if (cds_feat_on_query_mrna_ptr) {
+                    int cds_intersection_len = 
+                        min(exon.GetProduct_end().GetNucpos(),
+                            cds_feat_on_query_mrna_ptr->GetLocation().GetStop(eExtreme_Positional)) -
+                        max(exon.GetProduct_start().GetNucpos(),
+                            cds_feat_on_query_mrna_ptr->GetLocation().GetStart(eExtreme_Positional))
+                        +1;
+                    if (cds_intersection_len > 0) {
+                        cds_insert_length += cds_intersection_len;
+                    }
+                }
+
                 spliced_seg.SetExons().erase(it);
             }
         }
@@ -4082,14 +4109,17 @@ SImplementation::ConvertMixedAlignToAnnot(const CSeq_align& input_align,
         if (f.GetData().IsGene()) {
             continue;
         }
+
+        if (f.GetData().IsCdregion() && cds_insert_length==0) {
+            continue;
+        }
         
         x_SetExceptText(f, k_except_text_for_gap_filled_gnomon_model);
         _ASSERT(insert_ids.size() > 0);
         NON_CONST_ITERATE (set<CSeq_id_Handle>, id, insert_ids) {
             x_SetQualForGapFilledModel(f, *id);
         }
-        x_SetCommentForGapFilledModel(f, insert_length);
-
+        x_SetCommentForGapFilledModel(f, f.GetData().IsCdregion() ? cds_insert_length : insert_length);
     }
 
     annot.SetData().SetFtable().splice(annot.SetData().SetFtable().end(),

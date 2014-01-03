@@ -10011,8 +10011,8 @@ Seq-annot ::= {
       partial TRUE,
       except TRUE,
       comment "The sequence of the model RefSeq transcript was modified
- relative to this genomic sequence to represent the inferred complete CDS:
- inserted 1 base in 1 codon; added 132 bases not found in genome assembly",
+ relative to this genomic sequence to represent the inferred CDS: inserted 1
+ base in 1 codon; added 132 bases not found in genome assembly",
       product whole general {
         db "GNOMON",
         tag str "1444.m"
@@ -10063,8 +10063,8 @@ Seq-annot ::= {
       partial TRUE,
       except TRUE,
       comment "The sequence of the model RefSeq protein was modified relative
- to this genomic sequence to represent the inferred complete CDS: inserted 1
- base in 1 codon; added 132 bases not found in genome assembly",
+ to this genomic sequence to represent the inferred CDS: inserted 1 base in 1
+ codon; added 132 bases not found in genome assembly",
       product whole local id 2,
       location packed-int {
         {
@@ -10174,6 +10174,78 @@ Seq-annot ::= {
             }
           }
         }
+      }
+    }
+  }
+}
+Seq-annot ::= {
+  data ftable {
+    {
+      data gene {
+      },
+      partial TRUE,
+      location int {
+        from 1784,
+        to 5946,
+        strand plus,
+        id gi 90683044,
+        fuzz-from lim lt
+      }
+    },
+    {
+      data rna {
+        type miscRNA
+      },
+      partial TRUE,
+      except TRUE,
+      comment "The sequence of the model RefSeq transcript was modified
+ relative to this genomic sequence to represent the inferred CDS: added 498
+ bases not found in genome assembly",
+      product whole local str "CDNA_55",
+      location packed-int {
+        {
+          from 1784,
+          to 1907,
+          strand plus,
+          id gi 90683044,
+          fuzz-from lim lt,
+          fuzz-to lim gt
+        },
+        {
+          from 4140,
+          to 4257,
+          strand plus,
+          id gi 90683044,
+          fuzz-from lim lt
+        },
+        {
+          from 4546,
+          to 4610,
+          strand plus,
+          id gi 90683044
+        },
+        {
+          from 4693,
+          to 4771,
+          strand plus,
+          id gi 90683044
+        },
+        {
+          from 5805,
+          to 5946,
+          strand plus,
+          id gi 90683044
+        }
+      },
+      qual {
+        {
+          qual "inference",
+          val "similar to RNA sequence, mRNA (same species):INSD:JV694627.1"
+        }
+      },
+      except-text "annotated by transcript or proteomic data",
+      ids {
+        local str "rna.274883640"
       }
     }
   }
