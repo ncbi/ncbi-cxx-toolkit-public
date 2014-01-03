@@ -986,12 +986,18 @@ bool CSuspectRuleCheck :: DoesCodingRegionMatchTranslationConstraint(const CSeq_
 
 string CSuspectRuleCheck :: SkipWeasel(const string& str)
 {
-
+  if (str.empty()) {
+    return kEmptyStr;
+  }
   string ret_str(kEmptyStr);
   arr = NStr::Tokenize(str, " ", arr);
-  unsigned i, len, len_w;
+  if (arr.size() == 1) {
+     return str;
+  }
+  int i;
+  unsigned len, len_w;
   bool find_w;
-  for (i=0; i< arr.size() - 1; i++) {
+  for (i=0; i< (int)(arr.size() - 1); i++) {
     len = arr[i].size();
     find_w = false;
     ITERATE (vector <string>, it, thisInfo.weasels) {
@@ -1002,11 +1008,14 @@ string CSuspectRuleCheck :: SkipWeasel(const string& str)
          break;
        }
     }
-    if (!find_w) break;
+    if (!find_w) {
+         break;
+    }
   }
-  for (i; i< arr.size()-1; i++) ret_str += arr[i] + ' ';
+  for (i; i< (int)(arr.size()-1); i++) {
+          ret_str += arr[i] + ' ';
+  }
   ret_str += arr[arr.size()-1];
-// cerr << "ret_str " << ret_str << endl;
   arr.clear();
   return (ret_str);
 
@@ -1819,7 +1828,7 @@ bool CSuspectRuleCheck :: IsStringConstraintEmpty(const CString_constraint* cons
    else if (!constraint->CanGetMatch_text() 
                 || constraint->GetMatch_text().empty()) {
         return true;
-   {
+   }
    else {
       return false;
    }

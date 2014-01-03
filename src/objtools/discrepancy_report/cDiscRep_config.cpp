@@ -182,15 +182,42 @@ const char* fix_type_names[] = {
   "use protein instead of gene as appropriate"
 };
 
-void CRepConfig :: InitParams(const IRWRegistry& reg)
+void CRepConfig :: InitParams(const IRWRegistry* reg)
 {
     int i;
 
     // get other parameters from *.ini
-    thisInfo.expand_defline_on_set 
-         = reg.GetBool("OncallerTool", "EXPAND_DEFLINE_ON_SET", true);
-    thisInfo.expand_srcqual_report
-         = reg.GetBool("OncallerTool", "EXPAND_SRCQUAL_REPORT", true);
+    if (reg) {
+        thisInfo.expand_defline_on_set 
+           = reg->GetBool("OncallerTool", "EXPAND_DEFLINE_ON_SET", true);
+        thisInfo.expand_srcqual_report
+           = reg->GetBool("OncallerTool", "EXPAND_SRCQUAL_REPORT", true);
+
+        // ini of orga_prod_rules:
+        strtmp = reg->GetString("RuleFiles", "OrganelleProductRuleFile", "/ncbi/data/organelle_products.prt");
+        if (CFile(strtmp).Exists()) {
+            ReadInBlob(*thisInfo.orga_prod_rules, strtmp);
+        }
+        else {
+            NCBI_THROW(CException, eUnknown, 
+                          "Organelle products file not found: " + strtmp);
+        }
+
+        // ini. suspect rule file && susrule_fixtp_summ
+        strtmp = reg->GetString("RuleFiles", "PRODUCT_RULES_LIST", "/ncbi/data/product_rules.prt");
+        if (CFile(strtmp).Exists()) {
+            ReadInBlob(*thisInfo.suspect_prod_rules, strtmp);
+        }
+        else {
+            NCBI_THROW(CException, eUnknown, 
+                         "Product rules file not found: " + strtmp);
+        }
+    }
+    else {
+       thisInfo.expand_defline_on_set = thisInfo.expand_srcqual_report = true;
+       ReadInBlob(*thisInfo.orga_prod_rules, "/ncbi/data/organelle_products.prt");
+       ReadInBlob(*thisInfo.suspect_prod_rules, "/ncbi/data/product_rules.prt");
+    }
 
     // ini. of srcqual_keywords
     thisInfo.srcqual_keywords["forma-specialis"] = " f. sp.";
@@ -505,15 +532,6 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
     }
     arr.clear();
 
-    // ini of orga_prod_rules:
-    strtmp = reg.GetString("RuleFiles", "OrganelleProductRuleFile", "/ncbi/data/organelle_products.prt");
-    if (CFile(strtmp).Exists()) {
-        ReadInBlob(*thisInfo.orga_prod_rules, strtmp);
-    }
-    else {
-      NCBI_THROW(CException, eUnknown, "Organelle products file not found: " + strtmp);
-    }
-
     // ini. of matloc_names & matloc_notpresent_names;
     for (i = eString_location_contains; i <= eString_location_inlist; i++) {
        strtmp = ENUM_METHOD_NAME(EString_location)()->FindName(i, true);
@@ -531,15 +549,6 @@ void CRepConfig :: InitParams(const IRWRegistry& reg)
        }
        thisInfo.matloc_names[(EString_location)i] = strtmp;
        thisInfo.matloc_notpresent_names[(EString_location)i] = tmp;
-    }
-
-    // ini. suspect rule file && susrule_fixtp_summ
-    strtmp = reg.GetString("RuleFiles", "PRODUCT_RULES_LIST", "/ncbi/data/product_rules.prt");
-    if (CFile(strtmp).Exists()) {
-        ReadInBlob(*thisInfo.suspect_prod_rules, strtmp);
-    }
-    else {
-       NCBI_THROW(CException, eUnknown, "Product rules file not found: " + strtmp);
     }
 
     CSummarizeSusProdRule summ_susrule;
