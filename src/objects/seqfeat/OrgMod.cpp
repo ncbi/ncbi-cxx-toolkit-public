@@ -299,14 +299,22 @@ COrgMod::IsCultureCollectionValid(const string& culture_collection)
 string 
 COrgMod::IsSpecimenVoucherValid(const string& specimen_voucher)
 {
-    return IsStructuredVoucherValid(specimen_voucher, "s");
+    if (NStr::Find(specimen_voucher, ":") == string::npos) {
+        return "";
+    } else {
+        return IsStructuredVoucherValid(specimen_voucher, "s");
+    }
 }
 
 
 string 
 COrgMod::IsBiomaterialValid(const string& biomaterial)
 {
-    return IsStructuredVoucherValid(biomaterial, "b");
+    if (NStr::Find(biomaterial, ":") == string::npos) {
+        return "";
+    } else {
+        return IsStructuredVoucherValid(biomaterial, "b");
+    }
 }
 
 
