@@ -464,7 +464,8 @@ public:
 
     /// Get number of rows read after statement execution.
     /// This number is available only when all result sets are read or purged
-    /// by call to PurgeResults(). At all other times method returns -1.
+    /// by call to PurgeResults().  At all other times, the method throws an
+    /// exception.
     int GetRowCount(void);
     /// Get return status of stored procedure.
     /// Status is available only if stored procedure is executed via

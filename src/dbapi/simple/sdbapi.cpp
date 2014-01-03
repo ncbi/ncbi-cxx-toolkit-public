@@ -2099,17 +2099,24 @@ inline int
 CQueryImpl::GetRowCount(void)
 {
     x_CheckCanWork();
-    if (m_CurRS  ||  m_Stmt->HasMoreResults())
-        return -1;
-    else
+    if (m_CurRS  ||  m_Stmt->HasMoreResults()  ||  m_RowCount < 0) {
+        NCBI_THROW(CSDB_Exception, eInconsistent,
+          "CQuery::GetRowCount called with some results still unread.");
+    } else {
         return m_RowCount;
+    }
 }
 
 inline int
 CQueryImpl::GetStatus(void)
 {
     x_CheckCanWork();
-    return m_Status;
+    if (m_CurRS  ||  m_Stmt->HasMoreResults()  ||  m_Status < 0) {
+        NCBI_THROW(CSDB_Exception, eInconsistent,
+                   "CQuery::GetStatus called with some results still unread.");
+    } else {
+        return m_Status;
+    }
 }
 
 void CQueryImpl::x_CheckRowCount(void)
