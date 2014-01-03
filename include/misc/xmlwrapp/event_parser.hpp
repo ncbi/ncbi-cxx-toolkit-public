@@ -190,8 +190,10 @@ public:
     //####################################################################
     /**
      * Call this function to parse a chunk of xml data. When you are done
-     * feeding the parser chucks of data you need to call the parse_finish
-     * member function.
+     * feeding the parser chunks of data you need to call the parse_finish
+     * member function. If an error was detected while a chunk was parsed
+     * or a callback returned false to stop parsing the parse_finish member
+     * function should also be called.
      *
      * @param chunk The xml data chuck to parse.
      * @param messages A pointer to the object where all the warnings and error
@@ -205,6 +207,8 @@ public:
      * @param length The size of the given data chunk
      * @return True if the chunk was parsed sucessfully and was not interrupted
      *         by the user; false otherwise.
+     * @exception Throws xml::exception in case if missed parse_finish call is
+     *            detected.
      * @author Peter Jones; Sergey Satskiy, NCBI
     **/
     //####################################################################
@@ -297,7 +301,7 @@ protected:
     virtual bool start_document ();
     //####################################################################
     /**
-     * Override this member function to receive the start_document message.
+     * Override this member function to receive the end_document message.
      * This member function is called when the document end has been
      * detected.
      *

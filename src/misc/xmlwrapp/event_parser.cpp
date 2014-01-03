@@ -87,6 +87,9 @@ struct xml::impl::epimpl {
 public:
     epimpl (event_parser &parent, event_parser::sax_handlers_mask mask);
     ~epimpl (void);
+    void create_context(void);
+    void destroy_context(void);
+    void recreate_context(void);
 
     xmlSAXHandler       sax_handler_;
     xmlParserCtxt *     parser_context_;
@@ -329,11 +332,21 @@ bool event_parser::parse_stream (std::istream &stream, error_messages* messages,
         return false;
     }
 
-    parse_finished_ = false;
-    while (pimpl_->parser_status_ && (stream.read(buffer, const_buffer_size) || stream.gcount()))
-        pimpl_->parser_status_ = parse_chunk(buffer, (size_t)stream.gcount(), temp, how);
+    // Allocate a new parser context. Existing one is destroyed if needed.
+    pimpl_->recreate_context();
 
-    if (!stream && !stream.eof()) { parse_finish(temp, how); return false; }
+    parse_finished_ = false;
+    while (pimpl_->parser_status_ &&
+           (stream.read(buffer, const_buffer_size) || stream.gcount()))
+        pimpl_->parser_status_ = parse_chunk(buffer,
+                                             (size_t)stream.gcount(),
+                                             temp, how);
+
+    if (!stream && !stream.eof())
+    {
+        parse_finish(temp, how);
+        return false;
+    }
     return parse_finish(temp, how);
 }
 //####################################################################
@@ -352,9 +365,26 @@ bool event_parser::parse_chunk (const char *chunk, size_type length,
     parse_finished_ = false;
     pimpl_->errors_ = temp;
 
+    if (pimpl_->parser_context_ == NULL)
+        pimpl_->create_context();   // This is the first call of the
+                                    // parse_chunk so create a context
+    else
+    {
+        // Not first call, check that the callbacks are enabled
+        if (pimpl_->parser_context_->disableSAX != 0)
+            throw xml::exception("parse_finish(...) was not called after "
+                                 "an error occured or the user "
+                                 "stopped the parser");
+        if (pimpl_->parser_context_->instate == XML_PARSER_EOF)
+            throw xml::exception("parse_finish(...) was not called "
+                                 "after the parser has finished");
+    }
+
     xmlParseChunk(pimpl_->parser_context_, chunk, static_cast<int>(length), 0);
-    if (!pimpl_->parser_status_) return false;
-    if (is_failure(temp, how)) return false;
+    if (!pimpl_->parser_status_)
+        return false;
+    if (is_failure(temp, how))
+        return false;
     return true;
 }
 //####################################################################
@@ -365,10 +395,19 @@ bool event_parser::parse_finish (error_messages* messages,
     parse_finished_ = true;
 
     // There was an error while parsing or the user interrupted parsing
-    if (!pimpl_->parser_status_) return false;
-    if (messages)
-        if (is_failure(messages, how)) return false;
-    return true;
+    bool        ret_val = true;
+    if (!pimpl_->parser_status_)
+        ret_val= false;
+    else
+    {
+        if (messages)
+            if (is_failure(messages, how))
+                ret_val= false;
+    }
+
+    // The parser context is not needed any more
+    pimpl_->destroy_context();
+    return ret_val;
 }
 //####################################################################
 bool xml::event_parser::is_failure (error_messages* messages,
@@ -517,7 +556,8 @@ xml::event_parser::element_content_type xml::event_parser::get_element_content_t
 }
 //####################################################################
 epimpl::epimpl (event_parser &parent, event_parser::sax_handlers_mask mask)
-    : parser_status_(true),
+    : parser_context_(NULL),
+      parser_status_(true),
       errors_(NULL),
       parent_(parent)
 {
@@ -583,18 +623,33 @@ epimpl::epimpl (event_parser &parent, event_parser::sax_handlers_mask mask)
     else
         sax_handler_.ignorableWhitespace = cb_ignore;
 
-
-    if ( (parser_context_ = xmlCreatePushParserCtxt(&sax_handler_, this, 0, 0, 0)) == 0) {
-        throw std::bad_alloc();
-    }
+    // Note: parser context is not allocated here.
+    //       A new one is allocated each time a new parsing is requested
 }
-//####################################################################
+
 epimpl::~epimpl (void) {
     /* Do I need this?                     */
     /* xmlFreeDoc(parser_context_->myDoc); */
-    xmlFreeParserCtxt(parser_context_);
+    destroy_context();
 }
-//####################################################################
+
+void epimpl::create_context(void) {
+    parser_context_ = xmlCreatePushParserCtxt(&sax_handler_, this, 0, 0, 0);
+    if (parser_context_ == NULL)
+        throw std::bad_alloc();
+}
+
+void epimpl::destroy_context(void) {
+    if (parser_context_)
+        xmlFreeParserCtxt(parser_context_);
+    parser_context_ = NULL;
+}
+
+void epimpl::recreate_context(void) {
+    destroy_context();
+    create_context();
+}
+
 void epimpl::event_start_element (const xmlChar *tag, const xmlChar **props) {
     if (!parser_status_) return;
 
@@ -617,7 +672,7 @@ void epimpl::event_start_element (const xmlChar *tag, const xmlChar **props) {
     }
     if (!parser_status_) xmlStopParser(parser_context_);
 }
-//####################################################################
+
 void epimpl::event_end_element (const xmlChar *tag) {
     if (!parser_status_) return;
 
