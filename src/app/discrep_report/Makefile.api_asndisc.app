@@ -8,9 +8,9 @@
 APP = api_asndisc
 SRC = cApiAsndisc
 
-LIB = xdiscrepancy_report xobjread xvalidate xobjedit valid valerr taxon3 \
-        $(XFORMAT_LIBS) xalnmgr xobjutil xconnect tables \
-        taxon1 submit macro xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
+LIB = xdiscrepancy_report xvalidate xobjedit valid valerr \
+        taxon3 $(XFORMAT_LIBS) xalnmgr xobjutil tables \
+        taxon1 macro xregexp $(PCRE_LIB) $(OBJREAD_LIBS) $(OBJMGR_LIBS)
 
 LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
