@@ -86,6 +86,7 @@ struct SNetServerConnectionImpl : public CObject
 
     // The server this connection is connected to.
     CNetServer m_Server;
+    CAtomicCounter::TValue m_Generation;
     SNetServerConnectionImpl* m_NextFree;
 
     CSocket m_Socket;
@@ -163,6 +164,7 @@ struct SNetServerInPool : public CObject
     // API-specific server properties.
     CRef<INetServerProperties> m_ServerProperties;
 
+    CAtomicCounter m_CurrentConnectionGeneration;
     SNetServerConnectionImpl* m_FreeConnectionListHead;
     int m_FreeConnectionListSize;
     CFastMutex m_FreeConnectionListLock;

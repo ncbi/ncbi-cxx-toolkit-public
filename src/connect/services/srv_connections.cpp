@@ -104,6 +104,7 @@ bool CNetServerMultilineCmdOutput::ReadLine(string& output)
 inline SNetServerConnectionImpl::SNetServerConnectionImpl(
         SNetServerImpl* server) :
     m_Server(server),
+    m_Generation(server->m_ServerInPool->m_CurrentConnectionGeneration.Get()),
     m_NextFree(NULL)
 {
     if (TServConn_UserLinger2::GetDefault())
@@ -114,6 +115,8 @@ void SNetServerConnectionImpl::DeleteThis()
 {
     // Return this connection to the pool.
     if (m_Server->m_ServerInPool->m_ServerPool->m_PermanentConnection != eOff &&
+            m_Server->m_ServerInPool->m_CurrentConnectionGeneration.Get() ==
+                    m_Generation &&
             m_Socket.GetStatus(eIO_Open) == eIO_Success) {
         TFastMutexGuard guard(
                 m_Server->m_ServerInPool->m_FreeConnectionListLock);
@@ -297,6 +300,8 @@ SNetServerInPool::SNetServerInPool(unsigned host, unsigned short port,
     m_Address(host, port),
     m_ServerProperties(server_properties)
 {
+    m_CurrentConnectionGeneration.Set(0);
+
     m_FreeConnectionListHead = NULL;
     m_FreeConnectionListSize = 0;
 
@@ -441,7 +446,9 @@ CNetServerConnection SNetServerImpl::GetConnectionFromPool()
         guard.Release();
 
         // Check if the socket is already connected.
-        if (conn->m_Socket.GetStatus(eIO_Open) != eIO_Success)
+        if (conn->m_Socket.GetStatus(eIO_Open) != eIO_Success ||
+                conn->m_Generation !=
+                        m_ServerInPool->m_CurrentConnectionGeneration.Get())
             continue;
 
         SSOCK_Poll conn_socket_poll_struct = {

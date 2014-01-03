@@ -246,12 +246,10 @@ void SNetServiceImpl::Construct()
 
         if (!NStr::SplitInTwo(m_ServiceName, ":", host, port))
             m_ServiceType = CNetService::eLoadBalancedService;
-        else {
+        else
             Construct(m_ServerPool->FindOrCreateServerImpl(
                     g_NetService_gethostbyname(host),
                     (unsigned short) NStr::StringToInt(port)));
-            return;
-        }
     }
 }
 
@@ -1007,6 +1005,15 @@ void SNetServiceImpl::IterateUntilExecOK(const string& cmd,
         --retry_count;
 
         timeout = NULL;
+    }
+}
+
+void SNetServerPoolImpl::ResetServerConnections()
+{
+    CFastMutexGuard server_mutex_lock(m_ServerMutex);
+
+    NON_CONST_ITERATE(TNetServerByAddress, it, m_Servers) {
+        it->second->m_CurrentConnectionGeneration.Add(1);
     }
 }
 

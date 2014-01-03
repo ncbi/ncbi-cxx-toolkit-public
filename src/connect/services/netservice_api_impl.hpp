@@ -92,6 +92,8 @@ struct NCBI_XCONNECT_EXPORT SNetServerPoolImpl : public CObject
         unsigned host, unsigned short port);
     CRef<SNetServerInPool> ReturnServer(SNetServerInPool* server_impl);
 
+    void ResetServerConnections();
+
     virtual ~SNetServerPoolImpl();
 
     string m_APIName;

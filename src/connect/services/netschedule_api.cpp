@@ -755,6 +755,8 @@ void CNetScheduleAPI::SetClientSession(const string& client_session)
 
 void CNetScheduleAPI::UpdateAuthString()
 {
+    m_Impl->m_Service->m_ServerPool->ResetServerConnections();
+
     m_Impl->GetListener()->SetAuthString(m_Impl);
 }
 
