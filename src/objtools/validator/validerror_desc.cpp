@@ -330,7 +330,6 @@ bool CValidError_desc::ValidateStructuredComment
         }
     }
     return is_valid;
-    return is_valid;
 }
 
 

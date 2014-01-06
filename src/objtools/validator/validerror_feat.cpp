@@ -363,6 +363,26 @@ void CValidError_feat::ValidateSeqFeatContext(const CSeq_feat& feat, const CBios
             }
         }
     }
+
+    // check for CDSonMinusStrandTranscribedRNA
+    if (feat.IsSetData()
+        && feat.GetData().IsCdregion()
+        && feat.IsSetLocation()
+        && feat.GetLocation().GetStrand() == eNa_strand_minus) {
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(seq);
+        if ( bsh ) {
+            CSeqdesc_CI di(bsh, CSeqdesc::e_Molinfo);
+            if (di 
+                && di->GetMolinfo().IsSetTech() 
+                && di->GetMolinfo().GetTech() == CMolInfo::eTech_tsa
+                && di->GetMolinfo().IsSetBiomol()
+                && di->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_transcribed_RNA) {
+                PostErr(eDiag_Warning, eErr_SEQ_FEAT_CDSonMinusStrandTranscribedRNA,
+                        "Coding region on TSA transcribed RNA should not be on the minus strand", feat);
+            }
+        }
+    }                
+
 }
 
 

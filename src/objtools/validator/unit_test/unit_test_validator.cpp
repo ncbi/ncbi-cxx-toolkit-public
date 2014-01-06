@@ -94,6 +94,7 @@
 #include <objects/seqloc/Patent_seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/macro/Suspect_rule_set.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_ci.hpp>
@@ -17927,3 +17928,22 @@ BOOST_AUTO_TEST_CASE(Test_SQD_1470)
     CheckErrors (*eval, expected_errors);
 }
 
+
+BOOST_AUTO_TEST_CASE(Test_SQD_1309)
+{
+    // prepare entry
+    CRef<CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+    unit_test_util::RevComp(entry);    
+    CRef<CSeq_entry> nentry = unit_test_util::GetNucleotideSequenceFromGoodNucProtSet(entry);
+    SetTech(nentry, CMolInfo::eTech_tsa);
+    unit_test_util::SetBiomol (nentry, CMolInfo::eBiomol_transcribed_RNA);
+    nentry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+
+    STANDARD_SETUP
+
+    expected_errors.push_back(new CExpectedError("nuc", eDiag_Warning, "CDSonMinusStrandTranscribedRNA",
+                              "Coding region on TSA transcribed RNA should not be on the minus strand"));
+
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+}
