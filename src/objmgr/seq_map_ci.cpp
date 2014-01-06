@@ -37,10 +37,12 @@
 #include <objmgr/seq_map.hpp>
 #include <objmgr/tse_handle.hpp>
 #include <objmgr/seq_entry_handle.hpp>
-#include <objmgr/bioseq_handle.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/seq_vector.hpp>
+#include <objmgr/bioseq_handle.hpp>
 #include <objects/seq/seq_id_handle.hpp>
 #include <objects/seq/Seq_literal.hpp>
+#include <util/sequtil/sequtil_convert.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -684,6 +686,231 @@ bool CSeqMap_CI::IsValid(void) const
         !m_Stack.empty() &&
         m_Stack.front().InRange() &&
         m_Stack.front().GetType() != CSeqMap::eSeqEnd;
+}
+
+
+////////////////////////////////////////////////////////////////////
+// CSeqMap_I
+
+
+CSeqMap_I::CSeqMap_I(void)
+{
+}
+
+
+CSeqMap_I::CSeqMap_I(const CBioseq_EditHandle& bioseq,
+                     const SSeqMapSelector&    selector,
+                     TSeqPos                   pos)
+    : CSeqMap_CI(ConstRef(&bioseq.GetSeqMap()),
+                 &bioseq.GetScope(),
+                 sx_AdjustSelector(selector),
+                 pos),
+      m_SeqMap(&bioseq.SetSeqMap())
+{
+}
+
+
+CSeqMap_I::CSeqMap_I(const CBioseq_EditHandle& bioseq,
+                     const SSeqMapSelector&    selector,
+                     const CRange<TSeqPos>&    range)
+    : CSeqMap_CI(ConstRef(&bioseq.GetSeqMap()),
+                 &bioseq.GetScope(),
+                 sx_AdjustSelector(selector),
+                 range),
+      m_SeqMap(&bioseq.SetSeqMap())
+{
+}
+
+
+CSeqMap_I::CSeqMap_I(CRef<CSeqMap>&         seqmap,
+                     CScope*                scope,
+                     const SSeqMapSelector& selector,
+                     TSeqPos                pos)
+    : CSeqMap_CI(seqmap,
+                 scope,
+                 sx_AdjustSelector(selector),
+                 pos),
+      m_SeqMap(seqmap)
+{
+}
+
+
+CSeqMap_I::CSeqMap_I(CRef<CSeqMap>&         seqmap,
+                     CScope*                scope,
+                     const SSeqMapSelector& selector,
+                     const CRange<TSeqPos>& range)
+    : CSeqMap_CI(seqmap,
+                 scope,
+                 sx_AdjustSelector(selector),
+                 range),
+      m_SeqMap(seqmap)
+{
+}
+
+
+CSeqMap_I::~CSeqMap_I(void)
+{
+}
+
+
+inline
+SSeqMapSelector CSeqMap_I::sx_AdjustSelector(const SSeqMapSelector& selector)
+{
+    SSeqMapSelector sel_copy = selector;
+    sel_copy.SetResolveCount(0);
+    return sel_copy;
+}
+
+
+void CSeqMap_I::SetGap(TSeqPos length, CSeq_data* gap_data)
+{
+    if ( gap_data ) {
+        m_SeqMap->SetSegmentGap(*this, length, *gap_data);
+    }
+    else {
+        m_SeqMap->SetSegmentGap(*this, length);
+    }
+}
+
+
+void CSeqMap_I::SetRef(const CSeq_id_Handle& ref_id,
+                       TSeqPos               ref_pos,
+                       TSeqPos               ref_length,
+                       bool                  ref_minus_strand)
+{
+    m_SeqMap->SetSegmentRef(
+        *this, ref_length, ref_id, ref_pos, ref_minus_strand);
+
+}
+
+
+void CSeqMap_I::SetSeq_data(TSeqPos length, CSeq_data& data)
+{
+    m_SeqMap->SetSegmentData(*this, length, data);
+}
+
+
+CSeqMap_I& CSeqMap_I::InsertGap(TSeqPos length, CSeq_data* gap_data)
+{
+    CSeqMap_CI it = m_SeqMap->InsertSegmentGap(*this, length);
+    if ( gap_data ) {
+        SetGap(length, gap_data);
+    }
+    CSeqMap_CI::operator=(it);
+    return *this;
+}
+
+
+CSeqMap_I& CSeqMap_I::InsertRef(const CSeq_id_Handle& ref_id,
+                          TSeqPos               ref_pos,
+                          TSeqPos               ref_length,
+                          bool                  ref_minus_strand)
+{
+    CSeqMap_CI it = InsertGap(0);
+    m_SeqMap->SetSegmentRef(
+        *this, ref_length, ref_id, ref_pos, ref_minus_strand);
+    CSeqMap_CI::operator=(it);
+    return *this;
+}
+
+
+CSeqMap_I& CSeqMap_I::InsertData(TSeqPos length, CSeq_data& data)
+{
+    CSeqMap_CI it = InsertGap(0);
+    m_SeqMap->SetSegmentData(*this, length, data);
+    CSeqMap_CI::operator=(it);
+    return *this;
+}
+
+    
+CSeqMap_I& CSeqMap_I::InsertData(const string&       buffer,
+                                 CSeqUtil::ECoding   buffer_coding,
+                                 CSeq_data::E_Choice seq_data_coding)
+{
+    CRef<CSeq_data> data(new CSeq_data);
+    InsertData(0, *data);
+    SetSequence(buffer, buffer_coding, seq_data_coding);
+    return *this;
+}
+
+
+CSeqMap_I& CSeqMap_I::Remove(void)
+{
+    CSeqMap_CI it = m_SeqMap->RemoveSegment(*this);
+    CSeqMap_CI::operator=(it);
+    return *this;
+}
+
+
+void CSeqMap_I::GetSequence(string&           buffer,
+                            CSeqUtil::ECoding buffer_coding) const
+{
+    CConstRef<CSeq_data> data(&GetData());
+    CSeq_data::E_Choice src_coding = data->Which();
+
+#define CODING_UNPACK_CASE(coding)      \
+    case CSeq_data::e_##coding:         \
+        CSeqConvert::Convert(           \
+            data->Get##coding().Get(),  \
+            CSeqUtil::e_##coding,       \
+            0, GetLength(),             \
+            buffer, buffer_coding);     \
+            break
+
+    // Unpack and return
+    switch ( src_coding ) {
+    CODING_UNPACK_CASE(Iupacna);
+    CODING_UNPACK_CASE(Iupacaa);
+    CODING_UNPACK_CASE(Ncbi2na);
+    CODING_UNPACK_CASE(Ncbi4na);
+    CODING_UNPACK_CASE(Ncbi8na);
+    // CODING_UNPACK_CASE(Ncbipna);
+    CODING_UNPACK_CASE(Ncbi8aa);
+    CODING_UNPACK_CASE(Ncbieaa);
+    // CODING_UNPACK_CASE(Ncbipaa);
+    CODING_UNPACK_CASE(Ncbistdaa);
+    default:
+        NCBI_THROW(CSeqMapException, eUnimplemented,
+            "Unsupported seq-data type: " +
+            CSeq_data::SelectionName(src_coding));
+        break;
+    }
+}
+
+
+void CSeqMap_I::SetSequence(const string&       buffer,
+                            CSeqUtil::ECoding   buffer_coding,
+                            CSeq_data::E_Choice seq_data_coding)
+{
+    CRef<CSeq_data> new_data(new CSeq_data);
+
+#define CODING_PACK_CASE(coding)            \
+    case CSeq_data::e_##coding:             \
+        CSeqConvert::Convert(               \
+            buffer, buffer_coding,          \
+            0, buffer.size(),               \
+            new_data->Set##coding().Set(),  \
+            CSeqUtil::e_##coding);          \
+            break
+
+    switch ( seq_data_coding ) {
+    CODING_PACK_CASE(Iupacna);
+    CODING_PACK_CASE(Iupacaa);
+    CODING_PACK_CASE(Ncbi2na);
+    CODING_PACK_CASE(Ncbi4na);
+    CODING_PACK_CASE(Ncbi8na);
+    // CODING_PACK_CASE(Ncbipna);
+    CODING_PACK_CASE(Ncbi8aa);
+    CODING_PACK_CASE(Ncbieaa);
+    // CODING_PACK_CASE(Ncbipaa);
+    CODING_PACK_CASE(Ncbistdaa);
+    default:
+        NCBI_THROW(CSeqMapException, eUnimplemented,
+            "Unsupported seq-data type: " +
+            CSeq_data::SelectionName(seq_data_coding));
+        break;
+    }
+    SetSeq_data(buffer.size(), *new_data);
 }
 
 

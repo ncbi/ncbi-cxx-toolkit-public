@@ -39,7 +39,9 @@
 #include <objmgr/impl/heap_scope.hpp>
 #include <objmgr/tse_handle.hpp>
 #include <objects/seq/seq_id_handle.hpp>
+#include <objects/seq/Seq_data.hpp>
 #include <util/range.hpp>
+#include <util/sequtil/sequtil.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -319,6 +321,8 @@ public:
 
 private:
     friend class CSeqMap;
+    friend class CSeqMap_I;
+
     typedef CSeqMap_CI_SegmentInfo TSegmentInfo;
 
     CSeqMap_CI(const CSeqMap_CI& base,
@@ -374,6 +378,78 @@ private:
     // search range
     TSeqPos              m_SearchPos;
     TSeqPos              m_SearchEnd;
+};
+
+
+class CBioseq_EditHandle;
+
+/// Non-const iterator over CSeqMap (allows to edit the sequence).
+class NCBI_XOBJMGR_EXPORT CSeqMap_I : public CSeqMap_CI
+{
+public:
+    CSeqMap_I(void);
+    CSeqMap_I(const CBioseq_EditHandle& bioseq,
+              const SSeqMapSelector&    selector,
+              TSeqPos                   pos = 0);
+    CSeqMap_I(const CBioseq_EditHandle& bioseq,
+              const SSeqMapSelector&    selector,
+              const CRange<TSeqPos>&    range);
+    CSeqMap_I(CRef<CSeqMap>&         seqmap,
+              CScope*                scope,
+              const SSeqMapSelector& selector,
+              TSeqPos                pos = 0);
+    CSeqMap_I(CRef<CSeqMap>&         seqmap,
+              CScope*                scope,
+              const SSeqMapSelector& selector,
+              const CRange<TSeqPos>& range);
+
+    ~CSeqMap_I(void);
+
+    /// Change current segment to gap.
+    void SetGap(TSeqPos length, CSeq_data* gap_data = 0);
+    /// Change current segment to reference.
+    void SetRef(const CSeq_id_Handle& ref_id,
+                TSeqPos               ref_pos,
+                TSeqPos               ref_length,
+                bool                  ref_minus_strand = false);
+    /// Change current segment to data.
+    void SetSeq_data(TSeqPos length, CSeq_data& data);
+
+    /// Insert gap. On return the iterator points to the new segment.
+    CSeqMap_I& InsertGap(TSeqPos length, CSeq_data* gap_data = 0);
+    /// Insert reference. On return the iterator points to the new segment.
+    CSeqMap_I& InsertRef(const CSeq_id_Handle& ref_id,
+                         TSeqPos               ref_pos,
+                         TSeqPos               ref_length,
+                         bool                  ref_minus_strand = false);
+    /// Insert data. On return the iterator points to the new segment.
+    CSeqMap_I& InsertData(TSeqPos length, CSeq_data& data);
+    /// Insert data segment using the sequence string and the selected coding.
+    CSeqMap_I& InsertData(const string&       buffer,
+                          CSeqUtil::ECoding   buffer_coding,
+                          CSeq_data::E_Choice seq_data_coding);
+
+    /// Remove current segment. On return the iterator points to the next
+    /// segment or becomes invalid.
+    CSeqMap_I& Remove(void);
+
+    /// Get current sequence as a string with the selected encoding.
+    /// NOTE: Some seq-data types (Gap) and encodings (Ncbipna, Ncbipaa)
+    /// are not supported.
+    void GetSequence(string&           buffer,
+                     CSeqUtil::ECoding buffer_coding) const;
+    /// Set sequence data. The buffer is converted from buffer_coding
+    /// to seq_data_coding and put into the new seq-data.
+    /// NOTE: Some seq-data types (Gap) and encodings (Ncbipna, Ncbipaa)
+    /// are not supported.
+    void SetSequence(const string&       buffer,
+                     CSeqUtil::ECoding   buffer_coding,
+                     CSeq_data::E_Choice seq_data_coding);
+
+private:
+    static SSeqMapSelector sx_AdjustSelector(const SSeqMapSelector& selector);
+
+    CRef<CSeqMap> m_SeqMap;
 };
 
 
@@ -697,6 +773,10 @@ const CTSE_Handle& CSeqMap_CI::GetUsingTSE(void) const
 {
     return x_GetSegmentInfo().m_TSE;
 }
+
+
+/////////////////////////////////////////////////////////////////////
+//  CSeqMap_I
 
 
 /* @} */
