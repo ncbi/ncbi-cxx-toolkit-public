@@ -1843,7 +1843,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
  
     string test_type = GetTestType();
 
-    
+
     while(true) {
 
         if(m_segments.size() > 0) {
@@ -1968,7 +1968,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
               NCBI_THROW(CAlgoAlignException, eBadParameter, msg.c_str());
         }
 
-        //partial trimming, exons near <GAP>s
+        //partial trimming, exons near <GAP>s, terminal exons are trimmed already
         for(size_t k0 = 0; k0 < seg_dim; ++k0) {
             if(!segments[k0].m_exon) {
                 if( k0 > 0 && segments[k0-1].m_exon) {
@@ -1987,6 +1987,38 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 }
             }
         }
+
+        //CORRECTIONS AFTER PARTIAL TRIMMING
+        // indicate any slack space on the left
+        if(segments[0].m_box[0] > 0) {
+            
+            TSegment g;
+            g.m_box[0] = 0;
+            g.m_box[1] = segments[0].m_box[0] - 1;
+            g.m_box[2] = 0;
+            g.m_box[3] = segments[0].m_box[2] - 1;
+            g.SetToGap();
+            segments.push_front(g);
+            ++seg_dim;
+        }
+        
+        // same on the right        
+        TSegment& seg_last (segments.back());
+        
+        if(seg_last.m_box[1] + 1 < SeqLen1) {
+            
+            TSegment g;
+            g.m_box[0] = seg_last.m_box[1] + 1;
+            g.m_box[1] = SeqLen1 - 1;
+            g.m_box[2] = seg_last.m_box[3] + 1;
+            g.m_box[3] = SeqLen2 - 1;
+            g.SetToGap();
+            segments.push_back(g);
+            ++seg_dim;
+        }
+
+
+        //WHOLE EXON TRIMMING
 
         //drop low complexity terminal exons
         {{
@@ -2052,17 +2084,17 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
 
                 if(k == 0) {//the first segment is an exon 
                     if( (int)s.m_box[0] >= 20 ) {
-                        NCBI_THROW(CAlgoAlignException, eInternal, "missing gap at the beginning");
+                        adj = eHard;
                     } else {
-                        adj = eSoft;
+                        if(adj == eNo) adj = eSoft;
                     }
                 }
 
                 if( k + 1 == seg_dim ) {//the last segment is an exon
                     if( ( (int)SeqLen1 - (int)s.m_box[1] - 1 ) >= 20 ) {
-                        NCBI_THROW(CAlgoAlignException, eInternal, "missing gap at the end");
+                        adj = eHard;
                     } else {
-                        adj = eSoft;
+                        if(adj == eNo) adj = eSoft;//prevent switch from Hard to Soft
                     }
                 }
 
@@ -2070,7 +2102,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                     if( (int)s.m_box[0] >= 20 ) {
                         adj = eHard;
                     } else {
-                        adj = eSoft;
+                        if(adj == eNo) adj = eSoft;
                     }
                 }
 
@@ -2078,7 +2110,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                     if(  ( (int)SeqLen1 - (int)s.m_box[1] - 1 ) >= 20 ) {
                         adj = eHard;
                     } else {
-                        if(adj = eNo) adj = eSoft;//prevent switch from Hard to Soft
+                        if(adj == eNo) adj = eSoft;
                     }
                 }
                 
@@ -2160,34 +2192,6 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                   gap_prev = false;
               }
           }
-
-        // indicate any slack space on the left
-        if(segments[0].m_box[0] > 0) {
-            
-            TSegment g;
-            g.m_box[0] = 0;
-            g.m_box[1] = segments[0].m_box[0] - 1;
-            g.m_box[2] = 0;
-            g.m_box[3] = segments[0].m_box[2] - 1;
-            g.SetToGap();
-            segments.push_front(g);
-            ++seg_dim;
-        }
-
-        // same on the right
-        TSegment& seg_last (segments.back());
-
-        if(seg_last.m_box[1] + 1 < SeqLen1) {
-            
-            TSegment g;
-            g.m_box[0] = seg_last.m_box[1] + 1;
-            g.m_box[1] = SeqLen1 - 1;
-            g.m_box[2] = seg_last.m_box[3] + 1;
-            g.m_box[3] = SeqLen2 - 1;
-            g.SetToGap();
-            segments.push_back(g);
-            ++seg_dim;
-        }
 
         // merge all adjacent gaps
         int gap_start_idx (-1);
