@@ -23,11 +23,10 @@
 *
 * ===========================================================================
 *
-* Authors:  Jonathan Kans, Clifford Clausen,
-*           Aaron Ucko, Sergiy Gotvyanskyy
+* Authors:  Sergiy Gotvyanskyy
 *
 * File Description:
-*   Converter of various files into ASN.1 format, main application function
+*   Validates tab-delimited files agains ASN.1 datatypes, main application function
 *
 */
 
@@ -72,7 +71,7 @@ private:
 
     void Setup(const CArgs& args);
 
-    void ProcessOneFile(CNcbiIstream& input);
+    void ProcessOneFile(CNcbiIstream& input, CNcbiOstream* output);
     void ProcessOneFile();
     bool ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse);
 
@@ -89,14 +88,20 @@ private:
 
     string m_columns_def;
     string m_required_cols;
+    string m_ignored_cols;
+    string m_format;
+
+    CNcbiOstream* m_output;
     bool   m_comma_separated;
     bool   m_no_header;
     bool   m_skip_empty;
-    CNcbiOstream* m_output;
 };
 
 CTAbleValApp::CTAbleValApp(void):
-    m_LogStream(0), m_output(0)
+    m_LogStream(0), m_output(0),
+    m_comma_separated(false),
+    m_no_header(false),
+    m_skip_empty(false)
 {
 }
 
@@ -131,13 +136,15 @@ void CTAbleValApp::Init(void)
 
     arg_desc->AddFlag("no-header", "Start from the first row");
     arg_desc->AddFlag("skip-empty", "Ignore all empty rows");
-    arg_desc->AddDefaultKey("output", "String", "Output type: tab, xml, text, html", CArgDescriptions::eString, "tab");
+    arg_desc->AddDefaultKey("format", "String", "Output type: tab, xml, text, html", CArgDescriptions::eString, "tab");
 
     arg_desc->AddFlag("comma", "Use comma separator instead of tabs");
 
     arg_desc->AddOptionalKey("columns", "String", "Comma separated columns definitions", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("required", "String", "Comma separated required columns, use indices or names", CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("ignore", "String", "Comma separated columns to be ignored, use indices or names", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);    // done
 
@@ -173,8 +180,13 @@ int CTAbleValApp::Run(void)
     if (args["required"])
         m_required_cols = args["required"].AsString();
 
+    if (args["ignore"])
+        m_ignored_cols = args["ignore"].AsString();
+       
+
     m_no_header = args["no-header"];
     m_skip_empty = args["skip-empty"];
+    m_format = args["format"].AsString();
 
     // Designate where do we output files: local folder, specified folder or a specific single output file
     if (args["o"])
@@ -247,13 +259,30 @@ int CTAbleValApp::Run(void)
         return 0;
     }
 }
-void CTAbleValApp::ProcessOneFile(CNcbiIstream& input)
+void CTAbleValApp::ProcessOneFile(CNcbiIstream& input, CNcbiOstream* output)
 {
-   CTabDelimitedValidator validator(m_logger);
+   int flags = 
+       (m_comma_separated ? CTabDelimitedValidator::e_tab_comma_delim : CTabDelimitedValidator::e_tab_tab_delim) |
+       (m_no_header       ? CTabDelimitedValidator::e_tab_noheader : 0) |
+       (m_skip_empty      ? CTabDelimitedValidator::e_tab_ignore_empty_rows : 0);
+
+   if (m_format == "xml")
+       flags |= CTabDelimitedValidator::e_tab_xml_report;
+   else
+   if (m_format == "tab")
+       flags |= CTabDelimitedValidator::e_tab_tab_report;
+   else
+   if (m_format == "html")
+       flags |= CTabDelimitedValidator::e_tab_html_report;
+   else
+   if (m_format == "text")
+       flags |= CTabDelimitedValidator::e_tab_text_report;
+
+   CTabDelimitedValidator validator(output, CTabDelimitedValidator::e_Flags(flags));
 
    CRef<ILineReader> reader(ILineReader::New(input));
 
-   validator.ValidateInput(*reader, m_columns_def, m_required_cols, m_comma_separated, m_no_header, m_skip_empty);
+   validator.ValidateInput(*reader, m_columns_def, m_required_cols, m_ignored_cols);
 }
 
 void CTAbleValApp::ProcessOneFile()
@@ -276,18 +305,20 @@ void CTAbleValApp::ProcessOneFile()
         {
             if (m_output == 0)
             {
-                //local_file = GenerateOutputStream(m_context, m_current_file);
-                //local_output.reset(new CNcbiOfstream(local_file.GetPath().c_str()));
-                //output = local_output.get();
+                string temp_file = CTempString(m_current_file, 0, m_current_file.rfind('.')); // npos will signal to use the whole string
+                temp_file += ".val";
+                local_file.Reset(temp_file);
+                local_output.reset(new CNcbiOfstream(local_file.GetPath().c_str()));
+                output = local_output.get();
             }
             else
             {
-                //output = m_output;
+                output = m_output;
             }
         }
 
         CNcbiIfstream input(m_current_file.c_str());
-        ProcessOneFile(input);
+        ProcessOneFile(input, output);
         //if (!IsDryRun())
             //m_reader->WriteObject(*obj, *output);
     }

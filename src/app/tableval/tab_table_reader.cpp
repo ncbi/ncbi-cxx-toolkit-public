@@ -33,84 +33,174 @@
 
 #include <ncbi_pch.hpp>
 
-#include <objects/seq/Seq_descr.hpp>
-#include <objects/seq/Seqdesc.hpp>
-#include <objects/seq/Bioseq.hpp>
-#include <objects/seqset/Seq_entry.hpp>
-#include <objects/seqset/Bioseq_set.hpp>
-#include <objects/general/User_object.hpp>
-#include <objects/general/Object_id.hpp>
 #include <util/line_reader.hpp>
-#include <objtools/readers/source_mod_parser.hpp>
 
 #include "tab_table_reader.hpp"
+
+#include <misc/xmlwrapp/xmlwrapp.hpp>
 
 #include <common/test_assert.h>  /* This header must go last */
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-void CTabDelimitedValidator::_Validate(int col_number, const CTempString& datatype, const CTempString& value)
+void CTabDelimitedValidator::_Validate(int col_number, const CTempString& value)
 {
+    //const CTempString& datatype = m_col_defs[col_number];
 }
 
 void CTabDelimitedValidator::_ReportError(int col_number, const CTempString& error)
 {
+    CTabDelimitedValidatorError rec;
+    rec.m_col = col_number;
+    rec.m_row = m_current_row_number;
+    rec.m_msg = error;
+    m_errors.push_back(rec);
 }
 
-void CTabDelimitedValidator::ValidateInput(ILineReader& reader, const CTempString& default_collumns, const CTempString& required, bool comma_separated, bool no_header, bool ignore_empty_rows)
+void CTabDelimitedValidator::ValidateInput(ILineReader& reader, const CTempString& default_collumns,
+    const CTempString& required, const CTempString& ignored)
 {
-    vector<CTempStringEx> cols;
-    vector<bool> required_cols;
     m_current_row_number = 0;
+    m_delim = (m_flags & e_tab_comma_delim) ? "," : "\t";
 
-    CTempString delim = comma_separated ? "," : "\t";
-
-    if (!default_collumns.empty())
+    if (_ProcessHeader(reader, default_collumns))
     {
-        NStr::Tokenize(default_collumns, ",", cols); //using comma separator always
+        // preprocess headers & required & ignored
+        if (_MakeColumns("Required", required, m_required_cols) &&
+            _MakeColumns("Ignored", ignored, m_ignored_cols))
+            _OperateRows(reader);
     }
 
+    _GenerateReport();
+}
+
+void CTabDelimitedValidator::_ReportTab()
+{
+    if (!m_errors.empty())
+        *m_out_stream << "Row" << "\t" << "Column" << "\t" << "Error" << endl;
+
+    ITERATE(list<CTabDelimitedValidatorError>, it, m_errors)
+    {
+        *m_out_stream << it->m_row << "\t" << it->m_col << "\t" << it->m_msg.c_str() << endl;
+    }
+}
+
+void CTabDelimitedValidator::_ReportXML()
+{
+    if (m_errors.empty())
+        return;
+
+    xml::document xmldoc("tab_delimited_validator");
+    xml::node& root = xmldoc.get_root_node();
+
+    int i=0;
+    ITERATE(list<CTabDelimitedValidatorError>, it, m_errors)
+    {
+        xml::node new_node("error");
+        new_node.get_attributes().insert("row", NStr::IntToString(it->m_row).c_str());
+        new_node.get_attributes().insert("column", NStr::IntToString(it->m_row).c_str());
+        new_node.get_attributes().insert("message", it->m_msg.c_str()); // will be handled correctly
+        root.insert(new_node);
+
+        i++;
+        if (i>100) 
+            break;
+    }
+
+    xmldoc.set_is_standalone(true);
+    xmldoc.set_encoding("utf-8");
+    *m_out_stream << xmldoc;
+
+}
+
+void CTabDelimitedValidator::_GenerateReport()
+{
+    if ( (m_flags & CTabDelimitedValidator::e_tab_tab_report) == CTabDelimitedValidator::e_tab_tab_report)
+    {
+        _ReportTab();
+    }
+    else
+    if ( (m_flags & CTabDelimitedValidator::e_tab_xml_report) == CTabDelimitedValidator::e_tab_xml_report)
+    {
+        _ReportXML();
+    }
+}
+
+bool CTabDelimitedValidator::_MakeColumns(const string& message, const CTempString& collumns, vector<bool>& col_defs)
+{
+    col_defs.resize(m_col_defs.size(), false); // all values are not required
+    vector<CTempStringEx> names;
+    NStr::Tokenize(collumns, ",", names);
+    bool can_process = true;
+    for (size_t i=0; i<names.size(); i++)
+    {
+        int index = NStr::StringToInt(names[i], NStr::fConvErr_NoThrow);
+        if (index == 0)
+        {
+            vector<CTempStringEx>::const_iterator col_it = find(m_col_defs.begin(), m_col_defs.end(), names[i]);
+            if (col_it == m_col_defs.end())
+            {
+                _ReportError(i, message + " column does not exist");
+                // stop processing
+                can_process = false;
+            }                   
+            else
+                col_defs[index = col_it - m_col_defs.begin()] = true;
+        }
+        else
+        if (index >= m_col_defs.size() || index<0)
+        {
+            _ReportError(index, message + " column does not exist");
+            // stop processing
+            can_process = false;
+        }
+        else
+            col_defs[index + 1] = true;
+    }
+    return can_process;
+}
+
+bool CTabDelimitedValidator::_ProcessHeader(ILineReader& reader, const CTempString& default_collumns)
+{
+    if (!reader.AtEOF())
+    {
+        if (m_flags & e_tab_noheader)
+        {
+            NStr::Tokenize(default_collumns, ",", m_col_defs); //using comma separator always
+        }
+        else
+        {
+            reader.ReadLine();
+            // First line is a collumn definitions
+            m_current_row_number = reader.GetLineNumber();
+
+            NStr::Tokenize(reader.GetCurrentLine(), m_delim, m_col_defs);
+        }
+
+        if (m_col_defs.size()<1)
+        {
+            _ReportError(1, "No columns specified");            
+            return false;
+        }
+
+        return true;
+    }
+    return false;
+}
+
+void CTabDelimitedValidator::_OperateRows(ILineReader& reader)
+{
     while (!reader.AtEOF())
     {
         reader.ReadLine();
         // First line is a collumn definitions
         CTempString current = reader.GetCurrentLine();
         m_current_row_number = reader.GetLineNumber();
-        if (reader.GetLineNumber() == 1)
-        {
-            if (no_header)
-                continue;
-
-            if (default_collumns.empty())
-                NStr::Tokenize(current, delim, cols);
-
-            // preprocess headers & required
-            required_cols.resize(cols.size(), false); // all values are not required
-            vector<CTempStringEx> required_names;
-            NStr::Tokenize(required, ",", required_names);
-            for (size_t i=0; i<required_names.size(); i++)
-            {
-                int index = NStr::StringToInt(required_names[i], NStr::fConvErr_NoThrow);
-                if (index == 0)
-                {
-                    vector<CTempStringEx>::iterator col_it = find(cols.begin(), cols.end(), required_names[i]);
-                    if (col_it == cols.end())
-                    {
-                        _ReportError(i, "Required column does not exist");
-                        // stop processing
-                        return;
-                    }                   
-                    index = (col_it - cols.begin());
-                }
-                required_cols[index] = true;
-            }         
-            continue;
-        }
 
         if (current.empty())
         {
-            if (ignore_empty_rows)
+            if (m_flags & e_tab_ignore_empty_rows)
                 continue;
             else
                 _ReportError(0, "Empty rows not allowed");
@@ -118,21 +208,22 @@ void CTabDelimitedValidator::ValidateInput(ILineReader& reader, const CTempStrin
         else
         {
             vector<CTempStringEx> values;
-            NStr::Tokenize(current, delim, values);
+            NStr::Tokenize(current, m_delim, values);
 
-            if (values.size() > cols.size())
-                _ReportError(0, "To many values");
+            if (values.size() > m_col_defs.size())
+                _ReportError(m_col_defs.size(), "To many values");
 
-            for (size_t i=0; i<cols.size(); i++)
+            for (size_t i=0; i<m_col_defs.size(); i++)
             {
                 if (i>=values.size() || values[i].empty())
                 {
-                    if (required_cols[i])
+                    if (m_required_cols[i])
                         _ReportError(i, "Missing required value");
                 }
                 else
+                if (!m_ignored_cols[i])
                 {
-                   _Validate(i, cols[i], values[i]);
+                   _Validate(i, values[i]);
                 }
             }
         }
