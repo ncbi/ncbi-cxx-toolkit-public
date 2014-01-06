@@ -1827,6 +1827,7 @@ CQueryImpl::CQueryImpl(CDatabaseImpl* db_impl)
       m_CallStmt(NULL),
       m_CurRS(NULL),
       m_IgnoreBounds(false),
+      m_HasExplicitMode(false),
       m_RSBeginned(false),
       m_RSFinished(true),
       m_Executed(false),
@@ -2012,6 +2013,7 @@ inline void
 CQueryImpl::x_InitBeforeExec(void)
 {
     m_IgnoreBounds = false;
+    m_HasExplicitMode = false;
     m_RSBeginned = false;
     m_RSFinished = true;
     m_ReportedWrongRowCount = false;
@@ -2074,6 +2076,7 @@ CQueryImpl::SetIgnoreBounds(bool is_ignore)
 {
     x_CheckCanWork();
     m_IgnoreBounds = is_ignore;
+    m_HasExplicitMode = true;
     x_CheckRowCount();
 }
 
@@ -2220,7 +2223,14 @@ CQueryImpl::HasMoreResultSets(void)
                 m_CurRS = NULL;
                 break;
             case eDB_RowResult:
-                ++m_CurRSNo;
+                if (++m_CurRSNo == 2  &&  !m_HasExplicitMode ) {
+                    ERR_POST_X(16, Warning
+                               << "Multiple SDBAPI result sets found, but"
+                               " neither SingleSet nor MultiSet explicitly"
+                               " requested.  Defaulting to MultiSet per"
+                               " historic behavior, but future versions may"
+                               " default to SingleSet.");
+                }
                 if ( !m_IgnoreBounds ) {
                     m_ReportedWrongRowCount = false;
                 }
@@ -2278,6 +2288,7 @@ inline void
 CQueryImpl::PurgeResults(void)
 {
     x_CheckCanWork();
+    m_HasExplicitMode = true; // Doesn't particularly matter at this point!
     for (;;) {
         try {
             if (HasMoreResultSets()) {

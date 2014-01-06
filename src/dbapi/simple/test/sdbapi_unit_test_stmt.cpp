@@ -205,6 +205,7 @@ BOOST_AUTO_TEST_CASE(Test_SelectStmt2)
 
             query.SetSql( "exec sp_helpdb @dbname" );
             query.Execute();
+            query.MultiSet();
             query.RequireRowCount(1);
 
             while(query.HasMoreResultSets()) {

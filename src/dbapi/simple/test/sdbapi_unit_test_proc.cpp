@@ -194,6 +194,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure3)
 
             query.SetParameter( "@dbname", "master" );
             query.ExecuteSP("sp_helpdb");
+            query.MultiSet();
             query.RequireRowCount(1);
 
             int result_num = 0;
@@ -218,6 +219,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure3)
 
             query.SetSql("exec sp_helpdb 'master'");
             query.Execute();
+            query.MultiSet();
             query.RequireRowCount(1);
             while (query.HasMoreResultSets()) {
                 if (++result_num > 1) {
@@ -235,6 +237,7 @@ BOOST_AUTO_TEST_CASE(Test_Procedure3)
             CQuery query = GetDatabase().NewQuery();
 
             query.ExecuteSP("sp_spaceused");
+            query.MultiSet();
             query.RequireRowCount(1);
 
             BOOST_CHECK(query.HasMoreResultSets());

@@ -179,6 +179,7 @@ private:
     string              m_Sql;
     IResultSet*         m_CurRS;
     bool                m_IgnoreBounds;
+    bool                m_HasExplicitMode;
     bool                m_RSBeginned;
     bool                m_RSFinished;
     bool                m_Executed;
