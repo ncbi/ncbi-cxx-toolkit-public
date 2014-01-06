@@ -555,7 +555,11 @@ BOOST_AUTO_TEST_CASE(TPGTest)
     CRef<CObjectManager> om(CObjectManager::GetInstance());
     CScope scope(*CObjectManager::GetInstance());
 
+#ifdef NCBI_OS_DARWIN
+    string wgs_root = "/net/pan1/id_dumps/WGS/tmp";
+#else
     string wgs_root = "//panfs/pan1/id_dumps/WGS/tmp";
+#endif
     string wgs_prefix = "DAAH01";
     string wgs_dbpath = wgs_root+"/"+wgs_prefix;
     CWGSDataLoader::SLoaderParams wgs_loader_params;
