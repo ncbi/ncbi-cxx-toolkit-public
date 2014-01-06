@@ -114,7 +114,7 @@ class CDiscRepOutput : public CObject
     void x_InitializeOnCallerToolPriorities();
     void x_InitializeOnCallerToolGroups();
     void x_OrderResult(Int2Int& ord2i_citem);
-    void x_GroupResult(map <EOnCallerGrp, string> grp_idx_str);
+    void x_GroupResult(map <EOnCallerGrp, string>& grp_idx_str);
     void x_ReorderAndGroupOnCallerResults(Int2Int& ord2i_citem, 
                                         map <EOnCallerGrp, string>& grp_idx_str);
     string x_GetGrpName(EOnCallerGrp e_grp);

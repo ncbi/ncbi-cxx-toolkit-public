@@ -1150,7 +1150,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
       set <string> m_aa_bioseqs;
 
       string GetName_set() const {return string("ONCALLER_DEFLINE_ON_SET");}
-      string GetName_dup() const {return string("DISC_DUP_DEFLINE"); }
       string GetName_seqch() const {return string("DISC_TITLE_ENDS_WITH_SEQUENCE"); }
   };
 
@@ -1162,16 +1161,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return CSeqEntry_test_on_defline::GetName_seqch();}
   };
-
-  class CSeqEntry_DISC_DUP_DEFLINE : public CSeqEntry_test_on_defline
-  {
-    public:
-      virtual ~CSeqEntry_DISC_DUP_DEFLINE () {};
-
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const { return CSeqEntry_test_on_defline::GetName_dup();}
-  };
-
 
   class CSeqEntry_ONCALLER_DEFLINE_ON_SET : public CSeqEntry_test_on_defline
   {
@@ -1971,6 +1960,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
   class CSeqEntry_DISC_INCONSISTENT_MOLTYPES : public CSeqEntryTestAndRepData
   {
     public:
+      CSeqEntry_DISC_INCONSISTENT_MOLTYPES () : m_entry_no(0) { };
       virtual ~CSeqEntry_DISC_INCONSISTENT_MOLTYPES () {};
 
       virtual void TestOnObj(const CSeq_entry& seq_entry);
@@ -2280,7 +2270,18 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
     protected:
       string GetName_inc() const {return string("INCONSISTENT_SOURCE_DEFLINE");}
-      string GetName_missing() const {return string("TEST_TAXNAME_NOT_IN_DEFLINE"); }
+      string GetName_missing() const {
+                  return string("TEST_TAXNAME_NOT_IN_DEFLINE"); }
+      string GetName_dup() const {return string("DISC_DUP_DEFLINE"); }
+  };
+
+  class CBioseq_DISC_DUP_DEFLINE : public CBioseq_on_tax_def
+  {
+    public:
+      virtual ~CBioseq_DISC_DUP_DEFLINE () {};
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {return CBioseq_on_tax_def::GetName_dup();}
   };
 
   class CBioseq_INCONSISTENT_SOURCE_DEFLINE : public CBioseq_on_tax_def
