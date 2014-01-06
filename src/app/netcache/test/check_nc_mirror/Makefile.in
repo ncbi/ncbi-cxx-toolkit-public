@@ -6,12 +6,8 @@
 
 LIB_PROJ =
 
-APP_PROJ = test_nc_stress test_nc_stress_pubmed logs_splitter logs_replay
+APP_PROJ = check_nc_mirror
 PROJ_TAG = test
-
 
 srcdir = @srcdir@
 include @builddir@/Makefile.meta
-
-#SUB_PROJ = check_nc_mirror
-
