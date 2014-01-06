@@ -1987,7 +1987,7 @@ CQueryImpl::x_Close(void)
         try {
             VerifyDone(CQuery::eAllResultSets);
         } catch (CSDB_Exception& e) {
-            ERR_POST_X(13, Warning << e);
+            ERR_POST_X(14, Warning << e);
         }
         if (m_CurRSNo != 0) {
             _TRACE(m_CurRowNo << " row(s) from query.");
@@ -2286,7 +2286,7 @@ CQueryImpl::PurgeResults(void)
                 break;
             }
         } catch (CSDB_Exception& e) {
-            ERR_POST_X(14, Warning << e);
+            ERR_POST_X(15, Warning << e);
         }
     }
 }
