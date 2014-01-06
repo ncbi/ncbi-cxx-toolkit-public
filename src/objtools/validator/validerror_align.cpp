@@ -741,13 +741,25 @@ bool CValidError_align::x_ValidateDim
                      "Dim: This alignment has dimension zero", align);
         }
     } else if (obj.GetDim() == 1) {
+        string msg = "";
+        EErrType et;
         if (part > 0) {
-            PostErr (eDiag_Error, eErr_SEQ_ALIGN_SegsDimOne,
-                     "Segs: Segment " + NStr::SizetToString (part) + "apparently has only one sequence.  Each portion of the alignment must have at least two sequences.", align);
+            et = eErr_SEQ_ALIGN_SegsDimOne;
+            msg = "Segs: Segment " + NStr::SizetToString (part) + "apparently has only one sequence.  Each portion of the alignment must have at least two sequences.";
         } else {
-            PostErr (eDiag_Error, eErr_SEQ_ALIGN_AlignDimOne,
-                     "Dim: This seqalign apparently has only one sequence.  Each alignment must have at least two sequences.", align);
+            et = eErr_SEQ_ALIGN_AlignDimOne;
+            msg = "Dim: This seqalign apparently has only one sequence.  Each alignment must have at least two sequences.";
         }
+        CConstRef<CSeq_id> id = GetReportableSeqIdForAlignment(align, *m_Scope);
+        if (id) {
+            CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*id);
+            if (bsh) {
+                int version = 0;
+                const string& label = GetAccessionFromObjects(bsh.GetCompleteBioseq(), NULL, *m_Scope, &version);
+                msg += "  context " + label;
+            }
+        }
+        PostErr (eDiag_Error, et, msg, align);
     } else {
         rval = true;
     }

@@ -16791,7 +16791,7 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_ALIGN_AlignDimOne)
     STANDARD_SETUP_WITH_DATABASE
 
     expected_errors.push_back(new CExpectedError("good1", eDiag_Error, "AlignDimOne", 
-                  "Dim: This seqalign apparently has only one sequence.  Each alignment must have at least two sequences."));
+                  "Dim: This seqalign apparently has only one sequence.  Each alignment must have at least two sequences.  context good1"));
     options |= CValidator::eVal_val_align | CValidator::eVal_remote_fetch;
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);

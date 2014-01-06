@@ -1159,7 +1159,16 @@ void CValidError_imp::PostErr
         sv = eDiag_Error;
     }
 
-    // Append Alignment label
+    CConstRef<CSeq_id> id = GetReportableSeqIdForAlignment(align, *m_Scope);
+    if (id) {
+        CBioseq_Handle bsh = m_Scope->GetBioseqHandle(*id);
+        if (bsh) {
+            PostErr(sv, et, msg, *(bsh.GetCompleteBioseq()));
+            return;
+        }
+    }
+
+    // Can't get bioseq for reporting, use other Alignment label
     string desc = "ALIGNMENT: ";
     if (align.IsSetType()) {
         desc += align.ENUM_METHOD_NAME(EType)()->FindName(align.GetType(), true);
@@ -1175,6 +1184,8 @@ void CValidError_imp::PostErr
         desc += " SEGS: ";
         desc += align.GetSegs().SelectionName(align.GetSegs().Which());
     }
+
+ 
 
     int version = 0;
     const string& accession = GetAccessionFromObjects(&align, NULL, *m_Scope, &version);

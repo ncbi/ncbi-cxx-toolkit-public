@@ -78,6 +78,7 @@ string GetSequenceStringFromLoc(const CSeq_loc& loc,  CScope& scope);
 
 inline
 bool IsResidue(unsigned char residue) { return residue <= 250; }
+CConstRef<CSeq_id> GetReportableSeqIdForAlignment(const CSeq_align& align, CScope& scope);
 string GetAccessionFromObjects(const CSerialObject* obj, const CSeq_entry* ctx, CScope& scope, int* version);
 
 CBioseq_set_Handle GetSetParent (CBioseq_set_Handle set, CBioseq_set::TClass set_class);
