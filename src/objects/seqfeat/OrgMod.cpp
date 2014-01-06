@@ -450,6 +450,7 @@ COrgMod::FixStructuredVoucher(string& val, const string& v_type)
     if (rval) {
         val = MakeStructuredVoucher(new_inst_code, coll_code, id);
     }
+    return rval;
 }
 
 
