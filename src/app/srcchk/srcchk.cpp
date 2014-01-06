@@ -43,6 +43,7 @@
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
 #include <objtools/writers/writer_exception.hpp>
+#include <objtools/readers/message_listener.hpp>
 #include <objtools/writers/src_writer.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -66,11 +67,15 @@ private:
         vector<string>&);
     CSrcWriter* xInitWriter(
         const CArgs&);
+    void xDumpError(
+        const ILineError&,
+        std::ostream&);
 
 private:
     CRef<CObjectManager> m_pObjMngr;
     CRef<CScope> m_pScope;
     CRef<CSrcWriter> m_pWriter;
+    CRef<CMessageListenerBase> m_pErrors;
 };
 
 //  ----------------------------------------------------------------------------
@@ -121,9 +126,14 @@ int CSrcChkApp::Run()
     m_pScope.Reset(new CScope(*m_pObjMngr));
     m_pScope->AddDefaults();
 
+    m_pErrors = new CMessageListenerStrict;
     m_pWriter.Reset(xInitWriter(args));
     if (xTryProcessIdFile(args)) {
         return 0;
+    }
+    size_t errorCount = m_pErrors->Count();
+    for (size_t pos=0; pos < errorCount; ++pos) {
+        xDumpError(m_pErrors->GetError(pos), cerr);
     }
     return 1;
 }
@@ -137,6 +147,14 @@ bool CSrcChkApp::xTryProcessIdFile(
         return false;
     }
     CNcbiOstream* pOs = xInitOutputStream(args);
+    if (0 == pOs) {
+        CSrcError* pE = CSrcError::Create(
+            ncbi::eDiag_Error,
+            "Unable to open output file \"" + args["o"].AsString() + "\".");
+        m_pErrors->PutError(*pE);
+        delete pE;
+        return false;
+    }        
 
     const streamsize maxLineSize(100);
     char line[maxLineSize];
@@ -146,10 +164,21 @@ bool CSrcChkApp::xTryProcessIdFile(
         return false;
     }
 
-    CNcbiIstream& ifstr = args["i"].AsInputFile();
+    CNcbiIstream* pIfstr = 0;
+    try {
+        pIfstr = &args["i"].AsInputFile();
+    }
+    catch(std::exception&) {
+        CSrcError* pE = CSrcError::Create(
+            ncbi::eDiag_Error,
+            "Unable to open ID file \"" + args["i"].AsString() + "\".");
+        m_pErrors->PutError(*pE);
+        delete pE;
+        return false;
+    }
     vector<CBioseq_Handle> vecBsh;
-    while (!ifstr.eof()) {
-        ifstr.getline(line, maxLineSize);
+    while (!pIfstr->eof()) {
+        pIfstr->getline(line, maxLineSize);
         if (line[0] == 0  ||  line[0] == '#') {
             continue;
         }
@@ -162,7 +191,7 @@ bool CSrcChkApp::xTryProcessIdFile(
         }
         vecBsh.push_back(bsh);
     }
-    if (!m_pWriter->WriteBioseqHandles(vecBsh, desiredFields, *pOs)) {
+    if (!m_pWriter->WriteBioseqHandles(vecBsh, desiredFields, *pOs, m_pErrors)) {
         return false;
     }
     return true;
@@ -182,9 +211,20 @@ bool CSrcChkApp::xGetDesiredFields(
     if (args["F"]) {
         const streamsize maxLineSize(100);
         char line[maxLineSize];
-        CNcbiIstream& ifstr = args["F"].AsInputFile();
-        while (!ifstr.eof()) {
-            ifstr.getline(line, maxLineSize);
+        CNcbiIstream* pIfstr = 0;
+        try {
+            pIfstr = &args["F"].AsInputFile();
+        }
+        catch (std::exception e) {
+            CSrcError* pE = CSrcError::Create(
+                ncbi::eDiag_Error,
+                "Unable to open fields file \"" + args["F"].AsString() + "\".");
+            m_pErrors->PutError(*pE);
+            delete pE;
+            return false;
+        }
+        while (!pIfstr->eof()) {
+            pIfstr->getline(line, maxLineSize);
             if (line[0] == 0  ||  line[0] == '#') {
                 continue;
             }
@@ -193,9 +233,13 @@ bool CSrcChkApp::xGetDesiredFields(
             if (field.empty()) {
                 continue;
             }
+            if (field == "id"  ||  field == "accession") {
+                //handled implicitly
+                continue;
+            }
             fields.push_back(field);
         }
-        return CSrcWriter::ValidateFields(fields);
+        return CSrcWriter::ValidateFields(fields, m_pErrors);
     }
     fields.assign(
         CSrcWriter::sDefaultFields.begin(), CSrcWriter::sDefaultFields.end());
@@ -213,11 +257,8 @@ CNcbiOstream* CSrcChkApp::xInitOutputStream(
     try {
         return &args["o"].AsOutputFile();
     }
-    catch(...) {
-        NCBI_THROW(CObjWriterException, eArgErr, 
-            "xInitOutputStream: Unable to create output file \"" +
-            args["o"].AsString() +
-            "\"");
+    catch(std::exception&) {
+        return 0;
     }
 }
 
@@ -229,6 +270,19 @@ CSrcWriter* CSrcChkApp::xInitWriter(
     CSrcWriter* pWriter = new CSrcWriter(0);
     pWriter->SetDelimiter(args["delim"].AsString());
     return pWriter;
+}
+
+//  ---------------------------------------------------------------------------
+void CSrcChkApp::xDumpError(
+    const ILineError& error,
+    std::ostream& out)
+//  ---------------------------------------------------------------------------
+{
+    out << "srcchk " 
+        << error.SeverityStr().c_str() 
+        << ":  " 
+        << error.ErrorMessage().c_str()
+        << endl;
 }
 
 END_NCBI_SCOPE

@@ -46,6 +46,7 @@
 #include <objects/seqtable/SeqTable_multi_data.hpp>
 
 #include <objtools/writers/writer_exception.hpp>
+#include <objtools/readers/message_listener.hpp>
 #include <objtools/writers/src_writer.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -93,7 +94,8 @@ bool CSrcWriter::WriteBioseqHandle(
 bool CSrcWriter::WriteBioseqHandles( 
     const vector<CBioseq_Handle>& vecBsh,
     const FIELDS& desiredFields,
-    CNcbiOstream& out)
+    CNcbiOstream& out,
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     typedef vector<CBioseq_Handle> HANDLES;
@@ -204,20 +206,27 @@ CSrcWriter::HANDLER CSrcWriter::xGetHandler(
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::xHandleSourceField(
     const CBioSource& src, 
-    const string& fieldName)
+    const string& fieldName,
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     HANDLER pHandler = xGetHandler(fieldName);
     if (!pHandler) {
+        CSrcError* pE = CSrcError::Create(
+            ncbi::eDiag_Error,
+            "Unable to find handler for field \"" + fieldName + "\".");
+        pEC->PutError(*pE);
+        delete pE;
         return false;
     }
-    return (this->*pHandler)(src);
+    return (this->*pHandler)(src, pEC);
 }
 
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::xGather(
     CBioseq_Handle bsh,
-    const FIELDS& desiredFields)
+    const FIELDS& desiredFields,
+    IMessageListener*)
 //  ----------------------------------------------------------------------------
 {
     if (!xGatherId(bsh)) {
@@ -239,7 +248,8 @@ bool CSrcWriter::xGather(
 
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::xGatherId(
-    CBioseq_Handle bsh)
+    CBioseq_Handle bsh,
+    IMessageListener*)
 //  ----------------------------------------------------------------------------
 {
     const string colName = "id";
@@ -252,7 +262,8 @@ bool CSrcWriter::xGatherId(
 
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::xGatherTaxname(
-    const CBioSource& src)
+    const CBioSource& src,
+    IMessageListener*)
 //  ----------------------------------------------------------------------------
 {
     const string colName = "org.taxname";
@@ -270,7 +281,8 @@ bool CSrcWriter::xGatherTaxname(
 
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::xGatherOrgCommon(
-    const CBioSource& src)
+    const CBioSource& src,
+    IMessageListener*)
 //  ----------------------------------------------------------------------------
 {
     const string colName = "org.common";
@@ -288,7 +300,8 @@ bool CSrcWriter::xGatherOrgCommon(
 
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::xGatherOrgnameLineage(
-    const CBioSource& src)
+    const CBioSource& src,
+    IMessageListener*)
 //  ----------------------------------------------------------------------------
 {
     const string colName = "org.orgname.lineage";
@@ -307,7 +320,8 @@ bool CSrcWriter::xGatherOrgnameLineage(
 
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::xGatherDivision(
-    const CBioSource& src)
+    const CBioSource& src,
+    IMessageListener*)
 //  ----------------------------------------------------------------------------
 {
     const string colName = "org.div";
@@ -325,7 +339,8 @@ bool CSrcWriter::xGatherDivision(
 
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::xGatherGenome(
-    const CBioSource& src)
+    const CBioSource& src,
+    IMessageListener*)
 //  ----------------------------------------------------------------------------
 {
     const string colName = "genome";
@@ -343,7 +358,8 @@ bool CSrcWriter::xGatherGenome(
 
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::xGatherOrigin(
-    const CBioSource& src)
+    const CBioSource& src,
+    IMessageListener*)
 //  ----------------------------------------------------------------------------
 {
     const string colName = "origin";
@@ -361,7 +377,8 @@ bool CSrcWriter::xGatherOrigin(
 
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::xGatherSubtype(
-    const CBioSource& src)
+    const CBioSource& src,
+    IMessageListener*)
 //  ----------------------------------------------------------------------------
 {
     typedef map<string, int> INDEXCOUNTER;
@@ -407,7 +424,8 @@ bool CSrcWriter::xGatherSubtype(
 
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::xGatherOrgMod(
-    const CBioSource& src)
+    const CBioSource& src,
+    IMessageListener*)
 //  ----------------------------------------------------------------------------
 {
     typedef map<string, int> INDEXCOUNTER;
@@ -447,7 +465,8 @@ bool CSrcWriter::xGatherOrgMod(
 
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::xGatherDb(
-    const CBioSource& src)
+    const CBioSource& src,
+    IMessageListener*)
 //  ----------------------------------------------------------------------------
 {
     const string colName = "org.db";
@@ -496,7 +515,8 @@ bool CSrcWriter::xGatherDb(
 
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::xGatherPcrPrimers(
-    const CBioSource& src)
+    const CBioSource& src,
+    IMessageListener*)
 //  ----------------------------------------------------------------------------
 {
     const string pcrPrimersFwdNames = "pcr-primers.names.fwd";
@@ -643,13 +663,19 @@ void CSrcWriter::xAppendColumnValue(
 
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::ValidateFields(
-    const FIELDS fields)
+    const FIELDS fields,
+    IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {
     for (FIELDS::const_iterator cit = fields.begin(); cit != fields.end(); ++cit) {
         string field = *cit;
         HANDLERMAP::const_iterator fit = sHandlerMap.find(field);
         if (fit == sHandlerMap.end()) {
+            CSrcError* pE = CSrcError::Create(
+                ncbi::eDiag_Error,
+                "Field name \"" + field + "\" not recognized.");
+            pEC->PutError(*pE);
+            delete pE;
             return false;
         }
     }
@@ -671,6 +697,25 @@ string CSrcWriter::xDequotedValue(
 //  -----------------------------------------------------------------------------
 {
     return NStr::Replace(value, "\"", "\'\'");
+}
+
+//  -----------------------------------------------------------------------------
+CSrcError::CSrcError(
+    EDiagSev severity,
+    const string& message):
+//  -----------------------------------------------------------------------------
+    CLineError(ILineError::eProblem_Unset, severity, "", 0,
+        "", "", "", message, CLineError::TVecOfLines())
+{
+}
+
+//  -----------------------------------------------------------------------------
+CSrcError* CSrcError::Create(
+    EDiagSev severity,
+    const string& message)
+//  -----------------------------------------------------------------------------
+{
+    return new CSrcError(severity, message);
 }
 
 END_NCBI_SCOPE
