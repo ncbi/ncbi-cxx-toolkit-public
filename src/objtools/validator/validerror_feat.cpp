@@ -4108,6 +4108,55 @@ bool CValidError_feat::GetPrefixAndAccessionFromInferenceAccession (string inf_a
 }
 
 
+bool s_IsSraPrefix (string str)
+
+{
+    if (str.length() < 3) {
+        return false;
+    }
+    char ch = str.c_str()[0];
+    if (ch != 'S' && ch != 'E' && ch != 'D') return false;
+    ch = str.c_str()[1];
+    if (ch != 'R') return false;
+    ch = str.c_str()[2];
+    if (ch != 'A' && ch != 'P' && ch != 'X' && ch != 'R' && ch != 'S' && ch != 'Z') return false;
+    return true;
+}
+
+
+bool s_IsAllDigitsOrPeriods (string str)
+
+{
+    if (NStr::IsBlank(str) || NStr::StartsWith(str, ".") || NStr::EndsWith(str, ".")) {
+        return false;
+    }
+    bool rval = true;
+        ITERATE(string, it, str) {
+        if (!isdigit(*it) && *it != '.') {
+            rval = false;
+            break;
+        }
+    }
+    return rval;
+}
+
+
+bool s_IsAllDigits (string str)
+{
+    if (NStr::IsBlank(str)) {
+        return false;
+    }
+    bool rval = true;
+    ITERATE(string, it, str) {
+        if (!isdigit(*it)) {
+            rval = false;
+            break;
+        }
+    }
+    return rval;
+}
+
+
 CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccession (string accession, bool fetch_accession)
 {
     if (NStr::IsBlank (accession)) {
@@ -4118,12 +4167,14 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccessi
 
     string prefix, remainder;
     if (GetPrefixAndAccessionFromInferenceAccession (accession, prefix, remainder)) {
-        bool is_insd = false, is_refseq = false;
+        bool is_insd = false, is_refseq = false, is_blast = false;
 
         if (NStr::EqualNocase (prefix, "INSD")) {
             is_insd = true;
         } else if (NStr::EqualNocase (prefix, "RefSeq")) {
             is_refseq = true;
+        } else if (NStr::StartsWith (prefix, "BLAST", NStr::eNocase)) {
+            is_blast = true;
         }
         if (is_insd || is_refseq) {
             if (remainder.length() > 3) {
@@ -4137,40 +4188,45 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccessi
                     }
                 }
             } 
-            string ver = "";
-            int acc_code = ValidateAccessionFormat (remainder);
-            if (acc_code == 0) {
-                //-5: missing version number
-                //-6: bad version number
-                size_t dot_pos = NStr::Find (remainder, ".");
-                if (dot_pos == string::npos || NStr::IsBlank(remainder.substr(dot_pos + 1))) {
-                    acc_code = -5;
-                } else {
-                    const string& cps = remainder.substr(dot_pos + 1);
-                    const char *cp = cps.c_str();
-                    while (*cp != 0 && isdigit (*cp)) {
-                        ++cp;
-                    }
-                    if (*cp != 0) {
-                        acc_code = -6;
+            if (s_IsSraPrefix (remainder) && s_IsAllDigitsOrPeriods(remainder.substr(3))) {
+                // SRA
+            } else if (NStr::StartsWith(remainder, "MAP_") && s_IsAllDigits(remainder.substr(4))) {
+            } else {
+                string ver = "";
+                int acc_code = ValidateAccessionFormat (remainder);
+                if (acc_code == 0) {
+                    //-5: missing version number
+                    //-6: bad version number
+                    size_t dot_pos = NStr::Find (remainder, ".");
+                    if (dot_pos == string::npos || NStr::IsBlank(remainder.substr(dot_pos + 1))) {
+                        acc_code = -5;
+                    } else {
+                        const string& cps = remainder.substr(dot_pos + 1);
+                        const char *cp = cps.c_str();
+                        while (*cp != 0 && isdigit (*cp)) {
+                            ++cp;
+                        }
+                        if (*cp != 0) {
+                            acc_code = -6;
+                        }
                     }
                 }
-            }
 
-            if (acc_code == -5 || acc_code == -6) {
-                rsult = eInferenceValidCode_bad_accession_version;
-            } else if (acc_code != 0) {
-                rsult = eInferenceValidCode_bad_accession;
-            } else if (fetch_accession) {
-                // Test to see if accession is public
-                const char* database_names[] = { "Nucleotide", "Protein" };
-                const int num_databases = sizeof( database_names ) / sizeof( const char* );
-                TGi gi_number = ZERO_GI;
-                for ( int i=0; (gi_number == ZERO_GI) && (i < num_databases); ++ i ) {
-                    gi_number = x_SeqIdToGiNumber( remainder, database_names[ i ] );
-                }
-                if (gi_number == ZERO_GI) {
-                    rsult = eInferenceValidCode_accession_version_not_public;
+                if (acc_code == -5 || acc_code == -6) {
+                    rsult = eInferenceValidCode_bad_accession_version;
+                } else if (acc_code != 0) {
+                    rsult = eInferenceValidCode_bad_accession;
+                } else if (fetch_accession) {
+                    // Test to see if accession is public
+                    const char* database_names[] = { "Nucleotide", "Protein" };
+                    const int num_databases = sizeof( database_names ) / sizeof( const char* );
+                    TGi gi_number = ZERO_GI;
+                    for ( int i=0; (gi_number == ZERO_GI) && (i < num_databases); ++ i ) {
+                        gi_number = x_SeqIdToGiNumber( remainder, database_names[ i ] );
+                    }
+                    if (gi_number == ZERO_GI) {
+                        rsult = eInferenceValidCode_accession_version_not_public;
+                    }
                 }
             }
         }

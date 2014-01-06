@@ -14286,6 +14286,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_InvalidInferenceValue)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS    
+    
+    // SRA inferences are ok
+    feat->SetQual().front()->SetVal("similar to RNA sequence:INSD:ERP003431");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
 }
 
 
