@@ -680,13 +680,6 @@ bool CNetCacheAPI::HasBlob(const string& blob_id,
             return false;
         throw;
     }
-    catch (CNetServiceException& e) {
-        if (!TCGI_NetCacheUseHasbFallback::GetDefault() ||
-                e.GetErrCode() != CNetServiceException::eCommunicationError ||
-                e.GetMsg() != "Unknown request")
-            throw;
-        return !GetOwner(blob_id).empty();
-    }
 }
 
 
@@ -781,25 +774,6 @@ void CNetCacheAPI::ProlongBlobLifetime(const string& blob_key, unsigned ttl,
     m_Impl->AppendClientIPSessionIDPassword(&cmd, &parameters);
 
     m_Impl->ExecMirrorAware(key_obj, cmd, &parameters);
-}
-
-string CNetCacheAPI::GetOwner(const string& blob_id,
-        const CNamedParameterList* optional)
-{
-    CNetCacheKey key(blob_id, m_Impl->m_CompoundIDPool);
-
-    CNetCacheAPIParameters parameters(&m_Impl->m_DefaultParameters);
-
-    parameters.LoadNamedParameters(optional);
-
-    try {
-        return m_Impl->ExecMirrorAware(key, m_Impl->MakeCmd("GBOW ",
-                key, &parameters), &parameters).response;
-    } catch (CNetCacheException& e) {
-        if (e.GetErrCode() == CNetCacheException::eBlobNotFound)
-            return kEmptyStr;
-        throw;
-    }
 }
 
 IReader* CNetCacheAPI::GetReader(const string& key, size_t* blob_size,

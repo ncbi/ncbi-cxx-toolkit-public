@@ -423,10 +423,6 @@ class NCBI_XCONNECT_EXPORT CNetCacheAPI
     CNcbiIstream* GetIStream(const string& key, size_t* blob_size = NULL,
             const CNamedParameterList* optional = NULL);
 
-    /// Retrieve BLOB's owner information as registered by the server
-    string GetOwner(const string& blob_id,
-            const CNamedParameterList* optional = NULL);
-
     /// Remove BLOB by key
     void Remove(const string& blob_id,
             const CNamedParameterList* optional = NULL);
