@@ -50,8 +50,8 @@ BEGIN_NCBI_SCOPE
 #define USTR(str) (F_ISSET(fNoCase) ? s_ToLower(str) : (str))
 
 // Delimiters to separate pattern values (see IsBot(), IsMobileDevice(), IsTableDevice())
-const char* kPatternDelimiters = " ;\t|~";
-
+const char* kSingleLinePatternDelimiters = " ;\t|~";
+const char* kMultiLinePatternDelimiters  = "\n";
 
 inline string s_ToLower(string str)
 {
@@ -188,7 +188,7 @@ enum EPattern {
 
 
 // NOTE: Tablets must be checked before phones!!!
-//       Phones ~ almost all other mobile devices, that are not tablets
+//       Phones -- almost all other mobile devices, that are not tablets
 
 bool CCgiUserAgent::x_CheckPattern(int /*EPattern*/ what,
                                    bool current_status, bool use_patterns,
@@ -319,16 +319,28 @@ bool CCgiUserAgent::x_CheckPattern(int /*EPattern*/ what,
     list<string> patterns;
     // External patterns
     if ( !external_patterns.empty() ) {
-        NStr::Split(external_patterns, kPatternDelimiters, patterns);
+        if (external_patterns.find_first_of(kMultiLinePatternDelimiters) != NPOS) {
+            NStr::Split(external_patterns, kMultiLinePatternDelimiters, patterns);
+        } else {
+            NStr::Split(external_patterns, kSingleLinePatternDelimiters, patterns);
+        }
     }
     // User-defined patterns
     if (current_status) {
         if ( !exclude_patterns.empty() ) {
-            NStr::Split(USTR(exclude_patterns), kPatternDelimiters, patterns);
+            if (external_patterns.find_first_of(kMultiLinePatternDelimiters) != NPOS) {
+                NStr::Split(USTR(exclude_patterns), kMultiLinePatternDelimiters, patterns);
+            } else {
+                NStr::Split(USTR(exclude_patterns), kSingleLinePatternDelimiters, patterns);
+            }
         }
     } else {
         if ( !include_patterns.empty() ) {
-            NStr::Split(USTR(include_patterns), kPatternDelimiters, patterns);
+            if (external_patterns.find_first_of(kMultiLinePatternDelimiters) != NPOS) {
+                NStr::Split(USTR(include_patterns), kMultiLinePatternDelimiters, patterns);
+            } else {
+                NStr::Split(USTR(include_patterns), kSingleLinePatternDelimiters, patterns);
+            }
         }
     }
     // Search patterns

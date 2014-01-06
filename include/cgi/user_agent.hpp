@@ -280,7 +280,10 @@ public:
     ///   the user agent string, and should looks like:
     ///       "Googlebot Scooter WebCrawler Slurp"
     ///   You can use any delimiters from next list " ;|~\t".
-    ///   All patterns are case sensitive. 
+    ///   If you want to use space or any other symbol from the delimiters list
+    ///   as part of the pattern, then use multi-line pattern. In this case
+    ///   each line contains a single pattern with any symbol inside it.
+    ///   All patterns are case sensitive.
     ///   For details how to define registry/environment parameter see
     ///   CParam description.
     /// @exclude_patterns
@@ -341,6 +344,9 @@ public:
     ///   will be used. String value should have patterns for search in 
     ///   the user agent string, and should looks like: "Name1 Name2 Name3".
     ///   You can use any delimiters from next list " ;|~\t".
+    ///   If you want to use space or any other symbol from the delimiters list
+    ///   as part of the pattern, then use multi-line pattern. In this case
+    ///   each line contains a single pattern with any symbol inside it.
     ///   All patterns are case sensitive by default unless fNoCase flag is specified.
     /// @exclude_patterns
     ///   This parameter and string from (section 'CGI', name 'NotPhoneDevices')
@@ -376,6 +382,9 @@ public:
     ///   will be used. String value should have patterns for search in 
     ///   the user agent string, and should looks like: "Name1 Name2 Name3".
     ///   You can use any delimiters from next list " ;|~\t".
+    ///   If you want to use space or any other symbol from the delimiters list
+    ///   as part of the pattern, then use multi-line pattern. In this case
+    ///   each line contains a single pattern with any symbol inside it.
     ///   All patterns are case sensitive by default unless fNoCase flag is specified.
     /// @exclude_patterns
     ///   This parameter and string from (section 'CGI', name 'NotTabletDevices')
@@ -414,6 +423,9 @@ public:
     ///   will be used. String value should have patterns for search in 
     ///   the user agent string, and should looks like: "Name1 Name2 Name3".
     ///   You can use any delimiters from next list " ;|~\t".
+    ///   If you want to use space or any other symbol from the delimiters list
+    ///   as part of the pattern, then use multi-line pattern. In this case
+    ///   each line contains a single pattern with any symbol inside it.
     ///   All patterns are case sensitive by default unless fNoCase flag is specified.
     /// @exclude_patterns
     ///   This parameter and string from (section 'CGI', name 'NotMobileDevices')

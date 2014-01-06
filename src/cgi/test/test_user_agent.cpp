@@ -614,5 +614,5 @@ CTestApplication::~CTestApplication()
 
 int main(int argc, char** argv)
 {
-    return CTestApplication().AppMain(argc, argv, 0, eDS_Default, 0);
+    return CTestApplication().AppMain(argc, argv, 0, eDS_Default/*, 0*/);
 }
