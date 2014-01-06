@@ -199,7 +199,7 @@ void CCheckingClass :: CollectSeqdescFromSeqEntry(const CSeq_entry_Handle& seq_e
                CTestAndRepData :: biosrc_subsrc_seqdesc_seqentry.push_back(entry_pt);
            }
        } 
-       else if ( seqdesc_it->IsTitle() && seq_entry_h.IsSet()) {  // why IsSet()?
+       else if ( seqdesc_it->IsTitle()) {
            CTestAndRepData :: title_seqdesc.push_back( &(*seqdesc_it) );
            CTestAndRepData :: title_seqdesc_seqentry.push_back(entry_pt);
        }

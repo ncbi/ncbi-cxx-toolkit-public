@@ -833,11 +833,13 @@ string CTestAndRepData :: GetDiscItemTextForBioseqSet(const CBioseq_set& bioseq_
   } else {
     const list < CRef < CSeq_entry > >& seq_entrys = bioseq_set.GetSeq_set();
     if ( (*(seq_entrys.begin()))->IsSeq()) {
-      row_text = "Set containing " + 
-               BioseqToBestSeqIdString( (*(seq_entrys.begin()))->GetSeq(), CSeq_id::e_Genbank);
+      row_text = "Set containing "  
+                 + BioseqToBestSeqIdString((*(seq_entrys.begin()))->GetSeq(), 
+                                           CSeq_id::e_Genbank);
     }
     else if ( (*(seq_entrys.begin()))->IsSet()) {
-       row_text = GetDiscItemTextForBioseqSet( (*(seq_entrys.begin()))->GetSet());
+       row_text = "Set containing " 
+              + GetDiscItemTextForBioseqSet((*(seq_entrys.begin()))->GetSet());
     } 
     else row_text =  "BioseqSet";
   }

@@ -237,7 +237,8 @@ bool CDiscRepOutput :: x_OkToExpand(CRef < CClickableItem > c_item)
   if (c_item->setting_name == "DISC_FEATURE_COUNT") {
        return false;
   }
-  else if ( (c_item->item_list.empty()/*||oc.expand_report_categories[c_item->setting_name]*/)
+  else if ( (c_item->item_list.empty() || c_item->expanded)
+//                     ||oc.expand_report_categories[c_item->setting_name])
              && !(c_item->subcategories.empty()) ) {
       return true;
   }
@@ -514,7 +515,7 @@ void CDiscRepOutput :: x_InitializeOnCallerToolPriorities()
   m_sOnCallerToolPriorities["DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS"] = 95; 
   m_sOnCallerToolPriorities["DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA"] = 96;
   m_sOnCallerToolPriorities["ONCALLER_COMMENT_PRESENT"] = 97;
-  m_sOnCallerToolPriorities["SUSPECT_PRODUCT_NAME"] = 98;
+  m_sOnCallerToolPriorities["SUSPECT_PRODUCT_NAMES"] = 98;
   m_sOnCallerToolPriorities["UNCULTURED_NOTES_ONCALLER"] = 99;
 };
 
@@ -557,7 +558,7 @@ void CDiscRepOutput :: x_InitializeOnCallerToolGroups()
    m_sOnCallerToolGroups["END_COLON_IN_COUNTRY"] = eSource;
    m_sOnCallerToolGroups["DUP_DISC_ATCC_CULTURE_CONFLICT"] = eSource;
    m_sOnCallerToolGroups["DUP_DISC_CBS_CULTURE_CONFLICT"] = eSource;
-   m_sOnCallerToolGroups["ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH"] = eSource;
+   m_sOnCallerToolGroups["ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH"]=eSource;
    m_sOnCallerToolGroups["ONCALLER_MULTIPLE_CULTURE_COLLECTION"] = eSource;
    m_sOnCallerToolGroups["DISC_TRINOMIAL_SHOULD_HAVE_QUALIFIER"] = eSource;
    m_sOnCallerToolGroups["ONCALLER_CHECK_AUTHORITY"] = eSource;
@@ -603,35 +604,47 @@ void CDiscRepOutput :: x_InitializeOnCallerToolGroups()
 
    m_sOnCallerToolGroups["DISC_FLATFILE_FIND_ONCALLER"] = eSuspectText;
    m_sOnCallerToolGroups["DISC_FLATFILE_FIND_ONCALLER_FIXABLE"] = eSuspectText;
-   m_sOnCallerToolGroups["DISC_FLATFILE_FIND_ONCALLER_UNFIXABLE"] = eSuspectText;
+   m_sOnCallerToolGroups["DISC_FLATFILE_FIND_ONCALLER_UNFIXABLE"] =eSuspectText;
    m_sOnCallerToolGroups["DISC_CDS_PRODUCT_FIND"] = eSuspectText;
    m_sOnCallerToolGroups["DISC_SUSPICIOUS_NOTE_TEXT:"] = eSuspectText;
    m_sOnCallerToolGroups["DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS"] = eSuspectText;
-   m_sOnCallerToolGroups["DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA"] = eSuspectText;
+   m_sOnCallerToolGroups["DISC_INTERNAL_TRANSCRIBED_SPACER_RRNA"] =eSuspectText;
    m_sOnCallerToolGroups["ONCALLER_COMMENT_PRESENT"] = eSuspectText;
-   m_sOnCallerToolGroups["SUSPECT_PRODUCT_NAME"] = eSuspectText;
+   m_sOnCallerToolGroups["SUSPECT_PRODUCT_NAMES"] = eSuspectText;
    m_sOnCallerToolGroups["UNCULTURED_NOTES_ONCALLER"] = eSuspectText;
 };
 
 void CDiscRepOutput :: x_OrderResult(Int2Int& ord2i_citem)
 {
    unsigned i=0;
+   int pri;
+
    ITERATE (vector <CRef <CClickableItem> >, it, thisInfo.disc_report_data) {
-      ord2i_citem[m_sOnCallerToolPriorities[(*it)->setting_name]] = i;
+      if (m_sOnCallerToolPriorities.find((*it)->setting_name)
+            != m_sOnCallerToolPriorities.end()) {
+         pri = m_sOnCallerToolPriorities[(*it)->setting_name];
+      }
+      else pri = m_sOnCallerToolPriorities.size() + i + 1;
+      ord2i_citem[pri] = i;
       i++;
    }
 };
 
-void CDiscRepOutput :: x_GroupResult(map <EOnCallerGrp, string> grp_idx_str) 
+void CDiscRepOutput :: x_GroupResult(map <EOnCallerGrp, string>& grp_idx_str) 
 {
+   unsigned i=0;
    ITERATE (vector <CRef <CClickableItem> >, it, thisInfo.disc_report_data) {
-      EOnCallerGrp e_grp = m_sOnCallerToolGroups[(*it)->setting_name];
-      if (grp_idx_str.find(e_grp) == grp_idx_str.end()) {
-          grp_idx_str[e_grp] = NStr::IntToString((int)e_grp);
+      if (m_sOnCallerToolGroups.find((*it)->setting_name)
+            != m_sOnCallerToolGroups.end()) {
+          EOnCallerGrp e_grp = m_sOnCallerToolGroups[(*it)->setting_name];
+          if (grp_idx_str.find(e_grp) == grp_idx_str.end()) {
+              grp_idx_str[e_grp] = NStr::UIntToString(i);
+          }
+          else {
+              grp_idx_str[e_grp] += ("," + NStr::UIntToString(i));
+          }
       }
-      else {
-          grp_idx_str[e_grp] += ("," + NStr::IntToString((int)e_grp));
-      }
+      i++;
    }
 };
 
@@ -653,7 +666,7 @@ string CDiscRepOutput :: x_GetGrpName(EOnCallerGrp e_grp)
       case eSuspectText: return string("Suspect text tests");
       default:
         NCBI_THROW(CException, eUnknown, 
-           "Unknown Oncaller Tool group type: " + NStr::IntToString((int)e_grp));
+          "Unknown Oncaller Tool group type: " + NStr::IntToString((int)e_grp));
    };
    return kEmptyStr;
 };
@@ -666,6 +679,7 @@ CRef <CClickableItem> CDiscRepOutput :: x_CollectSameGroupToGbench(Int2Int& ord2
     unsigned idx;
     CRef <CClickableItem> new_item (new CClickableItem);
     new_item->description = x_GetGrpName(e_grp);
+    new_item->expanded = true;
     ITERATE (vector <string>, it, arr) {
         idx = NStr::StringToUInt(*it);
         strtmp = thisInfo.disc_report_data[idx]->setting_name;
@@ -689,7 +703,7 @@ CRef <CClickableItem> CDiscRepOutput :: x_CollectSameGroupToGbench(Int2Int& ord2
           unsigned typo_cnt = 0;
           ITERATE (Int2Int, it, sub_ord2idx) {
              if (thisInfo.disc_report_data[it->second]->setting_name
-                     == "SUSPECT_PRODUCT_NAME") {
+                     == "SUSPECT_PRODUCT_NAMES") {
                 NON_CONST_ITERATE (vector <CRef <CClickableItem> >, 
                          sit, 
                          thisInfo.disc_report_data[it->second]->subcategories) {
@@ -737,41 +751,47 @@ void CDiscRepOutput :: x_SendItemToGbench(CRef <CClickableItem> citem, vector <C
 
 void CDiscRepOutput :: Export(vector <CRef <CClickableText> >& item_list)
 {
-   if (oc.add_output_tag || oc.add_extra_output_tag) {
-      x_AddListOutputTags(); 
-   }
-   string desc;
-   if (thisInfo.report == "Oncaller") {
-       Int2Int ord2i_citem, sub_ord2idx;
-       map <EOnCallerGrp, string> grp_idx_str;
-       vector <string> arr;
-       x_ReorderAndGroupOnCallerResults(ord2i_citem, grp_idx_str);
-       ITERATE (Int2Int, it, ord2i_citem) {
-          if (it->second < 0) continue;
-          CRef <CClickableItem> this_item 
+   if (!thisInfo.disc_report_data.empty()) {
+      if (oc.add_output_tag || oc.add_extra_output_tag) {
+         x_AddListOutputTags(); 
+      }
+      string desc;
+      if (thisInfo.report == "Oncaller") {
+          Int2Int ord2i_citem, sub_ord2idx;
+          map <EOnCallerGrp, string> grp_idx_str;
+          vector <string> arr;
+          x_ReorderAndGroupOnCallerResults(ord2i_citem, grp_idx_str);
+          ITERATE (Int2Int, it, ord2i_citem) {
+             if (it->second < 0) {
+                 continue;
+             }
+             CRef <CClickableItem> this_item 
                  = thisInfo.disc_report_data[it->second];
-          if (m_sOnCallerToolGroups.find(this_item->setting_name) 
+             if (m_sOnCallerToolGroups.find(this_item->setting_name) 
                     != m_sOnCallerToolGroups.end()){
-             EOnCallerGrp e_grp = m_sOnCallerToolGroups[this_item->setting_name];
-             CRef <CClickableItem> 
-                 new_item(x_CollectSameGroupToGbench(ord2i_citem, 
-                                                     e_grp,
-                                                     grp_idx_str[e_grp]));
-             if (new_item.NotEmpty()) {
-                  x_SendItemToGbench(new_item, item_list);
+                EOnCallerGrp 
+                   e_grp = m_sOnCallerToolGroups[this_item->setting_name];
+                CRef <CClickableItem> 
+                    new_item(x_CollectSameGroupToGbench(ord2i_citem, 
+                                                        e_grp,
+                                                        grp_idx_str[e_grp]));
+                if (new_item.NotEmpty()) {
+                     x_SendItemToGbench(new_item, item_list);
+                }
+             }
+             else {
+                x_SendItemToGbench(this_item, item_list);
              }
           }
-          else {
-             x_SendItemToGbench(this_item, item_list);
-          }
-       }
-   }
-   else {
-     ITERATE (vector <CRef < CClickableItem > >, it, thisInfo.disc_report_data){
-        x_SendItemToGbench(*it, item_list);
-     } 
-   }
-   thisInfo.disc_report_data.clear();
+      }
+      else {
+        ITERATE (vector <CRef <CClickableItem> >, it,thisInfo.disc_report_data){
+           x_SendItemToGbench(*it, item_list);
+        } 
+      }
+      thisInfo.disc_report_data.clear();
+   };
+
    thisInfo.test_item_list.clear();
    thisInfo.test_item_objs.clear();
  

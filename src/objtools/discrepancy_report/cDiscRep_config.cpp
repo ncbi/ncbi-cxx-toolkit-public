@@ -63,7 +63,7 @@ vector < CRef < CClickableItem > >  CDiscRepInfo :: disc_report_data;
 Str2Strs                            CDiscRepInfo :: test_item_list;
 Str2Objs                            CDiscRepInfo :: test_item_objs;
 COutputConfig                       CDiscRepInfo :: output_config;
-CRef <CSuspect_rule_set >           CDiscRepInfo::suspect_prod_rules(new CSuspect_rule_set);
+CRef <CSuspect_rule_set >           CDiscRepInfo :: suspect_prod_rules(new CSuspect_rule_set);
 vector < vector <string> >          CDiscRepInfo :: susrule_summ;
 vector <string> 	            CDiscRepInfo :: weasels;
 CRef <CSeq_submit>                  CDiscRepInfo :: seq_submit(new CSeq_submit);
@@ -1512,9 +1512,9 @@ static const s_test_property test_list[] = {
    {"DISC_CITSUB_AFFIL_DUP_TEXT", fAsndisc | fOncaller},
    {"DISC_REQUIRED_CLONE", fAsndisc | fOncaller},
    {"ONCALLER_MULTISRC", fAsndisc | fOncaller},
-   {"DISC_SRC_QUAL_PROBLEM", fAsndisc | fOncaller},
-   {"DISC_SOURCE_QUALS_ASNDISC", fAsndisc}, // asndisc version
-   {"DISC_SOURCE_QUALS_ASNDISC_oncaller", fAsndisc | fOncaller},
+   {"DISC_SRC_QUAL_PROBLEM", fOncaller},  // oncaller =DISC_SOURCE_QUALS_ASNDISC
+   {"DISC_SOURCE_QUALS_ASNDISC", fAsndisc}, // asndisc version of *_PROBLEM
+//   {"DISC_SOURCE_QUALS_ASNDISC_oncaller", fAsndisc | fOncaller}, // needed?
    {"DISC_UNPUB_PUB_WITHOUT_TITLE", fAsndisc | fOncaller},
    {"ONCALLER_CONSORTIUM", fAsndisc | fOncaller},
    {"DISC_CHECK_AUTH_NAME", fAsndisc | fOncaller},
@@ -2410,11 +2410,13 @@ void CRepConfig :: GetTestList()
            CRef <CTestAndRepData>(new CSeqEntry_DISC_SOURCE_QUALS_ASNDISC));
         if (++i >= sz) return;
    }
+/*
    if (thisTest.tests_run.find("DISC_SOURCE_QUALS_ASNDISC_oncaller") != end_it){
        thisGrp.tests_on_SeqEntry_feat_desc.push_back(CRef <CTestAndRepData>(
                              new CSeqEntry_DISC_SOURCE_QUALS_ASNDISC_oncaller));
         if (++i >= sz) return;
    }
+*/
    if ( thisTest.tests_run.find("DISC_UNPUB_PUB_WITHOUT_TITLE") != end_it) {
        thisGrp.tests_on_SeqEntry_feat_desc.push_back(
            CRef <CTestAndRepData>(new CSeqEntry_DISC_UNPUB_PUB_WITHOUT_TITLE));
@@ -2457,8 +2459,8 @@ void CRepConfig :: GetTestList()
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("DISC_DUP_DEFLINE") != end_it) {
-       thisGrp.tests_on_SeqEntry_feat_desc.push_back(
-           CRef <CTestAndRepData>(new CSeqEntry_DISC_DUP_DEFLINE));
+       thisGrp.tests_on_Bioseq_CFeat_CSeqdesc.push_back(
+           CRef <CTestAndRepData>(new CBioseq_DISC_DUP_DEFLINE));
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("DISC_TITLE_ENDS_WITH_SEQUENCE") != end_it) {
@@ -2633,24 +2635,27 @@ void CRepConfAsndisc :: x_ReadAsn1(ESerialDataFormat datafm)
          }
        }
     }
-    else if (strtmp == "Seq-entry") {
-       *ois >> *seq_entry;
-       CheckThisSeqEntry(seq_entry);
-    }
-    else if (strtmp == "Bioseq") {
-       CRef <CBioseq> bioseq (new CBioseq);
-       *ois >> *bioseq;
-       seq_entry->SetSeq(*bioseq);
-       CheckThisSeqEntry(seq_entry);
-    }
-    else if (strtmp == "Bioseq-set") {
-       CRef <CBioseq_set> seq_set(new CBioseq_set);
-       *ois >> *seq_set;
-       seq_entry->SetSet(*seq_set);
-       CheckThisSeqEntry(seq_entry);
-    }
     else {
-        NCBI_THROW(CException, eUnknown, "Couldn't read type [" + strtmp + "]");
+      thisInfo.seq_submit.Reset(0);
+      if (strtmp == "Seq-entry") {
+         *ois >> *seq_entry;
+         CheckThisSeqEntry(seq_entry);
+      }
+      else if (strtmp == "Bioseq") {
+         CRef <CBioseq> bioseq (new CBioseq);
+         *ois >> *bioseq;
+         seq_entry->SetSeq(*bioseq);
+         CheckThisSeqEntry(seq_entry);
+      }
+      else if (strtmp == "Bioseq-set") {
+         CRef <CBioseq_set> seq_set(new CBioseq_set);
+         *ois >> *seq_set;
+         seq_entry->SetSet(*seq_set);
+         CheckThisSeqEntry(seq_entry);
+      }
+      else {
+         NCBI_THROW(CException,eUnknown, "Couldn't read type [" + strtmp + "]");
+      }
     }
     
     ois->Close();
@@ -2853,6 +2858,7 @@ void CRepConfAsndisc :: Run()
 
 void CRepConfig :: Run()
 {
+  thisInfo.seq_submit.Reset(0); //temp
   CRef <CSeq_entry> 
     seq_ref ((CSeq_entry*)(m_TopSeqEntry->GetCompleteSeq_entry().GetPointer()));
   CheckThisSeqEntry(seq_ref);
