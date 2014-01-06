@@ -159,8 +159,10 @@ public:
     class CField
     {
     public:
-        /// Get value as string.
-        /// Any underlying database type will be converted to string.
+        /// Get value as UTF-8 string.
+        /// Any underlying database type will be converted to a string
+        /// using the variable-width UTF-8 encoding.
+        /// @sa CUtf8::AsBasicString, CUtf8::AsSingleByteString
         string AsString(void) const;
         /// Get value as single byte.
         /// If underlying database type is string or text then attempt to
