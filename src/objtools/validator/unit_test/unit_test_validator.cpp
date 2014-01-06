@@ -17431,6 +17431,11 @@ BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
     to_fix = "43.098333, -91.00231";
     fixed = CSubSource::FixLatLonFormat(to_fix, true);
     BOOST_CHECK_EQUAL(fixed, "43.098333 N 91.00231 W");
+
+    to_fix = "14.60085 and 144.77629";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "14.60085 N 144.77629 E");
+
 }
 
 

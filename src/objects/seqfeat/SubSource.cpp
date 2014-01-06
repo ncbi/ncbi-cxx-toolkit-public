@@ -1148,6 +1148,7 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
     NStr::ReplaceInPlace (cpy, "SOUTH",     "S");
     NStr::ReplaceInPlace (cpy, "EAST",      "E");
     NStr::ReplaceInPlace (cpy, "WEST",      "W");
+    NStr::ReplaceInPlace (cpy, " AND ",     " "); // treat AND like a space delimiter
     NStr::ReplaceInPlace (cpy, "  ", " "); // double-spaces become single spaces
 
     size_t lat_pos = NStr::Find (cpy, "LAT");
