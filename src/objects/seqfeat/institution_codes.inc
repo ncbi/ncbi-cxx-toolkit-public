@@ -4544,6 +4544,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "NZCS	s	University, National Zoological Collection of Suriname",
 "NZFRI	s	New Zealand Forest Research Institute Limited",
 "NZFS	c	Forest Research Culture Collection",
+"NZG	s	National Zoological Gardens of South Africa",
 "NZOI	s	New Zealand Oceanographic Institute",
 "NZRD	c	New Zealand Reference Culture Collection of Microorganisms, Dairy Section",
 "NZRM	c	New Zealand Reference Culture Collection, Medical Section",
