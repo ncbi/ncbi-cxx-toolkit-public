@@ -83,13 +83,14 @@ using namespace validator;
 
 const char * ASNVAL_APP_VER = "10.0";
 
-//#define USE_XMLWRAPP_LIBS
+#define USE_XMLWRAPP_LIBS
 
 /////////////////////////////////////////////////////////////////////////////
 //
 //  Demo application
 //
 
+class CValXMLStream;
 
 class CAsnvalApp : public CNcbiApplication, CReadClassMemberHook
 {
@@ -170,8 +171,15 @@ private:
     CNcbiOstream* m_ValidErrorStream;
     CNcbiOstream* m_LogStream;
 #ifdef USE_XMLWRAPP_LIBS
-    auto_ptr<CObjectOStreamXml> m_ostr_xml;
+    auto_ptr<CValXMLStream> m_ostr_xml;
 #endif
+};
+
+class CValXMLStream: public CObjectOStreamXml
+{
+public:
+    CValXMLStream(CNcbiOstream& out, bool deleteOut): CObjectOStreamXml(out, deleteOut){};
+    void Print(const CValidErrItem& item);
 };
 
 
@@ -794,7 +802,7 @@ void CAsnvalApp::PrintValidErrItem(const CValidErrItem& item)
 #ifdef USE_XMLWRAPP_LIBS
         case eVerbosity_XML:
             {
-                m_ostr_xml->WriteObject(&item, item.GetThisTypeInfo());
+                m_ostr_xml->Print(item);
             }
 #else
         case eVerbosity_XML:
@@ -818,18 +826,47 @@ void CAsnvalApp::PrintValidErrItem(const CValidErrItem& item)
     }
 }
 
+void CValXMLStream::Print(const CValidErrItem& item)
+{
+#if 0
+    TTypeInfo info = item.GetThisTypeInfo();    
+    WriteObject(&item, info);
+#else
+    m_Output.PutString("  <message severity=\"");
+       m_Output.PutString(s_GetSeverityLabel(item.GetSeverity()));
+    m_Output.PutString("\" seq-id=\"");
+       m_Output.PutString(item.GetAccnver());
+    m_Output.PutString("\" feat-id=\"");
+       m_Output.PutString(item.GetFeatureId());
+    m_Output.PutString("\" code=\"");
+       m_Output.PutString(item.GetErrGroup());
+       m_Output.PutString("_");
+       m_Output.PutString(item.GetErrCode());
+    m_Output.PutString("\">");
+
+    WriteString(item.GetMsg(), eStringTypeVisible);
+
+    m_Output.PutString("</message>");
+    m_Output.PutEol();
+#endif
+}
+
 void CAsnvalApp::ConstructOutputStreams()
 {
     if (m_ValidErrorStream && m_verbosity == eVerbosity_XML)
     {
 #ifdef USE_XMLWRAPP_LIBS
-        m_ostr_xml.reset(new CObjectOStreamXml(*m_ValidErrorStream, false));
-        m_ostr_xml->SetEncoding(eEncoding_Ascii);
+        m_ostr_xml.reset(new CValXMLStream(*m_ValidErrorStream, false));
+        m_ostr_xml->SetEncoding(eEncoding_UTF8);
         m_ostr_xml->SetReferenceDTD(false);
+        m_ostr_xml->SetEnforcedStdXml(true);
         m_ostr_xml->WriteFileHeader(CValidErrItem::GetTypeInfo());
         m_ostr_xml->SetUseIndentation(true);
         m_ostr_xml->Flush();
-        *m_ValidErrorStream << endl << "<asnvalidate>" << endl;
+
+        *m_ValidErrorStream << endl << "<asnvalidate version=\"" << ASNVAL_APP_VER << "\" severity_cutoff=\""
+        << s_GetSeverityLabel(m_LowCutoff) << "\">" << endl;
+        m_ValidErrorStream->flush();
 #else
         *m_ValidErrorStream << "<asnvalidate version=\"" << ASNVAL_APP_VER << "\" severity_cutoff=\""
         << s_GetSeverityLabel(m_LowCutoff) << "\">" << endl;
