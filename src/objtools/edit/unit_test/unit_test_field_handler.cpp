@@ -306,6 +306,8 @@ BOOST_AUTO_TEST_CASE(Test_GBBlock)
     } else {
         BOOST_CHECK_EQUAL(d->GetGenbank().GetKeywords().front(), "my keyword");
     }
+
+
 }
 
 

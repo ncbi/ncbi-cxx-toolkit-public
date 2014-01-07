@@ -423,7 +423,7 @@ bool CStructuredCommentField::IsStructuredCommentForThisField (const CUser_objec
         return false;
     }
     string prefix = GetPrefix(user);
-    NormalizePrefix(prefix);
+    CComment_rule::NormalizePrefix(prefix);
     return NStr::Equal(prefix, m_Prefix);
 }
 
@@ -440,28 +440,10 @@ bool CStructuredCommentField::IsStructuredComment (const CUser_object& user)
 }
 
 
-void CStructuredCommentField::NormalizePrefix(string& prefix)
-{
-    if (!NStr::IsBlank(prefix)) {
-        while (NStr::StartsWith(prefix, "#")) {
-            prefix = prefix.substr(1);
-        }
-        while (NStr::EndsWith(prefix, "#")) {
-            prefix = prefix.substr(0, prefix.length() - 1);
-        }
-        if (NStr::EndsWith(prefix, "-START", NStr::eNocase)) {
-            prefix = prefix.substr(0, prefix.length() - 6);
-        } else if (NStr::EndsWith(prefix, "-END", NStr::eNocase)) {
-            prefix = prefix.substr(0, prefix.length() - 4);
-        }
-    }  
-}
-
-
 string CStructuredCommentField::MakePrefixFromRoot(const string& root)
 {
     string prefix = root;
-    NormalizePrefix(prefix);
+    CComment_rule::NormalizePrefix(prefix);
     prefix = "##" + prefix + "-START##";
     return prefix;
 }
@@ -470,7 +452,7 @@ string CStructuredCommentField::MakePrefixFromRoot(const string& root)
 string CStructuredCommentField::MakeSuffixFromRoot(const string& root)
 {
     string suffix = root;
-    NormalizePrefix(suffix);
+    CComment_rule::NormalizePrefix(suffix);
     suffix = "##" + suffix + "-END##";
     return suffix;
 }
@@ -491,7 +473,7 @@ string CStructuredCommentField::GetPrefix (const CUser_object& user)
             break;
         }
     }
-    NormalizePrefix(prefix);
+    CComment_rule::NormalizePrefix(prefix);
     return prefix;
 }
 
@@ -527,7 +509,7 @@ CRef<CUser_object> CStructuredCommentField::MakeUserObject(const string& prefix)
 
     if (!NStr::IsBlank(prefix)) {
         string root = prefix;
-        NormalizePrefix(root);
+        CComment_rule::NormalizePrefix(root);
         CRef<CUser_field> p(new CUser_field());
         p->SetLabel().SetStr(kStructuredCommentPrefix);
         string pre = MakePrefixFromRoot(root);
@@ -559,7 +541,7 @@ string CStructuredCommentField::KeywordForPrefix(const string& prefix)
 {
     size_t i;
     string compare = prefix;
-    NormalizePrefix(compare);
+    CComment_rule::NormalizePrefix(compare);
 
     for (i = 0; i < k_NumStructuredCommentKeywords; i++) {
         if (NStr::Equal(compare.c_str(), s_StructuredCommentKeywords[i].second)) {

@@ -32,6 +32,7 @@
 #include <objects/general/User_object.hpp>
 #include <objects/general/User_field.hpp>
 #include <objects/valid/Comment_set.hpp>
+#include <objects/valid/Comment_rule.hpp>
 
 #include <objmgr/scope.hpp>
 
@@ -55,7 +56,7 @@ class NCBI_XOBJEDIT_EXPORT CStructuredCommentField : public CFieldHandler
 public:
 
     CStructuredCommentField (const string& prefix, const string& field_name) : m_Prefix(prefix), m_FieldName(field_name) 
-            { NormalizePrefix(m_Prefix);
+            { CComment_rule::NormalizePrefix(m_Prefix);
               m_ConstraintFieldName = ""; 
               m_StringConstraint = NULL; };
 
@@ -84,7 +85,6 @@ public:
     static string GetPrefix (const CUser_object& user);
     static vector<string> GetFieldNames(const string& prefix);
     static CRef<CUser_object> MakeUserObject(const string& prefix);
-    static void NormalizePrefix(string& prefix);
     static string MakePrefixFromRoot(const string& root);
     static string MakeSuffixFromRoot(const string& root);
     static string KeywordForPrefix(const string& prefix);

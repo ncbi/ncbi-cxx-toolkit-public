@@ -48,7 +48,7 @@ BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
 BEGIN_SCOPE(edit)
 
-CApplyObject::CApplyObject(CBioseq_Handle bsh, const CSeqdesc& desc)
+CApplyObject::CApplyObject(CBioseq_Handle bsh, const CSeqdesc& desc) : m_Delete(false)
 {
     m_SEH = bsh.GetParentEntry();
     if (!desc.IsMolinfo() && !desc.IsTitle()) {
@@ -65,7 +65,7 @@ CApplyObject::CApplyObject(CBioseq_Handle bsh, const CSeqdesc& desc)
 }
 
 
-CApplyObject::CApplyObject(CBioseq_Handle bsh, CSeqdesc::E_Choice subtype)
+CApplyObject::CApplyObject(CBioseq_Handle bsh, CSeqdesc::E_Choice subtype): m_Delete(false)
 {
     m_SEH = bsh.GetParentEntry();
     if (subtype != CSeqdesc::e_Molinfo && subtype != CSeqdesc::e_Title) {
@@ -82,7 +82,7 @@ CApplyObject::CApplyObject(CBioseq_Handle bsh, CSeqdesc::E_Choice subtype)
 }
 
 
-CApplyObject::CApplyObject(CBioseq_Handle bsh, const string& user_label)
+CApplyObject::CApplyObject(CBioseq_Handle bsh, const string& user_label) : m_Delete(false)
 {
     m_SEH = bsh.GetParentEntry();
     CBioseq_set_Handle bssh = bsh.GetParentBioseq_set();
@@ -97,7 +97,7 @@ CApplyObject::CApplyObject(CBioseq_Handle bsh, const string& user_label)
 }
 
 
-CApplyObject::CApplyObject(CBioseq_Handle bsh, const CSeq_feat& feat)
+CApplyObject::CApplyObject(CBioseq_Handle bsh, const CSeq_feat& feat) : m_Delete(false)
 {
     m_SEH = bsh.GetParentEntry();
     m_Original.Reset(&feat);
@@ -107,7 +107,7 @@ CApplyObject::CApplyObject(CBioseq_Handle bsh, const CSeq_feat& feat)
 }
 
 
-CApplyObject::CApplyObject(CBioseq_Handle bsh)
+CApplyObject::CApplyObject(CBioseq_Handle bsh) : m_Delete(false)
 {
     m_SEH = bsh.GetParentEntry();
     m_Original.Reset(bsh.GetCompleteBioseq().GetPointer());
@@ -119,6 +119,29 @@ CApplyObject::CApplyObject(CBioseq_Handle bsh)
 
 void CApplyObject::ApplyChange()
 {
+    if (m_Delete) {
+        // deletion
+        if (m_Original) {
+            const CSeqdesc* orig_desc = dynamic_cast<const CSeqdesc * >(m_Original.GetPointer());
+            const CSeq_feat* orig_feat = dynamic_cast<const CSeq_feat * >(m_Original.GetPointer());
+            const CSeq_inst* orig_inst = dynamic_cast<const CSeq_inst * >(m_Original.GetPointer());
+            if (orig_desc) {
+                CSeq_entry_Handle seh = GetSeqEntryForSeqdesc (CRef<CScope>(&(m_SEH.GetScope())), *orig_desc);
+                if (!seh) {
+                    seh = m_SEH;
+                }
+                CSeq_entry_EditHandle eseh = seh.GetEditHandle();
+                eseh.RemoveSeqdesc(*orig_desc);
+            } else if (orig_feat) {
+                CSeq_feat_Handle oh = m_SEH.GetScope().GetSeq_featHandle(*orig_feat);
+                CSeq_feat_EditHandle(oh).Remove();
+            } else if (orig_inst) {
+                // not going to handle this for now
+            }
+        }
+        return;
+    }
+
     CSeqdesc* desc = dynamic_cast<CSeqdesc * >(m_Editable.GetPointer());
     CSeq_feat* feat = dynamic_cast<CSeq_feat * >(m_Editable.GetPointer());
     CSeq_inst* inst = dynamic_cast<CSeq_inst * >(m_Editable.GetPointer());

@@ -41,6 +41,7 @@
 #include <objects/misc/sequence_macros.hpp>
 #include <objmgr/annot_ci.hpp>
 #include <objmgr/feat_ci.hpp>
+#include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/util/seq_loc_util.hpp>
 #include <objtools/cleanup/cleanup_change.hpp>
@@ -55,6 +56,9 @@
 #include <objmgr/scope.hpp>
 
 #include <objects/medline/Medline_entry.hpp>
+#include <objtools/edit/struc_comm_field.hpp>
+#include <objtools/edit/gb_block_field.hpp>
+#include <objects/valid/Comment_rule.hpp>
 
 #include <util/ncbi_cache.hpp>
 #include <util/sequtil/sequtil_convert.hpp>
@@ -9563,6 +9567,70 @@ void CNewCleanup_imp::x_RemoveDupBioSource( CBioseq_set & bioseq_set )
 {
     if( x_RemoveDupBioSourceImpl( bioseq_set ) ) {
         ChangeMade( CCleanupChange::eRemoveDupBioSource );
+    }
+}
+
+void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
+{
+    vector<string> keywords = edit::CStructuredCommentField::GetKeywordList();
+    EDIT_EACH_SEQDESC_ON_BIOSEQ ( itr, bioseq ) {
+        CSeqdesc& desc = **itr;
+        if ( desc.Which() != CSeqdesc::e_Genbank ) continue;
+        CGB_block& gb_block = desc.SetGenbank();
+        FOR_EACH_STRING_IN_VECTOR ( s_itr, keywords ) {
+            EDIT_EACH_KEYWORD_ON_GENBANKBLOCK (k_itr, gb_block) {
+                if (NStr::EqualNocase (*k_itr, *s_itr)) {
+                    ERASE_KEYWORD_ON_GENBANKBLOCK (k_itr, gb_block);
+                }
+            }
+        }
+        if (gb_block.IsSetKeywords() && gb_block.GetKeywords().size() == 0) {
+            gb_block.ResetKeywords();
+        }
+        edit::CGBBlockField gb_block_field(edit::CGBBlockField::eGBBlockFieldType_Keyword);
+        if (gb_block_field.IsEmpty(desc)) {
+            ERASE_SEQDESC_ON_BIOSEQ ( itr, bioseq );
+        }
+    }
+
+    vector<string> new_keywords;
+    CBioseq_Handle bsh = m_Scope->GetBioseqHandle(bioseq);
+    for (CSeqdesc_CI di(bsh, CSeqdesc::e_User); di; ++di) {
+        const CUser_object& usr = di->GetUser();
+        if ( ! edit::CStructuredCommentField::IsStructuredComment (usr) ) continue;
+        try {
+            string prefix = edit::CStructuredCommentField::GetPrefix (usr);
+            CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
+            try {
+                const CComment_rule& rule = comment_rules->FindCommentRule(prefix);
+                CUser_object tmp;
+                tmp.Assign(usr);
+                CUser_object::TData& fields = tmp.SetData();
+                CComment_rule::TErrorList errors = rule.IsValid(tmp);
+                if (errors.size() == 0) {
+                    string kywd = edit::CStructuredCommentField::KeywordForPrefix( prefix );
+                    new_keywords.push_back(kywd);
+                }
+            } catch (CException) {
+            }
+        } catch (CException) {
+        }
+    }
+    if (new_keywords.size() > 0) {
+        CGB_block *gb_block = NULL;
+        EDIT_EACH_SEQDESC_ON_BIOSEQ ( itr, bioseq ) {
+            CSeqdesc& desc = **itr;
+            if ( desc.Which() != CSeqdesc::e_Genbank ) continue;
+            gb_block = &desc.SetGenbank();
+        }
+        if (! gb_block) {
+            CRef<CSeqdesc> new_desc ( new CSeqdesc );
+            gb_block = &(new_desc->SetGenbank());
+            bioseq.SetDescr().Set().push_back( new_desc );
+        }
+        FOR_EACH_STRING_IN_VECTOR ( n_itr, new_keywords ) {
+            ADD_KEYWORD_TO_GENBANKBLOCK (*gb_block, *n_itr);
+        }
     }
 }
 

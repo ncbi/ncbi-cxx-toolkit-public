@@ -67,9 +67,13 @@ CComment_set::~CComment_set(void)
 
 const CComment_rule& CComment_set::FindCommentRule (const string& prefix) const
 {
+    string search = prefix;
+    CComment_rule::NormalizePrefix(search);
     ITERATE (CComment_set::Tdata, it, Get()) {
         const CComment_rule& rule = **it;
-        if (NStr::EqualNocase(rule.GetPrefix(), prefix)) {
+        string this_prefix = rule.GetPrefix();
+        CComment_rule::NormalizePrefix(this_prefix);
+        if (NStr::EqualNocase(this_prefix, search)) {
             return **it;
         }
     }

@@ -57,6 +57,24 @@ CComment_rule::~CComment_rule(void)
 }
 
 
+void CComment_rule::NormalizePrefix(string& prefix)
+{
+    if (!NStr::IsBlank(prefix)) {
+        while (NStr::StartsWith(prefix, "#")) {
+            prefix = prefix.substr(1);
+        }
+        while (NStr::EndsWith(prefix, "#")) {
+            prefix = prefix.substr(0, prefix.length() - 1);
+        }
+        if (NStr::EndsWith(prefix, "-START", NStr::eNocase)) {
+            prefix = prefix.substr(0, prefix.length() - 6);
+        } else if (NStr::EndsWith(prefix, "-END", NStr::eNocase)) {
+            prefix = prefix.substr(0, prefix.length() - 4);
+        }
+    }  
+}
+
+
 const CField_rule& CComment_rule::FindFieldRule (const string& field_name) const
 {
     ITERATE (CField_set::Tdata, it, GetFields().Get()) {

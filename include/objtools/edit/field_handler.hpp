@@ -51,7 +51,7 @@ class NCBI_XOBJEDIT_EXPORT CApplyObject : public CObject
 {
 public:
     CApplyObject(CSeq_entry_Handle seh, CConstRef<CObject> orig, CRef<CObject> editable)
-        : m_SEH(seh), m_Original(orig), m_Editable(editable) {};
+        : m_SEH(seh), m_Original(orig), m_Editable(editable), m_Delete(false) {};
 
     CApplyObject(CBioseq_Handle bsh, const CSeqdesc& desc);
     CApplyObject(CBioseq_Handle bsh, CSeqdesc::E_Choice subtype);
@@ -64,6 +64,7 @@ public:
     const CObject& GetObject() const { return *m_Editable; };
     const CObject* GetOriginalObject() const {return m_Original.GetPointer();};
     void ReplaceEditable(CObject& edit) { m_Editable.Reset(&edit); };
+    void DeleteEditable(bool do_delete = true) { m_Delete = do_delete; };
     CSeq_entry_Handle GetSEH() const { return m_SEH; };
     void ApplyChange();
 
@@ -71,7 +72,7 @@ protected:
     CSeq_entry_Handle m_SEH;
     CConstRef<CObject> m_Original;
     CRef<CObject> m_Editable;
-
+    bool m_Delete;
 };
 
 

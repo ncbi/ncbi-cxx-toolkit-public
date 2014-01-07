@@ -62,6 +62,7 @@ public:
     ~CComment_rule(void);
 
     const CField_rule& FindFieldRule (const string& field_name) const;
+    static void NormalizePrefix(string& prefix);
 
     typedef pair<CField_rule::TSeverity, string> TError;
     typedef vector<TError> TErrorList;
