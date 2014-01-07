@@ -9,7 +9,7 @@
 APP = asn2flat
 SRC = asn2flat
 
-LIB  = xcleanup $(OBJREAD_LIBS) $(XFORMAT_LIBS) xalnmgr xobjutil entrez2cli entrez2 tables xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
+LIB  = xcleanup valid valerr $(OBJREAD_LIBS) $(XFORMAT_LIBS) xalnmgr xobjutil entrez2cli entrez2 tables xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
 LIBS = $(CMPRS_LIBS) $(PCRE_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects -Cygwin

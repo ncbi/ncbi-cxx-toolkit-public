@@ -8,7 +8,7 @@
 
 APP = asn_cleanup
 SRC = asn_cleanup
-LIB = $(XFORMAT_LIBS) xobjutil xalnmgr xcleanup xregexp entrez2cli \
+LIB = $(XFORMAT_LIBS) xobjutil xalnmgr xcleanup valid valerr xregexp entrez2cli \
     entrez2 tables $(OBJMGR_LIBS) $(PCRE_LIB)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(PCRE_LIBS) $(ORIG_LIBS)
