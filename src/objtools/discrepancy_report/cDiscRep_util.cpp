@@ -692,11 +692,15 @@ string CTestAndRepData :: GetProdNmForCD(const CSeq_feat& cd_feat)
      }
      if (prot_seq_feat.NotEmpty() && prot_seq_feat->GetData().IsProt()) {
          const CProt_ref& prot = prot_seq_feat->GetData().GetProt();
-         if (prot.CanGetName()) return( *(prot.GetName().begin()) );
+         if (prot.CanGetName() && !prot.GetName().empty()) {
+              return( *(prot.GetName().begin()) );
+         }
      }
      else {
         const CProt_ref* prot = cd_feat.GetProtXref();
-        if (prot && prot->CanGetName()) return ( *(prot->GetName().begin()) );
+        if (prot && prot->CanGetName() && !prot->GetName().empty()) {
+              return ( *(prot->GetName().begin()) );
+        }
      }
      return (kEmptyStr);
 
@@ -810,12 +814,22 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_submit& seq_submit)
   string desc;
   if (seq_submit.GetData().IsEntrys()) {
      const list <CRef <CSeq_entry> >& entrys = seq_submit.GetData().GetEntrys();
-     if ((*entrys.begin())->IsSeq()) 
-        desc =  BioseqToBestSeqIdString((*entrys.begin())->GetSeq(), CSeq_id::e_Genbank);
-     else desc = GetDiscItemTextForBioseqSet((*entrys.begin())->GetSet());
+     if (!entrys.empty()) {
+        if ((*entrys.begin())->IsSeq()) {
+            desc =  BioseqToBestSeqIdString((*entrys.begin())->GetSeq(), 
+                                             CSeq_id::e_Genbank);
+        }
+        else {
+          desc = GetDiscItemTextForBioseqSet((*entrys.begin())->GetSet());
+        }
+     }
   }
-  if (thisInfo.infile.empty()) return desc;
-  else return (thisInfo.infile + ": " + desc);
+  if (thisInfo.infile.empty()) {
+     return desc;
+  }
+  else {
+     return (thisInfo.infile + ": " + desc);
+  }
 };
 
 
@@ -823,25 +837,28 @@ string CTestAndRepData :: GetDiscItemTextForBioseqSet(const CBioseq_set& bioseq_
 {
   string     row_text(kEmptyStr);
 
-  strtmp.clear();
   if (bioseq_set.GetClass() == CBioseq_set::eClass_segset) {
-    row_text = "ss|" + 
-                BioseqToBestSeqIdString(bioseq_set.GetMasterFromSegSet(), CSeq_id::e_Genbank);
+    row_text = "ss|" 
+                  + BioseqToBestSeqIdString(bioseq_set.GetMasterFromSegSet(), 
+                                            CSeq_id::e_Genbank);
   } else if (bioseq_set.GetClass() == CBioseq_set::eClass_nuc_prot) {
-    row_text = "np|" + 
-                BioseqToBestSeqIdString(bioseq_set.GetNucFromNucProtSet(), CSeq_id::e_Genbank);
+    row_text = "np|" 
+                 + BioseqToBestSeqIdString(bioseq_set.GetNucFromNucProtSet(), 
+                                           CSeq_id::e_Genbank);
   } else {
     const list < CRef < CSeq_entry > >& seq_entrys = bioseq_set.GetSeq_set();
-    if ( (*(seq_entrys.begin()))->IsSeq()) {
-      row_text = "Set containing "  
+    if (seq_entrys.empty()) {
+       if ( (*(seq_entrys.begin()))->IsSeq()) {
+         row_text = "Set containing "  
                  + BioseqToBestSeqIdString((*(seq_entrys.begin()))->GetSeq(), 
                                            CSeq_id::e_Genbank);
-    }
-    else if ( (*(seq_entrys.begin()))->IsSet()) {
-       row_text = "Set containing " 
+       }
+       else if ( (*(seq_entrys.begin()))->IsSet()) {
+          row_text = "Set containing " 
               + GetDiscItemTextForBioseqSet((*(seq_entrys.begin()))->GetSet());
-    } 
-    else row_text =  "BioseqSet";
+       } 
+       else row_text =  "BioseqSet";
+    }
   }
 
   return (row_text);
@@ -869,7 +886,7 @@ string CTestAndRepData :: ListAuthNames(const CAuth_list& auths)
   unsigned i = 0;
   if (auths.GetNames().IsStd()) {
     ITERATE(list < CRef <CAuthor> >, it, auths.GetNames().GetStd()) {
-       strtmp.clear();
+       strtmp = kEmptyStr;
        (*it)->GetLabel(&strtmp, IAbstractCitation::fLabel_Unique);
        if ( (*it)->GetName().IsName()) {
           if ( (*it)->GetName().GetName().CanGetFirst()) {
@@ -1213,14 +1230,16 @@ void CTestAndRepData :: GetSeqFeatLabel(const CSeq_feat& seq_feat, string& label
 {
      GetLabel(seq_feat, &label, fFGL_Content);
      size_t pos;
-     if (!label.empty() && (string::npos != (pos = label.find("-")) ) )
+     if (!label.empty() && (string::npos != (pos = label.find("-")) ) ) {
           label = CTempString(label).substr(pos+1);
+     }
      strtmp = "/number=";
      if (!label.empty() 
             && seq_feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_exon 
-            && (string::npos != (pos = label.find(strtmp))))
+            && (string::npos != (pos = label.find(strtmp)))) {
           label = CTempString(label).substr(pos + strtmp.size());
-     strtmp.clear(); 
+     }
+     strtmp = kEmptyStr;
 };
 
 
@@ -1258,14 +1277,19 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
               context_label = GetProdNmForCD(*seq_feat_p);
       else {
           if (seq_feat_p->GetData().IsPub()) {
-                 if ( seq_feat_p->GetData().GetPub().GetPub().GetLabel(&context_label));
+               seq_feat_p->GetData().GetPub().GetPub().GetLabel(&context_label);
+//              if ( seq_feat_p->GetData().GetPub().GetPub().GetLabel(&context_label));
           }
           else GetSeqFeatLabel(*seq_feat_p, context_label);
       }
       if (context_label.empty()) context_label = "Unknown context label";
       strtmp = label+"\t" + context_label + "\t" + location + "\t" + locus_tag;
-      if (thisInfo.infile.empty()) return strtmp;
-      else return (thisInfo.infile + ": " + strtmp); 
+      if (thisInfo.infile.empty()) {
+         return strtmp;
+      }
+      else {
+          return (thisInfo.infile + ": " + strtmp); 
+      }
       // return (thisInfo.infile + ": " + label+"\t" + context_label + "\t" 
       //                                        + location + "\t" + locus_tag);
 }; // GetDiscItemText(const CSeqFeat& obj)

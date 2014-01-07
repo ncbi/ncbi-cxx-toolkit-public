@@ -63,7 +63,7 @@ vector < CRef < CClickableItem > >  CDiscRepInfo :: disc_report_data;
 Str2Strs                            CDiscRepInfo :: test_item_list;
 Str2Objs                            CDiscRepInfo :: test_item_objs;
 COutputConfig                       CDiscRepInfo :: output_config;
-CRef <CSuspect_rule_set >           CDiscRepInfo :: suspect_prod_rules(new CSuspect_rule_set);
+CRef <CSuspect_rule_set >      CDiscRepInfo :: suspect_prod_rules(new CSuspect_rule_set);
 vector < vector <string> >          CDiscRepInfo :: susrule_summ;
 vector <string> 	            CDiscRepInfo :: weasels;
 CRef <CSeq_submit>                  CDiscRepInfo :: seq_submit(new CSeq_submit);
@@ -93,7 +93,7 @@ vector <string>                     CDiscRepInfo :: taxnm_env;
 vector <string>                     CDiscRepInfo :: virus_lineage;
 vector <string>                     CDiscRepInfo :: strain_tax;
 Str2CombDt                          CDiscRepInfo :: fix_data;
-CRef <CSuspect_rule_set>            CDiscRepInfo :: orga_prod_rules (new CSuspect_rule_set);
+CRef<CSuspect_rule_set>       CDiscRepInfo :: orga_prod_rules (new CSuspect_rule_set);
 vector <string>                     CDiscRepInfo :: skip_bracket_paren;
 vector <string>                     CDiscRepInfo :: ok_num_prefix;
 map <EMacro_feature_type, CSeqFeatData::ESubtype> CDiscRepInfo :: feattype_featdef;
@@ -194,6 +194,12 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
            = reg->GetBool("OncallerTool", "EXPAND_SRCQUAL_REPORT", true);
 
         // ini of orga_prod_rules:
+/*
+        thisInfo.orga_prod_rules.Reset(CSuspect_rule_set::GetOrganelleProductRules());
+        // ini. suspect rule file && susrule_fixtp_summ
+        thisInfo.suspect_prod_rules.Reset(CSuspect_rule_set::GetProductRules());
+*/
+
         strtmp = reg->GetString("RuleFiles", "OrganelleProductRuleFile", "/ncbi/data/organelle_products.prt");
         if (CFile(strtmp).Exists()) {
             ReadInBlob(*thisInfo.orga_prod_rules, strtmp);

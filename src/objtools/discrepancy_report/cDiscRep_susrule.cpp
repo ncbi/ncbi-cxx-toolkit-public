@@ -1359,7 +1359,9 @@ bool CSuspectRuleCheck :: IsStringInSpanInList (const string& str, const string&
 
 string CSuspectRuleCheck :: StripUnimportantCharacters(const string& str, bool strip_space, bool strip_punct)
 {
-   if (str.empty()) return kEmptyStr;
+   if (str.empty()) {
+      return kEmptyStr;
+   }
    string result;
    result.reserve(str.size());
    string::const_iterator it = str.begin();
