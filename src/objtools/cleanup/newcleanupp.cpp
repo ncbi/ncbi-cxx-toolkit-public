@@ -5148,6 +5148,10 @@ void CNewCleanup_imp::x_SplitDbtag( CDbtag &dbt, vector< CRef< CDbtag > > & out_
         return;
     }
 
+    if ( m_SeqEntryInfoStack.top().m_IsEmblOrDdbj) {
+        return;
+    }
+
     // split by colon and generate new tags
     vector<string> tags;
     NStr::Tokenize( dbt.GetTag().GetStr(), ":", tags );
