@@ -317,8 +317,8 @@ CRef<CDense_seg> s_DoNWalign (const CRange<TSeqPos>& desired_align_range,
     CRef<CNWAligner> aligner (new CNWAligner(master_seq, hit_seq));
     aligner->SetWm(1);
     aligner->SetWms(-1);
-    aligner->SetWg(-5);
-    aligner->SetWs(-2);
+    aligner->SetWg(-1);
+    aligner->SetWs(-4);
     aligner->SetScoreMatrix(NULL);
     aligner->Run();
     xcript = aligner->GetTranscriptString();
@@ -436,12 +436,17 @@ CRef<CDense_seg> s_DoNWalign (const CRange<TSeqPos>& desired_align_range,
          nw_align_modified = true;
      }
 
-     /*
-    CNWFormatter fmt (*aligner);
+     
+     /* CNWFormatter fmt (*aligner);
       
     string text;
     fmt.AsText(&text, CNWFormatter::eFormatType2);
-    cerr << text << endl;*/
+    cerr << text << endl;
+
+    auto_ptr<CObjectOStream> out(CObjectOStream::Open(eSerial_AsnText, cerr)); 
+    cerr << "final denseg:" << endl;
+    *out << *den_ref; 
+    cerr << endl;*/
     return den_ref;
 }
 
