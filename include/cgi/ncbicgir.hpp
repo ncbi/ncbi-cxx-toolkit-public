@@ -176,8 +176,11 @@ public:
     /// Set HTTP request method.
     void SetRequestMethod(CCgiRequest::ERequestMethod method);
 
-    /// Called after successful call (no exception, zero code) of
-    /// ProcessRequest(). Do not call it directly from the user code!
+    /// Called by the CGI framework after a ProcessRequest(), unless the
+    /// latter threw an exception.
+    /// @note  It still gets called if ProcessRequest() returns non-zero code.
+    /// @attention
+    ///  Do not call it directly from the user code!
     void Finalize(void) const;
 
 public:

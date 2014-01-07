@@ -611,8 +611,8 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                     GetDiagContext().SetAppState(eDiagAppState_Request);
                     x_result = ProcessRequest(*m_Context);
                     GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
+                    m_Context->GetResponse().Finalize();
                     if (x_result == 0) {
-                        m_Context->GetResponse().Finalize();
                         if (m_Cache.get()) {
                             m_Context->GetResponse().Flush();
                             if (m_IsResultReady) {

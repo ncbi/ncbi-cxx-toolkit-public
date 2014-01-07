@@ -283,11 +283,11 @@ int CCgiApplication::Run(void)
                 GetDiagContext().SetAppState(eDiagAppState_Request);
                 result = ProcessRequest(*m_Context);
                 GetDiagContext().SetAppState(eDiagAppState_RequestEnd);
+                m_Context->GetResponse().Finalize();
                 if (result != 0) {
                     SetHTTPStatus(500);
                     m_ErrorStatus = true;
                 } else {
-                    m_Context->GetResponse().Finalize();
                     if (m_Cache.get()) {
                         m_Context->GetResponse().Flush();
                         if (m_IsResultReady) {
