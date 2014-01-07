@@ -3407,9 +3407,26 @@ void CValidError_bioseq::ValidateDelta(const CBioseq& seq)
                                     PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapProblem,
                                         "Seq-gap type == scaffold is missing required linkage evidence", seq);
                                 }
-                                if (gaptype == CSeq_gap::eType_repeat && gap.IsSetLinkage() && gap.GetLinkage() == CSeq_gap::eLinkage_linked) {
-                                    PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapProblem,
-                                        "Seq-gap type == repeat and linkage == linked is missing required linkage evidence", seq);
+                                if (gaptype == CSeq_gap::eType_repeat && gap.IsSetLinkage() && gap.GetLinkage() == CSeq_gap::eLinkage_linked) 
+                                {
+                                    bool suppress_SEQ_INST_SeqGapProblem = false;
+                                    if (has_gi && seq.IsSetDescr()) 
+                                    {
+                                        ITERATE(CBioseq::TDescr::Tdata, it, seq.GetDescr().Get())
+                                        {
+                                            if ((**it).IsCreate_date())
+                                            {
+                                                CDate threshold_date(CTime(2012, 10, 1));
+                                                if ((**it).GetCreate_date().Compare(threshold_date) == CDate::eCompare_before)
+                                                    suppress_SEQ_INST_SeqGapProblem = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    if (!suppress_SEQ_INST_SeqGapProblem)                                  
+                                       PostErr(eDiag_Critical, eErr_SEQ_INST_SeqGapProblem,
+                                          "Seq-gap type == repeat and linkage == linked is missing required linkage evidence", seq);
+                                    
                                 }
                             }
                         }
