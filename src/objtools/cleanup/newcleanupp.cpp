@@ -9572,7 +9572,7 @@ void CNewCleanup_imp::x_RemoveDupBioSource( CBioseq_set & bioseq_set )
 
 void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
 {
-    vector<string> keywords = edit::CStructuredCommentField::GetKeywordList();
+    vector<string> keywords = CComment_rule::GetKeywordList();
     EDIT_EACH_SEQDESC_ON_BIOSEQ ( itr, bioseq ) {
         CSeqdesc& desc = **itr;
         if ( desc.Which() != CSeqdesc::e_Genbank ) continue;
@@ -9587,8 +9587,7 @@ void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
         if (gb_block.IsSetKeywords() && gb_block.GetKeywords().size() == 0) {
             gb_block.ResetKeywords();
         }
-        edit::CGBBlockField gb_block_field(edit::CGBBlockField::eGBBlockFieldType_Keyword);
-        if (gb_block_field.IsEmpty(desc)) {
+        if (gb_block.IsEmpty()) {
             ERASE_SEQDESC_ON_BIOSEQ ( itr, bioseq );
         }
     }
@@ -9597,9 +9596,9 @@ void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
     CBioseq_Handle bsh = m_Scope->GetBioseqHandle(bioseq);
     for (CSeqdesc_CI di(bsh, CSeqdesc::e_User); di; ++di) {
         const CUser_object& usr = di->GetUser();
-        if ( ! edit::CStructuredCommentField::IsStructuredComment (usr) ) continue;
+        if ( ! CComment_rule::IsStructuredComment (usr) ) continue;
         try {
-            string prefix = edit::CStructuredCommentField::GetPrefix (usr);
+            string prefix = CComment_rule::GetStructuredCommentPrefix (usr);
             CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
             try {
                 const CComment_rule& rule = comment_rules->FindCommentRule(prefix);
@@ -9608,7 +9607,7 @@ void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
                 CUser_object::TData& fields = tmp.SetData();
                 CComment_rule::TErrorList errors = rule.IsValid(tmp);
                 if (errors.size() == 0) {
-                    string kywd = edit::CStructuredCommentField::KeywordForPrefix( prefix );
+                    string kywd = CComment_rule::KeywordForPrefix( prefix );
                     new_keywords.push_back(kywd);
                 }
             } catch (CException) {

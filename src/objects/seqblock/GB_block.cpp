@@ -52,6 +52,23 @@ CGB_block::~CGB_block(void)
 }
 
 
+bool CGB_block::IsEmpty(void) const
+{
+    if (!IsSetDate()
+        && !IsSetDiv()
+        && !IsSetEntry_date()
+        && !IsSetExtra_accessions()
+        && !IsSetKeywords()
+        && !IsSetOrigin()
+        && !IsSetSource()
+        && !IsSetTaxonomy()) {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

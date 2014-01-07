@@ -138,6 +138,30 @@ CConstRef<CComment_set> CComment_set::GetCommentRules()
 }
 
 
+vector<string> CComment_set::GetFieldNames(const string& prefix)
+{
+    vector<string> options;
+
+    string prefix_to_use = CComment_rule::MakePrefixFromRoot(prefix);
+
+    // look up mandatory and required field names from validator rules
+    CConstRef<CComment_set> rules = CComment_set::GetCommentRules();
+
+    if (rules) {
+        try {
+            const CComment_rule& rule = rules->FindCommentRule(prefix_to_use);
+            ITERATE(CComment_rule::TFields::Tdata, it, rule.GetFields().Get()) {
+                options.push_back((*it)->GetField_name());
+            }
+        } catch (CException ) {
+            // no rule for this prefix, can't list fields
+        }
+    }
+
+    return options;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

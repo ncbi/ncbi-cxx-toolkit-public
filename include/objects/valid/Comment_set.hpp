@@ -61,6 +61,8 @@ public:
 
     const CComment_rule& FindCommentRule (const string& prefix) const;
     static CConstRef<CComment_set> GetCommentRules();
+    static vector<string> GetFieldNames(const string& prefix);
+    
 
 private:
     // Prohibit copy constructor and assignment operator

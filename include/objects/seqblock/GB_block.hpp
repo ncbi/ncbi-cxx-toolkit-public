@@ -58,6 +58,7 @@ public:
     CGB_block(void);
     // destructor
     ~CGB_block(void);
+    bool IsEmpty(void) const;
 
 private:
     // Prohibit copy constructor and assignment operator

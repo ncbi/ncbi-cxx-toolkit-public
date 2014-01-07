@@ -88,18 +88,7 @@ bool CGBBlockField::IsEmpty(const CObject& object) const
         return false;
     }
     const CGB_block& block = desc->GetGenbank();
-    if (!block.IsSetDate()
-        && !block.IsSetDiv()
-        && !block.IsSetEntry_date()
-        && !block.IsSetExtra_accessions()
-        && !block.IsSetKeywords()
-        && !block.IsSetOrigin()
-        && !block.IsSetSource()
-        && !block.IsSetTaxonomy()) {
-        return true;
-    } else {
-        return false;
-    }
+    return block.IsEmpty();
 }
 
 

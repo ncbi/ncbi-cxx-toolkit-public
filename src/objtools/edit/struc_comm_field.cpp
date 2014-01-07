@@ -115,7 +115,7 @@ void CStructuredCommentField::x_InsertFieldAtCorrectPosition(CUser_object& user,
     }
     string this_field_label = field->GetLabel().GetStr();
 
-    vector<string> field_names = GetFieldNames(m_Prefix);
+    vector<string> field_names = CComment_set::GetFieldNames(m_Prefix);
     if (field_names.size() == 0) {
         // no information about field order, just add to end
         user.SetData().push_back(field);
@@ -419,86 +419,12 @@ vector<CConstRef<CObject> > CStructuredCommentField::GetRelatedObjects(const CAp
 
 bool CStructuredCommentField::IsStructuredCommentForThisField (const CUser_object& user) const
 {
-    if (!IsStructuredComment(user)) {
+    if (!CComment_rule::IsStructuredComment(user)) {
         return false;
     }
-    string prefix = GetPrefix(user);
+    string prefix = CComment_rule::GetStructuredCommentPrefix(user);
     CComment_rule::NormalizePrefix(prefix);
     return NStr::Equal(prefix, m_Prefix);
-}
-
-
-bool CStructuredCommentField::IsStructuredComment (const CUser_object& user)
-{
-    if (user.IsSetType()
-        && user.GetType().IsStr()
-        && NStr::EqualNocase(user.GetType().GetStr(),kStructuredComment)) {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-
-string CStructuredCommentField::MakePrefixFromRoot(const string& root)
-{
-    string prefix = root;
-    CComment_rule::NormalizePrefix(prefix);
-    prefix = "##" + prefix + "-START##";
-    return prefix;
-}
-
-
-string CStructuredCommentField::MakeSuffixFromRoot(const string& root)
-{
-    string suffix = root;
-    CComment_rule::NormalizePrefix(suffix);
-    suffix = "##" + suffix + "-END##";
-    return suffix;
-}
-
-
-string CStructuredCommentField::GetPrefix (const CUser_object& user)
-{
-    if (!IsStructuredComment(user) || !user.IsSetData()) {
-        return "";
-    }
-    string prefix = "";
-    ITERATE(CUser_object::TData, it, user.GetData()) {
-        if ((*it)->IsSetData() && (*it)->GetData().IsStr()
-            && (*it)->IsSetLabel() && (*it)->GetLabel().IsStr()
-            && (NStr::Equal((*it)->GetLabel().GetStr(), kStructuredCommentPrefix)
-                || NStr::Equal((*it)->GetLabel().GetStr(), kStructuredCommentSuffix))) {
-            prefix = (*it)->GetData().GetStr();
-            break;
-        }
-    }
-    CComment_rule::NormalizePrefix(prefix);
-    return prefix;
-}
-
-
-vector<string> CStructuredCommentField::GetFieldNames(const string& prefix)
-{
-    vector<string> options;
-
-    string prefix_to_use = MakePrefixFromRoot(prefix);
-
-    // look up mandatory and required field names from validator rules
-    CConstRef<CComment_set> rules = CComment_set::GetCommentRules();
-
-    if (rules) {
-        try {
-            const CComment_rule& rule = rules->FindCommentRule(prefix_to_use);
-            ITERATE(CComment_rule::TFields::Tdata, it, rule.GetFields().Get()) {
-                options.push_back((*it)->GetField_name());
-            }
-        } catch (CException ) {
-            // no rule for this prefix, can't list fields
-        }
-    }
-
-    return options;
 }
 
 
@@ -512,69 +438,16 @@ CRef<CUser_object> CStructuredCommentField::MakeUserObject(const string& prefix)
         CComment_rule::NormalizePrefix(root);
         CRef<CUser_field> p(new CUser_field());
         p->SetLabel().SetStr(kStructuredCommentPrefix);
-        string pre = MakePrefixFromRoot(root);
+        string pre = CComment_rule::MakePrefixFromRoot(root);
         p->SetData().SetStr(pre);
         obj->SetData().push_back(p);
         CRef<CUser_field> s(new CUser_field());
         s->SetLabel().SetStr(kStructuredCommentSuffix);
-        string suf = MakeSuffixFromRoot(root);
+        string suf = CComment_rule::MakeSuffixFromRoot(root);
         s->SetData().SetStr(suf);
         obj->SetData().push_back(s);
     }
     return obj;
-}
-
-
-typedef SStaticPair<const char*, const char*> TKeywordPrefix;
-
-const TKeywordPrefix s_StructuredCommentKeywords[] = {
-  {"GSC:MIGS:2.1", "MIGS-Data"},
-  {"GSC:MIMS:2.1", "MIMS-Data"},
-  {"GSC:MIENS:2.1", "MIENS-Data"},
-  {"GSC:MIxS;MIGS:3.0", "MIGS:3.0-Data"},
-  {"GSC:MIxS;MIMS:3.0", "MIMS:3.0-Data"},
-  {"GSC:MIxS;MIMARKS:3.0", "MIMARKS:3.0-Data"} };
-
-static size_t k_NumStructuredCommentKeywords = sizeof(s_StructuredCommentKeywords) / sizeof(TKeywordPrefix);
-
-string CStructuredCommentField::KeywordForPrefix(const string& prefix)
-{
-    size_t i;
-    string compare = prefix;
-    CComment_rule::NormalizePrefix(compare);
-
-    for (i = 0; i < k_NumStructuredCommentKeywords; i++) {
-        if (NStr::Equal(compare.c_str(), s_StructuredCommentKeywords[i].second)) {
-            return s_StructuredCommentKeywords[i].first;
-        }
-    }
-    return "";
-}
-
-
-string CStructuredCommentField::PrefixForKeyword(const string& keyword)
-{
-    size_t i;
-
-    for (i = 0; i < k_NumStructuredCommentKeywords; i++) {
-        if (NStr::Equal(keyword.c_str(), s_StructuredCommentKeywords[i].first)) {
-            return s_StructuredCommentKeywords[i].second;
-        }
-    }
-    return "";
-}
-
-
-vector<string> CStructuredCommentField::GetKeywordList()
-{
-    vector<string> keywords;
-
-    size_t i;
-
-    for (i = 0; i < k_NumStructuredCommentKeywords; i++) {
-        keywords.push_back(s_StructuredCommentKeywords[i].first);
-    }
-    return keywords;
 }
 
 

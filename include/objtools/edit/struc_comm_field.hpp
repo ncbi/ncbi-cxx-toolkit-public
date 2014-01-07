@@ -81,15 +81,7 @@ public:
     bool SetVal(CUser_field& field, const string & newValue, EExistingText existing_text);
     virtual string GetLabel() const { return m_Prefix + " " + m_FieldName; };
     bool IsStructuredCommentForThisField (const CUser_object& user) const;
-    static bool IsStructuredComment (const CUser_object& user);
-    static string GetPrefix (const CUser_object& user);
-    static vector<string> GetFieldNames(const string& prefix);
     static CRef<CUser_object> MakeUserObject(const string& prefix);
-    static string MakePrefixFromRoot(const string& root);
-    static string MakeSuffixFromRoot(const string& root);
-    static string KeywordForPrefix(const string& prefix);
-    static string PrefixForKeyword(const string& keyword);
-    static vector<string> GetKeywordList();
 
 protected:
     string m_Prefix;

@@ -6803,8 +6803,8 @@ void CValidError_bioseq::CheckForMultipleStructuredComments(const CBioseq& seq)
     CSeqdesc_CI di(m_Scope->GetBioseqHandle(seq), CSeqdesc::e_User);
     while (di) {
         const CUser_object& obj = di->GetUser();
-        if (edit::CStructuredCommentField::IsStructuredComment(obj)) {
-            string prefix = edit::CStructuredCommentField::GetPrefix(obj);
+        if (CComment_rule::IsStructuredComment(obj)) {
+            string prefix = CComment_rule::GetStructuredCommentPrefix(obj);
             if (!NStr::IsBlank(prefix)) {
                 sc_prefixes.push_back(prefix);
             }

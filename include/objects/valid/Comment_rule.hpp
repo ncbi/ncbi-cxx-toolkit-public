@@ -63,6 +63,14 @@ public:
 
     const CField_rule& FindFieldRule (const string& field_name) const;
     static void NormalizePrefix(string& prefix);
+    static bool IsStructuredComment (const CUser_object& user);
+    static string GetStructuredCommentPrefix (const CUser_object& user);
+    static string MakePrefixFromRoot(const string& root);
+    static string MakeSuffixFromRoot(const string& root);
+    static string KeywordForPrefix(const string& prefix);
+    static string PrefixForKeyword(const string& keyword);
+    static vector<string> GetKeywordList();
+    
 
     typedef pair<CField_rule::TSeverity, string> TError;
     typedef vector<TError> TErrorList;
