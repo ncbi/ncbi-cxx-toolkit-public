@@ -6465,9 +6465,12 @@ BOOST_AUTO_TEST_CASE(Fix_SpecificHost)
 	host = "Homo sapiens";
 	hostfix = FixSpecificHost(host, error_msg);
 	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
-	//BOOST_CHECK_EQUAL(hostfix, kEmptyStr);
-
-
+	//BOOST_CHECK_EQUAL(hostfix, string("Homo sapiens"));
+	
+	host = "Pig";
+	hostfix = FixSpecificHost(host, error_msg);
+	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
+	//BOOST_CHECK_EQUAL(hostfix, string("Pig"));
 }
 
 BOOST_AUTO_TEST_CASE(Test_Descr_RefGeneTrackingIllegalStatus)

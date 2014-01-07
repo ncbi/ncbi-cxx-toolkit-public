@@ -2850,14 +2850,12 @@ bool HasMisSpellFlag (const CT3Data& data)
 bool FindMatchInOrgRef (string str, const COrg_ref& org)
 {
     string match = "";
-	bool found_common = false;
 
     if (NStr::IsBlank(str)) {
         // do nothing;
     } else if (org.IsSetTaxname() && NStr::EqualNocase(str, org.GetTaxname())) {
         match = org.GetTaxname();
     } else if (org.IsSetCommon() && NStr::EqualNocase(str, org.GetCommon())) {
-		found_common = true;
         match = org.GetCommon();
     } else {
         FOR_EACH_SYN_ON_ORGREF (syn_it, org) {
@@ -2879,11 +2877,7 @@ bool FindMatchInOrgRef (string str, const COrg_ref& org)
             }
         }
     }
-    if (found_common) {
-		return NStr::EqualNocase(str, match);
-	} else {
-		return NStr::EqualCase(str, match);
-	}
+	return NStr::EqualCase(str, match);
 }
 
 
