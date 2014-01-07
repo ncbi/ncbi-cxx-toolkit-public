@@ -50,6 +50,9 @@
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/object_manager.hpp>
+#include <objects/taxon3/taxon3.hpp>
+#include <objects/taxon3/Taxon3_reply.hpp>
+//#include <objtools/validator/validatorp.hpp>
 #include <objtools/validator/utilities.hpp>
 
 #include <vector>
@@ -1820,6 +1823,198 @@ IsDuplicate
         }
     }
     return dup_type;        
+}
+
+// specific-host functions
+
+bool IsCommonName (const CT3Data& data)
+{
+	bool is_common = false;
+	
+	if (data.IsSetStatus()) {
+		ITERATE (CT3Reply::TData::TStatus, status_it, data.GetStatus()) {
+			if ((*status_it)->IsSetProperty() 
+				&& NStr::Equal((*status_it)->GetProperty(), "old_name_class", NStr::eNocase)) {
+				if ((*status_it)->IsSetValue() && (*status_it)->GetValue().IsStr()) {
+					string value_str = (*status_it)->GetValue().GetStr();
+					if (NStr::Equal(value_str, "common name", NStr::eCase) 
+						|| NStr::Equal(value_str, "genbank common name", NStr::eCase)) {
+						is_common = true;
+                        break;
+					}
+				}
+			}
+		}
+	}
+	return is_common;
+}
+
+bool HasMisSpellFlag (const CT3Data& data)
+{
+    bool has_misspell_flag = false;
+
+    if (data.IsSetStatus()) {
+        ITERATE (CT3Reply::TData::TStatus, status_it, data.GetStatus()) {
+            if ((*status_it)->IsSetProperty()) {
+                string prop = (*status_it)->GetProperty();
+                if (NStr::EqualNocase(prop, "misspelled_name")) {
+                    has_misspell_flag = true;
+                    break;
+                }
+            }
+        }
+    }
+    return has_misspell_flag;
+}
+
+
+bool FindMatchInOrgRef (string str, const COrg_ref& org)
+{
+    string match = "";
+
+    if (NStr::IsBlank(str)) {
+        // do nothing;
+    } else if (org.IsSetTaxname() && NStr::EqualNocase(str, org.GetTaxname())) {
+        match = org.GetTaxname();
+    } else if (org.IsSetCommon() && NStr::EqualNocase(str, org.GetCommon())) {
+        match = org.GetCommon();
+    } else {
+        FOR_EACH_SYN_ON_ORGREF (syn_it, org) {
+            if (NStr::EqualNocase(str, *syn_it)) {
+                match = *syn_it;
+                break;
+            }
+        }
+        if (NStr::IsBlank(match)) {
+            FOR_EACH_ORGMOD_ON_ORGREF (mod_it, org) {
+                if ((*mod_it)->IsSetSubtype()
+                    && ((*mod_it)->GetSubtype() == COrgMod::eSubtype_gb_synonym
+                        || (*mod_it)->GetSubtype() == COrgMod::eSubtype_old_name)
+                    && (*mod_it)->IsSetSubname()
+                    && NStr::EqualNocase(str, (*mod_it)->GetSubname())) {
+                    match = (*mod_it)->GetSubname();
+                    break;
+                }
+            }
+        }
+    }
+	return NStr::EqualCase(str, match);
+}
+
+
+static const string sIgnoreHostWordList[] = {
+  "cf.",
+  "cf ",
+  "aff ",
+  "aff.",
+  "near",
+  "nr.",
+  "nr "
+};
+
+
+static const int kNumIgnoreHostWordList = sizeof (sIgnoreHostWordList) / sizeof (string);
+
+void AdjustSpecificHostForTaxServer (string& spec_host)
+{
+    for (int i = 0; i < kNumIgnoreHostWordList; i++) {
+        NStr::ReplaceInPlace(spec_host, sIgnoreHostWordList[i], "");
+    }
+    NStr::ReplaceInPlace(spec_host, "  ", " ");
+    NStr::TruncateSpacesInPlace(spec_host);
+}
+
+
+
+bool IsSpecificHostValid(string& host, string& error_msg)
+{
+	bool is_valid = true;
+	error_msg = kEmptyStr;
+	
+	if (NStr::IsBlank(host)) {
+		error_msg = "Host is empty";
+		return is_valid;
+	}
+	
+	AdjustSpecificHostForTaxServer(host);
+	vector<CRef<COrg_ref> > org_req_list;
+	CRef<COrg_ref> req(new COrg_ref());
+	req->SetTaxname(host);
+	org_req_list.push_back(req);
+	
+	CTaxon3 taxon3;
+	taxon3.Init();
+	CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_req_list);
+	if (reply && reply->GetReply().size() == 1) {
+		CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+		if ((*reply_it)->IsError()) {
+			is_valid = false;
+			string err_str = "?";
+			if ((*reply_it)->GetError().IsSetMessage()) {
+				err_str = (*reply_it)->GetError().GetMessage();
+			}
+			if (NStr::Find(err_str, "ambiguous") != NPOS) {
+				error_msg = "Specific host value is ambiguous: " + host;
+			} else {
+				error_msg = "Invalid value for specific host: " + host;
+			}
+		} else if ((*reply_it)->IsData()) {
+			if (HasMisSpellFlag((*reply_it)->GetData())) {
+				is_valid = false;
+				error_msg = "Specific host value is misspelled: " + host;
+			} else if ((*reply_it)->GetData().IsSetOrg()) {
+				if (! FindMatchInOrgRef (host, (*reply_it)->GetData().GetOrg()) 
+					&& ! IsCommonName((*reply_it)->GetData())) {
+					is_valid = false;
+					error_msg = "Specific host value is incorrectly capitalized: " + host;
+					}
+			} else {
+				is_valid = false;
+				error_msg = "Invalid value for specific host: " + host;
+			}
+			
+		}
+	} else {
+		error_msg = "Invalid value for specific host: " + host;
+	}
+	
+	return is_valid;
+}
+
+string FixBadSpecificHost(string& host)
+{
+	// host is assumed to be an incorrect specific host value
+	// returns the corrected specific host, if it can be corrected, and an empty string, otherwise
+	string hostfix = kEmptyStr;
+	if (NStr::IsBlank(host)) {
+		return hostfix;
+	}
+	
+	AdjustSpecificHostForTaxServer(host);
+	vector<CRef<COrg_ref> > org_req_list;
+	CRef<COrg_ref> req(new COrg_ref());
+	req->SetTaxname(host);
+	org_req_list.push_back(req);
+	
+	CTaxon3 taxon3;
+	taxon3.Init();
+	CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_req_list);
+	if (reply && reply->GetReply().size() == 1) {
+		CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+		if ((*reply_it)->IsError()) {
+			// do nothing
+		} else if ((*reply_it)->IsData()) {
+			if (HasMisSpellFlag((*reply_it)->GetData()) && (*reply_it)->GetData().IsSetOrg()) {
+				hostfix = (*reply_it)->GetData().GetOrg().GetTaxname();
+			} else if ((*reply_it)->GetData().IsSetOrg()) {
+				if (! FindMatchInOrgRef(host, (*reply_it)->GetData().GetOrg())
+					&& ! IsCommonName((*reply_it)->GetData())) {
+						hostfix = (*reply_it)->GetData().GetOrg().GetTaxname();
+					}
+			} 
+		}
+	}
+	return hostfix;
 }
 
 

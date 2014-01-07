@@ -97,7 +97,6 @@ class CCountries;
 class CInferencePrefixList;
 class CComment_set;
 class CTaxon3_reply;
-class CT3Data;
 
 BEGIN_SCOPE(validator)
 
@@ -373,10 +372,6 @@ private:
 };
 
 typedef vector<COrgrefWithParent_SpecificHost> TSpecificHostWithParentList;
-bool NCBI_VALIDATOR_EXPORT IsCommonName (const CT3Data& data);
-bool NCBI_VALIDATOR_EXPORT HasMisSpellFlag (const CT3Data& data);
-bool NCBI_VALIDATOR_EXPORT FindMatchInOrgRef (string str, const COrg_ref& org);
-void NCBI_VALIDATOR_EXPORT AdjustSpecificHostForTaxServer (string& spec_host);
 
 class CBioSourceKind
 {

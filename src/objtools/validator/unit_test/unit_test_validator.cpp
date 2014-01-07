@@ -111,10 +111,6 @@
 #include <common/ncbi_export.h>
 #include <objtools/unit_test_util/unit_test_util.hpp>
 #include <objtools/edit/struc_comm_field.hpp>
-#include <objects/taxon3/taxon3.hpp>
-#include <objects/taxon3/Taxon3_reply.hpp>
-#include <objtools/validator/validatorp.hpp>
-
 
 // for writing out tmp files
 #include <serial/objostrasn.hpp>
@@ -216,58 +212,6 @@ void CheckErrors(const CValidError& eval,
         WriteErrors (eval, false);
     }
 }
-
-string FixSpecificHost( string& host, string& error_msg)
-{
-	/* returns a suggested fix for the specific host, if there is one, or an empty string otherwise */
-	string fixhost = kEmptyStr;
-	error_msg = kEmptyStr;
-	
-	if (NStr::IsBlank(host)) {
-		error_msg = "Host is empty";
-		return fixhost;
-	}
-	
-	AdjustSpecificHostForTaxServer(host);
-	vector<CRef<COrg_ref> > org_req_list;
-	CRef<COrg_ref> req(new COrg_ref());
-	req->SetTaxname(host);
-	org_req_list.push_back(req);
-	
-	CTaxon3 taxon3;
-	taxon3.Init();
-	CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_req_list);
-	if (reply && reply->GetReply().size() == 1) {
-		CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
-		if ((*reply_it)->IsError()) {
-			string err_str = "?";
-			if ((*reply_it)->GetError().IsSetMessage()) {
-				err_str = (*reply_it)->GetError().GetMessage();
-			}	
-			if (NStr::Find(err_str, "ambiguous") != NPOS) {
-				error_msg = "Specific host value is ambiguous: " + host;
-				} else {
-				error_msg = "Invalid value for specific host: " + host;
-			}
-		} else if ((*reply_it)->IsData()) {
-			if (HasMisSpellFlag((*reply_it)->GetData())) {
-				error_msg = "Specific host value is misspelled: " + host;
-				fixhost = (*reply_it)->GetData().GetOrg().GetTaxname();
-			} else if ((*reply_it)->GetData().IsSetOrg()) {
-				if ( ! FindMatchInOrgRef(host, (*reply_it)->GetData().GetOrg()) && ! IsCommonName((*reply_it)->GetData())) {
-					error_msg = "Specific host value is incorrectly capitalized: " + host;
-					fixhost = (*reply_it)->GetData().GetOrg().GetTaxname();
-				}	
-			} else {
-				error_msg = "Invalid value for specific host: " + host;
-			}
-		}
-	} else  {
-		error_msg = "Unknown error when requesting fix for specific host: " + host;
-	}
-	return fixhost;	
-}
-
 
 // Not currently used, but I'll leave it here in case
 // it's useful in the future.
@@ -6424,54 +6368,73 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadSpecificHost)
     CLEAR_ERRORS
 }
 
-BOOST_AUTO_TEST_CASE(Fix_SpecificHost)
+BOOST_AUTO_TEST_CASE(Test_Validity_SpecificHost)
 {
-	string hostfix, error_msg;
-	string host = "Pinus";
-	hostfix = FixSpecificHost(host, error_msg);
-	BOOST_CHECK_EQUAL(error_msg, string("Specific host value is ambiguous: Pinus"));
-	BOOST_CHECK_EQUAL(hostfix, kEmptyStr);
-
+	string host, error_msg;
+	host = "Homo sapiens";
+	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
+	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
+	
 	host = "Homo supiens";
-	hostfix = FixSpecificHost(host, error_msg);	
+	BOOST_CHECK_EQUAL(false, IsSpecificHostValid(host, error_msg));
 	BOOST_CHECK_EQUAL(error_msg, string("Invalid value for specific host: Homo supiens"));
-	BOOST_CHECK_EQUAL(hostfix, kEmptyStr);
-			
+	
+	host = "Pinus";
+	BOOST_CHECK_EQUAL(false, IsSpecificHostValid(host, error_msg));
+	BOOST_CHECK_EQUAL(error_msg, string("Specific host value is ambiguous: Pinus"));
+	
 	host = "Gallus Gallus";
-	hostfix = FixSpecificHost(host, error_msg);
+	BOOST_CHECK_EQUAL(false, IsSpecificHostValid(host, error_msg));
 	BOOST_CHECK_EQUAL(error_msg, string("Specific host value is incorrectly capitalized: Gallus Gallus"));
-	BOOST_CHECK_EQUAL(hostfix, string("Gallus gallus"));
 	
 	host = "Eschericia coli";
-	hostfix = FixSpecificHost(host, error_msg);
+	BOOST_CHECK_EQUAL(false, IsSpecificHostValid(host, error_msg));
 	BOOST_CHECK_EQUAL(error_msg, string("Specific host value is misspelled: Eschericia coli"));
-	BOOST_CHECK_EQUAL(hostfix, string("Escherichia coli"));
+	
+	host = "Avian";
+	BOOST_CHECK_EQUAL(false, IsSpecificHostValid(host, error_msg));
+	BOOST_CHECK_EQUAL(error_msg, string("Invalid value for specific host: Avian"));
 	
 	host = "Bovine";
-	hostfix = FixSpecificHost(host, error_msg);
+	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
 	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
-	//BOOST_CHECK_EQUAL(hostfix, string("Bovine"));
-
-	host = "Chicken";
-	hostfix = FixSpecificHost(host, error_msg);
-	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
-	//BOOST_CHECK_EQUAL(hostfix, string("Chicken"));
-
-	host = "Avian";
-	hostfix = FixSpecificHost(host, error_msg);
-	BOOST_CHECK_EQUAL(error_msg, string("Invalid value for specific host: Avian"));
-	//BOOST_CHECK_EQUAL(hostfix, kEmptyStr);
-	
-	host = "Homo sapiens";
-	hostfix = FixSpecificHost(host, error_msg);
-	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
-	//BOOST_CHECK_EQUAL(hostfix, string("Homo sapiens"));
 	
 	host = "Pig";
-	hostfix = FixSpecificHost(host, error_msg);
+	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
 	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
-	//BOOST_CHECK_EQUAL(hostfix, string("Pig"));
+	
+	host = "Chicken";
+	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
+	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
+	
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_FixBadSpecificHost)
+{
+	string hostfix, host;
+	host = "Homo supiens";
+	hostfix = FixBadSpecificHost(host);
+	BOOST_CHECK_EQUAL(hostfix, kEmptyStr);
+	
+	host = "Pinus";
+	hostfix = FixBadSpecificHost(host);
+	BOOST_CHECK_EQUAL(hostfix, kEmptyStr);
+		
+	host = "Gallus Gallus";
+	hostfix = FixBadSpecificHost(host);
+	BOOST_CHECK_EQUAL(hostfix, string("Gallus gallus"));
+		
+	host = "Eschericia coli";
+	hostfix = FixBadSpecificHost(host);
+	BOOST_CHECK_EQUAL(hostfix, string("Escherichia coli"));
+	
+	host = "Avian";
+	hostfix = FixBadSpecificHost(host);
+	BOOST_CHECK_EQUAL(hostfix, kEmptyStr);
+	
+}
+
 
 BOOST_AUTO_TEST_CASE(Test_Descr_RefGeneTrackingIllegalStatus)
 {

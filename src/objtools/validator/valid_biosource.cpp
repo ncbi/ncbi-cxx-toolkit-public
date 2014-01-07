@@ -2769,7 +2769,6 @@ void CValidError_imp::GatherTentativeName
 }
 
 
-
 void CValidError_imp::GatherSources
 (const CSeq_entry& se, 
  vector<CConstRef<CSeqdesc> >& src_descs,
@@ -2805,102 +2804,6 @@ void CValidError_imp::GatherSources
             GatherSources (**it, src_descs, desc_ctxs, src_feats);
         }
     }
-}
-
-
-bool IsCommonName (const CT3Data& data)
-{
-	bool is_common = false;
-	
-	if (data.IsSetStatus()) {
-		ITERATE (CT3Reply::TData::TStatus, status_it, data.GetStatus()) {
-			if ((*status_it)->IsSetProperty() && NStr::Equal((*status_it)->GetProperty(), "old_name_class", NStr::eNocase)) {
-				if ((*status_it)->IsSetValue() && (*status_it)->GetValue().IsStr()) {
-					string value_str = (*status_it)->GetValue().GetStr();
-					if (NStr::Equal(value_str, "common name", NStr::eCase) || NStr::Equal(value_str, "genbank common name", NStr::eCase)) {
-						is_common = true;
-                        break;
-					}
-				}
-			}
-		}
-	}
-	return is_common;
-}
-
-bool HasMisSpellFlag (const CT3Data& data)
-{
-    bool has_misspell_flag = false;
-
-    if (data.IsSetStatus()) {
-        ITERATE (CT3Reply::TData::TStatus, status_it, data.GetStatus()) {
-            if ((*status_it)->IsSetProperty()) {
-                string prop = (*status_it)->GetProperty();
-                if (NStr::EqualNocase(prop, "misspelled_name")) {
-                    has_misspell_flag = true;
-                    break;
-                }
-            }
-        }
-    }
-    return has_misspell_flag;
-}
-
-
-bool FindMatchInOrgRef (string str, const COrg_ref& org)
-{
-    string match = "";
-
-    if (NStr::IsBlank(str)) {
-        // do nothing;
-    } else if (org.IsSetTaxname() && NStr::EqualNocase(str, org.GetTaxname())) {
-        match = org.GetTaxname();
-    } else if (org.IsSetCommon() && NStr::EqualNocase(str, org.GetCommon())) {
-        match = org.GetCommon();
-    } else {
-        FOR_EACH_SYN_ON_ORGREF (syn_it, org) {
-            if (NStr::EqualNocase(str, *syn_it)) {
-                match = *syn_it;
-                break;
-            }
-        }
-        if (NStr::IsBlank(match)) {
-            FOR_EACH_ORGMOD_ON_ORGREF (mod_it, org) {
-                if ((*mod_it)->IsSetSubtype()
-                    && ((*mod_it)->GetSubtype() == COrgMod::eSubtype_gb_synonym
-                        || (*mod_it)->GetSubtype() == COrgMod::eSubtype_old_name)
-                    && (*mod_it)->IsSetSubname()
-                    && NStr::EqualNocase(str, (*mod_it)->GetSubname())) {
-                    match = (*mod_it)->GetSubname();
-                    break;
-                }
-            }
-        }
-    }
-	return NStr::EqualCase(str, match);
-}
-
-
-static const string sIgnoreHostWordList[] = {
-  "cf.",
-  "cf ",
-  "aff ",
-  "aff.",
-  "near",
-  "nr.",
-  "nr "
-};
-
-
-static const int kNumIgnoreHostWordList = sizeof (sIgnoreHostWordList) / sizeof (string);
-
-void AdjustSpecificHostForTaxServer (string& spec_host)
-{
-    for (int i = 0; i < kNumIgnoreHostWordList; i++) {
-        NStr::ReplaceInPlace(spec_host, sIgnoreHostWordList[i], "");
-    }
-    NStr::ReplaceInPlace(spec_host, "  ", " ");
-    NStr::TruncateSpacesInPlace(spec_host);
 }
 
 
