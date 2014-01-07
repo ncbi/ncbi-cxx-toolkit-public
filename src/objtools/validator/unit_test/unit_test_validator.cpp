@@ -221,6 +221,8 @@ string FixSpecificHost( string& host, string& error_msg)
 {
 	/* returns a suggested fix for the specific host, if there is one, or an empty string otherwise */
 	string fixhost = kEmptyStr;
+	error_msg = kEmptyStr;
+	
 	if (NStr::IsBlank(host)) {
 		error_msg = "Host is empty";
 		return fixhost;
@@ -251,9 +253,11 @@ string FixSpecificHost( string& host, string& error_msg)
 			if (HasMisSpellFlag((*reply_it)->GetData())) {
 				error_msg = "Specific host value is misspelled: " + host;
 				fixhost = (*reply_it)->GetData().GetOrg().GetTaxname();
-			} else if ( ! FindMatchInOrgRef(host, (*reply_it)->GetData().GetOrg())) {
-				error_msg = "Specific host value is incorrectly capitalized: " + host;
-				fixhost = (*reply_it)->GetData().GetOrg().GetTaxname();
+			} else if ((*reply_it)->GetData().IsSetOrg()) {
+				if ( ! FindMatchInOrgRef(host, (*reply_it)->GetData().GetOrg()) && ! IsCommonName((*reply_it)->GetData())) {
+					error_msg = "Specific host value is incorrectly capitalized: " + host;
+					fixhost = (*reply_it)->GetData().GetOrg().GetTaxname();
+				}	
 			} else {
 				error_msg = "Invalid value for specific host: " + host;
 			}
@@ -6442,6 +6446,27 @@ BOOST_AUTO_TEST_CASE(Fix_SpecificHost)
 	hostfix = FixSpecificHost(host, error_msg);
 	BOOST_CHECK_EQUAL(error_msg, string("Specific host value is misspelled: Eschericia coli"));
 	BOOST_CHECK_EQUAL(hostfix, string("Escherichia coli"));
+	
+	host = "Bovine";
+	hostfix = FixSpecificHost(host, error_msg);
+	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
+	//BOOST_CHECK_EQUAL(hostfix, string("Bovine"));
+
+	host = "Chicken";
+	hostfix = FixSpecificHost(host, error_msg);
+	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
+	//BOOST_CHECK_EQUAL(hostfix, string("Chicken"));
+
+	host = "Avian";
+	hostfix = FixSpecificHost(host, error_msg);
+	BOOST_CHECK_EQUAL(error_msg, string("Invalid value for specific host: Avian"));
+	//BOOST_CHECK_EQUAL(hostfix, kEmptyStr);
+	
+	host = "Homo sapiens";
+	hostfix = FixSpecificHost(host, error_msg);
+	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
+	//BOOST_CHECK_EQUAL(hostfix, kEmptyStr);
+
 
 }
 

@@ -2808,6 +2808,25 @@ void CValidError_imp::GatherSources
 }
 
 
+bool IsCommonName (const CT3Data& data)
+{
+	bool is_common = false;
+	
+	if (data.IsSetStatus()) {
+		ITERATE (CT3Reply::TData::TStatus, status_it, data.GetStatus()) {
+			if ((*status_it)->IsSetProperty() && NStr::Equal((*status_it)->GetProperty(), "old_name_class", NStr::eNocase)) {
+				if ((*status_it)->IsSetValue() && (*status_it)->GetValue().IsStr()) {
+					string value_str = (*status_it)->GetValue().GetStr();
+					if (NStr::Equal(value_str, "common name", NStr::eCase) || NStr::Equal(value_str, "genbank common name", NStr::eCase)) {
+						is_common = true;
+                        break;
+					}
+				}
+			}
+		}
+	}
+	return is_common;
+}
 
 bool HasMisSpellFlag (const CT3Data& data)
 {
@@ -3034,7 +3053,7 @@ void CValidError_imp::ValidateSpecificHost
 							 (*org_it).GetSeqfeatParent());
 					}
 				} else if ((*reply_it)->GetData().IsSetOrg()) {
-					if ( ! FindMatchInOrgRef (host, (*reply_it)->GetData().GetOrg())) {
+					if ( ! FindMatchInOrgRef (host, (*reply_it)->GetData().GetOrg()) && ! IsCommonName((*reply_it)->GetData())) {
 						if ((*org_it).HasParentSeqdesc()) {
 							PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
 									"Specific host value is incorrectly capitalized: " + host,
@@ -3521,7 +3540,7 @@ void CValidError_imp::ValidateTaxonomy(const COrg_ref& org, int genome)
                         PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
                                     "Specific host value is misspelled: " + host, org);
                     } else if ((*reply_it)->GetData().IsSetOrg()) {
-                        if ( ! FindMatchInOrgRef (host, (*reply_it)->GetData().GetOrg())) {
+                        if ( ! FindMatchInOrgRef (host, (*reply_it)->GetData().GetOrg()) && ! IsCommonName((*reply_it)->GetData())) {
                             PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
                                         "Specific host value is incorrectly capitalized: " + host, org);
                         }
