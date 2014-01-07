@@ -836,12 +836,16 @@ void CValXMLStream::Print(const CValidErrItem& item)
        m_Output.PutString(s_GetSeverityLabel(item.GetSeverity()));
     m_Output.PutString("\" seq-id=\"");
        m_Output.PutString(item.GetAccnver());
-    m_Output.PutString("\" feat-id=\"");
-       m_Output.PutString(item.GetFeatureId());
+
+    if (item.IsSetFeatureId()) {
+        m_Output.PutString("\" feat-id=\"");
+           m_Output.PutString(item.GetFeatureId());
+    }
+
     m_Output.PutString("\" code=\"");
-       m_Output.PutString(item.GetErrGroup());
-       m_Output.PutString("_");
-       m_Output.PutString(item.GetErrCode());
+        m_Output.PutString(item.GetErrGroup());
+        m_Output.PutString("_");
+        m_Output.PutString(item.GetErrCode());
     m_Output.PutString("\">");
 
     WriteString(item.GetMsg(), eStringTypeVisible);
