@@ -143,7 +143,7 @@ public:
     void VerifyDone(CQuery::EHowMuch how_much = CQuery::eThisResultSet);
     const CQuery::CField& GetColumn(const CDBParamVariant& col) const;
     const CVariant& GetFieldValue(const CQuery::CField& field);
-    bool IsFinished(void) const;
+    bool IsFinished(CQuery::EHowMuch how_much = CQuery::eThisResultSet) const;
 
     void SetIgnoreBounds(bool is_ignore);
     unsigned int GetResultSetNo(void);

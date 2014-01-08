@@ -2102,7 +2102,7 @@ inline int
 CQueryImpl::GetRowCount(void)
 {
     x_CheckCanWork();
-    if (m_CurRS  ||  m_Stmt->HasMoreResults()  ||  m_RowCount < 0) {
+    if ( !IsFinished(CQuery::eAllResultSets) ) {
         NCBI_THROW(CSDB_Exception, eInconsistent,
           "CQuery::GetRowCount called with some results still unread.");
     } else {
@@ -2114,7 +2114,7 @@ inline int
 CQueryImpl::GetStatus(void)
 {
     x_CheckCanWork();
-    if (m_CurRS  ||  m_Stmt->HasMoreResults()  ||  m_RowCount < 0) {
+    if ( !IsFinished(CQuery::eAllResultSets) ) {
         NCBI_THROW(CSDB_Exception, eInconsistent,
                    "CQuery::GetStatus called with some results still unread.");
     } else {
@@ -2279,6 +2279,13 @@ CQueryImpl::BeginNewRS(void)
         NCBI_THROW(CSDB_Exception, eClosed,
                    "All result sets in CQuery were already iterated through");
     }
+    if (m_RSFinished) {
+        // Complete recovering from a premature call to GetStatus or
+        // GetRowCount.
+        m_RSFinished  = false;
+        m_CurRelRowNo = 0;
+        x_InitRSFields();
+    }
     while (HasMoreResultSets()  &&  !x_Fetch()  &&  m_IgnoreBounds)
         m_RSBeginned = true;
     m_RSBeginned = true;
@@ -2405,9 +2412,34 @@ CQueryImpl::VerifyDone(CQuery::EHowMuch how_much)
 }
 
 inline bool
-CQueryImpl::IsFinished(void) const
+CQueryImpl::IsFinished(CQuery::EHowMuch how_much) const
 {
-    return m_RSFinished;
+    if ( !m_RSFinished ) {
+        return false;
+    } else if (how_much == CQuery::eThisResultSet
+               ||  ( !m_CurRS  &&  !m_Stmt->HasMoreResults())) {
+        return true;
+    }
+
+    // Check whether any further result sets actually exist, in which
+    // case some state (saved here) will need to be rolled back.
+    // m_CurRS will have to remain advanced, but HasMoreResultSets
+    // knows not to advance it again until BeginNewRS has run.
+    TColNumsMap  saved_col_nums   = m_ColNums;
+    TFields      saved_fields;
+    unsigned int saved_rel_row_no = m_CurRelRowNo;
+    CQueryImpl&  nc_self          = const_cast<CQueryImpl&>(*this);
+
+    swap(nc_self.m_Fields, saved_fields);
+    if (nc_self.HasMoreResultSets()) {
+        nc_self.m_RSFinished  = true; // still match end()
+        nc_self.m_ColNums     = saved_col_nums;
+        nc_self.m_CurRelRowNo = saved_rel_row_no;
+        swap(nc_self.m_Fields, saved_fields);
+        return false;
+    }
+
+    return true;
 }
 
 inline const CQuery::CField&
