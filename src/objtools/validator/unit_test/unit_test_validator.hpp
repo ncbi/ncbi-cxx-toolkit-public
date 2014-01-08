@@ -129,7 +129,6 @@ private:
 void CheckErrors(const CValidError& eval,
                  vector< CExpectedError* >& expected_errors);
 				 
-string FixSpecificHost( string& host, string& error_msg);			 
 END_SCOPE(objects)
 END_NCBI_SCOPE
 
