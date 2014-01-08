@@ -539,18 +539,23 @@ void CBioseq_SUSPECT_PHRASES :: GetReport(CRef <CClickableItem>& c_item)
    c_item->item_list.clear();
    
    ITERATE (Str2Strs, it, phrase2feats) {
-      AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second), 
-               "cds comment or protein description", 
-               "cds comments or protein descriptions", e_OtherComment, true, 
-               it->first);
+      AddSubcategory(c_item, 
+                     GetName() + "$" + it->first, 
+                     &(it->second), 
+                     "cds comment or protein description contains '", 
+                     "cds comments or protein descriptions contain '", 
+                     e_OtherComment, 
+                     true, 
+                     it->first + "'");
    }
    if (!c_item->item_list.empty()) {
        c_item->description 
            = GetOtherComment(c_item->item_list.size(), 
                              "cds comment or protein description",  
-                             "cds commentsor protein descriptions")
-              + "suspect phrases.";
+                             "cds comments or protein descriptions")
+              + " suspect phrases.";
    }
+   c_item->setting_name = "SUSPECT_PRODUCT_NAMES";
 };
 
 
