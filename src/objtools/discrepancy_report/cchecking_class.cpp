@@ -473,8 +473,7 @@ void CCheckingClass :: GoGetRep (vector <CRef <CTestAndRepData> >& test_category
                                     != thisInfo.test_item_list.end()) {
             c_item->setting_name = strtmp;
             c_item->item_list = thisInfo.test_item_list[strtmp];
-            if ( strtmp != "DISC_SOURCE_QUALS_ASNDISC"
-                        && strtmp != "LOCUS_TAGS"
+            if ( strtmp != "LOCUS_TAGS"
                         && strtmp != "INCONSISTENT_PROTEIN_ID_PREFIX") {
                   thisInfo.disc_report_data.push_back(c_item);
             }

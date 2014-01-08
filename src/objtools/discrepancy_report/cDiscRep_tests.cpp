@@ -753,11 +753,15 @@ void CBioseq_DISC_INCONSISTENT_MOLINFO_TECH :: GetReport(CRef <CClickableItem>& 
   Str2Strs tech2seqs;
   GetTestItemList(c_item->item_list, tech2seqs);
   c_item->item_list.clear();
+  CRef <CClickableItem> c_tech (new CClickableItem);
+  c_tech->setting_name = GetName();
+  c_tech->description = "technique";
   bool has_missing = false;
   if (tech2seqs.find("unknown") != tech2seqs.end()) {
     has_missing = true;
-    AddSubcategory(c_item, GetName()+ "$unknown", &(tech2seqs["unknown"]), 
-                   "Molinfo", "missing field technique");
+    AddSubcategory(c_tech, GetName()+ "$unknown", &(tech2seqs["unknown"]), 
+                   "Molinfo", "missing field technique", e_IsComment, false);
+    c_item->subcategories.push_back(c_tech);
   }
   unsigned cnt = tech2seqs.size();
   if (cnt == 1) {
@@ -765,14 +769,11 @@ void CBioseq_DISC_INCONSISTENT_MOLINFO_TECH :: GetReport(CRef <CClickableItem>& 
           strtmp = " (all missing)";
      }
      else {
-        CRef <CClickableItem> c_tech (new CClickableItem);
-        c_tech->description = "technique";
         Str2Strs::iterator it = tech2seqs.begin();
         AddSubcategory(c_tech, GetName() + "$" + it->first, &(it->second), 
                  "Molinfo has", "All Molinfos have", e_NoCntComment, true, 
                  " field technique value '" + it->first + "'");
         strtmp = " (all present, all same)";
-        c_tech->description += strtmp;
         c_item->subcategories.push_back(c_tech);
         copy(c_tech->item_list.begin(), c_tech->item_list.end(),
              back_inserter(c_item->item_list));
@@ -782,8 +783,6 @@ void CBioseq_DISC_INCONSISTENT_MOLINFO_TECH :: GetReport(CRef <CClickableItem>& 
   }
   else if (cnt == 2 && has_missing) {
       strtmp = " (some missing, all same)";
-      CRef <CClickableItem> c_tech (new CClickableItem);
-      c_tech->description = "technique" + strtmp;
       ITERATE (Str2Strs, it, tech2seqs) {
          if (it->first != "unknowns") {
              AddSubcategory(c_tech, GetName() + "$" + it->first, &(it->second),
@@ -799,8 +798,6 @@ void CBioseq_DISC_INCONSISTENT_MOLINFO_TECH :: GetReport(CRef <CClickableItem>& 
   }
   else {
     strtmp = " (all present, inconsistent)";
-    CRef <CClickableItem> c_tech (new CClickableItem);
-    c_tech->description = "technique" + strtmp;
     ITERATE (Str2Strs, it, tech2seqs) {
        AddSubcategory(c_tech, GetName() + "$" + it->first, &(it->second), 
                       "Molinfo", "field technique value '" + it->first, 
@@ -813,7 +810,9 @@ void CBioseq_DISC_INCONSISTENT_MOLINFO_TECH :: GetReport(CRef <CClickableItem>& 
          back_inserter(c_item->obj_list));
   }
 
-  c_item->description = "Molinfo Technique Report " + strtmp;
+  c_tech->description = "technique" + strtmp;
+  c_item->description = "Molinfo Technique Report" + strtmp;
+  c_item->expanded = true;
 };
 
 
@@ -3263,7 +3262,7 @@ string CBioseq_TEST_UNUSUAL_MISC_RNA :: GetTrnaProductString(const CTrna_ext& tr
         aa = aa_dt.GetNcbistdaa();
         break;
       default:
-        NCBI_THROW(CException, eUnknown,"GetTrnaProductString: can't get from.");
+        NCBI_USER_THROW("GetTrnaProductString: can't get from.");
   }
 
   if (from != eSeq_code_type_ncbieaa) {
@@ -7960,11 +7959,13 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
                }
             }
             else {
+/*
                strtmp = (string)"unique " 
                            + (qvlu2src.size() > 1 ? "values" : "value")
-                           + " for " + qual_nm,
+                           + " for " + qual_nm;
                AddSubcategory(c_item, setting_name, 0, "source", strtmp,
                      e_HasComment, true, kEmptyStr, false, qvlu2src.size());
+*/
             }
          }
          else {
@@ -8050,10 +8051,8 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
             c_item->setting_name = setting_name;
      }
      else {
-        if (it != qnm2qvlu_src.begin() ) {
-             c_item.Reset(new CClickableItem);
-             c_item->setting_name = setting_name;
-        }
+        c_item.Reset(new CClickableItem);
+        c_item->setting_name = setting_name;
         c_item->item_list.clear();
         thisInfo.disc_report_data.push_back(c_item);
      }
@@ -9706,8 +9705,7 @@ const CBioseq& CSeqEntry_test_on_user :: Get1stBioseqOfSet(const CBioseq_set& bi
 {
    const list < CRef < CSeq_entry > >& seq_entrys = bioseq_set.GetSeq_set();
    if (seq_entrys.empty()) {
-        NCBI_THROW(CException, eUnknown,
-                   "Bioseq_set does not contain any seq-entry");
+        NCBI_USER_THROW("Bioseq_set does not contain any seq-entry");
    }
    if ( (*(seq_entrys.begin()))->IsSeq()) {
        if ( (*(seq_entrys.begin()))->GetSeq().IsNa() ) {
@@ -9823,10 +9821,11 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
 
     // ONCALLER_MISSING_STRUCTURED_COMMENTS, MISSING_STRUCTURED_COMMENT
     if (run_oncall || run_scomm) {
-       cnt = (type_str == "StructuredComment") ? 1 : 0;
+       cnt = (type_str == "StructuredComment") ? 1 : 0; // 0 = missing
        for (CBioseq_CI bb_ci = b_ci; bb_ci; ++bb_ci) {
           CConstRef <CBioseq> seq_ref = bb_ci->GetCompleteBioseq();
           if (!bb_ci->IsAa()) {
+             bioseq_desc = GetDiscItemText(*seq_ref);
              if (bioseq2cnt.find(bioseq_desc) != bioseq2cnt.end()) {
                 bioseq2ref[bioseq_desc] 
                     = CConstRef <CObject>(seq_ref.GetPointer());
@@ -12219,14 +12218,15 @@ void CBioseq_DISC_FEATURE_COUNT_oncaller :: GetReport(CRef <CClickableItem>& c_i
       if (it->first.find("missing") == string::npos) { // feat$cnt@seq
          cnt2seq.clear();
          GetTestItemList(it->second, cnt2seq, "@");
-         feat_nm = it->first.substr(3); 
          if (it->first.find("nA_") != string::npos) { 
+            feat_nm = it->first.substr(3); 
             if (na_ls && !na_ls->empty()) {
               cnt2seq["0"] = feat2cnt_seq["missing_nA"];
               missing_ls = na_ls;
             }
          }
          else {
+           feat_nm = it->first.substr(2); 
            if (a_ls && !a_ls->empty()) {
               cnt2seq["0"] = feat2cnt_seq["missing_A"];
               missing_ls = a_ls;
@@ -12284,7 +12284,10 @@ void CBioseq_DISC_FEATURE_COUNT :: GetReport(CRef <CClickableItem>& c_item)
    c_item->item_list.clear();
     
    unsigned cnt;
+   string feat_nm;
    ITERATE (Str2Strs, it, feat2cnt) {
+      feat_nm = (it->first.substr(0,3) == "nA_") ? 
+                      it->first.substr(3) : it->first.substr(2);
       if (it != feat2cnt.begin()) {
          c_item.Reset(new CClickableItem);
          c_item->setting_name = GetName();
@@ -12295,7 +12298,8 @@ void CBioseq_DISC_FEATURE_COUNT :: GetReport(CRef <CClickableItem>& c_item)
           cnt += NStr::StringToUInt(*jt);
       }
       c_item->description 
-         = it->first + ": " + NStr::UIntToString(cnt) + ( (cnt>1)? " present" : "presents");
+         = feat_nm + ": " + NStr::UIntToString(cnt) + ( (cnt>1)? " present" : " presents");
+         feat_nm = it->first.substr(3); 
    }
 };
 

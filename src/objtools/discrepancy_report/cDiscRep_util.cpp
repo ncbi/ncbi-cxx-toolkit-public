@@ -1098,7 +1098,7 @@ const CSeq_id& CTestAndRepData::BioseqToBestSeqId(const CBioseq& bioseq, CSeq_id
         else  return ( (*it).GetObject() );
       };
       if ( best_score == 99999 ) 
-           NCBI_THROW(CException, eUnknown, "BioseqToBestSeqId failed");
+           NCBI_USER_THROW("BioseqToBestSeqId failed");
       else return ( (*best_seq_id).GetObject() );  
 }; // BioseqToBestSeqId()
 
@@ -1391,7 +1391,7 @@ void CTestAndRepData :: AddSubcategory(CRef <CClickableItem>& c_item, const stri
             c_sub->description = GetNoCntComment(cnt, desc1, desc2) + desc3;
             break;
        default:
-           NCBI_THROW(CException, eUnknown, "Bad comment type.");
+           NCBI_USER_THROW("Bad comment type.");
      }  
      if (itemlist && copy2parent) {
         copy(c_sub->item_list.begin(), c_sub->item_list.end(),

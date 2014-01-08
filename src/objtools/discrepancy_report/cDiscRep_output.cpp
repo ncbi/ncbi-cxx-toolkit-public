@@ -665,8 +665,7 @@ string CDiscRepOutput :: x_GetGrpName(EOnCallerGrp e_grp)
       case eFeature: return string("Feature tests");
       case eSuspectText: return string("Suspect text tests");
       default:
-        NCBI_THROW(CException, eUnknown, 
-          "Unknown Oncaller Tool group type: " + NStr::IntToString((int)e_grp));
+        NCBI_USER_THROW("Unknown Oncaller Tool group type: " + NStr::IntToString((int)e_grp));
    };
    return kEmptyStr;
 };

@@ -63,7 +63,7 @@ vector < CRef < CClickableItem > >  CDiscRepInfo :: disc_report_data;
 Str2Strs                            CDiscRepInfo :: test_item_list;
 Str2Objs                            CDiscRepInfo :: test_item_objs;
 COutputConfig                       CDiscRepInfo :: output_config;
-CRef <CSuspect_rule_set >      CDiscRepInfo :: suspect_prod_rules(new CSuspect_rule_set);
+CConstRef <CSuspect_rule_set >      CDiscRepInfo :: suspect_prod_rules(new CSuspect_rule_set);
 vector < vector <string> >          CDiscRepInfo :: susrule_summ;
 vector <string> 	            CDiscRepInfo :: weasels;
 CRef <CSeq_submit>                  CDiscRepInfo :: seq_submit(new CSeq_submit);
@@ -93,7 +93,7 @@ vector <string>                     CDiscRepInfo :: taxnm_env;
 vector <string>                     CDiscRepInfo :: virus_lineage;
 vector <string>                     CDiscRepInfo :: strain_tax;
 Str2CombDt                          CDiscRepInfo :: fix_data;
-CRef<CSuspect_rule_set>       CDiscRepInfo :: orga_prod_rules (new CSuspect_rule_set);
+CConstRef<CSuspect_rule_set>        CDiscRepInfo :: orga_prod_rules (new CSuspect_rule_set);
 vector <string>                     CDiscRepInfo :: skip_bracket_paren;
 vector <string>                     CDiscRepInfo :: ok_num_prefix;
 map <EMacro_feature_type, CSeqFeatData::ESubtype> CDiscRepInfo :: feattype_featdef;
@@ -187,42 +187,43 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
     int i;
 
     // get other parameters from *.ini
+    CSuspect_rule_set rule_set, rule_set2;
     if (reg) {
         thisInfo.expand_defline_on_set 
            = reg->GetBool("OncallerTool", "EXPAND_DEFLINE_ON_SET", true);
         thisInfo.expand_srcqual_report
            = reg->GetBool("OncallerTool", "EXPAND_SRCQUAL_REPORT", true);
 
-        // ini of orga_prod_rules:
-/*
-        thisInfo.orga_prod_rules.Reset(CSuspect_rule_set::GetOrganelleProductRules());
-        // ini. suspect rule file && susrule_fixtp_summ
-        thisInfo.suspect_prod_rules.Reset(CSuspect_rule_set::GetProductRules());
-*/
-
-        strtmp = reg->GetString("RuleFiles", "OrganelleProductRuleFile", "/ncbi/data/organelle_products.prt");
+        strtmp = reg->Get("RuleFiles", "OrganelleProductRuleFile");
+        CRef <CSuspect_rule_set> rule_set(new CSuspect_rule_set);
         if (CFile(strtmp).Exists()) {
-            ReadInBlob(*thisInfo.orga_prod_rules, strtmp);
+            ReadInBlob<CSuspect_rule_set>(*rule_set, strtmp);
+            thisInfo.orga_prod_rules.Reset(rule_set.GetPointer());
         }
         else {
-            NCBI_THROW(CException, eUnknown, 
-                          "Organelle products file not found: " + strtmp);
+            thisInfo.orga_prod_rules.Reset(
+                        CSuspect_rule_set::GetOrganelleProductRules());
         }
 
-        // ini. suspect rule file && susrule_fixtp_summ
-        strtmp = reg->GetString("RuleFiles", "PRODUCT_RULES_LIST", "/ncbi/data/product_rules.prt");
+        // ini. suspect rule file
+        strtmp = reg->Get("RuleFiles", "PRODUCT_RULES_LIST");
         if (CFile(strtmp).Exists()) {
-            ReadInBlob(*thisInfo.suspect_prod_rules, strtmp);
+            rule_set.Reset(new CSuspect_rule_set);
+            ReadInBlob<CSuspect_rule_set>(*rule_set, strtmp);
+            thisInfo.suspect_prod_rules.Reset(rule_set.GetPointer());
         }
         else {
-            NCBI_THROW(CException, eUnknown, 
-                         "Product rules file not found: " + strtmp);
+            thisInfo.suspect_prod_rules.Reset(
+                                 CSuspect_rule_set::GetProductRules());
         }
     }
-    else {
+    else { // default
        thisInfo.expand_defline_on_set = thisInfo.expand_srcqual_report = true;
-       ReadInBlob(*thisInfo.orga_prod_rules, "/ncbi/data/organelle_products.prt");
-       ReadInBlob(*thisInfo.suspect_prod_rules, "/ncbi/data/product_rules.prt");
+
+       // ini of orga_prod_rules:
+       thisInfo.orga_prod_rules.Reset(CSuspect_rule_set::GetOrganelleProductRules());
+       // ini. suspect rule file
+       thisInfo.suspect_prod_rules.Reset(CSuspect_rule_set::GetProductRules());
     }
 
     // ini. of srcqual_keywords
@@ -557,6 +558,7 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
        thisInfo.matloc_notpresent_names[(EString_location)i] = tmp;
     }
 
+    // ini. summ_susrule
     CSummarizeSusProdRule summ_susrule;
     ITERATE (list <CRef <CSuspect_rule> >, rit, 
                                        thisInfo.suspect_prod_rules->Get()) {
@@ -1213,8 +1215,7 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
     m_dorecurse = (args["u"] == "1") ? true : false;
     if ((m_indir.empty() || !CDir(m_indir).Exists()) 
          && thisInfo.infile.empty()) {
-         NCBI_THROW(CException, eUnknown, 
-                  "Input path or input file must be specified");
+         NCBI_USER_THROW("Input path or input file must be specified");
     }
     m_file_tp = args["a"];
 
@@ -1230,8 +1231,7 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
     string output_f = (args.find("o") != args.end()) ? args["o"] : kEmptyStr;
     m_outdir= (args.find("r") != args.end()) ? GetDirStr(args["r"]) : kEmptyStr;
     if (!output_f.empty() && !m_outdir.empty()) {
-        NCBI_THROW(CException, eUnknown,
-            "-o and -r are incompatible: specify the output file name with the full path.");
+        NCBI_USER_THROW("-o and -r are incompatible: specify the output file name with the full path.");
     }
 
     if (output_f.empty() && !thisInfo.infile.empty()) {
@@ -1241,8 +1241,7 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
     if (m_outdir.empty() && m_indir.empty()) m_outdir = "./";
     if (!m_outdir.empty() 
                && !CDir(m_outdir).Exists() && !CDir(m_outdir).Create()) {
-         NCBI_THROW(CException, eUnknown, 
-                           "Unable to create output directory " + m_outdir);
+         NCBI_USER_THROW("Unable to create output directory " + m_outdir);
    }
 
     thisInfo.output_config.output_f 
@@ -1341,64 +1340,64 @@ void CRepConfig :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
 
 static const s_test_property test_list[] = {
 // tests_on_SubmitBlk
-   {"DISC_SUBMITBLOCK_CONFLICT", fAsndisc | fOncaller},
+   {"DISC_SUBMITBLOCK_CONFLICT", fOncaller},
 
 // tests_on_Bioseq
-   {"DISC_MISSING_DEFLINES", fAsndisc | fOncaller},
+   {"DISC_MISSING_DEFLINES", fOncaller},
    {"DISC_QUALITY_SCORES", fDiscrepancy | fAsndisc},
    {"TEST_TERMINAL_NS", fDiscrepancy | fAsndisc},
    
 // tests_on_Bioseq_aa
-   {"COUNT_PROTEINS", fAsndisc},
+   {"COUNT_PROTEINS", 0},
    {"MISSING_PROTEIN_ID", fDiscrepancy | fAsndisc},
-   {"INCONSISTENT_PROTEIN_ID", fDiscrepancy | fAsndisc},
+   {"INCONSISTENT_PROTEIN_ID", fDiscrepancy},
 
 // tests_on_Bioseq_na
    {"DISC_COUNT_NUCLEOTIDES", fAsndisc | fOncaller},
    {"TEST_DEFLINE_PRESENT", fDiscrepancy | fAsndisc},
    {"N_RUNS", fDiscrepancy | fAsndisc},
-   {"N_RUNS_14", fAsndisc},
-   {"ZERO_BASECOUNT", fDiscrepancy | fAsndisc},
+   {"N_RUNS_14", fTSA},
+   {"ZERO_BASECOUNT", fDiscrepancy},
    {"TEST_LOW_QUALITY_REGION", fDiscrepancy | fAsndisc},
    {"DISC_PERCENT_N", fDiscrepancy | fAsndisc},
-   {"DISC_10_PERCENTN", fAsndisc},
+   {"DISC_10_PERCENTN", fTSA},
    {"TEST_UNUSUAL_NT", fDiscrepancy | fAsndisc},
 
 // tests_on_Bioseq_CFeat
    {"SUSPECT_PHRASES", fDiscrepancy | fAsndisc},
    {"DISC_SUSPECT_RRNA_PRODUCTS", fDiscrepancy | fAsndisc},
    {"SUSPECT_PRODUCT_NAMES", fDiscrepancy | fAsndisc | fOncaller},
-   {"DISC_PRODUCT_NAME_TYPO", fDiscrepancy | fAsndisc},
-   {"DISC_PRODUCT_NAME_QUICKFIX", fDiscrepancy | fAsndisc},
-   {"TEST_ORGANELLE_PRODUCTS", fAsndisc | fOncaller},
+   {"DISC_PRODUCT_NAME_TYPO", fDiscrepancy},
+   {"DISC_PRODUCT_NAME_QUICKFIX", fDiscrepancy},
+   {"TEST_ORGANELLE_PRODUCTS", fOncaller},
    {"DISC_GAPS", fDiscrepancy | fAsndisc},
    {"TEST_MRNA_OVERLAPPING_PSEUDO_GENE", fAsndisc | fOncaller},
    {"ONCALLER_HAS_STANDARD_NAME", fAsndisc | fOncaller},
    {"ONCALLER_ORDERED_LOCATION", fAsndisc | fOncaller},
-   {"DISC_FEATURE_LIST", fDiscrepancy | fAsndisc},
+   {"DISC_FEATURE_LIST", fDiscrepancy},
    {"TEST_CDS_HAS_CDD_XREF", fDiscrepancy | fAsndisc},
    {"DISC_CDS_HAS_NEW_EXCEPTION", fAsndisc | fOncaller},
    {"DISC_MICROSATELLITE_REPEAT_TYPE", fAsndisc | fOncaller},
    {"DISC_SUSPECT_MISC_FEATURES", fDiscrepancy | fAsndisc},
    {"DISC_CHECK_RNA_PRODUCTS_AND_COMMENTS", fAsndisc | fOncaller},
-   {"DISC_FEATURE_MOLTYPE_MISMATCH", fAsndisc | fOncaller},
+   {"DISC_FEATURE_MOLTYPE_MISMATCH", fOncaller},
    {"ADJACENT_PSEUDOGENES", fDiscrepancy | fAsndisc},
    {"MISSING_GENPRODSET_PROTEIN", fDiscrepancy | fAsndisc},
-   {"DUP_GENPRODSET_PROTEIN", fDiscrepancy | fAsndisc},
-   {"MISSING_GENPRODSET_TRANSCRIPT_ID", fDiscrepancy | fAsndisc},
-   {"DISC_DUP_GENPRODSET_TRANSCRIPT_ID", fDiscrepancy | fAsndisc},
-   {"DISC_FEAT_OVERLAP_SRCFEAT", fDiscrepancy | fAsndisc},
-   {"CDS_TRNA_OVERLAP", fAsndisc},
-   {"TRANSL_NO_NOTE", fAsndisc},
-   {"NOTE_NO_TRANSL", fAsndisc},
-   {"TRANSL_TOO_LONG", fAsndisc},
+   {"DUP_GENPRODSET_PROTEIN", fDiscrepancy},
+   {"MISSING_GENPRODSET_TRANSCRIPT_ID", fDiscrepancy},
+   {"DISC_DUP_GENPRODSET_TRANSCRIPT_ID", fAsndisc},
+   {"DISC_FEAT_OVERLAP_SRCFEAT", fAsndisc},
+   {"CDS_TRNA_OVERLAP", 0},
+   {"TRANSL_NO_NOTE", 0},
+   {"NOTE_NO_TRANSL", 0},
+   {"TRANSL_TOO_LONG", 0},
    {"TEST_SHORT_LNCRNA", fDiscrepancy | fOncaller},
-   {"FIND_STRAND_TRNAS", fDiscrepancy | fAsndisc},
-   {"FIND_BADLEN_TRNAS", fAsndisc | fOncaller},
-   {"COUNT_TRNAS", fAsndisc},
-   {"FIND_DUP_TRNAS", fAsndisc},
-   {"COUNT_RRNAS", fAsndisc},
-   {"FIND_DUP_RRNAS", fAsndisc},
+   {"FIND_STRAND_TRNAS", fDiscrepancy},
+   {"FIND_BADLEN_TRNAS", fOncaller},
+   {"COUNT_TRNAS", 0},
+   {"FIND_DUP_TRNAS", 0},
+   {"COUNT_RRNAS", 0},
+   {"FIND_DUP_RRNAS", 0},
    {"PARTIAL_CDS_COMPLETE_SEQUENCE", fDiscrepancy | fAsndisc},
    {"CONTAINED_CDS", fDiscrepancy | fAsndisc},
    {"PSEUDO_MISMATCH", fDiscrepancy | fAsndisc | fOncaller},
@@ -1408,17 +1407,17 @@ static const s_test_property test_list[] = {
    {"SHOW_TRANSL_EXCEPT", fDiscrepancy | fAsndisc},
    {"MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS", fDiscrepancy | fAsndisc},
    {"RRNA_NAME_CONFLICTS", fDiscrepancy | fAsndisc},
-   {"ONCALLER_GENE_MISSING", fAsndisc | fOncaller},
-   {"ONCALLER_SUPERFLUOUS_GENE", fAsndisc},
+   {"ONCALLER_GENE_MISSING", fOncaller},
+   {"ONCALLER_SUPERFLUOUS_GENE", 0},
    {"MISSING_GENES", fDiscrepancy | fAsndisc},
-   {"EXTRA_GENES", fDiscrepancy | fAsndisc},
+   {"EXTRA_GENES", fDiscrepancy},
    //tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_EXTRA_MISSING_GENES"));
    {"OVERLAPPING_CDS", fDiscrepancy | fAsndisc},
    {"RNA_CDS_OVERLAP", fDiscrepancy | fAsndisc},
    {"FIND_OVERLAPPED_GENES", fDiscrepancy | fAsndisc},
    {"OVERLAPPING_GENES", fDiscrepancy | fAsndisc},
    {"DISC_PROTEIN_NAMES", fDiscrepancy | fAsndisc},
-   {"DISC_CDS_PRODUCT_FIND", fAsndisc | fOncaller},
+   {"DISC_CDS_PRODUCT_FIND", fOncaller},
    {"EC_NUMBER_ON_UNKNOWN_PROTEIN", fDiscrepancy | fAsndisc},
    {"RNA_NO_PRODUCT", fDiscrepancy | fAsndisc | fOncaller},
    {"DISC_SHORT_INTRON", fDiscrepancy | fAsndisc | fOncaller},
@@ -1438,9 +1437,9 @@ static const s_test_property test_list[] = {
 // tests_on_Bioseq_CFeat_NotInGenProdSet
    {"DUPLICATE_GENE_LOCUS", fDiscrepancy | fAsndisc},
    {"MISSING_LOCUS_TAGS", fDiscrepancy | fAsndisc},
-   {"DUPLICATE_LOCUS_TAGS", fDiscrepancy | fAsndisc},
-   {"INCONSISTENT_LOCUS_TAG_PREFIX", fDiscrepancy | fAsndisc},
-   {"BAD_LOCUS_TAG_FORMAT", fDiscrepancy | fAsndisc},
+   {"DUPLICATE_LOCUS_TAGS", fDiscrepancy},
+   {"INCONSISTENT_LOCUS_TAG_PREFIX", fDiscrepancy},
+   {"BAD_LOCUS_TAG_FORMAT", fDiscrepancy},
    {"FEATURE_LOCATION_CONFLICT", fDiscrepancy | fAsndisc},
 
 // tests_on_Bioseq_CFeat_CSeqdesc
@@ -1450,7 +1449,7 @@ static const s_test_property test_list[] = {
    {"DISC_INCONSISTENT_MOLINFO_TECH", fDiscrepancy | fAsndisc},
    {"SHORT_CONTIG", fDiscrepancy | fAsndisc},
    {"SHORT_SEQUENCES", fDiscrepancy | fAsndisc},
-   {"SHORT_SEQUENCES_200", fAsndisc},
+   {"SHORT_SEQUENCES_200", fTSA},
    {"TEST_UNWANTED_SPACER", fDiscrepancy | fAsndisc | fOncaller},
    {"TEST_UNNECESSARY_VIRUS_GENE", fAsndisc | fOncaller},
    {"TEST_ORGANELLE_NOT_GENOMIC", fDiscrepancy | fAsndisc | fOncaller},
@@ -1465,27 +1464,27 @@ static const s_test_property test_list[] = {
    {"EUKARYOTE_SHOULD_HAVE_MRNA", fDiscrepancy | fAsndisc},
    {"RNA_PROVIRAL", fAsndisc | fOncaller},
    {"NON_RETROVIRIDAE_PROVIRAL", fAsndisc | fOncaller},
-   {"DISC_RETROVIRIDAE_DNA", fAsndisc | fOncaller},
-   {"DISC_mRNA_ON_WRONG_SEQUENCE_TYPE", fAsndisc | fOncaller},
+   {"DISC_RETROVIRIDAE_DNA", fOncaller},
+   {"DISC_mRNA_ON_WRONG_SEQUENCE_TYPE", fOncaller},
    {"DISC_RBS_WITHOUT_GENE", fAsndisc | fOncaller},
    {"DISC_EXON_INTRON_CONFLICT", fAsndisc | fOncaller},
-   {"TEST_TAXNAME_NOT_IN_DEFLINE", fAsndisc | fOncaller},
-   {"INCONSISTENT_SOURCE_DEFLINE", fDiscrepancy | fAsndisc},
+   {"TEST_TAXNAME_NOT_IN_DEFLINE", fOncaller},
+   {"INCONSISTENT_SOURCE_DEFLINE", fDiscrepancy},
    {"DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA", fAsndisc | fOncaller},
    {"DISC_BAD_BACTERIAL_GENE_NAME", fDiscrepancy | fAsndisc},
-   {"TEST_BAD_GENE_NAME", fDiscrepancy | fAsndisc},
-   {"MOLTYPE_NOT_MRNA", fAsndisc},
-   {"TECHNIQUE_NOT_TSA", fAsndisc},
-   {"DISC_POSSIBLE_LINKER", fAsndisc | fOncaller},
+   {"TEST_BAD_GENE_NAME", fDiscrepancy},
+   {"MOLTYPE_NOT_MRNA", fTSA},
+   {"TECHNIQUE_NOT_TSA", fTSA},
+   {"DISC_POSSIBLE_LINKER", fOncaller},
    {"SHORT_PROT_SEQUENCES", fDiscrepancy | fAsndisc},
    {"TEST_COUNT_UNVERIFIED", fAsndisc | fOncaller},
    {"TEST_DUP_GENES_OPPOSITE_STRANDS", fDiscrepancy | fAsndisc},
-   {"DISC_GENE_PARTIAL_CONFLICT", fAsndisc | fOncaller},
+   {"DISC_GENE_PARTIAL_CONFLICT", fOncaller},
 
 // tests_on_SeqEntry
    {"DISC_FLATFILE_FIND_ONCALLER", fAsndisc | fOncaller},
-   {"DISC_FLATFILE_FIND_ONCALLER_UNFIXABLE", fAsndisc | fOncaller},
-   {"DISC_FLATFILE_FIND_ONCALLER_FIXABLE", fAsndisc | fOncaller},
+   {"DISC_FLATFILE_FIND_ONCALLER_UNFIXABLE", fOncaller},
+   {"DISC_FLATFILE_FIND_ONCALLER_FIXABLE", fOncaller},
    {"TEST_ALIGNMENT_HAS_SCORE", fDiscrepancy | fAsndisc},
 
 // tests_on_SeqEntry_feat_desc: all CSeqEntry_Feat_desc tests need RmvRedundancy
@@ -1499,37 +1498,37 @@ static const s_test_property test_list[] = {
    {"ONCALLER_MORE_NAMES_COLLECTED_BY", fAsndisc | fOncaller},
    {"ONCALLER_STRAIN_TAXNAME_CONFLICT", fAsndisc | fOncaller},
    {"TEST_SMALL_GENOME_SET_PROBLEM", fAsndisc | fOncaller},
-   {"DISC_INCONSISTENT_MOLTYPES", fAsndisc | fOncaller},
+   {"DISC_INCONSISTENT_MOLTYPES", fOncaller},
    {"DISC_BIOMATERIAL_TAXNAME_MISMATCH", fAsndisc | fOncaller},
    {"DISC_CULTURE_TAXNAME_MISMATCH", fAsndisc | fOncaller},
-   {"DISC_STRAIN_TAXNAME_MISMATCH", fAsndisc | fOncaller},
-   {"DISC_SPECVOUCHER_TAXNAME_MISMATCH", fAsndisc | fOncaller},
-   {"DISC_HAPLOTYPE_MISMATCH", fAsndisc | fOncaller},
-   {"DISC_MISSING_VIRAL_QUALS", fAsndisc | fOncaller},
-   {"DISC_INFLUENZA_DATE_MISMATCH", fDiscrepancy | fAsndisc | fOncaller},
-   {"TAX_LOOKUP_MISSING", fDiscrepancy | fAsndisc},
-   {"TAX_LOOKUP_MISMATCH", fDiscrepancy | fAsndisc},
-   {"MISSING_STRUCTURED_COMMENT", fAsndisc},
-   {"ONCALLER_MISSING_STRUCTURED_COMMENTS", fAsndisc | fOncaller},
+   {"DISC_STRAIN_TAXNAME_MISMATCH", fOncaller},
+   {"DISC_SPECVOUCHER_TAXNAME_MISMATCH", fOncaller},
+   {"DISC_HAPLOTYPE_MISMATCH", fOncaller},
+   {"DISC_MISSING_VIRAL_QUALS", fOncaller},
+   {"DISC_INFLUENZA_DATE_MISMATCH", fDiscrepancy | fOncaller},
+   {"TAX_LOOKUP_MISSING", fDiscrepancy},
+   {"TAX_LOOKUP_MISMATCH", fDiscrepancy},
+   {"MISSING_STRUCTURED_COMMENT", fTSA},
+   {"ONCALLER_MISSING_STRUCTURED_COMMENTS", fOncaller},
    {"DISC_MISSING_AFFIL", fAsndisc | fOncaller},
-   {"DISC_CITSUBAFFIL_CONFLICT", fAsndisc | fOncaller},
-   {"DISC_TITLE_AUTHOR_CONFLICT", fAsndisc | fOncaller},
+   {"DISC_CITSUBAFFIL_CONFLICT", fOncaller},
+   {"DISC_TITLE_AUTHOR_CONFLICT", fOncaller},
    {"DISC_USA_STATE", fAsndisc | fOncaller},
    {"DISC_CITSUB_AFFIL_DUP_TEXT", fAsndisc | fOncaller},
-   {"DISC_REQUIRED_CLONE", fAsndisc | fOncaller},
+   {"DISC_REQUIRED_CLONE", fOncaller},
    {"ONCALLER_MULTISRC", fAsndisc | fOncaller},
    {"DISC_SRC_QUAL_PROBLEM", fOncaller},  // oncaller =DISC_SOURCE_QUALS_ASNDISC
    {"DISC_SOURCE_QUALS_ASNDISC", fAsndisc}, // asndisc version of *_PROBLEM
 //   {"DISC_SOURCE_QUALS_ASNDISC_oncaller", fAsndisc | fOncaller}, // needed?
    {"DISC_UNPUB_PUB_WITHOUT_TITLE", fAsndisc | fOncaller},
-   {"ONCALLER_CONSORTIUM", fAsndisc | fOncaller},
+   {"ONCALLER_CONSORTIUM", fOncaller},
    {"DISC_CHECK_AUTH_NAME", fAsndisc | fOncaller},
    {"DISC_CHECK_AUTH_CAPS", fAsndisc | fOncaller},
    {"DISC_MISMATCHED_COMMENTS", fDiscrepancy | fAsndisc},
    {"ONCALLER_COMMENT_PRESENT", fAsndisc | fOncaller},
    {"DUP_DISC_ATCC_CULTURE_CONFLICT", fAsndisc | fOncaller},
    {"ONCALLER_STRAIN_CULTURE_COLLECTION_MISMATCH", fAsndisc | fOncaller},
-   {"DISC_DUP_DEFLINE", fAsndisc | fOncaller},
+   {"DISC_DUP_DEFLINE", fOncaller},
    {"DISC_TITLE_ENDS_WITH_SEQUENCE", fDiscrepancy | fAsndisc},
    {"ONCALLER_DEFLINE_ON_SET", fAsndisc | fOncaller},
    {"DISC_BACTERIAL_TAX_STRAIN_MISMATCH", fDiscrepancy | fAsndisc},
@@ -1543,9 +1542,9 @@ static const s_test_property test_list[] = {
    {"ONCALLER_DUPLICATE_PRIMER_SET", fAsndisc | fOncaller},
    {"ONCALLER_COUNTRY_COLON", fAsndisc | fOncaller},
    {"TEST_MISSING_PRIMER", fAsndisc | fOncaller},
-   {"TEST_SP_NOT_UNCULTURED", fAsndisc | fOncaller},
+   {"TEST_SP_NOT_UNCULTURED", fOncaller},
    {"DISC_METAGENOMIC", fAsndisc | fOncaller},
-   {"DISC_MAP_CHROMOSOME_CONFLICT", fAsndisc | fOncaller},
+   {"DISC_MAP_CHROMOSOME_CONFLICT", fOncaller},
    {"DIVISION_CODE_CONFLICTS", fAsndisc | fOncaller},
    {"TEST_AMPLIFIED_PRIMERS_NO_ENVIRONMENTAL_SAMPLE", fAsndisc | fOncaller},
    {"TEST_UNNECESSARY_ENVIRONMENTAL", fAsndisc | fOncaller},
@@ -1555,7 +1554,7 @@ static const s_test_property test_list[] = {
    {"DISC_METAGENOME_SOURCE", fAsndisc | fOncaller},
    {"DISC_BACTERIA_MISSING_STRAIN", fAsndisc | fOncaller},
    {"DISC_REQUIRED_STRAIN", fDiscrepancy | fAsndisc},
-   {"MISSING_PROJECT", fAsndisc},
+   {"MISSING_PROJECT", fTSA},
    {"DISC_BACTERIA_SHOULD_NOT_HAVE_ISOLATE", fAsndisc | fOncaller},
 
 // tests_on_BioseqSet   // redundant because of nested set?
@@ -1576,7 +1575,7 @@ CRepConfig* CRepConfig :: factory(string report_tp, CSeq_entry_Handle* tse_p)
            m_TopSeqEntry = tse_p;
        }
        else {
-            NCBI_THROW(CException, eUnknown, "Missing top seq-entry-handle");
+            NCBI_USER_THROW("Missing top seq-entry-handle");
        }
        if (report_tp ==  "Discrepancy") {
           return new  CRepConfDiscrepancy();
@@ -1586,7 +1585,7 @@ CRepConfig* CRepConfig :: factory(string report_tp, CSeq_entry_Handle* tse_p)
        }
    }
    else {
-      NCBI_THROW(CException, eUnknown, "Unrecognized report type.");
+      NCBI_USER_THROW("Unrecognized report type.");
       return 0;
    }
 };  // CRepConfig::factory()
@@ -2622,7 +2621,7 @@ void CRepConfig :: GetTestList()
         if (++i >= sz) return;
    }
 
-   NCBI_THROW(CException, eUnknown, "Some requested tests are unrecognizable.");
+   NCBI_USER_THROW("Some requested tests are unrecognizable.");
 };
 
 void CRepConfAsndisc :: x_ReadAsn1(ESerialDataFormat datafm)
@@ -2660,7 +2659,7 @@ void CRepConfAsndisc :: x_ReadAsn1(ESerialDataFormat datafm)
          CheckThisSeqEntry(seq_entry);
       }
       else {
-         NCBI_THROW(CException,eUnknown, "Couldn't read type [" + strtmp + "]");
+         NCBI_USER_THROW("Couldn't read type [" + strtmp + "]");
       }
     }
     
@@ -2671,12 +2670,12 @@ void CRepConfAsndisc :: x_ReadFasta()
 {
    auto_ptr <CReaderBase> reader (CReaderBase::GetReader(CFormatGuess::eFasta)); // flags?
    if (!reader.get()) {
-       NCBI_THROW(CException, eUnknown, "File format not supported");
+       NCBI_USER_THROW("File format not supported");
    }
    CRef <CSerialObject> 
        obj= reader->ReadObject(*(new CNcbiIfstream(thisInfo.infile.c_str())));
    if (!obj) {
-      NCBI_THROW(CException, eUnknown, "Couldn't read file " + thisInfo.infile);
+      NCBI_USER_THROW("Couldn't read file " + thisInfo.infile);
    }
    CSeq_entry& seq_entry = dynamic_cast <CSeq_entry&>(obj.GetObject());
    seq_entry.ResetParentEntry();
@@ -2699,8 +2698,7 @@ void CRepConfAsndisc :: x_GuessFile()
           x_ReadFasta();
           break;
       default:
-         NCBI_THROW(CException, eUnknown,
-              "File format: " + NStr::UIntToString((unsigned)f_fmt) + " not supported");
+         NCBI_USER_THROW("File format: " + NStr::UIntToString((unsigned)f_fmt) + " not supported");
    }
 };
 
@@ -2759,7 +2757,7 @@ void CRepConfAsndisc :: x_CatenatedSeqEntry()
 void CRepConfAsndisc :: x_ProcessOneFile()
 {
    if (!CFile(thisInfo.infile).Exists()) {
-      NCBI_THROW(CException, eUnknown, "File not found: " + thisInfo.infile);
+      NCBI_USER_THROW("File not found: " + thisInfo.infile);
    }
    switch (m_file_tp[0]) {
       case 'a': x_GuessFile(); 
@@ -2817,7 +2815,7 @@ void CRepConfig :: CollectTests()
        cate_flag = fOncaller;
    }
    else {
-       NCBI_THROW(CException, eUnknown, "Unrecognized report type.");
+       NCBI_USER_THROW("Unrecognized report type.");
    }
 
    for (unsigned i=0; i< sizeof(test_list)/sizeof(s_test_property); i++) {
