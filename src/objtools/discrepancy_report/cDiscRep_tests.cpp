@@ -12164,7 +12164,9 @@ void CBioseq_on_feat_cnt :: TestOnObj(const CBioseq& bioseq)
 // non_prot_feat == ! CSeqFeatData::eSubtype_prot
    ITERATE (vector <const CSeq_feat*>, it, non_prot_feat) { 
       feat_nm = ( (*it)->GetData().IsProt() )? "A_" : "nA_";
-      feat_nm += (*it)->GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
+      strtmp = (*it)->GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
+      strtmp = (strtmp == "precursor_RNA") ? "preRNA" : strtmp;
+      feat_nm += strtmp;
       if (feat_cnt_ls.find(feat_nm) == feat_cnt_ls.end()) {
          feat_cnt_ls[feat_nm] = 1;
       }
