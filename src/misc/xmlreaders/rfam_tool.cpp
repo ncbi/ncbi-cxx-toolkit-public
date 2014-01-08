@@ -30,7 +30,7 @@
  */
 
 #include <ncbi_pch.hpp>
-#include <gpipe/asn_proc/rfam_tool.hpp>
+#include <misc/xmlreaders/rfam_tool.hpp>
 #include <corelib/ncbistd.hpp>
 #include <misc/xmlwrapp/stylesheet.hpp>
 
