@@ -1,0 +1,4 @@
+# $Id$
+
+LIB = xmlreaders
+SRC = rfam_tool

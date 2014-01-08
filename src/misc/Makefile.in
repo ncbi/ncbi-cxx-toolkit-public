@@ -1,7 +1,7 @@
 # $Id$
 
 SUB_PROJ            = third_party third_party_static clog grid_cgi xmlwrapp \
-                      hgvs netstorage jsonwrapp
+                      xmlreaders hgvs netstorage jsonwrapp
 EXPENDABLE_SUB_PROJ = cgi_redirect
 
 srcdir = @srcdir@
