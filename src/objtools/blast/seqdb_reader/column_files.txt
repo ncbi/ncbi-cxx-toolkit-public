@@ -203,7 +203,7 @@ Offset  Type       Fieldname         Notes
 28      Int4       offset-array-off  Offset in this file of the offset array.
 32      String(V)  column-title      Title of this column (not the volume).
 --      String(V)  create-date       Column creation time stamp string.
---      Int4       metadata-count    Number of meta-data elements.
+--      VarInt     metadata-count    Number of meta-data elements.
 --      Meta[]     metadata-list     See below for definition of Meta.
 --      PAD(z)     --                Pad to align offset array.
 --      Int4[]     offset-array4     Data offset array (if offset-int-size
