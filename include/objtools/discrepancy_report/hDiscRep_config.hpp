@@ -185,7 +185,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static vector < CRef < CClickableItem > > disc_report_data;
         static Str2Strs                           test_item_list;
         static Str2Objs                           test_item_objs;
-        static CRef < CSuspect_rule_set>          suspect_prod_rules;
+        static CConstRef < CSuspect_rule_set>     suspect_prod_rules;
         static vector < vector <string> >         susrule_summ;
         static vector <string> 		          weasels;
         static CRef <CSeq_submit>                 seq_submit;
@@ -216,7 +216,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static vector <string>                    virus_lineage;
         static vector <string>                    strain_tax;
         static Str2CombDt                         fix_data;
-        static CRef <CSuspect_rule_set>           orga_prod_rules;
+        static CConstRef <CSuspect_rule_set>      orga_prod_rules;
         static vector <string>                    skip_bracket_paren;
         static vector <string>                    ok_num_prefix;
         static map <EMacro_feature_type, CSeqFeatData::ESubtype>  feattype_featdef;
