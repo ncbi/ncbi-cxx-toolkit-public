@@ -646,8 +646,7 @@ public:
             init_tree();
         } 
         volatile const char* vp = _copyright<true>::_p;
-        char c = *vp;
-        c = 0;
+        cpr_ = *vp;
     }
 
     blocks_manager(const blocks_manager& blockman)
@@ -1550,6 +1549,7 @@ private:
     gap_word_t                             glevel_len_[bm::gap_levels];
     /// allocator
     allocator_type                         alloc_;
+    char                                   cpr_;
 };
 
 /**
