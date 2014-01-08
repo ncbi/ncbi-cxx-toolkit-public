@@ -188,10 +188,12 @@ void CNetScheduleServerListener::SetAuthString(SNetScheduleAPIImpl* impl)
         auth += '\"';
     }
 
-    auth += " client_version=\"";
-    auth += CNcbiApplication::Instance()->
-            GetFullVersion().GetVersionInfo().Print();
-    auth += '\"';
+    CNcbiApplication* app = CNcbiApplication::Instance();
+    if (app != NULL) {
+        auth += " client_version=\"";
+        auth += app->GetFullVersion().GetVersionInfo().Print();
+        auth += '\"';
+    }
 
     ITERATE(SNetScheduleAPIImpl::TAuthParams, it, impl->m_AuthParams) {
         auth += it->second;
