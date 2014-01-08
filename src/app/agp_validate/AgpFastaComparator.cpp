@@ -761,7 +761,7 @@ void CAgpFastaComparator::x_ProcessObjects(
     int iNumSkipped = 0;
 
     LOG_POST(Error << "Processing object file(s)...");
-    COMP_LOG(Error << "Processing object file(s)...");
+    COMP_LOG("Processing object file(s)...");
     ITERATE( list<string>, file_iter, filenames ) {
         const string &filename = *file_iter;
         try {
@@ -867,7 +867,7 @@ void CAgpFastaComparator::x_ProcessAgps(const list<string> & filenames,
     int iNumSkipped = 0;
 
     LOG_POST(Error << "Processing AGP...");
-    COMP_LOG(Error << "Processing AGP...");
+    COMP_LOG("Processing AGP...");
 
     CRef<CScope> pAgpToSeqEntryScope(new CScope(*CObjectManager::GetInstance()));
     pAgpToSeqEntryScope->AddDefaults();
