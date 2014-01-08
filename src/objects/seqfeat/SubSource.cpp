@@ -1023,8 +1023,25 @@ static string s_GetNumFromLatLonToken (string token)
                 val_str = val_str.substr (0, pos + prec + 1);
             }
         }
+
         return val_str + " " + dir;
     }            
+}
+
+
+static bool s_IsNumberStringInRange(const string& val_str, double max)
+{
+    double val;
+    char dir;
+    int processed;
+
+    if (sscanf (val_str.c_str(), "%lf %c%n", &val, &dir, &processed) != 2
+        || processed != val_str.length()
+        || val < 0.0 || val > max) {
+        return false;
+    } else {
+        return true;
+    }
 }
 
 
@@ -1312,12 +1329,14 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
     }
 
     la_token = s_GetNumFromLatLonToken (la_token);
-    if (NStr::IsBlank (la_token)) {
+    if (NStr::IsBlank (la_token)
+        || !s_IsNumberStringInRange(la_token, 90.0)) {
         return "";
     }
 
     lo_token = s_GetNumFromLatLonToken (lo_token);
-    if (NStr::IsBlank (lo_token)) {
+    if (NStr::IsBlank (lo_token)
+        || !s_IsNumberStringInRange(lo_token, 180.0)) {
         return "";
     }
 

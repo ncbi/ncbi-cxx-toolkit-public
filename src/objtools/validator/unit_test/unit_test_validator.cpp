@@ -17432,6 +17432,22 @@ BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
     fixed = CSubSource::FixLatLonFormat(to_fix, true);
     BOOST_CHECK_EQUAL(fixed, "");
 
+    to_fix = "91.00 N 5.00 E";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "");
+
+    to_fix = "83.00 N 181.00 E";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "");
+
+    to_fix = "91.00 S 5.00 E";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "");
+
+    to_fix = "83.00 S 181.00 W";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "");
+
     bool format_correct;
     bool precision_correct;
     bool lat_in_range;
