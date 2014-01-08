@@ -2372,6 +2372,11 @@ void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
    ENa_strand str1, str2;
    unsigned i=0, j=0;
    string desc1, desc2;
+
+   if (IsBioseqHasLineage(bioseq, "Eukaryota", false)) {
+      return;
+   }
+
    // IgnoreContainedCDS
    vector <int> ignore;
    ignore.reserve(cd_feat.size());
@@ -2453,13 +2458,15 @@ void CBioseq_CONTAINED_CDS :: GetReport(CRef <CClickableItem>& c_item)
             = thisInfo.test_item_objs[GetName() + "$" + list_tp2items.begin()->first];
       c_item->description 
           = GetIsComment(c_item->item_list.size(), "coding region")
-            + ", completely contained in another coding region on the " 
+            + "completely contained in another coding region on the " 
             + list_tp2items.begin()->first + " strand.";
    }
    else {
       ITERATE (Str2Strs, it, list_tp2items) {
-        AddSubcategory(c_item, GetName()+"$" + it->first, &(it->second), 
-            "coding region", 
+        AddSubcategory(c_item, 
+                       GetName()+"$" + it->first, 
+                       &(it->second), 
+                       "coding region", 
             "completely contained in another coding region on the " + it->first + " strand.");
            
       }
