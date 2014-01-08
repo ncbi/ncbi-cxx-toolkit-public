@@ -115,7 +115,6 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
     case eNetScheduleSubmitter:
         m_NetScheduleSubmitter = m_NetScheduleAPI.GetSubmitter();
 
-        SetUp_NetCacheCmd(eNetCacheAPI);
         m_GridClient.reset(new CGridClient(m_NetScheduleSubmitter,
                 m_NetCacheAPI, CGridClient::eManualCleanup,
                         CGridClient::eProgressMsgOn));
@@ -141,6 +140,9 @@ void CGridCommandLineInterfaceApp::SetUp_NetScheduleCmd(
 
     if (!m_Opts.client_session.empty())
         m_NetScheduleAPI.SetClientSession(m_Opts.client_session);
+
+    if (api_class == eNetScheduleSubmitter)
+        SetUp_NetCacheCmd(eNetCacheAPI);
 }
 
 void CGridCommandLineInterfaceApp::JobInfo_PrintStatus(
