@@ -902,6 +902,7 @@ static string s_GetNumFromLatLonToken (string token)
     double val = 0;
     size_t num_sep = 0, prev_start = 0;
     int prec = 0;
+    bool seen_period = false;
     while (pos < token.length()) {
         char ch = token.c_str()[pos];
         if (ch == ' ' || ch == ':' || ch == '-') {
@@ -961,7 +962,13 @@ static string s_GetNumFromLatLonToken (string token)
                 pos++;
             }
             prev_start = pos;
-        } else if (isdigit(ch) || ch == '.') {
+        } else if (isdigit(ch)) {
+            pos++;
+        } else if (ch == '.') {
+            if (seen_period) {
+                return "";
+            }
+            seen_period = true;
             pos++;
         } else {
             return "";

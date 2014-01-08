@@ -6366,6 +6366,11 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadSpecificHost)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+    // should not generate an error
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_nat_host, "");
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_nat_host, "Bovine");
+
+    
 }
 
 BOOST_AUTO_TEST_CASE(Test_Validity_SpecificHost)
@@ -6491,9 +6496,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_ReplacedCountryCode)
 
 BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
 {
-#ifdef BAD_VALIDATOR
-return;
-#endif
     // prepare entry
     CRef<CSeq_entry> entry = unit_test_util::BuildGoodSeq();
     
@@ -6535,7 +6537,6 @@ return;
     ambig.push_back("MZUT");
     ambig.push_back("MT");
     ambig.push_back("MP");
-    ambig.push_back("NCCB");
     ambig.push_back("NASC");
     ambig.push_back("IZAC");
     ambig.push_back("CCG");
@@ -6549,10 +6550,8 @@ return;
     ambig.push_back("SDSU");
     ambig.push_back("GC");
     ambig.push_back("UNL");
-    ambig.push_back("NCIP");
     ambig.push_back("MZUP");
     ambig.push_back("MG");
-    ambig.push_back("ACM");
     ambig.push_back("HNHM");
     ambig.push_back("PMS");
     ambig.push_back("BMBN");
@@ -6566,7 +6565,6 @@ return;
     ambig.push_back("ZMUH");
     ambig.push_back("UMO");
     ambig.push_back("SMF");
-    ambig.push_back("CDC");
     ambig.push_back("ZSP");
     ambig.push_back("TAU");
     ambig.push_back("MJG");
@@ -6638,7 +6636,6 @@ return;
     ambig.push_back("ZMG");
     ambig.push_back("IO");
     ambig.push_back("USM");
-    ambig.push_back("CIP");
     ambig.push_back("UCS");
     ambig.push_back("CN");
     ambig.push_back("PCM");
@@ -6654,11 +6651,9 @@ return;
     ambig.push_back("NCC");
     ambig.push_back("MSM");
     ambig.push_back("NMBA");
-    ambig.push_back("AS");
     ambig.push_back("RM");
     ambig.push_back("MBM");
     ambig.push_back("UPM");
-    ambig.push_back("CCM");
     ambig.push_back("MSU");
     ambig.push_back("PI");
     ambig.push_back("CENA");
@@ -6794,7 +6789,6 @@ return;
     ambig.clear();
     ambig.push_back("NASC");
     ambig.push_back("TCDU");
-    ambig.push_back("CIP");
 
     ITERATE (vector<string>, it, ambig) {
         expected_errors[0]->SetErrMsg("Institution code " + *it + " needs to be qualified with a <COUNTRY> designation");
@@ -6815,7 +6809,6 @@ return;
     ambig.push_back("IFM");
     ambig.push_back("MCCM");
     ambig.push_back("CCB");
-    ambig.push_back("NCCB");
     ambig.push_back("LBG");
     ambig.push_back("BCC");
     ambig.push_back("CCAC");
@@ -6831,7 +6824,6 @@ return;
     ambig.push_back("NJM");
     ambig.push_back("INA");
     ambig.push_back("BTCC");
-    ambig.push_back("ACM");
     ambig.push_back("YM");
     ambig.push_back("UCM");
     ambig.push_back("IZ");
@@ -6846,9 +6838,7 @@ return;
     ambig.push_back("NI");
     ambig.push_back("CB");
     ambig.push_back("AMP");
-    ambig.push_back("CDC");
     ambig.push_back("RIVE");
-    ambig.push_back("CIP");
     ambig.push_back("DUM");
     ambig.push_back("AKU");
     ambig.push_back("CN");
@@ -6877,7 +6867,6 @@ return;
     ambig.push_back("PCU");
     ambig.push_back("CVCC");
     ambig.push_back("BR");
-    ambig.push_back("CCM");
     ambig.push_back("MSU");
     ITERATE (vector<string>, it, ambig) {
         expected_errors[0]->SetErrMsg("Institution code " + *it + " needs to be qualified with a <COUNTRY> designation");
@@ -6920,6 +6909,12 @@ return;
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_culture_collection, "");
 
     CLEAR_ERRORS
+
+    // should be ok
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_specimen_voucher, "CCS2009-043");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
 }
 
 
@@ -17432,6 +17427,21 @@ BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
     to_fix = "14.60085 and 144.77629";
     fixed = CSubSource::FixLatLonFormat(to_fix, true);
     BOOST_CHECK_EQUAL(fixed, "14.60085 N 144.77629 E");
+
+    to_fix = "53.43.20 N 7.43.20 E";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "");
+
+    bool format_correct;
+    bool precision_correct;
+    bool lat_in_range;
+    bool lon_in_range;
+    double lat_value;
+    double lon_value;
+
+    CSubSource::IsCorrectLatLonFormat ("53.43.20 N 7.43.20 E", format_correct, precision_correct,
+                                     lat_in_range, lon_in_range,
+                                     lat_value, lon_value);
 
 }
 
