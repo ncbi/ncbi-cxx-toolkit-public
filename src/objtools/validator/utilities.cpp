@@ -1926,15 +1926,17 @@ void AdjustSpecificHostForTaxServer (string& spec_host)
 
 
 
-bool IsSpecificHostValid(string& host, string& error_msg)
+bool IsSpecificHostValid(const string& val, string& error_msg)
 {
 	bool is_valid = true;
 	error_msg = kEmptyStr;
 	
-	if (NStr::IsBlank(host)) {
+	if (NStr::IsBlank(val)) {
 		error_msg = "Host is empty";
 		return is_valid;
 	}
+
+    string host = val;
 	
 	AdjustSpecificHostForTaxServer(host);
 	vector<CRef<COrg_ref> > org_req_list;
@@ -1981,14 +1983,15 @@ bool IsSpecificHostValid(string& host, string& error_msg)
 	return is_valid;
 }
 
-string FixBadSpecificHost(string& host)
+string FixBadSpecificHost(const string& val)
 {
 	// host is assumed to be an incorrect specific host value
 	// returns the corrected specific host, if it can be corrected, and an empty string, otherwise
 	string hostfix = kEmptyStr;
-	if (NStr::IsBlank(host)) {
+	if (NStr::IsBlank(val)) {
 		return hostfix;
 	}
+    string host = val;
 	
 	AdjustSpecificHostForTaxServer(host);
 	vector<CRef<COrg_ref> > org_req_list;

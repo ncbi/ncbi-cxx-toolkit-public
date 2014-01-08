@@ -181,8 +181,8 @@ bool PartialsSame (const CSeq_loc& loc1, const CSeq_loc& loc2);
 
 // specific-host functions
 
-bool NCBI_VALIDATOR_EXPORT IsSpecificHostValid(string& host, string& error_msg);
-string NCBI_VALIDATOR_EXPORT FixBadSpecificHost(string& host);
+bool NCBI_VALIDATOR_EXPORT IsSpecificHostValid(const string& host, string& error_msg);
+string NCBI_VALIDATOR_EXPORT FixBadSpecificHost(const string& host);
 bool NCBI_VALIDATOR_EXPORT IsCommonName (const CT3Data& data);
 bool NCBI_VALIDATOR_EXPORT HasMisSpellFlag (const CT3Data& data);
 bool NCBI_VALIDATOR_EXPORT FindMatchInOrgRef (string str, const COrg_ref& org);
