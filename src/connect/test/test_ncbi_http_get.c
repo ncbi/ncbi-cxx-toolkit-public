@@ -60,28 +60,39 @@
 #include "test_assert.h"  /* This header must go last */
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
+static int/*bool*/ x_IsPrintable(const char* buf, size_t size)
+{
+    size_t n;
+    for (n = 0;  n < size;  ++n) {
+        if (!buf[n]  ||  !isprint((unsigned char) buf[n]))
+            return 0/*false*/;
+    }
+    return 1/*true*/;
+}
+
+
+/* Accept both plain and BASE-64 encoded, printable password */
 static const char* x_GetPkcs12Pass(const char* val, char* buf, size_t bufsize)
 {
     size_t in, out, len, half = bufsize >> 1;
     if (!(val = ConnNetInfo_GetValue(0, val, buf, half - 1, 0))  ||  !*val)
         return "";
+    if (!x_IsPrintable(val, len = strlen(val)))
+        return "";
     buf += half;
-    len  = strlen(val);
-    if (!BASE64_Decode(val, len, &in, buf, half - 1, &out))
-        return "";
-    if (in != len)
-        return "";
-    assert(out  &&  out < half);
-    if ((buf[out - 1] == '\n'  &&  !--out)  ||
-        (buf[out - 1] == '\r'  &&  !--out)) {
-        return "";
+    if (BASE64_Decode(val, len, &in, buf, half - 1, &out)  &&  in == len) {
+        assert(out  &&  out < half);
+        if ((buf[out - 1] != '\n'  ||  --out)  &&
+            (buf[out - 1] != '\r'  ||  --out)  &&
+            x_IsPrintable(buf, out)) {
+            buf[out] = '\0';
+            return buf;
+        }
     }
-    for (in = 0;  in < out;  ++in) {
-        if (!buf[in]  ||  !isprint((unsigned char) buf[in]))
-            return "";
-    }
-    buf[in] = '\0';
-    return buf;
+    return (const char*) memcpy(buf, val, ++len);
 }
 
 
