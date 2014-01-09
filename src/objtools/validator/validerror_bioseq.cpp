@@ -6791,23 +6791,11 @@ static string GetDateString (const CDate& date)
 
 static string s_GetKeywordForStructuredComment (const CUser_object& obj)
 {
-    string keyword = "";
-
-    ITERATE (CUser_object::TData, field, obj.GetData()) {
-        if ((*field)->IsSetLabel() 
-            && (*field)->GetLabel().IsStr()
-            && NStr::EqualNocase((*field)->GetLabel().GetStr(), "StructuredCommentPrefix")) {
-            const string& prefix = (*field)->GetData().GetStr();
-            if (NStr::EqualCase(prefix, "##MIGS-Data-START##")) {
-                keyword = "GSC:MIGS:2.1";
-            } else if (NStr::EqualCase(prefix, "##MIMS-Data-START##")) {
-                keyword = "GSC:MIMS:2.1";
-            } else if (NStr::EqualCase(prefix, "##MIENS-Data-START##")) {
-                keyword = "GSC:MIENS:2.1";
-            }
-            break;
-        }
+    string prefix = CComment_rule::GetStructuredCommentPrefix(obj);
+    if (NStr::IsBlank(prefix)) {
+        return "";
     }
+    string keyword = CComment_rule::KeywordForPrefix(prefix);
     return keyword;
 }
 
