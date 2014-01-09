@@ -30,11 +30,13 @@
  *
  */
 
+#include <connect/ncbi_base64.h>
 #include <connect/ncbi_gnutls.h>
 #include <connect/ncbi_http_connector.h>
 #include <connect/ncbi_util.h>
 #include "../ncbi_ansi_ext.h"
 #include "../ncbi_priv.h"               /* CORE logging facilities */
+#include <ctype.h>
 #include <errno.h>
 #ifdef NCBI_OS_MSWIN
 #  include <io.h>      /* for access() */
@@ -56,6 +58,31 @@
 #endif /*HAVE_LIBGNUTLS*/
 
 #include "test_assert.h"  /* This header must go last */
+
+
+static const char* x_GetPkcs12Pass(const char* val, char* buf, size_t bufsize)
+{
+    size_t in, out, len, half = bufsize >> 1;
+    if (!(val = ConnNetInfo_GetValue(0, val, buf, half - 1, 0))  ||  !*val)
+        return "";
+    buf += half;
+    len  = strlen(val);
+    if (!BASE64_Decode(val, len, &in, buf, half - 1, &out))
+        return "";
+    if (in != len)
+        return "";
+    assert(out  &&  out < half);
+    if ((buf[out - 1] == '\n'  &&  !--out)  ||
+        (buf[out - 1] == '\r'  &&  !--out)) {
+        return "";
+    }
+    for (in = 0;  in < out;  ++in) {
+        if (!buf[in]  ||  !isprint((unsigned char) buf[in]))
+            return "";
+    }
+    buf[in] = '\0';
+    return buf;
+}
 
 
 int main(int argc, char* argv[])
@@ -113,16 +140,15 @@ int main(int argc, char* argv[])
         status = SOCK_SetupSSLEx(NcbiSetupGnuTls);
         CORE_LOGF(eLOG_Note, ("SSL request acknowledged: %s",
                               IO_StatusStr(status)));
+        pass = x_GetPkcs12Pass(GNUTLS_PKCS12_PASS, blk, sizeof(blk));
         file = ConnNetInfo_GetValue(0, GNUTLS_PKCS12_FILE,
-                                    blk,                 sizeof(blk)/2 - 1, 0);
-        pass = ConnNetInfo_GetValue(0, GNUTLS_PKCS12_PASS,
-                                    blk + sizeof(blk)/2, sizeof(blk)/2 - 1, 0);
+                                    blk, sizeof(blk)/2 - 1, 0);
         if (file  &&  access(file, R_OK) == 0) {
             int err;
             if ((err = gnutls_certificate_allocate_credentials(&xcred)) != 0 ||
                 (err = gnutls_certificate_set_x509_simple_pkcs12_file
-                 (xcred, file, GNUTLS_PKCS12_TYPE, pass) != 0)) {
-                CORE_LOGF(eLOG_Error,
+                 (xcred, file, GNUTLS_PKCS12_TYPE, pass)) != 0) {
+                CORE_LOGF(eLOG_Fatal,
                           ("Cannot load PKCS#12 credentials from \"%s\": %s",
                            file, gnutls_strerror(err)));
             } else if ((cred = NcbiCredGnuTls(xcred)) != 0) {
@@ -130,7 +156,7 @@ int main(int argc, char* argv[])
                 CORE_LOGF(eLOG_Note, ("PKCS#12 credentials loaded from \"%s\"",
                                       file));
             } else
-                CORE_LOG_ERRNO(eLOG_Error, errno, "Cannot create NCBI_CRED");
+                CORE_LOG_ERRNO(eLOG_Fatal, errno, "Cannot create NCBI_CRED");
         }
 #else
         CORE_LOG(eLOG_Warning, "SSL requested but may be not supported");
