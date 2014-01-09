@@ -1031,7 +1031,7 @@ public:
 
     static vector<string> GetAccessionsFromInferenceString (string inference, string &prefix, string &remainder, bool &same_species);
     static bool GetPrefixAndAccessionFromInferenceAccession (string inf_accession, string &prefix, string &accession);
-    EInferenceValidCode ValidateInferenceAccession (string accession, bool fetch_accession);
+    EInferenceValidCode ValidateInferenceAccession (string accession, bool fetch_accession, bool is_similar_to);
     EInferenceValidCode ValidateInference(string inference, bool fetch_accession);
 
     // functions expected to be used in Discrepancy Report

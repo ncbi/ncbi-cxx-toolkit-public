@@ -14271,6 +14271,11 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_InvalidInferenceValue)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    feat->SetQual().front()->SetVal("similar to RNA sequence: BLAST:AY123456.1");
+    expected_errors[0]->SetErrMsg("Inference qualifier problem - bad accession type (similar to RNA sequence: BLAST:AY123456.1)");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
     CLEAR_ERRORS    
     
     // SRA inferences are ok

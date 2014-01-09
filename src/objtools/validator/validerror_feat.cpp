@@ -4157,7 +4157,7 @@ bool s_IsAllDigits (string str)
 }
 
 
-CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccession (string accession, bool fetch_accession)
+CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccession (string accession, bool fetch_accession, bool is_similar_to)
 {
     if (NStr::IsBlank (accession)) {
         return eInferenceValidCode_empty;
@@ -4229,6 +4229,8 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInferenceAccessi
                     }
                 }
             }
+        } else if (is_blast && is_similar_to) {
+            rsult = eInferenceValidCode_bad_accession_type;
         }
         if (NStr::Find (remainder, " ") != string::npos) {
             rsult = eInferenceValidCode_spaces;
@@ -4307,15 +4309,15 @@ CValidError_feat::EInferenceValidCode CValidError_feat::ValidateInference(string
     }
 
     CValidError_feat::EInferenceValidCode rsult = eInferenceValidCode_valid;
-
-    if (same_species && !NStr::StartsWith (prefix, "similar to")) {
+    bool is_similar_to = NStr::StartsWith (prefix, "similar to");
+    if (same_species && !is_similar_to) {
         rsult = eInferenceValidCode_same_species_misused;
     }
 
     if (rsult == eInferenceValidCode_valid) {
         for (size_t i = 0; i < accessions.size(); i++) {
             NStr::TruncateSpacesInPlace (accessions[i]);
-            rsult = ValidateInferenceAccession (accessions[i], fetch_accession);
+            rsult = ValidateInferenceAccession (accessions[i], fetch_accession, is_similar_to);
             if (rsult != eInferenceValidCode_valid) {
                 break;
             }
