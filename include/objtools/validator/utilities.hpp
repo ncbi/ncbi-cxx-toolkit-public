@@ -37,7 +37,11 @@
 
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/SeqFeatData.hpp>
+#include <objects/seqfeat/Org_ref.hpp>
+#include <objects/taxon3/T3Data.hpp>
 #include <objects/seqset/Bioseq_set.hpp>
+#include <objects/biblio/Id_pat.hpp> 
+#include <objects/biblio/Auth_list.hpp>
 #include <objmgr/seq_vector.hpp>
 
 #include <serial/iterator.hpp>
