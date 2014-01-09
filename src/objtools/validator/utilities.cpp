@@ -1909,7 +1909,9 @@ static const string sIgnoreHostWordList[] = {
   "aff.",
   "near",
   "nr.",
-  "nr "
+  "nr ",
+  "sp.",
+  "sp "
 };
 
 
@@ -1983,15 +1985,14 @@ bool IsSpecificHostValid(const string& val, string& error_msg)
 	return is_valid;
 }
 
-string FixBadSpecificHost(const string& val)
+string FixSpecificHost(const string& val)
 {
-	// host is assumed to be an incorrect specific host value
-	// returns the corrected specific host, if it can be corrected, and an empty string, otherwise
-	string hostfix = kEmptyStr;
+	string hostfix = val;
 	if (NStr::IsBlank(val)) {
 		return hostfix;
 	}
-    string host = val;
+	
+	string host = val;
 	
 	AdjustSpecificHostForTaxServer(host);
 	vector<CRef<COrg_ref> > org_req_list;
@@ -2002,21 +2003,31 @@ string FixBadSpecificHost(const string& val)
 	CTaxon3 taxon3;
 	taxon3.Init();
 	CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_req_list);
+	bool corrected = false;
 	if (reply && reply->GetReply().size() == 1) {
 		CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
 		if ((*reply_it)->IsError()) {
-			// do nothing
+			hostfix = kEmptyStr;
 		} else if ((*reply_it)->IsData()) {
 			if (HasMisSpellFlag((*reply_it)->GetData()) && (*reply_it)->GetData().IsSetOrg()) {
 				hostfix = (*reply_it)->GetData().GetOrg().GetTaxname();
+				corrected = true;
 			} else if ((*reply_it)->GetData().IsSetOrg()) {
 				if (! FindMatchInOrgRef(host, (*reply_it)->GetData().GetOrg())
 					&& ! IsCommonName((*reply_it)->GetData())) {
 						hostfix = (*reply_it)->GetData().GetOrg().GetTaxname();
+						corrected = true;
 					}
-			} 
+			} else  {
+				hostfix = kEmptyStr;
+			}
 		}
 	}
+	if ( !corrected && ! NStr::IsBlank(hostfix)) {
+		NStr::ReplaceInPlace(hostfix, "  ", " ");
+		NStr::TruncateSpacesInPlace(hostfix);
+	}	
+	
 	return hostfix;
 }
 

@@ -6384,7 +6384,7 @@ BOOST_AUTO_TEST_CASE(Test_Validity_SpecificHost)
 	BOOST_CHECK_EQUAL(false, IsSpecificHostValid(host, error_msg));
 	BOOST_CHECK_EQUAL(error_msg, string("Invalid value for specific host: Homo supiens"));
 	
-	host = "Pinus";
+	host = "Pinus sp.";
 	BOOST_CHECK_EQUAL(false, IsSpecificHostValid(host, error_msg));
 	BOOST_CHECK_EQUAL(error_msg, string("Specific host value is ambiguous: Pinus"));
 	
@@ -6415,28 +6415,48 @@ BOOST_AUTO_TEST_CASE(Test_Validity_SpecificHost)
 }
 
 
-BOOST_AUTO_TEST_CASE(Test_FixBadSpecificHost)
+BOOST_AUTO_TEST_CASE(Test_FixSpecificHost)
 {
 	string hostfix, host;
 	host = "Homo supiens";
-	hostfix = FixBadSpecificHost(host);
+	hostfix = FixSpecificHost(host);
 	BOOST_CHECK_EQUAL(hostfix, kEmptyStr);
 	
-	host = "Pinus";
-	hostfix = FixBadSpecificHost(host);
+	host = "Pinus sp.";
+	hostfix = FixSpecificHost(host);
 	BOOST_CHECK_EQUAL(hostfix, kEmptyStr);
 		
 	host = "Gallus Gallus";
-	hostfix = FixBadSpecificHost(host);
+	hostfix = FixSpecificHost(host);
 	BOOST_CHECK_EQUAL(hostfix, string("Gallus gallus"));
 		
 	host = "Eschericia coli";
-	hostfix = FixBadSpecificHost(host);
+	hostfix = FixSpecificHost(host);
 	BOOST_CHECK_EQUAL(hostfix, string("Escherichia coli"));
 	
 	host = "Avian";
-	hostfix = FixBadSpecificHost(host);
+	hostfix = FixSpecificHost(host);
 	BOOST_CHECK_EQUAL(hostfix, kEmptyStr);
+	
+	host = "";
+	hostfix = FixSpecificHost(host);
+	BOOST_CHECK_EQUAL(hostfix, kEmptyStr);
+	
+	host = "Bovine";
+	hostfix = FixSpecificHost(host);
+	BOOST_CHECK_EQUAL(hostfix, string("Bovine"));
+	
+	host = "Homo sapiens";
+	hostfix = FixSpecificHost(host);
+	BOOST_CHECK_EQUAL(hostfix, string("Homo sapiens"));
+	
+	host = "Pig";
+	hostfix = FixSpecificHost(host);
+	BOOST_CHECK_EQUAL(hostfix, string("Pig"));
+	
+	host = " Chicken";	
+	hostfix = FixSpecificHost(host);
+	BOOST_CHECK_EQUAL(hostfix, string("Chicken"));
 	
 }
 

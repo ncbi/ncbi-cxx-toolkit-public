@@ -180,9 +180,15 @@ CConstRef <CSeq_feat> GetGeneForFeature (const CSeq_feat& f1, CScope *scope);
 bool PartialsSame (const CSeq_loc& loc1, const CSeq_loc& loc2);
 
 // specific-host functions
-
+/// returns true and error_msg will be empty, if specific host is valid
+/// returns true and error_msg will be "Host is empty", if specific host is empty
+/// returns false if specific host is invalid
 bool NCBI_VALIDATOR_EXPORT IsSpecificHostValid(const string& host, string& error_msg);
-string NCBI_VALIDATOR_EXPORT FixBadSpecificHost(const string& host);
+/// returns the corrected specific host, if the specific host is invalid and can be corrected
+/// returns an empty string, if the specific host is invalid and cannot be corrected
+/// returns the original value except the preceding/trailing spaces, if the specific host is valid
+string NCBI_VALIDATOR_EXPORT FixSpecificHost(const string& host);
+
 bool NCBI_VALIDATOR_EXPORT IsCommonName (const CT3Data& data);
 bool NCBI_VALIDATOR_EXPORT HasMisSpellFlag (const CT3Data& data);
 bool NCBI_VALIDATOR_EXPORT FindMatchInOrgRef (string str, const COrg_ref& org);
