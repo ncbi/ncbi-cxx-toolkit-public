@@ -9987,3 +9987,4 @@ void CNewCleanup_imp::ExtendedCleanupSeqEntryHandle (
 
 END_SCOPE(objects)
 END_NCBI_SCOPE
+
