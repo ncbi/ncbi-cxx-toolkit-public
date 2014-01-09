@@ -9602,10 +9602,7 @@ void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
             CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
             try {
                 const CComment_rule& rule = comment_rules->FindCommentRule(prefix);
-                CUser_object tmp;
-                tmp.Assign(usr);
-                CUser_object::TData& fields = tmp.SetData();
-                CComment_rule::TErrorList errors = rule.IsValid(tmp);
+                CComment_rule::TErrorList errors = rule.IsValid(usr);
                 if (errors.size() == 0) {
                     string kywd = CComment_rule::KeywordForPrefix( prefix );
                     new_keywords.push_back(kywd);
