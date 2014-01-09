@@ -790,7 +790,7 @@ void CBioseq_DISC_INCONSISTENT_MOLINFO_TECH :: GetReport(CRef <CClickableItem>& 
   else if (cnt == 2 && has_missing) {
       strtmp = " (some missing, all same)";
       ITERATE (Str2Strs, it, tech2seqs) {
-         if (it->first != "unknowns") {
+         if (it->first != "unknown") {
              AddSubcategory(c_tech, 
                             GetName() + "$" + it->first, 
                             &(it->second),
