@@ -561,7 +561,7 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                     if (!(temp = (char*) malloc(size + 1))) {
                         int error = errno;
                         temp = ConnNetInfo_URL(uuu->net_info);
-                        CORE_LOGF_ERRNO_X(21, eLOG_Error, error,
+                        CORE_LOGF_ERRNO_X(20, eLOG_Error, error,
                                           ("[HTTP%s%s]  Out of memory encoding"
                                            " URL arguments (%lu bytes)",
                                            temp ? "; " : "",
@@ -1044,7 +1044,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         retry->mode = eRetry_None;
         if (!http_code  &&  uuu->error_header
             &&  uuu->net_info->debug_printout == eDebugPrintout_Some) {
-            CORE_DATA_X(19, eLOG_Note, str, size, "HTTP header (parse error)");
+            CORE_DATA_X(9, eLOG_Note, str, size, "HTTP header (parse error)");
         }
     } else if (header_parse == eHTTP_HeaderComplete) {
         retry->mode = eRetry_None;
@@ -1143,7 +1143,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         assert(!err  ||  *err);
         if (header_parse == eHTTP_HeaderContinue) {
             assert(err/*status != eIO_Closed*/);
-            CORE_LOGF_X(20, eLOG_Warning,
+            CORE_LOGF_X(19, eLOG_Warning,
                         ("[HTTP%s%s]  Server error message incomplete (%s)",
                          url ? "; " : "",
                          url ? url  : "", err));
@@ -1322,7 +1322,7 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
     if (status == eIO_Closed) {
         /* since this is merely an acknowledgement, it will be "instant" */
         SOCK_SetTimeout(uuu->sock, eIO_Close, &kZeroTimeout);
-        SOCK_CloseEx(uuu->sock, 0/*retain*/);
+        SOCK_CloseEx(uuu->sock, 0/*retain socket*/);
         uuu->read_state = eRS_DoneBody;
     }
 
