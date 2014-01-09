@@ -775,44 +775,45 @@ void CBioseq_DISC_INCONSISTENT_MOLINFO_TECH :: GetReport(CRef <CClickableItem>& 
      }
      else {
         Str2Strs::iterator it = tech2seqs.begin();
-        AddSubcategory(c_tech, GetName() + "$" + it->first, &(it->second), 
-                 "Molinfo has", "All Molinfos have", e_NoCntComment, true, 
-                 " field technique value '" + it->first + "'");
+        AddSubcategory(c_tech, 
+                       GetName() + "$" + it->first, 
+                       &(it->second), 
+                       "Molinfo has", 
+                       "All Molinfos have", 
+                       e_NoCntComment, 
+                       false, 
+                       " field technique value '" + it->first + "'");
         strtmp = " (all present, all same)";
         c_item->subcategories.push_back(c_tech);
-        copy(c_tech->item_list.begin(), c_tech->item_list.end(),
-             back_inserter(c_item->item_list));
-        copy(c_tech->obj_list.begin(), c_tech->obj_list.end(),
-             back_inserter(c_item->obj_list));
      }
   }
   else if (cnt == 2 && has_missing) {
       strtmp = " (some missing, all same)";
       ITERATE (Str2Strs, it, tech2seqs) {
          if (it->first != "unknowns") {
-             AddSubcategory(c_tech, GetName() + "$" + it->first, &(it->second),
-                            "Molinfo", "field technique value '" + it->first, 
-                            e_HasComment);
+             AddSubcategory(c_tech, 
+                            GetName() + "$" + it->first, 
+                            &(it->second),
+                            "Molinfo", 
+                            "field technique value '" + it->first + "'", 
+                            e_HasComment, 
+                            false);
          }
       }
       c_item->subcategories.push_back(c_tech);
-      copy(c_tech->item_list.begin(), c_tech->item_list.end(),
-           back_inserter(c_item->item_list));
-      copy(c_tech->obj_list.begin(), c_tech->obj_list.end(),
-           back_inserter(c_item->obj_list));
   }
   else {
     strtmp = " (all present, inconsistent)";
     ITERATE (Str2Strs, it, tech2seqs) {
-       AddSubcategory(c_tech, GetName() + "$" + it->first, &(it->second), 
-                      "Molinfo", "field technique value '" + it->first, 
-                      e_HasComment); 
+       AddSubcategory(c_tech, 
+                      GetName() + "$" + it->first, 
+                      &(it->second), 
+                      "Molinfo", 
+                       "field technique value '" + it->first + "'", 
+                      e_HasComment, 
+                      false); 
     }
     c_item->subcategories.push_back(c_tech);
-    copy(c_tech->item_list.begin(), c_tech->item_list.end(),
-         back_inserter(c_item->item_list));
-    copy(c_tech->obj_list.begin(), c_tech->obj_list.end(),
-         back_inserter(c_item->obj_list));
   }
 
   c_tech->description = "technique" + strtmp;
@@ -5329,14 +5330,19 @@ void CSeqEntry_TEST_ALIGNMENT_HAS_SCORE :: GetReport(CRef <CClickableItem>& c_it
 
 bool CSeqEntry_INCONSISTENT_BIOSOURCE :: SynonymsMatch(const COrg_ref& org1, const COrg_ref& org2)
 {
-     bool has_syn1 = org1.CanGetSyn(), has_syn2 = org2.CanGetSyn();
+     bool has_syn1 = (org1.CanGetSyn() && !org1.GetSyn().empty());
+     bool has_syn2 = (org2.CanGetSyn() && !org2.GetSyn().empty());
 
-     if ( !has_syn1 && !has_syn2 ) return true;
+     if ( !has_syn1 && !has_syn2 ) {
+          return true;
+     }
      if ( has_syn1 && has_syn2 ) {
         list <string>& syn1 = const_cast<COrg_ref&>(org1).SetSyn();
         list <string>& syn2 = const_cast<COrg_ref&>(org2).SetSyn();
 
-        if ((syn1.size() != syn2.size()) || syn1.empty()) return false;
+        if ((syn1.size() != syn2.size())) {
+            return false;
+        }
 
         syn1.sort();
         syn2.sort();
@@ -5459,8 +5465,8 @@ bool CSeqEntry_INCONSISTENT_BIOSOURCE :: OrgRefMatch(const COrg_ref& org1, const
 
 bool CSeqEntry_INCONSISTENT_BIOSOURCE :: SubSourceSetMatch(const CBioSource& biosrc1, const CBioSource& biosrc2)
 {
-  bool has_subtype1 = biosrc1.CanGetSubtype();
-  bool has_subtype2 = biosrc2.CanGetSubtype();
+  bool has_subtype1= (biosrc1.CanGetSubtype() && !biosrc1.GetSubtype().empty());
+  bool has_subtype2= (biosrc2.CanGetSubtype() && !biosrc2.GetSubtype().empty());
 
   if (!has_subtype1 && !has_subtype2) {
       return true;
@@ -5469,7 +5475,7 @@ bool CSeqEntry_INCONSISTENT_BIOSOURCE :: SubSourceSetMatch(const CBioSource& bio
     const list < CRef < CSubSource > >& subsrc1 = biosrc1.GetSubtype();
     const list < CRef < CSubSource > >& subsrc2 = biosrc2.GetSubtype();
 
-    if ( (subsrc1.size() != subsrc2.size()) || subsrc1.empty()) {
+    if ( (subsrc1.size() != subsrc2.size())) {
         return false;
     }
     list < CRef < CSubSource > >::const_iterator it, jt;
@@ -5495,17 +5501,20 @@ bool CSeqEntry_INCONSISTENT_BIOSOURCE :: BioSourceMatch( const CBioSource& biosr
   if ( (biosrc1.GetOrigin() != biosrc2.GetOrigin()) 
           || (biosrc1.CanGetIs_focus() != biosrc2.CanGetIs_focus())
           || !OrgRefMatch(biosrc1.GetOrg(), biosrc2.GetOrg()) 
-          || !SubSourceSetMatch(biosrc1, biosrc2) )
+          || !SubSourceSetMatch(biosrc1, biosrc2) ) {
       return false;
+  }
 
   int genome1 = biosrc1.GetGenome();
   int genome2 = biosrc2.GetGenome();
   if (genome1 == genome2) return true;
   if ( (genome1 = CBioSource::eGenome_unknown && genome2 == CBioSource::eGenome_genomic)
-        || (genome1 == CBioSource::eGenome_genomic && genome2 == CBioSource::eGenome_unknown) )
+        || (genome1 == CBioSource::eGenome_genomic && genome2 == CBioSource::eGenome_unknown) ) {
        return true;
- 
-  else return false;
+  }
+  else {
+     return false;
+  }
 };
 
 
@@ -5623,12 +5632,22 @@ string CSeqEntry_INCONSISTENT_BIOSOURCE :: DescribeOrgRefDifferences(const COrg_
   string comm1 = org1.CanGetCommon()? org1.GetCommon() : kEmptyStr;
   string comm2 = org2.CanGetCommon()? org2.GetCommon() : kEmptyStr;
 
-  if ( tax1 != tax2 ) org_ref_diff_str = "taxnames differ, ";
-  if ( comm1 != comm2 ) org_ref_diff_str += "common names differ, ";
-  if ( !SynonymsMatch(org1, org2) ) org_ref_diff_str += "synonyms differ, ";
-  if ( !DbtagMatch(org1, org2)) org_ref_diff_str += "dbxrefs differ, ";
+  if ( tax1 != tax2 ) {
+      org_ref_diff_str = "taxnames differ, ";
+  }
+  if ( comm1 != comm2 ) {
+       org_ref_diff_str += "common names differ, ";
+  }
+  if ( !SynonymsMatch(org1, org2) ) {
+      org_ref_diff_str += "synonyms differ, ";
+  }
+  if ( !DbtagMatch(org1, org2)) {
+      org_ref_diff_str += "dbxrefs differ, ";
+  }
   string tmp = DescribeOrgNameDifferences(org1, org2);
-  if (!tmp.empty()) org_ref_diff_str += tmp + ", ";
+  if (!tmp.empty()) {
+       org_ref_diff_str += tmp + ", ";
+  }
   org_ref_diff_str = org_ref_diff_str.substr(0, org_ref_diff_str.size()-2);
   return (org_ref_diff_str);
 }
@@ -5638,15 +5657,22 @@ string CSeqEntry_INCONSISTENT_BIOSOURCE :: DescribeOrgRefDifferences(const COrg_
 string CSeqEntry_INCONSISTENT_BIOSOURCE :: DescribeBioSourceDifferences(const CBioSource& biosrc1, const CBioSource& biosrc2)
 {
     string diff_str(kEmptyStr);
-    if (biosrc1.GetOrigin() != biosrc2.GetOrigin()) diff_str = "origins differ, ";
-    if (biosrc1.CanGetIs_focus() != biosrc2.CanGetIs_focus()) diff_str += "focus differs, ";
+    if (biosrc1.GetOrigin() != biosrc2.GetOrigin()) {
+         diff_str = "origins differ, ";
+    }
+    if (biosrc1.CanGetIs_focus() != biosrc2.CanGetIs_focus()) {
+        diff_str += "focus differs, ";
+    }
     int genome1 = biosrc1.GetGenome();
     int genome2 = biosrc2.GetGenome();
     if (genome1 != genome2
         && !(genome1 = CBioSource::eGenome_unknown && genome2 == CBioSource::eGenome_genomic)
-        && !(genome1 == CBioSource::eGenome_genomic && genome2 ==CBioSource::eGenome_unknown) )
+        && !(genome1 == CBioSource::eGenome_genomic && genome2 ==CBioSource::eGenome_unknown) ) {
        diff_str += "locations differ, ";
-    if (!SubSourceSetMatch(biosrc1,biosrc2)) diff_str += "subsource qualifiers differ, ";
+    }
+    if (!SubSourceSetMatch(biosrc1,biosrc2)) {
+       diff_str += "subsource qualifiers differ, ";
+    }
     string tmp = DescribeOrgRefDifferences (biosrc1.GetOrg(), biosrc2.GetOrg());
     if (!tmp.empty()) diff_str += tmp + ", ";
     diff_str = diff_str.substr(0, diff_str.size()-2);
@@ -12120,10 +12146,11 @@ void CSeqEntry_INCONSISTENT_BIOSOURCE :: TestOnObj(const CSeq_entry& seq_entry)
             biosrc_txt = GetDiscItemText(**it, *this_seq);
             for (CBioseq_CI bb_ci = b_ci; bb_ci; ++bb_ci) {
                if (bb_ci->IsNa()) {
+                  CConstRef <CBioseq> seq_ref = bb_ci->GetCompleteBioseq();
                   (*jt)->obj_text.push_back(biosrc_txt);
-                  (*jt)->obj_text.push_back( GetDiscItemText(*(bb_ci->GetCompleteBioseq())));
+                  (*jt)->obj_text.push_back(GetDiscItemText(*seq_ref));
                   (*jt)->obj_ls.push_back(CConstRef <CObject> (*it));
-                  (*jt)->obj_ls.push_back(CConstRef <CObject>(bb_ci->GetCompleteBioseq()));
+                  (*jt)->obj_ls.push_back(CConstRef <CObject>(seq_ref));
                }
             }
             found = true;
@@ -12131,9 +12158,11 @@ void CSeqEntry_INCONSISTENT_BIOSOURCE :: TestOnObj(const CSeq_entry& seq_entry)
          }
      }
      if (!found) {
-          INCONSISTENT_BIOSOURCE_biosrc.push_back(AddSeqEntry(**it, *this_seq, b_ci));
-          if (thisInfo.test_item_list.find(GetName()) == thisInfo.test_item_list.end()
-                                   && INCONSISTENT_BIOSOURCE_biosrc.size() > 1)
+          INCONSISTENT_BIOSOURCE_biosrc.push_back(
+                                      AddSeqEntry(**it, *this_seq, b_ci));
+          if ( (thisInfo.test_item_list.find(GetName()) 
+                             == thisInfo.test_item_list.end())
+                 && INCONSISTENT_BIOSOURCE_biosrc.size() > 1)
              thisInfo.test_item_list[GetName()].push_back("inconsistance");
      }
      i++;
@@ -12143,10 +12172,10 @@ void CSeqEntry_INCONSISTENT_BIOSOURCE :: TestOnObj(const CSeq_entry& seq_entry)
 
 void CSeqEntry_INCONSISTENT_BIOSOURCE :: GetReport(CRef <CClickableItem>& c_item)
 {
-   string diff =
-            (INCONSISTENT_BIOSOURCE_biosrc.size() > 1)?
-              " (" + DescribeBioSourceDifferences(*(INCONSISTENT_BIOSOURCE_biosrc[0]->biosrc),
-                                           *(INCONSISTENT_BIOSOURCE_biosrc[1]->biosrc)) + ")."
+   string diff = (INCONSISTENT_BIOSOURCE_biosrc.size() > 1)?
+              " (" + DescribeBioSourceDifferences(
+                          *(INCONSISTENT_BIOSOURCE_biosrc[0]->biosrc),
+                          *(INCONSISTENT_BIOSOURCE_biosrc[1]->biosrc)) + ")."
               : ".";
    c_item->item_list.clear();
    c_item->obj_list.clear();
