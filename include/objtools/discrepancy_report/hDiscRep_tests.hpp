@@ -873,7 +873,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CSeqEntry_DISC_INCONSISTENT_STRUCTURED_COMMENTS () {};
 
-      virtual string GetName() const { return CSeqEntry_on_incnst_user::GetName_comm();}
+      virtual string GetName() const { 
+                     return CSeqEntry_on_incnst_user::GetName_comm();}
       virtual void GetReport(CRef <CClickableItem>& c_item)
       {
           x_GetIncnstTestReport(c_item,GetName(), 
@@ -3735,7 +3736,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
       bool IsMixStrand(const CSeq_feat* seq_feat);
       bool IsMixedStrandGeneLocationOk(const CSeq_loc& feat_loc, const CSeq_loc& gene_loc);
       bool GeneRefMatch(const CGene_ref& gene1, const CGene_ref& gene2);
-      bool StrandOk(const int& strand1, const int& strand2);
   };
 
   class CBioseq_MISSING_LOCUS_TAGS : public CBioseqTestAndRepData
