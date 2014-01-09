@@ -1410,7 +1410,7 @@ static const s_test_property test_list[] = {
    {"ONCALLER_GENE_MISSING", fOncaller},
    {"ONCALLER_SUPERFLUOUS_GENE", 0},
    {"MISSING_GENES", fDiscrepancy | fAsndisc},
-   {"EXTRA_GENES", fDiscrepancy},
+   {"EXTRA_GENES", fDiscrepancy | fAsndisc},
    //tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>(new CBioseq_EXTRA_MISSING_GENES"));
    {"OVERLAPPING_CDS", fDiscrepancy | fAsndisc},
    {"RNA_CDS_OVERLAP", fDiscrepancy | fAsndisc},
@@ -1895,7 +1895,7 @@ void CRepConfig :: GetTestList()
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS") != end_it) {
-       thisGrp.tests_on_Bioseq_CFeat.push_back(CRef <CTestAndRepData>
+       thisGrp.tests_on_Bioseq_CFeat_CSeqdesc.push_back(CRef <CTestAndRepData>
             ( new CBioseq_MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS));
         if (++i >= sz) return;
    }
@@ -2025,7 +2025,7 @@ void CRepConfig :: GetTestList()
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("DISC_CDS_WITHOUT_MRNA") != end_it) {
-       thisGrp.tests_on_Bioseq_CFeat.push_back( 
+       thisGrp.tests_on_Bioseq_CFeat_CSeqdesc.push_back( 
            CRef <CTestAndRepData>( new CBioseq_DISC_CDS_WITHOUT_MRNA));
         if (++i >= sz) return;
    }
