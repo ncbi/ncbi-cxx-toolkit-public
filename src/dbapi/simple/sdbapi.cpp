@@ -807,7 +807,8 @@ CSDB_ConnectionParam::ComposeUrl(EThrowIfIncomplete allow_incomplete
              ||  m_Url.GetPath().empty()  ||  m_Url.GetPath() == "/"))
     {
         NCBI_THROW_FMT(CSDB_Exception, eURLFormat,
-                       "Connection parameters miss one of essential parts"
+                       "Connection parameters miss at least one essential part"
+                       " (host, user, password, or database [as \"path\"]): "
                        << m_Url.ComposeUrl(CUrlArgs::eAmp_Char));
     }
     return m_Url.ComposeUrl(CUrlArgs::eAmp_Char);
