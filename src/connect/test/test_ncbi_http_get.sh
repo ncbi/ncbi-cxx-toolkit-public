@@ -28,7 +28,7 @@ if [ "$ssl" = "1" -a "`echo $FEATURES | grep -vic '[-]GNUTLS'`" = "1" ]; then
   if [ -z "$proxy" -a "`netstat -a -n | grep -w 5556 | grep -c ':5556'`" != "0" ]; then
     url='https://localhost:5556'
   else
-    url='https://www.ncbi.nlm.nih.gov'
+    url='https://www.ncbi.nlm.nih.gov/Service/index.html'
   fi
 else
   url='http://www.ncbi.nlm.nih.gov/entrez/viewer.cgi?view=0&maxplex=1&save=idf&val=4959943'
