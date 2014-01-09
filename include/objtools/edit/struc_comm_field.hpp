@@ -133,4 +133,5 @@ END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif
-    // _STRUC_COMM_FIELD_H_
+// _STRUC_COMM_FIELD_H_
+

@@ -64,4 +64,5 @@ END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif
-    // _SEQID_GUESSER_H_
+// _SEQID_GUESSER_H_
+

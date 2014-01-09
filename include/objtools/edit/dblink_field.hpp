@@ -132,4 +132,5 @@ END_SCOPE(objects)
 END_NCBI_SCOPE
 
 #endif
-    // _DBLINK_FIELD_H_
+// _DBLINK_FIELD_H_
+
