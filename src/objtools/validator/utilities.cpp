@@ -1335,7 +1335,7 @@ void CheckBioseqEndsForNAndGap
 
         // check for gap at begining of sequence
         CSeqVector vec = bsh.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
-        if (vec.IsInGap(0) || vec.IsInGap(1)) {
+        if (vec.IsInGap(0) /* || vec.IsInGap(1) */ ) {
             begin_gap = eBioseqEndIsType_All;
             for (int i = 0; i < 10; i++) {
                 if (!vec.IsInGap(i)) {
@@ -1346,7 +1346,7 @@ void CheckBioseqEndsForNAndGap
         }
 
         // check for gap at end of sequence
-        if (vec.IsInGap (vec.size() - 2) || vec.IsInGap (vec.size() - 1)) {
+        if ( /* vec.IsInGap (vec.size() - 2) || */ vec.IsInGap (vec.size() - 1)) {
             end_gap = eBioseqEndIsType_All;
             for (int i = vec.size() - 11; i < vec.size(); i++) {
                 if (!vec.IsInGap(i)) {
@@ -1358,7 +1358,7 @@ void CheckBioseqEndsForNAndGap
 
         if (bsh.IsNa()) {
             // check for N bases at beginning of sequence
-            if (s_PosIsNNotGap(vec, 0) || s_PosIsNNotGap(vec, 1)) {
+            if (s_PosIsNNotGap(vec, 0) /* || s_PosIsNNotGap(vec, 1) */ ) {
                 begin_n = eBioseqEndIsType_All;
                 for (int i = 0; i < 10; i++) {
                     if (!s_PosIsNNotGap(vec, i)) {
@@ -1369,7 +1369,7 @@ void CheckBioseqEndsForNAndGap
             }
 
             // check for N bases at end of sequence
-            if (s_PosIsNNotGap(vec, vec.size() - 2) || s_PosIsNNotGap(vec, vec.size() - 1)) {
+            if ( /* s_PosIsNNotGap(vec, vec.size() - 2) || */ s_PosIsNNotGap(vec, vec.size() - 1)) {
                 end_n = eBioseqEndIsType_All;
                 for (int i = vec.size() - 10; i < vec.size(); i++) {
                     if (!s_PosIsNNotGap(vec, i)) {
