@@ -336,58 +336,60 @@ CComment_rule::TErrorList CComment_rule::IsValid(const CUser_object& user) const
     }
 
     // now look at dependent rules
-    ITERATE (CDependent_field_set::Tdata, depend_rule, GetDependent_rules().Get()) {
-        try {
-            string depend_field_name = (*depend_rule)->GetMatch_name();
-            const CUser_field& depend_field = user.GetField(depend_field_name);
-            string value = "";
-            if (depend_field.GetData().IsStr()) {
-                value = (depend_field.GetData().GetStr());
-            } else if (depend_field.GetData().IsInt()) {
-                value = NStr::IntToString(depend_field.GetData().GetInt());
-            }
-            if (((!(*depend_rule)->IsSetInvert_match() || !(*depend_rule)->GetInvert_match()) && (*depend_rule)->DoesStringMatchRuleExpression(value))
-                || ((*depend_rule)->IsSetInvert_match() && (*depend_rule)->GetInvert_match() && !(*depend_rule)->DoesStringMatchRuleExpression(value))) {
-                // other rules apply
-                ITERATE (CField_set::Tdata, other_rule, (*depend_rule)->GetOther_fields().Get()) {
-                    try {
-                        string other_field_name = (*other_rule)->GetField_name();
-                        const CUser_field& other_field = user.GetField(other_field_name);
-                        string other_value = "";
-                        if (other_field.GetData().IsStr()) {
-                            other_value = (other_field.GetData().GetStr());
-                        } else if (other_field.GetData().IsInt()) {
-                            other_value = NStr::IntToString(other_field.GetData().GetInt());
-                        }
-                        if (!(*other_rule)->DoesStringMatchRuleExpression(other_value)) {
-                            // post error about not matching format
-                            errors.push_back(TError((*other_rule)->GetSeverity(),
-                                         other_value + " is not a valid value for " + other_field_name
-                                         + " when " + depend_field_name + " has value '" + value + "'"));
-                        }
+    if (IsSetDependent_rules()) {
+        ITERATE (CDependent_field_set::Tdata, depend_rule, GetDependent_rules().Get()) {
+            try {
+                string depend_field_name = (*depend_rule)->GetMatch_name();
+                const CUser_field& depend_field = user.GetField(depend_field_name);
+                string value = "";
+                if (depend_field.GetData().IsStr()) {
+                    value = (depend_field.GetData().GetStr());
+                } else if (depend_field.GetData().IsInt()) {
+                    value = NStr::IntToString(depend_field.GetData().GetInt());
+                }
+                if (((!(*depend_rule)->IsSetInvert_match() || !(*depend_rule)->GetInvert_match()) && (*depend_rule)->DoesStringMatchRuleExpression(value))
+                    || ((*depend_rule)->IsSetInvert_match() && (*depend_rule)->GetInvert_match() && !(*depend_rule)->DoesStringMatchRuleExpression(value))) {
+                    // other rules apply
+                    ITERATE (CField_set::Tdata, other_rule, (*depend_rule)->GetOther_fields().Get()) {
+                        try {
+                            string other_field_name = (*other_rule)->GetField_name();
+                            const CUser_field& other_field = user.GetField(other_field_name);
+                            string other_value = "";
+                            if (other_field.GetData().IsStr()) {
+                                other_value = (other_field.GetData().GetStr());
+                            } else if (other_field.GetData().IsInt()) {
+                                other_value = NStr::IntToString(other_field.GetData().GetInt());
+                            }
+                            if (!(*other_rule)->DoesStringMatchRuleExpression(other_value)) {
+                                // post error about not matching format
+                                errors.push_back(TError((*other_rule)->GetSeverity(),
+                                             other_value + " is not a valid value for " + other_field_name
+                                             + " when " + depend_field_name + " has value '" + value + "'"));
+                            }
 
-                    } catch (CException) {
-                        // unable to find field
-                        if ((*other_rule)->IsSetRequired() && (*other_rule)->GetRequired()) {
+                        } catch (CException) {
+                            // unable to find field
+                            if ((*other_rule)->IsSetRequired() && (*other_rule)->GetRequired()) {
+                                errors.push_back(TError((*other_rule)->GetSeverity(),
+                                            "Required field " + (*other_rule)->GetField_name() + " is missing when "
+                                            + depend_field_name + " has value '" + value + "'"));
+                            }
+                        }
+                    }
+                    ITERATE (CField_set::Tdata, other_rule, (*depend_rule)->GetDisallowed_fields().Get()) {
+                        try {
+                            string other_field_name = (*other_rule)->GetField_name();
+                            // found field that should not be present
                             errors.push_back(TError((*other_rule)->GetSeverity(),
-                                        "Required field " + (*other_rule)->GetField_name() + " is missing when "
-                                        + depend_field_name + " has value '" + value + "'"));
+                                             other_field_name + " is not a valid field name when " + depend_field_name + " has value '" + value + "'"));                            
+                        } catch (CException ) {
+                            // did not find field, good
                         }
                     }
                 }
-                ITERATE (CField_set::Tdata, other_rule, (*depend_rule)->GetDisallowed_fields().Get()) {
-                    try {
-                        string other_field_name = (*other_rule)->GetField_name();
-                        // found field that should not be present
-                        errors.push_back(TError((*other_rule)->GetSeverity(),
-                                         other_field_name + " is not a valid field name when " + depend_field_name + " has value '" + value + "'"));                            
-                    } catch (CException ) {
-                        // did not find field, good
-                    }
-                }
+            } catch (CException ) {
+                // field not found
             }
-        } catch (CException ) {
-            // field not found
         }
     }
 
