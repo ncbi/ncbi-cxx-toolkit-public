@@ -364,7 +364,7 @@ class CDbIndex_Impl : public CDbIndex
         { 
             delete subject_map_;
             delete offset_data_;
-            if( mapfile_ != 0 ) mapfile_->Unmap(); 
+            if( mapfile_ != 0 ) { mapfile_->Unmap(); delete mapfile_; }
             else if ( map_start_ != 0 ) delete[] map_start_;
         }
 
