@@ -1025,11 +1025,8 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
     unsigned int host;
 
     if (!hostname  ||  !*hostname) {
-        char* p;
         if (s_gethostname(buf, sizeof(buf), log) != 0)
             return 0;
-        if ((p = strchr(buf, '.')) != 0)
-            *p = '\0';
         hostname = buf;
     }
 
