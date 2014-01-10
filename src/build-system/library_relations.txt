@@ -12038,6 +12038,10 @@ ximage needs3party $(TIFF_LIBS)
 ximage needs3party $(XPM_LIBS)
 ximage needs3party $(Z_LIBS)
 xml2 needs $(ORIG_LIBS)
+xmlreaders needs xmlwrapp
+xmlreaders needs xncbi
+xmlreaders needs3party $(LIBXML_LIBS)
+xmlreaders needs3party $(LIBXSLT_LIBS)
 xmlwrapp needs $(ORIG_LIBS)
 xmlwrapp needs3party $(LIBXML_LIBS)
 xmlwrapp needs3party $(LIBXSLT_LIBS)
