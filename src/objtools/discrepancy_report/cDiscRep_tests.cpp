@@ -761,17 +761,19 @@ void CBioseq_DISC_INCONSISTENT_MOLINFO_TECH :: GetReport(CRef <CClickableItem>& 
   CRef <CClickableItem> c_tech (new CClickableItem);
   c_tech->setting_name = GetName();
   c_tech->description = "technique";
-  bool has_missing = false;
-  if (tech2seqs.find("unknown") != tech2seqs.end()) {
-    has_missing = true;
-    AddSubcategory(c_tech, GetName()+ "$unknown", &(tech2seqs["unknown"]), 
-                   "Molinfo", "missing field technique", e_IsComment, false);
-    c_item->subcategories.push_back(c_tech);
-  }
+  bool has_missing = (tech2seqs.find("unknown") != tech2seqs.end()); 
   unsigned cnt = tech2seqs.size();
   if (cnt == 1) {
      if (has_missing) {
-          strtmp = " (all missing)";
+         AddSubcategory(c_tech, 
+                        GetName()+ "$unknown", 
+                        &(tech2seqs["unknown"]), 
+                        "Molinfo", 
+                        "missing field technique", 
+                         e_IsComment, 
+                         false);
+         c_item->subcategories.push_back(c_tech);
+         strtmp = " (all missing)";
      }
      else {
         Str2Strs::iterator it = tech2seqs.begin();
@@ -798,6 +800,17 @@ void CBioseq_DISC_INCONSISTENT_MOLINFO_TECH :: GetReport(CRef <CClickableItem>& 
                             "field technique value '" + it->first + "'", 
                             e_HasComment, 
                             false);
+         }
+         else {
+            AddSubcategory(c_tech,
+                           GetName() + "$" + it->first,
+                           &(it->second),
+                           "Molinfo is ",
+                           "Molinfos are ",
+                           e_OtherComment,
+                           false,
+                           " missing field technique.");
+
          }
       }
       c_item->subcategories.push_back(c_tech);
@@ -2189,6 +2202,10 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
    if (thisTest.is_TaxDef_run) return;
    thisTest.is_TaxDef_run = true;
 
+   bool run_dup = (thisTest.tests_run.find(GetName_dup()) != end_it);
+   bool run_inc = (thisTest.tests_run.find(GetName_inc()) != end_it);
+   bool run_missing = (thisTest.tests_run.find(GetName_missing()) != end_it);
+
    string taxnm(kEmptyStr), title(kEmptyStr), tax_desc;
    CConstRef <CObject> src_ref (null);
    ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
@@ -2210,9 +2227,7 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
       }
 
       // DISC_DUP_DEFLINE 
-      if (!bioseq.IsAa()
-            && !title.empty()
-            && thisTest.tests_run.find(GetName_dup()) != end_it ) {
+      if (run_dup && !bioseq.IsAa() && !title.empty()) {
           strtmp = NStr::ToUpper(title);
           thisInfo.test_item_list[GetName_dup()].push_back(strtmp + "$" + desc);
           thisInfo.test_item_objs[GetName_dup() +"$" + strtmp]
@@ -2220,8 +2235,7 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
       }
 
       // INCONSISTENT_SOURCE_DEFLINE
-      if (!title.empty()
-              && thisTest.tests_run.find(GetName_inc()) != end_it ) {
+      if (run_inc && !title.empty()) {
          if (title.find(taxnm) == string::npos) {
             thisInfo.test_item_list[GetName_inc()].push_back(
                                                        taxnm + "$" + tax_desc);
@@ -2234,8 +2248,7 @@ void CBioseq_on_tax_def :: TestOnObj(const CBioseq& bioseq)
       }
       
       // TEST_TAXNAME_NOT_IN_DEFLINE
-      if (!bioseq.IsAa() 
-                && thisTest.tests_run.find(GetName_missing()) != end_it) { 
+      if (run_missing && !bioseq.IsAa()) {
         if (NStr::EqualNocase(taxnm, "Human immunodeficiency virus 1")) {
               lookfor = "HIV-1";
         }
@@ -2294,21 +2307,23 @@ void CBioseq_DISC_DUP_DEFLINE :: GetReport(CRef <CClickableItem>& c_item)
                       + "identical";
           }
           else {
-              AddSubcategory(c_item, GetName(), &(iit->second), "definition line",
-                                                    "identical", e_IsComment, false);
-              AddSubcategory(c_item, GetName(), &unique, "definition line", 
-                                                    "unique", e_IsComment, false);
+              AddSubcategory(c_item, GetName(), &(iit->second), 
+                            "definition line", "identical", e_IsComment, false);
+              AddSubcategory(c_item, GetName(), &unique, 
+                             "definition line", "unique", e_IsComment, false);
               c_item->description = "Defline Problem Report";
           }
       }
       else {
          ITERATE (Str2Strs, it, def2ls) {
             if (it->second.size() > 1)
-              AddSubcategory(c_item, GetName(), &(it->second), "definition line",
-                                                    "identical", e_IsComment, false);
+              AddSubcategory(c_item, GetName(), &(it->second), 
+                            "definition line", "identical", e_IsComment, false);
          }
-         AddSubcategory(c_item, GetName(), &unique, "definition line",
-                                                    "unique", e_IsComment, false);
+         if (!unique.empty()) {
+             AddSubcategory(c_item, GetName(), &unique, "definition line",
+                            "unique", e_IsComment, false);
+         }
          c_item->description = "Defline Problem Report";
       }
    }
@@ -3083,7 +3098,7 @@ void CBioseq_on_mrna :: TestOnObj(const CBioseq& bioseq)
 
   bool has_qual_ids = false;
   if (bioseq.GetInst().GetMol() != CSeq_inst::eMol_dna 
-                         || !IsBioseqHasLineage(bioseq, "Eukaryota", false)) {
+           || !IsBioseqHasLineage(bioseq, "Eukaryota", false)) {
          return;
   }
   ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
@@ -5366,16 +5381,21 @@ bool CSeqEntry_INCONSISTENT_BIOSOURCE :: SynonymsMatch(const COrg_ref& org1, con
 
 bool CSeqEntry_INCONSISTENT_BIOSOURCE :: DbtagMatch(const COrg_ref& org1, const COrg_ref& org2)
 {
-    bool has_db1 = org1.CanGetDb(), has_db2 = org2.CanGetDb();
+    bool has_db1 = (org1.CanGetDb() && !org1.GetDb().empty());
+    bool has_db2 = (org2.CanGetDb() && !org2.GetDb().empty());
 
     if ( !has_db1 && !has_db2) return true;
     else if ( has_db1 && has_db2)  {
       const vector < CRef < CDbtag > >& db1 = org1.GetDb();
       const vector < CRef < CDbtag > >& db2 = org2.GetDb();
 
-      if (db1.size() != db2.size()) return false;
+      if (db1.size() != db2.size()) {
+           return false;
+      }
       for (unsigned i=0; i< db1.size(); i++) {   // already sorted
-           if ( !db1[i]->Match(*db2[i]) ) return false;
+           if ( !db1[i]->Match(*db2[i]) ) {
+              return false;
+           }
       };
       return true;
     }
@@ -5386,14 +5406,17 @@ bool CSeqEntry_INCONSISTENT_BIOSOURCE :: DbtagMatch(const COrg_ref& org1, const 
 
 bool CSeqEntry_INCONSISTENT_BIOSOURCE :: OrgModSetMatch(const COrgName& nm1, const COrgName& nm2) 
 {
-  bool has_mod1 = nm1.CanGetMod(), has_mod2 = nm2.CanGetMod();
+  bool has_mod1 = (nm1.CanGetMod() && !nm1.GetMod().empty());
+  bool has_mod2 = (nm2.CanGetMod() && !nm2.GetMod().empty());
 
   if (!has_mod1 && !has_mod2) return true;
   if (has_mod1 && has_mod2) {
      const list < CRef <COrgMod> >& mod1= nm1.GetMod();
      const list < CRef <COrgMod> >& mod2 = nm2.GetMod();
 
-     if ( (mod1.size() != mod2.size()) || mod1.empty()) return false;
+     if ( (mod1.size() != mod2.size())) {
+          return false;
+     }
      list < CRef < COrgMod > > ::const_iterator it, jt;
      // already sorted
      for (it = mod1.begin(), jt = mod2.begin(); it != mod1.end(); it++, jt++) {
@@ -5424,10 +5447,12 @@ bool CSeqEntry_INCONSISTENT_BIOSOURCE :: OrgNameMatch(const COrg_ref& org1, cons
      const COrgName& nm1 = org1.GetOrgname();
      const COrgName& nm2 = org2.GetOrgname();
 
-     COrgName::C_Name::E_Choice choc1 = nm1.CanGetName()? 
-                                          nm1.GetName().Which(): COrgName::C_Name::e_not_set;
-     COrgName::C_Name::E_Choice choc2 = nm2.CanGetName()? 
-                                          nm1.GetName().Which(): COrgName::C_Name::e_not_set;
+     COrgName::C_Name::E_Choice 
+           choc1 = nm1.CanGetName()? 
+                     nm1.GetName().Which(): COrgName::C_Name::e_not_set;
+     COrgName::C_Name::E_Choice 
+           choc2 = nm2.CanGetName()?  
+                     nm1.GetName().Which(): COrgName::C_Name::e_not_set;
      int gcode1 = nm1.CanGetGcode()? nm1.GetGcode(): 0;
      int gcode2 = nm2.CanGetGcode()? nm2.GetGcode(): 0;
      int mgcode1 = nm1.CanGetMgcode()? nm1.GetMgcode() : 0;
@@ -5439,12 +5464,22 @@ bool CSeqEntry_INCONSISTENT_BIOSOURCE :: OrgNameMatch(const COrg_ref& org1, cons
      string div1 = nm1.CanGetDiv()? nm1.GetDiv() : kEmptyStr;
      string div2 = nm2.CanGetDiv()? nm2.GetDiv() : kEmptyStr;
 
-     if (choc1 != choc2 || gcode1 != gcode2 || mgcode1 != mgcode2 || att1 != att2 
-               || lin1 != lin2 || div1 != div2 || !OrgModSetMatch(nm1, nm2)) 
+     if (choc1 != choc2 
+             || gcode1 != gcode2 
+             || mgcode1 != mgcode2 
+             || att1 != att2 
+             || lin1 != lin2 
+             || div1 != div2 
+             || !OrgModSetMatch(nm1, nm2)) {
            return false;
-     else return true;
+     }
+     else {
+       return true;
+     }
    }
-   else return false;
+   else { 
+       return false;
+   }
 }; // OrgNameMatch 
 
 
@@ -5586,16 +5621,20 @@ string CSeqEntry_INCONSISTENT_BIOSOURCE :: DescribeOrgNameDifferences(const COrg
    bool has_orgnm1 = org1.CanGetOrgname();
    bool has_orgnm2 = org2.CanGetOrgname();
 
-   if (!has_orgnm1 && !has_orgnm2) return(kEmptyStr);
+   if (!has_orgnm1 && !has_orgnm2) {
+          return(kEmptyStr);
+   }
    else if (has_orgnm1 && has_orgnm2) {
      string org_nm_diff_str(kEmptyStr);
      const COrgName& nm1 = org1.GetOrgname();
      const COrgName& nm2 = org2.GetOrgname();
 
-     COrgName::C_Name::E_Choice choc1 = nm1.CanGetName()?
-                                          nm1.GetName().Which(): COrgName::C_Name :: e_not_set;
-     COrgName::C_Name::E_Choice choc2 = nm2.CanGetName()?
-                                          nm2.GetName().Which(): COrgName::C_Name :: e_not_set;
+     COrgName::C_Name::E_Choice 
+          choc1 = nm1.CanGetName()?
+                    nm1.GetName().Which(): COrgName::C_Name :: e_not_set;
+     COrgName::C_Name::E_Choice 
+          choc2 = nm2.CanGetName()?
+                     nm2.GetName().Which(): COrgName::C_Name :: e_not_set;
      int gcode1 = nm1.CanGetGcode()? nm1.GetGcode(): 0;
      int gcode2 = nm2.CanGetGcode()? nm2.GetGcode(): 0;
      int mgcode1 = nm1.CanGetMgcode()? nm1.GetMgcode() : 0;
@@ -5607,18 +5646,34 @@ string CSeqEntry_INCONSISTENT_BIOSOURCE :: DescribeOrgNameDifferences(const COrg
      string div1 = nm1.CanGetDiv()? nm1.GetDiv() : kEmptyStr;
      string div2 = nm2.CanGetDiv()? nm2.GetDiv() : kEmptyStr;
 
-     if (choc1 != choc2) org_nm_diff_str = "orgname choices differ, ";
-     if (gcode1 != gcode2) org_nm_diff_str += "genetic codes differ, ";
-     if (mgcode1 != mgcode2) org_nm_diff_str += "mitochondrial genetic codes differ, ";
-     if (att1 != att2) org_nm_diff_str += "attributes differ, ";
-     if (lin1 != lin2) org_nm_diff_str += "lineages differ, ";
-     if (div1 != div2) org_nm_diff_str += "divisions differ, ";
+     if (choc1 != choc2) {
+          org_nm_diff_str = "orgname choices differ, ";
+     }
+     if (gcode1 != gcode2) {
+         org_nm_diff_str += "genetic codes differ, ";
+     }
+     if (mgcode1 != mgcode2) {
+          org_nm_diff_str += "mitochondrial genetic codes differ, ";
+     }
+     if (att1 != att2) {
+         org_nm_diff_str += "attributes differ, ";
+     }
+     if (lin1 != lin2) {
+         org_nm_diff_str += "lineages differ, ";
+     }
+     if (div1 != div2) {
+        org_nm_diff_str += "divisions differ, ";
+     }
      string tmp = OrgModSetDifferences(nm1, nm2);
-     if (!tmp.empty()) org_nm_diff_str += tmp + ", ";
+     if (!tmp.empty()) {
+         org_nm_diff_str += tmp + ", ";
+     }
      org_nm_diff_str = org_nm_diff_str.substr(0, org_nm_diff_str.size()-2);
      return (org_nm_diff_str); 
    }
-   else return ("One Orgname is missing, ");
+   else {
+      return ("One Orgname is missing, ");
+   }
 }
 
 
@@ -6030,26 +6085,38 @@ void CBioseq_test_on_rna :: FindMissingRNAsInList()
 
 bool CBioseq_test_on_rna :: RRnaMatch(const CRNA_ref& rna1, const CRNA_ref& rna2)
 {
-  if (!rna1.CanGetExt() && !rna2.CanGetExt()) return true;
+  if (!rna1.CanGetExt() && !rna2.CanGetExt()) {
+        return true;
+  }
   else if (rna1.CanGetExt() && rna2.CanGetExt()) {
     const CRNA_ref::C_Ext& ext1 = rna1.GetExt();
     const CRNA_ref::C_Ext& ext2 = rna2.GetExt();
-    if (ext1.Which() != ext2.Which()) return false;
+    if (ext1.Which() != ext2.Which()) {
+       return false;
+    }
     else {
       if (ext1.IsName()) {
-          if (ext1.GetName() == ext2.GetName()) return true;
-          else return false;
+          if (ext1.GetName() == ext2.GetName()) {
+              return true;
+          }
+          else {
+             return false;
+          }
       }
       else if (ext1.IsTRNA()) {
          const CTrna_ext& trna1 = ext1.GetTRNA();
          const CTrna_ext& trna2 = ext2.GetTRNA();
          bool has_aa1 = trna1.CanGetAa();
          bool has_aa2 = trna2.CanGetAa();
-         if (has_aa1 != has_aa2) return false;
+         if (has_aa1 != has_aa2) {
+             return false;
+         }
          else {
             const CTrna_ext::C_Aa& aa1 = trna1.GetAa();
             const CTrna_ext::C_Aa& aa2 = trna2.GetAa();
-            if (aa1.Which() != aa2.Which()) return false;
+            if (aa1.Which() != aa2.Which()) {
+                  return false;
+            }
             else {
                int iaa1, iaa2; 
                if (aa1.IsIupacaa()) {
@@ -6068,9 +6135,15 @@ bool CBioseq_test_on_rna :: RRnaMatch(const CRNA_ref& rna1, const CRNA_ref& rna2
                    iaa1 = aa1.GetNcbistdaa();
                    iaa2 = aa2.GetNcbistdaa();
                }
-               else return true;
-               if (iaa1 == iaa2) return true;
-               else return false;
+               else {
+                  return true;
+               }
+               if (iaa1 == iaa2) {
+                   return true;
+               }
+               else {
+                  return false;
+               }
             }
          }
       }
@@ -6079,26 +6152,35 @@ bool CBioseq_test_on_rna :: RRnaMatch(const CRNA_ref& rna1, const CRNA_ref& rna2
         const CRNA_gen& gen2 = ext2.GetGen();
         string class1 = gen1.CanGetClass() ? gen1.GetClass() : kEmptyStr;
         string class2 = gen2.CanGetClass() ? gen2.GetClass() : kEmptyStr;
-        if (class1 != class2) return false;
+        if (class1 != class2) {
+             return false;
+        }
         string prod1 = gen1.CanGetProduct() ? gen1.GetProduct() : kEmptyStr;
         string prod2 = gen2.CanGetProduct() ? gen2.GetProduct() : kEmptyStr;
-        if (prod1 != prod2) return false;
-        bool has_quals1 = gen1.CanGetQuals();
-        bool has_quals2 = gen2.CanGetQuals();
-        if (has_quals1 != has_quals2) return false;
+        if (prod1 != prod2) {
+               return false;
+        }
+        bool has_quals1 =(gen1.CanGetQuals() && !gen1.GetQuals().Get().empty());
+        bool has_quals2 =(gen2.CanGetQuals() && !gen2.GetQuals().Get().empty());
+        if (has_quals1 != has_quals2) {
+              return false;
+        }
         else if (has_quals1) { 
           unsigned sz1 = gen1.GetQuals().Get().size();
           unsigned sz2 = gen2.GetQuals().Get().size(); 
           if (sz1 != sz2) return false;
-          else if (!sz1) return true;
           else {
              Str2Str qual1_vlu;
              ITERATE (list <CRef <CRNA_qual> >, it, gen1.GetQuals().Get()) {
                 qual1_vlu[(*it)->GetQual()] = (*it)->GetVal();
              }
              ITERATE (list <CRef <CRNA_qual> >, it, gen2.GetQuals().Get()) {
-                if (qual1_vlu.find((*it)->GetQual()) == qual1_vlu.end()) return false;
-                else if (qual1_vlu[(*it)->GetQual()] != (*it)->GetVal()) return false;
+                if (qual1_vlu.find((*it)->GetQual()) == qual1_vlu.end()) {
+                     return false;
+                }
+                else if (qual1_vlu[(*it)->GetQual()] != (*it)->GetVal()) {
+                   return false;
+                }
              }
              return true;
           } 
@@ -6893,7 +6975,8 @@ void CBioseq_OVERLAPPING_CDS :: AddToDiscRep(const CSeq_feat* seq_feat)
                         || string::npos != NStr::FindNoCase(comm, "frame shift")
                         || string::npos != NStr::FindNoCase(comm, "extend") ) {
               thisInfo.test_item_list[GetName()].push_back("comment$" + desc);
-              thisInfo.test_item_objs[GetName() + "$comment"].push_back(feat_ref);
+              thisInfo.test_item_objs[GetName() + "$comment"]
+                         .push_back(feat_ref);
               has_comment = true;
          }
          
@@ -9221,7 +9304,7 @@ void CSeqEntry_test_on_biosrc :: IniMap(const list <CRef <CPCRPrimer> >& ls, Str
 bool CSeqEntry_test_on_biosrc :: SamePrimerList(const list <CRef <CPCRPrimer> >& ls1,
 const list <CRef <CPCRPrimer> >& ls2)
 {
-   if ( (ls1.size() != ls2.size()) || ls1.empty()) return false;
+   if ( (ls1.size() != ls2.size())) return false;
    Str2Int map1, map2;
    IniMap(ls1, map1);
    IniMap(ls2, map1);
@@ -9232,14 +9315,12 @@ const list <CRef <CPCRPrimer> >& ls2)
 
 bool CSeqEntry_test_on_biosrc :: SamePCRReaction(const CPCRReaction& pcr1, const CPCRReaction& pcr2)
 {
-  bool has_fwd1 = pcr1.CanGetForward();
-  bool has_rev1 = pcr1.CanGetReverse();
-  bool has_fwd2 = pcr1.CanGetForward();
-  bool has_rev2 = pcr1.CanGetReverse();
+  bool has_fwd1 = (pcr1.CanGetForward() && !pcr1.GetForward().Get().empty());
+  bool has_rev1 = (pcr1.CanGetReverse() && !pcr1.GetReverse().Get().empty());
+  bool has_fwd2 = (pcr2.CanGetForward() && !pcr2.GetForward().Get().empty());
+  bool has_rev2 = (pcr2.CanGetReverse() && !pcr2.GetReverse().Get().empty());
 
-  if ((has_fwd1 != has_fwd2) 
-             || (has_rev1 != has_rev2) 
-             || (!has_fwd1 && !has_rev1)) {
+  if ((has_fwd1 != has_fwd2) || (has_rev1 != has_rev2)) {
       return false;
   }
   if (has_fwd1) { 
@@ -9251,7 +9332,7 @@ bool CSeqEntry_test_on_biosrc :: SamePCRReaction(const CPCRReaction& pcr1, const
      return (SamePrimerList(pcr1.GetReverse().Get(), pcr2.GetReverse().Get()));
   };
 
-  return false;
+  return true;
 };
 
 void CSeqEntry_DISC_REQUIRED_STRAIN :: GetReport(CRef <CClickableItem>& c_item)
@@ -10121,10 +10202,14 @@ void CSeqEntry_ONCALLER_MISSING_STRUCTURED_COMMENTS :: GetReport(CRef <CClickabl
   string desc;
   if (bioseq2cnt.size() > 1) {
     ITERATE (Str2Strs, it, bioseq2cnt) {
-       desc = (it->first == "1" || it->first == "0")
-                   ? " structured comment":" structured comments";
+       if (it->first == "0") {
+          desc = "no structured comment";
+       }
+       else {
+          desc =it->first + " structured comment " + ((it->first =="1")?"":"s");
+       }
        AddSubcategory(c_item,  GetName() + "$" + it->first, &(it->second), 
-                      "sequence", it->first + desc, e_HasComment, false);
+                      "sequence", desc, e_HasComment, false);
     }
     c_item->description 
          = "Sequences have different numbers of structured comments.";

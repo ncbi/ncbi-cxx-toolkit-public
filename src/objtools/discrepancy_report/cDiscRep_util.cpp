@@ -811,7 +811,7 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_entry& seq_entry)
 
 string CTestAndRepData :: GetDiscItemText(const CSeq_submit& seq_submit)
 {
-  string desc;
+  string desc(kEmptyStr);
   if (seq_submit.GetData().IsEntrys()) {
      const list <CRef <CSeq_entry> >& entrys = seq_submit.GetData().GetEntrys();
      if (!entrys.empty()) {
@@ -847,7 +847,7 @@ string CTestAndRepData :: GetDiscItemTextForBioseqSet(const CBioseq_set& bioseq_
                                            CSeq_id::e_Genbank);
   } else {
     const list < CRef < CSeq_entry > >& seq_entrys = bioseq_set.GetSeq_set();
-    if (seq_entrys.empty()) {
+    if (!seq_entrys.empty()) {
        if ( (*(seq_entrys.begin()))->IsSeq()) {
          row_text = "Set containing "  
                  + BioseqToBestSeqIdString((*(seq_entrys.begin()))->GetSeq(), 
