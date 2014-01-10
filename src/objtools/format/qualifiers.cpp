@@ -1547,14 +1547,14 @@ void CFlatModelEvQVal::Format
     {
         text << section_prefix;
 
-        text << rnaseq_base_coverage << "% coverage by RNAseq alignments";
+        text << rnaseq_base_coverage << "% coverage of the annotated genomic feature by RNAseq alignments";
         if( rnaseq_biosamples_introns_full > 0 ) {
             text << ", including " << rnaseq_biosamples_introns_full;
             text << " sample";
             if( rnaseq_biosamples_introns_full > 1 ) {
                 text << 's';
             }
-            text << " with support for all introns";
+            text << " with support for all annotated introns";
         }
 
         section_prefix = ", and ";
