@@ -68,6 +68,10 @@ public:
         CMappedFeat,
         unsigned int =0);
 
+    virtual bool AssignFromAsnLinear(
+        CMappedFeat,
+        unsigned int =0);
+
     bool AssignParent(
         const CGff3WriteRecordFeature& );
 

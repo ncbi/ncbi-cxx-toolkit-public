@@ -304,7 +304,8 @@ void sRunTest(const string &sTestName, const STestInfo & testInfo, bool keep)
     if (!success) {
         CDirEntry deResult = CDirEntry(resultName);
         if (keep) {
-            deResult.Copy(testInfo.mOutFile.GetPath() + "." + extKeep);
+            deResult.Copy(testInfo.mOutFile.GetPath() + "." + extKeep, 
+                CDirEntry::fCF_Overwrite);
         }
         deResult.Remove();
         CDirEntry(logName).Remove();

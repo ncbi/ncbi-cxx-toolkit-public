@@ -83,7 +83,7 @@ bool CGff3FlybaseWriter::x_WriteAlignDisc(
     const CSeq_align& align)
 //  ----------------------------------------------------------------------------
 {
-    CGff3Writer::x_WriteAlignDisc(align);
+    CGff3Writer::xWriteAlignDisc(align);
     m_Os << "###" << endl;
     return true;
 }

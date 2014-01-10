@@ -135,6 +135,15 @@ CGff3WriteRecordFeature::~CGff3WriteRecordFeature()
 };
 
 //  ----------------------------------------------------------------------------
+bool CGff3WriteRecordFeature::AssignFromAsnLinear(
+    CMappedFeat mf,
+    unsigned int flags )
+//  ----------------------------------------------------------------------------
+{
+    return CGffWriteRecordFeature::AssignFromAsn(mf, flags);
+}
+
+//  ----------------------------------------------------------------------------
 bool CGff3WriteRecordFeature::AssignFromAsn(
     CMappedFeat mf,
     unsigned int flags )
