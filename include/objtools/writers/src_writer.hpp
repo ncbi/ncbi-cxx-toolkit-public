@@ -51,7 +51,6 @@ class NCBI_XOBJWRITE_EXPORT CSrcError:
 //  ============================================================================
 {   
 protected: 
-    //creates known deprecation warning for now
     CSrcError(const CLineError& other):CLineError(other){};
     CSrcError(
         ncbi::EDiagSev severity,

@@ -349,8 +349,7 @@ class NCBI_XOBJUTIL_EXPORT CLineError:
 {
 public:
 
-    /// The CLineError constructor is deprecated and will be removed at some
-    /// point so please use this instead.
+    /// Use this because the constructor is protected.
     ///
     /// @returns
     ///   Caller is responsible for the return value.
@@ -365,30 +364,13 @@ public:
         const std::string & strErrorMessage = string(""),
         const TVecOfLines & vecOfOtherLines = TVecOfLines() );
 
-    /// This is marked deprecated because it will eventually become
-    /// protected instead of public.  Please use the Create function instead.
-    NCBI_DEPRECATED_CTOR(CLineError(
-        EProblem eProblem,
-        EDiagSev eSeverity,
-        const std::string& strSeqId,
-        unsigned int uLine,
-        const std::string & strFeatureName,
-        const std::string & strQualifierName,
-        const std::string & strQualifierValue,
-        const std::string & strErrorMessage,
-        const TVecOfLines & m_vecOfOtherLine));
-
-    /// This is marked deprecated because it will eventually become
-    /// protected instead of public.  Please use the Throw function to throw
-    /// this exception and try to avoid using the copy constructor at all.
-    NCBI_DEPRECATED_CTOR(CLineError(const CLineError & rhs ));
-
+    /// Use this because copy ctor is protected.
     virtual ILineError *Clone(void) const;
 
     virtual ~CLineError(void) throw() {}
 
-    /// copy constructor will be hidden some day, so please use this function to
-    /// make this class throw.
+    /// copy constructor is protected so please use this function to
+    /// throw the object.
     NCBI_NORETURN void Throw(void) const;
        
     void PatchLineNumber(
@@ -447,6 +429,22 @@ protected:
     std::string m_strQualifierValue;
     std::string m_strErrorMessage;
     TVecOfLines m_vecOfOtherLines;
+
+    /// protected instead of public.  Please use the Create function instead.
+    CLineError(
+        EProblem eProblem,
+        EDiagSev eSeverity,
+        const std::string& strSeqId,
+        unsigned int uLine,
+        const std::string & strFeatureName,
+        const std::string & strQualifierName,
+        const std::string & strQualifierValue,
+        const std::string & strErrorMessage,
+        const TVecOfLines & m_vecOfOtherLine);
+
+    /// protected instead of public.  Please use the Throw function to throw
+    /// this exception and try to avoid using the copy constructor at all.
+    CLineError(const CLineError & rhs );
 };
 
 //  ============================================================================
@@ -461,7 +459,7 @@ public:
     using CObjReaderParseException::EErrCode;
 
     /// Please use this instead of the constructor because the ctor
-    /// will be moved from public to protected at some point.
+    /// is protected.
     ///
     /// @returns
     ///   Caller is responsible for the return value.
@@ -478,34 +476,14 @@ public:
         const TVecOfLines & vecOfOtherLines = TVecOfLines()
         );
 
+    /// Use instead of copy constructor, which is protected.
     virtual ILineError *Clone(void) const;
 
-    // Copy constructor will eventually become protected, so please use 
-    /// this function to make this function to throw.
+    // Copy constructor is protected, so please use 
+    /// this function to throw this object.
     NCBI_NORETURN void Throw(void) const;
 
     ~CObjReaderLineException(void) throw() { }
-
-    /// This is marked deprecated because it will eventually become
-    /// protected instead of public.  Please use the Create function instead.
-    NCBI_DEPRECATED_CTOR(
-    CObjReaderLineException(
-        EDiagSev eSeverity,
-        unsigned int uLine,
-        const std::string &strMessage,
-        EProblem eProblem = eProblem_GeneralParsingError,
-        const std::string& strSeqId = string(""),
-        const std::string & strFeatureName = string(""),
-        const std::string & strQualifierName = string(""),
-        const std::string & strQualifierValue = string(""),
-        CObjReaderLineException::EErrCode eErrCode = eFormat,
-        const TVecOfLines & vecOfOtherLines = TVecOfLines()
-        ));
-
-    /// This will become protected at some point in the future, so please
-    /// avoid using it.  To throw this exception, use the Throw function
-    NCBI_DEPRECATED_CTOR(
-    CObjReaderLineException(const CObjReaderLineException & rhs ));
 
     TErrCode GetErrCode(void) const 
     { 
@@ -552,6 +530,23 @@ protected:
     std::string m_strQualifierValue;
     std::string m_strErrorMessage;
     TVecOfLines m_vecOfOtherLines;
+
+    /// protected instead of public.  Please use the Create function instead.
+    CObjReaderLineException(
+        EDiagSev eSeverity,
+        unsigned int uLine,
+        const std::string &strMessage,
+        EProblem eProblem = eProblem_GeneralParsingError,
+        const std::string& strSeqId = string(""),
+        const std::string & strFeatureName = string(""),
+        const std::string & strQualifierName = string(""),
+        const std::string & strQualifierValue = string(""),
+        CObjReaderLineException::EErrCode eErrCode = eFormat,
+        const TVecOfLines & vecOfOtherLines = TVecOfLines()
+        );
+
+    /// Protected, so use Clone or Throw instead.
+    CObjReaderLineException(const CObjReaderLineException & rhs );
 };
 
     
