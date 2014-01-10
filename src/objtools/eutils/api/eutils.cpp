@@ -103,7 +103,7 @@ void CEUtils_Request::Connect(void)
         m_Stream.reset(new CConn_HttpStream(
             url,
             NULL,
-            "Content-type: application/x-www-form-urlencoded",
+            "Content-Type: application/x-www-form-urlencoded",
             NULL, NULL, NULL, NULL,
             fHTTP_AutoReconnect,
             timeout));
@@ -147,7 +147,7 @@ string CEUtils_Request::GetQueryString(void) const
     const string& webenv = GetConnContext()->GetWebEnv();
     if ( !webenv.empty() ) {
         if ( !args.empty() ) {
-            args += "&";
+            args += '&';
         }
         args += "WebEnv=" +
             NStr::URLEncode(webenv, NStr::eUrlEnc_ProcessMarkChars);
@@ -155,14 +155,14 @@ string CEUtils_Request::GetQueryString(void) const
     string qk = GetQueryKey();
     if ( !qk.empty() ) {
         if ( !args.empty() ) {
-            args += "&";
+            args += '&';
         }
         args += "query_key=" + qk;
     }
     const string& tool = GetConnContext()->GetTool();
     if ( !tool.empty() ) {
         if ( !args.empty() ) {
-            args += "&";
+            args += '&';
         }
         args += "tool=" +
             NStr::URLEncode(tool, NStr::eUrlEnc_ProcessMarkChars);
@@ -170,16 +170,16 @@ string CEUtils_Request::GetQueryString(void) const
     const string& email = GetConnContext()->GetEmail();
     if ( !email.empty() ) {
         if ( !args.empty() ) {
-            args += "&";
+            args += '&';
         }
         args += "email=" +
             NStr::URLEncode(email, NStr::eUrlEnc_ProcessMarkChars);
     }
     ITERATE(TRequestArgs, it, m_Args) {
         if ( !args.empty() ) {
-            args += "&";
+            args += '&';
         }
-        args += it->first + "=" +
+        args += it->first + '=' +
             NStr::URLEncode(it->second, NStr::eUrlEnc_ProcessMarkChars);
     }
     return args;
@@ -206,8 +206,10 @@ CObjectIStream* CEUtils_Request::GetObjectIStream(void)
 
 void CEUtils_Request::Read(string* content)
 {
-    content->erase();
     char buf[4096];
+    if ( content ) {
+        content->erase();
+    }
     CNcbiIostream& is = GetStream();
     while ( is.good() ) {
         is.read(buf, sizeof(buf));
@@ -290,7 +292,7 @@ string CEUtils_IdGroupSet::AsQueryString(void) const
     string ret;
     ITERATE(TIdGroupSet, it, m_Groups) {
         if ( !ret.empty() ) {
-            ret += "&";
+            ret += '&';
         }
         ret += it->AsQueryString();
     }
