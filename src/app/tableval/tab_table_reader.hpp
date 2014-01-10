@@ -44,36 +44,36 @@ public:
 
    // If you need messages and error to be logged
    // supply an optional IMessageListener instance
-   CTabDelimitedValidator(CNcbiOstream* out_stream, e_Flags flags = e_tab_tab_delim): 
-   m_out_stream(out_stream), m_flags(flags)
+   CTabDelimitedValidator(e_Flags flags = e_tab_tab_delim): 
+   m_flags(flags)
    {
    }
 
    // TODO: replace with options flags instead of parameters
    void ValidateInput(ILineReader& reader, 
-       const CTempString& default_collumns, const CTempString& required,
+       const CTempString& default_columns, const CTempString& required,
        const CTempString& ignored);
 
+   void GenerateOutput(CNcbiOstream* out_stream, bool no_headers);
+
 private:
-    void _Validate(int col_number, const CTempString& value);
+    bool _Validate(int col_number, const CTempString& value);
 
     void _OperateRows(ILineReader& reader);
-    bool _ProcessHeader(ILineReader& reader, const CTempString& default_collumns);
-    void _GenerateReport();
+    bool _ProcessHeader(ILineReader& reader, const CTempString& default_columns);
 
-    bool _MakeColumns(const string& message, const CTempString& collumns, vector<bool>& col_defs);
+    bool _MakeColumns(const string& message, const CTempString& columns, vector<bool>& col_defs);
 
     void _ReportError(int col_number, const CTempString& error);
-    void _ReportTab();
-    void _ReportXML();
+    void _ReportTab(CNcbiOstream* out_stream);
+    void _ReportXML(CNcbiOstream* out_stream, bool no_headers);
     int  m_current_row_number;
     CTempString m_delim;
-    vector<CTempStringEx> m_col_defs;
-    vector<bool>          m_required_cols;
-    vector<bool>          m_ignored_cols;
+    vector<string> m_col_defs;
+    vector<bool>   m_required_cols;
+    vector<bool>   m_ignored_cols;
 
     list<CTabDelimitedValidatorError> m_errors;
-    CNcbiOstream* m_out_stream;
     e_Flags m_flags;
 };
 

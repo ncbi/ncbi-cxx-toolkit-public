@@ -7,7 +7,7 @@
 #################################
 
 APP = tableval
-SRC = tableval tab_table_reader
+SRC = tableval tab_table_reader col_validator
 
 
 LIB  = xmlwrapp \

@@ -278,11 +278,12 @@ void CTAbleValApp::ProcessOneFile(CNcbiIstream& input, CNcbiOstream* output)
    if (m_format == "text")
        flags |= CTabDelimitedValidator::e_tab_text_report;
 
-   CTabDelimitedValidator validator(output, CTabDelimitedValidator::e_Flags(flags));
+   CTabDelimitedValidator validator((CTabDelimitedValidator::e_Flags)flags);
 
    CRef<ILineReader> reader(ILineReader::New(input));
 
    validator.ValidateInput(*reader, m_columns_def, m_required_cols, m_ignored_cols);
+   validator.GenerateOutput(output, false);
 }
 
 void CTAbleValApp::ProcessOneFile()

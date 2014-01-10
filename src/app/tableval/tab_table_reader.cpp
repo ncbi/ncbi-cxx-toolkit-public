@@ -38,15 +38,22 @@
 #include "tab_table_reader.hpp"
 
 #include <misc/xmlwrapp/xmlwrapp.hpp>
+#include "col_validator.hpp"
 
 #include <common/test_assert.h>  /* This header must go last */
 
 BEGIN_NCBI_SCOPE
 USING_SCOPE(objects);
 
-void CTabDelimitedValidator::_Validate(int col_number, const CTempString& value)
+bool CTabDelimitedValidator::_Validate(int col_number, const CTempString& value)
 {
-    //const CTempString& datatype = m_col_defs[col_number];
+    const string& datatype = m_col_defs[col_number];
+    string error;
+    bool isfatal = CColumnValidatorRegistry::GetInstance().DoValidate(datatype, value, error);
+    if (!error.empty())
+        _ReportError(col_number, error);
+
+    return isfatal;
 }
 
 void CTabDelimitedValidator::_ReportError(int col_number, const CTempString& error)
@@ -58,35 +65,33 @@ void CTabDelimitedValidator::_ReportError(int col_number, const CTempString& err
     m_errors.push_back(rec);
 }
 
-void CTabDelimitedValidator::ValidateInput(ILineReader& reader, const CTempString& default_collumns,
+void CTabDelimitedValidator::ValidateInput(ILineReader& reader, const CTempString& default_columns,
     const CTempString& required, const CTempString& ignored)
 {
     m_current_row_number = 0;
     m_delim = (m_flags & e_tab_comma_delim) ? "," : "\t";
 
-    if (_ProcessHeader(reader, default_collumns))
+    if (_ProcessHeader(reader, default_columns))
     {
         // preprocess headers & required & ignored
         if (_MakeColumns("Required", required, m_required_cols) &&
             _MakeColumns("Ignored", ignored, m_ignored_cols))
             _OperateRows(reader);
     }
-
-    _GenerateReport();
 }
 
-void CTabDelimitedValidator::_ReportTab()
+void CTabDelimitedValidator::_ReportTab(CNcbiOstream* out_stream)
 {
     if (!m_errors.empty())
-        *m_out_stream << "Row" << "\t" << "Column" << "\t" << "Error" << endl;
+        *out_stream << "Row" << "\t" << "Column" << "\t" << "Error" << endl;
 
     ITERATE(list<CTabDelimitedValidatorError>, it, m_errors)
     {
-        *m_out_stream << it->m_row << "\t" << it->m_col << "\t" << it->m_msg.c_str() << endl;
+        *out_stream << it->m_row << "\t" << it->m_col << "\t" << it->m_msg.c_str() << endl;
     }
 }
 
-void CTabDelimitedValidator::_ReportXML()
+void CTabDelimitedValidator::_ReportXML(CNcbiOstream* out_stream, bool no_headers)
 {
     if (m_errors.empty())
         return;
@@ -110,35 +115,22 @@ void CTabDelimitedValidator::_ReportXML()
 
     xmldoc.set_is_standalone(true);
     xmldoc.set_encoding("utf-8");
-    *m_out_stream << xmldoc;
+    *out_stream << xmldoc;
 
 }
 
-void CTabDelimitedValidator::_GenerateReport()
-{
-    if ( (m_flags & CTabDelimitedValidator::e_tab_tab_report) == CTabDelimitedValidator::e_tab_tab_report)
-    {
-        _ReportTab();
-    }
-    else
-    if ( (m_flags & CTabDelimitedValidator::e_tab_xml_report) == CTabDelimitedValidator::e_tab_xml_report)
-    {
-        _ReportXML();
-    }
-}
-
-bool CTabDelimitedValidator::_MakeColumns(const string& message, const CTempString& collumns, vector<bool>& col_defs)
+bool CTabDelimitedValidator::_MakeColumns(const string& message, const CTempString& columns, vector<bool>& col_defs)
 {
     col_defs.resize(m_col_defs.size(), false); // all values are not required
     vector<CTempStringEx> names;
-    NStr::Tokenize(collumns, ",", names);
+    NStr::Tokenize(columns, ",", names);
     bool can_process = true;
     for (size_t i=0; i<names.size(); i++)
     {
         int index = NStr::StringToInt(names[i], NStr::fConvErr_NoThrow);
         if (index == 0)
         {
-            vector<CTempStringEx>::const_iterator col_it = find(m_col_defs.begin(), m_col_defs.end(), names[i]);
+            vector<string>::const_iterator col_it = find(m_col_defs.begin(), m_col_defs.end(), names[i]);
             if (col_it == m_col_defs.end())
             {
                 _ReportError(i, message + " column does not exist");
@@ -149,7 +141,7 @@ bool CTabDelimitedValidator::_MakeColumns(const string& message, const CTempStri
                 col_defs[index = col_it - m_col_defs.begin()] = true;
         }
         else
-        if (index >= m_col_defs.size() || index<0)
+        if (index >= (int)m_col_defs.size() || index<0)
         {
             _ReportError(index, message + " column does not exist");
             // stop processing
@@ -161,18 +153,18 @@ bool CTabDelimitedValidator::_MakeColumns(const string& message, const CTempStri
     return can_process;
 }
 
-bool CTabDelimitedValidator::_ProcessHeader(ILineReader& reader, const CTempString& default_collumns)
+bool CTabDelimitedValidator::_ProcessHeader(ILineReader& reader, const CTempString& default_columns)
 {
     if (!reader.AtEOF())
     {
-        if (m_flags & e_tab_noheader)
+        if (!default_columns.empty())
         {
-            NStr::Tokenize(default_collumns, ",", m_col_defs); //using comma separator always
+            NStr::Tokenize(default_columns, ",", m_col_defs); //using comma separator always
         }
         else
         {
             reader.ReadLine();
-            // First line is a collumn definitions
+            // First line is a column definitions
             m_current_row_number = reader.GetLineNumber();
 
             NStr::Tokenize(reader.GetCurrentLine(), m_delim, m_col_defs);
@@ -194,7 +186,7 @@ void CTabDelimitedValidator::_OperateRows(ILineReader& reader)
     while (!reader.AtEOF())
     {
         reader.ReadLine();
-        // First line is a collumn definitions
+        // First line is a column definitions
         CTempString current = reader.GetCurrentLine();
         m_current_row_number = reader.GetLineNumber();
 
@@ -207,7 +199,7 @@ void CTabDelimitedValidator::_OperateRows(ILineReader& reader)
         }
         else
         {
-            vector<CTempStringEx> values;
+            vector<CTempStringEx> values; values.reserve(m_col_defs.size());
             NStr::Tokenize(current, m_delim, values);
 
             if (values.size() > m_col_defs.size())
@@ -223,10 +215,28 @@ void CTabDelimitedValidator::_OperateRows(ILineReader& reader)
                 else
                 if (!m_ignored_cols[i])
                 {
-                   _Validate(i, values[i]);
+                   bool isfatal = _Validate(i, values[i]);
+                   if (isfatal)
+                   {
+                       _ReportError(i, "Fatal error occured, stopping");
+                       return;
+                   }
                 }
             }
         }
+    }
+}
+
+void CTabDelimitedValidator::GenerateOutput(CNcbiOstream* out_stream, bool no_headers)
+{
+    if ( (m_flags & CTabDelimitedValidator::e_tab_tab_report) == CTabDelimitedValidator::e_tab_tab_report)
+    {
+        _ReportTab(out_stream);
+    }
+    else
+    if ( (m_flags & CTabDelimitedValidator::e_tab_xml_report) == CTabDelimitedValidator::e_tab_xml_report)
+    {
+        _ReportXML(out_stream, no_headers);
     }
 }
 
