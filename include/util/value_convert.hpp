@@ -1676,7 +1676,7 @@ template <typename CP, typename FROM>
 inline
 string operator+(const value_slice::CValueConvert<CP, FROM>& value, const string& s)
 {
-    string str_value = value;
+    string str_value = value.operator string();
 
     str_value += s;
     return str_value;
@@ -1701,7 +1701,7 @@ template <typename CP, typename FROM>
 inline
 string operator+(const value_slice::CValueConvert<CP, FROM>& value, const char* s)
 {
-    string str_value = value;
+    string str_value = value.operator string();
 
     if (s) {
         str_value += s;
