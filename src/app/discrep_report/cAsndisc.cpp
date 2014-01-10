@@ -96,6 +96,8 @@ void CDiscRepApp::Init(void)
 
 int CDiscRepApp :: Run(void)
 {
+    SetDiagFilter(eDiagFilter_Post, "Structured Comment");
+
     // Crocess command line args:  get GI to load
     const CArgs& args = GetArgs();
     
@@ -123,7 +125,10 @@ int CDiscRepApp :: Run(void)
           err_msg = "You need to supply at least an input file (-i) or a path in which to find input files (-p). Please see 'asndisc -help' for additional details.";
        }
        ERR_POST(err_msg);
+       return 1;
     } 
+
+    return 1;
 }
 
 
@@ -141,4 +146,5 @@ int main(int argc, const char* argv[])
   } catch(CException& eu) {
      ERR_POST(eu.GetMsg());
   }
+  return 1;
 }
