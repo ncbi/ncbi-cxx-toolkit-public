@@ -179,24 +179,26 @@ CHgvsReader::ReadSeqAnnot(
 
                     const string& code = 
                         CVariationException::GetTypeInfo_enum_ECode()->FindName(except.GetCode(), true);
-                    CObjReaderLineException err(
-                        eDiag_Warning,
-                        m_uLineNumber,
-                        string("CHgvsReader::ReadSeqAnnot Warning [") + code  + "] " + except.GetMessage(),
-                        ILineError::eProblem_GeneralParsingError);
-                    ProcessWarning(err, pEC);
+                    auto_ptr<CObjReaderLineException> err(
+                        CObjReaderLineException::Create(
+                            eDiag_Warning,
+                            m_uLineNumber,
+                            string("CHgvsReader::ReadSeqAnnot Warning [") + code  + "] " + except.GetMessage(),
+                            ILineError::eProblem_GeneralParsingError));
+                    ProcessWarning(*err, pEC);
                 } 
             }
 
             varUtil.AsVariation_feats(*var, annot->SetData().SetFtable());
         }
         catch (const variation::CHgvsParser::CHgvsParserException& e) {
-            CObjReaderLineException err(
-               eDiag_Error,
-               0,
-               string("CHgvsReader::ReadSeqAnnot Error [") + e.GetErrCodeString() + "] " + e.GetMsg(),
-               ILineError::eProblem_GeneralParsingError);
-            ProcessError(err, pEC);
+            auto_ptr<CObjReaderLineException> err(
+                CObjReaderLineException::Create(
+                    eDiag_Error,
+                    0,
+                    string("CHgvsReader::ReadSeqAnnot Error [") + e.GetErrCodeString() + "] " + e.GetMsg(),
+                    ILineError::eProblem_GeneralParsingError));
+                ProcessError(*err, pEC);
         }
     }
 
