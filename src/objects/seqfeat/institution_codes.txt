@@ -3056,6 +3056,14 @@ LA	s	University of California
 LABCC	c	Lactic acid bacteria culture collection
 LAC	s	Xian Institute of Lacquer
 LACM	s	Natural History Museum of Los Angeles County
+LACM:Crustacea	s	Natural History Museum of Los Angeles County, Crustacea Department
+LACM:Echinoderms	s	Natural History Museum of Los Angeles County, Echinoderms Department
+LACM:Entomology	s	Natural History Museum of Los Angeles County, Entomology Department
+LACM:Herpetology	s	Natural History Museum of Los Angeles County, Section of Herpetology
+LACM:Ichthyology	s	Natural History Museum of Los Angeles County, Ichthyology Department
+LACM:Malacology	s	Natural History Museum of Los Angeles County, Malacology Department
+LACM:Mammalogy	s	Natural History Museum of Los Angeles County, Mammalogy Department
+LACM:Ornithology	s	Natural History Museum of Los Angeles County, Ornithology Department
 LAE	s	Papua New Guinea Forest Research Institute
 LAF	s	University of Louisiana at Lafayette, Biology Department
 LAGO	s	Pacific Northwest Forest and Range Experiment Station
