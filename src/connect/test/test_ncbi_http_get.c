@@ -60,6 +60,8 @@
 #include "test_assert.h"  /* This header must go last */
 
 
+#ifdef HAVE_LIBGNUTLS
+
 #ifdef __GNUC__
 inline
 #endif /*__GNUC__*/
@@ -94,6 +96,8 @@ static const char* x_GetPkcs12Pass(const char* val, char* buf, size_t bufsize)
     }
     return (const char*) memcpy(buf, val, ++len);
 }
+
+#endif /*HAVE_LIBGNUTLS*/
 
 
 int main(int argc, char* argv[])
