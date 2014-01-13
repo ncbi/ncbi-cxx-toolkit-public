@@ -270,24 +270,6 @@ bool s_UserFieldCompare (const CRef<CUser_field>& f1, const CRef<CUser_field>& f
     return f1->GetLabel().Compare(f2->GetLabel()) < 0;
 }
 
-static bool s_IsGenomeAssembly (
-    const CUser_object& usr
-)
-
-{
-    ITERATE (CUser_object::TData, field, usr.GetData()) {
-        if ((*field)->IsSetLabel() && (*field)->GetLabel().IsStr()) {
-            if (NStr::EqualNocase((*field)->GetLabel().GetStr(), "StructuredCommentPrefix")) {
-                const string& prefix = (*field)->GetData().GetStr();
-                if (NStr::EqualCase(prefix, "##Genome-Assembly-Data-START##")) {
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
-}
-
 
 EErrType s_GetErrTypeFromString(const string& msg)
 {
@@ -353,18 +335,15 @@ static string s_OfficialPrefixList[] = {
     "RefSeq-Attributes"
 };
 
-static bool s_PrefixOrSuffixInList (
-  const string& val,
-  const string& before,
-  const string& after
+static bool s_IsAllowedPrefix (
+  const string& val
 )
 
 {
     for ( size_t i = 0; 
           i < sizeof(s_OfficialPrefixList) / sizeof(string); 
           ++i ) {
-        const string str = before + s_OfficialPrefixList[i] + after;
-        if (NStr::EqualNocase (val, str)) {
+        if (NStr::EqualNocase (val, s_OfficialPrefixList[i])) {
             return true;
         }
     }
@@ -389,30 +368,27 @@ bool CValidError_desc::ValidateStructuredComment
         }
         return false;
     }
-
-    if (! usr.HasField("StructuredCommentPrefix")) {
+    string prefix = CComment_rule::GetStructuredCommentPrefix(usr);
+    if (NStr::IsBlank(prefix)) {
         if (report) {
             PostErr (eDiag_Info, eErr_SEQ_DESCR_StructuredCommentPrefixOrSuffixMissing, 
                     "Structured Comment lacks prefix", *m_Ctx, desc);
         }
-        return false;
+        return true;
+    }
+    if (!s_IsAllowedPrefix(prefix)) {
+        if (report) {
+            PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue, 
+                    prefix + " is not a valid value for StructuredCommentPrefix", *m_Ctx, desc);
+        }
     }
 
     // find prefix
     try {
-        const CUser_field& prefix = usr.GetField("StructuredCommentPrefix");
-        if (!prefix.IsSetData() || !prefix.GetData().IsStr()) {
-            return true;
-        }
-        const string& pfx = prefix.GetData().GetStr();
-        if (! s_PrefixOrSuffixInList (pfx, "##", "-START##")) {
-            PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue, 
-                    pfx + " is not a valid value for StructuredCommentPrefix", *m_Ctx, desc);   
-        }
         CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
         if (comment_rules) {
             try {
-                const CComment_rule& rule = comment_rules->FindCommentRule(prefix.GetData().GetStr());
+                const CComment_rule& rule = comment_rules->FindCommentRule(prefix);
 
                 if (rule.GetRequire_order()) {
                     is_valid = ValidateStructuredComment (usr, desc, rule, report);
@@ -432,8 +408,9 @@ bool CValidError_desc::ValidateStructuredComment
             if (!suffix.IsSetData() || !suffix.GetData().IsStr()) {
                 return true;
             }
-            const string& sfx = suffix.GetData().GetStr();
-            if (! s_PrefixOrSuffixInList (sfx, "##", "-END##")) {
+            string sfx = suffix.GetData().GetStr();
+            CComment_rule::NormalizePrefix(sfx);
+            if (! s_IsAllowedPrefix (sfx)) {
                 PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue, 
                         sfx + " is not a valid value for StructuredCommentSuffix", *m_Ctx, desc);   
             }
