@@ -56,7 +56,7 @@ public:
     ~CWGSBlobId(void);
 
     // wgs file name or SRR accession
-    string m_WGSPath;
+    string m_WGSPrefix;
     bool m_Scaffold;
     Uint8 m_RowId;
 
@@ -164,13 +164,15 @@ private:
     // second: SRA accession or wgs file path
 
     // WGS files by accession
-    typedef limited_size_map<string, CRef<CWGSFileInfo> > TWGSFiles;
+    typedef map<string, CRef<CWGSFileInfo> > TFixedFiles;
+    typedef limited_size_map<string, CRef<CWGSFileInfo> > TFoundFiles;
 
     // mutex guarding input into the map
     CMutex  m_Mutex;
     CVDBMgr m_Mgr;
     string  m_WGSVolPath;
-    TWGSFiles m_WGSFiles;
+    TFixedFiles m_FixedFiles;
+    TFoundFiles m_FoundFiles;
 };
 
 END_SCOPE(objects)

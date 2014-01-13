@@ -116,7 +116,7 @@ CWGSBlobId::CWGSBlobId(CTempString str)
 
 
 CWGSBlobId::CWGSBlobId(CTempString prefix, bool scaffold, Uint8 row_id)
-    : m_WGSPath(prefix),
+    : m_WGSPrefix(prefix),
       m_Scaffold(scaffold),
       m_RowId(row_id)
 {
@@ -131,7 +131,7 @@ CWGSBlobId::~CWGSBlobId(void)
 string CWGSBlobId::ToString(void) const
 {
     CNcbiOstrstream out;
-    out << m_WGSPath << '.' << (m_Scaffold? "S": "") << m_RowId;
+    out << m_WGSPrefix << '.' << (m_Scaffold? "S": "") << m_RowId;
     return CNcbiOstrstreamToString(out);
 }
 
@@ -143,7 +143,7 @@ void CWGSBlobId::FromString(CTempString str)
         NCBI_THROW_FMT(CSraException, eOtherError,
                        "Bad CWGSBlobId: "<<str);
     }
-    m_WGSPath = str.substr(0, dot);
+    m_WGSPrefix = str.substr(0, dot);
     SIZE_TYPE pos = dot+1;
     if ( str[pos] == 'S' ) {
         m_Scaffold = true;
@@ -159,7 +159,7 @@ void CWGSBlobId::FromString(CTempString str)
 bool CWGSBlobId::operator<(const CBlobId& id) const
 {
     const CWGSBlobId& wgs2 = dynamic_cast<const CWGSBlobId&>(id);
-    if ( int diff = NStr::CompareNocase(m_WGSPath, wgs2.m_WGSPath) ) {
+    if ( int diff = NStr::CompareNocase(m_WGSPrefix, wgs2.m_WGSPrefix) ) {
         return diff < 0;
     }
     if ( m_Scaffold != wgs2.m_Scaffold ) {
@@ -174,7 +174,7 @@ bool CWGSBlobId::operator==(const CBlobId& id) const
     const CWGSBlobId& wgs2 = dynamic_cast<const CWGSBlobId&>(id);
     return m_RowId == wgs2.m_RowId &&
         m_Scaffold == wgs2.m_Scaffold &&
-        m_WGSPath == wgs2.m_WGSPath;
+        m_WGSPrefix == wgs2.m_WGSPrefix;
 }
 
 
@@ -186,8 +186,17 @@ bool CWGSBlobId::operator==(const CBlobId& id) const
 CWGSDataLoader_Impl::CWGSDataLoader_Impl(
     const CWGSDataLoader::SLoaderParams& params)
     : m_WGSVolPath(params.m_WGSVolPath),
-      m_WGSFiles(GetGCSize())
+      m_FoundFiles(GetGCSize())
 {
+    ITERATE (vector<string>, it, params.m_WGSFiles) {
+        CRef<CWGSFileInfo> info(new CWGSFileInfo(*this, *it));
+        if ( !m_FixedFiles.insert(TFixedFiles::value_type(info->GetWGSPrefix(),
+                                                          info)).second ) {
+            NCBI_THROW_FMT(CSraException, eOtherError,
+                           "Duplicated fixed WGS prefix: "<<
+                           info->GetWGSPrefix());
+        }
+    }
 }
 
 
@@ -198,14 +207,22 @@ CWGSDataLoader_Impl::~CWGSDataLoader_Impl(void)
 
 CRef<CWGSFileInfo> CWGSDataLoader_Impl::GetWGSFile(const string& prefix)
 {
+    if ( !m_FixedFiles.empty() ) {
+        // no dynamic WGS accessions
+        TFixedFiles::iterator it = m_FixedFiles.find(prefix);
+        if ( it != m_FixedFiles.end() ) {
+            return it->second;
+        }
+        return null;
+    }
     CMutexGuard guard(m_Mutex);
-    TWGSFiles::iterator it = m_WGSFiles.find(prefix);
-    if ( it != m_WGSFiles.end() ) {
+    TFoundFiles::iterator it = m_FoundFiles.find(prefix);
+    if ( it != m_FoundFiles.end() ) {
         return it->second;
     }
     try {
         CRef<CWGSFileInfo> info(new CWGSFileInfo(*this, prefix));
-        m_WGSFiles[prefix] = info;
+        m_FoundFiles[prefix] = info;
         return info;
     }
     catch ( CSraException& exc ) {
@@ -301,7 +318,7 @@ CWGSDataLoader_Impl::GetFileInfo(const CSeq_id_Handle& idh,
 
 CRef<CWGSFileInfo> CWGSDataLoader_Impl::GetFileInfo(const CWGSBlobId& blob_id)
 {
-    return GetWGSFile(blob_id.m_WGSPath);
+    return GetWGSFile(blob_id.m_WGSPrefix);
 }
 
 
@@ -490,13 +507,14 @@ CWGSFileInfo::CWGSFileInfo(CWGSDataLoader_Impl& impl,
 void CWGSFileInfo::x_Initialize(CWGSDataLoader_Impl& impl,
                                 CTempString prefix)
 {
-    m_WGSPrefix = prefix;
     m_WGSDb = CWGSDb(impl.m_Mgr, prefix, impl.m_WGSVolPath);
+    m_WGSPrefix = m_WGSDb->GetIdPrefixWithVersion();
     for ( int i = 0; i < 2; ++i ) {
         m_FirstBadRowId[i] = 0;
     }
     if ( GetDebugLevel() >= 1 ) {
-        ERR_POST_X(1, "Opened WGS DB "<<prefix<<" -> "<<m_WGSDb.GetWGSPath());
+        ERR_POST_X(1, "Opened WGS DB "<<prefix<<" -> "<<
+                   GetWGSPrefix()<<" "<<m_WGSDb.GetWGSPath());
     }
     x_InitMasterDescr();
 }

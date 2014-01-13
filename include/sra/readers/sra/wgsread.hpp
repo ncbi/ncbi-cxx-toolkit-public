@@ -71,6 +71,12 @@ public:
                 CTempString path_or_acc,
                 CTempString vol_path = CTempString());
 
+    const string& GetIdPrefix(void) const {
+        return m_IdPrefix;
+    }
+    const string& GetIdPrefixWithVersion(void) const {
+        return m_IdPrefixWithVersion;
+    }
     const string& GetWGSPath(void) const {
         return m_WGSPath;
     }

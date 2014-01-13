@@ -56,6 +56,7 @@ public:
             {
             }
         string m_WGSVolPath; // search path for WGS files, may be empty
+        vector<string>  m_WGSFiles;
     };
 
 
@@ -69,8 +70,16 @@ public:
         CObjectManager& om,
         CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
         CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
+    static TRegisterLoaderInfo RegisterInObjectManager(
+        CObjectManager& om,
+        const string& dir_path,
+        const vector<string>& wgs_files,
+        CObjectManager::EIsDefault is_default = CObjectManager::eNonDefault,
+        CObjectManager::TPriority priority = CObjectManager::kPriority_NotSet);
     static string GetLoaderNameFromArgs(void);
     static string GetLoaderNameFromArgs(const SLoaderParams& params);
+    static string GetLoaderNameFromArgs(const string& dir_path,
+                                        const vector<string>& wgs_files);
 
     virtual TBlobId GetBlobId(const CSeq_id_Handle& idh);
     virtual TBlobId GetBlobIdFromString(const string& str) const;

@@ -82,6 +82,22 @@ CWGSDataLoader::TRegisterLoaderInfo CWGSDataLoader::RegisterInObjectManager(
 }
 
 
+CWGSDataLoader::TRegisterLoaderInfo CWGSDataLoader::RegisterInObjectManager(
+    CObjectManager& om,
+    const string& dir_path,
+    const vector<string>& wgs_files,
+    CObjectManager::EIsDefault is_default,
+    CObjectManager::TPriority priority)
+{
+    SLoaderParams params;
+    params.m_WGSVolPath = dir_path;
+    params.m_WGSFiles = wgs_files;
+    TMaker maker(params);
+    CDataLoader::RegisterInObjectManager(om, maker, is_default, priority);
+    return maker.GetRegisterInfo();
+}
+
+
 string CWGSDataLoader::GetLoaderNameFromArgs(void)
 {
     return "WGSDataLoader";
@@ -91,10 +107,31 @@ string CWGSDataLoader::GetLoaderNameFromArgs(void)
 string CWGSDataLoader::GetLoaderNameFromArgs(const SLoaderParams& params)
 {
     string ret = GetLoaderNameFromArgs();
-    if ( !params.m_WGSVolPath.empty() ) {
-        ret += "("+params.m_WGSVolPath+")";
+    if ( params.m_WGSFiles.empty() ) {
+        if ( !params.m_WGSVolPath.empty() ) {
+            ret += "("+params.m_WGSVolPath+")";
+        }
+    }
+    else {
+        CNcbiOstrstream str;
+        str << ret << ":" << params.m_WGSVolPath << "/";
+        ITERATE ( vector<string>, it, params.m_WGSFiles ) {
+            str << "+" << *it;
+        }
+        ret = CNcbiOstrstreamToString(str);
     }
     return ret;
+}
+
+
+string CWGSDataLoader::GetLoaderNameFromArgs(
+    const string& dir_path,
+    const vector<string>& wgs_files)
+{
+    SLoaderParams params;
+    params.m_WGSVolPath = dir_path;
+    params.m_WGSFiles = wgs_files;
+    return GetLoaderNameFromArgs(params);
 }
 
 

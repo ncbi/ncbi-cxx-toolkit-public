@@ -392,7 +392,7 @@ BOOST_AUTO_TEST_CASE(FetchSeq14)
 
 BOOST_AUTO_TEST_CASE(FetchSeq15)
 {
-    CRef<CObjectManager> om(CObjectManager::GetInstance());
+    CRef<CObjectManager> om = sx_GetOM();
     CWGSDataLoader::RegisterInObjectManager(*om, CObjectManager::eDefault, 0);
     CGBDataLoader::RegisterInObjectManager(*om);
 
@@ -453,8 +453,8 @@ BOOST_AUTO_TEST_CASE(Scaffold2Fasta)
     CWGSDb wgs_db(mgr, "ALWZ01");
     size_t limit_count = 30000, start_row = 1, count = 0;
 
-    CRef<CObjectManager> om(CObjectManager::GetInstance());
-    CScope scope(*CObjectManager::GetInstance());
+    CRef<CObjectManager> om = sx_GetOM();
+    CScope scope(*om);
     CWGSDataLoader::RegisterInObjectManager(*om, CObjectManager::eDefault, 0);
     scope.AddDefaults();
 
@@ -489,8 +489,8 @@ BOOST_AUTO_TEST_CASE(Scaffold2Fasta2)
     CWGSDb wgs_db(mgr, "ALWZ01");
     size_t limit_count = 30000, start_row = 1, count = 0;
 
-    CRef<CObjectManager> om(CObjectManager::GetInstance());
-    CScope scope(*CObjectManager::GetInstance());
+    CRef<CObjectManager> om = sx_GetOM();
+    CScope scope(*om);
     CWGSDataLoader::RegisterInObjectManager(*om, CObjectManager::eDefault, 0);
     scope.AddDefaults();
 
@@ -526,8 +526,8 @@ BOOST_AUTO_TEST_CASE(Scaffold2Fasta2)
 
 BOOST_AUTO_TEST_CASE(WithdrawnCheck)
 {
-    CRef<CObjectManager> om(CObjectManager::GetInstance());
-    CScope scope(*CObjectManager::GetInstance());
+    CRef<CObjectManager> om = sx_GetOM();
+    CScope scope(*om);
     CWGSDataLoader::RegisterInObjectManager(*om, CObjectManager::eDefault);
     scope.AddDefaults();
 
@@ -552,25 +552,49 @@ BOOST_AUTO_TEST_CASE(WithdrawnCheck)
 
 BOOST_AUTO_TEST_CASE(TPGTest)
 {
-    CRef<CObjectManager> om(CObjectManager::GetInstance());
-    CScope scope(*CObjectManager::GetInstance());
+    CRef<CObjectManager> om = sx_GetOM();
+    CScope scope(*om);
 
 #ifdef NCBI_OS_DARWIN
     string wgs_root = "/net/pan1/id_dumps/WGS/tmp";
 #else
     string wgs_root = "//panfs/pan1/id_dumps/WGS/tmp";
 #endif
-    string wgs_prefix = "DAAH01";
-    string wgs_dbpath = wgs_root+"/"+wgs_prefix;
-    CWGSDataLoader::SLoaderParams wgs_loader_params;
-    wgs_loader_params.m_WGSVolPath = wgs_root;
-    CWGSDataLoader::RegisterInObjectManager(*om,  wgs_loader_params, CObjectManager::eDefault);
+    CWGSDataLoader::RegisterInObjectManager(*om,  wgs_root, vector<string>(), CObjectManager::eDefault);
     scope.AddDefaults();
 
     CBioseq_Handle bh;
 
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("DAAH01000001.1"));
     BOOST_CHECK(bh);
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AGKB01000001.1"));
+    BOOST_CHECK(bh);
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AAAA01000001.1"));
+    BOOST_CHECK(!bh);
 }
 
 
+BOOST_AUTO_TEST_CASE(FixedFileTest)
+{
+    CRef<CObjectManager> om = sx_GetOM();
+    CScope scope(*om);
+
+    vector<string> files;
+#ifdef NCBI_OS_DARWIN
+    string wgs_root = "/net/pan1/id_dumps/WGS/tmp";
+#else
+    string wgs_root = "//panfs/pan1/id_dumps/WGS/tmp";
+#endif
+    files.push_back(wgs_root+"/DAAH01");
+    CWGSDataLoader::RegisterInObjectManager(*om,  "", files, CObjectManager::eDefault);
+    scope.AddDefaults();
+
+    CBioseq_Handle bh;
+
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("DAAH01000001.1"));
+    BOOST_CHECK(bh);
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AGKB01000001.1"));
+    BOOST_CHECK(!bh);
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AAAA01000001.1"));
+    BOOST_CHECK(!bh);
+}
