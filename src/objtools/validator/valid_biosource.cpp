@@ -1017,8 +1017,8 @@ CBioSourceKind& CBioSourceKind::operator=(const CBioSource& bsrc)
            m_eukaryote = true;
            break;
 //       case CBioSource::eGenome_chromatophore: break;
-       //default:
-       //    NCBI_ASSERT(0, "Not fully implemented switch statement");
+       default:
+           break;
        }
    }
    else
@@ -1934,13 +1934,13 @@ void CValidError_imp::ValidateOrgRef
         }
         NStr::ReplaceInPlace(orgmod_name, "-", " ");
         if (subtype == COrgMod::eSubtype_sub_species) {
-            if (!s_FindWholeName(taxname_search, subname)) {
-                ++num_bad_subspecies;
+            if (!orgref.IsSubspeciesValid(subname)) {
+                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
+                       "Subspecies value specified is not found in taxname",
+                       obj, ctx);
             }
         } else if (subtype == COrgMod::eSubtype_variety) {
-            if (s_FindWholeName(taxname_search, subname)) {
-                have_variety_in_taxname = true;
-            } else {
+            if (!orgref.IsVarietyValid(subname)) {
                 PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
                            orgmod_name + " value specified is not found in taxname",
                            obj, ctx);
@@ -1958,22 +1958,7 @@ void CValidError_imp::ValidateOrgRef
                            "Specific host is identical to taxname",
                            obj, ctx);
             }
-        } else if (subtype == COrgMod::eSubtype_common) {
-            if (orgref.IsSetCommon() 
-                && NStr::EqualNocase(subname, orgref.GetCommon())) {
-                /*
-                PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod,
-                           "OrgMod common is identical to Org-ref common",
-                           obj, ctx);
-                */
-            }
-        }
-    }
-    if (!have_variety_in_taxname) {
-        for (int i = 0; i < num_bad_subspecies; i++) {
-            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BioSourceInconsistency,
-                       "Subspecies value specified is not found in taxname",
-                       obj, ctx);
+
         }
     }
 

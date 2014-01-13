@@ -83,11 +83,17 @@ public:
     const string& GetDivision(void) const;
     
     bool IsSetOrgMod(void) const;
+
+    bool IsVarietyValid(const string& variety) const;
+    bool HasValidVariety() const;
+    bool IsSubspeciesValid(const string& subspecies) const;
     
 private:
     // Prohibit copy constructor and assignment operator
     COrg_ref(const COrg_ref& value);
     COrg_ref& operator=(const COrg_ref& value);
+
+    string x_GetTaxnameAfterFirstTwoWords() const;
 };
 
 

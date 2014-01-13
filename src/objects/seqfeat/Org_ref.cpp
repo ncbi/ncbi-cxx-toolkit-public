@@ -168,6 +168,90 @@ bool COrg_ref::IsSetOrgMod(void) const
 }
 
 
+string COrg_ref::x_GetTaxnameAfterFirstTwoWords() const
+{
+    string taxname = "";
+    if (IsSetTaxname()) {
+        taxname = GetTaxname();
+    }
+    // Look for modifiers in taxname after first two words
+    size_t pos = NStr::Find (taxname, " ");
+    if (pos == string::npos) {
+        taxname = "";
+    } else {
+        taxname = taxname.substr(pos + 1);
+        NStr::TruncateSpacesInPlace(taxname);
+        pos = NStr::Find (taxname, " ");
+        if (pos == string::npos) {
+            taxname = "";
+        } else {
+            taxname = taxname.substr(pos + 1);
+            NStr::TruncateSpacesInPlace(taxname);
+        }
+    }
+    return taxname;
+}
+
+
+bool s_FindWholeWord (string taxname, string value)
+{
+    if (NStr::IsBlank(taxname) || NStr::IsBlank(value)) {
+        return false;
+    }
+    size_t pos = NStr::Find (taxname, value);
+    size_t value_len = value.length();
+    while (pos != string::npos 
+           && ( ( (pos != 0 && isalpha (taxname.c_str()[pos - 1]))
+                || isalpha (taxname.c_str()[pos + value_len])))) {
+        pos = NStr::Find(taxname, value, pos + value_len);
+    }
+    if (pos == string::npos) {
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+bool COrg_ref::IsVarietyValid(const string& variety) const
+{
+    if (NStr::IsBlank(variety)) {
+        return true;
+    }
+    string taxname = x_GetTaxnameAfterFirstTwoWords();
+    return s_FindWholeWord(taxname, variety);
+}
+
+
+bool COrg_ref::HasValidVariety() const
+{
+    if (!IsSetOrgname() || !GetOrgname().IsSetMod()) {
+        return false;
+    }
+    ITERATE(COrgName::TMod, it, GetOrgname().GetMod()) {
+        if ((*it)->IsSetSubtype() && (*it)->GetSubtype() == COrgMod::eSubtype_variety
+            && (*it)->IsSetSubname() && !NStr::IsBlank((*it)->GetSubname())
+            && IsVarietyValid((*it)->GetSubname())) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
+bool COrg_ref::IsSubspeciesValid(const string& subspecies) const
+{
+    if (NStr::IsBlank(subspecies)) {
+        return true;
+    }
+    string taxname = x_GetTaxnameAfterFirstTwoWords();
+    if (s_FindWholeWord(taxname, subspecies)) {
+        return true;
+    } else {
+        return HasValidVariety();
+    }
+
+}
 
 
 END_objects_SCOPE // namespace ncbi::objects::
