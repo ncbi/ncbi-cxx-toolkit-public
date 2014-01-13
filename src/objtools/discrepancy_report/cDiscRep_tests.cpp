@@ -4966,12 +4966,23 @@ void CBioseq_FEATURE_LOCATION_CONFLICT :: GetReport(CRef <CClickableItem>& c_ite
   size_t pos;
   ITERATE (Str2Strs, it, ftp2feats) {
     if ( (pos = it->first.find("_missing") != string::npos) ) {
-       AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second),
-           it->first.substr(0, pos) + " xref gene", "not exist", e_DoesComment);
+       AddSubcategory(c_item, 
+                      GetName() + "$" + it->first, 
+                      &(it->second),
+                      it->first.substr(0, pos) + " xref gene", 
+                      "not exist", 
+                      e_DoesComment);
     }    
     else {
-       AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second),
-           it->first + " location", "not match gene location", e_DoesComment);     
+       AddSubcategory(c_item, 
+                      GetName() + "$" + it->first, 
+                      &(it->second),
+                      it->first + " location", 
+                      "not match gene location", 
+                      e_DoesComment,
+                      true,
+                      kEmptyStr,
+                      true);     
     }
   }
 
@@ -5000,7 +5011,7 @@ void CBioseq_FEATURE_LOCATION_CONFLICT :: GetReport(CRef <CClickableItem>& c_ite
   }
 */
   c_item->description 
-        = GetHasComment(c_item->item_list.size(), "feature") + "inconsistent gene locations";
+        = GetHasComment(c_item->item_list.size()/2, "feature") + "inconsistent gene locations";
 };
 
 
@@ -7707,8 +7718,8 @@ void CSeqEntry_test_on_tax_cflts :: GetReport_cflts(CRef <CClickableItem>& c_ite
                    back_inserter(c_item->obj_list));
           }
           c_item->description 
-              = GetHasComment(c_item->item_list.size(), "biosource") 
-                 + qual_nm + " " + qual + " but do not have the same taxnames.";
+             = GetHasComment(c_item->item_list.size(), "biosource") 
+               + qual_nm + " '" + qual + "' but do not have the same taxnames.";
        }
    }
    else {
@@ -7727,8 +7738,8 @@ void CSeqEntry_test_on_tax_cflts :: GetReport_cflts(CRef <CClickableItem>& c_ite
                    back_inserter(c_sub->obj_list));
            }
            c_sub->description
-               = GetHasComment(c_sub->item_list.size(), "biosource") 
-                  + qual_nm + " " + qual+ " but do not have the same taxnames.";
+              = GetHasComment(c_sub->item_list.size(), "biosource") 
+                + qual_nm + " '" + qual+ "' but do not have the same taxnames.";
            copy(c_sub->item_list.begin(), c_sub->item_list.end(),
                 back_inserter( c_item->item_list));
            copy(c_sub->obj_list.begin(), c_sub->obj_list.end(),
@@ -10114,7 +10125,7 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
              && type_str == "StructuredComment"  
              && user_obj.HasField("StructuredCommentPrefix") 
              && user_obj.HasField("StructuredCommentSuffix")
-             && !validator.ValidateStructuredComment(user_obj, **it)) {
+             && !validator.ValidateStructuredComment(user_obj, **it, false)) {
        thisInfo.test_item_list[GetName_prefix()].push_back(user_desc); 
        thisInfo.test_item_objs[GetName_prefix()].push_back(CConstRef <CObject>(*it)); 
     }
