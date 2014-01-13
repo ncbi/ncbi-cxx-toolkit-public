@@ -8,7 +8,7 @@ esac
 compress='gzip -Nf'
 
 ws='[ 	]' # Contains a space and a tab.
-if [ -f ../../build-info ] \
+if [ -f ../../build_info ] \
     && (grep "^$ws*PURPOSE$ws*=$ws*FINAL$ws*\$" ../../build_info \
         &&  grep "^$ws*CODEBASE$ws*=$ws*PRODUCTION$ws*\$" ../../build_info \
         &&  bzip2 --version </dev/null) >/dev/null 2>&1; then
