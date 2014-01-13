@@ -96,8 +96,6 @@ void CDiscRepApp::Init(void)
 
 int CDiscRepApp :: Run(void)
 {
-    SetDiagFilter(eDiagFilter_Post, "Structured Comment");
-
     // Crocess command line args:  get GI to load
     const CArgs& args = GetArgs();
     

@@ -77,8 +77,6 @@ void GetAsndiscReport(int argc, const char* argv[])
 
 int main(int argc, const char* argv[])
 {
-    SetDiagFilter(eDiagFilter_Post, "Structured Comment");
-
     try {
        SetDiagPostLevel(eDiag_Error);
        GetAsndiscReport(argc, argv);

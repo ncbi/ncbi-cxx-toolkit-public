@@ -41,7 +41,8 @@
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 
-#include <objtools/discrepancy_report/hDiscRep_config.hpp>
+#include "/home/chenj/DisRepLib/trunk/c++/include/objtools/discrepancy_report/hDiscRep_config.hpp"
+// #include <objtools/discrepancy_report/hDiscRep_config.hpp>
 
 USING_NCBI_SCOPE;
 USING_SCOPE(DiscRepNmSpc);
@@ -95,12 +96,12 @@ void GetDiscrepancyReport(int argc, const char* argv[])
     scope->AddTopLevelSeqEntry(*seq_entry);   
     CSeq_entry_Handle seq_handle = scope->GetSeq_entryHandle(*seq_entry);
 
-    CRef <CRepConfig> 
-          config (CRepConfig::factory((string)"Discrepancy", &seq_handle));
 /*
     CRef <CRepConfig> 
-          config (CRepConfig::factory((string)"Oncaller", &seq_handle));
+          config (CRepConfig::factory((string)"Discrepancy", &seq_handle));
 */
+    CRef <CRepConfig> 
+          config (CRepConfig::factory((string)"Oncaller", &seq_handle));
 
     CRef <IRWRegistry> reg(0); 
     if (CFile("disc_report.ini").Exists()) {
@@ -118,8 +119,6 @@ void GetDiscrepancyReport(int argc, const char* argv[])
 int main(int argc, const char* argv[])
 {
 // Usage disc_report i=data_file
-
-   SetDiagFilter(eDiagFilter_Post, "Structured Comment");
 
    try {
       SetDiagPostLevel(eDiag_Error);
