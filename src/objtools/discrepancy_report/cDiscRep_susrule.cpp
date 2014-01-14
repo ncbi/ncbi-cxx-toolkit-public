@@ -1384,23 +1384,32 @@ bool CSuspectRuleCheck :: DoesSingleStringMatchConstraint(const string& str, con
   if (str.empty()) return false;
   if (IsStringConstraintEmpty(str_cons)) rval = true;
   else {
-    if (str_cons->GetIgnore_weasel()) this_str = SkipWeasel(str);
-
-    if (str_cons->GetIs_all_caps() && !CDiscRepUtil::IsAllCaps(this_str)) rval = false;
-    else if (str_cons->GetIs_all_lower() && !CDiscRepUtil::IsAllLowerCase(this_str)) 
+    if (str_cons->GetIgnore_weasel()) {
+         this_str = SkipWeasel(str);
+    }
+    if (str_cons->GetIs_all_caps() && !CDiscRepUtil::IsAllCaps(this_str)) {
+         rval = false;
+    }
+    else if (str_cons->GetIs_all_lower() 
+                 && !CDiscRepUtil::IsAllLowerCase(this_str)) {
                rval = false;
-    else if (str_cons->GetIs_all_punct() && !CDiscRepUtil::IsAllPunctuation(this_str)) 
+    }
+    else if (str_cons->GetIs_all_punct() 
+               && !CDiscRepUtil::IsAllPunctuation(this_str)) {
                rval = false;
-    else if (!str_cons->CanGetMatch_text() || str_cons->GetMatch_text().empty()) 
+    }
+    else if (!str_cons->CanGetMatch_text() ||str_cons->GetMatch_text().empty()){
         rval = true; 
+    }
     else {
       strtmp = Blob2Str(*str_cons);
       Str2Blob(strtmp, tmp_cons);
       tmp_match = tmp_cons.GetMatch_text();
-      if (str_cons->GetIgnore_weasel()) 
+      if (str_cons->GetIgnore_weasel()) {
             tmp_cons.SetMatch_text(SkipWeasel(str_cons->GetMatch_text()));
+      }
       if ((str_cons->GetMatch_location() != eString_location_inlist) 
-                                     && str_cons->CanGetIgnore_words()){
+                && str_cons->CanGetIgnore_words()){
           tmp_cons.SetMatch_text(tmp_match);
           rval = AdvancedStringMatch(str, &tmp_cons);
       }
@@ -1409,74 +1418,82 @@ bool CSuspectRuleCheck :: DoesSingleStringMatchConstraint(const string& str, con
         bool ig_space = str_cons->GetIgnore_space();
         bool ig_punct = str_cons->GetIgnore_punct();
         if ( (str_cons->GetMatch_location() != eString_location_inlist)
-                                                            && (ig_space || ig_punct)) {
+               && (ig_space || ig_punct)) {
            search = StripUnimportantCharacters(search, ig_space, ig_punct);
            pattern = StripUnimportantCharacters(pattern, ig_space, ig_punct);
         } 
 
         size_t pFound;
-        if (str_cons->GetCase_sensitive()) pFound = search.find(pattern);
-        else pFound = NStr::FindNoCase(search, pattern);
+        pFound = (str_cons->GetCase_sensitive())?
+                       search.find(pattern) : NStr::FindNoCase(search, pattern);
         switch (str_cons->GetMatch_location()) 
         {
           case eString_location_contains:
-            if (string::npos == pFound) rval = false;
-            else if (str_cons->GetWhole_word()) 
-            {
+            if (string::npos == pFound) {
+               rval = false;
+            }
+            else if (str_cons->GetWhole_word()) {
                 rval = IsWholeWordMatch (search, pFound, pattern.size());
-                while (!rval && pFound != string::npos) 
-                {
-	           if (str_cons->GetCase_sensitive()) 
-                           pFound = search.find(pattern, pFound+1);
-	           else pFound = NStr::FindNoCase(search, pattern, pFound+1);
-                   if (pFound != string::npos)
-                       rval = IsWholeWordMatch (search, pFound, pattern.size());
-                   else rval = false;
+                while (!rval && pFound != string::npos) {
+	           pFound = (str_cons->GetCase_sensitive()) ?
+                              search.find(pattern, pFound+1):
+                                NStr::FindNoCase(search, pattern, pFound+1);
+                   rval = (pFound != string::npos)? 
+                            IsWholeWordMatch (search, pFound, pattern.size()):
+                              false;
                 }
             }
-            else rval = true;
+            else {
+                 rval = true;
+            }
             break;
           case eString_location_starts:
             if (!pFound) {
-              if (str_cons->GetWhole_word()) 
-                  rval = IsWholeWordMatch (search, pFound, pattern.size());
-              else rval = true;
+              rval = (str_cons->GetWhole_word()) ?
+                       IsWholeWordMatch (search, pFound, pattern.size()):
+                         true;
             }
             break;
           case eString_location_ends:
             while (pFound != string::npos && !rval) {
               if ( (pFound + pattern.size()) == search.size()) {
-                if (str_cons->GetWhole_word()) 
-                    rval = IsWholeWordMatch (search, pFound, pattern.size());
-                else rval = true;
+                rval = (str_cons->GetWhole_word())? 
+                        IsWholeWordMatch (search, pFound, pattern.size()): true;
                 /* stop the search, we're at the end of the string */
                 pFound = string::npos;
               }
               else {
-  	        if (str_cons->GetCase_sensitive()) 
-                             pFound = search.find(pattern, pFound+1);
-	        else pFound = NStr::FindNoCase(search, pattern, pFound+1);
+  	        pFound = (str_cons->GetCase_sensitive()) ?
+                             pFound = search.find(pattern, pFound+1):
+                               NStr::FindNoCase(search, pattern, pFound+1);
               }
             }
             break;
           case eString_location_equals:
-            if (str_cons->GetCase_sensitive() && (search==pattern) ) rval= true; 
-            else if (!str_cons->GetCase_sensitive() && NStr::EqualNocase(search, pattern) ) 
+            if (str_cons->GetCase_sensitive() && (search==pattern) ) {
+               rval= true; 
+            }
+            else if (!str_cons->GetCase_sensitive() 
+                        && NStr::EqualNocase(search, pattern) ) {
                   rval = true;
+            }
             break;
           case eString_location_inlist:
-            if (str_cons->GetCase_sensitive()) pFound = pattern.find(search);
-            else pFound = NStr::FindNoCase(pattern, search);
-            if (pFound == string::npos) rval = false;
+            pFound = (str_cons->GetCase_sensitive())?
+                       pattern.find(search) : NStr::FindNoCase(pattern, search);
+            if (pFound == string::npos) {
+                  rval = false;
+            }
             else {
               rval = IsWholeWordMatch(pattern, pFound, search.size(), true);
-              while (!rval && pFound != string::npos) 
-              {
-                if (str_cons->GetCase_sensitive())
-                     pFound = CTempString(pattern).substr(pFound + 1).find(search);
-                else pFound = NStr::FindNoCase(CTempString(pattern).substr(pFound + 1),search);
-                if (pFound != string::npos)
+              while (!rval && pFound != string::npos) {
+                pFound = (str_cons->GetCase_sensitive())?
+                          CTempString(pattern).substr(pFound + 1).find(search):
+                             NStr::FindNoCase(
+                               CTempString(pattern).substr(pFound + 1), search);
+                if (pFound != string::npos) {
                     rval = IsWholeWordMatch (pattern, pFound, str.size(), true);
+                }
               }
             }
             if (!rval) {
@@ -2234,23 +2251,30 @@ string CSuspectRuleCheck :: GetNotTextqualSrcQualValue(const CBioSource& biosrc,
 
   switch (src_qual.Which()) {
     case CSource_qual_choice:: e_Location:
-      str = CBioSource::ENUM_METHOD_NAME(EGenome)()->FindName(
-                                         (CBioSource::EGenome)biosrc.GetGenome(), false);
+      str = CBioSource::ENUM_METHOD_NAME(EGenome)()
+             ->FindName((CBioSource::EGenome)biosrc.GetGenome(), false);
       if (str == "unknown") str = " "; // ????
       else if (str == "extrachrom") str = "extrachromosomal";
-      if (str_cons && !DoesStringMatchConstraint (str, str_cons)) str = kEmptyStr;
+      if (str_cons && !DoesStringMatchConstraint (str, str_cons)) {
+              str = kEmptyStr;
+      }
       break;
     case CSource_qual_choice::e_Origin:
-      str = CBioSource::ENUM_METHOD_NAME(EOrigin)()->FindName(
-                                               (CBioSource::EOrigin)biosrc.GetOrigin(), false);
-      if (str_cons && !DoesStringMatchConstraint (str, str_cons)) str = kEmptyStr;
+      str = CBioSource::ENUM_METHOD_NAME(EOrigin)()
+                     ->FindName((CBioSource::EOrigin)biosrc.GetOrigin(), false);
+      if (str_cons && !DoesStringMatchConstraint (str, str_cons)) {
+           str = kEmptyStr;
+      }
       break;
     case CSource_qual_choice::e_Gcode:
-      if (biosrc.IsSetGcode() && biosrc.GetGcode()) str = NStr::IntToString(biosrc.GetGcode());
+      if (biosrc.IsSetGcode() && biosrc.GetGcode()) {
+          str = NStr::IntToString(biosrc.GetGcode());
+      }
       break;
     case CSource_qual_choice::e_Mgcode:
-      if (biosrc.IsSetMgcode() && biosrc.GetMgcode())
+      if (biosrc.IsSetMgcode() && biosrc.GetMgcode()) {
               str = NStr::IntToString(biosrc.GetMgcode());
+      }
       break;
     default: break;
   }

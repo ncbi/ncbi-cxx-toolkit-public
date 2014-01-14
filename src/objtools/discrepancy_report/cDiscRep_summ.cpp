@@ -165,25 +165,28 @@ string CSummarizeSusProdRule :: SummarizeEndDistance (const CLocation_pos_constr
      default: break;
   }
 
-  return("with " + end_name + distance_words[(unsigned)lp_cons.Which()] 
-                                                           + NStr::IntToString(dist));
+  return("with " + end_name + distance_words[(unsigned)lp_cons.Which()] + NStr::IntToString(dist));
 }
 
 string CSummarizeSusProdRule :: SummarizeLocationConstraint (const CLocation_constraint& loc_cons)
 {
   if (rule_check.IsLocationConstraintEmpty (loc_cons)) return kEmptyStr;
 
-  string partial, location_type, dist5(kEmptyStr), dist3(kEmptyStr), seq_word(kEmptyStr);
+  string partial, location_type, dist5(kEmptyStr), dist3(kEmptyStr);
+  string seq_word(kEmptyStr);
   partial = SummarizePartialnessForLocationConstraint (loc_cons);
   location_type = thisInfo.loctype_names[loc_cons.GetLocation_type()];
-  dist5 = loc_cons.CanGetEnd5() ? SummarizeEndDistance (loc_cons.GetEnd5(), "5' end") : dist5;
-  dist3 = loc_cons.CanGetEnd3() ? SummarizeEndDistance (loc_cons.GetEnd3(), "3' end") : dist3;
+  dist5 = loc_cons.CanGetEnd5() ? 
+             SummarizeEndDistance (loc_cons.GetEnd5(), "5' end") : dist5;
+  dist3 = loc_cons.CanGetEnd3() ? 
+             SummarizeEndDistance (loc_cons.GetEnd3(), "3' end") : dist3;
 
   switch (loc_cons.GetSeq_type()) {
      case eSeqtype_constraint_nuc:
-             seq_word = "nucleotide sequences"; break;
+             seq_word = "nucleotide sequences"; 
+             break;
      case eSeqtype_constraint_prot:
-             seq_word = "protein sequences"; break;
+             seq_word = "protein sequences"; 
      default: break;
   }
 
@@ -212,8 +215,12 @@ string CSummarizeSusProdRule :: SummarizeLocationConstraint (const CLocation_con
 
 string CSummarizeSusProdRule :: GetStringLocationPhrase (EString_location match_location, bool not_present)
 {
-  if (not_present) return (thisInfo.matloc_notpresent_names[match_location]);
-  else return (thisInfo.matloc_names[match_location]);
+  if (not_present) {
+     return (thisInfo.matloc_notpresent_names[match_location]);
+  }
+  else {
+     return (thisInfo.matloc_names[match_location]);
+  }
 }
 
 string CSummarizeSusProdRule :: SummarizeWordSubstitution (const CWord_substitution& word)
@@ -238,23 +245,31 @@ string CSummarizeSusProdRule :: SummarizeStringConstraintEx(const CString_constr
   string str;
   if (str_cons.CanGetMatch_text()) {
     string loc_word = 
-             GetStringLocationPhrase (str_cons.GetMatch_location(), str_cons.GetNot_present());
+             GetStringLocationPhrase (str_cons.GetMatch_location(), 
+                                      str_cons.GetNot_present());
     if (loc_word.empty()) return kEmptyStr;
 
     string sub_words;
     if (!short_version) {
       if (str_cons.CanGetIgnore_words()) {
-         ITERATE (list <CRef <CWord_substitution> >, it, str_cons.GetIgnore_words().Get())
+         ITERATE (list <CRef <CWord_substitution> >, 
+                    it, 
+                    str_cons.GetIgnore_words().Get()) {
              sub_words += SummarizeWordSubstitution(**it) + ", ";    
-         if (!sub_words.empty()) sub_words = sub_words.substr(0, sub_words.size()-2);
+         }
+         if (!sub_words.empty()) {
+              sub_words = sub_words.substr(0, sub_words.size()-2);
+         }
       }
     }
 
     bool has_extra = false, has_start_para = false;
     str = loc_word + " '" + str_cons.GetMatch_text() + "'";
     if (!short_version) {
-       if (str_cons.GetCase_sensitive() || str_cons.GetWhole_word() 
-                         || str_cons.GetIgnore_space() || str_cons.GetIgnore_punct()) {
+       if (str_cons.GetCase_sensitive() 
+              || str_cons.GetWhole_word() 
+              || str_cons.GetIgnore_space() 
+              || str_cons.GetIgnore_punct()) {
           has_start_para = true;
           str += " (";
        }
@@ -291,9 +306,15 @@ string CSummarizeSusProdRule :: SummarizeStringConstraintEx(const CString_constr
     }
   }
   strtmp = kEmptyStr;
-  if (str_cons.GetIs_all_caps()) strtmp = ", all letters are uppercase";
-  if (str_cons.GetIs_all_lower()) strtmp += ", all letters are lowercase";
-  if (str_cons.GetIs_all_punct()) strtmp += ", all characters are punctuation";
+  if (str_cons.GetIs_all_caps()) {
+       strtmp = ", all letters are uppercase";
+  }
+  if (str_cons.GetIs_all_lower()) {
+        strtmp += ", all letters are lowercase";
+  }
+  if (str_cons.GetIs_all_punct()) {
+         strtmp += ", all characters are punctuation";
+  }
   return (str + strtmp);
 };
 
@@ -878,15 +899,18 @@ string CSummarizeSusProdRule :: SummarizeReplaceFunc (const CReplace_func& repla
     case CReplace_func::e_Simple_replace:
       {
         const CSimple_replace& simple = replace.GetSimple_replace();
-        summ = (string)"Replace " + (simple.GetWhole_string()? "entire name with " : "with ")
-                + (simple.CanGetReplace()? "''" : "'" + simple.GetReplace() + "'");
-        if (simple.GetWeasel_to_putative() && !short_version)
+        summ 
+         = (string)"replace " 
+             + (simple.GetWhole_string()? "entire name with " : "with ")
+             + (simple.CanGetReplace()? "'" + simple.GetReplace() + "'": "''");
+        if (simple.GetWeasel_to_putative() && !short_version) {
              summ += ", retain and normalize 'putative' synonym";
+        }
         break;
       }
     case CReplace_func::e_Haem_replace:
-      summ = "Replace '" + replace.GetHaem_replace() 
-                                      + "' with 'heme' if whole word, 'hem' otherwise";
+      summ = "replace '" + replace.GetHaem_replace() 
+                 + "' with 'heme' if whole word, 'hem' otherwise";
       break;
     default:
       summ = "Unknown replacement function";
@@ -895,7 +919,7 @@ string CSummarizeSusProdRule :: SummarizeReplaceFunc (const CReplace_func& repla
   return summ;
 }
 
-string CSummarizeSusProdRule :: SummarizeReplaceRule (const CReplace_rule& replace)
+string CSummarizeSusProdRule :: SummarizeReplaceRule (const CReplace_rule& replace, bool short_version)
 {
   string summ = SummarizeReplaceFunc (replace.GetReplace_func());
   if (replace.GetMove_to_note()) summ += ", move original to note";
@@ -908,20 +932,25 @@ string CSummarizeSusProdRule :: SummarizeSuspectRuleEx(const CSuspect_rule& rule
   string fixtp = (!short_version && rule.GetRule_type() != eFix_type_none) ?
                    fix_type_names[rule.GetRule_type()] : kEmptyStr;
 
-  string rule_desc = rule.CanGetDescription() ? rule.GetDescription() : kEmptyStr;
+  string rule_desc=rule.CanGetDescription() ? rule.GetDescription() : kEmptyStr;
   if (short_version && !rule_desc.empty()) {
       if (fixtp.empty()) return rule_desc;
       else return (rule_desc + " (" + fixtp + ")");
   }
 
   string find  = SummarizeSearchFunc (rule.GetFind(), short_version);
-  string except = (rule.CanGetExcept() && !rule_check.IsSearchFuncEmpty(rule.GetExcept()))?
-                    SummarizeSearchFunc(rule.GetExcept(), short_version) : kEmptyStr;
-  string feat_constraint = (!short_version && rule.CanGetFeat_constraint()) ?  
-                            SummarizeConstraintSet (rule.GetFeat_constraint()) : kEmptyStr;
-  string replace 
-          = (!short_version && rule.GetRule_type() == eFix_type_typo && rule.CanGetReplace())?
-             SummarizeReplaceRule (rule.GetReplace()) : kEmptyStr;
+  string 
+    except 
+      =(rule.CanGetExcept() && !rule_check.IsSearchFuncEmpty(rule.GetExcept()))?
+          SummarizeSearchFunc(rule.GetExcept(), short_version) : kEmptyStr;
+  string feat_constraint 
+           = (!short_version && rule.CanGetFeat_constraint()) ?  
+              SummarizeConstraintSet (rule.GetFeat_constraint()) : kEmptyStr;
+  string 
+    replace 
+      = (!short_version 
+            || (rule.GetRule_type() == eFix_type_typo && rule.CanGetReplace()))?
+         SummarizeReplaceRule (rule.GetReplace()) : kEmptyStr;
 
   string summ = find;
   if (!except.empty()) summ += " but not " + except;

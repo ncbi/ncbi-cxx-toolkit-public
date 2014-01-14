@@ -7089,6 +7089,7 @@ void CBioseq_OVERLAPPING_CDS :: GetReport(CRef <CClickableItem>& c_item)
 void CBioseq_test_on_missing_genes :: CheckGenesForFeatureType (const vector <const CSeq_feat*>& feats, bool makes_gene_not_superfluous)
 {
   unsigned j;
+int ii=0;
 
   ITERATE (vector <const CSeq_feat*>, it, feats) {
     if ((*it)->GetData().IsGene()) {
@@ -7103,9 +7104,8 @@ void CBioseq_test_on_missing_genes :: CheckGenesForFeatureType (const vector <co
            if (m_super_cnt) {
              j = 0;
              ITERATE (vector <const CSeq_feat*>, jt, gene_feat) {
-               if (m_super_idx[j] &&
-                     GeneRefMatchForSuperfluousCheck(
-                               (*jt)->GetData().GetGene(), xref_gene)) {
+               if (m_super_idx[j] && GeneRefMatchForSuperfluousCheck(
+                                        (*jt)->GetData().GetGene(), xref_gene)){
                    m_super_cnt --;
                    m_super_idx[j] = 0;
                }
@@ -7161,6 +7161,7 @@ void CBioseq_missing_genes_regular :: TestOnObj(const CBioseq& bioseq)
   unsigned i;
   if (IsmRNASequenceInGenProdSet(bioseq)) {
         m_super_cnt = 0;
+        return;
   }
   else {
      m_super_cnt = gene_feat.size();
@@ -7367,50 +7368,48 @@ void CBioseq_ONCALLER_SUPERFLUOUS_GENE :: GetReport(CRef <CClickableItem>& c_ite
 // new comb
 
 
-//bool CBioseq_EXTRA_MISSING_GENES :: GeneRefMatchForSuperfluousCheck (const CGene_ref& gene, const CGene_ref* g_xref)
 bool CBioseq_test_on_missing_genes :: GeneRefMatchForSuperfluousCheck (const CGene_ref& gene, const CGene_ref* g_xref)
 {
   const string& locus1 = (gene.CanGetLocus()) ? gene.GetLocus() : kEmptyStr;
-  const string& locus_tag1 = (gene.CanGetLocus_tag()) ? gene.GetLocus_tag() : kEmptyStr;
+  const string& 
+        locus_tag1 = (gene.CanGetLocus_tag()) ? gene.GetLocus_tag() : kEmptyStr;
 
-  const string& locus2 = (g_xref->CanGetLocus()) ? g_xref->GetLocus() : kEmptyStr;
-  const string& locus_tag2 = (g_xref->CanGetLocus_tag()) ? g_xref->GetLocus_tag() : kEmptyStr;
+  const string& locus2=(g_xref->CanGetLocus()) ? g_xref->GetLocus() : kEmptyStr;
+  const string& 
+        locus_tag2 
+            = (g_xref->CanGetLocus_tag()) ? g_xref->GetLocus_tag() : kEmptyStr;
 
-  if (locus1 != locus2 
-          || locus_tag1 != locus_tag2 
-          || (gene.GetPseudo() != g_xref->GetPseudo()) ) {
+  if ( (!locus1.empty() && !locus2.empty() && locus1 != locus2)
+        ||(!locus_tag1.empty() && !locus_tag2.empty() && locus_tag1!=locus_tag2)
+        || (gene.GetPseudo() != g_xref->GetPseudo()) ) {
       return false;
   }
   else {
     const string& allele1 = (gene.CanGetAllele()) ? gene.GetAllele(): kEmptyStr;
-    const string& allele2 = (g_xref->CanGetAllele()) ? g_xref->GetAllele(): kEmptyStr;
-    if (allele1.empty() || allele2.empty()) {
-         return true;
-    }
-    else if (allele1 != allele2) {
+    const string& 
+           allele2 = (g_xref->CanGetAllele()) ? g_xref->GetAllele(): kEmptyStr;
+    if (!allele1.empty() || !allele2.empty() && allele1 != allele2) {
        return false;
     }
     else {
       const string& desc1 = (gene.CanGetDesc())? gene.GetDesc() : kEmptyStr;
-      const string& desc2 = (g_xref->CanGetDesc())? g_xref->GetDesc() : kEmptyStr;
-      if (desc1.empty() || desc2.empty()) {
-          return true;
-      }
-      else if (desc1 != desc2) {
+      const string& desc2=(g_xref->CanGetDesc())? g_xref->GetDesc() : kEmptyStr;
+      if (!desc1.empty() && !desc2.empty() && desc1 != desc2) {
          return false;
       }
       else {
-        const string& maploc1 = (gene.CanGetMaploc())? gene.GetMaploc(): kEmptyStr;
-        const string& maploc2= (g_xref->CanGetMaploc())? g_xref->GetMaploc(): kEmptyStr; 
+        const string& 
+             maploc1 = (gene.CanGetMaploc())? gene.GetMaploc(): kEmptyStr;
+        const string& 
+             maploc2= (g_xref->CanGetMaploc())? g_xref->GetMaploc(): kEmptyStr; 
         if (!maploc1.empty() && !maploc2.empty() && maploc1 != maploc2) {
              return false; 
-        }
-        else {
-           return true;
         }
       }      
     } 
   }
+  
+  return true;
 };
 
 

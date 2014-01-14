@@ -1278,8 +1278,12 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
       else {
           if (seq_feat_p->GetData().IsPub()) {
                seq_feat_p->GetData().GetPub().GetPub().GetLabel(&context_label);
-//              if ( seq_feat_p->GetData().GetPub().GetPub().GetLabel(&context_label));
           }
+          if (seq_feat_p->GetData().IsGene()) {
+             if (seq_feat_p->GetData().GetGene().CanGetDesc()) {
+                context_label = seq_feat_p->GetData().GetGene().GetDesc(); 
+             }
+          } 
           else GetSeqFeatLabel(*seq_feat_p, context_label);
       }
       if (context_label.empty()) context_label = "Unknown context label";
