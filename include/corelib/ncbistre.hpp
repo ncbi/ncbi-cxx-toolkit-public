@@ -650,14 +650,10 @@ private:
 };
 
 
-// utility class for automatic conversion of strings to uppercase letters
-// sample usage:
-//    out << "Original:  \"" << str << "\"\n";
-//    out << "Uppercase: \"" << Upcase(str) << "\"\n";
-// utility class for automatic conversion of strings to lowercase letters
-// sample usage:
-//    out << "Original:  \"" << str << "\"\n";
-//    out << "Lowercase: \"" << Locase(str) << "\"\n";
+/// Utility class for automatic conversion of strings to all uppercase letters.
+/// Sample usage:
+///    out << "Original:  \"" << str         << '"' << endl;
+///    out << "Uppercase: \"" << Upcase(str) << '"' << endl;
 
 class NCBI_XNCBI_EXPORT CUpcaseStringConverter
 {
@@ -673,6 +669,12 @@ public:
     const char* m_String;
 };
 
+
+/// Utility class for automatic conversion of strings to all lowercase letters.
+/// Sample usage:
+///    out << "Original:  \"" << str         << '"' << endl;
+///    out << "Lowercase: \"" << Locase(str) << '"' << endl;
+
 class NCBI_XNCBI_EXPORT CLocaseStringConverter
 {
 public:
@@ -686,6 +688,17 @@ public:
     explicit CLocaseCharPtrConverter(const char* s) : m_String(s) { }
     const char* m_String;
 };
+
+
+/// Utility class for automatic conversion of strings (that may contain
+/// non-graphical characters) to a safe "printable" form.
+/// The safe printable form utilizes '\'-quoted special sequences, as well
+/// as either contracted or full 3-digit octal representation of non-printable
+/// characters, always making sure there is no ambiguity in the string
+/// interpretation (so that if the printed form is used back in a C program,
+/// it will be equivalent to the original string).
+/// Sample usage:
+///   out << "Printable: \"" << Printable(str) << '"' << endl;
 
 class NCBI_XNCBI_EXPORT CPrintableStringConverter
 {
@@ -705,8 +718,16 @@ public:
 /* @} */
 
 
-NCBI_XNCBI_EXPORT
-extern string Printable(char c);
+/// Convert one single character to a "printable" form.
+/// A "printable" form is one of well-known C-style backslash-quoted sequences
+/// ('\0', '\a', '\b', '\f', '\n', '\r', '\t', '\v', '\\', '\'', '\"'),
+/// or '\xXX' for other non-printable characters (per isprint()), or a
+/// graphical representation of 'c' as an ASCII character.
+/// @note  *DO NOT USE* to convert strings!  Because of the '\xXX' notation,
+/// such conversions can result in ambiguity (e.g. "\xAAA" is a valid
+/// _single_-character string per the standard).
+NCBI_DEPRECATED
+NCBI_XNCBI_EXPORT extern string Printable(char c);
 
 
 inline
