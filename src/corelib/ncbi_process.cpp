@@ -398,6 +398,8 @@ TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
             if (::chdir("/") ) { /*dummy*/ };  // NB: "/" always exists
         if (!(flags & fKeepStdin))
             ::fclose(stdin);
+        else
+            ::fflush(stdin);  // POSIX requires this
         ::close(fdin);
         if (!(flags & fKeepStdout))
             ::fclose(stdout);
