@@ -46,26 +46,29 @@ BEGIN_SCOPE(DiscRepNmSpc)
        CSummarizeSusProdRule (void) {};
        ~CSummarizeSusProdRule () {};
 
-       string SummarizeSuspectRuleEx(const CSuspect_rule& rule, bool short_version = true);
-       string SummarizeSearchFunc (const CSearch_func& func, bool short_version = true);
+       string SummarizeSuspectRuleEx(const CSuspect_rule& rule, 
+                                     bool short_version = true);
+       string SummarizeSearchFunc (const CSearch_func& func, 
+                                   bool short_version = true);
        string SummarizeConstraintSet (const CConstraint_choice_set& cons_set);
        string SummarizeConstraint (const CConstraint_choice& cons_choice);
-       string SummarizeLocationConstraint (const CLocation_constraint& loc_cons);
+       string SummarizeLocationConstraint(const CLocation_constraint& loc_cons);
        string SummarizePartialnessForLocationConstraint(const CLocation_constraint& loc_cons);
        string SummarizeEndDistance (const CLocation_pos_constraint& lp_cons, 
-                                                               const string& end_name);
+                                    const string& end_name);
        string SummarizeSourceConstraint (const CSource_constraint& src_cons);
        string SummarizeStringConstraintEx(const CString_constraint& str_cons, 
-                                                                   bool short_version = true);
+                                          bool short_version = true);
        string SummarizeSourceQual(const CSource_qual_choice& src_qual);
        string SummarizeCDSGeneProtQualConstraint(const CCDSGeneProt_qual_constraint& cgp_cons);
        string SummarizeCDSGeneProtPseudoConstraint(
-                                     const CCDSGeneProt_pseudo_constraint& cgp_pcons);
-       string SummarizeSequenceConstraint (const CSequence_constraint& seq_cons);
-       bool HasQuantity(const CQuantity_constraint& v, CQuantity_constraint::E_Choice& e_val, 
-                                                                                   int& num);
+                              const CCDSGeneProt_pseudo_constraint& cgp_pcons);
+       string SummarizeSequenceConstraint(const CSequence_constraint& seq_cons);
+       bool HasQuantity(const CQuantity_constraint& v, 
+                        CQuantity_constraint::E_Choice& e_val,
+                        int& num);
        string SummarizeFeatureQuantity (const CQuantity_constraint& v, 
-                                                            const string* feature_name = 0);
+                                        const string* feature_name = 0);
        string SummarizeSequenceLength (const CQuantity_constraint& v);
        string SummarizePublicationConstraint (const CPublication_constraint& pub_cons);
        string SummarizePubFieldConstraint (const CPub_field_constraint& field);
@@ -77,15 +80,20 @@ BEGIN_SCOPE(DiscRepNmSpc)
        string SummarizeRnaQual (const CRna_qual& rq);
        string SummarizeStructuredCommentField (const CStructured_comment_field& field);
        string SummarizeMolinfoFieldConstraint (const CMolinfo_field_constraint& mol_cons);
-       void GetStringConstraintPhrase(const list <CRef <CString_constraint> >& str_cons_set, 
-                                                                           string& phrase);
+       void GetStringConstraintPhrase(
+                 const list <CRef <CString_constraint> >& str_cons_set, 
+                 string& phrase);
        string SummarizeTranslationConstraint (const CTranslation_constraint& tras_cons);
        string SummarizeTranslationMismatches (const CQuantity_constraint& v);
-       string SummarizeReplaceFunc (const CReplace_func& replace, bool short_version = false);
-       string GetStringLocationPhrase (EString_location match_location, bool not_present);
+       string SummarizeReplaceFunc (const CReplace_func& replace, 
+                                    bool short_version = true);
+       string GetStringLocationPhrase (EString_location match_location, 
+                                       bool not_present);
        string SummarizeWordSubstitution (const CWord_substitution& word);
-       string FeatureFieldLabel(const string& feature_name, const CFeat_qual_choice& field);
-       string SummarizeReplaceRule (const CReplace_rule& replace);
+       string FeatureFieldLabel(const string& feature_name, 
+                                const CFeat_qual_choice& field);
+       string SummarizeReplaceRule (const CReplace_rule& replace, 
+                                    bool short_version = true);
    };
 
 END_SCOPE(DiscRepNmSpc)
