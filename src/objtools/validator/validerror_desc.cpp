@@ -376,11 +376,9 @@ bool CValidError_desc::ValidateStructuredComment
         }
         return true;
     }
-    if (!s_IsAllowedPrefix(prefix)) {
-        if (report) {
-            PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue, 
-                    prefix + " is not a valid value for StructuredCommentPrefix", *m_Ctx, desc);
-        }
+    if (report && !s_IsAllowedPrefix(prefix)) {
+        PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue, 
+                 prefix + " is not a valid value for StructuredCommentPrefix", *m_Ctx, desc);
     }
 
     // find prefix
@@ -410,7 +408,7 @@ bool CValidError_desc::ValidateStructuredComment
             }
             string sfx = suffix.GetData().GetStr();
             CComment_rule::NormalizePrefix(sfx);
-            if (! s_IsAllowedPrefix (sfx)) {
+            if (report && ! s_IsAllowedPrefix (sfx)) {
                 PostErr (eDiag_Error, eErr_SEQ_DESCR_BadStrucCommInvalidFieldValue, 
                         sfx + " is not a valid value for StructuredCommentSuffix", *m_Ctx, desc);   
             }
