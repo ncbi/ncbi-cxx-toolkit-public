@@ -1156,6 +1156,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
                     ::close(pipe_in[0]);
                 }
                 ::close(pipe_in[1]);
+                ::fflush(stdin);
             } else {
                 (void) ::freopen("/dev/null", "r", stdin);
             }
@@ -1257,7 +1258,7 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
         status_pipe[0] = -1;
 
         if (n > 0) {
-            // Child could not run -- reap it and exit with error
+            // Child could not run -- reap it and exit with an error
             ::waitpid(m_Pid, NULL, 0);
             string errmsg("Failed to execute \"" + cmd + '"');
             if ((size_t) n >= sizeof(errcode)  &&  errcode) {
