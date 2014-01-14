@@ -414,11 +414,16 @@ string Printable(char c)
     string s;
     switch ( c ) {
     case '\0':  s = "\\0";   break;
-    case '\\':  s = "\\\\";  break;
-    case '\n':  s = "\\n";   break;
     case '\t':  s = "\\t";   break;
-    case '\r':  s = "\\r";   break;
     case '\v':  s = "\\v";   break;
+    case '\b':  s = "\\b";   break;
+    case '\r':  s = "\\r";   break;
+    case '\f':  s = "\\f";   break;
+    case '\a':  s = "\\a";   break;
+    case '\n':  s = "\\n";   break;
+    case '\\':  s = "\\\\";  break;
+    case '\'':  s = "\\'";   break;
+    case '"':   s = "\\\"";  break;
     default:
         if ( isprint((unsigned char) c) ) {
             s = c;
@@ -464,7 +469,7 @@ void s_WritePrintable(CNcbiOstream& out, char c, char n)
         break;
     }
 
-    bool full = !s_IsQuoted(n)  &&  n >= '0'  &&  n <= '7' ? true : false;
+    bool full = !s_IsQuoted(n)  &&  '0' <= n  &&  n <= '7' ? true : false;
     unsigned char v;
     char octal[4];
     int k = 1;
@@ -736,6 +741,7 @@ END_NCBI_SCOPE
 // See in the header why it is outside of NCBI scope (SunPro bug workaround...)
 
 #if defined(NCBI_USE_OLD_IOSTREAM)
+
 extern NCBI_NS_NCBI::CNcbiOstream& operator<<(NCBI_NS_NCBI::CNcbiOstream& os,
                                               const NCBI_NS_STD::string& str)
 {
@@ -760,9 +766,8 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
     for (ch = is.rdbuf()->sbumpc();
          ch != EOF  &&  !isspace((unsigned char) ch);
          ch = is.rdbuf()->sbumpc()) {
-        str.append(1, (char)ch);
-        i++;
-        if (i == end)
+        str.append(1, (char) ch);
+        if (++i == end)
             break;
     }
     if (ch == EOF) 
@@ -773,6 +778,5 @@ extern NCBI_NS_NCBI::CNcbiIstream& operator>>(NCBI_NS_NCBI::CNcbiIstream& is,
     is.width(0);
     return is;
 }
-
 
 #endif  /* NCBI_USE_OLD_IOSTREAM */
