@@ -177,10 +177,10 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode full_mode,
         
         if (mode == CExec::eDetach) {
             if ( freopen("/dev/null", "r", stdin)  ) { /*dummy*/ };
-            if ( freopen("/dev/null", "a", stdout) ) { /*dummy*/ };
+            if ( freopen("/dev/null", "w", stdout) ) { /*dummy*/ };
             if ( freopen("/dev/null", "a", stderr) ) { /*dummy*/ };
             setsid();
-        } 
+        }
 
         if (((int)full_mode  &  CExec::fNewGroup) == CExec::fNewGroup) {
             setpgid(0, 0);
@@ -222,7 +222,7 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode full_mode,
     }
     close(status_pipe[0]);
     if (n > 0) {
-        // Child could not run -- rip it and exit with error
+        // Child could not run -- reap it and exit with error
         waitpid(pid, 0, 0);
         errno = (size_t) n >= sizeof(errcode) ? errcode : 0;        
         return -1;
