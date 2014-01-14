@@ -42,6 +42,7 @@
 #include <objtools/writers/gff_writer.hpp>
 #include <objtools/writers/gff3_write_data.hpp>
 #include <objtools/writers/gff_feature_record.hpp>
+#include <objtools/alnmgr/alnmap.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -139,8 +140,52 @@ protected:
         const CSeq_loc&,
         unsigned int );
 
-    string x_GetParentId(
-        CMappedFeat );
+    bool xAssignAlignment(
+        CGffFeatureRecord&);
+    bool xAssignAlignmentScores(
+        CGffAlignRecord&,
+        const CSeq_align&);
+
+    bool xAssignAlignmentDenseg(
+        CGffAlignRecord&,
+        const CAlnMap&,
+        unsigned int);
+    bool xAssignAlignmentDensegSeqId(
+        CGffAlignRecord&,
+        const CAlnMap&,
+        unsigned int);
+    bool xAssignAlignmentDensegType(
+        CGffAlignRecord&,
+        const CAlnMap&,
+        unsigned int);
+    bool xAssignAlignmentDensegSource(
+        CGffAlignRecord&,
+        const CAlnMap&,
+        unsigned int);
+    bool xAssignAlignmentDensegScores(
+        CGffAlignRecord&,
+        const CAlnMap&,
+        unsigned int);
+    bool xAssignAlignmentDensegTarget(
+        CGffAlignRecord&,
+        const CAlnMap&,
+        unsigned int);
+    bool xAssignAlignmentDensegGap(
+        CGffAlignRecord&,
+        const CAlnMap&,
+        unsigned int);
+    bool xAssignAlignmentDensegLocation(
+        CGffAlignRecord&,
+        const CAlnMap&,
+        unsigned int);
+
+    bool xAssignAlignmentSpliced(
+        CGffFeatureRecord&);
+        
+    bool xAssignAlignmentDensegSeqId(
+        CGffFeatureRecord&,
+        CBioseq_Handle,
+        CBioseq_Handle);
 
     bool xAssignSource(
         CGffFeatureRecord&,
@@ -338,25 +383,23 @@ protected:
     string xNextGenericId();
     string xNextCdsId();
     string xNextTrnaId();
+    string xNextAlignId();
 
 protected:
     unsigned int m_uRecordId;
  
     typedef map< CMappedFeat, CRef<CGffFeatureRecord> > TGeneMapNew;
     TGeneMapNew m_GeneMapNew;
-    typedef map< CMappedFeat, CRef<CGff3WriteRecordFeature> > TGeneMap;
-    TGeneMap m_GeneMap;
 
     typedef map< CMappedFeat, CRef<CGffFeatureRecord> > TMrnaMapNew;
     TMrnaMapNew m_MrnaMapNew;
-    typedef map< CMappedFeat, CRef<CGff3WriteRecordFeature> > TMrnaMap;
-    TMrnaMap m_MrnaMap;
 
     unsigned int m_uPendingGeneId;
     unsigned int m_uPendingMrnaId;
     unsigned int m_uPendingTrnaId;
     unsigned int m_uPendingCdsId;
     unsigned int m_uPendingGenericId;
+    unsigned int m_uPendingAlignId;
 };
 
 END_objects_SCOPE

@@ -108,8 +108,8 @@ CGffFeatureRecord::CGffFeatureRecord(
         m_puPhase = new unsigned int(*(other.m_puPhase));
     }
 
-    this->m_Attributes.insert( 
-        other.m_Attributes.begin(), other.m_Attributes.end());
+    this->mAttributes.insert( 
+        other.mAttributes.begin(), other.mAttributes.end());
 };
 
 //  ----------------------------------------------------------------------------
@@ -130,13 +130,13 @@ bool CGffFeatureRecord::AddAttribute(
     if (value.empty()) {
         return false; //don't accept blank values 
     }
-    TAttrIt it = m_Attributes.find(key);
-    if (it == m_Attributes.end()) {
-        m_Attributes[key] = vector<string>();
+    TAttrIt it = mAttributes.find(key);
+    if (it == mAttributes.end()) {
+        mAttributes[key] = vector<string>();
     }
-    if (std::find(m_Attributes[key].begin(), m_Attributes[key].end(), value) == 
-            m_Attributes[key].end()) {
-        m_Attributes[key].push_back(value);
+    if (std::find(mAttributes[key].begin(), mAttributes[key].end(), value) == 
+            mAttributes[key].end()) {
+        mAttributes[key].push_back(value);
     }
     return true;
 }
@@ -157,8 +157,8 @@ bool CGffFeatureRecord::GetAttributes(
     vector<string>& value ) const
 //  ----------------------------------------------------------------------------
 {
-    TAttrCit it = m_Attributes.find(key);
-    if (it == m_Attributes.end()  ||  it->second.empty()) {
+    TAttrCit it = mAttributes.find(key);
+    if (it == mAttributes.end()  ||  it->second.empty()) {
         return false;
     }
     value = it->second;
@@ -174,18 +174,18 @@ bool CGffFeatureRecord::AddAttributes(
     if (values.empty()) {
         return true; //nothing to do 
     }
-    TAttrIt it = m_Attributes.find(key);
-    if (it == m_Attributes.end()) {
-        m_Attributes[key] = vector<string>(values.begin(), values.end());
+    TAttrIt it = mAttributes.find(key);
+    if (it == mAttributes.end()) {
+        mAttributes[key] = vector<string>(values.begin(), values.end());
         return true;
     }
     for (vector<string>::const_iterator cit = values.begin(); 
             cit != values.end(); ++cit) {
         string current = *cit;
         vector<string>::iterator iit = std::find(
-            m_Attributes[key].begin(), m_Attributes[key].end(), current);
-        if (iit == m_Attributes[key].end()) {
-            m_Attributes[key].push_back(current);
+            mAttributes[key].begin(), mAttributes[key].end(), current);
+        if (iit == mAttributes[key].end()) {
+            mAttributes[key].push_back(current);
         }
     }
     return true;
@@ -197,7 +197,7 @@ bool CGffFeatureRecord::SetAttributes(
     const vector<string>& values)
 //  ----------------------------------------------------------------------------
 {
-    m_Attributes[key] = vector<string>(values.begin(), values.end());
+    mAttributes[key] = vector<string>(values.begin(), values.end());
     return true;
 }
 
@@ -265,69 +265,54 @@ string CGffFeatureRecord::StrPhase() const
 string CGffFeatureRecord::StrAttributes() const
 //  ----------------------------------------------------------------------------
 {
-    string strAttributes;
-	strAttributes.reserve(256);
-    CGffFeatureRecord::TAttributes attrs;
-    attrs.insert( Attributes().begin(), Attributes().end() );
-    CGffFeatureRecord::TAttrIt it;
+    string attributes;
+	attributes.reserve(256);
 
-    for ( it = attrs.begin(); it != attrs.end(); ++it ) {
-        string strKey = it->first;
+    for (CGffFeatureRecord::TAttrCit it = mAttributes.begin(); 
+            it != mAttributes.end(); ++it) {
+        string key = it->first;
 
-        if ( ! strAttributes.empty() ) {
-            strAttributes += "; ";
+        if (!attributes.empty()) {
+            attributes += ATTR_SEPARATOR;
         }
-        strAttributes += strKey;
-        strAttributes += "=";
-//        strAttributes += " ";
+        attributes += key;
+        attributes += "=";
 		
-		bool quote = CWriteUtil::NeedsQuoting(it->second.front());
-		if ( quote )
-			strAttributes += '\"';		
-		strAttributes += it->second.front();
-		if ( quote )
-			strAttributes += '\"';
-    }
-    if ( strAttributes.empty() ) {
-        strAttributes = ".";
-    }
-    return strAttributes;
-}
-
-//  ----------------------------------------------------------------------------
-void CGffFeatureRecord::x_StrAttributesAppendValue(
-    const string& strKey,
-    const string& attr_separator,
-    const string& multivalue_separator,
-    map<string, vector<string> >& attrs,
-    string& strAttributes ) const
-//  ----------------------------------------------------------------------------
-{
-    TAttrIt it = attrs.find( strKey );
-    if ( it == attrs.end() ) {
-        return;
-    }
-    string strValue;
-    vector<string> tags = it->second;
-    for ( vector<string>::iterator pTag = tags.begin(); pTag != tags.end(); pTag++ ) {
-        if ( !strValue.empty() ) {
-            strValue += multivalue_separator;
+		bool needsQuoting = CWriteUtil::NeedsQuoting(it->second.front());
+		if (needsQuoting) {
+			attributes += '\"';
+        }		
+		attributes += it->second.front();
+		if (needsQuoting) {
+			attributes += '\"';
         }
-        string strTag = CWriteUtil::UrlEncode( *pTag );
-        if (CWriteUtil::NeedsQuoting(strTag)) {
-            strTag = string("\"") + strTag + string("\"");
+    }
+
+    for (CGffFeatureRecord::TScoreCit it = mExtraScores.begin();
+            it != mExtraScores.end(); ++it) {
+        string key = it->first;
+
+        if (!attributes.empty()) {
+            attributes += ATTR_SEPARATOR;
         }
-        strValue += strTag;
+        attributes += key;
+        attributes += "=";
+		
+        string value = it->second;
+		//bool needsQuoting = CWriteUtil::NeedsQuoting(value);
+		bool needsQuoting = false; //we know it doesn't
+		if (needsQuoting) {
+			attributes += '\"';
+        }		
+		attributes += value;
+		if (needsQuoting) {
+			attributes += '\"';
+        }
     }
-
-    if ( ! strAttributes.empty() ) {
-        strAttributes += attr_separator;
+    if ( attributes.empty() ) {
+        attributes = ".";
     }
-    strAttributes += strKey;
-    strAttributes += "=";
-    strAttributes += strValue;
-
-	attrs.erase(it);
+    return attributes;
 }
 
 //  ----------------------------------------------------------------------------
@@ -400,6 +385,42 @@ void CGffFeatureRecord::SetStrand(
 }
 
 //  ----------------------------------------------------------------------------
+void CGffFeatureRecord::SetScore(
+    const string& key,
+    int value)
+//  ----------------------------------------------------------------------------
+{
+    string valueStr = NStr::IntToString(value);
+    if (key == "score") {
+        if (0 == m_pScore) {
+            m_pScore = new string();
+        }
+        *m_pScore = valueStr;
+    }
+    else {
+        mExtraScores[key] = valueStr;
+    }
+}
+
+//  ----------------------------------------------------------------------------
+void CGffFeatureRecord::SetScore(
+    const string& key,
+    double value)
+//  ----------------------------------------------------------------------------
+{
+    string valueStr = NStr::DoubleToString(value);
+    if (key == "score") {
+        if (0 == m_pScore) {
+            m_pScore = new string();
+        }
+        *m_pScore = valueStr;
+    }
+    else {
+        mExtraScores[key] = valueStr;
+    }
+}
+
+//  ----------------------------------------------------------------------------
 void CGffFeatureRecord::InitLocation(
     const CSeq_loc& loc)
 //  ----------------------------------------------------------------------------
@@ -444,12 +465,112 @@ bool CGffFeatureRecord::DropAttributes(
     const string& strAttr )
 //  ----------------------------------------------------------------------------
 {
-    TAttrIt it = m_Attributes.find( strAttr );
-    if ( it == m_Attributes.end() ) {
+    TAttrIt it = mAttributes.find( strAttr );
+    if ( it == mAttributes.end() ) {
         return false;
     }
-    m_Attributes.erase( it );
+    mAttributes.erase( it );
     return true;
+}
+
+//  ----------------------------------------------------------------------------
+CGffAlignRecord::CGffAlignRecord(
+    const string& id):
+//  ----------------------------------------------------------------------------
+    CGffFeatureRecord(id),
+    mGapIsTrivial(true)
+{
+}
+
+//  ----------------------------------------------------------------------------
+void CGffAlignRecord::SetTarget(
+    const string& target)
+//  ----------------------------------------------------------------------------
+{
+    mAttrTarget = target;
+}
+
+//  ----------------------------------------------------------------------------
+string CGffAlignRecord::StrTarget() const
+//  ----------------------------------------------------------------------------
+{
+    return mAttrTarget;
+}
+
+//  ----------------------------------------------------------------------------
+string CGffAlignRecord::StrGap() const
+//  ----------------------------------------------------------------------------
+{
+    return mAttrGap;
+}
+
+//  ----------------------------------------------------------------------------
+string CGffAlignRecord::StrAttributes() const
+//  ----------------------------------------------------------------------------
+{
+    string attributes = CGffFeatureRecord::StrAttributes();
+    attributes += CGffFeatureRecord::ATTR_SEPARATOR;
+    //bool needsQuoting = CWriteUtil::NeedsQuoting(StrTarget());
+    bool needsQuoting = true; //we know it does
+    attributes += "Target=";
+    if (needsQuoting) {
+        attributes += "\"";
+    }
+    attributes += StrTarget();
+    if (needsQuoting) {
+        attributes += "\"";
+    }
+    if (!mGapIsTrivial) {
+        attributes += CGffFeatureRecord::ATTR_SEPARATOR;
+        needsQuoting = CWriteUtil::NeedsQuoting(StrGap());
+        attributes += "Gap=";
+        if (needsQuoting) {
+            attributes += "\"";
+        }
+        attributes += StrGap();
+        if (needsQuoting) {
+            attributes += "\"";
+        }
+    }
+    return attributes;
+}
+
+//  ----------------------------------------------------------------------------
+void CGffAlignRecord::AddInsertion(
+    unsigned int size)
+//  ----------------------------------------------------------------------------
+{
+    if (!mAttrGap.empty()) {
+        mAttrGap += " ";
+    }
+    mAttrGap += "I";
+    mAttrGap += NStr::IntToString(size);
+    mGapIsTrivial = false;
+}
+
+//  ----------------------------------------------------------------------------
+void CGffAlignRecord::AddDeletion(
+    unsigned int size)
+//  ----------------------------------------------------------------------------
+{
+    if (!mAttrGap.empty()) {
+        mAttrGap += " ";
+    }
+    mAttrGap += "D";
+    mAttrGap += NStr::IntToString(size);
+    mGapIsTrivial = false;
+}
+
+//  ----------------------------------------------------------------------------
+void CGffAlignRecord::AddMatch(
+    unsigned int size)
+//  ----------------------------------------------------------------------------
+{
+    if (!mAttrGap.empty()) {
+        mAttrGap += " ";
+    }
+    mAttrGap += "M";
+    mAttrGap += NStr::IntToString(size);
 }
 
 END_objects_SCOPE

@@ -54,6 +54,10 @@ public:
     typedef TAttributes::iterator TAttrIt;
     typedef TAttributes::const_iterator TAttrCit;
 
+    typedef map<string, string> TScores;
+    typedef TScores::iterator TScoreIt;
+    typedef TScores::const_iterator TScoreCit;
+
 public:
     CGffFeatureRecord( 
         const string& id="");
@@ -82,20 +86,28 @@ public:
         unsigned int);
     void SetStrand(
         ENa_strand);
+    void SetScore(
+        const string&,
+        int);
+    void SetScore(
+        const string&,
+        double);
 
-    string StrType() const;
-    string StrAttributes() const;
-    string StrSeqId() const;
-    string StrSource() const;
-    string StrSeqStart() const;
-    string StrSeqStop() const;
-    string StrScore() const;
-    string StrStrand() const;
-    string StrPhase() const;
-    string StrStructibutes() const { return ""; };
+    virtual string StrType() const;
+    virtual string StrAttributes() const;
+    virtual string StrSeqId() const;
+    virtual string StrSource() const;
+    virtual string StrSeqStart() const;
+    virtual string StrSeqStop() const;
+    virtual string StrScore() const;
+    virtual string StrStrand() const;
+    virtual string StrPhase() const;
 
     const TAttributes& Attributes() const { 
-        return m_Attributes; 
+        return mAttributes; 
+    };
+    const TScores& ExtraScores() const { 
+        return mExtraScores; 
     };
     const CSeq_loc& Location() const {
         return *m_pLoc;
@@ -127,13 +139,6 @@ public:
 public:
     static const char* ATTR_SEPARATOR;
 protected:
-    void x_StrAttributesAppendValue(
-        const string&,
-        const string&,
-        const string&,
-        map<string, vector<string> >&,
-        string& ) const;
-
     string m_strSeqId;
     string m_strType;
     string m_strSource;
@@ -144,7 +149,41 @@ protected:
     ENa_strand* m_peStrand;
     unsigned int* m_puPhase;
     string m_strAttributes;    
-    TAttributes m_Attributes;
+    TAttributes mAttributes;
+    TScores mExtraScores;
+};
+//  ============================================================================
+class NCBI_XOBJWRITE_EXPORT CGffAlignRecord
+//  ============================================================================
+    : public CGffFeatureRecord
+{
+public:
+    CGffAlignRecord( 
+        const string& id="");
+
+    void SetTarget(
+        const string&);
+
+    void
+    AddInsertion(
+        unsigned int);
+
+    void
+    AddDeletion(
+        unsigned int);
+
+    void
+    AddMatch(
+        unsigned int);
+
+    string StrAttributes() const;
+    string StrTarget() const;
+    string StrGap() const;
+
+protected:
+    string mAttrGap;
+    string mAttrTarget;
+    bool mGapIsTrivial;
 };
 
 END_objects_SCOPE
