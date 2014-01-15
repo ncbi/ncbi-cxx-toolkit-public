@@ -61,6 +61,7 @@ static void s_REG_Get(void* user_data,
         string result(static_cast<IRegistry*> (user_data)->Get(section, name));
 
         if (!result.empty()) {
+            /*FIXME:  This is *bad* because of possible truncation*/
             strncpy0(value, result.c_str(), value_size - 1);
         }
     }
