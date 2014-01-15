@@ -122,10 +122,12 @@ public:
     bool IsSubmitAllowed(unsigned host) const;
     bool IsWorkerAllowed(unsigned host) const;
     bool IsProgramAllowed(const string &  program_name) const;
-    void GetMaxIOSizesAndNCAPI(unsigned int &  max_input_size,
-                               unsigned int &  max_output_size,
-                               map<string, string> & netcache_api) const;
-    void GetNCAPI(map<string, string> & netcache_api) const;
+    void GetMaxIOSizesAndLinkedSections(
+                unsigned int &  max_input_size,
+                unsigned int &  max_output_size,
+                map< string, map<string, string> > & linked_sections) const;
+    void GetLinkedSections(map< string,
+                                map<string, string> > & linked_sections) const;
 
     bool GetRefuseSubmits(void) const { return m_RefuseSubmits; }
     void SetRefuseSubmits(bool  val)  { m_RefuseSubmits = val;  }
@@ -571,8 +573,8 @@ private:
     unsigned int                m_DumpClientBufferSize;
     unsigned int                m_DumpAffBufferSize;
     unsigned int                m_DumpGroupBufferSize;
-    string                      m_NCAPISectionName;
     bool                        m_ScrambleJobKeys;
+    map<string, string>         m_LinkedSections;
 
     // Group registry
     CNSGroupsRegistry           m_GroupRegistry;

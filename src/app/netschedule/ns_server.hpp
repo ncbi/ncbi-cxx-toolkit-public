@@ -38,6 +38,7 @@
 #include "ns_server_misc.hpp"
 #include "ns_server_params.hpp"
 #include "ns_queue.hpp"
+#include "ns_alert.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -59,6 +60,7 @@ public:
     void AddDefaultListener(IServer_ConnectionFactory* factory);
     string SetNSParameters(const SNS_Parameters &  new_params,
                            bool                    limited);
+    string ReadServicesConfig(const CNcbiRegistry &  reg);
 
     virtual bool ShutdownRequested(void);
 
@@ -73,8 +75,6 @@ public:
     const bool &  IsLogExecutionWatcherThread() const { return m_LogExecutionWatcherThreadFlag; }
     const bool &  IsLogStatisticsThread() const       { return m_LogStatisticsThreadFlag; }
     const unsigned int &  GetStatInterval() const     { return m_StatInterval; }
-
-    unsigned GetCommandNumber();
 
     // Queue handling
     unsigned int  Configure(const IRegistry &  reg,
@@ -98,7 +98,9 @@ public:
     string GetQueueClassesConfig(void) const;
     string GetQueueInfo(void) const;
     string GetQueueConfig(void) const;
-    string GetNetcacheApiSectionConfig(void) const;
+    string GetLinkedSectionConfig(void) const;
+    string GetServiceToQueueSectionConfig(void) const;
+    string ResolveService(const string &  service) const;
 
     bool GetRefuseSubmits() const               { return m_RefuseSubmits; }
     void SetRefuseSubmits(bool  val)            { m_RefuseSubmits = val;  }
@@ -139,6 +141,11 @@ public:
     const CNetScheduleAccessList &  GetAdminHosts(void) const { return m_AdminHosts; }
     string GetAdminClientNames(void) const;
     CCompoundIDPool GetCompoundIDPool(void) const { return m_CompoundIDPool; }
+
+    string GetAlerts(void) const;
+    enum EAlertAckResult AcknowledgeAlert(const string &  id);
+    enum EAlertAckResult AcknowledgeAlert(EAlertType  alert_type);
+    void RegisterAlert(EAlertType  alert_type);
 
 protected:
     virtual void Exit();
@@ -194,12 +201,14 @@ private:
     // List of admin stations
     CNetScheduleAccessList                      m_AdminHosts;
 
-    CAtomicCounter                              m_AtomicCommandNumber;
-
     static CNetScheduleServer*                  sm_netschedule_server;
 
     mutable CRWLock                             m_AdminClientsLock;
     vector<string>                              m_AdminClientNames;
+    CNSAlerts                                   m_Alerts;
+
+    mutable CFastMutex                          m_ServicesLock;
+    map< string, string >                       m_Services;
 
     CCompoundIDPool                             m_CompoundIDPool;
 

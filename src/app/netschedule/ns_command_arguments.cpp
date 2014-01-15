@@ -71,6 +71,8 @@ void SNSCommandArguments::x_Reset()
     aff_to_del.erase();
     start_after.erase();
     group.erase();
+    alert.erase();
+    service.erase();
 
     any_affinity = false;
     wnode_affinity = false;
@@ -129,6 +131,9 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
                     NCBI_THROW(CNetScheduleException, eInvalidParameter,
                                "any_aff accepted values are 0 and 1.");
                 any_affinity = (tmp == 1);
+            }
+            else if (key == "alert") {
+                alert = NStr::ParseEscapes(val);
             }
             break;
         case 'c':
@@ -258,6 +263,9 @@ void SNSCommandArguments::AssignValues(const TNSProtoParams &     params,
                     NCBI_THROW(CNetScheduleException,
                                eInvalidParameter,
                                "Invalid job ID in 'start_after' option key");
+            }
+            else if (key == "service") {
+                service = NStr::ParseEscapes(val);
             }
             break;
         case 't':

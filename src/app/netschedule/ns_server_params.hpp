@@ -39,8 +39,8 @@
 
 BEGIN_NCBI_SCOPE
 
-//////////////////////////////////////////////////////////////////////////
-/// Parameters for server
+
+// Parameters for server
 struct SNS_Parameters : SServer_Parameters
 {
     bool            reinit;
@@ -67,8 +67,8 @@ struct SNS_Parameters : SServer_Parameters
     unsigned int    max_affinities;     // Max number of affinities a client
                                         // can report as preferred.
 
-    std::string     admin_hosts;
-    std::string     admin_client_names;
+    string          admin_hosts;
+    string          admin_client_names;
 
     // Affinity GC settings
     unsigned int    affinity_high_mark_percentage;
@@ -77,10 +77,11 @@ struct SNS_Parameters : SServer_Parameters
     unsigned int    affinity_low_removal;
     unsigned int    affinity_dirt_percentage;
 
-    void Read(const IRegistry& reg, const std::string& sname,
-              bool silent = false);
-    void CheckAffinityGarbageCollectorSettings(bool  silent);
-    void CheckGarbageCollectorSettings(bool  silent);
+    void Read(const IRegistry &  reg);
+
+    private:
+        void x_CheckAffinityGarbageCollectorSettings(void);
+        void x_CheckGarbageCollectorSettings(void);
 };
 
 END_NCBI_SCOPE

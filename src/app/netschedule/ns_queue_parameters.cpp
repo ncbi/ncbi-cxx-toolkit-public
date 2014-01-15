@@ -37,28 +37,13 @@
 #include "ns_types.hpp"
 #include "ns_db.hpp"
 #include "ns_queue.hpp"
+#include "ns_ini_params.hpp"
+
 
 
 BEGIN_NCBI_SCOPE
 
 
-static CNSPreciseTime   default_timeout(3600, 0);
-static CNSPreciseTime   default_notif_hifreq_interval(0, kNSecsPerSecond/10); // 0.1
-static CNSPreciseTime   default_notif_hifreq_period(5, 0);
-static unsigned int     default_notif_lofreq_mult = 50;
-static CNSPreciseTime   default_notif_handicap(0, 0);
-static unsigned int     default_dump_buffer_size = 100;
-static unsigned int     default_dump_client_buffer_size = 100;
-static unsigned int     default_dump_aff_buffer_size = 100;
-static unsigned int     default_dump_group_buffer_size = 100;
-static CNSPreciseTime   default_run_timeout(3600, 0);
-static unsigned int     default_failed_retries = 0;
-static CNSPreciseTime   default_blacklist_time = CNSPreciseTime(2147483647, 0);
-static CNSPreciseTime   default_run_timeout_precision(3, 0);
-static CNSPreciseTime   default_wnode_timeout(40, 0);
-static CNSPreciseTime   default_pending_timeout(604800, 0);
-static CNSPreciseTime   default_max_pending_wait_timeout(0, 0);
-static bool             default_scramble_job_keys = false;
 
 
 SQueueParameters::SQueueParameters() :
@@ -87,7 +72,6 @@ SQueueParameters::SQueueParameters() :
     pending_timeout(default_pending_timeout),
     max_pending_wait_timeout(default_max_pending_wait_timeout),
     description(""),
-    netcache_api_section_name(""),
     scramble_job_keys(default_scramble_job_keys),
     run_timeout_precision(default_run_timeout_precision)
 {}
@@ -124,9 +108,9 @@ void SQueueParameters::Read(const IRegistry& reg, const string& sname)
     pending_timeout = ReadPendingTimeout(reg, sname);
     max_pending_wait_timeout = ReadMaxPendingWaitTimeout(reg, sname);
     description = ReadDescription(reg, sname);
-    netcache_api_section_name = ReadNetCacheAPISectionName(reg, sname);
     scramble_job_keys = ReadScrambleJobKeys(reg, sname);
     run_timeout_precision = ReadRunTimeoutPrecision(reg, sname);
+    linked_sections = ReadLinkedSections(reg, sname);
     return;
 }
 
@@ -254,12 +238,6 @@ SQueueParameters::Diff(const SQueueParameters &  other,
                 NS_FormatPreciseTimeAsSec(max_pending_wait_timeout),
                 NS_FormatPreciseTimeAsSec(other.max_pending_wait_timeout));
 
-    if (netcache_api_section_name != other.netcache_api_section_name)
-        AddParameterToDiffString(
-                diff, "netcache_api",
-                netcache_api_section_name,
-                other.netcache_api_section_name);
-
     if (scramble_job_keys != other.scramble_job_keys)
         AddParameterToDiffString(
                 diff, "scramble_job_keys",
@@ -270,6 +248,84 @@ SQueueParameters::Diff(const SQueueParameters &  other,
         AddParameterToDiffString(diff, "description",
                                  description,
                                  other.description);
+
+    if (linked_sections != other.linked_sections) {
+        list<string>    added;
+        list<string>    deleted;
+        list<string>    changed;
+
+        for (map<string, string>::const_iterator  k = linked_sections.begin();
+             k != linked_sections.end(); ++k) {
+            string                                  old_section = k->first;
+            map<string, string>::const_iterator     found = other.linked_sections.find(old_section);
+
+            if (found == other.linked_sections.end()) {
+                deleted.push_back(old_section);
+                continue;
+            }
+            if (k->second != found->second)
+                changed.push_back(old_section);
+        }
+
+        for (map<string, string>::const_iterator  k = other.linked_sections.begin();
+             k != other.linked_sections.end(); ++k) {
+            string  new_section = k->first;
+
+            if (linked_sections.find(new_section) == linked_sections.end())
+                added.push_back(new_section);
+        }
+
+        if (!added.empty()) {
+            if (!diff.empty())
+                diff += ", ";
+            diff += "linked_section_added [";
+            for (list<string>::const_iterator k = added.begin();
+                 k != added.end(); ++k) {
+                if (k != added.begin())
+                    diff += ", ";
+                diff += "\"" + NStr::PrintableString(*k) + "\"";
+            }
+            diff += "]";
+        }
+
+        if (!deleted.empty()) {
+            if (!diff.empty())
+                diff += ", ";
+            diff += "linked_section_deleted [";
+            for (list<string>::const_iterator k = deleted.begin();
+                 k != deleted.end(); ++k) {
+                if (k != deleted.begin())
+                    diff += ", ";
+                diff += "\"" + NStr::PrintableString(*k) + "\"";
+            }
+            diff += "]";
+        }
+
+        if (!changed.empty()) {
+            if (!diff.empty())
+                diff += ", ";
+            diff += "linked_section_changed [";
+            for (list<string>::const_iterator k = changed.begin();
+                 k != changed.end(); ++k) {
+                if (k != changed.end())
+                    diff += ", ";
+                map<string, string>::const_iterator     val_iter;
+                string                                  changed_section_name = *k;
+
+                val_iter = linked_sections.find(changed_section_name);
+                string      old_value = val_iter->second;
+                val_iter = other.linked_sections.find(changed_section_name);
+                string      new_value = val_iter->second;
+
+                diff += "\"" + NStr::PrintableString(changed_section_name) + "\" ["
+                        "\"" + NStr::PrintableString(old_value) +
+                        "\", \"" + NStr::PrintableString(new_value) +
+                        "\"]";
+            }
+            diff += "]";
+        }
+    }
+
 
     // The run_timeout_precision parameter cannot be changed at run time so it
     // is not compared here.
@@ -343,15 +399,19 @@ SQueueParameters::GetPrintableParameters(bool  include_class,
         prefix + "program_name" + suffix + NStr::URLEncode(program_name) + separator +
         prefix + "subm_hosts" + suffix + NStr::URLEncode(subm_hosts) + separator +
         prefix + "wnode_hosts" + suffix + NStr::URLEncode(wnode_hosts) + separator +
-        prefix + "description" + suffix + NStr::URLEncode(description) + separator +
-        prefix + "netcache_api" + suffix + NStr::URLEncode(netcache_api_section_name);
+        prefix + "description" + suffix + NStr::URLEncode(description);
+        for (map<string, string>::const_iterator  k = linked_sections.begin();
+             k != linked_sections.end(); ++k)
+            result += separator + prefix + k->first + suffix + NStr::URLEncode(k->second);
     } else {
         result +=
         prefix + "program_name" + suffix + NStr::PrintableString(program_name) + separator +
         prefix + "subm_hosts" + suffix + NStr::PrintableString(subm_hosts) + separator +
         prefix + "wnode_hosts" + suffix + NStr::PrintableString(wnode_hosts) + separator +
-        prefix + "description" + suffix + NStr::PrintableString(description) + separator +
-        prefix + "netcache_api" + suffix + NStr::PrintableString(netcache_api_section_name);
+        prefix + "description" + suffix + NStr::PrintableString(description);
+        for (map<string, string>::const_iterator  k = linked_sections.begin();
+             k != linked_sections.end(); ++k)
+            result += separator + prefix + k->first + suffix + NStr::PrintableString(k->second);
     }
 
     return result;
@@ -387,8 +447,11 @@ string SQueueParameters::ConfigSection(bool is_class) const
     "wnode_timeout=\"" + NS_FormatPreciseTimeAsSec(wnode_timeout) + "\"\n"
     "pending_timeout=\"" + NS_FormatPreciseTimeAsSec(pending_timeout) + "\"\n"
     "max_pending_wait_timeout=\"" + NS_FormatPreciseTimeAsSec(max_pending_wait_timeout) + "\"\n"
-    "netcache_api=\"" + netcache_api_section_name + "\"\n"
     "scramble_job_keys=\"" + NStr::BoolToString(scramble_job_keys) + "\"\n";
+
+    for (map<string, string>::const_iterator  k = linked_sections.begin();
+         k != linked_sections.end(); ++k)
+        result += k->first + "=\"" + NStr::PrintableString(k->second) + "\"\n";
 
     return result;
 }
@@ -401,12 +464,8 @@ SQueueParameters::ReadTimeout(const IRegistry &  reg,
     double  val = GetDoubleNoErr("timeout",
                                  double(default_timeout));
 
-    if (val <= 0) {
-        LOG_POST(Warning << "[" << sname
-                         << "].timeout cannot be <= 0. Default value: "
-                         << default_timeout << " is used.");
+    if (val <= 0)
         return default_timeout;
-    }
     return CNSPreciseTime(val);
 }
 
@@ -417,13 +476,8 @@ SQueueParameters::ReadNotifHifreqInterval(const IRegistry &  reg,
     double  val = GetDoubleNoErr("notif_hifreq_interval",
                                  double(default_notif_hifreq_interval));
     val = (int(val * 10)) / 10.0;
-    if (val <= 0) {
-        LOG_POST(Warning << "[" << sname
-                         << "].notif_hifreq_interval cannot be <= 0."
-                            " Default value: " << default_notif_hifreq_interval
-                         << " is used.");
+    if (val <= 0)
         return default_notif_hifreq_interval;
-    }
     return CNSPreciseTime(val);
 }
 
@@ -433,13 +487,8 @@ SQueueParameters::ReadNotifHifreqPeriod(const IRegistry &  reg,
 {
     double  val = GetDoubleNoErr("notif_hifreq_period",
                                  double(default_notif_hifreq_period));
-    if (val <= 0) {
-        LOG_POST(Warning << "[" << sname
-                         << "].notif_hifreq_period cannot be <= 0."
-                            " Default value: " << default_notif_hifreq_period
-                         << " is used.");
+    if (val <= 0)
         return default_notif_hifreq_period;
-    }
     return CNSPreciseTime(val);
 }
 
@@ -449,13 +498,8 @@ SQueueParameters::ReadNotifLofreqMult(const IRegistry &  reg,
 {
     unsigned int    val = GetIntNoErr("notif_lofreq_mult",
                                       default_notif_lofreq_mult);
-    if (val <= 0) {
-        LOG_POST(Warning << "[" << sname
-                         << "].notif_lofreq_mult cannot be <= 0."
-                            " Default value: " << default_notif_lofreq_mult
-                         << " is used.");
+    if (val <= 0)
         return default_notif_lofreq_mult;
-    }
     return val;
 }
 
@@ -465,13 +509,8 @@ SQueueParameters::ReadNotifHandicap(const IRegistry &  reg,
 {
     double  val = GetDoubleNoErr("notif_handicap",
                                  double(default_notif_handicap));
-    if (val <= 0) {
-        LOG_POST(Warning << "[" << sname
-                         << "].notif_handicap cannot be <= 0."
-                            " Default value: " << default_notif_handicap
-                         << " is used.");
+    if (val < 0)
         return default_notif_handicap;
-    }
     return CNSPreciseTime(val);
 }
 
@@ -481,20 +520,10 @@ SQueueParameters::ReadDumpBufferSize(const IRegistry &  reg,
 {
     unsigned int    val = GetIntNoErr("dump_buffer_size",
                                       default_dump_buffer_size);
-    if (val < default_dump_buffer_size) {
-        LOG_POST(Warning << "[" << sname
-                         << "].dump_buffer_size should not be less than "
-                         << default_dump_buffer_size
-                         << ". Default value: " << default_dump_buffer_size
-                         << " is used.");
-        val = default_dump_buffer_size;  // Avoid too small buffer
-    }
-    else if (val > 10000) {
-        LOG_POST(Warning << "[" << sname
-                         << "].dump_buffer_size should not be larger than "
-                            "10000. The value 10000 is used.");
-        val = 10000;    // Avoid too large buffer
-    }
+    if (val < default_dump_buffer_size)
+        val = default_dump_buffer_size; // Avoid too small buffer
+    if (val > max_dump_buffer_size)
+        val = max_dump_buffer_size;     // Avoid too large buffer
     return val;
 }
 
@@ -504,20 +533,10 @@ SQueueParameters::ReadDumpClientBufferSize(const IRegistry &  reg,
 {
     unsigned int    val = GetIntNoErr("dump_client_buffer_size",
                                       default_dump_client_buffer_size);
-    if (val < default_dump_client_buffer_size) {
-        LOG_POST(Warning << "[" << sname
-                         << "].dump_client_buffer_size should not be less than "
-                         << default_dump_client_buffer_size
-                         << ". Default value: " << default_dump_client_buffer_size
-                         << " is used.");
+    if (val < default_dump_client_buffer_size)
         val = default_dump_client_buffer_size;  // Avoid too small buffer
-    }
-    else if (val > 10000) {
-        LOG_POST(Warning << "[" << sname
-                         << "].dump_client_buffer_size should not be larger than "
-                            "10000. The value 10000 is used.");
-        val = 10000;    // Avoid too large buffer
-    }
+    if (val > max_dump_client_buffer_size)
+        val = max_dump_client_buffer_size;      // Avoid too large buffer
     return val;
 }
 
@@ -527,20 +546,10 @@ SQueueParameters::ReadDumpAffBufferSize(const IRegistry &  reg,
 {
     unsigned int    val = GetIntNoErr("dump_aff_buffer_size",
                                       default_dump_aff_buffer_size);
-    if (val < default_dump_aff_buffer_size) {
-        LOG_POST(Warning << "[" << sname
-                         << "].dump_aff_buffer_size should not be less than "
-                         << default_dump_aff_buffer_size
-                         << ". Default value: " << default_dump_aff_buffer_size
-                         << " is used.");
-        val = default_dump_aff_buffer_size;  // Avoid too small buffer
-    }
-    else if (val > 10000) {
-        LOG_POST(Warning << "[" << sname
-                         << "].dump_aff_buffer_size should not be larger than "
-                            "10000. The value 10000 is used.");
-        val = 10000;    // Avoid too large buffer
-    }
+    if (val < default_dump_aff_buffer_size)
+        val = default_dump_aff_buffer_size; // Avoid too small buffer
+    if (val > max_dump_aff_buffer_size)
+        val = max_dump_aff_buffer_size;     // Avoid too large buffer
     return val;
 }
 
@@ -550,20 +559,10 @@ SQueueParameters::ReadDumpGroupBufferSize(const IRegistry &  reg,
 {
     unsigned int    val = GetIntNoErr("dump_group_buffer_size",
                                       default_dump_group_buffer_size);
-    if (val < default_dump_group_buffer_size) {
-        LOG_POST(Warning << "[" << sname
-                         << "].dump_group_buffer_size should not be less than "
-                         << default_dump_group_buffer_size
-                         << ". Default value: " << default_dump_group_buffer_size
-                         << " is used.");
-        val = default_dump_group_buffer_size;  // Avoid too small buffer
-    }
-    else if (val > 10000) {
-        LOG_POST(Warning << "[" << sname
-                         << "].dump_group_buffer_size should not be larger than "
-                            "10000. The value 10000 is used.");
-        val = 10000;    // Avoid too large buffer
-    }
+    if (val < default_dump_group_buffer_size)
+        val = default_dump_group_buffer_size;   // Avoid too small buffer
+    if (val > max_dump_group_buffer_size)
+        val = max_dump_group_buffer_size;       // Avoid too large buffer
     return val;
 }
 
@@ -573,13 +572,8 @@ SQueueParameters::ReadRunTimeout(const IRegistry &  reg,
 {
     double  val = GetDoubleNoErr("run_timeout",
                                  double(default_run_timeout));
-    if (val < 0) {
-        LOG_POST(Warning << "[" << sname
-                         << "].run_timeout cannot be < 0."
-                            " Default value: " << default_run_timeout
-                         << " is used.");
+    if (val < 0)
         return default_run_timeout;
-    }
     return CNSPreciseTime(val);
 }
 
@@ -603,13 +597,8 @@ SQueueParameters::ReadBlacklistTime(const IRegistry &  reg,
 {
     double  val = GetDoubleNoErr("blacklist_time",
                                  double(default_blacklist_time));
-    if (val < 0) {
-        LOG_POST(Warning << "[" << sname
-                         << "].blacklist_time cannot be < 0."
-                            " Default value: " << default_blacklist_time
-                         << " is used.");
+    if (val < 0)
         return default_blacklist_time;
-    }
     return CNSPreciseTime(val);
 }
 
@@ -618,25 +607,16 @@ SQueueParameters::ReadMaxInputSize(const IRegistry &  reg,
                                    const string &     sname)
 {
     string        s = reg.GetString(sname, "max_input_size", kEmptyStr);
-    unsigned int  val = kNetScheduleMaxDBDataSize;
+    unsigned int  val = kNetScheduleMaxDBDataSize;  // 2048
 
     try {
-        val = (unsigned) NStr::StringToUInt8_DataSize(s);
+        if (!s.empty())
+            val = (unsigned int) NStr::StringToUInt8_DataSize(s);
     }
-    catch (CStringException&) {
-        LOG_POST(Warning << "[" << sname
-                         << "].max_input_size cannot be converted to "
-                            "unsigned integer. Default value: "
-                         << kNetScheduleMaxDBDataSize
-                         << " is used.");
-    }
+    catch (const CStringException &)
+    {}
 
-    if (val > kNetScheduleMaxOverflowSize)
-        LOG_POST(Warning << "[" << sname
-                         << "].max_input_size cannot be larger than "
-                         << kNetScheduleMaxOverflowSize
-                         << ". Default value: " << kNetScheduleMaxOverflowSize
-                         << " is used.");
+    // kNetScheduleMaxOverflowSize is 1M
     val = min(kNetScheduleMaxOverflowSize, val);
     return val;
 }
@@ -646,25 +626,16 @@ SQueueParameters::ReadMaxOutputSize(const IRegistry &  reg,
                                     const string &     sname)
 {
     string        s = reg.GetString(sname, "max_output_size", kEmptyStr);
-    unsigned int  val = kNetScheduleMaxDBDataSize;
+    unsigned int  val = kNetScheduleMaxDBDataSize;  // 2048
 
     try {
-        val = (unsigned) NStr::StringToUInt8_DataSize(s);
+        if (!s.empty())
+            val = (unsigned int) NStr::StringToUInt8_DataSize(s);
     }
-    catch (CStringException&) {
-        LOG_POST(Warning << "[" << sname
-                         << "].max_output_size cannot be converted to "
-                            "unsigned integer. Default value: "
-                         << kNetScheduleMaxDBDataSize
-                         << " is used.");
-    }
+    catch (const CStringException &)
+    {}
 
-    if (val > kNetScheduleMaxOverflowSize)
-        LOG_POST(Warning << "[" << sname
-                         << "].max_output_size cannot be larger than "
-                         << kNetScheduleMaxOverflowSize
-                         << ". Default value: " << kNetScheduleMaxOverflowSize
-                         << " is used.");
+    // kNetScheduleMaxOverflowSize is 1M
     val = min(kNetScheduleMaxOverflowSize, val);
     return val;
 }
@@ -689,13 +660,8 @@ SQueueParameters::ReadWnodeTimeout(const IRegistry &  reg,
 {
     double  val = GetDoubleNoErr("wnode_timeout",
                                  double(default_wnode_timeout));
-    if (val <= 0) {
-        LOG_POST(Warning << "[" << sname
-                         << "].wnode_timeout cannot be <= 0. "
-                            "Default value: " << default_wnode_timeout
-                         << " is used.");
+    if (val <= 0)
         return default_wnode_timeout;
-    }
     return CNSPreciseTime(val);
 }
 
@@ -705,13 +671,8 @@ SQueueParameters::ReadPendingTimeout(const IRegistry &  reg,
 {
     double  val = GetDoubleNoErr("pending_timeout",
                                  double(default_pending_timeout));
-    if (val <= 0) {
-        LOG_POST(Warning << "[" << sname
-                         << "].pending_timeout cannot be <= 0. "
-                            "Default value: " << default_pending_timeout
-                         << " is used.");
+    if (val <= 0)
         return default_pending_timeout;
-    }
     return CNSPreciseTime(val);
 }
 
@@ -721,12 +682,8 @@ SQueueParameters::ReadMaxPendingWaitTimeout(const IRegistry &  reg,
 {
     double  val = GetDoubleNoErr("max_pending_wait_timeout",
                                  double(default_max_pending_wait_timeout));
-    if (val < 0) {
-        LOG_POST(Warning << "[" << sname
-                         << "].max_pending_wait_timeout cannot be < 0. "
-                            "Default value: 0 is used.");
+    if (val < 0)
         val = 0;
-    }
     return CNSPreciseTime(val);
 }
 
@@ -737,25 +694,14 @@ SQueueParameters::ReadDescription(const IRegistry &  reg,
     return reg.GetString(sname, "description", kEmptyStr);
 }
 
-string
-SQueueParameters::ReadNetCacheAPISectionName(const IRegistry &  reg,
-                                             const string &     sname)
-{
-    return reg.GetString(sname, "netcache_api", kEmptyStr);
-}
-
 CNSPreciseTime
 SQueueParameters::ReadRunTimeoutPrecision(const IRegistry &  reg,
                                           const string &     sname)
 {
     double  val = GetDoubleNoErr("run_timeout_precision",
                                  double(default_run_timeout_precision));
-    if (val < 0) {
-        LOG_POST(Warning << "[" << sname
-                         << "].run_timeout_precision cannot be < 0. "
-                            "Default value: 3.0 is used.");
+    if (val < 0)
         val = 3.0;
-    }
     return CNSPreciseTime(val);
 }
 
@@ -765,6 +711,42 @@ SQueueParameters::ReadScrambleJobKeys(const IRegistry &  reg,
                                       const string &     sname)
 {
     return GetBoolNoErr("scramble_job_keys", false);
+}
+
+
+map<string, string>
+SQueueParameters::ReadLinkedSections(const IRegistry &  reg,
+                                     const string &     sname)
+{
+    map<string, string>     linked_sections;
+    list<string>            entries;
+    list<string>            available_sections;
+
+    reg.EnumerateEntries(sname, &entries);
+    reg.EnumerateSections(&available_sections);
+
+    for (list<string>::const_iterator  k = entries.begin();
+         k != entries.end(); ++k) {
+        const string &      entry = *k;
+
+        if (!NStr::StartsWith(entry, "linked_section_", NStr::eCase))
+            continue;
+        if (entry == "linked_section_")
+            continue;
+
+        string  ref_section = reg.GetString(sname, entry, kEmptyStr);
+
+        if (ref_section.empty())
+            continue;
+        if (find(available_sections.begin(),
+                 available_sections.end(),
+                 ref_section) == available_sections.end())
+            continue;
+
+        // Here: linked section exists and the prefix is fine
+        linked_sections[entry] = ref_section;
+    }
+    return linked_sections;
 }
 
 END_NCBI_SCOPE

@@ -168,6 +168,7 @@ private:
     void x_ProcessGetConf(CQueue*);
     void x_ProcessVersion(CQueue*);
     void x_ProcessHealth(CQueue*);
+    void x_ProcessAclAlert(CQueue*);
     void x_ProcessQList(CQueue*);
     void x_ProcessQuitSession(CQueue*);
     void x_ProcessCreateDynamicQueue(CQueue*);
@@ -192,6 +193,7 @@ private:
     void x_CheckPortAndTimeout(void);
     void x_CheckAuthorizationToken(void);
     void x_CheckGetParameters(void);
+    void x_CheckQInf2Parameters(void);
 
 private:
     CRef<CQueue> GetQueue(void) {

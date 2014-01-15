@@ -57,6 +57,7 @@ private:
     void x_SaveSection(const CNcbiRegistry &  reg,
                        const string &  section,
                        map<string, string> &  storage);
+    bool x_WritePid(void) const;
 
     map<string, string>     m_OrigLogSection;
     map<string, string>     m_OrigDiagSection;

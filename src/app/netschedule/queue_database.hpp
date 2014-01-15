@@ -188,9 +188,9 @@ public:
     string GetQueueClassesConfig(void) const;
     string GetQueueInfo(void) const;
     string GetQueueConfig(void) const;
-    string GetNetcacheApiSectionConfig(void) const;
+    string GetLinkedSectionConfig(void) const;
 
-    map< string, string >  GetNCApiSection(const string &  section_name) const;
+    map< string, string >  GetLinkedSection(const string &  section_name) const;
 
 private:
     // No copy
@@ -252,9 +252,10 @@ private:
     size_t              m_PurgeStatusIndex;     // Scanned status index
     unsigned int        m_PurgeJobScanned;      // Scanned job ID within status
 
-    // netcache_api sections support
-    mutable CFastMutex                      m_NCApiSectionsGuard;
-    map< string, map< string, string > >    m_NetCacheApiSections;
+    // Linked sections support
+    mutable CFastMutex                      m_LinkedSectionsGuard;
+    // Section name -> section values
+    map< string, map< string, string > >    m_LinkedSections;
 
     bool x_PurgeQueue(CQueue &                queue,
                       size_t                  status_to_start,
@@ -288,14 +289,13 @@ private:
     TQueueParams  x_ReadIniFileQueueClassDescriptions(const IRegistry &   reg);
     TQueueParams  x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
                                                  const TQueueParams &  classes);
-    void  x_ReadNCApiSections(const IRegistry &  reg,
-                              string &           diff);
-    string  x_DetectChangesInNCAPISection(
+    void  x_ReadLinkedSections(const IRegistry &  reg,
+                               string &           diff);
+    string  x_DetectChangesInLinkedSection(
                                 const map<string, string> &  old_values,
                                 const map<string, string> &  new_values);
 
-    void  x_ValidateConfiguration(const TQueueParams &  queues_from_ini,
-                                  const TQueueParams &  classes_from_ini) const;
+    void  x_ValidateConfiguration(const TQueueParams &  queues_from_ini) const;
     unsigned int
     x_CountQueuesToAdd(const TQueueParams &  queues_from_ini) const;
 

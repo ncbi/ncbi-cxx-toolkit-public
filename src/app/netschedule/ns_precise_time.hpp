@@ -33,6 +33,7 @@
 
 
 #include <corelib/ncbi_limits.hpp>
+#include <corelib/ncbitime.hpp>
 #include <sys/time.h>
 
 

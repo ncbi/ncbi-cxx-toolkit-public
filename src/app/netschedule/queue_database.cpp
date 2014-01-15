@@ -401,7 +401,6 @@ CQueueDataBase::x_ReadDBQueueDescriptions(const string &  expected_prefix)
         params.max_pending_wait_timeout = CNSPreciseTime(m_QueueDescriptionDB.max_pending_wait_timeout_sec,
                                                          m_QueueDescriptionDB.max_pending_wait_timeout_nsec);
         params.description = m_QueueDescriptionDB.description;
-        params.netcache_api_section_name = m_QueueDescriptionDB.netcache_api_section_name;
         params.run_timeout_precision = CNSPreciseTime(m_QueueDescriptionDB.run_timeout_precision_sec,
                                                       m_QueueDescriptionDB.run_timeout_precision_nsec);
         params.scramble_job_keys = (m_QueueDescriptionDB.scramble_job_keys != 0);
@@ -482,7 +481,6 @@ CQueueDataBase::x_InsertParamRecord(const string &            key,
     m_QueueDescriptionDB.max_pending_wait_timeout_sec = params.max_pending_wait_timeout.Sec();
     m_QueueDescriptionDB.max_pending_wait_timeout_nsec = params.max_pending_wait_timeout.NSec();
     m_QueueDescriptionDB.description = params.description;
-    m_QueueDescriptionDB.netcache_api_section_name = params.netcache_api_section_name;
     m_QueueDescriptionDB.run_timeout_precision_sec = params.run_timeout_precision.Sec();
     m_QueueDescriptionDB.run_timeout_precision_nsec = params.run_timeout_precision.NSec();
     m_QueueDescriptionDB.scramble_job_keys = params.scramble_job_keys;
@@ -593,12 +591,11 @@ CQueueDataBase::x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
 
         // This queue derives from a class
         TQueueParams::const_iterator  found = classes.find(qclass);
-        if (found == classes.end())
-            NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                       "Configuration error. The queue '" +
-                       queue_name +
-                       "' refers to undefined queue class '" +
-                       qclass + "'.");
+        if (found == classes.end()) {
+            // Skip such a queue. The log message has been produced while the
+            // config file is validated.
+            continue;
+        }
 
         // Take the class parameters
         SQueueParameters    params = found->second;
@@ -666,7 +663,7 @@ CQueueDataBase::x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
                 params.pending_timeout =
                         params.ReadPendingTimeout(reg, section_name);
             else if (*val == "max_pending_wait_timeout")
-                params.max_pending_wait_timeout = 
+                params.max_pending_wait_timeout =
                         params.ReadMaxPendingWaitTimeout(reg, section_name);
             else if (*val == "description")
                 params.description =
@@ -674,13 +671,18 @@ CQueueDataBase::x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
             else if (*val == "run_timeout_precision")
                 params.run_timeout_precision =
                         params.ReadRunTimeoutPrecision(reg, section_name);
-            else if (*val == "netcache_api")
-                params.netcache_api_section_name =
-                        params.ReadNetCacheAPISectionName(reg, section_name);
             else if (*val == "scramble_job_keys")
                 params.scramble_job_keys =
                         params.ReadScrambleJobKeys(reg, section_name);
         }
+
+        // Apply linked sections if so
+        map<string, string> linked_sections =
+                                params.ReadLinkedSections(reg, section_name);
+        for (map<string, string>::const_iterator  k = linked_sections.begin();
+             k != linked_sections.end(); ++k)
+            params.linked_sections[k->first] = k->second;
+
         params.qclass = qclass;
         queues[queue_name] = params;
     }
@@ -689,12 +691,12 @@ CQueueDataBase::x_ReadIniFileQueueDescriptions(const IRegistry &     reg,
 }
 
 
-void  CQueueDataBase::x_ReadNCApiSections(const IRegistry &  reg,
-                                          string &           diff)
+void  CQueueDataBase::x_ReadLinkedSections(const IRegistry &  reg,
+                                           string &           diff)
 {
     // Read the new content
-    typedef map< string, map< string, string > >    ncapi_container;
-    ncapi_container     new_values;
+    typedef map< string, map< string, string > >    section_container;
+    section_container   new_values;
     list<string>        sections;
     reg.EnumerateSections(&sections);
 
@@ -709,32 +711,56 @@ void  CQueueDataBase::x_ReadNCApiSections(const IRegistry &  reg,
         if (NStr::CompareNocase(prefix, "qclass") != 0 &&
             NStr::CompareNocase(prefix, "queue") != 0)
             continue;
-        string      ref_section = reg.GetString(section_name,
-                                                "netcache_api", kEmptyStr);
-        if (ref_section.empty())
-            continue;
 
         list<string>    entries;
-        reg.EnumerateEntries(ref_section, &entries);
-        map<string, string> values;
-        for (list<string>::const_iterator k = entries.begin();
-             k != entries.end(); ++k)
-            values[*k] = reg.GetString(ref_section, *k, kEmptyStr);
+        reg.EnumerateEntries(section_name, &entries);
 
-        new_values[ref_section] = values;
+        ITERATE(list<string>, k, entries) {
+            const string &  entry = *k;
+            string          ref_section = reg.GetString(section_name,
+                                                        entry, kEmptyStr);
+
+            if (!NStr::StartsWith(entry, "linked_section_", NStr::eCase))
+                continue;
+
+            if (entry == "linked_section_")
+                continue;   // Malformed values prefix
+
+            if (ref_section.empty())
+                continue;   // Malformed section name
+
+            if (find(sections.begin(), sections.end(), ref_section) ==
+                                                            sections.end())
+                continue;   // Non-existing section
+
+            if (new_values.find(ref_section) != new_values.end())
+                continue;   // Has already been read
+
+            // Read the linked section values
+            list<string>    linked_section_entries;
+            reg.EnumerateEntries(ref_section, &linked_section_entries);
+            map<string, string> values;
+            for (list<string>::const_iterator j = linked_section_entries.begin();
+                 j != linked_section_entries.end(); ++j)
+                values[*j] = reg.GetString(ref_section, *j, kEmptyStr);
+
+            new_values[ref_section] = values;
+        }
     }
+
+    CFastMutexGuard     guard(m_LinkedSectionsGuard);
 
     // Identify those sections which were deleted
     vector<string>  deleted;
-    for (ncapi_container::const_iterator  k(m_NetCacheApiSections.begin());
-         k != m_NetCacheApiSections.end(); ++k)
+    for (section_container::const_iterator  k(m_LinkedSections.begin());
+         k != m_LinkedSections.end(); ++k)
         if (new_values.find(k->first) == new_values.end())
             deleted.push_back(k->first);
 
     if (!deleted.empty()) {
         if (!diff.empty())
             diff += ", ";
-        diff += "\"netcache_api_deleted\" [";
+        diff += "\"linked_section_deleted\" [";
         for (vector<string>::const_iterator  k(deleted.begin());
              k != deleted.end(); ++k) {
             if (k != deleted.begin())
@@ -746,16 +772,15 @@ void  CQueueDataBase::x_ReadNCApiSections(const IRegistry &  reg,
 
     // Identify those sections which were added
     vector<string>  added;
-    for (ncapi_container::const_iterator  k(new_values.begin());
+    for (section_container::const_iterator  k(new_values.begin());
          k != new_values.end(); ++k)
-        if (m_NetCacheApiSections.find(k->first) ==
-            m_NetCacheApiSections.end())
+        if (m_LinkedSections.find(k->first) == m_LinkedSections.end())
             added.push_back(k->first);
 
     if (!added.empty()) {
         if (!diff.empty())
             diff += ", ";
-        diff += "\"netcache_api_added\" [";
+        diff += "\"linked_section_added\" [";
         for (vector<string>::const_iterator  k(added.begin());
             k != added.end(); ++k) {
             if (k != added.begin())
@@ -767,11 +792,11 @@ void  CQueueDataBase::x_ReadNCApiSections(const IRegistry &  reg,
 
     // Deal with changed sections: what was added/deleted/modified
     vector<string>  changed;
-    for (ncapi_container::const_iterator  k(new_values.begin());
+    for (section_container::const_iterator  k(new_values.begin());
         k != new_values.end(); ++k) {
         if (find(added.begin(), added.end(), k->first) != added.end())
             continue;
-        if (new_values[k->first] == m_NetCacheApiSections[k->first])
+        if (new_values[k->first] == m_LinkedSections[k->first])
             continue;
         changed.push_back(k->first);
     }
@@ -779,26 +804,26 @@ void  CQueueDataBase::x_ReadNCApiSections(const IRegistry &  reg,
     if (!changed.empty()) {
         if (!diff.empty())
             diff += ", ";
-        diff += "\"netcache_api_changed\" [";
+
+        diff += "\"linked_section_changed\" [";
         for (vector<string>::const_iterator  k(changed.begin());
              k != changed.end(); ++k) {
             if (k != changed.begin())
                 diff += ", ";
-            diff += "\"" + *k + "\" {" + x_DetectChangesInNCAPISection(
-                                            m_NetCacheApiSections[*k],
+            diff += "\"" + *k + "\" {" + x_DetectChangesInLinkedSection(
+                                            m_LinkedSections[*k],
                                             new_values[*k]) + "}";
         }
         diff += "]";
     }
 
     // Finally, save the new configuration
-    CFastMutexGuard     guard(m_NCApiSectionsGuard);
-    m_NetCacheApiSections = new_values;
+    m_LinkedSections = new_values;
 }
 
 
 string
-CQueueDataBase::x_DetectChangesInNCAPISection(
+CQueueDataBase::x_DetectChangesInLinkedSection(
                         const map<string, string> &  old_values,
                         const map<string, string> &  new_values)
 {
@@ -870,26 +895,11 @@ CQueueDataBase::x_DetectChangesInNCAPISection(
 
 
 // Validates the config from an ini file for the following:
-// - a queue references a class which is not defined
 // - a static queue redefines existed dynamic queue
 void
 CQueueDataBase::x_ValidateConfiguration(
-                        const TQueueParams &  queues_from_ini,
-                        const TQueueParams &  classes_from_ini) const
+                        const TQueueParams &  queues_from_ini) const
 {
-    // Check that all queues refer to defined classes
-    for (TQueueParams::const_iterator  k = queues_from_ini.begin();
-         k != queues_from_ini.end(); ++k) {
-        if (k->second.qclass.empty())
-            continue;
-        if (classes_from_ini.find(k->second.qclass) == classes_from_ini.end())
-            NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                       "Configuration error. The queue '" +
-                       k->first +
-                       "' refers to undefined queue class '" +
-                       k->second.qclass + "'.");
-    }
-
     // Check that static queues do not mess with existing dynamic queues
     for (TQueueParams::const_iterator  k = queues_from_ini.begin();
          k != queues_from_ini.end(); ++k) {
@@ -1279,9 +1289,9 @@ time_t  CQueueDataBase::Configure(const IRegistry &  reg,
                                                            classes_from_ini);
 
     // Validate basic consistency of the incoming configuration
-    x_ValidateConfiguration(queues_from_ini, classes_from_ini);
+    x_ValidateConfiguration(queues_from_ini);
 
-    x_ReadNCApiSections(reg, diff);
+    x_ReadLinkedSections(reg, diff);
 
     // Check that the there are enough slots for the new queues if so
     // configured
@@ -1651,22 +1661,28 @@ string CQueueDataBase::PrintJobsStat(void)
 string CQueueDataBase::GetQueueClassesInfo(void) const
 {
     string                  output;
-    map<string, string>     netcache_api;
     CFastMutexGuard         guard(m_ConfigureLock);
+
     for (TQueueParams::const_iterator  k = m_QueueClasses.begin();
          k != m_QueueClasses.end(); ++k) {
         if (!output.empty())
             output += "\n";
 
-        netcache_api = GetNCApiSection(k->second.netcache_api_section_name);
         // false - not to include qclass
         // false - not URL encoded format
         output += "OK:[qclass " + k->first + "]\n" +
                   k->second.GetPrintableParameters(false, false);
 
-        for (map<string, string>::const_iterator  k = netcache_api.begin();
-             k != netcache_api.end(); ++k)
-            output += "\nOK:nc." + k->first + ": " + k->second;
+        for (map<string, string>::const_iterator j = k->second.linked_sections.begin();
+             j != k->second.linked_sections.end(); ++j) {
+            string  prefix((j->first).c_str() + strlen("linked_section_"));
+            string  section_name = j->second;
+
+            map<string, string> values = GetLinkedSection(section_name);
+            for (map<string, string>::const_iterator m = values.begin();
+                 m != values.end(); ++m)
+                output += "\nOK:" + prefix + "." + m->first + ": " + m->second;
+        }
     }
     return output;
 }
@@ -1690,22 +1706,28 @@ string CQueueDataBase::GetQueueClassesConfig(void) const
 string CQueueDataBase::GetQueueInfo(void) const
 {
     string                  output;
-    map<string, string>     netcache_api;
     CFastMutexGuard         guard(m_ConfigureLock);
+
     for (TQueueInfo::const_iterator  k = m_Queues.begin();
          k != m_Queues.end(); ++k) {
         if (!output.empty())
             output += "\n";
 
-        k->second.second->GetNCAPI(netcache_api);
         // true - include qclass
         // false - not URL encoded format
         output += "OK:[queue " + k->first + "]\n" +
                   x_SingleQueueInfo(k).GetPrintableParameters(true, false);
 
-        for (map<string, string>::const_iterator  k = netcache_api.begin();
-             k != netcache_api.end(); ++k)
-            output += "\nOK:nc." + k->first + ": " + k->second;
+        for (map<string, string>::const_iterator j = k->second.first.linked_sections.begin();
+             j != k->second.first.linked_sections.end(); ++j) {
+            string  prefix((j->first).c_str() + strlen("linked_section_"));
+            string  section_name = j->second;
+
+            map<string, string> values = GetLinkedSection(section_name);
+            for (map<string, string>::const_iterator m = values.begin();
+                 m != values.end(); ++m)
+                output += "\nOK:" + prefix + "." + m->first + ": " + m->second;
+        }
     }
     return output;
 }
@@ -1725,12 +1747,14 @@ string CQueueDataBase::GetQueueConfig(void) const
 }
 
 
-string CQueueDataBase::GetNetcacheApiSectionConfig(void) const
+string CQueueDataBase::GetLinkedSectionConfig(void) const
 {
     string              output;
+    CFastMutexGuard     guard(m_LinkedSectionsGuard);
+
     for (map< string, map< string, string > >::const_iterator
-            k = m_NetCacheApiSections.begin();
-            k != m_NetCacheApiSections.end(); ++k) {
+            k = m_LinkedSections.begin();
+            k != m_LinkedSections.end(); ++k) {
         if (!output.empty())
             output += "\n";
         output += "[" + k->first + "]\n";
@@ -1744,12 +1768,12 @@ string CQueueDataBase::GetNetcacheApiSectionConfig(void) const
 
 
 map< string, string >
-CQueueDataBase::GetNCApiSection(const string &  section_name) const
+CQueueDataBase::GetLinkedSection(const string &  section_name) const
 {
-    CFastMutexGuard     guard(m_NCApiSectionsGuard);
+    CFastMutexGuard     guard(m_LinkedSectionsGuard);
     map< string, map< string, string > >::const_iterator  found =
-        m_NetCacheApiSections.find(section_name);
-    if (found == m_NetCacheApiSections.end())
+        m_LinkedSections.find(section_name);
+    if (found == m_LinkedSections.end())
         return map< string, string >();
     return found->second;
 }

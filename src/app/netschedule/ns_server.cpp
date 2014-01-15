@@ -32,6 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include "ns_server.hpp"
+#include "ns_ini_params.hpp"
 #include "queue_database.hpp"
 
 
@@ -49,28 +50,27 @@ CNetScheduleServer::CNetScheduleServer()
       m_HostNetAddr(0),
       m_Shutdown(false),
       m_SigNum(0),
-      m_InactivityTimeout(0),
+      m_InactivityTimeout(default_network_timeout),
       m_QueueDB(0),
       m_StartTime(GetFastLocalTime()),
-      m_LogFlag(false),
-      m_LogBatchEachJobFlag(false),
-      m_LogNotificationThreadFlag(false),
-      m_LogCleaningThreadFlag(false),
-      m_LogExecutionWatcherThreadFlag(false),
-      m_LogStatisticsThreadFlag(false),
+      m_LogFlag(default_is_log),
+      m_LogBatchEachJobFlag(default_log_batch_each_job),
+      m_LogNotificationThreadFlag(default_log_notification_thread),
+      m_LogCleaningThreadFlag(default_log_cleaning_thread),
+      m_LogExecutionWatcherThreadFlag(default_log_execution_watcher_thread),
+      m_LogStatisticsThreadFlag(default_log_statistics_thread),
       m_RefuseSubmits(false),
-      m_UseHostname(false),
-      m_DeleteBatchSize(100),
-      m_MarkdelBatchSize(200),
-      m_ScanBatchSize(10000),
-      m_PurgeTimeout(0.1),
-      m_StatInterval(10),
-      m_MaxAffinities(10000),
+      m_UseHostname(default_use_hostname),
+      m_DeleteBatchSize(default_del_batch_size),
+      m_MarkdelBatchSize(default_markdel_batch_size),
+      m_ScanBatchSize(default_scan_batch_size),
+      m_PurgeTimeout(default_purge_timeout),
+      m_StatInterval(default_stat_interval),
+      m_MaxAffinities(default_max_affinities),
       m_NodeID("not_initialized"),
       m_SessionID("s" + x_GenerateGUID())
 {
     m_CurrentSubmitsCounter.Set(kSubmitCounterInitialValue);
-    m_AtomicCommandNumber.Set(1);
     sm_netschedule_server = this;
 }
 
@@ -213,6 +213,93 @@ string CNetScheduleServer::SetNSParameters(const SNS_Parameters &  params,
 }
 
 
+// Return: difference
+// Note: it is always called after the configuration is validated so
+//       no messages should be logged
+string CNetScheduleServer::ReadServicesConfig(const CNcbiRegistry &  reg)
+{
+    string                  diff;
+    const string            section = "service_to_queue";
+    map< string, string >   new_services;
+
+    // Read the new list -- new alerts if so
+    list<string>            entries;
+    reg.EnumerateEntries(section, &entries);
+
+
+    for (list<string>::const_iterator  k = entries.begin();
+         k != entries.end(); ++k) {
+        string      service_name = *k;
+        string      qname = reg.Get("service_to_queue", service_name);
+        if (qname.empty())
+            continue;
+
+        // Check that the queue name has been provided
+        if (!m_QueueDB->QueueExists(qname))
+            continue;
+
+        // Config line is fine, memorize it
+        NStr::ToUpper(service_name);
+        new_services[service_name] = qname;
+    }
+
+    // Compare with the old list -- combine report string
+    string      new_items;
+    string      deleted_items;
+    string      changed_items;
+
+    for (map< string, string>::const_iterator  k = new_services.begin();
+         k != new_services.end(); ++k) {
+        map< string, string>::const_iterator    found =
+                                                    m_Services.find(k->first);
+        if (found == m_Services.end()) {
+            if (!new_items.empty())
+                new_items += ", ";
+            new_items += "\"" + k->first + "\"";
+            continue;
+        }
+        if (found->second != k->second) {
+            if (!changed_items.empty())
+                changed_items += ", ";
+            changed_items += "\"" + k->first + "\" [\"" +
+                             found->second + "\", \"" + k->second + "\"]";
+        }
+    }
+
+    for (map< string, string>::const_iterator  k = m_Services.begin();
+         k != m_Services.end(); ++k) {
+        map< string, string>::const_iterator    found =
+                                                    new_services.find(k->first);
+        if (found == new_services.end()) {
+            if (!deleted_items.empty())
+                deleted_items += ", ";
+            deleted_items += "\"" + k->first + "\"";
+        }
+    }
+
+
+    if (!new_items.empty())
+        diff = "\"services_added\" [" + new_items + "]";
+
+    if (!deleted_items.empty()) {
+        if (!diff.empty())
+            diff += ", ";
+        diff += "\"services_deleted\" [" + deleted_items + "]";
+    }
+
+    if (!changed_items.empty()) {
+        if (!diff.empty())
+            diff += ", ";
+        diff += "\"services_changed\" {" + changed_items + "}";
+    }
+
+    // Set the current as the new one
+    CFastMutexGuard     guard(m_ServicesLock);
+    m_Services = new_services;
+    return diff;
+}
+
+
 bool CNetScheduleServer::ShutdownRequested(void)
 {
     return m_Shutdown;
@@ -232,12 +319,6 @@ void CNetScheduleServer::SetShutdownFlag(int signum)
         m_Shutdown = true;
         m_SigNum = signum;
     }
-}
-
-
-unsigned CNetScheduleServer::GetCommandNumber()
-{
-    return m_AtomicCommandNumber.Add(1);
 }
 
 
@@ -344,9 +425,42 @@ string CNetScheduleServer::GetQueueConfig(void) const
 }
 
 
-string CNetScheduleServer::GetNetcacheApiSectionConfig(void) const
+string CNetScheduleServer::GetLinkedSectionConfig(void) const
 {
-    return m_QueueDB->GetNetcacheApiSectionConfig();
+    return m_QueueDB->GetLinkedSectionConfig();
+}
+
+
+string CNetScheduleServer::GetServiceToQueueSectionConfig(void) const
+{
+    string                                  output;
+    map< string, string >::const_iterator   k;
+    CFastMutexGuard                         guard(m_ServicesLock);
+
+    if (m_Services.empty())
+        return output;
+
+    output = "\n[service_to_queue]";
+    for (k = m_Services.begin(); k != m_Services.end(); ++k) {
+        if (!output.empty())
+            output += "\n";
+        output += k->first + "=\"" + k->second + "\"";
+    }
+
+    return output;
+}
+
+
+string CNetScheduleServer::ResolveService(const string &  service) const
+{
+    map< string, string >::const_iterator   k;
+    CFastMutexGuard                         guard(m_ServicesLock);
+
+    for (k = m_Services.begin(); k != m_Services.end(); ++k) {
+        if (NStr::CompareNocase(k->first, service) == 0)
+            return k->second;
+    }
+    return "";
 }
 
 
@@ -379,6 +493,30 @@ string CNetScheduleServer::GetAdminClientNames(void) const
         ret += *k;
     }
     return ret;
+}
+
+
+string CNetScheduleServer::GetAlerts(void) const
+{
+    return m_Alerts.GetURLEncoded();
+}
+
+
+enum EAlertAckResult CNetScheduleServer::AcknowledgeAlert(const string &  id)
+{
+    return m_Alerts.Acknowledge(id);
+}
+
+
+enum EAlertAckResult CNetScheduleServer::AcknowledgeAlert(EAlertType  alert_type)
+{
+    return m_Alerts.Acknowledge(alert_type);
+}
+
+
+void CNetScheduleServer::RegisterAlert(EAlertType  alert_type)
+{
+    m_Alerts.Register(alert_type);
 }
 
 

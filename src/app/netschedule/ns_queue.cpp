@@ -39,6 +39,7 @@
 #include "ns_rollback.hpp"
 #include "queue_database.hpp"
 #include "ns_handler.hpp"
+#include "ns_ini_params.hpp"
 
 #include <corelib/ncbi_system.hpp> // SleepMilliSec
 #include <corelib/request_ctx.hpp>
@@ -92,13 +93,13 @@ CQueue::CQueue(CRequestExecutor&     executor,
 
     m_JobsToDeleteOps(0),
 
-    m_Timeout(3600, 0),
-    m_RunTimeout(3600, 0),
-    m_FailedRetries(0),
+    m_Timeout(default_timeout),
+    m_RunTimeout(default_run_timeout),
+    m_FailedRetries(default_failed_retries),
     m_MaxInputSize(kNetScheduleMaxDBDataSize),
     m_MaxOutputSize(kNetScheduleMaxDBDataSize),
-    m_WNodeTimeout(40, 0),
-    m_PendingTimeout(604800, 0),
+    m_WNodeTimeout(default_wnode_timeout),
+    m_PendingTimeout(default_pending_timeout),
     m_KeyGenerator(server->GetHost(), server->GetPort(), queue_name),
     m_Log(server->IsLog()),
     m_LogBatchEachJob(server->IsLogBatchEachJob()),
@@ -110,14 +111,14 @@ CQueue::CQueue(CRequestExecutor&     executor,
     m_AffinityLowRemoval(server->GetAffinityLowRemoval()),
     m_AffinityDirtPercentage(server->GetAffinityDirtPercentage()),
     m_NotificationsList(qdb, server->GetNodeID(), queue_name),
-    m_NotifHifreqInterval(0, 100000000), // 0.1 sec
-    m_NotifHifreqPeriod(5, 0),
-    m_NotifLofreqMult(50),
-    m_DumpBufferSize(100),
-    m_DumpClientBufferSize(100),
-    m_DumpAffBufferSize(100),
-    m_DumpGroupBufferSize(100),
-    m_ScrambleJobKeys(false)
+    m_NotifHifreqInterval(default_notif_hifreq_interval), // 0.1 sec
+    m_NotifHifreqPeriod(default_notif_hifreq_period),
+    m_NotifLofreqMult(default_notif_lofreq_mult),
+    m_DumpBufferSize(default_dump_buffer_size),
+    m_DumpClientBufferSize(default_dump_client_buffer_size),
+    m_DumpAffBufferSize(default_dump_aff_buffer_size),
+    m_DumpGroupBufferSize(default_dump_group_buffer_size),
+    m_ScrambleJobKeys(default_scramble_job_keys)
 {
     _ASSERT(!queue_name.empty());
 }
@@ -229,8 +230,8 @@ void CQueue::SetParameters(const SQueueParameters &  params)
     m_DumpClientBufferSize  = params.dump_client_buffer_size;
     m_DumpAffBufferSize     = params.dump_aff_buffer_size;
     m_DumpGroupBufferSize   = params.dump_group_buffer_size;
-    m_NCAPISectionName      = params.netcache_api_section_name;
     m_ScrambleJobKeys       = params.scramble_job_keys;
+    m_LinkedSections        = params.linked_sections;
 
     m_ClientsRegistry.SetBlacklistTimeout(m_BlacklistTime);
 
@@ -258,21 +259,30 @@ CQueue::TParameterList CQueue::GetParameters() const
 }
 
 
-void CQueue::GetMaxIOSizesAndNCAPI(unsigned int &  max_input_size,
-                                   unsigned int &  max_output_size,
-                                   map<string, string> & netcache_api) const
+void CQueue::GetMaxIOSizesAndLinkedSections(
+                unsigned int &  max_input_size,
+                unsigned int &  max_output_size,
+                map< string, map<string, string> > & linked_sections) const
 {
     CQueueParamAccessor     qp(*this);
 
     max_input_size = qp.GetMaxInputSize();
     max_output_size = qp.GetMaxOutputSize();
-    GetNCAPI(netcache_api);
+    GetLinkedSections(linked_sections);
 }
 
 
-void CQueue::GetNCAPI(map<string, string> & netcache_api) const
+void
+CQueue::GetLinkedSections(map< string,
+                               map<string, string> > &  linked_sections) const
 {
-    netcache_api = m_QueueDB.GetNCApiSection(m_NCAPISectionName);
+    for (map<string, string>::const_iterator  k = m_LinkedSections.begin();
+         k != m_LinkedSections.end(); ++k) {
+        map< string, string >   values = m_QueueDB.GetLinkedSection(k->second);
+
+        if (!values.empty())
+            linked_sections[k->first] = values;
+    }
 }
 
 // Used while loading the status matrix.

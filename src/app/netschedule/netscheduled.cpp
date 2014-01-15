@@ -55,12 +55,12 @@
 
 #include "queue_database.hpp"
 #include "ns_types.hpp"
-#include "ns_util.hpp"
 #include "ns_server_params.hpp"
 #include "ns_handler.hpp"
 #include "ns_server.hpp"
 #include "netschedule_version.hpp"
 #include "ns_application.hpp"
+#include "ns_util.hpp"
 
 #include <corelib/ncbi_process.hpp>
 #include <signal.h>
@@ -146,17 +146,14 @@ int CNetScheduleDApp::Run(void)
 {
     LOG_POST(Message << Warning << NETSCHEDULED_FULL_VERSION);
 
-    const CArgs&         args = GetArgs();
-    const CNcbiRegistry& reg  = GetConfig();
-
-    // Throws an exception if there are hanging references
-    NS_ValidateConfigFile(reg);
+    const CArgs &           args = GetArgs();
+    const CNcbiRegistry &   reg  = GetConfig();
 
     x_SaveSection(reg, "log", m_OrigLogSection);
     x_SaveSection(reg, "diag", m_OrigDiagSection);
     x_SaveSection(reg, "bdb", m_OrigBDBSection);
 
-    CNcbiOstrstream ostr;
+    CNcbiOstrstream     ostr;
     reg.Write(ostr);
     LOG_POST(Message << Warning
                      << "Configuration file content: " << ostr.str());
@@ -166,34 +163,10 @@ int CNetScheduleDApp::Run(void)
     signal(SIGINT,  Threaded_Server_SignalHandler);
     signal(SIGTERM, Threaded_Server_SignalHandler);
 
-    // Check that the pidfile argument is really a file
-    if (args[kPidFileArgName]) {
-        string      pid_file = args[kPidFileArgName].AsString();
-        if (pid_file == "-")
-            NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                       "PID file cannot be standard output and only "
-                       "file name is accepted.");
-        // Test writeability
-        if (access(pid_file.c_str(), F_OK) == 0) {
-            // File exists
-            if (access(pid_file.c_str(), W_OK) != 0)
-                NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                           "PID file is not writable.");
-        } else {
-            // File does not exist
-            FILE *  f = fopen(pid_file.c_str(), "w");
-            if (f == NULL)
-                NCBI_THROW(CNetScheduleException, eInvalidParameter,
-                           "PID file is not writable.");
-            fclose(f);
-            // The startup may fail before the pid file should be created,
-            // so leave the fs in the state as before the test
-            remove(pid_file.c_str());
-        }
-    }
+    bool    config_well_formed = NS_ValidateConfigFile(reg);
 
     // [bdb] section
-    SNSDBEnvironmentParams bdb_params;
+    SNSDBEnvironmentParams  bdb_params;
 
     if (!bdb_params.Read(reg, "bdb"))
         NCBI_THROW(CNetScheduleException, eInternalError,
@@ -201,7 +174,7 @@ int CNetScheduleDApp::Run(void)
 
     // [server] section
     SNS_Parameters      params;
-    params.Read(reg, "server");
+    params.Read(reg);
 
 
     m_ServerAcceptTimeout.sec  = 1;
@@ -254,17 +227,10 @@ int CNetScheduleDApp::Run(void)
                      << min_run_timeout << " seconds");
 
     // Save the process PID if PID is given
-    if (args[kPidFileArgName]) {
-        // Writability was tested at the beginning
-        string  pid_file = args[kPidFileArgName].AsString();
-        FILE *  f = fopen(pid_file.c_str(), "w");
-        if (f == NULL)
-            NCBI_THROW(CNetScheduleException, eInternalError,
-                       "Error opening pid file.");
-
-        fprintf(f, "%d", (unsigned int) CDiagContext::GetPID());
-        fclose(f);
-    }
+    if (!x_WritePid())
+        server->RegisterAlert(ePidFile);
+    if (!config_well_formed)
+        server->RegisterAlert(eConfig);
 
     qdb->RunExecutionWatcherThread(min_run_timeout);
     qdb->RunPurgeThread();
@@ -272,12 +238,14 @@ int CNetScheduleDApp::Run(void)
     qdb->RunServiceThread();
 
     server->SetQueueDB(qdb.release());
+    server->ReadServicesConfig(reg);
 
     if (args[kNodaemonArgName])
         NcbiCout << "Server started" << NcbiEndl;
 
     CAsyncDiagHandler diag_handler;
     diag_handler.SetCustomThreadSuffix("_l");
+
 
     try {
         diag_handler.InstallToDiag();
@@ -311,6 +279,46 @@ void CNetScheduleDApp::x_SaveSection(const CNcbiRegistry &  reg,
     }
 }
 
+
+// true if the PID is written successfully
+bool CNetScheduleDApp::x_WritePid(void) const
+{
+    const CArgs &   args = GetArgs();
+
+    // Check that the pidfile argument is really a file
+    if (args[kPidFileArgName]) {
+
+        string      pid_file = args[kPidFileArgName].AsString();
+
+        if (pid_file == "-") {
+            LOG_POST(Warning << "PID file cannot be standard output and only "
+                                "file name is accepted. Ignore and continue.");
+            return false;
+        }
+
+        // Test writeability
+        if (access(pid_file.c_str(), F_OK) == 0) {
+            // File exists
+            if (access(pid_file.c_str(), W_OK) != 0) {
+                LOG_POST(Warning << "PID file is not writable. "
+                                    "Ignore and continue.");
+                return false;
+            }
+        }
+
+        // File does not exist or write access is granted
+        FILE *  f = fopen(pid_file.c_str(), "w");
+        if (f == NULL) {
+            LOG_POST(Warning << "Error opening PID file for writing. "
+                                "Ignore and continue.");
+            return false;
+        }
+        fprintf(f, "%d", (unsigned int) CDiagContext::GetPID());
+        fclose(f);
+    }
+
+    return true;
+}
 
 
 int main(int argc, const char* argv[])

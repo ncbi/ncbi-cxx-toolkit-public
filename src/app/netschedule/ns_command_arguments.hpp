@@ -74,6 +74,8 @@ struct SNSCommandArguments
     string          aff_to_del;
     string          start_after;
     string          group;
+    string          alert;
+    string          service;
 
     bool            any_affinity;
     bool            wnode_affinity;

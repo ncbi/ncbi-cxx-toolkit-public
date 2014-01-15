@@ -103,6 +103,11 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
                          eNS_NoChecks },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
+    { "ACKALERT",      { &CNetScheduleHandler::x_ProcessAclAlert,
+                         eNS_NoChecks },
+        { { "alert",             eNSPT_Id,  eNSPA_Required      },
+          { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
+          { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "QUIT",          { &CNetScheduleHandler::x_ProcessQuitSession,
                          eNS_NoChecks },
         { { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
@@ -122,7 +127,8 @@ CNetScheduleHandler::SCommandMap CNetScheduleHandler::sm_CommandMap[] = {
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "QINF2",         { &CNetScheduleHandler::x_ProcessQueueInfo,
                          eNS_NoChecks },
-        { { "qname",             eNSPT_Id,  eNSPA_Required      },
+        { { "qname",             eNSPT_Id,  eNSPA_Optional, ""  },
+          { "service",           eNSPT_Id,  eNSPA_Optional, ""  },
           { "ip",                eNSPT_Str, eNSPA_Optional, ""  },
           { "sid",               eNSPT_Str, eNSPA_Optional, ""  } } },
     { "SETQUEUE",      { &CNetScheduleHandler::x_ProcessSetQueue,
@@ -2191,20 +2197,30 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
 
     if (reloaded) {
         const CNcbiRegistry &   reg = app->GetConfig();
+        bool                    well_formed = NS_ValidateConfigFile(reg);
 
-        // It throws an exception if something is wrong
-        NS_ValidateConfigFile(reg);
+        if (!well_formed) {
+            m_Server->RegisterAlert(eReconfigure);
+            x_SetCmdRequestStatus(eStatus_BadRequest);
+            x_WriteMessage("ERR:eInvalidParameter:Configuration file is not "
+                           "well formed. See log for the details.");
+            x_PrintCmdRequestStop();
+            return;
+        }
 
         string                  diff;
         m_Server->Configure(reg, diff);
 
         // Logging from the [server] section
         SNS_Parameters          params;
+        params.Read(reg);
 
-        params.Read(reg, "server");
         string      what_changed = m_Server->SetNSParameters(params, true);
+        string      services_changed = m_Server->ReadServicesConfig(reg);
 
-        if (what_changed.empty() && diff.empty()) {
+        if (what_changed.empty() && diff.empty() && services_changed.empty()) {
+            m_Server->AcknowledgeAlert(eConfig);
+            m_Server->AcknowledgeAlert(eReconfigure);
             if (m_ConnContext.NotNull())
                  GetDiagContext().Extra().Print("accepted_changes", "none");
             x_WriteMessage("OK:WARNING:No changeable parameters were "
@@ -2213,17 +2229,23 @@ void CNetScheduleHandler::x_ProcessReloadConfig(CQueue* q)
             return;
         }
 
-        string      total_changes;
-        if (!what_changed.empty() && !diff.empty())
-            total_changes = what_changed + ", " + diff;
-        else if (what_changed.empty())
-            total_changes = diff;
-        else
-            total_changes = what_changed;
+        string      total_changes = what_changed;
+        if (!diff.empty()) {
+            if (!total_changes.empty())
+                total_changes += ", ";
+            total_changes += diff;
+        }
+        if (!services_changed.empty()) {
+            if (!total_changes.empty())
+                total_changes += ", ";
+            total_changes += services_changed;
+        }
 
         if (m_ConnContext.NotNull())
             GetDiagContext().Extra().Print("config_changes", total_changes);
 
+        m_Server->AcknowledgeAlert(eConfig);
+        m_Server->AcknowledgeAlert(eReconfigure);
         x_WriteMessage("OK:" + total_changes);
     }
     else
@@ -2317,7 +2339,8 @@ void CNetScheduleHandler::x_ProcessGetConf(CQueue*)
                        x_GetBdbSection() +
                        m_Server->GetQueueClassesConfig() +
                        m_Server->GetQueueConfig() +
-                       m_Server->GetNetcacheApiSectionConfig());
+                       m_Server->GetLinkedSectionConfig() +
+                       m_Server->GetServiceToQueueSectionConfig());
     } else {
         // The original config file (the one used at the startup)
         // has been requested
@@ -2411,8 +2434,32 @@ void CNetScheduleHandler::x_ProcessHealth(CQueue*)
     else
         reply += "&proc_thread_count=n/a";
 
+    string  alerts = m_Server->GetAlerts();
+    if (!alerts.empty())
+        reply += "&" + alerts;
 
     x_WriteMessage(reply);
+    x_PrintCmdRequestStop();
+}
+
+
+void CNetScheduleHandler::x_ProcessAclAlert(CQueue*)
+{
+    enum EAlertAckResult    result =
+                m_Server->AcknowledgeAlert(m_CommandArguments.alert);
+    switch (result) {
+        case eNotFound:
+            x_WriteMessage("OK:WARNING:Alert has not been found;");
+            break;
+        case eAlreadyAcknowledged:
+            x_WriteMessage("OK:WARNING:Alert has already been acknowledged;");
+            break;
+        case eAcknowledged:
+            x_WriteMessage("OK:");
+            break;
+        default:
+            x_WriteMessage("OK:WARNING:unknown acknowledge result;");
+    }
     x_PrintCmdRequestStop();
 }
 
@@ -2456,21 +2503,37 @@ void CNetScheduleHandler::x_ProcessDeleteDynamicQueue(CQueue*)
 void CNetScheduleHandler::x_ProcessQueueInfo(CQueue*)
 {
     bool                cmdv2(m_CommandArguments.cmd == "QINF2");
-    SQueueParameters    params = m_Server->QueueInfo(m_CommandArguments.qname);
 
     if (cmdv2) {
+        x_CheckQInf2Parameters();
+
+        string      qname = m_CommandArguments.qname;
+        if (!m_CommandArguments.service.empty()) {
+            // Service has been provided, need to resolve it to a queue
+            qname = m_Server->ResolveService(m_CommandArguments.service);
+            if (qname.empty()) {
+                x_SetCmdRequestStatus(eStatus_NotFound);
+                x_WriteMessage("ERR:eUnknownService:Cannot resolve service " +
+                               m_CommandArguments.service + " to a queue");
+                x_PrintCmdRequestStop();
+                return;
+            }
+        }
+
+        SQueueParameters    params = m_Server->QueueInfo(qname);
         CRef<CQueue>        queue_ref;
         CQueue *            queue_ptr;
         size_t              jobs_per_state[g_ValidJobStatusesSize];
         string              jobs_part;
-        string              nc_api_part;
-        map<string, string> netcache_api;
+        string              linked_sections_part;
         size_t              total = 0;
+        map< string,
+             map<string, string> >      linked_sections;
 
-        queue_ref.Reset(m_Server->OpenQueue(m_CommandArguments.qname));
+        queue_ref.Reset(m_Server->OpenQueue(qname));
         queue_ptr = queue_ref.GetPointer();
         queue_ptr->GetJobsPerState("", "", jobs_per_state);
-        queue_ptr->GetNCAPI(netcache_api);
+        queue_ptr->GetLinkedSections(linked_sections);
 
         for (size_t  index(0); index < g_ValidJobStatusesSize; ++index) {
             jobs_part += "&" +
@@ -2480,19 +2543,31 @@ void CNetScheduleHandler::x_ProcessQueueInfo(CQueue*)
         }
         jobs_part += "&Total=" + NStr::NumericToString(total);
 
-        for (map<string, string>::const_iterator  k = netcache_api.begin();
-             k != netcache_api.end(); ++k)
-            nc_api_part += "&nc." + NStr::URLEncode(k->first) + "=" +
-                           NStr::URLEncode(k->second);
+        for (map< string, map<string, string> >::const_iterator
+                k = linked_sections.begin(); k != linked_sections.end(); ++k) {
+            string  prefix((k->first).c_str() + strlen("linked_section_"));
+            for (map<string, string>::const_iterator j = k->second.begin();
+                    j != k->second.end(); ++j) {
+                linked_sections_part += "&" + prefix + "." +
+                                        NStr::URLEncode(j->first) + "=" +
+                                        NStr::URLEncode(j->second);
+            }
+        }
+        string      qname_part;
+        if (!m_CommandArguments.service.empty())
+            qname_part = "queue_name=" + qname + "&";
 
         // Include queue classes and use URL encoding
-        x_WriteMessage("OK:" + params.GetPrintableParameters(true, true) +
-                       jobs_part + nc_api_part);
-    }
-    else
+        x_WriteMessage("OK:" + qname_part +
+                       params.GetPrintableParameters(true, true) +
+                       jobs_part + linked_sections_part);
+    } else {
+        SQueueParameters    params = m_Server->QueueInfo(
+                                                m_CommandArguments.qname);
         x_WriteMessage("OK:" + NStr::NumericToString(params.kind) + "\t" +
                        params.qclass + "\t\"" +
                        NStr::PrintableString(params.description) + "\"");
+    }
 
     x_PrintCmdRequestStop();
 }
@@ -2579,21 +2654,30 @@ void CNetScheduleHandler::x_ProcessSetQueue(CQueue*)
 
 void CNetScheduleHandler::x_ProcessGetParam(CQueue* q)
 {
-    unsigned int            max_input_size;
-    unsigned int            max_output_size;
-    map<string, string>     netcache_api;
+    unsigned int                max_input_size;
+    unsigned int                max_output_size;
+    map< string,
+         map<string, string> >  linked_sections;
 
-    q->GetMaxIOSizesAndNCAPI(max_input_size, max_output_size, netcache_api);
+    q->GetMaxIOSizesAndLinkedSections(max_input_size, max_output_size,
+                                      linked_sections);
 
     if (m_CommandArguments.cmd == "GETP2") {
         string  result("OK:max_input_size=" +
                        NStr::NumericToString(max_input_size) + "&" +
                        "max_output_size=" +
                        NStr::NumericToString(max_output_size));
-        for (map<string, string>::const_iterator  k = netcache_api.begin();
-             k != netcache_api.end(); ++k)
-            result += "&nc::" + NStr::URLEncode(k->first) + "=" +
-                      NStr::URLEncode(k->second);
+
+        for (map< string, map<string, string> >::const_iterator
+                k = linked_sections.begin(); k != linked_sections.end(); ++k) {
+            string  prefix((k->first).c_str() + strlen("linked_section_"));
+            for (map<string, string>::const_iterator j = k->second.begin();
+                    j != k->second.end(); ++j) {
+                result += "&" + prefix + "::" +
+                          NStr::URLEncode(j->first) + "=" +
+                          NStr::URLEncode(j->second);
+            }
+        }
         x_WriteMessage(result);
     } else {
         x_WriteMessage("OK:max_input_size=" +
@@ -2870,6 +2954,23 @@ void CNetScheduleHandler::x_CheckGetParameters(void)
         NCBI_THROW(CNetScheduleException, eInvalidParameter,
                    "It is forbidden to have both any_affinity and "
                    "exclusive_new_aff GET2 flags set to 1.");
+}
+
+
+void CNetScheduleHandler::x_CheckQInf2Parameters(void)
+{
+    // One of the arguments must be provided: qname or service
+    if (m_CommandArguments.qname.empty() &&
+        m_CommandArguments.service.empty())
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "QINF2 command expects a queue name or a service name. "
+                   "Nothing has been provided.");
+
+    if (!m_CommandArguments.qname.empty() &&
+        !m_CommandArguments.service.empty())
+        NCBI_THROW(CNetScheduleException, eInvalidParameter,
+                   "QINF2 command expects only one value: queue name or "
+                   "a service name. Both have been provided.");
 }
 
 

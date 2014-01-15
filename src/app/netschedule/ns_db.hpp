@@ -288,7 +288,6 @@ struct SQueueDescriptionDB : public CBDB_File
     CBDB_FieldUint4     max_pending_wait_timeout_sec;
     CBDB_FieldUint4     max_pending_wait_timeout_nsec;
     CBDB_FieldLString   description;
-    CBDB_FieldLString   netcache_api_section_name;
     CBDB_FieldUint4     run_timeout_precision_sec;
     CBDB_FieldUint4     run_timeout_precision_nsec;
     CBDB_FieldUint4     scramble_job_keys;
@@ -332,7 +331,6 @@ struct SQueueDescriptionDB : public CBDB_File
         BindData("max_pending_wait_timeout_sec",  &max_pending_wait_timeout_sec);
         BindData("max_pending_wait_timeout_nsec", &max_pending_wait_timeout_nsec);
         BindData("description",                   &description);
-        BindData("netcache_api_section_name",     &netcache_api_section_name);
         BindData("run_timeout_precision_sec",     &run_timeout_precision_sec);
         BindData("run_timeout_precision_nsec",    &run_timeout_precision_nsec);
         BindData("scramble_job_keys",             &scramble_job_keys);

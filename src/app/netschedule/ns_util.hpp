@@ -39,7 +39,9 @@
 BEGIN_NCBI_SCOPE
 
 
-void    NS_ValidateConfigFile(const CNcbiRegistry &  reg);
+// Validates the config file - it does LOG_POST(...) of the problems it found
+// Returns true if the config file is perfectly well formed
+bool NS_ValidateConfigFile(const IRegistry &  reg);
 
 
 END_NCBI_SCOPE
