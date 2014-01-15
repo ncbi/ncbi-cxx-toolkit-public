@@ -7111,8 +7111,10 @@ void CValidError_bioseq::ValidateSeqDescContext(const CBioseq& seq)
                         if (m_DescrValidator.ValidateStructuredComment(desc.GetUser(), desc, false)) {
                             // needs to have keyword
                             if (!found) {
+                                /*
                                 PostErr(eDiag_Info, eErr_SEQ_DESCR_MissingKeyword, 
                                         "Structured Comment compliant, keyword should be added", ctx, desc);
+                                */
                             }
                         } else {
                             // error if keyword is present

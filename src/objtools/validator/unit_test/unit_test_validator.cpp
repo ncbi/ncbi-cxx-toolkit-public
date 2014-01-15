@@ -7819,8 +7819,10 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingKeyword)
 
     // make the comment valid, should complain about missing keyword
     sdesc->SetUser().AddField("finishing_strategy", "foo", CUser_object::eParse_String);
+    /*
     expected_errors.push_back(new CExpectedError("good", eDiag_Info, "MissingKeyword",
                                                  "Structured Comment compliant, keyword should be added"));
+    */
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
