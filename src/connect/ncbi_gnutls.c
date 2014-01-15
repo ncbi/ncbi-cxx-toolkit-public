@@ -300,8 +300,7 @@ static void* s_GnuTlsCreate(ESOCK_Side side, SOCK sock,
         return 0;
     }
 
-    if (!ConnNetInfo_GetValue(0, "GNUTLS_PRIORITY", val, sizeof(val), 0))
-        *val = '\0';
+    ConnNetInfo_GetValue(0, "GNUTLS_PRIORITY", val, sizeof(val), 0);
 
     if ((*error = gnutls_init(&session, end)) != GNUTLS_E_SUCCESS/*0*/)
         return 0;
@@ -498,7 +497,7 @@ static EIO_Status s_GnuTlsInit(FSSLPull pull, FSSLPush push)
 
     assert(!s_GnuTlsCredAnon);
 
-    ConnNetInfo_GetValue(0, "GNUTLS_LOGLEVEL", val, sizeof(val), "");
+    ConnNetInfo_GetValue(0, "GNUTLS_LOGLEVEL", val, sizeof(val), 0);
     if (*val) {
         int level = atoi(val);
         s_GnuTlsLogLevel = level < 0 ? 0 : level;

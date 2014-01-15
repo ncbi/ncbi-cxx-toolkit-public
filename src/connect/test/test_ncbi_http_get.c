@@ -130,7 +130,7 @@ int main(int argc, char* argv[])
     } else
         fp = 0;
 
-    ConnNetInfo_GetValue(0, "RECONNECT", blk, 32, "");
+    ConnNetInfo_GetValue(0, "RECONNECT", blk, 32, 0);
     if (ConnNetInfo_Boolean(blk)) {
         CORE_LOG(eLOG_Note, "Reconnect mode acknowledged");
         flags = fHTTP_AutoReconnect;
@@ -147,7 +147,7 @@ int main(int argc, char* argv[])
         CORE_LOG(eLOG_Fatal, "Cannot parse URL");
 
     cred = 0;
-    ConnNetInfo_GetValue(0, "USESSL", blk, 32, "");
+    ConnNetInfo_GetValue(0, "USESSL", blk, 32, 0);
     if (net_info->scheme == eURL_Https  &&  ConnNetInfo_Boolean(blk)) {
 #ifdef HAVE_LIBGNUTLS
         const char* file;
@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
         pass = x_GetPkcs12Pass(GNUTLS_PKCS12_PASS, blk, sizeof(blk));
         file = ConnNetInfo_GetValue(0, GNUTLS_PKCS12_FILE,
                                     blk, sizeof(blk)/2 - 1, 0);
-        if (file  &&  access(file, R_OK) == 0) {
+        if (file  &&  *file  &&  access(file, R_OK) == 0) {
             int err;
             if ((err = gnutls_certificate_allocate_credentials(&xcred)) != 0 ||
                 (err = gnutls_certificate_set_x509_simple_pkcs12_file

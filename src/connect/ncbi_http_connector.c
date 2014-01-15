@@ -1823,7 +1823,7 @@ static EIO_Status s_CreateHttpConnector
     uuu->reserved     = 0;
     uuu->can_connect  = fCC_None;         /* will be properly set at open */
 
-    ConnNetInfo_GetValue(0, "HTTP_ERROR_HEADER_ONLY", val, sizeof(val), "");
+    ConnNetInfo_GetValue(0, "HTTP_ERROR_HEADER_ONLY", val, sizeof(val), 0);
     uuu->error_header = ConnNetInfo_Boolean(val);
 
     uuu->sock         = 0;
@@ -1873,7 +1873,7 @@ static CONNECTOR s_CreateConnector
     uuu->adjust       = adjust;
     uuu->cleanup      = cleanup;
 
-    ConnNetInfo_GetValue(0, "HTTP_INSECURE_REDIRECT", val, sizeof(val), "");
+    ConnNetInfo_GetValue(0, "HTTP_INSECURE_REDIRECT", val, sizeof(val), 0);
     if (ConnNetInfo_Boolean(val))
         uuu->flags |= fHTTP_InsecureRedirect;
 

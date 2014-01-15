@@ -185,7 +185,7 @@ int CTestApp::Run(void)
 
     if (!n) {
         char val[40], *e;
-        if (!ConnNetInfo_GetValue(0, REG_CONN_TIMEOUT, val, sizeof(val), "")
+        if (!ConnNetInfo_GetValue(0, REG_CONN_TIMEOUT, val, sizeof(val), 0)
             ||  !*val  ||  (timeout = NCBI_simple_atof(val, &e)) < 0.0
             ||  errno  ||  *e) {
             timeout = DEF_CONN_TIMEOUT;
