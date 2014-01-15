@@ -12777,7 +12777,7 @@ bool CSeqEntry_test_on_pub ::  AuthNoFirstLastNames(const CAuth_list& auths)
       ITERATE (list <CRef <CAuthor> >, it, auths.GetNames().GetStd()) {
         const CPerson_id& pid = (*it)->GetName();
         if (!pid.IsName()) {
-            return true;
+            return false;
         }
         const CName_std& name = pid.GetName();
         if (name.GetLast().empty()) {
@@ -12790,8 +12790,11 @@ bool CSeqEntry_test_on_pub ::  AuthNoFirstLastNames(const CAuth_list& auths)
            return true;
         }
       }
+      return false;
    }
-   return false;
+   else {
+      return true;
+   }
 };
 
 void CSeqEntry_test_on_pub :: CheckBadAuthCapsOrNoFirstLastNamesInPubdesc(const list <CRef <CPub> >& pubs, const string& desc, CConstRef <CObject> obj_ref)
@@ -12816,6 +12819,7 @@ void CSeqEntry_test_on_pub :: CheckBadAuthCapsOrNoFirstLastNamesInPubdesc(const 
       if (m_run_missing 
                && !isMissing && !has_pmid 
                && (isMissing = AuthNoFirstLastNames( (*it)->GetAuthors() ))) {
+cerr << MSerial_AsnText << **it << endl;
           thisInfo.test_item_list[GetName_missing()].push_back(desc);
           thisInfo.test_item_objs[GetName_missing()].push_back(obj_ref);
       }
