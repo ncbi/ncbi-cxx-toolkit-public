@@ -377,7 +377,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
                                  const CString_constraint* str_cons = 0);
       string GetFirstStringMatch(const vector <string>& strs,const 
                                  CString_constraint* str_cons = 0);
-      string GetQualName(ESource_qual src_qual);
       bool IsSubsrcQual(ESource_qual src_qual);
       string GetNotTextqualSrcQualValue(const CBioSource& biosrc, 
                                         const CSource_qual_choice& src_qual, 
@@ -3692,7 +3691,13 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual string GetName() const {return string("DISC_BAD_GENE_STRAND");}
 
     private:
-      bool AreIntervalStrandsOk(const CSeq_loc& g_loc, const CSeq_loc& f_loc);
+      bool x_AreIntervalStrandsOk(const CSeq_loc& g_loc, const CSeq_loc& f_loc);
+      void  x_CompareFeats(const CSeq_loc& g_loc, 
+                           const CSeq_loc& f_loc, 
+                           const string& g_desc, 
+                           const string& f_desc, 
+                           const CSeq_feat* gene, 
+                           const CSeq_feat* feat);
   };
 
   class CBioseq_DISC_SHORT_INTRON : public CBioseqTestAndRepData
