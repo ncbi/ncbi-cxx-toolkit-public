@@ -1283,6 +1283,12 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
              if (seq_feat_p->GetData().GetGene().CanGetDesc()) {
                 context_label = seq_feat_p->GetData().GetGene().GetDesc(); 
              }
+             else if (seq_feat_p->GetData().GetGene().CanGetLocus()) {
+                context_label = seq_feat_p->GetData().GetGene().GetLocus(); 
+             }
+             else if (seq_feat_p->GetData().GetGene().CanGetLocus_tag()) {
+                context_label = seq_feat_p->GetData().GetGene().GetLocus_tag(); 
+             }
           } 
           else GetSeqFeatLabel(*seq_feat_p, context_label);
       }
@@ -1354,7 +1360,9 @@ void CTestAndRepData :: GetTestItemList(const vector <string>& itemlist, Str2Str
    vector <string> rep_dt;
    ITERATE (vector <string>, it, itemlist) {
      rep_dt = NStr::Tokenize(*it, delim, rep_dt, NStr::eMergeDelims);
-     if (rep_dt.size() == 2) setting2list[rep_dt[0]].push_back(rep_dt[1]);
+     if (rep_dt.size() == 2) {
+          setting2list[rep_dt[0]].push_back(rep_dt[1]);
+     }
      rep_dt.clear();
    }
 };

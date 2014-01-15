@@ -1075,33 +1075,40 @@ bool CSuspectRuleCheck :: AdvancedStringCompare(const string& str, const string&
       whole_wd = (*it)->GetWhole_word();
       len1 = word_word[i].size();
       if (CaseNCompareEqual(word_word[i], cp_m, len1, case_sensitive)) { //text match
-           word_start_m = (!pos_match && is_start) || !isalpha(str_match[pos_match-1]);
+           word_start_m 
+               = (!pos_match && is_start) || !isalpha(str_match[pos_match-1]);
            ch1 = (cp_m.size() < len1) ? ' ' : cp_m[len1];
            if (!whole_wd || (!isalpha(ch1) && word_start_m)) { // whole word mch
               if ( !(*it)->CanGetSynonyms() ) { 
-                 if (AdvancedStringCompare(cp_s, CTempString(cp_m).substr(len1), str_cons, 
-                                            word_start_m, &target_match_len))
+                 if (AdvancedStringCompare(cp_s, 
+                                           CTempString(cp_m).substr(len1), 
+                                           str_cons, 
+                                           word_start_m, 
+                                           &target_match_len)) {
                     recursive_match = true;
+                 }
               }
               else {
-                 ITERATE (list <string>, sit, (*it)->GetSynonyms()) {
-                    len2 = (*sit).size();
+                ITERATE (list <string>, sit, (*it)->GetSynonyms()) {
+                  len2 = (*sit).size();
 
                     // text match
-                    if (CaseNCompareEqual(*sit, cp_s, len2, case_sensitive)) {
-                      word_start_s = (!pos_str && is_start) || !isalpha(str[pos_str-1]);
-                      ch2 = (cp_s.size() < len2) ? ' ' : cp_s[len2];
-                      // whole word match
-                      if (!whole_wd || (!isalpha(ch2) && word_start_s)) {
-                        if (AdvancedStringCompare(CTempString(cp_s).substr(len2), 
-                                          CTempString(cp_m).substr(len1), str_cons, 
-                                          word_start_m & word_start_s, &target_match_len)){
-
+                  if (CaseNCompareEqual(*sit, cp_s, len2, case_sensitive)) {
+                    word_start_s 
+                          = (!pos_str && is_start) || !isalpha(str[pos_str-1]);
+                    ch2 = (cp_s.size() < len2) ? ' ' : cp_s[len2];
+                    // whole word match
+                    if (!whole_wd || (!isalpha(ch2) && word_start_s)) {
+                       if (AdvancedStringCompare(CTempString(cp_s).substr(len2),
+                                                 CTempString(cp_m).substr(len1),
+                                                 str_cons, 
+                                                 word_start_m & word_start_s, 
+                                                 &target_match_len)){
                             recursive_match = true;
-                        }
-                      }
+                       }
                     }
-                 }
+                  }
+                }
               }
            }
       }
@@ -1133,24 +1140,32 @@ bool CSuspectRuleCheck :: AdvancedStringCompare(const string& str, const string&
 
   if (match && !recursive_match) {
     while ( pos_str < str.size() 
-             && ((ig_space && isspace(str[pos_str])) || (ig_punct && ispunct(str[pos_str]))) ){
+             && ((ig_space && isspace(str[pos_str])) 
+             || (ig_punct && ispunct(str[pos_str]))) ){
        pos_str++;
        target_match_len++;
     }
     while ( pos_match < str_match.size()
-              && ((ig_space && isspace(str_match[pos_match])) 
-                                     || (ig_punct && ispunct(str_match[pos_match])) ) )
+              && ( (ig_space && isspace(str_match[pos_match])) 
+                     || (ig_punct && ispunct(str_match[pos_match])) ) ) {
          pos_match++;
+    }
 
-    if (pos_match < str_match.size()) match = false;
-    else if ( (loc == eString_location_ends || loc == eString_location_equals) 
-               && pos_str < len_s)
+    if (pos_match < str_match.size()) {
          match = false;
+    }
+    else if ( (loc == eString_location_ends || loc == eString_location_equals) 
+                 && pos_str < len_s) {
+         match = false;
+    }
     else if (str_cons->GetWhole_word() 
-                           && (!is_start || (pos_str < len_s && isalpha (str[pos_str]))) )
+                && (!is_start || (pos_str < len_s && isalpha (str[pos_str]))) ){
              match = false;
+    }
   }
-  if (match && ini_target_match_len) *ini_target_match_len += target_match_len;
+  if (match && ini_target_match_len) {
+         *ini_target_match_len += target_match_len;
+  }
 
   return match;
 };
@@ -1159,22 +1174,34 @@ bool CSuspectRuleCheck :: AdvancedStringMatch(const string& str, const CString_c
 {
   if (!str_cons) return true;
   bool rval = false;
-  string match_text = (str_cons->CanGetMatch_text()) ? str_cons->GetMatch_text() : kEmptyStr;
+  string 
+    match_text 
+      = (str_cons->CanGetMatch_text()) ? str_cons->GetMatch_text() : kEmptyStr;
 
-  if (AdvancedStringCompare (str, match_text, str_cons, true)) return true;
+  if (AdvancedStringCompare (str, match_text, str_cons, true)) {
+       return true;
+  }
   else if (str_cons->GetMatch_location() == eString_location_starts 
-                           || str_cons->GetMatch_location() == eString_location_equals) 
+                || str_cons->GetMatch_location() == eString_location_equals) {
            return false;
+  }
   else {
     size_t pos = 1;
     unsigned len = str.size();
     while (!rval && pos < len) {
-      if (str_cons->GetWhole_word()) 
+      if (str_cons->GetWhole_word()) {
           while (pos < len && isalpha (str[pos-1])) pos++;
+      }
       if (pos < len) {
-        if (AdvancedStringCompare (CTempString(str).substr(pos), match_text, str_cons, true))
-                rval = true;
-        else pos++;
+        if (AdvancedStringCompare (CTempString(str).substr(pos), 
+                                   match_text, 
+                                   str_cons, 
+                                   true)) {
+            rval = true;
+        }
+        else {
+            pos++;
+        }
       }
     }
   }
@@ -1811,7 +1838,7 @@ bool CSuspectRuleCheck :: MatchesSearchFunc(const string& str, const CSearch_fun
          return StringMayContainPlural (str);
       case  CSearch_func::e_N_or_more_brackets_or_parentheses:
          return ContainsNorMoreSetsOfBracketsOrParentheses(str, 
-                                           func.GetN_or_more_brackets_or_parentheses());
+                                  func.GetN_or_more_brackets_or_parentheses());
       case CSearch_func::e_Three_numbers:
          return ContainsThreeOrMoreNumbersTogether (str);
       case CSearch_func::e_Underscore:
@@ -2176,25 +2203,6 @@ bool CSuspectRuleCheck :: DoesFeatureMatchLocationConstraint(const CSeq_feat& fe
   return true;
 };
 
-string CSuspectRuleCheck :: GetQualName(ESource_qual src_qual)
-{
-   string qual_name = ENUM_METHOD_NAME(ESource_qual)()->FindName(src_qual, false);
-   if (qual_name == "bio-material-INST") return("bio-material-inst");
-   else if (qual_name == "bio-material-COLL") return("bio-material-coll");
-   else if (qual_name == "bio-material-SpecID") return("bio-material-specid");
-   else if (qual_name == "common-name") return("common name");
-   else if (qual_name == "culture-collection-INST") return("culture-collection-inst");
-   else if (qual_name == "culture-collection-COLL") return("culture-collection-coll");
-   else if (qual_name == "culture-collection-SpecID") return("culture-collection-specid");
-   else if (qual_name == "orgmod-note") return("note-orgmod");
-   else if (qual_name == "nat-host") return("host");
-   else if (qual_name == "subsource-note") return("sub-species");
-   else if (qual_name == "all-notes") return("All Notes");
-   else if (qual_name == "all-quals") return("All");
-   else if (qual_name == "all-primers") return("All Primers");
-   return kEmptyStr;
-};
-
 bool CSuspectRuleCheck :: IsSubsrcQual(ESource_qual src_qual)
 {
    switch (src_qual) {
@@ -2288,7 +2296,7 @@ string CSuspectRuleCheck :: GetSrcQualValue4FieldType(const CBioSource& biosrc, 
      case CSource_qual_choice::e_Textqual:
        {
           ESource_qual text_qual= src_qual.GetTextqual();
-          string qual_name = GetQualName(text_qual);
+          string qual_name = thisInfo.srcqual_names[text_qual];
           bool is_subsrc = IsSubsrcQual(text_qual);
           str = CTestAndRepData :: GetSrcQualValue( biosrc, qual_name, is_subsrc, str_cons);
        }
@@ -3108,20 +3116,30 @@ bool CSuspectRuleCheck :: DoesBiosourceMatchConstraint (const CBioSource& biosrc
 {
   bool rval = false;
   string str1, str2;
-  const CSource_qual_choice* field1 = src_cons.CanGetField1() ? &src_cons.GetField1() : 0;
-  const CSource_qual_choice* field2 = src_cons.CanGetField2() ? &src_cons.GetField2() : 0;
+  const CSource_qual_choice* 
+            field1 = src_cons.CanGetField1() ? &src_cons.GetField1() : 0;
+  const CSource_qual_choice* 
+            field2 = src_cons.CanGetField2() ? &src_cons.GetField2() : 0;
   const CString_constraint* 
       str_cons = src_cons.CanGetConstraint() ? &src_cons.GetConstraint() : 0;
   if (IsStringConstraintEmpty(str_cons)) {
     /* looking for qual present */
-    if (field1 && !field2) rval = IsSourceQualPresent (biosrc, field1);
-    else if (field2 && !field1) rval = IsSourceQualPresent (biosrc, field2);
+    if (field1 && !field2) {
+           rval = IsSourceQualPresent (biosrc, field1);
+    }
+    else if (field2 && !field1) {
+         rval = IsSourceQualPresent (biosrc, field2);
+    }
     else if (field1 && field2) { /* looking for quals to match */
       str1 = GetSrcQualValue4FieldType (biosrc, *field1);
       str2 = GetSrcQualValue4FieldType (biosrc, *field2);
-      if (str1 == str2) rval = true;
+      if (str1 == str2) {
+         rval = true;
+      }
     } 
-    else rval = true; /* nothing specified, automatic match */
+    else {
+       rval = true; /* nothing specified, automatic match */
+    }
   } 
   else {
     if (field1 && !field2) {
@@ -3808,11 +3826,24 @@ bool CSuspectRuleCheck :: DoesObjectMatchConstraint(const CSeq_feat& data, const
     case CConstraint_choice::e_Field :
        return DoesObjectMatchFieldConstraint (data, cons.GetField());
     case CConstraint_choice::e_Source :
-       if (data.GetData().IsBiosrc()) 
-          return DoesBiosourceMatchConstraint ( data.GetData().GetBiosrc(), cons.GetSource());
+       if (data.GetData().IsBiosrc()) {
+          return DoesBiosourceMatchConstraint ( data.GetData().GetBiosrc(), 
+                                                cons.GetSource());
+       }
+       else {
+          CBioseq_Handle 
+             seq_hl = sequence::GetBioseqFromSeqLoc(data.GetLocation(), 
+                                                    *thisInfo.scope);
+          const CBioSource* src = GetBioSource(seq_hl);
+          if (src) {
+            return DoesBiosourceMatchConstraint(*src, cons.GetSource());
+          }
+          else return false;
+       }
        break;
     case CConstraint_choice::e_Cdsgeneprot_qual :
-       return DoesFeatureMatchCGPQualConstraint (data, cons.GetCdsgeneprot_qual());
+       return DoesFeatureMatchCGPQualConstraint (data, 
+                                                 cons.GetCdsgeneprot_qual());
 /*
       if (choice == 0) {
         rval = DoesCGPSetMatchQualConstraint (data, cons->data.ptrvalue);

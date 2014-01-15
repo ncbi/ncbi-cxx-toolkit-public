@@ -560,6 +560,7 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
 
     // ini. summ_susrule
     CSummarizeSusProdRule summ_susrule;
+
     ITERATE (list <CRef <CSuspect_rule> >, rit, 
                                        thisInfo.suspect_prod_rules->Get()) {
        arr.clear();
@@ -802,12 +803,52 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
     // ini of srcqual_orgmod, srcqual_subsrc, srcqual_names
     map <string, ESource_qual> srcnm_qual;
     map <string, COrgMod::ESubtype> orgmodnm_subtp;
-    for (i = eSource_qual_acronym; i<= eSource_qual_altitude; i++) {
+    for (i = eSource_qual_acronym; i <= eSource_qual_type_material; i++) {
        strtmp = ENUM_METHOD_NAME(ESource_qual)()->FindName(i, true);
        if (!strtmp.empty()) {
-           srcnm_qual[strtmp] = (ESource_qual)i;
+         srcnm_qual[strtmp] = (ESource_qual)i;
+
+         if (strtmp == "bio-material-INST") {
+             strtmp = "bio-material-inst";
+         }
+         else if (strtmp == "bio-material-COLL") {
+             strtmp = "bio-material-coll";
+         }
+         else if (strtmp == "bio-material-SpecID") {
+             strtmp = "bio-material-specid";
+         }
+         else if (strtmp == "common-name") {
+               strtmp = "common name";
+         }
+         else if (strtmp == "culture-collection-INST") {
+             strtmp = "culture-collection-inst";
+         }
+         else if (strtmp == "culture-collection-COLL") {
+             strtmp = "culture-collection-coll";
+         }
+         else if (strtmp == "culture-collection-SpecID") {
+             strtmp = "culture-collection-specid";
+         }
+         else if (strtmp == "orgmod-note") {
+               strtmp = "note-orgmod";
+         }
+         else if (strtmp == "nat-host") {
+              strtmp = "host";
+         }
+         else if (strtmp == "subsource-note") {
+             strtmp = "sub-species";
+         }
+         else if (strtmp == "all-notes") {
+             strtmp = "All Notes";
+         }
+         else if (strtmp == "all-quals") {
+             strtmp = "All";
+         }
+         else if (strtmp == "all-primers") {
+             strtmp = "All Primers";
+         }
+         thisInfo.srcqual_names[(ESource_qual)i] = strtmp;
        }
-       thisInfo.srcqual_names[(ESource_qual)i] = strtmp;
     }
 
     GetOrgModSubtpName(COrgMod::eSubtype_strain, 
