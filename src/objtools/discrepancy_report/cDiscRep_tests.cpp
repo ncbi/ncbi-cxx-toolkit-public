@@ -3996,12 +3996,13 @@ bool CBioseq_DISC_BAD_GENE_STRAND :: x_AreIntervalStrandsOk(const CSeq_loc& g_lo
 
 
 
+typedef multimap <unsigned, unsigned> TIndex;
 void CBioseq_DISC_BAD_GENE_STRAND :: TestOnObj(const CBioseq& bioseq)
 {
   if (bioseq.IsAa()) return;
   unsigned g_left, g_right, f_left, f_right;
-  multimap <unsigned, unsigned> fleft_idx, fright_idx;
-  multimap <unsigned, unsigned>::iterator l_it, r_it;
+  TIndex fleft_idx, fright_idx;
+  TIndex::iterator l_it, r_it;
   unsigned i, g_left_min, g_right_max;
   if (gene_feat.empty()) return;
   g_left_min = gene_feat[0]->GetLocation().GetStart(eExtreme_Positional);
@@ -4018,8 +4019,8 @@ void CBioseq_DISC_BAD_GENE_STRAND :: TestOnObj(const CBioseq& bioseq)
       f_right = f_loc.GetStop(eExtreme_Positional);
       if (f_right <= g_left_min) continue;
       if (f_left > g_right_max) break;
-      fleft_idx.insert(make_pair(f_left, i));
-      fright_idx.insert(make_pair(f_right, i));
+      fleft_idx.insert(TIndex::value_type(f_left, i));
+      fright_idx.insert(TIndex::value_type(f_right, i));
   }
 
   string g_desc, f_desc;
