@@ -39,10 +39,13 @@
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
+#include <objects/seqalign/Score.hpp>
 #include <objtools/writers/gff_writer.hpp>
 #include <objtools/writers/gff3_write_data.hpp>
 #include <objtools/writers/gff_feature_record.hpp>
 #include <objtools/alnmgr/alnmap.hpp>
+#include <objects/seqalign/Spliced_seg.hpp>
+#include <objects/seqalign/Spliced_exon.hpp>
 
 BEGIN_NCBI_SCOPE
 BEGIN_objects_SCOPE
@@ -179,14 +182,48 @@ protected:
         const CAlnMap&,
         unsigned int);
 
+    //Spliced-seg processing
     bool xAssignAlignmentSpliced(
-        CGffFeatureRecord&);
+        CGffAlignRecord&,
+        const CSpliced_seg&,
+        const CSpliced_exon&);
+    bool xAssignAlignmentSplicedTarget(
+        CGffAlignRecord&,
+        const CSpliced_seg&,
+        const CSpliced_exon&);
+    bool xAssignAlignmentSplicedPhase(
+        CGffAlignRecord&,
+        const CSpliced_seg&,
+        const CSpliced_exon&);
+    bool xAssignAlignmentSplicedAttributes(
+        CGffAlignRecord&,
+        const CSpliced_seg&,
+        const CSpliced_exon&);
+    bool xAssignAlignmentSplicedGap(
+        CGffAlignRecord&,
+        const CSpliced_seg&,
+        const CSpliced_exon&);
+    bool xAssignAlignmentSplicedScores(
+        CGffAlignRecord&,
+        const CSpliced_seg&,
+        const CSpliced_exon&);
+    bool xAssignAlignmentSplicedLocation(
+        CGffAlignRecord&,
+        const CSpliced_seg&,
+        const CSpliced_exon&);
+    bool xAssignAlignmentSplicedType(
+        CGffAlignRecord&,
+        const CSpliced_seg&,
+        const CSpliced_exon&);
+    bool xAssignAlignmentSplicedSource(
+        CGffAlignRecord&,
+        const CSpliced_seg&,
+        const CSpliced_exon&);
+    bool xAssignAlignmentSplicedSeqId(
+        CGffAlignRecord&,
+        const CSpliced_seg&,
+        const CSpliced_exon&);
         
-    bool xAssignAlignmentDensegSeqId(
-        CGffFeatureRecord&,
-        CBioseq_Handle,
-        CBioseq_Handle);
-
     bool xAssignSource(
         CGffFeatureRecord&,
         CGffFeatureContext&,
@@ -248,6 +285,10 @@ protected:
         CGffFeatureRecord&,
         CGffFeatureContext&,
         const CBioSource&);
+
+    bool xxAssignScore(
+        CGffFeatureRecord&,
+        const CScore&);
 
     //begin mss-234//
     bool xAssignFeature(
