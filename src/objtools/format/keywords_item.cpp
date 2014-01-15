@@ -48,6 +48,10 @@
 #include <objtools/format/text_ostream.hpp>
 #include <objtools/format/items/keywords_item.hpp>
 #include <objtools/format/context.hpp>
+#include <objects/valid/Comment_set.hpp>
+#include <objects/valid/Comment_rule.hpp>
+
+#include <objects/misc/sequence_util_macros.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -265,6 +269,30 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
                     }
                 }
             }
+        }
+    }
+
+    CBioseq_Handle bsh = ctx.GetHandle();
+    for (CSeqdesc_CI di(bsh, CSeqdesc::e_User); di; ++di) {
+        const CUser_object& usr = di->GetUser();
+        if ( ! CComment_rule::IsStructuredComment (usr) ) continue;
+        try {
+            string prefix = CComment_rule::GetStructuredCommentPrefix (usr);
+            CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
+            try {
+                const CComment_rule& rule = comment_rules->FindCommentRule(prefix);
+                CComment_rule::TErrorList errors = rule.IsValid(usr);
+                if (errors.size() == 0) {
+                    string kywd = CComment_rule::KeywordForPrefix( prefix );
+                    list<string> keywords;
+                    NStr::Split(kywd, ";", keywords);
+                    FOR_EACH_STRING_IN_LIST ( s_itr, keywords ) {
+                        x_AddKeyword(*s_itr);
+                    }
+                }
+            } catch (CException) {
+            }
+        } catch (CException) {
         }
     }
 
