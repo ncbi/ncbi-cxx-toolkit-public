@@ -175,13 +175,22 @@ int CTAbleValApp::Run(void)
     //m_HighCutoff = static_cast<EDiagSev>(args["P"].AsInteger() - 1);
 
     m_comma_separated = args["comma"];
-    if (args["columns"]) 
+    if (args["columns"])
+    {
         m_columns_def = args["columns"].AsString();
+        NStr::ToLower(m_columns_def);
+    }
     if (args["required"])
+    {
         m_required_cols = args["required"].AsString();
+        NStr::ToLower(m_required_cols);
+    }
 
     if (args["ignore"])
+    {
         m_ignored_cols = args["ignore"].AsString();
+        NStr::ToLower(m_ignored_cols);
+    }
        
 
     m_no_header = args["no-header"];

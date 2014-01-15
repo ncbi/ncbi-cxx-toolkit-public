@@ -3,6 +3,13 @@
 #include "col_validator.hpp"
 #include <algorithm>
 
+#include <objects/seqfeat/OrgMod.hpp>
+#include <objects/seqfeat/SubSource.hpp>
+#include <objects/seqfeat/BioSource.hpp>
+#include <objects/seqloc/Seq_id.hpp>
+
+#include <objects/taxon1/taxon1.hpp>
+
 BEGIN_NCBI_SCOPE
 
 #define DEFINE_COL_VALIDATOR_WITH_ALT_NAMES(name, text1, text2, text3) \
@@ -24,7 +31,13 @@ bool CAutoColValidator##name::DoValidate(const CTempString& value, string& error
 #define DEFINE_COL_VALIDATOR(name) DEFINE_COL_VALIDATOR_WITH_ALT_NAMES(name, #name, 0, 0)
 #define DEFINE_COL_VALIDATOR2(name, text) DEFINE_COL_VALIDATOR_WITH_ALT_NAMES(name, #text, 0, 0)
 #define DEFINE_COL_VALIDATOR3(name, text1, text2) DEFINE_COL_VALIDATOR_WITH_ALT_NAMES(name, #text1, #text2, 0)
-#define DEFINE_COL_VALIDATOR4(name, text1, text2, text3) DEFINE_COL_VALIDATOR_WITH_ALT_NAMES(name, #text1, #text2, #text3)
+#define DEFINE_COL_VALIDATOR4(name, text1, text2, text3) DEFINE_COL_VALIDATOR_WITH_ALT_NAMES(name, text1, text2, text3)
+
+USING_SCOPE(objects);
+namespace
+{
+    auto_ptr<objects::CTaxon1> m_taxClient;
+}
 
 CColumnValidator::CColumnValidator()
 {
@@ -90,23 +103,72 @@ void CColumnValidatorRegistry::UnRegister(CColumnValidator* val)
 #endif
 }
 
+DEFINE_COL_VALIDATOR(taxid)
+{
+    if (m_taxClient.get() == 0)
+    {
+        m_taxClient.reset(new CTaxon1);
+        m_taxClient->Init();
+    }
+
+    try
+    {
+        int taxid = NStr::StringToInt(value);
+        m_taxClient->GetById(taxid);
+    }
+    catch(const CException& ex)
+    {
+        error = ex.GetMsg();
+    }
+
+    return false;
+}
+
+
 DEFINE_COL_VALIDATOR4(orgname, "taxname", "org", "organism")
 {
+    if (m_taxClient.get() == 0)
+    {
+        m_taxClient.reset(new CTaxon1);
+        m_taxClient->Init();
+    }
+
+    try
+    {
+        int new_taxid = m_taxClient->GetTaxIdByName(value);
+    }
+    catch(const CException& ex)
+    {
+        error = ex.GetMsg();
+    }
+
     return false;
 }
 
 DEFINE_COL_VALIDATOR(genome)
 {
+    CBioSource::EGenome genome = CBioSource::GetGenomeByOrganelle (value);
     return false;
 }
 
 DEFINE_COL_VALIDATOR(origin)
 {
+    CBioSource::EOrigin origin = CBioSource::GetOriginByString(value);
+    if (origin == CBioSource::eOrigin_unknown)
+        error = "unknown origin type";
     return false;
 }
 
 DEFINE_COL_VALIDATOR(subsource)
 {
+    try
+    {
+    CSubSource::TSubtype subtype = CSubSource::GetSubtypeValue(value);
+    }
+    catch(CException& ex)
+    {
+        error = ex.GetMsg();
+    }
     return false;
 }
 
@@ -117,10 +179,41 @@ DEFINE_COL_VALIDATOR(orgmod)
 
 DEFINE_COL_VALIDATOR(subtype)
 {
+    try
+    {
+    COrgMod::TSubtype subtype = COrgMod::GetSubtypeValue(value);
+    }
+    catch(CException& ex)
+    {
+        error = ex.GetMsg();
+    }
     return false;
 }
-
-
+DEFINE_COL_VALIDATOR(accession)
+{
+    CSeq_id::EAccessionInfo info = CSeq_id::IdentifyAccession(value);
+    if (info == CSeq_id::eAcc_unknown)
+    {
+        error = "Unknown accession type";
+    }
+    return false;
+}
+DEFINE_COL_VALIDATOR(haplotype)
+{
+    return false;
+}
+DEFINE_COL_VALIDATOR(lineage)
+{
+    return false;
+}
+DEFINE_COL_VALIDATOR(serotype)
+{
+    return false;
+}
+DEFINE_COL_VALIDATOR(strain)
+{
+    return false;
+}
 
 END_NCBI_SCOPE
 

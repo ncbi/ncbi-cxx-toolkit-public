@@ -48,6 +48,9 @@ USING_SCOPE(objects);
 bool CTabDelimitedValidator::_Validate(int col_number, const CTempString& value)
 {
     const string& datatype = m_col_defs[col_number];
+    if (datatype.empty())
+        return false; 
+
     string error;
     bool isfatal = CColumnValidatorRegistry::GetInstance().DoValidate(datatype, value, error);
     if (!error.empty())
@@ -148,7 +151,7 @@ bool CTabDelimitedValidator::_MakeColumns(const string& message, const CTempStri
             can_process = false;
         }
         else
-            col_defs[index + 1] = true;
+            col_defs[index - 1] = true;
     }
     return can_process;
 }
@@ -159,7 +162,9 @@ bool CTabDelimitedValidator::_ProcessHeader(ILineReader& reader, const CTempStri
     {
         if (!default_columns.empty())
         {
-            NStr::Tokenize(default_columns, ",", m_col_defs); //using comma separator always
+            string lower = default_columns;
+            NStr::ToLower(lower);
+            NStr::Tokenize(lower, ",", m_col_defs); //using comma separator always
         }
         else
         {
@@ -167,7 +172,9 @@ bool CTabDelimitedValidator::_ProcessHeader(ILineReader& reader, const CTempStri
             // First line is a column definitions
             m_current_row_number = reader.GetLineNumber();
 
-            NStr::Tokenize(reader.GetCurrentLine(), m_delim, m_col_defs);
+            string lower = reader.GetCurrentLine();
+            NStr::ToLower(lower);
+            NStr::Tokenize(lower, m_delim, m_col_defs);
         }
 
         if (m_col_defs.size()<1)

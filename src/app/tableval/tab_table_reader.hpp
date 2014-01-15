@@ -39,8 +39,7 @@ public:
        e_tab_tab_report           = 32,
        e_tab_text_report          = 16+32,
        e_tab_html_report          = 64
-   };
-   
+   }; 
 
    // If you need messages and error to be logged
    // supply an optional IMessageListener instance

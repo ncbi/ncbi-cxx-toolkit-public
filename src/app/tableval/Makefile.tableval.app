@@ -11,7 +11,7 @@ SRC = tableval tab_table_reader col_validator
 
 
 LIB  = xmlwrapp \
-       xobjreadex  \
+       xobjreadex taxon3 taxon1 \
        $(XFORMAT_LIBS) $(BLAST_LIBS) xregexp $(PCRE_LIB) $(OBJMGR_LIBS)
 
 #LIB  = xalgophytree fastme prosplign xalgoalignutil xalgoseq xmlwrapp \
