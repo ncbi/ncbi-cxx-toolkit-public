@@ -2520,7 +2520,8 @@ bool CGff3Writer::xAssignFeatureAttributeParentGene(
     if (!it->second->GetAttributes("ID", parentId)) {
         return false;
     }
-    return record.SetAttributes("Parent", parentId);
+    record.SetParent(parentId.front());
+    return true;
 }
 
 //  ============================================================================
@@ -2548,7 +2549,8 @@ bool CGff3Writer::xAssignFeatureAttributeParentMrna(
     if (!it->second->GetAttributes("ID", parentId)) {
         return false;
     }
-    return record.SetAttributes("Parent", parentId);
+    record.SetParent(parentId.front());
+    return true;
 }
 
 //  ----------------------------------------------------------------------------

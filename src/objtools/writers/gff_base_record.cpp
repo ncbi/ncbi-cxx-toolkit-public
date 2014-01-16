@@ -56,7 +56,9 @@ CGffBaseRecord::CGffBaseRecord(
     mType("."),
     mScore("."),
     mStrand("."),
-    mPhase(".")
+    mPhase("."),
+    mRecordId(""),
+    mParent("")
 //  ----------------------------------------------------------------------------
 {
     if (!id.empty()) {
@@ -75,7 +77,9 @@ CGffBaseRecord::CGffBaseRecord(
     mType(other.mType),
     mScore(other.mScore),
     mStrand(other.mStrand),
-    mPhase(other.mPhase)
+    mPhase(other.mPhase),
+    mRecordId(other.mRecordId),
+    mParent(other.mParent)
 {
     m_pLoc = other.m_pLoc;
     mAttributes.insert( 
@@ -97,6 +101,14 @@ bool CGffBaseRecord::AddAttribute(
     if (value.empty()) {
         return false; //don't accept blank values 
     }
+    if (key == "ID") {
+        mRecordId = value;
+        return true;
+    }
+    if (key == "Parent") {
+        mParent = value;
+        return true;
+    }
     TAttrIt it = mAttributes.find(key);
     if (it == mAttributes.end()) {
         mAttributes[key] = vector<string>();
@@ -114,6 +126,17 @@ bool CGffBaseRecord::SetAttribute(
     const string& value )
 //  ----------------------------------------------------------------------------
 {
+    if (value.empty()) {
+        return false; //don't accept blank values 
+    }
+    if (key == "ID") {
+        mRecordId = value;
+        return true;
+    }
+    if (key == "Parent") {
+        mParent = value;
+        return true;
+    }
     DropAttributes(key);
     return AddAttribute(key, value);
 }
@@ -124,6 +147,16 @@ bool CGffBaseRecord::GetAttributes(
     vector<string>& value ) const
 //  ----------------------------------------------------------------------------
 {
+    if (key == "ID") {
+        value.clear();
+        value.push_back(mRecordId);
+        return true;
+    }
+    if (key == "Parent") {
+        value.clear();
+        value.push_back(mParent);
+        return true;
+    }
     TAttrCit it = mAttributes.find(key);
     if (it == mAttributes.end()  ||  it->second.empty()) {
         return false;
@@ -138,6 +171,12 @@ bool CGffBaseRecord::AddAttributes(
     const vector<string>& values)
 //  ----------------------------------------------------------------------------
 {
+    if (key == "ID") {
+        return false;
+    }
+    if (key == "Parent") {
+        return false;
+    }
     if (values.empty()) {
         return true; //nothing to do 
     }
@@ -160,14 +199,14 @@ bool CGffBaseRecord::AddAttributes(
 
 //  ----------------------------------------------------------------------------
 bool CGffBaseRecord::DropAttributes(
-    const string& strAttr )
+    const string& attr)
 //  ----------------------------------------------------------------------------
 {
-    TAttrIt it = mAttributes.find( strAttr );
-    if ( it == mAttributes.end() ) {
+    TAttrIt it = mAttributes.find(attr);
+    if (it == mAttributes.end()) {
         return false;
     }
-    mAttributes.erase( it );
+    mAttributes.erase(it);
     return true;
 }
 
@@ -177,6 +216,12 @@ bool CGffBaseRecord::SetAttributes(
     const vector<string>& values)
 //  ----------------------------------------------------------------------------
 {
+    if (key == "ID") {
+        return false;
+    }
+    if (key == "Parent") {
+        return false;
+    }
     mAttributes[key] = vector<string>(values.begin(), values.end());
     return true;
 }
@@ -186,7 +231,15 @@ void CGffBaseRecord::SetRecordId(
     const string& recordId)
 //  ----------------------------------------------------------------------------
 {
-    SetAttribute("ID", recordId);
+    mRecordId = recordId;
+}
+
+//  ----------------------------------------------------------------------------
+void CGffBaseRecord::SetParent(
+    const string& parent)
+//  ----------------------------------------------------------------------------
+{
+    mParent = parent;
 }
 
 //  ----------------------------------------------------------------------------
@@ -344,6 +397,17 @@ string CGffBaseRecord::StrAttributes() const
     string attributes;
 	attributes.reserve(256);
 
+    if (!mRecordId.empty()) {
+        attributes += "ID=";
+        attributes += mRecordId;
+    }
+    if (!mParent.empty()) {
+        if (!attributes.empty()) {
+            attributes += ATTR_SEPARATOR;
+        }
+        attributes += "Parent=";
+        attributes += mParent;
+    }
     for (TAttrCit it = mAttributes.begin(); it != mAttributes.end(); ++it) {
         string key = it->first;
 

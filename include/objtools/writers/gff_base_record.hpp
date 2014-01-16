@@ -82,6 +82,8 @@ public: //attribute management
 public:
     void SetRecordId(
         const string&);
+    void SetParent(
+        const string&);
     void SetSeqId(
         const string&);
     void SetMethod(
@@ -127,6 +129,8 @@ protected:
     string mPhase;
     TAttributes mAttributes;
     TScores mExtraScores;
+    string mRecordId;
+    string mParent;
 };
 
 END_objects_SCOPE
