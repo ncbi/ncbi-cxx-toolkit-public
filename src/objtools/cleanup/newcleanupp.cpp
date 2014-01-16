@@ -9572,15 +9572,19 @@ void CNewCleanup_imp::x_RemoveDupBioSource( CBioseq_set & bioseq_set )
 
 void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
 {
-    vector<string> keywords = CComment_rule::GetKeywordList();
+    vector<string> controlled_keywords = CComment_rule::GetKeywordList();
+    vector<string> original_keywords;
+
     EDIT_EACH_SEQDESC_ON_BIOSEQ ( itr, bioseq ) {
         CSeqdesc& desc = **itr;
         if ( desc.Which() != CSeqdesc::e_Genbank ) continue;
         CGB_block& gb_block = desc.SetGenbank();
-        FOR_EACH_STRING_IN_VECTOR ( s_itr, keywords ) {
-            EDIT_EACH_KEYWORD_ON_GENBANKBLOCK (k_itr, gb_block) {
+        EDIT_EACH_KEYWORD_ON_GENBANKBLOCK (k_itr, gb_block) {
+            original_keywords.push_back(*k_itr);
+            FOR_EACH_STRING_IN_VECTOR ( s_itr, controlled_keywords ) {
                 if (NStr::EqualNocase (*k_itr, *s_itr)) {
                     ERASE_KEYWORD_ON_GENBANKBLOCK (k_itr, gb_block);
+                    break;
                 }
             }
         }
@@ -9612,6 +9616,7 @@ void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
         } catch (CException) {
         }
     }
+    vector<string> final_keywords;
     if (new_keywords.size() > 0) {
         CGB_block *gb_block = NULL;
         EDIT_EACH_SEQDESC_ON_BIOSEQ ( itr, bioseq ) {
@@ -9624,9 +9629,31 @@ void CNewCleanup_imp::x_FixStructuredCommentKeywords( CBioseq & bioseq )
             gb_block = &(new_desc->SetGenbank());
             bioseq.SetDescr().Set().push_back( new_desc );
         }
+        if (gb_block->IsSetKeywords()) {
+            FOR_EACH_KEYWORD_ON_GENBANKBLOCK (k_itr, *gb_block) {
+                final_keywords.push_back(*k_itr);
+            }
+        }
         FOR_EACH_STRING_IN_VECTOR ( n_itr, new_keywords ) {
             ADD_KEYWORD_TO_GENBANKBLOCK (*gb_block, *n_itr);
+            final_keywords.push_back(*n_itr);
         }
+    }
+    bool any_change = false;
+    vector<string>::iterator orig_k = original_keywords.begin();
+    vector<string>::iterator final_k = final_keywords.begin();
+    while (!any_change && orig_k != original_keywords.end() && final_k != final_keywords.end()) {
+        if (!NStr::Equal(*orig_k, *final_k)) {
+            any_change = true;
+        }
+        orig_k++;
+        final_k++;
+    }
+    if (orig_k != original_keywords.end() || final_k != final_keywords.end()) {
+        any_change = true;
+    }
+    if (any_change) {
+        ChangeMade(CCleanupChange::eChangeKeywords);
     }
 }
 
