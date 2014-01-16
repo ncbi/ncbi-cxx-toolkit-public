@@ -1800,21 +1800,36 @@ bool CSuspectRuleCheck :: StringContainsUnbalancedParentheses(const string& sear
 {
   size_t pos = 0;
   char ch_src;
-  strtmp = "";
-  while (pos < search.size()) {
-     ch_src = search[pos];
-     if (ch_src == '(' || ch_src == '[') strtmp += ch_src;
-     else if (ch_src == ')') {
-         if (!IsPropClose(strtmp, '(')) return true;
-         else strtmp = strtmp.substr(0, strtmp.size()-1);
-     }
-     else if (ch_src == ']') {
-        if (!IsPropClose(strtmp, '[')) return true;
-        else strtmp = strtmp.substr(0, strtmp.size()-1);
-     }
-     pos ++;
+  strtmp = kEmptyStr;
+  string sch_src(search);
+  while (!sch_src.empty()) {
+    pos = sch_src.find_first_of("()[]");
+    if (pos == string::npos) {
+      if (strtmp.empty()) return false;
+      else return true;
+    }
+    else {
+       ch_src = sch_src[pos];
+       if (ch_src == '(' || ch_src == '[') {
+          strtmp += ch_src;
+       }
+       else if (sch_src[pos] == ')') {
+            if (!IsPropClose(strtmp, '(')) return true;
+            else strtmp = strtmp.substr(0, strtmp.size()-1);
+       }
+       else if (sch_src[pos] == ']') {
+            if (!IsPropClose(strtmp, '[')) return true;
+            else strtmp = strtmp.substr(0, strtmp.size()-1);
+       }
+    }
+    if (pos < sch_src.size()-1) {
+      sch_src = sch_src.substr(pos+1);
+    }
+    else sch_src = kEmptyStr;
   }
-  return false;
+  
+  if (strtmp.empty()) return false;
+  else return true;
 };
 
 bool CSuspectRuleCheck :: ProductContainsTerm(const string& pattern, const string& search)

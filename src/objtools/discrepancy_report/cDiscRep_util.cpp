@@ -123,7 +123,6 @@ vector <const CSeqdesc*>  CTestAndRepData :: org_orgmod_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: title_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: user_seqdesc;
 vector <const CSeqdesc*>  CTestAndRepData :: bioseq_biosrc_seqdesc;
-vector <const CSeqdesc*>  CTestAndRepData :: bioseq_molinfo;
 vector <const CSeqdesc*>  CTestAndRepData :: bioseq_title;
 vector <const CSeqdesc*>  CTestAndRepData :: bioseq_user;
 vector <const CSeqdesc*>  CTestAndRepData :: bioseq_genbank;
@@ -491,8 +490,9 @@ bool CTestAndRepData :: DoesStringContainPhrase(const string& str, const string&
   if (str.empty()) return false;
   string pattern(CRegexp::Escape(phrase));
   pattern = whole_word ? ("\\b" + pattern + "\\b") : pattern;
-  CRegexp::ECompile comp_flag = case_sensitive ?
-                            CRegexp::fCompile_default : CRegexp::fCompile_ignore_case;
+  CRegexp::ECompile 
+        comp_flag = case_sensitive ?
+                      CRegexp::fCompile_default : CRegexp::fCompile_ignore_case;
   CRegexp rx(pattern, comp_flag);
   if (rx.IsMatch(str)) return true;
   else return false;

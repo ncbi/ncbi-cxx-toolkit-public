@@ -318,6 +318,11 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
        ITERATE (list <CRef <CSuspect_rule> >, rit, 
                                    thisInfo.suspect_prod_rules->Get()) {
 
+/*
+if (rule_idx == 4) {
+cerr << MSerial_AsnText << **rit << endl;
+}
+*/
          if (rule_check.DoesStringMatchSuspectRule(m_bioseq_hl, 
                                                     prot_nm, 
                                                     *feat_in_use, **rit)){
@@ -327,6 +332,7 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
                    + GetDiscItemText(*feat_in_use));
               test_name = thisInfo.susrule_summ[rule_idx][0];
               summ = thisInfo.susrule_summ[rule_idx][2];
+// cerr << "rule_idx " << rule_idx <<  "  " << summ << endl;
               thisInfo.test_item_objs[test_name + "$" + summ].push_back(
                                              CConstRef<CObject>(feat_in_use));
          }
@@ -344,6 +350,7 @@ void CBioseq_on_SUSPECT_RULE :: GetReportForRules(CRef <CClickableItem>& c_item)
 
    string test_name, fixtp_name, summ;
    unsigned rule_idx, fixtp;
+   vector <string> arr;
    ITERATE (Str2Strs, fit, fixtp2rule_feats) {
      fixtp = NStr::StringToUInt(fit->first); 
      CRef <CClickableItem> name_cat_citem (new CClickableItem);
@@ -355,6 +362,17 @@ void CBioseq_on_SUSPECT_RULE :: GetReportForRules(CRef <CClickableItem>& c_item)
        test_name = thisInfo.susrule_summ[rule_idx][0];
        fixtp_name = thisInfo.susrule_summ[rule_idx][1];
        summ = thisInfo.susrule_summ[rule_idx][2];
+       if (rit->second.size() > 1) {
+          arr.clear();
+          arr = NStr::Tokenize(summ, " ", arr);
+          if (arr[0] == "is") {
+            arr[0] == "are";
+          } 
+          else if (arr[0][arr[0].size()-1] == 's') {
+            arr[0] = arr[0].substr(0, arr[0].size()-1);
+          }
+          summ = NStr::Join(arr, " ");
+       }
        AddSubcategory(name_cat_citem, test_name+"$"+summ, &(rit->second), 
                       "feature " + summ, "features " + summ,  e_OtherComment);
      } 
@@ -743,9 +761,11 @@ void CBioseq_DISC_INCONSISTENT_MOLINFO_TECH :: TestOnObj(const CBioseq& bioseq)
   if (bioseq.IsAa()) {
        return;
   }
-  ITERATE (vector <const CSeqdesc*>, it, bioseq_molinfo) {
+  const CMolInfo* 
+      molinfo = sequence::GetMolInfo(thisInfo.scope->GetBioseqHandle(bioseq));
+  if (molinfo) {
     strtmp =  CMolInfo::ENUM_METHOD_NAME(ETech)()->FindName(
-                     (CMolInfo::ETech)(*it)->GetMolinfo().GetTech(), false);
+                     (CMolInfo::ETech)molinfo->GetTech(), false);
     thisInfo.test_item_list[GetName()].push_back(
                                       strtmp + "$" + GetDiscItemText(bioseq));
     thisInfo.test_item_objs[GetName() + "$"+strtmp].push_back(
@@ -919,9 +939,7 @@ void CBioseq_TEST_UNWANTED_SPACER :: GetReport(CRef <CClickableItem>& c_item)
 // new comb 
 void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq) 
 {
-   if (thisTest.is_Aa_run) {
-       return;
-   }
+   if (thisTest.is_Aa_run) return;
    thisTest.is_Aa_run = true;
 
    string bioseq_desc(GetDiscItemText(bioseq));
@@ -935,24 +953,26 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
       }
       if (bioseq_set.Empty() 
              || bioseq_set->GetClass() != CBioseq_set::eClass_parts) { 
-         ITERATE (vector <const CSeqdesc*>, it, bioseq_molinfo) {
-            if ( (*it)->GetMolinfo().GetCompleteness()
-                    != CMolInfo::eCompleteness_complete) {
-                 continue;
-            }
-            else {
+         const CMolInfo* 
+           molinfo 
+              = sequence::GetMolInfo(thisInfo.scope->GetBioseqHandle(bioseq));
+         if (molinfo
+              && molinfo->GetCompleteness() != CMolInfo::eCompleteness_unknown
+              && molinfo->GetCompleteness() !=CMolInfo::eCompleteness_complete){
+            return;
+         }
+         else {
                thisInfo.test_item_list[GetName_shtprt()].push_back(bioseq_desc);
                thisInfo.test_item_objs[GetName_shtprt()].push_back(seq_ref);
-               break;
-            }
          }
       }       
-      return;
    }
  
     bool is_dna = (bioseq.GetInst().GetMol() == CSeq_inst::eMol_dna);
     bool is_rna = (bioseq.GetInst().GetMol() == CSeq_inst::eMol_rna);
 
+    const CMolInfo* 
+       molinfo = sequence::GetMolInfo(thisInfo.scope->GetBioseqHandle(bioseq));
     if (is_dna) {
 
       // DISC_RETROVIRIDAE_DNA, NON_RETROVIRIDAE_PROVIRAL
@@ -988,9 +1008,8 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
                && IsBioseqHasLineage(bioseq, "Eukaryota")) {
             ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
               if (!IsLocationOrganelle((*it)->GetSource().GetGenome())) {
-                 ITERATE (vector <const CSeqdesc*>, jt, bioseq_molinfo) {
-                    if ( (*jt)->GetMolinfo().GetBiomol() 
-                             == CMolInfo::eBiomol_genomic) {
+                 if (molinfo) {
+                    if ( molinfo->GetBiomol() == CMolInfo::eBiomol_genomic) {
                        ITERATE (vector <const CSeq_feat*>, kt, cd_feat) {
                          if (IsPseudoSeqFeatOrXrefGene(*kt)) {
                               continue;
@@ -1041,13 +1060,12 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
        
    // TEST_ORGANELLE_NOT_GENOMIC
    bool run_test = false;
-   ITERATE (vector <const CSeqdesc*>, it, bioseq_molinfo) {
-     int biomol = (*it)->GetMolinfo().GetBiomol();
+   if (molinfo) {
+     int biomol = molinfo->GetBiomol();
      if ( ( biomol == CMolInfo::eBiomol_genomic 
                          || biomol == CMolInfo::eBiomol_unknown)
             && is_dna) {
           run_test = true;
-          break;
      }
    }
    if (run_test && thisTest.tests_run.find(GetName_orgl()) != end_it) {
@@ -1142,13 +1160,13 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
       ReportPartialConflictsForFeatureType (rna_feat, "RNA");
       ReportPartialConflictsForFeatureType (utr3_feat, "3' URT");
       ReportPartialConflictsForFeatureType (utr5_feat, "5' URT");
-      if (!IsBioseqHasLineage(bioseq, "Eukaryota") || IsMrnaSequence ()) {
+      if (!IsBioseqHasLineage(bioseq, "Eukaryota") || IsMrnaSequence (bioseq)) {
           ReportPartialConflictsForFeatureType (cd_feat, "coding region", true);
       }
       ReportPartialConflictsForFeatureType (miscfeat_feat, "misc_feature");
    }
 
-   if (!IsmRNASequenceInGenProdSet(bioseq)) {
+   if (bioseq.IsNa() && !IsmRNASequenceInGenProdSet(bioseq)) {
       // SHORT_CONTIG
       if (len < 200 && thisTest.tests_run.find(GetName_contig()) != end_it ) {
           thisInfo.test_item_list[GetName_contig()].push_back(bioseq_desc);
@@ -1421,7 +1439,7 @@ void CBioseq_on_mRNA :: TestOnObj(const CBioseq& bioseq)
   }
   thisTest.is_mRNA_run = true;
 
-  if (!IsMrnaSequence()) {
+  if (!IsMrnaSequence(bioseq)) {
       return;
   }
 
@@ -1517,6 +1535,8 @@ void CBioseq_ONCALLER_HIV_RNA_INCONSISTENT :: TestOnObj(const CBioseq& bioseq)
    if (bioseq.GetInst().GetMol() != CSeq_inst::eMol_rna) {
         return;
    }
+   const CMolInfo* 
+       molinfo = sequence::GetMolInfo(thisInfo.scope->GetBioseqHandle(bioseq));
    ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
      const CBioSource& biosrc = (*it)->GetSource();
      if ( biosrc.GetGenome() == CBioSource::eGenome_unknown) {
@@ -1531,8 +1551,8 @@ void CBioseq_ONCALLER_HIV_RNA_INCONSISTENT :: TestOnObj(const CBioseq& bioseq)
          return;
      }
      if ( biosrc.GetGenome() == CBioSource::eGenome_genomic ){
-        ITERATE (vector <const CSeqdesc*>, jt, bioseq_molinfo) {
-           if ( (*jt)->GetMolinfo().GetBiomol() != CMolInfo::eBiomol_genomic) {
+        if (molinfo) {
+           if ( molinfo->GetBiomol() != CMolInfo::eBiomol_genomic) {
                 return;
            }
         }
@@ -1795,10 +1815,11 @@ void CBioseq_DISC_mRNA_ON_WRONG_SEQUENCE_TYPE :: TestOnObj(const CBioseq& bioseq
         return;
   }
   bool is_genomic = false;
-  ITERATE (vector <const CSeqdesc*>, it, bioseq_molinfo) {
-     if ( (*it)->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_genomic) {
+  const CMolInfo* 
+     molinfo = sequence::GetMolInfo(thisInfo.scope->GetBioseqHandle(bioseq));
+  if (molinfo) {
+     if ( molinfo->GetBiomol() == CMolInfo::eBiomol_genomic) {
          is_genomic = true; 
-         break;
      }
   }
   if (!is_genomic) {
@@ -1956,8 +1977,10 @@ void CBioseq_on_Aa :: GetFeatureList4Gene(const CSeq_feat* gene, const vector <c
 void CBioseq_DISC_FEATURE_MOLTYPE_MISMATCH :: TestOnObj(const CBioseq& bioseq)
 {
    bool is_genomic = false;
-   ITERATE (vector <const CSeqdesc*>, it, bioseq_molinfo) {
-      if ( (*it)->GetMolinfo().GetBiomol() == CMolInfo::eBiomol_genomic) {
+   const CMolInfo*
+     molinfo = sequence::GetMolInfo(thisInfo.scope->GetBioseqHandle(bioseq));
+   if (molinfo) {
+      if ( molinfo->GetBiomol() == CMolInfo::eBiomol_genomic) {
            is_genomic = true;
       }
    }
@@ -2812,10 +2835,12 @@ void CBioseq_on_Aa :: ReportPartialConflictsForFeatureType(vector <const CSeq_fe
 };
 
 
-bool CBioseqTestAndRepData :: IsMrnaSequence()
+bool CBioseqTestAndRepData :: IsMrnaSequence(const CBioseq& bioseq)
 {
-  ITERATE (vector <const CSeqdesc*>, it, bioseq_molinfo) {
-     if ( (*it)->GetMolinfo().GetBiomol() == CMolInfo :: eBiomol_mRNA) {
+  const CMolInfo*
+     molinfo = sequence::GetMolInfo(thisInfo.scope->GetBioseqHandle(bioseq));
+  if (molinfo) {
+     if ( molinfo->GetBiomol() == CMolInfo :: eBiomol_mRNA) {
          return true;
      }
   }
@@ -3107,8 +3132,10 @@ void CBioseq_on_mrna :: TestOnObj(const CBioseq& bioseq)
     }
   }
   
-  ITERATE (vector <const CSeqdesc*>, it, bioseq_molinfo) {
-    if ( (*it)->GetMolinfo().GetBiomol() != CMolInfo::eBiomol_genomic) {
+  const CMolInfo*
+     molinfo = sequence::GetMolInfo(thisInfo.scope->GetBioseqHandle(bioseq));
+  if (molinfo) {
+    if ( molinfo->GetBiomol() != CMolInfo::eBiomol_genomic) {
       return;
     }
   }
@@ -3827,13 +3854,15 @@ void CBioseq_TEST_LOW_QUALITY_REGION :: TestOnObj(const CBioseq& bioseq)
       } 
       else {
          if (start > -1) { 
-                     /* if we are already in an interval, see if we should continue to be */
+         /* if we are already in an interval, see if we should continue to be */
            len = i - start;
            if ( ((float)num_ns / (float)len) < min_pct) {
               /* is the interval long enough to qualify? */
               if (len >= min_length) {
-                 thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(bioseq));
-                 thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(&bioseq));
+                 thisInfo.test_item_list[GetName()]
+                           .push_back(GetDiscItemText(bioseq));
+                 thisInfo.test_item_objs[GetName()]
+                           .push_back(CConstRef <CObject>(&bioseq));
                  found_interval = true;
               }
               else { /* reset for next interval */
@@ -3848,8 +3877,10 @@ void CBioseq_TEST_LOW_QUALITY_REGION :: TestOnObj(const CBioseq& bioseq)
     // last interval
     len = i-start;
     if (!found_interval && start > -1 && len >= min_length) {
-         thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(bioseq));
-         thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(&bioseq));
+         thisInfo.test_item_list[GetName()]
+                    .push_back(GetDiscItemText(bioseq));
+         thisInfo.test_item_objs[GetName()]
+                    .push_back(CConstRef <CObject>(&bioseq));
     }
 };
 
@@ -4138,8 +4169,9 @@ void CBioseq_DISC_BAD_GENE_STRAND :: GetReport(CRef <CClickableItem>& c_item)
 
    c_item->description 
       = GetOtherComment(c_item->item_list.size()/2, 
-                    "feature location conflicts", "feature locations conflict") 
-          + "with gene location strands";
+                        "feature location conflicts", 
+                        "feature locations conflict") 
+          + " with gene location strands";
 };
 
 
@@ -5108,11 +5140,12 @@ bool CBioseq_MISSING_LOCUS_TAGS :: x_IsLocationDirSub(const CSeq_loc& seq_locati
          }
       }
       for (CSeqdesc_CI seqdesc_it(bioseq_h, CSeqdesc :: e_Molinfo);
-                                                            ret && seqdesc_it; ++seqdesc_it) {
+               ret && seqdesc_it; ++seqdesc_it) {
            const CMolInfo& mol = seqdesc_it->GetMolinfo();
            ret = (mol.GetTech() == CMolInfo::eTech_wgs) ? false : ret;
            is_complete =
-             (mol.GetCompleteness() == CMolInfo::eCompleteness_complete) ? true : is_complete;
+             (mol.GetCompleteness() == CMolInfo::eCompleteness_complete) ? 
+                true : is_complete;
       }
       // is genome? (complete and bacterial)?
       if (is_complete) {
@@ -6359,8 +6392,9 @@ void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
          continue;
        partial5 = (*it)->GetLocation().IsPartialStart(eExtreme_Biological);
        partial3 = (*it)->GetLocation().IsPartialStop(eExtreme_Biological);
-       if (!partial5 && !partial3
-                     && sequence::GetCoverage((*it)->GetLocation(), thisInfo.scope) < 200) {  
+       if (!partial5 
+              && !partial3
+              && sequence::GetCoverage((*it)->GetLocation(), thisInfo.scope) < 200) {  
             thisInfo.test_item_list[GetName_lnc()]
                         .push_back(GetDiscItemText(**it));
             thisInfo.test_item_objs[GetName_lnc()]
@@ -6527,18 +6561,21 @@ void CBioseq_test_on_molinfo :: TestOnObj(const CBioseq& bioseq)
    if (thisTest.is_MolInfo_run) return;
    thisTest.is_MolInfo_run = true;
 
+   const CMolInfo* 
+        molinfo = sequence::GetMolInfo(thisInfo.scope->GetBioseqHandle(bioseq));
    if (thisTest.tests_run.find(GetName_part()) != end_it) {
-      ITERATE (vector <const CSeqdesc*>, it, bioseq_molinfo) {
-         const CMolInfo& molinfo = (*it)->GetMolinfo();     
+      if (molinfo) {
          // PARTIAL_CDS_COMPLETE_SEQUENCE
-         if (molinfo.GetCompleteness() == CMolInfo::eCompleteness_complete) {
+         if (molinfo->GetCompleteness() == CMolInfo::eCompleteness_complete) {
             ITERATE (vector <const CSeq_feat*>, jt, cd_feat) {
               const CSeq_loc& seq_loc = (*jt)->GetLocation();
               if ( ((*jt)->CanGetPartial() && (*jt)->GetPartial())
                      || seq_loc.IsPartialStart(eExtreme_Biological)
                      || seq_loc.IsPartialStop(eExtreme_Biological) ) {
-                 thisInfo.test_item_list[GetName_part()].push_back(GetDiscItemText(**jt));
-                 thisInfo.test_item_objs[GetName_part()].push_back(CConstRef <CObject>(*jt));
+                 thisInfo.test_item_list[GetName_part()]
+                            .push_back(GetDiscItemText(**jt));
+                 thisInfo.test_item_objs[GetName_part()]
+                            .push_back(CConstRef <CObject>(*jt));
               }
             }
          }
@@ -6553,16 +6590,15 @@ void CBioseq_test_on_molinfo :: TestOnObj(const CBioseq& bioseq)
    CConstRef <CObject> seq_ref(&bioseq);
    if (bioseq.IsNa()) {
      if (run_mrna || run_tsa) {
-        ITERATE (vector <const CSeqdesc*>, it, bioseq_molinfo) {
-           const CMolInfo& molinfo = (*it)->GetMolinfo();
+        if (molinfo) {
           // MOLTYPE_NOT_MRNA
-          if (run_mrna && (molinfo.GetBiomol() != CMolInfo :: eBiomol_mRNA)) {
+          if (run_mrna && (molinfo->GetBiomol() != CMolInfo :: eBiomol_mRNA)) {
               thisInfo.test_item_list[GetName_mrna()].push_back(desc);
               thisInfo.test_item_objs[GetName_mrna()].push_back(seq_ref);
           }
 
           // TECHNIQUE_NOT_TSA
-          if (run_tsa && molinfo.GetTech() != CMolInfo :: eTech_tsa) {
+          if (run_tsa && molinfo->GetTech() != CMolInfo :: eTech_tsa) {
               thisInfo.test_item_list[GetName_tsa()].push_back(desc);
               thisInfo.test_item_objs[GetName_tsa()].push_back(seq_ref);
           }
@@ -6571,7 +6607,8 @@ void CBioseq_test_on_molinfo :: TestOnObj(const CBioseq& bioseq)
    }
    else if (run_link && bioseq.GetInst().GetMol() == CSeq_inst::eMol_rna) {
       // DISC_POSSIBLE_LINKER
-      if (!IsMrnaSequence() || (bioseq.IsSetLength() && bioseq.GetLength() < 30)){
+      if (!IsMrnaSequence(bioseq) 
+              || (bioseq.IsSetLength() && bioseq.GetLength() < 30)){
            return;
       }
       else {
@@ -7432,7 +7469,7 @@ bool CBioseq_test_on_missing_genes :: GeneRefMatchForSuperfluousCheck (const CGe
     const string& allele1 = (gene.CanGetAllele()) ? gene.GetAllele(): kEmptyStr;
     const string& 
            allele2 = (g_xref->CanGetAllele()) ? g_xref->GetAllele(): kEmptyStr;
-    if (!allele1.empty() || !allele2.empty() && allele1 != allele2) {
+    if (!allele1.empty() && !allele2.empty() && allele1 != allele2) {
        return false;
     }
     else {
@@ -11630,16 +11667,21 @@ bool CSeqEntry_test_on_pub :: CorrectUSAStates(CConstRef <CCit_sub>& cit_sub)
    if (cit_sub->GetAuthors().CanGetAffil()) {
        const CAffil& affil = cit_sub->GetAuthors().GetAffil();
        if (affil.IsStd()) {
-           country =(affil.GetStd().CanGetCountry()) ? affil.GetStd().GetCountry() : kEmptyStr;
-           state = (affil.GetStd().CanGetSub()) ? affil.GetStd().GetSub() : kEmptyStr;
+           country =(affil.GetStd().CanGetCountry()) 
+                       ? affil.GetStd().GetCountry() : kEmptyStr;
+           state = (affil.GetStd().CanGetSub()) 
+                      ? affil.GetStd().GetSub() : kEmptyStr;
            if (country == "USA") {
                if (state != "Washington DC") {
-                   if (state.empty() || state.size() > 2 
-                                   || !isupper(state[0]) || !isupper(state[1]))
+                   if (state.empty() 
+                           || state.size() > 2 
+                           || !isupper(state[0]) 
+                           || !isupper(state[1])) {
                           return false;
+                   }
                    else {
                         ITERATE (Str2Str, it, thisInfo.state_abbrev) {
-                           if (state == it->second) {
+                           if (state == it->first) {
                                  return true;
                            }
                         }
@@ -12819,7 +12861,6 @@ void CSeqEntry_test_on_pub :: CheckBadAuthCapsOrNoFirstLastNamesInPubdesc(const 
       if (m_run_missing 
                && !isMissing && !has_pmid 
                && (isMissing = AuthNoFirstLastNames( (*it)->GetAuthors() ))) {
-cerr << MSerial_AsnText << **it << endl;
           thisInfo.test_item_list[GetName_missing()].push_back(desc);
           thisInfo.test_item_objs[GetName_missing()].push_back(obj_ref);
       }

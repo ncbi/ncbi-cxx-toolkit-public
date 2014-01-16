@@ -120,7 +120,6 @@ CCheckingClass :: CCheckingClass() : num_bioseq(0)
 
    m_vec_desc.push_back(&CTestAndRepData :: bioseq_biosrc_seqdesc);
    m_vec_desc.push_back(&CTestAndRepData :: bioseq_genbank);
-   m_vec_desc.push_back(&CTestAndRepData :: bioseq_molinfo);
    m_vec_desc.push_back(&CTestAndRepData :: bioseq_title);
    m_vec_desc.push_back(&CTestAndRepData :: bioseq_user);
    m_vec_desc.push_back(&CTestAndRepData :: biosrc_orgmod_seqdesc);
@@ -407,9 +406,6 @@ void CCheckingClass :: CheckBioseq (CBioseq& bioseq)
             case CSeqdesc::e_Source: 
                    CTestAndRepData::bioseq_biosrc_seqdesc.push_back(&(*it));
                    break;
-            case CSeqdesc::e_Molinfo: 
-                   CTestAndRepData::bioseq_molinfo.push_back(&(*it));
-                   break;        
             case CSeqdesc::e_Title: 
                    CTestAndRepData::bioseq_title.push_back(&(*it));
                    break;

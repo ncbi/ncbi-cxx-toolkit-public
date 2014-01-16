@@ -87,35 +87,35 @@ string CSummarizeSusProdRule :: SummarizeSearchFunc (const CSearch_func& func, b
          summ = SummarizeStringConstraintEx (func.GetString_constraint(), short_version);
          break;
       case CSearch_func::e_Contains_plural:
-         summ = "May contain plural";
+         summ = "may contain plural";
          break;
       case CSearch_func::e_N_or_more_brackets_or_parentheses:
          summ
-            = "Contains " + NStr::IntToString(func.GetN_or_more_brackets_or_parentheses())
+            = "contains " + NStr::IntToString(func.GetN_or_more_brackets_or_parentheses())
               + " or more brackets or parentheses";
          break;
       case CSearch_func::e_Three_numbers:
          summ = "Three or more numbers together";
          break;
       case CSearch_func::e_Underscore:
-         summ = "Contains underscore";
+         summ = "contains underscore";
          break;
       case CSearch_func::e_Prefix_and_numbers:
-         summ = "Is '" + func.GetPrefix_and_numbers() + "' followed by numbers";
+         summ = "is '" + func.GetPrefix_and_numbers() + "' followed by numbers";
          break;
       case CSearch_func::e_All_caps:
-         summ = "Is all capital letters";
+         summ = "is all capital letters";
          break;
       case CSearch_func::e_Unbalanced_paren:
-         summ = "Contains unbalanced brackets or parentheses";
+         summ = "contains unbalanced brackets or parentheses";
          break;
       case CSearch_func::e_Too_long:
-         summ = "Is longer than " + NStr::IntToString(func.GetToo_long()) + " characters";
+         summ = "is longer than " + NStr::IntToString(func.GetToo_long()) + " characters";
          break;
       case CSearch_func::e_Has_term:
          strtmp = "'" + func.GetHas_term() + "'";
-         if (short_version) summ = "Contains " + strtmp;
-         else summ = "Contains " + strtmp 
+         if (short_version) summ = "contains " + strtmp;
+         else summ = "contains " + strtmp 
                     + " at start or separated from other letters by numbers, spaces, or punctuation, but does not also contain 'domain'";
          break;
       default:
