@@ -88,7 +88,7 @@ CRfamTool::GetModelByIdentification(const string& model_identification, CRfamMod
 bool
 CRfamTool::sx_GetModel(xml::node& node, CRfamModel& model)
 {
-    bool result;
+    bool result=false;
     NON_CONST_ITERATE(xml::node, child, node) {
         string parameter_name = child->get_name();
         string content = child->get_content();
@@ -129,3 +129,4 @@ CRfamModel::Get(const string& parameter_name)
 
 END_NCBI_SCOPE
 // END_SCOPE(objects)
+
