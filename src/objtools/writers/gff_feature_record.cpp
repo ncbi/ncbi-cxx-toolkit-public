@@ -135,7 +135,7 @@ string CGffAlignRecord::StrAttributes() const
 //  ----------------------------------------------------------------------------
 {
     string attributes = CGffBaseRecord::StrAttributes();
-    attributes += CGffFeatureRecord::ATTR_SEPARATOR;
+    attributes += CGffBaseRecord::ATTR_SEPARATOR;
     //bool needsQuoting = CWriteUtil::NeedsQuoting(StrTarget());
     bool needsQuoting = true; //we know it does
     attributes += "Target=";
@@ -147,7 +147,7 @@ string CGffAlignRecord::StrAttributes() const
         attributes += "\"";
     }
     if (!mGapIsTrivial) {
-        attributes += CGffFeatureRecord::ATTR_SEPARATOR;
+        attributes += CGffBaseRecord::ATTR_SEPARATOR;
         needsQuoting = CWriteUtil::NeedsQuoting(StrGap());
         attributes += "Gap=";
         if (needsQuoting) {
