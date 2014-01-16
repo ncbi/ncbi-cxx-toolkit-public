@@ -39,7 +39,6 @@
 #include <objects/seq/Annotdesc.hpp>
 #include <objects/seqfeat/BioSource.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
-#include <objects/seqalign/Score.hpp>
 #include <objtools/writers/gff_writer.hpp>
 #include <objtools/writers/gff3_write_data.hpp>
 #include <objtools/writers/gff_feature_record.hpp>
@@ -132,8 +131,8 @@ protected:
         CGffFeatureContext&,
         CMappedFeat );
 
-    virtual bool xWriteFeatureRecord( 
-        const CGffFeatureRecord& );
+    virtual bool xWriteRecord( 
+        const CGffBaseRecord& );
 
     void xWriteAlignment( 
         const CGffAlignmentRecord& record );
@@ -161,7 +160,7 @@ protected:
         CGffAlignRecord&,
         const CAlnMap&,
         unsigned int);
-    bool xAssignAlignmentDensegSource(
+    bool xAssignAlignmentDensegMethod(
         CGffAlignRecord&,
         const CAlnMap&,
         unsigned int);
@@ -215,7 +214,7 @@ protected:
         CGffAlignRecord&,
         const CSpliced_seg&,
         const CSpliced_exon&);
-    bool xAssignAlignmentSplicedSource(
+    bool xAssignAlignmentSplicedMethod(
         CGffAlignRecord&,
         const CSpliced_seg&,
         const CSpliced_exon&);
@@ -225,70 +224,66 @@ protected:
         const CSpliced_exon&);
         
     bool xAssignSource(
-        CGffFeatureRecord&,
+        CGffSourceRecord&,
         CGffFeatureContext&,
         CBioseq_Handle);
     bool xAssignSourceType(
-        CGffFeatureRecord&,
+        CGffSourceRecord&,
         CGffFeatureContext&,
         CBioseq_Handle);
     bool xAssignSourceSeqId(
-        CGffFeatureRecord&,
+        CGffSourceRecord&,
         CGffFeatureContext&,
         CBioseq_Handle);
-    bool xAssignSourceSource(
-        CGffFeatureRecord&,
+    bool xAssignSourceMethod(
+        CGffSourceRecord&,
         CGffFeatureContext&,
         CBioseq_Handle);
     bool xAssignSourceEndpoints(
-        CGffFeatureRecord&,
+        CGffSourceRecord&,
         CGffFeatureContext&,
         CBioseq_Handle);
     bool xAssignSourceAttributes(
-        CGffFeatureRecord&,
+        CGffSourceRecord&,
         CGffFeatureContext&,
         CBioseq_Handle);
     bool xAssignSourceAttributeGbKey(
-        CGffFeatureRecord&,
+        CGffSourceRecord&,
         CGffFeatureContext&,
         CBioseq_Handle);
     bool xAssignSourceAttributeMolType(
-        CGffFeatureRecord&,
+        CGffSourceRecord&,
         CGffFeatureContext&,
         CBioseq_Handle);
     bool xAssignSourceAttributeIsCircular(
-        CGffFeatureRecord&,
+        CGffSourceRecord&,
         CGffFeatureContext&,
         CBioseq_Handle);
     bool xAssignSourceAttributesBioSource(
-        CGffFeatureRecord&,
+        CGffSourceRecord&,
         CGffFeatureContext&,
         CBioseq_Handle);
 
     bool xAssignSourceAttributeGenome(
-        CGffFeatureRecord&,
+        CGffSourceRecord&,
         CGffFeatureContext&,
         const CBioSource&);
     bool xAssignSourceAttributeName(
-        CGffFeatureRecord&,
+        CGffSourceRecord&,
         CGffFeatureContext&,
         const CBioSource&);
     bool xAssignSourceAttributeDbxref(
-        CGffFeatureRecord&,
+        CGffSourceRecord&,
         CGffFeatureContext&,
         const CBioSource&);
     bool xAssignSourceAttributesOrgMod(
-        CGffFeatureRecord&,
+        CGffSourceRecord&,
         CGffFeatureContext&,
         const CBioSource&);
     bool xAssignSourceAttributesSubSource(
-        CGffFeatureRecord&,
+        CGffSourceRecord&,
         CGffFeatureContext&,
         const CBioSource&);
-
-    bool xxAssignScore(
-        CGffFeatureRecord&,
-        const CScore&);
 
     //begin mss-234//
     bool xAssignFeature(
@@ -307,7 +302,7 @@ protected:
         CGffFeatureRecord&,
         CGffFeatureContext&,
         CMappedFeat);
-    bool xAssignFeatureSource(
+    bool xAssignFeatureMethod(
         CGffFeatureRecord&,
         CGffFeatureContext&,
         CMappedFeat);
@@ -422,6 +417,7 @@ protected:
         CMappedFeat);
     //end mss-234//
     string xNextGenericId();
+    string xNextGeneId();
     string xNextCdsId();
     string xNextTrnaId();
     string xNextAlignId();

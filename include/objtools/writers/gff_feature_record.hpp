@@ -39,6 +39,7 @@
 #include <objmgr/util/feature.hpp>
 
 #include <objtools/writers/write_util.hpp>
+#include <objtools/writers/gff_base_record.hpp>
 #include <objtools/writers/feature_context.hpp>
 
 BEGIN_NCBI_SCOPE
@@ -47,115 +48,40 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGffFeatureRecord
 //  ============================================================================
-    : public CObject
+    : public CGffBaseRecord
 {
-public:
-    typedef map<string, vector<string> > TAttributes;
-    typedef TAttributes::iterator TAttrIt;
-    typedef TAttributes::const_iterator TAttrCit;
-
-    typedef map<string, string> TScores;
-    typedef TScores::iterator TScoreIt;
-    typedef TScores::const_iterator TScoreCit;
-
 public:
     CGffFeatureRecord( 
         const string& id="");
     CGffFeatureRecord(
-        const CGffFeatureRecord&);
+        const CGffFeatureRecord& other);
     virtual ~CGffFeatureRecord();
 
     void InitLocation(
         const CSeq_loc&);
-
-    void SetSeqId(
-        const string&);
-    void SetRecordId(
-        const string&);
-    void SetSource(
-        const string&);
-    void SetFeatureType(
-        const string&);
     void SetLocation(
         const CSeq_interval&);
-    void SetLocation(
-        unsigned int, //0-based seqstart
-        unsigned int, //0-based seqstop
-        ENa_strand = objects::eNa_strand_plus);
-    void SetPhase(
-        unsigned int);
-    void SetStrand(
-        ENa_strand);
-    void SetScore(
-        const string&,
-        int);
-    void SetScore(
-        const string&,
-        double);
 
-    virtual string StrType() const;
-    virtual string StrAttributes() const;
-    virtual string StrSeqId() const;
-    virtual string StrSource() const;
-    virtual string StrSeqStart() const;
-    virtual string StrSeqStop() const;
-    virtual string StrScore() const;
-    virtual string StrStrand() const;
-    virtual string StrPhase() const;
-
-    const TAttributes& Attributes() const { 
-        return mAttributes; 
-    };
-    const TScores& ExtraScores() const { 
-        return mExtraScores; 
-    };
     const CSeq_loc& Location() const {
         return *m_pLoc;
     };
-
-    bool AddAttribute(
-        const string&,
-        const string&);
-
-    bool AddAttributes(
-        const string&,
-        const vector<string>&);
-
-    bool SetAttribute(
-        const string&,
-        const string&);
-
-    bool SetAttributes(
-        const string&,
-        const vector<string>&);
-
-    bool GetAttributes(
-        const string&,
-        vector<string>&) const;
-
-    bool DropAttributes(
-        const string& );
-
-public:
-    static const char* ATTR_SEPARATOR;
 protected:
-    string m_strSeqId;
-    string m_strType;
-    string m_strSource;
-    unsigned int m_uSeqStart;
-    unsigned int m_uSeqStop;
-    CRef<CSeq_loc> m_pLoc;
-    string* m_pScore;
-    ENa_strand* m_peStrand;
-    unsigned int* m_puPhase;
-    string m_strAttributes;    
-    TAttributes mAttributes;
-    TScores mExtraScores;
 };
+
+//  ============================================================================
+class NCBI_XOBJWRITE_EXPORT CGffSourceRecord
+//  ============================================================================
+    : public CGffBaseRecord
+{
+public:
+    CGffSourceRecord( 
+        const string& id=""): CGffBaseRecord(id) {};
+};
+
 //  ============================================================================
 class NCBI_XOBJWRITE_EXPORT CGffAlignRecord
 //  ============================================================================
-    : public CGffFeatureRecord
+    : public CGffBaseRecord
 {
 public:
     CGffAlignRecord( 
@@ -167,11 +93,9 @@ public:
     void
     AddInsertion(
         unsigned int);
-
     void
     AddDeletion(
         unsigned int);
-
     void
     AddMatch(
         unsigned int);

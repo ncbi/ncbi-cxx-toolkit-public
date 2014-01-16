@@ -5,7 +5,7 @@ ASN_DEP = seqset
 LIB = xobjwrite
 SRC = agp_write \
       write_util \
-	  gff_feature_record \
+	  gff_base_record gff_feature_record \
       gff_writer gff2_write_data \
       gff3_writer gff3_write_data gff3_alignment_data gff3_source_data \
 		gff3_denseg_record gff3_splicedseg_record \
