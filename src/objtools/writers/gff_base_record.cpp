@@ -353,7 +353,13 @@ string CGffBaseRecord::StrAttributes() const
         attributes += key;
         attributes += "=";
 		
-		attributes += it->second.front();
+        vector<string> escapedValues;
+        for (vector<string>::const_iterator cit = it->second.begin();
+                cit != it->second.end(); ++cit) {
+            escapedValues.push_back(xEscapedValue(key, *cit));
+        }
+        string value = NStr::Join(escapedValues, ",");
+		attributes += value;
     }
 
     for (TScoreCit it = mExtraScores.begin(); it != mExtraScores.end(); ++it) {
@@ -366,12 +372,22 @@ string CGffBaseRecord::StrAttributes() const
         attributes += "=";
 		
         string value = it->second;
-		attributes += value;
+		attributes += xEscapedValue(key, value);
     }
     if ( attributes.empty() ) {
         attributes = ".";
     }
     return attributes;
+}
+
+//  ----------------------------------------------------------------------------
+string CGffBaseRecord::xEscapedValue(
+    const string& key,
+    const string& value) const
+//  ----------------------------------------------------------------------------
+{
+    string escapedValue(value);
+    return value;
 }
 
 END_objects_SCOPE
