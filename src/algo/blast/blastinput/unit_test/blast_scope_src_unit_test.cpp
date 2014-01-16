@@ -39,6 +39,10 @@
 #include <objects/entrez2/entrez2_client.hpp>
 #include <objmgr/seq_vector.hpp>
 
+#include <algo/blast/blastinput/blast_input.hpp>
+#include <algo/blast/blastinput/blast_fasta_input.hpp>
+#include <algo/blast/api/sseqloc.hpp>
+#include "blast_input_unit_test_aux.hpp"
 #if defined(NCBI_COMPILER_WORKSHOP) && defined(NDEBUG) && defined(NCBI_WITHOUT_MT) && defined(__i386) && NCBI_COMPILER_VERSION == 550
 #  define BUGGY_COMPILER
 #endif
@@ -48,84 +52,6 @@
 USING_NCBI_SCOPE;
 USING_SCOPE(blast);
 USING_SCOPE(objects);
-
-/// RAII class for the CBlastScopeSource. It revokes the BLAST database data
-/// loader upon destruction to reset the environment for other unit tests
-class CBlastScopeSourceWrapper {
-public:
-    CBlastScopeSourceWrapper() {
-        m_ScopeSrc.Reset(new CBlastScopeSource);
-    }
-    CBlastScopeSourceWrapper(SDataLoaderConfig dlconfig) {
-        m_ScopeSrc.Reset(new CBlastScopeSource(dlconfig));
-    }
-    CRef<CScope> NewScope() { return m_ScopeSrc->NewScope(); }
-    string GetBlastDbLoaderName() const { 
-        return m_ScopeSrc->GetBlastDbLoaderName(); 
-    }
-    ~CBlastScopeSourceWrapper() {
-        m_ScopeSrc->RevokeBlastDbDataLoader();
-        m_ScopeSrc.Reset();
-    }
-
-private:
-    CRef<CBlastScopeSource> m_ScopeSrc;
-};
-
-/// Auxiliary class to write temporary NCBI configuration files in the local
-/// directory for the purpose of testing the CBlastScopeSource configuration
-/// class via this file (and override any other installed NCBI configuration
-/// files)
-class CAutoNcbiConfigFile {
-public:
-    static const char* kSection;
-    static const char* kDataLoaders;
-    static const char* kProtBlastDbDataLoader;
-    static const char* kNuclBlastDbDataLoader;
-
-    typedef SDataLoaderConfig::EConfigOpts EConfigOpts;
-
-    CAutoNcbiConfigFile(EConfigOpts opts = SDataLoaderConfig::eDefault) {
-        m_Sentry = CMetaRegistry::Load("ncbi", CMetaRegistry::eName_RcOrIni);
-
-        string value;
-        if (opts & SDataLoaderConfig::eUseBlastDbDataLoader) {
-            value += "blastdb ";
-        }
-        if (opts & SDataLoaderConfig::eUseGenbankDataLoader) {
-            value += "genbank";
-        }
-        if (opts & SDataLoaderConfig::eUseNoDataLoaders) {
-            value += "none";
-        }
-        m_Sentry.registry->Set(kSection, kDataLoaders, value);
-    }
-
-    void SetProteinBlastDbDataLoader(const string& prot_db_name) {
-        m_Sentry.registry->Set(kSection, kProtBlastDbDataLoader, prot_db_name);
-    }
-
-    void SetNucleotideBlastDbDataLoader(const string& nucl_db_name) {
-        m_Sentry.registry->Set(kSection, kNuclBlastDbDataLoader, nucl_db_name);
-    }
-
-    void RemoveBLASTDBEnvVar() {
-        m_BlastDb = m_Sentry.registry->Get(kSection, "BLASTDB");
-        m_Sentry.registry->Set(kSection, "BLASTDB", "/dev/null");
-    }
-
-    ~CAutoNcbiConfigFile() {
-        m_Sentry.registry->Set(kSection, kDataLoaders, kEmptyStr);
-        m_Sentry.registry->Set(kSection, kProtBlastDbDataLoader, kEmptyStr);
-        m_Sentry.registry->Set(kSection, kNuclBlastDbDataLoader, kEmptyStr);
-        if ( !m_BlastDb.empty() ) {
-            m_Sentry.registry->Set(kSection, "BLASTDB", m_BlastDb);
-        }
-    }
-private:
-    CMetaRegistry::SEntry m_Sentry;
-    string m_BlastDb;
-};
 
 const char* CAutoNcbiConfigFile::kSection = "BLAST";
 const char* CAutoNcbiConfigFile::kDataLoaders = "DATA_LOADERS";

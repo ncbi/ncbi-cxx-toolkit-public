@@ -56,6 +56,7 @@
 #include <algo/blast/blastinput/tblastn_args.hpp>
 #include <algo/blast/blastinput/tblastx_args.hpp>
 #include <algo/blast/blastinput/psiblast_args.hpp>
+#include "blast_input_unit_test_aux.hpp"
 
 #undef NCBI_BOOST_NO_AUTO_TEST_MAIN
 #include <corelib/test_boost.hpp>
@@ -2465,6 +2466,38 @@ BOOST_AUTO_TEST_CASE(ParseSequenceRange_1BasedRange) {
 BOOST_AUTO_TEST_CASE(CheckQueryBatchSize) {
     BOOST_REQUIRE_EQUAL(100000, GetQueryBatchSize(eBlastn));
     BOOST_REQUIRE_EQUAL(10000, GetQueryBatchSize(eBlastn, false, true));
+}
+
+// Test case for WB-1304: save GI (i.e.: best ranked Seq-id) if available
+BOOST_AUTO_TEST_CASE(FetchGiFromAccessionInput) 
+{
+    const CSeq_id gi(CSeq_id::e_Gi, 224514933);
+    const string input("NT_026437.12");
+    typedef vector<pair<SDataLoaderConfig::EConfigOpts, string> > TVecOpts;
+    TVecOpts opts;
+    opts.push_back(make_pair(SDataLoaderConfig::eUseGenbankDataLoader, "genbank"));
+    opts.push_back(make_pair(SDataLoaderConfig::eUseBlastDbDataLoader, "BLASTDB"));
+    ITERATE(TVecOpts, config, opts) {
+        CAutoNcbiConfigFile acf(config->first);
+        blast::SDataLoaderConfig dlconfig(false);
+        dlconfig.OptimizeForWholeLargeSequenceRetrieval();
+        blast::CBlastInputSourceConfig input_config(dlconfig);
+        // this needs to be omitted for this test to work
+        //input_config.SetRetrieveSeqData(false);   
+        CBlastFastaInputSource fasta_input(input, input_config);
+        CBlastInput blast_input(&fasta_input);
+        //CBlastScopeSourceWrapper scope_source(dlconfig);
+        CRef<CScope> scope = CBlastScopeSource(dlconfig).NewScope();
+        TSeqLocVector query_loc = blast_input.GetAllSeqLocs(*scope);
+        BOOST_REQUIRE_EQUAL(1U, query_loc.size());
+        if (gi.AsFastaString() != query_loc[0].seqloc->GetId()->AsFastaString()) {
+            BOOST_CHECK_EQUAL(gi.AsFastaString(),
+                              query_loc[0].seqloc->GetId()->AsFastaString());
+            BOOST_CHECK_MESSAGE(gi.AsFastaString() ==
+                                query_loc[0].seqloc->GetId()->AsFastaString(),
+                                "Failed using " + config->second + " data loader");
+        }
+    }
 }
 
 BOOST_AUTO_TEST_SUITE_END() // end of blastinput test suite

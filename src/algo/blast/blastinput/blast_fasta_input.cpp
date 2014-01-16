@@ -384,7 +384,7 @@ CBlastFastaInputSource::x_FastaToSeqLoc(CRef<objects::CSeq_loc>& lcase_mask,
     retval->SetInt().SetTo((to > 0 && to < seqlen) ? to : (seqlen-1));
 
     // set ID
-    retval->SetInt().SetId().Assign(*itr->GetId().front());
+    retval->SetInt().SetId().Assign(*FindBestChoice(itr->GetId(), CSeq_id::BestRank));
 
     return retval;
 }
