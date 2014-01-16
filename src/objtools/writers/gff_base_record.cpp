@@ -43,7 +43,7 @@ BEGIN_objects_SCOPE // namespace ncbi::objects::
 //  ----------------------------------------------------------------------------
 const char* CGffBaseRecord::ATTR_SEPARATOR
 //  ----------------------------------------------------------------------------
-    = "; ";
+    = ";";
 
 //  ----------------------------------------------------------------------------
 CGffBaseRecord::CGffBaseRecord(
@@ -353,14 +353,7 @@ string CGffBaseRecord::StrAttributes() const
         attributes += key;
         attributes += "=";
 		
-		bool needsQuoting = CWriteUtil::NeedsQuoting(it->second.front());
-		if (needsQuoting) {
-			attributes += '\"';
-        }		
 		attributes += it->second.front();
-		if (needsQuoting) {
-			attributes += '\"';
-        }
     }
 
     for (TScoreCit it = mExtraScores.begin(); it != mExtraScores.end(); ++it) {
@@ -373,15 +366,7 @@ string CGffBaseRecord::StrAttributes() const
         attributes += "=";
 		
         string value = it->second;
-		//bool needsQuoting = CWriteUtil::NeedsQuoting(value);
-		bool needsQuoting = false; //we know it doesn't
-		if (needsQuoting) {
-			attributes += '\"';
-        }		
 		attributes += value;
-		if (needsQuoting) {
-			attributes += '\"';
-        }
     }
     if ( attributes.empty() ) {
         attributes = ".";

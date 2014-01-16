@@ -1,33 +1,33 @@
 ##gff-version 3
 #!gff-spec-version 1.20
 #!processor NCBI annotwriter
-NC_015762.1	RefSeq	match	471157	471350	.	+	.	ID=aln0; rank=1; Target="XR_131767.1 1 194 +"
-NC_015762.1	RefSeq	match	471433	471601	.	+	.	ID=aln0; rank=1; Target="XR_131767.1 195 363 +"
-NC_015762.1	RefSeq	match	471671	471756	.	+	.	ID=aln0; rank=1; Target="XR_131767.1 364 449 +"
-NC_015762.1	RefSeq	match	472570	472924	.	+	.	ID=aln0; rank=1; Target="XR_131767.1 450 805 +"; Gap="M281 I1 M74"
-NC_015762.1	RefSeq	match	473182	473797	.	+	.	ID=aln0; rank=1; Target="XR_131767.1 806 1421 +"
-NC_015762.1	RefSeq	match	473865	474140	.	+	.	ID=aln0; rank=1; Target="XR_131767.1 1422 1697 +"
-NC_015762.1	RefSeq	match	474208	475930	.	+	.	ID=aln0; rank=1; Target="XR_131767.1 1698 3420 +"
-NC_015762.1	RefSeq	cDNA_match	500008	500982	.	+	.	ID=aln1; rank=1; Target="XM_003392816.1 1 975 +"
-NC_015762.1	RefSeq	cDNA_match	501088	501129	.	+	.	ID=aln1; rank=1; Target="XM_003392816.1 976 1017 +"
-NC_015762.1	RefSeq	cDNA_match	501194	501298	.	+	.	ID=aln1; rank=1; Target="XM_003392816.1 1018 1122 +"
-NC_015762.1	RefSeq	cDNA_match	501378	501509	.	+	.	ID=aln1; rank=1; Target="XM_003392816.1 1123 1254 +"
-NC_015762.1	RefSeq	cDNA_match	501748	501937	.	+	.	ID=aln1; rank=1; Target="XM_003392816.1 1255 1445 +"; Gap="M83 I1 M107"
-NC_015762.1	RefSeq	cDNA_match	502031	502162	.	+	.	ID=aln1; rank=1; Target="XM_003392816.1 1446 1577 +"
-NC_015762.1	RefSeq	cDNA_match	502262	502423	.	+	.	ID=aln1; rank=1; Target="XM_003392816.1 1578 1739 +"
-NC_015762.1	RefSeq	cDNA_match	502481	502881	.	+	.	ID=aln1; rank=1; Target="XM_003392816.1 1740 2140 +"
-NC_015762.1	RefSeq	cDNA_match	503003	503856	.	+	.	ID=aln1; rank=1; Target="XM_003392816.1 2141 2994 +"
-NC_015762.1	RefSeq	match	891793	891881	.	+	.	ID=aln2; rank=1; Target="XR_131772.1 1 89 +"
-NC_015762.1	RefSeq	match	900127	900222	.	+	.	ID=aln2; rank=1; Target="XR_131772.1 90 185 +"
-NC_015762.1	RefSeq	match	900310	900505	.	+	.	ID=aln2; rank=1; Target="XR_131772.1 186 381 +"
-NC_015762.1	RefSeq	match	901244	901901	.	+	.	ID=aln2; rank=1; Target="XR_131772.1 382 1039 +"
-NC_015762.1	RefSeq	match	902311	902698	.	+	.	ID=aln2; rank=1; Target="XR_131772.1 1040 1427 +"
-NC_015762.1	RefSeq	match	902770	903081	.	+	.	ID=aln2; rank=1; Target="XR_131772.1 1428 1739 +"
-NC_015762.1	RefSeq	match	903235	903650	.	+	.	ID=aln2; rank=1; Target="XR_131772.1 1740 2156 +"; Gap="M70 I1 M346"
-NC_015762.1	RefSeq	match	903738	904574	.	+	.	ID=aln2; rank=1; Target="XR_131772.1 2157 2993 +"
-NC_015762.1	RefSeq	match	472031	472502	.	-	.	ID=aln3; rank=1; Target="XR_131768.1 1 472 +"
-NC_015762.1	RefSeq	match	471675	471754	.	-	.	ID=aln3; rank=1; Target="XR_131768.1 473 552 +"
-NC_015762.1	RefSeq	match	471442	471603	.	-	.	ID=aln3; rank=1; Target="XR_131768.1 553 714 +"
-NC_015762.1	RefSeq	match	471129	471352	.	-	.	ID=aln3; rank=1; Target="XR_131768.1 715 938 +"
-NC_015762.1	RefSeq	match	470560	471051	.	-	.	ID=aln3; rank=1; Target="XR_131768.1 939 1432 +"; Gap="M34 I2 M458"
+NC_015762.1	RefSeq	match	471157	471350	.	+	.	ID=aln0;rank=1;Target=XR_131767.1 1 194 +
+NC_015762.1	RefSeq	match	471433	471601	.	+	.	ID=aln0;rank=1;Target=XR_131767.1 195 363 +
+NC_015762.1	RefSeq	match	471671	471756	.	+	.	ID=aln0;rank=1;Target=XR_131767.1 364 449 +
+NC_015762.1	RefSeq	match	472570	472924	.	+	.	ID=aln0;rank=1;Target=XR_131767.1 450 805 +;Gap=M281 I1 M74
+NC_015762.1	RefSeq	match	473182	473797	.	+	.	ID=aln0;rank=1;Target=XR_131767.1 806 1421 +
+NC_015762.1	RefSeq	match	473865	474140	.	+	.	ID=aln0;rank=1;Target=XR_131767.1 1422 1697 +
+NC_015762.1	RefSeq	match	474208	475930	.	+	.	ID=aln0;rank=1;Target=XR_131767.1 1698 3420 +
+NC_015762.1	RefSeq	cDNA_match	500008	500982	.	+	.	ID=aln1;rank=1;Target=XM_003392816.1 1 975 +
+NC_015762.1	RefSeq	cDNA_match	501088	501129	.	+	.	ID=aln1;rank=1;Target=XM_003392816.1 976 1017 +
+NC_015762.1	RefSeq	cDNA_match	501194	501298	.	+	.	ID=aln1;rank=1;Target=XM_003392816.1 1018 1122 +
+NC_015762.1	RefSeq	cDNA_match	501378	501509	.	+	.	ID=aln1;rank=1;Target=XM_003392816.1 1123 1254 +
+NC_015762.1	RefSeq	cDNA_match	501748	501937	.	+	.	ID=aln1;rank=1;Target=XM_003392816.1 1255 1445 +;Gap=M83 I1 M107
+NC_015762.1	RefSeq	cDNA_match	502031	502162	.	+	.	ID=aln1;rank=1;Target=XM_003392816.1 1446 1577 +
+NC_015762.1	RefSeq	cDNA_match	502262	502423	.	+	.	ID=aln1;rank=1;Target=XM_003392816.1 1578 1739 +
+NC_015762.1	RefSeq	cDNA_match	502481	502881	.	+	.	ID=aln1;rank=1;Target=XM_003392816.1 1740 2140 +
+NC_015762.1	RefSeq	cDNA_match	503003	503856	.	+	.	ID=aln1;rank=1;Target=XM_003392816.1 2141 2994 +
+NC_015762.1	RefSeq	match	891793	891881	.	+	.	ID=aln2;rank=1;Target=XR_131772.1 1 89 +
+NC_015762.1	RefSeq	match	900127	900222	.	+	.	ID=aln2;rank=1;Target=XR_131772.1 90 185 +
+NC_015762.1	RefSeq	match	900310	900505	.	+	.	ID=aln2;rank=1;Target=XR_131772.1 186 381 +
+NC_015762.1	RefSeq	match	901244	901901	.	+	.	ID=aln2;rank=1;Target=XR_131772.1 382 1039 +
+NC_015762.1	RefSeq	match	902311	902698	.	+	.	ID=aln2;rank=1;Target=XR_131772.1 1040 1427 +
+NC_015762.1	RefSeq	match	902770	903081	.	+	.	ID=aln2;rank=1;Target=XR_131772.1 1428 1739 +
+NC_015762.1	RefSeq	match	903235	903650	.	+	.	ID=aln2;rank=1;Target=XR_131772.1 1740 2156 +;Gap=M70 I1 M346
+NC_015762.1	RefSeq	match	903738	904574	.	+	.	ID=aln2;rank=1;Target=XR_131772.1 2157 2993 +
+NC_015762.1	RefSeq	match	472031	472502	.	-	.	ID=aln3;rank=1;Target=XR_131768.1 1 472 +
+NC_015762.1	RefSeq	match	471675	471754	.	-	.	ID=aln3;rank=1;Target=XR_131768.1 473 552 +
+NC_015762.1	RefSeq	match	471442	471603	.	-	.	ID=aln3;rank=1;Target=XR_131768.1 553 714 +
+NC_015762.1	RefSeq	match	471129	471352	.	-	.	ID=aln3;rank=1;Target=XR_131768.1 715 938 +
+NC_015762.1	RefSeq	match	470560	471051	.	-	.	ID=aln3;rank=1;Target=XR_131768.1 939 1432 +;Gap=M34 I2 M458
 ###

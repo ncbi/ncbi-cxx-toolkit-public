@@ -1,30 +1,30 @@
 ##gff-version 3
 #!gff-spec-version 1.20
 #!processor NCBI annotwriter
-ctg123	.	gene	1000	9000	.	+	.	ID=gene0; gbkey=Gene
-ctg123	.	region	1000	1012	.	+	.	ID=id0; gbkey=TF_binding_site
-ctg123	.	mRNA	1050	9000	.	+	.	ID=rna0; Parent=gene0; gbkey=mRNA
-ctg123	.	exon	1050	1500	.	+	.	ID=id1; Parent=rna0; gbkey=mRNA
-ctg123	.	exon	3000	3902	.	+	.	ID=id2; Parent=rna0; gbkey=mRNA
-ctg123	.	exon	5000	5500	.	+	.	ID=id3; Parent=rna0; gbkey=mRNA
-ctg123	.	exon	7000	9000	.	+	.	ID=id4; Parent=rna0; gbkey=mRNA
-ctg123	.	mRNA	1050	9000	.	+	.	ID=rna1; Parent=gene0; gbkey=mRNA
-ctg123	.	exon	1050	1500	.	+	.	ID=id5; Parent=rna1; gbkey=mRNA
-ctg123	.	exon	5000	5500	.	+	.	ID=id6; Parent=rna1; gbkey=mRNA
-ctg123	.	exon	7000	9000	.	+	.	ID=id7; Parent=rna1; gbkey=mRNA
-ctg123	.	CDS	1201	1500	.	+	0	ID=cds0; Parent=rna0; gbkey=CDS
-ctg123	.	CDS	3000	3902	.	+	0	ID=cds0; Parent=rna0; gbkey=CDS
-ctg123	.	CDS	5000	5500	.	+	0	ID=cds0; Parent=rna0; gbkey=CDS
-ctg123	.	CDS	7000	7600	.	+	0	ID=cds0; Parent=rna0; gbkey=CDS
-ctg123	.	CDS	1201	1500	.	+	0	ID=cds1; Parent=rna1; gbkey=CDS
-ctg123	.	CDS	5000	5500	.	+	0	ID=cds1; Parent=rna1; gbkey=CDS
-ctg123	.	CDS	7000	7600	.	+	0	ID=cds1; Parent=rna1; gbkey=CDS
-ctg123	.	mRNA	1300	9000	.	+	.	ID=rna2; Parent=gene0; gbkey=mRNA
-ctg123	.	exon	1300	1500	.	+	.	ID=id8; Parent=rna2; gbkey=mRNA
-ctg123	.	exon	3000	3902	.	+	.	ID=id9; Parent=rna2; gbkey=mRNA
-ctg123	.	exon	5000	5500	.	+	.	ID=id10; Parent=rna2; gbkey=mRNA
-ctg123	.	exon	7000	9000	.	+	.	ID=id11; Parent=rna2; gbkey=mRNA
-ctg123	.	CDS	3301	3902	.	+	0	ID=cds2; Parent=rna2; gbkey=CDS
-ctg123	.	CDS	5000	5500	.	+	1	ID=cds2; Parent=rna2; gbkey=CDS
-ctg123	.	CDS	7000	7600	.	+	1	ID=cds2; Parent=rna2; gbkey=CDS
+ctg123	.	gene	1000	9000	.	+	.	ID=gene0;gbkey=Gene
+ctg123	.	region	1000	1012	.	+	.	ID=id0;gbkey=TF_binding_site
+ctg123	.	mRNA	1050	9000	.	+	.	ID=rna0;Parent=gene0;gbkey=mRNA
+ctg123	.	exon	1050	1500	.	+	.	ID=id1;Parent=rna0;gbkey=mRNA
+ctg123	.	exon	3000	3902	.	+	.	ID=id2;Parent=rna0;gbkey=mRNA
+ctg123	.	exon	5000	5500	.	+	.	ID=id3;Parent=rna0;gbkey=mRNA
+ctg123	.	exon	7000	9000	.	+	.	ID=id4;Parent=rna0;gbkey=mRNA
+ctg123	.	mRNA	1050	9000	.	+	.	ID=rna1;Parent=gene0;gbkey=mRNA
+ctg123	.	exon	1050	1500	.	+	.	ID=id5;Parent=rna1;gbkey=mRNA
+ctg123	.	exon	5000	5500	.	+	.	ID=id6;Parent=rna1;gbkey=mRNA
+ctg123	.	exon	7000	9000	.	+	.	ID=id7;Parent=rna1;gbkey=mRNA
+ctg123	.	CDS	1201	1500	.	+	0	ID=cds0;Parent=rna0;gbkey=CDS
+ctg123	.	CDS	3000	3902	.	+	0	ID=cds0;Parent=rna0;gbkey=CDS
+ctg123	.	CDS	5000	5500	.	+	0	ID=cds0;Parent=rna0;gbkey=CDS
+ctg123	.	CDS	7000	7600	.	+	0	ID=cds0;Parent=rna0;gbkey=CDS
+ctg123	.	CDS	1201	1500	.	+	0	ID=cds1;Parent=rna1;gbkey=CDS
+ctg123	.	CDS	5000	5500	.	+	0	ID=cds1;Parent=rna1;gbkey=CDS
+ctg123	.	CDS	7000	7600	.	+	0	ID=cds1;Parent=rna1;gbkey=CDS
+ctg123	.	mRNA	1300	9000	.	+	.	ID=rna2;Parent=gene0;gbkey=mRNA
+ctg123	.	exon	1300	1500	.	+	.	ID=id8;Parent=rna2;gbkey=mRNA
+ctg123	.	exon	3000	3902	.	+	.	ID=id9;Parent=rna2;gbkey=mRNA
+ctg123	.	exon	5000	5500	.	+	.	ID=id10;Parent=rna2;gbkey=mRNA
+ctg123	.	exon	7000	9000	.	+	.	ID=id11;Parent=rna2;gbkey=mRNA
+ctg123	.	CDS	3301	3902	.	+	0	ID=cds2;Parent=rna2;gbkey=CDS
+ctg123	.	CDS	5000	5500	.	+	1	ID=cds2;Parent=rna2;gbkey=CDS
+ctg123	.	CDS	7000	7600	.	+	1	ID=cds2;Parent=rna2;gbkey=CDS
 ###

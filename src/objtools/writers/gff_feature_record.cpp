@@ -136,27 +136,12 @@ string CGffAlignRecord::StrAttributes() const
 {
     string attributes = CGffBaseRecord::StrAttributes();
     attributes += CGffBaseRecord::ATTR_SEPARATOR;
-    //bool needsQuoting = CWriteUtil::NeedsQuoting(StrTarget());
-    bool needsQuoting = true; //we know it does
     attributes += "Target=";
-    if (needsQuoting) {
-        attributes += "\"";
-    }
     attributes += StrTarget();
-    if (needsQuoting) {
-        attributes += "\"";
-    }
     if (!mGapIsTrivial) {
         attributes += CGffBaseRecord::ATTR_SEPARATOR;
-        needsQuoting = CWriteUtil::NeedsQuoting(StrGap());
         attributes += "Gap=";
-        if (needsQuoting) {
-            attributes += "\"";
-        }
         attributes += StrGap();
-        if (needsQuoting) {
-            attributes += "\"";
-        }
     }
     return attributes;
 }
