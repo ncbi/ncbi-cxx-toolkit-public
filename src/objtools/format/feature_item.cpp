@@ -2145,7 +2145,9 @@ void CFeatureItem::x_AddQualProteinId(
         FOR_EACH_SEQID_ON_BIOSEQ(seqid_ci, *pBioseq) {
             const CSeq_id & seqid = **seqid_ci;
             if( ! seqid.IsGeneral() ) {
-                continue;
+                // not just general, so ignore all of them
+                pTheOneUsableGeneralSeqId.Reset();
+                break;
             }
 
             const CDbtag & db_tag = seqid.GetGeneral();
