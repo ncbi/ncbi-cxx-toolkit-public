@@ -2475,8 +2475,8 @@ BOOST_AUTO_TEST_CASE(FetchGiFromAccessionInput)
     const string input("NT_026437.12");
     typedef vector<pair<SDataLoaderConfig::EConfigOpts, string> > TVecOpts;
     TVecOpts opts;
-    opts.push_back(make_pair(SDataLoaderConfig::eUseGenbankDataLoader, "genbank"));
-    opts.push_back(make_pair(SDataLoaderConfig::eUseBlastDbDataLoader, "BLASTDB"));
+    opts.push_back(TVecOpts::value_type(SDataLoaderConfig::eUseGenbankDataLoader, "genbank"));
+    opts.push_back(TVecOpts::value_type(SDataLoaderConfig::eUseBlastDbDataLoader, "BLASTDB"));
     ITERATE(TVecOpts, config, opts) {
         CAutoNcbiConfigFile acf(config->first);
         blast::SDataLoaderConfig dlconfig(false);
