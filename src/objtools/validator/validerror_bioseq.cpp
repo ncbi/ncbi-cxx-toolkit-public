@@ -4453,6 +4453,10 @@ void CValidError_bioseq::ValidateCDSAndProtPartials (const CMappedFeat& feat)
                 if (!prot_bsh) {
                     return;
                 }
+                if (m_Scope->GetBioseqHandle(feat.GetLocationId()).GetTopLevelEntry()
+                   != prot_bsh.GetTopLevelEntry()) {
+                   return;
+                }
                 CFeat_CI prot(prot_bsh, CSeqFeatData::eSubtype_prot);
                 if (!prot) {
                     return;
