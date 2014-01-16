@@ -1113,7 +1113,7 @@ string CTestAndRepData :: BioseqToBestSeqIdString(const CBioseq& bioseq, CSeq_id
 
 string CTestAndRepData :: PrintSeqInt(const CSeq_interval& seq_int, bool range_only)
 {
-    string location;
+    string location(kEmptyStr);
 
     // Best seq_id
     if (!range_only) {
@@ -1121,8 +1121,9 @@ string CTestAndRepData :: PrintSeqInt(const CSeq_interval& seq_int, bool range_o
       if (!(seq_id.IsGenbank()) ) {
          CBioseq_Handle bioseq_hl = thisInfo.scope->GetBioseqHandle(seq_id);
          if (bioseq_hl) {
-            const CSeq_id& new_seq_id = 
-                BioseqToBestSeqId(*(bioseq_hl.GetCompleteBioseq()), CSeq_id::e_Genbank);
+            const CSeq_id& 
+                new_seq_id = BioseqToBestSeqId(*(bioseq_hl.GetCompleteBioseq()),
+                                               CSeq_id::e_Genbank);
             location = new_seq_id.AsFastaString();
          }
          else location = seq_id.AsFastaString();  // should be impossible
@@ -1132,12 +1133,16 @@ string CTestAndRepData :: PrintSeqInt(const CSeq_interval& seq_int, bool range_o
     }
 
     // strand
-    if (seq_int.CanGetStrand()) {
-      ENa_strand this_strand = seq_int.GetStrand();
-      location += thisInfo.strandsymbol[(int)this_strand];
-      int from, to;
-      string lab_from(kEmptyStr), lab_to(kEmptyStr);
-      if (eNa_strand_minus == this_strand 
+    ENa_strand 
+      this_strand 
+         = (seq_int.CanGetStrand()) ? seq_int.GetStrand(): eNa_strand_unknown;
+    if (this_strand == eNa_strand_other) {
+       NCBI_USER_THROW("Strand type is eNa_strand_other");
+    }
+    location += thisInfo.strandsymbol[(int)this_strand];
+    int from, to;
+    string lab_from(kEmptyStr), lab_to(kEmptyStr);
+    if (eNa_strand_minus == this_strand 
                                || eNa_strand_both_rev ==  this_strand) {
            to = seq_int.GetFrom();
            from = seq_int.GetTo();
@@ -1151,8 +1156,8 @@ string CTestAndRepData :: PrintSeqInt(const CSeq_interval& seq_int, bool range_o
                f_to.GetLabel(&lab_to, to); 
            }
            else lab_to = NStr::IntToString(++to);
-      }
-      else {
+    }
+    else {
            to = seq_int.GetTo();
            from = seq_int.GetFrom();
            if (seq_int.CanGetFuzz_from()) {
@@ -1165,9 +1170,8 @@ string CTestAndRepData :: PrintSeqInt(const CSeq_interval& seq_int, bool range_o
                f_to.GetLabel(&lab_to, to);
            }
            else lab_to = NStr::IntToString(++to);
-      }
-      location += lab_from + "-" + lab_to; 
-    } 
+    }
+    location += lab_from + "-" + lab_to; 
     return location;
 };
 
