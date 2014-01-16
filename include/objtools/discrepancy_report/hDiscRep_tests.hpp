@@ -642,7 +642,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       static vector <const CSeqdesc*>  title_seqdesc, biosrc_orgmod_seqdesc;
       static vector <const CSeqdesc*>  user_seqdesc, org_orgmod_seqdesc;
       static vector <const CSeqdesc*>  molinfo_seqdesc, biosrc_subsrc_seqdesc;
-      static vector <const CSeqdesc*>  bioseq_biosrc_seqdesc, bioseq_molinfo;
+      static vector <const CSeqdesc*>  bioseq_biosrc_seqdesc;
       static vector <const CSeqdesc*>  bioseq_title, bioseq_user, bioseq_genbank;
 
       static vector <const CSeq_entry*> pub_seqdesc_seqentry, comm_seqdesc_seqentry;
@@ -2128,6 +2128,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
        static string GetRNAProductString(const CSeq_feat& seq_feat);
     
     protected:
+       const CMolInfo* m_molinfo;
+
        bool x_IsShortrRNA(const CSeq_feat* seq_ft);
        bool BioseqHasKeyword(const CBioseq& bioseq, const string& keywd);
        bool StrandOk(ENa_strand strand1, ENa_strand strand2);
@@ -2151,7 +2153,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
                                                   bool look_xref=true);
        bool IsLocationOrganelle(int genome);
        bool ProductsMatchForRefSeq(const string& feat_prod, const string& mRNA_prod);
-       bool IsMrnaSequence();
+       bool IsMrnaSequence(const CBioseq& bioseq);
        int DistanceToUpstreamGap(const unsigned& pos, const CBioseq& bioseq);
        int DistanceToDownstreamGap (const int& pos, const CBioseq& bioseq);
        bool HasUnculturedNonOrganelleName (const string& tax_nm);
@@ -2305,7 +2307,9 @@ BEGIN_SCOPE(DiscRepNmSpc)
   class CBioseq_on_Aa :  public CBioseqTestAndRepData
   {
     public:
-      CBioseq_on_Aa () { m_e_exist.clear(); m_i_exist.clear(); m_check_eu_mrna = true;};
+      CBioseq_on_Aa () { m_e_exist.clear(); 
+                         m_i_exist.clear(); 
+                         m_check_eu_mrna = true;};
       virtual ~CBioseq_on_Aa () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
