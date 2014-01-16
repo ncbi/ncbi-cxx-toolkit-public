@@ -387,7 +387,14 @@ string CGffBaseRecord::xEscapedValue(
 //  ----------------------------------------------------------------------------
 {
     string escapedValue(value);
-    return value;
+    NStr::ReplaceInPlace(escapedValue, ";", "%23");
+    NStr::ReplaceInPlace(escapedValue, "=", "%3D");
+    NStr::ReplaceInPlace(escapedValue, "&", "%26");
+    if (key == "start_range"  ||  key == "end_range") {
+        return escapedValue;
+    }
+    NStr::ReplaceInPlace(escapedValue, ",", "%2C");
+    return escapedValue;
 }
 
 END_objects_SCOPE
