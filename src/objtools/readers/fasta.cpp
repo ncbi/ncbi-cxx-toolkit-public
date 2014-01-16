@@ -240,6 +240,7 @@ inline bool s_ASCII_IsValidNuc(unsigned char c)
     case 'C':
     case 'G':
     case 'T':
+    case 'U':
     case 'R':
     case 'Y':
     case 'S':

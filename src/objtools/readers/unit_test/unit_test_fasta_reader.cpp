@@ -34,6 +34,9 @@
 * ===========================================================================
 */
 
+// TODO: This test shows a lot of NULL pointer exceptions when it runs which,
+// although they do not indicate a problem, could cause confusion.
+
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbi_system.hpp>
@@ -184,7 +187,7 @@ namespace {
             },
             kDefaultFastaReaderFlags, // CFastaReader flags
             "> blah\n"
-            "ACGTACGTACGTNNNNNNNNNNNNNNNTNYYYYYYYYYYYYYYYYYYYYYYYYYYTACGT\n"
+            "ACGTACGTACGTNNNNNNNNNNNNNNNTUYYYYYYYYYYYYYYYYYYYYYYYYYYTACGT\n"
         },
 
         {
@@ -334,9 +337,9 @@ BOOST_AUTO_TEST_CASE(TestBadResidues)
 {
     const string kData = 
         ">Seq1\n"
-        "ACUTACGTACGTACGTACGTACGTACGTAC/TACGTACGTACGTACGT\n"
-        "ACUTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGTACGT\n"
-        "ACUTACGTACGTACGTACGTACGTACUTACGTACGTACGTACGTACGT\n";
+        "AC/TACGTACGTACGTACGTACGTACGTAC/TACGTACGTACGTACGT\n"
+        "AC/TACGTACGTACGTUCGTACGTACGTACGTACGTACGTACGTACGT\n"
+        "AC/TACGTACGTACGTACGTACGTAC/TACGTACGTACGTACGTACGT\n";
     const static CFastaReader::TFlags kFlags = 
         CFastaReader::fAssumeNuc | 
         CFastaReader::fForceType |
