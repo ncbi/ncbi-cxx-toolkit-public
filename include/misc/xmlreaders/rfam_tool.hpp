@@ -117,3 +117,4 @@ private:
 END_NCBI_SCOPE     
 
 #endif /// BACTERIAL_PIPELINE_RFAM_TOOL_HPP
+
