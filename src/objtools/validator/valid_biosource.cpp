@@ -1920,8 +1920,6 @@ void CValidError_imp::ValidateOrgRef
     // determine if variety is present and in taxname - if so,
     // can ignore missing subspecies
     // also look for specimen-voucher (nat-host) if identical to taxname
-    int num_bad_subspecies = 0;
-    bool have_variety_in_taxname = false;
     FOR_EACH_ORGMOD_ON_ORGNAME (it, orgname) {
         if (!(*it)->IsSetSubtype() || !(*it)->IsSetSubname()) {
             continue;
