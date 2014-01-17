@@ -947,8 +947,6 @@ public:
     ///   Retrieve the name of the account and the name of the first
     ///   group, which the account belongs to. The obtained group name may
     ///   be an empty string, if we don't have permissions to get it.
-    ///   Win32 really does not use groups, but they exist for the sake
-    ///   of POSIX compatibility.
     ///   Windows 2000/XP: In addition to looking up for local accounts,
     ///   local domain accounts, and explicitly trusted domain accounts,
     ///   it also can look for any account in any known domain around.
@@ -983,23 +981,23 @@ public:
                   EFollowLinks follow = eFollowLinks,
                   unsigned int* uid = 0, unsigned int* gid = 0) const;
 
-    /// Set an entry owner.
+    /// Set an entry owner and/or group.
     ///
-    /// You should have administrative rights to change an owner.
+    /// You should have administrative (super user) rights to change
+    /// an owner or group.
     /// WINDOWS:
-    ///   Only administrative privileges (Backup, Restore and Take Ownership)
-    ///   grant rights to change ownership.  Without one of the privileges,
+    ///   Only administrative privileges (Restore and Take Ownership)
+    ///   grant rights to change ownership. Without one of the privileges,
     ///   an administrator cannot take ownership of any file or give ownership
-    ///   back to the original owner.  Also, we cannot change user group here,
-    ///   so it will be ignored.
+    ///   back to the some user.
     /// UNIX:
     ///   The owner of an entry can change the group to any group of which
-    ///   that owner is a member of.  The super-user may assign the group
+    ///   that owner is a member of. The super-user may assign the group
     ///   arbitrarily.
     /// @param owner
-    ///   New owner name to set.
+    ///   New owner name to set. Use empty string if dont want to change.
     /// @param group
-    ///   New group name to set.
+    ///   New group name to set. Use empty string if dont want to change.
     /// @param uid
     ///   Pointer to an unsigned int to receive numeric user id of the
     ///   prospective owner (this information is purely supplemental).
