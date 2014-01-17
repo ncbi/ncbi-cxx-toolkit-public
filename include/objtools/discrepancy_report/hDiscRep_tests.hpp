@@ -319,7 +319,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       bool IsStringInSpan(const string& str, const string& first, const string& second);
       bool StringIsPositiveAllDigits(const string& str);
       bool StringMayContainPlural(const string& str);
-      bool ContainsNorMoreSetsOfBracketsOrParentheses(string search, const int& n);
+      bool ContainsNorMoreSetsOfBracketsOrParentheses(const string& search, 
+                                                      const int& n);
       bool SkipBracketOrParen(const unsigned& idx, string& start);
       char GetClose(char bp);
       bool ContainsThreeOrMoreNumbersTogether(const string& search);
