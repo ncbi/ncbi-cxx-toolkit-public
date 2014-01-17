@@ -413,7 +413,7 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
         data->net_info->firewall = eFWMode_Adaptive;
     ConnNetInfo_ExtendUserHeader(data->net_info,
                                  "User-Agent: NCBIServiceDispatcher/"
-                                 HTTP_DISP_VERSION
+                                 NCBI_DISP_VERSION
 #ifdef NCBI_CXX_TOOLKIT
                                  " (CXX Toolkit)"
 #else

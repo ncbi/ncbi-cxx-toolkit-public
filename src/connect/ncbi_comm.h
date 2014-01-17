@@ -35,12 +35,12 @@
  */
 
 #define NCBID_WEBPATH          "/Service/ncbid.cgi"
+#define NCBI_DISP_VERSION      "1.2"
 #define HTTP_CONNECTION_INFO   "Connection-Info:"
-#define HTTP_NCBI_SID          "NCBI-SID:"
 #define HTTP_DISP_FAILURES     "Dispatcher-Failures:"
 #define HTTP_DISP_MESSAGES     "Dispatcher-Messages:"
-#define HTTP_DISP_VERSION      "1.2"
 #define HTTP_NCBI_MESSAGE      "NCBI-Message:"
+#define HTTP_NCBI_SID          "NCBI-SID:"
 #define LBSM_DEFAULT_TIME      30     /* Default expiration time, in seconds */
 #define LBSM_DEFAULT_RATE      1000.0 /* For SLBSM_Service::info::rate       */
 #define LBSM_STANDBY_THRESHOLD 0.01

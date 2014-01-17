@@ -398,11 +398,11 @@ static char* s_HostPort(const char* host, unsigned short nport)
  * Cf. ncbi_conn_stream.cpp: s_SocketConnectorBuilder().
  */
 static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
+                                          EIO_Status*   status,
                                           const void*   data,
                                           size_t        size)
 {
     CONNECTOR   c;
-    EIO_Status  status;
     char*       hostport;
     SOCK        sock  = 0;
     int/*bool*/ proxy = 0/*false*/;
@@ -411,13 +411,13 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
     net_info->path[0] = '\0';
     net_info->args[0] = '\0';
     if (*net_info->http_proxy_host  &&  net_info->http_proxy_port) {
-        status = HTTP_CreateTunnel(net_info, fHTTP_NoAutoRetry, &sock);
-        assert(!sock ^ !(status != eIO_Success));
-        if (status == eIO_Success  &&  size) {
+        *status = HTTP_CreateTunnel(net_info, fHTTP_NoAutoRetry, &sock);
+        assert(!sock ^ !(*status != eIO_Success));
+        if (*status == eIO_Success  &&  size) {
             SOCK s;
-            status = SOCK_CreateOnTopEx(sock, 0, &s,
-                                        data, size, flags);
-            assert(!s ^ !(status != eIO_Success));
+            *status = SOCK_CreateOnTopEx(sock, 0, &s,
+                                         data, size, flags);
+            assert(!s ^ !(*status != eIO_Success));
             SOCK_Destroy(sock);
             sock = s;
         }
@@ -442,12 +442,14 @@ static CONNECTOR s_SocketConnectorBuilder(SConnNetInfo* net_info,
             }
             ConnNetInfo_Log(net_info, eLOG_Note, CORE_GetLOG());
         }
-        status = SOCK_CreateEx(host, net_info->port, net_info->timeout, &sock,
-                               data, size, flags);
-        assert(!sock ^ !(status != eIO_Success));
+        *status = SOCK_CreateEx(host, net_info->port, net_info->timeout, &sock,
+                                data, size, flags);
+        assert(!sock ^ !(*status != eIO_Success));
     }
     hostport = s_HostPort(net_info->host, net_info->port);
     if (!(c = SOCK_CreateConnectorOnTopEx(sock, 1/*own*/, hostport))) {
+        if (*status == eIO_Success)
+            *status  = eIO_Unknown;
         SOCK_Abort(sock);
         SOCK_Close(sock);
     }
@@ -566,10 +568,22 @@ static int/*bool*/ s_Adjust(SConnNetInfo* net_info,
 }
 
 
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
+static void x_DestroyConnector(CONNECTOR c)
+{
+    assert(!c->meta  &&  !c->next);
+    if (c->destroy)
+        c->destroy(c);
+}
+
+
 static CONNECTOR s_Open(SServiceConnector* uuu,
                         const STimeout*    timeout,
                         SSERV_InfoCPtr     info,
-                        SConnNetInfo*      net_info)
+                        SConnNetInfo*      net_info,
+                        EIO_Status*        status)
 {
     int/*bool*/ but_last = 0/*false*/;
     const char* user_header; /* either static "" or non-empty dynamic string */
@@ -618,7 +632,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             break;
         case fSERV_Standalone:
             if (!net_info->stateless)
-                return s_SocketConnectorBuilder(net_info, 0, 0);
+                return s_SocketConnectorBuilder(net_info, status, 0, 0);
             /* Otherwise, it will be a pass-thru connection via dispatcher */
             user_header = "Client-Mode: STATELESS_ONLY\r\n"; /*default*/
             user_header = s_AdjustNetParams(uuu->service, net_info,
@@ -668,15 +682,17 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         if (info)
             but_last = 1/*true*/;
     }
-    if (!user_header)
+    if (!user_header) {
+        *status = eIO_Unknown;
         return 0;
+    }
 
     if ((iter_header = SERV_Print(uuu->iter, net_info, but_last)) != 0) {
         size_t uh_len;
         if ((uh_len = strlen(user_header)) > 0) {
             char*  ih;
             size_t ih_len = strlen(iter_header);
-            if ((ih = (char*) realloc(iter_header, ++uh_len + ih_len)) != 0){
+            if ((ih = (char*) realloc(iter_header, ++uh_len + ih_len)) != 0) {
                 memcpy(ih + ih_len, user_header, uh_len);
                 iter_header = ih;
             }
@@ -691,24 +707,27 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         free((void*) uuu->user_header);
     }
     uuu->user_header = user_header;
-    if (user_header && !ConnNetInfo_OverrideUserHeader(net_info, user_header))
+    if (user_header && !ConnNetInfo_OverrideUserHeader(net_info, user_header)){
+        *status = eIO_Unknown;
         return 0;
+    }
 
     ConnNetInfo_ExtendUserHeader
         (net_info, "User-Agent: NCBIServiceConnector/"
-         HTTP_DISP_VERSION
+         NCBI_DISP_VERSION
 #ifdef NCBI_CXX_TOOLKIT
          " (CXX Toolkit)"
 #else
          " (C Toolkit)"
-#endif
+#endif /*NCBI_CXX_TOOLKIT*/
          );
 
+    *status = eIO_Success;
     if (!net_info->stateless  &&  (!info                         ||
                                    info->type == fSERV_Firewall  ||
                                    info->type == fSERV_Ncbid)) {
         /* Auxiliary HTTP connector first */
-        EIO_Status status = eIO_Success;
+        EIO_Status temp = eIO_Success;
         CONNECTOR c;
         CONN conn;
 
@@ -721,29 +740,45 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
                                    s_ParseHeaderNoUCB, uuu/*user_data*/,
                                    0/*adjust*/, 0/*cleanup*/);
         /* Wait for connection info back from dispatcher */
-        if (c  &&  (status = CONN_Create(c, &conn)) == eIO_Success) {
+        if (c  &&  (temp = CONN_Create(c, &conn)) == eIO_Success) {
             CONN_SetTimeout(conn, eIO_Open,      timeout);
             CONN_SetTimeout(conn, eIO_ReadWrite, timeout);
             CONN_SetTimeout(conn, eIO_Close,     timeout);
             /* This also triggers parse header callback */
-            CONN_Flush(conn);
-            CONN_Close(conn);
+            if ((temp = CONN_Flush(conn)) != eIO_Success)
+                *status = temp;
+            if ((temp = CONN_Close(conn)) != eIO_Success  &&
+                 temp                     != eIO_Closed   &&
+                *status < temp) {
+                *status = temp;
+            }
         } else {
-            const char* error = c ? IO_StatusStr(status) : 0;
+            /* This should only happen if we're out of memory */
+            const char* error;
+            if (c) {
+                error = IO_StatusStr(temp);
+                x_DestroyConnector(c);
+                *status = temp;
+            } else
+                error = 0;
             CORE_LOGF_X(4, eLOG_Error,
                         ("[%s]  Unable to create auxiliary HTTP %s%s%s",
                          uuu->service, c ? "connection" : "connector",
                          error  &&  *error ? ": " : "", error ? error : ""));
-            assert(0);
+            assert(!uuu->host);
         }
-        if (!uuu->host)
-            return 0/*failed, no connection info returned*/;
+        if (!uuu->host) {
+            /* No connection info returned */
+            if (*status == eIO_Success)
+                *status  = eIO_Unknown;
+            return 0;
+        }
         if (uuu->host == (unsigned int)(-1)) {
             assert(!info  ||  info->type == fSERV_Firewall);
             assert(!net_info->stateless);
             net_info->stateless = 1/*true*/;
             /* Fallback to try to use stateless mode instead */
-            return s_Open(uuu, timeout, info, net_info);
+            return s_Open(uuu, timeout, info, net_info, status);
         }
         SOCK_ntoa(uuu->host, net_info->host, sizeof(net_info->host));
         if ((net_info->firewall & eFWMode_Adaptive)
@@ -755,7 +790,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
         }
         net_info->port = uuu->port;
         ConnNetInfo_DeleteUserHeader(net_info, uuu->user_header);
-        return s_SocketConnectorBuilder(net_info, &uuu->ticket,
+        return s_SocketConnectorBuilder(net_info, status, &uuu->ticket,
                                         uuu->ticket ? sizeof(uuu->ticket) : 0);
     }
     return HTTP_CreateConnectorEx(net_info,
@@ -767,22 +802,25 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
 }
 
 
-static void s_Close(CONNECTOR       connector,
-                    const STimeout* timeout,
-                    int/*bool*/     close_dispatcher)
+static EIO_Status s_Close(CONNECTOR       connector,
+                          const STimeout* timeout,
+                          int/*bool*/     cleanup)
 {
     SServiceConnector* uuu = (SServiceConnector*) connector->handle;
+    EIO_Status status;
 
-    if (uuu->type) {
-        free((void*) uuu->type);
-        uuu->type = 0;
-    }
-    if (uuu->descr) {
-        free((void*) uuu->descr);
-        uuu->descr = 0;
-    }
-
-    if (close_dispatcher) {
+    if (cleanup) {
+        status = uuu->meta.close
+            ? uuu->meta.close(uuu->meta.c_close, timeout)
+            : eIO_Success;
+        if (uuu->type) {
+            free((void*) uuu->type);
+            uuu->type = 0;
+        }
+        if (uuu->descr) {
+            free((void*) uuu->descr);
+            uuu->descr = 0;
+        } 
         if (uuu->user_header) {
             free((void*) uuu->user_header);
             uuu->user_header = 0;
@@ -790,7 +828,8 @@ static void s_Close(CONNECTOR       connector,
         if (uuu->params.reset)
             uuu->params.reset(uuu->params.data);
         s_CloseDispatcher(uuu);
-    }
+    } else
+        status = eIO_Success/*unused*/;
 
     if (uuu->meta.list) {
         SMetaConnector* meta = connector->meta;
@@ -798,6 +837,8 @@ static void s_Close(CONNECTOR       connector,
         uuu->meta.list = 0;
         s_Reset(meta, connector);
     }
+
+    return status;
 }
 
 
@@ -824,10 +865,10 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
     for (uuu->retry = 0;  uuu->retry < uuu->net_info->max_try;  uuu->retry++) {
         SConnNetInfo* net_info;
         SSERV_InfoCPtr info;
-        CONNECTOR conn;
         int stateless;
+        CONNECTOR c;
 
-        assert(!uuu->meta.list  &&  !uuu->type  &&  !uuu->descr);
+        assert(!uuu->meta.list  &&  status != eIO_Success);
 
         if (!uuu->iter  &&  !s_OpenDispatcher(uuu))
             break;
@@ -838,29 +879,42 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         } else if (!(info = s_GetNextInfo(uuu, 0/*any*/)))
             break;
 
+        if (uuu->type) {
+            free((void*) uuu->type);
+            uuu->type = 0;
+        }
+        if (uuu->descr) {
+            free((void*) uuu->descr);
+            uuu->descr = 0;
+        }
         if (!(net_info = ConnNetInfo_Clone(uuu->net_info))) {
             status = eIO_Unknown;
             break;
         }
 
         net_info->scheme = eURL_Unspec;
-        conn = s_Open(uuu, timeout, info, net_info);
-        if (conn)
-            uuu->descr = ConnNetInfo_URL(net_info);
+        c = s_Open(uuu, timeout, info, net_info, &status);
+        uuu->descr = ConnNetInfo_URL(net_info);
         stateless = net_info->stateless;
 
         ConnNetInfo_Destroy(net_info);
 
-        if (!conn)
+        if (!c) {
+            if (status == eIO_Success)
+                status  = eIO_Closed;
             continue;
+        }
 
         /* Setup the new connector on a temporary meta-connector... */
         memset(&uuu->meta, 0, sizeof(uuu->meta));
-        METACONN_Add(&uuu->meta, conn);
-        assert(conn->meta == &uuu->meta);
+        if ((status = METACONN_Add(&uuu->meta, c)) != eIO_Success) {
+            x_DestroyConnector(c);
+            continue;
+        }
         /* ...then link it in using current connection's meta */
-        conn->next = meta->list;
-        meta->list = conn;
+        assert(c->meta == &uuu->meta);
+        c->next = meta->list;
+        meta->list = c;
 
         if (!uuu->descr  &&  uuu->meta.descr)
             CONN_SET_METHOD(meta, descr,  uuu->meta.descr, uuu->meta.c_descr);
@@ -869,6 +923,7 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         CONN_SET_METHOD    (meta, flush,  uuu->meta.flush, uuu->meta.c_flush);
         CONN_SET_METHOD    (meta, read,   uuu->meta.read,  uuu->meta.c_read);
         CONN_SET_METHOD    (meta, status, uuu->meta.status,uuu->meta.c_status);
+
         if (uuu->meta.get_type) {
             const char* temp;
             if ((temp = uuu->meta.get_type(uuu->meta.c_get_type)) != 0) {
@@ -886,9 +941,11 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
         }
 
         if (!uuu->meta.open) {
+            s_Close(connector, timeout, 0/*retain*/);
             status = eIO_NotSupported;
-            break;
+            continue;
         }
+
         status = uuu->meta.open(uuu->meta.c_open, timeout);
         if (status == eIO_Success)
             break;
@@ -898,14 +955,14 @@ static EIO_Status s_VT_Open(CONNECTOR connector, const STimeout* timeout)
                                             "/IEB/ToolBox/NETWORK"
                                             "/dispatcher.html#Firewalling" };
             CORE_LOGF_X(6, eLOG_Error,
-                        ("[%s]  %s connection failure (%s) usually indicates"
-                         " possible firewall configuration problems;"
-                         " please consult <%s>", uuu->service,
+                        ("[%s]  %s connection failure (%s) usually"
+                         " indicates possible firewall configuration"
+                         " problems; please consult <%s>", uuu->service,
                          !info ? "Firewall" : "Stateful relay",
                          IO_StatusStr(status), kFWLink));
         }
-        s_Close(connector, timeout, 0/*don't close dispatcher just as yet*/);
-        status = eIO_Closed;
+
+        s_Close(connector, timeout, 0/*retain*/);
     }
 
     uuu->status = status;
@@ -922,12 +979,7 @@ static EIO_Status s_VT_Status(CONNECTOR connector, EIO_Event unused)
 
 static EIO_Status s_VT_Close(CONNECTOR connector, const STimeout* timeout)
 {
-    SServiceConnector* uuu = (SServiceConnector*) connector->handle;
-    EIO_Status status = uuu->meta.close
-        ? uuu->meta.close(uuu->meta.c_close, timeout)
-        : eIO_Success;
-    s_Close(connector, timeout, 1/*close_dispatcher*/);
-    return status;
+    return s_Close(connector, timeout, 1/*cleanup*/);
 }
 
 
