@@ -1296,6 +1296,7 @@ bool CSuspectRuleCheck :: IsStringInSpan(const string& str, const string& first,
   str_num = first_num = second_num = 0;
   bool rval = false;
   size_t prefix_len;
+  string comp_str1, comp_str2;
   if (StringIsPositiveAllDigits (first)) {
     if (StringIsPositiveAllDigits (str) && StringIsPositiveAllDigits (second)) {
       str_num = NStr::StringToUInt (str);
@@ -1311,7 +1312,9 @@ bool CSuspectRuleCheck :: IsStringInSpan(const string& str, const string& first,
 
     new_str = CTempString(str).substr(prefix_len - 1);
     new_first = CTempString(first).substr(prefix_len - 1);
-    if (NStr::EqualCase(str, 0, prefix_len, first)
+    comp_str1 = CTempString(str).substr(0, prefix_len);
+    comp_str2 = CTempString(first).substr(0, prefix_len);
+    if (comp_str1 == comp_str2
         && StringIsPositiveAllDigits (new_str)
         && StringIsPositiveAllDigits (new_first)) {
       first_num = NStr::StringToUInt(new_first);
@@ -1330,9 +1333,11 @@ bool CSuspectRuleCheck :: IsStringInSpan(const string& str, const string& first,
        prefix_len ++;
     prefix_len ++;
 
+    comp_str1 = CTempString(str).substr(0, prefix_len);
+    comp_str2 = CTempString(first).substr(0, prefix_len);
     if (prefix_len <= first.size() && prefix_len <= second.size()
         && isdigit (first[prefix_len-1]) && isdigit (second[prefix_len-1])
-        && NStr::EqualCase(str, 0, prefix_len, first)) {
+        && comp_str1 == comp_str2) {
       new_first = CTempString(first).substr(prefix_len);
       new_second = CTempString(second).substr(prefix_len);
       new_str = CTempString(str).substr(prefix_len);
@@ -1797,10 +1802,15 @@ bool CSuspectRuleCheck :: IsPrefixPlusNumbers(const string& prefix, const string
   unsigned pattern_len;
 
   pattern_len = prefix.size();
-  if (pattern_len > 0 && !NStr::EqualCase(search, 0, pattern_len, prefix)) return false;
+  if (pattern_len > 0 && !NStr::EqualCase(search, 0, pattern_len, prefix)) {
+       return false;
+  }
 
-  size_t digit_len = search.find_first_not_of(CDiscRepUtil::digit_str, pattern_len);
-  if (digit_len != string::npos && digit_len == search.size()) return true;
+  size_t digit_len 
+           = search.find_first_not_of(CDiscRepUtil::digit_str, pattern_len);
+  if (digit_len != string::npos && digit_len == search.size()) {
+      return true;
+  }
 //  if (digit_len && (pattern_len + digit_len) == search.size()) return true;
   else return false;
 };
