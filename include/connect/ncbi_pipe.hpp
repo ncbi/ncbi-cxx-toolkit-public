@@ -488,7 +488,7 @@ protected:
     STimeout       m_CloseTimeoutValue; ///< Storage for m_CloseTimeout
 
 private:
-    /// Disable copy constructor and assignment.
+    // Disable copy constructor and assignment
     CPipe(const CPipe&);
     CPipe& operator= (const CPipe&);
 };

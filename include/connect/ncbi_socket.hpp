@@ -107,11 +107,6 @@ public:
 
 protected:
     TRIGGER m_Trigger;
-
-private:
-    // disable copy constructor and assignment
-    CTrigger(const CTrigger&);
-    CTrigger& operator= (const CTrigger&);
 };
 
 
@@ -482,11 +477,6 @@ protected:
     STimeout  ww_timeout;
     /// storage for c_timeout
     STimeout  cc_timeout;
-
-private:
-    // disable copy constructor and assignment
-    CSocket(const CSocket&);
-    CSocket& operator= (const CSocket&);
 };
 
 
@@ -584,11 +574,6 @@ protected:
 
     /// @note  The call is not valid with datagram sockets.
     EIO_Status Abort(void);
-
-private:
-    // disable copy constructor and assignment
-    CDatagramSocket(const CDatagramSocket&);
-    CDatagramSocket& operator= (const CDatagramSocket&);
 };
 
 
@@ -684,11 +669,6 @@ public:
 protected:
     LSOCK      m_Socket;
     EOwnership m_IsOwned;
-
-private:
-    // disable copy constructor and assignment
-    CListeningSocket(const CListeningSocket&);
-    CListeningSocket& operator= (const CListeningSocket&);
 };
 
 

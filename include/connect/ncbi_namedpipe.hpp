@@ -207,7 +207,7 @@ protected:
     STimeout          m_WriteTimeoutValue; ///< storage for m_WriteTimeout
 
 private:
-    /// Disable copy constructor and assignment.
+    // Disable copy constructor and assignment
     CNamedPipe(const CNamedPipe&);
     CNamedPipe& operator= (const CNamedPipe&);
 };
@@ -248,11 +248,6 @@ public:
 
     // Always returns eIO_Unknown in this class.
     virtual EIO_Status Create(const string&, const STimeout*, size_t);
-
-private:
-    /// Disable copy constructor and assignment.
-    CNamedPipeClient(const CNamedPipeClient&);
-    CNamedPipeClient& operator= (const CNamedPipeClient&);
 };
  
 
@@ -312,11 +307,6 @@ public:
     /// Return eIO_Success if client is disconnected and pipe is reinitialized.
     /// Any other return code indicates some failure.
     EIO_Status Disconnect(void);
-
-private:
-    /// Disable copy constructor and assignment.
-    CNamedPipeServer(const CNamedPipeServer&);
-    CNamedPipeServer& operator= (const CNamedPipeServer&);
 };
 
 

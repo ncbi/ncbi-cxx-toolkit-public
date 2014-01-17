@@ -59,11 +59,6 @@ public:
     EIO_Status Connect(const string&   filename,
                        const STimeout* timeout = kDefaultTimeout,
                        TSOCK_Flags     flags   = fSOCK_LogDefault);
-
-private:
-    // disable copy constructor and assignment
-    CUNIXSocket(const CUNIXSocket&);
-    CUNIXSocket& operator= (const CUNIXSocket&);
 };
 
 
@@ -80,11 +75,6 @@ public:
     EIO_Status Listen(const string&  filename,
                       unsigned short backlog = 64,
                       TSOCK_Flags    flags   = fSOCK_LogDefault);
-
-private:
-    // disable copy constructor and assignment
-    CUNIXListeningSocket(const CUNIXListeningSocket&);
-    CUNIXListeningSocket& operator= (const CUNIXListeningSocket&);
 };
 
 
