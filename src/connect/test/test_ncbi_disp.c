@@ -40,6 +40,61 @@
 #include "test_assert.h"  /* This header must go last */
 
 
+static unsigned short x_Msb(unsigned short x)
+{
+    unsigned int y;
+    while ((y = x & (x - 1)) != 0)
+        x = y;
+    return x;
+}
+
+
+static const char* x_OS(TNcbiOSType ostype)
+{
+    static char buf[40];
+    TNcbiOSType msb = x_Msb(ostype);
+    switch (msb) {
+    case fOS_Unknown:
+        return "unknown";
+    case fOS_IRIX:
+        return "IRIX";
+    case fOS_Solaris:
+        return "Solaris";
+    case fOS_BSD:
+        return ostype == fOS_Darwin ? "Darwin" : "BSD";
+    case fOS_Windows:
+        return (ostype & fOS_WindowsServer) == fOS_WindowsServer
+            ? "WindowsServer" : "Windows";
+    case fOS_Linux:
+        return "Linux";
+    default:
+        break;
+    }
+    sprintf(buf, "(%hu)", ostype);
+    return buf;
+}
+
+
+static const char* x_Bits(TNcbiCapacity capacity)
+{
+    static char buf[40];
+    switch (capacity) {
+    case fCapacity_Unknown:
+        return "unknown";
+    case fCapacity_32:
+        return "32";
+    case fCapacity_64:
+        return "64";
+    case fCapacity_32_64:
+        return "32+64";
+    default:
+        break;
+    }
+    sprintf(buf, "(%hu)", capacity);
+    return buf;
+}
+
+
 /* One can define env.var. 'service'_CONN_HOST to reroute dispatching
  * information to particular dispatching host (instead of default).
  */
@@ -124,16 +179,16 @@ int main(int argc, const char* argv[])
                 if (HINFO_MachineParams(hinfo, &params)) {
                     CORE_LOGF(eLOG_Note, ("    Arch:       %d",
                                           params.arch));
-                    CORE_LOGF(eLOG_Note, ("    OSType:     %d",
-                                          params.ostype));
+                    CORE_LOGF(eLOG_Note, ("    OSType:     %s",
+                                          x_OS(params.ostype)));
                     t = (time_t) params.bootup;
                     strftime(buf, sizeof(buf), kTimeFormat, localtime(&t));
                     CORE_LOGF(eLOG_Note, ("    Kernel:     %hu.%hu.%hu @ %s",
                                           params.kernel.major,
                                           params.kernel.minor,
                                           params.kernel.patch, buf));
-                    CORE_LOGF(eLOG_Note, ("    Bits:       %hu",
-                                          params.bits));
+                    CORE_LOGF(eLOG_Note, ("    Bits:       %s",
+                                          x_Bits(params.bits)));
                     CORE_LOGF(eLOG_Note, ("    Page size:  %lu",
                                           (unsigned long) params.pgsize));
                     t = (time_t) params.startup;
