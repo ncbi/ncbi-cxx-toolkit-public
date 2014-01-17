@@ -206,18 +206,7 @@ CObjectIStream* CEUtils_Request::GetObjectIStream(void)
 
 void CEUtils_Request::Read(string* content)
 {
-    char buf[4096];
-    if ( content ) {
-        content->erase();
-    }
-    CNcbiIostream& is = GetStream();
-    while ( is.good() ) {
-        is.read(buf, sizeof(buf));
-        streamsize len = is.gcount();
-        if ( content ) {
-            content->append(buf, len);
-        }
-    }
+    NcbiStreamToString(content, GetStream());
     Disconnect();
 }
 

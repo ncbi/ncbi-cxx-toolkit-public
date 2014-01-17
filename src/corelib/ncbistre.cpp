@@ -272,6 +272,20 @@ void NcbiStreamCopyThrow(CNcbiOstream& os, CNcbiIstream& is)
 }
 
 
+void NcbiStreamToString(string* str, CNcbiIstream& is)
+{
+    char buf[4096];
+    if (str)
+        str->erase();
+    while (is.good()) {
+        is.read(buf, sizeof(buf));
+        streamsize len = is.gcount();
+        if (str)
+            str->append(buf, len);
+    }
+}
+
+
 bool NcbiStreamCompare(CNcbiIstream& is1, CNcbiIstream& is2)
 {
     while (is1 && is2) {
@@ -413,25 +427,25 @@ string Printable(char c)
 
     string s;
     switch ( c ) {
-    case '\0':  s = "\\0";   break;
-    case '\t':  s = "\\t";   break;
-    case '\v':  s = "\\v";   break;
-    case '\b':  s = "\\b";   break;
-    case '\r':  s = "\\r";   break;
-    case '\f':  s = "\\f";   break;
-    case '\a':  s = "\\a";   break;
-    case '\n':  s = "\\n";   break;
-    case '\\':  s = "\\\\";  break;
-    case '\'':  s = "\\'";   break;
-    case '"':   s = "\\\"";  break;
+    case '\0':  s += "\\0";   break;
+    case '\t':  s += "\\t";   break;
+    case '\v':  s += "\\v";   break;
+    case '\b':  s += "\\b";   break;
+    case '\r':  s += "\\r";   break;
+    case '\f':  s += "\\f";   break;
+    case '\a':  s += "\\a";   break;
+    case '\n':  s += "\\n";   break;
+    case '\\':  s += "\\\\";  break;
+    case '\'':  s += "\\'";   break;
+    case '"':   s += "\\\"";  break;
     default:
-        if ( isprint((unsigned char) c) ) {
-            s = c;
-        } else {
-            s = "\\x";
+        if ( !isprint((unsigned char) c) ) {
+            s += "\\x";
             s += kHex[(unsigned char) c / 16];
             s += kHex[(unsigned char) c % 16];
-        }
+        } else
+            s += c;
+        break;
     }
     return s;
 }

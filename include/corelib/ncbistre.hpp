@@ -483,6 +483,13 @@ NCBI_XNCBI_EXPORT
 extern void NcbiStreamCopyThrow(CNcbiOstream& os, CNcbiIstream& is);
 
 
+/// Input the entire contents of the stream into a string (NULL causes drain).
+/// @sa
+///   NcbiStreamCopy
+NCBI_XNCBI_EXPORT
+extern void NcbiStreamToString(string* str, CNcbiIstream& is);
+
+
 /// Compare stream contents in binary form.
 ///
 /// @param is1
