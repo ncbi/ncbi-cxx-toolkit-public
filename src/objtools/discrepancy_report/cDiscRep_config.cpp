@@ -1480,7 +1480,7 @@ static const s_test_property test_list[] = {
    {"MISSING_LOCUS_TAGS", fDiscrepancy | fAsndisc},
    {"DUPLICATE_LOCUS_TAGS", fDiscrepancy},
    {"INCONSISTENT_LOCUS_TAG_PREFIX", fDiscrepancy},
-   {"BAD_LOCUS_TAG_FORMAT", fDiscrepancy},
+   {"BAD_LOCUS_TAG_FORMAT", fDiscrepancy | fAsndisc},
    {"FEATURE_LOCATION_CONFLICT", fDiscrepancy | fAsndisc},
 
 // tests_on_Bioseq_CFeat_CSeqdesc
@@ -2080,13 +2080,15 @@ void CRepConfig :: GetTestList()
            CRef <CTestAndRepData>(new CBioseq_MISSING_LOCUS_TAGS));
         if (++i >= sz) return;
    }
-   if ( thisTest.tests_run.find("DUPLICATE_LOCUS_TAGS") != end_it
-        || thisTest.tests_run.find("BAD_LOCUS_TAG_FORMAT") != end_it) {
+   if ( thisTest.tests_run.find("DUPLICATE_LOCUS_TAGS") != end_it) {
+       thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet
+           .push_back(CRef <CTestAndRepData>(new CBioseq_DUPLICATE_LOCUS_TAGS));
+        if (++i >= sz) return;
+   }
+   if ( thisTest.tests_run.find("BAD_LOCUS_TAG_FORMAT") != end_it) {
        thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet.push_back(
-           CRef <CTestAndRepData>(new CBioseq_on_locus_tags));
-        if (thisTest.tests_run.find("DUPLICATE_LOCUS_TAGS") != end_it) i++;
-        if (thisTest.tests_run.find("BAD_LOCUS_TAG_FORMAT") != end_it) i++;
-        if (i >= sz) return;
+           CRef <CTestAndRepData>(new CBioseq_BAD_LOCUS_TAG_FORMAT));
+        if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("INCONSISTENT_LOCUS_TAG_PREFIX") != end_it) {
        thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet.push_back(
