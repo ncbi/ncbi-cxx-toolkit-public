@@ -36,6 +36,8 @@
 #include <objtools/format/items/source_item.hpp>
 #include <objtools/format/items/feature_item.hpp>
 #include <objtools/validator/utilities.hpp>
+#include <objects/valid/Comment_rule.hpp>
+#include <objects/valid/Comment_set.hpp>
 #include <objects/submit/Contact_info.hpp>
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Seg_ext.hpp>
@@ -311,15 +313,23 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
          continue;
      }
      
+/*
+for (unsigned i=0; i< thisInfo.susrule_summ.size(); i++) {
+string summ = thisInfo.susrule_summ[i][2];
+ if (summ.find("equals") != string::npos) 
+cerr << "i  " << i << "  " << summ << endl;
+}
+*/
      if (prot.CanGetName() && !prot.GetName().empty()) {
        prot_nm = *(prot.GetName().begin()); 
        rule_idx = 0;
        string test_name, summ;
+//cerr << "port_nm " << prot_nm << endl;
        ITERATE (list <CRef <CSuspect_rule> >, rit, 
                                    thisInfo.suspect_prod_rules->Get()) {
 
 /*
-if (rule_idx == 4) {
+if (rule_idx == 111 && prot_nm == "conserved hypothetical protein") {
 cerr << MSerial_AsnText << **rit << endl;
 }
 */
@@ -332,7 +342,7 @@ cerr << MSerial_AsnText << **rit << endl;
                    + GetDiscItemText(*feat_in_use));
               test_name = thisInfo.susrule_summ[rule_idx][0];
               summ = thisInfo.susrule_summ[rule_idx][2];
-// cerr << "rule_idx " << rule_idx <<  "  " << summ << endl;
+ // cerr << "rule_idx " << rule_idx <<  "  " << summ << endl;
               thisInfo.test_item_objs[test_name + "$" + summ].push_back(
                                              CConstRef<CObject>(feat_in_use));
          }
@@ -9244,7 +9254,7 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
   // TAX_LOOKUP_MISSING, TAX_LOOKUP_MISMATCH
   string org_tax, db_tax;
   org_tax 
-     = biosrc.GetOrg().CanGetTaxname()? biosrc.GetOrg().GetTaxname() : kEmptyStr;
+     = biosrc.GetOrg().CanGetTaxname()? biosrc.GetOrg().GetTaxname() :kEmptyStr;
   if (m_run_tmiss || m_run_tbad) {
      CRef <CTaxon2_data> lookup_tax = thisInfo.tax_db_conn.Lookup(biosrc.GetOrg());
      if (lookup_tax.Empty() || !(lookup_tax->CanGetOrg())) {
@@ -10201,13 +10211,23 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
     }
 
     // ONCALLER_SWITCH_STRUCTURED_COMMENT_PREFIX
-    if (run_prefix 
-             && type_str == "StructuredComment"  
-             && user_obj.HasField("StructuredCommentPrefix") 
-             && user_obj.HasField("StructuredCommentSuffix")
-             && !validator.ValidateStructuredComment(user_obj, **it, false)) {
-       thisInfo.test_item_list[GetName_prefix()].push_back(user_desc); 
-       thisInfo.test_item_objs[GetName_prefix()].push_back(CConstRef <CObject>(*it)); 
+    if (run_prefix && type_str == "StructuredComment")  {
+       try {
+         string prefix = CComment_rule::GetStructuredCommentPrefix (user_obj);
+         CConstRef<CComment_set> comment_rules =CComment_set::GetCommentRules();
+            try {
+              const CComment_rule& rule =comment_rules->FindCommentRule(prefix);
+              CComment_rule::TErrorList errors = rule.IsValid(user_obj);
+                if (errors.size() > 0) {
+                    thisInfo.test_item_list[GetName_prefix()]
+                               .push_back(user_desc); 
+                    thisInfo.test_item_objs[GetName_prefix()]
+                               .push_back(CConstRef <CObject> (*it));                     
+                }
+            } catch (CException& eu) {
+            }
+        } catch (CException) {
+        }
     }
 
     i++;

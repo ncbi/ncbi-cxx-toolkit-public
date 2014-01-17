@@ -262,7 +262,7 @@ EPub_type CSuspectRuleCheck :: GetPubMLStatus (const CPub& the_pub)
   switch (the_pub.Which()) {
     case CPub::e_Gen :
       if (the_pub.GetGen().CanGetCit() 
-                       && NStr::EqualNocase(the_pub.GetGen().GetCit(), "unpublished"))
+               && NStr::EqualNocase(the_pub.GetGen().GetCit(), "unpublished"))
            status = ePub_type_unpublished;
       else status = ePub_type_published;
       break;
@@ -976,9 +976,15 @@ bool CSuspectRuleCheck :: DoesCodingRegionMatchTranslationConstraint(const CSeq_
         }
     }
     if (rval) {
-      if (quan_cons.IsGreater_than() && num <= quan_cons.GetGreater_than()) rval = false;
-      else if (quan_cons.IsEquals() && num != quan_cons.GetEquals()) rval = false;
-      else if (quan_cons.IsLess_than() && num >= quan_cons.GetLess_than()) rval = false;
+      if (quan_cons.IsGreater_than() && num <= quan_cons.GetGreater_than()) {
+          rval = false;
+      }
+      else if (quan_cons.IsEquals() && num != quan_cons.GetEquals()) {
+         rval = false;
+      }
+      else if (quan_cons.IsLess_than() && num >= quan_cons.GetLess_than()) {
+          rval = false;
+      }
     }
   }
   return rval;
@@ -990,6 +996,7 @@ string CSuspectRuleCheck :: SkipWeasel(const string& str)
     return kEmptyStr;
   }
   string ret_str(kEmptyStr);
+  arr.clear();
   arr = NStr::Tokenize(str, " ", arr);
   if (arr.size() == 1) {
      return str;
@@ -1002,7 +1009,9 @@ string CSuspectRuleCheck :: SkipWeasel(const string& str)
     find_w = false;
     ITERATE (vector <string>, it, thisInfo.weasels) {
        len_w = (*it).size(); 
-       if (len != len_w || !NStr::EqualNocase(arr[i], 0, len, *it)) continue;
+       if (len != len_w || !NStr::EqualNocase(arr[i], 0, len, *it)) {
+           continue;
+       }
        else { 
          find_w = true;
          break;
@@ -1018,29 +1027,21 @@ string CSuspectRuleCheck :: SkipWeasel(const string& str)
   ret_str += arr[arr.size()-1];
   arr.clear();
   return (ret_str);
-
-/*
-  while (ret_str != strtmp) {
-     ret_str = strtmp;
-     ITERATE (vector <string>, it, thisInfo.weasels) {
-        if (NStr::EqualNocase(strtmp.substr(0, (*it).size()), *it)
-                                             && isspace(strtmp[(*it).size()])) {
-            strtmp = NStr::TruncateSpaces(
-                           CTempString(strtmp).substr((*it).size()), NStr::eTrunc_Begin);
-            break;
-        }
-     };
-  }
-  return (ret_str);
-*/
 };
 
 // c CaseNCompare()
 bool CSuspectRuleCheck :: CaseNCompareEqual(string str1, string str2, unsigned len1, bool case_sensitive)
 {
-   if (!len1) return true;
-   if (case_sensitive) return (NStr::EqualCase(str1, 0, len1, str2));
-   else return (NStr::EqualNocase(str1, 0, len1, str2));
+   if (!len1) return false;
+   string comp_str1, comp_str2;
+   comp_str1 = CTempString(str1).substr(0, len1);
+   comp_str2 = CTempString(str2).substr(0, len1);
+   if (case_sensitive) {
+       return (comp_str1 == comp_str2);
+   }
+   else {
+     return (NStr::EqualNocase(comp_str1, 0, len1, comp_str2));
+   }
 };
 
 bool CSuspectRuleCheck :: AdvancedStringCompare(const string& str, const string& str_match, const CString_constraint* str_cons, bool is_start, unsigned* ini_target_match_len)
@@ -1049,32 +1050,42 @@ bool CSuspectRuleCheck :: AdvancedStringCompare(const string& str, const string&
   if (!str_cons || str_match.empty()) return true;
 
   size_t pos_match = 0, pos_str = 0;
-  bool case_sensitive, whole_wd, word_start_m, word_start_s;
+  bool wd_case, whole_wd, word_start_m, word_start_s;
   bool match = true, recursive_match = false;
   unsigned len_m = str_match.size(), len_s = str.size(), target_match_len=0;
   string cp_m, cp_s;
   bool ig_space = str_cons->GetIgnore_space();
   bool ig_punct = str_cons->GetIgnore_punct();
+  bool str_case = str_cons->GetCase_sensitive();
   EString_location loc = str_cons->GetMatch_location();
   unsigned len1, len2;
   char ch1, ch2;
   vector <string> word_word;
-  ITERATE (list <CRef <CWord_substitution> >, it, str_cons->GetIgnore_words().Get()) {
+  bool has_word = false;
+  ITERATE (list <CRef <CWord_substitution> >, 
+             it, 
+             str_cons->GetIgnore_words().Get()) {
       strtmp = ((*it)->CanGetWord()) ? (*it)->GetWord() : kEmptyStr;
       word_word.push_back(strtmp);
+      if (!strtmp.empty()) has_word = true;
   }
 
-  unsigned i=0;
+  unsigned i;
   while (match && pos_match < len_m && pos_str < len_s && !recursive_match) {
     cp_m = CTempString(str_match).substr(pos_match);
     cp_s = CTempString(str).substr(pos_str);
 
     /* first, check to see if we're skipping synonyms */
-    ITERATE (list <CRef <CWord_substitution> >, it, str_cons->GetIgnore_words().Get()) {
-      case_sensitive = (*it)->GetCase_sensitive();
-      whole_wd = (*it)->GetWhole_word();
-      len1 = word_word[i].size();
-      if (CaseNCompareEqual(word_word[i], cp_m, len1, case_sensitive)) { //text match
+    i=0;
+    if (has_word) {
+      ITERATE (list <CRef <CWord_substitution> >, 
+               it, 
+               str_cons->GetIgnore_words().Get()) {
+        wd_case = (*it)->GetCase_sensitive();
+        whole_wd = (*it)->GetWhole_word();
+        len1 = word_word[i].size();
+        //text match
+        if (len1 && CaseNCompareEqual(word_word[i], cp_m, len1,wd_case)){
            word_start_m 
                = (!pos_match && is_start) || !isalpha(str_match[pos_match-1]);
            ch1 = (cp_m.size() < len1) ? ' ' : cp_m[len1];
@@ -1093,7 +1104,7 @@ bool CSuspectRuleCheck :: AdvancedStringCompare(const string& str, const string&
                   len2 = (*sit).size();
 
                     // text match
-                  if (CaseNCompareEqual(*sit, cp_s, len2, case_sensitive)) {
+                  if (CaseNCompareEqual(*sit, cp_s, len2, wd_case)) {
                     word_start_s 
                           = (!pos_str && is_start) || !isalpha(str[pos_str-1]);
                     ch2 = (cp_s.size() < len2) ? ' ' : cp_s[len2];
@@ -1111,11 +1122,12 @@ bool CSuspectRuleCheck :: AdvancedStringCompare(const string& str, const string&
                 }
               }
            }
+        }
       }
     }
 
     if (!recursive_match) {
-      if (CaseNCompareEqual(cp_m, cp_s, 1, case_sensitive)) {
+      if (CaseNCompareEqual(cp_m, cp_s, 1, str_case)) {
            pos_match++;
            pos_str++;
            target_match_len++;
@@ -1567,6 +1579,7 @@ bool CSuspectRuleCheck :: StringMayContainPlural(const string& str)
   unsigned len;
 
   if (str.empty()) return false;
+  arr.clear();
   arr = NStr::Tokenize(str, " ,", arr, NStr::eMergeDelims);
   if (arr.size() == 1) { // doesn't have ', ', or the last char is ', '
      len = arr[0].size();
@@ -1647,25 +1660,25 @@ bool CSuspectRuleCheck :: SkipBracketOrParen(const unsigned& idx, string& start)
   return rval;
 };
 
-bool CSuspectRuleCheck :: ContainsNorMoreSetsOfBracketsOrParentheses(string search, const int& n)
+bool CSuspectRuleCheck :: ContainsNorMoreSetsOfBracketsOrParentheses(const string& search, const int& n)
 {
   size_t idx, end;
   int num_found = 0;
-  string open_bp("([");
+  string open_bp("(["), sch_src(search);
 
-  if (search.empty()) return false;
+  if (sch_src.empty()) return false;
 
-  idx = search.find_first_of(open_bp);
+  idx = sch_src.find_first_of(open_bp);
   while (idx != string::npos && num_found < n) {
-     end = search.find(GetClose(search[idx]), idx);
-     if (SkipBracketOrParen (idx, search)) { // ignore it
-         idx = search.find_first_of(open_bp, idx+1);
+     end = sch_src.find(GetClose(sch_src[idx]), idx);
+     if (SkipBracketOrParen (idx, sch_src)) { // ignore it
+         idx = sch_src.find_first_of(open_bp);
      }
      else if (end == string::npos) { // skip, doesn't close the bracket
-         idx = search.find_first_of(open_bp, idx+1);
+         idx = sch_src.find_first_of(open_bp, idx+1);
      }
      else {
-         idx = search.find_first_of(open_bp, end);
+         idx = sch_src.find_first_of(open_bp, end);
          num_found++;
      }
   }
@@ -1690,16 +1703,18 @@ bool CSuspectRuleCheck :: InWordBeforeCytochromeOrCoenzyme(const string& start_s
 {
   if (start_str.empty()) return false;
   size_t pos = start_str.find_last_of(' ');
+  string comp_str1, comp_str2;
   if (pos != string::npos) {
       strtmp = CTempString(start_str).substr(0, pos);
       pos = strtmp.find_last_not_of(' ');
       if (pos != string::npos) {
          unsigned len = strtmp.size();
-         if ( (len >= 10  
-                 && NStr::EqualNocase(CTempString(strtmp).substr(len-10), 0, 10, "cytochrome"))
-            || (len >= 8 
-                  && NStr::EqualNocase(CTempString(strtmp).substr(len-8), 0, 8, "coenzyme")) )
+         comp_str1 = CTempString(strtmp).substr(len-10);
+         comp_str2 = CTempString(strtmp).substr(len-8);
+         if ( (len >= 10  && NStr::EqualNocase(comp_str1, "cytochrome"))
+                || (len >= 8 && NStr::EqualNocase(comp_str2, "coenzyme")) ) {
              return true;
+         }
       }
   }
   return false;
@@ -1710,7 +1725,7 @@ bool CSuspectRuleCheck :: FollowedByFamily(string& after_str)
   size_t pos = after_str.find_first_of(' ');
   if (pos != string::npos) {
      after_str = CTempString(after_str).substr(pos+1);
-     if (NStr::EqualNocase(after_str, 0, 6, "family")) {
+     if (NStr::EqualNocase(after_str, "family")) {
            after_str = CTempString(after_str).substr(7);
            return true;
      }
@@ -1758,6 +1773,7 @@ bool CSuspectRuleCheck :: StringContainsUnderscore(const string& search)
 { 
   if (search.find('_') == string::npos) return false;
 
+  arr.clear();
   arr = NStr::Tokenize(search, "_", arr);
   for (unsigned i=0; i< arr.size() - 1; i++) {
      strtmp = arr[i+1];
@@ -3266,8 +3282,12 @@ string CSuspectRuleCheck :: GetFirstGBQualMatch (const vector <CRef <CGb_qual> >
   ITERATE (vector <CRef <CGb_qual> >, it, quals) {
      if (NStr::EqualNocase( (*it)->GetQual(), qual_name)) {
         str = (*it)->GetVal();
-        if (subfield) str = GetTwoFieldSubfield(str, subfield);
-        if (str.empty() || !DoesStringMatchConstraint (str, str_cons)) str = kEmptyStr;
+        if (subfield) {
+            str = GetTwoFieldSubfield(str, subfield);
+        }
+        if (str.empty() || !DoesStringMatchConstraint (str, str_cons)) {
+           str = kEmptyStr;
+        }
         else break;
      }
   }
