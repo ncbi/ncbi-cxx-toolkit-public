@@ -282,20 +282,25 @@ extern NCBI_XCONNECT_EXPORT REG g_CORE_Registry;
 #define CORE_REG_GET(section, name, value, value_size, def_value)   \
     g_CORE_RegistryGET(section, name, value, value_size, def_value)
     
-#define CORE_REG_SET(section, name, value, storage)  do {           \
-    CORE_LOCK_READ;                                                 \
-    REG_Set(g_CORE_Registry, section, name, value, storage);        \
-    CORE_UNLOCK;                                                    \
-} while (0)
+#define CORE_REG_SET(section, name, value, storage)                 \
+    g_CORE_RegistrySET(section, name, value, storage)
 
 
 /* (private, to be used exclusively by the above macro CORE_REG_GET) */
 extern NCBI_XCONNECT_EXPORT const char* g_CORE_RegistryGET
-(const char* section,
- const char* name,
- char*       value,
- size_t      value_size,
- const char* def_value
+(const char*  section,
+ const char*  name,
+ char*        value,
+ size_t       value_size,
+ const char*  def_value
+ );
+
+/* (private, to be used exclusively by the above macro CORE_REG_SET) */
+extern NCBI_XCONNECT_EXPORT int/*bool*/ g_CORE_RegistrySET
+(const char*  section,
+ const char*  name,
+ const char*  value,
+ EREG_Storage storage
  );
 
 

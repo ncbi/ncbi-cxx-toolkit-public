@@ -113,16 +113,31 @@ extern const char* g_CORE_Sprintf(const char* fmt, ...)
 
 
 extern const char* g_CORE_RegistryGET
-(const char* section,
- const char* name,
- char*       value,
- size_t      value_size,
- const char* def_value)
+(const char*  section,
+ const char*  name,
+ char*        value,
+ size_t       value_size,
+ const char*  def_value)
 {
-    const char* ret_value;
+    const char* retval;
     CORE_LOCK_READ;
-    ret_value = REG_Get(g_CORE_Registry,
-                        section, name, value, value_size, def_value);
+    retval = REG_Get(g_CORE_Registry,
+                     section, name, value, value_size, def_value);
     CORE_UNLOCK;
-    return ret_value;
+    return retval;
+}
+
+
+extern int/*bool*/ g_CORE_RegistrySET
+(const char*  section,
+ const char*  name,
+ const char*  value,
+ EREG_Storage storage)
+{
+    int/*bool*/ retval;
+    CORE_LOCK_READ;
+    retval = REG_Set(g_CORE_Registry,
+                     section, name, value, storage);
+    CORE_UNLOCK;
+    return retval;
 }
