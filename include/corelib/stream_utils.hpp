@@ -183,7 +183,7 @@ protected:
     AutoPtr<CNcbiOstream> m_Stream;
 
 private:
-    // prevent copy
+    // Prevent copy
     CStreamWriter(const CStreamWriter&);
     void operator=(const CStreamWriter&);
 };
