@@ -172,9 +172,9 @@ typedef unsigned short TNcbiOSType;
 
 /** Host parameters */
 typedef struct {
-    TNcbiArch          arch;    /**< Architecture ID, 0=unknown              */
+    TNcbiArch          arch;    /**< Architecture ID, see enum,    0=unknown */
     TNcbiCapacity      bits;    /**< Platform bitness, 32/64/32+64/0=unknown */
-    TNcbiOSType        ostype;  /**< OS type ID,      0=unknown              */
+    TNcbiOSType        ostype;  /**< OS type ID, see enum,         0=unknown */
     struct {
         unsigned short major;
         unsigned short minor;
