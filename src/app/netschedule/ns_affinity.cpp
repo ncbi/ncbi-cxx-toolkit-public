@@ -604,8 +604,12 @@ CNSAffinityRegistry::x_PrintOne(unsigned int                aff_id,
             buffer += "OK:  JOBS:\n";
 
             TNSBitVector::enumerator    en(jobs_affinity.m_Jobs.first());
-            for ( ; en.valid(); ++en)
-                buffer += "OK:    " + queue->MakeJobKey(*en) + "\n";
+            for ( ; en.valid(); ++en) {
+                unsigned int    job_id = *en;
+                TJobStatus      status = queue->GetJobStatus(job_id);
+                buffer += "OK:    " + queue->MakeJobKey(job_id) + " " +
+                          CNetScheduleAPI::StatusToString(status) + "\n";
+            }
         }
         else
             buffer += "OK:  JOBS: NONE\n";

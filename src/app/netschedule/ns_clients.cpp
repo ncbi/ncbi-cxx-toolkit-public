@@ -513,9 +513,13 @@ string CNSClient::Print(const string &               node_name,
         buffer += "OK:  BLACKLISTED JOBS:\n";
 
         TNSBitVector::enumerator    en(m_BlacklistedJobs.first());
-        for ( ; en.valid(); ++en)
-            buffer += "OK:    " + queue->MakeJobKey(*en) + " " +
-                      x_GetBlacklistLimit(*en) + "\n";
+        for ( ; en.valid(); ++en) {
+            unsigned int    job_id = *en;
+            TJobStatus      status = queue->GetJobStatus(job_id);
+            buffer += "OK:    " + queue->MakeJobKey(job_id) + " " +
+                      x_GetBlacklistLimit(job_id) + " " +
+                      CNetScheduleAPI::StatusToString(status) + "\n";
+        }
     }
 
     buffer += "OK:  NUMBER OF RUNNING JOBS: " +
