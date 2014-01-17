@@ -37,7 +37,6 @@
 
 #include <corelib/ncbistr.hpp>
 #include <connect/ncbi_socket_unix.h>
-#include <string>
 
 
 /** @addtogroup Sockets
