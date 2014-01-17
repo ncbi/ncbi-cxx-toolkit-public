@@ -2898,7 +2898,7 @@ void CRepConfAsndisc :: Run()
    thisInfo.test_item_list.clear();
 
     // Exit
-    thisInfo.tax_db_conn.Fini();
+   thisInfo.tax_db_conn.Fini();
 }; // Run()
 
 void CRepConfig :: Run()
@@ -2907,6 +2907,9 @@ void CRepConfig :: Run()
   CRef <CSeq_entry> 
     seq_ref ((CSeq_entry*)(m_TopSeqEntry->GetCompleteSeq_entry().GetPointer()));
   CheckThisSeqEntry(seq_ref);
+  
+    // Exit
+  thisInfo.tax_db_conn.Fini();
 };
 
 END_NCBI_SCOPE
