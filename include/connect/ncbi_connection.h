@@ -124,6 +124,19 @@ extern NCBI_XCONNECT_EXPORT const char* CONN_GetType
  );
 
 
+/** Return a human-readable description of the connection as a character
+ * '\0'-terminated string.  The string is not guaranteed to have any
+ * particular format and is intended solely for something like
+ * logging and debugging.  Return NULL if the connection cannot
+ * provide any description information (or if it is in a bad state).
+ * Application program must call free() to deallocate space occupied
+ * by the returned string when the description is no longer needed.
+ */
+extern NCBI_XCONNECT_EXPORT char* CONN_Description
+(CONN conn  /**< [in] connection handle */
+ );
+
+
 /** Get read ("event" == eIO_Read) or write ("event" == eIO_Write)
  * position within the connection.
  * Positions are advanced from 0 on, and only concerning I/O that has
@@ -135,19 +148,6 @@ extern NCBI_XCONNECT_EXPORT const char* CONN_GetType
 extern NCBI_XCONNECT_EXPORT TNCBI_BigCount CONN_GetPosition
 (CONN      conn,  /**< [in] connection handle */ 
  EIO_Event event  /**< [in] see description   */
- );
-
-
-/** Return a human-readable description of the connection as a character
- * '\0'-terminated string.  The string is not guaranteed to have any
- * particular format and is intended solely for something like
- * logging and debugging.  Return NULL if the connection cannot
- * provide any description information (or if it is in a bad state).
- * Application program must call free() to deallocate space occupied
- * by the returned string when the description is no longer needed.
- */
-extern NCBI_XCONNECT_EXPORT char* CONN_Description
-(CONN conn  /**< [in] connection handle */
  );
 
 
@@ -164,7 +164,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_SetTimeout
  );
 
 
-/** Retrieve current timeout (return NULL if it is infinite).
+/** Retrieve current timeout, return NULL(kInfiniteTimeout) if it is infinite.
  * The returned pointer is guaranteed to point to a valid timeout structure,
  * or to be either NULL or kDefaultTimeout until next CONN_SetTimeout()
  * or CONN_Close().
@@ -178,7 +178,7 @@ extern NCBI_XCONNECT_EXPORT const STimeout* CONN_GetTimeout
 /** Block on the connection until it becomes available for either reading or
  * writing (depending on "event"), until timeout expires, or until any error.
  * @note  "timeout" can also be one of the two special values:
- *        * NULL (for infinite timeout, also as kInfiniteTimeout);
+ *        * NULL (for infinite timeout, also known as kInfiniteTimeout);
  *        * kDefaultTimeout (connector-defined).
  * @sa
  *  CONN_Read, CONN_Write
@@ -348,7 +348,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status CONN_Close
  * when the callback was set).
  * When eCONN_OnTimeout callback occurs, the callback type eCONN_OnTimeout
  * gets OR'ed with I/O direction, which timed out (eIO_Read, eIO_Write, or
- * both when flushing), then passed as the type argument.
+ * both when flushing), then passed in as the type argument.
  * @par
  * CONN_SetCallback() stores previous callback in "old_cb" (if it is not NULL).
  * @par
@@ -377,7 +377,7 @@ typedef enum {
     eCONN_OnClose   = 0,  /**< NB: CONN has been flushed prior to the call   */
     eCONN_OnRead    = 1,  /**< Read from connector is about to occur         */
     eCONN_OnWrite   = 2,  /**< Write to connector is about to occur          */
-    eCONN_OnFlush   = 3,  /**< About to be flushed (NB: eIO_ReadWrite)       */
+    eCONN_OnFlush   = 3,  /**< About to be flushed (NB: == eIO_ReadWrite)    */
     eCONN_OnTimeout = 4   /**< Connector I/O has timed out                   */
 } ECONN_Callback;
 #define CONN_N_CALLBACKS  5

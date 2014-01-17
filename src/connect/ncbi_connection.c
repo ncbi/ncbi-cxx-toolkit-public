@@ -277,7 +277,7 @@ static EIO_Status x_ReInit(CONN conn, CONNECTOR connector, int/*bool*/ close)
 
         if (!x_conn) {
             /* entirely new connector - remove the old connector stack first */
-            METACONN_Remove(&conn->meta, 0);
+            METACONN_Remove(&conn->meta, 0); /* NB: always succeeds with "0" */
             assert(!conn->meta.list);
             memset(&conn->meta, 0, sizeof(conn->meta));
             conn->state = eCONN_Unusable;
@@ -292,8 +292,8 @@ static EIO_Status x_ReInit(CONN conn, CONNECTOR connector, int/*bool*/ close)
     if (!x_conn  &&  connector) {
         assert(conn->state == eCONN_Unusable);
         /* setup the new connector */
-        if (METACONN_Add(&conn->meta, connector) != eIO_Success)
-            return eIO_Unknown;
+        if ((status = METACONN_Add(&conn->meta, connector)) != eIO_Success)
+            return status;
         assert(conn->meta.list);
         conn->state = eCONN_Closed;
     }
@@ -425,6 +425,33 @@ extern char* CONN_Description(CONN conn)
 }
 
 
+extern TNCBI_BigCount CONN_GetPosition(CONN conn, EIO_Event event)
+{
+    static const STimeout* timeout = 0/*dummy*/;
+    char errbuf[80];
+
+    CONN_NOT_NULL_EX(30, GetPosition, 0);
+
+    switch (event) {
+    case eIO_Open:
+        conn->r_pos = 0;
+        conn->w_pos = 0;
+        break;
+    case eIO_Read:
+        return conn->r_pos;
+    case eIO_Write:
+        return conn->w_pos;
+    default:
+        sprintf(errbuf, "Unknown direction #%u", (unsigned int) event);
+        CONN_LOG_EX(31, GetPosition, eLOG_Error, errbuf, 0);
+        assert(0);
+        break;
+    }
+
+    return 0;
+}
+
+
 extern EIO_Status CONN_SetTimeout
 (CONN            conn,
  EIO_Event       event,
@@ -477,33 +504,6 @@ extern EIO_Status CONN_SetTimeout
     }
 
     return eIO_Success;
-}
-
-
-extern TNCBI_BigCount CONN_GetPosition(CONN conn, EIO_Event event)
-{
-    static const STimeout* timeout = 0/*dummy*/;
-    char errbuf[80];
-
-    CONN_NOT_NULL_EX(30, GetPosition, 0);
-
-    switch (event) {
-    case eIO_Open:
-        conn->r_pos = 0;
-        conn->w_pos = 0;
-        break;
-    case eIO_Read:
-        return conn->r_pos;
-    case eIO_Write:
-        return conn->w_pos;
-    default:
-        sprintf(errbuf, "Unknown direction #%u", (unsigned int) event);
-        CONN_LOG_EX(31, GetPosition, eLOG_Error, errbuf, 0);
-        assert(0);
-        break;
-    }
-
-    return 0;
 }
 
 
