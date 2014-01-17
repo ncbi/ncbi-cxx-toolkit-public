@@ -75,6 +75,7 @@
 #include <connect/ncbi_service_connector.h>
 #include <connect/ncbi_socket_connector.h>
 #include <util/icanceled.hpp>
+#include <utility>
 
 
 /** @addtogroup ConnStreams
@@ -123,7 +124,6 @@ public:
     } EConn_Flag;
     typedef unsigned int TConn_Flags;  ///< bitwise OR of EConn_Flag
 
-public:
     /// Create a stream based on a CONN, which is to be closed upon
     /// stream dtor only if "close" parameter is passed as "true".
     ///
@@ -137,8 +137,8 @@ public:
     /// @param buf_size
     ///  Default size of underlying stream buffer's I/O arena
     /// @param flags
-    ///  Specifies whether to tie input and output -- a tied stream flushes
-    ///  all pending output prior to doing any input.
+    ///  Specifies whether to tie input and output (a tied stream flushes all
+    ///  pending output prior to doing any input) and what to buffer.
     /// @sa
     ///  CONN, ncbi_connection.h
     ///
@@ -151,30 +151,32 @@ public:
      CT_CHAR_TYPE*   ptr      = 0,
      size_t          size     = 0);
 
+    typedef pair<CONNECTOR, EIO_Status> TConn_Pair;
 protected:
     /// Create a stream based on a CONNECTOR --
     /// only for internal use in derived classes.
     ///
-    /// @param connector
+    /// @param TConn_Pair::connector
     ///  A C object of type CONNECTOR (ncbi_connector.h) on top of which
-    ///  the stream is being constructed.  Used internally by individual
-    ///  ctors of specialized streams in this header.  May not be NULL.
+    ///  the stream is being constructed
+    /// @param TConn_Pair::status
+    ///  I/O status to use in underlying streambuf when CONNECTOR is NULL
     /// @param timeout
     ///  Default I/O timeout
     /// @param buf_size
     ///  Default size of underlying stream buffer's I/O arena
     /// @param flags
-    ///  Specifies whether to tie input and output -- a tied stream flushes
-    ///  all pending output prior to doing any input.
+    ///  Specifies whether to tie input and output (a tied stream flushes all
+    ///  pending output prior to doing any input) and what to buffer.
     /// @sa
     ///  CONNECTOR, ncbi_connector.h
     CConn_IOStream
-    (CONNECTOR       connector,
-     const STimeout* timeout  = kDefaultTimeout,
-     size_t          buf_size = kConn_DefaultBufSize,
-     TConn_Flags     flags    = fConn_ReadBuffered | fConn_WriteBuffered,
-     CT_CHAR_TYPE*   ptr      = 0,
-     size_t          size     = 0);
+    (const TConn_Pair& connpair,
+     const STimeout*   timeout  = kDefaultTimeout,
+     size_t            buf_size = kConn_DefaultBufSize,
+     TConn_Flags       flags    = fConn_ReadBuffered | fConn_WriteBuffered,
+     CT_CHAR_TYPE*     ptr      = 0,
+     size_t            size     = 0);
 
 public:
     virtual ~CConn_IOStream();
@@ -207,8 +209,8 @@ public:
     const STimeout* GetTimeout(EIO_Event direction) const;
 
     /// @return
-    ///   Status of the last I/O performed by the underlying CONN in
-    ///   the specified "direction" (either eIO_Open, IO_Read or eIO_Write);
+    ///   Status of the last I/O performed by the underlying CONN in the
+    ///   specified "direction" (either eIO_Open, IO_Read, or eIO_Write);
     ///   if "direction" is not specified (eIO_Close), return status
     ///   of the last CONN I/O performed by the stream.
     /// @sa
@@ -250,7 +252,7 @@ private:
     CConstIRef<ICanceled> m_Canceled;
     static EIO_Status x_IsCanceled(CONN conn, TCONN_Callback type, void* data);
 
-    // Disable copy constructor and assignment.
+    // Disable copy constructor and assignment
     CConn_IOStream(const CConn_IOStream&);
     CConn_IOStream& operator= (const CConn_IOStream&);
 };
@@ -293,9 +295,8 @@ inline CConn_IOStreamSetReadTimeout SetReadTimeout(const STimeout* timeout)
 inline CConn_IOStream& operator>> (CConn_IOStream& is,
                                    const CConn_IOStreamSetReadTimeout& s)
 {
-    if (is.good() && is.SetTimeout(eIO_Read, s.GetTimeout()) != eIO_Success) {
+    if (is.good() && is.SetTimeout(eIO_Read, s.GetTimeout()) != eIO_Success)
         is.clear(IOS_BASE::badbit);
-    }
     return is;
 }
 
@@ -323,9 +324,8 @@ inline CConn_IOStreamSetWriteTimeout SetWriteTimeout(const STimeout* timeout)
 inline CConn_IOStream& operator<< (CConn_IOStream& os,
                                    const CConn_IOStreamSetWriteTimeout& s)
 {
-    if (os.good() && os.SetTimeout(eIO_Write, s.GetTimeout()) != eIO_Success) {
+    if (os.good() && os.SetTimeout(eIO_Write, s.GetTimeout()) != eIO_Success)
         os.clear(IOS_BASE::badbit);
-    }
     return os;
 }
 
@@ -467,11 +467,6 @@ public:
     (CSocket&        socket,       ///< socket, underlying SOCK always grabbed
      const STimeout* timeout  = kDefaultTimeout,
      size_t          buf_size = kConn_DefaultBufSize);
-
-private:
-    // Disable copy constructor and assignment.
-    CConn_SocketStream(const CConn_SocketStream&);
-    CConn_SocketStream& operator= (const CConn_SocketStream&);
 };
 
 
@@ -576,11 +571,6 @@ private:
                                            void*         data,
                                            unsigned int  count);
     static void              x_Cleanup    (void*         data);
-
-private:
-    // Disable copy constructor and assignment.
-    CConn_HttpStream(const CConn_HttpStream&);
-    CConn_HttpStream& operator= (const CConn_HttpStream&);
 };
 
 
@@ -618,11 +608,6 @@ public:
      const SSERVICE_Extra* params   = 0,
      const STimeout*       timeout  = kDefaultTimeout,
      size_t                buf_size = kConn_DefaultBufSize);
-
-private:
-    // Disable copy constructor and assignment.
-    CConn_ServiceStream(const CConn_ServiceStream&);
-    CConn_ServiceStream& operator= (const CConn_ServiceStream&);
 };
 
 
@@ -674,11 +659,6 @@ public:
 
 protected:
     const void* m_Ptr;         ///< pointer to read memory area (if owned)
-
-private:
-    // Disable copy constructor and assignment.
-    CConn_MemoryStream(const CConn_MemoryStream&);
-    CConn_MemoryStream& operator= (const CConn_MemoryStream&);
 };
 
 
@@ -707,11 +687,6 @@ public:
 
 protected:
     CPipe* m_Pipe; ///< Underlying pipe.
-
-private:
-    // Disable copy constructor and assignment.
-    CConn_PipeStream(const CConn_PipeStream&);
-    CConn_PipeStream& operator= (const CConn_PipeStream&);
 };
 
 
@@ -733,11 +708,6 @@ public:
      const STimeout* timeout     = kDefaultTimeout,
      size_t          buf_size    = kConn_DefaultBufSize
      );
-
-private:
-    // Disable copy constructor and assignment.
-    CConn_NamedPipeStream(const CConn_NamedPipeStream&);
-    CConn_NamedPipeStream& operator= (const CConn_NamedPipeStream&);
 };
 
 
@@ -777,11 +747,6 @@ public:
     /// clear stream error state when successful (eIO_Success returns).
     /// @note The call empties both the stream and the underlying CONN.
     virtual EIO_Status Drain(const STimeout* timeout = kDefaultTimeout);
-
-private:
-    // Disable copy constructor and assignment.
-    CConn_FtpStream(const CConn_FtpStream&);
-    CConn_FtpStream& operator= (const CConn_FtpStream&);
 };
 
 
@@ -818,11 +783,6 @@ public:
 
 protected:
     void x_InitDownload(const string& file, Uint8 offset);
-
-private:
-    // Disable copy constructor and assignment.
-    CConn_FTPDownloadStream(const CConn_FTPDownloadStream&);
-    CConn_FTPDownloadStream& operator= (const CConn_FTPDownloadStream&);
 };
 
 
@@ -852,11 +812,6 @@ public:
 
 protected:
     void x_InitUpload(const string& file, Uint8 offset);
-
-private:
-    // Disable copy constructor and assignment.
-    CConn_FTPUploadStream(const CConn_FTPUploadStream&);
-    CConn_FTPUploadStream& operator= (const CConn_FTPUploadStream&);
 };
 
 

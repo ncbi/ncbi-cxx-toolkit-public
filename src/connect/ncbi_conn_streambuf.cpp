@@ -68,16 +68,19 @@ string CConn_Streambuf::x_Message(const char* msg)
 
 
 CConn_Streambuf::CConn_Streambuf(CONNECTOR                   connector,
+                                 EIO_Status                  status,
                                  const STimeout*             timeout,
                                  size_t                      buf_size,
                                  CConn_IOStream::TConn_Flags flags,
                                  CT_CHAR_TYPE*               ptr,
                                  size_t                      size)
     : m_Conn(0), m_WriteBuf(0), m_ReadBuf(&x_Buf), m_BufSize(1),
-      m_Status(eIO_Unknown), m_Tie(false), m_Close(true), m_CbValid(false),
+      m_Status(status), m_Tie(false), m_Close(true), m_CbValid(false),
       x_GPos((CT_OFF_TYPE)(ptr ? size : 0)), x_PPos((CT_OFF_TYPE) size)
 {
     if (!connector) {
+        if (m_Status == eIO_Success)
+            m_Status  = eIO_InvalidArg;
         ERR_POST_X(2, x_Message("CConn_Streambuf():  NULL connector"));
         return;
     }
@@ -90,6 +93,7 @@ CConn_Streambuf::CConn_Streambuf(CONNECTOR                   connector,
                                   | (m_Tie ? 0 : fCONN_Untie), &m_Conn))
         != eIO_Success) {
         ERR_POST_X(3, x_Message("CConn_Streambuf():  CONN_Create() failed"));
+        _ASSERT(!connector->meta  &&  !connector->next);
         if (connector->destroy)
             connector->destroy(connector);
         return;
@@ -107,10 +111,11 @@ CConn_Streambuf::CConn_Streambuf(CONN                        conn,
                                  CT_CHAR_TYPE*               ptr,
                                  size_t                      size)
     : m_Conn(conn), m_WriteBuf(0), m_ReadBuf(&x_Buf), m_BufSize(1),
-      m_Status(eIO_Unknown), m_Tie(false), m_Close(close), m_CbValid(false),
+      m_Status(eIO_Success), m_Tie(false), m_Close(close), m_CbValid(false),
       x_GPos((CT_OFF_TYPE)(ptr ? size : 0)), x_PPos((CT_OFF_TYPE) size)
 {
     if (!m_Conn) {
+        m_Status = eIO_InvalidArg;
         ERR_POST_X(1, x_Message("CConn_Streambuf():  NULL connection"));
         return;
     }
@@ -134,6 +139,8 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, size_t buf_size,
                              CConn_IOStream::TConn_Flags flags,
                              CT_CHAR_TYPE* ptr, size_t size)
 {
+    _ASSERT(m_Status == eIO_Success);
+
     if (timeout != kDefaultTimeout) {
         _VERIFY(CONN_SetTimeout(m_Conn, eIO_Open,      timeout) ==eIO_Success);
         _VERIFY(CONN_SetTimeout(m_Conn, eIO_ReadWrite, timeout) ==eIO_Success);
@@ -173,8 +180,6 @@ void CConn_Streambuf::x_Init(const STimeout* timeout, size_t buf_size,
     cb.data = this;
     CONN_SetCallback(m_Conn, eCONN_OnClose, &cb, &m_Cb);
     m_CbValid = true;
-
-    m_Status = eIO_Success;
 }
 
 

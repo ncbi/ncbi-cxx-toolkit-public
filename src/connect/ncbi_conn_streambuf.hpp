@@ -51,7 +51,7 @@ class CDiagCompileInfo;  // Forward declaration
 class CConn_Streambuf : public CConn_StreambufBase
 {
 public:
-    CConn_Streambuf(CONNECTOR connector,
+    CConn_Streambuf(CONNECTOR connector, EIO_Status status,
                     const STimeout* timeout, size_t buf_size,
                     CConn_IOStream::TConn_Flags flags,
                     CT_CHAR_TYPE* ptr, size_t size);
