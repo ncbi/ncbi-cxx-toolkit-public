@@ -1564,11 +1564,14 @@ bool CSuspectRuleCheck :: x_DoesStrContainPlural(const string& word, char last_l
 {
    unsigned len = word.size();
    if (last_letter == 's') {
-      if (len >= 5  && CTempString(word).substr(len-5) == "trans") return false; // not plural;
+      if (len >= 5  && CTempString(word).substr(len-5) == "trans") {
+            return false; // not plural;
+      }
       else if (len > 3) {
-        if (second_to_last_letter != 's' && second_to_last_letter != 'i'
-                                         && second_to_last_letter != 'u'
-                                         && next_letter == ',')
+        if (second_to_last_letter != 's' 
+               && second_to_last_letter != 'i'
+               && second_to_last_letter != 'u'
+               && next_letter == ',')
            return true;
       }
    }
@@ -1613,7 +1616,8 @@ bool CSuspectRuleCheck :: StringMayContainPlural(const string& str)
       may_contain_plural 
          = x_DoesStrContainPlural(*it, last_letter, second_to_last_letter, next_letter);
       if (may_contain_plural) break;
-      strtmp = CTempString(strtmp).substr(pos+len);
+      strtmp = NStr::TruncateSpaces(CTempString(strtmp).substr(pos+len), 
+                                    NStr::eTrunc_Begin);
     }
   }
   arr.clear();
