@@ -57,7 +57,7 @@
 
 extern const char* IO_StatusStr(EIO_Status status)
 {
-    static const char* s_StatusStr[eIO_Unknown + 1] = {
+    static const char* kStatusStr[eIO_Unknown + 1] = {
         "Success",
         "Timeout",
         "Closed",
@@ -67,8 +67,10 @@ extern const char* IO_StatusStr(EIO_Status status)
         "Unknown"
     };
 
-    assert(status >= eIO_Success  &&  status <= eIO_Unknown);
-    return s_StatusStr[status];
+    assert(eIO_Success <= status  &&  status <= eIO_Unknown);
+    return eIO_Success <= status  &&  status <= eIO_Unknown
+        ? kStatusStr[status]
+        : 0;
 }
 
 
@@ -254,7 +256,7 @@ struct LOG_tag {
 
 extern const char* LOG_LevelStr(ELOG_Level level)
 {
-    static const char* s_PostSeverityStr[eLOG_Fatal+1] = {
+    static const char* kPostSeverityStr[eLOG_Fatal + 1] = {
         "TRACE",
         "NOTE",
         "WARNING",
@@ -262,7 +264,11 @@ extern const char* LOG_LevelStr(ELOG_Level level)
         "CRITICAL",
         "FATAL"
     };
-    return s_PostSeverityStr[level];
+
+    assert(eLOG_Trace <= level  &&  level <= eLOG_Fatal);
+    return eLOG_Trace <= level  &&  level <= eLOG_Fatal
+        ? kPostSeverityStr[level]
+        : 0;
 }
 
 
@@ -470,7 +476,7 @@ extern void REG_Reset
     REG_LOCK_WRITE;
     REG_VALID;
 
-    if (do_cleanup  &&  rg->cleanup)
+    if (rg->cleanup  &&  do_cleanup)
         rg->cleanup(rg->user_data);
 
     rg->user_data = user_data;
@@ -529,7 +535,7 @@ extern const char* REG_Get
  const char* def_value)
 {
     if (!value  ||  value_size <= 0)
-        return 0;
+        return 0/*failed*/;
 
     if (def_value)
         strncpy0(value, def_value, value_size - 1);
@@ -557,7 +563,7 @@ extern int/*bool*/ REG_Set
  const char*  value,
  EREG_Storage storage)
 {
-    int result;
+    int/*bool*/ result;
 
     if (rg) {
         REG_LOCK_READ;
@@ -565,11 +571,11 @@ extern int/*bool*/ REG_Set
 
         result = (rg->set
                   ? rg->set(rg->user_data, section, name, value, storage)
-                  : 0);
+                  : 0/*failed*/);
 
         REG_UNLOCK;
     } else
-        result = 0;
+        result = 0/*failed*/;
 
     return result;
 }

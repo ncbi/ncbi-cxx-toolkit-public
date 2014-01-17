@@ -113,24 +113,24 @@ typedef enum {
  *  SOCK_Wait, SOCK_Poll, CONN_Wait, SOCK_SetTimeout, CONN_SetTimeout
  */
 typedef enum {
-    eIO_Open      = 0x0, /**< also serves as no-event indicator in SOCK_Poll */
-    eIO_Read      = 0x1, /**< read                                           */
-    eIO_Write     = 0x2, /**< write                                          */
-    eIO_ReadWrite = 0x3, /**< eIO_Read | eIO_Write (also, eCONN_OnFlush)     */
-    eIO_Close     = 0x4  /**< also serves as an error indicator in SOCK_Poll */
+    eIO_Open      = 0,  /**< also serves as no-event indicator in SOCK_Poll  */
+    eIO_Read      = 1,  /**< read                                            */
+    eIO_Write     = 2,  /**< write                                           */
+    eIO_ReadWrite = 3,  /**< eIO_Read | eIO_Write (also, eCONN_OnFlush)      */
+    eIO_Close     = 4   /**< also serves as an error indicator in SOCK_Poll  */
 } EIO_Event;
 
 
 /** I/O status.
  */
 typedef enum {
-    eIO_Success = 0,  /**< everything is fine, no error occurred             */
-    eIO_Timeout,      /**< timeout expired before any I/O succeeded          */
-    eIO_Closed,       /**< peer has closed the connection                    */
-    eIO_Interrupt,    /**< signal received while I/O was in progress         */
-    eIO_InvalidArg,   /**< bad argument value(s)                             */
-    eIO_NotSupported, /**< the requested operation is not supported          */
-    eIO_Unknown       /**< unknown (most probably -- fatal) error            */
+    eIO_Success = 0,    /**< everything is fine, no error occurred           */
+    eIO_Timeout,        /**< timeout expired before any I/O succeeded        */
+    eIO_Closed,         /**< peer has closed the connection                  */
+    eIO_Interrupt,      /**< signal received while I/O was in progress       */
+    eIO_InvalidArg,     /**< bad argument value(s)                           */
+    eIO_NotSupported,   /**< the requested operation is not supported        */
+    eIO_Unknown         /**< unknown (most probably -- fatal) error          */
 } EIO_Status;
 
 
