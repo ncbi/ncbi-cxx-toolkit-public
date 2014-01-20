@@ -269,6 +269,80 @@ bool CValidError_bioseqset::IsCDSProductInGPS(const CBioseq& seq, const CBioseq_
     return false;
 }
 
+static bool x_IgnoreEndings (CTempString inst, CTempString genr)
+
+{
+    int  i, j;
+
+    if (NStr::StartsWith (inst, ", partial ")) {
+        inst = inst.substr(10);
+    }
+    if (NStr::StartsWith (genr, ", partial ")) {
+        genr = genr.substr(10);
+    }
+
+    if (inst.size() > 2 && inst[0] == '(') {
+        i = inst.find (") ");
+        if (i != NPOS) {
+            inst = inst.substr(i + 2);
+        }
+    }
+
+    if (genr.size() > 2 && genr[0] == '(') {
+        j = genr.find (") ");
+        if (j != NPOS) {
+            genr = genr.substr(j + 2);
+        }
+    }
+
+    if (inst.size() > 2 && inst[0] == '[') {
+        i = inst.find ("]");
+        if (i != NPOS) {
+            inst = inst.substr(i + 1);
+        }
+    }
+
+    if (genr.size() > 2 && genr[0] == '[') {
+        j = genr.find ("]");
+        if (j != NPOS) {
+            genr = genr.substr(j + 1);
+        }
+    }
+
+    if (inst == genr) {
+        return true;
+    }
+
+    return false;
+}
+
+
+static bool x_EquivTitles (string& instantiated, string& generated)
+
+{
+    char  ch1, ch2;
+    int  i, j, max;
+
+    max = min (instantiated.length(), generated.length());
+
+    for (i = 0, j = 0; i < max && j < max; i++, j++) {
+        ch1 = instantiated [i];
+        ch2 = generated [j];
+        if (ch1 == ch2) continue;
+        while (ch1 == ' ') {
+            i++;
+            ch1 = instantiated [i];
+        }
+        while (ch2 == ' ') {
+            j++;
+            ch2 = generated [j];
+        }
+        return x_IgnoreEndings (CTempString(instantiated, i, NPOS), CTempString(generated, j, NPOS));
+    }
+
+    return true;
+}
+
 
 void CValidError_bioseqset::ValidateNucProtSet
 (const CBioseq_set& seqset,
@@ -363,9 +437,11 @@ void CValidError_bioseqset::ValidateNucProtSet
                             generated.erase (0, 12);
                         }
                         if (!NStr::EqualNocase(instantiated, generated)) {
-                            PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentProteinTitle,
-                                "Instantiated protein title does not match automatically "
-                                "generated title", seq);
+                            if (! x_EquivTitles (instantiated, generated)) {
+                                PostErr(eDiag_Warning, eErr_SEQ_DESCR_InconsistentProteinTitle,
+                                    "Instantiated protein title does not match automatically "
+                                   "generated title", seq);
+                            }
                         }
                     }
                 }
