@@ -9,7 +9,7 @@
 Netschedule server test script
 """
 
-import sys, os.path
+import sys, os.path, time
 
 oldcwd = os.getcwd()
 os.chdir( os.path.dirname( sys.argv[ 0 ] ) )
@@ -35,7 +35,7 @@ netstat = "/bin/netstat"
 netcat = "/usr/bin/netcat"
 
 
-latestNetscheduleVersion = "4.16.11"
+latestNetscheduleVersion = "4.17.0"
 
 
 # The map below describes what tests should be excluded for a certain
@@ -48,7 +48,8 @@ excludeTestsMap = \
     "4.16.9":   [ 214, 215,
                   1000, 1100, 1101, 1102, 1103, 1104, 1105, 1106, 1107 ],
     "4.16.10":  [ ],
-    "4.16.10":  [ ]
+    "4.16.11":  [ ],
+    "4.17.0":   [ ]
 }
 
 
@@ -451,6 +452,7 @@ def main():
         for index in range( startIndex, len( tests ) ):
             aTest = tests[ index ]
 
+            testID = str( aTest.getScenarioID() )
             if aTest.getScenarioID() in excludeList:
                 print getTimestamp() + " Test ID " + \
                       str( aTest.getScenarioID() ) + " skipped. " \
@@ -482,7 +484,9 @@ def main():
                       "Scenario: " + aTest.getScenario() + "\n" \
                       "Exception:\n" + str( exct )
                 sys.stderr.flush()
-            #time.sleep( 5 )
+            netschedule.safeStop()
+            if os.path.exists( "valgrind.out" ):
+                os.system( "mv valgrind.out valgrind.out." + testID )
             test_count -= 1
             if test_count == 0:
                 break
