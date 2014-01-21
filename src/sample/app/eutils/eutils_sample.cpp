@@ -171,7 +171,9 @@ void CEUtilsApp::Init(void)
         "uilist", "abstract", "citation", "medline", "full",
         // Sequence
         "native", "fasta", "gb", "gbc", "gbwithparts", "est", "gss",
-        "gp", "gpc", "seqid", "acc", "chr", "flt", "rsr", "brief", "docset"));
+        "gp", "gpc", "seqid", "acc", "chr", "flt", "rsr", "brief", "docset",
+        // Search
+        "count", "uilist"));
     arg_desc->AddOptionalKey("reldate", "RelDate", "Age of date in days",
         CArgDescriptions::eInteger);
     // taxonomy only
@@ -289,6 +291,19 @@ void CEUtilsApp::CallESearch(const CArgs& args)
     }
     if ( args["reldate"] ) {
         req.SetRelDate(args["reldate"].AsInteger());
+    }
+
+    string rettype = args["rettype"] ? args["rettype"].AsString() : kEmptyStr;
+    if (rettype == "count") {
+        req.SetRetType(CESearch_Request::eRetType_count);
+    }
+    else if (rettype == "uilist") {
+        req.SetRetType(CESearch_Request::eRetType_uilist);
+    }
+    else if ( !rettype.empty() ) {
+        ERR_POST(Error << "Rettype " << rettype <<
+            " is incompatible with e-search request.");
+        return;
     }
 
     // Print query string
