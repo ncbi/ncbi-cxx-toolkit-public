@@ -355,7 +355,7 @@ TInDels CAlignMap::GetInDels(bool fs_only) const {
             if(m_edited_ranges[range-1].GetExtraTo() > 0) {
                 int len = m_edited_ranges[range-1].GetExtraTo();
                 string seq = m_edited_ranges[range-1].GetExtraSeqTo();
-                TSignedSeqPos p = m_orig_ranges[range-1].GetTo()+1;
+                TSignedSeqPos p = m_orig_ranges[range-1].GetTo()+m_orig_ranges[range-1].GetExtraTo()+1; // if there is insertion+deletion (mismatch) this is correct position
                 PushInDel(indels, fs_only, p, len, false, seq);
             }
         }
@@ -368,7 +368,7 @@ TInDels CAlignMap::GetInDels(bool fs_only) const {
         if(m_edited_ranges[range].GetExtraFrom() > 0) {   // deletion on the left side  
             int len = m_edited_ranges[range].GetExtraFrom();
             string seq = m_edited_ranges[range].GetExtraSeqFrom();
-            TSignedSeqPos p = m_orig_ranges[range].GetFrom();
+            TSignedSeqPos p = m_orig_ranges[range].GetFrom();    // if there is insertion+deletion (mismatch) this is correct position
             PushInDel(indels, fs_only, p, len, false, seq);
         }
     }

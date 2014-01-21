@@ -125,6 +125,32 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
 
     const CSeq_id& genomic_id = sps.GetGenomic_id();
 
+    string mismatches;
+
+    if(seq_align.CanGetExt()) {
+        int count = 0;
+        ITERATE(CSeq_align::TExt, i, seq_align.GetExt()) {
+            if((*i)->IsSetType() && (*i)->GetType().IsStr()) {
+                string type = (*i)->GetType().GetStr();
+                if(type == "RNASeq-Counts") {
+                    ITERATE(CUser_object::TData, j, (*i)->GetData()) {
+                        if(*j && (*j)->CanGetLabel() && (*j)->GetLabel().IsStr()) {
+                            string label = (*j)->GetLabel().GetStr();
+                            if(NStr::EndsWith(label, "alignments"))
+                                count += (*j)->GetData().GetInt();
+                        }
+                    }
+                } else if(type == "MismatchedBases") {
+                    mismatches = (*i)->GetData().front()->GetData().GetStr();
+                }
+            }
+        }
+        if(count > 0)
+            SetWeight(count);
+        if(Strand() == eMinus)
+            reverse(mismatches.begin(),mismatches.end());
+    }
+
     bool ggap_model= false;
 
     ITERATE(CSpliced_seg::TExons, e_it, sps.GetExons()) {
@@ -141,8 +167,13 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
 
         //        bool cur_5_prime_splice = exon.CanGetAcceptor_before_exon() && exon.GetAcceptor_before_exon().CanGetBases() && exon.GetAcceptor_before_exon().GetBases().size()==2;
         bool cur_5_prime_splice = exon.CanGetAcceptor_before_exon() && exon.GetAcceptor_before_exon().CanGetBases();
-        if (prod_prev+1 != prod_cur_start || !prev_3_prime_splice || !cur_5_prime_splice)
+
+        if (prod_prev+1 != prod_cur_start || !prev_3_prime_splice || !cur_5_prime_splice) {
             AddHole();
+            if(!mismatches.empty())   // also will take care about first exon
+                mismatches = mismatches.substr(prod_cur_start - prod_prev -1);
+        }
+
         //        prev_3_prime_splice = exon.CanGetDonor_after_exon() && exon.GetDonor_after_exon().CanGetBases() && exon.GetDonor_after_exon().GetBases().size()==2;
         prev_3_prime_splice = exon.CanGetDonor_after_exon() && exon.GetDonor_after_exon().CanGetBases();
 
@@ -201,11 +232,20 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
 
         int pos = 0;
         int prod_pos = prod_cur_start;
+
         ITERATE(CSpliced_exon::TParts, p_it, exon.GetParts()) {
             const CSpliced_exon_chunk& chunk = **p_it;
             if (chunk.IsProduct_ins()) {
-                CInDelInfo fs(Strand()==ePlus?nuc_cur_start+pos:nuc_cur_end-pos+1,chunk.GetProduct_ins(),false);
-                if (Strand()==ePlus)
+                string v = kEmptyStr;
+                int product_ins = chunk.GetProduct_ins();
+                if(!mismatches.empty()) {
+                    v = mismatches.substr(0,product_ins);
+                    mismatches = mismatches.substr(product_ins);
+                }
+                if(Strand() == eMinus)
+                    reverse(v.begin(),v.end());
+                CInDelInfo fs(Strand()==ePlus?nuc_cur_start+pos:nuc_cur_end-pos+1, product_ins, false, v);
+                if (Strand() == ePlus)
                     indels.push_back(fs);
                 else
                     indels.insert(indels.begin(), fs);
@@ -221,8 +261,25 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
                 pos += chunk.GetMatch();
                 prod_pos += chunk.GetMatch();
             } else if (chunk.IsMismatch()) {
-                pos += chunk.GetMismatch();
-                prod_pos += chunk.GetMismatch();
+                int mismatch_len = chunk.GetMismatch();
+                pos += mismatch_len;
+                prod_pos += mismatch_len;
+                if(!mismatches.empty()) {
+                    string v = mismatches.substr(0,mismatch_len);
+                    if(Strand() == ePlus) {
+                        CInDelInfo gins(nuc_cur_start+pos-mismatch_len, mismatch_len, true);
+                        CInDelInfo gdel(nuc_cur_start+pos, mismatch_len, false, v);
+                        indels.push_back(gins);
+                        indels.push_back(gdel);
+                    } else {
+                        reverse(v.begin(),v.end());
+                        CInDelInfo gins(nuc_cur_end-pos+1, mismatch_len, true);
+                        CInDelInfo gdel(nuc_cur_end-pos+1+mismatch_len, mismatch_len, false, v);
+                        indels.insert(indels.begin(), gdel);
+                        indels.insert(indels.begin(), gins);
+                    }
+                    mismatches = mismatches.substr(mismatch_len);
+                }
             } else { // if (chunk.IsDiag())
                 pos += chunk.GetDiag();
                 prod_pos += chunk.GetDiag();
@@ -231,6 +288,8 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
 
         prod_prev = prod_cur_end;
     }
+
+    _ASSERT(mismatches.empty() || (product_len - prod_prev - 1 == (int)mismatches.length()));
 
     sort(transcript_exons.begin(),transcript_exons.end());
     bool minusstrand = Strand() == eMinus;
@@ -347,20 +406,6 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
         Status() |= CGeneModel::ePolyA;
     }
 
-    if(seq_align.CanGetExt()) {
-        int count = 0;
-        ITERATE(CSeq_align::TExt, i, seq_align.GetExt()) {
-            if((*i)->IsSetType() && (*i)->GetType().IsStr() && (*i)->GetType().GetStr() == "RNASeq-Counts") {
-                ITERATE(CUser_object::TData, j, (*i)->GetData()) {
-                    if(*j)
-                        count += (*j)->GetData().GetInt();
-                }
-            }
-        }
-        if(count > 0)
-            SetWeight(count);
-    }
-
     if(seq_align.CanGetScore()) {
         const CSeq_align::TScore& score = seq_align.GetScore();
         ITERATE(CSeq_align::TScore, it, score) {
@@ -375,6 +420,7 @@ CAlignModel::CAlignModel(const CSeq_align& seq_align) :
                 } else if(scr == "ambiguous_orientation") {
                     Status() |= CGeneModel::eUnknownOrientation;
                 } else if(scr == "count") {
+                    _ASSERT(Weight() == 1 || Weight() == (*it)->GetValue().GetInt());
                     SetWeight((*it)->GetValue().GetInt());
                 }
             }
