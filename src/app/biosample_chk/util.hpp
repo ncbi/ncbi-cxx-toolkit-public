@@ -63,7 +63,8 @@ public:
 
     ~CBiosampleFieldDiff(void) {};
 
-    void Print(ncbi::CNcbiOstream & stream);
+    static void PrintHeader(ncbi::CNcbiOstream & stream);
+    void Print(ncbi::CNcbiOstream & stream) const;
     void Print(ncbi::CNcbiOstream & stream, const CBiosampleFieldDiff& prev);
     const string& GetSequenceId() const { return m_SequenceID; };
     void SetSequenceId(string id) { m_SequenceID = id; };

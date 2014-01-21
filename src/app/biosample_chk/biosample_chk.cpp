@@ -159,6 +159,7 @@ private:
     size_t m_Level;
 
     CNcbiOstream* m_ReportStream;
+    bool m_NeedReportHeader;
     CNcbiOfstream* m_AsnOut;
     CNcbiOstream* m_LogStream;
 
@@ -198,7 +199,7 @@ private:
 
 CBiosampleChkApp::CBiosampleChkApp(void) :
     m_ObjMgr(0), m_In(0), m_Continue(false),
-    m_Level(0), m_ReportStream(0), m_AsnOut(0), m_LogStream(0), m_Mode(e_report_diffs),
+    m_Level(0), m_ReportStream(0), m_NeedReportHeader(true), m_AsnOut(0), m_LogStream(0), m_Mode(e_report_diffs),
     m_StructuredCommentPrefix(""), m_CompareStructuredComments(true), m_Processed(0), m_Unprocessed(0)
 {
     m_SrcReportFields.clear();
@@ -365,6 +366,7 @@ void CBiosampleChkApp::ProcessOneFile(string fname)
             NCBI_THROW(CException, eUnknown, "Unable to open " + path);
         }
         need_to_close_report = true;
+        m_NeedReportHeader = true;
     }
     if (!m_AsnOut && (m_Mode == e_push || m_Mode == e_take_from_biosample || m_Mode == e_take_from_biosample_force)) {
         string path = fname;
@@ -778,35 +780,9 @@ void CBiosampleChkApp::PrintDiffs(TBiosampleFieldDiffList & diffs)
         } else {
             *m_ReportStream << "No differences found" << endl;
         }
-    } else if (diffs.size() == 1) {
-        diffs.front()->Print(*m_ReportStream);
     } else {
-        sort(diffs.begin(), diffs.end(), s_CompareBiosampleFieldDiffs);
-
-        TBiosampleFieldDiffList::iterator f_prev = diffs.begin();
-        TBiosampleFieldDiffList::iterator f_next = f_prev;
-        f_next++;
-        while (f_next != diffs.end()) {
-            if ((*f_prev)->CompareAllButSequenceID(**f_next) == 0) {
-                string old_id = (*f_prev)->GetSequenceId();
-                string new_id = (*f_next)->GetSequenceId();
-                old_id += "," + new_id;
-                (*f_prev)->SetSequenceId(old_id);
-                 f_next = diffs.erase(f_next);
-            } else {
-                ++f_prev;
-                ++f_next;
-            }
-        }
-    
-        f_prev = diffs.begin();
-        f_next = f_prev;
-        f_next++;
-        (*f_prev)->Print(*m_ReportStream);
-        while (f_next != diffs.end()) {
-            (*f_next)->Print(*m_ReportStream, **f_prev);
-            f_next++;
-            f_prev++;
+        ITERATE(TBiosampleFieldDiffList, it, diffs) {
+            (*it)->Print(*m_ReportStream);
         }
     }
     if (m_Unprocessed > 0) {
@@ -817,6 +793,10 @@ void CBiosampleChkApp::PrintDiffs(TBiosampleFieldDiffList & diffs)
 
 void CBiosampleChkApp::PrintResults(TBiosampleFieldDiffList & diffs)
 {
+    if (m_NeedReportHeader) {
+        CBiosampleFieldDiff::PrintHeader(*m_ReportStream);
+        m_NeedReportHeader = false;
+    }
     PrintDiffs(diffs);
 }
 

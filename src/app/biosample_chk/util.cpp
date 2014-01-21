@@ -162,7 +162,13 @@ vector<string> GetBioProjectIDs(CBioseq_Handle bh)
 }
 
 
-void CBiosampleFieldDiff::Print(CNcbiOstream& stream)
+void CBiosampleFieldDiff::PrintHeader(ncbi::CNcbiOstream & stream)
+{
+    stream << "#Sample ID\tQualifier\tSequenceID\tOld Value\tNew Value" << endl;
+}
+
+    
+void CBiosampleFieldDiff::Print(CNcbiOstream& stream) const
 {
     stream << m_BiosampleID << "\t";
     stream << m_FieldName << "\t";
