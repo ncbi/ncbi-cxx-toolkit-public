@@ -9,7 +9,7 @@ Organism_name_gl_V
 Organism_name_gl_D
 Organism_name_gl_J
 For example, if you specify human as organism, then the database is human_gl_V.  All NCBI database files are supplied with igblastn program (see http://www.ncbi.nlm.nih.gov/igblast/ about database details).  You can make your own blast database using NCBI's makeblastdb (for example: makeblastdb -parse_seqids -dbtype nucl -in my_database).
-2).    Igblast internal data files (supplied with igblast program under internal_data subdirectory).  These files or their locations should NOT be edited.  Igblastn program expects the internal_data directory under current directory or a path pointed to by IGDATA environmental variable. 
+2).    Igblast internal data files (supplied with igblast program under internal_data subdirectory).  This directory contains data internal to igblast program and users should NEVER add, delete or edit any files in this directory.  Igblastn program expects the internal_data directory under current directory (i.e., where the igblast program is) or a path pointed to by IGDATA environmental variable. 
 
 2.  Optional files (also supplied with igblastn program if you search NCBI germline gene database):
 This is the file to indicate germline J gene coding frame start position (position is 0-based) for each sequence in your germline J sequence database.  Note that the supplied file contains only information for NCBI germline database.   If you search your own database and if it contains different sequences or sequence identifiers, then you need to edit that file (or supply your own file) to reflect that or you won't get proper frame status information for a rearrangement(other results will still be shown).  The default file name is:
