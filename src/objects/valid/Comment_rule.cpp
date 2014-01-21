@@ -397,6 +397,81 @@ CComment_rule::TErrorList CComment_rule::IsValid(const CUser_object& user) const
 }
 
 
+bool CComment_rule::ReorderFields(CUser_object& user) const
+{
+    if (!IsSetFields() || !user.IsSetData()) {
+        return false;
+    }
+    bool any_change = false;
+    CField_set::Tdata::const_iterator field_rule = GetFields().Get().begin();
+    CUser_object::TData::iterator unchecked_fields = user.SetData().begin();
+    while (field_rule != GetFields().Get().end() && unchecked_fields != user.SetData().end()) {
+        CUser_object::TData::iterator field = unchecked_fields;
+        while (field != user.SetData().end()) {
+            if ((*field)->IsSetLabel()
+                && (*field)->GetLabel().IsStr()) {
+                string label = (*field)->GetLabel().GetStr();
+                if (NStr::Equal(label, kStructuredCommentPrefix)) {
+                    // push to beginning if not already there
+                    if (field == user.SetData().begin()) {
+                        // already in position, just increment
+                        ++unchecked_fields;
+                        ++field;
+                    } else {
+                        CRef<CUser_field> new_field(new CUser_field());
+                        new_field->Assign(**field);
+                        user.SetData().erase(field);
+                        user.SetData().insert(user.SetData().begin(), new_field);
+                        unchecked_fields = user.SetData().begin();
+                        unchecked_fields++;
+                        field = unchecked_fields;
+                        field_rule = GetFields().Get().begin();
+                        any_change = true;
+                    }
+                } else if (NStr::Equal(label, kStructuredCommentSuffix)) {
+                    // TODO: move to end if not already there
+                    // for now just skip
+                    if (*field == user.SetData().back()) {
+                        // already at the end, just skip
+                        ++field;
+                    } else {
+                        CRef<CUser_field> new_field(new CUser_field());
+                        new_field->Assign(**field);
+                        user.SetData().erase(field);                        
+                        user.SetData().push_back(new_field);
+                        unchecked_fields = user.SetData().begin();
+                        field = unchecked_fields;
+                        field_rule = GetFields().Get().begin();
+                        any_change = true;
+                    }
+                } else if (NStr::Equal(label, (*field_rule)->GetField_name())) {
+                    if (field == unchecked_fields) {
+                        // already in position, just increment
+                        ++unchecked_fields;
+                        ++field;
+                    } else {
+                        CRef<CUser_field> new_field(new CUser_field());
+                        new_field->Assign(**field);
+                        user.SetData().erase(field);
+                        user.SetData().insert(unchecked_fields, new_field);
+                        unchecked_fields = user.SetData().begin();
+                        field = unchecked_fields;
+                        field_rule = GetFields().Get().begin();
+                        any_change = true;
+                    }
+                } else {
+                    ++field;
+                }
+            } else {
+                ++field;
+            }
+        }
+        ++field_rule;
+    }
+    return any_change;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE

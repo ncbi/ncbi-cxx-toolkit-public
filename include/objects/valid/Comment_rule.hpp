@@ -75,6 +75,7 @@ public:
     typedef pair<CField_rule::TSeverity, string> TError;
     typedef vector<TError> TErrorList;
     TErrorList IsValid(const CUser_object& user) const;
+    bool ReorderFields(CUser_object& user) const;
 
 private:
     // Prohibit copy constructor and assignment operator
