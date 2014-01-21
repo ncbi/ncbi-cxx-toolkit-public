@@ -3675,7 +3675,13 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_TEST_BAD_GENE_NAME () {};
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CBioseq_on_bad_gene_name::GetName_gnm(); }
+      virtual string GetName() const {
+           return CBioseq_on_bad_gene_name::GetName_gnm(); }
+
+    private:
+      string GetName_bgnm() const {
+             return CBioseq_on_bad_gene_name::GetName_bgnm(); 
+      } 
   };
 
   class CBioseq_DISC_BAD_BACTERIAL_GENE_NAME : public CBioseq_on_bad_gene_name
@@ -3683,7 +3689,12 @@ BEGIN_SCOPE(DiscRepNmSpc)
     public:
       virtual ~CBioseq_DISC_BAD_BACTERIAL_GENE_NAME () {};
       virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return CBioseq_on_bad_gene_name::GetName_bgnm(); }
+      virtual string GetName() const {
+              return CBioseq_on_bad_gene_name::GetName_bgnm(); }
+   
+    private:
+      string GetName_gnm() const {
+           return CBioseq_on_bad_gene_name::GetName_gnm(); }
   };
 
   class CBioseq_DISC_BAD_GENE_STRAND : public CBioseqTestAndRepData
@@ -3768,7 +3779,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual ~CBioseq_on_locus_tags () {};
 
       virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual void GetReport(CRef <CClickableItem>& c_item) = 0;
       virtual string GetName() const {return string("LOCUS_TAGS"); };
 
     protected:
@@ -3776,15 +3787,32 @@ BEGIN_SCOPE(DiscRepNmSpc)
       string GetName_incons() const {
                              return string("INCONSISTENT_LOCUS_TAG_PREFIX"); }
       string GetName_badtag() const { return string("BAD_LOCUS_TAG_FORMAT"); }
+      string GetName_glodup() const {
+                return string("DUPLICATE_LOCUS_TAGS_global"); }
+
+      void GetReport_dup(CRef <CClickableItem>& c_item, const string& setting_name);
+  };
+
+  class CBioseq_DUPLICATE_LOCUS_TAGS_global : public CBioseq_on_locus_tags
+  {
+    public:
+      virtual ~CBioseq_DUPLICATE_LOCUS_TAGS_global() { };
+      virtual string GetName() const {
+                           return CBioseq_on_locus_tags::GetName_glodup();}
+      virtual void GetReport(CRef <CClickableItem>& c_item) {
+           CBioseq_on_locus_tags :: GetReport_dup(c_item, GetName());
+      }
   };
 
   class CBioseq_DUPLICATE_LOCUS_TAGS : public CBioseq_on_locus_tags
   {
     public:
       virtual ~CBioseq_DUPLICATE_LOCUS_TAGS() { };
-
       virtual string GetName() const {
                                return CBioseq_on_locus_tags::GetName_dup();}
+      virtual void GetReport(CRef <CClickableItem>& c_item) {
+           CBioseq_on_locus_tags :: GetReport_dup(c_item, GetName());
+      }
   };
 
   class CBioseq_INCONSISTENT_LOCUS_TAG_PREFIX : public CBioseq_on_locus_tags
@@ -3801,6 +3829,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
   {
     public:
       virtual ~CBioseq_BAD_LOCUS_TAG_FORMAT() { };
+      virtual void GetReport(CRef <CClickableItem>& c_item);
 
       virtual string GetName() const {
                             return CBioseq_on_locus_tags::GetName_badtag();}
