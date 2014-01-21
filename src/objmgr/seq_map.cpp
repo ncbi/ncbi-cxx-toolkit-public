@@ -1496,6 +1496,7 @@ bool CSeqMap::x_DoUpdateSeq_inst(CSeq_inst& inst)
 
     // delta
     CDelta_ext::Tdata& delta = inst.SetExt().SetDelta().Set();
+    inst.SetRepr(CSeq_inst::eRepr_delta);
     CDelta_ext::Tdata::iterator iter = delta.begin();
     for ( size_t index = x_GetFirstEndSegmentIndex() + 1;
           index < x_GetLastEndSegmentIndex(); ++index ) {
