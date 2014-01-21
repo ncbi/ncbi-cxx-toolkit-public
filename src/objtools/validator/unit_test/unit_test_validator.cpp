@@ -2297,8 +2297,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_INST_BadSeqIdFormat)
     entry->SetSeq().ResetId();
     entry->SetSeq().SetId().push_back(general);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors.push_back (new CExpectedError ("thisdatabasevalueislong:b", eDiag_Warning, "BadSeqIdFormat", 
-                                                   "Database name longer than 20 characters"));
+    expected_errors.push_back (new CExpectedError ("thisdatabasevalueislong:b", eDiag_Critical, "BadSeqIdFormat",
+                                                   "General database longer than 20 characters"));
 
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);

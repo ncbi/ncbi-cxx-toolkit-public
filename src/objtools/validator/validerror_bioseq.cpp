@@ -398,24 +398,34 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                 if (dblen < 1) {
                    PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "General identifier missing database field", ctx);
                 }
-                if (dblen > 20) {
-                    PostErr(eDiag_Warning, eErr_SEQ_INST_BadSeqIdFormat, "Database name longer than 20 characters", ctx);
+                EDiagSev sev = eDiag_Warning;
+                if (! m_Imp.IsINSDInSep()) {
+                    sev = eDiag_Critical;
+                } else if (! m_Imp.IsIndexerVersion()) {
+                    sev = eDiag_Error;
                 }
-                if (dbt.IsSetTag() && dbt.GetTag().IsStr()) {
-                    int idlen = dbt.GetTag().GetStr().length();
-                    if (dblen + idlen > 64 && (! m_Imp.IsIndexerVersion()) && (! s_IsSkippableDbtag(dbt))) {
-                        PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "General identifier longer than 64 characters", ctx);
+                if (dblen > 20) {
+                    PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "General database longer than 20 characters", ctx);
+                }
+                if (! s_IsSkippableDbtag(dbt)) {
+                    if (dbt.IsSetTag() && dbt.GetTag().IsStr()) {
+                        int idlen = dbt.GetTag().GetStr().length();
+                        if (idlen > 64) {
+                            PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "General identifier longer than 64 characters", ctx);
+                        }
                     }
                 }
              }
            break;
         case CSeq_id::e_Local:
             if (id.IsLocal() && id.GetLocal().IsStr() && id.GetLocal().GetStr().length() > 64) {
+                EDiagSev sev = eDiag_Warning;
                 if (! m_Imp.IsINSDInSep()) {
-                    PostErr(eDiag_Critical, eErr_SEQ_INST_BadSeqIdFormat, "Local identifier longer than 64 characters", ctx);
+                    sev = eDiag_Critical;
                 } else if (! m_Imp.IsIndexerVersion()) {
-                    PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "Local identifier longer than 64 characters", ctx);
+                    sev = eDiag_Error;
                 }
+                PostErr(sev, eErr_SEQ_INST_BadSeqIdFormat, "Local identifier longer than 64 characters", ctx);
             }
             break;
         default:
