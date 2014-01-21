@@ -4992,9 +4992,16 @@ class Scenario240( TestBase ):
         if len( aff[ 'jobs' ] ) != 1:
             raise Exception( "Expected 1 job, received: " + \
                              str( len( aff[ 'jobs' ] ) ) )
-        if aff[ 'jobs' ][ 0 ] != jobID:
+
+        # Starting from NS 4.17.0 a job status is also provided
+        if ' ' in aff[ 'jobs' ][ 0 ]:
+            affJobID = aff[ 'jobs' ][ 0 ].split()[ 0 ]
+        else:
+            affJobID = aff[ 'jobs' ][ 0 ]
+        if affJobID != jobID:
             raise Exception( "Unexpected job for affinity. Expected: " + \
-                             jobID + ", received: " + aff[ 'jobs' ][ 0 ] )
+                             jobID + ", received: " + affJobID )
+
         if aff[ 'affinity_token' ] != 'a1':
             raise Exception( "Expected aff token: a1, received: " + \
                              aff[ 'affinity_token' ] )
