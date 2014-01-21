@@ -1478,7 +1478,8 @@ static const s_test_property test_list[] = {
 // tests_on_Bioseq_CFeat_NotInGenProdSet
    {"DUPLICATE_GENE_LOCUS", fDiscrepancy | fAsndisc},
    {"MISSING_LOCUS_TAGS", fDiscrepancy | fAsndisc},
-   {"DUPLICATE_LOCUS_TAGS", fDiscrepancy},
+   {"DUPLICATE_LOCUS_TAGS", fDiscrepancy | fAsndisc},
+   {"DUPLICATE_LOCUS_TAGS_global", fDiscrepancy | fAsndisc},
    {"INCONSISTENT_LOCUS_TAG_PREFIX", fDiscrepancy},
    {"BAD_LOCUS_TAG_FORMAT", fDiscrepancy | fAsndisc},
    {"FEATURE_LOCATION_CONFLICT", fDiscrepancy | fAsndisc},
@@ -1513,7 +1514,7 @@ static const s_test_property test_list[] = {
    {"INCONSISTENT_SOURCE_DEFLINE", fDiscrepancy},
    {"DISC_BACTERIA_SHOULD_NOT_HAVE_MRNA", fAsndisc | fOncaller},
    {"DISC_BAD_BACTERIAL_GENE_NAME", fDiscrepancy | fAsndisc},
-   {"TEST_BAD_GENE_NAME", fDiscrepancy},
+   {"TEST_BAD_GENE_NAME", fDiscrepancy | fAsndisc},
    {"MOLTYPE_NOT_MRNA", fTSA},
    {"TECHNIQUE_NOT_TSA", fTSA},
    {"DISC_POSSIBLE_LINKER", fOncaller},
@@ -1961,7 +1962,7 @@ void CRepConfig :: GetTestList()
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("EXTRA_GENES") != end_it) { 
-       thisGrp.tests_on_Bioseq_CFeat.push_back(
+       thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet.push_back(
            CRef <CTestAndRepData>(new CBioseq_EXTRA_GENES));
         if (++i >= sz) return;
    }
@@ -2061,7 +2062,7 @@ void CRepConfig :: GetTestList()
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("GENE_PRODUCT_CONFLICT") != end_it) {
-       thisGrp.tests_on_Bioseq_CFeat.push_back( 
+       thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet.push_back( 
            CRef <CTestAndRepData>( new CBioseq_GENE_PRODUCT_CONFLICT));
         if (++i >= sz) return;
    }
@@ -2083,6 +2084,11 @@ void CRepConfig :: GetTestList()
    if ( thisTest.tests_run.find("DUPLICATE_LOCUS_TAGS") != end_it) {
        thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet
            .push_back(CRef <CTestAndRepData>(new CBioseq_DUPLICATE_LOCUS_TAGS));
+        if (++i >= sz) return;
+   }
+   if ( thisTest.tests_run.find("DUPLICATE_LOCUS_TAGS_global") != end_it) {
+       thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet
+            .push_back(CRef <CTestAndRepData>(new CBioseq_DUPLICATE_LOCUS_TAGS_global));
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("BAD_LOCUS_TAG_FORMAT") != end_it) {

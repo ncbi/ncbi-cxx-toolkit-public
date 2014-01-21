@@ -268,8 +268,10 @@ bool CTestAndRepData :: EndsWithPattern(const string& pattern, const string& sea
   unsigned len = search.size();
 
   if (len >= phrase_len 
-              && NStr::EqualNocase(CTempString(search).substr(len - phrase_len), pattern))
+         && NStr::EqualNocase(CTempString(search).substr(len - phrase_len), 
+                              pattern)) {
       return true;
+  }
   else return false;
 }
 
@@ -339,7 +341,9 @@ bool CTestAndRepData :: StartsWithPattern(const string& pattern, const string& s
   unsigned phrase_len = pattern.size();
   unsigned len = search.size();
 
-  if (len >= phrase_len && NStr::EqualNocase(search,0, phrase_len, pattern)) return true;
+  if (len >= phrase_len && NStr::EqualNocase(search,0, phrase_len, pattern)) {
+       return true;
+  }
   else return false;
 }
 
