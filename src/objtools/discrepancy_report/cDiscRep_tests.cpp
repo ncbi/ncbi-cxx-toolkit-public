@@ -12692,8 +12692,9 @@ void CSeqEntry_on_comment :: TestOnObj(const CSeq_entry& seq_entry)
      desc = GetDiscItemText(**it, *(comm_seqdesc_seqentry[i])); 
      // ONCALLER_COMMENT_PRESENT
      if (run_has) {
-        if (m_all_same && comm_seqdesc[0]->GetComment() != (*it)->GetComment()) 
+        if (m_all_same && comm_seqdesc[0]->GetComment() != (*it)->GetComment()){
              m_all_same  = false; 
+        }
         thisInfo.test_item_list[GetName_has()].push_back(desc);
         thisInfo.test_item_objs[GetName_has()].push_back(feat_ref);
      }
@@ -12727,9 +12728,11 @@ void CSeqEntry_ONCALLER_COMMENT_PRESENT :: GetReport(CRef <CClickableItem>& c_it
 {
     c_item->obj_list = thisInfo.test_item_objs[GetName()];
     unsigned cnt = c_item->item_list.size();
-    strtmp = (cnt==1)? kEmptyStr : (m_all_same? " (all same)." : " (some different). ");
+    strtmp = (m_all_same? " (all same)." : " (some different). ");
     c_item->description 
-      = GetOtherComment(cnt, "comment descriptor was found", "comment descriptors were found")
+      = GetOtherComment(cnt, 
+                        "comment descriptor was found", 
+                        "comment descriptors were found")
         + strtmp;
 };
 
