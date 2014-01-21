@@ -93,6 +93,8 @@
 #include <objects/seqloc/Patent_seq_id.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqloc/Seq_interval.hpp>
+#include <objects/valid/Comment_set.hpp>
+#include <objects/valid/Comment_rule.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
 #include <objmgr/bioseq_ci.hpp>
@@ -367,6 +369,39 @@ BOOST_AUTO_TEST_CASE(Test_DefinitionLine)
         }
     }
 }
+
+
+// Structured comments in general
+BOOST_AUTO_TEST_CASE(Test_ReorderFields)
+{
+    string prefix = "Genome-Assembly-Data";
+    CRef<CUser_object> user = edit::CStructuredCommentField::MakeUserObject(prefix);
+
+    CRef<CUser_field> f1(new CUser_field());
+    f1->SetLabel().SetStr("Sequencing Technology");
+    f1->SetData().SetStr("3");
+    user->SetData().push_back(f1);
+    CRef<CUser_field> f2(new CUser_field());
+    f2->SetLabel().SetStr("Assembly Method");
+    f2->SetData().SetStr("2");
+    user->SetData().push_back(f2);
+    CRef<CUser_field> f3(new CUser_field());
+    f3->SetLabel().SetStr("Assembly Provider");
+    f3->SetData().SetStr("1");
+    user->SetData().push_back(f3);
+    
+    CConstRef<CComment_set> rules = CComment_set::GetCommentRules();
+    const CComment_rule& rule = rules->FindCommentRule(prefix);
+    BOOST_CHECK_EQUAL(rule.ReorderFields(*user), true);
+    BOOST_CHECK_EQUAL(user->GetData()[0]->GetLabel().GetStr(), "StructuredCommentPrefix");
+    BOOST_CHECK_EQUAL(user->GetData()[1]->GetLabel().GetStr(), "Assembly Provider");
+    BOOST_CHECK_EQUAL(user->GetData()[2]->GetLabel().GetStr(), "Assembly Method");
+    BOOST_CHECK_EQUAL(user->GetData()[3]->GetLabel().GetStr(), "Sequencing Technology");
+    BOOST_CHECK_EQUAL(user->GetData()[0]->GetLabel().GetStr(), "StructuredCommentSuffix");
+    BOOST_CHECK_EQUAL(rule.ReorderFields(*user), false);
+
+}
+
 
 
 
