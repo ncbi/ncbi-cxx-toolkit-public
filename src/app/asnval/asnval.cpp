@@ -69,6 +69,7 @@
 #include <objmgr/align_ci.hpp>
 #include <objmgr/graph_ci.hpp>
 #include <objmgr/seq_annot_ci.hpp>
+#include <objmgr/bioseq_ci.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 
 #include <serial/objostrxml.hpp>
@@ -154,6 +155,10 @@ private:
     unsigned int m_Options;
     bool m_Continue;
     bool m_OnlyAnnots;
+    time_t m_Longest;
+    string m_CurrentId;
+    string m_LongestId;
+    size_t m_NumFiles;
 
     size_t m_Level;
     size_t m_Reported;
@@ -185,6 +190,7 @@ public:
 
 CAsnvalApp::CAsnvalApp(void) :
     m_ObjMgr(0), m_In(0), m_Options(0), m_Continue(false), m_OnlyAnnots(false),
+    m_Longest(0), m_CurrentId(""), m_LongestId(""), m_NumFiles(0),
     m_Level(0), m_Reported(0), m_verbosity(eVerbosity_min),
     m_ValidErrorStream(0), m_LogStream(0)
 {
@@ -319,6 +325,10 @@ void CAsnvalApp::ValidateOneFile(string fname)
 {
     const CArgs& args = GetArgs();
 
+    if (m_LogStream) {
+        *m_LogStream << fname << endl;
+    }
+    time_t start_time = time(NULL);
     auto_ptr<CNcbiOfstream> local_stream;
 
     if (!m_ValidErrorStream) {
@@ -347,6 +357,13 @@ void CAsnvalApp::ValidateOneFile(string fname)
         }
 
     }
+    time_t stop_time = time(NULL);
+    time_t elapsed = stop_time - start_time;
+    if (elapsed > m_Longest) {
+        m_Longest = elapsed;
+        m_LongestId = m_CurrentId;
+    }
+    m_NumFiles++;
     DestroyOutputStreams();
 }
 
@@ -390,6 +407,8 @@ int CAsnvalApp::Run(void)
     const CArgs& args = GetArgs();
     Setup(args);
 
+    time_t start_time = time(NULL);
+
     if (args["o"]) {
         m_ValidErrorStream = &(args["o"].AsOutputFile());
     }
@@ -427,6 +446,13 @@ int CAsnvalApp::Run(void)
         if (args["i"]) {
             ValidateOneFile (args["i"].AsString());
         }
+    }
+
+    time_t stop_time = time(NULL);
+    if (m_LogStream) {
+        *m_LogStream << "Finished in " << stop_time - start_time << " seconds" << endl;
+        *m_LogStream << "Longest processing time " << m_Longest << " seconds on " << m_LongestId << endl;
+        *m_LogStream << "Total number of records " << m_NumFiles << endl;
     }
 
     DestroyOutputStreams();
@@ -574,6 +600,14 @@ CConstRef<CValidError> CAsnvalApp::ProcessSeqEntry(CSeq_entry& se)
         m_Cleanup.BasicCleanup (se);
     }
     CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(se);
+    if (m_LogStream) {
+        CBioseq_CI bi(seh);
+        if (bi) {
+            m_CurrentId = "";
+            bi->GetId().front().GetSeqId()->GetLabel(&m_CurrentId);
+            *m_LogStream << m_CurrentId << endl;
+        }
+    }
 
     if ( m_OnlyAnnots ) {
         for (CSeq_annot_CI ni(seh); ni; ++ni) {
