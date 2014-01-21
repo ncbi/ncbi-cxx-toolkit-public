@@ -6412,6 +6412,10 @@ BOOST_AUTO_TEST_CASE(Test_Validity_SpecificHost)
 	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
 	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
 	
+    host = "turtle";
+	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
+	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
+
 }
 
 

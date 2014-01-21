@@ -2779,32 +2779,14 @@ CRef<CTaxon3_reply> CValidError_imp::RequestSpecificHost
         FOR_EACH_ORGMOD_ON_BIOSOURCE (mod_it, (*desc_it)->GetSource()) {
             if ((*mod_it)->IsSetSubtype()
                 && (*mod_it)->GetSubtype() == COrgMod::eSubtype_nat_host
-                && (*mod_it)->IsSetSubname()
-                && isupper ((*mod_it)->GetSubname().c_str()[0])) {
-                   string host = (*mod_it)->GetSubname();
-                AdjustSpecificHostForTaxServer(host);
-                size_t pos = NStr::Find(host, " ");
-                if (pos != string::npos) {
-                    if (NStr::StartsWith(host.substr(pos + 1), "hybrid ")) {
-                        pos += 7;
-                    } else if (NStr::StartsWith(host.substr(pos + 1), "x ")) {
-                        pos += 2;
-                    }
-                    if (! NStr::StartsWith(host.substr(pos + 1), "sp.")
-                        && ! NStr::StartsWith(host.substr(pos + 1), "(")) {
-                        pos = NStr::Find(host, " ", pos + 1);
-                        if (pos != string::npos) {
-                            host = host.substr(0, pos);
-                        }
-                    } else {
-                        host = host.substr(0, pos);
-                    }
+                && (*mod_it)->IsSetSubname()) {
+                string host = SpecificHostValueToCheck((*mod_it)->GetSubname());
+                if (!NStr::IsBlank(host)) {
+                    CRef<COrg_ref> rq(new COrg_ref);
+                    rq->SetTaxname(host);
+				    host_list.push_back(COrgrefWithParent_SpecificHost(rq.GetObject(),**desc_it, **ctx_it));
+				    org_rq_list.push_back(rq);
                 }
-
-                CRef<COrg_ref> rq(new COrg_ref);
-                rq->SetTaxname(host);
-				host_list.push_back(COrgrefWithParent_SpecificHost(rq.GetObject(),**desc_it, **ctx_it));
-				org_rq_list.push_back(rq);
             }
         }
         ++desc_it;
@@ -2817,26 +2799,14 @@ CRef<CTaxon3_reply> CValidError_imp::RequestSpecificHost
         FOR_EACH_ORGMOD_ON_BIOSOURCE (mod_it, (*feat_it)->GetData().GetBiosrc()) {
             if ((*mod_it)->IsSetSubtype()
                 && (*mod_it)->GetSubtype() == COrgMod::eSubtype_nat_host
-                && (*mod_it)->IsSetSubname()
-                && isupper ((*mod_it)->GetSubname().c_str()[0])) {
-                string host = (*mod_it)->GetSubname();
-                size_t pos = NStr::Find(host, " ");
-                if (pos != string::npos) {
-                    if (! NStr::StartsWith(host.substr(pos + 1), "sp.")
-                        && ! NStr::StartsWith(host.substr(pos + 1), "(")) {
-                        pos = NStr::Find(host, " ", pos + 1);
-                        if (pos != string::npos) {
-                            host = host.substr(0, pos);
-                        }
-                    } else {
-                        host = host.substr(0, pos);
-                    }
+                && (*mod_it)->IsSetSubname()) {
+                string host = SpecificHostValueToCheck((*mod_it)->GetSubname());
+                if (!NStr::IsBlank(host)) {
+                    CRef<COrg_ref> rq(new COrg_ref);
+                    rq->SetTaxname(host);
+				    host_list.push_back(COrgrefWithParent_SpecificHost(rq.GetObject(), **feat_it));
+				    org_rq_list.push_back(rq);
                 }
-
-                CRef<COrg_ref> rq(new COrg_ref);
-                rq->SetTaxname(host);
-				host_list.push_back(COrgrefWithParent_SpecificHost(rq.GetObject(), **feat_it));
-				org_rq_list.push_back(rq);
             }
         }
         ++feat_it;
@@ -2869,65 +2839,20 @@ void CValidError_imp::ValidateSpecificHost
         // process descriptor and feature responses
 		while (reply_it != reply->GetReply().end() && org_it != host_list.end()) {
 			string host = (*org_it).GetOrgref().GetTaxname();
-			if ((*reply_it)->IsError()) {
-				string err_str = "?";
-                if ((*reply_it)->GetError().IsSetMessage()) {
-                    err_str = (*reply_it)->GetError().GetMessage();
-                }
+            string err_str = InterpretSpecificHostResult(host, **reply_it);
+            if (!NStr::IsBlank(err_str)) {
+                EErrType et = eErr_SEQ_DESCR_BadSpecificHost;
+                EDiagSev sev = eDiag_Warning;
                 if(NStr::Find(err_str, "ambiguous") != string::npos) {
-					if ((*org_it).HasParentSeqdesc()) {
-						PostObjErr (eDiag_Info, eErr_SEQ_DESCR_AmbiguousSpecificHost,
-                                "Specific host value is ambiguous: " + host,
-                                (*org_it).GetSeqdescParent(), &((*org_it).GetSeqentryParent()));
-					} else {
-						PostErr (eDiag_Info, eErr_SEQ_DESCR_AmbiguousSpecificHost,
-                                    "Specific host value is ambiguous: " + host,
-                                    (*org_it).GetSeqfeatParent());
-					}
-                } else {
-					if ((*org_it).HasParentSeqdesc()) {
-						PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-								"Invalid value for specific host: " + host,
-								(*org_it).GetSeqdescParent(), &((*org_it).GetSeqentryParent()));
-					} else {
-						PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-								"Invalid value for specific host: " + host,
-								 (*org_it).GetSeqfeatParent());
-					}
-                }
-			} else if ((*reply_it)->IsData()) {
-				if (HasMisSpellFlag((*reply_it)->GetData())) {
-					if ((*org_it).HasParentSeqdesc()) {
-						PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-								"Specific host value is misspelled: " + host,
-								(*org_it).GetSeqdescParent(), &((*org_it).GetSeqentryParent()));
-					} else {
-						PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-							 "Specific host value is misspelled: " + host,
-							 (*org_it).GetSeqfeatParent());
-					}
-				} else if ((*reply_it)->GetData().IsSetOrg()) {
-					if ( ! FindMatchInOrgRef (host, (*reply_it)->GetData().GetOrg()) && ! IsCommonName((*reply_it)->GetData())) {
-						if ((*org_it).HasParentSeqdesc()) {
-							PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-									"Specific host value is incorrectly capitalized: " + host,
-									(*org_it).GetSeqdescParent(), &((*org_it).GetSeqentryParent()));
-						} else {
-							PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-								 "Specific host value is incorrectly capitalized: " + host,
-								 (*org_it).GetSeqfeatParent());
-						}
-					}
+                    et = eErr_SEQ_DESCR_AmbiguousSpecificHost;
+                    sev = eDiag_Info;
+                } 
+				if ((*org_it).HasParentSeqdesc()) {
+					PostObjErr (sev, et, err_str,
+                            (*org_it).GetSeqdescParent(), &((*org_it).GetSeqentryParent()));
 				} else {
-					if ((*org_it).HasParentSeqdesc()) {
-						PostObjErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-								"Invalid value for specific host: " + host,
-								(*org_it).GetSeqdescParent(), &((*org_it).GetSeqentryParent()));
-					} else {
-						PostErr (eDiag_Warning, eErr_SEQ_DESCR_BadSpecificHost, 
-							 "Invalid value for specific host: " + host,
-							 (*org_it).GetSeqfeatParent());
-					}
+					PostErr (sev, et, err_str,
+                             (*org_it).GetSeqfeatParent());
 				}
 			}
 			++reply_it;

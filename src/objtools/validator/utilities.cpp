@@ -51,7 +51,6 @@
 #include <objmgr/seqdesc_ci.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objects/taxon3/taxon3.hpp>
-#include <objects/taxon3/Taxon3_reply.hpp>
 //#include <objtools/validator/validatorp.hpp>
 #include <objtools/validator/utilities.hpp>
 
@@ -1909,9 +1908,7 @@ static const string sIgnoreHostWordList[] = {
   "aff.",
   "near",
   "nr.",
-  "nr ",
-  "sp.",
-  "sp "
+  "nr "
 };
 
 
@@ -1927,60 +1924,90 @@ void AdjustSpecificHostForTaxServer (string& spec_host)
 }
 
 
+string SpecificHostValueToCheck(const string& val)
+{
+    if (NStr::IsBlank(val)) {
+        return val;
+    } else if (! isupper (val.c_str()[0])) {
+        return "";
+    }
+    string host = val;
+    AdjustSpecificHostForTaxServer(host);
+    size_t pos = NStr::Find(host, " ");
+    if (pos != string::npos) {
+        if (NStr::StartsWith(host.substr(pos + 1), "hybrid ")) {
+            pos += 7;
+        } else if (NStr::StartsWith(host.substr(pos + 1), "x ")) {
+            pos += 2;
+        }
+        if (! NStr::StartsWith(host.substr(pos + 1), "sp.")
+            && ! NStr::StartsWith(host.substr(pos + 1), "(")) {
+            pos = NStr::Find(host, " ", pos + 1);
+            if (pos != string::npos) {
+                host = host.substr(0, pos);
+            }
+        } else {
+            host = host.substr(0, pos);
+        }
+    }
+    return host;
+}
+
+
+string InterpretSpecificHostResult(const string& host, const CT3Reply& reply)
+{
+    string err_str = "";
+	if (reply.IsError()) {
+		err_str = "?";
+        if (reply.GetError().IsSetMessage()) {
+            err_str = reply.GetError().GetMessage();
+        }
+        if(NStr::Find(err_str, "ambiguous") != string::npos) {
+            err_str = "Specific host value is ambiguous: " + host;
+        } else {
+            err_str = "Invalid value for specific host: " + host;
+        }
+	} else if (reply.IsData()) {
+		if (HasMisSpellFlag(reply.GetData())) {
+            err_str = "Specific host value is misspelled: " + host;
+		} else if (reply.GetData().IsSetOrg()) {
+			if ( ! FindMatchInOrgRef (host, reply.GetData().GetOrg()) && ! IsCommonName(reply.GetData())) {
+                err_str = "Specific host value is incorrectly capitalized: " + host;
+			}
+		} else {
+			err_str = "Invalid value for specific host: " + host;
+		}
+	}
+    return err_str;
+}
+
 
 bool IsSpecificHostValid(const string& val, string& error_msg)
 {
 	bool is_valid = true;
 	error_msg = kEmptyStr;
 	
-	if (NStr::IsBlank(val)) {
-		error_msg = "Host is empty";
-		return is_valid;
-	}
-
-    string host = val;
+    // only check host values that start with a capital letter and have at least two words
+    string host = SpecificHostValueToCheck(val);
+    if (!NStr::IsBlank(host)) {
+	    vector<CRef<COrg_ref> > org_req_list;
+	    CRef<COrg_ref> req(new COrg_ref());
+	    req->SetTaxname(host);
+	    org_req_list.push_back(req);
 	
-	AdjustSpecificHostForTaxServer(host);
-	vector<CRef<COrg_ref> > org_req_list;
-	CRef<COrg_ref> req(new COrg_ref());
-	req->SetTaxname(host);
-	org_req_list.push_back(req);
-	
-	CTaxon3 taxon3;
-	taxon3.Init();
-	CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_req_list);
-	if (reply && reply->GetReply().size() == 1) {
-		CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
-		if ((*reply_it)->IsError()) {
-			is_valid = false;
-			string err_str = "?";
-			if ((*reply_it)->GetError().IsSetMessage()) {
-				err_str = (*reply_it)->GetError().GetMessage();
-			}
-			if (NStr::Find(err_str, "ambiguous") != NPOS) {
-				error_msg = "Specific host value is ambiguous: " + host;
-			} else {
-				error_msg = "Invalid value for specific host: " + host;
-			}
-		} else if ((*reply_it)->IsData()) {
-			if (HasMisSpellFlag((*reply_it)->GetData())) {
-				is_valid = false;
-				error_msg = "Specific host value is misspelled: " + host;
-			} else if ((*reply_it)->GetData().IsSetOrg()) {
-				if (! FindMatchInOrgRef (host, (*reply_it)->GetData().GetOrg()) 
-					&& ! IsCommonName((*reply_it)->GetData())) {
-					is_valid = false;
-					error_msg = "Specific host value is incorrectly capitalized: " + host;
-					}
-			} else {
-				is_valid = false;
-				error_msg = "Invalid value for specific host: " + host;
-			}
-			
-		}
-	} else {
-		error_msg = "Invalid value for specific host: " + host;
-	}
+	    CTaxon3 taxon3;
+	    taxon3.Init();
+	    CRef<CTaxon3_reply> reply = taxon3.SendOrgRefList(org_req_list);
+	    if (reply && reply->GetReply().size() == 1) {
+		    CTaxon3_reply::TReply::const_iterator reply_it = reply->GetReply().begin();
+            error_msg = InterpretSpecificHostResult(host, **reply_it);
+            if (!NStr::IsBlank(error_msg)) {
+                is_valid = false;
+            }
+	    } else {
+		    error_msg = "Invalid value for specific host: " + host;
+	    }
+    }
 	
 	return is_valid;
 }

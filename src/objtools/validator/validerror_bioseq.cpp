@@ -803,6 +803,7 @@ void CValidError_bioseq::ValidateInst(const CBioseq& seq)
 {
     const CSeq_inst& inst = seq.GetInst();
 
+
     // Check representation
     if ( !ValidateRepr(inst, seq) ) {
         return;
