@@ -550,16 +550,18 @@ BOOST_AUTO_TEST_CASE(WithdrawnCheck)
 }
 
 
-BOOST_AUTO_TEST_CASE(TPGTest)
+#ifdef NCBI_OS_DARWIN
+# define PAN1_PATH "/net/pan1"
+#else
+# define PAN1_PATH "//panfs/pan1"
+#endif
+
+    BOOST_AUTO_TEST_CASE(TPGTest)
 {
     CRef<CObjectManager> om = sx_GetOM();
     CScope scope(*om);
 
-#ifdef NCBI_OS_DARWIN
-    string wgs_root = "/net/pan1/id_dumps/WGS/tmp";
-#else
-    string wgs_root = "//panfs/pan1/id_dumps/WGS/tmp";
-#endif
+    string wgs_root = PAN1_PATH "/id_dumps/WGS/tmp";
     CWGSDataLoader::RegisterInObjectManager(*om,  wgs_root, vector<string>(), CObjectManager::eDefault);
     scope.AddDefaults();
 
@@ -567,10 +569,12 @@ BOOST_AUTO_TEST_CASE(TPGTest)
 
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("DAAH01000001.1"));
     BOOST_CHECK(bh);
-    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AGKB01000001.1"));
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("DAAG01000001.1"));
     BOOST_CHECK(bh);
-    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AAAA01000001.1"));
-    BOOST_CHECK(!bh);
+    //bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AGKB01000001.1"));
+    //BOOST_CHECK(!bh);
+    //bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AAAA01000001.1"));
+    //BOOST_CHECK(!bh);
 }
 
 
@@ -580,11 +584,7 @@ BOOST_AUTO_TEST_CASE(FixedFileTest)
     CScope scope(*om);
 
     vector<string> files;
-#ifdef NCBI_OS_DARWIN
-    string wgs_root = "/net/pan1/id_dumps/WGS/tmp";
-#else
-    string wgs_root = "//panfs/pan1/id_dumps/WGS/tmp";
-#endif
+    string wgs_root = PAN1_PATH "/id_dumps/WGS/tmp";
     files.push_back(wgs_root+"/DAAH01");
     CWGSDataLoader::RegisterInObjectManager(*om,  "", files, CObjectManager::eDefault);
     scope.AddDefaults();
@@ -593,6 +593,8 @@ BOOST_AUTO_TEST_CASE(FixedFileTest)
 
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("DAAH01000001.1"));
     BOOST_CHECK(bh);
+    bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("DAAG01000001.1"));
+    BOOST_CHECK(!bh);
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AGKB01000001.1"));
     BOOST_CHECK(!bh);
     bh = scope.GetBioseqHandle(CSeq_id_Handle::GetHandle("AAAA01000001.1"));
