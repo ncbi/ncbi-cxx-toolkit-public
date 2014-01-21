@@ -398,7 +398,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
                 if (dblen < 1) {
                    PostErr(eDiag_Error, eErr_SEQ_INST_BadSeqIdFormat, "General identifier missing database field", ctx);
                 }
-                EDiagSev sev = eDiag_Warning;
+                EDiagSev sev = eDiag_Error;
                 if (! m_Imp.IsINSDInSep()) {
                     sev = eDiag_Critical;
                 } else if (! m_Imp.IsIndexerVersion()) {
@@ -419,7 +419,7 @@ void CValidError_bioseq::ValidateSeqId(const CSeq_id& id, const CBioseq& ctx)
            break;
         case CSeq_id::e_Local:
             if (id.IsLocal() && id.GetLocal().IsStr() && id.GetLocal().GetStr().length() > 64) {
-                EDiagSev sev = eDiag_Warning;
+                EDiagSev sev = eDiag_Error;
                 if (! m_Imp.IsINSDInSep()) {
                     sev = eDiag_Critical;
                 } else if (! m_Imp.IsIndexerVersion()) {
