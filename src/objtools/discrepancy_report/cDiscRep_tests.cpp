@@ -940,24 +940,21 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
    CConstRef <CObject> seq_ref (&bioseq);
    unsigned len = bioseq.GetLength();
    CConstRef <CBioseq_set> bioseq_set = bioseq.GetParentSet();
+   const CMolInfo* 
+      molinfo 
+          = sequence::GetMolInfo(thisInfo.scope->GetBioseqHandle(bioseq));
    if (bioseq.IsAa() && thisTest.tests_run.find(GetName_shtprt()) != end_it){
       // SHORT_PROT_SEQUENCES
-      if (len >= 50) {
-           return;
-      }
-      if (bioseq_set.Empty() 
-             || bioseq_set->GetClass() != CBioseq_set::eClass_parts) { 
-         const CMolInfo* 
-           molinfo 
-              = sequence::GetMolInfo(thisInfo.scope->GetBioseqHandle(bioseq));
+      if (len < 50 
+           && ( bioseq_set.Empty() 
+                   || bioseq_set->GetClass() != CBioseq_set::eClass_parts)) { 
          if (molinfo
               && molinfo->GetCompleteness() != CMolInfo::eCompleteness_unknown
               && molinfo->GetCompleteness() !=CMolInfo::eCompleteness_complete){
-            return;
          }
          else {
-               thisInfo.test_item_list[GetName_shtprt()].push_back(bioseq_desc);
-               thisInfo.test_item_objs[GetName_shtprt()].push_back(seq_ref);
+            thisInfo.test_item_list[GetName_shtprt()].push_back(bioseq_desc);
+            thisInfo.test_item_objs[GetName_shtprt()].push_back(seq_ref);
          }
       }       
    }
@@ -965,8 +962,6 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
     bool is_dna = (bioseq.GetInst().GetMol() == CSeq_inst::eMol_dna);
     bool is_rna = (bioseq.GetInst().GetMol() == CSeq_inst::eMol_rna);
 
-    const CMolInfo* 
-       molinfo = sequence::GetMolInfo(thisInfo.scope->GetBioseqHandle(bioseq));
     if (is_dna) {
 
       // DISC_RETROVIRIDAE_DNA, NON_RETROVIRIDAE_PROVIRAL
@@ -993,15 +988,28 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
             }
          }
       }
-   }
-   else {
+      
       // EUKARYOTE_SHOULD_HAVE_MRNA
       bool has_CDs = false, has_mrna = false;
-      if (m_check_eu_mrna) {
-         if (thisTest.tests_run.find(GetName_eu_mrna()) != end_it
+      if (thisTest.tests_run.find(GetName_eu_mrna()) != end_it
                && IsBioseqHasLineage(bioseq, "Eukaryota")) {
-            ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
-              if (!IsLocationOrganelle((*it)->GetSource().GetGenome())) {
+        bool stop = false;
+        if (thisInfo.test_item_list.find(GetName_eu_mrna()) 
+              != thisInfo.test_item_list.end()) {
+           ITERATE (vector <string>, 
+                  vit, thisInfo.test_item_list[GetName_eu_mrna()]) {
+             if ("yes" == *vit) {
+               stop = true;
+               break; 
+             }
+           }
+        }
+        if (!stop) {
+          const CBioSource* 
+            biosrc
+              = sequence::GetBioSource(thisInfo.scope->GetBioseqHandle(bioseq));
+          if (biosrc) {
+              if (!IsLocationOrganelle(biosrc->GetGenome())) {
                  if (molinfo) {
                     if ( molinfo->GetBiomol() == CMolInfo::eBiomol_genomic) {
                        ITERATE (vector <const CSeq_feat*>, kt, cd_feat) {
@@ -1016,27 +1024,24 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
                          if (mRNA.NotEmpty()) { 
                               thisInfo.test_item_list[GetName_eu_mrna()]
                                    .push_back("yes");
-                              m_check_eu_mrna = false; // is m_check_eu_mrna necessary?
                               has_mrna = true;
                               break;
                          }
                        }
                     }
-                    if (has_mrna) {
-                        break;
-                    }
                  }
               }
-              if (has_mrna) {
-                   break; 
+              if (has_CDs && has_mrna) {
+                 thisInfo.test_item_list[GetName_eu_mrna()].push_back("yes");
               }
-            }
-            if (has_CDs && !has_mrna) {
-               thisInfo.test_item_list[GetName_eu_mrna()].push_back("no");
-            }
-         }
+              else {
+                 thisInfo.test_item_list[GetName_eu_mrna()].push_back("no");
+              }
+          }
+        }
       }
-
+   }
+   else {
       if (is_rna) {  // RNA_PROVIRAL
         if (thisTest.tests_run.find(GetName_rnapro()) != end_it) {
            ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
