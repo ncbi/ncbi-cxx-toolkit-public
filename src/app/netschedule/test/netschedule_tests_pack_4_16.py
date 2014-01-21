@@ -396,16 +396,16 @@ class Scenario800( TestBase ):
 
         ns_client = self.getNetScheduleService( 'TEST1', 'scenario800' )
         output = execAny( ns_client, 'GETP2' )
-        if "&nc::one=value+1" not in output:
+        if "&nc::one=value+1" not in output and "nc.one=value+1" not in output:
             raise Exception( "First value is not found in the output" )
-        if "&nc::two=value+2" not in output:
+        if "&nc::two=value+2" not in output and "&nc.two=value+2" not in output:
             raise Exception( "Second value is not found in the output" )
 
         output = execAny( ns_client, 'SETQUEUE TEST2' )
         output = execAny( ns_client, 'GETP2' )
-        if "&nc::three=value+3" not in output:
+        if "&nc::three=value+3" not in output and "&nc.three=value+3" not in output:
             raise Exception( "Third value is not found in the output" )
-        if "&nc::four=value+4" not in output:
+        if "&nc::four=value+4" not in output and "&nc.four=value+4" not in output:
             raise Exception( "Fourth value is not found in the output" )
 
         return True
