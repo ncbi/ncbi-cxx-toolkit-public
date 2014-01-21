@@ -500,7 +500,16 @@ CSeq_inst::TMol CWGSDataLoader_Impl::GetSequenceType(const CSeq_id_Handle& idh)
 CWGSFileInfo::CWGSFileInfo(CWGSDataLoader_Impl& impl,
                            CTempString prefix)
 {
-    x_Initialize(impl, prefix);
+    try {
+        x_Initialize(impl, prefix);
+    }
+    catch ( CException& exc ) {
+        if ( GetDebugLevel() >= 1 ) {
+            ERR_POST_X(1, "Exception while opeining WGS DB "<<prefix<<": "<<exc);
+        }
+        NCBI_RETHROW_FMT(exc, CSraException, eOtherError,
+                         "CWGSDataLoader: exception while opening WGS DB "<<prefix);
+    }
 }
 
 
