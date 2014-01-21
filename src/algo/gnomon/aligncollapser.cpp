@@ -308,10 +308,16 @@ bool AlignmentIsSupportedBySR(const CAlignModel& align, const vector<double>& co
     return (covered_length >= COVERED_FRACTION*align_len);
 }
 
-bool isGoodIntron(int a, int b, int strand, const CAlignCollapser::TAlignIntrons& introns) {
+bool isGoodIntron(int a, int b, EStrand strand, const CAlignCollapser::TAlignIntrons& introns, bool check_introns_on_both_strands) {
     SIntron intron_oriented_nosig(a, b, strand, true, "");
     SIntron intron_notoriented_nosig(a, b, ePlus, false, "");
-    return (introns.find(intron_oriented_nosig) != introns.end() || introns.find(intron_notoriented_nosig) != introns.end());
+    bool good_intron = (introns.find(intron_oriented_nosig) != introns.end() || introns.find(intron_notoriented_nosig) != introns.end());
+    if(!good_intron && check_introns_on_both_strands) {
+        SIntron intron_otherstrand_nosig(a, b, OtherStrand(strand), true, "");
+        good_intron = (introns.find(intron_otherstrand_nosig) != introns.end());
+    }
+
+    return good_intron;
 }
 
 
@@ -393,7 +399,7 @@ void CAlignCollapser::ClipNotSupportedFlanks(CAlignModel& align, double clip_thr
 
 void CAlignCollapser::ClipProteinToStartStop(CAlignModel& align) {
 
-    int maxclip = min(PROT_CLIP, (int)(align.TargetLen()*PROT_CLIP_FRAC+0.5));
+    int maxclip = min(PROT_CLIP, (int)(align.AlignLen()*PROT_CLIP_FRAC+0.5));
     TSignedSeqRange tlim = align.TranscriptLimits();
     int leftclip = maxclip-tlim.GetFrom();
     int rightclip = maxclip-(align.TargetLen()-tlim.GetTo()-1);
@@ -594,7 +600,7 @@ bool CAlignCollapser::RemoveNotSupportedIntronsFromProt(CAlignModel& align) {
         for (int k = 1; k < (int)align.Exons().size(); ++k) {
             CModelExon exonl = align.Exons()[k-1];
             CModelExon exonr = align.Exons()[k];
-            if(!(exonl.m_ssplice && exonr.m_fsplice) || isGoodIntron(exonl.GetTo(), exonr.GetFrom(), align.Strand(), m_align_introns))
+            if(!(exonl.m_ssplice && exonr.m_fsplice) || isGoodIntron(exonl.GetTo(), exonr.GetFrom(), align.Strand(), m_align_introns, false))
                 continue;
 
             TSignedSeqRange segl;
@@ -629,7 +635,7 @@ bool CAlignCollapser::RemoveNotSupportedIntronsFromProt(CAlignModel& align) {
     return true;
 }
 
-bool CAlignCollapser::RemoveNotSupportedIntronsFromTranscript(CAlignModel& align) const {
+bool CAlignCollapser::RemoveNotSupportedIntronsFromTranscript(CAlignModel& align, bool check_introns_on_both_strands) const {
 
     CAlignMap amap = align.GetAlignMap();
 
@@ -650,7 +656,7 @@ bool CAlignCollapser::RemoveNotSupportedIntronsFromTranscript(CAlignModel& align
         for(int k = 1; k < (int)a.Exons().size(); ++k) {
             CModelExon exonl = a.Exons()[k-1];
             CModelExon exonr = a.Exons()[k];
-            if(isGoodIntron(exonl.GetTo(), exonr.GetFrom(), a.Strand(), m_align_introns))
+            if(isGoodIntron(exonl.GetTo(), exonr.GetFrom(), a.Strand(), m_align_introns, check_introns_on_both_strands))
                 break;
             else
                 new_left = exonr.GetFrom();
@@ -659,7 +665,7 @@ bool CAlignCollapser::RemoveNotSupportedIntronsFromTranscript(CAlignModel& align
         for(int k = (int)a.Exons().size()-1; k > 0 && a.Exons()[k-1].GetTo() > new_left; --k) {
             CModelExon exonl = a.Exons()[k-1];
             CModelExon exonr = a.Exons()[k];
-            if(isGoodIntron(exonl.GetTo(), exonr.GetFrom(), a.Strand(), m_align_introns))
+            if(isGoodIntron(exonl.GetTo(), exonr.GetFrom(), a.Strand(), m_align_introns, check_introns_on_both_strands))
                 break;
             else
                 new_right = exonl.GetTo();
@@ -694,7 +700,7 @@ bool CAlignCollapser::RemoveNotSupportedIntronsFromTranscript(CAlignModel& align
         for (int k = 1; k < (int)editedmodel.Exons().size() && good_alignment; ++k) {
             CModelExon exonl = editedmodel.Exons()[k-1];
             CModelExon exonr = editedmodel.Exons()[k];
-            if(exonl.m_ssplice && exonr.m_fsplice && !isGoodIntron(exonl.GetTo(), exonr.GetFrom(), editedmodel.Strand(), m_align_introns)) {
+            if(exonl.m_ssplice && exonr.m_fsplice && !isGoodIntron(exonl.GetTo(), exonr.GetFrom(), editedmodel.Strand(), m_align_introns, check_introns_on_both_strands)) {
                 if(editedmodel.Status()&CGeneModel::eGapFiller) {
                     TSignedSeqRange segl =  amap.ShrinkToRealPoints(TSignedSeqRange(editedmodel.Limits().GetFrom(),exonl.GetTo()-1), false);
                     TSignedSeqRange segr = amap.ShrinkToRealPoints(TSignedSeqRange(exonr.GetFrom()+1,editedmodel.Limits().GetTo()), false);
@@ -1151,8 +1157,19 @@ void CAlignCollapser::FilterAlignments() {
             m_aligns_for_filtering_only.push_front(a);
 
             good_alignment = RemoveNotSupportedIntronsFromProt(align);
+        } else if(align.Type()&CGeneModel::eNotForChaining) {
+            good_alignment = RemoveNotSupportedIntronsFromTranscript(align, true);
         } else {
-            good_alignment = RemoveNotSupportedIntronsFromTranscript(align);
+            CAlignModel reversed = align;
+            good_alignment = RemoveNotSupportedIntronsFromTranscript(align, false);
+            if(align.Status()&CGeneModel::eUnknownOrientation) {
+                reversed.ReverseComplementModel();
+                bool good_reversed_alignment = RemoveNotSupportedIntronsFromTranscript(reversed, false);
+                if(reversed.Exons().size() > align.Exons().size()) {
+                    align = reversed;
+                    good_alignment = good_reversed_alignment;
+                }
+            }
         }
 
         if(!align.Exons().empty())
@@ -1623,7 +1640,18 @@ void CAlignCollapser::CleanExonEdge(int ie, CAlignModel& align, const string& tr
     string gseq = m_contig.substr(gleft,gright-gleft+1);
     
     //insert indels into both sequences
-    TInDels indels = align.GetAlignMap().GetInDels(false);
+    TInDels all_indels = align.GetAlignMap().GetInDels(false);   // possibly include mismatches as insertion/deletion pairs
+
+    TInDels indels;   // indels without mismatches
+    for(TInDels::iterator i = all_indels.begin(); i != all_indels.end(); ++i) {
+        TInDels::iterator next = i+1;
+        if(next != all_indels.end() && i->IsInsertion() && next->IsDeletion() && i->Loc()+i->Len() == next->Loc() && i->Len() == next->Len()) {  // mismatch pair
+            i = next;
+        } else {
+            indels.push_back(*i);
+        }
+    }
+
     TInDels::const_iterator indl = indels.end();
     ITERATE(TInDels, i, indels) {
         if(i->Loc() < align.Exons()[ie].GetFrom())
@@ -1789,7 +1817,7 @@ void CAlignCollapser::CleanExonEdge(int ie, CAlignModel& align, const string& tr
                 editedmodel.AddHole();
         }
 
-        CAlignMap editedamap(editedmodel.Exons(), transcript_exons, indels, align.Orientation(), align.GetAlignMap().TargetLen());
+        CAlignMap editedamap(editedmodel.Exons(), transcript_exons, all_indels, align.Orientation(), align.GetAlignMap().TargetLen());
         CAlignModel editedalign(editedmodel, editedamap);
         editedalign.SetTargetId(*align.GetTargetId());
 

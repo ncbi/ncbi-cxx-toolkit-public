@@ -145,7 +145,7 @@ private:
     bool CheckAndInsert(const CAlignModel& align, TAlignModelClusterSet& clsset) const;
     void ClipProteinToStartStop(CAlignModel& align);
     bool RemoveNotSupportedIntronsFromProt(CAlignModel& align);
-    bool RemoveNotSupportedIntronsFromTranscript(CAlignModel& align) const;
+    bool RemoveNotSupportedIntronsFromTranscript(CAlignModel& align, bool check_introns_on_both_strands) const;
     void ClipNotSupportedFlanks(CAlignModel& align, double clip_threshold);
 
     typedef map< CAlignCommon,deque<SAlignIndividual> > Tdata;
