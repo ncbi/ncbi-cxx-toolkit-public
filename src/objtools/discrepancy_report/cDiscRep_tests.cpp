@@ -2107,21 +2107,24 @@ void CBioseq_DISC_FEAT_OVERLAP_SRCFEAT :: TestOnObj(const CBioseq& bioseq)
 {
   string src_desc, feat_desc;
   unsigned src_left, src_right, feat_left, feat_right;
-  bool src_added;
+  bool src_added, span_circular;
   ITERATE (vector <const CSeq_feat*>, it, bioseq_biosrc_feat) {
     src_added = false;
     src_desc = GetDiscItemText(**it);
     src_left = (*it)->GetLocation().GetStart(eExtreme_Positional);
     src_right = (*it)->GetLocation().GetStop(eExtreme_Positional);
+    span_circular = (src_left > src_right);
     ITERATE (vector <const CSeq_feat*>, jt, all_feat) {
       feat_desc = GetDiscItemText(**jt); 
       if (src_desc == feat_desc) continue;
       feat_left = (*jt)->GetLocation().GetStart(eExtreme_Positional);
       feat_right = (*jt)->GetLocation().GetStop(eExtreme_Positional);
-      if (feat_right < src_left) continue;
-      if (feat_left > src_right) break;
-      sequence::ECompare 
-         ovp = sequence::Compare((*jt)->GetLocation(), (*it)->GetLocation(), thisInfo.scope);
+      if (!span_circular) {
+        if (feat_right < src_left) continue;
+        if (feat_left > src_right) break;
+      }
+      sequence::ECompare ovp = sequence::Compare((*jt)->GetLocation(), 
+                                         (*it)->GetLocation(), thisInfo.scope);
       if (ovp != sequence::eNoOverlap 
               && ovp != sequence::eContained 
               && ovp != sequence::eSame) {
@@ -2129,9 +2132,10 @@ void CBioseq_DISC_FEAT_OVERLAP_SRCFEAT :: TestOnObj(const CBioseq& bioseq)
          thisInfo.test_item_objs[GetName() + "$" + src_desc].push_back(
                                                    CConstRef <CObject>(*jt));
          if (!src_added) {
-             thisInfo.test_item_list[GetName()].push_back(src_desc +"$" +src_desc);
-             thisInfo.test_item_objs[GetName() +" $" + src_desc].push_back(
-                                                CConstRef <CObject>(*it));
+             thisInfo.test_item_list[GetName()]
+                         .push_back(src_desc +"$" +src_desc);
+             thisInfo.test_item_objs[GetName() +" $" + src_desc]
+                        .push_back(CConstRef <CObject>(*it));
              src_added = true;
          }
       }
@@ -2422,6 +2426,7 @@ void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
    }
 
    unsigned left1, right1, left2, right2;
+   bool span_circular;
    for (i=0; (int)i< (int)(cd_feat.size()-1); i++) {
      if (ignore[i]) continue;
      CConstRef <CObject> cdi_ref(cd_feat[i]);
@@ -2429,6 +2434,7 @@ void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
      str1 = loc1.GetStrand();
      left1 = loc1.GetStart(eExtreme_Positional);
      right1 = loc1.GetStop(eExtreme_Positional);
+     span_circular = (left1 > right1);
      for (j=i+1; j< cd_feat.size(); j++) {
         if (ignore[j]) continue;
         CConstRef <CObject> cdj_ref (cd_feat[j]);
@@ -2436,7 +2442,9 @@ void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
         str2 = loc2.GetStrand();
         left2 = loc2.GetStart(eExtreme_Positional);
         right2 = loc2.GetStop(eExtreme_Positional);
-        if (right1 < left2 || right2 < left1) continue;
+        if (!span_circular && (right1 < left2 || right2 < left1)) {
+            continue;
+        }
         sequence::ECompare 
             loc_cmp = sequence::Compare(loc1, loc2, thisInfo.scope);
         if (loc_cmp == sequence::eSame 
@@ -2460,14 +2468,16 @@ void CBioseq_CONTAINED_CDS :: TestOnObj(const CBioseq& bioseq)
           else {
              if (contained_other_strand.find(desc1) 
                                  == contained_other_strand.end()) {
-                thisInfo.test_item_list[GetName()].push_back("opposite$" + desc1);
-                thisInfo.test_item_objs[GetName() +"$opposite"].push_back(cdi_ref);
+                thisInfo.test_item_list[GetName()].push_back("opposite$"+desc1);
+                thisInfo.test_item_objs[GetName() +"$opposite"]
+                           .push_back(cdi_ref);
                 contained_other_strand.insert(desc1);
              }
              if (contained_other_strand.find(desc2) 
                               == contained_other_strand.end()) {
-                thisInfo.test_item_list[GetName()].push_back("opposite$" + desc2);
-                thisInfo.test_item_objs[GetName()+"$opposite"].push_back(cdj_ref);
+                thisInfo.test_item_list[GetName()].push_back("opposite$"+desc2);
+                thisInfo.test_item_objs[GetName()+"$opposite"]
+                             .push_back(cdj_ref);
                 contained_other_strand.insert(desc2);
              }
           }
@@ -3718,21 +3728,22 @@ void CBioseqTestAndRepData :: TestOverlapping_ed_Feats(const vector <const CSeq_
 {
    string overlapping_ed_feats("|");
    unsigned i, j;
+   bool span_circular;
    for (i=0; (int)i< (int)(feat.size()-1); i++) {
       if (isOverlapped && !IsUnknown(overlapping_ed_feats, i)) continue;
+      const CSeq_loc& loc_i = feat[i]->GetLocation();
+      span_circular = (loc_i.GetStart(eExtreme_Positional) 
+                            > loc_i.GetStop(eExtreme_Positional)); 
       for (j=i+1; j< feat.size(); j++) {
            if (!isOverlapped && !IsUnknown(overlapping_ed_feats, j)) continue;
-           const CSeq_loc& loc_i = feat[i]->GetLocation();
            const CSeq_loc& loc_j = feat[j]->GetLocation();
 
            // all feats more distant than the loc_j will have no chance of overlapping
-/*
-           if (loc_i.GetStop(eExtreme_Positional) 
+           if (!span_circular 
+                  && loc_i.GetStop(eExtreme_Positional) 
                         < loc_j.GetStart(eExtreme_Positional)) {
-cerr << "j.start " << loc_j.GetStart(eExtreme_Positional) << endl;
                break;
            }
-*/
 
            if (isGene && loc_i.GetStrand() != loc_j.GetStrand()) continue;
            sequence::ECompare 
@@ -4046,6 +4057,7 @@ typedef multimap <unsigned, unsigned> TIndex;
 void CBioseq_DISC_BAD_GENE_STRAND :: TestOnObj(const CBioseq& bioseq)
 {
   if (bioseq.IsAa()) return;
+
   unsigned g_left, g_right, f_left, f_right;
   TIndex fleft_idx, fright_idx;
   TIndex::iterator l_it, r_it;
@@ -4054,6 +4066,7 @@ void CBioseq_DISC_BAD_GENE_STRAND :: TestOnObj(const CBioseq& bioseq)
   g_left_min = gene_feat[0]->GetLocation().GetStart(eExtreme_Positional);
   g_right_max 
     = gene_feat[gene_feat.size()-1]->GetLocation().GetStop(eExtreme_Positional);
+  bool span_circular = (g_left_min > g_right_max);
   for (i=0; i < all_feat.size(); i++) {
       const CSeq_loc& f_loc = all_feat[i]->GetLocation();
       const CSeqFeatData& seq_feat_dt = all_feat[i]->GetData(); 
@@ -4063,8 +4076,10 @@ void CBioseq_DISC_BAD_GENE_STRAND :: TestOnObj(const CBioseq& bioseq)
       }
       f_left = f_loc.GetStart(eExtreme_Positional);
       f_right = f_loc.GetStop(eExtreme_Positional);
-      if (f_right <= g_left_min) continue;
-      if (f_left > g_right_max) break;
+      if (!span_circular) {
+        if (f_right <= g_left_min) continue;
+        if (f_left > g_right_max) break;
+      }
       fleft_idx.insert(TIndex::value_type(f_left, i));
       fright_idx.insert(TIndex::value_type(f_right, i));
   }
@@ -7152,16 +7167,25 @@ void CBioseq_OVERLAPPING_CDS :: TestOnObj(const CBioseq& bioseq)
     added.push_back(0);
   }
   i=0;
+  bool span_circular;
   ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
     const CSeq_loc& loc_i = (*it)->GetLocation();
+    span_circular = (loc_i.GetStart(eExtreme_Positional) 
+                        > loc_i.GetStop(eExtreme_Positional));
     ENa_strand strandi = loc_i.GetStrand();
     jt = it;
     j = i;
     while (++jt != cd_feat.end()) {
       j++;
       const CSeq_loc& loc_j = (*jt)->GetLocation();
-      if (loc_i.GetStop(eExtreme_Positional) < loc_j.GetStart(eExtreme_Positional)) break;
-      if (!OverlappingProdNmSimilar(GetProdNmForCD(**it), GetProdNmForCD(**jt))) continue;
+      if (!span_circular 
+             && loc_i.GetStop(eExtreme_Positional) 
+                    < loc_j.GetStart(eExtreme_Positional)) {
+         break;
+      }
+      if(!OverlappingProdNmSimilar(GetProdNmForCD(**it), GetProdNmForCD(**jt))){
+          continue;
+      }
       ENa_strand strandj = loc_j.GetStrand();
       if (strandi != strandj 
              && (strandi == eNa_strand_minus || strandj ==eNa_strand_minus)) {
