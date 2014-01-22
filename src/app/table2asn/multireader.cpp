@@ -350,6 +350,7 @@ CArgDescriptions* CMultiReader::InitAppArgs(CNcbiApplication& app)
 CRef<CSeq_entry> CMultiReader::xReadFile(const string& ifname)
 {
     CNcbiIfstream istr(ifname.c_str());
+    //CNcbiStreambuf istr;
 
     xSetFormat(m_context, istr);
     xSetFlags(m_context, istr);
@@ -378,6 +379,13 @@ CMultiReader::xReadASN1(CNcbiIstream& instream)
     const string sType = pObjIstrm->ReadFileHeader();
 
     // do the right thing depending on the input type
+    if( sType == CBioseq_set::GetTypeInfo()->GetName() ) {
+        CRef<CSeq_entry> entry (new CSeq_entry);
+        pObjIstrm->Read(ObjectInfo(entry->SetSet()), CObjectIStream::eNoFileHeader);
+
+        return entry;
+    }
+    else
     if( sType == CSeq_submit::GetTypeInfo()->GetName() ) {
         CRef<CSeq_submit> submit (new CSeq_submit);
         pObjIstrm->Read(ObjectInfo(*submit), CObjectIStream::eNoFileHeader);
@@ -497,9 +505,13 @@ void CMultiReader::xSetFormat(
             m_uFormat = CFormatGuess::eFiveColFeatureTable;
     }
 #endif
-    if (m_uFormat == CFormatGuess::eUnknown) {
-        m_uFormat = CFormatGuess::Format(istr);
-    }
+    CFormatGuess FG(istr);
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eBinaryASN);
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eFasta);
+    FG.GetFormatHints().AddPreferredFormat(CFormatGuess::eTextASN);
+    FG.GetFormatHints().DisableAllNonpreferred();
+
+    m_uFormat = FG.GuessFormat();
 }
 
 //  ----------------------------------------------------------------------------
@@ -703,7 +715,8 @@ void CMultiReader::ApplyAdditionalProperties(CSeq_entry& entry)
 
     if (!m_context.m_OrganismName.empty())
     {
-        m_context.SetBioSource(entry.SetDescr()).SetOrg().SetTaxname(m_context.m_OrganismName);
+        CAutoAddDesc(entry.SetDescr(), CSeqdesc::e_Source).Set().SetSource().
+           SetOrg().SetTaxname(m_context.m_OrganismName);
     }
 }
 

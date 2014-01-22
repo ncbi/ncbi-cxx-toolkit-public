@@ -66,7 +66,6 @@
 
 using namespace ncbi;
 using namespace objects;
-//using namespace validator;
 
 const char * TBL2ASN_APP_VER = "10.0";
 
@@ -119,8 +118,7 @@ private:
     //bool m_Continue;
     //bool m_OnlyAnnots;
 
-    //bool m_DoCleanup;
-    //CCleanup m_Cleanup;
+    string m_cleanup;
 
     //EDiagSev m_LowCutoff;
     //EDiagSev m_HighCutoff;
@@ -322,8 +320,6 @@ int CTbl2AsnApp::Run(void)
     m_logger->SetProgressOstream(m_LogStream);
     m_context.m_logger = m_logger;
 
-    /*
-
     // note - the C Toolkit uses 0 for SEV_NONE, but the C++ Toolkit uses 0 for SEV_INFO
     // adjust here to make the inputs to table2asn match tbl2asn expectations
     //m_ReportLevel = args["R"].AsInteger() - 1;
@@ -331,14 +327,14 @@ int CTbl2AsnApp::Run(void)
     //m_HighCutoff = static_cast<EDiagSev>(args["P"].AsInteger() - 1);
 
     //m_DoCleanup = args["cleanup"] && args["cleanup"].AsBoolean();
+    if (args["c"])
+        m_cleanup = args["c"].AsString();
 
     // Process file based on its content
     // Unless otherwise specifien we assume the file in hand is
     // a Seq-entry ASN.1 file, other option are a Seq-submit or NCBI
     // Release file (batch processing) where we process each Seq-entry
     // at a time.
-    m_Reported = 0;
-    */
 
     m_reader.reset(new CMultiReader(m_context));
     m_remote_updater.reset(new CRemoteUpdater(m_context));
@@ -587,10 +583,12 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         fr.FindOpenReadingFrame(*entry);
 
     fr.m_replacement_protein = m_replacement_proteins;
+#if 0
     fr.MergeCDSFeatures(*entry);
     entry->Parentize();
     if (m_possible_proteins.NotEmpty())
         fr.AddProteins(*m_possible_proteins, *entry);
+#endif
 
     bool need_update_date = m_context.ApplyCreateDate(*entry);
     if (need_update_date)
@@ -622,8 +620,14 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         //COpticalxml2asnOperator::UpdatePubDate(*result);
     }
 
-    //CTable2AsnValidator validator;
-    //validator.Validate(*entry);
+    CTable2AsnValidator validator;
+
+    if (!m_cleanup.empty())
+    {
+        validator.Cleanup(*entry);
+    }
+
+    validator.Validate(*entry);
 
 
 }

@@ -17,8 +17,34 @@ class CUser_object;
 class CBioSource;
 };
 
+#include <objects/seq/Seqdesc.hpp>
+
 // command line parameters are mapped into the context
 // those with only only symbol still needs to be implemented
+
+class CAutoAddDesc
+{
+public:
+    CAutoAddDesc(objects::CSeq_descr& descr, objects::CSeqdesc::E_Choice which)
+    {
+        m_descr.Reset(&descr);
+        m_which = which;
+    }
+    static
+    CRef<objects::CSeqdesc> LocateDesc(objects::CSeq_descr& descr, objects::CSeqdesc::E_Choice which);
+    const objects::CSeqdesc& Get();
+    objects::CSeqdesc& Set();
+
+private:
+    CAutoAddDesc();
+    CAutoAddDesc(const CAutoAddDesc&);
+
+    objects::CSeqdesc::E_Choice m_which;
+    CRef<objects::CSeq_descr> m_descr;
+    CRef<objects::CSeqdesc>   m_desc;
+};
+
+
 class CTable2AsnContext
 {
 public:
@@ -88,11 +114,9 @@ public:
     static
     objects::CUser_object& SetUserObject(objects::CSeq_descr& descr, const string& type);
     static
-    objects::CBioSource& SetBioSource(objects::CSeq_descr& SD);
+    objects::CBioSource& SetBioSource_old(objects::CSeq_descr& SD);
     bool ApplyCreateDate(objects::CSeq_entry& entry) const;
     void ApplyUpdateDate(objects::CSeq_entry& entry) const;
-    static
-    CRef<objects::CSeqdesc> LocateDesc(objects::CSeq_descr& descr, objects::CSeqdesc::E_Choice which);
     void ApplyAccession(objects::CSeq_entry& entry) const;
     void HandleGaps(objects::CSeq_entry& entry) const;
     CRef<CSerialObject> 

@@ -304,7 +304,7 @@ void COpticalxml2asnOperatorImpl::SetOrganismData(CSeq_descr& SD, const string& 
 {
     CSeq_descr::Tdata& TD = SD.Set();
 
-    CBioSource& biosource = CTable2AsnContext::SetBioSource(SD);
+    CBioSource& biosource = CAutoAddDesc(SD, CSeqdesc::e_Source).Set().SetSource();
     biosource.SetGenome(m_genome);
     if (context.m_taxid > 0)
         biosource.SetOrg().SetTaxId(context.m_taxid);
