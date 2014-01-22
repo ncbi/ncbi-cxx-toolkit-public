@@ -709,6 +709,13 @@ void CValidError_imp::ValidateLatLonCountry
     double neardist = 0.0;
     CLatLonCountryMap::TLatLonAdjustFlags adjustment = CLatLonCountryMap::fNone;
     CLatLonCountryId::TClassificationFlags adjusted_flags = 0;
+
+    if (!flags && m_LatLonCountryMap->IsNearLatLon(lat_value, lon_value, 2.0, neardist, country) && neardist < 5.0) {
+        id->SetGuessCountry (country);
+        id->SetGuessProvince ("");
+        flags = x_ClassifyLatLonId(id, country, province);
+    }
+
     if (!flags && !m_LatLonCountryMap->IsNearLatLon(lat_value, lon_value, 20.0, neardist, country)
         && !m_LatLonWaterMap->IsNearLatLon(lat_value, lon_value, 20.0, neardist, country)
         && (! NStr::IsBlank (cguess)) && NStr::IsBlank (wguess)) {
