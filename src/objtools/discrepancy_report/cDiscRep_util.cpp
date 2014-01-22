@@ -707,24 +707,6 @@ string CTestAndRepData :: GetProdNmForCD(const CSeq_feat& cd_feat)
         }
      }
      return (kEmptyStr);
-
-/*
-   if (seq_feat.CanGetProduct()) {
-       const CSeq_loc& cds_product = seq_feat.GetProduct();
-       for (CFeat_CI feat_it(*thisInfo.scope, cds_product); feat_it; ++feat_it)
-       {
-            CMappedFeat feat = *feat_it;
-            const CSeq_feat& prot_seq_feat = feat.GetOriginalFeature();
-            if (prot_seq_feat.GetData().IsProt()) {
-                const CProt_ref& prot = prot_seq_feat.GetData().GetProt();
-                if (prot.CanGetName()) {
-                    const list <string>& prot_nms = prot.GetName();
-                    return ( *(prot_nms.begin()) );
-                }
-            }
-       }
-   }
-*/
 };
 
 
@@ -763,43 +745,6 @@ bool CTestAndRepData :: IsmRNASequenceInGenProdSet(const CBioseq& bioseq)
    }
    return rval;
 };
-
-
-/*
-string GetKey(CSeqdesc::E_Choice idx) 
-{
-  vector <string> descrs;
-  descrs.reserve(25);
-  descrs.push_back("SeqDesc..");
-  descrs.push_back("MolType");
-  descrs.push_back("Modifier");
-  descrs.push_back("Method");
-  descrs.push_back("Name");
-  descrs.push_back("Title");
-  descrs.push_back("Organism");
-  descrs.push_back("Comment");
-  descrs.push_back("Numbering");
-  descrs.push_back("MapLocation");
-  descrs.push_back("PIR");
-  descrs.push_back("Genbank");
-  descrs.push_back("Pub");
-  descrs.push_back("Region");
-  descrs.push_back("UserObj");
-  descrs.push_back("SWISSPROT");
-  descrs.push_back("DbXref");
-  descrs.push_back("EMBL");
-  descrs.push_back("CreateDate");
-  descrs.push_back("UpdateDate");
-  descrs.push_back("PRF");
-  descrs.push_back("PDB");
-  descrs.push_back("Heterogen");
-  descrs.push_back("BioSrc");
-  descrs.push_back("MolInfo");
-
-  return (descrs[idx]);
-};
-*/
-
 
 string CTestAndRepData :: GetDiscItemText(const CSeq_entry& seq_entry)
 {
@@ -1269,7 +1214,7 @@ const CSeq_feat* CTestAndRepData :: GetCDFeatFromProtFeat(const CSeq_feat& prot)
 string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
 {
       CSeq_feat* seq_feat_p = const_cast <CSeq_feat*>(&seq_feat);
-// cerr << "seq_feat_p " << Blob2Str(*seq_feat_p, eSerial_AsnText) << endl;
+// cerr << "seq_feat_p " << MSerial_AsnText << *seq_feat_p << endl;
 
       if ( seq_feat.GetData().IsProt()) {
         const CSeq_feat* cds = GetCDFeatFromProtFeat(seq_feat);
@@ -1288,14 +1233,11 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
                seq_feat_p->GetData().GetPub().GetPub().GetLabel(&context_label);
           }
           if (seq_feat_p->GetData().IsGene()) {
-             if (seq_feat_p->GetData().GetGene().CanGetDesc()) {
-                context_label = seq_feat_p->GetData().GetGene().GetDesc(); 
-             }
-             else if (seq_feat_p->GetData().GetGene().CanGetLocus()) {
+             if (seq_feat_p->GetData().GetGene().CanGetLocus()) {
                 context_label = seq_feat_p->GetData().GetGene().GetLocus(); 
              }
-             else if (seq_feat_p->GetData().GetGene().CanGetLocus_tag()) {
-                context_label = seq_feat_p->GetData().GetGene().GetLocus_tag(); 
+             else if (seq_feat_p->GetData().GetGene().CanGetDesc()) {
+                context_label = seq_feat_p->GetData().GetGene().GetDesc(); 
              }
           } 
           else GetSeqFeatLabel(*seq_feat_p, context_label);

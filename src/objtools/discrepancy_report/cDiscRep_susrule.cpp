@@ -1616,8 +1616,8 @@ bool CSuspectRuleCheck :: StringMayContainPlural(const string& str)
       may_contain_plural 
          = x_DoesStrContainPlural(*it, last_letter, second_to_last_letter, next_letter);
       if (may_contain_plural) break;
-      strtmp = NStr::TruncateSpaces(CTempString(strtmp).substr(pos+len), 
-                                    NStr::eTrunc_Begin);
+      strtmp = CTempString(strtmp).substr(pos+len);
+      NStr::TruncateSpacesInPlace(strtmp, NStr::eTrunc_Begin);
     }
   }
   arr.clear();
@@ -2595,9 +2595,11 @@ string CSuspectRuleCheck :: GetQualFromFeatureAnyType(const CSeq_feat& seq_feat,
   bool is_legal_qual = feat_qual.IsLegal_qual();
   bool is_illegal_qual = feat_qual.IsIllegal_qual();
   EFeat_qual_legal 
-    legal_qual= feat_qual.IsLegal_qual() ? feat_qual.GetLegal_qual() : eFeat_qual_legal_allele;
+    legal_qual= feat_qual.IsLegal_qual() ? 
+                  feat_qual.GetLegal_qual() : eFeat_qual_legal_allele;
   const CString_constraint* 
-       illegal_qual = feat_qual.IsIllegal_qual() ?  &(feat_qual.GetIllegal_qual()) : 0;
+       illegal_qual = feat_qual.IsIllegal_qual() ?  
+                           &(feat_qual.GetIllegal_qual()) : 0;
 
   const CSeqFeatData& seq_fdt = seq_feat.GetData();
   // for gene fields 
@@ -2611,10 +2613,12 @@ string CSuspectRuleCheck :: GetQualFromFeatureAnyType(const CSeq_feat& seq_feat,
   else {
      gene_ref = const_cast<CGene_ref*>(seq_feat.GetGeneXref());
      if (!gene_ref) {
-        gene_feat = GetBestOverlappingFeat(seq_feat.GetLocation(), CSeqFeatData::e_Gene, 
-                                                         eOverlap_Contained, *thisInfo.scope);
-        if (gene_feat.NotEmpty())
+        gene_feat = GetBestOverlappingFeat(seq_feat.GetLocation(), 
+                                           CSeqFeatData::e_Gene, 
+                                           eOverlap_Contained, *thisInfo.scope);
+        if (gene_feat.NotEmpty()) {
           gene_ref = const_cast<CGene_ref*>(&(gene_feat->GetData().GetGene()));
+        }
      }
      else if (gene_ref->IsSuppressed()) gene_ref = 0;
   }
@@ -2637,56 +2641,73 @@ string CSuspectRuleCheck :: GetQualFromFeatureAnyType(const CSeq_feat& seq_feat,
 /* fields common to all features */
 /* note, also known as comment */
   if ( (is_legal_qual && legal_qual == eFeat_qual_legal_note)
-      || (is_illegal_qual && DoesStringMatchConstraint("note", illegal_qual)))
-  {
-     if (seq_feat.CanGetComment()) str =  seq_feat.GetComment();
+      || (is_illegal_qual && DoesStringMatchConstraint("note", illegal_qual))) {
+     if (seq_feat.CanGetComment()) {
+        str =  seq_feat.GetComment();
+     }
   }
   else if ((is_legal_qual && legal_qual == eFeat_qual_legal_db_xref)
-          || (is_illegal_qual && DoesStringMatchConstraint ("db_xref", illegal_qual)))
-  { /* db-xref */
-    if (seq_feat.CanGetDbxref()) str = GetDbxrefString (seq_feat.GetDbxref(), str_cons);
+          || (is_illegal_qual 
+                 && DoesStringMatchConstraint ("db_xref", illegal_qual))) { 
+    /* db-xref */
+    if (seq_feat.CanGetDbxref()) {
+       str = GetDbxrefString (seq_feat.GetDbxref(), str_cons);
+    }
     return str;
   }
   else if ((is_legal_qual && legal_qual == eFeat_qual_legal_exception)
-          || (is_illegal_qual && DoesStringMatchConstraint ("exception", illegal_qual)))
-  { /* exception */
-     if (seq_feat.CanGetExcept_text()) str = seq_feat.GetExcept_text();
+          || (is_illegal_qual 
+                  && DoesStringMatchConstraint ("exception", illegal_qual))) { 
+     /* exception */
+     if (seq_feat.CanGetExcept_text()) {
+        str = seq_feat.GetExcept_text();
+     }
   }
   else if ((is_legal_qual && legal_qual == eFeat_qual_legal_evidence)
-          || (is_illegal_qual && DoesStringMatchConstraint ("evidence", illegal_qual)))
-  { /* evidence */
+          || (is_illegal_qual 
+                 && DoesStringMatchConstraint ("evidence", illegal_qual))) { 
+     /* evidence */
      if (seq_feat.CanGetExp_ev()) {
-        if (seq_feat.GetExp_ev() == CSeq_feat::eExp_ev_experimental) str = "experimental";
-        else str = "non-experimental";
+        str = (seq_feat.GetExp_ev() == CSeq_feat::eExp_ev_experimental) ?
+                "experimental": "non-experimental";
      }
   }
   else if ((is_legal_qual && legal_qual == eFeat_qual_legal_citation)
-          || (is_illegal_qual && DoesStringMatchConstraint ("citation", illegal_qual)))
-  { /* citation */ // ####?????
+          || (is_illegal_qual 
+                 && DoesStringMatchConstraint ("citation", illegal_qual))) { 
+      /* citation */ // ####?????
 //    str = GetCitationTextFromFeature (sfp, str_cons, batch_extra == NULL ? NULL : batch_extra->cit_list);
-      if (seq_feat.CanGetCit()) seq_feat.GetCit().GetLabel(&str);
+      if (seq_feat.CanGetCit()) {
+          seq_feat.GetCit().GetLabel(&str);
+      }
   }
   else if ((is_legal_qual && legal_qual == eFeat_qual_legal_location)
-          || (is_illegal_qual && DoesStringMatchConstraint ("location", illegal_qual)))
-  { /* location */
+          || (is_illegal_qual 
+                && DoesStringMatchConstraint ("location", illegal_qual))) { 
+      /* location */
       return CTestAndRepData :: SeqLocPrintUseBestID (seq_feat.GetLocation());
   }
   else if ((is_legal_qual && legal_qual == eFeat_qual_legal_pseudo)
-           || (is_illegal_qual && DoesStringMatchConstraint ("pseudogene", illegal_qual)))
-  { /* pseudo */
+           || (is_illegal_qual 
+                && DoesStringMatchConstraint ("pseudogene", illegal_qual))) { 
+     /* pseudo */
      if (seq_feat.CanGetQual()) {
-        str = GetFirstGBQualMatch(seq_feat.GetQual(), "pseudogene", 0, str_cons);
-        if (str.empty() && seq_feat.CanGetPseudo() && seq_feat.GetPseudo())
+        str =GetFirstGBQualMatch(seq_feat.GetQual(), "pseudogene", 0, str_cons);
+        if (str.empty() && seq_feat.CanGetPseudo() && seq_feat.GetPseudo()){
              str = "unqualified";
+        }
      }
      return str;
   }
 // fields common to some features
   else if ((is_legal_qual && legal_qual == eFeat_qual_legal_product) 
-           || (is_illegal_qual && DoesStringMatchConstraint ("product", illegal_qual)))
-  { // product
+           || (is_illegal_qual 
+                     && DoesStringMatchConstraint ("product", illegal_qual))) {
+    // product
     if (prot) {
-      if (prot->CanGetName()) return GetFirstStringMatch (prot->GetName(), str_cons);
+      if (prot->CanGetName()) {
+         return GetFirstStringMatch (prot->GetName(), str_cons);
+      }
     } 
     else if (seq_fdt.IsRna()) {
       str = CBioseqTestAndRepData :: GetRNAProductString (seq_feat);
@@ -2696,82 +2717,114 @@ string CSuspectRuleCheck :: GetQualFromFeatureAnyType(const CSeq_feat& seq_feat,
     bool has_gene_ref = (gene_ref != 0);
     // locus
     if ((is_legal_qual && legal_qual == eFeat_qual_legal_gene)
-           || (is_illegal_qual && DoesStringMatchConstraint ("locus", illegal_qual))) {
-     if (has_gene_ref && gene_ref->CanGetLocus()) str = gene_ref->GetLocus();
+           || (is_illegal_qual 
+                   && DoesStringMatchConstraint ("locus", illegal_qual))) {
+       if (has_gene_ref && gene_ref->CanGetLocus()) {
+          str = gene_ref->GetLocus();
+       }
     }
     else if ((is_legal_qual && legal_qual == eFeat_qual_legal_gene_description)
-             || (is_illegal_qual && DoesStringMatchConstraint ("description", illegal_qual))) {
+             || (is_illegal_qual 
+                  && DoesStringMatchConstraint ("description", illegal_qual))) {
        /* description */
-          if (has_gene_ref && gene_ref->CanGetDesc()) str = gene_ref->GetDesc();
+          if (has_gene_ref && gene_ref->CanGetDesc()) {
+             str = gene_ref->GetDesc();
+          }
     }
     else if ((is_legal_qual && legal_qual == eFeat_qual_legal_map)
-               || (is_illegal_qual && DoesStringMatchConstraint ("map", illegal_qual))) {
-          /* maploc */
-           if (has_gene_ref && gene_ref->CanGetMaploc()) str = gene_ref->GetMaploc();
+               || (is_illegal_qual 
+                      && DoesStringMatchConstraint ("map", illegal_qual))) {
+       /* maploc */
+       if (has_gene_ref && gene_ref->CanGetMaploc()) {
+          str = gene_ref->GetMaploc();
+       }
     }
     else if ( ((is_legal_qual && legal_qual == eFeat_qual_legal_allele)
-                    || (is_illegal_qual && DoesStringMatchConstraint ("allele", illegal_qual)))
-                 && (seq_fdt.GetSubtype() == CSeqFeatData::eSubtype_variation)) {
-             /* allele */
-                if (has_gene_ref && gene_ref->CanGetAllele()) str = gene_ref->GetAllele();
+                    || (is_illegal_qual 
+                        && DoesStringMatchConstraint ("allele", illegal_qual)))
+                 && (seq_fdt.GetSubtype() == CSeqFeatData::eSubtype_variation)){
+       /* allele */
+       if (has_gene_ref && gene_ref->CanGetAllele()) {
+           str = gene_ref->GetAllele();
+       }
     }
     else if ((is_legal_qual && legal_qual == eFeat_qual_legal_locus_tag)
-               || (is_illegal_qual && DoesStringMatchConstraint ("locus_tag", illegal_qual))) {
-            /* locus_tag */
-               if (has_gene_ref && gene_ref->CanGetLocus_tag()) str = gene_ref->GetLocus_tag();
+               || (is_illegal_qual 
+                    && DoesStringMatchConstraint ("locus_tag", illegal_qual))) {
+       /* locus_tag */
+       if (has_gene_ref && gene_ref->CanGetLocus_tag()) {
+          str = gene_ref->GetLocus_tag();
+       }
     }
     else if ((is_legal_qual && legal_qual == eFeat_qual_legal_synonym)
-                || (is_illegal_qual && DoesStringMatchConstraint ("synonym", illegal_qual))) {
-              /* synonym */
-              if (has_gene_ref && gene_ref->CanGetSyn()) 
-                   return GetFirstStringMatch (gene_ref->GetSyn(), str_cons);
+                || (is_illegal_qual 
+                      && DoesStringMatchConstraint ("synonym", illegal_qual))) {
+       /* synonym */
+       if (has_gene_ref && gene_ref->CanGetSyn()) {
+          return GetFirstStringMatch (gene_ref->GetSyn(), str_cons);
+       }
     }
     else if (is_legal_qual && legal_qual == eFeat_qual_legal_gene_comment) {
-             /* gene comment */
-            if (gene_feat.NotEmpty() && gene_feat->CanGetComment()) 
-                    str = gene_feat->GetComment();
+       /* gene comment */
+       if (gene_feat.NotEmpty() && gene_feat->CanGetComment()) {
+          str = gene_feat->GetComment();
+       }
     }
     else { /* protein fields, note - product handled above */
        bool has_prot = (prot != 0);
        if ((is_legal_qual && legal_qual == eFeat_qual_legal_description)
-              || (is_illegal_qual && DoesStringMatchConstraint("description",illegal_qual))) {
-            /* description */
-            if (has_prot && prot->CanGetDesc()) str = prot->GetDesc();
+              || (is_illegal_qual 
+                   && DoesStringMatchConstraint("description",illegal_qual))) {
+          /* description */
+          if (has_prot && prot->CanGetDesc()) {
+                  str = prot->GetDesc();
+          }
        }
        else if ((is_legal_qual && legal_qual == eFeat_qual_legal_ec_number)
-                   ||(is_illegal_qual && DoesStringMatchConstraint("ec_number",illegal_qual))){
-               /* ec_number */
-               if (has_prot && prot->CanGetEc())
-                     return GetFirstStringMatch(prot->GetEc(), str_cons);
+                   ||(is_illegal_qual 
+                       && DoesStringMatchConstraint("ec_number",illegal_qual))){
+          /* ec_number */
+          if (has_prot && prot->CanGetEc()) {
+              return GetFirstStringMatch(prot->GetEc(), str_cons);
+          }
        }
        else if ((is_legal_qual && legal_qual == eFeat_qual_legal_activity)
-                   ||(is_illegal_qual && DoesStringMatchConstraint("activity",illegal_qual))) {
-               /* activity */
-               if (has_prot && prot->CanGetActivity()) 
-                    return GetFirstStringMatch (prot->GetActivity(), str_cons); 
+                   ||(is_illegal_qual 
+                        && DoesStringMatchConstraint("activity",illegal_qual))){
+          /* activity */
+          if (has_prot && prot->CanGetActivity()) {
+             return GetFirstStringMatch (prot->GetActivity(), str_cons); 
+          }
        }
        else { /* coding region fields */
            bool has_cd = seq_fdt.IsCdregion();
            /* transl_except */
            if (is_legal_qual && legal_qual == eFeat_qual_legal_transl_except) {
-                  if (has_cd) return GetCodeBreakString (seq_feat);
+               if (has_cd) {
+                  return GetCodeBreakString (seq_feat);
+               }
            }
-           else if (is_legal_qual && legal_qual == eFeat_qual_legal_transl_table) {
+           else if (is_legal_qual && legal_qual 
+                            == eFeat_qual_legal_transl_table) {
               /* transl_table */
               if ( has_cd) {
                  if (seq_fdt.GetCdregion().CanGetCode()) {
                      ITERATE (list < CRef <CGenetic_code::C_E> >, it,
-                                                   seq_fdt.GetCdregion().GetCode().Get()) {
-                         if ( (*it)->IsId() ) return NStr::IntToString( (*it)->GetId());
+                               seq_fdt.GetCdregion().GetCode().Get()) {
+                         if ( (*it)->IsId() ) {
+                             return NStr::IntToString( (*it)->GetId());
+                         }
                      }
                  }
               }
            }
-           else if (is_legal_qual && legal_qual == eFeat_qual_legal_translation) {
+           else if (is_legal_qual && legal_qual ==eFeat_qual_legal_translation){
               /* translation */  // try CSeqTranslator
               if (has_cd && seq_feat.CanGetProduct()) {
                  if (prot_hl && prot_hl.CanGetInst_Length()) {
-                   CSeqVector seq_vec = prot_hl.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
+                   CSeqVector  
+                     seq_vec 
+                        = prot_hl.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
                    seq_vec.GetSeqData(0, prot_hl.GetInst_Length(), str);
                    return str;
                  }
@@ -2780,32 +2833,41 @@ string CSuspectRuleCheck :: GetQualFromFeatureAnyType(const CSeq_feat& seq_feat,
            else { /* special RNA qualifiers */
               /* tRNA qualifiers */
               bool is_rna = seq_fdt.IsRna();
-              bool has_ext = (is_rna && seq_fdt.GetRna().CanGetExt()) ? true : false;
-              bool is_trna = (has_ext && seq_fdt.GetRna().GetExt().IsTRNA()) ? true : false; 
-              bool is_rna_gen = (has_ext && seq_fdt.GetRna().GetExt().IsGen()) ? true : false;
+              bool has_ext = (is_rna && seq_fdt.GetRna().CanGetExt());
+              bool is_trna = (has_ext && seq_fdt.GetRna().GetExt().IsTRNA());
+              bool is_rna_gen = (has_ext && seq_fdt.GetRna().GetExt().IsGen());
               /* codon-recognized */
-              if ((is_legal_qual && legal_qual == eFeat_qual_legal_codons_recognized)
+              if ((is_legal_qual && legal_qual 
+                               == eFeat_qual_legal_codons_recognized)
                    ||(is_illegal_qual 
-                             && DoesStringMatchConstraint("codon-recognized", illegal_qual))) {
-                if (is_trna) 
+                             && DoesStringMatchConstraint("codon-recognized", 
+                                                          illegal_qual))) {
+                if (is_trna) {
                    return GettRNACodonsRecognized(
-                                              seq_fdt.GetRna().GetExt().GetTRNA(), str_cons); 
-                   // str_cons not used?????
+                              seq_fdt.GetRna().GetExt().GetTRNA(), str_cons); 
+                }
               }
-              else if ((is_legal_qual && legal_qual == eFeat_qual_legal_anticodon)
+              else if ((is_legal_qual && legal_qual 
+                                   == eFeat_qual_legal_anticodon)
                          || (is_illegal_qual 
-                                 && DoesStringMatchConstraint ("anticodon", illegal_qual))) {
+                                 && DoesStringMatchConstraint ("anticodon", 
+                                                               illegal_qual))) {
                  /* anticodon */
-                 if (is_trna)
-                     return GetAnticodonLocString (seq_fdt.GetRna().GetExt().GetTRNA());
+                 if (is_trna) {
+                     return GetAnticodonLocString(
+                                       seq_fdt.GetRna().GetExt().GetTRNA());
+                 }
               }
-              else if ((is_legal_qual && legal_qual == eFeat_qual_legal_tag_peptide)
+              else if ((is_legal_qual && legal_qual 
+                                  == eFeat_qual_legal_tag_peptide)
                          || (is_illegal_qual 
-                                && DoesStringMatchConstraint ("tag-peptide", illegal_qual))) {
+                                && DoesStringMatchConstraint ("tag-peptide", 
+                                                               illegal_qual))) {
                  /* tag-peptide */
-                 if (is_rna_gen && seq_fdt.GetRna().GetExt().GetGen().CanGetQuals()) { 
+                 if (is_rna_gen 
+                         && seq_fdt.GetRna().GetExt().GetGen().CanGetQuals()) { 
                     ITERATE (list <CRef <CRNA_qual> >, it, 
-                                     seq_fdt.GetRna().GetExt().GetGen().GetQuals().Get()) {
+                           seq_fdt.GetRna().GetExt().GetGen().GetQuals().Get()){
                        if ((*it)->GetQual() == "tag_peptide" 
                                   && !(str = (*it)->GetVal()).empty()
                                   && DoesStringMatchConstraint(str, str_cons))
@@ -2815,15 +2877,19 @@ string CSuspectRuleCheck :: GetQualFromFeatureAnyType(const CSeq_feat& seq_feat,
                  }
                  return str;
               }
-              else if ((is_legal_qual && legal_qual == eFeat_qual_legal_ncRNA_class)
+              else if ((is_legal_qual && legal_qual 
+                             == eFeat_qual_legal_ncRNA_class)
                          || (is_illegal_qual 
-                                 && DoesStringMatchConstraint ("ncRNA_class", illegal_qual))) {
+                                 && DoesStringMatchConstraint ("ncRNA_class", 
+                                                               illegal_qual))) {
                  /* ncRNA_class */
-                 if (is_rna_gen && seq_fdt.GetRna().GetExt().GetGen().CanGetClass()) {
+                 if (is_rna_gen 
+                         && seq_fdt.GetRna().GetExt().GetGen().CanGetClass()) {
                      str = seq_fdt.GetRna().GetExt().GetGen().GetClass();
                  }
               }
-              else if (is_legal_qual && legal_qual == eFeat_qual_legal_codon_start) {
+              else if (is_legal_qual && legal_qual 
+                            == eFeat_qual_legal_codon_start) {
                 /* codon-start */
                 if (has_cd) {
                     const CCdregion& cd = seq_fdt.GetCdregion();
@@ -2831,27 +2897,36 @@ string CSuspectRuleCheck :: GetQualFromFeatureAnyType(const CSeq_feat& seq_feat,
                     else str = NStr::UIntToString( (unsigned)cd.GetFrame());
                 }
               }
-              else if (seq_fdt.IsRegion() && is_legal_qual 
-                                                && legal_qual == eFeat_qual_legal_name) {
+              else if (seq_fdt.IsRegion() 
+                          && is_legal_qual 
+                          && legal_qual == eFeat_qual_legal_name) {
                  /* special region qualifiers */
                  str = seq_fdt.GetRegion();
               } 
-              else if (is_legal_qual && seq_feat.CanGetQual()) { // actual GenBank qualifiers
-                 string feat_qual_name = thisInfo.featquallegal_name[legal_qual];
-                 bool has_subfield = thisInfo.featquallegal_subfield.find(legal_qual) 
-                                                   != thisInfo.featquallegal_subfield.end();
-                 unsigned subfield = has_subfield ? 
-                                       thisInfo.featquallegal_subfield[legal_qual] : 0;
-                 if (feat_qual_name != "name" || feat_qual_name != "location") {// gbqual > -1
-                    return GetFirstGBQualMatch(seq_feat.GetQual(), feat_qual_name, 
-                                                                           subfield, str_cons);
+              else if (is_legal_qual && seq_feat.CanGetQual()) { 
+                  // actual GenBank qualifiers
+                 string feat_qual_name =thisInfo.featquallegal_name[legal_qual];
+                 bool has_subfield 
+                       = (thisInfo.featquallegal_subfield.find(legal_qual) 
+                             != thisInfo.featquallegal_subfield.end());
+                 unsigned 
+                   subfield = has_subfield ? 
+                                thisInfo.featquallegal_subfield[legal_qual] : 0;
+                 if (feat_qual_name != "name" || feat_qual_name != "location") {
+                      // gbqual > -1
+                    return GetFirstGBQualMatch(seq_feat.GetQual(), 
+                                               feat_qual_name, 
+                                               subfield, str_cons);
                  }
               }
               else {
                  //GetFirstGBQualMatchConstraintName:the arg qua_name=first->data.ptrval is 0?
                  ITERATE (vector <CRef <CGb_qual> >, it, seq_feat.GetQual()) {
                     str = (*it)->GetVal();
-                    if (!str.empty() && DoesStringMatchConstraint(str, str_cons)) return str;
+                    if (!str.empty() 
+                          && DoesStringMatchConstraint(str, str_cons)) {
+                        return str;
+                    }
                     else str = kEmptyStr;
                  }
               }
@@ -2860,7 +2935,9 @@ string CSuspectRuleCheck :: GetQualFromFeatureAnyType(const CSeq_feat& seq_feat,
     }
   }
 
-  if (!str.empty() || DoesStringMatchConstraint(str, str_cons)) str = kEmptyStr;
+  if (!str.empty() && !DoesStringMatchConstraint(str, str_cons)) {
+        str = kEmptyStr;
+  }
   return str;
 }; // GetQualFromFeatureAnyType
 

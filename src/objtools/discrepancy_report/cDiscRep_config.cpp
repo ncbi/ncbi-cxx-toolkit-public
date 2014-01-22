@@ -1477,7 +1477,7 @@ static const s_test_property test_list[] = {
 
 // tests_on_Bioseq_CFeat_NotInGenProdSet
    {"DUPLICATE_GENE_LOCUS", fDiscrepancy | fAsndisc},
-   {"MISSING_LOCUS_TAGS", fDiscrepancy | fAsndisc},
+   {"MISSING_LOCUS_TAGS", fDiscrepancy},
    {"DUPLICATE_LOCUS_TAGS", fDiscrepancy | fAsndisc},
    {"DUPLICATE_LOCUS_TAGS_global", fDiscrepancy | fAsndisc},
    {"INCONSISTENT_LOCUS_TAG_PREFIX", fDiscrepancy},
@@ -1521,7 +1521,7 @@ static const s_test_property test_list[] = {
    {"SHORT_PROT_SEQUENCES", fDiscrepancy | fAsndisc},
    {"TEST_COUNT_UNVERIFIED", fAsndisc | fOncaller},
    {"TEST_DUP_GENES_OPPOSITE_STRANDS", fDiscrepancy | fAsndisc},
-   {"DISC_GENE_PARTIAL_CONFLICT", fOncaller},
+   {"DISC_GENE_PARTIAL_CONFLICT", fOncaller | fAsndisc},
 
 // tests_on_SeqEntry
    {"DISC_FLATFILE_FIND_ONCALLER", fAsndisc | fOncaller},

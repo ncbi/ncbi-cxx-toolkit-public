@@ -870,18 +870,19 @@ void CBioseq_TEST_MRNA_OVERLAPPING_PSEUDO_GENE :: GetReport(CRef <CClickableItem
 
 void CBioseq_TEST_UNWANTED_SPACER :: TestOnObj(const CBioseq& bioseq)
 {
-   ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
-     const CBioSource& biosrc = (*it)->GetSource();
-     switch ( biosrc.GetGenome() ) {
+   const CBioSource*
+     biosrc = sequence::GetBioSource(thisInfo.scope->GetBioseqHandle(bioseq));
+   if (biosrc) {
+     switch ( biosrc->GetGenome() ) {
         case CBioSource::eGenome_chloroplast:
         case CBioSource::eGenome_plastid:
             return;
         default: break; 
      }
      /* shouldn't be uncultured non-organelle */
-     if (biosrc.IsSetTaxname() 
-             && !biosrc.GetTaxname().empty() 
-             && HasUnculturedNonOrganelleName(biosrc.GetTaxname())) {
+     if (biosrc->IsSetTaxname() 
+             && !biosrc->GetTaxname().empty() 
+             && HasUnculturedNonOrganelleName(biosrc->GetTaxname())) {
          return;
      }
    }
@@ -941,8 +942,10 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
    unsigned len = bioseq.GetLength();
    CConstRef <CBioseq_set> bioseq_set = bioseq.GetParentSet();
    const CMolInfo* 
-      molinfo 
-          = sequence::GetMolInfo(thisInfo.scope->GetBioseqHandle(bioseq));
+      molinfo = sequence::GetMolInfo(thisInfo.scope->GetBioseqHandle(bioseq));
+   const CBioSource*
+      biosrc = sequence::GetBioSource(thisInfo.scope->GetBioseqHandle(bioseq));
+   CConstRef <CObject> biosrc_ref (biosrc);
    if (bioseq.IsAa() && thisTest.tests_run.find(GetName_shtprt()) != end_it){
       // SHORT_PROT_SEQUENCES
       if (len < 50 
@@ -1005,9 +1008,6 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
            }
         }
         if (!stop) {
-          const CBioSource* 
-            biosrc
-              = sequence::GetBioSource(thisInfo.scope->GetBioseqHandle(bioseq));
           if (biosrc) {
               if (!IsLocationOrganelle(biosrc->GetGenome())) {
                  if (molinfo) {
@@ -1044,14 +1044,11 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
    else {
       if (is_rna) {  // RNA_PROVIRAL
         if (thisTest.tests_run.find(GetName_rnapro()) != end_it) {
-           ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
-              if ( (*it)->GetSource().GetGenome() 
-                         == CBioSource :: eGenome_proviral ) {
-                  thisInfo.test_item_list[GetName_rnapro()].push_back(
-                                                              bioseq_desc);
-                  thisInfo.test_item_objs[GetName_rnapro()].push_back(seq_ref);
-                  break;
-              }
+           if (biosrc) {
+             if ( biosrc->GetGenome() == CBioSource :: eGenome_proviral ) {
+               thisInfo.test_item_list[GetName_rnapro()].push_back(bioseq_desc);
+               thisInfo.test_item_objs[GetName_rnapro()].push_back(seq_ref);
+             }
            }
         }
       }
@@ -1069,11 +1066,12 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
    }
    if (run_test && thisTest.tests_run.find(GetName_orgl()) != end_it) {
      ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
-       if (IsLocationOrganelle( (*it)->GetSource().GetGenome() )) {
-           thisInfo.test_item_list[GetName_orgl()].push_back(
-                                              GetDiscItemText(**it,bioseq));
-           thisInfo.test_item_objs[GetName_orgl()].push_back(
-                                              CConstRef <CObject>(*it));
+       const CBioSource& biosrc = (*it)->GetSource();
+       if (IsLocationOrganelle(biosrc.GetGenome() )) {
+           thisInfo.test_item_list[GetName_orgl()]
+                      .push_back(GetDiscItemText(**it, bioseq));
+           thisInfo.test_item_objs[GetName_orgl()]
+                      .push_back(CConstRef <CObject> (*it));
        }
      }
    }
@@ -1081,10 +1079,9 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
    // TEST_UNNECESSARY_VIRUS_GENE
    if (thisTest.tests_run.find(GetName_vir()) != end_it) {
       bool has_virus = false;
-      ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
-         const CBioSource& biosrc = (*it)->GetSource();
+      if (biosrc) {
          ITERATE (vector <string>, jt, thisInfo.virus_lineage) {
-            if (HasLineage(biosrc, *jt)) {
+            if (HasLineage(*biosrc, *jt)) {
                 ITERATE (vector <const CSeq_feat*>, kt, gene_feat) {
                     thisInfo.test_item_list[GetName_vir()]
                                .push_back(GetDiscItemText(**kt));
@@ -1094,9 +1091,6 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
                 has_virus = true;
                 break;
             }
-         }
-         if (has_virus) {
-             break;
          }
       }
    }
@@ -3126,8 +3120,10 @@ void CBioseq_on_mrna :: TestOnObj(const CBioseq& bioseq)
            || !IsBioseqHasLineage(bioseq, "Eukaryota", false)) {
          return;
   }
-  ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
-    if (IsLocationOrganelle((*it)->GetSource().GetGenome())) {
+  const CBioSource* 
+     biosrc = sequence::GetBioSource(thisInfo.scope->GetBioseqHandle(bioseq));
+  if (biosrc) {
+    if (IsLocationOrganelle(biosrc->GetGenome())) {
         return;
     }
   }
@@ -3179,7 +3175,7 @@ void CBioseq_on_mrna :: TestOnObj(const CBioseq& bioseq)
       // MRNA_SHOULD_HAVE_PROTEIN_TRANSCRIPT_IDS
       if (run_ids && !has_qual_ids) {
          if (!(mRNA->GetNamedQual("orig_protein_id").empty()) 
-                                && !(mRNA->GetNamedQual("orig_transcript_id").empty())) 
+                && !(mRNA->GetNamedQual("orig_transcript_id").empty())) 
            has_qual_ids = true;
       }
     }     
@@ -3262,7 +3258,7 @@ void CBioseq_GENE_PRODUCT_CONFLICT :: GetReport(CRef <CClickableItem>& c_item)
          c_sub->obj_list = thisInfo.test_item_objs[GetName() + "$" + gene];
          c_sub->description 
             = GetHasComment(c_sub->item_list.size(), "coding region")
-               + "the same gene name " + ("(" + gene + ") ")
+               + "the same gene name" + ("(" + gene + ") ")
                + "as another coding region but a different product.";
          copy(c_sub->item_list.begin(), c_sub->item_list.end(),
               back_inserter( c_item->item_list));
@@ -5125,7 +5121,7 @@ void CBioseq_MISSING_LOCUS_TAGS :: TestOnObj(const CBioseq& bioseq)
    ITERATE (vector <const CSeq_feat*>, jt, gene_feat) {
      const CGene_ref& gene = (*jt)->GetData().GetGene();
      if (gene.GetPseudo()) continue;
-     if (!gene.CanGetLocus_tag() || gene.GetLocus_tag().empty()) {
+     if (!gene.CanGetLocus_tag() || gene.GetLocus_tag().empty()) { 
         thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**jt));
         thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(*jt));
      }
@@ -5138,7 +5134,7 @@ void CBioseq_MISSING_LOCUS_TAGS :: GetReport(CRef <CClickableItem>& c_item)
    c_item->description = GetHasComment(c_item->item_list.size(), "gene") + "no locus tags.";
 };
 
-bool CBioseq_MISSING_LOCUS_TAGS :: x_IsLocationDirSub(const CSeq_loc& seq_location)  // not actually used
+bool CBioseq_MISSING_LOCUS_TAGS :: x_IsLocationDirSub(const CSeq_loc& seq_location)  // not actually used, because in C, the exclude_dirsub = false
 {   
    const CSeq_id* seq_id  = seq_location.GetId();
    if (!seq_id) return false;
@@ -6464,13 +6460,14 @@ void CBioseq_test_on_rna :: TestOnObj(const CBioseq& bioseq)
 
   bool run_test = false;
   int src_genome;
-  ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
-    src_genome = (*it)->GetSource().GetGenome(); 
+  const CBioSource* 
+     biosrc = sequence::GetBioSource(thisInfo.scope->GetBioseqHandle(bioseq));
+  if (biosrc) {
+    src_genome = biosrc->GetGenome(); 
     if ( src_genome == CBioSource ::eGenome_plastid
            || src_genome == CBioSource ::eGenome_mitochondrion
            || src_genome == CBioSource ::eGenome_chloroplast ) {
         run_test = true;
-        break;
     }
   }
 
