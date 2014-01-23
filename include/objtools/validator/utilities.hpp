@@ -141,7 +141,7 @@ string GetValidatorLocationLabel (const CSeq_loc& loc);
 void AppendBioseqLabel(string& str, const CBioseq& sq, bool supress_context);
 string GetBioseqIdLabel(const CBioseq& sq, bool limited = false);
 
-bool HasECnumberPattern (const string& str);
+bool NCBI_VALIDATOR_EXPORT HasECnumberPattern (const string& str);
 
 string GetAuthorsString (const CAuth_list& auth_list);
 
