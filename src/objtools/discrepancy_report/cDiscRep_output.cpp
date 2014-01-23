@@ -92,6 +92,9 @@ static const s_fataltag disc_fatal[] = {
         {"PARTIAL_CDS_COMPLETE_SEQUENCE", NULL, NULL},
         {"PSEUDO_MISMATCH", NULL, NULL},
         {"RNA_CDS_OVERLAP", "coding regions are completely contained in RNAs", NULL},
+        {"RNA_CDS_OVERLAP", "coding region is completely contained in an RNA", NULL},
+        {"RNA_CDS_OVERLAP", "coding regions completely contain RNAs", NULL},
+        {"RNA_CDS_OVERLAP", "coding region completely contains an RNA", NULL},
         {"RNA_NO_PRODUCT", NULL, NULL},
         {"SHOW_HYPOTHETICAL_CDS_HAVING_GENE_NAME", NULL, NULL},
         {"SUSPECT_PRODUCT_NAMES", "Remove organism from product name", NULL},
@@ -127,15 +130,18 @@ void CDiscRepOutput :: x_AddListOutputTags()
     if ((*it)->setting_name == "DISC_COUNT_NUCLEOTIDES") { // IsDiscCntGrt1
       arr.clear();
       arr = NStr::Tokenize((*it)->description, " ", arr);
-      na_cnt_grt1 = (isInt(arr[0]) && NStr::StringToInt(arr[0]) > 1) ? true : false;
+      na_cnt_grt1 = (isInt(arr[0]) && NStr::StringToInt(arr[0]) > 1);
       break;
     }
   }
  
   // AddOutpuTag
+  bool has_sub_trna_in_cds = false;
   NON_CONST_ITERATE (vector <CRef <CClickableItem> > , it, thisInfo.disc_report_data) {
      setting_name = (*it)->setting_name;
-     desc = (*it)->description;
+     desc = (*it)->description; 
+
+     // check subcategories first;
      NON_CONST_ITERATE (vector <CRef <CClickableItem> >, sit, (*it)->subcategories) {
         sub_desc = (*sit)->description;
         if (x_NeedsTag(setting_name, sub_desc, disc_fatal, disc_cnt)
@@ -144,13 +150,25 @@ void CDiscRepOutput :: x_AddListOutputTags()
            if (setting_name == "DISC_SOURCE_QUALS_ASNDISC") {
              if (sub_desc.find("some missing") != string::npos
                        || sub_desc.find("some duplicate") != string::npos)
-                  (*sit)->description = "FATAL: " + (*sit)->description;
+                  (*sit)->description = "FATAL: " + sub_desc;
 
            }
-           else (*sit)->description = "FATAL: " + (*sit)->description;
+           else if (setting_name == "RNA_CDS_OVERLAP"
+                      && (sub_desc.find("contain ") != string::npos
+                            || sub_desc.find("contains ") != string::npos)) {
+                ITERATE (vector <string>, iit, (*sit)->item_list) {
+                   if ( (*iit).find(": tRNA\t") != string::npos) {
+                      has_sub_trna_in_cds = true;
+                      (*sit)->description = "FATAL: " + sub_desc;
+                      break;
+                   }
+                }
+           }
+           else (*sit)->description = "FATAL: " + sub_desc;
         }
      }
 
+     // check self
      if (x_NeedsTag(setting_name, desc, disc_fatal, disc_cnt)
             || (oc.add_extra_output_tag 
                    && x_NeedsTag(setting_name, desc, extra_fatal, extra_cnt))) {
@@ -170,6 +188,9 @@ void CDiscRepOutput :: x_AddListOutputTags()
           (*it)->description = "FATAL: " + (*it)->description;
         }
      } 
+     else if (setting_name == "RNA_CDS_OVERLAP" && has_sub_trna_in_cds) {
+         (*it)->description = "FATAL: " + (*it)->description; 
+     }
   } 
 };
 

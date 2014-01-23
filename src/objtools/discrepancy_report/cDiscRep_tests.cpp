@@ -2577,7 +2577,7 @@ void CBioseq_EC_NUMBER_NOTE :: TestOnObj(const CBioseq& bioseq)
     if ( (*it)->CanGetComment() && !((*it)->GetComment().empty())) {
       desc = GetDiscItemText(**it); 
       CConstRef <CObject> feat_ref(*it);
-      if (CProt_ref::IsValidECNumberFormat((*it)->GetComment())) {
+      if (validator::HasECnumberPattern((*it)->GetComment())) {
          thisInfo.test_item_list[GetName()].push_back(desc);
          thisInfo.test_item_objs[GetName()].push_back(feat_ref);
       }
@@ -2586,7 +2586,7 @@ void CBioseq_EC_NUMBER_NOTE :: TestOnObj(const CBioseq& bioseq)
         if (prot_ref.NotEmpty()) {
             if (prot_ref->CanGetName() && !(prot_ref->GetName().empty())) {
               ITERATE (list <string>, jt, prot_ref->GetName()) {
-                if (CProt_ref::IsValidECNumberFormat(*jt)) {
+                if (validator::HasECnumberPattern(*jt)) {
                    thisInfo.test_item_list[GetName()].push_back(desc);
                    thisInfo.test_item_objs[GetName()].push_back(feat_ref);
                    done = true;
@@ -2595,7 +2595,7 @@ void CBioseq_EC_NUMBER_NOTE :: TestOnObj(const CBioseq& bioseq)
               }
           }
           if (!done && prot_ref->CanGetDesc() && !(prot_ref->GetDesc().empty())
-                 && CProt_ref::IsValidECNumberFormat(prot_ref->GetDesc())) {
+                 && validator::HasECnumberPattern(prot_ref->GetDesc())) {
                thisInfo.test_item_list[GetName()].push_back(desc);
                thisInfo.test_item_objs[GetName()].push_back(feat_ref);
           }
@@ -6980,10 +6980,11 @@ void CBioseq_RNA_CDS_OVERLAP :: TestOnObj(const CBioseq& bioseq)
     if ( subtp == CSeqFeatData::eSubtype_ncRNA
           || ( subtp == CSeqFeatData::eSubtype_tRNA && ignore_trna) ) continue;
     if (x_IsShortrRNA(*it)) continue;
+    const CSeq_loc& loc_i = (*it)->GetLocation();
     ITERATE (vector <const CSeq_feat*>, jt, cd_feat) {
-      const CSeq_loc& loc_i = (*it)->GetLocation();
       const CSeq_loc& loc_j = (*jt)->GetLocation();
-      sequence::ECompare ovlp_com = sequence::Compare(loc_j, loc_i, thisInfo.scope);
+      sequence::ECompare 
+          ovlp_com = sequence::Compare(loc_j, loc_i, thisInfo.scope);
       subcat_tp = kEmptyStr;
       switch (ovlp_com) {
         case sequence::eSame: subcat_tp = "extrc"; break;
@@ -6993,7 +6994,8 @@ void CBioseq_RNA_CDS_OVERLAP :: TestOnObj(const CBioseq& bioseq)
            strand_i = loc_i.GetStrand();
            strand_j = loc_j.GetStrand();
            if ((strand_i == eNa_strand_minus && strand_j != eNa_strand_minus)
-                       || (strand_i != eNa_strand_minus && strand_j == eNa_strand_minus))
+                       || (strand_i != eNa_strand_minus 
+                                && strand_j == eNa_strand_minus))
                 subcat_tp = "overlap_opp_strand";
            else subcat_tp = "overlap_same_strand";
            break;
@@ -7001,10 +7003,14 @@ void CBioseq_RNA_CDS_OVERLAP :: TestOnObj(const CBioseq& bioseq)
         default:;
       }
       if (!subcat_tp.empty()) {
-         thisInfo.test_item_list[GetName()].push_back(subcat_tp +"$" +GetDiscItemText(**jt));
-         thisInfo.test_item_list[GetName()].push_back(subcat_tp +"$" +GetDiscItemText(**it));
-         thisInfo.test_item_objs[GetName()+"$"+subcat_tp].push_back(CConstRef <CObject>(*jt));
-         thisInfo.test_item_objs[GetName()+"$"+subcat_tp].push_back(CConstRef <CObject>(*it));
+         thisInfo.test_item_list[GetName()]
+                     .push_back(subcat_tp +"$" +GetDiscItemText(**jt));
+         thisInfo.test_item_list[GetName()]
+                     .push_back(subcat_tp +"$" +GetDiscItemText(**it));
+         thisInfo.test_item_objs[GetName()+"$"+subcat_tp]
+                     .push_back(CConstRef <CObject>(*jt));
+         thisInfo.test_item_objs[GetName()+"$"+subcat_tp]
+                     .push_back(CConstRef <CObject>(*it));
       }
     }
   }
@@ -7017,57 +7023,55 @@ void CBioseq_RNA_CDS_OVERLAP :: GetReport(CRef <CClickableItem>& c_item)
    Str2Strs subcat2list;
    GetTestItemList(c_item->item_list, subcat2list);
    c_item->item_list.clear();
+   unsigned cnt_tot, cnt_ovp;
+   cnt_tot = cnt_ovp = 0;
 
    string desc1, desc2, desc3;
    CRef <CClickableItem> ovp_subcat (new CClickableItem);
    ITERATE (Str2Strs, it, subcat2list) {
-     if (it->first.find("overlap") != string::npos) {
+     if (it->first == "exact" 
+             || it->first == "cds_in_rna" || it->first == "rna_in_cds") {
        if (it->first == "exact") {
-         desc1 = "coding region exactly matches";
-         desc2 = "coding regions exactly match";
-         desc3 = " an RNA location";
+         desc1 = "coding region exactly matches an RNA";
+         desc2 = "coding regions exactly match RNAs";
        }
        else if (it->first == "cds_in_rna") {
-         desc1 = "coding region is";
-         desc2 = "coding regions are";
-         desc3 = " completely contained in RNA location";
+         desc1 = "coding region is completely contained in an RNA location";
+         desc2 = "coding regions are completely contained in RNA locations";
        }
        else if (it->first == "rna_in_cds" ) {
-         desc1 = "coding region completely contains";
-         desc2 = "coding regions completely contain";
-         desc3 = " RNAs";
+         desc1 = "coding region completely contains an RNA";
+         desc2 = "coding regions completely contain RNAs";
        }
-       AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second), desc1, desc2, 
-                   e_OtherComment, true, desc3, true); 
+       AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second), 
+                  desc1, desc2, e_OtherComment, false, "", true); 
      }
      else {
-       desc1 = "coding region overlaps";
-       desc2 = "coding regions overlap";
+       desc1 = "coding region overlaps an RNA";
+       desc2 = "coding regions overlap RNAs";
        if (it->first == "overlap_opp_strand") 
-             desc3 = " RNAs on the opposite strand (no containment)";
-       else desc3 = " RNAs on the same strand (no containment)";
-       AddSubcategory(ovp_subcat, GetName() + "$" + it->first, &(it->second), desc1, desc2, 
-                      e_OtherComment, true, desc3, true); 
+             desc3 = " on the opposite strand (no containment)";
+       else desc3 = " on the same strand (no containment)";
+       AddSubcategory(ovp_subcat, GetName() + "$" + it->first, &(it->second), 
+                  desc1, desc2, e_OtherComment, false, desc3, true); 
+       cnt_ovp += it->second.size()/2;
      } 
+     cnt_tot += it->second.size()/2;
    }
-   if (!ovp_subcat->item_list.empty()) {
+   if (!ovp_subcat->subcategories.empty()) {
       ovp_subcat->setting_name = GetName();
       ovp_subcat->description 
-         = GetOtherComment(ovp_subcat->item_list.size(), 
-                           "coding region exactly matches", 
-                           "coding regions exactly match") 
-             + " an RNA location";
-      copy(ovp_subcat->item_list.begin(), ovp_subcat->item_list.end(),
-           back_inserter(c_item->item_list));
-      copy(ovp_subcat->obj_list.begin(), ovp_subcat->obj_list.end(),
-           back_inserter(c_item->obj_list));
+         = GetOtherComment(cnt_ovp, 
+                           "coding region overlaps an RNA", 
+                           "coding region overlap RNAs") 
+             + " (no containment)";
       c_item->subcategories.push_back(ovp_subcat);
    }
-    
+
    c_item->description 
-        = GetOtherComment(c_item->item_list.size()/2, 
-                          "coding region overlapps", "coding regions overlap") 
-           + " RNA features";
+        = GetOtherComment(cnt_tot, 
+                          "coding region overlaps an RNA feature", 
+                          "coding regions overlap RNA features") ;
 }; // CBioseq_RNA_CDS_OVERLAP :: GetReport
 
 
@@ -12438,7 +12442,6 @@ void CSeqEntry_INCONSISTENT_BIOSOURCE :: GetReport(CRef <CClickableItem>& c_item
 
 void CBioseq_TEST_TERMINAL_NS :: TestOnObj(const CBioseq& bioseq)
 {
-/*
    validator :: EBioseqEndIsType begin_n, begin_gap, end_n, end_gap;
    validator::CheckBioseqEndsForNAndGap(thisInfo.scope->GetBioseqHandle(bioseq),
                                         begin_n, 
@@ -12450,7 +12453,6 @@ void CBioseq_TEST_TERMINAL_NS :: TestOnObj(const CBioseq& bioseq)
      thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(bioseq));
      thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(&bioseq));
    }
-*/
 };
 
 void CBioseq_TEST_TERMINAL_NS :: GetReport(CRef <CClickableItem>& c_item)

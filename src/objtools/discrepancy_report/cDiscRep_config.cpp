@@ -1261,10 +1261,12 @@ void CRepConfig :: ProcessArgs(Str2Str& args)
     m_file_tp = args["a"];
 
     // report category
-    thisInfo.output_config.add_output_tag = (thisInfo.report == "t");
-    thisInfo.output_config.add_extra_output_tag = (thisInfo.report == "s");
-    if (thisInfo.report == "t" || thisInfo.report == "s") {
+    if (args.find("P") != args.end()) {
+      thisInfo.output_config.add_output_tag = (args["P"] == "t");
+      thisInfo.output_config.add_extra_output_tag = (args["P"] == "s");
+      if (args["P"] == "t" || args["P"] == "s") {
           thisInfo.report = "Asndisc";
+      }
     }
 
     // output
@@ -1309,6 +1311,9 @@ void CRepConfig :: ReadArgs(const CArgs& args)
     // input file
     if (args["i"]) arg_map["i"] = args["i"].AsString();
     arg_map["a"] = args["a"].AsString();
+
+    // report_tp
+    if (args["P"]) arg_map["P"] = args["P"].AsString();
 
     // output
     if (args["o"]) arg_map["o"] = args["o"].AsString();
