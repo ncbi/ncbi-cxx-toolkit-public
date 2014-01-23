@@ -302,9 +302,9 @@ const CSeqdesc& CAutoAddDesc::Get()
     return *m_desc;
 }
 
-CSeqdesc& CAutoAddDesc::Set()
+CSeqdesc& CAutoAddDesc::Set(bool skip_lookup)
 {
-    if (m_desc.IsNull())
+    if (!skip_lookup && m_desc.IsNull())
         m_desc = LocateDesc(*m_descr, m_which);
     if (m_desc.IsNull())
     {
@@ -434,7 +434,12 @@ CRef<CSerialObject> CTable2AsnContext::CreateSeqEntryFromTemplate(CRef<CSeq_entr
 {
     if (m_submit_template.NotEmpty())
     {
-        CAutoAddDesc auto_desc(object->SetDescr(), CSeqdesc::e_Pub);
+        if (m_entry_template.NotEmpty() && m_entry_template->IsSetDescr())
+        {
+            object->SetDescr().Set().insert(object->SetDescr().Set().end(),
+                m_entry_template->GetDescr().Get().begin(),
+                m_entry_template->GetDescr().Get().end());
+        }
 
         if (m_submit_template->IsSetSub() &&
             m_submit_template->GetSub().IsSetCit())
@@ -446,8 +451,13 @@ CRef<CSerialObject> CTable2AsnContext::CreateSeqEntryFromTemplate(CRef<CSeq_entr
                 CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
                 pub->SetSub().SetDate(*date);
             }
-            auto_desc.Set().SetPub().SetPub().Set().push_back(pub);
+
+            CRef<CSeqdesc> desc(new CSeqdesc);
+            desc->SetPub().SetPub().Set().push_back(pub);
+            object->SetDescr().Set().push_back(desc);
         }
+
+#if 0
         if (m_submit_template->IsSetSub() &&
             m_submit_template->GetSub().IsSetContact() && 
             m_submit_template->GetSub().GetContact().IsSetContact())
@@ -456,8 +466,13 @@ CRef<CSerialObject> CTable2AsnContext::CreateSeqEntryFromTemplate(CRef<CSeq_entr
             author->Assign(m_submit_template->GetSub().GetContact().GetContact());
             CRef<CPub> pub(new CPub);               
             pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author);
-            auto_desc.Set().SetPub().SetPub().Set().push_back(pub);
+
+            CRef<CSeqdesc> desc(new CSeqdesc);
+            desc->SetPub().SetPub().Set().push_back(pub);
+            object->SetDescr().Set().push_back(desc);
         }
+#endif
+
         object->Parentize();
     }
     return CRef<CSerialObject>(object);
@@ -467,7 +482,14 @@ void CTable2AsnContext::MergeSeqDescr(objects::CSeq_descr& dest, const objects::
 {
     ITERATE(CSeq_descr::Tdata, it, src.Get())
     {
-        CRef<CSeqdesc> desc = CAutoAddDesc::LocateDesc(dest, (**it).Which());
+        CRef<CSeqdesc> desc;
+        switch ((**it).Which())
+        {
+        case CSeqdesc::e_Pub:
+            break;
+        default:
+            desc = CAutoAddDesc::LocateDesc(dest, (**it).Which());
+        }
         if (desc.Empty())
         {
             desc.Reset(new CSeqdesc);

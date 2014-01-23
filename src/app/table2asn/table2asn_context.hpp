@@ -33,7 +33,7 @@ public:
     static
     CRef<objects::CSeqdesc> LocateDesc(objects::CSeq_descr& descr, objects::CSeqdesc::E_Choice which);
     const objects::CSeqdesc& Get();
-    objects::CSeqdesc& Set();
+    objects::CSeqdesc& Set(bool skip_loopup = false);
 
 private:
     CAutoAddDesc();
