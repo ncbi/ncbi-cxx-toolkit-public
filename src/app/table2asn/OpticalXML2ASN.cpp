@@ -235,7 +235,7 @@ CRef<CSeq_entry> COpticalxml2asnOperatorImpl::BuildOpticalASNData(const CTable2A
     for (vector<COpticalChrData>::iterator it = m_vchr.begin(); it != m_vchr.end(); ++it)
     {
         CRef<CSeq_entry> new_entry(new CSeq_entry);
-        if (context.m_entry_template.NotEmpty())
+        if (context.m_entry_template.NotEmpty() && !context.m_avoid_submit_block)
             new_entry->Assign(*context.m_entry_template);
         BuildOpticalASNData(context, *it, new_entry->SetSeq());
 
