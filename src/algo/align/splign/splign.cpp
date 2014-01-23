@@ -88,6 +88,12 @@ namespace {
     const size_t kMinTermExonSize (28);
     const double kMinTermExonIdty (0.9);
 
+    //if flanking exon is closer than kFlankExonProx to the beggining/(end or polyA) of mRNA, it is NOT treated as adjecent to a gap  
+    const int kFlankExonProx (20);
+
+    //maximim length to cut to splice (exons near gaps)
+    const int kMaxCutToSplice (6);
+
     const CSplign::THit::TCoord
                  kMaxCoord (numeric_limits<CSplign::THit::TCoord>::max());
 
@@ -1550,6 +1556,7 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             NCBI_THROW(CAlgoAlignException, eNoAlignment,g_msg_NoExonsAboveIdtyLimit);
         }
 
+
 		// try to extend the last exon as long as it's a good match (min exon identity at the end required)
 		TSegment& s (const_cast<TSegment&>(m_segments[last_exon]));
 
@@ -1621,6 +1628,56 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             if(!m_nopolya && IsPolyA(&m_mrna.front(), coord, m_mrna.size())) {//polya
                 m_polya_start = coord;
             } else {//gap
+
+                if(GetTestType() == kTestType_20_28_90_cut20) {
+                    if(  ( mrna_size - (int)s.m_box[1] - 1 ) >= kFlankExonProx ) {//gap, cut to splice 
+                        int seq1_pos = (int)s.m_box[1];
+                        int seq2_pos = (int)s.m_box[3];
+                        int det_pos = s.m_details.size() - 1;
+                        int min_det_pos = det_pos - kMaxCutToSplice;
+                        int min_pos = (int)s.m_box[0] + 8;//exon should not be too short
+                        while(seq1_pos >= min_pos && det_pos >= min_det_pos) {
+                            if( (size_t)(seq2_pos + 2) < m_genomic.size() && s.m_details[det_pos] == 'M' && 
+                                   toupper(m_genomic[seq2_pos+1]) == 'G' &&  toupper(m_genomic[seq2_pos+2]) == 'T'  ) {//GT point
+                                if( (size_t)det_pos + 1 < s.m_details.size() ) {//resize
+                                    s.m_box[1] = seq1_pos;
+                                    s.m_box[3] = seq2_pos;
+                                    s.m_details.resize(det_pos + 1);
+                                    s.Update(m_aligner);
+                                    // update the last two annotation symbols
+                                    size_t adim = s.m_annot.size();
+                                    if(adim > 0 && s.m_annot[adim-1] == '>') {
+                                        s.m_annot += "GT";
+                                    } else if(adim > 2 && s.m_annot[adim-3] == '>') {
+                                        s.m_annot[adim-2] = 'G';
+                                        s.m_annot[adim-1] = 'T';
+                                    }
+                                    coord = seq1_pos+1;
+                                }
+                                break;
+                            }
+                            switch(s.m_details[det_pos]) {
+                            case 'M' :
+                                --seq1_pos;
+                                --seq2_pos;
+                                break;
+                            case 'R' :
+                                --seq1_pos;
+                                --seq2_pos;
+                                break;
+                            case 'I' :
+                                --seq2_pos;
+                                break;
+                            case 'D' :
+                                --seq1_pos;
+                                break;
+                            }
+                            --det_pos;
+                        }
+                    }
+                }
+
+
                 TSegment ss;
                 ss.m_box[0] = coord;
                 ss.m_box[1] = mrna_size - 1;
@@ -2083,7 +2140,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 adj = eNo;
 
                 if(k == 0) {//the first segment is an exon 
-                    if( (int)s.m_box[0] >= 20 ) {
+                    if( (int)s.m_box[0] >= kFlankExonProx ) {
                         adj = eHard;
                     } else {
                         if(adj == eNo) adj = eSoft;
@@ -2091,7 +2148,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 }
 
                 if( k + 1 == seg_dim ) {//the last segment is an exon
-                    if( ( (int)SeqLen1 - (int)s.m_box[1] - 1 ) >= 20 ) {
+                    if( ( (int)SeqLen1 - (int)s.m_box[1] - 1 ) >= kFlankExonProx ) {
                         adj = eHard;
                     } else {
                         if(adj == eNo) adj = eSoft;//prevent switch from Hard to Soft
@@ -2099,7 +2156,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 }
 
                 if(k > 0 && ( ! segments[k-1].m_exon ) ) {//gap on left
-                    if( (int)s.m_box[0] >= 20 ) {
+                    if( (int)s.m_box[0] >= kFlankExonProx ) {
                         adj = eHard;
                     } else {
                         if(adj == eNo) adj = eSoft;
@@ -2107,7 +2164,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 }
 
                 if(k + 1 < seg_dim && (! segments[k+1].m_exon ) ) {//gap on right
-                    if(  ( (int)SeqLen1 - (int)s.m_box[1] - 1 ) >= 20 ) {
+                    if(  ( (int)SeqLen1 - (int)s.m_box[1] - 1 ) >= kFlankExonProx ) {
                         adj = eHard;
                     } else {
                         if(adj == eNo) adj = eSoft;
@@ -2240,6 +2297,136 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
 
         if(exon_count0 == exon_count1) break;
     }
+
+    //cut to AG/GT
+    {{
+      
+        if (test_type == kTestType_20_28_90_cut20 )  { // test mode
+            bool first_exon = true;
+            size_t sdim = m_segments.size();
+            int last_exon_index = -1;
+            for(size_t k0 = 0; k0 < sdim; ++k0) {                
+                if(m_segments[k0].m_exon) {
+                    last_exon_index = (int)k0;
+                }
+            }
+            for(size_t k0 = 0; k0 < sdim; ++k0) {                
+                TSegment& s = m_segments[k0];
+                bool cut_from_left = false;
+                bool cut_from_right = false;
+                if(s.m_exon) {
+                    //check left
+                    if(first_exon) {
+                        if( (int)s.m_box[0] >= kFlankExonProx ) {//gap on left
+                            cut_from_left = true;
+                        }
+                        first_exon = false;
+                    } else if( ! segments[k0-1].m_exon ) {//gap on left
+                        cut_from_left = true;
+                    }
+                    //check right
+                    if( last_exon_index == (int)k0 ) {
+                        if(  ( (int)SeqLen1 - (int)s.m_box[1] - 1 ) >= kFlankExonProx ) {//gap on right
+                            cut_from_right = true;
+                        }
+                    } else if(k0 + 1 < sdim && (! segments[k0+1].m_exon ) ) {//gap on right
+                        cut_from_right = true;
+                    }
+
+                    //try to cut from left
+                    if(cut_from_left) {
+                        int seq1_pos = (int)s.m_box[0];
+                        int seq2_pos = (int)s.m_box[2];
+                        int det_pos = 0;
+                        int max_pos = (int)s.m_box[1] - 8;//exon should not be too short
+                        while(seq1_pos <= max_pos && det_pos <= kMaxCutToSplice) {
+                            if( seq2_pos > 1 && s.m_details[det_pos] == 'M' && 
+                                   toupper(Seq2[seq2_pos-2]) == 'A' &&  toupper(Seq2[seq2_pos-1]) == 'G'  ) {//AG point
+                                if(det_pos > 0) {//resize
+                                    s.m_box[0] = seq1_pos;
+                                    s.m_box[2] = seq2_pos;
+                                    s.m_details.erase(0, det_pos);
+                                    s.Update(m_aligner);
+                                    // update the first two annotation symbols
+                                    if(s.m_annot.size() > 0 && s.m_annot[0] == '<') {
+                                        s.m_annot = "AG" + s.m_annot;
+                                    } else if(s.m_annot.size() > 2 && s.m_annot[2] == '<') {
+                                        s.m_annot[0] = 'A';
+                                        s.m_annot[1] = 'G';
+                                    }
+                                }
+                                break;
+                            }
+                            switch(s.m_details[det_pos]) {
+                            case 'M' :
+                                ++seq1_pos;
+                                ++seq2_pos;
+                                break;
+                            case 'R' :
+                                ++seq1_pos;
+                                ++seq2_pos;
+                                break;
+                            case 'I' :
+                                ++seq2_pos;
+                                break;
+                            case 'D' :
+                                ++seq1_pos;
+                                break;
+                            }
+                            ++det_pos;
+                        }
+                    }
+
+                    //try to cut from right
+                    if(cut_from_right) {
+                        int seq1_pos = (int)s.m_box[1];
+                        int seq2_pos = (int)s.m_box[3];
+                        int det_pos = s.m_details.size() - 1;
+                        int min_det_pos = det_pos - kMaxCutToSplice;
+                        int min_pos = (int)s.m_box[0] + 8;//exon should not be too short
+                        while(seq1_pos >= min_pos && det_pos >= min_det_pos) {
+                            if( (size_t)(seq2_pos + 2) < m_genomic.size() && s.m_details[det_pos] == 'M' && 
+                                   toupper(Seq2[seq2_pos+1]) == 'G' &&  toupper(Seq2[seq2_pos+2]) == 'T'  ) {//GT point
+                                if( (size_t)det_pos + 1 < s.m_details.size() ) {//resize
+                                    s.m_box[1] = seq1_pos;
+                                    s.m_box[3] = seq2_pos;
+                                    s.m_details.resize(det_pos + 1);
+                                    s.Update(m_aligner);
+                                    // update the last two annotation symbols
+                                    size_t adim = s.m_annot.size();
+                                    if(adim > 0 && s.m_annot[adim-1] == '>') {
+                                        s.m_annot += "GT";
+                                    } else if(adim > 2 && s.m_annot[adim-3] == '>') {
+                                        s.m_annot[adim-2] = 'G';
+                                        s.m_annot[adim-1] = 'T';
+                                    }
+                                }
+                                break;
+                            }
+                            switch(s.m_details[det_pos]) {
+                            case 'M' :
+                                --seq1_pos;
+                                --seq2_pos;
+                                break;
+                            case 'R' :
+                                --seq1_pos;
+                                --seq2_pos;
+                                break;
+                            case 'I' :
+                                --seq2_pos;
+                                break;
+                            case 'D' :
+                                --seq1_pos;
+                                break;
+                            }
+                            --det_pos;
+                        }
+                    }
+                }
+            }
+        }
+    }}
+
 
 //#define DUMP_PROCESSED_SEGS
 #ifdef DUMP_PROCESSED_SEGS
