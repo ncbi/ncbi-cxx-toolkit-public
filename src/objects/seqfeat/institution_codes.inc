@@ -3864,6 +3864,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "MPL	s	Musee de Port Louis",
 "MPLN	s	Museo Provinciale di Storia Naturale",
 "MPM	s	Milwaukee Public Museum",
+"MPM<JPN>	s	Meguro Parasitological Museum",
 "MPMP	s	National Museum of the Philippines",
 "MPN	s	Massey University, Ecology Group",
 "MPPD	s	University of Minnesota, Plant Pathology Department",
