@@ -86,6 +86,7 @@ public:
     typedef list< CRef< CSeq_annot > > TAnnot;
     bool IsSetAnnot(void) const;
     const TAnnot& GetAnnot(void) const;
+    TAnnot& SetAnnot(void);
 
     enum ELabelType {
         eType,
@@ -95,6 +96,13 @@ public:
 
     // Append a label to label based on type or content of CSeq_entry
     void GetLabel(string* label, ELabelType type) const;
+
+    // Assign modified local Seq-ids for sequences in case of conflict.
+    // New ids will be made by adding suffixes "_1", "_2", etc.
+    // Parentize() will be called for matching ids to Bioseqs.
+    // Not all types of ids can be reassigned -
+    // currently on local and general ids.
+    void ReassignConflictingIds(void);
 
 protected:
     // From CSerialUserOp

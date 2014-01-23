@@ -43,6 +43,10 @@
 
 #include <objects/seq/Bioseq.hpp>
 
+#include <objects/seq/seq_id_handle.hpp>
+#include <objects/general/Object_id.hpp>
+#include <objects/general/Dbtag.hpp>
+
 // generated classes
 
 BEGIN_NCBI_SCOPE
@@ -188,6 +192,22 @@ const CSeq_entry::TAnnot& CSeq_entry::GetAnnot(void) const
 
 
 
+CSeq_entry::TAnnot& CSeq_entry::SetAnnot(void)
+{
+    switch ( Which() ) {
+    case e_Seq:
+        return (SetSeq().SetAnnot());
+    case e_Set:
+        return (SetSet().SetAnnot());
+    default:
+      NCBI_THROW(CSerialException, eNotImplemented,
+                 "CSeq_entry::SetAnnot: unsupported entry type "
+                 + SelectionName(Which()));
+    }
+}
+
+
+
 // Implemented here to prevent CBioseq dependency on CSeq_entry
 CConstRef<CSeqdesc> CBioseq::GetClosestDescriptor (CSeqdesc::E_Choice choice, int* level) const
 {
@@ -267,8 +287,325 @@ void CSeq_entry::GetLabel(string* label, ELabelType type) const
 }
 
 
+BEGIN_LOCAL_NAMESPACE;
+
+// mapping entries:
+// [Seq-id, null] == null - no replacement for the Seq-id.
+// [Seq-id, null] == gi - needs replacement, gi is the next suffix number.
+// [Seq-id, Bioseq] == null - needs replacement id, not yet assigned.
+// [Seq-id, Bioseq] == gi - no need for replacement.
+// [Seq-id, Bioseq] == new Seq-id - replacement id.
+typedef pair<CSeq_id_Handle, CConstRef<CBioseq> > TIdKey;
+typedef map<TIdKey, CSeq_id_Handle> TIdMap;
+typedef pair<TIdMap::iterator, bool> TIdInsert;
+
+
+inline bool sx_CanReassign(CSeq_id::E_Choice type)
+{
+    return type == CSeq_id::e_Local || type == CSeq_id::e_General;
+}
+
+
+TIdInsert
+sx_AddId(TIdMap& id_map, const CSeq_id_Handle& id, const CBioseq* seq = 0)
+{
+    return id_map.insert(TIdMap::value_type(TIdKey(id, ConstRef(seq)), null));
+}
+
+
+CSeq_id_Handle sx_MakeUniqueId(const CSeq_id_Handle& idh, TIdMap& id_map)
+{
+    CRef<CSeq_id> new_id(SerialClone(*idh.GetSeqId()));
+    CObject_id* obj_id = 0;
+    switch ( new_id->Which() ) {
+    case CSeq_id::e_Local: obj_id = &new_id->SetLocal(); break;
+    case CSeq_id::e_General: obj_id = &new_id->SetGeneral().SetTag(); break;
+    default:
+        NCBI_THROW(CException, eUnknown,
+                   "CSeq_entry::ReassignConflictingIds: "
+                   "bad type of conflicting id: "+new_id->AsFastaString());
+    }
+    string base;
+    if ( obj_id->IsStr() ) {
+        base = obj_id->GetStr();
+    }
+    else {
+        base = NStr::NumericToString(obj_id->GetId());
+    }
+    base += "_";
+    CSeq_id_Handle& suffix_id = id_map[TIdKey(idh, null)];
+    for ( int k = suffix_id.GetGi(); ; ++k ) {
+        obj_id->SetStr(base+NStr::NumericToString(k));
+        CSeq_id_Handle new_idh = CSeq_id_Handle::GetHandle(*new_id);
+        if ( sx_AddId(id_map, new_idh).second ) {
+            suffix_id = CSeq_id_Handle::GetGiHandle(k+1);
+            return new_idh;
+        }
+    }
+}
+
+
+inline
+size_t sx_Level(const CSeq_entry* entry)
+{
+    size_t level = 0;
+    while ( entry ) {
+        ++level;
+        entry = entry->GetParentEntry();
+    }
+    return level;
+}
+
+
+inline
+size_t sx_GetParentLevel(const CSeq_entry* entry1, size_t level1,
+                         const CSeq_entry* entry2, size_t level2)
+{
+    if ( level2 > level1 ) {
+        return sx_GetParentLevel(entry2, level2, entry1, level1);
+    }
+    // go to the same level
+    while ( level1 > level2 ) {
+        entry1 = entry1->GetParentEntry();
+        --level1;
+    }
+    // find common parent
+    while ( entry1 != entry2 ) {
+        entry1 = entry1->GetParentEntry();
+        entry2 = entry2->GetParentEntry();
+        --level1;
+    }
+    return level1;
+}
+
+
+inline
+bool sx_ComesBefore(const CSeq_entry* entry1, size_t level1,
+                    const CSeq_entry* entry2, size_t level2)
+{
+    if ( level2 > level1 ) {
+        return !sx_ComesBefore(entry2, level2, entry1, level1);
+    }
+    // go to the same level
+    while ( level1 > level2 ) {
+        entry1 = entry1->GetParentEntry();
+        --level1;
+    }
+    // find common parent
+    const CSeq_entry* parent = 0;
+    for ( ;; ) {
+        parent = entry1->GetParentEntry();
+        const CSeq_entry* parent2 = entry2->GetParentEntry();
+        if ( parent == parent2 ) {
+            break;
+        }
+        entry1 = parent;
+        entry2 = parent2;
+    }
+    // look which entry comes first in the common parent
+    const CBioseq_set& set = parent->GetSet();
+    ITERATE ( CBioseq_set::TSeq_set, it, set.GetSeq_set() ) {
+        if ( *it == entry1 ) {
+            return true;
+        }
+        if ( *it == entry2 ) {
+            return false;
+        }
+    }
+    // should not come here, but we'll return false anyway
+    return false;
+}
+
+
+typedef map<CSeq_id_Handle, CSeq_id_Handle> TIdMapCache;
+
+const CSeq_id_Handle& sx_FindBestId(const TIdMap& id_map,
+                                    TIdMapCache& cache,
+                                    const CSeq_entry& annot_entry,
+                                    const CSeq_id_Handle& id)
+{
+    CSeq_id_Handle& cached = cache[id];
+    if ( cached ) {
+        // use cached value
+        return cached;
+    }
+    // find correct replacement
+    // first scan for closest inner sequence, it's easier and usually succeeds
+    const CSeq_entry* closest_entry = 0;
+    size_t closest_level = kMax_Int;
+    for ( TIdMap::const_iterator it = id_map.lower_bound(TIdKey(id, null));
+          it != id_map.end() && it->first.first == id; ++it ) {
+        if ( !it->first.second ) { // skip non-bioseq entry
+            continue;
+        }
+        const CBioseq& seq = *it->first.second;
+        const CSeq_entry* seq_entry = seq.GetParentEntry();
+        size_t seq_level = 0;
+        for ( const CSeq_entry* entry = seq_entry;
+              entry; entry = entry->GetParentEntry(), ++seq_level ) {
+            if ( entry == &annot_entry ) {
+                // inner
+                if ( seq_level < closest_level ) {
+                    closest_level = seq_level;
+                    closest_entry = seq_entry;
+                    cached = it->second;
+                }
+                else if ( seq_level == closest_level &&
+                          sx_ComesBefore(seq_entry, seq_level,
+                                         closest_entry, closest_level) ) {
+                    // same level, use the one that comes first
+                    closest_entry = seq_entry;
+                    cached = it->second;
+                }
+                break;
+            }
+        }
+    }
+    if ( cached ) {
+        // found inner sequence
+        return cached;
+    }
+    // now scan for closest outer sequence in order:
+    // 1. closest commont parent
+    // 2. closest distance (through the commont parent)
+    // 3. comes first at fork
+    size_t annot_level = sx_Level(&annot_entry);
+    size_t closest_seq_level = kMax_Int;
+    // full scan for best candidate
+    for ( TIdMap::const_iterator it = id_map.lower_bound(TIdKey(id, null));
+          it != id_map.end() && it->first.first == id; ++it ) {
+        if ( !it->first.second ) {
+            continue;
+        }
+        const CBioseq& seq = *it->first.second;
+        const CSeq_entry* seq_entry = seq.GetParentEntry();
+        size_t seq_level = sx_Level(seq_entry);
+        size_t parent_level = sx_GetParentLevel(&annot_entry, annot_level,
+                                                seq_entry, seq_level);
+        size_t level = annot_level - parent_level;
+        if ( level < closest_level ) {
+            closest_level = level;
+            closest_seq_level = seq_level;
+            closest_entry = seq_entry;
+            cached = it->second;
+        }
+        else if ( level == closest_level &&
+                  seq_level < closest_seq_level ) {
+            closest_seq_level = seq_level;
+            closest_entry = seq_entry;
+            cached = it->second;
+        }
+        else if ( level == closest_level &&
+                  seq_level == closest_seq_level &&
+                  sx_ComesBefore(seq_entry, seq_level,
+                                 closest_entry, closest_seq_level) ) {
+            closest_entry = seq_entry;
+            cached = it->second;
+        }
+    }
+    return cached;
+}
+
+
+inline
+void sx_ProcessId(const TIdMap& id_map,
+                  TIdMapCache& cache,
+                  const CSeq_entry& entry,
+                  CSeq_id& id)
+{
+    if ( !sx_CanReassign(id.Which()) ) {
+        return;
+    }
+    CSeq_id_Handle idh = CSeq_id_Handle::GetHandle(id);
+    if ( !id_map.find(TIdKey(idh, null))->second ) {
+        // no mapping is necessary
+        return;
+    }
+    const CSeq_id_Handle& new_id = sx_FindBestId(id_map, cache, entry, idh);
+    if ( !new_id.IsGi() ) {
+        id.Assign(*new_id.GetSeqId());
+    }
+}
+
+
+END_LOCAL_NAMESPACE;
+
+
+void CSeq_entry::ReassignConflictingIds(void)
+{
+    TIdMap id_map;
+    // id_map states:
+    // [{id, null}] -> null : unique/first id - no change
+    // [{id, null}] -> gi : next replacement suffix to try for the id
+    // [{id, seq}] -> new_id : replace 'id' of 'seq' with 'new_id'
+    // [{id, seq}] -> null : slot for replacement
+
+    // gather conflicting ids
+    bool has_conflict = false;
+    CSeq_id_Handle gi1 = CSeq_id_Handle::GetGiHandle(1);
+    for ( CTypeConstIterator<CBioseq> it(ConstBegin(*this)); it; ++it ) {
+        ITERATE ( CBioseq::TId, idit, it->GetId() ) {
+            if ( !sx_CanReassign((**idit).Which()) ) {
+                // only local ids can be reassigned
+                continue;
+                NCBI_THROW_FMT(CException, eUnknown,
+                               "CSeq_entry::ReassignConflictingIds: "
+                               "conflicting id is not a Seq-id.local: "<<
+                               (*idit)->AsFastaString());
+            }
+            CSeq_id_Handle id = CSeq_id_Handle::GetHandle(**idit);
+            TIdInsert ins = sx_AddId(id_map, id);
+            if ( ins.second ) {
+                // first time occurence - keep it as it is
+                // make slot marking no replacement
+                sx_AddId(id_map, id, &*it).first->second = gi1;
+            }
+            else {
+                has_conflict = true;
+                // duplicate id, start replacement search with suffix 1
+                if ( !ins.first->second ) {
+                    ins.first->second = gi1;
+                }
+                // make mapping slot
+                sx_AddId(id_map, id, &*it);
+            }
+        }
+    }
+    if ( !has_conflict ) {
+        // no conflicts
+        return;
+    }
+    Parentize();
+    // assign new ids to Bioseqs
+    for ( CTypeIterator<CBioseq> it(*this); it; ++it ) {
+        NON_CONST_ITERATE ( CBioseq::TId, idit, it->SetId() ) {
+            if ( !sx_CanReassign((**idit).Which()) ) {
+                continue;
+            }
+            CSeq_id_Handle id = CSeq_id_Handle::GetHandle(**idit);
+            TIdMap::iterator map_it = id_map.find(TIdKey(id, ConstRef(&*it)));
+            if ( map_it != id_map.end() && !map_it->second ) {
+                // make replacement id
+                map_it->second = sx_MakeUniqueId(id, id_map);
+                // change it in the Bioseq
+                *idit = SerialClone(*map_it->second.GetSeqId());
+            }
+        }
+    }
+    // replace annotation ids
+    for ( CTypeIterator<CSeq_entry> it(*this); it; ++it ) {
+        if ( it->IsSetAnnot() ) {
+            TIdMapCache cache;
+            NON_CONST_ITERATE ( CSeq_entry::TAnnot, ait, it->SetAnnot() ) {
+                for ( CTypeIterator<CSeq_id> idit(**ait); idit; ++idit ) {
+                    sx_ProcessId(id_map, cache, *it, *idit);
+                }
+            }
+        }
+    }
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
-
-/* Original file checksum: lines: 61, chars: 1886, CRC32: 18c50f7 */
