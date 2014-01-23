@@ -355,7 +355,7 @@ COrgMod::IsStructuredVoucherValid(const string& val, const string& v_type)
         } else if (is_miscapitalized) {
             return "Institution code " + inst_coll + " exists, but correct capitalization is " + correct_cap;
         } else {   
-            if (NStr::FindNoCase(v_type, voucher_type) == string::npos) {
+            if (NStr::FindNoCase(voucher_type, v_type) == string::npos) {
                 if (NStr::FindNoCase (voucher_type, "b") != string::npos) {
                     return "Institution code " + inst_coll + " should be bio_material";
                 } else if (NStr::FindNoCase (voucher_type, "c") != string::npos) {
