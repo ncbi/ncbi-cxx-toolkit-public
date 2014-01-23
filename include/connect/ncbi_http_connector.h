@@ -131,7 +131,7 @@ typedef enum {
     fHCC_UrlDecodeInput   = fHTTP_UrlDecodeInput,
     fHCC_UrlEncodeOutput  = fHTTP_UrlEncodeOutput,
     fHCC_UrlCodec         = fHTTP_UrlCodec,
-    fHCC_UrlEncodeArgs    = 0x8,  /**< NB: Error-prone semantics, don't use! */
+    fHCC_UrlEncodeArgs    = 0x8,  /**< NB: Error-prone semantics, do not use!*/
     fHCC_DropUnread       = fHTTP_DropUnread,
     fHCC_NoUpread         = fHTTP_NoUpread,
     fHCC_Flushable        = fHTTP_Flushable,

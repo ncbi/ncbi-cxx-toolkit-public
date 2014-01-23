@@ -111,7 +111,7 @@ int main(int argc, const char* argv[])
     SendMailInfo_InitEx(&info, 0, eCORE_UsernameReal);
     CORE_LOGF(eLOG_Note, ("NULL - <%s>", info.from));
 
-    if ((huge_body = malloc(TEST_HUGE_BODY_SIZE)) != 0) {
+    if ((huge_body = (char*) malloc(TEST_HUGE_BODY_SIZE)) != 0) {
 
         strcpy(huge_body, "user5@");
         for (n = 0;  n < TEST_HUGE_BODY_SIZE - 6;  n++)

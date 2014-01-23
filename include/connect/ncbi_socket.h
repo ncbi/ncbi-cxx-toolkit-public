@@ -122,7 +122,7 @@
  *
  *  SOCK_SetDataLoggingAPI
  *  SOCK_SetDataLogging
- *  SOCK_SetErrHook
+ *  SOCK_SetErrHookAPI
  *
  * Auxiliary:
  *
@@ -1814,8 +1814,8 @@ typedef struct {
 typedef void (*FSOCK_ErrHook)(const SSOCK_ErrInfo* info, void* data);
 
 
-extern NCBI_XCONNECT_EXPORT void SOCK_SetErrHook(FSOCK_ErrHook hook,
-                                                 void*         data);
+extern NCBI_XCONNECT_EXPORT void SOCK_SetErrHookAPI(FSOCK_ErrHook hook,
+                                                    void*         data);
 
 
 

@@ -237,19 +237,21 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
 {
     static const STimeout kTimeout   = { 5,      0 };
     static const STimeout kTimeSlice = { 0, 100000 };
-    static struct {
+    static const struct {
         const char*  host;
         const char* vhost;
-    } x_Tests[] = {
-        { "www.ncbi.nlm.nih.gov",       0                      },
-        { "www.be-md.ncbi.nlm.nih.gov", "www.ncbi.nlm.nih.gov" },
-        { "www.st-va.ncbi.nlm.nih.gov", "www.ncbi.nlm.nih.gov" },
-        { "130.14.29.110",              "www.ncbi.nlm.nih.gov" }, // NCBI main
-        { "165.112.7.20",               "www.ncbi.nlm.nih.gov" }, // NCBI colo
+    } kTests[] = {
+        // 1. External servers
         { "www.google.com",             0                      },
         { "www.yahoo.com",              0                      },
-        { "8.8.4.4",                    "www.google.com"       }
-        // Google public DNS, responds at :80 as well
+        //    NB: Google's public DNS (also @8.8.8.8), responds at :80 as well
+        { "8.8.4.4",                    "www.google.com"       },
+        // 2. NCBI servers
+        { "www.ncbi.nlm.nih.gov",       0                      }, // NCBI
+        { "www.be-md.ncbi.nlm.nih.gov", "www.ncbi.nlm.nih.gov" }, // NCBI main
+        { "www.st-va.ncbi.nlm.nih.gov", "www.ncbi.nlm.nih.gov" }, // NCBI colo
+        { "130.14.29.110",              "www.ncbi.nlm.nih.gov" }, // NCBI main
+        { "165.112.7.20",               "www.ncbi.nlm.nih.gov" }  // NCBI colo
     };
 
     m_CheckPoint.clear();
@@ -275,13 +277,13 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
               (unsigned long) sec, (unsigned long) nanosec);
 
     vector< AutoPtr<CConn_HttpStream> > http;
-    for (size_t n = 0;  n < sizeof(x_Tests) / sizeof(x_Tests[0]);  ++n) {
+    for (size_t n = 0;  n < sizeof(kTests) / sizeof(kTests[0]);  ++n) {
         char user_header[80];
-        _ASSERT(::strlen(x_Tests[n].host) < sizeof(net_info->host) - 1);
-        ::strcpy(net_info->host, x_Tests[n].host);
-        if (x_Tests[n].vhost) {
-            _ASSERT(::strlen(x_Tests[n].vhost) + 6 < sizeof(user_header) - 1);
-            ::sprintf(user_header, "Host: %s", x_Tests[n].vhost);
+        _ASSERT(::strlen(kTests[n].host) < sizeof(net_info->host) - 1);
+        ::strcpy(net_info->host, kTests[n].host);
+        if (kTests[n].vhost) {
+            _ASSERT(::strlen(kTests[n].vhost) + 6 < sizeof(user_header) - 1);
+            ::sprintf(user_header, "Host: %s", kTests[n].vhost);
         } else
             *user_header = '\0';
         SAuxData* auxdata = new SAuxData(m_Canceled, 0);

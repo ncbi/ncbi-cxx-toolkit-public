@@ -320,7 +320,7 @@ static void s_ErrorCallback(const SSOCK_ErrInfo* info)
 }
 
 
-extern void SOCK_SetErrHook(FSOCK_ErrHook hook, void* data)
+extern void SOCK_SetErrHookAPI(FSOCK_ErrHook hook, void* data)
 {
     CORE_LOCK_WRITE;
     s_ErrData = data;

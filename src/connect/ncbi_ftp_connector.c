@@ -1696,13 +1696,13 @@ static EIO_Status s_FTPExecute(SFTPConnector* xxx, const STimeout* timeout)
         if (s[size - 1] == '\r')
             --size;
         s[size] = '\0';
+        if (*s)
+            xxx->what = s;
         if (!(c = (const char*) memchr(s, ' ', size)))
-            c = s + size;
+            c = s + size; /*@'\0'*/
         else
             size = (size_t)(c - s);
         assert(*c == ' '  ||  !*c);
-        if (*s)
-            xxx->what = s;
         if (size == 3  ||  size == 4) {
             SOCK_SetTimeout(xxx->cntl, eIO_ReadWrite, timeout);
             if         (size == 3  &&   strncasecmp(s, "REN",  3) == 0) {

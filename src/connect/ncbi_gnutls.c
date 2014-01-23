@@ -604,7 +604,7 @@ extern SOCKSSL NcbiSetupGnuTls(void)
 
 extern NCBI_CRED NcbiCredGnuTls(void* xcred)
 {
-    struct SNcbiCred* cred = calloc(xcred ? 2 : 1, sizeof(*cred));
+    struct SNcbiCred* cred = (NCBI_CRED) calloc(xcred ? 2 : 1, sizeof(*cred));
     if (cred  &&  xcred) {
         cred->type = eNcbiCred_GnuTls;
         cred->data = xcred;
