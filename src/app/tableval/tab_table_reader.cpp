@@ -52,7 +52,9 @@ bool CTabDelimitedValidator::_Validate(int col_number, const CTempString& value)
         return false; 
 
     string error;
-    bool isfatal = CColumnValidatorRegistry::GetInstance().DoValidate(datatype, value, error);
+    bool isfatal = CColumnValidatorRegistry::GetInstance().
+        DoValidate(datatype, value, error);
+
     if (!error.empty())
         _ReportError(col_number, error);
 
@@ -69,7 +71,8 @@ void CTabDelimitedValidator::_ReportError(int col_number, const CTempString& err
 }
 
 void CTabDelimitedValidator::ValidateInput(ILineReader& reader, const CTempString& default_columns,
-    const CTempString& required, const CTempString& ignored)
+    const CTempString& required, const CTempString& ignored,
+    const CTempString& unique)
 {
     m_current_row_number = 0;
     m_delim = (m_flags & e_tab_comma_delim) ? "," : "\t";
@@ -78,8 +81,43 @@ void CTabDelimitedValidator::ValidateInput(ILineReader& reader, const CTempStrin
     {
         // preprocess headers & required & ignored
         if (_MakeColumns("Required", required, m_required_cols) &&
-            _MakeColumns("Ignored", ignored, m_ignored_cols))
+            _MakeColumns("Ignored", ignored, m_ignored_cols) &&
+            _MakeColumns("Unique", unique, m_unique_cols))
+        {          
+            if (!unique.empty())
+                m_unique_values.resize(m_col_defs.size());
+
+            bool ignore_unknown = (m_flags & e_tab_ignore_unknown_types) == e_tab_ignore_unknown_types;
+            map<string, int> types;
+            for(size_t i=0; i<m_col_defs.size(); ++i)
+            {
+                if (m_ignored_cols[i])
+                    continue;
+
+                if (!CColumnValidatorRegistry::GetInstance().IsSupported(m_col_defs[i]))
+                {
+                    _ReportError(i,
+                        "Datatype " + m_col_defs[i] + " is not supported");
+                    if (ignore_unknown)
+                    {
+                       m_ignored_cols[i] = true;
+                       continue;
+                    }
+                    else
+                        return;
+                }
+
+                int count = ++types[m_col_defs[i]];
+                if (count == 2)
+                {
+                    // report only first occurance
+                    _ReportError(i, "Column " + m_col_defs[i] + " is not unique");
+                }
+                
+            }
+
             _OperateRows(reader);
+        }
     }
 }
 
@@ -144,7 +182,7 @@ bool CTabDelimitedValidator::_MakeColumns(const string& message, const CTempStri
                 col_defs[index = col_it - m_col_defs.begin()] = true;
         }
         else
-        if (index >= (int)m_col_defs.size() || index<0)
+        if (index > (int)m_col_defs.size() || index<1)
         {
             _ReportError(index, message + " column does not exist");
             // stop processing
@@ -220,14 +258,23 @@ void CTabDelimitedValidator::_OperateRows(ILineReader& reader)
                         _ReportError(i, "Missing required value");
                 }
                 else
-                if (!m_ignored_cols[i])
+                if (m_ignored_cols[i])
+                    continue;
+
+                bool isfatal = _Validate(i, values[i]);
+                if (isfatal)
                 {
-                   bool isfatal = _Validate(i, values[i]);
-                   if (isfatal)
-                   {
-                       _ReportError(i, "Fatal error occured, stopping");
-                       return;
-                   }
+                    _ReportError(i, "Fatal error occured, stopping");
+                    return;
+                }
+                if (m_unique_cols[i])
+                {
+                    int& count = m_unique_values[i][values[i]];
+                    if (count++)
+                    {
+                        _ReportError(i, "Non unique value");
+                    }
+                    
                 }
             }
         }

@@ -31,14 +31,15 @@ class CTabDelimitedValidator
 public:
    enum e_Flags
    {
-       e_tab_tab_delim            =  1,
-       e_tab_comma_delim          =  2,
-       e_tab_noheader             =  4,
-       e_tab_ignore_empty_rows    =  8,
-       e_tab_xml_report           = 16,
-       e_tab_tab_report           = 32,
-       e_tab_text_report          = 16+32,
-       e_tab_html_report          = 64
+       e_tab_tab_delim            =   1,
+       e_tab_comma_delim          =   2,
+       e_tab_noheader             =   4,
+       e_tab_ignore_empty_rows    =   8,
+       e_tab_xml_report           =  16,
+       e_tab_tab_report           =  32,
+       e_tab_text_report          =  16+32,
+       e_tab_html_report          =  64,
+       e_tab_ignore_unknown_types = 128
    }; 
 
    // If you need messages and error to be logged
@@ -51,7 +52,7 @@ public:
    // TODO: replace with options flags instead of parameters
    void ValidateInput(ILineReader& reader, 
        const CTempString& default_columns, const CTempString& required,
-       const CTempString& ignored);
+       const CTempString& ignored, const CTempString& unique);
 
    void GenerateOutput(CNcbiOstream* out_stream, bool no_headers);
 
@@ -59,9 +60,10 @@ private:
     bool _Validate(int col_number, const CTempString& value);
 
     void _OperateRows(ILineReader& reader);
-    bool _ProcessHeader(ILineReader& reader, const CTempString& default_columns);
+    bool _ProcessHeader(ILineReader& reader, const CTempString& default_cols);
 
-    bool _MakeColumns(const string& message, const CTempString& columns, vector<bool>& col_defs);
+    bool _MakeColumns(const string& message, 
+        const CTempString& columns, vector<bool>& col_defs);
 
     void _ReportError(int col_number, const CTempString& error);
     void _ReportTab(CNcbiOstream* out_stream);
@@ -71,6 +73,9 @@ private:
     vector<string> m_col_defs;
     vector<bool>   m_required_cols;
     vector<bool>   m_ignored_cols;
+    vector<bool>   m_unique_cols;
+
+    vector< map<string, int> > m_unique_values;
 
     list<CTabDelimitedValidatorError> m_errors;
     e_Flags m_flags;

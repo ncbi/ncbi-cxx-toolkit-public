@@ -23,10 +23,10 @@ protected: \
     if (text2) CColumnValidatorRegistry::GetInstance().Register(text2, this); \
     if (text3) CColumnValidatorRegistry::GetInstance().Register(text3, this); \
     } \
-    bool DoValidate(const CTempString& value, string& error); \
+    bool DoValidate(const CTempString& value, string& error) const; \
 }; \
 CAutoColValidator##name CAutoColValidator##name::_singleton; \
-bool CAutoColValidator##name::DoValidate(const CTempString& value, string& error)
+bool CAutoColValidator##name::DoValidate(const CTempString& value, string& error) const
 
 #define DEFINE_COL_VALIDATOR(name) DEFINE_COL_VALIDATOR_WITH_ALT_NAMES(name, #name, 0, 0)
 #define DEFINE_COL_VALIDATOR2(name, text) DEFINE_COL_VALIDATOR_WITH_ALT_NAMES(name, #text, 0, 0)
@@ -68,9 +68,16 @@ void CColumnValidatorRegistry::Register(const CTempString& name, CColumnValidato
     m_registry[name] = val;
 }
 
-bool CColumnValidatorRegistry::DoValidate(const string& datatype, const CTempString& value, string& error)
+bool CColumnValidatorRegistry::IsSupported(const string& datatype) const
 {
-    map<string, CColumnValidator*>::iterator it = m_registry.find(datatype);
+    map<string, CColumnValidator*>::const_iterator it = m_registry.find(datatype);
+    return (it != m_registry.end());
+}
+
+bool CColumnValidatorRegistry::DoValidate(const string& datatype, 
+    const CTempString& value, string& error) const
+{
+    map<string, CColumnValidator*>::const_iterator it = m_registry.find(datatype);
     if (it == m_registry.end())
     {
         error = "Datatype \"";

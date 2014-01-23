@@ -72,7 +72,7 @@ private:
     void Setup(const CArgs& args);
 
     void ProcessOneFile(CNcbiIstream& input, CNcbiOstream* output);
-    void ProcessOneFile();
+    void ProcessOneFile(const string& current_file);
     bool ProcessOneDirectory(const CDir& directory, const CMask& mask, bool recurse);
 
     CRef<CMessageListenerBase> m_logger;
@@ -84,24 +84,26 @@ private:
     CNcbiOstream* m_LogStream;
 
     string m_ResultsDirectory;
-    string m_current_file;
 
     string m_columns_def;
     string m_required_cols;
     string m_ignored_cols;
     string m_format;
+    string m_unique_cols;
 
     CNcbiOstream* m_output;
     bool   m_comma_separated;
     bool   m_no_header;
     bool   m_skip_empty;
+    bool   m_ignore_unknown_types;
 };
 
 CTAbleValApp::CTAbleValApp(void):
     m_LogStream(0), m_output(0),
     m_comma_separated(false),
     m_no_header(false),
-    m_skip_empty(false)
+    m_skip_empty(false),
+    m_ignore_unknown_types(false)
 {
 }
 
@@ -130,12 +132,13 @@ void CTAbleValApp::Init(void)
         CArgDescriptions::eOutputFile);
 
     arg_desc->AddDefaultKey
-        ("x", "String", "Suffix", CArgDescriptions::eString, ".tab");
+        ("x", "Suffix", "File suffix to match", CArgDescriptions::eString, ".tbl");
 
     arg_desc->AddFlag("E", "Recurse");
 
     arg_desc->AddFlag("no-header", "Start from the first row");
     arg_desc->AddFlag("skip-empty", "Ignore all empty rows");
+    arg_desc->AddFlag("ignore-unknown", "Ignore all unknown types");
     arg_desc->AddDefaultKey("format", "String", "Output type: tab, xml, text, html", CArgDescriptions::eString, "tab");
 
     arg_desc->AddFlag("comma", "Use comma separator instead of tabs");
@@ -145,6 +148,10 @@ void CTAbleValApp::Init(void)
     arg_desc->AddOptionalKey("required", "String", "Comma separated required columns, use indices or names", CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("ignore", "String", "Comma separated columns to be ignored, use indices or names", CArgDescriptions::eString);
+
+    arg_desc->AddOptionalKey("unique", "String", 
+        "Comma separated columns needs to be unique in file, use indices or names",
+        CArgDescriptions::eString);
 
     arg_desc->AddOptionalKey("logfile", "LogFile", "Error Log File", CArgDescriptions::eOutputFile);    // done
 
@@ -191,11 +198,18 @@ int CTAbleValApp::Run(void)
         m_ignored_cols = args["ignore"].AsString();
         NStr::ToLower(m_ignored_cols);
     }
+    if (args["unique"])
+    {
+        m_unique_cols = args["unique"].AsString();
+        NStr::ToLower(m_unique_cols);
+    }
+    
        
 
     m_no_header = args["no-header"];
     m_skip_empty = args["skip-empty"];
     m_format = args["format"].AsString();
+    m_ignore_unknown_types = args["ignore-unknown"];
 
     // Designate where do we output files: local folder, specified folder or a specific single output file
     if (args["o"])
@@ -236,8 +250,7 @@ int CTAbleValApp::Run(void)
         } else {
             if (args["i"])
             {
-                m_current_file = args["i"].AsString();
-                ProcessOneFile ();
+                ProcessOneFile (args["i"].AsString());
             }
         }
     }
@@ -273,7 +286,8 @@ void CTAbleValApp::ProcessOneFile(CNcbiIstream& input, CNcbiOstream* output)
    int flags = 
        (m_comma_separated ? CTabDelimitedValidator::e_tab_comma_delim : CTabDelimitedValidator::e_tab_tab_delim) |
        (m_no_header       ? CTabDelimitedValidator::e_tab_noheader : 0) |
-       (m_skip_empty      ? CTabDelimitedValidator::e_tab_ignore_empty_rows : 0);
+       (m_skip_empty      ? CTabDelimitedValidator::e_tab_ignore_empty_rows : 0) |
+       (m_ignore_unknown_types ? CTabDelimitedValidator::e_tab_ignore_unknown_types : 0); 
 
    if (m_format == "xml")
        flags |= CTabDelimitedValidator::e_tab_xml_report;
@@ -291,18 +305,18 @@ void CTAbleValApp::ProcessOneFile(CNcbiIstream& input, CNcbiOstream* output)
 
    CRef<ILineReader> reader(ILineReader::New(input));
 
-   validator.ValidateInput(*reader, m_columns_def, m_required_cols, m_ignored_cols);
+   validator.ValidateInput(*reader, m_columns_def, m_required_cols, m_ignored_cols, m_unique_cols);
    validator.GenerateOutput(output, false);
 }
 
-void CTAbleValApp::ProcessOneFile()
+void CTAbleValApp::ProcessOneFile(const string& current_file)
 {
-    CFile file(m_current_file);
+    CFile file(current_file);
     if (!file.Exists())
     {
         m_logger->PutError(
             *CLineError::Create(ILineError::eProblem_GeneralParsingError, eDiag_Error, "", 0,
-            "File " + m_current_file + " does not exists"));
+            "File " + current_file + " does not exists"));
         return;
     }
 
@@ -315,7 +329,7 @@ void CTAbleValApp::ProcessOneFile()
         {
             if (m_output == 0)
             {
-                string temp_file = CTempString(m_current_file, 0, m_current_file.rfind('.')); // npos will signal to use the whole string
+                string temp_file = CTempString(current_file, 0, current_file.rfind('.')); // npos will signal to use the whole string
                 temp_file += ".val";
                 local_file.Reset(temp_file);
                 local_output.reset(new CNcbiOfstream(local_file.GetPath().c_str()));
@@ -327,7 +341,7 @@ void CTAbleValApp::ProcessOneFile()
             }
         }
 
-        CNcbiIfstream input(m_current_file.c_str());
+        CNcbiIfstream input(current_file.c_str());
         ProcessOneFile(input, output);
         //if (!IsDryRun())
             //m_reader->WriteObject(*obj, *output);
@@ -355,8 +369,7 @@ bool CTAbleValApp::ProcessOneDirectory(const CDir& directory, const CMask& mask,
         {
             if (mask.Match((*it)->GetPath()))
             {
-                m_current_file = (*it)->GetPath();
-                ProcessOneFile();
+                ProcessOneFile((*it)->GetPath());
             }
         }
         else

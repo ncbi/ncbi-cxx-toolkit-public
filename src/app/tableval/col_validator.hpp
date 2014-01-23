@@ -13,7 +13,7 @@ protected:
     CColumnValidator();
 public:
     virtual ~CColumnValidator();
-    virtual bool DoValidate(const CTempString& value, string& error) = 0;
+    virtual bool DoValidate(const CTempString& value, string& error) const = 0;
 };
 
 class CColumnValidatorRegistry
@@ -26,7 +26,8 @@ public:
     void Register(const CTempString& name, CColumnValidator* val);
     void UnRegister(CColumnValidator* val);
 
-    bool DoValidate(const string& datatype, const CTempString& value, string& error);
+    bool IsSupported(const string& datatype) const; 
+    bool DoValidate(const string& datatype, const CTempString& value, string& error) const;
 private:
     map<string, CColumnValidator*> m_registry;
 };
