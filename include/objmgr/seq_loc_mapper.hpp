@@ -201,10 +201,12 @@ public:
 
     /// Destination of seq-id mapping through a GC-Assembly.
     enum EGCAssemblyAlias {
-        eGCA_Genbank, ///< Map to GenBank alias
-        eGCA_Refseq,  ///< Map to RefSeq alias
-        eGCA_UCSC,    ///< Map to UCSC alias
-        eGCA_Other    ///< Map to 'private' seq-id
+        eGCA_Genbank,    ///< Map to GenBank alias, prefer GI
+        eGCA_GenbankAcc, ///< Map to GenBank alias, prefer acc.ver
+        eGCA_Refseq,     ///< Map to RefSeq alias, prefer GI
+        eGCA_RefseqAcc,  ///< Map to RefSeq alias, prefer acc.ver
+        eGCA_UCSC,       ///< Map to UCSC alias
+        eGCA_Other       ///< Map to 'private' seq-id
     };
 
     /// Using CScope for virtual bioseqs created from GC-Assemblies.
@@ -247,16 +249,13 @@ private:
                             size_t           depth,
                             const CSeq_id*   top_id,
                             ESeqMapDirection direction);
+    void x_InitializeSeqMap(const CSeqMap&   seq_map,
+                            SSeqMapSelector  selector,
+                            const CSeq_id*   top_id,
+                            ESeqMapDirection direction);
     void x_InitializeSeqMap(CSeqMap_CI       seg_it,
                             const CSeq_id*   top_id,
                             ESeqMapDirection direction);
-    void x_InitializeBioseq(const CBioseq_Handle& bioseq,
-                            const CSeq_id*        top_id,
-                            ESeqMapDirection      direction);
-    void x_InitializeBioseq(const CBioseq_Handle& bioseq,
-                            size_t                depth,
-                            const CSeq_id*        top_id,
-                            ESeqMapDirection      direction);
 
     // Parse GC-Assembly, collect mappings for each seq-id to the
     // selected alias type.

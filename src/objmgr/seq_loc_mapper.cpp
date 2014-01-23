@@ -241,7 +241,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle target_seq,
             top_level_id = syns->GetSeq_id_Handle(syns->begin()).GetSeqId();
         }
     }
-    x_InitializeBioseq(target_seq,
+    x_InitializeSeqMap(target_seq.GetSeqMap(),
                        top_level_id.GetPointerOrNull(),
                        direction);
     if (direction == eSeqMap_Up) {
@@ -283,9 +283,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle   target_seq,
             top_id = syns->GetSeq_id_Handle(syns->begin()).GetSeqId();
         }
     }
-    selector.SetFlags(CSeqMap::fFindRef | CSeqMap::fIgnoreUnresolved)
-        .SetLinkUsedTSE();
-    x_InitializeSeqMap(CSeqMap_CI(target_seq, selector), top_id, direction);
+    selector.SetLinkUsedTSE(target_seq.GetTSE_Handle());
+    x_InitializeSeqMap(target_seq.GetSeqMap(), selector, top_id, direction);
     if (direction == eSeqMap_Up) {
         // Ignore seq-map destination ranges, map whole sequence to itself,
         // use unknown strand only.
@@ -306,10 +305,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
     : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
       m_Scope(scope)
 {
-    selector.SetFlags(CSeqMap::fFindRef | CSeqMap::fIgnoreUnresolved)
-        .SetLinkUsedTSE();
-    x_InitializeSeqMap(CSeqMap_CI(ConstRef(&seq_map),
-                       m_Scope.GetScopeOrNull(), selector),
+    x_InitializeSeqMap(seq_map,
+                       selector,
                        top_level_id,
                        direction);
     x_PreserveDestinationLocs();
@@ -325,7 +322,7 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t                 depth,
 {
     if (depth > 0) {
         depth--;
-        x_InitializeBioseq(top_level_seq,
+        x_InitializeSeqMap(top_level_seq.GetSeqMap(),
                            depth,
                            top_level_seq.GetSeqId().GetPointer(),
                            direction);
@@ -420,37 +417,29 @@ void CSeq_loc_Mapper::x_InitializeSeqMap(const CSeqMap&   seq_map,
 }
 
 
-void CSeq_loc_Mapper::x_InitializeBioseq(const CBioseq_Handle& bioseq,
-                                         const CSeq_id* top_id,
-                                         ESeqMapDirection direction)
-{
-    x_InitializeBioseq(bioseq, size_t(-1), top_id, direction);
-}
-
-
 void CSeq_loc_Mapper::x_InitializeSeqMap(const CSeqMap&   seq_map,
                                          size_t           depth,
                                          const CSeq_id*   top_id,
                                          ESeqMapDirection direction)
 {
-    SSeqMapSelector sel(CSeqMap::fFindRef | CSeqMap::fIgnoreUnresolved, depth);
-    sel.SetLinkUsedTSE();
-    x_InitializeSeqMap(CSeqMap_CI(ConstRef(&seq_map),
-                       m_Scope.GetScopeOrNull(), sel),
+    x_InitializeSeqMap(seq_map,
+                       SSeqMapSelector(0, depth),
                        top_id,
                        direction);
 }
 
 
-void CSeq_loc_Mapper::x_InitializeBioseq(const CBioseq_Handle& bioseq,
-                                         size_t                depth,
-                                         const CSeq_id*        top_id,
-                                         ESeqMapDirection      direction)
+void CSeq_loc_Mapper::x_InitializeSeqMap(const CSeqMap&   seq_map,
+                                         SSeqMapSelector  selector,
+                                         const CSeq_id*   top_id,
+                                         ESeqMapDirection direction)
 {
-    x_InitializeSeqMap(CSeqMap_CI(bioseq, SSeqMapSelector(
-        CSeqMap::fFindRef | CSeqMap::fIgnoreUnresolved, depth)),
-        top_id,
-        direction);
+    selector.SetFlags(CSeqMap::fFindRef | CSeqMap::fIgnoreUnresolved)
+        .SetLinkUsedTSE();
+    x_InitializeSeqMap(CSeqMap_CI(ConstRef(&seq_map),
+                       m_Scope.GetScopeOrNull(), selector),
+                       top_id,
+                       direction);
 }
 
 
@@ -458,74 +447,110 @@ void CSeq_loc_Mapper::x_InitializeSeqMap(CSeqMap_CI       seg_it,
                                          const CSeq_id*   top_id,
                                          ESeqMapDirection direction)
 {
-    // Start/stop of the top-level segment.
-    TSeqPos top_start = kInvalidSeqPos;
-    TSeqPos top_stop = kInvalidSeqPos;
-    // Segment start on the top-level sequence. This may be different
-    // from top_start in case of map built from a seq-loc - the
-    // top-level sequences are first-level references.
-    TSeqPos dst_seg_start = kInvalidSeqPos;
-    // For bioseqs this is equal to top_id, for seq-locs -
-    // ids of the first-level references.
-    CConstRef<CSeq_id> dst_id;
-
-    while (seg_it) {
-        // Remember iterator data before incrementing it.
-        _ASSERT(seg_it.GetType() == CSeqMap::eSeqRef);
-        size_t it_depth = seg_it.GetDepth();
-        TSeqPos it_pos = seg_it.GetPosition();
-        TSeqPos it_end = seg_it.GetEndPosition();
-        TSeqPos it_len = seg_it.GetLength();
-        CSeq_id_Handle it_ref_id = seg_it.GetRefSeqid();
-        TSeqPos it_ref_pos = seg_it.GetRefPosition();
-        bool it_ref_minus = seg_it.GetRefMinusStrand();
-        ++seg_it;
-
-        // When mapping down ignore non-leaf references.
-        bool prev_is_leaf = !seg_it  ||
-            seg_it.GetDepth() <= it_depth;
-        if (direction == eSeqMap_Down  &&  !prev_is_leaf) continue;
-
-        if (it_pos > top_stop  ||  !dst_id) {
-            // New top-level segment
-            top_start = it_pos;
-            top_stop = it_end - 1;
+    TSeqPos src_from, src_len, dst_from, dst_len;
+    ENa_strand dst_strand = eNa_strand_unknown;
+    if (direction == eSeqMap_Up) {
+        // Mapping up - for each iterator create mapping to the top level.
+        // If top_id is set, top level positions are the iterator's positions.
+        // Otherwise top-level ids and positions must be taked from the
+        // iterators with depth == 1.
+        TSeqPos top_ref_start = 0;
+        TSeqPos top_start = 0;
+        TSeqPos top_end = 0;
+        CConstRef<CSeq_id> dst_id(top_id);
+        _ASSERT(seg_it.GetDepth() == 1);
+        while ( seg_it ) {
+            ENa_strand src_strand = seg_it.GetRefMinusStrand() ? eNa_strand_minus : eNa_strand_plus;
+            src_from = seg_it.GetRefPosition();
+            src_len = seg_it.GetLength();
+            dst_len = src_len;
             if (top_id) {
-                // Top level is a bioseq
-                dst_id.Reset(top_id);
-                dst_seg_start = top_start;
+                dst_from = seg_it.GetPosition();
+                x_NextMappingRange(
+                    *seg_it.GetRefSeqid().GetSeqId(),
+                    src_from, src_len, src_strand,
+                    *top_id,
+                    dst_from, dst_len, dst_strand);
             }
-            else {
-                // Top level is a seq-loc, positions are
-                // on the first-level references
-                dst_id = it_ref_id.GetSeqId();
-                dst_seg_start = it_ref_pos;
+            else /* !top_id */ {
+                if (seg_it.GetDepth() == 1) {
+                    // Depth==1 - top level sequences (destination).
+                    dst_id.Reset(seg_it.GetRefSeqid().GetSeqId());
+                    top_ref_start = seg_it.GetRefPosition();
+                    top_start = seg_it.GetPosition();
+                    top_end = seg_it.GetEndPosition();
+                    dst_strand = seg_it.GetRefMinusStrand() ? eNa_strand_minus : eNa_strand_plus;
+                }
+                else {
+                    _ASSERT(seg_it.GetPosition() >= top_start);
+                    _ASSERT(seg_it.GetEndPosition() <= top_end);
+                    TSeqPos shift = seg_it.GetPosition() - top_start;
+                    dst_from = top_ref_start + shift;
+                    x_NextMappingRange(
+                        *seg_it.GetRefSeqid().GetSeqId(),
+                        src_from, src_len, src_strand,
+                        *dst_id,
+                        dst_from, dst_len, dst_strand);
+                }
+            }
+            ++seg_it;
+        }
+        return; // Done with eSeqMap_Up
+    }
+    // eSeqMap_Down
+    // Collect all non-leaf references, create mapping from each non-leaf
+    // to the bottom level.
+    list<CSeqMap_CI> refs;
+    refs.push_back(seg_it);
+    while ( seg_it ) {
+        ++seg_it;
+        // While depth increases push all iterators to the stack.
+        if ( seg_it ) {
+            if (refs.empty()  ||  refs.back().GetDepth() < seg_it.GetDepth()) {
+                refs.push_back(seg_it);
                 continue;
             }
         }
-        // When top_id is set, destination position = GetPosition(),
-        // else it needs to be calculated from top_start/stop and dst_start/stop.
-        TSeqPos dst_from = dst_seg_start + it_pos - top_start;
-
-        _ASSERT(dst_from >= dst_seg_start);
-        TSeqPos dst_len = it_len;
-        CConstRef<CSeq_id> src_id(it_ref_id.GetSeqId());
-        TSeqPos src_from = it_ref_pos;
-        TSeqPos src_len = dst_len;
-        ENa_strand src_strand = it_ref_minus ?
-            eNa_strand_minus : eNa_strand_unknown;
-        switch (direction) {
-        case eSeqMap_Up:
-            x_NextMappingRange(*src_id, src_from, src_len, src_strand,
-                               *dst_id, dst_from, dst_len, eNa_strand_unknown);
-            break;
-        case eSeqMap_Down:
-            x_NextMappingRange(*dst_id, dst_from, dst_len, eNa_strand_unknown,
-                               *src_id, src_from, src_len, src_strand);
-            break;
+        // End of seq-map or the last iterator was a leaf - create mappings.
+        if ( !refs.empty() ) {
+            CSeqMap_CI leaf = refs.back();
+            // Exclude self-mapping of the leaf reference.
+            refs.pop_back();
+            dst_strand = leaf.GetRefMinusStrand() ? eNa_strand_minus : eNa_strand_plus;
+            if ( top_id ) {
+                // Add mapping from the top-level sequence if any.
+                src_from = leaf.GetPosition();
+                src_len = leaf.GetLength();
+                dst_from = leaf.GetRefPosition();
+                dst_len = src_len;
+                x_NextMappingRange(
+                    *top_id,
+                    src_from, src_len, eNa_strand_unknown,
+                    *leaf.GetRefSeqid().GetSeqId(),
+                    dst_from, dst_len, dst_strand);
+            }
+            // Create mapping from each non-leaf level.
+            ITERATE(list<CSeqMap_CI>, it, refs) {
+                TSeqPos shift = leaf.GetPosition() - it->GetPosition();
+                ENa_strand src_strand = it->GetRefMinusStrand() ? eNa_strand_minus : eNa_strand_plus;
+                src_from = it->GetRefPosition() + shift;
+                src_len = leaf.GetLength();
+                dst_from = leaf.GetRefPosition();
+                dst_len = src_len;
+                x_NextMappingRange(
+                    *it->GetRefSeqid().GetSeqId(),
+                    src_from, src_len, src_strand,
+                    *leaf.GetRefSeqid().GetSeqId(),
+                    dst_from, dst_len, dst_strand);
+            }
+            if ( seg_it ) {
+                while ( !refs.empty()  &&  refs.back().GetDepth() >= seg_it.GetDepth()) {
+                    refs.pop_back();
+                }
+                refs.push_back(seg_it);
+            }
         }
-        _ASSERT(src_len == 0  &&  dst_len == 0);
-    };
+    }
 }
 
 
@@ -661,6 +686,46 @@ bool CSeq_loc_Mapper::x_IsUCSCRandomChr(const CGC_Sequence& gc_seq,
 }
 
 
+const CSeq_id* s_GetSeqIdAlias(const CGC_TypedSeqId& id,
+                               CSeq_loc_Mapper::EGCAssemblyAlias alias)
+{
+    switch ( id.Which() ) {
+    case CGC_TypedSeqId::e_Genbank:
+        if (alias == CSeq_loc_Mapper::eGCA_Genbank) {
+            return id.GetGenbank().IsSetGi() ?
+                &id.GetGenbank().GetGi() : &id.GetGenbank().GetPublic();
+        }
+        if (alias == CSeq_loc_Mapper::eGCA_GenbankAcc) {
+            return &id.GetGenbank().GetPublic();
+        }
+        break;
+    case CGC_TypedSeqId::e_Refseq:
+        if (alias == CSeq_loc_Mapper::eGCA_Refseq) {
+            return id.GetRefseq().IsSetGi() ?
+                &id.GetRefseq().GetGi() : &id.GetRefseq().GetPublic();
+        }
+        if (alias == CSeq_loc_Mapper::eGCA_RefseqAcc) {
+            return &id.GetRefseq().GetPublic();
+        }
+        break;
+    case CGC_TypedSeqId::e_External:
+        if (alias == CSeq_loc_Mapper::eGCA_UCSC  &&
+            id.GetExternal().GetExternal() == "UCSC") {
+            return &id.GetExternal().GetId();
+        }
+        break;
+    case CGC_TypedSeqId::e_Private:
+        if (alias == CSeq_loc_Mapper::eGCA_Other) {
+            return &id.GetPrivate();
+        }
+        break;
+    default:
+        break;
+    }
+    return 0;
+}
+
+
 void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
                                        EGCAssemblyAlias    to_alias)
 {
@@ -668,32 +733,7 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
         CConstRef<CSeq_id> dst_id;
         ITERATE(CGC_Sequence::TSeq_id_synonyms, it, gc_seq.GetSeq_id_synonyms()) {
             const CGC_TypedSeqId& id = **it;
-            switch ( id.Which() ) {
-            case CGC_TypedSeqId::e_Genbank:
-                if (to_alias == eGCA_Genbank) {
-                    // Use GI rather than accession from 'public' member.
-                    dst_id.Reset(&id.GetGenbank().GetGi());
-                }
-                break;
-            case CGC_TypedSeqId::e_Refseq:
-                if (to_alias == eGCA_Refseq) {
-                    dst_id.Reset(&id.GetRefseq().GetGi());
-                }
-                break;
-            case CGC_TypedSeqId::e_External:
-                if (to_alias == eGCA_UCSC  &&
-                    id.GetExternal().GetExternal() == "UCSC") {
-                    dst_id.Reset(&id.GetExternal().GetId());
-                }
-                break;
-            case CGC_TypedSeqId::e_Private:
-                if (to_alias == eGCA_Other) {
-                    dst_id.Reset(&id.GetPrivate());
-                }
-                break;
-            default:
-                break;
-            }
+            dst_id.Reset(s_GetSeqIdAlias(id, to_alias));
             if ( dst_id ) break; // Use the first matching alias
         }
         if ( dst_id ) {
@@ -705,21 +745,25 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
                 const CGC_TypedSeqId& id = **it;
                 switch ( id.Which() ) {
                 case CGC_TypedSeqId::e_Genbank:
-                    if (to_alias != eGCA_Genbank) {
-                        synonyms.insert(CSeq_id_Handle::GetHandle(id.GetGenbank().GetPublic()));
+                    if (dst_id != &id.GetGenbank().GetGi()) {
                         synonyms.insert(CSeq_id_Handle::GetHandle(id.GetGenbank().GetGi()));
-                        if ( id.GetGenbank().IsSetGpipe() ) {
-                            synonyms.insert(CSeq_id_Handle::GetHandle(id.GetGenbank().GetGpipe()));
-                        }
+                    }
+                    if (dst_id != &id.GetGenbank().GetPublic()) {
+                        synonyms.insert(CSeq_id_Handle::GetHandle(id.GetGenbank().GetPublic()));
+                    }
+                    if ( id.GetGenbank().IsSetGpipe() ) {
+                        synonyms.insert(CSeq_id_Handle::GetHandle(id.GetGenbank().GetGpipe()));
                     }
                     break;
                 case CGC_TypedSeqId::e_Refseq:
-                    if (to_alias != eGCA_Refseq) {
-                        synonyms.insert(CSeq_id_Handle::GetHandle(id.GetRefseq().GetPublic()));
+                    if (dst_id != &id.GetRefseq().GetGi()) {
                         synonyms.insert(CSeq_id_Handle::GetHandle(id.GetRefseq().GetGi()));
-                        if ( id.GetRefseq().IsSetGpipe() ) {
-                            synonyms.insert(CSeq_id_Handle::GetHandle(id.GetRefseq().GetGpipe()));
-                        }
+                    }
+                    if (dst_id != &id.GetRefseq().GetPublic()) {
+                        synonyms.insert(CSeq_id_Handle::GetHandle(id.GetRefseq().GetPublic()));
+                    }
+                    if ( id.GetRefseq().IsSetGpipe() ) {
+                        synonyms.insert(CSeq_id_Handle::GetHandle(id.GetRefseq().GetGpipe()));
                     }
                     break;
                 case CGC_TypedSeqId::e_Private:
@@ -893,33 +937,33 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
         ITERATE(CGC_Sequence::TSeq_id_synonyms, it, gc_seq.GetSeq_id_synonyms()) {
             // Add conversion for each synonym which can be used
             // as a source id.
-            const CGC_TypedSeqId& id = **it;
-            switch ( id.Which() ) {
+            const CGC_TypedSeqId& it_id = **it;
+            switch ( it_id.Which() ) {
             case CGC_TypedSeqId::e_Genbank:
-                synonyms.insert(CSeq_id_Handle::GetHandle(id.GetGenbank().GetPublic()));
-                synonyms.insert(CSeq_id_Handle::GetHandle(id.GetGenbank().GetGi()));
-                if ( id.GetGenbank().IsSetGpipe() ) {
-                    synonyms.insert(CSeq_id_Handle::GetHandle(id.GetGenbank().GetGpipe()));
+                synonyms.insert(CSeq_id_Handle::GetHandle(it_id.GetGenbank().GetPublic()));
+                synonyms.insert(CSeq_id_Handle::GetHandle(it_id.GetGenbank().GetGi()));
+                if ( it_id.GetGenbank().IsSetGpipe() ) {
+                    synonyms.insert(CSeq_id_Handle::GetHandle(it_id.GetGenbank().GetGpipe()));
                 }
                 break;
             case CGC_TypedSeqId::e_Refseq:
             {
                 // If some of the ids is used in the structure (see above),
                 // ignore all refseq ids.
-                synonyms.insert(CSeq_id_Handle::GetHandle(id.GetRefseq().GetPublic()));
-                synonyms.insert(CSeq_id_Handle::GetHandle(id.GetRefseq().GetGi()));
-                if (id.GetRefseq().IsSetGpipe()) {
-                    synonyms.insert(CSeq_id_Handle::GetHandle(id.GetRefseq().GetGpipe()));
+                synonyms.insert(CSeq_id_Handle::GetHandle(it_id.GetRefseq().GetPublic()));
+                synonyms.insert(CSeq_id_Handle::GetHandle(it_id.GetRefseq().GetGi()));
+                if (it_id.GetRefseq().IsSetGpipe()) {
+                    synonyms.insert(CSeq_id_Handle::GetHandle(it_id.GetRefseq().GetGpipe()));
                 }
                 break;
             }
             case CGC_TypedSeqId::e_Private:
                 // Ignore private local ids.
-                if (id.GetPrivate().IsLocal()) continue;
-                synonyms.insert(CSeq_id_Handle::GetHandle(id.GetPrivate()));
+                if (it_id.GetPrivate().IsLocal()) continue;
+                synonyms.insert(CSeq_id_Handle::GetHandle(it_id.GetPrivate()));
                 break;
             case CGC_TypedSeqId::e_External:
-                synonyms.insert(CSeq_id_Handle::GetHandle(id.GetExternal().GetId()));
+                synonyms.insert(CSeq_id_Handle::GetHandle(it_id.GetExternal().GetId()));
                 break;
             default:
                 NCBI_THROW(CAnnotMapperException, eOtherError,
@@ -966,14 +1010,10 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
             }
         }
     }
-    if (gc_seq.IsSetStructure()  &&
-        (!parent_seq  ||  direction == eSeqMap_Down)) {
+    if (gc_seq.IsSetStructure()  &&  !parent_seq ) {
         // This is a top-level sequence or we are mapping down,
         // create CSeqMap.
-        SSeqMapSelector sel = selector;
-        sel.SetFlags(CSeqMap::fFindRef | CSeqMap::fIgnoreUnresolved).
-            SetLinkUsedTSE();
-        x_InitializeSeqMap(CSeqMap_CI(bh, sel), id, direction);
+        x_InitializeSeqMap(bh.GetSeqMap(), selector, id, direction);
         if (direction == eSeqMap_Up) {
             // Ignore seq-map destination ranges, map whole sequence to itself,
             // use unknown strand only.
@@ -981,11 +1021,8 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
             m_DstRanges[0].clear();
             m_DstRanges[0][CSeq_id_Handle::GetHandle(*id)]
                 .push_back(TRange::GetWhole());
-            x_PreserveDestinationLocs();
         }
-        else {
-            m_DstRanges.clear();
-        }
+        x_PreserveDestinationLocs();
     }
 }
 
