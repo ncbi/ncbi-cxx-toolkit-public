@@ -150,35 +150,45 @@ const CBioSource* GetBioSource(const CBioseq_Handle& handle)
     return NULL;
 }
 
+
+const COrg_ref* GetOrg_refOrNull(const CBioseq_Handle& handle)
+{
+    vector<CSeqdesc::E_Choice> types;
+    types.push_back(CSeqdesc::e_Source);
+    types.push_back(CSeqdesc::e_Org);
+    CSeqdesc_CI desc_it(handle, types);
+    if ( desc_it ) {
+        const CSeqdesc& desc = *desc_it;
+        if ( desc.IsSource() ) {
+            return &desc.GetSource().GetOrg();
+        }
+        if ( desc.IsOrg() ) {
+            return &desc.GetOrg();
+        }
+    }
+    return 0;
+}
+
+
 const COrg_ref& GetOrg_ref(const CBioseq_Handle& handle)
 {
-    {{
-        CSeqdesc_CI desc(handle, CSeqdesc::e_Source);
-        if (desc) {
-            return desc->GetSource().GetOrg();
-        }
-    }}
-
-    {{
-        CSeqdesc_CI desc(handle, CSeqdesc::e_Org);
-        if (desc) {
-            return desc->GetOrg();
-        }
-    }}
-
+    const COrg_ref* org_ref = GetOrg_refOrNull(handle);
+    if ( org_ref ) {
+        return *org_ref;
+    }
     NCBI_THROW(CException, eUnknown, "No organism set");
 }
 
 
 int GetTaxId(const CBioseq_Handle& handle)
 {
-    try {
-        return GetOrg_ref(handle).GetTaxId();
+    const COrg_ref* org_ref = GetOrg_refOrNull(handle);
+    if ( org_ref ) {
+        return org_ref->GetTaxId();
     }
-    catch ( exception& ) {
-        return 0;
-    }
+    return 0;
 }
+
 
 const CMolInfo* GetMolInfo(const CBioseq_Handle& handle)
 {

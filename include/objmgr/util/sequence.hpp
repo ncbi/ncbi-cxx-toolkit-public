@@ -629,6 +629,10 @@ CBioseq_Handle GetParentForPart(const CBioseq_Handle& part);
 /// a CException if there is no org-ref associated with the sequence
 NCBI_XOBJUTIL_EXPORT
 const COrg_ref& GetOrg_ref(const CBioseq_Handle& handle);
+/// Return the pointer to org-ref associated with a given sequence
+/// or null if there is no org-ref associated with the sequence
+NCBI_XOBJUTIL_EXPORT
+const COrg_ref* GetOrg_refOrNull(const CBioseq_Handle& handle);
 
 /// return the tax-id associated with a given sequence.  This will return 0
 /// if no tax-id can be found.
