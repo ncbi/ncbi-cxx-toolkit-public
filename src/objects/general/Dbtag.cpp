@@ -585,7 +585,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_HMP, "http://www.hmpdacc.org/catalog/grid.php?dataset=genomic&hmp_id=" },
     { CDbtag::eDbtagType_HOMD, "http://www.homd.org/" },
     { CDbtag::eDbtagType_HPRD, "http://www.hprd.org/protein/" },
-    { CDbtag::eDbtagType_HSSP, "http://srs.ebi.ac.uk/srsbin/cgi-bin/wgetz?-newId+-e+hssp-ID:" },
+    { CDbtag::eDbtagType_HSSP, "http://mrs.cmbi.ru.nl/m6/search?db=all&q=" },
     { CDbtag::eDbtagType_H_InvDB, "http://www.h-invitational.jp" },
     { CDbtag::eDbtagType_IFO, "http://www.nbrc.nite.go.jp/NBRC2/NBRCCatalogueDetailServlet?ID=NBRC&CAT=" },
     { CDbtag::eDbtagType_IMGT_GENEDB, "http://www.imgt.org/IMGT_GENE-DB/GENElect?species=Homo+sapiens&query=2+" },
