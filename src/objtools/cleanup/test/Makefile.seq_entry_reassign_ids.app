@@ -10,7 +10,7 @@ LIB = seqset $(SEQ_LIBS) pub medline biblio general xser xutil test_boost xncbi
 LIBS = $(DL_LIBS) $(ORIG_LIBS)
 LDFLAGS = $(FAST_LDFLAGS)
 
-REQUIRES = objects
+REQUIRES = Boost.Test.Included
 
 CHECK_CMD = seq_entry_reassign_ids
 CHECK_COPY = test_cases
