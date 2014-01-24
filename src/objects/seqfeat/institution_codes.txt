@@ -2608,6 +2608,7 @@ INPA:LMM	c	Instituto Nacional de Pesquisas da Amazonia, Laboratorio de Micologia
 INPC	s	National Pusa Collections
 INRA<FRA>	b	Institut National de la Recherche Agronomique
 INRA<FRA>:CGAB	b	Institut National de la Recherche Agronomique, Collection of Germplasms of Agaricus bisporus
+Insitute of Biology and Soil Science, Russian Academy of Sciences	s	Insitute of Biology and Soil Science, Russian Academy of Sciences
 INV	s	Inverness Museum and Art Gallery
 INVA	s	Invergordon Academy
 INVAM	c	International Culture Collection of (Vesicular) Arbuscular Mycorrhizal Fungi
