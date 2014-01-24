@@ -1166,16 +1166,15 @@ string CTL_Connection::GetDbgInfo(void) const {
 
 inline
 const CDBParams* CTL_Connection::GetBindParams(void) const {
-#ifdef FTDS_IN_USE
-    return m_ActiveCmd ? &m_ActiveCmd->GetBindParams() : NULL;
-#else
-    // With Sybase ctlib, calling CTL_RPCCmd::GetBindParams within an
-    // error handler can deadlock, but specifically testing for it
-    // fails because dynamic_cast only reliably handles types known to
-    // the main executable, as opposed to plugins.  No other derived
-    // classes override GetBindParams anyway.
+    // Calling CTL_RPCCmd::GetBindParams within an error handler works
+    // poorly, since it tries to run a query to get parameter
+    // information.  (When using Sybase libraries, this attempt can
+    // yield outright deadlocks; FreeTDS fares better in that regard,
+    // but still produces no useful results.)  However, specifically
+    // testing for CTL_RPCCmd fails because dynamic_cast only reliably
+    // handles types known to the main executable, as opposed to
+    // plugins.  No other derived classes override GetBindParams anyway.
     return m_ActiveCmd ? &m_ActiveCmd->impl::CBaseCmd::GetBindParams() : NULL;
-#endif
 }
 
 inline
