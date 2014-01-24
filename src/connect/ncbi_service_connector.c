@@ -785,7 +785,7 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             &&  !SERV_IsFirewallPort(uuu->port)) {
             CORE_LOGF_X(9, net_info->firewall == eFWMode_Fallback
                         ? eLOG_Warning : eLOG_Trace,
-                        ("[%s]  Fallback port :%hu is not in the set",
+                        ("[%s]  Firewall port :%hu is not in the fallback set",
                          uuu->service, uuu->port));
         }
         net_info->port = uuu->port;
