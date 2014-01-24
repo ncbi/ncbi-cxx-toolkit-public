@@ -3,7 +3,7 @@
 # Meta-makefile (object utilities)
 ##################################
 
-LIB_PROJ = discrepancy_report
+EXPENDABLE_LIB_PROJ = discrepancy_report
 SUB_PROJ = 
 
 srcdir = @srcdir@
