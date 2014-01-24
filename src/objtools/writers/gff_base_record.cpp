@@ -451,13 +451,31 @@ string CGffBaseRecord::xEscapedValue(
 //  ----------------------------------------------------------------------------
 {
     string escapedValue(value);
+    NStr::ReplaceInPlace(escapedValue, "%", "%25");
+
+    char original[2];
+    original[1] = 0;
+    char replacement[4];
+    for (char c=1; c < 0x20; ++c) {
+        original[0] = c;
+        ::sprintf(replacement, "%%%2.2X", c);
+        NStr::ReplaceInPlace(escapedValue, original, replacement);
+    }
+    for (size_t t=0; t < escapedValue.size(); ++t) {
+        if (escapedValue[t] == 0) {
+            escapedValue[t] = 1;
+        }
+    }
+    original[0] = 1;
+    NStr::ReplaceInPlace(escapedValue, original, "%00");
+    original[0] = 0x7F;
+    NStr::ReplaceInPlace(escapedValue, original, "%7F");
     NStr::ReplaceInPlace(escapedValue, ";", "%23");
     NStr::ReplaceInPlace(escapedValue, "=", "%3D");
     NStr::ReplaceInPlace(escapedValue, "&", "%26");
-    if (key == "start_range"  ||  key == "end_range") {
-        return escapedValue;
+    if (key != "start_range"  &&  key != "end_range") {
+        NStr::ReplaceInPlace(escapedValue, ",", "%2C");
     }
-    NStr::ReplaceInPlace(escapedValue, ",", "%2C");
     return escapedValue;
 }
 
