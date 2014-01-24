@@ -121,12 +121,20 @@ void CValidError_align::ValidateSeqAlign(const CSeq_align& align)
         break;
     case CSeq_align::C_Segs::e_Sparse:
     case CSeq_align::C_Segs::e_Spliced:
+        // ignore new segtype warnings in genomic gpipe sequence
+        if (m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
+            return;
+        }
         PostErr(eDiag_Warning, eErr_SEQ_ALIGN_Segtype,
                 "Segs: This alignment has an undefined or unsupported Seqalign segtype "
                 + NStr::IntToString(segtype), align);
         return;
         break;
     default:
+        // ignore new segtype warnings in genomic gpipe sequence
+        if (m_Imp.IsGpipe() && m_Imp.IsGenomic()) {
+            return;
+        }
         PostErr(eDiag_Error, eErr_SEQ_ALIGN_Segtype,
                 "Segs: This alignment has an undefined or unsupported Seqalign segtype "
                 + NStr::IntToString(segtype), align);

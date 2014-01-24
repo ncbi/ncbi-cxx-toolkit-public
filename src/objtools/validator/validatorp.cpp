@@ -2956,6 +2956,30 @@ void CValidError_imp::Setup(const CSeq_entry_Handle& seh)
          }
     }
 
+    // search genome build and annotation pipeline user object descriptors
+    for (CSeqdesc_CI desc_ci (seh, CSeqdesc::e_User);
+         desc_ci && !m_IsGpipe;
+         ++desc_ci) {
+         if ( desc_ci->GetUser().IsSetType() ) {
+             const CUser_object& obj = desc_ci->GetUser();
+             const CObject_id& oi = obj.GetType();
+             if ( ! oi.IsStr() ) continue;
+             if ( NStr::CompareNocase(oi.GetStr(), "GenomeBuild") == 0 ) {
+                 m_IsGpipe = true;
+             } else if ( NStr::CompareNocase(oi.GetStr(), "StructuredComment") == 0 ) {
+                 ITERATE (CUser_object::TData, field, obj.GetData()) {
+                     if ((*field)->IsSetLabel() && (*field)->GetLabel().IsStr()) {
+                         if (NStr::EqualNocase((*field)->GetLabel().GetStr(), "Annotation Pipeline")) {
+                             if (NStr::EqualNocase((*field)->GetData().GetStr(), "NCBI eukaryotic genome annotation pipeline")) {
+                                 m_IsGpipe = true;
+                             }
+                         }
+                     }
+                 }
+             }
+         }
+    }
+
     // examine features for location gi, product gi, and locus tag
     for (CFeat_CI feat_ci (seh); 
          feat_ci && (!m_FeatLocHasGI || !m_ProductLocHasGI || !m_GeneHasLocusTag);
