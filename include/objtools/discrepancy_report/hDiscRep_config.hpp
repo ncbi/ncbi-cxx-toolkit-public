@@ -171,6 +171,12 @@ BEGIN_SCOPE(DiscRepNmSpc)
         virtual ~CRepConfOncaller () {};
    };
 
+   class CRepConfMega  : public CRepConfig
+   {
+      public:
+        virtual ~CRepConfMega () {};
+   };
+
    class CDiscRepInfo 
    {
       public:
