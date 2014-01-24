@@ -151,7 +151,11 @@ public:
     void SetNumNonSpecificTargets(int number) {
         m_NumNonSpecificTarget = number;
     }
-
+    ///internal default 100
+    void SetMaxTargetPerSequence(int number) {
+        m_MaxTargetPerSequence = number;
+    }
+    
     ///the length of region at the 3' end of primer during which the mismatched are
     ///counted.  The idea is that these mismatches affect the PCR amplification 
     ///much more than those at the 5' end.
@@ -214,6 +218,8 @@ private:
     int m_NumNonSpecificTarget;
 
     CSeq_id::EAccessionInfo m_TemplateType;
+    int m_MaxTargetPerSequence;
+
 
 };
 
@@ -354,6 +360,10 @@ private:
 
     ///the hits represent the transcript variants from the same gene as the input template
     vector<vector<SPrimerHitInfo> >m_VariantHit;
+
+    ///max number of targets allowed from a single subject sequence for a primer.
+    vector<int> m_NumTargetFromSameSequence;
+
 
     ///Analyze the primer pair specificity
     void x_AnalyzePrimerSpecificity();
@@ -607,6 +617,7 @@ private:
     SHspIndexInfo* m_HspOverlappingWithRightPrimer;
     SHspIndexInfo* m_HspOverlappingWithLeftPrimerMinusStrand;
     SHspIndexInfo* m_HspOverlappingWithRightPrimerMinusStrand;
+    
 
     //For internal test 
     friend class ::CPrimercheckTest;
