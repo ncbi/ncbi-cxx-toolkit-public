@@ -12,7 +12,6 @@ import time
 import socket
 from netschedule_tests_pack import TestBase
 from netschedule_tests_pack_4_10 import getClientInfo, changeAffinity, execAny
-from ncbi_grid_1_0.ncbi.grid import ns as grid
 
 # Works for python 2.5. Python 2.7 has it in urlparse module
 from cgi import parse_qs

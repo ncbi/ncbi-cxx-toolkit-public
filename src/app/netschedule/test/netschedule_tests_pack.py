@@ -17,9 +17,7 @@ class TestBase:
     def getNetScheduleService( self, queueName, clientName ):
         return ns.NetScheduleService( self.ns.getHost() + ":" + \
                                         str( self.ns.getPort() ),
-                                        queueName, clientName,
-                                        ipc.RPCServer( \
-                                            self.ns.getGridCLIPath() ) )
+                                        queueName, clientName )
 
     def __init__( self, netschedule ):
         self.ns = netschedule
