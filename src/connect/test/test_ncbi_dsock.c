@@ -41,26 +41,29 @@
 #include "test_assert.h"  /* This header must go last */
 
 /* maximal UDP packet size as allowed by the standard */
-#define MAX_UDP_DGRAM_SIZE 65535
+#define MAX_UDP_DGRAM_SIZE  65535
 
 #if defined(NCBI_OS_BSD) || defined(NCBI_OS_OSF1) || defined(NCBI_OS_DARWIN)
    /* FreeBSD has this limit :-/ Source: `sysctl net.inet.udp.maxdgram` */
    /* For OSF1 (and FreeBSD) see also: /usr/include/netinet/udp_var.h   */
-#  define MAX_DGRAM_SIZE (9*1024)
+#  define MAX_DGRAM_SIZE  (9*1024)
 #elif defined(NCBI_OS_IRIX)
    /* This has been found experimentally on IRIX64 6.5 04101931 IP25 */
-#  define MAX_DGRAM_SIZE (60*1024)
+#  define MAX_DGRAM_SIZE  (60*1024)
 #elif defined(NCBI_OS_LINUX)
    /* Larger sizes do not seem to work everywhere */
-#  define MAX_DGRAM_SIZE 59550
+#  define MAX_DGRAM_SIZE  59550
+#elif defined(NCBI_OS_SOLARIS)
+   /* 65508 was reported too large */
+#  define MAX_DGRAM_SIZE  65507
 #else
-#  define MAX_DGRAM_SIZE MAX_UDP_DGRAM_SIZE
+#  define MAX_DGRAM_SIZE  MAX_UDP_DGRAM_SIZE
 #endif
 /* NOTE: x86_64 (AMD) kernel does not allow dgrams bigger than MTU minus
  * small overhead;  for these we use the script and pass the MTU via argv.
  */
 
-#define DEFAULT_PORT 55555
+#define DEFAULT_PORT  55555
 
 
 static unsigned short s_MTU = MAX_DGRAM_SIZE;
