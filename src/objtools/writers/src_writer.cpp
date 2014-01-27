@@ -58,7 +58,7 @@ CSrcWriter::HANDLERMAP CSrcWriter::sHandlerMap;
 //  Default Fields:
 //  ----------------------------------------------------------------------------
 static const string arrDefaultFields[] = {
-    "db",
+    "taxid",
     "div",
     "genome",
     "lineage",
@@ -140,6 +140,7 @@ void CSrcWriter::xInit()
 {
     if (sHandlerMap.empty()) {
         sHandlerMap["db"] = &CSrcWriter::xGatherDb;
+        sHandlerMap["taxid"] = &CSrcWriter::xGatherTaxonId;
         sHandlerMap["div"] = &CSrcWriter::xGatherDivision;
         sHandlerMap["division"] = &CSrcWriter::xGatherDivision;
         sHandlerMap["genome"] = &CSrcWriter::xGatherGenome;
@@ -510,6 +511,50 @@ bool CSrcWriter::xGatherDb(
         xPrepareTableColumn(curColName, curDisplayName, "");
         xAppendColumnValue(curColName, dbtagStr);
     } 
+    return true;
+}
+
+//  ----------------------------------------------------------------------------
+bool CSrcWriter::xGatherTaxonId(
+    const CBioSource& src,
+    IMessageListener*)
+//  ----------------------------------------------------------------------------
+{
+    const string colName = "taxid";
+    const string displayName = "taxid";
+    const string defaultValue = "";
+
+    if (!src.IsSetOrg()  ||  !src.GetOrg().IsSetDb()) {
+        return true;
+    }
+
+    typedef vector< CRef< CDbtag > > DBTAGS;
+    const DBTAGS& tags = src.GetOrg().GetDb();
+    string taxonIdStr;
+    for (DBTAGS::const_iterator cit = tags.begin(); cit != tags.end(); ++cit) {
+        const CDbtag& tag = **cit;
+        if (!tag.IsSetDb()  ||  tag.GetDb() != "taxon") {
+            continue;
+        }
+        const CObject_id& objid = tag.GetTag();
+        switch (objid.Which()) {
+        default:
+            return false;
+        case CObject_id::e_Str:
+            if (objid.GetStr().empty()) {
+                continue;
+            }
+            taxonIdStr = objid.GetStr();
+            break;
+        case CObject_id::e_Id:
+            taxonIdStr = NStr::IntToString(objid.GetId());
+            break;
+        }
+        break;
+    }
+    string curDisplayName = displayName;
+    xPrepareTableColumn(colName, displayName, "");
+    xAppendColumnValue(colName, taxonIdStr);
     return true;
 }
 

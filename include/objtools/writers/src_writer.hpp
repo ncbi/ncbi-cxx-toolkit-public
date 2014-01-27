@@ -121,6 +121,7 @@ protected:
     virtual bool xGatherOrgnameLineage(const CBioSource&, IMessageListener* =0);
     virtual bool xGatherPcrPrimers(const CBioSource&, IMessageListener* =0);
     virtual bool xGatherDb(const CBioSource&, IMessageListener* =0);
+    virtual bool xGatherTaxonId(const CBioSource&, IMessageListener* =0);
 
     virtual bool xFormatTabDelimited(CNcbiOstream&);
 
