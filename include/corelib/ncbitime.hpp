@@ -550,7 +550,7 @@ public:
     ///   - y = year without century           (00-99)
     ///   - M = month as decimal number        (01-12)
     ///   - B = full month name                (January-December)
-    ///   - b = abbeviated month name          (Jan-Dec)
+    ///   - b = abbreviated month name         (Jan-Dec)
     ///   - D = day as decimal number          (01-31)
     ///   - d = day as decimal number (w/o 0)  (1-31)
     ///   - H = hour in 12-hour format         (00-12)
@@ -569,7 +569,7 @@ public:
     ///   - w = abbreviated day of week name   (Sun-Sat)
     ///
     ///   Format string can represent date/time partially, in this case
-    ///   current time, or defaut values, will be used to amplify time
+    ///   current time, or default values, will be used to amplify time
     ///   object, if possible. Current date/time cannot be used
     ///   if format string contains "z" (time shift) format symbol.
     ///   Also, it cannot be used if time format is ambiguous, like "Y/D".
@@ -939,7 +939,7 @@ public:
     ///
     /// Round stored time to specified precision. All time components with
     /// precision less that specified will be zero-filled, all other
-    /// components will be adjusted accondingly to rules for rounding
+    /// components will be adjusted accordingly to rules for rounding
     /// numbers.
     /// @param precision
     ///   Rounding precision. 
@@ -1347,14 +1347,14 @@ public:
     ///   Rounding mode. By default time span will be truncated at last value
     ///   specified by precision. If mode is eRound, that time span will be
     ///   arithmetically rounded by precision level. 
-    ///   This parameters is ignored for eSSP_Smart precision level and
-    ///   always works as eTrunc.
     /// @param zero_mode
     ///   Mode to print or skip zero parts of time span which should be
     ///   printed but have 0 value. Apply to middle and trailing zero parts
     ///   of time span only. Leading zeros will be ignored in common case
     ///   in any mode, they can be printed only if it is impossible
     ///   to represent time span otherwise.
+    ///   This parameters is ignored for eSSP_Smart precision level and
+    ///   always works as eSSZ_SkipZero.
     /// @return
     ///   A string representation of time span.
     /// @sa
@@ -1466,6 +1466,12 @@ private:
 
     /// Helper method to normalize stored time value.
     void x_Normalize(void);
+
+    /// Helpers for AsSmartString()
+    string x_AsSmartString_Smart_Big  (ERound rounding);
+    string x_AsSmartString_Smart_Small(ERound rounding);
+    string x_AsSmartString_Precision  (ESmartStringPrecision precision,
+                                       ERound rounding, ESmartStringZeroMode zero_mode);
 
 private:
     long  m_Sec;      ///< Seconds part of the time span

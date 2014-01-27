@@ -1231,10 +1231,103 @@ static void s_TestTimeSpan_AsSmartString(void)
         const char*                      result;
     };
 
+    // Shortcode for testing in smart mode -- (sec,ns) constructor only
+    #define SMART_STR_TEST(round, sec, nanosec, result) \
+            { CTimeSpan(sec, nanosec), CTimeSpan::eSSP_Smart, round, CTimeSpan::eSSZ_SkipZero,   result }, \
+            { CTimeSpan(sec, nanosec), CTimeSpan::eSSP_Smart, round, CTimeSpan::eSSZ_NoSkipZero, result }
+    // Same, but for an timespan object
+    #define SMART_STR_TEST_TS(round, ts, result) \
+            { ts, CTimeSpan::eSSP_Smart, round, CTimeSpan::eSSZ_SkipZero,   result }, \
+            { ts, CTimeSpan::eSSP_Smart, round, CTimeSpan::eSSZ_NoSkipZero, result }
+
     static const STest s_Test[] = {
 
+        // Smart mode for timespans < 1 min (CXX-4101)
+
+        SMART_STR_TEST(eTrunc,  0,          0,  "0 seconds" ),
+        SMART_STR_TEST(eTrunc,  1,          0,  "1 second" ),
+        SMART_STR_TEST(eTrunc,  1,    1000000,  "1 second" ),
+        SMART_STR_TEST(eTrunc,  0,        999,  "999 nanoseconds" ),
+        SMART_STR_TEST(eTrunc,  0,       1000,  "1 microsecond" ),
+        SMART_STR_TEST(eTrunc,  0,    1000000,  "1 millisecond" ),
+        SMART_STR_TEST(eTrunc,  0,  100000000,  "100 milliseconds" ),
+        SMART_STR_TEST(eTrunc,  0, 1000000001,  "1 second" ),
+        SMART_STR_TEST(eTrunc, 59,  900000000,  "59.9 seconds" ),
+        SMART_STR_TEST(eTrunc, 12,   41000000,  "12 seconds" ),
+        SMART_STR_TEST(eTrunc, 12,  341000000,  "12.3 seconds" ),
+        SMART_STR_TEST(eTrunc,  1,  234100000,  "1.23 seconds" ),
+        SMART_STR_TEST(eTrunc,  0,  123410000,  "123 milliseconds" ),
+        SMART_STR_TEST(eTrunc,  0,   12341000,  "12.3 milliseconds" ),
+        SMART_STR_TEST(eTrunc,  0,    1234100,  "1.23 milliseconds" ),
+        SMART_STR_TEST(eTrunc,  0,     123410,  "123 microseconds" ),
+        SMART_STR_TEST(eTrunc,  0,      12341,  "12.3 microseconds" ),
+        SMART_STR_TEST(eTrunc,  0,       1234,  "1.23 microseconds" ),
+        SMART_STR_TEST(eTrunc,  0,        123,  "123 nanoseconds" ),
+        SMART_STR_TEST(eTrunc,  0,         12,  "12 nanoseconds" ),
+        SMART_STR_TEST(eTrunc,  0,  999000000,  "999 milliseconds" ),
+        SMART_STR_TEST(eTrunc,  0,  999500000,  "999 milliseconds" ),
+        SMART_STR_TEST(eTrunc,  0,     999000,  "999 microseconds" ),
+        SMART_STR_TEST(eTrunc,  0,     999500,  "999 microseconds" ),
+
+        SMART_STR_TEST(eRound,  0,          0,  "0 seconds" ),
+        SMART_STR_TEST(eRound,  1,          0,  "1 second" ),
+        SMART_STR_TEST(eRound,  1,    1000000,  "1 second" ),
+        SMART_STR_TEST(eRound,  0,        999,  "999 nanoseconds" ),
+        SMART_STR_TEST(eRound,  0,       1000,  "1 microsecond" ),
+        SMART_STR_TEST(eRound,  0,    1000000,  "1 millisecond" ),
+        SMART_STR_TEST(eRound,  0,  100000000,  "100 milliseconds" ),
+        SMART_STR_TEST(eRound,  0, 1000000001,  "1 second" ),
+        SMART_STR_TEST(eRound, 59,  940000000,  "59.9 seconds" ),
+        SMART_STR_TEST(eRound, 59,  950000000,  "1 minute" ),
+        SMART_STR_TEST(eRound, 12,   50000000,  "12.1 seconds" ),
+        SMART_STR_TEST(eRound, 12,  341000000,  "12.3 seconds" ),
+        SMART_STR_TEST(eRound, 12,  351000000,  "12.4 seconds" ),
+        SMART_STR_TEST(eRound,  1,  234100000,  "1.23 seconds" ),
+        SMART_STR_TEST(eRound,  1,  235100000,  "1.24 seconds" ),
+        SMART_STR_TEST(eRound,  0,  123410000,  "123 milliseconds" ),
+        SMART_STR_TEST(eRound,  0,  123510000,  "124 milliseconds" ),
+        SMART_STR_TEST(eRound,  0,   12341000,  "12.3 milliseconds" ),
+        SMART_STR_TEST(eRound,  0,    1234100,  "1.23 milliseconds" ),
+        SMART_STR_TEST(eRound,  0,     123410,  "123 microseconds" ),
+        SMART_STR_TEST(eRound,  0,      12341,  "12.3 microseconds" ),
+        SMART_STR_TEST(eRound,  0,       1234,  "1.23 microseconds" ),
+        SMART_STR_TEST(eRound,  0,        123,  "123 nanoseconds" ),
+        SMART_STR_TEST(eRound,  0,         12,  "12 nanoseconds" ),
+        SMART_STR_TEST(eRound,  0,  999000000,  "999 milliseconds" ),
+        SMART_STR_TEST(eRound,  0,  999500000,  "1 second" ),
+        SMART_STR_TEST(eRound,  0,     999000,  "999 microseconds" ),
+        SMART_STR_TEST(eRound,  0,     999500,  "1 millisecond" ),
+
+        // Smart mode for timespans >= 1 min
+
+        SMART_STR_TEST( eTrunc,    60,         0, "1 minute" ),
+        SMART_STR_TEST( eTrunc,    61,         0, "1 minute 1 second" ),
+        SMART_STR_TEST( eTrunc,   119, 900000000, "1 minute 59 seconds" ),
+        SMART_STR_TEST( eTrunc,   600,         0, "10 minutes" ),
+        SMART_STR_TEST( eTrunc,   629,         0, "10 minutes 29 seconds" ),
+        SMART_STR_TEST( eTrunc,  3599, 900000000, "59 minutes 59 seconds" ),
+        SMART_STR_TEST( eTrunc,  3600,         0, "1 hour" ),
+        SMART_STR_TEST( eTrunc, 36000,         0, "10 hours" ),
+        SMART_STR_TEST( eTrunc, 36059,         0, "10 hours" ),
+        SMART_STR_TEST( eTrunc, 86400,         0, "1 day" ),
+
+        SMART_STR_TEST( eRound,    60,         0, "1 minute" ),
+        SMART_STR_TEST( eRound,    61,         0, "1 minute 1 second" ),
+        SMART_STR_TEST( eRound,   119, 900000000, "2 minutes" ),
+        SMART_STR_TEST( eRound,   600,         0, "10 minutes" ),
+        SMART_STR_TEST( eRound,   629,         0, "10 minutes 29 seconds" ),
+        SMART_STR_TEST( eRound,  3599, 900000000, "1 hour" ),
+        SMART_STR_TEST( eRound,  3600,         0, "1 hour" ),
+        SMART_STR_TEST( eRound, 36000,         0, "10 hours" ),
+        SMART_STR_TEST( eRound, 36059,         0, "10 hours 1 minute" ),
+        SMART_STR_TEST( eRound, 86400,         0, "1 day" ),
+
+        SMART_STR_TEST_TS( eTrunc, CTimeSpan(29,23,59,1,0),       "29 days 23 hours" ),
+        SMART_STR_TEST_TS( eRound, CTimeSpan(29,23,59,1,0),       "1 month" ),
+        SMART_STR_TEST_TS( eTrunc, CTimeSpan(559,0,59,41,900500), "1 year 6 months"),
+        SMART_STR_TEST_TS( eRound, CTimeSpan(559,0,59,41,900500), "1 year 6 months"),
+
         // zero time span
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0.0 seconds" },
         { CTimeSpan(0,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 years"   },
         { CTimeSpan(0,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 months"  },
         { CTimeSpan(0,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 days"    },
@@ -1250,7 +1343,6 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(0,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 seconds" },
         { CTimeSpan(0,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 seconds" },
         { CTimeSpan(0,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 seconds" },
-        { CTimeSpan(0,0), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 seconds" },
         { CTimeSpan(0,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"   },
         { CTimeSpan(0,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months"  },
         { CTimeSpan(0,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"    },
@@ -1268,15 +1360,14 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(0,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 seconds" },
 
         // 1 second
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1.0 seconds" },
         { CTimeSpan(1,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 years"   },
         { CTimeSpan(1,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 months"  },
         { CTimeSpan(1,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 days"    },
         { CTimeSpan(1,0), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 minutes" },
         { CTimeSpan(1,0), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1.000 seconds" },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1.000000 seconds" },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1.000000000 seconds" },
+        { CTimeSpan(1,0), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
+        { CTimeSpan(1,0), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
+        { CTimeSpan(1,0), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
         { CTimeSpan(1,0), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
         { CTimeSpan(1,0), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
         { CTimeSpan(1,0), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
@@ -1284,15 +1375,14 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(1,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
         { CTimeSpan(1,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
         { CTimeSpan(1,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
         { CTimeSpan(1,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"   },
         { CTimeSpan(1,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months"  },
         { CTimeSpan(1,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"    },
         { CTimeSpan(1,0), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 minutes" },
         { CTimeSpan(1,0), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1.000 seconds" },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1.000000 seconds" },
-        { CTimeSpan(1,0), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1.000000000 seconds" },
+        { CTimeSpan(1,0), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
+        { CTimeSpan(1,0), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
+        { CTimeSpan(1,0), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
         { CTimeSpan(1,0), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
         { CTimeSpan(1,0), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
         { CTimeSpan(1,0), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
@@ -1302,15 +1392,14 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(1,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
 
         // 1 second 1 millisecond
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1.001 seconds" },
         { CTimeSpan(1,1000000), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 years"   },
         { CTimeSpan(1,1000000), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 months"  },
         { CTimeSpan(1,1000000), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 days"    },
         { CTimeSpan(1,1000000), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 minutes" },
         { CTimeSpan(1,1000000), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1.001 seconds" },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1.001000 seconds" },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1.001000000 seconds" },
+        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second 1 millisecond" },
+        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second 1000 microseconds" },
+        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second 1000000 nanoseconds" },
         { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
         { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
         { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
@@ -1318,15 +1407,14 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
         { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
         { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "1.001 seconds" },
         { CTimeSpan(1,1000000), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"   },
         { CTimeSpan(1,1000000), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months"  },
         { CTimeSpan(1,1000000), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"    },
         { CTimeSpan(1,1000000), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 minutes" },
         { CTimeSpan(1,1000000), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1.001 seconds" },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1.001000 seconds" },
-        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1.001000000 seconds" },
+        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second 1 millisecond" },
+        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second 1000 microseconds" },
+        { CTimeSpan(1,1000000), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second 1000000 nanoseconds" },
         { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision1,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
         { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision2,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
         { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision3,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
@@ -1336,7 +1424,6 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(1,1000000), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
 
         // 1 minute 1 second
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute 1 second" },
         { CTimeSpan(61,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 years"  },
         { CTimeSpan(61,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 months" },
         { CTimeSpan(61,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 days"   },
@@ -1352,7 +1439,6 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(61,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute 1 second" },
         { CTimeSpan(61,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute 1 second" },
         { CTimeSpan(61,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute 1 second" },
-        { CTimeSpan(61,0), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute 1 second" },
         { CTimeSpan(61,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"  },
         { CTimeSpan(61,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months" },
         { CTimeSpan(61,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"   },
@@ -1370,8 +1456,6 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(61,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute 1 second" },
 
         // 999 nanoseconds
-        { CTimeSpan(0,999), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0.000000999 seconds" },
-        { CTimeSpan(0,999), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0.000000999 seconds" },
         { CTimeSpan(0,999), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"   },
         { CTimeSpan(0,999), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months"  },
         { CTimeSpan(0,999), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"    },
@@ -1379,91 +1463,83 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(0,999), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 seconds" },
         { CTimeSpan(0,999), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 seconds" },
         { CTimeSpan(0,999), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 seconds" },
-        { CTimeSpan(0,999), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "0.000000999 seconds" },
+        { CTimeSpan(0,999), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "999 nanoseconds" },
         { CTimeSpan(0,999), CTimeSpan::eSSP_Millisecond, eRound, CTimeSpan::eSSZ_SkipZero,   "0 seconds" },
-        { CTimeSpan(0,999), CTimeSpan::eSSP_Microsecond, eRound, CTimeSpan::eSSZ_SkipZero,   "0.000001 seconds" },
-        { CTimeSpan(0,999), CTimeSpan::eSSP_Nanosecond,  eRound, CTimeSpan::eSSZ_SkipZero,   "0.000000999 seconds" },
+        { CTimeSpan(0,999), CTimeSpan::eSSP_Microsecond, eRound, CTimeSpan::eSSZ_SkipZero,   "1 microsecond" },
+        { CTimeSpan(0,999), CTimeSpan::eSSP_Nanosecond,  eRound, CTimeSpan::eSSZ_SkipZero,   "999 nanoseconds" },
 
         // 1000 nanoseconds
-        { CTimeSpan(0,1000), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_SkipZero,  "0.000001 seconds" },
         { CTimeSpan(0,1000), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,  "0 years"   },
         { CTimeSpan(0,1000), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,  "0 months"  },
         { CTimeSpan(0,1000), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,  "0 days"    },
         { CTimeSpan(0,1000), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,  "0 minutes" },
         { CTimeSpan(0,1000), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,  "0 seconds" },
         { CTimeSpan(0,1000), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,  "0 seconds" },
-        { CTimeSpan(0,1000), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,  "0.000001 seconds" },
-        { CTimeSpan(0,1000), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,  "0.000001000 seconds" },
+        { CTimeSpan(0,1000), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,  "1 microsecond" },
+        { CTimeSpan(0,1000), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,  "1000 nanoseconds" },
 
         // 1,000,000 nanoseconds
-        { CTimeSpan(0,1000000), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_SkipZero, "0.001 seconds" },
         { CTimeSpan(0,1000000), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero, "0 years"   },
         { CTimeSpan(0,1000000), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero, "0 months"  },
         { CTimeSpan(0,1000000), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero, "0 days"    },
         { CTimeSpan(0,1000000), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero, "0 minutes" },
         { CTimeSpan(0,1000000), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero, "0 seconds" },
-        { CTimeSpan(0,1000000), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero, "0.001 seconds" },
-        { CTimeSpan(0,1000000), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero, "0.001000 seconds" },
-        { CTimeSpan(0,1000000), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero, "0.001000000 seconds" },
+        { CTimeSpan(0,1000000), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero, "1 millisecond" },
+        { CTimeSpan(0,1000000), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero, "1000 microseconds" },
+        { CTimeSpan(0,1000000), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero, "1000000 nanoseconds" },
 
         // 100,000,000 nanoseconds
-        { CTimeSpan(0,100000000), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_SkipZero, "0.1 seconds" },
         { CTimeSpan(0,100000000), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero, "0 years"   },
         { CTimeSpan(0,100000000), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero, "0 months"  },
         { CTimeSpan(0,100000000), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero, "0 days"    },
         { CTimeSpan(0,100000000), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero, "0 minutes" },
         { CTimeSpan(0,100000000), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero, "0 seconds" },
-        { CTimeSpan(0,100000000), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero, "0.100 seconds" },
-        { CTimeSpan(0,100000000), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero, "0.100000 seconds" },
-        { CTimeSpan(0,100000000), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero, "0.100000000 seconds" },
+        { CTimeSpan(0,100000000), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero, "100 milliseconds" },
+        { CTimeSpan(0,100000000), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero, "100000 microseconds" },
+        { CTimeSpan(0,100000000), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero, "100000000 nanoseconds" },
 
         // 1,000,000,000 nanoseconds
-        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1.0 seconds" },
-        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1.000 seconds" },
-        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1.000000 seconds" },
-        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1.000000000 seconds" },
-        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
+        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
+        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
+        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
         { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"   },
         { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months"  },
         { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"    },
         { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 minutes" },
         { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1.000 seconds" },
-        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1.000000 seconds" },
-        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1.000000000 seconds" },
+        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
+        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
+        { CTimeSpan(0,1000000000), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
 
         // 1,000,000,001 nanoseconds
-        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1.000000001 seconds" },
         { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
-        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1.000 seconds" },
-        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1.000000 seconds" },
-        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1.000000001 seconds" },
-        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "1.000000001 seconds" },
+        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
+        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second"  },
+        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 second 1 nanosecond" },
         { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"   },
         { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months"  },
         { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"    },
         { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 minutes" },
         { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
-        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1.000 seconds" },
-        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1.000000 seconds" },
-        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1.000000001 seconds" },
+        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
+        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second"  },
+        { CTimeSpan(0,1000000001), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 second 1 nanosecond" },
 
 #if (SIZEOF_LONG == 8)
         // 10,000,000,000 nanoseconds
-        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10.0 seconds" },
+        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 seconds" },
         { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 seconds" },
-        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"   },
-        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months"  },
-        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"    },
-        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 minutes" },
+        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"    },
+        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months"   },
+        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"     },
+        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Minute,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 minutes"  },
         { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Second,      eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 seconds" },
-        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "10.000 seconds" },
-        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "10.000000 seconds" },
-        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "10.000000000 seconds" },
+        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Millisecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 seconds" },
+        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Microsecond, eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 seconds" },
+        { CTimeSpan(0,NCBI_CONST_INT8(10000000000)), CTimeSpan::eSSP_Nanosecond,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 seconds" },
 #endif
 
         // 60 second
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute"  },
         { CTimeSpan(60,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 years"   },
         { CTimeSpan(60,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 months"  },
         { CTimeSpan(60,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 days"    },
@@ -1479,7 +1555,6 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(60,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute"  },
         { CTimeSpan(60,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute"  },
         { CTimeSpan(60,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 minute"  },
-        { CTimeSpan(60,0), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute"  },
         { CTimeSpan(60,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"   },
         { CTimeSpan(60,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months"  },
         { CTimeSpan(60,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"    },
@@ -1497,7 +1572,6 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(60,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 minute"  },
 
         // 600 seconds
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 minutes" },
         { CTimeSpan(600,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 years"    },
         { CTimeSpan(600,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 months"   },
         { CTimeSpan(600,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 days"     },
@@ -1513,7 +1587,6 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(600,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 minutes" },
         { CTimeSpan(600,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 minutes" },
         { CTimeSpan(600,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 minutes" },
-        { CTimeSpan(600,0), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 minutes" },
         { CTimeSpan(600,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"    },
         { CTimeSpan(600,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months"   },
         { CTimeSpan(600,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"     },
@@ -1531,7 +1604,6 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(600,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 minutes" },
 
         // 3600 seconds
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 hour"   },
         { CTimeSpan(3600,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 years"  },
         { CTimeSpan(3600,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 months" },
         { CTimeSpan(3600,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 days"   },
@@ -1547,7 +1619,6 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(3600,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 hour"   },
         { CTimeSpan(3600,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 hour"   },
         { CTimeSpan(3600,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 hour"   },
-        { CTimeSpan(3600,0), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 hour"   },
         { CTimeSpan(3600,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"  },
         { CTimeSpan(3600,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months" },
         { CTimeSpan(3600,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"   },
@@ -1565,7 +1636,6 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(3600,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 hour"   },
 
         // 36000 seconds
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 hours" },
         { CTimeSpan(36000,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 years"  },
         { CTimeSpan(36000,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 months" },
         { CTimeSpan(36000,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 days"   },
@@ -1581,7 +1651,6 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(36000,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 hours" },
         { CTimeSpan(36000,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 hours" },
         { CTimeSpan(36000,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "10 hours" },
-        { CTimeSpan(36000,0), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 hours" },
         { CTimeSpan(36000,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"  },
         { CTimeSpan(36000,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months" },
         { CTimeSpan(36000,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 days"   },
@@ -1599,7 +1668,6 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(36000,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "10 hours" },
 
         // 86400 seconds
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 day"    },
         { CTimeSpan(86400,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 years"  },
         { CTimeSpan(86400,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "0 months" },
         { CTimeSpan(86400,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 day"    },
@@ -1615,7 +1683,6 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(86400,0), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 day"    },
         { CTimeSpan(86400,0), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 day"    },
         { CTimeSpan(86400,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 day"    },
-        { CTimeSpan(86400,0), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 day"    },
         { CTimeSpan(86400,0), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 years"  },
         { CTimeSpan(86400,0), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "0 months" },
         { CTimeSpan(86400,0), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 day"    },
@@ -1633,7 +1700,6 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(86400,0), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 day"    },
 
         // Some long time
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months" },
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year" },
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months" },
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days" },
@@ -1649,7 +1715,6 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision5,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 0 hours 59 minutes" },
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 0 hours 59 minutes 41 seconds" },
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 0 hours 59 minutes 41 seconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Smart,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months" },
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Year,        eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 year" },
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Month,       eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months" },
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Day,         eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days" },
@@ -1666,7 +1731,6 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision6,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days 59 minutes 41 seconds" },
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision7,  eTrunc, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days 59 minutes 41 seconds" },
 
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Smart,       eRound, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months" },
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Year,        eRound, CTimeSpan::eSSZ_NoSkipZero, "2 years" },
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Month,       eRound, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months" },
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Day,         eRound, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days" },
@@ -1682,7 +1746,6 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision5,  eRound, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 1 hour" },
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision6,  eRound, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 0 hours 59 minutes 41 seconds" },
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision7,  eRound, CTimeSpan::eSSZ_NoSkipZero, "1 year 6 months 14 days 0 hours 59 minutes 41 seconds" },
-        { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Smart,       eRound, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months" },
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Year,        eRound, CTimeSpan::eSSZ_SkipZero,   "2 years" },
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Month,       eRound, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months" },
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Day,         eRound, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days" },
@@ -1699,7 +1762,7 @@ static void s_TestTimeSpan_AsSmartString(void)
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision6,  eRound, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days 59 minutes 41 seconds" },
         { CTimeSpan(559,0,59,41,900500), CTimeSpan::eSSP_Precision7,  eRound, CTimeSpan::eSSZ_SkipZero,   "1 year 6 months 14 days 59 minutes 41 seconds" },
 
-        //
+        // stopper
         { CTimeSpan(0,0), CTimeSpan::eSSP_Smart, eTrunc, CTimeSpan::eSSZ_SkipZero,  NULL }
     };
 
@@ -1982,6 +2045,8 @@ int main()
 
     // Run tests
     try {
+        s_TestTimeSpan_AsSmartString();
+return 0;
         s_TestMisc();
         s_TestFormats();
         s_TestGMT();

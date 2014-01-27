@@ -2331,32 +2331,226 @@ struct SSmartStringItem {
 };
 
 
-string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
-                                ERound                rounding,
-                                ESmartStringZeroMode  zero_mode) const
+// Helper functions for Smart mode and timespans >= 1 min.
+// Do not use with smaller timespans!
+string CTimeSpan::x_AsSmartString_Smart_Big(ERound rounding)
 {
-    // Make positive copy
-    CTimeSpan diff(*this);
-    if ( diff.GetSign() == eNegative ) {
-        diff.Invert();
+    // Round timespan
+    if ( rounding == eRound ) {
+
+        // Find first non-zero value for proper rounding (2 level max)
+        long days         = GetCompleteDays();
+        int  hours        = x_Hour();
+        int  minutes      = x_Minute();
+        int  adjust_level = eSSP_Second;
+
+        if ( days >=365 ) {
+            adjust_level = eSSP_Year;
+        } else if (days >= 30) {
+            adjust_level = eSSP_Month;
+        } else if (days > 0) {
+            adjust_level = eSSP_Day;
+        } else if (hours > 0) {
+            adjust_level = eSSP_Hour;
+        } else if (minutes > 0) {
+            adjust_level = eSSP_Minute;
+        }
+        adjust_level++; // one level down
+
+        // Add adjustment time span
+        switch (ESmartStringPrecision(adjust_level)) {
+            case eSSP_Month:
+                *this += CTimeSpan(15, 0, 0, 0);
+                break;
+            case eSSP_Day:
+                *this += CTimeSpan(0, 12, 0, 0);
+                break;
+            case eSSP_Hour:
+                *this += CTimeSpan(0, 0, 30, 0);
+                break;
+            case eSSP_Minute:
+                *this += CTimeSpan(0, 0, 0, 30);
+                break;
+            case eSSP_Second:
+                *this += CTimeSpan(0, 0, 0, 0, kNanoSecondsPerSecond/2);
+                break;
+            default:
+                ; // years, and seconds and below -- nothing to do
+        }
     }
+
+    // Prepare data
+    typedef SSmartStringItem SItem;
+    const int max_count = 6;
+    SItem span[max_count];
+
+    long days = GetCompleteDays();
+    long nanoseconds = GetNanoSecondsAfterSecond();
+
+    span[0] = SItem(days/365  , "year"  );  days %= 365;
+    span[1] = SItem(days/30   , "month" );  days %= 30;
+    span[2] = SItem(days      , "day"   );
+    span[3] = SItem(x_Hour()  , "hour"  );
+    span[4] = SItem(x_Minute(), "minute");
+    span[5] = SItem(x_Second(), "second");
+
+    string result;   // result string
+    int start = 0;   // precision level to start from (first non-zero)
+    int precision;   // end precision
+
+    // Get start precision after rounding (it can changes there)
+    for (; start < 5;  start++) {
+        if (span[start].value) {
+            break;
+        }
+    }
+    // Allow 2 levels max for smart mode
+    if (start == eSSP_Second) {
+        precision = start;
+    } else {
+        precision = start + 1;
+    }
+
+    // Compose result string
+    while (start <= precision) {
+        long val = span[start].value;
+        if ( !val ) {
+            start++;
+            continue;
+        }
+        if ( !result.empty() ) {
+            result += " ";
+        }
+        result += NStr::LongToString(val) + " " + span[start].str;
+        if (val != 1) {
+            result += "s";
+        }
+        start++;
+    }
+    return result;
+}
+
+// Helper functions for Smart mode and  timespans < 1 min.
+// Do not use with bigger timespans!
+string CTimeSpan::x_AsSmartString_Smart_Small(ERound rounding)
+{
+    enum EUnit {
+        eSecond = 0,
+        eMillisecond,
+        eMicrosecond,
+        eNanosecond
+    };
+    const char* kUnitNames[4] = { "second", "millisecond", "microsecond", "nanosecond" };
+
+    // Get timespan components
+    int  sec = x_Second();
+    long nanoseconds  = GetNanoSecondsAfterSecond();
+    // Split nanoseconds on 3 digit parts AAABBBCCC
+    // AAA - milli, BBB - micro, CCC - nano
+    int  milli = nanoseconds / 1000000;
+    int  micro = nanoseconds / 1000 % 1000;
+    int  nano  = nanoseconds % 1000;
+
+    // We would like to have 3 digits in result,
+    // so we need 2 components max.
+    EUnit unit = eSecond;
+    long  v1 = 0;
+    long  v2 = 0;
+
+    if ( sec ) {
+        v1 = sec;
+        v2 = milli;
+    } else if ( milli ) {
+        unit = eMillisecond;
+        v1 = milli;
+        v2 = micro;
+    } else if ( micro ) {
+        unit = eMicrosecond;
+        v1 = micro;
+        v2 = nano;
+    } else if ( nano ) {
+        unit = eNanosecond;
+        v1 = nano;
+        v2 = 0;
+    } else {
+        // Empty timespan
+        return "0 seconds";
+    }
+
+    string result;
+
+    result = NStr::LongToString(v1);
+    bool plural = (v1 != 1);
+    int len = result.length();
+
+    // Rounding
+    if (rounding == eRound) {
+        // Rounding depends on number of digits we already have in v1
+        if (len == 1) {
+            v2 += 5;
+        } else if (len == 2) {
+            v2 += 50;
+        } else { // len == 3
+            v2 += 500;
+        }
+        // Check on overflow
+        if ( v2 > 999 ) {
+            v1++;
+            v2 = 0;
+            if (unit == eSecond) {
+                if ( v1 > 59 ) {
+                    // Special case, because we work with timespans < 1 min
+                    return "1 minute";
+                }
+            } else {
+                if ( v1 > 999 ) {
+                    // Shift to bigger units
+                    v1 = 1;
+                    unit = EUnit(unit-1);
+                }
+            }
+            // Reconvert v1
+            result = NStr::LongToString(v1);
+            plural = (v1 != 1);
+            len = result.length();
+        }
+    }
+
+    // Add (3-n) digits from v2 after "."
+    if (v2  &&  len < 3) {
+        int n = v2 / 10;
+        if (len == 2) {
+            n = n / 10;
+        }
+        if ( n ) {
+            result += "." + NStr::LongToString(n);
+            plural = true;
+        }
+    }
+    result += string(" ") + kUnitNames[unit];
+    if (plural) {
+        result += "s";
+    }
+    return result;
+}
+
+
+// Helper functions for all modes except Smart.
+string CTimeSpan::x_AsSmartString_Precision(ESmartStringPrecision precision, 
+                                            ERound rounding, ESmartStringZeroMode zero_mode)
+{
     // Named or float precision level
     bool is_named_precision = (precision <= eSSP_Nanosecond);
-    bool is_smart_mode = (precision == eSSP_Smart);
 
     // Round time span
-    if ( !is_smart_mode  &&  rounding == eRound ) {
-
+    if (rounding == eRound ) {
         int adjust_level = precision;
 
         // Calculate adjustment for floating precision level
         if ( !is_named_precision ) {
             adjust_level = eSSP_Nanosecond;
-            long  days         = diff.GetCompleteDays();
-            int   hours        = diff.x_Hour();
-            int   minutes      = diff.x_Minute();
-            int   seconds      = diff.x_Second();
-            int   adjust_shift = precision - eSSP_Nanosecond - 1;
+            long days = GetCompleteDays();
+            int  adjust_shift = precision - eSSP_Nanosecond - 1;
 
             if ( days >=365 ) {
                 adjust_level = eSSP_Year + adjust_shift;
@@ -2364,46 +2558,47 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
                 adjust_level = eSSP_Month + adjust_shift;
             } else if (days > 0) {
                 adjust_level = eSSP_Day + adjust_shift;
-            } else if (hours > 0) {
+            } else if (x_Hour() > 0) {
                 adjust_level = eSSP_Hour + adjust_shift;
-            } else if (minutes > 0) {
+            } else if (x_Minute() > 0) {
                 adjust_level = eSSP_Minute + adjust_shift;
-            } else if (seconds > 0) {
+            } else if (x_Second() > 0) {
                 adjust_level = eSSP_Second + adjust_shift;
             }
             if (adjust_level > eSSP_Second) {
-                if ( diff.GetNanoSecondsAfterSecond() % 1000 == 0 ) {
+                if ( GetNanoSecondsAfterSecond() % 1000 == 0 ) {
                     adjust_level = eSSP_Millisecond;
-                } else if ( diff.GetNanoSecondsAfterSecond() % 1000000 == 0 ) {
+                } else if ( GetNanoSecondsAfterSecond() % 1000000 == 0 ) {
                     adjust_level = eSSP_Microsecond;
                 }
+                // no adjustment otherwise
             }
         }
         // Add adjustment time span
         switch (ESmartStringPrecision(adjust_level)) {
             case eSSP_Year:
-                diff += CTimeSpan(365/2, 0, 0, 0);
+                *this += CTimeSpan(365/2, 0, 0, 0);
                 break;
             case eSSP_Month:
-                diff += CTimeSpan(15, 0, 0, 0);
+                *this += CTimeSpan(15, 0, 0, 0);
                 break;
             case eSSP_Day:
-                diff += CTimeSpan(0, 12, 0, 0);
+                *this += CTimeSpan(0, 12, 0, 0);
                 break;
             case eSSP_Hour:
-                diff += CTimeSpan(0, 0, 30, 0);
+                *this += CTimeSpan(0, 0, 30, 0);
                 break;
             case eSSP_Minute:
-                diff += CTimeSpan(0, 0, 0, 30);
+                *this += CTimeSpan(0, 0, 0, 30);
                 break;
             case eSSP_Second:
-                diff += CTimeSpan(0, 0, 0, 0, kNanoSecondsPerSecond/2);
+                *this += CTimeSpan(0, 0, 0, 0, kNanoSecondsPerSecond/2);
                 break;
             case eSSP_Millisecond:
-                diff += CTimeSpan(0, 0, 0, 0, kNanoSecondsPerSecond/2000);
+                *this += CTimeSpan(0, 0, 0, 0, kNanoSecondsPerSecond/2000);
                 break;
             case eSSP_Microsecond:
-                diff += CTimeSpan(0, 0, 0, 0, kNanoSecondsPerSecond/2000000);
+                *this += CTimeSpan(0, 0, 0, 0, kNanoSecondsPerSecond/2000000);
                 break;
             default:
                 ; // nanoseconds -- nothing to do
@@ -2414,15 +2609,15 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
     typedef SSmartStringItem SItem;
     const int max_count = 7;
     SItem span[max_count];
-    long days = diff.GetCompleteDays();
-    long nanoseconds = diff.GetNanoSecondsAfterSecond();
+    long days = GetCompleteDays();
+    long nanoseconds = GetNanoSecondsAfterSecond();
 
-    span[0] = SItem(days/365       , "year"  );  days %= 365;
-    span[1] = SItem(days/30        , "month" );  days %= 30;
-    span[2] = SItem(days           , "day"   );
-    span[3] = SItem(diff.x_Hour()  , "hour"  );
-    span[4] = SItem(diff.x_Minute(), "minute");
-    span[5] = SItem(diff.x_Second(), "second");
+    span[0] = SItem(days/365  , "year"  );  days %= 365;
+    span[1] = SItem(days/30   , "month" );  days %= 30;
+    span[2] = SItem(days      , "day"   );
+    span[3] = SItem(x_Hour()  , "hour"  );
+    span[4] = SItem(x_Minute(), "minute");
+    span[5] = SItem(x_Second(), "second");
     switch (precision) {
         case eSSP_Millisecond:
             span[6] = SItem(nanoseconds / 1000000, "millisecond");
@@ -2434,65 +2629,44 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
             span[6] = SItem(nanoseconds, "nanosecond");
             break;
         default:
-            ; // other not nanoseconds based precisions
+            ; // other not-nanoseconds based precisions
     }
 
-    string result;  // result string
-    int start;      // precision level to start from (first non-zero)
-    int i = 0;      // index by precision level
+    // Result string
+    string result;  
+    // Precision level to start from (first non-zero)
+    int start = is_named_precision ? eSSP_Year  : eSSP_Precision1;
 
-    // Set start precision for smart mode
-    if ( is_smart_mode ) {
-        for (; i < 5;  i++) {
-            if (span[i].value) {
-                break;
-            }
-        }
-        start = ESmartStringPrecision(i);
-        // Allow 2 levels max for smart mode
-        if (start == eSSP_Second  &&  !nanoseconds  && zero_mode == eSSZ_SkipZero) {
-            // Disable zeros after point
-            precision = ESmartStringPrecision(i);
-        } else {
-            precision = ESmartStringPrecision(i+1);
-        }
-        is_named_precision = true;
-    } else {
-        start = is_named_precision ? eSSP_Year  : eSSP_Precision1;
-    }
+    // Compose resulting string
 
-    // Compose result string
-    for (; i < max_count  &&  start <= precision; i++) {
+    for (int i = 0; i < max_count  &&  start <= precision; i++) {
         long val = span[i].value;
 
         // Adjust precision to skip zero values
         if ( !val ) {
-            // For smart mode we already found stating value, so ignore this step
-            if (!is_smart_mode  || !(result.empty()  ||  precision > eSSP_Second)) {
-                if ( result.empty() ) {
-                    if (start == precision  &&  start != eSSP_Precision1) {
-                        break;
-                    }
-                    if ( is_named_precision ) {
-                        start++;
-                    }
-                    continue;
+            if ( result.empty() ) {
+                if (start == precision  &&  start != eSSP_Precision1) {
+                    break;
                 }
-                if (zero_mode == eSSZ_SkipZero) {
+                if ( is_named_precision ) {
                     start++;
-                    continue;
-                } else {
-                    long sum = 0;
-                    int cp = start + 1;
-                    for (int j = i + 1;
-                         j < max_count  &&  (cp <= precision);  j++, cp++) {
-                        sum += span[j].value;
-                    }
-                    if ( !sum ) {
-                        // all trailing parts are zeros -- skip all
-                        start = precision;
-                        break;
-                    }
+                }
+                continue;
+            }
+            if (zero_mode == eSSZ_SkipZero) {
+                start++;
+                continue;
+            } else {
+                long sum = 0;
+                int  cp = start + 1;
+                for (int j = i + 1;
+                     j < max_count  &&  (cp <= precision);  j++, cp++) {
+                    sum += span[j].value;
+                }
+                if ( !sum ) {
+                    // all trailing parts are zeros -- skip all
+                    start = precision;
+                    break;
                 }
             }
         }
@@ -2500,63 +2674,39 @@ string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
         if ( !result.empty() ) {
             result += " ";
         }
-
-        // Special case to display time span using N.N format
-        if (result.empty() &&
-            start >= eSSP_Millisecond  &&  start <= eSSP_Nanosecond) {
-            long seconds = span[5].value;
-            result += NStr::LongToString(seconds);
-            if (precision == eSSP_Second) {
-                result += " second";
-                if (seconds != 1) {
-                    result += "s";
-                }
-            } else {
-                result += ".";
-                size_t pad = 0;
-                switch (precision) {
-                    case eSSP_Millisecond:
-                        val = nanoseconds / 1000000;
-                        pad = 3;
-                        if ( val  ||  !is_smart_mode ) {
-                            break;
-                        }
-                    case eSSP_Microsecond:
-                        val = nanoseconds / 1000;
-                        pad = 6;
-                        if ( val  ||  !is_smart_mode ) {
-                            break;
-                        }
-                    case eSSP_Nanosecond:
-                        val = nanoseconds;
-                        pad = 9;
-                        if ( val  ||  !is_smart_mode ) {
-                            break;
-                        }
-                    default:
-                        // Smart mode is on and we have zero value for nanoseconds,
-                        // print zero millisecond part only.
-                        pad = 3;
-                }
-                s_AddZeroPadInt(result, val, pad, is_smart_mode);
-                result += " seconds";
-            }
-            break;
-        } else {
-            result += NStr::LongToString(val) + " " + span[i].str;
-            if (val != 1) {
-                result += "s";
-            }
+        result += NStr::LongToString(val) + " " + span[i].str;
+        if (val != 1) {
+            result += "s";
         }
     }
     if ( result.empty() ) {
-        if ( precision > eSSP_Second ) {
+        if ( precision >= eSSP_Second ) {
             return "0 " + span[eSSP_Second].str + "s";
         } else {
             return "0 " + span[precision].str + "s";
         }
     }
     return result;
+}
+
+
+string CTimeSpan::AsSmartString(ESmartStringPrecision precision,
+                                ERound                rounding,
+                                ESmartStringZeroMode  zero_mode) const
+{
+    // Make positive copy
+    CTimeSpan diff(*this);
+    if ( diff.GetSign() == eNegative ) {
+        diff.Invert();
+    }
+    if (precision == eSSP_Smart) {
+        if ( diff < CTimeSpan(60,0) ) {
+            return diff.x_AsSmartString_Smart_Small(rounding);
+        }
+        return diff.x_AsSmartString_Smart_Big(rounding);
+    } else {
+        return diff.x_AsSmartString_Precision(precision, rounding, zero_mode);
+    }
 }
 
 
