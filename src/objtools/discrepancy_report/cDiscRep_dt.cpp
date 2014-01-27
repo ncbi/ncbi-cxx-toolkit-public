@@ -40,9 +40,9 @@ BEGIN_NCBI_SCOPE
 USING_NCBI_SCOPE;
 USING_SCOPE(DiscRepNmSpc);
 
-CDiscRepInfo::CDiscRepInfo () 
-{
-s_SuspectProductNameData suspect_prod_terms[]={
+static CDiscRepInfo thisInfo;
+
+static const s_SuspectProductNameData suspect_prod_terms111[] = {
   { "beginning with period, comma, or hyphen" , CTestAndRepData::BeginsWithPunct, eSuspectNameType_InappropriateSymbol, NULL, NULL } ,
   { "begins or ends with quotes", CTestAndRepData::BeginsOrEndsWithQuotes, eSuspectNameType_QuickFix, NULL, CTestAndRepData::RemoveBeginningAndEndingQuotes } ,
   { "binding" , CTestAndRepData::EndsWithPattern, eSuspectNameType_UseProtein, NULL, NULL } ,
@@ -523,6 +523,10 @@ s_SuspectProductNameData suspect_prod_terms[]={
   { "zinc", CTestAndRepData::IsSingleWordOrWeaselPlusSingleWord, eSuspectNameType_QuickFix, "hypothetical protein", CTestAndRepData::ReplaceWholeNameAddNoteFunc } 
 };
 
-};
+CDiscRepInfo :: CDiscRepInfo ()
+{
+   thisInfo.suspect_prod_terms = suspect_prod_terms111;
+   thisInfo.num_suspect_prod_terms = ArraySize(suspect_prod_terms111);
+}
 
 END_NCBI_SCOPE

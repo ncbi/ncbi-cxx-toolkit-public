@@ -102,8 +102,8 @@ static const s_fataltag disc_fatal[] = {
         {"TEST_OVERLAPPING_RRNAS", NULL, NULL}
 };
 
-static const unsigned disc_cnt = sizeof(disc_fatal)/sizeof(s_fataltag);
-static const unsigned extra_cnt = sizeof(extra_fatal)/sizeof(s_fataltag);
+static const unsigned disc_cnt = ArraySize(disc_fatal);
+static const unsigned extra_cnt = ArraySize(extra_fatal);
 
 bool CDiscRepOutput :: x_NeedsTag(const string& setting_name, const string& desc, const s_fataltag* tags, const unsigned& cnt)
 {

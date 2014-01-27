@@ -206,7 +206,7 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithStaticList()
      }
 
      for (i=0; i< thisInfo.susterm_summ.size(); i++) {
-       s_SuspectProductNameData& this_term = thisInfo.suspect_prod_terms[i];
+       s_SuspectProductNameData this_term = thisInfo.suspect_prod_terms[i];
        if (!CategoryOkForBioSource(biosrc_p, this_term.fix_type)) continue;
        if (prot.CanGetName()) {
           ITERATE (list <string>, nit, prot.GetName()) {
@@ -222,7 +222,7 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithStaticList()
    }
 };
 
-const char* suspect_name_category_names[] = {
+static const char* suspect_name_category_names[] = {
   "Unknown category",
   "Typo",
   "Quick fix",
@@ -7313,6 +7313,7 @@ void CBioseq_missing_genes_regular :: TestOnObj(const CBioseq& bioseq)
   bool run_extra = (thisTest.tests_run.find(GetName_extra()) != end_it);
 
   unsigned i;
+  m_super_idx.clear();
   if (IsmRNASequenceInGenProdSet(bioseq)) {
       m_super_cnt = 0;
   }
@@ -7342,6 +7343,7 @@ void CBioseq_missing_genes_regular :: TestOnObj(const CBioseq& bioseq)
   if (!run_extra || !m_super_cnt) {
      return;
   }
+
   //GetPseudoAndNonPseudoGeneList;
   i=0;
   string desc, add_txt;
@@ -7444,6 +7446,7 @@ void CBioseq_missing_genes_oncaller :: TestOnObj(const CBioseq& bioseq)
 
   if (bioseq.IsAa()) return;
   m_super_cnt = 0;
+  m_super_idx.clear();
   unsigned i=0;
   m_super_idx.reserve(gene_feat.size());
   for (i=0; i< gene_feat.size(); i++) {
@@ -9465,8 +9468,7 @@ void CSeqEntry_test_on_biosrc :: IniMap(const list <CRef <CPCRPrimer> >& ls, Str
    }
 };
 
-bool CSeqEntry_test_on_biosrc :: SamePrimerList(const list <CRef <CPCRPrimer> >& ls1,
-const list <CRef <CPCRPrimer> >& ls2)
+bool CSeqEntry_test_on_biosrc :: SamePrimerList(const list <CRef <CPCRPrimer> >& ls1, const list <CRef <CPCRPrimer> >& ls2)
 {
    if ( (ls1.size() != ls2.size())) return false;
    Str2Int map1, map2;
@@ -10110,10 +10112,6 @@ void CSeqEntry_test_on_user :: TestOnObj(const CSeq_entry& seq_entry)
 {
   if (thisTest.is_DESC_user_run) return;
   thisTest.is_DESC_user_run = true;
-
-  CValidError errors;
-  validator::CValidError_imp imp(thisInfo.scope->GetObjectManager(),&errors);
-  validator::CValidError_desc validator(imp);
 
   unsigned i=0, cnt;
   string bioseq_desc, type_str, user_desc;
@@ -11372,7 +11370,7 @@ bool CSeqEntry_on_biosrc_subsrc :: HasSpecNames(const vector <string> arr)
 };
 
 
-const char*  RemovableCultureNotes[] = {
+static const char*  RemovableCultureNotes[] = {
  "[uncultured (using universal primers)]",
  "[uncultured (using universal primers) bacterial source]",
  "[cultured bacterial source]",
@@ -11398,7 +11396,6 @@ const char*  RemovableCultureNotes[] = {
  "[D-loop wizard; spans unknown]",
  "[D-loop wizard; spans known]"
 };
-static unsigned rmv_size = sizeof(RemovableCultureNotes)/sizeof(char*);
 
 static const char*  ReplaceableCultureNotes[] = {
  "[uncultured (with species-specific primers)]",
@@ -11406,8 +11403,6 @@ static const char*  ReplaceableCultureNotes[] = {
  "[uncultured (using species-specific primers) bacterial source]",
  "[amplified with species-specific primers]"
 };
-static unsigned rpl_size = sizeof(ReplaceableCultureNotes)/sizeof(char*);
-
 
 bool CSeqEntry_on_biosrc_subsrc :: x_HasUnculturedNotes(const string& str, const char** notes,
 unsigned sz)
@@ -11425,8 +11420,10 @@ void CSeqEntry_on_biosrc_subsrc :: RunTests(const CBioSource& biosrc, const stri
    if (m_run_uncul) {
       GetSubSrcValues(biosrc, CSubSource::eSubtype_other, arr);
       ITERATE (vector <string>, it, arr) {
-        if ( x_HasUnculturedNotes(*it, RemovableCultureNotes, rmv_size)
-              || x_HasUnculturedNotes(*it, ReplaceableCultureNotes, rpl_size) )
+        if ( x_HasUnculturedNotes(*it, RemovableCultureNotes, 
+                                   ArraySize(RemovableCultureNotes))
+              || x_HasUnculturedNotes(*it, ReplaceableCultureNotes, 
+                                      ArraySize(ReplaceableCultureNotes)) )
            thisInfo.test_item_list[GetName_uncul()].push_back(desc);      
            thisInfo.test_item_objs[GetName_uncul()].push_back(obj_ref);      
       }

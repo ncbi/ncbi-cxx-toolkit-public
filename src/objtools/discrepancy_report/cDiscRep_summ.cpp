@@ -429,7 +429,8 @@ string CSummarizeSusProdRule :: SummarizeCDSGeneProtPseudoConstraint (const CCDS
   return kEmptyStr;
 }
 
-const char* s_QuantityWords [] = { "exactly ", "more than ", "less than " };
+static const char* 
+   s_QuantityWords [] = { "exactly ", "more than ", "less than " };
 bool CSummarizeSusProdRule :: HasQuantity(const CQuantity_constraint& v, CQuantity_constraint::E_Choice& e_val, int& num)
 {
   e_val = v.Which();

@@ -33,6 +33,7 @@
 #include <ncbi_pch.hpp>
 #include <corelib/ncbistd.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbimisc.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objtools/readers/reader_base.hpp>
 #include <objtools/readers/fasta.hpp>
@@ -139,6 +140,8 @@ map <ESource_origin, string>        CDiscRepInfo :: srcori_names;
 CRef < CSuspect_rule_set>           CDiscRepInfo :: suspect_rna_rules (new CSuspect_rule_set);
 vector <string>                     CDiscRepInfo :: rna_rule_summ;
 vector <string>                     CDiscRepInfo :: suspect_phrases;
+const s_SuspectProductNameData*     CDiscRepInfo :: suspect_prod_terms;
+unsigned                            CDiscRepInfo :: num_suspect_prod_terms;
 
 vector < CRef <CTestAndRepData> >   CTestGrp :: tests_on_Bioseq;
 vector < CRef <CTestAndRepData> >   CTestGrp :: tests_on_Bioseq_aa;
@@ -277,7 +280,7 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
         "5.8S,130,1",
         "5S,90,1"
     };
-    for (i=0; i< (int)(sizeof(rRnaTerms)/sizeof(char*)); i++) {
+    for (i=0; i< (int)ArraySize(rRnaTerms); i++) {
         arr.clear();
         arr = NStr::Tokenize(rRnaTerms[i], ",", arr);
         thisInfo.rRNATerms[arr[0]].i_val = NStr::StringToInt(arr[1]);
@@ -531,7 +534,7 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
          "heam,,0",
          "mithocon,,0"
     };
-    for (i=0; i < (int)(sizeof(fix_data)/sizeof(char*)); i++) {
+    for (i=0; i < (int)ArraySize(fix_data); i++) {
         arr.clear();
         arr = NStr::Tokenize(fix_data[i], ",", arr);
         thisInfo.fix_data[arr[0]].s_val = arr[1].empty()? "no" : "yes";
@@ -584,7 +587,7 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
     // ini. of susterm_summ for suspect_prod_terms if necessary
     if ((thisInfo.suspect_prod_rules->Get()).empty()) {
        for (i=0; 
-            i < (int)thisInfo.GetSusProdTermsLen(thisInfo.suspect_prod_terms); 
+            i < thisInfo.num_suspect_prod_terms;
             i++){
           const s_SuspectProductNameData& 
                 this_term = thisInfo.suspect_prod_terms[i];
@@ -2879,7 +2882,7 @@ void CRepConfig :: CollectTests()
        NCBI_USER_THROW("Unrecognized report type.");
    }
 
-   for (unsigned i=0; i< sizeof(test_list)/sizeof(s_test_property); i++) {
+   for (unsigned i=0; i< ArraySize(test_list); i++) {
       if (test_list[i].category & cate_flag) {
                 thisTest.tests_run.insert(test_list[i].name);
       }

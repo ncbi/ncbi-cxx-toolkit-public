@@ -3568,9 +3568,13 @@ bool CSuspectRuleCheck :: DoesCGPSetMatchQualConstraint (const CCGPSetData& c, c
       rval = CanGetFieldString(c, cgp_cons.GetField2().GetField(), *str_cons);
     } 
     else if (has_field1 && has_field2 ) {
-      str1 = GetFieldValueFromCGPSet (c, cgp_cons.GetField1().GetField(), str_cons);
-      str2 = GetFieldValueFromCGPSet (c, cgp_cons.GetField2().GetField(), str_cons);
-      if (str1 == str2) rval = true;
+      str1 
+       = GetFieldValueFromCGPSet (c, cgp_cons.GetField1().GetField(), str_cons);
+      str2 
+       = GetFieldValueFromCGPSet (c, cgp_cons.GetField2().GetField(), str_cons);
+      if (str1 == str2) {
+          rval = true;
+      }
     } 
     else {
       /* generic string constraint */
@@ -3585,22 +3589,30 @@ bool CSuspectRuleCheck :: DoesFeatureMatchCGPQualConstraint (const CSeq_feat& fe
   CRef <CCGPSetData> cgp_set (new CCGPSetData);
   const CSeqFeatData& feat_dt = feat.GetData();
   if (feat_dt.IsCdregion() || feat_dt.IsProt()) {
-    if (feat_dt.IsProt()) cgp_set->cds = sequence::GetCDSForProduct(m_bioseq_hl);
-    else cgp_set->cds = &feat;
-    cgp_set->gene =CTestAndRepData :: GetGeneForFeature(*(cgp_set->cds)).GetPointer(); // ??why return ref
+    if (feat_dt.IsProt()) {
+         cgp_set->cds = sequence::GetCDSForProduct(m_bioseq_hl);
+    }
+    else {
+        cgp_set->cds = &feat;
+    }
+    cgp_set->gene 
+       = CTestAndRepData :: GetGeneForFeature(*(cgp_set->cds)).GetPointer(); // ??why return ref
     cgp_set->mrna = GetBestMrnaForCds(*(cgp_set->cds), *thisInfo.scope);
 
     GetProtFromCodingRegion(cgp_set, *(cgp_set->cds)); 
   } 
   else if (feat_dt.IsGene()) cgp_set->gene = &feat;
-  else if (feat_dt.IsRna() && feat_dt.GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+  else if (feat_dt.IsRna() 
+               && feat_dt.GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
      // c = BuildCGPSetFrommRNA (feat);
      cgp_set->mrna = &feat;
      cgp_set->gene = CTestAndRepData::GetGeneForFeature(feat).GetPointer();
   }
-  if (!cgp_set->cds && !cgp_set->gene && !cgp_set->mrna && cgp_set->prot.Empty() 
-                                     && cgp_set->mat_peptide_list.empty()) 
+  if (!cgp_set->cds && !cgp_set->gene 
+          && !cgp_set->mrna && cgp_set->prot.Empty() 
+          && cgp_set->mat_peptide_list.empty()) {
       return false;
+  }
 
   bool rval = DoesCGPSetMatchQualConstraint (*cgp_set, cons);
   bool has_field1_dt = (cons.CanGetField1() && cons.GetField1().IsField());
@@ -3610,14 +3622,16 @@ bool CSuspectRuleCheck :: DoesFeatureMatchCGPQualConstraint (const CSeq_feat& fe
       str_cons = cons.CanGetConstraint()? &(cons.GetConstraint()) : 0;
   if (rval && feat_dt.GetSubtype() == CSeqFeatData::eSubtype_mat_peptide_aa) {
     if (has_field1_dt) {
-      str1 = GetFieldValue(*cgp_set, feat, cons.GetField1().GetField(), str_cons);
+      str1 =GetFieldValue(*cgp_set,feat, cons.GetField1().GetField(), str_cons);
       if (str1.empty()) rval = false;
     }
     if (has_field2_dt) {
-      str2 = GetFieldValue(*cgp_set, feat, cons.GetField2().GetField(), str_cons);
+      str2 =GetFieldValue(*cgp_set,feat, cons.GetField2().GetField(), str_cons);
       if (str2.empty()) rval = false;
     }
-    if (rval && cons.CanGetField1() && cons.CanGetField2() && str1 != str2) rval = false;
+    if (rval && cons.CanGetField1() && cons.CanGetField2() && str1 != str2) {
+        rval = false;
+    }
   }
   return rval;
 };
@@ -3627,7 +3641,8 @@ const CSeq_feat* CSuspectRuleCheck :: GetmRNAforCDS (const CSeq_feat& cds)
   const CSeq_feat* mrna = 0;
   /* first, check for mRNA identified by feature xref */
   if (cds.CanGetXref()) {
-     CBioseq_Handle bioseq_hl = GetBioseqFromSeqLoc(cds.GetLocation(), *thisInfo.scope);
+     CBioseq_Handle 
+          bioseq_hl = GetBioseqFromSeqLoc(cds.GetLocation(), *thisInfo.scope);
      CTSE_Handle tse_hl = bioseq_hl.GetTSE_Handle();
      SAnnotSelector sel;
      sel.IncludeFeatSubtype(CSeqFeatData::eSubtype_mRNA);
