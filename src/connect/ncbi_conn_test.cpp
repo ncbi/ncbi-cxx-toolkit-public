@@ -241,9 +241,8 @@ EIO_Status CConnTest::ExtraCheckOnFailure(void)
         const char*  host;
         const char* vhost;
     } kTests[] = {
-        // 1. External servers
+        // 1. External server(s)
         { "www.google.com",             0                      },
-        { "www.yahoo.com",              0                      },
         //    NB: Google's public DNS (also @8.8.8.8), responds at :80 as well
         { "8.8.4.4",                    "www.google.com"       },
         // 2. NCBI servers
