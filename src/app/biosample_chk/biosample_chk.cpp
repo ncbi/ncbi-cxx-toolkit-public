@@ -880,6 +880,9 @@ void CBiosampleChkApp::AddBioseqToTable(CBioseq_Handle bh, bool with_id)
     vector<string> biosample_ids = GetBiosampleIDs(bh);
     if (biosample_ids.size() > 0 && !with_id) {
 		// do not collect if already has biosample ID
+        string label = "";
+        bh.GetId().front().GetSeqId()->GetLabel(&label);
+        *m_LogStream << label << " already has Biosample ID " << biosample_ids[0] << endl;
 		return;
 	}
 	vector<string> bioproject_ids = GetBioProjectIDs(bh);
