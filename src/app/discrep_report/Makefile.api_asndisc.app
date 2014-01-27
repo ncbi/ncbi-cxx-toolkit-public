@@ -16,4 +16,4 @@ LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 REQUIRES = objects
 
-WATCHERS = chenj
+WATCHERS = chenj bollin
