@@ -49,6 +49,7 @@
 #include <objmgr/util/sequence.hpp>
 #include <objmgr/bioseq_ci.hpp>
 #include <objmgr/seqdesc_ci.hpp>
+#include <objmgr/align_ci.hpp>
 #include <objmgr/object_manager.hpp>
 #include <objects/taxon3/taxon3.hpp>
 //#include <objtools/validator/validatorp.hpp>
@@ -355,6 +356,18 @@ static string s_GetAccessionForSeqdesc (CSeq_entry_Handle seh, const CSeqdesc& d
 }
 
 
+bool IsBioseqInSameSeqEntryAsAlign(CBioseq_Handle bsh, const CSeq_align& align, CScope& scope)
+{
+    CSeq_entry_Handle seh = bsh.GetTopLevelEntry();
+    for (CAlign_CI align_it(seh); align_it; ++align_it) {
+        if (&(*align_it) == &align) {
+            return true;
+        }
+    }
+    return false;
+}
+
+
 CConstRef<CSeq_id> GetReportableSeqIdForAlignment(const CSeq_align& align, CScope& scope)
 {
     // temporary - to match C Toolkit
@@ -366,7 +379,7 @@ CConstRef<CSeq_id> GetReportableSeqIdForAlignment(const CSeq_align& align, CScop
             for (int i = 0; i < align.GetDim(); ++i) {
                 const CSeq_id& id = align.GetSeq_id(i);
                 CBioseq_Handle bsh = scope.GetBioseqHandle(id);
-                if (bsh) {
+                if (bsh && IsBioseqInSameSeqEntryAsAlign(bsh, align, scope)) {
                     return CConstRef<CSeq_id>(&id);
                 }
             }

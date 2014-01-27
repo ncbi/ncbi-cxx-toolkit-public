@@ -18006,3 +18006,9 @@ BOOST_AUTO_TEST_CASE(Test_SQD_1309)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SQD_1532)
+{
+    BOOST_CHECK_EQUAL(COrgMod::IsCultureCollectionValid("50% TSB + 2mM Cr(VI)"), "Culture_collection should be structured, but is not");
+}
