@@ -473,7 +473,6 @@ void CSeq_loc_Mapper::x_InitializeSeqMap(CSeqMap_CI       seg_it,
         // iterators with depth == 1.
         TSeqPos top_ref_start = 0;
         TSeqPos top_start = 0;
-        TSeqPos top_end = 0;
         CConstRef<CSeq_id> dst_id(top_id);
         _ASSERT(seg_it.GetDepth() == 1);
         while ( seg_it ) {
@@ -495,12 +494,10 @@ void CSeq_loc_Mapper::x_InitializeSeqMap(CSeqMap_CI       seg_it,
                     dst_id.Reset(seg_it.GetRefSeqid().GetSeqId());
                     top_ref_start = seg_it.GetRefPosition();
                     top_start = seg_it.GetPosition();
-                    top_end = seg_it.GetEndPosition();
                     dst_strand = seg_it.GetRefMinusStrand() ? eNa_strand_minus : eNa_strand_plus;
                 }
                 else {
                     _ASSERT(seg_it.GetPosition() >= top_start);
-                    _ASSERT(seg_it.GetEndPosition() <= top_end);
                     TSeqPos shift = seg_it.GetPosition() - top_start;
                     dst_from = top_ref_start + shift;
                     x_NextMappingRange(
