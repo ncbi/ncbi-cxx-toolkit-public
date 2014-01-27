@@ -57,16 +57,15 @@ BEGIN_NCBI_SCOPE
 const char* CNetStorageException::GetErrCodeString() const
 {
     switch (GetErrCode()) {
-    case eInvalidArg:
-        return "eInvalidArg";
-    case eNotExists:
-        return "eNotExist";
-    case eIOError:
-        return "eIOError";
-    case eTimeout:
-        return "eTimeout";
-    default:
-        return CException::GetErrCodeString();
+    case eInvalidArg:           return "eInvalidArg";
+    case eNotExists:            return "eNotExist";
+    case eAuthError:            return "eAuthError";
+    case eIOError:              return "eIOError";
+    case eServerError:          return "eServerError";
+    case eDatabaseError:        return "eDatabaseError";
+    case eInvalidConfig:        return "eInvalidConfig";
+    case eTimeout:              return "eTimeout";
+    default:                    return CException::GetErrCodeString();
     }
 }
 

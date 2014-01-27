@@ -68,6 +68,8 @@ public:
         eAuthError,     ///< Authentication error (e.g. no FileTrack API key)
         eIOError,       ///< I/O error encountered while performing an op
         eServerError,   ///< NetStorage server error
+        eDatabaseError, ///< NetStorage metadata DB error
+        eInvalidConfig, ///< Invalid server configuration parameter
         eTimeout        ///< Timeout encountered while performing an op
     };
     virtual const char* GetErrCodeString() const;
