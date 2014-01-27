@@ -781,6 +781,11 @@ void CBiosampleChkApp::PrintDiffs(TBiosampleFieldDiffList & diffs)
             *m_ReportStream << "No differences found" << endl;
         }
     } else {
+        if (m_NeedReportHeader) {
+            CBiosampleFieldDiff::PrintHeader(*m_ReportStream);
+            m_NeedReportHeader = false;
+        }
+
         ITERATE(TBiosampleFieldDiffList, it, diffs) {
             (*it)->Print(*m_ReportStream);
         }
@@ -793,10 +798,6 @@ void CBiosampleChkApp::PrintDiffs(TBiosampleFieldDiffList & diffs)
 
 void CBiosampleChkApp::PrintResults(TBiosampleFieldDiffList & diffs)
 {
-    if (m_NeedReportHeader) {
-        CBiosampleFieldDiff::PrintHeader(*m_ReportStream);
-        m_NeedReportHeader = false;
-    }
     PrintDiffs(diffs);
 }
 

@@ -435,6 +435,25 @@ static bool s_ShouldIgnoreConflict(string label, string src_val, string sample_v
             rval = true;
         }
     }
+    // special handling for collection-date
+    if (!rval && NStr::EqualNocase(label, "collection-date")) {
+        try {
+            CRef<CDate> src_date = CSubSource::DateFromCollectionDate(src_val);
+            CRef<CDate> smpl_date = CSubSource::DateFromCollectionDate(sample_val);
+            if (src_date && smpl_date && src_date->Equals(*smpl_date)) {
+                rval = true;
+            }
+        } catch (...) {
+        }
+    }
+    // special handling for country
+    if (!rval && NStr::EqualNocase(label, "country")) {
+        NStr::ReplaceInPlace(src_val, ": ", ":");
+        NStr::ReplaceInPlace(sample_val, ": ", ":");
+        if (NStr::Equal(src_val, sample_val)) {
+            rval = true;
+        }
+    }
     return rval;
 }
 
