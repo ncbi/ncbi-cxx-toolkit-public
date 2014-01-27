@@ -10,7 +10,7 @@ LIB = xdiscrepancy_report
 
 ASN_DEP = general biblio pub seq seqset submit taxon3 macro valid
 
-WATCHERS = chenj
+WATCHERS = chenj bollin
 
 
 USES_LIBRARIES =  \
