@@ -4,7 +4,7 @@
 
 APP = test_bulkinfo
 SRC = test_bulkinfo
-LIB = $(OBJMGR_LIBS)
+LIB = xobjutil $(OBJMGR_LIBS)
 
 LIBS = $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 

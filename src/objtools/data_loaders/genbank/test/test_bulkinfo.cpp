@@ -37,6 +37,7 @@
 
 #include <objmgr/object_manager.hpp>
 #include <objmgr/scope.hpp>
+#include <objmgr/util/sequence.hpp>
 
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 //#include <internal/asn_cache/lib/asn_cache_loader.hpp>
@@ -46,6 +47,7 @@
 
 BEGIN_NCBI_SCOPE
 using namespace objects;
+using namespace sequence;
 
 
 const int g_gi_from = 156000;
@@ -68,6 +70,13 @@ public:
     virtual void Init(void);
     virtual int Run(void);
 
+    template<class Data>
+    void Display(size_t i,
+                 const char* name,
+                 const Data& gis,
+                 const Data& gis2,
+                 const Data& gisv) const;
+
     typedef vector<CSeq_id_Handle> TIds;
     typedef CScope::TGIs TGis;
     typedef vector<CSeq_id_Handle> TAccs;
@@ -88,6 +97,7 @@ public:
     EBulkType m_Type;
     bool m_Verbose;
     bool m_Single;
+    bool m_Verify;
     CScope::EForceLoad m_ForceLoad;
     CScope::EForceLabelLoad m_ForceLabelLoad;
 };
@@ -134,6 +144,7 @@ void CTestApplication::TestApp_Args(CArgDescriptions& args)
     args.AddFlag("no-force", "Do not force info loading");
     args.AddFlag("verbose", "Verbose results");
     args.AddFlag("single", "Use single id queries (non-bulk)");
+    args.AddFlag("verify", "Run extra test to verify returned values");
     args.AddDefaultKey
         ("count", "Count",
          "Number of iterations to run (default: 1)",
@@ -229,6 +240,7 @@ bool CTestApplication::TestApp_Init(const CArgs& args)
         CScope::eNoForceLabelLoad: CScope::eForceLabelLoad;
     m_Verbose = args["verbose"];
     m_Single = args["single"];
+    m_Verify = args["verify"];
     return true;
 }
 
@@ -247,18 +259,42 @@ CRef<CScope> s_MakeScope(void)
 }
 
 
+template<class Data>
+void CTestApplication::Display(size_t i,
+                               const char* name,
+                               const Data& gis,
+                               const Data& gis2,
+                               const Data& gisv) const
+{
+    if ( gis.empty() ) {
+        return;
+    }
+    if ( !m_Verbose && gis2[i] == gis[i] && gisv[i] == gis[i] ) {
+        return;
+    }
+    cout << name<<"("<<m_Ids[i]<<") -> "<<gis[i];
+    if ( !m_Single && gis2[i] != gis[i] ) {
+        cout << " single: "<<gis2[i];
+    }
+    if ( m_Verify && gisv[i] != gis[i] ) {
+        cout << " extra: "<<gisv[i];
+    }
+    cout << endl;
+}
+
+
 int CTestApplication::Run(void)
 {
     int run_count = GetArgs()["count"].AsInteger();
     for ( int run_i = 0; run_i < run_count; ++run_i ) {
         size_t count = m_Ids.size();
 
-        TGis gis, gis2;
-        TAccs accs, accs2;
-        TLabels labels, labels2;
-        TTaxIds taxids, taxids2;
-        TLengths lengths, lengths2;
-        TTypes types, types2;
+        TGis gis, gis2, gisv;
+        TAccs accs, accs2, accsv;
+        TLabels labels, labels2, labelsv;
+        TTaxIds taxids, taxids2, taxidsv;
+        TLengths lengths, lengths2, lengthsv;
+        TTypes types, types2, typesv;
 
         if ( !m_Single ) {
             CRef<CScope> scope = s_MakeScope();
@@ -336,58 +372,73 @@ int CTestApplication::Run(void)
             }
         }
 
-        if ( m_Verbose ) {
-            for ( size_t i = 0; i < count; ++i ) {
-                if ( !gis.empty() ) {
-                    LOG_POST(m_Ids[i]<<" -> "<<gis[i]);
-                }
-                if ( !accs.empty() ) {
-                    if ( accs[i] ) {
-                        LOG_POST(m_Ids[i]<<" -> "<<accs[i]);
-                    }
-                    else {
-                        LOG_POST(m_Ids[i]<<" -> null");
-                    }
-                }
-                if ( !labels.empty() ) {
-                    LOG_POST(m_Ids[i]<<" -> \""<<labels[i]<<"\"");
-                }
-                if ( !taxids.empty() ) {
-                    LOG_POST(m_Ids[i]<<" -> "<<taxids[i]);
-                }
-                if ( !lengths.empty() ) {
-                    LOG_POST(m_Ids[i]<<" -> "<<lengths[i]);
-                }
-                if ( !types.empty() ) {
-                    LOG_POST(m_Ids[i]<<" -> "<<types[i]);
-                }
+        if ( m_Verify ) {
+            CRef<CScope> scope = s_MakeScope();
 
-                // single queries
-                if ( !m_Single && !gis.empty() ) {
-                    LOG_POST(m_Ids[i]<<" -> "<<gis2[i]);
-                }
-                if ( !m_Single && !accs.empty() ) {
-                    if ( accs2[i] ) {
-                        LOG_POST(m_Ids[i]<<" -> "<<accs2[i]);
+            switch ( m_Type ) {
+            case eBulk_gi:    gisv.resize(count); break;
+            case eBulk_acc:   accsv.resize(count); break;
+            case eBulk_label: labelsv.resize(count); break;
+            case eBulk_taxid: taxidsv.resize(count); break;
+            case eBulk_length: lengthsv.resize(count); break;
+            case eBulk_type: typesv.resize(count); break;
+            }
+            for ( size_t i = 0; i < count; ++i ) {
+                CBioseq_Handle h = scope->GetBioseqHandle(m_Ids[i]);
+                switch ( m_Type ) {
+                case eBulk_gi:
+                    if ( h ) {
+                        CSeq_id_Handle id = GetId(h, eGetId_ForceGi);
+                        if ( id && id.IsGi() ) {
+                            gisv[i] = id.GetGi();
+                        }
                     }
-                    else {
-                        LOG_POST(m_Ids[i]<<" -> null");
+                    break;
+                case eBulk_acc:
+                    if ( h ) {
+                        accsv[i] = GetId(h, eGetId_ForceAcc);
                     }
+                    break;
+                case eBulk_label:
+                    if ( h ) {
+                        labelsv[i] = GetLabel(h.GetId());
+                    }
+                    break;
+                case eBulk_taxid:
+                    taxidsv[i] = h? GetTaxId(h): 0;
+                        break;
+                case eBulk_length:
+                    lengthsv[i] = h? h.GetBioseqLength(): kInvalidSeqPos;
+                        break;
+                case eBulk_type:
+                    typesv[i] = h? h.GetSequenceType(): CSeq_inst::eMol_not_set;
+                        break;
                 }
-                if ( !m_Single && !labels.empty() ) {
-                    LOG_POST(m_Ids[i]<<" -> \""<<labels2[i]<<"\"");
-                }
-                if ( !m_Single && !taxids.empty() ) {
-                    LOG_POST(m_Ids[i]<<" -> "<<taxids2[i]);
-                }
-                if ( !m_Single && !lengths.empty() ) {
-                    LOG_POST(m_Ids[i]<<" -> "<<lengths2[i]);
-                }
-                if ( !m_Single && !types.empty() ) {
-                    LOG_POST(m_Ids[i]<<" -> "<<types2[i]);
+                if ( h ) {
+                    scope->RemoveFromHistory(h);
                 }
             }
         }
+        else {
+            switch ( m_Type ) {
+            case eBulk_gi:    gisv = gis2; break;
+            case eBulk_acc:   accsv = accs2; break;
+            case eBulk_label: labelsv = labels2; break;
+            case eBulk_taxid: taxidsv = taxids2; break;
+            case eBulk_length: lengthsv = lengths2; break;
+            case eBulk_type: typesv = types2; break;
+            }
+        }
+
+        for ( size_t i = 0; i < count; ++i ) {
+            Display(i, "gi", gis, gis2, gisv);
+            Display(i, "acc", accs, accs2, accsv);
+            Display(i, "label", labels, labels2, labelsv);
+            Display(i, "taxid", taxids, taxids2, taxidsv);
+            Display(i, "length", lengths, lengths2, lengthsv);
+ Display(i, "type", types, types2, typesv);
+        }
+
         switch ( m_Type ) {
         case eBulk_gi:    _ASSERT(gis == gis2); break;
         case eBulk_acc:   _ASSERT(accs == accs2); break;
@@ -395,6 +446,14 @@ int CTestApplication::Run(void)
         case eBulk_taxid: _ASSERT(taxids == taxids2); break;
         case eBulk_length: _ASSERT(lengths == lengths2); break;
         case eBulk_type: _ASSERT(types == types2); break;
+        }
+        switch ( m_Type ) {
+        case eBulk_gi:    _ASSERT(gis == gisv); break;
+        case eBulk_acc:   _ASSERT(accs == accsv); break;
+        case eBulk_label: _ASSERT(labels == labelsv); break;
+        case eBulk_taxid: _ASSERT(taxids == taxidsv); break;
+        case eBulk_length: _ASSERT(lengths == lengthsv); break;
+        case eBulk_type: _ASSERT(types == typesv); break;
         }
     }
     LOG_POST("Passed");
