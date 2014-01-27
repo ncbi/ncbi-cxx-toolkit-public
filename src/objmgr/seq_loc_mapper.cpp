@@ -40,6 +40,7 @@
 #include <objmgr/impl/synonyms.hpp>
 #include <objmgr/impl/seq_align_mapper.hpp>
 #include <objmgr/impl/seq_loc_cvt.hpp>
+#include <objmgr/gc_assembly_parser.hpp>
 #include <objects/seqloc/Seq_loc.hpp>
 #include <objects/seqfeat/Seq_feat.hpp>
 #include <objects/seqfeat/Cdregion.hpp>
@@ -399,7 +400,23 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CGC_Assembly& gc_assembly,
         }
         m_SeqInfo.Reset(new CScope_Mapper_Sequence_Info(m_Scope));
     }
-    x_InitGCAssembly(gc_assembly, direction, selector);
+    CGC_Assembly_Parser parser(gc_assembly);
+    CRef<CSeq_entry> entry = parser.GetTSE();
+    m_Scope.GetScope().AddTopLevelSeqEntry(*entry);
+    const CGC_Assembly_Parser::TSeqIds& ids = parser.GetTopLevelSequences();
+    ITERATE(CGC_Assembly_Parser::TSeqIds, id, ids) {
+        CBioseq_Handle h = m_Scope.GetScope().GetBioseqHandle(*id);
+        if ( !h ) continue;
+        x_InitializeSeqMap(h.GetSeqMap(), selector, id->GetSeqId(), direction);
+        if (direction == eSeqMap_Up) {
+            // Ignore seq-map destination ranges, map whole sequence to itself,
+            // use unknown strand only.
+            m_DstRanges.resize(1);
+            m_DstRanges[0].clear();
+            m_DstRanges[0][*id].push_back(TRange::GetWhole());
+        }
+        x_PreserveDestinationLocs();
+    }
 }
 
 
@@ -649,10 +666,14 @@ bool CSeq_loc_Mapper::x_IsUCSCRandomChr(const CGC_Sequence& gc_seq,
         const CGC_TypedSeqId& gc_id = **it;
         switch ( gc_id.Which() ) {
         case CGC_TypedSeqId::e_Genbank:
-            id.Reset(&gc_id.GetGenbank().GetGi());
+            if ( gc_id.GetGenbank().IsSetGi() ) {
+                id.Reset(&gc_id.GetGenbank().GetGi());
+            }
             break;
         case CGC_TypedSeqId::e_Refseq:
-            id.Reset(&gc_id.GetRefseq().GetGi());
+            if ( gc_id.GetRefseq().IsSetGi() ) {
+                id.Reset(&gc_id.GetRefseq().GetGi());
+            }
             break;
         case CGC_TypedSeqId::e_External:
             id.Reset(&gc_id.GetExternal().GetId());
@@ -745,7 +766,7 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
                 const CGC_TypedSeqId& id = **it;
                 switch ( id.Which() ) {
                 case CGC_TypedSeqId::e_Genbank:
-                    if (dst_id != &id.GetGenbank().GetGi()) {
+                    if (id.GetGenbank().IsSetGi()  &&  dst_id != &id.GetGenbank().GetGi()) {
                         synonyms.insert(CSeq_id_Handle::GetHandle(id.GetGenbank().GetGi()));
                     }
                     if (dst_id != &id.GetGenbank().GetPublic()) {
@@ -756,7 +777,7 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
                     }
                     break;
                 case CGC_TypedSeqId::e_Refseq:
-                    if (dst_id != &id.GetRefseq().GetGi()) {
+                    if (id.GetRefseq().IsSetGi()  &&  dst_id != &id.GetRefseq().GetGi()) {
                         synonyms.insert(CSeq_id_Handle::GetHandle(id.GetRefseq().GetGi()));
                     }
                     if (dst_id != &id.GetRefseq().GetPublic()) {
@@ -847,182 +868,6 @@ void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
                 x_InitGCSequence(**tseq, to_alias);
             }
         }
-    }
-}
-
-
-void CSeq_loc_Mapper::x_InitGCAssembly(const CGC_Assembly& gc_assembly,
-                                       ESeqMapDirection    direction,
-                                       SSeqMapSelector     selector)
-{
-    if ( gc_assembly.IsUnit() ) {
-        const CGC_AssemblyUnit& unit = gc_assembly.GetUnit();
-        if ( unit.IsSetMols() ) {
-            ITERATE(CGC_AssemblyUnit::TMols, it, unit.GetMols()) {
-                const CGC_Replicon::TSequence& seq = (*it)->GetSequence();
-                if ( seq.IsSingle() ) {
-                    x_InitGCSequence(seq.GetSingle(),
-                        direction, selector, NULL, null);
-                }
-                else {
-                    ITERATE(CGC_Replicon::TSequence::TSet, it, seq.GetSet()) {
-                        x_InitGCSequence(**it,
-                            direction, selector, NULL, null);
-                    }
-                }
-            }
-        }
-        if ( unit.IsSetOther_sequences() ) {
-            ITERATE(CGC_Sequence::TSequences, seq, unit.GetOther_sequences()) {
-                ITERATE(CGC_TaggedSequences::TSeqs, tseq, (*seq)->GetSeqs()) {
-                    x_InitGCSequence(**tseq, direction, selector, NULL, null);
-                }
-            }
-        }
-    }
-    else if ( gc_assembly.IsAssembly_set() ) {
-        const CGC_AssemblySet& aset = gc_assembly.GetAssembly_set();
-        x_InitGCAssembly(aset.GetPrimary_assembly(), direction, selector);
-        if ( aset.IsSetMore_assemblies() ) {
-            ITERATE(CGC_AssemblySet::TMore_assemblies, assm,
-                aset.GetMore_assemblies()) {
-                x_InitGCAssembly(**assm, direction, selector);
-            }
-        }
-    }
-}
-
-
-void CSeq_loc_Mapper::x_InitGCSequence(const CGC_Sequence& gc_seq,
-                                       ESeqMapDirection    direction,
-                                       SSeqMapSelector     selector,
-                                       const CGC_Sequence* parent_seq,
-                                       CRef<CSeq_id>       override_id)
-{
-    CRef<CSeq_id> id(override_id);
-    if ( !id ) {
-        id.Reset(new CSeq_id);
-        id->Assign(gc_seq.GetSeq_id());
-    }
-
-    // Special case - structure contains just one (whole) sequence and
-    // the same sequence is mentioned in the synonyms. Must skip this
-    // sequence and use the part instead.
-    CSeq_id_Handle struct_syn;
-    if ( gc_seq.IsSetStructure() ) {
-        if (gc_seq.GetStructure().Get().size() == 1) {
-            const CDelta_seq& delta = *gc_seq.GetStructure().Get().front();
-            if ( delta.IsLoc() ) {
-                const CSeq_loc& delta_loc = delta.GetLoc();
-                switch (delta_loc.Which()) {
-                case CSeq_loc::e_Whole:
-                    struct_syn = CSeq_id_Handle::GetHandle(delta_loc.GetWhole());
-                    break;
-                case CSeq_loc::e_Int:
-                    if (delta_loc.GetInt().GetFrom() == 0) {
-                        struct_syn = CSeq_id_Handle::GetHandle(delta_loc.GetInt().GetId());
-                    }
-                    break;
-                default:
-                    break;
-                }
-            }
-        }
-    }
-
-    // Add synonyms if any.
-    TSynonyms synonyms;
-    synonyms.insert(CSeq_id_Handle::GetHandle(*id));
-    if ( gc_seq.IsSetSeq_id_synonyms() ) {
-        ITERATE(CGC_Sequence::TSeq_id_synonyms, it, gc_seq.GetSeq_id_synonyms()) {
-            // Add conversion for each synonym which can be used
-            // as a source id.
-            const CGC_TypedSeqId& it_id = **it;
-            switch ( it_id.Which() ) {
-            case CGC_TypedSeqId::e_Genbank:
-                synonyms.insert(CSeq_id_Handle::GetHandle(it_id.GetGenbank().GetPublic()));
-                synonyms.insert(CSeq_id_Handle::GetHandle(it_id.GetGenbank().GetGi()));
-                if ( it_id.GetGenbank().IsSetGpipe() ) {
-                    synonyms.insert(CSeq_id_Handle::GetHandle(it_id.GetGenbank().GetGpipe()));
-                }
-                break;
-            case CGC_TypedSeqId::e_Refseq:
-            {
-                // If some of the ids is used in the structure (see above),
-                // ignore all refseq ids.
-                synonyms.insert(CSeq_id_Handle::GetHandle(it_id.GetRefseq().GetPublic()));
-                synonyms.insert(CSeq_id_Handle::GetHandle(it_id.GetRefseq().GetGi()));
-                if (it_id.GetRefseq().IsSetGpipe()) {
-                    synonyms.insert(CSeq_id_Handle::GetHandle(it_id.GetRefseq().GetGpipe()));
-                }
-                break;
-            }
-            case CGC_TypedSeqId::e_Private:
-                // Ignore private local ids.
-                if (it_id.GetPrivate().IsLocal()) continue;
-                synonyms.insert(CSeq_id_Handle::GetHandle(it_id.GetPrivate()));
-                break;
-            case CGC_TypedSeqId::e_External:
-                synonyms.insert(CSeq_id_Handle::GetHandle(it_id.GetExternal().GetId()));
-                break;
-            default:
-                NCBI_THROW(CAnnotMapperException, eOtherError,
-                           "Unsupported alias type in GC-Sequence synonyms");
-                break;
-            }
-        }
-        // The sequence is referencing itself?
-        if (synonyms.find(struct_syn) != synonyms.end()) {
-            x_InitGCSequence(
-                *gc_seq.GetSequences().front()->GetSeqs().front(),
-                direction,
-                selector,
-                parent_seq,
-                id);
-            return;
-        }
-    }
-
-    CBioseq_Handle bh;
-    // Create virtual bioseq and use it to initialize the mapper
-    if ( gc_seq.IsSetStructure() ) {
-        bh = x_AddVirtualBioseq(synonyms, &gc_seq.GetStructure());
-    }
-    else {
-        // Create literal sequence
-        x_AddVirtualBioseq(synonyms);
-    }
-
-    if ( gc_seq.IsSetSequences() ) {
-        ITERATE(CGC_Sequence::TSequences, seq, gc_seq.GetSequences()) {
-            ITERATE(CGC_TaggedSequences::TSeqs, tseq, (*seq)->GetSeqs()) {
-                // To create a sub-level of the existing seq-map we need
-                // both structure at the current level and 'placed' state
-                // on the child sequences. If this is not true, iterate
-                // sub-sequences but treat them as top-level sequences rather
-                // than segments.
-                const CGC_Sequence* parent = 0;
-                if (gc_seq.IsSetStructure()  &&
-                    (*seq)->GetState() == CGC_TaggedSequences::eState_placed) {
-                    parent = &gc_seq;
-                }
-                x_InitGCSequence(**tseq, direction, selector, parent, null);
-            }
-        }
-    }
-    if (gc_seq.IsSetStructure()  &&  !parent_seq ) {
-        // This is a top-level sequence or we are mapping down,
-        // create CSeqMap.
-        x_InitializeSeqMap(bh.GetSeqMap(), selector, id, direction);
-        if (direction == eSeqMap_Up) {
-            // Ignore seq-map destination ranges, map whole sequence to itself,
-            // use unknown strand only.
-            m_DstRanges.resize(1);
-            m_DstRanges[0].clear();
-            m_DstRanges[0][CSeq_id_Handle::GetHandle(*id)]
-                .push_back(TRange::GetWhole());
-        }
-        x_PreserveDestinationLocs();
     }
 }
 

@@ -49,6 +49,9 @@
 #include <objmgr/bioseq_handle.hpp>
 #include <objmgr/seq_annot_handle.hpp>
 #include <objmgr/seq_feat_handle.hpp>
+#include <objmgr/gc_assembly_parser.hpp>
+#include <objects/genomecoll/GC_Assembly.hpp>
+
 
 BEGIN_NCBI_SCOPE
 BEGIN_SCOPE(objects)
@@ -278,6 +281,13 @@ public:
     CBioseq_Handle AddBioseq(const CBioseq& bioseq,
                              TPriority pri = kPriority_Default,
                              EExist action = eExist_Throw);
+
+    /// Add GC-Assembly. Sequences from the assembly are converted
+    /// to bioseqs and added to the scope as a new top level seq-entry.
+    CSeq_entry_Handle AddGC_Assembly(const CGC_Assembly& gc_assembly,
+        CGC_Assembly_Parser::FParserFlags flags = CGC_Assembly_Parser::fDefault,
+        TPriority pri = kPriority_Default,
+        EExist action = eExist_Throw);
 
     /// Add Seq-annot, return its CSeq_annot_Handle.
     /// Add object to the score with possibility to edit it directly.

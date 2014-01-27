@@ -508,6 +508,16 @@ CBioseq_Handle CScope::AddBioseq(const CBioseq& bioseq,
 }
 
 
+CSeq_entry_Handle CScope::AddGC_Assembly(const CGC_Assembly& gc_assembly,
+                                         CGC_Assembly_Parser::FParserFlags flags,
+                                         TPriority pri,
+                                         EExist action)
+{
+    CGC_Assembly_Parser parser(gc_assembly, flags);
+    return AddTopLevelSeqEntry(*parser.GetTSE(), pri, action);
+}
+
+
 CSeq_annot_Handle CScope::AddSeq_annot(const CSeq_annot& annot,
                                        TPriority priority,
                                        EExist action)
