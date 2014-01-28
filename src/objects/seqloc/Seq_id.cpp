@@ -532,6 +532,19 @@ CSeq_id::E_Choice CSeq_id::WhichInverseSeqId(const CTempString& SeqIdCode)
     }
 }
 
+static inline bool s_HasFastaTag(const CTempString& s)
+{
+    // > rather than >= because there should be content after the bar.
+    if (s.size() > 3  &&  s[2] == '|') {
+        return true;
+    } else if (s.size() > 4  &&  s[3] == '|') {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+
 
 static CSeq_id::E_Choice s_CheckForFastaTag(const CTempString& s)
 {
@@ -1711,6 +1724,14 @@ SIZE_TYPE CSeq_id::ParseIDs(CBioseq::TId& ids, const CTempString& s,
     if (ss.empty()) {
         return 0;
     }
+
+    // first simple check to make it faster
+    if (!s_HasFastaTag(ss)) {
+        CRef<CSeq_id> id(new CSeq_id(ss, flags | fParse_NoFASTA));
+        ids.push_back(id);
+        return 1;
+    }
+
     SIZE_TYPE count = 0;
     list<CTempString> fasta_pieces;
     NStr::Split(ss, "|", fasta_pieces, NStr::eNoMergeDelims);
