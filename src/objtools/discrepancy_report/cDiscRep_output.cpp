@@ -830,4 +830,11 @@ void CDiscRepOutput :: Export(vector <CRef <CClickableText> >& item_list)
    thisGrp.tests_on_SubmitBlk.clear();
 };
 
+void CDiscRepOutput :: Export(CRef <CClickableItem>& c_item)
+{
+   if (!thisInfo.disc_report_data.empty()) {
+      c_item.Reset(thisInfo.disc_report_data[0].GetPointer());
+   }
+};
+
 END_NCBI_SCOPE

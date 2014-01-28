@@ -141,6 +141,16 @@ static CDiscRepInfo thisInfo;
 static string strtmp;
 static CSuspectRuleCheck rule_check;
 
+int CTestAndRepData :: GetTestItemList(const string& setting_name, vector <string>& test_item_list)
+{
+   if (thisInfo.test_item_list.find(setting_name) 
+            != thisInfo.test_item_list.end()) {
+      test_item_list = thisInfo.test_item_list[setting_name];
+      return 0;
+   }
+   return 1;
+};
+
 // CTestAndRepData
 string CTestAndRepData :: x_GetUserObjType(const CUser_object& user_obj)
 {
@@ -1003,8 +1013,10 @@ string CTestAndRepData :: GetDiscItemText(const CBioseq& bioseq)
       unsigned ambigs_cnt = 0, gap_cnt = 0;
       SSeqMapSelector sel(CSeqMap::fDefaultFlags);
       if (bioseq.GetInst().CanGetSeq_data()) {   // is this necessary?
-        for (CSeqMap_CI seqmap_ci(bioseq_handle, sel); seqmap_ci;  ++seqmap_ci) {
-            if (seqmap_ci.GetType() == CSeqMap::eSeqGap) gap_cnt += seqmap_ci.GetLength();
+        for (CSeqMap_CI seqmap_ci(bioseq_handle, sel); seqmap_ci;  ++seqmap_ci){
+            if (seqmap_ci.GetType() == CSeqMap::eSeqGap) {
+                 gap_cnt += seqmap_ci.GetLength();
+            }
             else ambigs_cnt += CSeqportUtil::GetAmbigs(seqmap_ci.GetRefData(),
                                                     &out_seq, &idx,
                                                     CSeq_data::e_Ncbi2na,

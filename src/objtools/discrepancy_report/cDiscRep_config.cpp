@@ -587,7 +587,7 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
     // ini. of susterm_summ for suspect_prod_terms if necessary
     if ((thisInfo.suspect_prod_rules->Get()).empty()) {
        for (i=0; 
-            i < thisInfo.num_suspect_prod_terms;
+            i < (int)thisInfo.num_suspect_prod_terms;
             i++){
           const s_SuspectProductNameData& 
                 this_term = thisInfo.suspect_prod_terms[i];
@@ -1250,6 +1250,18 @@ string CRepConfig :: GetDirStr(const string& src_dir)
    return kEmptyStr;
 };
 
+
+// only consider enables/disables
+void CRepConfig :: SetArg(const string& arg, const string& vlu)
+{
+   if (arg == "e") {
+       m_enabled = NStr::Tokenize(vlu, ", ", m_enabled, NStr::eMergeDelims);
+   }
+   else if (arg == "d") {
+        m_disabled= NStr::Tokenize(vlu,", ", m_disabled, NStr::eMergeDelims);
+   }
+};
+
 void CRepConfig :: ProcessArgs(Str2Str& args)
 {
     // input file/path
@@ -1386,6 +1398,7 @@ void CRepConfig :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
     // collect disc report
     myChecker.CollectRepData();
 };  // CheckThisSeqEntry()
+
 
 static const s_test_property test_list[] = {
 // tests_on_SubmitBlk

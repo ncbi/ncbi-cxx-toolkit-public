@@ -441,8 +441,9 @@ void CCheckingClass :: CheckBioseq (CBioseq& bioseq)
 
         unsigned cur_len = thisGrp.tests_4_once.size();
         if (cur_len > prev_len) {
-            NON_CONST_ITERATE(vector < CRef < CTestAndRepData > >, it, 
-                                                         thisGrp.tests_on_Bioseq_na) {
+            NON_CONST_ITERATE(vector < CRef < CTestAndRepData > >, 
+                              it, 
+                              thisGrp.tests_on_Bioseq_na) {
                 if (thisGrp.tests_4_once[cur_len - 1].GetPointer() == *it) {
                     thisGrp.tests_on_Bioseq_na.erase(it);
                     break;
