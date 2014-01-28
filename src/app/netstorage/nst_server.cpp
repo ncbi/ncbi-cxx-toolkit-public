@@ -131,3 +131,21 @@ void CNetStorageServer::x_SetAdminClientNames(const string &  client_names)
                    NStr::eMergeDelims);
 }
 
+
+enum EAlertAckResult CNetStorageServer::AcknowledgeAlert(const string &  id)
+{
+    return m_Alerts.Acknowledge(id);
+}
+
+
+enum EAlertAckResult CNetStorageServer::AcknowledgeAlert(EAlertType  alert_type)
+{
+    return m_Alerts.Acknowledge(alert_type);
+}
+
+
+void CNetStorageServer::RegisterAlert(EAlertType  alert_type)
+{
+    m_Alerts.Register(alert_type);
+}
+

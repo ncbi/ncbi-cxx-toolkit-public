@@ -46,6 +46,7 @@
 #include "nst_protocol_utils.hpp"
 #include "nst_exception.hpp"
 #include "nst_version.hpp"
+#include "nst_application.hpp"
 
 
 USING_NCBI_SCOPE;
@@ -60,12 +61,16 @@ CNetStorageHandler::SProcessorMap   CNetStorageHandler::sm_Processors[] =
     { "HELLO",          & CNetStorageHandler::x_ProcessHello },
     { "INFO",           & CNetStorageHandler::x_ProcessInfo },
     { "CONFIGURATION",  & CNetStorageHandler::x_ProcessConfiguration },
+    { "HEALTH",         & CNetStorageHandler::x_ProcessHealth },
+    { "ACKALERT",       & CNetStorageHandler::x_ProcessAckAlert },
+    { "RECONFIGURE",    & CNetStorageHandler::x_ProcessReconfigure },
     { "SHUTDOWN",       & CNetStorageHandler::x_ProcessShutdown },
     { "GETCLIENTSINFO", & CNetStorageHandler::x_ProcessGetClientsInfo },
     { "GETOBJECTINFO",  & CNetStorageHandler::x_ProcessGetObjectInfo },
     { "GETATTR",        & CNetStorageHandler::x_ProcessGetAttr },
     { "SETATTR",        & CNetStorageHandler::x_ProcessSetAttr },
     { "READ",           & CNetStorageHandler::x_ProcessRead },
+    { "CREATE",         & CNetStorageHandler::x_ProcessCreate },
     { "WRITE",          & CNetStorageHandler::x_ProcessWrite },
     { "DELETE",         & CNetStorageHandler::x_ProcessDelete },
     { "RELOCATE",       & CNetStorageHandler::x_ProcessRelocate },
@@ -774,6 +779,75 @@ CNetStorageHandler::x_ProcessConfiguration(
 
 
 void
+CNetStorageHandler::x_ProcessHealth(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    if (m_Client.empty()) {
+        NCBI_THROW(CNetStorageServerException, eHelloRequired,
+                   "Anonymous client cannot request server health");
+    }
+
+    if (!m_Server->IsAdminClientName(m_Client)) {
+        NCBI_THROW(CNetStorageServerException, ePrivileges,
+                   "Only administrators can request server health");
+    }
+
+    m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
+
+
+
+
+}
+
+
+void
+CNetStorageHandler::x_ProcessAckAlert(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    if (m_Client.empty()) {
+        NCBI_THROW(CNetStorageServerException, eHelloRequired,
+                   "Anonymous client cannot acknowledge alerts");
+    }
+
+    if (!m_Server->IsAdminClientName(m_Client)) {
+        NCBI_THROW(CNetStorageServerException, ePrivileges,
+                   "Only administrators can acknowledge alerts");
+    }
+
+    m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
+
+
+
+
+}
+
+
+void
+CNetStorageHandler::x_ProcessReconfigure(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    if (m_Client.empty()) {
+        NCBI_THROW(CNetStorageServerException, eHelloRequired,
+                   "Anonymous client cannot reconfigure server");
+    }
+
+    if (!m_Server->IsAdminClientName(m_Client)) {
+        NCBI_THROW(CNetStorageServerException, ePrivileges,
+                   "Only administrators can reconfigure server");
+    }
+
+    m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
+
+
+
+
+}
+
+
+void
 CNetStorageHandler::x_ProcessShutdown(
                         const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args)
@@ -833,9 +907,9 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
 
-    string          file_id = x_GetFileID(message);
+    string          object_key = x_GetObjectKey(message);
     CNetStorage     net_storage(g_CreateNetStorage(0));
-    CNetFile        net_file = net_storage.Open(file_id, 0);
+    CNetFile        net_file = net_storage.Open(object_key, 0);
 
     CJsonNode       file_info = net_file.GetInfo().ToJSON();
 
@@ -855,6 +929,20 @@ CNetStorageHandler::x_ProcessGetAttr(
                         const SCommonRequestArguments &  common_args)
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
+    x_CheckNonAnonymousClient();
+
+    if (!message.HasKey("AttrName"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "Mandatory field 'AttrName' is missed");
+
+    string              object_key = x_GetObjectKey(message);
+    string              attr_name = message.GetString("AttrName");
+    CNetStorageDApp *   app = dynamic_cast<CNetStorageDApp*>
+                                        (CNcbiApplication::Instance());
+    IConnection *       conn = app->GetDb().GetDbConn();
+
+
+
 }
 
 
@@ -864,9 +952,35 @@ CNetStorageHandler::x_ProcessSetAttr(
                         const SCommonRequestArguments &  common_args)
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
-
     x_CheckNonAnonymousClient();
 
+    if (!message.HasKey("AttrName"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "Mandatory field 'AttrName' is missed");
+    if (!message.HasKey("AttrValue"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "Mandatory field 'AttrValue' is missed");
+
+
+    string              object_key = x_GetObjectKey(message);
+    string              attr_name = message.GetString("AttrName");
+    string              attr_value = message.GetString("AttrValue");
+    CNetStorageDApp *   app = dynamic_cast<CNetStorageDApp*>
+                                        (CNcbiApplication::Instance());
+    IConnection *       conn = app->GetDb().GetDbConn();
+
+
+
+}
+
+
+void
+CNetStorageHandler::x_ProcessCreate(
+                        const CJsonNode &                message,
+                        const SCommonRequestArguments &  common_args)
+{
+    m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
+    x_CheckNonAnonymousClient();
 
 }
 
@@ -882,10 +996,10 @@ CNetStorageHandler::x_ProcessWrite(
 
     if (message.HasKey("FileID") || message.HasKey("UserKey")) {
         // Some kind of identification is given
-        string          file_id = x_GetFileID(message);
+        string          object_key = x_GetObjectKey(message);
         CNetStorage     net_storage(g_CreateNetStorage(0));
 
-        m_ObjectStream = net_storage.Open(file_id, 0);
+        m_ObjectStream = net_storage.Open(object_key, 0);
     } else {
         // No identification - create a stream
         TNetStorageFlags    flags = ExtractStorageFlags(message);
@@ -926,9 +1040,9 @@ CNetStorageHandler::x_ProcessRead(
 
     x_CheckNonAnonymousClient();
 
-    string          file_id = x_GetFileID(message);
+    string          object_key = x_GetObjectKey(message);
     CNetStorage     net_storage(g_CreateNetStorage(0));
-    CNetFile        net_file = net_storage.Open(file_id, 0);
+    CNetFile        net_file = net_storage.Open(object_key, 0);
 
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
@@ -980,10 +1094,10 @@ CNetStorageHandler::x_ProcessDelete(
 
     x_CheckNonAnonymousClient();
 
-    string          file_id = x_GetFileID(message);
+    string          object_key = x_GetObjectKey(message);
     CNetStorage     net_storage(g_CreateNetStorage(0));
 
-    net_storage.Remove(file_id);
+    net_storage.Remove(object_key);
     m_ClientRegistry.AddObjectsDeleted(m_Client, 1);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
@@ -1016,9 +1130,9 @@ CNetStorageHandler::x_ProcessRelocate(
     x_CheckICacheSettings(new_location_icache_settings);
 
 
-    string          file_id = x_GetFileID(message);
+    string          object_key = x_GetObjectKey(message);
     CNetStorage     net_storage(g_CreateNetStorage(0));
-    string          new_file_id = net_storage.Relocate(file_id,
+    string          new_file_id = net_storage.Relocate(object_key,
                                                        new_location_flags);
 
     m_ClientRegistry.AddObjectsRelocated(m_Client, 1);
@@ -1044,9 +1158,9 @@ CNetStorageHandler::x_ProcessExists(
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
 
-    string          file_id = x_GetFileID(message);
+    string          object_key = x_GetObjectKey(message);
     CNetStorage     net_storage(g_CreateNetStorage(0));
-    bool            exists = net_storage.Exists(file_id);
+    bool            exists = net_storage.Exists(object_key);
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
 
     reply.SetBoolean("Exists", exists);
@@ -1062,9 +1176,9 @@ CNetStorageHandler::x_ProcessGetSize(
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
 
-    string          file_id = x_GetFileID(message);
+    string          object_key = x_GetObjectKey(message);
     CNetStorage     net_storage(g_CreateNetStorage(0));
-    CNetFile        net_file = net_storage.Open(file_id, 0);
+    CNetFile        net_file = net_storage.Open(object_key, 0);
     Uint8           object_size = net_file.GetSize();
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
 
@@ -1075,7 +1189,7 @@ CNetStorageHandler::x_ProcessGetSize(
 
 
 string
-CNetStorageHandler::x_GetFileID(const CJsonNode &  message)
+CNetStorageHandler::x_GetObjectKey(const CJsonNode &  message)
 {
     if (message.HasKey("FileID")) {
         string  file_id = message.GetString("FileID");

@@ -39,6 +39,7 @@
 
 #include "nst_server_parameters.hpp"
 #include "nst_precise_time.hpp"
+#include "nst_alert.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -79,6 +80,10 @@ public:
 
     bool IsAdminClientName(const string &  name) const;
 
+    enum EAlertAckResult AcknowledgeAlert(const string &  id);
+    enum EAlertAckResult AcknowledgeAlert(EAlertType  alert_type);
+    void RegisterAlert(EAlertType  alert_type);
+
     static CNetStorageServer *  GetInstance(void);
 
 protected:
@@ -96,6 +101,7 @@ private:
     vector<string>              m_AdminClientNames;
     string                      m_CommandLine;
     CCompoundIDPool             m_CompoundIDPool;
+    CNSTAlerts                  m_Alerts;
 
     static CNetStorageServer *  sm_netstorage_server;
 

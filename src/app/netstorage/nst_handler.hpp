@@ -172,6 +172,12 @@ private:
                        const SCommonRequestArguments &  common_args);
     void x_ProcessConfiguration(const CJsonNode &                message,
                                 const SCommonRequestArguments &  common_args);
+    void x_ProcessHealth(const CJsonNode &                message,
+                         const SCommonRequestArguments &  common_args);
+    void x_ProcessAckAlert(const CJsonNode &                message,
+                           const SCommonRequestArguments &  common_args);
+    void x_ProcessReconfigure(const CJsonNode &                message,
+                              const SCommonRequestArguments &  common_args);
     void x_ProcessShutdown(const CJsonNode &                message,
                            const SCommonRequestArguments &  common_args);
     void x_ProcessGetClientsInfo(const CJsonNode &                message,
@@ -184,6 +190,8 @@ private:
                           const SCommonRequestArguments &  common_args);
     void x_ProcessRead(const CJsonNode &                message,
                        const SCommonRequestArguments &  common_args);
+    void x_ProcessCreate(const CJsonNode &                message,
+                         const SCommonRequestArguments &  common_args);
     void x_ProcessWrite(const CJsonNode &                message,
                         const SCommonRequestArguments &  common_args);
     void x_ProcessDelete(const CJsonNode &                message,
@@ -197,7 +205,7 @@ private:
 
 private:
     string
-    x_GetFileID(const CJsonNode &  message);
+    x_GetObjectKey(const CJsonNode &  message);
     void x_CheckNonAnonymousClient(void);
     void x_CheckFileID(const string &  file_id);
     void x_CheckICacheSettings(const SICacheSettings &  icache_settings);

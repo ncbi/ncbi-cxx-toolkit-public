@@ -1,5 +1,5 @@
-#ifndef NETSTORAGE_CONNECTION_FACTORY__HPP
-#define NETSTORAGE_CONNECTION_FACTORY__HPP
+#ifndef NETSTORAGE_CONFIG__HPP
+#define NETSTORAGE_CONFIG__HPP
 
 /*  $Id$
  * ===========================================================================
@@ -26,36 +26,41 @@
  *
  * ===========================================================================
  *
- * Authors:  Denis Vakatov
+ * Authors:  Sergey Satskiy
  *
- * File Description: NetStorage connection factory
+ * File Description: NetStorage config file utilities
  *
  */
 
-#include <string>
-#include <connect/server.hpp>
-
+#include <corelib/ncbireg.hpp>
 
 BEGIN_NCBI_SCOPE
 
-class CNetStorageServer;
+
+const unsigned short    port_low_limit = 1;
+const unsigned short    port_high_limit = 65535;
+
+const unsigned int      default_network_timeout = 10;
+
+const unsigned int      default_max_connections = 100;
+const unsigned int      max_connections_low_limit = 1;
+const unsigned int      max_connections_high_limit = 1000;
+
+const unsigned int      default_init_threads = 10;
+const unsigned int      init_threads_low_limit = 1;
+const unsigned int      init_threads_high_limit = 1000;
+
+const unsigned int      default_max_threads = 25;
+const unsigned int      max_threads_low_limit = 1;
+const unsigned int      max_threads_high_limit = 1000;
 
 
-class CNetStorageConnectionFactory : public IServer_ConnectionFactory
-{
-public:
-    CNetStorageConnectionFactory(CNetStorageServer *  server):
-        m_Server(server)
-    {}
-
-    IServer_ConnectionHandler *  Create(void);
-
-private:
-    CNetStorageServer *     m_Server;
-};
+// Validates the config file - it does LOG_POST(...) of the problems it found
+// Returns true if the config file is perfectly well formed
+bool NSTValidateConfigFile(const IRegistry &  reg);
 
 
 END_NCBI_SCOPE
 
-#endif
+#endif /* NETSTORAGE_CONFIG__HPP */
 

@@ -62,12 +62,16 @@ class NetStorageConsole:
              'setattr':        self.sendSetAttr,
              'no-type':        self.sendNoType,
              'no-dict':        self.sendNoDictionary,
+             'create':         self.create,
              'upload':         self.upload,
              'delete':         self.delete,
              'download':       self.download,
              'exists':         self.exists,
              'getsize':        self.getsize,
              'relocate':       self.relocate,
+             'health':         self.health,
+             'reconfigure':    self.reconfigure,
+             'ackalert':       self.ackalert,
            }
 
         self.__commandSN = 0
@@ -356,6 +360,11 @@ class NetStorageConsole:
         self.printMessage( "Message from server", response )
         return
 
+    def create( self, arguments ):
+        " Sends the create command "
+        print "Not implemented yet"
+        return
+
     def upload( self, arguments ):
         " Uploads a file "
         if len( arguments ) < 1:
@@ -549,6 +558,25 @@ class NetStorageConsole:
         if "Status" not in response or response[ "Status" ] != "OK":
             print "Command failed"
         return
+
+
+    def health( self, arguments ):
+        " Sends HEALTH message "
+        print "Not implemented yet"
+        return
+
+
+    def reconfigure( self, arguments ):
+        " Sends RECONFIGURE message "
+        print "Not implemented yet"
+        return
+
+
+    def ackalert( self, arguments ):
+        " Sends ACLALERT message "
+        print "Not implemented yet"
+        return
+
 
     def sendSetAttr( self, arguments ):
         " Sends SETATTR message "

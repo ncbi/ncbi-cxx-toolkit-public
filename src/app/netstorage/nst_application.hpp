@@ -1,6 +1,5 @@
-#ifndef NETSTORAGE_CONNECTION_FACTORY__HPP
-#define NETSTORAGE_CONNECTION_FACTORY__HPP
-
+#ifndef NETSTORAGE_APPLICATION__HPP
+#define NETSTORAGE_APPLICATION__HPP
 /*  $Id$
  * ===========================================================================
  *
@@ -28,34 +27,40 @@
  *
  * Authors:  Denis Vakatov
  *
- * File Description: NetStorage connection factory
+ * File Description: Network Storage middle man server
  *
  */
 
-#include <string>
-#include <connect/server.hpp>
+#include <corelib/ncbiapp.hpp>
+#include "nst_dbapp.hpp"
 
 
-BEGIN_NCBI_SCOPE
-
-class CNetStorageServer;
+USING_NCBI_SCOPE;
 
 
-class CNetStorageConnectionFactory : public IServer_ConnectionFactory
+// NetStorage daemon application
+class CNetStorageDApp : public CNcbiApplication
 {
 public:
-    CNetStorageConnectionFactory(CNetStorageServer *  server):
-        m_Server(server)
-    {}
+    CNetStorageDApp();
 
-    IServer_ConnectionHandler *  Create(void);
+    void Init(void);
+    int Run(void);
+
+    // Singleton for CNSTDbApp, used for attributes
+    CNSTDbApp &  GetDb(void);
+
+protected:
+    EPreparseArgs PreparseArgs(int                argc,
+                               const char* const* argv);
 
 private:
-    CNetStorageServer *     m_Server;
+    STimeout                m_ServerAcceptTimeout;
+    string                  m_CommandLine;
+    auto_ptr<CNSTDbApp>     m_Db;   // Access to NST attributes DB
+
+    bool x_WritePid(void) const;
 };
-
-
-END_NCBI_SCOPE
 
 #endif
 

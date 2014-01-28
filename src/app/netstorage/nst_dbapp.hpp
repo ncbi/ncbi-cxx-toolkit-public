@@ -1,7 +1,7 @@
-#ifndef NETSTORAGE_CONNECTION_FACTORY__HPP
-#define NETSTORAGE_CONNECTION_FACTORY__HPP
+#ifndef NETSTORAGE_DBAPP__HPP
+#define NETSTORAGE_DBAPP__HPP
 
-/*  $Id$
+/* $Id$
  * ===========================================================================
  *
  *                            PUBLIC DOMAIN NOTICE
@@ -26,36 +26,51 @@
  *
  * ===========================================================================
  *
- * Authors:  Denis Vakatov
- *
- * File Description: NetStorage connection factory
+ * Author:  Viatcheslav Gorelenkov
  *
  */
 
-#include <string>
-#include <connect/server.hpp>
+#include <corelib/ncbiapp.hpp>
+#include <dbapi/dbapi.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
-class CNetStorageServer;
+
+struct SDbAccessInfo
+{
+    string    m_ServerName;
+    string    m_UserName;
+    string    m_Password;
+    string    m_Database;
+    string    m_Driver;
+};
 
 
-class CNetStorageConnectionFactory : public IServer_ConnectionFactory
+class CNSTDbApp
 {
 public:
-    CNetStorageConnectionFactory(CNetStorageServer *  server):
-        m_Server(server)
-    {}
+    CNSTDbApp(CNcbiApplication &  app);
+    ~CNSTDbApp(void);
 
-    IServer_ConnectionHandler *  Create(void);
+    const SDbAccessInfo &  GetDbAccessInfo(void);
+    IDataSource *          GetDataSource(void);
+    IConnection *          GetDbConn(void);
 
 private:
-    CNetStorageServer *     m_Server;
+
+    CNcbiApplication &      m_App;
+    auto_ptr<SDbAccessInfo> m_DbAccessInfo;
+    IDataSource *           m_IDataSource;
+    IConnection *           m_IDbConnection;
+
+    CNSTDbApp(void);
+    CNSTDbApp(const CNSTDbApp &  conn);
+    CNSTDbApp & operator= (const CNSTDbApp &  conn);
 };
 
 
 END_NCBI_SCOPE
 
-#endif
+#endif /* NETSTORAGE_DBAPP__HPP */
 

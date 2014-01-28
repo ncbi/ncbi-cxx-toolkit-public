@@ -55,6 +55,8 @@
 #include "nst_exception.hpp"
 #include "nst_connection_factory.hpp"
 #include "nst_server.hpp"
+#include "nst_application.hpp"
+#include "nst_config.hpp"
 
 
 
@@ -77,37 +79,32 @@ extern "C" void Threaded_Server_SignalHandler(int signum)
 }
 
 
-class CNetStorageDApp : public CNcbiApplication
+CNSTDbApp &  CNetStorageDApp::GetDb(void)
 {
-public:
-    CNetStorageDApp()
-        : CNcbiApplication()
-    {
-        CVersionInfo        version(NCBI_PACKAGE_VERSION_MAJOR,
-                                    NCBI_PACKAGE_VERSION_MINOR,
-                                    NCBI_PACKAGE_VERSION_PATCH);
-        CRef<CVersion>      full_version(new CVersion(version));
+    if (m_Db.get())
+        return *m_Db;
 
-        full_version->AddComponentVersion("Protocol",
-                                          NETSTORAGED_PROTOCOL_VERSION_MAJOR,
-                                          NETSTORAGED_PROTOCOL_VERSION_MINOR,
-                                          NETSTORAGED_PROTOCOL_VERSION_PATCH);
+    m_Db.reset(new CNSTDbApp(*this));
+    return *m_Db;
+}
 
-        SetVersion(version);
-        SetFullVersion(full_version);
-    }
 
-    void Init(void);
-    int Run(void);
+CNetStorageDApp::CNetStorageDApp()
+    : CNcbiApplication()
+{
+    CVersionInfo        version(NCBI_PACKAGE_VERSION_MAJOR,
+                                NCBI_PACKAGE_VERSION_MINOR,
+                                NCBI_PACKAGE_VERSION_PATCH);
+    CRef<CVersion>      full_version(new CVersion(version));
 
-protected:
-    EPreparseArgs PreparseArgs(int                argc,
-                               const char* const* argv);
+    full_version->AddComponentVersion("Protocol",
+                                      NETSTORAGED_PROTOCOL_VERSION_MAJOR,
+                                      NETSTORAGED_PROTOCOL_VERSION_MINOR,
+                                      NETSTORAGED_PROTOCOL_VERSION_PATCH);
 
-private:
-    STimeout    m_ServerAcceptTimeout;
-    string      m_CommandLine;
-};
+    SetVersion(version);
+    SetFullVersion(full_version);
+}
 
 
 void CNetStorageDApp::Init(void)
@@ -152,31 +149,7 @@ int CNetStorageDApp::Run(void)
     signal(SIGINT,  Threaded_Server_SignalHandler);
     signal(SIGTERM, Threaded_Server_SignalHandler);
 
-    // Check that the pidfile argument is really a file
-    if (args[kPidFileArgName]) {
-        string      pid_file = args[kPidFileArgName].AsString();
-        if (pid_file == "-")
-            NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                       "PID file cannot be standard output and only "
-                       "file name is accepted.");
-        // Test writeability
-        if (access(pid_file.c_str(), F_OK) == 0) {
-            // File exists
-            if (access(pid_file.c_str(), W_OK) != 0)
-                NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                           "PID file is not writable.");
-        } else {
-            // File does not exist
-            FILE *  f = fopen(pid_file.c_str(), "w");
-            if (f == NULL)
-                NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                           "PID file is not writable.");
-            fclose(f);
-            // The startup may fail before the pid file should be created,
-            // so leave the fs in the state as before the test
-            remove(pid_file.c_str());
-        }
-    }
+    bool    config_well_formed = NSTValidateConfigFile(reg);
 
     // [server] section
     SNetStorageServerParameters     params;
@@ -218,17 +191,10 @@ int CNetStorageDApp::Run(void)
         LOG_POST(Message << Warning << "Operating in non-daemon mode...");
 
     // Save the process PID if PID is given
-    if (args[kPidFileArgName]) {
-        // Writability was tested at the beginning
-        string  pid_file = args[kPidFileArgName].AsString();
-        FILE *  f = fopen(pid_file.c_str(), "w");
-        if (f == NULL)
-            NCBI_THROW(CNetStorageServerException, eInternalError,
-                       "Error opening pid file.");
-
-        fprintf(f, "%d", (unsigned int) CDiagContext::GetPID());
-        fclose(f);
-    }
+    if (!x_WritePid())
+        server->RegisterAlert(ePidFile);
+    if (!config_well_formed)
+        server->RegisterAlert(eConfig);
 
     if (args[kNodaemonArgName])
         NcbiCout << "Server started" << NcbiEndl;
@@ -263,6 +229,48 @@ CNetStorageDApp::PreparseArgs(int                argc,
     }
 
     return CNcbiApplication::PreparseArgs(argc, argv);
+}
+
+
+// true if the PID is written successfully
+bool CNetStorageDApp::x_WritePid(void) const
+{
+    const CArgs &   args = GetArgs();
+
+    // Check that the pidfile argument is really a file
+    if (args[kPidFileArgName]) {
+
+        string      pid_file = args[kPidFileArgName].AsString();
+
+        if (pid_file == "-") {
+            LOG_POST(Warning << "PID file cannot be standard output and only "
+                                "file name is accepted. Ignore and continue.");
+            return false;
+        }
+
+        // Test writeability
+        if (access(pid_file.c_str(), F_OK) == 0) {
+            // File exists
+            if (access(pid_file.c_str(), W_OK) != 0) {
+                LOG_POST(Warning << "PID file is not writable. "
+                                    "Ignore and continue.");
+                return false;
+            }
+        }
+
+        // File does not exist or write
+        // access is granted
+        FILE *  f = fopen(pid_file.c_str(), "w");
+        if (f == NULL) {
+            LOG_POST(Warning << "Error opening PID file for writing. "
+                                "Ignore and continue.");
+            return false;
+        }
+        fprintf(f, "%d", (unsigned int) CDiagContext::GetPID());
+        fclose(f);
+    }
+
+    return true;
 }
 
 
