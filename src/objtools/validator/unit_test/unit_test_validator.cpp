@@ -17479,6 +17479,10 @@ BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
     fixed = CSubSource::FixLatLonFormat(to_fix, true);
     BOOST_CHECK_EQUAL(fixed, "");
 
+    to_fix = "9.93°N and 78.12°E";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "9.93 N 78.12 E");
+
     bool format_correct;
     bool precision_correct;
     bool lat_in_range;

@@ -1113,6 +1113,9 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
         pos = NStr::Find (cpy, "o", pos + 1);
     }
 
+    // replace all '°' with space
+    NStr::ReplaceInPlace(cpy, "°", " ");
+
     // replace all '#' with ' '
     NStr::ReplaceInPlace (cpy, "#", " ");
 
