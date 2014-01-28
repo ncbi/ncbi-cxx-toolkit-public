@@ -6358,7 +6358,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadSpecificHost)
     CheckErrors (*eval, expected_errors);
 
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_nat_host, "");
-    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_nat_host, "Aedes");
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_nat_host, "Aedes sp.");
     expected_errors[0]->SetErrCode("AmbiguousSpecificHost");
     expected_errors[0]->SetSeverity(eDiag_Info);
     expected_errors[0]->SetErrMsg("Specific host value is ambiguous: Aedes");
@@ -6369,7 +6369,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadSpecificHost)
     // should not generate an error
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_nat_host, "");
     unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_nat_host, "Bovine");
-
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
     
 }
 
@@ -6397,8 +6398,8 @@ BOOST_AUTO_TEST_CASE(Test_Validity_SpecificHost)
 	BOOST_CHECK_EQUAL(error_msg, string("Specific host value is misspelled: Eschericia coli"));
 	
 	host = "Avian";
-	BOOST_CHECK_EQUAL(false, IsSpecificHostValid(host, error_msg));
-	BOOST_CHECK_EQUAL(error_msg, string("Invalid value for specific host: Avian"));
+	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));
+	BOOST_CHECK_EQUAL(error_msg, kEmptyStr);
 	
 	host = "Bovine";
 	BOOST_CHECK_EQUAL(true, IsSpecificHostValid(host, error_msg));

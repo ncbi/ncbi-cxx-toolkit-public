@@ -1944,24 +1944,29 @@ string SpecificHostValueToCheck(const string& val)
     } else if (! isupper (val.c_str()[0])) {
         return "";
     }
+
     string host = val;
-    AdjustSpecificHostForTaxServer(host);
+    // must have at least two words to check
     size_t pos = NStr::Find(host, " ");
-    if (pos != string::npos) {
-        if (NStr::StartsWith(host.substr(pos + 1), "hybrid ")) {
-            pos += 7;
-        } else if (NStr::StartsWith(host.substr(pos + 1), "x ")) {
-            pos += 2;
-        }
-        if (! NStr::StartsWith(host.substr(pos + 1), "sp.")
-            && ! NStr::StartsWith(host.substr(pos + 1), "(")) {
-            pos = NStr::Find(host, " ", pos + 1);
-            if (pos != string::npos) {
-                host = host.substr(0, pos);
-            }
-        } else {
+    if (pos == string::npos) {
+        return "";
+    }
+
+    AdjustSpecificHostForTaxServer(host);
+    pos = NStr::Find(host, " ");
+    if (NStr::StartsWith(host.substr(pos + 1), "hybrid ")) {
+        pos += 7;
+    } else if (NStr::StartsWith(host.substr(pos + 1), "x ")) {
+        pos += 2;
+    }
+    if (! NStr::StartsWith(host.substr(pos + 1), "sp.")
+        && ! NStr::StartsWith(host.substr(pos + 1), "(")) {
+        pos = NStr::Find(host, " ", pos + 1);
+        if (pos != string::npos) {
             host = host.substr(0, pos);
         }
+    } else {
+        host = host.substr(0, pos);
     }
     return host;
 }
