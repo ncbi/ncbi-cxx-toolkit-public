@@ -90,18 +90,16 @@ ExtractStorageFlags(const CJsonNode &  message)
 
     if (message.HasKey("StorageFlags")) {
         CJsonNode   flags = message.GetByKey("StorageFlags");
-        if (flags.HasKey("Fast"))
-            if (flags.GetBoolean("Fast"))
-                result |= fNST_Fast;
-        if (flags.HasKey("Persistent"))
-            if (flags.GetBoolean("Persistent"))
-                result |= fNST_Persistent;
-        if (flags.HasKey("Movable"))
-            if (flags.GetBoolean("Movable"))
-                result |= fNST_Movable;
-        if (flags.HasKey("Cacheable"))
-            if (flags.GetBoolean("Cacheable"))
-                result |= fNST_Cacheable;
+        if (flags.HasKey("Fast") && flags.GetBoolean("Fast"))
+            result |= fNST_Fast;
+        if (flags.HasKey("Persistent") && flags.GetBoolean("Persistent"))
+            result |= fNST_Persistent;
+        if (flags.HasKey("Movable") && flags.GetBoolean("Movable"))
+            result |= fNST_Movable;
+        if (flags.HasKey("Cacheable") && flags.GetBoolean("Cacheable"))
+            result |= fNST_Cacheable;
+        if (flags.HasKey("NoMetaData") && flags.GetBoolean("NoMetaData"))
+            result |= fNST_NoMetaData;
     }
     return result;
 }

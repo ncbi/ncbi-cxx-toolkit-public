@@ -164,6 +164,7 @@ enum EOption {
     eFastStorage,
     eMovable,
     eCacheable,
+    eNoMetaData,
     eNetSchedule,
     eQueue,
     eWorkerNode,

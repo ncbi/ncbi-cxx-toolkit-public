@@ -135,7 +135,10 @@ enum ENetStorageFlags {
     fNST_Fast       = (1 << 0), ///< E.g. use NetCache as the primary storage
     fNST_Persistent = (1 << 1), ///< E.g. use FileTrack as the primary storage
     fNST_Movable    = (1 << 2), ///< Allow the file to move between storages
-    fNST_Cacheable  = (1 << 3)  ///< Use NetCache for data caching
+    fNST_Cacheable  = (1 << 3), ///< Use NetCache for data caching
+    fNST_NoMetaData = (1 << 4), ///< Do not use NetStorage relational database
+                                ///< to track ownership & changes. Attributes
+                                ///< and querying will also be disabled.
 };
 typedef int TNetStorageFlags;  ///< Bitwise OR of ENetStorageFlags
 

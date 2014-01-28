@@ -662,6 +662,8 @@ void SNetStorageRPC::x_SetStorageFlags(CJsonNode& node, TNetStorageFlags flags)
         storage_flags.SetBoolean("Movable", true);
     if (flags & fNST_Cacheable)
         storage_flags.SetBoolean("Cacheable", true);
+    if (flags & fNST_NoMetaData)
+        storage_flags.SetBoolean("NoMetaData", true);
 
     node.SetByKey("StorageFlags", storage_flags);
 }

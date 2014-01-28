@@ -180,6 +180,10 @@ struct SOptionDefinition {
     {OPT_DEF(eSwitch, eCacheable),
         CACHEABLE_OPTION, "Use NetCache for data caching.", {-1}},
 
+    {OPT_DEF(eSwitch, eNoMetaData),
+        "no-meta-data", "Do not use relational database for "
+            "ownership, change tracking, and object attributes.", {-1}},
+
     {OPT_DEF(eOptionWithParameter, eNetSchedule),
         "ns|" NETSCHEDULE_OPTION, "NetSchedule service name "
             "or server address.", {-1}},
@@ -583,7 +587,7 @@ struct SCommandDefinition {
         "the generated file ID is printed to the standard output."
         ABOUT_NETSTORAGE_OPTION,
         {eOptionalID, eNetStorage, ePersistent, eFastStorage,
-            eNetCache, eCache, eTTL, eMovable, eCacheable,
+            eNetCache, eCache, eTTL, eMovable, eCacheable, eNoMetaData,
             eInput, eInputFile, eLoginToken, eAuth,
             eFileTrackSite, eFileTrackAPIKey, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
@@ -607,7 +611,7 @@ struct SCommandDefinition {
         "one for faster file access."
         ABOUT_NETSTORAGE_OPTION,
         {eID, eNetStorage, ePersistent, eFastStorage, eNetCache, eCache,
-            eTTL, eMovable, eCacheable, eLoginToken, eAuth,
+            eTTL, eMovable, eCacheable, eNoMetaData, eLoginToken, eAuth,
             eFileTrackSite, eFileTrackAPIKey, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
@@ -619,7 +623,7 @@ struct SCommandDefinition {
         "'--" PERSISTENT_OPTION "', '--" FAST_STORAGE_OPTION "', '--"
         MOVABLE_OPTION "', and '--" CACHEABLE_OPTION "' options.",
         {eOptionalID, eFileKey, eNamespace, ePersistent, eFastStorage,
-            eNetCache, eCache, eTTL, eMovable, eCacheable,
+            eNetCache, eCache, eTTL, eMovable, eCacheable, eNoMetaData,
             eLoginToken, eAuth, eFileTrackSite,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
@@ -1269,6 +1273,9 @@ int CGridCommandLineInterfaceApp::Run()
                 break;
             case eCacheable:
                 m_Opts.netstorage_flags |= fNST_Cacheable;
+                break;
+            case eNoMetaData:
+                m_Opts.netstorage_flags |= fNST_NoMetaData;
                 break;
             case eAttrName:
                 m_Opts.attr_name = opt_value;

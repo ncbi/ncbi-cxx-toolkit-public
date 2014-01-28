@@ -333,6 +333,8 @@ CJsonNode CNetFileID::ToJSON() const
             (m_StorageFlags & fNST_Movable) != 0);
     storage_flags.SetBoolean("Cacheable",
             (m_StorageFlags & fNST_Cacheable) != 0);
+    storage_flags.SetBoolean("NoMetaData",
+            (m_StorageFlags & fNST_NoMetaData) != 0);
 
     root.SetByKey("StorageFlags", storage_flags);
 
