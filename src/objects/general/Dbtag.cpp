@@ -581,7 +581,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_GeneID, "http://www.ncbi.nlm.nih.gov/gene/" },
     { CDbtag::eDbtagType_GrainGenes, "http://wheat.pw.usda.gov/cgi-bin/graingenes/report.cgi?class=marker&name=" },
     { CDbtag::eDbtagType_Greengenes, "http://greengenes.lbl.gov/cgi-bin/show_one_record_v2.pl?prokMSA_id=" },
-    { CDbtag::eDbtagType_HGNC, "http://www.genenames.org/data/hgnc_data.php?hgnc_id=" },
+    { CDbtag::eDbtagType_HGNC, "http://www.genenames.org/cgi-bin/gene_symbol_report?hgnc_id=" },
     { CDbtag::eDbtagType_HMP, "http://www.hmpdacc.org/catalog/grid.php?dataset=genomic&hmp_id=" },
     { CDbtag::eDbtagType_HOMD, "http://www.homd.org/" },
     { CDbtag::eDbtagType_HPRD, "http://www.hprd.org/protein/" },
@@ -589,6 +589,7 @@ static const TDbtUrl sc_url_prefix[] = {
     { CDbtag::eDbtagType_H_InvDB, "http://www.h-invitational.jp" },
     { CDbtag::eDbtagType_IFO, "http://www.nbrc.nite.go.jp/NBRC2/NBRCCatalogueDetailServlet?ID=NBRC&CAT=" },
     { CDbtag::eDbtagType_IMGT_GENEDB, "http://www.imgt.org/IMGT_GENE-DB/GENElect?species=Homo+sapiens&query=2+" },
+    { CDbtag::eDbtagType_IMGT_HLA, "http://www.ebi.ac.uk/cgi-bin/ipd/imgt/hla/get_allele.cgi?" },
     { CDbtag::eDbtagType_IMGT_LIGM, "http://www.imgt.org/cgi-bin/IMGTlect.jv?query=201+" },
     { CDbtag::eDbtagType_IRD, "http://www.fludb.org/brc/fluSegmentDetails.do?irdSubmissionId=" },
     { CDbtag::eDbtagType_ISD, "http://www.flu.lanl.gov/search/view_record.html?accession=" },
@@ -893,6 +894,12 @@ string CDbtag::GetUrl(const string & genus,
                                       "species=Homo+sapiens&",
                                       "species=" + taxname_url_piece + "&" ) +
                     tag;
+            }
+            break;
+
+        case CDbtag::eDbtagType_IMGT_HLA:
+            if( NStr::StartsWith(tag, "HLA") ) {
+                prefix = "http://www.ebi.ac.uk/Tools/dbfetch/dbfetch?db=imgthla;id=";
             }
             break;
 
