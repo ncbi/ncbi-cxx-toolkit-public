@@ -440,6 +440,7 @@ public:
     }
 
     SUPPORT_LINKER_OPTION(TargetMachine)
+    SUPPORT_LINKER_OPTION(ImageHasSafeExceptionHandlers)
     SUPPORT_LINKER_OPTION(OptimizeReferences)
     SUPPORT_LINKER_OPTION(EnableCOMDATFolding)
     SUPPORT_LINKER_OPTION(IgnoreAllDefaultLibraries)
@@ -523,6 +524,7 @@ public:
     SUPPORT_DUMMY_OPTION(SubSystem)
     SUPPORT_DUMMY_OPTION(ImportLibrary)
     SUPPORT_DUMMY_OPTION(TargetMachine)
+    SUPPORT_DUMMY_OPTION(ImageHasSafeExceptionHandlers)
     SUPPORT_DUMMY_OPTION(OptimizeReferences)
     SUPPORT_DUMMY_OPTION(EnableCOMDATFolding)
 

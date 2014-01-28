@@ -384,6 +384,7 @@ struct ILinkerTool : public ITool
     virtual string SubSystem(void)					  const = 0;
     virtual string ImportLibrary(void)				  const = 0;
     virtual string TargetMachine(void)				  const = 0;
+    virtual string ImageHasSafeExceptionHandlers(void) const = 0;
 
     //release - EXE DLL +=
     virtual string OptimizeReferences(void)			  const = 0;

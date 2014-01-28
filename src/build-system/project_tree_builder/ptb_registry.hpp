@@ -52,9 +52,9 @@ public:
     {
         return m_IsEmpty ? kEmptyStr : GetString(section,name);
     }
-    bool HasEntry(const string& section) const
+    bool HasEntry(const string& section, const string& name = kEmptyStr) const
     {
-        return m_IsEmpty ? false : m_Registry->HasEntry(section);
+        return m_IsEmpty ? false : m_Registry->HasEntry(section, name, IRegistry::fCountCleared);
     }
     void Read(CNcbiIstream& is)
     {

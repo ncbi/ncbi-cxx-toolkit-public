@@ -1531,7 +1531,17 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
                         ofs << "GENERATED_LIB_ORDER = -l" << NStr::Join(liborder," -l") << endl;
                     }
                     if (!lib3order.empty()) {
-                        ofs << "GENERATED_LIB3PARTY_ORDER = " << NStr::Join(lib3order," ") << endl;
+                        ofs << "GENERATED_LIB3PARTY_ORDER =";
+                        ITERATE( list<string>, l3, lib3order) {
+                            ofs << " ";
+                            if (m_Frameworks.find(*l3) != m_Frameworks.end()) {
+                                ofs << "-framework ";
+                            } else if (m_3PartyLibs.find(*l3) != m_3PartyLibs.end()) {
+                                ofs << "-l";
+                            }
+                            ofs << *l3;
+                        }
+                        ofs << endl;
                     }
                 }
             }
@@ -2543,11 +2553,6 @@ bool  CProjBulderApp::FindDepGraph(const string& root, list<string>& found) cons
 
 void   CProjBulderApp::LoadDepGraph(const string& filename)
 {
-#if !DO_PATCHTREEMAKEFILES
-    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
-        return;
-    }
-#endif
     const CMsvcSite& site = GetSite();
     CNcbiIfstream ifs(filename.c_str(), IOS_BASE::in);
     if ( ifs.is_open() ) {
@@ -2578,29 +2583,68 @@ void   CProjBulderApp::LoadDepGraph(const string& filename)
 #else
                 if (CSymResolver::IsDefine(third)) {
                     string resolved;
-                    site.ResolveDefine(CSymResolver::StripDefine(third), resolved);
+                    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
+                        string stripped(CSymResolver::StripDefine(third));
+                        if (stripped != "NCBI_C_ncbi") {
+                            site.ResolveDefine(stripped, resolved);
+                        }
+                        if (resolved.empty()) {
+                            resolved = "@" + stripped + "@";
+                        }
+                    } else {
+                        site.ResolveDefine(CSymResolver::StripDefine(third), resolved);
+                    }
                     third = resolved;
                 }
                 NStr::Split(third, LIST_SEPARATOR_LIBS, third_list);
 #endif
                 ITERATE(list<string>, f, first_list) {
-                    if (f->at(0) == '-') {
+                    string f_name = NStr::StartsWith(*f, "-l") ? f->substr(2) : *f;
+                    if (f_name.at(0) == '-') {
                         continue;
                     }
                     ITERATE(list<string>, t, third_list) {
-                        if (t->at(0) == '-' || *f == *t) {
+                        string t_name(*t);
+                        bool is_lib = false;
+                        bool is_framework = false;
+                        if (NStr::StartsWith(*t, "-l")) {
+                            is_lib = true;
+                            t_name = t->substr(2);
+                        } else if (NStr::CompareNocase(*t,"-framework") == 0) {
+                            if (t != third_list.end()) {
+                                is_framework = true;
+                                t_name = *(++t);
+                            } else {
+                                continue;
+                            }
+                        } else {
+                            is_lib = t->at(0) != '-';
+                        }
+                        if (*f == t_name) {
+                            continue;
+                        }
+                        if (!is_lib && !is_framework) {
+                            if (second == "needs3party") {
+                                m_GraphDepFlags[*f].insert(t_name);
+                            }
                             continue;
                         }
                         if (second == "includes") {
-                            m_GraphDepIncludes[*f].insert(*t);
+                            m_GraphDepIncludes[*f].insert(t_name);
                         } else if (second == "includes3party") {
-                            m_GraphDepIncludes[*f].insert(*t);
-                            m_3PartyLibs.insert(*t);
+                            m_GraphDepIncludes[*f].insert(t_name);
+                            m_3PartyLibs.insert(t_name);
+                            if (is_framework) {
+                                m_Frameworks.insert(t_name);
+                            }
                         } else if (second == "needs") {
-                            m_GraphDepPrecedes[*f].insert(*t);
+                            m_GraphDepPrecedes[*f].insert(t_name);
                         } else if (second == "needs3party") {
-                            m_GraphDepPrecedes[*f].insert(*t);
-                            m_3PartyLibs.insert(*t);
+                            m_GraphDepPrecedes[*f].insert(t_name);
+                            m_3PartyLibs.insert(t_name);
+                            if (is_framework) {
+                                m_Frameworks.insert(t_name);
+                            }
                         }
                     }
                 }
@@ -2609,6 +2653,9 @@ void   CProjBulderApp::LoadDepGraph(const string& filename)
     }
 
 #if !DO_PATCHTREEMAKEFILES
+    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
+        return;
+    }
     vector< set<string> > graph;
     for (map<string, set<string> >::const_iterator d= m_GraphDepPrecedes.begin();
             d!= m_GraphDepPrecedes.end(); ++d) {
@@ -2676,6 +2723,15 @@ string CProjBulderApp::ProcessLocationMacros(string raw_data)
         }
     }
     return data;
+}
+
+string CProjBulderApp::GetConfigureMacro(string data)
+{
+    string definition = GetConfig().GetString(CMsvc7RegSettings::GetMsvcSection(), data, "");
+    if (!definition.empty()) {
+        definition = CDirEntry::ConcatPath( m_ProjectTreeInfo->m_Compilers, definition);
+    }
+    return definition;
 }
 
 void CProjBulderApp::RegisterSuspiciousProject(const CProjKey& proj)

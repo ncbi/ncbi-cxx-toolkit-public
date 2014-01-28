@@ -141,12 +141,16 @@ public:
     string m_CustomConfFile;
     CSimpleMakeFileContents m_CustomConfiguration;
     map<string,string>  m_CompositeProjectTags;
+
     map<string, set<string> >  m_GraphDepIncludes;
     map<string, set<string> >  m_GraphDepPrecedes;
-    map<string, size_t >  m_GraphDepRank;
+    map<string, set<string> >  m_GraphDepFlags;
+    set<string>                m_3PartyLibs;
+    set<string>                m_Frameworks;
+
+    map<string, size_t >       m_GraphDepRank;
     map<string, list<string> > m_LibraryOrder;
     map<string, list<string> > m_3PartyLibraryOrder;
-    set<string> m_3PartyLibs;
 
 public:
     bool IsCMakeMode(void) const {return m_CMakeMode;}
@@ -198,6 +202,7 @@ public:
     string GetProjectTreeRoot(void) const;
     bool   IsAllowedProjectTag(const CProjItem& project, const string* filter = NULL) const;
     string ProcessLocationMacros(string data);
+    string GetConfigureMacro(string data);
     bool IsScanningWholeTree(void) const {return m_ScanningWholeTree;}
     void SetFail(int exit_code=1) {m_ExitCode=exit_code;}
     void RegisterSuspiciousProject(const CProjKey& proj);

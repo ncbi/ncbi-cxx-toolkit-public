@@ -113,6 +113,7 @@ struct SMakeProjectT
 
     
     static void   Create3PartyLibs        (const list<string>& libs_flags, 
+                                           const list<string>& expected_flags,
                                            list<string>*       libs_list,
                                            const string* mkname = NULL);
 
@@ -133,11 +134,13 @@ struct SMakeProjectT
     static void   VerifyLibDepends       ( list<CProjKey>&  depends_ids,
                                            const string& mkname,
                                            list<string>& liborder,
-                                           const set<string>* libs_to_ignore = nullptr);
+                                           const set<string>* libs_3party = nullptr,
+                                           list<string>* expected_3party = nullptr);
 
     static void   ConvertLibDepends       (const list<string>& depends_libs, 
                                            list<CProjKey>*     depends_ids,
-                                           const string* mkname = NULL);
+                                           const string* mkname = NULL,
+                                           list<string>* expected_3party = NULL);
 
     static void   ConvertLibDependsMacro  (const list<string>& depends, 
                                            list<string>& depends_libs);

@@ -30,6 +30,7 @@
 #include <ncbi_pch.hpp>
 #include "proj_src_resolver.hpp"
 #include "proj_builder_app.hpp"
+#include "proj_tree_builder.hpp"
 
 BEGIN_NCBI_SCOPE
 
@@ -98,18 +99,24 @@ void CProjSRCResolver::ResolveTo(list<string>* sources_dst)
     list<string> sources_names;
     ITERATE(list<string>, p, m_SourcesSrc) {
         const string& src = *p;
-        if ( !CSymResolver::IsDefine(src) ) {
-            sources_names.push_back(src);
+        string src_define;
+        if (SMakeProjectT::IsConfigurableDefine(src)) {
+            src_define = "$(" + SMakeProjectT::StripConfigurableDefine(src) + ")";
+        } else if (CSymResolver::IsDefine(src)) {
+            src_define = FilterDefine(src);
         } else {
-            PrepereResolver();
-            string src_define = FilterDefine(src);
-            list<string> resolved_src_defines;
-            m_Resolver.Resolve(src_define, &resolved_src_defines);
-
-            copy(resolved_src_defines.begin(),
-                 resolved_src_defines.end(),
-                 back_inserter(sources_names));
+            sources_names.push_back(src);
+            continue;
         }
+        PrepereResolver();
+        list<string> resolved_src_defines;
+        m_Resolver.Resolve(src_define, &resolved_src_defines);
+        if (resolved_src_defines.size() == 1 && resolved_src_defines.front() == src_define) {
+            continue;
+        }
+        copy(resolved_src_defines.begin(),
+                resolved_src_defines.end(),
+                back_inserter(sources_names));
     }
 
     ITERATE(list<string>, p, sources_names) {

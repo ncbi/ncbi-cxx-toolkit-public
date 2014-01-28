@@ -117,6 +117,10 @@ public:
     }
 
     void Clear(void);
+    void SetValueSeparator(const string& sep)
+    {
+        m_ValueSeparator = sep;
+    }
 
 private:
 
@@ -147,6 +151,7 @@ private:
     void AddReadyKV(const SKeyValue& kv);
     EMakeFileType m_Type;
     string m_Filename;
+    string m_ValueSeparator;
     const CSimpleMakeFileContents* m_Parent;
     bool m_Raw;
 };

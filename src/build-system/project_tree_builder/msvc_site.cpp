@@ -31,6 +31,7 @@
 #include "stl_msvc_usage.hpp"
 #include "msvc_site.hpp"
 #include "proj_builder_app.hpp"
+#include "proj_tree_builder.hpp"
 #include "msvc_prj_defines.hpp"
 #include "ptb_err_codes.hpp"
 
@@ -77,6 +78,25 @@ CMsvcSite::CMsvcSite(const string& reg_path)
         ITERATE (list<string>, it, not_provided) {
             m_NotProvidedThing.insert(*it);
         }
+
+        string unix_cfg = m_Registry.Get("ProjectTree","MetaData");
+        if (!unix_cfg.empty()) {
+            string fileloc;
+	        fileloc = CDirEntry::ConcatPath( CDirEntry::ConcatPath(
+	            GetApp().m_Root,
+	                GetApp().GetConfig().Get("ProjectTree", "src")),
+	                    CDirEntry::ConvertToOSPath(unix_cfg));
+            if (!CFile(fileloc).Exists() && !GetApp().m_ExtSrcRoot.empty()) {
+	            fileloc = CDirEntry::ConcatPath( CDirEntry::ConcatPath(
+	                GetApp().m_ExtSrcRoot,
+	                    GetApp().GetConfig().Get("ProjectTree", "src")),
+	                        CDirEntry::ConvertToOSPath(unix_cfg));
+            }
+            if (CFile(fileloc).Exists()) {
+                m_UnixMakeDef.SetValueSeparator(LIST_SEPARATOR_LIBS);
+                CSimpleMakeFileContents::LoadFrom(fileloc,&m_UnixMakeDef);
+            }
+        }
     } else {
         // unix
         string unix_cfg = m_Registry.Get(CMsvc7RegSettings::GetMsvcSection(),"MetaData");
@@ -88,7 +108,8 @@ CMsvcSite::CMsvcSite(const string& reg_path)
                 }
             }
             if (CFile(fileloc).Exists()) {
-                CSimpleMakeFileContents::LoadFrom(unix_cfg,&m_UnixMakeDef);
+                m_UnixMakeDef.SetValueSeparator(LIST_SEPARATOR_LIBS);
+                CSimpleMakeFileContents::LoadFrom(fileloc,&m_UnixMakeDef);
             }
         }
     
@@ -370,13 +391,36 @@ bool CMsvcSite::IsLibEnabledInConfig(const string&      lib,
 
 bool CMsvcSite::ResolveDefine(const string& define, string& resolved) const
 {
-    if (m_UnixMakeDef.GetValue(define,resolved)) {
-        return true;
+    if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
+        if (m_UnixMakeDef.GetValue(define,resolved)) {
+            return true;
+        }
     }
 //    resolved = m_Registry.Get("Defines", define);
     resolved = x_GetDefinesEntry(define);
     if (resolved.empty()) {
-        return m_Registry.HasEntry("Defines");
+        if (m_Registry.HasEntry("Defines", define)) {
+            return true;
+        }
+        if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
+            if (m_UnixMakeDef.GetValue(define,resolved)) {
+                list<string> lst, res;
+                NStr::Split(resolved, LIST_SEPARATOR_LIBS, lst);
+                ITERATE(list<string>, l, lst) {
+                    if (SMakeProjectT::IsConfigurableDefine(*l)) {
+                        resolved = x_GetDefinesEntry(SMakeProjectT::StripConfigurableDefine(*l));
+                        if (!resolved.empty()) {
+                            res.push_back(resolved);
+                            continue;
+                        }
+                    }
+                    res.push_back(*l);
+                }
+                resolved = NStr::Join(res, " ");
+                return true;
+            }
+        }
+        return false;
     }
     resolved = ProcessMacros(resolved);
     return true;

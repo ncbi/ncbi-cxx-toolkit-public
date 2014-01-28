@@ -51,7 +51,7 @@ public:
     enum EExpRule {
         eNoop,
         eReplace,
-        eAppend
+        ePattern
     };
 
     CExpansionRule(void);

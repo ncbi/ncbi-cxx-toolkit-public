@@ -264,11 +264,9 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                             msvc_prj.Append(new_vals,val);
                         }
                     } else {
-                        CExpansionRule exprule;
                         list<string> resolved_def;
-                        string val_define = resolver.FilterDefine(val, exprule, p->second);
-	                    resolver.Resolve(val_define, &resolved_def, p->second);
-                        exprule.ApplyRule(resolved_def);
+                        string val_define = FilterDefine(val);
+	                    resolver.Resolve(val, &resolved_def, p->second);
 	                    if ( resolved_def.empty() ) {
                             defs_unresolved.insert(val);
 		                    new_vals.push_back(val_define); //not resolved - keep old val
@@ -279,8 +277,7 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                                 const string& define = *l;
                                 if ( IsConfigurableDefine(define) ) {
                                     string stripped = StripConfigurableDefine(define);
-                                    string resolved_def_str;
-                                    site.ResolveDefine(stripped, resolved_def_str);
+                                    string resolved_def_str = site.GetDefinesEntry(stripped);
                                     if ( !resolved_def_str.empty() ) {
                                         defs_resolved[define] = resolved_def_str;
                                         list<string> resolved_defs;
@@ -311,27 +308,22 @@ void SMakeProjectT::DoResolveDefs(CSymResolver& resolver,
                                     }
 
                                 } else if (HasConfigurableDefine(define)) {
-                                    string raw = ExtractConfigurableDefine(define);
-                                    string stripped = StripConfigurableDefine(raw);
-                                    string resolved_def_str;
-                                    site.ResolveDefine(stripped, resolved_def_str);
-                                    if (resolved_def_str == " ") {
-                                        resolved_def_str.erase();
+                                    string def(define);
+                                    while (HasConfigurableDefine(def)) {
+                                        string raw = ExtractConfigurableDefine(def);
+                                        string stripped = StripConfigurableDefine(raw);
+                                        string resolved_def_str = site.GetDefinesEntry(stripped);
+                                        if (resolved_def_str == " ") {
+                                            resolved_def_str.erase();
+                                        }
+                                        NStr::ReplaceInPlace(def, raw, resolved_def_str);
                                     }
                                     if (msvc_empty) {
-                                        new_vals.push_back( NStr::Replace(define, raw, resolved_def_str));
+                                        new_vals.push_back( def);
                                     } else {
-                                        msvc_prj.Append(new_vals,NStr::Replace(define, raw, resolved_def_str));
+                                        msvc_prj.Append(new_vals,def);
                                     }
                                 } else {
-                                    string stripped = CSymResolver::StripDefine(val_define);
-                                    if (site.GetMacros().HasDefinition(stripped)) {
-                                        if (msvc_empty) {
-                                            new_vals.push_back(string("@")+stripped+"@");
-                                        } else {
-                                            msvc_prj.Append(new_vals,string("@")+stripped+"@");
-                                        }
-                                    }
                                     if (msvc_empty) {
                                         new_vals.push_back(define);
                                     } else {
@@ -431,7 +423,7 @@ void SMakeProjectT::CreateIncludeDirs(const list<string>& cpp_flags,
 
         // process -Ipath
         token_val = SMakeProjectT::GetOneIncludeDir(flag, "-I");
-        if ( !token_val.empty() && token_val[0] != '$' && token_val[0] != ':' )  {
+        if ( !token_val.empty() && token_val[0] != '$' && token_val[0] != '@' && token_val[0] != ':' )  {
             string dir = CDirEntry::NormalizePath(token_val);
             dir = CDirEntry::AddTrailingPathSeparator(dir);
             include_dirs->push_back(dir);
@@ -505,10 +497,11 @@ void SMakeProjectT::CreateDefines(const list<string>& cpp_flags,
 }
 
 
-void SMakeProjectT::Create3PartyLibs(const list<string>& libs_flags, 
-                                     list<string>*       libs_list,
-                                     const string* mkname)
+void SMakeProjectT::Create3PartyLibs(
+    const list<string>& libs_flags, const list<string>& expected_flags,
+    list<string>*   libs_list,  const string* mkname)
 {
+    set<string> done;
     list<string> unkflags;
     list<CProjKey> libs3;
     ITERATE(list<string>, p, libs_flags) {
@@ -517,25 +510,64 @@ void SMakeProjectT::Create3PartyLibs(const list<string>& libs_flags,
             break;
         } else if ( IsConfigurableDefine(flag) ) {
             libs_list->push_back(StripConfigurableDefine(flag));    
+            done.insert(flag);
         } else if (NStr::StartsWith(flag, "-l")) {
             libs3.push_back( CProjKey(CProjKey::eLib, flag.substr(2)));
             GetApp().m_3PartyLibs.insert(flag.substr(2));
+            done.insert(flag.substr(2));
         } else if ( NStr::CompareCase(flag, "-framework") == 0 ) {
             if (p != libs_flags.end()) {
                 GetApp().m_3PartyLibs.insert(*(++p));
+                GetApp().m_Frameworks.insert(*p);
+                done.insert(flag);
             }
         } else {
             unkflags.push_back(flag);
         }
     }
-    if (mkname && !libs3.empty() &&
-        CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
+    bool added = false;
+    if (GetApp().m_AddMissingDep) {
+        ITERATE(list<string>, p, expected_flags) {
+            const string& flag = *p;
+            if (NStr::StartsWith(flag, "-l")) {
+                if (done.find(flag.substr(2)) == done.end()) {
+                    libs3.push_back( CProjKey(CProjKey::eLib, flag.substr(2)));
+                    done.insert(flag.substr(2));
+                    added = true;
+                }
+            } else if (IsConfigurableDefine(flag)) {
+                if (done.find(flag) == done.end()) {
+                    libs3.push_back( CProjKey(CProjKey::eLib, flag));
+                    done.insert(flag);
+                    added = true;
+                }
+            } else {
+                if (find(unkflags.begin(), unkflags.end(), flag) == unkflags.end()) {
+                    unkflags.push_back(flag);
+                    added = true;
+                }
+            }
+        }
+    }
+    if (mkname != NULL && !GetApp().IsScanningWholeTree() && !libs3.empty()) {
         list<string> liborder;
+        if (added) {
+            liborder.push_back("");
+        }
         VerifyLibDepends(libs3, *mkname, liborder);
         if (!liborder.empty()) {
             GetApp().m_3PartyLibraryOrder[*mkname] = unkflags;
             ITERATE( list<string>, s, liborder) {
-                GetApp().m_3PartyLibraryOrder[*mkname].push_back("-l" + *s);
+                if (!s->empty()) {
+                    GetApp().m_3PartyLibraryOrder[*mkname].push_back(*s);
+                    if (libs_list && find(libs_list->begin(), libs_list->end(), *s) == libs_list->end()) {
+                        if ( IsConfigurableDefine(*s) ) {
+                            libs_list->push_back(StripConfigurableDefine(*s));
+                        } else {
+                            libs_list->push_back(*s);
+                        }
+                    }
+                }
             }
         }
     }
@@ -692,22 +724,31 @@ void SMakeProjectT::CreateFullPathes(const string&      dir,
 }
 
 static
-void s_CollectAllLeaves(map<string, set<string> >& source,
-                        const string& branch, set<string>& all)
+void s_CollectAllLeaves(map<string, set<string> >& source_dep,
+                        map<string, set<string> >& source_flags,
+                        const string& branch,
+                        set<string>& all_dep,
+                        set<string>& all_flags)
 {
-    if (all.find(branch) != all.end()) {
+    if (all_dep.find(branch) != all_dep.end()) {
         return;
     }
-    all.insert(branch);
-    const set<string>& branches(source[branch]);
+    all_dep.insert(branch);
+    if (source_flags.find(branch) != source_flags.end()) {
+        const set<string>& flags(source_flags[branch]);
+        ITERATE(set<string>, f, flags) {
+            all_flags.insert(*f);
+        }
+    }
+    const set<string>& branches(source_dep[branch]);
     ITERATE(set<string>, b, branches) {
-        s_CollectAllLeaves(source, *b, all);
+        s_CollectAllLeaves(source_dep, source_flags, *b, all_dep, all_flags);
     }
 }
 
 void  SMakeProjectT::VerifyLibDepends(
      list<CProjKey>&  depends_ids_arg, const string& mkname, list<string>& liborder,
-     const set<string>* libs_to_ignore)
+     const set<string>* libs_3party, list<string>* expected_3party)
 {
     if (depends_ids_arg.empty()) {
         return;
@@ -721,6 +762,7 @@ void  SMakeProjectT::VerifyLibDepends(
     list<string> duplicates;
     list<string> missing;
     set<string> alldepends;
+    set<string> allflags;
     list<CProjKey>  depends_ids( depends_ids_arg);
 
     for(list<CProjKey>::const_iterator p = depends_ids.begin();
@@ -733,7 +775,12 @@ void  SMakeProjectT::VerifyLibDepends(
             }
         }
         original.push_back(p->Id());
-        s_CollectAllLeaves( app.m_GraphDepPrecedes, p->Id(), alldepends);
+        s_CollectAllLeaves( app.m_GraphDepPrecedes, app.m_GraphDepFlags, p->Id(), alldepends, allflags);
+    }
+    if (expected_3party != nullptr) {
+        ITERATE( set<string>, s, allflags) {
+            expected_3party->push_back(*s);
+        }
     }
     ITERATE( set<string>, s, alldepends) {
         list<CProjKey>::const_iterator p = depends_ids.begin();
@@ -749,16 +796,24 @@ void  SMakeProjectT::VerifyLibDepends(
                 }
             }
             if (p == depends_ids.end()) {
-                if (libs_to_ignore == nullptr || 
-                    libs_to_ignore->find(*s) == libs_to_ignore->end()) {
-                    missing.push_back(*s);
+                if (libs_3party == nullptr || 
+                    libs_3party->find(*s) == libs_3party->end()) {
+                    if (!SMakeProjectT::IsConfigurableDefine(*s)) {
+                        missing.push_back(*s);
+                    }
+                } else if (expected_3party != nullptr) {
+                    if (SMakeProjectT::IsConfigurableDefine(*s)) {
+                        expected_3party->push_back( *s);
+                    } else {
+                        expected_3party->push_back( "-l" + *s);
+                    }
                 }
             }
         }
     }
     if (!missing.empty()) {
         warnings.push_back("missing dependencies: " + NStr::Join(missing,","));
-        if (app.m_AddMissingDep && libs_to_ignore != nullptr) {
+        if (app.m_AddMissingDep && libs_3party != nullptr) {
             ITERATE( list<string>, m,  missing) {
                 depends_ids.push_back(CProjKey(CProjKey::eLib, *m));
             }
@@ -769,7 +824,11 @@ void  SMakeProjectT::VerifyLibDepends(
     }
 #if 1
     set<string> projlibs;
-    bool fix = !duplicates.empty();
+    bool fix = (!liborder.empty() && liborder.begin()->empty()) ||
+                 !duplicates.empty() || depends_ids_arg.size() != depends_ids.size();
+    if (fix) {
+        liborder.clear();
+    }
     if (!app.m_GraphDepPrecedes.empty()) {
         set<string> libsofar;
         for(list<CProjKey>::const_iterator p = depends_ids.begin();
@@ -801,25 +860,28 @@ void  SMakeProjectT::VerifyLibDepends(
             }
         }
     }
-    if (fix && !app.m_GraphDepRank.empty())
-    {
-        vector< list<string> > recommend;
-        for (set<string>::const_iterator p= projlibs.begin(); p != projlibs.end(); ++p) {
-            size_t rank = app.m_GraphDepRank[*p];
-            while (recommend.size() < rank+1) {
-                list<string> t;
-                recommend.push_back(t);
+    if (fix) {
+        if (app.m_GraphDepRank.empty()) {
+            ITERATE (set<string>, p,  projlibs) {
+                liborder.push_back(*p);
             }
-            recommend[rank].push_back(*p);
-        }
-        list<string> advice;
-        for (size_t a= recommend.size(); a!= 0; --a) {
-            advice.insert(advice.end(), recommend[a-1].begin(), recommend[a-1].end());
-        }
-        warnings.push_back("present     library order: " + NStr::Join(original,","));
-        warnings.push_back("recommended library order: " + NStr::Join(advice,","));
+        } else {
+            vector< list<string> > recommend;
+            for (set<string>::const_iterator p= projlibs.begin(); p != projlibs.end(); ++p) {
+                size_t rank = app.m_GraphDepRank[*p];
+                while (recommend.size() < rank+1) {
+                    list<string> t;
+                    recommend.push_back(t);
+                }
+                recommend[rank].push_back(*p);
+            }
+            list<string> advice;
+            for (size_t a= recommend.size(); a!= 0; --a) {
+                advice.insert(advice.end(), recommend[a-1].begin(), recommend[a-1].end());
+            }
+            warnings.push_back("present     library order: " + NStr::Join(original,","));
+            warnings.push_back("recommended library order: " + NStr::Join(advice,","));
 
-        if (CMsvc7RegSettings::GetMsvcPlatform() == CMsvc7RegSettings::eUnix) {
             list<string> advice_full;
             ITERATE( list<string>, a, advice) {
                 for(list<CProjKey>::const_iterator p = depends_ids.begin();
@@ -830,11 +892,11 @@ void  SMakeProjectT::VerifyLibDepends(
                     }
                 }
             }
-            liborder = advice_full;//advice;
+            liborder = advice_full;
         }
     }
-    if (!warnings.empty()) {
-        if (libs_to_ignore == nullptr) {
+    if (!warnings.empty() && expected_3party != nullptr) {
+        if (libs_3party == nullptr) {
             warnings.push_front("====== Library order warnings (3rd party libs) ======");
         } else {
             warnings.push_front("====== Library order warnings (toolkit libs) ======");
@@ -885,7 +947,8 @@ void  SMakeProjectT::VerifyLibDepends(
 
 void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
                                       list<CProjKey>*     depends_ids,
-                                      const string* mkname)
+                                      const string* mkname,
+                                      list<string>* expected_3party)
 {
     list<string> depends_libs;
     SMakeProjectT::ConvertLibDependsMacro(depends, depends_libs);
@@ -914,6 +977,7 @@ void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
                 }
             }
         } else if (SMakeProjectT::IsConfigurableDefine(id)) {
+        } else if (id.empty()) {
         } else {
             if (!site.IsLibWithChoice(id) ||
                  site.GetChoiceForLib(id) == CMsvcSite::eLib) {
@@ -924,7 +988,7 @@ void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
 
     if (mkname != NULL && !GetApp().IsScanningWholeTree()) {
         VerifyLibDepends(*depends_ids, *mkname, GetApp().m_LibraryOrder[ *mkname],
-            &GetApp().m_3PartyLibs);
+            &GetApp().m_3PartyLibs, expected_3party);
     }
 
     depends_ids->sort();
@@ -948,7 +1012,13 @@ void SMakeProjectT::ConvertLibDependsMacro(const list<string>& depends,
                 site.GetMacros().GetValue(CSymResolver::StripDefine(id),lib)) {
                 list<string> res;
                 NStr::Split(lib, LIST_SEPARATOR, res);
-                copy(res.begin(), res.end(), back_inserter(depends_libs));
+                ITERATE( list<string>, r, res) {
+                    if (NStr::StartsWith(*r, "-l")) {
+                        depends_libs.push_back(r->substr(2));
+                    } else {
+                        depends_libs.push_back(*r);
+                    }
+                }
             } else {
                 depends_libs.push_back(id);
             }
@@ -959,8 +1029,11 @@ void SMakeProjectT::ConvertLibDependsMacro(const list<string>& depends,
 
 bool SMakeProjectT::IsConfigurableDefine(const string& define)
 {
-    return  NStr::StartsWith(define, "@")  &&
-            NStr::EndsWith  (define, "@");
+    if (NStr::StartsWith(define, "@")) {
+        string::size_type end = define.find("@",1);
+        return end != string::npos && ( ++end == define.size() || define[end] == '\0');
+    }
+    return false;
 
 }
 
@@ -1097,21 +1170,6 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
             copy(unix_sources.begin(), unix_sources.end(), back_inserter(sources));
         }
     }
-    
-    //LIBS
-    list<string> libs_3_party;
-    k = makefile.m_Contents.find("LIBS");
-    if (GetApp().GetBuildType().GetType() == CBuildType::eStatic) {
-        CSimpleMakeFileContents::TContents::const_iterator tmp_k =
-            makefile.m_Contents.find("STATIC_LIBS");
-        if (tmp_k != makefile.m_Contents.end()) {
-            k = tmp_k;
-        }
-    }
-    if (k != makefile.m_Contents.end()) {
-        const list<string> libs_flags = k->second;
-        SMakeProjectT::Create3PartyLibs(libs_flags, &libs_3_party, &applib_mfilepath);
-    }
 
     //depends
     list<string> depends;
@@ -1152,8 +1210,10 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     PLibExclude pred(proj_name, excluded_depends);
     EraseIf(adj_depends, pred);
 
+    list<string> expected_3party;
     list<CProjKey> depends_ids;
-    SMakeProjectT::ConvertLibDepends(adj_depends, &depends_ids, &applib_mfilepath);
+    SMakeProjectT::ConvertLibDepends(adj_depends, &depends_ids,
+                                     &applib_mfilepath, &expected_3party);
 
     list<CProjKey> unconditional_depends_ids;
     k = m->second.m_Contents.find("USR_DEP");
@@ -1178,6 +1238,24 @@ CProjKey SAppProjectT::DoCreate(const string& source_base_dir,
     if (makefile.CollectValues("REQUIRES", req_lst,
         CSimpleMakeFileContents::eSortUnique)) {
         project_makefile.Redefine(req_lst,requires);
+    }
+    
+    //LIBS
+    list<string> libs_3_party;
+    k = makefile.m_Contents.find("LIBS");
+    if (GetApp().GetBuildType().GetType() == CBuildType::eStatic) {
+        CSimpleMakeFileContents::TContents::const_iterator tmp_k =
+            makefile.m_Contents.find("STATIC_LIBS");
+        if (tmp_k != makefile.m_Contents.end()) {
+            k = tmp_k;
+        }
+    }
+    if (k != makefile.m_Contents.end() || !expected_3party.empty()) {
+        list<string> libs_flags;
+        if (k != makefile.m_Contents.end()) {
+            libs_flags = k->second;
+        }
+        SMakeProjectT::Create3PartyLibs(libs_flags, expected_3party, &libs_3_party, &applib_mfilepath);
     }
     
     //CPPFLAGS
@@ -1502,21 +1580,6 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
         project_makefile.Redefine(req_lst,requires);        
     }
 
-    //LIBS
-    list<string> libs_3_party;
-    k = m->second.m_Contents.find("LIBS");
-    if (GetApp().GetBuildType().GetType() == CBuildType::eStatic) {
-        CSimpleMakeFileContents::TContents::const_iterator tmp_k =
-            m->second.m_Contents.find("STATIC_LIBS");
-        if (tmp_k != m->second.m_Contents.end()) {
-            k = tmp_k;
-        }
-    }
-    if (k != m->second.m_Contents.end()) {
-        const list<string> libs_flags = k->second;
-        SMakeProjectT::Create3PartyLibs(libs_flags, &libs_3_party,
-            need_dll ? &applib_mfilepath : NULL);
-    }
     //CPPFLAGS
     list<string> include_dirs;
     list<string> defines;
@@ -1563,14 +1626,35 @@ CProjKey SLibProjectT::DoCreate(const string& source_base_dir,
 #endif
                 }
             }
+            list<string> expected_3party;
             list<CProjKey> dll_depends_ids;
             SMakeProjectT::ConvertLibDepends(dll_depends, &dll_depends_ids, 
-                need_dll ? &applib_mfilepath : NULL);
+                need_dll ? &applib_mfilepath : NULL,
+                need_dll ? &expected_3party  : NULL);
             copy(dll_depends_ids.begin(), 
                     dll_depends_ids.end(), 
                     back_inserter(depends_ids));
 //        }
 //    }
+
+    //LIBS
+    list<string> libs_3_party;
+    k = m->second.m_Contents.find("LIBS");
+    if (GetApp().GetBuildType().GetType() == CBuildType::eStatic) {
+        CSimpleMakeFileContents::TContents::const_iterator tmp_k =
+            m->second.m_Contents.find("STATIC_LIBS");
+        if (tmp_k != m->second.m_Contents.end()) {
+            k = tmp_k;
+        }
+    }
+    if (k != m->second.m_Contents.end() || !expected_3party.empty()) {
+        list<string> libs_flags;
+        if (k != m->second.m_Contents.end()) {
+            libs_flags = k->second;
+        }
+        SMakeProjectT::Create3PartyLibs(libs_flags, expected_3party, &libs_3_party,
+            need_dll ? &applib_mfilepath : NULL);
+    }
 
     CProjKey proj_key(CProjKey::eLib, proj_id);
     tree->m_Projects[proj_key] = CProjItem(CProjKey::eLib,
@@ -2065,8 +2149,8 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
             project.m_Sources.push_front(src);    
     }
     project.m_Sources.remove(proj_name);
-    project.m_Sources.push_back(proj_name + "__");
-    project.m_Sources.push_back(proj_name + "___");
+//    project.m_Sources.push_back(proj_name + "__");
+//    project.m_Sources.push_back(proj_name + "___");
     ITERATE(list<string>, p, asn_names) {
         const string& asn = *p;
         if (asn == proj_name)
@@ -2079,6 +2163,8 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
         src += asn;
 
         project.m_Sources.remove(asn);
+        project.m_Sources.remove(asn + "__");
+        project.m_Sources.remove(asn + "___");
         project.m_Sources.push_back(src + "__");
         project.m_Sources.push_back(src + "___");
     }
@@ -2682,6 +2768,9 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
         CDir::TEntries contents = dir.GetEntries("*");
         ITERATE(CDir::TEntries, p, contents) {
             const AutoPtr<CDirEntry>& dir_entry = *p;
+            if ( !dir_entry->IsDir() ) {
+                continue;
+            }
             string name  = dir_entry->GetName();
 //            if ( name == "."  ||  name == ".." ||  name == "CVS" ||  name == ".svn" ||
             if ( name[0] == '.'  ||  name == "CVS" ||
@@ -2693,17 +2782,15 @@ void CProjectTreeBuilder::ProcessDir(const string&         dir_name,
                 // already processed
                 continue;
             }
-            if ( dir_entry->IsDir() ) {
-                if (subprojects.find(name) != subprojects.end()) {
-                    subprojects_dirs[dir_entry->GetPath()] = subprojects[name];
-                } else {
-                    subprojects_dirs[dir_entry->GetPath()] =
-                        is_root ? eMakeType_Undefined : eMakeType_Excluded;
-                }
-                if (find(ordered_subprojects_dirs.begin(), ordered_subprojects_dirs.end(), name) == 
-                         ordered_subprojects_dirs.end()) {
-                    ordered_subprojects_dirs.push_back(name);
-                }
+            if (subprojects.find(name) != subprojects.end()) {
+                subprojects_dirs[dir_entry->GetPath()] = subprojects[name];
+            } else {
+                subprojects_dirs[dir_entry->GetPath()] =
+                    is_root ? eMakeType_Undefined : eMakeType_Excluded;
+            }
+            if (find(ordered_subprojects_dirs.begin(), ordered_subprojects_dirs.end(), name) == 
+                        ordered_subprojects_dirs.end()) {
+                ordered_subprojects_dirs.push_back(name);
             }
         }
         {
@@ -2841,18 +2928,28 @@ void CProjectTreeBuilder::UpdateDepGraph( CProjectTreeBuilder::TFiles files)
             ITERATE(list<string>, l, libdep) {
                 list<string> dep_list;
                 string dep(*l);
-                list<string> first_list;
                 if (CSymResolver::IsDefine(dep)) {
                     string resolved;
-                    site.ResolveDefine(CSymResolver::StripDefine(dep), resolved);
+                    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
+                        string stripped(CSymResolver::StripDefine(dep));
+                        if (stripped != "NCBI_C_ncbi") {
+                            site.ResolveDefine(stripped, resolved);
+                        }
+                        if (resolved.empty()) {
+                            resolved = "@" + stripped + "@";
+                        }
+                    } else {
+                        site.ResolveDefine(CSymResolver::StripDefine(dep), resolved);
+                    }
                     dep = resolved;
                 }
                 NStr::Split(dep, LIST_SEPARATOR_LIBS, dep_list);
                 ITERATE(list<string>, d, dep_list) {
-                    if (d->at(0) == '-' || libname == *d) {
+                    string dep_name = NStr::StartsWith(*d, "-l") ? d->substr(2) : *d;
+                    if (dep_name.at(0) == '-' || libname == dep_name) {
                         continue;
                     }
-                    GetApp().m_GraphDepPrecedes[libname].insert(*d);
+                    GetApp().m_GraphDepPrecedes[libname].insert(dep_name);
                 }
             }
         }

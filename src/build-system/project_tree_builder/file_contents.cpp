@@ -110,6 +110,7 @@ void CSimpleMakeFileContents::SetFrom(const CSimpleMakeFileContents& contents)
     m_Contents = contents.m_Contents;
     m_Type = contents.m_Type;
     m_Filename = contents.m_Filename;
+    m_ValueSeparator = contents.m_ValueSeparator;
     m_Parent = contents.m_Parent;
     m_Raw = contents.m_Raw;
 }
@@ -118,6 +119,9 @@ void CSimpleMakeFileContents::SetFrom(const CSimpleMakeFileContents& contents)
 void CSimpleMakeFileContents::LoadFrom(const string&  file_path,
                                        CSimpleMakeFileContents* fc)
 {
+    if (fc->m_ValueSeparator.empty()) {
+        fc->m_ValueSeparator = LIST_SEPARATOR;
+    }
     CSimpleMakeFileContents::SParser parser(fc);
     fc->Clear();
 
@@ -199,11 +203,14 @@ bool CSimpleMakeFileContents::GetValue(const string& key, string& value) const
     value = " ";
     const list<string>& lst = k->second;
     list<string>::const_iterator i = lst.begin();
-    if (i != lst.end()) {
+    if (i != lst.end() && *i != "#") {
         value = *i;
         ++i;
     }
     for (; i != lst.end(); ++i) {
+        if (*i == "#") {
+            break;
+        }
         value += ' ';
         value += *i;
     }
@@ -224,8 +231,8 @@ bool CSimpleMakeFileContents::GetValue(const string& key, string& value) const
                 value = NStr::Replace(value, raw_macro, definition);
             }
         }
-        value = NStr::Replace(value,"-l",kEmptyStr);
 #if 0
+        value = NStr::Replace(value,"-l",kEmptyStr);
         value = NStr::Replace(value,"-dll",kEmptyStr);
         value = NStr::Replace(value,"-static",kEmptyStr);
 #endif
@@ -420,10 +427,15 @@ void CSimpleMakeFileContents::AddReadyKV(const SKeyValue& kv)
         list<string> values;
 //        if (NStr::EndsWith(kv.m_Key,"LIBS")) {
         if (NStr::FindCase(kv.m_Key,"LIB") != NPOS ||
-            NStr::FindCase(kv.m_Value," -l") != NPOS) {
+            NStr::FindCase(kv.m_Value," -l") != NPOS ||
+            NStr::FindCase(kv.m_Value,"-rpath") != NPOS ||
+            NStr::FindCase(kv.m_Value,"-framework") != NPOS) {
             NStr::Split(kv.m_Value, LIST_SEPARATOR_LIBS, values);
         } else {
-            NStr::Split(kv.m_Value, LIST_SEPARATOR, values);
+            if (m_ValueSeparator.empty()) {
+                m_ValueSeparator = LIST_SEPARATOR;
+            }
+            NStr::Split(kv.m_Value, m_ValueSeparator, values);
         }
 // change '{' into '(', because I rely on that in many places
         NON_CONST_ITERATE(list<string>, v, values) {
