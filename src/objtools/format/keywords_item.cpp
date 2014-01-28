@@ -277,20 +277,9 @@ void CKeywordsItem::x_GatherInfo(CBioseqContext& ctx)
         const CUser_object& usr = di->GetUser();
         if ( ! CComment_rule::IsStructuredComment (usr) ) continue;
         try {
-            string prefix = CComment_rule::GetStructuredCommentPrefix (usr);
-            CConstRef<CComment_set> comment_rules = CComment_set::GetCommentRules();
-            try {
-                const CComment_rule& rule = comment_rules->FindCommentRule(prefix);
-                CComment_rule::TErrorList errors = rule.IsValid(usr);
-                if (errors.size() == 0) {
-                    string kywd = CComment_rule::KeywordForPrefix( prefix );
-                    list<string> keywords;
-                    NStr::Split(kywd, ";", keywords);
-                    FOR_EACH_STRING_IN_LIST ( s_itr, keywords ) {
-                        x_AddKeyword(*s_itr);
-                    }
-                }
-            } catch (CException) {
+            list<string> keywords = CComment_set::GetKeywords(usr);
+            FOR_EACH_STRING_IN_LIST ( s_itr, keywords ) {
+                x_AddKeyword(*s_itr);
             }
         } catch (CException) {
         }

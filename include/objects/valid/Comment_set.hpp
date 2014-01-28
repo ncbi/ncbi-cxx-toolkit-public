@@ -42,6 +42,7 @@
 
 // generated includes
 #include <objects/valid/Comment_set_.hpp>
+#include <objects/general/User_object.hpp>
 
 // generated classes
 
@@ -62,6 +63,7 @@ public:
     const CComment_rule& FindCommentRule (const string& prefix) const;
     static CConstRef<CComment_set> GetCommentRules();
     static vector<string> GetFieldNames(const string& prefix);
+    static list<string> GetKeywords(const CUser_object& user);
     
 
 private:

@@ -162,6 +162,33 @@ vector<string> CComment_set::GetFieldNames(const string& prefix)
 }
 
 
+list<string> CComment_set::GetKeywords(const CUser_object& user)
+{
+    list<string> keywords;
+
+    string prefix = CComment_rule::GetStructuredCommentPrefix (user);
+    string prefix_to_use = CComment_rule::MakePrefixFromRoot(prefix);
+
+    // look up mandatory and required field names from validator rules
+    CConstRef<CComment_set> rules = CComment_set::GetCommentRules();
+
+    if (rules) {
+        try {
+            const CComment_rule& rule = rules->FindCommentRule(prefix_to_use);
+            CComment_rule::TErrorList errors = rule.IsValid(user);
+            if (errors.size() == 0) {
+                string kywd = CComment_rule::KeywordForPrefix( prefix );
+                NStr::Split(kywd, ";", keywords);
+            }
+        } catch (CException& ) {
+            // no rule for this prefix, can't list fields
+        }
+    }
+
+    return keywords;
+}
+
+
 END_objects_SCOPE // namespace ncbi::objects::
 
 END_NCBI_SCOPE
