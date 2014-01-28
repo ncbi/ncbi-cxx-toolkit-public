@@ -124,16 +124,17 @@ BEGIN_SCOPE(DiscRepNmSpc)
         void ReadArgs(const CArgs& args);
         string GetDirStr(const string& src_dir);
         void ProcessArgs(Str2Str& args);
+        void SetArg(const string& arg, const string& val);
         static void CheckThisSeqEntry(CRef <CSeq_entry> seq_entry);
         void GetOrgModSubtpName(unsigned num1, unsigned num2,
                               map <string, COrgMod::ESubtype>& orgmodnm_subtp);
         CRef <CSearch_func> MakeSimpleSearchFunc(const string& match_text,
-                                                     bool whole_word = false);
+                                                 bool whole_word = false);
         void GetTestList();
         void CollectTests();
         virtual void Run();
         static CSeq_entry_Handle* m_TopSeqEntry;
-        static CRepConfig* factory(string report_tp, CSeq_entry_Handle* tse_p=0);
+        static CRepConfig* factory(string report_tp,CSeq_entry_Handle* tse_p=0);
 
      protected:
         vector <string> m_enabled, m_disabled;

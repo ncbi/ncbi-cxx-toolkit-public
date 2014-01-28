@@ -85,6 +85,7 @@ class CDiscRepOutput : public CObject
 
     void Export();
     void Export(vector <CRef <CClickableText> >& item_list);
+    void Export(CRef <CClickableItem>& c_item);
     
   private:
     Str2Int m_sOnCallerToolPriorities;

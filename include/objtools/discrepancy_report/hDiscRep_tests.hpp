@@ -535,7 +535,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
       virtual string GetName() const =0;
 
-      static bool AllCapitalLetters(const string& pattern, const string& search);
+      static bool AllCapitalLetters(const string& pattern,const string& search);
       static bool BeginsWithPunct(const string& pattern, const string& search);
       static bool BeginsOrEndsWithQuotes(const string& pattern, const string& search);
       static bool ContainsDoubleSpace(const string& pattern, const string& search);
@@ -610,7 +610,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       string GetDiscItemText(const CBioseq_set& obj);
       string GetDiscItemText(const CSeqdesc& obj, const CSeq_entry& seq_entry);
       string GetDiscItemText(const CSeqdesc& obj, const CBioseq& bioseq);
-      string GetDiscItemText(const CPerson_id& obj, const CSeq_entry& seq_entry);
+      string GetDiscItemText(const CPerson_id& obj,const CSeq_entry& seq_entry);
       string GetDiscItemText(const CSeq_entry& seq_entry);
 
       CBioseq* GetRepresentativeBioseqFromBioseqSet(const CBioseq_set& bioseq_set);
@@ -670,6 +670,9 @@ BEGIN_SCOPE(DiscRepNmSpc)
                                     bool is_subsrc = false, 
                                     const CString_constraint* str_cons = 0);
       static CConstRef <CSeq_feat> GetGeneForFeature(const CSeq_feat& seq_feat);
+
+      int GetTestItemList(const string& setting_name,  
+                             vector <string>& test_item_list);
 
     protected:
       string x_GetUserObjType(const CUser_object& user_obj);
