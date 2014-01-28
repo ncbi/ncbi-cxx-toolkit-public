@@ -563,8 +563,8 @@ void CBioseq_SUSPECT_PHRASES :: GetReport(CRef <CClickableItem>& c_item)
    if (!c_item->item_list.empty()) {
        c_item->description 
            = GetOtherComment(c_item->item_list.size(), 
-                             "cds comment or protein description",  
-                             "cds comments or protein descriptions")
+                             "cds comment or protein description contains",  
+                             "cds comments or protein descriptions contain")
               + " suspect phrases.";
    }
    c_item->setting_name = "SUSPECT_PRODUCT_NAMES";
@@ -12556,6 +12556,9 @@ void CBioseq_on_feat_cnt :: TestOnObj(const CBioseq& bioseq)
       feat_nm = ( (*it)->GetData().IsProt() )? "A_" : "nA_";
       strtmp = (*it)->GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
       strtmp = (strtmp == "precursor_RNA") ? "preRNA" : strtmp;
+      strtmp = (strtmp == "C_region")? "c_region" : strtmp;
+      strtmp = (strtmp == "J_segment")? "j_segment" : strtmp;
+      strtmp = (strtmp == "V_segment")? "v_segment" : strtmp;
       feat_nm += strtmp;
       if (feat_cnt_ls.find(feat_nm) == feat_cnt_ls.end()) {
          feat_cnt_ls[feat_nm] = 1;
