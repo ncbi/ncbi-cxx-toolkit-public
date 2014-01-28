@@ -1333,7 +1333,7 @@ protected:
 
     /// Test if a given flag is set.
     bool x_TestFlag(TFlags fFlag) {
-        return ( m_fFlags & fFlag );
+        return ( ( m_fFlags & fFlag ) != 0 );
     }
 
     /// This prepares the vector of trimming rules to be used

@@ -145,7 +145,7 @@ static const TGenomeKey genome_key_to_subtype [] = {
 typedef CStaticPairArrayMap <const char*, CBioSource::EGenome, PNocase_CStr> TGenomeMap;
 DEFINE_STATIC_ARRAY_MAP(TGenomeMap, sm_GenomeKeys, genome_key_to_subtype);
 
-CBioSource::EGenome CBioSource::GetGenomeByOrganelle (string organelle, NStr::ECase use_case, bool starts_with)
+CBioSource::EGenome CBioSource::GetGenomeByOrganelle (const string& organelle, NStr::ECase use_case, bool starts_with)
 {
     CBioSource::EGenome gtype = CBioSource::eGenome_unknown;
 
@@ -220,7 +220,7 @@ typedef CStaticPairArrayMap <const char*, CBioSource::EOrigin, PNocase_CStr> TOr
 DEFINE_STATIC_ARRAY_MAP(TOriginMap, sm_OriginKeys, origin_key_to_subtype);
 DEFINE_STATIC_ARRAY_MAP(TOriginMap, sm_OriginSynonyms, origin_synonyms);
 
-CBioSource::EOrigin CBioSource::GetOriginByString (string origin, NStr::ECase use_case, bool starts_with)
+CBioSource::EOrigin CBioSource::GetOriginByString (const string& origin, NStr::ECase use_case, bool starts_with)
 {
     CBioSource::EOrigin gtype = CBioSource::eOrigin_unknown;
 

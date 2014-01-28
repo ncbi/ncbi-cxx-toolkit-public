@@ -446,11 +446,13 @@ CRef<CSerialObject> CTable2AsnContext::CreateSeqEntryFromTemplate(CRef<CSeq_entr
         {
             CRef<CPub> pub(new CPub);
             pub->SetSub().Assign(m_submit_template->GetSub().GetCit());
+#if 0
             if (!pub->SetSub().IsSetDate())
             {
                 CRef<CDate> date(new CDate(CTime(CTime::eCurrent), CDate::ePrecision_day));
                 pub->SetSub().SetDate(*date);
             }
+#endif
 
             CRef<CSeqdesc> desc(new CSeqdesc);
             desc->SetPub().SetPub().Set().push_back(pub);

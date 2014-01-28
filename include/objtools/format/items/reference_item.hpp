@@ -164,6 +164,9 @@ public:
     // format affiliation
     static void FormatAffil(const CAffil& affil, string& result, bool gen_sub = false);
 
+    static void ChangeMedlineAuthorsToISO( CRef<CPub> pub );
+
+
 private:
  
     CReferenceItem(const CReferenceItem& value);
@@ -192,8 +195,7 @@ private:
     void x_CleanData(void);
     void x_CapitalizeTitleIfNecessary(void);
 
-    void x_ChangeMedlineAuthorsToISO( CRef<CPub> pub );
-    bool x_StringIsJustCapitalLetters( const string & str );
+    static bool x_StringIsJustCapitalLetters( const string & str );
 
     // data
     TPubType              m_PubType;

@@ -687,7 +687,7 @@ void CReferenceItem::x_GatherInfo(CBioseqContext& ctx)
             if( new_pub ) {
                 // authors come back in a weird format that we need
                 // to convert to ISO
-                x_ChangeMedlineAuthorsToISO(new_pub);
+                ChangeMedlineAuthorsToISO(new_pub);
 
                 new_pubs.push_back(new_pub);
             }
@@ -1234,7 +1234,7 @@ void CReferenceItem::x_CleanData(void)
 class CIsLowercase {
 public:
     bool operator()( const char ch ) {
-        return islower(ch);
+        return 0 != islower(ch);
     }
 };
 
@@ -1279,7 +1279,7 @@ void CReferenceItem::x_CapitalizeTitleIfNecessary()
     }
 }
 
-void CReferenceItem::x_ChangeMedlineAuthorsToISO( CRef<CPub> pub )
+void CReferenceItem::ChangeMedlineAuthorsToISO( CRef<CPub> pub )
 {
     // leave early if it doesn't need to be changed
     if( ! pub || ! pub->IsArticle() || ! pub->IsSetAuthors() || ! pub->GetAuthors().IsSetNames() ||
