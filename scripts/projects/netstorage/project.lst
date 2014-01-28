@@ -8,6 +8,7 @@ util/bitset$ update-only
 util/cache$ update-only
 util/math$ update-only
 connect$
+connect/ext$
 connect/services$
 db$
 db/bdb$
