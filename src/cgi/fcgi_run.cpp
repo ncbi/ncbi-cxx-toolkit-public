@@ -282,7 +282,7 @@ static int s_ShouldRestart(CTime& mtime, CCgiWatchFile* watcher, int delay)
 
 
 // Return true if current memory usage is above the limit.
-bool s_CheckMemoryLimit(size_t total_memory_limit)
+bool s_CheckMemoryLimit(Uint8 total_memory_limit)
 {
     if ( total_memory_limit ) {
         size_t memory_usage;
@@ -356,8 +356,10 @@ bool CCgiApplication::x_RunFastCGI(int* result, unsigned int def_iter)
                                    CNcbiRegistry::eReturn);
     auto_ptr<CCgiStatistics> stat(is_stat_log ? CreateStat() : 0);
 
-    size_t total_memory_limit =
-        reg.GetInt("FastCGI", "TotalMemoryLimit", 0, CNcbiRegistry::eReturn);
+    Uint8 total_memory_limit =
+        NStr::StringToUInt8_DataSize(
+        reg.GetString("FastCGI", "TotalMemoryLimit", "0", CNcbiRegistry::eReturn),
+        NStr::fConvErr_NoThrow);
 
     // Max. number of the Fast-CGI loop iterations
     unsigned int max_iterations;
