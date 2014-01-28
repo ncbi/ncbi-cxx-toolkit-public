@@ -92,6 +92,7 @@ public:
         eDbtagType_FANTOM_DB,
         eDbtagType_FBOL,
         eDbtagType_FLYBASE,
+        eDbtagType_Fungorum,
         eDbtagType_GABI,
         eDbtagType_GDB,
         eDbtagType_GEO,
