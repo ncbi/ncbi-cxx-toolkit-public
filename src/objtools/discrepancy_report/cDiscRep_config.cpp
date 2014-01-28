@@ -2901,14 +2901,20 @@ void CRepConfig :: CollectTests()
       }
    }
    
+   // disable first in case disable all then enable some
+   ITERATE (vector <string>, it, m_disabled) {
+      if ( (*it) == "All") {
+        thisTest.tests_run.clear();
+        break;
+      }
+      else if (thisTest.tests_run.find(*it) != thisTest.tests_run.end()) {
+           thisTest.tests_run.erase(*it);
+      }
+   }
+
    ITERATE (vector <string>, it, m_enabled) {
       if (thisTest.tests_run.find(*it) == thisTest.tests_run.end()) {
             thisTest.tests_run.insert(*it);
-      }
-   }
-   ITERATE (vector <string>, it, m_disabled) {
-      if (thisTest.tests_run.find(*it) != thisTest.tests_run.end()) {
-           thisTest.tests_run.erase(*it);
       }
    }
   
