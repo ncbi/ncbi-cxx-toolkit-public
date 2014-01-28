@@ -62,8 +62,6 @@ const char* CNetStorageException::GetErrCodeString() const
     case eAuthError:            return "eAuthError";
     case eIOError:              return "eIOError";
     case eServerError:          return "eServerError";
-    case eDatabaseError:        return "eDatabaseError";
-    case eInvalidConfig:        return "eInvalidConfig";
     case eTimeout:              return "eTimeout";
     default:                    return CException::GetErrCodeString();
     }
