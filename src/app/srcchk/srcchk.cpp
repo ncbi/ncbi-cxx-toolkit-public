@@ -206,7 +206,7 @@ bool CSrcChkApp::xGetDesiredFields(
     if (args["f"]) {
         string fieldString = args["f"].AsString();
         NStr::Tokenize(fieldString, ",", fields);
-        return CSrcWriter::ValidateFields(fields);
+        return CSrcWriter::ValidateFields(fields, m_pErrors);
     }
     if (args["F"]) {
         const streamsize maxLineSize(100);
