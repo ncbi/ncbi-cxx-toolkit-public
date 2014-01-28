@@ -223,7 +223,8 @@ public:
              CRef<CSearchDatabase> blastdb,
              CRef<IQueryFactory>   subjects,
              CRef<CBlastOptionsHandle> options,
-             CConstRef<CIgBlastOptions> ig_options)
+             CConstRef<CIgBlastOptions> ig_options,
+             string entrez_query)
        : m_IsLocal(false),
          m_NumThreads(1),
          m_Query(query_factory),
@@ -231,7 +232,8 @@ public:
          m_RemoteDb(blastdb),
          m_Options(options),
          m_IgOptions(ig_options),
-         m_AnnotationInfo(ig_options) { }
+         m_AnnotationInfo(ig_options),
+         m_EntrezQuery(entrez_query){ }
 
     /// Destructor
     ~CIgBlast() {};
@@ -255,6 +257,7 @@ private:
     CRef<CBlastOptionsHandle> m_Options;
     CConstRef<CIgBlastOptions> m_IgOptions;
     CIgAnnotationInfo m_AnnotationInfo;
+    string m_EntrezQuery;
 
     /// Prohibit copy constructor
     CIgBlast(const CIgBlast& rhs);

@@ -199,6 +199,9 @@ CIgBlast::Run()
         if (m_RemoteDb.NotEmpty()) {
             _ASSERT(m_Subject.Empty());
             blast.Reset(new CRemoteBlast(qf, m_Options, *m_RemoteDb));
+            if(m_EntrezQuery != NcbiEmptyString){
+                blast->SetEntrezQuery(m_EntrezQuery.c_str());
+            }
         } else {
             blast.Reset(new CRemoteBlast(qf, m_Options, m_Subject));
         }

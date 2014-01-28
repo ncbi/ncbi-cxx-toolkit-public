@@ -195,7 +195,8 @@ int CIgBlastnApp::Run(void)
                 CIgBlast rmt_blast(query, 
                                    db_args->GetSearchDatabase(), 
                                    db_args->GetSubjects(),
-                                   opts_hndl, ig_opts);
+                                   opts_hndl, ig_opts,
+                                   NcbiEmptyString);
                 //TODO:          m_CmdLineArgs->ProduceDebugRemoteOutput(),
                 //TODO:          m_CmdLineArgs->GetClientId());
                 results = rmt_blast.Run();
