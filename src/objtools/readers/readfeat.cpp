@@ -2289,6 +2289,10 @@ bool CFeature_table_reader_imp::x_AddQualifierToFeature (
                     }
                     return false;
                 case eQual_protein_id:
+                    // see SQD-1535
+                    if (typ == CSeqFeatData::e_Cdregion ||
+                        (typ == CSeqFeatData::e_Rna &&
+                        sfdata.GetRna().GetType() == CRNA_ref::eType_mRNA))
                     try {
                         CBioseq::TId ids;
                         CSeq_id::ParseIDs(ids, val,                                
