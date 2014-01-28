@@ -50,6 +50,23 @@ const size_t        alertToIdMapSize = sizeof(alertToIdMap) / sizeof(AlertToId);
 
 
 
+
+CJsonNode SNSTAlertAttributes::Serialize(void) const
+{
+    CJsonNode       alert(CJsonNode::NewObjectNode());
+
+    alert.SetBoolean("Acknowledged", !m_On);
+    alert.SetInteger("Count", m_Count);
+    alert.SetString("LastOccured",
+                    NST_FormatPreciseTime(m_LastDetectedTimestamp));
+    alert.SetString("LastAcknowledged",
+                    NST_FormatPreciseTime(m_AcknowledgedTimestamp));
+
+    return alert;
+}
+
+
+
 void CNSTAlerts::Register(enum EAlertType alert_type)
 {
     map< enum EAlertType,
@@ -116,6 +133,23 @@ string CNSTAlerts::x_TypeToId(enum EAlertType  type) const
             return alertToIdMap[k].id;
     }
     return "unknown";
+}
+
+
+CJsonNode CNSTAlerts::Serialize(void) const
+{
+    CJsonNode           alerts(CJsonNode::NewArrayNode());
+    CFastMutexGuard     guard(m_Lock);
+
+    for (map<enum EAlertType,
+             SNSTAlertAttributes>::const_iterator  k = m_Alerts.begin();
+         k != m_Alerts.end(); ++k) {
+        CJsonNode   single_alert(k->second.Serialize());
+
+        single_alert.SetString("Name", x_TypeToId(k->first));
+        alerts.Append(single_alert);
+    }
+    return alerts;
 }
 
 

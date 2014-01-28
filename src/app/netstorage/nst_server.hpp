@@ -83,6 +83,7 @@ public:
     enum EAlertAckResult AcknowledgeAlert(const string &  id);
     enum EAlertAckResult AcknowledgeAlert(EAlertType  alert_type);
     void RegisterAlert(EAlertType  alert_type);
+    CJsonNode SerializeAlerts(void) const;
 
     static CNetStorageServer *  GetInstance(void);
 

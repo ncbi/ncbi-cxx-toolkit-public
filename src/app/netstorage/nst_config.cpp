@@ -32,8 +32,7 @@
 #include <ncbi_pch.hpp>
 
 #include "nst_config.hpp"
-#include <connect/services/netstorage.hpp>
-
+#include "nst_exception.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -78,7 +77,7 @@ bool NSTValidateServerSection(const IRegistry &  reg)
     if (port_ok) {
         unsigned int    port_val = reg.GetInt(section, "port", 0);
         if (port_val < port_low_limit || port_val > port_high_limit)
-            NCBI_THROW(CNetStorageException, eInvalidConfig,
+            NCBI_THROW(CNetStorageServerException, eInvalidConfig,
                        "Invalid " + NSTRegValName(section, "port") +
                        " value. Allowed range: " +
                        NStr::NumericToString(port_low_limit) +
@@ -213,7 +212,7 @@ bool NSTValidateDatabaseSection(const IRegistry &  reg)
                              << " must not be empty");
         }
     }
-    
+
     bool    database_ok = NSTValidateString(reg, section, "database");
     well_formed = well_formed && database_ok;
     if (database_ok) {

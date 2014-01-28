@@ -41,6 +41,7 @@
 
 #include "nst_precise_time.hpp"
 #include <corelib/ncbimtx.hpp>
+#include <connect/services/json_over_uttp.hpp>
 
 #include <map>
 
@@ -73,6 +74,8 @@ struct SNSTAlertAttributes
         m_LastDetectedTimestamp(CNSTPreciseTime::Current()),
         m_AcknowledgedTimestamp(), m_On(true), m_Count(1)
     {}
+
+    CJsonNode Serialize(void) const;
 };
 
 
@@ -84,6 +87,7 @@ class CNSTAlerts
         void Register(enum EAlertType alert_type);
         enum EAlertAckResult Acknowledge(const string &  alert_id);
         enum EAlertAckResult Acknowledge(enum EAlertType alert_type);
+        CJsonNode Serialize(void) const;
 
     private:
         mutable CFastMutex          m_Lock;

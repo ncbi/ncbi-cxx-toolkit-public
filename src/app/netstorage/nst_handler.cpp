@@ -795,9 +795,10 @@ CNetStorageHandler::x_ProcessHealth(
 
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eAdministrator);
 
-
-
-
+    CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
+    reply.SetByKey("Alerts", m_Server->SerializeAlerts());
+    x_SendSyncMessage(reply);
+    x_PrintMessageRequestStop();
 }
 
 
@@ -982,6 +983,31 @@ CNetStorageHandler::x_ProcessCreate(
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
     x_CheckNonAnonymousClient();
 
+    TNetStorageFlags    flags = ExtractStorageFlags(message);
+    SICacheSettings     icache_settings = ExtractICacheSettings(message);
+
+    x_CheckICacheSettings(icache_settings);
+
+    // Create the object stream depending on settings
+    m_ObjectStream = x_CreateObjectStream(icache_settings, flags);
+
+    CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
+    string          file_id = m_ObjectStream.GetID();
+
+    reply.SetString("FileID", file_id);
+    x_SendSyncMessage(reply);
+
+    if (m_ConnContext.NotNull() && !message.HasKey("FileID")) {
+        CNetFileID      file_id_struct(m_Server->GetCompoundIDPool(), file_id);
+        GetDiagContext().Extra()
+            .Print("FileID", file_id)
+            .Print("FileKey", file_id_struct.GetUniqueKey());
+    }
+
+    // Inform the message receiving loop that raw data are to follow
+    m_ReadMode = eReadRawData;
+    m_DataMessageSN = common_args.m_SerialNumber;
+    m_ClientRegistry.AddObjectsWritten(m_Client, 1);
 }
 
 
@@ -991,25 +1017,17 @@ CNetStorageHandler::x_ProcessWrite(
                         const SCommonRequestArguments &  common_args)
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
-
     x_CheckNonAnonymousClient();
 
-    if (message.HasKey("FileID") || message.HasKey("UserKey")) {
-        // Some kind of identification is given
-        string          object_key = x_GetObjectKey(message);
-        CNetStorage     net_storage(g_CreateNetStorage(0));
+    if (!message.HasKey("FileID") && !message.HasKey("UserKey"))
+        NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
+                   "WRITE message must have FileID or UserKey. "
+                   "None of them was found.");
 
-        m_ObjectStream = net_storage.Open(object_key, 0);
-    } else {
-        // No identification - create a stream
-        TNetStorageFlags    flags = ExtractStorageFlags(message);
-        SICacheSettings     icache_settings = ExtractICacheSettings(message);
+    string          object_key = x_GetObjectKey(message);
+    CNetStorage     net_storage(g_CreateNetStorage(0));
 
-        x_CheckICacheSettings(icache_settings);
-
-        // Create the object stream depending on settings
-        m_ObjectStream = x_CreateObjectStream(icache_settings, flags);
-    }
+    m_ObjectStream = net_storage.Open(object_key, 0);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
     string          file_id = m_ObjectStream.GetID();

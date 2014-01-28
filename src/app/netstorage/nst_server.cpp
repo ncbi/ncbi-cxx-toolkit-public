@@ -149,3 +149,9 @@ void CNetStorageServer::RegisterAlert(EAlertType  alert_type)
     m_Alerts.Register(alert_type);
 }
 
+
+CJsonNode CNetStorageServer::SerializeAlerts(void) const
+{
+    return m_Alerts.Serialize();
+}
+
