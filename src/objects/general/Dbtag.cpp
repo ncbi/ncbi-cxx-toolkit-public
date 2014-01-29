@@ -766,6 +766,19 @@ string CDbtag::GetUrl(const string & genus,
             }
             break;
 
+        case CDbtag::eDbtagType_Fungorum:
+            {
+                int num_skip = 0;
+                string::const_iterator tag_iter = tag.begin();
+                for ( ; tag_iter != tag.end() && ! isdigit(*tag_iter) ; ++tag_iter ) {
+                    num_skip++;
+                }
+                if (num_skip > 0) {
+                    tag = tag.substr(num_skip);
+                }
+            }
+            break;
+
         case eDbtagType_MGI:
         case eDbtagType_MGD:
             if (NStr::StartsWith(tag, "MGI:", NStr::eNocase)  ||
@@ -814,9 +827,11 @@ string CDbtag::GetUrl(const string & genus,
             }
             break;
         }}
+
         case eDbtagType_REBASE:
             tag += ".html";
             break;
+
         case eDbtagType_H_InvDB:
             if (NStr::Find(tag, "HIT")) {
                 prefix = kHInvDbHIT;
