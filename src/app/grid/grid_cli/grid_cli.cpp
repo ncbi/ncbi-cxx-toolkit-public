@@ -1103,6 +1103,48 @@ static const char* const s_OutputFormats[eNumberOfOutputFormats] = {
 
 static char s_ConnDebugEnv[] = "CONN_DEBUG_PRINTOUT=DATA";
 
+class COutputFileHelper
+{
+public:
+    COutputFileHelper() : m_OutputStream(NULL) {}
+    FILE* CreateTemporaryFile(const char* output_file_name);
+    void SaveOutputFile();
+    ~COutputFileHelper();
+
+private:
+    string m_OutputFileName;
+    string m_TemporaryFileName;
+    FILE* m_OutputStream;
+};
+
+FILE* COutputFileHelper::CreateTemporaryFile(const char* output_file_name)
+{
+    m_OutputFileName = output_file_name;
+    m_TemporaryFileName = m_OutputFileName + ".tmp";
+    if ((m_OutputStream = fopen(m_TemporaryFileName.c_str(), "wb")) == NULL) {
+        NCBI_USER_THROW_FMT("Cannot create temporary file '" <<
+                m_TemporaryFileName << "': " << strerror(errno));
+    }
+    return m_OutputStream;
+}
+
+void COutputFileHelper::SaveOutputFile()
+{
+    if (m_OutputStream != NULL) {
+        fclose(m_OutputStream);
+        rename(m_TemporaryFileName.c_str(), m_OutputFileName.c_str());
+        m_OutputStream = NULL;
+    }
+}
+
+COutputFileHelper::~COutputFileHelper()
+{
+    if (m_OutputStream != NULL) {
+        fclose(m_OutputStream);
+        CDirEntry(m_TemporaryFileName).Remove();
+    }
+}
+
 int CGridCommandLineInterfaceApp::Run()
 {
     // Override connection defaults.
@@ -1114,6 +1156,8 @@ int CGridCommandLineInterfaceApp::Run()
 
     const SCommandDefinition* cmd_def;
     const int* cmd_opt;
+
+    COutputFileHelper output_file_helper;
 
     {
         bool enable_extended_cli = false;
@@ -1398,10 +1442,8 @@ int CGridCommandLineInterfaceApp::Run()
                 m_Opts.remote_app_args = opt_value;
                 break;
             case eOutputFile:
-                if ((m_Opts.output_stream = fopen(opt_value, "wb")) == NULL) {
-                    fprintf(stderr, "%s: %s\n", opt_value, strerror(errno));
-                    return 2;
-                }
+                m_Opts.output_stream =
+                        output_file_helper.CreateTemporaryFile(opt_value);
                 break;
             case eFileTrackSite:
                 TFileTrack_Site::SetDefault(opt_value);
@@ -1477,7 +1519,9 @@ int CGridCommandLineInterfaceApp::Run()
     }
 
     try {
-        return (this->*cmd_def->cmd_proc)();
+        int retcode = (this->*cmd_def->cmd_proc)();
+        output_file_helper.SaveOutputFile();
+        return retcode;
     }
     catch (CConfigException& e) {
         fprintf(stderr, "%s\n", e.GetMsg().c_str());
@@ -1510,8 +1554,6 @@ CGridCommandLineInterfaceApp::~CGridCommandLineInterfaceApp()
 {
     if (IsOptionSet(eInputFile) && m_Opts.input_stream != NULL)
         fclose(m_Opts.input_stream);
-    if (IsOptionSet(eOutputFile) && m_Opts.output_stream != NULL)
-        fclose(m_Opts.output_stream);
 }
 
 void CGridCommandLineInterfaceApp::PrintLine(const string& line)
