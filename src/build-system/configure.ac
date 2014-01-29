@@ -689,6 +689,23 @@ AC_DEFINE_UNQUOTED(HOST_OS,     "$host_os",     [System OS only])
 #### Make some provisions for traditional operation
 AC_PROG_INSTALL
 
+#### Point ICC at a suitable GCC version ASAP.
+case "/$CXX" in
+   */icpc )
+      if test -d /usr/local/gcc; then
+         case "`$CXX -dumpversion`:$host_cpu" in
+            *:i?86)           v=4.4.5 ;;
+            ?.* | 1[[01]].* ) v=4.0.1 ;;
+            *)                v=4.4.2 ;;
+         esac
+         gcc=/usr/local/gcc/$v/bin/gcc
+         if test -x $gcc; then
+            CC="$CC -gcc-name=$gcc"
+            CXX="$CXX -gcc-name=$gcc"
+         fi
+      fi
+      ;;
+esac
 
 #### C and C++ compilers
 AC_LANG(C++)
@@ -1907,18 +1924,6 @@ fi
 
 #### Intel compiler::  common flags and definitions
 if test "$compiler" = "ICC" ; then
-   if test -d /usr/local/gcc; then
-      case "$compiler_version:$HOST_CPU" in
-         *:i?86)               v=4.4.5 ;;
-         ???:* | 1[[01]]??:* ) v=4.0.1 ;;
-         *)                    v=4.4.2 ;;
-      esac
-      gcc=/usr/local/gcc/$v/bin/gcc
-      if test -x $gcc; then
-         CC="$CC -gcc-name=$gcc"
-         CXX="$CXX -gcc-name=$gcc"
-      fi
-   fi
    if test -n "$icc_license" ; then
       icc_CC="$CC"
       icc_CXX="$CXX"
