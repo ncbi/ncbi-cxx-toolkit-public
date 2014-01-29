@@ -3,7 +3,7 @@
 APP = test_hgvs_parser
 SRC = test_hgvs_parser_app
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
+CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) -Wno-unused-local-typedefs
 
 LIB_ = hgvs $(OBJREAD_LIBS) test_boost xregexp $(PCRE_LIB) xobjutil \
        entrez2cli entrez2 $(OBJMGR_LIBS)
