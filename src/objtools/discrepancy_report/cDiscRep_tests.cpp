@@ -7447,6 +7447,7 @@ void CBioseq_missing_genes_oncaller :: TestOnObj(const CBioseq& bioseq)
   if (bioseq.IsAa()) return;
   unsigned i=0;
   m_super_idx.clear();
+  m_no_genes.clear();
   if (IsmRNASequenceInGenProdSet(bioseq)) {
      m_super_cnt = 0;
   }
