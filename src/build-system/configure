@@ -25831,16 +25831,21 @@ echo "${ECHO_T}$ncbi_cv_lib_boost_version" >&6
    if test -d `echo $BOOST_INCLUDE | sed -e 's/^-I//'`/boost-${ncbi_cv_lib_boost_version}/boost; then
       BOOST_INCLUDE=$BOOST_INCLUDE/boost-${ncbi_cv_lib_boost_version}
    fi
-   case "$ncbi_compiler" in
-      MIPSPRO)
+   case "$compiler:$ncbi_compiler_ver" in
+      MIPSpro*)
          BOOST_INCLUDE="$BOOST_INCLUDE $BOOST_INCLUDE/boost/compatibility/cpp_c_headers"
          ;;
-      WORKSHOP)
+      WorkShop*)
          # Boost.Test's macros yield a *lot* of spurious "should not initialize
          # a non-const reference with a temporary" warnings, to the point of
          # overwhelming the compiler in some cases; turn them off altogether
          # when using Boost at all.
          BOOST_INCLUDE="$BOOST_INCLUDE -erroff=reftotemp"
+         ;;
+      GCC*:4[4-9]* | GCC*:5*)
+         # Some portions of Boost also have a lot of "unused" typedefs
+         # from concept checking.
+         BOOST_INCLUDE="$BOOST_INCLUDE -Wno-unused-local-typedefs"
          ;;
    esac
    case "$ncbi_cv_lib_boost_version" in
