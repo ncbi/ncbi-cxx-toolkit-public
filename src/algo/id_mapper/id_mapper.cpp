@@ -323,10 +323,24 @@ CGencollIdMapper::CanMeetSpec(const objects::CSeq_loc& Loc, const SIdSpec& Spec)
 void
 CGencollIdMapper::x_Init(void)
 {
+    bool HideRefSeqAcc = false;
+   
+    
+    if (m_Assembly->GetDesc().CanGetRelease_type() && 
+        m_Assembly->GetDesc().CanGetRelease_status() &&
+        m_Assembly->GetDesc().GetRelease_type()   == CGC_AssemblyDesc::eRelease_type_refseq &&
+        m_Assembly->GetDesc().GetRelease_status() == CGC_AssemblyDesc::eRelease_status_gpipe) {
+        HideRefSeqAcc = true;
+    }
+
+    
     CTypeIterator<CGC_Sequence> SeqIter(*m_Assembly);
     for ( ; SeqIter; ++SeqIter) {
         x_RecursiveSeqFix(*SeqIter);
         x_FillGpipeTopRole(*SeqIter);
+
+        if(HideRefSeqAcc)
+            x_RemoveHiddenAccessions(*SeqIter);
 
         NON_CONST_ITERATE (CGC_Sequence::TSequences,
                         ChildIter, SeqIter->SetSequences()) {
@@ -335,6 +349,8 @@ CGencollIdMapper::x_Init(void)
             for ( ; InnerIter; ++InnerIter) {
                 x_RecursiveSeqFix(*InnerIter);
                 x_FillGpipeTopRole(*InnerIter);
+                if(HideRefSeqAcc)
+                    x_RemoveHiddenAccessions(*SeqIter);
             }
         }
     }
@@ -554,6 +570,31 @@ CGencollIdMapper::x_FillGpipeTopRole(CGC_Sequence& Seq)
         Seq.SetRoles().push_back(SIdSpec::e_Role_ExcludePseudo_Top);
     }
 }
+
+
+void
+CGencollIdMapper::x_RemoveHiddenAccessions(CGC_Sequence& Seq)
+{
+    CSeq_id GenbankAcc;
+    NON_CONST_ITERATE(CGC_Sequence::TSeq_id_synonyms,
+        SynIter, Seq.SetSeq_id_synonyms()) {
+        CGC_TypedSeqId& Typed = **SynIter;
+        if(Typed.IsGenbank()) {
+            GenbankAcc.Assign(Typed.SetGenbank().GetPublic()); 
+        }
+    }
+
+    NON_CONST_ITERATE(CGC_Sequence::TSeq_id_synonyms,
+        SynIter, Seq.SetSeq_id_synonyms()) {
+        CGC_TypedSeqId& Typed = **SynIter;
+        if(Typed.IsRefseq()) {
+            //Typed.SetRefseq().ResetPublic();
+            Typed.SetRefseq().SetPublic().Assign(GenbankAcc);    
+            Typed.SetRefseq().ResetGpipe();
+        }
+    }
+}
+
 
 void
 CGencollIdMapper::x_FillChromosomeIds(void)
@@ -1295,6 +1336,8 @@ CGencollIdMapper::x_Map_Up(const CSeq_loc& SourceLoc,
     CRef<CSeq_loc> Result;
     Result = m_UpMapper->Map(SourceLoc); 
     if(!Result.IsNull() && !Result->IsNull()) {
+        if(Result->Equals(SourceLoc))
+            return Result;
         Result = Map(*Result, Spec);
     }
     return Result;
@@ -1309,6 +1352,8 @@ CGencollIdMapper::x_Map_Down(const CSeq_loc& SourceLoc,
     CRef<CSeq_loc> Result;
     Result = m_DownMapper->Map(SourceLoc); 
     if(!Result.IsNull() && !Result->IsNull()) {
+        if(Result->Equals(SourceLoc))
+            return Result;
         Result = Map(*Result, Spec);
     }
     return Result;
