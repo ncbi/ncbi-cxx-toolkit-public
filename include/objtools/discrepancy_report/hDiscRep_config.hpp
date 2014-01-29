@@ -227,6 +227,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static vector <string>                    skip_bracket_paren;
         static vector <string>                    ok_num_prefix;
         static map <EMacro_feature_type, CSeqFeatData::ESubtype>  feattype_featdef;
+        static Str2Str                            featkey_modified;
         static map <EMacro_feature_type, string>  feattype_name;
         static map <CRna_feat_type::E_Choice, CRNA_ref::EType> rnafeattp_rnareftp;
         static map <ERna_field, EFeat_qual_legal>  rnafield_featquallegal;
