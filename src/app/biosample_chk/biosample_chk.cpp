@@ -36,6 +36,7 @@
 #include <corelib/ncbiapp.hpp>
 #include <corelib/ncbienv.hpp>
 #include <corelib/ncbiargs.hpp>
+#include <corelib/ncbiutil.hpp>
 
 #include <serial/serial.hpp>
 #include <serial/objistr.hpp>
@@ -869,6 +870,29 @@ static bool s_IsCitSub (const CSeqdesc& desc)
 }
 
 
+string GetBestBioseqLabel(CBioseq_Handle bsh)
+{
+    string label = "";
+    bool have_accession = false;
+
+    CRef<CSeq_id> id(NULL);
+    const CBioseq::TId id_list = bsh.GetCompleteBioseq()->GetId();
+    ITERATE(CBioseq::TId, it, id_list) {
+        if ((*it)->IsGenbank()) {
+            id = *it;
+        }
+    }
+    if (!id) {
+        id = FindBestChoice(id_list, CSeq_id::BestRank);
+    }
+    if (id) {
+        id->GetLabel(&label);
+    }
+
+    return label;
+}
+
+
 const string kSequenceID = "Sequence ID";
 const string kAffilInst = "Institution";
 const string kAffilDept = "Department";
@@ -880,8 +904,7 @@ void CBiosampleChkApp::AddBioseqToTable(CBioseq_Handle bh, bool with_id)
     vector<string> biosample_ids = GetBiosampleIDs(bh);
     if (biosample_ids.size() > 0 && !with_id) {
 		// do not collect if already has biosample ID
-        string label = "";
-        bh.GetId().front().GetSeqId()->GetLabel(&label);
+        string label = GetBestBioseqLabel(bh);
         *m_LogStream << label << " already has Biosample ID " << biosample_ids[0] << endl;
 		return;
 	}
@@ -902,8 +925,7 @@ void CBiosampleChkApp::AddBioseqToTable(CBioseq_Handle bh, bool with_id)
         return;
     }
 
-    string sequence_id;
-    bh.GetId().front().GetSeqId()->GetLabel(&sequence_id);
+    string sequence_id = GetBestBioseqLabel(bh);
 	size_t row = m_Table->GetNum_rows();
 	AddValueToTable (m_Table, kSequenceID, sequence_id, row);
 
@@ -992,8 +1014,7 @@ void CBiosampleChkApp::GetBioseqDiffs(CBioseq_Handle bh)
         return;
     }
 
-    string sequence_id;
-    bh.GetId().front().GetSeqId()->GetLabel(&sequence_id);
+    string sequence_id = GetBestBioseqLabel(bh);
 
     ITERATE(vector<string>, id, biosample_ids) {
         CRef<CSeq_descr> descr = GetBiosampleData(*id, m_UseDevServer);
@@ -1108,8 +1129,7 @@ void CBiosampleChkApp::ProcessBioseqHandle(CBioseq_Handle bh)
             m_Diffs.clear();
             GetBioseqDiffs(bh);
             if (DoDiffsContainConflicts()) {
-                string sequence_id;
-                bh.GetId().front().GetSeqId()->GetLabel(&sequence_id);
+                string sequence_id = GetBestBioseqLabel(bh);
                 *m_LogStream << "Conflicts found for  " << sequence_id << endl;
                 AddBioseqToTable(bh, true);
             } else {
