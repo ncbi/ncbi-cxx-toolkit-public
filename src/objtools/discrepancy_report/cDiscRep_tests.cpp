@@ -7445,21 +7445,21 @@ void CBioseq_missing_genes_oncaller :: TestOnObj(const CBioseq& bioseq)
   if (!run_missing && !run_extra) return;
 
   if (bioseq.IsAa()) return;
-  m_super_cnt = 0;
-  m_super_idx.clear();
   unsigned i=0;
-  m_super_idx.reserve(gene_feat.size());
-  for (i=0; i< gene_feat.size(); i++) {
-          m_super_idx.push_back(0);
+  m_super_idx.clear();
+  if (IsmRNASequenceInGenProdSet(bioseq)) {
+     m_super_cnt = 0;
   }
-  i = 0;
-  if (!IsmRNASequenceInGenProdSet(bioseq)) {
-     ITERATE (vector <const CSeq_feat*>, it, gene_feat) {
-       if ( !((*it)->CanGetPseudo()) || !((*it)->GetPseudo()) ) {
-          m_super_cnt ++;
-          m_super_idx[i] = 1;
+  else {
+     m_super_cnt = gene_feat.size();
+     m_super_idx.reserve(gene_feat.size());
+     for (i=0; i< gene_feat.size(); i++) {
+       if ( !(gene_feat[i]->CanGetPseudo()) || !(gene_feat[i]->GetPseudo()) ) {
+          m_super_idx.push_back(1);
        }
-       i++; 
+       else {
+          m_super_idx.push_back(0);
+       }
      }
   }
 
@@ -12555,10 +12555,10 @@ void CBioseq_on_feat_cnt :: TestOnObj(const CBioseq& bioseq)
    ITERATE (vector <const CSeq_feat*>, it, non_prot_feat) { 
       feat_nm = ( (*it)->GetData().IsProt() )? "A_" : "nA_";
       strtmp = (*it)->GetData().GetKey(CSeqFeatData::eVocabulary_genbank);
-      strtmp = (strtmp == "precursor_RNA") ? "preRNA" : strtmp;
-      strtmp = (strtmp == "C_region")? "c_region" : strtmp;
-      strtmp = (strtmp == "J_segment")? "j_segment" : strtmp;
-      strtmp = (strtmp == "V_segment")? "v_segment" : strtmp;
+      if (thisInfo.featkey_modified.find(strtmp) 
+             != thisInfo.featkey_modified.end()) {
+         strtmp = thisInfo.featkey_modified[strtmp];
+      }
       feat_nm += strtmp;
       if (feat_cnt_ls.find(feat_nm) == feat_cnt_ls.end()) {
          feat_cnt_ls[feat_nm] = 1;

@@ -98,6 +98,7 @@ CConstRef<CSuspect_rule_set>        CDiscRepInfo :: orga_prod_rules (new CSuspec
 vector <string>                     CDiscRepInfo :: skip_bracket_paren;
 vector <string>                     CDiscRepInfo :: ok_num_prefix;
 map <EMacro_feature_type, CSeqFeatData::ESubtype> CDiscRepInfo :: feattype_featdef;
+Str2Str                             CDiscRepInfo :: featkey_modified;
 map <EMacro_feature_type, string>   CDiscRepInfo :: feattype_name;
 map <CRna_feat_type::E_Choice, CRNA_ref::EType>   CDiscRepInfo :: rnafeattp_rnareftp;
 map <ERna_field, EFeat_qual_legal>  CDiscRepInfo :: rnafield_featquallegal;
@@ -629,6 +630,13 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
     strtmp = "DUF,UPF,IS,TIGR,UCP,PUF,CHP";
     thisInfo.ok_num_prefix
         = NStr::Tokenize(strtmp, ",", thisInfo.ok_num_prefix);
+
+    // ini of featkey_modified;
+    thisInfo.featkey_modified["precursor_RNA"] = "preRNA";
+    thisInfo.featkey_modified["C_region"] = "c_region";
+    thisInfo.featkey_modified["J_segment"] = "j_segment";
+    thisInfo.featkey_modified["V_segment"] = "v_segment";
+    thisInfo.featkey_modified["D-loop"] = "d_loop";
 
     // ini of feattype_featdef & feattype_name
     for (i = eMacro_feature_type_any; i <= eMacro_feature_type_imp_CDS; i++) {
@@ -1398,7 +1406,6 @@ void CRepConfig :: CheckThisSeqEntry(CRef <CSeq_entry> seq_entry)
     // collect disc report
     myChecker.CollectRepData();
 };  // CheckThisSeqEntry()
-
 
 static const s_test_property test_list[] = {
 // tests_on_SubmitBlk
