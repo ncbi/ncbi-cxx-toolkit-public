@@ -5426,8 +5426,15 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
                               "Unexpected use of /sex qualifier"));
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BioSourceInconsistency",
+                              "Bacteria should have strain or isolate or environmental sample"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                              "Unexpected use of /sex qualifier"));
     unit_test_util::SetLineage(entry, "Archaea; foo");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -5671,15 +5678,20 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetTaxon(entry, 0);
     unit_test_util::SetTaxon(entry, 77133);
     expected_errors[0]->SetErrMsg("Uncultured should also have /environmental_sample");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BioSourceInconsistency",
+                              "Bacteria should have strain or isolate or environmental sample"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     
+    CLEAR_ERRORS
+
     scope.RemoveTopLevelSeqEntry(seh);
     unit_test_util::MakeSeqLong(entry->SetSeq());
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "true");
     unit_test_util::SetSubSource(entry, CSubSource::eSubtype_isolation_source, "foo");
     seh = scope.AddTopLevelSeqEntry(*entry);
-    expected_errors[0]->SetErrMsg("Uncultured bacterium sequence length is suspiciously high");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                              "Uncultured bacterium sequence length is suspiciously high"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -5758,6 +5770,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetLineage (entry, "Bacteria; foo");
     unit_test_util::SetSubSource (entry, CSubSource::eSubtype_other, "cRNA");
     expected_errors[0]->SetErrMsg("cRNA note conflicts with molecule type");
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BioSourceInconsistency",
+                              "Bacteria should have strain or isolate or environmental sample"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     
@@ -5767,12 +5781,15 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
+    CLEAR_ERRORS
+
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                              "Negative-strand virus with plus strand CDS should be mRNA or cRNA"));
     scope.RemoveTopLevelSeqEntry(seh);
     entry = unit_test_util::BuildGoodNucProtSet();
     unit_test_util::SetLineage(entry, "Viruses; negative-strand viruses");
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors[0]->SetAccession("nuc");
-    expected_errors[0]->SetErrMsg("Negative-strand virus with plus strand CDS should be mRNA or cRNA");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     // error goes away if mRNA or cRNA or ambisense or synthetic
@@ -7448,9 +7465,12 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingChromosome)
     unit_test_util::SetLineage (entry, "Viruses; foo");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    expected_errors.push_back(new CExpectedError("AC_123456", eDiag_Error, "BioSourceInconsistency",
+                              "Bacteria should have strain or isolate or environmental sample"));
     unit_test_util::SetLineage (entry, "Bacteria; foo");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+    CLEAR_ERRORS
     unit_test_util::SetLineage (entry, "Archaea; foo");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
