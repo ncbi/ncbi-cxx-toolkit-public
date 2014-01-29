@@ -308,6 +308,7 @@ void CDataLoader::GetAccVers(const TIds& ids, TLoaded& loaded, TIds& ret)
         if ( loaded[i] ) {
             continue;
         }
+        seq_ids.clear();
         GetIds(ids[i], seq_ids);
         if ( !seq_ids.empty() ) {
             ret[i] = CScope::x_GetAccVer(seq_ids);
@@ -327,6 +328,7 @@ void CDataLoader::GetGis(const TIds& ids, TLoaded& loaded, TGis& ret)
         if ( loaded[i] ) {
             continue;
         }
+        seq_ids.clear();
         GetIds(ids[i], seq_ids);
         if ( !seq_ids.empty() ) {
             ret[i] = CScope::x_GetGi(seq_ids);
