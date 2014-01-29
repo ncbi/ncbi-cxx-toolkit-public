@@ -286,13 +286,15 @@ class CCgiResponseException : public CCgiException
 {
 public:
     enum EErrCode {
-        eDoubleHeader          ///< Header has already been written
+        eDoubleHeader,          ///< Header has already been written
+        eBadHeaderValue         ///< Invalid header value
     };
     virtual const char* GetErrCodeString(void) const
     {
         switch ( GetErrCode() ) {
-        case eDoubleHeader:  return "Header has already been written";
-        default:             return CException::GetErrCodeString();
+        case eDoubleHeader:   return "Header has already been written";
+        case eBadHeaderValue: return "Invalid header value";
+        default:              return CException::GetErrCodeString();
         }
     }
 

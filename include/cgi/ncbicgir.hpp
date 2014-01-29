@@ -223,6 +223,7 @@ protected:
 
 private:
     void x_RestoreOutputExceptions(void);
+    bool x_ValidateHeader(const string& name, const string& value) const;
 
     const CCgiSession*   m_Session;
     auto_ptr<CCgiCookie> m_TrackingCookie;
