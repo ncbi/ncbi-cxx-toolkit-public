@@ -5381,6 +5381,9 @@ case "$compiler:$compiler_version" in
      ncbi_cv_prog_cxx_11=no
      ncbi_cv_prog_c_99=no
      ;;
+   ICC:* )
+     ncbi_cv_prog_c_99='-std=c99 -fgnu89-inline'
+     ;;
 esac
 
 echo "$as_me:$LINENO: checking how to enable C++ '11 features in $CXX" >&5
@@ -6253,8 +6256,11 @@ echo "$as_me: WARNING: Unable to find static libstdc++ requested by --with-bin-r
     LINK="$LINK -Kc++"
     ;;
   ICC:1???:* )
-    APP_LDFLAGS="-static-intel $APP_LDFLAGS"
-    DLL_LDFLAGS="-static-intel -nodefaultlibs $DLL_LDFLAGS"
+    # Suppress "warning #10237: -lcilkrts linked in dynamically, static
+    # library not available" which is not a problem in practice due to
+    # as-needed linkage.
+    APP_LDFLAGS="-static-intel -diag-disable 10237 $APP_LDFLAGS"
+    DLL_LDFLAGS="-static-intel -diag-disable 10237 -nodefaultlibs $DLL_LDFLAGS"
     # Redundant for apps, but necessary for plugins to be adequately
     # self-contained, at least on 32-bit Linux.
     LIBS="$LIBS -lstdc++"
