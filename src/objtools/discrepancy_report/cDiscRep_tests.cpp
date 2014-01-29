@@ -9318,12 +9318,14 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
       thisInfo.test_item_objs[GetName_iso()].push_back(obj_ref);
   }
 
+  // CheckTaxNamesAgainstTaxDatabase in tax3api.c
   // TAX_LOOKUP_MISSING, TAX_LOOKUP_MISMATCH
   string org_tax, db_tax;
   org_tax 
      = biosrc.GetOrg().CanGetTaxname()? biosrc.GetOrg().GetTaxname() :kEmptyStr;
   if (m_run_tmiss || m_run_tbad) {
-     CRef <CTaxon2_data> lookup_tax = thisInfo.tax_db_conn.Lookup(biosrc.GetOrg());
+     CRef <CTaxon2_data> 
+         lookup_tax = thisInfo.tax_db_conn.Lookup(biosrc.GetOrg());
      if (lookup_tax.Empty() || !(lookup_tax->CanGetOrg())) {
          if (m_run_tmiss) {
               thisInfo.test_item_list[GetName_tmiss()].push_back(desc); 
@@ -12908,6 +12910,16 @@ void CSeqEntry_test_on_pub :: CheckBadAuthCapsOrNoFirstLastNamesInPubdesc(const 
   
   ITERATE (list <CRef <CPub> >, it, pubs) {
     if ( !(*it)->IsProc() && (*it)->IsSetAuthors() ) {
+      // Check Cit_art.ids (ArticleIdSet may have pmid)
+      if ((*it)->IsArticle() && (*it)->GetArticle().CanGetIds()) {
+         ITERATE (list <CRef <CArticleId> >, ait, 
+                      (*it)->GetArticle().GetIds().Get()) {
+            if ((*ait)->IsPubmed()) {
+               has_pmid = true;
+            }
+         }
+         
+      }
       if (m_run_cap 
              && !isBadCap 
              && (isBadCap = HasBadAuthorName( (*it)->GetAuthors() ) )) {
