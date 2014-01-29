@@ -15,7 +15,7 @@ endif
 
 DLL_LIB = objcoords xobjmgr
 
-CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE) -Wno-unused-local-typedefs
+CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 LIBS = $(CMPRS_LIBS) $(ORIG_LIBS)
 REQUIRES = Boost.Spirit
 
