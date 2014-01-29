@@ -142,6 +142,7 @@ protected:
 
     void x_RecursiveSeqFix(objects::CGC_Sequence& Seq);
     void x_FillGpipeTopRole(objects::CGC_Sequence& Seq);
+    void x_RemoveHiddenAccessions(objects::CGC_Sequence& Seq);
     void x_FillChromosomeIds(void);
     void x_PrioritizeIds(void);
     void x_PrioritizeIds(objects::CGC_Sequence& Sequence);
