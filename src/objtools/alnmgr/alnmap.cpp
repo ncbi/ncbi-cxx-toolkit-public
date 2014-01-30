@@ -364,10 +364,6 @@ CAlnMap::x_SetRawSegTypes(TNumrow row) const
             }
         }
         
-
-        /// Regression test (against the original version)
-        _ASSERT(flags == x_SetRawSegType(row, seg));
-
         /// Done with this segment
         flags |= fTypeIsSet;
     }
