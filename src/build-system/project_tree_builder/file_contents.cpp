@@ -381,15 +381,18 @@ void CSimpleMakeFileContents::SParser::AcceptLine(const string& line)
 
     if (m_Continue) {
 	    m_Continue = s_WillContinue(strline);
-	    if ( strline.empty() ) {
+	    if ( strline.empty() || strline.find_first_not_of(' ') == string::npos ) {
 		    //fix for ill-formed makefiles:
 		    m_FileContents->AddReadyKV(m_CurrentKV);
 		    return;
+#if 0
+// this is dangerous "fix"
 	    } else if ( s_IsKVString(strline) ) {
 		    //fix for ill-formed makefiles:
 		    m_FileContents->AddReadyKV(m_CurrentKV);
 		    m_Continue = false; // guard 
 		    AcceptLine(strline.c_str()); 
+#endif
 	    }
 	    if (m_Continue)
 		    s_StripContinueStr(&strline);

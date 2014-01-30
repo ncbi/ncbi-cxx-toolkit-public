@@ -86,7 +86,7 @@ void CSymResolver::Resolve(const string& define, list<string>* resolved_def)
     while (HasDefine(data) && modified) {
         modified = false;
         string::size_type start, prev, end;
-        for (start=0, prev=-1; ; prev=start) {
+        for (start=0, prev=start-1; ; prev=start) {
             start = data.find("$(", prev+1);
             if (start == string::npos) {
                 start = prev;
@@ -152,7 +152,7 @@ void CSymResolver::Resolve(const string& define, list<string>* resolved_def,
     while (HasDefine(data) && modified) {
         modified = false;
         string::size_type start, prev, end;
-        for (start=0, prev=-1; ; prev=start) {
+        for (start=0, prev=start-1; ; prev=start) {
             start = data.find("$(", prev+1);
             if (start == string::npos) {
                 start = prev;
@@ -387,6 +387,8 @@ string CExpansionRule::ApplyRule( const string& value) const
         return value;
     } else if (value[0] == '$') {
         return value;
+    } else if (value[0] == '@' && NStr::StartsWith(m_Rvalue, "-D")) {
+        return kEmptyStr;
     } else if (m_Rule == eReplace && !m_Lvalue.empty()) {
         return NStr::Replace(value, m_Lvalue, m_Rvalue);
     }

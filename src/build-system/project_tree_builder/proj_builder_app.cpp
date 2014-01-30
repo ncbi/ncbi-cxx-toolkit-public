@@ -1538,6 +1538,9 @@ void CProjBulderApp::GenerateUnixProjects(CProjectItemsTree& projects_tree)
                                 ofs << "-framework ";
                             } else if (m_3PartyLibs.find(*l3) != m_3PartyLibs.end()) {
                                 ofs << "-l";
+                            } else if (l3->at(0) != '-' && 
+                                       l3->find_first_of("$/.") == string::npos) {
+                                ofs << "-l";
                             }
                             ofs << *l3;
                         }

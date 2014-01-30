@@ -513,7 +513,8 @@ void SMakeProjectT::Create3PartyLibs(
             done.insert(flag);
         } else if (NStr::StartsWith(flag, "-l")) {
             libs3.push_back( CProjKey(CProjKey::eLib, flag.substr(2)));
-            GetApp().m_3PartyLibs.insert(flag.substr(2));
+// user cannot be trusted
+//            GetApp().m_3PartyLibs.insert(flag.substr(2));
             done.insert(flag.substr(2));
         } else if ( NStr::CompareCase(flag, "-framework") == 0 ) {
             if (p != libs_flags.end()) {
@@ -761,6 +762,7 @@ void  SMakeProjectT::VerifyLibDepends(
     list<string> original;
     list<string> duplicates;
     list<string> missing;
+    map<string, string> missing_suffix;
     set<string> alldepends;
     set<string> allflags;
     list<CProjKey>  depends_ids( depends_ids_arg);
@@ -783,29 +785,39 @@ void  SMakeProjectT::VerifyLibDepends(
         }
     }
     ITERATE( set<string>, s, alldepends) {
+        string id(*s);
+        string s_suffix;
+        if (NStr::EndsWith(id,"-dll")) {
+            s_suffix = "-dll";
+            NStr::ReplaceInPlace(id, s_suffix, "");
+        } else if (NStr::EndsWith(id,"-static")) {
+            s_suffix = "-static";
+            NStr::ReplaceInPlace(id, s_suffix, "");
+        }
         list<CProjKey>::const_iterator p = depends_ids.begin();
         for(; p != depends_ids.end(); ++p) {
-            if (p->Id() == *s) {
+            if (p->Id() == id) {
                 break;
             }
         }
         if (p == depends_ids.end()) {
             for(p = depends_ids.begin(); p != depends_ids.end(); ++p) {
-                if (app.m_GraphDepIncludes[p->Id()].find(*s) != app.m_GraphDepIncludes[p->Id()].end()) {
+                if (app.m_GraphDepIncludes[p->Id()].find(id) != app.m_GraphDepIncludes[p->Id()].end()) {
                     break;
                 }
             }
             if (p == depends_ids.end()) {
                 if (libs_3party == nullptr || 
-                    libs_3party->find(*s) == libs_3party->end()) {
-                    if (!SMakeProjectT::IsConfigurableDefine(*s)) {
-                        missing.push_back(*s);
+                    libs_3party->find(id) == libs_3party->end()) {
+                    if (!SMakeProjectT::IsConfigurableDefine(id)) {
+                        missing.push_back(id);
+                        missing_suffix[id] = s_suffix;
                     }
                 } else if (expected_3party != nullptr) {
-                    if (SMakeProjectT::IsConfigurableDefine(*s)) {
-                        expected_3party->push_back( *s);
+                    if (SMakeProjectT::IsConfigurableDefine(id)) {
+                        expected_3party->push_back( id);
                     } else {
-                        expected_3party->push_back( "-l" + *s);
+                        expected_3party->push_back( "-l" + id);
                     }
                 }
             }
@@ -815,7 +827,7 @@ void  SMakeProjectT::VerifyLibDepends(
         warnings.push_back("missing dependencies: " + NStr::Join(missing,","));
         if (app.m_AddMissingDep && libs_3party != nullptr) {
             ITERATE( list<string>, m,  missing) {
-                depends_ids.push_back(CProjKey(CProjKey::eLib, *m));
+                depends_ids.push_back(CProjKey(CProjKey::eLib, *m, missing_suffix[*m]));
             }
         }
     }
@@ -834,7 +846,7 @@ void  SMakeProjectT::VerifyLibDepends(
         for(list<CProjKey>::const_iterator p = depends_ids.begin();
             p != depends_ids.end(); ++p) {
             list<string> wrong;
-            bool obsolete=false;
+            bool obsolete = false;
             set<string>& precedes(app.m_GraphDepPrecedes[p->Id()]);
             ITERATE(set<string>, s, libsofar) {
                 if (precedes.find(*s) != precedes.end()) {
@@ -842,11 +854,16 @@ void  SMakeProjectT::VerifyLibDepends(
                 }
                 if (app.m_GraphDepIncludes[p->Id()].find(*s) != app.m_GraphDepIncludes[p->Id()].end()) {
                     fix=true;
+                    obsolete = true;
+                    projlibs.erase(*s);
+                    projlibs.insert(p->Id());
                     warnings.push_back("obsolete library: " + *s + " already included into " + p->Id());
                 }
                 if (app.m_GraphDepIncludes[*s].find(p->Id()) != app.m_GraphDepIncludes[*s].end()) {
                     fix=true;
                     obsolete = true;
+                    projlibs.erase(p->Id());
+                    projlibs.insert(*s);
                     warnings.push_back("obsolete library: " + p->Id() + " already included into " + *s);
                 }
             }
