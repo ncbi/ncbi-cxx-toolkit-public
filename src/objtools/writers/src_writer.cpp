@@ -230,10 +230,12 @@ bool CSrcWriter::xGather(
     IMessageListener*)
 //  ----------------------------------------------------------------------------
 {
-    if (!xGatherId(bsh)) {
-        return false;
-    }
+    // for each of biosources we may create individual record
+    // with the same ID
     for (CSeqdesc_CI sdit(bsh, CSeqdesc::e_Source); sdit; ++sdit) {
+        if (!xGatherId(bsh)) {
+            return false;
+        }
         const CBioSource& src = sdit->GetSource();
         for (FIELDS::const_iterator cit = desiredFields.begin();
                 cit != desiredFields.end(); ++cit) {
@@ -253,7 +255,7 @@ bool CSrcWriter::xGatherId(
     IMessageListener*)
 //  ----------------------------------------------------------------------------
 {
-    const string colName = "id";
+    static const string colName = "id";
 
     string label;
     bsh.GetSeqId()->GetLabel(&label, CSeq_id::eContent);
@@ -470,9 +472,9 @@ bool CSrcWriter::xGatherDb(
     IMessageListener*)
 //  ----------------------------------------------------------------------------
 {
-    const string colName = "org.db";
-    const string displayName = "org.db";
-    const string defaultValue = "";
+    static const string colName = "org.db.";
+    static const string displayName = "org.db.";
+    static const string defaultValue = "";
 
     if (!src.IsSetOrg()  ||  !src.GetOrg().IsSetDb()) {
         return true;
@@ -480,7 +482,6 @@ bool CSrcWriter::xGatherDb(
 
     typedef vector< CRef< CDbtag > > DBTAGS;
     const DBTAGS& tags = src.GetOrg().GetDb();
-    unsigned int dbCounter = 0;
     for (DBTAGS::const_iterator cit = tags.begin(); cit != tags.end(); ++cit) {
         const CDbtag& tag = **cit;
         if (!tag.IsSetDb()  ||  tag.GetDb().empty()  ||  !tag.IsSetTag()) {
@@ -495,19 +496,16 @@ bool CSrcWriter::xGatherDb(
             if (objid.GetStr().empty()) {
                 continue;
             }
-            dbtagStr = tag.GetDb() + ":" + objid.GetStr();
+            dbtagStr = objid.GetStr();
             break;
         case CObject_id::e_Id:
-            dbtagStr = tag.GetDb() + ":" + NStr::IntToString(objid.GetId());
+            dbtagStr = NStr::IntToString(objid.GetId());
             break;
         }
         string curColName = colName;
         string curDisplayName = displayName;
-        if (dbCounter > 0) {
-            string suffix = string("#") + NStr::IntToString(dbCounter);
-            curColName += suffix;
-            curDisplayName += suffix;
-        }
+        curColName += tag.GetDb();
+        curDisplayName += tag.GetDb();
         xPrepareTableColumn(curColName, curDisplayName, "");
         xAppendColumnValue(curColName, dbtagStr);
     } 
@@ -520,9 +518,9 @@ bool CSrcWriter::xGatherTaxonId(
     IMessageListener*)
 //  ----------------------------------------------------------------------------
 {
-    const string colName = "taxid";
-    const string displayName = "taxid";
-    const string defaultValue = "";
+    static const string colName = "taxid";
+    static const string displayName = "taxid";
+    static const string defaultValue = "";
 
     if (!src.IsSetOrg()  ||  !src.GetOrg().IsSetDb()) {
         return true;
@@ -708,7 +706,7 @@ void CSrcWriter::xAppendColumnValue(
 
 //  ----------------------------------------------------------------------------
 bool CSrcWriter::ValidateFields(
-    const FIELDS fields,
+    const FIELDS& fields,
     IMessageListener* pEC)
 //  ----------------------------------------------------------------------------
 {

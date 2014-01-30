@@ -101,7 +101,7 @@ public:
     };
 
     static bool ValidateFields(
-        const FIELDS fields,
+        const FIELDS& fields,
         IMessageListener* = 0);
 
 protected:
