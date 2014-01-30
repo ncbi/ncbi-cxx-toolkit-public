@@ -199,10 +199,6 @@ void CCgiResponse::SetStatus(unsigned int code, const string& reason)
         THROW1_TRACE(runtime_error,
                      "CCgiResponse::SetStatus() -- code too big, exceeds 999");
     }
-    if (reason.find_first_of("\r\n") != string::npos) {
-        THROW1_TRACE(runtime_error,
-                     "CCgiResponse::SetStatus() -- text contains CR or LF");
-    }
     SetHeaderValue(sm_HTTPStatusName, NStr::UIntToString(code) + ' ' + reason);
     CDiagContext::GetRequestContext().SetRequestStatus(code);
 }
