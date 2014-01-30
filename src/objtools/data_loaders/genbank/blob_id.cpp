@@ -74,7 +74,7 @@ CBlob_id* CBlob_id::CreateFromString(const string& str)
                        "\"" + str + "\" is not a valid Genbank BlobId");
     }
         
-    CBlob_id* blobid = new CBlob_id;
+    CRef<CBlob_id> blobid(new CBlob_id);
     blobid->SetSat(sat);
     blobid->SetSubSat(sub_sat);
     blobid->SetSatKey(sat_key);

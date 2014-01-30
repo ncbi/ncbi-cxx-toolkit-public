@@ -216,6 +216,10 @@ public:
 
     virtual TBlobId GetBlobId(const CSeq_id_Handle& idh);
     virtual TBlobId GetBlobIdFromString(const string& str) const;
+    TBlobId GetBlobIdFromSatSatKey(int sat,
+                                   int sat_key,
+                                   int sub_sat = 0) const;
+
     virtual TBlobVersion GetBlobVersion(const TBlobId& id);
     bool CanGetBlobById(void) const;
     TTSE_Lock GetBlobById(const TBlobId& id);

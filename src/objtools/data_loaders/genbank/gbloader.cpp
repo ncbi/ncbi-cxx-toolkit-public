@@ -754,6 +754,18 @@ CDataLoader::TBlobId CGBDataLoader::GetBlobIdFromString(const string& str) const
 }
 
 
+CDataLoader::TBlobId CGBDataLoader::GetBlobIdFromSatSatKey(int sat,
+                                                           int sat_key,
+                                                           int sub_sat) const
+{
+    CRef<CBlob_id> blob_id(new CBlob_id);
+    blob_id->SetSat(sat);
+    blob_id->SetSatKey(sat_key);
+    blob_id->SetSubSat(sub_sat);
+    return TBlobId(blob_id);
+}
+
+
 void CGBDataLoader::GetIds(const CSeq_id_Handle& idh, TIds& ids)
 {
     CGBReaderRequestResult result(this, idh);
