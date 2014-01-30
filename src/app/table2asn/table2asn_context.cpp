@@ -544,29 +544,6 @@ void CTable2AsnContext::CopyFeatureIdsToComments(CSeq_entry& entry) const
 {
     CScope scope(*CObjectManager::GetInstance());
     CSeq_entry_Handle h_entry = scope.AddTopLevelSeqEntry(entry);
-    for (CFeat_CI feat_it(h_entry, SAnnotSelector(CSeqFeatData::e_Rna) ); feat_it; ++feat_it)
-    {
-       //cout << "has feature" << endl;    
-    }
-}
-
-void CTable2AsnContext::SetSeqId(CSeq_entry& entry) const
-{
-    if (entry.IsSeq())
-    {
-        string base;
-        CDirEntry::SplitPath(m_current_file, 0, &base, 0);
-        CRef<CSeq_id> id(new CSeq_id(string("lcl|") + base));
-        entry.SetSeq().SetId().clear();
-        entry.SetSeq().SetId().push_back(id);
-        // now it's good to rename features ....
-    }
-}
-
-void CTable2AsnContext::CopyFeatureIdsToComments(CSeq_entry& entry) const
-{
-    CScope scope(*CObjectManager::GetInstance());
-    CSeq_entry_Handle h_entry = scope.AddTopLevelSeqEntry(entry);
     for (CBioseq_CI bioseq_it(h_entry); bioseq_it; ++bioseq_it)
     {
         for (CFeat_CI feat_it(*bioseq_it, SAnnotSelector(CSeqFeatData::e_Rna) ); feat_it; ++feat_it)
