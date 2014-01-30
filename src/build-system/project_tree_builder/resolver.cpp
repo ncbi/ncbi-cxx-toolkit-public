@@ -378,6 +378,9 @@ void CExpansionRule::Init(const string& textrule,
         } else if (NStr::FindCase(m_Lvalue, "%") != NPOS) {
             m_Rule = ePattern;
         }
+        if (NStr::FindCase(m_Rvalue, "%") == NPOS) {
+            m_Rvalue.insert(0,1,'%');
+        }
     }
 }
 
