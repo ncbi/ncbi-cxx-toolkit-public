@@ -16,7 +16,7 @@ WATCHERS = vasilche
 
 
 USES_LIBRARIES =  \
-    biblio connect general genome_collection id1 id2 medline ncbi_xreader \
+    biblio general genome_collection id1 id2 medline ncbi_xreader \
     ncbi_xreader_cache ncbi_xreader_id1 ncbi_xreader_id2 pub seq \
     seqcode seqedit seqset seqsplit sequtil xcompress xconnect xncbi \
     xobjmgr xser xutil
