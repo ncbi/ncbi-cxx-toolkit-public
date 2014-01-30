@@ -4763,7 +4763,7 @@ ncbi_cv_lib_boost_version=BOOST_LIB_VERSION
          # when using Boost at all.
          BOOST_INCLUDE="$BOOST_INCLUDE -erroff=reftotemp"
          ;;
-      GCC*:4[[4-9]]* | GCC*:5*)
+      GCC*:4[[7-9]]* | GCC*:5*)
          # Some portions of Boost also have a lot of "unused" typedefs
          # from concept checking.
          BOOST_INCLUDE="$BOOST_INCLUDE -Wno-unused-local-typedefs"
