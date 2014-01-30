@@ -694,7 +694,13 @@ bool CDiscRepUtil :: IsWholeWord(const string& str, const string& phrase)
 
 string CTestAndRepData :: GetProdNmForCD(const CSeq_feat& cd_feat)
 {
-     // should be the longest CProt_ref on the bioseq pointed by the cds.GetProduct()
+  // should be the longest CProt_ref on the bioseq pointed by the cds.GetProduct()
+     // check Xref first;
+     const CProt_ref* prot = cd_feat.GetProtXref();
+     if (prot && prot->CanGetName() && !prot->GetName().empty()) {
+        return ( *(prot->GetName().begin()) );
+     }
+
      CConstRef <CSeq_feat> prot_seq_feat;
      if (cd_feat.CanGetProduct()) {
          prot_seq_feat 
@@ -710,12 +716,14 @@ string CTestAndRepData :: GetProdNmForCD(const CSeq_feat& cd_feat)
               return( *(prot.GetName().begin()) );
          }
      }
+/*
      else {
         const CProt_ref* prot = cd_feat.GetProtXref();
         if (prot && prot->CanGetName() && !prot->GetName().empty()) {
               return ( *(prot->GetName().begin()) );
         }
      }
+*/
      return (kEmptyStr);
 };
 
@@ -1145,7 +1153,11 @@ string CTestAndRepData :: SeqLocPrintUseBestID(const CSeq_loc& seq_loc, bool ran
   else if (seq_loc.IsMix()) {
      location = "(";
      ITERATE (list <CRef <CSeq_loc> >, it, seq_loc.GetMix().Get()) {
-        location += SeqLocPrintUseBestID(**it) + ", ";
+        if (it == seq_loc.GetMix().Get().begin()) {
+           location += SeqLocPrintUseBestID(**it, range_only);
+        }
+        else location += SeqLocPrintUseBestID(**it, true);
+        location += ", ";
      }
      if (!location.empty()) location = location.substr(0, location.size()-2);
      location += ")"; 
@@ -1153,7 +1165,11 @@ string CTestAndRepData :: SeqLocPrintUseBestID(const CSeq_loc& seq_loc, bool ran
   else if (seq_loc.IsPacked_int()) {
      location = "(";
      ITERATE (list <CRef <CSeq_interval> >, it, seq_loc.GetPacked_int().Get()) {
-        location += PrintSeqInt(**it) + ", ";
+        if (it == seq_loc.GetPacked_int().Get().begin()) {
+           location += PrintSeqInt(**it, range_only);
+        }
+        else location += PrintSeqInt(**it, true);
+        location += ", ";
      }
      if (!location.empty()) location = location.substr(0, location.size()-2);
      location += ")";
@@ -1226,7 +1242,6 @@ const CSeq_feat* CTestAndRepData :: GetCDFeatFromProtFeat(const CSeq_feat& prot)
 string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
 {
       CSeq_feat* seq_feat_p = const_cast <CSeq_feat*>(&seq_feat);
-// cerr << "seq_feat_p " << MSerial_AsnText << *seq_feat_p << endl;
 
       if ( seq_feat.GetData().IsProt()) {
         const CSeq_feat* cds = GetCDFeatFromProtFeat(seq_feat);
@@ -1238,22 +1253,23 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_feat& seq_feat)
       if (label.empty()) label = "Unknown label";
       string locus_tag = GetLocusTagForFeature (*seq_feat_p);
       string context_label(kEmptyStr);
-      if (seq_feat_p->GetData().IsCdregion()) 
+      if (seq_feat_p->GetData().IsCdregion()) { 
               context_label = GetProdNmForCD(*seq_feat_p);
-      else {
-          if (seq_feat_p->GetData().IsPub()) {
+      }
+      else if (seq_feat_p->GetData().IsPub()) {
                seq_feat_p->GetData().GetPub().GetPub().GetLabel(&context_label);
-          }
-          if (seq_feat_p->GetData().IsGene()) {
-             if (seq_feat_p->GetData().GetGene().CanGetLocus()) {
+      }
+      else if (seq_feat_p->GetData().IsGene()) {
+             if (seq_feat_p->GetData().GetGene().CanGetLocus()
+                  && !seq_feat_p->GetData().GetGene().GetLocus().empty()) {
                 context_label = seq_feat_p->GetData().GetGene().GetLocus(); 
              }
              else if (seq_feat_p->GetData().GetGene().CanGetDesc()) {
                 context_label = seq_feat_p->GetData().GetGene().GetDesc(); 
              }
-          } 
-          else GetSeqFeatLabel(*seq_feat_p, context_label);
-      }
+      } 
+      else GetSeqFeatLabel(*seq_feat_p, context_label);
+
       if (context_label.empty()) context_label = "Unknown context label";
       strtmp = label+"\t" + context_label + "\t" + location + "\t" + locus_tag;
       if (thisInfo.infile.empty()) {

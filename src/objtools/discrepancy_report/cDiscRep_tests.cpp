@@ -5080,6 +5080,7 @@ void CBioseq_FEATURE_LOCATION_CONFLICT :: GetReport(CRef <CClickableItem>& c_ite
   c_item->item_list.clear();
  
   size_t pos;
+  unsigned cnt=0;
   ITERATE (Str2Strs, it, ftp2feats) {
     if ( (pos = it->first.find("_missing") != string::npos) ) {
        AddSubcategory(c_item, 
@@ -5088,6 +5089,7 @@ void CBioseq_FEATURE_LOCATION_CONFLICT :: GetReport(CRef <CClickableItem>& c_ite
                       it->first.substr(0, pos) + " xref gene", 
                       "not exist", 
                       e_DoesComment);
+       cnt += it->second.size();
     }    
     else {
        AddSubcategory(c_item, 
@@ -5099,6 +5101,7 @@ void CBioseq_FEATURE_LOCATION_CONFLICT :: GetReport(CRef <CClickableItem>& c_ite
                       true,
                       kEmptyStr,
                       true);     
+      cnt += (it->second.size())/2;
     }
   }
 
@@ -5127,7 +5130,7 @@ void CBioseq_FEATURE_LOCATION_CONFLICT :: GetReport(CRef <CClickableItem>& c_ite
   }
 */
   c_item->description 
-        = GetHasComment(c_item->item_list.size()/2, "feature") + "inconsistent gene locations";
+        = GetHasComment(cnt, "feature") + "inconsistent gene locations";
 };
 
 
@@ -7172,6 +7175,7 @@ void CBioseq_OVERLAPPING_CDS :: TestOnObj(const CBioseq& bioseq)
   }
   i=0;
   bool span_circular;
+
   ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
     const CSeq_loc& loc_i = (*it)->GetLocation();
     span_circular = (loc_i.GetStart(eExtreme_Positional) 
@@ -7228,12 +7232,12 @@ void CBioseq_OVERLAPPING_CDS :: GetReport(CRef <CClickableItem>& c_item)
        desc2 = "coding regions overlap";
        desc3 = " another coding region with a similar or identical name but have the appropriate note text.";
      }
-     AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second),desc1, desc2, 
-                                                             e_OtherComment, true, desc3);
+     AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second),
+                    desc1, desc2, e_OtherComment, true, desc3);
    }
    c_item->description 
-     = GetOtherComment(c_item->item_list.size(), "coding region overlapps", 
-                                                                "coding regions overlap")
+     = GetOtherComment(c_item->item_list.size(), 
+                        "coding region overlapps", "coding regions overlap")
         + " another coding region with a similar or identical name.";
 }; // OVERLAPPING_CDS
 
@@ -7351,34 +7355,45 @@ void CBioseq_missing_genes_regular :: TestOnObj(const CBioseq& bioseq)
      if (m_super_idx[i++]) {
        desc = GetDiscItemText(**it);
        CConstRef <CObject> feat_ref (*it);
-       thisInfo.test_item_list[GetName_extra()].push_back("extra$" + desc);
-       thisInfo.test_item_objs[GetName_extra()+"$extra"].push_back(feat_ref);
        add_txt = kEmptyStr;
        const CSeqFeatData& seq_feat_dt = (*it)->GetData();
        if ( ((*it)->CanGetPseudo() && (*it)->GetPseudo()) 
                  || seq_feat_dt.GetGene().GetPseudo() 
                  || x_HasPseudogeneQualifier(**it) ) {
-            add_txt = "pseudo";
+          add_txt = "pseudo";
+          thisInfo.test_item_list[GetName_extra()].push_back("extra$" + desc);
+          thisInfo.test_item_objs[GetName_extra()+"$extra"].push_back(feat_ref);
        }
-       else {
-             if ((*it)->CanGetComment()) {
-               const string& comment = (*it)->GetComment();
-               // RemoveGenesWithNoteOrDescription
-               if (comment.empty()) {
+       else {  // non_pseudo_list in C
+          // RemoveGenesWithNoteOrDescription
+          if ( (*it)->CanGetComment() && !(*it)->GetComment().empty()) {
+              continue;
+          }
+          else {
+            const CGene_ref& gene_ref = seq_feat_dt.GetGene();
+            if (gene_ref.CanGetDesc() && !gene_ref.GetDesc().empty()) {
+               continue;
+            }
+            else {
+              thisInfo.test_item_list[GetName_extra()]
+                          .push_back("extra$" + desc);
+              thisInfo.test_item_objs[GetName_extra()+"$extra"]
+                          .push_back(feat_ref);
+            }
+          }
+          
+          // GetFrameshiftAndNonFrameshiftGeneList
+/* no sense: no seq-feat-comment after the RemoveGenesWithNoteOrDescription
+          if ((*it)->CanGetComment()) {
+             const string& comment = (*it)->GetComment();
+             if (comment.empty()) {
                  const CGene_ref& gene_ref = seq_feat_dt.GetGene();
                  if (!gene_ref.CanGetDesc() || gene_ref.GetDesc().empty()) 
                     add_txt = "nonshift";
-               }
-               
-/* this doesn't work after RemoveGenesWithNoteOrDescription
-              //GetFrameshiftAndNonFrameshiftGeneList,
-               if (string::npos != NStr::FindNoCase(comment, "frameshift")
-                    || string::npos!= NStr::FindNoCase(comment, "frame shift"))
-                   nm_desc = "frameshift$" + desc;
-               else nm_desc = "nonshift$" + desc;
-*/
              }
-             else add_txt = "nonshift";
+          }
+          else add_txt = "nonshift";
+*/
        }
        if (!add_txt.empty()) {
           thisInfo.test_item_list[GetName_extra()]
