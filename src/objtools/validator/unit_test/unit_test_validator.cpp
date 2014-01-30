@@ -18037,3 +18037,16 @@ BOOST_AUTO_TEST_CASE(Test_SQD_1532)
 {
     BOOST_CHECK_EQUAL(COrgMod::IsCultureCollectionValid("50% TSB + 2mM Cr(VI)"), "Culture_collection should be structured, but is not");
 }
+
+
+BOOST_AUTO_TEST_CASE(Test_SexQualifiers)
+{
+    BOOST_CHECK_EQUAL(CSubSource::IsValidSexQualifierValue("male"), true);
+    BOOST_CHECK_EQUAL(CSubSource::IsValidSexQualifierValue("llama"), false);
+    BOOST_CHECK_EQUAL(CSubSource::IsValidSexQualifierValue("m/f"), true);
+
+    BOOST_CHECK_EQUAL(CSubSource::FixSexQualifierValue("m/f"), "male and female");
+    BOOST_CHECK_EQUAL(CSubSource::FixSexQualifierValue("m/f/neuter"), "male, female, and neuter");
+
+}
+

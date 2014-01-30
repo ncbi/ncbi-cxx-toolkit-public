@@ -1357,8 +1357,11 @@ const char* sm_ValidSexQualifierValues[] = {
   "bisexual",
   "diecious",
   "dioecious",
+  "f",
   "female",
+  "gelding",
   "hermaphrodite",
+  "m",
   "male",
   "monecious",
   "monoecious",
@@ -1372,15 +1375,89 @@ bool CSubSource::IsValidSexQualifierValue (const string& value)
 {
     string str = value;
     NStr::ToLower(str);
+
+    vector<string> words;
+    NStr::Tokenize(value," ,/",words);
+    if (words.size() == 0) {
+        return false;
+    }
+
     size_t max = sizeof(sm_ValidSexQualifierValues) / sizeof(const char*);
 
     const char* *begin = sm_ValidSexQualifierValues;
     const char* *end = &(sm_ValidSexQualifierValues[max]);
 
-    return find(begin, end, str) != end;
+    bool is_good = false;
+
+    ITERATE(vector<string>, w, words) {
+        if (NStr::EqualNocase(*w, "and")) {
+            // ok, skip it
+        } else {
+            if (find(begin, end, *w) != end) {
+                is_good = true;
+            } else {
+                is_good = false;
+                break;
+            }
+        }
+    }
+    return is_good;
 }
 
 
+string CSubSource::FixSexQualifierValue (const string& value)
+{
+    string str = value;
+    NStr::ToLower(str);
+
+    vector<string> words;
+    NStr::Tokenize(value," ,/",words);
+
+    if (words.size() == 0) {
+        return "";
+    }
+    size_t max = sizeof(sm_ValidSexQualifierValues) / sizeof(const char*);
+
+    const char* *begin = sm_ValidSexQualifierValues;
+    const char* *end = &(sm_ValidSexQualifierValues[max]);
+
+    vector<string> good_values;
+
+    ITERATE(vector<string>, w, words) {
+        if (NStr::EqualNocase(*w, "and")) {
+            // ok, skip it
+        } else {
+            if (find(begin, end, *w) != end) {
+                if (NStr::Equal(*w, "m")) {
+                    good_values.push_back("male");
+                } else if (NStr::Equal(*w, "f")) {
+                    good_values.push_back("female");
+                } else {
+                    good_values.push_back(*w);
+                }
+            } else {
+                // if any bad values, can't autofix
+                return "";
+            }
+        }
+    }
+    if (good_values.size() == 0) {
+        // no good tokens, can't autofix
+        return "";
+    }
+
+    string fixed = good_values[0];
+    for (size_t i = 1; i < good_values.size(); i++) {
+        if (good_values.size() > 2) {
+            fixed += ",";
+        }
+        if (i == good_values.size() - 1) {
+            fixed += " and";
+        }
+        fixed += " " + good_values[i];
+    }
+    return fixed;
+}
 
 
 // =============================================================================

@@ -161,7 +161,7 @@ public:
                                      double& lat_value, double& lon_value);
     static string FixLatLonFormat (string orig_lat_lon, bool guess = false);
     static bool IsValidSexQualifierValue (const string& value);
-
+    static string FixSexQualifierValue (const string& value);
 
 private:
     // Prohibit copy constructor and assignment operator
