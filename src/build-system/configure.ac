@@ -1112,7 +1112,7 @@ case "$compiler:$compiler_version" in
      ncbi_cv_prog_c_99=no
      ;;
    ICC:* )
-     ncbi_cv_prog_c_99='-std=c99 -fgnu89-inline'
+     ncbi_cv_prog_c_99='-std=gnu99 -fgnu89-inline'
      ;;
 esac
 
