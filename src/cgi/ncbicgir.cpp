@@ -126,22 +126,18 @@ void CCgiResponse::RemoveHeaderValue(const string& name)
 bool CCgiResponse::x_ValidateHeader(const string& name, const string& value) const
 {
     // Very basic validation of names - prohibit CR/LF.
-    if (name.find_first_of("\n\r", 0) != NPOS) {
+    if (name.find("\n", 0) != NPOS) {
         return false;
     }
-    // Names may contain CR/LF, but only if followed by space or tab.
-    size_t pos = value.find_first_of("\n\r", 0);
+    // Values may contain [CR/]LF, but only if followed by space or tab.
+    size_t pos = value.find("\n", 0);
     while (pos != NPOS) {
         ++pos;
         if (pos >= value.size()) break;
-        if ((value[pos - 1] == '\n'  &&  value[pos] == '\r')  ||
-            (value[pos - 1] == '\r'  &&  value[pos] == '\n')) {
-            ++pos;
-        }
-        if (pos < value.size()  &&  value[pos] != ' '  &&  value[pos] != '\t') {
+        if (value[pos] != ' '  &&  value[pos] != '\t') {
             return false;
         }
-        pos = value.find_first_of("\n\r", pos);
+        pos = value.find("\n", pos);
     }
     return true;
 }
@@ -157,7 +153,9 @@ void CCgiResponse::SetHeaderValue(const string& name, const string& value)
         }
         else {
             NCBI_THROW(CCgiResponseException, eDoubleHeader,
-                       "CCgiResponse::SetHeaderValue() -- invalid header value");
+                       "CCgiResponse::SetHeaderValue() -- "
+                       "invalid header name or value: " +
+                       name + "=" + value);
         }
     }
 }
