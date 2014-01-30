@@ -327,7 +327,7 @@ static const char* s_StrErrorInternal(int error)
 #if defined(NCBI_OS_LINUX)  ||  defined(NCBI_OS_CYGWIN)
     for (i = 0;  i < sizeof(errsup) / sizeof(errsup[0]) - 1/*dummy*/;  ++i) {
         if (errsup[i].erroff < error) {
-            const char* errtxt = errsup[i].errfun(error);
+            const char* errtxt = errsup[i].errfun(error - errsup[i].erroff);
             if (errtxt  &&  *errtxt)
                 return errtxt;
         }
