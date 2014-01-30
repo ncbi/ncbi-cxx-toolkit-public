@@ -305,6 +305,10 @@ public:
     // AddBioseq().
     void RemoveTopLevelSeqEntry(CTSE_Handle entry);
 
+    CSeq_entry_Handle GetSeq_entryHandle(CDataLoader* loader,
+                                         const CBlobIdKey& blob_id,
+                                         TMissing action);
+
     // Deprecated interface
     CBioseq_Handle GetBioseqHandle(const CBioseq& bioseq,
                                    TMissing action);

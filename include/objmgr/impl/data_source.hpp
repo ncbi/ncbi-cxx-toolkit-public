@@ -271,6 +271,8 @@ public:
     typedef pair<CConstRef<CBioseq_set_Info>, TTSE_Lock> TBioseq_set_Lock;
     typedef pair<CConstRef<CBioseq_Info>, TTSE_Lock> TBioseq_Lock;
 
+    TSeq_entry_Lock GetSeq_entry_Lock(const CBlobIdKey& blob_id);
+
     TTSE_Lock FindTSE_Lock(const CSeq_entry& entry,
                            const TTSE_LockSet& history) const;
     TSeq_entry_Lock FindSeq_entry_Lock(const CSeq_entry& entry,

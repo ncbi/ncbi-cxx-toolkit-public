@@ -265,6 +265,7 @@ public:
 
     TTSE_Lock GetTSE_Lock(const CTSE_Lock& tse);
     TTSE_Lock FindTSE_Lock(const CSeq_entry& tse);
+    TSeq_entry_Lock GetSeq_entry_Lock(const CBlobIdKey& blob_id);
     TSeq_entry_Lock FindSeq_entry_Lock(const CSeq_entry& entry);
     TSeq_annot_Lock FindSeq_annot_Lock(const CSeq_annot& annot);
     TBioseq_set_Lock FindBioseq_set_Lock(const CBioseq_set& seqset);

@@ -1095,6 +1095,30 @@ void CScope_Impl::x_ClearCacheOnRemoveAnnot(const CTSE_Info& old_tse)
 }
 
 
+CSeq_entry_Handle CScope_Impl::GetSeq_entryHandle(CDataLoader* loader,
+                                                  const CBlobIdKey& blob_id,
+                                                  TMissing action)
+{
+    TConfReadLockGuard guard(m_ConfLock);
+    CRef<CDataSource_ScopeInfo> ds = x_GetDSInfo(*loader->GetDataSource());
+    if ( !ds ) {
+        NCBI_THROW(CObjMgrException, eFindFailed,
+                   "CScope::GetSeq_entryHandle(loader, blob_id): "
+                   "data loader is not in the scope");
+    }
+    TSeq_entry_Lock lock = ds->GetSeq_entry_Lock(blob_id);
+    if ( lock.first ) {
+        return CSeq_entry_Handle(*lock.first, *lock.second);
+    }
+    if ( action == CScope::eMissing_Null ) {
+        return CSeq_entry_Handle();
+    }
+    NCBI_THROW(CObjMgrException, eFindFailed,
+               "CScope::GetSeq_entryHandle(loader, blob_id): "
+               "entry is not found");
+}
+
+
 CBioseq_set_Handle CScope_Impl::GetBioseq_setHandle(const CBioseq_set& seqset,
                                                     TMissing action)
 {

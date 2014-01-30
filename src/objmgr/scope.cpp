@@ -110,6 +110,14 @@ CBioseq_Handle CScope::GetBioseqHandle(const CSeq_loc& loc)
 }
 
 
+CSeq_entry_Handle CScope::GetSeq_entryHandle(CDataLoader* data_loader,
+                                             const TBlobId& blob_id,
+                                             EMissing action)
+{
+    return m_Impl->GetSeq_entryHandle(data_loader, blob_id, action);
+}
+
+
 CTSE_Handle CScope::GetTSE_Handle(const CSeq_entry& entry,
                                   EMissing action)
 {

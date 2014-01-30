@@ -76,6 +76,8 @@ class CSeq_id_Handle;
 class CObjectManager;
 class CScope_Impl;
 class CSynonymsSet;
+class CBlobIdKey;
+class CDataLoader;
 
 
 /////////////////////////////////////////////////////////////////////////////
@@ -149,6 +151,14 @@ public:
         eMissing_Null,
         eMissing_Default = eMissing_Throw
     };
+
+    typedef CBlobIdKey TBlobId;
+    /// Get Seq-entry handle by its blob-id, with possible loading.
+    /// The blob-id can be obtained from CTSE_Handle::GetBlobId() or
+    /// from specific data loader (see CGBDataLoader::GetBlobId()).
+    CSeq_entry_Handle GetSeq_entryHandle(CDataLoader* loader,
+                                         const TBlobId& blob_id,
+                                         EMissing action = eMissing_Default);
 
     // Deprecated interface
     /// Find object in scope

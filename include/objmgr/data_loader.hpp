@@ -63,6 +63,7 @@ class CTSE_Chunk_Info;
 class CBioseq_Info;
 class IEditSaver;
 struct SAnnotSelector;
+class CScope_Impl;
 
 /////////////////////////////////////////////////////////////////////////////
 // structure to describe required data set
@@ -338,6 +339,7 @@ protected:
     CDataSource* GetDataSource(void) const;
 
     friend class CGBReaderRequestResult;
+    friend class CScope_Impl;
     
 private:
     CDataLoader(const CDataLoader&);

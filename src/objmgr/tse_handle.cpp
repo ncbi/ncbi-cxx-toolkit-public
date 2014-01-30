@@ -124,6 +124,12 @@ CTSE_Handle::TBlobId CTSE_Handle::GetBlobId(void) const
 }
 
 
+CDataLoader* CTSE_Handle::GetDataLoader(void) const
+{
+    return x_GetTSE_Info().GetDataSource().GetDataLoader();
+}
+
+
 bool CTSE_Handle::IsValid(void) const
 {
     return m_TSE && m_TSE->IsAttached();

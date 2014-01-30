@@ -383,6 +383,21 @@ CDataSource::FindTSE_Lock(const CSeq_entry& tse,
 
 
 CDataSource::TSeq_entry_Lock
+CDataSource::GetSeq_entry_Lock(const CBlobIdKey& blob_id)
+{
+    TSeq_entry_Lock ret;
+    {{
+        TMainLock::TReadLockGuard guard(m_DSMainLock);
+        ret.first = m_Loader->GetBlobById(blob_id);
+        if ( ret.first ) {
+            x_SetLock(ret.second, ConstRef(&ret.first->GetTSE_Info()));
+        }
+    }}
+    return ret;
+}
+
+
+CDataSource::TSeq_entry_Lock
 CDataSource::FindSeq_entry_Lock(const CSeq_entry& entry,
                                 const TTSE_LockSet& /*history*/) const
 {

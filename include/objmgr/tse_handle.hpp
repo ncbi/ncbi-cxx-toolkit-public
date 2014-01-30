@@ -56,6 +56,7 @@ class CSeq_entry_Handle;
 class CSeq_id;
 class CSeq_id_Handle;
 class CBlobIdKey;
+class CDataLoader;
 class CSeq_feat_Handle;
 class CAnnotObject_Info;
 class CObject_id;
@@ -94,6 +95,7 @@ public:
     /// TSE info getters
     typedef CBlobIdKey TBlobId;
     TBlobId GetBlobId(void) const;
+    CDataLoader* GetDataLoader(void) const;
 
     bool Blob_IsSuppressed(void) const;
     bool Blob_IsSuppressedTemp(void) const;

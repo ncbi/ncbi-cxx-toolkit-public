@@ -535,6 +535,21 @@ CDataSource_ScopeInfo::FindTSE_Lock(const CSeq_entry& tse)
 
 
 CDataSource_ScopeInfo::TSeq_entry_Lock
+CDataSource_ScopeInfo::GetSeq_entry_Lock(const CBlobIdKey& blob_id)
+{
+    CDataSource::TSeq_entry_Lock lock;
+    {{
+        TTSE_LockSetMutex::TReadLockGuard guard(m_TSE_LockSetMutex);
+        lock = GetDataSource().GetSeq_entry_Lock(blob_id);
+    }}
+    if ( lock.first ) {
+        return TSeq_entry_Lock(lock.first, GetTSE_Lock(lock.second));
+    }
+    return TSeq_entry_Lock();
+}
+
+
+CDataSource_ScopeInfo::TSeq_entry_Lock
 CDataSource_ScopeInfo::FindSeq_entry_Lock(const CSeq_entry& entry)
 {
     CDataSource::TSeq_entry_Lock lock;
