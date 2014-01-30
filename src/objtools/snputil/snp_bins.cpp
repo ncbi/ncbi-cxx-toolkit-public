@@ -157,7 +157,7 @@ int NSnpBins::ChooseSignificant(const SBinEntry* entry1, const SBinEntry* entry2
 CRef<NSnpBins::SBin> NSnpBins::GetBin(const objects::CSeq_annot_Handle& annot,
 								  TSeqRange range)
 {
-    static const CTableFieldHandle<int>      col_type("trackType");
+    const CTableFieldHandle<int>      col_type("trackType");
     int     pos_start, pos_end;
     int type;
     string title, comment;
@@ -190,19 +190,19 @@ CRef<NSnpBins::SBin> NSnpBins::GetBin(const objects::CSeq_annot_Handle& annot,
 CRef<NSnpBins::SBinEntry> NSnpBins::GetEntry(const objects::CSeq_annot_Handle& annot,
 								             int row)
 {
-    static const CTableFieldHandle<int>      col_pos("pos");
-    static const CTableFieldHandle<double>   col_val("pvalue");
-    static const CTableFieldHandle<string>   col_trait("trait");
-    static const CTableFieldHandle<string>   col_pmids("pmids");
-    static const CTableFieldHandle<string>   col_rgenes("reportedGenes");
-    static const CTableFieldHandle<string>   col_mgenes("mappedGenes");
-    static const CTableFieldHandle<int>      col_snpid("snpId");
-    static const CTableFieldHandle<int>      col_type("trackType");
-    static const CTableFieldHandle<int>      col_clinsigid("clinSigID");
-    static const CTableFieldHandle<string>   col_hgvs("HGVS");
-    static const CTableFieldHandle<string>   col_dbgaptext("dbgaptext");
-    static const CTableFieldHandle<string>   col_context("context");
-    static const CTableFieldHandle<int>      col_source("source");
+    const CTableFieldHandle<int>      col_pos("pos");
+    const CTableFieldHandle<double>   col_val("pvalue");
+    const CTableFieldHandle<string>   col_trait("trait");
+    const CTableFieldHandle<string>   col_pmids("pmids");
+    const CTableFieldHandle<string>   col_rgenes("reportedGenes");
+    const CTableFieldHandle<string>   col_mgenes("mappedGenes");
+    const CTableFieldHandle<int>      col_snpid("snpId");
+    const CTableFieldHandle<int>      col_type("trackType");
+    const CTableFieldHandle<int>      col_clinsigid("clinSigID");
+    const CTableFieldHandle<string>   col_hgvs("HGVS");
+    const CTableFieldHandle<string>   col_dbgaptext("dbgaptext");
+    const CTableFieldHandle<string>   col_context("context");
+    const CTableFieldHandle<int>      col_source("source");
 
     int     pos, snpid, ClinSigID;
     double  pvalue;
