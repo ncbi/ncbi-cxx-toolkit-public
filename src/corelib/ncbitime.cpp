@@ -2385,8 +2385,6 @@ string CTimeSpan::x_AsSmartString_Smart_Big(ERound rounding)
     SItem span[max_count];
 
     long days = GetCompleteDays();
-    long nanoseconds = GetNanoSecondsAfterSecond();
-
     span[0] = SItem(days/365  , "year"  );  days %= 365;
     span[1] = SItem(days/30   , "month" );  days %= 30;
     span[2] = SItem(days      , "day"   );
