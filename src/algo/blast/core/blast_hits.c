@@ -3395,6 +3395,29 @@ s_TrimResultsByTotalHSPLimit(BlastHSPResults* results, Uint4 total_hsp_limit)
 
     return hsp_limit_exceeded;
 }
+
+typedef struct BlastHSPwOid {
+	BlastHSP *  hsp;
+	Int4 		oid;
+} BlastHSPwOid;
+
+static int
+s_CompareScoreHSPwOid(const void* v1, const void* v2)
+{
+   BlastHSPwOid * r1 = (BlastHSPwOid *) v1;
+   BlastHSPwOid * r2 = (BlastHSPwOid *) v2;
+   return (s_EvalueCompareHSPs(&(r1->hsp), &(r2->hsp)));
+}
+
+static int
+s_CompareOidHSPwOid(const void* v1, const void* v2)
+{
+   BlastHSPwOid * r1 = (BlastHSPwOid *) v1;
+   BlastHSPwOid * r2 = (BlastHSPwOid *) v2;
+   return (r1->oid > r2->oid);
+}
+
+
 /* extended version of the above function. Provides information about query number
  * which exceeded number of HSP.
  * The hsp_limit_exceeded is of results->num_queries size guarantied.
@@ -3413,9 +3436,10 @@ s_TrimResultsByTotalHSPLimitEx(BlastHSPResults* results,
 
     for (query_index = 0; query_index < results->num_queries; ++query_index) {
         BlastHitList* hit_list = NULL;
-        BlastHSPList** hsplist_array = NULL;
         Int4 hsplist_count = 0;
         int subj_index;
+        Int4 total_hsps = 0;  /* total number of HSPs */
+
         if( hsp_limit_exceeded) hsp_limit_exceeded[query_index]  = FALSE;
 
         if ( !(hit_list = results->hitlist_array[query_index]) )
@@ -3423,39 +3447,69 @@ s_TrimResultsByTotalHSPLimitEx(BlastHSPResults* results,
         /* The count of HSPs is separate for each query. */
         hsplist_count = hit_list->hsplist_count;
 
-        hsplist_array = (BlastHSPList**) 
-            malloc(hsplist_count*sizeof(BlastHSPList*));
-        
         for (subj_index = 0; subj_index < hsplist_count; ++subj_index) {
-            hsplist_array[subj_index] = hit_list->hsplist_array[subj_index];
+        	total_hsps += hit_list->hsplist_array[subj_index]->hspcnt;
         }
- 
-        qsort((void*)hsplist_array, hsplist_count,
-              sizeof(BlastHSPList*), s_CompareHsplistHspcnt);
-        
-        {
-            Int4 tot_hsps = 0;  /* total number of HSPs */
-            Uint4 hsp_per_seq = MAX(1, total_hsp_limit/hsplist_count);
-            for (subj_index = 0; subj_index < hsplist_count; ++subj_index) {
-                Int4 allowed_hsp_num = ((subj_index+1)*hsp_per_seq) - tot_hsps;
-                BlastHSPList* hsp_list = hsplist_array[subj_index];
-                if (hsp_list->hspcnt > allowed_hsp_num) {
-                    /* Free the extra HSPs */
-                    int hsp_index;
-                    for (hsp_index = allowed_hsp_num; 
-                         hsp_index < hsp_list->hspcnt; ++hsp_index) {
-                        Blast_HSPFree(hsp_list->hsp_array[hsp_index]);
-                    }
-                    hsp_list->hspcnt = allowed_hsp_num;
-                    any_hsp_limit_exceeded = TRUE;
-        	    if( hsp_limit_exceeded ) hsp_limit_exceeded[query_index]  = FALSE;
-                }
-                tot_hsps += hsp_list->hspcnt;
-            }
-        }
-        sfree(hsplist_array);
-    }
 
+        if(total_hsps > total_hsp_limit)
+        {
+        	 BlastHSPwOid *  everything_list = (BlastHSPwOid *) malloc(total_hsps * sizeof(BlastHSPwOid));
+        	 BlastHSPList * subj_list;
+       		 int hsp_counter = 0;
+       		 int max_hit_list_size = hit_list->hsplist_max;
+        	 if( hsp_limit_exceeded) {
+        		 hsp_limit_exceeded[query_index]  = TRUE;
+        		 any_hsp_limit_exceeded = TRUE;
+        	 }
+        	 for (subj_index = 0; subj_index < hsplist_count; ++subj_index) {
+        		 int subj_hsp;
+        		 BlastHSP ** hsps_per_subj;
+        		 subj_list = hit_list->hsplist_array[subj_index];
+        		 hsps_per_subj = subj_list->hsp_array;
+        		 for(subj_hsp=0; subj_hsp < subj_list->hspcnt; ++subj_hsp) {
+        			 everything_list[hsp_counter].hsp = hsps_per_subj[subj_hsp];
+        			 everything_list[hsp_counter].oid = subj_list->oid;
+        			 hsps_per_subj[subj_hsp] = NULL;
+        			 hsp_counter ++;
+        		 }
+
+        	 }
+        	 results->hitlist_array[query_index] = Blast_HitListFree(hit_list);
+        	 qsort((void*)everything_list, total_hsps, sizeof(BlastHSPwOid), s_CompareScoreHSPwOid);
+
+        	 for(hsp_counter = total_hsp_limit; hsp_counter < total_hsps ; ++hsp_counter) {
+        		 everything_list[hsp_counter].hsp = Blast_HSPFree(everything_list[hsp_counter].hsp);
+        		 everything_list[hsp_counter].oid = 0x7fffff;
+        	 }
+
+        	 qsort((void*)everything_list, total_hsp_limit, sizeof(BlastHSPwOid), s_CompareOidHSPwOid);
+        	 subj_index = 0;
+       		 subj_list = NULL;
+        	 for(hsp_counter = 0; hsp_counter < total_hsp_limit; ++ hsp_counter)
+        	 {
+        		 int hsp_counter_start = hsp_counter;
+        		 int hspcnt;
+        		 int num_hsp;
+
+        		 while ((everything_list[hsp_counter].oid == everything_list[hsp_counter+1].oid) &&
+        				 (hsp_counter + 1 < total_hsp_limit)) {
+        			 hsp_counter ++;
+        		 }
+        		 num_hsp = hsp_counter -hsp_counter_start + 1;
+        		 subj_list = Blast_HSPListNew(num_hsp);
+        		 subj_list->oid = everything_list[hsp_counter].oid;
+        		 subj_list->query_index = query_index;
+
+        		 for(hspcnt = 0; hspcnt < num_hsp; ++hspcnt) {
+        			 Blast_HSPListSaveHSP(subj_list, everything_list[hsp_counter_start + hspcnt].hsp);
+        		 }
+
+        		 Blast_HSPResultsInsertHSPList(results,subj_list, max_hit_list_size );
+        	 }
+        	 free(everything_list);
+        }
+    }
+        
     return any_hsp_limit_exceeded;
 }
 
