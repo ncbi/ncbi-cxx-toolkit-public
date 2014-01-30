@@ -65,7 +65,7 @@ public:
     string C;
     string V;
     bool   J;
-    bool   I;
+    bool   m_copy_genid_to_note;
     string G;
     bool   R;
     bool   S;
@@ -126,6 +126,8 @@ public:
 
     void MergeSeqDescr(objects::CSeq_descr& dest, const objects::CSeq_descr& src) const;
     void MergeWithTemplate(objects::CSeq_entry& entry) const;
+    void SetSeqId(objects::CSeq_entry& entry) const;
+    void CopyFeatureIdsToComments(objects::CSeq_entry& entry) const;
 
     CRef<objects::CSeq_submit> m_submit_template;
     CRef<objects::CSeq_entry>  m_entry_template;

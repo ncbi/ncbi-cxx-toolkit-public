@@ -78,16 +78,6 @@ USING_SCOPE(objects);
 namespace
 {
 
-void GetSeqId(CRef<CSeq_id>& id, const CTable2AsnContext& context)
-{
-    if (context.m_SetIDFromFile)
-    {
-        string base;
-        CDirEntry::SplitPath(context.m_current_file, 0, &base, 0);
-        id.Reset(new CSeq_id(string("lcl|") + base));
-    }
-}
-
 }
 //  ============================================================================
 void DumpMemory(const string& prefix)
@@ -665,22 +655,10 @@ void CMultiReader::ApplyAdditionalProperties(CSeq_entry& entry)
     switch(entry.Which())
     {
     case CSeq_entry::e_Seq:
-        if (m_context.m_SetIDFromFile)
-        {
-            CRef<CSeq_id> id;
-            GetSeqId(id, m_context);
-            entry.SetSeq().SetId().push_back(id);
-        }
-
         break;
+
     case CSeq_entry::e_Set:
         {
-            if (m_context.m_SetIDFromFile)
-            {
-                CRef<CSeq_id> id;
-                GetSeqId(id, m_context);
-                entry.SetSet().SetId().Assign(*id);
-            }
             if (!entry.SetSet().IsSetClass())
             {
                 entry.SetSet().SetClass(CBioseq_set_Base::eClass_genbank);

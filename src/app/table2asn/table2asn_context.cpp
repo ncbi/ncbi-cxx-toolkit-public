@@ -35,6 +35,14 @@
 
 #include <corelib/ncbistd.hpp>
 
+#include <objmgr/object_manager.hpp>
+#include <objmgr/feat_ci.hpp>
+
+#include <objmgr/object_manager.hpp>
+#include <objmgr/feat_ci.hpp>
+#include <objmgr/bioseq_ci.hpp>
+#include <objects/general/Dbtag.hpp>
+
 #include <objects/submit/Seq_submit.hpp>
 #include <objects/seqset/Seq_entry.hpp>
 #include <objects/seq/Bioseq.hpp>
@@ -167,6 +175,7 @@ void x_ApplySourceQualifiers(objects::CBioseq& bioseq, const string& src_qualifi
 
 CTable2AsnContext::CTable2AsnContext():
     m_output(0),
+    m_copy_genid_to_note(false),
     m_ProjectVersionNumber(0),
     m_flipped_struc_cmt(false),
     m_RemoteTaxonomyLookup(false),
@@ -515,6 +524,72 @@ void CTable2AsnContext::MergeWithTemplate(CSeq_entry& entry) const
     if (entry.IsSeq())
     {
         MergeSeqDescr(entry.SetDescr(), m_entry_template->GetDescr());
+    }
+}
+
+void CTable2AsnContext::SetSeqId(CSeq_entry& entry) const
+{
+    if (entry.IsSeq())
+    {
+        string base;
+        CDirEntry::SplitPath(m_current_file, 0, &base, 0);
+        CRef<CSeq_id> id(new CSeq_id(string("lcl|") + base));
+        entry.SetSeq().SetId().clear();
+        entry.SetSeq().SetId().push_back(id);
+        // now it's good to rename features ....
+    }
+}
+
+void CTable2AsnContext::CopyFeatureIdsToComments(CSeq_entry& entry) const
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle h_entry = scope.AddTopLevelSeqEntry(entry);
+    for (CFeat_CI feat_it(h_entry, SAnnotSelector(CSeqFeatData::e_Rna) ); feat_it; ++feat_it)
+    {
+       //cout << "has feature" << endl;    
+    }
+}
+
+void CTable2AsnContext::SetSeqId(CSeq_entry& entry) const
+{
+    if (entry.IsSeq())
+    {
+        string base;
+        CDirEntry::SplitPath(m_current_file, 0, &base, 0);
+        CRef<CSeq_id> id(new CSeq_id(string("lcl|") + base));
+        entry.SetSeq().SetId().clear();
+        entry.SetSeq().SetId().push_back(id);
+        // now it's good to rename features ....
+    }
+}
+
+void CTable2AsnContext::CopyFeatureIdsToComments(CSeq_entry& entry) const
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle h_entry = scope.AddTopLevelSeqEntry(entry);
+    for (CBioseq_CI bioseq_it(h_entry); bioseq_it; ++bioseq_it)
+    {
+        for (CFeat_CI feat_it(*bioseq_it, SAnnotSelector(CSeqFeatData::e_Rna) ); feat_it; ++feat_it)
+        {
+            ITERATE(CBioseq::TId, id_it, bioseq_it->GetBioseqCore()->GetId())
+            {
+                if (!(**id_it).IsGeneral()) continue;
+
+                const string& dbtag = (**id_it).GetGeneral().GetDb();
+                if (NStr::Compare(dbtag, "TMSMART") == 0) continue;
+                if (NStr::Compare(dbtag, "NCBIFILE") == 0) continue;
+
+                CSeq_feat& feature = (CSeq_feat&) feat_it->GetOriginalFeature();
+
+                if (!feature.IsSetComment())
+                    feature.SetComment("");
+
+                string& comment = feature.SetComment();
+                if (!comment.empty())
+                    comment += "; ";
+                (**id_it).GetLabel(&comment);
+           }
+        }
     }
 }
 

@@ -218,16 +218,16 @@ void CTbl2AsnApp::Init(void)
                         g Generate Gene Report\n\
                         t Validate with TSA Check", CArgDescriptions::eString);
 
-    arg_desc->AddFlag("q", "Seq ID from File Name");      // almost done
+    arg_desc->AddFlag("q", "Seq ID from File Name");      // done
     arg_desc->AddFlag("u", "GenProdSet to NucProtSet");   // done
-    arg_desc->AddFlag("I", "General ID to Note");
+    arg_desc->AddFlag("I", "General ID to Note");         // copy id to note if they are general type
 
     arg_desc->AddOptionalKey("G", "String", "Alignment Gap Flags (comma separated fields, e.g., p,-,-,-,?,. )\n\
                                             n Nucleotide or p Protein,\n\
                                             Begin, Middle, End Gap Characters,\n\
                                             Missing Characters, Match Characters", CArgDescriptions::eString);
 
-    arg_desc->AddFlag("R", "Remote Sequence Record Fetching from ID");
+    arg_desc->AddFlag("R", "Remote Sequence Record Fetching from ID");  
     arg_desc->AddFlag("S", "Smart Feature Annotation");
 
     arg_desc->AddOptionalKey("Q", "String", "mRNA Title Policy\n\
@@ -236,7 +236,7 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddFlag("U", "Remove Unnecessary Gene Xref");
     arg_desc->AddFlag("L", "Force Local protein_id/transcript_id");
-    arg_desc->AddFlag("T", "Remote Taxonomy Lookup");               // almost done
+    arg_desc->AddFlag("T", "Remote Taxonomy Lookup");               // done
     arg_desc->AddFlag("P", "Remote Publication Lookup");            // done
     arg_desc->AddFlag("W", "Log Progress");
     arg_desc->AddFlag("K", "Save Bioseq-set");
@@ -366,6 +366,8 @@ int CTbl2AsnApp::Run(void)
     m_context.m_GenomicProductSet = args["g"].AsBoolean();
     m_context.m_HandleAsSet = args["s"].AsBoolean();
     m_context.m_NucProtSet = args["u"].AsBoolean();
+    m_context.m_SetIDFromFile = args["q"].AsBoolean();
+    m_context.m_copy_genid_to_note = args["I"].AsBoolean();
 
     if (m_context.m_NucProtSet || m_context.m_GenomicProductSet)
     {
@@ -562,6 +564,11 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         }
         entry->Parentize();
 
+        if (m_context.m_SetIDFromFile)
+        {
+            m_context.SetSeqId(*entry);
+        }
+
         m_context.HandleGaps(*entry);
 
         bool need_update_date = m_context.ApplyCreateDate(*entry);
@@ -586,6 +593,9 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     entry->Parentize();
     if (m_possible_proteins.NotEmpty())
         fr.AddProteins(*m_possible_proteins, *entry);
+
+    if (m_context.m_copy_genid_to_note)
+        m_context.CopyFeatureIdsToComments(*entry);
 
     if (m_context.m_RemoteTaxonomyLookup)
     {
