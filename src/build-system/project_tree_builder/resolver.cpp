@@ -378,7 +378,7 @@ void CExpansionRule::Init(const string& textrule,
         } else if (NStr::FindCase(m_Lvalue, "%") != NPOS) {
             m_Rule = ePattern;
         }
-        if (NStr::FindCase(m_Rvalue, "%") == NPOS) {
+        if (m_Rule == ePattern && NStr::FindCase(m_Rvalue, "%") == NPOS) {
             m_Rvalue = "%" + m_Rvalue;
         }
     }
@@ -393,7 +393,11 @@ string CExpansionRule::ApplyRule( const string& value) const
     } else if (value[0] == '@' && NStr::StartsWith(m_Rvalue, "-D")) {
         return kEmptyStr;
     } else if (m_Rule == eReplace && !m_Lvalue.empty()) {
-        return NStr::Replace(value, m_Lvalue, m_Rvalue);
+        if (NStr::EndsWith(value, m_Lvalue)) {
+            return NStr::Replace(value, m_Lvalue, m_Rvalue,
+                NStr::Find(value, m_Lvalue, 0, NPOS, NStr::eLast));
+        }
+        return value;
     }
 //    else if (m_Rule == ePattern) {
     string tmp(value);
