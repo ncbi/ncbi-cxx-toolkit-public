@@ -182,12 +182,19 @@ static SConnNetInfo* ConnNetInfo_Create(const char*    svc_name,
 }
 
 
+static inline bool x_IsFatalError(int error)
+{
+    return error == 400  ||  error == 403  ||  error == 404 ? true : false;
+}
+
+
 struct SAuxData {
     const ICanceled* m_Canceled;
+    bool             m_Failed;
     void*            m_Data;
 
     SAuxData(const ICanceled* canceled, void* data)
-        : m_Canceled(canceled), m_Data(data)
+        : m_Canceled(canceled), m_Failed(false), m_Data(data)
     { }
 };
 
@@ -195,8 +202,12 @@ struct SAuxData {
 extern "C" {
 
 static EHTTP_HeaderParse s_AnyHeader(const char* /*header*/,
-                                     void* /*data*/, int /*server_error*/)
+                                     void* data, int server_error)
 {
+    SAuxData* auxdata = reinterpret_cast<SAuxData*>(data);
+    _ASSERT(auxdata);
+    if (x_IsFatalError(server_error))
+        auxdata->m_Failed = true;
     return eHTTP_HeaderContinue;
 }
 
@@ -206,6 +217,8 @@ static EHTTP_HeaderParse s_SvcHeader(const char* header,
 {
     SAuxData* auxdata = reinterpret_cast<SAuxData*>(data);
     _ASSERT(auxdata);
+    if (x_IsFatalError(server_error))
+        auxdata->m_Failed = true;
     *((int*) auxdata->m_Data) =
         !server_error  &&  NStr::FindNoCase(header, "\nService: ") != NPOS
         ? 1
@@ -218,7 +231,8 @@ static int/*bool*/ s_Adjust(SConnNetInfo*, void* data, unsigned int /*count*/)
 {
     SAuxData* auxdata = reinterpret_cast<SAuxData*>(data);
     _ASSERT(auxdata);
-    return auxdata->m_Canceled  &&  auxdata->m_Canceled->IsCanceled()
+    return auxdata->m_Failed
+        ||  (auxdata->m_Canceled  &&  auxdata->m_Canceled->IsCanceled())
         ? 0/*false*/ : 1/*true*/;
 }
 
@@ -342,7 +356,7 @@ EIO_Status CConnTest::HttpOkay(string* reason)
                 : kEmptyStr);
     SAuxData* auxdata = new SAuxData(m_Canceled, 0);
     CConn_HttpStream http("http://" + host + port + "/Service/index.html",
-                          net_info, kEmptyStr/*user_header*/, 0/*parse_hdr*/,
+                          net_info, kEmptyStr/*user_header*/, s_AnyHeader,
                           auxdata, s_Adjust, s_Cleanup, 0/*flags*/, m_Timeout);
     http.SetCanceledCallback(m_Canceled);
     string temp;
@@ -567,7 +581,7 @@ EIO_Status CConnTest::x_GetFirewallConfiguration(const SConnNetInfo* net_info)
     if (!ConnNetInfo_GetValue(0, "FWD_URL", fwdurl, sizeof(fwdurl), kFWDUrl))
         return eIO_InvalidArg;
     SAuxData* auxdata = new SAuxData(m_Canceled, 0);
-    CConn_HttpStream fwdcgi(fwdurl, net_info, kEmptyStr/*usr_hdr*/, 0/*ckhdr*/,
+    CConn_HttpStream fwdcgi(fwdurl, net_info, kEmptyStr/*usrhdr*/, s_AnyHeader,
                             auxdata, s_Adjust, s_Cleanup, 0/*flg*/, m_Timeout);
     fwdcgi.SetCanceledCallback(m_Canceled);
     fwdcgi << "selftest" << NcbiEndl;
