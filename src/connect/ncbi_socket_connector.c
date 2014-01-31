@@ -35,10 +35,14 @@
 
 #include "ncbi_ansi_ext.h"
 #include "ncbi_assert.h"
+#include "ncbi_priv.h"
 #include "ncbi_socketp.h"
 #include <connect/ncbi_socket_connector.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+#define NCBI_USE_ERRCODE_X   Connect_Socket
+
 
 #define MAX_IP_ADDR_LEN       16 /* sizeof("255.255.255.255") */
 
@@ -59,6 +63,38 @@ typedef struct {
     size_t         size;      /* size of the "data" buffer                */
     const void*    data;      /* data to send to the server on connect    */
 } SSockConnector;
+
+
+/*ARGSUSED*/
+#ifdef __GNUC__
+inline
+#endif /*__GNUC__*/
+static const char* x_GetType(SSockConnector* xxx)
+{
+    return g_kNcbiSockNameAbbr;  /*NB: Important!*/
+}
+
+
+static char* x_Descr(SSockConnector* xxx)
+{
+    size_t hostlen, portlen;
+    char* buf, port[16];
+    if (!xxx->host)
+        return 0;
+    if (!xxx->port  &&  *xxx->host) {
+        portlen = 1/*EOL*/;
+        port[0] = '\0';
+    } else
+        portlen = (size_t) sprintf(port, ":%hu", xxx->port) + 1/*EOL*/;
+    hostlen = strlen(xxx->host);
+    buf = (char*) malloc(hostlen + portlen);
+    if (buf) {
+        memcpy(buf,           xxx->host, hostlen);
+        memcpy(buf + hostlen,      port, portlen);
+    }
+    return buf;
+}
+
 
 
 /***********************************************************************
@@ -96,34 +132,17 @@ extern "C" {
 #endif /* __cplusplus */
 
 
-/*ARGSUSED*/
 static const char* s_VT_GetType
 (CONNECTOR connector)
 {
-    return g_kNcbiSockNameAbbr; /*NB: Important!*/
+    return x_GetType((SSockConnector*) connector->handle);
 }
 
 
 static char* s_VT_Descr
 (CONNECTOR connector)
 {
-    SSockConnector* xxx = (SSockConnector*) connector->handle;
-    size_t hostlen, portlen;
-    char* buf, port[16];
-    if (!xxx->host)
-        return 0;
-    if (!xxx->port  &&  *xxx->host) {
-        portlen = 1/*EOL*/;
-        port[0] = '\0';
-    } else
-        portlen = (size_t) sprintf(port, ":%hu", xxx->port) + 1/*EOL*/;
-    hostlen = strlen(xxx->host);
-    buf = (char*) malloc(hostlen + portlen);
-    if (buf) {
-        memcpy(buf,           xxx->host, hostlen);
-        memcpy(buf + hostlen,      port, portlen);
-    }
-    return buf;
+    return x_Descr((SSockConnector*) connector->handle);
 }
 
 
@@ -135,17 +154,28 @@ static EIO_Status s_VT_Open
     EIO_Status status = eIO_Success;
 
     if (!xxx->sock) {
-        unsigned short i;
+        unsigned short n;
         if (!xxx->port)
             return eIO_Closed;
         assert(xxx->try_own);
-        for (i = 0;  i < xxx->try_own;  i++) {
+        for (n = 0;  n < xxx->try_own;  ++n) {
             /* connect */
             status = SOCK_CreateEx(xxx->host, xxx->port, timeout, &xxx->sock,
                                    xxx->data, xxx->size, xxx->flags);
             if (xxx->sock)
                 break;
             assert(status != eIO_Success);
+        }
+        if (!xxx->sock  &&  xxx->try_own > 1) {
+            char* descr = x_Descr(xxx);
+            CORE_LOGF_X(163, eLOG_Error,
+                        ("[%s%s%s]  Too many failed attempts (%hu), giving up",
+                         x_GetType(xxx),
+                         descr  &&  *descr ? "; "  : "",
+                         descr             ? descr : "",
+                         xxx->try_own));
+            if (descr)
+                free(descr);
         }
     }
     assert(!xxx->sock ^ !(status != eIO_Success));
