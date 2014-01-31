@@ -365,7 +365,7 @@ void CExpansionRule::Reset()
    m_Rule = eNoop;
 }
 void CExpansionRule::Init(const string& textrule,
-    CSymResolver* resolver,  const CSimpleMakeFileContents* data)
+    CSymResolver* /*resolver*/,  const CSimpleMakeFileContents* data)
 {
     Reset();
     if (NStr::SplitInTwo(textrule, "=", m_Lvalue, m_Rvalue)) {
@@ -379,7 +379,7 @@ void CExpansionRule::Init(const string& textrule,
             m_Rule = ePattern;
         }
         if (NStr::FindCase(m_Rvalue, "%") == NPOS) {
-            m_Rvalue.insert(0,1,'%');
+            m_Rvalue = "%" + m_Rvalue;
         }
     }
 }
