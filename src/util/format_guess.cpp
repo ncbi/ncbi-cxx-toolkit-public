@@ -1112,13 +1112,6 @@ CFormatGuess::TestFormatAlignment(
     list<string>::const_iterator iter = m_TestLines.begin();
     list<string> toks;
 
-    // Merge delims if > 1.  Do not merge single delims (since they could 
-    // more easily represent blank fields
-    NStr::EMergeDelims  merge_delims = NStr::eMergeDelims;
-    if (delims.size() == 1)
-        merge_delims = NStr::eNoMergeDelims;
-
-
     // Skip initial lines since not all headers start with comments like # or ;:
     // Don't skip though if file is very short - add up to 3, 1 for each line 
     // over 5:
