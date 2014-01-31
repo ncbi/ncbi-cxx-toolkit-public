@@ -527,7 +527,7 @@ bool CSeqMap_CI::x_Pop(void)
     if ( x_GetSegment().m_SegType == CSeqMap::eSeqRef ) {
         m_Selector.PopResolve();
     }
-    m_Selector.m_Length = x_GetSegmentInfo().x_CalcLength();
+    x_UpdateLength();
     return true;
 }
 
@@ -541,7 +541,7 @@ bool CSeqMap_CI::x_TopNext(void)
         return false;
     }
     else {
-        m_Selector.m_Length = x_GetSegmentInfo().x_CalcLength();
+        x_UpdateLength();
         return true;
     }
 }
@@ -555,7 +555,7 @@ bool CSeqMap_CI::x_TopPrev(void)
         return false;
     }
     else {
-        m_Selector.m_Length = x_GetSegmentInfo().x_CalcLength();
+        x_UpdateLength();
         m_Selector.m_Position -= m_Selector.m_Length;
         return true;
     }
@@ -689,6 +689,12 @@ bool CSeqMap_CI::IsValid(void) const
 }
 
 
+void CSeqMap_CI::x_UpdateLength(void)
+{
+    m_Selector.m_Length = x_GetSegmentInfo().x_CalcLength();
+}
+
+
 ////////////////////////////////////////////////////////////////////
 // CSeqMap_I
 
@@ -810,6 +816,7 @@ CSeqMap_I& CSeqMap_I::InsertRef(const CSeq_id_Handle& ref_id,
     m_SeqMap->SetSegmentRef(
         *this, ref_length, ref_id, ref_pos, ref_minus_strand);
     CSeqMap_CI::operator=(it);
+    x_UpdateLength();
     return *this;
 }
 
@@ -819,6 +826,7 @@ CSeqMap_I& CSeqMap_I::InsertData(TSeqPos length, CSeq_data& data)
     CSeqMap_CI it = InsertGap(0);
     m_SeqMap->SetSegmentData(*this, length, data);
     CSeqMap_CI::operator=(it);
+    x_UpdateLength();
     return *this;
 }
 
@@ -830,6 +838,7 @@ CSeqMap_I& CSeqMap_I::InsertData(const string&       buffer,
     CRef<CSeq_data> data(new CSeq_data);
     InsertData(0, *data);
     SetSequence(buffer, buffer_coding, seq_data_coding);
+    x_UpdateLength();
     return *this;
 }
 
@@ -911,6 +920,7 @@ void CSeqMap_I::SetSequence(const string&       buffer,
         break;
     }
     SetSeq_data(buffer.size(), *new_data);
+    x_UpdateLength();
 }
 
 
