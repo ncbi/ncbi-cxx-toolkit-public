@@ -849,9 +849,6 @@ template<typename Container>
 void __SET_LINK_ELEMENT(
     Container& container, const string& name, const string& value)
 {
-    if (value.empty()) {
-        return;
-    }
     CRef<msbuild::CLink::C_E> e(new msbuild::CLink::C_E);
     e->SetAnyContent().SetName(name);
     e->SetAnyContent().SetValue(CUtf8::AsUTF8(value,eEncoding_UTF8));
@@ -1165,7 +1162,9 @@ void CMsvcProjectGenerator::GenerateMsbuild(
 #endif
                 __SET_LINK(p, SubSystem);
                 __SET_LINK(p, TargetMachine);
-                __SET_LINK(p, ImageHasSafeExceptionHandlers);
+                if (!msvc_tool.Linker()->ImageHasSafeExceptionHandlers().empty()) {
+                    __SET_LINK(p, ImageHasSafeExceptionHandlers);
+                }
             }
             // librarian
             {
