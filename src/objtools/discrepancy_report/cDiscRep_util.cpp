@@ -1020,7 +1020,7 @@ string CTestAndRepData :: GetDiscItemText(const CBioseq& bioseq)
       if (!bioseq_handle) return kEmptyStr;
       unsigned ambigs_cnt = 0, gap_cnt = 0;
       SSeqMapSelector sel(CSeqMap::fDefaultFlags);
-      if (bioseq.GetInst().CanGetSeq_data()) {   // is this necessary?
+      if (bioseq.GetInst().CanGetSeq_data()) { 
         for (CSeqMap_CI seqmap_ci(bioseq_handle, sel); seqmap_ci;  ++seqmap_ci){
             if (seqmap_ci.GetType() == CSeqMap::eSeqGap) {
                  gap_cnt += seqmap_ci.GetLength();

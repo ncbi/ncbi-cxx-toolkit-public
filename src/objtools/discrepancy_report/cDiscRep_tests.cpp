@@ -962,6 +962,8 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
       }       
    }
  
+    if (bioseq.IsAa()) return;
+
     bool is_dna = (bioseq.GetInst().GetMol() == CSeq_inst::eMol_dna);
     bool is_rna = (bioseq.GetInst().GetMol() == CSeq_inst::eMol_rna);
 
@@ -1055,15 +1057,17 @@ void CBioseq_on_Aa :: TestOnObj(const CBioseq& bioseq)
    }
        
    // TEST_ORGANELLE_NOT_GENOMIC
-   bool run_test = false;
+   bool run_test = true;
    if (molinfo) {
      int biomol = molinfo->GetBiomol();
      if ( ( biomol == CMolInfo::eBiomol_genomic 
                          || biomol == CMolInfo::eBiomol_unknown)
             && is_dna) {
-          run_test = true;
+          run_test = false;
      }
    }
+   else run_test = false;
+
    if (run_test && thisTest.tests_run.find(GetName_orgl()) != end_it) {
      ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) {
        const CBioSource& biosrc = (*it)->GetSource();
@@ -2128,9 +2132,6 @@ void CBioseq_DISC_FEAT_OVERLAP_SRCFEAT :: TestOnObj(const CBioseq& bioseq)
       if (ovp != sequence::eNoOverlap 
               && ovp != sequence::eContained 
               && ovp != sequence::eSame) {
-         thisInfo.test_item_list[GetName()].push_back(src_desc +"$" +feat_desc);
-         thisInfo.test_item_objs[GetName() + "$" + src_desc].push_back(
-                                                   CConstRef <CObject>(*jt));
          if (!src_added) {
              thisInfo.test_item_list[GetName()]
                          .push_back(src_desc +"$" +src_desc);
@@ -2138,6 +2139,9 @@ void CBioseq_DISC_FEAT_OVERLAP_SRCFEAT :: TestOnObj(const CBioseq& bioseq)
                         .push_back(CConstRef <CObject>(*it));
              src_added = true;
          }
+         thisInfo.test_item_list[GetName()].push_back(src_desc +"$" +feat_desc);
+         thisInfo.test_item_objs[GetName() + "$" + src_desc].push_back(
+                                                   CConstRef <CObject>(*jt));
       }
     }
   }
@@ -2155,11 +2159,10 @@ void CBioseq_DISC_FEAT_OVERLAP_SRCFEAT :: GetReport(CRef <CClickableItem>& c_ite
          c_item->setting_name = GetName();
          thisInfo.disc_report_data.push_back(c_item);
      }
-     c_item->item_list.push_back(it->first);
      copy(it->second.begin(), it->second.end(), 
           back_inserter(c_item->item_list));
      c_item->obj_list = thisInfo.test_item_objs[GetName()+ "$" + it->first];
-     c_item->description = GetOtherComment(c_item->item_list.size(), 
+     c_item->description = GetOtherComment(c_item->item_list.size()-1, 
                                          "feature overlaps", "features overlap")
                              + " a source feature.";
    };
@@ -4525,7 +4528,7 @@ void CBioseq_on_base :: x_AddNsReport(CRef <CClickableItem>& c_item)
      rep_dt.clear();
    }
    c_item->description = GetHasComment(c_item->item_list.size(), "sequence") 
-                           + "runs of " + (is_n10 ? "10":"14") + " or more Ns.";
+                           + "runs of " + (is_n10 ? "10":"15") + " or more Ns.";
 };
 
 void CBioseq_N_RUNS :: GetReport(CRef <CClickableItem>& c_item) 
@@ -4546,18 +4549,11 @@ void CBioseq_ZERO_BASECOUNT :: GetReport(CRef <CClickableItem>& c_item)
 
    string base_tp;
    ITERATE (Str2Strs, it, bases2list) {
-     CRef <CClickableItem> c_sub (new CClickableItem);
-     c_sub->setting_name = GetName();
-     c_sub->item_list = it->second;
-     c_sub->description = GetHasComment(c_sub->item_list.size(), "sequence") 
-                          + "no " + it->first + "s.";
-     c_sub->obj_list = thisInfo.test_item_objs[GetName() + "$" + it->first];
-     c_item->subcategories.push_back(c_sub);
-     copy(it->second.begin(), it->second.end(), 
-          back_inserter(c_item->item_list));
-     copy(c_sub->obj_list.begin(), c_sub->obj_list.end(),
-          back_inserter( c_item->obj_list));
+     AddSubcategory(c_item, GetName() + "$" + it->first, &(it->second), 
+                      "sequence", "no " + it->first + "s.", e_HasComment );
    }
+   c_item->description = GetHasComment(c_item->item_list.size(), "sequence") 
+                           + "a zero basecount for a nucleotide";
 };
 
 void CBioseq_DISC_PERCENT_N :: GetReport(CRef <CClickableItem>& c_item)
@@ -5359,6 +5355,7 @@ void CBioseq_INCONSISTENT_LOCUS_TAG_PREFIX :: GetReport(CRef <CClickableItem>& c
   Str2Strs prefix2dups;
   GetTestItemList(c_item->item_list, prefix2dups);
   c_item->item_list.clear();
+  if (prefix2dups.size() <=1) return;
   ITERATE (Str2Strs, it, prefix2dups) {
      if (it != prefix2dups.begin()) {
         c_item.Reset(new CClickableItem);
@@ -5886,9 +5883,16 @@ void CBioseq_test_on_genprod_set :: TestOnObj(const CBioseq& bioseq)
    if (thisTest.is_GP_Set_run) return;
    thisTest.is_GP_Set_run = true;
 
-   if (!bioseq.IsNa()) {thisTest.is_GP_Set_run = true; return; }
+   if (!bioseq.IsNa()) {
+       return; 
+   }
    CConstRef <CBioseq_set> set = bioseq.GetParentSet();
-   if (set.Empty()) { thisTest.is_GP_Set_run = true; return;}
+   if (set.Empty()) { 
+      return;
+   }
+   if (set->GetClass() != CBioseq_set::eClass_gen_prod_set) {
+      return;
+   }
 
    bool run_mprot = (thisTest.tests_run.find(GetName_mprot()) != end_it);
    bool run_dprot = (thisTest.tests_run.find(GetName_dprot()) != end_it);
@@ -5915,6 +5919,7 @@ void CBioseq_test_on_genprod_set :: TestOnObj(const CBioseq& bioseq)
    }
 
    /* look for missing transcript IDs and duplicate transcript IDs on mRNAs */
+   // MISSING_GENPRODSET_TRANSCRIPT_ID
    if (run_mtid || run_dtid) {
      ITERATE (vector <const CSeq_feat*>, it, mrna_feat) {
        desc = GetDiscItemText(**it);
@@ -5922,7 +5927,7 @@ void CBioseq_test_on_genprod_set :: TestOnObj(const CBioseq& bioseq)
           if ( run_mtid && (!(*it)->CanGetPseudo() || !(*it)->GetPseudo()))
             thisInfo.test_item_list[GetName_mtid()].push_back(desc);
        }
-       else if (run_dtid) {
+       else if (run_dtid) { // DUP_GENPRODSET_TRANSCRIPT_ID
           const CSeq_id& seq_id = sequence::GetId((*it)->GetProduct(), thisInfo.scope);
           seq_id.GetLabel(&prod_id); 
           thisInfo.test_item_list[GetName_dtid()].push_back(prod_id + "$" + desc);
@@ -6017,7 +6022,10 @@ void CBioseq_test_on_prot :: TestOnObj(const CBioseq& bioseq)
             strtmp = dbtag.GetDb();
             if (run_prefix) {
                if (!strtmp.empty()) {
-                  thisInfo.test_item_list[GetName_prefix()].push_back(strtmp + "$" + desc);
+                  thisInfo.test_item_list[GetName_prefix()]
+                             .push_back(strtmp + "$" + desc);
+                  thisInfo.test_item_objs[GetName_prefix() + "$" + strtmp]
+                             .push_back(seq_ref);
                   break;
                }
             }
@@ -6051,23 +6059,6 @@ void CBioseq_MISSING_PROTEIN_ID:: GetReport(CRef <CClickableItem>& c_item)
                          + "invalid " + ( (cnt > 1)? "IDs." : "ID." );
 };
 
-
-void CBioseq_INCONSISTENT_PROTEIN_ID :: MakeRep(const Str2Strs& item_map, const string& desc1, const string& desc2)
-{
-   string setting_name = GetName();
-   ITERATE (Str2Strs, it, item_map) {
-     if (it->second.size() > 1) {
-       CRef <CClickableItem> c_item(new CClickableItem);
-       c_item->setting_name = setting_name;
-       c_item->item_list = it->second;
-       c_item->description = GetHasComment(c_item->item_list.size(), desc1) 
-                             + desc2 + it->first +".";
-       thisInfo.disc_report_data.push_back(c_item);
-     }
-   }
-};
-
-
 void CBioseq_INCONSISTENT_PROTEIN_ID :: GetReport(CRef <CClickableItem>& c_item)
 {
    Str2Strs db2list, prefix2list;
@@ -6077,13 +6068,19 @@ void CBioseq_INCONSISTENT_PROTEIN_ID :: GetReport(CRef <CClickableItem>& c_item)
    c_item->item_list.clear();
 
    // ReportInconsistentGlobalDiscrepancyStrings
-   if (db2list.size() > 1) {
-       MakeRep(db2list, "sequence", "protein ID prefix ");
-   }
-
    // ReportInconsistentGlobalDiscrepancyPrefixes
-   if (prefix2list.size() > 1) {
-       MakeRep(prefix2list, "feature", "locus tag prefix ");
+   if (db2list.size() > 1) {
+     ITERATE (Str2Strs, it, db2list) {
+       if (it != db2list.begin()) {
+         c_item.Reset(new CClickableItem);
+         thisInfo.disc_report_data.push_back(c_item);
+         c_item->setting_name = GetName();
+       }
+       c_item->item_list = it->second;
+       c_item->obj_list = thisInfo.test_item_objs[GetName()+ "$" + it->first];
+       c_item->description = GetHasComment(c_item->item_list.size(), "sequence")
+                             + "protein ID prefix " + it->first +".";
+     }
    }
 };
 
@@ -9335,9 +9332,11 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
 
   // CheckTaxNamesAgainstTaxDatabase in tax3api.c
   // TAX_LOOKUP_MISSING, TAX_LOOKUP_MISMATCH
+  // CTaxno1::Lookup gives all tax: public and non-public
   string org_tax, db_tax;
   org_tax 
      = biosrc.GetOrg().CanGetTaxname()? biosrc.GetOrg().GetTaxname() :kEmptyStr;
+
   if (m_run_tmiss || m_run_tbad) {
      CRef <CTaxon2_data> 
          lookup_tax = thisInfo.tax_db_conn.Lookup(biosrc.GetOrg());

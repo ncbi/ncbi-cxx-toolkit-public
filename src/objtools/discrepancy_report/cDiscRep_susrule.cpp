@@ -2630,11 +2630,16 @@ string CSuspectRuleCheck :: GetQualFromFeatureAnyType(const CSeq_feat& seq_feat,
   else if (seq_fdt.IsCdregion()) {
     prot = seq_feat.GetProtXref();
     if (!prot && seq_feat.CanGetProduct()) {
-      prot_hl = GetBioseqFromSeqLoc(seq_feat.GetProduct(), *thisInfo.scope); 
-      if (prot_hl) {
-         const CSeq_feat* prot_f = GetPROTForProduct(prot_hl);
-         if (prot_f) prot = &(prot_f->GetData().GetProt());
-      }
+     CConstRef <CSeq_feat> prot_seq_feat;
+     prot_seq_feat 
+        = CConstRef <CSeq_feat> (
+              sequence::GetBestOverlappingFeat(seq_feat.GetProduct(),
+                                             CSeqFeatData::e_Prot,
+                                             sequence::eOverlap_Contains,
+                                             *thisInfo.scope));
+     if (prot_seq_feat.NotEmpty()) {
+       prot = &(prot_seq_feat->GetData().GetProt());
+     }
     }
   }
 
@@ -3328,7 +3333,8 @@ CConstRef <CSeq_feat> CSuspectRuleCheck::AddProtFeatForCds(const CSeq_feat& cd_f
 void CSuspectRuleCheck :: GetProtFromCodingRegion (CRef <CCGPSetData>& cgp, const CSeq_feat& cd_feat)
 {
   if (cd_feat.CanGetProduct()) {
-    CBioseq_Handle prot_bhl = GetBioseqFromSeqLoc (cd_feat.GetProduct(), *thisInfo.scope);
+    CBioseq_Handle 
+       prot_bhl = GetBioseqFromSeqLoc (cd_feat.GetProduct(), *thisInfo.scope);
     if (prot_bhl)
     {
       cgp->prot = GetPROTForProduct(prot_bhl);
@@ -3340,8 +3346,9 @@ void CSuspectRuleCheck :: GetProtFromCodingRegion (CRef <CCGPSetData>& cgp, cons
       }
 
       /* also add in mat_peptides from protein feature */
-      for (CFeat_CI fci(prot_bhl, SAnnotSelector(CSeqFeatData::eSubtype_mat_peptide_aa).SetByProduct()); fci; ++fci)
+      for (CFeat_CI fci(prot_bhl, SAnnotSelector(CSeqFeatData::eSubtype_mat_peptide_aa).SetByProduct()); fci; ++fci) {
           cgp->mat_peptide_list.push_back(fci->GetSeq_feat());
+      }
     }
   }
 };
@@ -3802,23 +3809,30 @@ bool CSuspectRuleCheck :: DoesFeatureMatchCGPPseudoConstraint (const CSeq_feat& 
          if (sf_is_pseudo) any_pseudo = true;
        } 
        else if (sf_dt.IsProt()) {
-         const CSeq_feat* prot = GetPROTForProduct(m_bioseq_hl);
-         if (prot && prot->CanGetPseudo() && prot->GetPseudo()) any_pseudo = true;
+         const CSeq_feat* prot = GetPROTForProduct(m_bioseq_hl);  // mature prot
+         if (prot && prot->CanGetPseudo() && prot->GetPseudo()) {
+              any_pseudo = true;
+         }
        } 
        else if (sf_dt.IsCdregion()) {
          if (seq_feat.CanGetProduct()) {
-            const CSeq_feat* prot = GetPROTForProduct(
-                                 GetBioseqFromSeqLoc(seq_feat.GetProduct(), *thisInfo.scope));
-            if (prot && prot->CanGetPseudo() && prot->GetPseudo()) any_pseudo = true;
+            const CSeq_feat* 
+               prot = GetPROTForProduct(
+                   GetBioseqFromSeqLoc(seq_feat.GetProduct(), *thisInfo.scope));
+            if (prot && prot->CanGetPseudo() && prot->GetPseudo()) {
+                any_pseudo = true;
+            }
          }
        } 
        else {
          vector <const CSeq_feat*> feat_list;
-         ListFeaturesInLocation(sf_loc,CSeqFeatData::eSubtype_cdregion,feat_list);
+         ListFeaturesInLocation(sf_loc, CSeqFeatData::eSubtype_cdregion,
+                                  feat_list);
          ITERATE (vector <const CSeq_feat*>, it, feat_list) {
             if ( (*it)->CanGetProduct()) {
-               const CSeq_feat* prot = GetPROTForProduct(
-                              GetBioseqFromSeqLoc( (*it)->GetProduct(), *thisInfo.scope));
+               const CSeq_feat* 
+                 prot = GetPROTForProduct(
+                    GetBioseqFromSeqLoc( (*it)->GetProduct(), *thisInfo.scope));
                if (prot && prot->CanGetPseudo() && prot->GetPseudo()) {
                   any_pseudo = true;
                   break;

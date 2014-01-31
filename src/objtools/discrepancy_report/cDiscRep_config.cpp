@@ -1419,7 +1419,7 @@ static const s_test_property test_list[] = {
 // tests_on_Bioseq_aa
    {"COUNT_PROTEINS", fMegaReport},
    {"MISSING_PROTEIN_ID", fDiscrepancy | fAsndisc | fMegaReport| fMegaReport},
-   {"INCONSISTENT_PROTEIN_ID", fDiscrepancy},
+   {"INCONSISTENT_PROTEIN_ID", fAsndisc | fDiscrepancy},
 
 // tests_on_Bioseq_na
    {"DISC_COUNT_NUCLEOTIDES", fAsndisc | fOncaller| fMegaReport},
@@ -1508,7 +1508,7 @@ static const s_test_property test_list[] = {
    {"MISSING_LOCUS_TAGS", fDiscrepancy | fMegaReport},
    {"DUPLICATE_LOCUS_TAGS", fDiscrepancy | fAsndisc},
    {"DUPLICATE_LOCUS_TAGS_global", fDiscrepancy | fAsndisc},
-   {"INCONSISTENT_LOCUS_TAG_PREFIX", fDiscrepancy},
+   {"INCONSISTENT_LOCUS_TAG_PREFIX", fAsndisc | fDiscrepancy},
    {"BAD_LOCUS_TAG_FORMAT", fDiscrepancy | fAsndisc},
    {"FEATURE_LOCATION_CONFLICT", fDiscrepancy | fAsndisc | fMegaReport},
 
