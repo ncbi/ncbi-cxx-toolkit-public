@@ -176,6 +176,7 @@ void x_ApplySourceQualifiers(objects::CBioseq& bioseq, const string& src_qualifi
 CTable2AsnContext::CTable2AsnContext():
     m_output(0),
     m_copy_genid_to_note(false),
+    m_remove_unnec_xref(false),
     m_ProjectVersionNumber(0),
     m_flipped_struc_cmt(false),
     m_RemoteTaxonomyLookup(false),
@@ -570,5 +571,44 @@ void CTable2AsnContext::CopyFeatureIdsToComments(CSeq_entry& entry) const
     }
 }
 
+void CTable2AsnContext::RemoveUnnecessaryXRef(CSeq_entry& entry) const
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle h_entry = scope.AddTopLevelSeqEntry(entry);
+}
+
+void CTable2AsnContext::SmartFeatureAnnotation(CSeq_entry& entry) const
+{
+    CScope scope(*CObjectManager::GetInstance());
+    CSeq_entry_Handle h_entry = scope.AddTopLevelSeqEntry(entry);
+
+    size_t numgene = 0;
+
+    std::vector<CSeq_feat*> cds;
+    std::vector<CSeq_feat*> rnas;
+    for (CFeat_CI feat_it(h_entry); feat_it; ++feat_it)
+    {
+        if (!feat_it->IsSetData())
+            continue;
+
+        switch (feat_it->GetData().Which())
+        {
+        case CSeqFeatData::e_Gene:
+            numgene++;
+            break;
+        case CSeqFeatData::e_Cdregion:
+            cds.push_back((CSeq_feat*) &feat_it->GetOriginalFeature());
+            break;
+        case CSeqFeatData::e_Rna:
+            rnas.push_back((CSeq_feat*) &feat_it->GetOriginalFeature());
+            break;
+        default:
+            break;
+        }
+    }
+    if (numgene == 0)
+        return;
+
+}
 
 END_NCBI_SCOPE

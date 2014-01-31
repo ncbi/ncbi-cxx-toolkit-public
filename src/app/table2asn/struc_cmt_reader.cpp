@@ -230,5 +230,10 @@ void CStructuredCommentsReader::AddSourceQualifier(CBioseq& container, const str
     mod.ApplyAllMods(container);
 }
 
+CStructuredComments::CStructuredComments(objects::CSeq_entry& container)
+    :m_entry(&container)
+{
+}
+
 END_NCBI_SCOPE
 

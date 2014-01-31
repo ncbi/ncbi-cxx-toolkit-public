@@ -70,7 +70,7 @@ public:
     bool   R;
     bool   S;
     string Q;
-    bool   U;
+    bool   m_remove_unnec_xref;
     bool   L;
     bool   W;
     bool   K;
@@ -78,7 +78,7 @@ public:
     string ZOutFile;
     string zOufFile;
     string X;
-    string M;
+    string m_master_genome_flag;
     string l;
     string m;
     string m_single_structure_cmt;
@@ -128,6 +128,8 @@ public:
     void MergeWithTemplate(objects::CSeq_entry& entry) const;
     void SetSeqId(objects::CSeq_entry& entry) const;
     void CopyFeatureIdsToComments(objects::CSeq_entry& entry) const;
+    void RemoveUnnecessaryXRef(objects::CSeq_entry& entry) const;
+    void SmartFeatureAnnotation(objects::CSeq_entry& entry) const;
 
     CRef<objects::CSeq_submit> m_submit_template;
     CRef<objects::CSeq_entry>  m_entry_template;

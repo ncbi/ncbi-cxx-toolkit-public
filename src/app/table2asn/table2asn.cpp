@@ -220,7 +220,7 @@ void CTbl2AsnApp::Init(void)
 
     arg_desc->AddFlag("q", "Seq ID from File Name");      // done
     arg_desc->AddFlag("u", "GenProdSet to NucProtSet");   // done
-    arg_desc->AddFlag("I", "General ID to Note");         // copy id to note if they are general type
+    arg_desc->AddFlag("I", "General ID to Note");         // done
 
     arg_desc->AddOptionalKey("G", "String", "Alignment Gap Flags (comma separated fields, e.g., p,-,-,-,?,. )\n\
                                             n Nucleotide or p Protein,\n\
@@ -368,6 +368,12 @@ int CTbl2AsnApp::Run(void)
     m_context.m_NucProtSet = args["u"].AsBoolean();
     m_context.m_SetIDFromFile = args["q"].AsBoolean();
     m_context.m_copy_genid_to_note = args["I"].AsBoolean();
+    m_context.m_remove_unnec_xref = args["U"].AsBoolean();
+    if (args["M"])
+    {
+        m_context.m_master_genome_flag = args["M"].AsString();
+        m_context.m_remove_unnec_xref = true;
+    }
 
     if (m_context.m_NucProtSet || m_context.m_GenomicProductSet)
     {
@@ -547,6 +553,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     CRef<CSeq_entry> entry;
     m_context.m_avoid_orf_lookup = false;
     bool avoid_submit_block = false;
+    bool do_dates = false;
 
     if (m_context.m_current_file.substr(m_context.m_current_file.length()-4).compare(".xml") == 0)
     {
@@ -557,6 +564,7 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     }
     else
     {
+        do_dates = true;
         entry = m_reader->LoadFile(m_context.m_current_file);
         if (m_fcs_reader.get())
         {
@@ -570,10 +578,6 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
         }
 
         m_context.HandleGaps(*entry);
-
-        bool need_update_date = m_context.ApplyCreateDate(*entry);
-        if (need_update_date)
-            m_context.ApplyUpdateDate(*entry);
     }
 
     if (m_context.m_descriptors.NotNull())
@@ -603,6 +607,13 @@ void CTbl2AsnApp::ProcessOneFile(CRef<CSerialObject>& result)
     }
 
     m_context.ApplyAccession(*entry);
+
+    if (do_dates)
+    {
+        // if create-date exists apply update date
+        if (m_context.ApplyCreateDate(*entry))
+            m_context.ApplyUpdateDate(*entry);
+    }
 
     if (avoid_submit_block)
         result = m_context.CreateSeqEntryFromTemplate(entry);

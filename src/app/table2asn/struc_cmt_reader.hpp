@@ -70,6 +70,14 @@ private:
     objects::IMessageListener* m_logger;
 };
 
+class CStructuredComments
+{
+public:
+    CStructuredComments(objects::CSeq_entry& container);
+protected:
+    CRef<objects::CSeq_entry> m_entry;
+};
+
 END_NCBI_SCOPE
 
 

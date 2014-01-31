@@ -878,7 +878,6 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
         throw runtime_error("The Seq-entry must be a Bioseq not a Bioseq-set.");
     }
 
-#if 0
     if (context.m_submit_template.NotEmpty())
     {
         if (context.m_submit_template->IsSetSub() &&
@@ -888,7 +887,6 @@ void CMultiReader::LoadTemplate(CTable2AsnContext& context, const string& ifname
         context.m_submit_template->SetSub().SetCit().SetDate(*date);
         }
     }
-#endif
 
 #if 0
     if( args["output-type"].AsString() == "Seq-entry" ) {
