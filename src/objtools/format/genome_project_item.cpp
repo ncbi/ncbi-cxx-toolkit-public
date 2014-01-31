@@ -217,10 +217,10 @@ void CGenomeProjectItem::x_GatherInfo(CBioseqContext& ctx)
     typedef SStaticPair<const char *, SDbLinkLabelInfo> TDbLinkLabelToInfo;
     static const TDbLinkLabelToInfo kDbLinkLabelToInfo[] = {
         { "Assembly",               { true,  false, "http://www.ncbi.nlm.nih.gov/assembly/" } },
-        { "BioProject",             { true,  false, "http://www.ncbi.nlm.nih.gov/bioproject?term=" } },
-        { "BioSample",              { true,  false, "http://www.ncbi.nlm.nih.gov/biosample?term=" } },
+        { "BioProject",             { true,  false, "http://www.ncbi.nlm.nih.gov/bioproject/" } },
+        { "BioSample",              { true,  false, "http://www.ncbi.nlm.nih.gov/biosample/" } },
         { "ProbeDB",                { true,  false, "" } },
-        { "Sequence Read Archive",  { true,  false, "http://www.ncbi.nlm.nih.gov/sites/entrez?db=sra&term=" } },
+        { "Sequence Read Archive",  { true,  false, "http://www.ncbi.nlm.nih.gov/sra/" } },
         { "Trace Assembly Archive", { false, true,  "" } }
     };
     typedef const CStaticPairArrayMap<const char *, SDbLinkLabelInfo, PNocase> TDbLinkLabelToInfoMap;
