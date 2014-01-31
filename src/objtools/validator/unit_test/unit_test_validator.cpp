@@ -4511,8 +4511,10 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadOrgMod)
                               "Unknown orgmod subtype 1"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadOrgMod",
                               "Multiple strain qualifiers on the same BioSource"));
+    /*
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadOrgMod",
                               "Orgmod variety should only be in plants, fungi, or cyanobacteria"));
+    */
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
                               "Variety value specified is not found in taxname"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BadOrgMod",

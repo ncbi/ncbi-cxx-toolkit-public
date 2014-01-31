@@ -1863,8 +1863,10 @@ void CValidError_imp::ValidateOrgRef
         ValidateDbxref(orgref.GetDb(), obj, true, ctx);
     }
 
+    bool has_taxon = false;
     FOR_EACH_DBXREF_ON_ORGREF (dbt, orgref) {
         if ( NStr::CompareNocase((*dbt)->GetDb(), "taxon") != 0 ) continue;
+        has_taxon = true;
         if (! (*dbt)->IsSetTag()) continue;
         const CObject_id& id = (*dbt)->GetTag();
         if (! id.IsId()) continue;
@@ -1876,14 +1878,7 @@ void CValidError_imp::ValidateOrgRef
     }
 
     if ( IsRequireTaxonID() ) {
-        bool found = false;
-        FOR_EACH_DBXREF_ON_ORGREF (dbt, orgref) {
-            if ( NStr::CompareNocase((*dbt)->GetDb(), "taxon") == 0 ) {
-                found = true;
-                break;
-            }
-        }
-        if ( !found ) {
+        if ( !has_taxon ) {
             PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_NoTaxonID,
                 "BioSource is missing taxon ID", obj, ctx);
         }
@@ -1893,7 +1888,7 @@ void CValidError_imp::ValidateOrgRef
         return;
     }
     const COrgName& orgname = orgref.GetOrgname();
-    ValidateOrgName(orgname, obj, ctx);
+    ValidateOrgName(orgname, has_taxon, obj, ctx);
 
     // Look for modifiers in taxname
     string taxname_search = taxname;
@@ -1960,7 +1955,8 @@ void CValidError_imp::ValidateOrgRef
 
 
 void CValidError_imp::ValidateOrgName
-(const COrgName&    orgname,
+(const COrgName& orgname,
+ const bool has_taxon,
  const CSerialObject& obj,
  const CSeq_entry *ctx)
 {
@@ -2034,9 +2030,11 @@ void CValidError_imp::ValidateOrgName
                             (NStr::Find(orgname.GetLineage(), "Cyanobacteria") == string::npos
                             && NStr::Find(orgname.GetLineage(), "Myxogastria") == string::npos
                             && NStr::Find(orgname.GetLineage(), "Oomycetes") == string::npos))) {
-                        PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
-                            "Orgmod variety should only be in plants, fungi, or cyanobacteria", 
-                            obj, ctx);
+                        if ( !has_taxon ) {
+                            PostObjErr(eDiag_Warning, eErr_SEQ_DESCR_BadOrgMod, 
+                               "Orgmod variety should only be in plants, fungi, or cyanobacteria", 
+                                obj, ctx);
+                        }
                     }
                     break;
                 case COrgMod::eSubtype_other:
