@@ -272,17 +272,44 @@ void NcbiStreamCopyThrow(CNcbiOstream& os, CNcbiIstream& is)
 }
 
 
-void NcbiStreamToString(string* str, CNcbiIstream& is)
+bool NcbiStreamToString(string* str, CNcbiIstream& is, size_t str_size)
 {
-    char buf[4096];
-    if (str)
-        str->erase();
-    while (is.good()) {
-        is.read(buf, sizeof(buf));
-        streamsize len = is.gcount();
+    if (!is.good()) {
         if (str)
-            str->append(buf, len);
+            str->resize(str_size);
+        return false;
     }
+
+    char   buf[4096];
+    size_t buf_size = sizeof(buf);
+
+    if (str  &&  str->size() < str_size + buf_size)
+        str->resize(str_size + buf_size);
+
+    do {
+        try {
+            is.read(str ? &(*str)[str_size] : buf, buf_size);
+        } catch (...) {
+            if (str)
+                str->resize(str_size);
+            throw;
+        }
+        if (str) {
+            streamsize count = is.gcount();
+            str_size += count;
+            if ((size_t) count == buf_size) {
+                if (buf_size < (1UL << 20))
+                    buf_size <<= 1;
+                str->resize(str_size + buf_size);
+            } else
+                _ASSERT(!is.good());
+        }
+    } while (is.good());
+
+    if (str)
+        str->resize(str_size);
+
+    return is.rdstate() == NcbiEofbit ? true : false;
 }
 
 
