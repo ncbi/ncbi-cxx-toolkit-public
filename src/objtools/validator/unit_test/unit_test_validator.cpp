@@ -7995,6 +7995,11 @@ BOOST_AUTO_TEST_CASE(Test_Generic_AuthorListHasEtAl)
 
     pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author);
     pub->SetSub().SetAuthors().SetAffil().SetStr("some affiliation");
+
+    pub->SetSub().SetDate().SetStd().SetYear(2009);
+    pub->SetSub().SetDate().SetStd().SetMonth(12);
+    pub->SetSub().SetDate().SetStd().SetDay(31);
+
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -8039,6 +8044,11 @@ BOOST_AUTO_TEST_CASE(Test_Generic_AuthorListHasEtAl)
 
     pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author);
     pub->SetSub().SetAuthors().SetAffil().SetStr("some affiliation");
+
+    pub->SetSub().SetDate().SetStd().SetYear(2009);
+    pub->SetSub().SetDate().SetStd().SetMonth(12);
+    pub->SetSub().SetDate().SetStd().SetDay(31);
+
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -8085,6 +8095,11 @@ BOOST_AUTO_TEST_CASE(Test_Generic_AuthorListHasEtAl)
     pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author);
     pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author2);
     pub->SetSub().SetAuthors().SetAffil().SetStr("some affiliation");
+
+    pub->SetSub().SetDate().SetStd().SetYear(2009);
+    pub->SetSub().SetDate().SetStd().SetMonth(12);
+    pub->SetSub().SetDate().SetStd().SetDay(31);
+
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -8128,6 +8143,11 @@ BOOST_AUTO_TEST_CASE(Test_Generic_AuthorListHasEtAl)
     pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author);
     pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author2);
     pub->SetSub().SetAuthors().SetAffil().SetStr("some affiliation");
+
+    pub->SetSub().SetDate().SetStd().SetYear(2009);
+    pub->SetSub().SetDate().SetStd().SetMonth(12);
+    pub->SetSub().SetDate().SetStd().SetDay(31);
+
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -8145,7 +8165,11 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
     CRef<CAuthor> author = unit_test_util::BuildGoodAuthor();
     submit->SetSub().SetCit().SetAuthors().SetNames().SetStd().push_back(author);
     submit->SetSub().SetCit().SetAuthors().SetAffil().SetStd().SetAffil("some affiliation");
-    
+
+    submit->SetSub().SetCit().SetDate().SetStd().SetYear(2009);
+    submit->SetSub().SetCit().SetDate().SetStd().SetMonth(12);
+    submit->SetSub().SetCit().SetDate().SetStd().SetDay(31);
+
     STANDARD_SETUP
 
     vector<string> ids;
@@ -8193,6 +8217,11 @@ BOOST_AUTO_TEST_CASE(Test_Generic_MissingPubInfo)
         entry->SetDescr().Set().push_back(desc);
         pub->SetSub().SetAuthors().SetNames().SetStd().push_back(author);
         pub->SetSub().SetAuthors().SetAffil().SetStd().SetAffil("some affiliation");
+
+        pub->SetSub().SetDate().SetStd().SetYear(2009);
+        pub->SetSub().SetDate().SetStd().SetMonth(12);
+        pub->SetSub().SetDate().SetStd().SetDay(31);
+
         seh = scope.AddTopLevelSeqEntry(*entry);
 
         expected_errors[0]->SetErrMsg("Submission citation affiliation has no country");

@@ -1085,6 +1085,9 @@ void CValidError_imp::ValidateCitSub
         if (rval != eDateValid_valid) {
             PostBadDateError (eDiag_Error, "Submission citation date has error", rval, obj, ctx);
         }
+    } else {
+        PostObjErr(eDiag_Error, eErr_GENERIC_MissingPubInfo,
+            "Submission citation has no date", obj, ctx);
     }
 }
 
