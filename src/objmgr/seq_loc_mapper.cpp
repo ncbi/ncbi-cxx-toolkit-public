@@ -111,28 +111,16 @@ CScope_Mapper_Sequence_Info::GetSequenceType(const CSeq_id_Handle& idh)
     if ( m_Scope.IsNull() ) {
         return CSeq_loc_Mapper_Base::eSeq_unknown;
     }
-    TSeqType seqtype = CSeq_loc_Mapper_Base::eSeq_unknown;
-    CBioseq_Handle handle;
-    try {
-        handle = m_Scope.GetScope().GetBioseqHandle(idh);
-        if ( handle ) {
-            switch ( handle.GetBioseqMolType() ) {
-            case CSeq_inst::eMol_dna:
-            case CSeq_inst::eMol_rna:
-            case CSeq_inst::eMol_na:
-                seqtype = CSeq_loc_Mapper_Base::eSeq_nuc;
-                break;
-            case CSeq_inst::eMol_aa:
-                seqtype = CSeq_loc_Mapper_Base::eSeq_prot;
-                break;
-            default:
-                break;
-            }
-        }
+    switch ( m_Scope.GetScope().GetSequenceType(idh) ) {
+    case CSeq_inst::eMol_dna:
+    case CSeq_inst::eMol_rna:
+    case CSeq_inst::eMol_na:
+        return CSeq_loc_Mapper_Base::eSeq_nuc;
+    case CSeq_inst::eMol_aa:
+        return CSeq_loc_Mapper_Base::eSeq_prot;
+    default:
+        return CSeq_loc_Mapper_Base::eSeq_unknown;
     }
-    catch ( exception& ) {
-    }
-    return seqtype;
 }
 
 
