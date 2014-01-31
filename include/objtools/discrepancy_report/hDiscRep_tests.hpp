@@ -2966,9 +2966,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
 
       virtual void GetReport(CRef <CClickableItem>& c_item);
       virtual string GetName() const {return CBioseq_test_on_prot::GetName_prefix(); }
-
-    private:
-      void MakeRep(const Str2Strs& item_map, const string& desc1, const string& desc2);
   };
 
 
