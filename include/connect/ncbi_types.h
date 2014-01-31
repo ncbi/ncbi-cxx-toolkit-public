@@ -147,7 +147,7 @@ typedef unsigned int TNCBI_Time;
 #define NCBI_TIME_INFINITE ((TNCBI_Time)(-1))
 
 
-/** Big integer for file size and position
+/** Big unsigned integer for file size and position
  */
 
 #if defined(__MINGW32__)  ||  defined(__MINGW64__)
