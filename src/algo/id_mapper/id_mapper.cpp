@@ -399,9 +399,13 @@ CGencollIdMapper::x_Init(void)
 
     {{
         SSeqMapSelector  Sel;
-        //Sel.SetFlags(CSeqMap::fFindAny);
         Sel.SetResolveCount(0);
-        m_DownMapper.Reset(new CSeq_loc_Mapper(*m_Assembly, CSeq_loc_Mapper::eSeqMap_Down, Sel));
+        m_DownMapper_Shallow.Reset(new CSeq_loc_Mapper(*m_Assembly, CSeq_loc_Mapper::eSeqMap_Down, Sel));
+    }}
+    {{
+        SSeqMapSelector  Sel;
+        Sel.SetResolveCount(-1);
+        m_DownMapper_Deep.Reset(new CSeq_loc_Mapper(*m_Assembly, CSeq_loc_Mapper::eSeqMap_Down, Sel));
     }}
 
     m_Assembly->PostRead();
@@ -1350,10 +1354,18 @@ CGencollIdMapper::x_Map_Down(const CSeq_loc& SourceLoc,
                             ) const
 {
     CRef<CSeq_loc> Result;
-    Result = m_DownMapper->Map(SourceLoc); 
+    Result = m_DownMapper_Shallow->Map(SourceLoc); 
     if(!Result.IsNull() && !Result->IsNull()) {
-        if(Result->Equals(SourceLoc))
+        if(Result->Equals(SourceLoc)) {
+            Result = m_DownMapper_Deep->Map(SourceLoc);
+            if(!Result.IsNull() && !Result->IsNull()) {
+                if(Result->Equals(SourceLoc)) {
+                    return CRef<CSeq_loc>();
+                }           
+                Result = Map(*Result, Spec);
+            }
             return Result;
+        }
         Result = Map(*Result, Spec);
     }
     return Result;

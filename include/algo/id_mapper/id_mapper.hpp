@@ -237,7 +237,7 @@ private:
     TChildToParentMap m_ChildToParentMap;
     
     typedef CRef<objects::CSeq_loc_Mapper> TSeqLocMapperRef;
-    mutable TSeqLocMapperRef m_UpMapper, m_DownMapper;
+    mutable TSeqLocMapperRef m_UpMapper, m_DownMapper_Shallow, m_DownMapper_Deep;
 };
 
 

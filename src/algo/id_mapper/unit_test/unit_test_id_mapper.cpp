@@ -199,6 +199,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscPseudoTest_Scaffold)
     Expected->SetInt().SetId().Set("NT_113872.1");
     Expected->SetInt().SetFrom(57066);
     Expected->SetInt().SetTo(67066);
+    Expected->SetInt().SetStrand(eNa_strand_plus);
 
     // Check that Map results meet expectations
     BOOST_CHECK(Result->Equals(*Expected));
@@ -238,7 +239,8 @@ BOOST_AUTO_TEST_CASE(TestCaseUcscPseudoTest_Comp)
     Expected->SetInt().SetId().Set("NT_113872.1");
     Expected->SetInt().SetFrom(57066);
     Expected->SetInt().SetTo(67066);
-
+    Expected->SetInt().SetStrand(eNa_strand_plus);
+    
     // Check that Map results meet expectations
     BOOST_CHECK(Result->Equals(*Expected));
 }
@@ -279,6 +281,7 @@ BOOST_AUTO_TEST_CASE(TestCaseDownMapTest)
     Expected.SetInt().SetId().Set("AL356789.16");
     Expected.SetInt().SetFrom(56981);
     Expected.SetInt().SetTo(56982);
+    Expected.SetInt().SetStrand(eNa_strand_plus);
 
     // Check that Map results meet expectations
     BOOST_CHECK(Result->Equals(Expected));
@@ -320,6 +323,7 @@ BOOST_AUTO_TEST_CASE(TestCaseDownScafMapTest)
     Expected.SetInt().SetId().Set("GL000006.1");
     Expected.SetInt().SetFrom(19971918);
     Expected.SetInt().SetTo(19971919);
+    Expected.SetInt().SetStrand(eNa_strand_plus);
 
     // Check that Map results meet expectations
     BOOST_CHECK(Result->Equals(Expected));
@@ -446,6 +450,7 @@ BOOST_AUTO_TEST_CASE(TestCaseUpMapScaffoldTest)
     Expected.SetInt().SetId().Set("GL000006.1");
     Expected.SetInt().SetFrom(70208201);
     Expected.SetInt().SetTo(70208202);
+    Expected.SetInt().SetStrand(eNa_strand_plus);
 
     // Check that Map results meet expectations
     BOOST_CHECK(Result->Equals(Expected));
@@ -516,6 +521,7 @@ BOOST_AUTO_TEST_CASE(TestCaseEverythingTest)
     OrigLoc->SetInt().SetId().SetLocal().SetStr("LG2");
     OrigLoc->SetInt().SetFrom(123456789);
     OrigLoc->SetInt().SetTo(123456798);
+    OrigLoc->SetInt().SetStrand(eNa_strand_plus);
 
     CRef<CSeq_loc> Result = Mapper.Map(*OrigLoc, MapSpec);
 
@@ -523,6 +529,7 @@ BOOST_AUTO_TEST_CASE(TestCaseEverythingTest)
     Expected->SetInt().SetId().Set("NT_022135.16");
     Expected->SetInt().SetFrom(13205452);
     Expected->SetInt().SetTo(13205461);
+    Expected->SetInt().SetStrand(eNa_strand_plus);
 
     // Check that Map results meet expectations
     BOOST_CHECK(Result->Equals(*Expected));
