@@ -124,7 +124,7 @@ static EHTTP_HeaderParse s_ParseHeader(const char* header,
     struct SDISPD_Data* data = (struct SDISPD_Data*)((SERV_ITER) iter)->data;
     int code = 0/*success code if any*/;
     if (server_error) {
-        if (server_error == 400  ||  server_error == 403)
+        if (server_error == 400 || server_error == 403 || server_error == 404)
             data->fail = 1/*true*/;
     } else if (sscanf(header, "%*s %d", &code) < 1) {
         data->eof = 1/*true*/;
@@ -158,9 +158,9 @@ static void s_Resolve(SERV_ITER iter)
     struct SDISPD_Data* data = (struct SDISPD_Data*) iter->data;
     SConnNetInfo* net_info = data->net_info;
     EIO_Status status = eIO_Success;
-    CONNECTOR conn = 0;
+    CONNECTOR c = 0;
+    CONN conn;
     char* s;
-    CONN c;
 
     assert(!(data->eof | data->fail));
     assert(!!net_info->stateless == !!iter->stateless);
@@ -182,23 +182,26 @@ static void s_Resolve(SERV_ITER iter)
                                        : !net_info->stateless
                                        ? "Client-Mode: STATEFUL_CAPABLE\r\n"
                                        : "Client-Mode: STATELESS_ONLY\r\n")) {
-        conn = HTTP_CreateConnectorEx(net_info, fHTTP_Flushable, s_ParseHeader,
-                                      iter/*data*/, s_Adjust, 0/*cleanup*/);
+        c = HTTP_CreateConnectorEx(net_info, fHTTP_Flushable, s_ParseHeader,
+                                   iter/*data*/, s_Adjust, 0/*cleanup*/);
     }
     if (s) {
         ConnNetInfo_DeleteUserHeader(net_info, s);
         free(s);
     }
-    if (conn  &&  (status = CONN_Create(conn, &c)) == eIO_Success) {
-        /* Send all the HTTP data, then trigger header callback */
-        CONN_Flush(c);
-        CONN_Close(c);
+    if (c  &&  (status = CONN_Create(c, &conn)) == eIO_Success) {
+        /* Send all the HTTP data... */
+        CONN_Flush(conn);
+        /* ...then trigger the header callback */
+        CONN_Close(conn);
     } else {
         CORE_LOGF_X(1, eLOG_Error,
                     ("%s%s%sUnable to create auxiliary HTTP %s: %s",
                      &"["[!*iter->name], iter->name, *iter->name ? "]  " : "",
-                     conn ? "connection" : "connector",
-                     IO_StatusStr(conn ? status : eIO_Unknown)));
+                     c              ? "connection" : "connector",
+                     IO_StatusStr(c ? status       : eIO_Unknown)));
+        if (c  &&  c->destroy)
+            c->destroy(c);
         assert(0);
     }
 }
@@ -405,7 +408,7 @@ const SSERV_VTable* SERV_DISPD_Open(SERV_ITER iter,
         srand(g_NCBI_ConnectRandomSeed);
     }
 
-    /* Reset request method to be GET ('cause no HTTP body is ever used) */
+    /* Reset request method to be GET ('cause there's no HTTP body to send) */
     data->net_info->req_method = eReqMethod_Get;
     if (iter->stateless)
         data->net_info->stateless = 1/*true*/;

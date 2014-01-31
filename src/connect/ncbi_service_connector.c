@@ -744,9 +744,10 @@ static CONNECTOR s_Open(SServiceConnector* uuu,
             CONN_SetTimeout(conn, eIO_Open,      timeout);
             CONN_SetTimeout(conn, eIO_ReadWrite, timeout);
             CONN_SetTimeout(conn, eIO_Close,     timeout);
-            /* This also triggers parse header callback */
+            /* Send all the HTTP data... */
             if ((temp = CONN_Flush(conn)) != eIO_Success)
                 *status = temp;
+            /* ...then trigger the header callback */
             if ((temp = CONN_Close(conn)) != eIO_Success  &&
                  temp                     != eIO_Closed   &&
                 *status < temp) {
