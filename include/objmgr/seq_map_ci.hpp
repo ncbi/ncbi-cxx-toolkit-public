@@ -378,6 +378,9 @@ private:
     // search range
     TSeqPos              m_SearchPos;
     TSeqPos              m_SearchEnd;
+
+protected:
+    void x_UpdateLength(void);
 };
 
 
