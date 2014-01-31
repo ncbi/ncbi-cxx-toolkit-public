@@ -102,10 +102,17 @@ extern "C" {
 
 typedef enum {
     eReqMethod_Any = 0,
-    eReqMethod_Get,     /* 1   */
-    eReqMethod_Post,    /* 2   */
-    eReqMethod_Head,    /* 1|2 */
-    eReqMethod_Connect  /* 4   */
+    /* HTTP/1.0 */
+    eReqMethod_Get,          /*  1 */
+    eReqMethod_Post,         /*  2 */
+    eReqMethod_Head,         /*  3 */
+    eReqMethod_Connect,      /*  4 */
+    /* HTTP/1.1, not yet supported */
+    eReqMethod_v1  = 8,
+    eReqMethod_Put = 16,     /* 16 */
+    eReqMethod_Trace,        /* 17 */
+    eReqMethod_Delete,       /* 18 */
+    eReqMethod_Options       /* 19 */
 } EReqMethod;
 
 typedef unsigned EBReqMethod;
@@ -154,8 +161,9 @@ typedef unsigned EBDebugPrintout;
  */
 typedef struct {  /* NCBI_FAKE_WARNING: ICC */
     char            client_host[256]; /* effective client hostname ('\0'=def)*/
-    EBReqMethod     req_method:3;     /* method to use in the request (HTTP) */
     EBURLScheme     scheme:3;         /* only pre-defined types (limited)    */
+    EBReqMethod     req_method:5;     /* method to use in the request (HTTP) */
+    unsigned        version:1;        /* HTTP/1.v                            */
     EBFWMode        firewall:2;       /* to use firewall (relay otherwise)   */
     unsigned        stateless:1;      /* to connect in HTTP-like fashion only*/
     unsigned        lb_disable:1;     /* to disable local load-balancing     */

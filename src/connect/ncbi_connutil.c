@@ -289,7 +289,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
 
     len = service ? strlen(service) : 0;
 
-    /* NB: Not cleared up with all 0s */
+    /* NB: *NOT* cleared up with all 0s */
     if (!(info = (SConnNetInfo*) malloc(sizeof(*info) + len)))
         return 0/*failure*/;
 
@@ -307,7 +307,33 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         info->req_method = eReqMethod_Post;
     else if (strcasecmp(str, "GET") == 0)
         info->req_method = eReqMethod_Get;
-    /* NB: HEAD, CONNECT not allowed here */
+    /* NB: HEAD, CONNECT, etc not allowed here */
+
+    /* compatibility */
+    info->version = 0;
+
+    /* firewall mode */
+    REG_VALUE(REG_CONN_FIREWALL, str, DEF_CONN_FIREWALL);
+    info->firewall = x_ParseFirewall(str, generic);
+
+    /* stateless client? */
+    REG_VALUE(REG_CONN_STATELESS, str, DEF_CONN_STATELESS);
+    info->stateless = ConnNetInfo_Boolean(str);
+
+    /* prohibit use of the local load balancer? */
+    REG_VALUE(REG_CONN_LB_DISABLE, str, DEF_CONN_LB_DISABLE);
+    info->lb_disable = ConnNetInfo_Boolean(str);
+
+    /* turn on debug printout? */
+    REG_VALUE(REG_CONN_DEBUG_PRINTOUT, str, DEF_CONN_DEBUG_PRINTOUT);
+    if (ConnNetInfo_Boolean(str)
+        ||    (*str  &&   strcasecmp(str, "some") == 0)) {
+        info->debug_printout = eDebugPrintout_Some;
+    } else if (*str  &&  (strcasecmp(str, "all")  == 0  ||
+                          strcasecmp(str, "data") == 0)) {
+        info->debug_printout = eDebugPrintout_Data;
+    } else
+        info->debug_printout = eDebugPrintout_None;
 
     /* username */
     REG_VALUE(REG_CONN_USER, info->user, DEF_CONN_USER);
@@ -364,6 +390,11 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     /* non-transparent CERN-like firewall proxy server? */
     REG_VALUE(REG_CONN_PROXY_HOST, info->proxy_host, DEF_CONN_PROXY_HOST);
 
+    /* max. # of attempts to establish connection */
+    REG_VALUE(REG_CONN_MAX_TRY, str, 0);
+    val = atoi(str);
+    info->max_try = (unsigned short)(val > 0 ? val : DEF_CONN_MAX_TRY);
+
     /* connection timeout */
     REG_VALUE(REG_CONN_TIMEOUT, str, 0);
     len = strlen(str);
@@ -378,35 +409,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
     } else
         info->timeout      = kInfiniteTimeout/*0*/;
 
-    /* max. # of attempts to establish connection */
-    REG_VALUE(REG_CONN_MAX_TRY, str, 0);
-    val = atoi(str);
-    info->max_try = (unsigned short)(val > 0 ? val : DEF_CONN_MAX_TRY);
-
-    /* firewall mode */
-    REG_VALUE(REG_CONN_FIREWALL, str, DEF_CONN_FIREWALL);
-    info->firewall = x_ParseFirewall(str, generic);
-
-    /* stateless client? */
-    REG_VALUE(REG_CONN_STATELESS, str, DEF_CONN_STATELESS);
-    info->stateless = ConnNetInfo_Boolean(str);
-
-    /* prohibit use of the local load balancer? */
-    REG_VALUE(REG_CONN_LB_DISABLE, str, DEF_CONN_LB_DISABLE);
-    info->lb_disable = ConnNetInfo_Boolean(str);
-
-    /* turn on debug printout? */
-    REG_VALUE(REG_CONN_DEBUG_PRINTOUT, str, DEF_CONN_DEBUG_PRINTOUT);
-    if (ConnNetInfo_Boolean(str)
-        ||    (*str  &&   strcasecmp(str, "some") == 0)) {
-        info->debug_printout = eDebugPrintout_Some;
-    } else if (*str  &&  (strcasecmp(str, "all")  == 0  ||
-                          strcasecmp(str, "data") == 0)) {
-        info->debug_printout = eDebugPrintout_Data;
-    } else
-        info->debug_printout = eDebugPrintout_None;
-
-    /* user header */
+    /* HTTP user header */
     REG_VALUE(REG_CONN_HTTP_USER_HEADER, str, DEF_CONN_HTTP_USER_HEADER);
     info->http_user_header = *str ? x_StrcatCRLF(NULL, str) : 0;
 
@@ -1133,6 +1136,36 @@ static const char* x_Port(unsigned short port, char buf[])
 }
 
 
+static const char* x_ReqMethod(EBReqMethod req_method, char buf[])
+{
+    int v1 = req_method & eReqMethod_v1 ? 1/*true*/ : 0/*false*/;
+    req_method &= ~eReqMethod_v1;
+    switch (req_method) {
+    case eReqMethod_Any:
+        return v1 ? "ANY/1.1"     : "ANY";
+    case eReqMethod_Get:
+        return v1 ? "GET/1.1"     : "GET";
+    case eReqMethod_Post:
+        return v1 ? "POST/1.1"    : "POST";
+    case eReqMethod_Head:
+        return v1 ? "HEAD/1.1"    : "HEAD";
+    case eReqMethod_Connect:
+        return v1 ? "CONNECT/1.1" : "CONNECT";
+    case eReqMethod_Put:
+        return "PUT";
+    case eReqMethod_Trace:
+        return "TRACE";
+    case eReqMethod_Delete:
+        return "DELETE";
+    case eReqMethod_Options:
+        return "OPTIONS";
+    default:
+        break;
+    }
+    return x_Num(req_method, buf);
+}
+
+
 static const char* x_Firewall(unsigned int firewall)
 {
     switch ((EFWMode) firewall) {
@@ -1252,26 +1285,11 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
         s_SaveString(s, "client_host",     info->client_host);
     else
         s_SaveKeyval(s, "client_host",     "(default)");
-    s_SaveKeyval    (s, "req_method",     (info->req_method
-                                           == eReqMethod_Connect
-                                           ? "CONNECT"
-                                           : info->req_method
-                                           == eReqMethod_Head
-                                           ? "HEAD"
-                                           : info->req_method
-                                           == eReqMethod_Post
-                                           ? "POST"
-                                           : info->req_method
-                                           == eReqMethod_Get
-                                           ? "GET"
-                                           : info->req_method
-                                           == eReqMethod_Any
-                                           ? "ANY"
-                                           : x_Num(info->req_method, buf)));
     s_SaveKeyval    (s, "scheme",         (info->scheme
                                            ? x_Scheme((EURLScheme)info->scheme,
                                                       buf)
                                            : "(unspec)"));
+    s_SaveKeyval    (s, "req_method",      x_ReqMethod(info->req_method, buf));
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
     s_SaveString    (s, "user",            info->user);
 #else
@@ -1296,21 +1314,22 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
     s_SaveString    (s, "http_proxy_user", info->http_proxy_user);
 #else
-    s_SaveKeyval    (s, "http_proxy_user",(info->http_proxy_user[0] ?
-                                           "(set)" : "\"\""));
+    s_SaveKeyval    (s, "http_proxy_user",(info->http_proxy_user[0]
+                                           ? "(set)" : "\"\""));
 #endif /*_DEBUG && !NDEBUG*/
-    if (*info->http_proxy_pass)
-        s_SaveKeyval(s, "http_proxy_pass", "(set)");
-    else
+    if (*info->http_proxy_pass) {
+        s_SaveKeyval(s, "http_proxy_pass",(info->http_proxy_pass[0]
+                                           ? "(set)" : "(ignored)"));
+    } else
         s_SaveString(s, "http_proxy_pass", info->http_proxy_pass);
     s_SaveBool      (s, "http_proxy_leak", info->http_proxy_leak);
     s_SaveString    (s, "proxy_host",      info->proxy_host);
+    s_SaveULong     (s, "max_try",         info->max_try);
     if (info->timeout) {
         s_SaveULong (s, "timeout(sec)",    info->timeout->sec);
         s_SaveULong (s, "timeout(usec)",   info->timeout->usec);
     } else
         s_SaveKeyval(s, "timeout",         "INFINITE");
-    s_SaveULong     (s, "max_try",         info->max_try);
     s_SaveKeyval    (s, "firewall",        x_Firewall(info->firewall));
     s_SaveBool      (s, "stateless",       info->stateless);
     s_SaveBool      (s, "lb_disable",      info->lb_disable);
@@ -1456,8 +1475,8 @@ extern EIO_Status URL_ConnectEx
     size_t      hdr_len;
     char        hdr_buf[80];
     size_t      args_len;
+    const char* x_req_method;
     size_t      user_hdr_len = user_hdr  &&  *user_hdr ? strlen(user_hdr) : 0;
-    const char* x_req_method; /* "CONNECT " / "HEAD" / "POST " / "GET " */
 
     /* sanity check first */
     if (!sock  ||  !host  ||  !*host  ||  !path  ||  !*path
@@ -1487,35 +1506,35 @@ extern EIO_Status URL_ConnectEx
                                   req_method == eReqMethod_Head)) {
         CORE_LOGF_X(3, eLOG_Warning,
                     ("[URL_Connect] "
-                     " Content length (%lu) ignored with method %s",
+                     " Content-Length (%lu) is ignored with request method %s",
                      (unsigned long) content_length,
                      req_method == eReqMethod_Get ? "GET" : "HEAD"));
         content_length = 0;
     }
 
     switch (req_method) {
-    case eReqMethod_Connect:
-        x_req_method = "CONNECT ";
-        add_hdr = 0;
-        break;
-    case eReqMethod_Head:
-        x_req_method = "HEAD ";
+    case eReqMethod_Get:
+        x_req_method = "GET ";
         add_hdr = 1;
         break;
     case eReqMethod_Post:
         x_req_method = "POST ";
         add_hdr = 1;
         break;
-    case eReqMethod_Get:
-        x_req_method = "GET ";
+    case eReqMethod_Head:
+        x_req_method = "HEAD ";
         add_hdr = 1;
+        break;
+    case eReqMethod_Connect:
+        x_req_method = "CONNECT ";
+        add_hdr = 0;
         break;
     default:
         CORE_LOGF_X(4, eLOG_Error,
-                    ("[URL_Connect]  Unrecognized request method (#%u)",
-                     (unsigned int) req_method));
+                    ("[URL_Connect]  Unsupported request method (%s)",
+                     x_ReqMethod(req_method, hdr_buf)));
         assert(0);
-        return x_URLConnectErrorReturn(s, eIO_InvalidArg);
+        return x_URLConnectErrorReturn(s, eIO_NotSupported);
     }
 
     hdr_len = 0;
@@ -1541,7 +1560,7 @@ extern EIO_Status URL_ConnectEx
     buf = 0;
     errno = 0;
     /* compose HTTP header */
-    if (/* {CONNECT|POST|GET} <path>[?<args>] HTTP/1.0\r\n */
+    if (/* METHOD <path>[?<args>] HTTP/1.x\r\n */
         !BUF_Write(&buf, x_req_method,   strlen(x_req_method))  ||
         !BUF_Write(&buf, path,           strlen(path))          ||
         (args_len
@@ -1620,9 +1639,11 @@ extern EIO_Status URL_ConnectEx
         } else
             *hdr_buf = '\0';
         CORE_LOGF_X(7, eLOG_Error,
-                    ("[URL_Connect]  Failed to %s to %s:%hu: %s%s",
+                    ("[URL_Connect; //%s:%hu%s%s%s%.*s]  Failed to %s: %s%s",
+                     host, port, &"/"[*path == '/'], path,
+                     &"?"[!args_len], (int) args_len, args,
                      s ? "use connection" : "connect",
-                     host, port, IO_StatusStr(status), hdr_buf));
+                     IO_StatusStr(status), hdr_buf));
     } else
         verify(SOCK_SetTimeout(*sock, eIO_ReadWrite, rw_timeout)==eIO_Success);
     return status;
