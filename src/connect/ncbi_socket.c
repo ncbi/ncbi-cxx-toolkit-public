@@ -372,7 +372,7 @@ static const char* s_ID(const SOCK sock, char buf[MAXIDLEN])
             sname = sock->session ? "SUSOCK" : "USOCK";
         else
 #endif /*NCBI_OS_UNIX*/
-            sname = sock->session ? "SSOCK"  : "SOCK";
+            sname = sock->session ? "SSOCK"  : g_kNcbiSockNameAbbr;
         break;
     case eDatagram:
         sname = "DSOCK";
@@ -2844,7 +2844,7 @@ static EIO_Status s_Read_(SOCK    sock,
     if ((rtv_set = sock->r_tv_set) != 0)
         rtv = sock->r_tv;
     assert(!*n_read  ||  peek > 0);
-    assert((peek >= 0  &&  size)  ||  (peek < 0  &&  !(buf  ||  size)));
+    assert((peek >= 0  &&  size)  ||  (peek < 0  &&  !buf  &&  !size));
     do {
         size_t x_read;
         size_t n_todo;
@@ -2915,7 +2915,7 @@ static EIO_Status s_Read_(SOCK    sock,
                            peek ? x_read : x_read - n_todo)) {
                 CORE_LOGF_ERRNO_X(8, eLOG_Error, errno,
                                   ("%s[SOCK::Read] "
-                                   " Cannot store data in peek buffer",
+                                   " Cannot save unread data",
                                    s_ID(sock, xx_buf)));
                 sock->eof      = 1/*failure*/;
                 sock->r_status = eIO_Closed;
