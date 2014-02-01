@@ -2686,6 +2686,7 @@ ISBC:CMF	cb	Institute of Soil Biology, Academy of Science of the Czech Republic,
 ISC<FRA>	c	International Salmonella Centre (W.H.O.)
 ISC<USA-IA>	s	Iowa State University, Botany Department
 ISCM	s	Institut Scientifique Cheripen
+ISEA	s	Institute of Systematics and Evolution of Animals
 ISEAK	s	Instytut Systematyki i Ewolucji Zwierz
 ISEM	s	Institut des Sciences de l'Evolution Montpellier 	
 ISER	s	Institutul Speologie Emil G. Racovita
@@ -5473,6 +5474,7 @@ SMN	s	Simao District National Medical and Pharmaceutical Institute
 SMNG	s	Senckenberg Museum fuer Naturkunde Goerlitz
 SMNH<CAN>	s	Saskatchewan Museum of Natural History
 SMNH<SWE>	s	Department of Paleozoology, Swedish Museum of Natural History
+SMNH<UKR>	s	State Museum of Natural History
 SMNH<USA-KS>	s	Schmidt Museum of Natural History, Emporia State University
 SMNK	s	Staatliches Museum fuer Naturkunde Karlsruhe (State Museum of Natural History)
 SMNS	s	Staatliches Museum fuer Naturkund Stuttgart
