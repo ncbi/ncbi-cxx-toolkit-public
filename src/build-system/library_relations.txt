@@ -176,6 +176,7 @@ VDBUtils needs general
 VDBUtils needs genome_collection
 VDBUtils needs medline
 VDBUtils needs ncbi_xloader_csra
+VDBUtils needs ncbi_xloader_wgs
 VDBUtils needs pub
 VDBUtils needs seq
 VDBUtils needs seqcode
