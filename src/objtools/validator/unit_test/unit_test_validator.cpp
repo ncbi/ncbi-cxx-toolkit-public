@@ -18077,6 +18077,7 @@ BOOST_AUTO_TEST_CASE(Test_SQD_1532)
 BOOST_AUTO_TEST_CASE(Test_SexQualifiers)
 {
     BOOST_CHECK_EQUAL(CSubSource::IsValidSexQualifierValue("M"), true);
+    BOOST_CHECK_EQUAL(CSubSource::FixSexQualifierValue("M"), "male");
     BOOST_CHECK_EQUAL(CSubSource::IsValidSexQualifierValue("Male"), true);
     BOOST_CHECK_EQUAL(CSubSource::IsValidSexQualifierValue("male"), true);
     BOOST_CHECK_EQUAL(CSubSource::IsValidSexQualifierValue("llama"), false);

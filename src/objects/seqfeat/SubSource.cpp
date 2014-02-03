@@ -1434,7 +1434,7 @@ bool CSubSource::IsValidSexQualifierValue (const string& value)
     bool is_good = false;
 
     ITERATE(vector<string>, w, words) {
-        if (NStr::EqualNocase(*w, "and")) {
+        if (NStr::Equal(*w, "and")) {
             // ok, skip it
         } else {
             if (find(begin, end, *w) != end) {
@@ -1455,7 +1455,7 @@ string CSubSource::FixSexQualifierValue (const string& value)
     NStr::ToLower(str);
 
     vector<string> words;
-    NStr::Tokenize(value," ,/",words);
+    NStr::Tokenize(str," ,/",words);
 
     if (words.size() == 0) {
         return "";
@@ -1468,7 +1468,7 @@ string CSubSource::FixSexQualifierValue (const string& value)
     vector<string> good_values;
 
     ITERATE(vector<string>, w, words) {
-        if (NStr::EqualNocase(*w, "and")) {
+        if (NStr::Equal(*w, "and")) {
             // ok, skip it
         } else {
             if (find(begin, end, *w) != end) {
