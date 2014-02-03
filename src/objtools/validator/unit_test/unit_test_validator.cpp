@@ -17499,8 +17499,16 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_WrongQualOnFeature)
 
 BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
 {
-    string to_fix = "43.098333, -89.405278";
+    string to_fix = "9.93N\xC2\xB0 and 78.12\xC2\xB0\x45";
     string fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "9.93 N 78.12 E");
+
+    to_fix = "9.93N<C2><B0> and 78.12<C2><B0>E";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "9.93 N 78.12 E");
+
+    to_fix = "43.098333, -89.405278";
+    fixed = CSubSource::FixLatLonFormat(to_fix, true);
     BOOST_CHECK_EQUAL(fixed, "43.098333 N 89.405278 W");
 
     to_fix = "43.098333, -91.00231";
