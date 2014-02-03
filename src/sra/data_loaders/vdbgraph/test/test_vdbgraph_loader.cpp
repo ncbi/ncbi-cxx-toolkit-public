@@ -73,7 +73,9 @@ static CRef<CScope> s_MakeScope(const string& file_name = kEmptyStr)
 
 
 static void s_CheckFast(CScope& scope, const CSeq_id& id, TSeqPos seq_len,
-                        const vector<string>& naccs, bool only_main = true)
+                        const vector<string>& naccs,
+                        bool only_main = true,
+                        bool no_annots = false)
 {
     NcbiCout << "Test with "<<naccs.size()<<" accs"<<NcbiEndl;
     SAnnotSelector sel;
@@ -85,6 +87,11 @@ static void s_CheckFast(CScope& scope, const CSeq_id& id, TSeqPos seq_len,
     loc.SetWhole(*SerialClone(id));
     CGraph_CI graph_it(scope, loc, sel);
     CSeq_table_CI table_it(scope, loc, sel);
+    if ( no_annots ) {
+        BOOST_CHECK(!graph_it);
+        BOOST_CHECK(!table_it);
+        return;
+    }
     if ( only_main ) {
         BOOST_CHECK_EQUAL(graph_it.GetSize()+table_it.GetSize(),
                           ((seq_len-1)/kMainChunkSize+1)*naccs.size());
@@ -148,9 +155,11 @@ static void s_CheckFast(CScope& scope, const CSeq_id& id, TSeqPos seq_len,
 
 
 static void s_CheckFast(CScope& scope, const CSeq_id& id, TSeqPos seq_len,
-                        const string& nacc, bool only_main = true)
+                        const string& nacc,
+                        bool only_main = true,
+                        bool no_annots = false)
 {
-    s_CheckFast(scope, id, seq_len, vector<string>(1, nacc), only_main);
+    s_CheckFast(scope, id, seq_len, vector<string>(1, nacc), only_main, no_annots);
     return;
     SAnnotSelector sel;
     sel.SetSearchUnresolved();
@@ -158,6 +167,12 @@ static void s_CheckFast(CScope& scope, const CSeq_id& id, TSeqPos seq_len,
     loc.SetWhole(*SerialClone(id));
     CGraph_CI graph_it(scope, loc, sel);
     CSeq_table_CI table_it(scope, loc, sel);
+    if ( no_annots ) {
+        BOOST_CHECK(!graph_it);
+        BOOST_CHECK(!table_it);
+        return;
+    }
+    
     BOOST_CHECK(graph_it.GetSize());
     if ( 0 ) {
         for ( ; graph_it; ++graph_it ) {
@@ -217,6 +232,7 @@ static void s_VerifyGraphs(CScope& scope, const CSeq_id& id, TSeqPos seq_len,
 BOOST_AUTO_TEST_CASE(FetchSeq1)
 {
     string nacc = "NA000008777.1";
+    string nacc2 = "NA000008778.1";
     CSeq_id seqid1("NC_002333.2");
     TSeqPos seq_len = 16596;
 
@@ -228,12 +244,15 @@ BOOST_AUTO_TEST_CASE(FetchSeq1)
 
     s_CheckFast(*scope, seqid1, seq_len, nacc, false);
     s_VerifyGraphs(*scope, seqid1, seq_len, nacc);
+    // VDB graph loader with fixed file should not find other NA
+    s_CheckFast(*scope, seqid1, seq_len, nacc2, false, true);
 }
 
 
 BOOST_AUTO_TEST_CASE(FetchSeq2)
 {
     string nacc = "NA000008777.1";
+    string nacc2 = "NA000008778.1";
     CSeq_id seqid1("NC_002333.2");
     TSeqPos seq_len = 16596;
 
@@ -241,6 +260,11 @@ BOOST_AUTO_TEST_CASE(FetchSeq2)
     BOOST_REQUIRE_EQUAL(kInvalidSeqPos, scope->GetSequenceLength(seqid1));
     CBioseq_Handle handle1 = scope->GetBioseqHandle(seqid1);
     BOOST_REQUIRE(!handle1);
+
+    s_CheckFast(*scope, seqid1, seq_len, nacc, false);
+    s_VerifyGraphs(*scope, seqid1, seq_len, nacc);
+    // VDB graph loader with auto NA search should find other NAs
+    s_CheckFast(*scope, seqid1, seq_len, nacc2, false);
 
     SAnnotSelector sel;
     sel.SetSearchUnresolved();

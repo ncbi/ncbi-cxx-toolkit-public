@@ -343,8 +343,10 @@ CVDBGraphDataLoader_Impl::GetOrphanAnnotRecords(CDataSource* ds,
     // explicitly specified files
     for ( TSeqIdIndex::iterator it = m_SeqIdIndex.lower_bound(id);
           it != m_SeqIdIndex.end() && it->first == id; ++it ) {
-        TBlobId blob_id(new CVDBGraphBlobId(it->second->m_VDBFile, id));
-        locks.insert(GetBlobById(ds, blob_id));
+        if ( !sel || sel->IsIncludedNamedAnnotAccession(it->second->m_BaseAnnotName) ) {
+            TBlobId blob_id(new CVDBGraphBlobId(it->second->m_VDBFile, id));
+            locks.insert(GetBlobById(ds, blob_id));
+        }
     }
     // implicitly load NA accessions
     if ( sel && sel->IsIncludedAnyNamedAnnotAccession() ) {
