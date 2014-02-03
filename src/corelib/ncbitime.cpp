@@ -757,19 +757,18 @@ CTime::CTime(int year, int month, int day, int hour,
 
 CTime::CTime(EInitMode mode, ETimeZone tz, ETimeZonePrecision tzp)
 {
+    Clear();
     m_Data.tz = tz;
     m_Data.tzprec = tzp;
-
     if (mode == eCurrent) {
         SetCurrent();
-    } else {
-        Clear();
     }
 }
 
 
 CTime::CTime(time_t t, ETimeZonePrecision tzp)
 {
+    Clear();
     m_Data.tz = eGmt;
     m_Data.tzprec = tzp;
     SetTimeT(t);
@@ -778,6 +777,7 @@ CTime::CTime(time_t t, ETimeZonePrecision tzp)
 
 CTime::CTime(const struct tm& t, ETimeZonePrecision tzp)
 {
+    Clear();
     m_Data.tz = eLocal;
     m_Data.tzprec = tzp;
     SetTimeTM(t);
@@ -787,6 +787,7 @@ CTime::CTime(const struct tm& t, ETimeZonePrecision tzp)
 CTime::CTime(const string& str, const CTimeFormat& format,
              ETimeZone tz, ETimeZonePrecision tzp)
 {
+    Clear();
     m_Data.tz = tz;
     m_Data.tzprec = tzp;
 
