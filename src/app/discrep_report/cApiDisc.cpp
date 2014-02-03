@@ -93,15 +93,16 @@ void GetDiscrepancyReport(int argc, const char* argv[])
 
     CRef<CObjectManager> object_manager = CObjectManager::GetInstance();
     CRef <CScope> scope (new CScope(*object_manager));
-    scope->AddTopLevelSeqEntry(*seq_entry);   
-    CSeq_entry_Handle seq_handle = scope->GetSeq_entryHandle(*seq_entry);
+    CSeq_entry_Handle seq_handle = scope->AddTopLevelSeqEntry(*seq_entry);   
 
 /*
     CRef <CRepConfig> 
           config (CRepConfig::factory((string)"Discrepancy", &seq_handle));
-*/
     CRef <CRepConfig> 
           config (CRepConfig::factory((string)"Oncaller", &seq_handle));
+*/
+    CRef <CRepConfig> 
+          config (CRepConfig::factory((string)"Mega", &seq_handle));
 
     CRef <IRWRegistry> reg(0); 
     if (CFile("disc_report.ini").Exists()) {
