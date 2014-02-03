@@ -5109,46 +5109,10 @@ void CBioseq_FEATURE_LOCATION_CONFLICT :: GetReport(CRef <CClickableItem>& c_ite
     }
   }
 
-/*
-  unsigned cnt=0;
-  ITERATE (vector <string>, it, thisInfo.test_item_list[GetName()]) {
-    CRef <CClickableItem> c_sub (new CClickableItem);
-    rep_arr = NStr::Tokenize(*it, "$", rep_arr);
-    size_t pos;
-    if ( (pos = rep_arr[0].find("_missing")) != string::npos) {
-      c_sub->description = rep_arr[0].substr(0, pos) + " xref gene does not exist";
-      c_sub->item_list.push_back(rep_arr[1]);
-      c_item->item_list.push_back(rep_arr[1]);
-    }
-    else {
-      c_sub->description = rep_arr[0] + " location does not match gene location";
-      c_sub->item_list.push_back(rep_arr[1]);
-      c_sub->item_list.push_back( *(++it) );
-      c_item->item_list.push_back(rep_arr[1]);
-      c_item->item_list.push_back( *it );
-    }
-     
-    c_item->subcategories.push_back(c_sub);
-    cnt++;
-    rep_arr.clear();
-  }
-*/
   c_item->description 
         = GetHasComment(cnt, "feature") + "inconsistent gene locations";
 };
 
-
-void CBioseq_MISSING_LOCUS_TAGS :: TestOnObj(const CBioseq& bioseq) 
-{
-   ITERATE (vector <const CSeq_feat*>, jt, gene_feat) {
-     const CGene_ref& gene = (*jt)->GetData().GetGene();
-     if (gene.GetPseudo()) continue;
-     if (!gene.CanGetLocus_tag() || gene.GetLocus_tag().empty()) { 
-        thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(**jt));
-        thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(*jt));
-     }
-   }
-};
 
 void CBioseq_MISSING_LOCUS_TAGS :: GetReport(CRef <CClickableItem>& c_item)
 {
@@ -5156,7 +5120,7 @@ void CBioseq_MISSING_LOCUS_TAGS :: GetReport(CRef <CClickableItem>& c_item)
    c_item->description = GetHasComment(c_item->item_list.size(), "gene") + "no locus tags.";
 };
 
-bool CBioseq_MISSING_LOCUS_TAGS :: x_IsLocationDirSub(const CSeq_loc& seq_location)  // not actually used, because in C, the exclude_dirsub = false
+bool CBioseq_on_locus_tags :: x_IsLocationDirSub(const CSeq_loc& seq_location)  // not actually used, because in C, the exclude_dirsub = false
 {   
    const CSeq_id* seq_id  = seq_location.GetId();
    if (!seq_id) return false;
@@ -5205,6 +5169,7 @@ bool CBioseq_MISSING_LOCUS_TAGS :: x_IsLocationDirSub(const CSeq_loc& seq_locati
 };
 
 
+bool exclude_dirsub = false;
 void CBioseq_on_locus_tags :: TestOnObj(const CBioseq& bioseq) 
 {
   if (thisTest.is_LocusTag_run) return;
@@ -5222,6 +5187,9 @@ void CBioseq_on_locus_tags :: TestOnObj(const CBioseq& bioseq)
   bool run_glodup = (thisTest.tests_run.find(GetName_glodup()) != end_it);
 
   set <string> sent_gene;
+  bool has_locus_tag;
+  vector <string> missing_texts;
+  vector <CConstRef <CObject> > missing_objs;
   ITERATE (vector <const CSeq_feat*>, jt, gene_feat) {
      const CGene_ref& gene = (*jt)->GetData().GetGene();
      if (gene.GetPseudo()) continue;  
@@ -5230,6 +5198,7 @@ void CBioseq_on_locus_tags :: TestOnObj(const CBioseq& bioseq)
      if (gene.CanGetLocus_tag()) {
         locus_tag = gene.GetLocus_tag();
         if (!locus_tag.empty()) {
+           has_locus_tag = true;
            if (run_dup) { // DUPLICATE_LOCUS_TAGS
               thisInfo.test_item_list[GetName_dup()]
                         .push_back(locus_tag + "$" + test_desc);
@@ -5298,15 +5267,29 @@ void CBioseq_on_locus_tags :: TestOnObj(const CBioseq& bioseq)
            }
            else if (run_badtag) {
               thisInfo.test_item_list[GetName_badtag()].push_back(test_desc);
-              thisInfo.test_item_objs[GetName_badtag()].push_back(gene_ref);
+              thisInfo.test_item_objs[GetName_badtag()]
+                          .push_back(gene_ref);
            }
         }
+        else { // MISSING_LOCUS_TAGS
+          if (!exclude_dirsub || !x_IsLocationDirSub((*jt)->GetLocation())) {
+             missing_texts.push_back(test_desc);
+             missing_objs.push_back(gene_ref); 
+          }
+        }
      }
+  }
+  
+  if (has_locus_tag && !missing_texts.empty()) {
+     copy(missing_texts.begin(), missing_texts.end(), 
+           back_inserter(thisInfo.test_item_list[GetName_miss()]));
+     copy(missing_objs.begin(), missing_objs.end(), 
+              back_inserter(thisInfo.test_item_objs[GetName_miss()]));
   }
 };
 
 
-void CBioseq_on_locus_tags :: GetReport_dup(CRef <CClickableItem>& c_item, const string& setting_name)
+void CBioseq_on_locus_tags :: x_GetReport_dup(CRef <CClickableItem>& c_item, const string& setting_name)
 {
    Str2Strs tag2dups;
    GetTestItemList(c_item->item_list, tag2dups);
