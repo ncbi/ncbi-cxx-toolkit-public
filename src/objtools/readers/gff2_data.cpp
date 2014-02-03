@@ -187,17 +187,18 @@ bool CGff2Record::AssignFromGff(
 {
     vector< string > columns;
 
-    string strLeftOver = strRawInput;
-    for ( size_t i=0; i < 8 && ! strLeftOver.empty(); ++i ) {
-        string strFront;
-        NStr::SplitInTwo( strLeftOver, " \t", strFront, strLeftOver );
-		columns.push_back( strFront );
-        NStr::TruncateSpacesInPlace( strLeftOver, NStr::eTrunc_Begin );
-    }
-    columns.push_back( strLeftOver );
-        
+    NStr::Tokenize(strRawInput, "\t", columns);
     if ( columns.size() < 9 ) {
-        // not enough fields to work with
+        columns.clear();
+        string strLeftOver = strRawInput;
+        string strFront;
+        for ( size_t i=0; i < 9 && ! strLeftOver.empty(); ++i ) {
+            NStr::SplitInTwo( strLeftOver, " \t", strFront, strLeftOver );
+		    columns.push_back( strFront );
+            NStr::TruncateSpacesInPlace( strLeftOver, NStr::eTrunc_Begin );
+        }
+    }
+    if ( columns.size() < 9 ) {
         return false;
     }
     //  to do: more sanity checks
@@ -342,6 +343,9 @@ bool CGff2Record::x_AssignAttributesFromGff(
             // Probably due to trailing "; ". Sequence Ontology generates such
             // things. 
             continue;
+        }
+        if (strKey == "ID"  &&  strValue == "id685531") {
+            cerr << "";
         }
         m_Attributes[ strKey ] = strValue;        
     }
