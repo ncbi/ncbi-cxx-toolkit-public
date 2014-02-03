@@ -501,17 +501,29 @@ void SMakeProjectT::Create3PartyLibs(
     const list<string>& libs_flags, const list<string>& expected_flags,
     list<string>*   libs_list,  const string* mkname)
 {
+    bool liborder_found = mkname != NULL && GetApp().m_LibraryOrder.find(*mkname) != GetApp().m_LibraryOrder.end();
     set<string> done;
     list<string> unkflags;
     list<CProjKey> libs3;
     ITERATE(list<string>, p, libs_flags) {
-        const string& flag = *p;
+        string flag = *p;
         if (flag == "#") {
             break;
         } else if ( IsConfigurableDefine(flag) ) {
             libs_list->push_back(StripConfigurableDefine(flag));    
             done.insert(flag);
         } else if (NStr::StartsWith(flag, "-l")) {
+            if (NStr::EndsWith(flag,"-dll")) {
+                NStr::ReplaceInPlace(flag, "-dll", "");
+            } else if (NStr::EndsWith(flag,"-static")) {
+                NStr::ReplaceInPlace(flag, "-static", "");
+            }
+            if (liborder_found && find(
+                    GetApp().m_LibraryOrder[*mkname].begin(),
+                    GetApp().m_LibraryOrder[*mkname].end(), flag.substr(2)) !=
+                        GetApp().m_LibraryOrder[*mkname].end()) {
+                continue;
+            }
             libs3.push_back( CProjKey(CProjKey::eLib, flag.substr(2)));
 // user cannot be trusted
 //            GetApp().m_3PartyLibs.insert(flag.substr(2));
