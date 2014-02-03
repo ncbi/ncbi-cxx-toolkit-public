@@ -883,7 +883,23 @@ static void s_TrimInternalSpaces (string& token)
 }
 
 
-static string s_GetNumFromLatLonToken (string token)
+string s_GetDefaultDir(bool is_negative, string default_dir)
+{
+    string dir = "";
+    if (is_negative) {
+        if (NStr::Equal("N", default_dir)) {
+            dir = "S";
+        } else if (NStr::Equal("E", default_dir)) {
+            dir = "W";
+        }
+    } else {
+        dir = default_dir;
+    }
+    return dir;
+}
+
+
+static string s_GetNumFromLatLonToken (string token, string default_dir)
 {
     NStr::TruncateSpacesInPlace(token);
     string dir = "";
@@ -892,11 +908,25 @@ static string s_GetNumFromLatLonToken (string token)
         token = token.substr(1);
     } else {
         dir = token.substr(token.length() - 1, 1);
-        token = token.substr(0, token.length() - 1);
+        if (isalpha(dir.c_str()[0])) {
+            token = token.substr(0, token.length() - 1);
+        } else {
+            dir = "";
+        }
     }
     NStr::TruncateSpacesInPlace(token);
     // clean up double spaces, spaces between numbers and '
     s_TrimInternalSpaces(token);
+
+    // find leading negative sign
+    bool is_negative = false;
+    if (NStr::StartsWith(token, "-")) {
+        is_negative = true;
+        token = token.substr(1);
+    }
+    if (NStr::IsBlank(dir)) {
+        dir = s_GetDefaultDir(is_negative, default_dir);
+    }
 
     size_t pos = 0;
     double val = 0;
@@ -976,10 +1006,14 @@ static string s_GetNumFromLatLonToken (string token)
     }
 
     if (prev_start == 0) {
-        return token + " " + dir;
+        if (!NStr::IsBlank(dir)) {
+            token = token + " " + dir;
+        }
+        return token;
     } else {
         if (prev_start < pos) {
             string num_str = token.substr(prev_start, pos - prev_start);
+
             double this_val = NStr::StringToDouble (num_str);
             if (num_sep == 0) {
                 val += this_val;
@@ -1024,7 +1058,12 @@ static string s_GetNumFromLatLonToken (string token)
             }
         }
 
-        return val_str + " " + dir;
+
+        if (!NStr::IsBlank(dir)) {
+            val_str = val_str + " " + dir;
+        }
+
+        return val_str;
     }            
 }
 
@@ -1140,17 +1179,20 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
         pos = NStr::Find (cpy, "o", pos + 1);
     }
 
-    // replace typo semicolon with colon
-    pos = NStr::Find (cpy, ";");
+    // get rid of colons, semicolons, and commas
+    NStr::ReplaceInPlace (cpy, ":", " ");
+    NStr::ReplaceInPlace (cpy, ";", " ");
+    NStr::ReplaceInPlace (cpy, ",", " ");
+
+    // get rid of periods after letters not before numbers
+    pos = NStr::Find (cpy, ".");
     while (pos != string::npos) {
-        if (pos > 0 && isdigit (cpy.c_str()[pos - 1]) && isdigit (cpy.c_str()[pos + 1])) {
+        if (pos > 0 && isalpha(cpy.c_str()[pos - 1])) {
             string before = cpy.substr(0, pos);
             string after = cpy.substr(pos + 1);
-            cpy = before + ":" + after;
-            pos = NStr::Find (cpy, ";");
-        } else {
-          pos = NStr::Find (cpy, ";", pos + 1);
+            cpy = before + " " + after;
         }
+        pos = NStr::Find (cpy, ".", pos + 1);
     }
 
     NStr::ReplaceInPlace (cpy, "LONGITUDE", "LONG");
@@ -1158,6 +1200,7 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
     NStr::ReplaceInPlace (cpy, "LONG",      "LO");
     NStr::ReplaceInPlace (cpy, "LO:",       "LO");
     NStr::ReplaceInPlace (cpy, "LATITUDE",  "LAT");
+    NStr::ReplaceInPlace (cpy, "LATTITUDE",  "LAT");
     NStr::ReplaceInPlace (cpy, "LAT.",      "LAT");
     NStr::ReplaceInPlace (cpy, "LAT:",      "LAT");
     NStr::ReplaceInPlace (cpy, "DEGREES",   " " );
@@ -1331,13 +1374,14 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
         s_RemoveExtraText (lo_token, extra_text);
     }
 
-    la_token = s_GetNumFromLatLonToken (la_token);
+    la_token = s_GetNumFromLatLonToken (la_token, "N");
     if (NStr::IsBlank (la_token)
         || !s_IsNumberStringInRange(la_token, 90.0)) {
         return "";
     }
 
-    lo_token = s_GetNumFromLatLonToken (lo_token);
+    lo_token = s_GetNumFromLatLonToken (lo_token, "E");
+
     if (NStr::IsBlank (lo_token)
         || !s_IsNumberStringInRange(lo_token, 180.0)) {
         return "";
