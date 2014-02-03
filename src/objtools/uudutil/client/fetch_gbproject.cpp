@@ -69,6 +69,8 @@ CFetchGBProjectApp::Init(void)
                     );
 
     arg_desc->AddFlag("p", "print project");
+    arg_desc->AddFlag("b", "print project as binary ASN.1");
+    arg_desc->AddFlag("n", "avoiding printing output");
 
     SetupArgDescriptions(arg_desc.release());
 }
@@ -80,7 +82,13 @@ CFetchGBProjectApp::Run(void)
     static const string nckey = args["k"].AsString();
 
     CProjectStorage prjstorage("FetchGBProjectApp");
-    if (args["p"].AsBoolean()) {
+    if (args["n"].AsBoolean()) {
+        CConstRef<CSerialObject> proj = prjstorage.GetObject(nckey);
+    }
+    else if(args["b"].AsBoolean()) {
+        NcbiCout << MSerial_AsnBinary << *prjstorage.GetObject(nckey);
+    }
+    else if(args["p"].AsBoolean()) {
         NcbiCout << MSerial_AsnText << *prjstorage.GetObject(nckey);
     }
     else {
