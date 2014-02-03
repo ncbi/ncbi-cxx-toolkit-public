@@ -3756,23 +3756,10 @@ BEGIN_SCOPE(DiscRepNmSpc)
                                    const string& feat_type);
       bool IsGeneLocationOk(const CSeq_feat* seq_feat, const CSeq_feat* gene);
       bool IsMixStrand(const CSeq_feat* seq_feat);
-      bool IsMixedStrandGeneLocationOk(const CSeq_loc& feat_loc, const CSeq_loc& gene_loc);
+      bool IsMixedStrandGeneLocationOk(const CSeq_loc& feat_loc, 
+                                       const CSeq_loc& gene_loc);
       bool GeneRefMatch(const CGene_ref& gene1, const CGene_ref& gene2);
   };
-
-  class CBioseq_MISSING_LOCUS_TAGS : public CBioseqTestAndRepData
-  {
-    public:
-      virtual ~CBioseq_MISSING_LOCUS_TAGS() { };
-
-      virtual void TestOnObj(const CBioseq& bioseq);
-      virtual void GetReport(CRef <CClickableItem>& c_item);
-      virtual string GetName() const {return string("MISSING_LOCUS_TAGS"); }
-
-    private:
-      bool x_IsLocationDirSub(const CSeq_loc& seq_location);
-  };
-
 
   class CBioseq_on_locus_tags : public CBioseqTestAndRepData
   {
@@ -3784,6 +3771,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual string GetName() const {return string("LOCUS_TAGS"); };
 
     protected:
+      string GetName_miss() const { return string("MISSING_LOCUS_TAGS"); }
       string GetName_dup() const { return string("DUPLICATE_LOCUS_TAGS"); }
       string GetName_incons() const {
                              return string("INCONSISTENT_LOCUS_TAG_PREFIX"); }
@@ -3791,7 +3779,21 @@ BEGIN_SCOPE(DiscRepNmSpc)
       string GetName_glodup() const {
                 return string("DUPLICATE_LOCUS_TAGS_global"); }
 
-      void GetReport_dup(CRef <CClickableItem>& c_item, const string& setting_name);
+    protected:
+      bool x_IsLocationDirSub(const CSeq_loc& seq_location);
+      void x_GetReport_dup(CRef <CClickableItem>& c_item, 
+                           const string& setting_name);
+  };
+
+  class CBioseq_MISSING_LOCUS_TAGS : public CBioseq_on_locus_tags
+  {
+    public:
+      virtual ~CBioseq_MISSING_LOCUS_TAGS() { };
+
+      virtual void GetReport(CRef <CClickableItem>& c_item);
+      virtual string GetName() const {
+              return CBioseq_on_locus_tags::GetName_miss(); }
+
   };
 
   class CBioseq_DUPLICATE_LOCUS_TAGS_global : public CBioseq_on_locus_tags
@@ -3801,7 +3803,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual string GetName() const {
                            return CBioseq_on_locus_tags::GetName_glodup();}
       virtual void GetReport(CRef <CClickableItem>& c_item) {
-           CBioseq_on_locus_tags :: GetReport_dup(c_item, GetName());
+           CBioseq_on_locus_tags :: x_GetReport_dup(c_item, GetName());
       }
   };
 
@@ -3812,7 +3814,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       virtual string GetName() const {
                                return CBioseq_on_locus_tags::GetName_dup();}
       virtual void GetReport(CRef <CClickableItem>& c_item) {
-           CBioseq_on_locus_tags :: GetReport_dup(c_item, GetName());
+           CBioseq_on_locus_tags :: x_GetReport_dup(c_item, GetName());
       }
   };
 
