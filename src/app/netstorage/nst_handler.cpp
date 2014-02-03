@@ -936,12 +936,13 @@ CNetStorageHandler::x_ProcessGetAttr(
         NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
                    "Mandatory field 'AttrName' is missed");
 
+    /*
     string              object_key = x_GetObjectKey(message);
     string              attr_name = message.GetString("AttrName");
     CNetStorageDApp *   app = dynamic_cast<CNetStorageDApp*>
                                         (CNcbiApplication::Instance());
     IConnection *       conn = app->GetDb().GetDbConn();
-
+    */
 
 
 }
@@ -963,13 +964,14 @@ CNetStorageHandler::x_ProcessSetAttr(
                    "Mandatory field 'AttrValue' is missed");
 
 
+    /*
     string              object_key = x_GetObjectKey(message);
     string              attr_name = message.GetString("AttrName");
     string              attr_value = message.GetString("AttrValue");
     CNetStorageDApp *   app = dynamic_cast<CNetStorageDApp*>
                                         (CNcbiApplication::Instance());
     IConnection *       conn = app->GetDb().GetDbConn();
-
+    */
 
 
 }

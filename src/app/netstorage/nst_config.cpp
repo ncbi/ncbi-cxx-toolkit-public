@@ -46,8 +46,8 @@ static bool NSTValidateBool(const IRegistry &  reg,
                             const string &  section, const string &  entry);
 static bool NSTValidateInt(const IRegistry &  reg,
                            const string &  section, const string &  entry);
-static bool NSTValidateDouble(const IRegistry &  reg,
-                              const string &  section, const string &  entry);
+//static bool NSTValidateDouble(const IRegistry &  reg,
+//                              const string &  section, const string &  entry);
 static bool NSTValidateString(const IRegistry &  reg,
                               const string &  section, const string &  entry);
 static string NSTRegValName(const string &  section, const string &  entry);
@@ -284,6 +284,7 @@ bool NSTValidateInt(const IRegistry &  reg,
 }
 
 
+/*
 // Checks that a double value is fine
 bool NSTValidateDouble(const IRegistry &  reg,
                        const string &  section, const string &  entry)
@@ -299,6 +300,7 @@ bool NSTValidateDouble(const IRegistry &  reg,
     }
     return true;
 }
+*/
 
 
 // Checks that a double value is fine
