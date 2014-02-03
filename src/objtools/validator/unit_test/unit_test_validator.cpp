@@ -14890,6 +14890,8 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_CDShasTooManyXs)
 
     STANDARD_SETUP
 
+    expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "FeatureIsMostlyNs",
+                               "Feature contains more than 50% Ns"));
     expected_errors.push_back (new CExpectedError("nuc", eDiag_Warning, "CDShasTooManyXs",
                                "CDS translation consists of more than 50% X residues"));
     eval = validator.Validate(seh, options);

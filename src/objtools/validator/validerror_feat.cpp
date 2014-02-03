@@ -7384,6 +7384,24 @@ size_t CValidError_feat::x_FindStartOfGap (CBioseq_Handle bsh, int pos)
 }
 
 
+static bool xf_IsDeltaLitOnly (CBioseq_Handle bsh)
+
+{
+    if ( bsh.IsSetInst_Ext() ) {
+        const CBioseq_Handle::TInst_Ext& ext = bsh.GetInst_Ext();
+        if ( ext.IsDelta() ) {
+            ITERATE (CDelta_ext::Tdata, it, ext.GetDelta().Get()) {
+                if ( (*it)->IsLoc() ) {
+                    return false;
+                }
+            }
+        }
+    }
+    return true;
+}
+
+
+
 void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
 {
     // check for bond locations - only allowable in bond feature and under special circumstances for het
@@ -7592,6 +7610,59 @@ void CValidError_feat::x_ValidateSeqFeatLoc(const CSeq_feat& feat)
                     }            
                 } catch (CException ) {
                 } catch (std::exception ) {
+                }
+            }
+
+            // look for features with > 50% Ns
+            // ignore gap features for this
+            if (bsh.IsNa() && bsh.IsSetInst_Repr()) {
+                CSeq_inst::TRepr repr = bsh.GetInst_Repr();
+                if (repr == CSeq_inst::eRepr_raw ||
+                    (repr == CSeq_inst::eRepr_delta && xf_IsDeltaLitOnly(bsh))) {
+                    if (feat.GetData().IsImp() && feat.GetData().GetImp().IsSetKey() &&
+                        (NStr::EqualNocase(feat.GetData().GetImp().GetKey(), "gap") || feat.GetData().GetSubtype() == CSeqFeatData::eSubtype_misc_feature)) {
+                    } else {
+                        try {
+                            int num_n = 0;
+                            int real_bases = 0;
+
+                            for ( CSeq_loc_CI loc_it(loc); loc_it; ++loc_it ) {        
+                                CSeqVector vec = GetSequenceFromLoc (loc_it.GetEmbeddingSeq_loc(), *m_Scope);
+                                if ( !vec.empty() ) {
+                                    CBioseq_Handle ph = BioseqHandleFromLocation(m_Scope, loc_it.GetEmbeddingSeq_loc());
+                                    TSeqPos offset = loc_it.GetEmbeddingSeq_loc().GetStart (eExtreme_Positional);
+                                    string vec_data;
+                                    vec.GetSeqData(0, vec.size(), vec_data);
+
+                                    int pos = 0;
+                                    string::iterator it = vec_data.begin();
+                                    while (it != vec_data.end()) {
+                                        if (*it == 'N') {
+                                            CSeqMap_CI map_iter(ph, SSeqMapSelector(), offset + pos);
+                                            if (map_iter.GetType() == CSeqMap::eSeqGap) {
+                                            } else {
+                                                num_n++;
+                                            }
+                                        } else {
+                                            if (isalpha(*it)) {
+                                              real_bases++;
+                                            }
+                                        }
+                                        ++it;
+                                        ++pos;
+                                    }
+                                }
+                            }
+
+                            if (num_n > real_bases) {
+                                PostErr (eDiag_Warning, eErr_SEQ_FEAT_FeatureIsMostlyNs, 
+                                         "Feature contains more than 50% Ns", feat);
+                            }
+
+                        } catch (CException ) {
+                        } catch (std::exception ) {
+                        }
+                    }
                 }
             }
         }
