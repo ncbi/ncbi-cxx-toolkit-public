@@ -42,7 +42,6 @@
 #include <objmgr/scope.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/validator/validatorp.hpp>
-#include <objects/taxon1/taxon1.hpp>
 
 #include <serial/objistr.hpp>
 #include <serial/objhook.hpp>
@@ -211,7 +210,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static vector <string>                    suspicious_notes;
         static vector <string>                    trna_list; 
         static Str2UInt                           desired_aaList;
-        static CTaxon1                            tax_db_conn;
         static Str2Str                            state_abbrev;
         static Str2Str                            cds_prod_find;
         static vector <string>                    s_pseudoweasels;

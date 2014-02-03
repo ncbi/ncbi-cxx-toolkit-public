@@ -695,7 +695,8 @@ BEGIN_SCOPE(DiscRepNmSpc)
       void GetTestItemList(const vector <string>& itemlist, 
                            Str2Strs& setting2list, 
                            const string& delim = "$");
-      void RmvRedundancy(vector <string>& item_list);
+      void RmvRedundancy(vector <string>& items, 
+                          vector <CConstRef <CObject> >& objs);
       bool DoesStringContainPhrase(const string& str, 
                                    const vector <string>& phrases, 
                                    bool case_sensitive = true, 

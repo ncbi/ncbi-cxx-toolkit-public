@@ -41,7 +41,6 @@
 #include <objmgr/scope.hpp>
 #include <objtools/data_loaders/genbank/gbloader.hpp>
 #include <objtools/validator/validatorp.hpp>
-#include <objects/taxon1/taxon1.hpp>
 
 #include <serial/objistr.hpp>
 #include <serial/objhook.hpp>
