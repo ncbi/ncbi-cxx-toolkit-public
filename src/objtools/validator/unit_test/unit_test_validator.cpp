@@ -18076,12 +18076,16 @@ BOOST_AUTO_TEST_CASE(Test_SQD_1532)
 
 BOOST_AUTO_TEST_CASE(Test_SexQualifiers)
 {
+    BOOST_CHECK_EQUAL(CSubSource::IsValidSexQualifierValue("M"), true);
+    BOOST_CHECK_EQUAL(CSubSource::IsValidSexQualifierValue("Male"), true);
     BOOST_CHECK_EQUAL(CSubSource::IsValidSexQualifierValue("male"), true);
     BOOST_CHECK_EQUAL(CSubSource::IsValidSexQualifierValue("llama"), false);
     BOOST_CHECK_EQUAL(CSubSource::IsValidSexQualifierValue("m/f"), true);
 
     BOOST_CHECK_EQUAL(CSubSource::FixSexQualifierValue("m/f"), "male and female");
     BOOST_CHECK_EQUAL(CSubSource::FixSexQualifierValue("m/f/neuter"), "male, female, and neuter");
+
+
 
 }
 

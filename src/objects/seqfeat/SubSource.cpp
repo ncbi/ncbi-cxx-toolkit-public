@@ -1421,7 +1421,7 @@ bool CSubSource::IsValidSexQualifierValue (const string& value)
     NStr::ToLower(str);
 
     vector<string> words;
-    NStr::Tokenize(value," ,/",words);
+    NStr::Tokenize(str," ,/",words);
     if (words.size() == 0) {
         return false;
     }
