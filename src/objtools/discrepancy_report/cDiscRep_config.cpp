@@ -82,7 +82,6 @@ vector <string>                     CDiscRepInfo :: suspicious_notes;
 vector <string>                     CDiscRepInfo :: trna_list;
 vector <string>                     CDiscRepInfo :: rrna_standard_name;
 Str2UInt                            CDiscRepInfo :: desired_aaList;
-CTaxon1                             CDiscRepInfo :: tax_db_conn;
 Str2Str                             CDiscRepInfo :: state_abbrev;
 Str2Str                             CDiscRepInfo :: cds_prod_find;
 vector <string>                     CDiscRepInfo :: s_pseudoweasels;
@@ -349,9 +348,6 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
     thisInfo.desired_aaList["Sec"] = 0;
     thisInfo.desired_aaList["Pyl"] = 0;
     thisInfo.desired_aaList["Ter"] = 0;
-
-    // ini. of tax_db_conn: taxonomy db connection
-    thisInfo.tax_db_conn.Init();
 
     // ini. of usa_state_abbv;
     thisInfo.state_abbrev["AL"] = "Alabama";
@@ -1929,7 +1925,7 @@ void CRepConfig :: GetTestList()
         if (++i >= sz) return;
    }
    if ( thisTest.tests_run.find("FIND_DUP_RRNAS") != end_it) {
-       thisGrp.tests_on_Bioseq_CFeat.push_back(
+       thisGrp.tests_on_Bioseq_CFeat_CSeqdesc.push_back(
                     CRef <CTestAndRepData> (new CBioseq_FIND_DUP_RRNAS));
         if (++i >= sz) return;
    }
@@ -2945,9 +2941,6 @@ void CRepConfAsndisc :: Run()
    }
    thisInfo.disc_report_data.clear();
    thisInfo.test_item_list.clear();
-
-    // Exit
-   thisInfo.tax_db_conn.Fini();
 }; // Run()
 
 void CRepConfig :: Run()
@@ -2956,9 +2949,6 @@ void CRepConfig :: Run()
   CRef <CSeq_entry> 
     seq_ref ((CSeq_entry*)(m_TopSeqEntry->GetCompleteSeq_entry().GetPointer()));
   CheckThisSeqEntry(seq_ref);
-  
-    // Exit
-  thisInfo.tax_db_conn.Fini();
 };
 
 END_NCBI_SCOPE

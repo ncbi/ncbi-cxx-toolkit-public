@@ -556,16 +556,21 @@ CConstRef <CSeq_feat> CTestAndRepData :: GetGeneForFeature(const CSeq_feat& seq_
 };
 
 
-void CTestAndRepData :: RmvRedundancy(vector <string>& item_list)
+void CTestAndRepData :: RmvRedundancy(vector <string>& items, vector <CConstRef <CObject> >& objs)
 {
-  vector <string> tmp = item_list;
-  item_list.clear();
-  strtmp = "";
+  vector <string> tmp = items;
+  vector <CConstRef <CObject> > tmp_objs = objs;
+  set <string> uni_item;
+  items.clear(); 
+  objs.clear();
+  unsigned i=0;
   ITERATE (vector <string>, it, tmp) {
-    if (strtmp.find(*it) == string::npos) {
-      item_list.push_back(*it);
-      strtmp += *it + ",";
+    if (uni_item.find(*it) == uni_item.end()) {
+      items.push_back(*it);
+      objs.push_back(tmp_objs[i]);
+      uni_item.insert(*it);
     } 
+    i++;
   }
 };
 
@@ -782,12 +787,13 @@ string CTestAndRepData :: GetDiscItemText(const CSeq_submit& seq_submit)
   if (seq_submit.GetData().IsEntrys()) {
      const list <CRef <CSeq_entry> >& entrys = seq_submit.GetData().GetEntrys();
      if (!entrys.empty()) {
+        desc = "Cit-sub for ";
         if ((*entrys.begin())->IsSeq()) {
-            desc =  BioseqToBestSeqIdString((*entrys.begin())->GetSeq(), 
+            desc += BioseqToBestSeqIdString((*entrys.begin())->GetSeq(), 
                                              CSeq_id::e_Genbank);
         }
         else {
-          desc = GetDiscItemTextForBioseqSet((*entrys.begin())->GetSet());
+          desc += GetDiscItemTextForBioseqSet((*entrys.begin())->GetSet());
         }
      }
   }
