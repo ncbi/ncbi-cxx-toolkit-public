@@ -77,7 +77,7 @@ enum EOnCallerGrp {
     eSuspectText
 };
 
-class CDiscRepOutput : public CObject
+class NCBI_DISCREPANCY_REPORT_EXPORT CDiscRepOutput : public CObject
 {
   public:
     ~CDiscRepOutput () {};
