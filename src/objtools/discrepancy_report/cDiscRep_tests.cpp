@@ -7780,13 +7780,16 @@ void CSeqEntry_test_on_tax_cflts :: RunTests(const CBioSource& biosrc, const str
    string tax_nm;
    tax_nm = biosrc.IsSetTaxname() ? biosrc.GetTaxname() : kEmptyStr;
    if (tax_nm.empty()) return; 
+/*
    else tax_nm = "$" + tax_nm + "#";
-   string tax_desc(tax_nm + desc);
+   string tax_desc(tax_nm + "#"  desc);
+*/
 
    string desc_tmp;
    ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrg().GetOrgname().GetMod()) {
-     strtmp = (*it)->GetSubname() + tax_desc;
-     desc_tmp = "$" + strtmp + "#" + tax_nm;
+     strtmp = (*it)->GetSubname() + "$" + tax_nm + "#" + desc;
+//     desc_tmp = "$" + strtmp + "#" + tax_nm;
+     desc_tmp = "$" + strtmp;
      switch ( (*it)->GetSubtype() ) {
 
        // DISC_SPECVOUCHER_TAXNAME_MISMATCH
@@ -7877,11 +7880,36 @@ void CSeqEntry_test_on_tax_cflts :: GetReport_cflts(CRef <CClickableItem>& c_ite
        }
    }
    else {
+     bool cnt_sub = 0;
+     ITERATE (Str2Strs, it, qual2tax_seqs) {
+       tax2seqs.clear();
+       GetTestItemList(it->second, tax2seqs, "#");
+       if (tax2seqs.size() > 1) {
+          cnt_sub++;
+          if (cnt_sub > 1) break;
+       }
+     }
+     if (!cnt_sub) return;
+
      ITERATE (Str2Strs, it, qual2tax_seqs) {
        qual = it->first;
        tax2seqs.clear();
        GetTestItemList(it->second, tax2seqs, "#");
        if (tax2seqs.size() > 1) {
+         if (cnt_sub == 1) {
+            ITERATE (Str2Strs, jt, tax2seqs) {
+              copy(jt->second.begin(), jt->second.end(),
+                    back_inserter( c_item->item_list));
+              strtmp = "$" + qual + "#" + jt->first;
+              obj_ls = &(thisInfo.test_item_objs[GetName() + strtmp]);
+              copy(obj_ls->begin(), obj_ls->end(),
+                     back_inserter(c_item->obj_list));
+           }
+           c_item->description
+              = GetHasComment(c_item->item_list.size(), "biosource")
+                + qual_nm + " '" + qual+ "' but do not have the same taxnames.";
+         }
+         else {
            CRef <CClickableItem> c_sub (new CClickableItem);
            ITERATE (Str2Strs, jt, tax2seqs) {
              copy(jt->second.begin(), jt->second.end(),
@@ -7899,10 +7927,12 @@ void CSeqEntry_test_on_tax_cflts :: GetReport_cflts(CRef <CClickableItem>& c_ite
            copy(c_sub->obj_list.begin(), c_sub->obj_list.end(),
                 back_inserter( c_item->obj_list));
            c_item->subcategories.push_back(c_sub);
+           c_item->description 
+              = GetHasComment(c_item->item_list.size(), "BioSource")
+                + qual_nm + "/taxname conflicts.";
+         }
        }   
      }
-     c_item->description = GetHasComment(c_item->item_list.size(), "BioSource") 
-                           + qual_nm + "/taxname conflicts.";
    }
 };
 
@@ -11460,7 +11490,6 @@ void CSeqEntry_on_biosrc_subsrc :: RunTests(const CBioSource& biosrc, const stri
    if (m_run_col) {
       GetSubSrcValues(biosrc, CSubSource::eSubtype_collected_by, arr);
       if (Has3Names(arr)) {
-cerr << "biosrc " << MSerial_AsnText << biosrc << endl;
           thisInfo.test_item_list[GetName_col()].push_back(desc);
           thisInfo.test_item_objs[GetName_col()].push_back(obj_ref);
       }
