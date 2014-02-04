@@ -14,7 +14,7 @@ CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
 LIB = xdiscrepancy_report xobjread xvalidate valid valerr taxon3 \
         $(XFORMAT_LIBS) xalnmgr xobjutil tables \
-        taxon1 macro xregexp $(PCRE_LIB) $(OBJREAD_LIBS) $(OBJMGR_LIBS) \
+        macro xregexp $(PCRE_LIB) $(OBJREAD_LIBS) $(OBJMGR_LIBS) \
         test_boost xncbi
 
 LIBS = $(PCRE_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
