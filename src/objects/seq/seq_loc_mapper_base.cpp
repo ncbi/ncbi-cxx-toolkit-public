@@ -528,6 +528,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(IMapper_Sequence_Info* seqinfo)
       m_Mappings(new CMappingRanges),
       m_CurrentGroup(0),
       m_FuzzOption(0),
+      m_MapOptions(0),
       m_SeqInfo(seqinfo ? seqinfo : new CDefault_Mapper_Sequence_Info)
 {
 }
@@ -545,6 +546,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(CMappingRanges* mapping_ranges,
       m_Mappings(mapping_ranges),
       m_CurrentGroup(0),
       m_FuzzOption(0),
+      m_MapOptions(0),
       m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
 {
 }
@@ -563,6 +565,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_feat&  map_feat,
       m_Mappings(new CMappingRanges),
       m_CurrentGroup(0),
       m_FuzzOption(0),
+      m_MapOptions(0),
       m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
 {
     x_InitializeFeat(map_feat, dir);
@@ -582,6 +585,7 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_loc& source,
       m_Mappings(new CMappingRanges),
       m_CurrentGroup(0),
       m_FuzzOption(0),
+      m_MapOptions(0),
       m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
 {
     x_InitializeLocs(source, target);
@@ -602,9 +606,10 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align& map_align,
       m_Mappings(new CMappingRanges),
       m_CurrentGroup(0),
       m_FuzzOption(0),
+      m_MapOptions(opts),
       m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
 {
-    x_InitializeAlign(map_align, to_id, opts);
+    x_InitializeAlign(map_align, to_id);
 }
 
 
@@ -622,9 +627,10 @@ CSeq_loc_Mapper_Base::CSeq_loc_Mapper_Base(const CSeq_align& map_align,
       m_Mappings(new CMappingRanges),
       m_CurrentGroup(0),
       m_FuzzOption(0),
+      m_MapOptions(opts),
       m_SeqInfo(seq_info ? seq_info : new CDefault_Mapper_Sequence_Info)
 {
-    x_InitializeAlign(map_align, to_row, opts);
+    x_InitializeAlign(map_align, to_row);
 }
 
 
@@ -958,8 +964,7 @@ void CSeq_loc_Mapper_Base::x_InitializeLocs(const CSeq_loc& source,
 
 
 void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
-                                             const CSeq_id&    to_id,
-                                             TMapOptions       opts)
+                                             const CSeq_id&    to_id)
 {
     // When finding the destination row, the first row with required seq-id
     // is used. Do not check if there are multiple rows with the same id.
@@ -999,7 +1004,7 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
                 NCBI_THROW(CAnnotMapperException, eBadAlignment,
                            "Target ID not found in the alignment");
             }
-            x_InitAlign(dseg, to_row, opts);
+            x_InitAlign(dseg, to_row);
             break;
         }
     case CSeq_align::C_Segs::e_Std:
@@ -1047,7 +1052,7 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
                 // Each sub-alignment forms a separate group.
                 // See SetMergeBySeg().
                 m_CurrentGroup++;
-                x_InitializeAlign(**aln, to_id, opts);
+                x_InitializeAlign(**aln, to_id);
             }
             break;
         }
@@ -1064,11 +1069,14 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
                 // Prefer to map from the second subrow to the first one
                 // if their ids are the same.
                 if ((*it)->GetFirst_id().Equals(to_id)) {
-                    x_InitSparse(sparse, row, fAlign_Sparse_ToFirst);
+                    m_MapOptions &= ~fAlign_Sparse_ToSecond;
+                    m_MapOptions |= fAlign_Sparse_ToFirst;
                 }
                 else if ((*it)->GetSecond_id().Equals(to_id)) {
-                    x_InitSparse(sparse, row, fAlign_Sparse_ToSecond);
+                    m_MapOptions &= ~fAlign_Sparse_ToFirst;
+                    m_MapOptions |= fAlign_Sparse_ToSecond;
                 }
+                x_InitSparse(sparse, row);
             }
             break;
         }
@@ -1080,8 +1088,7 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
 
 
 void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
-                                             size_t            to_row,
-                                             TMapOptions       opts)
+                                             size_t            to_row)
 {
     switch ( map_align.GetSegs().Which() ) {
     case CSeq_align::C_Segs::e_Dendiag:
@@ -1097,7 +1104,7 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
     case CSeq_align::C_Segs::e_Denseg:
         {
             const CDense_seg& dseg = map_align.GetSegs().GetDenseg();
-            x_InitAlign(dseg, to_row, opts);
+            x_InitAlign(dseg, to_row);
             break;
         }
     case CSeq_align::C_Segs::e_Std:
@@ -1123,7 +1130,7 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
             ITERATE(CSeq_align_set::Tdata, aln, aln_set.Get()) {
                 // Each sub-alignment forms a separate group. See SetMergeBySeg().
                 m_CurrentGroup++;
-                x_InitializeAlign(**aln, to_row, opts);
+                x_InitializeAlign(**aln, to_row);
             }
             break;
         }
@@ -1143,7 +1150,7 @@ void CSeq_loc_Mapper_Base::x_InitializeAlign(const CSeq_align& map_align,
         }
     case CSeq_align::C_Segs::e_Sparse:
         {
-            x_InitSparse(map_align.GetSegs().GetSparse(), to_row, opts);
+            x_InitSparse(map_align.GetSegs().GetSparse(), to_row);
             break;
         }
     default:
@@ -1213,8 +1220,7 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CDense_diag& diag, size_t to_row)
 
 
 void CSeq_loc_Mapper_Base::x_InitAlign(const CDense_seg& denseg,
-                                       size_t to_row,
-                                       TMapOptions opts)
+                                       size_t to_row)
 {
     // Check the alignment for consistency. Adjust invalid values, show
     // warnings if this happens.
@@ -1266,7 +1272,7 @@ void CSeq_loc_Mapper_Base::x_InitAlign(const CDense_seg& denseg,
 
         // Depending on the flags we may need to use whole range
         // for each dense-seg ignoring its segments.
-        if (opts & fAlign_Dense_seg_TotalRange) {
+        if (m_MapOptions & fAlign_Dense_seg_TotalRange) {
             // Get total range for source and destination rows.
             // Both ranges must be not empty.
             TSeqRange r_src = denseg.GetSeqRange(row);
@@ -1697,11 +1703,10 @@ void CSeq_loc_Mapper_Base::x_InitSpliced(const CSpliced_seg& spliced,
 
 
 void CSeq_loc_Mapper_Base::x_InitSparse(const CSparse_seg& sparse,
-                                        int to_row,
-                                        TMapOptions opts)
+                                        int to_row)
 {
     // Sparse-seg needs special row indexing.
-    bool to_second = (opts & fAlign_Sparse_ToSecond) != 0;
+    bool to_second = (m_MapOptions & fAlign_Sparse_ToSecond) != 0;
 
     // Check the alignment for consistency. Adjust invalid values, show
     // warnings if this happens.

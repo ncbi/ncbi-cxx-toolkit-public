@@ -128,7 +128,21 @@ public:
     /// @param direction
     ///  Direction of mapping: up (from segments to master) or down.
     CSeq_loc_Mapper(CBioseq_Handle   target_seq,
-                    ESeqMapDirection direction);
+                    ESeqMapDirection direction,
+                    TMapOptions      opts = 0);
+
+    /// Mapping between segments and the top level sequence.
+    /// @param target_seq
+    ///  Top level bioseq
+    /// @param direction
+    ///  Direction of mapping: up (from segments to master) or down.
+    /// @param selector
+    ///  Seq-map selector with additional restrictions (range, strand etc.).
+    ///  Some properties of the selector are always adjusted by the mapper.
+    CSeq_loc_Mapper(CBioseq_Handle   target_seq,
+                    ESeqMapDirection direction,
+                    SSeqMapSelector  selector,
+                    TMapOptions      opts = 0);
 
     /// Mapping through a seq-map.
     /// @param seq_map
@@ -141,46 +155,8 @@ public:
     CSeq_loc_Mapper(const CSeqMap&   seq_map,
                     ESeqMapDirection direction,
                     const CSeq_id*   top_level_id = 0,
-                    CScope*          scope = 0);
-
-    /// Mapping between segments and the top level sequence limited by depth.
-    /// @param depth
-    ///  Mapping depth. Depth of 0 converts synonyms.
-    /// @param top_level_seq
-    ///  Top level bioseq
-    /// @param direction
-    ///  Direction of mapping: up (from segments to master) or down.
-    CSeq_loc_Mapper(size_t                depth,
-                    const CBioseq_Handle& top_level_seq,
-                    ESeqMapDirection      direction);
-
-    /// Depth-limited mapping through a seq-map.
-    /// @param depth
-    ///  Mapping depth. Depth of 0 converts synonyms.
-    /// @param seq_map
-    ///  Sequence map defining the mapping
-    /// @param direction
-    ///  Direction of mapping: up (from segments to master) or down.
-    /// @param top_level_id
-    ///  Explicit destination id when mapping up, may be used with
-    ///  seq-maps constructed from a seq-loc with multiple ids.
-    CSeq_loc_Mapper(size_t           depth,
-                    const CSeqMap&   top_level_seq,
-                    ESeqMapDirection direction,
-                    const CSeq_id*   top_level_id = 0,
-                    CScope*          scope = 0);
-
-    /// Mapping between segments and the top level sequence.
-    /// @param target_seq
-    ///  Top level bioseq
-    /// @param direction
-    ///  Direction of mapping: up (from segments to master) or down.
-    /// @param selector
-    ///  Seq-map selector with additional restrictions (range, strand etc.).
-    ///  Some properties of the selector are always adjusted by the mapper.
-    CSeq_loc_Mapper(CBioseq_Handle   target_seq,
-                    ESeqMapDirection direction,
-                    SSeqMapSelector  selector);
+                    CScope*          scope = 0,
+                    TMapOptions      opts = 0);
 
     /// Mapping through a seq-map.
     /// @param seq_map
@@ -197,7 +173,37 @@ public:
                     ESeqMapDirection direction,
                     SSeqMapSelector  selector,
                     const CSeq_id*   top_level_id = 0,
-                    CScope*          scope = 0);
+                    CScope*          scope = 0,
+                    TMapOptions      opts = 0);
+
+    /// Mapping between segments and the top level sequence limited by depth.
+    /// @param depth
+    ///  Mapping depth. Depth of 0 converts synonyms.
+    /// @param top_level_seq
+    ///  Top level bioseq
+    /// @param direction
+    ///  Direction of mapping: up (from segments to master) or down.
+    CSeq_loc_Mapper(size_t                depth,
+                    const CBioseq_Handle& top_level_seq,
+                    ESeqMapDirection      direction,
+                    TMapOptions           opts = 0);
+
+    /// Depth-limited mapping through a seq-map.
+    /// @param depth
+    ///  Mapping depth. Depth of 0 converts synonyms.
+    /// @param seq_map
+    ///  Sequence map defining the mapping
+    /// @param direction
+    ///  Direction of mapping: up (from segments to master) or down.
+    /// @param top_level_id
+    ///  Explicit destination id when mapping up, may be used with
+    ///  seq-maps constructed from a seq-loc with multiple ids.
+    CSeq_loc_Mapper(size_t           depth,
+                    const CSeqMap&   top_level_seq,
+                    ESeqMapDirection direction,
+                    const CSeq_id*   top_level_id = 0,
+                    CScope*          scope = 0,
+                    TMapOptions      opts = 0);
 
     /// Destination of seq-id mapping through a GC-Assembly.
     enum EGCAssemblyAlias {
@@ -229,7 +235,8 @@ public:
                     ESeqMapDirection    direction,
                     SSeqMapSelector     selector,
                     CScope*             scope = 0,
-                    EScopeFlag          scope_flag = eCopyScope);
+                    EScopeFlag          scope_flag = eCopyScope,
+                    TMapOptions         opts = 0);
 
     ~CSeq_loc_Mapper(void);
 
@@ -256,6 +263,13 @@ private:
     void x_InitializeSeqMap(CSeqMap_CI       seg_it,
                             const CSeq_id*   top_id,
                             ESeqMapDirection direction);
+    void x_InitializeSeqMapUp(CSeqMap_CI       seg_it,
+                              const CSeq_id*   top_id);
+    void x_InitializeSeqMapDown(CSeqMap_CI       seg_it,
+                                const CSeq_id*   top_id);
+    void x_InitializeSeqMapSingleLevel(CSeqMap_CI       seg_it,
+                                       const CSeq_id*   top_id,
+                                       ESeqMapDirection direction);
 
     // Parse GC-Assembly, collect mappings for each seq-id to the
     // selected alias type.

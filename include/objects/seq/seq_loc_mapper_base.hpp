@@ -296,10 +296,19 @@ public:
         /// Ignore internal dense-seg structure - map each
         /// dense-seg according to the total ranges involved
         fAlign_Dense_seg_TotalRange = 0x01,
+
         /// Flags used to indicate mapping direction when mapping
         /// through a sparse-seg.
         fAlign_Sparse_ToFirst       = 0x00, ///< Map to first-id
-        fAlign_Sparse_ToSecond      = 0x02  ///< Map to second-id
+        fAlign_Sparse_ToSecond      = 0x02, ///< Map to second-id
+        
+        /// Flag used when mapping through a seq-map (this includes
+        /// mapping through a bioseq or a GC-assembly). If set, each
+        /// call to Map() goes only one level up or down, unlike normal
+        /// mode which maps from any level as far up/down as possible.
+        /// The result of mapping can be mapped further by making another
+        /// call to Map().
+        fMapSingleLevel             = 0x04
     };
     typedef int TMapOptions;
 
@@ -493,12 +502,10 @@ protected:
     // row containing the id and sets it as mapping target. All other
     // rows become mapping source.
     void x_InitializeAlign(const CSeq_align& map_align,
-                           const CSeq_id&    to_id,
-                           TMapOptions       opts);
+                           const CSeq_id&    to_id);
     // Initialize the mapper from an alignment, map to the specified row.
     void x_InitializeAlign(const CSeq_align& map_align,
-                           size_t            to_row,
-                           TMapOptions       opts);
+                           size_t            to_row);
 
     // Create dummy mapping from the whole destination location to itself.
     // This will prevent truncation of ranges already on the target.
@@ -640,15 +647,13 @@ private:
 
     // Initialize the mapper from different alignment types.
     void x_InitAlign(const CDense_diag& diag, size_t to_row);
-    void x_InitAlign(const CDense_seg& denseg, size_t to_row,
-                     TMapOptions opts);
+    void x_InitAlign(const CDense_seg& denseg, size_t to_row);
     void x_InitAlign(const CStd_seg& sseg, size_t to_row);
     void x_InitAlign(const CPacked_seg& pseg, size_t to_row);
     void x_InitSpliced(const CSpliced_seg& spliced,
                        const CSeq_id&      to_id);
     void x_InitSpliced(const CSpliced_seg& spliced, ESplicedRow to_row);
-    void x_InitSparse(const CSparse_seg& sparse, int to_row,
-                      TMapOptions opts);
+    void x_InitSparse(const CSparse_seg& sparse, int to_row);
 
     void x_IterateExonParts(const CSpliced_exon::TParts& parts,
                             ESplicedRow                  to_row,
@@ -801,6 +806,8 @@ protected:
     int                  m_CurrentGroup;
     // Control how fuzz is generated and propagated
     TFuzzOption          m_FuzzOption;
+    // Misc mapping options
+    TMapOptions          m_MapOptions;
 
     // Sequence info provider
     mutable CRef<IMapper_Sequence_Info> m_SeqInfo;

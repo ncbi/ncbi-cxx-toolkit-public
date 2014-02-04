@@ -201,7 +201,8 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
     : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
       m_Scope(scope)
 {
-    x_InitializeAlign(map_align, to_id, opts);
+    m_MapOptions = opts;
+    x_InitializeAlign(map_align, to_id);
 }
 
 
@@ -212,16 +213,19 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeq_align& map_align,
     : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
       m_Scope(scope)
 {
-    x_InitializeAlign(map_align, to_row, opts);
+    m_MapOptions = opts;
+    x_InitializeAlign(map_align, to_row);
 }
 
 
-CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle target_seq,
-                                 ESeqMapDirection direction)
+CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle   target_seq,
+                                 ESeqMapDirection direction,
+                                 TMapOptions      opts)
     : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(
                            &target_seq.GetScope())),
       m_Scope(&target_seq.GetScope())
 {
+    m_MapOptions = opts;
     CConstRef<CSeq_id> top_level_id = target_seq.GetSeqId();
     if ( !top_level_id ) {
         // Bioseq handle has no id, try to get one.
@@ -248,10 +252,12 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle target_seq,
 CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
                                  ESeqMapDirection direction,
                                  const CSeq_id*   top_level_id,
-                                 CScope*          scope)
+                                 CScope*          scope,
+                                 TMapOptions      opts)
     : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
       m_Scope(scope)
 {
+    m_MapOptions = opts;
     x_InitializeSeqMap(seq_map, top_level_id, direction);
     x_PreserveDestinationLocs();
 }
@@ -259,11 +265,13 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
 
 CSeq_loc_Mapper::CSeq_loc_Mapper(CBioseq_Handle   target_seq,
                                  ESeqMapDirection direction,
-                                 SSeqMapSelector  selector)
+                                 SSeqMapSelector  selector,
+                                 TMapOptions      opts)
     : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(
                            &target_seq.GetScope())),
       m_Scope(&target_seq.GetScope())
 {
+    m_MapOptions = opts;
     CConstRef<CSeq_id> top_id = target_seq.GetSeqId();
     if ( !top_id ) {
         // Bioseq handle has no id, try to get one.
@@ -290,10 +298,12 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
                                  ESeqMapDirection direction,
                                  SSeqMapSelector  selector,
                                  const CSeq_id*   top_level_id,
-                                 CScope*          scope)
+                                 CScope*          scope,
+                                 TMapOptions      opts)
     : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
       m_Scope(scope)
 {
+    m_MapOptions = opts;
     x_InitializeSeqMap(seq_map,
                        selector,
                        top_level_id,
@@ -304,11 +314,13 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CSeqMap&   seq_map,
 
 CSeq_loc_Mapper::CSeq_loc_Mapper(size_t                 depth,
                                  const CBioseq_Handle&  top_level_seq,
-                                 ESeqMapDirection       direction)
+                                 ESeqMapDirection       direction,
+                                 TMapOptions            opts)
     : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(
                            &top_level_seq.GetScope())),
       m_Scope(&top_level_seq.GetScope())
 {
+    m_MapOptions = opts;
     if (depth > 0) {
         depth--;
         x_InitializeSeqMap(top_level_seq.GetSeqMap(),
@@ -331,10 +343,12 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(size_t           depth,
                                  const CSeqMap&   top_level_seq,
                                  ESeqMapDirection direction,
                                  const CSeq_id*   top_level_id,
-                                 CScope*          scope)
+                                 CScope*          scope,
+                                 TMapOptions      opts)
     : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
       m_Scope(scope)
 {
+    m_MapOptions = opts;
     if (depth > 0) {
         depth--;
         x_InitializeSeqMap(top_level_seq, depth, top_level_id, direction);
@@ -374,10 +388,12 @@ CSeq_loc_Mapper::CSeq_loc_Mapper(const CGC_Assembly& gc_assembly,
                                  ESeqMapDirection    direction,
                                  SSeqMapSelector     selector,
                                  CScope*             scope,
-                                 EScopeFlag          scope_flag)
+                                 EScopeFlag          scope_flag,
+                                 TMapOptions         opts)
     : CSeq_loc_Mapper_Base(new CScope_Mapper_Sequence_Info(scope)),
       m_Scope(scope)
 {
+    m_MapOptions = opts;
     // While parsing GC-Assembly the mapper will need to add virtual
     // bioseqs to the scope. To keep the original scope clean of them,
     // create a new scope and add the original one as a child.
@@ -452,53 +468,73 @@ void CSeq_loc_Mapper::x_InitializeSeqMap(CSeqMap_CI       seg_it,
                                          const CSeq_id*   top_id,
                                          ESeqMapDirection direction)
 {
+    if (m_MapOptions & fMapSingleLevel) {
+        x_InitializeSeqMapSingleLevel(seg_it, top_id, direction);
+    }
+    else if (direction == eSeqMap_Up) {
+        x_InitializeSeqMapUp(seg_it, top_id);
+    }
+    else {
+        x_InitializeSeqMapDown(seg_it, top_id);
+    }
+}
+
+
+void CSeq_loc_Mapper::x_InitializeSeqMapUp(CSeqMap_CI       seg_it,
+                                           const CSeq_id*   top_id)
+{
     TSeqPos src_from, src_len, dst_from, dst_len;
     ENa_strand dst_strand = eNa_strand_unknown;
-    if (direction == eSeqMap_Up) {
-        // Mapping up - for each iterator create mapping to the top level.
-        // If top_id is set, top level positions are the iterator's positions.
-        // Otherwise top-level ids and positions must be taked from the
-        // iterators with depth == 1.
-        TSeqPos top_ref_start = 0;
-        TSeqPos top_start = 0;
-        CConstRef<CSeq_id> dst_id(top_id);
-        _ASSERT(seg_it.GetDepth() == 1);
-        while ( seg_it ) {
-            ENa_strand src_strand = seg_it.GetRefMinusStrand() ? eNa_strand_minus : eNa_strand_plus;
-            src_from = seg_it.GetRefPosition();
-            src_len = seg_it.GetLength();
-            dst_len = src_len;
-            if (top_id) {
-                dst_from = seg_it.GetPosition();
+    // Mapping up - for each iterator create mapping to the top level.
+    // If top_id is set, top level positions are the iterator's positions.
+    // Otherwise top-level ids and positions must be taked from the
+    // iterators with depth == 1.
+    TSeqPos top_ref_start = 0;
+    TSeqPos top_start = 0;
+    CConstRef<CSeq_id> dst_id(top_id);
+    _ASSERT(seg_it.GetDepth() == 1);
+    while ( seg_it ) {
+        ENa_strand src_strand = seg_it.GetRefMinusStrand() ? eNa_strand_minus : eNa_strand_plus;
+        src_from = seg_it.GetRefPosition();
+        src_len = seg_it.GetLength();
+        dst_len = src_len;
+        if (top_id) {
+            dst_from = seg_it.GetPosition();
+            x_NextMappingRange(
+                *seg_it.GetRefSeqid().GetSeqId(),
+                src_from, src_len, src_strand,
+                *top_id,
+                dst_from, dst_len, dst_strand);
+        }
+        else /* !top_id */ {
+            if (seg_it.GetDepth() == 1) {
+                // Depth==1 - top level sequences (destination).
+                dst_id.Reset(seg_it.GetRefSeqid().GetSeqId());
+                top_ref_start = seg_it.GetRefPosition();
+                top_start = seg_it.GetPosition();
+                dst_strand = seg_it.GetRefMinusStrand() ? eNa_strand_minus : eNa_strand_plus;
+            }
+            else {
+                _ASSERT(seg_it.GetPosition() >= top_start);
+                TSeqPos shift = seg_it.GetPosition() - top_start;
+                dst_from = top_ref_start + shift;
                 x_NextMappingRange(
                     *seg_it.GetRefSeqid().GetSeqId(),
                     src_from, src_len, src_strand,
-                    *top_id,
+                    *dst_id,
                     dst_from, dst_len, dst_strand);
             }
-            else /* !top_id */ {
-                if (seg_it.GetDepth() == 1) {
-                    // Depth==1 - top level sequences (destination).
-                    dst_id.Reset(seg_it.GetRefSeqid().GetSeqId());
-                    top_ref_start = seg_it.GetRefPosition();
-                    top_start = seg_it.GetPosition();
-                    dst_strand = seg_it.GetRefMinusStrand() ? eNa_strand_minus : eNa_strand_plus;
-                }
-                else {
-                    _ASSERT(seg_it.GetPosition() >= top_start);
-                    TSeqPos shift = seg_it.GetPosition() - top_start;
-                    dst_from = top_ref_start + shift;
-                    x_NextMappingRange(
-                        *seg_it.GetRefSeqid().GetSeqId(),
-                        src_from, src_len, src_strand,
-                        *dst_id,
-                        dst_from, dst_len, dst_strand);
-                }
-            }
-            ++seg_it;
         }
-        return; // Done with eSeqMap_Up
+        ++seg_it;
     }
+}
+
+
+void CSeq_loc_Mapper::x_InitializeSeqMapDown(CSeqMap_CI       seg_it,
+                                             const CSeq_id*   top_id)
+{
+    TSeqPos src_from, src_len, dst_from, dst_len;
+    ENa_strand dst_strand = eNa_strand_unknown;
     // eSeqMap_Down
     // Collect all non-leaf references, create mapping from each non-leaf
     // to the bottom level.
@@ -545,13 +581,138 @@ void CSeq_loc_Mapper::x_InitializeSeqMap(CSeqMap_CI       seg_it,
                     *leaf.GetRefSeqid().GetSeqId(),
                     dst_from, dst_len, dst_strand);
             }
-            if ( seg_it ) {
-                while ( !refs.empty()  &&  refs.back().GetDepth() >= seg_it.GetDepth()) {
-                    refs.pop_back();
-                }
-                refs.push_back(seg_it);
+            while ( !refs.empty()  &&  refs.back().GetDepth() >= seg_it.GetDepth()) {
+                refs.pop_back();
             }
         }
+        if ( seg_it ) {
+            refs.push_back(seg_it);
+        }
+    }
+}
+
+
+void CSeq_loc_Mapper::x_InitializeSeqMapSingleLevel(CSeqMap_CI       seg_it,
+                                                    const CSeq_id*   top_id,
+                                                    ESeqMapDirection direction)
+{
+    TSeqPos seg_from, seg_len, ref_from, ref_len;
+    ENa_strand seg_strand = eNa_strand_unknown;
+    ENa_strand ref_strand = eNa_strand_unknown;
+    // Stack of segments for each level.
+    list<CSeqMap_CI> refs;
+    refs.push_back(seg_it);
+    while ( seg_it ) {
+        ++seg_it;
+        // While depth increases push all iterators to the stack.
+        if ( seg_it ) {
+            if (refs.empty()  ||  refs.back().GetDepth() < seg_it.GetDepth()) {
+                refs.push_back(seg_it);
+                continue;
+            }
+        }
+        // End of seq-map or the last iterator was a leaf - create mappings.
+        if ( !refs.empty() ) {
+            CSeqMap_CI ref = refs.back();
+            refs.pop_back();
+            if (direction == eSeqMap_Down) {
+                // Create self-mapping of the leaf reference - we can not use
+                // m_DstRanges here since they will contain ranges for each
+                // level while we need only the bottom.
+                seg_from = ref.GetRefPosition();
+                seg_len = ref.GetLength();
+                ref_from = seg_from;
+                ref_len = seg_len;
+                CConstRef<CSeq_id> id = ref.GetRefSeqid().GetSeqId();
+                x_NextMappingRange(*id, seg_from, seg_len, eNa_strand_unknown,
+                    *id, ref_from, ref_len, eNa_strand_unknown);
+            }
+            // Create mapping for each non-leaf level.
+            while ( !refs.empty() ) {
+                const CSeqMap_CI& seg = refs.back();
+                TSeqPos shift = ref.GetPosition() - seg.GetPosition();
+                seg_strand = seg.GetRefMinusStrand() ? eNa_strand_minus : eNa_strand_plus;
+                seg_from = seg.GetRefPosition() + shift;
+                seg_len = ref.GetLength();
+                ref_from = ref.GetRefPosition();
+                ref_len = seg_len;
+                ref_strand = ref.GetRefMinusStrand() ? eNa_strand_minus : eNa_strand_plus;
+                switch (direction) {
+                case eSeqMap_Down:
+                    x_NextMappingRange(
+                        *seg.GetRefSeqid().GetSeqId(),
+                        seg_from, seg_len, seg_strand,
+                        *ref.GetRefSeqid().GetSeqId(),
+                        ref_from, ref_len, ref_strand);
+                    break;
+                case eSeqMap_Up:
+                    x_NextMappingRange(
+                        *ref.GetRefSeqid().GetSeqId(),
+                        ref_from, ref_len, ref_strand,
+                        *seg.GetRefSeqid().GetSeqId(),
+                        seg_from, seg_len, seg_strand);
+                    break;
+                }
+                ref = seg;
+                if (ref.GetDepth() >= seg_it.GetDepth()) {
+                    refs.pop_back();
+                }
+                else {
+                    break;
+                }
+            }
+            // Are there still segments above?
+            if ( refs.empty() ) {
+                // Top level segment.
+                _ASSERT(ref);
+                if (top_id) {
+                    // If the top level is a single bioseq, add mapping.
+                    seg_from = ref.GetPosition();
+                    seg_len = ref.GetLength();
+                    ref_from = ref.GetRefPosition();
+                    ref_len = seg_len;
+                    ref_strand = ref.GetRefMinusStrand() ? eNa_strand_minus : eNa_strand_plus;
+                    switch (direction) {
+                    case eSeqMap_Down:
+                        x_NextMappingRange(
+                            *top_id,
+                            seg_from, seg_len, eNa_strand_unknown,
+                            *ref.GetRefSeqid().GetSeqId(),
+                            ref_from, ref_len, ref_strand);
+                        break;
+                    case eSeqMap_Up:
+                        x_NextMappingRange(
+                            *ref.GetRefSeqid().GetSeqId(),
+                            ref_from, ref_len, ref_strand,
+                            *top_id,
+                            seg_from, seg_len, seg_strand);
+                        break;
+                    }
+                }
+                else if (direction == eSeqMap_Up) {
+                    // Create self-mapping of the top-level reference if the top
+                    // level is not a single bioseq but rather a seq-map level.
+                    ref_from = ref.GetRefPosition();
+                    ref_len = ref.GetLength();
+                    seg_from = ref_from;
+                    seg_len = ref_len;
+                    CConstRef<CSeq_id> id = ref.GetRefSeqid().GetSeqId();
+                    x_NextMappingRange(*id, ref_from, ref_len, eNa_strand_unknown,
+                        *id, seg_from, seg_len, eNa_strand_unknown);
+                }
+            }
+        }
+        if ( seg_it ) {
+            refs.push_back(seg_it);
+        }
+    }
+    // Remove all collected destination ranges - they are not real destinations.
+    m_DstRanges.clear();
+    // If top level is a single sequence, create self-mapping for it.
+    if (top_id  &&  direction == eSeqMap_Up) {
+        m_DstRanges.resize(1);
+        m_DstRanges[0].clear();
+        m_DstRanges[0][CSeq_id_Handle::GetHandle(*top_id)].push_back(TRange::GetWhole());
     }
 }
 
