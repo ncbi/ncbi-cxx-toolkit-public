@@ -1915,13 +1915,13 @@ bool FindMatchInOrgRef (string str, const COrg_ref& org)
 
 
 static const string sIgnoreHostWordList[] = {
-  "cf.",
-  "cf ",
-  "aff ",
-  "aff.",
-  "near",
-  "nr.",
-  "nr "
+  " cf.",
+  " cf ",
+  " aff ",
+  " aff.",
+  " near",
+  " nr.",
+  " nr "
 };
 
 
@@ -1930,7 +1930,7 @@ static const int kNumIgnoreHostWordList = sizeof (sIgnoreHostWordList) / sizeof 
 void AdjustSpecificHostForTaxServer (string& spec_host)
 {
     for (int i = 0; i < kNumIgnoreHostWordList; i++) {
-        NStr::ReplaceInPlace(spec_host, sIgnoreHostWordList[i], "");
+        NStr::ReplaceInPlace(spec_host, sIgnoreHostWordList[i], " ");
     }
     NStr::ReplaceInPlace(spec_host, "  ", " ");
     NStr::TruncateSpacesInPlace(spec_host);
