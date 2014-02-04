@@ -206,6 +206,11 @@ void CDiscRepOutput :: Export()
   *(oc.output_f) << "\n\nDetailed Report\n";
   x_WriteDiscRepDetails(thisInfo.disc_report_data, oc.use_flag);
 
+   // clearn
+   thisInfo.test_item_list.clear();
+   thisInfo.test_item_objs.clear();
+   thisInfo.disc_report_data.clear();
+
 };  // Asndisc:: Export
 
 bool CDiscRepOutput :: x_RmTagInDescp(string& str, const string& tag)
@@ -815,7 +820,9 @@ void CDiscRepOutput :: Export(vector <CRef <CClickableText> >& item_list)
    thisInfo.test_item_list.clear();
    thisInfo.test_item_objs.clear();
  
+   // moved to CollectTestList
    // clean for gbench usage. 
+/*
    thisGrp.tests_on_Bioseq.clear();
    thisGrp.tests_on_Bioseq_na.clear();
    thisGrp.tests_on_Bioseq_aa.clear();
@@ -828,6 +835,7 @@ void CDiscRepOutput :: Export(vector <CRef <CClickableText> >& item_list)
    thisGrp.tests_4_once.clear();
    thisGrp.tests_on_BioseqSet.clear();
    thisGrp.tests_on_SubmitBlk.clear();
+*/
 };
 
 void CDiscRepOutput :: Export(CRef <CClickableItem>& c_item)
@@ -835,6 +843,10 @@ void CDiscRepOutput :: Export(CRef <CClickableItem>& c_item)
    if (!thisInfo.disc_report_data.empty()) {
       c_item.Reset(thisInfo.disc_report_data[0].GetPointer());
    }
-};
+
+   thisInfo.disc_report_data.clear();
+   thisInfo.test_item_list.clear();
+   thisInfo.test_item_objs.clear();
+} 
 
 END_NCBI_SCOPE

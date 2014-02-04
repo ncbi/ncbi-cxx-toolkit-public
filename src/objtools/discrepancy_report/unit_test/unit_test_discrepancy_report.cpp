@@ -120,10 +120,12 @@ USING_SCOPE(objects);
 USING_SCOPE(DiscRepNmSpc);
 
 
+static CRef <CRepConfig> config(new CRepConfig);
 NCBITEST_AUTO_INIT()
 {
     // Your application initialization code here (optional)
     cout << "Initialization function executed" << endl;
+    config->InitParams(0);
 }
 
 
@@ -137,12 +139,46 @@ NCBITEST_INIT_CMDLINE(arg_desc)
 }
 
 
-
 NCBITEST_AUTO_FINI()
 {
     // Your application finalization code here (optional)
     cout << "Finalization function executed" << endl;
 }
+
+BOOST_AUTO_TEST_CASE(MISSING_LOCUS_TAGS)
+{
+   CRef <CSeq_entry> entry (new CSeq_entry);
+   CNcbiIstrstream istr(sc_TestEntryCollidingLocusTags);
+   istr >> MSerial_AsnText >> *entry;
+
+   CBioseq& seq = entry->SetSeq();
+   list <CRef <CSeq_annot> >& annots = seq.SetAnnot();
+   list <CRef <CSeq_feat> > & feats =(*(annots.begin()))->SetData().SetFtable();
+   CGene_ref& gene_ref= (*(feats.begin()))->SetData().SetGene();
+   string strtmp(kEmptyStr);
+   gene_ref.SetLocus_tag("");
+
+   CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+   CRef <CScope> scope(new CScope(*objmgr));
+   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+   
+   config->SetTopLevelSeqEntry(&seh);
+   config->SetArg("d", "All");
+   config->SetArg("e", "MISSING_LOCUS_TAGS");
+   config->CollectTests();
+   config->Run();
+   CRef <CClickableItem> c_item(0);
+   CDiscRepOutput output_obj;
+   output_obj.Export(c_item);
+
+   NCBITEST_CHECK_MESSAGE(!c_item.Empty(),
+                     "MISSING_LOCUS_TAGS did not have any report");
+   NCBITEST_CHECK_MESSAGE(c_item->item_list.size() == c_item->obj_list.size(),
+                          "the sizes of item_list and obj_list are not equal");
+   string msg = "1 gene has no locus tags.";
+   NCBITEST_CHECK_MESSAGE(c_item->description == msg, 
+                         "Test result is incorrect: " + c_item->description);
+};
 
 BOOST_AUTO_TEST_CASE(DISC_COUNT_NUCLEOTIDES)
 {
@@ -154,9 +190,7 @@ BOOST_AUTO_TEST_CASE(DISC_COUNT_NUCLEOTIDES)
    CRef <CScope> scope(new CScope(*objmgr));
    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
-   CRef <CRepConfig>
-     config (CRepConfig::factory("Discrepancy", &seh));
-
+   config->SetTopLevelSeqEntry(&seh);
    config->SetArg("d", "All");
    config->SetArg("e", "DISC_COUNT_NUCLEOTIDES");
    config->CollectTests();

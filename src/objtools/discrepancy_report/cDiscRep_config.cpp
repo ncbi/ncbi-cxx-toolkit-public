@@ -71,7 +71,6 @@ CRef <CSeq_submit>                  CDiscRepInfo :: seq_submit(new CSeq_submit);
 bool                                CDiscRepInfo :: expand_defline_on_set;
 bool                                CDiscRepInfo :: expand_srcqual_report;
 string                              CDiscRepInfo :: report_lineage;
-vector <string>                     CDiscRepInfo :: strandsymbol;
 bool                                CDiscRepInfo :: exclude_dirsub;
 Str2CombDt                          CDiscRepInfo :: rRNATerms;
 vector <string>                     CDiscRepInfo :: bad_gene_names_contained;
@@ -258,14 +257,6 @@ void CRepConfig :: InitParams(const IRWRegistry* reg)
     // ini. of weasels
     strtmp = "candidate,hypothetical,novel,possible,potential,predicted,probable,putative,candidate,uncharacterized,unique";
     thisInfo.weasels = NStr::Tokenize(strtmp, ",", thisInfo.weasels);
-
-    // ini. of strandsymbol
-    thisInfo.strandsymbol.reserve(5);
-    thisInfo.strandsymbol.push_back("");
-    thisInfo.strandsymbol.push_back("");
-    thisInfo.strandsymbol.push_back("c");
-    thisInfo.strandsymbol.push_back("b");
-    thisInfo.strandsymbol.push_back("r");
 
     // ini. of rRNATerms
     const char* rRnaTerms[] = {
@@ -1663,6 +1654,20 @@ CRepConfig* CRepConfig :: factory(string report_tp, CSeq_entry_Handle* tse_p)
 void CRepConfig :: GetTestList() 
 {
    unsigned sz = thisTest.tests_run.size(), i=0;
+
+   thisGrp.tests_on_Bioseq.clear();   
+   thisGrp.tests_on_Bioseq_na.clear();   
+   thisGrp.tests_on_Bioseq_aa.clear();   
+   thisGrp.tests_on_Bioseq_CFeat.clear();   
+   thisGrp.tests_on_Bioseq_CFeat_NotInGenProdSet.clear();   
+   thisGrp.tests_on_Bioseq_NotInGenProdSet.clear();   
+   thisGrp.tests_on_Bioseq_CFeat_CSeqdesc.clear();   
+   thisGrp.tests_on_SeqEntry.clear();   
+   thisGrp.tests_on_SeqEntry_feat_desc.clear();   
+   thisGrp.tests_4_once.clear();   
+   thisGrp.tests_on_BioseqSet.clear();   
+   thisGrp.tests_on_SubmitBlk.clear();   
+
    set <string>::iterator end_it = thisTest.tests_run.end();
    if (i >= sz) return;
    if (thisTest.tests_run.find("DISC_SUBMITBLOCK_CONFLICT") != end_it) {
@@ -2895,7 +2900,7 @@ void CRepConfig :: CollectTests()
        cate_flag = fMegaReport;
    }
    else {
-       NCBI_USER_THROW("Unrecognized report type.");
+       cate_flag = fUnknown;
    }
 
    for (unsigned i=0; i< ArraySize(test_list); i++) {

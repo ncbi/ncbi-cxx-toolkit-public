@@ -75,6 +75,8 @@
 #include <objtools/discrepancy_report/hDiscRep_tests.hpp>
 #include <objtools/discrepancy_report/hUtilib.hpp>
 
+#include <string>
+
 BEGIN_NCBI_SCOPE
 
 USING_NCBI_SCOPE;
@@ -1086,6 +1088,7 @@ string CTestAndRepData :: BioseqToBestSeqIdString(const CBioseq& bioseq, CSeq_id
 }; // BioseqToBestSeqIdString();
 
 
+static const char* strandsymbol[] = {"", "", "c","b", "r"};
 string CTestAndRepData :: PrintSeqInt(const CSeq_interval& seq_int, bool range_only)
 {
     string location(kEmptyStr);
@@ -1114,7 +1117,7 @@ string CTestAndRepData :: PrintSeqInt(const CSeq_interval& seq_int, bool range_o
     if (this_strand == eNa_strand_other) {
        NCBI_USER_THROW("Strand type is eNa_strand_other");
     }
-    location += thisInfo.strandsymbol[(int)this_strand];
+    location += strandsymbol[(int)this_strand];
     int from, to;
     string lab_from(kEmptyStr), lab_to(kEmptyStr);
     if (eNa_strand_minus == this_strand 
