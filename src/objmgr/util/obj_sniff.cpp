@@ -195,6 +195,7 @@ void CObjectsSniffer::ProbeText(CObjectIStream& input)
 
     string header;
 
+    CNcbiStreampos start_pos = input.GetStreamPos();
     try {
         while (true) {
             m_StreamPos = input.GetStreamPos();
@@ -237,12 +238,13 @@ void CObjectsSniffer::ProbeText(CObjectIStream& input)
             } // for
         } // while
     }
-    catch (CEofException& ) {
+    catch (CEofException& /*ignored*/) {
     }
     catch (exception& e) {
         LOG_POST_X(3, Info << "Exception reading "
                    << format_name << " " << e.what());
     }
+    input.SetStreamPos(start_pos);
 }
 
 
@@ -254,6 +256,7 @@ void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
     // Brute force interrogation of the source file.
     //
 
+    CNcbiStreampos start_pos = input.GetStreamPos();
     it = m_Candidates.begin();
     while (it < m_Candidates.end()) {
 
@@ -285,7 +288,7 @@ void CObjectsSniffer::ProbeASN1_Bin(CObjectIStream& input)
             ++it; // trying the next type.
         }
     }
-
+    input.SetStreamPos(start_pos);
 }
 
 
