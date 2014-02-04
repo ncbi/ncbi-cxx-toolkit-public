@@ -29,3 +29,4 @@ dbapi/driver/ctlib$
 dbapi/driver/ftds64$
 dbapi/driver/ftds64/freetds
 dbapi/driver/ftds64/ctlib$
+dbapi/simple$
