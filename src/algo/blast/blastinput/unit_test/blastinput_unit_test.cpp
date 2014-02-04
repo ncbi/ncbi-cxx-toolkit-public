@@ -1375,7 +1375,7 @@ BOOST_AUTO_TEST_CASE(ReadAccessionsAndGisWithNewLines)
     gi_accessions.push_back(make_pair(string("89161215"), 111583154L));
     gi_accessions.push_back(make_pair(string("89161217"), 155407050L));
     gi_accessions.push_back(make_pair(string("89161219"), 11133097L));
-    gi_accessions.push_back(make_pair(string("NC_000001"), 249250621L));
+    gi_accessions.push_back(make_pair(string("NC_000001"), 248956422L));
     gi_accessions.push_back(make_pair(string("NC_000010.9"), 135374737L));
     gi_accessions.push_back(make_pair(string("gnl|ti|12345"), 657L));
     gi_accessions.push_back(make_pair(string("NC_000011.8"), 134452384L));
