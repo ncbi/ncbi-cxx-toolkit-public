@@ -373,7 +373,7 @@ CTime::CTime(const CTime& t)
 CTime::CTime(int year, int yearDayNumber,
              ETimeZone tz, ETimeZonePrecision tzp)
 {
-    Clear();
+    memset(&m_Data, 0, sizeof(m_Data));
     m_Data.tz = tz;
     m_Data.tzprec = tzp;
 
@@ -729,6 +729,8 @@ CTime::CTime(int year, int month, int day, int hour,
              int minute, int second, long nanosecond,
              ETimeZone tz, ETimeZonePrecision tzp)
 {
+    memset(&m_Data, 0, sizeof(m_Data));
+
     CHECK_RANGE_YEAR(year);
     CHECK_RANGE_MONTH(month);
     CHECK_RANGE_DAY(day);
@@ -757,7 +759,7 @@ CTime::CTime(int year, int month, int day, int hour,
 
 CTime::CTime(EInitMode mode, ETimeZone tz, ETimeZonePrecision tzp)
 {
-    Clear();
+    memset(&m_Data, 0, sizeof(m_Data));
     m_Data.tz = tz;
     m_Data.tzprec = tzp;
     if (mode == eCurrent) {
@@ -768,7 +770,7 @@ CTime::CTime(EInitMode mode, ETimeZone tz, ETimeZonePrecision tzp)
 
 CTime::CTime(time_t t, ETimeZonePrecision tzp)
 {
-    Clear();
+    memset(&m_Data, 0, sizeof(m_Data));
     m_Data.tz = eGmt;
     m_Data.tzprec = tzp;
     SetTimeT(t);
@@ -777,7 +779,7 @@ CTime::CTime(time_t t, ETimeZonePrecision tzp)
 
 CTime::CTime(const struct tm& t, ETimeZonePrecision tzp)
 {
-    Clear();
+    memset(&m_Data, 0, sizeof(m_Data));
     m_Data.tz = eLocal;
     m_Data.tzprec = tzp;
     SetTimeTM(t);
@@ -787,7 +789,7 @@ CTime::CTime(const struct tm& t, ETimeZonePrecision tzp)
 CTime::CTime(const string& str, const CTimeFormat& format,
              ETimeZone tz, ETimeZonePrecision tzp)
 {
-    Clear();
+    memset(&m_Data, 0, sizeof(m_Data));
     m_Data.tz = tz;
     m_Data.tzprec = tzp;
 
