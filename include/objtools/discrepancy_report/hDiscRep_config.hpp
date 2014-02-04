@@ -64,6 +64,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
    typedef map <string, s_CombData> Str2CombDt;
 
    enum ETestCategoryFlags {
+      fUnknown = 0,
       fDiscrepancy = 1 << 0,
       fOncaller = 1 << 1,
       fMegaReport = 1 << 2,
@@ -135,6 +136,10 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static CSeq_entry_Handle* m_TopSeqEntry;
         static CRepConfig* factory(string report_tp,CSeq_entry_Handle* tse_p=0);
 
+        void SetTopLevelSeqEntry(CSeq_entry_Handle* tse) {
+           m_TopSeqEntry = tse;
+        };
+
      protected:
         vector <string> m_enabled, m_disabled;
         string m_outsuffix, m_outdir, m_insuffix, m_indir, m_file_tp;
@@ -198,7 +203,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
         static bool                               expand_defline_on_set;
         static bool                               expand_srcqual_report;
         static string                             report_lineage;
-        static vector <string>                    strandsymbol;
         static bool                               exclude_dirsub;
 
         static Str2CombDt                         rRNATerms;
