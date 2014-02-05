@@ -149,13 +149,35 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
 
     reply.SetContentType(fmt);
 
-    if (CNetCacheKey::ParseBlobKey(key.c_str(), key.length(), NULL, m_CompoundIDPool))
+    if (CNetCacheKey::ParseBlobKey(key.c_str(), key.length(), NULL))
         x_FetchNetCacheBlob(request, reply, key);
-    else if (m_NetStorage)
-        x_FetchNetStorageObject(request, reply, key);
     else {
-        NCBI_THROW_FMT(CArgException, eInvalidArg,
-            "Not a NetCache key (and NetStorage is not configured): " << key);
+        CCompoundID compound_id;
+        try {
+            compound_id = m_CompoundIDPool.FromString(key);
+        }
+        catch (CCompoundIDException&) {
+            NCBI_THROW_FMT(CArgException, eInvalidArg, "Invalid key: " << key);
+        }
+
+        switch (compound_id.GetClass()) {
+        case eCIC_NetCacheKey:
+            x_FetchNetCacheBlob(request, reply, key);
+            break;
+        case eCIC_NetStorageFileID:
+            if (m_NetStorage)
+                x_FetchNetStorageObject(request, reply, key);
+            else {
+                NCBI_THROW_FMT(CArgException, eInvalidArg,
+                    "NetStorage is not configured; key=" << key);
+            }
+            break;
+        default:
+            {
+                NCBI_THROW_FMT(CArgException, eInvalidArg,
+                        "Invalid key: " << key);
+            }
+        }
     }
 
     return 0;
