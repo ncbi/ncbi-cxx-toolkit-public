@@ -115,7 +115,7 @@ typedef enum {
     eReqMethod_Options       /* 19 */
 } EReqMethod;
 
-typedef unsigned EBReqMethod;
+typedef unsigned TReqMethod; /* EReqMethod or (EReqMethod | eReqMethod_v1) */
 
 
 typedef enum {
@@ -162,8 +162,8 @@ typedef unsigned EBDebugPrintout;
 typedef struct {  /* NCBI_FAKE_WARNING: ICC */
     char            client_host[256]; /* effective client hostname ('\0'=def)*/
     EBURLScheme     scheme:3;         /* only pre-defined types (limited)    */
-    EBReqMethod     req_method:5;     /* method to use in the request (HTTP) */
-    unsigned        version:1;        /* HTTP/1.v                            */
+    TReqMethod      req_method:5;     /* method to use in the request (HTTP) */
+    unsigned        version:1;        /* HTTP/1.v (or selected by req_method)*/
     EBFWMode        firewall:2;       /* to use firewall (relay otherwise)   */
     unsigned        stateless:1;      /* to connect in HTTP-like fashion only*/
     unsigned        lb_disable:1;     /* to disable local load-balancing     */
@@ -611,7 +611,7 @@ extern NCBI_XCONNECT_EXPORT EIO_Status URL_ConnectEx
  unsigned short  port,            /* may be 0, defaulted to either 80 or 443 */
  const char*     path,            /* must be provided                        */
  const char*     args,            /* may be NULL or empty                    */
- EReqMethod      req_method,      /* ANY selects method by "content_length"  */
+ TReqMethod      req_method,      /* ANY selects method by "content_length"  */
  size_t          content_length,
  const STimeout* o_timeout,       /* timeout for an OPEN stage               */
  const STimeout* rw_timeout,      /* timeout for READ and WRITE              */
