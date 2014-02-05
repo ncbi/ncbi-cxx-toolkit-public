@@ -615,7 +615,10 @@ static EIO_Status s_Connect(SHttpConnector* uuu,
                 flags |= fSOCK_ReadOnWrite;
 
             status = URL_ConnectEx(host, port, path, args,
-                                   (EReqMethod) uuu->net_info->req_method, len,
+                                   uuu->net_info->req_method
+                                   | (uuu->net_info->version
+                                      ? eReqMethod_v1
+                                      : 0), len,
                                    uuu->o_timeout, uuu->w_timeout,
                                    uuu->net_info->http_user_header,
                                    uuu->net_info->credentials,
@@ -672,6 +675,26 @@ static void s_DropConnection(SHttpConnector* uuu)
 }
 
 
+struct XWriteBufCtx {
+    SOCK       sock;
+    EIO_Status status;
+};
+
+
+static size_t x_WriteBuf(void* data, const void* buf, size_t size)
+{
+    struct XWriteBufCtx* ctx = (struct XWriteBufCtx*) data;
+    size_t written;
+
+    assert(buf  &&  size);
+    if (ctx->status != eIO_Success)
+        return 0;
+    ctx->status = SOCK_Write(ctx->sock, buf, size,
+                             &written, eIO_WritePlain);
+    return written;
+}
+
+
 /* Connect to the server specified by uuu->net_info, then compose and form
  * relevant HTTP header, and flush the accumulated output data(uuu->w_buf)
  * after the HTTP header. If connection/write unsuccessful, retry to reconnect
@@ -683,8 +706,8 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
     EIO_Status status;
 
     for (;;) {
-        size_t body_size;
-        char   buf[4096];
+        char   buf[80];
+        size_t temp;
         char*  url;
 
         if (uuu->sock)
@@ -693,21 +716,22 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
             break;
 
         if (uuu->w_len) {
-            size_t off = BUF_Size(uuu->w_buf) - uuu->w_len;
-
-            SOCK_SetTimeout(uuu->sock, eIO_Write, uuu->w_timeout);
+            size_t              off = BUF_Size(uuu->w_buf) - uuu->w_len;
+            struct XWriteBufCtx ctx;
+            ctx.sock   = uuu->sock;
+            ctx.status = eIO_Success/*NB: status*/;
+            SOCK_SetTimeout(ctx.sock, eIO_Write, uuu->w_timeout);
             do {
-                size_t n_written;
-                size_t n_write = BUF_PeekAt(uuu->w_buf, off, buf, sizeof(buf));
-                status = SOCK_Write(uuu->sock, buf, n_write,
-                                    &n_written, eIO_WritePlain);
-                if (status != eIO_Success)
+                temp = BUF_PeekAtCB(uuu->w_buf, off,
+                                    x_WriteBuf, &ctx, uuu->w_len);
+                uuu->w_len -= temp;
+                off        += temp;
+                if (ctx.status != eIO_Success)
                     break;
-                uuu->w_len -= n_written;
-                off        += n_written;
             } while (uuu->w_len);
+            status  = ctx.status;
         } else if (uuu->read_state == eRS_WriteRequest)
-            status = SOCK_Write(uuu->sock, 0, 0, 0, eIO_WritePlain);
+            status  = SOCK_Write(uuu->sock, 0, 0, 0, eIO_WritePlain);
 
         if (status == eIO_Success) {
             assert(uuu->w_len == 0);
@@ -733,9 +757,9 @@ static EIO_Status s_ConnectAndSend(SHttpConnector* uuu,
                       &&  !(uuu->w_timeout->sec | uuu->w_timeout->usec)))) {
             break;
         }
-        if ((body_size = BUF_Size(uuu->w_buf)) != 0) {
+        if (uuu->w_len  &&  (temp = BUF_Size(uuu->w_buf)) != 0) {
             sprintf(buf, "write request body at offset %lu",
-                    (unsigned long)(body_size - uuu->w_len));
+                    (unsigned long)(temp - uuu->w_len));
         } else
             strcpy(buf, "flush request header");
 
@@ -1166,7 +1190,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
 
     if (uuu->net_info->debug_printout
         ||  header_parse == eHTTP_HeaderContinue) {
-        if (http_code > 0/*real error, short body expected*/)
+        if (http_code > 0/*real error, w/only a very short body is expected*/)
             SOCK_SetTimeout(uuu->sock, eIO_Read, kInfiniteTimeout);
         status = SOCK_StripToPattern(uuu->sock, 0, 0, &uuu->http, &size);
         assert(status != eIO_Success);
@@ -1831,6 +1855,10 @@ static EIO_Status s_CreateHttpConnector
     if (!xxx)
         return eIO_Unknown;
 
+    if (xxx->req_method  &  eReqMethod_v1) {
+        xxx->req_method &= ~eReqMethod_v1;
+        xxx->version = 1;
+    }
     if (!tunnel) {
         if (xxx->req_method == eReqMethod_Connect
             ||  (xxx->scheme != eURL_Unspec  && 
@@ -1849,6 +1877,7 @@ static EIO_Status s_CreateHttpConnector
 
     if (tunnel) {
         xxx->req_method = eReqMethod_Connect;
+        xxx->version = 0;
         xxx->path[0] = '\0';
         xxx->args[0] = '\0';
         if (xxx->http_referer) {
