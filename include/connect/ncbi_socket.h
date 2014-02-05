@@ -1011,8 +1011,8 @@ extern NCBI_XCONNECT_EXPORT EIO_Status SOCK_Read
 
 
 /** Read a line from SOCK.  A line is terminated by either '\n' (with
- * optional preceding '\r') or '\0'.  Returned result is always '\0'-
- * terminated and having '\r'(if any)'\n' stripped. *n_read (if 'n_read'
+ * an optional preceding '\r') or '\0'.  Returned result is always '\0'-
+ * terminated and having '\r'(if any)'\n' stripped.  *n_read (if 'n_read'
  * passed non-NULL) contains the numbed of characters written into
  * 'buf' (not counting the terminating '\0').  If 'buf', whose size is
  * specified via 'size' parameter, is not big enough to contain the
