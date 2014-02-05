@@ -116,9 +116,9 @@ public:
 
 
     /*  Access CD info via sequence list index  */
-    TGi    GetGIFromSequenceList(int SeqIndex) const;       // get GI from sequence list
-    string GetDefline(int SeqIndex);                  // get description from sequence list
-    /* ADDED */ 
+    TGi    GetGIFromSequenceList(int SeqIndex) const; // get GI from sequence list
+    string GetDefline(int SeqIndex) const;            // get description from sequence list
+
     string GetSequenceStringByIndex(int SeqIndex);    // return the full sequence for index SeqIndex
     string GetSpeciesForIndex(int SeqIndex);          // get species name from sequence list
     bool   GetSeqEntryForIndex(int seqIndex, CRef< CSeq_entry > & seqEntry) const;  //  was cdGetSeq from algMerge

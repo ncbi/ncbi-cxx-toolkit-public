@@ -644,18 +644,18 @@ TGi CCdCore::GetGIFromSequenceList(int SeqIndex) const {
       }
     }
   }
-  return -1; 
+  return -1;
 }
   
 
-string CCdCore::GetDefline(int SeqIndex) {
+string CCdCore::GetDefline(int SeqIndex) const {
 //-------------------------------------------------------------------------
 // get a description for the SeqIndex sequence
 //-------------------------------------------------------------------------
   list< CRef< CSeq_entry > >::const_iterator  i;
   list< CRef< CSeqdesc > >::const_iterator  j;
   int  SeqCount;
-  string  Description;
+  string  Description = kEmptyStr;
 
   if (IsSetSequences()) {
     if (GetSequences().IsSet()) {
