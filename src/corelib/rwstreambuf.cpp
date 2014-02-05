@@ -378,7 +378,7 @@ CT_INT_TYPE CRWStreambuf::underflow(void)
 #ifdef NCBI_COMPILER_MIPSPRO
     if (m_MIPSPRO_ReadsomeGptrSetLevel  &&  m_MIPSPRO_ReadsomeGptr != gptr())
         return CT_EOF;
-    m_MIPSPRO_ReadsomeGptr = (CT_CHAR_TYPE*)(-1);
+    m_MIPSPRO_ReadsomeGptr = (CT_CHAR_TYPE*)(-1L);
 #endif /*NCBI_COMPILER_MIPSPRO*/
 
     // read from device
@@ -466,7 +466,7 @@ streamsize CRWStreambuf::showmanyc(void)
     _ASSERT(!gptr()  ||  gptr() >= egptr());
 
     if ( !m_Reader )
-        return -1;
+        return -1L;
 
     // flush output buffer, if tied up to it
     if (!(m_Flags & fUntie))
@@ -486,7 +486,7 @@ streamsize CRWStreambuf::showmanyc(void)
     default:
         break;
     }
-    return -1;
+    return -1L;
 }
 
 
@@ -512,7 +512,7 @@ CT_POS_TYPE CRWStreambuf::seekoff(CT_OFF_TYPE off, IOS_BASE::seekdir whence,
             break;
         }
     }
-    return (CT_POS_TYPE)((CT_OFF_TYPE)(-1));
+    return (CT_POS_TYPE)((CT_OFF_TYPE)(-1L));
 }
 
 
