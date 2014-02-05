@@ -409,9 +409,10 @@ static SNSProtoArgument s_AuthArgs[] = {
 
 
 
-static void s_BufReadHelper(void* data, void* ptr, size_t size)
+static size_t s_BufReadHelper(void* data, const void* ptr, size_t size)
 {
     ((string*) data)->append((const char *) ptr, size);
+    return size;
 }
 
 
