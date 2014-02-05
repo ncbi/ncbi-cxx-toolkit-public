@@ -150,7 +150,7 @@ public:
 /// 
 /// TConnectTraits template classes: CAsnBinCompressed and CAsnBinUncompressed
 ///
-template <typename TConnectTraits>
+template <typename TConnectTraits, int DefaultTimeout = 20>
 class CGridRPCBaseClient : private TConnectTraits
 {
 public:
@@ -159,7 +159,8 @@ public:
                        const string& client_name,
                        const string& NC_registry_section
                       )
-        : m_NS_api(NS_service, client_name, NS_queue)
+        : m_NS_api(NS_service, client_name, NS_queue),
+          m_Timeout(DefaultTimeout)
     {
         x_Init(NC_registry_section);
     }
@@ -167,7 +168,8 @@ public:
     CGridRPCBaseClient(const string& NS_registry_section = "netschedule_api",
                        const string& NC_registry_section = kEmptyStr
                       )
-        : m_NS_api(CNetScheduleAPI::eAppRegistry, NS_registry_section)
+        : m_NS_api(CNetScheduleAPI::eAppRegistry, NS_registry_section),
+          m_Timeout(DefaultTimeout)
     {
         LOG_POST(Trace << "NS: " << NS_registry_section);
         static const CNcbiRegistry& cfg = CNcbiApplication::Instance()->GetConfig();
@@ -177,6 +179,11 @@ public:
                 : NC_registry_section
         );
         x_Init(nc_reg);
+    }
+
+    void SetTimeout(const size_t timeout)
+    {
+        m_Timeout = timeout;
     }
 
     void x_Init(const string& NC_registry_section)
@@ -209,15 +216,12 @@ public:
 
         CNetScheduleJob& job = m_Grid_cli->GetJob();
 
-        // TODO You can move this deadline above TRequest serialization
-        // to include job input submission into 'deadline' as well.
-        size_t timeout_in_seconds = 20;
-        CDeadline deadline(timeout_in_seconds, 0);
+        CDeadline deadline(m_Timeout, 0);
 
         CNetScheduleNotificationHandler submit_job_handler;
         submit_job_handler.SubmitJob(m_NS_api.GetSubmitter(),
                                      job,
-                                     timeout_in_seconds
+                                     m_Timeout
                                     );
         LOG_POST(Trace << "job: " << job.job_id);
 
@@ -245,6 +249,7 @@ private:
     mutable CNetScheduleAPI m_NS_api;
     mutable CNetCacheAPI m_NC_api;
     mutable auto_ptr<CGridClient> m_Grid_cli;
+    int m_Timeout;
 };
 
 
