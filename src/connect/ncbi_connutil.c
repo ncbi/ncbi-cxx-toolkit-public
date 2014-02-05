@@ -368,7 +368,7 @@ extern SConnNetInfo* ConnNetInfo_Create(const char* service)
         errno = 0;
         if (*str  &&  (val = strtoul(str, &e, 10)) > 0
             &&  !errno  &&  !*e  &&  val < (1 << 16)) {
-            info->http_proxy_port =  val;
+            info->http_proxy_port = val;
         } else
             info->http_proxy_port =  0/*none*/;
         /* HTTP proxy username */
@@ -446,7 +446,7 @@ extern int/*bool*/ ConnNetInfo_ParseURL(SConnNetInfo* info, const char* url)
     if (!*url)
         return 1/*success*/;
 
-    if (info->req_method == eReqMethod_Connect) {
+    if ((info->req_method & ~eReqMethod_v1) == eReqMethod_Connect) {
         len = strlen(url);
         s = (const char*) memchr(url, ':', len);
         if (s)
@@ -1136,9 +1136,9 @@ static const char* x_Port(unsigned short port, char buf[])
 }
 
 
-static const char* x_ReqMethod(EBReqMethod req_method, char buf[])
+static const char* x_ReqMethod(TReqMethod req_method, char buf[])
 {
-    int v1 = req_method & eReqMethod_v1 ? 1/*true*/ : 0/*false*/;
+    int/*bool*/ v1 = req_method & eReqMethod_v1 ? 1/*true*/ : 0/*false*/;
     req_method &= ~eReqMethod_v1;
     switch (req_method) {
     case eReqMethod_Any:
@@ -1289,7 +1289,10 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
                                            ? x_Scheme((EURLScheme)info->scheme,
                                                       buf)
                                            : "(unspec)"));
-    s_SaveKeyval    (s, "req_method",      x_ReqMethod(info->req_method, buf));
+    s_SaveKeyval    (s, "req_method",      x_ReqMethod(info->req_method
+                                                       | (info->version
+                                                          ? eReqMethod_v1
+                                                          : 0), buf));
 #if defined(_DEBUG)  &&  !defined(NDEBUG)
     s_SaveString    (s, "user",            info->user);
 #else
@@ -1357,6 +1360,7 @@ extern void ConnNetInfo_Log(const SConnNetInfo* info, ELOG_Level sev, LOG lg)
 
 extern char* ConnNetInfo_URL(const SConnNetInfo* info)
 {
+    TReqMethod  req_method;
     const char* scheme;
     size_t      schlen;
     const char* path;
@@ -1368,13 +1372,14 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
     if (!info)
         return 0/*failed*/;
 
+    req_method = info->req_method & ~eReqMethod_v1;
     scheme = x_Scheme((EURLScheme) info->scheme, buf);
-    if ((!scheme  &&  info->req_method != eReqMethod_Connect)  ||
+    if ((!scheme  &&  req_method != eReqMethod_Connect)  ||
         ( scheme  &&  !isalpha((unsigned char)(*scheme)))) {
         return 0/*failed*/;
     }
 
-    if (info->req_method == eReqMethod_Connect) {
+    if (req_method == eReqMethod_Connect) {
         scheme = "";
         schlen = 0;
         path = 0;
@@ -1395,7 +1400,7 @@ extern char* ConnNetInfo_URL(const SConnNetInfo* info)
         strlwr((char*) memcpy(url, scheme, schlen + 1));
         len  = schlen;
         len += sprintf(url + len, "://%s" + (schlen ? 0 : 3), info->host);
-        if (info->port  ||  !path/*info->req_method == eReqMethod_Connect*/)
+        if (info->port  ||  !path/*req_method == eReqMethod_Connect*/)
             len += sprintf(url + len, ":%hu", info->port);
         sprintf(url + len, "%s%s%s%s",
                 &"/"[! path  ||  *path == '/'], path ? path : "",
@@ -1454,7 +1459,7 @@ extern EIO_Status URL_ConnectEx
  unsigned short  port,
  const char*     path,
  const char*     args,
- EReqMethod      req_method,
+ TReqMethod      req_method,
  size_t          content_length,
  const STimeout* o_timeout,
  const STimeout* rw_timeout,
@@ -1463,25 +1468,27 @@ extern EIO_Status URL_ConnectEx
  TSOCK_Flags     flags,
  SOCK*           sock)
 {
-    static const char kHostTag[] = "Host: ";
-    static const char kHttpVer[] = " HTTP/1.0\r\n";
-
+    static const char* kHttp[] = { " HTTP/1.0\r\n",
+                                   " HTTP/1.1\r\n" };
+    static const char  kHost[] = "Host: ";
     SOCK        s;
     BUF         buf;
     char*       hdr;
+    unsigned    ver;
     SSOCK_Init  init;
     EIO_Status  status;
     int         add_hdr;
     size_t      hdr_len;
     char        hdr_buf[80];
     size_t      args_len;
-    const char* x_req_method;
+    EReqMethod  x_req_meth;
+    const char* x_req_meth_str;
     size_t      user_hdr_len = user_hdr  &&  *user_hdr ? strlen(user_hdr) : 0;
 
     /* sanity check first */
     if (!sock  ||  !host  ||  !*host  ||  !path  ||  !*path
         ||  (user_hdr  &&  *user_hdr  &&  user_hdr[user_hdr_len - 1] != '\n')){
-        CORE_LOG_X(2, eLOG_Error, "[URL_Connect]  Bad argument(s)");
+        CORE_LOG_X(2, eLOG_Critical, "[URL_Connect]  Bad argument(s)");
         if (sock) {
             s = *sock;
             *sock = 0;
@@ -1495,43 +1502,47 @@ extern EIO_Status URL_ConnectEx
     /* FIXME:  check to be removed */
     if (cred  &&  cred < (NCBI_CRED) 4096) {
         CORE_LOG(eLOG_Critical, "[URL_ConnectEx]  Obsolete feature"
-                 " 'encode_args' is no longer allowed");
+                 " 'encode_args' is no longer supported");
         return x_URLConnectErrorReturn(s, eIO_InvalidArg);
     }
 
+    ver = req_method >= eReqMethod_v1 ? 1 : 0;
+    x_req_meth = (EReqMethod)(req_method & ~eReqMethod_v1);
     /* select request method and its verbal representation */
-    if (req_method == eReqMethod_Any)
-        req_method  = content_length ? eReqMethod_Post : eReqMethod_Get;
-    else if (content_length  &&  (req_method == eReqMethod_Get  ||
-                                  req_method == eReqMethod_Head)) {
+    if (x_req_meth == eReqMethod_Any)
+        x_req_meth  = content_length ? eReqMethod_Post : eReqMethod_Get;
+    else if (content_length  &&  (x_req_meth == eReqMethod_Get  ||
+                                  x_req_meth == eReqMethod_Head)) {
         CORE_LOGF_X(3, eLOG_Warning,
                     ("[URL_Connect] "
                      " Content-Length (%lu) is ignored with request method %s",
                      (unsigned long) content_length,
-                     req_method == eReqMethod_Get ? "GET" : "HEAD"));
+                     x_req_meth == eReqMethod_Get ? "GET" : "HEAD"));
         content_length = 0;
     }
 
-    switch (req_method) {
+    switch (x_req_meth | (ver ? eReqMethod_v1 : 0)/*FIXME: to remove*/) {
     case eReqMethod_Get:
-        x_req_method = "GET ";
+        x_req_meth_str = "GET ";
         add_hdr = 1;
         break;
     case eReqMethod_Post:
-        x_req_method = "POST ";
+        x_req_meth_str = "POST ";
         add_hdr = 1;
         break;
     case eReqMethod_Head:
-        x_req_method = "HEAD ";
+        x_req_meth_str = "HEAD ";
         add_hdr = 1;
         break;
     case eReqMethod_Connect:
-        x_req_method = "CONNECT ";
+        x_req_meth_str = "CONNECT ";
         add_hdr = 0;
         break;
     default:
         CORE_LOGF_X(4, eLOG_Error,
-                    ("[URL_Connect]  Unsupported request method (%s)",
+                    ("[URL_Connect; //%s:%hu%s%s] "
+                     " Unsupported request method %s",
+                     host, port, &"/"[*path == '/'], path,
                      x_ReqMethod(req_method, hdr_buf)));
         assert(0);
         return x_URLConnectErrorReturn(s, eIO_NotSupported);
@@ -1540,11 +1551,12 @@ extern EIO_Status URL_ConnectEx
     hdr_len = 0;
     if (add_hdr) {
         const char* temp;
-        assert(req_method != eReqMethod_Connect);
+        assert(x_req_meth != eReqMethod_Connect);
+        /* FIXME: This to be moved to URL_Connect() */
         for (temp = user_hdr;  temp  &&  *temp;  temp = strchr(temp, '\n')) {
             if (temp != user_hdr)
                 temp++;
-            if (strncasecmp(temp, kHostTag, sizeof(kHostTag) - 2) == 0) {
+            if (strncasecmp(temp, kHost, sizeof(kHost) - 2) == 0) {
                 add_hdr = 0;
                 break;
             }
@@ -1561,41 +1573,43 @@ extern EIO_Status URL_ConnectEx
     errno = 0;
     /* compose HTTP header */
     if (/* METHOD <path>[?<args>] HTTP/1.x\r\n */
-        !BUF_Write(&buf, x_req_method,   strlen(x_req_method))  ||
-        !BUF_Write(&buf, path,           strlen(path))          ||
+        !BUF_Write(&buf, x_req_meth_str, strlen(x_req_meth_str))  ||
+        !BUF_Write(&buf, path,           strlen(path))            ||
         (args_len
-         &&  (!BUF_Write(&buf, "?",      1)                     ||
-              !BUF_Write(&buf, args,     args_len)))            ||
-        !BUF_Write      (&buf, kHttpVer, sizeof(kHttpVer) - 1)  ||
+         &&  (!BUF_Write(&buf, "?",        1)                     ||
+              !BUF_Write(&buf, args,       args_len)))            ||
+        !BUF_Write      (&buf, kHttp[ver], strlen(kHttp[ver]))    ||
 
         (add_hdr
          /* Host: host[:port]\r\n */
-         &&  (!BUF_Write(&buf, kHostTag, sizeof(kHostTag) - 1)  ||
-              !BUF_Write(&buf, host,     strlen(host))          ||
-              !BUF_Write(&buf, hdr_buf,  hdr_len)               ||
-              !BUF_Write(&buf, "\r\n",   2)))                   ||
+         &&  (!BUF_Write(&buf, kHost,   sizeof(kHost) - 1)        ||
+              !BUF_Write(&buf, host,    strlen(host))             ||
+              !BUF_Write(&buf, hdr_buf, hdr_len)                  ||
+              !BUF_Write(&buf, "\r\n",  2)))                      ||
 
         /* Content-Length: <content_length>\r\n */
-        (req_method == eReqMethod_Post
+        (x_req_meth == eReqMethod_Post/*NB: HTTP/1.0 only*/  &&  !ver
          &&  ((add_hdr
                = sprintf(hdr_buf, "Content-Length: %lu\r\n",
-                         (unsigned long) content_length)) <= 0  ||
-              !BUF_Write(&buf, hdr_buf,  (size_t) add_hdr)))    ||
+                         (unsigned long) content_length)) <= 0    ||
+              !BUF_Write(&buf, hdr_buf,  (size_t) add_hdr)))      ||
 
         /* <user_header> */
         (user_hdr_len
-         &&  !BUF_Write (&buf, user_hdr, user_hdr_len))         ||
+         &&  !BUF_Write (&buf, user_hdr, user_hdr_len))           ||
 
         /* header separator */
-        !BUF_Write(&buf, "\r\n", 2)                             ||
+        !BUF_Write(&buf, "\r\n", 2)                               ||
 
         /* tunneled data */
-        (req_method == eReqMethod_Connect  &&  content_length
+        (x_req_meth == eReqMethod_Connect  &&  content_length
          &&  !BUF_Write (&buf, args,     content_length))) {
         int x_errno = errno;
         CORE_LOGF_ERRNO_X(5, eLOG_Error, x_errno,
-                          ("[URL_Connect]  Cannot build HTTP header for"
-                           " %s:%hu", host, port));
+                          ("[URL_Connect; //%s:%hu%s%s%s%.*s] "
+                           " Cannot build HTTP header",
+                           host, port, &"/"[*path == '/'], path,
+                           &"?"[!args_len], (int) args_len, args));
         BUF_Destroy(buf);
         return x_URLConnectErrorReturn(s, eIO_Unknown);
     }
@@ -1604,8 +1618,10 @@ extern EIO_Status URL_ConnectEx
         ||  BUF_Read(buf, hdr, hdr_len) != hdr_len) {
         int x_errno = errno;
         CORE_LOGF_ERRNO_X(6, eLOG_Error, x_errno,
-                          ("[URL_Connect]  Cannot maintain HTTP header for"
-                           " %s:%hu", host, port));
+                          ("[URL_Connect; //%s:%hu%s%s%s%.*s] "
+                           " Cannot maintain HTTP header",
+                           host, port, &"/"[*path == '/'], path,
+                           &"?"[!args_len], (int) args_len, args));
         if (hdr)
             free(hdr);
         BUF_Destroy(buf);
@@ -1619,13 +1635,13 @@ extern EIO_Status URL_ConnectEx
     init.cred = cred;
 
     if (s) {
-        /* resuse connection */
-        status = SOCK_CreateOnTopInternal(s, 0, sock,
+        /* re-use existing connection */
+        status = SOCK_CreateOnTopInternal(s/*old*/, 0, sock/*new*/,
                                           &init, flags);
         SOCK_Destroy(s);
     } else {
         /* connect to HTTPD */
-        status = SOCK_CreateInternal(host, port, o_timeout, sock,
+        status = SOCK_CreateInternal(host, port, o_timeout, sock/*new*/,
                                      &init, flags);
     }
     free(hdr);
@@ -1639,7 +1655,8 @@ extern EIO_Status URL_ConnectEx
         } else
             *hdr_buf = '\0';
         CORE_LOGF_X(7, eLOG_Error,
-                    ("[URL_Connect; //%s:%hu%s%s%s%.*s]  Failed to %s: %s%s",
+                    ("[URL_Connect; //%s:%hu%s%s%s%.*s] "
+                     " Failed to %s: %s%s",
                      host, port, &"/"[*path == '/'], path,
                      &"?"[!args_len], (int) args_len, args,
                      s ? "use connection" : "connect",
@@ -1667,6 +1684,8 @@ extern SOCK URL_Connect
     char*  temp;
     size_t args_len;
 
+    if (req_method >= eReqMethod_v1)
+        req_method  = (EReqMethod)((int) eReqMethod_v1 - 1)/*bad*/;
     if (req_method != eReqMethod_Connect  &&  args  &&  encode_args
         &&  (args_len = strcspn(args, "#")) > 0) {
         /* URL-encode "args", if any specified */
