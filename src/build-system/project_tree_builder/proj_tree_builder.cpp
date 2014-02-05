@@ -737,8 +737,8 @@ void SMakeProjectT::CreateFullPathes(const string&      dir,
 }
 
 static
-void s_CollectAllLeaves(map<string, set<string> >& source_dep,
-                        map<string, set<string> >& source_flags,
+void s_CollectAllLeaves(const map<string, set<string> >& source_dep,
+                        const map<string, set<string> >& source_flags,
                         const string& branch,
                         set<string>& all_dep,
                         set<string>& all_flags)
@@ -748,14 +748,16 @@ void s_CollectAllLeaves(map<string, set<string> >& source_dep,
     }
     all_dep.insert(branch);
     if (source_flags.find(branch) != source_flags.end()) {
-        const set<string>& flags(source_flags[branch]);
+        const set<string>& flags(source_flags.find(branch)->second);
         ITERATE(set<string>, f, flags) {
             all_flags.insert(*f);
         }
     }
-    const set<string>& branches(source_dep[branch]);
-    ITERATE(set<string>, b, branches) {
-        s_CollectAllLeaves(source_dep, source_flags, *b, all_dep, all_flags);
+    if (source_flags.find(branch) != source_flags.end()) {
+        const set<string>& branches(source_dep.find(branch)->second);
+        ITERATE(set<string>, b, branches) {
+            s_CollectAllLeaves(source_dep, source_flags, *b, all_dep, all_flags);
+        }
     }
 }
 
@@ -859,10 +861,11 @@ void  SMakeProjectT::VerifyLibDepends(
             p != depends_ids.end(); ++p) {
             list<string> wrong;
             bool obsolete = false;
-            set<string>& precedes(app.m_GraphDepPrecedes[p->Id()]);
             ITERATE(set<string>, s, libsofar) {
-                if (precedes.find(*s) != precedes.end()) {
-                    wrong.push_back(*s);
+                if (app.m_GraphDepPrecedes.find(p->Id()) != app.m_GraphDepPrecedes.end()) {
+                    if (app.m_GraphDepPrecedes[p->Id()].find(*s) != app.m_GraphDepPrecedes[p->Id()].end()) {
+                        wrong.push_back(*s);
+                    }
                 }
                 if (app.m_GraphDepIncludes[p->Id()].find(*s) != app.m_GraphDepIncludes[p->Id()].end()) {
                     fix=true;
@@ -886,6 +889,20 @@ void  SMakeProjectT::VerifyLibDepends(
             libsofar.insert(p->Id());
             if (!obsolete) {
                 projlibs.insert(p->Id());
+            }
+        }
+// all toolkit libs should be known
+// while 3rd party may be unknown
+        if (expected_3party != nullptr) {
+            list<string> unknown;
+            ITERATE (set<string>, p,  projlibs) {
+                if (app.m_GraphDepPrecedes.find(*p) == app.m_GraphDepPrecedes.end()) {
+                    unknown.push_back(*p);
+                }
+            }
+            if (!unknown.empty()) {
+                fix = false;
+                warnings.push_back("unknown toolkit libraries: "  + NStr::Join(unknown,","));
             }
         }
     }
