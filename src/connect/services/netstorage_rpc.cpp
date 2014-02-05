@@ -800,6 +800,7 @@ size_t SNetFileRPC::Read(void* buffer, size_t buf_size)
 
     while (buf_size > 0) {
         switch (m_UTTPReader.GetNextEvent()) {
+        case CUTTPReader::eChunkPart:
         case CUTTPReader::eChunk:
             m_CurrentChunk = m_UTTPReader.GetChunkPart();
             m_CurrentChunkSize = m_UTTPReader.GetChunkPartSize();
