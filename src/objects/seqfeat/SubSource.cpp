@@ -1154,7 +1154,6 @@ string CSubSource::FixLatLonFormat (string orig_lat_lon, bool guess)
 
     // replace all '°' with space
     NStr::ReplaceInPlace(cpy, "\xC2\xB0", " ");
-    NStr::ReplaceInPlace(cpy, "<C2><B0>", " ");
     NStr::ReplaceInPlace(cpy, "°", " ");
 
     // replace all '#' with ' '
@@ -2457,7 +2456,11 @@ string CCountries::NewFixCountry (const string& test)
 {
     // change requested for JIRA:SQD-1410
     if (s_SuppressCountryFix(test)) {
-        return "";
+        if (IsValid(test)) {
+            return test;
+        } else {
+            return "";
+        }
     }
 
 

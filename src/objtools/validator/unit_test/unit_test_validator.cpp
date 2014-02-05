@@ -17505,10 +17505,6 @@ BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
     string fixed = CSubSource::FixLatLonFormat(to_fix, true);
     BOOST_CHECK_EQUAL(fixed, "9.93 N 78.12 E");
 
-    to_fix = "9.93N<C2><B0> and 78.12<C2><B0>E";
-    fixed = CSubSource::FixLatLonFormat(to_fix, true);
-    BOOST_CHECK_EQUAL(fixed, "9.93 N 78.12 E");
-
     to_fix = "43.098333, -89.405278";
     fixed = CSubSource::FixLatLonFormat(to_fix, true);
     BOOST_CHECK_EQUAL(fixed, "43.098333 N 89.405278 W");
@@ -17869,6 +17865,7 @@ BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
 
 BOOST_AUTO_TEST_CASE(Test_NewFixCountry)
 {
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Egypt: Red Sea, Ras Mohamed, Sinai"), "Egypt: Red Sea, Ras Mohamed, Sinai");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Kenya."), "Kenya");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("U.S.A."), "USA");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("\"United Kingdom: Scotland, Edinburgh\""), "United Kingdom: Scotland, Edinburgh");
@@ -17921,7 +17918,7 @@ BOOST_AUTO_TEST_CASE(Test_NewFixCountry)
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Wissenkerke, Keihoogteweg, the Netherlands"), "Netherlands: Wissenkerke, Keihoogteweg");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Wolfskill Orchand, Winters, California"), "");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Yun Shui"), "");
-    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("USSR: Kazakhstan, Kurtu"), "");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("USSR: Kazakhstan, Kurtu"), "USSR: Kazakhstan, Kurtu");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("USA:"), "USA");
 }
 
