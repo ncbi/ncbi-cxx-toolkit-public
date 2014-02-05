@@ -41,6 +41,7 @@
 #include <cgi/cgi_exception.hpp>
 
 #include <connect/services/netcache_api.hpp>
+#include <connect/services/netstorage.hpp>
 #include <connect/services/grid_app_version_info.hpp>
 
 #include <corelib/reader_writer.hpp>
@@ -50,6 +51,8 @@
 #define GRID_APP_NAME "ncfetch.cgi"
 
 USING_NCBI_SCOPE;
+
+#define NETSTORAGE_IO_BUFFER_SIZE 4096
 
 /// NetCache BLOB/image fetch application
 ///
@@ -61,6 +64,15 @@ protected:
     virtual int OnException(std::exception& e, CNcbiOstream& os);
 
 private:
+    void x_FetchNetCacheBlob(
+        const CCgiRequest& request,
+        CCgiResponse& reply,
+        const string& key);
+    void x_FetchNetStorageObject(
+        const CCgiRequest& request,
+        CCgiResponse& reply,
+        const string& key);
+
     enum {
         eNoPassword,
         ePasswordFromParam,
@@ -68,6 +80,10 @@ private:
     } m_PasswordSource;
 
     string m_PasswordSourceName;
+
+    CCompoundIDPool m_CompoundIDPool;
+    CNetCacheAPI m_NetCacheAPI;
+    CNetStorage m_NetStorage;
 };
 
 void CNetCacheBlobFetchApp::Init()
@@ -75,7 +91,9 @@ void CNetCacheBlobFetchApp::Init()
     // Standard CGI framework initialization
     CCgiApplication::Init();
 
-    string password_source = GetConfig().GetString("ncfetch",
+    const CNcbiRegistry& reg = GetConfig();
+
+    string password_source = reg.GetString("ncfetch",
         "password_source", kEmptyStr);
     if (password_source.empty())
         m_PasswordSource = eNoPassword;
@@ -93,6 +111,14 @@ void CNetCacheBlobFetchApp::Init()
             m_PasswordSourceName = source_type;
         }
     }
+
+    m_NetCacheAPI = CNetCacheAPI(GRID_APP_NAME);
+
+    string netstorage_init_string = reg.GetString("ncfetch",
+            "netstorage", kEmptyStr);
+
+    if (!netstorage_init_string.empty())
+        m_NetStorage = CNetStorage(netstorage_init_string);
 }
 
 int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
@@ -123,12 +149,27 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
 
     reply.SetContentType(fmt);
 
-    CNetCacheAPI nc_api(GRID_APP_NAME);
+    if (CNetCacheKey::ParseBlobKey(key.c_str(), key.length(), NULL, m_CompoundIDPool))
+        x_FetchNetCacheBlob(request, reply, key);
+    else if (m_NetStorage)
+        x_FetchNetStorageObject(request, reply, key);
+    else {
+        NCBI_THROW_FMT(CArgException, eInvalidArg,
+            "Not a NetCache key (and NetStorage is not configured): " << key);
+    }
 
+    return 0;
+}
+
+void CNetCacheBlobFetchApp::x_FetchNetCacheBlob(
+        const CCgiRequest& request,
+        CCgiResponse& reply,
+        const string& key)
+{
     size_t blob_size = 0;
     auto_ptr<IReader> reader;
     if (m_PasswordSource == eNoPassword)
-        reader.reset(nc_api.GetReader(key, &blob_size,
+        reader.reset(m_NetCacheAPI.GetReader(key, &blob_size,
             nc_caching_mode = CNetCacheAPI::eCaching_Disable));
     else {
         string password;
@@ -151,7 +192,7 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
                         "Password required.", CCgiException::e403_Forbidden);
             }
         }
-        reader.reset(nc_api.GetReader(key, &blob_size,
+        reader.reset(m_NetCacheAPI.GetReader(key, &blob_size,
             (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
             nc_blob_password = password)));
     }
@@ -166,8 +207,27 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
 
     CRStream in_stream(reader.get());
     NcbiStreamCopy(reply.out(), in_stream);
+}
 
-    return 0;
+void CNetCacheBlobFetchApp::x_FetchNetStorageObject(
+        const CCgiRequest& request,
+        CCgiResponse& reply,
+        const string& key)
+{
+    CNetFile netfile(m_NetStorage.Open(key));
+
+    char buffer[NETSTORAGE_IO_BUFFER_SIZE];
+
+    while (!netfile.Eof()) {
+        size_t bytes_read = netfile.Read(buffer, sizeof(buffer));
+
+        reply.out().write(buffer, bytes_read);
+
+        if (bytes_read < sizeof(buffer))
+            break;
+    }
+
+    netfile.Close();
 }
 
 int CNetCacheBlobFetchApp::OnException(std::exception& e, CNcbiOstream& os)
