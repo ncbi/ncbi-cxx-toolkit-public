@@ -579,7 +579,7 @@ CT_POS_TYPE CConn_Streambuf::seekoff(CT_OFF_TYPE        off,
             break;
         }
     }
-    return (CT_POS_TYPE)((CT_OFF_TYPE)(-1));
+    return (CT_POS_TYPE)((CT_OFF_TYPE)(-1L));
 }
 
 
