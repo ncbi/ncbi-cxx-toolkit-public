@@ -66,7 +66,7 @@
 #    include <sys/vfs.h>
 #  endif
 #  if !defined(MAP_FAILED)
-#    define MAP_FAILED ((void *) -1)
+#    define MAP_FAILED ((void *)(-1L))
 #  endif
 
 #else
@@ -2624,7 +2624,7 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
     uid_t temp_uid;
     if ( !owner.empty() ) {
         temp_uid = CUnixFeature::GetUserUIDByName(owner);
-        if (temp_uid == (uid_t)(-1L)){
+        if (temp_uid == (uid_t)(-1)){
             unsigned int temp;
             if (!NStr::StringToNumeric(owner,
                                        &temp, NStr::fConvErr_NoThrow, 0)) {
@@ -2637,13 +2637,13 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
             *uid = temp_uid;
         }
     } else {
-        temp_uid = (uid_t)(-1L);
+        temp_uid = (uid_t)(-1);
     }
 
     gid_t temp_gid;
     if ( !group.empty() ) {
         temp_gid = CUnixFeature::GetGroupGIDByName(group);
-        if (temp_gid == (gid_t)(-1L)) {
+        if (temp_gid == (gid_t)(-1)) {
             unsigned int temp;
             if (!NStr::StringToNumeric(group,
                                        &temp, NStr::fConvErr_NoThrow, 0)) {
@@ -2656,7 +2656,7 @@ bool CDirEntry::SetOwner(const string& owner, const string& group,
             *gid = temp_gid;
         }
     } else {
-        temp_gid = (gid_t)(-1L);
+        temp_gid = (gid_t)(-1);
     }
 
     if (follow == eFollowLinks  ||  GetType(eIgnoreLinks) != eLink) {
@@ -2997,7 +2997,7 @@ Int8 CFile::GetLength(void) const
         GetType(st) != eFile ) {
         //LOG_ERROR("CFile:GetLength(): stat() failed for " << GetPath());
         CNcbiError::SetFromErrno(GetPath());
-        return -1;
+        return -1L;
     }
     return st.st_size;
 }
@@ -5012,7 +5012,7 @@ Int8 CMemoryFileMap::GetFileSize(void) const
             struct stat st;
             if ( fstat(m_Handle->hMap, &st) != 0 ) {
                 CNcbiError::SetFromErrno();
-                return -1;
+                return -1L;
             }
             return st.st_size;
         }
@@ -5785,7 +5785,7 @@ Uint8 CFileIO::GetFilePos(void) const
     }
 #elif defined(NCBI_OS_UNIX)
     off_t pos = lseek(m_Handle, 0, SEEK_CUR);
-    if (pos != -1) {
+    if (pos != -1L) {
         return (Uint8)pos;
     }
 #endif
