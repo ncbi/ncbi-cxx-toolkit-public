@@ -148,7 +148,7 @@ uid_t CUnixFeature::GetUserUIDByName(const string& user)
     (defined(HAVE_GETPWUID)  &&  !defined(NCBI_HAVE_GETPWUID_R))
     // NB:  getpwnam() is MT-safe on Solaris
     const struct passwd* pwd = getpwnam(user.c_str());
-    uid = pwd ? pwd->pw_uid : (uid_t)(-1L);
+    uid = pwd ? pwd->pw_uid : (uid_t)(-1);
 
 #elif defined(NCBI_HAVE_GETPWUID_R)
     struct passwd* pwd;
@@ -212,14 +212,14 @@ uid_t CUnixFeature::GetUserUIDByName(const string& user)
         buf = new char[size <<= 1];
     }
 
-    uid = pwd ? pwd->pw_uid : (uid_t)(-1L);
+    uid = pwd ? pwd->pw_uid : (uid_t)(-1);
 
     if (buf != x_buf) {
         delete[] buf;
     }
 
 #else
-    uid = (uid_t)(-1L);
+    uid = (uid_t)(-1);
 
 #endif
 
@@ -323,7 +323,7 @@ gid_t CUnixFeature::GetGroupGIDByName(const string& group)
     (defined(HAVE_GETPWUID)  &&  !defined(NCBI_HAVE_GETPWUID_R))
     // NB:  getgrnam() is MT-safe on Solaris
     const struct group* grp = getgrnam(group.c_str());
-    gid = grp ? grp->gr_gid : (gid_t)(-1L);
+    gid = grp ? grp->gr_gid : (gid_t)(-1);
 
 #elif defined(NCBI_HAVE_GETPWUID_R)
     struct group* grp;
@@ -387,14 +387,14 @@ gid_t CUnixFeature::GetGroupGIDByName(const string& group)
         buf = new char[size <<= 1];
     }
 
-    gid = grp ? grp->gr_gid : (gid_t)(-1L);
+    gid = grp ? grp->gr_gid : (gid_t)(-1);
 
     if (buf != x_buf) {
         delete[] buf;
     }
 
 #else
-    gid = (gid_t)(-1L);
+    gid = (gid_t)(-1);
 
 #endif
 

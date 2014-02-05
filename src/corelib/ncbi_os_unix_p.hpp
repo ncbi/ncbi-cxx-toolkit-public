@@ -72,7 +72,7 @@ public:
     /// @param user
     ///   User name whose ID is looked up
     /// @return
-    ///   Numeric user ID when succeeded, or (uid_t)(-1L) when failed
+    ///   Numeric user ID when succeeded, or (uid_t)(-1) when failed
     static uid_t GetUserUIDByName(const string& user);
 
     /// Look up group name by given numeric group ID.
@@ -88,7 +88,7 @@ public:
     /// @param group
     ///   Group name whose ID is looked up
     /// @return
-    ///   Numeric group ID when succeeded, or (gid_t)(-1L) when failed
+    ///   Numeric group ID when succeeded, or (gid_t)(-1) when failed
     static gid_t GetGroupGIDByName(const string& group);
 };
 
