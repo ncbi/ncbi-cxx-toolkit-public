@@ -2967,6 +2967,7 @@ static EIO_Status s_Read(SOCK    sock,
         info.status = status;
         s_ErrorCallback(&info);
     }
+    assert(*n_read <= size);
     return status;
 }
 
@@ -3362,23 +3363,52 @@ static EIO_Status s_WriteData(SOCK        sock,
 }
 
 
+struct XWriteBufCtx {
+    SOCK       sock;
+    EIO_Status status;
+};
+
+
+static size_t x_WriteBuf(void* data, const void* buf, size_t size)
+{
+    struct XWriteBufCtx* ctx = (struct XWriteBufCtx*) data;
+    size_t n_written = 0;
+
+    assert(buf  &&  size  &&  ctx->status == eIO_Success);
+
+    do {
+        size_t x_written;
+        ctx->status = s_WriteData(ctx->sock, buf, size, &x_written, 0);
+        if (ctx->status != eIO_Success) {
+            assert(!x_written);
+            break;
+        }
+        n_written += x_written;
+        size      -= x_written;
+        buf        = (const char*) buf + x_written;
+    } while (size);
+
+    assert(!size/*n_written == initial size*/  ||  ctx->status != eIO_Success);
+    return n_written;
+}
+
+
 static EIO_Status s_WritePending(SOCK                  sock,
                                  const struct timeval* tv,
                                  int/*bool*/           writeable,
                                  int/*bool*/           oob)
 {
+    struct XWriteBufCtx ctx;
     unsigned int wtv_set;
     struct timeval wtv;
-    EIO_Status status;
     int restore;
-    size_t off;
 
     assert(sock->type == eSocket  &&  sock->sock != SOCK_INVALID);
 
     if (sock->pending) {
         const char* what;
-        int         error;
-        status = s_IsConnected_(sock, tv, &what, &error, writeable);
+        int        error;
+        EIO_Status status = s_IsConnected_(sock, tv, &what, &error, writeable);
         if (status != eIO_Success) {
             if (status != eIO_Timeout) {
                 char _id[MAXIDLEN];
@@ -3409,25 +3439,19 @@ static EIO_Status s_WritePending(SOCK                  sock,
         restore = 1;
     } else
         restore = wtv_set/*to silence compiler warning*/ = 0;
-    off = BUF_Size(sock->w_buf) - sock->w_len;
-    do {
-        size_t n_written;
-        char   buf[SOCK_BUF_CHUNK_SIZE];
-        size_t n_write = BUF_PeekAt(sock->w_buf, off, buf, sizeof(buf));
-        status = s_WriteData(sock, buf, n_write, &n_written, 0);
-        assert(status == eIO_Success ||  !n_written);
-        if (status != eIO_Success)
-            break;
-        sock->w_len -= n_written;
-        off         += n_written;
-    } while (sock->w_len);
+
+    ctx.sock     = sock;
+    ctx.status   = eIO_Success;
+    sock->w_len -= BUF_PeekAtCB(sock->w_buf,
+                                BUF_Size(sock->w_buf) - sock->w_len,
+                                x_WriteBuf, &ctx, sock->w_len);
+    assert((sock->w_len != 0) == (ctx.status != eIO_Success));
+
     if (restore) {
         if ((sock->w_tv_set = wtv_set) != 0)
             x_tvcpy(&sock->w_tv, &wtv);
     }
-
-    assert((sock->w_len != 0) == (status != eIO_Success));
-    return status;
+    return ctx.status;
 }
 
 
@@ -3508,6 +3532,7 @@ static EIO_Status s_Write(SOCK        sock,
         info.status = status;
         s_ErrorCallback(&info);
     }
+    assert(*n_written <= size);
     return status;
 }
 
@@ -6555,6 +6580,7 @@ extern EIO_Status SOCK_Read(SOCK           sock,
         x_read = 0;
     }
 
+    assert(x_read <= size);
     if ( n_read )
         *n_read = x_read;
     return status;
@@ -6760,6 +6786,7 @@ extern EIO_Status SOCK_Write(SOCK            sock,
         x_written = 0;
     }
 
+    assert(x_written <= size);
     if ( n_written )
         *n_written = x_written;
     return status;
