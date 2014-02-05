@@ -1839,7 +1839,7 @@ const char * CDeflineGenerator::x_SetPrefix (void)
         } else {
             prefix = "TPA: ";
         }
-    } else if (m_Multispecies) {
+    } else if (m_Multispecies && m_IsWP) {
         prefix = "MULTISPECIES: ";
     }
 
