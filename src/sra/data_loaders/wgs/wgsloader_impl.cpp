@@ -255,6 +255,16 @@ CWGSDataLoader_Impl::GetFileInfo(const string& acc,
         return null;
     }
     string prefix = acc.substr(0, prefix_len);
+    for ( SIZE_TYPE i = prefix_len-6; i < prefix_len-2; ++i ) {
+        if ( !isalpha(acc[i]&0xff) ) {
+            return null;
+        }
+    }
+    for ( SIZE_TYPE i = prefix_len-2; i < prefix_len; ++i ) {
+        if ( !isdigit(acc[i]&0xff) ) {
+            return null;
+        }
+    }
     SIZE_TYPE row_pos = prefix_len;
     bool scaffold = false;
     if ( acc[row_pos] == 'S' ) {
