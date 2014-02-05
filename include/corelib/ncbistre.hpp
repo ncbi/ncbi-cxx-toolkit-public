@@ -450,12 +450,13 @@ extern CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str,
 
 /// Copy entire contents of stream "is" into "os".
 /// @return
-/// "true" if the operation was successful, "is" was read entirely,
-/// and all of its contents had been written to "os";
-/// "false" if either extraction from "is" or insertion into "os" have failed.
+/// "true" if the operation was successful, i.e. "is" had been read entirely
+/// with all of its _available_ contents (including none) written to "os";
+/// "false" if either extraction from "is" or insertion into "os" failed.
 ///
-/// Note that upon successful completion, is.eof() may not always be true.
-/// The call may throw exceptions only if they are enabled on the
+/// Note that input ("is") stream state is not always asserted accurately, in
+/// particular, upon successful completion "is.eof()" may not necessarily be
+/// true.  The call may throw exceptions only if they are enabled on the
 /// respective stream(s).
 ///
 /// Note that the call is an extension to the standard
@@ -484,17 +485,20 @@ extern void NcbiStreamCopyThrow(CNcbiOstream& os, CNcbiIstream& is);
 
 
 /// Input the entire contents of an istream into a string (NULL causes drain).
+/// "is" gets its failbit set if nothing was extracted from it;  and gets its
+/// eofbit (w/o failbit) set if the stream has reached an EOF condition.
 ///
 /// @param pos
-///   Where in "*str" to begin saving data (ignored when "str" == NULL).
+///   Where in "*s" to begin saving data (ignored when "s" == NULL).
 /// @return
-///   True if copy was successful (i.e. "is" had reached EOF), false otherwise.
+///   Size of copied data if the operation was successful (i.e. "is" had
+///   reached EOF), 0 otherwise.
 /// @note
-///   If "str" != NULL, then "str->size() >= pos" upon return.
+///   If "s" != NULL, then "s->size() >= pos" always upon return.
 /// @sa
 ///   NcbiStreamCopy
 NCBI_XNCBI_EXPORT
-extern bool NcbiStreamToString(string* str, CNcbiIstream& is, size_t pos = 0);
+extern size_t NcbiStreamToString(string* s, CNcbiIstream& is, size_t pos = 0);
 
 
 /// Compare stream contents in binary form.

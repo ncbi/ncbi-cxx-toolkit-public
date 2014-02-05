@@ -215,11 +215,13 @@ CNcbiIstream& NcbiGetlineEOL(CNcbiIstream& is, string& str, SIZE_TYPE* count)
 
 bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is)
 {
-    if (!is.good())
+    if (!os.good())
         return false;
 #ifndef NCBI_COMPILER_GCC
-    if (CT_EQ_INT_TYPE(is.peek(), CT_EOF))
-        return true; // NB: Workshop doesn't set eofbit (C++ Std 27.6.1.3.27)
+    if (CT_EQ_INT_TYPE(is.peek(), CT_EOF)) {
+        // NB: C++ Std says nothing about eofbit (27.6.1.3.27)
+        return true;
+    }
     os << is.rdbuf();
 #elif   NCBI_COMPILER_VERSION <= 330
     // GCC stdlib++ version <= 3.3.0 has a bug in implementation of streamcopy,
@@ -242,18 +244,15 @@ bool NcbiStreamCopy(CNcbiOstream& os, CNcbiIstream& is)
     } while (is.good());
 #else
     if (CT_EQ_INT_TYPE(is.peek(), CT_EOF)) {
-#  ifdef __GLIBCXX__
-        return is.eof() ? true : false; // NB: GLIBC++ sets eofbit
-#  else
-        return true; // The C++ Std does not say about eofbit (27.6.1.3.27)
-#  endif
+        // NB: C++ Std says nothing about eofbit (27.6.1.3.27)
+        return true;
     }
     os << is.rdbuf();
 #endif
     if (!os.good()  ||  !os.flush())
         return false;
     if (CT_EQ_INT_TYPE(is.peek(), CT_EOF))
-        return is.fail() ? false : true;
+        return true;
     os.clear(NcbiFailbit);
     return false;
 }
@@ -272,19 +271,26 @@ void NcbiStreamCopyThrow(CNcbiOstream& os, CNcbiIstream& is)
 }
 
 
-bool NcbiStreamToString(string* str, CNcbiIstream& is, size_t str_size)
+size_t NcbiStreamToString(string* str, CNcbiIstream& is, size_t pos)
 {
     if (!is.good()) {
+        // Can't extract anything
         if (str)
-            str->resize(str_size);
-        return false;
+            str->resize(pos);
+        is.setstate(NcbiFailbit);
+        return 0;
     }
 
-    char   buf[4096];
+    char   buf[5120];
     size_t buf_size = sizeof(buf);
+    size_t str_size;
 
-    if (str  &&  str->size() < str_size + buf_size)
-        str->resize(str_size + buf_size);
+    if (str) {
+        str_size = pos;
+        if (str->size() < str_size + buf_size)
+            str->resize(str_size + buf_size);
+    } else
+        str_size = pos = 0;
 
     do {
         try {
@@ -294,11 +300,11 @@ bool NcbiStreamToString(string* str, CNcbiIstream& is, size_t str_size)
                 str->resize(str_size);
             throw;
         }
+        streamsize count = is.gcount();
+        str_size += count;
         if (str) {
-            streamsize count = is.gcount();
-            str_size += count;
             if ((size_t) count == buf_size) {
-                if (buf_size < (1UL << 20))
+                if (buf_size < (1UL << 16))
                     buf_size <<= 1;
                 str->resize(str_size + buf_size);
             } else
@@ -306,10 +312,22 @@ bool NcbiStreamToString(string* str, CNcbiIstream& is, size_t str_size)
         }
     } while (is.good());
 
+    _ASSERT(str_size >= pos);
     if (str)
         str->resize(str_size);
 
-    return is.rdstate() == NcbiEofbit ? true : false;
+    if (!(str_size -= pos)) {
+        // Nothing extracted
+        is.setstate(NcbiFailbit);
+        return 0;
+    }
+
+    // NB: istream::read() sets both bits at EOF (27.6.1.3.28)
+    IOS_BASE::iostate iostate = is.rdstate();
+    if (iostate != (NcbiFailbit | NcbiEofbit))
+        return 0;
+    is.clear(iostate & ~NcbiFailbit);
+    return str_size;
 }
 
 
