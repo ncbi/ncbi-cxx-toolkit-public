@@ -74,7 +74,7 @@ CBedFeatureRecord::~CBedFeatureRecord()
 
 //  ----------------------------------------------------------------------------
 bool CBedFeatureRecord::AssignDisplayData(
-    CMappedFeat mf,
+    const CMappedFeat& mf,
     bool bUseScore )
 //  ----------------------------------------------------------------------------
 {

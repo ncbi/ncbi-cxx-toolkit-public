@@ -50,21 +50,21 @@ public:
     ~CBedFeatureRecord();
 
     bool AssignLocation(const CSeq_interval&);
-    bool AssignDisplayData(CMappedFeat, bool);
+    bool AssignDisplayData(const CMappedFeat&, bool);
     bool Write(CNcbiOstream&, unsigned int);
 
-    string Chrom() const { return m_strChrom; };
-    string ChromStart() const { return m_strChromStart; };
-    string ChromEnd() const { return m_strChromEnd; };
-    string Name() const { return m_strName; };
-    string Score() const { return m_strScore; }; 
-    string Strand() const { return m_strStrand; };   
-    string ThickStart() const { return m_strThickStart; };   
-    string ThickEnd() const { return m_strThickEnd; };   
-    string ItemRgb() const { return m_strItemRgb; };   
-    string BlockCount() const { return m_strBlockCount; };   
-    string BlockSizes() const { return m_strBlockSizes; };   
-    string BlockStarts() const { return m_strBlockStarts; };
+    const string& Chrom() const { return m_strChrom; };
+    const string& ChromStart() const { return m_strChromStart; };
+    const string& ChromEnd() const { return m_strChromEnd; };
+    const string& Name() const { return m_strName; };
+    const string& Score() const { return m_strScore; }; 
+    const string& Strand() const { return m_strStrand; };   
+    const string& ThickStart() const { return m_strThickStart; };   
+    const string& ThickEnd() const { return m_strThickEnd; };   
+    const string& ItemRgb() const { return m_strItemRgb; };   
+    const string& BlockCount() const { return m_strBlockCount; };   
+    const string& BlockSizes() const { return m_strBlockSizes; };   
+    const string& BlockStarts() const { return m_strBlockStarts; };
    
     size_t ColumnCount() const { return m_uColumnCount; };
 

@@ -1,0 +1,76 @@
+Seq-annot ::= {
+  desc {
+    name "MACS peaks for Mouse_h3k27ac_FL1_p00001",
+    user {
+      type str "NCBI_BED_COLUMN_COUNT",
+      data {
+        {
+          label str "NCBI_BED_COLUMN_COUNT",
+          data int 5
+        }
+      }
+    }
+  },
+  data ftable {
+    {
+      id local id 1,
+      data region "chr1",
+      location int {
+        from 4561209,
+        to 4562354,
+        id local str "chr1"
+      },
+      title "label1",
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data real { 48322, 10, -2 }
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    },
+    {
+      id local id 4,
+      data region "chr1",
+      location int {
+        from 4775069,
+        to 4776177,
+        id local str "chr1"
+      },
+      title "label2",
+      exts {
+        {
+          type str "DisplaySettings",
+          data {
+            {
+              label str "score",
+              data real { 34467, 10, -2 }
+            }
+          }
+        },
+        {
+          type str "BED",
+          data {
+            {
+              label str "location",
+              data str "chrom"
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -829,8 +829,23 @@ void CBedReader::xSetFeatureBedData(
     exts.push_front(pDisplayData);
 
     try {
-        int score = NStr::StringToInt(fields[4]);
-        pDisplayData->AddField("score", score);
+        int int_score = NStr::StringToInt(fields[4], NStr::fConvErr_NoThrow );
+        if (int_score == 0)
+        {
+            if (fields[4].compare("0") == 0)
+            {
+                pDisplayData->AddField("score", int_score);
+            }
+            else
+            {
+                double score = NStr::StringToDouble(fields[4]);       
+                pDisplayData->AddField("score", score);
+            }
+        }
+        else
+        {
+            pDisplayData->AddField("score", int_score);
+        }
     }
     catch(std::exception&) {
         AutoPtr<CObjReaderLineException> pErr(
