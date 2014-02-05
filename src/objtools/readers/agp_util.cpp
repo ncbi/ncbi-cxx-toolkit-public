@@ -1212,6 +1212,23 @@ void CAgpErrEx::PrintLine(CNcbiOstream& ostr,
     ostr<< linenum  << ":" << line << "\n";
 }
 
+void ReplaceUnprintableCharacters(string& text)
+{
+  // replace with '?' the character numbers not allowed in ISO-8859-1
+  for(SIZE_TYPE p1=0;true;p1++) {
+    p1 = text.find("&#", p1);
+    if(p1==NPOS) break;
+    SIZE_TYPE p2 = text.find(';', p1+2);
+    if(p2!=NPOS) {
+      text = text.substr(0,p1) + "?" + text.substr(p2+1);
+    }
+    else {
+      text = text.substr(0,p1) + "..."; // missing ";" is not expected
+      break;
+    }
+  }
+}
+
 void CAgpErrEx::PrintLineXml(CNcbiOstream& ostr,
     const string& filename, int linenum, const string& content,
     bool two_lines_involved)
@@ -1221,7 +1238,8 @@ void CAgpErrEx::PrintLineXml(CNcbiOstream& ostr,
     if(two_lines_involved) attr+=" two_lines=\"true\"";
 
     string xml_content = NStr::XmlEncode(content);
-    if( xml_content.find("&#x0;")!=NPOS ) NStr::ReplaceInPlace(xml_content, "&#x0;", "?");
+    //if( xml_content.find("&#x0;")!=NPOS ) NStr::ReplaceInPlace(xml_content, "&#x0;", "?");
+    ReplaceUnprintableCharacters(xml_content);
     ostr << " <line " << attr << ">" << xml_content << "</line>\n";
 
 }
@@ -1244,7 +1262,9 @@ void CAgpErrEx::PrintMessageXml(CNcbiOstream& ostr, int code, const string& deta
     if(appliesTo & CAgpErr::fAtPpLine  ) ostr << " <line_num>" << m_line_num_pp    << "</line_num>\n";
     if(appliesTo & CAgpErr::fAtPrevLine) ostr << " <line_num>" << m_line_num_prev  << "</line_num>\n";
     if(appliesTo & CAgpErr::fAtThisLine) ostr << " <line_num>current</line_num>\n";
-    ostr << " <text>" << NStr::XmlEncode( FormatMessage( GetMsg(code), details ) ) << "</text>\n";
+    string text = NStr::XmlEncode( FormatMessage( GetMsg(code), details ) );
+    ReplaceUnprintableCharacters(text);
+    ostr << " <text>" << text << "</text>\n";
 
     ostr << "</message>\n";
 }
