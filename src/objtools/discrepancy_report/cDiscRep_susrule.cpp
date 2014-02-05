@@ -2683,6 +2683,7 @@ string CSuspectRuleCheck :: GetQualFromFeatureAnyType(const CSeq_feat& seq_feat,
       /* citation */ // ####?????
 //    str = GetCitationTextFromFeature (sfp, str_cons, batch_extra == NULL ? NULL : batch_extra->cit_list);
       if (seq_feat.CanGetCit()) {
+          str = kEmptyStr;
           seq_feat.GetCit().GetLabel(&str);
       }
   }

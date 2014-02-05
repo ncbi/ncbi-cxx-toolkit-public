@@ -1250,9 +1250,11 @@ string CRepConfig :: GetDirStr(const string& src_dir)
 void CRepConfig :: SetArg(const string& arg, const string& vlu)
 {
    if (arg == "e") {
+       m_enabled.clear();
        m_enabled = NStr::Tokenize(vlu, ", ", m_enabled, NStr::eMergeDelims);
    }
    else if (arg == "d") {
+        m_disabled.clear();
         m_disabled= NStr::Tokenize(vlu,", ", m_disabled, NStr::eMergeDelims);
    }
 };
@@ -1653,8 +1655,6 @@ CRepConfig* CRepConfig :: factory(string report_tp, CSeq_entry_Handle* tse_p)
 
 void CRepConfig :: GetTestList() 
 {
-   unsigned sz = thisTest.tests_run.size(), i=0;
-
    thisGrp.tests_on_Bioseq.clear();   
    thisGrp.tests_on_Bioseq_na.clear();   
    thisGrp.tests_on_Bioseq_aa.clear();   
@@ -1668,6 +1668,7 @@ void CRepConfig :: GetTestList()
    thisGrp.tests_on_BioseqSet.clear();   
    thisGrp.tests_on_SubmitBlk.clear();   
 
+   unsigned sz = thisTest.tests_run.size(), i=0;
    set <string>::iterator end_it = thisTest.tests_run.end();
    if (i >= sz) return;
    if (thisTest.tests_run.find("DISC_SUBMITBLOCK_CONFLICT") != end_it) {
@@ -2925,7 +2926,7 @@ void CRepConfig :: CollectTests()
             thisTest.tests_run.insert(*it);
       }
    }
-  
+
    GetTestList();
 };
 

@@ -45,10 +45,13 @@
 
 #include <corelib/test_boost.hpp>
 
-#include <objtools/discrepancy_report/hDiscRep_tests.hpp>
+#include <objtools/unit_test_util/unit_test_util.hpp>
 
+#include <objtools/discrepancy_report/hDiscRep_tests.hpp>
 #include <objtools/discrepancy_report/hDiscRep_output.hpp>
 #include <objtools/discrepancy_report/hDiscRep_config.hpp>
+#include <objtools/discrepancy_report/hUtilib.hpp>
+
 
 const char* sc_TestEntryCollidingLocusTags ="Seq-entry ::= seq {\
      id {\
@@ -118,7 +121,7 @@ BEGIN_NCBI_SCOPE
 USING_NCBI_SCOPE;
 USING_SCOPE(objects);
 USING_SCOPE(DiscRepNmSpc);
-
+USING_SCOPE(unit_test_util);
 
 static CRef <CRepConfig> config(new CRepConfig);
 NCBITEST_AUTO_INIT()
@@ -145,6 +148,100 @@ NCBITEST_AUTO_FINI()
     cout << "Finalization function executed" << endl;
 }
 
+void RunTest(CRef <CRepConfig>& config, CRef <CClickableItem>& c_item)
+{
+   config->CollectTests();
+   config->Run();
+   CDiscRepOutput output_obj;
+   output_obj.Export(c_item);
+};
+
+void CheckReport(CRef <CClickableItem>& c_item, const string& msg)
+{
+   if (c_item.Empty() || (c_item->description).empty()) {
+      NCBITEST_CHECK_MESSAGE(!c_item.Empty(), "no report");
+   }
+   else {
+     NCBITEST_CHECK_MESSAGE(c_item->item_list.size() == c_item->obj_list.size(),
+              "The sizes of item_list and obj_list are not equal");
+     NCBITEST_CHECK_MESSAGE(c_item->description == msg,
+              "Test report is incorrect: " + c_item->description);
+   }
+};
+
+BOOST_AUTO_TEST_CASE(DUP_GENPRODSET_PROTEIN)
+{
+   CRef <CSeq_entry> entry = unit_test_util::BuildGoodGenProdSet();
+
+   // add cdregion
+   CRef <CSeq_entry> 
+     genomic_entry = unit_test_util::GetGenomicFromGenProdSet(entry); 
+   const list <CRef <CSeq_annot> >& annots = genomic_entry->GetSeq().GetAnnot();
+   CRef <CSeq_feat> new_feat(new CSeq_feat);
+   ITERATE(list <CRef <CSeq_feat> >, it,
+                        (*(annots.begin()))->GetData().GetFtable()) {
+      if ( (*it)->GetData().IsCdregion()) {
+         new_feat->SetData().SetCdregion().Assign(((*it)->GetData().GetCdregion()));
+         new_feat->SetLocation().SetInt().SetId().Assign(*(genomic_entry->GetSeq().GetId().front()));
+         new_feat->SetLocation().SetInt().SetFrom(0);
+         new_feat->SetLocation().SetInt().SetTo(genomic_entry->GetSeq().GetInst().GetLength()-1);
+         new_feat->SetProduct().Assign((*it)->GetProduct());
+         unit_test_util::AddFeat(new_feat, genomic_entry );
+         break;
+      }
+   }
+
+   CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+   CRef <CScope> scope(new CScope(*objmgr));
+   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+   config->SetTopLevelSeqEntry(&seh);
+   config->SetArg("d", "All");
+   config->SetArg("e", "DUP_GENPRODSET_PROTEIN");
+   CRef <CClickableItem> c_item(0);
+   RunTest(config, c_item);
+   CheckReport(c_item, "2 coding regions have protein ID prot");
+};
+
+BOOST_AUTO_TEST_CASE(MISSING_GENPRODSET_TRANSCRIPT_ID)
+{
+   CRef <CSeq_entry> entry = unit_test_util::BuildGoodGenProdSet();
+   CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+   CRef <CScope> scope(new CScope(*objmgr));
+   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+ 
+   // good gen-prod-set
+   config->SetTopLevelSeqEntry(&seh);
+   config->SetArg("d", "All");
+   config->SetArg("e", "MISSING_GENPRODSET_TRANSCRIPT_ID");
+   CRef <CClickableItem> c_item(0);   
+   RunTest(config, c_item); 
+   if (!c_item.Empty()) {
+      NCBITEST_CHECK_MESSAGE(c_item.Empty(), 
+               "Wrong report: " + c_item->description);
+   }
+
+   // reset Product of mRNA
+   CRef <CSeq_entry> 
+        genomic_entry = unit_test_util::GetGenomicFromGenProdSet(entry);
+   list <CRef <CSeq_annot> >& annots = genomic_entry->SetSeq().SetAnnot();
+   list <CRef <CSeq_feat> > & feats =(*(annots.begin()))->SetData().SetFtable();
+   NON_CONST_ITERATE(list <CRef <CSeq_feat> >, it, 
+                        (*(annots.begin()))->SetData().SetFtable()) {
+      if ( (*it)->SetData().GetSubtype() == CSeqFeatData::eSubtype_mRNA) {
+         (*it)->ResetProduct(); 
+         break;
+      }
+   }
+   
+   objmgr.Reset(CObjectManager::GetInstance().GetPointer());
+   scope.Reset(new CScope(*objmgr));
+   seh = scope->AddTopLevelSeqEntry(*entry);
+   config->SetTopLevelSeqEntry(&seh);
+   RunTest(config, c_item);
+   CheckReport(c_item, "1 mRNA has missing transcript ID.");
+};
+
+
 BOOST_AUTO_TEST_CASE(MISSING_LOCUS_TAGS)
 {
    CRef <CSeq_entry> entry (new CSeq_entry);
@@ -170,14 +267,7 @@ BOOST_AUTO_TEST_CASE(MISSING_LOCUS_TAGS)
    CRef <CClickableItem> c_item(0);
    CDiscRepOutput output_obj;
    output_obj.Export(c_item);
-
-   NCBITEST_CHECK_MESSAGE(!c_item.Empty(),
-                     "MISSING_LOCUS_TAGS did not have any report");
-   NCBITEST_CHECK_MESSAGE(c_item->item_list.size() == c_item->obj_list.size(),
-                          "the sizes of item_list and obj_list are not equal");
-   string msg = "1 gene has no locus tags.";
-   NCBITEST_CHECK_MESSAGE(c_item->description == msg, 
-                         "Test result is incorrect: " + c_item->description);
+   CheckReport(c_item, "1 gene has no locus tags.");
 };
 
 BOOST_AUTO_TEST_CASE(DISC_COUNT_NUCLEOTIDES)
@@ -198,15 +288,7 @@ BOOST_AUTO_TEST_CASE(DISC_COUNT_NUCLEOTIDES)
    CRef <CClickableItem> c_item(0);
    CDiscRepOutput output_obj;
    output_obj.Export(c_item);
-
-   NCBITEST_CHECK_MESSAGE(!c_item.Empty(),
-                     "DISC_COUNT_NUCLEOTIDES did not find any nucleotide");
-   NCBITEST_CHECK_MESSAGE(c_item->item_list.size() == c_item->obj_list.size(),
-                          "the sizes of item_list and obj_list are not equal");
-   string msg = "1 nucleotide Bioseq is present.";
-   NCBITEST_CHECK_MESSAGE(c_item->description == msg, 
-                         "Test result is incorrect: " + c_item->description);
-
+   CheckReport(c_item, "1 nucleotide Bioseq is present.");
 };
 
 

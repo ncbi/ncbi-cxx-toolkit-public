@@ -936,7 +936,7 @@ string CTestAndRepData :: SeqDescLabelContent(const CSeqdesc& sd)
           {
             const COrg_ref& org = sd.GetOrg();
             return (org.CanGetTaxname() ? org.GetTaxname() 
-                                          : (org.CanGetCommon()? org.GetCommon(): kEmptyStr));
+                       : (org.CanGetCommon()? org.GetCommon(): kEmptyStr));
           }
         case CSeqdesc::e_Pub:
             sd.GetPub().GetPub().GetLabel(&label);
@@ -945,7 +945,7 @@ string CTestAndRepData :: SeqDescLabelContent(const CSeqdesc& sd)
           {
             const CUser_object& uop = sd.GetUser();
             return (uop.CanGetClass()? uop.GetClass() 
-                                 : (uop.GetType().IsStr()? uop.GetType().GetStr(): kEmptyStr));
+                 : (uop.GetType().IsStr()? uop.GetType().GetStr(): kEmptyStr));
           }
         case CSeqdesc::e_Method:
               return (ENUM_METHOD_NAME(EGIBB_method)()->FindName(sd.GetMethod(), true));
@@ -953,14 +953,15 @@ string CTestAndRepData :: SeqDescLabelContent(const CSeqdesc& sd)
               return (ENUM_METHOD_NAME(EGIBB_mol)()->FindName(sd.GetMol_type(), true));
         case CSeqdesc::e_Modif:
               ITERATE (list <EGIBB_mod>, it, sd.GetModif()) {
-                label += ENUM_METHOD_NAME(EGIBB_mod)()->FindName(*it, true) + ", ";
+                label 
+                  += ENUM_METHOD_NAME(EGIBB_mod)()->FindName(*it, true) + ", ";
               }
               return (label.substr(0, label.size()-2));
         case CSeqdesc::e_Source:
           {
             const COrg_ref& org = sd.GetSource().GetOrg();
             return (org.CanGetTaxname() ? org.GetTaxname() 
-                                          : (org.CanGetCommon()? org.GetCommon(): kEmptyStr));
+                       : (org.CanGetCommon()? org.GetCommon(): kEmptyStr));
           }  
         case CSeqdesc::e_Maploc:
               sd.GetMaploc().GetLabel(&label);
@@ -1218,6 +1219,7 @@ string CTestAndRepData :: GetLocusTagForFeature(const CSeq_feat& seq_feat)
 
 void CTestAndRepData :: GetSeqFeatLabel(const CSeq_feat& seq_feat, string& label)
 {
+     label = kEmptyStr;
      GetLabel(seq_feat, &label, fFGL_Content);
      size_t pos;
      if (!label.empty() && (string::npos != (pos = label.find("-")) ) ) {

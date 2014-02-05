@@ -12,7 +12,7 @@ SRC = unit_test_discrepancy_report
 
 CPPFLAGS = $(ORIG_CPPFLAGS) $(BOOST_INCLUDE)
 
-LIB = xdiscrepancy_report xobjread xvalidate valid valerr taxon3 \
+LIB = xunittestutil xdiscrepancy_report xobjread xvalidate valid valerr taxon3 \
         $(XFORMAT_LIBS) xalnmgr xobjutil tables \
         macro xregexp $(PCRE_LIB) $(OBJREAD_LIBS) $(OBJMGR_LIBS) \
         test_boost xncbi

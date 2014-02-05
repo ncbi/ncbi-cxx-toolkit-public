@@ -5897,14 +5897,20 @@ void CBioseq_test_on_genprod_set :: TestOnObj(const CBioseq& bioseq)
        desc = GetDiscItemText(**it);
        CConstRef <CObject> feat_ref (*it);
        if (!(*it)->CanGetProduct()) {
-          if (run_mprot && (!(*it)->CanGetPseudo() || !(*it)->GetPseudo()))
+          if (run_mprot && (!(*it)->CanGetPseudo() || !(*it)->GetPseudo())) {
             thisInfo.test_item_list[GetName_mprot()].push_back(desc);
             thisInfo.test_item_objs[GetName_mprot()].push_back(feat_ref);
+          }
        }
        else if (run_dprot) {
-          const CSeq_id& seq_id = sequence::GetId((*it)->GetProduct(), thisInfo.scope); 
-          seq_id.GetLabel(&prod_id); 
-          thisInfo.test_item_list[GetName_dprot()].push_back(prod_id + "$" + desc);
+          const CSeq_id& seq_id 
+                     = sequence::GetId((*it)->GetProduct(), thisInfo.scope); 
+          prod_id = kEmptyStr;
+          seq_id.GetLabel(&prod_id, CSeq_id::eContent); 
+          thisInfo.test_item_list[GetName_dprot()]
+                         .push_back(prod_id + "$" + desc);
+          thisInfo.test_item_objs[GetName_dprot() + "$" + prod_id]
+                       .push_back(feat_ref);
        }
      }   
    }
@@ -5914,21 +5920,28 @@ void CBioseq_test_on_genprod_set :: TestOnObj(const CBioseq& bioseq)
    if (run_mtid || run_dtid) {
      ITERATE (vector <const CSeq_feat*>, it, mrna_feat) {
        desc = GetDiscItemText(**it);
+       CConstRef <CObject> feat_ref(*it);
        if (!(*it)->CanGetProduct()) {
           if ( run_mtid && (!(*it)->CanGetPseudo() || !(*it)->GetPseudo()))
             thisInfo.test_item_list[GetName_mtid()].push_back(desc);
+            thisInfo.test_item_objs[GetName_mtid()].push_back(feat_ref);
        }
        else if (run_dtid) { // DUP_GENPRODSET_TRANSCRIPT_ID
-          const CSeq_id& seq_id = sequence::GetId((*it)->GetProduct(), thisInfo.scope);
-          seq_id.GetLabel(&prod_id); 
-          thisInfo.test_item_list[GetName_dtid()].push_back(prod_id + "$" + desc);
+          const CSeq_id& 
+              seq_id = sequence::GetId((*it)->GetProduct(), thisInfo.scope);
+          prod_id = kEmptyStr;
+          seq_id.GetLabel(&prod_id, CSeq_id::eContent); 
+          thisInfo.test_item_list[GetName_dtid()]
+                         .push_back(prod_id + "$" + desc);
+          thisInfo.test_item_objs[GetName_dtid() + "$" + prod_id]
+                         .push_back(feat_ref);
        }
      }
    }
 };
 
 
-void CBioseq_test_on_genprod_set :: GetReport_dup(CRef <CClickableItem>& c_item, const string& setting_name, const string& desc1, const string& desc2, const string& desc3)
+void CBioseq_test_on_genprod_set :: x_GetReport_dup(CRef <CClickableItem>& c_item, const string& setting_name, const string& desc1, const string& desc2, const string& desc3)
 {
    Str2Strs label2feats;
    GetTestItemList(c_item->item_list, label2feats);
@@ -5938,6 +5951,9 @@ void CBioseq_test_on_genprod_set :: GetReport_dup(CRef <CClickableItem>& c_item,
        cnt = (label2feats.begin()->second).size(); 
        if (cnt > 1) {
           c_item->item_list = label2feats.begin()->second;
+          strtmp = setting_name + "$" + label2feats.begin()->first;
+          c_item->obj_list 
+              = thisInfo.test_item_objs[strtmp];
           c_item->description 
              = GetHasComment(cnt, desc1) + desc2 + label2feats.begin()->first;
        }
@@ -5945,12 +5961,14 @@ void CBioseq_test_on_genprod_set :: GetReport_dup(CRef <CClickableItem>& c_item,
    else {
       ITERATE (Str2Strs, it, label2feats) {
          if (it->second.size() > 1) {
-            AddSubcategory(c_item, setting_name, &(it->second), desc1,
-                              desc2 + it->first, e_HasComment); 
+            AddSubcategory(c_item, setting_name + "$" + it->first, 
+               &(it->second), desc1, desc2 + it->first, e_HasComment); 
          } 
       }
-      if (c_item->subcategories.size()> 1)
-         c_item->description = GetHasComment(c_item->item_list.size(), desc1) + desc3;
+      if (c_item->subcategories.size()> 1) {
+         c_item->description 
+            = GetHasComment(c_item->item_list.size(), desc1) + desc3;
+      }
    };
 };
 
@@ -5966,13 +5984,14 @@ void CBioseq_MISSING_GENPRODSET_PROTEIN :: GetReport(CRef <CClickableItem>& c_it
 
 void CBioseq_DUP_GENPRODSET_PROTEIN :: GetReport(CRef <CClickableItem>& c_item)
 {
-   GetReport_dup(c_item, GetName(), "coding region", "protein ID ", 
+   x_GetReport_dup(c_item, GetName(), "coding region", "protein ID ", 
                                            "non-unique protein IDs.");
 };
 
 
 void CBioseq_MISSING_GENPRODSET_TRANSCRIPT_ID :: GetReport(CRef <CClickableItem>& c_item)
 {
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    unsigned cnt = c_item->item_list.size();
    c_item->description = GetHasComment(cnt, "mRNA") 
                            + "missing transcript " + ((cnt > 1) ? "IDs." : "ID.");
@@ -5981,7 +6000,7 @@ void CBioseq_MISSING_GENPRODSET_TRANSCRIPT_ID :: GetReport(CRef <CClickableItem>
 
 void CBioseq_DISC_DUP_GENPRODSET_TRANSCRIPT_ID :: GetReport(CRef <CClickableItem>& c_item)
 {
-   GetReport_dup(c_item, GetName(), "mRNA", "non-unique transcript ID ", 
+   x_GetReport_dup(c_item, GetName(), "mRNA", "non-unique transcript ID ", 
                                               "non-unique transcript IDs.");
 };
 
@@ -11807,6 +11826,7 @@ string CSeqEntry_test_on_pub :: GetAuthNameList(const CAuthor& auth, bool use_in
   const CPerson_id& pid = auth.GetName();
   switch (pid.Which()) {
     case CPerson_id::e_Dbtag:
+          str = kEmptyStr;
           pid.GetDbtag().GetLabel(&str);
           break;
     case CPerson_id::e_Name:
