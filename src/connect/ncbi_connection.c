@@ -1010,7 +1010,7 @@ extern EIO_Status CONN_ReadLine
                 CONN_LOG_EX(35, ReadLine, eLOG_Critical,
                             "Cannot pushback extra data", 0);
                 conn->state = eCONN_Bad;
-                status = eIO_Closed;
+                status = eIO_Unknown;
             } else
                 status = eIO_Success;
             break;
