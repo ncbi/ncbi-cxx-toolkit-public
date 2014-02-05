@@ -2876,7 +2876,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       string GetName_mtid() const {return string("MISSING_GENPRODSET_TRANSCRIPT_ID");}
       string GetName_dtid() const {return string("DUP_GENPRODSET_TRANSCRIPT_ID");}
 
-      void GetReport_dup(CRef <CClickableItem>& c_item, 
+      void x_GetReport_dup(CRef <CClickableItem>& c_item, 
                          const string& setting_name, 
                          const string& desc1, 
                          const string& desc2, 
