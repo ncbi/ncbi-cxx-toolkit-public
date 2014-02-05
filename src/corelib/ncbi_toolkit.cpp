@@ -235,7 +235,7 @@ CNcbiToolkit::~CNcbiToolkit( void )
 
 static const CNcbiToolkit* s_NcbiToolkit = NULL;
 
-const CNcbiToolkit* kNcbiToolkit_Finalized = (CNcbiToolkit*) (-1);
+const CNcbiToolkit* kNcbiToolkit_Finalized = (const CNcbiToolkit*)(-1L);
 
 DEFINE_STATIC_FAST_MUTEX(s_NcbiToolkit_Mtx);
 
