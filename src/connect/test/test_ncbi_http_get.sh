@@ -34,4 +34,4 @@ else
   url='http://www.ncbi.nlm.nih.gov/entrez/viewer.cgi?view=0&maxplex=1&save=idf&val=4959943'
 fi
 
-exec test_ncbi_http_get "$url"
+$CHECK_EXEC test_ncbi_http_get "$url"
