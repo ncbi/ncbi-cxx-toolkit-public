@@ -1630,7 +1630,7 @@ const char* CTar::x_ReadArchive(size_t& n)
                         is->clear();
                     }
                 } catch (IOS_BASE::failure&) {
-                    xread = m_Stream.rdstate() == NcbiEofbit ? 0 : -1;
+                    xread = m_Stream.rdstate() & NcbiEofbit ? 0 : -1;
                 }
 #else
                 xread = m_Stream.rdbuf()
@@ -1993,6 +1993,7 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
         // Here the magic is protruded into the adjacent version field
         fmt = eTar_OldGNU;
     } else if (memcmp(h->magic, "\0\0\0\0\0", 6) == 0) {
+        // We'll use this also to speedup corruption checks w/checksum
         fmt = eTar_Legacy;
     } else {
         TAR_THROW_EX(this, eUnsupportedTarFormat,
@@ -2003,11 +2004,21 @@ CTar::EStatus CTar::x_ReadEntryInfo(bool dump, bool pax)
     // Get checksum from header
     if (!s_OctalToNum(val, h->checksum, sizeof(h->checksum))) {
         // We must allow all zero bytes here in case of pad/zero blocks
-        for (size_t i = 0;  i < sizeof(block->buffer);  ++i) {
-            if (block->buffer[i]) {
-                TAR_THROW_EX(this, eUnsupportedTarFormat,
-                             "Bad checksum", h, fmt);
+        bool corrupted;
+        if (fmt == eTar_Legacy) {
+            corrupted = false;
+            for (size_t i = 0;  i < sizeof(block->buffer);  ++i) {
+                if (block->buffer[i]) {
+                    corrupted = true;
+                    break;
+                }
             }
+        } else {
+            corrupted = true;
+        }
+        if (corrupted) {
+            TAR_THROW_EX(this, eUnsupportedTarFormat,
+                         "Bad checksum", h, fmt);
         }
         m_StreamPos += BLOCK_SIZE;  // NB: nread
         return eZeroBlock;
