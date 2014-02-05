@@ -299,11 +299,11 @@ extern int/*bool*/ BUF_PushBack(BUF* buf, const void* src, size_t size)
 }
 
 
-extern size_t BUF_PeekAtCB(BUF    buf,
-                           size_t pos,
-                           void (*callback)(void*, void*, size_t),
-                           void*  cbdata,
-                           size_t size)
+extern size_t BUF_PeekAtCB(BUF      buf,
+                           size_t   pos,
+                           size_t (*callback)(void*, const void*, size_t),
+                           void*    cbdata,
+                           size_t   size)
 {
     size_t     todo;
     SBufChunk* chunk;
@@ -336,8 +336,12 @@ extern size_t BUF_PeekAtCB(BUF    buf,
         if (copy > todo)
             copy = todo;
 
-        callback(cbdata, (char*) chunk->data + skip, copy);
-        todo -= copy;
+        skip  = callback(cbdata, (const char*) chunk->data + skip, copy);
+        if (skip > copy)
+            skip = copy;
+        todo -= skip;
+        if (skip < copy)
+            break;
     }
 
     assert(size >= todo);
@@ -345,11 +349,12 @@ extern size_t BUF_PeekAtCB(BUF    buf,
 }
 
 
-static void s_MemcpyCB(void* cbdata, void* data, size_t size)
+static size_t s_MemcpyCB(void* cbdata, const void* data, size_t size)
 {
     char** dst = (char**) cbdata;
     memcpy(*dst, data, size);
     *dst += size;
+    return size;
 }
 
 

@@ -172,8 +172,11 @@ extern NCBI_XCONNECT_EXPORT size_t BUF_PeekAt
 
 
 /*!
- * Call "callback" on up to "size" bytes stored in "buf" (starting at position
- * "pos"), in chunks.  Pass "cbdata" as an opaque parameter to "callback".
+ * Call "callback" repeatedly on up to "size" bytes stored in "buf" (starting
+ * at position "pos"), in chunks.  Pass "cbdata" as an opaque parameter to the
+ * "callback".  Processing stops when all buffer bytes (but no more than
+ * "size" bytes) have been visited by the "callback", or when the "callback"
+ * returns a value less than its passed "size" argument.
  * Return the # of processed bytes (can be less than "size").
  * Return zero and do nothing if "buf" is NULL or "pos" >= BUF_Size(buf).
  * Do nothing and return min(BUF_Size(buf)-pos, size) if "callback" is NULL.
@@ -181,7 +184,7 @@ extern NCBI_XCONNECT_EXPORT size_t BUF_PeekAt
 extern NCBI_XCONNECT_EXPORT size_t BUF_PeekAtCB
 (BUF         buf,
  size_t      pos,
- void       (*callback)(void* cbdata, void* buf, size_t size),
+ size_t    (*callback)(void* cbdata, const void* buf, size_t size),
  void*       cbdata,
  size_t      size
  );
