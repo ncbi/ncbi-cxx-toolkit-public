@@ -6580,7 +6580,6 @@ extern EIO_Status SOCK_Read(SOCK           sock,
         x_read = 0;
     }
 
-    assert(x_read <= size);
     if ( n_read )
         *n_read = x_read;
     return status;
@@ -6786,7 +6785,6 @@ extern EIO_Status SOCK_Write(SOCK            sock,
         x_written = 0;
     }
 
-    assert(x_written <= size);
     if ( n_written )
         *n_written = x_written;
     return status;
