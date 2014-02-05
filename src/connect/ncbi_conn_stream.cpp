@@ -749,7 +749,7 @@ void CConn_MemoryStream::ToString(string* str)
                    "CConn_MemoryStream::ToString(NULL) is not allowed");
     }
     CConn_Streambuf* sb = dynamic_cast<CConn_Streambuf*>(rdbuf());
-    size_t size = sb ? (size_t)(tellp() - tellg()) : 0;
+    size_t size = sb  &&  good() ? (size_t)(tellp() - tellg()) : 0;
     str->resize(size);
     if (sb) {
         size_t s = (size_t) sb->sgetn(&(*str)[0], size);
@@ -771,7 +771,7 @@ void CConn_MemoryStream::ToVector(vector<char>* vec)
                    "CConn_MemoryStream::ToVector(NULL) is not allowed");
     }
     CConn_Streambuf* sb = dynamic_cast<CConn_Streambuf*>(rdbuf());
-    size_t size = sb ? (size_t)(tellp() - tellg()) : 0;
+    size_t size = sb  &&  good() ? (size_t)(tellp() - tellg()) : 0;
     vec->resize(size);
     if (sb) {
         size_t s = (size_t) sb->sgetn(&(*vec)[0], size);
