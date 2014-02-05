@@ -584,20 +584,56 @@ void CBioseq_DISC_SUSPECT_RRNA_PRODUCTS :: TestOnObj(const CBioseq& bioseq)
    string tse_text = GetDiscItemText(*(tse_hl.GetCompleteObject()));
    string check_val, sf_text;
    unsigned rule_idx;
+   const CSeq_feat* feat_in_use = 0;
+   ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
+     const CProt_ref& prot = (*it)->GetData().GetProt();
+     if (prot.CanGetName() && !prot.GetName().empty()) {
+       check_val = *(prot.GetName().begin());
+       if ((*it)->GetData().GetSubtype() == CSeqFeatData::eSubtype_prot) {
+          CBioseq_Handle seq_hl = thisInfo.scope->GetBioseqHandle(bioseq);
+          feat_in_use = sequence::GetCDSForProduct(seq_hl); 
+       }
+       else feat_in_use = *it; 
+     }
+     sf_text = GetDiscItemText(**it);
+      rule_idx = 0;
+      ITERATE (list <CRef <CSuspect_rule> >, rit,
+                                       thisInfo.suspect_rna_rules->Get()) {
+         if (rule_check.MatchesSuspectProductRule(check_val, **rit)) {
+            if (!(*rit)->CanGetFeat_constraint()
+                  || rule_check.DoesObjectMatchConstraintChoiceSet(
+                                         **it, (*rit)->GetFeat_constraint())) {
+                strtmp = NStr::UIntToString(rule_idx);
+                thisInfo.test_item_list[GetName()].push_back(
+                                      tse_text + "$" + strtmp + "#" + sf_text);
+                strtmp = GetName() + "$" + tse_text + "#" + strtmp;
+                thisInfo.test_item_objs[strtmp].push_back(
+                                                     CConstRef <CObject>(*it));
+            }
+         }
+         rule_idx ++;
+      }
+   }
    ITERATE (vector <const CSeq_feat*>, it, rrna_feat) {
       check_val = GetRNAProductString(**it); 
+/* fix?
+      check_val 
+         = (check_val == "5s_rRNA")? "5S ribosomal RNA":
+              ((check_val == "16s_rRNA") ? "16S ribosomal RNA" :
+                 ((check_val == "23s_rRNA") ? "23S ribosomal RNA":check_val));
+*/
       sf_text = GetDiscItemText(**it);
       rule_idx = 0;
       ITERATE (list <CRef <CSuspect_rule> >, rit, 
                                        thisInfo.suspect_rna_rules->Get()) {
          if (rule_check.MatchesSuspectProductRule(check_val, **rit)) {
-            if ((*rit)->CanGetFeat_constraint() 
-                  && rule_check.DoesObjectMatchConstraintChoiceSet(
+            if (!(*rit)->CanGetFeat_constraint() 
+                  || rule_check.DoesObjectMatchConstraintChoiceSet(
                                          **it, (*rit)->GetFeat_constraint())) {
                 strtmp = NStr::UIntToString(rule_idx);
                 thisInfo.test_item_list[GetName()].push_back(
                                       tse_text + "$" + strtmp + "#" + sf_text);
-                strtmp = GetName() + "$" + tse_text + "_" + strtmp;
+                strtmp = GetName() + "$" + tse_text + "#" + strtmp;
                 thisInfo.test_item_objs[strtmp].push_back(
                                                      CConstRef <CObject>(*it));
             }
@@ -622,11 +658,11 @@ void CBioseq_DISC_SUSPECT_RRNA_PRODUCTS :: GetReport(CRef <CClickableItem>& c_it
       } 
       
       rule2feats.clear();
-      GetTestItemList(sit->second, rule2feats);
+      GetTestItemList(sit->second, rule2feats, "#");
       ITERATE (Str2Strs, rit, rule2feats) {
          rule_idx = NStr::StringToUInt(rit->first);
          strtmp = " rRNA product names " + thisInfo.rna_rule_summ[rule_idx];
-         AddSubcategory(c_item, GetName() + "$" + sit->first + "_" + rit->first,
+         AddSubcategory(c_item, GetName() + "$" + sit->first + "#" + rit->first,
                         &(rit->second), strtmp, strtmp, e_OtherComment);
       } 
       c_item->description 
