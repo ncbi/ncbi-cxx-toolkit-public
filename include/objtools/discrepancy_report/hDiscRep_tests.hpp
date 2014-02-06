@@ -1991,16 +1991,16 @@ BEGIN_SCOPE(DiscRepNmSpc)
       unsigned m_entry_cnt;
 
       void ExtractNonAaBioseqsOfSet(const string& tax_hap, const CBioseq_set& set);
-      bool SeqMatch(const CConstRef <CBioseq>& seq1, 
-                    int beg1, 
+      bool SubSeqsMatch(const CConstRef <CBioseq>& seq1, 
+                    unsigned beg1, 
                     const CConstRef <CBioseq>& seq2,
-                    int beg2, 
+                    unsigned beg2, 
                     unsigned& len, 
                     bool Ndiff = true);
       bool SeqsMatch(const vector <CConstRef <CBioseq> >& seqs, 
                      bool Ndiff = true);
-      void ReportOneHaplotypeSequenceMismatch(Str2Seqs::const_iterator& iter, 
-                                              bool Ndiff=true);
+      void ReportSameTaxHaplotypeDiffSequenceMismatch(
+                       Str2Seqs::const_iterator& iter, bool allow_Ndiff=true);
       void ReportHaplotypeSequenceMismatchForList();
       void MakeCitem4DiffSeqs(CRef <CClickableItem>& c_item, 
                               const vector <string> tax_hap_seqs, 
