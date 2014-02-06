@@ -142,14 +142,27 @@ int CNetStorageDApp::Run(void)
 {
     LOG_POST(Message << Warning << NETSTORAGED_FULL_VERSION);
 
-    const CArgs&         args = GetArgs();
-    const CNcbiRegistry& reg  = GetConfig();
+    const CArgs &           args = GetArgs();
+    const CNcbiRegistry &   reg  = GetConfig();
 
     // attempt to get server gracefully shutdown on signal
     signal(SIGINT,  Threaded_Server_SignalHandler);
     signal(SIGTERM, Threaded_Server_SignalHandler);
 
     bool    config_well_formed = NSTValidateConfigFile(reg);
+    bool    db_connect_ok = false;
+
+    try {
+        GetDb().Connect();
+        db_connect_ok = true;
+    } catch (const CException &  ex) {
+        ERR_POST(ex);
+    } catch (const std::exception &  ex) {
+        ERR_POST("Exception while connecting to the database: " << ex.what());
+    } catch (...) {
+        ERR_POST("Unknown exception while connecting to the database");
+    }
+
 
     // [server] section
     SNetStorageServerParameters     params;
@@ -195,6 +208,8 @@ int CNetStorageDApp::Run(void)
         server->RegisterAlert(ePidFile);
     if (!config_well_formed)
         server->RegisterAlert(eConfig);
+    if (!db_connect_ok)
+        server->RegisterAlert(eDB);
 
     if (args[kNodaemonArgName])
         NcbiCout << "Server started" << NcbiEndl;

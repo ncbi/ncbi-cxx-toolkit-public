@@ -39,7 +39,37 @@ SET ANSI_PADDING ON;
 SET ANSI_WARNINGS ON;
 GO
 
+
+
+-- Modify the condition below when ready for the deployment
+IF 1 = 0
+BEGIN
+    IF (EXISTS (SELECT * FROM sys.database_principals WHERE name = 'netstorage_read')) OR
+       (EXISTS (SELECT * FROM sys.database_principals WHERE name = 'netstorage_write')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'CreateObjectWithIDs')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'CreateObject')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'CreateClientOwnerGroup')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'AttrValues')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'Objects')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'Owners')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'Groups')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'Clients')) OR
+       (EXISTS (SELECT * FROM sysobjects WHERE name = 'Attributes'))
+    BEGIN
+        RAISERROR( 'Do not run the script on existing database', 11, 1 )
+        SET noexec on
+    END
+END
+
+
+
+
+
 -- Drop all the existing objects if so
+IF EXISTS (SELECT * FROM sys.database_principals WHERE name = 'netstorage_read')
+    DROP USER netstorage_read
+IF EXISTS (SELECT * FROM sys.database_principals WHERE name = 'netstorage_write')
+    DROP USER netstorage_write
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'CreateObjectWithIDs')
     DROP PROCEDURE CreateObjectWithIDs
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'CreateObject')
@@ -59,7 +89,6 @@ IF EXISTS (SELECT * FROM sysobjects WHERE name = 'Clients')
 IF EXISTS (SELECT * FROM sysobjects WHERE name = 'Attributes')
     DROP TABLE Attributes
 GO
-
 
 
 
@@ -200,7 +229,7 @@ GO
 
 
 
--- Stored procedures
+-- Returns 0 if everything is fine
 CREATE PROCEDURE CreateClientOwnerGroup
     @client_name    varchar(256),
     @owner_name     varchar(128) = NULL,
@@ -211,35 +240,99 @@ CREATE PROCEDURE CreateClientOwnerGroup
     @group_id_      bigint OUT
 AS
 BEGIN
+    DECLARE @ret_val INT
+    DECLARE @error_message NVARCHAR(4000)
+    DECLARE @error_severity INT
+    DECLARE @error_state INT
+    DECLARE @error_number INT
+
+    -- Initialize return values
+    SET @ret_val = 0
+    SET @client_id_ = NULL
+    SET @owner_id_ = NULL
+    SET @group_id_ = NULL
+
+
+    -- Handle the Clients table
     IF ((@client_name IS NOT NULL) AND (@client_name != ''))
     BEGIN
         IF NOT EXISTS (SELECT client_id FROM Clients WHERE name = @client_name)
-            INSERT INTO Clients (name) VALUES (@client_name)
+        BEGIN
+            BEGIN TRY
+                INSERT INTO Clients (name) VALUES (@client_name)
+            END TRY
+            BEGIN CATCH
+                SET @error_message = ERROR_MESSAGE()
+                SET @error_severity = ERROR_SEVERITY()
+                SET @error_state = ERROR_STATE()
+                SET @error_number = ERROR_NUMBER()
+
+                IF @error_number != 2627   -- Already exists
+                BEGIN
+                    RAISERROR( @error_message, @error_severity, @error_state )
+                    SET @ret_val = @ret_val + 1
+                END
+            END CATCH
+        END
         SELECT @client_id_ = client_id FROM Clients WHERE name = @client_name
     END
-    ELSE
-        SET @client_id_ = NULL
 
+
+    -- Handle the Owners table
     IF ((@owner_name IS NOT NULL) AND (@owner_name != ''))
     BEGIN
         IF NOT EXISTS (SELECT owner_id FROM Owners WHERE name = @owner_name)
-            INSERT INTO Owners (name) VALUES (@owner_name)
+        BEGIN
+            BEGIN TRY
+                INSERT INTO Owners (name) VALUES (@owner_name)
+            END TRY
+            BEGIN CATCH
+                SET @error_message = ERROR_MESSAGE()
+                SET @error_severity = ERROR_SEVERITY()
+                SET @error_state = ERROR_STATE()
+                SET @error_number = ERROR_NUMBER()
+
+                IF @error_number != 2627   -- Already exists
+                BEGIN
+                    RAISERROR( @error_message, @error_severity, @error_state )
+                    SET @ret_val = @ret_val + 1
+                END
+            END CATCH
+        END
         SELECT @owner_id_ = owner_id FROM Owners WHERE name = @owner_name
     END
-    ELSE
-        SET @owner_id_ = NULL
 
+
+    -- Handle the Groups table
     IF ((@group_name IS NOT NULL) AND (@group_name != ''))
     BEGIN
         IF NOT EXISTS (SELECT group_id FROM Groups WHERE name = @group_name)
-            INSERT INTO Groups (name) VALUES (@group_name)
+        BEGIN
+            BEGIN TRY
+                INSERT INTO Groups (name) VALUES (@group_name)
+            END TRY
+            BEGIN CATCH
+                SET @error_message = ERROR_MESSAGE()
+                SET @error_severity = ERROR_SEVERITY()
+                SET @error_state = ERROR_STATE()
+                SET @error_number = ERROR_NUMBER()
+
+                IF @error_number != 2627   -- Already exists
+                BEGIN
+                    RAISERROR( @error_message, @error_severity, @error_state )
+                    SET @ret_val = @ret_val + 1
+                END
+            END CATCH
+        END
         SELECT @group_id_ = group_id FROM Groups WHERE name = @group_name
     END
-        SET @group_id_ = NULL
+
+    RETURN @ret_val
 END
 GO
 
 
+-- Returns 0 if everything is fine
 CREATE PROCEDURE CreateObject
     @object_name    varchar(256),
     @object_size    bigint,
@@ -255,9 +348,14 @@ BEGIN
             (SELECT client_id FROM Clients WHERE name = @client_name),
             GETDATE(),
             @object_size)
+    IF @@ERROR = 0
+        RETURN 0
+    RETURN 1
 END
 GO
 
+
+-- Returns 0 if everything is fine
 CREATE PROCEDURE CreateObjectWithIDs
     @object_name    varchar(256),
     @object_size    bigint,
@@ -268,6 +366,31 @@ AS
 BEGIN
     INSERT INTO Objects (name, owner_id, group_id, client_id, tm_create, size)
     VALUES (@object_name, @owner_id, @group_id, @client_id, GETDATE(), @object_size)
+    IF @@ERROR = 0
+        RETURN 0
+    RETURN 1
 END
+GO
+
+
+
+-- Users
+-- It is expected that two logins have already been created on the DB server:
+-- netstorage_read
+-- netstorage_write
+CREATE USER netstorage_read FOR LOGIN netstorage_read
+CREATE USER netstorage_write FOR LOGIN netstorage_write
+EXEC sp_addrolemember 'db_datareader', 'netstorage_read'
+EXEC sp_addrolemember 'db_datawriter', 'netstorage_write'
+EXEC sp_addrolemember 'db_datareader', 'netstorage_write'
+GO
+
+-- Grants execution permissions to all the stored procedures
+GRANT EXECUTE TO netstorage_write
+GO
+
+
+-- Restore if it was changed
+SET noexec off
 GO
 

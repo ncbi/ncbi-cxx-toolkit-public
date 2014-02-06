@@ -13,8 +13,8 @@ REQUIRES = MT Linux
 
 
 LIB =  ncbi_xcache_netcache netstorage xconnserv xthrserv \
-       ncbi_xdbapi_ftds $(FTDS_LIB) dbapi dbapi_driver $(XCONNEXT) xconnect connssl xutil xncbi
-LIBS = $(FTDS_LIBS) $(NETWORK_LIBS) $(GNUTLS_LIBS) $(CMPRS_LIBS) $(NETWORK_LIBS) $(DL_LIBS) $(ORIG_LIBS)
+       $(SDBAPI_LIB) xconnect connssl xutil xncbi
+LIBS = $(SDBAPI_LIBS) $(NETWORK_LIBS) $(GNUTLS_LIBS) $(CMPRS_LIBS) $(DL_LIBS) $(ORIG_LIBS)
 
 CPPFLAGS = $(ORIG_CPPFLAGS)
 

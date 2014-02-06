@@ -23,16 +23,13 @@
  *
  * ===========================================================================
  *
- * Author:  Viatcheslav Gorelenkov
+ * Author:  Sergey Satskiy
  *
  */
 
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbistd.hpp>
-#include <dbapi/driver/drivers.hpp>
-#include <dbapi/driver/dbapi_svc_mapper.hpp>
-
 #include "nst_dbapp.hpp"
 
 
@@ -40,68 +37,90 @@ BEGIN_NCBI_SCOPE
 
 
 CNSTDbApp::CNSTDbApp(CNcbiApplication &  app)
-    : m_App(app),
-      m_IDataSource(NULL),
-      m_IDbConnection(NULL)
+    : m_App(app), m_Connected(false)
 {
-    DBLB_INSTALL_DEFAULT();
-    DBAPI_RegisterDriver_FTDS();
 }
 
 
 CNSTDbApp::~CNSTDbApp(void)
 {
+    if (m_Connected)
+        x_GetDatabase()->Close();
 }
 
 
-const SDbAccessInfo &  CNSTDbApp::GetDbAccessInfo(void)
+void CNSTDbApp::Connect(void)
+{
+    if (!m_Connected) {
+        x_GetDatabase()->Connect();
+        m_Connected = true;
+    }
+}
+
+
+int CNSTDbApp::ExecSP_CreateClientOwnerGroup(
+            const string &  client,
+            const CJsonNode &  message,
+            const SCommonRequestArguments &  common_args,
+            Int8 &  client_id, Int8 &  owner_id, Int8 &  group_id)
+{
+
+
+
+    return 0;
+}
+
+
+CQuery CNSTDbApp::x_NewQuery(void)
+{
+    if (!m_Connected)
+        Connect();
+    return x_GetDatabase()->NewQuery();
+}
+
+
+CQuery CNSTDbApp::x_NewQuery(const string &  sql)
+{
+    if (!m_Connected)
+        Connect();
+    return x_GetDatabase()->NewQuery(sql);
+}
+
+
+const SDbAccessInfo &  CNSTDbApp::x_GetDbAccessInfo(void)
 {
     if (m_DbAccessInfo.get())
         return *m_DbAccessInfo;
 
     m_DbAccessInfo.reset(new SDbAccessInfo);
 
-    m_DbAccessInfo->m_ServerName =
-        m_App.GetConfig().GetString("database", "server_name", "");
+    m_DbAccessInfo->m_Service =
+        m_App.GetConfig().GetString("database", "service", "");
     m_DbAccessInfo->m_UserName =
         m_App.GetConfig().GetString("database", "user_name", "");
     m_DbAccessInfo->m_Password =
         m_App.GetConfig().GetString("database", "password", "");
     m_DbAccessInfo->m_Database =
         m_App.GetConfig().GetString("database", "database", "");
-    m_DbAccessInfo->m_Driver = "ftds";
 
     return *m_DbAccessInfo;
 }
 
 
-IDataSource *  CNSTDbApp::GetDataSource(void)
+CDatabase *  CNSTDbApp::x_GetDatabase(void)
 {
-    if (m_IDataSource)
-        return m_IDataSource;
+    if (m_Db.get() == NULL) {
+        const SDbAccessInfo &   access_info = x_GetDbAccessInfo();
+        string                  uri = "dbapi://" + access_info.m_UserName +
+                                      ":" + access_info.m_Password +
+                                      "@" + access_info.m_Service +
+                                      "/" + access_info.m_Database;
+        CSDB_ConnectionParam    db_params(uri);
 
-    CDB_UserHandler::SetDefault(new CDB_UserHandler_Exception());
+        m_Db.reset(new CDatabase(db_params));
+    }
 
-    CDriverManager &    dm = CDriverManager::GetInstance();
-    m_IDataSource = dm.CreateDs(GetDbAccessInfo().m_Driver);
-    return m_IDataSource;
-}
-
-
-IConnection *  CNSTDbApp::GetDbConn(void)
-{
-    if (m_IDbConnection)
-        return m_IDbConnection;
-
-    m_IDbConnection = GetDataSource()->CreateConnection();
-
-    const SDbAccessInfo &   access_info = GetDbAccessInfo();
-    m_IDbConnection->Connect(access_info.m_UserName,
-                             access_info.m_Password,
-                             access_info.m_ServerName,
-                             access_info.m_Database);
-    m_IDbConnection->SetMode(IConnection::eBulkInsert);
-    return m_IDbConnection;
+    return m_Db.get();
 }
 
 END_NCBI_SCOPE

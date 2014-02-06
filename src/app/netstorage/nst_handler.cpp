@@ -189,7 +189,7 @@ void CNetStorageHandler::OnRead(void)
                 // received then it does not make sense even to log it to avoid
                 // excessive messages in AppLog.
                 ERR_POST("Incoming message parsing error. " << e <<
-                        " The connection will be closed.");
+                         " The connection will be closed.");
             }
             x_SetConnRequestStatus(eStatus_BadRequest);
             m_Server->CloseConnection(&GetSocket());
@@ -989,6 +989,23 @@ CNetStorageHandler::x_ProcessCreate(
     SICacheSettings     icache_settings = ExtractICacheSettings(message);
 
     x_CheckICacheSettings(icache_settings);
+
+    Int8        client_id;
+    Int8        owner_id;
+    Int8        group_id;
+    if ((flags & fNST_NoMetaData) == 0) {
+        // Meta information is required so check the DB
+        CNetStorageDApp *   app = dynamic_cast<CNetStorageDApp*>
+                                        (CNcbiApplication::Instance());
+
+        if (app->GetDb().ExecSP_CreateClientOwnerGroup(
+                    m_Client, message, common_args,
+                    client_id, owner_id, group_id) != 0)
+            NCBI_THROW(CNetStorageServerException, eDatabaseError,
+                       "Error executing CreateClientOwnerGroup stored "
+                       "procedure. See MS SQL log for details");
+    }
+
 
     // Create the object stream depending on settings
     m_ObjectStream = x_CreateObjectStream(icache_settings, flags);

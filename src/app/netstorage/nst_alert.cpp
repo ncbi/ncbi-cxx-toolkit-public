@@ -45,7 +45,8 @@ struct AlertToId
 
 const AlertToId     alertToIdMap[] = { { eConfig,      "config" },
                                        { eReconfigure, "reconfigure" },
-                                       { ePidFile,     "pidfile" } };
+                                       { ePidFile,     "pidfile" },
+                                       { eDB,          "database" } };
 const size_t        alertToIdMapSize = sizeof(alertToIdMap) / sizeof(AlertToId);
 
 

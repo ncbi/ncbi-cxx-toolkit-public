@@ -177,14 +177,14 @@ bool NSTValidateDatabaseSection(const IRegistry &  reg)
     const string    section = "database";
     bool            well_formed = true;
 
-    bool    server_name_ok = NSTValidateString(reg, section, "server_name");
-    well_formed = well_formed && server_name_ok;
-    if (server_name_ok) {
-        string      value = reg.GetString(section, "server_name", "");
+    bool    service_ok = NSTValidateString(reg, section, "service");
+    well_formed = well_formed && service_ok;
+    if (service_ok) {
+        string      value = reg.GetString(section, "service", "");
         if (value.empty()) {
             well_formed = false;
             LOG_POST(Warning << g_LogPrefix << " value "
-                             << NSTRegValName(section, "server_name")
+                             << NSTRegValName(section, "service")
                              << " must not be empty");
         }
     }

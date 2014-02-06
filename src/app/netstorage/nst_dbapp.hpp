@@ -26,24 +26,27 @@
  *
  * ===========================================================================
  *
- * Author:  Viatcheslav Gorelenkov
+ * Author: Sergey Satskiy
  *
  */
 
 #include <corelib/ncbiapp.hpp>
-#include <dbapi/dbapi.hpp>
+#include <dbapi/simple/sdbapi.hpp>
 
 
 BEGIN_NCBI_SCOPE
 
+// Forward declarations
+struct SCommonRequestArguments;
+class CJsonNode;
+
 
 struct SDbAccessInfo
 {
-    string    m_ServerName;
+    string    m_Service;
     string    m_UserName;
     string    m_Password;
     string    m_Database;
-    string    m_Driver;
 };
 
 
@@ -53,16 +56,25 @@ public:
     CNSTDbApp(CNcbiApplication &  app);
     ~CNSTDbApp(void);
 
-    const SDbAccessInfo &  GetDbAccessInfo(void);
-    IDataSource *          GetDataSource(void);
-    IConnection *          GetDbConn(void);
+    void Connect(void);
+
+    int ExecSP_CreateClientOwnerGroup(
+            const string &  client,
+            const CJsonNode &  message,
+            const SCommonRequestArguments &  common_args,
+            Int8 &  client_id, Int8 &  owner_id, Int8 &  group_id);
 
 private:
+    const SDbAccessInfo &  x_GetDbAccessInfo(void);
+    CDatabase *            x_GetDatabase(void);
+    CQuery x_NewQuery(void);
+    CQuery x_NewQuery(const string &  sql);
 
-    CNcbiApplication &      m_App;
-    auto_ptr<SDbAccessInfo> m_DbAccessInfo;
-    IDataSource *           m_IDataSource;
-    IConnection *           m_IDbConnection;
+private:
+    CNcbiApplication &          m_App;
+    auto_ptr<SDbAccessInfo>     m_DbAccessInfo;
+    auto_ptr<CDatabase>         m_Db;
+    bool                        m_Connected;
 
     CNSTDbApp(void);
     CNSTDbApp(const CNSTDbApp &  conn);
