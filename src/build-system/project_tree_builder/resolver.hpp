@@ -97,6 +97,7 @@ public:
 
     bool IsEmpty(void) const;
 
+    static bool   StripSuffix(string& libname, string* suffix=nullptr);
     static bool   IsDefine   (const string& param);
     static bool   HasDefine   (const string& param);
     static string StripDefine(const string& define);

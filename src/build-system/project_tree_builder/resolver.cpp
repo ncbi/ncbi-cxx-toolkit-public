@@ -228,6 +228,21 @@ CSymResolver& CSymResolver::Append(const CSymResolver& src, bool warn_redef)
     return *this;
 }
 
+bool CSymResolver::StripSuffix(string& libname, string* suffix)
+{
+    string suff[] = {"-dll", "-static", ""};
+    for (int i = 0; !suff[i].empty(); ++i) {
+        if (NStr::EndsWith(libname,suff[i])) {
+            if (suffix) {
+                *suffix = suff[i];
+            }
+            NStr::ReplaceInPlace(libname, suff[i], "");
+            return true;
+        }
+    }
+    return false;
+}
+
 bool CSymResolver::IsDefine(const string& param)
 {
     return (

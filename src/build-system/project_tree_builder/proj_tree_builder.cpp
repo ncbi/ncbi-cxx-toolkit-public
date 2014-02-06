@@ -513,11 +513,7 @@ void SMakeProjectT::Create3PartyLibs(
             libs_list->push_back(StripConfigurableDefine(flag));    
             done.insert(flag);
         } else if (NStr::StartsWith(flag, "-l")) {
-            if (NStr::EndsWith(flag,"-dll")) {
-                NStr::ReplaceInPlace(flag, "-dll", "");
-            } else if (NStr::EndsWith(flag,"-static")) {
-                NStr::ReplaceInPlace(flag, "-static", "");
-            }
+            CSymResolver::StripSuffix(flag);
             if (liborder_found && find(
                     GetApp().m_LibraryOrder[*mkname].begin(),
                     GetApp().m_LibraryOrder[*mkname].end(), flag.substr(2)) !=
@@ -801,13 +797,7 @@ void  SMakeProjectT::VerifyLibDepends(
     ITERATE( set<string>, s, alldepends) {
         string id(*s);
         string s_suffix;
-        if (NStr::EndsWith(id,"-dll")) {
-            s_suffix = "-dll";
-            NStr::ReplaceInPlace(id, s_suffix, "");
-        } else if (NStr::EndsWith(id,"-static")) {
-            s_suffix = "-static";
-            NStr::ReplaceInPlace(id, s_suffix, "");
-        }
+        CSymResolver::StripSuffix(id, &s_suffix);
         list<CProjKey>::const_iterator p = depends_ids.begin();
         for(; p != depends_ids.end(); ++p) {
             if (p->Id() == id) {
@@ -1003,13 +993,7 @@ void SMakeProjectT::ConvertLibDepends(const list<string>& depends,
     ITERATE(list<string>, p, depends_libs) {
         string id = *p;
         string suffix;
-        if (NStr::EndsWith(id,"-dll")) {
-            suffix = "-dll";
-            NStr::ReplaceInPlace(id, suffix, "");
-        } else if (NStr::EndsWith(id,"-static")) {
-            suffix = "-static";
-            NStr::ReplaceInPlace(id, suffix, "");
-        }
+        CSymResolver::StripSuffix(id, &suffix);
         if(CSymResolver::IsDefine(id)) {
             string def;
             GetApp().GetSite().ResolveDefine(CSymResolver::StripDefine(id), def);
@@ -2955,9 +2939,6 @@ void CProjectTreeBuilder::ProcessUserProjFile(const string& file_name,
 
 void CProjectTreeBuilder::UpdateDepGraph( CProjectTreeBuilder::TFiles files)
 {
-    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
-        return;
-    }
     const CMsvcSite& site = GetApp().GetSite();
     ITERATE( CProjectTreeBuilder::TFiles, f, files) {
         const CSimpleMakeFileContents& fc( f->second);
@@ -2992,6 +2973,7 @@ void CProjectTreeBuilder::UpdateDepGraph( CProjectTreeBuilder::TFiles files)
                 NStr::Split(dep, LIST_SEPARATOR_LIBS, dep_list);
                 ITERATE(list<string>, d, dep_list) {
                     string dep_name = NStr::StartsWith(*d, "-l") ? d->substr(2) : *d;
+                    CSymResolver::StripSuffix(dep_name);
                     if (dep_name.at(0) == '-' || libname == dep_name) {
                         continue;
                     }

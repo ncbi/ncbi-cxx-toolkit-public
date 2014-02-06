@@ -630,6 +630,7 @@ int CProjBulderApp::Run(void)
 #endif
     // Build projects tree
 #ifndef _DEBUG
+// I need this to collect library relations data and metadata
     {
         bool b = m_ScanWholeTree;
         m_ScanWholeTree = true;
@@ -637,6 +638,7 @@ int CProjBulderApp::Run(void)
         m_ScanWholeTree = b;
     }
 #endif
+
     CProjectItemsTree projects_tree(GetProjectTreeInfo().m_Src);
     CProjectTreeBuilder::BuildProjectTree(GetProjectTreeInfo().m_IProjectFilter.get(), 
                                           GetProjectTreeInfo().m_Src, 
@@ -2606,8 +2608,10 @@ void   CProjBulderApp::LoadDepGraph(const string& filename)
                     if (f_name.at(0) == '-') {
                         continue;
                     }
+                    CSymResolver::StripSuffix(f_name);
                     ITERATE(list<string>, t, third_list) {
                         string t_name(*t);
+                        CSymResolver::StripSuffix(t_name);
                         bool is_lib = false;
                         bool is_framework = false;
                         if (NStr::StartsWith(*t, "-l")) {
