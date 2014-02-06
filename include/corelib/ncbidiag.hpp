@@ -782,9 +782,9 @@ typedef int TDiagPostFlags;  ///< Binary OR of "EDiagPostFlag"
 /// Application execution states shown in the std prefix
 enum EDiagAppState {
     eDiagAppState_NotSet,        ///< Reserved value, never used in messages
-    eDiagAppState_AppBegin,      ///< PB
-    eDiagAppState_AppRun,        ///< P
-    eDiagAppState_AppEnd,        ///< PE
+    eDiagAppState_AppBegin,      ///< AB
+    eDiagAppState_AppRun,        ///< A
+    eDiagAppState_AppEnd,        ///< AE
     eDiagAppState_RequestBegin,  ///< RB
     eDiagAppState_Request,       ///< R
     eDiagAppState_RequestEnd     ///< RE
