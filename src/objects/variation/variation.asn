@@ -46,7 +46,8 @@ VariationException ::= SEQUENCE
         ref-same-as-variant (12), --reference sequence at the location is same as variant sequence in the variation
         seqfetch-too-long (13), --can't fetch sequence because location is longer than specified threshold
         seqfetch-intronic (14), --can't fetch sequence for an intronic (anchor+offset)-based location
-        seqfetch-invalid (15)   --can't fetch sequence because location is invalid (e.g. extends past the end)
+        seqfetch-invalid (15),   --can't fetch sequence because location is invalid (e.g. extends past the end)
+        no-mapping-from-newer-version (16) --have mapping from older version of a sequence, but not from newer
     } OPTIONAL,
     
     message VisibleString
