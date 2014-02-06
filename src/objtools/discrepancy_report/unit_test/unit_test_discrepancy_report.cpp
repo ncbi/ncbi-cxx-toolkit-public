@@ -162,11 +162,34 @@ void CheckReport(CRef <CClickableItem>& c_item, const string& msg)
       NCBITEST_CHECK_MESSAGE(!c_item.Empty(), "no report");
    }
    else {
+/*
      NCBITEST_CHECK_MESSAGE(c_item->item_list.size() == c_item->obj_list.size(),
               "The sizes of item_list and obj_list are not equal");
+*/
      NCBITEST_CHECK_MESSAGE(c_item->description == msg,
               "Test report is incorrect: " + c_item->description);
    }
+};
+
+BOOST_AUTO_TEST_CASE(DISC_FLATFILE_FIND_ONCALLER)
+{
+  CRef <CSeq_entry> entry = unit_test_util::BuildGoodNucProtSet();
+
+   CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+   CRef <CScope> scope(new CScope(*objmgr));
+   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+   config->SetTopLevelSeqEntry(&seh);
+   
+   NON_CONST_ITERATE (list <CRef <CSeq_entry> >, it, entry->SetSet().SetSeq_set()){
+      if ( (*it)->SetSeq().IsAa()) {
+         (*it)->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("SHAEMNVV");
+      }
+   }
+
+   config->SetArg("e", "DISC_FLATFILE_FIND_ONCALLER");
+   CRef <CClickableItem> c_item(0);
+   RunTest(config, c_item);
+   CheckReport(c_item, "1 object contains haem");
 };
 
 BOOST_AUTO_TEST_CASE(DUP_GENPRODSET_PROTEIN)
