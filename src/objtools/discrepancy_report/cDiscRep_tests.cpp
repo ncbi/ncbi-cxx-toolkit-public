@@ -8260,9 +8260,13 @@ void CSeqEntry_test_on_quals :: ProcessUniQuals(const Str2Strs& qvlu2src, const 
    vector <string> uni_sub;
    vector <CConstRef <CObject> > uni_sub_obj;
    unsigned uni_cnt=0, sz;
-   string qual_vlu;
+   string qual_vlu, qual_nm_ori;
 
    const vector <string>* vstr_p;
+   qual_nm_ori = qual_nm;
+   if (qual_nm_ori.find("note") != string::npos) {
+      qual_nm_ori = "note";
+   }
    ITERATE (Str2Strs, jt, qvlu2src) {
       qual_vlu = jt->first; 
       if ( qual_vlu == "missing" || qual_vlu == "multi_same"
@@ -8270,7 +8274,7 @@ void CSeqEntry_test_on_quals :: ProcessUniQuals(const Str2Strs& qvlu2src, const 
            continue;
       }
       sz = (jt->second).size();
-      strtmp = setting_nm + "$" + qual_nm + "#" + qual_vlu;
+      strtmp = setting_nm + "$" + qual_nm_ori + "#" + qual_vlu;
       if (sz > 1) {
 //	  vstr_p = (setting_nm == GetName_sq_oncall()) ? &(jt->second) : 0;
 	  vstr_p = (setting_nm == GetName_bad()) ? &(jt->second) : 0;
@@ -8291,7 +8295,6 @@ void CSeqEntry_test_on_quals :: ProcessUniQuals(const Str2Strs& qvlu2src, const 
    if (uni_cnt) {
        strtmp = (string)"unique "
                   + (uni_cnt >1 ? "values" : "value") + " for " + qual_nm;
-       // if (setting_nm == GetName_sq_oncall()) {
        if (setting_nm == GetName_bad()) {
            CRef <CClickableItem> c_sub (new CClickableItem);
            c_sub->setting_name = setting_nm;
@@ -8299,16 +8302,13 @@ void CSeqEntry_test_on_quals :: ProcessUniQuals(const Str2Strs& qvlu2src, const 
            c_sub->obj_list = uni_sub_obj;
            c_sub->description 
                     = GetHasComment(c_sub->item_list.size(), "source") + strtmp;
-/*
-           copy(c_sub->item_list.begin(), c_sub->item_list.end(),
-                         back_inserter( c_item->item_list ));
-           copy(c_sub->obj_list.begin(), c_sub->obj_list.end(),
-                         back_inserter( c_item->obj_list ));
-*/
            c_item->subcategories.push_back(c_sub);
        }
        else {
-           AddSubcategory(c_item, setting_nm, 0, "source", strtmp,
+           // ? original setting_nm or modified?
+           string 
+              setting_nm_mod = setting_nm + "$" + qual_nm_ori + "#" + qual_vlu; 
+           AddSubcategory(c_item, setting_nm_mod, 0, "source", strtmp,
                    e_HasComment, false, kEmptyStr, false, uni_cnt); 
        }
        uni_sub.clear();
@@ -8319,13 +8319,14 @@ void CSeqEntry_test_on_quals :: ProcessUniQuals(const Str2Strs& qvlu2src, const 
 void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, const string& setting_name)
 {
    Str2Strs qnm2qvlu_src;
+
    GetTestItemList(c_item->item_list, qnm2qvlu_src);
    c_item->item_list.clear();
 
    bool all_same, all_unique, all_present;
    bool multi_same, multi_dup, multi_all_dif;
    unsigned multi_type_cnt;
-   string qual_nm, qual_vlu;
+   string qual_nm, qual_nm_ori, qual_vlu;
    const vector <string>* vstr_p = 0;
 
    Str2Strs qvlu2src;
@@ -8343,9 +8344,10 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
    }
 
    ITERATE (Str2Strs, it, qnm2qvlu_src) {
-     qual_nm = it->first;
+     qual_nm_ori = qual_nm = it->first;
      qvlu2src.clear();
      GetTestItemList(it->second, qvlu2src, "#");
+
      if (qvlu2src.size() == 1 && qvlu2src.begin()->second.size() > 1) {
            all_same = true;
      }
@@ -8379,14 +8381,14 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
          qual_nm += "-subsrc";
      }
      c_item->description = qual_nm;
-     unsigned sz;
+     unsigned sz = 0;
      if (all_present) {
          c_item->description += " (all present, ";
          if (all_same) {
             qual_vlu = qvlu2src.begin()->first;
             c_item->description += "all same";
             strtmp
-              = setting_name + "$" + qual_nm + "#" + qvlu2src.begin()->first;
+              =setting_name + "$" + qual_nm_ori + "#" + qvlu2src.begin()->first;
             AddSubcategory(c_item, 
                            strtmp,
                            &(qvlu2src.begin()->second), //0, 
@@ -8407,7 +8409,8 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
                             && jt->first != "multi_dup" 
                             && jt->first != "multi_all_dif") {
                       c_item->item_list.push_back((jt->second)[0]);
-                      strtmp = setting_name + "$" + qual_nm + "#" + jt->first;
+                      strtmp 
+                        = setting_name + "$" + qual_nm_ori + "#" + jt->first;
                       c_item->obj_list.push_back(
                                            thisInfo.test_item_objs[strtmp][0]);
                   }
@@ -8436,7 +8439,7 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
         vstr_p 
             = (setting_name == GetName_sq_oncall()) ? &qvlu2src["missing"] :0;
 */
-        strtmp = setting_name + "$" + qual_nm + "#missing";
+        strtmp = setting_name + "$" + qual_nm_ori + "#missing";
         AddSubcategory(c_item, strtmp, vstr_p, "source", "missing " + qual_nm, 
            e_IsComment, false, kEmptyStr, false, qvlu2src["missing"].size());
         if (all_same) {
@@ -8445,7 +8448,7 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
             vstr_p = (setting_name != GetName_bad()) ? 
                         &(qvlu2src.begin()->second) : 0;
             qual_vlu = qvlu2src.begin()->first;
-            strtmp = setting_name + "$" + qual_nm + "#" + qual_vlu;
+            strtmp = setting_name + "$" + qual_nm_ori + "#" + qual_vlu;
             AddSubcategory(c_item, strtmp, vstr_p, "source", 
                  " '" + qual_vlu + "' for " + qual_nm, e_HasComment,
                  true, kEmptyStr, false, (qvlu2src.begin()->second).size());
@@ -8461,32 +8464,34 @@ void CSeqEntry_test_on_quals :: GetReport_quals(CRef <CClickableItem>& c_item, c
      }
 
      //multiple
-     sz = qvlu2src["multi_same"].size() 
-              + qvlu2src["multi_dup"].size() + qvlu2src["multi_all_dif"].size();
      string ext_desc;
      if ( multi_type_cnt) {
           c_item->description += ", some multi";
           CRef <CClickableItem> c_sub (new CClickableItem);
           c_sub->setting_name = setting_name;
           if (multi_type_cnt == 1) {
+              sz = qvlu2src["multi_same"].size();
               ext_desc = multi_same ? ", same_value" 
                               : (multi_dup ? ", some dupplicates" : kEmptyStr);
           }
           else {
               ext_desc = kEmptyStr;
               if (multi_same) {
+                 sz = qvlu2src["multi_same"].size();
                  c_sub->subcategories.push_back(MultiItem(qual_nm, 
                                                          qvlu2src["multi_same"],
                                                           ", same value", 
                                                           setting_name));
               }
               if (multi_dup) {
+                 sz += qvlu2src["multi_dup"].size();
                  c_sub->subcategories.push_back(MultiItem( qual_nm, 
                                                          qvlu2src["multi_dup"], 
                                                          ", some duplicates", 
                                                          setting_name));
               }
               if (multi_all_dif) {
+                 sz += qvlu2src["multi_all_dif"].size();
                  c_sub->subcategories.push_back(MultiItem(qual_nm, 
                                                       qvlu2src["multi_all_dif"],
                                                       kEmptyStr, 
@@ -11181,18 +11186,6 @@ void CSeqEntry_DISC_INCONSISTENT_MOLTYPES :: GetReport(CRef <CClickableItem>& c_
   }
 };
 
-
-void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ExtractNonAaBioseqsOfSet(const string& tax_hap, const CBioseq_set& set)
-{
-   CBioseq_set_Handle set_hl = thisInfo.scope->GetBioseq_setHandle(set);
-   for (CBioseq_CI seq_ci(set_hl); seq_ci; ++seq_ci) {
-      if (!(seq_ci->IsAa())) {
-           m_tax_hap2seqs[tax_hap].push_back(
-                            CConstRef <CBioseq> (seq_ci->GetCompleteBioseq()));
-      }
-   }
-};
-
 bool CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: SubSeqsMatch(const CConstRef <CBioseq>& seq1, unsigned beg1, const CConstRef <CBioseq>& seq2, unsigned beg2, unsigned& len, bool allow_Ndiff)
 {
    CBioseq_Handle hdl1 = thisInfo.scope->GetBioseqHandle(*seq1);
@@ -11204,11 +11197,19 @@ bool CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: SubSeqsMatch(const CConstRef <CBioseq>
       return false;
    }
 
-   CSeqVector seq_vec1 = hdl1.GetSeqVector(CBioseq_Handle::eCoding_Iupac, eNa_strand_plus); 
-   CSeqVector seq_vec2 = hdl2.GetSeqVector(CBioseq_Handle::eCoding_Iupac, eNa_strand_plus); 
+   CSeqVector 
+     seq_vec1 
+        = hdl1.GetSeqVector(CBioseq_Handle::eCoding_Iupac, eNa_strand_plus); 
+   CSeqVector 
+      seq_vec2 
+          = hdl2.GetSeqVector(CBioseq_Handle::eCoding_Iupac, eNa_strand_plus); 
    unsigned sz=0;
-   if (seq_vec1.empty() && seq_vec2.empty()) return true;
-   else if (seq_vec1.empty() || seq_vec2.empty()) return false;
+   if (seq_vec1.empty() && seq_vec2.empty()) {
+        return true;
+   }
+   else if (seq_vec1.empty() || seq_vec2.empty()) {
+         return false;
+   }
    CSeqVector_CI it1 = seq_vec1.begin();
    unsigned i=0;
    if (beg1) {
