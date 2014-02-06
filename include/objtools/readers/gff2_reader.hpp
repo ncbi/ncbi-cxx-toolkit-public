@@ -286,7 +286,7 @@ protected:
         const string& );
                 
     bool x_IsCommentLine(
-        const string& );
+        const CTempString& );
 
     bool x_ReadLine(
         ILineReader&,

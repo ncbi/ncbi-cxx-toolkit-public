@@ -276,9 +276,10 @@ bool CGff2Reader::x_ReadLine(
 {
     strLine.clear();
     while ( ! lr.AtEOF() ) {
-        strLine = NStr::TruncateSpaces( *++lr );
+        CTempString temp = NStr::TruncateSpaces_Unsafe( *++lr );
         ++m_uLineNumber;
-        if ( ! x_IsCommentLine( strLine ) ) {
+        if ( ! x_IsCommentLine( temp ) ) {
+            strLine = temp;
             return true;
         }
     }
@@ -287,7 +288,7 @@ bool CGff2Reader::x_ReadLine(
 
 //  ----------------------------------------------------------------------------
 bool CGff2Reader::x_IsCommentLine(
-    const string& strLine )
+    const CTempString& strLine )
 //  ----------------------------------------------------------------------------
 {
     if ( strLine.empty() ) {
@@ -416,7 +417,7 @@ bool CGff2Reader::x_ParseAlignmentGff(
     //  Parse the record and determine which ID the given feature will pertain 
     //  to:
     //
-    CGff2Record* pRecord = x_CreateRecord();
+    auto_ptr<CGff2Record> pRecord(x_CreateRecord());
     if ( ! pRecord->AssignFromGff( strLine ) ) {
         return false;
     }
@@ -457,7 +458,6 @@ bool CGff2Reader::x_ParseAlignmentGff(
         annots.push_back( pAnnot );      
     }
  
-    delete pRecord;
     return true; 
 };
 
@@ -1269,8 +1269,8 @@ bool CGff2Reader::IsAlignmentData(
     const string& line)
 //  ============================================================================
 {
-    vector<string> columns;
-    NStr::Tokenize( line, "\t", columns, NStr::eMergeDelims );
+    vector<CTempString> columns;
+    CGff2Record::TokenizeGFF(columns, line);
     if (columns.size() < 9) {
         return false;
     }

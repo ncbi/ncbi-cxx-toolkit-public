@@ -127,6 +127,7 @@ public:
         int,
         CRef<CSeq_feat> ) const;
 
+    static void TokenizeGFF(vector<CTempString>& columns, const CTempString& line);
 protected:
     virtual bool x_AssignAttributesFromGff(
         const string& );

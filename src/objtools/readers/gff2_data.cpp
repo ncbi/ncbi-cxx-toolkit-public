@@ -180,24 +180,32 @@ CGff2Record::~CGff2Record()
     delete m_pePhase; 
 };
 
+void CGff2Record::TokenizeGFF(vector<CTempString>& columns, const CTempString& in_line)
+{
+    columns.clear();
+    columns.reserve(9);
+    size_t index;
+    // better to be thread-safe static
+    const CTempString space_tab_delim("\t "); 
+    CTempString line(in_line);
+    while (!line.empty() && columns.size()<8 && (index = line.find_first_of(space_tab_delim)) != CTempString::npos)
+    {
+        CTempString next = line.substr(0, index);
+        index = line.find_first_not_of(space_tab_delim, index);
+        line = line.substr(index);
+        columns.push_back(next); 
+    }
+    if (!line.empty())
+        columns.push_back(line);
+}
 //  ----------------------------------------------------------------------------
 bool CGff2Record::AssignFromGff(
     const string& strRawInput )
 //  ----------------------------------------------------------------------------
 {
-    vector< string > columns;
-
-    NStr::Tokenize(strRawInput, "\t", columns);
-    if ( columns.size() < 9 ) {
-        columns.clear();
-        string strLeftOver = strRawInput;
-        string strFront;
-        for ( size_t i=0; i < 9 && ! strLeftOver.empty(); ++i ) {
-            NStr::SplitInTwo( strLeftOver, " \t", strFront, strLeftOver );
-		    columns.push_back( strFront );
-            NStr::TruncateSpacesInPlace( strLeftOver, NStr::eTrunc_Begin );
-        }
-    }
+    vector< CTempString > columns;
+    
+    TokenizeGFF(columns, strRawInput);
     if ( columns.size() < 9 ) {
         return false;
     }
@@ -214,7 +222,7 @@ bool CGff2Record::AssignFromGff(
             eDiag_Error,
             0,
             "Bad data line: location start is greater than location stop (start="
-            + columns[3] + ", stop=" + columns[4] + ").",
+            + string(columns[3]) + ", stop=" + string(columns[4]) + ").",
             ILineError::eProblem_FeatureBadStartAndOrStop) );
         pErr->Throw();
     }
@@ -226,9 +234,11 @@ bool CGff2Record::AssignFromGff(
     if ( columns[6] == "+" ) {
         m_peStrand = new ENa_strand( eNa_strand_plus );
     }
+    else
     if ( columns[6] == "-" ) {
         m_peStrand = new ENa_strand( eNa_strand_minus );
     }
+    else
     if ( columns[6] == "?" ) {
         m_peStrand = new ENa_strand( eNa_strand_unknown );
     }
@@ -236,9 +246,11 @@ bool CGff2Record::AssignFromGff(
     if ( columns[7] == "0" ) {
         m_pePhase = new TFrame( CCdregion::eFrame_one );
     }
+    else
     if ( columns[7] == "1" ) {
         m_pePhase = new TFrame( CCdregion::eFrame_two );
     }
+    else
     if ( columns[7] == "2" ) {
         m_pePhase = new TFrame( CCdregion::eFrame_three );
     }
