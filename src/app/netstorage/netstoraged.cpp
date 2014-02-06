@@ -79,12 +79,12 @@ extern "C" void Threaded_Server_SignalHandler(int signum)
 }
 
 
-CNSTDbApp &  CNetStorageDApp::GetDb(void)
+CNSTDatabase &  CNetStorageDApp::GetDb(void)
 {
     if (m_Db.get())
         return *m_Db;
 
-    m_Db.reset(new CNSTDbApp(*this));
+    m_Db.reset(new CNSTDatabase(*this));
     return *m_Db;
 }
 

@@ -1,5 +1,5 @@
-#ifndef NETSTORAGE_DBAPP__HPP
-#define NETSTORAGE_DBAPP__HPP
+#ifndef NETSTORAGE_DATABASE__HPP
+#define NETSTORAGE_DATABASE__HPP
 
 /* $Id$
  * ===========================================================================
@@ -50,11 +50,11 @@ struct SDbAccessInfo
 };
 
 
-class CNSTDbApp
+class CNSTDatabase
 {
 public:
-    CNSTDbApp(CNcbiApplication &  app);
-    ~CNSTDbApp(void);
+    CNSTDatabase(CNcbiApplication &  app);
+    ~CNSTDatabase(void);
 
     void Connect(void);
 
@@ -76,9 +76,9 @@ private:
     auto_ptr<CDatabase>         m_Db;
     bool                        m_Connected;
 
-    CNSTDbApp(void);
-    CNSTDbApp(const CNSTDbApp &  conn);
-    CNSTDbApp & operator= (const CNSTDbApp &  conn);
+    CNSTDatabase(void);
+    CNSTDatabase(const CNSTDatabase &  conn);
+    CNSTDatabase & operator= (const CNSTDatabase &  conn);
 };
 
 

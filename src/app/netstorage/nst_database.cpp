@@ -30,26 +30,26 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbistd.hpp>
-#include "nst_dbapp.hpp"
+#include "nst_database.hpp"
 
 
 BEGIN_NCBI_SCOPE
 
 
-CNSTDbApp::CNSTDbApp(CNcbiApplication &  app)
+CNSTDatabase::CNSTDatabase(CNcbiApplication &  app)
     : m_App(app), m_Connected(false)
 {
 }
 
 
-CNSTDbApp::~CNSTDbApp(void)
+CNSTDatabase::~CNSTDatabase(void)
 {
     if (m_Connected)
         x_GetDatabase()->Close();
 }
 
 
-void CNSTDbApp::Connect(void)
+void CNSTDatabase::Connect(void)
 {
     if (!m_Connected) {
         x_GetDatabase()->Connect();
@@ -58,7 +58,7 @@ void CNSTDbApp::Connect(void)
 }
 
 
-int CNSTDbApp::ExecSP_CreateClientOwnerGroup(
+int CNSTDatabase::ExecSP_CreateClientOwnerGroup(
             const string &  client,
             const CJsonNode &  message,
             const SCommonRequestArguments &  common_args,
@@ -71,7 +71,7 @@ int CNSTDbApp::ExecSP_CreateClientOwnerGroup(
 }
 
 
-CQuery CNSTDbApp::x_NewQuery(void)
+CQuery CNSTDatabase::x_NewQuery(void)
 {
     if (!m_Connected)
         Connect();
@@ -79,7 +79,7 @@ CQuery CNSTDbApp::x_NewQuery(void)
 }
 
 
-CQuery CNSTDbApp::x_NewQuery(const string &  sql)
+CQuery CNSTDatabase::x_NewQuery(const string &  sql)
 {
     if (!m_Connected)
         Connect();
@@ -87,7 +87,7 @@ CQuery CNSTDbApp::x_NewQuery(const string &  sql)
 }
 
 
-const SDbAccessInfo &  CNSTDbApp::x_GetDbAccessInfo(void)
+const SDbAccessInfo &  CNSTDatabase::x_GetDbAccessInfo(void)
 {
     if (m_DbAccessInfo.get())
         return *m_DbAccessInfo;
@@ -107,7 +107,7 @@ const SDbAccessInfo &  CNSTDbApp::x_GetDbAccessInfo(void)
 }
 
 
-CDatabase *  CNSTDbApp::x_GetDatabase(void)
+CDatabase *  CNSTDatabase::x_GetDatabase(void)
 {
     if (m_Db.get() == NULL) {
         const SDbAccessInfo &   access_info = x_GetDbAccessInfo();
