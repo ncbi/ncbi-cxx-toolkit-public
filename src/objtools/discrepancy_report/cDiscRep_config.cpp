@@ -1349,6 +1349,7 @@ CRef <CSearch_func> CRepConfig :: MakeSimpleSearchFunc(const string& match_text,
 {
      CRef <CString_constraint> str_cons (new CString_constraint);
      str_cons->SetMatch_text(match_text);
+     str_cons->SetMatch_location(eString_location_contains);
      if (whole_word) {
          str_cons->SetWhole_word(whole_word);
      }
@@ -2910,19 +2911,17 @@ void CRepConfig :: CollectTests()
       }
    }
    
-   // disable first in case disable all then enable some
-   ITERATE (vector <string>, it, m_disabled) {
-      if ( (*it) == "All") {
-        thisTest.tests_run.clear();
-        break;
-      }
-      else if (thisTest.tests_run.find(*it) != thisTest.tests_run.end()) {
+   if (!m_disabled.empty() && !thisTest.tests_run.empty()) {
+     ITERATE (vector <string>, it, m_disabled) {
+        if (thisTest.tests_run.find(*it) != thisTest.tests_run.end()) {
            thisTest.tests_run.erase(*it);
-      }
+        }
+     }
    }
 
-   ITERATE (vector <string>, it, m_enabled) {
-      if (thisTest.tests_run.find(*it) == thisTest.tests_run.end()) {
+   if (!m_enabled.empty()) {  // only run enabled tests.
+      thisTest.tests_run.clear();
+      ITERATE (vector <string>, it, m_enabled) {
             thisTest.tests_run.insert(*it);
       }
    }

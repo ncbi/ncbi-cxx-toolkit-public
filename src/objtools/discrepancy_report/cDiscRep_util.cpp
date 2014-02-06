@@ -518,7 +518,9 @@ bool CTestAndRepData :: DoesStringContainPhrase(const string& str, const string&
 bool CTestAndRepData :: DoesStringContainPhrase(const string& str, const vector <string>& phrases, bool case_sensitive, bool whole_word)
 {
    ITERATE (vector <string>, it, phrases) {
-      if (DoesStringContainPhrase(str, *it, case_sensitive, whole_word)) return true;   
+      if (DoesStringContainPhrase(str, *it, case_sensitive, whole_word)) {
+           return true;   
+      }
    }
    return false;
 };
@@ -1084,7 +1086,7 @@ const CSeq_id& CTestAndRepData::BioseqToBestSeqId(const CBioseq& bioseq, CSeq_id
 string CTestAndRepData :: BioseqToBestSeqIdString(const CBioseq& bioseq, CSeq_id :: E_Choice choice )
 {
   const CSeq_id& seq_id = BioseqToBestSeqId(bioseq, CSeq_id::e_Genbank);
-  return (seq_id.GetSeqIdString());
+  return (seq_id.GetSeqIdString(true));
 
 }; // BioseqToBestSeqIdString();
 
@@ -1369,6 +1371,11 @@ void CTestAndRepData :: AddSubcategory(CRef <CClickableItem>& c_item, const stri
      if (itemlist) {
          c_sub->item_list = *itemlist;
          c_sub->obj_list = thisInfo.test_item_objs[sub_grp_nm];
+/*
+         if (rm_redundancy) {
+             RmvRedundancy(c_sub->item_list, c_sub->obj_list);
+         }
+*/
      }
      unsigned cnt = itemlist ? c_sub->item_list.size() : input_cnt;
      cnt = halfsize ? cnt/2 : cnt; 

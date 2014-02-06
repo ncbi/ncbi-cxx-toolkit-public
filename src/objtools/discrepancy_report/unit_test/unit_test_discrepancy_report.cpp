@@ -195,7 +195,6 @@ BOOST_AUTO_TEST_CASE(DUP_GENPRODSET_PROTEIN)
    CRef <CScope> scope(new CScope(*objmgr));
    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
    config->SetTopLevelSeqEntry(&seh);
-   config->SetArg("d", "All");
    config->SetArg("e", "DUP_GENPRODSET_PROTEIN");
    CRef <CClickableItem> c_item(0);
    RunTest(config, c_item);
@@ -211,7 +210,6 @@ BOOST_AUTO_TEST_CASE(MISSING_GENPRODSET_TRANSCRIPT_ID)
  
    // good gen-prod-set
    config->SetTopLevelSeqEntry(&seh);
-   config->SetArg("d", "All");
    config->SetArg("e", "MISSING_GENPRODSET_TRANSCRIPT_ID");
    CRef <CClickableItem> c_item(0);   
    RunTest(config, c_item); 
@@ -260,7 +258,6 @@ BOOST_AUTO_TEST_CASE(MISSING_LOCUS_TAGS)
    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
    
    config->SetTopLevelSeqEntry(&seh);
-   config->SetArg("d", "All");
    config->SetArg("e", "MISSING_LOCUS_TAGS");
    config->CollectTests();
    config->Run();
@@ -281,7 +278,6 @@ BOOST_AUTO_TEST_CASE(DISC_COUNT_NUCLEOTIDES)
    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
 
    config->SetTopLevelSeqEntry(&seh);
-   config->SetArg("d", "All");
    config->SetArg("e", "DISC_COUNT_NUCLEOTIDES");
    config->CollectTests();
    config->Run();

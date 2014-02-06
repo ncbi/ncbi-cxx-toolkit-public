@@ -312,9 +312,7 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
          // find BioSource, to check whether we want to run all categories
          biosrc_p = sequence::GetBioSource (m_bioseq_hl);
      }
-     else {
-         continue;
-     }
+     else continue;
      
      if (prot.CanGetName() && !prot.GetName().empty()) {
        prot_nm = *(prot.GetName().begin()); 
@@ -11195,7 +11193,7 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ExtractNonAaBioseqsOfSet(const string&
    }
 };
 
-bool CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: SeqMatch(const CConstRef <CBioseq>& seq1, int beg1, const CConstRef <CBioseq>& seq2, int beg2, unsigned& len, bool Ndiff)
+bool CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: SubSeqsMatch(const CConstRef <CBioseq>& seq1, unsigned beg1, const CConstRef <CBioseq>& seq2, unsigned beg2, unsigned& len, bool allow_Ndiff)
 {
    CBioseq_Handle hdl1 = thisInfo.scope->GetBioseqHandle(*seq1);
    CBioseq_Handle hdl2 = thisInfo.scope->GetBioseqHandle(*seq2);
@@ -11212,48 +11210,61 @@ bool CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: SeqMatch(const CConstRef <CBioseq>& se
    if (seq_vec1.empty() && seq_vec2.empty()) return true;
    else if (seq_vec1.empty() || seq_vec2.empty()) return false;
    CSeqVector_CI it1 = seq_vec1.begin();
+   unsigned i=0;
+   if (beg1) {
+     for (it1 = seq_vec1.begin(), i=0; i < beg1; ++it1, i++);
+   }
    CSeqVector_CI it2 = seq_vec2.begin();
+   if (beg2) {
+     for (it2 = seq_vec2.begin(), i=0; i < beg2; ++it2, i++);
+   }
    for (;   it1 && it2 && (sz < len); ++it1, ++it2, sz++) {
-      if (Ndiff && ( *it1 == 'N' || *it2 == 'N' )) continue;
-      else if ( *it1 == *it2 ) continue;
+      if (allow_Ndiff && ( *it1 == 'N' || *it2 == 'N' )) continue;
+      else if ( !allow_Ndiff && (*it1 == *it2 )) continue;
       else return false;
    }
    return true;
 };
 
-bool CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: SeqsMatch(const vector <CConstRef <CBioseq> >& seqs, bool Ndiff)
+bool CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: SeqsMatch(const vector <CConstRef <CBioseq> >& seqs, bool allow_N)
 {
   unsigned len1, len2;
-  bool rvlu = true;
+  bool rval = true;
   int diff, i, j;
-  for (i=0; i < (int)seqs.size() -1 && !rvlu; i++)
-     for (j=0; (j< (int)seqs.size()) && rvlu; j++) {
-       len1 = seqs[i]->IsSetLength() ? seqs[i]->GetLength() : 0;
-       len2 = seqs[j]->IsSetLength() ? seqs[j]->GetLength() : 0;
-       diff = len1 - len2;
-       if (diff > 0) {
-         while (!rvlu && diff >= 0) {
-            rvlu = SeqMatch(seqs[i], diff, seqs[j], 0, len2, Ndiff);
+  i = 0;
+  len1 = seqs[i]->IsSetLength() ? seqs[i]->GetLength() : 0;
+  while (!len1) {
+     len1 = seqs[++i]->IsSetLength() ? seqs[i]->GetLength() : 0;
+  }
+  for (j=i+1; (j< (int)seqs.size()) && rval; j++) {
+     len2 = seqs[j]->IsSetLength() ? seqs[j]->GetLength() : 0;
+     diff = len1 - len2;  // window size of comparison
+     if (diff > 0) {
+         do {
+            // CompareSubSequence
+            rval = SubSeqsMatch(seqs[i], (unsigned)diff, seqs[j], 0, len2, allow_N);
             diff --;
-         }
-       }
-       else if (diff < 0) {
-           diff = -diff;
-           while (!rvlu && diff >=0) {
-             rvlu = SeqMatch(seqs[i], 0, seqs[j], diff, len1, Ndiff);
-             diff --;
-           }
-       }
-       else rvlu = SeqMatch(seqs[i], 0, seqs[j], 0, len1, Ndiff);
+         } while(!rval && diff>=0);
      }
+     else if (diff < 0) {
+           diff = -diff;
+           do {
+             rval = SubSeqsMatch(seqs[i], 0, seqs[j], (unsigned)diff, len1, allow_N);
+             diff --;
+           } while (!rval && diff >= 0);
+     }
+     else {
+          rval = SubSeqsMatch(seqs[i], 0, seqs[j], 0, len1, allow_N);
+     }
+  }
 
-  return rvlu;
+  return rval;
 };
 
 
-void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ReportOneHaplotypeSequenceMismatch(Str2Seqs::const_iterator& iter, bool Ndiff)
+void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ReportSameTaxHaplotypeDiffSequenceMismatch(Str2Seqs::const_iterator& iter, bool allow_Ndiff)
 {
-   strtmp = (string)"seq_diff_" + (Ndiff ? "N" : "strict") 
+   strtmp = (string)"seq_diff_" + (allow_Ndiff ? "N" : "strict") 
                                  + "_" + NStr::UIntToString(m_entry_cnt);
    ITERATE (vector <CConstRef <CBioseq> >, it, iter->second) {
      thisInfo.test_item_list[GetName()].push_back(
@@ -11268,16 +11279,12 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ReportOneHaplotypeSequenceMismatch(Str
 void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ReportHaplotypeSequenceMismatchForList()
 {
    /* first, look for same taxname, same haplotype, different sequence */
-   bool Ndiff_mismatch, strict_mismatch;
    ITERATE (Str2Seqs, it, m_tax_hap2seqs) {
-      Ndiff_mismatch = strict_mismatch = false;
-      Ndiff_mismatch = SeqsMatch(it->second);
-      strict_mismatch = SeqsMatch(it->second, false);
-      if (Ndiff_mismatch) {
-           ReportOneHaplotypeSequenceMismatch(it);
+      if (!SeqsMatch(it->second)) {
+           ReportSameTaxHaplotypeDiffSequenceMismatch(it);
       }
-      if (strict_mismatch) {
-           ReportOneHaplotypeSequenceMismatch(it, false);
+      if (!SeqsMatch(it->second, false)) {
+           ReportSameTaxHaplotypeDiffSequenceMismatch(it, false);
       }
    }
 
@@ -11295,47 +11302,26 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ReportHaplotypeSequenceMismatchForList
    }
 
    unsigned j, len1, len2;
-//   vector <string> seqs_Ndiff, seqs_strict;
    vector <unsigned> seqs_Ndiff_idx, seqs_strict_idx;
    string desc;
    bool mismatch, match_strict, match_Ndiff;
    for (i=0; (int)i < (int)(seqs.size()-1); i++) {
       if (seqs[i].Empty()) continue;
       len1 = seqs[i]->IsSetLength() ? seqs[i]->GetLength() : 0; 
-/*
-      desc1 = GetDiscItemText(*seqs[i]) + ": " + hap_tps[hap_idx[i]];
-      CConstRef <CObject> obj1 (seqs[i].GetPointer());
-*/
       mismatch = false;
       for (j=i+1; j < seqs.size(); j++) {
          if (seqs[j].Empty()) continue;
          len2 = seqs[j]->IsSetLength() ? seqs[j]->GetLength() : 0;
          if (len1 == len2) {
            match_strict = match_Ndiff = false;
-/*
-           desc2 = GetDiscItemText(*seqs[j]) + ": " + hap_tps[hap_idx[j]];
-           CConstRef <CObject> obj2 (seqs[j].GetPointer());
-*/
-           if (SeqMatch(seqs[i], 0, seqs[j], 0, len1) ) {
-/*
-               if (seqs_Ndiff.empty()) {
-                   seqs_Ndiff.push_back(desc1);
-               }
-               seqs_Ndiff.push_back(desc2);
-*/
+           if (SubSeqsMatch(seqs[i], 0, seqs[j], 0, len1) ) {
                if (seqs_Ndiff_idx.empty()) {
                    seqs_Ndiff_idx.push_back(i);
                }
                seqs_Ndiff_idx.push_back(j);
                match_Ndiff = true;  
            }
-           if (SeqMatch(seqs[i], 0, seqs[j], 0, len1, false)) {
-/*
-               if (seqs_strict.empty()) {
-                   seqs_strict.push_back(desc1);
-               }
-               seqs_strict.push_back(desc2);
-*/
+           if (SubSeqsMatch(seqs[i], 0, seqs[j], 0, len1, false)) {
                if (seqs_strict_idx.empty()) {
                    seqs_strict_idx.push_back(i);
                }
@@ -11650,25 +11636,28 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: TestOnObj(const CSeq_entry& seq_entry)
 {
    m_tax_hap2seqs.clear();
    
-   // why m_entry_cnt???
+   // Note - analysis should be performed separately for each SeqEntry, 
+   // rather than for the list as a whole
    if (thisInfo.test_item_list.find(GetName()) ==thisInfo.test_item_list.end()){
         m_entry_cnt = 0;
    }
    else m_entry_cnt ++;
-   string tax_nm, hap_tp;
+   string tax_nm;
    unsigned i=0;
    ITERATE (vector <const CSeqdesc*>, it, biosrc_subsrc_seqdesc) {
      const CBioSource& biosrc = (*it)->GetSource();
      if (biosrc.IsSetTaxname() && !(tax_nm = biosrc.GetTaxname()).empty()) {
-        ITERATE (list <CRef <CSubSource> >, it, biosrc.GetSubtype()) {
-           if ((*it)->GetSubtype() == CSubSource :: eSubtype_haplotype 
-                     && !(hap_tp = (*it)->GetName()).empty()) {
-               if (biosrc_subsrc_seqdesc_seqentry[i]->IsSet()) {
-                  ExtractNonAaBioseqsOfSet(tax_nm +"#" + hap_tp, 
-                                  biosrc_subsrc_seqdesc_seqentry[i]->GetSet());
-               }
-               break;
+        vector <string> arr;
+        GetSubSrcValues(biosrc, CSubSource :: eSubtype_haplotype, arr);
+        if (!arr.empty()) {
+           for (CBioseq_CI seq_ci(*thisInfo.scope, 
+                                  *biosrc_subsrc_seqdesc_seqentry[i],
+                                  CSeq_inst::eMol_na); 
+                   seq_ci; ++seq_ci) {
+               m_tax_hap2seqs[tax_nm + "#" + arr[0]].push_back(
+                          CConstRef <CBioseq> (seq_ci->GetCompleteBioseq()));
            }
+           arr.clear();
         }
      }
      i++;
@@ -11738,28 +11727,24 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: GetReport(CRef <CClickableItem>& c_ite
      }
    }
 
+   unsigned cnt=0;
    if (csub_N.NotEmpty()) {
-     csub_N->description 
-       = "There are " + NStr::UIntToString((unsigned)csub_N->item_list.size())
-         + "haplotype problems (loose match, allowing Ns to differ)";
+     cnt = csub_N->item_list.size()/2;
+     csub_N->description = (cnt == 1)? "There is " : "There are ";
+     csub_N->description += NStr::UIntToString(cnt) + " haplotype problem";
+     csub_N->description += ((cnt == 1)? "": "s");
+     csub_N->description += " (loose match, allowing Ns to differ)";
      csub_N->setting_name = GetName();
      c_item->subcategories.push_back(csub_N);
-     copy( csub_N->item_list.begin(), csub_N->item_list.end(),
-           back_inserter(c_item->item_list));
-     copy( csub_N->obj_list.begin(), csub_N->obj_list.end(),
-           back_inserter(c_item->obj_list));
    }
    if (csub_strict.NotEmpty()) {
-      csub_strict->description
-        = "There are " 
-            + NStr::UIntToString((unsigned)csub_strict->item_list.size())
-            + "haplotype problems (strict match)";
-      csub_strict->setting_name = GetName();
-      c_item->subcategories.push_back(csub_strict);
-      copy(csub_strict->item_list.begin(), csub_strict->item_list.end(),
-           back_inserter( c_item->item_list));
-      copy(csub_strict->obj_list.begin(), csub_strict->obj_list.end(),
-           back_inserter( c_item->obj_list));
+     cnt = csub_strict->item_list.size()/2;
+     csub_strict->description = (cnt == 1)? "There is " : "There are ";
+     csub_strict->description += NStr::UIntToString(cnt) + " haplotype problem";
+     csub_strict->description += ((cnt == 1)? "": "s");
+     csub_strict->description += " (strict match)";
+     csub_strict->setting_name = GetName();
+     c_item->subcategories.push_back(csub_strict);
    }
    c_item->description = "Haplotype Problem Report";
 };

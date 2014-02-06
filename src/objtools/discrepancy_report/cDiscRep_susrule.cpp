@@ -1602,6 +1602,7 @@ bool CSuspectRuleCheck :: StringMayContainPlural(const string& str)
   else {
     strtmp = str;
     size_t pos;
+    vector <string>::const_iterator jt;
     ITERATE (vector <string>, it, arr) { 
       pos = strtmp.find(*it);
       len = (*it).size();
@@ -1616,8 +1617,10 @@ bool CSuspectRuleCheck :: StringMayContainPlural(const string& str)
       may_contain_plural 
          = x_DoesStrContainPlural(*it, last_letter, second_to_last_letter, next_letter);
       if (may_contain_plural) break;
-      strtmp = CTempString(strtmp).substr(pos+len);
-      NStr::TruncateSpacesInPlace(strtmp, NStr::eTrunc_Begin);
+      jt = it;
+      if (++jt != arr.end()) { // not jt++
+         strtmp = CTempString(strtmp).substr(strtmp.find(*jt));
+      }
     }
   }
   arr.clear();
