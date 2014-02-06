@@ -263,21 +263,6 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& test) THROWS((CExc
         }
     }
 
-    int day_val = 0;
-    if (!NStr::IsBlank(day)) {
-        try {
-            day_val = NStr::StringToInt (day);
-            if (day_val < 1 || day_val > 31) {
-                NCBI_THROW (CException, eUnknown,
-                                "collection-date string has invalid day value");
-            }
-        } catch ( const exception& ) {
-            // threw exception while converting to int
-            NCBI_THROW (CException, eUnknown,
-                            "collection-date string is improperly formatted");
-        }
-    }
-
     int month_val = 0;
     if (!NStr::IsBlank(month)) {
         for (size_t i = 0; i < ArraySize(sm_LegalMonths); i++) {
@@ -290,6 +275,21 @@ CRef<CDate> CSubSource::DateFromCollectionDate (const string& test) THROWS((CExc
         if (month_val == 0) {
             NCBI_THROW (CException, eUnknown,
                             "collection-date string has invalid month");
+        }
+    }
+
+    int day_val = 0;
+    if (!NStr::IsBlank(day)) {
+        try {
+            day_val = NStr::StringToInt (day);
+            if (day_val < 1 || day_val > dpm) {
+                NCBI_THROW (CException, eUnknown,
+                                "collection-date string has invalid day value");
+            }
+        } catch ( const exception& ) {
+            // threw exception while converting to int
+            NCBI_THROW (CException, eUnknown,
+                            "collection-date string is improperly formatted");
         }
     }
 
