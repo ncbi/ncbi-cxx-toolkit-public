@@ -82,7 +82,7 @@ BEGIN_NCBI_SCOPE
 /// respective IReader/IWriter API explicitly.
 
 
-/// Reader-based stream.
+/// Reader-based input stream.
 /// @sa IReader
 ///
 /// @param buf_size
@@ -119,7 +119,7 @@ private:
 };
 
 
-/// Writer-based stream.
+/// Writer-based output stream.
 /// @sa IWriter
 ///
 /// @param buf_size
@@ -156,7 +156,7 @@ private:
 };
 
 
-/// Reader-writer based stream.
+/// Reader-writer based input-output stream.
 /// @sa IReaderWriter, IReader, IWriter
 ///
 /// @param buf_size
