@@ -152,10 +152,6 @@
  *
  */
 
-#if defined(NCBISOCK__H)
-#  error "<ncbisock.h> and <ncbi_socket.h> must never be #include'd together"
-#endif
-
 #include <connect/ncbi_core.h>
 
 

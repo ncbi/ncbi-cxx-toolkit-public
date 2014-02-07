@@ -1027,6 +1027,13 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
     if (!hostname  ||  !*hostname) {
         if (s_gethostname(buf, sizeof(buf), log) != 0)
             return 0;
+#ifdef NCBI_OS_DARWIN
+        {
+            char* p;
+            if ((p = strchr(buf, '.')) != 0)
+                *p = '\0';
+        }
+#endif /*NCBI_OS_DARWIN*/
         hostname = buf;
     }
 
