@@ -301,25 +301,25 @@ int CGridCommandLineInterfaceApp::Cmd_MkObjectID()
         break;
 
     case 0:
-        fprintf(stderr, GRID_APP_NAME " mkfileid: either a "
-                "file ID or a combination of '--"
-                FILE_KEY_OPTION "' and '--" NAMESPACE_OPTION
+        fprintf(stderr, GRID_APP_NAME " mkobjectid: either an "
+                "object ID or a combination of '--"
+                OBJECT_KEY_OPTION "' and '--" NAMESPACE_OPTION
                 "' must be specified.\n");
         return 2;
 
     case OPTION_N(1):
-        fprintf(stderr, GRID_APP_NAME " mkfileid: '--" FILE_KEY_OPTION
+        fprintf(stderr, GRID_APP_NAME " mkobjectid: '--" OBJECT_KEY_OPTION
                 "' requires '--" NAMESPACE_OPTION "'.\n");
         return 2;
 
     case OPTION_N(2):
-        fprintf(stderr, GRID_APP_NAME " mkfileid: '--" NAMESPACE_OPTION
-                "' requires '--" FILE_KEY_OPTION "'.\n");
+        fprintf(stderr, GRID_APP_NAME " mkobjectid: '--" NAMESPACE_OPTION
+                "' requires '--" OBJECT_KEY_OPTION "'.\n");
         return 2;
 
     default:
-        fprintf(stderr, GRID_APP_NAME " mkfileid: file ID cannot "
-                "be combined with either '--" FILE_KEY_OPTION
+        fprintf(stderr, GRID_APP_NAME " mkobjectid: object ID cannot "
+                "be combined with either '--" OBJECT_KEY_OPTION
                 "' or '--" NAMESPACE_OPTION "'.\n");
         return 2;
     }
