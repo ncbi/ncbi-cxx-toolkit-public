@@ -339,17 +339,16 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
             stderr_handle  = INVALID_HANDLE_VALUE;
         }
         
-        // Flush std.output buffers before remap
+        // Flush stdio buffers before remap
         NcbiCout.flush();
-        ::fflush(stdout);
         if (stdout_handle != INVALID_HANDLE_VALUE) {
             ::FlushFileBuffers(stdout_handle);
         }
         NcbiCerr.flush();
-        ::fflush(stderr);
         if (stderr_handle != INVALID_HANDLE_VALUE) {
             ::FlushFileBuffers(stderr_handle);
         }
+        ::fflush(NULL);
 
         // Set base security attributes
         SECURITY_ATTRIBUTES attr;
@@ -1078,11 +1077,10 @@ EIO_Status CPipeHandle::Open(const string&         cmd,
 
     int status_pipe[2] = {-1, -1};
     try {
-        // Flush std.output
+        // Flush stdio
         NcbiCout.flush();
-        ::fflush(stdout);
         NcbiCerr.flush();
-        ::fflush(stderr);
+        ::fflush(NULL);
 
         // Create pipe for child's stdin
         _ASSERT(CPipe::fStdIn_Close);

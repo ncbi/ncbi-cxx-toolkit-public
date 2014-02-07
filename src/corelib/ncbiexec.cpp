@@ -136,6 +136,9 @@ s_SpawnUnix(ESpawnFunc func, CExec::EMode full_mode,
     // Get master mode
     CExec::EMode mode = (CExec::EMode)(full_mode & (int)CExec::fModeMask);
 
+    // Flush stdio
+    fflush(NULL);
+
     // Replace the current process image with a new process image.
     if (mode == CExec::eOverlay) {
         switch (func) {

@@ -359,6 +359,7 @@ TPid CProcess::Daemonize(const char* logfile, CProcess::TDaemonFlags flags)
                 }
             }
         }
+        ::fflush(NULL);
         TPid pid = Fork();
         if (pid) {
             // Parent thread (including fork error)
