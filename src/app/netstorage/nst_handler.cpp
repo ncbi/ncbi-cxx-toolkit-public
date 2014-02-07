@@ -1064,13 +1064,18 @@ CNetStorageHandler::x_ProcessWrite(
     reply.SetString("ObjectID", object_id);
     x_SendSyncMessage(reply);
 
-    if (m_ConnContext.NotNull() && !message.HasKey("ObjectID")) {
-        CNetStorageObjectID     object_id_struct(m_Server->GetCompoundIDPool(),
-                                object_id);
+    CNetStorageObjectID     object_id_struct(m_Server->GetCompoundIDPool(),
+                            object_id);
+    TNetStorageFlags        flags = object_id_struct.GetStorageFlags();
 
+    if (m_ConnContext.NotNull() && !message.HasKey("ObjectID")) {
         GetDiagContext().Extra()
             .Print("ObjectID", object_id)
             .Print("ObjectKey", object_id_struct.GetUniqueKey());
+    }
+
+    if ((flags & fNST_NoMetaData) == 0) {
+        // Touch Objects table
     }
 
     // Inform the message receiving loop that raw data are to follow
