@@ -956,7 +956,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
             header_header = "HTTP header (retriable server error)";
         assert(!url);
         url = ConnNetInfo_URL(uuu->net_info);
-        CORE_DATAF_X(9, eLOG_Note, str, size,
+        CORE_DATAF_X(9, tmp ? eLOG_Error : eLOG_Note, str, size,
                      ("[HTTP%s%s]  %s",
                       url ? "; " : "",
                       url ? url  : "", header_header));
@@ -1026,7 +1026,7 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         }
     }}
 
-    if (tmp) {
+    if (tmp  &&  !uuu->net_info->debug_printout) {
         char text[40];
         assert(http_code);
         if (!url)
