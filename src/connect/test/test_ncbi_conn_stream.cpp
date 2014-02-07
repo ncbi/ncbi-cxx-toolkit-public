@@ -115,7 +115,8 @@ int main(int argc, const char* argv[])
     // Set error posting and tracing on maximum
     SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Info);
-    SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
+    SetDiagPostAllFlags(SetDiagPostAllFlags(eDPF_Default)
+                        | eDPF_All | eDPF_OmitInfoSev);
     UnsetDiagPostFlag(eDPF_Line);
     UnsetDiagPostFlag(eDPF_File);
     UnsetDiagPostFlag(eDPF_Location);
@@ -265,10 +266,13 @@ int main(int argc, const char* argv[])
                                      0/*port = default*/, flag, 0/*cmcb*/,
                                      1024/*offset*/, net_info->timeout);
 
-    for (size = 0;  download.good();  size += (size_t) download.gcount()) {
-        char buf[512];
-        download.read(buf, sizeof(buf));
-    }
+    size_t pos1 = (size_t) download.tellg();
+    size = NcbiStreamToString(0, download);
+    if (!size)
+        download.clear(NcbiBadbit);
+    else if (download.eof()  &&  !download.fail())
+        download.clear();
+    size_t pos2 = (size_t) download.tellg();
     download.clear();
     download << "SIZE " <<
         "/toolbox/ncbi_tools++/DATA/Misc/test_ncbi_conn_stream.FTP.data";
@@ -278,8 +282,13 @@ int main(int argc, const char* argv[])
     if (!size)
         ERR_POST(Fatal << "No file downloaded");
     if (n  &&  n != size + 1024)
-        ERR_POST(Fatal << "File size mismatch: 1024+" << size << "<>" << n);
-
+        ERR_POST(Fatal << "File size mismatch: 1024+" << size << "!=" << n);
+    else if (pos1 == (size_t)(-1L)  ||  pos2 == (size_t)(-1L)) 
+        ERR_POST(Fatal << "Bad stream posision(s): " << pos1 << ',' << pos2);
+    else if (size != pos2 - pos1) {
+        ERR_POST(Fatal << "Size mismatch: " << size << "!="
+                 << pos2 << '-' <<  pos1);
+    }
     LOG_POST(Info << "Test 2 passed: 1024+" << size << '=' << n
              << " byte(s) downloaded via FTP\n");
 
