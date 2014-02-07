@@ -1990,7 +1990,6 @@ BEGIN_SCOPE(DiscRepNmSpc)
       Str2Seqs m_tax_hap2seqs;
       unsigned m_entry_cnt;
 
-      void ExtractNonAaBioseqsOfSet(const string& tax_hap, const CBioseq_set& set);
       bool SubSeqsMatch(const CConstRef <CBioseq>& seq1, 
                     unsigned beg1, 
                     const CConstRef <CBioseq>& seq2,
