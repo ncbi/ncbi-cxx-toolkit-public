@@ -1419,7 +1419,7 @@ static EIO_Status s_Read(SHttpConnector* uuu, void* buf,
                 } else {
                     TNCBI_BigCount excess = uuu->received - uuu->expected;
                     assert(*n_read >= excess);
-                    *n_read -= excess;
+                    *n_read -= (size_t) excess;
                 }
                 uuu->read_state = eRS_DropBody;
                 status  = eIO_Unknown;

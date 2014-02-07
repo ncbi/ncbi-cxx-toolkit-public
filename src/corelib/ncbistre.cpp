@@ -301,7 +301,7 @@ size_t NcbiStreamToString(string* str, CNcbiIstream& is, size_t pos)
             throw;
         }
         streamsize count = is.gcount();
-        str_size += count;
+        str_size += (size_t) count;
         if (str) {
             if ((size_t) count == buf_size) {
                 if (buf_size < (1UL << 16))
