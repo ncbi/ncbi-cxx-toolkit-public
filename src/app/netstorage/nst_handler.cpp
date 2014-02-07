@@ -314,7 +314,7 @@ bool CNetStorageHandler::x_ReadRawData()
 
     case CUTTPReader::eControlSymbol:
         if (m_UTTPReader.GetControlSymbol() == '\n') {
-            x_SendReadConfirmation();
+            x_SendWriteConfirmation();
             m_ReadMode = eReadMessages;
             return true;
         }
@@ -490,13 +490,24 @@ void CNetStorageHandler::x_OnData(const void* data, size_t data_size)
 }
 
 
-void CNetStorageHandler::x_SendReadConfirmation()
+void CNetStorageHandler::x_SendWriteConfirmation()
 {
     if (!m_ObjectStream) {
         x_SetCmdRequestStatus(eStatus_ServerError);
         x_PrintMessageRequestStop();
         return;
     }
+
+    // Detect if the meta info required
+
+    // Detect if it was write or create
+
+    // Write into the DB if required
+
+    // If failed:
+    //   if create => failure
+    //   if write => success
+
 
     x_SendSyncMessage(CreateResponseMessage(m_DataMessageSN));
     x_PrintMessageRequestStop();
@@ -910,13 +921,13 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
 
     string            object_key = x_GetObjectKey(message);
     CNetStorage       net_storage(g_CreateNetStorage(0));
-    CNetStorageObject net_file = net_storage.Open(object_key, 0);
+    CNetStorageObject net_storage_object = net_storage.Open(object_key, 0);
 
-    CJsonNode       file_info = net_file.GetInfo().ToJSON();
+    CJsonNode       object_info = net_storage_object.GetInfo().ToJSON();
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
 
-    for (CJsonIterator it = file_info.Iterate(); it; ++it)
+    for (CJsonIterator it = object_info.Iterate(); it; ++it)
         reply.SetByKey(it.GetKey(), it.GetNode());
 
     x_SendSyncMessage(reply);
@@ -998,12 +1009,9 @@ CNetStorageHandler::x_ProcessCreate(
         CNetStorageDApp *   app = dynamic_cast<CNetStorageDApp*>
                                         (CNcbiApplication::Instance());
 
-        if (app->GetDb().ExecSP_CreateClientOwnerGroup(
-                    m_Client, message, common_args,
-                    client_id, owner_id, group_id) != 0)
-            NCBI_THROW(CNetStorageServerException, eDatabaseError,
-                       "Error executing CreateClientOwnerGroup stored "
-                       "procedure. See MS SQL log for details");
+        app->GetDb().ExecSP_CreateClientOwnerGroup(
+                    m_Client, message,
+                    client_id, owner_id, group_id);
     }
 
 
@@ -1022,7 +1030,7 @@ CNetStorageHandler::x_ProcessCreate(
 
         GetDiagContext().Extra()
             .Print("ObjectID", object_id)
-            .Print("FileKey", object_id_struct.GetUniqueKey());
+            .Print("ObjectKey", object_id_struct.GetUniqueKey());
     }
 
     // Inform the message receiving loop that raw data are to follow
@@ -1062,7 +1070,7 @@ CNetStorageHandler::x_ProcessWrite(
 
         GetDiagContext().Extra()
             .Print("ObjectID", object_id)
-            .Print("FileKey", object_id_struct.GetUniqueKey());
+            .Print("ObjectKey", object_id_struct.GetUniqueKey());
     }
 
     // Inform the message receiving loop that raw data are to follow
@@ -1081,9 +1089,9 @@ CNetStorageHandler::x_ProcessRead(
 
     x_CheckNonAnonymousClient();
 
-    string          object_key = x_GetObjectKey(message);
-    CNetStorage     net_storage(g_CreateNetStorage(0));
-    CNetStorageObject        net_file = net_storage.Open(object_key, 0);
+    string              object_key = x_GetObjectKey(message);
+    CNetStorage         net_storage(g_CreateNetStorage(0));
+    CNetStorageObject   net_storage_object = net_storage.Open(object_key, 0);
 
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
@@ -1095,8 +1103,8 @@ CNetStorageHandler::x_ProcessRead(
     size_t          bytes_read;
 
     try {
-        while (!net_file.Eof()) {
-            bytes_read = net_file.Read(buffer, sizeof(buffer));
+        while (!net_storage_object.Eof()) {
+            bytes_read = net_storage_object.Read(buffer, sizeof(buffer));
 
             m_UTTPWriter.SendChunk(buffer, bytes_read, false);
 
@@ -1106,7 +1114,7 @@ CNetStorageHandler::x_ProcessRead(
             m_ClientRegistry.AddBytesRead(m_Client, bytes_read);
         }
 
-        net_file.Close();
+        net_storage_object.Close();
 
         reply = CreateResponseMessage(common_args.m_SerialNumber);
     }
@@ -1219,8 +1227,8 @@ CNetStorageHandler::x_ProcessGetSize(
 
     string            object_key = x_GetObjectKey(message);
     CNetStorage       net_storage(g_CreateNetStorage(0));
-    CNetStorageObject net_file = net_storage.Open(object_key, 0);
-    Uint8             object_size = net_file.GetSize();
+    CNetStorageObject net_storage_object = net_storage.Open(object_key, 0);
+    Uint8             object_size = net_storage_object.GetSize();
     CJsonNode         reply = CreateResponseMessage(common_args.m_SerialNumber);
 
     reply.SetInteger("Size", object_size);
@@ -1240,7 +1248,7 @@ CNetStorageHandler::x_GetObjectKey(const CJsonNode &  message)
             CNetStorageObjectID  object_id_struct(m_Server->GetCompoundIDPool(),
                                  object_id);
             GetDiagContext().Extra()
-                .Print("FileKey", object_id_struct.GetUniqueKey());
+                .Print("ObjectKey", object_id_struct.GetUniqueKey());
         }
         return object_id;
     }
@@ -1271,7 +1279,7 @@ CNetStorageHandler::x_GetObjectKey(const CJsonNode &  message)
     if (m_ConnContext.NotNull()) {
         GetDiagContext().Extra()
             .Print("ObjectID", object_id)
-            .Print("FileKey", object_id_struct.GetUniqueKey());
+            .Print("ObjectKey", object_id_struct.GetUniqueKey());
     }
 
     return object_id;

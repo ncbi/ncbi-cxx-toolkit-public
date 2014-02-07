@@ -58,11 +58,13 @@ public:
 
     void Connect(void);
 
-    int ExecSP_CreateClientOwnerGroup(
+    void ExecSP_CreateClientOwnerGroup(
             const string &  client,
             const CJsonNode &  message,
-            const SCommonRequestArguments &  common_args,
             Int8 &  client_id, Int8 &  owner_id, Int8 &  group_id);
+    void ExecSP_CreateObjectWithIDs(
+            const string &  name, Int8  size,
+            Int8  client_id, Int8  owner_id, Int8  group_id);
 
 private:
     const SDbAccessInfo &  x_GetDbAccessInfo(void);

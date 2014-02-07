@@ -30,7 +30,9 @@
 #include <ncbi_pch.hpp>
 
 #include <corelib/ncbistd.hpp>
+#include <connect/services/json_over_uttp.hpp>
 #include "nst_database.hpp"
+#include "nst_exception.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -58,16 +60,70 @@ void CNSTDatabase::Connect(void)
 }
 
 
-int CNSTDatabase::ExecSP_CreateClientOwnerGroup(
+void CNSTDatabase::ExecSP_CreateClientOwnerGroup(
             const string &  client,
             const CJsonNode &  message,
-            const SCommonRequestArguments &  common_args,
             Int8 &  client_id, Int8 &  owner_id, Int8 &  group_id)
 {
+    CQuery      query = x_NewQuery();
+    query.SetParameter("@client_name", client);
+
+    if (message.HasKey("Owner"))
+        query.SetParameter("@owner_name", message.GetString("Owner"));
+    else
+        query.SetNullParameter("@owner_name", eSDB_String);
+    if (message.HasKey("Group"))
+        query.SetParameter("@group_name", message.GetString("Group"));
+    else
+        query.SetNullParameter("@group_name", eSDB_String);
+    query.SetParameter("@client_id_", 0, eSDB_Int8, eSP_InOut);
+    query.SetParameter("@owner_id_", 0, eSDB_Int8, eSP_InOut);
+    query.SetParameter("@group_id_", 0, eSDB_Int8, eSP_InOut);
+
+    query.ExecuteSP("CreateClientOwnerGroup");
+    query.VerifyDone();
+
+    int     status = query.GetStatus();
+    if (status != 0)
+        NCBI_THROW(CNetStorageServerException, eDatabaseError,
+                   "Error executing CreateClientOwnerGroup stored "
+                   "procedure (return code " + NStr::NumericToString(status) +
+                   "). See MS SQL log for details.");
+
+    client_id = query.GetParameter("@client_id_").AsInt8();
+    owner_id = query.GetParameter("@owner_id_").AsInt8();
+    group_id = query.GetParameter("@group_id_").AsInt8();
+}
 
 
+void CNSTDatabase::ExecSP_CreateObjectWithIDs(
+            const string &  name, Int8  size,
+            Int8  client_id, Int8  owner_id, Int8  group_id)
+{
+    CQuery      query = x_NewQuery();
+    query.SetParameter("@object_name", name);
+    query.SetParameter("@object_size", size);
+    query.SetParameter("@client_id", client_id);
 
-    return 0;
+    if (owner_id == 0)
+        query.SetNullParameter("@owner_id", eSDB_Int8);
+    else
+        query.SetParameter("@owner_id", owner_id);
+
+    if (group_id == 0)
+        query.SetNullParameter("@group_id", eSDB_Int8);
+    else
+        query.SetParameter("@group_id", group_id);
+
+    query.ExecuteSP("CreateObjectWithIDs");
+    query.VerifyDone();
+
+    int     status = query.GetStatus();
+    if (status != 0)
+        NCBI_THROW(CNetStorageServerException, eDatabaseError,
+                   "Error executing CreateObjectWithIDs stored "
+                   "procedure (return code " + NStr::NumericToString(status) +
+                   "). See MS SQL log for details.");
 }
 
 

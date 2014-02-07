@@ -90,7 +90,7 @@ private:
     bool  x_ReadRawData();
     void  x_OnMessage(const CJsonNode &  message);
     void  x_OnData(const void *  data, size_t  data_size);
-    void  x_SendReadConfirmation();
+    void  x_SendWriteConfirmation();
 
     // It closes the connection if there were socket writing errors
     EIO_Status  x_SendSyncMessage(const CJsonNode &  message);
