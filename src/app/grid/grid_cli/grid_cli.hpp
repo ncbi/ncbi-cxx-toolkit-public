@@ -70,7 +70,7 @@
 #define NETCACHE_OPTION "netcache"
 #define CACHE_OPTION "cache"
 #define NETSTORAGE_OPTION "netstorage"
-#define FILE_KEY_OPTION "file-key"
+#define OBJECT_KEY_OPTION "object-key"
 #define NAMESPACE_OPTION "namespace"
 #define PERSISTENT_OPTION "persistent"
 #define FAST_STORAGE_OPTION "fast-storage"
@@ -158,7 +158,7 @@ enum EOption {
     eEnableMirroring,
     eUseCompoundID,
     eNetStorage,
-    eFileKey,
+    eObjectKey,
     eNamespace,
     ePersistent,
     eFastStorage,

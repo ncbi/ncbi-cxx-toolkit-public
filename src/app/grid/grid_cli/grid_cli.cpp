@@ -160,13 +160,13 @@ struct SOptionDefinition {
         "nst|" NETSTORAGE_OPTION, "NetStorage service name "
             "or server address.", {-1}},
 
-    {OPT_DEF(eOptionWithParameter, eFileKey),
-        FILE_KEY_OPTION, "Uniqie user-defined key to address the file. "
+    {OPT_DEF(eOptionWithParameter, eObjectKey),
+        OBJECT_KEY_OPTION, "Uniqie user-defined key to address the object. "
             "Requires '--" NAMESPACE_OPTION "'.", {-1}},
 
     {OPT_DEF(eOptionWithParameter, eNamespace),
-        NAMESPACE_OPTION, "Domain-specific name that isolates files "
-            "created with a user-defined key from files created "
+        NAMESPACE_OPTION, "Domain-specific name that isolates objects "
+            "created with a user-defined key from objects created "
             "by other users.", {-1}},
 
     {OPT_DEF(eSwitch, ePersistent),
@@ -176,7 +176,7 @@ struct SOptionDefinition {
         FAST_STORAGE_OPTION, "Use a fast storage like NetCache.", {-1}},
 
     {OPT_DEF(eSwitch, eMovable),
-        MOVABLE_OPTION, "Allow the file to move between storages.", {-1}},
+        MOVABLE_OPTION, "Allow the object to move between storages.", {-1}},
 
     {OPT_DEF(eSwitch, eCacheable),
         CACHEABLE_OPTION, "Use NetCache for data caching.", {-1}},
@@ -476,8 +476,8 @@ struct SCommandCategoryDefinition {
     "following format: \"key,version,subkey\"."
 
 #define MAY_REQUIRE_LOCATION_HINTING \
-    "Some file IDs may require additional options " \
-    "to hint at the current file location."
+    "Some object IDs may require additional options " \
+    "to hint at the current object location."
 
 #define ABOUT_NETSTORAGE_OPTION \
     "\n\nIf a NetStorage service (or server) is specified " \
@@ -579,13 +579,13 @@ struct SCommandDefinition {
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_Upload,
-        "upload", "Create or rewrite a NetStorage file.",
+        "upload", "Create or rewrite a NetStorage object.",
         "Save the data coming from the standard input (or an input file) "
         "to a network storage. The choice of the storage is based on the "
         "specified combination of the '--" PERSISTENT_OPTION "', '--"
         FAST_STORAGE_OPTION "', '--" MOVABLE_OPTION "', and '--"
         CACHEABLE_OPTION "' options. After the data has been written, "
-        "the generated file ID is printed to the standard output."
+        "the generated object ID is printed to the standard output."
         ABOUT_NETSTORAGE_OPTION,
         {eOptionalID, eNetStorage, ePersistent, eFastStorage,
             eNetCache, eCache, eTTL, eMovable, eCacheable, eNoMetaData,
@@ -594,8 +594,8 @@ struct SCommandDefinition {
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_Download,
-        "download", "Retrieve a NetStorage file.",
-        "Read the file identified by ID and send its contents to the "
+        "download", "Retrieve a NetStorage object.",
+        "Read the object identified by ID and send its contents to the "
         "standard output (or to the specified output file)."
         ABOUT_NETSTORAGE_OPTION,
         {eID, eNetStorage, eNetCache, eCache, eOffset, eSize,
@@ -603,13 +603,13 @@ struct SCommandDefinition {
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_Relocate,
-        "relocate", "Move a NetStorage file to a different storage.",
-        "Transfer file contents to the new location hinted by "
+        "relocate", "Move a NetStorage object to a different storage.",
+        "Transfer object contents to the new location hinted by "
         "a combination of the '--" PERSISTENT_OPTION "', '--"
         FAST_STORAGE_OPTION "', and '--" CACHEABLE_OPTION "' options. "
-        "After the data has been transferred, a new file ID "
+        "After the data has been transferred, a new object ID "
         "will be generated, which can be used instead of the old "
-        "one for faster file access."
+        "one for faster object access."
         ABOUT_NETSTORAGE_OPTION,
         {eID, eNetStorage, ePersistent, eFastStorage, eNetCache, eCache,
             eTTL, eMovable, eCacheable, eNoMetaData, eLoginToken, eAuth,
@@ -619,11 +619,11 @@ struct SCommandDefinition {
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_MkObjectID,
         "mkobjectid", "Turn a user-defined key into a NetStorage object ID.",
         "Take a unique user-defined key/namespace pair (or an "
-        "existing file ID) and make a new file ID. The resulting "
-        "file ID will reflect storage preferences specified by the "
+        "existing object ID) and make a new object ID. The resulting "
+        "object ID will reflect storage preferences specified by the "
         "'--" PERSISTENT_OPTION "', '--" FAST_STORAGE_OPTION "', '--"
         MOVABLE_OPTION "', and '--" CACHEABLE_OPTION "' options.",
-        {eOptionalID, eFileKey, eNamespace, ePersistent, eFastStorage,
+        {eOptionalID, eObjectKey, eNamespace, ePersistent, eFastStorage,
             eNetCache, eCache, eTTL, eMovable, eCacheable, eNoMetaData,
             eLoginToken, eAuth, eFileTrackSite,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
@@ -1255,7 +1255,7 @@ int CGridCommandLineInterfaceApp::Run()
                 /* FALL THROUGH */
             case eID:
             case eNetStorageObjectID:
-            case eFileKey:
+            case eObjectKey:
             case eJobId:
             case eTargetQueueArg:
                 m_Opts.id = opt_value;

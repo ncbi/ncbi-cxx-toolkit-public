@@ -288,7 +288,7 @@ int CGridCommandLineInterfaceApp::Cmd_MkObjectID()
     auto_ptr<CNetStorageObjectID> object_id;
 
     switch (IsOptionSet(eOptionalID, OPTION_N(0)) |
-            IsOptionSet(eFileKey, OPTION_N(1)) |
+            IsOptionSet(eObjectKey, OPTION_N(1)) |
             IsOptionSet(eNamespace, OPTION_N(2))) {
     case OPTION_N(0):
         object_id.reset(new CNetStorageObjectID(m_CompoundIDPool, m_Opts.id));
