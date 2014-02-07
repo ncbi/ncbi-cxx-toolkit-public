@@ -908,9 +908,9 @@ CNetStorageHandler::x_ProcessGetObjectInfo(
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
 
-    string          object_key = x_GetObjectKey(message);
-    CNetStorage     net_storage(g_CreateNetStorage(0));
-    CNetFile        net_file = net_storage.Open(object_key, 0);
+    string            object_key = x_GetObjectKey(message);
+    CNetStorage       net_storage(g_CreateNetStorage(0));
+    CNetStorageObject net_file = net_storage.Open(object_key, 0);
 
     CJsonNode       file_info = net_file.GetInfo().ToJSON();
 
@@ -1011,16 +1011,18 @@ CNetStorageHandler::x_ProcessCreate(
     m_ObjectStream = x_CreateObjectStream(icache_settings, flags);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
-    string          file_id = m_ObjectStream.GetID();
+    string          object_id = m_ObjectStream.GetID();
 
-    reply.SetString("FileID", file_id);
+    reply.SetString("ObjectID", object_id);
     x_SendSyncMessage(reply);
 
-    if (m_ConnContext.NotNull() && !message.HasKey("FileID")) {
-        CNetFileID      file_id_struct(m_Server->GetCompoundIDPool(), file_id);
+    if (m_ConnContext.NotNull() && !message.HasKey("ObjectID")) {
+        CNetStorageObjectID      object_id_struct(m_Server->GetCompoundIDPool(),
+                                 object_id);
+
         GetDiagContext().Extra()
-            .Print("FileID", file_id)
-            .Print("FileKey", file_id_struct.GetUniqueKey());
+            .Print("ObjectID", object_id)
+            .Print("FileKey", object_id_struct.GetUniqueKey());
     }
 
     // Inform the message receiving loop that raw data are to follow
@@ -1038,9 +1040,9 @@ CNetStorageHandler::x_ProcessWrite(
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eWriter);
     x_CheckNonAnonymousClient();
 
-    if (!message.HasKey("FileID") && !message.HasKey("UserKey"))
+    if (!message.HasKey("ObjectID") && !message.HasKey("UserKey"))
         NCBI_THROW(CNetStorageServerException, eMandatoryFieldsMissed,
-                   "WRITE message must have FileID or UserKey. "
+                   "WRITE message must have ObjectID or UserKey. "
                    "None of them was found.");
 
     string          object_key = x_GetObjectKey(message);
@@ -1049,16 +1051,18 @@ CNetStorageHandler::x_ProcessWrite(
     m_ObjectStream = net_storage.Open(object_key, 0);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
-    string          file_id = m_ObjectStream.GetID();
+    string          object_id = m_ObjectStream.GetID();
 
-    reply.SetString("FileID", file_id);
+    reply.SetString("ObjectID", object_id);
     x_SendSyncMessage(reply);
 
-    if (m_ConnContext.NotNull() && !message.HasKey("FileID")) {
-        CNetFileID      file_id_struct(m_Server->GetCompoundIDPool(), file_id);
+    if (m_ConnContext.NotNull() && !message.HasKey("ObjectID")) {
+        CNetStorageObjectID     object_id_struct(m_Server->GetCompoundIDPool(),
+                                object_id);
+
         GetDiagContext().Extra()
-            .Print("FileID", file_id)
-            .Print("FileKey", file_id_struct.GetUniqueKey());
+            .Print("ObjectID", object_id)
+            .Print("FileKey", object_id_struct.GetUniqueKey());
     }
 
     // Inform the message receiving loop that raw data are to follow
@@ -1079,7 +1083,7 @@ CNetStorageHandler::x_ProcessRead(
 
     string          object_key = x_GetObjectKey(message);
     CNetStorage     net_storage(g_CreateNetStorage(0));
-    CNetFile        net_file = net_storage.Open(object_key, 0);
+    CNetStorageObject        net_file = net_storage.Open(object_key, 0);
 
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
@@ -1169,19 +1173,19 @@ CNetStorageHandler::x_ProcessRelocate(
 
     string          object_key = x_GetObjectKey(message);
     CNetStorage     net_storage(g_CreateNetStorage(0));
-    string          new_file_id = net_storage.Relocate(object_key,
-                                                       new_location_flags);
+    string          new_object_id = net_storage.Relocate(object_key,
+                                                         new_location_flags);
 
     m_ClientRegistry.AddObjectsRelocated(m_Client, 1);
 
     CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
 
-    reply.SetString("FileID", new_file_id);
+    reply.SetString("ObjectID", new_object_id);
     x_SendSyncMessage(reply);
 
     if (m_ConnContext.NotNull()) {
         GetDiagContext().Extra()
-            .Print("NewFileID", new_file_id);
+            .Print("NewObjectID", new_object_id);
     }
 
     x_PrintMessageRequestStop();
@@ -1213,11 +1217,11 @@ CNetStorageHandler::x_ProcessGetSize(
 {
     m_ClientRegistry.AppendType(m_Client, CNSTClient::eReader);
 
-    string          object_key = x_GetObjectKey(message);
-    CNetStorage     net_storage(g_CreateNetStorage(0));
-    CNetFile        net_file = net_storage.Open(object_key, 0);
-    Uint8           object_size = net_file.GetSize();
-    CJsonNode       reply = CreateResponseMessage(common_args.m_SerialNumber);
+    string            object_key = x_GetObjectKey(message);
+    CNetStorage       net_storage(g_CreateNetStorage(0));
+    CNetStorageObject net_file = net_storage.Open(object_key, 0);
+    Uint8             object_size = net_file.GetSize();
+    CJsonNode         reply = CreateResponseMessage(common_args.m_SerialNumber);
 
     reply.SetInteger("Size", object_size);
     x_SendSyncMessage(reply);
@@ -1228,16 +1232,17 @@ CNetStorageHandler::x_ProcessGetSize(
 string
 CNetStorageHandler::x_GetObjectKey(const CJsonNode &  message)
 {
-    if (message.HasKey("FileID")) {
-        string  file_id = message.GetString("FileID");
-        x_CheckFileID(file_id);
+    if (message.HasKey("ObjectID")) {
+        string  object_id = message.GetString("ObjectID");
+        x_CheckObjectID(object_id);
 
         if (m_ConnContext.NotNull()) {
-            CNetFileID  file_id_struct(m_Server->GetCompoundIDPool(), file_id);
+            CNetStorageObjectID  object_id_struct(m_Server->GetCompoundIDPool(),
+                                 object_id);
             GetDiagContext().Extra()
-                .Print("FileKey", file_id_struct.GetUniqueKey());
+                .Print("FileKey", object_id_struct.GetUniqueKey());
         }
-        return file_id;
+        return object_id;
     }
 
     // Take the arguments
@@ -1254,22 +1259,22 @@ CNetStorageHandler::x_GetObjectKey(const CJsonNode &  message)
 
     CNetICacheClient    icache_client(icache_settings.m_ServiceName,
                                       icache_settings.m_CacheName, client_name);
-    CNetFileID          file_id_struct(m_Server->GetCompoundIDPool(),
+    CNetStorageObjectID object_id_struct(m_Server->GetCompoundIDPool(),
                                        flags, user_key.m_AppDomain,
                                        user_key.m_UniqueID,
                                        TFileTrack_Site::GetDefault().c_str());
-    g_SetNetICacheParams(file_id_struct, icache_client);
+    g_SetNetICacheParams(object_id_struct, icache_client);
 
-    string              file_id = file_id_struct.GetID();
+    string              object_id = object_id_struct.GetID();
 
     // Log if needed
     if (m_ConnContext.NotNull()) {
         GetDiagContext().Extra()
-            .Print("FileID", file_id)
-            .Print("FileKey", file_id_struct.GetUniqueKey());
+            .Print("ObjectID", object_id)
+            .Print("FileKey", object_id_struct.GetUniqueKey());
     }
 
-    return file_id;
+    return object_id;
 }
 
 
@@ -1285,11 +1290,11 @@ CNetStorageHandler::x_CheckNonAnonymousClient(void)
 
 
 void
-CNetStorageHandler::x_CheckFileID(const string &  file_id)
+CNetStorageHandler::x_CheckObjectID(const string &  object_id)
 {
-    if (file_id.empty()) {
+    if (object_id.empty()) {
         NCBI_THROW(CNetStorageServerException, eInvalidArgument,
-                   "FileID must not be an empty string");
+                   "ObjectID must not be an empty string");
     }
 }
 
@@ -1339,7 +1344,7 @@ CNetStorageHandler::x_GetStorageParams(
 }
 
 
-CNetFile CNetStorageHandler::x_CreateObjectStream(
+CNetStorageObject CNetStorageHandler::x_CreateObjectStream(
                     const SICacheSettings &  icache_settings,
                     TNetStorageFlags         flags)
 {

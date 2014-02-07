@@ -97,7 +97,8 @@ CNetStorageByKey g_CreateNetStorageByKey(
         TNetStorageFlags default_flags = 0);
 
 /// @internal
-void g_SetNetICacheParams(CNetFileID& file_id, CNetICacheClient icache_client);
+void g_SetNetICacheParams(CNetStorageObjectID& object_id,
+        CNetICacheClient icache_client);
 
 NCBI_PARAM_DECL(string, netstorage_api, backend_storage);
 typedef NCBI_PARAM_TYPE(netstorage_api, \

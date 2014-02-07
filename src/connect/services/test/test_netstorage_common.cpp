@@ -45,7 +45,7 @@ USING_NCBI_SCOPE;
 
 static const string s_TestData("The quick brown fox jumps over the lazy dog.");
 
-static void s_ReadAndCompare(CNetFile file)
+static void s_ReadAndCompare(CNetStorageObject file)
 {
     char buffer[10];
     const char* expected = s_TestData.data();
@@ -68,7 +68,7 @@ static void s_ReadAndCompare(CNetFile file)
     BOOST_CHECK_MESSAGE(remaining_size == 0, "Got less data than expected");
 }
 
-static string s_WriteAndRead(CNetFile new_file)
+static string s_WriteAndRead(CNetStorageObject new_file)
 {
     new_file.Write(s_TestData);
 
@@ -90,26 +90,27 @@ static string s_WriteAndRead(CNetFile new_file)
 void g_TestNetStorage(CNetStorage netstorage)
 {
     // Create a file that should to go to NetCache.
-    string file_id = s_WriteAndRead(
+    string object_id = s_WriteAndRead(
             netstorage.Create(fNST_Fast | fNST_Movable));
 
     // Now read the whole file using the buffered version
     // of Read(). Verify that the contents of each buffer
     // match the original data.
-    CNetFile orig_file = netstorage.Open(file_id);
+    CNetStorageObject orig_file = netstorage.Open(object_id);
 
     s_ReadAndCompare(orig_file);
 
     // Generate a "non-movable" file ID by calling Relocate()
     // with the same storage preferences (so the file should not
     // be actually relocated).
-    string fast_storage_file_id = netstorage.Relocate(file_id, fNST_Fast);
+    string fast_storage_object_id = netstorage.Relocate(object_id, fNST_Fast);
 
     // Relocate the file to a persistent storage.
-    string persistent_id = netstorage.Relocate(file_id, fNST_Persistent);
+    string persistent_id = netstorage.Relocate(object_id, fNST_Persistent);
 
     // Verify that the file has disappeared from the "fast" storage.
-    CNetFile fast_storage_file = netstorage.Open(fast_storage_file_id);
+    CNetStorageObject fast_storage_file =
+            netstorage.Open(fast_storage_object_id);
 
     // Make sure the relocated file does not exists in the
     // original storage anymore.
@@ -118,7 +119,7 @@ void g_TestNetStorage(CNetStorage netstorage)
 
     // However, the file must still be accessible
     // either using the original ID:
-    s_ReadAndCompare(netstorage.Open(file_id));
+    s_ReadAndCompare(netstorage.Open(object_id));
     // or using the newly generated persistent storage ID:
     s_ReadAndCompare(netstorage.Open(persistent_id));
 }

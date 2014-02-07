@@ -226,28 +226,28 @@ int CGridCommandLineInterfaceApp::Cmd_Upload()
 {
     SetUp_NetStorageCmd(eNetStorageAPI);
 
-    CNetFile netfile(IsOptionSet(eOptionalID) ?
+    CNetStorageObject netstorage_object(IsOptionSet(eOptionalID) ?
             m_NetStorage.Open(m_Opts.id, m_Opts.netstorage_flags) :
             m_NetStorage.Create(m_Opts.netstorage_flags));
 
     if (IsOptionSet(eInput))
-        netfile.Write(m_Opts.input);
+        netstorage_object.Write(m_Opts.input);
     else {
         char buffer[IO_BUFFER_SIZE];
         size_t bytes_read;
 
         while ((bytes_read = fread(buffer, 1,
                 sizeof(buffer), m_Opts.input_stream)) > 0) {
-            netfile.Write(buffer, bytes_read);
+            netstorage_object.Write(buffer, bytes_read);
             if (feof(m_Opts.input_stream))
                 break;
         }
     }
 
-    netfile.Close();
+    netstorage_object.Close();
 
     if (!IsOptionSet(eOptionalID))
-        PrintLine(netfile.GetID());
+        PrintLine(netstorage_object.GetID());
 
     return 0;
 }
@@ -256,17 +256,18 @@ int CGridCommandLineInterfaceApp::Cmd_Download()
 {
     SetUp_NetStorageCmd(eNetStorageAPI);
 
-    CNetFile netfile(m_NetStorage.Open(m_Opts.id, m_Opts.netstorage_flags));
+    CNetStorageObject netstorage_object(m_NetStorage.Open(m_Opts.id,
+            m_Opts.netstorage_flags));
 
     char buffer[IO_BUFFER_SIZE];
     size_t bytes_read;
 
-    while (!netfile.Eof()) {
-        bytes_read = netfile.Read(buffer, sizeof(buffer));
+    while (!netstorage_object.Eof()) {
+        bytes_read = netstorage_object.Read(buffer, sizeof(buffer));
         fwrite(buffer, 1, bytes_read, m_Opts.output_stream);
     }
 
-    netfile.Close();
+    netstorage_object.Close();
 
     return 0;
 }
@@ -280,21 +281,21 @@ int CGridCommandLineInterfaceApp::Cmd_Relocate()
     return 0;
 }
 
-int CGridCommandLineInterfaceApp::Cmd_MkFileID()
+int CGridCommandLineInterfaceApp::Cmd_MkObjectID()
 {
     SetUp_NetStorageCmd(eNetStorageAPI);
 
-    auto_ptr<CNetFileID> file_id;
+    auto_ptr<CNetStorageObjectID> object_id;
 
     switch (IsOptionSet(eOptionalID, OPTION_N(0)) |
             IsOptionSet(eFileKey, OPTION_N(1)) |
             IsOptionSet(eNamespace, OPTION_N(2))) {
     case OPTION_N(0):
-        file_id.reset(new CNetFileID(m_CompoundIDPool, m_Opts.id));
+        object_id.reset(new CNetStorageObjectID(m_CompoundIDPool, m_Opts.id));
         break;
 
     case OPTION_N(1) + OPTION_N(2):
-        file_id.reset(new CNetFileID(m_CompoundIDPool,
+        object_id.reset(new CNetStorageObjectID(m_CompoundIDPool,
                 m_Opts.netstorage_flags, m_Opts.app_domain, m_Opts.id,
                 TFileTrack_Site::GetDefault().c_str()));
         break;
@@ -324,31 +325,32 @@ int CGridCommandLineInterfaceApp::Cmd_MkFileID()
     }
 
     if (IsOptionSet(eNetCache))
-        g_SetNetICacheParams(*file_id, m_NetICacheClient);
+        g_SetNetICacheParams(*object_id, m_NetICacheClient);
 
     if (m_Opts.netstorage_flags != 0)
-        file_id->SetStorageFlags(m_Opts.netstorage_flags);
+        object_id->SetStorageFlags(m_Opts.netstorage_flags);
 
     if (IsOptionSet(eTTL))
-        file_id->SetTTL(m_Opts.ttl);
+        object_id->SetTTL(m_Opts.ttl);
 
-    PrintLine(file_id->GetID());
+    PrintLine(object_id->GetID());
 
     return 0;
 }
 
-int CGridCommandLineInterfaceApp::Cmd_NetFileInfo()
+int CGridCommandLineInterfaceApp::Cmd_NetStorageObjectInfo()
 {
     SetUp_NetStorageCmd(eNetStorageAPI);
 
-    CNetFile netfile(m_NetStorage.Open(m_Opts.id, m_Opts.netstorage_flags));
+    CNetStorageObject netstorage_object(m_NetStorage.Open(m_Opts.id,
+            m_Opts.netstorage_flags));
 
-    g_PrintJSON(stdout, netfile.GetInfo().ToJSON());
+    g_PrintJSON(stdout, netstorage_object.GetInfo().ToJSON());
 
     return 0;
 }
 
-int CGridCommandLineInterfaceApp::Cmd_RemoveNetFile()
+int CGridCommandLineInterfaceApp::Cmd_RemoveNetStorageObject()
 {
     SetUp_NetStorageCmd(eNetStorageAPI);
 

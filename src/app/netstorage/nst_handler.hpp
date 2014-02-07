@@ -144,7 +144,7 @@ private:
     vector<CJsonNode>       m_OutputQueue;
 
 private:
-    CNetFile                m_ObjectStream;
+    CNetStorageObject       m_ObjectStream;
     Int8                    m_DataMessageSN;
 
 private:
@@ -207,14 +207,14 @@ private:
     string
     x_GetObjectKey(const CJsonNode &  message);
     void x_CheckNonAnonymousClient(void);
-    void x_CheckFileID(const string &  file_id);
+    void x_CheckObjectID(const string &  object_id);
     void x_CheckICacheSettings(const SICacheSettings &  icache_settings);
     void x_CheckUserKey(const SUserKey &  user_key);
     void x_GetStorageParams(const CJsonNode &   message,
                             SICacheSettings *   icache_settings,
                             SUserKey *          user_key,
                             TNetStorageFlags *  flags);
-    CNetFile x_CreateObjectStream(
+    CNetStorageObject x_CreateObjectStream(
                     const SICacheSettings &  icache_settings,
                     TNetStorageFlags         flags);
 

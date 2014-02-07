@@ -39,7 +39,7 @@
 BEGIN_NCBI_SCOPE
 
 /// @internal
-struct NCBI_XCONNECT_EXPORT SNetFileImpl : public CObject
+struct NCBI_XCONNECT_EXPORT SNetStorageObjectImpl : public CObject
 {
     virtual string GetID() = 0;
     virtual size_t Read(void* buffer, size_t buf_size) = 0;
@@ -50,62 +50,62 @@ struct NCBI_XCONNECT_EXPORT SNetFileImpl : public CObject
     virtual string GetAttribute(const string& attr_name) = 0;
     virtual void SetAttribute(const string& attr_name,
             const string& attr_value) = 0;
-    virtual CNetFileInfo GetInfo() = 0;
+    virtual CNetStorageObjectInfo GetInfo() = 0;
     virtual void Close() = 0;
 };
 
-inline string CNetFile::GetID()
+inline string CNetStorageObject::GetID()
 {
     return m_Impl->GetID();
 }
 
-inline size_t CNetFile::Read(void* buffer, size_t buf_size)
+inline size_t CNetStorageObject::Read(void* buffer, size_t buf_size)
 {
     return m_Impl->Read(buffer, buf_size);
 }
 
-inline void CNetFile::Read(string* data)
+inline void CNetStorageObject::Read(string* data)
 {
     m_Impl->Read(data);
 }
 
-inline bool CNetFile::Eof()
+inline bool CNetStorageObject::Eof()
 {
     return m_Impl->Eof();
 }
 
-inline void CNetFile::Write(const void* buffer, size_t buf_size)
+inline void CNetStorageObject::Write(const void* buffer, size_t buf_size)
 {
     m_Impl->Write(buffer, buf_size);
 }
 
-inline void CNetFile::Write(const string& data)
+inline void CNetStorageObject::Write(const string& data)
 {
     m_Impl->Write(data.data(), data.length());
 }
 
-inline Uint8 CNetFile::GetSize()
+inline Uint8 CNetStorageObject::GetSize()
 {
     return m_Impl->GetSize();
 }
 
-inline string CNetFile::GetAttribute(const string& attr_name)
+inline string CNetStorageObject::GetAttribute(const string& attr_name)
 {
     return m_Impl->GetAttribute(attr_name);
 }
 
-inline void CNetFile::SetAttribute(const string& attr_name,
+inline void CNetStorageObject::SetAttribute(const string& attr_name,
         const string& attr_value)
 {
     m_Impl->SetAttribute(attr_name, attr_value);
 }
 
-inline CNetFileInfo CNetFile::GetInfo()
+inline CNetStorageObjectInfo CNetStorageObject::GetInfo()
 {
     return m_Impl->GetInfo();
 }
 
-inline void CNetFile::Close()
+inline void CNetStorageObject::Close()
 {
     m_Impl->Close();
 }
@@ -113,44 +113,46 @@ inline void CNetFile::Close()
 /// @internal
 struct NCBI_XCONNECT_EXPORT SNetStorageImpl : public CObject
 {
-    virtual CNetFile Create(TNetStorageFlags flags = 0) = 0;
-    virtual CNetFile Open(const string& file_id,
+    virtual CNetStorageObject Create(TNetStorageFlags flags = 0) = 0;
+    virtual CNetStorageObject Open(const string& object_id,
             TNetStorageFlags flags = 0) = 0;
-    virtual string Relocate(const string& file_id, TNetStorageFlags flags) = 0;
-    virtual bool Exists(const string& file_id) = 0;
-    virtual void Remove(const string& file_id) = 0;
+    virtual string Relocate(const string& object_id,
+            TNetStorageFlags flags) = 0;
+    virtual bool Exists(const string& object_id) = 0;
+    virtual void Remove(const string& object_id) = 0;
 };
 
-inline CNetFile CNetStorage::Create(TNetStorageFlags flags)
+inline CNetStorageObject CNetStorage::Create(TNetStorageFlags flags)
 {
     return m_Impl->Create(flags);
 }
 
-inline CNetFile CNetStorage::Open(const string& file_id, TNetStorageFlags flags)
-{
-    return m_Impl->Open(file_id, flags);
-}
-
-inline string CNetStorage::Relocate(const string& file_id,
+inline CNetStorageObject CNetStorage::Open(const string& object_id,
         TNetStorageFlags flags)
 {
-    return m_Impl->Relocate(file_id, flags);
+    return m_Impl->Open(object_id, flags);
 }
 
-inline bool CNetStorage::Exists(const string& file_id)
+inline string CNetStorage::Relocate(const string& object_id,
+        TNetStorageFlags flags)
 {
-    return m_Impl->Exists(file_id);
+    return m_Impl->Relocate(object_id, flags);
 }
 
-inline void CNetStorage::Remove(const string& file_id)
+inline bool CNetStorage::Exists(const string& object_id)
 {
-    m_Impl->Remove(file_id);
+    return m_Impl->Exists(object_id);
+}
+
+inline void CNetStorage::Remove(const string& object_id)
+{
+    m_Impl->Remove(object_id);
 }
 
 /// @internal
 struct NCBI_XCONNECT_EXPORT SNetStorageByKeyImpl : public CObject
 {
-    virtual CNetFile Open(const string& unique_key,
+    virtual CNetStorageObject Open(const string& unique_key,
             TNetStorageFlags flags = 0) = 0;
     virtual string Relocate(const string& unique_key,
             TNetStorageFlags flags, TNetStorageFlags old_flags = 0) = 0;
@@ -158,7 +160,7 @@ struct NCBI_XCONNECT_EXPORT SNetStorageByKeyImpl : public CObject
     virtual void Remove(const string& key, TNetStorageFlags flags = 0) = 0;
 };
 
-inline CNetFile CNetStorageByKey::Open(const string& unique_key,
+inline CNetStorageObject CNetStorageByKey::Open(const string& unique_key,
         TNetStorageFlags flags)
 {
     return m_Impl->Open(unique_key, flags);
@@ -181,7 +183,7 @@ inline void CNetStorageByKey::Remove(const string& key, TNetStorageFlags flags)
 }
 
 /// @internal
-enum ENetFileCompoundIDCues {
+enum ENetStorageObjectCompoundIDCues {
     eNFCIDC_KeyAndNamespace,
     eNFCIDC_NetICache,
     eNFCIDC_AllowXSiteConn,
@@ -191,7 +193,7 @@ enum ENetFileCompoundIDCues {
 };
 
 /// @internal
-enum ENetFileIDFields {
+enum ENetStorageObjectIDFields {
     fNFID_KeyAndNamespace   = (1 << eNFCIDC_KeyAndNamespace),
     fNFID_NetICache         = (1 << eNFCIDC_NetICache),
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
@@ -201,8 +203,8 @@ enum ENetFileIDFields {
     fNFID_FileTrackDev      = (1 << eNFCIDC_FileTrackDev),
     fNFID_FileTrackQA       = (1 << eNFCIDC_FileTrackQA),
 };
-///< @internal Bitwise OR of ENetFileIDFields
-typedef unsigned char TNetFileIDFields;
+///< @internal Bitwise OR of ENetStorageObjectIDFields
+typedef unsigned char TNetStorageObjectIDFields;
 
 /// @internal
 enum EFileTrackSite {
@@ -217,19 +219,19 @@ NCBI_XCONNECT_EXPORT
 EFileTrackSite g_StringToFileTrackSite(const char* ft_site_name);
 
 /// @internal
-class NCBI_XCONNECT_EXPORT CNetFileID
+class NCBI_XCONNECT_EXPORT CNetStorageObjectID
 {
 public:
-    CNetFileID(CCompoundIDPool::TInstance cid_pool,
+    CNetStorageObjectID(CCompoundIDPool::TInstance cid_pool,
             TNetStorageFlags flags,
             Uint8 random_number,
             const char* ft_site_name);
-    CNetFileID(CCompoundIDPool::TInstance cid_pool,
+    CNetStorageObjectID(CCompoundIDPool::TInstance cid_pool,
             TNetStorageFlags flags,
             const string& app_domain,
             const string& unique_key,
             const char* ft_site_name);
-    CNetFileID(CCompoundIDPool::TInstance cid_pool,
+    CNetStorageObjectID(CCompoundIDPool::TInstance cid_pool,
             const string& packed_id);
 
     void SetStorageFlags(TNetStorageFlags storage_flags)
@@ -239,7 +241,7 @@ public:
     }
 
     TNetStorageFlags GetStorageFlags() const {return m_StorageFlags;}
-    TNetFileIDFields GetFields() const {return m_Fields;}
+    TNetStorageObjectIDFields GetFields() const {return m_Fields;}
 
     Int8 GetTimestamp() const {return m_Timestamp;}
     Uint8 GetRandom() const {return m_Random;}
@@ -304,13 +306,13 @@ private:
     void x_SetUniqueKeyFromUserDefinedKey();
 
     void x_Pack();
-    void SetFieldFlags(TNetFileIDFields flags) {m_Fields |= flags;}
-    void ClearFieldFlags(TNetFileIDFields flags) {m_Fields &= ~flags;}
+    void SetFieldFlags(TNetStorageObjectIDFields flags) {m_Fields |= flags;}
+    void ClearFieldFlags(TNetStorageObjectIDFields flags) {m_Fields &= ~flags;}
 
     CCompoundIDPool m_CompoundIDPool;
 
     TNetStorageFlags m_StorageFlags;
-    TNetFileIDFields m_Fields;
+    TNetStorageObjectIDFields m_Fields;
 
     Int8 m_Timestamp;
     Uint8 m_Random;

@@ -58,25 +58,27 @@ NCBI_PARAM_DEF(string, netstorage_api, backend_storage, "netcache, filetrack");
 NCBI_PARAM_DEF(string, filetrack, site, "prod");
 NCBI_PARAM_DEF(string, filetrack, api_key, kEmptyStr);
 
-struct SNetFileAPIImpl;
+struct SNetStorageObjectAPIImpl;
 
 struct SNetStorageAPIImpl : public SNetStorageImpl
 {
     SNetStorageAPIImpl(CNetICacheClient::TInstance icache_client,
             TNetStorageFlags default_flags);
 
-    virtual CNetFile Create(TNetStorageFlags flags = 0);
-    virtual CNetFile Open(const string& file_id, TNetStorageFlags flags = 0);
-    virtual string Relocate(const string& file_id, TNetStorageFlags flags);
-    virtual bool Exists(const string& file_id);
-    virtual void Remove(const string& file_id);
+    virtual CNetStorageObject Create(TNetStorageFlags flags = 0);
+    virtual CNetStorageObject Open(const string& object_id,
+            TNetStorageFlags flags = 0);
+    virtual string Relocate(const string& object_id, TNetStorageFlags flags);
+    virtual bool Exists(const string& object_id);
+    virtual void Remove(const string& object_id);
 
     TNetStorageFlags GetDefaultFlags(TNetStorageFlags flags)
     {
         return flags != 0 ? flags : m_DefaultFlags;
     }
 
-    string MoveFile(SNetFileAPIImpl* orig_file, SNetFileAPIImpl* new_file);
+    string MoveFile(SNetStorageObjectAPIImpl* orig_file,
+            SNetStorageObjectAPIImpl* new_file);
 
     CCompoundIDPool m_CompoundIDPool;
     CNetICacheClient m_NetICacheClient;
@@ -108,7 +110,7 @@ SNetStorageAPIImpl::SNetStorageAPIImpl(
     m_AvailableStorageMask |= fNST_Movable | fNST_Cacheable;
 }
 
-enum ENetFileIOStatus {
+enum ENetStorageObjectIOStatus {
     eNFS_Closed,
     eNFS_WritingToNetCache,
     eNFS_ReadingFromNetCache,
@@ -119,56 +121,57 @@ enum ENetFileIOStatus {
 class ITryLocation
 {
 public:
-    virtual bool TryLocation(ENetFileLocation location) = 0;
+    virtual bool TryLocation(ENetStorageObjectLocation location) = 0;
     virtual ~ITryLocation() {}
 };
 
-struct SNetFileAPIImpl : public SNetFileImpl
+struct SNetStorageObjectAPIImpl : public SNetStorageObjectImpl
 {
-    SNetFileAPIImpl(SNetStorageAPIImpl* storage_impl,
+    SNetStorageObjectAPIImpl(SNetStorageAPIImpl* storage_impl,
             TNetStorageFlags flags,
             Uint8 random_number,
             CNetICacheClient::TInstance icache_client) :
         m_NetStorage(storage_impl),
         m_NetICacheClient(icache_client),
-        m_FileID(storage_impl->m_CompoundIDPool, flags, random_number,
+        m_ObjectID(storage_impl->m_CompoundIDPool, flags, random_number,
                 TFileTrack_Site::GetDefault().c_str()),
         m_CurrentLocation(eNFL_Unknown),
         m_IOStatus(eNFS_Closed)
     {
-        g_SetNetICacheParams(m_FileID, icache_client);
+        g_SetNetICacheParams(m_ObjectID, icache_client);
     }
 
-    SNetFileAPIImpl(SNetStorageAPIImpl* storage_impl, const string& file_id) :
+    SNetStorageObjectAPIImpl(SNetStorageAPIImpl* storage_impl,
+            const string& object_id) :
         m_NetStorage(storage_impl),
         m_NetICacheClient(eVoid),
-        m_FileID(storage_impl->m_CompoundIDPool, file_id),
+        m_ObjectID(storage_impl->m_CompoundIDPool, object_id),
         m_CurrentLocation(eNFL_Unknown),
         m_IOStatus(eNFS_Closed)
     {
     }
 
-    SNetFileAPIImpl(SNetStorageAPIImpl* storage_impl,
+    SNetStorageObjectAPIImpl(SNetStorageAPIImpl* storage_impl,
             TNetStorageFlags flags,
             const string& domain_name,
             const string& unique_key,
             CNetICacheClient::TInstance icache_client) :
         m_NetStorage(storage_impl),
         m_NetICacheClient(icache_client),
-        m_FileID(storage_impl->m_CompoundIDPool,
+        m_ObjectID(storage_impl->m_CompoundIDPool,
                 flags, domain_name, unique_key,
                 TFileTrack_Site::GetDefault().c_str()),
         m_CurrentLocation(eNFL_Unknown),
         m_IOStatus(eNFS_Closed)
     {
-        g_SetNetICacheParams(m_FileID, icache_client);
+        g_SetNetICacheParams(m_ObjectID, icache_client);
     }
 
-    SNetFileAPIImpl(SNetStorageAPIImpl* storage_impl,
-            const CNetFileID& file_id) :
+    SNetStorageObjectAPIImpl(SNetStorageAPIImpl* storage_impl,
+            const CNetStorageObjectID& object_id) :
         m_NetStorage(storage_impl),
         m_NetICacheClient(eVoid),
-        m_FileID(file_id),
+        m_ObjectID(object_id),
         m_CurrentLocation(eNFL_Unknown),
         m_IOStatus(eNFS_Closed)
     {
@@ -182,7 +185,7 @@ struct SNetFileAPIImpl : public SNetFileImpl
     virtual string GetAttribute(const string& attr_name);
     virtual void SetAttribute(const string& attr_name,
             const string& attr_value);
-    virtual CNetFileInfo GetInfo();
+    virtual CNetStorageObjectInfo GetInfo();
     virtual void Close();
 
     bool SetNetICacheClient();
@@ -190,13 +193,13 @@ struct SNetFileAPIImpl : public SNetFileImpl
 
     CNetServer GetNetCacheServer();
 
-    const ENetFileLocation* GetPossibleFileLocations(); // For reading.
+    const ENetStorageObjectLocation* GetPossibleFileLocations(); // For reading.
     void ChooseLocation(); // For writing.
 
     ERW_Result s_ReadFromNetCache(char* buf, size_t count, size_t* bytes_read);
 
-    bool s_TryReadLocation(ENetFileLocation location, ERW_Result* rw_res,
-            char* buf, size_t count, size_t* bytes_read);
+    bool s_TryReadLocation(ENetStorageObjectLocation location,
+            ERW_Result* rw_res, char* buf, size_t count, size_t* bytes_read);
 
     ERW_Result BeginOrContinueReading(
             void* buf, size_t count, size_t* bytes_read = 0);
@@ -207,26 +210,26 @@ struct SNetFileAPIImpl : public SNetFileImpl
     void Locate();
     bool LocateAndTry(ITryLocation* try_object);
 
-    bool x_TryGetFileSizeFromLocation(ENetFileLocation location,
+    bool x_TryGetFileSizeFromLocation(ENetStorageObjectLocation location,
             Uint8* file_size);
 
-    bool x_TryGetInfoFromLocation(ENetFileLocation location,
-            CNetFileInfo* file_info);
+    bool x_TryGetInfoFromLocation(ENetStorageObjectLocation location,
+            CNetStorageObjectInfo* file_info);
 
-    bool x_ExistsAtLocation(ENetFileLocation location);
+    bool x_ExistsAtLocation(ENetStorageObjectLocation location);
 
     bool Exists();
     void Remove();
 
-    virtual ~SNetFileAPIImpl();
+    virtual ~SNetStorageObjectAPIImpl();
 
     CRef<SNetStorageAPIImpl,
             CNetComponentCounterLocker<SNetStorageAPIImpl> > m_NetStorage;
     CNetICacheClient m_NetICacheClient;
 
-    CNetFileID m_FileID;
-    ENetFileLocation m_CurrentLocation;
-    ENetFileIOStatus m_IOStatus;
+    CNetStorageObjectID m_ObjectID;
+    ENetStorageObjectLocation m_CurrentLocation;
+    ENetStorageObjectIOStatus m_IOStatus;
 
     auto_ptr<IEmbeddedStreamWriter> m_NetCacheWriter;
     auto_ptr<IReader> m_NetCacheReader;
@@ -237,16 +240,17 @@ struct SNetFileAPIImpl : public SNetFileImpl
     CRef<SFileTrackPostRequest> m_FileTrackPostRequest;
 };
 
-void g_SetNetICacheParams(CNetFileID& file_id, CNetICacheClient icache_client)
+void g_SetNetICacheParams(CNetStorageObjectID& object_id,
+        CNetICacheClient icache_client)
 {
     if (!icache_client)
-        file_id.ClearNetICacheParams();
+        object_id.ClearNetICacheParams();
     else {
         CNetService service(icache_client.GetService());
 
         CNetServer icache_server(service.Iterate().GetServer());
 
-        file_id.SetNetICacheParams(
+        object_id.SetNetICacheParams(
                 service.GetServiceName(), icache_client.GetCacheName(),
                 icache_server.GetHost(), icache_server.GetPort()
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
@@ -256,14 +260,14 @@ void g_SetNetICacheParams(CNetFileID& file_id, CNetICacheClient icache_client)
     }
 }
 
-bool SNetFileAPIImpl::SetNetICacheClient()
+bool SNetStorageObjectAPIImpl::SetNetICacheClient()
 {
     if (!m_NetICacheClient) {
-        if (m_FileID.GetFields() & fNFID_NetICache) {
-            m_NetICacheClient = CNetICacheClient(m_FileID.GetNCServiceName(),
-                    m_FileID.GetCacheName(), kEmptyStr);
+        if (m_ObjectID.GetFields() & fNFID_NetICache) {
+            m_NetICacheClient = CNetICacheClient(m_ObjectID.GetNCServiceName(),
+                    m_ObjectID.GetCacheName(), kEmptyStr);
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
-            if (m_FileID.GetFields() & fNFID_AllowXSiteConn)
+            if (m_ObjectID.GetFields() & fNFID_AllowXSiteConn)
                 m_NetICacheClient.GetService().AllowXSiteConnections();
 #endif
         } else if (m_NetStorage->m_NetICacheClient)
@@ -274,7 +278,7 @@ bool SNetFileAPIImpl::SetNetICacheClient()
     return true;
 }
 
-void SNetFileAPIImpl::DemandNetCache()
+void SNetStorageObjectAPIImpl::DemandNetCache()
 {
     if (!SetNetICacheClient()) {
         NCBI_THROW(CNetStorageException, eInvalidArg,
@@ -282,28 +286,29 @@ void SNetFileAPIImpl::DemandNetCache()
     }
 }
 
-CNetServer SNetFileAPIImpl::GetNetCacheServer()
+CNetServer SNetStorageObjectAPIImpl::GetNetCacheServer()
 {
-    return (m_FileID.GetFields() & fNFID_NetICache) == 0 ? CNetServer() :
-            m_NetICacheClient.GetService().GetServer(m_FileID.GetNetCacheIP(),
-                    m_FileID.GetNetCachePort());
+    return (m_ObjectID.GetFields() & fNFID_NetICache) == 0 ? CNetServer() :
+            m_NetICacheClient.GetService().GetServer(m_ObjectID.GetNetCacheIP(),
+                    m_ObjectID.GetNetCachePort());
 }
 
-static const ENetFileLocation s_TryNetCacheThenFileTrack[] =
+static const ENetStorageObjectLocation s_TryNetCacheThenFileTrack[] =
         {eNFL_NetCache, eNFL_FileTrack, eNFL_NotFound};
 
-static const ENetFileLocation s_NetCache[] =
+static const ENetStorageObjectLocation s_NetCache[] =
         {eNFL_NetCache, eNFL_NotFound};
 
-static const ENetFileLocation s_TryFileTrackThenNetCache[] =
+static const ENetStorageObjectLocation s_TryFileTrackThenNetCache[] =
         {eNFL_FileTrack, eNFL_NetCache, eNFL_NotFound};
 
-static const ENetFileLocation s_FileTrack[] =
+static const ENetStorageObjectLocation s_FileTrack[] =
         {eNFL_FileTrack, eNFL_NotFound};
 
-const ENetFileLocation* SNetFileAPIImpl::GetPossibleFileLocations()
+const ENetStorageObjectLocation*
+        SNetStorageObjectAPIImpl::GetPossibleFileLocations()
 {
-    TNetStorageFlags flags = m_FileID.GetStorageFlags();
+    TNetStorageFlags flags = m_ObjectID.GetStorageFlags();
 
     if (flags == 0)
         // Just guessing.
@@ -324,9 +329,9 @@ const ENetFileLocation* SNetFileAPIImpl::GetPossibleFileLocations()
     return s_NetCache;
 }
 
-void SNetFileAPIImpl::ChooseLocation()
+void SNetStorageObjectAPIImpl::ChooseLocation()
 {
-    TNetStorageFlags flags = m_FileID.GetStorageFlags();
+    TNetStorageFlags flags = m_ObjectID.GetStorageFlags();
 
     if (flags == 0)
         flags = (SetNetICacheClient() ? fNST_Fast : fNST_Persistent) &
@@ -340,7 +345,7 @@ void SNetFileAPIImpl::ChooseLocation()
     }
 }
 
-ERW_Result SNetFileAPIImpl::s_ReadFromNetCache(char* buf,
+ERW_Result SNetStorageObjectAPIImpl::s_ReadFromNetCache(char* buf,
         size_t count, size_t* bytes_read)
 {
     size_t iter_bytes_read;
@@ -369,12 +374,13 @@ ERW_Result SNetFileAPIImpl::s_ReadFromNetCache(char* buf,
     return rw_res;
 }
 
-bool SNetFileAPIImpl::s_TryReadLocation(ENetFileLocation location,
+bool SNetStorageObjectAPIImpl::s_TryReadLocation(
+        ENetStorageObjectLocation location,
         ERW_Result* rw_res, char* buf, size_t count, size_t* bytes_read)
 {
     if (location == eNFL_NetCache) {
         m_NetCacheReader.reset(m_NetICacheClient.GetReadStream(
-                m_FileID.GetUniqueKey(), 0, kEmptyStr,
+                m_ObjectID.GetUniqueKey(), 0, kEmptyStr,
                 &m_NetCache_BlobSize,
                 (nc_caching_mode = CNetCacheAPI::eCaching_Disable,
                 nc_server_to_use = GetNetCacheServer())));
@@ -388,7 +394,7 @@ bool SNetFileAPIImpl::s_TryReadLocation(ENetFileLocation location,
         }
     } else { /* location == eNFL_FileTrack */
         m_FileTrackRequest =
-                m_NetStorage->m_FileTrackAPI.StartDownload(&m_FileID);
+                m_NetStorage->m_FileTrackAPI.StartDownload(&m_ObjectID);
 
         try {
             *rw_res = m_FileTrackRequest->Read(buf, count, bytes_read);
@@ -407,7 +413,7 @@ bool SNetFileAPIImpl::s_TryReadLocation(ENetFileLocation location,
     return false;
 }
 
-ERW_Result SNetFileAPIImpl::BeginOrContinueReading(
+ERW_Result SNetStorageObjectAPIImpl::BeginOrContinueReading(
         void* buf, size_t count, size_t* bytes_read)
 {
     switch (m_IOStatus) {
@@ -416,7 +422,8 @@ ERW_Result SNetFileAPIImpl::BeginOrContinueReading(
         case eNFL_Unknown:
             {
                 ERW_Result rw_res = eRW_Success;
-                const ENetFileLocation* location = GetPossibleFileLocations();
+                const ENetStorageObjectLocation* location =
+                        GetPossibleFileLocations();
 
                 do
                     if (s_TryReadLocation(*location, &rw_res,
@@ -439,7 +446,7 @@ ERW_Result SNetFileAPIImpl::BeginOrContinueReading(
         }
 
         NCBI_THROW_FMT(CNetStorageException, eNotExists,
-                "Cannot open \"" << m_FileID.GetID() << "\" for reading.");
+                "Cannot open \"" << m_ObjectID.GetID() << "\" for reading.");
 
     case eNFS_ReadingFromNetCache:
         return s_ReadFromNetCache(reinterpret_cast<char*>(buf),
@@ -457,7 +464,7 @@ ERW_Result SNetFileAPIImpl::BeginOrContinueReading(
     return eRW_Success;
 }
 
-bool SNetFileAPIImpl::Eof()
+bool SNetStorageObjectAPIImpl::Eof()
 {
     switch (m_IOStatus) {
     case eNFS_Closed:
@@ -477,7 +484,7 @@ bool SNetFileAPIImpl::Eof()
             "Invalid file status: cannot check EOF status while writing.");
 }
 
-ERW_Result SNetFileAPIImpl::Write(const void* buf, size_t count,
+ERW_Result SNetStorageObjectAPIImpl::Write(const void* buf, size_t count,
         size_t* bytes_written)
 {
     switch (m_IOStatus) {
@@ -487,16 +494,16 @@ ERW_Result SNetFileAPIImpl::Write(const void* buf, size_t count,
 
         if (m_CurrentLocation == eNFL_NetCache) {
             m_NetCacheWriter.reset(m_NetICacheClient.GetNetCacheWriter(
-                    m_FileID.GetUniqueKey(), 0, kEmptyStr,
-                            nc_blob_ttl = (m_FileID.GetFields() & fNFID_TTL ?
-                                    (unsigned) m_FileID.GetTTL() : 0)));
+                    m_ObjectID.GetUniqueKey(), 0, kEmptyStr,
+                            nc_blob_ttl = (m_ObjectID.GetFields() & fNFID_TTL ?
+                                    (unsigned) m_ObjectID.GetTTL() : 0)));
 
             m_IOStatus = eNFS_WritingToNetCache;
 
             return m_NetCacheWriter->Write(buf, count, bytes_written);
         } else {
             m_FileTrackPostRequest =
-                    m_NetStorage->m_FileTrackAPI.StartUpload(&m_FileID);
+                    m_NetStorage->m_FileTrackAPI.StartUpload(&m_ObjectID);
 
             m_IOStatus = eNFS_WritingToFileTrack;
 
@@ -521,28 +528,30 @@ ERW_Result SNetFileAPIImpl::Write(const void* buf, size_t count,
 
 struct SCheckForExistence : public ITryLocation
 {
-    SCheckForExistence(SNetFileAPIImpl* netfile_api) :
-        m_NetFileAPI(netfile_api)
+    SCheckForExistence(SNetStorageObjectAPIImpl* netstorage_object_api) :
+        m_NetStorageObjectAPI(netstorage_object_api)
     {
     }
 
-    virtual bool TryLocation(ENetFileLocation location);
+    virtual bool TryLocation(ENetStorageObjectLocation location);
 
-    CRef<SNetFileAPIImpl,
-            CNetComponentCounterLocker<SNetFileAPIImpl> > m_NetFileAPI;
+    CRef<SNetStorageObjectAPIImpl, CNetComponentCounterLocker<
+            SNetStorageObjectAPIImpl> > m_NetStorageObjectAPI;
 };
 
-bool SCheckForExistence::TryLocation(ENetFileLocation location)
+bool SCheckForExistence::TryLocation(ENetStorageObjectLocation location)
 {
     try {
         if (location == eNFL_NetCache) {
-            if (m_NetFileAPI->m_NetICacheClient.HasBlob(
-                    m_NetFileAPI->m_FileID.GetUniqueKey(), kEmptyStr,
-                    nc_server_to_use = m_NetFileAPI->GetNetCacheServer()))
+            if (m_NetStorageObjectAPI->m_NetICacheClient.HasBlob(
+                    m_NetStorageObjectAPI->m_ObjectID.GetUniqueKey(), kEmptyStr,
+                    nc_server_to_use =
+                            m_NetStorageObjectAPI->GetNetCacheServer()))
                 return true;
         } else { /* location == eNFL_FileTrack */
-            if (!m_NetFileAPI->m_NetStorage->m_FileTrackAPI.GetFileInfo(
-                    &m_NetFileAPI->m_FileID).GetBoolean("deleted"))
+            if (!m_NetStorageObjectAPI->m_NetStorage->
+                    m_FileTrackAPI.GetFileInfo(
+                    &m_NetStorageObjectAPI->m_ObjectID).GetBoolean("deleted"))
                 return true;
         }
     }
@@ -553,14 +562,15 @@ bool SCheckForExistence::TryLocation(ENetFileLocation location)
     return false;
 }
 
-void SNetFileAPIImpl::Locate()
+void SNetStorageObjectAPIImpl::Locate()
 {
     SCheckForExistence check_for_existence(this);
 
     switch (m_CurrentLocation) {
     case eNFL_Unknown:
         {
-            const ENetFileLocation* location = GetPossibleFileLocations();
+            const ENetStorageObjectLocation* location =
+                    GetPossibleFileLocations();
 
             do
                 if (check_for_existence.TryLocation(*location)) {
@@ -574,7 +584,7 @@ void SNetFileAPIImpl::Locate()
     case eNFL_NotFound:
         {
             NCBI_THROW_FMT(CNetStorageException, eNotExists,
-                    "NetFile \"" << m_FileID.GetID() <<
+                    "NetStorageObject \"" << m_ObjectID.GetID() <<
                     "\" could not be found.");
         }
         break;
@@ -584,12 +594,13 @@ void SNetFileAPIImpl::Locate()
     }
 }
 
-bool SNetFileAPIImpl::LocateAndTry(ITryLocation* try_object)
+bool SNetStorageObjectAPIImpl::LocateAndTry(ITryLocation* try_object)
 {
     switch (m_CurrentLocation) {
     case eNFL_Unknown:
         {
-            const ENetFileLocation* location = GetPossibleFileLocations();
+            const ENetStorageObjectLocation* location =
+                    GetPossibleFileLocations();
 
             do
                 if (try_object->TryLocation(*location))
@@ -603,7 +614,7 @@ bool SNetFileAPIImpl::LocateAndTry(ITryLocation* try_object)
 
     default:
         {
-            CNetFileInfo file_info;
+            CNetStorageObjectInfo file_info;
             if (try_object->TryLocation(m_CurrentLocation))
                 return true;
         }
@@ -612,20 +623,21 @@ bool SNetFileAPIImpl::LocateAndTry(ITryLocation* try_object)
     return false;
 }
 
-bool SNetFileAPIImpl::x_TryGetFileSizeFromLocation(ENetFileLocation location,
+bool SNetStorageObjectAPIImpl::x_TryGetFileSizeFromLocation(
+        ENetStorageObjectLocation location,
         Uint8* file_size)
 {
     try {
         if (location == eNFL_NetCache) {
             *file_size = m_NetICacheClient.GetBlobSize(
-                    m_FileID.GetUniqueKey(), 0, kEmptyStr,
+                    m_ObjectID.GetUniqueKey(), 0, kEmptyStr,
                             nc_server_to_use = GetNetCacheServer());
 
             m_CurrentLocation = eNFL_NetCache;
             return true;
         } else { /* location == eNFL_FileTrack */
             *file_size = (Uint8) m_NetStorage->m_FileTrackAPI.GetFileInfo(
-                    &m_FileID).GetInteger("size");
+                    &m_ObjectID).GetInteger("size");
 
             m_CurrentLocation = eNFL_FileTrack;
             return true;
@@ -638,13 +650,14 @@ bool SNetFileAPIImpl::x_TryGetFileSizeFromLocation(ENetFileLocation location,
     return false;
 }
 
-Uint8 SNetFileAPIImpl::GetSize()
+Uint8 SNetStorageObjectAPIImpl::GetSize()
 {
     switch (m_CurrentLocation) {
     case eNFL_Unknown:
         {
             Uint8 file_size;
-            const ENetFileLocation* location = GetPossibleFileLocations();
+            const ENetStorageObjectLocation* location =
+                    GetPossibleFileLocations();
 
             do
                 if (x_TryGetFileSizeFromLocation(*location, &file_size))
@@ -666,39 +679,41 @@ Uint8 SNetFileAPIImpl::GetSize()
     }
 
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
-            "NetFile \"" << m_FileID.GetID() <<
+            "NetStorageObject \"" << m_ObjectID.GetID() <<
             "\" could not be found in any of the designated locations.");
 }
 
 struct STryGetAttr : public ITryLocation
 {
-    STryGetAttr(SNetFileAPIImpl* netfile_api, const string& attr_name) :
-        m_NetFileAPI(netfile_api),
+    STryGetAttr(SNetStorageObjectAPIImpl* netstorage_object_api,
+            const string& attr_name) :
+        m_NetStorageObjectAPI(netstorage_object_api),
         m_AttrName(attr_name)
     {
     }
 
-    virtual bool TryLocation(ENetFileLocation location);
+    virtual bool TryLocation(ENetStorageObjectLocation location);
 
-    CRef<SNetFileAPIImpl,
-            CNetComponentCounterLocker<SNetFileAPIImpl> > m_NetFileAPI;
+    CRef<SNetStorageObjectAPIImpl, CNetComponentCounterLocker<
+            SNetStorageObjectAPIImpl> > m_NetStorageObjectAPI;
     string m_AttrName;
     string m_AttrValue;
 };
 
-bool STryGetAttr::TryLocation(ENetFileLocation location)
+bool STryGetAttr::TryLocation(ENetStorageObjectLocation location)
 {
     try {
         if (location == eNFL_NetCache) {
             string attr_blob_id =
-                m_NetFileAPI->m_FileID.GetUniqueKey() + "_attr_";
+                m_NetStorageObjectAPI->m_ObjectID.GetUniqueKey() + "_attr_";
             attr_blob_id += m_AttrName;
 
             size_t blob_size;
 
-            auto_ptr<IReader> reader(m_NetFileAPI->m_NetICacheClient.
+            auto_ptr<IReader> reader(m_NetStorageObjectAPI->m_NetICacheClient.
                     GetReadStream(attr_blob_id, 0, kEmptyStr, &blob_size,
-                    nc_server_to_use = m_NetFileAPI->GetNetCacheServer()));
+                    nc_server_to_use =
+                            m_NetStorageObjectAPI->GetNetCacheServer()));
 
             if (reader.get() == NULL)
                 return false;
@@ -712,8 +727,9 @@ bool STryGetAttr::TryLocation(ENetFileLocation location)
                 return false;
             }
         } else { /* location == eNFL_FileTrack */
-            m_AttrValue = m_NetFileAPI->m_NetStorage->m_FileTrackAPI.
-                    GetFileAttribute(&m_NetFileAPI->m_FileID, m_AttrName);
+            m_AttrValue = m_NetStorageObjectAPI->m_NetStorage->m_FileTrackAPI.
+                    GetFileAttribute(
+                            &m_NetStorageObjectAPI->m_ObjectID, m_AttrName);
         }
 
         return true;
@@ -725,7 +741,7 @@ bool STryGetAttr::TryLocation(ENetFileLocation location)
     return false;
 }
 
-string SNetFileAPIImpl::GetAttribute(const string& attr_name)
+string SNetStorageObjectAPIImpl::GetAttribute(const string& attr_name)
 {
     STryGetAttr try_get_attr(this, attr_name);
 
@@ -734,15 +750,15 @@ string SNetFileAPIImpl::GetAttribute(const string& attr_name)
 
     NCBI_THROW_FMT(CNetStorageException, eNotExists,
             "Failed to retrieve attribute \"" << attr_name <<
-            "\" of \"" << m_FileID.GetID() << "\".");
+            "\" of \"" << m_ObjectID.GetID() << "\".");
 }
 
-void SNetFileAPIImpl::SetAttribute(const string& attr_name,
+void SNetStorageObjectAPIImpl::SetAttribute(const string& attr_name,
         const string& attr_value)
 {
     Locate();
     if (m_CurrentLocation == eNFL_NetCache) {
-        string attr_blob_id = m_FileID.GetUniqueKey() + "_attr_";
+        string attr_blob_id = m_ObjectID.GetUniqueKey() + "_attr_";
         attr_blob_id += attr_name;
 
         auto_ptr<IEmbeddedStreamWriter> writer(
@@ -752,17 +768,18 @@ void SNetFileAPIImpl::SetAttribute(const string& attr_name,
         writer->Close();
     } else { /* location == eNFL_FileTrack */
         m_NetStorage->m_FileTrackAPI.SetFileAttribute(
-                &m_FileID, attr_name, attr_value);
+                &m_ObjectID, attr_name, attr_value);
     }
 }
 
-bool SNetFileAPIImpl::x_TryGetInfoFromLocation(ENetFileLocation location,
-        CNetFileInfo* file_info)
+bool SNetStorageObjectAPIImpl::x_TryGetInfoFromLocation(
+        ENetStorageObjectLocation location,
+        CNetStorageObjectInfo* file_info)
 {
     if (location == eNFL_NetCache) {
         try {
             CNetServerMultilineCmdOutput output = m_NetICacheClient.GetBlobInfo(
-                    m_FileID.GetUniqueKey(), 0, kEmptyStr,
+                    m_ObjectID.GetUniqueKey(), 0, kEmptyStr,
                     nc_server_to_use = GetNetCacheServer());
 
             CJsonNode blob_info = CJsonNode::NewObjectNode();
@@ -787,10 +804,10 @@ bool SNetFileAPIImpl::x_TryGetInfoFromLocation(ENetFileLocation location,
 
             if (!got_blob_size)
                 blob_size = m_NetICacheClient.GetSize(
-                        m_FileID.GetUniqueKey(), 0, kEmptyStr);
+                        m_ObjectID.GetUniqueKey(), 0, kEmptyStr);
 
-            *file_info = CNetFileInfo(m_FileID.GetID(),
-                    eNFL_NetCache, m_FileID, blob_size, blob_info);
+            *file_info = CNetStorageObjectInfo(m_ObjectID.GetID(),
+                    eNFL_NetCache, m_ObjectID, blob_size, blob_info);
 
             m_CurrentLocation = eNFL_NetCache;
             return true;
@@ -801,7 +818,7 @@ bool SNetFileAPIImpl::x_TryGetInfoFromLocation(ENetFileLocation location,
     } else { /* location == eNFL_FileTrack */
         try {
             CJsonNode file_info_node =
-                    m_NetStorage->m_FileTrackAPI.GetFileInfo(&m_FileID);
+                    m_NetStorage->m_FileTrackAPI.GetFileInfo(&m_ObjectID);
 
             Uint8 file_size = 0;
 
@@ -810,8 +827,8 @@ bool SNetFileAPIImpl::x_TryGetInfoFromLocation(ENetFileLocation location,
             if (size_node)
                 file_size = (Uint8) size_node.AsInteger();
 
-            *file_info = CNetFileInfo(m_FileID.GetID(),
-                    eNFL_FileTrack, m_FileID, file_size, file_info_node);
+            *file_info = CNetStorageObjectInfo(m_ObjectID.GetID(),
+                    eNFL_FileTrack, m_ObjectID, file_size, file_info_node);
 
             m_CurrentLocation = eNFL_FileTrack;
             return true;
@@ -824,13 +841,14 @@ bool SNetFileAPIImpl::x_TryGetInfoFromLocation(ENetFileLocation location,
     return false;
 }
 
-CNetFileInfo SNetFileAPIImpl::GetInfo()
+CNetStorageObjectInfo SNetStorageObjectAPIImpl::GetInfo()
 {
     switch (m_CurrentLocation) {
     case eNFL_Unknown:
         {
-            CNetFileInfo file_info;
-            const ENetFileLocation* location = GetPossibleFileLocations();
+            CNetStorageObjectInfo file_info;
+            const ENetStorageObjectLocation* location =
+                    GetPossibleFileLocations();
 
             do
                 if (x_TryGetInfoFromLocation(*location, &file_info))
@@ -844,20 +862,22 @@ CNetFileInfo SNetFileAPIImpl::GetInfo()
 
     default:
         {
-            CNetFileInfo file_info;
+            CNetStorageObjectInfo file_info;
             if (x_TryGetInfoFromLocation(m_CurrentLocation, &file_info))
                 return file_info;
         }
     }
 
-    return CNetFileInfo(m_FileID.GetID(), eNFL_NotFound, m_FileID, 0, NULL);
+    return CNetStorageObjectInfo(m_ObjectID.GetID(),
+            eNFL_NotFound, m_ObjectID, 0, NULL);
 }
 
-bool SNetFileAPIImpl::x_ExistsAtLocation(ENetFileLocation location)
+bool SNetStorageObjectAPIImpl::x_ExistsAtLocation(
+        ENetStorageObjectLocation location)
 {
     if (location == eNFL_NetCache) {
         try {
-            if (!m_NetICacheClient.HasBlob(m_FileID.GetUniqueKey(),
+            if (!m_NetICacheClient.HasBlob(m_ObjectID.GetUniqueKey(),
                     kEmptyStr, nc_server_to_use = GetNetCacheServer()))
                 return false;
 
@@ -870,7 +890,7 @@ bool SNetFileAPIImpl::x_ExistsAtLocation(ENetFileLocation location)
     } else { /* location == eNFL_FileTrack */
         try {
             if (m_NetStorage->m_FileTrackAPI.GetFileInfo(
-                    &m_FileID).GetBoolean("deleted"))
+                    &m_ObjectID).GetBoolean("deleted"))
                 return false;
 
             m_CurrentLocation = eNFL_FileTrack;
@@ -884,12 +904,13 @@ bool SNetFileAPIImpl::x_ExistsAtLocation(ENetFileLocation location)
     return false;
 }
 
-bool SNetFileAPIImpl::Exists()
+bool SNetStorageObjectAPIImpl::Exists()
 {
     switch (m_CurrentLocation) {
     case eNFL_Unknown:
         {
-            const ENetFileLocation* location = GetPossibleFileLocations();
+            const ENetStorageObjectLocation* location =
+                    GetPossibleFileLocations();
 
             do
                 if (x_ExistsAtLocation(*location))
@@ -908,12 +929,12 @@ bool SNetFileAPIImpl::Exists()
     return false;
 }
 
-void SNetFileAPIImpl::Remove()
+void SNetStorageObjectAPIImpl::Remove()
 {
     if (m_CurrentLocation == eNFL_Unknown ||
             m_CurrentLocation == eNFL_FileTrack)
         try {
-            m_NetStorage->m_FileTrackAPI.Remove(&m_FileID);
+            m_NetStorage->m_FileTrackAPI.Remove(&m_ObjectID);
         }
         catch (CException& e) {
             LOG_POST(Trace << e);
@@ -922,7 +943,7 @@ void SNetFileAPIImpl::Remove()
     if (m_CurrentLocation == eNFL_Unknown ||
             m_CurrentLocation == eNFL_NetCache)
         try {
-            m_NetICacheClient.RemoveBlob(m_FileID.GetUniqueKey(), 0,
+            m_NetICacheClient.RemoveBlob(m_ObjectID.GetUniqueKey(), 0,
                     kEmptyStr, nc_server_to_use = GetNetCacheServer());
         }
         catch (CException& e) {
@@ -932,7 +953,7 @@ void SNetFileAPIImpl::Remove()
     m_CurrentLocation = eNFL_NotFound;
 }
 
-void SNetFileAPIImpl::Close()
+void SNetStorageObjectAPIImpl::Close()
 {
     switch (m_IOStatus) {
     default: /* case eNFS_Closed: */
@@ -962,7 +983,7 @@ void SNetFileAPIImpl::Close()
     }
 }
 
-SNetFileAPIImpl::~SNetFileAPIImpl()
+SNetStorageObjectAPIImpl::~SNetStorageObjectAPIImpl()
 {
     try {
         Close();
@@ -970,12 +991,12 @@ SNetFileAPIImpl::~SNetFileAPIImpl()
     NCBI_CATCH_ALL("Error while implicitly closing a NetStorage file.");
 }
 
-string SNetFileAPIImpl::GetID()
+string SNetStorageObjectAPIImpl::GetID()
 {
-    return m_FileID.GetID();
+    return m_ObjectID.GetID();
 }
 
-size_t SNetFileAPIImpl::Read(void* buffer, size_t buf_size)
+size_t SNetStorageObjectAPIImpl::Read(void* buffer, size_t buf_size)
 {
     size_t bytes_read;
 
@@ -984,12 +1005,12 @@ size_t SNetFileAPIImpl::Read(void* buffer, size_t buf_size)
     return bytes_read;
 }
 
-void SNetFileAPIImpl::Write(const void* buffer, size_t buf_size)
+void SNetStorageObjectAPIImpl::Write(const void* buffer, size_t buf_size)
 {
     Write(buffer, buf_size, NULL);
 }
 
-CNetFile SNetStorageAPIImpl::Create(TNetStorageFlags flags)
+CNetStorageObject SNetStorageAPIImpl::Create(TNetStorageFlags flags)
 {
     // Restrict to available storage backends.
     flags &= m_AvailableStorageMask;
@@ -1022,34 +1043,37 @@ CNetFile SNetStorageAPIImpl::Create(TNetStorageFlags flags)
     random_number = m_FileTrackAPI.GetRandom();
 #endif // NCBI_OS_MSWIN
 
-    CRef<SNetFileAPIImpl, CNetComponentCounterLocker<SNetFileAPIImpl> >
-            netfile(new SNetFileAPIImpl(this, GetDefaultFlags(flags),
+    CRef<SNetStorageObjectAPIImpl, CNetComponentCounterLocker<
+            SNetStorageObjectAPIImpl> > netstorage_object(
+                    new SNetStorageObjectAPIImpl(this, GetDefaultFlags(flags),
                     random_number, m_NetICacheClient));
 
-    return netfile.GetPointerOrNull();
+    return netstorage_object.GetPointerOrNull();
 }
 
-CNetFile SNetStorageAPIImpl::Open(const string& file_id, TNetStorageFlags flags)
+CNetStorageObject SNetStorageAPIImpl::Open(
+        const string& object_id, TNetStorageFlags flags)
 {
     flags &= m_AvailableStorageMask;
 
-    CRef<SNetFileAPIImpl, CNetComponentCounterLocker<SNetFileAPIImpl> >
-            netfile(new SNetFileAPIImpl(this, file_id));
+    CRef<SNetStorageObjectAPIImpl, CNetComponentCounterLocker<
+            SNetStorageObjectAPIImpl> > netstorage_object(
+                    new SNetStorageObjectAPIImpl(this, object_id));
 
     if (flags != 0)
-        netfile->m_FileID.SetStorageFlags(flags);
+        netstorage_object->m_ObjectID.SetStorageFlags(flags);
 
-    return netfile.GetPointerOrNull();
+    return netstorage_object.GetPointerOrNull();
 }
 
-string SNetStorageAPIImpl::MoveFile(SNetFileAPIImpl* orig_file,
-        SNetFileAPIImpl* new_file)
+string SNetStorageAPIImpl::MoveFile(SNetStorageObjectAPIImpl* orig_file,
+        SNetStorageObjectAPIImpl* new_file)
 {
     new_file->ChooseLocation();
 
     if (new_file->m_CurrentLocation == eNFL_NetCache &&
-            (new_file->m_FileID.GetFields() & fNFID_NetICache) == 0)
-        g_SetNetICacheParams(new_file->m_FileID, m_NetICacheClient);
+            (new_file->m_ObjectID.GetFields() & fNFID_NetICache) == 0)
+        g_SetNetICacheParams(new_file->m_ObjectID, m_NetICacheClient);
 
     char buffer[RELOCATION_BUFFER_SIZE];
 
@@ -1073,43 +1097,48 @@ string SNetStorageAPIImpl::MoveFile(SNetFileAPIImpl* orig_file,
         orig_file->Remove();
     }
 
-    return new_file->m_FileID.GetID();
+    return new_file->m_ObjectID.GetID();
 }
 
-string SNetStorageAPIImpl::Relocate(const string& file_id,
+string SNetStorageAPIImpl::Relocate(const string& object_id,
         TNetStorageFlags flags)
 {
     flags &= m_AvailableStorageMask;
 
     if (flags == 0)
-        return file_id;
+        return object_id;
 
-    CRef<SNetFileAPIImpl, CNetComponentCounterLocker<SNetFileAPIImpl> >
-            orig_file(new SNetFileAPIImpl(this, file_id));
+    CRef<SNetStorageObjectAPIImpl, CNetComponentCounterLocker<
+            SNetStorageObjectAPIImpl> >
+                    orig_file(new SNetStorageObjectAPIImpl(this, object_id));
 
-    if (orig_file->m_FileID.GetStorageFlags() == flags)
-        return file_id;
+    if (orig_file->m_ObjectID.GetStorageFlags() == flags)
+        return object_id;
 
-    CRef<SNetFileAPIImpl, CNetComponentCounterLocker<SNetFileAPIImpl> >
-            new_file(new SNetFileAPIImpl(this, orig_file->m_FileID));
+    CRef<SNetStorageObjectAPIImpl, CNetComponentCounterLocker<
+            SNetStorageObjectAPIImpl> >
+                    new_file(new SNetStorageObjectAPIImpl(this,
+                                orig_file->m_ObjectID));
 
-    new_file->m_FileID.SetStorageFlags(flags);
+    new_file->m_ObjectID.SetStorageFlags(flags);
 
     return MoveFile(orig_file, new_file);
 }
 
-bool SNetStorageAPIImpl::Exists(const string& file_id)
+bool SNetStorageAPIImpl::Exists(const string& object_id)
 {
-    CRef<SNetFileAPIImpl, CNetComponentCounterLocker<SNetFileAPIImpl> >
-            net_file(new SNetFileAPIImpl(this, file_id));
+    CRef<SNetStorageObjectAPIImpl, CNetComponentCounterLocker<
+            SNetStorageObjectAPIImpl> >
+                    net_file(new SNetStorageObjectAPIImpl(this, object_id));
 
     return net_file->Exists();
 }
 
-void SNetStorageAPIImpl::Remove(const string& file_id)
+void SNetStorageAPIImpl::Remove(const string& object_id)
 {
-    CRef<SNetFileAPIImpl, CNetComponentCounterLocker<SNetFileAPIImpl> >
-            net_file(new SNetFileAPIImpl(this, file_id));
+    CRef<SNetStorageObjectAPIImpl, CNetComponentCounterLocker<
+            SNetStorageObjectAPIImpl> >
+                    net_file(new SNetStorageObjectAPIImpl(this, object_id));
 
     return net_file->Remove();
 }
@@ -1131,7 +1160,7 @@ struct SNetStorageByKeyAPIImpl : public SNetStorageByKeyImpl
         }
     }
 
-    virtual CNetFile Open(const string& unique_key,
+    virtual CNetStorageObject Open(const string& unique_key,
             TNetStorageFlags flags = 0);
     virtual string Relocate(const string& unique_key,
             TNetStorageFlags flags, TNetStorageFlags old_flags = 0);
@@ -1144,10 +1173,10 @@ struct SNetStorageByKeyAPIImpl : public SNetStorageByKeyImpl
     string m_DomainName;
 };
 
-CNetFile SNetStorageByKeyAPIImpl::Open(const string& unique_key,
+CNetStorageObject SNetStorageByKeyAPIImpl::Open(const string& unique_key,
         TNetStorageFlags flags)
 {
-    return new SNetFileAPIImpl(m_APIImpl,
+    return new SNetStorageObjectAPIImpl(m_APIImpl,
             m_APIImpl->GetDefaultFlags(flags) &
                     m_APIImpl->m_AvailableStorageMask,
             m_DomainName, unique_key, m_APIImpl->m_NetICacheClient);
@@ -1156,23 +1185,28 @@ CNetFile SNetStorageByKeyAPIImpl::Open(const string& unique_key,
 string SNetStorageByKeyAPIImpl::Relocate(const string& unique_key,
         TNetStorageFlags flags, TNetStorageFlags old_flags)
 {
-    CRef<SNetFileAPIImpl, CNetComponentCounterLocker<SNetFileAPIImpl> >
-            orig_file(new SNetFileAPIImpl(m_APIImpl, old_flags,
-                    m_DomainName, unique_key, m_APIImpl->m_NetICacheClient));
+    CRef<SNetStorageObjectAPIImpl, CNetComponentCounterLocker<
+            SNetStorageObjectAPIImpl> >
+                    orig_file(new SNetStorageObjectAPIImpl(m_APIImpl, old_flags,
+                            m_DomainName, unique_key,
+                            m_APIImpl->m_NetICacheClient));
 
-    CRef<SNetFileAPIImpl, CNetComponentCounterLocker<SNetFileAPIImpl> >
-            new_file(new SNetFileAPIImpl(m_APIImpl,
-                    flags & m_APIImpl->m_AvailableStorageMask,
-                    m_DomainName, unique_key, m_APIImpl->m_NetICacheClient));
+    CRef<SNetStorageObjectAPIImpl, CNetComponentCounterLocker<
+            SNetStorageObjectAPIImpl> >
+                    new_file(new SNetStorageObjectAPIImpl(m_APIImpl,
+                            flags & m_APIImpl->m_AvailableStorageMask,
+                            m_DomainName, unique_key,
+                            m_APIImpl->m_NetICacheClient));
 
     return m_APIImpl->MoveFile(orig_file, new_file);
 }
 
 bool SNetStorageByKeyAPIImpl::Exists(const string& key, TNetStorageFlags flags)
 {
-    CRef<SNetFileAPIImpl, CNetComponentCounterLocker<SNetFileAPIImpl> >
-            net_file(new SNetFileAPIImpl(m_APIImpl,
-                    m_APIImpl->GetDefaultFlags(flags),
+    CRef<SNetStorageObjectAPIImpl, CNetComponentCounterLocker<
+            SNetStorageObjectAPIImpl> >
+                    net_file(new SNetStorageObjectAPIImpl(m_APIImpl,
+                            m_APIImpl->GetDefaultFlags(flags),
                             m_DomainName, key, m_APIImpl->m_NetICacheClient));
 
     return net_file->Exists();
@@ -1180,9 +1214,10 @@ bool SNetStorageByKeyAPIImpl::Exists(const string& key, TNetStorageFlags flags)
 
 void SNetStorageByKeyAPIImpl::Remove(const string& key, TNetStorageFlags flags)
 {
-    CRef<SNetFileAPIImpl, CNetComponentCounterLocker<SNetFileAPIImpl> >
-            net_file(new SNetFileAPIImpl(m_APIImpl,
-                    m_APIImpl->GetDefaultFlags(flags),
+    CRef<SNetStorageObjectAPIImpl, CNetComponentCounterLocker<
+            SNetStorageObjectAPIImpl> >
+                    net_file(new SNetStorageObjectAPIImpl(m_APIImpl,
+                            m_APIImpl->GetDefaultFlags(flags),
                             m_DomainName, key, m_APIImpl->m_NetICacheClient));
 
     net_file->Remove();

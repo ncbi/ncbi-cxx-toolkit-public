@@ -242,10 +242,10 @@ Checks:
 
 8. GETOBJECTINFO
 
-8.1 Bad FileID
+8.1 Bad ObjectID
 Steps:
 - start server
-- send GETOBJECTINFO with FileID set to 'blah'
+- send GETOBJECTINFO with ObjectID set to 'blah'
 
 Checks:
 - the server reply status is ERROR
@@ -269,10 +269,10 @@ should be tested as follows:
 - make sure the object is where it is supposed to be
 
 
-9.x Bad FileID
+9.x Bad ObjectID
 Steps:
 - start server
-- send WRITE message with malformed FileID
+- send WRITE message with malformed ObjectID
 
 Checks:
 - server reply status is ERROR
@@ -346,10 +346,10 @@ Checks:
 - server reply status is ERROR
 
 
-10.7 Read with bad FileID
+10.7 Read with bad ObjectID
 Steps:
 - start server
-- send READ message with malformed FileID
+- send READ message with malformed ObjectID
 
 Checks:
 - server reply status is ERROR
@@ -397,10 +397,10 @@ Checks:
 - server reply status is OK
 
 
-11.5 Delete with bad FileID
+11.5 Delete with bad ObjectID
 Steps:
 - start server
-- send DELETE message with malformed FileID
+- send DELETE message with malformed ObjectID
 
 Checks:
 - server reply status is ERROR
@@ -493,7 +493,7 @@ Checks:
 12.9 Relocate with bad file ID
 Steps:
 - start server
-- relocate an object using a malformed FileID
+- relocate an object using a malformed ObjectID
 
 Checks:
 - the server reply status is ERROR
@@ -539,10 +539,10 @@ Checks:
 - the server reply status is OK and the object does not exist
 
 
-13.5 Bad FileID
+13.5 Bad ObjectID
 Steps:
 - start server
-- send the EXISTS message with malformed FileID
+- send the EXISTS message with malformed ObjectID
 
 Checks:
 - the server reply is ERROR
@@ -588,10 +588,10 @@ Checks:
 - the server reply status is ERROR
 
 
-14.5 Bad FileID
+14.5 Bad ObjectID
 Steps:
 - start server
-- send the GETSIZE message with malformed FileID
+- send the GETSIZE message with malformed ObjectID
 
 Checks:
 - the server reply is ERROR

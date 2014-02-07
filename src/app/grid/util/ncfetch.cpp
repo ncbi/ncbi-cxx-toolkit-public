@@ -164,7 +164,7 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
         case eCIC_NetCacheKey:
             x_FetchNetCacheBlob(request, reply, key);
             break;
-        case eCIC_NetStorageFileID:
+        case eCIC_NetStorageObjectID:
             if (m_NetStorage)
                 x_FetchNetStorageObject(request, reply, key);
             else {
@@ -236,12 +236,12 @@ void CNetCacheBlobFetchApp::x_FetchNetStorageObject(
         CCgiResponse& reply,
         const string& key)
 {
-    CNetFile netfile(m_NetStorage.Open(key));
+    CNetStorageObject netstorage_object(m_NetStorage.Open(key));
 
     char buffer[NETSTORAGE_IO_BUFFER_SIZE];
 
-    while (!netfile.Eof()) {
-        size_t bytes_read = netfile.Read(buffer, sizeof(buffer));
+    while (!netstorage_object.Eof()) {
+        size_t bytes_read = netstorage_object.Read(buffer, sizeof(buffer));
 
         reply.out().write(buffer, bytes_read);
 
@@ -249,7 +249,7 @@ void CNetCacheBlobFetchApp::x_FetchNetStorageObject(
             break;
     }
 
-    netfile.Close();
+    netstorage_object.Close();
 }
 
 int CNetCacheBlobFetchApp::OnException(std::exception& e, CNcbiOstream& os)

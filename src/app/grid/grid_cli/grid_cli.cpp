@@ -78,7 +78,8 @@ struct SOptionDefinition {
 
     {OPT_DEF(ePositionalArgument, eAppUID), "APP_UID", NULL, {-1}},
 
-    {OPT_DEF(ePositionalArgument, eNetFileID), "FILE_ID", NULL, {-1}},
+    {OPT_DEF(ePositionalArgument, eNetStorageObjectID),
+            "OBJECT_ID", NULL, {-1}},
 
     {OPT_DEF(ePositionalArgument, eAttrName), "ATTR_NAME", NULL, {-1}},
 
@@ -615,8 +616,8 @@ struct SCommandDefinition {
             eFileTrackSite, eFileTrackAPIKey, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
-    {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_MkFileID,
-        "mkfileid", "Turn a user-defined key into a NetFile ID.",
+    {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_MkObjectID,
+        "mkobjectid", "Turn a user-defined key into a NetStorage object ID.",
         "Take a unique user-defined key/namespace pair (or an "
         "existing file ID) and make a new file ID. The resulting "
         "file ID will reflect storage preferences specified by the "
@@ -627,33 +628,35 @@ struct SCommandDefinition {
             eLoginToken, eAuth, eFileTrackSite,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
-    {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_NetFileInfo,
-        "netfileinfo", "Print information about a NetFile ID.",
+    {eNetStorageCommand,
+            &CGridCommandLineInterfaceApp::Cmd_NetStorageObjectInfo,
+        "objectinfo", "Print information about a NetStorage object ID.",
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
         {eID, eNetStorage, eNetCache, eCache, eLoginToken, eAuth, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
-    {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_RemoveNetFile,
-        "rmnetfile", "Remove a NetFile by its ID.",
+    {eNetStorageCommand,
+            &CGridCommandLineInterfaceApp::Cmd_RemoveNetStorageObject,
+        "rmobject", "Remove a NetStorage object by its ID.",
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
         {eID, eNetStorage, eNetCache, eCache, eLoginToken, eAuth, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_GetAttr,
-        "getattr", "Get a NetFile attribute value.",
+        "getattr", "Get a NetStorage object attribute value.",
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
-        {eNetFileID, eAttrName, eNetStorage,
+        {eNetStorageObjectID, eAttrName, eNetStorage,
             eNetCache, eCache, eLoginToken, eAuth, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
     {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_SetAttr,
-        "setattr", "Set a NetFile attribute value.",
+        "setattr", "Set a NetStorage object attribute value.",
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
-        {eNetFileID, eAttrName, eAttrValue, eNetStorage,
+        {eNetStorageObjectID, eAttrName, eAttrValue, eNetStorage,
             eNetCache, eCache, eLoginToken, eAuth,
             eFileTrackAPIKey, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
@@ -1251,7 +1254,7 @@ int CGridCommandLineInterfaceApp::Run()
                 MarkOptionAsExplicitlySet(eID);
                 /* FALL THROUGH */
             case eID:
-            case eNetFileID:
+            case eNetStorageObjectID:
             case eFileKey:
             case eJobId:
             case eTargetQueueArg:

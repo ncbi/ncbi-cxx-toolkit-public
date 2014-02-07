@@ -67,7 +67,7 @@ EFileTrackSite g_StringToFileTrackSite(const char* ft_site_name)
     }
 }
 
-CNetFileID::CNetFileID(CCompoundIDPool::TInstance cid_pool,
+CNetStorageObjectID::CNetStorageObjectID(CCompoundIDPool::TInstance cid_pool,
         TNetStorageFlags flags, Uint8 random_number,
         const char* ft_site_name) :
     m_CompoundIDPool(cid_pool),
@@ -82,7 +82,7 @@ CNetFileID::CNetFileID(CCompoundIDPool::TInstance cid_pool,
     x_SetUniqueKeyFromRandom();
 }
 
-CNetFileID::CNetFileID(CCompoundIDPool::TInstance cid_pool,
+CNetStorageObjectID::CNetStorageObjectID(CCompoundIDPool::TInstance cid_pool,
         TNetStorageFlags flags,
         const string& app_domain,
         const string& unique_key,
@@ -101,14 +101,14 @@ CNetFileID::CNetFileID(CCompoundIDPool::TInstance cid_pool,
 
 #define THROW_INVALID_ID_ERROR(packed_id) \
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg, \
-                "Invalid NetFile ID '" << (packed_id) << '\'')
+                "Invalid NetStorageObject ID '" << (packed_id) << '\'')
 
 #define VERIFY_FIELD_EXISTS(field) \
         if (!(field)) { \
             THROW_INVALID_ID_ERROR(packed_id); \
         }
 
-CNetFileID::CNetFileID(CCompoundIDPool::TInstance cid_pool,
+CNetStorageObjectID::CNetStorageObjectID(CCompoundIDPool::TInstance cid_pool,
         const string& packed_id) :
     m_CompoundIDPool(cid_pool),
     m_Dirty(false),
@@ -117,7 +117,7 @@ CNetFileID::CNetFileID(CCompoundIDPool::TInstance cid_pool,
     CCompoundID cid = m_CompoundIDPool.FromString(packed_id);
 
     // 1. Check the ID class.
-    if (cid.GetClass() != eCIC_NetStorageFileID) {
+    if (cid.GetClass() != eCIC_NetStorageObjectID) {
         THROW_INVALID_ID_ERROR(packed_id);
     }
 
@@ -128,7 +128,7 @@ CNetFileID::CNetFileID(CCompoundIDPool::TInstance cid_pool,
 
     // 3. Restore the field flags.
     VERIFY_FIELD_EXISTS(field = field.GetNextHomogeneous());
-    m_Fields = (TNetFileIDFields) field.GetFlags();
+    m_Fields = (TNetStorageObjectIDFields) field.GetFlags();
 
     // 4. Restore file identification.
     if (m_Fields & fNFID_KeyAndNamespace) {
@@ -180,14 +180,14 @@ CNetFileID::CNetFileID(CCompoundIDPool::TInstance cid_pool,
     }
 }
 
-void CNetFileID::ClearNetICacheParams()
+void CNetStorageObjectID::ClearNetICacheParams()
 {
     m_Dirty = true;
 
     ClearFieldFlags(fNFID_NetICache);
 }
 
-void CNetFileID::SetNetICacheParams(const string& service_name,
+void CNetStorageObjectID::SetNetICacheParams(const string& service_name,
         const string& cache_name, Uint4 server_ip, unsigned short server_port
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
         , bool allow_xsite_conn
@@ -211,7 +211,7 @@ void CNetFileID::SetNetICacheParams(const string& service_name,
 #endif
 }
 
-void CNetFileID::SetFileTrackSite(EFileTrackSite ft_site)
+void CNetStorageObjectID::SetFileTrackSite(EFileTrackSite ft_site)
 {
     m_Dirty = true;
 
@@ -223,14 +223,14 @@ void CNetFileID::SetFileTrackSite(EFileTrackSite ft_site)
         m_Fields |= fNFID_FileTrackQA;
 }
 
-EFileTrackSite CNetFileID::GetFileTrackSite()
+EFileTrackSite CNetStorageObjectID::GetFileTrackSite()
 {
     return m_Fields & fNFID_FileTrackDev ? eFileTrack_DevSite :
             m_Fields & fNFID_FileTrackQA ? eFileTrack_QASite :
                     eFileTrack_ProdSite;
 }
 
-string CNetFileID::GetFileTrackURL()
+string CNetStorageObjectID::GetFileTrackURL()
 {
     switch (GetFileTrackSite()) {
     default:
@@ -244,7 +244,7 @@ string CNetFileID::GetFileTrackURL()
     }
 }
 
-void CNetFileID::x_SetFileTrackSite(const char* ft_site_name)
+void CNetStorageObjectID::x_SetFileTrackSite(const char* ft_site_name)
 {
     switch (g_StringToFileTrackSite(ft_site_name)) {
     case eFileTrack_DevSite:
@@ -257,22 +257,22 @@ void CNetFileID::x_SetFileTrackSite(const char* ft_site_name)
     }
 }
 
-void CNetFileID::x_SetUniqueKeyFromRandom()
+void CNetStorageObjectID::x_SetUniqueKeyFromRandom()
 {
     m_UniqueKey = NStr::NumericToString(m_Timestamp) + '_';
     m_UniqueKey.append(NStr::NumericToString(m_Random));
 }
 
-void CNetFileID::x_SetUniqueKeyFromUserDefinedKey()
+void CNetStorageObjectID::x_SetUniqueKeyFromUserDefinedKey()
 {
     m_UniqueKey = m_AppDomain + '_';
     m_UniqueKey.append(m_UserKey);
 }
 
-void CNetFileID::x_Pack()
+void CNetStorageObjectID::x_Pack()
 {
     // 1. Allocate a new CompoundID object.
-    CCompoundID cid = m_CompoundIDPool.NewID(eCIC_NetStorageFileID);
+    CCompoundID cid = m_CompoundIDPool.NewID(eCIC_NetStorageObjectID);
 
     // 2. Save the storage flags.
     cid.AppendFlags(m_StorageFlags);
@@ -317,7 +317,7 @@ void CNetFileID::x_Pack()
     m_Dirty = false;
 }
 
-CJsonNode CNetFileID::ToJSON() const
+CJsonNode CNetStorageObjectID::ToJSON() const
 {
     CJsonNode root(CJsonNode::NewObjectNode());
 

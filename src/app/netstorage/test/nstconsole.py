@@ -418,12 +418,12 @@ class NetStorageConsole:
             print "Exactly one argument is required "
             return
 
-        fileID = arguments[ 0 ]
+        objectID = arguments[ 0 ]
 
         message = { 'Type':         'DELETE',
                     'SessionID':    '1111111111111111_0000SID',
                     'ClientIP':     hostIP,
-                    'FileID':       fileID }
+                    'ObjectID':     objectID }
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
@@ -437,12 +437,12 @@ class NetStorageConsole:
             print "Exactly one argument is required "
             return
 
-        fileID = arguments[ 0 ]
+        objectID = arguments[ 0 ]
 
         message = { 'Type':         'READ',
                     'SessionID':    '1111111111111111_0000SID',
                     'ClientIP':     hostIP,
-                    'FileID':       fileID }
+                    'ObjectID':     objectID }
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
@@ -478,11 +478,11 @@ class NetStorageConsole:
             print "Exactly one argument is required "
             return
 
-        fileID = arguments[ 0 ]
+        objectID = arguments[ 0 ]
         message = { 'Type':         'EXISTS',
                     'SessionID':    '1111111111111111_0000SID',
                     'ClientIP':     hostIP,
-                    'FileID':       fileID }
+                    'ObjectID':     objectID }
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
@@ -495,11 +495,11 @@ class NetStorageConsole:
             print "Exactly one argument is required "
             return
 
-        fileID = arguments[ 0 ]
+        objectID = arguments[ 0 ]
         message = { 'Type':         'GETSIZE',
                     'SessionID':    '1111111111111111_0000SID',
                     'ClientIP':     hostIP,
-                    'FileID':       fileID }
+                    'ObjectID':     objectID }
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
@@ -512,11 +512,11 @@ class NetStorageConsole:
             print "Exactly one argument is required "
             return
 
-        fileID = arguments[ 0 ]
+        objectID = arguments[ 0 ]
         message = { 'Type':         'GETOBJECTINFO',
                     'SessionID':    '1111111111111111_0000SID',
                     'ClientIP':     hostIP,
-                    'FileID':       fileID }
+                    'ObjectID':     objectID }
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
@@ -529,12 +529,12 @@ class NetStorageConsole:
             print "Exactly one argument is required "
             return
 
-        fileID = arguments[ 0 ]
+        objectID = arguments[ 0 ]
 
         message = { 'Type':         'GETATTR',
                     'SessionID':    '1111111111111111_0000SID',
                     'ClientIP':     hostIP,
-                    'FileID':       fileID }
+                    'ObjectID':     objectID }
 
         response = self.exchange( message )
         if "Status" not in response or response[ "Status" ] != "OK":
@@ -551,7 +551,7 @@ class NetStorageConsole:
         message = { 'Type':         'RELOCATE',
                     'SessionID':    '1111111111111111_0000SID',
                     'ClientIP':     hostIP,
-                    'FileID':       srcID,
+                    'ObjectID':     srcID,
                     'NewLocation':  json.loads( ' '.join( arguments[ 1 : ] ) ) }
 
         response = self.exchange( message )
