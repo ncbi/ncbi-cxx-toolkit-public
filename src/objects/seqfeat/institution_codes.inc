@@ -7028,6 +7028,7 @@ static const char* const kInstitutionCollectionCodeList[] = {
 "ZUFSM<BRA>	s	Universidade Federal de Santa Maria, Laboratorio de Herpetologia",
 "ZULU	s	University of Zululand, Botany Department",
 "ZUMT	s	Department of Zoology, University Museum",
+"ZUTC	s	Zoological Museum University of Tehran",
 "ZV	s	Technical University, Department of Phytology",
 "ZVC	s	Depto. de Zoologia Vertebrados de la Facultad de Humanidades y Ciencias",
 "ZVCB<URY>	s	Vertebrate Collection, Facultad de Ciencias, Universidad de la Republica",
