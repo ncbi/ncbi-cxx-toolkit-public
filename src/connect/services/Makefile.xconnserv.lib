@@ -11,7 +11,8 @@ SRC     = grid_worker ns_client_factory grid_worker_app \
           netcache_key netcache_rw netcache_params netcache_api \
           netcache_api_admin \
           netservice_protocol_parser util clparser json_over_uttp netstorage_rpc \
-          netfileid netfileinfo pack_int ns_output_parser compound_id compound_id_v0
+          netstorageobjectid netstorageobjectinfo pack_int ns_output_parser \
+          compound_id compound_id_v0
 
 LIB     = xconnserv
 PROJ_TAG = core

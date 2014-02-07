@@ -45,14 +45,14 @@ USING_NCBI_SCOPE;
 
 static const string s_TestData("The quick brown fox jumps over the lazy dog.");
 
-static void s_ReadAndCompare(CNetStorageObject file)
+static void s_ReadAndCompare(CNetStorageObject netstorage_object)
 {
     char buffer[10];
     const char* expected = s_TestData.data();
     size_t remaining_size = s_TestData.length();
 
-    while (!file.Eof()) {
-        size_t bytes_read = file.Read(buffer, sizeof(buffer));
+    while (!netstorage_object.Eof()) {
+        size_t bytes_read = netstorage_object.Read(buffer, sizeof(buffer));
 
         BOOST_CHECK_MESSAGE(bytes_read <= remaining_size,
                 "Got more data than expected");
@@ -63,61 +63,61 @@ static void s_ReadAndCompare(CNetStorageObject file)
         remaining_size -= bytes_read;
     }
 
-    file.Close();
+    netstorage_object.Close();
 
     BOOST_CHECK_MESSAGE(remaining_size == 0, "Got less data than expected");
 }
 
-static string s_WriteAndRead(CNetStorageObject new_file)
+static string s_WriteAndRead(CNetStorageObject new_netstorage_object)
 {
-    new_file.Write(s_TestData);
+    new_netstorage_object.Write(s_TestData);
 
-    // Now close the file and then read it entirely
+    // Now close the object and then read it entirely
     // into a string.
-    new_file.Close();
+    new_netstorage_object.Close();
 
     string data;
     data.reserve(10);
 
-    new_file.Read(&data);
+    new_netstorage_object.Read(&data);
 
     // Make sure the data is not corrupted.
     BOOST_CHECK_MESSAGE(data == s_TestData, "Read(string*) is broken");
 
-    return new_file.GetID();
+    return new_netstorage_object.GetID();
 }
 
 void g_TestNetStorage(CNetStorage netstorage)
 {
-    // Create a file that should to go to NetCache.
+    // Create a NetStorage object that should to go to NetCache.
     string object_id = s_WriteAndRead(
             netstorage.Create(fNST_Fast | fNST_Movable));
 
-    // Now read the whole file using the buffered version
+    // Now read the whole object using the buffered version
     // of Read(). Verify that the contents of each buffer
     // match the original data.
-    CNetStorageObject orig_file = netstorage.Open(object_id);
+    CNetStorageObject orig_netstorage_object = netstorage.Open(object_id);
 
-    s_ReadAndCompare(orig_file);
+    s_ReadAndCompare(orig_netstorage_object);
 
-    // Generate a "non-movable" file ID by calling Relocate()
-    // with the same storage preferences (so the file should not
+    // Generate a "non-movable" object ID by calling Relocate()
+    // with the same storage preferences (so the object should not
     // be actually relocated).
     string fast_storage_object_id = netstorage.Relocate(object_id, fNST_Fast);
 
-    // Relocate the file to a persistent storage.
+    // Relocate the object to a persistent storage.
     string persistent_id = netstorage.Relocate(object_id, fNST_Persistent);
 
-    // Verify that the file has disappeared from the "fast" storage.
-    CNetStorageObject fast_storage_file =
+    // Verify that the object has disappeared from the "fast" storage.
+    CNetStorageObject fast_storage_object =
             netstorage.Open(fast_storage_object_id);
 
-    // Make sure the relocated file does not exists in the
+    // Make sure the relocated object does not exists in the
     // original storage anymore.
-    BOOST_CHECK_THROW(s_ReadAndCompare(fast_storage_file),
+    BOOST_CHECK_THROW(s_ReadAndCompare(fast_storage_object),
             CNetStorageException);
 
-    // However, the file must still be accessible
+    // However, the object must still be accessible
     // either using the original ID:
     s_ReadAndCompare(netstorage.Open(object_id));
     // or using the newly generated persistent storage ID:
@@ -136,11 +136,11 @@ void g_TestNetStorageByKey(CNetStorageByKey netstorage)
     // Write and read test data using a user-defined key.
     s_WriteAndRead(netstorage.Open(unique_key, fNST_Fast | fNST_Movable));
 
-    // Make sure the file is readable with a different combination of flags.
+    // Make sure the object is readable with a different combination of flags.
     s_ReadAndCompare(netstorage.Open(unique_key,
             fNST_Persistent | fNST_Movable));
 
-    // Relocate the file to FileTrack and make sure
+    // Relocate the object to FileTrack and make sure
     // it can be read from there.
     netstorage.Relocate(unique_key, fNST_Persistent, fNST_Movable);
 

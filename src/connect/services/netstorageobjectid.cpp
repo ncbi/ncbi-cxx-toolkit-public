@@ -101,7 +101,7 @@ CNetStorageObjectID::CNetStorageObjectID(CCompoundIDPool::TInstance cid_pool,
 
 #define THROW_INVALID_ID_ERROR(packed_id) \
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg, \
-                "Invalid NetStorageObject ID '" << (packed_id) << '\'')
+                "Invalid NetStorage object ID '" << (packed_id) << '\'')
 
 #define VERIFY_FIELD_EXISTS(field) \
         if (!(field)) { \
