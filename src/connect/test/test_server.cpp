@@ -363,7 +363,9 @@ static STimeout kAcceptTimeout = { 1, 0 };
 int CServerTestApp::Run(void)
 {
     SetDiagPostLevel(eDiag_Info);
-    SetDiagPostAllFlags(eDPF_Severity | eDPF_OmitInfoSev | eDPF_ErrorID);
+    SetDiagPostAllFlags((SetDiagPostAllFlags(eDPF_Default) & ~eDPF_All)
+                        | eDPF_Severity | eDPF_OmitInfoSev | eDPF_ErrorID);
+    SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
 
 #if defined(NCBI_OS_MSWIN)  ||  defined(NCBI_OS_CYGWIN)
     CRequestRateControl rate_control(6);

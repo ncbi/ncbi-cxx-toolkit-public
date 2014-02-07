@@ -88,9 +88,10 @@ int main(int argc, char* argv[])
 
     SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Info);
-    SetDiagPostAllFlags(eDPF_DateTime    | eDPF_Severity |
-                        eDPF_OmitInfoSev | eDPF_ErrorID  |
-                        eDPF_Prefix);
+    SetDiagPostAllFlags((SetDiagPostAllFlags(eDPF_Default) & ~eDPF_All)
+                        | eDPF_DateTime    | eDPF_Severity
+                        | eDPF_OmitInfoSev | eDPF_ErrorID
+                        | eDPF_Prefix);
     SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
 
     s_NumThreads = 2; // default is small

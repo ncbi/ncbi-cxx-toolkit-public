@@ -262,8 +262,10 @@ int main(int argc, char* argv[])
 
     SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Info);
-    SetDiagPostAllFlags(eDPF_DateTime    | eDPF_Severity |
-                        eDPF_OmitInfoSev | eDPF_ErrorID);
+    SetDiagPostAllFlags((SetDiagPostAllFlags(eDPF_Default) & ~eDPF_All)
+                        | eDPF_DateTime    | eDPF_Severity
+                        | eDPF_OmitInfoSev | eDPF_ErrorID);
+    SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
 
     ERR_POST(Info << "Testing NCBI CRWStream API");
 

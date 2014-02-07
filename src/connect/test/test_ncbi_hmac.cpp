@@ -90,7 +90,8 @@ int main(int argc, char* argv[])
     // Setup error posting
     SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Trace);
-    SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
+    SetDiagPostAllFlags(eSetDiagPostAllFlags(eDPF_Default)
+                        | DPF_All | eDPF_OmitInfoSev);
     UnsetDiagPostFlag(eDPF_Line);
     UnsetDiagPostFlag(eDPF_File);
     UnsetDiagPostFlag(eDPF_Location);

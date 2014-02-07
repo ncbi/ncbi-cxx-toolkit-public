@@ -584,7 +584,8 @@ int main(int argc, const char* argv[])
     // Setup error posting
     SetDiagTrace(eDT_Enable);
     SetDiagPostLevel(eDiag_Trace);
-    SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
+    SetDiagPostAllFlags(SetDiagPostAllFlags(eDPF_Default)
+                        | eDPF_All | eDPF_OmitInfoSev);
     UnsetDiagPostFlag(eDPF_Line);
     UnsetDiagPostFlag(eDPF_File);
     UnsetDiagPostFlag(eDPF_Location);

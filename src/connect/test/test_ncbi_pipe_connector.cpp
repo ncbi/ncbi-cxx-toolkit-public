@@ -69,12 +69,14 @@ static void x_SetupDiag(const char* who)
 {
     // Set error posting and tracing on maximum
     //SetDiagTrace(eDT_Enable);
-    SetDiagPostAllFlags(eDPF_All | eDPF_OmitInfoSev);
+    SetDiagPostLevel(eDiag_Info);
+    SetDiagPostAllFlags(SetDiagPostAllFlags(eDPF_Default)
+                        | eDPF_All | eDPF_OmitInfoSev);
     UnsetDiagPostFlag(eDPF_Line);
     UnsetDiagPostFlag(eDPF_File);
     UnsetDiagPostFlag(eDPF_Location);
     UnsetDiagPostFlag(eDPF_LongFilename);
-    SetDiagPostLevel(eDiag_Info);
+    SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
 
     SetDiagPostPrefix(who);
 
