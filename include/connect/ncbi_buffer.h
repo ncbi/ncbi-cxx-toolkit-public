@@ -26,7 +26,7 @@
  *
  * ===========================================================================
  *
- * Author:  Denis Vakatov
+ * Author:  Denis Vakatov, Anton Lavrentiev
  *
  * File Description:
  *   Memory-resident FIFO storage area (to be used e.g. in I/O buffering)
@@ -50,10 +50,6 @@
  *
  */
 
-#if defined(NCBIBUF__H)
-#  error "<ncbibuf.h> and <ncbi_buffer.h> must never be #include'd together"
-#endif
-
 #include <connect/connect_export.h>
 #include <stddef.h>     /* ...to define "size_t"... */
 
@@ -69,8 +65,8 @@ extern "C" {
 #endif
 
 
-struct BUF_tag;
-typedef struct BUF_tag* BUF;  /* handle of a buffer */
+struct SNcbiBuf;
+typedef struct SNcbiBuf* BUF;  /* handle of a buffer */
 
 
 /*!

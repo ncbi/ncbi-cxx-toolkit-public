@@ -50,19 +50,19 @@ typedef struct SBufChunkTag {
 
 /* Buffer
  */
-typedef struct BUF_tag {
+struct SNcbiBuf {
     SBufChunk* list;    /* the linked list of chunks                         */
     SBufChunk* last;    /* shortcut to the last chunk in the list            */
     size_t     unit;    /* chunk size unit                                   */
     size_t     size;    /* total buffer size; m.b.consistent at all times    */
-} BUF_struct;
+};
 
 
 extern size_t BUF_SetChunkSize(BUF* buf, size_t chunk_size)
 {
     /* create buffer internals, if not created yet */
     if (!*buf) {
-        if (!(*buf = (BUF_struct*) malloc(sizeof(**buf))))
+        if (!(*buf = (struct SNcbiBuf*) malloc(sizeof(**buf))))
             return 0;
         (*buf)->list = (*buf)->last = 0;
         (*buf)->size = 0;
