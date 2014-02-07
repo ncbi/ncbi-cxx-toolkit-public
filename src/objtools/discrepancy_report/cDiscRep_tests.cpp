@@ -11144,17 +11144,19 @@ void CSeqEntry_DISC_INCONSISTENT_MOLTYPES :: TestOnObj(const CSeq_entry& seq_ent
           continue;
       }
       const CMolInfo* molinfo = sequence::GetMolInfo(*b_ci);
-      biomol_nm = CMolInfo::ENUM_METHOD_NAME(EBiomol)()
+      if (molinfo) {
+        biomol_nm = CMolInfo::ENUM_METHOD_NAME(EBiomol)()
                        ->FindName(molinfo->GetBiomol(), false);
-      mol_nm = CSeq_inst::ENUM_METHOD_NAME(EMol)()
+        mol_nm = CSeq_inst::ENUM_METHOD_NAME(EMol)()
                   ->FindName(b_ci->GetInst_Mol(), false);
-      strtmp = entry_no + "$" + biomol_nm + " " + mol_nm;
-      CConstRef <CBioseq> seq_ref = b_ci->GetCompleteBioseq();
-      thisInfo.test_item_list[GetName()]
+        strtmp = entry_no + "$" + biomol_nm + " " + mol_nm;
+        CConstRef <CBioseq> seq_ref = b_ci->GetCompleteBioseq();
+        thisInfo.test_item_list[GetName()]
                  .push_back(strtmp + "#" + GetDiscItemText(*seq_ref));
-      strtmp = "$" + entry_no + "#" + biomol_nm + " " + mol_nm;
-      thisInfo.test_item_objs[GetName() + strtmp]
+        strtmp = "$" + entry_no + "#" + biomol_nm + " " + mol_nm;
+        thisInfo.test_item_objs[GetName() + strtmp]
                  .push_back(CConstRef <CObject> (seq_ref.GetPointer()));
+      }
    } 
    m_entry_no ++;
 };
