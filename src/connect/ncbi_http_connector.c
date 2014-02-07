@@ -1026,19 +1026,21 @@ static EIO_Status s_ReadHeader(SHttpConnector* uuu,
         }
     }}
 
-    if (tmp  &&  !uuu->net_info->debug_printout) {
-        char text[40];
-        assert(http_code);
-        if (!url)
-            url = ConnNetInfo_URL(uuu->net_info);
-        if (http_code > 0)
-            sprintf(text, "%d", http_code);
-        else
-            strncpy0(text, "occurred", sizeof(text) - 1);
-        CORE_LOGF_X(22, eLOG_Error,
-                    ("[HTTP%s%s]  Fatal error %s",
-                     url ? "; " : "",
-                     url ? url  : "", text));
+    if (tmp) {
+        if (!uuu->net_info->debug_printout) {
+            char text[40];
+            assert(http_code);
+            if (!url)
+                url = ConnNetInfo_URL(uuu->net_info);
+            if (http_code > 0)
+                sprintf(text, "%d", http_code);
+            else
+                strncpy0(text, "occurred", sizeof(text) - 1);
+            CORE_LOGF_X(22, eLOG_Error,
+                        ("[HTTP%s%s]  Fatal error %s",
+                         url ? "; " : "",
+                         url ? url  : "", text));
+        }
         if (!uuu->adjust)
             uuu->net_info->max_try = 0;
     }
