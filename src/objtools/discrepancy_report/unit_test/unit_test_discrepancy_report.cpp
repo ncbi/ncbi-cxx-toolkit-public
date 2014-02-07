@@ -148,12 +148,12 @@ NCBITEST_AUTO_FINI()
     cout << "Finalization function executed" << endl;
 }
 
-void RunTest(CRef <CRepConfig>& config, CRef <CClickableItem>& c_item)
+void RunTest(CRef <CClickableItem>& c_item, const string& setting_name)
 {
    config->CollectTests();
    config->Run();
    CDiscRepOutput output_obj;
-   output_obj.Export(c_item);
+   output_obj.Export(c_item, setting_name);
 };
 
 void CheckReport(CRef <CClickableItem>& c_item, const string& msg)
@@ -162,13 +162,63 @@ void CheckReport(CRef <CClickableItem>& c_item, const string& msg)
       NCBITEST_CHECK_MESSAGE(!c_item.Empty(), "no report");
    }
    else {
-/*
      NCBITEST_CHECK_MESSAGE(c_item->item_list.size() == c_item->obj_list.size(),
               "The sizes of item_list and obj_list are not equal");
-*/
      NCBITEST_CHECK_MESSAGE(c_item->description == msg,
               "Test report is incorrect: " + c_item->description);
    }
+};
+
+CRef <CSeq_feat> MakeRNAFeatWithExtName(const CRef <CSeq_entry> nuc_entry, CRNA_ref::EType type, const string ext_name)
+{
+   CRef <CSeq_feat> rna_feat(new CSeq_feat);
+   CRef <CRNA_ref::C_Ext> rna_ext (new CRNA_ref::C_Ext);
+   rna_ext->SetName(ext_name);
+   CRef <CRNA_ref> rna_ref(new CRNA_ref);
+   rna_ref->SetType(type);
+   rna_ref->SetExt(*rna_ext);
+   rna_feat->SetData().SetRna(*rna_ref);
+   rna_feat->SetLocation().SetInt().SetId().Assign(*(nuc_entry->GetSeq().GetId().front()));
+   rna_feat->SetLocation().SetInt().SetFrom(0);
+   rna_feat->SetLocation().SetInt().SetTo(nuc_entry->GetSeq().GetInst().GetLength()-1);
+   return rna_feat;
+};
+
+BOOST_AUTO_TEST_CASE(DISC_SUSPECT_RRNA_PRODUCTS)
+{
+   CRef <CSeq_entry> entry = BuildGoodNucProtSet();
+
+   // add rrna onto nucleotide sequence
+   CRef <CSeq_entry> nuc_entry = GetNucleotideSequenceFromGoodNucProtSet(entry);
+   CRef <CSeq_feat> 
+     new_rna =MakeRNAFeatWithExtName(nuc_entry, CRNA_ref::eType_rRNA,"5s_rRNA");
+   AddFeat(new_rna, nuc_entry);
+   new_rna = MakeRNAFeatWithExtName(nuc_entry, CRNA_ref::eType_rRNA,"16s_rRNA");
+   AddFeat(new_rna, nuc_entry);
+   new_rna = MakeRNAFeatWithExtName(nuc_entry, CRNA_ref::eType_rRNA,"23s_rRNA");
+   AddFeat(new_rna, nuc_entry);
+   new_rna 
+      = MakeRNAFeatWithExtName(nuc_entry, CRNA_ref::eType_rRNA,"partial 16S");
+   AddFeat(new_rna, nuc_entry);
+   new_rna 
+    = MakeRNAFeatWithExtName(nuc_entry, CRNA_ref::eType_rRNA,"12S rRNA domain");
+   AddFeat(new_rna, nuc_entry);
+   new_rna 
+    =MakeRNAFeatWithExtName(nuc_entry, CRNA_ref::eType_rRNA,"8S ribosomal RNA");
+   AddFeat(new_rna, nuc_entry);
+
+   // change protein name
+   SetNucProtSetProductName(entry, "fake domain");
+
+   CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+   CRef <CScope> scope(new CScope(*objmgr));
+   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+   config->SetTopLevelSeqEntry(&seh);
+
+   config->SetArg("e", "DISC_SUSPECT_RRNA_PRODUCTS");
+   CRef <CClickableItem> c_item(0);
+   RunTest(c_item, "DISC_FLATFILE_FIND_ONCALLER");
+   CheckReport(c_item, "7 rRNA product names contain suspect phrase");
 };
 
 BOOST_AUTO_TEST_CASE(DISC_FLATFILE_FIND_ONCALLER)
@@ -180,15 +230,12 @@ BOOST_AUTO_TEST_CASE(DISC_FLATFILE_FIND_ONCALLER)
    CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
    config->SetTopLevelSeqEntry(&seh);
    
-   NON_CONST_ITERATE (list <CRef <CSeq_entry> >, it, entry->SetSet().SetSeq_set()){
-      if ( (*it)->SetSeq().IsAa()) {
-         (*it)->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("SHAEMNVV");
-      }
-   }
+   CRef <CSeq_entry> prot_entry = entry->SetSet().SetSeq_set().back();
+   prot_entry->SetSeq().SetInst().SetSeq_data().SetIupacaa().Set("SHAEMNVV");
 
    config->SetArg("e", "DISC_FLATFILE_FIND_ONCALLER");
    CRef <CClickableItem> c_item(0);
-   RunTest(config, c_item);
+   RunTest(c_item, "DISC_FLATFILE_FIND_ONCALLER");
    CheckReport(c_item, "1 object contains haem");
 };
 
@@ -220,7 +267,7 @@ BOOST_AUTO_TEST_CASE(DUP_GENPRODSET_PROTEIN)
    config->SetTopLevelSeqEntry(&seh);
    config->SetArg("e", "DUP_GENPRODSET_PROTEIN");
    CRef <CClickableItem> c_item(0);
-   RunTest(config, c_item);
+   RunTest(c_item, "DUP_GENPRODSET_PROTEIN");
    CheckReport(c_item, "2 coding regions have protein ID prot");
 };
 
@@ -235,7 +282,7 @@ BOOST_AUTO_TEST_CASE(MISSING_GENPRODSET_TRANSCRIPT_ID)
    config->SetTopLevelSeqEntry(&seh);
    config->SetArg("e", "MISSING_GENPRODSET_TRANSCRIPT_ID");
    CRef <CClickableItem> c_item(0);   
-   RunTest(config, c_item); 
+   RunTest(c_item, "MISSING_GENPRODSET_TRANSCRIPT_ID"); 
    if (!c_item.Empty()) {
       NCBITEST_CHECK_MESSAGE(c_item.Empty(), 
                "Wrong report: " + c_item->description);
@@ -258,7 +305,7 @@ BOOST_AUTO_TEST_CASE(MISSING_GENPRODSET_TRANSCRIPT_ID)
    scope.Reset(new CScope(*objmgr));
    seh = scope->AddTopLevelSeqEntry(*entry);
    config->SetTopLevelSeqEntry(&seh);
-   RunTest(config, c_item);
+   RunTest(c_item, "MISSING_GENPRODSET_TRANSCRIPT_ID");
    CheckReport(c_item, "1 mRNA has missing transcript ID.");
 };
 
@@ -282,11 +329,8 @@ BOOST_AUTO_TEST_CASE(MISSING_LOCUS_TAGS)
    
    config->SetTopLevelSeqEntry(&seh);
    config->SetArg("e", "MISSING_LOCUS_TAGS");
-   config->CollectTests();
-   config->Run();
    CRef <CClickableItem> c_item(0);
-   CDiscRepOutput output_obj;
-   output_obj.Export(c_item);
+   RunTest(c_item, "MISSING_LOCUS_TAGS");
    CheckReport(c_item, "1 gene has no locus tags.");
 };
 
@@ -302,11 +346,8 @@ BOOST_AUTO_TEST_CASE(DISC_COUNT_NUCLEOTIDES)
 
    config->SetTopLevelSeqEntry(&seh);
    config->SetArg("e", "DISC_COUNT_NUCLEOTIDES");
-   config->CollectTests();
-   config->Run();
    CRef <CClickableItem> c_item(0);
-   CDiscRepOutput output_obj;
-   output_obj.Export(c_item);
+   RunTest(c_item, "DISC_COUNT_NUCLEOTIDES");
    CheckReport(c_item, "1 nucleotide Bioseq is present.");
 };
 

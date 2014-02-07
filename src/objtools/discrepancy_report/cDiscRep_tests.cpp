@@ -10655,6 +10655,7 @@ CFlatFileConfig::CGenbankBlockCallback::EAction CFlatfileTextFind::unified_notif
 {
   block_text 
     =CTestAndRepData::FindReplaceString(block_text, m_taxname, "", false, true);
+
   //ITERATE (Str2UInt, it, thisInfo.whole_word) {
   ITERATE (Str2CombDt, it, thisInfo.fix_data) {
      CConstRef <CObject> obj_ref;
@@ -10765,10 +10766,12 @@ void CSeqEntry_DISC_FLATFILE_FIND_ONCALLER :: GetReport(CRef <CClickableItem>& c
    m_citem1 = true;
    if (thisTest.tests_run.find(GetName()) != end_it
           || thisTest.tests_run.find(GetName_nofix()) != end_it) {
+       AddCItemToReport("no", GetName(), c_item);
        AddCItemToReport("no", GetName_nofix(), c_item);
    }
    if (thisTest.tests_run.find(GetName()) != end_it
           || thisTest.tests_run.find(GetName_fix()) != end_it) {
+      AddCItemToReport("yes", GetName(), c_item); 
       AddCItemToReport("yes", GetName_fix(), c_item); 
    }
 };
