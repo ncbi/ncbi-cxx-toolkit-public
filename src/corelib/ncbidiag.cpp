@@ -2977,13 +2977,13 @@ EDiagSevChange CDiagBuffer::sm_PostSeverityChange = eDiagSC_Unknown;
 static const TDiagPostFlags s_OldDefaultPostFlags =
     eDPF_Prefix | eDPF_Severity | eDPF_ErrorID | 
     eDPF_ErrCodeMessage | eDPF_ErrCodeExplanation |
-    eDPF_ErrCodeUseSeverity | eDPF_AtomicWrite;
+    eDPF_ErrCodeUseSeverity;
 static const TDiagPostFlags s_NewDefaultPostFlags =
     s_OldDefaultPostFlags |
 #if defined(NCBI_THREADS)
     eDPF_TID | eDPF_SerialNo_Thread |
 #endif
-    eDPF_PID | eDPF_SerialNo | eDPF_AtomicWrite;
+    eDPF_PID | eDPF_SerialNo;
 static TDiagPostFlags s_PostFlags = 0;
 static bool s_DiagPostFlagsInitialized = false;
 
@@ -5132,15 +5132,10 @@ void CDiagHandler::PostToConsole(const SDiagMessage& mess)
         return;
     }
     CDiagLock lock(CDiagLock::ePost);
-    if ( IsSetDiagPostFlag(eDPF_AtomicWrite, mess.m_Flags) ) {
-        CNcbiOstrstream str_os;
-        str_os << mess;
-        cerr.write(str_os.str(), str_os.pcount());
-        str_os.rdbuf()->freeze(false);
-    }
-    else {
-        cerr << mess;
-    }
+    CNcbiOstrstream str_os;
+    str_os << mess;
+    cerr.write(str_os.str(), str_os.pcount());
+    str_os.rdbuf()->freeze(false);
     cerr << NcbiFlush;
 }
 
@@ -5192,15 +5187,10 @@ void CStreamDiagHandler::Post(const SDiagMessage& mess)
     }
     CDiagLock lock(CDiagLock::ePost);
     m_Stream->clear();
-    if ( IsSetDiagPostFlag(eDPF_AtomicWrite, mess.m_Flags) ) {
-        CNcbiOstrstream str_os;
-        str_os << mess;
-        m_Stream->write(str_os.str(), str_os.pcount());
-        str_os.rdbuf()->freeze(false);
-    }
-    else {
-        *m_Stream << mess;
-    }
+    CNcbiOstrstream str_os;
+    str_os << mess;
+    m_Stream->write(str_os.str(), str_os.pcount());
+    str_os.rdbuf()->freeze(false);
     if (m_QuickFlush) {
         *m_Stream << NcbiFlush;
     }

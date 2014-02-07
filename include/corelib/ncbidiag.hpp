@@ -750,8 +750,9 @@ enum EDiagPostFlag {
     eDPF_AppLog             = 1 << 24, ///< Post message to application log
     eDPF_IsMessage          = 1 << 25, ///< Print "Message" severity name.
 
-    /// Hint for the current handler to make message output as atomic as
-    /// possible (e.g. for stream and file handlers).
+    /// This flag is deprecated and ignored - all log writes are atomic.
+    /// For compatibility IsSetDiagPostFlag always returns true when
+    /// asked about this flag.
     eDPF_AtomicWrite        = 1 << 26,
 
     /// Send the message to 'console' regardless of it's severity.
