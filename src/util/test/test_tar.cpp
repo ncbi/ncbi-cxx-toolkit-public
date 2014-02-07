@@ -140,7 +140,7 @@ CTarTest::CTarTest(void)
 #endif // __GLIBCPP__ || (__GLIBCXX__  &&  __GLIBCXX__ < 20060524)
     SetDiagPostLevel(eDiag_Warning);
     SetDiagPostAllFlags((SetDiagPostAllFlags(eDPF_Default) & ~eDPF_All)
-                        | eDPF_DateTime    | eDPF_Severity |
+                        | eDPF_DateTime    | eDPF_Severity
                         | eDPF_OmitInfoSev | eDPF_ErrorID);
     SetDiagTraceAllFlags(SetDiagPostAllFlags(eDPF_Default));
     DisableArgDescriptions(fDisableStdArgs);
