@@ -67,7 +67,7 @@ public:
     /// Information shown as labels in the guide tree
     ///
     enum ELabelType {
-        eTaxName, eSeqTitle, eBlastName, eSeqId, eSeqIdAndBlastName
+        eTaxName, eSeqTitle, eBlastName, eSeqId, eSeqIdAndBlastName, eTaxNameAndAccession
     };
 
     /// Feature IDs used in guide tree
