@@ -1155,9 +1155,9 @@ void CDB_ResultProcessor::ReleaseConn(void)
 
 
 ////////////////////////////////////////////////////////////////////////////////
-CAutoTrans::CAutoTrans(CDB_Connection& connection)
+CAutoTrans::CAutoTrans(const CSubject& subject)
 : m_Abort(true)
-, m_Conn(connection)
+, m_Conn(subject.m_Connection)
 , m_TranCount(0)
 {
     BeginTransaction();

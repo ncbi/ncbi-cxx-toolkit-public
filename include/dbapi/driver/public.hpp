@@ -980,7 +980,17 @@ private:
 class NCBI_DBAPIDRIVER_EXPORT CAutoTrans
 {
 public:
-    CAutoTrans(CDB_Connection& connection);
+    /// Helper class to allow safe initialization from higher-layer objects.
+    class CSubject {
+    public:
+        CSubject(CDB_Connection& connection) : m_Connection(connection) { }
+
+    private:
+        CDB_Connection& m_Connection;
+        friend class CAutoTrans;
+    };
+
+    CAutoTrans(const CSubject& subject);
     ~CAutoTrans(void);
 
 public:
@@ -994,6 +1004,9 @@ public:
     }
 
 private:
+    CAutoTrans(const CAutoTrans&);
+    CAutoTrans& operator =(const CAutoTrans&);
+
     void BeginTransaction(void);
     void Commit(void);
     void Rollback(void);
@@ -1008,9 +1021,9 @@ private:
 
 ////////////////////////////////////////////////////////////////////////////////
 inline
-CAutoTrans DBAPI_MakeTrans(CDB_Connection& connection)
+CAutoTrans::CSubject DBAPI_MakeTrans(CDB_Connection& connection)
 {
-    return CAutoTrans(connection);
+    return CAutoTrans::CSubject(connection);
 }
 
 

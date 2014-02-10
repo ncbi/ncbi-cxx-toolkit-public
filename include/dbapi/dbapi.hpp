@@ -926,9 +926,9 @@ public:
 
 ////////////////////////////////////////////////////////////////////////////////
 inline
-CAutoTrans DBAPI_MakeTrans(IConnection& connection)
+CAutoTrans::CSubject DBAPI_MakeTrans(IConnection& connection)
 {
-    return CAutoTrans(*connection.GetCDB_Connection());
+    return DBAPI_MakeTrans(*connection.GetCDB_Connection());
 }
 
 

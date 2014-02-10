@@ -39,7 +39,7 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/rwstream.hpp>
 #include <util/ncbi_url.hpp>
-#include <dbapi/driver/exception.hpp>
+#include <dbapi/driver/public.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -47,6 +47,7 @@ BEGIN_NCBI_SCOPE
 
 class CSDBAPI;
 class CDatabase;
+class CQuery;
 class CBlobBookmark;
 class CDatabaseImpl;
 class CBulkInsertImpl;
@@ -128,6 +129,11 @@ enum ESP_ParamType {
     eSP_In,     ///< Parameter is only passed to server, no return is expected
     eSP_InOut   ///< Parameter can be returned from stored procedure
 };
+
+/// (S)DBAPI_TRANSACTION glue for CQuery.
+CAutoTrans::CSubject DBAPI_MakeTrans(CQuery& query);
+/// RAII transaction support for SDBAPI.
+#define SDBAPI_TRANSACTION(query) DBAPI_TRANSACTION(query)
 
 
 /// Object used to execute queries and stored procedures on the database
@@ -562,6 +568,8 @@ public:
 
 private:
     friend class CDatabase;
+
+    friend CAutoTrans::CSubject DBAPI_MakeTrans(CQuery& query);
 
     /// Create query object for given database object
     CQuery(CDatabaseImpl* db_impl);

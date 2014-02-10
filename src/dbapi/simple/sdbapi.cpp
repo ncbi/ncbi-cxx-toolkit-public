@@ -2530,6 +2530,12 @@ CBlobBookmark::GetOStream(size_t blob_size,
 }
 
 
+CAutoTrans::CSubject DBAPI_MakeTrans(CQuery& query)
+{
+    return DBAPI_MakeTrans(*query.m_Impl->GetConnection());
+}
+
+
 CQuery::CRowIterator::CRowIterator(void)
     : m_IsEnd(false)
 {}
