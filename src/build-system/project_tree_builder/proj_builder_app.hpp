@@ -41,6 +41,7 @@
 #include "msvc_site.hpp"
 #include "msvc_makefile.hpp"
 #include "msvc_dlls_info.hpp"
+#include "proj_tree_builder.hpp"
 
 
 BEGIN_NCBI_SCOPE
@@ -216,11 +217,14 @@ public:
     string GetUtilityProjectsSrcDir(void);
     void SetConfFileData(const string& src, const string& dest);
     
+    void  UpdateDepGraph( CProjectTreeBuilder::TFiles& files);
 private:
     void    LoadProjectTags(const string& filename);
     bool    FindDepGraph(const string& root, list<string>& found) const;
     void    LoadDepGraph(const string& filename);
-    void  InsertDep(vector< set<string> >& graph, const string& dep);
+    void    CollectDep(const string& libname, const string& depname);
+    void    RankDepGraph(void);
+    void    InsertDep(vector< set<string> >& graph, const string& dep);
 
     void    GetBuildConfigs     (list<SConfigInfo>* configs);
     void    GenerateMsvcProjects(CProjectItemsTree& projects_tree);

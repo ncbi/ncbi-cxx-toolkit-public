@@ -2658,8 +2658,91 @@ void   CProjBulderApp::LoadDepGraph(const string& filename)
             }
         }
     }
+    for ( map<string, set<string> >::const_iterator i = m_GraphDepIncludes.begin();
+        i != m_GraphDepIncludes.end(); ++i) {
+        const set<string>& inc = i->second;
+        for (set<string>::const_iterator m = inc.begin(); m != inc.end(); ++m) {
+            CollectDep(i->first, *m);
+        }
+    }
+    RankDepGraph();
+}
 
-#if !DO_PATCHTREEMAKEFILES
+void CProjBulderApp::CollectDep(const string& libname, const string& incname)
+{
+    if (incname[0] == '@') {
+        return;
+    }
+    const set<string>& deps = m_GraphDepPrecedes[incname];
+    for (set<string>::const_iterator d = deps.begin(); d != deps.end(); ++d) {
+        m_GraphDepPrecedes[libname].insert(*d);
+    }
+    if (m_GraphDepIncludes.find(incname) != m_GraphDepIncludes.end()) {
+        const set<string>& inc = m_GraphDepIncludes.find(incname)->second;
+        for (set<string>::const_iterator m = inc.begin(); m != inc.end(); ++m) {
+            CollectDep(libname, *m);
+        }
+    }
+}
+
+void CProjBulderApp::UpdateDepGraph( CProjectTreeBuilder::TFiles& files)
+{
+#if DO_PATCHTREEMAKEFILES
+    return;
+#endif
+    if (!IsScanningWholeTree()) {
+        return;
+    }
+    const CMsvcSite& site = GetSite();
+    ITERATE( CProjectTreeBuilder::TFiles, f, files) {
+        const CSimpleMakeFileContents& fc( f->second);
+        string libname;
+        fc.GetValue("LIB", libname);
+        list<string> libdep;
+        fc.GetValue("USES_LIBRARIES", libdep);
+        if (!libdep.empty()) {
+            if (m_GraphDepPrecedes.find(libname) == m_GraphDepPrecedes.end()) {
+                set<string> t;
+                m_GraphDepPrecedes[libname] = t;
+            }
+            ITERATE(list<string>, l, libdep) {
+                list<string> dep_list;
+                string dep(*l);
+                if (CSymResolver::IsDefine(dep)) {
+                    string resolved;
+                    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
+                        string stripped(CSymResolver::StripDefine(dep));
+                        if (stripped != "NCBI_C_ncbi") {
+                            site.ResolveDefine(stripped, resolved);
+                        }
+                        if (resolved.empty()) {
+                            resolved = "@" + stripped + "@";
+                        }
+                    } else {
+                        site.ResolveDefine(CSymResolver::StripDefine(dep), resolved);
+                    }
+                    dep = resolved;
+                }
+                NStr::Split(dep, LIST_SEPARATOR_LIBS, dep_list);
+                ITERATE(list<string>, d, dep_list) {
+                    string dep_name = NStr::StartsWith(*d, "-l") ? d->substr(2) : *d;
+                    CSymResolver::StripSuffix(dep_name);
+                    if (dep_name.at(0) == '-' || libname == dep_name) {
+                        continue;
+                    }
+                    m_GraphDepPrecedes[libname].insert(dep_name);
+                }
+            }
+        }
+    }
+    RankDepGraph();
+}
+
+void  CProjBulderApp::RankDepGraph(void)
+{
+#if DO_PATCHTREEMAKEFILES
+    return;
+#endif
     if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
         return;
     }
@@ -2673,7 +2756,6 @@ void   CProjBulderApp::LoadDepGraph(const string& filename)
             m_GraphDepRank[*l] = s;
         }
     }
-#endif
 }
 
 void  CProjBulderApp::InsertDep(vector< set<string> >& graph, const string& dep)

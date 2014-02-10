@@ -2406,8 +2406,7 @@ CProjectTreeBuilder::BuildOneProjectTree(const IProjectFilter* filter,
         }
 	}
     ResolveDefs(resolver, subtree_makefiles);
-//    UpdateDepGraph( subtree_makefiles.m_Lib);
-
+//    GetApp().UpdateDepGraph( subtree_makefiles.m_Lib);
 
     // Build projects tree
     CProjectItemsTree::CreateFrom(root_src_path,
@@ -2935,53 +2934,6 @@ void CProjectTreeBuilder::ProcessUserProjFile(const string& file_name,
 	} else {
         PTB_WARNING(file_name, "ignored; empty");
 	}
-}
-
-void CProjectTreeBuilder::UpdateDepGraph( CProjectTreeBuilder::TFiles files)
-{
-    const CMsvcSite& site = GetApp().GetSite();
-    ITERATE( CProjectTreeBuilder::TFiles, f, files) {
-        const CSimpleMakeFileContents& fc( f->second);
-        string libname;
-        fc.GetValue("LIB", libname);
-        list<string> libdep;
-        fc.GetValue("USES_LIBRARIES", libdep);
-        if (!libdep.empty()) {
-            if (GetApp().m_GraphDepPrecedes.find(libname) == GetApp().m_GraphDepPrecedes.end()) {
-                set<string> t;
-                GetApp().m_GraphDepPrecedes[libname] = t;
-            }
-//            GetApp().m_GraphDepPrecedes[libname].insert( libdep.begin(), libdep.end());
-            ITERATE(list<string>, l, libdep) {
-                list<string> dep_list;
-                string dep(*l);
-                if (CSymResolver::IsDefine(dep)) {
-                    string resolved;
-                    if (CMsvc7RegSettings::GetMsvcPlatform() != CMsvc7RegSettings::eUnix) {
-                        string stripped(CSymResolver::StripDefine(dep));
-                        if (stripped != "NCBI_C_ncbi") {
-                            site.ResolveDefine(stripped, resolved);
-                        }
-                        if (resolved.empty()) {
-                            resolved = "@" + stripped + "@";
-                        }
-                    } else {
-                        site.ResolveDefine(CSymResolver::StripDefine(dep), resolved);
-                    }
-                    dep = resolved;
-                }
-                NStr::Split(dep, LIST_SEPARATOR_LIBS, dep_list);
-                ITERATE(list<string>, d, dep_list) {
-                    string dep_name = NStr::StartsWith(*d, "-l") ? d->substr(2) : *d;
-                    CSymResolver::StripSuffix(dep_name);
-                    if (dep_name.at(0) == '-' || libname == dep_name) {
-                        continue;
-                    }
-                    GetApp().m_GraphDepPrecedes[libname].insert(dep_name);
-                }
-            }
-        }
-    }
 }
 
 //recursive resolving
