@@ -51,6 +51,17 @@ enum EMakeFileType {
 
 string MakeFileTypeAsString(EMakeFileType type);
 
+/// Key Value struct
+struct SKeyValue
+{
+    SKeyValue(void) {
+        m_Append = false;
+    }
+    string m_Key;
+    string m_Value;
+    bool m_Append;
+};
+
 /////////////////////////////////////////////////////////////////////////////
 ///
 /// CSimpleMakeFileContents --
@@ -136,6 +147,7 @@ private:
         void StartParse(void);
         void AcceptLine(const string& line);
         void EndParse(void);
+        void LoadInclude(const string& file_path);
 
         bool      m_Continue;
         SKeyValue m_CurrentKV;

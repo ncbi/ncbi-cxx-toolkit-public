@@ -38,13 +38,6 @@
 
 BEGIN_NCBI_SCOPE
 
-/// Key Value struct
-struct SKeyValue
-{
-    string m_Key;
-    string m_Value;
-};
-
 /// Filter for projects in project tree
 class IProjectFilter
 {

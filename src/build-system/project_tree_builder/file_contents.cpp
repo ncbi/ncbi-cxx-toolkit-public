@@ -343,14 +343,20 @@ static void s_StripContinueStr(string* str)
 }
 
 
-static bool s_SplitKV(const string& line, string* key, string* value)
+static bool s_SplitKV(const string& line, SKeyValue& kv)
 {
-    if ( !NStr::SplitInTwo(line, "=", *key, *value) )
+    if ( !NStr::SplitInTwo(line, "=", kv.m_Key, kv.m_Value) )
 	    return false;
 
-    *key = NStr::TruncateSpaces(*key); // only for key - preserve sp for vals
-    if ( s_WillContinue(*value) ) 
-	    s_StripContinueStr(value);		
+    kv.m_Key = NStr::TruncateSpaces(kv.m_Key); // only for key - preserve sp for vals
+    kv.m_Append = NStr::EndsWith(kv.m_Key, "+");
+    if (kv.m_Append) {
+        kv.m_Append = true;
+        NStr::ReplaceInPlace(kv.m_Key, "+", " ");
+        kv.m_Key = NStr::TruncateSpaces(kv.m_Key); // only for key - preserve sp for vals
+    }
+    if ( s_WillContinue(kv.m_Value) ) 
+	    s_StripContinueStr(&kv.m_Value);		
 
     return true;
 }
@@ -400,16 +406,48 @@ void CSimpleMakeFileContents::SParser::AcceptLine(const string& line)
 	    return;
 	    
     } else {
-	    // may be only k=v string
-	    if ( s_IsKVString(strline) ) {
+#if 0
+        const string include_token("include ");
+        const string srcdir_token("$(srcdir)");
+        if ( NStr::StartsWith(strline, include_token) ) {
+            string include = NStr::TruncateSpaces(
+                strline.substr(include_token.length()));
+            
+            if (NStr::StartsWith(include, srcdir_token)) {
+                include = CDirEntry::NormalizePath(
+                    CDirEntry::ConcatPath(
+                        CDirEntry( m_FileContents->GetFileName()).GetDir(), 
+                        NStr::Replace(include, srcdir_token, "")));
+                LoadInclude(include);
+            }
+        } else
+#endif
+        if ( s_IsKVString(strline) ) {
 		    m_FileContents->AddReadyKV(m_CurrentKV);
 		    m_Continue = s_WillContinue(strline);
-		    s_SplitKV(strline, &m_CurrentKV.m_Key, &m_CurrentKV.m_Value);
+		    s_SplitKV(strline, m_CurrentKV);
 		    return;			
 	    }
     }
 }
 
+void CSimpleMakeFileContents::SParser::LoadInclude(const string& file_path)
+{
+    EndParse();
+    CNcbiIfstream ifs(file_path.c_str(), IOS_BASE::in | IOS_BASE::binary);
+    if ( !ifs ) {
+        PTB_WARNING_EX(m_FileContents->GetFileName(), 
+            ePTB_FileNotFound, "Include file not found: " << file_path);
+        return;
+    }
+    StartParse();
+    string strline;
+    while ( NcbiGetlineEOL(ifs, strline) ) {
+	    AcceptLine(strline);
+    }
+    EndParse();
+    StartParse();
+}
 
 void CSimpleMakeFileContents::SParser::EndParse(void)
 {
@@ -451,7 +489,9 @@ void CSimpleMakeFileContents::AddReadyKV(const SKeyValue& kv)
             }
         }
         list<string>& dest = m_Contents[kv.m_Key];
-        dest.clear();
+        if (!kv.m_Append) {
+            dest.clear();
+        }
         string value;
         size_t start_count=0, end_count=0;
         ITERATE(list<string>, v, values) {
