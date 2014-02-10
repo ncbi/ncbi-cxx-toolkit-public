@@ -70,7 +70,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
             CBlobBookmark bm = it[1].GetBookmark();
             BOOST_CHECK_NO_THROW(query.VerifyDone(CQuery::eAllResultSets));
 
-            ostream& out = bm.GetOStream(clob_value.size(), CQuery::eDisableLog);
+            ostream& out = bm.GetOStream(clob_value.size(), kBOSFlags);
             out.write(clob_value.data(), clob_value.size());
             out.flush();
         }
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                 }
                 ITERATE(vector<CBlobBookmark>, it, bms) {
                     ostream& out = it->GetOStream(clob_value.size(),
-                                                  CQuery::eDisableLog);
+                                                  kBOSFlags);
                     out.write(clob_value.data(), clob_value.size());
                     out.flush();
                 }
@@ -232,7 +232,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_NewConn)
             query.RequireRowCount(1);
 
             ITERATE(CQuery, it, query.SingleSet()) {
-                ostream& out = it[1].GetOStream(clob_value.size(), CQuery::eDisableLog);
+                ostream& out = it[1].GetOStream(clob_value.size(), kBOSFlags);
                 out.write(clob_value.data(), clob_value.size());
                 out.flush();
             }
@@ -302,7 +302,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_NewConn)
 
                         ITERATE(CQuery, it, query.SingleSet()) {
                             ostream& out = it[1].GetOStream(clob_value.size(),
-                                                            CQuery::eDisableLog);
+                                                            kBOSFlags);
                             out.write(clob_value.data(), clob_value.size());
                             out.flush();
                         }
@@ -392,7 +392,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB2)
                 }
                 ITERATE(vector<CBlobBookmark>, it, bms) {
                     ostream& out = it->GetOStream(sizeof(clob_value) - 1,
-                                                  CQuery::eDisableLog);
+                                                  kBOSFlags);
                     out.write(clob_value, sizeof(clob_value) - 1);
                     out.flush();
                 }
@@ -483,7 +483,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB2_NewConn)
 
                 ITERATE(CQuery, it, query.SingleSet()) {
                     ostream& out = it[1].GetOStream(sizeof(clob_value) - 1,
-                                                    CQuery::eDisableLog);
+                                                    kBOSFlags);
                     out.write(clob_value, sizeof(clob_value) - 1);
                     out.flush();
                 }
@@ -710,7 +710,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple)
                 }
                 ITERATE(vector<CBlobBookmark>, it, bms) {
                     ostream& out = it->GetOStream(clob_value.size(),
-                                                  CQuery::eDisableLog);
+                                                  kBOSFlags);
                     out.write(clob_value.data(), clob_value.size());
                     out.flush();
                     BOOST_CHECK(out.good());
@@ -807,7 +807,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple_NewConn)
                 ITERATE(CQuery, it, query.SingleSet()) {
                     for (int pos = 1; pos <= 4; ++pos) {
                         ostream& out = it[pos].GetOStream(clob_value.size(),
-                                                          CQuery::eDisableLog);
+                                                          kBOSFlags);
                         out.write(clob_value.data(), clob_value.size());
                         out.flush();
                         BOOST_CHECK(out.good());
@@ -890,7 +890,7 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream)
                 bms.push_back(it[1].GetBookmark());
             }
             ITERATE(vector<CBlobBookmark>, it, bms) {
-                ostream& ostrm = it->GetOStream(data_len, CQuery::eDisableLog);
+                ostream& ostrm = it->GetOStream(data_len, kBOSFlags);
 
                 ostrm.write(out.str(), data_len);
                 out.freeze(false);
@@ -1010,7 +1010,7 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream_NewConn)
             query.RequireRowCount(1);
 
             ITERATE(CQuery, it, query.SingleSet()) {
-                ostream& ostrm = it[1].GetOStream(data_len, CQuery::eDisableLog);
+                ostream& ostrm = it[1].GetOStream(data_len, kBOSFlags);
 
                 ostrm.write(out.str(), data_len);
                 out.freeze(false);

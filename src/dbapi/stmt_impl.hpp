@@ -78,11 +78,25 @@ public:
 
     virtual IConnection* GetParentConn();
 
-    virtual IWriter* GetBlobWriter(I_ITDescriptor &d, size_t blob_size, EAllowLog log_it);
+    virtual IWriter* GetBlobWriter(I_ITDescriptor &d, size_t blob_size,
+                                   TBlobOStreamFlags flags);
+    virtual IWriter* GetBlobWriter(I_ITDescriptor &d, size_t blob_size,
+                                   EAllowLog log_it)
+    {
+        return IStatement::GetBlobWriter(d, blob_size, log_it);
+    }
+
+    virtual CNcbiOstream& GetBlobOStream(I_ITDescriptor &d, 
+                                         size_t blob_size, 
+                                         TBlobOStreamFlags flags,
+                                         size_t buf_size);
     virtual CNcbiOstream& GetBlobOStream(I_ITDescriptor &d, 
 		                                 size_t blob_size, 
 										 EAllowLog log_it,
-										 size_t buf_size);
+                                         size_t buf_size)
+    {
+        return IStatement::GetBlobOStream(d, blob_size, log_it, buf_size);
+    }
 
     CConnection* GetConnection() {
         return m_conn;

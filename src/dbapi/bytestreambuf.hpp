@@ -33,9 +33,7 @@
 * File Description:  streambuf implementation for BLOBs
 */
 
-#include <corelib/ncbistd.hpp>
-#include <corelib/ncbistre.hpp>
-//#include <iostream>
+#include <dbapi/dbapi.hpp>
 
 BEGIN_NCBI_SCOPE
 
@@ -45,7 +43,8 @@ class CResultSet;
 class CByteStreamBuf : public streambuf
 {
 public:
-    CByteStreamBuf(streamsize bufsize);
+    CByteStreamBuf(streamsize bufsize, TBlobOStreamFlags flags = 0,
+                   CDB_Connection* conn = NULL);
     virtual ~CByteStreamBuf();
 
     void SetCmd(CDB_SendDataCmd* cmd);
@@ -71,7 +70,7 @@ private:
     CResultSet* m_rs;
     CDB_SendDataCmd* m_cmd;
     //int m_column;
-
+    auto_ptr<CAutoTrans> m_AutoTrans;
 };
 
 END_NCBI_SCOPE

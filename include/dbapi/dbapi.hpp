@@ -75,6 +75,27 @@ enum EAllowLog {
 };
 
 
+/////////////////////////////////////////////////////////////////////////////
+///
+///  EBlobOStreamFlags --
+///
+///  How to send BLOB data (generalization of EAllowLog).
+///
+enum EBlobOStreamFlags {
+    /// Use a (sub)transaction (committed once all data's been sent
+    /// successfully, rolled back for unrecoverable errors) to guard
+    /// against races that could let readers see incomplete blobs, and
+    /// to allow for replication as appropriate.  NB: This approach can
+    /// yield local deadlocks in some circumstances, particularly if a
+    /// single application thread maintains multiple connections to the
+    /// database in question (due, for instance, to using methods that
+    /// establish temporary clones of the original connection).
+    fBOS_UseTransaction = 1 << 0,
+    fBOS_SkipLogging    = 1 << 1 //< Don't request server-side logging.
+};
+
+typedef int TBlobOStreamFlags; //< Binary OR of EBlobOStreamFlags
+
 
 /////////////////////////////////////////////////////////////////////////////
 ///
@@ -232,14 +253,17 @@ public:
     ///
     /// @param blob_size
     ///   blob_size is the size of the BLOB to be written.
-    /// @param log_it
-    ///    Enables transaction log for BLOB (enabled by default).
-    ///    Make sure you have enough log segment space, or disable it.
+    /// @param flags
+    ///    @see EBlobOStreamFlags.
     /// @param buf_size
     ///   The size of internal buffer, default 4096.
     virtual CNcbiOstream& GetBlobOStream(size_t blob_size,
-                                         EAllowLog log_it = eEnableLog,
+                                         TBlobOStreamFlags flags = 0,
                                          size_t buf_size = 0) = 0;
+
+    virtual CNcbiOstream& GetBlobOStream(size_t blob_size,
+                                         EAllowLog log_it,
+                                         size_t buf_size = 0);
 
     /// Get Blob output stream with explicit additional connection.
     ///
@@ -248,15 +272,19 @@ public:
     ///   clones the existing connection implicitly)
     /// @param blob_size
     ///   blob_size is the size of the BLOB to be written.
-    /// @param log_it
-    ///    Enables transaction log for BLOB (enabled by default).
-    ///    Make sure you have enough log segment space, or disable it.
+    /// @param flags
+    ///    @see EBlobOStreamFlags.
     /// @param buf_size
     ///   The size of internal buffer, default 4096.
     virtual CNcbiOstream& GetBlobOStream(IConnection *conn,
                                          size_t blob_size,
-                                         EAllowLog log_it = eEnableLog,
+                                         TBlobOStreamFlags flags = 0,
                                          size_t buf_size = 0) = 0;
+
+    virtual CNcbiOstream& GetBlobOStream(IConnection *conn,
+                                         size_t blob_size,
+                                         EAllowLog log_it,
+                                         size_t buf_size = 0);
 
     /// Get a Blob Reader.
     ///
@@ -396,11 +424,15 @@ public:
     ///   Descriptor
     /// @param blob_size
     ///   Size of BLOB to write
-    /// @param log_it
-    ///   Enable or disable logging
+    /// @param flags
+    ///   @see EBlobOStreamFlags.
     virtual IWriter* GetBlobWriter(I_ITDescriptor &d,
                                    size_t blob_size,
-                                   EAllowLog log_it) = 0;
+                                   TBlobOStreamFlags flags = 0) = 0;
+
+    virtual IWriter* GetBlobWriter(I_ITDescriptor &d,
+                                   size_t blob_size,
+                                   EAllowLog log_it);
 
     /// Get an ostream for writing BLOBs using previously created
     /// CDB_ITDescriptor
@@ -408,14 +440,19 @@ public:
     ///   Descriptor
     /// @param blob_size
     ///   Size of BLOB to write
-    /// @param log_it
-    ///   Enable or disable logging
+    /// @param flags
+    ///   @see EBlobOStreamFlags.
     /// @param buf_size
     ///   Buffer size, default 4096
     virtual CNcbiOstream& GetBlobOStream(I_ITDescriptor &d,
                                          size_t blob_size,
-                                         EAllowLog log_it = eEnableLog,
+                                         TBlobOStreamFlags flags = 0,
                                          size_t buf_size = 0) = 0;
+
+    virtual CNcbiOstream& GetBlobOStream(I_ITDescriptor &d,
+                                         size_t blob_size,
+                                         EAllowLog log_it,
+                                         size_t buf_size = 0);
 
     /// Get the parent connection.
     ///
@@ -530,15 +567,19 @@ public:
     ///   Column number.
     /// @param blob_size
     ///   blob_size is the size of the BLOB to be written.
-    /// @param log_it
-    ///    Enables transaction log for BLOB (enabled by default).
-    ///    Make sure you have enough log segment space, or disable it.
+    /// @param flags
+    ///   @see EBlobOStreamFlags.
     /// @param buf_size
     ///   The size of internal buffer, default 4096.
     virtual CNcbiOstream& GetBlobOStream(unsigned int col,
                                          size_t blob_size,
-                                         EAllowLog log_it = eEnableLog,
+                                         TBlobOStreamFlags flags = 0,
                                          size_t buf_size = 0) = 0;
+
+    virtual CNcbiOstream& GetBlobOStream(unsigned int col,
+                                         size_t blob_size,
+                                         EAllowLog log_it,
+                                         size_t buf_size = 0);
 
     /// Get Blob Writer
     ///
@@ -547,12 +588,16 @@ public:
     ///   Column number.
     /// @param blob_size
     ///   blob_size is the size of the BLOB to be written.
-    /// @param log_it
-    ///   Enables transaction log for BLOB (enabled by default).
-    ///   Make sure you have enough log segment space, or disable it.
+    /// @param flags
+    ///   @see EBlobOStreamFlags.
     virtual IWriter* GetBlobWriter(unsigned int col,
                                    size_t blob_size,
-                                   EAllowLog log_it = eEnableLog) = 0;
+                                   TBlobOStreamFlags flags = 0) = 0;
+
+    virtual IWriter* GetBlobWriter(unsigned int col,
+                                   size_t blob_size,
+                                   EAllowLog log_it);
+
     /// Update statement for cursor.
     ///
     /// @param table

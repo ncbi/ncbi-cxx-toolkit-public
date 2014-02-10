@@ -43,7 +43,8 @@ BEGIN_NCBI_SCOPE
 
 enum { DEF_BUFSIZE = 2048 };
 
-CByteStreamBuf::CByteStreamBuf(streamsize bufsize)
+CByteStreamBuf::CByteStreamBuf(streamsize bufsize, TBlobOStreamFlags flags,
+                               CDB_Connection* conn)
     : m_buf(0), 
     m_size(bufsize > 0 ? size_t(bufsize) : DEF_BUFSIZE), 
     /* m_len(0),*/ m_rs(0), m_cmd(0) //, m_column(-1)
@@ -53,6 +54,10 @@ CByteStreamBuf::CByteStreamBuf(streamsize bufsize)
 
     setp(getPBuf(), getPBuf() + m_size);
     _TRACE("I/O buffer size: " << m_size);
+    if ((flags & fBOS_UseTransaction) != 0) {
+        _ASSERT(conn != NULL);
+        m_AutoTrans.reset(new CAutoTrans(*conn));
+    }
 }
 
 CByteStreamBuf::~CByteStreamBuf()
@@ -137,6 +142,10 @@ CT_INT_TYPE CByteStreamBuf::overflow(CT_INT_TYPE c)
     static size_t total = 0;
     size_t put = m_cmd->SendChunk(pbase(), pptr() - pbase());
     total += put;
+    if (m_AutoTrans.get()  &&  m_cmd->HasMoreResults()) {
+        m_AutoTrans->Finish();
+        m_AutoTrans.reset();
+    }
     if( put > 0 ) {
         setp(getPBuf(), getPBuf() + m_size );
 
@@ -148,6 +157,7 @@ CT_INT_TYPE CByteStreamBuf::overflow(CT_INT_TYPE c)
     else {
         _TRACE("Total sent: " << total);
         total = 0;
+        m_AutoTrans.reset();
         return CT_EOF;
     }
     

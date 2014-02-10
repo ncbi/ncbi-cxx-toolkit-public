@@ -60,34 +60,30 @@ CBlobOStream::CBlobOStream(CDB_Connection* connAux,
                            I_ITDescriptor* desc,
                            size_t datasize, 
                            streamsize bufsize,
-                           bool log_it,
+                           TBlobOStreamFlags flags,
                            bool destroyConn)
-    : ostream(new CByteStreamBuf(bufsize)), m_desc(desc), m_conn(connAux), m_destroyConn(destroyConn)
+    : ostream(new CByteStreamBuf(bufsize, flags, connAux)), m_desc(desc),
+      m_conn(connAux), m_destroyConn(destroyConn)
 {
-    if( log_it ) {
-        _TRACE("CBlobOStream::ctor(): Transaction log enabled");
-    }
-    else {
-        _TRACE("CBlobOStream::ctor(): Transaction log disabled");
-    }
-    ((CByteStreamBuf*)rdbuf())->SetCmd(m_conn->SendDataCmd(*m_desc, datasize, log_it));
+    _TRACE("CBlobOStream: flags = " << flags);
+    ((CByteStreamBuf*)rdbuf())
+        ->SetCmd(m_conn->SendDataCmd(*m_desc, datasize,
+                                     (flags & fBOS_SkipLogging) == 0));
 }
 
 CBlobOStream::CBlobOStream(CDB_CursorCmd* curCmd,
                            unsigned int item_num,
                            size_t datasize, 
                            streamsize bufsize,
-                           bool log_it)
-                           : ostream(new CByteStreamBuf(bufsize)), m_desc(0), m_conn(0),
-                           m_destroyConn(false)
+                           TBlobOStreamFlags flags,
+                           CDB_Connection* conn)
+    : ostream(new CByteStreamBuf(bufsize, flags, conn)), m_desc(NULL),
+      m_conn(conn), m_destroyConn(false)
 {
-    if( log_it ) {
-        _TRACE("CBlobOStream::ctor(): Transaction log enabled");
-    }
-    else {
-        _TRACE("CBlobOStream::ctor(): Transaction log disabled");
-    }
-    ((CByteStreamBuf*)rdbuf())->SetCmd(curCmd->SendDataCmd(item_num, datasize, log_it));
+    _TRACE("CBlobOStream: flags = " << flags);
+    ((CByteStreamBuf*)rdbuf())
+        ->SetCmd(curCmd->SendDataCmd(item_num, datasize,
+                                     (flags & fBOS_SkipLogging) == 0));
 }
 
 CBlobOStream::~CBlobOStream()

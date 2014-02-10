@@ -268,6 +268,9 @@ extern const char* dblib_driver;
 
 extern const char* msg_record_expected;
 
+static const TBlobOStreamFlags kBOSFlags = (fBOS_UseTransaction |
+                                            fBOS_SkipLogging);
+
 string GetSybaseClientVersion(void);
 
 END_NCBI_SCOPE

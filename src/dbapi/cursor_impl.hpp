@@ -60,14 +60,28 @@ public:
                           const CDBParamVariant& param);
 
     virtual IResultSet* Open();
+
+    CNcbiOstream& GetBlobOStream(unsigned int col,
+                            size_t blob_size, 
+                            TBlobOStreamFlags flags,
+                            size_t buf_size);
     CNcbiOstream& GetBlobOStream(unsigned int col,
                             size_t blob_size, 
                             EAllowLog log_it,
-                            size_t buf_size);
+                            size_t buf_size)
+    {
+        return ICursor::GetBlobOStream(col, blob_size, log_it, buf_size);
+    }
 
     virtual IWriter* GetBlobWriter(unsigned int col,
                                             size_t blob_size, 
-                                            EAllowLog log_it);
+                                            TBlobOStreamFlags flags);
+    virtual IWriter* GetBlobWriter(unsigned int col,
+                                            size_t blob_size, 
+                                            EAllowLog log_it)
+    {
+        return ICursor::GetBlobWriter(col, blob_size, log_it);
+    }
 
     virtual void Update(const string& table, const string& updateSql);
     virtual void Delete(const string& table);

@@ -327,27 +327,27 @@ IReader* CResultSet::GetBlobReader()
 }
 
 CNcbiOstream& CResultSet::GetBlobOStream(size_t blob_size,
-										 EAllowLog log_it,
+                                         TBlobOStreamFlags flags,
 										 size_t buf_size)
 {
 	_ASSERT(m_conn);
 	return xGetBlobOStream(m_conn->CloneCDB_Conn(), blob_size,
-                           log_it, buf_size, true);
+                           flags, buf_size, true);
 }
 
 CNcbiOstream& CResultSet::GetBlobOStream(IConnection *conn, 
 										  size_t blob_size,
-                                          EAllowLog log_it,
+                                          TBlobOStreamFlags flags,
                                           size_t buf_size)
 {
 	_ASSERT(m_conn);
 	return xGetBlobOStream(conn->GetCDB_Connection(), blob_size,
-                           log_it, buf_size, false);
+                           flags, buf_size, false);
 }
 
 CNcbiOstream& CResultSet::xGetBlobOStream(CDB_Connection *cdb_conn, 
 										  size_t blob_size,
-                                          EAllowLog log_it,
+                                          TBlobOStreamFlags flags,
                                           size_t buf_size,
 										  bool destroy)
 {
@@ -372,7 +372,7 @@ CNcbiOstream& CResultSet::xGetBlobOStream(CDB_Connection *cdb_conn,
 #endif
     }
 
-    m_ostr = new CWStream(new CxBlobWriter(cdb_conn, *desc, blob_size, log_it == eEnableLog, destroy),
+    m_ostr = new CWStream(new CxBlobWriter(cdb_conn, *desc, blob_size, flags, destroy),
 		                   buf_size, 0, CRWStreambuf::fOwnWriter);
     return *m_ostr;
 }

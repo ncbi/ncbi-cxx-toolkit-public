@@ -39,7 +39,7 @@
 #include <corelib/ncbitime.hpp>
 #include <corelib/rwstream.hpp>
 #include <util/ncbi_url.hpp>
-#include <dbapi/driver/public.hpp>
+#include <dbapi/dbapi.hpp>
 
 
 BEGIN_NCBI_SCOPE
@@ -238,10 +238,14 @@ public:
         ///
         /// @param blob_size
         ///   blob_size is the size of the BLOB to be written.
+        /// @param flags
+        ///   @see EBlobOStreamFlags.
         /// @param log_it
         ///    Enables transaction log for BLOB (enabled by default).
         ///    Make sure you have enough log segment space, or disable it.
-        CNcbiOstream& GetOStream(size_t blob_size, EAllowLog log_it = eEnableLog) const;
+        CNcbiOstream& GetOStream(size_t blob_size, TBlobOStreamFlags flags = 0)
+            const;
+        CNcbiOstream& GetOStream(size_t blob_size, EAllowLog log_it) const;
 
         /// Get bookmark for the blob. This bookmark can be used to change
         /// blob data later when all results from this query are processed.
@@ -591,11 +595,14 @@ public:
     ///
     /// @param blob_size
     ///   blob_size is the size of the BLOB to be written.
+    /// @param flags
+    ///   @see EBlobOStreamFlags.
     /// @param log_it
     ///    Enables transaction log for BLOB (enabled by default).
     ///    Make sure you have enough log segment space, or disable it.
-    CNcbiOstream& GetOStream(size_t blob_size,
-                             CQuery::EAllowLog log_it = CQuery::eEnableLog) const;
+    CNcbiOstream& GetOStream(size_t blob_size, TBlobOStreamFlags flags = 0)
+        const;
+    CNcbiOstream& GetOStream(size_t blob_size, CQuery::EAllowLog log_it) const;
 
     /// Empty constructor of bookmark object.
     /// Object created this way cannot be used for anything except assigning

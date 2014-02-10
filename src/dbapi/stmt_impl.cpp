@@ -289,23 +289,24 @@ bool CStatement::HasRows()
     return m_irs != 0;
 }
 
-IWriter* CStatement::GetBlobWriter(I_ITDescriptor &d, size_t blob_size, EAllowLog log_it)
+IWriter* CStatement::GetBlobWriter(I_ITDescriptor &d, size_t blob_size,
+                                   TBlobOStreamFlags flags)
 {
     delete m_wr;
     m_wr = 0;
     m_wr = new CxBlobWriter(GetConnection()->GetCDB_Connection(),
-                            d, blob_size, log_it == eEnableLog, false);
+                            d, blob_size, flags, false);
     return m_wr;
 }
 
 CNcbiOstream& CStatement::GetBlobOStream(I_ITDescriptor &d, size_t blob_size,
-                                         EAllowLog log_it, size_t buf_size)
+                                         TBlobOStreamFlags flags,
+                                         size_t buf_size)
 {
     delete m_ostr;
     m_ostr = 0;
     m_ostr = new CWStream(new CxBlobWriter(GetConnection()->GetCDB_Connection(),
-                                           d, blob_size, log_it == eEnableLog,
-                                           false),
+                                           d, blob_size, flags, false),
                           buf_size, 0, (CRWStreambuf::fOwnWriter |
                                         CRWStreambuf::fLogExceptions));
     return *m_ostr;

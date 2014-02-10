@@ -135,7 +135,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
             while(blobRs->Next()) {
                 ostream& out = auto_cursor->GetBlobOStream(1,
                                                            clob_value.size(),
-                                                           eDisableLog);
+                                                           kBOSFlags);
                 out.write(clob_value.data(), clob_value.size());
                 out.flush();
             }
@@ -145,7 +145,8 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
     //             if( auto_stmt->HasRows() ) {
     //                 auto_ptr<IResultSet> rs(auto_stmt->GetResultSet());
     //                 while ( rs->Next() ) {
-    //                     ostream& out = rs->GetBlobOStream(clob_value.size(), eDisableLog);
+    //                     ostream& out = rs->GetBlobOStream(clob_value.size(),
+    //                                                       kBOSFlags);
     //                     out.write(clob_value.data(), clob_value.size());
     //                     out.flush();
     //                 }
@@ -286,7 +287,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                             while(blobRs->Next()) {
                                 ostream& out = auto_cursor->GetBlobOStream(1,
                                         clob_value.size(),
-                                        eDisableLog);
+                                        kBOSFlags);
                                 out.write(clob_value.data(), clob_value.size());
                                 out.flush();
                             }
@@ -303,7 +304,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB)
                             while(blobRs->Next()) {
                                 ostream& out = auto_cursor->GetBlobOStream(1,
                                         clob_value.size(),
-                                        eDisableLog);
+                                        kBOSFlags);
                                 out.write(clob_value.data(), clob_value.size());
                                 out.flush();
                             }
@@ -493,7 +494,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB2)
                     ostream& out =
                         auto_cursor->GetBlobOStream(1,
                                                     sizeof(clob_value) - 1,
-                                                    eDisableLog
+                                                    kBOSFlags
                                                     );
                     out.write(clob_value, sizeof(clob_value) - 1);
                     out.flush();
@@ -720,7 +721,7 @@ BOOST_AUTO_TEST_CASE(Test_LOB_Multiple)
                         ostream& out =
                             auto_cursor->GetBlobOStream(pos,
                                                         clob_value.size(),
-                                                        eDisableLog
+                                                        kBOSFlags
                                                         );
                         out.write(clob_value.data(), clob_value.size());
                         out.flush();
@@ -1097,7 +1098,7 @@ BOOST_AUTO_TEST_CASE(Test_BlobStream)
             while (blobRs->Next()) {
                 ostream& ostrm = auto_cursor->GetBlobOStream(1,
                                                              data_len,
-                                                             eDisableLog);
+                                                             kBOSFlags);
 
                 ostrm.write(out.str(), data_len);
                 out.freeze(false);

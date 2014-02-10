@@ -56,14 +56,15 @@ public:
 	             I_ITDescriptor* desc,
                  size_t datasize, 
                  streamsize bufsize,
-                 bool log_it,
+                 TBlobOStreamFlags flags,
                  bool destroyConn = false);
     
     CBlobOStream(CDB_CursorCmd* curCmd,
 	             unsigned int item_num,
                  size_t datasize, 
                  streamsize bufsize,
-                 bool log_it);
+                 TBlobOStreamFlags flags,
+                 CDB_Connection* conn);
     
     virtual ~CBlobOStream();
     

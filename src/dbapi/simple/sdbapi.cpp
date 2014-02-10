@@ -2485,13 +2485,13 @@ CBlobBookmarkImpl::CBlobBookmarkImpl(CDatabaseImpl* db_impl, I_ITDescriptor* des
 {}
 
 CNcbiOstream&
-CBlobBookmarkImpl::GetOStream(size_t blob_size, CQuery::EAllowLog log_it)
+CBlobBookmarkImpl::GetOStream(size_t blob_size, TBlobOStreamFlags flags)
 {
     try {
         CDB_Connection* db_conn = m_DBImpl->GetConnection()->GetCDB_Connection();
         m_OStream.reset(new CWStream
                         (new CxBlobWriter(db_conn, *m_Descr, blob_size,
-                                          log_it == CQuery::eEnableLog, false),
+                                          flags, false),
                          0, 0,
                          CRWStreambuf::fOwnWriter
                          | CRWStreambuf::fLogExceptions));
@@ -2523,12 +2523,17 @@ CBlobBookmark::~CBlobBookmark(void)
 {}
 
 CNcbiOstream&
-CBlobBookmark::GetOStream(size_t blob_size,
-                          CQuery::EAllowLog log_it /* = eEnableLog */) const
+CBlobBookmark::GetOStream(size_t blob_size, TBlobOStreamFlags flags) const
 {
-    return m_Impl.GetNCPointer()->GetOStream(blob_size, log_it);
+    return m_Impl.GetNCPointer()->GetOStream(blob_size, flags);
 }
 
+CNcbiOstream&
+CBlobBookmark::GetOStream(size_t blob_size, CQuery::EAllowLog log_it) const
+{
+    return GetOStream(blob_size,
+                      (log_it == CQuery::eDisableLog) ? fBOS_SkipLogging : 0);
+}
 
 CAutoTrans::CSubject DBAPI_MakeTrans(CQuery& query)
 {
@@ -2744,7 +2749,7 @@ CQuery::CField::IsNull(void) const
 }
 
 CNcbiOstream&
-CQuery::CField::GetOStream(size_t blob_size, EAllowLog log_it /* = eEnableLog */) const
+CQuery::CField::GetOStream(size_t blob_size, TBlobOStreamFlags flags) const
 {
     const CVariant& var_val = m_Query->GetFieldValue(*this);
     EDB_Type var_type = var_val.GetType();
@@ -2758,14 +2763,20 @@ CQuery::CField::GetOStream(size_t blob_size, EAllowLog log_it /* = eEnableLog */
         CDB_Connection* db_conn = conn->GetCDB_Connection();
         m_OStream.reset(new CWStream
                         (new CxBlobWriter(db_conn, var_val.GetITDescriptor(),
-                                          blob_size, log_it == eEnableLog,
-                                          false),
+                                          blob_size, flags, false),
                          0, 0,
                          CRWStreambuf::fOwnWriter
                          | CRWStreambuf::fLogExceptions));
         return *m_OStream;
     }
     SDBAPI_CATCH_LOWLEVEL()
+}
+
+CNcbiOstream&
+CQuery::CField::GetOStream(size_t blob_size, EAllowLog log_it) const
+{
+    return GetOStream(blob_size,
+                      (log_it == eDisableLog) ? fBOS_SkipLogging : 0);
 }
 
 CBlobBookmark

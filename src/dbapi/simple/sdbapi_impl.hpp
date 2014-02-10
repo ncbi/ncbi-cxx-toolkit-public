@@ -201,7 +201,7 @@ class CBlobBookmarkImpl : public CObject
 public:
     CBlobBookmarkImpl(CDatabaseImpl* db_impl, I_ITDescriptor* descr);
 
-    CNcbiOstream& GetOStream(size_t blob_size, CQuery::EAllowLog log_it);
+    CNcbiOstream& GetOStream(size_t blob_size, TBlobOStreamFlags flags);
 
 private:
     CRef<CDatabaseImpl> m_DBImpl;

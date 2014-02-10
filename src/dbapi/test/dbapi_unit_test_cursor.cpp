@@ -303,7 +303,8 @@ BOOST_AUTO_TEST_CASE(Test_Cursor2)
                 auto_ptr<IResultSet> blobRs(auto_cursor->Open());
 
                 if (blobRs->Next()) {
-                    ostream& out = auto_cursor->GetBlobOStream(1, strlen(clob), eDisableLog);
+                    ostream& out = auto_cursor->GetBlobOStream(1, strlen(clob),
+                                                               kBOSFlags);
                     out.write(clob, strlen(clob));
                     out.flush();
                 } else {
@@ -329,7 +330,8 @@ BOOST_AUTO_TEST_CASE(Test_Cursor2)
                     BOOST_FAIL( msg_record_expected );
                 }
 
-                ostream& out = auto_cursor->GetBlobOStream(1, strlen(clob), eDisableLog);
+                ostream& out = auto_cursor->GetBlobOStream(1, strlen(clob),
+                                                           kBOSFlags);
                 out.write(clob, strlen(clob));
                 out.flush();
             }

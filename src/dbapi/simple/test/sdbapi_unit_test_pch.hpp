@@ -145,6 +145,9 @@ size_t GetNumOfRecords(CQuery& query, const string& table_name);
 
 extern const char* msg_record_expected;
 
+static const TBlobOStreamFlags kBOSFlags = (fBOS_UseTransaction |
+                                            fBOS_SkipLogging);
+
 END_NCBI_SCOPE
 
 #endif  // DBAPI_UNIT_TEST_H

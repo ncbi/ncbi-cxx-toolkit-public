@@ -105,7 +105,7 @@ void CCursor::Delete(const string& table)
 
 CNcbiOstream& CCursor::GetBlobOStream(unsigned int col,
                                       size_t blob_size, 
-                                      EAllowLog log_it,
+                                      TBlobOStreamFlags flags,
                                       size_t buf_size)
 {
     // Delete previous ostream
@@ -115,7 +115,7 @@ CNcbiOstream& CCursor::GetBlobOStream(unsigned int col,
     m_ostr = new CWStream(new CxBlobWriter(GetCursorCmd(),
                                            col - 1,
                                            blob_size,
-                                           log_it == eEnableLog), 
+                                           flags), 
                           buf_size, 0, (CRWStreambuf::fOwnWriter |
                                         CRWStreambuf::fLogExceptions));
     return *m_ostr;
@@ -123,7 +123,7 @@ CNcbiOstream& CCursor::GetBlobOStream(unsigned int col,
 
 IWriter* CCursor::GetBlobWriter(unsigned int col,
                                 size_t blob_size, 
-                                EAllowLog log_it)
+                                TBlobOStreamFlags flags)
 {
     // Delete previous writer
     delete m_wr;
@@ -132,7 +132,7 @@ IWriter* CCursor::GetBlobWriter(unsigned int col,
     m_wr = new CxBlobWriter(GetCursorCmd(),
                             col - 1,
                             blob_size,
-                            log_it == eEnableLog);
+                            flags);
     return m_wr;
 }
 

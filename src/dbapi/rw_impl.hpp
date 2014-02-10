@@ -69,13 +69,13 @@ public:
     CxBlobWriter(CDB_Connection* conn,
                 I_ITDescriptor &d,
                 size_t blobsize, 
-                bool log_it,
+                TBlobOStreamFlags flags,
 				bool destroy);
 
     CxBlobWriter(CDB_CursorCmd* curCmd,
                 unsigned int item_num,
                 size_t datasize, 
-                bool log_it);
+                TBlobOStreamFlags flags);
 
     virtual ERW_Result Write(const void* buf,
                              size_t      count,
@@ -90,6 +90,8 @@ private:
     CDB_SendDataCmd *m_dataCmd;
 	bool m_destroy;
 	CDB_Connection *m_cdbConn;
+    auto_ptr<CAutoTrans> m_AutoTrans;
+    size_t m_BytesNeeded;
 };
 
 END_NCBI_SCOPE

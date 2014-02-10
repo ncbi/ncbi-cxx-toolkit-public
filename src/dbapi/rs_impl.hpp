@@ -76,13 +76,26 @@ public:
     virtual CNcbiIstream& GetBlobIStream(size_t buf_size);
 
     virtual CNcbiOstream& GetBlobOStream(size_t blob_size, 
-                                         EAllowLog log_it,
+                                         TBlobOStreamFlags flags,
                                          size_t buf_size);
+    virtual CNcbiOstream& GetBlobOStream(size_t blob_size, 
+                                         EAllowLog log_it,
+                                         size_t buf_size)
+    {
+        return IResultSet::GetBlobOStream(blob_size, log_it, buf_size);
+    }
 
     virtual CNcbiOstream& GetBlobOStream(IConnection *conn,
                                          size_t blob_size, 
-                                         EAllowLog log_it,
+                                         TBlobOStreamFlags flags,
                                          size_t buf_size);
+    virtual CNcbiOstream& GetBlobOStream(IConnection *conn,
+                                         size_t blob_size, 
+                                         EAllowLog log_it,
+                                         size_t buf_size)
+    {
+        return IResultSet::GetBlobOStream(conn, blob_size, log_it, buf_size);
+    }
 
 	virtual IReader* GetBlobReader();
 
@@ -122,7 +135,7 @@ private:
     
 	CNcbiOstream& xGetBlobOStream(CDB_Connection *cdb_conn, 
 		                          size_t blob_size,
-                                  EAllowLog log_it,
+                                  TBlobOStreamFlags flags,
                                   size_t buf_size,
 					  			  bool destroy);
 

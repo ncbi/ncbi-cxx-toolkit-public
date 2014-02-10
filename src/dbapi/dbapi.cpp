@@ -59,6 +59,21 @@ IStatement::~IStatement()
 {
 }
 
+IWriter* IStatement::GetBlobWriter(I_ITDescriptor& d, size_t blob_size,
+                                   EAllowLog log_it)
+{
+    return GetBlobWriter(d, blob_size,
+                         (log_it == eDisableLog) ? fBOS_SkipLogging : 0);
+}
+
+CNcbiOstream& IStatement::GetBlobOStream(I_ITDescriptor& d, size_t blob_size,
+                                         EAllowLog log_it, size_t buf_size)
+{
+    return GetBlobOStream(d, blob_size,
+                          (log_it == eDisableLog) ? fBOS_SkipLogging : 0,
+                          buf_size);
+}
+
 ICallableStatement::~ICallableStatement() 
 {
 }
@@ -84,12 +99,43 @@ IResultSet::~IResultSet()
 {
 }
 
+CNcbiOstream& IResultSet::GetBlobOStream(size_t blob_size, EAllowLog log_it,
+                                         size_t buf_size)
+{
+    return GetBlobOStream(blob_size,
+                          (log_it == eDisableLog) ? fBOS_SkipLogging : 0,
+                          buf_size);
+}
+
+CNcbiOstream& IResultSet::GetBlobOStream(IConnection *conn, size_t blob_size,
+                                         EAllowLog log_it, size_t buf_size)
+{
+    return GetBlobOStream(conn, blob_size,
+                          (log_it == eDisableLog) ? fBOS_SkipLogging : 0,
+                          buf_size);
+}
+
 IResultSetMetaData::~IResultSetMetaData()
 {
 }
 
 ICursor::~ICursor()
 {
+}
+
+CNcbiOstream& ICursor::GetBlobOStream(unsigned int col, size_t blob_size,
+                                      EAllowLog log_it, size_t buf_size)
+{
+    return GetBlobOStream(col, blob_size,
+                          (log_it == eDisableLog) ? fBOS_SkipLogging : 0,
+                          buf_size);
+}
+
+IWriter* ICursor::GetBlobWriter(unsigned int col, size_t blob_size,
+                                EAllowLog log_it)
+{
+    return GetBlobWriter(col, blob_size,
+                         (log_it == eDisableLog) ? fBOS_SkipLogging : 0);
 }
 
 IBulkInsert::~IBulkInsert()

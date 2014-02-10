@@ -82,33 +82,50 @@ ERW_Result CxBlobReader::PendingCount(size_t* /* count */)
 CxBlobWriter::CxBlobWriter(CDB_CursorCmd* curCmd,
                          unsigned int item_num,
                          size_t datasize, 
-						 bool log_it) : m_destroy(false), m_cdbConn(0)
+                         TBlobOStreamFlags flags)
+    : m_destroy(false), m_cdbConn(0), m_BytesNeeded(datasize)
 {
-    m_dataCmd = curCmd->SendDataCmd(item_num, datasize, log_it);
+    m_dataCmd = curCmd->SendDataCmd(item_num, datasize,
+                                    (flags & fBOS_SkipLogging) == 0);
 }
 
 CxBlobWriter::CxBlobWriter(CDB_Connection* conn,
                          I_ITDescriptor &d,
                          size_t blobsize, 
-                         bool log_it,
-						 bool destroy) : m_destroy(destroy), m_cdbConn(conn)
+                         TBlobOStreamFlags flags,
+                         bool destroy)
+    : m_destroy(destroy), m_cdbConn(conn), m_BytesNeeded(blobsize)
 {
-    m_dataCmd = conn->SendDataCmd(d, blobsize, log_it);
+    if ((flags & fBOS_UseTransaction) != 0) {
+        m_AutoTrans.reset(new CAutoTrans(*conn));
+    }
+    m_dataCmd = conn->SendDataCmd(d, blobsize,
+                                  (flags & fBOS_SkipLogging) == 0);
 }
 
 ERW_Result CxBlobWriter::Write(const void* buf,
                               size_t      count,
                               size_t*     bytes_written)
 {
+    _ASSERT(count <= m_BytesNeeded);
     size_t bPut = m_dataCmd->SendChunk(buf, count);
 
     if( bytes_written != 0 )
         *bytes_written = bPut;
 
-    if( bPut == 0 )
+    m_BytesNeeded -= bPut;
+    if (m_BytesNeeded == 0  &&  m_AutoTrans.get() != NULL) {
+        // Promptly release the transaction.
+        m_AutoTrans->Finish();
+        m_AutoTrans.reset();    
+    }
+
+    if (bPut == 0) {
+        m_AutoTrans.reset();
         return eRW_Eof;
-    else
+    } else {
         return eRW_Success;
+    }
 }
 
 ERW_Result CxBlobWriter::Flush()
@@ -120,10 +137,11 @@ CxBlobWriter::~CxBlobWriter()
 {
     try {
         delete m_dataCmd;
-		if( m_destroy )
-			delete m_cdbConn;
     }
     NCBI_CATCH_ALL_X( 8, kEmptyStr )
+    if (m_destroy) {
+        delete m_cdbConn;
+    }
 }
 
 
