@@ -1588,15 +1588,19 @@ void CBioseq_ONCALLER_HIV_RNA_INCONSISTENT :: TestOnObj(const CBioseq& bioseq)
      }
      if ( biosrc.GetGenome() == CBioSource::eGenome_genomic ){
         if (molinfo) {
-           if ( molinfo->GetBiomol() != CMolInfo::eBiomol_genomic) {
+           if ( molinfo->GetBiomol() == CMolInfo::eBiomol_genomic) {
                 return;
+           }
+           else {
+             thisInfo.test_item_list[GetName()]
+                         .push_back(GetDiscItemText(bioseq));
+             thisInfo.test_item_objs[GetName()]
+                         .push_back(CConstRef <CObject>(&bioseq));
            }
         }
      }
    }
 
-   thisInfo.test_item_list[GetName()].push_back(GetDiscItemText(bioseq));
-   thisInfo.test_item_objs[GetName()].push_back(CConstRef <CObject>(&bioseq));
 };
 
 void CBioseq_ONCALLER_HIV_RNA_INCONSISTENT :: GetReport(CRef <CClickableItem>& c_item)
@@ -5430,10 +5434,13 @@ bool CSeqEntryTestAndRepData :: HasAmplifiedWithSpeciesSpecificPrimerNote(const 
     }
   }
 
-  ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrg().GetOrgname().GetMod()) {
-     if ( (*it)->GetSubtype() == COrgMod::eSubtype_other
-                  && (*it)->GetSubname() == "amplified with species-specific primers")
+  if (biosrc.IsSetOrgMod()) {
+    ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod()) {
+      if ( (*it)->GetSubtype() == COrgMod::eSubtype_other
+           && (*it)->GetSubname() == "amplified with species-specific primers"){
         return true;
+      }
+    }
   }
   return false;
 };
@@ -5443,15 +5450,21 @@ bool CSeqEntryTestAndRepData :: IsBacterialIsolate(const CBioSource& biosrc)
 {
    if (!HasLineage(biosrc, "Bacteria")
          || !biosrc.IsSetOrgMod()
-         || HasAmplifiedWithSpeciesSpecificPrimerNote(biosrc)) return false;
+         || HasAmplifiedWithSpeciesSpecificPrimerNote(biosrc)) {
+     return false;
+   }
 
-   ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrg().GetOrgname().GetMod()) {
+   if (!biosrc.IsSetOrgMod()) {
+     return false;
+   }
+   ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod()) {
      strtmp = (*it)->GetSubname();
      if ( (*it)->GetSubtype() == COrgMod::eSubtype_isolate
              && !NStr::EqualNocase(strtmp, 0, 13, "DGGE gel band")
              && !NStr::EqualNocase(strtmp, 0, 13, "TGGE gel band")
-             && !NStr::EqualNocase(strtmp, 0, 13, "SSCP gel band"))
+             && !NStr::EqualNocase(strtmp, 0, 13, "SSCP gel band")) {
         return true;
+     }
    }
    return false; 
 };
@@ -5483,10 +5496,10 @@ void CSeqEntry_TEST_ALIGNMENT_HAS_SCORE :: x_CheckSeqEntryAlign(const CSeq_entry
      if (bseq_set.CanGetAnnot()) {
        ITERATE (list <CRef <CSeq_annot> >, it, bseq_set.GetAnnot()) {
          if ((*it)->GetData().IsAlign()) {
-            ITERATE (list <CRef <CSeq_align> >, ait, (*it)->GetData().GetAlign()) {
-                  x_CheckSeqAlign(**ait, GetDiscItemText(bseq_set), 
-                                                     CConstRef <CObject> (&bseq_set));
-            }
+          ITERATE (list <CRef <CSeq_align> >, ait, (*it)->GetData().GetAlign()){
+              x_CheckSeqAlign(**ait, GetDiscItemText(bseq_set), 
+                                     CConstRef <CObject> (&bseq_set));
+          }
          }
        }
      } 
@@ -7839,7 +7852,8 @@ void CSeqEntry_test_on_tax_cflts :: RunTests(const CBioSource& biosrc, const str
 */
 
    string desc_tmp;
-   ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrg().GetOrgname().GetMod()) {
+   if (!biosrc.IsSetOrgMod()) return;
+   ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod()) {
      strtmp = (*it)->GetSubname() + "$" + tax_nm + "#" + desc;
 //     desc_tmp = "$" + strtmp + "#" + tax_nm;
      desc_tmp = "$" + strtmp;
@@ -8013,9 +8027,12 @@ void CSeqEntry_test_on_quals :: GetMultiSubSrcVlus(const CBioSource& biosrc, con
 
 void CSeqEntry_test_on_quals :: GetMultiOrgModVlus(const CBioSource& biosrc, const string& type_name, vector <string>& multi_vlus)
 {
-   ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod() )
-      if ((*it)->GetSubtypeName((*it)->GetSubtype()) == type_name)
+   if (!biosrc.IsSetOrgMod()) return;
+   ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod() ){
+      if ((*it)->GetSubtypeName((*it)->GetSubtype()) == type_name) {
           multi_vlus.push_back((*it)->GetSubname());
+      }
+   }
 };
 
 
@@ -8024,27 +8041,39 @@ void CSeqEntry_test_on_quals :: GetMultiPrimerVlus(const CBioSource& biosrc, con
    if (!biosrc.CanGetPcr_primers()) return;
    ITERATE (list <CRef <CPCRReaction> >, jt, biosrc.GetPcr_primers().Get()) {
      if (qual_name == "fwd_primer_name" || qual_name == "fwd_primer_seq") {
-       ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetForward().Get()) {
-          if ( qual_name == "fwd_primer_name" && (*kt)->CanGetName() ) {
+       if ((*jt)->CanGetForward()) {
+         ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetForward().Get()) {
+            if ( qual_name == "fwd_primer_name" && (*kt)->CanGetName() ) {
               strtmp = (*kt)->GetName();
-              if (!strtmp.empty()) multi_vlus.push_back(strtmp);
-          }
-          if ( qual_name == "fwd_primer_seq" && (*kt)->CanGetSeq() ) {
+              if (!strtmp.empty()) {
+                  multi_vlus.push_back(strtmp);
+              }
+            }
+            if ( qual_name == "fwd_primer_seq" && (*kt)->CanGetSeq() ) {
               strtmp = (*kt)->GetSeq();
-              if (!strtmp.empty()) multi_vlus.push_back(strtmp);
-          }
+              if (!strtmp.empty()) {
+                   multi_vlus.push_back(strtmp);
+              }
+            }
+         }
        }
      }
      else {
-        ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetReverse().Get()) {
-           if ( qual_name == "rev_primer_name" && (*kt)->CanGetName() ) {
+        if ( (*jt)->CanGetReverse()) {
+          ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetReverse().Get()) {
+             if ( qual_name == "rev_primer_name" && (*kt)->CanGetName() ) {
                strtmp = (*kt)->GetName();
-               if (!strtmp.empty()) multi_vlus.push_back(strtmp);
-           }
-           if ( qual_name == "rev_primer_seq" && (*kt)->CanGetSeq() ) {
+               if (!strtmp.empty()) {
+                   multi_vlus.push_back(strtmp);
+               }
+             }
+             if ( qual_name == "rev_primer_seq" && (*kt)->CanGetSeq() ) {
                strtmp = (*kt)->GetSeq();
-               if (!strtmp.empty()) multi_vlus.push_back(strtmp);
-           }
+               if (!strtmp.empty()) {
+                   multi_vlus.push_back(strtmp);
+               }
+             }
+          }
         }
      }
    }
@@ -8106,30 +8135,43 @@ void CSeqEntry_test_on_quals :: GetMultiQualVlus(const string& qual_name, const 
 string CTestAndRepData :: GetSrcQualValue(const CBioSource& biosrc, const string& qual_name, bool is_subsrc, const CString_constraint* str_cons)
 {
  string ret_str(kEmptyStr);
- if (is_subsrc) ret_str = Get1SubSrcValue(biosrc, qual_name);
- else if (qual_name == "location") ret_str = thisInfo.genome_names[biosrc.GetGenome()];
- else if (qual_name == "taxname") 
+ if (is_subsrc) {
+    ret_str = Get1SubSrcValue(biosrc, qual_name);
+ }
+ else if (qual_name == "location") {
+     ret_str = thisInfo.genome_names[biosrc.GetGenome()];
+ }
+ else if (qual_name == "taxname") {
             ret_str = biosrc.IsSetTaxname() ? biosrc.GetTaxname() : kEmptyStr;
- else if (qual_name == "common_name") 
+ }
+ else if (qual_name == "common_name") { 
         ret_str = biosrc.IsSetCommon() ? biosrc.GetCommon() : kEmptyStr;
- else if (qual_name == "lineage") 
+ }
+ else if (qual_name == "lineage") {
         ret_str = biosrc.IsSetLineage() ? biosrc.GetLineage() : kEmptyStr;
- else if (qual_name == "division") 
+ }
+ else if (qual_name == "division") {
         ret_str = biosrc.IsSetDivision() ? biosrc.GetDivision() : kEmptyStr;
- else if (qual_name == "dbxref") ret_str = "no ready yet";
+ }
+ else if (qual_name == "dbxref") {
+     ret_str = "no ready yet";
+ }
  else if (qual_name == "taxid") {
    int tid = biosrc.GetOrg().GetTaxId();
-   if (tid > 0) ret_str = NStr::IntToString(tid);
+   if (tid > 0) {
+       ret_str = NStr::IntToString(tid);
+   }
    else {
      if (biosrc.GetOrg().CanGetDb()) {
        ITERATE (vector <CRef <CDbtag> >, it, biosrc.GetOrg().GetDb()) {
          strtmp = (*it)->GetDb();
          if (NStr::FindNoCase(strtmp, "taxdb") != string::npos
                && strtmp.size() == ((string)"taxdb").size()
-               && (*it)->GetTag().IsStr()) 
+               && (*it)->GetTag().IsStr()) {
              ret_str = (*it)->GetTag().GetStr();
-         }       
-       }
+         }
+       }       
+     }
    }
  }
  else if ( qual_name == "fwd_primer_name" || qual_name == "fwd_primer_seq"
@@ -8138,32 +8180,42 @@ string CTestAndRepData :: GetSrcQualValue(const CBioSource& biosrc, const string
    if (biosrc.CanGetPcr_primers()) {
      ITERATE (list <CRef <CPCRReaction> >, jt, biosrc.GetPcr_primers().Get()) {
        if (qual_name == "fwd_primer_name" || qual_name == "fwd_primer_seq") {
-         ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetForward().Get()) {
-          if ( qual_name == "fwd_primer_name" && (*kt)->CanGetName() ) {
+         if ((*jt)->CanGetForward()) {
+           ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetForward().Get()) {
+            if ( qual_name == "fwd_primer_name" && (*kt)->CanGetName() ) {
               strtmp = (*kt)->GetName();
-              if (!strtmp.empty()) { ret_str = strtmp; break; }
-          }
-          if ( qual_name == "fwd_primer_seq" && (*kt)->CanGetSeq() ) {
+              if (!strtmp.empty()) { 
+                   ret_str = strtmp; 
+                   break; 
+              }
+            }
+            if ( qual_name == "fwd_primer_seq" && (*kt)->CanGetSeq() ) {
               strtmp = (*kt)->GetSeq();
-              if (!strtmp.empty()) { ret_str = strtmp; break; }
-          }
-          if (!ret_str.empty()) break;
+              if (!strtmp.empty()) { 
+                   ret_str = strtmp; 
+                   break; 
+              }
+            }
+            if (!ret_str.empty()) break;
+           }
          }
        }
        else {
-        ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetReverse().Get()) {
-           if ( qual_name == "rev_primer_name" && (*kt)->CanGetName() ) {
+        if ((*jt)->CanGetReverse()) {
+          ITERATE (list <CRef <CPCRPrimer> >, kt, (*jt)->GetReverse().Get()) {
+             if ( qual_name == "rev_primer_name" && (*kt)->CanGetName() ) {
                strtmp = (*kt)->GetName();
                if (!strtmp.empty()) {ret_str = strtmp; break;}
-           }
-           if ( qual_name == "rev_primer_seq" && (*kt)->CanGetSeq() ) {
+             }
+             if ( qual_name == "rev_primer_seq" && (*kt)->CanGetSeq() ) {
                strtmp = (*kt)->GetSeq();
                if (!strtmp.empty()) { ret_str = strtmp; break;}
-           }
-           if ( !ret_str.empty() ) break;
-        }
+             }
+             if ( !ret_str.empty() ) break;
+          }
+         }
+         if ( !ret_str.empty() ) break;
        }
-       if ( !ret_str.empty() ) break;
      }
    }
  }
@@ -8597,7 +8649,7 @@ bool CSeqEntry_test_on_quals :: GetQual2SrcIdx(const vector <CConstRef <CBioSour
          }
       }
 
-      if ( it->IsSetOrgname() && it->GetOrgname().CanGetMod() ) {
+      if ( it->IsSetOrgMod() ) {
          has_newqual = true;
          ITERATE (list <CRef <COrgMod> >, jt, it->GetOrgname().GetMod() ) {
             strtmp = (*jt)->GetSubtypeName((*jt)->GetSubtype(), 
@@ -8802,19 +8854,22 @@ bool CSeqEntry_test_on_biosrc_orgmod :: IsStrainInCultureCollectionForBioSource(
 {
   COrgMod::ESubtype check_type;
   string check_head(kEmptyStr), subname_rest(kEmptyStr);
+  if (!biosrc.IsSetOrgMod()) {
+        return false;
+  }
   const list < CRef < COrgMod > >& mods = biosrc.GetOrgname().GetMod();
   ITERATE (list <CRef <COrgMod> >, it, mods) {
     if ( (*it)->GetSubtype() == COrgMod::eSubtype_strain
-                  && (*it)->GetSubname().substr(0, strain_head.size()) == strain_head) {
-       check_type = COrgMod::eSubtype_culture_collection;
-       check_head = culture_head;
-       subname_rest = CTempString((*it)->GetSubname()).substr(strain_head.size());
+           && (*it)->GetSubname().substr(0, strain_head.size()) == strain_head){
+     check_type = COrgMod::eSubtype_culture_collection;
+     check_head = culture_head;
+     subname_rest = CTempString((*it)->GetSubname()).substr(strain_head.size());
     }
     else if ( (*it)->GetSubtype() == COrgMod::eSubtype_culture_collection
                 && (*it)->GetSubname().substr(0, culture_head.size()) == culture_head) {
-       check_type = COrgMod::eSubtype_strain;
-       check_head = strain_head;
-       subname_rest = CTempString((*it)->GetSubname()).substr(culture_head.size());
+     check_type = COrgMod::eSubtype_strain;
+     check_head = strain_head;
+     subname_rest =CTempString((*it)->GetSubname()).substr(culture_head.size());
     }
 
     if (!check_head.empty()&& !subname_rest.empty() 
@@ -8866,33 +8921,35 @@ void CSeqEntry_test_on_biosrc_orgmod :: BiosrcHasConflictingStrainAndCultureColl
    bool has_match = false, has_conflict = false;
    string extra_str(kEmptyStr), subnm1, subnm2;
 
-   const list < CRef < COrgMod > >& mods = biosrc.GetOrgname().GetMod();
-   ITERATE (list < CRef < COrgMod > >, it, mods) {
-     if ((*it)->GetSubtype() == COrgMod :: eSubtype_strain) {
-       ITERATE (list < CRef < COrgMod > >, jt, mods) {
-         if ( (*jt)->GetSubtype() == COrgMod :: eSubtype_culture_collection) {
-            subnm1 = (*it)->GetSubname();
-            subnm2 = (*jt)->GetSubname();
-            RmvChar(subnm1, ": ");
-            RmvChar(subnm2, ": ");
-            if (subnm1 == subnm2) {
+   if (biosrc.IsSetOrgMod()) {
+     const list < CRef < COrgMod > >& mods = biosrc.GetOrgname().GetMod();
+     ITERATE (list < CRef < COrgMod > >, it, mods) {
+       if ((*it)->GetSubtype() == COrgMod :: eSubtype_strain) {
+         ITERATE (list < CRef < COrgMod > >, jt, mods) {
+           if ( (*jt)->GetSubtype() == COrgMod :: eSubtype_culture_collection) {
+              subnm1 = (*it)->GetSubname();
+              subnm2 = (*jt)->GetSubname();
+              RmvChar(subnm1, ": ");
+              RmvChar(subnm2, ": ");
+              if (subnm1 == subnm2) {
                    has_match = true;
                    break;
-            }
-            else {
-               extra_str = "        " 
+              }
+              else {
+                 extra_str = "        " 
                             + (*it)->GetSubtypeName((*it)->GetSubtype(),
                                                     COrgMod::eVocabulary_insdc)
                             + ": " + (*it)->GetSubname() + "\n        "
                             + (*jt)->GetSubtypeName((*jt)->GetSubtype(),
                                                     COrgMod::eVocabulary_insdc)
                             + ": " + (*jt)->GetSubname();
-               has_conflict = true;
-            }
-         }
-       };
-       if (has_match) {
+                 has_conflict = true;
+              }
+           }
+         };
+         if (has_match) {
            break;
+         }
        }
      }
    }
@@ -9124,11 +9181,17 @@ bool CSeqEntry_test_on_biosrc_orgmod :: HasMissingBacteriaStrain(const CBioSourc
        return false;
    tax_nm = CTempString(tax_nm).substr(pos+5);
    if (tax_nm.empty() 
-           || (tax_nm.find('(') != string::npos && tax_nm[tax_nm.size()-1] == ')')) 
+       || (tax_nm.find('(') != string::npos && tax_nm[tax_nm.size()-1] == ')')){
             return false;
+   }
+   if (!biosrc.IsSetOrgMod()) {
+       return true;
+   }
    ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod()) {
-       if ( (*it)->GetSubtype() == COrgMod :: eSubtype_strain && (*it)->GetSubname() == tax_nm)
+       if ( (*it)->GetSubtype() == COrgMod :: eSubtype_strain 
+                && (*it)->GetSubname() == tax_nm) {
             return false;
+       }
    }
    return true;
 };
@@ -9211,8 +9274,11 @@ bool CSeqEntry_test_on_biosrc :: x_IsMissingRequiredStrain(const CBioSource& bio
 {
   if (!HasLineage(biosrc, "Bacteria")) return false;
   if (biosrc.IsSetOrgMod()) {
-     ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod())
-       if ( (*it)->GetSubtype() == COrgMod :: eSubtype_strain) return false;
+     ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod()) {
+       if ( (*it)->GetSubtype() == COrgMod :: eSubtype_strain) {
+           return false;
+       }
+     }
   }
   return true;
 };
@@ -9223,9 +9289,12 @@ bool CSeqEntry_test_on_biosrc :: HasMulSrc(const CBioSource& biosrc)
     ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod()) {
       const int subtype = (*it)->GetSubtype();
       const string& subname = (*it)->GetSubname();
-      if ( (subtype == COrgMod::eSubtype_strain || subtype == COrgMod::eSubtype_isolate)
-             && ( subname.find(",") !=string::npos || subname.find(";") !=string::npos) )
+      if ( (subtype == COrgMod::eSubtype_strain 
+                     || subtype == COrgMod::eSubtype_isolate)
+             && ( subname.find(",") !=string::npos 
+                    || subname.find(";") !=string::npos) ) {
          return true;
+      }
     }
     return false;
   }
@@ -9237,15 +9306,21 @@ bool CSeqEntry_test_on_biosrc :: IsBacterialIsolate(const CBioSource& biosrc)
 {
    if (!HasLineage(biosrc, "Bacteria")
          || !biosrc.IsSetOrgMod()
-         || HasAmplifiedWithSpeciesSpecificPrimerNote(biosrc)) return false;
+         || HasAmplifiedWithSpeciesSpecificPrimerNote(biosrc)) {
+      return false;
+   }
 
-   ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrg().GetOrgname().GetMod()) {
+   if (!biosrc.IsSetOrgMod()) {
+      return false;
+   }
+   ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod()) {
      strtmp = (*it)->GetSubname();
      if ( (*it)->GetSubtype() == COrgMod::eSubtype_isolate
              && !NStr::EqualNocase(strtmp, 0, 13, "DGGE gel band")
              && !NStr::EqualNocase(strtmp, 0, 13, "TGGE gel band")
-             && !NStr::EqualNocase(strtmp, 0, 13, "SSCP gel band"))
+             && !NStr::EqualNocase(strtmp, 0, 13, "SSCP gel band")) {
         return true;
+     }
    }
    return false;
 };
@@ -9341,7 +9416,7 @@ void CSeqEntry_test_on_biosrc :: AddMissingViralQualsDiscrepancies(const CBioSou
     }
   }
 
-  if (biosrc.IsSetOrgname() && biosrc.GetOrgname().CanGetMod()) {
+  if (biosrc.IsSetOrgMod()) {
     ITERATE (list< CRef< COrgMod > >, it, biosrc.GetOrgname().GetMod()) {
       if ( (*it)->GetSubtype() == COrgMod :: eSubtype_nat_host) {
         has_specific_host = true;
@@ -9372,24 +9447,32 @@ void CSeqEntry_test_on_biosrc :: AddMissingViralQualsDiscrepancies(const CBioSou
 bool CSeqEntry_test_on_biosrc :: IsMissingRequiredClone (const CBioSource& biosrc)
 {
    bool has_clone = false, needs_clone = false;
-   if (HasAmplifiedWithSpeciesSpecificPrimerNote(biosrc)) return false;
+   if (HasAmplifiedWithSpeciesSpecificPrimerNote(biosrc)) {
+      return false;
+   }
    if (biosrc.IsSetTaxname()
-         && NStr::FindNoCase(biosrc.GetTaxname(), "uncultured") != string::npos)
+        && NStr::FindNoCase(biosrc.GetTaxname(), "uncultured") != string::npos){
       needs_clone = true;
+   }
    if (IsSubSrcPresent(biosrc, CSubSource :: eSubtype_environmental_sample)
-                     || IsSubSrcPresent(biosrc, CSubSource :: eSubtype_clone))
-         has_clone = true;
+          || IsSubSrcPresent(biosrc, CSubSource :: eSubtype_clone)) {
+      has_clone = true;
+   }
    if (needs_clone && !has_clone) {  // look for gel band isolate
      if (biosrc.IsSetOrgMod()) {
        ITERATE (list <CRef <COrgMod> >, it, biosrc.GetOrgname().GetMod()) {
           if ( (*it)->GetSubtype() == COrgMod :: eSubtype_isolate 
-                && NStr::FindNoCase((*it)->GetSubname(), "gel band") != string::npos) {
-                   needs_clone = false;  break;
+                && NStr::FindNoCase((*it)->GetSubname(), "gel band") 
+                         != string::npos) {
+             needs_clone = false;  
+             break;
           }
        }
      }
    }
-   if (needs_clone && !has_clone) return true;
+   if (needs_clone && !has_clone) {
+       return true;
+   }
    return false;
 };
 
@@ -9489,14 +9572,14 @@ void CSeqEntry_test_on_biosrc ::RunTests(const CBioSource& biosrc, const string&
        has_chrom = IsSubSrcPresent(biosrc, CSubSource :: eSubtype_chromosome);
        if (has_map && !has_chrom) {
          for (CBioseq_CI b_ci(*thisInfo.scope, *(biosrc_seqdesc_seqentry[idx]));
-                  b_ci; 
-                  ++b_ci){
+                   b_ci; 
+                   ++b_ci){
             if (b_ci->IsAa()) continue;
             CConstRef <CBioseq> bioseq = b_ci->GetCompleteBioseq();
             if (IsBioseqHasLineage(*bioseq, "Eukaryota", false)) {
-                 thisInfo.test_item_list[GetName_map()]
-                             .push_back( GetDiscItemText(*bioseq)); 
-                 thisInfo.test_item_objs[GetName_map()]
+                  thisInfo.test_item_list[GetName_map()]
+                              .push_back( GetDiscItemText(*bioseq)); 
+                  thisInfo.test_item_objs[GetName_map()]
                            .push_back(CConstRef <CObject>(bioseq.GetPointer()));
             }
          }
@@ -11285,6 +11368,7 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ReportSameTaxHaplotypeDiffSequenceMism
 void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ReportHaplotypeSequenceMismatchForList()
 {
    /* first, look for same taxname, same haplotype, different sequence */
+cerr << "222\n";
    ITERATE (Str2Seqs, it, m_tax_hap2seqs) {
       if (!SeqsMatch(it->second)) {
            ReportSameTaxHaplotypeDiffSequenceMismatch(it);
@@ -11294,6 +11378,7 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ReportHaplotypeSequenceMismatchForList
       }
    }
 
+cerr << "333\n";
    /* now look for sequence that match but have different haplotypes */
    vector <CConstRef <CBioseq> > seqs;
    vector <string> hap_tps;
@@ -11307,35 +11392,36 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ReportHaplotypeSequenceMismatchForList
      }
    }
 
+cerr << "444\n";
    unsigned j, len1, len2;
-   vector <unsigned> seqs_Ndiff_idx, seqs_strict_idx;
+   vector <unsigned> seqs_Ndiff_idx, seqs_strict_idx, matched;
    string desc;
-   bool mismatch, match_strict, match_Ndiff;
+   bool mismatch;
+   matched.reserve(seqs.size());
+   for (i=0; i < seqs.size(); i++) {
+       matched.push_back(0);
+   }
    for (i=0; (int)i < (int)(seqs.size()-1); i++) {
-      if (seqs[i].Empty()) continue;
+      if (matched[i]) continue;
       len1 = seqs[i]->IsSetLength() ? seqs[i]->GetLength() : 0; 
       mismatch = false;
       for (j=i+1; j < seqs.size(); j++) {
-         if (seqs[j].Empty()) continue;
+         if (matched[j]) continue;
          len2 = seqs[j]->IsSetLength() ? seqs[j]->GetLength() : 0;
          if (len1 == len2) {
-           match_strict = match_Ndiff = false;
            if (SubSeqsMatch(seqs[i], 0, seqs[j], 0, len1) ) {
                if (seqs_Ndiff_idx.empty()) {
                    seqs_Ndiff_idx.push_back(i);
                }
                seqs_Ndiff_idx.push_back(j);
-               match_Ndiff = true;  
+               matched[j] = 1;
            }
            if (SubSeqsMatch(seqs[i], 0, seqs[j], 0, len1, false)) {
                if (seqs_strict_idx.empty()) {
                    seqs_strict_idx.push_back(i);
                }
                seqs_strict_idx.push_back(j);
-               match_strict = true;
-           }
-           if (match_Ndiff || match_strict) {
-               seqs[j].Reset();
+               matched[j] = 1;
            }
            if (hap_tps[hap_idx[j]] != hap_tps[hap_idx[i]]) {
                  mismatch = true;
@@ -11670,6 +11756,7 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: TestOnObj(const CSeq_entry& seq_entry)
    }
 
    if (!m_tax_hap2seqs.empty()) {
+cerr << "111\n";
         ReportHaplotypeSequenceMismatchForList();
    }
 };
@@ -12827,10 +12914,10 @@ void CSeqEntry_on_comment :: TestOnObj(const CSeq_entry& seq_entry)
 
      // DISC_MISMATCHED_COMMENTS
      if (run_mix) {
-        strtmp = (*it)->GetComment();
-        strtmp = strtmp.empty() ? "empty" : strtmp;
-        thisInfo.test_item_list[GetName_mix()].push_back(strtmp + "$" + desc);
-        thisInfo.test_item_objs[GetName_mix() +"$" + strtmp].push_back(feat_ref);
+       strtmp = (*it)->GetComment();
+       strtmp = strtmp.empty() ? "empty" : strtmp;
+       thisInfo.test_item_list[GetName_mix()].push_back(strtmp + "$" + desc);
+       thisInfo.test_item_objs[GetName_mix() +"$" + strtmp].push_back(feat_ref);
      }
   }
 };
@@ -12856,13 +12943,10 @@ void CSeqEntry_ONCALLER_COMMENT_PRESENT :: GetReport(CRef <CClickableItem>& c_it
     unsigned cnt = c_item->item_list.size();
     strtmp = (m_all_same? " (all same)." : " (some different). ");
     c_item->description 
-      = GetOtherComment(cnt, 
-                        "comment descriptor was found", 
+      = GetOtherComment(cnt, "comment descriptor was found", 
                         "comment descriptors were found")
         + strtmp;
 };
-
-
 
 bool CSeqEntry_test_on_pub :: IsNameCapitalizationOk(const string& name)
 {
@@ -12892,7 +12976,7 @@ bool CSeqEntry_test_on_pub :: IsNameCapitalizationOk(const string& name)
           ITERATE (vector <string>, it, thisInfo.short_auth_nms) {
             len = (*it).size();
             if (name.size() > len 
-                  && ((pos = name.find(*it)) != string::npos) 
+                  && ((pos = name.find(*it, pos)) != string::npos) 
                   && name[len] == ' ') {
                found = true;
                pos += len -1; //in order to set need_cap correctly

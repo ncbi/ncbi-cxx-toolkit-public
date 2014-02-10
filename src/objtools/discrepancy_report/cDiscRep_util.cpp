@@ -39,8 +39,6 @@
 #include <objects/seq/Seq_ext.hpp>
 #include <objects/seq/Delta_ext.hpp>
 #include <objects/seq/Delta_seq.hpp>
-#include <objects/seqfeat/PCRReactionSet.hpp>
-#include <objects/seqfeat/PCRPrimerSet.hpp>
 #include <objects/seqfeat/RNA_gen.hpp>
 #include <objects/seqfeat/RNA_ref.hpp>
 #include <objects/seqblock/GB_block.hpp>

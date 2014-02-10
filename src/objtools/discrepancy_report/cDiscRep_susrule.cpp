@@ -1737,7 +1737,7 @@ bool CSuspectRuleCheck :: FollowedByFamily(string& after_str)
   size_t pos = after_str.find_first_of(' ');
   if (pos != string::npos) {
      after_str = CTempString(after_str).substr(pos+1);
-     if (NStr::EqualNocase(after_str, "family")) {
+     if (NStr::EqualNocase(after_str, 0, 6, "family")) {
            after_str = CTempString(after_str).substr(7);
            return true;
      }
