@@ -2269,6 +2269,9 @@ void SeqDB_GetFileExtensions(bool db_is_protein, vector<string>& extn)
     extn.push_back(kExtnMol + "sd");   // ISAM string data file
     extn.push_back(kExtnMol + "pi");   // ISAM PIG index file
     extn.push_back(kExtnMol + "pd");   // ISAM PIG data file
+    extn.push_back(kExtnMol + "xc");   // gi-to-taxids cyclopedia file
+    extn.push_back(kExtnMol + "xi");   // gi-to-taxids index file
+    extn.push_back(kExtnMol + "xd");   // gi-to-taxids data file
 
     // Contain masking information
     extn.push_back(kExtnMol + "aa");   // ISAM mask index file
