@@ -753,7 +753,7 @@ enum EDiagPostFlag {
     /// This flag is deprecated and ignored - all log writes are atomic.
     /// For compatibility IsSetDiagPostFlag always returns true when
     /// asked about this flag.
-    eDPF_AtomicWrite        = 1 << 26,
+    eDPF_AtomicWrite        = 1 << 26, ///< @deprecated
 
     /// Send the message to 'console' regardless of it's severity.
     /// To be set by 'Console' manipulator only.
@@ -769,8 +769,7 @@ enum EDiagPostFlag {
     eDPF_ImportantFlagsMask = eDPF_PreMergeLines |
                               eDPF_MergeLines |
                               eDPF_OmitInfoSev |
-                              eDPF_OmitSeparator |
-                              eDPF_AtomicWrite,
+                              eDPF_OmitSeparator,
 
     /// Use flags provided by user as-is, do not allow CNcbiDiag to replace
     /// "important" flags by the globally set ones.

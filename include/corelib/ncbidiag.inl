@@ -486,7 +486,6 @@ bool CDiagBuffer::GetTraceEnabled(void) {
 
 inline
 bool IsSetDiagPostFlag(EDiagPostFlag flag, TDiagPostFlags flags) {
-    if (flag == eDPF_AtomicWrite) return true;
     if (flags & eDPF_Default)
         flags |= CDiagBuffer::s_GetPostFlags();
     return (flags & flag) != 0;

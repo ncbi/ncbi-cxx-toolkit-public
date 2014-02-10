@@ -4798,6 +4798,7 @@ static TDiagPostFlags s_SetDiagPostAllFlags(TDiagPostFlags& flags,
     CDiagLock lock(CDiagLock::eWrite);
 
     TDiagPostFlags prev_flags = flags;
+    new_flags &= ~eDPF_AtomicWrite;
     if (new_flags & eDPF_Default) {
         new_flags |= prev_flags;
         new_flags &= ~eDPF_Default;
