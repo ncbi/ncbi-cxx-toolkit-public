@@ -9694,7 +9694,10 @@ bool CSeqEntry_test_on_biosrc :: SamePCRReaction(const CPCRReaction& pcr1, const
   }
   if (has_fwd1) { 
     if (SamePrimerList(pcr1.GetForward().Get(), pcr2.GetForward().Get())) {
-      return (SamePrimerList(pcr1.GetReverse().Get(), pcr2.GetReverse().Get()));
+      if (has_rev1) {
+         return (
+             SamePrimerList(pcr1.GetReverse().Get(), pcr2.GetReverse().Get()));
+      }
     }
     else return false;
   }
