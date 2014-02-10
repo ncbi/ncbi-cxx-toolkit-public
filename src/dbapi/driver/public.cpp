@@ -300,6 +300,7 @@ CDB_LangCmd* CDB_Connection::LangCmd(const string& lang_query)
 CDB_RPCCmd* CDB_Connection::RPC(const string& rpc_name)
 {
     CHECK_CONNECTION(m_ConnImpl);
+    // _TRACE-d in CDB_RPCCmd::Send, which performs the actual I/O.
     return m_ConnImpl->RPC(rpc_name);
 }
 
@@ -325,18 +326,25 @@ CDB_SendDataCmd* CDB_Connection::SendDataCmd(I_ITDescriptor& desc,
                                              bool dump_results)
 {
     CHECK_CONNECTION(m_ConnImpl);
+    _TRACE("Sending " << data_size << " byte(s) of data");
     return m_ConnImpl->SendDataCmd(desc, data_size, log_it, dump_results);
 }
 
 bool CDB_Connection::SendData(I_ITDescriptor& desc, CDB_Stream& lob, bool log_it)
 {
     CHECK_CONNECTION(m_ConnImpl);
+    _TRACE("Sending " << lob.Size() << " byte(s) of data");
     return m_ConnImpl->SendData(desc, lob, log_it);
 }
 
 void CDB_Connection::SetDatabaseName(const string& name)
 {
+    if (name.empty()) {
+        return;
+    }
+
     CHECK_CONNECTION(m_ConnImpl);
+    _TRACE("Now using database " << name);
     m_ConnImpl->SetDatabaseName(name);
 }
 
