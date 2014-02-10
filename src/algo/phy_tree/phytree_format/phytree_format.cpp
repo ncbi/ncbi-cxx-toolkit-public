@@ -528,7 +528,7 @@ void CPhyTreeFormatter::x_InitTreeLabels(CBioTreeContainer &btc,
    
     NON_CONST_ITERATE (CNodeSet::Tdata, node, btc.SetNodes().Set()) {
         if ((*node)->CanGetFeatures()) {
-            string  blastName = "";
+            string  blastName = "",accNbr;
             //int id = (*node)->GetId();
             CRef< CNodeFeature > label_feature_node;
             CRef< CNodeFeature > selected_feature_node;
@@ -537,7 +537,7 @@ void CPhyTreeFormatter::x_InitTreeLabels(CBioTreeContainer &btc,
 //              featureSelectedID = s_kSeqIdId;
                 featureSelectedID = eAccessionNbrId;                
             }
-            else if (lblType == eTaxName) {
+            else if (lblType == eTaxName || lblType == eTaxNameAndAccession) {
                 featureSelectedID = eOrganismId;
             }                
             else if (lblType == eSeqTitle) {
@@ -561,7 +561,10 @@ void CPhyTreeFormatter::x_InitTreeLabels(CBioTreeContainer &btc,
                                     lblType == eSeqIdAndBlastName) { 
                    blastName = (*node_feature)->GetValue();
                 }
-            
+                if ((*node_feature)->GetFeatureid() == eAccessionNbrId && 
+                                    lblType == eTaxNameAndAccession) { 
+                   accNbr = (*node_feature)->GetValue();
+                }                
                 if ((*node_feature)->GetFeatureid() == featureSelectedID) {
                     // a terminal node
                     // figure out which sequence this corresponds to
@@ -576,6 +579,10 @@ void CPhyTreeFormatter::x_InitTreeLabels(CBioTreeContainer &btc,
                     //concatinate with blastName
                     label = label + "(" + blastName + ")";
                 }
+                if(lblType == eTaxNameAndAccession) {
+                    //concatinate with accession number
+                    label = label + "(" + accNbr + ")";
+                }                
                 //label_feature_node->SetValue(label);
                 label_feature_node->ResetValue();
                 label_feature_node->SetValue() = label;                
@@ -765,9 +772,12 @@ void CPhyTreeFormatter::x_InitTreeFeatures(CBioTreeContainer& btc,
         case eSeqIdAndBlastName:
             labels[i] = accession_nbrs[i] + "(" + blast_names[i] + ")";
             break;
+
+        case eTaxNameAndAccession:
+            labels[i] = organisms[i] + "(" + accession_nbrs[i] + ")";
+            break;        
         }
-
-
+     
         if (labels[i].empty()) {
             CSeq_id_Handle best_id_handle = sequence::GetId(bio_seq_handles[i],
                                                        sequence::eGetId_Best);
