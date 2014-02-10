@@ -1628,9 +1628,8 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
             if(!m_nopolya && IsPolyA(&m_mrna.front(), coord, m_mrna.size())) {//polya
                 m_polya_start = coord;
             } else {//gap
-
                 if(GetTestType() == kTestType_20_28_90_cut20) {
-                    if(  ( mrna_size - (int)s.m_box[1] - 1 ) >= kFlankExonProx ) {//gap, cut to splice 
+                    if(  ( (int)mrna_size - (int)s.m_box[1] - 1 ) >= kFlankExonProx ) {//gap, cut to splice 
                         int seq1_pos = (int)s.m_box[1];
                         int seq2_pos = (int)s.m_box[3];
                         int det_pos = s.m_details.size() - 1;
@@ -1676,7 +1675,6 @@ CSplign::SAlignedCompartment CSplign::x_RunOnCompartment(THitRefs* phitrefs,
                         }
                     }
                 }
-
 
                 TSegment ss;
                 ss.m_box[0] = coord;
@@ -1903,6 +1901,8 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
 
     while(true) {
 
+        bool continue_iterations = false;
+
         if(m_segments.size() > 0) {
             segments.resize(m_segments.size());
             copy(m_segments.begin(), m_segments.end(), segments.begin());
@@ -1918,7 +1918,6 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
         ITERATE(TSegmentDeque, ii, segments) {
             if(ii->m_exon) ++exon_count0;
         }
-
 
         //extend 100% near gaps and flanks
         if (test_type == kTestType_20_28_90_cut20 )  { // test mode
@@ -1952,7 +1951,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                 last_exon->ExtendRight(m_mrna, m_genomic, ext_len, m_aligner);
             }
         }
-                        
+                      
 
         //PARTIAL TRIMMING OF TERMINAL EXONS
         if( test_type == kTestType_production_default) {//default production
@@ -2074,7 +2073,6 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
             ++seg_dim;
         }
 
-
         //WHOLE EXON TRIMMING
 
         //drop low complexity terminal exons
@@ -2102,36 +2100,88 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
             } 
         }}
 
-        // turn to gaps exons with low identity
-        for(size_t k (0); k < seg_dim; ++k) {
-            TSegment& s (segments[k]);
-            if(s.m_exon == false) continue;
 
-            bool drop (false);
+        //throw away low identity exons       
+        NON_CONST_ITERATE(TSegmentDeque, ii, segments) {
+            if(ii->m_exon == false) continue;
+            if(ii->m_idty < m_MinExonIdty) {
+                if(test_type == kTestType_20_28_90_cut20) {//try to trim it first
+                    TSegment sl(*ii), sr(*ii);
+                    sl.ImproveFromLeft1(Seq1, Seq2, m_aligner);
+                    sr.ImproveFromRight1(Seq1, Seq2, m_aligner);
+                    if(sl.m_details != ii->m_details || sr.m_details != ii->m_details){
+                        //pick better one
+                        if(sl.m_details == ii->m_details ||
+                           (sr.m_details != ii->m_details && sr.m_score > sl.m_score ) ) {
+                            *ii = sr;
+                        } else {
+                            *ii = sl;
+                        }
+                        //add gaps if needed
+                        if(ii != segments.begin() && (ii)->m_box[0] > (ii - 1)->m_box[1] + 1) {
+                            TSegment sgap;
+                            sgap.m_box[0] = (ii - 1)->m_box[1] + 1;
+                            sgap.m_box[2] = (ii - 1)->m_box[3] + 1;
+                            sgap.m_box[1] = ii->m_box[0] - 1;
+                            sgap.m_box[3] = ii->m_box[2] - 1;
+                            sgap.SetToGap();
+                            ii = segments.insert(ii, sgap);
+                            continue_iterations = true;
+                            ++seg_dim;
+                            ++ii;
+                        }
+                        if( (ii+1) != segments.end() && (ii+1)->m_box[0] > ii->m_box[1] + 1 ) {
+                            TSegment sgap;
+                            ++ii;
+                            sgap.m_box[0] = (ii - 1)->m_box[1] + 1;
+                            sgap.m_box[2] = (ii - 1)->m_box[3] + 1;
+                            sgap.m_box[1] = ii->m_box[0] - 1;
+                            sgap.m_box[3] = ii->m_box[2] - 1;
+                            sgap.SetToGap();
+                            ii = segments.insert(ii, sgap);
+                            continue_iterations = true;
+                            ++seg_dim;
+                        }
 
-            if(s.m_idty < m_MinExonIdty) {
-                drop = true; // always make gaps on low identity
-            } else if (s.m_idty < .9 && s.m_len < 20) {
-                // 20_90 rule for short exons preceded/followed by non-consensus splices
+                    } else {
+                        ii->SetToGap();//partial trimming did not help
+                    }
+                } else {// end of kTestType_20_28_90_cut20
+                    //old style, just throw away
+                    ii->SetToGap();
+                } 
+            } else if(ii->m_idty < .9 && ii->m_len < 20) {
+                // 20_90 rule for short exons preceded/followed by non-consensus splices    
                 bool nc_prev (false), nc_next (false);
-                if(k > 0 && segments[k-1].m_exon) {
+                if(ii != segments.begin() && (ii - 1)->m_exon) {
                     nc_prev = ! TSegment::s_IsConsensusSplice(
-                                    segments[k-1].GetDonor(),
-                                    s.GetAcceptor());
+                                    (ii - 1)->GetDonor(),
+                                     ii->GetAcceptor());
                 }
-                if(k + 1 < seg_dim && segments[k+1].m_exon) {
+                if( (ii+1) != segments.end() && (ii + 1)->m_exon) {
                     nc_next = ! TSegment::s_IsConsensusSplice(
-                                    s.GetDonor(),
-                                    segments[k+1].GetAcceptor());
+                                     ii->GetDonor(),
+                                    (ii + 1)->GetAcceptor());
                 }
-                drop = nc_prev || nc_next;
-            }
+                if( nc_prev || nc_next ) {
+                     ii->SetToGap();
+                }
+            }            
 
-                
-            //20_28_90 TEST MODE
-           // turn to gaps exons with combination of shortness and low identity
-           if (test_type == kTestType_20_28_90 || test_type == kTestType_20_28_90_cut20 )  { // test mode
+        }
+
+
+        // turn to gaps exons with low identity
+        //20_28_90 TEST MODE
+        // turn to gaps exons with combination of shortness and low identity           
                 // deal with exons adjacent to gaps
+        if (test_type == kTestType_20_28_90 || test_type == kTestType_20_28_90_cut20 )  { // test mode  
+            for(size_t k (0); k < seg_dim; ++k) {
+                TSegment& s (segments[k]);
+                if(s.m_exon == false) continue;
+                
+                bool drop (false);
+                
                 enum EAdjustExon {
                     eNo,
                     eSoft, //for exons close to mRNA edge
@@ -2183,12 +2233,12 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                         drop = true;
                     }
                 }
-           }
-           if(drop) {
-               s.SetToGap();
-           }
+                if(drop) {
+                    s.SetToGap();
+                }
+            }
         }
-            
+
 
         // turn to gaps short weak terminal exons
         {{
@@ -2250,6 +2300,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
               }
           }
 
+
         // merge all adjacent gaps
         int gap_start_idx (-1);
         if(seg_dim && segments[0].m_exon == false) {
@@ -2295,11 +2346,12 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
             if(ii->m_exon) ++exon_count1;
         }
 
-        if(exon_count0 == exon_count1) break;
+        if(exon_count0 == exon_count1 && continue_iterations == false) break;
     }
 
     //cut to AG/GT
     {{
+
       
         if (test_type == kTestType_20_28_90_cut20 )  { // test mode
             bool first_exon = true;
@@ -2321,7 +2373,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                             cut_from_left = true;
                         }
                         first_exon = false;
-                    } else if( ! segments[k0-1].m_exon ) {//gap on left
+                    } else if( ! m_segments[k0-1].m_exon ) {//gap on left
                         cut_from_left = true;
                     }
                     //check right
@@ -2329,7 +2381,7 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                         if(  ( (int)SeqLen1 - (int)s.m_box[1] - 1 ) >= kFlankExonProx ) {//gap on right
                             cut_from_right = true;
                         }
-                    } else if(k0 + 1 < sdim && (! segments[k0+1].m_exon ) ) {//gap on right
+                    } else if(k0 + 1 < sdim && (! m_segments[k0+1].m_exon ) ) {//gap on right
                         cut_from_right = true;
                     }
 
@@ -2353,6 +2405,12 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                                     } else if(s.m_annot.size() > 2 && s.m_annot[2] == '<') {
                                         s.m_annot[0] = 'A';
                                         s.m_annot[1] = 'G';
+                                    }
+                                    if( k0>0 && ( !m_segments[k0-1].m_exon ) ) {//adjust previos gap 
+                                        TSegment& g = m_segments[k0-1];
+                                        g.m_box[1] = s.m_box[0] - 1;
+                                        g.m_box[3] = s.m_box[2] - 1;
+                                        g.m_len = g.m_box[1] - g.m_box[0] + 1;
                                     }
                                 }
                                 break;
@@ -2399,6 +2457,12 @@ float CSplign::x_Run(const char* Seq1, const char* Seq2)
                                     } else if(adim > 2 && s.m_annot[adim-3] == '>') {
                                         s.m_annot[adim-2] = 'G';
                                         s.m_annot[adim-1] = 'T';
+                                    }
+                                    if( k0 + 1 < sdim && ( !m_segments[k0+1].m_exon ) ) {//adjust next gap
+                                        TSegment& g = m_segments[k0+1];
+                                        g.m_box[0] = s.m_box[1] + 1;
+                                        g.m_box[2] = s.m_box[3] + 1;
+                                        g.m_len = g.m_box[1] - g.m_box[0] + 1;
                                     }
                                 }
                                 break;
