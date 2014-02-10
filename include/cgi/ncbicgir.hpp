@@ -47,6 +47,7 @@
 BEGIN_NCBI_SCOPE
 
 class CCgiSession;
+class CCgiStreamWrapper;
 
 class NCBI_XCGI_EXPORT CCgiResponse
 {
@@ -155,6 +156,15 @@ public:
     /// @sa GetOutput()
     void SetThrowOnBadOutput(bool throw_on_bad_output);
 
+    // If enabled, HEAD request will cause the application to exit
+    // immediately after writing headers. For this option to work
+    // correctly ProcessRequest must allow CCgiHeadException to
+    // be caught by CCgiApplication::Run().
+    // If the option is disabled, no exception is thrown and the application
+    // continues to run, but the output stream is blocked so that no more data
+    // can be sent to the client.
+    void SetExceptionAfterHEAD(bool expt_after_head);
+
     /// Check if 'Accept-Ranges' header is set to 'bytes'.
     bool AcceptRangesBytes(void) const;
 
@@ -229,13 +239,17 @@ private:
     auto_ptr<CCgiCookie> m_TrackingCookie;
     bool                 m_DisableTrackingCookie;
 
-    //
     NCBI_PARAM_DECL(bool, CGI, ThrowOnBadOutput);
     typedef NCBI_PARAM_TYPE(CGI, ThrowOnBadOutput) TCGI_ThrowOnBadOutput;
     TCGI_ThrowOnBadOutput m_ThrowOnBadOutput;
 
-    //
+    NCBI_PARAM_DECL(bool, CGI, ExceptionAfterHEAD);
+    typedef NCBI_PARAM_TYPE(CGI, ExceptionAfterHEAD) TCGI_ExceptionAfterHEAD;
+    TCGI_ExceptionAfterHEAD m_ExceptionAfterHEAD;
+
     string m_JQuery_Callback;
+
+    mutable auto_ptr<CCgiStreamWrapper> m_OutputWrapper;
 };
 
 

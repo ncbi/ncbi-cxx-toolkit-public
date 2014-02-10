@@ -146,7 +146,11 @@ int CCgiSampleApplication::ProcessRequest(CCgiContext& ctx)
     try {
         _TRACE("stream status: " << ctx.GetStreamStatus());
         response.WriteHeader();
-        page->Print(response.out(), CNCBINode::eHTML);
+        if (request.GetRequestMethod() != CCgiRequest::eMethod_HEAD) {
+            page->Print(response.out(), CNCBINode::eHTML);
+        }
+    } catch (CCgiHeadException&) {
+        throw;
     } catch (exception& e) {
         ERR_POST("Failed to compose/send Sample CGI HTML page: " << e.what());
         return 4;

@@ -71,6 +71,80 @@ const char* CCgiResponse::sm_AcceptRangesBytes  = "bytes";
 const char* CCgiResponse::sm_ContentRange       = "Content-Range";
 
 NCBI_PARAM_DEF_IN_SCOPE(bool, CGI, ThrowOnBadOutput, true, CCgiResponse);
+NCBI_PARAM_DEF_IN_SCOPE(bool, CGI, ExceptionAfterHEAD, false, CCgiResponse);
+
+
+// Helper writer and stream used to disable real output stream during
+// HEAD requests after sending headers so that the application can not
+// output more data or clear 'bad' bit.
+class CCgiStreamWrapperWriter : public IWriter
+{
+public:
+    CCgiStreamWrapperWriter(void)
+        : m_ErrorReported(false) {}
+
+    virtual ERW_Result Write(const void* buf,
+                             size_t      count,
+                             size_t*     bytes_written = 0)
+    {
+        if ( !m_ErrorReported ) {
+            ERR_POST_X(4, "CCgiStreamWrapperWriter::Write() -- attempt to "
+                "write data after sending headers on HEAD request.");
+            m_ErrorReported = true;
+        }
+        // Pretend the operation was successfull so that applications
+        // which check I/O result do not fail.
+        if ( bytes_written ) {
+            *bytes_written = count;
+        }
+        return eRW_Success;
+    }
+
+    virtual ERW_Result Flush(void)
+    {
+        return eRW_Success;
+    }
+
+private:
+    bool m_ErrorReported;
+};
+
+
+class CCgiStreamWrapper : public CWStream
+{
+public:
+    CCgiStreamWrapper(CNcbiOstream* out)
+        : CWStream(new CCgiStreamWrapperWriter, 0, 0, CRWStreambuf::fOwnWriter),
+          m_Output(out),
+          m_OldBuf(0),
+          m_NewBuf(rdbuf())
+    {
+        if ( m_Output ) {
+            // Prevent output from writing anything, disable exceptions -
+            // an attemp to write will be reported by the wrapper.
+            m_Output->exceptions(ios_base::goodbit);
+            m_Output->setstate(ios_base::badbit);
+            // Replace rdbuf with the customized one, which does not
+            // write anything, but reports an error (once).
+            m_Output->flush();
+            m_OldBuf = m_Output->rdbuf();
+            m_Output->rdbuf(m_NewBuf);
+        }
+    }
+
+    virtual ~CCgiStreamWrapper(void)
+    {
+        // Restore the original rdbuf so that it can be safely destroyed.
+        if (m_Output  &&  m_Output->rdbuf() == m_NewBuf) {
+            m_Output->rdbuf(m_OldBuf);
+        }
+    }
+
+private:
+    CNcbiOstream*           m_Output;
+    CNcbiStreambuf*         m_OldBuf;
+    CNcbiStreambuf*         m_NewBuf;
+};
 
 
 inline bool s_ZeroTime(const tm& date)
@@ -391,15 +465,20 @@ CNcbiOstream& CCgiResponse::WriteHeader(CNcbiOstream& os) const
         os << m_JQuery_Callback << '(';
     }
 
-    if (m_RequestMethod == CCgiRequest::eMethod_HEAD  &&  &os == m_Output) {
+    if (m_RequestMethod == CCgiRequest::eMethod_HEAD  &&  &os == m_Output
+        &&  !m_OutputWrapper.get()) {
         try {
-            m_Output->setstate(ios_base::badbit);
+            m_OutputWrapper.reset(new CCgiStreamWrapper(m_Output));
         }
         catch (ios_base::failure&) {
         }
-        // Do not send content when serving HEAD request.
-        NCBI_CGI_THROW_WITH_STATUS(CCgiHeadException, eHeaderSent,
-            "HEAD response sent.", CCgiException::e200_Ok);
+        if ( m_ExceptionAfterHEAD.Get() ) {
+            // Optionally stop processing request immediately. The exception
+            // should not be handles by ProcessRequest, but must go up to
+            // the Run() to work correctly.
+            NCBI_CGI_THROW_WITH_STATUS(CCgiHeadException, eHeaderSent,
+                "HEAD response sent.", CCgiException::e200_Ok);
+        }
     }
 
     return os;
@@ -513,6 +592,12 @@ void CCgiResponse::SetThrowOnBadOutput(bool throw_on_bad_output)
         m_OutputExpt = m_Output->exceptions();
         m_Output->exceptions(IOS_BASE::badbit | IOS_BASE::failbit);
     }
+}
+
+
+void CCgiResponse::SetExceptionAfterHEAD(bool expt_after_head)
+{
+    m_ExceptionAfterHEAD.Set(expt_after_head);
 }
 
 
