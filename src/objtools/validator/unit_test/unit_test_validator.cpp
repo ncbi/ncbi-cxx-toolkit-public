@@ -2743,9 +2743,12 @@ BOOST_AUTO_TEST_CASE(Test_TerminalNs)
 
     CLEAR_ERRORS
 
-    // no more warnings if circular
+    // no more TerminalNs warnings if circular
     entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
     unit_test_util::SetCompleteness(entry, CMolInfo::eCompleteness_complete);
+    expected_errors.push_back(new CExpectedError("USA1_1", eDiag_Warning, "UnwantedCompleteFlag",
+                              "Suspicious use of complete"));
+
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -3071,9 +3074,9 @@ BOOST_AUTO_TEST_CASE(Test_CompleteCircleProblem)
     SetTitle(entry, "This is just a title");
     unit_test_util::SetCompleteness(entry, CMolInfo::eCompleteness_complete);
     seh = scope.AddTopLevelSeqEntry(*entry);
-    /*
-    expected_errors.push_back(new CExpectedError("AY123456", eDiag_Warning, "CompleteCircleProblem", "Circular topology has complete flag set, but title should say complete sequence or complete genome"));
-    */
+    expected_errors.push_back(new CExpectedError("AY123456", eDiag_Warning, "UnwantedCompleteFlag",
+                              "Suspicious use of complete"));
+
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -3233,15 +3236,12 @@ BOOST_AUTO_TEST_CASE(Test_TerminalGap)
 
     CLEAR_ERRORS
 
-    // no more warnings if circular - changed to still show first/last delta component
+    // no more terminal gap warnings if circular - changed to still show first/last delta component
     entry->SetSeq().SetInst().SetTopology(CSeq_inst::eTopology_circular);
     unit_test_util::SetCompleteness(entry, CMolInfo::eCompleteness_complete);
-    /*
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "First delta seq component is a gap"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BadDeltaSeq", "Last delta seq component is a gap"));
-    expected_errors[0]->SetAccession("USA1_1");
-    expected_errors[1]->SetAccession("USA1_1");
-    */
+    expected_errors.push_back(new CExpectedError("USA1_1", eDiag_Warning, "UnwantedCompleteFlag",
+                              "Suspicious use of complete"));
+
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     CLEAR_ERRORS
@@ -5088,14 +5088,18 @@ BOOST_AUTO_TEST_CASE(Test_Descr_UnwantedCompleteFlag)
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
-    CLEAR_ERRORS
-
-    // only for genbank records
-    scope.RemoveTopLevelSeqEntry(seh);
-    entry->SetSeq().SetId().front()->SetEmbl().SetAccession("AY123456");
-    seh = scope.AddTopLevelSeqEntry(*entry);
+    // still get error if not viral
+    SetTitle(entry, "complete sequence");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // suppress if viral
+    unit_test_util::SetLineage(entry, "Viruses");
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
 }
 
 
@@ -6730,7 +6734,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("ALM");
     ambig.push_back("ITCC");
     ambig.push_back("TM");
-    ambig.push_back("IAM");
     ambig.push_back("WB");
     ambig.push_back("UK");
     ambig.push_back("ZMK");
@@ -6872,7 +6875,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BadInstitutionCode)
     ambig.push_back("UCM");
     ambig.push_back("IZ");
     ambig.push_back("ITCC");
-    ambig.push_back("IAM");
     ambig.push_back("WB");
     ambig.push_back("LE");
     ambig.push_back("BNA");
@@ -7681,6 +7683,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceNeedsChromosome)
     SetTitle (entry, "Sebaea microphylla, complete genome.");
 
     STANDARD_SETUP
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "UnwantedCompleteFlag",
+                              "Suspicious use of complete"));
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceNeedsChromosome",
                               "Non-viral complete genome not labeled as chromosome"));
 
@@ -7698,6 +7702,8 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceNeedsChromosome)
     // if not genomic
     unit_test_util::SetBiomol (entry, CMolInfo::eBiomol_mRNA);
     entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "UnwantedCompleteFlag",
+                              "Suspicious use of complete"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     unit_test_util::SetBiomol (entry, CMolInfo::eBiomol_genomic);
@@ -7709,6 +7715,7 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceNeedsChromosome)
     SetTitle (entry, "Sebaea microphylla, complete genome.");
 
     // if source location chromosome
+    CLEAR_ERRORS
     unit_test_util::SetGenome (entry, CBioSource::eGenome_chromosome);
     expected_errors.push_back(new CExpectedError("good", eDiag_Info, "ChromosomeLocation",
                    "INDEXER_ONLY - BioSource location is chromosome"));
@@ -17652,6 +17659,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_ExtraProteinFeature)
 
 BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
 {
+    bool bad_format = false;
+    bool in_future = false;
+    CSubSource::IsCorrectDateFormat("collection date: Nov-2010 and Dec-2012", bad_format, in_future);
+    BOOST_CHECK_EQUAL(true, bad_format);
+    BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("collection date: Nov-2010 and Dec-2012"), "");
+
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("20-12-2014"), "20-Dec-2014");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Dec-12-2014"), "12-Dec-2014");
     BOOST_CHECK_EQUAL(CSubSource::FixDateFormat("Sep-11"), "");
@@ -18096,4 +18109,5 @@ BOOST_AUTO_TEST_CASE(Test_SexQualifiers)
 
 
 }
+
 

@@ -690,9 +690,16 @@ string CSubSource::FixDateFormat (const string& test, bool month_first, bool& mo
         }
     } else if (!NStr::IsBlank (month)) {
         if (tokens.size() == 2) {
-            // we have a month and two other numbers
-            int val1 = NStr::StringToInt (tokens[0]); 
-            int val2 = NStr::StringToInt (tokens[1]);
+            // we have a month and two other numbers (we hope)
+            int val1 = 0;
+            int val2 = 0;
+            try {
+                val1 = NStr::StringToInt (tokens[0]); 
+                val2 = NStr::StringToInt (tokens[1]);
+            } catch (CException& e) {
+                // not actually numbers
+                return "";
+            }
             bool zero_pad_1 = NStr::StartsWith(tokens[0], "0");
             bool zero_pad_2 = NStr::StartsWith(tokens[1], "0");
             if (val1 < 10 && !zero_pad_1 && (val2 > 10 || zero_pad_2)) {
