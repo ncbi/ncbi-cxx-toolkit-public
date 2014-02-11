@@ -721,7 +721,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
                                   const string& type_name,
                                   vector <string>& strs);
       bool IsSubSrcPresent(const CBioSource& biosrc, CSubSource::ESubtype subtype);
-      bool AllVecElesSame(const vector <string> arr);
+      bool AllVecElementsSame(const vector <string> arr);
   };
 
 
