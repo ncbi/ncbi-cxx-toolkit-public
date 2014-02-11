@@ -668,6 +668,10 @@ bool CWriteUtil::GetBestId(
         return GetBestId(idh, mf.GetScope(), best_id);
     }
     const CSeq_loc& loc = mf.GetLocation();
+    idh = sequence::GetIdHandle(loc, &mf.GetScope());
+    return  GetBestId(idh, mf.GetScope(), best_id);
+
+    /**
     if (loc.IsInt()) {
         return  GetBestId( 
             CSeq_id_Handle::GetHandle(loc.GetInt().GetId()), 
@@ -689,6 +693,7 @@ bool CWriteUtil::GetBestId(
         catch (...) {};
     }
     best_id = mf.GetLocationId().AsString();
+    **/
     return true;
 }
 
