@@ -191,6 +191,31 @@ CRef <CSeq_feat> MakeRNAFeatWithExtName(const CRef <CSeq_entry> nuc_entry, CRNA_
    return rna_feat;
 };
 
+BOOST_AUTO_TEST_CASE(DISC_mRNA_ON_WRONG_SEQUENCE_TYPE)
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();  // dna, eBiomol_genomic
+   SetLineage(entry, "Eukaryota");
+   NON_CONST_ITERATE (list <CRef <CSeqdesc> >, it, entry->SetDescr().Set()) {
+     if ( (*it)->IsSource()) {
+       (*it)->SetSource().SetGenome(CBioSource::eGenome_kinetoplast);
+     }
+   }
+
+   CRef <CSeq_feat> 
+    new_mRNA = MakeRNAFeatWithExtName(entry, CRNA_ref::eType_mRNA, "fake");
+   AddFeat(new_mRNA, entry);
+   
+   CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+   CRef <CScope> scope(new CScope(*objmgr));
+   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+   config->SetTopLevelSeqEntry(&seh);
+
+   config->SetArg("e", "DISC_mRNA_ON_WRONG_SEQUENCE_TYPE");
+   CRef <CClickableItem> c_item(0);
+   RunTest(c_item, "DISC_mRNA_ON_WRONG_SEQUENCE_TYPE");
+   CheckReport(c_item, "1 mRNA is located on eukaryotic sequences that do not have genomic or plasmid source");
+};
+
 BOOST_AUTO_TEST_CASE(DISC_FEATURE_MOLTYPE_MISMATCH)
 {
    // genomic rna

@@ -614,8 +614,9 @@ bool CTestAndRepData :: IsBiosrcEukaryotic(const CBioSource& biosrc)
                   && genome != CBioSource :: eGenome_chloroplast
                   && genome != CBioSource :: eGenome_plastid
                   && genome != CBioSource :: eGenome_apicoplast
-                  && HasLineage(biosrc, "Eukaryota"))
+                  && HasLineage(biosrc, "Eukaryota")) {
          return true; 
+   }
    else return false;
 };
 
@@ -624,8 +625,6 @@ bool CTestAndRepData :: IsBioseqHasLineage(const CBioseq& bioseq, const string& 
 {
    CBioseq_Handle bioseq_handle = thisInfo.scope->GetBioseqHandle(bioseq);
    if (!bioseq_handle) return false;
-   CSeqdesc_CI it(bioseq_handle, CSeqdesc :: e_Source);
-   if (!it) return false;
    if (type == "Eukaryota") {
       if (has_biosrc) {
          ITERATE (vector <const CSeqdesc*>, it, bioseq_biosrc_seqdesc) 

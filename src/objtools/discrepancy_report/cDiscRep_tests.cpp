@@ -11375,7 +11375,6 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ReportSameTaxHaplotypeDiffSequenceMism
 void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: ReportHaplotypeSequenceMismatchForList()
 {
    /* first, look for same taxname, same haplotype, different sequence */
-cerr << "222\n";
    ITERATE (Str2Seqs, it, m_tax_hap2seqs) {
       if (!SeqsMatch(it->second)) {
            ReportSameTaxHaplotypeDiffSequenceMismatch(it);
@@ -11385,7 +11384,6 @@ cerr << "222\n";
       }
    }
 
-cerr << "333\n";
    /* now look for sequence that match but have different haplotypes */
    vector <CConstRef <CBioseq> > seqs;
    vector <string> hap_tps;
@@ -11399,7 +11397,6 @@ cerr << "333\n";
      }
    }
 
-cerr << "444\n";
    unsigned j, len1, len2;
    vector <unsigned> seqs_Ndiff_idx, seqs_strict_idx, matched;
    string desc;
@@ -11763,7 +11760,6 @@ void CSeqEntry_DISC_HAPLOTYPE_MISMATCH :: TestOnObj(const CSeq_entry& seq_entry)
    }
 
    if (!m_tax_hap2seqs.empty()) {
-cerr << "111\n";
         ReportHaplotypeSequenceMismatchForList();
    }
 };
