@@ -901,7 +901,7 @@ void CSplignApp::x_ProcessPair(THitRefs& hitrefs, const CArgs& args,
                                THit::TCoord smin, THit::TCoord smax)
 {
 
-    const CSplignFormatter::ETextFlags flags (CSplignFormatter::eTF_NoExonScores);
+    const int flags (CSplignFormatter::eTF_NoExonScores | CSplignFormatter::eTF_UseFastaStyleIds);
 
     const bool raw_hits (!args["comps"]);
 

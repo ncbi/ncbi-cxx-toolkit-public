@@ -96,7 +96,7 @@ void CSplignFormatter::SetSeqIds(CConstRef<objects::CSeq_id> id1,
 
 
 string CSplignFormatter::AsExonTable(
-    const CSplign::TResults* results, ETextFlags flags) const
+    const CSplign::TResults* results, int flags) const
 {
     if(results == 0) {
         results = &m_splign_results;
@@ -620,7 +620,7 @@ CRef<CSpliced_exon_chunk> CreateSplicedExonChunk(char cur, size_t count)
 
 CRef<CSeq_align_set> CSplignFormatter::AsSeqAlignSet(
    const CSplign::TResults * results, 
-   EAsnFlags flag)
+   int flag)
 const
 {
     const bool spliced_seg  (flag & 0x0001);

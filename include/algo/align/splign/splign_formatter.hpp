@@ -72,7 +72,7 @@ public:
 
     // formatters
     string AsExonTable(const CSplign::TResults* results = 0,
-                       ETextFlags flags = eTF_None) const;
+                       int flags = eTF_None) const;
 
     /// Format alignment as plain text.
     ///
@@ -104,7 +104,7 @@ public:
     ///   Formatted alignment as a seq-align-set reference.
     CRef<objects::CSeq_align_set> AsSeqAlignSet(
         const CSplign::TResults* results = 0,
-        EAsnFlags flags  = eAF_SplicedSegWithParts)
+        int flags  = eAF_SplicedSegWithParts)
         const;
 
 private:
