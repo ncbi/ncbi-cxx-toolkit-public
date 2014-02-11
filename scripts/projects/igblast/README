@@ -1,52 +1,93 @@
-There are two command line programs for igblast...igblastn and igblastp.  The former is for nucleotide sequence and the latter is for protein sequences.
-
+There are two command line programs for igblast...igblastn and igblastp.  The former is for nucleotide 
+sequence and the latter is for protein sequences.
 
 igblastn:
 
 1.  Required files. 
-1).       Blast database files for searching germline V, D, and J genes.  You can specify any germline databases you like (using -germline_db_V, -germline_db_J and -germline_db_D options).   The default databases are the following NCBI  human germline databases (i.e., the program will automatically look for these if not specified):
-Organism_name_gl_V
-Organism_name_gl_D
-Organism_name_gl_J
-For example, if you specify human as organism, then the database is human_gl_V.  All NCBI database files are supplied with igblastn program (see http://www.ncbi.nlm.nih.gov/igblast/ about database details).  You can make your own blast database using NCBI's makeblastdb (for example: makeblastdb -parse_seqids -dbtype nucl -in my_database).
-2).    Igblast internal data files (supplied with igblast program under internal_data subdirectory).  This directory contains data internal to igblast program and users should NEVER add, delete or edit any files in this directory.  Igblastn program expects the internal_data directory under current directory (i.e., where the igblast program is) or a path pointed to by IGDATA environmental variable. 
+1).       Blast database files for searching germline V, D, and J genes.  You can specify any germline 
+databases you like (using -germline_db_V, -germline_db_J and -germline_db_D options).   
+The NCBI mouse germline gene databases (i.e., mouse_gl_V, etc.) are supplied with igblastn program 
+(see http://www.ncbi.nlm.nih.gov/igblast/ about database details).  
+To search IMGT germline sequences, you need to download them from IMGT web site 
+(http://www.imgt.org/IMGT_vquest/share/textes/ ).   After you have downloaded the sequences, 
+invoke our utility tool edit_imgt_file.pl to process the sequences (to change the long IMGT definition 
+lines to germline gene names only).  For example:
 
-2.  Optional files (also supplied with igblastn program if you search NCBI germline gene database):
-This is the file to indicate germline J gene coding frame start position (position is 0-based) for each sequence in your germline J sequence database.  Note that the supplied file contains only information for NCBI germline database.   If you search your own database and if it contains different sequences or sequence identifiers, then you need to edit that file (or supply your own file) to reflect that or you won't get proper frame status information for a rearrangement(other results will still be shown).  The default file name is:
-Organism_name_gl.aux (i.e., human_gl.aux if you don't specify that file and your search is for human sequences).  
-The entry format has tab-delimited fields for sequence id and coding frame start position.  See human_gl.aux or mouse_gl.aux for examples.  Enter -1 if the frame information is unknown (or simply don't include that sequence entry at all).  You need to use -auxiliary_data option to specify your file. You can directly supply a path to this file or put it under a path  pointed to by IGDATA environmental variable.
+./edit_imgt_file.pl imgt_file > my_seq_file
+
+Then you can use NCBI's makeblastdb tool (ftp://ftp.ncbi.nlm.nih.gov/blast/executables/blast+/LATEST/ ) 
+to make the blast database from the output file.  For example:
+
+makeblastdb -parse_seqids -dbtype nucl -in my_seq_file
+
+Now you can use my_seq_file as blast database file for igblast.
+
+2).    Igblast internal data files (supplied with igblast program).  This directory contains data internal to 
+igblast program only and users should NEVER add, delete, move, copy or edit any files in this directory.  
+Igblastn program expects the internal_data directory under current directory (i.e., where the igblast 
+program is) or a path pointed to by IGDATA environmental variable. 
+
+2.  Optional files (Also supplied with igblast program):
+This is the file to indicate germline J gene coding frame start position (position is 0-based) for each 
+sequence in your germline J sequence database.  Note that the supplied file contains only information 
+for NCBI or IMGT  germline database.   If you search your own database and if it contains different 
+sequences or sequence identifiers, then you need to edit that file (or supply your own file) to reflect that 
+or you won't get proper frame status information for a rearrangement (other results will still be shown).  
+The entry format has tab-delimited fields for sequence id and coding frame start position.  See 
+human_gl.aux or mouse_gl.aux for examples.  Enter -1 if the frame information is unknown (or simply 
+don't include that sequence entry at all).  You need to use -auxiliary_data option to specify your file. You 
+can directly supply a path to this file or put it under a path pointed to by IGDATA environmental variable.
  
 3.  Some examples.
 1).  Searching germline gene database
-a).  To query one or more human Ig sequences (contained in myseq) against NCBI human germline gene database with standard text alignment result format (you can type "./igblastn -help" to see details on all input parameters and the default setting, particularly those under IgBLAST options):
-./igblastn -germline_db_V database/human_gl_V -germline_db_J database/human_gl_J -germline_db_D database/human_gl_D -organism human -domain_system kabat -query myseq -auxiliary_data optional_file/human_gl.aux -show_translation -outfmt 3
+a).  To query one or more mouse Ig sequences (contained in myseq) against NCBI mouse germline gene 
+database with standard text alignment result format (you can type "./igblastn -help" to see details on all 
+input parameters and the default setting, particularly those under IgBLAST options):
+./igblastn -germline_db_V mouse_gl_V -germline_db_J mouse_gl_J -germline_db_D mouse_gl_D -
+organism mouse -domain_system kabat -query myseq -auxiliary_data optional_file/mouse_gl.aux -
+show_translation -outfmt 3
 
-b).  To query one or more human Ig sequences (contained in myseq) against NCBI human germline gene database with tabular result:
-./igblastn -germline_db_V database/human_gl_V -germline_db_J database/human_gl_J -germline_db_D database/human_gl_D -organism human -domain_system kabat -query myseq -auxiliary_data optional_file/human_gl.aux -show_translation -outfmt 7
+b).  To query one or more mouse T cell receptor sequences (contained in myseq) against imgt mouse 
+germline gene database:
+./igblastn -germline_db_V imgt_tcr_db_v -germline_db_J imgt_tcr_db_j -germline_db_D imgt_tcr_db -
+organism mouse -domain_system imgt -query myseqtcr -ig_seqtype TCR -auxiliary_data 
+optional_file/mouse_gl.aux -show_translation -outfmt 3
 
-c).  To query one or more human Ig sequences (contained in myseq) against custom database such as Andew Collins IGH repertoire database:
-./igblastn -germline_db_V database/UNSWIgVRepertoire_fasta.txt -germline_db_J database/UNSWIgJRepertoire_fasta.txt -germline_db_D database/UNSWIgDRepertoire_fasta.txt -organism human -domain_system kabat -query myseq  -auxiliary_data optional_file/human_gl.aux -show_translation
-Please be aware that you need to specify your own coding frame start and chain_type information (see details on optional files above) if your custom database has different sequence entries from NCBI database.  
+c).  To query one or human Ig sequences (contained in myseq) against custom database such as Andew 
+Collins IGH repertoire database:
+./igblastn -germline_db_V UNSWIgVRepertoire_fasta.txt -germline_db_J UNSWIgJRepertoire_fasta.txt -
+germline_db_D UNSWIgDRepertoire_fasta.txt -organism human -domain_system kabat -query myseq  -
+auxiliary_data optional_file/human_gl.aux -show_translation
+Please be aware that you need to specify your own coding frame start and chain_type information (see 
+details on optional files above) if your custom database has different sequence entries from NCBI or 
+IMGT database.  
 
 2).  Searching other databases in addition to germline database.
-Igblast allows you to search an additional database (such as NCBI nr database) as well as the germline database at the same time.  You'll get hits from germline sequences followed by hits from non-germline database.
-You MUST use -db option to specify the non-germline database which may not contain any sequences identifiers that exist in germline databases.  Note this option is ONLY for non-germline database (germline databases MUST be used with -germline_db_V, -germline_db_D or -germline_db_J option).  
+Igblast allows you to search an additional database (such as NCBI nr database) as well as the germline 
+database at the same time.  You'll get hits from germline sequences followed by hits from non-germline 
+database.
+You MUST use -db option to specify the non-germline database which may not contain any sequences 
+identifiers that exist in germline databases.  Note this option is ONLY for non-germline database 
+(germline databases MUST be used with -germline_db_V, -germline_db_D or -germline_db_J option).  
+a).  To query one or more mouse Ig sequences (contained in myseq) against NCBI  nr database:
+./igblastn -germline_db_V mouse_gl_V -germline_db_J mouse_gl_J -germline_db_D mouse_gl_D -
+organism mouse -domain_system kabat -query myseq -auxiliary_data optional_file/mouse_gl.aux -
+show_translation -outfmt 3 -db nr -remote 
 
-
-a).  To query one or more human Ig sequences (contained in myseq) against NCBI  nr database:
-./igblastn -germline_db_V database/human_gl_V -germline_db_J database/human_gl_J -germline_db_D database/human_gl_D -query myseq -auxiliary_data optional_file/human_gl.aux  -show_translation -db nr -num_alignments 10 -remote -outfmt 3
-Note the -remote option used with this search...-remote option directs igblast to send nr database searching to NCBI server which typically is much faster.
+Note the -remote option used with this search...-remote option directs igblast to send nr database 
+searching to NCBI server which typically is much faster.
  
-
-
 igblastp:
-
-parameters are similar to those of igblastn except it does not need germline D database, germline J database and optional file.  igblastp only performs search against V gene database.
+The parameters are similar to those of igblastn except it does not need germline D database, germline J 
+database and optional file.  igblastp only performs search against V gene database.
 
 Some examples:
   
-1).  Searching germline gene database
- ./igblastp -germline_db_V database/human_gl_V -query myseq -outfmt 3
+1).  Searching mouse Ig sequence against mouse germline gene database
+ 
+./igblastp -germline_db_V mouse_gl_V -query myseq.prot -outfmt 3 -organism mouse
 
 2).  Searching other databases in addition to germline database.
- ./igblastp -germline_db_V database/human_gl_V -query myseq  -db nr -outfmt 3
+
+./igblastp -germline_db_V mouse_gl_V -query myseq.prot -outfmt 3 -organism mouse -db nr –remote
+
