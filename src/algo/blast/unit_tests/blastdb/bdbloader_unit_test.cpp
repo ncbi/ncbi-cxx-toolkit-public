@@ -254,7 +254,7 @@ void RetrievePartsOfLargeChromosome(bool is_remote)
     CRef<CScope> scope(new CScope(*CObjectManager::GetInstance()));
     scope->AddDefaults();
 
-    const TSeqPos kLength(249250621);
+    const TSeqPos kLength(248956422);
     TSeqPos len = sequence::GetLength(*id, scope);
     BOOST_REQUIRE_EQUAL(kLength, len);
     BOOST_REQUIRE_EQUAL(kLength, scope->GetSequenceLength(*id));
@@ -325,7 +325,7 @@ void RetrieveLargeChromosomeWithTimeOut(bool is_remote)
     scope->AddDefaults();
     CRef<CSeq_id> id(new CSeq_id(kAccession));
     TSeqPos len = sequence::GetLength(*id, scope);
-    const TSeqPos kLength(249250621);
+    const TSeqPos kLength(248956422);
     BOOST_REQUIRE_EQUAL(kLength, len);
 
     CBioseq_Handle bh = scope->GetBioseqHandle(*id);
