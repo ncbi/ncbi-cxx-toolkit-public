@@ -169,6 +169,13 @@ void CheckReport(CRef <CClickableItem>& c_item, const string& msg)
    }
 };
 
+CRef <CSeq_entry> BuildGoodRnaSeq()
+{
+   CRef <CSeq_entry> entry = BuildGoodSeq();
+   entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_rna);
+   return entry; 
+};
+
 CRef <CSeq_feat> MakeRNAFeatWithExtName(const CRef <CSeq_entry> nuc_entry, CRNA_ref::EType type, const string ext_name)
 {
    CRef <CSeq_feat> rna_feat(new CSeq_feat);
@@ -182,6 +189,52 @@ CRef <CSeq_feat> MakeRNAFeatWithExtName(const CRef <CSeq_entry> nuc_entry, CRNA_
    rna_feat->SetLocation().SetInt().SetFrom(0);
    rna_feat->SetLocation().SetInt().SetTo(nuc_entry->GetSeq().GetInst().GetLength()-1);
    return rna_feat;
+};
+
+BOOST_AUTO_TEST_CASE(DISC_FEATURE_MOLTYPE_MISMATCH)
+{
+   // genomic rna
+   CRef <CSeq_entry> entry = BuildGoodRnaSeq();
+
+   // add rRNA
+   CRef <CSeq_feat>
+     new_rna = MakeRNAFeatWithExtName(entry, CRNA_ref::eType_rRNA,"5s_rRNA");
+   AddFeat(new_rna, entry);
+
+   CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+   CRef <CScope> scope(new CScope(*objmgr));
+   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+   config->SetTopLevelSeqEntry(&seh);
+
+   config->SetArg("e", "DISC_FEATURE_MOLTYPE_MISMATCH");
+   CRef <CClickableItem> c_item(0);
+   RunTest(c_item, "DISC_FEATURE_MOLTYPE_MISMATCH");
+   CheckReport(c_item, "1 sequence has rRNA or misc_RNA features but are not genomic DNA.");
+ 
+   // changed to miscRNA
+   entry->SetSeq().SetAnnot().front()->SetData().SetFtable().front()->SetData().SetRna().SetType(CRNA_ref::eType_miscRNA);
+
+   objmgr.Reset(CObjectManager::GetInstance().GetPointer());
+   scope.Reset(new CScope(*objmgr));
+   seh = scope->AddTopLevelSeqEntry(*entry);
+   config->SetTopLevelSeqEntry(&seh);
+   config->SetArg("e", "DISC_FEATURE_MOLTYPE_MISMATCH");
+   c_item.Reset(0);
+   RunTest(c_item, "DISC_FEATURE_MOLTYPE_MISMATCH");
+   CheckReport(c_item, "1 sequence has rRNA or misc_RNA features but are not genomic DNA.");
+
+   // changed to dna of eBiomol_unknown
+   entry->SetSeq().SetInst().SetMol(CSeq_inst::eMol_dna);
+   entry->SetSeq().SetDescr().Set().front()->SetMolinfo().SetBiomol(CMolInfo::eBiomol_unknown);
+
+   objmgr.Reset(CObjectManager::GetInstance().GetPointer());
+   scope.Reset(new CScope(*objmgr));
+   seh = scope->AddTopLevelSeqEntry(*entry);
+   config->SetTopLevelSeqEntry(&seh);
+   config->SetArg("e", "DISC_FEATURE_MOLTYPE_MISMATCH");
+   c_item.Reset(0);
+   RunTest(c_item, "DISC_FEATURE_MOLTYPE_MISMATCH");
+   CheckReport(c_item, "1 sequence has rRNA or misc_RNA features but are not genomic DNA.");
 };
 
 BOOST_AUTO_TEST_CASE(DISC_SUSPECT_RRNA_PRODUCTS)

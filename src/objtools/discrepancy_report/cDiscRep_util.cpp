@@ -370,10 +370,15 @@ bool CTestAndRepData :: ThreeOrMoreNumbersTogether(const string& pattern, const 
    return rule_check.ContainsThreeOrMoreNumbersTogether (search);
 }
 
-bool CTestAndRepData :: AllVecElesSame(const vector <string> arr)
+bool CTestAndRepData :: AllVecElementsSame(const vector <string> arr)
 {
-    if (arr.size() > 1)
-        ITERATE (vector <string>, it, arr) if ( arr[0] != *it ) return false;
+    if (arr.size() > 1) {
+        ITERATE (vector <string>, it, arr) {
+           if ( arr[0] != *it ) {
+              return false;
+           }
+        }
+    }
 
     return true;
 };
@@ -1115,9 +1120,6 @@ string CTestAndRepData :: PrintSeqInt(const CSeq_interval& seq_int, bool range_o
     ENa_strand 
       this_strand 
          = (seq_int.CanGetStrand()) ? seq_int.GetStrand(): eNa_strand_unknown;
-    if (this_strand == eNa_strand_other) {
-       NCBI_USER_THROW("Strand type is eNa_strand_other");
-    }
     location += strandsymbol[(int)this_strand];
     int from, to;
     string lab_from(kEmptyStr), lab_to(kEmptyStr);

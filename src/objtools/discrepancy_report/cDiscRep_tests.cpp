@@ -10992,26 +10992,30 @@ void CSeqEntry_TEST_SMALL_GENOME_SET_PROBLEM :: TestOnObj(const CSeq_entry& seq_
       if (all_isolates_same) {
          arr.clear();
          GetOrgModValues(biosrc, COrgMod::eSubtype_isolate, arr);
-         all_isolates_same = AllVecElesSame(arr);
-         if (all_isolates_same) {
-           if (pre_isolate.empty() && !arr[0].empty()) {
-                pre_isolate = arr[0];
-           }
-           else if (arr[0] != pre_isolate) {
-               all_isolates_same = false;
-           }
+         if (!arr.empty()) {
+            all_isolates_same = AllVecElementsSame(arr);
+            if (all_isolates_same) {
+              if (pre_isolate.empty() && !arr[0].empty()) {
+                   pre_isolate = arr[0];
+              }
+              else if (arr[0] != pre_isolate) {
+                  all_isolates_same = false;
+              }
+            }
          }
       }
       if (all_strains_same) {
          arr.clear();
          GetOrgModValues(biosrc, COrgMod::eSubtype_strain, arr);
-         all_strains_same = AllVecElesSame(arr);
-         if (all_strains_same) {
-            if (pre_strain.empty() && !arr[0].empty()) {
-                  pre_strain = arr[0];
-            }
-            else if (arr[0] != pre_strain) {
-               all_strains_same = false;
+         if (!arr.empty()) {
+            all_strains_same = AllVecElementsSame(arr);
+            if (all_strains_same) {
+               if (pre_strain.empty() && !arr[0].empty()) {
+                     pre_strain = arr[0];
+               }
+               else if (arr[0] != pre_strain) {
+                  all_strains_same = false;
+               }
             }
          }
       }
