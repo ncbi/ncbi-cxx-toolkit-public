@@ -1353,7 +1353,7 @@ int CGridWorkerNode::Run(
     if (reg.GetBool(kServerSec,
             "force_exit", false, 0, CNcbiRegistry::eReturn)) {
         ERR_POST_X(45, "Force exit");
-    } else if (m_MaxThreads > 1) {
+    } else if (m_MaxThreads > 1 && watcher.GetJobsRunningNumber() > 0) {
         try {
             LOG_POST_X(32, Info << "Stopping worker threads...");
             thread_pool->KillAllThreads(true);
