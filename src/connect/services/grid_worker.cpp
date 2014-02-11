@@ -1350,6 +1350,8 @@ int CGridWorkerNode::Run(
         try_count = 0;
     }
     LOG_POST_X(31, Info << "Shutting down...");
+    LOG_POST(Info << "Stopping Control thread...");
+    control_thread->Stop();
     if (reg.GetBool(kServerSec,
             "force_exit", false, 0, CNcbiRegistry::eReturn)) {
         ERR_POST_X(45, "Force exit");
@@ -1364,9 +1366,8 @@ int CGridWorkerNode::Run(
         }
     }
 
-    LOG_POST_X(55, Info << "Stopping Control and Committer threads...");
+    LOG_POST_X(55, Info << "Stopping Committer threads...");
     m_JobCommitterThread->Stop();
-    control_thread->Stop();
 
     CNcbiOstrstream os;
     CGridGlobals::GetInstance().GetJobWatcher().Print(os);
