@@ -187,18 +187,18 @@ static void RemoteFetchLongNucleotideBioseq(bool fixed_slice_size)
         
         scope.AddDataLoader(loader_names.front());
         
-        CSeq_id seqid1(CSeq_id::e_Gi, 89058412);  // nucleotide
+        CSeq_id seqid1(CSeq_id::e_Gi, 568801968);  // nucleotide
         
         CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
         BOOST_REQUIRE(handle1);
-        const TSeqPos kLength(647850);
+        const TSeqPos kLength(3084811);
         BOOST_REQUIRE_EQUAL(kLength, handle1.GetInst().GetLength());
         BOOST_REQUIRE_EQUAL(9606, scope.GetTaxId(seqid1));
         BOOST_REQUIRE_EQUAL(CSeq_inst::eMol_na, scope.GetSequenceType(seqid1));
 
         CSeqVector sv = handle1.GetSeqVector(CBioseq_Handle::eCoding_Iupac);
         const string
-            kExpectedSeqData("CCTAAATATATATGCACCCAATACAGGAGCACCCAGATTCATAAAGCAAGTCCTGAATGACCTACAAAGAGACTTAGCCTCCAACACAATAATAATGGGA");
+            kExpectedSeqData("ATTAACTGCAAATTACACGTATTGAGATGCATAAAAAGCCAAACCCTTGGGATAAAAATCTGAAAAGCTTTAAGAGGAAAAGTCTACCTCCTGAAATGAA");
         string buffer;
         sv.GetSeqData(393200, 393300, buffer);
         BOOST_REQUIRE_EQUAL(kExpectedSeqData, buffer);

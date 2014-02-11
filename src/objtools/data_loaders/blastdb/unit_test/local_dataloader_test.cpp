@@ -194,12 +194,12 @@ BOOST_AUTO_TEST_CASE(LocalFetchNucleotideBioseqNotFixedSize)
 
      CBioseq_Handle handle1 = scope.GetBioseqHandle(seqid1);
      BOOST_REQUIRE(handle1);
-     BOOST_REQUIRE_EQUAL(51304566, handle1.GetInst().GetLength());
+     BOOST_REQUIRE_EQUAL(50818468, handle1.GetInst().GetLength());
      BOOST_REQUIRE_EQUAL(9606, scope.GetTaxId(seqid1));
      BOOST_REQUIRE_EQUAL(CSeq_inst::eMol_na, scope.GetSequenceType(seqid1));
 
      CConstRef<CBioseq> bioseq1 = handle1.GetCompleteBioseq();
-     BOOST_REQUIRE_EQUAL(51304566, bioseq1->GetInst().GetLength());
+     BOOST_REQUIRE_EQUAL(50818468, bioseq1->GetInst().GetLength());
 
 }
 
