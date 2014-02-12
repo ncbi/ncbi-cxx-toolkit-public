@@ -2677,6 +2677,12 @@ void CProjBulderApp::CollectDep(const string& libname, const string& incname)
     for (set<string>::const_iterator d = deps.begin(); d != deps.end(); ++d) {
         m_GraphDepPrecedes[libname].insert(*d);
     }
+    if (m_GraphDepFlags.find(incname) != m_GraphDepFlags.end()) {
+        const set<string>& flags = m_GraphDepFlags[incname];
+        for (set<string>::const_iterator d = flags.begin(); d != flags.end(); ++d) {
+            m_GraphDepFlags[libname].insert(*d);
+        }
+    }
     if (m_GraphDepIncludes.find(incname) != m_GraphDepIncludes.end()) {
         const set<string>& inc = m_GraphDepIncludes.find(incname)->second;
         for (set<string>::const_iterator m = inc.begin(); m != inc.end(); ++m) {
