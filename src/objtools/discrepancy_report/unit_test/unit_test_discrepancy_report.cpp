@@ -191,6 +191,54 @@ CRef <CSeq_feat> MakeRNAFeatWithExtName(const CRef <CSeq_entry> nuc_entry, CRNA_
    return rna_feat;
 };
 
+BOOST_AUTO_TEST_CASE(DISC_RBS_WITHOUT_GENE)
+{
+   CRef <CSeq_entry> entry (new CSeq_entry);
+   CNcbiIstrstream istr(sc_TestEntryCollidingLocusTags);
+   istr >> MSerial_AsnText >> *entry;
+
+   AddGoodImpFeat(entry, "RBS");
+   int gene_fm = entry->GetSeq().GetAnnot().front()->GetData().GetFtable().front()->GetLocation().GetInt().GetFrom();
+   int gene_to = entry->GetSeq().GetAnnot().front()->GetData().GetFtable().front()->GetLocation().GetInt().GetTo();
+   entry->SetSeq().SetAnnot().front()->SetData().SetFtable().back()->SetLocation().SetInt().SetFrom(gene_fm);
+   entry->SetSeq().SetAnnot().front()->SetData().SetFtable().back()->SetLocation
+().SetInt().SetTo(gene_to);
+
+   CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+   CRef <CScope> scope(new CScope(*objmgr));
+   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+   config->SetTopLevelSeqEntry(&seh);
+
+   config->SetArg("e", "DISC_RBS_WITHOUT_GENE");
+   CRef <CClickableItem> c_item(0);
+   RunTest(c_item, "DISC_RBS_WITHOUT_GENE");
+   CheckReport(c_item, "1 RBS feature does not have overlapping genes");
+
+
+};
+
+BOOST_AUTO_TEST_CASE(ONCALLER_HIV_RNA_INCONSISTENT)
+{
+   CRef <CSeq_entry> entry = BuildGoodRnaSeq();
+   NON_CONST_ITERATE (list <CRef <CSeqdesc> > , it, entry->SetDescr().Set()) {
+      if ((*it)->IsSource()) {
+         (*it)->SetSource().SetGenome(CBioSource::eGenome_genomic);
+      }
+   }
+   SetTaxname(entry, "Human immunodeficiency virus");
+   SetBiomol(entry, CMolInfo::eBiomol_mRNA);
+
+   CRef<CObjectManager> objmgr = CObjectManager::GetInstance();
+   CRef <CScope> scope(new CScope(*objmgr));
+   CSeq_entry_Handle seh = scope->AddTopLevelSeqEntry(*entry);
+   config->SetTopLevelSeqEntry(&seh);
+
+   config->SetArg("e", "ONCALLER_HIV_RNA_INCONSISTENT");
+   CRef <CClickableItem> c_item(0);
+   RunTest(c_item, "ONCALLER_HIV_RNA_INCONSISTENT");
+   CheckReport(c_item, "1 HIV RNA bioseq has inconsistent location/moltype");
+};
+
 BOOST_AUTO_TEST_CASE(DISC_mRNA_ON_WRONG_SEQUENCE_TYPE)
 {
    CRef <CSeq_entry> entry = BuildGoodSeq();  // dna, eBiomol_genomic

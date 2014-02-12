@@ -296,7 +296,6 @@ void CBioseq_on_SUSPECT_RULE :: GetReportForStaticList(CRef <CClickableItem>& c_
 void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
 {
    const CSeq_feat* feat_in_use = 0;
-   const CBioSource* biosrc_p = 0;
    string prot_nm;
    unsigned rule_idx;
    ITERATE (vector <const CSeq_feat*>, it, prot_feat) {
@@ -309,8 +308,9 @@ void CBioseq_on_SUSPECT_RULE :: FindSuspectProductNamesWithRules()
      // add coding region rather than protein
      if (sf_dt.GetSubtype() == CSeqFeatData::eSubtype_prot) {
          feat_in_use = sequence::GetCDSForProduct(m_bioseq_hl);
-         // find BioSource, to check whether we want to run all categories
-         biosrc_p = sequence::GetBioSource (m_bioseq_hl);
+         if (!feat_in_use) {
+            feat_in_use = *it;
+         }
      }
      else continue;
      
@@ -1578,12 +1578,15 @@ void CBioseq_ONCALLER_HIV_RNA_INCONSISTENT :: TestOnObj(const CBioseq& bioseq)
      if ( biosrc.GetGenome() == CBioSource::eGenome_unknown) {
            return;
      }
-     if ( biosrc.IsSetTaxname() || (strtmp = biosrc.GetTaxname()).empty()) {
+     if ( biosrc.IsSetTaxname()) {
+        strtmp = biosrc.GetTaxname();
+        if (strtmp.empty()) {
           return;
+        }
      }
      if (!NStr::EqualNocase(strtmp, "Human immunodeficiency virus")
-             && (!NStr::EqualNocase(strtmp, "Human immunodeficiency virus"))
-             && (!NStr::EqualNocase(strtmp, "Human immunodeficiency virus"))) {
+             && (!NStr::EqualNocase(strtmp, "Human immunodeficiency virus 1"))
+             && (!NStr::EqualNocase(strtmp, "Human immunodeficiency virus 2"))){
          return;
      }
      if ( biosrc.GetGenome() == CBioSource::eGenome_genomic ){
@@ -1642,6 +1645,8 @@ void CBioseq_on_cd_feat :: TestOnObj(const CBioseq& bisoeq)
     if (run_cdd && (*it)->CanGetDbxref()) {
        ITERATE (vector < CRef< CDbtag > >, jt, (*it)->GetDbxref()) {
          if ( NStr::EqualNocase( (*jt)->GetDb(), "CDD")) {
+              thisInfo.test_item_list[GetName_cdd()].push_back(desc);
+              thisInfo.test_item_objs[GetName_cdd()].push_back(feat_ref);
             break;
          }
        }
@@ -1652,6 +1657,7 @@ void CBioseq_on_cd_feat :: TestOnObj(const CBioseq& bisoeq)
 
 void CBioseq_TEST_CDS_HAS_CDD_XREF :: GetReport(CRef <CClickableItem>& c_item)
 {
+   c_item->obj_list = thisInfo.test_item_objs[GetName()];
    c_item->description = GetHasComment(c_item->item_list.size(), "feature") 
                           + "CDD Xrefs";
    c_item->obj_list = thisInfo.test_item_objs[GetName()];
@@ -3587,7 +3593,7 @@ void CBioseq_test_on_bac_partial :: TestOnObj(const CBioseq& bioseq)
   string desc;
   bool run_noexc = (thisTest.tests_run.find(GetName_noexc()) != end_it);
   bool run_exc = (thisTest.tests_run.find(GetName_exc()) != end_it);
-  if (bioseq_biosrc_seqdesc.empty() || !IsBioseqHasLineage(bioseq, "Eukaryota")) {
+  if (bioseq_biosrc_seqdesc.empty() || !IsBioseqHasLineage(bioseq,"Eukaryota")){
      bool partial5, partial3, partialL, partialR;
      ENa_strand strand;
      ITERATE (vector <const CSeq_feat*>, it, cd_feat) {
@@ -3605,19 +3611,28 @@ void CBioseq_test_on_bac_partial :: TestOnObj(const CBioseq& bioseq)
            partialL = partial5;
            partialR = partial3;
        }
-       if ( (partialL && IsNonExtendableLeft(bioseq, seq_loc.GetTotalRange().GetFrom()))
-            || (partialR && IsNonExtendableRight(bioseq, seq_loc.GetTotalRange().GetTo()))) {
+       if ( (partialL 
+                 && IsNonExtendableLeft(bioseq, 
+                                        seq_loc.GetTotalRange().GetFrom()))
+              || (partialR 
+                     && IsNonExtendableRight(bioseq, 
+                                             seq_loc.GetTotalRange().GetTo()))){
           desc = GetDiscItemText(**it);
+          CConstRef <CObject> seq_ref (*it);
           // DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_PROBLEMS
-          if ((*it)->CanGetExcept_text() 
-                 && NStr::FindNoCase((*it)->GetExcept_text(), kNonExtendableException)
-                                                                == string::npos) {
-              if (run_noexc) thisInfo.test_item_list[GetName_noexc()].push_back(desc);
+          if (!(*it)->CanGetExcept_text() 
+                 || NStr::FindNoCase((*it)->GetExcept_text(), 
+                                      kNonExtendableException)
+                        == string::npos) {
+              if (run_noexc) {
+                 thisInfo.test_item_list[GetName_noexc()].push_back(desc);
+                 thisInfo.test_item_objs[GetName_exc()].push_back(seq_ref);
+              }
           }
           else { // DISC_BACTERIAL_PARTIAL_NONEXTENDABLE_EXCEPTION 
              if (run_exc) { 
                  thisInfo.test_item_list[GetName_exc()].push_back(desc);
-                 thisInfo.test_item_objs[GetName_exc()].push_back(CConstRef <CObject>(*it));
+                 thisInfo.test_item_objs[GetName_exc()].push_back(seq_ref);
              }
           }
        }
@@ -9143,13 +9158,19 @@ bool CSeqEntry_test_on_biosrc_orgmod :: DoAuthorityAndTaxnameConflict(const CBio
   if (auty_strs.empty()) return false;
 
   strtmp = biosrc.GetTaxname();
-  size_t pos = strtmp.find(' ');
+  size_t pos = strtmp.find(' '), end;
   unsigned len;
-  if (pos != string::npos) pos = CTempString(strtmp).substr(pos).find(' ');
-  if (pos == string::npos) len = strtmp.size();
-  else len = pos;
+  if (pos != string::npos) {
+      end = CTempString(strtmp).substr(pos+1).find(' ');
+  }
+  if (end == string::npos) {
+     len = strtmp.size();
+  }
+  else len = end + pos + 1;
   ITERATE (vector <string>, it, auty_strs) {
-    if ( (*it).size() < len || (*it).substr(0, len) == strtmp) return true;
+    if ( (*it).size() < len || (*it).substr(0, len) != strtmp.substr(0, len)) {
+        return true;
+    }
   }
   return false; 
 };

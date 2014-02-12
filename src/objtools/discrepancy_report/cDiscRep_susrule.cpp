@@ -4121,6 +4121,9 @@ bool CSuspectRuleCheck :: DoesStringMatchSuspectRule(const CBioseq_Handle& biose
       const CSeq_feat* cds = sequence::GetCDSForProduct(m_bioseq_hl);
       if (cds) {
           feat_pnt = const_cast <CSeq_feat*>(cds);
+          if (!feat_pnt) {
+             feat_pnt = &feat;
+          }
       }
     }
 
