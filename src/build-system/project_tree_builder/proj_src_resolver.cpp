@@ -53,10 +53,30 @@ static void s_GetMakefileIncludes(const string& applib_mfilepath,
         if ( NStr::StartsWith(strline, include_token) ) {
             string include = strline.substr(include_token.length());
             
-            const string srcdir_token("$(srcdir)");
+            string root;
+            string srcdir_token("$(srcdir)");
             if (include.find(srcdir_token) == 0) {
+                root = source_base_dir;
+            } else {
+                srcdir_token = "$(top_srcdir)";
+                if (include.find(srcdir_token) == 0) {
+                    root = GetApp().GetProjectTreeInfo().m_Root;
+                }
+                else {
+#if 0
+                    srcdir_token = "$(builddir)";
+                    if (NStr::StartsWith(include, srcdir_token)) {
+                        root = GetApp().GetBuildRoot();
+                        if (root.empty()) {
+                            root = CDirEntry(GetApp().m_Solution).GetDir();
+                        }
+                    }
+#endif
+                }
+            }
+            if (!root.empty()) {
                 include = include.substr(srcdir_token.length());
-                include = CDirEntry::ConcatPath(source_base_dir, include);
+                include = CDirEntry::ConcatPath(root, include);
                 include = CDirEntry::NormalizePath(include);
             }
             includes->push_back(include);
@@ -95,6 +115,7 @@ static bool s_SourceFileExists(const string& dir, const string& name)
 void CProjSRCResolver::ResolveTo(list<string>* sources_dst)
 {
     sources_dst->clear();
+    PrepareResolver();
     
     list<string> sources_names;
     ITERATE(list<string>, p, m_SourcesSrc) {
@@ -108,7 +129,6 @@ void CProjSRCResolver::ResolveTo(list<string>* sources_dst)
             sources_names.push_back(src);
             continue;
         }
-        PrepereResolver();
         list<string> resolved_src_defines;
         m_Resolver.Resolve(src_define, &resolved_src_defines);
         if (resolved_src_defines.size() == 1 && resolved_src_defines.front() == src_define) {
@@ -144,7 +164,7 @@ void CProjSRCResolver::ResolveTo(list<string>* sources_dst)
 }
 
 
-void CProjSRCResolver::PrepereResolver(void)
+void CProjSRCResolver::PrepareResolver(void)
 {
     if ( !m_Resolver.IsEmpty() )
         return;
@@ -153,15 +173,10 @@ void CProjSRCResolver::PrepereResolver(void)
     s_GetMakefileIncludes(m_MakefilePath, 
                           m_SourcesBaseDir, &include_makefiles);
 
-    CSymResolver::LoadFrom(m_MakefilePath, &m_Resolver);
     ITERATE(list<string>, p, include_makefiles) {
-        const string& makefile_path = *p;
-        m_Resolver.Append( CSymResolver(makefile_path));
-
-        string dir;
-        CDirEntry::SplitPath(makefile_path, &dir);
-        m_MakefileDirs.push_back(dir);
+        m_MakefileDirs.push_back( CDirEntry(*p).GetDir());
     }
+    CSymResolver::LoadFrom(m_MakefilePath, &m_Resolver);
     m_Resolver.Append( GetApp().GetSite().GetMacros());
 }
 

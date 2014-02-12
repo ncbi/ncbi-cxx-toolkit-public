@@ -406,22 +406,38 @@ void CSimpleMakeFileContents::SParser::AcceptLine(const string& line)
 	    return;
 	    
     } else {
-#if 0
         const string include_token("include ");
-        const string srcdir_token("$(srcdir)");
         if ( NStr::StartsWith(strline, include_token) ) {
             string include = NStr::TruncateSpaces(
                 strline.substr(include_token.length()));
-            
+            string root;
+            string srcdir_token("$(srcdir)");
             if (NStr::StartsWith(include, srcdir_token)) {
+                root = CDirEntry( m_FileContents->GetFileName()).GetDir();
+            } else {
+                srcdir_token = "$(top_srcdir)";
+                if (NStr::StartsWith(include, srcdir_token)) {
+                    root = GetApp().GetProjectTreeInfo().m_Root;
+                }
+                else {
+#if 0
+                    srcdir_token = "$(builddir)";
+                    if (NStr::StartsWith(include, srcdir_token)) {
+                        root = GetApp().GetBuildRoot();
+                        if (root.empty()) {
+                            root = CDirEntry(GetApp().m_Solution).GetDir();
+                        }
+                    }
+#endif
+                }
+            }
+            if (!root.empty()) {
                 include = CDirEntry::NormalizePath(
-                    CDirEntry::ConcatPath(
-                        CDirEntry( m_FileContents->GetFileName()).GetDir(), 
+                    CDirEntry::ConcatPath( root, 
                         NStr::Replace(include, srcdir_token, "")));
                 LoadInclude(include);
             }
         } else
-#endif
         if ( s_IsKVString(strline) ) {
 		    m_FileContents->AddReadyKV(m_CurrentKV);
 		    m_Continue = s_WillContinue(strline);
@@ -517,6 +533,9 @@ void CSimpleMakeFileContents::AddReadyKV(const SKeyValue& kv)
                         dest.push_back(*t+arg);
                     }
                 } else {
+                    if (kv.m_Key == "SRC" && CSymResolver::IsDefine(value)) {
+                        value = FilterDefine(value);
+                    }
                     dest.push_back(value);
                 }
                 start_count = end_count = 0;

@@ -749,7 +749,7 @@ void s_CollectAllLeaves(const map<string, set<string> >& source_dep,
             all_flags.insert(*f);
         }
     }
-    if (source_flags.find(branch) != source_flags.end()) {
+    if (source_dep.find(branch) != source_dep.end()) {
         const set<string>& branches(source_dep.find(branch)->second);
         ITERATE(set<string>, b, branches) {
             s_CollectAllLeaves(source_dep, source_flags, *b, all_dep, all_flags);
@@ -2178,19 +2178,21 @@ CProjKey SAsnProjectMultipleT::DoCreate(const string& source_base_dir,
         if ( !CSymResolver::IsDefine(src) )
             project.m_Sources.push_front(src);    
     }
-    project.m_Sources.remove(proj_name);
+//    project.m_Sources.remove(proj_name);
 //    project.m_Sources.push_back(proj_name + "__");
 //    project.m_Sources.push_back(proj_name + "___");
     ITERATE(list<string>, p, asn_names) {
         const string& asn = *p;
-        if (asn == proj_name)
-            continue;
         string src(1, CDirEntry::GetPathSeparator());
-        src += "..";
-        src += CDirEntry::GetPathSeparator();
-        src += asn;
-        src += CDirEntry::GetPathSeparator();
-        src += asn;
+        if (asn == proj_name) {
+            src = asn;
+        } else {
+            src += "..";
+            src += CDirEntry::GetPathSeparator();
+            src += asn;
+            src += CDirEntry::GetPathSeparator();
+            src += asn;
+        }
 
         project.m_Sources.remove(asn);
         project.m_Sources.remove(asn + "__");

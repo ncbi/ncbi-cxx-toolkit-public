@@ -59,7 +59,7 @@ private:
     list<string>        m_MakefileDirs;
 
     CSymResolver m_Resolver;
-    void PrepereResolver(void);
+    void PrepareResolver(void);
 
     //no value type semantics
     CProjSRCResolver(void);
