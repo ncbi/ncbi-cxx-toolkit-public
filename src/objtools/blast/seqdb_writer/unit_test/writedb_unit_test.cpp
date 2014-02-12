@@ -2551,7 +2551,7 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_TestDirectoryCreation)
     bd->SetSourceDb("nr");
     //bd->SetVerbosity(true);
     bd->SetUseRemote(true);
-    vector<string> ids(1, "129295");
+    vector<string> ids(1, "405833");
     bd->AddIds(ids);
     bd->EndBuild();
     CFile f1(kOutput + ".pin");
@@ -2580,7 +2580,7 @@ BOOST_AUTO_TEST_CASE(CBuildDatabase_TestBasicDatabaseCreation)
     bd->SetSourceDb("nr");
     //bd->SetVerbosity(true);
     bd->SetUseRemote(true);
-    vector<string> ids(1, "129295");
+    vector<string> ids(1, "405833");
     bd->AddIds(ids);
     bd->EndBuild();
     CFile f1(kOutput + ".pin");
