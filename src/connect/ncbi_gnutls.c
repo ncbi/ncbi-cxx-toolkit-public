@@ -196,45 +196,6 @@ static int/*bool*/ x_IsTimeout(SOCK sock, EIO_Event direction)
 #  ifdef __GNUC__
 inline
 #  endif /*__GNUC__*/
-static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
-{
-    int error;
-
-    assert(status != eIO_Success);
-
-    switch (status) {
-    case eIO_Timeout:
-        error = x_IsTimeout(sock, direction) ? SOCK_ETIMEDOUT : EAGAIN;
-        break;
-    case eIO_Closed:
-        error = SOCK_ENOTCONN;
-        break;
-    case eIO_Interrupt:
-        error = SOCK_EINTR;
-        break;
-    case eIO_NotSupported:
-        error = NCBI_NOTSUPPORTED;
-        break;
-    case eIO_Unknown:
-        error = 0/*keep*/;
-        break;
-    default:
-        /*NB:eIO_InvalidArg*/
-        error = EINVAL;
-        break;
-    }
-#if 0
-    CORE_TRACEF(("CONNECT status %s -> errno %d%s", IO_StatusStr(status),
-                 error ? error : errno,
-                 error ? ""    : " (kept)"));
-#endif
-    return error;
-}
-
-
-#  ifdef __GNUC__
-inline
-#  endif /*__GNUC__*/
 static EIO_Status x_RetryStatus(gnutls_session_t session, EIO_Event direction)
 {
     SOCK sock = (SOCK) gnutls_session_get_ptr(session);
@@ -274,6 +235,45 @@ static EIO_Status x_ErrorToStatus(int error,
                  error, IO_StatusStr(status)));
 #endif
     return status;
+}
+
+
+#  ifdef __GNUC__
+inline
+#  endif /*__GNUC__*/
+static int x_StatusToError(EIO_Status status, SOCK sock, EIO_Event direction)
+{
+    int error;
+
+    assert(status != eIO_Success);
+
+    switch (status) {
+    case eIO_Timeout:
+        error = x_IsTimeout(sock, direction) ? SOCK_ETIMEDOUT : EAGAIN;
+        break;
+    case eIO_Closed:
+        error = SOCK_ENOTCONN;
+        break;
+    case eIO_Interrupt:
+        error = SOCK_EINTR;
+        break;
+    case eIO_NotSupported:
+        error = NCBI_NOTSUPPORTED;
+        break;
+    case eIO_Unknown:
+        error = 0/*keep*/;
+        break;
+    default:
+        /*NB:eIO_InvalidArg*/
+        error = EINVAL;
+        break;
+    }
+#if 0
+    CORE_TRACEF(("CONNECT status %s -> %s %d", IO_StatusStr(status),
+                 error ? "error" : "errno",
+                 error ?  error  :  errno));
+#endif
+    return error;
 }
 
 
