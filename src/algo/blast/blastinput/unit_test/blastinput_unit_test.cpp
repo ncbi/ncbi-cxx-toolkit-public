@@ -813,7 +813,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession)
     BOOST_REQUIRE_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetTo() == true);
-    const TSeqPos length(249250621);
+    const TSeqPos length(248956422);
     BOOST_REQUIRE_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetId() == true);
@@ -841,9 +841,9 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequence)
 {
     CNcbiIfstream infile("data/accession.txt");
     const bool is_protein(false);
-    const TIntId kGi = 224589800;
+    const TIntId kGi = 568815597;
     const TSeqPos kStart = 0;
-    const TSeqPos kStop(249250620);
+    const TSeqPos kStop(248956421);
     SDataLoaderConfig dlconfig("chromosome", is_protein);
     dlconfig.OptimizeForWholeLargeSequenceRetrieval(true);
 
@@ -961,7 +961,7 @@ BOOST_AUTO_TEST_CASE(ReadSingleAccession_RetrieveLargeSequenceWithRange)
     BOOST_REQUIRE_EQUAL(accession, b.GetId().front()->GetOther().GetAccession());
     BOOST_REQUIRE_EQUAL(CSeq_inst::eRepr_raw, b.GetInst().GetRepr());
     BOOST_REQUIRE(CSeq_inst::IsNa(b.GetInst().GetMol()));
-    const TSeqPos length(249250621);
+    const TSeqPos length(248956422);
     BOOST_REQUIRE_EQUAL(length, b.GetInst().GetLength());
 }
 #ifdef _DEBUG
@@ -981,7 +981,7 @@ BOOST_AUTO_TEST_CASE(ReadMultipleAccessions)
     CRef<CBlastInput> source(s_DeclareBlastInput(infile, iconfig));
 
     vector< pair<string, long> > accession_lengths;
-    accession_lengths.push_back(make_pair(string("NC_000001"), 249250621L));
+    accession_lengths.push_back(make_pair(string("NC_000001"), 248956422L));
     accession_lengths.push_back(make_pair(string("NC_000010.9"), 135374737L));
     accession_lengths.push_back(make_pair(string("NC_000011.8"), 134452384L));
     accession_lengths.push_back(make_pair(string("NC_000012.10"), 132349534L));
@@ -1488,7 +1488,7 @@ BOOST_AUTO_TEST_CASE(ReadAccessionNucleotideIntoBuffer_Single)
     BOOST_REQUIRE_EQUAL((TSeqPos)0, ssl.seqloc->GetInt().GetFrom());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetTo() == true);
-    const TSeqPos length(249250621);
+    const TSeqPos length(248956422);
     BOOST_REQUIRE_EQUAL(length-1, ssl.seqloc->GetInt().GetTo());
 
     BOOST_REQUIRE(ssl.seqloc->GetInt().IsSetId() == true);
@@ -2471,8 +2471,8 @@ BOOST_AUTO_TEST_CASE(CheckQueryBatchSize) {
 // Test case for WB-1304: save GI (i.e.: best ranked Seq-id) if available
 BOOST_AUTO_TEST_CASE(FetchGiFromAccessionInput) 
 {
-    const CSeq_id gi(CSeq_id::e_Gi, 224514933);
-    const string input("NT_026437.12");
+    const CSeq_id gi(CSeq_id::e_Gi, 568802206);
+    const string input("NT_026437.13");
     typedef vector<pair<SDataLoaderConfig::EConfigOpts, string> > TVecOpts;
     TVecOpts opts;
     opts.push_back(TVecOpts::value_type(SDataLoaderConfig::eUseGenbankDataLoader, "genbank"));
