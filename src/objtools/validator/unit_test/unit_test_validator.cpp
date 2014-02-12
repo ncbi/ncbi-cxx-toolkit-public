@@ -5432,8 +5432,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     seh = scope.AddTopLevelSeqEntry(*entry);
     expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
                               "Unexpected use of /sex qualifier"));
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BioSourceInconsistency",
-                              "Bacteria should have strain or isolate or environmental sample"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
 
@@ -5684,8 +5682,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetTaxon(entry, 0);
     unit_test_util::SetTaxon(entry, 77133);
     expected_errors[0]->SetErrMsg("Uncultured should also have /environmental_sample");
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BioSourceInconsistency",
-                              "Bacteria should have strain or isolate or environmental sample"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     
@@ -5776,8 +5772,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     unit_test_util::SetLineage (entry, "Bacteria; foo");
     unit_test_util::SetSubSource (entry, CSubSource::eSubtype_other, "cRNA");
     expected_errors[0]->SetErrMsg("cRNA note conflicts with molecule type");
-    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BioSourceInconsistency",
-                              "Bacteria should have strain or isolate or environmental sample"));
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
     
@@ -5915,6 +5909,46 @@ BOOST_AUTO_TEST_CASE(Test_Descr_BioSourceInconsistency)
     CheckErrors (*eval, expected_errors);
 
     CLEAR_ERRORS
+
+    // report missing env_sample/strain/isolate if bacterial and biosample
+    unit_test_util::SetLineage (entry, "Bacteria; foo");
+    CRef<CSeqdesc> biosample(new CSeqdesc());
+    biosample->SetUser().SetType().SetStr("DBLink");
+    CRef<CUser_field> f(new CUser_field());
+    f->SetLabel().SetStr("BioSample");
+    f->SetData().SetStr("PRJNA12345");
+    biosample->SetUser().SetData().push_back(f);
+    entry->SetSeq().SetDescr().Set().push_back(biosample);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Error, "BioSourceInconsistency",
+                              "Bacteria should have strain or isolate or environmental sample"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    CLEAR_ERRORS
+
+    // no error if strain, isolate, or environmental sample set
+    scope.RemoveTopLevelSeqEntry(seh);
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, "bar");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_strain, "");
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_isolate, "bar");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
+    scope.RemoveTopLevelSeqEntry(seh);
+    unit_test_util::SetOrgMod(entry, COrgMod::eSubtype_isolate, "");
+    unit_test_util::SetSubSource(entry, CSubSource::eSubtype_environmental_sample, "true");
+    seh = scope.AddTopLevelSeqEntry(*entry);
+    expected_errors.push_back(new CExpectedError("good", eDiag_Warning, "BioSourceInconsistency",
+                              "Environmental sample should also have isolation source or specific host annotated"));
+    eval = validator.Validate(seh, options);
+    CheckErrors (*eval, expected_errors);
+
 }
 
 
@@ -7469,8 +7503,6 @@ BOOST_AUTO_TEST_CASE(Test_Descr_MissingChromosome)
     unit_test_util::SetLineage (entry, "Viruses; foo");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
-    expected_errors.push_back(new CExpectedError("AC_123456", eDiag_Error, "BioSourceInconsistency",
-                              "Bacteria should have strain or isolate or environmental sample"));
     unit_test_util::SetLineage (entry, "Bacteria; foo");
     eval = validator.Validate(seh, options);
     CheckErrors (*eval, expected_errors);
@@ -17508,6 +17540,12 @@ BOOST_AUTO_TEST_CASE(Test_SEQ_FEAT_WrongQualOnFeature)
 
 BOOST_AUTO_TEST_CASE(Test_FixLatLonFormat)
 {
+#if 0
+    string to_fix = "N03'00'12.1 E101'39'33'1";
+    string fixed = CSubSource::FixLatLonFormat(to_fix, true);
+    BOOST_CHECK_EQUAL(fixed, "3.0034 N 101.6591 E");
+#endif
+
     string to_fix = "9.93N\xC2\xB0 and 78.12\xC2\xB0\x45";
     string fixed = CSubSource::FixLatLonFormat(to_fix, true);
     BOOST_CHECK_EQUAL(fixed, "9.93 N 78.12 E");
@@ -18113,3 +18151,13 @@ BOOST_AUTO_TEST_CASE(Test_SexQualifiers)
 }
 
 
+BOOST_AUTO_TEST_CASE(TEST_DisableStrainForwarding)
+{
+    CBioSource src;
+
+    src.SetDisableStrainForwarding(true);
+    BOOST_CHECK_EQUAL(src.GetOrg().GetOrgname().GetAttrib(), "nomodforward");
+    BOOST_CHECK_EQUAL(src.GetDisableStrainForwarding(), true);
+    src.SetDisableStrainForwarding(false);
+    BOOST_CHECK_EQUAL(src.GetDisableStrainForwarding(), false);
+}

@@ -1510,16 +1510,6 @@ void CValidError_imp::ValidateBioSource
                    obj, ctx);
     }
 
-    if (IsGpipe() || IsIndexerVersion()) {
-        if (isBacteria) {
-            if ( ! has_strain && ! has_isolate && ! env_sample ) {
-                PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency, 
-                           "Bacteria should have strain or isolate or environmental sample",
-                           obj, ctx);
-            }
-        }
-    }
-
     ValidateOrgRef (orgref, obj, ctx);
 }
 
@@ -2190,6 +2180,40 @@ static bool s_CompleteGenomeNeedsChromosome (const CBioSource& source)
 }
 
 
+bool s_IsBacteria(const CBioSource& source)
+{
+    bool rval = false;
+
+    if (source.IsSetLineage()) {
+        string lineage = source.GetLineage();
+        if (NStr::StartsWith(lineage, "Bacteria; ", NStr::eNocase)) {
+            rval = true;
+        }
+    }
+    return rval;
+}
+
+
+bool s_IsBioSample(const CBioseq_Handle& bsh)
+{
+    bool rval = false;
+    CSeqdesc_CI d(bsh, CSeqdesc::e_User);
+    while (d && !rval) {
+        if (d->GetUser().IsSetType() && d->GetUser().GetType().IsStr() && NStr::Equal(d->GetUser().GetType().GetStr(), "DBLink")) {
+            ITERATE(CUser_object::TData, f, d->GetUser().GetData()) {
+                if ((*f)->IsSetLabel() && (*f)->GetLabel().IsStr() && NStr::Equal((*f)->GetLabel().GetStr(), "BioSample")
+                    && (*f)->IsSetData() && ((*f)->GetData().IsStr() || (*f)->GetData().IsStrs())) {
+                    rval = true;
+                    break;
+                }
+            }
+        }
+        ++d;
+    }
+    return rval;
+}
+
+
 void CValidError_imp::ValidateBioSourceForSeq
 (const CBioSource&    source,
  const CSerialObject& obj,
@@ -2492,6 +2516,46 @@ void CValidError_imp::ValidateBioSourceForSeq
             }
           }
       }
+
+    if (IsGpipe() || IsIndexerVersion()) {
+        if (s_IsBacteria(source) && s_IsBioSample(bsh)) {
+            bool has_strain = false;
+            bool has_isolate = false;
+            bool env_sample = false;
+            if (source.IsSetSubtype()) {
+                ITERATE(CBioSource::TSubtype, s, source.GetSubtype()) {
+                    if ((*s)->IsSetSubtype() && (*s)->GetSubtype() == CSubSource::eSubtype_environmental_sample) {
+                        env_sample = true;
+                        break;
+                    }
+                }
+            }
+            if (!env_sample && source.IsSetOrg() 
+                && source.GetOrg().IsSetOrgname() 
+                && source.GetOrg().GetOrgname().IsSetMod()) {
+                ITERATE(COrgName::TMod, om, source.GetOrg().GetOrgname().GetMod()) {
+                    if ((*om)->IsSetSubtype()) {
+                        if ((*om)->GetSubtype() == COrgMod::eSubtype_isolate) {
+                            has_isolate = true;
+                            break;
+                        } else if ((*om)->GetSubtype() == COrgMod::eSubtype_strain) {
+                            has_strain = true;
+                            break;
+                        }
+                    }
+                }
+            }
+
+
+            if ( ! has_strain && ! has_isolate && ! env_sample ) {
+                PostObjErr(eDiag_Error, eErr_SEQ_DESCR_BioSourceInconsistency, 
+                           "Bacteria should have strain or isolate or environmental sample",
+                           obj, ctx);
+            }
+        }
+    }
+
+
 }
 
 
