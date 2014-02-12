@@ -3955,10 +3955,9 @@ void CValidError_bioseq::x_ValidateCompletness
             CSeqdesc_CI src_desc(m_CurrentHandle, CSeqdesc::e_Source);
             if (src_desc) {
                 const CBioSource& biosrc = src_desc->GetSource();
-                if ((!biosrc.IsSetOrg()
-                     || !biosrc.GetOrg().IsSetOrgname()
-                     || !biosrc.GetOrg().GetOrgname().IsSetLineage()
-                     || NStr::FindNoCase(biosrc.GetOrg().GetOrgname().GetLineage(), "Viruses") == string::npos) // not viral
+                if ((!biosrc.IsSetLineage() 
+                     || (NStr::FindNoCase(biosrc.GetLineage(), "Viruses") == string::npos
+                         && NStr::FindNoCase(biosrc.GetLineage(), "Viroids") == string::npos)) // not viral
                     && (!src_desc->GetSource().IsSetGenome()
                         || src_desc->GetSource().GetGenome() == CBioSource::eGenome_genomic)) { // location not set or genomic
                     PostErr(eDiag_Warning, eErr_SEQ_DESCR_UnwantedCompleteFlag,
