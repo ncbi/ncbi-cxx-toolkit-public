@@ -107,6 +107,10 @@ public:
     string GetBioprojectType (void) const;
     string GetBioprojectLocation (void) const;
 
+    // for Taxonomy
+    void SetDisableStrainForwarding(bool val);
+    bool GetDisableStrainForwarding() const;
+
 private:
     // Prohibit copy constructor and assignment operator
     CBioSource(const CBioSource& value);

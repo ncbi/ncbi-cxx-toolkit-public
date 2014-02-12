@@ -541,6 +541,45 @@ string CBioSource::GetBioprojectLocation(void) const
     return "";
 }
 
+const string kDisableStrainForwardAttrib = "nomodforward";
+
+void CBioSource::SetDisableStrainForwarding(bool val)
+{
+    if (val) {
+        string attrib = "";
+        if (IsSetOrg() && GetOrg().IsSetOrgname() && GetOrg().GetOrgname().IsSetAttrib()) {
+            attrib = GetOrg().GetOrgname().GetAttrib();
+        }
+        if (NStr::Find(attrib, kDisableStrainForwardAttrib) == string::npos) {
+            if (!NStr::IsBlank(attrib)) {
+                attrib += ";";
+            }
+            attrib += kDisableStrainForwardAttrib;
+            SetOrg().SetOrgname().SetAttrib(attrib);
+        }
+    } else {
+        if (IsSetOrg() && GetOrg().IsSetOrgname() && GetOrg().GetOrgname().IsSetAttrib()) {
+            NStr::ReplaceInPlace(SetOrg().SetOrgname().SetAttrib(), kDisableStrainForwardAttrib, "");
+            NStr::ReplaceInPlace(SetOrg().SetOrgname().SetAttrib(), ";;", "");
+            if (NStr::IsBlank(GetOrg().GetOrgname().GetAttrib())) {
+                SetOrg().SetOrgname().ResetAttrib();
+            }
+        }
+    }
+}
+
+
+bool CBioSource::GetDisableStrainForwarding() const
+{
+    bool val = false;
+    if (IsSetOrg() && GetOrg().IsSetOrgname() && GetOrg().GetOrgname().IsSetAttrib()
+        && NStr::Find(GetOrg().GetOrgname().GetAttrib(), kDisableStrainForwardAttrib) != string::npos) {
+        val = true;
+    }
+    return val;
+}
+
+
 
 END_objects_SCOPE // namespace ncbi::objects::
 
