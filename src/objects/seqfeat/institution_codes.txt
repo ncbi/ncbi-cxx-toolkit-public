@@ -75,7 +75,7 @@ ADW	s	University of Adelaide
 AEF	s	University of Ankara, Department of Pharmaceutical Botany
 AEI	s	American Entomological Institute
 AEIC	s	American Entomological Institute
-AES	s	University of Alaska
+AES	s	Herbarium, Agricultural and Forestry Experiment Station, University of Alaska
 AESB	s	Agriculture Experiment Station
 AFAQ	s	Amateur Fisheries Association of Queensland
 AFES	s	Maritimes Forest Research Centre
@@ -111,9 +111,9 @@ AK	s	Auckland War Memorial Museum
 AKU<JPN>	c	Faculty of Agriculture
 AKU<NZ>	s	University of Auckland, School of Biological Sciences
 AL	s	Universite d'Alger
-ALA<USA-AK>	s	University of Alaska Museum
+ALA<USA-AK>	s	Herbarium, University of Alaska Museum of the North
 ALA<USA-AL>	s	University of Alabama Museum of Natural History
-ALAJ	s	University of Alaska
+ALAJ	s	Herbarium, University of Alaska SE
 ALAM	s	Adams State College, Biology Department
 ALB	s	Civico Museo Archeologico e di Scienze Naturali Federico Eusebio
 ALBA	s	Universidad de Castilla, La Mancha, Departamento de Ciencia y Tecnologia Agroforestal
@@ -5756,7 +5756,6 @@ TCMM	c	Thai Collection of Medical Microorganism, Department of Pathology, Facult
 TCNM	s	Timpanogos Cave National Monument
 TCSW	s	Texas Women's University, Biology Department
 TCWC	s	Texas Cooperative Wildlife Collection
-TCWC:	s	Texas Cooperative Wildlife Collection, 
 TCWC:Birds	s	Texas Cooperative Wildlife Collection, Collection of Birds
 TCWC:Fish	s	Texas Cooperative Wildlife Collection, Collection of Fishes
 TCWC:Herp	s	Texas Cooperative Wildlife Collection, Collection of Amphibians and Reptiles
@@ -5968,7 +5967,7 @@ UA<GRC>	s	Department of Historical Geology and Paleontology
 UA<USA-AL>	s	University of Alabama Collection
 UA<USA-AZ>	s	University of Arizona
 UAAAC	s	University of Alaska Anchorage Avian Collection
-UAAH	s	University of Alaska Anchorage, Department of Biological Sciences
+UAAH	s	Herbarium, Department of Biological Sciences, University of Alaska Anchorage
 UAAM	s	The Arthropod Museum, University of Arkansas
 UAB<ESP>	s	Universidad Autonoma de Barcelona
 UABC	s	Universidad Autonoma de Baja California
