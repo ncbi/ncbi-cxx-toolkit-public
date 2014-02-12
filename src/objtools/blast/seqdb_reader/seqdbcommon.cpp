@@ -2255,6 +2255,7 @@ void SeqDB_GetFileExtensions(bool db_is_protein, vector<string>& extn)
 {
     // NOTE: If more extensions are added, please keep in sync with
     // updatedb.pl's DistributeBlastDbsToBackends
+    // and Blast.pm's @blastdb_extensions
     extn.clear();
 
     const string kExtnMol(1, db_is_protein ? 'p' : 'n');
@@ -2270,8 +2271,8 @@ void SeqDB_GetFileExtensions(bool db_is_protein, vector<string>& extn)
     extn.push_back(kExtnMol + "pi");   // ISAM PIG index file
     extn.push_back(kExtnMol + "pd");   // ISAM PIG data file
     extn.push_back(kExtnMol + "xc");   // gi-to-taxids cyclopedia file
-    extn.push_back(kExtnMol + "xi");   // gi-to-taxids index file
-    extn.push_back(kExtnMol + "xd");   // gi-to-taxids data file
+    extn.push_back(kExtnMol + "xa");   // gi-to-taxids index file
+    extn.push_back(kExtnMol + "xb");   // gi-to-taxids data file
 
     // Contain masking information
     extn.push_back(kExtnMol + "aa");   // ISAM mask index file
