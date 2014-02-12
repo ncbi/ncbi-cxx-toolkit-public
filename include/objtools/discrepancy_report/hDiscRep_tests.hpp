@@ -2134,6 +2134,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
     protected:
        const CMolInfo* m_molinfo;
 
+       bool GeneRefMatch(const CGene_ref& gene1, const CGene_ref& gene2);
        bool x_IsShortrRNA(const CSeq_feat* seq_ft);
        bool BioseqHasKeyword(const CBioseq& bioseq, const string& keywd);
        bool StrandOk(ENa_strand strand1, ENa_strand strand2);
@@ -2351,7 +2352,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
                                          bool check_for_utrs = false);
       void  GetFeatureList4Gene(const CSeq_feat* gene, 
                                 const vector <const CSeq_feat*> feats,
-                                vector <unsigned> exist_ls);
+                                vector <unsigned>& exist_ls);
   };
 
   class CBioseq_EUKARYOTE_SHOULD_HAVE_MRNA : public CBioseq_on_Aa
@@ -3757,7 +3758,7 @@ BEGIN_SCOPE(DiscRepNmSpc)
       bool IsMixStrand(const CSeq_feat* seq_feat);
       bool IsMixedStrandGeneLocationOk(const CSeq_loc& feat_loc, 
                                        const CSeq_loc& gene_loc);
-      bool GeneRefMatch(const CGene_ref& gene1, const CGene_ref& gene2);
+//      bool GeneRefMatch(const CGene_ref& gene1, const CGene_ref& gene2);
   };
 
   class CBioseq_on_locus_tags : public CBioseqTestAndRepData
