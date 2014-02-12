@@ -39,15 +39,15 @@ BEGIN_NCBI_SCOPE
 
 struct SNetStorageObjectInfoImpl : public CObject
 {
-    SNetStorageObjectInfoImpl(const string& object_id,
+    SNetStorageObjectInfoImpl(const string& object_loc,
             ENetStorageObjectLocation location,
-            CJsonNode::TInstance object_id_info,
+            CJsonNode::TInstance object_loc_info,
             Uint8 file_size,
             CJsonNode::TInstance storage_specific_info);
 
-    string m_ObjectID;
+    string m_ObjectLoc;
     ENetStorageObjectLocation m_Location;
-    CJsonNode m_ObjectIDInfo;
+    CJsonNode m_ObjectLocInfo;
     Uint8 m_FileSize;
     CJsonNode m_StorageSpecificInfo;
 };
@@ -55,29 +55,29 @@ struct SNetStorageObjectInfoImpl : public CObject
 static const char* s_NCTimeFormat = "M/D/Y h:m:s.r";
 static const char* s_ISO8601TimeFormat = "Y-M-DTh:m:s.r";
 
-SNetStorageObjectInfoImpl::SNetStorageObjectInfoImpl(const string& object_id,
+SNetStorageObjectInfoImpl::SNetStorageObjectInfoImpl(const string& object_loc,
         ENetStorageObjectLocation location,
-        CJsonNode::TInstance object_id_info,
+        CJsonNode::TInstance object_loc_info,
         Uint8 file_size,
         CJsonNode::TInstance storage_specific_info) :
-    m_ObjectID(object_id),
+    m_ObjectLoc(object_loc),
     m_Location(location),
-    m_ObjectIDInfo(object_id_info),
+    m_ObjectLocInfo(object_loc_info),
     m_FileSize(file_size),
     m_StorageSpecificInfo(storage_specific_info)
 {
 }
 
-CNetStorageObjectInfo::CNetStorageObjectInfo(const string& object_id,
+CNetStorageObjectInfo::CNetStorageObjectInfo(const string& object_loc,
         ENetStorageObjectLocation location,
-        const CNetStorageObjectID& object_id_struct,
+        const CNetStorageObjectLoc& object_loc_struct,
         Uint8 file_size, CJsonNode::TInstance storage_specific_info) :
-    m_Impl(new SNetStorageObjectInfoImpl(object_id, location,
-            object_id_struct.ToJSON(), file_size, storage_specific_info))
+    m_Impl(new SNetStorageObjectInfoImpl(object_loc, location,
+            object_loc_struct.ToJSON(), file_size, storage_specific_info))
 {
 }
 
-CNetStorageObjectInfo::CNetStorageObjectInfo(const string& object_id,
+CNetStorageObjectInfo::CNetStorageObjectInfo(const string& object_loc,
         const CJsonNode& file_info_node)
 {
     const string location_str(file_info_node.GetString("Location"));
@@ -91,8 +91,8 @@ CNetStorageObjectInfo::CNetStorageObjectInfo(const string& object_id,
 
     Uint8 file_size = file_size_node ? (Uint8) file_size_node.AsInteger() : 0;
 
-    m_Impl = new SNetStorageObjectInfoImpl(object_id, location,
-            file_info_node.GetByKey("ObjectIDInfo"), file_size,
+    m_Impl = new SNetStorageObjectInfoImpl(object_loc, location,
+            file_info_node.GetByKey("ObjectLocInfo"), file_size,
             file_info_node.GetByKeyOrNull("StorageSpecificInfo"));
 }
 
@@ -101,9 +101,9 @@ ENetStorageObjectLocation CNetStorageObjectInfo::GetLocation() const
     return m_Impl->m_Location;
 }
 
-CJsonNode CNetStorageObjectInfo::GetObjectIDInfo() const
+CJsonNode CNetStorageObjectInfo::GetObjectLocInfo() const
 {
-    return m_Impl->m_ObjectIDInfo;
+    return m_Impl->m_ObjectLocInfo;
 }
 
 CTime CNetStorageObjectInfo::GetCreationTime() const
@@ -132,7 +132,7 @@ string CNetStorageObjectInfo::GetNFSPathname() const
             throw;
         NCBI_THROW_FMT(CNetStorageException, eInvalidArg,
                 "Cannot retrieve NFS path information for '" <<
-                m_Impl->m_ObjectID << '\'');
+                m_Impl->m_ObjectLoc << '\'');
     }
 }
 
@@ -168,8 +168,8 @@ CJsonNode CNetStorageObjectInfo::ToJSON()
     if (ctime)
         root.SetByKey("CreationTime", ctime);
 
-    if (m_Impl->m_ObjectIDInfo)
-        root.SetByKey("ObjectIDInfo", m_Impl->m_ObjectIDInfo);
+    if (m_Impl->m_ObjectLocInfo)
+        root.SetByKey("ObjectLocInfo", m_Impl->m_ObjectLocInfo);
 
     if (m_Impl->m_StorageSpecificInfo)
         root.SetByKey("StorageSpecificInfo", m_Impl->m_StorageSpecificInfo);

@@ -90,27 +90,27 @@ static string s_WriteAndRead(CNetStorageObject new_netstorage_object)
 void g_TestNetStorage(CNetStorage netstorage)
 {
     // Create a NetStorage object that should to go to NetCache.
-    string object_id = s_WriteAndRead(
+    string object_loc = s_WriteAndRead(
             netstorage.Create(fNST_Fast | fNST_Movable));
 
     // Now read the whole object using the buffered version
     // of Read(). Verify that the contents of each buffer
     // match the original data.
-    CNetStorageObject orig_netstorage_object = netstorage.Open(object_id);
+    CNetStorageObject orig_netstorage_object = netstorage.Open(object_loc);
 
     s_ReadAndCompare(orig_netstorage_object);
 
     // Generate a "non-movable" object ID by calling Relocate()
     // with the same storage preferences (so the object should not
     // be actually relocated).
-    string fast_storage_object_id = netstorage.Relocate(object_id, fNST_Fast);
+    string fast_storage_object_loc = netstorage.Relocate(object_loc, fNST_Fast);
 
     // Relocate the object to a persistent storage.
-    string persistent_id = netstorage.Relocate(object_id, fNST_Persistent);
+    string persistent_loc = netstorage.Relocate(object_loc, fNST_Persistent);
 
     // Verify that the object has disappeared from the "fast" storage.
     CNetStorageObject fast_storage_object =
-            netstorage.Open(fast_storage_object_id);
+            netstorage.Open(fast_storage_object_loc);
 
     // Make sure the relocated object does not exists in the
     // original storage anymore.
@@ -119,9 +119,9 @@ void g_TestNetStorage(CNetStorage netstorage)
 
     // However, the object must still be accessible
     // either using the original ID:
-    s_ReadAndCompare(netstorage.Open(object_id));
+    s_ReadAndCompare(netstorage.Open(object_loc));
     // or using the newly generated persistent storage ID:
-    s_ReadAndCompare(netstorage.Open(persistent_id));
+    s_ReadAndCompare(netstorage.Open(persistent_loc));
 }
 
 void g_TestNetStorageByKey(CNetStorageByKey netstorage)

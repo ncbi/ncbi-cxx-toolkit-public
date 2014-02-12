@@ -164,7 +164,7 @@ int CNetCacheBlobFetchApp::ProcessRequest(CCgiContext& ctx)
         case eCIC_NetCacheKey:
             x_FetchNetCacheBlob(request, reply, key);
             break;
-        case eCIC_NetStorageObjectID:
+        case eCIC_NetStorageObjectLoc:
             if (m_NetStorage)
                 x_FetchNetStorageObject(request, reply, key);
             else {

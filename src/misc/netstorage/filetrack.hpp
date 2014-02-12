@@ -48,7 +48,7 @@ struct SFileTrackAPI;
 struct SFileTrackRequest : public CObject
 {
     SFileTrackRequest(SFileTrackAPI* storage_impl,
-            CNetStorageObjectID* object_id,
+            CNetStorageObjectLoc* object_loc,
             const string& url,
             const string& user_header = kEmptyStr,
             FHTTP_ParseHeader parse_header = 0);
@@ -61,7 +61,7 @@ struct SFileTrackRequest : public CObject
     void CheckIOStatus();
 
     SFileTrackAPI* m_FileTrackAPI;
-    CNetStorageObjectID* m_ObjectID;
+    CNetStorageObjectLoc* m_ObjectLoc;
     string m_URL;
     CConn_HttpStream m_HTTPStream;
     int m_HTTPStatus;
@@ -72,7 +72,7 @@ struct SFileTrackRequest : public CObject
 struct SFileTrackPostRequest : public SFileTrackRequest
 {
     SFileTrackPostRequest(SFileTrackAPI* storage_impl,
-            CNetStorageObjectID* object_id,
+            CNetStorageObjectLoc* object_loc,
             const string& url, const string& boundary,
             const string& user_header = kEmptyStr,
             FHTTP_ParseHeader parse_header = 0);
@@ -93,19 +93,19 @@ struct SFileTrackAPI
 
     string GetAPIKey();
 
-    string LoginAndGetSessionKey(CNetStorageObjectID* object_id);
+    string LoginAndGetSessionKey(CNetStorageObjectLoc* object_loc);
 
-    CJsonNode GetFileInfo(CNetStorageObjectID* object_id);
+    CJsonNode GetFileInfo(CNetStorageObjectLoc* object_loc);
 
-    string GetFileAttribute(CNetStorageObjectID* object_id,
+    string GetFileAttribute(CNetStorageObjectLoc* object_loc,
             const string& attr_name);
-    void SetFileAttribute(CNetStorageObjectID* object_id,
+    void SetFileAttribute(CNetStorageObjectLoc* object_loc,
             const string& attr_name, const string& attr_value);
 
-    CRef<SFileTrackPostRequest> StartUpload(CNetStorageObjectID* object_id);
-    CRef<SFileTrackRequest> StartDownload(CNetStorageObjectID* object_id);
+    CRef<SFileTrackPostRequest> StartUpload(CNetStorageObjectLoc* object_loc);
+    CRef<SFileTrackRequest> StartDownload(CNetStorageObjectLoc* object_loc);
 
-    void Remove(CNetStorageObjectID* object_id);
+    void Remove(CNetStorageObjectLoc* object_loc);
 
     Uint8 GetRandom();
     string GenerateUniqueBoundary();

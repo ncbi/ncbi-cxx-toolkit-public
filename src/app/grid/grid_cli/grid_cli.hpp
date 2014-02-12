@@ -132,7 +132,7 @@ enum EOption {
     eOptionalID,
     eID,
     eAppUID,
-    eNetStorageObjectID,
+    eNetStorageObjectLoc,
     eAttrName,
     eAttrValue,
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
@@ -428,7 +428,7 @@ public:
     int Cmd_Upload();
     int Cmd_Download();
     int Cmd_Relocate();
-    int Cmd_MkObjectID();
+    int Cmd_MkObjectLoc();
     int Cmd_NetStorageObjectInfo();
     int Cmd_RemoveNetStorageObject();
     int Cmd_GetAttr();

@@ -78,8 +78,8 @@ struct SOptionDefinition {
 
     {OPT_DEF(ePositionalArgument, eAppUID), "APP_UID", NULL, {-1}},
 
-    {OPT_DEF(ePositionalArgument, eNetStorageObjectID),
-            "OBJECT_ID", NULL, {-1}},
+    {OPT_DEF(ePositionalArgument, eNetStorageObjectLoc),
+            "OBJECT_LOC", NULL, {-1}},
 
     {OPT_DEF(ePositionalArgument, eAttrName), "ATTR_NAME", NULL, {-1}},
 
@@ -616,8 +616,8 @@ struct SCommandDefinition {
             eFileTrackSite, eFileTrackAPIKey, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
-    {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_MkObjectID,
-        "mkobjectid", "Turn a user-defined key into a NetStorage object ID.",
+    {eNetStorageCommand, &CGridCommandLineInterfaceApp::Cmd_MkObjectLoc,
+        "mkobjectloc", "Turn a user-defined key into a NetStorage object ID.",
         "Take a unique user-defined key/namespace pair (or an "
         "existing object ID) and make a new object ID. The resulting "
         "object ID will reflect storage preferences specified by the "
@@ -648,7 +648,7 @@ struct SCommandDefinition {
         "getattr", "Get a NetStorage object attribute value.",
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
-        {eNetStorageObjectID, eAttrName, eNetStorage,
+        {eNetStorageObjectLoc, eAttrName, eNetStorage,
             eNetCache, eCache, eLoginToken, eAuth, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
 
@@ -656,7 +656,7 @@ struct SCommandDefinition {
         "setattr", "Set a NetStorage object attribute value.",
         MAY_REQUIRE_LOCATION_HINTING
         ABOUT_NETSTORAGE_OPTION,
-        {eNetStorageObjectID, eAttrName, eAttrValue, eNetStorage,
+        {eNetStorageObjectLoc, eAttrName, eAttrValue, eNetStorage,
             eNetCache, eCache, eLoginToken, eAuth,
             eFileTrackAPIKey, eDebugHTTP,
             ALLOW_XSITE_CONN_IF_SUPPORTED -1}},
@@ -1254,7 +1254,7 @@ int CGridCommandLineInterfaceApp::Run()
                 MarkOptionAsExplicitlySet(eID);
                 /* FALL THROUGH */
             case eID:
-            case eNetStorageObjectID:
+            case eNetStorageObjectLoc:
             case eObjectKey:
             case eJobId:
             case eTargetQueueArg:

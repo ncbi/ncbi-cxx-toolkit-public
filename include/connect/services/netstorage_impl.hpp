@@ -114,12 +114,12 @@ inline void CNetStorageObject::Close()
 struct NCBI_XCONNECT_EXPORT SNetStorageImpl : public CObject
 {
     virtual CNetStorageObject Create(TNetStorageFlags flags = 0) = 0;
-    virtual CNetStorageObject Open(const string& object_id,
+    virtual CNetStorageObject Open(const string& object_loc,
             TNetStorageFlags flags = 0) = 0;
-    virtual string Relocate(const string& object_id,
+    virtual string Relocate(const string& object_loc,
             TNetStorageFlags flags) = 0;
-    virtual bool Exists(const string& object_id) = 0;
-    virtual void Remove(const string& object_id) = 0;
+    virtual bool Exists(const string& object_loc) = 0;
+    virtual void Remove(const string& object_loc) = 0;
 };
 
 inline CNetStorageObject CNetStorage::Create(TNetStorageFlags flags)
@@ -127,26 +127,26 @@ inline CNetStorageObject CNetStorage::Create(TNetStorageFlags flags)
     return m_Impl->Create(flags);
 }
 
-inline CNetStorageObject CNetStorage::Open(const string& object_id,
+inline CNetStorageObject CNetStorage::Open(const string& object_loc,
         TNetStorageFlags flags)
 {
-    return m_Impl->Open(object_id, flags);
+    return m_Impl->Open(object_loc, flags);
 }
 
-inline string CNetStorage::Relocate(const string& object_id,
+inline string CNetStorage::Relocate(const string& object_loc,
         TNetStorageFlags flags)
 {
-    return m_Impl->Relocate(object_id, flags);
+    return m_Impl->Relocate(object_loc, flags);
 }
 
-inline bool CNetStorage::Exists(const string& object_id)
+inline bool CNetStorage::Exists(const string& object_loc)
 {
-    return m_Impl->Exists(object_id);
+    return m_Impl->Exists(object_loc);
 }
 
-inline void CNetStorage::Remove(const string& object_id)
+inline void CNetStorage::Remove(const string& object_loc)
 {
-    m_Impl->Remove(object_id);
+    m_Impl->Remove(object_loc);
 }
 
 /// @internal
@@ -193,7 +193,7 @@ enum ENetStorageObjectCompoundIDCues {
 };
 
 /// @internal
-enum ENetStorageObjectIDFields {
+enum ENetStorageObjectLocFields {
     fNFID_KeyAndNamespace   = (1 << eNFCIDC_KeyAndNamespace),
     fNFID_NetICache         = (1 << eNFCIDC_NetICache),
 #ifdef NCBI_GRID_XSITE_CONN_SUPPORT
@@ -203,8 +203,8 @@ enum ENetStorageObjectIDFields {
     fNFID_FileTrackDev      = (1 << eNFCIDC_FileTrackDev),
     fNFID_FileTrackQA       = (1 << eNFCIDC_FileTrackQA),
 };
-///< @internal Bitwise OR of ENetStorageObjectIDFields
-typedef unsigned char TNetStorageObjectIDFields;
+///< @internal Bitwise OR of ENetStorageObjectLocFields
+typedef unsigned char TNetStorageObjectLocFields;
 
 /// @internal
 enum EFileTrackSite {
@@ -219,20 +219,20 @@ NCBI_XCONNECT_EXPORT
 EFileTrackSite g_StringToFileTrackSite(const char* ft_site_name);
 
 /// @internal
-class NCBI_XCONNECT_EXPORT CNetStorageObjectID
+class NCBI_XCONNECT_EXPORT CNetStorageObjectLoc
 {
 public:
-    CNetStorageObjectID(CCompoundIDPool::TInstance cid_pool,
+    CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
             TNetStorageFlags flags,
             Uint8 random_number,
             const char* ft_site_name);
-    CNetStorageObjectID(CCompoundIDPool::TInstance cid_pool,
+    CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
             TNetStorageFlags flags,
             const string& app_domain,
             const string& unique_key,
             const char* ft_site_name);
-    CNetStorageObjectID(CCompoundIDPool::TInstance cid_pool,
-            const string& packed_id);
+    CNetStorageObjectLoc(CCompoundIDPool::TInstance cid_pool,
+            const string& object_loc);
 
     void SetStorageFlags(TNetStorageFlags storage_flags)
     {
@@ -241,7 +241,7 @@ public:
     }
 
     TNetStorageFlags GetStorageFlags() const {return m_StorageFlags;}
-    TNetStorageObjectIDFields GetFields() const {return m_Fields;}
+    TNetStorageObjectLocFields GetFields() const {return m_Fields;}
 
     Int8 GetTimestamp() const {return m_Timestamp;}
     Uint8 GetRandom() const {return m_Random;}
@@ -306,13 +306,13 @@ private:
     void x_SetUniqueKeyFromUserDefinedKey();
 
     void x_Pack();
-    void SetFieldFlags(TNetStorageObjectIDFields flags) {m_Fields |= flags;}
-    void ClearFieldFlags(TNetStorageObjectIDFields flags) {m_Fields &= ~flags;}
+    void SetFieldFlags(TNetStorageObjectLocFields flags) {m_Fields |= flags;}
+    void ClearFieldFlags(TNetStorageObjectLocFields flags) {m_Fields &= ~flags;}
 
     CCompoundIDPool m_CompoundIDPool;
 
     TNetStorageFlags m_StorageFlags;
-    TNetStorageObjectIDFields m_Fields;
+    TNetStorageObjectLocFields m_Fields;
 
     Int8 m_Timestamp;
     Uint8 m_Random;

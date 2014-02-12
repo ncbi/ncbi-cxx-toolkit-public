@@ -42,7 +42,7 @@ USING_NCBI_SCOPE;
 
 #define TOKEN_TYPE__NETCACHE_BLOB_KEY "NetCacheBlobKey"
 #define TOKEN_TYPE__NETSCHEDULE_JOB_KEY "NetScheduleJobKey"
-#define TOKEN_TYPE__NETSTORAGEOBJECT_ID "NetStorageObjectID"
+#define TOKEN_TYPE__NETSTORAGEOBJECT_LOC "NetStorageObjectLoc"
 
 int CGridCommandLineInterfaceApp::Cmd_WhatIs()
 {
@@ -95,13 +95,13 @@ int CGridCommandLineInterfaceApp::Cmd_WhatIs()
         }
     } else {
         try {
-            CNetStorageObjectID object_id(m_CompoundIDPool, m_Opts.id);
+            CNetStorageObjectLoc object_loc(m_CompoundIDPool, m_Opts.id);
 
-            CJsonNode object_id_info(object_id.ToJSON());
+            CJsonNode object_loc_info(object_loc.ToJSON());
 
-            object_id_info.SetString("type", TOKEN_TYPE__NETSTORAGEOBJECT_ID);
+            object_loc_info.SetString("type", TOKEN_TYPE__NETSTORAGEOBJECT_LOC);
 
-            g_PrintJSON(stdout, object_id_info);
+            g_PrintJSON(stdout, object_loc_info);
         }
         catch (CCompoundIDException&) {
             fprintf(stderr, "Unable to recognize the specified token.\n");

@@ -49,7 +49,7 @@ struct SNetStorageObjectImpl;           ///< @internal
 struct SNetStorageImpl;                 ///< @internal
 struct SNetStorageByKeyImpl;            ///< @internal
 struct SNetStorageObjectInfoImpl;       ///< @internal
-class  CNetStorageObjectID;             ///< @internal
+class  CNetStorageObjectLoc;            ///< @internal
 
 
 /** @addtogroup NetStorage
@@ -90,14 +90,14 @@ class NCBI_XCONNECT_EXPORT CNetStorageObjectInfo
     NCBI_NET_COMPONENT(NetStorageObjectInfo);
 
     /// Construct a CNetStorageObjectInfo object.
-    CNetStorageObjectInfo(const string& object_id,
+    CNetStorageObjectInfo(const string& object_loc,
             ENetStorageObjectLocation location,
-            const CNetStorageObjectID& object_id_struct,
+            const CNetStorageObjectLoc& object_loc_struct,
             Uint8 object_size,
             CJsonNode::TInstance storage_specific_info);
 
     /// Load NetStorage object information from a JSON object.
-    CNetStorageObjectInfo(const string& object_id,
+    CNetStorageObjectInfo(const string& object_loc,
             const CJsonNode& object_info_node);
 
     /// Return a ENetStorageObjectLocation constant that corresponds to the
@@ -110,7 +110,7 @@ class NCBI_XCONNECT_EXPORT CNetStorageObjectInfo
 
     /// Return a JSON object containing the fields of the object ID.
     /// A valid value is returned even if GetLocation() == eNFL_NotFound.
-    CJsonNode GetObjectIDInfo() const;
+    CJsonNode GetObjectLocInfo() const;
 
     /// Return object creation time reported by the storage back-end.
     /// @note Valid only if GetLocation() != eNFL_NotFound.
@@ -326,20 +326,22 @@ class NCBI_XCONNECT_EXPORT CNetStorage
     ///  The object is not checked for existence until
     ///  CNetStorageObject::Read() is called
     ///
-    /// @param object_id
+    /// @param object_loc
     ///  File to open
     /// @param flags
-    ///  Combination of flags that hints at the current object location (storage)
+    ///  Combination of flags that hints at the current object location
+    ///  (storage).
     ///  and caching. If this combination differs from that embedded in
-    ///  'object_id', a new object ID will be generated for this object.
+    ///  'object_loc', a new object ID will be generated for this object.
     /// @return
     ///  New CNetStorageObject
     ///
-    CNetStorageObject Open(const string& object_id, TNetStorageFlags flags = 0);
+    CNetStorageObject Open(const string& object_loc,
+            TNetStorageFlags flags = 0);
 
     /// Relocate a object according to the specified combination of flags
     ///
-    /// @param object_id
+    /// @param object_loc
     ///  An existing object to relocate
     /// @param flags
     ///  Combination of flags that defines the new object location (storage)
@@ -349,24 +351,24 @@ class NCBI_XCONNECT_EXPORT CNetStorage
     ///  If possible, this new ID should be used for further access to the
     ///  object. Note however that its original ID still can be used as well.
     ///
-    string Relocate(const string& object_id, TNetStorageFlags flags);
+    string Relocate(const string& object_loc, TNetStorageFlags flags);
 
-    /// Check if the object addressed by 'object_id' exists.
+    /// Check if the object addressed by 'object_loc' exists.
     ///
-    /// @param object_id
+    /// @param object_loc
     ///  File to check for existence
     /// @return
     ///  TRUE if the object exists; FALSE otherwise
     ///
-    bool Exists(const string& object_id);
+    bool Exists(const string& object_loc);
 
-    /// Remove the object addressed by 'object_id'. If the object is
+    /// Remove the object addressed by 'object_loc'. If the object is
     /// cached, an attempt is made to purge it from the cache as well.
     ///
-    /// @param object_id
+    /// @param object_loc
     ///  File to remove
     ///
-    void Remove(const string& object_id);
+    void Remove(const string& object_loc);
 };
 
 

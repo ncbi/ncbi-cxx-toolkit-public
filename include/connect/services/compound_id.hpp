@@ -51,7 +51,7 @@ enum ECompoundIDClass {
     eCIC_GenericID,
     eCIC_NetCacheKey,
     eCIC_NetScheduleKey,
-    eCIC_NetStorageObjectID,
+    eCIC_NetStorageObjectLoc,
 
     eCIC_NumberOfClasses
 };

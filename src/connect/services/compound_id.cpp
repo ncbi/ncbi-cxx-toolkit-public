@@ -45,7 +45,7 @@
 #define CIC_GENERICID_CLASS_NAME "CompoundID"
 #define CIC_NETCACHEKEY_CLASS_NAME "NetCacheKey"
 #define CIC_NETSCHEDULEKEY_CLASS_NAME "NetScheduleKey"
-#define CIC_NETSTORAGEOBJECTID_CLASS_NAME "NetStorageObjectID"
+#define CIC_NETSTORAGEOBJECTLOC_CLASS_NAME "NetStorageObjectLoc"
 
 #define CIT_ID_TYPE_NAME "id"
 #define CIT_INTEGER_TYPE_NAME "int"
@@ -73,7 +73,7 @@ static const char* s_ClassNames[eCIC_NumberOfClasses] = {
     /* eCIC_GenericID           */  CIC_GENERICID_CLASS_NAME,
     /* eCIC_NetCacheKey         */  CIC_NETCACHEKEY_CLASS_NAME,
     /* eCIC_NetScheduleKey      */  CIC_NETSCHEDULEKEY_CLASS_NAME,
-    /* eCIC_NetStorageObjectID  */  CIC_NETSTORAGEOBJECTID_CLASS_NAME
+    /* eCIC_NetStorageObjectLoc */  CIC_NETSTORAGEOBJECTLOC_CLASS_NAME
 };
 
 static const char* s_TypeNames[eCIT_NumberOfTypes] = {
@@ -446,7 +446,8 @@ private:
 
 #define CID_PARSER_EXCEPTION(message) \
     NCBI_THROW_FMT(CCompoundIDException, eInvalidDumpSyntax, \
-            "line " << m_ErrLine << ", column " << (m_ErrPos - m_LineBegin + 1) << ": " << message)
+            "line " << m_ErrLine << ", column " << \
+            (m_ErrPos - m_LineBegin + 1) << ": " << message)
 
 CCompoundID CCompoundIDDumpParser::ParseID()
 {
@@ -477,8 +478,8 @@ CCompoundID CCompoundIDDumpParser::ParseID()
             new_id_class = eCIC_NetCacheKey;
         else if (new_id_class_name == CIC_NETSCHEDULEKEY_CLASS_NAME)
             new_id_class = eCIC_NetScheduleKey;
-        else if (new_id_class_name == CIC_NETSTORAGEOBJECTID_CLASS_NAME)
-            new_id_class = eCIC_NetStorageObjectID;
+        else if (new_id_class_name == CIC_NETSTORAGEOBJECTLOC_CLASS_NAME)
+            new_id_class = eCIC_NetStorageObjectLoc;
     }
 
     if (new_id_class == eCIC_NumberOfClasses) {

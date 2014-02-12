@@ -281,59 +281,59 @@ int CGridCommandLineInterfaceApp::Cmd_Relocate()
     return 0;
 }
 
-int CGridCommandLineInterfaceApp::Cmd_MkObjectID()
+int CGridCommandLineInterfaceApp::Cmd_MkObjectLoc()
 {
     SetUp_NetStorageCmd(eNetStorageAPI);
 
-    auto_ptr<CNetStorageObjectID> object_id;
+    auto_ptr<CNetStorageObjectLoc> object_loc;
 
     switch (IsOptionSet(eOptionalID, OPTION_N(0)) |
             IsOptionSet(eObjectKey, OPTION_N(1)) |
             IsOptionSet(eNamespace, OPTION_N(2))) {
     case OPTION_N(0):
-        object_id.reset(new CNetStorageObjectID(m_CompoundIDPool, m_Opts.id));
+        object_loc.reset(new CNetStorageObjectLoc(m_CompoundIDPool, m_Opts.id));
         break;
 
     case OPTION_N(1) + OPTION_N(2):
-        object_id.reset(new CNetStorageObjectID(m_CompoundIDPool,
+        object_loc.reset(new CNetStorageObjectLoc(m_CompoundIDPool,
                 m_Opts.netstorage_flags, m_Opts.app_domain, m_Opts.id,
                 TFileTrack_Site::GetDefault().c_str()));
         break;
 
     case 0:
-        fprintf(stderr, GRID_APP_NAME " mkobjectid: either an "
+        fprintf(stderr, GRID_APP_NAME " mkobjectloc: either an "
                 "object ID or a combination of '--"
                 OBJECT_KEY_OPTION "' and '--" NAMESPACE_OPTION
                 "' must be specified.\n");
         return 2;
 
     case OPTION_N(1):
-        fprintf(stderr, GRID_APP_NAME " mkobjectid: '--" OBJECT_KEY_OPTION
+        fprintf(stderr, GRID_APP_NAME " mkobjectloc: '--" OBJECT_KEY_OPTION
                 "' requires '--" NAMESPACE_OPTION "'.\n");
         return 2;
 
     case OPTION_N(2):
-        fprintf(stderr, GRID_APP_NAME " mkobjectid: '--" NAMESPACE_OPTION
+        fprintf(stderr, GRID_APP_NAME " mkobjectloc: '--" NAMESPACE_OPTION
                 "' requires '--" OBJECT_KEY_OPTION "'.\n");
         return 2;
 
     default:
-        fprintf(stderr, GRID_APP_NAME " mkobjectid: object ID cannot "
+        fprintf(stderr, GRID_APP_NAME " mkobjectloc: object ID cannot "
                 "be combined with either '--" OBJECT_KEY_OPTION
                 "' or '--" NAMESPACE_OPTION "'.\n");
         return 2;
     }
 
     if (IsOptionSet(eNetCache))
-        g_SetNetICacheParams(*object_id, m_NetICacheClient);
+        g_SetNetICacheParams(*object_loc, m_NetICacheClient);
 
     if (m_Opts.netstorage_flags != 0)
-        object_id->SetStorageFlags(m_Opts.netstorage_flags);
+        object_loc->SetStorageFlags(m_Opts.netstorage_flags);
 
     if (IsOptionSet(eTTL))
-        object_id->SetTTL(m_Opts.ttl);
+        object_loc->SetTTL(m_Opts.ttl);
 
-    PrintLine(object_id->GetID());
+    PrintLine(object_loc->GetID());
 
     return 0;
 }
