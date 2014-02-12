@@ -341,14 +341,13 @@ CFlatItemFormatter::Start(
         "<body>\n"
         "<hr /><div class=\"sequence\">" );
 
-    if ( m_Ctx->GetConfig().DoHTML() ) {
-//        Out.AddLine( "Content-type: text/html" );
-//        Out.AddLine( "<HTML>" );
-//        Out.AddLine( "<HEAD><TITLE>Entry</TITLE></HEAD>" );
-//        Out.AddLine( "<BODY>" );
-//        Out.AddLine( "<hr>" );
-//        Out.AddLine( "<pre>" );
-        Out.AddLine( strHtmlHead );
+    const string strCgiHead("<div class=\"sequence\">");
+
+    //mss-249
+    if (m_Ctx->GetConfig().DoHTML()) {
+        m_Ctx->GetConfig().IsModeEntrez() ?
+            Out.AddLine( strCgiHead ) :
+            Out.AddLine( strHtmlHead );
     }
 };
 
@@ -361,9 +360,13 @@ CFlatItemFormatter::End(
         "</div><hr />\n"
         "</body>\n"
         "</html>" );
+    const string strCgiTail( "</div>" );
 
+    //mss-249
     if ( m_Ctx->GetConfig().DoHTML() ) {
-        Out.AddLine( strHtmlTail );
+        m_Ctx->GetConfig().IsModeEntrez() ?
+            Out.AddLine( strCgiTail ) :
+            Out.AddLine( strHtmlTail );
     }
 };
 
