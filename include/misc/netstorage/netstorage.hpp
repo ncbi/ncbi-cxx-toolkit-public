@@ -92,13 +92,11 @@ CNetStorageByKey g_CreateNetStorageByKey(
 /// @param default_flags
 ///  Default storage preferences for files created by this object.
 ///
-NCBI_XCONNECT_EXPORT
 CNetStorageByKey g_CreateNetStorageByKey(
         const string&    domain_name,
         TNetStorageFlags default_flags = 0);
 
 /// @internal
-NCBI_XCONNECT_EXPORT
 CNetStorageObject g_CreateNetStorageObject(
         CNetStorage::TInstance netstorage_api,
         Int8 object_loc,
