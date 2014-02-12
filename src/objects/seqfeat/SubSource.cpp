@@ -2258,6 +2258,7 @@ static const SStaticPair<const char*, const char*> s_map_country_name_fixes[] = 
 {"UMI", "United States Minor Outlying Islands"},
 {"URY", "Uruguay"},
 {"UZB", "Uzbekistan"},
+{"United States", "USA"},
 {"United States of America", "USA"},
 {"VAT", "Holy See (Vatican City State)"},
 {"VCT", "Saint Vincent and the Grenadines"},

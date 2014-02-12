@@ -17878,6 +17878,8 @@ BOOST_AUTO_TEST_CASE(Test_FixFormatDate)
 
 BOOST_AUTO_TEST_CASE(Test_NewFixCountry)
 {
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("United States"), "USA");
+    BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Russia, Tatarstan, Kazan"), "Russia: Tatarstan, Kazan");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Egypt: Red Sea, Ras Mohamed, Sinai"), "Egypt: Red Sea, Ras Mohamed, Sinai");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("Kenya."), "Kenya");
     BOOST_CHECK_EQUAL(CCountries::NewFixCountry("U.S.A."), "USA");
