@@ -180,7 +180,7 @@
 #  error "SOCK_BUF_CHUNK_SIZE too small"
 #endif /*MAXIDLEN<SOCK_BUF_CHUNK_SIZE*/
 
-#define SOCK_STRERROR(err)    s_StrError(0, (err))
+#define SOCK_STRERROR(error)  s_StrError(0, (error))
 
 #define SOCK_LOOPBACK         (assert(INADDR_LOOPBACK), htonl(INADDR_LOOPBACK))
 
@@ -497,16 +497,16 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
     case eIO_Read:
     case eIO_Write:
         {{
-            const char* strerr = NULL;
+            const char* strerr = 0;
             what = (event == eIO_Read
-                    ? (sock->type != eDatagram  &&  !size
-                       ? (data
-                          ? (strerr = s_StrError(sock, *((int*) data)))
-                          : "EOF hit")
-                       : "Read")
-                    : (sock->type != eDatagram  &&  !size
-                       ? (strerr = s_StrError(sock, *((int*) data)))
-                       : "Written"));
+                    ? (sock->type == eDatagram  ||  size  ||
+                       (data  &&  !(strerr = s_StrError(sock, *((int*) data))))
+                       ? "Read"
+                       : data ? strerr : "EOF Hit")
+                    : (sock->type == eDatagram  ||  size  ||
+                       !(strerr = s_StrError(sock, *((int*) data)))
+                       ? "Written"
+                       :        strerr));
 
             n = (int) strlen(what);
             while (n  &&  isspace((unsigned char) what[n - 1]))
@@ -534,10 +534,10 @@ static void s_DoLog(ELOG_Level  level, const SOCK sock, EIO_Event   event,
                          ("%s%.*s%s%s%s", s_ID(sock, _id), n, what,
                           sock->type == eDatagram
                           ? (event == eIO_Read ? " from " : " to ")
-                          : !size
+                          : size  ||  !data ? "" : strerr
                           ? (event == eIO_Read
                              ? " while reading" : " while writing")
-                          : "",
+                          : " 0 bytes",
                           head, tail));
 
             UTIL_ReleaseBuffer(strerr);
@@ -774,7 +774,7 @@ static EIO_Status s_Init(void)
             CORE_UNLOCK;
             strerr = SOCK_STRERROR(error);
             CORE_LOG_ERRNO_EXX(3, eLOG_Error,
-                               error, strerr,
+                               error, strerr ? strerr : "",
                                "[SOCK::InitializeAPI] "
                                " Failed WSAStartup()");
             UTIL_ReleaseBuffer(strerr);
@@ -920,7 +920,7 @@ extern EIO_Status SOCK_ShutdownAPI(void)
         if (error) {
             const char* strerr = SOCK_STRERROR(error);
             CORE_LOG_ERRNO_EXX(4, eLOG_Warning,
-                               error, strerr,
+                               error, strerr ? strerr : "",
                                "[SOCK::ShutdownAPI] "
                                " Failed WSACleanup()");
             UTIL_ReleaseBuffer(strerr);
@@ -994,7 +994,7 @@ static int s_gethostname(char* name, size_t namelen, ESwitch log)
             int error = SOCK_ERRNO;
             const char* strerr = SOCK_STRERROR(error);
             CORE_LOG_ERRNO_EXX(103, eLOG_Error,
-                               error, strerr,
+                               error, strerr ? strerr : "",
                                "[SOCK_gethostname] "
                                " Failed gethostname()");
             UTIL_ReleaseBuffer(strerr);
@@ -1058,7 +1058,7 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
                     error += EAI_BASE;
                 strerr = SOCK_STRERROR(error);
                 CORE_LOGF_ERRNO_EXX(105, eLOG_Warning,
-                                    error, strerr,
+                                    error, strerr ? strerr : "",
                                     ("[SOCK_gethostbyname] "
                                      " Failed getaddrinfo(\"%.*s\")",
                                      MAXHOSTNAMELEN, hostname));
@@ -1125,7 +1125,7 @@ static unsigned int s_gethostbyname_(const char* hostname, ESwitch log)
 #  endif /*NETDB_INTERNAL*/
             strerr = SOCK_STRERROR(error);
             CORE_LOGF_ERRNO_EXX(106, eLOG_Warning,
-                                error, strerr,
+                                error, strerr ? strerr : "",
                                 ("[SOCK_gethostbyname] "
                                  " Failed gethostbyname%s(\"%.*s\")",
                                  suffix, MAXHOSTNAMELEN, hostname));
@@ -1243,7 +1243,7 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
                     sprintf(addr, "0x%08X", (unsigned int) ntohl(host));
                 strerr = SOCK_STRERROR(error);
                 CORE_LOGF_ERRNO_EXX(107, eLOG_Warning,
-                                    error, strerr,
+                                    error, strerr ? strerr : "",
                                     ("[SOCK_gethostbyaddr] "
                                      " Failed getnameinfo(%s)",
                                      addr));
@@ -1318,7 +1318,7 @@ static char* s_gethostbyaddr_(unsigned int host, char* name,
                 sprintf(addr, "0x%08X", (unsigned int) ntohl(host));
             strerr = SOCK_STRERROR(error);
             CORE_LOGF_ERRNO_EXX(108, eLOG_Warning,
-                                error, strerr,
+                                error, strerr ? strerr : "",
                                 ("[SOCK_gethostbyaddr] "
                                  " Failed gethostbyaddr%s(%s)",
                                  suffix, addr));
@@ -1716,7 +1716,7 @@ static EIO_Status s_Select_(size_t                n,
             if (error != SOCK_EINTR) {
                 const char* strerr = SOCK_STRERROR(error);
                 CORE_LOGF_ERRNO_EXX(5, eLOG_Warning,
-                                    error, strerr,
+                                    error, strerr ? strerr : "",
                                     ("%s[SOCK::Select] "
                                      " Failed select()",
                                      n == 1 ? s_ID(polls[0].sock, _id) : ""));
@@ -2005,7 +2005,7 @@ static EIO_Status s_Poll_(size_t                n,
             if ((x_ready = SOCK_ERRNO) != SOCK_EINTR) {
                 const char* strerr = SOCK_STRERROR(x_ready);
                 CORE_LOGF_ERRNO_EXX(147, ready ? eLOG_Warning : eLOG_Error,
-                                    x_ready, strerr,
+                                    x_ready, strerr ? strerr : "",
                                     ("%s[SOCK::Select] "
                                      " Failed poll()",
                                      n == 1 ? s_ID(polls[0].sock, _id) : ""));
@@ -2358,7 +2358,7 @@ static EIO_Status s_Select(size_t                n,
                         int error = SOCK_ERRNO;
                         const char* strerr = SOCK_STRERROR(error);
                         CORE_LOGF_ERRNO_EXX(136, eLOG_Error,
-                                            error, strerr,
+                                            error, strerr ? strerr : "",
                                             ("%s[SOCK::Select] "
                                              " Failed WSAEnumNetworkEvents",
                                              s_ID(sock, _id)));
@@ -2568,7 +2568,7 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
                 TSOCK_socklen_t mlen = (TSOCK_socklen_t) sizeof(m);
                 if (getsockopt(sock->sock, SOL_IP, IP_MTU, &m, &mlen) != 0) {
                     const char* strerr = SOCK_STRERROR(SOCK_ERRNO);
-                    sprintf(mtu, ", MTU unknown (%.80s)", strerr);
+                    sprintf(mtu, ", MTU ?? (%.80s)", strerr ? strerr : "??");
                     UTIL_ReleaseBuffer(strerr);
                 } else
                     sprintf(mtu, ", MTU = %d", m);
@@ -2586,7 +2586,7 @@ static EIO_Status s_IsConnected_(SOCK                  sock,
             int x_error = SOCK_ERRNO;
             const char* strerr = SOCK_STRERROR(x_error);
             CORE_LOGF_ERRNO_EXX(6, eLOG_Trace,
-                                x_error, strerr,
+                                x_error, strerr ? strerr : "",
                                 ("%s[SOCK::IsConnected] "
                                  " Failed setsockopt(REUSEADDR)",
                                  s_ID(sock, _id)));
@@ -2767,7 +2767,7 @@ static EIO_Status s_Recv(SOCK    sock,
         if (error != SOCK_EINTR) {
             const char* strerr = SOCK_STRERROR(error);
             CORE_LOGF_ERRNO_EXX(7, eLOG_Trace,
-                                error, strerr,
+                                error, strerr ? strerr : "",
                                 ("%s[SOCK::Recv] "
                                  " Failed recv()",
                                  s_ID(sock, _id)));            
@@ -3274,7 +3274,7 @@ static EIO_Status s_Send(SOCK        sock,
             char _id[MAXIDLEN];
             const char* strerr = SOCK_STRERROR(error);
             CORE_LOGF_ERRNO_EXX(11, eLOG_Trace,
-                                error, strerr,
+                                error, strerr ? strerr : "",
                                 ("%s[SOCK::Send] "
                                  " Failed send()",
                                  s_ID(sock, _id)));
@@ -3422,7 +3422,7 @@ static EIO_Status s_WritePending(SOCK                  sock,
                 const char* strerr = s_StrError(sock, error);
                 CORE_LOGF_ERRNO_EXX(12, sock->log != eOff
                                     ? eLOG_Error : eLOG_Trace,
-                                    error, strerr,
+                                    error, strerr ? strerr : "",
                                     ("%s[SOCK::WritePending] "
                                      " Failed %s: %s",
                                      s_ID(sock, _id),
@@ -3628,7 +3628,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
                     if (status != eIO_Success) {
                         const char* strerr = s_StrError(sock, error);
                         CORE_LOGF_ERRNO_EXX(127, eLOG_Trace,
-                                            error, strerr,
+                                            error, strerr ? strerr : "",
                                             ("%s[SOCK::%s] "
                                              " Failed SSL bye",
                                              s_ID(sock, _id),
@@ -3692,7 +3692,7 @@ static EIO_Status s_Shutdown(SOCK                  sock,
             ) {
             const char* strerr = SOCK_STRERROR(error);
             CORE_LOGF_ERRNO_EXX(16, eLOG_Trace,
-                                error, strerr,
+                                error, strerr ? strerr : "",
                                 ("%s[SOCK::Shutdown] "
                                  " Failed shutdown(%s)",
                                  s_ID(sock, _id), dir == eIO_Read ? "R" :
@@ -3755,7 +3755,7 @@ static EIO_Status s_Close_(SOCK sock, int abort)
                 &&  abort >= 0  &&  sock->connected) {
                 const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
                 CORE_LOGF_ERRNO_EXX(17, eLOG_Trace,
-                                    error, strerr,
+                                    error, strerr ? strerr : "",
                                     ("%s[SOCK::%s] "
                                      " Failed setsockopt(SO_LINGER)",
                                      s_ID(sock, _id),
@@ -3771,7 +3771,7 @@ static EIO_Status s_Close_(SOCK sock, int abort)
                     &&  !abort  &&  sock->connected) {
                     const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
                     CORE_LOGF_ERRNO_EXX(18, eLOG_Trace,
-                                        error, strerr,
+                                        error, strerr ? strerr : "",
                                         ("%s[SOCK::Close] "
                                          " Failed setsockopt(TCP_LINGER2)",
                                          s_ID(sock, _id)));
@@ -3799,7 +3799,7 @@ static EIO_Status s_Close_(SOCK sock, int abort)
             const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
             assert(!abort);
             CORE_LOGF_ERRNO_EXX(19, eLOG_Trace,
-                                error, strerr,
+                                error, strerr ? strerr : "",
                                 ("%s[SOCK::Close] "
                                  " Cannot set socket back to blocking mode",
                                  s_ID(sock, _id)));
@@ -3859,7 +3859,7 @@ static EIO_Status s_Close_(SOCK sock, int abort)
             if (abort  ||  error != SOCK_EINTR) {
                 const char* strerr = SOCK_STRERROR(error);
                 CORE_LOGF_ERRNO_EXX(21, abort == 1 ? eLOG_Warning : eLOG_Error,
-                                    error, strerr,
+                                    error, strerr ? strerr : "",
                                     ("%s[SOCK::%s] "
                                      " Failed close()",
                                      s_ID(sock, _id),
@@ -3959,7 +3959,7 @@ static EIO_Status s_Connect_(SOCK            sock,
         if (!session) {
             const char* strerr = s_StrError(sock, error);
             CORE_LOGF_ERRNO_EXX(131, eLOG_Error,
-                                error, strerr,
+                                error, strerr ? strerr : "",
                                 ("%s[SOCK::Connect] "
                                  " Failed to initialize secure session",
                                  s_ID(sock, _id)));
@@ -4021,7 +4021,7 @@ static EIO_Status s_Connect_(SOCK            sock,
     if ((x_sock = socket(addr.sa.sa_family, SOCK_STREAM, 0)) == SOCK_INVALID) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(23, eLOG_Error,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("%s[SOCK::Connect] "
                              " Cannot create socket",
                              s_ID(sock, _id)));
@@ -4052,7 +4052,7 @@ static EIO_Status s_Connect_(SOCK            sock,
     if (WSAEventSelect(sock->sock, sock->event, SOCK_EVENTS) != 0) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(123, eLOG_Error,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("%s[SOCK::Connect] "
                              " Failed to bind IO event",
                              s_ID(sock, _id)));
@@ -4065,7 +4065,7 @@ static EIO_Status s_Connect_(SOCK            sock,
     if (!s_SetNonblock(x_sock, 1/*true*/)) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(24, eLOG_Error,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("%s[SOCK::Connect] "
                              " Cannot set socket to non-blocking mode",
                              s_ID(sock, _id)));
@@ -4080,7 +4080,7 @@ static EIO_Status s_Connect_(SOCK            sock,
         if (sock->keepalive  &&  !s_SetKeepAlive(x_sock, 1/*true*/)) {
             const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
             CORE_LOGF_ERRNO_EXX(151, eLOG_Warning,
-                                error, strerr,
+                                error, strerr ? strerr : "",
                                 ("%s[SOCK::Connect] "
                                  " Failed setsockopt(KEEPALIVE)",
                                  s_ID(sock, _id)));
@@ -4091,7 +4091,7 @@ static EIO_Status s_Connect_(SOCK            sock,
         if (!s_SetOobInline(x_sock, 1/*true*/)) {
             const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
             CORE_LOGF_ERRNO_EXX(135, eLOG_Warning,
-                                error, strerr,
+                                error, strerr ? strerr : "",
                                 ("%s[SOCK::Connect] "
                                  " Failed setsockopt(OOBINLINE)",
                                  s_ID(sock, _id)));
@@ -4153,7 +4153,7 @@ static EIO_Status s_Connect_(SOCK            sock,
                 const char* strerr = SOCK_STRERROR(error);
                 CORE_LOGF_ERRNO_EXX(25, sock->log != eOff
                                     ? eLOG_Error : eLOG_Trace,
-                                    error, strerr,
+                                    error, strerr ? strerr : "",
                                     ("%s[SOCK::Connect] "
                                      " Failed connect()",
                                      s_ID(sock, _id)));
@@ -4197,7 +4197,7 @@ static EIO_Status s_Connect_(SOCK            sock,
                 const char* strerr = s_StrError(sock, error);
                 CORE_LOGF_ERRNO_EXX(26, sock->log != eOff
                                     ? eLOG_Error : eLOG_Trace,
-                                    error, strerr,
+                                    error, strerr ? strerr : "",
                                     ("%s[SOCK::Connect] "
                                      " Failed %s: %s", s_ID(sock, _id),
                                      what ? what : "pending connect()",
@@ -4364,7 +4364,7 @@ static EIO_Status s_CreateOnTop(const void* handle,
     if (getpeername(fd, &peer.sa, &peerlen) != 0) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(148, eLOG_Error,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
                              " Invalid OS socket handle",
                              x_id, (unsigned int) fd));
@@ -4430,7 +4430,7 @@ static EIO_Status s_CreateOnTop(const void* handle,
     if (WSAEventSelect(fd, event, SOCK_EVENTS) != 0) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(162, eLOG_Error,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
                              " Failed to bind IO event",
                              x_id, (unsigned int) fd));
@@ -4443,7 +4443,7 @@ static EIO_Status s_CreateOnTop(const void* handle,
     if (!s_SetNonblock(fd, 1/*true*/)) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(50, eLOG_Error,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("SOCK#%u[%u]: [SOCK::CreateOnTop] "
                              " Cannot set socket to non-blocking mode",
                              x_id, (unsigned int) fd));
@@ -4520,7 +4520,7 @@ static EIO_Status s_CreateOnTop(const void* handle,
         if (!session) {
             const char* strerr = s_StrError(x_sock, error);
             CORE_LOGF_ERRNO_EXX(132, eLOG_Error,
-                                error, strerr,
+                                error, strerr ? strerr : "",
                                 ("%s[SOCK::CreateOnTop] "
                                  " Failed to initialize secure session",
                                  s_ID(x_sock, _id)));
@@ -4541,7 +4541,7 @@ static EIO_Status s_CreateOnTop(const void* handle,
         if (!s_SetKeepAlive(fd, x_sock->keepalive)) {
             const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
             CORE_LOGF_ERRNO_EXX(153, eLOG_Warning,
-                                error, strerr,
+                                error, strerr ? strerr : "",
                                 ("%s[SOCK::CreateOnTop] "
                                  " Failed setsockopt(KEEPALIVE)",
                                  s_ID(x_sock, _id)));
@@ -4552,7 +4552,7 @@ static EIO_Status s_CreateOnTop(const void* handle,
         if (!s_SetOobInline(fd, 1/*true*/)) {
             const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
             CORE_LOGF_ERRNO_EXX(138, eLOG_Warning,
-                                error, strerr,
+                                error, strerr ? strerr : "",
                                 ("%s[SOCK::CreateOnTop] "
                                  " Failed setsockopt(OOBINLINE)",
                                  s_ID(x_sock, _id)));
@@ -4587,7 +4587,7 @@ static EIO_Status s_CreateOnTop(const void* handle,
     if (setsockopt(fd, SOL_SOCKET, SO_LINGER, (char*) &lgr, sizeof(lgr)) != 0){
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(43, eLOG_Warning,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("%s[SOCK::CreateOnTop] "
                              " Failed setsockopt(SO_NOLINGER)",
                              s_ID(x_sock, _id)));
@@ -4673,7 +4673,7 @@ static EIO_Status s_CreateListening(const char*    path,
         } else
             cp = path;
         CORE_LOGF_ERRNO_EXX(34, eLOG_Error,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("LSOCK#%u[?]@%s: [LSOCK::Create] "
                              " Failed socket()", x_id, cp));
         UTIL_ReleaseBuffer(strerr);
@@ -4719,7 +4719,7 @@ static EIO_Status s_CreateListening(const char*    path,
             else
                 strcpy (_id, "?");
             CORE_LOGF_ERRNO_EXX(35, eLOG_Error,
-                                error, strerr,
+                                error, strerr ? strerr : "",
                                 ("LSOCK#%u[%u]@:%s: [LSOCK::Create] "
                                  " Failed setsockopt(%s)", x_id,
                                  (unsigned int) x_lsock, _id, failed));
@@ -4776,7 +4776,7 @@ static EIO_Status s_CreateListening(const char*    path,
             cp = path;
         CORE_LOGF_ERRNO_EXX(36, error != SOCK_EADDRINUSE
                             ? eLOG_Error : eLOG_Trace,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("LSOCK#%u[%u]@%s: [LSOCK::Create] "
                              " Failed bind()",
                              x_id, (unsigned int) x_lsock, cp));
@@ -4796,7 +4796,7 @@ static EIO_Status s_CreateListening(const char*    path,
         if (error  ||  addr.sa.sa_family != AF_INET  ||  !addr.in.sin_port) {
             const char* strerr = SOCK_STRERROR(error);
             CORE_LOGF_ERRNO_EXX(150, eLOG_Error,
-                                error, strerr,
+                                error, strerr ? strerr : "",
                                 ("LSOCK#%u[%u]@:?: [LSOCK::Create] "
                                  " Cannot obtain free socket port",
                                  x_id, (unsigned int) x_lsock));
@@ -4828,7 +4828,7 @@ static EIO_Status s_CreateListening(const char*    path,
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         assert(!path);
         CORE_LOGF_ERRNO_EXX(119, eLOG_Error,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("LSOCK#%u[%u]@:%hu: [LSOCK::Create] "
                              " Failed to bind IO event",
                              x_id, (unsigned int) x_lsock, port));
@@ -4847,7 +4847,7 @@ static EIO_Status s_CreateListening(const char*    path,
         } else
             cp = path;
         CORE_LOGF_ERRNO_EXX(38, eLOG_Error,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("LSOCK#%u[%u]@%s: [LSOCK::Create] "
                              " Cannot set socket to non-blocking mode",
                              x_id, (unsigned int) x_lsock, cp));
@@ -4866,7 +4866,7 @@ static EIO_Status s_CreateListening(const char*    path,
         } else
             cp = path;
         CORE_LOGF_ERRNO_EXX(37, eLOG_Error,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("LSOCK#%u[%u]@%s: [LSOCK::Create] "
                              " Failed listen(%hu)",
                              x_id, (unsigned int) x_lsock, cp, backlog));
@@ -5034,7 +5034,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
     if ((x_sock = accept(lsock->sock, &addr.sa, &addrlen)) == SOCK_INVALID) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(40, eLOG_Error,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("%s[LSOCK::Accept] "
                              " Failed accept()",
                              s_ID((SOCK) lsock, _id)));
@@ -5078,7 +5078,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
         int error = SOCK_ERRNO;
         const char* strerr = SOCK_STRERROR(error);
         CORE_LOGF_ERRNO_EXX(121, eLOG_Error,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("SOCK#%u[%u]@%s: [LSOCK::Accept] "
                              " Failed to bind IO event",
                              x_id, (unsigned int) x_sock,
@@ -5093,7 +5093,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
     if (!s_SetNonblock(x_sock, 1/*true*/)) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(41, eLOG_Error,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("SOCK#%u[%u]@%s: [LSOCK::Accept] "
                              " Cannot set socket to non-blocking mode",
                              x_id, (unsigned int) x_sock,
@@ -5152,7 +5152,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
         if (s_ReuseAddress == eOn  &&  !s_SetReuseAddress(x_sock, 1)) {
             const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
             CORE_LOGF_ERRNO_EXX(42, eLOG_Warning,
-                                error, strerr,
+                                error, strerr ? strerr : "",
                                 ("%s[LSOCK::Accept] "
                                  " Failed setsockopt(REUSEADDR)",
                                  s_ID(*sock, _id)));
@@ -5163,7 +5163,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
         if ((*sock)->keepalive  &&  !s_SetKeepAlive(x_sock, 1)) {
             const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
             CORE_LOGF_ERRNO_EXX(152, eLOG_Warning,
-                                error, strerr,
+                                error, strerr ? strerr : "",
                                 ("%s[LSOCK::Accept] "
                                  " Failed setsockopt(KEEPALIVE)",
                                  s_ID(*sock, _id)));
@@ -5174,7 +5174,7 @@ static EIO_Status s_Accept(LSOCK           lsock,
         if (!s_SetOobInline(x_sock, 1/*true*/)) {
             const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
             CORE_LOGF_ERRNO_EXX(137, eLOG_Warning,
-                                error, strerr,
+                                error, strerr ? strerr : "",
                                 ("%s[LSOCK::Accept] "
                                  " Failed setsockopt(OOBINLINE)",
                                  s_ID(*sock, _id)));
@@ -5268,7 +5268,7 @@ static EIO_Status s_CloseListening(LSOCK lsock)
             if (error != SOCK_EINTR) {
                 const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
                 CORE_LOGF_ERRNO_EXX(45, eLOG_Error,
-                                    error, strerr,
+                                    error, strerr ? strerr : "",
                                     ("LSOCK#%u[%u]: [LSOCK::Close] "
                                      " Failed close()",
                                      lsock->id, (unsigned int) lsock->sock));
@@ -5402,7 +5402,7 @@ static EIO_Status s_RecvMsg(SOCK            sock,
         } else {
             const char* strerr = SOCK_STRERROR(error);
             CORE_LOGF_ERRNO_EXX(94, eLOG_Trace,
-                                error, strerr,
+                                error, strerr ? strerr : "",
                                 ("%s[DSOCK::RecvMsg] "
                                  " Failed recvfrom()",
                                  s_ID(sock, w)));
@@ -5558,7 +5558,7 @@ static EIO_Status s_SendMsg(SOCK           sock,
             else
                 SOCK_HostPortToString(x_host, x_port, w, sizeof(w)/2);
             CORE_LOGF_ERRNO_EXX(91, eLOG_Trace,
-                                error, strerr,
+                                error, strerr ? strerr : "",
                                 ("%s[DSOCK::SendMsg] "
                                  " Failed sendto(%s)",
                                  s_ID(sock, w + sizeof(w)/2), w));
@@ -7045,7 +7045,7 @@ extern void SOCK_SetCork(SOCK sock, int/*bool*/ on_off)
         int error = SOCK_ERRNO;
         const char* strerr = SOCK_STRERROR(error);
         CORE_LOGF_ERRNO_EXX(160, eLOG_Warning,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("%s[SOCK::SetCork] "
                              " Failed setsockopt(%sTCP_CORK)",
                              s_ID(sock, _id), on_off ? "" : "!"));
@@ -7082,7 +7082,7 @@ extern void SOCK_DisableOSSendDelay(SOCK sock, int/*bool*/ on_off)
         int error = SOCK_ERRNO;
         const char* strerr = SOCK_STRERROR(error);
         CORE_LOGF_ERRNO_EXX(75, eLOG_Warning,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("%s[SOCK::DisableOSSendDelay] "
                              " Failed setsockopt(%sTCP_NODELAY)",
                              s_ID(sock, _id), on_off ? "" : "!"));
@@ -7123,7 +7123,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
     if ((x_sock = socket(AF_INET, SOCK_DGRAM, 0)) == SOCK_INVALID) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(76, eLOG_Error,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("DSOCK#%u[?]: [DSOCK::Create] "
                              " Cannot create socket",
                              x_id));
@@ -7148,7 +7148,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
     if (WSAEventSelect(x_sock, event, SOCK_EVENTS) != 0) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(140, eLOG_Error,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("DSOCK#%u[%u]: [DSOCK::Create] "
                              " Failed to bind IO event",
                              x_id, (unsigned int) x_sock));
@@ -7162,7 +7162,7 @@ extern EIO_Status DSOCK_CreateEx(SOCK* sock, TSOCK_Flags flags)
     if (!s_SetNonblock(x_sock, 1/*true*/)) {
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(77, eLOG_Error,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("DSOCK#%u[%u]: [DSOCK::Create] "
                              " Cannot set socket to non-blocking mode",
                              x_id, (unsigned int) x_sock));
@@ -7268,7 +7268,7 @@ extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
         const char* strerr = SOCK_STRERROR(error = SOCK_ERRNO);
         CORE_LOGF_ERRNO_EXX(80, error != SOCK_EADDRINUSE
                             ? eLOG_Error : eLOG_Trace,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("%s[DSOCK::Bind] "
                              " Failed bind(:%hu)",
                              s_ID(sock, _id), port));
@@ -7283,7 +7283,7 @@ extern EIO_Status DSOCK_Bind(SOCK sock, unsigned short port)
         if (error  ||  addr.sa.sa_family != AF_INET  ||  !addr.in.sin_port) {
             const char* strerr = SOCK_STRERROR(error);
             CORE_LOGF_ERRNO_EXX(114, eLOG_Error,
-                                error, strerr,
+                                error, strerr ? strerr : "",
                                 ("%s[DSOCK::Bind] "
                                  " Cannot obtain free socket port",
                                  s_ID(sock, _id)));
@@ -7380,7 +7380,7 @@ extern EIO_Status DSOCK_Connect(SOCK sock,
         else
             *addr = '\0';
         CORE_LOGF_ERRNO_EXX(85, eLOG_Error,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("%s[DSOCK::Connect] "
                              " Failed %sconnect%s%s%s",
                              s_ID(sock, _id), *addr ? "" : "to dis",
@@ -7609,7 +7609,7 @@ extern EIO_Status DSOCK_SetBroadcast(SOCK sock, int/*bool*/ broadcast)
             int error = SOCK_ERRNO;
             const char* strerr = SOCK_STRERROR(error);
             CORE_LOGF_ERRNO_EXX(102, eLOG_Error,
-                                error, strerr,
+                                error, strerr ? strerr : "",
                                 ("%s[DSOCK::SetBroadcast] "
                                  " Failed setsockopt(%sBROADCAST)",
                                  s_ID(sock, _id), bcast ? "" : "NO"));
@@ -7771,7 +7771,7 @@ extern void SOCK_SetReuseAddress(SOCK sock, int/*bool*/ on_off)
         int error = SOCK_ERRNO;
         const char* strerr = SOCK_STRERROR(error);
         CORE_LOGF_ERRNO_EXX(74, eLOG_Warning,
-                            error, strerr,
+                            error, strerr ? strerr : "",
                             ("%s[SOCK::SetReuseAddress] "
                              " Failed setsockopt(%sREUSEADDR)",
                              s_ID(sock, _id), on_off ? "" : "NO"));
